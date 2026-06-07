@@ -1118,3 +1118,23 @@ the EXE holds only keys ("SCORE" DG 0x11CF, "EXPLOITS" DG 0x11E0). The string
 `tools/coverage.py` + `docs/COVERAGE.md`: 1248 functions, 1236 (99%) with @asm
 citations, 342 (27%) with a BYTE_VERIFIED-adjacent citation (heuristic upper
 bound). audit.py regression baseline now 69/69.
+
+---
+
+## Native mission convert rate — `func_0572E6` (verified 2026-06-07)
+
+The per-check conversion probability is byte-traced (identified via the
+INDIANSCONVERT key DG 0x182A pushed @0x57341). func_0572E6 file 0x0572E6
+(ENTER 0x0F25).
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| convert_rate = `*(0x8D4E)[+2] + 2` (active tribe record field +2) | @asm 0x572F2 `mov bx,[0x8d4e]`; 0x572F6 `mov al,[bx+2]`; 0x572FB `inc ax;inc ax` | BYTE_VERIFIED |
+| rate doubled when mission-bonus flag CL&0x10 set | @asm 0x57300 `test cl,0x10`; 0x57305 `shl ax,1` | BYTE_VERIFIED (mechanism); CL source TBD |
+| convert occurs iff `random_int(0,15) < rate` | @asm 0x5730A `push 0xf;push 0`; 0x5730E `lcall 0x181F:0x4D4`; 0x57316 `cmp ax,[bp-4]`; 0x57319 `jge` exit | BYTE_VERIFIED |
+| INDIANSCONVERT message shown on success, human-visible only | @asm 0x57341 `push 0x182a`; gate 0x5731B `cmp [bp+6],4`/0x57325 `cmp [bx+0x543f],0` | BYTE_VERIFIED |
+
+So P(convert per eligible check) = MIN(rate,16)/16 where rate = tribe[+2]+2
+(×2 with the mission-bonus flag). The tribe +2 byte's per-tribe values are
+external (TRIBE.TXT/NAMES.TXT @TRIBE); the CL bit-0x10 source (expert missionary
+vs mission building) is TBD. mission.c updated; audit 75/75.

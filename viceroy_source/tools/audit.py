@@ -155,6 +155,14 @@ check_ins("score rank cap cmp ax,0x17 (23)", 0x03AA71, "cmp", "0x17")
 check_ins("score ladder loop bound cmp ...,0x18 (24)", 0x03AA63, "cmp", "0x18")
 check_bytes("HOF record builder func_03B2F8 enter 0x2c", 0x03B2F8, "c8 2c 00 00")
 
+# ---- native mission convert rate func_0572E6 (verified 2026-06-07) -------
+check_bytes("mission convert func_0572E6 enter 0xf25", 0x0572E6, "c8 25 0f 00")
+check_ins("mission rate tribe[+2] mov al,[bx+2]", 0x0572F6, "mov", "[bx+2]")
+check_ins("mission bonus test cl,0x10", 0x057300, "test", "cl,0x10")
+check_bytes("mission roll random_int(0,15)", 0x05730A, "6a 0f 6a 00 9a d4 04 1f 18")
+check_ins("mission gate cmp roll,[bp-4]", 0x057316, "cmp", "[bp-4]")
+check_bytes("mission INDIANSCONVERT push 0x182a", 0x057341, "68 2a 18")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
