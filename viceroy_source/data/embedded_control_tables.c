@@ -36,6 +36,14 @@ const int8_t NEIGHBOR_DY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
  */
 const int8_t MAP_DELTA_C8[10] = { 0, 1, 0, -1, -1, 1, 1, -1, 0, 2 };
 
+/* 4-cardinal neighbour deltas (N,E,S,W), used by the map-generator landmass
+ * blob-growth pass (func_0645F6 @0x646EC/0x646F8) and orthogonal walks.
+ *   @bytes dx @file 0x1DA48: 00 01 00 ff   dy @file 0x1DA4E: ff 00 01 00
+ * @status BYTE_VERIFIED
+ */
+const int8_t CARDINAL_DX[4] = {  0,  1,  0, -1 };
+const int8_t CARDINAL_DY[4] = { -1,  0,  1,  0 };
+
 /* ------------------------------------------------------- commodity → building
  * good_to_chain_bit[good] : for each of the 19 commodity slots, the building
  * "chain" bit-id whose presence gates/boosts that good's production, or -1 if

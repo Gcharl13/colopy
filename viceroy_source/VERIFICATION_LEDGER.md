@@ -1189,3 +1189,32 @@ byte-traced (the per-FF EFFECTS in func_03BC42 were already done).
 | FF category table DS:0x9654 (stride 6 +0), era/weight DS:0x9655 (+1), name-ptrs DS:0x9652 | @asm 0x3C0B1/0x3C0C4 reads | BYTE_VERIFIED (location); values external (NAMES.TXT @FATHERS) |
 
 audit.py now 96/96.
+
+---
+
+## Random map generation — `func_0645F6` / `func_064A10` (verified 2026-06-07)
+
+The world generator is **fully in-EXE code** (two overlay functions), NOT external
+data-driven — only the invocation/seeding and the CUSTOMIZE-form parameter binding
+are overlay-blocked.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| PASS 1 landmass/continent blob growth = func_0645F6 (file 0x645F6, ENTER 0x26) | @asm 0x64616 `lcall 0xd1d:0xfb2` grid memcpy; 4-cardinal walk 0x646EC/0x646F8 | BYTE_VERIFIED |
+| PASS 2 terrain/climate/rivers/features/starts = func_064A10 (file 0x64A10, ENTER 0x3C) | @asm 0x64A16 `random_int(1,0x7fff)` salt -> DS:0x190; param [bp+6]=0 full vs edge-repaint | BYTE_VERIFIED |
+| tile grid = row-major 1 byte/tile, addr = y*map_width + x, base far-ptr DS:0x15C:0x15E | @asm 0x05CED `imul [0x853a]`; 0x05CF1 `add ax,[0x15c]` | BYTE_VERIFIED |
+| map dims map_width DS:0x853A / map_height DS:0x853C (BSS, runtime) | @asm 0x64B33/0x64C5D word reads | BYTE_VERIFIED |
+| equator row = map_height/2; climate-band divisor = map_height/4 | @asm 0x64C8D `sar ax,1`; 0x64DE5 `sar ax,2` | BYTE_VERIFIED |
+| forest/moisture budget = random_int(0, \|height/4 - lat\| + 4*climate[0x1E84]) -> denser at equator | @asm 0x64DFE `mov cx,[0x1e84]`; 0x64E02 `shl cx,2`; 0x64E0A `lcall 0x4d4` | BYTE_VERIFIED |
+| gen params (CUSTOMIZE outputs, real defaults): DS:0x1E7E..0x1E84=1, 0x1E86=0 (land-form iters); 0x1E82 water-level, 0x1E84 climate | @bytes file 0x1F81E..0x1F826 (initialized data) | BYTE_VERIFIED (values); label binding TBD |
+| terrain byte: type = low 5 bits; 0x19 base land, 0x1A forest, 0x18 mountain; flags 0x20/0x40(land)/0x80 | @asm 0x64D0E `mov [bp-0x2e],0x19`; 0x65552 `mov bx,0x18`; 0x64764 `or [bp-4],0x40` | BYTE_VERIFIED |
+| terrain-type dispatch via CS-relative jump tables (6/6/8-way) | @asm 0x64CF6 `jmp cs:[bx+0xbac]`; 0x65048 `jmp cs:[bx+0xefe]`; 0x65318 `jmp cs:[bx+0x11ce]` | BYTE_VERIFIED (tables); per-arm terrain semantics TBD |
+| river/coast tracer walks 8-dir deltas, dir=random_int(0,8), +8/+0x10 elevation tiers | @asm 0x653A3 `random_int(0,8)`; 0x653B9 `add ...,[bx+0xb4]`; 0x653F8 `add ...,8` | BYTE_VERIFIED |
+| 4 player starts: struct DS:0x883A stride 0x13C, scattered into vertical fifths (map/5), rotation via [0x5398]%4 | @asm 0x65CC6 `imul [bp-0x28],0x13c`; 0x65CCB row/0x65CD2 col writes; 0x65C78 `add [0x5398]`/idiv 4 | BYTE_VERIFIED |
+| AMER2 fixed-start override gated by DS:0x2174, hard coords (0x2B,0x44) | @asm 0x65BF6 `cmp [0x2174],0`; 0x65C11 `push 0x44;push 0x2b` | BYTE_VERIFIED |
+| 4-cardinal delta table DS:0xA8 dx{0,1,0,-1}/DS:0xAE dy{-1,0,1,0}; 20-entry ring DS:0xC8/0xDE | @asm 0x646EC/0x65B43/0x65B4F | BYTE_VERIFIED |
+
+TBD: generation invoker + RNG seed source (overlay-swapped, trail ends at RTLink
+loader 0x110D:0x0D91); CUSTOMIZE-form -> DS:0x1E7E.. parameter wiring (form-handler
+overlay); per-terrain-arm semantics of the CS jump-table targets. The 4-cardinal and
+20-ring delta tables are now in data/embedded_control_tables.c. audit.py 108/108.

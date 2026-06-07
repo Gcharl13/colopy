@@ -188,6 +188,19 @@ check_bytes("FF threshold (ff_count+1)*factor imul [bp-4]", 0x03C303, "f7 6e fc"
 check_bytes("FF select random_int(1,total_weight)", 0x03C0DB, "9a d4 04 1f 18")
 check_bytes("FF pending slot mov [bx+0x12],ax", 0x03C269, "89 47 12")
 
+# ---- map generation func_0645F6 / func_064A10 (verified 2026-06-07) -------
+check_bytes("mapgen PASS1 func_0645F6 enter 0x26", 0x0645F6, "c8 26 00 00")
+check_bytes("mapgen PASS2 func_064A10 enter 0x3c", 0x064A10, "c8 3c 00 00")
+check_ins("mapgen reads map_width [0x853a]", 0x064B33, "mov", "[0x853a]")
+check_bytes("mapgen equator sar ax,1 (height/2)", 0x064C8D, "d1 f8")
+check_bytes("mapgen climate band sar ax,2 (height/4)", 0x064DE5, "c1 f8 02")
+check_bytes("mapgen moisture 4*climate shl cx,2", 0x064E02, "c1 e1 02")
+check_bytes("mapgen base-land terrain id 0x19", 0x064D0E, "c7 46 d2 19 00")
+check_bytes("mapgen start slot imul [bp-0x28],0x13c", 0x065CC6, "69 5e d8 3c 01")
+# 4-cardinal delta table (used by mapgen blob growth)
+check_bytes("CARDINAL_DX[4] @DS:0xa8", 0x1DA48, "00 01 00 ff")
+check_bytes("CARDINAL_DY[4] @DS:0xae", 0x1DA4E, "ff 00 01 00")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
