@@ -10,7 +10,7 @@
     "load_image_functions": 550,
     "overlay_functions": 691,
     "total_functions": 1241,
-    "total_instructions": 212746
+    "total_instructions": 212778
   },
   "functions": [
     {
@@ -1953,18 +1953,18 @@
       "size": 34,
       "instructions": 15,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_0085B2_unknown.asm",
-      "status": "RAW"
+      "name": "test_bit_at_8a",
+      "asm_file": "disasm/func_0085B2_test_bit_at_8a.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x0085D6",
-      "size": 44,
-      "instructions": 16,
+      "size": 56,
+      "instructions": 23,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_0085D6_unknown.asm",
-      "status": "RAW"
+      "name": "set_or_clear_bit_at_8a",
+      "asm_file": "disasm/func_0085D6_set_or_clear_bit_at_8a.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x00860E",
@@ -2106,9 +2106,9 @@
       "size": 62,
       "instructions": 26,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008918_unknown.asm",
-      "status": "RAW"
+      "name": "blit_at_origin_if_pair_visible",
+      "asm_file": "disasm/func_008918_blit_at_origin_if_pair_visible.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008956",
@@ -2187,9 +2187,9 @@
       "size": 38,
       "instructions": 13,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008D00_unknown.asm",
-      "status": "RAW"
+      "name": "step_100_or_level_scaled",
+      "asm_file": "disasm/func_008D00_step_100_or_level_scaled.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008D26",
@@ -2223,18 +2223,18 @@
       "size": 68,
       "instructions": 25,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008E02_unknown.asm",
-      "status": "RAW"
+      "name": "set_commodity_band_at_index",
+      "asm_file": "disasm/func_008E02_set_commodity_band_at_index.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008E46",
       "size": 61,
       "instructions": 23,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008E46_unknown.asm",
-      "status": "RAW"
+      "name": "dispatch_via_8e02_with_band",
+      "asm_file": "disasm/func_008E46_dispatch_via_8e02_with_band.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008E84",
@@ -2250,27 +2250,27 @@
       "size": 33,
       "instructions": 14,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008F02_unknown.asm",
-      "status": "RAW"
+      "name": "check_total_exceeds_threshold",
+      "asm_file": "disasm/func_008F02_check_total_exceeds_threshold.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008F2A",
       "size": 53,
       "instructions": 21,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008F2A_unknown.asm",
-      "status": "RAW"
+      "name": "unpack_nibble_at_60",
+      "asm_file": "disasm/func_008F2A_unpack_nibble_at_60.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008F6C",
       "size": 72,
       "instructions": 26,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_008F6C_unknown.asm",
-      "status": "RAW"
+      "name": "pack_nibble_at_60",
+      "asm_file": "disasm/func_008F6C_pack_nibble_at_60.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x008FB4",
@@ -2310,21 +2310,21 @@
     },
     {
       "file_offset": "0x00913C",
-      "size": 41,
-      "instructions": 16,
+      "size": 72,
+      "instructions": 31,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_00913C_unknown.asm",
-      "status": "RAW"
+      "name": "set_field_at_40_or_unit_byte",
+      "asm_file": "disasm/func_00913C_set_field_at_40_or_unit_byte.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x009184",
-      "size": 29,
-      "instructions": 11,
+      "size": 72,
+      "instructions": 30,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_009184_unknown.asm",
-      "status": "RAW"
+      "name": "nibble_to_4_tier_quantity",
+      "asm_file": "disasm/func_009184_nibble_to_4_tier_quantity.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x0091CC",
@@ -2337,12 +2337,12 @@
     },
     {
       "file_offset": "0x00929A",
-      "size": 33,
-      "instructions": 12,
+      "size": 70,
+      "instructions": 27,
       "region": "load_image",
-      "name": "unknown",
-      "asm_file": "disasm/func_00929A_unknown.asm",
-      "status": "RAW"
+      "name": "classify_pair_bounds",
+      "asm_file": "disasm/func_00929A_classify_pair_bounds.asm",
+      "status": "MANUAL"
     },
     {
       "file_offset": "0x0092E0",
@@ -2815,7 +2815,7 @@
     {
       "file_offset": "0x00BC10",
       "size": 16,
-      "instructions": 9,
+      "instructions": 29,
       "region": "load_image",
       "name": "is_arg2_negative",
       "asm_file": "disasm/func_00BC10_is_arg2_negative.asm",
@@ -4201,7 +4201,7 @@
     {
       "file_offset": "0x010530",
       "size": 25,
-      "instructions": 11,
+      "instructions": 23,
       "region": "load_image",
       "name": "unknown",
       "asm_file": "disasm/func_010530_unknown.asm",

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # generate_manifest.py
 #
-# Walks reverse_engineered/raw/COLONIZE and emits MANIFEST.md at the
-# reverse_engineered/ root. For every file we record:
+# Walks raw/COLONIZE and emits MANIFEST.md at the
+#  root. For every file we record:
 #   - relative path
 #   - size in bytes
 #   - SHA256 hash
@@ -91,7 +91,7 @@ def main():
             f"(originals: **{len(originals)}**, foreign/derived: **{len(foreigners)}**)\n\n"
         )
         f.write(
-            "Source: `reverse_engineered/raw/COLONIZE/` "
+            "Source: `raw/COLONIZE/` "
             "(bit-for-bit copy of `COLONIZE/`).\n\n"
         )
         f.write(

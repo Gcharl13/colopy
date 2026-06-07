@@ -38,7 +38,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-COLONIZE = ROOT.parent / "COLONIZE"
+COLONIZE = ROOT / "raw" / "COLONIZE"
 SIGLIB = ROOT / "tools" / "sigmatch.json"
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # disasm_mz.py
 #
-# Phase 1 disassembler for the six DOS executables in reverse_engineered/raw/COLONIZE/.
+# Phase 1 disassembler for the six DOS executables in raw/COLONIZE/.
 #
 # Per the project plan (formats/EXE_MZ.md, formats/RTLINK.md):
 #
@@ -746,7 +746,7 @@ def main() -> int:
     ap.add_argument(
         "--root",
         default=str(Path(__file__).resolve().parent.parent),
-        help="reverse_engineered/ root",
+        help=" root",
     )
     ap.add_argument(
         "--exes",

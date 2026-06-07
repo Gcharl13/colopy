@@ -25,7 +25,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
-COLONIZE = ROOT.parent / "COLONIZE"
+COLONIZE = ROOT / "raw" / "COLONIZE"
 
 # Pixel-verified popup colors
 POPUP_BODY_GREEN = (140, 200, 100)   # bright yellow-green body (re-sampled 2026-05-04)

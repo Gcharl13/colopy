@@ -25,3 +25,8 @@ raw/
 
 # tool-generated disasm outputs (regenerable via tools/disasm_full.py etc.)
 extracted/
+
+# no tracked binaries (data ships as text/JSON)
+*.xlsx
+# never commit the excluded pre-split corpus tree (untracked leftover)
+reverse_engineered/

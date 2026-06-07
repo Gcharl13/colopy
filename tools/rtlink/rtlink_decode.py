@@ -751,8 +751,8 @@ def cmd_validate(img: RTLinkImage) -> int:
 # CLI
 # ---------------------------------------------------------------------------
 def _default_exe() -> Path:
-    # Tool lives at reverse_engineered/tools/rtlink/; the canonical raw EXE is
-    # reverse_engineered/raw/COLONIZE/VICEROY.EXE (identical to top-level copy).
+    # Tool lives at tools/rtlink/; the canonical raw EXE is
+    # raw/COLONIZE/VICEROY.EXE (identical to top-level copy).
     here = Path(__file__).resolve()
     candidate = here.parents[2] / "raw" / "COLONIZE" / "VICEROY.EXE"
     if candidate.exists():

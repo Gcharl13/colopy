@@ -102,7 +102,7 @@ def read_colony_record(data: bytes, dgroup: int, colony_ptr: int) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--session", default="session-12",
-                    help="Session directory under reverse_engineered/")
+                    help="Session directory under ")
     ap.add_argument("--include-colony-record", action="store_true")
     args = ap.parse_args()
     sess = ROOT / args.session

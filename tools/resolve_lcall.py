@@ -17,12 +17,12 @@ KEY DECODE (Day-1 breakthrough, 2026-05-03):
     overlay function it forwards to.
 
 This tool consumes:
-  - reverse_engineered/code/VICEROY/overlay_thunks.json (1020 thunks)
-  - reverse_engineered/viceroy_source/overlay_directory.json (34 of 82
+  - code/VICEROY/overlay_thunks.json (1020 thunks)
+  - viceroy_source/overlay_directory.json (34 of 82
     segments resolved to file offsets)
 
 It emits:
-  - reverse_engineered/viceroy_source/lcall_resolution.json — mapping
+  - viceroy_source/lcall_resolution.json — mapping
     every (seg, off) seen in disasm to thunk + overlay-target metadata
   - Optionally: in-place .asm annotation appending
        ; THUNK -> 0xSEG2:0xOFF2 [@file 0xNNNNNN]

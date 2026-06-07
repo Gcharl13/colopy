@@ -5,12 +5,12 @@ project's docs and renderers refers to a real address inside the
 disassembled binaries.
 
 Walks:
-- reverse_engineered/docs/*.md
-- reverse_engineered/STATUS.md
-- reverse_engineered/WEEK1_SUMMARY.md
-- reverse_engineered/code/VICEROY/disasm/*.asm (citations within
+- docs/*.md
+- STATUS.md
+- WEEK1_SUMMARY.md
+- code/VICEROY/disasm/*.asm (citations within
   function-header blocks)
-- reverse_engineered/tools/render_*.py (`# CITED: ...` comments)
+- tools/render_*.py (`# CITED: ...` comments)
 
 For each citation, the offset must:
 1. Be in the range [0..file_size) of the named EXE.

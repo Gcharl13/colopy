@@ -30,7 +30,7 @@ from collections import defaultdict
 
 ROOT = Path(__file__).resolve().parents[1] / "code" / "VICEROY"
 DISASM = ROOT / "disasm"
-EXE = Path(__file__).resolve().parents[2] / "COLONIZE" / "VICEROY.EXE"
+EXE = Path(__file__).resolve().parents[1] / "raw" / "COLONIZE" / "VICEROY.EXE"
 
 DGROUP_FILE_BASE = 0x10000
 DGROUP_FILE_END  = 0x20000      # 64 KB

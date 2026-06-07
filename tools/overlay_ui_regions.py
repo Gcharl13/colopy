@@ -6,7 +6,7 @@ script draws labelled rectangles showing what we believe occupies each
 pixel region. The original frame is kept underneath so the eye can verify
 the math matches the pixels.
 
-Outputs go to `reverse_engineered/verification/ui_overlays/`.
+Outputs go to `verification/ui_overlays/`.
 
 Each frame is upscaled 4× for legibility (320×200 → 1280×800).
 

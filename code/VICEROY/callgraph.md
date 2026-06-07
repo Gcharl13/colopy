@@ -34,7 +34,7 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
 | 0x005FD4 `map_xy_bounds_or_neg1_alt` | 6 | 1 | MANUAL |  |
 | 0x0090C8 `current_unit_field_at_20` | 6 | 0 | MANUAL |  |
 | 0x009102 `current_unit_field_at_40` | 6 | 0 | MANUAL |  |
-| 0x00BC10 `unknown` | 6 | 0 | RAW |  |
+| 0x00BC10 `is_arg2_negative` | 6 | 0 | MANUAL |  |
 | 0x0106BA `strrchr_far` | 6 | 0 | MANUAL |  |
 | 0x005E90 `unknown` | 5 | 3 | RAW |  |
 | 0x0062B4 `is_tile_walkable_or_special` | 5 | 1 | MANUAL |  |
@@ -44,13 +44,13 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
 | 0x01070C `strlen_far` | 5 | 0 | MANUAL |  |
 | 0x002544 `unknown` | 4 | 1 | RAW |  |
 | 0x00260E `format_to_buffer_2D54` | 4 | 1 | MANUAL |  |
-| 0x008956 `unknown` | 4 | 1 | RAW |  |
+| 0x008956 `lookup_byte_from_pair` | 4 | 1 | MANUAL |  |
 | 0x00BF3C `unknown` | 4 | 1 | RAW |  |
 | 0x003436 `terrain_id_normalize_to_8` | 4 | 0 | MANUAL |  |
 | 0x0069D2 `unknown` | 4 | 0 | RAW |  |
 | 0x006CCA `unit_table_offset_calc` | 4 | 0 | MANUAL |  |
 | 0x0087F4 `power_record_read_dword` | 4 | 0 | MANUAL |  |
-| 0x008892 `unknown` | 4 | 0 | RAW |  |
+| 0x008892 `find_pair_in_table_C8_DE` | 4 | 0 | MANUAL |  |
 | 0x008B96 `unit_field_test_at_3146` | 4 | 0 | MANUAL |  |
 | 0x008D9C `lookup_table_2F4_signed` | 4 | 0 | MANUAL |  |
 | 0x00D272 `kbhit` | 4 | 0 | MANUAL |  |
@@ -292,6 +292,18 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x007BCE `unknown` (RAW)
 - Callees: none
 
+### 0x0085B2 `test_bit_at_8a`
+
+- Status: `MANUAL`
+- Callers: none
+- Callees: none
+
+### 0x0085D6 `set_or_clear_bit_at_8a`
+
+- Status: `MANUAL`
+- Callers: none
+- Callees: none
+
 ### 0x00863E `wrapper_with_global_8DC6`
 
 - Status: `MANUAL`
@@ -318,6 +330,36 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x008982 `unknown` (RAW)
 - Callees: none
 
+### 0x008892 `find_pair_in_table_C8_DE`
+
+- Status: `MANUAL`
+- Callers (4):
+    - 0x0088D0 `unknown` (RAW)
+    - 0x008918 `blit_at_origin_if_pair_visible` (MANUAL)
+    - 0x008956 `lookup_byte_from_pair` (MANUAL)
+    - 0x008982 `unknown` (RAW)
+- Callees: none
+
+### 0x008918 `blit_at_origin_if_pair_visible`
+
+- Status: `MANUAL`
+- Callers (1):
+    - 0x008982 `unknown` (RAW)
+- Callees (2):
+    - 0x005D4E `unknown` (RAW)
+    - 0x008892 `find_pair_in_table_C8_DE` (MANUAL)
+
+### 0x008956 `lookup_byte_from_pair`
+
+- Status: `MANUAL`
+- Callers (4):
+    - 0x0098F6 `unknown` (RAW)
+    - 0x009B9C `unknown` (RAW)
+    - 0x00A3E1 `unknown` (RAW)
+    - 0x00A994 `unknown` (RAW)
+- Callees (1):
+    - 0x008892 `find_pair_in_table_C8_DE` (MANUAL)
+
 ### 0x008B96 `unit_field_test_at_3146`
 
 - Status: `MANUAL`
@@ -328,6 +370,14 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x009818 `unknown` (RAW)
 - Callees: none
 
+### 0x008D00 `step_100_or_level_scaled`
+
+- Status: `MANUAL`
+- Callers (2):
+    - 0x00A3E1 `unknown` (RAW)
+    - 0x00AB95 `unknown` (RAW)
+- Callees: none
+
 ### 0x008D9C `lookup_table_2F4_signed`
 
 - Status: `MANUAL`
@@ -336,6 +386,44 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x009876 `unknown` (RAW)
     - 0x009FFC `unknown` (RAW)
     - 0x00B704 `unknown` (RAW)
+- Callees: none
+
+### 0x008E02 `set_commodity_band_at_index`
+
+- Status: `MANUAL`
+- Callers (1):
+    - 0x008E46 `dispatch_via_8e02_with_band` (MANUAL)
+- Callees: none
+
+### 0x008E46 `dispatch_via_8e02_with_band`
+
+- Status: `MANUAL`
+- Callers (2):
+    - 0x008E84 `unknown` (RAW)
+    - 0x00A3E1 `unknown` (RAW)
+- Callees (1):
+    - 0x008E02 `set_commodity_band_at_index` (MANUAL)
+
+### 0x008F02 `check_total_exceeds_threshold`
+
+- Status: `MANUAL`
+- Callers: none
+- Callees: none
+
+### 0x008F2A `unpack_nibble_at_60`
+
+- Status: `MANUAL`
+- Callers (2):
+    - 0x008FB4 `unknown` (RAW)
+    - 0x009184 `nibble_to_4_tier_quantity` (MANUAL)
+- Callees: none
+
+### 0x008F6C `pack_nibble_at_60`
+
+- Status: `MANUAL`
+- Callers (2):
+    - 0x008FB4 `unknown` (RAW)
+    - 0x009318 `unknown` (RAW)
 - Callees: none
 
 ### 0x0090C8 `current_unit_field_at_20`
@@ -362,6 +450,28 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x009FFC `unknown` (RAW)
 - Callees: none
 
+### 0x00913C `set_field_at_40_or_unit_byte`
+
+- Status: `MANUAL`
+- Callers (1):
+    - 0x009318 `unknown` (RAW)
+- Callees (1):
+    - 0x008BD4 `unknown` (RAW)
+
+### 0x009184 `nibble_to_4_tier_quantity`
+
+- Status: `MANUAL`
+- Callers: none
+- Callees (1):
+    - 0x008F2A `unpack_nibble_at_60` (MANUAL)
+
+### 0x00929A `classify_pair_bounds`
+
+- Status: `MANUAL`
+- Callers (1):
+    - 0x009318 `unknown` (RAW)
+- Callees: none
+
 ### 0x00B2F0 `unit_table_3154_byte`
 
 - Status: `MANUAL`
@@ -369,6 +479,18 @@ Direct CALL/LCALL relationships, recovered from capstone-decoded operands. Calls
     - 0x00B368 `unknown` (RAW)
     - 0x00B42C `unknown` (RAW)
     - 0x00B550 `unknown` (RAW)
+- Callees: none
+
+### 0x00BC10 `is_arg2_negative`
+
+- Status: `MANUAL`
+- Callers (6):
+    - 0x006608 `unknown` (RAW)
+    - 0x009318 `unknown` (RAW)
+    - 0x009B9C `unknown` (RAW)
+    - 0x009FFC `unknown` (RAW)
+    - 0x00A3E1 `unknown` (RAW)
+    - 0x00A994 `unknown` (RAW)
 - Callees: none
 
 ### 0x00D272 `kbhit`

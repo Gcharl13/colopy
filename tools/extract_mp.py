@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-COLONIZE = ROOT.parent / "COLONIZE"
+COLONIZE = ROOT / "raw" / "COLONIZE"
 
 
 def extract(mp_path: Path, out_dir: Path):

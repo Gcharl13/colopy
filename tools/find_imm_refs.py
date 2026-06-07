@@ -25,7 +25,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-EXE = Path(__file__).resolve().parents[2] / "COLONIZE" / "VICEROY.EXE"
+EXE = Path(__file__).resolve().parents[1] / "raw" / "COLONIZE" / "VICEROY.EXE"
 
 # (Segment paragraph in Ghidra, file offset, length) — extracted from
 # the user's memory map output. We use this to convert file offsets back

@@ -1,11 +1,200 @@
 {
   "stats": {
-    "total": 71,
-    "strong": 39,
-    "weak": 32,
+    "total": 287,
+    "strong": 160,
+    "weak": 127,
     "invalid": 0
   },
   "citations": [
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 155416,
+      "raw": "file 0x025F18",
+      "line": 28,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 155600,
+      "raw": "file 0x025FD0",
+      "line": 29,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 158168,
+      "raw": "file 0x0269D8",
+      "line": 30,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 159760,
+      "raw": "file 0x027010",
+      "line": 31,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 161752,
+      "raw": "file 0x0277D8",
+      "line": 32,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 162572,
+      "raw": "file 0x027B0C",
+      "line": 33,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 163400,
+      "raw": "file 0x027E48",
+      "line": 34,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 154122,
+      "raw": "file 0x025A0A",
+      "line": 35,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 159144,
+      "raw": "file 0x026DA8",
+      "line": 36,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 154002,
+      "raw": "file 0x025992",
+      "line": 36,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 153868,
+      "raw": "file 0x02590C",
+      "line": 82,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394378,
+      "raw": "file 0x06048A",
+      "line": 83,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394454,
+      "raw": "file 0x0604D6",
+      "line": 84,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394218,
+      "raw": "file 0x0603EA",
+      "line": 85,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 165778,
+      "raw": "file 0x028792",
+      "line": 88,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 168098,
+      "raw": "file 0x0290A2",
+      "line": 92,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 159772,
+      "raw": "file 0x02701C",
+      "line": 93,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 226112,
+      "raw": "file 0x037340",
+      "line": 118,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 155416,
+      "raw": "file 0x025F18",
+      "line": 179,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 235656,
+      "raw": "file 0x039888",
+      "line": 307,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 226112,
+      "raw": "func_037340_unknown.asm",
+      "line": 522,
+      "source_file": "docs\\ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
     {
       "type": "file_offset",
       "exe": "VICEROY",
@@ -72,6 +261,663 @@
     {
       "type": "file_offset",
       "exe": "VICEROY",
+      "offset": 305872,
+      "raw": "file 0x04AAD0",
+      "line": 140,
+      "source_file": "docs\\CAPITAL_BONUS_ANALYSIS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 121225,
+      "raw": "file 0x1D989",
+      "line": 28,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 95006,
+      "raw": "file 0x1731E",
+      "line": 38,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 447796,
+      "raw": "file 0x6D534",
+      "line": 42,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 104920,
+      "raw": "file 0x199D8",
+      "line": 46,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 118865,
+      "raw": "file 0x1D051",
+      "line": 64,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 99445,
+      "raw": "file 0x18475",
+      "line": 70,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 98864,
+      "raw": "file 0x18230",
+      "line": 100,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 97585,
+      "raw": "file 0x17D31",
+      "line": 110,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 292224,
+      "raw": "file 0x47580",
+      "line": 138,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 96527,
+      "raw": "file 0x1790F",
+      "line": 145,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 99624,
+      "raw": "file 0x18528",
+      "line": 162,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 103970,
+      "raw": "file 0x19622",
+      "line": 190,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 104060,
+      "raw": "file 0x1967C",
+      "line": 193,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 104053,
+      "raw": "file 0x19675",
+      "line": 194,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 104094,
+      "raw": "file 0x1969E",
+      "line": 195,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 104836,
+      "raw": "file 0x19984",
+      "line": 237,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 102914,
+      "raw": "file 0x19202",
+      "line": 258,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 103833,
+      "raw": "file 0x19599",
+      "line": 293,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 95011,
+      "raw": "file 0x17323",
+      "line": 375,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 100900,
+      "raw": "file 0x18A24",
+      "line": 406,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 101276,
+      "raw": "file 0x18B9C",
+      "line": 407,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 102409,
+      "raw": "file 0x19009",
+      "line": 408,
+      "source_file": "docs\\COLONY_RENDERER_DECODED.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33500,
+      "raw": "file 0x82DC",
+      "line": 16,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13732,
+      "raw": "file 0x35A4",
+      "line": 16,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 191362,
+      "raw": "file 0x2EB82",
+      "line": 29,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 192140,
+      "raw": "file 0x2EE8C",
+      "line": 29,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33538,
+      "raw": "file 0x8302",
+      "line": 30,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 472506,
+      "raw": "file 0x735BA",
+      "line": 30,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33547,
+      "raw": "file 0x830B",
+      "line": 31,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 22980,
+      "raw": "file 0x59C4",
+      "line": 32,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 22989,
+      "raw": "file 0x59CD",
+      "line": 33,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33592,
+      "raw": "file 0x8338",
+      "line": 34,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 184289,
+      "raw": "file 0x2CFE1",
+      "line": 34,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 32280,
+      "raw": "file 0x07E18",
+      "line": 35,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33512,
+      "raw": "file 0x82E8",
+      "line": 36,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33976,
+      "raw": "file 0x84B8",
+      "line": 37,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33535,
+      "raw": "file 0x82FF",
+      "line": 39,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 197984,
+      "raw": "file 0x30560",
+      "line": 41,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 32062,
+      "raw": "file 0x07D3E",
+      "line": 51,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 32262,
+      "raw": "file 0x07E06",
+      "line": 57,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 32280,
+      "raw": "file 0x07E18",
+      "line": 58,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33500,
+      "raw": "file 0x82DC",
+      "line": 61,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33618,
+      "raw": "file 0x8352",
+      "line": 63,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33500,
+      "raw": "file 0x82DC",
+      "line": 65,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33983,
+      "raw": "file 0x84BF",
+      "line": 108,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 32262,
+      "raw": "file 0x07E06",
+      "line": 109,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141288,
+      "raw": "file 0x227E8",
+      "line": 118,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 36134,
+      "raw": "file 0x8D26",
+      "line": 124,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33500,
+      "raw": "file 0x82DC",
+      "line": 129,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13732,
+      "raw": "file 0x35A4",
+      "line": 132,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13732,
+      "raw": "file 0x35A4",
+      "line": 136,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 108016,
+      "raw": "file 0x1A5F0",
+      "line": 142,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 426453,
+      "raw": "file 0x681D5",
+      "line": 158,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 427752,
+      "raw": "file 0x686E8",
+      "line": 164,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 427770,
+      "raw": "file 0x686FA",
+      "line": 165,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 427788,
+      "raw": "file 0x6870C",
+      "line": 166,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141339,
+      "raw": "file 0x2281B",
+      "line": 179,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 153856,
+      "raw": "file 0x025900",
+      "line": 179,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141415,
+      "raw": "file 0x22867",
+      "line": 180,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 23596,
+      "raw": "file 0x5C2C",
+      "line": 184,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 121416,
+      "raw": "file 0x1DA48",
+      "line": 220,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 121422,
+      "raw": "file 0x1DA4E",
+      "line": 221,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129156,
+      "raw": "file 0x1F884",
+      "line": 225,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141339,
+      "raw": "file 0x2281B",
+      "line": 256,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141415,
+      "raw": "file 0x22867",
+      "line": 256,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13732,
+      "raw": "file 0x35A4",
+      "line": 257,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129666,
+      "raw": "file 0x1FA82",
+      "line": 263,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 185098,
+      "raw": "file 0x2D30A",
+      "line": 267,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 141339,
+      "raw": "file 0x2281B",
+      "line": 294,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33543,
+      "raw": "file 0x8307",
+      "line": 319,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33547,
+      "raw": "file 0x830B",
+      "line": 320,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 33592,
+      "raw": "file 0x8338",
+      "line": 321,
+      "source_file": "docs\\COLONY_RENDER_CHAIN.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
       "offset": 48144,
       "raw": "file 0x00BC10",
       "line": 25,
@@ -83,7 +929,7 @@
       "exe": "VICEROY",
       "offset": 384538,
       "raw": "file 0x05DE1A",
-      "line": 70,
+      "line": 109,
       "source_file": "docs\\DATA_MODEL.md",
       "status": "weak_in_gap"
     },
@@ -92,16 +938,7 @@
       "exe": "VICEROY",
       "offset": 384542,
       "raw": "file 0x05DE1E",
-      "line": 77,
-      "source_file": "docs\\DATA_MODEL.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 384157,
-      "raw": "file 0x05DC9D",
-      "line": 78,
+      "line": 116,
       "source_file": "docs\\DATA_MODEL.md",
       "status": "weak_in_gap"
     },
@@ -110,7 +947,7 @@
       "exe": "VICEROY",
       "offset": 305956,
       "raw": "file 0x04AB24",
-      "line": 117,
+      "line": 214,
       "source_file": "docs\\DATA_MODEL.md",
       "status": "weak_in_gap"
     },
@@ -119,7 +956,7 @@
       "exe": "VICEROY",
       "offset": 425416,
       "raw": "func_067DC8_unknown.asm",
-      "line": 191,
+      "line": 539,
       "source_file": "docs\\DATA_MODEL.md",
       "status": "strong_func_entry"
     },
@@ -225,6 +1062,591 @@
     {
       "type": "file_offset",
       "exe": "VICEROY",
+      "offset": 132709,
+      "raw": "file 0x20665",
+      "line": 97,
+      "source_file": "docs\\ENGINE_ID_CORRECTION.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 25092,
+      "raw": "file 0x6204",
+      "line": 378,
+      "source_file": "docs\\GAME_INDEX_TABLES.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 227751,
+      "raw": "file 0x0379A7",
+      "line": 36,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 220570,
+      "raw": "file 0x035D9A",
+      "line": 60,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 220570,
+      "raw": "file 0x035D9A",
+      "line": 63,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 220570,
+      "raw": "file 0x035D9A",
+      "line": 66,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 217364,
+      "raw": "file 0x035114",
+      "line": 106,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 222306,
+      "raw": "file 0x036462",
+      "line": 121,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 216100,
+      "raw": "file 0x034C24",
+      "line": 126,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 199784,
+      "raw": "file 0x030C68",
+      "line": 127,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 216100,
+      "raw": "file 0x034C24",
+      "line": 173,
+      "source_file": "docs\\IMMIGRATION_RECRUIT_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 137922,
+      "raw": "file 0x021AC2",
+      "line": 95,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 137860,
+      "raw": "file 0x021A84",
+      "line": 97,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456112,
+      "raw": "file 0x06F5B0",
+      "line": 147,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456154,
+      "raw": "file 0x06F5DA",
+      "line": 148,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456178,
+      "raw": "file 0x06F5F2",
+      "line": 149,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456220,
+      "raw": "file 0x06F61C",
+      "line": 150,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394378,
+      "raw": "file 0x06048A",
+      "line": 219,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394152,
+      "raw": "file 0x0603A8",
+      "line": 221,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 394454,
+      "raw": "file 0x0604D6",
+      "line": 223,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 168098,
+      "raw": "file 0x0290A2",
+      "line": 312,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 138562,
+      "raw": "file 0x021D42",
+      "line": 407,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 168032,
+      "raw": "file 0x029060",
+      "line": 614,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 451536,
+      "raw": "func_06E3D0_unknown.asm",
+      "line": 60,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442002,
+      "raw": "func_06BE92_unknown.asm",
+      "line": 84,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442130,
+      "raw": "func_06BF12_unknown.asm",
+      "line": 113,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442172,
+      "raw": "func_06BF3C_unknown.asm",
+      "line": 121,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442214,
+      "raw": "func_06BF66_unknown.asm",
+      "line": 129,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 33222,
+      "raw": "func_0081C6_unknown.asm",
+      "line": 167,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 235656,
+      "raw": "func_039888_unknown.asm",
+      "line": 304,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 226112,
+      "raw": "func_037340_unknown.asm",
+      "line": 338,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 252458,
+      "raw": "func_03DA2A_unknown.asm",
+      "line": 402,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 480082,
+      "raw": "func_075352_unknown.asm",
+      "line": 442,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 33222,
+      "raw": "func_0081C6_unknown.asm",
+      "line": 533,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 305098,
+      "raw": "func_04A7CA_unknown.asm",
+      "line": 594,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 451536,
+      "raw": "func_06E3D0_unknown.asm",
+      "line": 703,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442002,
+      "raw": "func_06BE92_unknown.asm",
+      "line": 705,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442130,
+      "raw": "func_06BF12_unknown.asm",
+      "line": 707,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442172,
+      "raw": "func_06BF3C_unknown.asm",
+      "line": 709,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 442214,
+      "raw": "func_06BF66_unknown.asm",
+      "line": 711,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 456154,
+      "raw": "func_06F5DA_unknown.asm",
+      "line": 713,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 480082,
+      "raw": "func_075352_unknown.asm",
+      "line": 715,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 252458,
+      "raw": "func_03DA2A_unknown.asm",
+      "line": 717,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 226112,
+      "raw": "func_037340_unknown.asm",
+      "line": 719,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 235656,
+      "raw": "func_039888_unknown.asm",
+      "line": 721,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 33222,
+      "raw": "func_0081C6_unknown.asm",
+      "line": 723,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 305098,
+      "raw": "func_04A7CA_unknown.asm",
+      "line": 725,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 253510,
+      "raw": "func_03DE46_unknown.asm",
+      "line": 727,
+      "source_file": "docs\\KING_AND_CINEMATIC_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 425416,
+      "raw": "file 0x067DC8",
+      "line": 46,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 156478,
+      "raw": "file 0x02633E",
+      "line": 93,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 130336,
+      "raw": "file 0x1FD20",
+      "line": 132,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129383,
+      "raw": "file 0x1F967",
+      "line": 153,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 451536,
+      "raw": "file 0x06E3D0",
+      "line": 206,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 442002,
+      "raw": "file 0x06BE92",
+      "line": 232,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 8050,
+      "raw": "file 0x1F72",
+      "line": 237,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 8055,
+      "raw": "file 0x1F77",
+      "line": 245,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 442130,
+      "raw": "file 0x06BF12",
+      "line": 273,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 8062,
+      "raw": "file 0x1F7E",
+      "line": 277,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 442172,
+      "raw": "file 0x06BF3C",
+      "line": 296,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 8067,
+      "raw": "file 0x1F83",
+      "line": 299,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 442214,
+      "raw": "file 0x06BF66",
+      "line": 309,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456112,
+      "raw": "file 0x6F5B0",
+      "line": 324,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 454251,
+      "raw": "file 0x06EE6B",
+      "line": 387,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 153882,
+      "raw": "file 0x02591A",
+      "line": 491,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129403,
+      "raw": "file 0x1F97B",
+      "line": 546,
+      "source_file": "docs\\POPUP_TEMPLATE_AUDIT.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
       "offset": 130336,
       "raw": "file 0x1FD20",
       "line": 154,
@@ -265,6 +1687,348 @@
       "raw": "file\n0x82DC",
       "line": 163,
       "source_file": "docs\\RENDERER_ARCHITECTURE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 185944,
+      "raw": "file 0x02D658",
+      "line": 612,
+      "source_file": "docs\\RENDERER_GEOMETRY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 492520,
+      "raw": "file 0x0783E8",
+      "line": 18,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 492554,
+      "raw": "file 0x07840A",
+      "line": 22,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 379000,
+      "raw": "file 0x05C878",
+      "line": 368,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303109,
+      "raw": "file\n0x04A005",
+      "line": 644,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303109,
+      "raw": "file 0x4A005",
+      "line": 814,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303122,
+      "raw": "file 0x4A012",
+      "line": 817,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303141,
+      "raw": "file 0x4A025",
+      "line": 823,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303146,
+      "raw": "file 0x4A02A",
+      "line": 826,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303151,
+      "raw": "file 0x4A02F",
+      "line": 828,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303171,
+      "raw": "file 0x4A043",
+      "line": 831,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303188,
+      "raw": "file 0x4A054",
+      "line": 834,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303200,
+      "raw": "file 0x4A060",
+      "line": 835,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303205,
+      "raw": "file 0x4A065",
+      "line": 836,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303210,
+      "raw": "file 0x4A06A",
+      "line": 839,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303226,
+      "raw": "file 0x4A07A",
+      "line": 842,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303242,
+      "raw": "file 0x4A08A",
+      "line": 846,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303263,
+      "raw": "file 0x4A09F",
+      "line": 850,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303283,
+      "raw": "file 0x4A0B3",
+      "line": 853,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303318,
+      "raw": "file 0x4A0D6",
+      "line": 857,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303332,
+      "raw": "file 0x4A0E4",
+      "line": 860,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 544,
+      "raw": "file 0x000220",
+      "line": 1207,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 552,
+      "raw": "file 0x000228",
+      "line": 1208,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 554,
+      "raw": "file 0x00022A",
+      "line": 1209,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 556,
+      "raw": "file 0x00022C",
+      "line": 1210,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 558,
+      "raw": "file 0x00022E",
+      "line": 1211,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 560,
+      "raw": "file 0x000230",
+      "line": 1212,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 562,
+      "raw": "file 0x000232",
+      "line": 1213,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 5223,
+      "raw": "file 0x1467",
+      "line": 1245,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 303583,
+      "raw": "file 0x04A1DF",
+      "line": 1280,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 7446,
+      "raw": "file 0x001D16",
+      "line": 1451,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 5551,
+      "raw": "file 0x0015AF",
+      "line": 1462,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 3429,
+      "raw": "file 0x000D65",
+      "line": 1474,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 3429,
+      "raw": "file 0x000D65",
+      "line": 1483,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 335404,
+      "raw": "file 0x051E2C",
+      "line": 1672,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 217349,
+      "raw": "file 0x035105",
+      "line": 1684,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 379000,
+      "raw": "func_05C878_unknown.asm",
+      "line": 370,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "func_file",
+      "exe": "VICEROY",
+      "offset": 307038,
+      "raw": "func_04AF5E_unknown.asm",
+      "line": 1126,
+      "source_file": "docs\\RESIDUAL_FINDINGS.md",
       "status": "strong_func_entry"
     },
     {
@@ -329,6 +2093,213 @@
       "line": 95,
       "source_file": "docs\\RTLINK_OVERLAYS.md",
       "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 240064,
+      "raw": "file 0x03A9C0",
+      "line": 790,
+      "source_file": "docs\\SESSION_UI_CATALOG.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 443680,
+      "raw": "file 0x06C520",
+      "line": 23,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 444496,
+      "raw": "file 0x06C850",
+      "line": 27,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 447254,
+      "raw": "file 0x06D316",
+      "line": 31,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 153882,
+      "raw": "file 0x02591A",
+      "line": 72,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456084,
+      "raw": "file 0x06F594",
+      "line": 242,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 455962,
+      "raw": "file 0x06F51A",
+      "line": 245,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 454900,
+      "raw": "file 0x06F0F4",
+      "line": 248,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 451536,
+      "raw": "file 0x06E3D0",
+      "line": 249,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 454900,
+      "raw": "file 0x06F0F4",
+      "line": 254,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 451536,
+      "raw": "file 0x06E3D0",
+      "line": 264,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 445798,
+      "raw": "file 0x06CD66",
+      "line": 297,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 449636,
+      "raw": "file 0x06DC64",
+      "line": 308,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 448972,
+      "raw": "file 0x06D9CC",
+      "line": 316,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 450158,
+      "raw": "file 0x06DE6E",
+      "line": 322,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456020,
+      "raw": "file 0x06F554",
+      "line": 333,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 456112,
+      "raw": "file 0x06F5B0",
+      "line": 342,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 395322,
+      "raw": "file 0x06083A",
+      "line": 348,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129417,
+      "raw": "file 0x1F989",
+      "line": 455,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 153882,
+      "raw": "file 0x02591A",
+      "line": 456,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 131106,
+      "raw": "file 0x20022",
+      "line": 464,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 108612,
+      "raw": "file 0x01A844",
+      "line": 528,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 484814,
+      "raw": "file 0x0765CE",
+      "line": 535,
+      "source_file": "docs\\UI_FIDELITY.md",
+      "status": "weak_in_gap"
     },
     {
       "type": "file_offset",
@@ -578,7 +2549,7 @@
       "exe": "VICEROY",
       "offset": 130345,
       "raw": "file 0x1FD29",
-      "line": 302,
+      "line": 300,
       "source_file": "tools\\render_gameplay.py",
       "status": "weak_in_gap"
     },
@@ -587,7 +2558,7 @@
       "exe": "VICEROY",
       "offset": 480082,
       "raw": "file 0x075352",
-      "line": 123,
+      "line": 141,
       "source_file": "tools\\render_king.py",
       "status": "strong_func_entry"
     },
@@ -596,7 +2567,7 @@
       "exe": "VICEROY",
       "offset": 480286,
       "raw": "file 0x07541E",
-      "line": 125,
+      "line": 143,
       "source_file": "tools\\render_king.py",
       "status": "strong_in_function"
     },
@@ -605,7 +2576,7 @@
       "exe": "VICEROY",
       "offset": 480286,
       "raw": "file 0x07541E",
-      "line": 139,
+      "line": 157,
       "source_file": "tools\\render_king.py",
       "status": "strong_in_function"
     },
@@ -614,35 +2585,8 @@
       "exe": "VICEROY",
       "offset": 480082,
       "raw": "func_075352_unknown.asm",
-      "line": 123,
+      "line": 141,
       "source_file": "tools\\render_king.py",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 425463,
-      "raw": "file 0x067DF7",
-      "line": 269,
-      "source_file": "tools\\render_map_popup.py",
-      "status": "strong_in_function"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 425449,
-      "raw": "file 0x067DE9",
-      "line": 270,
-      "source_file": "tools\\render_map_popup.py",
-      "status": "strong_in_function"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 425416,
-      "raw": "func_067DC8_unknown.asm",
-      "line": 265,
-      "source_file": "tools\\render_map_popup.py",
       "status": "strong_func_entry"
     }
   ]
