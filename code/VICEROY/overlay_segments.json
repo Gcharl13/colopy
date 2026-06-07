@@ -1,0 +1,2733 @@
+{
+  "detected_segments": [
+    {
+      "index": 0,
+      "first_offset": "0x2083c",
+      "last_offset": "0x2091d",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02083C",
+        "0x020918"
+      ],
+      "total_bytes": 225
+    },
+    {
+      "index": 1,
+      "first_offset": "0x20f50",
+      "last_offset": "0x20fd6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x020F50"
+      ],
+      "total_bytes": 134
+    },
+    {
+      "index": 2,
+      "first_offset": "0x21602",
+      "last_offset": "0x216ab",
+      "function_count": 2,
+      "function_offsets": [
+        "0x021602",
+        "0x02165E"
+      ],
+      "total_bytes": 169
+    },
+    {
+      "index": 3,
+      "first_offset": "0x219e8",
+      "last_offset": "0x22184",
+      "function_count": 7,
+      "function_offsets": [
+        "0x0219E8",
+        "0x021A14",
+        "0x021D32",
+        "0x021E72",
+        "0x021EDE",
+        "0x021FF2",
+        "0x02211E"
+      ],
+      "total_bytes": 1948
+    },
+    {
+      "index": 4,
+      "first_offset": "0x22334",
+      "last_offset": "0x22389",
+      "function_count": 1,
+      "function_offsets": [
+        "0x022334"
+      ],
+      "total_bytes": 85
+    },
+    {
+      "index": 5,
+      "first_offset": "0x22542",
+      "last_offset": "0x22584",
+      "function_count": 1,
+      "function_offsets": [
+        "0x022542"
+      ],
+      "total_bytes": 66
+    },
+    {
+      "index": 6,
+      "first_offset": "0x227e8",
+      "last_offset": "0x2291d",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0227E8",
+        "0x022832",
+        "0x02287E"
+      ],
+      "total_bytes": 309
+    },
+    {
+      "index": 7,
+      "first_offset": "0x22a3a",
+      "last_offset": "0x22b04",
+      "function_count": 1,
+      "function_offsets": [
+        "0x022A3A"
+      ],
+      "total_bytes": 202
+    },
+    {
+      "index": 8,
+      "first_offset": "0x22cdc",
+      "last_offset": "0x22f83",
+      "function_count": 4,
+      "function_offsets": [
+        "0x022CDC",
+        "0x022D46",
+        "0x022E16",
+        "0x022F08"
+      ],
+      "total_bytes": 679
+    },
+    {
+      "index": 9,
+      "first_offset": "0x23344",
+      "last_offset": "0x23641",
+      "function_count": 3,
+      "function_offsets": [
+        "0x023344",
+        "0x02356C",
+        "0x0235D6"
+      ],
+      "total_bytes": 765
+    },
+    {
+      "index": 10,
+      "first_offset": "0x23f1c",
+      "last_offset": "0x23ff8",
+      "function_count": 1,
+      "function_offsets": [
+        "0x023F1C"
+      ],
+      "total_bytes": 220
+    },
+    {
+      "index": 11,
+      "first_offset": "0x241ce",
+      "last_offset": "0x24725",
+      "function_count": 9,
+      "function_offsets": [
+        "0x0241CE",
+        "0x024224",
+        "0x0242AE",
+        "0x024322",
+        "0x024342",
+        "0x0245C6",
+        "0x024632",
+        "0x024692",
+        "0x0246E2"
+      ],
+      "total_bytes": 1367
+    },
+    {
+      "index": 12,
+      "first_offset": "0x24a48",
+      "last_offset": "0x24aff",
+      "function_count": 1,
+      "function_offsets": [
+        "0x024A48"
+      ],
+      "total_bytes": 183
+    },
+    {
+      "index": 13,
+      "first_offset": "0x254c0",
+      "last_offset": "0x255a5",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0254C0"
+      ],
+      "total_bytes": 229
+    },
+    {
+      "index": 14,
+      "first_offset": "0x25900",
+      "last_offset": "0x25a86",
+      "function_count": 2,
+      "function_offsets": [
+        "0x025900",
+        "0x025A1E"
+      ],
+      "total_bytes": 390
+    },
+    {
+      "index": 15,
+      "first_offset": "0x25c32",
+      "last_offset": "0x25d5a",
+      "function_count": 2,
+      "function_offsets": [
+        "0x025C32",
+        "0x025D34"
+      ],
+      "total_bytes": 296
+    },
+    {
+      "index": 16,
+      "first_offset": "0x25eee",
+      "last_offset": "0x26175",
+      "function_count": 3,
+      "function_offsets": [
+        "0x025EEE",
+        "0x026022",
+        "0x026142"
+      ],
+      "total_bytes": 647
+    },
+    {
+      "index": 17,
+      "first_offset": "0x2633e",
+      "last_offset": "0x26580",
+      "function_count": 3,
+      "function_offsets": [
+        "0x02633E",
+        "0x026374",
+        "0x0264A8"
+      ],
+      "total_bytes": 578
+    },
+    {
+      "index": 18,
+      "first_offset": "0x268ce",
+      "last_offset": "0x26965",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0268CE"
+      ],
+      "total_bytes": 151
+    },
+    {
+      "index": 19,
+      "first_offset": "0x26ab2",
+      "last_offset": "0x271c3",
+      "function_count": 7,
+      "function_offsets": [
+        "0x026AB2",
+        "0x026BCC",
+        "0x026CC2",
+        "0x026DD4",
+        "0x026FF2",
+        "0x02701C",
+        "0x0270D0"
+      ],
+      "total_bytes": 1809
+    },
+    {
+      "index": 20,
+      "first_offset": "0x275ce",
+      "last_offset": "0x27606",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0275CE"
+      ],
+      "total_bytes": 56
+    },
+    {
+      "index": 21,
+      "first_offset": "0x27746",
+      "last_offset": "0x27c62",
+      "function_count": 5,
+      "function_offsets": [
+        "0x027746",
+        "0x027954",
+        "0x02798C",
+        "0x027ADA",
+        "0x027BB6"
+      ],
+      "total_bytes": 1308
+    },
+    {
+      "index": 22,
+      "first_offset": "0x27d84",
+      "last_offset": "0x27e70",
+      "function_count": 2,
+      "function_offsets": [
+        "0x027D84",
+        "0x027DB2"
+      ],
+      "total_bytes": 236
+    },
+    {
+      "index": 23,
+      "first_offset": "0x2814c",
+      "last_offset": "0x2826a",
+      "function_count": 3,
+      "function_offsets": [
+        "0x02814C",
+        "0x02819E",
+        "0x0281D6"
+      ],
+      "total_bytes": 286
+    },
+    {
+      "index": 24,
+      "first_offset": "0x2842c",
+      "last_offset": "0x2860e",
+      "function_count": 4,
+      "function_offsets": [
+        "0x02842C",
+        "0x028466",
+        "0x02853C",
+        "0x028592"
+      ],
+      "total_bytes": 482
+    },
+    {
+      "index": 25,
+      "first_offset": "0x28792",
+      "last_offset": "0x288c8",
+      "function_count": 6,
+      "function_offsets": [
+        "0x028792",
+        "0x0287B2",
+        "0x0287C6",
+        "0x0287EA",
+        "0x028826",
+        "0x02883E"
+      ],
+      "total_bytes": 310
+    },
+    {
+      "index": 26,
+      "first_offset": "0x28d8c",
+      "last_offset": "0x28e45",
+      "function_count": 1,
+      "function_offsets": [
+        "0x028D8C"
+      ],
+      "total_bytes": 185
+    },
+    {
+      "index": 27,
+      "first_offset": "0x2956d",
+      "last_offset": "0x29597",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02956D"
+      ],
+      "total_bytes": 42
+    },
+    {
+      "index": 28,
+      "first_offset": "0x299a0",
+      "last_offset": "0x299b6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0299A0"
+      ],
+      "total_bytes": 22
+    },
+    {
+      "index": 29,
+      "first_offset": "0x29ac0",
+      "last_offset": "0x29ef7",
+      "function_count": 6,
+      "function_offsets": [
+        "0x029AC0",
+        "0x029B84",
+        "0x029BBE",
+        "0x029C10",
+        "0x029D24",
+        "0x029DD4"
+      ],
+      "total_bytes": 1079
+    },
+    {
+      "index": 30,
+      "first_offset": "0x2a0bc",
+      "last_offset": "0x2a1ee",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02A0BC"
+      ],
+      "total_bytes": 306
+    },
+    {
+      "index": 31,
+      "first_offset": "0x2a31c",
+      "last_offset": "0x2a362",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02A31C"
+      ],
+      "total_bytes": 70
+    },
+    {
+      "index": 32,
+      "first_offset": "0x2a462",
+      "last_offset": "0x2a4c6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02A462"
+      ],
+      "total_bytes": 100
+    },
+    {
+      "index": 33,
+      "first_offset": "0x2a6a6",
+      "last_offset": "0x2a714",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02A6A6"
+      ],
+      "total_bytes": 110
+    },
+    {
+      "index": 34,
+      "first_offset": "0x2a8ec",
+      "last_offset": "0x2a92b",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02A8EC"
+      ],
+      "total_bytes": 63
+    },
+    {
+      "index": 35,
+      "first_offset": "0x2aaec",
+      "last_offset": "0x2ab2b",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02AAEC"
+      ],
+      "total_bytes": 63
+    },
+    {
+      "index": 36,
+      "first_offset": "0x2ad8e",
+      "last_offset": "0x2b07e",
+      "function_count": 4,
+      "function_offsets": [
+        "0x02AD8E",
+        "0x02AEDA",
+        "0x02AFCE",
+        "0x02B046"
+      ],
+      "total_bytes": 752
+    },
+    {
+      "index": 37,
+      "first_offset": "0x2b2a0",
+      "last_offset": "0x2b395",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02B2A0",
+        "0x02B368"
+      ],
+      "total_bytes": 245
+    },
+    {
+      "index": 38,
+      "first_offset": "0x2b4d2",
+      "last_offset": "0x2b75c",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02B4D2",
+        "0x02B744"
+      ],
+      "total_bytes": 650
+    },
+    {
+      "index": 39,
+      "first_offset": "0x2b8c6",
+      "last_offset": "0x2ba24",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02B8C6",
+        "0x02B9DC"
+      ],
+      "total_bytes": 350
+    },
+    {
+      "index": 40,
+      "first_offset": "0x2bb8a",
+      "last_offset": "0x2bca4",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02BB8A",
+        "0x02BC72"
+      ],
+      "total_bytes": 282
+    },
+    {
+      "index": 41,
+      "first_offset": "0x2c546",
+      "last_offset": "0x2c824",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02C546",
+        "0x02C5D4"
+      ],
+      "total_bytes": 734
+    },
+    {
+      "index": 42,
+      "first_offset": "0x2cfd0",
+      "last_offset": "0x2d0fb",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02CFD0",
+        "0x02D0E4"
+      ],
+      "total_bytes": 299
+    },
+    {
+      "index": 43,
+      "first_offset": "0x2d30a",
+      "last_offset": "0x2d4f8",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02D30A",
+        "0x02D3C6"
+      ],
+      "total_bytes": 494
+    },
+    {
+      "index": 44,
+      "first_offset": "0x2d606",
+      "last_offset": "0x2da7d",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02D606",
+        "0x02D658"
+      ],
+      "total_bytes": 1143
+    },
+    {
+      "index": 45,
+      "first_offset": "0x2eabc",
+      "last_offset": "0x2ec3d",
+      "function_count": 6,
+      "function_offsets": [
+        "0x02EABC",
+        "0x02EAEA",
+        "0x02EB1C",
+        "0x02EB46",
+        "0x02EB78",
+        "0x02EC2E"
+      ],
+      "total_bytes": 385
+    },
+    {
+      "index": 46,
+      "first_offset": "0x2ee34",
+      "last_offset": "0x2ee40",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02EE34"
+      ],
+      "total_bytes": 12
+    },
+    {
+      "index": 47,
+      "first_offset": "0x2ef64",
+      "last_offset": "0x2f0c7",
+      "function_count": 2,
+      "function_offsets": [
+        "0x02EF64",
+        "0x02F052"
+      ],
+      "total_bytes": 355
+    },
+    {
+      "index": 48,
+      "first_offset": "0x2f3a2",
+      "last_offset": "0x2f3e1",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02F3A2"
+      ],
+      "total_bytes": 63
+    },
+    {
+      "index": 49,
+      "first_offset": "0x2ff0c",
+      "last_offset": "0x2ff7b",
+      "function_count": 1,
+      "function_offsets": [
+        "0x02FF0C"
+      ],
+      "total_bytes": 111
+    },
+    {
+      "index": 50,
+      "first_offset": "0x3034c",
+      "last_offset": "0x305ff",
+      "function_count": 5,
+      "function_offsets": [
+        "0x03034C",
+        "0x030550",
+        "0x030566",
+        "0x030590",
+        "0x0305A8"
+      ],
+      "total_bytes": 691
+    },
+    {
+      "index": 51,
+      "first_offset": "0x30b38",
+      "last_offset": "0x31109",
+      "function_count": 10,
+      "function_offsets": [
+        "0x030B38",
+        "0x030B4C",
+        "0x030BB6",
+        "0x030C14",
+        "0x030C68",
+        "0x030D16",
+        "0x030D86",
+        "0x030DF4",
+        "0x030F76",
+        "0x0310B4"
+      ],
+      "total_bytes": 1489
+    },
+    {
+      "index": 52,
+      "first_offset": "0x31298",
+      "last_offset": "0x315af",
+      "function_count": 4,
+      "function_offsets": [
+        "0x031298",
+        "0x031366",
+        "0x0314AE",
+        "0x0314DC"
+      ],
+      "total_bytes": 791
+    },
+    {
+      "index": 53,
+      "first_offset": "0x317cc",
+      "last_offset": "0x32538",
+      "function_count": 27,
+      "function_offsets": [
+        "0x0317CC",
+        "0x0318D2",
+        "0x0319A6",
+        "0x0319BC",
+        "0x031A32",
+        "0x031AFA",
+        "0x031BB0",
+        "0x031BE6",
+        "0x031DC8",
+        "0x031F28",
+        "0x031F48",
+        "0x031F5C",
+        "0x031F80",
+        "0x03200A",
+        "0x0320EE",
+        "0x032122",
+        "0x0321B4",
+        "0x0321FC",
+        "0x032262",
+        "0x032278",
+        "0x032294",
+        "0x0322D0",
+        "0x03234A",
+        "0x03240C",
+        "0x03245C",
+        "0x0324C8",
+        "0x0324F2"
+      ],
+      "total_bytes": 3436
+    },
+    {
+      "index": 54,
+      "first_offset": "0x32914",
+      "last_offset": "0x329a8",
+      "function_count": 1,
+      "function_offsets": [
+        "0x032914"
+      ],
+      "total_bytes": 148
+    },
+    {
+      "index": 55,
+      "first_offset": "0x32dac",
+      "last_offset": "0x32e32",
+      "function_count": 1,
+      "function_offsets": [
+        "0x032DAC"
+      ],
+      "total_bytes": 134
+    },
+    {
+      "index": 56,
+      "first_offset": "0x32fe2",
+      "last_offset": "0x3315e",
+      "function_count": 2,
+      "function_offsets": [
+        "0x032FE2",
+        "0x03314E"
+      ],
+      "total_bytes": 380
+    },
+    {
+      "index": 57,
+      "first_offset": "0x3334e",
+      "last_offset": "0x3347b",
+      "function_count": 2,
+      "function_offsets": [
+        "0x03334E",
+        "0x03342C"
+      ],
+      "total_bytes": 301
+    },
+    {
+      "index": 58,
+      "first_offset": "0x335fa",
+      "last_offset": "0x337a1",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0335FA",
+        "0x033716",
+        "0x033778"
+      ],
+      "total_bytes": 423
+    },
+    {
+      "index": 59,
+      "first_offset": "0x33a52",
+      "last_offset": "0x33ab6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x033A52"
+      ],
+      "total_bytes": 100
+    },
+    {
+      "index": 60,
+      "first_offset": "0x33be4",
+      "last_offset": "0x33eb2",
+      "function_count": 2,
+      "function_offsets": [
+        "0x033BE4",
+        "0x033C96"
+      ],
+      "total_bytes": 718
+    },
+    {
+      "index": 61,
+      "first_offset": "0x341d6",
+      "last_offset": "0x34439",
+      "function_count": 2,
+      "function_offsets": [
+        "0x0341D6",
+        "0x034318"
+      ],
+      "total_bytes": 611
+    },
+    {
+      "index": 62,
+      "first_offset": "0x3471e",
+      "last_offset": "0x34c94",
+      "function_count": 4,
+      "function_offsets": [
+        "0x03471E",
+        "0x0349F4",
+        "0x034AE0",
+        "0x034C24"
+      ],
+      "total_bytes": 1398
+    },
+    {
+      "index": 63,
+      "first_offset": "0x34dd4",
+      "last_offset": "0x34eb7",
+      "function_count": 1,
+      "function_offsets": [
+        "0x034DD4"
+      ],
+      "total_bytes": 227
+    },
+    {
+      "index": 64,
+      "first_offset": "0x350a0",
+      "last_offset": "0x35105",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0350A0"
+      ],
+      "total_bytes": 101
+    },
+    {
+      "index": 65,
+      "first_offset": "0x353de",
+      "last_offset": "0x355a5",
+      "function_count": 2,
+      "function_offsets": [
+        "0x0353DE",
+        "0x0354BE"
+      ],
+      "total_bytes": 455
+    },
+    {
+      "index": 66,
+      "first_offset": "0x35ad0",
+      "last_offset": "0x35b7c",
+      "function_count": 2,
+      "function_offsets": [
+        "0x035AD0",
+        "0x035B06"
+      ],
+      "total_bytes": 172
+    },
+    {
+      "index": 67,
+      "first_offset": "0x35d9a",
+      "last_offset": "0x361b4",
+      "function_count": 4,
+      "function_offsets": [
+        "0x035D9A",
+        "0x035E80",
+        "0x036038",
+        "0x036138"
+      ],
+      "total_bytes": 1050
+    },
+    {
+      "index": 68,
+      "first_offset": "0x363a2",
+      "last_offset": "0x363c3",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0363A2"
+      ],
+      "total_bytes": 33
+    },
+    {
+      "index": 69,
+      "first_offset": "0x36574",
+      "last_offset": "0x36581",
+      "function_count": 1,
+      "function_offsets": [
+        "0x036574"
+      ],
+      "total_bytes": 13
+    },
+    {
+      "index": 70,
+      "first_offset": "0x36976",
+      "last_offset": "0x3698e",
+      "function_count": 1,
+      "function_offsets": [
+        "0x036976"
+      ],
+      "total_bytes": 24
+    },
+    {
+      "index": 71,
+      "first_offset": "0x36b34",
+      "last_offset": "0x36c21",
+      "function_count": 2,
+      "function_offsets": [
+        "0x036B34",
+        "0x036B40"
+      ],
+      "total_bytes": 237
+    },
+    {
+      "index": 72,
+      "first_offset": "0x37340",
+      "last_offset": "0x3758f",
+      "function_count": 3,
+      "function_offsets": [
+        "0x037340",
+        "0x0373CA",
+        "0x03744A"
+      ],
+      "total_bytes": 591
+    },
+    {
+      "index": 73,
+      "first_offset": "0x37958",
+      "last_offset": "0x37a9c",
+      "function_count": 2,
+      "function_offsets": [
+        "0x037958",
+        "0x037A10"
+      ],
+      "total_bytes": 324
+    },
+    {
+      "index": 74,
+      "first_offset": "0x3807e",
+      "last_offset": "0x380e7",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03807E"
+      ],
+      "total_bytes": 105
+    },
+    {
+      "index": 75,
+      "first_offset": "0x38418",
+      "last_offset": "0x388de",
+      "function_count": 3,
+      "function_offsets": [
+        "0x038418",
+        "0x038778",
+        "0x038890"
+      ],
+      "total_bytes": 1222
+    },
+    {
+      "index": 76,
+      "first_offset": "0x38a50",
+      "last_offset": "0x38bc6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x038A50"
+      ],
+      "total_bytes": 374
+    },
+    {
+      "index": 77,
+      "first_offset": "0x38ed4",
+      "last_offset": "0x3925e",
+      "function_count": 4,
+      "function_offsets": [
+        "0x038ED4",
+        "0x038F2C",
+        "0x0391C0",
+        "0x039218"
+      ],
+      "total_bytes": 906
+    },
+    {
+      "index": 78,
+      "first_offset": "0x393f4",
+      "last_offset": "0x39580",
+      "function_count": 2,
+      "function_offsets": [
+        "0x0393F4",
+        "0x03954C"
+      ],
+      "total_bytes": 396
+    },
+    {
+      "index": 79,
+      "first_offset": "0x39888",
+      "last_offset": "0x398a4",
+      "function_count": 1,
+      "function_offsets": [
+        "0x039888"
+      ],
+      "total_bytes": 28
+    },
+    {
+      "index": 80,
+      "first_offset": "0x39e98",
+      "last_offset": "0x3a1cc",
+      "function_count": 2,
+      "function_offsets": [
+        "0x039E98",
+        "0x039EE2"
+      ],
+      "total_bytes": 820
+    },
+    {
+      "index": 81,
+      "first_offset": "0x3a9c0",
+      "last_offset": "0x3aa09",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03A9C0"
+      ],
+      "total_bytes": 73
+    },
+    {
+      "index": 82,
+      "first_offset": "0x3ada6",
+      "last_offset": "0x3b777",
+      "function_count": 3,
+      "function_offsets": [
+        "0x03ADA6",
+        "0x03B2F8",
+        "0x03B3B8"
+      ],
+      "total_bytes": 2513
+    },
+    {
+      "index": 83,
+      "first_offset": "0x3b900",
+      "last_offset": "0x3bc72",
+      "function_count": 10,
+      "function_offsets": [
+        "0x03B900",
+        "0x03B93C",
+        "0x03B95A",
+        "0x03B980",
+        "0x03B9E0",
+        "0x03BA26",
+        "0x03BA5A",
+        "0x03BAA6",
+        "0x03BB4A",
+        "0x03BC42"
+      ],
+      "total_bytes": 882
+    },
+    {
+      "index": 84,
+      "first_offset": "0x3bfd2",
+      "last_offset": "0x3c01c",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03BFD2"
+      ],
+      "total_bytes": 74
+    },
+    {
+      "index": 85,
+      "first_offset": "0x3c282",
+      "last_offset": "0x3c681",
+      "function_count": 7,
+      "function_offsets": [
+        "0x03C282",
+        "0x03C322",
+        "0x03C424",
+        "0x03C4A2",
+        "0x03C528",
+        "0x03C5A8",
+        "0x03C638"
+      ],
+      "total_bytes": 1023
+    },
+    {
+      "index": 86,
+      "first_offset": "0x3c932",
+      "last_offset": "0x3cb00",
+      "function_count": 3,
+      "function_offsets": [
+        "0x03C932",
+        "0x03CA2A",
+        "0x03CAC6"
+      ],
+      "total_bytes": 462
+    },
+    {
+      "index": 87,
+      "first_offset": "0x3cda2",
+      "last_offset": "0x3ceb3",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03CDA2"
+      ],
+      "total_bytes": 273
+    },
+    {
+      "index": 88,
+      "first_offset": "0x3d510",
+      "last_offset": "0x3db05",
+      "function_count": 3,
+      "function_offsets": [
+        "0x03D510",
+        "0x03D948",
+        "0x03DA2A"
+      ],
+      "total_bytes": 1525
+    },
+    {
+      "index": 89,
+      "first_offset": "0x3de46",
+      "last_offset": "0x3ded0",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03DE46"
+      ],
+      "total_bytes": 138
+    },
+    {
+      "index": 90,
+      "first_offset": "0x3e162",
+      "last_offset": "0x3e4d4",
+      "function_count": 3,
+      "function_offsets": [
+        "0x03E162",
+        "0x03E2EA",
+        "0x03E442"
+      ],
+      "total_bytes": 882
+    },
+    {
+      "index": 91,
+      "first_offset": "0x3e664",
+      "last_offset": "0x3e673",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03E664"
+      ],
+      "total_bytes": 15
+    },
+    {
+      "index": 92,
+      "first_offset": "0x3e844",
+      "last_offset": "0x3e883",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03E844"
+      ],
+      "total_bytes": 63
+    },
+    {
+      "index": 93,
+      "first_offset": "0x3e984",
+      "last_offset": "0x3e99e",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03E984"
+      ],
+      "total_bytes": 26
+    },
+    {
+      "index": 94,
+      "first_offset": "0x3ecf0",
+      "last_offset": "0x3ed46",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03ECF0"
+      ],
+      "total_bytes": 86
+    },
+    {
+      "index": 95,
+      "first_offset": "0x3f90e",
+      "last_offset": "0x3f981",
+      "function_count": 2,
+      "function_offsets": [
+        "0x03F90E",
+        "0x03F946"
+      ],
+      "total_bytes": 115
+    },
+    {
+      "index": 96,
+      "first_offset": "0x3fa9c",
+      "last_offset": "0x3faba",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03FA9C"
+      ],
+      "total_bytes": 30
+    },
+    {
+      "index": 97,
+      "first_offset": "0x3fdde",
+      "last_offset": "0x3fe30",
+      "function_count": 1,
+      "function_offsets": [
+        "0x03FDDE"
+      ],
+      "total_bytes": 82
+    },
+    {
+      "index": 98,
+      "first_offset": "0x40002",
+      "last_offset": "0x402e1",
+      "function_count": 4,
+      "function_offsets": [
+        "0x040002",
+        "0x04002C",
+        "0x04007E",
+        "0x040170"
+      ],
+      "total_bytes": 735
+    },
+    {
+      "index": 99,
+      "first_offset": "0x404b0",
+      "last_offset": "0x40701",
+      "function_count": 4,
+      "function_offsets": [
+        "0x0404B0",
+        "0x04057A",
+        "0x040608",
+        "0x040656"
+      ],
+      "total_bytes": 593
+    },
+    {
+      "index": 100,
+      "first_offset": "0x409d6",
+      "last_offset": "0x41098",
+      "function_count": 7,
+      "function_offsets": [
+        "0x0409D6",
+        "0x040C1E",
+        "0x040E22",
+        "0x040FD6",
+        "0x04101C",
+        "0x041034",
+        "0x041080"
+      ],
+      "total_bytes": 1730
+    },
+    {
+      "index": 101,
+      "first_offset": "0x41410",
+      "last_offset": "0x41443",
+      "function_count": 1,
+      "function_offsets": [
+        "0x041410"
+      ],
+      "total_bytes": 51
+    },
+    {
+      "index": 102,
+      "first_offset": "0x41654",
+      "last_offset": "0x41669",
+      "function_count": 1,
+      "function_offsets": [
+        "0x041654"
+      ],
+      "total_bytes": 21
+    },
+    {
+      "index": 103,
+      "first_offset": "0x41832",
+      "last_offset": "0x42200",
+      "function_count": 10,
+      "function_offsets": [
+        "0x041832",
+        "0x0418AA",
+        "0x04198E",
+        "0x041B76",
+        "0x041C00",
+        "0x041C64",
+        "0x041CBE",
+        "0x041E7E",
+        "0x041EEA",
+        "0x042138"
+      ],
+      "total_bytes": 2510
+    },
+    {
+      "index": 104,
+      "first_offset": "0x42726",
+      "last_offset": "0x4288e",
+      "function_count": 2,
+      "function_offsets": [
+        "0x042726",
+        "0x0427D6"
+      ],
+      "total_bytes": 360
+    },
+    {
+      "index": 105,
+      "first_offset": "0x42b10",
+      "last_offset": "0x430c9",
+      "function_count": 8,
+      "function_offsets": [
+        "0x042B10",
+        "0x042CEC",
+        "0x042D46",
+        "0x042DA6",
+        "0x042DFA",
+        "0x042F20",
+        "0x042FD6",
+        "0x043074"
+      ],
+      "total_bytes": 1465
+    },
+    {
+      "index": 106,
+      "first_offset": "0x44540",
+      "last_offset": "0x44861",
+      "function_count": 7,
+      "function_offsets": [
+        "0x044540",
+        "0x044556",
+        "0x04458A",
+        "0x0445EE",
+        "0x044644",
+        "0x04477E",
+        "0x044836"
+      ],
+      "total_bytes": 801
+    },
+    {
+      "index": 107,
+      "first_offset": "0x4497e",
+      "last_offset": "0x44bb7",
+      "function_count": 8,
+      "function_offsets": [
+        "0x04497E",
+        "0x0449C4",
+        "0x044A5A",
+        "0x044A92",
+        "0x044AC2",
+        "0x044B06",
+        "0x044B36",
+        "0x044B7A"
+      ],
+      "total_bytes": 569
+    },
+    {
+      "index": 108,
+      "first_offset": "0x44d16",
+      "last_offset": "0x44d30",
+      "function_count": 1,
+      "function_offsets": [
+        "0x044D16"
+      ],
+      "total_bytes": 26
+    },
+    {
+      "index": 109,
+      "first_offset": "0x44e7c",
+      "last_offset": "0x451b2",
+      "function_count": 3,
+      "function_offsets": [
+        "0x044E7C",
+        "0x044FA4",
+        "0x0450BA"
+      ],
+      "total_bytes": 822
+    },
+    {
+      "index": 110,
+      "first_offset": "0x452d4",
+      "last_offset": "0x45301",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0452D4"
+      ],
+      "total_bytes": 45
+    },
+    {
+      "index": 111,
+      "first_offset": "0x458ec",
+      "last_offset": "0x45be7",
+      "function_count": 4,
+      "function_offsets": [
+        "0x0458EC",
+        "0x04598A",
+        "0x045A1E",
+        "0x045AE4"
+      ],
+      "total_bytes": 763
+    },
+    {
+      "index": 112,
+      "first_offset": "0x45d00",
+      "last_offset": "0x46173",
+      "function_count": 6,
+      "function_offsets": [
+        "0x045D00",
+        "0x045D92",
+        "0x045DF2",
+        "0x046004",
+        "0x046056",
+        "0x0460F8"
+      ],
+      "total_bytes": 1139
+    },
+    {
+      "index": 113,
+      "first_offset": "0x464c2",
+      "last_offset": "0x465ee",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0464C2"
+      ],
+      "total_bytes": 300
+    },
+    {
+      "index": 114,
+      "first_offset": "0x467f8",
+      "last_offset": "0x4694b",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0467F8"
+      ],
+      "total_bytes": 339
+    },
+    {
+      "index": 115,
+      "first_offset": "0x46d70",
+      "last_offset": "0x47073",
+      "function_count": 6,
+      "function_offsets": [
+        "0x046D70",
+        "0x046DE0",
+        "0x046E18",
+        "0x046EC0",
+        "0x046FC2",
+        "0x046FFA"
+      ],
+      "total_bytes": 771
+    },
+    {
+      "index": 116,
+      "first_offset": "0x482de",
+      "last_offset": "0x48608",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0482DE",
+        "0x04830E",
+        "0x0485F6"
+      ],
+      "total_bytes": 810
+    },
+    {
+      "index": 117,
+      "first_offset": "0x4891a",
+      "last_offset": "0x48a89",
+      "function_count": 2,
+      "function_offsets": [
+        "0x04891A",
+        "0x048A3A"
+      ],
+      "total_bytes": 367
+    },
+    {
+      "index": 118,
+      "first_offset": "0x48ca4",
+      "last_offset": "0x492ce",
+      "function_count": 3,
+      "function_offsets": [
+        "0x048CA4",
+        "0x048CF8",
+        "0x048F34"
+      ],
+      "total_bytes": 1578
+    },
+    {
+      "index": 119,
+      "first_offset": "0x49600",
+      "last_offset": "0x496ba",
+      "function_count": 1,
+      "function_offsets": [
+        "0x049600"
+      ],
+      "total_bytes": 186
+    },
+    {
+      "index": 120,
+      "first_offset": "0x4a37c",
+      "last_offset": "0x4a497",
+      "function_count": 2,
+      "function_offsets": [
+        "0x04A37C",
+        "0x04A426"
+      ],
+      "total_bytes": 283
+    },
+    {
+      "index": 121,
+      "first_offset": "0x4a7ca",
+      "last_offset": "0x4a9c5",
+      "function_count": 1,
+      "function_offsets": [
+        "0x04A7CA"
+      ],
+      "total_bytes": 507
+    },
+    {
+      "index": 122,
+      "first_offset": "0x4ac00",
+      "last_offset": "0x4ad8d",
+      "function_count": 1,
+      "function_offsets": [
+        "0x04AC00"
+      ],
+      "total_bytes": 397
+    },
+    {
+      "index": 123,
+      "first_offset": "0x4af5e",
+      "last_offset": "0x4b197",
+      "function_count": 2,
+      "function_offsets": [
+        "0x04AF5E",
+        "0x04B036"
+      ],
+      "total_bytes": 569
+    },
+    {
+      "index": 124,
+      "first_offset": "0x4b308",
+      "last_offset": "0x4b57f",
+      "function_count": 1,
+      "function_offsets": [
+        "0x04B308"
+      ],
+      "total_bytes": 631
+    },
+    {
+      "index": 125,
+      "first_offset": "0x4bda4",
+      "last_offset": "0x4be53",
+      "function_count": 1,
+      "function_offsets": [
+        "0x04BDA4"
+      ],
+      "total_bytes": 175
+    },
+    {
+      "index": 126,
+      "first_offset": "0x4c060",
+      "last_offset": "0x4cd2f",
+      "function_count": 23,
+      "function_offsets": [
+        "0x04C060",
+        "0x04C0F0",
+        "0x04C1F0",
+        "0x04C20C",
+        "0x04C262",
+        "0x04C298",
+        "0x04C2CE",
+        "0x04C306",
+        "0x04C35A",
+        "0x04C404",
+        "0x04C4AE",
+        "0x04C50C",
+        "0x04C532",
+        "0x04C596",
+        "0x04C5C0",
+        "0x04C682",
+        "0x04C71C",
+        "0x04C7F0",
+        "0x04C846",
+        "0x04C89E",
+        "0x04CA86",
+        "0x04CAF6",
+        "0x04CC50"
+      ],
+      "total_bytes": 3279
+    },
+    {
+      "index": 127,
+      "first_offset": "0x4e2b6",
+      "last_offset": "0x4e51e",
+      "function_count": 2,
+      "function_offsets": [
+        "0x04E2B6",
+        "0x04E2D6"
+      ],
+      "total_bytes": 616
+    },
+    {
+      "index": 128,
+      "first_offset": "0x51d56",
+      "last_offset": "0x52339",
+      "function_count": 4,
+      "function_offsets": [
+        "0x051D56",
+        "0x051E2C",
+        "0x051EE6",
+        "0x051EF4"
+      ],
+      "total_bytes": 1507
+    },
+    {
+      "index": 129,
+      "first_offset": "0x52f7e",
+      "last_offset": "0x52f99",
+      "function_count": 1,
+      "function_offsets": [
+        "0x052F7E"
+      ],
+      "total_bytes": 27
+    },
+    {
+      "index": 130,
+      "first_offset": "0x53654",
+      "last_offset": "0x53663",
+      "function_count": 1,
+      "function_offsets": [
+        "0x053654"
+      ],
+      "total_bytes": 15
+    },
+    {
+      "index": 131,
+      "first_offset": "0x53820",
+      "last_offset": "0x538b6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x053820"
+      ],
+      "total_bytes": 150
+    },
+    {
+      "index": 132,
+      "first_offset": "0x53a34",
+      "last_offset": "0x53bc1",
+      "function_count": 5,
+      "function_offsets": [
+        "0x053A34",
+        "0x053AA0",
+        "0x053B14",
+        "0x053B26",
+        "0x053B7E"
+      ],
+      "total_bytes": 397
+    },
+    {
+      "index": 133,
+      "first_offset": "0x54505",
+      "last_offset": "0x545b6",
+      "function_count": 1,
+      "function_offsets": [
+        "0x054505"
+      ],
+      "total_bytes": 177
+    },
+    {
+      "index": 134,
+      "first_offset": "0x55760",
+      "last_offset": "0x557c2",
+      "function_count": 2,
+      "function_offsets": [
+        "0x055760",
+        "0x05576B"
+      ],
+      "total_bytes": 98
+    },
+    {
+      "index": 135,
+      "first_offset": "0x5651c",
+      "last_offset": "0x56549",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05651C"
+      ],
+      "total_bytes": 45
+    },
+    {
+      "index": 136,
+      "first_offset": "0x56694",
+      "last_offset": "0x56c59",
+      "function_count": 5,
+      "function_offsets": [
+        "0x056694",
+        "0x056A10",
+        "0x056B08",
+        "0x056B92",
+        "0x056C3E"
+      ],
+      "total_bytes": 1477
+    },
+    {
+      "index": 137,
+      "first_offset": "0x572e6",
+      "last_offset": "0x5738a",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0572E6"
+      ],
+      "total_bytes": 164
+    },
+    {
+      "index": 138,
+      "first_offset": "0x57a3a",
+      "last_offset": "0x57b0f",
+      "function_count": 3,
+      "function_offsets": [
+        "0x057A3A",
+        "0x057AA2",
+        "0x057AFC"
+      ],
+      "total_bytes": 213
+    },
+    {
+      "index": 139,
+      "first_offset": "0x57ce0",
+      "last_offset": "0x580b1",
+      "function_count": 3,
+      "function_offsets": [
+        "0x057CE0",
+        "0x057DC0",
+        "0x057F4E"
+      ],
+      "total_bytes": 977
+    },
+    {
+      "index": 140,
+      "first_offset": "0x59b3e",
+      "last_offset": "0x59b9f",
+      "function_count": 2,
+      "function_offsets": [
+        "0x059B3E",
+        "0x059B90"
+      ],
+      "total_bytes": 97
+    },
+    {
+      "index": 141,
+      "first_offset": "0x5a20e",
+      "last_offset": "0x5a29b",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05A20E"
+      ],
+      "total_bytes": 141
+    },
+    {
+      "index": 142,
+      "first_offset": "0x5a40e",
+      "last_offset": "0x5a463",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05A40E"
+      ],
+      "total_bytes": 85
+    },
+    {
+      "index": 143,
+      "first_offset": "0x5a862",
+      "last_offset": "0x5a8a1",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05A862"
+      ],
+      "total_bytes": 63
+    },
+    {
+      "index": 144,
+      "first_offset": "0x5ac34",
+      "last_offset": "0x5ac8d",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05AC34"
+      ],
+      "total_bytes": 89
+    },
+    {
+      "index": 145,
+      "first_offset": "0x5aea0",
+      "last_offset": "0x5b2e5",
+      "function_count": 5,
+      "function_offsets": [
+        "0x05AEA0",
+        "0x05AF2C",
+        "0x05AF70",
+        "0x05B0DC",
+        "0x05B2C2"
+      ],
+      "total_bytes": 1093
+    },
+    {
+      "index": 146,
+      "first_offset": "0x5be30",
+      "last_offset": "0x5bef5",
+      "function_count": 2,
+      "function_offsets": [
+        "0x05BE30",
+        "0x05BE84"
+      ],
+      "total_bytes": 197
+    },
+    {
+      "index": 147,
+      "first_offset": "0x5c65a",
+      "last_offset": "0x5c6db",
+      "function_count": 2,
+      "function_offsets": [
+        "0x05C65A",
+        "0x05C69C"
+      ],
+      "total_bytes": 129
+    },
+    {
+      "index": 148,
+      "first_offset": "0x5c878",
+      "last_offset": "0x5cc2b",
+      "function_count": 2,
+      "function_offsets": [
+        "0x05C878",
+        "0x05CA7E"
+      ],
+      "total_bytes": 947
+    },
+    {
+      "index": 149,
+      "first_offset": "0x5e7e0",
+      "last_offset": "0x5e887",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05E7E0"
+      ],
+      "total_bytes": 167
+    },
+    {
+      "index": 150,
+      "first_offset": "0x5e9b0",
+      "last_offset": "0x5eaf2",
+      "function_count": 2,
+      "function_offsets": [
+        "0x05E9B0",
+        "0x05EA38"
+      ],
+      "total_bytes": 322
+    },
+    {
+      "index": 151,
+      "first_offset": "0x5fc30",
+      "last_offset": "0x5fc43",
+      "function_count": 1,
+      "function_offsets": [
+        "0x05FC30"
+      ],
+      "total_bytes": 19
+    },
+    {
+      "index": 152,
+      "first_offset": "0x5fe60",
+      "last_offset": "0x600cd",
+      "function_count": 5,
+      "function_offsets": [
+        "0x05FE60",
+        "0x05FE7A",
+        "0x05FEA0",
+        "0x05FEF4",
+        "0x060026"
+      ],
+      "total_bytes": 621
+    },
+    {
+      "index": 153,
+      "first_offset": "0x60350",
+      "last_offset": "0x60955",
+      "function_count": 11,
+      "function_offsets": [
+        "0x060350",
+        "0x060382",
+        "0x0603A8",
+        "0x0603DA",
+        "0x06040A",
+        "0x06044C",
+        "0x06046E",
+        "0x060522",
+        "0x0605F6",
+        "0x06076A",
+        "0x06083A"
+      ],
+      "total_bytes": 1541
+    },
+    {
+      "index": 154,
+      "first_offset": "0x60c34",
+      "last_offset": "0x610da",
+      "function_count": 7,
+      "function_offsets": [
+        "0x060C34",
+        "0x060CE0",
+        "0x060D8C",
+        "0x060EC4",
+        "0x060F32",
+        "0x060FBC",
+        "0x0610B0"
+      ],
+      "total_bytes": 1190
+    },
+    {
+      "index": 155,
+      "first_offset": "0x612e6",
+      "last_offset": "0x61469",
+      "function_count": 2,
+      "function_offsets": [
+        "0x0612E6",
+        "0x061454"
+      ],
+      "total_bytes": 387
+    },
+    {
+      "index": 156,
+      "first_offset": "0x61e10",
+      "last_offset": "0x61f61",
+      "function_count": 3,
+      "function_offsets": [
+        "0x061E10",
+        "0x061E96",
+        "0x061F02"
+      ],
+      "total_bytes": 337
+    },
+    {
+      "index": 157,
+      "first_offset": "0x62716",
+      "last_offset": "0x62992",
+      "function_count": 3,
+      "function_offsets": [
+        "0x062716",
+        "0x0627BE",
+        "0x06295E"
+      ],
+      "total_bytes": 636
+    },
+    {
+      "index": 158,
+      "first_offset": "0x62d84",
+      "last_offset": "0x62dd3",
+      "function_count": 1,
+      "function_offsets": [
+        "0x062D84"
+      ],
+      "total_bytes": 79
+    },
+    {
+      "index": 159,
+      "first_offset": "0x63880",
+      "last_offset": "0x638fd",
+      "function_count": 1,
+      "function_offsets": [
+        "0x063880"
+      ],
+      "total_bytes": 125
+    },
+    {
+      "index": 160,
+      "first_offset": "0x63bd8",
+      "last_offset": "0x63ccf",
+      "function_count": 2,
+      "function_offsets": [
+        "0x063BD8",
+        "0x063C58"
+      ],
+      "total_bytes": 247
+    },
+    {
+      "index": 161,
+      "first_offset": "0x63f3c",
+      "last_offset": "0x64409",
+      "function_count": 6,
+      "function_offsets": [
+        "0x063F3C",
+        "0x064154",
+        "0x0641EC",
+        "0x064266",
+        "0x06436C",
+        "0x0643F8"
+      ],
+      "total_bytes": 1229
+    },
+    {
+      "index": 162,
+      "first_offset": "0x64534",
+      "last_offset": "0x64659",
+      "function_count": 2,
+      "function_offsets": [
+        "0x064534",
+        "0x0645F6"
+      ],
+      "total_bytes": 293
+    },
+    {
+      "index": 163,
+      "first_offset": "0x64a10",
+      "last_offset": "0x65110",
+      "function_count": 1,
+      "function_offsets": [
+        "0x064A10"
+      ],
+      "total_bytes": 1792
+    },
+    {
+      "index": 164,
+      "first_offset": "0x65d26",
+      "last_offset": "0x65d33",
+      "function_count": 1,
+      "function_offsets": [
+        "0x065D26"
+      ],
+      "total_bytes": 13
+    },
+    {
+      "index": 165,
+      "first_offset": "0x66850",
+      "last_offset": "0x669cc",
+      "function_count": 3,
+      "function_offsets": [
+        "0x066850",
+        "0x066884",
+        "0x066968"
+      ],
+      "total_bytes": 380
+    },
+    {
+      "index": 166,
+      "first_offset": "0x66b96",
+      "last_offset": "0x66bc7",
+      "function_count": 2,
+      "function_offsets": [
+        "0x066B96",
+        "0x066BB0"
+      ],
+      "total_bytes": 49
+    },
+    {
+      "index": 167,
+      "first_offset": "0x66cd6",
+      "last_offset": "0x678f3",
+      "function_count": 17,
+      "function_offsets": [
+        "0x066CD6",
+        "0x066E0C",
+        "0x066E52",
+        "0x066EC8",
+        "0x066F68",
+        "0x06703C",
+        "0x067082",
+        "0x067182",
+        "0x0672E0",
+        "0x0673CC",
+        "0x067476",
+        "0x0674A8",
+        "0x06753C",
+        "0x067644",
+        "0x067700",
+        "0x0677CA",
+        "0x06787C"
+      ],
+      "total_bytes": 3101
+    },
+    {
+      "index": 168,
+      "first_offset": "0x67a24",
+      "last_offset": "0x6824d",
+      "function_count": 13,
+      "function_offsets": [
+        "0x067A24",
+        "0x067B84",
+        "0x067BE4",
+        "0x067C54",
+        "0x067C8E",
+        "0x067CF4",
+        "0x067D54",
+        "0x067DC8",
+        "0x067E28",
+        "0x067E8C",
+        "0x067EEC",
+        "0x067F50",
+        "0x0681A8"
+      ],
+      "total_bytes": 2089
+    },
+    {
+      "index": 169,
+      "first_offset": "0x685dc",
+      "last_offset": "0x68674",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0685DC"
+      ],
+      "total_bytes": 152
+    },
+    {
+      "index": 170,
+      "first_offset": "0x68898",
+      "last_offset": "0x68a23",
+      "function_count": 3,
+      "function_offsets": [
+        "0x068898",
+        "0x06892E",
+        "0x068A14"
+      ],
+      "total_bytes": 395
+    },
+    {
+      "index": 171,
+      "first_offset": "0x68f38",
+      "last_offset": "0x696d9",
+      "function_count": 12,
+      "function_offsets": [
+        "0x068F38",
+        "0x068FA0",
+        "0x068FDC",
+        "0x069058",
+        "0x069156",
+        "0x0691A4",
+        "0x06921A",
+        "0x06927C",
+        "0x06929C",
+        "0x06936C",
+        "0x0694AE",
+        "0x0696C6"
+      ],
+      "total_bytes": 1953
+    },
+    {
+      "index": 172,
+      "first_offset": "0x69d8c",
+      "last_offset": "0x6a20d",
+      "function_count": 1,
+      "function_offsets": [
+        "0x069D8C"
+      ],
+      "total_bytes": 1153
+    },
+    {
+      "index": 173,
+      "first_offset": "0x6a700",
+      "last_offset": "0x6a932",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06A700"
+      ],
+      "total_bytes": 562
+    },
+    {
+      "index": 174,
+      "first_offset": "0x6aa88",
+      "last_offset": "0x6aad8",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06AA88"
+      ],
+      "total_bytes": 80
+    },
+    {
+      "index": 175,
+      "first_offset": "0x6ae08",
+      "last_offset": "0x6b0d4",
+      "function_count": 3,
+      "function_offsets": [
+        "0x06AE08",
+        "0x06AF1C",
+        "0x06B02A"
+      ],
+      "total_bytes": 716
+    },
+    {
+      "index": 176,
+      "first_offset": "0x6b202",
+      "last_offset": "0x6b256",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06B202"
+      ],
+      "total_bytes": 84
+    },
+    {
+      "index": 177,
+      "first_offset": "0x6b398",
+      "last_offset": "0x6baec",
+      "function_count": 3,
+      "function_offsets": [
+        "0x06B398",
+        "0x06B6EE",
+        "0x06B722"
+      ],
+      "total_bytes": 1876
+    },
+    {
+      "index": 178,
+      "first_offset": "0x6bd14",
+      "last_offset": "0x6bf90",
+      "function_count": 6,
+      "function_offsets": [
+        "0x06BD14",
+        "0x06BE50",
+        "0x06BE92",
+        "0x06BF12",
+        "0x06BF3C",
+        "0x06BF66"
+      ],
+      "total_bytes": 636
+    },
+    {
+      "index": 179,
+      "first_offset": "0x6c18c",
+      "last_offset": "0x6c872",
+      "function_count": 19,
+      "function_offsets": [
+        "0x06C18C",
+        "0x06C220",
+        "0x06C23C",
+        "0x06C254",
+        "0x06C27C",
+        "0x06C296",
+        "0x06C2D6",
+        "0x06C346",
+        "0x06C388",
+        "0x06C492",
+        "0x06C520",
+        "0x06C6EA",
+        "0x06C74A",
+        "0x06C77A",
+        "0x06C7AA",
+        "0x06C7DA",
+        "0x06C80A",
+        "0x06C832",
+        "0x06C850"
+      ],
+      "total_bytes": 1766
+    },
+    {
+      "index": 180,
+      "first_offset": "0x6ca38",
+      "last_offset": "0x6cbb7",
+      "function_count": 4,
+      "function_offsets": [
+        "0x06CA38",
+        "0x06CA72",
+        "0x06CA82",
+        "0x06CB94"
+      ],
+      "total_bytes": 383
+    },
+    {
+      "index": 181,
+      "first_offset": "0x6cd66",
+      "last_offset": "0x6cdae",
+      "function_count": 2,
+      "function_offsets": [
+        "0x06CD66",
+        "0x06CD8C"
+      ],
+      "total_bytes": 72
+    },
+    {
+      "index": 182,
+      "first_offset": "0x6cf7a",
+      "last_offset": "0x6d02c",
+      "function_count": 3,
+      "function_offsets": [
+        "0x06CF7A",
+        "0x06CFBC",
+        "0x06CFE8"
+      ],
+      "total_bytes": 178
+    },
+    {
+      "index": 183,
+      "first_offset": "0x6d316",
+      "last_offset": "0x6d40f",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06D316"
+      ],
+      "total_bytes": 249
+    },
+    {
+      "index": 184,
+      "first_offset": "0x6d88c",
+      "last_offset": "0x6da82",
+      "function_count": 4,
+      "function_offsets": [
+        "0x06D88C",
+        "0x06D8C8",
+        "0x06D938",
+        "0x06D9CC"
+      ],
+      "total_bytes": 502
+    },
+    {
+      "index": 185,
+      "first_offset": "0x6dc64",
+      "last_offset": "0x6dc98",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06DC64"
+      ],
+      "total_bytes": 52
+    },
+    {
+      "index": 186,
+      "first_offset": "0x6de6e",
+      "last_offset": "0x6e4cd",
+      "function_count": 5,
+      "function_offsets": [
+        "0x06DE6E",
+        "0x06E0C8",
+        "0x06E2DE",
+        "0x06E3AE",
+        "0x06E3D0"
+      ],
+      "total_bytes": 1631
+    },
+    {
+      "index": 187,
+      "first_offset": "0x6eed4",
+      "last_offset": "0x6ef3f",
+      "function_count": 2,
+      "function_offsets": [
+        "0x06EED4",
+        "0x06EEEC"
+      ],
+      "total_bytes": 107
+    },
+    {
+      "index": 188,
+      "first_offset": "0x6f0f4",
+      "last_offset": "0x6f144",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06F0F4"
+      ],
+      "total_bytes": 80
+    },
+    {
+      "index": 189,
+      "first_offset": "0x6f51a",
+      "last_offset": "0x6f7e9",
+      "function_count": 10,
+      "function_offsets": [
+        "0x06F51A",
+        "0x06F554",
+        "0x06F57E",
+        "0x06F5B0",
+        "0x06F5DA",
+        "0x06F5F2",
+        "0x06F61C",
+        "0x06F64C",
+        "0x06F698",
+        "0x06F6DA"
+      ],
+      "total_bytes": 719
+    },
+    {
+      "index": 190,
+      "first_offset": "0x6f8fa",
+      "last_offset": "0x6f986",
+      "function_count": 1,
+      "function_offsets": [
+        "0x06F8FA"
+      ],
+      "total_bytes": 140
+    },
+    {
+      "index": 191,
+      "first_offset": "0x6faba",
+      "last_offset": "0x6fb1d",
+      "function_count": 2,
+      "function_offsets": [
+        "0x06FABA",
+        "0x06FAE8"
+      ],
+      "total_bytes": 99
+    },
+    {
+      "index": 192,
+      "first_offset": "0x6fca4",
+      "last_offset": "0x7147c",
+      "function_count": 23,
+      "function_offsets": [
+        "0x06FCA4",
+        "0x06FDF0",
+        "0x06FE1C",
+        "0x06FF94",
+        "0x070060",
+        "0x0702C0",
+        "0x070302",
+        "0x070494",
+        "0x070580",
+        "0x070782",
+        "0x0707B6",
+        "0x07092E",
+        "0x070A1A",
+        "0x070C6C",
+        "0x070CB4",
+        "0x070DE8",
+        "0x070EBA",
+        "0x070FF8",
+        "0x0710C2",
+        "0x071106",
+        "0x071246",
+        "0x071350",
+        "0x0713D4"
+      ],
+      "total_bytes": 6104
+    },
+    {
+      "index": 193,
+      "first_offset": "0x715e8",
+      "last_offset": "0x71623",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0715E8"
+      ],
+      "total_bytes": 59
+    },
+    {
+      "index": 194,
+      "first_offset": "0x72090",
+      "last_offset": "0x720b7",
+      "function_count": 1,
+      "function_offsets": [
+        "0x072090"
+      ],
+      "total_bytes": 39
+    },
+    {
+      "index": 195,
+      "first_offset": "0x72b9a",
+      "last_offset": "0x735ba",
+      "function_count": 8,
+      "function_offsets": [
+        "0x072B9A",
+        "0x072C78",
+        "0x072CA4",
+        "0x072CC2",
+        "0x072F7A",
+        "0x073158",
+        "0x073270",
+        "0x0734F8"
+      ],
+      "total_bytes": 2592
+    },
+    {
+      "index": 196,
+      "first_offset": "0x73ab0",
+      "last_offset": "0x73d1e",
+      "function_count": 2,
+      "function_offsets": [
+        "0x073AB0",
+        "0x073BB0"
+      ],
+      "total_bytes": 622
+    },
+    {
+      "index": 197,
+      "first_offset": "0x7431e",
+      "last_offset": "0x74405",
+      "function_count": 1,
+      "function_offsets": [
+        "0x07431E"
+      ],
+      "total_bytes": 231
+    },
+    {
+      "index": 198,
+      "first_offset": "0x745f0",
+      "last_offset": "0x74691",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0745F0",
+        "0x07464C",
+        "0x074688"
+      ],
+      "total_bytes": 161
+    },
+    {
+      "index": 199,
+      "first_offset": "0x749e0",
+      "last_offset": "0x74c39",
+      "function_count": 1,
+      "function_offsets": [
+        "0x0749E0"
+      ],
+      "total_bytes": 601
+    },
+    {
+      "index": 200,
+      "first_offset": "0x75352",
+      "last_offset": "0x756b7",
+      "function_count": 3,
+      "function_offsets": [
+        "0x075352",
+        "0x075594",
+        "0x0755CC"
+      ],
+      "total_bytes": 869
+    },
+    {
+      "index": 201,
+      "first_offset": "0x759e8",
+      "last_offset": "0x760d6",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0759E8",
+        "0x075F98",
+        "0x075FB6"
+      ],
+      "total_bytes": 1774
+    },
+    {
+      "index": 202,
+      "first_offset": "0x764f2",
+      "last_offset": "0x76c90",
+      "function_count": 7,
+      "function_offsets": [
+        "0x0764F2",
+        "0x076524",
+        "0x076594",
+        "0x076642",
+        "0x076AEC",
+        "0x076B9E",
+        "0x076C70"
+      ],
+      "total_bytes": 1950
+    },
+    {
+      "index": 203,
+      "first_offset": "0x76e50",
+      "last_offset": "0x76f47",
+      "function_count": 1,
+      "function_offsets": [
+        "0x076E50"
+      ],
+      "total_bytes": 247
+    },
+    {
+      "index": 204,
+      "first_offset": "0x7705a",
+      "last_offset": "0x7711d",
+      "function_count": 3,
+      "function_offsets": [
+        "0x07705A",
+        "0x07706C",
+        "0x077100"
+      ],
+      "total_bytes": 195
+    },
+    {
+      "index": 205,
+      "first_offset": "0x772ba",
+      "last_offset": "0x773cf",
+      "function_count": 4,
+      "function_offsets": [
+        "0x0772BA",
+        "0x0772C4",
+        "0x0772DA",
+        "0x0772FA"
+      ],
+      "total_bytes": 277
+    },
+    {
+      "index": 206,
+      "first_offset": "0x775ec",
+      "last_offset": "0x77792",
+      "function_count": 3,
+      "function_offsets": [
+        "0x0775EC",
+        "0x0776F4",
+        "0x077772"
+      ],
+      "total_bytes": 422
+    },
+    {
+      "index": 207,
+      "first_offset": "0x77990",
+      "last_offset": "0x77b2f",
+      "function_count": 4,
+      "function_offsets": [
+        "0x077990",
+        "0x077A34",
+        "0x077ADE",
+        "0x077B10"
+      ],
+      "total_bytes": 415
+    },
+    {
+      "index": 208,
+      "first_offset": "0x77d5e",
+      "last_offset": "0x78d3e",
+      "function_count": 29,
+      "function_offsets": [
+        "0x077D5E",
+        "0x077ED0",
+        "0x077F3A",
+        "0x078068",
+        "0x078142",
+        "0x078184",
+        "0x0781DE",
+        "0x078242",
+        "0x07826A",
+        "0x07831A",
+        "0x0783E4",
+        "0x07845A",
+        "0x078548",
+        "0x078640",
+        "0x0786FE",
+        "0x0787A2",
+        "0x0787DC",
+        "0x07881E",
+        "0x078856",
+        "0x078872",
+        "0x0789FA",
+        "0x078A4A",
+        "0x078AF2",
+        "0x078B0E",
+        "0x078B3E",
+        "0x078BCE",
+        "0x078C0C",
+        "0x078C48",
+        "0x078CB2"
+      ],
+      "total_bytes": 4064
+    }
+  ],
+  "rtlink_segment_ljmp_ranges": {
+    "0x0019": {
+      "thunk_count": 21,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0xc2a"
+    },
+    "0x001F": {
+      "thunk_count": 15,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x1aa"
+    },
+    "0x000B": {
+      "thunk_count": 6,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x7c2"
+    },
+    "0x0015": {
+      "thunk_count": 33,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x10be"
+    },
+    "0x001D": {
+      "thunk_count": 3,
+      "min_ljmp_off": "0xa4",
+      "max_ljmp_off": "0x3ce"
+    },
+    "0x0017": {
+      "thunk_count": 40,
+      "min_ljmp_off": "0x3d0",
+      "max_ljmp_off": "0x3848"
+    },
+    "0x0018": {
+      "thunk_count": 9,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x208"
+    },
+    "0x001B": {
+      "thunk_count": 8,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0xc4"
+    },
+    "0x0016": {
+      "thunk_count": 23,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x24b8"
+    },
+    "0x000F": {
+      "thunk_count": 15,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x3180"
+    },
+    "0x0009": {
+      "thunk_count": 9,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x424"
+    },
+    "0x0005": {
+      "thunk_count": 22,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x2548"
+    },
+    "0x0004": {
+      "thunk_count": 76,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x6024"
+    },
+    "0x001A": {
+      "thunk_count": 28,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x2d46"
+    },
+    "0x0002": {
+      "thunk_count": 79,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x6cd4"
+    },
+    "0x0003": {
+      "thunk_count": 15,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x1e64"
+    },
+    "0x0001": {
+      "thunk_count": 47,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x3b68"
+    },
+    "0x000D": {
+      "thunk_count": 27,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x6d8e"
+    },
+    "0x0006": {
+      "thunk_count": 32,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x2564"
+    },
+    "0x000C": {
+      "thunk_count": 19,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x4528"
+    },
+    "0x001E": {
+      "thunk_count": 11,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0xe2"
+    },
+    "0x000A": {
+      "thunk_count": 21,
+      "min_ljmp_off": "0x16",
+      "max_ljmp_off": "0x14de"
+    },
+    "0x0008": {
+      "thunk_count": 24,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x11a4"
+    },
+    "0x0012": {
+      "thunk_count": 24,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x1486"
+    },
+    "0x0007": {
+      "thunk_count": 9,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0xc1e"
+    },
+    "0x0010": {
+      "thunk_count": 10,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x1b0e"
+    },
+    "0x0013": {
+      "thunk_count": 5,
+      "min_ljmp_off": "0x86",
+      "max_ljmp_off": "0xf74"
+    },
+    "0x000E": {
+      "thunk_count": 6,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x35e"
+    },
+    "0x0011": {
+      "thunk_count": 1,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x0"
+    },
+    "0x0014": {
+      "thunk_count": 11,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x8c0"
+    },
+    "0x001C": {
+      "thunk_count": 9,
+      "min_ljmp_off": "0x0",
+      "max_ljmp_off": "0x21c"
+    }
+  }
+}

@@ -1,0 +1,844 @@
+{
+  "FUN_renames": [
+    {
+      "original": "FUN_103D4",
+      "rename_to": "rand",
+      "role": "MSC 6.0 LCG",
+      "case_variants": [
+        "FUN_103D4",
+        "fun_103d4"
+      ]
+    },
+    {
+      "original": "FUN_103C2",
+      "rename_to": "srand",
+      "role": "MSC 6.0 srand",
+      "case_variants": [
+        "FUN_103C2",
+        "fun_103c2"
+      ]
+    },
+    {
+      "original": "FUN_C322",
+      "rename_to": "random_int",
+      "role": "random_int(lo, hi)",
+      "case_variants": [
+        "FUN_C322",
+        "fun_c322"
+      ]
+    },
+    {
+      "original": "FUN_10530",
+      "rename_to": "_aFlmul",
+      "role": "32x32 multiply",
+      "case_variants": [
+        "FUN_10530",
+        "fun_10530"
+      ]
+    },
+    {
+      "original": "FUN_10496",
+      "rename_to": "_aFldiv",
+      "role": "signed long divide",
+      "case_variants": [
+        "FUN_10496",
+        "fun_10496"
+      ]
+    },
+    {
+      "original": "FUN_FDB4",
+      "rename_to": "strcpy_near",
+      "role": "MSC 6.0 strcpy",
+      "case_variants": [
+        "FUN_FDB4",
+        "fun_fdb4"
+      ]
+    },
+    {
+      "original": "FUN_FD74",
+      "rename_to": "strcat_near",
+      "role": "MSC 6.0 strcat",
+      "case_variants": [
+        "FUN_FD74",
+        "fun_fd74"
+      ]
+    },
+    {
+      "original": "FUN_BC10",
+      "rename_to": "power_attribute_bit",
+      "role": "PowerRecord bitfield reader",
+      "case_variants": [
+        "FUN_BC10",
+        "fun_bc10"
+      ]
+    },
+    {
+      "original": "FUN_48CC",
+      "rename_to": "clamp_value_lo_hi",
+      "role": "clamp(v, lo, hi)",
+      "case_variants": [
+        "FUN_48CC",
+        "fun_48cc"
+      ]
+    },
+    {
+      "original": "FUN_81C6",
+      "rename_to": "set_active_tribe",
+      "role": "sets g_settlement_ptr_8D4E",
+      "case_variants": [
+        "FUN_81C6",
+        "fun_81c6"
+      ]
+    },
+    {
+      "original": "FUN_513C",
+      "rename_to": "output_flush_helper",
+      "role": "conditional flush",
+      "case_variants": [
+        "FUN_513C",
+        "fun_513c"
+      ]
+    },
+    {
+      "original": "FUN_50BC",
+      "rename_to": "set_message_context",
+      "role": "set_message_context(code)",
+      "case_variants": [
+        "FUN_50BC",
+        "fun_50bc"
+      ]
+    },
+    {
+      "original": "FUN_8110",
+      "rename_to": "get_power_name_word",
+      "role": "EU vs native name lookup",
+      "case_variants": [
+        "FUN_8110",
+        "fun_8110"
+      ]
+    },
+    {
+      "original": "FUN_6E94",
+      "rename_to": "decrement_power_unit_count",
+      "role": "destroy_unit primitive",
+      "case_variants": [
+        "FUN_6E94",
+        "fun_6e94"
+      ]
+    },
+    {
+      "original": "FUN_7F34",
+      "rename_to": "get_per_power_byte",
+      "role": "EU/native universal accessor",
+      "case_variants": [
+        "FUN_7F34",
+        "fun_7f34"
+      ]
+    },
+    {
+      "original": "FUN_6204",
+      "rename_to": "terrain_normalize",
+      "role": "auto-forest mapping",
+      "case_variants": [
+        "FUN_6204",
+        "fun_6204"
+      ]
+    },
+    {
+      "original": "FUN_4A7CA",
+      "rename_to": "native_village_raze_chiefkill",
+      "role": "CHIEFKILL gold formula",
+      "case_variants": [
+        "FUN_4A7CA",
+        "fun_4a7ca"
+      ]
+    },
+    {
+      "original": "FUN_57F4E",
+      "rename_to": "diplomacy_meeting_smite",
+      "role": "diplomacy + SMITE",
+      "case_variants": [
+        "FUN_57F4E",
+        "fun_57f4e"
+      ]
+    },
+    {
+      "original": "FUN_5CA7E",
+      "rename_to": "colony_burn_capture",
+      "role": "colony burn / capture",
+      "case_variants": [
+        "FUN_5CA7E",
+        "fun_5ca7e"
+      ]
+    },
+    {
+      "original": "FUN_5BE84",
+      "rename_to": "native_raid_outcome_dispatcher",
+      "role": "6 raid outcomes",
+      "case_variants": [
+        "FUN_5BE84",
+        "fun_5be84"
+      ]
+    },
+    {
+      "original": "FUN_5C878",
+      "rename_to": "treasure_transport_galleon",
+      "role": "King's Galleon event",
+      "case_variants": [
+        "FUN_5C878",
+        "fun_5c878"
+      ]
+    },
+    {
+      "original": "FUN_34AE0",
+      "rename_to": "king_attempt_tax_change",
+      "role": "king tax raise/lower",
+      "case_variants": [
+        "FUN_34AE0",
+        "fun_34ae0"
+      ]
+    },
+    {
+      "original": "FUN_34318",
+      "rename_to": "tea_party_apply_tax",
+      "role": "tax cap = 75",
+      "case_variants": [
+        "FUN_34318",
+        "fun_34318"
+      ]
+    },
+    {
+      "original": "FUN_5B2C2",
+      "rename_to": "combat_resolver",
+      "role": "combat + demotion ladder",
+      "case_variants": [
+        "FUN_5B2C2",
+        "fun_5b2c2"
+      ]
+    },
+    {
+      "original": "FUN_2D658",
+      "rename_to": "colony_production_handler",
+      "role": "colony screen production",
+      "case_variants": [
+        "FUN_2D658",
+        "fun_2d658"
+      ]
+    },
+    {
+      "original": "FUN_2883E",
+      "rename_to": "townhall_assembly_services",
+      "role": "Liberty Bell production",
+      "case_variants": [
+        "FUN_2883E",
+        "fun_2883e"
+      ]
+    },
+    {
+      "original": "FUN_22542",
+      "rename_to": "colony_founding_validity_check",
+      "role": "can colony be founded here",
+      "case_variants": [
+        "FUN_22542",
+        "fun_22542"
+      ]
+    },
+    {
+      "original": "FUN_36138",
+      "rename_to": "king_actions_dispatcher",
+      "role": "king events (turn>=30)",
+      "case_variants": [
+        "FUN_36138",
+        "fun_36138"
+      ]
+    },
+    {
+      "original": "FUN_4A426",
+      "rename_to": "native_learning_trainer",
+      "role": "colonist trains in village",
+      "case_variants": [
+        "FUN_4A426",
+        "fun_4a426"
+      ]
+    },
+    {
+      "original": "FUN_4AC00",
+      "rename_to": "native_extortion",
+      "role": "extort gold from natives",
+      "case_variants": [
+        "FUN_4AC00",
+        "fun_4ac00"
+      ]
+    },
+    {
+      "original": "FUN_4B036",
+      "rename_to": "native_war_declaration",
+      "role": "declare war on tribe",
+      "case_variants": [
+        "FUN_4B036",
+        "fun_4b036"
+      ]
+    },
+    {
+      "original": "FUN_4B308",
+      "rename_to": "tribe_attitude_display",
+      "role": "5-level attitude",
+      "case_variants": [
+        "FUN_4B308",
+        "fun_4b308"
+      ]
+    },
+    {
+      "original": "FUN_49600",
+      "rename_to": "native_trade_haggling",
+      "role": "BUY/SELL with natives",
+      "case_variants": [
+        "FUN_49600",
+        "fun_49600"
+      ]
+    },
+    {
+      "original": "FUN_4E2D6",
+      "rename_to": "ai_action_dispatcher",
+      "role": "11 AI actions",
+      "case_variants": [
+        "FUN_4E2D6",
+        "fun_4e2d6"
+      ]
+    },
+    {
+      "original": "FUN_6F0F4",
+      "rename_to": "dialog_framework",
+      "role": "the dialog layout engine",
+      "case_variants": [
+        "FUN_6F0F4",
+        "fun_6f0f4"
+      ]
+    },
+    {
+      "original": "FUN_6EEEC",
+      "rename_to": "text_template_parser",
+      "role": "$COUNTRY$ etc. substitution",
+      "case_variants": [
+        "FUN_6EEEC",
+        "fun_6eeec"
+      ]
+    },
+    {
+      "original": "FUN_72090",
+      "rename_to": "top_menu_bar_dispatcher",
+      "role": "game/menu/orders/pedia/etc.",
+      "case_variants": [
+        "FUN_72090",
+        "fun_72090"
+      ]
+    },
+    {
+      "original": "FUN_2F052",
+      "rename_to": "king_events_refit",
+      "role": "KINGTAX/REFIT",
+      "case_variants": [
+        "FUN_2F052",
+        "fun_2f052"
+      ]
+    },
+    {
+      "original": "FUN_3DE46",
+      "rename_to": "independence_event",
+      "role": "INDEPENDENCE event",
+      "case_variants": [
+        "FUN_3DE46",
+        "fun_3de46"
+      ]
+    },
+    {
+      "original": "FUN_3E984",
+      "rename_to": "declaration_guard",
+      "role": "ALREADYREVOLUTION guard",
+      "case_variants": [
+        "FUN_3E984",
+        "fun_3e984"
+      ]
+    },
+    {
+      "original": "FUN_3ECF0",
+      "rename_to": "diplomatic_actions_menu",
+      "role": "right-click unit options",
+      "case_variants": [
+        "FUN_3ECF0",
+        "fun_3ecf0"
+      ]
+    },
+    {
+      "original": "FUN_3E844",
+      "rename_to": "sons_of_liberty_display",
+      "role": "REBELUP/DOWN message",
+      "case_variants": [
+        "FUN_3E844",
+        "fun_3e844"
+      ]
+    },
+    {
+      "original": "FUN_3D948",
+      "rename_to": "intervention_event",
+      "role": "French intervention",
+      "case_variants": [
+        "FUN_3D948",
+        "fun_3d948"
+      ]
+    },
+    {
+      "original": "FUN_3FDDE",
+      "rename_to": "ship_combat_event",
+      "role": "naval events",
+      "case_variants": [
+        "FUN_3FDDE",
+        "fun_3fdde"
+      ]
+    },
+    {
+      "original": "FUN_2F3A2",
+      "rename_to": "win_lose_check",
+      "role": "iterate colonies of player",
+      "case_variants": [
+        "FUN_2F3A2",
+        "fun_2f3a2"
+      ]
+    },
+    {
+      "original": "FUN_3A9C0",
+      "rename_to": "score_formula",
+      "role": "964-byte stack frame",
+      "case_variants": [
+        "FUN_3A9C0",
+        "fun_3a9c0"
+      ]
+    },
+    {
+      "original": "FUN_3ADA6",
+      "rename_to": "hall_of_fame_writer",
+      "role": "HALLFAME.DAT writer",
+      "case_variants": [
+        "FUN_3ADA6",
+        "fun_3ada6"
+      ]
+    },
+    {
+      "original": "FUN_5A20E",
+      "rename_to": "scout_interactions",
+      "role": "SCOUTCOLONY events",
+      "case_variants": [
+        "FUN_5A20E",
+        "fun_5a20e"
+      ]
+    },
+    {
+      "original": "FUN_4A37C",
+      "rename_to": "wagon_train_kill",
+      "role": "KILLWAGONS",
+      "case_variants": [
+        "FUN_4A37C",
+        "fun_4a37c"
+      ]
+    },
+    {
+      "original": "FUN_749E0",
+      "rename_to": "scenario_loader",
+      "role": "reads 40 NAMES.TXT sections",
+      "case_variants": [
+        "FUN_749E0",
+        "fun_749e0"
+      ]
+    },
+    {
+      "original": "FUN_2B744",
+      "rename_to": "buy_commodity",
+      "role": "BUYME0",
+      "case_variants": [
+        "FUN_2B744",
+        "fun_2b744"
+      ]
+    },
+    {
+      "original": "FUN_305A8",
+      "rename_to": "market_price_drift",
+      "role": "PRICEUP/PRICEDOWN",
+      "case_variants": [
+        "FUN_305A8",
+        "fun_305a8"
+      ]
+    },
+    {
+      "original": "FUN_20F50",
+      "rename_to": "tutorial_dispatcher",
+      "role": "TUTORIAL1..19",
+      "case_variants": [
+        "FUN_20F50",
+        "fun_20f50"
+      ]
+    },
+    {
+      "original": "FUN_11D91",
+      "rename_to": "rtlink_dispatcher_main",
+      "role": "353 callers",
+      "case_variants": [
+        "FUN_11D91",
+        "fun_11d91"
+      ]
+    },
+    {
+      "original": "FUN_11DAB",
+      "rename_to": "rtlink_dispatcher_partner",
+      "role": "smart vectoring",
+      "case_variants": [
+        "FUN_11DAB",
+        "fun_11dab"
+      ]
+    },
+    {
+      "original": "FUN_13BED",
+      "rename_to": "entry_point",
+      "role": "MZ entry",
+      "case_variants": [
+        "FUN_13BED",
+        "fun_13bed"
+      ]
+    },
+    {
+      "original": "FUN_1072A",
+      "rename_to": "cstart",
+      "role": "C startup",
+      "case_variants": [
+        "FUN_1072A",
+        "fun_1072a"
+      ]
+    },
+    {
+      "original": "FUN_12CF7",
+      "rename_to": "startup_helper",
+      "role": "DGROUP setup",
+      "case_variants": [
+        "FUN_12CF7",
+        "fun_12cf7"
+      ]
+    },
+    {
+      "original": "FUN_1A5F0",
+      "rename_to": "_main",
+      "role": "first overlay thunk",
+      "case_variants": [
+        "FUN_1A5F0",
+        "fun_1a5f0"
+      ]
+    }
+  ],
+  "DAT_renames": [
+    {
+      "original": "DAT_18E",
+      "rename_to": "g_terrain_display_mode",
+      "role": "auto-forest function",
+      "case_variants": [
+        "DAT_18E",
+        "dat_18e"
+      ]
+    },
+    {
+      "original": "DAT_28EE",
+      "rename_to": "g_rand_seed_low",
+      "role": "RNG seed low word",
+      "case_variants": [
+        "DAT_28EE",
+        "dat_28ee"
+      ]
+    },
+    {
+      "original": "DAT_28F0",
+      "rename_to": "g_rand_seed_high",
+      "role": "RNG seed high word",
+      "case_variants": [
+        "DAT_28F0",
+        "dat_28f0"
+      ]
+    },
+    {
+      "original": "DAT_372",
+      "rename_to": "g_score_accumulator",
+      "role": "from func_03A9C0",
+      "case_variants": [
+        "DAT_372",
+        "dat_372"
+      ]
+    },
+    {
+      "original": "DAT_5382",
+      "rename_to": "g_game_flags",
+      "role": "bit 0 = endgame",
+      "case_variants": [
+        "DAT_5382",
+        "dat_5382"
+      ]
+    },
+    {
+      "original": "DAT_538A",
+      "rename_to": "g_turn_alt_counter",
+      "role": "alt turn counter",
+      "case_variants": [
+        "DAT_538A",
+        "dat_538a"
+      ]
+    },
+    {
+      "original": "DAT_538E",
+      "rename_to": "g_turn_counter",
+      "role": "main turn counter",
+      "case_variants": [
+        "DAT_538E",
+        "dat_538e"
+      ]
+    },
+    {
+      "original": "DAT_5398",
+      "rename_to": "g_current_human_player",
+      "role": "self-marker",
+      "case_variants": [
+        "DAT_5398",
+        "dat_5398"
+      ]
+    },
+    {
+      "original": "DAT_53A6",
+      "rename_to": "g_difficulty_or_player",
+      "role": "0..4 difficulty / current player",
+      "case_variants": [
+        "DAT_53A6",
+        "dat_53a6"
+      ]
+    },
+    {
+      "original": "DAT_53D2",
+      "rename_to": "g_self_power",
+      "role": "SOL display",
+      "case_variants": [
+        "DAT_53D2",
+        "dat_53d2"
+      ]
+    },
+    {
+      "original": "DAT_84FC",
+      "rename_to": "g_king_record_ptr",
+      "role": "king/payer record",
+      "case_variants": [
+        "DAT_84FC",
+        "dat_84fc"
+      ]
+    },
+    {
+      "original": "DAT_8542",
+      "rename_to": "g_active_colony_ptr",
+      "role": "current colony",
+      "case_variants": [
+        "DAT_8542",
+        "dat_8542"
+      ]
+    },
+    {
+      "original": "DAT_853A",
+      "rename_to": "g_map_width",
+      "role": "",
+      "case_variants": [
+        "DAT_853A",
+        "dat_853a"
+      ]
+    },
+    {
+      "original": "DAT_853C",
+      "rename_to": "g_map_height",
+      "role": "",
+      "case_variants": [
+        "DAT_853C",
+        "dat_853c"
+      ]
+    },
+    {
+      "original": "DAT_8D4E",
+      "rename_to": "g_active_tribe_record_ptr",
+      "role": "set by set_active_tribe",
+      "case_variants": [
+        "DAT_8D4E",
+        "dat_8d4e"
+      ]
+    },
+    {
+      "original": "DAT_8D50",
+      "rename_to": "g_active_tribe_power_idx",
+      "role": "= tribe_idx + 4",
+      "case_variants": [
+        "DAT_8D50",
+        "dat_8d50"
+      ]
+    },
+    {
+      "original": "DAT_8D52",
+      "rename_to": "g_active_tribe_idx",
+      "role": "0..7",
+      "case_variants": [
+        "DAT_8D52",
+        "dat_8d52"
+      ]
+    },
+    {
+      "original": "DAT_3146",
+      "rename_to": "g_unit_table",
+      "role": "UnitRecord[N], stride 0x1C",
+      "case_variants": [
+        "DAT_3146",
+        "dat_3146"
+      ]
+    },
+    {
+      "original": "DAT_540E",
+      "rename_to": "g_aipersonality_table",
+      "role": "AIPersonality[N], stride 0x34",
+      "case_variants": [
+        "DAT_540E",
+        "dat_540e"
+      ]
+    },
+    {
+      "original": "DAT_5AD6",
+      "rename_to": "g_tribe_data_table",
+      "role": "TribeData[N], stride 78",
+      "case_variants": [
+        "DAT_5AD6",
+        "dat_5ad6"
+      ]
+    },
+    {
+      "original": "DAT_8809",
+      "rename_to": "g_powerrecord_table",
+      "role": "PowerRecord[N], stride 0x13C",
+      "case_variants": [
+        "DAT_8809",
+        "dat_8809"
+      ]
+    },
+    {
+      "original": "DAT_8904",
+      "rename_to": "g_market_state_table",
+      "role": "stride 79*4 = 316 bytes",
+      "case_variants": [
+        "DAT_8904",
+        "dat_8904"
+      ]
+    },
+    {
+      "original": "DAT_8CFC",
+      "rename_to": "g_per_power_unit_count",
+      "role": "byte per power",
+      "case_variants": [
+        "DAT_8CFC",
+        "dat_8cfc"
+      ]
+    },
+    {
+      "original": "DAT_9298",
+      "rename_to": "g_per_power_active_flag",
+      "role": "byte per power",
+      "case_variants": [
+        "DAT_9298",
+        "dat_9298"
+      ]
+    },
+    {
+      "original": "DAT_940C",
+      "rename_to": "g_per_power_stockpile",
+      "role": "byte per power",
+      "case_variants": [
+        "DAT_940C",
+        "dat_940c"
+      ]
+    },
+    {
+      "original": "DAT_941C",
+      "rename_to": "g_per_power_word_factor",
+      "role": "word table (SMITE)",
+      "case_variants": [
+        "DAT_941C",
+        "dat_941c"
+      ]
+    },
+    {
+      "original": "DAT_942C",
+      "rename_to": "g_per_power_byte_factor",
+      "role": "byte table (SMITE)",
+      "case_variants": [
+        "DAT_942C",
+        "dat_942c"
+      ]
+    }
+  ],
+  "LCALL_helpers": [
+    {
+      "original": "0x181F:0x07B4",
+      "rename_to": "power_attribute_bit"
+    },
+    {
+      "original": "0x181F:0x04D4",
+      "rename_to": "random_int"
+    },
+    {
+      "original": "0x181F:0x035C",
+      "rename_to": "clamp_value_lo_hi"
+    },
+    {
+      "original": "0x181F:0x04B6",
+      "rename_to": "output_flush_helper"
+    },
+    {
+      "original": "0x181F:0x048E",
+      "rename_to": "set_message_context"
+    },
+    {
+      "original": "0x181F:0x09A4",
+      "rename_to": "get_power_name_word"
+    },
+    {
+      "original": "0x181F:0x0808",
+      "rename_to": "decrement_power_unit_count"
+    },
+    {
+      "original": "0x181F:0x0A38",
+      "rename_to": "get_per_power_byte"
+    },
+    {
+      "original": "0xD1D:0x07E4",
+      "rename_to": "strcpy_near"
+    },
+    {
+      "original": "0xD1D:0x07A4",
+      "rename_to": "strcat_near"
+    },
+    {
+      "original": "0xD1D:0x0F60",
+      "rename_to": "_aFlmul"
+    },
+    {
+      "original": "0xD1D:0x0EC6",
+      "rename_to": "_aFldiv"
+    },
+    {
+      "original": "0xD1D:0x0E04",
+      "rename_to": "rand"
+    },
+    {
+      "original": "0xD1D:0x0DF2",
+      "rename_to": "srand"
+    }
+  ],
+  "metadata": {
+    "fun_count": 59,
+    "dat_count": 27,
+    "lcall_count": 14,
+    "source": "FUNCTION_INVENTORY.md + DATA_MODEL.md (BYTE_VERIFIED entries)"
+  }
+}

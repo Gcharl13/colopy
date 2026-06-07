@@ -1,0 +1,158 @@
+{
+  "source_exe": "C:\\Users\\gregc\\OneDrive\\Desktop\\COLOPY\\COLONIZE\\VICEROY.EXE",
+  "signatures": [
+    {
+      "name": "rand",
+      "source_offset": "0x0103d4",
+      "length": 40,
+      "desc": "MSC 6.0 LCG: seed*0x343FD + 0x269EC3",
+      "sha256": "25c4b09ceff7a7bdcf781772c682659a820a4506a459977e0e247d17ce434a0b",
+      "head_bytes_hex": "b8fd43ba03005250ff36f028ff36ee28",
+      "full_bytes_hex": "b8fd43ba03005250ff36f028ff36ee289a600f1d0d05c39e83d226a3ee288916f0288bc280e47fcb"
+    },
+    {
+      "name": "random_int",
+      "source_offset": "0x00c322",
+      "length": 63,
+      "desc": "random_int(lo, hi) \u2014 universal roll",
+      "sha256": "27e0efddf5797dca001dec8ed7b8a90a18ba77ffa2b61abae301ead0879fe1c1",
+      "head_bytes_hex": "c80400009a040e1d0d8bc88b46082b46",
+      "full_bytes_hex": "c80400009a040e1d0d8bc88b46082b460640f7e98ac48ae28ad6d0e61af6d1fad1d8d1fad1d8d1fad1d8d1fad1d8d1fad1d8d1fad1d8d1fad1d8034606c9cb"
+    },
+    {
+      "name": "__aFlmul",
+      "source_offset": "0x010530",
+      "length": 50,
+      "desc": "MSC 6.0 32x32 truncated multiply",
+      "sha256": "8c62adb4c675947443e01a6ed0c071c6226326bcf97f2e8dc07a2e3461f161d4",
+      "head_bytes_hex": "558bec8b46088b4e0c0bc88b4e0a7509",
+      "full_bytes_hex": "558bec8b46088b4e0c0bc88b4e0a75098b4606f7e15dca080053f7e18bd88b4606f7660c03d88b4606f7e103d35b5dca0800"
+    },
+    {
+      "name": "__aFldiv",
+      "source_offset": "0x010496",
+      "length": 152,
+      "desc": "MSC 6.0 32-bit signed long divide",
+      "sha256": "3e4f5175ecbc4c5e161e27845d36d55dd199b4921b0d2ac67e1eb4611057eb33",
+      "head_bytes_hex": "558bec57565333ff8b46080bc07d1147",
+      "full_bytes_hex": "558bec57565333ff8b46080bc07d11478b5606f7d8f7da1d00008946088956068b460c0bc07d11478b560af7d8f7da1d000089460c89560a0bc075158b4e0a8b460833d2f7f18bd88b4606f7f18bd3eb388bd88b4e0a8b56088b4606d1ebd1d9d1ead1d80bdb75f4f7f18bf0f7660c918b460af7e603d1720c3b5608770772063b460676014e33d2964f7507f7daf7d883da005b5e5f5dca"
+    },
+    {
+      "name": "strcpy_near",
+      "source_offset": "0x00fdb4",
+      "length": 28,
+      "desc": "MSC 6.0 strcpy",
+      "sha256": "f6fbb38bf38f3d50b0a25473180a2ed4f2c1f7389ec26c4c50595acd0bc3cc27",
+      "head_bytes_hex": "558bec8bd78bde8b76088bfe8cd88ec0",
+      "full_bytes_hex": "558bec8bd78bde8b76088bfe8cd88ec033c0b9fffff2aef7d18b7e06"
+    },
+    {
+      "name": "power_attribute_bit",
+      "source_offset": "0x00bc10",
+      "length": 61,
+      "desc": "PowerRecord bitfield bit-test",
+      "sha256": "7b4ddc8efcccf1c41174679eb70df0b44eaabcc1eb1415095b97e50d3bd4f66c",
+      "head_bytes_hex": "558bec56837e08007d06b801005ec9cb",
+      "full_bytes_hex": "558bec56837e08007d06b801005ec9cb837e06047c062bc05ec9cb906976063c018b5e08c1fb038a800f888a4e0880e107ba0100d3e222c22ae45ec9cb"
+    },
+    {
+      "name": "clamp_value_lo_hi",
+      "source_offset": "0x0048cc",
+      "length": 29,
+      "desc": "clamp(value, lo, hi)",
+      "sha256": "3a2f1a9aca064d0c3e54bc8155a9c05dfa0d98d083ad5e3b3dcdce5e33d59ae7",
+      "head_bytes_hex": "558bec8b56068b46083bc27d028bc28b",
+      "full_bytes_hex": "558bec8b56068b46083bc27d028bc28bd03b460a7e038b460a8bd0c9cb"
+    },
+    {
+      "name": "set_active_tribe",
+      "source_offset": "0x0081c6",
+      "length": 44,
+      "desc": "sets g_settlement_ptr_8D4E",
+      "sha256": "4625d4384f9a0ab5fc4d80cbbd2c06ff75cf7ba950cbb724878032191cc3f92d",
+      "head_bytes_hex": "558bec8b4606a3528d0bc07c053d0800",
+      "full_bytes_hex": "558bec8b4606a3528d0bc07c053d08007c05c7460600008b4606050400a3508d6b46064e05d65aa34e8dc9cb"
+    },
+    {
+      "name": "output_flush_helper",
+      "source_offset": "0x00513c",
+      "length": 26,
+      "desc": "conditional message flush",
+      "sha256": "defbf1a1c087dfcc74712350d257d57cf33bc0656c7275c6f9397b8e459085fc",
+      "head_bytes_hex": "558bec833ea000007410833ea2000075",
+      "full_bytes_hex": "558bec833ea000007410833ea200007509ff76060ee8b4ffc9cb"
+    },
+    {
+      "name": "set_message_context",
+      "source_offset": "0x0050bc",
+      "length": 47,
+      "desc": "set_message_context(code)",
+      "sha256": "9003efd5307c8f2985bf3c52db78c7d744e4d4cbacddcc2edaf833630c6c906c",
+      "head_bytes_hex": "558beca1960039460674268b4606a394",
+      "full_bytes_hex": "558beca1960039460674268b4606a39400833ea00000740d833ea200007506c7069e0001000bc07c08b801009a0e00"
+    },
+    {
+      "name": "get_power_name_word",
+      "source_offset": "0x008110",
+      "length": 30,
+      "desc": "EU vs native power-name lookup",
+      "sha256": "aa539b4a0d0b859c972afe011f47f2f761db0e45cf46a681e73a134fbc37bb37",
+      "head_bytes_hex": "558bec837e06047c118b5e068bc3d1e3",
+      "full_bytes_hex": "558bec837e06047c118b5e068bc3d1e303d8d1e38b87fc8cc9cbf6068253"
+    },
+    {
+      "name": "decrement_power_unit_count",
+      "source_offset": "0x006e94",
+      "length": 60,
+      "desc": "destroy_unit + dec count",
+      "sha256": "de4ed0842e2877db029d2ed7bf84272c4b038d9707ab582b720e3e378e0a7bca",
+      "head_bytes_hex": "c808000057568b7e060bff7d03e9b200",
+      "full_bytes_hex": "c808000057568b7e060bff7d03e9b2006bdf1c895ef88a9f473183e30f7c1083fb047d0b80bffc8c007404fe8ffc8c83fb047c178b5ef880bf4a3100"
+    },
+    {
+      "name": "get_per_power_byte",
+      "source_offset": "0x007f34",
+      "length": 44,
+      "desc": "universal EU/native byte accessor",
+      "sha256": "ea4a6a1b1bbe7a4ab3a1b109c9292829abbb6c33923d366b630a1a94c50e2844",
+      "head_bytes_hex": "c802000056837e06047c116b76064e8b",
+      "full_bytes_hex": "c802000056837e06047c116b76064e8b5e088a80d8592ae45ec9cb906976063c018b5e088a803c882ae45ec9"
+    },
+    {
+      "name": "terrain_normalize",
+      "source_offset": "0x006204",
+      "length": 46,
+      "desc": "auto-forest mapping",
+      "sha256": "8be63f1b45880f8ac16fd1ab3d40e2b614898878a3ba314c38de6c35f5149d92",
+      "head_bytes_hex": "558bec8a4606241f2ae4894606a18e01",
+      "full_bytes_hex": "558bec8a4606241f2ae4894606a18e01eb2c837e06187d2d837e06087c278a46062507000c088946068a4606c9cb"
+    },
+    {
+      "name": "is_arg2_negative",
+      "source_offset": "0x00bc10",
+      "length": 16,
+      "desc": "(part of power_attribute_bit early exit)",
+      "sha256": "5c925e606e6c664d93bf77a03e54bbbd3c9cd531bb015d59c7464e9678251d6a",
+      "head_bytes_hex": "558bec56837e08007d06b801005ec9cb",
+      "full_bytes_hex": "558bec56837e08007d06b801005ec9cb"
+    },
+    {
+      "name": "srand",
+      "source_offset": "0x0103c2",
+      "length": 17,
+      "desc": "MSC 6.0 srand",
+      "sha256": "0e33235c5bb73709776eb2a938b1bfff954070abe0f7dc2212893910a17fc733",
+      "head_bytes_hex": "558bec8b4606a3ee28c706f02800005d",
+      "full_bytes_hex": "558bec8b4606a3ee28c706f02800005dcb"
+    },
+    {
+      "name": "strcat_near",
+      "source_offset": "0x00fd74",
+      "length": 64,
+      "desc": "MSC 6.0 strcat (size estimated)",
+      "sha256": "2d9c532ff8121876ecc5ebf6ed034c2cc6de34a1c51b29e598ca77ca3491b907",
+      "head_bytes_hex": "558bec8bd78bde8cd88ec08b7e0633c0",
+      "full_bytes_hex": "558bec8bd78bde8cd88ec08b7e0633c0b9fffff2ae8d75ff8b7e08b9fffff2aef7d12bf987fe8b4606f7c601007402a449d1e9f3a513c9f3a48bf38bfa5dcb00"
+    }
+  ]
+}

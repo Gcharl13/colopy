@@ -1,10 +1,20 @@
+# --- never commit verbatim executables/binaries ---
+# The DOS exes live ONLY as bin/*.b64 (transformed). reconstitute.py rebuilds the
+# real .EXE locally; those (and any other binary) must stay out of git.
+*.exe
+*.EXE
+*.dll
+*.com
+
 # generated graph + caches (regenerable)
 graphify-out/
 .dos_db.json
 .win_index.json
+
 # python
 __pycache__/
 *.pyc
+
 # os/editor cruft
 Thumbs.db
 .DS_Store

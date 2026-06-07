@@ -1,0 +1,6048 @@
+{
+  "_doc": "Re-segmented overlay function index for VICEROY.EXE. Each function decoded at its TRUE page code base (overlay_pages.json code_offset), NOT the old single flat blob base. Boundaries by MSC prologue (ENTER/push-bp) + terminal RET/RETF with mid-function-RETF guard. Produced by tools/resegment_overlay.py.",
+  "exe": "COLONIZE/VICEROY.EXE",
+  "generated_from": "reverse_engineered/code/VICEROY/overlay_pages.json",
+  "reloc_validation": {
+    "total_reloc_sites": 6507,
+    "matched_thunk_seg": 6492,
+    "match_pct": 99.8,
+    "thunk_segs": [
+      "0x181f",
+      "0x191f",
+      "0x1a1f",
+      "0xc0c",
+      "0xd1d"
+    ],
+    "nonmatch_sample": [
+      [
+        "0x05",
+        "0xc2e",
+        "0x0"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb9"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x0A",
+        "0x1b5a",
+        "0xb8"
+      ],
+      [
+        "0x12",
+        "0x1b22",
+        "0x9e"
+      ],
+      [
+        "0x12",
+        "0x1b22",
+        "0xba"
+      ],
+      [
+        "0x12",
+        "0x1b22",
+        "0xba"
+      ],
+      [
+        "0x12",
+        "0x1b22",
+        "0x68"
+      ],
+      [
+        "0x1C",
+        "0x1b5a",
+        "0xb8"
+      ]
+    ],
+    "nonmatch_count": 15
+  },
+  "summary": {
+    "total_functions": 629,
+    "valid_prologue": 626,
+    "valid_prologue_pct": 99.5,
+    "enter": 525,
+    "push_bp_mov_bp_sp": 95,
+    "no_frame_valid": 6,
+    "invalid_prologue": 3
+  },
+  "pages": {
+    "0x01": {
+      "file_offset": "0x020670",
+      "code_offset": "0x020EE0",
+      "code_end": "0x024BF0",
+      "nominal_end_resident": "0x024380",
+      "size_paragraphs": 977,
+      "reloc_count": 527,
+      "functions": 34
+    },
+    "0x02": {
+      "file_offset": "0x024BF0",
+      "code_offset": "0x025900",
+      "code_end": "0x02CB00",
+      "nominal_end_resident": "0x02BDF0",
+      "size_paragraphs": 1824,
+      "reloc_count": 826,
+      "functions": 67
+    },
+    "0x03": {
+      "file_offset": "0x02CB00",
+      "code_offset": "0x02CFD0",
+      "code_end": "0x02FAF0",
+      "nominal_end_resident": "0x02F620",
+      "size_paragraphs": 690,
+      "reloc_count": 296,
+      "functions": 15
+    },
+    "0x04": {
+      "file_offset": "0x02FAF0",
+      "code_offset": "0x030550",
+      "code_end": "0x036990",
+      "nominal_end_resident": "0x035F30",
+      "size_paragraphs": 1604,
+      "reloc_count": 652,
+      "functions": 57
+    },
+    "0x05": {
+      "file_offset": "0x036990",
+      "code_offset": "0x037340",
+      "code_end": "0x03B380",
+      "nominal_end_resident": "0x03A9D0",
+      "size_paragraphs": 1028,
+      "reloc_count": 608,
+      "functions": 21
+    },
+    "0x06": {
+      "file_offset": "0x03B380",
+      "code_offset": "0x03B900",
+      "code_end": "0x03EA60",
+      "nominal_end_resident": "0x03E4E0",
+      "size_paragraphs": 790,
+      "reloc_count": 340,
+      "functions": 32
+    },
+    "0x07": {
+      "file_offset": "0x03EA60",
+      "code_offset": "0x03ECF0",
+      "code_end": "0x0400F0",
+      "nominal_end_resident": "0x03FE60",
+      "size_paragraphs": 320,
+      "reloc_count": 152,
+      "functions": 5
+    },
+    "0x08": {
+      "file_offset": "0x0400F0",
+      "code_offset": "0x0404B0",
+      "code_end": "0x0428D0",
+      "nominal_end_resident": "0x042510",
+      "size_paragraphs": 578,
+      "reloc_count": 228,
+      "functions": 24
+    },
+    "0x09": {
+      "file_offset": "0x0428D0",
+      "code_offset": "0x042C50",
+      "code_end": "0x044400",
+      "nominal_end_resident": "0x044080",
+      "size_paragraphs": 379,
+      "reloc_count": 214,
+      "functions": 8
+    },
+    "0x0A": {
+      "file_offset": "0x044400",
+      "code_offset": "0x044540",
+      "code_end": "0x045C20",
+      "nominal_end_resident": "0x045AE0",
+      "size_paragraphs": 366,
+      "reloc_count": 70,
+      "functions": 24
+    },
+    "0x0B": {
+      "file_offset": "0x045C20",
+      "code_offset": "0x045D00",
+      "code_end": "0x046600",
+      "nominal_end_resident": "0x046520",
+      "size_paragraphs": 144,
+      "reloc_count": 43,
+      "functions": 7
+    },
+    "0x0C": {
+      "file_offset": "0x046600",
+      "code_offset": "0x046DE0",
+      "code_end": "0x04BA50",
+      "nominal_end_resident": "0x04B270",
+      "size_paragraphs": 1223,
+      "reloc_count": 492,
+      "functions": 19
+    },
+    "0x0D": {
+      "file_offset": "0x04BA50",
+      "code_offset": "0x04C1F0",
+      "code_end": "0x053540",
+      "nominal_end_resident": "0x052DA0",
+      "size_paragraphs": 1845,
+      "reloc_count": 477,
+      "functions": 28
+    },
+    "0x0E": {
+      "file_offset": "0x053540",
+      "code_offset": "0x053820",
+      "code_end": "0x0562B0",
+      "nominal_end_resident": "0x055FD0",
+      "size_paragraphs": 681,
+      "reloc_count": 171,
+      "functions": 6
+    },
+    "0x0F": {
+      "file_offset": "0x0562B0",
+      "code_offset": "0x056A10",
+      "code_end": "0x05A950",
+      "nominal_end_resident": "0x05A1F0",
+      "size_paragraphs": 1012,
+      "reloc_count": 461,
+      "functions": 14
+    },
+    "0x10": {
+      "file_offset": "0x05A950",
+      "code_offset": "0x05AF70",
+      "code_end": "0x05E740",
+      "nominal_end_resident": "0x05E120",
+      "size_paragraphs": 893,
+      "reloc_count": 382,
+      "functions": 9
+    },
+    "0x11": {
+      "file_offset": "0x05E740",
+      "code_offset": "0x05E9B0",
+      "code_end": "0x05FAD0",
+      "nominal_end_resident": "0x05F860",
+      "size_paragraphs": 274,
+      "reloc_count": 145,
+      "functions": 1
+    },
+    "0x12": {
+      "file_offset": "0x05FAD0",
+      "code_offset": "0x05FE60",
+      "code_end": "0x061CA0",
+      "nominal_end_resident": "0x061910",
+      "size_paragraphs": 484,
+      "reloc_count": 218,
+      "functions": 25
+    },
+    "0x13": {
+      "file_offset": "0x061CA0",
+      "code_offset": "0x061E10",
+      "code_end": "0x0633E0",
+      "nominal_end_resident": "0x063270",
+      "size_paragraphs": 349,
+      "reloc_count": 79,
+      "functions": 7
+    },
+    "0x14": {
+      "file_offset": "0x0633E0",
+      "code_offset": "0x063880",
+      "code_end": "0x066680",
+      "nominal_end_resident": "0x0661E0",
+      "size_paragraphs": 736,
+      "reloc_count": 285,
+      "functions": 13
+    },
+    "0x15": {
+      "file_offset": "0x066680",
+      "code_offset": "0x066850",
+      "code_end": "0x068980",
+      "nominal_end_resident": "0x0687B0",
+      "size_paragraphs": 531,
+      "reloc_count": 105,
+      "functions": 37
+    },
+    "0x16": {
+      "file_offset": "0x068980",
+      "code_offset": "0x068EE0",
+      "code_end": "0x06BB00",
+      "nominal_end_resident": "0x06B5A0",
+      "size_paragraphs": 706,
+      "reloc_count": 332,
+      "functions": 23
+    },
+    "0x17": {
+      "file_offset": "0x06BB00",
+      "code_offset": "0x06BE50",
+      "code_end": "0x06F850",
+      "nominal_end_resident": "0x06F500",
+      "size_paragraphs": 928,
+      "reloc_count": 201,
+      "functions": 57
+    },
+    "0x18": {
+      "file_offset": "0x06F850",
+      "code_offset": "0x06F8E0",
+      "code_end": "0x06FB40",
+      "nominal_end_resident": "0x06FAB0",
+      "size_paragraphs": 38,
+      "reloc_count": 24,
+      "functions": 4
+    },
+    "0x19": {
+      "file_offset": "0x06FB40",
+      "code_offset": "0x06FDF0",
+      "code_end": "0x071490",
+      "nominal_end_resident": "0x0711E0",
+      "size_paragraphs": 362,
+      "reloc_count": 162,
+      "functions": 21
+    },
+    "0x1A": {
+      "file_offset": "0x071490",
+      "code_offset": "0x072090",
+      "code_end": "0x0763D0",
+      "nominal_end_resident": "0x0757D0",
+      "size_paragraphs": 1076,
+      "reloc_count": 757,
+      "functions": 21
+    },
+    "0x1B": {
+      "file_offset": "0x0763D0",
+      "code_offset": "0x0764D0",
+      "code_end": "0x076D70",
+      "nominal_end_resident": "0x076C70",
+      "size_paragraphs": 138,
+      "reloc_count": 51,
+      "functions": 8
+    },
+    "0x1C": {
+      "file_offset": "0x076D70",
+      "code_offset": "0x076E50",
+      "code_end": "0x077880",
+      "nominal_end_resident": "0x0777A0",
+      "size_paragraphs": 163,
+      "reloc_count": 43,
+      "functions": 11
+    },
+    "0x1D": {
+      "file_offset": "0x077880",
+      "code_offset": "0x077990",
+      "code_end": "0x077E00",
+      "nominal_end_resident": "0x077CF0",
+      "size_paragraphs": 71,
+      "reloc_count": 58,
+      "functions": 5
+    },
+    "0x1E": {
+      "file_offset": "0x077E00",
+      "code_offset": "0x077ED0",
+      "code_end": "0x0785A0",
+      "nominal_end_resident": "0x0784D0",
+      "size_paragraphs": 109,
+      "reloc_count": 42,
+      "functions": 10
+    },
+    "0x1F": {
+      "file_offset": "0x0785A0",
+      "code_offset": "0x078640",
+      "code_end": "0x078D3E",
+      "nominal_end_resident": "0x078CA0",
+      "size_paragraphs": 112,
+      "reloc_count": 30,
+      "functions": 16
+    }
+  },
+  "functions": [
+    {
+      "file_offset": "0x020EE0",
+      "page_id": "0x01",
+      "size": 111,
+      "instructions": 35,
+      "prologue_type": "no-frame (first byte 0x1E)",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x020F50",
+      "page_id": "0x01",
+      "size": 1714,
+      "instructions": 586,
+      "prologue_type": "ENTER 0x002A,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x021602",
+      "page_id": "0x01",
+      "size": 92,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02165E",
+      "page_id": "0x01",
+      "size": 906,
+      "instructions": 293,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0219E8",
+      "page_id": "0x01",
+      "size": 44,
+      "instructions": 16,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x021A14",
+      "page_id": "0x01",
+      "size": 797,
+      "instructions": 247,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x021D32",
+      "page_id": "0x01",
+      "size": 320,
+      "instructions": 103,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x021E72",
+      "page_id": "0x01",
+      "size": 107,
+      "instructions": 39,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x021EDE",
+      "page_id": "0x01",
+      "size": 275,
+      "instructions": 91,
+      "prologue_type": "ENTER 0x005E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x021FF2",
+      "page_id": "0x01",
+      "size": 299,
+      "instructions": 100,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02211E",
+      "page_id": "0x01",
+      "size": 533,
+      "instructions": 178,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022334",
+      "page_id": "0x01",
+      "size": 526,
+      "instructions": 177,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022542",
+      "page_id": "0x01",
+      "size": 678,
+      "instructions": 240,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0227E8",
+      "page_id": "0x01",
+      "size": 73,
+      "instructions": 27,
+      "prologue_type": "ENTER 0x0044,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022832",
+      "page_id": "0x01",
+      "size": 75,
+      "instructions": 28,
+      "prologue_type": "ENTER 0x0028,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02287E",
+      "page_id": "0x01",
+      "size": 444,
+      "instructions": 150,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022A3A",
+      "page_id": "0x01",
+      "size": 673,
+      "instructions": 222,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022CDC",
+      "page_id": "0x01",
+      "size": 106,
+      "instructions": 40,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022D46",
+      "page_id": "0x01",
+      "size": 208,
+      "instructions": 66,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022E16",
+      "page_id": "0x01",
+      "size": 242,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x022F08",
+      "page_id": "0x01",
+      "size": 1084,
+      "instructions": 334,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x023344",
+      "page_id": "0x01",
+      "size": 551,
+      "instructions": 189,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02356C",
+      "page_id": "0x01",
+      "size": 105,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0235D6",
+      "page_id": "0x01",
+      "size": 2374,
+      "instructions": 818,
+      "prologue_type": "ENTER 0x001E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x023F1C",
+      "page_id": "0x01",
+      "size": 689,
+      "instructions": 246,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0241CE",
+      "page_id": "0x01",
+      "size": 86,
+      "instructions": 28,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x024224",
+      "page_id": "0x01",
+      "size": 138,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0242AE",
+      "page_id": "0x01",
+      "size": 116,
+      "instructions": 35,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x024322",
+      "page_id": "0x01",
+      "size": 32,
+      "instructions": 14,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x024342",
+      "page_id": "0x01",
+      "size": 643,
+      "instructions": 215,
+      "prologue_type": "ENTER 0x001E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0245C6",
+      "page_id": "0x01",
+      "size": 107,
+      "instructions": 40,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x024632",
+      "page_id": "0x01",
+      "size": 96,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x024692",
+      "page_id": "0x01",
+      "size": 80,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0246E2",
+      "page_id": "0x01",
+      "size": 1294,
+      "instructions": 388,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x025900",
+      "page_id": "0x02",
+      "size": 285,
+      "instructions": 106,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x025A1E",
+      "page_id": "0x02",
+      "size": 531,
+      "instructions": 188,
+      "prologue_type": "ENTER 0x0040,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x025C32",
+      "page_id": "0x02",
+      "size": 258,
+      "instructions": 94,
+      "prologue_type": "ENTER 0x00A4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x025D34",
+      "page_id": "0x02",
+      "size": 442,
+      "instructions": 156,
+      "prologue_type": "ENTER 0x0038,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x025EEE",
+      "page_id": "0x02",
+      "size": 308,
+      "instructions": 108,
+      "prologue_type": "ENTER 0x005E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026022",
+      "page_id": "0x02",
+      "size": 288,
+      "instructions": 102,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026142",
+      "page_id": "0x02",
+      "size": 507,
+      "instructions": 181,
+      "prologue_type": "ENTER 0x006E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02633E",
+      "page_id": "0x02",
+      "size": 54,
+      "instructions": 17,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026374",
+      "page_id": "0x02",
+      "size": 308,
+      "instructions": 104,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0264A8",
+      "page_id": "0x02",
+      "size": 1062,
+      "instructions": 363,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0268CE",
+      "page_id": "0x02",
+      "size": 483,
+      "instructions": 174,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026AB2",
+      "page_id": "0x02",
+      "size": 282,
+      "instructions": 100,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026BCC",
+      "page_id": "0x02",
+      "size": 246,
+      "instructions": 89,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026CC2",
+      "page_id": "0x02",
+      "size": 273,
+      "instructions": 94,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026DD4",
+      "page_id": "0x02",
+      "size": 541,
+      "instructions": 193,
+      "prologue_type": "ENTER 0x0062,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x026FF2",
+      "page_id": "0x02",
+      "size": 41,
+      "instructions": 14,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02701C",
+      "page_id": "0x02",
+      "size": 180,
+      "instructions": 68,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0270D0",
+      "page_id": "0x02",
+      "size": 1278,
+      "instructions": 432,
+      "prologue_type": "ENTER 0x007E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0275CE",
+      "page_id": "0x02",
+      "size": 376,
+      "instructions": 119,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027746",
+      "page_id": "0x02",
+      "size": 526,
+      "instructions": 176,
+      "prologue_type": "ENTER 0x0076,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027954",
+      "page_id": "0x02",
+      "size": 56,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02798C",
+      "page_id": "0x02",
+      "size": 334,
+      "instructions": 121,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027ADA",
+      "page_id": "0x02",
+      "size": 220,
+      "instructions": 81,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027BB6",
+      "page_id": "0x02",
+      "size": 461,
+      "instructions": 166,
+      "prologue_type": "ENTER 0x0074,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027D84",
+      "page_id": "0x02",
+      "size": 46,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x027DB2",
+      "page_id": "0x02",
+      "size": 921,
+      "instructions": 320,
+      "prologue_type": "ENTER 0x0074,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02814C",
+      "page_id": "0x02",
+      "size": 82,
+      "instructions": 38,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02819E",
+      "page_id": "0x02",
+      "size": 55,
+      "instructions": 19,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0281D6",
+      "page_id": "0x02",
+      "size": 598,
+      "instructions": 208,
+      "prologue_type": "ENTER 0x0080,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02842C",
+      "page_id": "0x02",
+      "size": 57,
+      "instructions": 26,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x028466",
+      "page_id": "0x02",
+      "size": 214,
+      "instructions": 76,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02853C",
+      "page_id": "0x02",
+      "size": 85,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x028592",
+      "page_id": "0x02",
+      "size": 512,
+      "instructions": 212,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x028792",
+      "page_id": "0x02",
+      "size": 32,
+      "instructions": 13,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0287B2",
+      "page_id": "0x02",
+      "size": 19,
+      "instructions": 8,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0287C6",
+      "page_id": "0x02",
+      "size": 35,
+      "instructions": 16,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0287EA",
+      "page_id": "0x02",
+      "size": 60,
+      "instructions": 25,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x028826",
+      "page_id": "0x02",
+      "size": 23,
+      "instructions": 9,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02883E",
+      "page_id": "0x02",
+      "size": 1357,
+      "instructions": 481,
+      "prologue_type": "ENTER 0x006A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x028D8C",
+      "page_id": "0x02",
+      "size": 3091,
+      "instructions": 989,
+      "prologue_type": "ENTER 0x0148,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0299A0",
+      "page_id": "0x02",
+      "size": 287,
+      "instructions": 108,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029AC0",
+      "page_id": "0x02",
+      "size": 196,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029B84",
+      "page_id": "0x02",
+      "size": 57,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029BBE",
+      "page_id": "0x02",
+      "size": 82,
+      "instructions": 25,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029C10",
+      "page_id": "0x02",
+      "size": 275,
+      "instructions": 96,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029D24",
+      "page_id": "0x02",
+      "size": 176,
+      "instructions": 60,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x029DD4",
+      "page_id": "0x02",
+      "size": 744,
+      "instructions": 275,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02A0BC",
+      "page_id": "0x02",
+      "size": 607,
+      "instructions": 230,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02A31C",
+      "page_id": "0x02",
+      "size": 325,
+      "instructions": 122,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02A462",
+      "page_id": "0x02",
+      "size": 579,
+      "instructions": 206,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02A6A6",
+      "page_id": "0x02",
+      "size": 582,
+      "instructions": 206,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02A8EC",
+      "page_id": "0x02",
+      "size": 512,
+      "instructions": 180,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02AAEC",
+      "page_id": "0x02",
+      "size": 674,
+      "instructions": 244,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02AD8E",
+      "page_id": "0x02",
+      "size": 331,
+      "instructions": 118,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02AEDA",
+      "page_id": "0x02",
+      "size": 243,
+      "instructions": 90,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02AFCE",
+      "page_id": "0x02",
+      "size": 119,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B046",
+      "page_id": "0x02",
+      "size": 602,
+      "instructions": 213,
+      "prologue_type": "ENTER 0x0060,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B2A0",
+      "page_id": "0x02",
+      "size": 199,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B368",
+      "page_id": "0x02",
+      "size": 361,
+      "instructions": 126,
+      "prologue_type": "ENTER 0x005A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B4D2",
+      "page_id": "0x02",
+      "size": 625,
+      "instructions": 213,
+      "prologue_type": "ENTER 0x001E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B744",
+      "page_id": "0x02",
+      "size": 386,
+      "instructions": 140,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B8C6",
+      "page_id": "0x02",
+      "size": 277,
+      "instructions": 115,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02B9DC",
+      "page_id": "0x02",
+      "size": 429,
+      "instructions": 158,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02BB8A",
+      "page_id": "0x02",
+      "size": 232,
+      "instructions": 100,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02BC72",
+      "page_id": "0x02",
+      "size": 2259,
+      "instructions": 848,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02C546",
+      "page_id": "0x02",
+      "size": 141,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x02C5D4",
+      "page_id": "0x02",
+      "size": 1318,
+      "instructions": 373,
+      "prologue_type": "ENTER 0x001A,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x02CFD0",
+      "page_id": "0x03",
+      "size": 274,
+      "instructions": 91,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02D0E4",
+      "page_id": "0x03",
+      "size": 549,
+      "instructions": 200,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02D30A",
+      "page_id": "0x03",
+      "size": 188,
+      "instructions": 71,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02D3C6",
+      "page_id": "0x03",
+      "size": 575,
+      "instructions": 197,
+      "prologue_type": "ENTER 0x001A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02D606",
+      "page_id": "0x03",
+      "size": 81,
+      "instructions": 27,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02D658",
+      "page_id": "0x03",
+      "size": 5220,
+      "instructions": 1789,
+      "prologue_type": "ENTER 0x012C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EABC",
+      "page_id": "0x03",
+      "size": 46,
+      "instructions": 14,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EAEA",
+      "page_id": "0x03",
+      "size": 49,
+      "instructions": 15,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EB1C",
+      "page_id": "0x03",
+      "size": 42,
+      "instructions": 16,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EB46",
+      "page_id": "0x03",
+      "size": 49,
+      "instructions": 22,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EB78",
+      "page_id": "0x03",
+      "size": 699,
+      "instructions": 221,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02EE34",
+      "page_id": "0x03",
+      "size": 304,
+      "instructions": 104,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x02EF64",
+      "page_id": "0x03",
+      "size": 236,
+      "instructions": 77,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02F052",
+      "page_id": "0x03",
+      "size": 847,
+      "instructions": 285,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x02F3A2",
+      "page_id": "0x03",
+      "size": 1869,
+      "instructions": 627,
+      "prologue_type": "ENTER 0x0078,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x030550",
+      "page_id": "0x04",
+      "size": 21,
+      "instructions": 9,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030566",
+      "page_id": "0x04",
+      "size": 42,
+      "instructions": 19,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030590",
+      "page_id": "0x04",
+      "size": 24,
+      "instructions": 12,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0305A8",
+      "page_id": "0x04",
+      "size": 1424,
+      "instructions": 524,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030B38",
+      "page_id": "0x04",
+      "size": 20,
+      "instructions": 9,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030B4C",
+      "page_id": "0x04",
+      "size": 105,
+      "instructions": 40,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x030BB6",
+      "page_id": "0x04",
+      "size": 94,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030C14",
+      "page_id": "0x04",
+      "size": 83,
+      "instructions": 28,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030C68",
+      "page_id": "0x04",
+      "size": 174,
+      "instructions": 54,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030D16",
+      "page_id": "0x04",
+      "size": 111,
+      "instructions": 37,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030D86",
+      "page_id": "0x04",
+      "size": 110,
+      "instructions": 36,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030DF4",
+      "page_id": "0x04",
+      "size": 385,
+      "instructions": 139,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x030F76",
+      "page_id": "0x04",
+      "size": 318,
+      "instructions": 112,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0310B4",
+      "page_id": "0x04",
+      "size": 483,
+      "instructions": 171,
+      "prologue_type": "ENTER 0x0074,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x031298",
+      "page_id": "0x04",
+      "size": 206,
+      "instructions": 84,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031366",
+      "page_id": "0x04",
+      "size": 327,
+      "instructions": 120,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0314AE",
+      "page_id": "0x04",
+      "size": 46,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0314DC",
+      "page_id": "0x04",
+      "size": 752,
+      "instructions": 271,
+      "prologue_type": "ENTER 0x0068,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0317CC",
+      "page_id": "0x04",
+      "size": 261,
+      "instructions": 98,
+      "prologue_type": "ENTER 0x0056,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0318D2",
+      "page_id": "0x04",
+      "size": 211,
+      "instructions": 81,
+      "prologue_type": "ENTER 0x0056,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0319A6",
+      "page_id": "0x04",
+      "size": 21,
+      "instructions": 11,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0319BC",
+      "page_id": "0x04",
+      "size": 117,
+      "instructions": 49,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031A32",
+      "page_id": "0x04",
+      "size": 199,
+      "instructions": 70,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031AFA",
+      "page_id": "0x04",
+      "size": 182,
+      "instructions": 60,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031BB0",
+      "page_id": "0x04",
+      "size": 54,
+      "instructions": 20,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x031BE6",
+      "page_id": "0x04",
+      "size": 481,
+      "instructions": 164,
+      "prologue_type": "ENTER 0x00B6,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x031DC8",
+      "page_id": "0x04",
+      "size": 351,
+      "instructions": 138,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031F28",
+      "page_id": "0x04",
+      "size": 32,
+      "instructions": 13,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031F48",
+      "page_id": "0x04",
+      "size": 19,
+      "instructions": 8,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031F5C",
+      "page_id": "0x04",
+      "size": 35,
+      "instructions": 16,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x031F80",
+      "page_id": "0x04",
+      "size": 137,
+      "instructions": 49,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03200A",
+      "page_id": "0x04",
+      "size": 227,
+      "instructions": 89,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0320EE",
+      "page_id": "0x04",
+      "size": 51,
+      "instructions": 16,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032122",
+      "page_id": "0x04",
+      "size": 146,
+      "instructions": 56,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0321B4",
+      "page_id": "0x04",
+      "size": 72,
+      "instructions": 24,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0321FC",
+      "page_id": "0x04",
+      "size": 102,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032262",
+      "page_id": "0x04",
+      "size": 22,
+      "instructions": 10,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032278",
+      "page_id": "0x04",
+      "size": 27,
+      "instructions": 13,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032294",
+      "page_id": "0x04",
+      "size": 59,
+      "instructions": 22,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0322D0",
+      "page_id": "0x04",
+      "size": 121,
+      "instructions": 43,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03234A",
+      "page_id": "0x04",
+      "size": 194,
+      "instructions": 78,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03240C",
+      "page_id": "0x04",
+      "size": 80,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03245C",
+      "page_id": "0x04",
+      "size": 150,
+      "instructions": 57,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0324F2",
+      "page_id": "0x04",
+      "size": 1057,
+      "instructions": 384,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032914",
+      "page_id": "0x04",
+      "size": 1175,
+      "instructions": 423,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032DAC",
+      "page_id": "0x04",
+      "size": 566,
+      "instructions": 197,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x032FE2",
+      "page_id": "0x04",
+      "size": 364,
+      "instructions": 116,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03314E",
+      "page_id": "0x04",
+      "size": 511,
+      "instructions": 185,
+      "prologue_type": "ENTER 0x0060,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03334E",
+      "page_id": "0x04",
+      "size": 221,
+      "instructions": 78,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03342C",
+      "page_id": "0x04",
+      "size": 462,
+      "instructions": 175,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0335FA",
+      "page_id": "0x04",
+      "size": 283,
+      "instructions": 109,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x033716",
+      "page_id": "0x04",
+      "size": 97,
+      "instructions": 41,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x033778",
+      "page_id": "0x04",
+      "size": 730,
+      "instructions": 263,
+      "prologue_type": "ENTER 0x0022,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x033A52",
+      "page_id": "0x04",
+      "size": 402,
+      "instructions": 152,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x033BE4",
+      "page_id": "0x04",
+      "size": 178,
+      "instructions": 64,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x033C96",
+      "page_id": "0x04",
+      "size": 724,
+      "instructions": 249,
+      "prologue_type": "ENTER 0x006C,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x033F6A",
+      "page_id": "0x04",
+      "size": 10788,
+      "instructions": 0,
+      "prologue_type": "no-frame (first byte 0x8E)",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x037340",
+      "page_id": "0x05",
+      "size": 137,
+      "instructions": 47,
+      "prologue_type": "ENTER 0x0352,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0373CA",
+      "page_id": "0x05",
+      "size": 128,
+      "instructions": 43,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03744A",
+      "page_id": "0x05",
+      "size": 1294,
+      "instructions": 469,
+      "prologue_type": "ENTER 0x006E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x037958",
+      "page_id": "0x05",
+      "size": 184,
+      "instructions": 67,
+      "prologue_type": "ENTER 0x002C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x037A10",
+      "page_id": "0x05",
+      "size": 1646,
+      "instructions": 555,
+      "prologue_type": "ENTER 0x006E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03807E",
+      "page_id": "0x05",
+      "size": 921,
+      "instructions": 327,
+      "prologue_type": "ENTER 0x00CE,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038418",
+      "page_id": "0x05",
+      "size": 864,
+      "instructions": 271,
+      "prologue_type": "ENTER 0x0120,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038778",
+      "page_id": "0x05",
+      "size": 280,
+      "instructions": 88,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038890",
+      "page_id": "0x05",
+      "size": 447,
+      "instructions": 156,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038A50",
+      "page_id": "0x05",
+      "size": 1155,
+      "instructions": 396,
+      "prologue_type": "ENTER 0x008C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038ED4",
+      "page_id": "0x05",
+      "size": 87,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x038F2C",
+      "page_id": "0x05",
+      "size": 659,
+      "instructions": 228,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0391C0",
+      "page_id": "0x05",
+      "size": 87,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x039218",
+      "page_id": "0x05",
+      "size": 475,
+      "instructions": 166,
+      "prologue_type": "ENTER 0x0068,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0393F4",
+      "page_id": "0x05",
+      "size": 344,
+      "instructions": 116,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03954C",
+      "page_id": "0x05",
+      "size": 827,
+      "instructions": 294,
+      "prologue_type": "ENTER 0x006A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x039888",
+      "page_id": "0x05",
+      "size": 1551,
+      "instructions": 530,
+      "prologue_type": "ENTER 0x0072,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x039E98",
+      "page_id": "0x05",
+      "size": 73,
+      "instructions": 22,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x039EE2",
+      "page_id": "0x05",
+      "size": 2781,
+      "instructions": 960,
+      "prologue_type": "ENTER 0x007E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03A9C0",
+      "page_id": "0x05",
+      "size": 2360,
+      "instructions": 748,
+      "prologue_type": "ENTER 0x03C4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03B2F8",
+      "page_id": "0x05",
+      "size": 134,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x002C,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x03B900",
+      "page_id": "0x06",
+      "size": 59,
+      "instructions": 24,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03B93C",
+      "page_id": "0x06",
+      "size": 29,
+      "instructions": 14,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03B95A",
+      "page_id": "0x06",
+      "size": 38,
+      "instructions": 11,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03B980",
+      "page_id": "0x06",
+      "size": 96,
+      "instructions": 39,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03B9E0",
+      "page_id": "0x06",
+      "size": 69,
+      "instructions": 26,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BA26",
+      "page_id": "0x06",
+      "size": 52,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BA5A",
+      "page_id": "0x06",
+      "size": 76,
+      "instructions": 27,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BAA6",
+      "page_id": "0x06",
+      "size": 163,
+      "instructions": 56,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BB4A",
+      "page_id": "0x06",
+      "size": 247,
+      "instructions": 83,
+      "prologue_type": "ENTER 0x0300,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BC42",
+      "page_id": "0x06",
+      "size": 911,
+      "instructions": 297,
+      "prologue_type": "ENTER 0x0060,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03BFD2",
+      "page_id": "0x06",
+      "size": 688,
+      "instructions": 238,
+      "prologue_type": "ENTER 0x0074,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C282",
+      "page_id": "0x06",
+      "size": 160,
+      "instructions": 56,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C322",
+      "page_id": "0x06",
+      "size": 258,
+      "instructions": 84,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x03C424",
+      "page_id": "0x06",
+      "size": 126,
+      "instructions": 51,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C4A2",
+      "page_id": "0x06",
+      "size": 134,
+      "instructions": 53,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C528",
+      "page_id": "0x06",
+      "size": 128,
+      "instructions": 41,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C5A8",
+      "page_id": "0x06",
+      "size": 143,
+      "instructions": 53,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C638",
+      "page_id": "0x06",
+      "size": 762,
+      "instructions": 265,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03C932",
+      "page_id": "0x06",
+      "size": 247,
+      "instructions": 89,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03CA2A",
+      "page_id": "0x06",
+      "size": 155,
+      "instructions": 57,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03CAC6",
+      "page_id": "0x06",
+      "size": 732,
+      "instructions": 267,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03CDA2",
+      "page_id": "0x06",
+      "size": 1902,
+      "instructions": 662,
+      "prologue_type": "ENTER 0x0082,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03D510",
+      "page_id": "0x06",
+      "size": 1080,
+      "instructions": 374,
+      "prologue_type": "ENTER 0x0056,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03D948",
+      "page_id": "0x06",
+      "size": 225,
+      "instructions": 73,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03DA2A",
+      "page_id": "0x06",
+      "size": 1051,
+      "instructions": 324,
+      "prologue_type": "ENTER 0x051E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03DE46",
+      "page_id": "0x06",
+      "size": 795,
+      "instructions": 286,
+      "prologue_type": "ENTER 0x0324,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E162",
+      "page_id": "0x06",
+      "size": 391,
+      "instructions": 136,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E2EA",
+      "page_id": "0x06",
+      "size": 343,
+      "instructions": 126,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E442",
+      "page_id": "0x06",
+      "size": 546,
+      "instructions": 198,
+      "prologue_type": "ENTER 0x005A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E664",
+      "page_id": "0x06",
+      "size": 479,
+      "instructions": 168,
+      "prologue_type": "ENTER 0x0056,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E844",
+      "page_id": "0x06",
+      "size": 319,
+      "instructions": 116,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03E984",
+      "page_id": "0x06",
+      "size": 210,
+      "instructions": 63,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x03ECF0",
+      "page_id": "0x07",
+      "size": 3101,
+      "instructions": 991,
+      "prologue_type": "ENTER 0x0040,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03F90E",
+      "page_id": "0x07",
+      "size": 398,
+      "instructions": 150,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03FA9C",
+      "page_id": "0x07",
+      "size": 834,
+      "instructions": 280,
+      "prologue_type": "ENTER 0x001C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x03FDDE",
+      "page_id": "0x07",
+      "size": 366,
+      "instructions": 135,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x03FF4C",
+      "page_id": "0x07",
+      "size": 419,
+      "instructions": 0,
+      "prologue_type": "UNRECOGNISED (0xF0)",
+      "prologue_valid": false,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x0404B0",
+      "page_id": "0x08",
+      "size": 201,
+      "instructions": 74,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04057A",
+      "page_id": "0x08",
+      "size": 141,
+      "instructions": 53,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x040608",
+      "page_id": "0x08",
+      "size": 78,
+      "instructions": 26,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x040656",
+      "page_id": "0x08",
+      "size": 896,
+      "instructions": 308,
+      "prologue_type": "ENTER 0x002A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0409D6",
+      "page_id": "0x08",
+      "size": 584,
+      "instructions": 197,
+      "prologue_type": "ENTER 0x001C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x040C1E",
+      "page_id": "0x08",
+      "size": 515,
+      "instructions": 163,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x040E22",
+      "page_id": "0x08",
+      "size": 436,
+      "instructions": 140,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x040FD6",
+      "page_id": "0x08",
+      "size": 70,
+      "instructions": 24,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04101C",
+      "page_id": "0x08",
+      "size": 23,
+      "instructions": 7,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041034",
+      "page_id": "0x08",
+      "size": 76,
+      "instructions": 25,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041080",
+      "page_id": "0x08",
+      "size": 912,
+      "instructions": 314,
+      "prologue_type": "ENTER 0x0042,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041410",
+      "page_id": "0x08",
+      "size": 579,
+      "instructions": 202,
+      "prologue_type": "ENTER 0x0022,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041654",
+      "page_id": "0x08",
+      "size": 598,
+      "instructions": 200,
+      "prologue_type": "ENTER 0x003E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0418AA",
+      "page_id": "0x08",
+      "size": 227,
+      "instructions": 70,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04198E",
+      "page_id": "0x08",
+      "size": 487,
+      "instructions": 162,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041B76",
+      "page_id": "0x08",
+      "size": 137,
+      "instructions": 45,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041C00",
+      "page_id": "0x08",
+      "size": 100,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041C64",
+      "page_id": "0x08",
+      "size": 89,
+      "instructions": 29,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041CBE",
+      "page_id": "0x08",
+      "size": 448,
+      "instructions": 158,
+      "prologue_type": "ENTER 0x001A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041E7E",
+      "page_id": "0x08",
+      "size": 108,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x041EEA",
+      "page_id": "0x08",
+      "size": 589,
+      "instructions": 201,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x042138",
+      "page_id": "0x08",
+      "size": 1518,
+      "instructions": 507,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042726",
+      "page_id": "0x08",
+      "size": 176,
+      "instructions": 60,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0427D6",
+      "page_id": "0x08",
+      "size": 239,
+      "instructions": 82,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042C50",
+      "page_id": "0x09",
+      "size": 155,
+      "instructions": 50,
+      "prologue_type": "no-frame (first byte 0x83)",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042CEC",
+      "page_id": "0x09",
+      "size": 89,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042D46",
+      "page_id": "0x09",
+      "size": 95,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042DA6",
+      "page_id": "0x09",
+      "size": 83,
+      "instructions": 29,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042DFA",
+      "page_id": "0x09",
+      "size": 293,
+      "instructions": 102,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042F20",
+      "page_id": "0x09",
+      "size": 182,
+      "instructions": 65,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x042FD6",
+      "page_id": "0x09",
+      "size": 157,
+      "instructions": 52,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x043074",
+      "page_id": "0x09",
+      "size": 4990,
+      "instructions": 1678,
+      "prologue_type": "ENTER 0x00C0,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x044540",
+      "page_id": "0x0A",
+      "size": 21,
+      "instructions": 11,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x044556",
+      "page_id": "0x0A",
+      "size": 52,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04458A",
+      "page_id": "0x0A",
+      "size": 99,
+      "instructions": 37,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x0445EE",
+      "page_id": "0x0A",
+      "size": 86,
+      "instructions": 35,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044644",
+      "page_id": "0x0A",
+      "size": 313,
+      "instructions": 106,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04477E",
+      "page_id": "0x0A",
+      "size": 183,
+      "instructions": 71,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044836",
+      "page_id": "0x0A",
+      "size": 328,
+      "instructions": 117,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04497E",
+      "page_id": "0x0A",
+      "size": 69,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0449C4",
+      "page_id": "0x0A",
+      "size": 149,
+      "instructions": 58,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044A5A",
+      "page_id": "0x0A",
+      "size": 56,
+      "instructions": 24,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044A92",
+      "page_id": "0x0A",
+      "size": 47,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044AC2",
+      "page_id": "0x0A",
+      "size": 68,
+      "instructions": 28,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044B06",
+      "page_id": "0x0A",
+      "size": 47,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044B36",
+      "page_id": "0x0A",
+      "size": 68,
+      "instructions": 28,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044B7A",
+      "page_id": "0x0A",
+      "size": 411,
+      "instructions": 146,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044D16",
+      "page_id": "0x0A",
+      "size": 357,
+      "instructions": 137,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044E7C",
+      "page_id": "0x0A",
+      "size": 296,
+      "instructions": 107,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x044FA4",
+      "page_id": "0x0A",
+      "size": 278,
+      "instructions": 109,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0450BA",
+      "page_id": "0x0A",
+      "size": 537,
+      "instructions": 197,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0452D4",
+      "page_id": "0x0A",
+      "size": 1559,
+      "instructions": 519,
+      "prologue_type": "ENTER 0x003C,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0458EC",
+      "page_id": "0x0A",
+      "size": 158,
+      "instructions": 64,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x04598A",
+      "page_id": "0x0A",
+      "size": 147,
+      "instructions": 57,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x045A1E",
+      "page_id": "0x0A",
+      "size": 198,
+      "instructions": 75,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x045AE4",
+      "page_id": "0x0A",
+      "size": 310,
+      "instructions": 114,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x045D00",
+      "page_id": "0x0B",
+      "size": 145,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x045D92",
+      "page_id": "0x0B",
+      "size": 95,
+      "instructions": 35,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x045DF2",
+      "page_id": "0x0B",
+      "size": 529,
+      "instructions": 193,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046004",
+      "page_id": "0x0B",
+      "size": 81,
+      "instructions": 27,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046056",
+      "page_id": "0x0B",
+      "size": 162,
+      "instructions": 55,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0460F8",
+      "page_id": "0x0B",
+      "size": 969,
+      "instructions": 344,
+      "prologue_type": "ENTER 0x0048,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0464C2",
+      "page_id": "0x0B",
+      "size": 305,
+      "instructions": 104,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x046DE0",
+      "page_id": "0x0C",
+      "size": 56,
+      "instructions": 22,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046E18",
+      "page_id": "0x0C",
+      "size": 167,
+      "instructions": 52,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046EC0",
+      "page_id": "0x0C",
+      "size": 258,
+      "instructions": 95,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046FC2",
+      "page_id": "0x0C",
+      "size": 56,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x046FFA",
+      "page_id": "0x0C",
+      "size": 4835,
+      "instructions": 1599,
+      "prologue_type": "ENTER 0x00A2,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0482DE",
+      "page_id": "0x0C",
+      "size": 48,
+      "instructions": 20,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04830E",
+      "page_id": "0x0C",
+      "size": 743,
+      "instructions": 259,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0485F6",
+      "page_id": "0x0C",
+      "size": 804,
+      "instructions": 267,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04891A",
+      "page_id": "0x0C",
+      "size": 287,
+      "instructions": 99,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x048A3A",
+      "page_id": "0x0C",
+      "size": 617,
+      "instructions": 213,
+      "prologue_type": "ENTER 0x0038,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x048CA4",
+      "page_id": "0x0C",
+      "size": 656,
+      "instructions": 223,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x048F34",
+      "page_id": "0x0C",
+      "size": 1740,
+      "instructions": 624,
+      "prologue_type": "ENTER 0x00A4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x049600",
+      "page_id": "0x0C",
+      "size": 3451,
+      "instructions": 1138,
+      "prologue_type": "ENTER 0x00D8,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04A37C",
+      "page_id": "0x0C",
+      "size": 170,
+      "instructions": 58,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04A426",
+      "page_id": "0x0C",
+      "size": 931,
+      "instructions": 318,
+      "prologue_type": "ENTER 0x0036,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04A7CA",
+      "page_id": "0x0C",
+      "size": 1077,
+      "instructions": 361,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04AC00",
+      "page_id": "0x0C",
+      "size": 861,
+      "instructions": 289,
+      "prologue_type": "ENTER 0x002A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04AF5E",
+      "page_id": "0x0C",
+      "size": 937,
+      "instructions": 319,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04B308",
+      "page_id": "0x0C",
+      "size": 1861,
+      "instructions": 635,
+      "prologue_type": "ENTER 0x00BA,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x04C1F0",
+      "page_id": "0x0D",
+      "size": 27,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C20C",
+      "page_id": "0x0D",
+      "size": 86,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C262",
+      "page_id": "0x0D",
+      "size": 53,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C298",
+      "page_id": "0x0D",
+      "size": 53,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C2CE",
+      "page_id": "0x0D",
+      "size": 55,
+      "instructions": 26,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C306",
+      "page_id": "0x0D",
+      "size": 84,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C35A",
+      "page_id": "0x0D",
+      "size": 169,
+      "instructions": 59,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C404",
+      "page_id": "0x0D",
+      "size": 169,
+      "instructions": 59,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C4AE",
+      "page_id": "0x0D",
+      "size": 94,
+      "instructions": 35,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C50C",
+      "page_id": "0x0D",
+      "size": 37,
+      "instructions": 13,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C532",
+      "page_id": "0x0D",
+      "size": 100,
+      "instructions": 38,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C596",
+      "page_id": "0x0D",
+      "size": 42,
+      "instructions": 13,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C5C0",
+      "page_id": "0x0D",
+      "size": 194,
+      "instructions": 79,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C682",
+      "page_id": "0x0D",
+      "size": 153,
+      "instructions": 55,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C71C",
+      "page_id": "0x0D",
+      "size": 211,
+      "instructions": 70,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C7F0",
+      "page_id": "0x0D",
+      "size": 86,
+      "instructions": 37,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C846",
+      "page_id": "0x0D",
+      "size": 87,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04C89E",
+      "page_id": "0x0D",
+      "size": 488,
+      "instructions": 170,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04CA86",
+      "page_id": "0x0D",
+      "size": 111,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04CAF6",
+      "page_id": "0x0D",
+      "size": 345,
+      "instructions": 119,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04CC50",
+      "page_id": "0x0D",
+      "size": 5733,
+      "instructions": 1939,
+      "prologue_type": "ENTER 0x01E4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x04E2B6",
+      "page_id": "0x0D",
+      "size": 32,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x04E2D6",
+      "page_id": "0x0D",
+      "size": 14975,
+      "instructions": 4858,
+      "prologue_type": "ENTER 0x00EE,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x051D56",
+      "page_id": "0x0D",
+      "size": 214,
+      "instructions": 81,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x051E2C",
+      "page_id": "0x0D",
+      "size": 186,
+      "instructions": 68,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x051EE6",
+      "page_id": "0x0D",
+      "size": 13,
+      "instructions": 6,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x051EF4",
+      "page_id": "0x0D",
+      "size": 4233,
+      "instructions": 1456,
+      "prologue_type": "ENTER 0x0044,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x052F7E",
+      "page_id": "0x0D",
+      "size": 1472,
+      "instructions": 455,
+      "prologue_type": "ENTER 0x001E,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x053820",
+      "page_id": "0x0E",
+      "size": 531,
+      "instructions": 186,
+      "prologue_type": "ENTER 0x0028,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x053A34",
+      "page_id": "0x0E",
+      "size": 107,
+      "instructions": 39,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x053AA0",
+      "page_id": "0x0E",
+      "size": 115,
+      "instructions": 40,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x053B14",
+      "page_id": "0x0E",
+      "size": 18,
+      "instructions": 8,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x053B26",
+      "page_id": "0x0E",
+      "size": 87,
+      "instructions": 31,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x053B7E",
+      "page_id": "0x0E",
+      "size": 10025,
+      "instructions": 3186,
+      "prologue_type": "ENTER 0x01C0,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x056A10",
+      "page_id": "0x0F",
+      "size": 247,
+      "instructions": 90,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x056B08",
+      "page_id": "0x0F",
+      "size": 138,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x056B92",
+      "page_id": "0x0F",
+      "size": 171,
+      "instructions": 58,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x056C3E",
+      "page_id": "0x0F",
+      "size": 3580,
+      "instructions": 1189,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057A3A",
+      "page_id": "0x0F",
+      "size": 103,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057AA2",
+      "page_id": "0x0F",
+      "size": 89,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0056,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057AFC",
+      "page_id": "0x0F",
+      "size": 484,
+      "instructions": 172,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057CE0",
+      "page_id": "0x0F",
+      "size": 224,
+      "instructions": 76,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057DC0",
+      "page_id": "0x0F",
+      "size": 397,
+      "instructions": 141,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x057F4E",
+      "page_id": "0x0F",
+      "size": 7151,
+      "instructions": 2356,
+      "prologue_type": "ENTER 0x00D6,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x059B3E",
+      "page_id": "0x0F",
+      "size": 81,
+      "instructions": 26,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x059B90",
+      "page_id": "0x0F",
+      "size": 2173,
+      "instructions": 729,
+      "prologue_type": "ENTER 0x004A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05A40E",
+      "page_id": "0x0F",
+      "size": 1107,
+      "instructions": 387,
+      "prologue_type": "ENTER 0x0074,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05A862",
+      "page_id": "0x0F",
+      "size": 224,
+      "instructions": 75,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x05AF70",
+      "page_id": "0x10",
+      "size": 364,
+      "instructions": 123,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05B0DC",
+      "page_id": "0x10",
+      "size": 486,
+      "instructions": 167,
+      "prologue_type": "ENTER 0x0072,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05B2C2",
+      "page_id": "0x10",
+      "size": 2925,
+      "instructions": 974,
+      "prologue_type": "ENTER 0x003A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05BE30",
+      "page_id": "0x10",
+      "size": 83,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05BE84",
+      "page_id": "0x10",
+      "size": 2006,
+      "instructions": 683,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05C65A",
+      "page_id": "0x10",
+      "size": 65,
+      "instructions": 19,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05C69C",
+      "page_id": "0x10",
+      "size": 475,
+      "instructions": 168,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05C878",
+      "page_id": "0x10",
+      "size": 518,
+      "instructions": 183,
+      "prologue_type": "ENTER 0x005E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05CA7E",
+      "page_id": "0x10",
+      "size": 7348,
+      "instructions": 2313,
+      "prologue_type": "ENTER 0x00DE,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x05E9B0",
+      "page_id": "0x11",
+      "size": 4371,
+      "instructions": 1553,
+      "prologue_type": "ENTER 0x00CC,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05FE60",
+      "page_id": "0x12",
+      "size": 26,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05FE7A",
+      "page_id": "0x12",
+      "size": 38,
+      "instructions": 15,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05FEA0",
+      "page_id": "0x12",
+      "size": 83,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x05FEF4",
+      "page_id": "0x12",
+      "size": 306,
+      "instructions": 112,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060026",
+      "page_id": "0x12",
+      "size": 810,
+      "instructions": 276,
+      "prologue_type": "ENTER 0x0068,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060350",
+      "page_id": "0x12",
+      "size": 50,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060382",
+      "page_id": "0x12",
+      "size": 37,
+      "instructions": 15,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0603A8",
+      "page_id": "0x12",
+      "size": 50,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0603DA",
+      "page_id": "0x12",
+      "size": 47,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06040A",
+      "page_id": "0x12",
+      "size": 66,
+      "instructions": 26,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06044C",
+      "page_id": "0x12",
+      "size": 33,
+      "instructions": 16,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06046E",
+      "page_id": "0x12",
+      "size": 180,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060522",
+      "page_id": "0x12",
+      "size": 211,
+      "instructions": 80,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0605F6",
+      "page_id": "0x12",
+      "size": 371,
+      "instructions": 129,
+      "prologue_type": "ENTER 0x005C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06076A",
+      "page_id": "0x12",
+      "size": 208,
+      "instructions": 73,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06083A",
+      "page_id": "0x12",
+      "size": 1017,
+      "instructions": 356,
+      "prologue_type": "ENTER 0x0060,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060C34",
+      "page_id": "0x12",
+      "size": 171,
+      "instructions": 66,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060CE0",
+      "page_id": "0x12",
+      "size": 171,
+      "instructions": 54,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060D8C",
+      "page_id": "0x12",
+      "size": 312,
+      "instructions": 125,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060EC4",
+      "page_id": "0x12",
+      "size": 110,
+      "instructions": 47,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060F32",
+      "page_id": "0x12",
+      "size": 137,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x060FBC",
+      "page_id": "0x12",
+      "size": 243,
+      "instructions": 85,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0610B0",
+      "page_id": "0x12",
+      "size": 566,
+      "instructions": 201,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0612E6",
+      "page_id": "0x12",
+      "size": 366,
+      "instructions": 118,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x061454",
+      "page_id": "0x12",
+      "size": 2121,
+      "instructions": 722,
+      "prologue_type": "ENTER 0x003C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x061E10",
+      "page_id": "0x13",
+      "size": 133,
+      "instructions": 50,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x061E96",
+      "page_id": "0x13",
+      "size": 107,
+      "instructions": 42,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x061F02",
+      "page_id": "0x13",
+      "size": 2067,
+      "instructions": 698,
+      "prologue_type": "ENTER 0x0084,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x062716",
+      "page_id": "0x13",
+      "size": 168,
+      "instructions": 68,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0627BE",
+      "page_id": "0x13",
+      "size": 415,
+      "instructions": 158,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x06295E",
+      "page_id": "0x13",
+      "size": 1061,
+      "instructions": 373,
+      "prologue_type": "ENTER 0x007A,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x062D84",
+      "page_id": "0x13",
+      "size": 1618,
+      "instructions": 561,
+      "prologue_type": "ENTER 0x0046,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x063880",
+      "page_id": "0x14",
+      "size": 855,
+      "instructions": 294,
+      "prologue_type": "ENTER 0x002E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x063BD8",
+      "page_id": "0x14",
+      "size": 127,
+      "instructions": 53,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x063C58",
+      "page_id": "0x14",
+      "size": 740,
+      "instructions": 283,
+      "prologue_type": "ENTER 0x0022,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x063F3C",
+      "page_id": "0x14",
+      "size": 535,
+      "instructions": 199,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x064154",
+      "page_id": "0x14",
+      "size": 151,
+      "instructions": 50,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0641EC",
+      "page_id": "0x14",
+      "size": 122,
+      "instructions": 50,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x064266",
+      "page_id": "0x14",
+      "size": 261,
+      "instructions": 110,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06436C",
+      "page_id": "0x14",
+      "size": 140,
+      "instructions": 54,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0643F8",
+      "page_id": "0x14",
+      "size": 315,
+      "instructions": 108,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x064534",
+      "page_id": "0x14",
+      "size": 194,
+      "instructions": 67,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0645F6",
+      "page_id": "0x14",
+      "size": 1050,
+      "instructions": 343,
+      "prologue_type": "ENTER 0x0026,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x064A10",
+      "page_id": "0x14",
+      "size": 4886,
+      "instructions": 1633,
+      "prologue_type": "ENTER 0x003C,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x065D26",
+      "page_id": "0x14",
+      "size": 2387,
+      "instructions": 742,
+      "prologue_type": "ENTER 0x00DA,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066850",
+      "page_id": "0x15",
+      "size": 51,
+      "instructions": 17,
+      "prologue_type": "ENTER 0x0108,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066884",
+      "page_id": "0x15",
+      "size": 228,
+      "instructions": 92,
+      "prologue_type": "ENTER 0x0108,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066968",
+      "page_id": "0x15",
+      "size": 558,
+      "instructions": 201,
+      "prologue_type": "ENTER 0x0038,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066B96",
+      "page_id": "0x15",
+      "size": 26,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066BB0",
+      "page_id": "0x15",
+      "size": 293,
+      "instructions": 107,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066CD6",
+      "page_id": "0x15",
+      "size": 379,
+      "instructions": 129,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066E52",
+      "page_id": "0x15",
+      "size": 118,
+      "instructions": 52,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066EC8",
+      "page_id": "0x15",
+      "size": 159,
+      "instructions": 52,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x066F68",
+      "page_id": "0x15",
+      "size": 211,
+      "instructions": 74,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06703C",
+      "page_id": "0x15",
+      "size": 69,
+      "instructions": 25,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x067082",
+      "page_id": "0x15",
+      "size": 256,
+      "instructions": 89,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x067182",
+      "page_id": "0x15",
+      "size": 350,
+      "instructions": 119,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0672E0",
+      "page_id": "0x15",
+      "size": 236,
+      "instructions": 97,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0673CC",
+      "page_id": "0x15",
+      "size": 169,
+      "instructions": 58,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x067476",
+      "page_id": "0x15",
+      "size": 50,
+      "instructions": 22,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0674A8",
+      "page_id": "0x15",
+      "size": 147,
+      "instructions": 55,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06753C",
+      "page_id": "0x15",
+      "size": 264,
+      "instructions": 98,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x067644",
+      "page_id": "0x15",
+      "size": 188,
+      "instructions": 66,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x067700",
+      "page_id": "0x15",
+      "size": 202,
+      "instructions": 65,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0677CA",
+      "page_id": "0x15",
+      "size": 178,
+      "instructions": 62,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06787C",
+      "page_id": "0x15",
+      "size": 423,
+      "instructions": 157,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x067A24",
+      "page_id": "0x15",
+      "size": 352,
+      "instructions": 128,
+      "prologue_type": "ENTER 0x0010,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067B84",
+      "page_id": "0x15",
+      "size": 96,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067BE4",
+      "page_id": "0x15",
+      "size": 111,
+      "instructions": 38,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067C54",
+      "page_id": "0x15",
+      "size": 57,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067C8E",
+      "page_id": "0x15",
+      "size": 102,
+      "instructions": 38,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067CF4",
+      "page_id": "0x15",
+      "size": 96,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067D54",
+      "page_id": "0x15",
+      "size": 116,
+      "instructions": 45,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067DC8",
+      "page_id": "0x15",
+      "size": 95,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067E28",
+      "page_id": "0x15",
+      "size": 99,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067E8C",
+      "page_id": "0x15",
+      "size": 95,
+      "instructions": 32,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067EEC",
+      "page_id": "0x15",
+      "size": 99,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x067F50",
+      "page_id": "0x15",
+      "size": 599,
+      "instructions": 210,
+      "prologue_type": "ENTER 0x002C,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0681A8",
+      "page_id": "0x15",
+      "size": 1076,
+      "instructions": 363,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x0685DC",
+      "page_id": "0x15",
+      "size": 699,
+      "instructions": 241,
+      "prologue_type": "ENTER 0x0028,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x068898",
+      "page_id": "0x15",
+      "size": 149,
+      "instructions": 50,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06892E",
+      "page_id": "0x15",
+      "size": 75,
+      "instructions": 25,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x068EE0",
+      "page_id": "0x16",
+      "size": 87,
+      "instructions": 26,
+      "prologue_type": "no-frame (first byte 0xA1)",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x068F38",
+      "page_id": "0x16",
+      "size": 104,
+      "instructions": 36,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x068FA0",
+      "page_id": "0x16",
+      "size": 59,
+      "instructions": 21,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x068FDC",
+      "page_id": "0x16",
+      "size": 124,
+      "instructions": 44,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x069058",
+      "page_id": "0x16",
+      "size": 253,
+      "instructions": 90,
+      "prologue_type": "ENTER 0x001C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x069156",
+      "page_id": "0x16",
+      "size": 78,
+      "instructions": 33,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0691A4",
+      "page_id": "0x16",
+      "size": 117,
+      "instructions": 41,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06921A",
+      "page_id": "0x16",
+      "size": 97,
+      "instructions": 33,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06927C",
+      "page_id": "0x16",
+      "size": 32,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06929C",
+      "page_id": "0x16",
+      "size": 207,
+      "instructions": 62,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06936C",
+      "page_id": "0x16",
+      "size": 322,
+      "instructions": 102,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0694AE",
+      "page_id": "0x16",
+      "size": 535,
+      "instructions": 187,
+      "prologue_type": "ENTER 0x0066,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0696C6",
+      "page_id": "0x16",
+      "size": 1733,
+      "instructions": 612,
+      "prologue_type": "ENTER 0x0062,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x069D8C",
+      "page_id": "0x16",
+      "size": 2420,
+      "instructions": 787,
+      "prologue_type": "ENTER 0x00A8,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06A700",
+      "page_id": "0x16",
+      "size": 904,
+      "instructions": 315,
+      "prologue_type": "ENTER 0x006A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06AA88",
+      "page_id": "0x16",
+      "size": 895,
+      "instructions": 312,
+      "prologue_type": "ENTER 0x006C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06AE08",
+      "page_id": "0x16",
+      "size": 276,
+      "instructions": 102,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06AF1C",
+      "page_id": "0x16",
+      "size": 270,
+      "instructions": 99,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06B02A",
+      "page_id": "0x16",
+      "size": 472,
+      "instructions": 164,
+      "prologue_type": "ENTER 0x0062,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06B202",
+      "page_id": "0x16",
+      "size": 406,
+      "instructions": 155,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06B398",
+      "page_id": "0x16",
+      "size": 854,
+      "instructions": 315,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06B6EE",
+      "page_id": "0x16",
+      "size": 52,
+      "instructions": 19,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x06B722",
+      "page_id": "0x16",
+      "size": 975,
+      "instructions": 295,
+      "prologue_type": "ENTER 0x03C8,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x06BE50",
+      "page_id": "0x17",
+      "size": 65,
+      "instructions": 27,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06BE92",
+      "page_id": "0x17",
+      "size": 127,
+      "instructions": 41,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06BF12",
+      "page_id": "0x17",
+      "size": 41,
+      "instructions": 14,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06BF3C",
+      "page_id": "0x17",
+      "size": 41,
+      "instructions": 14,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06BF66",
+      "page_id": "0x17",
+      "size": 550,
+      "instructions": 170,
+      "prologue_type": "ENTER 0x008C,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C18C",
+      "page_id": "0x17",
+      "size": 147,
+      "instructions": 52,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C220",
+      "page_id": "0x17",
+      "size": 27,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C23C",
+      "page_id": "0x17",
+      "size": 24,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C254",
+      "page_id": "0x17",
+      "size": 40,
+      "instructions": 16,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C27C",
+      "page_id": "0x17",
+      "size": 25,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C296",
+      "page_id": "0x17",
+      "size": 63,
+      "instructions": 21,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C2D6",
+      "page_id": "0x17",
+      "size": 112,
+      "instructions": 42,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C346",
+      "page_id": "0x17",
+      "size": 65,
+      "instructions": 23,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C388",
+      "page_id": "0x17",
+      "size": 265,
+      "instructions": 97,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C492",
+      "page_id": "0x17",
+      "size": 141,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06C520",
+      "page_id": "0x17",
+      "size": 458,
+      "instructions": 143,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C6EA",
+      "page_id": "0x17",
+      "size": 96,
+      "instructions": 33,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x06C74A",
+      "page_id": "0x17",
+      "size": 47,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C77A",
+      "page_id": "0x17",
+      "size": 47,
+      "instructions": 18,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C7AA",
+      "page_id": "0x17",
+      "size": 48,
+      "instructions": 17,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C7DA",
+      "page_id": "0x17",
+      "size": 47,
+      "instructions": 17,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C80A",
+      "page_id": "0x17",
+      "size": 39,
+      "instructions": 15,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C832",
+      "page_id": "0x17",
+      "size": 29,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06C850",
+      "page_id": "0x17",
+      "size": 488,
+      "instructions": 160,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CA38",
+      "page_id": "0x17",
+      "size": 58,
+      "instructions": 22,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CA72",
+      "page_id": "0x17",
+      "size": 15,
+      "instructions": 7,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CA82",
+      "page_id": "0x17",
+      "size": 274,
+      "instructions": 95,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CB94",
+      "page_id": "0x17",
+      "size": 465,
+      "instructions": 158,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CD66",
+      "page_id": "0x17",
+      "size": 37,
+      "instructions": 13,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x06CD8C",
+      "page_id": "0x17",
+      "size": 494,
+      "instructions": 165,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CF7A",
+      "page_id": "0x17",
+      "size": 65,
+      "instructions": 24,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06CFBC",
+      "page_id": "0x17",
+      "size": 43,
+      "instructions": 16,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06CFE8",
+      "page_id": "0x17",
+      "size": 814,
+      "instructions": 261,
+      "prologue_type": "ENTER 0x016A,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06D316",
+      "page_id": "0x17",
+      "size": 1398,
+      "instructions": 442,
+      "prologue_type": "ENTER 0x002C,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06D88C",
+      "page_id": "0x17",
+      "size": 59,
+      "instructions": 20,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06D8C8",
+      "page_id": "0x17",
+      "size": 112,
+      "instructions": 39,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06D938",
+      "page_id": "0x17",
+      "size": 148,
+      "instructions": 47,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06D9CC",
+      "page_id": "0x17",
+      "size": 664,
+      "instructions": 225,
+      "prologue_type": "ENTER 0x0012,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06DC64",
+      "page_id": "0x17",
+      "size": 522,
+      "instructions": 183,
+      "prologue_type": "ENTER 0x006A,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06DE6E",
+      "page_id": "0x17",
+      "size": 601,
+      "instructions": 207,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x06E0C8",
+      "page_id": "0x17",
+      "size": 534,
+      "instructions": 188,
+      "prologue_type": "ENTER 0x0018,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06E2DE",
+      "page_id": "0x17",
+      "size": 207,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x005E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06E3AE",
+      "page_id": "0x17",
+      "size": 34,
+      "instructions": 15,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06E3D0",
+      "page_id": "0x17",
+      "size": 2820,
+      "instructions": 895,
+      "prologue_type": "ENTER 0x0038,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x06EED4",
+      "page_id": "0x17",
+      "size": 24,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06EEEC",
+      "page_id": "0x17",
+      "size": 520,
+      "instructions": 183,
+      "prologue_type": "ENTER 0x002E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F0F4",
+      "page_id": "0x17",
+      "size": 1061,
+      "instructions": 369,
+      "prologue_type": "ENTER 0x0168,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F51A",
+      "page_id": "0x17",
+      "size": 57,
+      "instructions": 21,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F554",
+      "page_id": "0x17",
+      "size": 42,
+      "instructions": 20,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F57E",
+      "page_id": "0x17",
+      "size": 49,
+      "instructions": 24,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F5B0",
+      "page_id": "0x17",
+      "size": 41,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F5DA",
+      "page_id": "0x17",
+      "size": 24,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F5F2",
+      "page_id": "0x17",
+      "size": 41,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F61C",
+      "page_id": "0x17",
+      "size": 48,
+      "instructions": 21,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F64C",
+      "page_id": "0x17",
+      "size": 75,
+      "instructions": 25,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x06F698",
+      "page_id": "0x17",
+      "size": 65,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0016,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F6DA",
+      "page_id": "0x17",
+      "size": 372,
+      "instructions": 114,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x06F8E0",
+      "page_id": "0x18",
+      "size": 26,
+      "instructions": 7,
+      "prologue_type": "no-frame (first byte 0x83)",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06F8FA",
+      "page_id": "0x18",
+      "size": 447,
+      "instructions": 176,
+      "prologue_type": "ENTER 0x00A2,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06FABA",
+      "page_id": "0x18",
+      "size": 46,
+      "instructions": 20,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06FAE8",
+      "page_id": "0x18",
+      "size": 74,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x06FDF0",
+      "page_id": "0x19",
+      "size": 44,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06FE1C",
+      "page_id": "0x19",
+      "size": 376,
+      "instructions": 137,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x06FF94",
+      "page_id": "0x19",
+      "size": 204,
+      "instructions": 72,
+      "prologue_type": "ENTER 0x0054,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070060",
+      "page_id": "0x19",
+      "size": 607,
+      "instructions": 209,
+      "prologue_type": "ENTER 0x0312,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0702C0",
+      "page_id": "0x19",
+      "size": 66,
+      "instructions": 31,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070302",
+      "page_id": "0x19",
+      "size": 402,
+      "instructions": 150,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070494",
+      "page_id": "0x19",
+      "size": 236,
+      "instructions": 86,
+      "prologue_type": "ENTER 0x0062,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070580",
+      "page_id": "0x19",
+      "size": 514,
+      "instructions": 181,
+      "prologue_type": "ENTER 0x0312,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070782",
+      "page_id": "0x19",
+      "size": 51,
+      "instructions": 23,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0707B6",
+      "page_id": "0x19",
+      "size": 376,
+      "instructions": 138,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x07092E",
+      "page_id": "0x19",
+      "size": 236,
+      "instructions": 86,
+      "prologue_type": "ENTER 0x0062,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070A1A",
+      "page_id": "0x19",
+      "size": 665,
+      "instructions": 230,
+      "prologue_type": "ENTER 0x0314,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070CB4",
+      "page_id": "0x19",
+      "size": 308,
+      "instructions": 115,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070DE8",
+      "page_id": "0x19",
+      "size": 209,
+      "instructions": 74,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x070EBA",
+      "page_id": "0x19",
+      "size": 317,
+      "instructions": 106,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x070FF8",
+      "page_id": "0x19",
+      "size": 202,
+      "instructions": 59,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0710C2",
+      "page_id": "0x19",
+      "size": 68,
+      "instructions": 20,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x071106",
+      "page_id": "0x19",
+      "size": 320,
+      "instructions": 110,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x071246",
+      "page_id": "0x19",
+      "size": 266,
+      "instructions": 90,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x071350",
+      "page_id": "0x19",
+      "size": 131,
+      "instructions": 41,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0713D4",
+      "page_id": "0x19",
+      "size": 178,
+      "instructions": 57,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x072090",
+      "page_id": "0x1A",
+      "size": 2826,
+      "instructions": 945,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x072B9A",
+      "page_id": "0x1A",
+      "size": 266,
+      "instructions": 99,
+      "prologue_type": "ENTER 0x0024,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x072CA4",
+      "page_id": "0x1A",
+      "size": 29,
+      "instructions": 12,
+      "prologue_type": "ENTER 0x0050,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x072CC2",
+      "page_id": "0x1A",
+      "size": 696,
+      "instructions": 213,
+      "prologue_type": "ENTER 0x0276,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x072F7A",
+      "page_id": "0x1A",
+      "size": 478,
+      "instructions": 166,
+      "prologue_type": "ENTER 0x005C,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x073158",
+      "page_id": "0x1A",
+      "size": 280,
+      "instructions": 99,
+      "prologue_type": "ENTER 0x005A,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x073270",
+      "page_id": "0x1A",
+      "size": 648,
+      "instructions": 239,
+      "prologue_type": "ENTER 0x00C4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0734F8",
+      "page_id": "0x1A",
+      "size": 1464,
+      "instructions": 564,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x073AB0",
+      "page_id": "0x1A",
+      "size": 256,
+      "instructions": 101,
+      "prologue_type": "ENTER 0x005A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x073BB0",
+      "page_id": "0x1A",
+      "size": 1901,
+      "instructions": 664,
+      "prologue_type": "ENTER 0x0064,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x07431E",
+      "page_id": "0x1A",
+      "size": 722,
+      "instructions": 237,
+      "prologue_type": "ENTER 0x0060,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0745F0",
+      "page_id": "0x1A",
+      "size": 91,
+      "instructions": 31,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x07464C",
+      "page_id": "0x1A",
+      "size": 60,
+      "instructions": 24,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x074688",
+      "page_id": "0x1A",
+      "size": 856,
+      "instructions": 364,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0749E0",
+      "page_id": "0x1A",
+      "size": 2417,
+      "instructions": 703,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x075352",
+      "page_id": "0x1A",
+      "size": 578,
+      "instructions": 197,
+      "prologue_type": "ENTER 0x0320,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x075594",
+      "page_id": "0x1A",
+      "size": 55,
+      "instructions": 22,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0755CC",
+      "page_id": "0x1A",
+      "size": 1052,
+      "instructions": 321,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0759E8",
+      "page_id": "0x1A",
+      "size": 1455,
+      "instructions": 467,
+      "prologue_type": "ENTER 0x03F4,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x075F98",
+      "page_id": "0x1A",
+      "size": 30,
+      "instructions": 12,
+      "prologue_type": "ENTER 0x0300,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x075FB6",
+      "page_id": "0x1A",
+      "size": 1039,
+      "instructions": 298,
+      "prologue_type": "ENTER 0x000C,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x0764D0",
+      "page_id": "0x1B",
+      "size": 33,
+      "instructions": 8,
+      "prologue_type": "no-frame (first byte 0xC7)",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0764F2",
+      "page_id": "0x1B",
+      "size": 49,
+      "instructions": 16,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076524",
+      "page_id": "0x1B",
+      "size": 111,
+      "instructions": 34,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076594",
+      "page_id": "0x1B",
+      "size": 174,
+      "instructions": 58,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x076642",
+      "page_id": "0x1B",
+      "size": 1194,
+      "instructions": 401,
+      "prologue_type": "ENTER 0x020E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076AEC",
+      "page_id": "0x1B",
+      "size": 178,
+      "instructions": 74,
+      "prologue_type": "ENTER 0x0126,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076B9E",
+      "page_id": "0x1B",
+      "size": 210,
+      "instructions": 87,
+      "prologue_type": "ENTER 0x0126,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076C70",
+      "page_id": "0x1B",
+      "size": 254,
+      "instructions": 99,
+      "prologue_type": "ENTER 0x013E,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x076E50",
+      "page_id": "0x1C",
+      "size": 521,
+      "instructions": 185,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x07705A",
+      "page_id": "0x1C",
+      "size": 18,
+      "instructions": 9,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x07706C",
+      "page_id": "0x1C",
+      "size": 148,
+      "instructions": 56,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x077100",
+      "page_id": "0x1C",
+      "size": 441,
+      "instructions": 163,
+      "prologue_type": "ENTER 0x0020,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0772BA",
+      "page_id": "0x1C",
+      "size": 10,
+      "instructions": 6,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0772C4",
+      "page_id": "0x1C",
+      "size": 21,
+      "instructions": 11,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0772DA",
+      "page_id": "0x1C",
+      "size": 31,
+      "instructions": 12,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0772FA",
+      "page_id": "0x1C",
+      "size": 754,
+      "instructions": 251,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x0775EC",
+      "page_id": "0x1C",
+      "size": 263,
+      "instructions": 107,
+      "prologue_type": "ENTER 0x000E,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0776F4",
+      "page_id": "0x1C",
+      "size": 125,
+      "instructions": 50,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x077772",
+      "page_id": "0x1C",
+      "size": 255,
+      "instructions": 89,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x077990",
+      "page_id": "0x1D",
+      "size": 164,
+      "instructions": 61,
+      "prologue_type": "ENTER 0x002E,0",
+      "prologue_valid": true,
+      "terminal": "RET"
+    },
+    {
+      "file_offset": "0x077A34",
+      "page_id": "0x1D",
+      "size": 169,
+      "instructions": 63,
+      "prologue_type": "ENTER 0x0058,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x077ADE",
+      "page_id": "0x1D",
+      "size": 49,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x077B10",
+      "page_id": "0x1D",
+      "size": 590,
+      "instructions": 204,
+      "prologue_type": "ENTER 0x0052,0",
+      "prologue_valid": true,
+      "terminal": "RET imm16"
+    },
+    {
+      "file_offset": "0x077D5E",
+      "page_id": "0x1D",
+      "size": 162,
+      "instructions": 64,
+      "prologue_type": "ENTER 0x006A,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x077ED0",
+      "page_id": "0x1E",
+      "size": 106,
+      "instructions": 53,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x077F3A",
+      "page_id": "0x1E",
+      "size": 519,
+      "instructions": 185,
+      "prologue_type": "ENTER 0x030A,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x078142",
+      "page_id": "0x1E",
+      "size": 66,
+      "instructions": 25,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x078184",
+      "page_id": "0x1E",
+      "size": 90,
+      "instructions": 29,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0781DE",
+      "page_id": "0x1E",
+      "size": 100,
+      "instructions": 38,
+      "prologue_type": "ENTER 0x0302,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078242",
+      "page_id": "0x1E",
+      "size": 39,
+      "instructions": 24,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x07826A",
+      "page_id": "0x1E",
+      "size": 176,
+      "instructions": 67,
+      "prologue_type": "ENTER 0x0312,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x07831A",
+      "page_id": "0x1E",
+      "size": 320,
+      "instructions": 117,
+      "prologue_type": "ENTER 0x0316,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x07845A",
+      "page_id": "0x1E",
+      "size": 315,
+      "instructions": 130,
+      "prologue_type": "ENTER 0x00A0,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x078595",
+      "page_id": "0x1E",
+      "size": 2,
+      "instructions": 0,
+      "prologue_type": "UNRECOGNISED (0xCA)",
+      "prologue_valid": false,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x078640",
+      "page_id": "0x1F",
+      "size": 189,
+      "instructions": 68,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0786FE",
+      "page_id": "0x1F",
+      "size": 163,
+      "instructions": 63,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x0787A2",
+      "page_id": "0x1F",
+      "size": 58,
+      "instructions": 29,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0787DC",
+      "page_id": "0x1F",
+      "size": 66,
+      "instructions": 31,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x07881E",
+      "page_id": "0x1F",
+      "size": 55,
+      "instructions": 19,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x078856",
+      "page_id": "0x1F",
+      "size": 28,
+      "instructions": 10,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x078872",
+      "page_id": "0x1F",
+      "size": 391,
+      "instructions": 145,
+      "prologue_type": "ENTER 0x0014,0",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x0789FA",
+      "page_id": "0x1F",
+      "size": 80,
+      "instructions": 30,
+      "prologue_type": "ENTER 0x0006,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078A4A",
+      "page_id": "0x1F",
+      "size": 168,
+      "instructions": 61,
+      "prologue_type": "ENTER 0x0002,0",
+      "prologue_valid": true,
+      "terminal": "JMP-tail"
+    },
+    {
+      "file_offset": "0x078AF2",
+      "page_id": "0x1F",
+      "size": 28,
+      "instructions": 14,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF"
+    },
+    {
+      "file_offset": "0x078B0E",
+      "page_id": "0x1F",
+      "size": 191,
+      "instructions": 67,
+      "prologue_type": "ENTER 0x0008,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078BCE",
+      "page_id": "0x1F",
+      "size": 62,
+      "instructions": 19,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078C0C",
+      "page_id": "0x1F",
+      "size": 59,
+      "instructions": 18,
+      "prologue_type": "push bp;mov bp,sp",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078C48",
+      "page_id": "0x1F",
+      "size": 105,
+      "instructions": 37,
+      "prologue_type": "ENTER 0x0004,0",
+      "prologue_valid": true,
+      "terminal": "RETF imm16"
+    },
+    {
+      "file_offset": "0x078CB2",
+      "page_id": "0x1F",
+      "size": 137,
+      "instructions": 48,
+      "prologue_type": "ENTER 0x000A,0",
+      "prologue_valid": true,
+      "terminal": "page-end"
+    },
+    {
+      "file_offset": "0x078D3B",
+      "page_id": "0x1F",
+      "size": 2,
+      "instructions": 0,
+      "prologue_type": "UNRECOGNISED (0xCA)",
+      "prologue_valid": false,
+      "terminal": "page-end"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "@GAME": "~GAME\n  Game Options\n  Colony Report Options\n  Sound Options\n  Pick Music\n  Save Game\n  Load Game\n  DECLARE INDEPENDENCE\n  Retire\n  Exit to DOS\n",
+  "@VIEW": "~VIEW\n  ~Move Pieces\n  ~View Pieces\n  ~European Status\n  Find Colony\n  Zoom In#   ~Z\n  Zoom Out   ~X\n  Zoom Level 120 x 96\n  Zoom Level #60 x 48\n  Zoom Level #30 x 24\n  Zoom Level #15 x 12\n  Show ~Hidden Terrain\n  ~Center View\n",
+  "@ORDERS": "~ORDERS\n  ~Activate unit\n  ~Wait for next unit\n  ~Fortify\n  ~Fortify\n  ~Sentry\n  ~Build Colony\n  Join Colony (~B)\n  Clear Forest (~P)\n  Plow Fields  (~P)\n  Build ~Road\n  ~Load Cargo\n  ~Unload Cargo\n  ~Pillage\n  ~Go to Port\n  ~Go to Place\n  Begin ~Trade Route\n  ~Return to Europe\n  No Orders (~s~p~a~c~e~ bar)\n  Dump Cargo ~Overboard\n  Disband Unit (~s~h~i~f~t~-~D)\n",
+  "@REPORTS": "~REPORTS\n  ~F~1 Terrain Information\n  ~F~2 Religious Adviser\n  ~F~3 Continental Congress\n  ~F~4 Labor Adviser\n  ~F~5 Economic Adviser\n  ~F~6 Colony Adviser\n  ~F~7 Naval Adviser\n  ~F~8 Foreign Affairs Advisor\n  ~F~9 Indian Adviser\n  ~F~1~0 Colonization Score\n\n",
+  "@TRADE": "~TRADE\n  Edit Trade Route\n  Create Trade Route\n  Delete Trade Route\n",
+  "@CUP": "~CHEAT\n  ~F~0~1 Create Unit\n  ~F~0~2 Debug Info Flags\n  ~F~0~4 Reveal Map\n  ~F~0~5 Set Human Player\n  ~F~0~6 Kill Indians\n  ~F~0~7 Advance Revolution Status\n  Sound Test\n  Memory Check\n  ~F~0~8 Show Strategy\n  ~F~0~9 Show Colony Sites\n  ~F~0~1~0 Test Routine\n",
+  "@PEDIA": "~COLONIZOPEDIA\n  Cargo Types\n  Unit Types\n  Terrain Types\n  Colonist Skills\n  Colony Buildings\n  Founding Fathers\n  Miscellaneous\n  Complete\n",
+  "@END": ""
+}

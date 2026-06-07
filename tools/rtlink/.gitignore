@@ -1,0 +1,4 @@
+# Regenerable from rtlink_decode.py + COLONIZE/VICEROY.EXE:
+#   python rtlink_decode.py flatten
+# A 459 KB binary; not versioned (regenerate on demand).
+VICEROY_flat.exe

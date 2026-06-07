@@ -1,0 +1,258 @@
+{
+  "source": "C:\\Users\\gregc\\OneDrive\\Desktop\\COLOPY\\reverse_engineered\\raw\\COLONIZE\\VICEROY.EXE",
+  "flat_exe": "reverse_engineered\\tools\\rtlink\\VICEROY_flat.exe",
+  "resident_bytes": 132720,
+  "code_offset": 9216,
+  "page_layout": [
+    {
+      "page_id": 1,
+      "segment_num": 2,
+      "orig_code_offset": 134880,
+      "code_size": 15632,
+      "flat_offset": 132720,
+      "flat_paragraph": 7719
+    },
+    {
+      "page_id": 2,
+      "segment_num": 3,
+      "orig_code_offset": 153856,
+      "code_size": 29184,
+      "flat_offset": 148352,
+      "flat_paragraph": 8696
+    },
+    {
+      "page_id": 3,
+      "segment_num": 4,
+      "orig_code_offset": 184272,
+      "code_size": 11040,
+      "flat_offset": 177536,
+      "flat_paragraph": 10520
+    },
+    {
+      "page_id": 4,
+      "segment_num": 5,
+      "orig_code_offset": 197968,
+      "code_size": 25664,
+      "flat_offset": 188576,
+      "flat_paragraph": 11210
+    },
+    {
+      "page_id": 5,
+      "segment_num": 6,
+      "orig_code_offset": 226112,
+      "code_size": 16448,
+      "flat_offset": 214240,
+      "flat_paragraph": 12814
+    },
+    {
+      "page_id": 6,
+      "segment_num": 7,
+      "orig_code_offset": 243968,
+      "code_size": 12640,
+      "flat_offset": 230688,
+      "flat_paragraph": 13842
+    },
+    {
+      "page_id": 7,
+      "segment_num": 8,
+      "orig_code_offset": 257264,
+      "code_size": 5120,
+      "flat_offset": 243328,
+      "flat_paragraph": 14632
+    },
+    {
+      "page_id": 8,
+      "segment_num": 9,
+      "orig_code_offset": 263344,
+      "code_size": 9248,
+      "flat_offset": 248448,
+      "flat_paragraph": 14952
+    },
+    {
+      "page_id": 9,
+      "segment_num": 10,
+      "orig_code_offset": 273488,
+      "code_size": 6064,
+      "flat_offset": 257696,
+      "flat_paragraph": 15530
+    },
+    {
+      "page_id": 10,
+      "segment_num": 11,
+      "orig_code_offset": 279872,
+      "code_size": 5856,
+      "flat_offset": 263760,
+      "flat_paragraph": 15909
+    },
+    {
+      "page_id": 11,
+      "segment_num": 12,
+      "orig_code_offset": 285952,
+      "code_size": 2304,
+      "flat_offset": 269616,
+      "flat_paragraph": 16275
+    },
+    {
+      "page_id": 12,
+      "segment_num": 13,
+      "orig_code_offset": 290272,
+      "code_size": 19568,
+      "flat_offset": 271920,
+      "flat_paragraph": 16419
+    },
+    {
+      "page_id": 13,
+      "segment_num": 14,
+      "orig_code_offset": 311792,
+      "code_size": 29520,
+      "flat_offset": 291488,
+      "flat_paragraph": 17642
+    },
+    {
+      "page_id": 14,
+      "segment_num": 15,
+      "orig_code_offset": 342048,
+      "code_size": 10896,
+      "flat_offset": 321008,
+      "flat_paragraph": 19487
+    },
+    {
+      "page_id": 15,
+      "segment_num": 16,
+      "orig_code_offset": 354832,
+      "code_size": 16192,
+      "flat_offset": 331904,
+      "flat_paragraph": 20168
+    },
+    {
+      "page_id": 16,
+      "segment_num": 17,
+      "orig_code_offset": 372592,
+      "code_size": 14288,
+      "flat_offset": 348096,
+      "flat_paragraph": 21180
+    },
+    {
+      "page_id": 17,
+      "segment_num": 18,
+      "orig_code_offset": 387504,
+      "code_size": 4384,
+      "flat_offset": 362384,
+      "flat_paragraph": 22073
+    },
+    {
+      "page_id": 18,
+      "segment_num": 19,
+      "orig_code_offset": 392800,
+      "code_size": 7744,
+      "flat_offset": 366768,
+      "flat_paragraph": 22347
+    },
+    {
+      "page_id": 19,
+      "segment_num": 20,
+      "orig_code_offset": 400912,
+      "code_size": 5584,
+      "flat_offset": 374512,
+      "flat_paragraph": 22831
+    },
+    {
+      "page_id": 20,
+      "segment_num": 21,
+      "orig_code_offset": 407680,
+      "code_size": 11776,
+      "flat_offset": 380096,
+      "flat_paragraph": 23180
+    },
+    {
+      "page_id": 21,
+      "segment_num": 22,
+      "orig_code_offset": 419920,
+      "code_size": 8496,
+      "flat_offset": 391872,
+      "flat_paragraph": 23916
+    },
+    {
+      "page_id": 22,
+      "segment_num": 23,
+      "orig_code_offset": 429792,
+      "code_size": 11296,
+      "flat_offset": 400368,
+      "flat_paragraph": 24447
+    },
+    {
+      "page_id": 23,
+      "segment_num": 24,
+      "orig_code_offset": 441936,
+      "code_size": 14848,
+      "flat_offset": 411664,
+      "flat_paragraph": 25153
+    },
+    {
+      "page_id": 24,
+      "segment_num": 25,
+      "orig_code_offset": 456928,
+      "code_size": 608,
+      "flat_offset": 426512,
+      "flat_paragraph": 26081
+    },
+    {
+      "page_id": 25,
+      "segment_num": 26,
+      "orig_code_offset": 458224,
+      "code_size": 5792,
+      "flat_offset": 427120,
+      "flat_paragraph": 26119
+    },
+    {
+      "page_id": 26,
+      "segment_num": 27,
+      "orig_code_offset": 467088,
+      "code_size": 17216,
+      "flat_offset": 432912,
+      "flat_paragraph": 26481
+    },
+    {
+      "page_id": 27,
+      "segment_num": 28,
+      "orig_code_offset": 484560,
+      "code_size": 2208,
+      "flat_offset": 450128,
+      "flat_paragraph": 27557
+    },
+    {
+      "page_id": 28,
+      "segment_num": 29,
+      "orig_code_offset": 486992,
+      "code_size": 2608,
+      "flat_offset": 452336,
+      "flat_paragraph": 27695
+    },
+    {
+      "page_id": 29,
+      "segment_num": 30,
+      "orig_code_offset": 489872,
+      "code_size": 1136,
+      "flat_offset": 454944,
+      "flat_paragraph": 27858
+    },
+    {
+      "page_id": 30,
+      "segment_num": 31,
+      "orig_code_offset": 491216,
+      "code_size": 1744,
+      "flat_offset": 456080,
+      "flat_paragraph": 27929
+    },
+    {
+      "page_id": 31,
+      "segment_num": 32,
+      "orig_code_offset": 493120,
+      "code_size": 1792,
+      "flat_offset": 457824,
+      "flat_paragraph": 28038
+    }
+  ],
+  "thunks_patched": 658,
+  "caveat": "Flat EXE relocates overlay code contiguously and rewrites type-A thunk JMPF segment operands to flat paragraphs. The MZ relocation table is NOT rebuilt for relocated segments; treat the flat EXE as an analysis aid and the JSON as the authoritative page map."
+}

@@ -1,0 +1,4 @@
+.win_index.json
+.dos_db.json
+__pycache__/
+*.pyc

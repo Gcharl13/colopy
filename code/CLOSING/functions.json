@@ -1,0 +1,1241 @@
+{
+  "summary": {
+    "exe": "CLOSING.EXE",
+    "file_size": 83246,
+    "image_bytes": 62769,
+    "header_bytes": 2560,
+    "code_data_bytes": 60209,
+    "overlay_bytes": 20477,
+    "relocations": 595,
+    "load_image_functions": 136,
+    "overlay_functions": 0,
+    "total_functions": 136,
+    "total_instructions": 54037
+  },
+  "functions": [
+    {
+      "file_offset": "0x000E4C",
+      "size": 46,
+      "instructions": 18,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_000E4C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00176A",
+      "size": 73,
+      "instructions": 34,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00176A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0017F2",
+      "size": 11,
+      "instructions": 6,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0017F2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x001C0E",
+      "size": 33,
+      "instructions": 13,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_001C0E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x001C3A",
+      "size": 53,
+      "instructions": 25,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_001C3A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x001CA2",
+      "size": 48,
+      "instructions": 15,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_001CA2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x001CD2",
+      "size": 39,
+      "instructions": 24,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_001CD2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x001FA8",
+      "size": 57,
+      "instructions": 20,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_001FA8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0022C8",
+      "size": 13,
+      "instructions": 8,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0022C8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0022DC",
+      "size": 15,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0022DC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002400",
+      "size": 77,
+      "instructions": 31,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002400_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0026EA",
+      "size": 69,
+      "instructions": 28,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0026EA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002750",
+      "size": 13,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002750_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00278A",
+      "size": 17,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00278A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0027CC",
+      "size": 34,
+      "instructions": 14,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0027CC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002A9C",
+      "size": 28,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002A9C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002AB8",
+      "size": 42,
+      "instructions": 24,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002AB8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002C98",
+      "size": 36,
+      "instructions": 22,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002C98_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002DAA",
+      "size": 21,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002DAA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x002E04",
+      "size": 21,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_002E04_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0033C2",
+      "size": 15,
+      "instructions": 6,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0033C2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0033DE",
+      "size": 49,
+      "instructions": 25,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0033DE_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0041E6",
+      "size": 68,
+      "instructions": 27,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0041E6_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004302",
+      "size": 29,
+      "instructions": 16,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004302_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0044DD",
+      "size": 7,
+      "instructions": 4,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0044DD_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0044E4",
+      "size": 8,
+      "instructions": 4,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0044E4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0044EC",
+      "size": 10,
+      "instructions": 6,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0044EC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0044F6",
+      "size": 106,
+      "instructions": 44,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0044F6_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0045C4",
+      "size": 186,
+      "instructions": 72,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0045C4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00467E",
+      "size": 43,
+      "instructions": 20,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00467E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0046AA",
+      "size": 21,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0046AA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0046C0",
+      "size": 135,
+      "instructions": 63,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0046C0_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0047A4",
+      "size": 62,
+      "instructions": 29,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0047A4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0047E2",
+      "size": 63,
+      "instructions": 30,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0047E2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004822",
+      "size": 50,
+      "instructions": 26,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004822_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004854",
+      "size": 43,
+      "instructions": 21,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004854_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004880",
+      "size": 27,
+      "instructions": 15,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004880_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00489C",
+      "size": 51,
+      "instructions": 28,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00489C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0048D2",
+      "size": 34,
+      "instructions": 19,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0048D2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0048FA",
+      "size": 27,
+      "instructions": 15,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0048FA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004938",
+      "size": 28,
+      "instructions": 14,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004938_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004954",
+      "size": 10,
+      "instructions": 6,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004954_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00495E",
+      "size": 39,
+      "instructions": 17,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00495E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004986",
+      "size": 34,
+      "instructions": 18,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004986_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0049FA",
+      "size": 127,
+      "instructions": 47,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0049FA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004A7A",
+      "size": 26,
+      "instructions": 12,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004A7A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004A94",
+      "size": 33,
+      "instructions": 13,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004A94_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004AD8",
+      "size": 44,
+      "instructions": 22,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004AD8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004B04",
+      "size": 134,
+      "instructions": 57,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004B04_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004B8A",
+      "size": 42,
+      "instructions": 24,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004B8A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004BB4",
+      "size": 30,
+      "instructions": 17,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004BB4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004BD2",
+      "size": 30,
+      "instructions": 17,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004BD2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004BF0",
+      "size": 29,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004BF0_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004C0E",
+      "size": 7,
+      "instructions": 4,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004C0E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004C15",
+      "size": 41,
+      "instructions": 17,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004C15_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004C3E",
+      "size": 154,
+      "instructions": 73,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004C3E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004CD8",
+      "size": 25,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004CD8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004D0A",
+      "size": 30,
+      "instructions": 16,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004D0A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004D66",
+      "size": 28,
+      "instructions": 15,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004D66_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004DC4",
+      "size": 42,
+      "instructions": 22,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004DC4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004DF2",
+      "size": 69,
+      "instructions": 36,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004DF2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004E38",
+      "size": 26,
+      "instructions": 14,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004E38_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004E74",
+      "size": 33,
+      "instructions": 18,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004E74_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004E9E",
+      "size": 42,
+      "instructions": 23,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004E9E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004ECC",
+      "size": 36,
+      "instructions": 20,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004ECC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004EF0",
+      "size": 23,
+      "instructions": 13,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004EF0_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004F08",
+      "size": 54,
+      "instructions": 29,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004F08_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004F3E",
+      "size": 70,
+      "instructions": 34,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004F3E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004F84",
+      "size": 49,
+      "instructions": 24,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004F84_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x004FCC",
+      "size": 78,
+      "instructions": 39,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_004FCC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005096",
+      "size": 34,
+      "instructions": 16,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005096_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005274",
+      "size": 15,
+      "instructions": 6,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005274_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0052F2",
+      "size": 18,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0052F2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00531D",
+      "size": 12,
+      "instructions": 7,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00531D_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0053AA",
+      "size": 149,
+      "instructions": 65,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0053AA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005440",
+      "size": 44,
+      "instructions": 20,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005440_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00546C",
+      "size": 232,
+      "instructions": 93,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00546C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005554",
+      "size": 115,
+      "instructions": 47,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005554_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0055C7",
+      "size": 63,
+      "instructions": 29,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0055C7_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005606",
+      "size": 116,
+      "instructions": 50,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005606_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005682",
+      "size": 75,
+      "instructions": 33,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005682_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0056DE",
+      "size": 448,
+      "instructions": 186,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0056DE_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005BEA",
+      "size": 32,
+      "instructions": 13,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005BEA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005C0A",
+      "size": 122,
+      "instructions": 46,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005C0A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005C84",
+      "size": 125,
+      "instructions": 52,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005C84_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005D6E",
+      "size": 46,
+      "instructions": 26,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005D6E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005DC2",
+      "size": 43,
+      "instructions": 19,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005DC2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005DEE",
+      "size": 172,
+      "instructions": 71,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005DEE_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x005F64",
+      "size": 191,
+      "instructions": 68,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_005F64_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006024",
+      "size": 44,
+      "instructions": 23,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006024_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0060B0",
+      "size": 341,
+      "instructions": 127,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0060B0_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006206",
+      "size": 46,
+      "instructions": 22,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006206_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00623A",
+      "size": 151,
+      "instructions": 65,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00623A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00631E",
+      "size": 25,
+      "instructions": 12,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00631E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006362",
+      "size": 26,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006362_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00637C",
+      "size": 105,
+      "instructions": 42,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00637C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00651E",
+      "size": 185,
+      "instructions": 82,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00651E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00666A",
+      "size": 87,
+      "instructions": 38,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00666A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0066CA",
+      "size": 403,
+      "instructions": 151,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0066CA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00685E",
+      "size": 273,
+      "instructions": 106,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00685E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006984",
+      "size": 33,
+      "instructions": 17,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006984_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x0069A5",
+      "size": 40,
+      "instructions": 21,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_0069A5_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006ACC",
+      "size": 66,
+      "instructions": 34,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006ACC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006B0E",
+      "size": 43,
+      "instructions": 26,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006B0E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006B3A",
+      "size": 360,
+      "instructions": 133,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006B3A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x006DB2",
+      "size": 37,
+      "instructions": 20,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_006DB2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x007136",
+      "size": 50,
+      "instructions": 22,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_007136_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x007309",
+      "size": 16,
+      "instructions": 7,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_007309_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00738E",
+      "size": 14,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00738E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00778C",
+      "size": 18,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00778C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00779E",
+      "size": 148,
+      "instructions": 56,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00779E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x007BAE",
+      "size": 62,
+      "instructions": 19,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_007BAE_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x007BEC",
+      "size": 59,
+      "instructions": 18,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_007BEC_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008B22",
+      "size": 23,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008B22_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008BE6",
+      "size": 20,
+      "instructions": 12,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008BE6_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008BFA",
+      "size": 49,
+      "instructions": 23,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008BFA_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008D02",
+      "size": 29,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008D02_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008D20",
+      "size": 191,
+      "instructions": 74,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008D20_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x008F7C",
+      "size": 32,
+      "instructions": 18,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_008F7C_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x009086",
+      "size": 20,
+      "instructions": 8,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_009086_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x009F26",
+      "size": 8,
+      "instructions": 4,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_009F26_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x009F30",
+      "size": 21,
+      "instructions": 11,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_009F30_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x009F46",
+      "size": 31,
+      "instructions": 12,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_009F46_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A276",
+      "size": 32,
+      "instructions": 15,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A276_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A2A2",
+      "size": 65,
+      "instructions": 27,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A2A2_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A2E4",
+      "size": 21,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A2E4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A31A",
+      "size": 31,
+      "instructions": 16,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A31A_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A464",
+      "size": 10,
+      "instructions": 5,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A464_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A844",
+      "size": 68,
+      "instructions": 31,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A844_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A8F8",
+      "size": 26,
+      "instructions": 10,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A8F8_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A912",
+      "size": 14,
+      "instructions": 9,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A912_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00A9F4",
+      "size": 106,
+      "instructions": 38,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00A9F4_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00AA5E",
+      "size": 102,
+      "instructions": 42,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00AA5E_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00AC68",
+      "size": 28,
+      "instructions": 14,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00AC68_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00ACD6",
+      "size": 121,
+      "instructions": 45,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00ACD6_unknown.asm",
+      "status": "RAW"
+    },
+    {
+      "file_offset": "0x00AEEC",
+      "size": 73,
+      "instructions": 35,
+      "region": "load_image",
+      "name": "unknown",
+      "asm_file": "disasm/func_00AEEC_unknown.asm",
+      "status": "RAW"
+    }
+  ]
+}

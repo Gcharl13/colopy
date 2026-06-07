@@ -1,0 +1,3644 @@
+{
+  "pattern_counts": {
+    "TINY_RETURN": 11,
+    "WRAPPER_LCALL": 27,
+    "UNKNOWN": 12,
+    "PROLOGUE_HEAVY": 53,
+    "DISPATCHER": 13,
+    "WRAPPER_NEARCALL": 9,
+    "TINY_ACCESSOR": 54,
+    "MEDIUM_LOGIC": 18,
+    "COUNT_LOOP": 3,
+    "FIND_LOOP": 8,
+    "LARGE_LOGIC": 2
+  },
+  "functions": {
+    "0x00232A": {
+      "file_offset": "0x00232A",
+      "size": 8,
+      "asm_file": "disasm/func_00232A_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 4
+    },
+    "0x00239E": {
+      "file_offset": "0x00239E",
+      "size": 49,
+      "asm_file": "disasm/func_00239E_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          779,
+          72
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x002A04": {
+      "file_offset": "0x002A04",
+      "size": 34,
+      "asm_file": "disasm/func_002A04_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          683,
+          14
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x002B82": {
+      "file_offset": "0x002B82",
+      "size": 73,
+      "asm_file": "disasm/func_002B82_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          2210,
+          104
+        ]
+      ],
+      "near_calls": [
+        10846
+      ],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x002DE0": {
+      "file_offset": "0x002DE0",
+      "size": 65,
+      "asm_file": "disasm/func_002DE0_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x003724": {
+      "file_offset": "0x003724",
+      "size": 32,
+      "asm_file": "disasm/func_003724_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 14
+    },
+    "0x0038E4": {
+      "file_offset": "0x0038E4",
+      "size": 82,
+      "asm_file": "disasm/func_0038E4_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          2114,
+          262
+        ],
+        [
+          2114,
+          456
+        ],
+        [
+          2114,
+          408
+        ],
+        [
+          2114,
+          408
+        ],
+        [
+          2114,
+          408
+        ],
+        [
+          2114,
+          408
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x00402A": {
+      "file_offset": "0x00402A",
+      "size": 73,
+      "asm_file": "disasm/func_00402A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          3564
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 34
+    },
+    "0x0040B2": {
+      "file_offset": "0x0040B2",
+      "size": 11,
+      "asm_file": "disasm/func_0040B2_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          3067,
+          28
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x00427E": {
+      "file_offset": "0x00427E",
+      "size": 17,
+      "asm_file": "disasm/func_00427E_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        16992
+      ],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00466C": {
+      "file_offset": "0x00466C",
+      "size": 46,
+      "asm_file": "disasm/func_00466C_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 19
+    },
+    "0x0046CE": {
+      "file_offset": "0x0046CE",
+      "size": 25,
+      "asm_file": "disasm/func_0046CE_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x00494A": {
+      "file_offset": "0x00494A",
+      "size": 33,
+      "asm_file": "disasm/func_00494A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 13
+    },
+    "0x004976": {
+      "file_offset": "0x004976",
+      "size": 53,
+      "asm_file": "disasm/func_004976_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          3540
+        ],
+        [
+          3909,
+          266
+        ],
+        [
+          5000,
+          3564
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 25
+    },
+    "0x0049DE": {
+      "file_offset": "0x0049DE",
+      "size": 65,
+      "asm_file": "disasm/func_0049DE_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1668
+        ],
+        [
+          3909,
+          266
+        ],
+        [
+          5000,
+          3564
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 27
+    },
+    "0x004D1A": {
+      "file_offset": "0x004D1A",
+      "size": 64,
+      "asm_file": "disasm/func_004D1A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        10,
+        18,
+        20,
+        22,
+        24,
+        26
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x004DAE": {
+      "file_offset": "0x004DAE",
+      "size": 27,
+      "asm_file": "disasm/func_004DAE_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          5000,
+          3564
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x004DCA": {
+      "file_offset": "0x004DCA",
+      "size": 24,
+      "asm_file": "disasm/func_004DCA_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          820,
+          108
+        ]
+      ],
+      "near_calls": [
+        19886
+      ],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x004E0A": {
+      "file_offset": "0x004E0A",
+      "size": 25,
+      "asm_file": "disasm/func_004E0A_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x004E24": {
+      "file_offset": "0x004E24",
+      "size": 63,
+      "asm_file": "disasm/func_004E24_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22,
+        24
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x004ED4": {
+      "file_offset": "0x004ED4",
+      "size": 65,
+      "asm_file": "disasm/func_004ED4_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 23
+    },
+    "0x0053C0": {
+      "file_offset": "0x0053C0",
+      "size": 29,
+      "asm_file": "disasm/func_0053C0_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [
+        21112
+      ],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x005600": {
+      "file_offset": "0x005600",
+      "size": 15,
+      "asm_file": "disasm/func_005600_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x005B08": {
+      "file_offset": "0x005B08",
+      "size": 61,
+      "asm_file": "disasm/func_005B08_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "lcalls": [
+        [
+          3909,
+          266
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x00641A": {
+      "file_offset": "0x00641A",
+      "size": 59,
+      "asm_file": "disasm/func_00641A_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          3124,
+          68
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 20
+    },
+    "0x006F3C": {
+      "file_offset": "0x006F3C",
+      "size": 34,
+      "asm_file": "disasm/func_006F3C_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [
+        27132
+      ],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x007A62": {
+      "file_offset": "0x007A62",
+      "size": 24,
+      "asm_file": "disasm/func_007A62_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x0080E2": {
+      "file_offset": "0x0080E2",
+      "size": 25,
+      "asm_file": "disasm/func_0080E2_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x00810C": {
+      "file_offset": "0x00810C",
+      "size": 21,
+      "asm_file": "disasm/func_00810C_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x00813E": {
+      "file_offset": "0x00813E",
+      "size": 24,
+      "asm_file": "disasm/func_00813E_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        32936
+      ],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x008168": {
+      "file_offset": "0x008168",
+      "size": 24,
+      "asm_file": "disasm/func_008168_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [
+        32936
+      ],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x008180": {
+      "file_offset": "0x008180",
+      "size": 24,
+      "asm_file": "disasm/func_008180_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        32936
+      ],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x0081AA": {
+      "file_offset": "0x0081AA",
+      "size": 24,
+      "asm_file": "disasm/func_0081AA_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        32936
+      ],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x008378": {
+      "file_offset": "0x008378",
+      "size": 19,
+      "asm_file": "disasm/func_008378_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00838E": {
+      "file_offset": "0x00838E",
+      "size": 52,
+      "asm_file": "disasm/func_00838E_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x0083C2": {
+      "file_offset": "0x0083C2",
+      "size": 68,
+      "asm_file": "disasm/func_0083C2_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        10,
+        14,
+        16,
+        18,
+        20,
+        22,
+        24,
+        26
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 26
+    },
+    "0x009C5E": {
+      "file_offset": "0x009C5E",
+      "size": 13,
+      "asm_file": "disasm/func_009C5E_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x009C7C": {
+      "file_offset": "0x009C7C",
+      "size": 21,
+      "asm_file": "disasm/func_009C7C_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x009C92": {
+      "file_offset": "0x009C92",
+      "size": 15,
+      "asm_file": "disasm/func_009C92_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 8
+    },
+    "0x009D16": {
+      "file_offset": "0x009D16",
+      "size": 12,
+      "asm_file": "disasm/func_009D16_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x009D8E": {
+      "file_offset": "0x009D8E",
+      "size": 20,
+      "asm_file": "disasm/func_009D8E_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x009DB4": {
+      "file_offset": "0x009DB4",
+      "size": 69,
+      "asm_file": "disasm/func_009DB4_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 28
+    },
+    "0x00A02A": {
+      "file_offset": "0x00A02A",
+      "size": 94,
+      "asm_file": "disasm/func_00A02A_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          2171,
+          74
+        ],
+        [
+          2631,
+          3430
+        ],
+        [
+          2171,
+          192
+        ],
+        [
+          2171,
+          564
+        ],
+        [
+          2902,
+          948
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 35
+    },
+    "0x00A0D0": {
+      "file_offset": "0x00A0D0",
+      "size": 16,
+      "asm_file": "disasm/func_00A0D0_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A102": {
+      "file_offset": "0x00A102",
+      "size": 16,
+      "asm_file": "disasm/func_00A102_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A112": {
+      "file_offset": "0x00A112",
+      "size": 16,
+      "asm_file": "disasm/func_00A112_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A122": {
+      "file_offset": "0x00A122",
+      "size": 16,
+      "asm_file": "disasm/func_00A122_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A132": {
+      "file_offset": "0x00A132",
+      "size": 16,
+      "asm_file": "disasm/func_00A132_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A142": {
+      "file_offset": "0x00A142",
+      "size": 16,
+      "asm_file": "disasm/func_00A142_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A152": {
+      "file_offset": "0x00A152",
+      "size": 16,
+      "asm_file": "disasm/func_00A152_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A162": {
+      "file_offset": "0x00A162",
+      "size": 16,
+      "asm_file": "disasm/func_00A162_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A172": {
+      "file_offset": "0x00A172",
+      "size": 16,
+      "asm_file": "disasm/func_00A172_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A182": {
+      "file_offset": "0x00A182",
+      "size": 16,
+      "asm_file": "disasm/func_00A182_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A192": {
+      "file_offset": "0x00A192",
+      "size": 16,
+      "asm_file": "disasm/func_00A192_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A1A2": {
+      "file_offset": "0x00A1A2",
+      "size": 16,
+      "asm_file": "disasm/func_00A1A2_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          1510
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x00A1B2": {
+      "file_offset": "0x00A1B2",
+      "size": 26,
+      "asm_file": "disasm/func_00A1B2_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          820,
+          108
+        ],
+        [
+          5000,
+          3618
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x00A1CC": {
+      "file_offset": "0x00A1CC",
+      "size": 49,
+      "asm_file": "disasm/func_00A1CC_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          820,
+          108
+        ],
+        [
+          5000,
+          3618
+        ]
+      ],
+      "near_calls": [
+        41314,
+        41330
+      ],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x00A2B8": {
+      "file_offset": "0x00A2B8",
+      "size": 46,
+      "asm_file": "disasm/func_00A2B8_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          3618
+        ]
+      ],
+      "near_calls": [
+        41614
+      ],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x00A2E6": {
+      "file_offset": "0x00A2E6",
+      "size": 27,
+      "asm_file": "disasm/func_00A2E6_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x00A302": {
+      "file_offset": "0x00A302",
+      "size": 27,
+      "asm_file": "disasm/func_00A302_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x00A31E": {
+      "file_offset": "0x00A31E",
+      "size": 58,
+      "asm_file": "disasm/func_00A31E_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 22
+    },
+    "0x00A358": {
+      "file_offset": "0x00A358",
+      "size": 58,
+      "asm_file": "disasm/func_00A358_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x00A392": {
+      "file_offset": "0x00A392",
+      "size": 85,
+      "asm_file": "disasm/func_00A392_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 33
+    },
+    "0x00A3E8": {
+      "file_offset": "0x00A3E8",
+      "size": 68,
+      "asm_file": "disasm/func_00A3E8_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14,
+        16
+      ],
+      "lcalls": [],
+      "near_calls": [
+        41702,
+        41816
+      ],
+      "touches_8542": false,
+      "instruction_count": 36
+    },
+    "0x00A42C": {
+      "file_offset": "0x00A42C",
+      "size": 62,
+      "asm_file": "disasm/func_00A42C_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 23
+    },
+    "0x00A46A": {
+      "file_offset": "0x00A46A",
+      "size": 56,
+      "asm_file": "disasm/func_00A46A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14,
+        16
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x00A500": {
+      "file_offset": "0x00A500",
+      "size": 71,
+      "asm_file": "disasm/func_00A500_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18
+      ],
+      "lcalls": [],
+      "near_calls": [
+        41730,
+        42090
+      ],
+      "touches_8542": false,
+      "instruction_count": 37
+    },
+    "0x00A548": {
+      "file_offset": "0x00A548",
+      "size": 75,
+      "asm_file": "disasm/func_00A548_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        41394,
+        41168,
+        41394
+      ],
+      "touches_8542": false,
+      "instruction_count": 35
+    },
+    "0x00B176": {
+      "file_offset": "0x00B176",
+      "size": 8,
+      "asm_file": "disasm/func_00B176_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 5
+    },
+    "0x00B1A2": {
+      "file_offset": "0x00B1A2",
+      "size": 57,
+      "asm_file": "disasm/func_00B1A2_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          683,
+          14
+        ],
+        [
+          683,
+          274
+        ]
+      ],
+      "near_calls": [
+        45430
+      ],
+      "touches_8542": false,
+      "instruction_count": 27
+    },
+    "0x00B1DC": {
+      "file_offset": "0x00B1DC",
+      "size": 39,
+      "asm_file": "disasm/func_00B1DC_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          683,
+          274
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x00B20A": {
+      "file_offset": "0x00B20A",
+      "size": 50,
+      "asm_file": "disasm/func_00B20A_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          683,
+          274
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 22
+    },
+    "0x00CA92": {
+      "file_offset": "0x00CA92",
+      "size": 133,
+      "asm_file": "disasm/func_00CA92_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          3145,
+          14
+        ]
+      ],
+      "near_calls": [
+        47734,
+        51158
+      ],
+      "touches_8542": false,
+      "instruction_count": 44
+    },
+    "0x00CDD4": {
+      "file_offset": "0x00CDD4",
+      "size": 17,
+      "asm_file": "disasm/func_00CDD4_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 8
+    },
+    "0x00CF14": {
+      "file_offset": "0x00CF14",
+      "size": 164,
+      "asm_file": "disasm/func_00CF14_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        8
+      ],
+      "lcalls": [
+        [
+          3206,
+          12
+        ]
+      ],
+      "near_calls": [
+        52284,
+        52692
+      ],
+      "touches_8542": false,
+      "instruction_count": 54
+    },
+    "0x00D030": {
+      "file_offset": "0x00D030",
+      "size": 48,
+      "asm_file": "disasm/func_00D030_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          3792,
+          982
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x00D0A2": {
+      "file_offset": "0x00D0A2",
+      "size": 14,
+      "asm_file": "disasm/func_00D0A2_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00D0F4": {
+      "file_offset": "0x00D0F4",
+      "size": 13,
+      "asm_file": "disasm/func_00D0F4_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 8
+    },
+    "0x00D108": {
+      "file_offset": "0x00D108",
+      "size": 15,
+      "asm_file": "disasm/func_00D108_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00D12E": {
+      "file_offset": "0x00D12E",
+      "size": 106,
+      "asm_file": "disasm/func_00D12E_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 44
+    },
+    "0x00D64E": {
+      "file_offset": "0x00D64E",
+      "size": 77,
+      "asm_file": "disasm/func_00D64E_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          3458
+        ],
+        [
+          5000,
+          3618
+        ],
+        [
+          5000,
+          3618
+        ],
+        [
+          5000,
+          3504
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 31
+    },
+    "0x00D810": {
+      "file_offset": "0x00D810",
+      "size": 35,
+      "asm_file": "disasm/func_00D810_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x00D852": {
+      "file_offset": "0x00D852",
+      "size": 168,
+      "asm_file": "disasm/func_00D852_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          3941,
+          906
+        ],
+        [
+          3941,
+          1404
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 55
+    },
+    "0x00D920": {
+      "file_offset": "0x00D920",
+      "size": 14,
+      "asm_file": "disasm/func_00D920_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00D984": {
+      "file_offset": "0x00D984",
+      "size": 69,
+      "asm_file": "disasm/func_00D984_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          3941,
+          1215
+        ],
+        [
+          3941,
+          1997
+        ],
+        [
+          3781,
+          36
+        ],
+        [
+          3941,
+          2307
+        ],
+        [
+          3941,
+          1233
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 28
+    },
+    "0x00D9EA": {
+      "file_offset": "0x00D9EA",
+      "size": 13,
+      "asm_file": "disasm/func_00D9EA_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00DA24": {
+      "file_offset": "0x00DA24",
+      "size": 17,
+      "asm_file": "disasm/func_00DA24_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x00DA9E": {
+      "file_offset": "0x00DA9E",
+      "size": 34,
+      "asm_file": "disasm/func_00DA9E_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 14
+    },
+    "0x00DD64": {
+      "file_offset": "0x00DD64",
+      "size": 18,
+      "asm_file": "disasm/func_00DD64_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 8
+    },
+    "0x00DD80": {
+      "file_offset": "0x00DD80",
+      "size": 15,
+      "asm_file": "disasm/func_00DD80_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x00DE6C": {
+      "file_offset": "0x00DE6C",
+      "size": 14,
+      "asm_file": "disasm/func_00DE6C_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x00E0BC": {
+      "file_offset": "0x00E0BC",
+      "size": 104,
+      "asm_file": "disasm/func_00E0BC_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          3217,
+          68
+        ],
+        [
+          4157,
+          158
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 44
+    },
+    "0x00E380": {
+      "file_offset": "0x00E380",
+      "size": 28,
+      "asm_file": "disasm/func_00E380_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x00E39C": {
+      "file_offset": "0x00E39C",
+      "size": 42,
+      "asm_file": "disasm/func_00E39C_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x00E57C": {
+      "file_offset": "0x00E57C",
+      "size": 36,
+      "asm_file": "disasm/func_00E57C_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 22
+    },
+    "0x00E68E": {
+      "file_offset": "0x00E68E",
+      "size": 21,
+      "asm_file": "disasm/func_00E68E_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x00E6E8": {
+      "file_offset": "0x00E6E8",
+      "size": 21,
+      "asm_file": "disasm/func_00E6E8_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [
+        59022
+      ],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x00ECA6": {
+      "file_offset": "0x00ECA6",
+      "size": 15,
+      "asm_file": "disasm/func_00ECA6_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x00ED0A": {
+      "file_offset": "0x00ED0A",
+      "size": 49,
+      "asm_file": "disasm/func_00ED0A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 25
+    },
+    "0x010AE0": {
+      "file_offset": "0x010AE0",
+      "size": 62,
+      "asm_file": "disasm/func_010AE0_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 19
+    },
+    "0x010B1E": {
+      "file_offset": "0x010B1E",
+      "size": 59,
+      "asm_file": "disasm/func_010B1E_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          3273,
+          784
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x011AF2": {
+      "file_offset": "0x011AF2",
+      "size": 23,
+      "asm_file": "disasm/func_011AF2_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x011BB6": {
+      "file_offset": "0x011BB6",
+      "size": 20,
+      "asm_file": "disasm/func_011BB6_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x011BCA": {
+      "file_offset": "0x011BCA",
+      "size": 49,
+      "asm_file": "disasm/func_011BCA_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 23
+    },
+    "0x011C1A": {
+      "file_offset": "0x011C1A",
+      "size": 20,
+      "asm_file": "disasm/func_011C1A_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x011D4E": {
+      "file_offset": "0x011D4E",
+      "size": 29,
+      "asm_file": "disasm/func_011D4E_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x011D6C": {
+      "file_offset": "0x011D6C",
+      "size": 191,
+      "asm_file": "disasm/func_011D6C_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [
+        73038
+      ],
+      "touches_8542": false,
+      "instruction_count": 74
+    },
+    "0x011FC8": {
+      "file_offset": "0x011FC8",
+      "size": 32,
+      "asm_file": "disasm/func_011FC8_unknown.asm",
+      "pattern": "COUNT_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x0120D2": {
+      "file_offset": "0x0120D2",
+      "size": 20,
+      "asm_file": "disasm/func_0120D2_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 8
+    },
+    "0x01288B": {
+      "file_offset": "0x01288B",
+      "size": 16,
+      "asm_file": "disasm/func_01288B_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x0128D6": {
+      "file_offset": "0x0128D6",
+      "size": 68,
+      "asm_file": "disasm/func_0128D6_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 31
+    },
+    "0x01298A": {
+      "file_offset": "0x01298A",
+      "size": 26,
+      "asm_file": "disasm/func_01298A_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x0129A4": {
+      "file_offset": "0x0129A4",
+      "size": 59,
+      "asm_file": "disasm/func_0129A4_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x012A86": {
+      "file_offset": "0x012A86",
+      "size": 106,
+      "asm_file": "disasm/func_012A86_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          4397,
+          350
+        ]
+      ],
+      "near_calls": [
+        76380
+      ],
+      "touches_8542": false,
+      "instruction_count": 38
+    },
+    "0x012AF0": {
+      "file_offset": "0x012AF0",
+      "size": 102,
+      "asm_file": "disasm/func_012AF0_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [
+        76380
+      ],
+      "touches_8542": false,
+      "instruction_count": 42
+    },
+    "0x013ADC": {
+      "file_offset": "0x013ADC",
+      "size": 18,
+      "asm_file": "disasm/func_013ADC_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x013AEE": {
+      "file_offset": "0x013AEE",
+      "size": 103,
+      "asm_file": "disasm/func_013AEE_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          2200
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 44
+    },
+    "0x013DEC": {
+      "file_offset": "0x013DEC",
+      "size": 32,
+      "asm_file": "disasm/func_013DEC_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x013E18": {
+      "file_offset": "0x013E18",
+      "size": 65,
+      "asm_file": "disasm/func_013E18_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 27
+    },
+    "0x013E5A": {
+      "file_offset": "0x013E5A",
+      "size": 21,
+      "asm_file": "disasm/func_013E5A_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 9
+    },
+    "0x013E90": {
+      "file_offset": "0x013E90",
+      "size": 24,
+      "asm_file": "disasm/func_013E90_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x013EB4": {
+      "file_offset": "0x013EB4",
+      "size": 53,
+      "asm_file": "disasm/func_013EB4_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x013EF0": {
+      "file_offset": "0x013EF0",
+      "size": 22,
+      "asm_file": "disasm/func_013EF0_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x0140DC": {
+      "file_offset": "0x0140DC",
+      "size": 36,
+      "asm_file": "disasm/func_0140DC_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 16
+    },
+    "0x01469A": {
+      "file_offset": "0x01469A",
+      "size": 8,
+      "asm_file": "disasm/func_01469A_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 4
+    },
+    "0x0146A4": {
+      "file_offset": "0x0146A4",
+      "size": 21,
+      "asm_file": "disasm/func_0146A4_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x0146BA": {
+      "file_offset": "0x0146BA",
+      "size": 31,
+      "asm_file": "disasm/func_0146BA_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x0149EA": {
+      "file_offset": "0x0149EA",
+      "size": 73,
+      "asm_file": "disasm/func_0149EA_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 35
+    },
+    "0x014A34": {
+      "file_offset": "0x014A34",
+      "size": 31,
+      "asm_file": "disasm/func_014A34_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 16
+    },
+    "0x014B7E": {
+      "file_offset": "0x014B7E",
+      "size": 10,
+      "asm_file": "disasm/func_014B7E_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 5
+    },
+    "0x014C0A": {
+      "file_offset": "0x014C0A",
+      "size": 28,
+      "asm_file": "disasm/func_014C0A_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 14
+    },
+    "0x014C78": {
+      "file_offset": "0x014C78",
+      "size": 77,
+      "asm_file": "disasm/func_014C78_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 30
+    },
+    "0x01505B": {
+      "file_offset": "0x01505B",
+      "size": 7,
+      "asm_file": "disasm/func_01505B_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 4
+    },
+    "0x015062": {
+      "file_offset": "0x015062",
+      "size": 8,
+      "asm_file": "disasm/func_015062_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 4
+    },
+    "0x01506A": {
+      "file_offset": "0x01506A",
+      "size": 10,
+      "asm_file": "disasm/func_01506A_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x015074": {
+      "file_offset": "0x015074",
+      "size": 106,
+      "asm_file": "disasm/func_015074_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          4002
+        ]
+      ],
+      "near_calls": [
+        86283,
+        86283,
+        86283,
+        86283,
+        86238
+      ],
+      "touches_8542": false,
+      "instruction_count": 44
+    },
+    "0x015142": {
+      "file_offset": "0x015142",
+      "size": 186,
+      "asm_file": "disasm/func_015142_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          5582
+        ],
+        [
+          5000,
+          7090
+        ],
+        [
+          5000,
+          1574
+        ],
+        [
+          5000,
+          1510
+        ],
+        [
+          5000,
+          1852
+        ],
+        [
+          5000,
+          2726
+        ]
+      ],
+      "near_calls": [
+        90760
+      ],
+      "touches_8542": false,
+      "instruction_count": 72
+    },
+    "0x0151FC": {
+      "file_offset": "0x0151FC",
+      "size": 43,
+      "asm_file": "disasm/func_0151FC_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          5000,
+          7038
+        ],
+        [
+          5000,
+          5172
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 20
+    },
+    "0x015228": {
+      "file_offset": "0x015228",
+      "size": 21,
+      "asm_file": "disasm/func_015228_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          892
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x01523E": {
+      "file_offset": "0x01523E",
+      "size": 135,
+      "asm_file": "disasm/func_01523E_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [
+        94124
+      ],
+      "touches_8542": false,
+      "instruction_count": 63
+    },
+    "0x015322": {
+      "file_offset": "0x015322",
+      "size": 163,
+      "asm_file": "disasm/func_015322_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [
+        94124,
+        91214
+      ],
+      "touches_8542": false,
+      "instruction_count": 78
+    },
+    "0x015428": {
+      "file_offset": "0x015428",
+      "size": 62,
+      "asm_file": "disasm/func_015428_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          5798
+        ]
+      ],
+      "near_calls": [
+        91036,
+        91151
+      ],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x015466": {
+      "file_offset": "0x015466",
+      "size": 63,
+      "asm_file": "disasm/func_015466_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 30
+    },
+    "0x0154A6": {
+      "file_offset": "0x0154A6",
+      "size": 50,
+      "asm_file": "disasm/func_0154A6_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 26
+    },
+    "0x0154D8": {
+      "file_offset": "0x0154D8",
+      "size": 43,
+      "asm_file": "disasm/func_0154D8_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 21
+    },
+    "0x015504": {
+      "file_offset": "0x015504",
+      "size": 27,
+      "asm_file": "disasm/func_015504_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x015520": {
+      "file_offset": "0x015520",
+      "size": 51,
+      "asm_file": "disasm/func_015520_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 28
+    },
+    "0x015556": {
+      "file_offset": "0x015556",
+      "size": 34,
+      "asm_file": "disasm/func_015556_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 19
+    },
+    "0x01557E": {
+      "file_offset": "0x01557E",
+      "size": 27,
+      "asm_file": "disasm/func_01557E_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x0155BC": {
+      "file_offset": "0x0155BC",
+      "size": 28,
+      "asm_file": "disasm/func_0155BC_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 14
+    },
+    "0x0155D8": {
+      "file_offset": "0x0155D8",
+      "size": 10,
+      "asm_file": "disasm/func_0155D8_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x0155E2": {
+      "file_offset": "0x0155E2",
+      "size": 39,
+      "asm_file": "disasm/func_0155E2_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          7926
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 17
+    },
+    "0x01560A": {
+      "file_offset": "0x01560A",
+      "size": 34,
+      "asm_file": "disasm/func_01560A_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x01567E": {
+      "file_offset": "0x01567E",
+      "size": 127,
+      "asm_file": "disasm/func_01567E_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          7926
+        ],
+        [
+          5000,
+          5582
+        ],
+        [
+          5000,
+          7122
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 47
+    },
+    "0x0156FE": {
+      "file_offset": "0x0156FE",
+      "size": 26,
+      "asm_file": "disasm/func_0156FE_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          2046
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x015718": {
+      "file_offset": "0x015718",
+      "size": 33,
+      "asm_file": "disasm/func_015718_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          5582
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 13
+    },
+    "0x01575C": {
+      "file_offset": "0x01575C",
+      "size": 44,
+      "asm_file": "disasm/func_01575C_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [
+        [
+          5000,
+          8300
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 22
+    },
+    "0x015788": {
+      "file_offset": "0x015788",
+      "size": 90,
+      "asm_file": "disasm/func_015788_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          5000,
+          5798
+        ],
+        [
+          5000,
+          4900
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 37
+    },
+    "0x0157E2": {
+      "file_offset": "0x0157E2",
+      "size": 134,
+      "asm_file": "disasm/func_0157E2_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          7122
+        ],
+        [
+          5000,
+          7122
+        ],
+        [
+          5000,
+          7122
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 57
+    },
+    "0x015868": {
+      "file_offset": "0x015868",
+      "size": 42,
+      "asm_file": "disasm/func_015868_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x015892": {
+      "file_offset": "0x015892",
+      "size": 54,
+      "asm_file": "disasm/func_015892_unknown.asm",
+      "pattern": "COUNT_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x0158EA": {
+      "file_offset": "0x0158EA",
+      "size": 30,
+      "asm_file": "disasm/func_0158EA_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 17
+    },
+    "0x015908": {
+      "file_offset": "0x015908",
+      "size": 30,
+      "asm_file": "disasm/func_015908_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 17
+    },
+    "0x015926": {
+      "file_offset": "0x015926",
+      "size": 14,
+      "asm_file": "disasm/func_015926_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x015934": {
+      "file_offset": "0x015934",
+      "size": 11,
+      "asm_file": "disasm/func_015934_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x01593F": {
+      "file_offset": "0x01593F",
+      "size": 38,
+      "asm_file": "disasm/func_01593F_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 20
+    },
+    "0x015972": {
+      "file_offset": "0x015972",
+      "size": 7,
+      "asm_file": "disasm/func_015972_unknown.asm",
+      "pattern": "TINY_RETURN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 4
+    },
+    "0x015979": {
+      "file_offset": "0x015979",
+      "size": 41,
+      "asm_file": "disasm/func_015979_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        12,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 17
+    },
+    "0x0159A2": {
+      "file_offset": "0x0159A2",
+      "size": 154,
+      "asm_file": "disasm/func_0159A2_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 73
+    },
+    "0x015A3C": {
+      "file_offset": "0x015A3C",
+      "size": 25,
+      "asm_file": "disasm/func_015A3C_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x015A6E": {
+      "file_offset": "0x015A6E",
+      "size": 30,
+      "asm_file": "disasm/func_015A6E_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 16
+    },
+    "0x015ACA": {
+      "file_offset": "0x015ACA",
+      "size": 28,
+      "asm_file": "disasm/func_015ACA_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 15
+    },
+    "0x015B28": {
+      "file_offset": "0x015B28",
+      "size": 42,
+      "asm_file": "disasm/func_015B28_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 22
+    },
+    "0x015B56": {
+      "file_offset": "0x015B56",
+      "size": 69,
+      "asm_file": "disasm/func_015B56_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 36
+    },
+    "0x015B9C": {
+      "file_offset": "0x015B9C",
+      "size": 26,
+      "asm_file": "disasm/func_015B9C_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 14
+    },
+    "0x015BD8": {
+      "file_offset": "0x015BD8",
+      "size": 33,
+      "asm_file": "disasm/func_015BD8_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 18
+    },
+    "0x015C02": {
+      "file_offset": "0x015C02",
+      "size": 42,
+      "asm_file": "disasm/func_015C02_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 23
+    },
+    "0x015C30": {
+      "file_offset": "0x015C30",
+      "size": 36,
+      "asm_file": "disasm/func_015C30_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 20
+    },
+    "0x015C54": {
+      "file_offset": "0x015C54",
+      "size": 23,
+      "asm_file": "disasm/func_015C54_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 13
+    },
+    "0x015C6C": {
+      "file_offset": "0x015C6C",
+      "size": 54,
+      "asm_file": "disasm/func_015C6C_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x015CA2": {
+      "file_offset": "0x015CA2",
+      "size": 70,
+      "asm_file": "disasm/func_015CA2_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 34
+    },
+    "0x015CE8": {
+      "file_offset": "0x015CE8",
+      "size": 49,
+      "asm_file": "disasm/func_015CE8_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 24
+    },
+    "0x015D30": {
+      "file_offset": "0x015D30",
+      "size": 30,
+      "asm_file": "disasm/func_015D30_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        10,
+        14
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 19
+    },
+    "0x015DFA": {
+      "file_offset": "0x015DFA",
+      "size": 34,
+      "asm_file": "disasm/func_015DFA_unknown.asm",
+      "pattern": "UNKNOWN",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [
+        90241,
+        90241
+      ],
+      "touches_8542": false,
+      "instruction_count": 16
+    },
+    "0x015FD8": {
+      "file_offset": "0x015FD8",
+      "size": 15,
+      "asm_file": "disasm/func_015FD8_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 6
+    },
+    "0x016056": {
+      "file_offset": "0x016056",
+      "size": 18,
+      "asm_file": "disasm/func_016056_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 11
+    },
+    "0x016081": {
+      "file_offset": "0x016081",
+      "size": 12,
+      "asm_file": "disasm/func_016081_unknown.asm",
+      "pattern": "WRAPPER_NEARCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [
+        90198
+      ],
+      "touches_8542": false,
+      "instruction_count": 7
+    },
+    "0x01610E": {
+      "file_offset": "0x01610E",
+      "size": 149,
+      "asm_file": "disasm/func_01610E_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [
+        94302,
+        92876
+      ],
+      "touches_8542": false,
+      "instruction_count": 65
+    },
+    "0x0161A4": {
+      "file_offset": "0x0161A4",
+      "size": 151,
+      "asm_file": "disasm/func_0161A4_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        93110,
+        94302
+      ],
+      "touches_8542": false,
+      "instruction_count": 65
+    },
+    "0x016288": {
+      "file_offset": "0x016288",
+      "size": 44,
+      "asm_file": "disasm/func_016288_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          5000,
+          9208
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 20
+    },
+    "0x0162B4": {
+      "file_offset": "0x0162B4",
+      "size": 232,
+      "asm_file": "disasm/func_0162B4_unknown.asm",
+      "pattern": "LARGE_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          8738
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 93
+    },
+    "0x01639C": {
+      "file_offset": "0x01639C",
+      "size": 115,
+      "asm_file": "disasm/func_01639C_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          5000,
+          9202
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 47
+    },
+    "0x01640F": {
+      "file_offset": "0x01640F",
+      "size": 63,
+      "asm_file": "disasm/func_01640F_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [
+        91214
+      ],
+      "touches_8542": false,
+      "instruction_count": 29
+    },
+    "0x01644E": {
+      "file_offset": "0x01644E",
+      "size": 116,
+      "asm_file": "disasm/func_01644E_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          7478
+        ]
+      ],
+      "near_calls": [
+        91338
+      ],
+      "touches_8542": false,
+      "instruction_count": 50
+    },
+    "0x0164CA": {
+      "file_offset": "0x0164CA",
+      "size": 75,
+      "asm_file": "disasm/func_0164CA_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          5000,
+          5582
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 33
+    },
+    "0x016526": {
+      "file_offset": "0x016526",
+      "size": 448,
+      "asm_file": "disasm/func_016526_unknown.asm",
+      "pattern": "LARGE_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [
+        86302,
+        92586,
+        92465,
+        92465,
+        92465,
+        92485
+      ],
+      "touches_8542": false,
+      "instruction_count": 186
+    },
+    "0x016A32": {
+      "file_offset": "0x016A32",
+      "size": 32,
+      "asm_file": "disasm/func_016A32_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 13
+    },
+    "0x016A52": {
+      "file_offset": "0x016A52",
+      "size": 122,
+      "asm_file": "disasm/func_016A52_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 46
+    },
+    "0x016ACC": {
+      "file_offset": "0x016ACC",
+      "size": 125,
+      "asm_file": "disasm/func_016ACC_unknown.asm",
+      "pattern": "COUNT_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 52
+    },
+    "0x016BB6": {
+      "file_offset": "0x016BB6",
+      "size": 185,
+      "asm_file": "disasm/func_016BB6_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [
+        [
+          5000,
+          9182
+        ]
+      ],
+      "near_calls": [
+        93290,
+        93290,
+        93290,
+        86302
+      ],
+      "touches_8542": false,
+      "instruction_count": 82
+    },
+    "0x016CF6": {
+      "file_offset": "0x016CF6",
+      "size": 46,
+      "asm_file": "disasm/func_016CF6_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 26
+    },
+    "0x016D4A": {
+      "file_offset": "0x016D4A",
+      "size": 43,
+      "asm_file": "disasm/func_016D4A_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 19
+    },
+    "0x016D76": {
+      "file_offset": "0x016D76",
+      "size": 172,
+      "asm_file": "disasm/func_016D76_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [
+        [
+          5000,
+          7122
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 71
+    },
+    "0x016EEC": {
+      "file_offset": "0x016EEC",
+      "size": 191,
+      "asm_file": "disasm/func_016EEC_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10,
+        12
+      ],
+      "lcalls": [
+        [
+          5000,
+          5582
+        ],
+        [
+          5000,
+          9202
+        ]
+      ],
+      "near_calls": [
+        90760
+      ],
+      "touches_8542": false,
+      "instruction_count": 68
+    },
+    "0x016FAC": {
+      "file_offset": "0x016FAC",
+      "size": 44,
+      "asm_file": "disasm/func_016FAC_unknown.asm",
+      "pattern": "FIND_LOOP",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8,
+        10
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 23
+    },
+    "0x01705E": {
+      "file_offset": "0x01705E",
+      "size": 25,
+      "asm_file": "disasm/func_01705E_unknown.asm",
+      "pattern": "WRAPPER_LCALL",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [],
+      "lcalls": [
+        [
+          5000,
+          9202
+        ]
+      ],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 12
+    },
+    "0x0170A2": {
+      "file_offset": "0x0170A2",
+      "size": 26,
+      "asm_file": "disasm/func_0170A2_unknown.asm",
+      "pattern": "TINY_ACCESSOR",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        10,
+        12
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 10
+    },
+    "0x0170BC": {
+      "file_offset": "0x0170BC",
+      "size": 105,
+      "asm_file": "disasm/func_0170BC_unknown.asm",
+      "pattern": "MEDIUM_LOGIC",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6,
+        8
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 42
+    },
+    "0x01727E": {
+      "file_offset": "0x01727E",
+      "size": 33,
+      "asm_file": "disasm/func_01727E_unknown.asm",
+      "pattern": "PROLOGUE_HEAVY",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [],
+      "touches_8542": false,
+      "instruction_count": 17
+    },
+    "0x01729F": {
+      "file_offset": "0x01729F",
+      "size": 40,
+      "asm_file": "disasm/func_01729F_unknown.asm",
+      "pattern": "DISPATCHER",
+      "prologue": "PUSH-BP-MOV-BP-SP",
+      "args": [
+        6
+      ],
+      "lcalls": [],
+      "near_calls": [
+        95174,
+        94920,
+        95174
+      ],
+      "touches_8542": false,
+      "instruction_count": 21
+    }
+  }
+}

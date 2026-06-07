@@ -1,0 +1,1324 @@
+{
+  "summary": {
+    "exe": "OPENING",
+    "functions_total": 145,
+    "function_lines_total": 3885,
+    "function_lines_identified": 3883,
+    "orphan_lines_total": 52543,
+    "orphan_lines_identified": 52398,
+    "grand_total": 56428,
+    "grand_identified": 56281,
+    "pct_identified": 99.73949103282058,
+    "by_status": {
+      "DONE": 144,
+      "IN-PROGRESS": 1
+    }
+  },
+  "functions": [
+    {
+      "asm_file": "func_000C00_unknown.asm",
+      "offset": 3072,
+      "name": "unknown",
+      "lines": 14,
+      "identified": 14,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_000C2E_unknown.asm",
+      "offset": 3118,
+      "name": "unknown",
+      "lines": 18,
+      "identified": 18,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0016AC_unknown.asm",
+      "offset": 5804,
+      "name": "unknown",
+      "lines": 7,
+      "identified": 7,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00198C_unknown.asm",
+      "offset": 6540,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002594_unknown.asm",
+      "offset": 9620,
+      "name": "unknown",
+      "lines": 34,
+      "identified": 34,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00261C_unknown.asm",
+      "offset": 9756,
+      "name": "unknown",
+      "lines": 6,
+      "identified": 6,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002A38_unknown.asm",
+      "offset": 10808,
+      "name": "unknown",
+      "lines": 13,
+      "identified": 13,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002A64_unknown.asm",
+      "offset": 10852,
+      "name": "unknown",
+      "lines": 25,
+      "identified": 25,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002ACC_unknown.asm",
+      "offset": 10956,
+      "name": "unknown",
+      "lines": 15,
+      "identified": 15,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002AFC_unknown.asm",
+      "offset": 11004,
+      "name": "unknown",
+      "lines": 24,
+      "identified": 24,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_002DD2_unknown.asm",
+      "offset": 11730,
+      "name": "unknown",
+      "lines": 20,
+      "identified": 20,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0030F2_unknown.asm",
+      "offset": 12530,
+      "name": "unknown",
+      "lines": 8,
+      "identified": 8,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003106_unknown.asm",
+      "offset": 12550,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00322A_unknown.asm",
+      "offset": 12842,
+      "name": "unknown",
+      "lines": 31,
+      "identified": 31,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003514_unknown.asm",
+      "offset": 13588,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00357A_unknown.asm",
+      "offset": 13690,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0035B4_unknown.asm",
+      "offset": 13748,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0035F6_unknown.asm",
+      "offset": 13814,
+      "name": "unknown",
+      "lines": 14,
+      "identified": 14,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003982_unknown.asm",
+      "offset": 14722,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00399E_unknown.asm",
+      "offset": 14750,
+      "name": "unknown",
+      "lines": 24,
+      "identified": 24,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003B7E_unknown.asm",
+      "offset": 15230,
+      "name": "unknown",
+      "lines": 22,
+      "identified": 22,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003C90_unknown.asm",
+      "offset": 15504,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003CEA_unknown.asm",
+      "offset": 15594,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_003D2E_unknown.asm",
+      "offset": 15662,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0042D6_unknown.asm",
+      "offset": 17110,
+      "name": "unknown",
+      "lines": 5,
+      "identified": 5,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00433A_unknown.asm",
+      "offset": 17210,
+      "name": "unknown",
+      "lines": 25,
+      "identified": 25,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005142_unknown.asm",
+      "offset": 20802,
+      "name": "unknown",
+      "lines": 27,
+      "identified": 27,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00525E_unknown.asm",
+      "offset": 21086,
+      "name": "unknown",
+      "lines": 16,
+      "identified": 16,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005439_unknown.asm",
+      "offset": 21561,
+      "name": "unknown",
+      "lines": 4,
+      "identified": 4,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005440_unknown.asm",
+      "offset": 21568,
+      "name": "unknown",
+      "lines": 4,
+      "identified": 4,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005448_unknown.asm",
+      "offset": 21576,
+      "name": "unknown",
+      "lines": 6,
+      "identified": 6,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005452_unknown.asm",
+      "offset": 21586,
+      "name": "unknown",
+      "lines": 44,
+      "identified": 44,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005520_unknown.asm",
+      "offset": 21792,
+      "name": "unknown",
+      "lines": 13,
+      "identified": 13,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005546_unknown.asm",
+      "offset": 21830,
+      "name": "unknown",
+      "lines": 23,
+      "identified": 23,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005563_unknown.asm",
+      "offset": 21859,
+      "name": "unknown",
+      "lines": 12,
+      "identified": 12,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005576_unknown.asm",
+      "offset": 21878,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005588_unknown.asm",
+      "offset": 21896,
+      "name": "unknown",
+      "lines": 31,
+      "identified": 31,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005642_unknown.asm",
+      "offset": 22082,
+      "name": "unknown",
+      "lines": 20,
+      "identified": 20,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00566E_unknown.asm",
+      "offset": 22126,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005684_unknown.asm",
+      "offset": 22148,
+      "name": "unknown",
+      "lines": 63,
+      "identified": 63,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005768_unknown.asm",
+      "offset": 22376,
+      "name": "unknown",
+      "lines": 29,
+      "identified": 29,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0057A6_unknown.asm",
+      "offset": 22438,
+      "name": "unknown",
+      "lines": 30,
+      "identified": 30,
+      "status": "DONE",
+      "purpose": ""
+    },
+    {
+      "asm_file": "func_0057E6_unknown.asm",
+      "offset": 22502,
+      "name": "unknown",
+      "lines": 26,
+      "identified": 26,
+      "status": "DONE",
+      "purpose": ""
+    },
+    {
+      "asm_file": "func_005818_unknown.asm",
+      "offset": 22552,
+      "name": "unknown",
+      "lines": 21,
+      "identified": 21,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005844_unknown.asm",
+      "offset": 22596,
+      "name": "unknown",
+      "lines": 15,
+      "identified": 15,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005860_unknown.asm",
+      "offset": 22624,
+      "name": "unknown",
+      "lines": 28,
+      "identified": 28,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005896_unknown.asm",
+      "offset": 22678,
+      "name": "unknown",
+      "lines": 19,
+      "identified": 19,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0058BE_unknown.asm",
+      "offset": 22718,
+      "name": "unknown",
+      "lines": 15,
+      "identified": 15,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0058FC_unknown.asm",
+      "offset": 22780,
+      "name": "unknown",
+      "lines": 14,
+      "identified": 14,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005918_unknown.asm",
+      "offset": 22808,
+      "name": "unknown",
+      "lines": 6,
+      "identified": 6,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005922_unknown.asm",
+      "offset": 22818,
+      "name": "unknown",
+      "lines": 17,
+      "identified": 17,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00594A_unknown.asm",
+      "offset": 22858,
+      "name": "unknown",
+      "lines": 18,
+      "identified": 18,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0059BE_unknown.asm",
+      "offset": 22974,
+      "name": "unknown",
+      "lines": 47,
+      "identified": 47,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005A3E_unknown.asm",
+      "offset": 23102,
+      "name": "unknown",
+      "lines": 12,
+      "identified": 12,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005A58_unknown.asm",
+      "offset": 23128,
+      "name": "unknown",
+      "lines": 13,
+      "identified": 13,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005A9C_unknown.asm",
+      "offset": 23196,
+      "name": "unknown",
+      "lines": 22,
+      "identified": 22,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005AC8_unknown.asm",
+      "offset": 23240,
+      "name": "unknown",
+      "lines": 57,
+      "identified": 57,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005B4E_unknown.asm",
+      "offset": 23374,
+      "name": "unknown",
+      "lines": 24,
+      "identified": 24,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005B78_unknown.asm",
+      "offset": 23416,
+      "name": "unknown",
+      "lines": 17,
+      "identified": 17,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005B96_unknown.asm",
+      "offset": 23446,
+      "name": "unknown",
+      "lines": 17,
+      "identified": 17,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005BB4_unknown.asm",
+      "offset": 23476,
+      "name": "unknown",
+      "lines": 23,
+      "identified": 23,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005BE2_unknown.asm",
+      "offset": 23522,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005C00_unknown.asm",
+      "offset": 23552,
+      "name": "unknown",
+      "lines": 7,
+      "identified": 7,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005C0E_unknown.asm",
+      "offset": 23566,
+      "name": "unknown",
+      "lines": 4,
+      "identified": 4,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005C15_unknown.asm",
+      "offset": 23573,
+      "name": "unknown",
+      "lines": 17,
+      "identified": 17,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005C3E_unknown.asm",
+      "offset": 23614,
+      "name": "unknown",
+      "lines": 73,
+      "identified": 73,
+      "status": "DONE",
+      "purpose": ""
+    },
+    {
+      "asm_file": "func_005CD8_unknown.asm",
+      "offset": 23768,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": ""
+    },
+    {
+      "asm_file": "func_005D0A_unknown.asm",
+      "offset": 23818,
+      "name": "unknown",
+      "lines": 16,
+      "identified": 16,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005D66_unknown.asm",
+      "offset": 23910,
+      "name": "unknown",
+      "lines": 15,
+      "identified": 15,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005DC4_unknown.asm",
+      "offset": 24004,
+      "name": "unknown",
+      "lines": 22,
+      "identified": 22,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005DF2_unknown.asm",
+      "offset": 24050,
+      "name": "unknown",
+      "lines": 36,
+      "identified": 36,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005E38_unknown.asm",
+      "offset": 24120,
+      "name": "unknown",
+      "lines": 14,
+      "identified": 14,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005E74_unknown.asm",
+      "offset": 24180,
+      "name": "unknown",
+      "lines": 18,
+      "identified": 18,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005E9E_unknown.asm",
+      "offset": 24222,
+      "name": "unknown",
+      "lines": 23,
+      "identified": 23,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005ECC_unknown.asm",
+      "offset": 24268,
+      "name": "unknown",
+      "lines": 20,
+      "identified": 20,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005EF0_unknown.asm",
+      "offset": 24304,
+      "name": "unknown",
+      "lines": 13,
+      "identified": 13,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005F08_unknown.asm",
+      "offset": 24328,
+      "name": "unknown",
+      "lines": 29,
+      "identified": 29,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005F3E_unknown.asm",
+      "offset": 24382,
+      "name": "unknown",
+      "lines": 34,
+      "identified": 34,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005F84_unknown.asm",
+      "offset": 24452,
+      "name": "unknown",
+      "lines": 24,
+      "identified": 24,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_005FCC_unknown.asm",
+      "offset": 24524,
+      "name": "unknown",
+      "lines": 39,
+      "identified": 39,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006096_unknown.asm",
+      "offset": 24726,
+      "name": "unknown",
+      "lines": 16,
+      "identified": 16,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006274_unknown.asm",
+      "offset": 25204,
+      "name": "unknown",
+      "lines": 6,
+      "identified": 6,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0062F2_unknown.asm",
+      "offset": 25330,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00631D_unknown.asm",
+      "offset": 25373,
+      "name": "unknown",
+      "lines": 7,
+      "identified": 7,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0063AA_unknown.asm",
+      "offset": 25514,
+      "name": "unknown",
+      "lines": 65,
+      "identified": 65,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006440_unknown.asm",
+      "offset": 25664,
+      "name": "unknown",
+      "lines": 20,
+      "identified": 20,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00646C_unknown.asm",
+      "offset": 25708,
+      "name": "unknown",
+      "lines": 93,
+      "identified": 93,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006554_unknown.asm",
+      "offset": 25940,
+      "name": "unknown",
+      "lines": 47,
+      "identified": 47,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0065C7_unknown.asm",
+      "offset": 26055,
+      "name": "unknown",
+      "lines": 29,
+      "identified": 29,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006606_unknown.asm",
+      "offset": 26118,
+      "name": "unknown",
+      "lines": 50,
+      "identified": 50,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006682_unknown.asm",
+      "offset": 26242,
+      "name": "unknown",
+      "lines": 33,
+      "identified": 33,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0066DE_unknown.asm",
+      "offset": 26334,
+      "name": "unknown",
+      "lines": 186,
+      "identified": 184,
+      "status": "IN-PROGRESS",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006BEA_unknown.asm",
+      "offset": 27626,
+      "name": "unknown",
+      "lines": 13,
+      "identified": 13,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006C0A_unknown.asm",
+      "offset": 27658,
+      "name": "unknown",
+      "lines": 46,
+      "identified": 46,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006C84_unknown.asm",
+      "offset": 27780,
+      "name": "unknown",
+      "lines": 52,
+      "identified": 52,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006D6E_unknown.asm",
+      "offset": 28014,
+      "name": "unknown",
+      "lines": 26,
+      "identified": 26,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006DC2_unknown.asm",
+      "offset": 28098,
+      "name": "unknown",
+      "lines": 19,
+      "identified": 19,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006DEE_unknown.asm",
+      "offset": 28142,
+      "name": "unknown",
+      "lines": 71,
+      "identified": 71,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_006F64_unknown.asm",
+      "offset": 28516,
+      "name": "unknown",
+      "lines": 68,
+      "identified": 68,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007024_unknown.asm",
+      "offset": 28708,
+      "name": "unknown",
+      "lines": 23,
+      "identified": 23,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0070B0_unknown.asm",
+      "offset": 28848,
+      "name": "unknown",
+      "lines": 127,
+      "identified": 127,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00722C_unknown.asm",
+      "offset": 29228,
+      "name": "unknown",
+      "lines": 65,
+      "identified": 65,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007310_unknown.asm",
+      "offset": 29456,
+      "name": "unknown",
+      "lines": 12,
+      "identified": 12,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007354_unknown.asm",
+      "offset": 29524,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00736E_unknown.asm",
+      "offset": 29550,
+      "name": "unknown",
+      "lines": 42,
+      "identified": 42,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007510_unknown.asm",
+      "offset": 29968,
+      "name": "unknown",
+      "lines": 82,
+      "identified": 82,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00765C_unknown.asm",
+      "offset": 30300,
+      "name": "unknown",
+      "lines": 38,
+      "identified": 38,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0076BC_unknown.asm",
+      "offset": 30396,
+      "name": "unknown",
+      "lines": 67,
+      "identified": 67,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007850_unknown.asm",
+      "offset": 30800,
+      "name": "unknown",
+      "lines": 106,
+      "identified": 106,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007976_unknown.asm",
+      "offset": 31094,
+      "name": "unknown",
+      "lines": 17,
+      "identified": 17,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007997_unknown.asm",
+      "offset": 31127,
+      "name": "unknown",
+      "lines": 21,
+      "identified": 21,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007ABE_unknown.asm",
+      "offset": 31422,
+      "name": "unknown",
+      "lines": 34,
+      "identified": 34,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007B00_unknown.asm",
+      "offset": 31488,
+      "name": "unknown",
+      "lines": 26,
+      "identified": 26,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007B2C_unknown.asm",
+      "offset": 31532,
+      "name": "unknown",
+      "lines": 133,
+      "identified": 133,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_007DA4_unknown.asm",
+      "offset": 32164,
+      "name": "unknown",
+      "lines": 20,
+      "identified": 20,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_008128_unknown.asm",
+      "offset": 33064,
+      "name": "unknown",
+      "lines": 22,
+      "identified": 22,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_0082FB_unknown.asm",
+      "offset": 33531,
+      "name": "unknown",
+      "lines": 7,
+      "identified": 7,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_008380_unknown.asm",
+      "offset": 33664,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00877E_unknown.asm",
+      "offset": 34686,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_008790_unknown.asm",
+      "offset": 34704,
+      "name": "unknown",
+      "lines": 56,
+      "identified": 56,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_008BA0_unknown.asm",
+      "offset": 35744,
+      "name": "unknown",
+      "lines": 19,
+      "identified": 19,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_008BDE_unknown.asm",
+      "offset": 35806,
+      "name": "unknown",
+      "lines": 18,
+      "identified": 18,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009A58_unknown.asm",
+      "offset": 39512,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009B1C_unknown.asm",
+      "offset": 39708,
+      "name": "unknown",
+      "lines": 12,
+      "identified": 12,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009B30_unknown.asm",
+      "offset": 39728,
+      "name": "unknown",
+      "lines": 23,
+      "identified": 23,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009C38_unknown.asm",
+      "offset": 39992,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009C56_unknown.asm",
+      "offset": 40022,
+      "name": "unknown",
+      "lines": 74,
+      "identified": 74,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009EB2_unknown.asm",
+      "offset": 40626,
+      "name": "unknown",
+      "lines": 18,
+      "identified": 18,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_009FBC_unknown.asm",
+      "offset": 40892,
+      "name": "unknown",
+      "lines": 8,
+      "identified": 8,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00AE5C_unknown.asm",
+      "offset": 44636,
+      "name": "unknown",
+      "lines": 4,
+      "identified": 4,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00AE66_unknown.asm",
+      "offset": 44646,
+      "name": "unknown",
+      "lines": 11,
+      "identified": 11,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00AE7C_unknown.asm",
+      "offset": 44668,
+      "name": "unknown",
+      "lines": 12,
+      "identified": 12,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B1AC_unknown.asm",
+      "offset": 45484,
+      "name": "unknown",
+      "lines": 15,
+      "identified": 15,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B1D8_unknown.asm",
+      "offset": 45528,
+      "name": "unknown",
+      "lines": 27,
+      "identified": 27,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B21A_unknown.asm",
+      "offset": 45594,
+      "name": "unknown",
+      "lines": 9,
+      "identified": 9,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B250_unknown.asm",
+      "offset": 45648,
+      "name": "unknown",
+      "lines": 16,
+      "identified": 16,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B39A_unknown.asm",
+      "offset": 45978,
+      "name": "unknown",
+      "lines": 5,
+      "identified": 5,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B77A_unknown.asm",
+      "offset": 46970,
+      "name": "unknown",
+      "lines": 31,
+      "identified": 31,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B82E_unknown.asm",
+      "offset": 47150,
+      "name": "unknown",
+      "lines": 10,
+      "identified": 10,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B848_unknown.asm",
+      "offset": 47176,
+      "name": "unknown",
+      "lines": 21,
+      "identified": 21,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B92A_unknown.asm",
+      "offset": 47402,
+      "name": "unknown",
+      "lines": 38,
+      "identified": 38,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00B994_unknown.asm",
+      "offset": 47508,
+      "name": "unknown",
+      "lines": 42,
+      "identified": 42,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00BB9E_unknown.asm",
+      "offset": 48030,
+      "name": "unknown",
+      "lines": 14,
+      "identified": 14,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00BC0C_unknown.asm",
+      "offset": 48140,
+      "name": "unknown",
+      "lines": 45,
+      "identified": 45,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    },
+    {
+      "asm_file": "func_00BE22_unknown.asm",
+      "offset": 48674,
+      "name": "unknown",
+      "lines": 35,
+      "identified": 35,
+      "status": "DONE",
+      "purpose": "UNKNOWN"
+    }
+  ]
+}

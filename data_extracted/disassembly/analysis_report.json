@@ -1,0 +1,686 @@
+{
+  "load_image_functions": 525,
+  "overlay_functions": 695,
+  "total_functions": 1220,
+  "struct_references": {
+    "Unit": 323,
+    "Power": 35,
+    "Colony": 21,
+    "AI": 96,
+    "TradeRoute": 23
+  },
+  "global_references": {
+    "score": 39,
+    "unit_table": 65,
+    "unk_thresh": 21,
+    "season": 18,
+    "cur_nation": 198,
+    "game_flag": 7,
+    "colony_tbl": 8,
+    "map_terrain": 141,
+    "ai_pers": 79,
+    "year": 44,
+    "glob_8DB8": 15,
+    "glob_8D52": 62,
+    "player_ptr": 2,
+    "glob_8D4A": 41
+  },
+  "random_patterns": [
+    [
+      2,
+      2283,
+      "; 6.25% chance"
+    ],
+    [
+      3,
+      3997,
+      "; 6.25% chance"
+    ],
+    [
+      10,
+      6541,
+      "; 6.25% chance"
+    ],
+    [
+      37,
+      21147,
+      "; 6.25% chance"
+    ],
+    [
+      88,
+      40445,
+      "; 12.5% chance"
+    ],
+    [
+      109,
+      52577,
+      "; 6.25% chance"
+    ],
+    [
+      119,
+      59647,
+      "; 6.25% chance"
+    ],
+    [
+      168,
+      73357,
+      "; 12.5% chance"
+    ],
+    [
+      185,
+      83067,
+      "; 6.25% chance"
+    ],
+    [
+      259,
+      124555,
+      "; 6.25% chance"
+    ],
+    [
+      259,
+      124555,
+      "; 6.25% chance"
+    ],
+    [
+      271,
+      131057,
+      "; 6.25% chance"
+    ],
+    [
+      271,
+      131057,
+      "; 6.25% chance"
+    ],
+    [
+      272,
+      131953,
+      "; 6.25% chance"
+    ],
+    [
+      274,
+      133053,
+      "; 6.25% chance"
+    ],
+    [
+      281,
+      135629,
+      "; 6.25% chance"
+    ],
+    [
+      283,
+      135977,
+      "; 6.25% chance"
+    ],
+    [
+      284,
+      136465,
+      "; 6.25% chance"
+    ],
+    [
+      289,
+      137349,
+      "; 6.25% chance"
+    ],
+    [
+      297,
+      141121,
+      "; 6.25% chance"
+    ],
+    [
+      298,
+      141205,
+      "; 6.25% chance"
+    ],
+    [
+      325,
+      153243,
+      "; 6.25% chance"
+    ],
+    [
+      338,
+      158101,
+      "; 6.25% chance"
+    ],
+    [
+      340,
+      162985,
+      "; 6.25% chance"
+    ],
+    [
+      343,
+      164821,
+      "; 6.25% chance"
+    ],
+    [
+      344,
+      165439,
+      "; 6.25% chance"
+    ],
+    [
+      352,
+      174329,
+      "; 6.25% chance"
+    ],
+    [
+      354,
+      175267,
+      "; 6.25% chance"
+    ],
+    [
+      354,
+      175267,
+      "; 6.25% chance"
+    ],
+    [
+      375,
+      180793,
+      "; 6.25% chance"
+    ],
+    [
+      379,
+      187473,
+      "; 6.25% chance"
+    ],
+    [
+      411,
+      236457,
+      "; 6.25% chance"
+    ],
+    [
+      412,
+      236969,
+      "; 6.25% chance"
+    ],
+    [
+      418,
+      240247,
+      "; 6.25% chance"
+    ],
+    [
+      426,
+      246809,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      457,
+      265711,
+      "; 6.25% chance"
+    ],
+    [
+      464,
+      272159,
+      "; 6.25% chance"
+    ],
+    [
+      504,
+      292335,
+      "; 3.125% chance"
+    ],
+    [
+      530,
+      300839,
+      "; 12.5% chance"
+    ],
+    [
+      569,
+      314545,
+      "; 25% chance"
+    ],
+    [
+      569,
+      314545,
+      "; 25% chance"
+    ],
+    [
+      575,
+      317546,
+      "; 25% chance"
+    ],
+    [
+      577,
+      318051,
+      "; 25% chance"
+    ],
+    [
+      577,
+      318051,
+      "; 25% chance"
+    ]
+  ],
+  "year_checks": [
+    [
+      121,
+      60733,
+      "; year=1600"
+    ],
+    [
+      127,
+      65347,
+      "; year=1700"
+    ],
+    [
+      127,
+      65347,
+      "; year=1600"
+    ],
+    [
+      196,
+      88787,
+      "; year=1600"
+    ],
+    [
+      196,
+      88787,
+      "; year=1700"
+    ],
+    [
+      229,
+      111349,
+      "; year=1600"
+    ],
+    [
+      229,
+      111349,
+      "; year=1700"
+    ],
+    [
+      238,
+      113693,
+      "; year=1600"
+    ],
+    [
+      238,
+      113693,
+      "; year=1650"
+    ],
+    [
+      238,
+      113693,
+      "; year=1700"
+    ],
+    [
+      253,
+      121597,
+      "; year=1600"
+    ],
+    [
+      253,
+      121597,
+      "; year=1700"
+    ],
+    [
+      253,
+      121597,
+      "; year=1800"
+    ],
+    [
+      354,
+      175267,
+      "; year=1492"
+    ],
+    [
+      379,
+      187473,
+      "; year=1650"
+    ],
+    [
+      385,
+      202895,
+      "; year=1700"
+    ],
+    [
+      395,
+      217350,
+      "; year=1600"
+    ],
+    [
+      395,
+      217350,
+      "; year=1700"
+    ],
+    [
+      395,
+      217350,
+      "; year=1600"
+    ],
+    [
+      644,
+      349059,
+      "; year=1700"
+    ]
+  ],
+  "top_30_functions": [
+    {
+      "idx": 77,
+      "offset": "0x08727",
+      "size": 2017,
+      "tags": [
+        "Unit",
+        "Power",
+        "TradeRoute",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 457,
+      "offset": "0x40DEF",
+      "size": 2013,
+      "tags": [
+        "AI",
+        "Unit",
+        "unit_table",
+        "glob_8D4A",
+        "glob_8D52",
+        "glob_8DB8",
+        "ai_pers"
+      ]
+    },
+    {
+      "idx": 530,
+      "offset": "0x49727",
+      "size": 1934,
+      "tags": [
+        "map_terrain"
+      ]
+    },
+    {
+      "idx": 622,
+      "offset": "0x51A2B",
+      "size": 1797,
+      "tags": []
+    },
+    {
+      "idx": 402,
+      "offset": "0x36C81",
+      "size": 1777,
+      "tags": [
+        "AI",
+        "Unit",
+        "unit_table",
+        "glob_8D4A",
+        "cur_nation",
+        "glob_8D52",
+        "ai_pers"
+      ]
+    },
+    {
+      "idx": 633,
+      "offset": "0x5354B",
+      "size": 1553,
+      "tags": [
+        "score",
+        "unit_table",
+        "TradeRoute",
+        "Colony"
+      ]
+    },
+    {
+      "idx": 111,
+      "offset": "0x0CFF3",
+      "size": 1440,
+      "tags": [
+        "AI",
+        "ai_pers",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 569,
+      "offset": "0x4CCB1",
+      "size": 1395,
+      "tags": []
+    },
+    {
+      "idx": 222,
+      "offset": "0x1A741",
+      "size": 1362,
+      "tags": [
+        "map_terrain"
+      ]
+    },
+    {
+      "idx": 180,
+      "offset": "0x13631",
+      "size": 1343,
+      "tags": [
+        "Unit"
+      ]
+    },
+    {
+      "idx": 386,
+      "offset": "0x32919",
+      "size": 1341,
+      "tags": [
+        "Unit",
+        "Power",
+        "Colony",
+        "game_flag",
+        "season",
+        "colony_tbl",
+        "unit_table",
+        "cur_nation",
+        "score"
+      ]
+    },
+    {
+      "idx": 395,
+      "offset": "0x35106",
+      "size": 1219,
+      "tags": [
+        "year",
+        "glob_8D52",
+        "unk_thresh",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 103,
+      "offset": "0x0B60D",
+      "size": 1187,
+      "tags": [
+        "Unit",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 385,
+      "offset": "0x3188F",
+      "size": 1093,
+      "tags": [
+        "year",
+        "Unit",
+        "AI",
+        "unk_thresh",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 249,
+      "offset": "0x1CEAB",
+      "size": 1080,
+      "tags": [
+        "Unit",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 379,
+      "offset": "0x2DC51",
+      "size": 1074,
+      "tags": [
+        "year",
+        "Unit",
+        "unk_thresh",
+        "unit_table",
+        "glob_8D4A",
+        "cur_nation",
+        "glob_8D52",
+        "glob_8DB8"
+      ]
+    },
+    {
+      "idx": 476,
+      "offset": "0x43F91",
+      "size": 1050,
+      "tags": []
+    },
+    {
+      "idx": 643,
+      "offset": "0x54F67",
+      "size": 1020,
+      "tags": [
+        "year",
+        "Power",
+        "Unit",
+        "AI",
+        "unk_thresh",
+        "ai_pers"
+      ]
+    },
+    {
+      "idx": 630,
+      "offset": "0x52E93",
+      "size": 972,
+      "tags": [
+        "score",
+        "unit_table",
+        "TradeRoute",
+        "Colony"
+      ]
+    },
+    {
+      "idx": 539,
+      "offset": "0x4B0BD",
+      "size": 970,
+      "tags": [
+        "year",
+        "map_terrain"
+      ]
+    },
+    {
+      "idx": 380,
+      "offset": "0x2F02A",
+      "size": 963,
+      "tags": [
+        "Unit"
+      ]
+    },
+    {
+      "idx": 301,
+      "offset": "0x22A0F",
+      "size": 955,
+      "tags": [
+        "year",
+        "season",
+        "Power",
+        "Unit"
+      ]
+    },
+    {
+      "idx": 646,
+      "offset": "0x55951",
+      "size": 954,
+      "tags": [
+        "map_terrain",
+        "game_flag"
+      ]
+    },
+    {
+      "idx": 105,
+      "offset": "0x0BF6F",
+      "size": 927,
+      "tags": [
+        "Unit",
+        "game_flag",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 207,
+      "offset": "0x17A19",
+      "size": 921,
+      "tags": [
+        "score",
+        "Unit",
+        "unit_table",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 477,
+      "offset": "0x443AB",
+      "size": 897,
+      "tags": []
+    },
+    {
+      "idx": 271,
+      "offset": "0x1FFF1",
+      "size": 883,
+      "tags": [
+        "Unit",
+        "TradeRoute",
+        "AI",
+        "unit_table",
+        "cur_nation",
+        "glob_8D52",
+        "glob_8DB8",
+        "ai_pers"
+      ]
+    },
+    {
+      "idx": 346,
+      "offset": "0x288CF",
+      "size": 874,
+      "tags": [
+        "glob_8D4A",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 208,
+      "offset": "0x17DB3",
+      "size": 864,
+      "tags": [
+        "score",
+        "Unit",
+        "cur_nation"
+      ]
+    },
+    {
+      "idx": 638,
+      "offset": "0x54023",
+      "size": 856,
+      "tags": []
+    }
+  ]
+}

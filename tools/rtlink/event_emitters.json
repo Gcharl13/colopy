@@ -1,0 +1,3214 @@
+{
+ "MAPTOLOAD": {
+  "handle": "0x235c",
+  "emitters": [
+   {
+    "func": "func_0759E8",
+    "page": "1A",
+    "site": "0x75d0d",
+    "reachable": false
+   }
+  ]
+ },
+ "MULTI": {
+  "handle": "0x206d",
+  "emitters": [
+   {
+    "func": "func_070EBA",
+    "page": "19",
+    "site": "0x70eeb",
+    "reachable": false
+   }
+  ]
+ },
+ "MULTIREV": {
+  "handle": "0x138e",
+  "emitters": [
+   {
+    "func": "func_03E984",
+    "page": "06",
+    "site": "0x3e9c5",
+    "reachable": false
+   }
+  ]
+ },
+ "SAVEGAME": {
+  "handle": "0x20f6",
+  "emitters": [
+   {
+    "func": "func_072F7A",
+    "page": "1A",
+    "site": "0x72f80",
+    "reachable": false
+   }
+  ]
+ },
+ "LOADGAME": {
+  "handle": "0x211a",
+  "emitters": [
+   {
+    "func": "func_073158",
+    "page": "1A",
+    "site": "0x73163",
+    "reachable": false
+   }
+  ]
+ },
+ "VICEROY": {
+  "handle": "0x2334",
+  "emitters": [
+   {
+    "func": "func_075594",
+    "page": "1A",
+    "site": "0x75598",
+    "reachable": false
+   }
+  ]
+ },
+ "COLONY": {
+  "handle": "0xba0",
+  "emitters": [
+   {
+    "func": "func_025D34",
+    "page": "02",
+    "site": "0x25ec8",
+    "reachable": true
+   }
+  ]
+ },
+ "LANDFALL": {
+  "handle": "0x13ea",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3fe39",
+    "reachable": false
+   }
+  ]
+ },
+ "LANDFALL2": {
+  "handle": "0x13f3",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3fe40",
+    "reachable": false
+   }
+  ]
+ },
+ "SHIPCOMBAT": {
+  "handle": "0x1415",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3ff18",
+    "reachable": false
+   }
+  ]
+ },
+ "SHIPLAKE": {
+  "handle": "0x1420",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3ff2a",
+    "reachable": false
+   }
+  ]
+ },
+ "LANDFIRST": {
+  "handle": "0x1429",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3ff32",
+    "reachable": false
+   }
+  ]
+ },
+ "SEACOLONY": {
+  "handle": "0x99b",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x225cb",
+    "reachable": true
+   }
+  ]
+ },
+ "NOPORT": {
+  "handle": "0x9c6",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x22750",
+    "reachable": true
+   }
+  ]
+ },
+ "BUILT": {
+  "handle": "0xd6f",
+  "emitters": [
+   {
+    "func": "func_02D0E4",
+    "page": "03",
+    "site": "0x2d2d4",
+    "reachable": true
+   }
+  ]
+ },
+ "FULL": {
+  "handle": "0xbe9",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x288c3",
+    "reachable": true
+   }
+  ]
+ },
+ "NOTEACHER": {
+  "handle": "0xc31",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28a60",
+    "reachable": true
+   }
+  ]
+ },
+ "NEEDCOLLEGE": {
+  "handle": "0xc3b",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28a89",
+    "reachable": true
+   }
+  ]
+ },
+ "NEEDUNIVERSITY": {
+  "handle": "0xc47",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28ab3",
+    "reachable": true
+   }
+  ]
+ },
+ "TRAINFAIL": {
+  "handle": "0xde7",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e008",
+    "reachable": true
+   }
+  ]
+ },
+ "TRAINCRIMINAL": {
+  "handle": "0xdf1",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2df2a",
+    "reachable": true
+   }
+  ]
+ },
+ "TRAININDENTURED": {
+  "handle": "0xdff",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2df5e",
+    "reachable": true
+   }
+  ]
+ },
+ "TRAINPROFESSION": {
+  "handle": "0xe0f",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dfa8",
+    "reachable": true
+   }
+  ]
+ },
+ "SIEGE": {
+  "handle": "0xc7c",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28adc",
+    "reachable": true
+   }
+  ]
+ },
+ "ABANDON": {
+  "handle": "0xbee",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x288db",
+    "reachable": true
+   }
+  ]
+ },
+ "SAILHOME": {
+  "handle": "0x140c",
+  "emitters": [
+   {
+    "func": "func_03FDDE",
+    "page": "07",
+    "site": "0x3fec0",
+    "reachable": false
+   }
+  ]
+ },
+ "UNREST": {
+  "handle": "0x1190",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x364f9",
+    "reachable": false
+   }
+  ]
+ },
+ "SCHOOL1": {
+  "handle": "0xc29",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28a58",
+    "reachable": true
+   }
+  ]
+ },
+ "COLLEGE2": {
+  "handle": "0xc20",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28a50",
+    "reachable": true
+   }
+  ]
+ },
+ "UNIV3": {
+  "handle": "0xc1a",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28a48",
+    "reachable": true
+   }
+  ]
+ },
+ "NODOCKS": {
+  "handle": "0xc74",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28ad4",
+    "reachable": true
+   }
+  ]
+ },
+ "CARGOREADY0": {
+  "handle": "0xebb",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e96c",
+    "reachable": true
+   }
+  ]
+ },
+ "LUMBER": {
+  "handle": "0xe66",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e3a1",
+    "reachable": true
+   }
+  ]
+ },
+ "COTTON": {
+  "handle": "0xe6d",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e3d6",
+    "reachable": true
+   }
+  ]
+ },
+ "TOBACCO": {
+  "handle": "0xe74",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e40b",
+    "reachable": true
+   }
+  ]
+ },
+ "CANESUGAR": {
+  "handle": "0xe7c",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e440",
+    "reachable": true
+   }
+  ]
+ },
+ "FURS": {
+  "handle": "0xe86",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e475",
+    "reachable": true
+   }
+  ]
+ },
+ "ORE": {
+  "handle": "0xe8b",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e4bc",
+    "reachable": true
+   }
+  ]
+ },
+ "TOOLS": {
+  "handle": "0xe8f",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e4f1",
+    "reachable": true
+   }
+  ]
+ },
+ "FOOD1": {
+  "handle": "0xe3b",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e219",
+    "reachable": true
+   }
+  ]
+ },
+ "FOOD2": {
+  "handle": "0xe41",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e234",
+    "reachable": true
+   }
+  ]
+ },
+ "VANISH": {
+  "handle": "0xe47",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e265",
+    "reachable": true
+   }
+  ]
+ },
+ "STARVE1": {
+  "handle": "0xe4e",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e296",
+    "reachable": true
+   }
+  ]
+ },
+ "STARVE2": {
+  "handle": "0xe56",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e2b0",
+    "reachable": true
+   }
+  ]
+ },
+ "FOODLOW": {
+  "handle": "0xe5e",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e362",
+    "reachable": true
+   }
+  ]
+ },
+ "SPOIL1": {
+  "handle": "0xead",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e8b8",
+    "reachable": true
+   }
+  ]
+ },
+ "SPOIL2": {
+  "handle": "0xeb4",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e8be",
+    "reachable": true
+   }
+  ]
+ },
+ "BUYME0": {
+  "handle": "0xd29",
+  "emitters": [
+   {
+    "func": "func_02B744",
+    "page": "02",
+    "site": "0x2b862",
+    "reachable": true
+   }
+  ]
+ },
+ "BUYME1": {
+  "handle": "0xd22",
+  "emitters": [
+   {
+    "func": "func_02B744",
+    "page": "02",
+    "site": "0x2b850",
+    "reachable": true
+   }
+  ]
+ },
+ "DEPLETION": {
+  "handle": "0xd75",
+  "emitters": [
+   {
+    "func": "func_02D30A",
+    "page": "03",
+    "site": "0x2d3a1",
+    "reachable": true
+   }
+  ]
+ },
+ "SCREWED": {
+  "handle": "0x1dbe",
+  "emitters": [
+   {
+    "func": "func_061454",
+    "page": "12",
+    "site": "0x61b6e",
+    "reachable": false
+   }
+  ]
+ },
+ "CANCELPEACE": {
+  "handle": "0x13cb",
+  "emitters": [
+   {
+    "func": "func_03ECF0",
+    "page": "07",
+    "site": "0x3f22f",
+    "reachable": true
+   }
+  ]
+ },
+ "SIGNTREATY": {
+  "handle": "0x188d",
+  "emitters": [
+   {
+    "func": "func_057DC0",
+    "page": "0F",
+    "site": "0x57e86",
+    "reachable": true
+   }
+  ]
+ },
+ "DECLAREWAR": {
+  "handle": "0x13d7",
+  "emitters": [
+   {
+    "func": "func_03ECF0",
+    "page": "07",
+    "site": "0x3f262",
+    "reachable": true
+   }
+  ]
+ },
+ "HAVETREATY": {
+  "handle": "0x932",
+  "emitters": [
+   {
+    "func": "func_021FF2",
+    "page": "01",
+    "site": "0x220ce",
+    "reachable": true
+   }
+  ]
+ },
+ "WHACKINDIANS": {
+  "handle": "0x13ad",
+  "emitters": [
+   {
+    "func": "func_03ECF0",
+    "page": "07",
+    "site": "0x3efe4",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWELCOME": {
+  "handle": "0x1803",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x56db2",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBOW": {
+  "handle": "0x1cd7",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e662",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANPEACE": {
+  "handle": "0x17ec",
+  "emitters": [
+   {
+    "func": "func_056B92",
+    "page": "0F",
+    "site": "0x56bf1",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANCOME": {
+  "handle": "0x17f8",
+  "emitters": [
+   {
+    "func": "func_056B92",
+    "page": "0F",
+    "site": "0x56c2c",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANSHUN": {
+  "handle": "0x1811",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x56e11",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWAGONS": {
+  "handle": "0x1871",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x5799b",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANCITY": {
+  "handle": "0x1866",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x576f8",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANSLAVES": {
+  "handle": "0x1cbf",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e296",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANSCONVERT": {
+  "handle": "0x182a",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x57341",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANGIVEFOOD": {
+  "handle": "0x1839",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x573eb",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANGIVESTUFF": {
+  "handle": "0x1848",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x5754d",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANCOMMENT": {
+  "handle": "0x1858",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x57861",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBEGFOOD": {
+  "handle": "0x181c",
+  "emitters": [
+   {
+    "func": "func_056C3E",
+    "page": "0F",
+    "site": "0x5716f",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBRIBE": {
+  "handle": "0x951",
+  "emitters": [
+   {
+    "func": "func_02211E",
+    "page": "01",
+    "site": "0x22315",
+    "reachable": true
+   }
+  ]
+ },
+ "NOPLOW": {
+  "handle": "0x93d",
+  "emitters": [
+   {
+    "func": "func_02211E",
+    "page": "01",
+    "site": "0x22177",
+    "reachable": true
+   }
+  ]
+ },
+ "NOROAD": {
+  "handle": "0x95d",
+  "emitters": [
+   {
+    "func": "func_022334",
+    "page": "01",
+    "site": "0x2237c",
+    "reachable": true
+   }
+  ]
+ },
+ "HALF": {
+  "handle": "0x1c06",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5cb83",
+    "reachable": true
+   }
+  ]
+ },
+ "LOOT": {
+  "handle": "0x1ccc",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e538",
+    "reachable": true
+   }
+  ]
+ },
+ "LOOT2": {
+  "handle": "0x1cd1",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e55a",
+    "reachable": true
+   }
+  ]
+ },
+ "LOOTCASH": {
+  "handle": "0x148e",
+  "emitters": [
+   {
+    "func": "func_041EEA",
+    "page": "08",
+    "site": "0x42098",
+    "reachable": false
+   }
+  ]
+ },
+ "LOOTFOREIGN": {
+  "handle": "0x1786",
+  "emitters": [
+   {
+    "func": "func_04E2D6",
+    "page": "0D",
+    "site": "0x5099e",
+    "reachable": true
+   }
+  ]
+ },
+ "LOOTCAPTURE": {
+  "handle": "0x1b13",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b544",
+    "reachable": true
+   }
+  ]
+ },
+ "WAGONCAPTURE": {
+  "handle": "0x1b1f",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b566",
+    "reachable": true
+   }
+  ]
+ },
+ "COLONISTCAPTURE": {
+  "handle": "0x1b3d",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b586",
+    "reachable": true
+   }
+  ]
+ },
+ "COLONISTCAPTURE2": {
+  "handle": "0x1b2c",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b57e",
+    "reachable": true
+   }
+  ]
+ },
+ "CARGOCAPTURE": {
+  "handle": "0x1b69",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b98c",
+    "reachable": true
+   }
+  ]
+ },
+ "DEMOTE": {
+  "handle": "0x1b4d",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b679",
+    "reachable": true
+   }
+  ]
+ },
+ "SHIPDAMAGE": {
+  "handle": "0x1b76",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5bc79",
+    "reachable": true
+   }
+  ]
+ },
+ "SHIPSUNK": {
+  "handle": "0x1b81",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5bd0f",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDNOTHING": {
+  "handle": "0x1bba",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c637",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDWREAK": {
+  "handle": "0x1b8a",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c1de",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDSTORES": {
+  "handle": "0x1b94",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c3cc",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDBURN": {
+  "handle": "0x1b9f",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c50b",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDSHIP": {
+  "handle": "0x1ba8",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c57b",
+    "reachable": true
+   }
+  ]
+ },
+ "RAIDGOLD": {
+  "handle": "0x1bb1",
+  "emitters": [
+   {
+    "func": "func_05BE84",
+    "page": "10",
+    "site": "0x5c5f7",
+    "reachable": true
+   }
+  ]
+ },
+ "MISSION0": {
+  "handle": "0x1532",
+  "emitters": [
+   {
+    "func": "func_048A3A",
+    "page": "0C",
+    "site": "0x48b53",
+    "reachable": true
+   }
+  ]
+ },
+ "HERESY0": {
+  "handle": "0x153b",
+  "emitters": [
+   {
+    "func": "func_048CA4",
+    "page": "0C",
+    "site": "0x48ec1",
+    "reachable": true
+   }
+  ]
+ },
+ "HERESY1": {
+  "handle": "0x1543",
+  "emitters": [
+   {
+    "func": "func_048CA4",
+    "page": "0C",
+    "site": "0x48ef0",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBURN": {
+  "handle": "0x14c8",
+  "emitters": [
+   {
+    "func": "func_045D00",
+    "page": "0B",
+    "site": "0x45d87",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWIN0": {
+  "handle": "0x1ca9",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e09e",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANLOSE": {
+  "handle": "0x1cb4",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e177",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWINCOLONY": {
+  "handle": "0x1c88",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e01f",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWINCOLONY2": {
+  "handle": "0x1c98",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5e026",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBURNCOLONY": {
+  "handle": "0x1c65",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5dfe6",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANBURNCOLONY2": {
+  "handle": "0x1c76",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5dfee",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANSURPRISE": {
+  "handle": "0x14dc",
+  "emitters": [
+   {
+    "func": "func_046FFA",
+    "page": "0C",
+    "site": "0x48186",
+    "reachable": true
+   }
+  ]
+ },
+ "CAPTURED": {
+  "handle": "0x1c52",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5dee2",
+    "reachable": true
+   }
+  ]
+ },
+ "CAPTURED2": {
+  "handle": "0x1c5b",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5deea",
+    "reachable": true
+   }
+  ]
+ },
+ "CAPTURED3": {
+  "handle": "0x1c48",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5deda",
+    "reachable": true
+   }
+  ]
+ },
+ "BURNED": {
+  "handle": "0x1c28",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5dae6",
+    "reachable": true
+   }
+  ]
+ },
+ "BURNED2": {
+  "handle": "0x1c2f",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5db0b",
+    "reachable": true
+   }
+  ]
+ },
+ "BURNED3": {
+  "handle": "0x1c37",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5db12",
+    "reachable": true
+   }
+  ]
+ },
+ "EUROPEWIN": {
+  "handle": "0x1c13",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5d9f3",
+    "reachable": true
+   }
+  ]
+ },
+ "EUROPELOSE": {
+  "handle": "0x1c1d",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5da20",
+    "reachable": true
+   }
+  ]
+ },
+ "WAREHOUSEFULL": {
+  "handle": "0xcd6",
+  "emitters": [
+   {
+    "func": "func_02A6A6",
+    "page": "02",
+    "site": "0x2a841",
+    "reachable": true
+   }
+  ]
+ },
+ "EXTORTSTUFF": {
+  "handle": "0x169d",
+  "emitters": [
+   {
+    "func": "func_04AC00",
+    "page": "0C",
+    "site": "0x4af2b",
+    "reachable": true
+   }
+  ]
+ },
+ "EXTORTPOOR": {
+  "handle": "0x1692",
+  "emitters": [
+   {
+    "func": "func_04AC00",
+    "page": "0C",
+    "site": "0x4ae25",
+    "reachable": true
+   }
+  ]
+ },
+ "EXTORTLAUGH": {
+  "handle": "0x167d",
+  "emitters": [
+   {
+    "func": "func_04AC00",
+    "page": "0C",
+    "site": "0x4ad5a",
+    "reachable": true
+   }
+  ]
+ },
+ "EXTORTNO": {
+  "handle": "0x1689",
+  "emitters": [
+   {
+    "func": "func_04AC00",
+    "page": "0C",
+    "site": "0x4adcf",
+    "reachable": true
+   }
+  ]
+ },
+ "TOONEAR": {
+  "handle": "0x9a5",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x2260a",
+    "reachable": true
+   }
+  ]
+ },
+ "TOONEARBUILD": {
+  "handle": "0x9b9",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x22651",
+    "reachable": true
+   }
+  ]
+ },
+ "TOOMOUNTAIN": {
+  "handle": "0x9ad",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x2262f",
+    "reachable": true
+   }
+  ]
+ },
+ "MADATSHIPS": {
+  "handle": "0x1705",
+  "emitters": [
+   {
+    "func": "func_04B308",
+    "page": "0C",
+    "site": "0x4b40d",
+    "reachable": true
+   }
+  ]
+ },
+ "MADATWAGONS": {
+  "handle": "0x15ce",
+  "emitters": [
+   {
+    "func": "func_04A37C",
+    "page": "0C",
+    "site": "0x4a3f1",
+    "reachable": true
+   }
+  ]
+ },
+ "GRUDGEWAGONS": {
+  "handle": "0x15da",
+  "emitters": [
+   {
+    "func": "func_04A37C",
+    "page": "0C",
+    "site": "0x4a406",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFHOWDY": {
+  "handle": "0x1630",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4a959",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFGUIDES": {
+  "handle": "0x163b",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4a9fd",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFAREA": {
+  "handle": "0x1654",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4aa4f",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFGIFT": {
+  "handle": "0x165e",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4ab52",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFBORED": {
+  "handle": "0x1672",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4abed",
+    "reachable": true
+   }
+  ]
+ },
+ "CHIEFKILL": {
+  "handle": "0x1668",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4abaa",
+    "reachable": true
+   }
+  ]
+ },
+ "KILLWAGONS": {
+  "handle": "0x15c3",
+  "emitters": [
+   {
+    "func": "func_04A37C",
+    "page": "0C",
+    "site": "0x4a3c6",
+    "reachable": true
+   }
+  ]
+ },
+ "TRADE0": {
+  "handle": "0x1575",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49b08",
+    "reachable": true
+   }
+  ]
+ },
+ "BADCARGO": {
+  "handle": "0x1561",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49964",
+    "reachable": true
+   }
+  ]
+ },
+ "BADHAGGLE0": {
+  "handle": "0x157c",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49e37",
+    "reachable": true
+   }
+  ]
+ },
+ "BADHAGGLE1": {
+  "handle": "0x156a",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49996",
+    "reachable": true
+   }
+  ]
+ },
+ "BADHAGGLE2": {
+  "handle": "0x15b8",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x4a33f",
+    "reachable": true
+   }
+  ]
+ },
+ "BADHAGGLE3": {
+  "handle": "0x158d",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49d6f",
+    "reachable": true
+   }
+  ]
+ },
+ "BRING": {
+  "handle": "0x1587",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49d4a",
+    "reachable": true
+   }
+  ]
+ },
+ "DEFICIT": {
+  "handle": "0x1598",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49f12",
+    "reachable": true
+   }
+  ]
+ },
+ "BUYWHICH": {
+  "handle": "0x15a0",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x49f87",
+    "reachable": true
+   }
+  ]
+ },
+ "BUY0": {
+  "handle": "0x15a9",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x4a144",
+    "reachable": true
+   }
+  ]
+ },
+ "NOTENOUGH": {
+  "handle": "0x15ae",
+  "emitters": [
+   {
+    "func": "func_049600",
+    "page": "0C",
+    "site": "0x4a26c",
+    "reachable": true
+   }
+  ]
+ },
+ "LEARNSTAY": {
+  "handle": "0x1615",
+  "emitters": [
+   {
+    "func": "func_04A426",
+    "page": "0C",
+    "site": "0x4a758",
+    "reachable": true
+   }
+  ]
+ },
+ "TRADENAMES": {
+  "handle": "0x1d7e",
+  "emitters": [
+   {
+    "func": "func_0610B0",
+    "page": "12",
+    "site": "0x61157",
+    "reachable": true
+   }
+  ]
+ },
+ "TRADENONE": {
+  "handle": "0xa2d",
+  "emitters": [
+   {
+    "func": "func_022D46",
+    "page": "01",
+    "site": "0x22d53",
+    "reachable": true
+   }
+  ]
+ },
+ "TRADESELECT": {
+  "handle": "0xa37",
+  "emitters": [
+   {
+    "func": "func_022D46",
+    "page": "01",
+    "site": "0x22d81",
+    "reachable": true
+   }
+  ]
+ },
+ "TRADEDELETE": {
+  "handle": "0x1d96",
+  "emitters": [
+   {
+    "func": "func_0612E6",
+    "page": "12",
+    "site": "0x612ec",
+    "reachable": true
+   }
+  ]
+ },
+ "CARGOLOAD": {
+  "handle": "0x1d3d",
+  "emitters": [
+   {
+    "func": "func_060D8C",
+    "page": "12",
+    "site": "0x60e89",
+    "reachable": true
+   }
+  ]
+ },
+ "CARGOUNLOAD": {
+  "handle": "0x1d47",
+  "emitters": [
+   {
+    "func": "func_060D8C",
+    "page": "12",
+    "site": "0x60e8e",
+    "reachable": true
+   }
+  ]
+ },
+ "ROUTELOOP": {
+  "handle": "0x1476",
+  "emitters": [
+   {
+    "func": "func_041080",
+    "page": "08",
+    "site": "0x413f7",
+    "reachable": true
+   }
+  ]
+ },
+ "KINGLOWER": {
+  "handle": "0x10a8",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x34b5c",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGRAISE": {
+  "handle": "0x10b2",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x34b75",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGTAX": {
+  "handle": "0xf01",
+  "emitters": [
+   {
+    "func": "func_02F052",
+    "page": "03",
+    "site": "0x2f392",
+    "reachable": false
+   }
+  ]
+ },
+ "TAXOPTIONS": {
+  "handle": "0x105f",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x345f9",
+    "reachable": false
+   }
+  ]
+ },
+ "TEAPARTY": {
+  "handle": "0x106a",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x34700",
+    "reachable": false
+   }
+  ]
+ },
+ "KISSUP": {
+  "handle": "0x1033",
+  "emitters": [
+   {
+    "func": "func_03334E",
+    "page": "04",
+    "site": "0x333c5",
+    "reachable": true
+   }
+  ]
+ },
+ "KISSSORRY": {
+  "handle": "0x103a",
+  "emitters": [
+   {
+    "func": "func_03334E",
+    "page": "04",
+    "site": "0x333fb",
+    "reachable": true
+   }
+  ]
+ },
+ "PRICEUP": {
+  "handle": "0xfa8",
+  "emitters": [
+   {
+    "func": "func_0305A8",
+    "page": "04",
+    "site": "0x30a04",
+    "reachable": true
+   }
+  ]
+ },
+ "PRICEDOWN": {
+  "handle": "0xfb0",
+  "emitters": [
+   {
+    "func": "func_0305A8",
+    "page": "04",
+    "site": "0x30a9b",
+    "reachable": true
+   }
+  ]
+ },
+ "SHIPSLOW": {
+  "handle": "0x1a51",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x59e48",
+    "reachable": true
+   }
+  ]
+ },
+ "SHIPRUN": {
+  "handle": "0x1a49",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x59dbc",
+    "reachable": true
+   }
+  ]
+ },
+ "FORTFIRE": {
+  "handle": "0xd7f",
+  "emitters": [
+   {
+    "func": "func_02D3C6",
+    "page": "03",
+    "site": "0x2d5d9",
+    "reachable": true
+   }
+  ]
+ },
+ "ARMOPTIONS": {
+  "handle": "0x1054",
+  "emitters": [
+   {
+    "func": "func_033C96",
+    "page": "04",
+    "site": "0x33da4",
+    "reachable": true
+   }
+  ]
+ },
+ "UNITOPTIONS": {
+  "handle": "0xd11",
+  "emitters": [
+   {
+    "func": "func_02B046",
+    "page": "02",
+    "site": "0x2b131",
+    "reachable": true
+   }
+  ]
+ },
+ "SHIPOPTIONS": {
+  "handle": "0xcf8",
+  "emitters": [
+   {
+    "func": "func_02AAEC",
+    "page": "02",
+    "site": "0x2abd1",
+    "reachable": true
+   }
+  ]
+ },
+ "EUROPESHIPOPTIONS": {
+  "handle": "0x1015",
+  "emitters": [
+   {
+    "func": "func_03314E",
+    "page": "04",
+    "site": "0x331ad",
+    "reachable": true
+   }
+  ]
+ },
+ "CASHTREASURE": {
+  "handle": "0x1be0",
+  "emitters": [
+   {
+    "func": "func_05C878",
+    "page": "10",
+    "site": "0x5c8a1",
+    "reachable": true
+   }
+  ]
+ },
+ "USEDUPTOOLS": {
+  "handle": "0x145a",
+  "emitters": [
+   {
+    "func": "func_040608",
+    "page": "08",
+    "site": "0x4064c",
+    "reachable": true
+   }
+  ]
+ },
+ "EVASIVE": {
+  "handle": "0x1c0b",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5d469",
+    "reachable": true
+   }
+  ]
+ },
+ "KINGNEWWAR": {
+  "handle": "0x1134",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x360be",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGVICTORY": {
+  "handle": "0x113f",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x36280",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGWIFE": {
+  "handle": "0x1155",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x362c7",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGWAR": {
+  "handle": "0x1166",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x362fa",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGNAVACT": {
+  "handle": "0x1178",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x36348",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGSTAMPACT": {
+  "handle": "0x1183",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x36371",
+    "reachable": false
+   }
+  ]
+ },
+ "COUNTRIES": {
+  "handle": "0x114b",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x36295",
+    "reachable": false
+   }
+  ]
+ },
+ "ORDINAL": {
+  "handle": "0x115e",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x362e9",
+    "reachable": false
+   }
+  ]
+ },
+ "NEEDTOOLS": {
+  "handle": "0xea1",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e648",
+    "reachable": true
+   }
+  ]
+ },
+ "ALREADYHAVE": {
+  "handle": "0xe95",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e5c5",
+    "reachable": true
+   }
+  ]
+ },
+ "LOBOTOMIZE": {
+  "handle": "0xcae",
+  "emitters": [
+   {
+    "func": "func_028D8C",
+    "page": "02",
+    "site": "0x297a4",
+    "reachable": true
+   }
+  ]
+ },
+ "NATION0A": {
+  "handle": "0x219d",
+  "emitters": [
+   {
+    "func": "func_07431E",
+    "page": "1A",
+    "site": "0x74440",
+    "reachable": false
+   }
+  ]
+ },
+ "CONTINENTAL": {
+  "handle": "0x1bc6",
+  "emitters": [
+   {
+    "func": "func_05C69C",
+    "page": "10",
+    "site": "0x5c825",
+    "reachable": true
+   }
+  ]
+ },
+ "VETERAN": {
+  "handle": "0x1bd2",
+  "emitters": [
+   {
+    "func": "func_05C69C",
+    "page": "10",
+    "site": "0x5c834",
+    "reachable": true
+   }
+  ]
+ },
+ "VALOR": {
+  "handle": "0x1bda",
+  "emitters": [
+   {
+    "func": "func_05C69C",
+    "page": "10",
+    "site": "0x5c868",
+    "reachable": true
+   }
+  ]
+ },
+ "SCOUTCOLONY": {
+  "handle": "0x1a64",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x5a251",
+    "reachable": true
+   }
+  ]
+ },
+ "LOSTOURSCOUTS": {
+  "handle": "0x1a82",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x5a38d",
+    "reachable": true
+   }
+  ]
+ },
+ "LOSTTHEIRSCOUTS": {
+  "handle": "0x1a90",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x5a3bb",
+    "reachable": true
+   }
+  ]
+ },
+ "HELLOUSA": {
+  "handle": "0x18d8",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58923",
+    "reachable": true
+   }
+  ]
+ },
+ "PIRACY": {
+  "handle": "0x18fa",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58b0d",
+    "reachable": true
+   }
+  ]
+ },
+ "SIEGES": {
+  "handle": "0x1908",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58c99",
+    "reachable": true
+   }
+  ]
+ },
+ "MEEKNESS": {
+  "handle": "0x1884",
+  "emitters": [
+   {
+    "func": "func_057AA2",
+    "page": "0F",
+    "site": "0x57aac",
+    "reachable": true
+   }
+  ]
+ },
+ "HEATHEN": {
+  "handle": "0x18eb",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x589c0",
+    "reachable": true
+   }
+  ]
+ },
+ "APOSTATES": {
+  "handle": "0x18e1",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58989",
+    "reachable": true
+   }
+  ]
+ },
+ "TRIBUTE": {
+  "handle": "0x1916",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58e7d",
+    "reachable": true
+   }
+  ]
+ },
+ "WANTSTUFF": {
+  "handle": "0x1926",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58f56",
+    "reachable": true
+   }
+  ]
+ },
+ "RID": {
+  "handle": "0x1951",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59077",
+    "reachable": true
+   }
+  ]
+ },
+ "WORTHY": {
+  "handle": "0x195d",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x5911d",
+    "reachable": true
+   }
+  ]
+ },
+ "GIVECASH": {
+  "handle": "0x196f",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x591d5",
+    "reachable": true
+   }
+  ]
+ },
+ "PEACEUSA": {
+  "handle": "0x198d",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59356",
+    "reachable": true
+   }
+  ]
+ },
+ "NOTWITHDRAW": {
+  "handle": "0x19af",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x5947d",
+    "reachable": true
+   }
+  ]
+ },
+ "WITHDRAW": {
+  "handle": "0x19a6",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x593d7",
+    "reachable": true
+   }
+  ]
+ },
+ "NOTHINGWITHDRAW": {
+  "handle": "0x1996",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x593b7",
+    "reachable": true
+   }
+  ]
+ },
+ "MAYBEWITHDRAW": {
+  "handle": "0x19bb",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59498",
+    "reachable": true
+   }
+  ]
+ },
+ "PROVOKE": {
+  "handle": "0x1930",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x58fee",
+    "reachable": true
+   }
+  ]
+ },
+ "WARMANLY": {
+  "handle": "0x1940",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59049",
+    "reachable": true
+   }
+  ]
+ },
+ "THREATS": {
+  "handle": "0x19f2",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59755",
+    "reachable": true
+   }
+  ]
+ },
+ "GIFTS": {
+  "handle": "0x19e4",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59700",
+    "reachable": true
+   }
+  ]
+ },
+ "NOCONTACT": {
+  "handle": "0x16b7",
+  "emitters": [
+   {
+    "func": "func_04AF5E",
+    "page": "0C",
+    "site": "0x4b189",
+    "reachable": true
+   }
+  ]
+ },
+ "ALREADYSMITE": {
+  "handle": "0x16dc",
+  "emitters": [
+   {
+    "func": "func_04AF5E",
+    "page": "0C",
+    "site": "0x4b224",
+    "reachable": true
+   }
+  ]
+ },
+ "SMITEINDIANS": {
+  "handle": "0x1a1a",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59974",
+    "reachable": true
+   }
+  ]
+ },
+ "SMITEEUROPE": {
+  "handle": "0x1a27",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59a0c",
+    "reachable": true
+   }
+  ]
+ },
+ "UNFORTUNATE": {
+  "handle": "0x16d0",
+  "emitters": [
+   {
+    "func": "func_04AF5E",
+    "page": "0C",
+    "site": "0x4b1f0",
+    "reachable": true
+   }
+  ]
+ },
+ "MERCENARY": {
+  "handle": "0x1a3f",
+  "emitters": [
+   {
+    "func": "func_057F4E",
+    "page": "0F",
+    "site": "0x59ab3",
+    "reachable": true
+   }
+  ]
+ },
+ "SUCCESSION": {
+  "handle": "0x128c",
+  "emitters": [
+   {
+    "func": "func_03C638",
+    "page": "06",
+    "site": "0x3c76a",
+    "reachable": false
+   }
+  ]
+ },
+ "REBELMAJORITY": {
+  "handle": "0xd8a",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2db55",
+    "reachable": true
+   }
+  ]
+ },
+ "REBELUNANIMOUS": {
+  "handle": "0xd98",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2db9a",
+    "reachable": true
+   }
+  ]
+ },
+ "TORYMINORITY": {
+  "handle": "0xda7",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dbe0",
+    "reachable": true
+   }
+  ]
+ },
+ "TORYMAJORITY": {
+  "handle": "0xdb4",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dc26",
+    "reachable": true
+   }
+  ]
+ },
+ "SONSUP": {
+  "handle": "0xdc1",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dc74",
+    "reachable": true
+   }
+  ]
+ },
+ "SONSDOWN": {
+  "handle": "0xdc8",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dcae",
+    "reachable": true
+   }
+  ]
+ },
+ "REBELUP": {
+  "handle": "0x1362",
+  "emitters": [
+   {
+    "func": "func_03E844",
+    "page": "06",
+    "site": "0x3e924",
+    "reachable": false
+   }
+  ]
+ },
+ "REBELUP50": {
+  "handle": "0x1358",
+  "emitters": [
+   {
+    "func": "func_03E844",
+    "page": "06",
+    "site": "0x3e91c",
+    "reachable": false
+   }
+  ]
+ },
+ "REBELDOWN": {
+  "handle": "0x136a",
+  "emitters": [
+   {
+    "func": "func_03E844",
+    "page": "06",
+    "site": "0x3e96d",
+    "reachable": false
+   }
+  ]
+ },
+ "REFIT": {
+  "handle": "0xeef",
+  "emitters": [
+   {
+    "func": "func_02F052",
+    "page": "03",
+    "site": "0x2f1d7",
+    "reachable": false
+   }
+  ]
+ },
+ "WELLSEASONED": {
+  "handle": "0x1647",
+  "emitters": [
+   {
+    "func": "func_04A7CA",
+    "page": "0C",
+    "site": "0x4aa14",
+    "reachable": true
+   }
+  ]
+ },
+ "KINGBUY": {
+  "handle": "0x1318",
+  "emitters": [
+   {
+    "func": "func_03E162",
+    "page": "06",
+    "site": "0x3e262",
+    "reachable": false
+   }
+  ]
+ },
+ "SEIZURE": {
+  "handle": "0x1284",
+  "emitters": [
+   {
+    "func": "func_03C5A8",
+    "page": "06",
+    "site": "0x3c615",
+    "reachable": false
+   }
+  ]
+ },
+ "SEIZURESEA": {
+  "handle": "0x1297",
+  "emitters": [
+   {
+    "func": "func_03C932",
+    "page": "06",
+    "site": "0x3ca00",
+    "reachable": false
+   }
+  ]
+ },
+ "SEIZURELAND": {
+  "handle": "0x12a2",
+  "emitters": [
+   {
+    "func": "func_03C932",
+    "page": "06",
+    "site": "0x3c944",
+    "reachable": false
+   }
+  ]
+ },
+ "INDEPENDENCE": {
+  "handle": "0x130b",
+  "emitters": [
+   {
+    "func": "func_03DE46",
+    "page": "06",
+    "site": "0x3e104",
+    "reachable": false
+   }
+  ]
+ },
+ "INVASION": {
+  "handle": "0x12bb",
+  "emitters": [
+   {
+    "func": "func_03CDA2",
+    "page": "06",
+    "site": "0x3d21a",
+    "reachable": false
+   }
+  ]
+ },
+ "TOOTORY": {
+  "handle": "0x1386",
+  "emitters": [
+   {
+    "func": "func_03E984",
+    "page": "06",
+    "site": "0x3e9b7",
+    "reachable": false
+   }
+  ]
+ },
+ "DECLARE": {
+  "handle": "0x1397",
+  "emitters": [
+   {
+    "func": "func_03E984",
+    "page": "06",
+    "site": "0x3e9f0",
+    "reachable": false
+   }
+  ]
+ },
+ "DEADCONVERTS": {
+  "handle": "0xee2",
+  "emitters": [
+   {
+    "func": "func_02EF64",
+    "page": "03",
+    "site": "0x2f03f",
+    "reachable": false
+   }
+  ]
+ },
+ "MOBILIZE": {
+  "handle": "0x132d",
+  "emitters": [
+   {
+    "func": "func_03E2EA",
+    "page": "06",
+    "site": "0x3e3a5",
+    "reachable": false
+   }
+  ]
+ },
+ "MOBILIZE2": {
+  "handle": "0x1336",
+  "emitters": [
+   {
+    "func": "func_03E2EA",
+    "page": "06",
+    "site": "0x3e3bc",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGMOBILIZE": {
+  "handle": "0x1320",
+  "emitters": [
+   {
+    "func": "func_03E162",
+    "page": "06",
+    "site": "0x3e2db",
+    "reachable": false
+   }
+  ]
+ },
+ "FOREIGNNOTAVAIL": {
+  "handle": "0x11b6",
+  "emitters": [
+   {
+    "func": "func_039888",
+    "page": "05",
+    "site": "0x39896",
+    "reachable": true
+   }
+  ]
+ },
+ "NOCOLONIESEITHER": {
+  "handle": "0x98a",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x22576",
+    "reachable": true
+   }
+  ]
+ },
+ "NOMAYORSDURINGREV": {
+  "handle": "0x1a70",
+  "emitters": [
+   {
+    "func": "func_059B90",
+    "page": "0F",
+    "site": "0x5a28a",
+    "reachable": true
+   }
+  ]
+ },
+ "AMBUSHHINT": {
+  "handle": "0x126f",
+  "emitters": [
+   {
+    "func": "func_03C322",
+    "page": "06",
+    "site": "0x3c392",
+    "reachable": true
+   }
+  ]
+ },
+ "CONSIDER": {
+  "handle": "0x127a",
+  "emitters": [
+   {
+    "func": "func_03C322",
+    "page": "06",
+    "site": "0x3c39e",
+    "reachable": true
+   }
+  ]
+ },
+ "INTERVENTION": {
+  "handle": "0x12db",
+  "emitters": [
+   {
+    "func": "func_03D948",
+    "page": "06",
+    "site": "0x3da1a",
+    "reachable": false
+   }
+  ]
+ },
+ "FRIEND": {
+  "handle": "0x12d4",
+  "emitters": [
+   {
+    "func": "func_03D948",
+    "page": "06",
+    "site": "0x3d9d1",
+    "reachable": false
+   }
+  ]
+ },
+ "INTERVENE": {
+  "handle": "0x12c4",
+  "emitters": [
+   {
+    "func": "func_03D510",
+    "page": "06",
+    "site": "0x3d7bb",
+    "reachable": false
+   }
+  ]
+ },
+ "EXPLOITS": {
+  "handle": "0x11e0",
+  "emitters": [
+   {
+    "func": "func_03A9C0",
+    "page": "05",
+    "site": "0x3ab8f",
+    "reachable": false
+   }
+  ]
+ },
+ "SCORE": {
+  "handle": "0x11cf",
+  "emitters": [
+   {
+    "func": "func_03A9C0",
+    "page": "05",
+    "site": "0x3aaaa",
+    "reachable": false
+   }
+  ]
+ },
+ "OTHERMIGHT": {
+  "handle": "0xf5e",
+  "emitters": [
+   {
+    "func": "func_02F3A2",
+    "page": "03",
+    "site": "0x2f7ec",
+    "reachable": false
+   }
+  ]
+ },
+ "OTHERLESS": {
+  "handle": "0xf69",
+  "emitters": [
+   {
+    "func": "func_02F3A2",
+    "page": "03",
+    "site": "0x2f86f",
+    "reachable": false
+   }
+  ]
+ },
+ "TORYUPRISING": {
+  "handle": "0x12ae",
+  "emitters": [
+   {
+    "func": "func_03CAC6",
+    "page": "06",
+    "site": "0x3cd94",
+    "reachable": false
+   }
+  ]
+ },
+ "TRADEMERCANTILISM": {
+  "handle": "0x1ab3",
+  "emitters": [
+   {
+    "func": "func_05A40E",
+    "page": "0F",
+    "site": "0x5a487",
+    "reachable": false
+   }
+  ]
+ },
+ "TRADENOCARGO": {
+  "handle": "0x1ac5",
+  "emitters": [
+   {
+    "func": "func_05A40E",
+    "page": "0F",
+    "site": "0x5a4a6",
+    "reachable": false
+   }
+  ]
+ },
+ "TRADENOWANT": {
+  "handle": "0x1add",
+  "emitters": [
+   {
+    "func": "func_05A40E",
+    "page": "0F",
+    "site": "0x5a790",
+    "reachable": false
+   }
+  ]
+ },
+ "TRADEWITH": {
+  "handle": "0x1ae9",
+  "emitters": [
+   {
+    "func": "func_05A40E",
+    "page": "0F",
+    "site": "0x5a7ef",
+    "reachable": false
+   }
+  ]
+ },
+ "EXTINCT": {
+  "handle": "0x14d4",
+  "emitters": [
+   {
+    "func": "func_046EC0",
+    "page": "0C",
+    "site": "0x46fb3",
+    "reachable": true
+   }
+  ]
+ },
+ "MERCENARIES": {
+  "handle": "0x1340",
+  "emitters": [
+   {
+    "func": "func_03E442",
+    "page": "06",
+    "site": "0x3e63a",
+    "reachable": false
+   }
+  ]
+ },
+ "MERCS": {
+  "handle": "0x12ce",
+  "emitters": [
+   {
+    "func": "func_03D510",
+    "page": "06",
+    "site": "0x3d7db",
+    "reachable": false
+   }
+  ]
+ },
+ "ALREADYREVOLUTION": {
+  "handle": "0x1374",
+  "emitters": [
+   {
+    "func": "func_03E984",
+    "page": "06",
+    "site": "0x3e991",
+    "reachable": false
+   }
+  ]
+ },
+ "NEWCOLONIST": {
+  "handle": "0xe2f",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2e156",
+    "reachable": true
+   }
+  ]
+ },
+ "INEFFICIENT": {
+  "handle": "0xdd1",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dd1c",
+    "reachable": true
+   }
+  ]
+ },
+ "EFFICIENT": {
+  "handle": "0xddd",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2dd55",
+    "reachable": true
+   }
+  ]
+ },
+ "CLEARCUT": {
+  "handle": "0x1466",
+  "emitters": [
+   {
+    "func": "func_040656",
+    "page": "08",
+    "site": "0x4083b",
+    "reachable": true
+   }
+  ]
+ },
+ "REALLYBUY": {
+  "handle": "0x111f",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x352b4",
+    "reachable": false
+   }
+  ]
+ },
+ "INDIANWARPATH2": {
+  "handle": "0x16c1",
+  "emitters": [
+   {
+    "func": "func_04AF5E",
+    "page": "0C",
+    "site": "0x4b1c2",
+    "reachable": true
+   }
+  ]
+ },
+ "INDIANWARFARE": {
+  "handle": "0x16e9",
+  "emitters": [
+   {
+    "func": "func_04AF5E",
+    "page": "0C",
+    "site": "0x4b2d3",
+    "reachable": true
+   }
+  ]
+ },
+ "LOSENOCOLONIES": {
+  "handle": "0xf09",
+  "emitters": [
+   {
+    "func": "func_02F3A2",
+    "page": "03",
+    "site": "0x2f441",
+    "reachable": false
+   }
+  ]
+ },
+ "HOWTOWIN": {
+  "handle": "0x1c3f",
+  "emitters": [
+   {
+    "func": "func_05CA7E",
+    "page": "10",
+    "site": "0x5dc57",
+    "reachable": true
+   }
+  ]
+ },
+ "ARTILLERY": {
+  "handle": "0x1b54",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b6e7",
+    "reachable": true
+   }
+  ]
+ },
+ "ARTILLERY2": {
+  "handle": "0x1b5e",
+  "emitters": [
+   {
+    "func": "func_05B2C2",
+    "page": "10",
+    "site": "0x5b740",
+    "reachable": true
+   }
+  ]
+ },
+ "SOMEBOYCOTT": {
+  "handle": "0x1027",
+  "emitters": [
+   {
+    "func": "func_03314E",
+    "page": "04",
+    "site": "0x3331a",
+    "reachable": true
+   }
+  ]
+ },
+ "KEEPSTOCKADE": {
+  "handle": "0xbba",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28888",
+    "reachable": true
+   }
+  ]
+ },
+ "MORETHANTHREE": {
+  "handle": "0xbc7",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28898",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL1": {
+  "handle": "0x8b3",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x20ff0",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL2": {
+  "handle": "0x8a9",
+  "emitters": [
+   {
+    "func": "func_020EE0",
+    "page": "01",
+    "site": "0x20f43",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL3": {
+  "handle": "0x8e9",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x21345",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL4": {
+  "handle": "0xd3d",
+  "emitters": [
+   {
+    "func": "func_02C5D4",
+    "page": "02",
+    "site": "0x2c73f",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL5": {
+  "handle": "0x1197",
+  "emitters": [
+   {
+    "func": "func_033F6A",
+    "page": "04",
+    "site": "0x36514",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL6": {
+  "handle": "0xec7",
+  "emitters": [
+   {
+    "func": "func_02D658",
+    "page": "03",
+    "site": "0x2ea41",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL7": {
+  "handle": "0xc99",
+  "emitters": [
+   {
+    "func": "func_02883E",
+    "page": "02",
+    "site": "0x28d36",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL8": {
+  "handle": "0x8f3",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x213de",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL9": {
+  "handle": "0x8fd",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x21476",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL10": {
+  "handle": "0x907",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x215c2",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL11": {
+  "handle": "0x8bd",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x2106e",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL12": {
+  "handle": "0xd47",
+  "emitters": [
+   {
+    "func": "func_02C5D4",
+    "page": "02",
+    "site": "0x2c7b1",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTORIAL13": {
+  "handle": "0x8c8",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x210b9",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL14": {
+  "handle": "0x8d3",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x210f9",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL15": {
+  "handle": "0x8de",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x2114c",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTORIAL19": {
+  "handle": "0x912",
+  "emitters": [
+   {
+    "func": "func_020F50",
+    "page": "01",
+    "site": "0x215ef",
+    "reachable": false
+   }
+  ]
+ },
+ "TUTNOLUMBER": {
+  "handle": "0x9d9",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x2278a",
+    "reachable": true
+   }
+  ]
+ },
+ "TUTNOSPACES": {
+  "handle": "0x9cd",
+  "emitters": [
+   {
+    "func": "func_022542",
+    "page": "01",
+    "site": "0x22772",
+    "reachable": true
+   }
+  ]
+ },
+ "KINGLOSE": {
+  "handle": "0xf20",
+  "emitters": [
+   {
+    "func": "func_02F3A2",
+    "page": "03",
+    "site": "0x2f54b",
+    "reachable": false
+   }
+  ]
+ },
+ "KINGWIN": {
+  "handle": "0xf31",
+  "emitters": [
+   {
+    "func": "func_02F3A2",
+    "page": "03",
+    "site": "0x2f6a1",
+    "reachable": false
+   }
+  ]
+ },
+ "DISBANDSHIP": {
+  "handle": "0x9f5",
+  "emitters": [
+   {
+    "func": "func_02287E",
+    "page": "01",
+    "site": "0x22910",
+    "reachable": true
+   }
+  ]
+ },
+ "NOMOREWAREHOUSE": {
+  "handle": "0xd52",
+  "emitters": [
+   {
+    "func": "func_02D0E4",
+    "page": "03",
+    "site": "0x2d145",
+    "reachable": true
+   }
+  ]
+ },
+ "NOMOREWAGONS": {
+  "handle": "0xd62",
+  "emitters": [
+   {
+    "func": "func_02D0E4",
+    "page": "03",
+    "site": "0x2d1f2",
+    "reachable": true
+   }
+  ]
+ }
+}

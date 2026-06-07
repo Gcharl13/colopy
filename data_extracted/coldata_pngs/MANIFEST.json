@@ -1,0 +1,7457 @@
+{
+  "coldata0/MS_BITMAP_1100": {
+    "type": "MS_BITMAP",
+    "dll": "coldata0",
+    "res_id": "1100",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata0/MS_BITMAP_1100.png"
+  },
+  "coldata0/MS_BITMAP_1102": {
+    "type": "MS_BITMAP",
+    "dll": "coldata0",
+    "res_id": "1102",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata0/MS_BITMAP_1102.png"
+  },
+  "coldata0/MS_SPRITE_5000": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5000",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5000.png"
+  },
+  "coldata0/MS_SPRITE_5001": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5001",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5001.png"
+  },
+  "coldata0/MS_SPRITE_5002": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5002",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5002.png"
+  },
+  "coldata0/MS_SPRITE_5003": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5003",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5003.png"
+  },
+  "coldata0/MS_SPRITE_5004": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5004",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5004.png"
+  },
+  "coldata0/MS_SPRITE_5005": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5005",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5005.png"
+  },
+  "coldata0/MS_SPRITE_5006": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5006",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5006.png"
+  },
+  "coldata0/MS_SPRITE_5007": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5007",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5007.png"
+  },
+  "coldata0/MS_SPRITE_5008": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5008",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5008.png"
+  },
+  "coldata0/MS_SPRITE_5009": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5009",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5009.png"
+  },
+  "coldata0/MS_SPRITE_5010": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5010",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5010.png"
+  },
+  "coldata0/MS_SPRITE_5011": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5011",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5011.png"
+  },
+  "coldata0/MS_SPRITE_5012": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5012",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5012.png"
+  },
+  "coldata0/MS_SPRITE_5013": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5013",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5013.png"
+  },
+  "coldata0/MS_SPRITE_5014": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5014",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5014.png"
+  },
+  "coldata0/MS_SPRITE_5015": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5015",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5015.png"
+  },
+  "coldata0/MS_SPRITE_5016": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5016",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5016.png"
+  },
+  "coldata0/MS_SPRITE_5017": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5017",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5017.png"
+  },
+  "coldata0/MS_SPRITE_5018": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5018",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5018.png"
+  },
+  "coldata0/MS_SPRITE_5019": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5019",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5019.png"
+  },
+  "coldata0/MS_SPRITE_5020": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5020",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5020.png"
+  },
+  "coldata0/MS_SPRITE_5021": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5021",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5021.png"
+  },
+  "coldata0/MS_SPRITE_5022": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5022",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5022.png"
+  },
+  "coldata0/MS_SPRITE_5023": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5023",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5023.png"
+  },
+  "coldata0/MS_SPRITE_5024": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5024",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5024.png"
+  },
+  "coldata0/MS_SPRITE_5025": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5025",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5025.png"
+  },
+  "coldata0/MS_SPRITE_5026": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5026",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5026.png"
+  },
+  "coldata0/MS_SPRITE_5027": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5027",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5027.png"
+  },
+  "coldata0/MS_SPRITE_5028": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5028",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5028.png"
+  },
+  "coldata0/MS_SPRITE_5029": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5029",
+    "w": 38,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5029.png"
+  },
+  "coldata0/MS_SPRITE_5030": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5030",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5030.png"
+  },
+  "coldata0/MS_SPRITE_5031": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5031",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5031.png"
+  },
+  "coldata0/MS_SPRITE_5032": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5032",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5032.png"
+  },
+  "coldata0/MS_SPRITE_5033": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5033",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5033.png"
+  },
+  "coldata0/MS_SPRITE_5034": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5034",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5034.png"
+  },
+  "coldata0/MS_SPRITE_5035": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5035",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5035.png"
+  },
+  "coldata0/MS_SPRITE_5036": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5036",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5036.png"
+  },
+  "coldata0/MS_SPRITE_5037": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5037",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5037.png"
+  },
+  "coldata0/MS_SPRITE_5038": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5038",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5038.png"
+  },
+  "coldata0/MS_SPRITE_5039": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5039",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5039.png"
+  },
+  "coldata0/MS_SPRITE_5040": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5040",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5040.png"
+  },
+  "coldata0/MS_SPRITE_5041": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5041",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5041.png"
+  },
+  "coldata0/MS_SPRITE_5042": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5042",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5042.png"
+  },
+  "coldata0/MS_SPRITE_5043": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5043",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5043.png"
+  },
+  "coldata0/MS_SPRITE_5044": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5044",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5044.png"
+  },
+  "coldata0/MS_SPRITE_5045": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5045",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5045.png"
+  },
+  "coldata0/MS_SPRITE_5046": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5046",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5046.png"
+  },
+  "coldata0/MS_SPRITE_5047": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5047",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5047.png"
+  },
+  "coldata0/MS_SPRITE_5048": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5048",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5048.png"
+  },
+  "coldata0/MS_SPRITE_5049": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5049",
+    "w": 26,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5049.png"
+  },
+  "coldata0/MS_SPRITE_5050": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5050",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5050.png"
+  },
+  "coldata0/MS_SPRITE_5051": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5051",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5051.png"
+  },
+  "coldata0/MS_SPRITE_5052": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5052",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5052.png"
+  },
+  "coldata0/MS_SPRITE_5053": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5053",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5053.png"
+  },
+  "coldata0/MS_SPRITE_5054": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5054",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5054.png"
+  },
+  "coldata0/MS_SPRITE_5055": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5055",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5055.png"
+  },
+  "coldata0/MS_SPRITE_5056": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5056",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5056.png"
+  },
+  "coldata0/MS_SPRITE_5057": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5057",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5057.png"
+  },
+  "coldata0/MS_SPRITE_5058": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5058",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5058.png"
+  },
+  "coldata0/MS_SPRITE_5059": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5059",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5059.png"
+  },
+  "coldata0/MS_SPRITE_5060": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5060",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5060.png"
+  },
+  "coldata0/MS_SPRITE_5061": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5061",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5061.png"
+  },
+  "coldata0/MS_SPRITE_5062": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5062",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5062.png"
+  },
+  "coldata0/MS_SPRITE_5063": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5063",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5063.png"
+  },
+  "coldata0/MS_SPRITE_5064": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5064",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5064.png"
+  },
+  "coldata0/MS_SPRITE_5065": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5065",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5065.png"
+  },
+  "coldata0/MS_SPRITE_5066": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5066",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5066.png"
+  },
+  "coldata0/MS_SPRITE_5067": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5067",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5067.png"
+  },
+  "coldata0/MS_SPRITE_5068": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5068",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5068.png"
+  },
+  "coldata0/MS_SPRITE_5069": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5069",
+    "w": 37,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5069.png"
+  },
+  "coldata0/MS_SPRITE_5070": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5070",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5070.png"
+  },
+  "coldata0/MS_SPRITE_5071": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5071",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5071.png"
+  },
+  "coldata0/MS_SPRITE_5072": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5072",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5072.png"
+  },
+  "coldata0/MS_SPRITE_5073": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5073",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5073.png"
+  },
+  "coldata0/MS_SPRITE_5074": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5074",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5074.png"
+  },
+  "coldata0/MS_SPRITE_5075": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5075",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5075.png"
+  },
+  "coldata0/MS_SPRITE_5076": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5076",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5076.png"
+  },
+  "coldata0/MS_SPRITE_5077": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5077",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5077.png"
+  },
+  "coldata0/MS_SPRITE_5078": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5078",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5078.png"
+  },
+  "coldata0/MS_SPRITE_5079": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5079",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5079.png"
+  },
+  "coldata0/MS_SPRITE_5080": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5080",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5080.png"
+  },
+  "coldata0/MS_SPRITE_5081": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5081",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5081.png"
+  },
+  "coldata0/MS_SPRITE_5082": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5082",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5082.png"
+  },
+  "coldata0/MS_SPRITE_5083": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5083",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5083.png"
+  },
+  "coldata0/MS_SPRITE_5084": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5084",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5084.png"
+  },
+  "coldata0/MS_SPRITE_5085": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5085",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5085.png"
+  },
+  "coldata0/MS_SPRITE_5086": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5086",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5086.png"
+  },
+  "coldata0/MS_SPRITE_5087": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5087",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5087.png"
+  },
+  "coldata0/MS_SPRITE_5088": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5088",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5088.png"
+  },
+  "coldata0/MS_SPRITE_5089": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5089",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5089.png"
+  },
+  "coldata0/MS_SPRITE_5090": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5090",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5090.png"
+  },
+  "coldata0/MS_SPRITE_5091": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5091",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5091.png"
+  },
+  "coldata0/MS_SPRITE_5092": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5092",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5092.png"
+  },
+  "coldata0/MS_SPRITE_5093": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5093",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5093.png"
+  },
+  "coldata0/MS_SPRITE_5094": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5094",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5094.png"
+  },
+  "coldata0/MS_SPRITE_5095": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5095",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5095.png"
+  },
+  "coldata0/MS_SPRITE_5096": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5096",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5096.png"
+  },
+  "coldata0/MS_SPRITE_5097": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5097",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5097.png"
+  },
+  "coldata0/MS_SPRITE_5098": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5098",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5098.png"
+  },
+  "coldata0/MS_SPRITE_5099": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5099",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5099.png"
+  },
+  "coldata0/MS_SPRITE_5100": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5100",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5100.png"
+  },
+  "coldata0/MS_SPRITE_5101": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5101",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5101.png"
+  },
+  "coldata0/MS_SPRITE_5102": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5102",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5102.png"
+  },
+  "coldata0/MS_SPRITE_5103": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5103",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5103.png"
+  },
+  "coldata0/MS_SPRITE_5104": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5104",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5104.png"
+  },
+  "coldata0/MS_SPRITE_5105": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5105",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5105.png"
+  },
+  "coldata0/MS_SPRITE_5106": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5106",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5106.png"
+  },
+  "coldata0/MS_SPRITE_5107": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5107",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5107.png"
+  },
+  "coldata0/MS_SPRITE_5108": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5108",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5108.png"
+  },
+  "coldata0/MS_SPRITE_5109": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5109",
+    "w": 32,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5109.png"
+  },
+  "coldata0/MS_SPRITE_5110": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5110",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5110.png"
+  },
+  "coldata0/MS_SPRITE_5111": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5111",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5111.png"
+  },
+  "coldata0/MS_SPRITE_5112": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5112",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5112.png"
+  },
+  "coldata0/MS_SPRITE_5113": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5113",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5113.png"
+  },
+  "coldata0/MS_SPRITE_5114": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5114",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5114.png"
+  },
+  "coldata0/MS_SPRITE_5115": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5115",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5115.png"
+  },
+  "coldata0/MS_SPRITE_5116": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5116",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5116.png"
+  },
+  "coldata0/MS_SPRITE_5117": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5117",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5117.png"
+  },
+  "coldata0/MS_SPRITE_5118": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5118",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5118.png"
+  },
+  "coldata0/MS_SPRITE_5119": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5119",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5119.png"
+  },
+  "coldata0/MS_SPRITE_5120": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5120",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5120.png"
+  },
+  "coldata0/MS_SPRITE_5121": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5121",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5121.png"
+  },
+  "coldata0/MS_SPRITE_5122": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5122",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5122.png"
+  },
+  "coldata0/MS_SPRITE_5123": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5123",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5123.png"
+  },
+  "coldata0/MS_SPRITE_5124": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5124",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5124.png"
+  },
+  "coldata0/MS_SPRITE_5125": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5125",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5125.png"
+  },
+  "coldata0/MS_SPRITE_5126": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5126",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5126.png"
+  },
+  "coldata0/MS_SPRITE_5127": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5127",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5127.png"
+  },
+  "coldata0/MS_SPRITE_5128": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5128",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5128.png"
+  },
+  "coldata0/MS_SPRITE_5129": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5129",
+    "w": 34,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5129.png"
+  },
+  "coldata0/MS_SPRITE_5130": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5130",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5130.png"
+  },
+  "coldata0/MS_SPRITE_5131": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5131",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5131.png"
+  },
+  "coldata0/MS_SPRITE_5132": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5132",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5132.png"
+  },
+  "coldata0/MS_SPRITE_5133": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5133",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5133.png"
+  },
+  "coldata0/MS_SPRITE_5134": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5134",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5134.png"
+  },
+  "coldata0/MS_SPRITE_5135": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5135",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5135.png"
+  },
+  "coldata0/MS_SPRITE_5136": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5136",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5136.png"
+  },
+  "coldata0/MS_SPRITE_5137": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5137",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5137.png"
+  },
+  "coldata0/MS_SPRITE_5138": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5138",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5138.png"
+  },
+  "coldata0/MS_SPRITE_5139": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5139",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5139.png"
+  },
+  "coldata0/MS_SPRITE_5140": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5140",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5140.png"
+  },
+  "coldata0/MS_SPRITE_5141": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5141",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5141.png"
+  },
+  "coldata0/MS_SPRITE_5142": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5142",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5142.png"
+  },
+  "coldata0/MS_SPRITE_5143": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5143",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5143.png"
+  },
+  "coldata0/MS_SPRITE_5144": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5144",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5144.png"
+  },
+  "coldata0/MS_SPRITE_5145": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5145",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5145.png"
+  },
+  "coldata0/MS_SPRITE_5146": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5146",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5146.png"
+  },
+  "coldata0/MS_SPRITE_5147": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5147",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5147.png"
+  },
+  "coldata0/MS_SPRITE_5148": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5148",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5148.png"
+  },
+  "coldata0/MS_SPRITE_5149": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5149",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5149.png"
+  },
+  "coldata0/MS_SPRITE_5150": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5150",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5150.png"
+  },
+  "coldata0/MS_SPRITE_5151": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5151",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5151.png"
+  },
+  "coldata0/MS_SPRITE_5152": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5152",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5152.png"
+  },
+  "coldata0/MS_SPRITE_5153": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5153",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5153.png"
+  },
+  "coldata0/MS_SPRITE_5154": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5154",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5154.png"
+  },
+  "coldata0/MS_SPRITE_5155": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5155",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5155.png"
+  },
+  "coldata0/MS_SPRITE_5156": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5156",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5156.png"
+  },
+  "coldata0/MS_SPRITE_5157": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5157",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5157.png"
+  },
+  "coldata0/MS_SPRITE_5158": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5158",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5158.png"
+  },
+  "coldata0/MS_SPRITE_5159": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5159",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5159.png"
+  },
+  "coldata0/MS_SPRITE_5160": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5160",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5160.png"
+  },
+  "coldata0/MS_SPRITE_5161": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5161",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5161.png"
+  },
+  "coldata0/MS_SPRITE_5162": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5162",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5162.png"
+  },
+  "coldata0/MS_SPRITE_5163": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5163",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5163.png"
+  },
+  "coldata0/MS_SPRITE_5164": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5164",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5164.png"
+  },
+  "coldata0/MS_SPRITE_5165": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5165",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5165.png"
+  },
+  "coldata0/MS_SPRITE_5166": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5166",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5166.png"
+  },
+  "coldata0/MS_SPRITE_5167": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5167",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5167.png"
+  },
+  "coldata0/MS_SPRITE_5168": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5168",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5168.png"
+  },
+  "coldata0/MS_SPRITE_5169": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5169",
+    "w": 28,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5169.png"
+  },
+  "coldata0/MS_SPRITE_5170": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5170",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5170.png"
+  },
+  "coldata0/MS_SPRITE_5171": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5171",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5171.png"
+  },
+  "coldata0/MS_SPRITE_5172": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5172",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5172.png"
+  },
+  "coldata0/MS_SPRITE_5173": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5173",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5173.png"
+  },
+  "coldata0/MS_SPRITE_5174": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5174",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5174.png"
+  },
+  "coldata0/MS_SPRITE_5175": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5175",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5175.png"
+  },
+  "coldata0/MS_SPRITE_5176": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5176",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5176.png"
+  },
+  "coldata0/MS_SPRITE_5177": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5177",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5177.png"
+  },
+  "coldata0/MS_SPRITE_5178": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5178",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5178.png"
+  },
+  "coldata0/MS_SPRITE_5179": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5179",
+    "w": 27,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5179.png"
+  },
+  "coldata0/MS_SPRITE_5180": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5180",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5180.png"
+  },
+  "coldata0/MS_SPRITE_5181": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5181",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5181.png"
+  },
+  "coldata0/MS_SPRITE_5182": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5182",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5182.png"
+  },
+  "coldata0/MS_SPRITE_5183": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5183",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5183.png"
+  },
+  "coldata0/MS_SPRITE_5184": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5184",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5184.png"
+  },
+  "coldata0/MS_SPRITE_5185": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5185",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5185.png"
+  },
+  "coldata0/MS_SPRITE_5186": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5186",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5186.png"
+  },
+  "coldata0/MS_SPRITE_5187": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5187",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5187.png"
+  },
+  "coldata0/MS_SPRITE_5188": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5188",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5188.png"
+  },
+  "coldata0/MS_SPRITE_5189": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5189",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5189.png"
+  },
+  "coldata0/MS_SPRITE_5190": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5190",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5190.png"
+  },
+  "coldata0/MS_SPRITE_5191": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5191",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5191.png"
+  },
+  "coldata0/MS_SPRITE_5192": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5192",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5192.png"
+  },
+  "coldata0/MS_SPRITE_5193": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5193",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5193.png"
+  },
+  "coldata0/MS_SPRITE_5194": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5194",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5194.png"
+  },
+  "coldata0/MS_SPRITE_5195": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5195",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5195.png"
+  },
+  "coldata0/MS_SPRITE_5196": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5196",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5196.png"
+  },
+  "coldata0/MS_SPRITE_5197": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5197",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5197.png"
+  },
+  "coldata0/MS_SPRITE_5198": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5198",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5198.png"
+  },
+  "coldata0/MS_SPRITE_5199": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5199",
+    "w": 35,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5199.png"
+  },
+  "coldata0/MS_SPRITE_5200": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5200",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5200.png"
+  },
+  "coldata0/MS_SPRITE_5201": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5201",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5201.png"
+  },
+  "coldata0/MS_SPRITE_5202": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5202",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5202.png"
+  },
+  "coldata0/MS_SPRITE_5203": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5203",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5203.png"
+  },
+  "coldata0/MS_SPRITE_5204": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5204",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5204.png"
+  },
+  "coldata0/MS_SPRITE_5205": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5205",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5205.png"
+  },
+  "coldata0/MS_SPRITE_5206": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5206",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5206.png"
+  },
+  "coldata0/MS_SPRITE_5207": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5207",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5207.png"
+  },
+  "coldata0/MS_SPRITE_5208": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5208",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5208.png"
+  },
+  "coldata0/MS_SPRITE_5209": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5209",
+    "w": 39,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5209.png"
+  },
+  "coldata0/MS_SPRITE_5210": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5210",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5210.png"
+  },
+  "coldata0/MS_SPRITE_5211": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5211",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5211.png"
+  },
+  "coldata0/MS_SPRITE_5212": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5212",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5212.png"
+  },
+  "coldata0/MS_SPRITE_5213": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5213",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5213.png"
+  },
+  "coldata0/MS_SPRITE_5214": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5214",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5214.png"
+  },
+  "coldata0/MS_SPRITE_5215": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5215",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5215.png"
+  },
+  "coldata0/MS_SPRITE_5216": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5216",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5216.png"
+  },
+  "coldata0/MS_SPRITE_5217": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5217",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5217.png"
+  },
+  "coldata0/MS_SPRITE_5218": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5218",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5218.png"
+  },
+  "coldata0/MS_SPRITE_5219": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5219",
+    "w": 25,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5219.png"
+  },
+  "coldata0/MS_SPRITE_5220": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5220",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5220.png"
+  },
+  "coldata0/MS_SPRITE_5221": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5221",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5221.png"
+  },
+  "coldata0/MS_SPRITE_5222": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5222",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5222.png"
+  },
+  "coldata0/MS_SPRITE_5223": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5223",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5223.png"
+  },
+  "coldata0/MS_SPRITE_5224": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5224",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5224.png"
+  },
+  "coldata0/MS_SPRITE_5225": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5225",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5225.png"
+  },
+  "coldata0/MS_SPRITE_5226": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5226",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5226.png"
+  },
+  "coldata0/MS_SPRITE_5227": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5227",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5227.png"
+  },
+  "coldata0/MS_SPRITE_5228": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5228",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5228.png"
+  },
+  "coldata0/MS_SPRITE_5229": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5229",
+    "w": 30,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5229.png"
+  },
+  "coldata0/MS_SPRITE_5230": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5230",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5230.png"
+  },
+  "coldata0/MS_SPRITE_5231": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5231",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5231.png"
+  },
+  "coldata0/MS_SPRITE_5232": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5232",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5232.png"
+  },
+  "coldata0/MS_SPRITE_5233": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5233",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5233.png"
+  },
+  "coldata0/MS_SPRITE_5234": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5234",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5234.png"
+  },
+  "coldata0/MS_SPRITE_5235": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5235",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5235.png"
+  },
+  "coldata0/MS_SPRITE_5236": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5236",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5236.png"
+  },
+  "coldata0/MS_SPRITE_5237": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5237",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5237.png"
+  },
+  "coldata0/MS_SPRITE_5238": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5238",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5238.png"
+  },
+  "coldata0/MS_SPRITE_5239": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5239",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5239.png"
+  },
+  "coldata0/MS_SPRITE_5240": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5240",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5240.png"
+  },
+  "coldata0/MS_SPRITE_5241": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5241",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5241.png"
+  },
+  "coldata0/MS_SPRITE_5242": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5242",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5242.png"
+  },
+  "coldata0/MS_SPRITE_5243": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5243",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5243.png"
+  },
+  "coldata0/MS_SPRITE_5244": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5244",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5244.png"
+  },
+  "coldata0/MS_SPRITE_5245": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5245",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5245.png"
+  },
+  "coldata0/MS_SPRITE_5246": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5246",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5246.png"
+  },
+  "coldata0/MS_SPRITE_5247": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5247",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5247.png"
+  },
+  "coldata0/MS_SPRITE_5248": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5248",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5248.png"
+  },
+  "coldata0/MS_SPRITE_5249": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5249",
+    "w": 29,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5249.png"
+  },
+  "coldata0/MS_SPRITE_5250": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5250",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5250.png"
+  },
+  "coldata0/MS_SPRITE_5251": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5251",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5251.png"
+  },
+  "coldata0/MS_SPRITE_5252": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5252",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5252.png"
+  },
+  "coldata0/MS_SPRITE_5253": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5253",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5253.png"
+  },
+  "coldata0/MS_SPRITE_5254": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5254",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5254.png"
+  },
+  "coldata0/MS_SPRITE_5255": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5255",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5255.png"
+  },
+  "coldata0/MS_SPRITE_5256": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5256",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5256.png"
+  },
+  "coldata0/MS_SPRITE_5257": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5257",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5257.png"
+  },
+  "coldata0/MS_SPRITE_5258": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5258",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5258.png"
+  },
+  "coldata0/MS_SPRITE_5259": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "5259",
+    "w": 31,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_5259.png"
+  },
+  "coldata0/MS_SPRITE_6000": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6000",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6000.png"
+  },
+  "coldata0/MS_SPRITE_6001": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6001",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6001.png"
+  },
+  "coldata0/MS_SPRITE_6002": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6002",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6002.png"
+  },
+  "coldata0/MS_SPRITE_6003": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6003",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6003.png"
+  },
+  "coldata0/MS_SPRITE_6004": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6004",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6004.png"
+  },
+  "coldata0/MS_SPRITE_6005": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6005",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6005.png"
+  },
+  "coldata0/MS_SPRITE_6006": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6006",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6006.png"
+  },
+  "coldata0/MS_SPRITE_6007": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6007",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6007.png"
+  },
+  "coldata0/MS_SPRITE_6008": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6008",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6008.png"
+  },
+  "coldata0/MS_SPRITE_6009": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6009",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6009.png"
+  },
+  "coldata0/MS_SPRITE_6010": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6010",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6010.png"
+  },
+  "coldata0/MS_SPRITE_6011": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6011",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6011.png"
+  },
+  "coldata0/MS_SPRITE_6012": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6012",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6012.png"
+  },
+  "coldata0/MS_SPRITE_6013": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6013",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6013.png"
+  },
+  "coldata0/MS_SPRITE_6014": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6014",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6014.png"
+  },
+  "coldata0/MS_SPRITE_6015": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6015",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6015.png"
+  },
+  "coldata0/MS_SPRITE_6016": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6016",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6016.png"
+  },
+  "coldata0/MS_SPRITE_6017": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6017",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6017.png"
+  },
+  "coldata0/MS_SPRITE_6018": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6018",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6018.png"
+  },
+  "coldata0/MS_SPRITE_6019": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6019",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6019.png"
+  },
+  "coldata0/MS_SPRITE_6020": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6020",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6020.png"
+  },
+  "coldata0/MS_SPRITE_6021": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6021",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6021.png"
+  },
+  "coldata0/MS_SPRITE_6022": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6022",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6022.png"
+  },
+  "coldata0/MS_SPRITE_6023": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6023",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6023.png"
+  },
+  "coldata0/MS_SPRITE_6024": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6024",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6024.png"
+  },
+  "coldata0/MS_SPRITE_6025": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6025",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6025.png"
+  },
+  "coldata0/MS_SPRITE_6026": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6026",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6026.png"
+  },
+  "coldata0/MS_SPRITE_6027": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6027",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6027.png"
+  },
+  "coldata0/MS_SPRITE_6028": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6028",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6028.png"
+  },
+  "coldata0/MS_SPRITE_6029": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6029",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6029.png"
+  },
+  "coldata0/MS_SPRITE_6030": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6030",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6030.png"
+  },
+  "coldata0/MS_SPRITE_6031": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6031",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6031.png"
+  },
+  "coldata0/MS_SPRITE_6032": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6032",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6032.png"
+  },
+  "coldata0/MS_SPRITE_6033": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6033",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6033.png"
+  },
+  "coldata0/MS_SPRITE_6034": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6034",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6034.png"
+  },
+  "coldata0/MS_SPRITE_6035": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6035",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6035.png"
+  },
+  "coldata0/MS_SPRITE_6036": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6036",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6036.png"
+  },
+  "coldata0/MS_SPRITE_6037": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6037",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6037.png"
+  },
+  "coldata0/MS_SPRITE_6038": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6038",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6038.png"
+  },
+  "coldata0/MS_SPRITE_6039": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6039",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6039.png"
+  },
+  "coldata0/MS_SPRITE_6040": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6040",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6040.png"
+  },
+  "coldata0/MS_SPRITE_6041": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6041",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6041.png"
+  },
+  "coldata0/MS_SPRITE_6042": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6042",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6042.png"
+  },
+  "coldata0/MS_SPRITE_6043": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6043",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6043.png"
+  },
+  "coldata0/MS_SPRITE_6044": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6044",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6044.png"
+  },
+  "coldata0/MS_SPRITE_6045": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6045",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6045.png"
+  },
+  "coldata0/MS_SPRITE_6046": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6046",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6046.png"
+  },
+  "coldata0/MS_SPRITE_6047": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6047",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6047.png"
+  },
+  "coldata0/MS_SPRITE_6048": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6048",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6048.png"
+  },
+  "coldata0/MS_SPRITE_6049": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6049",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6049.png"
+  },
+  "coldata0/MS_SPRITE_6050": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6050",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6050.png"
+  },
+  "coldata0/MS_SPRITE_6051": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6051",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6051.png"
+  },
+  "coldata0/MS_SPRITE_6052": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6052",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6052.png"
+  },
+  "coldata0/MS_SPRITE_6053": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6053",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6053.png"
+  },
+  "coldata0/MS_SPRITE_6054": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6054",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6054.png"
+  },
+  "coldata0/MS_SPRITE_6055": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6055",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6055.png"
+  },
+  "coldata0/MS_SPRITE_6056": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6056",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6056.png"
+  },
+  "coldata0/MS_SPRITE_6057": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6057",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6057.png"
+  },
+  "coldata0/MS_SPRITE_6058": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6058",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6058.png"
+  },
+  "coldata0/MS_SPRITE_6059": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6059",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6059.png"
+  },
+  "coldata0/MS_SPRITE_6060": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6060",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6060.png"
+  },
+  "coldata0/MS_SPRITE_6061": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6061",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6061.png"
+  },
+  "coldata0/MS_SPRITE_6062": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6062",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6062.png"
+  },
+  "coldata0/MS_SPRITE_6063": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6063",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6063.png"
+  },
+  "coldata0/MS_SPRITE_6064": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6064",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6064.png"
+  },
+  "coldata0/MS_SPRITE_6065": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6065",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6065.png"
+  },
+  "coldata0/MS_SPRITE_6066": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6066",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6066.png"
+  },
+  "coldata0/MS_SPRITE_6067": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6067",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6067.png"
+  },
+  "coldata0/MS_SPRITE_6068": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6068",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6068.png"
+  },
+  "coldata0/MS_SPRITE_6069": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6069",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6069.png"
+  },
+  "coldata0/MS_SPRITE_6070": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6070",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6070.png"
+  },
+  "coldata0/MS_SPRITE_6071": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6071",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6071.png"
+  },
+  "coldata0/MS_SPRITE_6072": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6072",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6072.png"
+  },
+  "coldata0/MS_SPRITE_6073": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6073",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6073.png"
+  },
+  "coldata0/MS_SPRITE_6074": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6074",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6074.png"
+  },
+  "coldata0/MS_SPRITE_6075": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6075",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6075.png"
+  },
+  "coldata0/MS_SPRITE_6076": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6076",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6076.png"
+  },
+  "coldata0/MS_SPRITE_6077": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6077",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6077.png"
+  },
+  "coldata0/MS_SPRITE_6078": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6078",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6078.png"
+  },
+  "coldata0/MS_SPRITE_6079": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6079",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6079.png"
+  },
+  "coldata0/MS_SPRITE_6080": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6080",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6080.png"
+  },
+  "coldata0/MS_SPRITE_6081": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6081",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6081.png"
+  },
+  "coldata0/MS_SPRITE_6082": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6082",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6082.png"
+  },
+  "coldata0/MS_SPRITE_6083": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6083",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6083.png"
+  },
+  "coldata0/MS_SPRITE_6084": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6084",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6084.png"
+  },
+  "coldata0/MS_SPRITE_6085": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6085",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6085.png"
+  },
+  "coldata0/MS_SPRITE_6086": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6086",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6086.png"
+  },
+  "coldata0/MS_SPRITE_6087": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6087",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6087.png"
+  },
+  "coldata0/MS_SPRITE_6088": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6088",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6088.png"
+  },
+  "coldata0/MS_SPRITE_6089": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6089",
+    "w": 11,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6089.png"
+  },
+  "coldata0/MS_SPRITE_6090": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6090",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6090.png"
+  },
+  "coldata0/MS_SPRITE_6091": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6091",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6091.png"
+  },
+  "coldata0/MS_SPRITE_6092": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6092",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6092.png"
+  },
+  "coldata0/MS_SPRITE_6093": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6093",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6093.png"
+  },
+  "coldata0/MS_SPRITE_6094": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6094",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6094.png"
+  },
+  "coldata0/MS_SPRITE_6095": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6095",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6095.png"
+  },
+  "coldata0/MS_SPRITE_6096": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6096",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6096.png"
+  },
+  "coldata0/MS_SPRITE_6097": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6097",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6097.png"
+  },
+  "coldata0/MS_SPRITE_6098": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6098",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6098.png"
+  },
+  "coldata0/MS_SPRITE_6099": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6099",
+    "w": 12,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6099.png"
+  },
+  "coldata0/MS_SPRITE_6100": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6100",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6100.png"
+  },
+  "coldata0/MS_SPRITE_6101": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6101",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6101.png"
+  },
+  "coldata0/MS_SPRITE_6102": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6102",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6102.png"
+  },
+  "coldata0/MS_SPRITE_6103": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6103",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6103.png"
+  },
+  "coldata0/MS_SPRITE_6104": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6104",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6104.png"
+  },
+  "coldata0/MS_SPRITE_6105": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6105",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6105.png"
+  },
+  "coldata0/MS_SPRITE_6106": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6106",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6106.png"
+  },
+  "coldata0/MS_SPRITE_6107": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6107",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6107.png"
+  },
+  "coldata0/MS_SPRITE_6108": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6108",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6108.png"
+  },
+  "coldata0/MS_SPRITE_6109": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6109",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6109.png"
+  },
+  "coldata0/MS_SPRITE_6110": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6110",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6110.png"
+  },
+  "coldata0/MS_SPRITE_6111": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6111",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6111.png"
+  },
+  "coldata0/MS_SPRITE_6112": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6112",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6112.png"
+  },
+  "coldata0/MS_SPRITE_6113": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6113",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6113.png"
+  },
+  "coldata0/MS_SPRITE_6114": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6114",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6114.png"
+  },
+  "coldata0/MS_SPRITE_6115": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6115",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6115.png"
+  },
+  "coldata0/MS_SPRITE_6116": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6116",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6116.png"
+  },
+  "coldata0/MS_SPRITE_6117": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6117",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6117.png"
+  },
+  "coldata0/MS_SPRITE_6118": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6118",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6118.png"
+  },
+  "coldata0/MS_SPRITE_6119": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6119",
+    "w": 15,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6119.png"
+  },
+  "coldata0/MS_SPRITE_6120": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6120",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6120.png"
+  },
+  "coldata0/MS_SPRITE_6121": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6121",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6121.png"
+  },
+  "coldata0/MS_SPRITE_6122": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6122",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6122.png"
+  },
+  "coldata0/MS_SPRITE_6123": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6123",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6123.png"
+  },
+  "coldata0/MS_SPRITE_6124": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6124",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6124.png"
+  },
+  "coldata0/MS_SPRITE_6125": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6125",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6125.png"
+  },
+  "coldata0/MS_SPRITE_6126": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6126",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6126.png"
+  },
+  "coldata0/MS_SPRITE_6127": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6127",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6127.png"
+  },
+  "coldata0/MS_SPRITE_6128": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6128",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6128.png"
+  },
+  "coldata0/MS_SPRITE_6129": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6129",
+    "w": 24,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6129.png"
+  },
+  "coldata0/MS_SPRITE_6130": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6130",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6130.png"
+  },
+  "coldata0/MS_SPRITE_6131": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6131",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6131.png"
+  },
+  "coldata0/MS_SPRITE_6132": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6132",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6132.png"
+  },
+  "coldata0/MS_SPRITE_6133": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6133",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6133.png"
+  },
+  "coldata0/MS_SPRITE_6134": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6134",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6134.png"
+  },
+  "coldata0/MS_SPRITE_6135": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6135",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6135.png"
+  },
+  "coldata0/MS_SPRITE_6136": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6136",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6136.png"
+  },
+  "coldata0/MS_SPRITE_6137": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6137",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6137.png"
+  },
+  "coldata0/MS_SPRITE_6138": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6138",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6138.png"
+  },
+  "coldata0/MS_SPRITE_6139": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6139",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6139.png"
+  },
+  "coldata0/MS_SPRITE_6140": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6140",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6140.png"
+  },
+  "coldata0/MS_SPRITE_6141": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6141",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6141.png"
+  },
+  "coldata0/MS_SPRITE_6142": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6142",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6142.png"
+  },
+  "coldata0/MS_SPRITE_6143": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6143",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6143.png"
+  },
+  "coldata0/MS_SPRITE_6144": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6144",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6144.png"
+  },
+  "coldata0/MS_SPRITE_6145": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6145",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6145.png"
+  },
+  "coldata0/MS_SPRITE_6146": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6146",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6146.png"
+  },
+  "coldata0/MS_SPRITE_6147": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6147",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6147.png"
+  },
+  "coldata0/MS_SPRITE_6148": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6148",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6148.png"
+  },
+  "coldata0/MS_SPRITE_6149": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6149",
+    "w": 13,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6149.png"
+  },
+  "coldata0/MS_SPRITE_6150": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6150",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6150.png"
+  },
+  "coldata0/MS_SPRITE_6151": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6151",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6151.png"
+  },
+  "coldata0/MS_SPRITE_6152": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6152",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6152.png"
+  },
+  "coldata0/MS_SPRITE_6153": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6153",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6153.png"
+  },
+  "coldata0/MS_SPRITE_6154": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6154",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6154.png"
+  },
+  "coldata0/MS_SPRITE_6155": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6155",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6155.png"
+  },
+  "coldata0/MS_SPRITE_6156": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6156",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6156.png"
+  },
+  "coldata0/MS_SPRITE_6157": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6157",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6157.png"
+  },
+  "coldata0/MS_SPRITE_6158": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6158",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6158.png"
+  },
+  "coldata0/MS_SPRITE_6159": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6159",
+    "w": 23,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6159.png"
+  },
+  "coldata0/MS_SPRITE_6160": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6160",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6160.png"
+  },
+  "coldata0/MS_SPRITE_6161": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6161",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6161.png"
+  },
+  "coldata0/MS_SPRITE_6162": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6162",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6162.png"
+  },
+  "coldata0/MS_SPRITE_6163": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6163",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6163.png"
+  },
+  "coldata0/MS_SPRITE_6164": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6164",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6164.png"
+  },
+  "coldata0/MS_SPRITE_6165": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6165",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6165.png"
+  },
+  "coldata0/MS_SPRITE_6166": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6166",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6166.png"
+  },
+  "coldata0/MS_SPRITE_6167": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6167",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6167.png"
+  },
+  "coldata0/MS_SPRITE_6168": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6168",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6168.png"
+  },
+  "coldata0/MS_SPRITE_6169": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6169",
+    "w": 21,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6169.png"
+  },
+  "coldata0/MS_SPRITE_6170": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6170",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6170.png"
+  },
+  "coldata0/MS_SPRITE_6171": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6171",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6171.png"
+  },
+  "coldata0/MS_SPRITE_6172": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6172",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6172.png"
+  },
+  "coldata0/MS_SPRITE_6173": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6173",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6173.png"
+  },
+  "coldata0/MS_SPRITE_6174": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6174",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6174.png"
+  },
+  "coldata0/MS_SPRITE_6175": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6175",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6175.png"
+  },
+  "coldata0/MS_SPRITE_6176": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6176",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6176.png"
+  },
+  "coldata0/MS_SPRITE_6177": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6177",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6177.png"
+  },
+  "coldata0/MS_SPRITE_6178": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6178",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6178.png"
+  },
+  "coldata0/MS_SPRITE_6179": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6179",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6179.png"
+  },
+  "coldata0/MS_SPRITE_6180": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6180",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6180.png"
+  },
+  "coldata0/MS_SPRITE_6181": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6181",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6181.png"
+  },
+  "coldata0/MS_SPRITE_6182": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6182",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6182.png"
+  },
+  "coldata0/MS_SPRITE_6183": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6183",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6183.png"
+  },
+  "coldata0/MS_SPRITE_6184": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6184",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6184.png"
+  },
+  "coldata0/MS_SPRITE_6185": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6185",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6185.png"
+  },
+  "coldata0/MS_SPRITE_6186": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6186",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6186.png"
+  },
+  "coldata0/MS_SPRITE_6187": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6187",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6187.png"
+  },
+  "coldata0/MS_SPRITE_6188": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6188",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6188.png"
+  },
+  "coldata0/MS_SPRITE_6189": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6189",
+    "w": 14,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6189.png"
+  },
+  "coldata0/MS_SPRITE_6190": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6190",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6190.png"
+  },
+  "coldata0/MS_SPRITE_6191": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6191",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6191.png"
+  },
+  "coldata0/MS_SPRITE_6192": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6192",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6192.png"
+  },
+  "coldata0/MS_SPRITE_6193": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6193",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6193.png"
+  },
+  "coldata0/MS_SPRITE_6194": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6194",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6194.png"
+  },
+  "coldata0/MS_SPRITE_6195": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6195",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6195.png"
+  },
+  "coldata0/MS_SPRITE_6196": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6196",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6196.png"
+  },
+  "coldata0/MS_SPRITE_6197": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6197",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6197.png"
+  },
+  "coldata0/MS_SPRITE_6198": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6198",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6198.png"
+  },
+  "coldata0/MS_SPRITE_6199": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6199",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6199.png"
+  },
+  "coldata0/MS_SPRITE_6200": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6200",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6200.png"
+  },
+  "coldata0/MS_SPRITE_6201": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6201",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6201.png"
+  },
+  "coldata0/MS_SPRITE_6202": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6202",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6202.png"
+  },
+  "coldata0/MS_SPRITE_6203": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6203",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6203.png"
+  },
+  "coldata0/MS_SPRITE_6204": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6204",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6204.png"
+  },
+  "coldata0/MS_SPRITE_6205": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6205",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6205.png"
+  },
+  "coldata0/MS_SPRITE_6206": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6206",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6206.png"
+  },
+  "coldata0/MS_SPRITE_6207": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6207",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6207.png"
+  },
+  "coldata0/MS_SPRITE_6208": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6208",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6208.png"
+  },
+  "coldata0/MS_SPRITE_6209": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6209",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6209.png"
+  },
+  "coldata0/MS_SPRITE_6210": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6210",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6210.png"
+  },
+  "coldata0/MS_SPRITE_6211": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6211",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6211.png"
+  },
+  "coldata0/MS_SPRITE_6212": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6212",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6212.png"
+  },
+  "coldata0/MS_SPRITE_6213": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6213",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6213.png"
+  },
+  "coldata0/MS_SPRITE_6214": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6214",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6214.png"
+  },
+  "coldata0/MS_SPRITE_6215": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6215",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6215.png"
+  },
+  "coldata0/MS_SPRITE_6216": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6216",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6216.png"
+  },
+  "coldata0/MS_SPRITE_6217": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6217",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6217.png"
+  },
+  "coldata0/MS_SPRITE_6218": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6218",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6218.png"
+  },
+  "coldata0/MS_SPRITE_6219": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6219",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6219.png"
+  },
+  "coldata0/MS_SPRITE_6220": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6220",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6220.png"
+  },
+  "coldata0/MS_SPRITE_6221": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6221",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6221.png"
+  },
+  "coldata0/MS_SPRITE_6222": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6222",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6222.png"
+  },
+  "coldata0/MS_SPRITE_6223": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6223",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6223.png"
+  },
+  "coldata0/MS_SPRITE_6224": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6224",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6224.png"
+  },
+  "coldata0/MS_SPRITE_6225": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6225",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6225.png"
+  },
+  "coldata0/MS_SPRITE_6226": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6226",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6226.png"
+  },
+  "coldata0/MS_SPRITE_6227": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6227",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6227.png"
+  },
+  "coldata0/MS_SPRITE_6228": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6228",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6228.png"
+  },
+  "coldata0/MS_SPRITE_6229": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6229",
+    "w": 16,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6229.png"
+  },
+  "coldata0/MS_SPRITE_6230": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6230",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6230.png"
+  },
+  "coldata0/MS_SPRITE_6231": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6231",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6231.png"
+  },
+  "coldata0/MS_SPRITE_6232": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6232",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6232.png"
+  },
+  "coldata0/MS_SPRITE_6233": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6233",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6233.png"
+  },
+  "coldata0/MS_SPRITE_6234": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6234",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6234.png"
+  },
+  "coldata0/MS_SPRITE_6235": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6235",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6235.png"
+  },
+  "coldata0/MS_SPRITE_6236": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6236",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6236.png"
+  },
+  "coldata0/MS_SPRITE_6237": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6237",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6237.png"
+  },
+  "coldata0/MS_SPRITE_6238": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6238",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6238.png"
+  },
+  "coldata0/MS_SPRITE_6239": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6239",
+    "w": 18,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6239.png"
+  },
+  "coldata0/MS_SPRITE_6240": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6240",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6240.png"
+  },
+  "coldata0/MS_SPRITE_6241": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6241",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6241.png"
+  },
+  "coldata0/MS_SPRITE_6242": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6242",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6242.png"
+  },
+  "coldata0/MS_SPRITE_6243": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6243",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6243.png"
+  },
+  "coldata0/MS_SPRITE_6244": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6244",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6244.png"
+  },
+  "coldata0/MS_SPRITE_6245": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6245",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6245.png"
+  },
+  "coldata0/MS_SPRITE_6246": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6246",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6246.png"
+  },
+  "coldata0/MS_SPRITE_6247": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6247",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6247.png"
+  },
+  "coldata0/MS_SPRITE_6248": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6248",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6248.png"
+  },
+  "coldata0/MS_SPRITE_6249": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6249",
+    "w": 20,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6249.png"
+  },
+  "coldata0/MS_SPRITE_6250": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6250",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6250.png"
+  },
+  "coldata0/MS_SPRITE_6251": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6251",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6251.png"
+  },
+  "coldata0/MS_SPRITE_6252": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6252",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6252.png"
+  },
+  "coldata0/MS_SPRITE_6253": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6253",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6253.png"
+  },
+  "coldata0/MS_SPRITE_6254": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6254",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6254.png"
+  },
+  "coldata0/MS_SPRITE_6255": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6255",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6255.png"
+  },
+  "coldata0/MS_SPRITE_6256": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6256",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6256.png"
+  },
+  "coldata0/MS_SPRITE_6257": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6257",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6257.png"
+  },
+  "coldata0/MS_SPRITE_6258": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6258",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6258.png"
+  },
+  "coldata0/MS_SPRITE_6259": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "6259",
+    "w": 19,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_6259.png"
+  },
+  "coldata0/MS_SPRITE_7000": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7000",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7000.png"
+  },
+  "coldata0/MS_SPRITE_7001": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7001",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7001.png"
+  },
+  "coldata0/MS_SPRITE_7002": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7002",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7002.png"
+  },
+  "coldata0/MS_SPRITE_7003": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7003",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7003.png"
+  },
+  "coldata0/MS_SPRITE_7004": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7004",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7004.png"
+  },
+  "coldata0/MS_SPRITE_7005": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7005",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7005.png"
+  },
+  "coldata0/MS_SPRITE_7006": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7006",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7006.png"
+  },
+  "coldata0/MS_SPRITE_7007": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7007",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7007.png"
+  },
+  "coldata0/MS_SPRITE_7008": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7008",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7008.png"
+  },
+  "coldata0/MS_SPRITE_7009": {
+    "type": "MS_SPRITE",
+    "dll": "coldata0",
+    "res_id": "7009",
+    "w": 60,
+    "h": 54,
+    "png": "extracted/coldata_pngs/coldata0/MS_SPRITE_7009.png"
+  },
+  "coldata0/MS_PALETTE_666": {
+    "type": "MS_PALETTE",
+    "dll": "coldata0",
+    "res_id": "666",
+    "size": 512
+  },
+  "coldata1/MS_BITMAP_201": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "201",
+    "w": 1280,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_201.png"
+  },
+  "coldata1/MS_BITMAP_204": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "204",
+    "w": 558,
+    "h": 449,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_204.png"
+  },
+  "coldata1/MS_BITMAP_251": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "251",
+    "w": 640,
+    "h": 454,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_251.png"
+  },
+  "coldata1/MS_BITMAP_253": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "253",
+    "w": 60,
+    "h": 20,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_253.png"
+  },
+  "coldata1/MS_BITMAP_254": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "254",
+    "w": 60,
+    "h": 20,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_254.png"
+  },
+  "coldata1/MS_BITMAP_400": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "400",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_400.png"
+  },
+  "coldata1/MS_BITMAP_401": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "401",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_401.png"
+  },
+  "coldata1/MS_BITMAP_402": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "402",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_402.png"
+  },
+  "coldata1/MS_BITMAP_1101": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1101",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1101.png"
+  },
+  "coldata1/MS_BITMAP_1306": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1306",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1306.png"
+  },
+  "coldata1/MS_BITMAP_1307": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1307",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1307.png"
+  },
+  "coldata1/MS_BITMAP_1308": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1308",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1308.png"
+  },
+  "coldata1/MS_BITMAP_1309": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1309",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1309.png"
+  },
+  "coldata1/MS_BITMAP_1310": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1310",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1310.png"
+  },
+  "coldata1/MS_BITMAP_1311": {
+    "type": "MS_BITMAP",
+    "dll": "coldata1",
+    "res_id": "1311",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata1/MS_BITMAP_1311.png"
+  },
+  "coldata2/MS_BITMAP_403": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "403",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_403.png"
+  },
+  "coldata2/MS_BITMAP_404": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "404",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_404.png"
+  },
+  "coldata2/MS_BITMAP_405": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "405",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_405.png"
+  },
+  "coldata2/MS_BITMAP_406": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "406",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_406.png"
+  },
+  "coldata2/MS_BITMAP_407": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "407",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_407.png"
+  },
+  "coldata2/MS_BITMAP_408": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "408",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_408.png"
+  },
+  "coldata2/MS_BITMAP_409": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "409",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_409.png"
+  },
+  "coldata2/MS_BITMAP_410": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "410",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_410.png"
+  },
+  "coldata2/MS_BITMAP_411": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "411",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_411.png"
+  },
+  "coldata2/MS_BITMAP_412": {
+    "type": "MS_BITMAP",
+    "dll": "coldata2",
+    "res_id": "412",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata2/MS_BITMAP_412.png"
+  },
+  "coldata3/MS_BITMAP_310": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "310",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_310.png"
+  },
+  "coldata3/MS_BITMAP_504": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "504",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_504.png"
+  },
+  "coldata3/MS_BITMAP_505": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "505",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_505.png"
+  },
+  "coldata3/MS_BITMAP_506": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "506",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_506.png"
+  },
+  "coldata3/MS_BITMAP_507": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "507",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_507.png"
+  },
+  "coldata3/MS_BITMAP_508": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "508",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_508.png"
+  },
+  "coldata3/MS_BITMAP_509": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "509",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_509.png"
+  },
+  "coldata3/MS_BITMAP_510": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "510",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_510.png"
+  },
+  "coldata3/MS_BITMAP_511": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "511",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_511.png"
+  },
+  "coldata3/MS_BITMAP_512": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "512",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_512.png"
+  },
+  "coldata3/MS_BITMAP_513": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "513",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_513.png"
+  },
+  "coldata3/MS_BITMAP_514": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "514",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_514.png"
+  },
+  "coldata3/MS_BITMAP_515": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "515",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_515.png"
+  },
+  "coldata3/MS_BITMAP_750": {
+    "type": "MS_BITMAP",
+    "dll": "coldata3",
+    "res_id": "750",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata3/MS_BITMAP_750.png"
+  },
+  "coldata3/MS_SPRITE_125": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "125",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_125.png"
+  },
+  "coldata3/MS_SPRITE_126": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "126",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_126.png"
+  },
+  "coldata3/MS_SPRITE_127": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "127",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_127.png"
+  },
+  "coldata3/MS_SPRITE_128": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "128",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_128.png"
+  },
+  "coldata3/MS_SPRITE_129": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "129",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_129.png"
+  },
+  "coldata3/MS_SPRITE_130": {
+    "type": "MS_SPRITE",
+    "dll": "coldata3",
+    "res_id": "130",
+    "w": 155,
+    "h": 391,
+    "png": "extracted/coldata_pngs/coldata3/MS_SPRITE_130.png"
+  },
+  "coldata4/MS_BITMAP_516": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "516",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_516.png"
+  },
+  "coldata4/MS_BITMAP_517": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "517",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_517.png"
+  },
+  "coldata4/MS_BITMAP_518": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "518",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_518.png"
+  },
+  "coldata4/MS_BITMAP_519": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "519",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_519.png"
+  },
+  "coldata4/MS_BITMAP_520": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "520",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_520.png"
+  },
+  "coldata4/MS_BITMAP_521": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "521",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_521.png"
+  },
+  "coldata4/MS_BITMAP_522": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "522",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_522.png"
+  },
+  "coldata4/MS_BITMAP_523": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "523",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_523.png"
+  },
+  "coldata4/MS_BITMAP_1200": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1200",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1200.png"
+  },
+  "coldata4/MS_BITMAP_1201": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1201",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1201.png"
+  },
+  "coldata4/MS_BITMAP_1202": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1202",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1202.png"
+  },
+  "coldata4/MS_BITMAP_1203": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1203",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1203.png"
+  },
+  "coldata4/MS_BITMAP_1204": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1204",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1204.png"
+  },
+  "coldata4/MS_BITMAP_1205": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1205",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1205.png"
+  },
+  "coldata4/MS_BITMAP_1206": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1206",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1206.png"
+  },
+  "coldata4/MS_BITMAP_1207": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1207",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1207.png"
+  },
+  "coldata4/MS_BITMAP_1208": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1208",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1208.png"
+  },
+  "coldata4/MS_BITMAP_1209": {
+    "type": "MS_BITMAP",
+    "dll": "coldata4",
+    "res_id": "1209",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata4/MS_BITMAP_1209.png"
+  },
+  "coldata5/MS_PALETTE_9000": {
+    "type": "MS_PALETTE",
+    "dll": "coldata5",
+    "res_id": "9000",
+    "size": 519168
+  },
+  "coldata5/MS_PALETTE_9999": {
+    "type": "MS_PALETTE",
+    "dll": "coldata5",
+    "res_id": "9999",
+    "size": 5120
+  },
+  "coldata5/MS_ANIM_9001": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9001",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9002": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9002",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9003": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9003",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9004": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9004",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9005": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9005",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9006": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9006",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9007": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9007",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9008": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9008",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9009": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9009",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9010": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9010",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9011": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9011",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9012": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9012",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9013": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9013",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9014": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9014",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9015": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9015",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9016": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9016",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9017": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9017",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9018": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9018",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9019": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9019",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9020": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9020",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9021": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9021",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9022": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9022",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9023": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9023",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9024": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9024",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9025": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9025",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9026": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9026",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9027": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9027",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9028": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9028",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9029": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9029",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9030": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9030",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9031": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9031",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9032": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9032",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9033": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9033",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9034": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9034",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9035": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9035",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9036": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9036",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9037": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9037",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9038": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9038",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9039": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9039",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9040": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9040",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9041": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9041",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9042": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9042",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9043": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9043",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9044": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9044",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9045": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9045",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9046": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9046",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9047": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9047",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9048": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9048",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9049": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9049",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9050": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9050",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9051": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9051",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9052": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9052",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9053": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9053",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9054": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9054",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9055": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9055",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9056": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9056",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9057": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9057",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9058": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9058",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9059": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9059",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9060": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9060",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9061": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9061",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9062": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9062",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9063": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9063",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9064": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9064",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9065": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9065",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9066": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9066",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9067": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9067",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9068": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9068",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9069": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9069",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9070": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9070",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9071": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9071",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9072": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9072",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9073": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9073",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9074": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9074",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9075": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9075",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9076": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9076",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9077": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9077",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9078": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9078",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9079": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9079",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9080": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9080",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9081": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9081",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9082": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9082",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9083": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9083",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9084": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9084",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9085": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9085",
+    "size": 50176,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9086": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9086",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9087": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9087",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9088": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9088",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9089": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9089",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9090": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9090",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9091": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9091",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9092": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9092",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9093": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9093",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9094": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9094",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9095": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9095",
+    "size": 4608,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9096": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9096",
+    "size": 4608,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9097": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9097",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9098": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9098",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9099": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9099",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9100": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9100",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9101": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9101",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9102": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9102",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9103": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9103",
+    "size": 3584,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9104": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9104",
+    "size": 4096,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9105": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9105",
+    "size": 4608,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9106": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9106",
+    "size": 4608,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9107": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9107",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9108": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9108",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9109": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9109",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9110": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9110",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9111": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9111",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9112": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9112",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9113": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9113",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9114": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9114",
+    "size": 1024,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9115": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9115",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9116": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9116",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9117": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9117",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9118": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9118",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9119": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9119",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9120": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9120",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9121": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9121",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9122": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9122",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9123": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9123",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9124": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9124",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9125": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9125",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9126": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9126",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9127": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9127",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9128": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9128",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9129": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9129",
+    "size": 2560,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9130": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9130",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9131": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9131",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9132": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9132",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9133": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9133",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9134": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9134",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9135": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9135",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9136": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9136",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9137": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9137",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9138": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9138",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9139": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9139",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9140": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9140",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9141": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9141",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9142": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9142",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9143": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9143",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9144": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9144",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9145": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9145",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9146": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9146",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9147": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9147",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9148": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9148",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9149": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9149",
+    "size": 512,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9150": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9150",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9151": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9151",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9152": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9152",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9153": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9153",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9154": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9154",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9155": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9155",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9156": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9156",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9157": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9157",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9158": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9158",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9159": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9159",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9160": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9160",
+    "size": 1536,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9161": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9161",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9162": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9162",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9163": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9163",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9164": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9164",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9165": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9165",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9166": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9166",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9167": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9167",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9168": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9168",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9169": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9169",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9170": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9170",
+    "size": 3072,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9171": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9171",
+    "size": 2048,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9180": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9180",
+    "size": 24064,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9181": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9181",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9182": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9182",
+    "size": 28672,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9183": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9183",
+    "size": 33280,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9184": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9184",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9185": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9185",
+    "size": 27648,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9186": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9186",
+    "size": 31232,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9187": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9187",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9188": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9188",
+    "size": 27648,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9189": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9189",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9190": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9190",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9191": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9191",
+    "size": 24064,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9192": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9192",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9193": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9193",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9194": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9194",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9195": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9195",
+    "size": 13312,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9196": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9196",
+    "size": 22528,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9197": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9197",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9198": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9198",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9199": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9199",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata5/MS_ANIM_9200": {
+    "type": "MS_ANIM",
+    "dll": "coldata5",
+    "res_id": "9200",
+    "size": 33792,
+    "note": "Animation format not yet decoded"
+  },
+  "coldata6/MS_BITMAP_500": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "500",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_500.png"
+  },
+  "coldata6/MS_BITMAP_501": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "501",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_501.png"
+  },
+  "coldata6/MS_BITMAP_502": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "502",
+    "w": 252,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_502.png"
+  },
+  "coldata6/MS_BITMAP_503": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "503",
+    "w": 253,
+    "h": 203,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_503.png"
+  },
+  "coldata6/MS_BITMAP_1300": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1300",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1300.png"
+  },
+  "coldata6/MS_BITMAP_1301": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1301",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1301.png"
+  },
+  "coldata6/MS_BITMAP_1302": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1302",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1302.png"
+  },
+  "coldata6/MS_BITMAP_1303": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1303",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1303.png"
+  },
+  "coldata6/MS_BITMAP_1304": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1304",
+    "w": 640,
+    "h": 480,
+    "bpp": 8,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1304.png"
+  },
+  "coldata6/MS_BITMAP_1305": {
+    "type": "MS_BITMAP",
+    "dll": "coldata6",
+    "res_id": "1305",
+    "w": 10,
+    "h": 10,
+    "bpp": 6,
+    "png": "extracted/coldata_pngs/coldata6/MS_BITMAP_1305.png"
+  },
+  "coldata6/MS_SPRITE_350": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "350",
+    "w": 146,
+    "h": 43,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_350.png"
+  },
+  "coldata6/MS_SPRITE_351": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "351",
+    "w": 146,
+    "h": 43,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_351.png"
+  },
+  "coldata6/MS_SPRITE_352": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "352",
+    "w": 146,
+    "h": 43,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_352.png"
+  },
+  "coldata6/MS_SPRITE_353": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "353",
+    "w": 146,
+    "h": 43,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_353.png"
+  },
+  "coldata6/MS_SPRITE_354": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "354",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_354.png"
+  },
+  "coldata6/MS_SPRITE_355": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "355",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_355.png"
+  },
+  "coldata6/MS_SPRITE_356": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "356",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_356.png"
+  },
+  "coldata6/MS_SPRITE_357": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "357",
+    "w": 150,
+    "h": 115,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_357.png"
+  },
+  "coldata6/MS_SPRITE_358": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "358",
+    "w": 150,
+    "h": 115,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_358.png"
+  },
+  "coldata6/MS_SPRITE_359": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "359",
+    "w": 150,
+    "h": 115,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_359.png"
+  },
+  "coldata6/MS_SPRITE_360": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "360",
+    "w": 105,
+    "h": 88,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_360.png"
+  },
+  "coldata6/MS_SPRITE_363": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "363",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_363.png"
+  },
+  "coldata6/MS_SPRITE_364": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "364",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_364.png"
+  },
+  "coldata6/MS_SPRITE_365": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "365",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_365.png"
+  },
+  "coldata6/MS_SPRITE_366": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "366",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_366.png"
+  },
+  "coldata6/MS_SPRITE_367": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "367",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_367.png"
+  },
+  "coldata6/MS_SPRITE_368": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "368",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_368.png"
+  },
+  "coldata6/MS_SPRITE_369": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "369",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_369.png"
+  },
+  "coldata6/MS_SPRITE_370": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "370",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_370.png"
+  },
+  "coldata6/MS_SPRITE_371": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "371",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_371.png"
+  },
+  "coldata6/MS_SPRITE_372": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "372",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_372.png"
+  },
+  "coldata6/MS_SPRITE_373": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "373",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_373.png"
+  },
+  "coldata6/MS_SPRITE_374": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "374",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_374.png"
+  },
+  "coldata6/MS_SPRITE_375": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "375",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_375.png"
+  },
+  "coldata6/MS_SPRITE_376": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "376",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_376.png"
+  },
+  "coldata6/MS_SPRITE_377": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "377",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_377.png"
+  },
+  "coldata6/MS_SPRITE_378": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "378",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_378.png"
+  },
+  "coldata6/MS_SPRITE_379": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "379",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_379.png"
+  },
+  "coldata6/MS_SPRITE_380": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "380",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_380.png"
+  },
+  "coldata6/MS_SPRITE_383": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "383",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_383.png"
+  },
+  "coldata6/MS_SPRITE_384": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "384",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_384.png"
+  },
+  "coldata6/MS_SPRITE_385": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "385",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_385.png"
+  },
+  "coldata6/MS_SPRITE_386": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "386",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_386.png"
+  },
+  "coldata6/MS_SPRITE_387": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "387",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_387.png"
+  },
+  "coldata6/MS_SPRITE_388": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "388",
+    "w": 106,
+    "h": 88,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_388.png"
+  },
+  "coldata6/MS_SPRITE_389": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "389",
+    "w": 106,
+    "h": 88,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_389.png"
+  },
+  "coldata6/MS_SPRITE_390": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "390",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_390.png"
+  },
+  "coldata6/MS_SPRITE_391": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "391",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_391.png"
+  },
+  "coldata6/MS_SPRITE_392": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "392",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_392.png"
+  },
+  "coldata6/MS_SPRITE_393": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "393",
+    "w": 106,
+    "h": 88,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_393.png"
+  },
+  "coldata6/MS_SPRITE_394": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "394",
+    "w": 87,
+    "h": 53,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_394.png"
+  },
+  "coldata6/MS_SPRITE_395": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "395",
+    "w": 46,
+    "h": 66,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_395.png"
+  },
+  "coldata6/MS_SPRITE_396": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "396",
+    "w": 150,
+    "h": 115,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_396.png"
+  },
+  "coldata6/MS_SPRITE_500": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "500",
+    "w": 17,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_500.png"
+  },
+  "coldata6/MS_SPRITE_501": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "501",
+    "w": 13,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_501.png"
+  },
+  "coldata6/MS_SPRITE_502": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "502",
+    "w": 14,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_502.png"
+  },
+  "coldata6/MS_SPRITE_503": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "503",
+    "w": 14,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_503.png"
+  },
+  "coldata6/MS_SPRITE_504": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "504",
+    "w": 14,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_504.png"
+  },
+  "coldata6/MS_SPRITE_505": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "505",
+    "w": 13,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_505.png"
+  },
+  "coldata6/MS_SPRITE_506": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "506",
+    "w": 13,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_506.png"
+  },
+  "coldata6/MS_SPRITE_507": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "507",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_507.png"
+  },
+  "coldata6/MS_SPRITE_508": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "508",
+    "w": 8,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_508.png"
+  },
+  "coldata6/MS_SPRITE_509": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "509",
+    "w": 11,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_509.png"
+  },
+  "coldata6/MS_SPRITE_510": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "510",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_510.png"
+  },
+  "coldata6/MS_SPRITE_511": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "511",
+    "w": 15,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_511.png"
+  },
+  "coldata6/MS_SPRITE_512": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "512",
+    "w": 19,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_512.png"
+  },
+  "coldata6/MS_SPRITE_513": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "513",
+    "w": 17,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_513.png"
+  },
+  "coldata6/MS_SPRITE_514": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "514",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_514.png"
+  },
+  "coldata6/MS_SPRITE_515": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "515",
+    "w": 14,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_515.png"
+  },
+  "coldata6/MS_SPRITE_516": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "516",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_516.png"
+  },
+  "coldata6/MS_SPRITE_517": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "517",
+    "w": 15,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_517.png"
+  },
+  "coldata6/MS_SPRITE_518": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "518",
+    "w": 12,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_518.png"
+  },
+  "coldata6/MS_SPRITE_519": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "519",
+    "w": 15,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_519.png"
+  },
+  "coldata6/MS_SPRITE_520": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "520",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_520.png"
+  },
+  "coldata6/MS_SPRITE_521": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "521",
+    "w": 16,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_521.png"
+  },
+  "coldata6/MS_SPRITE_522": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "522",
+    "w": 24,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_522.png"
+  },
+  "coldata6/MS_SPRITE_523": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "523",
+    "w": 20,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_523.png"
+  },
+  "coldata6/MS_SPRITE_524": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "524",
+    "w": 18,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_524.png"
+  },
+  "coldata6/MS_SPRITE_525": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "525",
+    "w": 17,
+    "h": 20,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_525.png"
+  },
+  "coldata6/MS_SPRITE_530": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "530",
+    "w": 55,
+    "h": 34,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_530.png"
+  },
+  "coldata6/MS_SPRITE_531": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "531",
+    "w": 83,
+    "h": 34,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_531.png"
+  },
+  "coldata6/MS_SPRITE_532": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "532",
+    "w": 55,
+    "h": 34,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_532.png"
+  },
+  "coldata6/MS_SPRITE_700": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "700",
+    "w": 128,
+    "h": 307,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_700.png"
+  },
+  "coldata6/MS_SPRITE_701": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "701",
+    "w": 160,
+    "h": 240,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_701.png"
+  },
+  "coldata6/MS_SPRITE_702": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "702",
+    "w": 108,
+    "h": 319,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_702.png"
+  },
+  "coldata6/MS_SPRITE_703": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "703",
+    "w": 132,
+    "h": 255,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_703.png"
+  },
+  "coldata6/MS_SPRITE_704": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "704",
+    "w": 112,
+    "h": 266,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_704.png"
+  },
+  "coldata6/MS_SPRITE_705": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "705",
+    "w": 140,
+    "h": 280,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_705.png"
+  },
+  "coldata6/MS_SPRITE_706": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "706",
+    "w": 88,
+    "h": 217,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_706.png"
+  },
+  "coldata6/MS_SPRITE_707": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "707",
+    "w": 80,
+    "h": 221,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_707.png"
+  },
+  "coldata6/MS_SPRITE_708": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "708",
+    "w": 92,
+    "h": 239,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_708.png"
+  },
+  "coldata6/MS_SPRITE_709": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "709",
+    "w": 140,
+    "h": 328,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_709.png"
+  },
+  "coldata6/MS_SPRITE_710": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "710",
+    "w": 156,
+    "h": 291,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_710.png"
+  },
+  "coldata6/MS_SPRITE_711": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "711",
+    "w": 156,
+    "h": 328,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_711.png"
+  },
+  "coldata6/MS_SPRITE_712": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "712",
+    "w": 152,
+    "h": 320,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_712.png"
+  },
+  "coldata6/MS_SPRITE_713": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "713",
+    "w": 160,
+    "h": 265,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_713.png"
+  },
+  "coldata6/MS_SPRITE_714": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "714",
+    "w": 160,
+    "h": 336,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_714.png"
+  },
+  "coldata6/MS_SPRITE_715": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "715",
+    "w": 128,
+    "h": 341,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_715.png"
+  },
+  "coldata6/MS_SPRITE_716": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "716",
+    "w": 120,
+    "h": 329,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_716.png"
+  },
+  "coldata6/MS_SPRITE_717": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "717",
+    "w": 88,
+    "h": 302,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_717.png"
+  },
+  "coldata6/MS_SPRITE_718": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "718",
+    "w": 80,
+    "h": 271,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_718.png"
+  },
+  "coldata6/MS_SPRITE_719": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "719",
+    "w": 204,
+    "h": 274,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_719.png"
+  },
+  "coldata6/MS_SPRITE_720": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "720",
+    "w": 120,
+    "h": 223,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_720.png"
+  },
+  "coldata6/MS_SPRITE_721": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "721",
+    "w": 128,
+    "h": 272,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_721.png"
+  },
+  "coldata6/MS_SPRITE_722": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "722",
+    "w": 76,
+    "h": 222,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_722.png"
+  },
+  "coldata6/MS_SPRITE_723": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "723",
+    "w": 96,
+    "h": 215,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_723.png"
+  },
+  "coldata6/MS_SPRITE_724": {
+    "type": "MS_SPRITE",
+    "dll": "coldata6",
+    "res_id": "724",
+    "w": 84,
+    "h": 212,
+    "png": "extracted/coldata_pngs/coldata6/MS_SPRITE_724.png"
+  },
+  "coldata8/MS_SPRITE_100": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "100",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_100.png"
+  },
+  "coldata8/MS_SPRITE_101": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "101",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_101.png"
+  },
+  "coldata8/MS_SPRITE_102": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "102",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_102.png"
+  },
+  "coldata8/MS_SPRITE_103": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "103",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_103.png"
+  },
+  "coldata8/MS_SPRITE_105": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "105",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_105.png"
+  },
+  "coldata8/MS_SPRITE_106": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "106",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_106.png"
+  },
+  "coldata8/MS_SPRITE_107": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "107",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_107.png"
+  },
+  "coldata8/MS_SPRITE_108": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "108",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_108.png"
+  },
+  "coldata8/MS_SPRITE_109": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "109",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_109.png"
+  },
+  "coldata8/MS_SPRITE_110": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "110",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_110.png"
+  },
+  "coldata8/MS_SPRITE_111": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "111",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_111.png"
+  },
+  "coldata8/MS_SPRITE_115": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "115",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_115.png"
+  },
+  "coldata8/MS_SPRITE_116": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "116",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_116.png"
+  },
+  "coldata8/MS_SPRITE_117": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "117",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_117.png"
+  },
+  "coldata8/MS_SPRITE_118": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "118",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_118.png"
+  },
+  "coldata8/MS_SPRITE_119": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "119",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_119.png"
+  },
+  "coldata8/MS_SPRITE_120": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "120",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_120.png"
+  },
+  "coldata8/MS_SPRITE_121": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "121",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_121.png"
+  },
+  "coldata8/MS_SPRITE_122": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "122",
+    "w": 32,
+    "h": 32,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_122.png"
+  },
+  "coldata8/MS_SPRITE_260": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "260",
+    "w": 127,
+    "h": 381,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_260.png"
+  },
+  "coldata8/MS_SPRITE_261": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "261",
+    "w": 146,
+    "h": 381,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_261.png"
+  },
+  "coldata8/MS_SPRITE_262": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "262",
+    "w": 176,
+    "h": 381,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_262.png"
+  },
+  "coldata8/MS_SPRITE_263": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "263",
+    "w": 190,
+    "h": 418,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_263.png"
+  },
+  "coldata8/MS_SPRITE_264": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "264",
+    "w": 135,
+    "h": 421,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_264.png"
+  },
+  "coldata8/MS_SPRITE_265": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "265",
+    "w": 135,
+    "h": 421,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_265.png"
+  },
+  "coldata8/MS_SPRITE_266": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "266",
+    "w": 199,
+    "h": 421,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_266.png"
+  },
+  "coldata8/MS_SPRITE_267": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "267",
+    "w": 214,
+    "h": 421,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_267.png"
+  },
+  "coldata8/MS_SPRITE_268": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "268",
+    "w": 137,
+    "h": 430,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_268.png"
+  },
+  "coldata8/MS_SPRITE_269": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "269",
+    "w": 172,
+    "h": 432,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_269.png"
+  },
+  "coldata8/MS_SPRITE_270": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "270",
+    "w": 225,
+    "h": 432,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_270.png"
+  },
+  "coldata8/MS_SPRITE_271": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "271",
+    "w": 159,
+    "h": 430,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_271.png"
+  },
+  "coldata8/MS_SPRITE_272": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "272",
+    "w": 180,
+    "h": 424,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_272.png"
+  },
+  "coldata8/MS_SPRITE_273": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "273",
+    "w": 180,
+    "h": 424,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_273.png"
+  },
+  "coldata8/MS_SPRITE_274": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "274",
+    "w": 164,
+    "h": 432,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_274.png"
+  },
+  "coldata8/MS_SPRITE_275": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "275",
+    "w": 200,
+    "h": 424,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_275.png"
+  },
+  "coldata8/MS_SPRITE_276": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "276",
+    "w": 100,
+    "h": 351,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_276.png"
+  },
+  "coldata8/MS_SPRITE_277": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "277",
+    "w": 127,
+    "h": 351,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_277.png"
+  },
+  "coldata8/MS_SPRITE_278": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "278",
+    "w": 100,
+    "h": 351,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_278.png"
+  },
+  "coldata8/MS_SPRITE_279": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "279",
+    "w": 142,
+    "h": 351,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_279.png"
+  },
+  "coldata8/MS_SPRITE_280": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "280",
+    "w": 284,
+    "h": 337,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_280.png"
+  },
+  "coldata8/MS_SPRITE_281": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "281",
+    "w": 284,
+    "h": 337,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_281.png"
+  },
+  "coldata8/MS_SPRITE_282": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "282",
+    "w": 284,
+    "h": 337,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_282.png"
+  },
+  "coldata8/MS_SPRITE_283": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "283",
+    "w": 284,
+    "h": 337,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_283.png"
+  },
+  "coldata8/MS_SPRITE_284": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "284",
+    "w": 219,
+    "h": 431,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_284.png"
+  },
+  "coldata8/MS_SPRITE_285": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "285",
+    "w": 182,
+    "h": 431,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_285.png"
+  },
+  "coldata8/MS_SPRITE_286": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "286",
+    "w": 202,
+    "h": 431,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_286.png"
+  },
+  "coldata8/MS_SPRITE_287": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "287",
+    "w": 310,
+    "h": 432,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_287.png"
+  },
+  "coldata8/MS_SPRITE_288": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "288",
+    "w": 112,
+    "h": 435,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_288.png"
+  },
+  "coldata8/MS_SPRITE_289": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "289",
+    "w": 164,
+    "h": 435,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_289.png"
+  },
+  "coldata8/MS_SPRITE_290": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "290",
+    "w": 172,
+    "h": 435,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_290.png"
+  },
+  "coldata8/MS_SPRITE_291": {
+    "type": "MS_SPRITE",
+    "dll": "coldata8",
+    "res_id": "291",
+    "w": 127,
+    "h": 435,
+    "png": "extracted/coldata_pngs/coldata8/MS_SPRITE_291.png"
+  }
+}

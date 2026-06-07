@@ -1,0 +1,425 @@
+# Raw audit output - all candidate findings, per-line
+
+## Hand-coded UI string literals
+
+L98: 'COLONIZE'  ::  COLONIZE_DIR = BASE_DIR / "COLONIZE"
+L149: 'Food'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L149: 'Sugar'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L149: 'Tobacco'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L149: 'Cotton'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L149: 'Furs'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L149: 'Lumber'  ::  "Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber",
+L150: 'Ore'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L150: 'Silver'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L150: 'Horses'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L150: 'Rum'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L150: 'Cigars'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L150: 'Cloth'  ::  "Ore", "Silver", "Horses", "Rum", "Cigars", "Cloth",
+L151: 'Coats'  ::  "Coats", "Trade G.", "Tools", "Muskets",
+L151: 'Trade G.'  ::  "Coats", "Trade G.", "Tools", "Muskets",
+L151: 'Tools'  ::  "Coats", "Trade G.", "Tools", "Muskets",
+L151: 'Muskets'  ::  "Coats", "Trade G.", "Tools", "Muskets",
+L172: 'Stockade'  ::  0:  "Stockade",     1:  "Fort",          2:  "Fortress",
+L172: 'Fort'  ::  0:  "Stockade",     1:  "Fort",          2:  "Fortress",
+L172: 'Fortress'  ::  0:  "Stockade",     1:  "Fort",          2:  "Fortress",
+L173: 'Armory'  ::  3:  "Armory",       4:  "Magazine",      5:  "Arsenal",
+L173: 'Magazine'  ::  3:  "Armory",       4:  "Magazine",      5:  "Arsenal",
+L173: 'Arsenal'  ::  3:  "Armory",       4:  "Magazine",      5:  "Arsenal",
+L174: 'Docks'  ::  6:  "Docks",        7:  "Drydock",       8:  "Shipyard",
+L174: 'Drydock'  ::  6:  "Docks",        7:  "Drydock",       8:  "Shipyard",
+L174: 'Shipyard'  ::  6:  "Docks",        7:  "Drydock",       8:  "Shipyard",
+L175: 'Town Hall'  ::  9:  "Town Hall",    10: "Schoolhouse",   11: "College",
+L175: 'Schoolhouse'  ::  9:  "Town Hall",    10: "Schoolhouse",   11: "College",
+L175: 'College'  ::  9:  "Town Hall",    10: "Schoolhouse",   11: "College",
+L176: 'University'  ::  12: "University",   13: "Warehouse",     14: "Warehouse Exp.",
+L176: 'Warehouse'  ::  12: "University",   13: "Warehouse",     14: "Warehouse Exp.",
+L176: 'Warehouse Exp.'  ::  12: "University",   13: "Warehouse",     14: "Warehouse Exp.",
+L177: 'Stable'  ::  15: "Stable",       16: "Church",        17: "Cathedral",
+L177: 'Church'  ::  15: "Stable",       16: "Church",        17: "Cathedral",
+L177: 'Cathedral'  ::  15: "Stable",       16: "Church",        17: "Cathedral",
+L178: 'Blacksmith'  ::  18: "Blacksmith",   19: "Iron Works",    20: "Lumber Mill",
+L178: 'Iron Works'  ::  18: "Blacksmith",   19: "Iron Works",    20: "Lumber Mill",
+L178: 'Lumber Mill'  ::  18: "Blacksmith",   19: "Iron Works",    20: "Lumber Mill",
+L179: 'Fur Trade Post'  ::  21: "Fur Trade Post", 22: "Fur Factory", 23: "Rum Distillery",
+L179: 'Fur Factory'  ::  21: "Fur Trade Post", 22: "Fur Factory", 23: "Rum Distillery",
+L179: 'Rum Distillery'  ::  21: "Fur Trade Post", 22: "Fur Factory", 23: "Rum Distillery",
+L180: 'Rum Factory'  ::  24: "Rum Factory",  25: "Printing Press", 26: "Newspaper",
+L180: 'Printing Press'  ::  24: "Rum Factory",  25: "Printing Press", 26: "Newspaper",
+L180: 'Newspaper'  ::  24: "Rum Factory",  25: "Printing Press", 26: "Newspaper",
+L181: 'Tobacco Shop'  ::  27: "Tobacco Shop",  28: "Cigar Factory", 29: "Weaver",
+L181: 'Cigar Factory'  ::  27: "Tobacco Shop",  28: "Cigar Factory", 29: "Weaver",
+L181: 'Weaver'  ::  27: "Tobacco Shop",  28: "Cigar Factory", 29: "Weaver",
+L182: 'Textile Mill'  ::  30: "Textile Mill",  31: "Custom House",
+L182: 'Custom House'  ::  30: "Textile Mill",  31: "Custom House",
+L260: 'London\\nLa Rochelle\\nSeville\\nAmsterdam'  ::  DOS_HOME_PORTS = _parse_newline_list(_NAMES_DATA.get("@HOMEPORT", "London\nLa Ro
+L274: 'England\\nFrance\\nSpain\\nNetherlands'  ::  DOS_NATION_NAMES = _parse_nation_names(_NAMES_DATA.get("@COUNTRY", "England\nFra
+L275: 'English\\nFrench\\nSpanish\\nDutch'  ::  DOS_NATIONALITY = _parse_newline_list(_NAMES_DATA.get("@NATIONALITY", "English\n
+L276: 'Eng.\\nFr.\\nSpan.\\nDutch'  ::  DOS_NATION_ABBREV = _parse_newline_list(_NAMES_DATA.get("@NATIONABBREV", "Eng.\n
+L281: 'Our Queen\\nOur King\\nThe Pope\\nOur Stadtholder'  ::  DOS_GREAT_LEADER = _parse_newline_list(_GAME_DATA.get("@GREATLEADER", "Our Queen
+L282: 'King\\nKing\\nKing\\nStadtholder'  ::  DOS_MY_LEADER = _parse_newline_list(_GAME_DATA.get("@MYLEADER", "King\nKing\nKin
+L318: 'Spring\\nAutumn'  ::  DOS_SEASONS = _parse_newline_list(_NAMES_DATA.get("@SEASONS", "Spring\nAutumn"))
+L332: 'GAME'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L332: 'VIEW'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L332: 'ORDERS'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L332: 'REPORTS'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L332: 'TRADE'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L332: 'COLONIZOPEDIA'  ::  MENU_ITEMS = ["GAME", "VIEW", "ORDERS", "REPORTS", "TRADE", "COLONIZOPEDIA"]
+L335: 'GAME'  ::  "GAME": [
+L336: 'Game Options'  ::  "Game Options", "Colony Report Options", "Sound Options",
+L336: 'Colony Report Options'  ::  "Game Options", "Colony Report Options", "Sound Options",
+L336: 'Sound Options'  ::  "Game Options", "Colony Report Options", "Sound Options",
+L337: 'Pick Music'  ::  "Pick Music", "Save Game", "Load Game",
+L337: 'Save Game'  ::  "Pick Music", "Save Game", "Load Game",
+L337: 'Load Game'  ::  "Pick Music", "Save Game", "Load Game",
+L338: 'DECLARE INDEPENDENCE'  ::  "DECLARE INDEPENDENCE", "Retire", "Exit to DOS",
+L338: 'Retire'  ::  "DECLARE INDEPENDENCE", "Retire", "Exit to DOS",
+L338: 'Exit to DOS'  ::  "DECLARE INDEPENDENCE", "Retire", "Exit to DOS",
+L340: 'VIEW'  ::  "VIEW": [
+L341: 'Move Pieces'  ::  "Move Pieces", "View Pieces", "European Status",
+L341: 'View Pieces'  ::  "Move Pieces", "View Pieces", "European Status",
+L341: 'European Status'  ::  "Move Pieces", "View Pieces", "European Status",
+L342: 'Find Colony'  ::  "Find Colony", "Zoom In", "Zoom Out",
+L342: 'Zoom In'  ::  "Find Colony", "Zoom In", "Zoom Out",
+L342: 'Zoom Out'  ::  "Find Colony", "Zoom In", "Zoom Out",
+L343: 'Center View'  ::  "Center View", "Show Hidden Terrain",
+L343: 'Show Hidden Terrain'  ::  "Center View", "Show Hidden Terrain",
+L345: 'ORDERS'  ::  "ORDERS": [
+L346: 'Activate unit'  ::  "Activate unit", "Wait", "Fortify", "Sentry",
+L346: 'Wait'  ::  "Activate unit", "Wait", "Fortify", "Sentry",
+L346: 'Fortify'  ::  "Activate unit", "Wait", "Fortify", "Sentry",
+L346: 'Sentry'  ::  "Activate unit", "Wait", "Fortify", "Sentry",
+L347: 'Build Colony'  ::  "Build Colony", "Clear Forest", "Plow Fields",
+L347: 'Clear Forest'  ::  "Build Colony", "Clear Forest", "Plow Fields",
+L347: 'Plow Fields'  ::  "Build Colony", "Clear Forest", "Plow Fields",
+L348: 'Build Road'  ::  "Build Road", "Load Cargo", "Unload Cargo",
+L348: 'Load Cargo'  ::  "Build Road", "Load Cargo", "Unload Cargo",
+L348: 'Unload Cargo'  ::  "Build Road", "Load Cargo", "Unload Cargo",
+L349: 'Go to Place'  ::  "Go to Place", "Return to Europe", "No Orders",
+L349: 'Return to Europe'  ::  "Go to Place", "Return to Europe", "No Orders",
+L349: 'No Orders'  ::  "Go to Place", "Return to Europe", "No Orders",
+L351: 'REPORTS'  ::  "REPORTS": [
+L352: 'Terrain Info (F1)'  ::  "Terrain Info (F1)", "Religious Adviser (F2)",
+L352: 'Religious Adviser (F2)'  ::  "Terrain Info (F1)", "Religious Adviser (F2)",
+L353: 'Continental Congress (F3)'  ::  "Continental Congress (F3)", "Labor Adviser (F4)",
+L353: 'Labor Adviser (F4)'  ::  "Continental Congress (F3)", "Labor Adviser (F4)",
+L354: 'Economic Adviser (F5)'  ::  "Economic Adviser (F5)", "Colony Adviser (F6)",
+L354: 'Colony Adviser (F6)'  ::  "Economic Adviser (F5)", "Colony Adviser (F6)",
+L355: 'Naval Adviser (F7)'  ::  "Naval Adviser (F7)", "Foreign Affairs (F8)",
+L355: 'Foreign Affairs (F8)'  ::  "Naval Adviser (F7)", "Foreign Affairs (F8)",
+L356: 'Indian Adviser (F9)'  ::  "Indian Adviser (F9)", "Score (F10)",
+L356: 'Score (F10)'  ::  "Indian Adviser (F9)", "Score (F10)",
+L358: 'TRADE'  ::  "TRADE": [
+L359: 'Edit Trade Route'  ::  "Edit Trade Route", "Create Trade Route", "Delete Trade Route",
+L359: 'Create Trade Route'  ::  "Edit Trade Route", "Create Trade Route", "Delete Trade Route",
+L359: 'Delete Trade Route'  ::  "Edit Trade Route", "Create Trade Route", "Delete Trade Route",
+L361: 'COLONIZOPEDIA'  ::  "COLONIZOPEDIA": [
+L362: 'Cargo Types'  ::  "Cargo Types", "Unit Types", "Terrain Types",
+L362: 'Unit Types'  ::  "Cargo Types", "Unit Types", "Terrain Types",
+L362: 'Terrain Types'  ::  "Cargo Types", "Unit Types", "Terrain Types",
+L363: 'Colonist Skills'  ::  "Colonist Skills", "Colony Buildings",
+L363: 'Colony Buildings'  ::  "Colonist Skills", "Colony Buildings",
+L364: 'Founding Fathers'  ::  "Founding Fathers", "Complete",
+L364: 'Complete'  ::  "Founding Fathers", "Complete",
+L384: 'FONTSMAL'  ::  def __init__(self, font_name="FONTSMAL"):
+L590: "Sid Meier's Colonization (1994)"  ::  pygame.display.set_caption("Sid Meier's Colonization (1994)")
+L602: 'FONTSMAL'  ::  self.font = BitmapFont("FONTSMAL")
+L607: 'OPENMENU'  ::  self.bg_title = load_background("OPENMENU")
+L608: 'OPENMENU'  ::  self.bg_menu = load_background("OPENMENU")
+L609: 'EUROPE'  ::  self.bg_europe = load_background("EUROPE")
+L610: 'WOODPANL'  ::  self.bg_colony = load_background("WOODPANL")
+L611: 'WOODPANL'  ::  self.bg_woodpanel = load_background("WOODPANL")
+L612: 'NATIONS'  ::  self.bg_nations = load_background("NATIONS")
+L613: 'DIFFICUL'  ::  self.bg_difficulty = load_background("DIFFICUL")
+L614: 'KINGLSS1'  ::  self.bg_king = load_background("KINGLSS1")
+L635: 'PHYS0'  ::  self.terrain_sprites = load_sprite_sheet("PHYS0")        # overlays
+L636: 'TERRAIN'  ::  self.terrain_base_sprites = load_sprite_sheet("TERRAIN") # textured ground
+L637: 'ICONS'  ::  self.icon_sprites = load_sprite_sheet("ICONS")
+L703: 'AMER2.MP'  ::  map_path = COLONIZE_DIR / "AMER2.MP"
+L709: 'Loaded AMER2.MP map'  ::  self.msg_log.add("Loaded AMER2.MP map")
+L711: 'Map load failed: {e}'  ::  self.msg_log.add(f"Map load failed: {e}")
+L715: 'Generated random New World'  ::  self.msg_log.add("Generated random New World")
+L1140: 'Init error: {e}'  ::  self.msg_log.add(f"Init error: {e}")
+L1206: 'Go-to mode: click destination'  ::  self.msg_log.add("Go-to mode: click destination")
+L1272: 'Init error: {e}'  ::  self.msg_log.add(f"Init error: {e}")
+L1398: 'Moving to ({map_x},{map_y})'  ::  self.msg_log.add(f"Moving to ({map_x},{map_y})")
+L1475: 'GAME'  ::  if menu_name == "GAME":
+L1476: 'Save'  ::  if "Save" in item_text:
+L1478: 'Load'  ::  elif "Load" in item_text:
+L1480: 'Exit'  ::  elif "Exit" in item_text:
+L1482: 'VIEW'  ::  elif menu_name == "VIEW":
+L1483: 'European'  ::  if "European" in item_text:
+L1485: 'Center'  ::  elif "Center" in item_text:
+L1487: 'ORDERS'  ::  elif menu_name == "ORDERS":
+L1488: 'Fortify'  ::  if "Fortify" in item_text:
+L1490: 'Sentry'  ::  elif "Sentry" in item_text:
+L1492: 'Build Colony'  ::  elif "Build Colony" in item_text:
+L1494: 'Wait'  ::  elif "Wait" in item_text:
+L1496: 'No Orders'  ::  elif "No Orders" in item_text:
+L1541: 'No moves left'  ::  self.msg_log.add("No moves left")
+L1556: 'Ship at {colony.name}'  ::  self.msg_log.add(f"Ship at {colony.name}")
+L1566: 'Sail to Europe? (press E)'  ::  self.msg_log.add("Sail to Europe? (press E)")
+L1652: 'Arrived at destination'  ::  self.msg_log.add("Arrived at destination")
+L1736: 'Cannot found colony on water'  ::  self.msg_log.add("Cannot found colony on water")
+L1740: 'Cannot found colony in Arctic'  ::  self.msg_log.add("Cannot found colony in Arctic")
+L1743: 'Colony already exists here'  ::  self.msg_log.add("Colony already exists here")
+L1747: 'This unit cannot found a colony'  ::  self.msg_log.add("This unit cannot found a colony")
+L1768: 'Founded {name}!'  ::  self.msg_log.add(f"Founded {name}!")
+L1770: 'Cannot found colony (limit reached)'  ::  self.msg_log.add("Cannot found colony (limit reached)")
+L1780: 'Colony {self.gs.colony_count + 1}'  ::  name = f"Colony {self.gs.colony_count + 1}"
+L1788: 'Ships cannot fortify'  ::  self.msg_log.add("Ships cannot fortify")
+L1842: 'No colony here'  ::  self.msg_log.add("No colony here")
+L1857: 'Nothing but rumors...'  ::  self.msg_log.add("Nothing but rumors...")
+L1861: 'Ancient ruins! Found {gold} gold!'  ::  self.msg_log.add(f"Ancient ruins! Found {gold} gold!")
+L1864: 'Survivors join your expedition!'  ::  self.msg_log.add("Survivors join your expedition!")
+L1868: 'Friendly natives give {gold} gold as gift'  ::  self.msg_log.add(f"Friendly natives give {gold} gold as gift")
+L1876: 'Seven Cities of Cibola! A treasure is found!'  ::  self.msg_log.add("Seven Cities of Cibola! A treasure is found!")
+L1878: 'Tales of the ancients but nothing of value'  ::  self.msg_log.add("Tales of the ancients but nothing of value")
+L1880: 'The expedition vanishes without a trace!'  ::  self.msg_log.add("The expedition vanishes without a trace!")
+L1911: 'Not enough gold!'  ::  self.msg_log.add("Not enough gold!")
+L1918: 'Bought {qty} {GOOD_NAMES[g]} for {cost} gold'  ::  self.msg_log.add(f"Bought {qty} {GOOD_NAMES[g]} for {cost} gold")
+L1920: 'No colonies to receive goods'  ::  self.msg_log.add(f"No colonies to receive goods")
+L1928: 'Need {eu.recruit_cost} gold to recruit'  ::  self.msg_log.add(f"Need {eu.recruit_cost} gold to recruit")
+L1947: 'Colonist recruited!'  ::  self.msg_log.add("Colonist recruited!")
+L1951: 'No immigrants available'  ::  self.msg_log.add("No immigrants available")
+L1972: 'Turn processing note: {e}'  ::  self.msg_log.add(f"Turn processing note: {e}")
+L1990: 'Year {self.gs.year}. Gold: {ns.power_gold}'  ::  self.msg_log.add(f"Year {self.gs.year}. Gold: {ns.power_gold}")
+L2013: 'Famine in {colony.name}!'  ::  self.msg_log.add(f"Famine in {colony.name}!")
+L2063: 'Sentry awakened at ({u.x},{u.y})!'  ::  self.msg_log.add(f"Sentry awakened at ({u.x},{u.y})!")
+L2074: 'Game saved!'  ::  self.msg_log.add("Game saved!")
+L2076: 'Save failed!'  ::  self.msg_log.add("Save failed!")
+L2083: 'Game loaded! Year {self.gs.year}'  ::  self.msg_log.add(f"Game loaded! Year {self.gs.year}")
+L2086: 'No save file found'  ::  self.msg_log.add("No save file found")
+L2093: 'Terrain {t}'  ::  return DOS_TERRAIN_NAMES.get(t, f"Terrain {t}")
+L2135: "SID MEIER'S"  ::  self.font.render_centered(surf, "SID MEIER'S", NATIVE_W // 2, 30, (255, 220, 150
+L2136: 'COLONIZATION'  ::  self.font.render_centered(surf, "COLONIZATION", NATIVE_W // 2, 45, (255, 240, 18
+L2138: 'Press ENTER'  ::  self.font.render_centered(surf, "Press ENTER", NATIVE_W // 2, 150, (200, 200, 20
+L2151: 'COLONIZATION'  ::  self.font.render_centered(surf, "COLONIZATION", NATIVE_W // 2, 30, (255, 240, 18
+L2169: 'Press 1-5 to select'  ::  self.font.render_centered(surf, "Press 1-5 to select", NATIVE_W // 2, 175, (160,
+L2181: 'Choose Difficulty Level'  ::  self.font.render_centered(surf, "Choose Difficulty Level",
+L2189: 'Level {i+1}'  ::  dname = DOS_DIFFICULTY_NAMES[i] if i < len(DOS_DIFFICULTY_NAMES) else f"Level {i
+L2195: 'Press 1-5 to select'  ::  self.font.render_centered(surf, "Press 1-5 to select", NATIVE_W // 2, 175, (160,
+L2204: 'Please Enter Your Name'  ::  self.font.render_centered(surf, "Please Enter Your Name",
+L2224: 'Press ENTER to confirm'  ::  self.font.render_centered(surf, "Press ENTER to confirm",
+L2238: 'England'  ::  nation = DOS_NATION_NAMES[pn] if pn < len(DOS_NATION_NAMES) else "England"
+L2241: 'The King'  ::  leader_title = DOS_GREAT_LEADER[pn] if pn < len(DOS_GREAT_LEADER) else "The King
+L2243: 'King'  ::  ruler_type = DOS_MY_LEADER[pn] if pn < len(DOS_MY_LEADER) else "King"
+L2250: 'Year of Our Lord'  ::  self.font.render_centered(surf, "Year of Our Lord", NATIVE_W // 2, 20, cream)
+L2252: 'An Audience With'  ::  self.font.render_centered(surf, "An Audience With", NATIVE_W // 2, 50, cream)
+L2255: 'The Queen of England'  ::  audience_title = "The Queen of England"
+L2257: 'The Stadtholder'  ::  audience_title = "The Stadtholder"
+L2259: 'The {ruler_type} of {nation}'  ::  audience_title = f"The {ruler_type} of {nation}"
+L2266: 'Go and explore this new land. Settle'  ::  "Go and explore this new land. Settle",
+L2275: 'Press ENTER to begin your voyage'  ::  self.font.render_centered(surf, "Press ENTER to begin your voyage",
+L2299: 'Select European Power'  ::  self.font.render_centered(surf, "Select European Power", NATIVE_W // 2, 8, (255,
+L2309: 'Immigration'  ::  bonuses = ["Immigration", "Cooperation", "Conquest", "Trade"]
+L2309: 'Cooperation'  ::  bonuses = ["Immigration", "Cooperation", "Conquest", "Trade"]
+L2309: 'Conquest'  ::  bonuses = ["Immigration", "Cooperation", "Conquest", "Trade"]
+L2309: 'Trade'  ::  bonuses = ["Immigration", "Cooperation", "Conquest", "Trade"]
+L2311: 'Nation {i}'  ::  nname = DOS_NATION_NAMES[i] if i < len(DOS_NATION_NAMES) else f"Nation {i}"
+L3544: 'Gold: {gold}'  ::  self.font.render(surf, f"Gold: {gold}", px + 4, info_y + 10, gold_col)
+L3545: 'Tax: {tax}%'  ::  self.font.render(surf, f"Tax: {tax}%", px + 4, info_y + 20, cream)
+L3551: 'Loc: ({self.cursor_mx},{self.cursor_my})'  ::  coord_str = f"Loc: ({self.cursor_mx},{self.cursor_my})"
+L3576: 'Type{u.type}'  ::  uname = _UNIT_NAMES.get(u.type, f"Type{u.type}")
+L3578: 'Moves: {u.moves_left}'  ::  self.font.render(surf, f"Moves: {u.moves_left}", px + 4, unit_y + 10, cream)
+L3582: 'Fortified'  ::  if u.status & UNIT_FLAG_FORTIFIED: status = "Fortified"
+L3583: 'Sentry'  ::  elif u.status & UNIT_FLAG_SENTRY: status = "Sentry"
+L3584: 'Veteran'  ::  elif u.status & UNIT_FLAG_VETERAN: status = "Veteran"
+L3589: 'GO TO'  ::  self.font.render(surf, "GO TO", px + 4, unit_y + 30, (255, 255, 100))
+L3591: 'No unit'  ::  self.font.render(surf, "No unit", px + 4, unit_y, dim)
+L3600: 'Unknown'  ::  nname = NATION_NAMES[pn] if pn < len(NATION_NAMES) else "Unknown"
+L3607: 'Turn {self.gs.turn}'  ::  self.font.render(surf, f"Turn {self.gs.turn}", px + 4, emblem_y + 18, (140, 130,
+L3721: 'Pop: {colony.population}'  ::  self.font.render(surf, f"Pop: {colony.population}", 5, 3, (200, 200, 200))
+L3722: 'ESC:Back'  ::  self.font.render(surf, "ESC:Back", NATIVE_W - 50, 3, (160, 140, 100))
+L3725: 'STOCKPILE'  ::  self.font.render(surf, "STOCKPILE", 8, 20, (255, 220, 150))
+L3741: 'BUILDINGS'  ::  self.font.render(surf, "BUILDINGS", 115, 20, (255, 220, 150))
+L3757: 'COLONY INFO'  ::  self.font.render(surf, "COLONY INFO", info_x, 20, (255, 220, 150))
+L3764: 'Nation: {NATION_NAMES[colony.nation]}'  ::  f"Nation: {NATION_NAMES[colony.nation]}",
+L3765: 'Population: {colony.population}'  ::  f"Population: {colony.population}",
+L3766: 'Liberty Bells: {colony.liberty_bells}'  ::  f"Liberty Bells: {colony.liberty_bells}",
+L3767: 'SoL: {sol_pct}%'  ::  f"SoL: {sol_pct}%",
+L3768: 'Crosses: {colony.crosses}'  ::  f"Crosses: {colony.crosses}",
+L3769: 'Fortification: {colony.fortification}'  ::  f"Fortification: {colony.fortification}",
+L3778: 'PRODUCTION PER TURN'  ::  self.font.render(surf, "PRODUCTION PER TURN", 8, prod_y + 3, (255, 220, 150))
+L3808: 'GARRISON:'  ::  self.font.render(surf, "GARRISON:", 8, units_y, (255, 220, 150))
+L3835: 'Europe'  ::  port_name = NATION_HOMEPORT[pn] if pn < len(NATION_HOMEPORT) else "Europe"
+L3837: 'Port of {port_name}'  ::  self.font.render_centered(surf, f"Port of {port_name}", NATIVE_W // 2, 2, (255, 
+L3840: 'Gold: {ns.power_gold}'  ::  self.font.render(surf, f"Gold: {ns.power_gold}", 5, 16, (255, 215, 0))
+L3841: 'Tax: {ns.tax_rate}%'  ::  self.font.render(surf, f"Tax: {ns.tax_rate}%", 100, 16, (200, 200, 200))
+L3855: 'TRADE'  ::  self.font.render(surf, "TRADE", ctrl_x, ctrl_y, (255, 220, 150))
+L3856: 'Qty: {self.europe_trade_qty}'  ::  self.font.render(surf, f"Qty: {self.europe_trade_qty}", ctrl_x, ctrl_y + 12, (20
+L3857: 'Up/Down: Qty'  ::  self.font.render(surf, "Up/Down: Qty", ctrl_x, ctrl_y + 24, (150, 150, 150))
+L3858: 'Left/Right: Good'  ::  self.font.render(surf, "Left/Right: Good", ctrl_x, ctrl_y + 34, (150, 150, 150))
+L3865: 'Selected: {GOOD_NAMES[g]}'  ::  self.font.render(surf, f"Selected: {GOOD_NAMES[g]}", ctrl_x, sel_y, (255, 255, 2
+L3869: 'Buy cost: {cost}'  ::  self.font.render(surf, f"Buy cost: {cost}", ctrl_x, sel_y + 12, (200, 100, 100))
+L3870: 'Sell rev: {revenue - tax}'  ::  self.font.render(surf, f"Sell rev: {revenue - tax}", ctrl_x, sel_y + 22, (100, 2
+L3874: 'IMMIGRANTS'  ::  self.font.render(surf, "IMMIGRANTS", 10, pool_y, (255, 220, 150))
+L3877: 'Available'  ::  label = "Available" if slot.available else "---"
+L3879: 'Slot {i + 1}: {label}'  ::  self.font.render(surf, f"Slot {i + 1}: {label}", 10, pool_y + 12 + i * 10, col)
+L3881: 'TRANSIT'  ::  self.font.render(surf, "TRANSIT", ctrl_x, pool_y, (255, 220, 150))
+L3888: 'No ships'  ::  self.font.render(surf, "No ships", ctrl_x, pool_y + 12, (120, 120, 120))
+
+## Hardcoded RGB color tuples
+
+L112: rgb=(172, 164, 164)  ::  0:  20,   # Tundra      -> (172,164,164) tundra-grey
+L113: rgb=(204, 176, 140)  ::  1:  66,   # Desert      -> (204,176,140)
+L114: rgb=(184, 184, 64)  ::  2:  54,   # Plains      -> (184,184, 64) olive-brown
+L115: rgb=(204, 148, 52)  ::  3:  60,   # Prairie     -> (204,148, 52) yellow-green
+L116: rgb=(104, 176, 72)  ::  4:  91,   # Grassland   -> (104,176, 72) dark green
+L117: rgb=(152, 204, 104)  ::  5:  40,   # Savannah    -> (152,204,104) bright green
+L118: rgb=(88, 164, 52)  ::  6:  43,   # Marsh       -> ( 88,164, 52)
+L119: rgb=(28, 124, 16)  ::  7:  46,   # Swamp       -> ( 28,124, 16)
+L128: rgb=(216, 216, 216)  ::  16: 15,   # Arctic      -> (216,216,216) white
+L139: rgb=(32, 44, 136)  ::  25: 45,   # Ocean       -> ( 32, 44,136)
+L140: rgb=(56, 76, 156)  ::  26: 93,   # Sea Lane    -> ( 56, 76,156)
+L156: rgb=(200, 200, 100)  ::  (200, 200, 100), (255, 200, 200), (100, 160,  80), (240, 240, 240),
+L156: rgb=(255, 200, 200)  ::  (200, 200, 100), (255, 200, 200), (100, 160,  80), (240, 240, 240),
+L156: rgb=(100, 160, 80)  ::  (200, 200, 100), (255, 200, 200), (100, 160,  80), (240, 240, 240),
+L156: rgb=(240, 240, 240)  ::  (200, 200, 100), (255, 200, 200), (100, 160,  80), (240, 240, 240),
+L157: rgb=(160, 120, 60)  ::  (160, 120,  60), (180, 140,  60), (140, 140, 160), (200, 200, 220),
+L157: rgb=(180, 140, 60)  ::  (160, 120,  60), (180, 140,  60), (140, 140, 160), (200, 200, 220),
+L157: rgb=(140, 140, 160)  ::  (160, 120,  60), (180, 140,  60), (140, 140, 160), (200, 200, 220),
+L157: rgb=(200, 200, 220)  ::  (160, 120,  60), (180, 140,  60), (140, 140, 160), (200, 200, 220),
+L158: rgb=(180, 140, 100)  ::  (180, 140, 100), (160,  50,  40), (140, 100,  50), (100, 100, 200),
+L158: rgb=(160, 50, 40)  ::  (180, 140, 100), (160,  50,  40), (140, 100,  50), (100, 100, 200),
+L158: rgb=(140, 100, 50)  ::  (180, 140, 100), (160,  50,  40), (140, 100,  50), (100, 100, 200),
+L158: rgb=(100, 100, 200)  ::  (180, 140, 100), (160,  50,  40), (140, 100,  50), (100, 100, 200),
+L159: rgb=(120, 80, 60)  ::  (120,  80,  60), (200, 180, 100), (140, 140, 140), (100, 100, 100),
+L159: rgb=(200, 180, 100)  ::  (120,  80,  60), (200, 180, 100), (140, 140, 140), (100, 100, 100),
+L159: rgb=(140, 140, 140)  ::  (120,  80,  60), (200, 180, 100), (140, 140, 140), (100, 100, 100),
+L159: rgb=(100, 100, 100)  ::  (120,  80,  60), (200, 180, 100), (140, 140, 140), (100, 100, 100),
+L164: rgb=(200, 50, 50)  ::  (200,  50,  50),   # England - red
+L165: rgb=(50, 50, 200)  ::  (50,   50, 200),   # France - blue
+L166: rgb=(200, 200, 50)  ::  (200, 200,  50),   # Spain - yellow
+L167: rgb=(200, 130, 30)  ::  (200, 130,  30),   # Netherlands - orange
+L485: rgb=(255, 85, 255)  ::  img.set_colorkey((255, 85, 255))
+L1601: rgb=(8, 9, 18)  ::  elif tt in (8, 9, 18):
+L2100: rgb=(0, 0, 30)  ::  surf.fill((0, 0, 30))
+L2134: rgb=(20, 10, 5)  ::  surf.fill((20, 10, 5))
+L2135: rgb=(255, 220, 150)  ::  self.font.render_centered(surf, "SID MEIER'S", NATIVE_W // 2, 30, (255, 220, 150
+L2136: rgb=(255, 240, 180)  ::  self.font.render_centered(surf, "COLONIZATION", NATIVE_W // 2, 45, (255, 240, 18
+L2137: rgb=(180, 160, 120)  ::  self.font.render_centered(surf, "1994 Reconstruction", NATIVE_W // 2, 65, (180, 
+L2138: rgb=(200, 200, 200)  ::  self.font.render_centered(surf, "Press ENTER", NATIVE_W // 2, 150, (200, 200, 20
+L2148: rgb=(30, 18, 8)  ::  surf.fill((30, 18, 8))
+L2151: rgb=(255, 240, 180)  ::  self.font.render_centered(surf, "COLONIZATION", NATIVE_W // 2, 30, (255, 240, 18
+L2154: rgb=(255, 255, 100)  ::  yellow = (255, 255, 100)
+L2156: rgb=(220, 200, 160)  ::  cream = (220, 200, 160)
+L2169: rgb=(160, 140, 100)  ::  self.font.render_centered(surf, "Press 1-5 to select", NATIVE_W // 2, 175, (160,
+L2178: rgb=(30, 18, 8)  ::  surf.fill((30, 18, 8))
+L2182: rgb=(255, 240, 180)  ::  NATIVE_W // 2, 30, (255, 240, 180))
+L2191: rgb=(255, 255, 100)  ::  self.font.render_centered(surf, label, NATIVE_W // 2 - 20, start_y + i * 20, (25
+L2193: rgb=(160, 140, 100)  ::  self.font.render(surf, diff_notes[i], NATIVE_W // 2 + 60, start_y + i * 20, (160
+L2195: rgb=(160, 140, 100)  ::  self.font.render_centered(surf, "Press 1-5 to select", NATIVE_W // 2, 175, (160,
+L2202: rgb=(30, 18, 8)  ::  surf.fill((30, 18, 8))
+L2205: rgb=(255, 240, 180)  ::  NATIVE_W // 2, 50, (255, 240, 180))
+L2212: rgb=(10, 10, 10)  ::  pygame.draw.rect(surf, (10, 10, 10), (box_x, box_y, box_w, box_h))
+L2213: rgb=(140, 120, 80)  ::  pygame.draw.rect(surf, (140, 120, 80), (box_x, box_y, box_w, box_h), 1)
+L2225: rgb=(160, 140, 100)  ::  NATIVE_W // 2, 130, (160, 140, 100))
+L2235: rgb=(30, 18, 8)  ::  surf.fill((30, 18, 8))
+L2245: rgb=(255, 220, 80)  ::  gold_col = (255, 220, 80)
+L2247: rgb=(220, 200, 160)  ::  cream = (220, 200, 160)
+L2276: rgb=(200, 200, 100)  ::  NATIVE_W // 2, 175, (200, 200, 100))
+L2296: rgb=(30, 20, 10)  ::  surf.fill((30, 20, 10))
+L2299: rgb=(255, 240, 180)  ::  self.font.render_centered(surf, "Select European Power", NATIVE_W // 2, 8, (255,
+L2316: rgb=(180, 170, 140)  ::  self.font.render_centered(surf, leader, cx, cy + 10, (180, 170, 140))
+L2354: rgb=(15, 10, 5)  ::  pygame.draw.rect(surf, (15, 10, 5), (0, MENU_BAR_Y, NATIVE_W, MENU_BAR_H))
+L2356: rgb=(50, 35, 15)  ::  pygame.draw.line(surf, (50, 35, 15), (0, MENU_BAR_Y + MENU_BAR_H - 1),
+L2361: rgb=(255, 255, 200)  ::  highlight = (255, 255, 200)
+L2365: rgb=(50, 35, 20)  ::  pygame.draw.rect(surf, (50, 35, 20), (mx_start - 2, MENU_BAR_Y, mw + 4, MENU_BAR
+L2391: rgb=(10, 8, 5)  ::  pygame.draw.rect(surf, (10, 8, 5), (dd_x + 2, dd_y + 2, dd_w, dd_h))
+L2393: rgb=(40, 30, 20)  ::  pygame.draw.rect(surf, (40, 30, 20), (dd_x, dd_y, dd_w, dd_h))
+L2395: rgb=(120, 90, 50)  ::  pygame.draw.rect(surf, (120, 90, 50), (dd_x, dd_y, dd_w, dd_h), 1)
+L2406: rgb=(70, 50, 30)  ::  pygame.draw.rect(surf, (70, 50, 30), (dd_x + 1, iy, dd_w - 2, 10))
+L2407: rgb=(255, 255, 200)  ::  self.font.render(surf, item, dd_x + 4, iy + 1, (255, 255, 200))
+L2409: rgb=(200, 180, 150)  ::  self.font.render(surf, item, dd_x + 4, iy + 1, (200, 180, 150))
+L2673: rgb=(0, 2, 4)  ::  (0, 2, 4),     # phase 1: slightly brighter
+L2674: rgb=(0, 3, 6)  ::  (0, 3, 6),     # phase 2: brightest
+L2675: rgb=(0, 1, 2)  ::  (0, 1, 2),     # phase 3: back toward baseline
+L2826: rgb=(24, 28, 125)  ::  big.fill(TERRAIN_COLORS.get(25, (24, 28, 125)))
+L2872: rgb=(128, 128, 128)  ::  color = TERRAIN_COLORS.get(base, (128, 128, 128))
+L3243: rgb=(200, 180, 50)  ::  pygame.draw.circle(surf, (200, 180, 50),
+L3319: rgb=(1, 0, 4)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3319: rgb=(0, 1, 1)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3331: rgb=(1, 0, 4)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3331: rgb=(0, 1, 1)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3340: rgb=(1, 0, 4)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3340: rgb=(0, 1, 1)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3349: rgb=(1, 0, 4)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3349: rgb=(0, 1, 1)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3359: rgb=(1, 0, 4)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3359: rgb=(0, 1, 1)  ::  for dy, dx, bit in [(-1, 0, 8), (1, 0, 4), (0, -1, 2), (0, 1, 1)]:
+L3380: rgb=(180, 120, 60)  ::  pygame.draw.polygon(surf, (180, 120, 60), [
+L3385: rgb=(140, 90, 40)  ::  pygame.draw.polygon(surf, (140, 90, 40), [
+L3410: rgb=(255, 255, 200)  ::  self.font.render(surf, c.name, name_x, sy + TILE_H, (255, 255, 200))
+L3456: rgb=(80, 80, 80)  ::  pygame.draw.circle(surf, (80, 80, 80), (sx + 5, sy + 12), 2)
+L3457: rgb=(80, 80, 80)  ::  pygame.draw.circle(surf, (80, 80, 80), (sx + 11, sy + 12), 2)
+L3459: rgb=(255, 215, 0)  ::  pygame.draw.rect(surf, (255, 215, 0), (sx + 3, sy + 3, 10, 10))
+L3460: rgb=(200, 170, 0)  ::  pygame.draw.rect(surf, (200, 170, 0), (sx + 3, sy + 3, 10, 10), 1)
+L3466: rgb=(200, 200, 200)  ::  pygame.draw.rect(surf, (200, 200, 200), (sx, sy, TILE_W, TILE_H), 1)
+L3469: rgb=(100, 100, 100)  ::  pygame.draw.line(surf, (100, 100, 100), (sx, sy), (sx + TILE_W, sy + TILE_H))
+L3472: rgb=(255, 255, 0)  ::  pygame.draw.circle(surf, (255, 255, 0), (sx + TILE_W - 3, sy + 2), 2)
+L3512: rgb=(45, 28, 12)  ::  pygame.draw.rect(surf, (45, 28, 12), (px, py, RPANEL_W, RPANEL_H))
+L3515: rgb=(70, 45, 20)  ::  pygame.draw.line(surf, (70, 45, 20), (px, py), (px, py + RPANEL_H - 1))
+L3520: rgb=(220, 200, 160)  ::  cream = (220, 200, 160)
+L3521: rgb=(160, 140, 100)  ::  dim = (160, 140, 100)
+L3522: rgb=(255, 220, 80)  ::  gold_col = (255, 220, 80)
+L3529: rgb=(180, 120, 40)  ::  pygame.draw.rect(surf, (180, 120, 40), (mm_x - 1, mm_y - 1, mm_w + 2, mm_h + 2),
+L3549: rgb=(70, 45, 20)  ::  pygame.draw.line(surf, (70, 45, 20), (px + 4, loc_y - 2), (px + RPANEL_W - 4, lo
+L3572: rgb=(70, 45, 20)  ::  pygame.draw.line(surf, (70, 45, 20), (px + 4, unit_y - 2), (px + RPANEL_W - 4, u
+L3586: rgb=(180, 220, 140)  ::  self.font.render(surf, status, px + 4, unit_y + 20, (180, 220, 140))
+L3589: rgb=(255, 255, 100)  ::  self.font.render(surf, "GO TO", px + 4, unit_y + 30, (255, 255, 100))
+L3598: rgb=(80, 55, 25)  ::  pygame.draw.line(surf, (80, 55, 25), (px + 4, emblem_y), (px + RPANEL_W - 4, emb
+L3607: rgb=(140, 130, 110)  ::  self.font.render(surf, f"Turn {self.gs.turn}", px + 4, emblem_y + 18, (140, 130,
+L3614: rgb=(32, 44, 136)  ::  pygame.draw.rect(surf, TERRAIN_COLORS.get(25, (32, 44, 136)),
+L3616: rgb=(80, 60, 30)  ::  pygame.draw.rect(surf, (80, 60, 30), (mm_x, mm_y, mm_w, mm_h), 1)
+L3637: rgb=(140, 140, 150)  ::  col = (140, 140, 150)  # mountains
+L3639: rgb=(120, 100, 70)  ::  col = (120, 100, 70)   # hills
+L3641: rgb=(60, 100, 40)  ::  col = TERRAIN_COLORS.get(base, (60, 100, 40))
+L3670: rgb=(30, 18, 8)  ::  pygame.draw.rect(surf, (30, 18, 8), (0, STATUS_BAR_Y, NATIVE_W, STATUS_BAR_H))
+L3673: rgb=(80, 55, 25)  ::  pygame.draw.line(surf, (80, 55, 25), (0, STATUS_BAR_Y), (NATIVE_W, STATUS_BAR_Y)
+L3681: rgb=(220, 200, 160)  ::  self.font.render(surf, hints, hints_x, STATUS_BAR_Y + 2, (220, 200, 160))
+L3697: rgb=(255, 255, 200)  ::  self.font.render(surf, msg, MAP_VP_X + 4, y + 1, (255, 255, 200))
+L3715: rgb=(40, 25, 15)  ::  surf.fill((40, 25, 15))
+L3716: rgb=(100, 70, 30)  ::  pygame.draw.rect(surf, (100, 70, 30), (0, 0, NATIVE_W, NATIVE_H), 3)
+L3719: rgb=(60, 35, 15)  ::  pygame.draw.rect(surf, (60, 35, 15), (0, 0, NATIVE_W, 16))
+L3720: rgb=(255, 240, 180)  ::  self.font.render_centered(surf, colony.name, NATIVE_W // 2, 3, (255, 240, 180))
+L3721: rgb=(200, 200, 200)  ::  self.font.render(surf, f"Pop: {colony.population}", 5, 3, (200, 200, 200))
+L3722: rgb=(160, 140, 100)  ::  self.font.render(surf, "ESC:Back", NATIVE_W - 50, 3, (160, 140, 100))
+L3725: rgb=(255, 220, 150)  ::  self.font.render(surf, "STOCKPILE", 8, 20, (255, 220, 150))
+L3736: rgb=(100, 255, 100)  ::  self.font.render(surf, f"+{prod}", 82, y, (100, 255, 100))
+L3738: rgb=(255, 100, 100)  ::  self.font.render(surf, f"{prod}", 82, y, (255, 100, 100))
+L3741: rgb=(255, 220, 150)  ::  self.font.render(surf, "BUILDINGS", 115, 20, (255, 220, 150))
+L3746: rgb=(200, 200, 200)  ::  self.font.render(surf, bname, 115, by, (200, 200, 200))
+L3753: rgb=(120, 120, 120)  ::  self.font.render(surf, "(none)", 115, by, (120, 120, 120))
+L3757: rgb=(255, 220, 150)  ::  self.font.render(surf, "COLONY INFO", info_x, 20, (255, 220, 150))
+L3772: rgb=(200, 200, 200)  ::  self.font.render(surf, line, info_x, 30 + i * 10, (200, 200, 200))
+L3776: rgb=(30, 18, 8)  ::  pygame.draw.rect(surf, (30, 18, 8), (0, prod_y, NATIVE_W, 70))
+L3777: rgb=(100, 70, 30)  ::  pygame.draw.line(surf, (100, 70, 30), (0, prod_y), (NATIVE_W, prod_y))
+L3778: rgb=(255, 220, 150)  ::  self.font.render(surf, "PRODUCTION PER TURN", 8, prod_y + 3, (255, 220, 150))
+L3793: rgb=(200, 60, 60)  ::  pygame.draw.rect(surf, (200, 60, 60), (x, y + 9, bw, 4))
+L3808: rgb=(255, 220, 150)  ::  self.font.render(surf, "GARRISON:", 8, units_y, (255, 220, 150))
+L3813: rgb=(200, 200, 255)  ::  self.font.render(surf, uname, ux, units_y, (200, 200, 255))
+L3825: rgb=(20, 30, 60)  ::  surf.fill((20, 30, 60))
+L3837: rgb=(255, 240, 180)  ::  self.font.render_centered(surf, f"Port of {port_name}", NATIVE_W // 2, 2, (255, 
+L3840: rgb=(255, 215, 0)  ::  self.font.render(surf, f"Gold: {ns.power_gold}", 5, 16, (255, 215, 0))
+L3841: rgb=(200, 200, 200)  ::  self.font.render(surf, f"Tax: {ns.tax_rate}%", 100, 16, (200, 200, 200))
+L3846: rgb=(60, 40, 80)  ::  pygame.draw.rect(surf, (60, 40, 80), (8, y - 1, 200, 10))
+L3850: rgb=(255, 255, 200)  ::  col = (255, 255, 200) if selected else (180, 180, 180)
+L3850: rgb=(180, 180, 180)  ::  col = (255, 255, 200) if selected else (180, 180, 180)
+L3855: rgb=(255, 220, 150)  ::  self.font.render(surf, "TRADE", ctrl_x, ctrl_y, (255, 220, 150))
+L3856: rgb=(200, 200, 200)  ::  self.font.render(surf, f"Qty: {self.europe_trade_qty}", ctrl_x, ctrl_y + 12, (20
+L3857: rgb=(150, 150, 150)  ::  self.font.render(surf, "Up/Down: Qty", ctrl_x, ctrl_y + 24, (150, 150, 150))
+L3858: rgb=(150, 150, 150)  ::  self.font.render(surf, "Left/Right: Good", ctrl_x, ctrl_y + 34, (150, 150, 150))
+L3859: rgb=(100, 200, 100)  ::  self.font.render(surf, "B: Buy goods", ctrl_x, ctrl_y + 48, (100, 200, 100))
+L3860: rgb=(200, 200, 100)  ::  self.font.render(surf, "S: Sell goods", ctrl_x, ctrl_y + 58, (200, 200, 100))
+L3861: rgb=(100, 200, 255)  ::  self.font.render(surf, "R: Recruit", ctrl_x, ctrl_y + 68, (100, 200, 255))
+L3865: rgb=(255, 255, 200)  ::  self.font.render(surf, f"Selected: {GOOD_NAMES[g]}", ctrl_x, sel_y, (255, 255, 2
+L3869: rgb=(200, 100, 100)  ::  self.font.render(surf, f"Buy cost: {cost}", ctrl_x, sel_y + 12, (200, 100, 100))
+L3870: rgb=(100, 200, 100)  ::  self.font.render(surf, f"Sell rev: {revenue - tax}", ctrl_x, sel_y + 22, (100, 2
+L3871: rgb=(150, 150, 150)  ::  self.font.render(surf, f"(Tax: {tax})", ctrl_x, sel_y + 32, (150, 150, 150))
+L3874: rgb=(255, 220, 150)  ::  self.font.render(surf, "IMMIGRANTS", 10, pool_y, (255, 220, 150))
+L3875: rgb=(180, 180, 180)  ::  self.font.render(surf, f"(Cost: {eu.recruit_cost} gold)", 85, pool_y, (180, 180,
+L3878: rgb=(100, 255, 100)  ::  col = (100, 255, 100) if slot.available else (100, 100, 100)
+L3878: rgb=(100, 100, 100)  ::  col = (100, 255, 100) if slot.available else (100, 100, 100)
+L3881: rgb=(255, 220, 150)  ::  self.font.render(surf, "TRANSIT", ctrl_x, pool_y, (255, 220, 150))
+L3886: rgb=(180, 180, 200)  ::  ctrl_x, pool_y + 12 + i * 10, (180, 180, 200))
+L3888: rgb=(120, 120, 120)  ::  self.font.render(surf, "No ships", ctrl_x, pool_y + 12, (120, 120, 120))
