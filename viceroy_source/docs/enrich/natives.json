@@ -1,0 +1,338 @@
+{
+ "INDIANBRIBE": {
+  "trigger": "The player issues a build order (colony, road, or plow) on a tile that a native tribe owns, and chooses to pay the tribe rather than abandon the order. Shown after the tribe's objection prompt when the player agrees to settle the matter.",
+  "inputs": "The active unit's tile and the adjacent NativeSettlement's owning tribe; the tribe's standing objection to construction on its land; the player's gold (the bribe cost is read from a per-tribe land table, exact amount not byte-resolved).",
+  "outputs": "The tribe withdraws its objection (\"Very well, we withdraw our objection.\"); the build order is allowed to proceed on the contested tile and the tile is marked as conceded to the player. Gold is debited as the bribe (amount cited-TBD).",
+  "func": "func_02211E",
+  "verified": "true (string emit byte-verified at 0x22315/0x224FF in the build-road/plow handler; bribe-gold amount cited-TBD)"
+ },
+ "DEADCONVERTS": {
+  "trigger": "Fires when an Indian convert working in the field finishes its outdoor work order: the per-unit work counter ticks past 8 turns on a free-colonist (convert) unit whose activity byte marks it as working. Mirrors the rule that converts who do not settle into a colony within eight turns of conversion lose faith.",
+  "inputs": "The convert unit's record (type = free colonist, activity = working, plus its work-progress counter), its tile ownership, and whether the owning power is a live human player.",
+  "outputs": "The terrain-change work is applied for a human owner, the work order is finished, the convert is consumed/returned to the tribe, and the boxed \"Indian converts lose faith and return to tribe\" notice is shown.",
+  "func": "func_02EF64",
+  "verified": "true (control flow, 8-turn counter, UnitRecord fields, and DEADCONVERTS string all byte-verified)"
+ },
+ "WHACKINDIANS": {
+  "trigger": "The player commands one of their units to attack a tile occupied by a native tribe with whom no war is yet declared (relation \"at war\" bit clear). A Yes/No confirmation is raised before committing the attack.",
+  "inputs": "The acting unit and the target tile's occupant tribe; the current relation flags between the player and that tribe (treaty/peace bits); whether the acting power is human.",
+  "outputs": "On Yes (\"Shall we attack the {tribe}?\" -> Yes), war is declared: the war bit is set in the relation matrix for the player toward that tribe and the existing treaty/peace bit is cleared, after which the attack proceeds. On No, nothing changes.",
+  "func": "func_03ECF0",
+  "verified": "true (WHACKINDIANS dialog handle byte-verified at 0x03EFE4; declare-war relation mutation byte-verified in rel_declare_war)"
+ },
+ "INDIANBURN": {
+  "trigger": "Fires when a native tribe destroys the player's missions during a relation/turn change: the settlement-marker refresh scans the tribe's settlements and finds missions belonging to the affected colony to clear.",
+  "inputs": "The target tribe index and the player colony index; each NativeSettlement's owner field and mission flag (the low nibble identifying which power's mission it holds).",
+  "outputs": "Every matching mission flag is reset to \"no mission\" (the missions are burned), the tribe's village markers are redrawn, and for a real player colony the \"{tribe} burn {power} missions! Church authorities are outraged!\" notice is shown.",
+  "func": "func_045D00",
+  "verified": "true (full body byte-verified: mission-flag clear to 0xFF and INDIANBURN message at 0x14C8)"
+ },
+ "EXTINCT": {
+  "trigger": "Fires when a native tribe loses its last settlement: removing a settlement decrements the tribe's settlement count, and when that count reaches zero the tribe is eliminated.",
+  "inputs": "The settlement being removed and its owning tribe; the tribe's remaining settlement-count byte after the removal decrement.",
+  "outputs": "The tribe is flagged as eliminated (its record's eliminated bit is set) and the \"The {tribe} tribe has been wiped out.\" announcement is shown.",
+  "func": "func_046EC0",
+  "verified": "true (settlement remove/compact, tribe-count decrement, and eliminate flag byte-verified; EXTINCT message at handle 0x14D4)"
+ },
+ "INDIANSURPRISE": {
+  "trigger": "Fires during the native per-unit AI turn when an AI-controlled brave's best-scoring action is a hostile strike whose target is the human player. The native's accumulated alarm/tension toward that power (and/or the value of the goods the player trades) pushes the unit to attack.",
+  "inputs": "The acting native unit and its 8 neighbour tiles; the per-(settlement,power) alarm/tension accumulator (a hostile strike becomes attractive once alarm crosses its high threshold) and the market value of coveted cargo; the player colony near the strike.",
+  "outputs": "The unit commits a surprise raid near the player's colony and the \"{tribe} make surprise raid near {colony}! Colonists frightened. {tribe} chief denies involvement.\" prompt is shown to the human player; the unit's move order and direction are set toward the target.",
+  "func": "func_046FFA",
+  "verified": "true (control flow, alarm-array index/threshold, and INDIANSURPRISE dialog at 0x048186 byte-verified; per-occupant weight tables are data-resident TBD)"
+ },
+ "MISSION0": {
+  "trigger": "Fires when a missionary establishes a new mission in a native settlement (the mission is founded that turn).",
+  "inputs": "The founding power and the native settlement; the settlement's tribe; the current year. (This handler also recomputes the commodity-trade pressure tied to the settlement.)",
+  "outputs": "A mission of the founding nation is founded in the settlement (\"{nation} {denomination} mission founded in {settlement}, {year}. {tribe} approach new religion with curiosity.\"); the settlement's mission flag is set to that power and its trade state updates.",
+  "func": "func_048A3A",
+  "verified": "false (MISSION0 string emit byte-verified via push 0x1532 at 0x048B53; the hand-port labeled this function a market-price worker, so the mission-founding mechanics here are taken from the GAME.TXT message text, not fully resolved in code)"
+ },
+ "HERESY0": {
+  "trigger": "Fires when a missionary of one nation founds/operates a mission in a settlement that already holds a RIVAL nation's mission, and the rival's converts are NOT loyal: the newcomer denounces the rival's heresy and the converts side with the newcomer.",
+  "inputs": "The challenging and incumbent mission nations and the settlement's converts (the loyalty roll deciding the outcome).",
+  "outputs": "The converts burn the incumbent nation's mission and erect a new mission for the challenging nation (\"{nation} missionaries denounce heresy of {rival}. {tribe} converts burn {rival} mission and erect a new, {nation} one!\"); the settlement's mission flag flips to the challenging nation.",
+  "func": "func_048CA4",
+  "verified": "false (HERESY0 string emit byte-verified via push 0x153B; hand-port labeled this function a supply/demand price worker, so the mission-rivalry mechanics are derived from the GAME.TXT message text)"
+ },
+ "HERESY1": {
+  "trigger": "Fires in the same mission-rivalry contest as HERESY0 but when the incumbent nation's converts ARE loyal: the challenge fails and the challenger's missionary is killed.",
+  "inputs": "The challenging and incumbent mission nations and the settlement's converts (the loyalty roll resolves in the incumbent's favor).",
+  "outputs": "The loyal worshipers burn the challenger at the stake (\"{nation} missionaries denounce heresy of {rival}. Loyal {tribe} worshipers burn the {nation} at the stake!\"); the incumbent mission is retained and the challenging missionary is lost.",
+  "func": "func_048CA4",
+  "verified": "false (HERESY1 string emit byte-verified via push 0x1543; mission-rivalry mechanics derived from the GAME.TXT message text, see HERESY0)"
+ },
+ "CHIEFAREA": {
+  "trigger": "Fires when a Scout enters a native settlement and the village offers tales of nearby lands: a positive 'speak with the chief' outcome that reveals surrounding terrain.",
+  "inputs": "The visiting Scout unit and the settlement's tribe; a random visit-outcome roll modified by Scout/Seasoned-Scout status and tribe attitude.",
+  "outputs": "The chief welcomes the travelers and reveals/explores the nearby map (\"...Come sit by the fire and we shall tell you tales of nearby lands.\"); the surrounding tiles around the settlement are uncovered for the player.",
+  "func": "func_04A7CA",
+  "verified": "true (CHIEFAREA string emit byte-verified at 0x04AA4F in the scout-visit handler; the map-reveal effect is taken from the message text)"
+ },
+ "CHIEFBORED": {
+  "trigger": "Fires when a Scout re-enters a native settlement that has already been visited / has nothing more to offer: a neutral 'nothing new here' outcome.",
+  "inputs": "The visiting unit and the settlement (already-visited / exhausted state); the tribe.",
+  "outputs": "The village gives a polite, empty greeting with no reward (\"The {tribe} are always pleased to welcome {nationality} travelers.\"); the visit ends with no gold/guides/tales.",
+  "func": "func_04A7CA",
+  "verified": "true (CHIEFBORED string emit byte-verified at 0x04ABED in the scout-visit handler; no-reward outcome from the message text)"
+ },
+ "CHIEFGIFT": {
+  "trigger": "Fires when a Scout enters a native settlement and the village's 'speak with the chief' outcome is a gift of beads/gold (treasure offering).",
+  "inputs": "The visiting Scout and the settlement's tribe; a random outcome roll (Scout/Seasoned-Scout improves results); a gift-value roll.",
+  "outputs": "The village gives the player a gift worth a stated sum of gold (\"Please take these valuable beads (worth {amount}) back to your chieftain...\"); that gold is credited to the player's treasury.",
+  "func": "func_04A7CA",
+  "verified": "true (CHIEFGIFT string emit byte-verified at 0x04AB52 in the scout-visit handler; gift-gold amount cited-TBD, value from message text)"
+ },
+ "CHIEFGUIDES": {
+  "trigger": "Fires when a Scout enters a native settlement and the 'speak with the chief' outcome is the gift of guides (an expanded map reveal in honor of the visitor's tales).",
+  "inputs": "The visiting Scout and the settlement's tribe; a random visit-outcome roll improved by Scout/Seasoned-Scout status.",
+  "outputs": "The village provides guides that reveal a larger area of the map around the settlement (\"...the {tribe} shall provide you with guides to aid your passage through our lands.\").",
+  "func": "func_04A7CA",
+  "verified": "true (CHIEFGUIDES string emit byte-verified at 0x04A9FD in the scout-visit handler; guides/reveal effect from message text)"
+ },
+ "CHIEFHOWDY": {
+  "trigger": "Fires when a unit first makes contact with / enters a peaceful native settlement that wants to trade: the village describes its specialty and the goods it needs.",
+  "inputs": "The visiting unit and the settlement's tribe; the settlement's specialty good and the commodities it wants to buy/sell (from the per-settlement trade tables).",
+  "outputs": "An informational greeting naming the village's specialty and the goods it will trade for (\"We are a peaceful village known for our {specialty}. We would gladly trade with you if you bring us some {needed good}...\"); no immediate state change beyond opening trade.",
+  "func": "func_04A7CA",
+  "verified": "true (CHIEFHOWDY string emit byte-verified at 0x04A959 in the scout-visit handler; trade-info content from message text)"
+ },
+ "CHIEFKILL": {
+  "trigger": "Fires when a unit enters a native settlement under conditions the tribe treats as taboo-breaking (a hostile/forbidden approach), and the village turns on the visitor instead of welcoming it.",
+  "inputs": "The attacking unit's index, the attacker's power, the target settlement and its population (the NativeSettlement population field); the difficulty level (sets the per-roll upper bound).",
+  "outputs": "The village declares the visitor has broken sacred taboos (\"You have broken sacred taboos of the {tribe} tribe! We shall tie you up for target practice.\"). When this resolves as a raze, gold is awarded to the attacker = (three rolls of 1..(10-difficulty) summed) x (roll of 1..6) x 4 x (settlement population + 1); a capital adds a separate bonus on top.",
+  "func": "func_04A7CA",
+  "verified": "true (gold formula byte-verified from 0x04AAD0..0x04AB6E using population at +0x04, user-verified against Inca/Aztec capitals; CHIEFKILL string at 0x04ABAA; capital bonus magnitude TBD)"
+ },
+ "INDIANWARFARE": {
+  "trigger": "Fires when a tribe is incited to war (a war council is held) -- typically driven by a rival nation's missionaries inciting the tribe against another power.",
+  "inputs": "The inciting nation, the target nation, and the tribe being incited; the relation/alarm state between the tribe and the target.",
+  "outputs": "The tribe holds a War Council and goes to war against the named target (\"{tribe} nation holds War Council! {nation} missionaries incite {tribe} to warfare against the {target}!\"); the relation/war state between that tribe and the target is set hostile.",
+  "func": "func_04AF5E",
+  "verified": "true (INDIANWARFARE string emit byte-verified via push 0x16E9 at 0x04B2D3; the hand-port mislabeled this function 'buy goods in Europe', so the war-council effect is taken from the GAME.TXT message text)"
+ },
+ "INDIANWARPATH2": {
+  "trigger": "Fires when a Scout asks a native tribe to make war on a specified enemy and the tribe agrees for a price: a paid 'go on the warpath' offer.",
+  "inputs": "The player's treasury (PowerRecord gold), the requested enemy tribe, and the computed bribe price (built from a per-power markup/cost chain); affordability is checked before the deal.",
+  "outputs": "The tribe offers to drive the named enemy out in exchange for a stated sum (\"We will gladly drive the {enemy} from our ancestral lands in exchange for {amount}.\" -> Pay/Never mind). On Pay, the gold is debited from the player and the tribe goes to war with the target.",
+  "func": "func_04AF5E",
+  "verified": "true (INDIANWARPATH2 string emit byte-verified via push 0x16C1 at 0x04B1C2; cost computation/affordability/gold-debit mechanics byte-verified; the hand-port mislabeled the function as a Europe purchase, the warpath framing is from the message text)"
+ },
+ "INDIANCOME": {
+  "trigger": "Drawn as part of the native-tribe relations report toward a power when the tribe's trade/familiarity value is still low (below threshold) -- an invitation to visit and trade.",
+  "inputs": "The power index and the tribe handle; the per-(tribe,power) relation/trade value (only drawn when that value is under the threshold).",
+  "outputs": "Adds the invitation line \"We hope you will soon visit {tribe} villages... and send your wagon trains to trade with us.\" to the relations display. Informational; no game-state change.",
+  "func": "func_056B92",
+  "verified": "true (control flow and INDIANCOME line draw at 0x056C2C byte-verified; threshold-table value semantics data-resident TBD)"
+ },
+ "INDIANPEACE": {
+  "trigger": "Drawn in the native-tribe relations report for an established friendly/peace relationship between the power and the tribe.",
+  "inputs": "The power index and tribe handle; the relation query for the treaty/peace bit.",
+  "outputs": "Adds the friendship line \"The {tribe} welcome peace with our brothers the {power}. Let us smoke a peace pipe...\" to the relations display. Informational; reflects the existing peace state.",
+  "func": "func_056B92",
+  "verified": "true (control flow and INDIANPEACE line draw at 0x056BF1 byte-verified)"
+ },
+ "INDIANBEGFOOD": {
+  "trigger": "One outcome of the 'speak with the chief' / native-settlement visit dialog: the tribe has fallen on hard times and asks the player to share food.",
+  "inputs": "The visiting unit, the settlement, and a mode flag; a random outcome roll gated by settlement size and tribe attitude; the player's food stores.",
+  "outputs": "The tribe asks for food (\"...Will our brothers of {power} share the bounty of their harvests...\") and the player may decline or give an offered quantity of food. On giving, food is transferred from the player to the tribe (amount data-resident, TBD).",
+  "func": "func_056C3E",
+  "verified": "false (the function is the village-visit dispatcher; INDIANBEGFOOD is one of its byte-anchored outcome keys, but the per-branch food amounts and selection roll are data-resident -- text from GAME.TXT)"
+ },
+ "INDIANCITY": {
+  "trigger": "One outcome of the native-settlement visit dialog (or a tribe grievance): the tribe accuses the player's colonists of destruction and demands reparations from the colony stores, threatening force.",
+  "inputs": "The tribe, the offending colony, the commodity and quantity demanded as reparations, and the colony's stockpile of that commodity.",
+  "outputs": "Presents the demand (\"...we therefore demand {qty} {commodity} from the colony stores as reparations.\" -> Man the stockade / Hand them over). On Hand them over, the commodity is removed from the colony stores; on Man the stockade, the player risks war.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANCITY is a byte-anchored outcome key of the village-visit dispatcher; demanded amounts and the war/comply consequences are data-resident -- text from GAME.TXT)"
+ },
+ "INDIANCOMMENT": {
+  "trigger": "One outcome of the native-settlement visit dialog: a peaceful tribe warns the player that their colonies are overusing land near native settlements.",
+  "inputs": "The tribe and the neighboring player; the proximity/land-use pressure of the player's colonies near the tribe's settlements.",
+  "outputs": "Shows the warning \"...your colonies are beginning to overuse the lands near our settlements.\" -- a diplomatic caution with no immediate transfer; tension toward the player rises if the behavior continues.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANCOMMENT is a byte-anchored outcome key of the village-visit dispatcher; the land-use/tension trigger detail is from the GAME.TXT message text)"
+ },
+ "INDIANGIVEFOOD": {
+  "trigger": "One outcome of the native-settlement visit dialog when the player's food stores are low and the tribe is friendly: the tribe brings a gift of food.",
+  "inputs": "The tribe, the player and a player colony; the player's low food state and the tribe's surplus harvest (and the friendly relation).",
+  "outputs": "The tribe gifts a stated quantity of food (\"We offer you a gift of {qty} food in recognition of the everlasting peace...\"); that food is credited to the player.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANGIVEFOOD is a byte-anchored outcome key of the village-visit dispatcher; the gifted food amount is data-resident -- text from GAME.TXT)"
+ },
+ "INDIANGIVESTUFF": {
+  "trigger": "One outcome of the native-settlement visit dialog when the tribe is friendly and pleased with a player colony's progress: a gift of trade goods.",
+  "inputs": "The tribe, the player colony, and the commodity/quantity gifted (from the settlement's trade tables); the friendly relation.",
+  "outputs": "The tribe gifts a stated quantity of a commodity (\"We have come to offer you {qty} {commodity} in recognition of the everlasting peace...\"); that commodity is credited to the player's colony.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANGIVESTUFF is a byte-anchored outcome key of the village-visit dispatcher; the gifted commodity/amount is data-resident -- text from GAME.TXT)"
+ },
+ "INDIANSCONVERT": {
+  "trigger": "One outcome of the native-settlement visit dialog: the tribe, persuaded by the player's missionaries, offers some of its people as converts to join a player colony.",
+  "inputs": "The visiting unit/missionary influence, the settlement, and the target player colony; the conversion roll.",
+  "outputs": "Some natives join the player colony as converts (\"...convinced some of us to join your colony at {colony} and live among you as converts.\"); one or more convert units are produced for the player.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANSCONVERT is a byte-anchored outcome key of the village-visit dispatcher; the convert count/placement is data-resident -- text from GAME.TXT)"
+ },
+ "INDIANSHUN": {
+  "trigger": "Outcome of a native interaction (visit/treaty) where the tribe rejects the player and turns hostile: the tribe declares it will drive the player out.",
+  "inputs": "The tribe and the player; the tribe's hostile attitude state at the time of the interaction.",
+  "outputs": "The tribe declares war (\"Then the mighty {tribe} shall mercilessly drive you from our shores. Prepare for WAR!\"); the tribe-vs-player relation becomes at-war.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANSHUN is a byte-anchored outcome key of the village-visit dispatcher; the war declaration is from the GAME.TXT message text)"
+ },
+ "INDIANWAGONS": {
+  "trigger": "A tribe grievance variant of the reparations demand aimed at the player's wagon trains: the tribe accuses the colonists of destruction and demands the goods carried in the wagons.",
+  "inputs": "The tribe, the offending colony/wagons, the commodity and quantity carried in the wagons.",
+  "outputs": "Presents the demand (\"...we therefore demand all {qty} of the {commodity} in these wagons as reparations.\" -> Hand them over / Circle the wagons). On Hand them over, the wagon cargo is surrendered to the tribe; on Circle the wagons, the player risks attack.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANWAGONS is a byte-anchored outcome key of the village-visit dispatcher; demanded amounts and consequences are data-resident -- text from GAME.TXT)"
+ },
+ "INDIANWELCOME": {
+  "trigger": "One outcome of the native-settlement visit dialog: a friendly tribe welcomes the player, offers the occupied land as a gift, and proposes a peace treaty.",
+  "inputs": "The visiting unit, the settlement, the tribe and its population/size; the friendly attitude state.",
+  "outputs": "The tribe offers the land the player occupies and a peace treaty (\"...we generously offer you the land you now occupy as a gift. Will you accept our treaty and live with us in peace as brothers?\" -> Yes/No). On Yes, a peace treaty is established and the land is conceded.",
+  "func": "func_056C3E",
+  "verified": "false (INDIANWELCOME is a byte-anchored outcome key of the village-visit dispatcher; the treaty/land-grant effect is from the GAME.TXT message text)"
+ },
+ "MEEKNESS": {
+  "trigger": "Not an event message but a phrase fragment (\"request\"/\"demand\") used to compose the tone of a native attitude/diplomacy menu line; drawn while building the native attitude menu.",
+  "inputs": "The menu anchor position and a 0/1 selector that picks 'request' vs 'demand' (sets the iteration count 1 or 2).",
+  "outputs": "Emits the chosen 'request' or 'demand' wording into the rendered native attitude/diplomacy menu line. UI-only; no game-state change.",
+  "func": "func_057AA2",
+  "verified": "true (control flow of the MEEKNESS menu-line builder byte-verified at 0x057AAC; the two options are the literal 'request'/'demand' fragments)"
+ },
+ "HEATHEN": {
+  "trigger": "Shown during a meeting with a native tribe that is at war with another (heathen) tribe and asks the player, as a fellow believer, to join in subduing that rival tribe.",
+  "inputs": "The two powers in the meeting (the asking tribe and the player) and the named heathen tribe being subdued; the meeting/relation state.",
+  "outputs": "Presents the request (\"...Will you, as fellow believers, join with us in this holy task?\" -> refuse / \"teach the {tribe} a lesson\"). The player's choice colors relations: refusing protects the targeted tribe, agreeing aligns the player against it.",
+  "func": "func_057F4E",
+  "verified": "false (HEATHEN string emit byte-verified in the meeting dispatcher; the consequence of each choice crosses the data-resident attitude-score model -- text from GAME.TXT)"
+ },
+ "SMITEINDIANS": {
+  "trigger": "Shown when the player, in a meeting, asks a native tribe to attack (\"smite\") another heathen tribe in exchange for payment.",
+  "inputs": "The attacker power's treasury and the opponent/target tribe; a player-factor table and the tribe's treasury feed the loot/cost computation; the bit-19 power attribute can halve the amount.",
+  "outputs": "Offers to smite the named tribe for a stated sum (\"We shall ruthlessly smite the heathen {tribe} in exchange for {amount}.\" -> Pay/Never mind). On Pay (and if the payer can afford it) the gold transfers between the involved powers; otherwise the UNFORTUNATE refusal is shown.",
+  "func": "func_057F4E",
+  "verified": "true (the smite gold formula and the gold transfer are byte-verified at 0x05997C..0x059AD9; SMITEINDIANS dialog at handle 0x1A1A; the 0x181F:0x035C scaler's exact clamp/random behavior is TBD)"
+ },
+ "WANTSTUFF": {
+  "trigger": "Shown when a native tribe (or power), in a meeting, demands a commodity from the player as reparations for befouling land it claims.",
+  "inputs": "The demanding tribe, the player, the commodity and quantity demanded, and the player's holdings of that commodity; gated on the running attitude score and the best-good index.",
+  "outputs": "Presents the demand (\"...We demand {qty} {commodity} as reparations.\" -> mock them / \"gladly share {qty} {commodity}\"). On comply, the commodity is moved between the two powers' market arrays; on refusal, tension/war risk rises.",
+  "func": "func_057F4E",
+  "verified": "false (WANTSTUFF string emit byte-verified (handle 0x1926) and the market-array transfer is byte-cited, but the demanded amount derives from the data-resident attitude-score accumulator (TBD) -- text from GAME.TXT)"
+ },
+ "RAIDBURN": {
+  "trigger": "One outcome of a native brave's raid on a player colony, selected by the raid-outcome roll (1..4 remapped by difficulty/feasibility): the raiders burn buildings.",
+  "inputs": "The raiding native unit (combat types) and the target colony; the outcome roll and feasibility predicates.",
+  "outputs": "Buildings in the colony are destroyed (\"{tribe} raiding party burns buildings in {colony}! {building} destroyed. Colonists demand immediate vengeance!\"); the named building is removed and a vengeance/alarm effect on the colonists follows.",
+  "func": "func_05BE84",
+  "verified": "true (raid outcome roll and 5-way dispatch byte-verified; RAIDBURN emitted via push 0x1B9F at 0x05C50B; the burn magnitude/feasibility predicate internals are TBD)"
+ },
+ "RAIDGOLD": {
+  "trigger": "One outcome of a native raid on a player colony (the loot-gold branch), selected by the raid-outcome roll after the gold-poor guard.",
+  "inputs": "The raiding tribe's strength, the target colony's size, and the victim power's treasury (these feed the 32-bit loot amount); whether the victim is human.",
+  "outputs": "Gold is plundered from the colony: the looted amount is subtracted from the victim power's treasury and recorded for the popup (\"{tribe} raiding party seizes strongboxes in {colony}! Merchants report {amount} plundered. Colonists enraged!\").",
+  "func": "func_05BE84",
+  "verified": "true (the gold transfer (subtract from PowerRecord gold +0x2A) and RAIDGOLD message at 0x05C5F7 are byte-verified; the exact loot-amount mul/div chain is partly TBD)"
+ },
+ "RAIDNOTHING": {
+  "trigger": "The 'no effect' outcome of a native raid on a player colony, selected when the outcome roll resolves to nothing (e.g. the raiding party is repelled).",
+  "inputs": "The raiding native unit and the target colony; the outcome roll resolving to the NOTHING branch.",
+  "outputs": "The raid fails with no loss to the player (\"{tribe} raiding party wiped out in {colony}! Colonists jubilant!\"); the per-(raider,victim) raid-tension counter is cleared.",
+  "func": "func_05BE84",
+  "verified": "true (NOTHING dispatch branch and RAIDNOTHING message at 0x05C637 byte-verified; the post-raid tension-counter clear is byte-verified)"
+ },
+ "RAIDSHIP": {
+  "trigger": "One outcome of a native raid on a coastal player colony: the raiders attack a ship in the harbor.",
+  "inputs": "The raiding native unit, the target colony, and a ship docked there; the outcome roll selecting the ship/harbor branch.",
+  "outputs": "A ship in the harbor is damaged (\"{tribe} raiding party attacks harbor in {colony}! {ship} damaged. Colonists appalled!\").",
+  "func": "func_05BE84",
+  "verified": "true (RAIDSHIP emitted via push 0x1BA8 at 0x05C57B in the raid dispatcher; the ship-damage effect detail is from the message text)"
+ },
+ "RAIDSTORES": {
+  "trigger": "One outcome of a native raid on a player colony: the raiders steal from the colony stores.",
+  "inputs": "The raiding native unit and the target colony's stockpile; the outcome roll selecting the STORES branch (gated by a feasibility predicate).",
+  "outputs": "A commodity is stolen from the colony stores (\"{tribe} raiding party attacks stores in {colony}! Large quantities of {commodity} stolen. Colonists outraged!\"); the raid path also bumps the target settlement's wealth/aggression accumulators.",
+  "func": "func_05BE84",
+  "verified": "true (STORES dispatch and RAIDSTORES message at 0x05C3CC byte-verified, including the settlement-record +0x08/+0x0A bumps; the stolen-commodity amount is TBD)"
+ },
+ "RAIDWREAK": {
+  "trigger": "The population/general-havoc outcome of a native raid on a (often AI-owned, spy-reported) player colony.",
+  "inputs": "The raiding native unit and the target colony; the outcome roll selecting the WREAK/population branch.",
+  "outputs": "The raiding party wreaks havoc on the colony, reported via spies (\"Spies report: {tribe} raiding party wreaks havoc in the {power} colony of {colony}.\").",
+  "func": "func_05BE84",
+  "verified": "true (RAIDWREAK emitted via push 0x1B8A at 0x05C1DE in the raid dispatcher; the population/havoc effect detail is from the message text)"
+ },
+ "INDIANBOW": {
+  "trigger": "Fires when a tribe submits to a far stronger power after a decisive defeat/intimidation: the tribe bows and cedes its land in tribute.",
+  "inputs": "The submitting tribe and the dominant power; the combat/intimidation outcome in the colony-attack resolver tail.",
+  "outputs": "The tribe gives the power all the land it occupies (\"The {tribe} tribe bows before the might of the {power}... we give you all the land you now occupy.\"); the land is ceded to the player.",
+  "func": "func_05CA7E",
+  "verified": "false (INDIANBOW emitted from the colony-attack resolver's far tail at 0x05E662, which spills past the cleanly-decoded page region; the cede-land effect is from the GAME.TXT message text)"
+ },
+ "INDIANBURNCOLONY": {
+  "trigger": "Fires when natives win an attack on the HUMAN player's colony decisively enough to destroy it: the colony is massacred and burned to the ground.",
+  "inputs": "The attacking native unit and the defending player colony; the land-combat win/loss roll (random over attacker+defender strength, win if roll <= attacker strength) resolving as a native win against the colony.",
+  "outputs": "The colony is burned and its colonists massacred (\"{tribe} massacre {power} colonists at {colony}! Colony burned to the ground! King demands explanation!\"); the colony is removed.",
+  "func": "func_05CA7E",
+  "verified": "true (the land-combat win/loss decision is byte-verified at 0x05D188/0x05D194; INDIANBURNCOLONY emitted via push 0x1C65 at 0x05DFE6; the colony loot/burn long-math magnitude is TBD)"
+ },
+ "INDIANBURNCOLONY2": {
+  "trigger": "The spy-reported (non-human / observed) variant of a native attack that burns a colony to the ground.",
+  "inputs": "The attacking tribe and the destroyed colony (a colony not belonging to the active human player); the same native-win combat outcome.",
+  "outputs": "Reports the colony's destruction via spies (\"Spies report: {tribe} burn {power} colony at {colony}. {power} governor vows revenge.\"); the colony is removed.",
+  "func": "func_05CA7E",
+  "verified": "true (INDIANBURNCOLONY2 emitted via push 0x1C76 at 0x05DFEE in the colony-attack resolver; combat win/loss byte-verified)"
+ },
+ "INDIANLOSE": {
+  "trigger": "Fires when a native attack on a defended target is repelled (the defender wins the land-combat roll against the native attacker).",
+  "inputs": "The native attacker and the defending unit; the combat roll resolving against the native.",
+  "outputs": "The native attack fails near the target (\"{defender unit} {verb} {tribe} near {place}!\"); the native unit is demoted/destroyed by the combat applier.",
+  "func": "func_05CA7E",
+  "verified": "false (INDIANLOSE emitted from the colony-attack resolver's far tail at 0x05E177, past the cleanly-decoded page region; the combat win/loss form is byte-verified but this message's exact gating is TBD)"
+ },
+ "INDIANSLAVES": {
+  "trigger": "Fires after a native settlement is overcome (e.g. its mission/defenders), when frightened natives flee to a player mission and become converts.",
+  "inputs": "The affected tribe and the receiving player mission; the post-combat / mission outcome.",
+  "outputs": "Frightened natives join the player's mission as converts (\"Frightened {tribe} flock to {power} mission as converts.\"); convert units are produced for the player.",
+  "func": "func_05CA7E",
+  "verified": "false (INDIANSLAVES emitted from the resolver's far tail at 0x05E296, past the cleanly-decoded page region; the convert effect is from the GAME.TXT message text)"
+ },
+ "INDIANWIN0": {
+  "trigger": "Fires when natives win a field ambush against a player's unit/stack (not a colony) -- the native attacker wins the land-combat roll.",
+  "inputs": "The attacking tribe and the ambushed player unit/group near a place; the land-combat roll resolving as a native win.",
+  "outputs": "The natives ambush and defeat the player's unit (\"{tribe} ambush {player unit} near {place}!\"); the player's unit is removed/demoted by the combat applier.",
+  "func": "func_05CA7E",
+  "verified": "true (INDIANWIN0 emitted via push 0x1CA9 at 0x05E09E in the colony-attack resolver; the land-combat win/loss decision is byte-verified)"
+ },
+ "INDIANWINCOLONY": {
+  "trigger": "Fires when natives win an attack on the HUMAN player's colony but a defender dies holding it off (a costly successful native assault, colony not razed).",
+  "inputs": "The attacking tribe, the player colony, and the named defending colonist who falls; the native-win combat outcome.",
+  "outputs": "The colonists are massacred and a defender dies (\"{tribe} massacre {power} colonists at {colony}! {defender} dies fending off onslaught.\").",
+  "func": "func_05CA7E",
+  "verified": "true (INDIANWINCOLONY emitted via push 0x1C88 at 0x05E01F in the colony-attack resolver; combat win/loss byte-verified)"
+ },
+ "INDIANWINCOLONY2": {
+  "trigger": "The spy-reported (observed / non-human) variant of a native massacre at a colony.",
+  "inputs": "The attacking tribe and the colony massacred (not the active human's); the native-win combat outcome.",
+  "outputs": "Reports the massacre via spies (\"Spies report: {tribe} massacre {power} colonists at {colony}. {power} governor plans countermeasures.\").",
+  "func": "func_05CA7E",
+  "verified": "true (INDIANWINCOLONY2 emitted via push 0x1C98 at 0x05E026 in the colony-attack resolver; combat win/loss byte-verified)"
+ },
+ "LOOT": {
+  "trigger": "Fires when the player loots and burns a native settlement that yields a large treasure (a treasure too big to carry without a Galleon).",
+  "inputs": "The razed native settlement and the attacker; the recovered treasure amount.",
+  "outputs": "The settlement is burned, the natives flee, and a stated treasure is recovered (\"{tribe} loot and burn {settlement}! Natives flee in panic! {amount} worth of treasure recovered from ruins! It will take a Galleon to get this treasure back to Europe!\"); a treasure unit/value is created for the player.",
+  "func": "func_05CA7E",
+  "verified": "false (LOOT emitted from the resolver's far tail at 0x05E538, past the cleanly-decoded page region; the treasure amount/long-math is TBD -- text from GAME.TXT)"
+ },
+ "LOOT2": {
+  "trigger": "Fires when the player loots and burns a native settlement that yields no treasure: the settlement is destroyed but nothing of value is recovered.",
+  "inputs": "The razed native settlement and the attacker; a treasure roll resolving to nothing.",
+  "outputs": "The settlement is burned and the natives flee with no treasure (\"{tribe} burn {settlement}! Natives flee in panic!\"); the settlement is removed.",
+  "func": "func_05CA7E",
+  "verified": "false (LOOT2 emitted from the resolver's far tail at 0x05E55A, past the cleanly-decoded page region; the no-treasure outcome is from the GAME.TXT message text)"
+ }
+}

@@ -1,0 +1,457 @@
+{
+ "TUTORIAL1": {
+  "trigger": "Tutorial Hints option is on and, on the very first turn (Discoverer level), the player's ship carrying a pioneer and soldier is selected on the high seas; shown once.",
+  "inputs": "Active unit and its type/owner, turn counter (turn 0), difficulty (Discoverer), the per-hint shown bit, and whether the ship is on screen.",
+  "outputs": "Pops a hint box explaining to sail west (left arrow) to find land or east (right arrow) to return to port, then sets the hint's shown bit so it never repeats.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL2": {
+  "trigger": "Tutorial Hints on: shown when the ship has found uncharted land and the player should disembark.",
+  "inputs": "Active ship unit position relative to land; tutorial shown-bit.",
+  "outputs": "Hint box telling the player to move the ship toward land and choose Make Landfall to put colonists ashore.",
+  "func": "func_020EE0 (tutorial-hints helper)",
+  "verified": false
+ },
+ "TUTORIAL3": {
+  "trigger": "Tutorial Hints on: a pioneer is on a tile whose surroundings have abundant resources and at least ~5 nearby land tiles, suggesting a first colony site; shown once.",
+  "inputs": "Active unit position, 8/9-neighbour terrain scan (land/colony counts via terrain-id and colony-index lookups), the named resource of the area; shown-bit.",
+  "outputs": "Hint box saying the abundance here makes a good first-colony spot and to press 'B' to build; sets the shown bit.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL4": {
+  "trigger": "Tutorial Hints on: the player opens the Colony Screen for the very first time (first-visit block in the colony dialog).",
+  "inputs": "Active colony, its current worker and what it produces, an empty surrounding ring tile; shown-bit on the colony-screen-seen flag.",
+  "outputs": "Hint box explaining the Colony Screen and Jobs Menu (change a colonist's job, drag him to a tile/building, or to the fence to remove him); sets the seen bit.",
+  "func": "func_02C5D4 (interactive colony screen)",
+  "verified": true
+ },
+ "TUTORIAL5": {
+  "trigger": "Tutorial Hints on: colonists are waiting on the docks in the home Europe port ready to join a colony, prompting the player to send a ship.",
+  "inputs": "Europe-port immigrant queue (which specialists are on the docks), the home port name; shown-bit.",
+  "outputs": "Hint box noting colonists are ready on the docks in Europe and a ship sent there will bring them to the New World.",
+  "func": "func_033F6A (king/recruit/purchase dispatcher)",
+  "verified": false
+ },
+ "TUTORIAL6": {
+  "trigger": "Tutorial Hints on: a colony has accumulated a sellable cargo, prompting the player to ship it to Europe for profit.",
+  "inputs": "Colony stored-cargo amount and type, the colony name and the home Europe port name; shown-bit.",
+  "outputs": "Hint box telling the player to move a ship into the colony, pick up the cargo, and sell it in Europe.",
+  "func": "func_02D658 (colony-turn / cargo update)",
+  "verified": false
+ },
+ "TUTORIAL7": {
+  "trigger": "Tutorial Hints on: a colony is growing rapidly and is unprotected, suggesting the player build a Stockade.",
+  "inputs": "Colony name and growth/size; shown-bit.",
+  "outputs": "Hint box explaining the build chain (Lumberjack chops lumber, Carpenter makes buildings, then click the Hammer button to choose what to build) and to consider a Stockade.",
+  "func": "func_02883E (colony building/options handler)",
+  "verified": false
+ },
+ "TUTORIAL8": {
+  "trigger": "Tutorial Hints on: a colonist with no specialty profession stands near a friendly native village that could teach a skill.",
+  "inputs": "Active unit type/profession (no specialty), terrain/feature under and around the unit (native village within range); shown-bit.",
+  "outputs": "Hint box suggesting moving the unspecialized colonist into the friendly native village so the natives may teach him a skill.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL9": {
+  "trigger": "Tutorial Hints on: a pioneer is on a tile that is a good place for a road (resource terrain band).",
+  "inputs": "Active pioneer position, neighbour terrain band scan; shown-bit.",
+  "outputs": "Hint box explaining roads (press 'R'); roads boost fur/lumber/ore/silver here and speed unit movement.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL10": {
+  "trigger": "Tutorial Hints on: a pioneer is on a tile that is a good place to plow or clear (forest/terrain band, >=2 forest neighbours).",
+  "inputs": "Active pioneer position, 8-neighbour forest/terrain-band count; shown-bit.",
+  "outputs": "Hint box explaining plowing (press 'P'): plowing raises food/tobacco/cotton/sugar by one, and plowing a forest clears it for agriculture.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL11": {
+  "trigger": "Tutorial Hints on: early game (turn < 20), the player's ship is selected, explaining what ships are for; shown once.",
+  "inputs": "Active unit type/cargo, turn counter, the ship's type name and home port; shown-bit.",
+  "outputs": "Hint box describing the ship's uses (explore, carry cargo home, bring immigrants) and controls (arrow keys, 'G' to send to a port).",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL12": {
+  "trigger": "Tutorial Hints on: the player opens the colony screen of a port colony where a ship is waiting for cargo (first-visit block B with a ship-type unit present).",
+  "inputs": "Active colony, presence of a ship-type defender (unit type in the ship band) at the colony, the colony name; shown-bit.",
+  "outputs": "Hint box explaining how to drag warehouse cargo into the ship's holds, return to the map (ESC), then send the ship to Europe with 'G'.",
+  "func": "func_02C5D4 (interactive colony screen)",
+  "verified": true
+ },
+ "TUTORIAL13": {
+  "trigger": "Tutorial Hints on: early game (turn < 20), the player's pioneers (type 2) have just arrived in the New World and have no feature yet; shown once.",
+  "inputs": "Active unit type (pioneers), turn counter, whether the tile has a feature; shown-bit.",
+  "outputs": "Hint box advising to find a coastal site with food/resources for the first colony, noting pioneers carry 100 Tools for clearing/plowing/roads.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL14": {
+  "trigger": "Tutorial Hints on: early game (turn < 20), the player's soldiers (type 1) have arrived with no feature yet; shown once.",
+  "inputs": "Active unit type (soldiers), turn counter, tile feature flag; shown-bit.",
+  "outputs": "Hint box explaining soldiers attack and defend, carry 50 Muskets, and become stronger when equipped with Horses.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL15": {
+  "trigger": "Tutorial Hints on: new colonists have arrived in a colony (turn < 40), prompting the player to assign them.",
+  "inputs": "Active unit type (colonist, type 0), turn counter, the destination colony record/name; shown-bit.",
+  "outputs": "Hint box telling the player to click the colony and drag the new colonists from the fence into a field or building.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "TUTORIAL19": {
+  "trigger": "Tutorial Hints on: a colonist of type 0 is on/near specific terrain (converts context), explaining native Converts; shown once.",
+  "inputs": "Active unit type and the terrain under it; shown-bit.",
+  "outputs": "Hint box explaining Converts (natives who join your colonies): they cannot be educated but are better at farming, planting, fishing, and mining.",
+  "func": "func_020F50 (tutorial-hints dispatcher)",
+  "verified": true
+ },
+ "ARMOPTIONS": {
+  "trigger": "Player clicks a unit on the European dock/harbor to open its options menu.",
+  "inputs": "Selected unit's type, the costs to arm/equip with Muskets, Tools, or Horses (and the sale credits), and whether it can be blessed as a missionary.",
+  "outputs": "Shows the dock-options menu: board/skip next ship, move to front of dock, arm/sell Muskets, equip/sell Tools, equip/sell Horses, bless/cancel Missionary status, or no changes.",
+  "func": "func_033C96 (unit-selection panel + order classifier)",
+  "verified": true
+ },
+ "REALLYBUY": {
+  "trigger": "Player confirms a purchase action that costs gold (e.g. buying a recruit, specialist, or item) and the game asks for final confirmation.",
+  "inputs": "The item/thing being purchased and its gold cost.",
+  "outputs": "Yes/No confirmation prompt 'Purchase X for $N?'; on Yes the purchase proceeds and gold is deducted.",
+  "func": "func_033F6A (king/recruit/purchase dispatcher)",
+  "verified": false
+ },
+ "TRIBUTE": {
+  "trigger": "During a European-power diplomacy meeting, the other (e.g. Catholic) power offers to overlook your colonies in exchange for a gold 'donation'.",
+  "inputs": "The demanding power's sponsor name, the natives/region cited, your colony location, and the demanded donation amount in gold; your treasury.",
+  "outputs": "Presents the demand: refuse ('Not a penny for those heretic swine') or pay the donation; paying transfers the gold and avoids hostility.",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "MULTI": {
+  "trigger": "Multiplayer start is selected (via the COLONIZE_MULTI environment variable or a command-line/menu option), prompting selection of human-controlled powers.",
+  "inputs": "The COLONIZE_MULTI env var (compared against 'MULTI'), command-line argv option markers; the active-power roster.",
+  "outputs": "Shows the 'Multiplayer Start Selected' screen and lets the player pick which European powers are controlled by human players.",
+  "func": "func_070EBA (argv/env parser) / func_07431E (new-game roster init)",
+  "verified": true
+ },
+ "SAVEGAME": {
+  "trigger": "Player chooses Save Game from the menu, opening the save-slot picker.",
+  "inputs": "The current game state and the available save slots (filenames built as COLONY<slot>.SAV); the save command is gated by the SAVEGAME message key.",
+  "outputs": "Shows the 'Select Save Slot' dialog; on a chosen slot it invokes the save driver to write the COLONIZE-magic save file, then reports success (SAVEGOOD) or an error (SAVEERROR).",
+  "func": "func_072F7A (save orchestrator)",
+  "verified": true
+ },
+ "LOADGAME": {
+  "trigger": "Player chooses Load Game from the menu, opening the load-slot picker.",
+  "inputs": "Available save files in the slots; the load command is gated by the LOADGAME message key; each file's COLONIZE magic, version, and map size are validated.",
+  "outputs": "Shows the 'Select Game To Load' dialog; on a chosen slot it runs the load driver and maps the result to a message (LOADGOOD / LOADNOT / LOADOLD / LOADSIZE / LOADERROR).",
+  "func": "func_073158 (load orchestrator)",
+  "verified": true
+ },
+ "NATION0A": {
+  "trigger": "New-game initialization draws the leader/nation intro panel after the starting European power is chosen (randomly picked 0-3 unless multiplayer).",
+  "inputs": "The randomly chosen nation index (England/France/Spain/Netherlands), the leader-name string, and the chosen nation's history/description text section.",
+  "outputs": "Composes the intro panel (WOODPANL background + LEADERNAME prompt + the NATION0A-family nation description text) and zero-initializes the per-power PowerRecord and AIPersonality tables.",
+  "func": "func_07431E (new-game init / leader-and-nation setup)",
+  "verified": true
+ },
+ "MAPTOLOAD": {
+  "trigger": "Player starts a game in AMERICA and chooses 'Map Editor' (custom map), opening the .MP map-file picker.",
+  "inputs": "The list of available '*.MP' map files in the save/data directory; menu keys OPENMENU/BEGINMENU/AMERICA drive the surrounding screen.",
+  "outputs": "Shows the 'Select Map File to Load' header and file list; the chosen .MP map name is recorded (replacing the default AMER2.MP) and loaded.",
+  "func": "func_0759E8 (save/load/new-map game screen)",
+  "verified": true
+ },
+ "HAVETREATY": {
+  "trigger": "The active unit tries to build a colony or act on a tile adjacent to a native settlement of a tribe with whom you have a peace treaty.",
+  "inputs": "The active unit, an 8-neighbour scan for an adjacent native settlement owned by a matching tribe, the tribe identity.",
+  "outputs": "Warns 'We have signed a peace treaty with the {tribe}' and offers Cancel Action or Break Treaty; breaking the treaty flags the settlement and claims the tile.",
+  "func": "func_021FF2 (build-colony / treaty check)",
+  "verified": true
+ },
+ "TRADENONE": {
+  "trigger": "Player tries to assign a unit to a trade route but no trade routes have been defined yet.",
+  "inputs": "The trade-route count (zero).",
+  "outputs": "Shows 'You have not yet defined any trade routes.' and aborts the assignment.",
+  "func": "func_022D46 (assign-trade-route picker)",
+  "verified": true
+ },
+ "TRADESELECT": {
+  "trigger": "Player assigns a unit to a trade route and at least one route exists, opening the route picker.",
+  "inputs": "The active unit, its type (ship vs land determines route kind), and the list of defined trade routes.",
+  "outputs": "Shows 'Select a trade route:'; on a pick the unit is assigned to that route and put into trade-route order.",
+  "func": "func_022D46 (assign-trade-route picker)",
+  "verified": true
+ },
+ "BUYME0": {
+  "trigger": "Player asks to rush/complete a colony's current build project but cannot afford it (information-only variant, no choices).",
+  "inputs": "The current build item's name, the gold cost to complete it, and the treasury balance.",
+  "outputs": "Displays 'Cost to complete X: $N. Treasury: $M.' as an informational message (no buy option offered because funds are insufficient).",
+  "func": "func_02B744 (colony build/value helper)",
+  "verified": false
+ },
+ "BUYME1": {
+  "trigger": "Player asks to rush/complete a colony's current build project and can afford it (choice variant).",
+  "inputs": "The current build item's name, the gold cost to complete it, and the treasury balance.",
+  "outputs": "Shows 'Cost to complete X: $N. Treasury: $M.' with options Never mind / Complete it; choosing Complete spends the gold and finishes the build.",
+  "func": "func_02B744 (colony build/value helper)",
+  "verified": false
+ },
+ "DEPLETION": {
+  "trigger": "During colony turn processing, a worked resource tile in the colony's surrounding ring (a mine/ore site) becomes depleted.",
+  "inputs": "Sweep of the colony's 8 surrounding cells, each cell's terrain class (resource-bearing 6/7) and feature; the colony name.",
+  "outputs": "Changes the depleted map tile and shows 'Mine depleted near {colony}.'",
+  "func": "func_02D30A (colony resource-depletion scan)",
+  "verified": true
+ },
+ "CANESUGAR": {
+  "trigger": "During colony turn processing, a colony runs out of stored sugar so its distillers cannot work.",
+  "inputs": "The colony's sugar stock (zero) and the colony name.",
+  "outputs": "Shows '{colony} has run out of sugar... Our distillers cannot continue their work until a new supply is found.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "COTTON": {
+  "trigger": "During colony turn processing, a colony runs out of stored cotton so its weavers cannot work.",
+  "inputs": "The colony's cotton stock (zero) and the colony name.",
+  "outputs": "Shows '{colony} has run out of cotton... Our weavers cannot continue their work until a new supply is found.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "FURS": {
+  "trigger": "During colony turn processing, a colony runs out of stored furs so its fur traders cannot work.",
+  "inputs": "The colony's furs stock (zero) and the colony name.",
+  "outputs": "Shows '{colony} has run out of furs... Our fur traders cannot continue their work until a new supply is found.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "LUMBER": {
+  "trigger": "During colony turn processing, a colony runs out of stored lumber so its carpenters cannot work.",
+  "inputs": "The colony's lumber stock (zero) and the colony name.",
+  "outputs": "Shows '{colony} has run out of lumber... Our carpenters cannot continue their work until a new supply is found.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "NEEDTOOLS": {
+  "trigger": "During colony turn processing, a colony's build project needs more tools than are available to finish.",
+  "inputs": "The colony name, the building under construction, the tools required for completion, and the tools currently available.",
+  "outputs": "Shows '{building} under construction in {colony} requires {N} tools for completion. Only {M} tools are currently available.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "TOBACCO": {
+  "trigger": "During colony turn processing, a colony runs out of stored tobacco so its tobacconists cannot work.",
+  "inputs": "The colony's tobacco stock (zero) and the colony name.",
+  "outputs": "Shows '{colony} has run out of tobacco... Our tobacconists cannot continue their work until a new supply is found.'",
+  "func": "func_02D658 (colony-turn update)",
+  "verified": false
+ },
+ "REFIT": {
+  "trigger": "A damaged ship that had returned to a colony/Europe for repairs finishes repairing.",
+  "inputs": "The ship's name and the port/colony where it was repaired.",
+  "outputs": "Shows '{ship} has completed its repairs in {port}.'",
+  "func": "func_02F052 (king/ship events)",
+  "verified": false
+ },
+ "KISSSORRY": {
+  "trigger": "Player agrees to pay back-taxes to lift a Parliamentary boycott (after the KISSUP prompt) but does not have enough gold.",
+  "inputs": "The player's available gold (less than the back-tax amount demanded).",
+  "outputs": "Shows 'Unfortunately, we only have $N available.' and the boycott is not lifted.",
+  "func": "func_03334E (pay/settle unit cost vs treasury)",
+  "verified": true
+ },
+ "ORDINAL": {
+  "trigger": "Not a dialog: an ordinal-word lookup table (first, second, third, ... thirtieth) used to compose other messages.",
+  "inputs": "A 1-based index into the ordinal list.",
+  "outputs": "Returns the ordinal word for that index (e.g. for naming the Nth founding father, Nth wife, etc.) to be inserted into another message.",
+  "func": "func_033F6A (king/message formatting dispatcher)",
+  "verified": false
+ },
+ "CANCELPEACE": {
+  "trigger": "A peace treaty between two powers is cancelled (e.g. via the right-click give-command / declare-war handler, or when a power breaks a treaty).",
+  "inputs": "The two power/tribe names whose treaty is ending.",
+  "outputs": "Announces '{power} cancel peace treaty with {power}.' and sets the two parties' relations to no-treaty/war.",
+  "func": "func_03ECF0 (ai_eval_unit / declare-war handler, ported to ai/unit_orders.c + diplomacy/relations.c)",
+  "verified": true
+ },
+ "BADHAGGLE0": {
+  "trigger": "While trading goods with a native village, the player haggles too long and the natives lose patience with this offer.",
+  "inputs": "The cargo being offered to the natives.",
+  "outputs": "Shows 'Our patience with your haggling is exhausted. We no longer want your worthless {cargo}...' and ends this trade.",
+  "func": "func_049600 (native trade/haggle dispatcher)",
+  "verified": false
+ },
+ "BADHAGGLE1": {
+  "trigger": "Player returns to trade the same cargo the natives already refused after over-haggling.",
+  "inputs": "The previously refused cargo.",
+  "outputs": "Shows 'We have already told you that we no longer want your {cargo}. Come back when you have something else.'",
+  "func": "func_049600 (native trade/haggle dispatcher)",
+  "verified": false
+ },
+ "BRING": {
+  "trigger": "After a native trade interaction, the village hints at what goods it wants for next time.",
+  "inputs": "The two/three cargo types the village is in need of.",
+  "outputs": "Shows 'We are in need of {A} and {B}. Perhaps you will bring some next time... Even {C} would be of some value.'",
+  "func": "func_049600 (native trade dispatcher)",
+  "verified": false
+ },
+ "NOTENOUGH": {
+  "trigger": "During a native trade the player promises a buy/payment larger than their treasury can back.",
+  "inputs": "The player's treasury balance.",
+  "outputs": "Shows 'Sadly, your treasury ($N) is not large enough to back your promise.' and the deal falls through.",
+  "func": "func_049600 (native trade dispatcher)",
+  "verified": false
+ },
+ "LEARNSTAY": {
+  "trigger": "An unskilled colonist (Young One) visits a native village willing to teach him a master profession.",
+  "inputs": "The tribe and the master profession they can teach.",
+  "outputs": "Offers 'we {tribe} will show you how to become a master {profession}' with choices to become the master now or decline.",
+  "func": "func_04A426 (native village learn-skill handler)",
+  "verified": false
+ },
+ "EXTORTNO": {
+  "trigger": "A scout/unit demands tribute (extortion) from a native village but the village refuses outright.",
+  "inputs": "The player's leader title and the tribe identity.",
+  "outputs": "Shows the refusal 'You must think us very foolish indeed... The {tribe} will not be taken in by your tricks and treachery.'",
+  "func": "func_04AC00 (native extortion handler)",
+  "verified": false
+ },
+ "EXTORTPOOR": {
+  "trigger": "A unit extorts a native village that has no goods worth giving.",
+  "inputs": "The player's leader title and the tribe identity.",
+  "outputs": "Shows 'the humble and peaceloving {tribe} have no gifts worthy of your magnificence. We pray that you will be merciful and spare us.'",
+  "func": "func_04AC00 (native extortion handler)",
+  "verified": false
+ },
+ "EXTORTSTUFF": {
+  "trigger": "A unit successfully extorts goods from an intimidated native village.",
+  "inputs": "The player's leader title, the tribe, the goods amount/type extorted, and the destination colony.",
+  "outputs": "Shows the village conceding to deliver {N} {goods} to {colony} to be spared, and the goods are transferred.",
+  "func": "func_04AC00 (native extortion handler)",
+  "verified": false
+ },
+ "ALREADYSMITE": {
+  "trigger": "Player asks a European power (in diplomacy) to attack a native tribe they are already at war with.",
+  "inputs": "The named tribe and the other power's existing war state against it.",
+  "outputs": "Shows 'We are already at war with the worthless {tribe}.'",
+  "func": "func_04AF5E (native warfare/diplomacy dispatcher)",
+  "verified": false
+ },
+ "NOCONTACT": {
+  "trigger": "Player asks a power to act against a tribe with whom that power has had no contact.",
+  "inputs": "The named tribe and the asked power's contact state.",
+  "outputs": "Shows 'We have no contact with the {tribe}.'",
+  "func": "func_04AF5E (native warfare/diplomacy dispatcher)",
+  "verified": false
+ },
+ "UNFORTUNATE": {
+  "trigger": "Player agrees to pay a power (e.g. to smite a tribe or move forces) but lacks the gold to cover the promise.",
+  "inputs": "The player's treasury balance versus the promised amount.",
+  "outputs": "Shows 'Unfortunately, your treasury is insufficient to match your extravagant promises.' and the deal is void.",
+  "func": "func_04AF5E (native warfare/diplomacy dispatcher)",
+  "verified": false
+ },
+ "SIGNTREATY": {
+  "trigger": "Two powers/tribes conclude a peace treaty (announcement).",
+  "inputs": "The two party names.",
+  "outputs": "Announces 'The {A} and {B} have signed a peace treaty.'",
+  "func": "func_057DC0 (diplomacy treaty handler)",
+  "verified": false
+ },
+ "GIFTS": {
+  "trigger": "During a European-power diplomacy meeting the other power offers a gift of gold for continued forbearance.",
+  "inputs": "The gift amount in gold.",
+  "outputs": "Shows 'We present you with a gift of $N in exchange for your continued forbearance.' and credits the gold.",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "PEACEUSA": {
+  "trigger": "In diplomacy with an independent (post-revolution USA) nation, that nation responds to a peace proposal.",
+  "inputs": "The USA nation name and your nation name.",
+  "outputs": "Shows the USA peace response with reply options (Go in peace / withdraw forces first / threat / suggest an alliance).",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "PROVOKE": {
+  "trigger": "During a diplomacy meeting the other power declares war over your provocations.",
+  "inputs": "The meeting context (accumulated provocations/attitude).",
+  "outputs": "Shows 'We can no longer tolerate your foul provocations. Prepare for WAR!' and sets the two powers at war.",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "RID": {
+  "trigger": "During a diplomacy meeting the other power orders you to leave a region/the hemisphere or be driven out.",
+  "inputs": "The power's sponsor name and the region/colony in question.",
+  "outputs": "Shows the ultimatum 'we order you to leave {region} immediately. If you do not, we shall drive you into the sea.'",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "THREATS": {
+  "trigger": "During a diplomacy meeting the other power dismisses your threat.",
+  "inputs": "The meeting context.",
+  "outputs": "Shows 'We laugh at your feeble threats.'",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "WARMANLY": {
+  "trigger": "During a diplomacy meeting you reject a power's offer and it declares war (the assertive 'manly' variant).",
+  "inputs": "The power's sponsor name and the region in question.",
+  "outputs": "Shows 'You reject our generous offer? Then in the name of {sponsor} we shall wipe you from the face of the New World. Prepare for WAR!'",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "WITHDRAW": {
+  "trigger": "During a diplomacy meeting the other power agrees to withdraw its forces in the interest of peace.",
+  "inputs": "The withdraw-negotiation outcome.",
+  "outputs": "Shows 'In the interest of peace, we shall withdraw our forces.' and the forces pull back to Europe.",
+  "func": "func_057F4E (European diplomacy meeting/parley dispatcher)",
+  "verified": true
+ },
+ "TRADENOWANT": {
+  "trigger": "A wagon train / ship offers goods to a native village that is not interested in that cargo.",
+  "inputs": "The offered cargo amount and type.",
+  "outputs": "Shows 'We are not interested in your {N} {cargo}. Come back when you have something better to offer.'",
+  "func": "func_05A40E (native village trade handler)",
+  "verified": false
+ },
+ "EVASIVE": {
+  "trigger": "In combat, an attacking unit's strike misses and the defender evades it (combat-outcome verb emitted by the land-combat decider).",
+  "inputs": "Attacker and defender unit names/owners, the resolved combat roll.",
+  "outputs": "Shows '{attacker} evades {defender}.' (an inconsequential / dodged engagement).",
+  "func": "func_05CA7E (land-combat decider, ported to ai/unit_ai_leaf.c)",
+  "verified": true
+ },
+ "TRADEDELETE": {
+  "trigger": "Player chooses to delete a defined trade route.",
+  "inputs": "The list of existing trade routes (route count) and the chosen route to delete.",
+  "outputs": "Shows 'Which trade route should we delete:' then, on confirmation, detaches units assigned to it, compacts the route table, and decrements the route count.",
+  "func": "func_0612E6 (trade-route delete)",
+  "verified": true
+ },
+ "LOSENOCOLONIES": {
+  "trigger": "End-of-turn king check: from the year 1600 onward, the player has zero colonies and is not in the War of Independence.",
+  "inputs": "The active power's colony count (zero), the current year (>= 1600), the war flag (not at war), the player's leader title and name.",
+  "outputs": "The King removes the player as Viceroy ('Our efforts in the New World have proven fruitless...'); the score result is zeroed and the game ends in defeat.",
+  "func": "func_02F3A2 (king_war_turn, ported to king/war_turn.c)",
+  "verified": true
+ },
+ "SCORE": {
+  "trigger": "End of game: the score/Hall-of-Fame screen is shown and computes the player's rank, which selects a legacy-naming line.",
+  "inputs": "The raw per-power score (population, colonies, founding fathers, gold, bells, etc. - see note), the difficulty factor (Discoverer/Explorer/Conquistador/Governor/Viceroy map to 4/5/6/8/10), and the player/leader name. Rank 0-23 is found via pct = factor*raw_score/100 binned through a quadratic ladder ((k*k)/3 < pct), clamped to 23. The factor math and rank ladder are byte-verified; the raw-score component WEIGHTS live in an overlay routine and are NOT verified (do not trust the reconstructed SCORING.md formula).",
+  "outputs": "Picks one entry from the legacy list (a Fever / Fly / Ivy / Rattlesnake / ...Boulevard / ...Mountains / Republic of... / ...ica) keyed by the computed rank, naming something after the player, and draws the rank title (@SCORE1..@SCORE24) plus the medallion sprite.",
+  "func": "func_03A9C0 (end-of-game SCORE+RANK screen; rank math in scoring/compute.c score_endgame_rank)",
+  "verified": true
+ },
+ "VICEROY": {
+  "trigger": "Start of a new game: the opening 'Audience With The King' investiture screen where the monarch dubs the player Viceroy of the New World.",
+  "inputs": "The chosen nation/country name and the nation index (Netherlands shows the 'Stadtholder' variant @VICEROY2 instead of 'The King').",
+  "outputs": "Displays the dub-thee-Viceroy address ('For the greater glory of {country}, we dub thee Viceroy of the New World...') in a year-1492 audience panel; on Netherlands an alternate Stadtholder clause is appended.",
+  "func": "func_075594 (show simple message dialog)",
+  "verified": true
+ }
+}

@@ -1,0 +1,226 @@
+{
+ "NOPORT": {
+  "trigger": "Player issues the Build-Colony command ('B') on a tile that has no ocean square adjacent to it. The build-colony validity check reaches the port/access gate and finds the chosen tile is landlocked.",
+  "inputs": "The active land unit and its map tile; the 8 neighbouring tiles tested for adjacency to ocean water; current difficulty/tutorial setting (the port gate is one of the difficulty-gated build checks).",
+  "outputs": "Shows a confirm dialog warning that the colony would have no ocean access, so its produce must be hauled to a port by wagon trains. The player may confirm (build anyway) or cancel. No game state changes until confirmation.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "DISBANDSHIP": {
+  "trigger": "Player issues the Disband command ('D') on a ship that is currently at sea while it still has more than one unit/cargo aboard. The disband handler classifies the target as a ship (ship-class unit type) and counts what it is carrying.",
+  "inputs": "The targeted ship unit; the count of units/cargo loaded aboard it (must be greater than one to block).",
+  "outputs": "Shows a message refusing the disband ('We cannot disband a ship at sea while it is carrying units') and aborts. The ship is NOT destroyed; no further disband prompt is shown.",
+  "func": "func_02287E",
+  "verified": true
+ },
+ "NODOCKS": {
+  "trigger": "In the colony-services menu, the player selects an action that would operate fishing boats / load from the water at a colony that has not yet built Docks (menu dispatch item that maps to the no-docks branch).",
+  "inputs": "The selected colony and its building set (specifically whether Docks is present); the chosen menu item id.",
+  "outputs": "Shows an informational popup explaining that fishing boats cannot operate at this colony until Docks is built. No state change; the action is refused.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "UNIV3": {
+  "trigger": "In the colony-services menu, the player tries to add a fourth teacher to a University whose faculty is already at its cap of three teachers (training/schooling menu branch).",
+  "inputs": "The selected colony; its University building level; the current count of assigned teachers (cap is three).",
+  "outputs": "Shows an informational popup that a University supports only three teachers at a time. The assignment is refused; no colonist is added as a teacher.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "SHIPOPTIONS": {
+  "trigger": "Player opens the unit-orders popup for a ship (in a colony garrison or harbour). The order-menu builder presents the ship's available commands.",
+  "inputs": "The selected ship unit and its current activity/orders byte and type (used to enable/disable individual menu items).",
+  "outputs": "Presents a list of ship orders: Move to front, Clear orders, Sentry, Anchor in harbor ('Fortify'), Unload all cargo, No changes. The chosen item then sets the unit's activity (wake / sentry / fortify), unloads cargo, or commits a board/load move.",
+  "func": "func_02AAEC",
+  "verified": true
+ },
+ "CARGOREADY0": {
+  "trigger": "During the per-colony end-of-turn update, a colony has accumulated a fresh, exportable load of a commodity (the new-cargo report event, gated by the colony's production/build state and the 'report new cargos available' option).",
+  "inputs": "The colony (STRING0 = colony name) and the commodity that just became available (STRING1 = cargo name); the colony's per-turn production and warehouse state.",
+  "outputs": "Posts a turn-report notice: 'A new cargo of <commodity> is ready at <colony>, Your Excellency.' Informational only; no resource change beyond the production already booked.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "INEFFICIENT": {
+  "trigger": "During the per-colony end-of-turn update, the number of colonists who are NOT Sons of Liberty members (the tory count) reaches or exceeds the inefficiency band, where the band size is (10 minus difficulty level). Reported once when the colony crosses into the inefficient state (latched), if the 'report inefficient government' option is on.",
+  "inputs": "Colony population; rebel (Sons of Liberty) percentage; tory_count = population x (100 - rebel_pct) / 100; difficulty level (sets the threshold = 10 - difficulty); the colony's already-reported flag and the report-option bit.",
+  "outputs": "Posts a warning that the colony has an inefficient government: every group of NUMBER0 tories beyond the threshold imposes a -1 production penalty on its colonists. The penalty itself is applied in the production model; this is the notification. Sets the colony's 'inefficient already reported' flag.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "SPOIL1": {
+  "trigger": "During the per-colony end-of-turn update, a colony's stockpile of a single commodity exceeds its warehouse capacity and the exact overflow tonnage of that one commodity is known, so the precise spoilage is reported.",
+  "inputs": "The colony (STRING0 = name); the commodity that overflowed (STRING1 = cargo name); the warehouse capacity; the overflow amount (NUMBER0 = tons thrown away).",
+  "outputs": "Posts a notice that the colony exceeded warehouse capacity and NUMBER0 tons of <commodity> were thrown away, hinting that a larger warehouse holds another 100 tons. The overflow stock is discarded down to capacity.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "SPOIL2": {
+  "trigger": "During the per-colony end-of-turn update, a colony's stockpile exceeds warehouse capacity but multiple commodities overflowed (no single tonnage is named), so the generic spoilage message is shown instead of SPOIL1.",
+  "inputs": "The colony (STRING0 = name); the set of commodities over capacity; the warehouse capacity.",
+  "outputs": "Posts a notice that the colony exceeded warehouse capacity and some cargo was thrown away, hinting that a larger warehouse holds another 100 tons. The overflowing stock is discarded down to capacity.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "PRICEUP": {
+  "trigger": "During the market price-drift recompute, a commodity's accumulated demand crosses its rise threshold so its European price ticks up by one, and the affected market belongs to a human-controlled (non-AI) power so the change is announced.",
+  "inputs": "The commodity (STRING0 = cargo name); the European market/nation (STRING1 = nation name); the commodity's per-good attrition/rise parameters from the cargo data table; the per-good demand accumulator and current price level versus its ceiling; the active power and whether it is AI-controlled.",
+  "outputs": "Raises the commodity's European sell/buy price by one (clamped below its per-good ceiling), subtracts the rise threshold from the demand accumulator, and posts a notice: 'The price of <commodity> in <nation> has risen to <new price>.'",
+  "func": "func_0305A8",
+  "verified": true
+ },
+ "PRICEDOWN": {
+  "trigger": "During the market price-drift recompute, a commodity's accumulated supply crosses its fall threshold so its European price ticks down by one, and the affected market belongs to a human-controlled (non-AI) power so the change is announced.",
+  "inputs": "The commodity (STRING0 = cargo name); the European market/nation (STRING1 = nation name); the commodity's per-good fall parameters from the cargo data table; the per-good demand accumulator and current price level versus its floor; the active power and whether it is AI-controlled.",
+  "outputs": "Lowers the commodity's European price by one (clamped above its per-good floor), subtracts the fall threshold from the accumulator, and posts a notice: 'The price of <commodity> in <nation> has fallen to <new price>.'",
+  "func": "func_0305A8",
+  "verified": true
+ },
+ "EUROPESHIPOPTIONS": {
+  "trigger": "Player clicks a ship docked in the Europe port screen; the Europe ship-interaction handler builds and presents that ship's command menu.",
+  "inputs": "The clicked ship's UnitRecord index and type; the ship's cargo-slot state; the per-type stat row used to format the ship label.",
+  "outputs": "Presents the Europe-port ship menu: Move to front, Set sail for the New World, Unload all cargo, No changes. Selecting 'Set sail' dispatches the ship out of Europe toward the New World; 'Unload' empties its hold in port.",
+  "func": "func_03314E",
+  "verified": true
+ },
+ "SAILHOME": {
+  "trigger": "A player ship reaches the high-seas edge of the map (the destination-classifier returns the sail-home status for the move). Only asked when the ship is NOT already locked in Europe; if it is, the EUROPENOTLEAVE refusal is shown instead.",
+  "inputs": "The active ship and its computed destination tile; the destination status code from the ship-destination classifier; the in-Europe lock flag.",
+  "outputs": "Asks 'We have reached the high seas... Shall we sail for Europe?' with Yes/No. On Yes the ship departs the map for Europe (enters the trans-Atlantic crossing); on No it stays in coastal waters and the move is abandoned.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "SHIPLAKE": {
+  "trigger": "A player ship attempts to move into an inland lake square; the ship-destination classifier returns the lake status for the destination tile.",
+  "inputs": "The active ship and its destination tile; the destination status code identifying the tile as an inland lake.",
+  "outputs": "Shows 'Ship units cannot enter inland lake squares.' and refuses the move; the ship stays put.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "ROUTELOOP": {
+  "trigger": "A unit assigned to a named trade route arrives and the route-arrival check finds the route effectively has only one port on its itinerary (all candidate stops resolve to the same destination), so the unit cannot continue.",
+  "inputs": "The trade-route name (STRING0); the unit's home colony / route stop list; the per-slot production snapshot the arrival check compares (all-equal means a single effective port).",
+  "outputs": "Opens a panel and shows 'Your Excellency, our \"<route>\" trade route has only one port on its itinerary!' then ends the unit's activity. The unit halts rather than looping.",
+  "func": "func_041080",
+  "verified": true
+ },
+ "BADCARGO": {
+  "trigger": "While trading at a native settlement, the player offers (to sell) a commodity the village already has plenty of, so the natives decline that good and counter with what they actually want.",
+  "inputs": "The offered commodity (STRING0); the tribe's current stocks of that good; up to three goods the village does want (STRING1, STRING2, STRING3) drawn from its demand list.",
+  "outputs": "Shows the natives' refusal: they have enough of STRING0 and ask the player to come back with STRING1/STRING2 (even STRING3 would help). No trade occurs; the player may pick a different good.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "BUY0": {
+  "trigger": "While trading at a native settlement on the BUY path, the player chooses to buy a good the village has, and the natives quote an asking price to fill the unit's hold.",
+  "inputs": "The good being bought (STRING0); the carrying unit and its empty hold (STRING1); quantity offered (NUMBER2); the native ask price (NUMBER0) and the player's available gold (NUMBER3); a fairer counter price (NUMBER1); the buyer power's PowerRecord gold.",
+  "outputs": "Shows the offer to fill the hold with NUMBER2 of STRING0 for NUMBER0 gold, with choices to pay, counter-offer (NUMBER1), or decline. On accept (and if affordable) the buyer's PowerRecord gold is debited by the ask and the goods load into the unit; if unaffordable a NOTENOUGH refusal is raised.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "DEFICIT": {
+  "trigger": "The player initiates trade at a native settlement with a unit that is carrying no trade goods at all, so there is nothing to sell.",
+  "inputs": "The trading unit and its (empty) cargo hold; the native settlement.",
+  "outputs": "Shows the natives' refusal: 'Since you have brought no trade goods, we will not trade with you.' The trade session ends with no exchange.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "TRADE0": {
+  "trigger": "While trading at a native settlement on the SELL path, the unit carries a commodity the village wants, and the natives quote a gold offer to buy it.",
+  "inputs": "The commodity carried (STRING1) and its descriptor (STRING0); the native buy offer (NUMBER0); a fairer counter price (NUMBER1); the selling power's PowerRecord gold.",
+  "outputs": "Shows the natives' purchase offer for the goods with choices: accept NUMBER0, counter-offer NUMBER1, gift the goods (no payment), or decline. On accept the seller's PowerRecord gold is credited by the agreed total and the cargo is removed from the unit.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "MADATSHIPS": {
+  "trigger": "A ship-class unit (ship/galleon/man-of-war range) approaches a settlement of a power whose relation flag indicates distrust of the player's fleet, and the anger/relation thresholds are crossed, so that power refuses sea contact. (Message text is verified; the handler's exact King-versus-fleet vs native-distrust framing is not fully pinned down.)",
+  "inputs": "The arriving ship unit and its owner nibble; the other power and its relation flags toward the player; the per-power distrust/anger state word and threshold; the relevant PowerRecord gold for the intervention branch.",
+  "outputs": "Shows the refusal: 'The <power> people do not trust the men in your ships... If you approach our shoreline we shall punish you.' The trade/contact is refused, with a possible hostile reprisal if the ship continues toward shore.",
+  "func": "func_04B308",
+  "verified": false
+ },
+ "SMITEEUROPE": {
+  "trigger": "At a native settlement, the player asks the tribe to attack a rival EUROPEAN power (the smite branch targeting another colonial nation rather than a native tribe). The tribe quotes a gold fee to do it.",
+  "inputs": "The target rival European power (STRING0 = its name); the tribe being asked; a computed gold fee (NUMBER0) derived from the tribe's treasury and a player factor, optionally halved by a PowerRecord bit; the player power's PowerRecord gold.",
+  "outputs": "Shows 'We shall ruthlessly drive the heretic <power> from the New World in exchange for <fee> to cover our expenses.' with Pay / Never mind. On Pay (if affordable) the tribe's gold is debited and the player's PowerRecord gold receives the transfer, and the tribe is set to war against the named European power; if the tribe is too poor an UNFORTUNATE refusal is shown instead.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "SHIPRUN": {
+  "trigger": "A ship moving through waters watched by an enemy ship successfully evades the blockading/intercepting vessel (the 'slips past' naval-interception outcome). Derived from the message text; the emitting code path is not reconstructed in the ported source.",
+  "inputs": "The moving ship (STRING0) and its nationality (STRING2); the enemy interceptor ship (STRING3) and its nationality (STRING1).",
+  "outputs": "Posts a notice: '<nation> <ship> slips past <enemy nation> <enemy ship>!' The moving ship continues its voyage unhindered.",
+  "func": "func_059B90",
+  "verified": false
+ },
+ "SHIPSLOW": {
+  "trigger": "A ship's sea movement is reduced because an enemy ship is present in/near its path (the interception that slows rather than stops the voyage). Derived from the message text; the emitting code path is not reconstructed in the ported source.",
+  "inputs": "The moving ship (STRING0); the enemy ship slowing it (STRING2) and its nationality (STRING1).",
+  "outputs": "Posts a notice: '<ship>'s progress slowed by presence of <enemy nation> <enemy ship>.' The ship's remaining movement for the turn is curtailed.",
+  "func": "func_059B90",
+  "verified": false
+ },
+ "TRADEMERCANTILISM": {
+  "trigger": "The player tries to trade goods with another European power's settlement, but that power's monarch has imposed Mercantilism (the mercantilism check for the foreign power returns set), forbidding trade with foreign merchants.",
+  "inputs": "The trading unit and the foreign power's owner nibble; that power's leader (STRING0 = monarch/leader name); the mercantilism flag for that power; the at-peace/treaty relation bit (a separate TRADEATWAR refusal applies if not at peace).",
+  "outputs": "Shows '<leader> has ordered us not to trade with foreign merchants... we must ask you to go away.' and aborts the trade dialog with no exchange.",
+  "func": "func_05A40E",
+  "verified": true
+ },
+ "TRADENOCARGO": {
+  "trigger": "The player opens the trade-with-foreign-power dialog with a unit that is carrying no cargo, so there is nothing to offer (the unit's cargo-slot count is zero).",
+  "inputs": "The trading unit and its (empty) cargo-slot count; the foreign power (already passed the at-peace and mercantilism gates).",
+  "outputs": "Shows 'You have brought nothing with you to trade with us. Please come back when you have something useful to offer.' and aborts the trade dialog.",
+  "func": "func_05A40E",
+  "verified": true
+ },
+ "SHIPDAMAGE": {
+  "trigger": "A ship loses a naval combat but is damaged rather than sunk (the ship-path LOSE branch of the combat consequence applier, when the elimination flag selects damage).",
+  "inputs": "The losing ship (STRING0 = nationality, STRING1 = ship type); the friendly port it retreats to (STRING2); the combat outcome flags selecting damage versus sinking.",
+  "outputs": "Shows '<nation> <ship> damaged! Ship returns to <port> for repairs.' The ship survives but is sent back to a friendly port and is out of action while repairing (its cargo/load handling follows the damage path; SHIPSUNK is the alternative when destroyed).",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "BURNED3": {
+  "trigger": "During the combat decider, when the resolved target was an enemy colony that gets burned, the spies-report variant fires to notify the player that one rival European power has burned another rival's colony (third-party report).",
+  "inputs": "The attacking power that burned the colony (STRING0); the victim power (STRING1) and the colony location (STRING3); the combat win flag and the 'target is a colony' flag.",
+  "outputs": "Posts a spies-report notice: '<attacker> burn <victim> colony at <place>. <victim> governor vows reprisals.' Informational; the colony-loss/loot is applied in the combat tail.",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "EUROPELOSE": {
+  "trigger": "A combat between the active power and a rival EUROPEAN power's unit/colony resolves as a loss for the active power (the combat decider's win flag is zero).",
+  "inputs": "The attacker unit and defender; the resolved win flag (zero = loss); the units' nationalities, types, and the engagement location (STRING0..STRING4 fill the result line).",
+  "outputs": "Shows the loss line (e.g. '<enemy nation> <enemy unit> <verb> <our unit> near <place>!') and the consequence applier removes/demotes the active power's attacking unit.",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "EUROPEWIN": {
+  "trigger": "A combat between the active power and a rival EUROPEAN power's unit/colony resolves as a win for the active power (the combat decider's win flag is nonzero).",
+  "inputs": "The attacker unit and defender; the resolved win flag (nonzero = win); the units' nationalities, types, and the engagement location (STRING0..STRING4 fill the result line).",
+  "outputs": "Shows the win line (e.g. '<our nation> <verb> <enemy nation> <enemy unit> near <place>!') and the consequence applier removes/demotes the defender (or, for a colony target, proceeds to the burn/loot path).",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "CARGOLOAD": {
+  "trigger": "The cargo/stack-row UI is drawn in LOAD mode at a colony (the stack-row layout handler picks the load title), prompting the player to choose which cargo to load onto a transport.",
+  "inputs": "The colony (STRING0 = name); the layout mode flag that selects the load title; the unit stack/cargo rows at the cursor.",
+  "outputs": "Presents the prompt 'Select a cargo to load at <colony>.' and lets the player pick a commodity row to load into the ship/wagon hold.",
+  "func": "func_060D8C",
+  "verified": true
+ },
+ "CARGOUNLOAD": {
+  "trigger": "The cargo/stack-row UI is drawn in UNLOAD mode at a colony (the stack-row layout handler picks the unload title), prompting the player to choose which cargo to unload from a transport.",
+  "inputs": "The colony (STRING0 = name); the layout mode flag that selects the unload title; the unit stack/cargo rows at the cursor.",
+  "outputs": "Presents the prompt 'Select a cargo to unload at <colony>.' and lets the player pick a commodity row to discharge from the ship/wagon hold into the colony.",
+  "func": "func_060D8C",
+  "verified": true
+ },
+ "TRADENAMES": {
+  "trigger": "Not a triggered popup but a data name-list the game reads when displaying or labelling trade-route types. Referenced wherever a trade-route's behaviour type is named. (Body emitting it is not reconstructed in the ported source; meaning derived from the list text.)",
+  "inputs": "A trade-route type index (0..4) used to select one of the five names.",
+  "outputs": "Supplies the five trade-route type labels: Run, Ferry, Cargo, Transport, Triangle. Used as display strings for route configuration; no game-state change of its own.",
+  "func": "func_0610B0",
+  "verified": false
+ }
+}

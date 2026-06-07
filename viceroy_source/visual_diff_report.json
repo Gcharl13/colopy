@@ -1,0 +1,138 @@
+[
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 661472,
+    "mismatch_percent": 64.6,
+    "avg_delta_on_mismatches": 238.4,
+    "rendered": "verification/screens/colony_baltimore.png",
+    "reference": "verification/dosbox_screenshots/colon3.jpg",
+    "label": "Colony screen"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 565294,
+    "mismatch_percent": 55.2,
+    "avg_delta_on_mismatches": 229.8,
+    "rendered": "verification/gameplay/gameplay.png",
+    "reference": "verification/dosbox_screenshots/screenshot_03.jpg",
+    "label": "Gameplay screen"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 206496,
+    "mismatch_percent": 20.17,
+    "avg_delta_on_mismatches": 286.2,
+    "rendered": "verification/screens/europe.png",
+    "reference": "verification/dosbox_screenshots/0d9a26d4c422d6188237dff0521e62027795dcefaab8278ffc8373e500dbcbcd.jpg",
+    "label": "Europe screen"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 43283,
+    "mismatch_percent": 4.23,
+    "avg_delta_on_mismatches": 159.4,
+    "rendered": "verification/screens/nations.png",
+    "reference": "verification/dosbox_screenshots/719e5080b9f342c2c8785061fba86c13a5702b01cf9e515ea82e47b306fa2bb8.jpg",
+    "label": "Nations screen"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 238824,
+    "mismatch_percent": 23.32,
+    "avg_delta_on_mismatches": 185.7,
+    "rendered": "verification/screens/score.png",
+    "reference": "verification/dosbox_screenshots/f8997b67c07e4ba2f0416e5fb6a6ba3a39f9da1140bc8674edbddbb999adf7c9.jpg",
+    "label": "Score screen"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 606219,
+    "mismatch_percent": 59.2,
+    "avg_delta_on_mismatches": 205.9,
+    "rendered": "verification/popups/popup_lostcity2_cibola.png",
+    "reference": "verification/dosbox_screenshots/b6235e52e93e0546fab74bc6669aa8e9f9cda0680b8439c3e3eb67fc9f970bfa.jpg",
+    "label": "Cibola popup"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 461223,
+    "mismatch_percent": 45.04,
+    "avg_delta_on_mismatches": 167.9,
+    "rendered": "verification/screens/declaration_signed.png",
+    "reference": "verification/dosbox_screenshots/cf61be10bc6d787cfc8c8383790326df2f98af1268ff100375fdf8d7fa7b3f28.jpg",
+    "label": "Declaration signed"
+  },
+  {
+    "rendered_size": [
+      1280,
+      800
+    ],
+    "reference_size_resized_to": [
+      1280,
+      800
+    ],
+    "total_pixels": 1024000,
+    "mismatching_pixels": 631249,
+    "mismatch_percent": 61.65,
+    "avg_delta_on_mismatches": 172.5,
+    "rendered": "verification/dialogs/example_diplomatic.png",
+    "reference": "verification/dosbox_screenshots/acaab05505b30bd023db8e99d950ec831ed3c0aee0fc2d4441c5927bf8dfc1ab.jpg",
+    "label": "Diplomatic dialog"
+  }
+]

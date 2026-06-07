@@ -1,0 +1,13 @@
+{
+  "exe": "VICEROY",
+  "method": "gap-scan after RET for prologue-like entries",
+  "candidates": [
+    "0x0067D4",
+    "0x0101F8",
+    "0x012E0E",
+    "0x019E5F",
+    "0x063E68",
+    "0x063ED2",
+    "0x06FA3E"
+  ]
+}

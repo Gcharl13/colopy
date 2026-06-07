@@ -1,0 +1,331 @@
+{
+ "ARTILLERY": {
+  "trigger": "An Artillery unit (or Damaged Artillery) loses a land fight and the demotion ladder routes it to the destroy/damage block; specifically intact Artillery taking its first loss.",
+  "inputs": "Loser UnitRecord is type Artillery; combat already decided (attacker won) by the land decider func_05CA7E; consequence applier func_05B2C2 reaches its destroy/damage block.",
+  "outputs": "Intact Artillery is downgraded to Damaged Artillery (not destroyed). Shows 'X Artillery damaged. Further damage will destroy it.'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "ARTILLERY2": {
+  "trigger": "A Damaged Artillery unit loses a land fight (its second loss).",
+  "inputs": "Loser UnitRecord is type Damaged Artillery; combat decided against it.",
+  "outputs": "The damaged artillery is destroyed and removed from the board. Shows 'Damaged X Artillery destroyed.'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "DEMOTE": {
+  "trigger": "A combatant land unit loses a fight on open ground (no colony/fort present) and has a defined demotion target on the fixed ladder.",
+  "inputs": "Loser UnitRecord type; fixed remap ladder (byte-verified in func_05B2C2): Dragoon->Soldier, Soldier->Free Colonist, Continental Cavalry->Continental Army, Continental Army->Free Colonist, Cavalry->Regular; a veteran-status override (vet_type==24) remaps a 0-outcome to Expert-class 3 instead. Types with no ladder entry are destroyed outright (no DEMOTE message).",
+  "outputs": "Loser's unit type is changed to the next-lower rung; the unit survives. Shows 'X Y routed! Unit demoted to Z status.'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "LOOTCAPTURE": {
+  "trigger": "A Treasure unit is captured when an enemy combat unit defeats/overruns its stack (the non-combatant capture path).",
+  "inputs": "Loser is a Treasure-carrying unit (non-combatant type); capturing power; treasure value carried by the unit.",
+  "outputs": "The treasure (worth N gold) is seized by the capturing power. Shows 'X treasure worth {N} CAPTURED by the Y!'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "WAGONCAPTURE": {
+  "trigger": "A Wagon Train unit is captured when an enemy combat unit defeats it (non-combatant capture path).",
+  "inputs": "Loser is a Wagon Train (non-combatant type); capturing power.",
+  "outputs": "The wagon train (and any cargo) is captured by the enemy power. Shows 'X wagon train CAPTURED by the Y!'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "COLONISTCAPTURE": {
+  "trigger": "A defenseless colonist-type unit (Free Colonist / specialist) is captured by an enemy combat unit (non-combatant capture path).",
+  "inputs": "Loser is a colonist/non-combatant unit; capturing power.",
+  "outputs": "The colonist(s) are captured by the enemy power. Shows 'X colonists CAPTURED by the Y!'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "COLONISTCAPTURE2": {
+  "trigger": "A Veteran Soldier loses and is captured/reduced, also stripping veteran status (the capture branch that emits the 'lose Veteran status' variant).",
+  "inputs": "Loser is a (veteran) soldier whose capture reduces it to colonist; capturing power.",
+  "outputs": "The colonist(s) captured AND the soldier loses Veteran status. Shows 'X colonists CAPTURED by the Y! Soldiers lose Veteran status.'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "CARGOCAPTURE": {
+  "trigger": "A ship attacker wins a ship-vs-ship fight and seizes a portion of the loser's cargo (ship-path spoils).",
+  "inputs": "Winning ship; losing ship's cargo (commodity type + tonnage); ship-path roll already resolved in func_05B2C2.",
+  "outputs": "A cargo of N units of a commodity is transferred to the victorious ship. Shows 'X cargo of {N commodity} captured by {Y ship}!'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "SHIPSUNK": {
+  "trigger": "A ship loses a ship-vs-ship fight badly enough to be sunk (ship-path destroy branch). Per the ship roll, the attacking ship wins iff roll<=hull, and a losing defender with no repair option sinks.",
+  "inputs": "Loser ship type + name; victor ship type + name; ship roll on guns(DEF)/hull(ATK).",
+  "outputs": "The ship is destroyed (sunk) with all cargo lost. Shows 'X Y sunk by Z W!'.",
+  "func": "func_05B2C2",
+  "verified": true
+ },
+ "VALOR": {
+  "trigger": "A soldier-class unit wins a land fight and is promoted up the combat ladder (the generic promotion case in the post-combat FX routine, reached on a combat WIN).",
+  "inputs": "Winning UnitRecord; its current class and next class; called from the land decider's win branch (func_05CA7E -> func_05C69C post-combat FX). Reaches the generic 'promoted from X to Y' branch (the non-Veteran, non-Continental case).",
+  "outputs": "The unit's type advances one promotion rung. Shows 'Because of their valor in battle, our X soldiers have been promoted from Y to Z status.'.",
+  "func": "func_05C69C",
+  "verified": true
+ },
+ "CAPTURED": {
+  "trigger": "An enemy (or, during the revolution, the King's) force successfully captures one of your colonies, plundering its treasury.",
+  "inputs": "Attacking power; defending colony; gold in the colony treasury plundered. Resolved in the colony attack/capture path of the land decider func_05CA7E.",
+  "outputs": "The colony changes hands and N gold is plundered. Shows 'X march into Z! {N} plundered!'.",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "CAPTURED2": {
+  "trigger": "Another power's colony is captured by a third party and you learn of it via spies (the spy-report variant of a colony capture, no plunder shown to you).",
+  "inputs": "Attacking power; the foreign colony captured.",
+  "outputs": "Spy report informs you the colony was taken. Shows 'Spies report: X march into Z.'.",
+  "func": "func_05CA7E",
+  "verified": false
+ },
+ "CAPTURED3": {
+  "trigger": "A colony you can directly observe is captured, but with no treasury to plunder (the no-plunder variant of a colony capture).",
+  "inputs": "Attacking power; the captured colony (empty/no gold).",
+  "outputs": "The colony changes hands; no gold message. Shows 'X march into Z!'.",
+  "func": "func_05CA7E",
+  "verified": false
+ },
+ "HALF": {
+  "trigger": "A unit with too few movement/action points left is ordered to attack this turn anyway; the game warns it will fight at reduced strength and asks for confirmation.",
+  "inputs": "Acting unit's remaining action capacity (soft_score < 3 in the leaf); the fraction-of-strength figure (N/3) it would fight at. Evaluated in the func_05CA7E head.",
+  "outputs": "Y/N prompt 'these men are tired... they will fight at {N/3 strength}.' Choosing Charge commits the weakened attack (attacker strength is scaled by soft_score/3 in the combat math); choosing rest aborts the attack.",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "SIEGE": {
+  "trigger": "Player tries to create/train a non-military unit in a colony that is under siege (enemy combat units in the surrounding area outnumber friendly combat units).",
+  "inputs": "Colony's surrounding-area combat-unit balance (enemy vs friendly). Gated in the colony-management overlay func_02883E.",
+  "outputs": "Refusal message: while besieged, only Soldier and Dragoon units may be created in this colony. Shows the SIEGE notice; no unit is created.",
+  "func": "func_02883E",
+  "verified": false
+ },
+ "COUNTRIES": {
+  "trigger": "Filler/lookup table of non-playable nation names used when a message needs to name a foreign (king's-enemy) country, e.g. for KINGNEWWAR / war-declaration text.",
+  "inputs": "An index selecting one of the listed countries; pulled by the king/war message builders (func_033F6A area).",
+  "outputs": "Supplies one country name from the fixed list: the Holy Roman Empire, the Portuguese, the Ottoman Turks, the Barbary Pirates, Russia, Prussia, Sweden, Denmark. Not an event in itself; substituted into combat/war narration.",
+  "func": "func_033F6A",
+  "verified": true
+ },
+ "AMBUSHHINT": {
+  "trigger": "Per-power liberty-bell tick (func_03C322 = ff_bells_tick): during the revolution phase, the first time a power's accumulated bells cross the Continental-Congress threshold (game-phase bit0 set, bits1-2 clear, bells_toward_next > bells produced this turn), the 'Congress newly available' notification fires, printing the AMBUSHHINT combat-tip dialog (immediately followed by CONSIDER).",
+  "inputs": "PowerRecord bells-toward-next-Father pool vs bells produced this turn; the game-phase flags (revolution-active bit, Congress-unlocked latch bits); bell threshold from ff_bells_required.",
+  "outputs": "Hint dialog: when your troops attack the King's troops while NEITHER unit is in a colony square, you gain an ambush bonus equal to the terrain's normal defensive value. Sets game-phase bit2 (notified latch). Note: this is a tutorial/strategy tip, not a combat resolution.",
+  "func": "func_03C322",
+  "verified": true
+ },
+ "SHIPCOMBAT": {
+  "trigger": "Player orders a non-warship (or any ship that is not a Privateer/Frigate) to attack an enemy ship, or a ship move resolves to the 'cannot attack ships' status. Dispatched in the ship move/arrival handler func_03FDDE (destination status case 7).",
+  "inputs": "Active ship's type; destination classified by func_03FA9C which writes the ship-dest status code.",
+  "outputs": "Refusal message: 'Only Privateers and Frigates can attack enemy ships.'. The attack is not performed.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "GIVECASH": {
+  "trigger": "A weak/helpless settlement (native village or other) offers a cash bribe to a stronger attacker to be spared, just before an attack would resolve. Surfaced in the European/native diplomacy meeting dispatcher func_057F4E (paid-peace MEEK/GIVECASH branch).",
+  "inputs": "Defender's available gold (the offered amount, computed from the other power's gold scaled by a difficulty/strength factor x100); whether the parties are not already at war.",
+  "outputs": "Y/N dialog offering N gold for peace/sparing. Accepting transfers N gold from the defender to the player and sets a peace/treaty bit; declining proceeds with the attack.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "PIRACY": {
+  "trigger": "Another European power (or the King) demands you withdraw your Privateers that are lurking off their coast, during a diplomacy parley. War-grievance exchange in func_057F4E (gated on a contact bit and the offended power having a colony/strength).",
+  "inputs": "Presence of your Privateers near the complaining power's coast; the request/demand verb (MEEKNESS) chosen by their attitude.",
+  "outputs": "Dialog demanding withdrawal of all Privateers. Choosing to comply withdraws them to Europe and clears the war high-bit; denying piracy keeps them and risks war.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "SIEGES": {
+  "trigger": "Another power demands you withdraw the large military force you have stationed adjacent to their colonies, during a diplomacy parley (SIEGES exchange in func_057F4E).",
+  "inputs": "Count of your military units adjacent to the complaining power's colonies vs their tolerance threshold; the request/demand verb.",
+  "outputs": "Dialog demanding withdrawal of all units adjacent to their colonies. Complying withdraws your forces to Europe; refusing keeps them (and lowers their attitude / risks war).",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "NOPLOW": {
+  "trigger": "Player orders a Pioneer to plow a tile that has already been plowed.",
+  "inputs": "Target tile's plowed flag. Checked in the pioneer-order overlay func_02211E.",
+  "outputs": "Refusal: 'That land has already been plowed.'. No action, no tools consumed.",
+  "func": "func_02211E",
+  "verified": false
+ },
+ "NOROAD": {
+  "trigger": "Player orders a Pioneer to build a road on a tile that already has a road.",
+  "inputs": "Target tile's road flag. Checked in the pioneer-order overlay func_022334.",
+  "outputs": "Refusal: 'There is already a road here, Your Excellency.'. No action, no tools consumed.",
+  "func": "func_022334",
+  "verified": false
+ },
+ "LOBOTOMIZE": {
+  "trigger": "Player chooses to clear a colonist's specialty (the 'Clear Specialty' job), turning a specialist back into an ordinary Free Colonist.",
+  "inputs": "Selected colonist's current specialty profession. Handled in func_028D8C.",
+  "outputs": "Y/N confirmation: clear this colonist's specialty ({profession}) and make him an ordinary free colonist? On Yes, the unit's profession is reset to Free Colonist.",
+  "func": "func_028D8C",
+  "verified": false
+ },
+ "UNITOPTIONS": {
+  "trigger": "Player clicks a land unit in a colony to open its per-unit action menu.",
+  "inputs": "Selected unit. Menu built in the unit-options overlay func_02B046.",
+  "outputs": "Action menu listing: Move to front / Clear orders / Sentry-or-Board ship / Fortify / No changes (string handle for UNITOPTIONS). Choosing an item sets the unit's orders accordingly.",
+  "func": "func_02B046",
+  "verified": false
+ },
+ "NOMOREWAGONS": {
+  "trigger": "Player sets a colony to build a Wagon Train when the player already has as many wagon trains as colonies (the wagon-train cap = colony count).",
+  "inputs": "Current wagon-train count vs colony count. Checked in the build-selection overlay func_02D0E4.",
+  "outputs": "Refusal: 'X is set to produce a Wagon Train, but we are not allowed to have more wagon trains than we have colonies ({N}).'. Build order rejected.",
+  "func": "func_02D0E4",
+  "verified": false
+ },
+ "NEWCOLONIST": {
+  "trigger": "A colony's accumulated food crosses the population-growth threshold during the colony turn update, producing a new colonist.",
+  "inputs": "Colony food stockpile / growth counter. Emitted by the colony turn-update path func_02D658.",
+  "outputs": "A new Free Colonist becomes available in the colony (placed on the 'fence'). Shows 'Population increase in X. New colonist now available.'.",
+  "func": "func_02D658",
+  "verified": false
+ },
+ "USEDUPTOOLS": {
+  "trigger": "A Pioneer (or Hardy Pioneer) consumes the last of its tools while terraforming and reverts to a plain colonist.",
+  "inputs": "Pioneer's remaining tool count reaching zero. Handled in the unit/terraform overlay func_040608.",
+  "outputs": "The pioneer is converted back to Free Colonist (Hardy Pioneer keeps its expert class). Shows 'Our pioneer has reverted to colonist status after using all its tools.'.",
+  "func": "func_040608",
+  "verified": true
+ },
+ "CLEARCUT": {
+  "trigger": "A Pioneer finishes clearing a forest tile that is adjacent to one of your colonies; the felled timber is added to that colony's lumber stockpile.",
+  "inputs": "The cleared forest tile; nearest owning colony; lumber yield N from the clear. Handled in the clear-forest overlay func_040656.",
+  "outputs": "Forest is removed and {N lumber} is added to the colony stockpile. Shows 'Pioneers clear forest near X. {N lumber} added to stockpile.'.",
+  "func": "func_040656",
+  "verified": true
+ },
+ "GRUDGEWAGONS": {
+  "trigger": "Your wagon train arrives to trade at a native settlement of a tribe that is angry at you (you have committed atrocities), but the tribe grudgingly trades anyway.",
+  "inputs": "Tribe's attitude toward you / atrocity record; arriving wagon train. Handled in func_04A37C (wagon-train-at-settlement outcome, sibling of the haggle resolver).",
+  "outputs": "Trade proceeds: 'We grudgingly receive your wagons in spite of the atrocities you have committed against the X people.'.",
+  "func": "func_04A37C",
+  "verified": true
+ },
+ "KILLWAGONS": {
+  "trigger": "Your wagon train enters the territory of a tribe hostile enough that it is destroyed/disappears (the worst wagon-at-settlement outcome).",
+  "inputs": "Tribe attitude/hostility; arriving wagon train. Handled in func_04A37C.",
+  "outputs": "The wagon train is lost. Shows 'Our wagon train has disappeared without a trace in X country.'.",
+  "func": "func_04A37C",
+  "verified": true
+ },
+ "MADATWAGONS": {
+  "trigger": "Your wagon train tries to trade at a native settlement of a tribe that, due to your atrocities, refuses to trade with you.",
+  "inputs": "Tribe attitude/atrocity record; arriving wagon train. Handled in func_04A37C.",
+  "outputs": "Trade refused: 'Because of the atrocities you have committed against the X people, we do not wish to trade with you.'.",
+  "func": "func_04A37C",
+  "verified": true
+ },
+ "MAYBEWITHDRAW": {
+  "trigger": "During a parley, when another power demands you withdraw forces near their colonies, this is the counter-offer where they agree to move THEIR forces in exchange for a demobilization payment. Surfaced in the diplomacy WITHDRAW negotiation block of func_057F4E.",
+  "inputs": "The demobilization fee N (cost-to-move). Player's gold for the alternate 'pay' choice.",
+  "outputs": "Dialog: 'Our forces protect valid interests. We are willing to move them in exchange for {N} to cover demobilization.' Options: pay N (gold transferred, forces withdraw), threaten ('withdraw or perish'), or never mind.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "NOTWITHDRAW": {
+  "trigger": "During a parley, the other power flatly refuses to withdraw their forces near your colonies (the hard-no response to a withdraw request). Diplomacy WITHDRAW block of func_057F4E.",
+  "inputs": "The other power's resolve (attitude/strength). Their forces remain in place.",
+  "outputs": "'Our forces protect valid X interests and shall not be moved.'. No withdrawal occurs.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "LOSTOURSCOUTS": {
+  "trigger": "Your Scout attempts to infiltrate a foreign colony and fails, getting captured by the colony's owner.",
+  "inputs": "Scout unit and the target colony's owning power; the infiltration outcome (data-resident odds). Resolved in the scout-action path func_059B90.",
+  "outputs": "Your scout party is lost (captured). Shows 'Our scouts near X have been captured by the Y, Your Excellency!'.",
+  "func": "func_059B90",
+  "verified": true
+ },
+ "LOSTTHEIRSCOUTS": {
+  "trigger": "An enemy power's Scout attempts to infiltrate one of YOUR colonies and is caught.",
+  "inputs": "Enemy scout; your colony; the scout's horse count N. Resolved in the scout-action path func_059B90.",
+  "outputs": "You capture the enemy scout party and add its {N horses} to the colony stables. Shows 'We have captured a party of X scouts attempting to infiltrate Y... Their {N horses} have been taken to the colony stables.'.",
+  "func": "func_059B90",
+  "verified": true
+ },
+ "VETERAN": {
+  "trigger": "A regular soldier/dragoon survives and 'hardens' into a Veteran after combat (the Veteran-promotion branch of the post-combat FX routine, reached on a combat WIN).",
+  "inputs": "Winning UnitRecord whose post-combat reclassification hits the Veteran branch. Pre-veteran soldier/dragoon class.",
+  "outputs": "The unit type advances to Veteran. Shows 'Our X have hardened to Veteran status, Your Excellency!'.",
+  "func": "func_05C69C",
+  "verified": true
+ },
+ "VANISH": {
+  "trigger": "A colony runs completely out of food during the colony turn update and all its colonists starve, eliminating the colony.",
+  "inputs": "Colony food stockpile reaching zero with no production. Detected in the colony turn-update path func_02D658.",
+  "outputs": "The colony is destroyed. Shows 'Our colony at X has vanished! The colonists appear to have starved to death.'.",
+  "func": "func_02D658",
+  "verified": false
+ },
+ "BADHAGGLE2": {
+  "trigger": "When BUYING a good from a native settlement, the player haggles too aggressively and exhausts the tribe's patience; the natives refuse to sell anything further until the player brings something of value.",
+  "inputs": "Haggle-escalation state in the native trade resolver func_049600 (the BUY-side patience-exhausted state); the player's offer history this session.",
+  "outputs": "'Our patience with your haggling is exhausted. We will sell you nothing further until you bring us something of value.'. Sale aborted; the settlement is flagged unwilling to sell.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "BADHAGGLE3": {
+  "trigger": "The player re-approaches a native settlement that already refused to sell (BADHAGGLE2 state) and tries to buy again without having brought anything new.",
+  "inputs": "The settlement's already-refused sell state; the player's (still empty-handed) approach. Native trade resolver func_049600.",
+  "outputs": "'As we said before, we will sell you nothing further until you bring us something of value.'. No sale.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "BUYWHICH": {
+  "trigger": "A scout/wagon arrives at a native settlement willing to sell, and the game presents the menu of goods the tribe has available to buy.",
+  "inputs": "The three commodities the settlement currently offers for sale (data-driven by the settlement). Native trade resolver func_049600.",
+  "outputs": "Menu: 'We have {A}, {B}, and {C} available to trade with you. Which would you like to buy?' with the three goods plus 'Nothing'. Selecting one proceeds to the BUY0/BUY1 price-haggle dialog.",
+  "func": "func_049600",
+  "verified": true
+ },
+ "WELLSEASONED": {
+  "trigger": "A Scout improves from base to Seasoned status (a scout-specific promotion, emitted from the native-village / exploration interaction path).",
+  "inputs": "Scout unit; the seasoning-promotion condition (e.g. successful exploration / chief interaction). Emitted in func_04A7CA (chief/village interaction).",
+  "outputs": "The scout's class advances to Seasoned. Shows 'Our Scouts have improved to Seasoned status, Your Excellency.'.",
+  "func": "func_04A7CA",
+  "verified": false
+ },
+ "NOTHINGWITHDRAW": {
+  "trigger": "During a parley you ask another power to withdraw their forces from near your colonies, but they have no forces adjacent to your colonies. Diplomacy WITHDRAW block of func_057F4E.",
+  "inputs": "Count of the other power's units adjacent to your colonies == 0.",
+  "outputs": "'We have no forces adjacent to your colonies.'. No action.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "CASHTREASURE": {
+  "trigger": "A Treasure unit is sold to foreign agents (cashed in without shipping it home via a galleon), or, in the demo/endgame fast path, treasure is auto-converted; resolved in the treasure-transport event func_05C878.",
+  "inputs": "Treasure base value = 100 x settlement size; a tax/share multiplier M (capped at 90; for the non-pirate case M = max((player_difficulty+10)*5, pool*2)); gold_delta = M * base / 100. Attacker PowerRecord.",
+  "outputs": "Treasure is sold for N gold, credited to the power's treasury; the remaining (base - gold_delta) accrues to total-loot and score-bonus. Shows 'Treasure sold to foreign agents for {N}.'.",
+  "func": "func_05C878",
+  "verified": true
+ },
+ "ORE": {
+  "trigger": "During the colony turn update, the colony's ore stockpile is exhausted (ore over-production counter set this turn) while no consuming chain is present (blacksmiths can't get ore), so the 'out of ore' production report fires. Phase 8 of func_02D658.",
+  "inputs": "Colony ore over-production counter set this turn plus a 'no blacksmith chain present' test; emitted in func_02D658 Phase 8.",
+  "outputs": "Production warning: 'X has run out of ore, Your Excellency. Our blacksmiths cannot continue their work until a new supply is found.'. (Note: this is a colony production report, not a Founding-Father event despite the worklist grouping.)",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TOOLS": {
+  "trigger": "During the colony turn update, the colony's tools stockpile is exhausted (tools over-production counter set) while no consuming chain is present (gunsmiths can't get tools). Phase 8 of func_02D658.",
+  "inputs": "Colony tools over-production counter set this turn plus a 'no gunsmith chain present' test; emitted in func_02D658 Phase 8.",
+  "outputs": "Production warning: 'X has run out of tools, Your Excellency. Our gunsmiths cannot continue their work until a new supply is found.'. (Colony production report, not a Founding-Father event.)",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "HELLOUSA": {
+  "trigger": "You begin a diplomacy parley with another European power that has WON its independence and become a 'United States'-style republic; the post-independence greeting variant is selected. Greeting block of the European-diplomacy meeting dispatcher func_057F4E.",
+  "inputs": "The other power's post-revolution (independent) state; greeting-variant selector (chooses HELLOUSA over HELLOFIRST/HELLOAHOY/HELLOMEEK/HELLOMANLY).",
+  "outputs": "Greeting line: 'Greetings, X, from the newly elected government of the {Y}.'. Opens the parley.",
+  "func": "func_057F4E",
+  "verified": true
+ }
+}

@@ -1,0 +1,282 @@
+{
+ "SEACOLONY": {
+  "trigger": "Player issues Build-Colony ('B') with the active unit standing on a water/ocean tile (the tile has a sea 'feature' set).",
+  "inputs": "Active unit's tile; feature_at_xy(unit) returns a water feature.",
+  "outputs": "Refuses the colony. Shows the notice 'colonies cannot be built at sea'. No colony is founded; the unit keeps its move.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "TOOMOUNTAIN": {
+  "trigger": "Build-Colony ('B') on a tile whose terrain id is mountains.",
+  "inputs": "terrain_id_at_xy(unit) equals the mountains terrain id; the compare-then-show-TOOMOUNTAIN gate is byte-verified in the disassembly.",
+  "outputs": "Refuses the colony. Shows 'Colonies cannot be built in the mountains'. Nothing is founded.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "TOONEAR": {
+  "trigger": "Build-Colony ('B') on a tile that fails the colony-adjacency spacing check (an adjacency helper returns negative, or the colony-spacing flag is not 1), i.e. the tile is too close to an existing colony.",
+  "inputs": "Adjacency/spacing check on the candidate tile; the message subject is set to the nearby colony's name.",
+  "outputs": "Refuses the colony. Shows 'This land is too near to {colony} for a new colony'. Nothing is founded.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "TOONEARBUILD": {
+  "trigger": "Build-Colony ('B') where the 9-neighbour density scan finds a colony build project already under way in an adjacent square.",
+  "inputs": "Neighbour scan over the 8 surrounding tiles detecting an in-progress colony-founding order.",
+  "outputs": "Refuses the colony. Shows 'A colony building project is already under way in an adjacent square'. Nothing is founded.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "TUTNOLUMBER": {
+  "trigger": "Build-Colony ('B') on a difficulty/tutorial path where the surrounding squares contain no forest (the carpenters would have no lumber source).",
+  "inputs": "Forest count in the colony's would-be work ring is zero; gated by the difficulty/tutorial-hints setting.",
+  "outputs": "Shows a confirm dialog warning the colony will struggle for lumber, offering 'Cancel action' / 'Build colony anyway'. Founding proceeds only if the player confirms (choice == 'Build anyway').",
+  "func": "func_022542",
+  "verified": true
+ },
+ "TUTNOSPACES": {
+  "trigger": "Build-Colony ('B') on a difficulty/tutorial path where only a few productive squares are adjacent (fewer than ~4 usable land tiles in the work ring).",
+  "inputs": "Productive-land count in the colony's would-be work ring is low; gated by the difficulty/tutorial-hints setting.",
+  "outputs": "Shows a confirm dialog warning of low growth potential, offering 'Cancel action' / 'Build colony anyway'. Founding proceeds only if confirmed.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "COLONY": {
+  "trigger": "A new colony has just been founded by the active unit and the game asks the player to name it.",
+  "inputs": "Newly created ColonyRecord with a default suggested name.",
+  "outputs": "Name-entry prompt 'What shall we name this colony?'. The entered text becomes the colony name. (func_025D34 as listed is the colony-screen random-layout/graphics builder and is not itself the name-prompt emit site; trigger/outputs derived from the @COLONY message text and the colony-founding flow in func_022542.)",
+  "func": "func_025D34",
+  "verified": false
+ },
+ "ABANDON": {
+  "trigger": "Player selects the Abandon-Colony command for an existing colony from the in-colony services menu.",
+  "inputs": "The selected colony (its name is formatted into the prompt).",
+  "outputs": "Confirm dialog 'Shall we indeed abandon our {colony} colony... forfeiting all of our hard work?' with 'Yes' / 'Never! That would be folly.' On Yes the colony is removed and all its accumulated work is lost.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "COLLEGE2": {
+  "trigger": "Player tries to assign more than two teachers in a colony whose school building is a College (the College faculty cap is 2).",
+  "inputs": "Colony's school level == College; current teacher count already at 2.",
+  "outputs": "Shows 'The College can support a faculty of only two teachers at a time'. The extra teacher assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "FULL": {
+  "trigger": "Player tries to add an immigrant/colonist to a colony that is already at its maximum population (the colony is far too crowded).",
+  "inputs": "Target colony population at the per-colony cap; the colony name is formatted into the message.",
+  "outputs": "Shows 'The colony of {X} is far too crowded... find another colony for these immigrants'. The colonist is not placed.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "KEEPSTOCKADE": {
+  "trigger": "Player tries to voluntarily reduce a colony's population below three (e.g. drag the last colonists out) while that colony has a stockade, fort, or fortress.",
+  "inputs": "Colony has a stockade/fort/fortress AND the requested population would drop below 3.",
+  "outputs": "Shows 'We cannot voluntarily reduce below three the population of a colony that has a stockade, fort, or fortress'. The removal is blocked.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "MORETHANTHREE": {
+  "trigger": "Player tries to place a fourth colonist into a single colony building (buildings hold at most three workers).",
+  "inputs": "Target building already has 3 assigned colonists.",
+  "outputs": "Shows 'We cannot put more than three colonists in any one building'. The assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "NEEDCOLLEGE": {
+  "trigger": "Player designates a teacher for a profession that the colony's current school (a Schoolhouse) is not advanced enough to teach (the profession requires a College). Dispatch arm where the colony's school field == College-required.",
+  "inputs": "Selected teaching profession; colony school level below College; profession name formatted into the message.",
+  "outputs": "Shows 'We must build a college to teach that profession ({X}) in our colony'. The teaching assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "NEEDUNIVERSITY": {
+  "trigger": "Player designates a teacher for a profession that requires a University while the colony's school is only a College/Schoolhouse. Dispatch arm where the colony's school field == University-required.",
+  "inputs": "Selected teaching profession; colony school level below University; profession name formatted into the message.",
+  "outputs": "Shows 'We must build a university to teach that profession ({X}) in our colony'. The teaching assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "NOTEACHER": {
+  "trigger": "Player tries to set a colonist as a teacher in a school/college/university, but that colonist has no mastered profession to teach.",
+  "inputs": "Selected colonist has no specialty profession.",
+  "outputs": "Shows 'Only colonists who have mastered a profession may teach'. The teacher assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "SCHOOL1": {
+  "trigger": "Player tries to assign more than one teacher in a colony whose education building is a Schoolhouse (Schoolhouse faculty cap is 1).",
+  "inputs": "Colony's school level == Schoolhouse; current teacher count already at 1.",
+  "outputs": "Shows 'The Schoolhouse can support a faculty of only one teacher at a time'. The extra teacher assignment is rejected.",
+  "func": "func_02883E",
+  "verified": true
+ },
+ "WAREHOUSEFULL": {
+  "trigger": "Player unloads cargo from a unit into a colony (or otherwise adds a commodity) such that the resulting warehouse stock for that commodity would exceed the colony's storage capacity. Fires only for a non-food commodity when the dialog owner is interactive.",
+  "inputs": "Commodity index (cargo != 0); current warehouse stock + amount being added; the colony's per-commodity capacity (smaller warehouses hold less). Byte-verified overflow check newstock > capacity in func_02A6A6.",
+  "outputs": "Confirm popup: 'the warehouse at {X} already contains {N} units of {Y}. It can only hold {cap}. If we add another {K} units, some of the {Y} will probably spoil!' with 'Never mind' / 'Unload anyway'. Only on 'Unload anyway' is the stock added (which then triggers spoilage of the excess on the colony turn).",
+  "func": "func_02A6A6",
+  "verified": true
+ },
+ "BUILT": {
+  "trigger": "A colonist is placed to work in (i.e. completes/activates) a colony building or structure; fires when the structure starts producing, for an interactive (human) colony.",
+  "inputs": "The clicked/finished building id; the colony's per-(building,owner) tally is incremented; building != certain capacity-capped types.",
+  "outputs": "Shows '{colony} colony produces {product}.' and records this as the colony's last build. The colony's build-default work word is reset.",
+  "func": "func_02D0E4",
+  "verified": true
+ },
+ "NOMOREWAREHOUSE": {
+  "trigger": "Player sets a colony to build a Warehouse Expansion when it already has the maximum (only one expansion is allowed per colony; the colony's warehouse-level count is already at two).",
+  "inputs": "Selected building is the warehouse expansion; the colony's warehouse-level count is already at its maximum of two (base warehouse plus one expansion).",
+  "outputs": "Shows '{colony} is set to produce a Warehouse Expansion... but only one expansion is allowed per colony'. The build request is rejected.",
+  "func": "func_02D0E4",
+  "verified": true
+ },
+ "FORTFIRE": {
+  "trigger": "A colony with a coastal Fort/Fortress and at least one cannon (Artillery) garrisoned has an enemy (non-allied, non-treaty) combat unit move adjacent; the fort opens fire. Fires when computed firepower is greater than zero.",
+  "inputs": "Fort/Fortress presence (one or two defenders with their bonus values); count of garrisoned cannon; the adjacent enemy unit. Firepower = cannon_count * fort_defenders * 4 (the multiply-by-four is byte-verified in the disassembly).",
+  "outputs": "Shows '{Fort/Fortress} at {colony} opens fire on {enemy unit}!' and resolves a strike against the enemy via the land-combat decider (the target may be damaged/destroyed).",
+  "func": "func_02D3C6",
+  "verified": true
+ },
+ "ALREADYHAVE": {
+  "trigger": "During the colony end-of-turn build/needs scan, the colony is set to produce a building it has already built.",
+  "inputs": "Colony's queued building id matches a structure already present in the colony.",
+  "outputs": "Shows '{colony} is set to produce a {building}, but it has already built one!' (build queue flagged; no duplicate is built).",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "EFFICIENT": {
+  "trigger": "On the colony end-of-turn SoL/Tory update, the colony's Tory (non-Sons-of-Liberty) share drops back below the inefficiency threshold, having previously been over it (the colony's inefficiency latch bit was set and now clears).",
+  "inputs": "tory_count = population * (100 - rebel%) / 100; divisor = 10 - difficulty. EFFICIENT fires when tory_count is below the divisor and the colony's inefficiency flag was previously set. (The companion REBELMAJORITY 50-percent gate and this divisor model are byte-verified in the disassembly; same divisor used by the production penalty.)",
+  "outputs": "Shows '{colony} has improved the efficiency of its government... Production penalties no longer apply'. The colony's -1-per-N-tories production penalty is removed.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "FOOD1": {
+  "trigger": "On the colony end-of-turn food settlement, the colony's stored food has just been depleted (food stock reaches zero / goes negative) and it is NOT the pre-winter season.",
+  "inputs": "Colony food stock after consuming population*2 this turn; season/turn threshold (the pre-winter latch at the year-threshold word is not yet set).",
+  "outputs": "Shows 'Food stores have been depleted in {colony}!' as a warning. (No starvation deaths yet this turn.)",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "FOOD2": {
+  "trigger": "On the colony end-of-turn food settlement, food stores are depleted AND winter is coming soon (the pre-winter season threshold is met).",
+  "inputs": "Colony food stock at/below zero; the season/year threshold indicating winter approaches.",
+  "outputs": "Shows 'Food stores have been depleted in {colony}! Winter is coming soon and we may starve to death!' (stronger warning than FOOD1).",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "FOODLOW": {
+  "trigger": "On the colony end-of-turn food settlement, the colony is rapidly depleting its food supply but still has some left (low-but-not-yet-empty band), heading into the winter months.",
+  "inputs": "Remaining colony food stock (a small positive amount, passed as %NUMBER0 into the message).",
+  "outputs": "Shows 'The colony of {X} is rapidly depleting its food supply... We have only {N food} left. We must have food for the winter months.'",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "SONSDOWN": {
+  "trigger": "On the colony end-of-turn SoL update, when no majority/minority band changed: the colony's Sons-of-Liberty percentage tens-band fell versus the previous sample (specifically (rebel%+4)/10 dropped below the prior tens-band), and the SoL-report option is enabled.",
+  "inputs": "rebel% this turn vs previous turn; band = rebel%/10; gated by the 'Report Sons of Liberty membership' option being enabled.",
+  "outputs": "Shows 'Sons of Liberty membership in {colony} is down to {N} percent... Perhaps we should generate more Liberty Bells...' (informational; recommends Statesmen/Printing Press/Newspaper).",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "SONSUP": {
+  "trigger": "On the colony end-of-turn SoL update, when no majority/minority band changed: the colony's Sons-of-Liberty percentage tens-band rose versus the previous sample, and the SoL-report option is enabled.",
+  "inputs": "rebel% this turn vs previous turn; band_now = rebel%/10 greater than band_prev; gated by the 'Report Sons of Liberty membership' option being enabled.",
+  "outputs": "Shows 'Sons of Liberty membership in {colony} is up to {N} percent... The more Liberty Bells our Statesmen generate, the faster membership will rise.' (informational).",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "STARVE1": {
+  "trigger": "On the colony end-of-turn food settlement, the colony has run out of food during harsh winter weather and colonists die of starvation (winter band; not the 'winter coming' pre-warning).",
+  "inputs": "Colony food stock exhausted while in the winter season band; one or more colonists are removed.",
+  "outputs": "Shows '{colony} colony has run out of food... many colonists are starving to death.' A colonist is removed from the colony (population drops).",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "STARVE2": {
+  "trigger": "On the colony end-of-turn food settlement, the colony has run out of food and colonists are starving, AND winter is still coming soon (the pre-winter threshold variant of the starvation band).",
+  "inputs": "Colony food stock exhausted; season/year threshold indicating winter approaches; colonists removed.",
+  "outputs": "Shows '{colony} colony has run out of food... Colonists are starving to death, and to make matters worse, winter is coming soon.' A colonist is removed.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TRAINCRIMINAL": {
+  "trigger": "On the colony end-of-turn schooling step, a teacher graduates a Criminal one rank (the teacher-graduation path applied to a petty criminal), upgrading him.",
+  "inputs": "Colony has an active teacher; a schooling candidate is a Criminal; the endgame report-suppression flag is clear.",
+  "outputs": "Shows 'A criminal in {colony} has become an indentured servant through education.' The colonist's rank is upgraded Criminal -> Indentured Servant.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TRAINFAIL": {
+  "trigger": "On the colony end-of-turn schooling step, there is a teacher in the colony but no eligible students: the schooling-candidate list emptied with no graduation because all colonists there already have specialty professions.",
+  "inputs": "Colony has a teacher; schooling-candidate scan found no upgradeable colonist.",
+  "outputs": "Shows 'We have a teacher in {colony}, but all the colonists there already have specialty professions...' (suggests clearing a specialty). No graduation occurs.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TRAININDENTURED": {
+  "trigger": "On the colony end-of-turn schooling step, a teacher graduates an Indentured Servant one rank (the indentured-servant graduation path), upgrading him to a free colonist.",
+  "inputs": "Colony has an active teacher; a schooling candidate is an Indentured Servant.",
+  "outputs": "Shows 'An indentured servant in {colony} has become a free colonist through education.' The colonist's rank is upgraded Indentured Servant -> Free Colonist.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TRAINPROFESSION": {
+  "trigger": "On the colony end-of-turn schooling step, a teacher successfully teaches a Free Colonist (or convert-eligible colonist) a specialty profession. The teacher building's level (School/College/University -> band 4/6/8) determines which professions can be taught.",
+  "inputs": "Colony has an active teacher whose profession can be taught at the colony's school level; an eligible student colonist; profession name formatted into the message.",
+  "outputs": "Shows 'A colonist in {colony} has learned the specialty profession {X}.' The student gains that specialty profession.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "UNREST": {
+  "trigger": "Religious unrest in the home country boosts emigration, making new colonists available on the Europe docks (a periodic Europe immigration event).",
+  "inputs": "Home country (%COUNTRY); the made-available colonist type (%STRING1) and the home port name (%STRING0).",
+  "outputs": "Shows 'Religious unrest in {COUNTRY} causes increased emigration. Colonists ({type}) now available in {port}.' New recruits queue at the dock. (Listed func_033F6A is the page-trailing jump-table region after func_033C96 \u2014 a PHANTOM, not real code \u2014 so the emit site is not byte-traced here; trigger/outputs derived from the @UNREST message text, hence unverified.)",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "LANDFALL": {
+  "trigger": "A ship carrying land units reaches a coast tile and the player tries to move onto land (ship-destination status code 2: adjacent open land).",
+  "inputs": "Active ship; destination tile classified as a normal landfall (status 2); the ship's secondary destination datum.",
+  "outputs": "Confirm dialog 'Shall we make landfall, Your Excellency, and leave the ships behind?' with 'Stay With Ships' / 'Make Landfall'. On 'Make Landfall' the carried colonists are unloaded onto land and adjacent tiles are revealed.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "LANDFALL2": {
+  "trigger": "A ship carrying land units tries to move into a tile it cannot reach by water (ship-destination status code 3: e.g. up a river the ship cannot navigate).",
+  "inputs": "Active ship; destination tile classified as the river/inaccessible-landfall variant (status 3).",
+  "outputs": "Confirm dialog 'Our ships cannot navigate up this river, Excellency. Shall we make landfall and leave the ships behind?' with 'Stay With Ships' / 'Make Landfall'. On 'Make Landfall' the carried units are unloaded onto land.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "EXTORTLAUGH": {
+  "trigger": "A player demands tribute/goods from a native village (an extortion attempt), but the village is strong/fierce enough to refuse defiantly. Byte-cited as the refuse branch of the native-village trade/extortion resolver that emits the EXTORTLAUGH message.",
+  "inputs": "Demanding unit at the village; the village's resolve from the demand-vs-supply roll and the tribe's warrior strength; tribe name formatted into the message.",
+  "outputs": "Shows 'We laugh at your puny threats. Do not try our patience, for {tribe} warriors are known for their ferocity in times of war.' The demand yields nothing.",
+  "func": "func_04AC00",
+  "verified": true
+ },
+ "WORTHY": {
+  "trigger": "During a European-power diplomacy meeting/parley, the other power proposes a demarcation ('line of Tordesillas') treaty dividing all the land into two perpetual spheres of influence. Byte-cited in the peace/treaty branch of the meeting dispatcher that emits the WORTHY message.",
+  "inputs": "The two European powers (self and other); the proposing king's name (%STRING0); the two sphere labels (%STRING1, %STRING2).",
+  "outputs": "Shows the demarcation-treaty offer 'we propose a demarcation treaty, dividing all the land... into perpetual and inviolable spheres of influence. Will you agree to such a partition?' with 'Yes' / 'No'. On Yes a sphere-of-influence partition treaty is established.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "SCOUTCOLONY": {
+  "trigger": "A Scout unit reaches the outskirts of a foreign (or other-power) colony and the player is offered scout actions against it.",
+  "inputs": "The scout unit and the target colony (its name is shown in the prompt).",
+  "outputs": "Action menu 'Our scouts have reached the outskirts of {colony}... What shall they do?' with 'Meet With Mayor' / 'Infiltrate Colony' / 'Attack Colony' / 'Nothing'. The chosen option drives the corresponding scout interaction. (Listed func_059B90 is ai_evaluate_unit_targets, the per-unit AI move/target scorer, which references but does not clearly emit this player-facing menu; trigger/outputs derived from the @SCOUTCOLONY message text, hence unverified.)",
+  "func": "func_059B90",
+  "verified": false
+ },
+ "BURNED2": {
+  "trigger": "On resolving land combat where the attacker WINS against a target that is a colony, the colony is razed; BURNED2 is the spy-report variant reporting that a (foreign) colony was burned to the ground and its governor vows reprisals. Byte-cited in the win-flag tail of the land-combat decider (one of the three burn-outcome messages BURNED / BURNED2 / BURNED3).",
+  "inputs": "Land-combat win against a colony tile (the target-is-colony flag set); attacker/colony nations formatted into the message.",
+  "outputs": "Shows 'Colony at {X} burned to the ground. {nation} governor vows reprisals.' The colony is destroyed (this is the observed/spy-report phrasing rather than the player's own-colony 'King demands explanation' wording).",
+  "func": "func_05CA7E",
+  "verified": true
+ }
+}

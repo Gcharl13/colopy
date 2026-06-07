@@ -1,0 +1,11 @@
+# generated graph + caches (regenerable)
+graphify-out/
+.dos_db.json
+.win_index.json
+# python
+__pycache__/
+*.pyc
+# os/editor cruft
+Thumbs.db
+.DS_Store
+*.swp

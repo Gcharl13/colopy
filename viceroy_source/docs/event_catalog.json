@@ -1,0 +1,3994 @@
+[
+ {
+  "key": "ABANDON",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "Shall we indeed {abandon} our %STRING0 colony,"
+ },
+ {
+  "key": "ABANDON2",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Shall we indeed {abandon} our %STRING0 colony,"
+ },
+ {
+  "key": "ALREADYHAVE",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} is set to produce a {%STRING1}, but"
+ },
+ {
+  "key": "BUILD1",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^In the Year of Our Lord One Thousand Four Hundred Ninety-Two,"
+ },
+ {
+  "key": "BUILD10",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^A New World!"
+ },
+ {
+  "key": "BUILD2",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^an Expedition led by the Great %STRING0,"
+ },
+ {
+  "key": "BUILD3",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^left %STRING0 on a Voyage of Discovery."
+ },
+ {
+  "key": "BUILD4",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^Commissioned and Blessed by the %STRING1 of %STRING0,"
+ },
+ {
+  "key": "BUILD5",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^to Explore the Ocean Sea,"
+ },
+ {
+  "key": "BUILD6",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^to find Uncharted Lands,"
+ },
+ {
+  "key": "BUILD7",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^and to Establish Colonies for the Greater Glory of %STRING0."
+ },
+ {
+  "key": "BUILD8",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^A Ship loaded with Pioneers and Soldiers"
+ },
+ {
+  "key": "BUILD9",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^Set Sail to find a New Life, a New Beginning, . . ."
+ },
+ {
+  "key": "BUILT",
+  "cat": "Colony & Buildings",
+  "func": "func_02D0E4",
+  "page": "03",
+  "reachable": true,
+  "summary": "%STRING0 colony produces {%STRING1}."
+ },
+ {
+  "key": "BURNED2",
+  "cat": "Colony & Buildings",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Colony at {%STRING3} burned to the ground."
+ },
+ {
+  "key": "COLLEGE2",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "The {College} can support a faculty of only {two}"
+ },
+ {
+  "key": "COLONY",
+  "cat": "Colony & Buildings",
+  "func": "func_025D34",
+  "page": "02",
+  "reachable": true,
+  "summary": "What shall we name this colony?"
+ },
+ {
+  "key": "COLONYFLAG",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Colony Flags Error."
+ },
+ {
+  "key": "COLONYOPTIONS",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Set Colony Report Options"
+ },
+ {
+  "key": "COLONYUNIT",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Options for {%STRING0%STRING1}:"
+ },
+ {
+  "key": "EFFICIENT",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has improved the efficiency of its government, Your Excellency."
+ },
+ {
+  "key": "EXTORTLAUGH",
+  "cat": "Colony & Buildings",
+  "func": "func_04AC00",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We laugh at your puny threats.  Do not try our patience, for"
+ },
+ {
+  "key": "FINDCITY",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Where the heck is . . ."
+ },
+ {
+  "key": "FOOD1",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Food stores have been depleted"
+ },
+ {
+  "key": "FOOD2",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Food stores have been depleted"
+ },
+ {
+  "key": "FOODLOW",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "The colony of {%STRING0} is rapidly depleting its"
+ },
+ {
+  "key": "FORTFIRE",
+  "cat": "Colony & Buildings",
+  "func": "func_02D3C6",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} at {%STRING1} opens fire on {%STRING2 %STRING3}!"
+ },
+ {
+  "key": "FULL",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "The colony of {%STRING0} is {far too crowded},"
+ },
+ {
+  "key": "KEEPSTOCKADE",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "We cannot voluntarily reduce below {three} the population of a colony"
+ },
+ {
+  "key": "LANDFALL",
+  "cat": "Colony & Buildings",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "Shall we make landfall, Your Excellency,"
+ },
+ {
+  "key": "LANDFALL2",
+  "cat": "Colony & Buildings",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "Our ships cannot navigate up this river,"
+ },
+ {
+  "key": "LANDHO",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Land Ho!  What shall we call this new"
+ },
+ {
+  "key": "LEARNMASTER",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We are glad to have a master {%STRING1} living"
+ },
+ {
+  "key": "LOSTCITY0",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Which of the following individuals shall we recruit?"
+ },
+ {
+  "key": "LOSTCITY1",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You have discovered a {Fountain"
+ },
+ {
+  "key": "LOSTCITY2",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You have found one of the {Seven"
+ },
+ {
+  "key": "LOSTCITY3",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You find the ruins of a lost civilization."
+ },
+ {
+  "key": "LOSTCITY4",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition happens upon strange burial"
+ },
+ {
+  "key": "LOSTCITY5",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has vanished without"
+ },
+ {
+  "key": "LOSTCITY6",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You find nothing but rumors."
+ },
+ {
+  "key": "LOSTCITY7",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition enters the village of a small,"
+ },
+ {
+  "key": "LOSTCITY8",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"You are trespassing near our holy {%STRING0} shrines!  The"
+ },
+ {
+  "key": "LOSTCITY9",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You happen upon the desperate survivors of"
+ },
+ {
+  "key": "MORETHANTHREE",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "We cannot put more than {three} colonists in any one building, Your"
+ },
+ {
+  "key": "NEEDCOLLEGE",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "We must build a {college} to teach that"
+ },
+ {
+  "key": "NEEDUNIVERSITY",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "We must build a {university} to teach that"
+ },
+ {
+  "key": "NOCITY",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0\" not found."
+ },
+ {
+  "key": "NOMOREWAREHOUSE",
+  "cat": "Colony & Buildings",
+  "func": "func_02D0E4",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} is set to produce a {Warehouse Expansion},"
+ },
+ {
+  "key": "NOTEACHER",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "Only colonists who have mastered a profession may teach."
+ },
+ {
+  "key": "RENAMECOLONY",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "What shall we rename this colony?"
+ },
+ {
+  "key": "SCHOOL1",
+  "cat": "Colony & Buildings",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "The {Schoolhouse} can support a faculty of only {one}"
+ },
+ {
+  "key": "SCOUTCOLONY",
+  "cat": "Colony & Buildings",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "Our {scouts} have reached the outskirts of {%STRING0},"
+ },
+ {
+  "key": "SEACOLONY",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "It may surprise you to learn that colonies"
+ },
+ {
+  "key": "SONSDOWN",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is down to %NUMBER0%%, Your"
+ },
+ {
+  "key": "SONSUP",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is up to %NUMBER0%%, Your"
+ },
+ {
+  "key": "SPOIL3",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The colony of {%STRING0} has exceeded its warehouse capacity."
+ },
+ {
+  "key": "STARVE1",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} colony has run out of food, Your Excellency!"
+ },
+ {
+  "key": "STARVE2",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} colony has run out of food, Your Excellency!"
+ },
+ {
+  "key": "TOOMANYCOLONIES",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "A {colony} cannot be created because the maximum number of colonies for"
+ },
+ {
+  "key": "TOOMOUNTAIN",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "Colonies cannot be built in the {mountains},"
+ },
+ {
+  "key": "TOONEAR",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "This land is too near to {%STRING0} for"
+ },
+ {
+  "key": "TOONEARBUILD",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "A colony building project is already under way"
+ },
+ {
+  "key": "TRAINCRIMINAL",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "A {criminal} in {%STRING0} has become an {indentured"
+ },
+ {
+  "key": "TRAINFAIL",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "We have a {teacher} in {%STRING0}, but all the colonists"
+ },
+ {
+  "key": "TRAININDENTURED",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "An {indentured servant} in {%STRING0} has become a"
+ },
+ {
+  "key": "TRAINPROFESSION",
+  "cat": "Colony & Buildings",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "A {colonist} in {%STRING0} has learned the specialty profession {%STRING1}."
+ },
+ {
+  "key": "TRAVELPLACE",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a colony to travel to:"
+ },
+ {
+  "key": "TUTNOLUMBER",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "None of the spaces surrounding this square are forested, Your Excellency."
+ },
+ {
+  "key": "TUTNOSPACES",
+  "cat": "Colony & Buildings",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "There are only a few productive squares adjacent to this square,"
+ },
+ {
+  "key": "UNREST",
+  "cat": "Colony & Buildings",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "Religious unrest in %COUNTRY causes increased"
+ },
+ {
+  "key": "UPKEEP",
+  "cat": "Colony & Buildings",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your Excellency, we cannot afford to pay the upkeep ({%NUMBER0$}) on"
+ },
+ {
+  "key": "WAREHOUSEFULL",
+  "cat": "Colony & Buildings",
+  "func": "func_02A6A6",
+  "page": "02",
+  "reachable": true,
+  "summary": "Your Excellency, the warehouse at {%STRING0} already"
+ },
+ {
+  "key": "WORTHY",
+  "cat": "Colony & Buildings",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Although all of this land is rightfully ours by order of %STRING0,"
+ },
+ {
+  "key": "AMBUSHHINT",
+  "cat": "Combat & Siege",
+  "func": "func_03C322",
+  "page": "06",
+  "reachable": true,
+  "summary": "Your Excellency, the King's armies have little experience with the"
+ },
+ {
+  "key": "ARTILLERY",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "%STRING0 %STRING1 {damaged}.  Further damage will destroy it."
+ },
+ {
+  "key": "ARTILLERY2",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "Damaged %STRING0 %STRING1 {destroyed}."
+ },
+ {
+  "key": "CANNOTATTACK",
+  "cat": "Combat & Siege",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "That unit type cannot attack."
+ },
+ {
+  "key": "CAPTURED",
+  "cat": "Combat & Siege",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} march into {%STRING2}!  {%NUMBER0$}"
+ },
+ {
+  "key": "CAPTURED2",
+  "cat": "Combat & Siege",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} march into {%STRING2}."
+ },
+ {
+  "key": "CAPTURED3",
+  "cat": "Combat & Siege",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} march into {%STRING2}!"
+ },
+ {
+  "key": "CARGOCAPTURE",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} cargo of {%NUMBER0 %STRING1} captured by {%STRING2 %STRING3}!"
+ },
+ {
+  "key": "COLONISTCAPTURE",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} colonists CAPTURED by the {%STRING1}!"
+ },
+ {
+  "key": "COLONISTCAPTURE2",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} colonists CAPTURED by the {%STRING1}!  Soldiers"
+ },
+ {
+  "key": "COUNTRIES",
+  "cat": "Combat & Siege",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "the Holy Roman Empire"
+ },
+ {
+  "key": "DEMOTE",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0 %STRING1} routed!  Unit demoted to {%STRING2} status."
+ },
+ {
+  "key": "GIVECASH",
+  "cat": "Combat & Siege",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Please spare our meek and helpless settlement from destruction."
+ },
+ {
+  "key": "HALF",
+  "cat": "Combat & Siege",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Your Excellency, these men are tired.  If we force"
+ },
+ {
+  "key": "LOOTCAPTURE",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} treasure worth {%NUMBER0$} CAPTURED by the {%STRING1}!"
+ },
+ {
+  "key": "MILITARY",
+  "cat": "Combat & Siege",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"You must attack the infidel . . .\""
+ },
+ {
+  "key": "PIRACY",
+  "cat": "Combat & Siege",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"%STRING0 is most displeased with the {%STRING1 pirates} lying"
+ },
+ {
+  "key": "PIRACYUSA",
+  "cat": "Combat & Siege",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} will not suffer foreign pirates to prey"
+ },
+ {
+  "key": "SHIPCOMBAT",
+  "cat": "Combat & Siege",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "Only {Privateers} and {Frigates} can attack enemy ships."
+ },
+ {
+  "key": "SHIPSUNK",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0 %STRING1 sunk} by %STRING2 %STRING3!"
+ },
+ {
+  "key": "SIEGE",
+  "cat": "Combat & Siege",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "This colony is under {siege}, since enemy combat units"
+ },
+ {
+  "key": "SIEGES",
+  "cat": "Combat & Siege",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"%STRING0 is disturbed by the large %STRING1 forces lurking"
+ },
+ {
+  "key": "SIEGESUSA",
+  "cat": "Combat & Siege",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The %STRING0 has never recognized the right of foreign powers"
+ },
+ {
+  "key": "SNEAK",
+  "cat": "Combat & Siege",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Sneak attack by the treacherous {%STRING0}!"
+ },
+ {
+  "key": "VALOR",
+  "cat": "Combat & Siege",
+  "func": "func_05C69C",
+  "page": "10",
+  "reachable": true,
+  "summary": "Because of their valor in battle, our {%STRING0}"
+ },
+ {
+  "key": "WAGONCAPTURE",
+  "cat": "Combat & Siege",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} wagon train CAPTURED by the {%STRING1}!"
+ },
+ {
+  "key": "BADCARGO",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We have enough {%STRING0} and don't"
+ },
+ {
+  "key": "BURNED3",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} burn {%STRING1} colony at {%STRING3}."
+ },
+ {
+  "key": "BUY0",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We shall fill up your {%STRING1} with {%NUMBER2 %STRING0} in"
+ },
+ {
+  "key": "BUY1",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We grow tired of your constant haggling.  We shall fill up"
+ },
+ {
+  "key": "CARGOLOAD",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_060D8C",
+  "page": "12",
+  "reachable": true,
+  "summary": "Select a cargo to load at {%STRING0}."
+ },
+ {
+  "key": "CARGOREADY0",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "A new cargo of {%STRING1} is ready at {%STRING0}, Your Excellency."
+ },
+ {
+  "key": "CARGOREADY1",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "A new cargo of {%STRING1} is ready at {%STRING0}, Your Excellency."
+ },
+ {
+  "key": "CARGOREADY2",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "A new cargo of {%STRING1} is ready at {%STRING0}, Your Excellency."
+ },
+ {
+  "key": "CARGOUNLOAD",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_060D8C",
+  "page": "12",
+  "reachable": true,
+  "summary": "Select a cargo to unload at {%STRING0}."
+ },
+ {
+  "key": "CUSTOM",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Which cargos shall our {Custom House} export?"
+ },
+ {
+  "key": "DEFICIT",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Since you have brought no trade goods, we will not"
+ },
+ {
+  "key": "DISBANDSHIP",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02287E",
+  "page": "01",
+  "reachable": true,
+  "summary": "We cannot disband a ship at sea while it is carrying"
+ },
+ {
+  "key": "DONTKNOWSHIPS",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "We must contact the Indians on land first, Excellency.\""
+ },
+ {
+  "key": "EUROPEARM",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "European dock options:"
+ },
+ {
+  "key": "EUROPELOSE",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING1 %STRING2} %STRING4 {%STRING0} near %STRING3!"
+ },
+ {
+  "key": "EUROPENOTAVAIL",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The European Status Screen is no longer available once"
+ },
+ {
+  "key": "EUROPENOTLEAVE",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Ships cannot sail to and from Europe for the duration"
+ },
+ {
+  "key": "EUROPESHIPCLICK",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "European harbor options for {%STRING0}:"
+ },
+ {
+  "key": "EUROPESHIPOPTIONS",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_03314E",
+  "page": "04",
+  "reachable": true,
+  "summary": "Move to front."
+ },
+ {
+  "key": "EUROPEWIN",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} %STRING4 {%STRING1 %STRING2} near %STRING3!"
+ },
+ {
+  "key": "INEFFICIENT",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has an inefficient government, Your Excellency!"
+ },
+ {
+  "key": "MADATSHIPS",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_04B308",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"The {%STRING0} people do not trust the men in your"
+ },
+ {
+  "key": "MERCANTILISM",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We are concerned that this {%STRING0} you have built"
+ },
+ {
+  "key": "NODOCKS",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "We cannot operate fishing boats at this colony"
+ },
+ {
+  "key": "NOPORT",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "This square does not have access to the {ocean},"
+ },
+ {
+  "key": "OVERBOARD",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "What cargo shall we throw overboard, Your Excellency?"
+ },
+ {
+  "key": "PICKACARGO",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Which cargo shall we capture?"
+ },
+ {
+  "key": "PRICEDOWN",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_0305A8",
+  "page": "04",
+  "reachable": true,
+  "summary": "The price of {%STRING0} in %STRING1 has fallen to {%NUMBER0$}."
+ },
+ {
+  "key": "PRICEUP",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_0305A8",
+  "page": "04",
+  "reachable": true,
+  "summary": "The price of {%STRING0} in %STRING1 has risen to {%NUMBER0$}."
+ },
+ {
+  "key": "RECRUIT",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The following individuals will"
+ },
+ {
+  "key": "RECRUIT2",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The following specialty professions are available"
+ },
+ {
+  "key": "RECRUITCHOOSE",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Religious unrest in %COUNTRY causes increased"
+ },
+ {
+  "key": "ROUTELOOP",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_041080",
+  "page": "08",
+  "reachable": true,
+  "summary": "Your Excellency, our \"{%STRING0}\" trade route"
+ },
+ {
+  "key": "SAILAWAY",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Shall we set sail for the {New World},"
+ },
+ {
+  "key": "SAILHOME",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "We have reached the {high seas}, Your"
+ },
+ {
+  "key": "SAILPORT",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a port to sail to:"
+ },
+ {
+  "key": "SHIPDAMAGE",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05B2C2",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0 %STRING1} damaged!  Ship returns to {%STRING2} for repairs."
+ },
+ {
+  "key": "SHIPLAKE",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "Ship units cannot enter inland {lake} squares."
+ },
+ {
+  "key": "SHIPOPTIONS",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02AAEC",
+  "page": "02",
+  "reachable": true,
+  "summary": "Move to front."
+ },
+ {
+  "key": "SHIPRUN",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "{%STRING2 %STRING0} slips past {%STRING1 %STRING3}!"
+ },
+ {
+  "key": "SHIPSLOW",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "{%STRING0}'s progress slowed by presence of {%STRING1 %STRING2}."
+ },
+ {
+  "key": "SMITEEUROPE",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We shall ruthlessly drive the heretic {%STRING0}"
+ },
+ {
+  "key": "SPOIL1",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "The colony of {%STRING0} has exceeded its warehouse capacity."
+ },
+ {
+  "key": "SPOIL2",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "The colony of {%STRING0} has exceeded its warehouse capacity."
+ },
+ {
+  "key": "SPOIL4",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The colony of {%STRING0} has exceeded its warehouse capacity."
+ },
+ {
+  "key": "TRADE0",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We see that you have brought some %STRING0"
+ },
+ {
+  "key": "TRADE1",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Your haggling is trying our patience, but"
+ },
+ {
+  "key": "TRADEATWAR",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Ships and wagon trains cannot enter the colonies of foreign powers"
+ },
+ {
+  "key": "TRADEMERCANTILISM",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05A40E",
+  "page": "0F",
+  "reachable": false,
+  "summary": "\"In the interests of {Mercantilism}, %STRING0 has ordered us not"
+ },
+ {
+  "key": "TRADENAMES",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_0610B0",
+  "page": "12",
+  "reachable": true,
+  "summary": "5"
+ },
+ {
+  "key": "TRADENOCARGO",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_05A40E",
+  "page": "0F",
+  "reachable": false,
+  "summary": "\"You have brought nothing with you to trade with us.  Please come"
+ },
+ {
+  "key": "TRADEWHICH",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Which cargo shall we offer to trade, Your Excellency?"
+ },
+ {
+  "key": "TRIBUTEUSA",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} does not recognize the right of european powers to"
+ },
+ {
+  "key": "UNIV3",
+  "cat": "Europe, Docks & Trade",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "The {University} can support a faculty of only {three}"
+ },
+ {
+  "key": "WANTSTUFFUSA",
+  "cat": "Europe, Docks & Trade",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} does not recognize the right of european powers to"
+ },
+ {
+  "key": "BADHAGGLE2",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Our patience with your haggling is exhausted."
+ },
+ {
+  "key": "BADHAGGLE3",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"As we said before, we will sell you nothing further"
+ },
+ {
+  "key": "BUYWHICH",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We have {%STRING0}, {%STRING1}, and {%STRING2} available to trade with"
+ },
+ {
+  "key": "CASHTREASURE",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_05C878",
+  "page": "10",
+  "reachable": true,
+  "summary": "Treasure sold to foreign agents for {%NUMBER0$}."
+ },
+ {
+  "key": "LEARNCRIMINAL",
+  "cat": "Exploration & Lost Cities",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Your ill manners offend us, Young One, and"
+ },
+ {
+  "key": "NOTHINGWITHDRAW",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We have no forces adjacent to your colonies.\""
+ },
+ {
+  "key": "VANISH",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Your Excellency!  Our colony at {%STRING0} has"
+ },
+ {
+  "key": "WELLSEASONED",
+  "cat": "Exploration & Lost Cities",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "Our {Scouts} have improved to {Seasoned} status, Your Excellency."
+ },
+ {
+  "key": "HELLOUSA",
+  "cat": "Founding Fathers",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Greetings, %STRING0, from the newly elected government"
+ },
+ {
+  "key": "OLDPEACEMANLY",
+  "cat": "Founding Fathers",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Although the {%STRING0} do not properly belong in this hemisphere,"
+ },
+ {
+  "key": "ORE",
+  "cat": "Founding Fathers",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {ore}, Your Excellency.  Our blacksmiths"
+ },
+ {
+  "key": "TOOLS",
+  "cat": "Founding Fathers",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {tools}, Your Excellency.  Our gunsmiths"
+ },
+ {
+  "key": "ALREADYREVOLUTION",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E984",
+  "page": "06",
+  "reachable": false,
+  "summary": "We are already fighting a War of Independence, Excellency."
+ },
+ {
+  "key": "APOSTATES",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We note that you have signed a treaty with those unrepentant"
+ },
+ {
+  "key": "APOSTATESUSA",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We note that you have signed a treaty with those imperialist"
+ },
+ {
+  "key": "BURNED",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} burn {%STRING3} to the ground!"
+ },
+ {
+  "key": "CANTMOBILIZE",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Continental Army can mobilize in colonies"
+ },
+ {
+  "key": "CONSIDER",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03C322",
+  "page": "06",
+  "reachable": true,
+  "summary": "%STRING0 is considering intervention on our behalf against the King,"
+ },
+ {
+  "key": "CONTINENTAL",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_05C69C",
+  "page": "10",
+  "reachable": true,
+  "summary": "Our {Veteran %STRING0} have hardened to {Continental Army}"
+ },
+ {
+  "key": "DECLARE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E984",
+  "page": "06",
+  "reachable": false,
+  "summary": "Shall we declare our independence from {%STRING0}, Your Excellency?"
+ },
+ {
+  "key": "DECLAREWAR",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03ECF0",
+  "page": "07",
+  "reachable": true,
+  "summary": "The {%STRING0} and {%STRING1} are now at war."
+ },
+ {
+  "key": "EXPLOITS",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03A9C0",
+  "page": "05",
+  "reachable": false,
+  "summary": "COLONIZATION RATING: %NUMBER0%%"
+ },
+ {
+  "key": "FOREIGNNOTAVAIL",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_039888",
+  "page": "05",
+  "reachable": true,
+  "summary": "The Foreign Affairs Adviser's report is no longer available"
+ },
+ {
+  "key": "FREEDOM",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING1 Founding Fathers announce that"
+ },
+ {
+  "key": "FRIEND",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03D948",
+  "page": "06",
+  "reachable": false,
+  "summary": "British General Cornwallis"
+ },
+ {
+  "key": "GREATDEEDS",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "seek a life of {religious freedom} and service to the Crown"
+ },
+ {
+  "key": "GREATKINGS",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "our Queen and the Church of England"
+ },
+ {
+  "key": "HOWTOWIN",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "We have just won a glorious victory on the road to freedom, Your Excellency."
+ },
+ {
+  "key": "INDEPENDENCE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03DE46",
+  "page": "06",
+  "reachable": false,
+  "summary": "Continental Congress signs {Declaration of Independence}!"
+ },
+ {
+  "key": "INTERVENE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03D510",
+  "page": "06",
+  "reachable": false,
+  "summary": "%STRING1 Intervention Force arrives in {%STRING0}!  Local Rebel Army"
+ },
+ {
+  "key": "INTERVENTION",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03D948",
+  "page": "06",
+  "reachable": false,
+  "summary": "{%STRING0} declares war on %STRING1 and joins the War of Independence"
+ },
+ {
+  "key": "INVASION",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03CDA2",
+  "page": "06",
+  "reachable": false,
+  "summary": "Royal Expeditionary Force lands near {%STRING0}!"
+ },
+ {
+  "key": "KINGBLESS",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"You have our royal blessing.  If you wish, you may kiss"
+ },
+ {
+  "key": "KINGBUY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E162",
+  "page": "06",
+  "reachable": false,
+  "summary": "King increases military spending.  {%STRING0} added to royal"
+ },
+ {
+  "key": "KINGFRIGATE",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0 %STRING1.  We note that enemy warships are"
+ },
+ {
+  "key": "KINGFUND",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Our royal treasury is stretched to the limit.  At this"
+ },
+ {
+  "key": "KINGGALLEON2",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0 %STRING1.  We are most pleased at the amount"
+ },
+ {
+  "key": "KINGGALLEON3",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0 %STRING1.  We are most pleased at the amount"
+ },
+ {
+  "key": "KINGLAUGH",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Ha ha ha ha ha ha ha!  You make a funny joke!"
+ },
+ {
+  "key": "KINGLOSE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02F3A2",
+  "page": "03",
+  "reachable": false,
+  "summary": "\"In our wisdom, we have decided to let you go"
+ },
+ {
+  "key": "KINGLOWER",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"After careful consideration, we have graciously decided"
+ },
+ {
+  "key": "KINGMERCY",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0 %STRING1.  In light of the unfortunate loss"
+ },
+ {
+  "key": "KINGMOBILIZE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E162",
+  "page": "06",
+  "reachable": false,
+  "summary": "Parliament votes additional funds to suppress"
+ },
+ {
+  "key": "KINGNAVACT",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  We are concerned that the Crown is not"
+ },
+ {
+  "key": "KINGNEWWAR",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  The arrogant attitude of the {%STRING2} has"
+ },
+ {
+  "key": "KINGNO",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We are most dissatisfied with your efforts in the"
+ },
+ {
+  "key": "KINGNOTHING",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"In spite of your impudence, we shall not change your"
+ },
+ {
+  "key": "KINGRAISE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"Your DARE to demand lower taxes!  After the kindness"
+ },
+ {
+  "key": "KINGRECRUIT",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The {Royal University} can provide us with specialists"
+ },
+ {
+  "key": "KINGSTAMPACT",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  The ungrateful attitude of the colonists"
+ },
+ {
+  "key": "KINGTAX",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02F052",
+  "page": "03",
+  "reachable": false,
+  "summary": "\"It is essential that the Crown receive proper"
+ },
+ {
+  "key": "KINGVICTORY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  To celebrate our recent victory"
+ },
+ {
+  "key": "KINGWAR",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  Because of recent developments in our"
+ },
+ {
+  "key": "KINGWELCOME0",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Welcome, %STRING0 %STRING1.  Your exploits in"
+ },
+ {
+  "key": "KINGWIFE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  In honor of our recent wedding to"
+ },
+ {
+  "key": "KINGWIN",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02F3A2",
+  "page": "03",
+  "reachable": false,
+  "summary": "\"As expected, your attempt to separate from"
+ },
+ {
+  "key": "KISSUP",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03334E",
+  "page": "04",
+  "reachable": true,
+  "summary": "{%STRING0} is currently under Parliamentary {boycott}, Your Excellency."
+ },
+ {
+  "key": "LANDFIRST",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03FDDE",
+  "page": "07",
+  "reachable": false,
+  "summary": "Land units cannot enter an enemy occupied square"
+ },
+ {
+  "key": "LOOTCASH",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_041EEA",
+  "page": "08",
+  "reachable": false,
+  "summary": "{%STRING0} treasure fleet laden with {%NUMBER0$} arrives safely in %STRING1!"
+ },
+ {
+  "key": "LOOTFOREIGN",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_04E2D6",
+  "page": "0D",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} treasure fleet laden with {%NUMBER0$} arrives"
+ },
+ {
+  "key": "LOSING1",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "King's Forces control all ports in %STRING0!"
+ },
+ {
+  "key": "LOSING2",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "King's Forces control all colonies in %STRING0!"
+ },
+ {
+  "key": "LOSING3",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "King's Forces control over 90%% of %STRING0 population!"
+ },
+ {
+  "key": "MERCENARIES",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E442",
+  "page": "06",
+  "reachable": false,
+  "summary": "The King of %STRING0 has offered to send us a force of trained {mercenaries}"
+ },
+ {
+  "key": "MERCENARY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "The {%STRING0} declare war on the {%STRING1}."
+ },
+ {
+  "key": "MERCS",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03D510",
+  "page": "06",
+  "reachable": false,
+  "summary": "%STRING1 mercenaries arrive in %STRING0."
+ },
+ {
+  "key": "MOBILIZE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E2EA",
+  "page": "06",
+  "reachable": false,
+  "summary": "Continental Army mobilizes at {%STRING0}! Our Veteran %STRING1"
+ },
+ {
+  "key": "MOBILIZE2",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E2EA",
+  "page": "06",
+  "reachable": false,
+  "summary": "Continental Army mobilizes at {%STRING0}! {%NUMBER0} Veteran"
+ },
+ {
+  "key": "MULTIREV",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E984",
+  "page": "06",
+  "reachable": false,
+  "summary": "^^Warning!"
+ },
+ {
+  "key": "NOCOLONIESEITHER",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_022542",
+  "page": "01",
+  "reachable": true,
+  "summary": "New colonies cannot be founded during the {War of Independence}."
+ },
+ {
+  "key": "NOMAYORSDURINGREV",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "Scouts cannot meet with mayors during the {War of Independence}."
+ },
+ {
+  "key": "NOWARSDURINGREV",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Foreign colonies cannot be attacked during the {War of Independence}."
+ },
+ {
+  "key": "OLDPEACEMEEK",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We welcome the friendship of our brothers the {%STRING0} and their"
+ },
+ {
+  "key": "OTHERGRANTED",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The King of {%STRING0} grants {independence} to %STRING1!  %STRING2"
+ },
+ {
+  "key": "OTHERLESS",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02F3A2",
+  "page": "03",
+  "reachable": false,
+  "summary": "Spies Report:  Only {%NUMBER0} {%STRING1} now support independence"
+ },
+ {
+  "key": "OTHERMIGHT",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02F3A2",
+  "page": "03",
+  "reachable": false,
+  "summary": "Your Excellency, the King of {%STRING0} is considering granting independence"
+ },
+ {
+  "key": "PICKINDEPENDENCE",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select an independence tune:"
+ },
+ {
+  "key": "PURCHASETAX",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We have graciously decided to raise your tax rate by {%NUMBER0%%}"
+ },
+ {
+  "key": "REBELDOWN",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E844",
+  "page": "06",
+  "reachable": false,
+  "summary": "{Tory} sentiment is once again on the rise in the colonies, Your"
+ },
+ {
+  "key": "REBELMAJORITY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is up to %NUMBER0%%, Your"
+ },
+ {
+  "key": "REBELUNANIMOUS",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is up to 100%%, Your Excellency."
+ },
+ {
+  "key": "REBELUP",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E844",
+  "page": "06",
+  "reachable": false,
+  "summary": "{Rebel} sentiment is rising in the colonies, Your Excellency!"
+ },
+ {
+  "key": "REBELUP50",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E844",
+  "page": "06",
+  "reachable": false,
+  "summary": "{Rebel} sentiment is rising in the colonies, Your Excellency!"
+ },
+ {
+  "key": "RETIRING",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 %STRING1 steps down after over 300 years of loyal service to the"
+ },
+ {
+  "key": "RETIRING2",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "War-weary Continental Congress sues for peace!  King accepts"
+ },
+ {
+  "key": "SCREWED",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_061454",
+  "page": "12",
+  "reachable": false,
+  "summary": "\"These are the burial grounds of our"
+ },
+ {
+  "key": "SEIZURE",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03C5A8",
+  "page": "06",
+  "reachable": false,
+  "summary": "{%STRING0} seized on the high seas by the Royal Navy!"
+ },
+ {
+  "key": "SEIZURELAND",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03C932",
+  "page": "06",
+  "reachable": false,
+  "summary": "{%STRING0} captured by the Royal Army!"
+ },
+ {
+  "key": "SEIZURESEA",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03C932",
+  "page": "06",
+  "reachable": false,
+  "summary": "{%STRING0} captured at sea by the Royal Navy!"
+ },
+ {
+  "key": "SOMEBOYCOTT",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03314E",
+  "page": "04",
+  "reachable": true,
+  "summary": "Some of the cargo could not be unloaded because of a parliamentary"
+ },
+ {
+  "key": "SOONRETIRING0",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 %STRING1 plans to retire in 1800!  A rumor circulates"
+ },
+ {
+  "key": "SOONRETIRING1",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"General %STRING1, the people are weary of this long war.  If we cannot"
+ },
+ {
+  "key": "SUCCESSION",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03C638",
+  "page": "06",
+  "reachable": false,
+  "summary": "War of the Spanish Succession ends in Europe!"
+ },
+ {
+  "key": "TAXOPTIONS",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "Kiss pinky ring."
+ },
+ {
+  "key": "TEAPARTY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "{%STRING3 Party}!  Sons of Liberty throw {%NUMBER0} tons of %STRING0"
+ },
+ {
+  "key": "TOOTORY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03E984",
+  "page": "06",
+  "reachable": false,
+  "summary": "Only {%NUMBER0%%} of the colonists support the independence"
+ },
+ {
+  "key": "TORYMAJORITY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is down to %NUMBER0%%, Your"
+ },
+ {
+  "key": "TORYMINORITY",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sons of Liberty membership in {%STRING0} is down from 100%% to %NUMBER0%%,"
+ },
+ {
+  "key": "TORYUPRISING",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_03CAC6",
+  "page": "06",
+  "reachable": false,
+  "summary": "Tory uprising near %STRING0!  Parliament arms Tory Militia!"
+ },
+ {
+  "key": "TRADEWITH",
+  "cat": "King, Taxes & Revolution",
+  "func": "func_05A40E",
+  "page": "0F",
+  "reachable": false,
+  "summary": "\"We will give you {%NUMBER0 %STRING0} in exchange for your %NUMBER1 %STRING1."
+ },
+ {
+  "key": "VIOLATE",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} violate {%STRING1} territory near {%STRING2}!"
+ },
+ {
+  "key": "WARN1",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your Excellency, the King's forces control all but %NUMBER0 of the"
+ },
+ {
+  "key": "WARN2",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your Excellency, the King's forces control all but %NUMBER1 of our"
+ },
+ {
+  "key": "WARN3",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your Excellency, the King's forces control %NUMBER2%% of the %STRING0"
+ },
+ {
+  "key": "WHICHFREEDOM",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The Continental Congress will expand during its next session,"
+ },
+ {
+  "key": "WINNING",
+  "cat": "King, Taxes & Revolution",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Royal Expeditionary Force annihilated!"
+ },
+ {
+  "key": "ALREADYSMITE",
+  "cat": "Miscellaneous",
+  "func": "func_04AF5E",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We are already at war with the worthless {%STRING0}.\""
+ },
+ {
+  "key": "BADHAGGLE0",
+  "cat": "Miscellaneous",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Our patience with your haggling is exhausted."
+ },
+ {
+  "key": "BADHAGGLE1",
+  "cat": "Miscellaneous",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We have already told you that we no longer want your"
+ },
+ {
+  "key": "BRING",
+  "cat": "Miscellaneous",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We are in need of {%STRING0} and {%STRING1}.  Perhaps you will"
+ },
+ {
+  "key": "BUYME0",
+  "cat": "Miscellaneous",
+  "func": "func_02B744",
+  "page": "02",
+  "reachable": true,
+  "summary": "Cost to complete %STRING0: %NUMBER0$."
+ },
+ {
+  "key": "BUYME1",
+  "cat": "Miscellaneous",
+  "func": "func_02B744",
+  "page": "02",
+  "reachable": true,
+  "summary": "Cost to complete %STRING0: %NUMBER0$."
+ },
+ {
+  "key": "CANCELPEACE",
+  "cat": "Miscellaneous",
+  "func": "func_03ECF0",
+  "page": "07",
+  "reachable": true,
+  "summary": "{%STRING0} cancel peace treaty with {%STRING1}."
+ },
+ {
+  "key": "CANESUGAR",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {sugar}, Your Excellency.  Our distillers"
+ },
+ {
+  "key": "CCLIM",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "CLIMATE"
+ },
+ {
+  "key": "CCONT",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "LAND FORM"
+ },
+ {
+  "key": "CLAND",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "LAND MASS"
+ },
+ {
+  "key": "COTTON",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {cotton}, Your Excellency.  Our weavers"
+ },
+ {
+  "key": "CTEMP",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "TEMPERATURE"
+ },
+ {
+  "key": "DEFOREST",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Deforestation near %STRING0."
+ },
+ {
+  "key": "DEPLETION",
+  "cat": "Miscellaneous",
+  "func": "func_02D30A",
+  "page": "03",
+  "reachable": true,
+  "summary": "Mine depleted near %STRING0."
+ },
+ {
+  "key": "END",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "(no text)"
+ },
+ {
+  "key": "EVASIVE",
+  "cat": "Miscellaneous",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0 %STRING1} evades {%STRING2 %STRING3}."
+ },
+ {
+  "key": "EXTORTNO",
+  "cat": "Miscellaneous",
+  "func": "func_04AC00",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"You must think us very foolish indeed, %STRING0 %STRING1.  The {%STRING2}"
+ },
+ {
+  "key": "EXTORTPOOR",
+  "cat": "Miscellaneous",
+  "func": "func_04AC00",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Mighty %STRING0, we tremble before you.  Alas, the humble and"
+ },
+ {
+  "key": "EXTORTSTUFF",
+  "cat": "Miscellaneous",
+  "func": "func_04AC00",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Great %STRING0, we bow before the might of your strange weapons."
+ },
+ {
+  "key": "FURS",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {furs}, Your Excellency.  Our fur traders"
+ },
+ {
+  "key": "GIFTS",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We present you with a gift of {%NUMBER0$} in exchange for"
+ },
+ {
+  "key": "HAVETREATY",
+  "cat": "Miscellaneous",
+  "func": "func_021FF2",
+  "page": "01",
+  "reachable": true,
+  "summary": "\"We have signed a peace treaty with the {%STRING0},"
+ },
+ {
+  "key": "HELLOMANLY",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"%STRING0.  We note with {displeasure} that your presence continues"
+ },
+ {
+  "key": "HELLOMEEK",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"{Mighty} %STRING0, we again welcome you to {%STRING1}."
+ },
+ {
+  "key": "HOWMUCH5",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "How much {%STRING0} should be sold (at {%NUMBER1$}) to %STRING2 (0-%NUMBER0)."
+ },
+ {
+  "key": "KISSSORRY",
+  "cat": "Miscellaneous",
+  "func": "func_03334E",
+  "page": "04",
+  "reachable": true,
+  "summary": "Unfortunately, we only have {%NUMBER0$} available."
+ },
+ {
+  "key": "LEARNLATER",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Very well.  Perhaps another time.\""
+ },
+ {
+  "key": "LEARNMAD",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Your ill manners infuriate us, Young One.  You fail"
+ },
+ {
+  "key": "LEARNSTAY",
+  "cat": "Miscellaneous",
+  "func": "func_04A426",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"You are unskilled, Young One, and your ways are"
+ },
+ {
+  "key": "LUMBER",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {lumber}, Your Excellency.  Our carpenters"
+ },
+ {
+  "key": "NEEDTOOLS",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING1} under construction in {%STRING0} requires"
+ },
+ {
+  "key": "NEEDTOOLS0",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING1} under construction in {%STRING0} requires"
+ },
+ {
+  "key": "NOCONTACT",
+  "cat": "Miscellaneous",
+  "func": "func_04AF5E",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We have no contact with the {%STRING0}.\""
+ },
+ {
+  "key": "NOTENOUGH",
+  "cat": "Miscellaneous",
+  "func": "func_049600",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Sadly, your treasury ({%NUMBER0$}) is not large enough to"
+ },
+ {
+  "key": "ORDINAL",
+  "cat": "Miscellaneous",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "first"
+ },
+ {
+  "key": "PEACEMANLY",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Very well.  However, {only} the land you now occupy"
+ },
+ {
+  "key": "PEACEMEEK",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Excellent. All of the land which you now occupy"
+ },
+ {
+  "key": "PEACEUSA",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} welcomes peace with our politically backward neighbors,"
+ },
+ {
+  "key": "PROVOKE",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We can no longer tolerate your foul provocations.  Prepare for WAR!\""
+ },
+ {
+  "key": "PURCHASE",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The following items are available.  Which shall"
+ },
+ {
+  "key": "REFIT",
+  "cat": "Miscellaneous",
+  "func": "func_02F052",
+  "page": "03",
+  "reachable": false,
+  "summary": "{%STRING0} has completed its repairs in {%STRING1}."
+ },
+ {
+  "key": "RID",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"In the name of {%STRING0}, we order you to leave {%STRING1} immediately."
+ },
+ {
+  "key": "RIDUSA",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING1} orders you to leave this hemisphere immediately."
+ },
+ {
+  "key": "SIGNTREATY",
+  "cat": "Miscellaneous",
+  "func": "func_057DC0",
+  "page": "0F",
+  "reachable": true,
+  "summary": "The {%STRING0} and {%STRING1} have signed a peace treaty."
+ },
+ {
+  "key": "THREATS",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We laugh at your feeble threats.\""
+ },
+ {
+  "key": "TIMECHANGE",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^Colonization Help: Time Scale"
+ },
+ {
+  "key": "TOBACCO",
+  "cat": "Miscellaneous",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} has run out of {tobacco}, Your Excellency.  Our tobacconists"
+ },
+ {
+  "key": "TRADEDELETE",
+  "cat": "Miscellaneous",
+  "func": "func_0612E6",
+  "page": "12",
+  "reachable": true,
+  "summary": "Which trade route should we {delete}:"
+ },
+ {
+  "key": "TRADEMANY",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Only {%NUMBER0} trade routes can be defined, Your Excellency."
+ },
+ {
+  "key": "TRADENAME",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Enter the name for this trade route."
+ },
+ {
+  "key": "TRADENONE",
+  "cat": "Miscellaneous",
+  "func": "func_022D46",
+  "page": "01",
+  "reachable": true,
+  "summary": "You have not yet defined any trade routes."
+ },
+ {
+  "key": "TRADENONE2",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "You have not yet defined any {%STRING0} trade routes."
+ },
+ {
+  "key": "TRADENOWANT",
+  "cat": "Miscellaneous",
+  "func": "func_05A40E",
+  "page": "0F",
+  "reachable": false,
+  "summary": "\"We are not interested in your {%NUMBER0 %STRING0}.  Come back when"
+ },
+ {
+  "key": "TRADESELECT",
+  "cat": "Miscellaneous",
+  "func": "func_022D46",
+  "page": "01",
+  "reachable": true,
+  "summary": "Select a trade route:"
+ },
+ {
+  "key": "TRADETYPE",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Is this a {sea} trade route or a {land} trade route?"
+ },
+ {
+  "key": "UNFORTUNATE",
+  "cat": "Miscellaneous",
+  "func": "func_04AF5E",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Unfortunately, your treasury is insufficient to"
+ },
+ {
+  "key": "WARMANLY",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"You reject our generous offer?  Then in the name of"
+ },
+ {
+  "key": "WARMEEK",
+  "cat": "Miscellaneous",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Very well, then in the name of %STRING0 we shall drive"
+ },
+ {
+  "key": "WITHDRAW",
+  "cat": "Miscellaneous",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"In the interest of peace, we shall withdraw our forces.\""
+ },
+ {
+  "key": "BURIAL1",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The mounds are cold and empty."
+ },
+ {
+  "key": "BURIAL2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Within, you find trinkets worth {%NUMBER0$}."
+ },
+ {
+  "key": "BURIAL3",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Within, you find incredible treasure worth {%NUMBER1$}!"
+ },
+ {
+  "key": "CHIEFAREA",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"The {%STRING0} are pleased to welcome travelers"
+ },
+ {
+  "key": "CHIEFBORED",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"The {%STRING0} are always pleased to welcome {%STRING1}"
+ },
+ {
+  "key": "CHIEFGIFT",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"The {%STRING0} welcome the emissaries of the {%STRING1}"
+ },
+ {
+  "key": "CHIEFGUIDES",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We gladly welcome you to our %STRING1."
+ },
+ {
+  "key": "CHIEFHOWDY",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Greetings, travelers.  We are a peaceful village"
+ },
+ {
+  "key": "CHIEFKILL",
+  "cat": "Natives",
+  "func": "func_04A7CA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"You have broken sacred taboos of the {%STRING0} tribe!"
+ },
+ {
+  "key": "DEADCONVERTS",
+  "cat": "Natives",
+  "func": "func_02EF64",
+  "page": "03",
+  "reachable": false,
+  "summary": "Indian {converts} lose faith and return to tribe.  Converts"
+ },
+ {
+  "key": "EXTINCT",
+  "cat": "Natives",
+  "func": "func_046EC0",
+  "page": "0C",
+  "reachable": true,
+  "summary": "The %STRING0 tribe has been wiped out."
+ },
+ {
+  "key": "HEATHEN",
+  "cat": "Natives",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We are currently busy subduing the notorious heathen {%STRING1} tribe."
+ },
+ {
+  "key": "HEATHENUSA",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The %STRING0 is currently in the process of relocating members"
+ },
+ {
+  "key": "HELLOAHOY",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Ahoy there, %STRING0, and welcome to {%STRING1}."
+ },
+ {
+  "key": "HELLOFIRST",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Greetings, %STRING0, and welcome to {%STRING1}."
+ },
+ {
+  "key": "HERESY0",
+  "cat": "Natives",
+  "func": "func_048CA4",
+  "page": "0C",
+  "reachable": true,
+  "summary": "{%STRING0 missionaries} denounce heresy of {%STRING1}."
+ },
+ {
+  "key": "HERESY1",
+  "cat": "Natives",
+  "func": "func_048CA4",
+  "page": "0C",
+  "reachable": true,
+  "summary": "{%STRING0 missionaries} denounce heresy of {%STRING1}."
+ },
+ {
+  "key": "INDIANBEGFOOD",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} tribe has fallen upon hard times and does"
+ },
+ {
+  "key": "INDIANBOW",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "\"The {%STRING0} tribe bows before the might of the {%STRING1}."
+ },
+ {
+  "key": "INDIANBRIBE",
+  "cat": "Natives",
+  "func": "func_02211E",
+  "page": "01",
+  "reachable": true,
+  "summary": "\"Very well, we withdraw our objection.\""
+ },
+ {
+  "key": "INDIANBURN",
+  "cat": "Natives",
+  "func": "func_045D00",
+  "page": "0B",
+  "reachable": true,
+  "summary": "{%STRING0} burn {%STRING1} missions!  Church authorities"
+ },
+ {
+  "key": "INDIANBURNCOLONY",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} massacre {%STRING1} colonists at {%STRING3}!"
+ },
+ {
+  "key": "INDIANBURNCOLONY2",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} burn {%STRING1} colony at {%STRING3}."
+ },
+ {
+  "key": "INDIANCITY",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "The {%STRING0} settlers in {%STRING3} have committed"
+ },
+ {
+  "key": "INDIANCOME",
+  "cat": "Natives",
+  "func": "func_056B92",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We hope you will soon {visit} %STRING0 villages to"
+ },
+ {
+  "key": "INDIANCOMMENT",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "The {%STRING0} are pleased to see the prosperity of our"
+ },
+ {
+  "key": "INDIANFOREST",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"This forest and the creatures"
+ },
+ {
+  "key": "INDIANFOREST2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"This forest and the creatures"
+ },
+ {
+  "key": "INDIANGIVEFOOD",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} see that your food stores are low this"
+ },
+ {
+  "key": "INDIANGIVESTUFF",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} tribe is pleased to see the progress of"
+ },
+ {
+  "key": "INDIANGOLD",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} people cry out for justice."
+ },
+ {
+  "key": "INDIANGRUDGE",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} nation holds War Council!"
+ },
+ {
+  "key": "INDIANHELLO1",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} tribe welcomes the most worthy {%STRING1}"
+ },
+ {
+  "key": "INDIANHELLO2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} tribe greets the most ruthless {%STRING1}"
+ },
+ {
+  "key": "INDIANLAND",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"You are trespassing on {%STRING0 land}."
+ },
+ {
+  "key": "INDIANLOSE",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING1 %STRING2} %STRING4 {%STRING0} near %STRING3!"
+ },
+ {
+  "key": "INDIANPEACE",
+  "cat": "Natives",
+  "func": "func_056B92",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} welcome peace with our brothers"
+ },
+ {
+  "key": "INDIANROAD",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We are worried that building a {road}"
+ },
+ {
+  "key": "INDIANSCONVERT",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The wisdom of your missionaries has convinced some of us"
+ },
+ {
+  "key": "INDIANSHUN",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Then the mighty {%STRING0} shall mercilessly drive you from our"
+ },
+ {
+  "key": "INDIANSLAVES",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Frightened {%STRING0} flock to %STRING1 mission as {converts}."
+ },
+ {
+  "key": "INDIANSURPRISE",
+  "cat": "Natives",
+  "func": "func_046FFA",
+  "page": "0C",
+  "reachable": true,
+  "summary": "{%STRING0} make surprise raid near {%STRING1}!  Colonists"
+ },
+ {
+  "key": "INDIANTREATY",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} tribe bows before the"
+ },
+ {
+  "key": "INDIANWAGONS",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} settlers have committed"
+ },
+ {
+  "key": "INDIANWAR",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"We {%STRING0} have tried to live in"
+ },
+ {
+  "key": "INDIANWARFARE",
+  "cat": "Natives",
+  "func": "func_04AF5E",
+  "page": "0C",
+  "reachable": true,
+  "summary": "{%STRING0} nation holds War Council!"
+ },
+ {
+  "key": "INDIANWARPATH",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} tribe is ready to go on the warpath."
+ },
+ {
+  "key": "INDIANWARPATH2",
+  "cat": "Natives",
+  "func": "func_04AF5E",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We will gladly drive the {%STRING0} from our ancestral"
+ },
+ {
+  "key": "INDIANWELCOME",
+  "cat": "Natives",
+  "func": "func_056C3E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"The {%STRING0} tribe welcomes you."
+ },
+ {
+  "key": "INDIANWIN0",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} ambush {%STRING1 %STRING2} near %STRING3!"
+ },
+ {
+  "key": "INDIANWIN1",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} ambush {%STRING1 %STRING2} near %STRING3!"
+ },
+ {
+  "key": "INDIANWIN2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} ambush {%STRING1 %STRING2} near %STRING3!"
+ },
+ {
+  "key": "INDIANWINCOLONY",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} massacre {%STRING1} colonists at {%STRING3}!"
+ },
+ {
+  "key": "INDIANWINCOLONY2",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} massacre {%STRING1} colonists at {%STRING3}."
+ },
+ {
+  "key": "LEARNALREADY",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"The {%STRING0} of this village have already shared"
+ },
+ {
+  "key": "LEARNDONE",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Congratulations, Young One.  You have learned the"
+ },
+ {
+  "key": "LEARNSLOW",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"You are unskilled and uncouth, Young One, and have"
+ },
+ {
+  "key": "LOOT",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} loot and burn {%STRING1 %STRING2}!  Natives flee in"
+ },
+ {
+  "key": "LOOT2",
+  "cat": "Natives",
+  "func": "func_05CA7E",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} burn {%STRING1 %STRING2}!  Natives flee in panic!"
+ },
+ {
+  "key": "MEEKNESS",
+  "cat": "Natives",
+  "func": "func_057AA2",
+  "page": "0F",
+  "reachable": true,
+  "summary": "request"
+ },
+ {
+  "key": "MISSION0",
+  "cat": "Natives",
+  "func": "func_048A3A",
+  "page": "0C",
+  "reachable": true,
+  "summary": "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0."
+ },
+ {
+  "key": "MISSION1",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0."
+ },
+ {
+  "key": "MISSION2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0."
+ },
+ {
+  "key": "MISSION3",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0."
+ },
+ {
+  "key": "NOLOOT",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} burn {%STRING1 %STRING2}!  Natives flee in"
+ },
+ {
+  "key": "PICKINDIAN",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select an Indian tune:"
+ },
+ {
+  "key": "PISS0",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The {%STRING1} tribe is now %STRING2 {%STRING3}."
+ },
+ {
+  "key": "PISS1",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Because of your incessant roadbuilding,"
+ },
+ {
+  "key": "PISS2",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Because you persist in destroying the forest,"
+ },
+ {
+  "key": "PISS3",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Because of the continued work of %STRING0 missionaries,"
+ },
+ {
+  "key": "PISS4",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Because of this umprovoked attack,"
+ },
+ {
+  "key": "PISS5",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Because of increasing population pressure"
+ },
+ {
+  "key": "RAIDBURN",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} raiding party burns buildings in {%STRING1}!"
+ },
+ {
+  "key": "RAIDGOLD",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} raiding party seizes strongboxes in {%STRING1}!"
+ },
+ {
+  "key": "RAIDNOTHING",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} raiding party wiped out in {%STRING1}!"
+ },
+ {
+  "key": "RAIDSCALP",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{%STRING0} raiding party takes scalps in {%STRING1}!"
+ },
+ {
+  "key": "RAIDSHIP",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} raiding party attacks harbor in {%STRING1}!"
+ },
+ {
+  "key": "RAIDSTORES",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "{%STRING0} raiding party attacks stores in {%STRING1}!"
+ },
+ {
+  "key": "RAIDWREAK",
+  "cat": "Natives",
+  "func": "func_05BE84",
+  "page": "10",
+  "reachable": true,
+  "summary": "Spies report: {%STRING0} raiding party wreaks havoc in"
+ },
+ {
+  "key": "SMITEINDIANS",
+  "cat": "Natives",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We shall ruthlessly smite the heathen {%STRING0}"
+ },
+ {
+  "key": "TEACHCONVERT",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Indian converts already know the Indian ways."
+ },
+ {
+  "key": "VILLAGEBAD",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has reached a %STRING0 of {%STRING1}.  A"
+ },
+ {
+  "key": "VILLAGEHAPPY",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has reached a %STRING0 of {%STRING1}.  The"
+ },
+ {
+  "key": "VILLAGEMEDIUM",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has reached a %STRING0 of {%STRING1}.  The"
+ },
+ {
+  "key": "VILLAGESAVAGE",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has reached a %STRING0 of {%STRING1}.  The"
+ },
+ {
+  "key": "VILLAGEWAR",
+  "cat": "Natives",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Your expedition has reached a %STRING0 of {%STRING1}.  A"
+ },
+ {
+  "key": "WANTSTUFF",
+  "cat": "Natives",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"We are displeased that you continue to befoul lands that are"
+ },
+ {
+  "key": "WHACKINDIANS",
+  "cat": "Natives",
+  "func": "func_03ECF0",
+  "page": "07",
+  "reachable": true,
+  "summary": "Shall we attack the {%STRING0}, Your Excellency?"
+ },
+ {
+  "key": "LOSENOCOLONIES",
+  "cat": "Score & Endgame",
+  "func": "func_02F3A2",
+  "page": "03",
+  "reachable": false,
+  "summary": "\"%STRING0 %STRING1.  Our efforts in the New World have"
+ },
+ {
+  "key": "RETIRE",
+  "cat": "Score & Endgame",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Do you really want to quit?"
+ },
+ {
+  "key": "SCORE",
+  "cat": "Score & Endgame",
+  "func": "func_03A9C0",
+  "page": "05",
+  "reachable": false,
+  "summary": "An Infectious Disease, %STRING0 Fever"
+ },
+ {
+  "key": "SCORED",
+  "cat": "Score & Endgame",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Scoring for this game is now complete."
+ },
+ {
+  "key": "VICEROY",
+  "cat": "Score & Endgame",
+  "func": "func_075594",
+  "page": "1A",
+  "reachable": false,
+  "summary": "^"
+ },
+ {
+  "key": "VICEROY2",
+  "cat": "Score & Endgame",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^"
+ },
+ {
+  "key": "AMERICA",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Would you like to use the original Americas map, or"
+ },
+ {
+  "key": "ARMOPTIONS",
+  "cat": "Setup, Menus & System",
+  "func": "func_033C96",
+  "page": "04",
+  "reachable": true,
+  "summary": "Don't get on next ship."
+ },
+ {
+  "key": "BEGINMENU",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "{COLONIZATION} Version %STRING0 -- %STRING1"
+ },
+ {
+  "key": "DIFFICULTY",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a Difficulty Level"
+ },
+ {
+  "key": "DOS",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Exit to DOS?"
+ },
+ {
+  "key": "DOSYES",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Exit to DOS?"
+ },
+ {
+  "key": "GAMEOPTIONS",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Set Game Options"
+ },
+ {
+  "key": "GREATLEADER",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Our Queen"
+ },
+ {
+  "key": "GREATLEADER2",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "the Queen"
+ },
+ {
+  "key": "HOWMUCH1",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "How much {%STRING0} should be loaded onto %STRING1 (0-%NUMBER0)."
+ },
+ {
+  "key": "HOWMUCH2",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "How much {%STRING0} should be unloaded from %STRING1 to %STRING2 (0-%NUMBER0)."
+ },
+ {
+  "key": "HOWMUCH4",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "How much {%STRING0} (at {%NUMBER1$}) should be purchased"
+ },
+ {
+  "key": "LEADERNAME",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^Please Enter Your Name."
+ },
+ {
+  "key": "LOADERROR",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Error loading game %STRING0."
+ },
+ {
+  "key": "LOADGAME",
+  "cat": "Setup, Menus & System",
+  "func": "func_073158",
+  "page": "1A",
+  "reachable": false,
+  "summary": "Select Game To Load"
+ },
+ {
+  "key": "LOADGOOD",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Loaded %STRING0 successfully."
+ },
+ {
+  "key": "LOADNOT",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 is not a valid save file."
+ },
+ {
+  "key": "LOADOLD",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 is an obsolete save file."
+ },
+ {
+  "key": "LOADSIZE",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 does not match the current map"
+ },
+ {
+  "key": "MAPTOLOAD",
+  "cat": "Setup, Menus & System",
+  "func": "func_0759E8",
+  "page": "1A",
+  "reachable": false,
+  "summary": "^^Select Map File to Load"
+ },
+ {
+  "key": "MULTI",
+  "cat": "Setup, Menus & System",
+  "func": "func_070EBA",
+  "page": "19",
+  "reachable": false,
+  "summary": "^^Multiplayer Start Selected"
+ },
+ {
+  "key": "MULTINEXT",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^{%STRING0} Player Turn"
+ },
+ {
+  "key": "MYLEADER",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "King"
+ },
+ {
+  "key": "NATION0A",
+  "cat": "Setup, Menus & System",
+  "func": "func_07431E",
+  "page": "1A",
+  "reachable": false,
+  "summary": "^^ENGLAND"
+ },
+ {
+  "key": "NATION0B",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^ENGLAND"
+ },
+ {
+  "key": "NATION1A",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^FRANCE"
+ },
+ {
+  "key": "NATION1B",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^FRANCE"
+ },
+ {
+  "key": "NATION2A",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^SPAIN"
+ },
+ {
+  "key": "NATION2B",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^SPAIN"
+ },
+ {
+  "key": "NATION3A",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^NETHERLANDS"
+ },
+ {
+  "key": "NATION3B",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "^^NETHERLANDS"
+ },
+ {
+  "key": "PICKMILITARY",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a military tune:"
+ },
+ {
+  "key": "PICKMUSIC",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a piece of music:"
+ },
+ {
+  "key": "PICKNATION",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select a European Power"
+ },
+ {
+  "key": "REALLYBUY",
+  "cat": "Setup, Menus & System",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "Purchase %STRING0 for %NUMBER0$?"
+ },
+ {
+  "key": "SAVEERROR",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Error saving game %STRING0."
+ },
+ {
+  "key": "SAVEGAME",
+  "cat": "Setup, Menus & System",
+  "func": "func_072F7A",
+  "page": "1A",
+  "reachable": false,
+  "summary": "Select Save Slot"
+ },
+ {
+  "key": "SAVEGOOD",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING1 saved as %STRING0."
+ },
+ {
+  "key": "SOUNDOPTIONS",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Set Sound Options"
+ },
+ {
+  "key": "SUREDELETE",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Are you sure you want to delete the {%STRING0}?"
+ },
+ {
+  "key": "TRADESTART",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Select destination number %NUMBER0 for route"
+ },
+ {
+  "key": "TRIBUTE",
+  "cat": "Setup, Menus & System",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"%STRING0 has told us that we must drive all {%STRING1} from the"
+ },
+ {
+  "key": "TUTORIAL1",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "Our {%STRING0} carrying a pioneer and a soldier is on the high seas,"
+ },
+ {
+  "key": "TUTORIAL10",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "This looks like a good place to {plow} or {clear}.  Our {pioneers} will plow"
+ },
+ {
+  "key": "TUTORIAL11",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "Our ship, a {%STRING0}, is one of our most valuable units.  We can use"
+ },
+ {
+  "key": "TUTORIAL12",
+  "cat": "Setup, Menus & System",
+  "func": "func_02C5D4",
+  "page": "02",
+  "reachable": true,
+  "summary": "Our ship has arrived in %STRING0, Your Excellency, and is waiting"
+ },
+ {
+  "key": "TUTORIAL13",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "Our {pioneers} have arrived in the New World, Excellency!  They are"
+ },
+ {
+  "key": "TUTORIAL14",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "Our {soldiers} have two uses.  They can be used to attack our"
+ },
+ {
+  "key": "TUTORIAL15",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "New colonists have arrived in {%STRING0}, Your Excellency!  You can make"
+ },
+ {
+  "key": "TUTORIAL16",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "It is important for every colony to grow enough {food} to feed its"
+ },
+ {
+  "key": "TUTORIAL17",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "The European Status Screen shows your home port in %STRING0, %STRING1."
+ },
+ {
+  "key": "TUTORIAL18",
+  "cat": "Setup, Menus & System",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Cargo is normally purchased in units of 100; when you drag a cargo from"
+ },
+ {
+  "key": "TUTORIAL19",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "{Converts} are natives who for one reason or another have decided to"
+ },
+ {
+  "key": "TUTORIAL2",
+  "cat": "Setup, Menus & System",
+  "func": "func_020EE0",
+  "page": "01",
+  "reachable": true,
+  "summary": "We've found uncharted land, Excellency.  To put the colonists ashore,"
+ },
+ {
+  "key": "TUTORIAL3",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "The abundance of {%STRING0} in this area makes this a good place to"
+ },
+ {
+  "key": "TUTORIAL4",
+  "cat": "Setup, Menus & System",
+  "func": "func_02C5D4",
+  "page": "02",
+  "reachable": true,
+  "summary": "On the {Colony Screen}, you can decide what the colonists in this colony"
+ },
+ {
+  "key": "TUTORIAL5",
+  "cat": "Setup, Menus & System",
+  "func": "func_033F6A",
+  "page": "04",
+  "reachable": false,
+  "summary": "Excellency, there are {%STRING1} ready to join our colony on the docks"
+ },
+ {
+  "key": "TUTORIAL6",
+  "cat": "Setup, Menus & System",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Sire, there are {%NUMBER0} {%STRING0} in {%STRING1}.  If we move a ship"
+ },
+ {
+  "key": "TUTORIAL7",
+  "cat": "Setup, Menus & System",
+  "func": "func_02883E",
+  "page": "02",
+  "reachable": true,
+  "summary": "%STRING0 is growing rapidly, Your Excellency, and we may want to"
+ },
+ {
+  "key": "TUTORIAL8",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "This %STRING0 has no specialty profession.  If we move him into a"
+ },
+ {
+  "key": "TUTORIAL9",
+  "cat": "Setup, Menus & System",
+  "func": "func_020F50",
+  "page": "01",
+  "reachable": false,
+  "summary": "This looks like a good place for a {road}.  Our {pioneers} will build"
+ },
+ {
+  "key": "CLEARCUT",
+  "cat": "Units & Movement",
+  "func": "func_040656",
+  "page": "08",
+  "reachable": true,
+  "summary": "Pioneers clear forest near {%STRING0}.  {%NUMBER0 lumber} added"
+ },
+ {
+  "key": "CONFISCATE",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "\"Because of the atrocities you have committed against"
+ },
+ {
+  "key": "GRUDGEWAGONS",
+  "cat": "Units & Movement",
+  "func": "func_04A37C",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"We grudgingly receive your wagons in spite of the"
+ },
+ {
+  "key": "HOWMUCH3",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "How much {%STRING0} should be moved from %STRING1 to %STRING2 (0-%NUMBER0)."
+ },
+ {
+  "key": "KILLWAGONS",
+  "cat": "Units & Movement",
+  "func": "func_04A37C",
+  "page": "0C",
+  "reachable": true,
+  "summary": "Your Excellency! Our {wagon train} has disappeared"
+ },
+ {
+  "key": "LOBOTOMIZE",
+  "cat": "Units & Movement",
+  "func": "func_028D8C",
+  "page": "02",
+  "reachable": true,
+  "summary": "Do you wish to {clear} this colonist's specialty"
+ },
+ {
+  "key": "LOOTWAGONS",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "%STRING0 loot wagon trains near %STRING3!"
+ },
+ {
+  "key": "LOSTOURSCOUTS",
+  "cat": "Units & Movement",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "Our {scouts} near {%STRING1} have been captured by the {%STRING0}, Your"
+ },
+ {
+  "key": "LOSTTHEIRSCOUTS",
+  "cat": "Units & Movement",
+  "func": "func_059B90",
+  "page": "0F",
+  "reachable": true,
+  "summary": "We have captured a party of {%STRING0 scouts} attempting"
+ },
+ {
+  "key": "MADATWAGONS",
+  "cat": "Units & Movement",
+  "func": "func_04A37C",
+  "page": "0C",
+  "reachable": true,
+  "summary": "\"Because of the atrocities you have committed against"
+ },
+ {
+  "key": "MAYBEWITHDRAW",
+  "cat": "Units & Movement",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Our forces protect valid %STRING0 interests.  We are, however,"
+ },
+ {
+  "key": "NEWCOLONIST",
+  "cat": "Units & Movement",
+  "func": "func_02D658",
+  "page": "03",
+  "reachable": true,
+  "summary": "Population increase in %STRING0.  New colonist now available."
+ },
+ {
+  "key": "NOMOREWAGONS",
+  "cat": "Units & Movement",
+  "func": "func_02D0E4",
+  "page": "03",
+  "reachable": true,
+  "summary": "{%STRING0} is set to produce a {Wagon Train}, Your"
+ },
+ {
+  "key": "NOPLOW",
+  "cat": "Units & Movement",
+  "func": "func_02211E",
+  "page": "01",
+  "reachable": true,
+  "summary": "That land has already been {plowed}."
+ },
+ {
+  "key": "NOROAD",
+  "cat": "Units & Movement",
+  "func": "func_022334",
+  "page": "01",
+  "reachable": true,
+  "summary": "There is already a {road} here,"
+ },
+ {
+  "key": "NOTWITHDRAW",
+  "cat": "Units & Movement",
+  "func": "func_057F4E",
+  "page": "0F",
+  "reachable": true,
+  "summary": "\"Our forces protect valid %STRING0 interests and shall"
+ },
+ {
+  "key": "ONLYCOL",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "That function can be performed only"
+ },
+ {
+  "key": "ONLYPIO",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "That function can be performed only"
+ },
+ {
+  "key": "SUREDISBAND",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Really {disband} %STRING0?"
+ },
+ {
+  "key": "TOOMANYUNITS",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "A {unit} cannot be created because the maximum number of units for"
+ },
+ {
+  "key": "UNITFLAG",
+  "cat": "Units & Movement",
+  "func": null,
+  "page": null,
+  "reachable": null,
+  "summary": "Unit Flags Error (%NUMBER0, %NUMBER1) (%STRING0)."
+ },
+ {
+  "key": "UNITOPTIONS",
+  "cat": "Units & Movement",
+  "func": "func_02B046",
+  "page": "02",
+  "reachable": true,
+  "summary": "Move to front."
+ },
+ {
+  "key": "USEDUPTOOLS",
+  "cat": "Units & Movement",
+  "func": "func_040608",
+  "page": "08",
+  "reachable": true,
+  "summary": "Our {pioneer} has reverted to {colonist} status after using"
+ },
+ {
+  "key": "VETERAN",
+  "cat": "Units & Movement",
+  "func": "func_05C69C",
+  "page": "10",
+  "reachable": true,
+  "summary": "Our {%STRING0} have hardened to {Veteran} status,"
+ }
+]

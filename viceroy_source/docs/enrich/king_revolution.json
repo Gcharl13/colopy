@@ -1,0 +1,422 @@
+{
+ "NOCOLONIESEITHER": {
+  "trigger": "Player presses Build-Colony (B) with the active unit while the War of Independence flag is set (the global revolution flag, bit 0). The gate is checked before any other colony-validity test.",
+  "inputs": "The revolution/war-of-independence flag (global event flags, bit 0); the active unit.",
+  "outputs": "Shows the message 'New colonies cannot be founded during the War of Independence' and aborts the build command; no colony is created.",
+  "func": "func_022542",
+  "verified": true
+ },
+ "REBELMAJORITY": {
+  "trigger": "During a colony's end-of-turn Sons-of-Liberty settlement, the colony's rebel sentiment (its Sons-of-Liberty membership %) reaches at least 50% and the colony was not already latched into the rebel-majority band (colony flags bit 4 clear).",
+  "inputs": "The colony's rebel sentiment % (computed from its Liberty Bells vs population); the colony's owner power; the colony's band-latch flags.",
+  "outputs": "Sets the colony's rebel-majority latch (flags bit 4); every colonist in that colony gains a +1 bonus to base production. Shows the 'Sons of Liberty membership is up to N%... A majority support independence' message.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "REBELUNANIMOUS": {
+  "trigger": "A colony's rebel sentiment reaches 100% (full Sons-of-Liberty membership) and the colony was not already latched into the unanimous band (colony flags bit 2 clear).",
+  "inputs": "The colony's rebel sentiment %; the colony's owner power; the unanimous-band latch flag.",
+  "outputs": "Sets the unanimous latch (flags bit 2); colonists gain a +2 production bonus and can be educated more quickly. Shows the 'membership is up to 100%... +2 to base production' message.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TORYMINORITY": {
+  "trigger": "A colony that was previously at unanimous (100%) Sons-of-Liberty support (unanimous latch bit 2 set) sees rebel sentiment fall below 95%.",
+  "inputs": "The colony's rebel sentiment %; the unanimous-band latch flag.",
+  "outputs": "Drops the colony out of the unanimous band; its production bonus is reduced from +2 back to +1. Shows the 'membership is down from 100% to N%... only +1 to base production' message.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "TORYMAJORITY": {
+  "trigger": "A colony that was in the rebel-majority band (majority latch bit 4 set) sees rebel sentiment fall below 50%.",
+  "inputs": "The colony's rebel sentiment %; the majority-band latch flag.",
+  "outputs": "Clears the majority latch; the colony loses its production bonus entirely. Shows the 'membership is down to N%... no longer gain production bonuses' message.",
+  "func": "func_02D658",
+  "verified": true
+ },
+ "REBELUP": {
+  "trigger": "Pre-revolution only: at the active/rebel power's end-of-turn Sons-of-Liberty recompute, national rebel sentiment rises into a new ten-point band (current %/10 greater than the previously latched band), while national % is still below 50%. Gated to powers with at least 4 colonies.",
+  "inputs": "Recomputed national rebel sentiment %; the previous ten-point band latch; the power's colony count.",
+  "outputs": "Latches the new ten-point band and shows the 'Rebel sentiment is rising... N% support independence... any colony with 50% Sons of Liberty gets +1' message.",
+  "func": "func_03E844",
+  "verified": true
+ },
+ "REBELUP50": {
+  "trigger": "Pre-revolution: same per-turn national rebel-sentiment recompute as REBELUP, but national sentiment has now risen into a new band that is at or above 50%. The first time a power crosses 50% with no rebel power yet designated, that power is marked as the rebel (future USA) power.",
+  "inputs": "Recomputed national rebel sentiment %; the previous band latch; whether a rebel power has been designated yet.",
+  "outputs": "Marks this power as the rebel power (enabling the Declare-Independence option). Shows the 'N% support independence... Founding Fathers think we should declare independence' message.",
+  "func": "func_03E844",
+  "verified": true
+ },
+ "REBELDOWN": {
+  "trigger": "Pre-revolution: at the per-turn national recompute, rebel sentiment falls into a lower ten-point band ((%+4)/10 below the previously latched band) for the active/rebel power (with at least 4 colonies).",
+  "inputs": "Recomputed national rebel sentiment %; the previous band latch.",
+  "outputs": "Latches the new lower band and shows the 'Tory sentiment is once again on the rise... only N% support independence' message.",
+  "func": "func_03E844",
+  "verified": true
+ },
+ "KINGTAX": {
+  "trigger": "The king's routine tax-raise event fires (a Navigation-Act-style raise). The king periodically decides to raise the player's tax rate; the proposed increase is computed and applied, then this audience message announces it.",
+  "inputs": "Current tax rate (king record); difficulty (sets the base increment) and turn/era (era multiplier); the king's record.",
+  "outputs": "Raises the player's tax rate by the computed percentage and shows the King's-audience message stating the increase and the new rate, offering the TAXOPTIONS choice (kiss the ring or hold a Tea Party).",
+  "func": "func_02F052",
+  "verified": false
+ },
+ "KINGLOSE": {
+  "trigger": "Endgame / end-of-war resolution in the per-turn king war handler: the player has won the War of Independence (the King concedes). Emitted as the King's final mocking concession cinematic line.",
+  "inputs": "The revolution/war flag; the player's military and colony situation; the king/power records and the score-result accumulator.",
+  "outputs": "Shows the King's concession speech ('In our wisdom, we have decided to let you go your own way...'); contributes to ending the war on the player's terms.",
+  "func": "func_02F3A2",
+  "verified": true
+ },
+ "KINGWIN": {
+  "trigger": "Endgame / end-of-war resolution in the per-turn king war handler: the King's Royal forces have defeated the rebellion (player loses the War of Independence).",
+  "inputs": "The revolution/war flag; the player's military/colony situation; the king/power records.",
+  "outputs": "Shows the King's triumphant speech ('your attempt to separate from mother X has proven futile... Rag Tag armies are no match for our Royal forces'); the player loses the war.",
+  "func": "func_02F3A2",
+  "verified": true
+ },
+ "OTHERLESS": {
+  "trigger": "Per-turn king/war handler spy-report path: a foreign European power that was approaching its own independence loses popular support, so the count of its colonists favoring liberty has dropped.",
+  "inputs": "The other power's colonist-support-for-independence count vs the threshold required; the friend/support ratio between the powers.",
+  "outputs": "Shows the 'Spies Report: Only N support independence from X. The King will not grant liberty unless M are in favor' message; no state change for the player.",
+  "func": "func_02F3A2",
+  "verified": true
+ },
+ "OTHERMIGHT": {
+  "trigger": "Per-turn king/war handler: a foreign European power is nearing independence for its own colonies (enough of its colonists support liberty that the King is considering granting it).",
+  "inputs": "The other power's colonists-supporting-independence count, its total colonists, and the threshold needed; the per-power friend/support ratio.",
+  "outputs": "Shows the 'the King of X is considering granting independence... once M colonists support liberty, the X colonies will be granted freedom' advisory; no direct player-state change.",
+  "func": "func_02F3A2",
+  "verified": true
+ },
+ "SOMEBOYCOTT": {
+  "trigger": "On the Europe screen, the player tries to unload cargo from a ship into the home port but one or more of the cargo types are under a Parliamentary boycott (imposed by an earlier Tea Party), so that cargo cannot be sold.",
+  "inputs": "The ship's cargo types vs the per-power boycott bitmap (which goods Parliament has boycotted).",
+  "outputs": "Shows 'Some of the cargo could not be unloaded because of a parliamentary boycott...' and leaves the boycotted cargo on the ship; clicking the boycotted cargo type opens the back-tax (KISSUP) lift-boycott dialog.",
+  "func": "func_03314E",
+  "verified": true
+ },
+ "KISSUP": {
+  "trigger": "Player clicks a boycotted cargo type (on the Europe screen) to request that Parliament lift the boycott. For a human-controlled, in-play power, this confirm-and-pay dialog is shown asking for the accumulated back taxes.",
+  "inputs": "The boycotted commodity; the back-tax cost (a per-unit fee scaled by quantity); the power's treasury gold; the per-unit 'owes payment' bitmask.",
+  "outputs": "Offers 'Pay N gold' vs refuse. On accept and sufficient gold: deducts the back taxes from the treasury, adds them to cumulative spend, clears that commodity's boycott bit (lifting the boycott). If gold is short it falls through to the KISSSORRY 'we only have N available' message.",
+  "func": "func_03334E",
+  "verified": true
+ },
+ "KINGLOWER": {
+  "trigger": "The player asked the king to lower taxes and the king grants it: in the tax-change decision, the player declines the king's proposed raise, so the king instead lowers the rate by a small amount.",
+  "inputs": "Current tax rate (king record); difficulty (sets the lower amount = roughly 5 minus difficulty); the random draw for the granted reduction.",
+  "outputs": "Lowers the player's tax rate by the computed percentage and shows 'we have graciously decided to lower your tax rate by N%. The tax rate is now M%'.",
+  "func": "func_033F6A",
+  "verified": true
+ },
+ "KINGNAVACT": {
+  "trigger": "The king imposes a Navigation Act as a reason for a tax raise (a flavored variant of the routine tax-raise event), citing that the Crown is not receiving its due share of New World revenue.",
+  "inputs": "Current tax rate; difficulty/era-scaled raise amount; the king's record.",
+  "outputs": "Raises the tax rate by the computed percentage and shows the Navigation-Act King's-audience message with the new rate, offering TAXOPTIONS (kiss ring / Tea Party).",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "KINGNEWWAR": {
+  "trigger": "The king declares a new war on a foreign power and orders the player to join it, cancelling the player's existing peace arrangement with that power.",
+  "inputs": "The target foreign power; difficulty (sizes the gift gold and number of veteran soldiers); the king's record and the player's treasury.",
+  "outputs": "Cancels the player's peace with the named power; grants the player gold from the Royal Treasury and a number of Veteran Soldier units; shows the declaration. Player may kiss the ring.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "KINGRAISE": {
+  "trigger": "Punitive tax raise: the player demanded lower taxes and, instead of granting it, the king raises taxes to punish the impudence (the 'yes/raise' branch of the king tax-change decision).",
+  "inputs": "Current tax rate; difficulty/era-scaled raise amount (here doubled); the king's record.",
+  "outputs": "Raises the tax rate by the computed percentage and shows 'You DARE to demand lower taxes!... we shall raise taxes by N%. The tax rate is now M%', offering TAXOPTIONS.",
+  "func": "func_033F6A",
+  "verified": true
+ },
+ "KINGSTAMPACT": {
+  "trigger": "The king imposes a Stamp Act on a named colony as a reason for a tax raise (flavored variant of the routine raise), citing the colonists' ungrateful attitude.",
+  "inputs": "Current tax rate; difficulty/era-scaled raise amount; the colony named in the message; the king's record.",
+  "outputs": "Raises the tax rate by the computed percentage and shows the Stamp-Act King's-audience message with the new rate, offering TAXOPTIONS.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "KINGVICTORY": {
+  "trigger": "The king's forces win a battle in one of the King's wars, so the king magnanimously lowers the player's tax rate to celebrate the victory.",
+  "inputs": "Current tax rate; the lower amount; the enemy power named in the message; the king's record.",
+  "outputs": "Lowers the player's tax rate by the computed percentage and shows 'To celebrate our recent victory over X, we have decided to LOWER your tax rate by N%. The tax rate is now M%'.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "KINGWAR": {
+  "trigger": "An ongoing King's war continues, which the king uses as justification to raise the player's tax rate.",
+  "inputs": "Current tax rate; difficulty/era-scaled raise amount; the enemy power named in the message; the king's record.",
+  "outputs": "Raises the tax rate by the computed percentage and shows 'Because of recent developments in our ongoing war with X, we have decided to raise your tax rate by N%...', offering TAXOPTIONS.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "KINGWIFE": {
+  "trigger": "Random king's-wedding event: in honor of the king's recent marriage, the king raises the player's tax rate.",
+  "inputs": "Current tax rate; difficulty/era-scaled raise amount; the king's record.",
+  "outputs": "Raises the tax rate by the computed percentage and shows 'In honor of our recent wedding to our X wife, we have decided to raise your tax rate by N%...', offering TAXOPTIONS.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "TAXOPTIONS": {
+  "trigger": "Appended as the response options to every tax-RAISE King's-audience message (KINGTAX/KINGRAISE/KINGNAVACT/KINGSTAMPACT/KINGWAR/KINGWIFE/MERCANTILISM/PURCHASETAX). It is a combine-options target the dispatcher concatenates onto the raise message.",
+  "inputs": "The boycottable commodity name (used to label the 'X Party' option).",
+  "outputs": "Presents two choices: 'Kiss pinky ring' (accept the new tax) or 'Hold a {commodity} Party' (refuse the tax and trigger a Tea Party / TEAPARTY for that commodity).",
+  "func": "func_033F6A",
+  "verified": true
+ },
+ "TEAPARTY": {
+  "trigger": "The player chose 'Hold a {commodity} Party' from the TAXOPTIONS prompt instead of paying the new tax.",
+  "inputs": "The commodity chosen for the party; the colony where it is held; the quantity of that commodity thrown into the sea; the home-port name.",
+  "outputs": "The Sons of Liberty dump that commodity's stores into the sea; the new tax is refused; Parliament announces a boycott of that commodity (sets the boycott bit so it cannot be traded in Europe until lifted). Also increments the king's anger counter. Shows the Tea Party message.",
+  "func": "func_033F6A",
+  "verified": false
+ },
+ "FOREIGNNOTAVAIL": {
+  "trigger": "Player opens the Foreign Affairs Adviser report (F8) while the War of Independence flag is set. The handler's first act tests the revolution flag (bit 0) and bails if set.",
+  "inputs": "The revolution/war-of-independence flag (global event flags, bit 0).",
+  "outputs": "Shows 'The Foreign Affairs Adviser's report is no longer available once the War of Independence has begun' and returns without drawing the report.",
+  "func": "func_039888",
+  "verified": true
+ },
+ "EXPLOITS": {
+  "trigger": "End of game: the score/rank screen is displayed. The player's raw score is computed and mapped to a 0..23 rank title via a squared ladder clamped at 23, then this rating screen is rendered.",
+  "inputs": "The player's raw power score (from the scoring function); the rank ladder; the player/leader name.",
+  "outputs": "Shows 'COLONIZATION RATING: N%' and the rank-titled list of things named after the player ('the citizens give your name to...'); this is the end-of-game rating presentation.",
+  "func": "func_03A9C0",
+  "verified": true
+ },
+ "CONSIDER": {
+  "trigger": "During the War of Independence (revolution flag set, intervention-phase bits 2 and 4 clear), the per-turn Liberty-Bells tick for the active power makes its accumulated bells cross the threshold for the first time, unlocking the foreign-intervention offer. Fires once (then sets the intervention-considered phase bit).",
+  "inputs": "Liberty bells produced this turn and the accumulated bells-toward-next; the revolution and intervention phase bits; the bells required for the next milestone; the intervening power.",
+  "outputs": "Sets the intervention-considered phase bit (one-shot) and shows 'X is considering intervention on our behalf against the King... if we generate N liberty bells they will join us' (preceded by the AMBUSHHINT tip).",
+  "func": "func_03C322",
+  "verified": true
+ },
+ "SEIZURE": {
+  "trigger": "Per-power scan (over all units owned by a given power) for that power's land/transport units (the land-unit type range) standing on a tile that is off the active on-screen view; the King's Royal Navy seizes such off-screen shipping/goods.",
+  "inputs": "The unit count and UnitRecord table; per-unit owner and type; whether each unit's tile is on the active view.",
+  "outputs": "Sets the per-type message argument and shows '{cargo} seized on the high seas by the Royal Navy!' for each qualifying unit, then refreshes that unit slot.",
+  "func": "func_03C5A8",
+  "verified": true
+ },
+ "SUCCESSION": {
+  "trigger": "Single-player War-of-the-Spanish-Succession event: the four European powers are ranked by a weighted score; the strongest still-eligible crown (winner) annexes the weakest still-eligible crown (loser). Early-out if a particular global status bit is already set.",
+  "inputs": "Per-power weighted score tables; per-power defeat flags; map ownership/visibility layers; the loser's units, colonies, and native-mission records.",
+  "outputs": "Transfers all of the loser's tile ownership/visibility, units, colonies (reassigning owner, clearing siege fields), and missions to the winner; marks the loser defeated; makes the loser the active player and redraws. Shows the 'War of the Spanish Succession ends... cede X to the winner... Treaty of Utrecht' message.",
+  "func": "func_03C638",
+  "verified": true
+ },
+ "SEIZURELAND": {
+  "trigger": "At a given map tile, the scan finds a FOREIGN European land unit (owner not the current player, owner is one of the four European powers, that power still in play) of a land-unit type, and the tile-has-target test fails for that unit (a land seizure context).",
+  "inputs": "The target tile coordinates; the unit's owner, type, and per-power flag; the tile-has-target test.",
+  "outputs": "Sets the per-type message argument and shows '{unit/cargo} captured by the Royal Army!', then refreshes the unit slot.",
+  "func": "func_03C932",
+  "verified": true
+ },
+ "SEIZURESEA": {
+  "trigger": "Same per-tile foreign-land-unit scan as SEIZURELAND, but on the sea-capture branch (the tile-has-target test passes and the unit is a qualifying land-unit type being captured at sea by the Royal Navy).",
+  "inputs": "The target tile coordinates; the unit's owner, type, and per-power flag; the tile-has-target test.",
+  "outputs": "Sets the per-type message argument and shows '{unit/cargo} captured at sea by the Royal Navy!', then refreshes the unit slot.",
+  "func": "func_03C932",
+  "verified": true
+ },
+ "TORYUPRISING": {
+  "trigger": "Random hostile-spawn event against one colony of a given power. An opening roll (random_int over 0..difficulty+1) must succeed; then the most susceptible eligible colony is chosen by a score = colony field x ((100 - Sons-of-Liberty %) x 2)/100 + difficulty + 1, minus garrison defense, and suppressed if a current-player unit is adjacent.",
+  "inputs": "Difficulty; per-colony susceptibility field, Sons-of-Liberty %, garrison defense (def table per unit type); adjacency of current-player units; the colony's surrounding work tiles.",
+  "outputs": "Flags the chosen colony and spawns Tory-militia hostile units on its open work tiles (with a chance of upgrading their type/variant per severity step); applies a terrain change and shows 'Tory uprising near X! Parliament arms Tory Militia!'. If nothing spawned, clears the colony flag.",
+  "func": "func_03CAC6",
+  "verified": true
+ },
+ "INVASION": {
+  "trigger": "Royal Expeditionary Force amphibious landing during the War of Independence: each turn the King's still-at-sea REF (Regulars/Cavalry/Men-o-War/Artillery counts) attempts to put land troops ashore next to one of the rebel power's coastal colonies. Gated on the REF Men-o-War count and total composition.",
+  "inputs": "The REF composition counts (Regulars/Cavalry/Men-o-War/Artillery); the power's coastal colonies (those with the coastal/landable flag set), their Sons-of-Liberty %, population field, and garrison combat value; landing-tile capacity around each colony; difficulty.",
+  "outputs": "Picks a colony (weighted by susceptibility and defense), pathfinds a beach tile, spawns the REF land stack (a royal land-unit type) there, plays the landing effects, shows 'Royal Expeditionary Force lands near X!', and decrements the committed REF counts.",
+  "func": "func_03CDA2",
+  "verified": true
+ },
+ "INTERVENE": {
+  "trigger": "A foreign intervention force on the rebel side arrives next to one of the rebel power's coastal colonies (the AI/preview variant of the foreign-intervention landing, chosen by population-weighted colony pick).",
+  "inputs": "The rebel/target power's coastal colonies and their populations; the intervening power's name id; the intervention-force composition counters; the chosen beach tile.",
+  "outputs": "Spawns the intervention lead unit and stack at the chosen beach and shows 'X Intervention Force arrives in {colony}! Local Rebel Army commander regales X admiral'.",
+  "func": "func_03D510",
+  "verified": true
+ },
+ "MERCS": {
+  "trigger": "Mercenaries the player purchased (from a foreign king's mercenary offer) arrive: handled by the same foreign-landing routine (the variant path), placing the bought force near a coastal colony.",
+  "inputs": "The target power's coastal colonies; the offering power's name id; the force composition counts; the chosen beach tile.",
+  "outputs": "Spawns the mercenary stack near the colony and shows 'X mercenaries arrive in {colony}'.",
+  "func": "func_03D510",
+  "verified": true
+ },
+ "FRIEND": {
+  "trigger": "Selector list of the intervening ally's general/admiral name strings (British General Cornwallis / French General Lafayette / Spanish Generals / Dutch Admiral de Ruyter), indexed by the intervening power. Used by the foreign-intervention routine to name the ally commander.",
+  "inputs": "The intervening (ally) power index.",
+  "outputs": "Provides the ally commander name string substituted into the INTERVENTION / INTERVENE announcements; not a standalone event message.",
+  "func": "func_03D948",
+  "verified": true
+ },
+ "INTERVENTION": {
+  "trigger": "A foreign power formally declares war on the King and joins the War of Independence on the rebel side (the genuine intervention, as opposed to the preview/AI variant).",
+  "inputs": "The intervening power and the King's power; the rebel target power; the intervention-force composition counters; the ally general/admiral name.",
+  "outputs": "Decrements the intervention bookkeeping counters and shows 'X declares war on Y and joins the War of Independence on the Rebel side! ...navy plans bombardment of Tory-held fortifications'; spawns the lead intervention unit.",
+  "func": "func_03D948",
+  "verified": true
+ },
+ "INDEPENDENCE": {
+  "trigger": "The player confirms the Declaration of Independence (after the DECLARE prompt). This handler sets up the war, flips the world into the revolution state, and announces it. It is the sole writer of the year-counter byte pair (century / year-of-century).",
+  "inputs": "The seceding power and the current player; current year; the four powers' weighted scores (to pick the intervention ally); the ally's stat tables and difficulty (to size the REF + intervention force).",
+  "outputs": "Sets the revolution flag (war declared); composes the REF and foreign-intervention force counts; transfers the player's tile-ownership to the ally; marks the current player at war; refreshes the seceding power's units; clears certain PowerRecord words; writes the year-counter pair; shows 'Continental Congress signs Declaration of Independence! ...Expeditionary force dispatched... General X calls for volunteers for the new Continental Army!'.",
+  "func": "func_03DE46",
+  "verified": true
+ },
+ "KINGBUY": {
+  "trigger": "The king increases military spending and adds a unit to the Royal Expeditionary Force (the REF-buildup path, run as the war/REF escalates).",
+  "inputs": "The current REF composition; difficulty; the king's record.",
+  "outputs": "Adds the named unit to the REF and shows 'King increases military spending. {unit} added to royal expeditionary force. Colonial leaders express alarm.' (no King sprite; a plain notification popup).",
+  "func": "func_03E162",
+  "verified": false
+ },
+ "KINGMOBILIZE": {
+  "trigger": "Parliament votes additional funds to suppress the revolution, mobilizing more royal forces in the rebel power's region.",
+  "inputs": "The rebel power's region/colony being targeted; the REF composition; the king's record.",
+  "outputs": "Mobilizes the named royal units in the target colony and shows 'Parliament votes additional funds to suppress revolution in X. {unit} mobilized in {colony}.' (no King sprite).",
+  "func": "func_03E162",
+  "verified": false
+ },
+ "MOBILIZE": {
+  "trigger": "After a Sons-of-Liberty surge: for a colony of the rebel power whose Sons-of-Liberty % is at least 50%, exactly one garrisoned 'rebel' veteran unit (marked by the rebel-variant flag) is converted to Continental Army (the veteran-soldier type is promoted to the Continental-soldier type).",
+  "inputs": "The colony's owner power and Sons-of-Liberty %; the colony's population field; the garrisoned units' types and rebel-variant flag.",
+  "outputs": "Promotes the veteran unit's type to Continental Army; applies a terrain change and shows 'Continental Army mobilizes at {colony}! Our Veteran {unit} have been promoted to Continental Army status.'",
+  "func": "func_03E2EA",
+  "verified": true
+ },
+ "MOBILIZE2": {
+  "trigger": "Same Sons-of-Liberty-surge conversion as MOBILIZE, but more than one garrisoned rebel veteran unit is converted in the colony (veteran soldiers and veteran dragoons promoted to their Continental-Army equivalents), up to a clamp of (population/2)*(SoL%-50)/50.",
+  "inputs": "The colony's owner power and Sons-of-Liberty %; the colony's population field; the garrisoned units' types and rebel-variant flag; the count converted.",
+  "outputs": "Promotes that many veteran units to Continental Army; applies a terrain change and shows 'Continental Army mobilizes at {colony}! {N} Veteran units have been promoted to Continental Army status.'",
+  "func": "func_03E2EA",
+  "verified": true
+ },
+ "MERCENARIES": {
+  "trigger": "Wartime foreign-mercenary offer: 1-in-3 chance per applicable turn (suppressed while a foreign intervention is pending) for a foreign king to offer the player a force of trained mercenaries for gold, when the price is within the player's treasury.",
+  "inputs": "Difficulty (sizes package and price); random draws for package size, category, and price; the offering power name; the player's treasury gold.",
+  "outputs": "Shows 'The King of X has offered to send us a force of trained mercenaries (units) in exchange for N gold' with 'Pay N' vs 'No thank you'. On accept and affordable, debits the treasury and applies the purchase (the bought force is later landed by the MERCS path).",
+  "func": "func_03E442",
+  "verified": true
+ },
+ "ALREADYREVOLUTION": {
+  "trigger": "The player attempts to declare independence (request the King-audience / declare action) while the War of Independence is already in progress.",
+  "inputs": "The revolution/war flag (already set).",
+  "outputs": "Shows 'We are already fighting a War of Independence, Excellency.' and takes no action.",
+  "func": "func_03E984",
+  "verified": true
+ },
+ "DECLARE": {
+  "trigger": "The player chooses the declare-independence action while national rebel sentiment is at least 50% (the majority gate) and the game is single-player. Presents the final confirmation.",
+  "inputs": "National rebel sentiment % (>= 50 required, else TOOTORY); single-player vs multiplayer flag; the home power name.",
+  "outputs": "Shows 'Shall we declare our independence from X? This will end our turn and place us at war with our King!' with 'Never! That would be treasonous!' vs 'Yes! Give me liberty or give me death!'. Choosing yes runs the INDEPENDENCE handler.",
+  "func": "func_03E984",
+  "verified": true
+ },
+ "MULTIREV": {
+  "trigger": "The player attempts to declare independence in a multiplayer game (the auto-revolution events are disabled in multiplayer).",
+  "inputs": "The multiplayer flag.",
+  "outputs": "Shows the warning 'The Revolution does not function in multi-player mode. If you declare independence, the game will become a single player game. Are you sure?' with 'Declare independence' vs 'Never Mind'; declaring converts the game to single-player.",
+  "func": "func_03E984",
+  "verified": true
+ },
+ "TOOTORY": {
+  "trigger": "The player tries to declare independence but national rebel sentiment is below 50% (no majority behind the independence movement).",
+  "inputs": "National rebel sentiment %.",
+  "outputs": "Shows 'Only N% of the colonists support the independence movement... We cannot start a rebellion against the King until the majority is behind us.' and blocks the declaration.",
+  "func": "func_03E984",
+  "verified": true
+ },
+ "DECLAREWAR": {
+  "trigger": "Two powers go to war with each other (the right-click give-command / relation handler that sets the war relation between two powers). The largest function in this overlay (the AI unit evaluator) also hosts the rel-declare-war path.",
+  "inputs": "The two powers' identities and their relation/treaty state.",
+  "outputs": "Sets the war relation between the two named powers and shows 'The X and Y are now at war.'",
+  "func": "func_03ECF0",
+  "verified": true
+ },
+ "LANDFIRST": {
+  "trigger": "A land unit aboard a ship tries to move directly into an enemy-occupied square from the ship. The ship move/arrival handler's destination classifier disallows it (the enemy-occupied destination code).",
+  "inputs": "The mover's type (a land unit aboard a ship), the destination tile's owner/occupant and terrain.",
+  "outputs": "Shows 'Land units cannot enter an enemy occupied square from on board a ship. You must first unload them into an empty or friendly-occupied square.' and aborts the move.",
+  "func": "func_03FDDE",
+  "verified": true
+ },
+ "LOOTCASH": {
+  "trigger": "A treasure (from looting a native settlement or a lost city) is transported home: the King's galleon ferries the player's treasure fleet safely to Europe, and the Crown takes a tax-rate share. (Verified emitter is the treasure-transport event func_05C878; the worklist's func_041EEA is the per-turn unit-order/supply driver and does not push this string.)",
+  "inputs": "The settlement/treasure source size; the attacker power record (gold, total-loot, score fields); the current tax rate (Crown's share); the home-port name.",
+  "outputs": "Adds the player's share to the treasury (and the Crown-share remainder to loot/score totals) and shows 'X treasure fleet laden with N gold arrives safely in {port}! Crown takes M% share. Z added to treasury.'",
+  "func": "func_05C878",
+  "verified": true
+ },
+ "LOOTFOREIGN": {
+  "trigger": "Spy report when a FOREIGN power's treasure fleet arrives in its home port (the foreign-power equivalent of LOOTCASH), reported during that power's unit move/turn processing.",
+  "inputs": "The foreign power's treasure amount and home port; the foreign king's reaction.",
+  "outputs": "Shows 'Spies report: X treasure fleet laden with N gold arrives in {port}. X king pleased with booty.' (informational only).",
+  "func": "func_04E2D6",
+  "verified": false
+ },
+ "APOSTATES": {
+  "trigger": "European-power diplomacy meeting: a (Catholic) European power notes the player has signed a treaty with natives it considers heretics/unrepentant and demands (or requests) that the player cancel that treaty.",
+  "inputs": "The meeting power and the native tribe in question; the request-vs-demand tone (MEEKNESS).",
+  "outputs": "Shows 'We note that you have signed a treaty with those unrepentant heretics, the X. We {request/demand} that you cancel this treaty at once' with 'Never! The X are our friends!' vs 'Yes! We shall crush the X together!'. The player's answer sets the diplomatic outcome.",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "MERCENARY": {
+  "trigger": "European-power diplomacy SMITE branch: after the player pays a European power to attack (smite) another power, that paid power declares war on the target.",
+  "inputs": "The two powers involved (the paid power and the target); the war-relation matrix.",
+  "outputs": "Sets the war relation (sets the at-war bit) and shows 'The X declare war on the Y.'",
+  "func": "func_057F4E",
+  "verified": true
+ },
+ "NOMAYORSDURINGREV": {
+  "trigger": "A scout tries to 'Meet With Mayor' at a colony while the War of Independence is active. (The assigned func_059B90 is the AI unit-target evaluator, which does not push this string; the actual guard is in the scout-meeting action and keys off the revolution flag.)",
+  "inputs": "The revolution/war-of-independence flag.",
+  "outputs": "Shows 'Scouts cannot meet with mayors during the War of Independence.' and blocks the scout's meet-mayor action.",
+  "func": "func_059B90",
+  "verified": false
+ },
+ "TRADEWITH": {
+  "trigger": "A native village offers the player a goods-for-goods (or goods-for-gold) trade in the native trade dialog. (The assigned func_05A40E is the foreign-EUROPEAN-power trade dialog, which pushes TRADEATWAR/TRADEMERCANTILISM/TRADENOCARGO/TRADEWHICH but not TRADEWITH; the actual emitter is the native trade handler.)",
+  "inputs": "The cargo the player carries and the cargo the village offers in return; the gold-equivalent offer; the village's wants.",
+  "outputs": "Shows 'We will give you N X in exchange for your M Y. Or, if you like, we are willing to give you Z gold. Is this satisfactory?' with options to take the goods, take the gold, or refuse; the chosen option performs the exchange.",
+  "func": "func_05A40E",
+  "verified": false
+ },
+ "CONTINENTAL": {
+  "trigger": "On-arrival unit-promotion check (the unit-arrive/reclassify routine): a Veteran unit hardens to Continental Army status. The revolution-gated branch requires the War of Independence flag set and the seceding-power flag.",
+  "inputs": "The unit's type (soldier or dragoon eligible) and owner; the destination status/terrain value; the revolution flag and seceding-power flag; difficulty; the per-power active flag.",
+  "outputs": "Reclassifies the unit to Continental Army status and shows 'Our Veteran {unit} have hardened to Continental Army status, Your Excellency!' (for a human, in-play European power).",
+  "func": "func_05C69C",
+  "verified": true
+ },
+ "BURNED": {
+  "trigger": "In the deep tail of the land-combat decider, an attacking unit captures and razes a foreign/rebel colony (the player's own troops or the King's). The BURNED/BURNED2/BURNED3 verbs are chosen by the viewer/perspective (own colony razed vs spy report).",
+  "inputs": "The attacking and defending units; the colony struct (loot/ownership); whether the target was a colony; the viewer power.",
+  "outputs": "Captures/destroys the colony with the loot formula and shows 'X burn {colony} to the ground! Colonists flee in panic! King demands explanation!'.",
+  "func": "func_05CA7E",
+  "verified": true
+ },
+ "HOWTOWIN": {
+  "trigger": "Shown after the rebels win a battle/colony during the War of Independence, explaining the victory conditions (the land-combat decider's revolution-progress message path).",
+  "inputs": "The revolution state and the player's combat result.",
+  "outputs": "Shows 'We have just won a glorious victory on the road to freedom... to win our independence we must recapture all of our colonies from the King and destroy most of his ground forces in the New World.' (informational guidance).",
+  "func": "func_05CA7E",
+  "verified": false
+ },
+ "SCREWED": {
+  "trigger": "Lost-City-Rumour engine, burial-mounds outcome (the player chose to search ancient burial mounds): if the exploring player is human and the tribe turns hostile, the SCREWED key is appended after the BURIAL result.",
+  "inputs": "Whether the explorer is the human player; the burial-mounds outcome roll; the tribe whose sacred ground was disturbed.",
+  "outputs": "Shows 'These are the burial grounds of our ancient X fathers! You have trespassed on sacred land. Now you must die!' and the natives turn hostile / attack the expedition.",
+  "func": "func_061454",
+  "verified": true
+ }
+}

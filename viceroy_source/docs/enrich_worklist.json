@@ -1,0 +1,1162 @@
+{
+ "King, Taxes & Revolution": [
+  {
+   "func": "func_022542",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "NOCOLONIESEITHER"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "REBELMAJORITY",
+    "REBELUNANIMOUS",
+    "TORYMAJORITY",
+    "TORYMINORITY"
+   ]
+  },
+  {
+   "func": "func_02F052",
+   "src": "(ext/not-found)",
+   "events": [
+    "KINGTAX"
+   ]
+  },
+  {
+   "func": "func_02F3A2",
+   "src": "(ext/not-found)",
+   "events": [
+    "KINGLOSE",
+    "KINGWIN",
+    "OTHERLESS",
+    "OTHERMIGHT"
+   ]
+  },
+  {
+   "func": "func_03314E",
+   "src": "(ext/not-found)",
+   "events": [
+    "SOMEBOYCOTT"
+   ]
+  },
+  {
+   "func": "func_03334E",
+   "src": "src/overlay/overlay_031F28_033EB2.c",
+   "events": [
+    "KISSUP"
+   ]
+  },
+  {
+   "func": "func_033F6A",
+   "src": "(ext/not-found)",
+   "events": [
+    "KINGLOWER",
+    "KINGNAVACT",
+    "KINGNEWWAR",
+    "KINGRAISE",
+    "KINGSTAMPACT",
+    "KINGVICTORY",
+    "KINGWAR",
+    "KINGWIFE",
+    "TAXOPTIONS",
+    "TEAPARTY"
+   ]
+  },
+  {
+   "func": "func_039888",
+   "src": "src/overlay/overlay_038A50_03C5A8.c",
+   "events": [
+    "FOREIGNNOTAVAIL"
+   ]
+  },
+  {
+   "func": "func_03A9C0",
+   "src": "src/overlay/overlay_038A50_03C5A8.c",
+   "events": [
+    "EXPLOITS"
+   ]
+  },
+  {
+   "func": "func_03C322",
+   "src": "src/overlay/overlay_038A50_03C5A8.c",
+   "events": [
+    "CONSIDER"
+   ]
+  },
+  {
+   "func": "func_03C5A8",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "SEIZURE"
+   ]
+  },
+  {
+   "func": "func_03C638",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "SUCCESSION"
+   ]
+  },
+  {
+   "func": "func_03C932",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "SEIZURELAND",
+    "SEIZURESEA"
+   ]
+  },
+  {
+   "func": "func_03CAC6",
+   "src": "(ext/not-found)",
+   "events": [
+    "TORYUPRISING"
+   ]
+  },
+  {
+   "func": "func_03CDA2",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "INVASION"
+   ]
+  },
+  {
+   "func": "func_03D510",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "INTERVENE",
+    "MERCS"
+   ]
+  },
+  {
+   "func": "func_03D948",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "FRIEND",
+    "INTERVENTION"
+   ]
+  },
+  {
+   "func": "func_03DE46",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "INDEPENDENCE"
+   ]
+  },
+  {
+   "func": "func_03E162",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "KINGBUY",
+    "KINGMOBILIZE"
+   ]
+  },
+  {
+   "func": "func_03E2EA",
+   "src": "(ext/not-found)",
+   "events": [
+    "MOBILIZE",
+    "MOBILIZE2"
+   ]
+  },
+  {
+   "func": "func_03E442",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "MERCENARIES"
+   ]
+  },
+  {
+   "func": "func_03E844",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "REBELDOWN",
+    "REBELUP",
+    "REBELUP50"
+   ]
+  },
+  {
+   "func": "func_03E984",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "ALREADYREVOLUTION",
+    "DECLARE",
+    "MULTIREV",
+    "TOOTORY"
+   ]
+  },
+  {
+   "func": "func_03ECF0",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "DECLAREWAR"
+   ]
+  },
+  {
+   "func": "func_03FDDE",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "LANDFIRST"
+   ]
+  },
+  {
+   "func": "func_041EEA",
+   "src": "src/overlay/overlay_040C1E_04458A.c",
+   "events": [
+    "LOOTCASH"
+   ]
+  },
+  {
+   "func": "func_04E2D6",
+   "src": "(ext/not-found)",
+   "events": [
+    "LOOTFOREIGN"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "APOSTATES",
+    "MERCENARY"
+   ]
+  },
+  {
+   "func": "func_059B90",
+   "src": "(ext/not-found)",
+   "events": [
+    "NOMAYORSDURINGREV"
+   ]
+  },
+  {
+   "func": "func_05A40E",
+   "src": "(ext/not-found)",
+   "events": [
+    "TRADEWITH"
+   ]
+  },
+  {
+   "func": "func_05C69C",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "CONTINENTAL"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "BURNED",
+    "HOWTOWIN"
+   ]
+  },
+  {
+   "func": "func_061454",
+   "src": "(ext/not-found)",
+   "events": [
+    "SCREWED"
+   ]
+  }
+ ],
+ "Europe, Docks & Trade": [
+  {
+   "func": "func_022542",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "NOPORT"
+   ]
+  },
+  {
+   "func": "func_02287E",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "DISBANDSHIP"
+   ]
+  },
+  {
+   "func": "func_02883E",
+   "src": "(ext/not-found)",
+   "events": [
+    "NODOCKS",
+    "UNIV3"
+   ]
+  },
+  {
+   "func": "func_02AAEC",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "SHIPOPTIONS"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "CARGOREADY0",
+    "INEFFICIENT",
+    "SPOIL1",
+    "SPOIL2"
+   ]
+  },
+  {
+   "func": "func_0305A8",
+   "src": "(ext/not-found)",
+   "events": [
+    "PRICEDOWN",
+    "PRICEUP"
+   ]
+  },
+  {
+   "func": "func_03314E",
+   "src": "(ext/not-found)",
+   "events": [
+    "EUROPESHIPOPTIONS"
+   ]
+  },
+  {
+   "func": "func_03FDDE",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "SAILHOME",
+    "SHIPLAKE"
+   ]
+  },
+  {
+   "func": "func_041080",
+   "src": "src/overlay/overlay_040C1E_04458A.c",
+   "events": [
+    "ROUTELOOP"
+   ]
+  },
+  {
+   "func": "func_049600",
+   "src": "(ext/not-found)",
+   "events": [
+    "BADCARGO",
+    "BUY0",
+    "DEFICIT",
+    "TRADE0"
+   ]
+  },
+  {
+   "func": "func_04B308",
+   "src": "(ext/not-found)",
+   "events": [
+    "MADATSHIPS"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "SMITEEUROPE"
+   ]
+  },
+  {
+   "func": "func_059B90",
+   "src": "(ext/not-found)",
+   "events": [
+    "SHIPRUN",
+    "SHIPSLOW"
+   ]
+  },
+  {
+   "func": "func_05A40E",
+   "src": "(ext/not-found)",
+   "events": [
+    "TRADEMERCANTILISM",
+    "TRADENOCARGO"
+   ]
+  },
+  {
+   "func": "func_05B2C2",
+   "src": "(ext/not-found)",
+   "events": [
+    "SHIPDAMAGE"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "BURNED3",
+    "EUROPELOSE",
+    "EUROPEWIN"
+   ]
+  },
+  {
+   "func": "func_060D8C",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "CARGOLOAD",
+    "CARGOUNLOAD"
+   ]
+  },
+  {
+   "func": "func_0610B0",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "TRADENAMES"
+   ]
+  }
+ ],
+ "Miscellaneous": [
+  {
+   "func": "func_021FF2",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "HAVETREATY"
+   ]
+  },
+  {
+   "func": "func_022D46",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "TRADENONE",
+    "TRADESELECT"
+   ]
+  },
+  {
+   "func": "func_02B744",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "BUYME0",
+    "BUYME1"
+   ]
+  },
+  {
+   "func": "func_02D30A",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "DEPLETION"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "CANESUGAR",
+    "COTTON",
+    "FURS",
+    "LUMBER",
+    "NEEDTOOLS",
+    "TOBACCO"
+   ]
+  },
+  {
+   "func": "func_02F052",
+   "src": "(ext/not-found)",
+   "events": [
+    "REFIT"
+   ]
+  },
+  {
+   "func": "func_03334E",
+   "src": "src/overlay/overlay_031F28_033EB2.c",
+   "events": [
+    "KISSSORRY"
+   ]
+  },
+  {
+   "func": "func_033F6A",
+   "src": "(ext/not-found)",
+   "events": [
+    "ORDINAL"
+   ]
+  },
+  {
+   "func": "func_03ECF0",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "CANCELPEACE"
+   ]
+  },
+  {
+   "func": "func_049600",
+   "src": "(ext/not-found)",
+   "events": [
+    "BADHAGGLE0",
+    "BADHAGGLE1",
+    "BRING",
+    "NOTENOUGH"
+   ]
+  },
+  {
+   "func": "func_04A426",
+   "src": "(ext/not-found)",
+   "events": [
+    "LEARNSTAY"
+   ]
+  },
+  {
+   "func": "func_04AC00",
+   "src": "(ext/not-found)",
+   "events": [
+    "EXTORTNO",
+    "EXTORTPOOR",
+    "EXTORTSTUFF"
+   ]
+  },
+  {
+   "func": "func_04AF5E",
+   "src": "(ext/not-found)",
+   "events": [
+    "ALREADYSMITE",
+    "NOCONTACT",
+    "UNFORTUNATE"
+   ]
+  },
+  {
+   "func": "func_057DC0",
+   "src": "(ext/not-found)",
+   "events": [
+    "SIGNTREATY"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "GIFTS",
+    "PEACEUSA",
+    "PROVOKE",
+    "RID",
+    "THREATS",
+    "WARMANLY",
+    "WITHDRAW"
+   ]
+  },
+  {
+   "func": "func_05A40E",
+   "src": "(ext/not-found)",
+   "events": [
+    "TRADENOWANT"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "EVASIVE"
+   ]
+  },
+  {
+   "func": "func_0612E6",
+   "src": "src/overlay/overlay_0612E6_066EB3.c",
+   "events": [
+    "TRADEDELETE"
+   ]
+  }
+ ],
+ "Natives": [
+  {
+   "func": "func_02211E",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "INDIANBRIBE"
+   ]
+  },
+  {
+   "func": "func_02EF64",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "DEADCONVERTS"
+   ]
+  },
+  {
+   "func": "func_03ECF0",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "WHACKINDIANS"
+   ]
+  },
+  {
+   "func": "func_045D00",
+   "src": "src/overlay/overlay_04458A_04694B.c",
+   "events": [
+    "INDIANBURN"
+   ]
+  },
+  {
+   "func": "func_046EC0",
+   "src": "(ext/not-found)",
+   "events": [
+    "EXTINCT"
+   ]
+  },
+  {
+   "func": "func_046FFA",
+   "src": "(ext/not-found)",
+   "events": [
+    "INDIANSURPRISE"
+   ]
+  },
+  {
+   "func": "func_048A3A",
+   "src": "(ext/not-found)",
+   "events": [
+    "MISSION0"
+   ]
+  },
+  {
+   "func": "func_048CA4",
+   "src": "(ext/not-found)",
+   "events": [
+    "HERESY0",
+    "HERESY1"
+   ]
+  },
+  {
+   "func": "func_04A7CA",
+   "src": "(ext/not-found)",
+   "events": [
+    "CHIEFAREA",
+    "CHIEFBORED",
+    "CHIEFGIFT",
+    "CHIEFGUIDES",
+    "CHIEFHOWDY",
+    "CHIEFKILL"
+   ]
+  },
+  {
+   "func": "func_04AF5E",
+   "src": "(ext/not-found)",
+   "events": [
+    "INDIANWARFARE",
+    "INDIANWARPATH2"
+   ]
+  },
+  {
+   "func": "func_056B92",
+   "src": "(ext/not-found)",
+   "events": [
+    "INDIANCOME",
+    "INDIANPEACE"
+   ]
+  },
+  {
+   "func": "func_056C3E",
+   "src": "(ext/not-found)",
+   "events": [
+    "INDIANBEGFOOD",
+    "INDIANCITY",
+    "INDIANCOMMENT",
+    "INDIANGIVEFOOD",
+    "INDIANGIVESTUFF",
+    "INDIANSCONVERT",
+    "INDIANSHUN",
+    "INDIANWAGONS",
+    "INDIANWELCOME"
+   ]
+  },
+  {
+   "func": "func_057AA2",
+   "src": "(ext/not-found)",
+   "events": [
+    "MEEKNESS"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "HEATHEN",
+    "SMITEINDIANS",
+    "WANTSTUFF"
+   ]
+  },
+  {
+   "func": "func_05BE84",
+   "src": "(ext/not-found)",
+   "events": [
+    "RAIDBURN",
+    "RAIDGOLD",
+    "RAIDNOTHING",
+    "RAIDSHIP",
+    "RAIDSTORES",
+    "RAIDWREAK"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "INDIANBOW",
+    "INDIANBURNCOLONY",
+    "INDIANBURNCOLONY2",
+    "INDIANLOSE",
+    "INDIANSLAVES",
+    "INDIANWIN0",
+    "INDIANWINCOLONY",
+    "INDIANWINCOLONY2",
+    "LOOT",
+    "LOOT2"
+   ]
+  }
+ ],
+ "Colony & Buildings": [
+  {
+   "func": "func_022542",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "SEACOLONY",
+    "TOOMOUNTAIN",
+    "TOONEAR",
+    "TOONEARBUILD",
+    "TUTNOLUMBER",
+    "TUTNOSPACES"
+   ]
+  },
+  {
+   "func": "func_025D34",
+   "src": "(ext/not-found)",
+   "events": [
+    "COLONY"
+   ]
+  },
+  {
+   "func": "func_02883E",
+   "src": "(ext/not-found)",
+   "events": [
+    "ABANDON",
+    "COLLEGE2",
+    "FULL",
+    "KEEPSTOCKADE",
+    "MORETHANTHREE",
+    "NEEDCOLLEGE",
+    "NEEDUNIVERSITY",
+    "NOTEACHER",
+    "SCHOOL1"
+   ]
+  },
+  {
+   "func": "func_02A6A6",
+   "src": "src/overlay/overlay_027BB6_02A92B.c",
+   "events": [
+    "WAREHOUSEFULL"
+   ]
+  },
+  {
+   "func": "func_02D0E4",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "BUILT",
+    "NOMOREWAREHOUSE"
+   ]
+  },
+  {
+   "func": "func_02D3C6",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "FORTFIRE"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "ALREADYHAVE",
+    "EFFICIENT",
+    "FOOD1",
+    "FOOD2",
+    "FOODLOW",
+    "SONSDOWN",
+    "SONSUP",
+    "STARVE1",
+    "STARVE2",
+    "TRAINCRIMINAL",
+    "TRAINFAIL",
+    "TRAININDENTURED",
+    "TRAINPROFESSION"
+   ]
+  },
+  {
+   "func": "func_033F6A",
+   "src": "(ext/not-found)",
+   "events": [
+    "UNREST"
+   ]
+  },
+  {
+   "func": "func_03FDDE",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "LANDFALL",
+    "LANDFALL2"
+   ]
+  },
+  {
+   "func": "func_04AC00",
+   "src": "(ext/not-found)",
+   "events": [
+    "EXTORTLAUGH"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "WORTHY"
+   ]
+  },
+  {
+   "func": "func_059B90",
+   "src": "(ext/not-found)",
+   "events": [
+    "SCOUTCOLONY"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "BURNED2"
+   ]
+  }
+ ],
+ "Setup, Menus & System": [
+  {
+   "func": "func_020EE0",
+   "src": "(ext/not-found)",
+   "events": [
+    "TUTORIAL2"
+   ]
+  },
+  {
+   "func": "func_020F50",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "TUTORIAL1",
+    "TUTORIAL10",
+    "TUTORIAL11",
+    "TUTORIAL13",
+    "TUTORIAL14",
+    "TUTORIAL15",
+    "TUTORIAL19",
+    "TUTORIAL3",
+    "TUTORIAL8",
+    "TUTORIAL9"
+   ]
+  },
+  {
+   "func": "func_02883E",
+   "src": "(ext/not-found)",
+   "events": [
+    "TUTORIAL7"
+   ]
+  },
+  {
+   "func": "func_02C5D4",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "TUTORIAL12",
+    "TUTORIAL4"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "TUTORIAL6"
+   ]
+  },
+  {
+   "func": "func_033C96",
+   "src": "src/overlay/overlay_031F28_033EB2.c",
+   "events": [
+    "ARMOPTIONS"
+   ]
+  },
+  {
+   "func": "func_033F6A",
+   "src": "(ext/not-found)",
+   "events": [
+    "REALLYBUY",
+    "TUTORIAL5"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "TRIBUTE"
+   ]
+  },
+  {
+   "func": "func_070EBA",
+   "src": "src/overlay/overlay_070302_074405.c",
+   "events": [
+    "MULTI"
+   ]
+  },
+  {
+   "func": "func_072F7A",
+   "src": "(ext/not-found)",
+   "events": [
+    "SAVEGAME"
+   ]
+  },
+  {
+   "func": "func_073158",
+   "src": "(ext/not-found)",
+   "events": [
+    "LOADGAME"
+   ]
+  },
+  {
+   "func": "func_07431E",
+   "src": "src/overlay/overlay_070302_074405.c",
+   "events": [
+    "NATION0A"
+   ]
+  },
+  {
+   "func": "func_0759E8",
+   "src": "src/overlay/overlay_0745F0_077A6A.c",
+   "events": [
+    "MAPTOLOAD"
+   ]
+  }
+ ],
+ "Units & Movement": [
+  {
+   "func": "func_02211E",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "NOPLOW"
+   ]
+  },
+  {
+   "func": "func_022334",
+   "src": "src/overlay/overlay_02083C_024337.c",
+   "events": [
+    "NOROAD"
+   ]
+  },
+  {
+   "func": "func_028D8C",
+   "src": "(ext/not-found)",
+   "events": [
+    "LOBOTOMIZE"
+   ]
+  },
+  {
+   "func": "func_02B046",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "UNITOPTIONS"
+   ]
+  },
+  {
+   "func": "func_02D0E4",
+   "src": "src/overlay/overlay_02AAEC_02F0C7.c",
+   "events": [
+    "NOMOREWAGONS"
+   ]
+  },
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "NEWCOLONIST"
+   ]
+  },
+  {
+   "func": "func_040608",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "USEDUPTOOLS"
+   ]
+  },
+  {
+   "func": "func_040656",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "CLEARCUT"
+   ]
+  },
+  {
+   "func": "func_04A37C",
+   "src": "(ext/not-found)",
+   "events": [
+    "GRUDGEWAGONS",
+    "KILLWAGONS",
+    "MADATWAGONS"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "MAYBEWITHDRAW",
+    "NOTWITHDRAW"
+   ]
+  },
+  {
+   "func": "func_059B90",
+   "src": "(ext/not-found)",
+   "events": [
+    "LOSTOURSCOUTS",
+    "LOSTTHEIRSCOUTS"
+   ]
+  },
+  {
+   "func": "func_05C69C",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "VETERAN"
+   ]
+  }
+ ],
+ "Combat & Siege": [
+  {
+   "func": "func_02883E",
+   "src": "(ext/not-found)",
+   "events": [
+    "SIEGE"
+   ]
+  },
+  {
+   "func": "func_033F6A",
+   "src": "(ext/not-found)",
+   "events": [
+    "COUNTRIES"
+   ]
+  },
+  {
+   "func": "func_03C322",
+   "src": "src/overlay/overlay_038A50_03C5A8.c",
+   "events": [
+    "AMBUSHHINT"
+   ]
+  },
+  {
+   "func": "func_03FDDE",
+   "src": "src/overlay/overlay_03C5A8_040C11.c",
+   "events": [
+    "SHIPCOMBAT"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "GIVECASH",
+    "PIRACY",
+    "SIEGES"
+   ]
+  },
+  {
+   "func": "func_05B2C2",
+   "src": "(ext/not-found)",
+   "events": [
+    "ARTILLERY",
+    "ARTILLERY2",
+    "CARGOCAPTURE",
+    "COLONISTCAPTURE",
+    "COLONISTCAPTURE2",
+    "DEMOTE",
+    "LOOTCAPTURE",
+    "SHIPSUNK",
+    "WAGONCAPTURE"
+   ]
+  },
+  {
+   "func": "func_05C69C",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "VALOR"
+   ]
+  },
+  {
+   "func": "func_05CA7E",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "CAPTURED",
+    "CAPTURED2",
+    "CAPTURED3",
+    "HALF"
+   ]
+  }
+ ],
+ "Exploration & Lost Cities": [
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "VANISH"
+   ]
+  },
+  {
+   "func": "func_049600",
+   "src": "(ext/not-found)",
+   "events": [
+    "BADHAGGLE2",
+    "BADHAGGLE3",
+    "BUYWHICH"
+   ]
+  },
+  {
+   "func": "func_04A7CA",
+   "src": "(ext/not-found)",
+   "events": [
+    "WELLSEASONED"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "NOTHINGWITHDRAW"
+   ]
+  },
+  {
+   "func": "func_05C878",
+   "src": "src/overlay/overlay_05C69C_0610DA.c",
+   "events": [
+    "CASHTREASURE"
+   ]
+  }
+ ],
+ "Score & Endgame": [
+  {
+   "func": "func_02F3A2",
+   "src": "(ext/not-found)",
+   "events": [
+    "LOSENOCOLONIES"
+   ]
+  },
+  {
+   "func": "func_03A9C0",
+   "src": "src/overlay/overlay_038A50_03C5A8.c",
+   "events": [
+    "SCORE"
+   ]
+  },
+  {
+   "func": "func_075594",
+   "src": "src/overlay/overlay_0745F0_077A6A.c",
+   "events": [
+    "VICEROY"
+   ]
+  }
+ ],
+ "Founding Fathers": [
+  {
+   "func": "func_02D658",
+   "src": "(ext/not-found)",
+   "events": [
+    "ORE",
+    "TOOLS"
+   ]
+  },
+  {
+   "func": "func_057F4E",
+   "src": "(ext/not-found)",
+   "events": [
+    "HELLOUSA"
+   ]
+  }
+ ]
+}

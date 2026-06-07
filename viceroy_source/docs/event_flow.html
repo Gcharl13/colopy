@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VICEROY.EXE — Event Handling Process Flow</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --ink:#e6edf3; --muted:#9aa7b4;
+    --line:#30363d; --accent:#58a6ff; --gold:#e3b341; --red:#f85149; --green:#3fb950;
+    --purple:#bc8cff; --teal:#39c5cf;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.5px}
+  h2{font-size:21px;margin:42px 0 12px;border-bottom:1px solid var(--line);padding-bottom:7px}
+  h3{font-size:16px;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 8px}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.86em}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);
+       border-radius:5px;padding:1px 7px;color:var(--muted);font-size:12px}
+  .answer{background:linear-gradient(135deg,#1a2233,#161b22);border:1px solid #2d3b52;
+          border-left:4px solid var(--gold);border-radius:10px;padding:18px 22px;margin:18px 0}
+  .answer h3{color:var(--gold)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);
+        border-radius:8px;padding:14px 18px;margin:16px 0}
+  .note.warn{border-left-color:var(--red)}
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+           padding:14px;margin:14px 0;overflow:auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card.king{border-top:3px solid var(--red)}
+  .card.rebel{border-top:3px solid var(--green)}
+  .card.foreign{border-top:3px solid var(--purple)}
+  .card.euro{border-top:3px solid var(--gold)}
+  .card .role{font-weight:600;font-size:15px}
+  .card .fn{float:right;color:var(--muted);font-size:11px}
+  .kv{margin:7px 0 0}
+  .kv b{color:var(--accent);font-weight:600;display:inline-block;min-width:64px;vertical-align:top}
+  .msg{margin-top:8px;padding:7px 10px;background:#0b1f17;border:1px solid #1d3a2a;
+       border-radius:6px;color:#9fe0b6;font-style:italic;font-size:13px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:10px 0}
+  .legend span{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+  .sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+  footer{margin-top:50px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Sid Meier&rsquo;s Colonization — Event Handling Process Flow</h1>
+<p class="sub">Reconstructed from the byte-verified C decompile of <code>VICEROY.EXE</code> (1994 DOS).
+Labels are plain-English roles, not addresses. Last built 2026-05-30. &mdash;
+<b>Looking for <em>every</em> event?</b> See the complete searchable
+<a href="event_catalog.html">Event Catalog (all 499)</a> or the whole-game
+<a href="event_graph.html">interactive network</a>.</p>
+
+<div class="answer">
+  <h3>&#9201; What triggers the &ldquo;War of the Spanish Succession&rdquo; message &mdash; and when</h3>
+  <p><b>What it does:</b> it is a <b>single-player-only</b> European political event. When it fires, the
+  game ranks the four European crowns by a weighted strength score and the <b>strongest crown annexes
+  the weakest crown&rsquo;s entire New World colony holdings</b> (the &ldquo;Treaty of Utrecht&rdquo;), then
+  shows the message naming who lost their colonies to whom.</p>
+  <p><b>Pre-conditions (verified):</b> (1) the game is <b>not</b> in multiplayer mode &mdash; the auto-event
+  is disabled when two or more human players are present; (2) two or more European powers exist to compare.
+  Once the handler runs, it performs the annexation unconditionally (no internal dice / year check) &mdash;
+  so the <b>timing is decided entirely by its dispatcher</b>, the per-turn European-politics update.</p>
+  <p><b>How it is dispatched (traced via the thunk cross-reference):</b> the succession handler is
+  <b>dispatch-only</b> &mdash; nothing calls it by name. It is shown by the <b>master report/event
+  dispatcher</b> <code>func_0235D6</code> (a 27-case switch keyed on an event id 0&ndash;26) that the
+  end-of-turn processing invokes. Each case is gated on event-pending flags and game-state counters
+  (multiplayer flag, rebel-sentiment %, unit count&hellip;) and then calls the page-06 European handlers
+  through the overlay thunk table.</p>
+  <p><b>Honest limit on &ldquo;exact turn&rdquo;:</b> what remains unresolved is only the <em>last hop</em>
+  &mdash; the end-of-turn code that <em>enqueues</em> the succession&rsquo;s event id (its precise schedule /
+  probability). The reseg function boundaries in this European-events page are mis-segmented, so isolating
+  that one enqueue site needs a control-flow rebuild of the page. Everything else above is byte-verified.</p>
+</div>
+
+<div class="note warn">
+  <h3>&#9888;&#65039; Other mechanics with the <em>same</em> tracing issue</h3>
+  <p>The succession is not special &mdash; the whole <b>War-of-Independence &amp; King event cluster</b> is
+  <b>dispatch-only</b> (handlers reached through the European-events overlay, never called by name in the
+  overlay code). Confirmed for: <b>Spanish Succession, Ship Seizure, Land Capture, REF Invasion, Tory
+  Uprising, Foreign Intervention, Foreign General joins, Mobilize Continentals, Declaration of Independence,
+  Mercenary Offer, King REF Build-up, Tory Sentiment Rise, King Tax Raise, King Concedes</b>. Any
+  &ldquo;exact firing turn&rdquo; question about these has the same answer shape as the succession.</p>
+</div>
+
+<h2>1 &middot; How events are handled (architecture)</h2>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  TL["Game Turn Loop<br/>(resident code)"]:::res
+  EOT["End-of-Turn Processing"]:::res
+  EURO["European-Politics Update<br/>(overlay &mdash; single-player only)"]:::disp
+  ACT["Player Action handlers<br/>(e.g. choose &lsquo;Declare Independence&rsquo;)"]:::res
+  NEWS["Report / Event Dispatcher (func_0235D6)<br/>27-case switch; flag- &amp; counter-gated &rarr; shows messages"]:::disp
+  CLUS{{"Event-handler cluster<br/>(dispatch-only, by condition)"}}:::evt
+  MSG["GAME.TXT message shown to player<br/>(@SUCCESSION, @INDEPENDENCE, &hellip;)"]:::msg
+
+  TL --> EOT
+  EOT --> EURO
+  EOT --> NEWS
+  TL --> ACT
+  EURO -->|"condition met this turn"| CLUS
+  ACT -->|"rebel sentiment &ge; 50%?"| CLUS
+  CLUS -->|"sets event flags +<br/>changes game state"| NEWS
+  CLUS --> MSG
+  NEWS --> MSG
+
+  classDef res fill:#1c2330,stroke:#3b4a61,color:#e6edf3;
+  classDef disp fill:#2a2140,stroke:#5a4a8a,color:#e6edf3;
+  classDef evt fill:#3a2e16,stroke:#7a6326,color:#f0e2c0;
+  classDef msg fill:#0b1f17,stroke:#1d3a2a,color:#9fe0b6;
+</pre>
+</div>
+
+<h2>2 &middot; The Revolution storyline (event flow)</h2>
+<p class="sub">The independence arc is driven by <b>rebel sentiment</b> (Sons of Liberty support %), not by the
+Spanish Succession. The two only share the single-vs-multiplayer switch.</p>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  SOL["Rebel sentiment rises/falls each turn<br/>(Sons of Liberty support %)"]:::rebel
+  MAJ["Colony reaches MAJORITY support<br/>&rarr; +1 production to its colonists"]:::rebel
+  TORYM["Colony drops below majority<br/>&rarr; loses production bonus"]:::rebel
+  REBDOWN["King propaganda: Tory sentiment rises<br/>support % falls"]:::king
+  TRY{"Player tries to<br/>Declare Independence"}:::rebel
+  TOO["Blocked: &lsquo;Only N% support independence&hellip;<br/>need the majority&rsquo;"]:::king
+  MP["Blocked: &lsquo;Revolution does not<br/>function in multi-player mode&rsquo;"]:::king
+  DECL["Confirm: &lsquo;Shall we declare independence?&rsquo;"]:::rebel
+  INDEP["DECLARATION OF INDEPENDENCE<br/>King dispatches Expeditionary Force"]:::rebel
+  KBUY["King builds up the REF<br/>(adds Regulars / Cavalry / Men-o-War / Artillery)"]:::king
+  MOB["Mobilize: your Veterans &rarr; Continental Army"]:::rebel
+  INV["REF lands near a colony"]:::king
+  SEIZE["At sea / on land: King captures your units<br/>before independence"]:::king
+  TORYUP["Tory Militia armed near a colony"]:::king
+  INTER["Foreign Intervention Force arrives to help"]:::foreign
+  FRIEND["Foreign General/Admiral joins<br/>(Lafayette, Cornwallis, de Ruyter&hellip;)"]:::foreign
+  MERC["King offers mercenaries for gold"]:::foreign
+  WIN["King concedes &rarr; you win independence"]:::rebel
+
+  SOL --> MAJ
+  SOL --> TORYM
+  REBDOWN --> SOL
+  SOL --> TRY
+  TRY -->|"support &lt; 50%"| TOO
+  TRY -->|"multiplayer"| MP
+  TRY -->|"support &ge; 50%, single-player"| DECL
+  DECL --> INDEP
+  INDEP --> KBUY
+  INDEP --> MOB
+  KBUY --> INV
+  INV --> SEIZE
+  INV --> TORYUP
+  INDEP --> INTER
+  INTER --> FRIEND
+  KBUY --> MERC
+  INTER --> WIN
+  MOB --> WIN
+
+  classDef rebel fill:#11271b,stroke:#2c6b41,color:#bff0cf;
+  classDef king fill:#2a1416,stroke:#7a2b2f,color:#f3c0c2;
+  classDef foreign fill:#241a33,stroke:#6a4aa0,color:#dcc8ff;
+</pre>
+</div>
+
+<h2>3 &middot; Event reference (function &middot; trigger &middot; inputs &middot; outputs)</h2>
+<div class="legend">
+  <span><i class="sw" style="background:#3fb950"></i> Rebel / colony</span>
+  <span><i class="sw" style="background:#f85149"></i> King / Crown</span>
+  <span><i class="sw" style="background:#bc8cff"></i> Foreign power</span>
+  <span><i class="sw" style="background:#e3b341"></i> European politics</span>
+</div>
+<div class="grid" id="cards"></div>
+
+<footer>
+<p><b>Methodology &amp; honesty.</b> Every event below was located by its GAME.TXT message key, then traced
+to its emitting function in the re-segmented overlay disassembly and spot-checked against raw
+<code>VICEROY.EXE</code> bytes. Plain-English roles come from the message text + the verified state the
+function reads/writes. Where a function&rsquo;s internal detail was not fully byte-verified, the card says so
+(&ldquo;handler identified; effect from message&rdquo;). The function ids (<code>func_XXXXXX</code>) are kept only
+as stable identifiers; all behavioural labels are address-free. The exact per-turn <em>dispatch</em> of the
+dispatch-only cluster is the one open item (see the notes above).</p>
+</footer>
+
+</div>
+<script>
+const EVENTS = [
+ {cls:"euro", role:"War of the Spanish Succession", fn:"func_03C638", key:"@SUCCESSION",
+  trigger:"Single-player; 2+ European powers; chosen by the per-turn European-politics update",
+  inputs:"Each European crown's weighted strength score; multiplayer flag",
+  outputs:"Strongest crown ANNEXES the weakest crown's New World colonies (ownership transfer)",
+  msg:"“War of the Spanish Succession ends in Europe! {power}, ravaged by war, agrees to cede {colony} to the {power}. Treaty of Utrecht…”"},
+
+ {cls:"rebel", role:"Declare Independence (attempt)", fn:"func_03E984", key:"@DECLARE / @TOOTORY / @MULTIREV",
+  trigger:"Player chooses “Declare Independence”",
+  inputs:"National rebel-sentiment % (Sons of Liberty support); multiplayer flag",
+  outputs:"If support ≥ 50% & single-player → confirmation → declaration; else blocked",
+  msg:"Blocked below 50%: “Only N% of the colonists support the independence movement… we cannot start a rebellion until the majority is behind us.”"},
+
+ {cls:"rebel", role:"Declaration of Independence", fn:"func_03DE46", key:"@INDEPENDENCE",
+  trigger:"Confirmed declaration (after the 50% gate)",
+  inputs:"Active power; king state",
+  outputs:"Resets king bell tally; King dispatches the Royal Expeditionary Force; war begins",
+  msg:"“Continental Congress signs Declaration of Independence! … Expeditionary force dispatched to suppress rebellion!”"},
+
+ {cls:"king", role:"King Tax Raise", fn:"func_02F052", key:"@KINGTAX",
+  trigger:"Periodic Crown demand (king-anger driven)",
+  inputs:"Current tax rate; king anger",
+  outputs:"Raises your tax rate by N%",
+  msg:"“…we have graciously decided to raise your tax rate by N%. The tax rate is now M%.”"},
+
+ {cls:"king", role:"King REF Build-up", fn:"func_03E162", key:"@KINGBUY",
+  trigger:"Periodically as rebel sentiment grows (pre/during war)",
+  inputs:"Difficulty; current REF composition; rebel sentiment",
+  outputs:"Adds units (Regulars/Cavalry/Men-o-War/Artillery) to the Royal Expeditionary Force",
+  msg:"“King increases military spending. {force} added to royal expeditionary force. Colonial leaders express alarm.”"},
+
+ {cls:"king", role:"Tory Sentiment Rise", fn:"func_03E844", key:"@REBELDOWN",
+  trigger:"King propaganda / events lowering rebel support",
+  inputs:"Rebel-sentiment %",
+  outputs:"Lowers rebel sentiment (handler identified; magnitude from message)",
+  msg:"“Tory sentiment is once again on the rise… Only N% of the population now supports independence.”"},
+
+ {cls:"king", role:"Ship Seizure (at sea)", fn:"func_03C5A8", key:"@SEIZURE",
+  trigger:"Pre-independence Crown action against your shipping",
+  inputs:"Your ships/cargo (handler identified; effect from message)",
+  outputs:"Your ship is seized by the Royal Navy",
+  msg:"“{ship} seized on the high seas by the Royal Navy!”"},
+
+ {cls:"king", role:"Land Capture", fn:"func_03C932", key:"@SEIZURELAND",
+  trigger:"Pre-independence Crown action on land",
+  inputs:"Your land units (handler identified; effect from message)",
+  outputs:"Your unit is captured by the Royal Army",
+  msg:"“{unit} captured by the Royal Army!”"},
+
+ {cls:"king", role:"REF Invasion", fn:"func_03CDA2", key:"@INVASION",
+  trigger:"During the War of Independence",
+  inputs:"REF units; target colony",
+  outputs:"Royal Expeditionary Force lands near one of your colonies",
+  msg:"“Royal Expeditionary Force lands near {colony}!”"},
+
+ {cls:"king", role:"Tory Uprising", fn:"func_03CAC6", key:"@TORYUPRISING",
+  trigger:"During the war, near a low-rebel colony",
+  inputs:"Colony rebel sentiment",
+  outputs:"Parliament arms Tory Militia near a colony",
+  msg:"“Tory uprising near {colony}! Parliament arms Tory Militia!”"},
+
+ {cls:"foreign", role:"Foreign Intervention", fn:"func_03D510", key:"@INTERVENE",
+  trigger:"War of Independence going well for rebels",
+  inputs:"War progress; a friendly European power",
+  outputs:"A foreign Intervention Force arrives to fight alongside you",
+  msg:"“{power} Intervention Force arrives in {colony}! Local Rebel Army commander regales {power} admiral.”"},
+
+ {cls:"foreign", role:"Foreign General/Admiral joins", fn:"func_03D948", key:"@FRIEND",
+  trigger:"Tied to the intervention path",
+  inputs:"Intervening power",
+  outputs:"A named foreign commander joins your cause (Lafayette, Cornwallis, de Ruyter…)",
+  msg:"“French General Lafayette / British General Cornwallis / Dutch Admiral de Ruyter…”"},
+
+ {cls:"rebel", role:"Mobilize Continentals", fn:"func_03E2EA", key:"@MOBILIZE",
+  trigger:"On declaration / during war",
+  inputs:"Your Veteran Soldiers",
+  outputs:"Veterans are promoted to Continental Army status",
+  msg:"“Continental Army mobilizes at {colony}! Our Veteran {unit} have been promoted to Continental Army status.”"},
+
+ {cls:"foreign", role:"Mercenary Offer", fn:"func_03E442", key:"@MERCENARIES",
+  trigger:"During the war",
+  inputs:"Your gold; an offering European king",
+  outputs:"Offers trained mercenaries in exchange for gold (accept/decline)",
+  msg:"“The King of {power} has offered to send us a force of trained mercenaries ({units}) in exchange for {gold}.”"},
+
+ {cls:"rebel", role:"Colony reaches Rebel majority", fn:"(SoL update)", key:"@REBELMAJORITY",
+  trigger:"A colony's Sons of Liberty support crosses the majority",
+  inputs:"Colony Sons-of-Liberty %",
+  outputs:"All colonists there gain +1 to base production",
+  msg:"“Sons of Liberty membership in {colony} is up to N%… All colonists in {colony} gain +1 to their base production abilities.”"},
+
+ {cls:"king", role:"Colony drops to Tory majority", fn:"(SoL update)", key:"@TORYMAJORITY",
+  trigger:"A colony's support falls back below the majority",
+  inputs:"Colony Sons-of-Liberty %",
+  outputs:"Colony loses its +1 production bonus",
+  msg:"“…membership in {colony} is down to N%… {colony} colonists no longer gain production bonuses.”"},
+
+ {cls:"rebel", role:"King Concedes (you win)", fn:"func_02F3A2", key:"@KINGLOSE",
+  trigger:"War of Independence won",
+  inputs:"War outcome",
+  outputs:"King gives up; independence achieved",
+  msg:"“In our wisdom, we have decided to let you go your own way…”"},
+];
+
+const c = document.getElementById("cards");
+for (const e of EVENTS){
+  const d = document.createElement("div");
+  d.className = "card " + e.cls;
+  d.innerHTML =
+    '<span class="fn mono">'+e.fn+'</span>'+
+    '<div class="role">'+e.role+'</div>'+
+    '<div class="kv"><b>Event</b> <span class="tag">'+e.key+'</span></div>'+
+    '<div class="kv"><b>Trigger</b> '+e.trigger+'</div>'+
+    '<div class="kv"><b>Inputs</b> '+e.inputs+'</div>'+
+    '<div class="kv"><b>Outputs</b> '+e.outputs+'</div>'+
+    '<div class="msg">'+e.msg+'</div>';
+  c.appendChild(d);
+}
+mermaid.initialize({startOnLoad:true, theme:"dark", flowchart:{useMaxWidth:true, htmlLabels:true}});
+</script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+{
+  "source": "viceroy.exe overlay segment table",
+  "overlay_offset_in_file": 132709,
+  "overlay_size_bytes": 362201,
+  "method": "empirical via prologue-detected function anchors (Day 1.4)",
+  "note": "RTLink linker directory format not yet fully decoded. The 34 resolved segments are derived from cross-referencing 1020 thunk LJMP targets against 691 detected function entry points in the overlay region. Segments with fewer than 2 thunk-target anchors remain unresolved.",
+  "resolved_segments": {
+    "0x0": {
+      "file_offset": 153856,
+      "thunk_count": 661,
+      "matched": 99,
+      "match_ratio": 0.15,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x5eb": {
+      "file_offset": 159728,
+      "thunk_count": 82,
+      "matched": 4,
+      "match_ratio": 0.049,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x427": {
+      "file_offset": 199956,
+      "thunk_count": 47,
+      "matched": 5,
+      "match_ratio": 0.106,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x4b": {
+      "file_offset": 394152,
+      "thunk_count": 25,
+      "matched": 4,
+      "match_ratio": 0.16,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x37f": {
+      "file_offset": 191292,
+      "thunk_count": 24,
+      "matched": 4,
+      "match_ratio": 0.167,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x984": {
+      "file_offset": 204566,
+      "thunk_count": 16,
+      "matched": 3,
+      "match_ratio": 0.188,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x9": {
+      "file_offset": 141258,
+      "thunk_count": 10,
+      "matched": 2,
+      "match_ratio": 0.2,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x5b3": {
+      "file_offset": 392236,
+      "thunk_count": 9,
+      "matched": 3,
+      "match_ratio": 0.333,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x262": {
+      "file_offset": 138544,
+      "thunk_count": 8,
+      "matched": 2,
+      "match_ratio": 0.25,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x12b": {
+      "file_offset": 144746,
+      "thunk_count": 7,
+      "matched": 2,
+      "match_ratio": 0.286,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x97": {
+      "file_offset": 159948,
+      "thunk_count": 6,
+      "matched": 2,
+      "match_ratio": 0.333,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x29f": {
+      "file_offset": 139304,
+      "thunk_count": 6,
+      "matched": 2,
+      "match_ratio": 0.333,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x101": {
+      "file_offset": 394236,
+      "thunk_count": 5,
+      "matched": 3,
+      "match_ratio": 0.6,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x5dc": {
+      "file_offset": 137698,
+      "thunk_count": 5,
+      "matched": 2,
+      "match_ratio": 0.4,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x24c": {
+      "file_offset": 165766,
+      "thunk_count": 5,
+      "matched": 2,
+      "match_ratio": 0.4,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x9ef": {
+      "file_offset": 163200,
+      "thunk_count": 5,
+      "matched": 2,
+      "match_ratio": 0.4,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x1047": {
+      "file_offset": 199774,
+      "thunk_count": 5,
+      "matched": 2,
+      "match_ratio": 0.4,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x9f6": {
+      "file_offset": 199782,
+      "thunk_count": 4,
+      "matched": 2,
+      "match_ratio": 0.5,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xae7": {
+      "file_offset": 159728,
+      "thunk_count": 3,
+      "matched": 2,
+      "match_ratio": 0.667,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xacb": {
+      "file_offset": 202914,
+      "thunk_count": 3,
+      "matched": 2,
+      "match_ratio": 0.667,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xa29": {
+      "file_offset": 199437,
+      "thunk_count": 3,
+      "matched": 2,
+      "match_ratio": 0.667,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x3f1": {
+      "file_offset": 139918,
+      "thunk_count": 3,
+      "matched": 2,
+      "match_ratio": 0.667,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x57e": {
+      "file_offset": 197982,
+      "thunk_count": 3,
+      "matched": 2,
+      "match_ratio": 0.667,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xb70": {
+      "file_offset": 162130,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xa4e": {
+      "file_offset": 165802,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x2dd": {
+      "file_offset": 210708,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x2fd": {
+      "file_offset": 165758,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x30d": {
+      "file_offset": 175422,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x3e4": {
+      "file_offset": 164850,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xa0a": {
+      "file_offset": 204668,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xb32": {
+      "file_offset": 263674,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xb2c": {
+      "file_offset": 165862,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0xbdd": {
+      "file_offset": 159728,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    },
+    "0x1103": {
+      "file_offset": 197980,
+      "thunk_count": 2,
+      "matched": 2,
+      "match_ratio": 1.0,
+      "resolution_method": "empirical_anchor_match"
+    }
+  },
+  "unresolved_segments": {
+    "0x1059": {
+      "file_offset": null,
+      "thunk_count": 3,
+      "matched": 0,
+      "resolution_method": "unresolved_low_anchor_count"
+    },
+    "0xa58": {
+      "file_offset": null,
+      "thunk_count": 3,
+      "matched": 0,
+      "resolution_method": "unresolved_low_anchor_count"
+    },
+    "0xae3": {
+      "file_offset": null,
+      "thunk_count": 2,
+      "matched": 0,
+      "resolution_method": "unresolved_low_anchor_count"
+    },
+    "0xb9e": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbf5": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbca": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc28": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc11": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc2a": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc36": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc56": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbaa": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x2d6": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xade": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb8f": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb8d": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x2d8": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x2e9": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x981": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc0c": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xd11": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb5e": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xd05": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbc3": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbbc": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb78": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xcf8": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xaea": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbbb": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbb9": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xcaa": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc89": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc06": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb57": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xafb": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x1085": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x105f": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb3f": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb01": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xbd4": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xb8b": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0xc05": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x107c": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x106d": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x1074": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x1066": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x1088": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    },
+    "0x1100": {
+      "file_offset": null,
+      "thunk_count": 1,
+      "matched": 0,
+      "resolution_method": "unresolved_single_thunk"
+    }
+  },
+  "stats": {
+    "total_segments": 82,
+    "resolved": 34,
+    "unresolved": 48,
+    "resolved_thunks": 177,
+    "total_thunks": 1020
+  }
+}
