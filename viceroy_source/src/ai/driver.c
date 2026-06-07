@@ -7,8 +7,8 @@
  * SCOPE OF VERIFICATION
  *   Every global address, structure stride, and control-flow edge below was
  *   read from VICEROY.EXE (COLONIZE/VICEROY.EXE) via the re-segmented overlay
- *   disassembly (reverse_engineered/code/VICEROY/disasm_overlay_reseg/) and the
- *   Type-A thunk map (reverse_engineered/code/VICEROY/typeA_thunk_targets.json,
+ *   disassembly (code/VICEROY/disasm_overlay_reseg/) and the
+ *   Type-A thunk map (code/VICEROY/typeA_thunk_targets.json,
  *   tools/map_typeA_thunks.py). Cross-page far-calls are annotated with the
  *   resolving Type-A thunk.
  *
@@ -29,9 +29,9 @@
  * @verified_by     Hand-decompiled from VICEROY.EXE 2026-05-28 (overlay reseg
  *                  + Type-A thunk map). Supersedes the prior RECONSTRUCTED
  *                  (fabricated) driver.c.
- * @ref             reverse_engineered/code/VICEROY/typeA_thunk_targets.json
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_07.asm
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_06.asm
+ * @ref             code/VICEROY/typeA_thunk_targets.json
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_07.asm
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_06.asm
  * ============================================================================ */
 #include "viceroy_types.h"
 

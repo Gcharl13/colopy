@@ -17,10 +17,10 @@
  * truncate at the first RET and badly under-size the large routines, e.g.
  * func_074688 "9 bytes" is really a 0x32-byte 6-field setter, func_0749E0
  * "601" is really 2417, func_0755CC "235" is really 1052):
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1A.asm (base 0x72090, ..0x763D0)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1B.asm (base 0x764D0, ..0x76D70)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1C.asm (base 0x76E50, ..0x77880)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1D.asm (base 0x77990, ..0x77E00)
+ *   code/VICEROY/disasm_overlay_reseg/page_1A.asm (base 0x72090, ..0x763D0)
+ *   code/VICEROY/disasm_overlay_reseg/page_1B.asm (base 0x764D0, ..0x76D70)
+ *   code/VICEROY/disasm_overlay_reseg/page_1C.asm (base 0x76E50, ..0x77880)
+ *   code/VICEROY/disasm_overlay_reseg/page_1D.asm (base 0x77990, ..0x77E00)
  * Entry prologues spot-checked against raw COLONIZE/VICEROY.EXE.
  *
  * STRICT cite-or-TBD: every value/offset cites the .asm or raw EXE; opaque

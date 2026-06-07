@@ -5,11 +5,11 @@ Produced by `tools/resegment_overlay.py` from the byte-decoded VP page directory
 
 ## Outputs
 
-- `reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_01.asm … page_1F.asm`
+- `code/VICEROY/disasm_overlay_reseg/page_01.asm … page_1F.asm`
   (31 files) — each overlay page disassembled at its TRUE page code base, with a
   per-page header (file_offset / code_offset / code_end / reloc_count) and one
   `; ---- func_XXXXXX  size= insns= prologue= terminal= ----` block per function.
-- `reverse_engineered/code/VICEROY/overlay_functions_reseg.json` — combined index:
+- `code/VICEROY/overlay_functions_reseg.json` — combined index:
   per-function `{file_offset, page_id, size, instructions, prologue_type,
   prologue_valid, terminal}`, plus `summary`, `pages`, and `reloc_validation`.
 

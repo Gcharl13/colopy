@@ -7,9 +7,9 @@
  * are OVERLAY-resident and are marked TBD.
  *
  * Authoritative source for everything in this file:
- *   reverse_engineered/docs/DIALOG_GEOMETRY.md           (the rect data flow)
- *   reverse_engineered/code/VICEROY/disasm/func_067DC8_unknown.asm (the asm)
- *   reverse_engineered/docs/RENDERER_GEOMETRY.md "Popup framework" / "Map
+ *   docs/DIALOG_GEOMETRY.md           (the rect data flow)
+ *   code/VICEROY/disasm/func_067DC8_unknown.asm (the asm)
+ *   docs/RENDERER_GEOMETRY.md "Popup framework" / "Map
  *     Banner Popups" (frame-verified popup geometry + GAME.TXT @width rule)
  *
  * Prior revision FABRICATED: a Dialog/DialogButton struct with title/body/

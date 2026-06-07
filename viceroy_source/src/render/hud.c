@@ -39,7 +39,7 @@
  *   0x1A1F:0x896  resident rect-fill        (x, y, w, h, color) [minimap_fill]
  *
  * What was ALREADY solid (kept below):
- *   - The on-screen frame-verified visible layout: reverse_engineered/docs/
+ *   - The on-screen frame-verified visible layout: docs/
  *     RENDERER_GEOMETRY.md ("Map view ... VERIFIED v2/v3", "Default map view
  *     sidebar"). These are the VISIBLE regions; the byte-traced HUD_* table is
  *     the DRAW-CALL truth and is preferred where the two differ (the frame

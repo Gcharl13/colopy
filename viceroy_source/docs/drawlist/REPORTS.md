@@ -5,7 +5,7 @@ F3 Continental Congress, F4 Labor, F5 Economic, F6 Colony, F7 Naval,
 F8 Foreign Affairs, F9 Indian).
 
 **Decoded:** 2026-05-31, straight from `raw/COLONIZE/VICEROY.EXE` via the RTLink
-overlay resolver (`reverse_engineered/tools/rtlink/rtlink_decode.py validate` →
+overlay resolver (`tools/rtlink/rtlink_decode.py validate` →
 ALL PASS). Supersedes the obsolete "BLOCKED overlay 0x191F — PNG-measured only"
 caveat in `docs/FIDELITY_CONFORMANCE.md` §"Report screens" and SCREEN_LAYOUTS §4.
 

@@ -21,7 +21,7 @@ import json
 import os
 from collections import defaultdict, Counter
 
-PROJECT = r"c:\Users\gregc\OneDrive\Desktop\COLOPY\reverse_engineered"
+PROJECT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 FUNCTIONS_JSON = os.path.join(PROJECT, "code", "VICEROY", "functions.json")
 THUNKS_JSON = os.path.join(PROJECT, "code", "VICEROY", "overlay_thunks.json")
 OUT_JSON = os.path.join(PROJECT, "code", "VICEROY", "overlay_segments.json")

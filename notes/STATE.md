@@ -22,7 +22,7 @@ old `colonization_project_full/clean/` framing below is STALE — see note).
 >   demotion,resolve}.c — see fabricated_data/README.md) + generated render
 >   output (build/, render_test_*.png, debug_*/) + scratch + duplicate exports.
 > - **Clean tree**: root loose files 30->14; Ghidra exports relocated to
->   reverse_engineered/ghidra_export/. ff.h/effects.c/recruit.c + the byte-
+>   ghidra_export/. ff.h/effects.c/recruit.c + the byte-
 >   verified src/ (combat/market/king/production) were confirmed CORRECT.
 > - **Still TBD**: native behavioural params (aggression/pop/skills), the raze
 >   size/wealth input re-trace, the price->coin curve. ~14 RULINGS 2026-05-30.
@@ -36,7 +36,7 @@ old `colonization_project_full/clean/` framing below is STALE — see note).
 >   bases (629 fns, 99.5% valid prologues) -> Type-A thunk->function cross-page call
 >   graph. The "core logic missing" premise was wrong — it was mis-decoded; now
 >   correct. New tooling: tools/{resolve_thunks,decode_overlay_pages_v2,
->   resegment_overlay,map_typeA_thunks}.py + reverse_engineered/code/VICEROY/*.json
+>   resegment_overlay,map_typeA_thunks}.py + code/VICEROY/*.json
 >   + disasm_overlay_reseg/.
 > - **Byte-verified C (src/, cite-or-TBD)**: combat, market (pricing/boycott),
 >   colony production, AI dispatch, king (REF/demands), native (settlement/raid/
@@ -80,8 +80,8 @@ old `colonization_project_full/clean/` framing below is STALE — see note).
 >   is DONE: main.py is now a 35-line shim) all predate today.
 >
 > **2026-05-05 update**: Major UI / asset / memory progress —
-> 100-task plan in `reverse_engineered/docs/UI_TASK_PLAN_100.md`,
-> master cross-reference in `reverse_engineered/docs/UI_DOCS_INDEX.md`.
+> 100-task plan in `docs/UI_TASK_PLAN_100.md`,
+> master cross-reference in `docs/UI_DOCS_INDEX.md`.
 > See "What's verified" below for added pinned facts.
 
 This document describes **what is here, what runs, what's verified, and what

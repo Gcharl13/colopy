@@ -226,7 +226,7 @@ indices. **So the renderer should index PNGs at `VICEROY_idx − 1`.**
 
 ### Report-screen gauge / row segment sprites (byte-cited roles → PORT png)
 
-Roles are byte-verified in `reverse_engineered/.../drawlist/REPORTS.md` (gauge
+Roles are byte-verified in `.../drawlist/REPORTS.md` (gauge
 primitive `func_002EE4` @0x236; rebel/tory enqueue `func_0033F2` @0x222). The
 VICEROY indices below are ground truth from the disassembly; the PORT png index
 is `VICEROY − 1` (rule above); the depiction is the **decoded original**.

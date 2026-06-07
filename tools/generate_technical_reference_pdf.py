@@ -11,7 +11,7 @@ Honest scope:
 - All UNKNOWN content is flagged as gaps, not fabricated
 
 Usage: python generate_technical_reference_pdf.py
-Output: c:/Users/gregc/OneDrive/Desktop/COLOPY/COLONIZATION_TECHNICAL_REFERENCE.pdf
+Output: COLONIZATION_TECHNICAL_REFERENCE.pdf
 """
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-ROOT = Path(r'c:/Users/gregc/OneDrive/Desktop/COLOPY')
+ROOT = Path(str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 DOCS = ROOT / 'reverse_engineered' / 'docs'
 FORMATS = ROOT / 'reverse_engineered' / 'formats'
 COLONIZE = ROOT / 'COLONIZE'

@@ -15,7 +15,7 @@
  *   NOTE the order: Man-O-War is slot 2, Artillery is slot 3.
  *
  * @verified_by  Hand-decompiled 2026-05-29 from the re-segmented overlay dump
- *               (reverse_engineered/code/VICEROY/disasm_overlay_reseg/).
+ *               (code/VICEROY/disasm_overlay_reseg/).
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"

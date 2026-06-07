@@ -8,8 +8,8 @@
  * the generic text-line widget the dialogs draw through.
  *
  * Hand-ported from the RE-SEGMENTED overlay disassembly
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_16.asm (code_base 0x068EE0)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_17.asm (code_base 0x06BE50)
+ *   code/VICEROY/disasm_overlay_reseg/page_16.asm (code_base 0x068EE0)
+ *   code/VICEROY/disasm_overlay_reseg/page_17.asm (code_base 0x06BE50)
  * which is AUTHORITATIVE for function extents (the per-func disasm/func_*.asm
  * dumps the stale auto banners cite TRUNCATE at the first RET and mis-size the
  * large routines, e.g. they record func_0696C6 as "19 bytes" when its real

@@ -25,7 +25,7 @@ page_id = static trailer word @thunk+0x0A   (segment list @file 0x192F0)
 DGROUP  = handle + 0x1D9A0
 ```
 
-Resolver: `reverse_engineered/tools/rtlink/rtlink_decode.py`
+Resolver: `tools/rtlink/rtlink_decode.py`
 (`resolve <page> <off>` / `flatten` / `info` / `validate`). `validate` passes
 ALL byte self-checks, including `resolve(0x10, 0x352) == 0x5B2C2` landing on the
 combat resolver's clean `ENTER` prologue. Proof of method end-to-end: the F3

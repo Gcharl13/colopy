@@ -61,13 +61,13 @@
  *
  * @region          overlay (page 0x09, code base 0x42C50; reached via Type-A
  *                  thunk 0x181F:0x424 -> file 0x43074, verified
- *                  reverse_engineered/tools/rtlink/rtlink_decode.py resolve 0x09 0x424)
+ *                  tools/rtlink/rtlink_decode.py resolve 0x09 0x424)
  * @verified_by     Hand-decompiled from RAW VICEROY.EXE 2026-05-30 (reseg page_09
  *                  full body 0x43074..0x443C9 + raw-byte spot-checks). NEW file.
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_09.asm
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_09.asm
  * @ref             COLONIZE/VICEROY.EXE (raw; ultimate arbiter)
- * @ref             reverse_engineered/viceroy_source/src/ui/main_loop.c (0x8540/0x853E = cursor tile)
- * @ref             reverse_engineered/viceroy_source/include/power.h (PowerRecord +0x2A gold)
+ * @ref             viceroy_source/src/ui/main_loop.c (0x8540/0x853E = cursor tile)
+ * @ref             viceroy_source/include/power.h (PowerRecord +0x2A gold)
  * ============================================================================ */
 #include "viceroy_types.h"
 

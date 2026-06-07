@@ -1,6 +1,6 @@
 # func_0749E0 — NAMES.TXT data-table loader (decoded 2026-05-31)
 
-Byte-traced from `reverse_engineered/code/VICEROY/disasm/func_0749E0_unknown.asm`
+Byte-traced from `code/VICEROY/disasm/func_0749E0_unknown.asm`
 (file 0x0749E0..0x074C39, 601 bytes) via the 0x191F/0x1A1F resolver. This was a
 `NEXT_TARGETS.md` Group-A `TBD-inner` item; the outer section dispatch is now
 fully mapped (only the orphan sub-loader `func_07637F` remains inner — see §3).

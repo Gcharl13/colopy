@@ -3,8 +3,8 @@
  *
  * Region: AI / combat / unit-movement (pages 0x0D and 0x0E of VICEROY.EXE).
  * Hand-ported from the RE-SEGMENTED overlay disassembly
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0D.asm  (code_base 0x04C1F0)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0E.asm  (code_base 0x05382 0)
+ *   code/VICEROY/disasm_overlay_reseg/page_0D.asm  (code_base 0x04C1F0)
+ *   code/VICEROY/disasm_overlay_reseg/page_0E.asm  (code_base 0x05382 0)
  * which is AUTHORITATIVE for function extents (the per-func disasm/func_*.asm
  * dumps this file's stale banners cite badly truncate the large routines).
  * Raw-byte entry prologues spot-checked against COLONIZE/VICEROY.EXE.

@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-ROOT = Path(r'c:/Users/gregc/OneDrive/Desktop/COLOPY')
+ROOT = Path(str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 INPUT = ROOT / 'VICEROY2.EXE.c'
 OUTPUT = ROOT / 'VICEROY2_annotated.c'
 

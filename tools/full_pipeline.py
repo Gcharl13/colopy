@@ -23,7 +23,7 @@ import re
 import sys
 from collections import defaultdict, Counter
 
-PROJECT = r"c:\Users\gregc\OneDrive\Desktop\COLOPY\reverse_engineered"
+PROJECT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 
 
 # Reuse logic from existing tools.

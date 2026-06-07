@@ -2,7 +2,7 @@
 
 **Status of this document:** byte-grounded investigation, no fabrication.
 Every claim below is backed by a raw-byte citation into
-`reverse_engineered/raw/COLONIZE/VICEROY.EXE` (file offsets, uppercase hex)
+`raw/COLONIZE/VICEROY.EXE` (file offsets, uppercase hex)
 or a JSON artifact in this tree. Where a semantic role cannot be cited, it is
 marked **TBD**.
 

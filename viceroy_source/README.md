@@ -183,7 +183,7 @@ understood), then colony / unit (the largest decoded slice), then map
 ## Building (notional)
 
 ```
-$ cd reverse_engineered/viceroy_source
+$ cd viceroy_source
 $ make all          # produces obj/VICEROY.EXE
 $ make verify       # diffs against ../raw/COLONIZE/VICEROY.EXE; should be byte-identical
 ```

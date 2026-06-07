@@ -6,10 +6,10 @@ title string, and data sources. Renderers can use this to produce
 pixel-faithful versions.
 
 **Source files searched**
-- `reverse_engineered/code/VICEROY/disasm/` (1,243 .asm files)
-- `reverse_engineered/code/COLONIZE/disasm/` (1,245 .asm files, recol overlay)
-- `reverse_engineered/raw/COLONIZE/GAME.TXT`
-- `reverse_engineered/raw/COLONIZE/LABELS.TXT`
+- `code/VICEROY/disasm/` (1,243 .asm files)
+- `code/COLONIZE/disasm/` (1,245 .asm files, recol overlay)
+- `raw/COLONIZE/GAME.TXT`
+- `raw/COLONIZE/LABELS.TXT`
 - `build/ui_extract/funcs.json` (185+ LCALLs catalogued per function)
 
 ---
@@ -35,7 +35,7 @@ The F-key dispatcher lives inside the large function **`func_0x2b743`**
 | F9 | 0x143 | `LCALL 0x191F:0x41A` | 0x0000:0x010A | **file 0x025A0A** | Indian Adviser |
 | F10 | 0x144 | conditional: `LCALL 0x181F:0x574` or `LCALL 0x191F:0x3AA` | 0:0x14A8 / 0:0x92 | **file 0x026DA8** / file 0x025992 | Score |
 
-Citation: `reverse_engineered/code/VICEROY/disasm/orphans_overlay.asm`
+Citation: `code/VICEROY/disasm/orphans_overlay.asm`
 lines 13818..13898 (file offset 0x2BDEA..0x2BECF).
 
 The F-key handler pushes the **current player power_idx** (from

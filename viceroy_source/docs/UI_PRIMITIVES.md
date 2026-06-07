@@ -8,10 +8,10 @@
 > distinguishes those, byte-by-byte.
 >
 > **cite-or-stop.** Every claim below is read from
-> `reverse_engineered/raw/COLONIZE/VICEROY.EXE`
+> `raw/COLONIZE/VICEROY.EXE`
 > (494,910 bytes, sha256 `a17ed64c27671e5e95236e54a7ddc85803a96ba822fbed05e1dad34d3917e2e3`)
 > and the per-function disassembly in
-> `reverse_engineered/code/VICEROY/disasm/`. `codeOffset = 0x2400`,
+> `code/VICEROY/disasm/`. `codeOffset = 0x2400`,
 > `DGROUP` base `0x1D9A0`. Items not byte-confirmed are flagged
 > **NEEDS VERIFICATION**. Nothing here is guessed.
 

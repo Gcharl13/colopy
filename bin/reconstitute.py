@@ -15,7 +15,12 @@ Verifies every output against SHA256SUMS.txt.
 import base64, hashlib, sys, pathlib
 
 here = pathlib.Path(__file__).resolve().parent
-out = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else here
+repo = here.parent
+# Default outdir = <repo>/raw/COLONIZE/ -- the path the disasm tool suite
+# (tools/disasm_mz.py, tools/rtlink/rtlink_decode.py, callgraph.py, parse_thunks.py,
+# find_missed_funcs.py, ...) already looks in. So `python bin/reconstitute.py` with
+# NO args makes the whole bench find the bytes. Pass an explicit dir to override.
+out = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else (repo / "raw" / "COLONIZE")
 out.mkdir(parents=True, exist_ok=True)
 
 sums = {}

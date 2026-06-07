@@ -1,6 +1,6 @@
 # C Reconstruction Completion Plan (autonomous engine)
 
-**The C source under `reverse_engineered/viceroy_source/` is THE product.**
+**The C source under `viceroy_source/` is THE product.**
 Python (`colonize_sdl/`) and Godot (`colonization_godot/`) are deprioritized
 test harnesses — do NOT work on them under this plan.
 

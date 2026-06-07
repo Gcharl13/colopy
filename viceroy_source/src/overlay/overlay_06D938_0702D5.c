@@ -13,9 +13,9 @@
  * cited truncate at the first RET and badly understate the large routines, e.g.
  * they claim func_06D938 is 61 B / func_06D9CC 182 / func_06DC64 52 / func_06DE6E
  * 410 / func_0702C0 21, when the real extents are 148 / 664 / 522 / 601 / 66 B):
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_17.asm  (IP = file-0x06BB00)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_18.asm  (IP = file-0x06F850)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_19.asm  (IP = file-0x06FB40)
+ *   code/VICEROY/disasm_overlay_reseg/page_17.asm  (IP = file-0x06BB00)
+ *   code/VICEROY/disasm_overlay_reseg/page_18.asm  (IP = file-0x06F850)
+ *   code/VICEROY/disasm_overlay_reseg/page_19.asm  (IP = file-0x06FB40)
  * Raw-byte entry prologues spot-checked against raw/COLONIZE/VICEROY.EXE.
  *
  * WHAT THIS REGION DOES (byte-derived):

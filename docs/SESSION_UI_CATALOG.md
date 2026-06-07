@@ -348,7 +348,7 @@ Plymouth and Europe for sugar export.
 ## Sprite usage observed in this session
 
 Cross-reference between session frames and the
-`reverse_engineered/assets/sprites/` library. Each entry below
+`assets/sprites/` library. Each entry below
 identifies the sprite asset by directory name, gives its visual
 description (verified from the .png), and lists the in-session
 frame(s) where it appears.

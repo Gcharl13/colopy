@@ -94,7 +94,7 @@ flat blob, or anchoring it at the wrong base. With the directory decoded:
 ## Files
 
 - `tools/decode_overlay_pages_v2.py` — deterministic directory decoder (new).
-- `reverse_engineered/code/VICEROY/overlay_pages.json` — regenerated, all 31
+- `code/VICEROY/overlay_pages.json` — regenerated, all 31
   pages high-confidence with `file_offset` + `code_offset` + sizes + flags.
 - `tools/decode_overlay_pages.py` — the old prologue-vote tool, kept for
   provenance; its `_blocker` is now resolved by v2.

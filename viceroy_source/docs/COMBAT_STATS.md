@@ -16,7 +16,7 @@ string rule `file_offset = handle + 0x1D9A0`).
 ## 1. The @UNIT loader (file 0x74EC3..0x74F66) — byte trace
 
 The loader lives in overlay page `0x1A`
-(`reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1A.asm`,
+(`code/VICEROY/disasm_overlay_reseg/page_1A.asm`,
 lines 4163–4208). It is the `@UNIT` table builder — NOT `func_0749E0`
 (that one ends at 0x74C39 and loads SEASONS/FORESTED/RESOURCE/COUNTRY/…;
 the `@UNIT` loop is a separate loop further down the same page).

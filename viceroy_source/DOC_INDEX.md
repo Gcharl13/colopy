@@ -1,7 +1,7 @@
 # DOC_INDEX — Documentation Audit & Source-of-Truth Map
 
 **Generated:** 2026-05-30 (documentation audit).
-**Scope:** every `.md` under `reverse_engineered/viceroy_source/` (top-level,
+**Scope:** every `.md` under `viceroy_source/` (top-level,
 `docs/`, `formats/`, `data/`, `src/overlay/`). 54 source docs (+ this index).
 (Three 2026-05-30 docs — `UI_VERIFICATION.md`, `OPENING_SEQUENCE.md`, plus a
 concurrently-landing edit — were committed while this audit ran and are
@@ -28,7 +28,7 @@ explicitly contradicted by `docs/RULINGS.md` and the byte-verified `src/**/*.c`.
 
 When two sources disagree, the higher tier wins:
 
-1. **The byte-verified C source** — `reverse_engineered/viceroy_source/src/**/*.c`
+1. **The byte-verified C source** — `viceroy_source/src/**/*.c`
    (and `data/*.c`, `include/*.h`) where the value carries an `@asm` citation and
    a `BYTE_VERIFIED` tag. This is the ULTIMATE truth: it is read directly from
    `COLONIZE/VICEROY.EXE` bytes. (Caveat: a `.c` file with a `RECONSTRUCTED` /
@@ -185,7 +185,7 @@ For these, the prose doc is STALE-REVIEW and the only trustworthy source is the
    ff_progress@0x2A) which CONTRADICTS the byte-verified PowerRecord
    (Tax@+0x01, Gold@+0x2A, FF-mask@+0x07, price_level byte[16]@+0x4C, volume
    word[16]@+0x5C — RULINGS wave-3 + PowerRecord-layout memory). **The verified
-   data model is the SIBLING file `reverse_engineered/docs/DATA_MODEL.md`** (the
+   data model is the SIBLING file `docs/DATA_MODEL.md`** (the
    one RULINGS repeatedly calls "the cited authority") + `include/*.h`. The
    viceroy_source copy is therefore STALE-REVIEW for struct layouts / AUTHORITATIVE
    only for its appended NAMES.TXT→DGROUP section. Listed here as a gap because no
@@ -195,7 +195,7 @@ For these, the prose doc is STALE-REVIEW and the only trustworthy source is the
 
 ## Audit method (reproducibility)
 
-- File list: `find reverse_engineered/viceroy_source -name '*.md'` (54 source
+- File list: `find viceroy_source -name '*.md'` (54 source
   docs + this index).
 - Dates: `git log -1 --format=%cs -- <path>` (≈39 @ 2026-05-28, 1 @ 2026-05-29,
   ≈14 @ 2026-05-30; a few 2026-05-30 docs landed during the audit).

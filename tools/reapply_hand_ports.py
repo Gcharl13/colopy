@@ -8,7 +8,7 @@ The hand-port database is in this file as HAND_PORTS dict.
 import os
 import re
 
-PROJECT = r"c:\Users\gregc\OneDrive\Desktop\COLOPY\reverse_engineered"
+PROJECT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 OVERLAY_DIR = os.path.join(PROJECT, "viceroy_source", "src", "overlay")
 
 

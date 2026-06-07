@@ -393,7 +393,7 @@ positions of a 48×48 tile.
 
 - **Type**: Far call via the RTLink **thunk table** (NOT a separate engine
   segment). 0x181F:0x0254 is a Type-B thunk (file 0x1A844) → JMPF to resident
-  **file 0xE76A** (0x0C36:0x000A). See reverse_engineered/code/VICEROY/thunks_resolved.json.
+  **file 0xE76A** (0x0C36:0x000A). See code/VICEROY/thunks_resolved.json.
 - **Location in caller**: bytes 9A 54 02 1F 18 at file 0x67E02
   (inside func_O508).
 - **Calling convention** (inferred from func_O508 0x67DC8 + call sites at
@@ -531,7 +531,7 @@ positions of a 48×48 tile.
   (stride 0x0C) of `jmpf 0x191F:NNNN`. **0x191F is NOT an undisassembled overlay
   segment** — it is an address in the RTLink thunk table (file 0x1A5F0..0x1D5E6).
   Each entry is a Type-A thunk whose target is an overlay page; all 31 page bases
-  are recovered in reverse_engineered/code/VICEROY/overlay_pages.json, and the
+  are recovered in code/VICEROY/overlay_pages.json, and the
   overlay code is already flat-disassembled in
   extracted/disassembly/viceroy_overlay_full.asm.
 - **Remaining**: re-segment the overlay disasm using the recovered page bases so
@@ -558,7 +558,7 @@ positions of a 48×48 tile.
   Seed at DGROUP:0x28EE/0x28F0; `srand` at 0x103C2. `random_int(lo,hi)` at
   **file 0xC322** (`((rand()*(hi-lo+1))>>15)+lo`), reached from the overlay via
   `LCALL 0x181F:0x04D4` and called from dozens of game-logic sites. See
-  `reverse_engineered/viceroy_source/src/runtime/rng.c`.
+  `viceroy_source/src/runtime/rng.c`.
 - **Why the earlier "not located" was wrong**: the 2026-04-20 note scanned only
   the overlay; the RNG lives in the load image. `0x343FD` occurs exactly once in
   the whole binary — at 0x103D5, inside `rand()`. (The sub-note that DS:0x5398

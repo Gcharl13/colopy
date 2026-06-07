@@ -31,7 +31,7 @@ power id (0..7); slots 0..3 are the four playable European powers, slots
 > `+0x01` tax_rate · `+0x02` rebel_pct · `+0x07` FF bitmap · `+0x0C/+0x0E` bells (current/total) ·
 > `+0x14` FF count · `+0x20` boycott bitmap · **`+0x2A` gold (dword)** · `+0x2E` per-power bells
 > tally · `+0x34` war matrix (abs 0x883C) · `+0x4C` price_level byte[16].
-> Authoritative struct model: **`reverse_engineered/docs/DATA_MODEL.md` (sibling) + `include/*.h`**
+> Authoritative struct model: **`docs/DATA_MODEL.md` (sibling) + `include/*.h`**
 > + `decompile_status.html`. (The NAMES.TXT @section table appended lower in THIS file IS verified.)
 
 ```c

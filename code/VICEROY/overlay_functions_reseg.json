@@ -1,7 +1,7 @@
 {
   "_doc": "Re-segmented overlay function index for VICEROY.EXE. Each function decoded at its TRUE page code base (overlay_pages.json code_offset), NOT the old single flat blob base. Boundaries by MSC prologue (ENTER/push-bp) + terminal RET/RETF with mid-function-RETF guard. Produced by tools/resegment_overlay.py.",
   "exe": "COLONIZE/VICEROY.EXE",
-  "generated_from": "reverse_engineered/code/VICEROY/overlay_pages.json",
+  "generated_from": "code/VICEROY/overlay_pages.json",
   "reloc_validation": {
     "total_reloc_sites": 6507,
     "matched_thunk_seg": 6492,

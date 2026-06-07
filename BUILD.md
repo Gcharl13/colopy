@@ -4,6 +4,15 @@ A third party should be able to reproduce every BYTE_VERIFIED claim
 in this archive **from the original VICEROY.EXE / MAPEDIT.EXE bytes**
 in under 30 minutes by following this guide.
 
+> **Start here (verified 2026-06):** the "First run" block in [README.md](README.md)
+> is the verified happy path — `pip install -r requirements.txt` →
+> `python bin/reconstitute.py` → `python tools/disasm_mz.py --exes VICEROY.EXE`
+> (~1241 funcs) → `python tools/rtlink/rtlink_decode.py validate --exe bin/VICEROY.EXE`
+> (ALL PASS). The detailed steps below are the full-project guide, re-rooted to the
+> repo root (`tools/`, not `reverse_engineered/tools/`); a few render/asset steps
+> reference the deferred visual phase and may name tools not shipped in this
+> disasm-only bench.
+
 This is the reproducibility doc for the entire reverse-engineering
 project.
 
@@ -15,44 +24,44 @@ project.
 
 ```bash
 # 1. Disassemble both binaries
-python reverse_engineered/tools/disasm_mz.py --exe VICEROY
-python reverse_engineered/tools/disasm_mz.py --exe MAPEDIT
+python tools/disasm_mz.py --exes VICEROY.EXE
+python tools/disasm_mz.py --exes MAPEDIT.EXE
 
 # 2. Resolve overlay thunks
-python reverse_engineered/tools/parse_thunks.py --exe VICEROY
+python tools/parse_thunks.py --exes VICEROY.EXE
 
 # 3. LCALL annotation (Day-1 breakthrough; 79.5% of LCALLs resolved)
-python reverse_engineered/tools/resolve_lcall.py --annotate
+python tools/resolve_lcall.py --annotate
 
 # 4. Sigmatch (17 helpers + 5 MAPEDIT shared functions BYTE_VERIFIED)
-python reverse_engineered/tools/sigmatch.py --self-test
-python reverse_engineered/tools/sigmatch.py --build-lib
-python reverse_engineered/tools/apply_sigmatch.py --target MAPEDIT
+python tools/sigmatch.py --self-test
+python tools/sigmatch.py --build-lib
+python tools/apply_sigmatch.py --target MAPEDIT
 
 # 5. Bulk classify instructions (ledger 0% -> 99%)
-python reverse_engineered/tools/classify_instructions.py --exe VICEROY
-python reverse_engineered/tools/classify_instructions.py --exe MAPEDIT
+python tools/classify_instructions.py --exes VICEROY.EXE
+python tools/classify_instructions.py --exes MAPEDIT.EXE
 
 # 6. Auto-tag functions by string xrefs
-python reverse_engineered/tools/auto_name_funcs.py --exe VICEROY
+python tools/auto_name_funcs.py --exes VICEROY.EXE
 
 # 7. MAPEDIT pseudo-C tree
-python reverse_engineered/tools/build_mapedit_source.py
+python tools/build_mapedit_source.py
 
 # 8. Refresh ledger
-python reverse_engineered/tools/ledger_update.py
+python tools/ledger_update.py
 
 # 9. Linkcheck across docs (every "file 0xNNNNNN" must resolve)
-python reverse_engineered/tools/linkcheck.py
+python tools/linkcheck.py
 
 # 10. Fabrication check across renderers
-python reverse_engineered/tools/check_no_fabrication.py
+python tools/check_no_fabrication.py
 
 # 11. Visual diff (informational; not a hard pass)
-python reverse_engineered/tools/visual_diff.py
+python tools/visual_diff.py
 
 # 12. Asset round-trip status
-python reverse_engineered/tools/verify_assets.py
+python tools/verify_assets.py
 ```
 
 Expected outputs after running the above:
@@ -73,7 +82,7 @@ Expected outputs after running the above:
 ## Prerequisites
 
 - Python 3.8+
-- `pip install Pillow` (for PNG rendering)
+- `pip install -r requirements.txt` (capstone is the one hard dep)
 - The original `COLONIZE/` directory from a Sid Meier's Colonization
   (DOS, 1994) installation, placed at the project root.
 
@@ -85,7 +94,7 @@ playable smoke test).
 ## Step 1: Verify all 319 COLONIZE/ files match the golden manifest (~30 sec)
 
 ```bash
-cd reverse_engineered
+cd .  # repo root
 python tools/verify.py
 ```
 
@@ -139,9 +148,9 @@ signatures don't match — investigation needed.
 
 ```bash
 python tools/sigmatch.py --build-lib
-python tools/sigmatch.py --scan ../COLONIZE/MAPEDIT.EXE
-python tools/sigmatch.py --scan ../COLONIZE/OPENING.EXE
-python tools/sigmatch.py --scan ../COLONIZE/CLOSING.EXE
+python tools/sigmatch.py --scan raw/COLONIZE/MAPEDIT.EXE
+python tools/sigmatch.py --scan raw/COLONIZE/OPENING.EXE
+python tools/sigmatch.py --scan raw/COLONIZE/CLOSING.EXE
 ```
 
 Expected matches:
@@ -186,7 +195,7 @@ the proof is the cited bytes in VICEROY.EXE. Quick spot-checks:
 ```bash
 # Native village raze (CHIEFKILL) gold formula
 python -c "
-data = open('../COLONIZE/VICEROY.EXE', 'rb').read()
+data = open('raw/COLONIZE/VICEROY.EXE', 'rb').read()
 # 'sum_3 × roll_4 × 4 × (size_byte+1)' is verified at file 0x04AB17..0x04AB2A
 print('IMUL [BP-0x14]:', data[0x04AB17:0x04AB1A].hex(), '(expect F7 6E EC)')
 print('SHL AX, 2     :', data[0x04AB1A:0x04AB1D].hex(), '(expect C1 E0 02)')
@@ -195,7 +204,7 @@ print('IMUL [BP-0x14]:', data[0x04AB2A:0x04AB2D].hex(), '(expect F7 6E EC)')
 
 # rand() LCG constants
 python -c "
-data = open('../COLONIZE/VICEROY.EXE', 'rb').read()
+data = open('raw/COLONIZE/VICEROY.EXE', 'rb').read()
 # At 0x0103D4: B8 FD 43 (MOV AX, 0x43FD) and 0x0103D7: BA 03 00 (MOV DX, 3)
 # i.e. multiplier = 0x000343FD = 213245
 print('rand multiplier:', data[0x0103D4:0x0103DA].hex())
@@ -214,7 +223,7 @@ constants live at the cited offsets.
 
 ```bash
 python -c "
-data = open('../COLONIZE/VICEROY.EXE', 'rb').read()
+data = open('raw/COLONIZE/VICEROY.EXE', 'rb').read()
 # DGROUP string segment at 2b5a:0000 = file 0x01D9A0
 base = 0x01D9A0
 print('CASHTREASURE:', data[base+0x1be0:base+0x1bec].decode())

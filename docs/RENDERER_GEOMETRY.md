@@ -57,7 +57,7 @@ the upper sub-panel, not the lower).
 ## Colony screen (Plymouth — frame 1310196718) — VERIFIED v3
 
 **Frame-verified 2026-05-20** via luma-edge analysis of
-`reverse_engineered/session_1777952458/frames/1310196718000000.webp`.
+`session_1777952458/frames/1310196718000000.webp`.
 See `tools/measure_colony_bands.py` and `tools/measure_colony_xbands.py`
 for the measurement scripts. v2 entries had the title bar 4 px too
 tall and the middle band misnamed "Colonist row" at 26 px when it's

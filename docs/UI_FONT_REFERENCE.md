@@ -134,14 +134,14 @@ print(repr(data[0x1FD20:0x1FD90]))
 python -c "
 from PIL import Image
 for f in ['FONTKING','FONTSMAL','FONTTINY','FONTINTR','FONT-NP']:
-    g = Image.open(f'reverse_engineered/assets/fonts/{f}/{f}.FF.065.png')
+    g = Image.open(f'assets/fonts/{f}/{f}.FF.065.png')
     print(f, g.size)
 "
 
 # Sample colon3 pixel colors
 python -c "
 from PIL import Image
-img = Image.open('reverse_engineered/verification/dosbox_screenshots/colon3.jpg').convert('RGB')
+img = Image.open('verification/dosbox_screenshots/colon3.jpg').convert('RGB')
 print('inv num at (15,470):', img.getpixel((15,470)))
 print('title bg at (80,2):', img.getpixel((80,2)))
 print('SoL bg at (10,330):', img.getpixel((10,330)))

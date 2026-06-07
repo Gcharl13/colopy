@@ -5,9 +5,9 @@
  * file load/save/create path, CONFIG.COL + argv/env parsing, the save/load
  * filename builders, and the new-game power-table initialiser.
  * Spans TWO re-segmented overlay pages of VICEROY.EXE:
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_19.asm
+ *   code/VICEROY/disasm_overlay_reseg/page_19.asm
  *       (record 24; code_base 0x06FDF0; code_end 0x071490)  -- funcs ..0x0713D4
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1A.asm
+ *   code/VICEROY/disasm_overlay_reseg/page_1A.asm
  *       (record 25; code_base 0x072090; code_end 0x0763D0)  -- funcs 0x072090..
  * The re-seg pages are AUTHORITATIVE for extents; the legacy per-func
  * disasm/func_*.asm dumps this file's old banners cited TRUNCATE at the first

@@ -2,7 +2,7 @@
  * overlay_054505_05C69B.c -- overlay functions in file range 0x054505..0x05C69B
  *
  * Region: COMBAT / DIPLOMACY / NATIVE-RELATIONS / TRADE.  Hand-ported from the
- * re-segmented overlay dump (reverse_engineered/code/VICEROY/disasm_overlay_reseg/
+ * re-segmented overlay dump (code/VICEROY/disasm_overlay_reseg/
  * page_0E.asm code_base 0x053820, page_0F.asm code_base 0x056A10, page_10.asm
  * code_base 0x05AF70) cross-checked against raw COLONIZE/VICEROY.EXE bytes and
  * the DGROUP string table (strings.json, DGROUP image base 0x1D9A0).

@@ -257,9 +257,9 @@ advisor (Continental MSS5 or similar — TBD).
 
 | Asset | Source path | Use |
 |-------|------------|-----|
-| Body fill | `reverse_engineered/assets/backgrounds/WOODPANL/WOODPANL.PIK.png` (320×200) | tile-crop to popup rect |
-| Frame | `reverse_engineered/assets/sprites/WOODFRAM/WOODFRAM.SS.000.png` (274×170) | 9-slice or center-crop |
-| Title strip | `reverse_engineered/assets/sprites/NAMEPLAT/NAMEPLAT.SS.000.png` (18×14), `.001.png` (16×14), `.002.png` (18×14) | choose width per title length |
+| Body fill | `assets/backgrounds/WOODPANL/WOODPANL.PIK.png` (320×200) | tile-crop to popup rect |
+| Frame | `assets/sprites/WOODFRAM/WOODFRAM.SS.000.png` (274×170) | 9-slice or center-crop |
+| Title strip | `assets/sprites/NAMEPLAT/NAMEPLAT.SS.000.png` (18×14), `.001.png` (16×14), `.002.png` (18×14) | choose width per title length |
 | Default tile font | `FONTTINY/FONTTINY.FF.<ASCII>.png` | popup body |
 | SMALLFONT-flag font | `FONTSMAL/FONTSMAL.FF.<ASCII>.png` | popup body when @SMALLFONT |
 | King speech-bubble font | `FONTKING/FONTKING.FF.<ASCII>.png` | King audience only |

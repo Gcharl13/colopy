@@ -70,10 +70,10 @@
  * @verified_by     Hand-decompiled from VICEROY.EXE 2026-05-30 (page_10.asm reseg
  *                  + per-func dump + string-rule xrefs). PROLOGUE/early blocks
  *                  byte-verified; deep scoring tail honestly TBD.
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_10.asm
- * @ref             reverse_engineered/code/VICEROY/disasm/func_05CA7E_unknown.asm
- * @ref             reverse_engineered/code/VICEROY/disasm/func_04E2D6_unknown.asm
- * @ref             reverse_engineered/code/VICEROY/strings.json
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_10.asm
+ * @ref             code/VICEROY/disasm/func_05CA7E_unknown.asm
+ * @ref             code/VICEROY/disasm/func_04E2D6_unknown.asm
+ * @ref             code/VICEROY/strings.json
  * ============================================================================ */
 #include "viceroy_types.h"
 
@@ -730,8 +730,8 @@ cleanup_far:
  * resident. Documented here as the shared MOVE evaluator; full port deferred.
  * (Inputs byte-verified; weights TBD -- NOT invented.)
  *
- * @ref reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0D.asm (func_04E2D6)
- * @ref reverse_engineered/code/VICEROY/disasm/func_04E2D6_unknown.asm
+ * @ref code/VICEROY/disasm_overlay_reseg/page_0D.asm (func_04E2D6)
+ * @ref code/VICEROY/disasm/func_04E2D6_unknown.asm
  * ============================================================================ */
 extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
                                         int16_t flag, int16_t one);
@@ -765,7 +765,7 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
  *  - Strings byte-verified via the +0x1D9A0 rule: "HALF" 0x1C06, "Bad defense"
  *    literal 0x1CE1, "EVASIVE" 0x1C0B, "EUROPEWIN" 0x1C13, "EUROPELOSE" 0x1C1D,
  *    "BURNED"/"BURNED2"/"BURNED3" 0x1C28/0x1C2F/0x1C37.
- *  - Trampolines resolved via reverse_engineered/tools/rtlink/rtlink_decode.py:
+ *  - Trampolines resolved via tools/rtlink/rtlink_decode.py:
  *      near 0x3DDD -> 0x05E72D ljmp 0x1A1F:0x6F8 -> func_05BE30 (applier wrapper)
  *      near 0x3DD3 -> 0x05E723 ljmp 0x1A1F:0x6E0 -> func_05B2C2 (consequence applier)
  *      0x181F:0x9C8 -> FILE 0x07C2A (strength accessor); 0x181F:0x9DC -> 0x07D3E

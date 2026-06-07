@@ -18,7 +18,7 @@ multiple times in this project.** Write rulings down; don't re-fight them.
 
 ## Special source: the original game manual (user-provided 2026-05-30)
 
-`reverse_engineered/docs/GAME_MANUAL.md` is the official Colonization manual /
+`docs/GAME_MANUAL.md` is the official Colonization manual /
 Technical Supplement (converted from the user's `document.md`). It documents the
 **design intent — how each feature is meant to FUNCTION.** Authority rule:
 

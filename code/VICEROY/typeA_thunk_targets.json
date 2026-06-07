@@ -1,7 +1,7 @@
 {
-  "_doc": "Type-A (overlay) RTLink thunk -> overlay function map for VICEROY.EXE. Each Type-A thunk carries a page_id trailer (overlay segment) and a JMPF offset plus a secondary disambiguation word (ljmp_seg). CORRECT resolution formula: target_file_offset = page.code_offset + (ljmp_seg<<4) + jmpf_off. Produced by reverse_engineered/tools/rtlink/rtlink_decode.py (resolver authority; validate ALL PASS). 157 thunk targets corrected from prior version which omitted the (ljmp_seg<<4) term.",
+  "_doc": "Type-A (overlay) RTLink thunk -> overlay function map for VICEROY.EXE. Each Type-A thunk carries a page_id trailer (overlay segment) and a JMPF offset plus a secondary disambiguation word (ljmp_seg). CORRECT resolution formula: target_file_offset = page.code_offset + (ljmp_seg<<4) + jmpf_off. Produced by tools/rtlink/rtlink_decode.py (resolver authority; validate ALL PASS). 157 thunk targets corrected from prior version which omitted the (ljmp_seg<<4) term.",
   "exe": "COLONIZE/VICEROY.EXE",
-  "resolver": "reverse_engineered/tools/rtlink/rtlink_decode.py",
+  "resolver": "tools/rtlink/rtlink_decode.py",
   "formula": "target_file_offset = segments[page_id-1].code_offset + (ljmp_seg<<4) + jmpf_off",
   "thunk_table": {
     "start": "0x01A5F0",

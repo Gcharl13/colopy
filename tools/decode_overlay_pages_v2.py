@@ -93,7 +93,7 @@ page 1 starts with `1E 68..` push-ds since it is the init/opening segment).
 ============================================================================
 OUTPUT
 ============================================================================
-Rewrites reverse_engineered/code/VICEROY/overlay_pages.json with, for each of
+Rewrites code/VICEROY/overlay_pages.json with, for each of
 the 31 pages: {file_offset (= disk image base), code_offset (first instruction),
 size_paragraphs, size_bytes, reloc_count, flags, residency, confidence:"high"}.
 A prologue self-check is recorded per page (code_offset lands on
@@ -162,7 +162,7 @@ def code_start(exe: bytes, disk: int) -> tuple[int, int, str]:
 
 def main() -> int:
     root = Path(__file__).resolve().parent.parent
-    exe = (root / "COLONIZE" / "VICEROY.EXE").read_bytes()
+    exe = (root / "raw" / "COLONIZE" / "VICEROY.EXE").read_bytes()
 
     desc_file = locate_descriptor_table(exe)
 
@@ -203,7 +203,7 @@ def main() -> int:
                 "DETERMINISTICALLY from the on-disk 32-byte segment-descriptor table "
                 "(supersedes the prologue-vote heuristic). See "
                 "tools/decode_overlay_pages_v2.py header for the full byte trace.",
-        "exe": "COLONIZE/VICEROY.EXE",
+        "exe": "raw/COLONIZE/VICEROY.EXE",
         "method": "vp_segment_descriptor_table (byte-decoded)",
         "overlay_image_start": f"0x{OVERLAY_START:06X}",
         "descriptor_table": {
@@ -243,7 +243,7 @@ def main() -> int:
         "pages": pages,
     }
 
-    out_path = root / "reverse_engineered" / "code" / "VICEROY" / "overlay_pages.json"
+    out_path = root / "code" / "VICEROY" / "overlay_pages.json"
     out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
 
     print(f"[decode_overlay_pages_v2] descriptor table @ 0x{desc_file:06X}; "

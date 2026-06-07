@@ -5,7 +5,7 @@
  *         (VICEROY.EXE overlay page 0x17, record 22).
  *
  * Hand-ported from the RE-SEGMENTED overlay disassembly
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_17.asm
+ *   code/VICEROY/disasm_overlay_reseg/page_17.asm
  *     (code_base 0x06BE50, code_end 0x06F850 — this whole file lives in that
  *      single page; the page is AUTHORITATIVE for function extents.  The stale
  *      per-func disasm/func_*.asm banners this file used to cite truncate at the

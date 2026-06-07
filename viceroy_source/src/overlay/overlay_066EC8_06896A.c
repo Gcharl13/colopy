@@ -10,7 +10,7 @@
  * blit leaves (src/render/terrain.c, src/render/blit.c).
  *
  * Hand-ported from the RE-SEGMENTED overlay disassembly
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_15.asm
+ *   code/VICEROY/disasm_overlay_reseg/page_15.asm
  *   (code_base 0x66850; this file's whole range lives in that ONE page; it is
  *    AUTHORITATIVE for function extents — the per-func disasm/func_*.asm dumps
  *    the stale auto banners cited badly truncate the larger routines, e.g. they

@@ -48,11 +48,11 @@
  * @verified_by     Hand-decompiled from VICEROY.EXE 2026-05-30 (overlay reseg
  *                  page_07/page_08 full bodies + string-rule xrefs + per-func
  *                  dumps). func_03ECF0 + func_040E22 are decoded END-TO-END here.
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_07.asm
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_08.asm
- * @ref             reverse_engineered/code/VICEROY/disasm/func_040E22_unknown.asm
- * @ref             reverse_engineered/code/VICEROY/strings.json (message handles)
- * @ref             reverse_engineered/code/VICEROY/typeA_thunk_targets.json
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_07.asm
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_08.asm
+ * @ref             code/VICEROY/disasm/func_040E22_unknown.asm
+ * @ref             code/VICEROY/strings.json (message handles)
+ * @ref             code/VICEROY/typeA_thunk_targets.json
  * ============================================================================ */
 #include "viceroy_types.h"
 

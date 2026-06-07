@@ -5,9 +5,9 @@
  * distinct subsystems, hand-ported from the RE-SEGMENTED overlay disassembly
  * (AUTHORITATIVE for extents / control flow; the per-func disasm/func_*.asm
  * dumps the stale auto-banners cite truncate the large routines):
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1D.asm (code_base 0x77990) — tail
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1E.asm (code_base 0x77ED0)
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1F.asm (code_base 0x78640)
+ *   code/VICEROY/disasm_overlay_reseg/page_1D.asm (code_base 0x77990) — tail
+ *   code/VICEROY/disasm_overlay_reseg/page_1E.asm (code_base 0x77ED0)
+ *   code/VICEROY/disasm_overlay_reseg/page_1F.asm (code_base 0x78640)
  * Raw-byte prologues spot-checked against raw/COLONIZE/VICEROY.EXE.
  *
  * The three subsystems:

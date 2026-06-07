@@ -16,7 +16,7 @@ Every `lcall 0x181F:NNN` / `0x191F:NNN` / `0x1A1F:NNN` is an RTLink/Plus V2
 **thunk dispatch**. The far address `seg:off` is only a *window* into the thunk
 table (file 0x1A5F0..0x1D610). The thunk record's own page-id trailer — NOT the
 window seg — names the real overlay page. Resolved with
-`reverse_engineered/tools/rtlink/rtlink_decode.py` (validate: ALL PASS):
+`tools/rtlink/rtlink_decode.py` (validate: ALL PASS):
 
 ```
 target_file_offset = segments[page_id-1].code_offset + offset_in_segment
@@ -750,7 +750,7 @@ i.e. (x, y) top-left, (w, h) as tabulated.
 ## Verification provenance
 
 - RTLink resolver self-validation: **ALL PASS** (16 byte-checks incl. thunk
-  0x1CCD0 → func_05B2C2). Tool: `reverse_engineered/tools/rtlink/rtlink_decode.py`.
+  0x1CCD0 → func_05B2C2). Tool: `tools/rtlink/rtlink_decode.py`.
 - **2026-05-31 re-decode method:** every picker function and every draw-primitive
   target was re-disassembled CONTINUOUSLY (across the reseg splits that truncate
   the per-func `.asm` stubs) directly from `raw/COLONIZE/VICEROY.EXE` with

@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(r'c:/Users/gregc/OneDrive/Desktop/COLOPY')
+ROOT = Path(str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 FRAMES = ROOT / 'reverse_engineered' / 'session_1777952458' / 'frames'
 OUT = ROOT / 'reverse_engineered' / 'verification' / 'ui_overlays'
 OUT.mkdir(parents=True, exist_ok=True)

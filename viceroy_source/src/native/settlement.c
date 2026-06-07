@@ -12,7 +12,7 @@
  *   fields +0x00 x  +0x01 y  +0x02 owner  +0x04 pop  +0x05 mission(0x10|owner)
  *
  * @verified_by  Hand-decompiled from the RE-SEGMENTED overlay dump
- *               (reverse_engineered/code/VICEROY/disasm_overlay_reseg/) 2026-05-29.
+ *               (code/VICEROY/disasm_overlay_reseg/) 2026-05-29.
  *               String segment base = file 0x1D9A0 (CHIEFKILL @seg 0x1668 =
  *               file 0x1F008; BURNED @seg 0x1C28 = file 0x1F5C8).
  * ============================================================================ */

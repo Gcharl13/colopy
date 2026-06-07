@@ -33,7 +33,7 @@ import os
 import sys
 from collections import Counter
 
-PROJECT = r"c:\Users\gregc\OneDrive\Desktop\COLOPY\reverse_engineered"
+PROJECT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 DISASM_DIR = os.path.join(PROJECT, "code", "VICEROY", "disasm")
 FUNCTIONS_JSON = os.path.join(PROJECT, "code", "VICEROY", "functions.json")
 OUTPUT_JSON = os.path.join(PROJECT, "code", "VICEROY", "overlay_classification.json")

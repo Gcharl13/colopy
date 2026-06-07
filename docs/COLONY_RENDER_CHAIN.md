@@ -185,7 +185,7 @@ For `lcall 0x1A1F:N`, the thunk lives at file `0x1C5F0 + N`.
 - `0x302` "on-screen bounds check" — inferred only.
 - `0x254` "pixel-blit to framebuffer" — inferred only.
 
-A separate, BAD attempt at thunk resolution lives in `reverse_engineered/viceroy_source/overlay_thunks_resolved.json` — its `resolved_file_offset` field uses `empirical_anchor_match` with low confidence (0.167 match ratio for segment 0x37F). **Use the formula in this doc, not that JSON file.**
+A separate, BAD attempt at thunk resolution lives in `viceroy_source/overlay_thunks_resolved.json` — its `resolved_file_offset` field uses `empirical_anchor_match` with low confidence (0.167 match ratio for segment 0x37F). **Use the formula in this doc, not that JSON file.**
 
 ---
 

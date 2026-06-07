@@ -41,7 +41,7 @@ Confidence = hits/total for the page. Pages with many thunks resolve at
 tools/resolve_thunks.py. A handful of sparse pages (1-2 thunks, e.g. page
 0x11) cannot be uniquely pinned and are flagged low_confidence.
 
-Output: reverse_engineered/code/VICEROY/overlay_pages.json
+Output: code/VICEROY/overlay_pages.json
     { "page_id": {file_offset, size_bytes_estimate, size_paragraphs_estimate,
                   anchor_hits, anchor_total, confidence}, ... }
 
@@ -98,7 +98,7 @@ def find_prologues(exe: bytes, lo: int, hi: int) -> set[int]:
 
 def load_typeA_page_offsets(root: Path) -> dict[int, list[int]]:
     """page_id -> [entry offsets within page] from the parsed thunk table."""
-    thunks = json.loads((root / "reverse_engineered" / "code" / "VICEROY"
+    thunks = json.loads((root / "code" / "VICEROY"
                          / "overlay_thunks.json").read_text())["thunks"]
     pageoffs: dict[int, list[int]] = defaultdict(list)
     for t in thunks:
@@ -183,7 +183,7 @@ def recover_page_bases(exe: bytes, prologues: set[int],
 
 def main() -> int:
     root = Path(__file__).resolve().parent.parent
-    exe = (root / "COLONIZE" / "VICEROY.EXE").read_bytes()
+    exe = (root / "raw" / "COLONIZE" / "VICEROY.EXE").read_bytes()
     assert len(exe) == FILE_SIZE
 
     prologues = find_prologues(exe, OVERLAY_START, len(exe))
@@ -204,7 +204,7 @@ def main() -> int:
         "_doc": "RTLink/Plus overlay page -> file-offset map for VICEROY.EXE, "
                 "recovered by prologue-anchored voting over Type-A thunk page "
                 "offsets (NOT by decoding the on-disk VP directory; see _blocker).",
-        "exe": "COLONIZE/VICEROY.EXE",
+        "exe": "raw/COLONIZE/VICEROY.EXE",
         "overlay_image_start": f"0x{OVERLAY_START:06X}",
         "overlay_pad_start": f"0x{OVERLAY_PAD_START:06X}",
         "page_count": len(pages),
@@ -256,7 +256,7 @@ def main() -> int:
         },
     }
 
-    out_path = root / "reverse_engineered" / "code" / "VICEROY" / "overlay_pages.json"
+    out_path = root / "code" / "VICEROY" / "overlay_pages.json"
     out_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
 
     print(f"[decode_overlay_pages] recovered {len(pages)} page bases "

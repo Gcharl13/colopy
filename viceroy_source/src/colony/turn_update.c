@@ -36,9 +36,9 @@
  * `compute_colony_center_yields` name is retained as a thin alias that just
  * calls it, to keep the colony.h decl / callgraph stable.
  *
- * @ref reverse_engineered/code/VICEROY/disasm/func_009B9C_compute_terrain_yield.asm
- * @ref reverse_engineered/code/VICEROY/disasm/func_00A222_compute_colony_center_yields.asm
- * @ref reverse_engineered/code/VICEROY/disasm/func_00A3E1_colony_turn_update.asm
+ * @ref code/VICEROY/disasm/func_009B9C_compute_terrain_yield.asm
+ * @ref code/VICEROY/disasm/func_00A222_compute_colony_center_yields.asm
+ * @ref code/VICEROY/disasm/func_00A3E1_colony_turn_update.asm
  *      (NOTE: the latter two .asm dumps are the two halves of the SAME
  *       function, split by the segmentation artifact described above.)
  * ------------------------------------------------------------------------

@@ -37,7 +37,7 @@
  *
  * (Call order in the binary is Ore,Tobacco,Cotton,Furs,Sugar.  The 'slot'
  *  column is the input commodity id, retained for documentation.)
- * @ref reverse_engineered/code/VICEROY/disasm/func_00A3E1_colony_turn_update.asm
+ * @ref code/VICEROY/disasm/func_00A3E1_colony_turn_update.asm
  * ============================================================================ */
 const struct production_chain k_production_chains[5] = {
     /* {raw, finished, slot=raw} */
@@ -54,7 +54,7 @@ const struct production_chain k_production_chains[5] = {
  *  data file documents the conversion rule the tables feed.)
  *
  * @asm 0x008E84..0x008EFC (120 bytes)  ENTER 6 / LEAVE / RETF
- * @ref reverse_engineered/code/VICEROY/disasm/func_008E84_unknown.asm
+ * @ref code/VICEROY/disasm/func_008E84_unknown.asm
  *
  * ARG ORDER (byte-verified from call site @asm 0xA65B `PUSH 0xE; PUSH 6`, cdecl):
  *   [bp+6] = raw_id      (= 6 Ore for the Ore->Tools chain)

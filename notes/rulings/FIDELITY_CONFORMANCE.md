@@ -59,7 +59,7 @@ sampled from the DOS captures in `reference/dos/`.**
 
 ## Popups / dialogs
 
-The ~30+ GAME.TXT popup templates (see `reverse_engineered/viceroy_source/docs/
+The ~30+ GAME.TXT popup templates (see `viceroy_source/docs/
 EVENT_DISPATCH.md` + `event_catalog.html`) share ONE dialog frame + sizing engine
 (`UI_FIDELITY.md` Popups: centered, max(80,line+10,@width), border 3/inset 2,
 WOODFRAM frame, FONTTINY body). Conform the shared chrome once, then verify a
@@ -169,7 +169,7 @@ artifacts (land mid-instruction in the colony overlay) — do NOT cite them.
 ## Full UI decompilation program — shift gears (2026-05-31)
 
 The "BLOCKED overlay 0x191F" caveat above is **OBSOLETE.** The overlays are
-statically resolvable (`reverse_engineered/tools/rtlink/rtlink_decode.py
+statically resolvable (`tools/rtlink/rtlink_decode.py
 validate` → ALL PASS; RULINGS commit 199). Every report body, the Europe
 3-column band, and the colony terrain scene are now reachable. F3 is the proof
 (decoded + conformed, 0.8%→53.5%).
@@ -180,9 +180,9 @@ question of if something is missing"), the work shifted to a **complete
 byte-cited draw-list decode of every UI surface**, sourced straight from the
 now-resolvable original. Outputs (single source of truth for BOTH the C
 reconstruction and the port):
-- `reverse_engineered/viceroy_source/docs/drawlist/REPORTS.md` — all 9 F-key bodies
-- `reverse_engineered/viceroy_source/docs/drawlist/EUROPE_COLONY.md` — Europe overlay band + colony terrain scene
-- `reverse_engineered/viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` — master painter index + Title/menu/pickers/King/HoF/Map-HUD/popup-frame/menus
+- `viceroy_source/docs/drawlist/REPORTS.md` — all 9 F-key bodies
+- `viceroy_source/docs/drawlist/EUROPE_COLONY.md` — Europe overlay band + colony terrain scene
+- `viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` — master painter index + Title/menu/pickers/King/HoF/Map-HUD/popup-frame/menus
 
 Each entry = sprite (sheet+index+x,y) / string (source+x,y+font+color) /
 rect-line-gauge (coords+color), every value cited to a file offset or named

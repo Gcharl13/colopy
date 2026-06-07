@@ -85,7 +85,7 @@
  *       function LCALLs: test_building_or_father_bit, count_building_chain_present,
  *       sol_membership_pct)
  * @ref  src/data/production.c              (the 0x8Dxx/0x8Exx commodity globals)
- * @ref  reverse_engineered/tools/rtlink/RTLINK_V2.md  (thunk resolution)
+ * @ref  tools/rtlink/RTLINK_V2.md  (thunk resolution)
  * ============================================================================ */
 #include "viceroy_types.h"
 

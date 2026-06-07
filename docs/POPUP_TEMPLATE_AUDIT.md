@@ -3,8 +3,8 @@
 Audit of how VICEROY draws the modal-popup / dialog template, and how it
 picks the advisor / king / tribe / missionary sprite shown above the popup.
 
-All offsets are file offsets into `reverse_engineered/raw/COLONIZE/VICEROY.EXE`
-(or its disassembly under `reverse_engineered/code/VICEROY/disasm/`).
+All offsets are file offsets into `raw/COLONIZE/VICEROY.EXE`
+(or its disassembly under `code/VICEROY/disasm/`).
 
 Status legend:
 - `VERIFIED` — disassembled and byte-cited in this doc.

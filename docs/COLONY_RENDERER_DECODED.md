@@ -7,7 +7,7 @@ title-text, flag, and background loader all located with byte citations.
 (455,137 bytes, MS-C 6.0 large-model, flat-linked — VICEROY's
 "overlay 0x191F" is in the main code segment here.)
 
-**Disassembly**: `reverse_engineered/code/COLONIZE/disasm/` (1244 funcs)
+**Disassembly**: `code/COLONIZE/disasm/` (1244 funcs)
 
 **DGROUP base** (recol): `paragraph 0x62F7` → file `0x68F70`. Verified by
 matching string `"COLONY"` to file `0x6E879` (DGROUP+0x2909).

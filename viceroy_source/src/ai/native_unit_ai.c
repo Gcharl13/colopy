@@ -72,10 +72,10 @@
  * @verified_by     Hand-decompiled from RAW VICEROY.EXE 2026-05-30 (reseg page_0C
  *                  full body + raw-byte spot-checks + string-rule xrefs + decoded
  *                  cs-relative jump tables). NEW: not previously ported.
- * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0C.asm
+ * @ref             code/VICEROY/disasm_overlay_reseg/page_0C.asm
  * @ref             COLONIZE/VICEROY.EXE (raw; spot-checks above)
- * @ref             reverse_engineered/code/VICEROY/strings.json (0x14DC=INDIANSURPRISE)
- * @ref             reverse_engineered/viceroy_source/src/native/raid.c (shared 0x54F6)
+ * @ref             code/VICEROY/strings.json (0x14DC=INDIANSURPRISE)
+ * @ref             viceroy_source/src/native/raid.c (shared 0x54F6)
  * ============================================================================ */
 #include "viceroy_types.h"
 

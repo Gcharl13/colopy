@@ -29,7 +29,7 @@ Format:
 ## 2026-05-30 — Game manual added as behavioral source; confirms combat-modifier model (reconciles wave-6 "+50% refuted")
 
 User provided the original Colonization manual / Technical Supplement →
-`reverse_engineered/docs/GAME_MANUAL.md` (UTF-16→UTF-8). Added to TRUTH_HIERARCHY as a
+`docs/GAME_MANUAL.md` (UTF-16→UTF-8). Added to TRUTH_HIERARCHY as a
 FUNCTION source (authoritative for how a feature works; EXE bytes still win for exact
 numbers — patches may differ).
 
@@ -113,7 +113,7 @@ corrected; VERIFICATION_LEDGER "RTLink overlay wall" section; Python V2 flattene
 under tools/rtlink/ (in progress). The C++ tool needs a ScummVM+VS build, so we
 reimplement the V2 algorithm in Python (clean-room from the documented format).
 
-**Follow-up**: (1) ✅ DONE — `reverse_engineered/tools/rtlink/rtlink_decode.py`
+**Follow-up**: (1) ✅ DONE — `tools/rtlink/rtlink_decode.py`
 (V2 decoder; info/flatten/resolve/validate) built + validated (31 segments,
 1023 thunks; resolves any overlay addr to a flat file offset; emits VICEROY_flat.exe
 + viceroy_rtlink_map.json). This eliminates the reseg-drift hazard — re-disassemble
@@ -931,14 +931,14 @@ base=0x3144 across the corpus until confirmed; the committed base=0x3146 is
 ## 2026-05-28 — UnitRecord table base is DGROUP:0x3146, not 0x315E
 
 **Conflict**: anchor_map.md / decompiled.md / unit.h said the unit-table base is
-DGROUP:0x315E (stride 0x1C); reverse_engineered/docs/DATA_MODEL.md / VICEROY2 /
+DGROUP:0x315E (stride 0x1C); docs/DATA_MODEL.md / VICEROY2 /
 PROGRESS said 0x3146.
 
 **Source A** — anchor_map.md (33,197,235), decompiled.md (38), unit.h, the
 viceroy_source VERIFICATION_LEDGER said base 0x315E "confirmed via
 unit_field_lookup_simple (0x66BA)".
 
-**Source B** — reverse_engineered/docs/DATA_MODEL.md:41, VICEROY2_annotated.c
+**Source B** — docs/DATA_MODEL.md:41, VICEROY2_annotated.c
 (`#define UNIT_TABLE_BASE 0x3146`) said base 0x3146 ("652+ refs to [reg+0x3146]").
 
 **Ruling**: **0x3146 wins** (TRUTH_HIERARCHY: raw VICEROY.EXE bytes outrank
@@ -952,7 +952,7 @@ The unit.h "0x315E − 8 = 0x3156" derivation was arithmetically wrong (diff is
 0x18=24); its conclusion (0x3146) was right.
 
 **Action taken**: corrected anchor_map.md (33,197,198,235), decompiled.md (38),
-unit.h (4-5,16,25-32), VERIFICATION_LEDGER.md (397), reverse_engineered/PROGRESS.md
+unit.h (4-5,16,25-32), VERIFICATION_LEDGER.md (397), PROGRESS.md
 (116,117). No code change (load_game_state.py already uses 0x3146).
 
 **Follow-up**: residual tracker lines (viceroy_source/PROGRESS.md, DISASM_LEDGER.md)
@@ -964,14 +964,14 @@ still to propagate.
 
 **Conflict**: viceroy_source/docs/DATA_MODEL.md + native.h describe a 200-byte
 (0xC8) NativeSettlement at table 0x4850 / data 0x09100 / 80-slot max;
-reverse_engineered/docs/DATA_MODEL.md + project memory describe an 18-byte (0x12)
+docs/DATA_MODEL.md + project memory describe an 18-byte (0x12)
 record at DGROUP:0x54EC.
 
 **Source A** — viceroy_source/docs/DATA_MODEL.md (242-272), native.h,
 COLONIZATION_TECHNICAL_REFERENCE.md (200) said 200 bytes / 0x9100 / 0x4850 / 80
 slots. Both source files self-flag ">>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<".
 
-**Source B** — reverse_engineered/docs/DATA_MODEL.md + memory said 18 bytes at
+**Source B** — docs/DATA_MODEL.md + memory said 18 bytes at
 0x54EC (x/y/owner/mission), table compacts on raze.
 
 **Ruling**: **18 bytes @ 0x54EC wins** (raw bytes outrank reconstruction). Every
@@ -985,7 +985,7 @@ paired with 0x54EC), not a 624-byte rival table.
 
 **Action taken**: corrected viceroy_source/docs/DATA_MODEL.md (242,244,251-273,
 379,398), native.h (19-27,34-47), VERIFICATION_LEDGER.md (201),
-COLONIZATION_TECHNICAL_REFERENCE.md (200,201,2324,2326). reverse_engineered/docs/
+COLONIZATION_TECHNICAL_REFERENCE.md (200,201,2324,2326). docs/
 DATA_MODEL.md unchanged (already correct; now the cited authority).
 
 **Follow-up**: fields +0x03 and +0x06..+0x11 of the 18-byte record are TBD; the
@@ -3383,7 +3383,7 @@ PHYS0.148 per SPRITE_CATALOG row 0x90). Therefore:
 - Per-layer sprite-selection refinement (coast 150–153 flip mask, river
   row 0x00 adjacency, forest wxad transition, resource sprites) is driven
   from the cited `extracted/disassembly/render_chain_capstone.txt` /
-  `reverse_engineered/docs/RENDER_CHAIN.md` + SPRITE_CATALOG, validated
+  `docs/RENDER_CHAIN.md` + SPRITE_CATALOG, validated
   against cropped in-game frame patches.
 - **Do NOT** pixel-chase the editor export (e.g., do not lighten
   PHYS0.148 to match it — that would abandon the authentic sprite and be
@@ -3536,7 +3536,7 @@ call sites `mov bx,id; lcall 0x181F:0x772`):
   loads EUROPE.PIK (key 0x0FBA @0x030DCE). Composer 0x031E4C. ✓ europe_screen.c.
 - **COLONY** = screen-id **0x2C**, entry @file **0x025EC8**, page **0x03**, loads
   COLONY.PIK (key 0x0BA0). Composer = VICEROY equivalent of recol func_0199D8
-  (see reverse_engineered/docs/COLONY_RENDERER_DECODED.md). Being re-traced into
+  (see docs/COLONY_RENDERER_DECODED.md). Being re-traced into
   colony_screen.c.
 - (Other screen-ids found: 0x28 @0x450ae, 0x29 @0x6d5aa, 0x2a @0x7661f,
   0x2d @0x05e63.)

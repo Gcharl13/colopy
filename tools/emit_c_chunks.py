@@ -17,7 +17,7 @@ import re
 import sys
 from collections import defaultdict
 
-PROJECT = r"c:\Users\gregc\OneDrive\Desktop\COLOPY\reverse_engineered"
+PROJECT = str(__import__("pathlib").Path(__file__).resolve().parents[1])
 
 sys.path.insert(0, os.path.join(PROJECT, "tools"))
 from overlay_body_gen import (parse_asm, trace_control_flow, build_skeleton_body,

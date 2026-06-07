@@ -2,7 +2,7 @@
  * overlay_046D70_04C2E1.c -- overlay functions in file range 0x046D70..0x04C2E1
  *
  * Region: native / colony / combat.  Hand-ported from the per-function
- * disassembly (reverse_engineered/code/VICEROY/disasm/func_*.asm) and the
+ * disassembly (code/VICEROY/disasm/func_*.asm) and the
  * re-segmented overlay dump (disasm_overlay_reseg/page_0C.asm, code_base
  * 0x46600).  STRICT cite-or-TBD: every value/offset cites the .asm; anything
  * undeterminable (opaque overlay 0x191F / 0x1A1F targets, truncated dumps) is
@@ -2019,7 +2019,7 @@ done:
  * !! OFFSET RECONCILIATION (authoritative) — read before the entries below !!
  * ----------------------------------------------------------------------------
  * The authoritative re-segmented dump
- *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0C.asm
+ *   code/VICEROY/disasm_overlay_reseg/page_0C.asm
  * states for overlay page 0x0C:
  *     code_offset (first insn) = 0x046DE0
  *     code_end (next reloc hdr)= 0x04BA50

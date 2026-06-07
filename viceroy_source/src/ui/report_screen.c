@@ -16,7 +16,7 @@
  *   code/VICEROY/disasm_overlay_reseg/page_1A.asm  (func_072090, lines 11..956)
  *   COLONIZE/VICEROY.EXE                           (raw bytes -- extent + spots)
  *   COLONIZE/MENU.TXT                              (the menu-content ground truth)
- *   reverse_engineered/viceroy_source/lcall_resolution_VICEROY.json (helper thunks)
+ *   viceroy_source/lcall_resolution_VICEROY.json (helper thunks)
  *
  * String handles (file_offset = handle + 0x1D9A0):
  *   "REPORT"    handle 0x11A2 -> @file 0x1EB42     (@asm 0x037344 PUSH 0x11A2)
@@ -489,7 +489,7 @@ done:
  *    report, a MAP overlay, NOT a page-0x05 renderer; out of scope here.)
  *
  * EVERY thunk above resolves to page 0x05 via the byte-decoded RTLink V2 page
- * directory (reverse_engineered/tools/rtlink/viceroy_rtlink_map.json):
+ * directory (tools/rtlink/viceroy_rtlink_map.json):
  *   page 0x05 code_offset = 0x037340, so page-05 offsets map 1:1 to file
  *   offsets in the 0x37340.. range (verified: rtlink_decode.py resolve 0x05 0).
  *

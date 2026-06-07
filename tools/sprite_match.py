@@ -41,7 +41,7 @@ from typing import Optional
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-ROOT = Path(r'c:/Users/gregc/OneDrive/Desktop/COLOPY')
+ROOT = Path(str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 SPRITE_ROOT = ROOT / 'extracted' / 'assets' / 'sprites'
 FRAMES = ROOT / 'reverse_engineered' / 'session_1777952458' / 'frames'
 OUT_DIR = ROOT / 'reverse_engineered' / 'verification' / 'sprite_matches'

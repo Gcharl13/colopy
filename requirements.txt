@@ -1,0 +1,12 @@
+# --- required for the core disassembly bench ---
+capstone>=5.0        # 16-bit x86 disassembly (tools/disasm_mz.py, rtlink/, capstone-by-offset)
+
+# --- optional: only needed by peripheral / asset / report tools ---
+# Pillow            # sprite/PNG extraction (tools/extract_visuals.py, sprite_*.py)
+# pyyaml            # a few config-driven tools
+# numpy             # some analysis/visual diff tools
+# opencv-python     # sprite matching (tools/sprite_match.py)
+# openpyxl          # DATA_TABLES.xlsx read/write
+# pandas            # tabular analysis
+# reportlab         # generate_technical_reference_pdf.py
+# zstandard         # if re-reading compressed session captures (not shipped here)

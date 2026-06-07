@@ -5,13 +5,29 @@ DOS game *Sid Meier's Colonization* (`VICEROY.EXE`, Microsoft C 6.0 + RTLink
 overlays). It is a **self-sufficient disassembly bench**: clone it and you have
 everything needed to *continue the core disassembly* — the bytes, the tools, the
 work-in-progress disasm, the reconstructed C, and the notes/lessons — with no prior
-context required. Any port (Python, Godot, native rebuild) is downstream and
-generated *from* this source.
+context. Any port (Python, Godot, native rebuild) is downstream and generated *from*
+this source.
 
 ## Prime directive
 Every reconstructed value traces to a **byte-verified** artifact in the original
 binary — a file offset, a `NAMES.TXT` field, or a recorded ruling. **Never guess.**
 Un-cited values are marked `TBD`, not invented.
+
+## First run (continuing the disassembly)
+```bash
+pip install -r requirements.txt                    # capstone is the one hard dependency
+python bin/reconstitute.py                         # rebuild the 6 DOS .EXE into raw/COLONIZE/ (sha256-verified)
+python tools/disasm_mz.py --exes VICEROY.EXE       # -> ~1241 funcs / 212k insns into code/VICEROY/disasm/
+python tools/rtlink/rtlink_decode.py validate --exe bin/VICEROY.EXE   # -> VALIDATION: ALL PASS
+```
+`reconstitute.py` stages the executables into `raw/COLONIZE/` — the path the whole
+tool suite looks in — so the bench works out of the box. Capstone-by-offset also
+works directly: file offsets in the disasm/docs (e.g. `0x035D9A`) index
+`raw/COLONIZE/VICEROY.EXE` (or `bin/VICEROY.EXE`).
+
+Then for orientation: `notes/TRUTH_HIERARCHY.md`, `viceroy_source/DOC_INDEX.md` (doc
+map), `viceroy_source/VERIFICATION_LEDGER.md` (`BYTE_VERIFIED` vs skeleton), and
+`viceroy_source/RECONSTRUCTION_PLAN.md` + `PROGRESS.md` (roadmap).
 
 ## Layout
 ```
@@ -26,29 +42,25 @@ docs/             RE findings (DATA_MODEL, RESIDUAL_FINDINGS, GHIDRA_REFERENCE,
                   IMMIGRATION_RECRUIT_FINDINGS, RTLINK_OVERLAYS, …)
 notes/            project catalogs + RULINGS + the truth hierarchy + tech reference
 formats/          on-disk file-format specs (.MP/.SS/.PAL/.PIK/…)
-data_extracted/   decoded data tables (JSON/text) — NO images yet
+data_extracted/   decoded data tables (NAMES/GAME sections, palette, map, strings)
+                  + a disassembly snapshot. (Graphics-asset metadata is NOT here —
+                  it's a deferred visual phase, regenerable via tools/extract_visuals.py.)
 mapedit_source/ opening_source/ closing_source/   companion-program decompilations
 ```
-
-## First run (continuing the disassembly)
-```
-python bin/reconstitute.py          # rebuild the real .EXE files from bin/*.b64 (sha256-verified)
-```
-Then: `notes/TRUTH_HIERARCHY.md` and `docs/DOC_INDEX*` for orientation;
-`viceroy_source/VERIFICATION_LEDGER.md` for what's `BYTE_VERIFIED` vs skeleton;
-`viceroy_source/RECONSTRUCTION_PLAN.md` + `PROGRESS.md` for the roadmap.
 
 ## Status — phased import
 - [x] **Phase 1** — reverse-engineered C source (`viceroy_source/`).
 - [x] **Phase 2** — DOS disassembly, RE tooling, notes/catalogs/rulings, byte-record.
-- [x] **Phase 3 (data)** — decoded data tables (`data_extracted/`, JSON/text).
-- [ ] **Phase 3 (images)** — the PNG / sprite / screenshot extractions (deferred).
+- [x] **Phase 3 (data)** — decoded data tables (`data_extracted/`).
+- [ ] **Phase 3 (images)** — the PNG / sprite / screenshot extractions (deferred;
+      downstream/port concern, regenerable from the bytes via the asset tools).
 
 ## Scope decisions (deliberate)
 - **DOS only.** The Win16 build was a throwaway analysis *oracle*; its findings are
   folded into the DOS-cited docs. No Win16 source, binaries, or tooling here.
-- **No verbatim binaries** (they live only as `bin/*.b64`), **no runtime session
-  dumps**, **no ports**, **no build/engine artifacts** — all regenerable or cruft.
+- **No verbatim binaries** (they live only as `bin/*.b64`; `reconstitute.py` rebuilds
+  them locally into `raw/`, which is git-ignored), **no runtime session dumps**, **no
+  ports**, **no build/engine artifacts** — all regenerable or cruft.
 
 > Private repository. Derivative reverse-engineering/preservation analysis of a
 > copyrighted work — do not make public or redistribute. See `bin/README.md`.

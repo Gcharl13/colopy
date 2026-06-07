@@ -3,9 +3,9 @@
 Created 2026-05-24. Source-of-truth disassembly findings for the renderer
 team. Every byte offset, DGROUP address, and string in this doc was read
 from the VICEROY.EXE disasm tree at
-`reverse_engineered/code/VICEROY/disasm/` (or COLONIZE.EXE where noted)
+`code/VICEROY/disasm/` (or COLONIZE.EXE where noted)
 and the GAME.TXT message file at
-`reverse_engineered/raw/COLONIZE/GAME.TXT`.
+`raw/COLONIZE/GAME.TXT`.
 
 Companion JSON: `build/ui_extract/king_and_cinematic.json`.
 
@@ -15,7 +15,7 @@ Companion JSON: `build/ui_extract/king_and_cinematic.json`.
 
 1. **The popup at "King audience" is NOT painted by func at 0x249B1.**
    That offset (in COLONIZE.EXE — `func_0249B1` in
-   `reverse_engineered/code/COLONIZE/disasm/`) is a small **filename
+   `code/COLONIZE/disasm/`) is a small **filename
    builder** for the load_image overlay, NOT the audience screen
    painter. Existing `build/ui_extract/screens/king_screen.json`
    `paint_func: "0x249b1"` is misleading — it just identifies the
@@ -57,7 +57,7 @@ Companion JSON: `build/ui_extract/king_and_cinematic.json`.
 ### The speaker-portrait dispatcher: `func_06E3D0`
 
 @ file `0x06E3D0..0x06E4CD` (253 bytes).
-Disasm: `reverse_engineered/code/VICEROY/disasm/func_06E3D0_unknown.asm`.
+Disasm: `code/VICEROY/disasm/func_06E3D0_unknown.asm`.
 
 Reads bytes off a far-pointer arg (`[bp+6]` is `(seg, off)`):
 - `byte [es:bx+0xA] & 0x10` → set `[0x1f8a] = 1`
@@ -353,7 +353,7 @@ The argument `[bp+6]` selects which REPORT*.PIK to load.
 
 ### REPORT*.PIK inventory (visual identification, 2026-05-24)
 
-From inspecting `reverse_engineered/assets/backgrounds/REPORT*/`:
+From inspecting `assets/backgrounds/REPORT*/`:
 
 | File | Subject (visual) | Likely Adviser |
 |------|------------------|----------------|
@@ -495,8 +495,8 @@ parchment text-blob over the throne-room background:
 ### Closing / Credits cinematic (CLOS-BKG + CLOS-*)
 
 The closing cinematic is handled by **CLOSING.EXE**, NOT VICEROY.EXE.
-See `reverse_engineered/code/CLOSING/` and
-`reverse_engineered/closing_source/`.
+See `code/CLOSING/` and
+`closing_source/`.
 
 `CLOS-BKG.PIK` is the background; the foreground is composed from
 seven multi-frame animation sheets (per `SPRITE_CATALOG.md` lines
@@ -700,42 +700,42 @@ This will render the per-tribe IND sprite.
 
 ## Cross-references
 
-- `reverse_engineered/code/VICEROY/disasm/func_06E3D0_unknown.asm` —
+- `code/VICEROY/disasm/func_06E3D0_unknown.asm` —
   speaker-portrait dispatcher
-- `reverse_engineered/code/VICEROY/disasm/func_06BE92_unknown.asm` —
+- `code/VICEROY/disasm/func_06BE92_unknown.asm` —
   King/IND filename builder
-- `reverse_engineered/code/VICEROY/disasm/func_06BF12_unknown.asm` —
+- `code/VICEROY/disasm/func_06BF12_unknown.asm` —
   MSS filename builder
-- `reverse_engineered/code/VICEROY/disasm/func_06BF3C_unknown.asm` —
+- `code/VICEROY/disasm/func_06BF3C_unknown.asm` —
   MYR filename builder
-- `reverse_engineered/code/VICEROY/disasm/func_06BF66_unknown.asm` —
+- `code/VICEROY/disasm/func_06BF66_unknown.asm` —
   MSS3 / colonist slot
-- `reverse_engineered/code/VICEROY/disasm/func_06F5DA_unknown.asm` —
+- `code/VICEROY/disasm/func_06F5DA_unknown.asm` —
   **"open King audience" entry point**
-- `reverse_engineered/code/VICEROY/disasm/func_075352_unknown.asm` —
+- `code/VICEROY/disasm/func_075352_unknown.asm` —
   WIN/LOSS endgame cinematic
-- `reverse_engineered/code/VICEROY/disasm/func_03DA2A_unknown.asm` —
+- `code/VICEROY/disasm/func_03DA2A_unknown.asm` —
   Declaration of Independence cinematic (DECOIND.PIK)
-- `reverse_engineered/code/VICEROY/disasm/func_037340_unknown.asm` —
+- `code/VICEROY/disasm/func_037340_unknown.asm` —
   REPORT*.PIK loader
-- `reverse_engineered/code/VICEROY/disasm/func_039888_unknown.asm` —
+- `code/VICEROY/disasm/func_039888_unknown.asm` —
   FOREIGNNOTAVAIL guard
-- `reverse_engineered/code/VICEROY/disasm/func_0081C6_unknown.asm` —
+- `code/VICEROY/disasm/func_0081C6_unknown.asm` —
   set_active_native_tribe
-- `reverse_engineered/code/VICEROY/disasm/func_04A7CA_unknown.asm` —
+- `code/VICEROY/disasm/func_04A7CA_unknown.asm` —
   CHIEFHOWDY dispatcher
-- `reverse_engineered/code/VICEROY/disasm/func_03DE46_unknown.asm` —
+- `code/VICEROY/disasm/func_03DE46_unknown.asm` —
   Independence event handler (writes 0x53A7 = century)
-- `reverse_engineered/viceroy_source/src/king/king_tax_raise.c` —
+- `viceroy_source/src/king/king_tax_raise.c` —
   BYTE_VERIFIED tax-change formula (KINGRAISE/KINGLOWER paths)
-- `reverse_engineered/raw/COLONIZE/GAME.TXT` lines 461, 1589-1640,
+- `raw/COLONIZE/GAME.TXT` lines 461, 1589-1640,
   1843-1891, 2570, 2707, 3328-3345 — all @KING* message bodies
-- `reverse_engineered/raw/COLONIZE/NAMES.TXT` lines 79-83
+- `raw/COLONIZE/NAMES.TXT` lines 79-83
   (@COUNTRY), 385-394 (@TRIBES) — power and tribe ordering
 - `build/ui_extract/popup_layouts.json` entries `"king_tax"`,
   `"foradv_picker"`, `"fullscreen_foreign_affairs"`,
   `"fullscreen_advisor_report"` — popup geometries
-- `reverse_engineered/assets/sprites/KING*/`, `IND*/`, `MSS*/`,
+- `assets/sprites/KING*/`, `IND*/`, `MSS*/`,
   `MYR*/`, `KINGLOSE/`, `KINGWIN/` — sprite art
-- `reverse_engineered/assets/backgrounds/KINGLSS1/`, `KINGLSS2/`,
+- `assets/backgrounds/KINGLSS1/`, `KINGLSS2/`,
   `DECLARAT/`, `DECOIND/`, `REPORT*/`, `CLOS-BKG/` — PIK art

@@ -19,3 +19,6 @@ __pycache__/
 Thumbs.db
 .DS_Store
 *.swp
+
+# reconstituted DOS exes (rebuilt by bin/reconstitute.py)
+raw/
