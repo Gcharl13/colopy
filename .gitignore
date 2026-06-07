@@ -22,3 +22,6 @@ Thumbs.db
 
 # reconstituted DOS exes (rebuilt by bin/reconstitute.py)
 raw/
+
+# tool-generated disasm outputs (regenerable via tools/disasm_full.py etc.)
+extracted/
