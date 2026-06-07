@@ -163,6 +163,31 @@ check_bytes("mission roll random_int(0,15)", 0x05730A, "6a 0f 6a 00 9a d4 04 1f 
 check_ins("mission gate cmp roll,[bp-4]", 0x057316, "cmp", "[bp-4]")
 check_bytes("mission INDIANSCONVERT push 0x182a", 0x057341, "68 2a 18")
 
+# ---- king tax demand + REF growth (verified 2026-06-07) ------------------
+check_ins("king tax func_034AE0 mov bx,[0x84fc]", 0x034AE4, "mov", "[0x84fc]")
+check_bytes("king tax raise base and ax,0xfe", 0x034AF1, "25 fe 00")
+check_bytes("king tax raise turn/400 mov cx,0x190", 0x034AFF, "b9 90 01")
+check_bytes("king RAISE step random_int(1,diff)", 0x034B6A, "9a d4 04 1f 18")
+check_ins("REF growth gate test [0x5382],1", 0x03E172, "test", "[0x5382]")
+check_bytes("REF budget base shl ax,3 (diff*8)", 0x03E181, "c1 e0 03")
+check_bytes("REF budget +10 add ax,0xa", 0x03E184, "05 0a 00")
+check_bytes("REF era x2 cmp [0x538a],0x640 (1600)", 0x03E18A, "81 3e 8a 53 40 06")
+check_bytes("REF buy threshold cmp [bx+0x22],0x708", 0x03E1C6, "81 7f 22 08 07")
+check_bytes("REF GROWTH inc word[bx+0x53da]", 0x03E238, "ff 87 da 53")
+check_bytes("REF arm count 4 cmp [bp-0x62],4", 0x037DA0, "83 7e 9e 04")
+
+# ---- founding-father bell economy (verified 2026-06-07) ------------------
+check_bytes("PowerRec ptr imul ax,ax,0x13c", 0x030559, "69 c0 3c 01")
+check_bytes("PowerRec ptr add ax,0x8808", 0x03055D, "05 08 88")
+check_bytes("FF bells add [bx+0xc],ax (spend acc)", 0x03C336, "01 47 0c")
+check_bytes("FF bells add [bx+0xe],ax (lifetime)", 0x03C339, "01 47 0e")
+check_bytes("FF bells reset [bx+0xc]=0 on elect", 0x03C3EA, "c7 47 0c 00 00")
+check_bytes("FF cost factor shl [bp-4],3 (x8)", 0x03C2B1, "c1 66 fc 03")
+check_ins("FF cost reads ff_count [bx-0x77e4]", 0x03C2FA, "mov", "[bx-0x77e4]")
+check_bytes("FF threshold (ff_count+1)*factor imul [bp-4]", 0x03C303, "f7 6e fc")
+check_bytes("FF select random_int(1,total_weight)", 0x03C0DB, "9a d4 04 1f 18")
+check_bytes("FF pending slot mov [bx+0x12],ax", 0x03C269, "89 47 12")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

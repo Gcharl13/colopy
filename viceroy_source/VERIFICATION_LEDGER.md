@@ -1138,3 +1138,54 @@ So P(convert per eligible check) = MIN(rate,16)/16 where rate = tribe[+2]+2
 (×2 with the mission-bonus flag). The tribe +2 byte's per-tribe values are
 external (TRIBE.TXT/NAMES.TXT @TRIBE); the CL bit-0x10 source (expert missionary
 vs mission building) is TBD. mission.c updated; audit 75/75.
+
+---
+
+## King tax demand + REF growth — `func_034AE0` / `func_03E162` (verified 2026-06-07)
+
+### King tax adjust `func_034AE0` (file 0x34AE0, RETFs 0x34B43/0x34B7D)
+Per-evaluation RAISE/LOWER/NOTHING decision (KINGRAISE DG 0x10b2 / KINGLOWER
+0x10a8 / KINGNOTHING 0x109c). There is NO internal random gate on whether to run
+(cadence is overlay-driven, TBD); the only randomness is the step amounts and the
+LOWER fire-chance.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| target = `((diff&0xFE)*2 + 4) * (turn/400 + 1)` | @asm 0x34AEE..0x34B0D (`mov al,[0x53a6];and ax,0xfe;shl ax,1;add ax,4` × `[0x538e]/0x190+1`) | BYTE_VERIFIED |
+| RAISE when target+5 >= current tax; step = `random_int(1,diff)*2` | @asm 0x34B10 `add al,5`/`cmp [bx+1],al/jge`; 0x34B6A `lcall 0x181F:0x4D4`; 0x34B72 `shl ax,1` | BYTE_VERIFIED |
+| LOWER only when tax >> target, 1-in-(diff+1) chance; step = -`random_int(1,5-diff)` | @asm 0x34B1F `random_int(1,diff+1)`; 0x34B30 `dec/je`; 0x34B44 `random_int(1,5-diff)`; 0x34B59 `neg ax` | BYTE_VERIFIED |
+| tea-party/tax-apply cap 75 (func_034318) re-confirmed | @asm 0x3434F `cmp byte[bx+1],0x4b` | BYTE_VERIFIED |
+| KINGTAX rebate/fund grant (func_0349F4) gold = `max(1,6-(cnt+1)/2 - taxfactor)*100` -> King gold +0x2A | @asm 0x34A63..0x34A7B; 0x34AA9 `add [bx+0x2a],ax` | BYTE_VERIFIED |
+
+### REF growth `func_03E162` = king_buy_REF_unit (file 0x3E162, RETFs 0x3E288/0x3E2E8)
+**REF growth is funded by the King's tax/trade budget, NOT player bells/SoL.**
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| only grows pre-war: gate `[0x5382]&1`==0 | @asm 0x3E172 `test byte[0x5382],1`/je | BYTE_VERIFIED |
+| per-turn budget add = `(diff*8 + 10)`, ×2 at year>=1600/1700/1750 (cumulative) | @asm 0x3E181 `shl ax,3`; 0x3E184 `add ax,0xa`; 0x3E18A/0x3E197/0x3E1A2 year cmp 0x640/0x6a4/0x6d6 + shl | BYTE_VERIFIED |
+| budget accumulates in King record dword +0x22; +1 REF unit per 1800 (0x708) | @asm 0x3E1B5 `add [bx+0x22],ax`; 0x3E1C6 `cmp [bx+0x22],0x708/jae`; 0x3E271 `sub [bx+0x22],0x708` | BYTE_VERIFIED |
+| chosen arm balanced by ratio; growth = `inc word[bx+0x53da]` (arm*2) | @asm 0x3E1D5..0x3E20E ratio compares; 0x3E238 `inc word[bx+0x53da]` | BYTE_VERIFIED |
+| REF = 4-arm word array DS:0x53DA..0x53E0 (+ "arrived" tally 0x53E2); landing decrements (func_03CDA2 @0x3D4C0) | @asm 0x37DA0 `cmp [bp-0x62],4`; 0x3D4C0 `dec word[bx+0x53da]` | BYTE_VERIFIED (layout) |
+| budget fed by tariff: `+= goods_sold * king_tax/100` (func_2D6C0 @0x2D785) | @asm 0x2D737 `mov al,[bx+1]`; 0x2D785 `add [bx+0x22],ax` | BYTE_VERIFIED |
+
+CORRECTION: func_02F052's KINGTAX string (DG 0x1094) is a king-unit-SPAWN message,
+not the tax demand; the tax decision is func_034AE0. King record +0x22 is the
+tax-BUDGET accumulator (funds REF), not a bells counter.
+
+## Founding-father bell economy — `func_03C322`/`func_03C282`/`func_03BFD2` (verified 2026-06-07)
+
+The full liberty-bell -> Continental Congress -> founding-father pipeline is now
+byte-traced (the per-FF EFFECTS in func_03BC42 were already done).
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| bells accumulate: `[bx+0x0C] += bells` (spend acc, reset on elect) and `[bx+0x0E] += bells` (lifetime) | @asm 0x3C336 `add [bx+0xc],ax`; 0x3C339 `add [bx+0xe],ax`; 0x3C3EA `mov [bx+0xc],0` | BYTE_VERIFIED |
+| **threshold = (ff_count+1) × cost_factor + 1**, halved for the first FF | @asm 0x3C2FA `mov al,[bx-0x77e4]`(ff_count +0x14); 0x3C302 `inc ax`; 0x3C303 `imul [bp-4]`; 0x3C30B `sar ax,1` if ff_count==0 | BYTE_VERIFIED |
+| cost_factor = base ×8 ×1.5/era; base = human `(diff+3)*2`, AI `(14-diff)` | @asm 0x3C297/0x3C2A4 base; 0x3C2B1 `shl [bp-4],3`; 0x3C2B5/0x3C2C5/0x3C2D5/0x3C2E5 year>=1600/1650/1700/1750 each `+=(v>>1)` | BYTE_VERIFIED |
+| election fires when `[bx+0x0C] >= threshold` | @asm 0x3C3BA `cmp ax,[bx+0xc]`/jg skip; 0x3C3DC `push [bx+0x12]` elect | BYTE_VERIFIED |
+| selection: per-category weighted `random_int(1,total_weight)` over not-yet-owned FFs; writes pending slot +0x12 | @asm 0x3C0DB `lcall 0x181F:0x4D4`; subtract-walk; 0x3C269 `mov [bx+0x12],ax` | BYTE_VERIFIED |
+| human powers (idx<4, AI-flag [bx+0x543f]==0) get a choice dialog; AI commits the roll | @asm 0x3C10A `imul bx,[bp+6],0x34`; 0x3C10E `cmp byte[bx+0x543f],0` | BYTE_VERIFIED |
+| FF category table DS:0x9654 (stride 6 +0), era/weight DS:0x9655 (+1), name-ptrs DS:0x9652 | @asm 0x3C0B1/0x3C0C4 reads | BYTE_VERIFIED (location); values external (NAMES.TXT @FATHERS) |
+
+audit.py now 96/96.
