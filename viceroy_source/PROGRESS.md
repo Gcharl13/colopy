@@ -7,6 +7,38 @@
 
 ---
 
+## 2026-06-07 — binary supplied; toolchain + audit harness in-repo
+
+The user provided `VICEROY.EXE` (494,910 B, sha256 a17ed64c…). The whole
+byte-analysis layer is now rebuilt in-repo under [`tools/`](tools/README.md)
+(MZ model, string/xref scan, function census, claim audit, DGROUP/table census,
+coverage). The binary + generated disasm live in the git-ignored `re_work/`.
+
+- **`tools/audit.py`: 106 headline byte-claims re-verified against the exact
+  binary, green.** Run it after any change; append a check per new trace.
+- **`docs/COVERAGE.md`** (regenerable): 1248 functions, 1236 (99%) cited,
+  ~344 (27%) with byte-verified-adjacent cites.
+- **`docs/DATA_TABLES.md`**: resolved the long-standing "wrong table offsets"
+  problem — the balance tables (unit/terrain/building/commodity/tribe/FF/king/
+  scenario) are **external**, loaded from `COLONIZE/*.TXT` into BSS, not embedded
+  in the EXE. Supplying those `.TXT` files is the unblock for their values.
+- **`docs/FORMULAS.md`**: consolidated byte-verified formula spec.
+- **Subsystems byte-verified/extended this session** (all in audit.py + ledger):
+  market price drift (func_0305A8), Sons-of-Liberty/Tory (func_02D658 +
+  sol_membership_pct), Lost City Rumor (func_061454), endgame rank ladder
+  (func_03A9C0), native mission convert (func_0572E6), king tax demand
+  (func_034AE0), REF growth (func_03E162), founding-father bell economy
+  (func_03C322/03C282/03BFD2), and random map generation (func_0645F6/064A10).
+- Confirmed **no disease and no weather subsystem** exist (absence is byte-proven).
+
+What still blocks 100%: (1) the `.TXT` data-file values; (2) overlay-swapped
+bodies behind RTLink (a handful of formulas — score-total sum, buy/sell spread,
+generation invoker); (3) the remaining in-scope SKELETON game-logic/UI functions
+(a few hundred, one focused trace each); (4) out-of-scope platform leaves (stub).
+See [docs/COVERAGE.md](docs/COVERAGE.md) for the breakdown.
+
+---
+
 ## What's done (BYTE_VERIFIED)
 
 | Layer                                          | Status              |
