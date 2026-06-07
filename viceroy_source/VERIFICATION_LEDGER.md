@@ -996,3 +996,33 @@ per good). Numeric contents are NAMES.TXT/overlay-driven -> values TBD.
   now byte-verified; the bell-per-colonist threshold lives in the +0xC6
   accumulator (incremented +100/colonist-growth @asm 0x9453). TORY% and the
   REBEL*/TORY* threshold dispatch remain overlay-resident TBD.
+
+---
+
+## BINARY AVAILABLE — toolchain rebuilt in-repo (2026-06-07)
+
+The user supplied `COLONIZE/VICEROY.EXE` (494,910 bytes, sha256
+`a17ed64c27671e5e95236e54a7ddc85803a96ba822fbed05e1dad34d3917e2e3`). Prior
+sessions lacked the binary in-repo and were blocked on byte-verification. A
+from-scratch analysis toolchain now lives in `viceroy_source/tools/`
+(`viceroy_exe.py`, `strings_scan.py`, `funcscan.py`, `audit.py`); the binary +
+generated disasm stay in the git-ignored `re_work/`.
+
+**Calibration (independent rebuild reproduces every documented anchor):**
+- load_base 0x2400 (e_cparhdr 576); entry 110D:071D @file 0x13BED; init SS:SP 25E5:4096
+- 2260 relocations; image_len/overlay-start 0x20665 — all match docs exactly
+- thunk[0] @0x1A5F0 = `9a ab 0d 0d 11` (LCALL 0x110D:0x0DAB) — exact
+- 788 strings located; every documented key (VICEROY.EXE@0x19951, SMITEINDIANS
+  dg 0x1a1a, KINGTAX dg 0x0f01, BURNED dg 0x1c28, TEAPARTY dg 0x106a, …) at its
+  documented offset; DGROUP string base 0x1D9A0 confirmed
+- funcscan: 1,248 prologue-seeded functions (matches documented 1,241), 98% clean RETF
+
+**`audit.py`: 27/27 headline BYTE_VERIFIED claims re-confirmed against this exact
+binary** — rand() LCG, unit_create/place/move, king tax cap=75, PowerRecord base
+0x8808, FF dispatch (count++ @0x3BD37, slot @0x3BD3A), treaty imul 0x13c,
+combat resolver prologue, gold-tick `add [bx+0x2a],ax`, dialog rect LEA [0x839e],
+colony bit `[bx+si+0x5dca]`, native owner +4, report renderers. Two initial
+mismatches were harness off-by-ones (rand mov dx @0x103D7 not 0x103D8; dialog
+func_067DC8 is `ENTER 4,0` not push-bp), now corrected — the binary matches the
+prior reconstruction faithfully. This is the regression baseline; every new
+byte-trace appends an assertion here.

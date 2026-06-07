@@ -9,3 +9,7 @@ __pycache__/
 Thumbs.db
 .DS_Store
 *.swp
+
+# reverse-engineering working dir (binary + generated disasm; do not commit)
+re_work/
+*.EXE
