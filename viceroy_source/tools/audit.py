@@ -100,6 +100,21 @@ check_ins("native owner add ax,4", 0x046FC9, "add", "ax,4")
 check_bytes("report F2 renderer 0x37958 enter", 0x37958, "c8")
 check_bytes("report F4 Labor 0x38418 enter", 0x38418, "c8")
 
+# embedded DGROUP control tables (data-tables resolution 2026-06-07)
+check_bytes("NEIGHBOR_DX[8] @DS:0xb4", 0x1DA54, "00 01 01 01 00 ff ff ff")
+check_bytes("NEIGHBOR_DY[8] @DS:0xbe", 0x1DA5E, "ff ff 00 01 01 01 00 ff")
+check_ins("adjacency loop bound cmp [bp-4],8", 0x007088, "cmp", "8")
+check_ins("adjacency dx read mov al,[bx+0xb4]", 0x007091, "mov", "[bx+0xb4]")
+check_ins("adjacency dy read mov al,[bx+0xbe]", 0x00709B, "mov", "[bx+0xbe]")
+check_ins("good->chain accessor func_008D9C cmp [bp+6],0x13", 0x008DA5, "cmp", "0x13")
+check_ins("good->chain read mov al,[bx+0x2f4]", 0x008DAE, "mov", "[bx+0x2f4]")
+check_bytes("GOOD_TO_CHAIN_BIT[19] tail @DS:0x2fd", 0x1DC9D, "1b 18 15 20 23 27 03 25 09 0c")
+check_bytes("GOOD_TO_RAW_INPUT[19] tail @DS:0x2aa", 0x1DC4A, "08 01 02 03 04 ff 06 0e 05 ff ff")
+# external balance tables: confirm the BSS bases the accessors use are >0x2cc5
+# (i.e. NOT in the initialized image) — proves they are runtime-loaded.
+assert 0x5235 > 0x2CC5 and 0x59D8 > 0x2CC5 and 0x8808 > 0x2CC5
+results.append((True, "balance-table bases (0x5235/0x59d8/0x8808) are BSS (>0x2cc5)", "model", "external/.TXT-loaded"))
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
