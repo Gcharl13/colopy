@@ -115,6 +115,36 @@ check_bytes("GOOD_TO_RAW_INPUT[19] tail @DS:0x2aa", 0x1DC4A, "08 01 02 03 04 ff 
 assert 0x5235 > 0x2CC5 and 0x59D8 > 0x2CC5 and 0x8808 > 0x2CC5
 results.append((True, "balance-table bases (0x5235/0x59d8/0x8808) are BSS (>0x2cc5)", "model", "external/.TXT-loaded"))
 
+# ---- market price drift func_0305A8 (re-verified 2026-06-07) -------------
+check_bytes("market drift func_0305A8 enter 0x66", 0x0305A8, "c8 66 00 00")
+check_bytes("market supply imul power x0x4f", 0x0305CE, "6b 5e ac 4f")
+check_ins("market price-target sub [bx+0x53ea],ax", 0x030639, "sub", "[bx+0x53ea]")
+check_bytes("market rise threshold mov al,0x9c (-100)", 0x030986, "b0 9c")
+check_ins("market PRICE+1 inc byte[bx+di+0x4c]", 0x0309B5, "inc", "[bx+di+0x4c]")
+check_bytes("market fall threshold mov al,0x64 (+100)", 0x030A22, "b0 64")
+check_ins("market PRICE-1 dec byte[bx+di+0x4c]", 0x030A4C, "dec", "[bx+di+0x4c]")
+check_bytes("market PRICEUP push 0x0fa8", 0x030A04, "68 a8 0f")
+check_bytes("market PRICEDOWN push 0x0fb0", 0x030A9B, "68 b0 0f")
+check_bytes("market func_0305A8 terminating RETF", 0x030B37, "cb")
+
+# ---- SoL / Tory func_2D658 + sol_membership_pct (re-verified 2026-06-07) --
+check_ins("SoL bell-EMA add [bx+0xc2],ax", 0x2DA9C, "add", "[bx+0xc2]")
+check_ins("SoL Tory difficulty mov al,[0x53a6]", 0x2DCBC, "mov", "[0x53a6]")
+check_ins("SoL Tory sub ax,0xa (->10-diff)", 0x2DCC1, "sub", "0xa")
+check_ins("SoL REBELMAJORITY cmp rebel,0x32(>=50)", 0x2DB29, "cmp", "0x32")
+check_ins("SoL REBELUNANIMOUS cmp rebel,0x64(100)", 0x2DB6E, "cmp", "0x64")
+check_ins("SoL membership +20 deWitt add ax,0x14", 0x00859F, "add", "0x14")
+check_ins("SoL membership clamp cmp ax,0x64", 0x0085A8, "cmp", "0x64")
+
+# ---- LCR dispatcher func_061454 (re-verified 2026-06-07) ----------------
+check_bytes("LCR func_061454 enter 0x3c", 0x061454, "c8 3c 00 00")
+check_bytes("LCR primary roll random_int(1,9)", 0x0614F6, "6a 09 6a 01 9a d4 04 1f 18")
+check_ins("LCR scout-type cmp byte[bx+0x3146],5", 0x0614A6, "cmp", "5")
+check_ins("LCR dispatch cmp ax,9", 0x061C2C, "cmp", "9")
+check_ins("LCR gold imul bx,[0x5394],0x13c", 0x061C4C, "imul", "0x13c")
+check_ins("LCR gold add [bx-0x77ce],ax (PowerRec+0x2a)", 0x061C52, "add", "[bx-0x77ce]")
+check_bytes("LCR terminating RETF", 0x061C9C, "cb")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

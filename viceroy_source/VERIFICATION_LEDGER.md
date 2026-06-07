@@ -1026,3 +1026,61 @@ mismatches were harness off-by-ones (rand mov dx @0x103D7 not 0x103D8; dialog
 func_067DC8 is `ENTER 4,0` not push-bp), now corrected — the binary matches the
 prior reconstruction faithfully. This is the regression baseline; every new
 byte-trace appends an assertion here.
+
+---
+
+## Re-verification wave against the supplied binary (2026-06-07)
+
+With VICEROY.EXE now in-repo, three core subsystems were independently
+re-traced from the binary (via background agents, every cited offset
+spot-checked by hand) and locked into `tools/audit.py` (now 61/61 green). All
+confirm — and tighten — the existing source.
+
+### Market price drift — `func_0305A8` (file 0x0305A8 .. 0x030B37, ENTER 0x66)
+- Per-turn loop over **16 commodities × 4 powers**; commodity record stride **9**
+  (fields +0 min, +1 max, +3 rise_factor, +4 fall_factor, +5 demand) — BSS, loaded
+  from NAMES.TXT @CARGO (values [TBD-external]).
+- Drift step is **exactly ±1** price unit: `inc byte[bx+di+0x4c]` @0x309B5 (rise),
+  `dec` @0x30A4C (fall) on `price_level[16]` = active PowerRecord+0x4C.
+- Trigger: volume accumulator `vol_accum[16]` (PowerRecord+0x5C) crossing
+  **−100×rise_factor** (al=0x9c @0x30986) to rise, **+100×fall_factor**
+  (al=0x64 @0x30A22) to fall; the crossed threshold is subtracted back out
+  (hysteresis). Supply→target uses **÷256** (8× sar/rcr @0x30618).
+- Euro-supply read per power at **DS:0x8904 = PowerRecord+0xFC**, dword stride 0x13C
+  (`imul ...,0x4f` ×4 @0x305CE). Price-target word array **DS:0x53EA** decayed
+  @0x30639. Emits **PRICEUP**(DG 0xfa8)/**PRICEDOWN**(DG 0xfb0). Bell-curve reprice
+  cap **0x19(25)** @0x30ACE. [TBD] bid/ask spread = overlay thunks 0x181F:0xcc2/0xac4.
+
+### Sons-of-Liberty / Tory — `func_02D658` + `func_008524` (sol_membership_pct)
+- membership% = **bell_EMA×100 / threshold_accum**, fields ColonyRecord
+  +0xC2/+0xC4 (EMA) over +0xC6/+0xC8 (threshold); ×100 via 0xD1D:0xF60, ÷ via
+  0xD1D:0xEC6 @0x8557/0x855E. **+20** Jan de Witt FF bonus `add ax,0x14` @0x859F
+  (gated cmp [bx+0x1a],4 + FF-flag table DS:0x543F stride 0x34); clamp **100**
+  @0x85A8.
+- EMA update `A += bells − (A>>6)`: six sar/rcr (÷64) then `add [bx+0xC2],ax`
+  @0x2DA9C. Threshold `B −= B>>6; B += 2×colonists` (`shl ax,1` @0x2DA68).
+- **Tory% = 100 − rebel%**; tory_count = pop×tory%/100; tolerated Tories before
+  INEFFICIENT = **(10 − difficulty)** (`mov al,[0x53A6]; sub ax,0xa; neg ax`
+  @0x2DCBC). Band messages: **REBELMAJORITY ≥50** (cmp 0x32 @0x2DB29),
+  **REBELUNANIMOUS ≥100** (cmp 0x64 @0x2DB6E), TORYMINORITY <95, TORYMAJORITY <50,
+  SONSUP/SONSDOWN on 10-pt band crossings (+4 hysteresis down). Latched via
+  ColonyRecord+0x1C bits {0x02 unanimous, 0x04 majority, 0x08 tory-overload}.
+  Per-power bells tally PowerRecord+0x2E (DS:0x8836) `imul ...,0x13c` @0x2E6BA.
+- CORRECTION to a prior note: there is **no `TORYFLED` key** (not in the binary);
+  the adjacent keys are SONSUP/SONSDOWN/INEFFICIENT/EFFICIENT. REBELUP/REBELUP50/
+  REBELDOWN belong to a separate UI func near 0x3E900, not func_02D658.
+
+### Lost City Rumor — `func_061454` (file 0x061454 .. 0x061C9C, ENTER 0x3C)
+- Confirms the existing lcr.c: outcome is **procedural, not a weight table**.
+  Primary roll **random_int(1,9)** @0x614F6, floored ≥1, then remapped by ~10
+  gates (scout/seasoned-scout, per-rumor option [0x5382]&1, tile-value thresholds
+  0x18/0x1b/0x1c, roll thresholds 0xA/0x19/0x32/0x41, repeat counters
+  [0x1DC6]/[0x1DC7]) before the tail switch `cmp ax,9` @0x61C2C.
+- **Scout** = unit type 5 (`cmp byte[bx+0x3146],5` @0x614A6, `imul [bp+6],0x1c`);
+  Seasoned Scout role 0x16 → payout shift bonus ∈{0,1,2}.
+- Outcome 5 = Fountain of Youth: **8× immigrant queue** (loop 0..8, LCALL
+  0x191F:0xd2c). Outcome 9 = Cibola treasure-train (create unit via 0x181F:0x95c).
+- Gold to all paths: `imul bx,[0x5394],0x13c; add [bx-0x77ce],ax; adc [bx-0x77cc],dx`
+  @0x61C4C = **PowerRecord+0x2A gold dword** (DS:0x8832). UI suppressed for AI
+  (guard [bp-8], set only when active==local human player). [TBD] overlay helper
+  identities behind the 0x181F/0x191F thunks; caller of the dispatcher.
