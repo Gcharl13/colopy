@@ -1084,3 +1084,37 @@ confirm — and tighten — the existing source.
   @0x61C4C = **PowerRecord+0x2A gold dword** (DS:0x8832). UI suppressed for AI
   (guard [bp-8], set only when active==local human player). [TBD] overlay helper
   identities behind the 0x181F/0x191F thunks; caller of the dispatcher.
+
+---
+
+## Endgame scoring rank ladder — `func_03A9C0` (verified 2026-06-07)
+
+The Hall-of-Fame rank ladder is now byte-traced (display/ranking layer; the raw
+score-total sum is overlay-resident, see TBD). `func_03A9C0` file 0x03A9C0
+(ENTER 0x3C4), early-return RETF @0x3AA08 for score<=0, body extends to 0x3B2F8.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| raw score from overlay routine 0x191F:0x3AA via thunk 0x3B36A | @asm 0x3A9F5 `push cs; call 0x3b36a`; result -> [bp-0xBE] @0x3A9FC | BYTE_VERIFIED (call); body TBD (overlay) |
+| difficulty multiplier = diff+4, +1 if diff>=3, +1 if diff>=4 (0..4 -> 4,5,6,8,10) | @asm 0x3AA0A `mov al,[0x53a6]`; 0x3AA0F `add ax,4`; 0x3AA15 `cmp [0x53a6],3`/inc; 0x3AA20 `cmp ...,4`/inc | BYTE_VERIFIED |
+| scaled = (mult * rawScore) / 100 | @asm 0x3AA34 `imul [bp-0xbe]`; 0x3AA38 `mov cx,0x64`; 0x3AA3C `idiv cx` | BYTE_VERIFIED |
+| rank = largest i-1 (i=1..24) with i*i/3 < scaled; loop bound 24, cap 23 | @asm 0x3AA4D `imul cx`; 0x3AA4F `mov bx,3`; 0x3AA53 `idiv bx`; 0x3AA63 `cmp ...,0x18`; 0x3AA71 `cmp ax,0x17`/`mov ax,0x17` | BYTE_VERIFIED |
+| displayed score = scaled / 2 | @asm 0x3AA6A `sar [bp-2],1` | BYTE_VERIFIED |
+| fanfare id by tier: rank 23->0x24, 7..22->0x25, <=6->0x21 | @asm 0x3AD51 `cmp [bp-0xc0],0x17`; 0x3AD58 `mov ax,0x24`; else 0x25/0x21 | BYTE_VERIFIED |
+| HOF record builder func_03B2F8 (file 0x3B2F8, ENTER 0x2C, RETF 0x3B368): country-name @[0x5398]*0x34+0x540E, indep flag [0x5382]&1, year [0x538A], difficulty [0x53A6], score from same overlay routine | @asm 0x3B2FC/0x3B317/0x3B329/0x3B335/0x3B33D | BYTE_VERIFIED (record fields); component sum TBD |
+| HALLFAME.DAT load/sort/insert func_03ADA6: rep-movsw sort up to 6 records (0x2A words) by descending score field +0x26 | @asm 0x3AED0/0x3AED8 | BYTE_VERIFIED (structure) |
+| win-state master flag word [0x5382]: bit0=independence (set @func_03DE46 0x3E031 `or [0x5382],1`), bit3 -> HOF, bit4 suppresses interactive HOF | @asm 0x3E031; 0x3B320; 0x3A9BB `test [0x5382],0x10` | BYTE_VERIFIED |
+
+TBD: (1) the score-TOTAL component formula (colonists/FFs/treasure/rebel
+sentiment) is computed inside the RTLink-swapped overlay at 0x191F:0x3AA (thunk
+descriptor `05 00 b1 02` -> overlay seg 0x02B1) — not statically resolvable from
+the thunk chain; needs the RTLink flattener or a runtime dump. (2) Rank-title
+text (Discoverer..Viceroy) is loaded by key+rank from an external message file;
+the EXE holds only keys ("SCORE" DG 0x11CF, "EXPLOITS" DG 0x11E0). The string
+"Colonization_Rating" is NOT in the EXE (external).
+
+## Coverage instrumented (2026-06-07)
+
+`tools/coverage.py` + `docs/COVERAGE.md`: 1248 functions, 1236 (99%) with @asm
+citations, 342 (27%) with a BYTE_VERIFIED-adjacent citation (heuristic upper
+bound). audit.py regression baseline now 69/69.

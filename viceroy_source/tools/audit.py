@@ -145,6 +145,16 @@ check_ins("LCR gold imul bx,[0x5394],0x13c", 0x061C4C, "imul", "0x13c")
 check_ins("LCR gold add [bx-0x77ce],ax (PowerRec+0x2a)", 0x061C52, "add", "[bx-0x77ce]")
 check_bytes("LCR terminating RETF", 0x061C9C, "cb")
 
+# ---- endgame rank ladder func_03A9C0 (verified 2026-06-07) ---------------
+check_bytes("score rank-ladder func_03A9C0 enter 0x3c4", 0x03A9C0, "c8 c4 03 00")
+check_ins("score difficulty mov al,[0x53a6]", 0x03AA0A, "mov", "[0x53a6]")
+check_ins("score mult base add ax,4", 0x03AA0F, "add", "ax,4")
+check_bytes("score scale /100 mov cx,0x64", 0x03AA38, "b9 64 00")
+check_bytes("score rank ladder i*i/3 mov bx,3", 0x03AA4F, "bb 03 00")
+check_ins("score rank cap cmp ax,0x17 (23)", 0x03AA71, "cmp", "0x17")
+check_ins("score ladder loop bound cmp ...,0x18 (24)", 0x03AA63, "cmp", "0x18")
+check_bytes("HOF record builder func_03B2F8 enter 0x2c", 0x03B2F8, "c8 2c 00 00")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
