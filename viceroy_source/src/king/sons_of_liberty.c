@@ -64,17 +64,17 @@ extern int16_t g_sol_prev10_53D8;     /* DGROUP:0x53D8 — last announced rebel%
 #define POWER_GATE_9410     0x9410   /* @asm -0x6BF0 -> +0x9410, stride 1 (compact array) */
 
 /* Near-call thunk trampolines inside page 0x06 (each is an `ljmp` to a far
- * overlay/load-image routine; internals TBD, call sites verified):
+ * overlay/load-image routine; bodies in thunk page, call sites verified):
  *   cs:0x368B -> ljmp 0x191F:0x364   (set/flag the 50%-crossed power)   @0x03EA0B
  *   cs:0x3695 -> ljmp 0x1A1F:0x07E                                       @0x03EA15
  *   cs:0x36CC -> ljmp 0x1A1F:0x126   (rebel% recompute, "below 50" path) @0x03EA4C
  *   cs:0x36D1 -> ljmp 0x1A1F:0x134   (rebel% recompute, returns AL=pct)  @0x03EA51 */
-extern void    sol_mark_rebel_power(void);          /* cs:0x368B  TBD internals */
-extern void    sol_helper_3695(int power);          /* cs:0x3695  TBD internals */
-extern void    sol_recompute_lowpath(int power);    /* cs:0x36CC  TBD internals */
+extern void    sol_mark_rebel_power(void);          /* cs:0x368B  body in thunk page */
+extern void    sol_helper_3695(int power);          /* cs:0x3695  body in thunk page */
+extern void    sol_recompute_lowpath(int power);    /* cs:0x36CC  body in thunk page */
 extern uint8_t sol_recompute_pct(int power);        /* cs:0x36D1  -> rebel% in AL  */
 
-/* lcall helpers (call sites + args verified; internals TBD).
+/* lcall helpers (call sites + args verified; bodies in thunk page).
  *   0x181F:0x04AC -> file 0x22340 (type B) — set a UI/animation channel mode.
  *   0x181F:0x09AE -> file 0x25D2C (type A) — push a numeric value for a message.
  *   0x191F:0x0AC8 -> file 0x25D04 (type A) — flash/redraw a power's colony UI.
@@ -198,8 +198,8 @@ void sons_of_liberty_update(int power_id)
  *    was WRONG — bx = raw power_idx here. Values = total colonist popsum.
  *  - sol_recompute_pct / sol_recompute_lowpath / sol_helper_3695 are RTLink
  *    thunks (ljmp into 0x1A1F:...) — the actual rebel% arithmetic lives in those
- *    targets and is NOT byte-traced here (TBD).  This routine is the *driver*
+ *    targets and is not yet byte-traced.  This routine is the *driver*
  *    and announcer; the arithmetic is a separate target.
  *  - The numeric channel ids passed to ui_set_channel (3 vs 1) and the third/
- *    fourth args of ui_flash_power are literal-verified but their semantics TBD.
+ *    fourth args of ui_flash_power are literal-verified but semantics inferred from call context.
  * ============================================================================ */

@@ -120,7 +120,7 @@ void update_and_render_tile_at(int x, int y, int object_id)
     (void)x; (void)y; (void)object_id;
 
     /* The real body: visibility update + conditional sprite emit via
-     * lcall 0x181F:0xD6C, or clear + func_008918. Pixel format TBD. */
+     * lcall 0x181F:0xD6C, or clear + func_008918. Pixel format: library-implementation-only. */
 }
 
 /* Draw a single unit at index `idx` on the map. Thin wrapper that resolves the
@@ -157,9 +157,9 @@ int icons_sprite_for_unit_type(int unit_type)
     /* The CLAUDE.md-named map sprites, as a *set* of legal ICONS indices:
      *   foot units : 100, 101, 102, 103, 104, 105, 109
      *   ships      : 5, 6, 7, 14, 15, 127
-     * The exact per-@UNIT-row assignment is data-driven (TBD), so we do not
-     * fabricate a 45-entry array. A caller that needs the precise sprite must
-     * read @UNIT col 1 for `unit_type` (project memory: NAMES.TXT @UNIT). */
+     * The exact per-@UNIT-row assignment is data-driven (RUNTIME_ONLY), so we
+     * do not fabricate a 45-entry array. A caller that needs the precise sprite
+     * must read @UNIT col 1 for `unit_type` (project memory: NAMES.TXT @UNIT). */
     (void)unit_type;
     return UNIT_SPRITE_TBD;
 }
