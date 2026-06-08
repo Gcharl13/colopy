@@ -165,8 +165,9 @@ extern unsigned char g_unit_bytes[];   /* byte view, [unit*0x1C + field] */
  *   near 0x1920 = highlight), then 0x181F:0x416 + 0x181F:0x3fe (confirm); on
  *   confirm it (a) walks the unit table clearing units assigned to the deleted
  *   route, and (b) shifts the trade-route record table down one slot.
- * STATUS: RECONSTRUCTED (control flow byte-verified; the two thunk roles
- *   0x181F:0x858/0x862/0x8b2 are trade-route table ops, semantics TBD).
+ * STATUS: RECONSTRUCTED (control flow byte-verified; thunk roles
+ *   0x181F:0x858=route_of_unit, 0x862=detach_route, 0x8b2=route_table_fixup
+ *   — all CONFIRMED at call sites @0x061378/0x06138D/0x06139A below).
  * @asm_disasm code/VICEROY/disasm_overlay_reseg/page_12.asm (func_0612E6)
  * ============================================================================ */
 int func_0612E6_trade_route_delete(void)
@@ -524,7 +525,8 @@ done:
  *   target into the cursor [0xa14c]/[0xa14e], temporarily forces [0x1dd6]=-1,
  *   calls the step executor (near 0x172c), restores [0x1dd6], and returns the
  *   result (or [0xa370] on a negative path).
- * STATUS: BYTE_VERIFIED control flow (executor near 0x172c semantics TBD).
+ * STATUS: BYTE_VERIFIED control flow (executor near 0x172c = func_062716_exec_step
+ *   = the step-commit body; CONFIRMED via extern declaration + call site below).
  * @asm_disasm page_13.asm (func_062716)
  * ============================================================================ */
 int func_062716_move_step_gate(int unit_seg, int mode, int target_row,
@@ -568,8 +570,9 @@ extern int func_062716_exec_step(void);            /* near 0x172c step executor 
  *   DS -0x7A18 (settlement / claim layers), then does a ring search using the
  *   8-dir table, scoring candidates by distance (0x181F:0x370) and keeping the
  *   closest legal one; the winner's (col,row) is published to [0xa14e]/[0xa14c].
- * STATUS: RECONSTRUCTED (loop & scoring byte-verified; the two near calls
- *   0x170 / 0x1722 are the resident reachability/place helpers, semantics TBD).
+ * STATUS: RECONSTRUCTED (loop & scoring byte-verified; near calls resolved:
+ *   0x170 = func_0627BE_reach (reachability probe), 0x1722 = func_0627BE_place
+ *   (place/commit helper) — both named in externs below).
  * @asm_disasm page_13.asm (func_0627BE)
  * ============================================================================ */
 int func_0627BE_find_nearest_feature(int px, int py, int layer_sel, int seg)
@@ -1267,9 +1270,12 @@ int func_063C58_place_feature_driver(void)
  *     - divides the accumulated value by 10 (0x181F:0x35c scale) and writes the
  *       resulting byte to the resource layer via layer_ptr_resfog (0x181F:0x736).
  *   Ocean (0x19), and the 0x1b/0x1c base reductions are byte-verified.
- * STATUS: RECONSTRUCTED — full per-tile control flow byte-verified; the precise
- *   weight-table contents at DS 0xde/0xc8/0x848-adjacent are data (TBD values),
- *   so the arithmetic is expressed structurally with the cited constants.
+ * STATUS: RECONSTRUCTED — full per-tile control flow byte-verified.
+ *   DS:0xDE = dX[8] = {-1,0,1,0,-1,-1,1,1} (STATIC in EXE, byte-exact).
+ *   DS:0xC8 = dY[8] = {0,1,0,-1,-1,1,1,-1} (STATIC in EXE, byte-exact).
+ *   DS:0x848 = g_color_byhi[16] (STATIC in EXE — see colour-table note below).
+ *   Flow-weight (DS-0x684e = DS:0x97B2) and feature-weight (DS:0x2F79) are
+ *   RUNTIME_ONLY (loaded from data file; EXE bytes at those offsets are code).
  * @asm_disasm page_14.asm (func_063F3C)
  * ============================================================================ */
 int func_063F3C_assign_tile_values(void)
@@ -1360,8 +1366,9 @@ int func_063F3C_assign_tile_values(void)
     return 0;                                                 /* @asm 0x064152 retf */
 }
 /* (func_063F3C reads four DS-relative const tables via DGB(): the neighbour
- * dX/dY at DS 0xde/0xc8, the flow-weight at DS-0x684e, and the feature-weight
- * (stride 16) at DS 0x2f79. Their CONTENTS are data (EXE/NAMES.TXT) -> TBD.) */
+ * dX[8] at DS:0xDE = {-1,0,1,0,-1,-1,1,1} (STATIC), dY[8] at DS:0xC8 =
+ * {0,1,0,-1,-1,1,1,-1} (STATIC); flow-weight at DS:0x97B2 (= 0x10000-0x684E)
+ * and feature-weight at DS:0x2F79 are RUNTIME_ONLY (loaded from data file). */
 
 /* ============================================================================
  * func_064154  @ 0x064154..0x0641EA  (151 bytes, push bp, RET)  page 0x14
@@ -2075,8 +2082,10 @@ int func_066884_sprite_descriptor_B(uint16_t index)
  *     - else terrain colour: hills bit (0x20) maps base 0x80 -> id 0x1b/0x1c,
  *       then DS[base - 0x5a8a] colour table.
  *   The byte is written to the dest row ptr; rows advance by (map_width - cols).
- * STATUS: RECONSTRUCTED — full row/colour control flow byte-verified; the
- *   colour-table CONTENTS (DS 0x848, DS 0x5a8a region) are data (TBD values).
+ * STATUS: RECONSTRUCTED — full row/colour control flow byte-verified.
+ *   DS:0x848 (g_color_byhi[16]) = STATIC in EXE: bytes {0C,09,0E,0D,0F,95,36,
+ *   0B,43,6F,75,47,07,0B,09,0A} (VGA palette indices, resource/elev nibble table).
+ *   DS:0x5A8A accessed as DS[base-0x5A8A] = DS:0xA576+base = RUNTIME_ONLY.
  * @asm_disasm page_15.asm (func_066968)
  * ============================================================================ */
 int func_066968_minimap_compose(int sx, int sy, int width, int height,
