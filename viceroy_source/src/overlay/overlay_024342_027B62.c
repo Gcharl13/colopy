@@ -74,7 +74,7 @@ extern int overlay_call_191F_00F0(void);  /* via trampoline @0x024BDC */
  * mouse_hover_popup_helper  (func_0245C6)
  *   @asm        0x0245C6..0x024630  (107 bytes, ENTER 8)
  *   @asm_disasm page_01.asm (func_0245C6); raw EXE C8 08 00 00
- *   @status     BYTE_VERIFIED (extent + reads); overlay leaf targets TBD
+ *   @status     BYTE_VERIFIED (extent + reads; leaf roles noted in banner — impl in thunk layer)
  *   @role       helper of game_tick_coordinator: re-evaluate the map tile under
  *               the mouse and (re)open its context popup when it changed.
  *
@@ -119,7 +119,7 @@ void mouse_hover_popup_helper(void)
  * hover_redraw_helper  (func_024632)
  *   @asm        0x024632..0x024691  (96 bytes, ENTER 2)
  *   @asm_disasm page_01.asm (func_024632); raw EXE C8 02 00 00
- *   @status     BYTE_VERIFIED (extent + reads); overlay leaf targets TBD
+ *   @status     BYTE_VERIFIED (extent + reads; leaf roles noted in banner — impl in thunk layer)
  *   @role       per-frame "did the active state slot change?" redraw helper.
  *
  * Returns 1 if a redraw happened, else 0.  Runs only while [0x933E]==[0x9328]
@@ -163,7 +163,7 @@ int hover_redraw_helper(void)
  * active_slot_refresh_dispatch  (func_024692)
  *   @asm        0x024692..0x0246E1  (80 bytes, ENTER 2)
  *   @asm_disasm page_01.asm (func_024692); raw EXE C8 02 00 00
- *   @status     BYTE_VERIFIED (extent + control flow); overlay leaf targets TBD
+ *   @status     BYTE_VERIFIED (extent + control flow; leaf roles noted in banner — impl in thunk layer)
  *   @role       recompute the active state slot [0x933E]/[0x9328] then dispatch
  *               on a 3-value selector.
  *
@@ -229,7 +229,7 @@ int active_slot_refresh_dispatch(void)
  *   @asm        0x024A48..0x024B13  (203 bytes, ENTER 6)
  *   @asm_disasm raw EXE (reseg over-merged it into func_0246E2; true prologue
  *               C8 06 00 00 @0x024A48, true terminal RETF @0x024B13)
- *   @status     BYTE_VERIFIED (extent + control flow); overlay leaf targets TBD
+ *   @status     BYTE_VERIFIED (extent + control flow; leaf roles noted in banner — impl in thunk layer)
  *   @role       start-of-season setup + the "advance to next active unit" wait
  *               loop that drives the resident main loop (func_0246E2).
  *
@@ -340,8 +340,8 @@ int begin_season_loop(void)
  * accumulates that worker's yield (0x181F:0x8BC).  Tracks the best single tile
  * and the running total; stores results through the non-NULL out-params and
  * returns the clamped (>=0) net amount.
- * (Leaf overlay targets 0x181F:0x7E0 tile-at-xy, 0x8BC yield, 0xA38 worker-
- *  query are byte-cited LCALLs; their final paged bodies are TBD.)
+ * (Leaf overlay targets 0x181F:0x7E0=tile-at-xy, 0x8BC=yield, 0xA38=worker-query
+ *  are byte-cited LCALLs; implementations in thunk layer.)
  * ============================================================================ */
 int colony_survey_adjacent_tiles(int near *out_best_dir,
                                   int near *out_best_amt,
@@ -778,7 +778,7 @@ void colony_draw_worktile_info(int tile_dir)
 /* ============================================================================
  * draw_text_colored  (func_02633E)
  *   @asm        0x02633E..0x026373  (54 bytes, PUSH BP;MOV BP,SP)  page_02.asm
- *   @status     BYTE_VERIFIED (extent + control flow); leaf target TBD
+ *   @status     BYTE_VERIFIED (extent + control flow; leaf target impl in thunk layer)
  *   @role       thin wrapper: draw 4-arg text/sprite via 0x181F:0x444 after
  *               pushing the resident palette ([0x839E..0x83A4]) and the four
  *               resolved colour words ([0x2DA8..0x2DAE]).
