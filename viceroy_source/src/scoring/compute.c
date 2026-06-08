@@ -187,7 +187,11 @@ void gold_income_tick_for_power(int power_idx)
  *                @asm 03A3D9..03A4A3  (0x181F:0x84FC + 0x2A:0x2C = 32-bit gold; /1000)
  *
  *    [bp-0x6c]  score_ref        — PowerRecord[+0x18] × -(difficulty+1)  [NEGATIVE penalty]
- *                                   Field +0x18 semantics TBD (initialized 0; updated during game)
+ *                                   Field +0x18 = battles_won counter (BYTE); incremented
+ *                                   at @asm 0x5BF21 (inside func_05A67E, Block B attacker-win).
+ *                                   BYTE_VERIFIED 2026-06-08: the score penalizes you for
+ *                                   battles won (the more you fought, the harder the victory
+ *                                   must be to be meaningful for scoring).
  *                @asm 03A4A4..03A543  (cmp [bx+0x18],0; mov cx,0xffff; sub cx,difficulty; imul)
  *
  *    [bp-0x5a]  score_sol        — g_bolivar_meter (DGROUP:0x53D0); Bolivar/SoL meter 0..100
