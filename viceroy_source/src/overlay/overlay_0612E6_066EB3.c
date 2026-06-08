@@ -657,9 +657,11 @@ extern int func_0627BE_place(int seg, int n);   /* near 0x1722 place/commit help
  * this file (verified via the page-13 ljmp/near map):
  *   near 0xb1e -> func_0627BE_find_nearest_feature  (file 0x627BE)
  *   near 0x170 -> func_061E10_scan_match            (file 0x61E10)
- * The caller marshals them through registers; the exact (col,row,sel,seg) <->
- * (px,py,layer_sel) binding is approximate (TBD-inner) — the call sites and
- * their role are byte-verified, the precise register order is not re-derived.
+ * BYTE_VERIFIED 2026-06-08 — register layout for func_0627BE calls:
+ *   AX=px (pixel col), DX=py (pixel row), BX=layer_sel (= dir_class 0/1).
+ *   Callee does sar ax,2 / sar dx,2 to convert to tile coords.
+ *   Call 1 @0x629BB: AX=[bp-0x80]=seedx, DX=original-DX-at-entry=seedy, BX=[bp-0x68]=dir_class.
+ *   Call 2 @0x629E0: AX=[bp-0x7c]=saved-BX-at-entry, DX=[bp+6], BX=[bp-0x68]=dir_class. CLOSED.
  * ============================================================================ */
 int func_06295E_ai_move_resolver(int target_col, int target_row)
 {
