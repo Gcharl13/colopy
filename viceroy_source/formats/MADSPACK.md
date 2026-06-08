@@ -30,7 +30,7 @@ MADSPACK-compressed streams from coldata\*.dll. It's a port of the
 ## Algorithm summary
 
 LZ77 variant:
-- Sliding-window dictionary (size TBD; likely 4 KB based on similar formats)
+- Sliding-window dictionary (size not yet decoded; likely 4 KB based on similar formats)
 - Match length / distance encoded as a short pair (likely 2-3 bytes)
 - Literal runs marked with a flag byte every 8 tokens
 

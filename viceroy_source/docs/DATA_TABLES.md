@@ -43,7 +43,7 @@ derived from it). The parser writes the records into the BSS tables above.
 ff_effects, kings_demands and scenario_starts **cannot be byte-verified from
 VICEROY.EXE alone.** To complete them, supply the `COLONIZE/*.TXT` files; then
 the values become byte-facts read from those files (and cross-checked against the
-BSS write sites in the parser). Until then they are `[TBD — external]`. The
+BSS write sites in the parser). Until then they are `[not yet decoded — external]`. The
 `data/*.c` balance files now carry that banner; only their struct *layouts*
 (strides, field order — byte-anchored from accessors) are trustworthy.
 
@@ -55,7 +55,7 @@ The EXE *does* embed small control tables (logic, not balance):
 |-------|--------|----------|------------------|------|
 | `NEIGHBOR_DX[8]` | 0x00B4 | 0x1DA54 | `mov al,[bx+0xb4]` @0x07091, loop `cmp [bp-4],8` @0x07088 | tile adjacency Δx (N,NE,E,SE,S,SW,W,NW) |
 | `NEIGHBOR_DY[8]` | 0x00BE | 0x1DA5E | `mov al,[bx+0xbe]` @0x0709B | tile adjacency Δy |
-| `MAP_DELTA_C8[10]` | 0x00C8 | 0x1DA68 | same map-helper family | second delta table (role TBD) |
+| `MAP_DELTA_C8[10]` | 0x00C8 | 0x1DA68 | same map-helper family | second delta table (role not yet decoded) |
 | `GOOD_TO_CHAIN_BIT[19]` | 0x02F4 | 0x1DC94 | func_008D9C `cmp [bp+6],0x13; mov al,[bx+0x2f4]; cwde` | building-chain id per commodity |
 | `GOOD_TO_RAW_INPUT[19]` | 0x02A2 | 0x1DC42 | colony net-flow helpers | raw-material id per finished good |
 

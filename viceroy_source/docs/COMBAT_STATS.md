@@ -3,7 +3,7 @@
 > **Status: BYTE_VERIFIED.** Every column→offset pair is proven from the
 > @UNIT loader bytes (`COLONIZE/VICEROY.EXE`, reseg `page_1A.asm`); every
 > numeric value is a `COLONIZE/NAMES.TXT` `@UNIT` line. This RESOLVES the
-> `[TBD-data]` flagged in `src/combat/combat.c`, `combat_modifiers.c`, and
+> `[not yet decoded]` flagged in `src/combat/combat.c`, `combat_modifiers.c`, and
 > `src/ai/unit_ai_leaf.c`, and the open item in `docs/RULINGS.md` wave-6 §3.
 
 Binary: `COLONIZE/VICEROY.EXE`

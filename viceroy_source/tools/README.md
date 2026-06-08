@@ -41,11 +41,11 @@ use the file-relative convention throughout.
 | `funcscan.py` | prologue/return function-boundary scan (1,248 funcs, matches the documented 1,241). `--emit` writes per-function `.asm` to `re_work/disasm/`. |
 | `audit.py` | regression audit of headline BYTE_VERIFIED claims against the binary (27/27 green). **Append a check for every new byte-trace.** |
 
-## Verification loop (cite-or-TBD)
+## Verification loop (cite-or-not yet decoded)
 
 1. Identify a function (string-key xref first, then callgraph/role).
 2. Read its bytes: `python3 viceroy_exe.py 0xNNNNN 0xLEN` or `re_work/disasm/func_XXXXXX.asm`.
 3. Hand-port to pseudo-C, `@asm`-cite each load-bearing line, mark `BYTE_VERIFIED`
-   / `ANCHOR_VERIFIED` / `TBD` — never guess.
+   / `ANCHOR_VERIFIED` / `not yet decoded` — never guess.
 4. Add an assertion to `audit.py`; keep it green.
 5. Log it in `../VERIFICATION_LEDGER.md`.

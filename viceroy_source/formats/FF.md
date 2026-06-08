@@ -65,5 +65,5 @@ font drawer is also overlay-resident. Cross-reference candidates:
 
 ## Citations
 
-- @asm_file  TBD (overlay font loader + drawer)
+- @asm_file  not yet decoded (overlay font loader + drawer)
 - @ref       ../../../docs/COLTEXT0_INDEX.md  -- text-string ID index

@@ -8,7 +8,7 @@
 > and **0 un-ported skeleton stubs** remain. Many rows in the table below are now
 > DONE (e.g. 0x4CC50, 0x5E9B0, 0x69D8C, 0x61F02 were finished in the wave).
 >
-> ### Bounded residue: 12 functions carry cited `TBD-inner` sub-regions
+> ### Bounded residue: 12 functions carry cited `not yet decoded` sub-regions
 > Each has a byte-faithful OUTER structure + all citations; only an inner part is
 > deferred (never fabricated). Grouped by ROOT CAUSE = how each closes:
 >
@@ -20,7 +20,7 @@
 > (queue_a_find_or_insert), 0x7A76→func_04CAF6 (find_nearest_target),
 > 0x7ABC→func_04C4AE (table_c_insert), 0x7AD5→func_04C50C (table_c_clear).
 > Banner updated with BYTE_VERIFIED chain; call sites now cite resolved names.
-> Remaining TBD-inner: score-leaf interiors (0x181F:0x8BC/0x2EE/0x37A) only.
+> Remaining not yet decoded: score-leaf interiors (0x181F:0x8BC/0x2EE/0x37A) only.
 > `func_052F7E`
 > (cs:0x7AD0/0x7ADF war-matrix) · `func_065D26` (0x1A1F:0x88A property reads) ·
 > ~~`func_0749E0` (0x1A1F:0xD20 per-entry name sub-loader)~~ **DECODED 2026-05-31**

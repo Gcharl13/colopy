@@ -10,7 +10,7 @@ from it — even with no prior context.
 ## Prime directive
 Every reconstructed value traces to a **byte-verified** artifact in the original
 binary — a file offset, a `NAMES.TXT` field, or a recorded ruling. **Never guess.**
-If a value can't be cited, it's marked `TBD`, not invented.
+If a value can't be cited, it's marked `not yet decoded`, not invented.
 
 ## Status — phased import
 This repo is being assembled in phases (largest, most-derivable assets last):

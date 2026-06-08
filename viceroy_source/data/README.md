@@ -34,7 +34,7 @@ time:
 So **their numeric values cannot be byte-verified from VICEROY.EXE alone** — they
 require the `COLONIZE/*.TXT` files (the prior project's
 `extracted/text/NAMES_sections.json` came from those). Until those are supplied,
-every value in the `*.c` files below is `[TBD — external data file]`, NOT a
+every value in the `*.c` files below is `[not yet decoded — external data file]`, NOT a
 byte-fact. Each file now carries that banner; the struct *layouts* (strides/field
 order, byte-verified from the accessors) are the reusable part.
 
@@ -54,5 +54,5 @@ accessors:
 
 `terrain_yield.c`, `unit_classes.c`, `building_costs.c`, `ff_effects.c`,
 `kings_demands.c`, `scenario_starts.c`, `commodity_prices.c`, `tribe_data.c` —
-**layout-only**. Values are `[TBD — external]` pending the `.TXT` data files.
+**layout-only**. Values are `[not yet decoded — external]` pending the `.TXT` data files.
 `embedded_control_tables.c` — **BYTE_VERIFIED** real EXE tables.

@@ -46,12 +46,12 @@ citation blocks, with the function rename applied (no longer
 ### `func_0759E8` @ 0x0759E8  (1438 bytes)
 
 - **File:** `overlay_0745F0_077A6A.c`
-- **Inferred role:** EUROPE_SCREEN or MENU_DRAW (TBD)
+- **Inferred role:** EUROPE_SCREEN or MENU_DRAW (not yet decoded)
 
 ### `func_03ADA6` @ 0x03ADA6  (1362 bytes)
 
 - **File:** `overlay_038A50_03C5A8.c`
-- **Inferred role:** TBD — large self-contained function with many branches
+- **Inferred role:** not yet decoded — large self-contained function with many branches
 
 ### `func_076642` @ 0x076642  (1194 bytes)
 

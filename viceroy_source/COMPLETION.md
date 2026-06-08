@@ -4,7 +4,7 @@
 
 | Metric                                          | Original VICEROY.EXE | Reconstructed |
 |-------------------------------------------------|---------------------:|--------------:|
-| Total file size                                 | 494,910 bytes        | TBD           |
+| Total file size                                 | 494,910 bytes        | not yet decoded |
 | **Total functions discovered**                  | **1,241**            | **1,241 cited** |
 | **Functions with citation block (`@asm`)**      | —                    | **1,241 / 1,241 = 100%** |
 | **Functions renamed away from `_unknown`**      | —                    | **1,167 / 1,167 = 100%** (all C-tree functions are role-renamed) |
@@ -28,7 +28,7 @@
 |------|------:|---------|
 | **BYTE_VERIFIED** | **~47** | Hand-decompiled; formula/layout confirmed against the actual bytes. The only functions safe to port as-is. |
 | **RECONSTRUCTED** | subset | Plausible semantics written but explicitly NOT byte-verified (carry a "DO NOT TRUST" banner, e.g. combat/market/mapgen). |
-| **@status SKELETON** | **~1,167** | Auto-traced control flow over `Purpose: UNKNOWN` asm; semantics TBD. ~92% of DISASM_LEDGER rows end in `Purpose: UNKNOWN`. |
+| **@status SKELETON** | **~1,167** | Auto-traced control flow over `Purpose: UNKNOWN` asm; semantics not yet decoded. ~92% of DISASM_LEDGER rows end in `Purpose: UNKNOWN`. |
 
 So the real progress number toward an exact 100% copy is the **~47 BYTE_VERIFIED**,
 not the 1,241. Closing the gap = promoting SKELETON → BYTE_VERIFIED, plus

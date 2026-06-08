@@ -71,7 +71,7 @@ expands to one or more lines of text.
 
 ## Citations
 
-- @asm_file  TBD (overlay-resident TXT-section parser)
+- @asm_file  not yet decoded (overlay-resident TXT-section parser)
 - @ref       ../../../extracted/text/NAMES_sections.json  -- the
               authoritative parsed terrain ordering
 - @rule      Per docs/RULINGS.md: terrain ordering MUST come from

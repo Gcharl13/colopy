@@ -58,14 +58,14 @@ Answers: "where/how do I test that the UI and visuals are figured out?" Built
 - **Coded layouts now exist [V]** for Map-HUD / Europe / **Colony** / Reports /
   Title / Hall-of-Fame (see `SCREEN_LAYOUTS.md`). Colony was re-traced to its real
   composer func_028592 (the first pass mis-attributed the Europe composer 0x031E4C
-  — RULINGS 2026-05-30). A few leaf constants remain `[recol-xref]`/TBD-inner: the
+  — RULINGS 2026-05-30). A few leaf constants remain `[recol-xref]`/not yet decoded: the
   Europe banner pixel origin, and the colony per-type BUILDING.SS sprite indices
   (one call deeper than the building loop).
 - **Continental Congress / FF** and **Naval adviser** screens are not yet coded.
 - **No golden regression images** exist for colony / europe / reports — only the map. Adding
   per-screen goldens (captured per `CAPTURE_PLAN.md`) would make those screens automatically
   testable instead of eyeball-only.
-- A few overlay report dialogs are `TBD-inner` (e.g. the 854 B `dialog_dispatch`); their
+- A few overlay report dialogs are `not yet decoded` (e.g. the 854 B `dialog_dispatch`); their
   outer layout is decoded, inner per-row wiring is cited-but-not-expanded.
 - The **cutscene/cinematic** player is intentionally out of scope (DOS media playback).
 

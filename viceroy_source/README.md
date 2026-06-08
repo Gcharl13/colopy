@@ -170,8 +170,8 @@ status. Every function's status is one of:
 
 - **DONE**: complete, citation-backed, byte-verifiable
 - **PARTIAL**: written but with TODO markers (e.g. for unresolved overlay calls)
-- **STUB**: function declared with body `{ /* TBD: see func_<offset>.asm */ }`
-- **TBD**: not yet started
+- **STUB**: function declared with body `{ /* not yet decoded: see func_<offset>.asm */ }`
+- **not yet decoded**: not yet started
 
 The total tree will not be complete in a single session. The plan in
 `COMPLETION.md` shows the order: boot/runtime first (smallest, best

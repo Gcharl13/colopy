@@ -24,7 +24,7 @@ based on the user's sound config (CONFIG.COL).
 - Sound driver selection (which of A/G/P/R)
 - Audio cue level (none / minimal / full)
 - Music on/off
-- (more flags TBD)
+- (more flags not yet decoded)
 
 ## Loader
 
@@ -34,7 +34,7 @@ COL is loaded by the sound init code.
 
 ## Citations
 
-- @asm_file  TBD (sound-init in overlay; config-load in load_image)
+- @asm_file  not yet decoded (sound-init in overlay; config-load in load_image)
 - @ref       ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1 (mention
               of "AdLib/Sound Blaster via ASOUND.COL/GSOUND.COL/...")
 - @rule      The four sound drivers are mutually exclusive at runtime;

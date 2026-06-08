@@ -33,7 +33,7 @@ The framebuffer is **direct-write**. (FABRICATED claim removed: an earlier
 draft asserted flicker was mitigated by a "per-tile dirty-rect system that
 only redraws what changed." No such system exists in VICEROY.EXE — the
 verified `func_O514` redraws the whole 15×12 viewport unconditionally each
-frame. See `src/render/tile_chain.c`. Double-buffering status: TBD.)
+frame. See `src/render/tile_chain.c`. Double-buffering status: not yet decoded.)
 
 ## Top-level render dispatch
 
