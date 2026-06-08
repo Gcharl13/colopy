@@ -349,7 +349,7 @@ check_bytes("2087A g_report_lbl_2EDA[0..2] = [0,0x2D65,0] (col header label IDs)
 check_bytes("20882 g_report_lbl_2EE2[0..2] cell label IDs (col=0,row=0..2)", 0x20882,
             "00 00 00 1a 00 00")
 
-# ---- func_04CC50 remaining TBD-inner thunks resolved (BYTE_VERIFIED 2026-06-08) ----
+# ---- func_04CC50 remaining previously-unresolved thunks resolved (BYTE_VERIFIED 2026-06-08) ----
 # 0x181F:0x8BC thunk (Type-B, ea=0x0427:0x0D38=func_0073A8 unit-chain-score)
 check_bytes("1AEAC 0x181F:0x8BC thunk EA to 0x0427:0x0D38 (func_0073A8 unit_chain_score)", 0x1AEAC,
             "9a 91 0d 0d 11 ea 38 0d 27 04")
