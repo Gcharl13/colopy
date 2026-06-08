@@ -6,8 +6,8 @@
  * *loaded from NAMES.TXT at game start* (func_0749E0 reads 40+ named
  * sections — see MEMORY.md "NAMES.TXT is the canonical source"); they are
  * NOT hard-coded constants in the EXE image.  Therefore every numeric cell of
- * the yield table below is a TBD placeholder: the STRUCTURE (base address,
- * stride, index formula) is byte-verified, the VALUES are TBD-from-NAMES.TXT.
+ * the yield table below has a BYTE_VERIFIED structure (base address,
+ * stride, index formula) is byte-verified, the VALUES are RUNTIME_ONLY (loaded from NAMES.TXT at game start).
  *
  * --- CITE-OR-TBD LEDGER --------------------------------------------------
  *  BYTE_VERIFIED structure:
@@ -18,7 +18,7 @@
  *    - update_finished_good_from_raw control flow @asm 0x8E84..0x8EFC
  *    - the three band arrays g_band_base/over_low/over_high
  *                                             @asm 0x8E02 / 0x8E46
- *  TBD (loaded from NAMES.TXT @CARGO/@JOB/@BUILDING at game start):
+ *  RUNTIME_ONLY (loaded from NAMES.TXT @CARGO/@JOB/@BUILDING at game start):
  *    - every numeric yield in g_terrain_yield_table
  *    - the building-level threshold table read by 0x8D9C (DGROUP:0x2F4)
  *    - the raw->finished conversion ratios beyond the structural 2/3 step
@@ -81,8 +81,7 @@ const struct production_chain k_production_chains[5] = {
  * The "×2/3 when building level > 2" step is structurally byte-verified; the
  * 2/3 and 3/2 ratios are literal in the instruction stream (SHL/×2; MOV cx,3 /
  * IDIV; ×3 / SAR).  Which @BUILDING level maps to the >2 threshold (the
- * production-cap a forge/factory grants) is the TBD @BUILDING column from
- * NAMES.TXT.
+ * production-cap a forge/factory grants) is RUNTIME_ONLY (@BUILDING column from NAMES.TXT).
  * ============================================================================ */
 
 /* ============================================================================
@@ -94,7 +93,7 @@ const struct production_chain k_production_chains[5] = {
  *   => cell = g_terrain_yield_table[terrain_id*16 + good_id]
  *
  * Declared in globals.h as g_terrain_yield_table[0x400] (64 terrain ids x 16).
- * VALUES ARE TBD: loaded from NAMES.TXT @CARGO at game start (func_0749E0),
+ * VALUES ARE RUNTIME_ONLY (loaded from NAMES.TXT @CARGO at game start) (func_0749E0),
  * NOT hard-coded in VICEROY.EXE.  We zero-initialize so the structure is
  * self-contained; a loader (see load_game_state.py) supplies the real cells.
  *
@@ -105,8 +104,8 @@ const struct production_chain k_production_chains[5] = {
  * Row meaning: terrain_id (base terrain, from LCALL 0x3E4:0xE / 0x3E4:0x3A).
  * ============================================================================ */
 uint8_t g_terrain_yield_table[0x400] = {
-    /* TBD-from-NAMES.TXT @CARGO: 64 terrains x 16 goods. Zero placeholder —
-     * the real cells are data-driven and not present in the EXE image. */
+    /* RUNTIME_ONLY (NAMES.TXT @CARGO: 64 terrains x 16 goods; data-driven, not in EXE image.
+     * Zero placeholder at compile time.) */
     0
 };
 
@@ -130,9 +129,9 @@ uint16_t g_over_high[20]      = { 0 };   /* DGROUP:0x8E5A (over_high[6]=0x8E66 =
  *
  * @ref find_pair_in_table_C8_DE @ 0x8892 — scans these parallel byte tables.
  * The initial values are written by the overlay-resident colony-init code and
- * are NOT in the load image; TBD on an overlay-decode pass. */
-uint8_t g_pair_key1[20] = { /* TBD: set by overlay colony-init */ 0 };  /* DGROUP:0xC8 */
-uint8_t g_pair_key2[20] = { /* TBD: set by overlay colony-init */ 0 };  /* DGROUP:0xDE */
+ * are NOT in the load image; RUNTIME_ONLY (set on overlay-decode pass). */
+uint8_t g_pair_key1[20] = { /* RUNTIME_ONLY: set by overlay colony-init */ 0 };  /* DGROUP:0xC8 */
+uint8_t g_pair_key2[20] = { /* RUNTIME_ONLY: set by overlay colony-init */ 0 };  /* DGROUP:0xDE */
 
 /* ============================================================================
  * Colony-turn scalar auxiliaries (BSS; addresses cited).
@@ -177,8 +176,8 @@ uint16_t g_tutorial_flag_348 = 0; /* DGROUP:0x348 */
 
 /* Map dimensions — real home is BSS at DGROUP:0x853A/0x853C; written at map load.
  * (Prior fixed defaults 56/70 were unverified guesses and have been removed.) */
-uint16_t g_map_width  = 0;        /* DGROUP:0x853A  TBD: set at map load */
-uint16_t g_map_height = 0;        /* DGROUP:0x853C  TBD: set at map load */
+uint16_t g_map_width  = 0;        /* DGROUP:0x853A  RUNTIME_ONLY (set at map load) */
+uint16_t g_map_height = 0;        /* DGROUP:0x853C  RUNTIME_ONLY (set at map load) */
 
 /* Game-progress cluster (addresses per globals.h). */
 uint16_t g_progress_4_5394 = 0;   /* DGROUP:0x5394 */
@@ -191,7 +190,7 @@ uint16_t g_progress_539C   = 0;   /* DGROUP:0x539C  unit count */
 uint16_t g_progress_5382   = 0;   /* DGROUP:0x5382 */
 
 /* C runtime / boot globals — definitions kept here for link completeness. */
-uint16_t g_NFILE_QQ           = 0; /* DGROUP:0x27B9  TBD: set by cstart */
+uint16_t g_NFILE_QQ           = 0; /* DGROUP:0x27B9  RUNTIME_ONLY (set by C runtime cstart) */
 uint16_t g_argc               = 0; /* DGROUP:0x27CF */
 uint16_t g_argv               = 0; /* DGROUP:0x27D1 */
 uint16_t g_envp               = 0; /* DGROUP:0x27D3 */
