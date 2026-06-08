@@ -444,13 +444,16 @@ int func_008770_colony_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  PowerRecord gold reader (== power_record_read_dword, power.h)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0087F4_logic_sz_18(uint16_t arg0_bp_06)
+uint32_t func_0087F4_logic_sz_18(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0087F7 imul bx,[bp+6],0x13c; 0x0087FC mov ax,[bx-0x77ce];
+     *      0x008800 mov dx,[bx-0x77cc]  -> returns dx:ax (32-bit).
+     * -0x77CE == DGROUP +0x8832 == PowerRecord base 0x8808 + 0x2A = gold dword
+     * (DGROUP_MEMORY_MAP §3.5). Reads PowerRecord[arg0].gold. */
+    return *(uint32_t near *)(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A);
 }
 
 /* @asm        0x008806..0x008845  (63 bytes)  region=load_image
@@ -683,13 +686,17 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-unit-type attribute lookup (table 0x30E keyed by unit type)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008BB2_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x008BB5 imul bx,[bp+6],0x1c; 0x008BB9 mov bl,[bx+0x3146]
+     *      (UnitRecord.type, +0x02); 0x008BBF mov al,[bx+0x30e]; cwde.
+     * Looks up a signed per-unit-type attribute byte from the DGROUP table at
+     * 0x030E, indexed by unit_table[arg0].type (DGROUP_MEMORY_MAP §3.1). */
+    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    return (int8_t)*(uint8_t near *)(0x030E + type);
 }
 
 /* @asm        0x008BC6..0x008BD3  (13 bytes)  region=load_image
@@ -701,13 +708,16 @@ int func_008BB2_logic_sz_20(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-good attribute lookup (signed byte table at 0x2F5)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008BC6_logic_sz_13(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x008BC9 mov bx,[bp+6]; 0x008BCC mov al,[bx+0x2f5]; cwde.
+     * Signed-byte lookup into the per-good attribute table at DGROUP:0x02F5,
+     * indexed by arg0 (a good/commodity id). Sits beside the GOOD_TO_* tables
+     * at 0x2AA/0x2F4/0x2FD (audit.py). */
+    return (int8_t)*(uint8_t near *)(0x02F5 + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x008BD4..0x008C1D  (73 bytes)  region=load_image

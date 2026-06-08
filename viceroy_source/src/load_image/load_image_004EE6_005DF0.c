@@ -106,13 +106,15 @@ int func_0050BC_op_sz_51(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  global setter (writes DGROUP word [0x009A])
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0050F0_logic_sz_11(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x0050F3 mov ax,[bp+6]; 0x0050F6 mov [0x9a],ax -- setter for the
+     * DGROUP word at 0x009A; returns the value written (left in ax). */
+    *(uint16_t near *)0x009A = arg0_bp_06;
+    return arg0_bp_06;
 }
 
 /* @asm        0x0050FC..0x005107  (11 bytes)  region=load_image
@@ -124,13 +126,15 @@ int func_0050F0_logic_sz_11(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  global setter (writes DGROUP word [0x0098])
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0050FC_logic_sz_11(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x0050FF mov ax,[bp+6]; 0x005102 mov [0x98],ax -- setter for the
+     * DGROUP word at 0x0098; returns the value written (left in ax). */
+    *(uint16_t near *)0x0098 = arg0_bp_06;
+    return arg0_bp_06;
 }
 
 /* @asm        0x005108..0x00513B  (51 bytes)  region=load_image
