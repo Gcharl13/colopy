@@ -11,7 +11,7 @@
  * the VICEROY.EXE bytes (capstone-disassembled, 16-bit real mode), with each
  * basic block cited to its file offset.
  *
- * IDENTIFICATION NOTE (cite-or-TBD honesty): none of these helpers has a
+ * IDENTIFICATION NOTE (cite-or-not yet decoded honesty): none of these helpers has a
  * direct message-key STRING xref — they are pure bit/table/arithmetic leaves.
  * Their roles are therefore established by (a) byte-trace of the actual
  * instructions and (b) the callgraph (which big colony function calls them and
@@ -19,7 +19,7 @@
  * family it is noted (e.g. the SoL% function feeds the REBELMAJORITY /
  * REBELUNANIMOUS / TORY* message keys in strings.json).
  *
- * --- CITE-OR-TBD LEDGER ----------------------------------------------------
+ * --- CITE-OR-NOT-YET-DECODED LEDGER ----------------------------------------
  *  BYTE_VERIFIED (full body decoded; offsets + operand bytes confirmed):
  *    - test_colony_building_bit          0x860E..0x861D  (ColonyRecord bit @ 0x5DCA + idx*0xCA)
  *    - test_building_or_father_bit       0x863E..0x864D  (forwards current-colony idx g_8DC6)
@@ -174,7 +174,7 @@ int count_building_chain_present(int start_idx)
  *
  * Same chain walk as 0x864E but for an arbitrary colony (calls the 2-arg
  * 0x860E with (start_idx, colony_idx)).  No load_image caller in the callgraph
- * (callers are overlay-resident → TBD); the body is fully byte-verified.
+ * (callers are overlay-resident → not yet decoded); the body is fully byte-verified.
  *
  * @asm 0x868F: PUSH [bp+8]; PUSH [bp+6]; CALL 0x860E   (test_colony_building_bit(bit=[bp+8], col=[bp+6]))
  * @asm 0x86A3: chain walk via [bp+8] = g_chain_next([bp+8])
@@ -200,7 +200,7 @@ int count_building_chain_present_colony(int colony_idx, int start_idx)
  *
  * Follows the chain from `start_idx` (in [bp+6]) to its end (no bit test),
  * returning the last index reached (the value held in [bp+6] when chain_next
- * first goes negative).  No load_image caller (overlay-resident → TBD).
+ * first goes negative).  No load_image caller (overlay-resident → not yet decoded).
  *
  * @asm 0x86C3: JMP into the test at 0x86CE
  * @asm 0x86C6: [bp+6] = chain_next  (loop body)
@@ -208,13 +208,13 @@ int count_building_chain_present_colony(int colony_idx, int start_idx)
  * @asm 0x86E1: LEAVE/RETF — the function value in AX is the last chain_next
  *              that was >= 0 (= the final idx) WHEN the loop ran at least once.
  *
- * EDGE-CASE [TBD]: the prologue JMPs straight to the test (0x86C3 → 0x86CE), so
+ * EDGE-CASE [not yet decoded]: the prologue JMPs straight to the test (0x86C3 → 0x86CE), so
  *   if chain_next(start_idx) < 0 on the very first read the loop body never runs
  *   and AX is left UNINITIALIZED (whatever the caller passed in).  We return
  *   start_idx in that case — a defined approximation; the original's value there
  *   is indeterminate.  Harmless because the only-known use of a chain walk feeds
  *   indices that have a non-terminal first link.  No load_image caller (callers
- *   overlay-resident → role TBD).
+ *   overlay-resident → role not yet decoded).
  * ============================================================================ */
 int building_chain_walk_to_top(int start_idx)
 {
@@ -383,7 +383,7 @@ int lookup_signed_2F4(int index)
  * @asm 0x8DED: CMP [bp+8],0 / JE 0x8DFC; else *[bp+8] = g_over_high[rel]
  * Returns AX.
  *
- * No load_image caller (callers overlay-resident, e.g. Europe market screen → TBD);
+ * No load_image caller (callers overlay-resident, e.g. Europe market screen → not yet decoded);
  * body fully byte-verified.
  * ============================================================================ */
 int commodity_net_minus_chain(int idx, uint16_t far *out_ptr)

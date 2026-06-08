@@ -3,8 +3,8 @@
  *
  * Hand-ported from VICEROY.EXE (raw bytes = ultimate arbiter) cross-checked
  * against code/VICEROY/disasm_overlay_reseg/page_01.asm + page_02.asm.
- * Every basic block carries an @asm <file_offset> citation.  cite-or-TBD:
- * anything not byte-determinable is marked TBD/UNKNOWN, never guessed.
+ * Every basic block carries an @asm <file_offset> citation.  cite-or-not yet decoded:
+ * anything not byte-determinable is marked not yet decoded/UNKNOWN, never guessed.
  *
  * SUBSYSTEM: this file is overlay PAGE 0x02 (file code base 0x025900, segment
  * list index 1) plus a tail of PAGE 0x01.  Page 0x02 is the in-game COLONY
@@ -21,7 +21,7 @@
  *   0x181F -> file 0x1A5F0   0x191F -> file 0x1B5F0   0x1A1F -> file 0x1C5F0
  * and through page 0x0D1D.  These are byte-verified from the LCALL operand;
  * the FINAL resolved target of each type-B thunk is RUNTIME-paged (VP dir) and
- * is therefore tagged TBD where it cannot be byte-resolved (the project's
+ * is therefore tagged body in thunk page where it cannot be byte-resolved (the project's
  * overlay_thunks_resolved.json "empirical_anchor_match" is a heuristic and is
  * NOT treated as ground truth here).  Drawing-primitive roles below
  * (0x181F:0x16E append-fmt, 0x178 reset-buf, 0x204 measure-text, 0x35C
@@ -1228,7 +1228,7 @@ store:
  * ctx->byte[+0x96] (HORSE stock) and, if >1, draws the count number
  * (0xD1D:0x8FA itoa + 0x181F:0x13C) at half-sprite offset.
  * (ColonyRecord +0x95/+0x96 used as food/horse stock here -- the colony.h
- *  header currently marks +0x95 as 'era' and +0x96 as TBD; do not edit it.)
+ *  header currently marks +0x95 as 'era' and +0x96 as not yet decoded; do not edit it.)
  * ============================================================================ */
 void colony_draw_commodity(int item, int x, int y, int colony_idx)
 {

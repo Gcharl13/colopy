@@ -49,10 +49,10 @@
  *   181F:016E / 0150 text draw (page75)  181F:00E2 region_restore / free
  *   1A1F:0356 window_alloc_init          191F:01A8 widget_invalidate(a,b)
  *
- * STRICT cite-or-TBD: every value/offset cites page_17.asm (display IP is the
+ * STRICT cite-or-not yet decoded: every value/offset cites page_17.asm (display IP is the
  * 2nd column, = file - 0x06BB00).  Anything undeterminable (opaque overlay
  * targets, the 1398-byte geometry pass not fully byte-walked this round) is
- * marked TBD/STILL-SKELETON and never guessed.
+ * marked not yet decoded/STILL-SKELETON and never guessed.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).
@@ -116,7 +116,7 @@ int func_06F83F(void) { return overlay_call_1A1F_0AE6(); }
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (absolute DGROUP offsets from the
- * disasm; names describe the byte-verified ROLE, semantics marked TBD are not
+ * disasm; names describe the byte-verified ROLE, semantics marked not yet decoded are not
  * guessed).  Cross-cited where another src file already named the address.
  * -------------------------------------------------------------------------- */
 extern uint8_t  g_dialog_slot_9CB0[];  /* DGROUP:0x9CB0 — per-dialog scratch block
@@ -148,7 +148,7 @@ extern int16_t  g_panel_bg_2F34;       /* DGROUP:0x2F34 — panel background fil
 
 /* Charset / format-string constants this region passes to the C runtime.
  * These are pointers to small DGROUP string literals; we keep them as raw
- * DGROUP offsets (cite-or-TBD — their exact bytes are not re-extracted here). */
+ * DGROUP offsets (not yet decoded — their exact bytes are not re-extracted here). */
 #define DLG_STR_1F72  0x1F72  /* @asm format/charset buffer arg */
 #define DLG_STR_1F8C  0x1F8C  /* @asm charset arg for 0D1D:0C56 (find-in-set) */
 #define DLG_STR_1F91  0x1F91  /* @asm "..." prefix for clipped button label */

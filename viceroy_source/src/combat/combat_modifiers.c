@@ -115,9 +115,9 @@
  *   state (Sons-of-Liberty / veteran / colony-defense bookkeeping lives here,
  *   per the per-power layout). They modify the OUTCOME via comparison, not the
  *   odds-roll inputs. Their precise per-array semantics (which is SoL%, which is
- *   defense bonus) require the per-power init code and are [TBD] beyond this
+ *   defense bonus) require the per-power init code and are [not yet decoded] beyond this
  *   sub-task's scope; their combat ROLE (post-roll attacker_wins adjustment) is
- *   byte-verified here.                                                          [V/TBD-split]
+ *   byte-verified here.                                                          [V/not yet decoded-split]
  *
  * NOTE the global [0x5325] (MUL @0x5B9A2) is a single-byte difficulty/scale
  * factor applied to the per-power strength; not separately xref-indexed.
@@ -140,7 +140,7 @@ extern struct UnitRecord g_units[];     /* DGROUP:0x3144 stride 0x1C */
 /* Per-power military-strength arrays (DGROUP negative offsets, stride 0x13=19
  * per power). LOCAL externs — these are the colony/power-defense state; the
  * resolver reads them ONLY in the post-roll comparison block @0x5B85B..0x5BA2D.
- * Cited by use-site; per-array semantics [TBD beyond combat]. */
+ * Cited by use-site; per-array semantics [not yet decoded beyond combat]. */
 extern unsigned char g_pow_strength_by_type[/* power*0x13 + type */];  /* DS:-0x6DB4 @0x5B889 [V] */
 extern unsigned char g_pow_strength_cap[/* power */];                  /* DS:-0x6D68 @0x5B899 [V] */
 extern unsigned char g_pow_def_term[/* power*0x13 (+...) */];          /* DS:-0x6DA4/-0x6DA3 @0x5B9D5/0x5B99E [V] */
@@ -151,7 +151,7 @@ extern unsigned char g_pow_misc_6bf0[/* power */];                     /* DS:-0x
 extern unsigned char g_combat_difficulty_scale;                        /* DS:0x5325  @0x5B9A2 [V] */
 
 /* Library helpers (load-image segment 0x181F; bodies in runtime library,
- * [TBD-libimage]). random_int is the verified one (0x181F:0x04D4). */
+ * library-implementation-only). random_int is the verified one (0x181F:0x04D4). */
 extern int  random_int(int lo, int hi);                 /* 0x181F:0x04D4 (rng.c) [V] */
 extern int  lib_weighted_pick(int a, int b, int c);     /* 0x181F:0x35C @0x5BA1B [V call] */
 

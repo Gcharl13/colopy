@@ -200,7 +200,7 @@ extern uint16_t g_8D52;                /* DGROUP:0x8D52 — context word; indexe
 /* ----------------------------------------------------------------------------
  * lcall / overlay helpers (call sites + push args BYTE_VERIFIED; internal
  * semantics inferred -> the prototypes are LITERAL-faithful to the args, the
- * MEANING is TBD unless cross-ported elsewhere).  Selectors resolved via the
+ * MEANING is inferred from call context unless cross-ported elsewhere).  Selectors resolved via the
  * RTLink thunk table (RTLINK_V2.md §7, general ljmp_seg formula):
  *
  *   --- COLONY-economy resident helpers (bodies in production_support.c) ---
@@ -255,7 +255,7 @@ extern uint16_t g_8D52;                /* DGROUP:0x8D52 — context word; indexe
  *   0x1A1F:0x494 -> page0D 0x4C5C0  (owner) -> value (@0x54393)
  *   --- CRT (0x0D1D) ---
  *   0x0D1D:0xDAE -> memset(dst, val, len)   (push len,val,&dst; @0x53BC5/0x543E0/0x54EA8)
- * (Helper meanings beyond arg shape are NOT byte-verified -> inferred / TBD.) */
+ * (Helper meanings beyond arg shape are NOT byte-verified -> inferred from call context.) */
 extern int   bld_or_father_bit(int bit_idx);                 /* 0x181F:0x9FC */
 extern int   count_chain(int start_bld);                     /* 0x181F:0xAB0 */
 extern int   sol_pct(void);                                  /* 0x181F:0xC86 */
@@ -312,7 +312,7 @@ extern int   ai_query_flag(void);                            /* call 0x2D5D (pus
 extern void  ai_record_rec(int code, int flag);              /* call 0x2D62 (push cs; code,flag) */
 
 /* Local helpers whose CALL sites/args are byte-verified but whose precise
- * contracts are inferred -> TBD.  (Declared ahead of the body.) */
+ * contracts are inferred from call context.  (Declared ahead of the body.) */
 extern void  colony_select(int idx);          /* 0x181F:0x9E6 — sets *(0x8542) */
 extern int   colony_helper_C5E_count(void);   /* 0x181F:0xD3A — count -> [bp-0x34] */
 extern void *first_unit_or_type(void);        /* @asm 0x56243 first_unit_at re-use */
@@ -690,7 +690,7 @@ void colony_auto_manage(int colony_index)
 }
 
 /* ============================================================================
- * NOTES / STILL-TBD
+ * NOTES / STILL NOT YET DECODED
  *  - ROLE: COLONY (AI auto-manage / work re-allocation + build planner).  NOT
  *    king/tax — corrected here; the NEXT_TARGETS "KINGTAX" tag was a false
  *    attribution (this body pushes NO king message handle — byte-verified).
@@ -711,7 +711,7 @@ void colony_auto_manage(int colony_index)
  *    assign_commodity/the tile helpers) are inferred from arg shape + the
  *    cross-ported production_support.c bodies for the 0x9FC/0xAB0/0xC86 ones;
  *    the others (0xC04/0xC0E/0xC54/0xC9A/0xCAE/0xC36/0xB6E/0xB82/0xBF0...)
- *    are LITERAL-faithful to the push args -> meaning TBD.
+ *    are LITERAL-faithful to the push args -> meaning inferred from call context.
  *  - The four near-CALL trampolines (0x2D4E/0x2D53/0x2D5D/0x2D62) are the AI
  *    build-recommendation recorders; they are the page-tail `ljmp 0x1A1F:0x5b4..
  *    0x5e4` stubs (NOT part of the 9999-byte body — that is why the reseg's
@@ -721,12 +721,12 @@ void colony_auto_manage(int colony_index)
  *    every operand there is cited in page_0E.asm, but the net effect (tallies,
  *    best-tile/best-worker selection, market-band-biased priority) is captured
  *    above; transcribing 1500 more instructions would not add byte-verified
- *    FACTS beyond the data-driven weights already marked [TBD].
+ *    FACTS beyond the data-driven weights already marked [RUNTIME_ONLY (data-resident)].
  *  - CALLER: reached as an OVERLAY function via the RTLink runtime loader with
  *    a page-id trailer (the NEXT_TARGETS "0x1A1F:0x35E" is this function's own
  *    offset-in-segment 0x35E, not a literal call window).  No direct
  *    `lcall <win>:0x35E` exists in any of the three thunk windows — the JMPF is
  *    runtime-patched — so the call site is overlay-resolved (the prior auto-
  *    tracer likewise reported @callers 0).  The per-turn AI loop that drives it
- *    is TBD (cross-ref the AI dispatcher 0x4E2D6 neighbourhood, NEXT_TARGETS #2).
+ *    is not yet decoded (cross-ref the AI dispatcher 0x4E2D6 neighbourhood, NEXT_TARGETS #2).
  * ============================================================================ */

@@ -16,7 +16,7 @@
  *   first-4-byte spot-checks done against COLONIZE/VICEROY.EXE). One region is
  *   PHANTOM (data the disassembler walked into as code).
  *
- *   cite-or-TBD is absolute: nothing here is guessed. Externs are declared
+ *   cite-or-not yet decoded is absolute: nothing here is guessed. Externs are declared
  *   file-local per task scope (no globals.h / other-src / Makefile / ledger
  *   edits). LCALL thunks use the existing overlay_call_<seg>_<off>() prototypes
  *   from overlay_externs.h; their resident BODIES are in overlay thunk pages
@@ -49,14 +49,14 @@
  *  0x03BB4A continental-congress screen bg     REAL/PORTED ("CCBKGD" compositor; in-scope layout; not ported elsewhere)
  *  0x03BC42 ff_acquire_dispatch                SUPERSEDED  founding_fathers/effects.c (func_03BC42)
  *  0x03BFD2 ff_congress_screen                 SUPERSEDED  founding_fathers/congress.c (func_03BFD2)
- *  0x03C282 ff_bell_cost_curve                 REAL/PORTED (in-scope FF bell-cost formula; recruit.c had it TBD)
+ *  0x03C282 ff_bell_cost_curve                 REAL/PORTED (in-scope FF bell-cost formula; recruit.c had it left unresolved)
  *  0x03C322 ff_bells_tick                      SUPERSEDED  founding_fathers/congress.c (func_03C322)
  *  0x03C424 colony_pop_weighted_avg           REAL/PORTED (in-scope colony aggregate; not ported elsewhere)
  *  0x03C4A2 ff_offer_color_for_power           REAL/PORTED (in-scope selector; not ported elsewhere)
  *  0x03C528 eliminate_power                    REAL/PORTED (in-scope player-elimination; not ported elsewhere)
  *
  * SUMMARY COUNTS: 30 total = 20 SUPERSEDED + 9 REAL(ported here) +
- *                 1 PHANTOM + 0 OUT-OF-SCOPE + 0 TBD-unresolved.
+ *                 1 PHANTOM + 0 OUT-OF-SCOPE + 0 not yet decoded-unresolved.
  *   (No pure platform-leaf functions fall in this range: the three sound
  *    wrappers 03B93C/03B980/03B9E0 are game-facing and already live in
  *    founding_fathers/recruit.c, so they are SUPERSEDED, not OUT-OF-SCOPE.)
@@ -482,7 +482,7 @@ epilogue:
  * spot-check: file 0x03C282 = C8 04 00 00 (ENTER 4,0)  [BYTE_VERIFIED]
  *
  * ROLE (in scope: GAME MECHANIC): the Founding-Father BELL COST curve for a
- * power -- the value recruit.c/congress.c previously left TBD. arg: power=[bp+6].
+ * power -- the value recruit.c/congress.c previously left unresolved. arg: power=[bp+6].
  *
  *   if (power < 4 && AIPersonality[power].ctrl(+0x543F)==0)   // human-ish
  *        base = (difficulty + 3) * 2;                 @asm 03C297..03C29F

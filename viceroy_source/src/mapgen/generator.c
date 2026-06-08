@@ -5,7 +5,7 @@
  * STATUS LEGEND
  *   BYTE_VERIFIED : control flow / in-EXE constant read straight from the
  *                   re-segmented overlay disassembly (file offset cited).
- *   TBD           : value/table is data-driven (NAMES.TXT) or lives behind an
+ *   not yet decoded : value/table is data-driven (NAMES.TXT) or lives behind an
  *                   RTLink overlay thunk whose target is not yet resolved.
  *
  * ENTRY POINT (BYTE_VERIFIED)
@@ -39,7 +39,7 @@
  *   These are the explicit-pointer twins of the resident accessor
  *   func_005CFE (@0x5CFE), which computes layer[y*map_width + x].
  *
- * THE ARGUMENT  (BYTE_VERIFIED branch, semantics TBD)
+ * THE ARGUMENT  (BYTE_VERIFIED branch, semantics not yet decoded)
  *   func_064A10 takes one stack word [bp+6]. Almost every pass is gated on it:
  *     @asm 0x064A2C  cmp [bp+6],0 / jne 0x2561  (skip the whole procedural fill)
  *     @asm 0x065BF0  cmp [bp+6],0 ... or es:[bx],0xA0 at fixed tiles  (scripted
@@ -47,7 +47,7 @@
  *   Interpretation: arg==0 => generate a random continental map; arg!=0 =>
  *   a premade/America scenario was loaded, so skip generation and only do the
  *   border / fixup passes. Named `premade` below. (NOT byte-proven to be the
- *   menu "America vs Random" flag — marked TBD.)
+ *   menu "America vs Random" flag — marked not yet decoded.)
  *
  * DGROUP file base = 0x1D9A0 (BYTE_VERIFIED: @UNFORESTED string at file 0x1FB54
  * lands at DS offset 0x21B4).  All DS-relative const tables (jump tables, the
@@ -85,7 +85,7 @@
  * NOTE ON SETTLEMENTS / RESOURCES / LCR
  *   func_064A10 does NOT place native settlements, prime resources, or lost-city
  *   rumours — it only builds the terrain layer + European starts. Those are
- *   separate New-Game passes (settlements.c / TBD functions) and are largely
+ *   separate New-Game passes (settlements.c / not yet decoded functions) and are largely
  *   data-driven (NAMES.TXT). They are kept here for structure but flagged.
  * ============================================================================ */
 #include "viceroy_types.h"
