@@ -31,7 +31,10 @@ extern void far *g_map_layer_160;   /* DGROUP:0x0160..0x0163 (far ptr); @ref map
 /* ----------------------------------------------------------------------------
  * Unit table
  * ---------------------------------------------------------------------------- */
-extern struct UnitRecord  unit_table[];   /* DGROUP:0x3146 (stride 0x1C); see unit.h */
+/* unit_table: canonical decl is in unit.h (pointer aliased to DG_UNIT_TABLE,
+ * g_dgroup+0x3144). Was wrongly declared here as an array `unit_table[]` (a
+ * conflicting decl); reconciled to the pointer form. */
+extern struct UnitRecord far *unit_table;   /* DGROUP:0x3144 (stride 0x1C); see unit.h */
 extern uint16_t           g_unit_chain;   /* DGROUP:0x315C (2 bytes ahead of table base) */
 
 /* ----------------------------------------------------------------------------

@@ -70,11 +70,11 @@ extern uint8_t g_dgroup[DGROUP_SIZE];     /* the real data segment (runtime/dgro
 #undef  DGROUP_PTR
 #define DGROUP_PTR(addr)  DG_PTR(addr)
 
-/* Modern build: g_dgroup is zero-initialized; dgroup_init() reconstructs the
- * INITIALIZED static-data window (DS 0x0000..0x2CC5) from the game data files
- * -- NOT from VICEROY.EXE bytes (copyright). Everything >= ~0x2CC5 is BSS. */
-#ifdef _VICEROY_MODERN
+/* dgroup_init() points the record tables (unit_table/power/ai_personality) at
+ * the data segment and, in the modern build, reconstructs the INITIALIZED
+ * static-data window (DS 0x0000..0x2CC5) from the game data files -- NOT from
+ * VICEROY.EXE bytes (copyright). Everything >= ~0x2CC5 is BSS. Call at startup.
+ * (runtime/dgroup.c) */
 void dgroup_init(void);
-#endif
 
 #endif /* VICEROY_DGROUP_H */

@@ -89,8 +89,12 @@ struct PowerRecord {
 /* Physically 4 EU records at DGROUP:0x8808 (0x8808..0x8CF8). The [8] is a logical
  * convenience for power-index args 0..7; native "powers" 4..11 do NOT own a full
  * 0x13C PowerRecord (their state lives in the 0x54EC NativeSettlement table). See
- * DGROUP_MEMORY_MAP §3.5 / §5.3. Do not index beyond 3 expecting real EU state. */
-extern struct PowerRecord power[8];
+ * DGROUP_MEMORY_MAP §3.5 / §5.3. Do not index beyond 3 expecting real EU state.
+ * Aliased into the data segment via DG_POWER_TABLE (runtime/dgroup.c): in the
+ * modern build it points at g_dgroup+0x8808, in DOS at DS:0x8808. `power[p]`
+ * indexes it; local vars/params named `power` shadow it normally. (Changed from
+ * `power[8]` array to a pointer for the aliasing -- no sizeof/&array reliance.) */
+extern struct PowerRecord *power;
 
 /* ----------------------------------------------------------------------------
  * Power index conventions

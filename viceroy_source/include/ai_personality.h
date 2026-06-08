@@ -49,7 +49,10 @@ struct AIPersonality {              /* base DGROUP:0x540E, stride 0x34 (52 bytes
 #define AI_TABLE_BASE         0x540E  /* DGROUP-relative; field +0x00 = LEADERNAME */
 #define AI_CONTROLLER_OFF     0x31    /* controller flag at +0x31 (DGROUP:0x543F) */
 
-extern struct AIPersonality ai_personality[4];
+/* Aliased into the data segment via DG_AI_TABLE (runtime/dgroup.c): modern build
+ * points it at g_dgroup+0x540E, DOS at DS:0x540E. (Changed from `[4]` array to a
+ * pointer for the aliasing.) */
+extern struct AIPersonality *ai_personality;
 
 /* ----------------------------------------------------------------------------
  * Pre-defined per-nation personalities — DISPROVEN / not yet decoded.
