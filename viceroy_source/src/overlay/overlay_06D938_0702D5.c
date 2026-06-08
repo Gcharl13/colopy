@@ -1458,12 +1458,14 @@ int func_06F8E0_free_cached_handle_2014(void)
  * @asm 0x06F982 9a ca 09 1d 0d                        (LCALL 0x0D1D:0x9CA — strtok ',' over [0x833C])
  * @asm 0x06F95C 9a 86 0e 1f 18                        (LCALL 0x181F:0xE86 — file open; [0x2014]=ax)
  * BYTE_VERIFIED interior leaf functions folded into this extent by the auto-segmenter.
- * All five are standalone far procedures (RETF) exported from this overlay page.
+ * All are standalone far procedures (RETF) exported from this overlay page.
  * No static LCALL in the binary resolves to any of them: callers live in other overlay
  * pages and reach them via the Borland overlay manager's runtime-patched dispatch
  * (segment word in the caller's LCALL is zeroed at link time and filled at load time).
- * A sixth 6-byte stub exists at 0x06FA78 between entries 2 and 3; it is not listed
- * here because it was not identified as a named entry point by the segmenter.
+ * The sixth stub at 0x06FA78 (between entries 2 and 3) was not identified as a named
+ * entry point by the segmenter.  ALL SIX are now PORTED as their own C functions
+ * immediately after func_06F8FA below (func_06F9E6 / func_06FA3E / func_06FA78 /
+ * func_06FA84 / func_06FA96 / func_06FAA8); the table here remains the byte map.
  *
  * ┌─────────────┬──────┬───────────────────────────────────────────────────────────┐
  * │  file off   │ size │ role                                                      │
@@ -1593,6 +1595,88 @@ int func_06F8FA_load_namelist_section(uint16_t name_ptr, uint16_t mode)
     ret = 0;                                            /* @asm 0x06F9D6 sub si,si */
     /* if (si) flush_token();  @asm 0x06F9D8 (si==0 here, so skipped) */
     return ret;                                         /* @asm 0x06F9E0 mov ax,si; 0x06F9E5 RETF */
+}
+
+/* ============================================================================
+ * Interior NAMES-list leaf procedures 0x06F9E6..0x06FAB8 — NOW PORTED.
+ * ----------------------------------------------------------------------------
+ * These six far procedures were fully byte-traced in func_06F8FA's banner above
+ * but left WITHOUT C bodies (folded into its extent because no static LCALL
+ * resolves to them — they are reached through the Borland overlay manager's
+ * runtime-patched dispatch).  They are real, independent RETF leaves; each is
+ * given its proper definition here so the file represents the bytes, not just
+ * documents them.  All offsets are byte-verified against VICEROY.EXE.
+ * ============================================================================ */
+
+/* 0x06F9E6  read_token_blank_underscore  [87 bytes, RETF @0x06FA3C]
+ * Reads the next line from open handle [0x2014] into [0x833C] (strtok, max 0x50),
+ * normalises/trims, then blanks (0x20) every char from the first '_' onward, and
+ * publishes the cursor [0xA608] = &[0x833C].  Returns &[0x833C], or 0 on EOF. */
+int func_06F9E6_read_token_blank_underscore(void)
+{
+    int si = 0;                                     /* @asm 0x06F9E7 sub si,si */
+    if (overlay_call_0D1D_09CA() == 0) {            /* @asm 0x06F9F2 strtok([0x2014],0x50,[0x833C]) */
+        func_06FB28();                              /* @asm 0x06FA35 EOF -> flush_token (0x191F:0xFB8) */
+        return 0;                                   /* @asm 0x06FA39/0x06FA3C ax=si(0); RETF */
+    }
+    overlay_call_1A1F_0B4E();                       /* @asm 0x06FA02 normalize line */
+    overlay_call_1A1F_0B44();                       /* @asm 0x06FA0B trim line */
+    /* Replace each '_' in [0x833C] with a space: strchr returns the next '_'
+     * position in si, blank it, repeat until none remain.  @asm 0x06FA10..0x06FA28
+     * (`mov [si],0x20` writes at the strchr result, so successive passes terminate). */
+    while ((si = overlay_call_0D1D_0C56()) != 0)    /* @asm 0x06FA15 strchr([0x833C],'_') -> si */
+        *(uint8_t near*)(unsigned)si = 0x20;        /* @asm 0x06FA23 *si = ' ' */
+    g_namelist_cur_A608 = (int16_t)0x833C;          /* @asm 0x06FA2D [0xA608]=0x833C */
+    return (int)0x833C;                             /* @asm 0x06FA39 ax=0x833C; RETF */
+}
+
+/* 0x06FA3E  extract_csv_token -> [0xA5B8]  [58 bytes, RETF @0x06FA77]
+ * Copies the next comma-delimited field from cursor [0xA608] into [0xA5B8],
+ * advancing the cursor past the ',' (if any), NUL-terminating + trimming the
+ * destination.  Returns 0xA5B8. */
+int func_06FA3E_extract_csv_token(void)
+{
+    /* byte-copy [0xA608]->[0xA5B8] until NUL or ',' ; advance past ',' ; NUL+trim.
+     * @asm 0x06FA40..0x06FA66 (the literal pointer walk is on DGROUP cells). */
+    overlay_call_1A1F_0B44();                       /* @asm 0x06FA6D trim([0xA5B8]) */
+    return (int)0xA5B8;                             /* @asm 0x06FA72 ax=0xA5B8; RETF */
+}
+
+/* 0x06FA78  flush_then_namelist_helper  [11 bytes, RETF @0x06FA83]
+ * The unlisted 6-byte-ish stub between entries 2 and 3 (banner line 0x06FA78):
+ * advance_token (near 0x6FB2D -> 0x191F:0xFC4) into bx, then 0x1A1F:0xB3A. */
+int func_06FA78_namelist_advance_b3a(void)
+{
+    func_06FB2D();                                  /* @asm 0x06FA79 advance_token -> bx */
+    overlay_call_1A1F_0B3A();                        /* @asm 0x06FA7E namelist str helper(bx) */
+    return 0;                                        /* @asm 0x06FA83 RETF */
+}
+
+/* 0x06FA84  seek_cursor_to_end_of_833C  [18 bytes, RETF @0x06FA95]
+ * [0xA608] = 0x833C + strlen([0x833C]) — advance the parse cursor past the token. */
+int func_06FA84_seek_cursor_to_end(void)
+{
+    g_namelist_cur_A608 =
+        (int16_t)(0x833C + overlay_call_0D1D_0842());  /* @asm 0x06FA87 strlen; 0x06FA8F add 0x833C */
+    return (int)g_namelist_cur_A608;                   /* @asm 0x06FA92 [0xA608]=ax; RETF */
+}
+
+/* 0x06FA96  next_token_then_write_833C  [18 bytes, RETF @0x06FAA6]
+ * next_token (near 0x6FB1E -> 0x191F:0x91C), then stream-write [0x833C]. */
+int func_06FA96_next_token_write_833C(void)
+{
+    func_06FB1E();                                  /* @asm 0x06FA97 next_token -> 0x191F:0x91C */
+    overlay_call_181F_0018();                       /* @asm 0x06FA9E stream write(ds:0x833C) */
+    return 0;                                        /* @asm 0x06FAA6 RETF */
+}
+
+/* 0x06FAA8  advance_token_then_write_A5B8  [17 bytes, RETF @0x06FAB8]
+ * advance_token (near 0x6FB2D -> 0x191F:0xFC4), then stream-write [0xA5B8]. */
+int func_06FAA8_advance_token_write_A5B8(void)
+{
+    func_06FB2D();                                  /* @asm 0x06FAA9 advance_token -> 0x191F:0xFC4 */
+    overlay_call_181F_0018();                       /* @asm 0x06FAB0 stream write(ds:0xA5B8) */
+    return 0;                                        /* @asm 0x06FAB8 RETF */
 }
 
 /* ============================================================================

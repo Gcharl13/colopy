@@ -356,7 +356,9 @@ void func_07464C_colony_or_unit_record_setter6(uint16_t idx_ax, uint16_t val0_dx
  * (Stale banner "9 bytes TINY_RETURN" is WRONG; the reseg sizes it 856 because
  * a frameless data-init block follows with no prologue.  The real function is
  * 0x32 bytes 0x074688..0x0746BB, terminal `retf 6`, verified in raw EXE:
- *   55 8b ec 53 56 ... 5e c9 ca 06 00.)
+ *   55 8b ec 53 56 ... 5e c9 ca 06 00.  That trailing frameless block
+ *   0x0746BC..0x0749DF is now ported separately as
+ *   func_0746BC_init_founding_fathers_table, below.)
  * Writes a 6-byte-stride record (si = arg0_bp_06*6) into a table based at
  * DGROUP -0x6874..-0x6870.  Args: AL/DL come in registers (DL->cl), plus
  * stack [bp+0xa], [bp-2] (word), [bp+8].
@@ -383,6 +385,149 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
     *((uint8_t  near *)(si - 0x6872)) = (uint8_t)arg2_bp_0A;   /* @asm 0x0746A2/0746A5 */
     *((uint16_t near *)(si - 0x6870)) = arg3_bp_m2;            /* @asm 0x0746A9/0746AC */
     *((uint8_t  near *)(si - 0x6871)) = (uint8_t)arg1_bp_08;   /* @asm 0x0746B0/0746B3 */
+}
+
+/* ----------------------------------------------------------------------------
+ * Page-0x1A record-setter trampolines reached by the hardcoded table init below.
+ * Both are near `call` sites that ljmp into page 0x12 (seg 0x1A1F); declared
+ * file-local per the project's cite-or-extern rule (siblings of the
+ * page1A_names_subloader trampoline at 0x1A1F:0xD20).  Raw bytes verified:
+ *   0x076384: EA 2E 0D 1F 1A   (ljmp 0x1A1F:0x0D2E)
+ *   0x07638E: EA 4A 0D 1F 1A   (ljmp 0x1A1F:0x0D4A)
+ * Roles inferred from the call-site argument shape (index/prereq/next/category
+ * tuple writer, and the same writer with an extra magnitude word). */
+extern int father_table_set_076384(uint16_t index_ax, uint16_t prereq_dx,
+                                    uint16_t category, uint16_t next_idx); /* 0x1A1F:0x0D2E */
+extern int father_table_set_value_07638E(uint16_t a_ax, uint16_t index_dx,
+                                          uint16_t magnitude_bx, uint16_t category,
+                                          uint16_t neg1, uint16_t p2);      /* 0x1A1F:0x0D4A */
+
+/* ============================================================================
+ * func_0746BC — init_founding_fathers_table   [DONE — BYTE_VERIFIED, newly ported]
+ * ----------------------------------------------------------------------------
+ * THE HARDCODED FOUNDING-FATHERS PREREQUISITE / CATEGORY TABLE INITIALISER.
+ * This is the FRAMELESS block (no ENTER prologue; starts at `push 1`) that the
+ * func_074688 banner flagged as "a data-init block follows with no prologue"
+ * but the prior pass left UNPORTED.  Full extent 0x0746BC..0x0749DF, terminal
+ * RETF @0x0749DF (the very next byte, 0x0749E0, is func_0749E0's ENTER).
+ *
+ * It seeds the 42 founding fathers (index 0x00..0x29) across 15 categories
+ * (0x00..0x0E), recording for each father: its PREREQUISITE father (dx; 0xFFFF =
+ * none) and the NEXT father in the same category chain ([bp+0xA]; -1 = end of
+ * chain), via setter 0x1A1F:0x0D2E (near 0x076384).  Then six fathers get an
+ * extra numeric magnitude (bx = 500/1000/2000/3000/2000/5000) via setter
+ * 0x1A1F:0x0D4A (near 0x07638E) — the "scaled effect" fathers (e.g. gold/bell
+ * thresholds).  The names themselves come from NAMES.TXT @FATHERS (cnt 0x19 of
+ * the simple rows + the chained extension here); this routine fixes the STATIC
+ * topology (who unlocks whom, and in which category column).
+ *
+ * The (index, prereq, next, category) tuples are byte-exact from the call sites:
+ * @asm 0x0746BC  set(0x00, none, 0x01, cat0)
+ * @asm 0x0746CB  set(0x01, 0x00, 0x02, cat0)
+ * @asm 0x0746DA  set(0x02, 0x01, end,  cat0)
+ * @asm 0x0746EB  set(0x03, none, 0x04, cat1)   0x074708 set(0x04,0x03,0x05,cat1)
+ * @asm 0x07470C  set(0x05, 0x04, end,  cat1)
+ * @asm 0x07471D  set(0x06, none, 0x07, cat2)   0x07472D set(0x07,0x06,0x08,cat2)
+ * @asm 0x07473E  set(0x08, 0x07, end,  cat2)
+ * @asm 0x07474F  set(0x09, none, end,  cat3)   0x07475F set(0x0A,0x09,0x0B,cat3)
+ * @asm 0x074770  set(0x0B, 0x0A, end,  cat3)
+ * @asm 0x074781  set(0x1E, 0x0B, 0x1F, cat3)   0x074792 set(0x1F,0x1E,end,cat3)
+ * @asm 0x0747A3  set(0x0C, none, 0x0D, cat4)   0x0747B3 set(0x0D,0x0C,0x0E,cat4)
+ * @asm 0x0747C4  set(0x0E, 0x0D, end,  cat4)
+ * @asm 0x0747D5  set(0x0F, none, 0x10, cat5)   0x0747E5 set(0x10,0x0F,end,cat5)
+ * @asm 0x0747F6  set(0x11, none, end,  cat5)
+ * @asm 0x074806  set(0x12, none, end,  cat6)
+ * @asm 0x074816  set(0x13, none, 0x14, cat7)   0x074826 set(0x14,0x13,end,cat7)
+ * @asm 0x074837  set(0x15, none, 0x16, cat8)   0x074847 set(0x16,0x15,0x17,cat8)
+ * @asm 0x074858  set(0x17, 0x16, end,  cat8)
+ * @asm 0x074869  set(0x18, none, 0x19, cat9)   0x074879 set(0x19,0x18,0x1A,cat9)
+ * @asm 0x07488A  set(0x1A, 0x19, end,  cat9)
+ * @asm 0x07489B  set(0x1B, none, 0x1C, catA)   0x0748AB set(0x1C,0x1B,0x1D,catA)
+ * @asm 0x0748BC  set(0x1D, 0x1C, end,  catA)
+ * @asm 0x0748CD  set(0x20, none, 0x21, catB)   0x0748DD set(0x21,0x20,0x22,catB)
+ * @asm 0x0748EE  set(0x22, 0x21, end,  catB)
+ * @asm 0x0748FF  set(0x23, none, end,  catC)
+ * @asm 0x07490F  set(0x24, 0x23, end,  catC)
+ * @asm 0x074920  set(0x25, none, end,  catD)
+ * @asm 0x074930  set(0x26, 0x25, end,  catD)
+ * @asm 0x074941  set(0x27, none, 0x28, catE)   0x074951 set(0x28,0x27,0x29,catE)
+ * @asm 0x074962  set(0x29, 0x28, end,  catE)
+ * Six magnitude fathers (setter 0x07638E, a_ax=0, push p2/-1/category):
+ * @asm 0x074973  setv(idx 0x0B, mag 0x01F4=500,  cat0, p2=2)
+ * @asm 0x074985  setv(idx 0x0D, mag 0x03E8=1000, cat1, p2=2)
+ * @asm 0x074997  setv(idx 0x0E, mag 0x07D0=2000, cat2, p2=4)
+ * @asm 0x0749A9  setv(idx 0x0F, mag 0x0BB8=3000, cat3, p2=6)
+ * @asm 0x0749BB  setv(idx 0x10, mag 0x07D0=2000, cat4, p2=3)
+ * @asm 0x0749CD  setv(idx 0x11, mag 0x1388=5000, cat5, p2=8)
+ * @asm 0x0749DF  retf
+ * ============================================================================ */
+void func_0746BC_init_founding_fathers_table(void)
+{
+    /* category 0 */
+    father_table_set_076384(0x00, 0xFFFF, 0, 0x01);  /* @asm 0x0746BC */
+    father_table_set_076384(0x01, 0x00,   0, 0x02);  /* @asm 0x0746CB */
+    father_table_set_076384(0x02, 0x01,   0, 0xFFFF);/* @asm 0x0746DA (next=end) */
+    /* category 1 */
+    father_table_set_076384(0x03, 0xFFFF, 1, 0x04);  /* @asm 0x0746EB */
+    father_table_set_076384(0x04, 0x03,   1, 0x05);  /* @asm 0x074708 */
+    father_table_set_076384(0x05, 0x04,   1, 0xFFFF);/* @asm 0x07470C */
+    /* category 2 */
+    father_table_set_076384(0x06, 0xFFFF, 2, 0x07);  /* @asm 0x07471D */
+    father_table_set_076384(0x07, 0x06,   2, 0x08);  /* @asm 0x07472D */
+    father_table_set_076384(0x08, 0x07,   2, 0xFFFF);/* @asm 0x07473E */
+    /* category 3 (with the 0x1E/0x1F extension pair spliced after 0x0B) */
+    father_table_set_076384(0x09, 0xFFFF, 3, 0xFFFF);/* @asm 0x07474F */
+    father_table_set_076384(0x0A, 0x09,   3, 0x0B);  /* @asm 0x07475F */
+    father_table_set_076384(0x0B, 0x0A,   3, 0xFFFF);/* @asm 0x074770 */
+    father_table_set_076384(0x1E, 0x0B,   3, 0x1F);  /* @asm 0x074781 */
+    father_table_set_076384(0x1F, 0x1E,   3, 0xFFFF);/* @asm 0x074792 */
+    /* category 4 */
+    father_table_set_076384(0x0C, 0xFFFF, 4, 0x0D);  /* @asm 0x0747A3 */
+    father_table_set_076384(0x0D, 0x0C,   4, 0x0E);  /* @asm 0x0747B3 */
+    father_table_set_076384(0x0E, 0x0D,   4, 0xFFFF);/* @asm 0x0747C4 */
+    /* category 5 */
+    father_table_set_076384(0x0F, 0xFFFF, 5, 0x10);  /* @asm 0x0747D5 */
+    father_table_set_076384(0x10, 0x0F,   5, 0xFFFF);/* @asm 0x0747E5 */
+    father_table_set_076384(0x11, 0xFFFF, 5, 0xFFFF);/* @asm 0x0747F6 */
+    /* category 6 */
+    father_table_set_076384(0x12, 0xFFFF, 6, 0xFFFF);/* @asm 0x074806 */
+    /* category 7 */
+    father_table_set_076384(0x13, 0xFFFF, 7, 0x14);  /* @asm 0x074816 */
+    father_table_set_076384(0x14, 0x13,   7, 0xFFFF);/* @asm 0x074826 */
+    /* category 8 */
+    father_table_set_076384(0x15, 0xFFFF, 8, 0x16);  /* @asm 0x074837 */
+    father_table_set_076384(0x16, 0x15,   8, 0x17);  /* @asm 0x074847 */
+    father_table_set_076384(0x17, 0x16,   8, 0xFFFF);/* @asm 0x074858 */
+    /* category 9 */
+    father_table_set_076384(0x18, 0xFFFF, 9, 0x19);  /* @asm 0x074869 */
+    father_table_set_076384(0x19, 0x18,   9, 0x1A);  /* @asm 0x074879 */
+    father_table_set_076384(0x1A, 0x19,   9, 0xFFFF);/* @asm 0x07488A */
+    /* category 0xA */
+    father_table_set_076384(0x1B, 0xFFFF, 0xA, 0x1C);/* @asm 0x07489B */
+    father_table_set_076384(0x1C, 0x1B,   0xA, 0x1D);/* @asm 0x0748AB */
+    father_table_set_076384(0x1D, 0x1C,   0xA, 0xFFFF);/* @asm 0x0748BC */
+    /* category 0xB */
+    father_table_set_076384(0x20, 0xFFFF, 0xB, 0x21);/* @asm 0x0748CD */
+    father_table_set_076384(0x21, 0x20,   0xB, 0x22);/* @asm 0x0748DD */
+    father_table_set_076384(0x22, 0x21,   0xB, 0xFFFF);/* @asm 0x0748EE */
+    /* category 0xC */
+    father_table_set_076384(0x23, 0xFFFF, 0xC, 0xFFFF);/* @asm 0x0748FF */
+    father_table_set_076384(0x24, 0x23,   0xC, 0xFFFF);/* @asm 0x07490F */
+    /* category 0xD */
+    father_table_set_076384(0x25, 0xFFFF, 0xD, 0xFFFF);/* @asm 0x074920 */
+    father_table_set_076384(0x26, 0x25,   0xD, 0xFFFF);/* @asm 0x074930 */
+    /* category 0xE */
+    father_table_set_076384(0x27, 0xFFFF, 0xE, 0x28);/* @asm 0x074941 */
+    father_table_set_076384(0x28, 0x27,   0xE, 0x29);/* @asm 0x074951 */
+    father_table_set_076384(0x29, 0x28,   0xE, 0xFFFF);/* @asm 0x074962 */
+
+    /* six magnitude fathers (index in dx, magnitude in bx, category pushed). */
+    father_table_set_value_07638E(0, 0x0B, 0x01F4, 0, 0xFFFF, 2);  /* @asm 0x074973 mag 500  */
+    father_table_set_value_07638E(0, 0x0D, 0x03E8, 1, 0xFFFF, 2);  /* @asm 0x074985 mag 1000 */
+    father_table_set_value_07638E(0, 0x0E, 0x07D0, 2, 0xFFFF, 4);  /* @asm 0x074997 mag 2000 */
+    father_table_set_value_07638E(0, 0x0F, 0x0BB8, 3, 0xFFFF, 6);  /* @asm 0x0749A9 mag 3000 */
+    father_table_set_value_07638E(0, 0x10, 0x07D0, 4, 0xFFFF, 3);  /* @asm 0x0749BB mag 2000 */
+    father_table_set_value_07638E(0, 0x11, 0x1388, 5, 0xFFFF, 8);  /* @asm 0x0749CD mag 5000 */
 }
 
 /* ============================================================================

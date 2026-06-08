@@ -235,43 +235,142 @@ int func_070494_draw_difficulty_screen(void)
     return 0;                                            /* @asm 0x07057E RETF */
 }
 
+/* point_in_rect (0x181F:0x03CA) — used by the modal row-hit scans below; not in
+ * overlay_externs.h, declared file-local per the project's cite-or-extern rule.
+ * (docs/thunk_signatures.json: 0x181F:0x03CA = point_in_rect(x0,y0,x1,y1).) */
+extern int overlay_call_181F_03CA(void);  /* 0x181F:0x03CA -- point_in_rect */
+
 /* ============================================================================
- * func_070580 — difficulty_pick_dispatch   [DONE — control flow BYTE_VERIFIED]
+ * func_070580 — difficulty_pick_dispatch   [DONE — BYTE_VERIFIED, tail reconstructed]
  * ----------------------------------------------------------------------------
- * The modal loop / dispatcher behind the difficulty screen (sister of the
- * nation dispatcher func_070A1A, ~514 bytes).  It runs the input/format chain
- *   0x181F:0x44E (poll/get-event) -> if 0: 0x181F:0x998 (test) and exit,
- *   else 0x181F:0x3B6/0x3F4 (set clip/region), 0x181F:0x444 (draw box),
- *   0x181F:0xE2 (flush), then via near-call 0x070C64 (-> 0x1A1F:0x0BF2) format,
- *   0x181F:0x47A/0x466/0xF6 (hit-test against the row rects), and 0x181F:0x3E0
- *   (resolve which difficulty row the cursor is over) -- writing the result to
- *   the difficulty byte [0x53A6] when a row is chosen.
+ * The MODAL keyboard/mouse loop behind the difficulty-picker screen (sister of
+ * the nation dispatcher func_070A1A; full extent 0x070580..0x070781, ENTER
+ * 0x312,0; terminal RETF @0x070781).  Returns the saved-screen flag [bp-6].
  *
- * @asm 0x0705A8  lcall 0x181F:0x44E (event)  ; if AX==0 -> 0x998 test then exit
- * @asm 0x0705D8  lcall 0x181F:0x3B6          ; @asm 0x0705E3 0x3F4 region
- * @asm 0x070611  lcall 0x181F:0x444 (box)    ; @asm 0x070623 0xE2 flush
- * @asm 0x070629  call 0x070C64 (-> 0x1A1F:0x0BF2 format)
- * @asm 0x07062C/0x070638/0x070643  lcall 0x181F:0x47A/0x466/0xF6 (hit-test)
- * @asm 0x07064C  lcall 0x181F:0x3E0 (row resolve) -> stores [0x53A6]
- * (Touches DGROUP 0x07F0/0x07F6/0xA60A read; 0x53A6/0xA60A written.)
+ * CORRECTED 2026-06-08: the prior body was COLLAPSED and had the top-level
+ * branch INVERTED.  It claimed `event==0` was the exit path and stopped at the
+ * single 0x3E0 resolve (0x07064C); in fact the per-func dump truncated at the
+ * first RET (0x070781 is reached only via the loop) and the real routine is:
+ *   (a) `event!=0` is the ACCELERATOR shortcut (a menu key was already pressed):
+ *       run ovl_popup_simple(0x2036); if its result <=0 just exit, else set the
+ *       difficulty = result-1 and fall straight to the saved-screen teardown.
+ *   (b) `event==0` is the INTERACTIVE path: a do/while loop that redraws the box
+ *       + 5 rows, polls the keyboard (0x3E0=kbd_poll) and the mouse rects
+ *       (0x3CA=point_in_rect), and lets the user move the highlighted difficulty
+ *       up/down with arrows/space/Enter (mod-5 wrap) or click a row, until Enter
+ *       or a click commits (done=0) — exactly mirroring func_070A1A.
+ *
+ * Keyboard map (key in [bp-0x312], 5 difficulties so wrap is mod 5):
+ *   ESC(0x1B)            -> return (abort, keep done=1, screen NOT restored path)
+ *   8 / 0x148(up)/0x14B  -> UP   : [0x53A6] = ([0x53A6]+4) % 5   (= cur-1)
+ *   9 / 0x150(down)/0x14D-> DOWN : [0x53A6] = ([0x53A6]+1) % 5
+ *   0x0D(Enter)/space    -> commit (done flag [bp-8] = 0)
+ * After each up/down the old + new rows are repainted via draw_difficulty_row
+ * (near 0x070C50) so only the two affected rows redraw.
+ *
+ * @asm 0x070584  done([bp-6]) = 1 ; [0xA60A] = 0
+ * @asm 0x0705A8  event = cc_bg_load_44E(0x202D, regions...) ; if 0 -> 0x705D8 (loop)
+ * @asm 0x0705B4  r = ovl_popup_simple(0x2036) ([bp-2]) ; if r<=0 RETF; else [0x53A6]=r-1; -> teardown
+ * @asm 0x0705D8  set clip 0x3B6 ; restore region 0x3F4(ss:[bp-0x310])
+ * @asm 0x070636  LOOP top: 0x444 draw box ; 0xE2 flush ; near 0x070C64 format
+ * @asm 0x07062C  0x47A hit-test setup ; redraw([bp-8])=1 ; 0x466 hit-test ; [bp-4]=[0xA60A]
+ * @asm 0x070643  if (point_in_rect 0xF6 == 0) goto 0x70677 (skip key handling)
+ * @asm 0x07064C  key = kbd_poll 0x3E0 -> [bp-0x312] ; dispatch (see map above)
+ * @asm 0x070692  UP:   [bp-4]=[0x53A6]; ax=[0x53A6]+4
+ * @asm 0x0706C0  DOWN: [bp-4]=[0x53A6]; ax=[0x53A6]+1
+ * @asm 0x07069D  ([0x53A6] = ax % 5) ; redraw old row [bp-4] + new row [0x53A6]
+ * @asm 0x070677  if (![0x7F0] || ![0x7F6]) goto 0x70755 (no mouse rect scan)
+ * @asm 0x0706E5  for (row=0; row<5; row++) if (point_in_rect 0x3CA @x0x44,w0x5A) select row
+ * @asm 0x07073A  if ([0x7F4] && [0x7EA]<0x67 && [0x7E8]<0x80) done=0 (clicked in panel)
+ * @asm 0x070755  0x45C(0, done) present ; if (done) goto 0x70636 (loop)
+ * @asm 0x070768  done=0 ; teardown: 0x3B6 clip ; 0x3F4(0xFC00,0xA000) ; return [bp-6]
  * ============================================================================ */
 int func_070580_difficulty_pick_dispatch(void)
 {
-    if (overlay_call_181F_044E() == 0) {                /* @asm 0x0705A8 event; 0 -> exit path */
-        overlay_call_181F_0998();                       /* @asm 0x0705BE end-test */
-        return 0;                                        /* @asm 0x0705CA/0x0705D5 */
+    int saved_flag = 1;                                  /* @asm 0x070584 [bp-6] (return value) */
+    int done;                                            /* @asm [bp-8] keep-looping flag */
+    int old_row;                                         /* @asm [bp-4] previous selection */
+    int key;                                             /* @asm [bp-0x312] */
+    int row;                                             /* @asm [bp-0xE] mouse-scan index */
+
+    /* @asm 0x0705A8 cc_bg_load_44E -> nonzero means an accelerator key was queued. */
+    if (overlay_call_181F_044E() != 0) {
+        int r = overlay_call_181F_0998();               /* @asm 0x0705BE ovl_popup_simple(0x2036) */
+        if (r <= 0)                                      /* @asm 0x0705C6 or ax,ax; jg; else jmp 0x7076d */
+            return saved_flag;                           /* @asm 0x0705CA RETF (abort, screen NOT restored) */
+        g_difficulty_53A6 = (uint8_t)(r - 1);            /* @asm 0x0705D0 dec al -> [0x53A6] */
+        goto teardown;                                   /* @asm 0x0705D5 jmp 0x70768 */
     }
+
     overlay_call_181F_03B6();                            /* @asm 0x0705D8 set clip */
-    overlay_call_181F_03F4();                            /* @asm 0x0705E3 set region */
-    overlay_call_181F_0444();                            /* @asm 0x070611 draw box */
+    overlay_call_181F_03F4();                            /* @asm 0x0705E3 restore region (ss:[bp-0x310]) */
+
+    /* one-time: draw the difficulty box + 5 rows, arm the hit-tester. */
+    overlay_call_181F_0444();                            /* @asm 0x070611 draw difficulty box */
     overlay_call_181F_00E2();                            /* @asm 0x070623 flush */
-    func_070C64();                                       /* @asm 0x070629 format (-> 0x1A1F:0x0BF2) */
+    func_070C64();                                       /* @asm 0x070629 format rows (-> 0x1A1F:0x0BF2) */
     overlay_call_181F_047A();                            /* @asm 0x07062C hit-test setup */
-    overlay_call_181F_0466();                            /* @asm 0x070638 hit-test */
-    if (overlay_call_181F_00F6() != 0) {                 /* @asm 0x070643 cursor over a row? */
-        overlay_call_181F_03E0();                        /* @asm 0x07064C resolve -> [0x53A6] */
-    }
-    return 0;                                            /* @asm 0x07076D RETF */
+    done = 1;                                            /* @asm 0x070631 [bp-8]=1 (loop runs until commit) */
+
+    do {                                                 /* @asm 0x070636 LOOP top (input/present) */
+        overlay_call_181F_0466();                        /* @asm 0x070638 hit-test */
+        old_row = (int)*(uint16_t near*)0xA60A;          /* @asm 0x07063D [bp-4]=[0xA60A] */
+
+        if (overlay_call_181F_00F6() != 0) {             /* @asm 0x070643 cursor over the panel? */
+            key = overlay_call_181F_03E0();              /* @asm 0x07064C kbd_poll -> [bp-0x312] */
+
+            /* keyboard dispatch — UP/DOWN wrap mod 5, ESC abort, Enter commit.
+             * old_row ([bp-4]) is reloaded from [0x53A6] at the head of each
+             * UP/DOWN block (0x070692 / 0x0706C0) so the two repaints below hit
+             * the previous and the new selection. */
+            if (key == 0x1B) {                           /* @asm 0x07065C ESC */
+                return saved_flag;                       /* @asm 0x070661 jmp 0x7076d (RETF) */
+            } else if (key == 0x20 || key == 0x150 || key == 0x14D || key == 9) {
+                /* DOWN: (cur+1) % 5   @asm 0x0706C0 (space/down/right/key-9) */
+                old_row = (int)(uint8_t)g_difficulty_53A6;            /* @asm 0x0706C0 [bp-4] */
+                g_difficulty_53A6 = (uint8_t)(((uint8_t)g_difficulty_53A6 + 1) % 5); /* @asm 0x0706C8/0x07069D */
+                func_070C50();                           /* @asm 0x0706AB redraw old row [bp-4] */
+                func_070C50();                           /* @asm 0x0706B8 redraw new row [0x53A6] */
+            } else if (key == 8 || key == 0x148 || key == 0x14B) {
+                /* UP: (cur+4) % 5 == cur-1   @asm 0x070692 (key-8/up/left) */
+                old_row = (int)(uint8_t)g_difficulty_53A6;            /* @asm 0x070692 [bp-4] */
+                g_difficulty_53A6 = (uint8_t)(((uint8_t)g_difficulty_53A6 + 4) % 5); /* @asm 0x07069A/0x07069D */
+                func_070C50();                           /* @asm 0x0706AB redraw old row [bp-4] */
+                func_070C50();                           /* @asm 0x0706B8 redraw new row [0x53A6] */
+            } else if (key == 0x0D) {                    /* @asm 0x070670 Enter -> sub al,4 == 0 */
+                done = 0;                                 /* @asm 0x070672 [bp-8]=0 commit */
+            }
+        }
+
+        /* mouse-rect row scan — only if both mouse-present words are set. */
+        if (*(uint16_t near*)0x07F0 != 0 &&              /* @asm 0x070677 */
+            *(uint16_t near*)0x07F6 != 0) {              /* @asm 0x070681 */
+            for (row = 0; row < 5; row++) {              /* @asm 0x0706E5 cmp 5 */
+                func_070C46();                           /* @asm 0x0706F7 row geometry (-> 0x1A1F:0x0B90) -> [bp-0x10]/[bp-0xC] */
+                if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070707 or ax,ax; je 0x706e2 (else select) */
+                    old_row = (int)(uint8_t)g_difficulty_53A6;        /* @asm 0x070713 [bp-4] */
+                    g_difficulty_53A6 = (uint8_t)row;    /* @asm 0x07071B [0x53A6]=row */
+                    func_070C50();                       /* @asm 0x070725 redraw old row */
+                    func_070C50();                       /* @asm 0x070732 redraw new row (then 0x070738 jmp 0x706e2 continues) */
+                }
+            }
+            /* @asm 0x07073A clicked inside the panel area? -> commit */
+            if (*(uint16_t near*)0x07F4 != 0 &&          /* @asm 0x07073A */
+                *(int16_t near*)0x07EA < 0x67 &&         /* @asm 0x070741 */
+                *(int16_t near*)0x07E8 < 0x80)           /* @asm 0x070748 */
+                done = 0;                                /* @asm 0x070750 */
+        }
+
+        overlay_call_181F_045C();                        /* @asm 0x07075A present(0, done) */
+    } while (done != 0);                                 /* @asm 0x07075F if (done) jmp 0x70636 */
+
+    saved_flag = 0;                                      /* @asm 0x070768 [bp-6]=0 (completed normally) */
+
+teardown:
+    overlay_call_181F_03B6();                            /* @asm 0x07076D clip */
+    overlay_call_181F_03F4();                            /* @asm 0x070778 restore region (0xFC00,0xA000) */
+    (void)old_row; (void)key; (void)row;
+    return saved_flag;                                  /* @asm 0x07077D mov ax,[bp-6]; RETF */
 }
 
 /* ============================================================================
@@ -378,49 +477,133 @@ int func_07092E_draw_nation_screen(void)
 }
 
 /* ============================================================================
- * func_070A1A — nation_pick_dispatch   [DONE — control flow BYTE_VERIFIED]
+ * func_070A1A — nation_pick_dispatch   [DONE — BYTE_VERIFIED, tail reconstructed]
  * ----------------------------------------------------------------------------
- * Modal loop / dispatcher behind the nations screen (~665 bytes; structural
- * twin of func_070580).  Same event/format/hit-test chain
- *   0x181F:0x44E event -> if 0: 0x181F:0x998 then exit;
- *   0x181F:0x3B6/0x3F4 region, 0x181F:0x444 box, 0x181F:0xE2 flush,
- *   near 0x070C3C(format), 0x181F:0x47A/0x466/0xF6 hit-test,
- *   0x181F:0x3E0 row resolve -> writes the chosen nation index [0x5398].
- * Extra: when the cursor selects a row it also re-formats two adjacent labels
- *   via TWO near-calls 0x070C5F (-> draw_nation_row) and may re-arm a redraw
- *   via near 0x070C5A.  (Reads 0x07F0/0x07F6/0x201E/0x5398/0xA60A;
- *   writes 0x1F5C/0x5398/0xA60A.)
+ * The MODAL keyboard/mouse loop behind the NATIONS picker (full extent
+ * 0x070A1A..0x070C3B, ENTER 0x314,0; terminal RETF @0x070C3B).  Structural twin
+ * of func_070580, but the four nations sit in a 2x2 GRID, so navigation is mod
+ * 4 and the down-arrow moves by +2 (next row) while right moves +1 (next col).
+ * Returns the saved-screen flag [bp-8].
  *
- * @asm 0x070A42  lcall 0x181F:0x44E (event); 0 -> 0x998 then exit
- * @asm 0x070A7A/0x070A85  lcall 0x181F:0x3B6/0x3F4 (region)
- * @asm 0x070AB3  lcall 0x181F:0x444 (box)   @asm 0x070AC5 0xE2 flush
- * @asm 0x070ACB  call 0x070C3C (format)
- * @asm 0x070ACE/0x070ADA/0x070AE5  lcall 0x181F:0x47A/0x466/0xF6 (hit-test)
- * @asm 0x070AEE  lcall 0x181F:0x3E0 (resolve -> [0x5398])
- * @asm 0x070B5F/0x070B6A  call 0x070C5F x2 (redraw two rows)
- * @asm 0x070BBA  call 0x070C5A (re-arm)
+ * CORRECTED 2026-06-08: the prior body was COLLAPSED and INVERTED — it took
+ * `event==0` as the exit, ran a single 0x3E0 "resolve", invented an unconditional
+ * `func_070C5A()` tail, and stopped at 0x070BCE (which is actually mid-function,
+ * inside the mouse-rect repaint).  The per-func dump truncated at the first RET;
+ * the real routine is the interactive grid picker below.
+ *
+ * @asm 0x070A1E  done([bp-8]) = 1 ; [0xA60A] = 0
+ * @asm 0x070A42  event = cc_bg_load_44E(0x2043, regions...) ; if 0 -> 0x70A7A (loop)
+ * @asm 0x070A4E  [0x1F5C]=4 ; r = ovl_popup_simple(0x204B) ([bp-2])
+ * @asm 0x070A68  if r<=0 -> teardown(0x70C27, done still 1) ; else [0x5398]=r-1; -> 0x70C22
+ * @asm 0x070A7A  set clip 0x3B6 ; restore region 0x3F4(ss:[bp-0x312])
+ * @asm 0x070AB3  0x444 draw box ; 0xE2 flush ; near 0x070C3C format ; 0x47A hit-test setup
+ * @asm 0x070AD3  redraw([bp-0xA]) = 1
+ * @asm 0x070AD8  LOOP top: 0x466 hit-test ; [bp-6]=[0xA60A] ; if (point_in_rect 0xF6==0) goto 0x70B1C
+ * @asm 0x070AEE  key = kbd_poll 0x3E0 -> [bp-0x314] ; grid dispatch:
+ *                  ESC(0x1B)              -> teardown (abort)
+ *                  8 / 0x148(up)/0x14B    -> step = 3  ((cur+3)%4 = up/prev row)
+ *                  9 / 0x14D(right)/space -> step = 1  ((cur+1)%4 = next col)
+ *                  0x150(down)            -> step = 2  ((cur+2)%4 = next row)
+ *                  0x0D(Enter)            -> [bp-0xA] = 0 (commit)
+ * @asm 0x070B40  step block: [bp-6]=[0x5398]; [0x5398]=([0x5398]+step)%4;
+ *                  redraw old row [bp-6] + new row [0x5398] via near 0x070C5F x2
+ * @asm 0x070B1C  if (![0x7F0] || ![0x7F6]) goto 0x70BFC (no mouse scan)
+ * @asm 0x070B9F  for (row=0; row < (5 - ([0x201E]==1)); row++)
+ *                  if (point_in_rect 0x3CA @x0x58,w0x52) select row, redraw old+new
+ * @asm 0x070BFC  if ([0x7F4] && [0x7E8]<0x70) done([bp-0xA]) = 0 (clicked in panel)
+ * @asm 0x070C0F  0x45C(0, done) present ; if (done) goto 0x70AD8 (loop)
+ * @asm 0x070C22  done=0 ; teardown: 0x3B6 clip ; 0x3F4(0xFC00,0xA000) ; return [bp-8]
  * ============================================================================ */
 int func_070A1A_nation_pick_dispatch(void)
 {
-    if (overlay_call_181F_044E() == 0) {                /* @asm 0x070A42 event; 0 -> exit */
-        overlay_call_181F_0998();                       /* @asm 0x070A5E end-test */
-        return 0;                                        /* @asm 0x070A6A/0x070A77 */
+    int saved_flag = 1;                                  /* @asm 0x070A1E [bp-8] (return value) */
+    int done;                                            /* @asm [bp-0xA] keep-looping flag */
+    int old_row;                                         /* @asm [bp-6] previous selection */
+    int key;                                             /* @asm [bp-0x314] */
+    int row;                                             /* @asm [bp-4] mouse-scan index */
+    int step;                                            /* @asm [bp-0x10] navigation delta (1/2/3) */
+    int nation_count;
+
+    /* @asm 0x070A42 cc_bg_load_44E -> nonzero means an accelerator key was queued. */
+    if (overlay_call_181F_044E() != 0) {
+        int r;
+        *(uint16_t near*)0x1F5C = 4;                     /* @asm 0x070A4E menu context = 4 nations */
+        r = overlay_call_181F_0998();                   /* @asm 0x070A5E ovl_popup_simple(0x204B) */
+        if (r <= 0)                                      /* @asm 0x070A66 or ax,ax; jg; else jmp 0x70c27 */
+            goto teardown;                               /* @asm 0x070A6A (abort, done stays 1) */
+        g_sel_nation_5398 = (uint16_t)(r - 1);           /* @asm 0x070A70 dec al -> [0x5398] */
+        goto commit;                                     /* @asm 0x070A77 jmp 0x70c22 */
     }
-    overlay_call_181F_03B6();                            /* @asm 0x070A7A clip */
-    overlay_call_181F_03F4();                            /* @asm 0x070A85 region */
-    overlay_call_181F_0444();                            /* @asm 0x070AB3 box */
+
+    overlay_call_181F_03B6();                            /* @asm 0x070A7A set clip */
+    overlay_call_181F_03F4();                            /* @asm 0x070A85 restore region (ss:[bp-0x312]) */
+
+    /* one-time: draw the nations box + 4 grid cells, arm the hit-tester. */
+    overlay_call_181F_0444();                            /* @asm 0x070AB3 draw nations box */
     overlay_call_181F_00E2();                            /* @asm 0x070AC5 flush */
-    func_070C3C();                                       /* @asm 0x070ACB format (-> 0x1A1F:0x0B58) */
+    func_070C3C();                                       /* @asm 0x070ACB format cells (-> 0x1A1F:0x0B58) */
     overlay_call_181F_047A();                            /* @asm 0x070ACE hit-test setup */
-    overlay_call_181F_0466();                            /* @asm 0x070ADA hit-test */
-    if (overlay_call_181F_00F6() != 0) {                 /* @asm 0x070AE5 cursor over a row? */
-        if (overlay_call_181F_03E0() != 0) {             /* @asm 0x070AEE resolve -> [0x5398] */
-            func_070C5F();                               /* @asm 0x070B5F redraw row a */
-            func_070C5F();                               /* @asm 0x070B6A redraw row b */
+    done = 1;                                            /* @asm 0x070AD3 [bp-0xA]=1 (loop until commit) */
+
+    do {                                                 /* @asm 0x070AD8 LOOP top (input/present) */
+        overlay_call_181F_0466();                        /* @asm 0x070ADA hit-test */
+        old_row = (int)*(uint16_t near*)0xA60A;          /* @asm 0x070ADF [bp-6]=[0xA60A] */
+
+        if (overlay_call_181F_00F6() != 0) {             /* @asm 0x070AE5 cursor over the panel? */
+            key = overlay_call_181F_03E0();              /* @asm 0x070AEE kbd_poll -> [bp-0x314] */
+
+            /* 2x2 grid dispatch: up=+3, down=+2, right/space=+1 (all mod 4). */
+            step = 0;
+            if (key == 0x1B) {                           /* @asm 0x070B01 ESC */
+                goto teardown;                           /* @asm 0x070B06 jmp 0x70c27 (abort) */
+            } else if (key == 8 || key == 0x148 || key == 0x14B) {
+                step = 3;                                /* @asm 0x070B40 UP/left: (cur+3)%4 */
+            } else if (key == 0x150) {
+                step = 2;                                /* @asm 0x070B7A DOWN: (cur+2)%4 */
+            } else if (key == 0x20 || key == 0x14D || key == 9) {
+                step = 1;                                /* @asm 0x070B80 right/space/key-9: (cur+1)%4 */
+            } else if (key == 0x0D) {                    /* @asm 0x070B13 Enter -> sub al,4 == 0 */
+                done = 0;                                /* @asm 0x070B17 [bp-0xA]=0 commit */
+            }
+            if (step != 0) {                             /* @asm 0x070B40 step block */
+                old_row = (int)g_sel_nation_5398;        /* @asm 0x070B46 [bp-6] */
+                g_sel_nation_5398 = (uint16_t)(((int)g_sel_nation_5398 + step) % 4); /* @asm 0x070B4D idiv 4 */
+                func_070C5F();                           /* @asm 0x070B5F redraw old row [bp-6] */
+                func_070C5F();                           /* @asm 0x070B6A redraw new row [0x5398] */
+            }
         }
-    }
-    func_070C5A();                                       /* @asm 0x070BBA re-arm redraw */
-    return 0;                                            /* @asm 0x070BCE RETF */
+
+        /* mouse-rect grid scan — only if both mouse-present words are set.
+         * count = 5 when MULTI ([0x201E]==1) else 4. */
+        if (*(uint16_t near*)0x07F0 != 0 &&              /* @asm 0x070B1C */
+            *(uint16_t near*)0x07F6 != 0) {              /* @asm 0x070B26 */
+            nation_count = (*(uint16_t near*)0x201E == 1) ? 5 : 4;   /* @asm 0x070B9F cmp 1; sbb; add 5 */
+            for (row = 0; row < nation_count; row++) {   /* @asm 0x070BA9 cmp [bp-4] */
+                func_070C5A();                           /* @asm 0x070BBA cell geometry (-> 0x1A1F:0x0BC8) -> [bp-0x12]/[bp-0xE] */
+                if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070BCA point_in_rect(x0x58,w0x52) */
+                    old_row = (int)g_sel_nation_5398;    /* @asm 0x070BD6 [bp-6] */
+                    g_sel_nation_5398 = (uint16_t)row;   /* @asm 0x070BDC [0x5398]=row */
+                    func_070C5F();                       /* @asm 0x070BE8 redraw old row */
+                    func_070C5F();                       /* @asm 0x070BF3 redraw new row (then 0x070BF9 jmp 0x70b9c continues) */
+                }
+            }
+            /* @asm 0x070BFC clicked inside the panel area? -> commit */
+            if (*(uint16_t near*)0x07F4 != 0 &&          /* @asm 0x070BFC */
+                *(int16_t near*)0x07E8 < 0x70)           /* @asm 0x070C03 */
+                done = 0;                                /* @asm 0x070C0A */
+        }
+
+        overlay_call_181F_045C();                        /* @asm 0x070C14 present(0, done) */
+    } while (done != 0);                                 /* @asm 0x070C19 if (done) jmp 0x70AD8 */
+
+commit:
+    saved_flag = 0;                                      /* @asm 0x070C22 [bp-8]=0 (completed normally) */
+
+teardown:
+    overlay_call_181F_03B6();                            /* @asm 0x070C27 clip */
+    overlay_call_181F_03F4();                            /* @asm 0x070C32 restore region (0xFC00,0xA000) */
+    (void)old_row; (void)key; (void)row; (void)step;
+    return saved_flag;                                  /* @asm 0x070C37 mov ax,[bp-8]; RETF */
 }
 
 /* ============================================================================
@@ -1164,6 +1347,57 @@ finalise:
     overlay_call_191F_01A8();                            /* @asm 0x073467 finalise (tail) */
     (void)arg6; (void)arg8; (void)src; (void)argC;
     return 0;                                            /* @asm 0x073473 RETF */
+}
+
+/* ============================================================================
+ * func_073474 — load_panel_palette_from_colors   [DONE — BYTE_VERIFIED, newly ported]
+ * ----------------------------------------------------------------------------
+ * A frameless leaf (0x073474..0x0734BB, terminal RETF) that the prior pass
+ * dropped: it sat unnamed between func_073270 and the SUPERSEDED func_0734F8.
+ * It publishes the panel DEFAULT-COLOUR palette by copying the 10 colour bytes
+ * the NAMES.TXT @COLORS section loaded into [0x830..0x839] (see func_0749E0,
+ * COLORS @DS:0x22A7 -> bytes [0x830..0x839]) into the panel-default-geometry
+ * words [0x1F40..0x1F52] (the same g_panel_words_1F3C[] block func_06F6DA
+ * fills from a record), then sets two fixed panel fields.
+ *
+ * Mapping (each byte zero-extended into its word; verified at every store):
+ *   [0x1F50] <- [0x833]   [0x1F52] <- [0x834]   [0x1F4A] <- [0x830]
+ *   [0x1F4E] <- [0x831]   [0x1F4C] <- [0x832]   [0x1F42] <- [0x835]
+ *   [0x1F40] <- [0x835] (same AX reused)        [0x1F44] <- [0x837]
+ *   [0x1F46] <- [0x838]   [0x1F48] <- [0x839]
+ *   [0x1F6C] <- 0x93F0    [0x1F64] <- 1
+ *
+ * @asm 0x073474  al=[0x833]; [0x1F50]=ax
+ * @asm 0x07347C  al=[0x834]; [0x1F52]=ax
+ * @asm 0x073482  al=[0x830]; [0x1F4A]=ax
+ * @asm 0x073488  al=[0x831]; [0x1F4E]=ax
+ * @asm 0x07348E  al=[0x832]; [0x1F4C]=ax
+ * @asm 0x073494  al=[0x835]; [0x1F42]=ax ; [0x1F40]=ax        (AX reused @0x07349A)
+ * @asm 0x07349D  al=[0x837]; [0x1F44]=ax
+ * @asm 0x0734A3  al=[0x838]; [0x1F46]=ax
+ * @asm 0x0734A9  al=[0x839]; [0x1F48]=ax
+ * @asm 0x0734AF  [0x1F6C]=0x93F0 ; @asm 0x0734B5 [0x1F64]=1 ; @asm 0x0734BB RETF
+ * ============================================================================ */
+extern uint8_t  g_colors_830[];          /* DGROUP:0x830  — @COLORS bytes (NAMES.TXT) [0x830..0x839] */
+extern int16_t  g_panel_words_1F3C[];    /* DGROUP:0x1F3C.. — panel default-geometry/colour words */
+extern int16_t  g_panel_field_1F6C;      /* DGROUP:0x1F6C  — panel field (set 0x93F0 here) */
+extern int16_t  g_panel_field_1F64;      /* DGROUP:0x1F64  — panel field (set 1 here) */
+
+void func_073474_load_panel_palette_from_colors(void)
+{
+    /* g_panel_words_1F3C[N] addresses 0x1F3C+2N: idx 2=0x1F40 .. idx 0xB=0x1F52. */
+    g_panel_words_1F3C[0x0A] = (int16_t)g_colors_830[3]; /* @asm 0x073474 [0x833]->[0x1F50] */
+    g_panel_words_1F3C[0x0B] = (int16_t)g_colors_830[4]; /* @asm 0x07347C [0x834]->[0x1F52] */
+    g_panel_words_1F3C[0x07] = (int16_t)g_colors_830[0]; /* @asm 0x073482 [0x830]->[0x1F4A] */
+    g_panel_words_1F3C[0x09] = (int16_t)g_colors_830[1]; /* @asm 0x073488 [0x831]->[0x1F4E] */
+    g_panel_words_1F3C[0x08] = (int16_t)g_colors_830[2]; /* @asm 0x07348E [0x832]->[0x1F4C] */
+    g_panel_words_1F3C[0x03] = (int16_t)g_colors_830[5]; /* @asm 0x073494 [0x835]->[0x1F42] */
+    g_panel_words_1F3C[0x02] = (int16_t)g_colors_830[5]; /* @asm 0x07349A (AX reused)->[0x1F40] */
+    g_panel_words_1F3C[0x04] = (int16_t)g_colors_830[7]; /* @asm 0x07349D [0x837]->[0x1F44] */
+    g_panel_words_1F3C[0x05] = (int16_t)g_colors_830[8]; /* @asm 0x0734A3 [0x838]->[0x1F46] */
+    g_panel_words_1F3C[0x06] = (int16_t)g_colors_830[9]; /* @asm 0x0734A9 [0x839]->[0x1F48] */
+    g_panel_field_1F6C = (int16_t)0x93F0;                /* @asm 0x0734AF */
+    g_panel_field_1F64 = 1;                              /* @asm 0x0734B5 -> RETF */
 }
 
 /* func_0734F8 — save_game_state (SAVE driver) — SUPERSEDED -> src/save/save_serializer.c

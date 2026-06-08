@@ -561,6 +561,31 @@ int func_06929C_tile_info_panel_draw(uint16_t arg0)
 }
 
 /* ============================================================================
+ * func_069304 -- tile_info_popup_variant  [DONE -- BYTE_VERIFIED, newly ported]
+ * ----------------------------------------------------------------------------
+ * A frameless leaf (0x069304..0x06936A, terminal RETF) the prior pass dropped:
+ * it sat unnamed between func_06929C and func_06936C.  A second tile-info pop-up
+ * path keyed on message 0x1EC4 over the same tile rect [0x2DA8..0x2DAE].  It
+ * tests the keyed predicate; if it fires, fills the tile rect at colour 8; then
+ * always draws the boxed frame (0x140x0xC8) over the screen rect [0x839E..] and
+ * tile rect [0x2DA8..].  Sibling of func_06929C (which uses key 0x1EC4 via the
+ * 0x181F:0x444 path); this variant adds the colour-8 fill on a positive predicate.
+ *
+ * @asm 0x069304  if (0x191F:0x87A(0x1EC4, tileRect[0x2DA8..]) != 0)        ; keyed predicate
+ * @asm 0x069335     0x181F:0x484(color 8, tileRect[0x2DA8..])              ; fill the tile cell
+ * @asm 0x06933C  0x181F:0x444(bx=0x140, 0xC8, screenRect[0x839E..], tileRect[0x2DA8..]) ; frame
+ * @asm 0x06936A  RETF
+ * ============================================================================ */
+int func_069304_tile_info_popup_variant(void)
+{
+    if (overlay_call_191F_087A() != 0) {                /* @asm 0x069319 keyed predicate(0x1EC4, rect) */
+        overlay_call_181F_0484();                       /* @asm 0x069337 fill tile cell (colour 8) */
+    }
+    overlay_call_181F_0444();                           /* @asm 0x069365 draw boxed frame */
+    return 0;                                           /* @asm 0x06936A RETF */
+}
+
+/* ============================================================================
  * func_06936C -- terrain_yield_row_draw  [DONE -- control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * Draws one terrain row of the F1 terrain report: a label column whose width
