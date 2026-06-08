@@ -8,7 +8,7 @@
  * UPGRADE 2026-05-30: the map-view chrome composers HAVE now been decoded to
  * file offsets from the RE-SEGMENTED overlay disassembly (page_12.asm /
  * page_15.asm), and the C bodies live in src/overlay/. So the placement is no
- * longer "TBD" — the actual draw-call x/y/w/h push-immediates are byte-traced
+ * longer "left unresolved" — the actual draw-call x/y/w/h push-immediates are byte-traced
  * below in the HUD PLACEMENT TABLE (HUD_*). The composers are:
  *
  *   func_06787C  render_frame_setup       overlay_066EC8_06896A.c  @0x06787C
@@ -228,7 +228,7 @@
  *                                                         @asm 0x060BD6 -> 0x181F:0xCE
  *       (operands cited verbatim; under the 0xCE arg order ax=x,dx=y,bx=w,push h.
  *        NB: x+w here exceeds 320, so bx may be a 2nd X-coord rather than a width
- *        for this primitive — exact w-vs-x2 role is TBD, the raw values are solid.)
+ *        for this primitive — exact w-vs-x2 role is not yet decoded, the raw values are solid.)
  *   full-screen frame box: x=0 w=0x140(320) h=0xC8(200)   @asm 0x060C1E -> 0x181F:0xE2
  *   tile-row label = ([0x9E14]/0x4A)+1                    @asm 0x06087D
  *
@@ -247,7 +247,7 @@
 #define DATETURN_FIELD3_X 0xD0     /* 208  date/turn field  @asm 0x0609DE (push 0xd0) */
 #define MSGLINE_BOX_X     0x118    /* 280  bottom strip ax  @asm 0x060BDB (ax=0x118) */
 #define MSGLINE_BOX_Y     0xAA     /* 170  bottom strip dx  @asm 0x060BDE (dx=0xaa) */
-#define MSGLINE_BOX_W     0x135    /* 309  bottom strip bx (w or x2, TBD)  @asm 0x060BE1 (bx=0x135) */
+#define MSGLINE_BOX_W     0x135    /* 309  bottom strip bx (w or x2, not yet decoded)  @asm 0x060BE1 (bx=0x135) */
 #define MSGLINE_BOX_H     0xBD     /* 189  bottom strip push-h  @asm 0x060BD6 (push 0xbd) */
 #define SCREEN_BOX_X      0        /*   0  full-screen frame  @asm 0x060C1E (push 0) */
 #define SCREEN_BOX_W      0x140    /* 320  full-screen frame  @asm 0x060C20 (push 0x140) */

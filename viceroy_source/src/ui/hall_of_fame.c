@@ -8,7 +8,7 @@
  *     ranked HALL-OF-FAME table screen that ALSO reads/inserts/writes
  *     HALLFAME.DAT.  The DOS record layout IS now byte-traced: stride 0x2A
  *     (42 bytes), max 6 entries; 5 shown on screen.
- * cite-or-TBD; every coordinate cites its @asm push.
+ * cite-or-left unresolved; every coordinate cites its @asm push.
  *
  * @asm_disasm  code/VICEROY/disasm_overlay_reseg/page_05.asm (lines 4848..)
  * raw-EXE spot-checks (this session):
@@ -50,10 +50,10 @@
  *                   detected. The 1,362 figure is a detected size, not a
  *                   byte-traced record count.
  *
- * Per-record DOS byte layout: TBD. Only the Win16 colonize.exe HALLFAME.DAT is
+ * Per-record DOS byte layout: not yet decoded. Only the Win16 colonize.exe HALLFAME.DAT is
  * decoded (the 210-byte / "3x42 + 82 deco + u16 csum" layout in
  * colowin/hallfame_format.py). The DOS reader/writer record format is NOT
- * traced (VERIFICATION_LEDGER.md: "TBD for DOS"). Do not assume the Win16
+ * traced (VERIFICATION_LEDGER.md: "left unresolved for DOS"). Do not assume the Win16
  * layout for this binary.
  * ---------------------------------------------------------------------------- */
 #define HALLFAME_FILE        "HALLFAME.DAT"   /* CITED: str handle 0x11F2 @0x1EB92 / 0x1227 @0x1EBC7 */

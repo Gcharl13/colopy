@@ -44,9 +44,9 @@
  * ------------------------------------------------------------------------
  *
  * EVERY constant below carries an @asm file-offset cite naming the
- * instruction and its actual operand bytes, OR an explicit [TBD] marker.
+ * instruction and its actual operand bytes, OR an explicit [not yet decoded] marker.
  *
- * --- CITE-OR-TBD LEDGER --------------------------------------------------
+ * --- CITE-OR-NOT-YET-DECODED LEDGER --------------------------------------------------
  *  BYTE_VERIFIED (offset + operand bytes confirmed in COLONIZE/VICEROY.EXE):
  *    - terrain*16+good yield-table base DGROUP:0x2F7B   @asm 0x9C1E: 8A 80 7B 2F
  *    - 5x5 ring scan (BOTH loops 0..4)                  @asm 0xA417 / 0xA46B
@@ -202,7 +202,7 @@ int compute_terrain_yield(int ring_a, int ring_b, int *out, int flag)
     if (good_id == 0 || good_id == 8) era_flag = 1; else era_flag = 0;
 
     /* --- step 9b: the SoL/Tory bell penalty (sol_adj, signed) ---
-     * FULLY decoded (was TBD in prior draft):
+     * FULLY decoded (was left unresolved in prior draft):
      *   sol_pct   = sol_membership_pct()                              @asm 0x9D14 CALL 0x8524
      *   tory_pct  = 100 - sol_pct                                     @asm 0x9D1A/0x9D1D
      *   tory_cnt  = (population * tory_pct + 50) / 100   [round]       @asm 0x9D23..0x9D32

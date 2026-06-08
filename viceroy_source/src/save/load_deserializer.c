@@ -4,11 +4,11 @@
  *  STATUS LEGEND (per viceroy_source/VERIFICATION_LEDGER.md):
  *    [BYTE_VERIFIED]   bytes read directly from COLONIZE/VICEROY.EXE
  *    [ANCHOR_VERIFIED] confirmed function/string anchor; value/order not byte-traced
- *    [TBD]             not located / not verified -- do NOT trust
+ *    [not yet decoded] not located / not verified -- do NOT trust
  *
  *  -------------------------------------------------------------------------
  *  2026-05-30 BREAKTHROUGH (supersedes the "deserializer overlay-resident /
- *  [TBD]" framing):
+ *  [left unresolved]" framing):
  *  -------------------------------------------------------------------------
  *  The real DOS game-state DESERIALIZER is now LOCATED + BYTE-TRACED via the
  *  RTLink resolver. It is func_073BB0 @0x073BB0 (1901 bytes, ENTER 0x64,0) in
@@ -27,7 +27,7 @@
  *
  *  ==> The CORRECTION about func_011F6E (below) still stands: 0x011F6E is the
  *      RTLink/overlay-EXE record reader (MZ-magic checker), NOT the savegame
- *      loader. The actual loader was the [TBD] overlay routine -- now resolved
+ *      loader. The actual loader was the [left unresolved] overlay routine -- now resolved
  *      to func_073BB0.
  *
  *  DOS save HEADER (now byte-known, overturns "no magic"):

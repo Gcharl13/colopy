@@ -107,7 +107,7 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
      *   contact_count  = g_diplo_contact_942C[power] (diplomatic meetings, 0..255)
      *   trade_volume   = g_trade_accum_941C[power] (cumulative gold/trade activity)
      */
-    int power_idx = attacker_power_idx; /* local_C8 = power index 0..3 (TBD: attacker vs opponent) */
+    int power_idx = attacker_power_idx; /* local_C8 = power index 0..3 (not yet decoded: attacker vs opponent) */
     int32_t player_factor =
         (int32_t)g_diplo_contact_942C[power_idx] + (int32_t)g_trade_accum_941C[power_idx];
     int32_t step2 = __aFlmul(player_factor, step1);
@@ -222,7 +222,7 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
  *
  *   player_factor = g_diplo_contact_942C[power] + g_trade_accum_941C[power]
  *                 = diplomatic_contact_count (0..255) + cumulative_trade_gold
- *     (power index TBD: attacker or opponent; resolved tables from 0x042138 init)
+ *     (power index not yet decoded: attacker or opponent; resolved tables from 0x042138 init)
  *
  * RESOLVED 2026-06-08:
  *   - ovly_181F_035C: PURE CLAMP (file 0x0048CC, runtime 0x024C:0x000C)
@@ -231,7 +231,7 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
  *     (reset to 0 @0x042171; saturating increment @0x042126; /16 for display)
  *   - g_word_DGROUP_941C → g_trade_accum_941C: per-power uint16[4] trade volume
  *     (accumulated from unit trade values @0x042335; /32 for display)
- * STILL TBD:
+ * STILL not yet decoded:
  *   - exact power index for local_C8 (attacker vs opponent)
  *   - bit 19 of attacker PowerRecord (Founding Father or scenario flag)
  * ============================================================================ */

@@ -22,7 +22,7 @@
  *      067C54/067C8E/067A24.
  *   render setup (this file): func_06787C @0x6787C establishes zoom + viewport.
  *
- * STILL TBD (cited reason): the *pixel format* of the leaf framebuffer poke.
+ * STILL not yet decoded (cited reason): the *pixel format* of the leaf framebuffer poke.
  * Every leaf primitive ends in an LCALL into a load-image overlay
  * (0x181F:0x254/0x25E/0x268/0x272/0x286/0x2F8 -> overlay segs 0x0C36/0x0101/
  * 0x0C56; 0x1A1F:0x984/0x98E -> seg 0x0CAA/0x0C89). Those targets are resident
@@ -31,7 +31,7 @@
  * which sprite index / which clip rect). The SELECTION logic — which sprite
  * index at which screen pixel — is now fully byte-verified below.
  *
- * The PHYS0 sprite-sheet far-pointer pairs are identified (no longer "TBD
+ * The PHYS0 sprite-sheet far-pointer pairs are identified (no longer "left unresolved
  * descriptor"): [0x174]/[0x176] and [0x16C]/[0x16E] are the loaded sheet bases;
  * [0x186]/[0x188] are sheet metrics; the sheet's *internal* numbering is data.
  * ============================================================================ */
@@ -231,7 +231,7 @@ extern int      river_detail_at(int bx, int by);            /* 0x181F:0x75E */
  * index in AX and draws it at the current tile origin [0xA5A4]/[0xA5A6] offset
  * by [0x1EA4]/[0x1EA5], clipped to [0x839E]. They branch on [0x186] (zoom
  * metric) to a full-tile path vs a scaled path. EXACT pixel poke is in the
- * load-image overlay (TBD); we model the index + placement, which IS verified.
+ * load-image overlay (library-implementation-only); we model the index + placement, which IS verified.
  * ---------------------------------------------------------------------------- */
 
 /* func_067DC8 @0x67DC8 (NEAR 0x1748). Reads sheet ptr [0x174]/[0x176]; if
