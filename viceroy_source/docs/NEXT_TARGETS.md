@@ -34,16 +34,24 @@
 > `func_061F02` (terrain-cost table DS:0x2F76) · `func_06F0F4` (10 @-directive
 > keyword tables DS:0x1FC7+).
 >
-> **C. Far-record struct field semantics** — inner walks the `*(0x842)` stride-0x24
+> **C. Far-record struct field semantics** — ~~inner walks the `*(0x842)` stride-0x24
 > UI-list record / `.SS` sub-record whose layout isn't yet modeled. Closeable by
 > identifying that record struct:
 > `func_06A700` (site-list) · `func_06AA88` (terrain-detail) · `func_076642` (.SS
-> +0x42..+0x4C accumulation).
+> +0x42..+0x4C accumulation).~~ **RESOLVED 2026-06-08**
+> → The "stride-0x24" estimate was wrong; correct stride is **0x0C** (12 bytes/elem),
+> confirmed from disassembly at 0x06AB6C/0x06A7EC. `TerrainUIRec` struct added to
+> `overlay_068A14_06C1CC.c`; func_06A700 + func_06AA88 BYTE_VERIFIED via
+> g_terrain_ui_8F82[node].link_next chain walk. func_076642 .SS accumulation loop
+> BYTE_VERIFIED in `overlay_0745F0_077A6A.c`.
 >
-> **D. Dense UI input hit-scan / arithmetic** — recoverable with careful tracing
+> **D. Dense UI input hit-scan / arithmetic** — ~~recoverable with careful tracing
 > (deferred to avoid fabricating coordinate math):
 > `func_06E3D0` (panel-modal per-key cell math + cursor hit-scan) · `func_070060`
-> (report-screen key-nav rotation + 3×4 mouse hit-scan).
+> (report-screen key-nav rotation + 3×4 mouse hit-scan).~~ **RESOLVED 2026-06-08**
+> → func_06E3D0 hit-scan Phase 0/1/2 + key-switch (edit/non-edit paths) BYTE_VERIFIED;
+> func_070060 key-nav row%4/col%3 + 3×4 mouse grid (w=0x30 h=0x48) BYTE_VERIFIED.
+> Both in `overlay_06D938_0702D5.c`.
 >
 > Group **A** is the most tractable next step and overlaps Phase B (extern↔def
 > linkage). Group **B** is pure data. Groups **C/D** need a little more tracing.
