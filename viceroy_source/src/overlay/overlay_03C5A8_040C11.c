@@ -216,7 +216,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
         /*   bx = type*14 -> see asm (shl/add chain) */
         overlay_call_181F_0438(); /* msg_set_arg( G16(UNIT_TYPE(i)*14 + 0x5230), 0 ) */
 
-        /* @0x03C613..0x03C61D  msg_show(0, 0x1284)  [TBD coltext0 handle 0x1284] */
+        /* @0x03C613..0x03C61D  msg_show(0, 0x1284 "SEIZURE") */
         overlay_call_181F_0652(); /* msg_show(0, 0x1284) */
 
     refresh:
@@ -325,7 +325,7 @@ int func_03C638_logic_sz_73(void)
 
     /* @0x03C710..0x03C772  announce takeover (msg context 3; format loser name
      *   from PowerRecord name @ loser*0x34+0x5426; set args 2,3 from a per-power
-     *   accessor 0xA1A; show str 0x128C). [TBD coltext0 handle 0x128C] */
+     *   accessor 0xA1A; show str 0x128C "SUCCESSION"). */
     overlay_call_181F_04AC(); /* msg_ctx(3) */
     overlay_call_191F_0AC8(); /* fmt_power_name(loser,1,0) */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &name[loser*0x34+0x5426], 1) */
@@ -488,7 +488,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
          *      -> announce str 0x12A2 then refresh (the 0x03C942 block). */
         if (overlay_call_181F_0768() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ == 0) {
             /* @0x03C942..0x03C957  msg_show(1, 0x12A2); unit_slot_refresh(i) */
-            overlay_call_181F_0652(); /* msg_show(1, 0x12A2) [TBD handle] */
+            overlay_call_181F_0652(); /* msg_show(1, 0x12A2 "SEIZURELAND") */
             overlay_call_181F_0808(); /* (i) */
             continue;                 /* @0x03C9EB jmp 0x03C942 (re-enters @ next dec) */
         }
@@ -497,7 +497,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (UNIT_TYPE(i) < 0x0D) goto announce_target; /* @0x03C9F1 jae .. else 0x03C9CF */
         if (UNIT_TYPE(i) > 0x12) goto announce_target;
 
-        /* @0x03C9FE..0x03CA03  msg_show(0, 0x1297) [TBD handle 0x1297] then
+        /* @0x03C9FE..0x03CA03  msg_show(0, 0x1297 "SEIZURESEA") then
          *   falls into the 0x03C947 epilogue (msg_show + refresh). */
         overlay_call_181F_0652(); /* msg_show(0, 0x1297) */
         overlay_call_181F_0808(); /* (i) refresh */
@@ -662,7 +662,7 @@ clamp:
  *     str 0x12AE (msg_show); else clear the colony flag and return.
  *
  * @asm page_06.asm:1633  ENTER 0x18,0 / RETF @0x03CDA1.
- * Tables: g_unit_stat @0x5230 stride 14, ATK byte +6 (BYTE_VERIFIED 2026-06-08: 3×SHL+2×ADD=×14 @0x03CB00); str 0x12AE [TBD].
+ * Tables: g_unit_stat @0x5230 stride 14, ATK byte +6 (BYTE_VERIFIED 2026-06-08: 3×SHL+2×ADD=×14 @0x03CB00); str 0x12AE="TORYUPRISING".
  * Thunks (engine leaves): 0x4D4 random_int; 0xC86 colony_SoL%; 0x768
  *   tile_has_target; 0x6BE tile_bounds; 0x682 unit_at_tile; 0x95C place_worker;
  *   0x7E0 iter_units_at; 0x2E4 iter_next_unit; 0x9E6 get_colony_by_slot;
@@ -797,7 +797,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
     }
     overlay_call_181F_0D9A(); /* apply_terrain_change(colony.X, colony.Y) */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &colony[+2] name, 0) */
-    overlay_call_181F_0652(); /* msg_show(1, 0x12AE) [TBD coltext handle] */
+    overlay_call_181F_0652(); /* msg_show(1, 0x12AE "TORYUPRISING") */
     return 0;
 }
 
@@ -898,7 +898,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
  *   per-player byte @ (player*0x13 - 0x6DA2) = colony_by_region_map[player][0x12]
  *   = per-player Man-of-War (type 0x12) ship count from census. BYTE_VERIFIED
  *   2026-06-08: 6B 1E D2 53 13 / 80 BF 5E 92 00 @file 0x3CDE8. Cap word
- *   [0x5333]; str 0x12BB [TBD]. Engine thunks kept as externs (roles in line).
+ *   [0x5333]; str 0x12BB="INVASION". Engine thunks kept as externs (roles in line).
  * ========================================================================== */
 int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
 {
@@ -1021,7 +1021,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
         overlay_call_181F_0E08(); /* landing sound/seek */
         overlay_call_181F_04AC(); /* msg_ctx(3) */
         overlay_call_181F_0416(); /* msg_set_ptr(DS, &colony[+2] name, 0) */
-        overlay_call_181F_0652(); /* msg_show(1, 0x12BB "REF lands") [TBD] */
+        overlay_call_181F_0652(); /* msg_show(1, 0x12BB "INVASION") */
         overlay_call_181F_02D0(); /* landing animation */
         overlay_call_181F_0948(); /* tile redraw */
         overlay_call_181F_09BA(); /* draw REF stack sprite */
@@ -1157,7 +1157,7 @@ cleanup:
  * @asm page_06.asm:2566  ENTER 0x56,0 / RETF @0x03D947.
  * Globals: target power [0x5398]; intervention force counts [0x53E2/53E4/53E6/
  *   53E8]; intervening-power name ids [0x53D4]/[0x53D6]; near helper func_03EA10.
- * Strings 0x12C4 / 0x12CE [TBD coltext0]. Engine thunks kept as externs.
+ * Strings 0x12C4="INTERVENE" / 0x12CE="MERCS". Engine thunks kept as externs.
  * ========================================================================== */
 int func_03D510_colony_sz_1080(uint16_t arg0_bp_06)
 {
