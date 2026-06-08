@@ -343,7 +343,10 @@ int func_04C596_ai_queue_b_clear(uint16_t power)
  * its ABSOLUTE DGROUP base (negative-displacement DS addressing: base = -disp):
  *   0x9410 v0 [bx-0x6BF0]  ·  0x9298 tier [bx-0x6D68]  ·  0xA0B8 gate [bx*2-0x5F48]
  *   0x9567 ratio [bx*3-0x6A99]  ·  0x9414 scale [bx-0x6BEC]  ·  0x944E cap [bx*2-0x6BB2]
- * Control flow + strides BYTE_VERIFIED; per-power table SEMANTICS are TBD-by-name.
+ * Control flow + strides BYTE_VERIFIED. Known identities (RUNTIME_ONLY):
+ *   DS:0x9410 = g_power_gate_9410 per-power colonist popsum (= strengthB / metric2)
+ *   DS:0x9298 = per-power colony count (= metric1 in score_and_rank_four_powers)
+ *   DS:0x9414, 0x9567, 0x944E, 0xA0B8: strides confirmed; semantic names TBD-by-name.
  * ============================================================================ */
 extern uint8_t  g_ai_pwr_v0_9410[];    /* DGROUP:0x9410 (-0x6BF0), per-power byte */
 extern uint8_t  g_ai_pwr_tbl_9298[];   /* DGROUP:0x9298 (-0x6D68), per-power tier byte */
@@ -1150,7 +1153,8 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * per-owner unit-density table 0x94E6[owner<<4+base] (same table func_053820
      * reads) to assign work-plan codes into 0x9870[-0x6790], gated by threat
      * (0x181F:0x30C) and war state (0x181F:0xA38).  The colony loop + work-plan
-     * writes are byte-cited; the code-selection arithmetic is TBD-inner.
+     * writes are byte-cited; code-selection arithmetic is BYTE_VERIFIED (2026-06-08):
+     * Flags byte [bp-0x9a] and per-power table 0x94E6 selection below.
      *
      * BYTE_VERIFIED (2026-06-08) — code-selection arithmetic for [bp-0x9a] flags:
      *
@@ -1504,7 +1508,11 @@ void func_04E2B6_unit_set_order_state(uint16_t unit_index, uint8_t p_dl,
  * The state value 0xB (+0x314C), subtype gate 0x45 (+0x314B), and the per-type
  * flag table 0x523D are the same constants used by func_04C846 / func_04E2B6.
  * arg0 = unit index.  The jump-table targets are byte-read from the cs:[bx+0x5C2A]
- * table; the 0x191F handler bodies (overlay page 0x11) are TBD-exact.
+ * Handler roles CONFIRMED (auto_manage.c, overlay_040C1E, overlay_02083C):
+ *   0x191F:0x1C2 = finalize_place(unit)   (auto_manage.c:292, state=8)
+ *   0x191F:0x216 = place_variant(unit)    (auto_manage.c:293, state=9)
+ *   0x191F:0x1FA = begin_building(unit)   (overlay_02083C state=7 begin-build)
+ *   0x191F:0x4BA = arrive_finish(unit)    (overlay_040C1E @0x041194 arrive+clear)
  * [BYTE_VERIFIED control flow + dispatch]
  * ============================================================================ */
 extern uint8_t g_ai_pwr_pool_9456[];   /* DGROUP:0x9456 (=0x10000-0x6BAA), per-power pool */
@@ -2219,7 +2227,8 @@ extern void ai_set_plot_target(int tx, int ty);
  *
  * Reads/writes the current colony *(0x8542) (+0x94 field, +0x1C flags bit7).
  * The 12-byte-stride table @0x8F85 (DS disp -0x707B) and predicate (near 0x2D4E)
- * are byte-read; their SEMANTICS are TBD-by-name.  [BYTE_VERIFIED control flow]
+ * g_tbl_8F85 is RUNTIME_ONLY (EXE bytes at DS:0x8F85 are near-code instructions).
+ * Predicate near 0x2D4E: semantics TBD-by-name.  [BYTE_VERIFIED control flow]
  * ============================================================================ */
 extern int8_t g_tbl_8F85[];   /* DGROUP:0x8F85 (=disp -0x707B), 12-byte stride (read .b0) */
 
@@ -2266,7 +2275,11 @@ int func_053A34_colony_set_field(int16_t value)
  * Reads the current colony *(0x8542) stockpile array (+0x9A, 16x u16) — the same
  * stockpile field colony_screen.c documents.  The word table @-0x7238 thresholds
  * (3, 8) and the 0x64 stock cap are byte-read; the per-class tables @0x864/@0x866
- * are TBD-by-name (strides exact).  arg0 = commodity/class index.  [BYTE_VERIFIED]
+ * Per-class tables are STATIC in EXE (BYTE_VERIFIED values @file DS+0x864):
+ *   class 0: [+0]=0x03, [+2]=0x0E  class 1: [+0]=0x27, [+2]=0x06
+ *   class 2: [+0]=0x20, [+2]=0x04  class 3: [+0]=0x1B, [+2]=0x01
+ *   class 4: [+0]=0x18, [+2]=0x02  class 5: [+0]=0x15, [+2]=0x03
+ * Field semantic names TBD-by-name; values byte-exact.  arg0 = class idx.  [BV]
  * ============================================================================ */
 extern uint8_t  g_class_tbl_0864[];   /* DGROUP:0x0864 base, stride 4 (b@+0 / b@+2) */
 extern int16_t  g_class_word_8DC8[];  /* DGROUP:0x8DC8 (=0x10000-0x7238) — per-class word thresholds */
