@@ -77,7 +77,7 @@
  *     page_16.asm 0x06B660..) ; these bridge to the dialog-helper overlay
  *     pages.  We call through the canonical role-named externs below. -----------
  *   cs:0x2D12 func_06B692 -> 0x1A1F:0x9D0  dialog_open / save background
- *   cs:0x2CFE func_06B67E -> 0x191F:0x998  label-wrap (centered title) helper
+ *   cs:0x2CFE func_06B67E -> 0x1A1F:0x998  label-wrap (centered title) helper
  *   cs:0x2D0D func_06B68D -> 0x1A1F:0x9C2  dialog_present helper
  *   cs:0x2D21 func_06B6A1 -> 0x1A1F:0x9FA  draw one list line (value,icon,y)
  *   cs:0x2D03 func_06B683 -> 0x1A1F:0x9A6  register one map-overlay legend cell
@@ -113,9 +113,13 @@ extern uint8_t  g_unit_table_3144[];      /* DGROUP:0x3144 -- UnitRecord[], stri
 
 /* Near-CS RTLink trampolines (page-0x16 block @0x06B660..; see file banner).
  * No-arg canonical prototypes matching the file's call convention; the overlay-
- * side bodies live in pages 0x191F/0x1A1F (exact behaviour TBD-cross-page). */
+ * side bodies live in pages 0x191F / 0x1A1F (separate overlay segments, not
+ * resident in this file's range).  The LJMP targets are BYTE_VERIFIED 2026-06-08
+ * by raw-byte inspection of the 0x06B660..0x06B6BF block (each is an 0xEA FAR JMP;
+ * all targets match the banner above and the extern comments below).
+ * CLOSED: structural -- callee body in separate overlay page (0x191F or 0x1A1F). */
 extern int func_06B692(void);  /* cs:0x2D12 -> 0x1A1F:0x9D0  dialog_open/save-bg */
-extern int func_06B67E(void);  /* cs:0x2CFE -> 0x191F:0x998  label-wrap helper   */
+extern int func_06B67E(void);  /* cs:0x2CFE -> 0x1A1F:0x998  label-wrap helper   */
 extern int func_06B68D(void);  /* cs:0x2D0D -> 0x1A1F:0x9C2  present helper       */
 extern int func_06B6A1(void);  /* cs:0x2D21 -> 0x1A1F:0x9FA  draw list line       */
 extern int func_06B683(void);  /* cs:0x2D03 -> 0x1A1F:0x9A6  register legend cell */
