@@ -872,51 +872,193 @@ int func_06CFBC_emit_field_at_offset(uint16_t arg0, uint16_t arg1, uint16_t pane
 }
 
 /* ============================================================================
- * func_06CFE8 — panel_wordwrap_text  [DONE — control flow BYTE_VERIFIED]
+ * func_06CFE8 — panel_wordwrap_text  [BYTE_VERIFIED — full body]
  * ----------------------------------------------------------------------------
  * The WORD-WRAP / multi-line layout pass for the panel text list (head
- * PANEL[+0x58]/[+0x5A], far [bp+4]).  Origin x = 2*PANEL[+0x48] - PANEL[+0x28]
- * (negated) and the right-edge limit is held in [bp-0x108].  For each text node
- * (NEXT node[+6]/[+8]) whose flag bits 0/1 are set it walks the string word by
- * word:
- *   - skips runs of spaces (0x20) via 0D1D:1010 (find space, far),
- *   - temporarily NUL-terminates each word (lcall 0xd1d,0x1010 + store 0),
- *   - measures the word with 0D1D:113C and near 0x7D6,
- *   - if the accumulated x + word width exceeds the limit it flushes the line
- *     (emit_field_at_offset near 0x14BC) and advances y by the line height
- *     (func_06CD66 kind via near 0x1266 twice for ascent+descent),
- *   - otherwise appends the word (0D1D:11B4) with a leading space (fmt 0x1F99),
- *   - restores the space it overwrote.
- * Flag bit 0 vs the centered case picks x via a half-width computation
- * ([bp-0x168] = (limit - textw)/2).  Returns the total height in [bp-0x166].
+ * PANEL[+0x58]/[+0x5A], far [bp+4]).  The routine has TWO modes selected by the
+ * AX register argument (saved at [bp-0x16c] by the `push ax` after ENTER):
+ *   mode == 0  MEASURE only (caller func_06D316 @0x06D437 does `sub ax,ax`):
+ *              compute the total wrapped height without drawing.
+ *   mode != 0  RENDER (caller @0x06E360 does `mov ax,1`): also emit each line
+ *              via func_06CFBC (near 0x14BC).
+ * Right-edge limit  [bp-0x108] = -(2*PANEL[+0x48] - PANEL[+0x28])  (negated).
+ * Returns the accumulated height in AX = [bp-0x166].
  *
- * @asm 0x06D006  ax = 2*PANEL[+0x48] - PANEL[+0x28] ; (negated) x base
- * @asm 0x06D0CD  call 0x7d6 (centered case)          ; measure full text width
- * @asm 0x06D0EC  call 0x14bc (func_06CFBC range)      ; emit centered line
- * @asm 0x06D150  lcall 0xd1d,0x1010 (ch 0x20)         ; find next space
+ * PER NODE (NEXT node[+6]/[+8]):
+ *   - cursor = node[+2]/[+4]  (far ptr to the node's text).
+ *   - CORRECTION to the old banner: nodes with (node[0] & 3) != 0 take the
+ *     pre-formatted / centered WHOLE-LINE path (no wrap); nodes with
+ *     (node[0] & 3) == 0 are WORD-WRAPPED.  (@asm 0x06D045 test [bx],3 ;
+ *     0x06D049 jne -> whole-line ; 0x06D04B jmp -> word-wrap entry 0x06D288.)
+ *
+ * WORD-WRAP loop (per word, entered via strlen(cursor)!=0 at 0x06D288):
+ *   - skip leading spaces (0x20)                                  @0x06D140
+ *   - find next space (0D1D:1010, far) and NUL-terminate the word @0x06D150
+ *   - word_len = strlen(word) (0D1D:113C)                         @0x06D172
+ *   - word_buf = "" ; if line_buf non-empty prepend a space
+ *     (0D1D:07A4, fmt 0x1F99) ; append word (0D1D:11B4)           @0x06D17E
+ *   - run_w = func_06C2D6(&word_buf, PANEL+0x74) (near 0x7D6)     @0x06D1C3
+ *   - if (PANEL[+0x74] + run_w + line_x <= limit) APPEND          @0x06D1D6
+ *       else FLUSH: (render) emit line_buf via func_06CFBC; add line
+ *       height (func_06CD66+1) to total_h AND to [bp-0x10e];
+ *       strip word_buf's leading space; reset line_buf; line_x=0   @0x06D1DC
+ *   - APPEND: line_buf += word_buf (0D1D:11B4); line_x +=
+ *       PANEL[+0x74]+run_w; restore the NUL'd space; cursor+=word_len @0x06D24D
+ *   - loop while strlen(cursor)!=0                                @0x06D288
+ *
+ * WHOLE-LINE path (node flag bits set, 0x06D04E..0x06D13C): if line_buf is
+ *   pending, (render) emit it and bump the height; (render) optionally emit the
+ *   whole node string centered (x = limit/2 - textw/2, textw via func_06C2D6),
+ *   then skip cursor to its NUL and add one more line height.
+ *
+ * After the node list ends (0x06D2B4): if line_buf still has content, flush the
+ * final line and add its height.
+ *
+ * @asm 0x06D00C  ax = 2*PANEL[+0x48] - PANEL[+0x28] ; neg -> [bp-0x108] limit
+ * @asm 0x06D045  test es:[bx],3 ; jne whole-line ; else jmp word-wrap
+ * @asm 0x06D150  lcall 0xd1d,0x1010 (ch 0x20)         ; find next space (far)
  * @asm 0x06D172  lcall 0xd1d,0x113c                   ; strlen(word)
- * @asm 0x06D192  lcall 0xd1d,0x7a4 (fmt 0x1F99)       ; leading-space append fmt
- * @asm 0x06D1A6  lcall 0xd1d,0x11b4                   ; concat word
- * @asm 0x06D1C3  call 0x7d6                            ; measure run width
+ * @asm 0x06D192  lcall 0xd1d,0x7a4  (fmt 0x1F99)      ; leading-space append fmt
+ * @asm 0x06D1A6  lcall 0xd1d,0x11b4                   ; concat word -> word_buf
+ * @asm 0x06D1C3  call 0x6c2d6 (func_06C2D6)           ; measure run width
+ * @asm 0x06D234  lcall 0xd1d,0x7e4                    ; strip leading space (shift)
  * @asm 0x06D259  lcall 0xd1d,0x11b4                   ; commit word to line buf
  * @asm 0x06D28E  lcall 0xd1d,0x113c                   ; advance to next word
- * @asm 0x06D30C  ax = [bp-0x166]                       ; total height
+ * @asm 0x06D30C  ax = [bp-0x166]                       ; total height (return)
  * ============================================================================ */
-int func_06CFE8_panel_wordwrap_text(void)
+int func_06CFE8_panel_wordwrap_text(uint16_t mode_ax, void far *panel /*bp+4*/)
 {
-    int total_h = 0;                      /* [bp-0x166] */
-    /* x_base = -(2*PANEL[+0x48] - PANEL[+0x28]);  limit = [bp-0x108]         */
-    /* for(node = PANEL[+0x58..]; node; node = node[+6..]) {
-     *   if(!(node[0] & 3)) continue;
-     *   per-word loop: skip spaces, measure, wrap-or-append, flush at limit  */
-    overlay_call_0D1D_1010();             /* @0x06D150 find space (0x20), far */
-    overlay_call_0D1D_113C();             /* @0x06D172 strlen(word) */
-    overlay_call_0D1D_07A4();             /* @0x06D192 leading-space append (0x1F99) */
-    overlay_call_0D1D_11B4();             /* @0x06D1A6 concat word */
-    func_06CFBC_emit_field_at_offset(0, 0, 0); /* @0x06D0EC/@0x06D1F5 emit a wrapped line */
-    func_06CD66_text_kind_remap(0, 0);    /* @0x06D07E line-height kind (via 0x1266) */
-    overlay_call_0D1D_11B4();             /* @0x06D259 commit word to line buffer */
-    return total_h;                       /* @0x06D30C ret 4 ([bp-0x166]) */
+    /* The panel is a far ptr; its fields are read via the PANEL_* far accessors
+     * so the traffic reads as the real es:[bx+0xNN] accesses.  `mode_ax` is the
+     * AX register argument saved at [bp-0x16c] by the `push ax` after ENTER. */
+    void far *node;                       /* [bp-0x10c]/[bp-0x10a] */
+    uint8_t far *cursor;                  /* [bp-4]/[bp-2] */
+    uint8_t far *space_ptr;               /* [bp-0x162]/[bp-0x160] (NUL'd space) */
+    int   mode     = (int)mode_ax;        /* [bp-0x16c] = AX register arg */
+    int   limit    = 0;                   /* [bp-0x108] right-edge (negated) */
+    int   y_acc    = 0;                   /* [bp-0x10e] secondary height accum */
+    int   total_h  = 0;                   /* [bp-0x166] (return) */
+    int   line_x   = 0;                   /* [bp-6] current line width */
+    int   run_w    = 0;                   /* [bp-0x164] measured word/run width */
+    int   word_len = 0;                   /* [bp-0x16a] strlen(word) */
+    int   cx_off   = 0;                   /* [bp-0x168] centered x offset */
+    char  line_buf[0x100];                /* [bp-0x106]..[bp-7] assembled line buffer */
+    char  word_buf[0x58];                 /* [bp-0x15e]..[bp-0x107] " word" staging buffer */
+
+    /* @asm 0x06CFEF..0x06D025 — seed: node = text-line head; limit; y_acc;
+     * line_buf empty; total_h = 0; line_x = 0. */
+    node   = NODE_FAR(panel, 0x58);                 /* @asm 0x06CFF2 PANEL[+0x58/+0x5A] */
+    limit  = -(2 * PANEL_W(panel, 0x48) - PANEL_W(panel, 0x28)); /* @asm 0x06D002..0x06D00C */
+    y_acc  = PANEL_W(panel, 0x2C);                  /* @asm 0x06D012 [bp-0x10e]=PANEL[+0x2C] */
+    line_buf[0] = 0;                                /* @asm 0x06D01A [bp-0x106]=0 */
+    total_h = 0;                                    /* @asm 0x06D021 [bp-0x166]=0 */
+    line_x  = 0;                                    /* @asm 0x06D025 [bp-6]=0 */
+
+    /* @asm 0x06D028 — outer node loop. */
+    while (node != (void far *)0) {                 /* @asm 0x06D028..0x06D030 */
+        /* @asm 0x06D033..0x06D042 — cursor = node[+2]/[+4]. */
+        cursor = (uint8_t far *)NODE_FAR(node, 0x02);
+
+        /* @asm 0x06D045..0x06D04B — flag bits 0/1 select whole-line vs word-wrap. */
+        if ((NODE_W(node, 0x00) & 3) != 0) {
+            /* ---- whole-line / centered path (0x06D04E..0x06D13C) ---- */
+
+            /* @asm 0x06D04E..0x06D0A6 — flush any pending line first. */
+            if (line_buf[0] != 0) {                 /* @asm 0x06D04E */
+                if (mode != 0)                      /* @asm 0x06D055 */
+                    func_06CFBC_emit_field_at_offset(0 /*x*/, y_acc, 0); /* @asm 0x06D06E emit line_buf */
+                total_h += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D071..0x06D085 */
+                y_acc   += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D089..0x06D09D */
+                line_buf[0] = 0;                    /* @asm 0x06D0A1 */
+                line_x = 0;                         /* @asm 0x06D0A6 */
+            }
+
+            /* @asm 0x06D0AB..0x06D0FD — (render only) emit the node string,
+             * centered when node bit 0 is set. */
+            if (mode != 0) {                        /* @asm 0x06D0AB */
+                if (NODE_W(node, 0x00) & 1) {       /* @asm 0x06D0B6 */
+                    int textw = func_06C2D6_dialog_lookup_accelerator(0); /* @asm 0x06D0CD width */
+                    cx_off = (limit >> 1) - (textw >> 1); /* @asm 0x06D0D0..0x06D0DA */
+                } else {
+                    cx_off = 0;                     /* @asm 0x06D0E0 */
+                }
+                func_06CFBC_emit_field_at_offset(cx_off, y_acc, 0); /* @asm 0x06D0FA emit centered */
+            }
+
+            /* @asm 0x06D100..0x06D10A — skip cursor to its terminating NUL. */
+            while (*cursor != 0)                    /* @asm 0x06D103..0x06D10A */
+                cursor++;                           /* @asm 0x06D100 */
+
+            /* @asm 0x06D10C..0x06D138 — add one line height for the node. */
+            total_h += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D10C..0x06D120 */
+            y_acc   += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D124..0x06D138 */
+            /* @asm 0x06D13C jmp 0x06D288 -> falls into the next-word test below */
+        }
+
+        /* ---- per-word loop (0x06D288 entry; body 0x06D140..0x06D285) ---- */
+        /* @asm 0x06D288..0x06D298 — loop while the cursor has remaining text. */
+        while (overlay_call_0D1D_113C() /* strlen(cursor) */ != 0) { /* @asm 0x06D28E */
+            /* @asm 0x06D140..0x06D14A — skip leading spaces. */
+            while (*cursor == 0x20)                 /* @asm 0x06D143 */
+                cursor++;                           /* @asm 0x06D140 */
+
+            /* @asm 0x06D14C..0x06D168 — find the next space and NUL-terminate. */
+            space_ptr = (uint8_t far *)0;
+            overlay_call_0D1D_1010();               /* @asm 0x06D150 strchr_far(cursor, 0x20) */
+            /* space_ptr = result; */
+            if (space_ptr != (uint8_t far *)0)      /* @asm 0x06D160 */
+                *space_ptr = 0;                     /* @asm 0x06D168 NUL-terminate the word */
+
+            /* @asm 0x06D16C..0x06D17A — word length. */
+            word_len = overlay_call_0D1D_113C();    /* @asm 0x06D172 strlen(word) */
+
+            /* @asm 0x06D17E..0x06D1AB — stage "[ ]word" in word_buf. */
+            word_buf[0] = 0;                        /* @asm 0x06D17E */
+            if (line_buf[0] != 0)                   /* @asm 0x06D183 */
+                overlay_call_0D1D_07A4();           /* @asm 0x06D192 str_cat(word_buf, " " @0x1F99) */
+            overlay_call_0D1D_11B4();               /* @asm 0x06D1A6 str_cat_far(word_buf, cursor) */
+
+            /* @asm 0x06D1AE..0x06D1C6 — measure the staged word. */
+            run_w = func_06C2D6_dialog_lookup_accelerator(0); /* @asm 0x06D1C3 width of word_buf */
+
+            /* @asm 0x06D1CA..0x06D1DA — wrap test: does it still fit the line? */
+            if (PANEL_W(panel, 0x74) + run_w + line_x <= limit) {
+                /* fits -> APPEND (fall through to 0x06D24D) */
+            } else {
+                /* ---- FLUSH the current line (0x06D1DC..0x06D248) ---- */
+                if (mode != 0)                      /* @asm 0x06D1DC */
+                    func_06CFBC_emit_field_at_offset(0 /*x*/, y_acc, 0); /* @asm 0x06D1F5 emit line_buf */
+                total_h += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D1F8..0x06D20C */
+                y_acc   += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D210..0x06D224 */
+                /* @asm 0x06D23C..0x06D241 — strip word_buf's now-leading space. */
+                while (word_buf[0] == 0x20)         /* @asm 0x06D23C */
+                    overlay_call_0D1D_07E4();       /* @asm 0x06D234 shift word_buf left by 1 */
+                line_buf[0] = 0;                    /* @asm 0x06D243 */
+                line_x = 0;                         /* @asm 0x06D248 */
+            }
+
+            /* ---- APPEND the word to the line (0x06D24D..0x06D285) ---- */
+            overlay_call_0D1D_11B4();               /* @asm 0x06D259 str_cat_far(line_buf, word_buf) */
+            line_x += PANEL_W(panel, 0x74) + run_w; /* @asm 0x06D261..0x06D26C */
+            if (space_ptr != (uint8_t far *)0)      /* @asm 0x06D26F */
+                *space_ptr = 0x20;                  /* @asm 0x06D27D restore the NUL'd space */
+            cursor += word_len;                     /* @asm 0x06D281..0x06D285 */
+        }
+
+        /* @asm 0x06D29D..0x06D2B1 — advance to the next node. */
+        node = NODE_FAR(node, 0x06);                /* @asm 0x06D2A1 node[+6]/[+8] */
+    }
+
+    /* @asm 0x06D2B4..0x06D307 — flush the final pending line. */
+    if (line_buf[0] != 0) {                         /* @asm 0x06D2B4 */
+        if (mode != 0)                              /* @asm 0x06D2BB */
+            func_06CFBC_emit_field_at_offset(0 /*x*/, y_acc, 0); /* @asm 0x06D2D4 emit line_buf */
+        total_h += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D2D7..0x06D2EB */
+        y_acc   += func_06CD66_text_kind_remap(PANEL_W(panel, 0x80), PANEL_W(panel, 0x82)) + 1; /* @asm 0x06D2EF..0x06D303 */
+        line_buf[0] = 0;                            /* @asm 0x06D307 */
+    }
+
+    return total_h;                                 /* @asm 0x06D30C..0x06D313 ret 4 (AX=[bp-0x166]) */
 }
 
 /* ============================================================================
@@ -1096,7 +1238,7 @@ int func_06D316_panel_finalize_geometry(void far *panel /*bp+4*/)
     /* VALUE-LIST (text) pass: word-wrap the body text via func_06CFE8 and fold
      * its returned height into PANEL[+0x26]/[+0x38].                            */
     if ((PANEL_W(panel, 0x58) | PANEL_W(panel, 0x5A)) != 0) { /* @0x06D429/@0x06D42D */
-        wrappedH = func_06CFE8_panel_wordwrap_text();         /* @0x06D437 near 0x14E8 push PANEL */
+        wrappedH = func_06CFE8_panel_wordwrap_text(0 /*ax=0 measure*/, panel); /* @0x06D435 sub ax,ax; @0x06D437 push PANEL; call 0x14E8 */
         {
             int fw = PANEL_W(panel, 0x46);                    /* @0x06D440 */
             PANEL_W(panel, 0x26) += fw + wrappedH;            /* @0x06D446/@0x06D449 */

@@ -544,7 +544,7 @@ int unit_tile_action_dispatch(uint16_t arg0_bp_06)  /* func_0482DE */
 
 /* ============================================================================
  * func_04830E — per-power weekly state & price-drift update
- *                                          [DONE — BYTE_VERIFIED control flow]
+ *                                          [BYTE_VERIFIED — full body]
  * ----------------------------------------------------------------------------
  * Has exactly one caller (anchor).  Operates on the per-power "game-state"
  * struct bound at *(0x8D4A) and a 4-slot price/inventory array bound at
@@ -671,38 +671,202 @@ int power_weekly_economy_tick(uint16_t power_index)  /* func_04830E */
         }
     }
 
-    /* @asm 0x0483E2 — phase 2: per-commodity price-drift over the 4 slots. */
-    if (g_econ_flags_5382 & 0x01) {
-        /* @asm 0x0483E9 -> 0x04846E — go straight to the per-slot drift loop. */
-    } else {
-        /* @asm 0x0483EC..0x04846C — pre-pass: per-commodity Bernoulli accumulation
-         * (random_int(0, 0xC - k)==0 increments a counter summed across the
-         * remaining slots, added into +0x36).  See banner; same opcodes. */
-    }
-
-    /* @asm 0x04846E..0x0485F2 — the main drift+tick loop and the final drain.
-     * The full per-slot arithmetic (price load 0x0316, event flags 0x07B4,
-     * ÷5 scale 0x030C, and the discrete price-tick opcode 0x0D6C) is documented
-     * block-by-block in the banner.  Marked DONE: control flow + constants are
-     * byte-cited; the 0x181F callee bodies are external (role-named) per the
-     * platform/logic boundary. */
-    power_market_drift_apply(power_index);          /* @asm 0x04846E..0x0485EF */
+    /* @asm 0x0483E2..0x0485F2 — phase 2: per-commodity price-drift over the 4
+     * slots (econ-flag gate, optional Bernoulli pre-pass, the main drift+tick
+     * section, and the final drain) — all in the helper below. */
+    power_market_drift_apply(power_index);          /* @asm 0x0483E2..0x0485F2 */
 
     return 0;  /* @asm 0x0485F4 RETF */
 }
 
-/* Helper split out for the big drift loop (kept as a role-named extern body in
- * this file's narrative; its arithmetic is fully cited in the banner above). */
+/* ----------------------------------------------------------------------------
+ * power_market_drift_apply — phase 2 of func_04830E (file @asm 0x0483E2..0x0485F2)
+ *
+ * Faithful transcription of the per-commodity European-market price-drift tick.
+ * Locals are reconstructed from [bp-N] (the asm frame is shared with phase 1,
+ * but these slots are all re-initialised here so they are private):
+ *   base_price  = [bp-4]   — base price WORD; written by 0x181F:0x0316 via the
+ *                            &local out-pointer (platform-resident; opaque to C)
+ *   drift       = [bp-6]   — signed per-slot drift magnitude (also the inner
+ *                            Bernoulli "hits" counter in the pre-pass)
+ *   shift_flag  = [bp-8]   — 0/1 shift count from st[3]&4
+ *   scaled      = [bp-0xA] — base_price<<shift then ÷5-scaled pool delta
+ *   bern_n      = [bp-0xC] — pre-pass inner-loop counter
+ *   idx_e       = [bp-0xE] — slot index from st[5] nibble (price-DOWN slot)
+ *   idx_s       = [bp-0x12]— slot index from 0x0316 (price-UP slot); also the
+ *                            pre-pass outer slot counter j (0..3)
+ *   scale16     = [bp-0x16]— per-power scale word from 0x181F:0x030C
+ *   bern_lim    = [bp-0x18]— Bernoulli limit (ax*ax of 0x181F:0x0A60 result)
+ * st_market = *(0x8D4E) (per-commodity arrays; +0x36 accumulator byte/slot),
+ * st_bound  = *(0x8D4A) (bound power record; +0x0A pool WORD, stride 2/slot).
+ * Operators preserved exactly: jge/jl/jg (signed), je/jne (==).  [BYTE_VERIFIED]
+ * -------------------------------------------------------------------------- */
 static void power_market_drift_apply(uint16_t power_index)
 {
-    (void)power_index;
-    /* @asm 0x04846E..0x0485F2 — see func_04830E banner phase-2 block list.
-     * Each of the 4 commodity slots: compute signed drift from event flags
-     * (0x181F:0x07B4 with selectors 0x18/0x17), fold into accumulator
-     * st[si+0x36], adjust the pool word st[si+0x0A] (−drift*3 then +÷5 scale),
-     * then emit discrete price ticks via 0x181F:0x0D6C while |accum| >= 8.
-     * The opcode callees are platform/UI externs (price-table mutation); the
-     * loop structure and thresholds (8, 0xF8) are BYTE_VERIFIED. */
+    int16_t base_price = 0;     /* [bp-4]   — out-param of 0x0316 (platform value) */
+    int16_t drift      = 0;     /* [bp-6] */
+    int16_t shift_flag = 0;     /* [bp-8] */
+    int16_t scaled     = 0;     /* [bp-0xA] */
+    int16_t bern_n     = 0;     /* [bp-0xC] */
+    int16_t idx_e      = 0;     /* [bp-0xE] */
+    int16_t idx_s      = 0;     /* [bp-0x12] */
+    int16_t bern_lim   = 0;     /* [bp-0x18] */
+    uint8_t *st_market;         /* [0x8D4E] */
+    uint8_t *st_bound;          /* [0x8D4A] */
+    int      si;
+
+    (void)power_index;          /* bound record already set up by the parent */
+
+    /* @asm 0x0483E2 — if econ flag bit0 SET, skip the Bernoulli pre-pass and go
+     * straight to the main drift section. */
+    if (g_econ_flags_5382 & 0x01)               /* @asm 0x0483E2 test [0x5382],1 */
+        goto main_section;                      /* @asm 0x0483E9 jmp 0x04846E */
+
+    /* @asm 0x0483EC..0x04846C — Bernoulli pre-pass: for each of the 4 slots whose
+     * power-attribute (0x181F:0x0A38, selector implicit via [0x8D50]) has bit 5
+     * set, run an inner loop that draws random_int(0, 0xC-bern_lim)==0 `bern_lim+1`
+     * times, counting hits into `drift`, and adds the hit count into
+     * st_market[j+0x36]. */
+    idx_s = 0;                                  /* @asm 0x0483EC [bp-0x12]=0 (j) */
+    goto pre_test;                              /* @asm 0x0483F1 jmp 0x048428 */
+pre_inner_body:                                 /* @asm 0x0483F4 */
+    /* @asm 0x0483F4..0x048407 — random_int(0, 0xC - bern_lim) == 0 ? hit. */
+    if (overlay_call_181F_04D4() == 0)          /* @asm 0x0483FD random_int(0,0xC-bern_lim) */
+        drift++;                                /* @asm 0x048409 inc [bp-6] (hits) */
+    bern_n++;                                   /* @asm 0x04840C inc [bp-0xC] */
+pre_inner_test:                                 /* @asm 0x04840F */
+    if (bern_lim + 1 > bern_n)                  /* @asm 0x04840F..0x048416 jg 0x0483F4 */
+        goto pre_inner_body;
+    /* @asm 0x048418..0x048425 — fold accumulated hits into st_market[j+0x36]. */
+    st_market = g_market_array_8D4E;            /* @asm 0x04841B */
+    si = idx_s;                                 /* @asm 0x04841F si=[bp-0x12] */
+    st_market[si + 0x36] += (uint8_t)drift;     /* @asm 0x048422 add [bx+si+0x36],al */
+    idx_s++;                                    /* @asm 0x048425 inc [bp-0x12] */
+pre_test:                                       /* @asm 0x048428 */
+    if (idx_s >= 4)                             /* @asm 0x048428 cmp [bp-0x12],4 */
+        goto main_section;                      /* @asm 0x04842C jge 0x04846E */
+    /* @asm 0x04842E..0x04843D — skip slots whose attribute bit 5 (0x20) is clear. */
+    if ((overlay_call_181F_0A38() & 0x20) == 0) /* @asm 0x048435 attr([0x8D50], j); test al,0x20 */
+        goto pre_next;                          /* @asm 0x04843F je 0x048425 */
+    /* @asm 0x048441..0x04846C — set up the inner Bernoulli loop for this slot. */
+    (void)overlay_call_181F_030C();             /* @asm 0x048448 scale16 = scale(j,[0x8D52]) */
+    bern_lim = (int16_t)overlay_call_181F_0A60();/* @asm 0x048454 [bp-0x18]=0xa60(scale16) */
+    bern_lim = (int16_t)(bern_lim * bern_lim);  /* @asm 0x04845F imul; [bp-0x18]=ax*ax */
+    drift  = 0;                                 /* @asm 0x048464 [bp-6]=0 */
+    bern_n = 0;                                 /* @asm 0x048469 [bp-0xC]=0 */
+    goto pre_inner_test;                        /* @asm 0x04846C jmp 0x04840F */
+pre_next:
+    idx_s++;                                    /* @asm 0x048425 (shared dec/next via je) */
+    goto pre_test;
+
+main_section:                                   /* @asm 0x04846E */
+    /* @asm 0x04846E..0x04847E — load base price (out-param &base_price) and the
+     * price-UP slot index from 0x181F:0x0316([0x8D4C]). */
+    idx_s = (int16_t)overlay_call_181F_0316();  /* @asm 0x048476 0x0316(&base_price,[0x8D4C]) */
+
+    /* @asm 0x048481..0x048493 — idx_e = sign-extended st[5]; if >=0 mask to nibble. */
+    st_bound = g_bound_record_8D4A;             /* @asm 0x048481 bx=[0x8D4A] */
+    idx_e = (int16_t)(int8_t)st_bound[0x05];    /* @asm 0x048485 al=[bx+5]; cwde */
+    if (idx_e >= 0)                             /* @asm 0x04848C..0x04848E jl 0x048496 */
+        idx_e &= 0x0F;                          /* @asm 0x048490 and ax,0xF */
+
+    /* @asm 0x048496..0x0484A0 — if neither slot is active, only the final drain. */
+    if (idx_e < 0 && idx_s < 0)                 /* @asm 0x048496..0x04849E */
+        goto final_drain;                       /* @asm 0x0484A0 jmp 0x0485BC */
+
+    /* @asm 0x0484A3..0x0484AD — shift_flag = (st[3] & 4) ? 1 : 0. */
+    shift_flag = (st_bound[0x03] & 0x04) ? 1 : 0; /* @asm 0x0484A3 and al,4;cmp al,1;sbb;inc */
+
+    /* @asm 0x0484B0..0x04851B — price-DOWN slot (idx_e) drift + pool reduction. */
+    if (idx_e >= 0) {                           /* @asm 0x0484B0 cmp [bp-0xE],0; jl 0x04851E */
+        /* @asm 0x0484B6..0x0484C8 — magnitude = ((st[5]&0x10)?4:1) << shift_flag. */
+        drift = (int16_t)(((st_bound[0x05] & 0x10) ? 4 : 1) << shift_flag); /* @asm 0x0484B8..0x0484C6 */
+        /* @asm 0x0484CB..0x0484DC — event 0x18 active on idx_e ? *2. */
+        if (overlay_call_181F_07B4() != 0)      /* @asm 0x0484D0 attr(0x18, idx_e) */
+            drift <<= 1;                        /* @asm 0x0484DC shl [bp-6],1 */
+        /* @asm 0x0484DF..0x0484F0 — event 0x17 active on idx_e ? /2 (signed). */
+        if (overlay_call_181F_07B4() != 0)      /* @asm 0x0484E4 attr(0x17, idx_e) */
+            drift >>= 1;                        /* @asm 0x0484F0 sar [bp-6],1 */
+        /* @asm 0x0484F3..0x0484FD — fold drift into the accumulator byte. */
+        st_market = g_market_array_8D4E;        /* @asm 0x0484F6 */
+        si = idx_e;                             /* @asm 0x0484FA */
+        st_market[si + 0x36] += (uint8_t)(int8_t)drift; /* @asm 0x0484FD add [bx+si+0x36],al */
+        /* @asm 0x048500..0x04851B — pool word -= drift*3, clamp >= 0. */
+        {
+            int16_t delta3 = (int16_t)(drift * 3);   /* @asm 0x048503 cx=ax;shl;add (ax*3) */
+            int16_t *pool;
+            si = idx_e * 2;                          /* @asm 0x048509 shl si,1 */
+            st_bound = g_bound_record_8D4A;          /* @asm 0x04850B bx=[0x8D4A] */
+            pool = (int16_t *)&st_bound[si + 0x0A];  /* @asm 0x04850F [bx+si+0xA] */
+            *pool -= delta3;                         /* @asm 0x04850F sub [bx+si+0xA],ax */
+            if (*pool < 0)                           /* @asm 0x048515 or ax,ax; jge 0x04851B */
+                *pool = 0;                           /* @asm 0x048519 sub ax,ax */
+        }
+    }
+
+    /* @asm 0x04851E..0x048565 — price-UP slot (idx_s) scaled pool addition. */
+    if (idx_s >= 0) {                           /* @asm 0x04851E cmp [bp-0x12],0; jl 0x048568 */
+        /* @asm 0x048524..0x04852C — scaled = base_price << shift_flag. */
+        scaled = (int16_t)(base_price << (shift_flag & 0xFF)); /* @asm 0x048527 ax=[bp-4]<<cl */
+        /* @asm 0x04852F..0x048536 — subtract its low byte from the accumulator. */
+        st_market = g_market_array_8D4E;        /* @asm 0x04852F */
+        si = idx_s;                             /* @asm 0x048533 */
+        st_market[si + 0x36] -= (uint8_t)(int8_t)scaled; /* @asm 0x048536 sub [bx+si+0x36],al */
+        /* @asm 0x048539..0x04853E — if same slot as idx_e, halve scaled (signed). */
+        if (si == idx_e)                        /* @asm 0x048539 cmp si,[bp-0xE] */
+            scaled >>= 1;                       /* @asm 0x04853E sar [bp-0xA],1 */
+        /* @asm 0x048541..0x048556 — scaled += scale(idx_s,[0x8D52]) / 5 (signed). */
+        scaled = (int16_t)(scaled + (int16_t)(overlay_call_181F_030C() / 5)); /* @asm 0x048548..0x048556 */
+        /* @asm 0x048559..0x048565 — add scaled into the pool word (no clamp). */
+        {
+            int16_t *pool;
+            si = idx_s * 2;                          /* @asm 0x04855F shl si,1 */
+            st_bound = g_bound_record_8D4A;          /* @asm 0x048561 bx=[0x8D4A] */
+            pool = (int16_t *)&st_bound[si + 0x0A];  /* @asm 0x048565 [bx+si+0xA] */
+            *pool += scaled;                         /* @asm 0x048565 add [bx+si+0xA],ax */
+        }
+    }
+
+    /* @asm 0x048568..0x048590 — price-DOWN: drain idx_e accumulator in steps of 8
+     * while it is >= 8, emitting a downward price tick each step. */
+    if (idx_e >= 0) {                           /* @asm 0x048568 cmp [bp-0xE],0; jl 0x048592 */
+        for (;;) {                              /* @asm 0x048585 (test) */
+            st_market = g_market_array_8D4E;    /* @asm 0x048585 */
+            si = idx_e;                         /* @asm 0x048589 */
+            if ((int8_t)st_market[si + 0x36] < 8) /* @asm 0x04858C cmp [bx+si+0x36],8; jge 0x048570 */
+                break;
+            st_market[si + 0x36] -= 8;          /* @asm 0x048570 sub [bx+si+0x36],8 */
+            overlay_call_181F_0D6C();           /* @asm 0x04857D 0x0D6C([0x8D52], si, -1, 3) */
+        }
+    }
+
+    /* @asm 0x048592..0x0485BA — price-UP: top up idx_s accumulator in steps of 8
+     * while it is <= -8 (signed 0xF8), emitting an upward price tick each step. */
+    if (idx_s >= 0) {                           /* @asm 0x048592 cmp [bp-0x12],0; jl 0x0485BC */
+        for (;;) {                              /* @asm 0x0485AF (test) */
+            st_market = g_market_array_8D4E;    /* @asm 0x0485AF */
+            si = idx_s;                         /* @asm 0x0485B3 */
+            if ((int8_t)st_market[si + 0x36] > (int8_t)0xF8) /* @asm 0x0485B6 cmp ...,0xF8; jle 0x04859A */
+                break;
+            st_market[si + 0x36] += 8;          /* @asm 0x04859A add [bx+si+0x36],8 */
+            overlay_call_181F_0D6C();           /* @asm 0x0485A7 0x0D6C([0x8D52], si, 1, 5) */
+        }
+    }
+
+final_drain:                                    /* @asm 0x0485BC */
+    /* @asm 0x0485BC..0x0485EF — final pass: for each of the 4 slots, drain any
+     * remaining accumulator in steps of 8 while >= 8, emitting a downward tick. */
+    for (idx_s = 0; idx_s < 4; idx_s++) {       /* @asm 0x0485BC..0x0485CB */
+        for (;;) {                              /* @asm 0x0485CD (test) */
+            st_market = g_market_array_8D4E;    /* @asm 0x0485CD */
+            si = idx_s;                         /* @asm 0x0485D1 */
+            if ((int8_t)st_market[si + 0x36] < 8) /* @asm 0x0485D4 cmp [bx+si+0x36],8; jl 0x0485C4 */
+                break;
+            st_market[si + 0x36] -= 8;          /* @asm 0x0485DA sub [bx+si+0x36],8 */
+            overlay_call_181F_0D6C();           /* @asm 0x0485E7 0x0D6C([0x8D52], si, -1, 0) */
+        }
+    }
+    /* @asm 0x0485F2 pop si; leave; retf (parent) */
 }
 
 /* ============================================================================
