@@ -1,7 +1,7 @@
 # Byte-verified game formulas — re-implementation reference
 
 Every formula here is traced to VICEROY.EXE bytes and locked in `tools/audit.py`
-(96/96 green). Citations are file offsets. Values from external `.TXT` data files
+(159/159 green). Citations are file offsets. Values from external `.TXT` data files
 are marked `[ext]`. This is the portable spec a re-target consumes; the chronological
 proof is in `VERIFICATION_LEDGER.md`.
 

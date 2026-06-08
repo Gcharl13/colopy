@@ -1282,3 +1282,49 @@ code region. The prior "field += field/(0xFFFF-n)" growth claim was a
 mis-reading: that site (@0x4700B) scales the **global** word DS:0x538E (~×24/25),
 not a settlement field. Native settlement growth (if modeled) is overlay-resident
 -> TBD. audit.py 128/128.
+
+---
+
+## Colony surrounding-tile production scan — `func_048F34` (verified 2026-06-08)
+
+Full 1740-byte body (file 0x048F34..0x0495FF) byte-traced end to end; the prior
+port covered only the first ~922 bytes (phases A/B) and left phases C/D skeleton.
+
+### Phase C — 5×5 terrain classify (0x04904A..0x049241)
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| scan window rows/cols = scan.{y,x}±2 from BoundRecord *(0x8D4A) [+0]=x [+1]=y | @asm 0x04904E/0x049229/0x04923B | BYTE_VERIFIED |
+| visited[row_idx*5+col_idx] skips tiles claimed by other colonies (phase B) | @asm 0x049159/0x049178 | BYTE_VERIFIED |
+| terrain id from 0x181F:0x078C; exact-match 0x1B→forest++,0x1C→mineral++,0x18→grain+=4 | @asm 0x049185/0x049195/0x04919E/0x0491A7 | BYTE_VERIFIED |
+| ids 8..0x17 → food++ and terrain_sub=(id&7); sub<3 → special++/grain+=2, else ore/fish + cotton/sugar/tobacco | @asm 0x0491C5/0x0491EF/0x0491F9 | BYTE_VERIFIED |
+| secondary classifier (id 0..7 and 0x19/0x1A): hills batch-convert market[+2]+1 to food in 3s; per-id cotton/sugar/tobacco/fur/fish/grain buckets | @asm 0x049066/0x04907F/0x04909B | BYTE_VERIFIED |
+| **CORRECTION:** ids 2/3 `!(id&4)` arm is `jmp 0x04905F` (grain+=2 ONLY); it does NOT pass 0x04905C (special++). Only the food-branch sub<3 path (`jmp 0x04905C`) bumps special_cnt | @asm 0x0490FD `e9 5f ff` → 0x04905F vs 0x0491F6 `e9 63 fe` → 0x04905C | BYTE_VERIFIED |
+
+### Phase D — finalize per-resource outputs (0x049242..0x0495FF)
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| base = colony level *(0x8D4A)[+4] + 1; tiles = base² | @asm 0x049242..0x049250 | BYTE_VERIFIED |
+| outputs are two CONTIGUOUS 16-word arrays: cap[16] @0x9E58..0x9E76, yield[16] @0x9E78..0x9E96; the clear-loop zeroes the whole block and the cap-normalize/fort-bonus loops re-scan it. The `mov [0x9eXX],..` slot writes ARE elements of these arrays (e.g. 0x9E80=yield[4], 0x9E6E=cap[11]) | @asm 0x049259 `[bx-0x61a8]/[bx-0x6188]` (0x9E58/0x9E78 signed) | BYTE_VERIFIED |
+| food yield[0] += (mkt+base)*food_cnt/(7-mkt); food cap[0] = (tiles*4) >> (mkt>1) | @asm 0x049285/0x0492A7 | BYTE_VERIFIED |
+| lumber yield[7] = market[+0xc]/max(1,saw_level) + forest*(mkt>2?8:4); saw_level = g_power_scalar_962A[cur_power] (= [cur_record-0x69D6]) | @asm 0x0492B8/0x0492C3/0x0492F0 | BYTE_VERIFIED |
+| silver/tobacco caps use signed (x/4)*2 (cdq/xor/sub/sar2/xor/sub/shl); inputs ≥0 so == abs | @asm 0x049334/0x049379 | BYTE_VERIFIED |
+| per-slot cap-normalize via 0x181F:0x035C(cap[i],0,50); fort flag *(0x8D4A)[+3]&4 doubles cap[0..7], ×1.5 cap[13..15], doubles yield[7..15] | @asm 0x04944D/0x049466/0x049476/0x049493/0x0494AA | BYTE_VERIFIED |
+| per-slot decay: yield -= cap/2 (floor 1 if prior yield>0); cap -= prevyield/2 (floor 1 if prior cap>0); demand market[i*2+0xe] adjusts cap (supply) or yield (negative demand) | @asm 0x049537..0x049591/0x0495B9 | BYTE_VERIFIED |
+
+audit.py 152/152 after this function; 12 anchors added.
+
+---
+
+## TABLE_C shift-down — `func_04C2CE` (verified 2026-06-08)
+
+Last remaining STILL-SKELETON game-logic stub. The per-func dump is the COMPLETE
+55-byte body (ENTER 0x04C2CE .. RETF 0x04C304), not truncated/mis-addressed.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| sibling of overlay_grid16_shift_down but for TABLE_C @0xA0DC (16 slots × 6 bytes), a flat 1-D array (no column arg) | @asm 0x04C2CE ENTER 2,0; one arg stop_row [bp+6] | BYTE_VERIFIED |
+| r = 0x0E downto stop_row: copy 3 words from record[r] (si=0xA0DC+r*6) to record[r+1] (di=si+6) via movsw×3, es=ds | @asm 0x04C2DC bx=r*6; 0x04C2E7 di; 0x04C2EB si; 0x04C2F3 movsw×3 | BYTE_VERIFIED |
+
+audit.py 159/159. With these two functions, no explicitly-marked game-logic
+SKELETON stub remains in src/; the residual work is OUT-OF-SCOPE leaves,
+EXTERNAL-DATA `.TXT` values, and RTLink overlay-swapped bodies (see COVERAGE.md).
