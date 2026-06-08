@@ -59,5 +59,5 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
 cd viceroy_source/tools
 python3 funcscan.py            # re_work/functions.json (needs re_work/VICEROY.EXE)
 python3 coverage.py            # this table + re_work/coverage.json
-python3 audit.py               # 69/69 byte-claim regression check
+python3 audit.py               # 128/128 byte-claim regression check
 ```

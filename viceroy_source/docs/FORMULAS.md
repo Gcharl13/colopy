@@ -94,6 +94,33 @@ select:  per category, weighted random_int(1, sum_weights) over not-yet-owned FF
 ff_count = PowerRecord+0x14. FF category/era-weight tables DS:0x9654/0x9655 are `[ext]`
 (NAMES.TXT @FATHERS). Per-FF effects = func_03BC42 (separately byte-verified).
 
+## Combat — `func_07C2A`/`func_07D3E` (strength), `func_05CA7E` (land), `func_05B2C2` (outcome)
+```
+ATK = column DS:0x5236[type] * 8 (* per-type mods)        # 0x5235=DEFENSE, 0x5236=ATTACK  [ext]
+DEF = ((fort_terrain_factor + 4) * base_def) / 4          # factor 0->x1, 2->x1.5, 4->x2
+land modifiers (applied to ATK/DEF before roll):
+  player terrain bonus +(4-difficulty) each side ; amphibious ATK*(k/3) ;
+  weak-attacker DEF/2 ; artillery-vs-fort DEF/4 ; settlement DEF*2 ;
+  scout ambush ATK*3/2 ; cross-terrain ATK*3/2
+roll = random_int(1, ATK+DEF) ;  attacker wins iff roll <= ATK   # on MODIFIED strengths
+difficulty<=1 AI shortcut: odds = ATK*8 / (DEF+1)
+outcome: loser captured (convert table) or destroyed (flag [+0x3148]|=0x80);
+         ships demote down hull-damage ladder; winner promotes if veteran flag 0x40 set
+```
+Strength columns and terrain-defense table DS:0x2F77 are `[ext]` (NAMES.TXT @UNIT/@TERRAIN).
+
+## Native raid — `func_05BE84`
+```
+outcome = random_int(1,4)  -> forced to a feasible target (STORES/BURN/WREAK/GOLD/SHIP)
+GOLD  = random_int(50, min(0x7FFF, colony[+0x1F] * PowerGold / (tribeByte[0x9410+t]+1) + 10))
+        subtracted from victim PowerRecord+0x2A
+STORES = random_int(0, min(10, colonyGoods/2)) of one commodity (floor 1), from colony+0x9A
+trigger: tribe raids when alarm DS:0x54F6[(power*9+tribe)*2] >= 0x80 (zeroed after a raid;
+         normal accumulation clamped to [0x20,0x60])
+```
+WREAK/SHIP unit removal is overlay-resident `[TBD]`. Native settlement growth: no static
+growth write exists — `[TBD]` / overlay.
+
 ## Subsystems confirmed ABSENT (byte-verified by absence)
 No disease/plague and no weather/storm subsystem exist in VICEROY.EXE (zero matching
 strings). Colony population changes only via starvation (food deficit) and combat/raze.
