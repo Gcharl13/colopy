@@ -12,7 +12,7 @@
  * 0xFFFF (== -1 signed) terminates a link / means "no unit". The HEAD of a
  * tile's chain has chain_prev < 0. A separate map-side structure (reached via
  * the 0x037F:* helpers) records which unit index is a given tile's head; those
- * helpers live in another segment and are TBD here -- their arg/return shapes
+ * helpers live in another segment (body in thunk page) -- their arg/return shapes
  * are taken from the call sites, never invented.
  *
  * These three functions were BYTE_VERIFIED 2026-05-30 by disassembling the

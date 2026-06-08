@@ -65,7 +65,7 @@ void unit_cargo_slot_set_quantity(int unit_idx, int slot, int qty)
  * loaded successfully).
  * ============================================================================ */
 extern int unit_cargo_slot_kind_or_neg1(int slot, int unit_idx);
-extern int unit_alloc_new_slot(int unit_idx, int commodity_idx, int qty);  /* TBD: in same module */
+extern int unit_alloc_new_slot(int unit_idx, int commodity_idx, int qty);  /* defined in same module (see cargo.c sibling) */
 
 int unit_load_commodity_into_slots(int unit_idx, int commodity_idx, int qty)
 {

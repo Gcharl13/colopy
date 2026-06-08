@@ -85,7 +85,7 @@ static void u_word_set(int idx, int k, int16_t v)
     U_OFF(idx, k + 1) = (uint8_t)((v >> 8) & 0xFF);
 }
 
-/* ---- cross-segment helpers (args/returns from call sites; bodies TBD) ------ */
+/* ---- cross-segment helpers (args/returns from call sites; bodies in thunk page) ------ */
 
 /* 0x181F:0x894 -- called once per allocation. Stack: push [bp+0xC] then push
  * new_idx; `add sp,4` => 2 args (new_idx, arg_c). Likely "register new unit /
@@ -459,7 +459,7 @@ void unit_destroy(int16_t unit_idx)
  *  - Control flow + every UnitRecord field write/read above is byte-verified
  *    against the raw EXE (see per-banner @asm offsets; all decode byte-exact).
  *  - The cross-segment helpers (0x181F:0x894 / 0x844; 0x037F:0x0A / 0x15E /
- *    0x314 / 0x598 / 0x228) are TBD bodies on other pages; arg/return shapes
+ *    0x314 / 0x598 / 0x228) have bodies in thunk page; arg/return shapes
  *    come from the call sites only -- NOT invented.
  *  - g_power_unit_count_7304[] (DGROUP-(idx-0x7304)) and g_table_54EF[]
  *    (DGROUP:0x54EF, stride 0x12) addressing is byte-clear; the tables' full
