@@ -173,7 +173,7 @@ extern int overlay_call_0C0C_0006(void);  /* mouse_pos() -> AX=x, DX=y        */
  *             (under/over a build threshold).  Pure presentation; touches 8542
  *             read-only.
  * @status     BYTE_VERIFIED (control flow + every constant traced).  The exact
- *             pixels produced by the 0x181F primitives stay TBD (library side).
+ *             pixels produced by the 0x181F primitives: library-implementation-only.
  * ---------------------------------------------------------------------------- */
 int func_027BB6_colony_buildings_panel(void)
 {
@@ -281,7 +281,7 @@ int func_027D84_grid_cell_geom(uint16_t col, uint16_t *out_x,
  *               func_027D84's geometry feeds.  The [0x33C]==0 branch is the
  *               empty-colony case (just 6 label rows).
  * @status     BYTE_VERIFIED (full control flow + all DGROUP/table offsets
- *               traced).  Pixel output of the 0x181F primitives is TBD.
+ *               traced).  Pixel output of the 0x181F primitives: library-implementation-only.
  * ---------------------------------------------------------------------------- */
 int func_027DB2_colony_units_panel(uint16_t do_blit)
 {
@@ -429,7 +429,7 @@ int func_02819E_draw_production_row(uint16_t row, uint16_t color)
  *               selected commodity ([0x33A]) differently.  Finally redraws a
  *               status line at y from [0x2F5E] and, if do_blit, inverts the bar.
  * @status     BYTE_VERIFIED (full trace incl. the two 16-iter loops and the
- *               cargo word-array stride).  Glyph pixels are library-side TBD.
+ *               cargo word-array stride).  Glyph pixels: library-implementation-only.
  * ---------------------------------------------------------------------------- */
 int func_0281D6_colony_commodity_bar(uint16_t do_blit)
 {
@@ -606,7 +606,7 @@ int func_02853C_colony_titlebar(uint16_t do_blit, uint16_t use_alt)
  *               0x5380&0x10 / 0x8E32 / 0x8E5A block @0x0286DA gates a one-shot
  *               option-register (0x181F:0x3FE, key [0xBAD]).
  * @status     BYTE_VERIFIED (primary draw sequence + tail entry layout traced).
- *               The painter leaves' pixels are library-side TBD.
+ *               The painter leaves' pixels: library-implementation-only.
  * ---------------------------------------------------------------------------- */
 int func_028592_colony_screen_draw(uint16_t do_blit)
 {
@@ -1058,7 +1058,7 @@ int func_029D24_commodity_legend(void)
  *               and repaint.  This is the colony screen's master mouse-click
  *               dispatcher (everything clickable on that screen routes here).
  * @status     BYTE_VERIFIED (hot-zone table strides + mode-6 click arms traced
- *               instruction-by-instruction).  Handler-leaf pixels are TBD.
+ *               instruction-by-instruction).  Handler-leaf pixels: library-implementation-only.
  * @touches_8542 yes (population +0x1F).
  * ---------------------------------------------------------------------------- */
 int func_029DD4_colony_click_router(void)
@@ -1381,7 +1381,7 @@ post:
  *               and apply (0x181F:0xAD8).  Returns [bp-6] (1 normally, 0 when a
  *               transfer was applied).
  * @status     BYTE_VERIFIED (stock word-array stride, the 0x64/stock clamps, and
- *               the value/apply chain traced).  Library pixel/price internals TBD.
+ *               the value/apply chain traced).  Library pixel/price internals: library-implementation-only.
  * @touches_8542 yes (warehouse stock array at +0x9A).
  * ---------------------------------------------------------------------------- */
 int func_02A462_commodity_sell_dialog(uint16_t unit, uint16_t cargo,
