@@ -167,8 +167,10 @@ extern int16_t g_word_53A2;
  * aggressive the native escalation). */
 extern uint8_t g_byte_53A6;
 
-/* DGROUP:0x894 -- a feature/flags byte; bit 2 tested @asm 0x0470A3 (gates the
- * "notify EU player of native presence" path). TBD exact bit map. */
+/* DGROUP:0x894 -- a 7-bit options/display flags bitfield (see overlay_02083C_024337.c
+ * func_02356C); value 0x02 tested @asm 0x0470A3 (gates the "notify EU player of
+ * native presence" path). Other bits: 0x01=trade (tile_info_panel.c), 0x04=colony
+ * screen (overlay_046D70_04C2E1.c), 0x10/0x20=view gates (overlay_0612E6_066EB3.c). */
 extern uint8_t g_flags_894;
 
 /* DGROUP:0x8542 -- POINTER to the active ColonyRecord; +2 (the colony x/y word)
@@ -177,7 +179,9 @@ extern uint16_t g_colony_ptr_8542;
 
 /* DGROUP:0x8CFA -- the "target European power" / attacked-power index word, read
  * @asm 0x047086 / 0x047555 / 0x047B55..0x047BA1 (clamped <4; used as the
- * attitude/market query subject when valuing a strike). TBD exact role. */
+ * attitude/market query subject when valuing a strike).
+ * RUNTIME_ONLY (NAMES.TXT/data-file): set by the AI driver that picks the
+ * target; the stored value is not in the EXE static image. */
 extern int16_t g_target_power_8CFA;
 
 /* DGROUP:0x8D4A -- pointer to the per-power AI state / the (col,row) ORIGIN word
@@ -196,12 +200,16 @@ extern uint16_t g_ai_state_ptr_8D4A;
  *         1, or 2 to mark a handled colony). */
 extern uint16_t g_active_settlement_ptr_8D4E;
 
-/* DGROUP:0x8D52 -- the commodity/cargo id word the native covets (pushed to the
- * market-quantity query 0x181F:0x30C) @asm 0x0474AE / 0x047670. TBD which cargo. */
+/* DGROUP:0x8D52 -- the commodity/cargo id word the native tribe covets (pushed to the
+ * market-quantity query 0x181F:0x30C) @asm 0x0474AE / 0x047670.
+ * RUNTIME_ONLY (NAMES.TXT/data-file): the specific cargo id is tribe-type-dependent
+ * and loaded from NAMES.TXT / TRIBE.TXT at runtime; no static EXE literal. */
 extern int16_t g_native_cargo_8D52;
 
-/* DGROUP:0x8DB8 -- scratch result word written by several 0x181F queries and
- * copied into locals (@asm 0x047117 / 0x0473.. region). TBD. */
+/* DGROUP:0x8DB8 -- engagement-strength / guard word written by several 0x181F
+ * queries and copied into locals (@asm 0x047117 / 0x0473.. region).
+ * Per overlay_03C5A8_040C11.c: "engagement strength" (0 = allow tribute per
+ * combat.c @0x5BB3D). RUNTIME_ONLY (NAMES.TXT/data-file). */
 extern int16_t g_query_result_8DB8;
 
 /* DGROUP:0x2F77 -- per-occupant-TYPE weight table, stride 16 (`shl bx,4`); byte
@@ -245,7 +253,7 @@ extern uint8_t g_power_gate_9410[/* power_idx */];
 /* ----------------------------------------------------------------------------
  * Overlay helpers (RTLink far-thunks, 0x181F:* / 0x191F:* / 0x1A1F:*). Semantics
  * are taken from the call sites (arg count / how the return is used); bodies are
- * on other pages and are TBD where noted. NONE are invented.
+ * on other pages (body in thunk page) where noted. NONE are invented.
  * The bitmask conventions match the EU evaluator (unit_orders.c): on the tile-
  * ability queries, `&0xa` = "attack-ish capability", `&0x40` = second ability
  * family, `&0x20` (on the attitude query 0xA38) = "at peace / treaty".
@@ -333,7 +341,7 @@ extern int16_t ovly_query_9E6(int16_t colony);                /* @0x047D7C selec
  * but their values are SAVE-GAME BSS (populated at runtime; zero in EXE). 0x9410
  * is the g_power_gate_9410 popsum table (RESOLVED; see extern below). The deep
  * dialog/animation helper bodies
- * are opaque overlay calls (TBD). The original's goto-heavy structure (shared
+ * are opaque overlay calls (body in thunk page). The original's goto-heavy structure (shared
  * loop-continue target 0xD8A, commit target 0x198E) is reproduced with labels.
  * ============================================================================ */
 int16_t native_unit_ai(int16_t self)
@@ -438,7 +446,7 @@ int16_t native_unit_ai(int16_t self)
         int16_t sdy = -(g_native_settlement_54EC[home_link][0x01] - self_y); /* @asm 0x047153..0x04715C */
         int16_t sdx = -(g_native_settlement_54EC[home_link][0x00] - self_x); /* @asm 0x04715F..0x047168 */
         home_dist = ovly_dist_370(sdx, sdy);              /* @asm 0x04716D -> [bp-0x90] */
-        (void)home_dist; /* [bp-0x90] kept for fidelity; consumed by later helpers (TBD) */
+        (void)home_dist; /* [bp-0x90] kept for fidelity; consumed by later helpers (body in thunk page) */
     }
     /* @asm 0x047179 cmp [bp-0x78],0; jl 0xb9d -- verify the home settlement's tile
      *      terrain (0x6B4) still matches the unit's base id; if not, invalidate
@@ -661,7 +669,7 @@ int16_t native_unit_ai(int16_t self)
                  * EU stack it accumulates a defence weight via market value
                  * (0x30C>>1) into [bp-0x28] and keeps the max as [bp-0x98], the
                  * stack as [bp-0x68]. The coordinate/owner math @asm 0x04757A..
-                 * 0x047600 is byte-clear; helper bodies TBD.) */
+                 * 0x047600 is byte-clear; helper bodies in thunk page.) */
                 best_enemy = -1; best_defw = -1;          /* @asm 0x047524 */
             }
 
@@ -751,7 +759,8 @@ int16_t native_unit_ai(int16_t self)
                  *         +8, else random_int(0x32,0x64) vs market & 0x315c/0x315e
                  *         sign checks -> +0xa.
                  * (@asm 0x047890..0x047A24. The +0x2f77 occ-type weight ×4 at
-                 *  @asm 0x0477D1 is added here too; that TABLE is [TBD].) */
+                 *  @asm 0x0477D1 is added here too; that TABLE is SAVE-GAME BSS
+                 *  (RUNTIME_ONLY (NAMES.TXT/data-file) — see g_occtype_weight_2F77 extern above).) */
                 int16_t loot_flag = 0;   /* [bp-0x84] */
                 int16_t took = 0;        /* [bp-0x20] */
                 cur = self;                                /* @asm 0x047537 ([bp-0x38]=[bp+6]) */
@@ -760,7 +769,8 @@ int16_t native_unit_ai(int16_t self)
                 {
                     uint8_t occt = (uint8_t)occ_kind;      /* dispatch key occ unit type */
                     /* @asm 0x0477D1 score += g_occtype_weight_2F77[occt][0] * 4;
-                     * (byte at +0 of 16-byte struct; save-game BSS, values TBD) */
+                     * (byte at +0 of 16-byte struct; save-game BSS, values RUNTIME_ONLY
+                     * (NAMES.TXT/data-file) — populated from save file at 0x07461B) */
                     score += (int16_t)g_occtype_weight_2F77[occt][0] * 4;
                     switch (occt <= 0x0C ? occt : 0x0C) {  /* @asm 0x047890 cmp ax,0xc; ja default */
                         case 0:  score += 5;       break;  /* t[0]  @asm 0x047822 */
@@ -1257,15 +1267,16 @@ finish:
  *  - The [bp+6] alias (acting unit vs scratch "current unit on tile") is modeled
  *    with a stable `self` + a separate `cur`; the binary saves/restores via
  *    [bp-0x72] (@0x0471ED / 0x0472FB / 0x047E58) -- semantics preserved.
- *  - OVERLAY HELPER BODIES (0x181F:* / 0x191F:* / 0x1A1F:*) are on other pages and
- *    are TBD; their arg/return shapes are taken from the call sites, NOT invented.
+ *  - OVERLAY HELPER BODIES (0x181F:* / 0x191F:* / 0x1A1F:*) are on other pages
+ *    (body in thunk page); their arg/return shapes are taken from the call sites, NOT invented.
  *  - STATUS: control flow + globals + inline weights BYTE_VERIFIED; 0x9410 table
  *    RESOLVED (g_power_gate_9410 = per-power popsum, indexed by owner_power).
  *    UnitRecord field indices corrected 2026-06-08: goto_flags byte at absolute
  *    0x3148 = record offset +0x04 (was [0x08]); mission_turn at 0x3156 = +0x12
  *    (was [0x10]).  ColonyRecord +0x1A renamed owner_power (was defence_word).
  *    0x2F77 / 0x5236 are SAVE-GAME BSS; the weight TABLE VALUES are not present
- *    in the EXE (loaded from save file at runtime). A few opaque overlay helper
- *    semantics TBD. Tag: RECONSTRUCTED (structure byte-verified; field offsets
- *    corrected 2026-06-08; 0x9410 RESOLVED).
+ *    in the EXE (loaded from save file at runtime; RUNTIME_ONLY (NAMES.TXT/data-file)).
+ *    A few opaque overlay helper semantics are RUNTIME_ONLY (NAMES.TXT/data-file).
+ *    Tag: RECONSTRUCTED (structure byte-verified; field offsets corrected 2026-06-08;
+ *    0x9410 RESOLVED).
  * ============================================================================ */
