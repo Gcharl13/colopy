@@ -53,9 +53,14 @@ python3 rtlink/flatten.py 5 0x92     # resolve overlay seg 5 : offset 0x92 (+ di
 
 - Low-thunk segments (`weak`/`AMBIG` in the table) are not reliable — they have too
   few offsets to pin a unique base; treat only `STRONG` rows as resolved.
-- `0x181F`/`0x191F` use two loaders (`0x110D:0x0D91` "Type-B", `0x0DAB` "Type-A").
-  Type-A fixup records occasionally point a few bytes into a routine (alternate
-  entry); when a resolved offset lands mid-instruction, snap to the enclosing
-  function start from `functions.json`.
+- `0x181F`/`0x191F` use two loaders (`0x110D:0x0D91` "Type-B" 10/12-byte records,
+  `0x0DAB` "Type-A" **14-byte** records). The fingerprint (which aggregates all
+  windows and is self-correcting on the `9A` re-scan) yields the correct segment
+  bases either way — but an INDIVIDUAL Type-A resolution is not yet fully trusted:
+  resolving the endgame raw-score thunk `0x191F:0x3AA` lands on `func_0373CA`
+  (seg5:0x92), which disassembles as a UI glyph-draw routine, not a score sum.
+  So the Type-A `(off, segid)` field positions need pinning before per-thunk
+  Type-A resolutions (e.g. the score) are relied upon. Type-B (`0x181F`) and the
+  segment-base map are validated (resident control 323/362).
 - Needs `re_work/VICEROY.EXE` (gitignored) and `re_work/functions.json`
   (`funcscan.py`). Output `re_work/overlay_segmap.json` is regenerable.

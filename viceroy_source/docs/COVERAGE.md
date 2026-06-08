@@ -48,11 +48,19 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
    their *values* need those data files (see `DATA_TABLES.md`). The combat/AI
    weight columns at DS:0x5235.. are the same story.
 
-4. **OVERLAY-SWAPPED bodies behind RTLink.** The score-total component sum at
-   `0x191F:0x3AA` is genuinely overlay-resident: its 0x181F-style thunk's second
-   stage is `jmp far 0x0000:0x0092` — a **load-time-patched placeholder segment**
-   (overlay id 5), so static resolution needs the RTLink V2 flattener
-   (`tools/rtlink/`, in progress) or a memory dump.
+4. **OVERLAY-SWAPPED bodies behind RTLink.** The RTLink V2 flattener now EXISTS
+   (`tools/rtlink/flatten.py`) and statically recovers the overlay
+   segment-id → file-base map by fingerprinting thunk-offset/function-start
+   overlap. It is validated two ways: 23/31 segments resolve STRONG, and the
+   resident-thunk control lands on resident function starts 323/362 (89%). So
+   overlay-only call targets reached via `0x181F` (Type-B) thunks are now
+   statically resolvable (`base[segid] + off`) — the wall is largely down.
+   - **Remaining caveat:** the `0x191F` (Type-A, 14-byte) thunk records have a
+     field-position nuance still being pinned. The endgame score-total component
+     sum at `0x191F:0x3AA` resolves under the current parse to `func_0373CA`
+     (seg5:0x92), which is actually a UI glyph-draw routine — so the score raw
+     value is NOT yet correctly located. score-total stays `[TBD]` pending the
+     Type-A fix (no longer "needs a memory dump", just the format detail).
    - **CORRECTION (2026-06-08):** the buy/sell bid-ask spread is NOT here. The
      prior `0x181F:0xcc2/0xac4` lead was a misattribution — those thunks resolve
      to RESIDENT `func_00B5A8`/`func_00B65A` (jmp far 0x05EB:0x32F8/0x33AA, file
