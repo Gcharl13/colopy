@@ -338,6 +338,17 @@ check_bytes("1F958 MACRO_KEYTAB_1FB8 = 'COUNTRY\\0'", 0x1F958,
 check_bytes("1F960 MACRO_KEYTAB_1FC0 = 'YEAR\\0'", 0x1F960,
             "59 45 41 52 00")
 
+# ---- report screen DGROUP arrays extracted (BYTE_VERIFIED 2026-06-08) ----
+# g_report_colrow_1E7E initial values all 1 (four cols, each initially highlighting row 1)
+check_bytes("1F81E g_report_colrow_1E7E[0..3] = [1,1,1,1] (initial col-row cursor)", 0x1F81E,
+            "01 00 01 00 01 00 01 00")
+# g_report_lbl_2EDA first 3 entries: 0x0000, 0x2D65, 0x0000 (col 0 header label = 0x2D65)
+check_bytes("2087A g_report_lbl_2EDA[0..2] = [0,0x2D65,0] (col header label IDs)", 0x2087A,
+            "00 00 65 2d 00 00")
+# g_report_lbl_2EE2 first 6 words: [0,0x1A00,0,0x0874,0,0x1AD8]
+check_bytes("20882 g_report_lbl_2EE2[0..2] cell label IDs (col=0,row=0..2)", 0x20882,
+            "00 00 00 1a 00 00")
+
 # ---- func_04CC50 remaining TBD-inner thunks resolved (BYTE_VERIFIED 2026-06-08) ----
 # 0x181F:0x8BC thunk (Type-B, ea=0x0427:0x0D38=func_0073A8 unit-chain-score)
 check_bytes("1AEAC 0x181F:0x8BC thunk EA to 0x0427:0x0D38 (func_0073A8 unit_chain_score)", 0x1AEAC,

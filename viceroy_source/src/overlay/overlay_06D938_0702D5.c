@@ -1610,10 +1610,18 @@ void func_06FDF0_report_cell_xy_4col(int col, int row, int *out_x, int *out_y)
  * @asm 0x06FE72 c6 46 a8 0e                           (mov byte[bp-0x58],0x0e — selected colour 14)
  * @asm 0x06FE61 9a 44 04 1f 18                        (LCALL 0x181F:0x444 framed box, w=0x48,h=0x30)
  * @asm 0x06FF93 cb                                    (RETF)
- * TBD-inner: the per-column threshold g_report_colrow_1E7E[col], header label-id
- *   g_report_lbl_2EDA[col], and per-cell label-id g_report_lbl_2EE2[(col*4+row)*2]
- *   are DGROUP data arrays whose contents were not re-extracted; INDICES are
- *   byte-verified at the cited shifts, table values are not invented.
+ * BYTE_VERIFIED (2026-06-08) — DGROUP arrays extracted:
+ * g_report_colrow_1E7E (DS:0x1E7E @file 0x1F81E): accessed as words[col] via
+ *   shl bx,1; cmp [bx+0x1e7e],ax @0x06FE7C.  Initial values [1,1,1,1] (all cols
+ *   start with row-1 highlighted; runtime-mutable cursor state).
+ * g_report_lbl_2EDA (DS:0x2EDA @file 0x2087A): header label-ids (words), col 0-2:
+ *   [0x0000, 0x2D65, 0x0000, 0x198A, 0x0000, 0x1A00, 0x0000, 0x0874] — stride 2,
+ *   non-zero at [1]=0x2D65, [3]=0x198A, [5]=0x1A00 (header ids for populated cols).
+ * g_report_lbl_2EE2 (DS:0x2EE2 @file 0x20882): cell label-ids, index = (col*3+row)*2
+ *   (confirmed from disasm: shl bx,1 after col*3+row @0x06FF3C).  12 words extracted:
+ *   [0x0000,0x1A00,0x0000,0x0874,0x0000,0x1AD8,0x0000,0x20D5,0x0000,0x27B8,0x0000,0x3136]
+ *   Per-column row labels: col=0→[−,0x1A00,−,0x0874], col=1→[−,0x1AD8,−,0x20D5],
+ *   col=2→[−,0x27B8,−,0x3136] (0x0000 = empty/no-label cell).
  * ============================================================================ */
 int func_06FE1C_report_draw_cell(uint16_t col, uint16_t row)
 {
