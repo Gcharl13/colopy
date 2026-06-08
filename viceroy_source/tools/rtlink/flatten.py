@@ -104,11 +104,16 @@ def scan_thunks(exe):
                 segid = d[i + 10] | (d[i + 11] << 8)
                 if is_type_a and i + 14 <= THUNK_SCAN_HI:
                     extra = d[i + 12] | (d[i + 13] << 8)
-                    if extra:
+                    # Distinguish genuine extra from a 12-byte thunk (next thunk leaking in).
+                    # A 12-byte Type-A thunk has bytes[12..13] == 9A AB (start of next thunk).
+                    # A genuine extra field is never 0xAB9A (that value * 16 far exceeds the
+                    # file size of ~480 KB).  Using the 0x9A boundary test is robust.
+                    if extra and d[i + 12] != 0x9A:
                         type_a_extra[(segid, off)] = extra
                         i += 14
                         continue
-                    i += 14
+                    # extra==0 or 12-byte thunk (extra bytes are next thunk): 12-byte advance
+                    i += 12
                 else:
                     i += 12
                 # add to fingerprint only when extra==0 (primary base is extra-0 base)
