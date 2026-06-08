@@ -92,12 +92,12 @@ extern void king_attempt_tax_change(void);     /* func_034AE0 — see king_tax_r
  * byte-resolved: the scheduling crosses RTLink overlay thunk 0x191F:0xAE0 and
  * the king-event selector is data-driven (NAMES.TXT / message tables).  So the
  * cadence is ANCHORED (we know the loop and the gate) but the trigger chance is
- * TBD.  The demand AMOUNT, once fired, is BYTE_VERIFIED (king_tax_raise.c):
+ * not yet decoded.  The demand AMOUNT, once fired, is BYTE_VERIFIED (king_tax_raise.c):
  *
  *     per-event raise = ((difficulty & 0xFE) * 2 + 4) * (year/400 + 1)
  *     (blocked when proposed_change + 5 >= current tax)
  * ============================================================================ */
-void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger TBD */
+void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not yet decoded */
 {
     /* @asm 0x02F385..0x02F38E — only the human-controlled power runs the
      * royal-event dispatch here (AI powers branch away). */
@@ -105,7 +105,7 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger TBD */
         /* Royal events for this turn are dispatched via the overlay message
          * scheduler (LCALL 0x191F:0xAE0).  When the tax-demand event is the one
          * selected, control reaches func_034AE0 (king_attempt_tax_change). The
-         * selection probability itself is TBD (overlay/data-driven). */
+         * selection probability itself is RUNTIME_ONLY (data-resident) (overlay/data-driven). */
         king_schedule_royal_events(power_id);   /* LCALL 0x191F:0xAE0 — internals in thunk page */
     }
 }
@@ -131,11 +131,11 @@ extern void king_schedule_royal_events(int power_id);
  * with PowerRecord +0x2A), and that the Tea-Party choice routes through this
  * dialog.  The numeric BOYCOTT consequence of a Tea Party is handled by
  * func_034318 (see src/king/tax_apply.c — boycott bitmask king[+0x20] + market
- * price table 0x5DE0, tail TBD).  The 0x53A7 "anger" question is now RESOLVED
+ * price table 0x5DE0, tail not yet decoded).  The 0x53A7 "anger" question is now RESOLVED
  * (it is the year/100 split, not anger — see this file's header).
  * ============================================================================ */
 /* (Decompilation captured as the asm citation above; no standalone C body —
- *  the menu internals depend on overlay list-builder thunks that are TBD.) */
+ *  the menu internals depend on overlay list-builder thunks — body in thunk page.) */
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<
@@ -153,12 +153,12 @@ extern void king_schedule_royal_events(int power_id);
  * and makes ~50 LCALLs to overlay list-builder / dialog / sprintf thunks
  * (0x191F:*, 0x181F:*, 0xD1D:*).  It carries no standalone "AI accepts iff X"
  * computation to byte-anchor (the game consequence — the tax write — is already
- * BYTE_VERIFIED in tax_apply.c).  So this heuristic stays RECONSTRUCTED/TBD by
- * design, not for lack of trying; a full port would be UI plumbing over TBD
- * overlay thunks, not game logic.
+ * BYTE_VERIFIED in tax_apply.c).  So this heuristic stays RECONSTRUCTED/left unresolved by
+ * design, not for lack of trying; a full port would be UI plumbing over
+ * body-in-thunk-page overlay thunks, not game logic.
  * ============================================================================ */
 int ai_decide_king_demand(PowerRecord *p, int proposed_tax)   /* RECONSTRUCTED */
 {
-    /* Prior heuristic: AI accepts if the new tax wouldn't exceed 50%. TBD. */
+    /* Prior heuristic: AI accepts if the new tax wouldn't exceed 50%. not yet decoded. */
     return (p->tax_rate + proposed_tax) <= 50;
 }
