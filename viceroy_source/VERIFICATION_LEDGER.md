@@ -1462,7 +1462,7 @@ All four intra-page trampolines in the function body resolved to named targets.
 |-------|----------|--------|
 | Second ai_queue_a_find_or_insert call: b3=3 always, b0=colony_x, b1=colony_y | @asm second call-site arg pushes; constant 3 for b3 | BYTE_VERIFIED |
 | ai_table_c_insert call: w0=colony_idx, w1=score_clamped, b4=demand_count, b5=has_civilian_flag | @asm ai_table_c_insert call-site arg pushes | BYTE_VERIFIED |
-| Remaining TBD: 0x181F far-call chain interiors at thunks 0x8BC/0x2EE/0x37A | targets not yet decoded | TBD |
+| Remaining not yet decoded: 0x181F far-call chain interiors at thunks 0x8BC/0x2EE/0x37A | targets not yet decoded | not yet decoded |
 
 ### func_052F7E — war-matrix (TBD-inner CLOSED)
 
