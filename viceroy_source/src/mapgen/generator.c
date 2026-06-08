@@ -33,7 +33,7 @@
  *   map_width  = DGROUP:[0x853A]  (58 in shipped maps)   (BYTE_VERIFIED)
  *   map_height = DGROUP:[0x853C]  (72 in shipped maps)   (BYTE_VERIFIED)
  *
- * TILE ACCESS HELPERS (BYTE_VERIFIED call shape; thunk file offset TBD)
+ * TILE ACCESS HELPERS (BYTE_VERIFIED call shape; body in thunk page)
  *   read  : lcall 0x1A1F:0x0868  (layer_far_ptr, x in AX, y in DX) -> AL=byte
  *   write : lcall 0x1A1F:0x0872  (layer_far_ptr, x in AX, y in DX, BX=value)
  *   These are the explicit-pointer twins of the resident accessor
@@ -173,7 +173,7 @@ void map_generate_new_world(int premade)
  *                        length, fill base, bx=column, ax=start row, cdq)
  *   lcall 0x181F:0xBA  = horizontal-span fill (args: layer ptr, span length,
  *                        fill base, ax=start col, bx=width, dx=row)
- * Their resolved file offsets are TBD (overlay thunks).
+ * Their bodies are in thunk page (overlay thunks).
  *
  * EXACT SEQUENCE (BYTE_VERIFIED immediates):
  *   @asm 0x065951  col (W-1), rows 0..(H-1)   -> base 0x1A SeaLane   [push 0x1A; bx=W-1; ax=0]

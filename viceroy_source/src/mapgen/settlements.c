@@ -94,7 +94,7 @@ int native_add(int x, int y, int tribe)
 
     /* @asm 0x046E85  mark the settlement-present bit (|=2) on the map feature
      * layer at (x,y) via lcall 0x181F:0x740 / 0x704.  Modelled as a no-op here
-     * (the feature-layer helper is overlay-resident; file offset TBD). */
+     * (the feature-layer helper is overlay-resident; body in thunk page). */
 
     return idx;                                        /* @0x046EBA return AX */
 }

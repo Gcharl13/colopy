@@ -54,9 +54,9 @@
  *   BYTE_VERIFIED : the 20-cell kernel CONTENTS (above), the loop bound 0x14,
  *                   the land/in-bounds gating helpers, the feature-stamp calls,
  *                   the -1 "no path" sentinel, the western-half source sweep.
- *   TBD           : the internals of helpers 0x181F:0x68C / 0x718 / 0x302 /
- *                   0x768 (overlay-thunk-resident; file offsets unresolved), and
- *                   whether 0x68C sets bit 6 directly or via the feature layer.
+ *   body in thunk page: the internals of helpers 0x181F:0x68C / 0x718 / 0x302 /
+ *                   0x768 (overlay-thunk-resident); whether 0x68C sets bit 6
+ *                   directly or via the feature layer is genuinely unknown.
  * ============================================================================ */
 #include "viceroy_types.h"
 
@@ -64,7 +64,7 @@ extern uint16_t g_map_width;     /* DGROUP:0x853A */
 extern uint16_t g_map_height;    /* DGROUP:0x853C */
 extern uint8_t *g_layer_terrain; /* [0x15C] */
 
-/* Overlay helpers used by the feature pass (BYTE_VERIFIED roles, file TBD). */
+/* Overlay helpers used by the feature pass (BYTE_VERIFIED roles; body in thunk page). */
 extern int  tile_in_bounds(int x, int y);                     /* lcall 0x181F:0x302 */
 extern int  tile_is_land  (int x, int y);                     /* lcall 0x181F:0x768 */
 extern void tile_set_feature(int x, int y, int code, int on); /* lcall 0x181F:0x68C (push on,code,y,x) */

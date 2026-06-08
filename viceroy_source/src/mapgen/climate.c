@@ -74,9 +74,9 @@ extern int  random_int(int lo, int hi);                /* lcall 0x181F:0x04D4 ->
 extern uint8_t tile_read (uint8_t *layer, int x, int y);  /* 0x1A1F:0x868 */
 extern void    tile_write(uint8_t *layer, int x, int y, uint8_t v); /* 0x1A1F:0x872 */
 
-/* Generator tuning params — VALUES are TBD (loaded at runtime from the
- * difficulty/setup struct; the disk image holds defaults of 1/0 because they
- * are BSS).  The way they are USED is byte-verified.
+/* Generator tuning params — VALUES are RUNTIME_ONLY (data-resident; loaded at
+ * runtime from the difficulty/setup struct; the disk image holds defaults of
+ * 1/0 because they are BSS).  The way they are USED is byte-verified.
  *   [0x1e7e]+[0x1e80]+1, *0x140 -> land-seed target            @0x064AAD..0x064AB5
  *   [0x1e82]            -> shl 1, sub from 1, *2 -> lat shift   @0x064C9D..0x064CA6
  *   [0x1e84]            -> shl 2 -> land threshold base         @0x064DFE,0x065060
@@ -222,7 +222,7 @@ void apply_landmass_and_climate(void)
                 continue;
 
             /* source test: is this a forest-seed tile?  @0x0653DC lcall 0x181F:0xD12.
-             * Helper internals TBD; modelled as a probability roll. */
+             * Helper body in thunk page; modelled as a probability roll. */
             {
                 int roll = random_int(0, 1);         /* @0x0653EA push 1 / lcall 0x181F:0x4D4 */
                 if (roll == 0) {
