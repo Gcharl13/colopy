@@ -65,7 +65,9 @@
  *   RESOLVED 2026-06-08: 0x2F77 and 0x5236 are SAVE-GAME BSS arrays (zero in EXE,
  *   loaded at runtime from save file). 0x2F77 byte is at struct+0 (not +1) within
  *   the 16-byte per-occupant entry; 0x5236 is a combat strength byte (not a flag).
- *   Still TBD: colony-attribute table 0x9410 (`[bx-0x6bf0]`, idx from 0x5D60, >>3).
+ *   RESOLVED 2026-06-08: 0x9410 (`[bx-0x6bf0]`, idx from 0x5D60, >>3) IS the
+ *   per-power popsum table g_power_gate_9410 from sons_of_liberty.c — SAME BSS
+ *   array, indexed by ColonyRecord[ci].owner_power (+0x1A from base 0x5D46 = 0x5D60).
  *
  * @region          overlay (page 0x0C, code seg base 0x046600 / data-CS 0x046DE0)
  * @verified_by     Hand-decompiled from RAW VICEROY.EXE 2026-05-30 (reseg page_0C
@@ -94,13 +96,13 @@
  *   +0x05 field_05     @asm 0x0480E9 ([bx+0x3149]) subtracted from a maxmoves
  *   +0x06 moves        @asm 0x04711E ([bx+0x314a]) -- ALSO the home-settlement
  *                      link index (settlement = [+0x314a]; *9 for the 0x54F6 row)
- *   +0x08 order_flags  @asm 0x0481A2 ([bx+0x3148]) bits 8 (goto pending) toggled
+ *   +0x04 goto_flags    @asm 0x0481A2 ([bx+0x3148]) bit 0x08 = goto-pending toggled
+ *   +0x08 orders/state @asm 0x047FBF ([bx+0x314c]) <- 5 or 6 (MOVE) / 0
  *   +0x09 goto_x       @asm 0x048239 ([bx+0x314d]) written from ColonyRecord x
  *   +0x0A goto_y       @asm 0x048241 ([bx+0x314e]) written from ColonyRecord y
- *   +0x08 orders/state @asm 0x047FBF ([bx+0x314c]) <- 5 or 6 (MOVE) / 0
  *   +0x0B field_0b     @asm 0x047360 region ([bx+0x314b]) 0x74/0x69/0x40 markers
  *   +0x0F last_dir     @asm 0x047FA0 ([bx+0x314f]) <- chosen direction (argmax)
- *   +0x10 mission_turn @asm 0x0481E6 ([bx+0x3156]) <- turn-counter 0x538E; the
+ *   +0x12 mission_turn @asm 0x0481E6 ([bx+0x3156]) <- turn-counter 0x538E; the
  *                      "patience" timer compared against the wealth/alarm score
  *   +0x18 v_316/v_318  @asm 0x047876/0x04787D ([bx+0x315c]/[bx+0x315e]) signs */
 extern uint8_t g_units_3144[/* unit */][0x1C];
@@ -135,9 +137,9 @@ extern uint16_t g_raid_tension_54F6[/* settlement_link*9 + power */];
  * the occupant query 0x181F:0x614):
  *   +0x00 x   (0x5D46) @asm 0x0471C1 / 0x047CE0 / 0x047E9D / 0x048235
  *   +0x01 y   (0x5D47) @asm 0x0471BC / 0x047CD4 / 0x047E91 / 0x04823D
- *   +0x1A defence_word (0x5D60) @asm 0x0476EB / 0x047CF9 / 0x047EC9 -- pushed to
- *         market-value (0x181F:0x30C) and attitude (0x181F:0xA38) queries; a
- *         high-value/low-defence colony scores higher
+ *   +0x1A owner_power  (0x5D60) @asm 0x0476EB / 0x047CF9 / 0x047EC9 -- the
+ *         owning power index (0..7) used to index g_power_gate_9410 for the
+ *         strength-gate check; also passed to market/attitude helpers.
  *   +0x1F flags  (0x5D65) @asm 0x0471D3 (>>1 cmp 2) / 0x0472D4 (>>2) -- a
  *         population/size-derived scaler used in the distance-vs-reward gate */
 extern uint8_t g_colony_5D46[/* colony */][0xCA];
@@ -221,12 +223,24 @@ extern uint8_t g_occtype_weight_2F77[/* occ_type */][16];
  * (same loader that fills 0x523B=DEF, 0x523C=ATK). EXE bytes are BSS. */
 extern uint8_t g_unittype_combatstr_5236[/* type */][14];
 
-/* DGROUP:0x9410 -- colony-attribute byte table indexed by ColonyRecord[+0x5D60]
- * (the defence word, used as a byte index): `mov cl,[bx-0x6bf0]` @asm 0x0476F1 /
- * 0x048210 (-0x6bf0 == 0x9410 unsigned), then `shr cl,3`. The (>>3) result feeds
- * the distance-vs-reward "is this colony worth the march" gate. TABLE CONTENTS
- * [TBD] (data-resident). */
-extern uint8_t g_colony_attr_9410[/* defence-derived index */];
+/* DGROUP:0x9410 -- per-power accumulated colonist popsum table. BYTE_VERIFIED 2026-06-08.
+ * This is the SAME table as g_power_gate_9410 in sons_of_liberty.c (compact byte
+ * array, stride 1, indexed by power_idx 0..7). SAVE-GAME BSS; zeroed at turn start,
+ * rebuilt by func_03FD38 (popsum += 1 per colonist in/adjacent to a colony, and
+ * += population byte per owned colony entity).
+ *
+ * In this function the access is:
+ *   1. BX = colony_idx * 0xCA         (IMUL BX, [bp-0x92], 0xCA)
+ *   2. BL = DS[BX + 0x5D60]           (MOV BL, [BX + 0x5D60])
+ *      = ColonyRecord[colony_idx].owner_power  (field +0x1A from base 0x5D46)
+ *   3. BX = zero_extend(BL)           (SUB BH, BH) => owner_power (0..7)
+ *   4. CL = DS[BX + 0x9410]           (MOV CL, [BX + 0x9410])
+ *      = g_power_gate_9410[owner_power]
+ *   5. CL >>= 3                       (SHR CL, 3) => attr = popsum >> 3
+ * The (>>3) result is a STRENGTH GATE: a colony owned by a more-populated power
+ * costs more patience to justify attacking (higher popsum => higher need threshold).
+ * @asm 0x0476F1 (scoring path) / 0x048210 (commit path). */
+extern uint8_t g_power_gate_9410[/* power_idx */];
 
 /* ----------------------------------------------------------------------------
  * Overlay helpers (RTLink far-thunks, 0x181F:* / 0x191F:* / 0x1A1F:*). Semantics
@@ -315,8 +329,10 @@ extern int16_t ovly_query_9E6(int16_t colony);                /* @0x047D7C selec
  * After the loop it COMMITS the best action.
  *
  * Faithful, basic-block-cited port. INLINE weights are cited from raw bytes.
- * Data-resident weight TABLES (0x2F77 / 0x5236 / 0x9410) are accessed at the
- * cited sites but their VALUES are [TBD]. The deep dialog/animation helper bodies
+ * Data-resident weight TABLES (0x2F77 / 0x5236) are accessed at the cited sites
+ * but their values are SAVE-GAME BSS (populated at runtime; zero in EXE). 0x9410
+ * is the g_power_gate_9410 popsum table (RESOLVED; see extern below). The deep
+ * dialog/animation helper bodies
  * are opaque overlay calls (TBD). The original's goto-heavy structure (shared
  * loop-continue target 0xD8A, commit target 0x198E) is reproduced with labels.
  * ============================================================================ */
@@ -671,13 +687,13 @@ int16_t native_unit_ai(int16_t self)
                         v_6e = (mv >= 0x4B) ? 1 : 0;       /* @asm 0x04767C..0x047688 */
                     }
                     if (covet == 0 && v_6e == 0) {         /* @asm 0x04768B/0x047693 */
-                        int16_t patience = deadline_7c - g_units_3144[self][0x10]; /* @asm 0x047695..0x04769C (0x3156) */
+                        int16_t patience = deadline_7c - g_units_3144[self][0x12]; /* @asm 0x047695..0x04769C (0x3156) */
                         int16_t need = (dist_w << 1) + 5;  /* @asm 0x0476A0..0x0476A8 */
                         if (patience < need) continue;     /* @asm 0x0476AA jmp 0xd8a */
                     }
                     /* @asm 0x0476AF add (deadline - UnitRecord[+0x3156])*2 to
                      *      [bp-0x98], then add [bp-0x98] to the score [bp-0x24]. */
-                    best_defw = (deadline_7c - g_units_3144[self][0x10]) << 1; /* @asm 0x0476AF..0x0476BC */
+                    best_defw = (deadline_7c - g_units_3144[self][0x12]) << 1; /* @asm 0x0476AF..0x0476BC */
                     score += best_defw;                    /* @asm 0x0476C0..0x0476C4 */
                     if (v_6e == 0) aflags |= 0x80;         /* @asm 0x0476CD (was-targeting) */
                 }
@@ -685,14 +701,15 @@ int16_t native_unit_ai(int16_t self)
 
             /* @asm 0x0476D1 cmp [bp-0x50],0; jne 0x114e -- when NO own-stack here,
              *      a best_enemy<0, and best_target>=0 (a real colony in range):
-             *      add a (colony attribute 0x9410 + best_target*4 + 5)-vs-patience
-             *      gated DISTANCE-SCALED reward to the score. (@asm 0x0476D7..0x04774B) */
+             *      add a (popsum[owner_power]>>3 + best_target*2 + 5)-vs-patience
+             *      gated DISTANCE-SCALED reward to the score. (@asm 0x0476D7..0x04774B)
+             *      The popsum gate raises the hurdle for attacking well-populated powers. */
             if (enemy_here == 0 && best_enemy < 0 && best_target >= 0) { /* @asm 0x0476D1/0x0476D7/0x0476DD */
                 int16_t ci = colony_idx;                   /* [bp-0x92] */
-                uint8_t defidx = g_colony_5D46[ci][0x1A];  /* @asm 0x0476EB (0x5d60) */
-                int16_t attr = (int16_t)(g_colony_attr_9410[defidx] >> 3); /* @asm 0x0476F1 [TBD table] */
+                uint8_t owner_pwr = g_colony_5D46[ci][0x1A];  /* @asm 0x0476EB (0x5d60) = ColonyRecord.owner_power (+0x1A from base 0x5D46) */
+                int16_t attr = (int16_t)(g_power_gate_9410[owner_pwr] >> 3); /* @asm 0x0476F1 popsum[owner_power]>>3 = strength gate */
                 int16_t need = attr + (best_target << 1) + 5; /* @asm 0x0476FA..0x047701 */
-                int16_t patience = deadline_7c - g_units_3144[self][0x10]; /* @asm 0x047704..0x04770B (0x3156) */
+                int16_t patience = deadline_7c - g_units_3144[self][0x12]; /* @asm 0x047704..0x04770B (0x3156) */
                 if (need <= patience) {                    /* @asm 0x04770F jg 0x114e */
                     int16_t cdx = -(g_colony_5D46[ci][0x00] - tile_x); /* @asm 0x047715..0x04771E (0x5d46) */
                     int16_t cdy = -(g_colony_5D46[ci][0x01] - tile_y); /* @asm 0x047721..0x04772A (0x5d47) */
@@ -1124,14 +1141,14 @@ int16_t native_unit_ai(int16_t self)
     /* @asm 0x048191 test [bp-0x82],0xa; jne 0x1b9e; or [bp-0x6e]: clear the unit's
      *   order-flags bit 8 (goto-pending) when appropriate. (@asm 0x048196..0x0481AC) */
     if ((flags_82 & 0x0A) || (flags_82 & 4)) {             /* @asm 0x048191/0x048198 */
-        g_units_3144[self][0x08] /*0x3148*/ &= 0xF7;       /* @asm 0x0481A2 and ...,0xf7 */
+        g_units_3144[self][0x04] /*0x3148*/ &= 0xF7;       /* @asm 0x0481A2 and ...,0xf7 */
         flags_82 &= 0x7F;                                  /* @asm 0x0481A7 */
     }
 
     /* @asm 0x0481B0 test byte [bx+0x3148],8 -- if the unit had a pending GOTO,
      *   clear it and re-issue a confront/move toward (map_x,map_y) via 0x1A1F:0x192. */
-    if (g_units_3144[self][0x08] /*0x3148*/ & 8) {         /* @asm 0x0481B0 */
-        g_units_3144[self][0x08] &= 0xF7;                  /* @asm 0x0481B7 */
+    if (g_units_3144[self][0x04] /*0x3148*/ & 8) {         /* @asm 0x0481B0 */
+        g_units_3144[self][0x04] &= 0xF7;                  /* @asm 0x0481B7 */
         ovly_confront_1A1F_192(self,
                                g_units_3144[self][0x00],
                                g_units_3144[self][0x01]);  /* @asm 0x0481CB (0x3144/0x3145) */
@@ -1142,22 +1159,22 @@ int16_t native_unit_ai(int16_t self)
      *   targeting", stamp the patience deadline into UnitRecord[+0x3156] (start
      *   the march clock) and set order-flags bit 8 (goto pending). */
     if (flags_82 & 0x80) {                                 /* @asm 0x0481D8 */
-        g_units_3144[self][0x10] /*0x3156*/ = (uint8_t)g_turn_counter_538E; /* @asm 0x0481DF..0x0481E6 */
-        g_units_3144[self][0x08] /*0x3148*/ |= 8;          /* @asm 0x0481EA or ...,8 */
+        g_units_3144[self][0x12] /*0x3156*/ = (uint8_t)g_turn_counter_538E; /* @asm 0x0481DF..0x0481E6 */
+        g_units_3144[self][0x04] /*0x3148*/ |= 8;          /* @asm 0x0481EA or ...,8 */
     }
 
     /* @asm 0x0481EF test [bp-0x82],0x8a; jne 0x1caa -- when the action is a pure
      *   march toward a colony target ([bp-0x46]>=0 and no immediate attack flags):
-     *   gate the (colony attr 0x9410 + best_target*4 + 0xa) vs patience, then set
+     *   gate the (popsum[owner_power]>>3 + best_target*4 + 0xa) vs patience, then set
      *   the unit's GOTO target (+0x314d/+0x314e) to the colony coords and resolve
      *   a path (0x1A1F:0x210). (@asm 0x0481F4..0x0482A8) */
     if (!(flags_82 & 0x8A)) {                              /* @asm 0x0481EF */
         if (best_target >= 0) {                            /* @asm 0x0481F9 */
             int16_t ci = colony_idx;                       /* [bp-0x92] */
-            uint8_t defidx = g_colony_5D46[ci][0x1A];      /* @asm 0x04820A (0x5d60) */
-            int16_t attr = (int16_t)(g_colony_attr_9410[defidx] >> 3); /* @asm 0x048210 [TBD table] */
+            uint8_t owner_pwr = g_colony_5D46[ci][0x1A];    /* @asm 0x04820A (0x5d60) = ColonyRecord.owner_power (+0x1A from base 0x5D46) */
+            int16_t attr = (int16_t)(g_power_gate_9410[owner_pwr] >> 3); /* @asm 0x048210 popsum[owner_power]>>3 = strength gate */
             int16_t need = attr + (best_target << 2) + 0x0A; /* @asm 0x048219..0x048221 */
-            int16_t patience = deadline_7c - g_units_3144[self][0x10]; /* @asm 0x048224..0x04822B (0x3156) */
+            int16_t patience = deadline_7c - g_units_3144[self][0x12]; /* @asm 0x048224..0x04822B (0x3156) */
             if (need <= patience) {                        /* @asm 0x04822F jg 0x1caa */
                 /* set GOTO target = colony (x,y) */
                 g_units_3144[self][0x09] = g_colony_5D46[ci][0x00]; /* @asm 0x048239 (0x314d <- 0x5d46) */
@@ -1223,8 +1240,11 @@ finish:
  *      * 0x5236 per-unit-type combat strength (stride 14) @0x04729C and @0x04619D
  *        — SAVE-GAME BSS (same table as g_unit_stat at DS:0x5230, byte +6); renamed
  *        from g_unittype_flag_5236 to g_unittype_combatstr_5236.
- *      * 0x9410 colony-attribute byte (`[bx-0x6bf0]`, idx from 0x5D60, >>3)
- *        @0x0476F1 / @0x048210 — still TBD.
+ *      * 0x9410 per-power colonist popsum (`[bx-0x6bf0]`, idx = owner_power,
+ *        ColonyRecord[ci]+0x1A from base 0x5D46 = DS:0x5D60) @0x0476F1 / @0x048210
+ *        — RESOLVED 2026-06-08: SAME BSS table as g_power_gate_9410 in sons_of_liberty.c.
+ *        Renamed g_colony_attr_9410 -> g_power_gate_9410; defidx -> owner_pwr.
+ *        SAVE-GAME BSS (zeroed at turn start by func_03FD38).
  *    All INLINE immediate weights ARE byte-verified (the +0x32/+0x23/+0x14/+0xa/
  *    +8/+5/+4/+3/+2/-1/-2/-6/-0x19/-0x28 deltas, the random_int bounds, and the
  *    two cs-relative score JUMP TABLES decoded from raw bytes at file 0x04789E
@@ -1239,7 +1259,13 @@ finish:
  *    [bp-0x72] (@0x0471ED / 0x0472FB / 0x047E58) -- semantics preserved.
  *  - OVERLAY HELPER BODIES (0x181F:* / 0x191F:* / 0x1A1F:*) are on other pages and
  *    are TBD; their arg/return shapes are taken from the call sites, NOT invented.
- *  - STATUS: control flow + globals + inline weights BYTE_VERIFIED; data-resident
- *    weight tables + a few opaque helper semantics TBD. Tag: RECONSTRUCTED
- *    (structure byte-verified; the weight TABLE VALUES are the only TBD residue).
+ *  - STATUS: control flow + globals + inline weights BYTE_VERIFIED; 0x9410 table
+ *    RESOLVED (g_power_gate_9410 = per-power popsum, indexed by owner_power).
+ *    UnitRecord field indices corrected 2026-06-08: goto_flags byte at absolute
+ *    0x3148 = record offset +0x04 (was [0x08]); mission_turn at 0x3156 = +0x12
+ *    (was [0x10]).  ColonyRecord +0x1A renamed owner_power (was defence_word).
+ *    0x2F77 / 0x5236 are SAVE-GAME BSS; the weight TABLE VALUES are not present
+ *    in the EXE (loaded from save file at runtime). A few opaque overlay helper
+ *    semantics TBD. Tag: RECONSTRUCTED (structure byte-verified; field offsets
+ *    corrected 2026-06-08; 0x9410 RESOLVED).
  * ============================================================================ */

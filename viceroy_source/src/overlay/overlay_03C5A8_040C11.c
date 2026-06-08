@@ -2915,7 +2915,10 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
  *  @0x0409CA..0x0409D5  done/abort: clear unit [+0x314C]=0; return.
  *
  * @asm page_08.asm:170  ENTER 0x2A,0 / RETF @0x0409D5.
- * Tables: move_table @0x2F78 stride 16; def_table @0x2F80 stride 16 [TBD];
+ * Tables: move_table @0x2F78 stride 16 (terrain record field at row offset +4);
+ *   def_table @0x2F80 = g_terrain_yield_table[terrain][good_id=5] = Lumber yield
+ *   column. BYTE_VERIFIED 2026-06-08: 8A 87 80 2F = MOV AL,[BX+0x2F80], BX=terr<<4;
+ *   0x2F80 = 0x2F7B+5 (5 bytes into 9-byte yield row, Lumber = good 5).
  *   str 0x1466 [TBD]. [0x8DB8]=engagement strength; [0x8D52]=active map ctx.
  *   Near helpers 0x172D/0x1732 (sibling overlay code). Geometry/draw thunks ext.
  * ========================================================================== */
@@ -3151,7 +3154,9 @@ done:
  *  @0x040C12..0x040C1D  clear314c: unit [+0x314C]=0; return.
  *
  * @asm page_08.asm:480  ENTER 0x1C,0 / RETF @0x040C1D.
- * move_table @0x2F78 stride 16 [TBD]. Near helpers 0x172D/0x1732. Thunks ext.
+ * move_table @0x2F78 stride 16: terrain record field at row offset +4 from base
+ * 0x2F74 (3 bytes before yield base 0x2F7B). BYTE_VERIFIED 2026-06-08: 8A 84 78 2F.
+ * Near helpers 0x172D/0x1732. Thunks ext.
  * ========================================================================== */
 int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
 {
