@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x00E454..0x00E46B  (23 bytes)  region=load_image
@@ -252,9 +253,9 @@ int func_00E702_logic_sz_21(const void far *rgb /*bp+6:bp+8*/,
      *      pop si; pop di; leave; retf 4. */
     const uint8_t far *src = (const uint8_t far *)rgb + (uint16_t)(first_index * 3);
     uint16_t remaining = (uint16_t)(count * 3);
-    uint16_t burst_cap = *(uint16_t near *)0x806;
+    uint16_t burst_cap = DG16(0x806);
 
-    *(uint16_t near *)0x808 = 1;                 /* @asm 0x00E71C palette-busy flag */
+    DG16(0x808) = 1;                 /* @asm 0x00E71C palette-busy flag */
     /* @asm 0x00E730 outp(0x3C8, (uint8_t)first_index)  -- DAC write index */
     outp(0x3C8, (uint8_t)first_index);
     while (remaining != 0) {
@@ -268,7 +269,7 @@ int func_00E702_logic_sz_21(const void far *rgb /*bp+6:bp+8*/,
             outp(0x3C9, *src++);                 /* stream component bytes to DAC data */
         remaining -= burst;                      /* @asm 0x00E758 sub di,cx */
     }
-    *(uint16_t near *)0x808 = 0;                 /* @asm 0x00E75D clear busy flag */
+    DG16(0x808) = 0;                 /* @asm 0x00E75D clear busy flag */
     return 0;
 }
 
@@ -689,7 +690,7 @@ int func_00F510_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * The C-visible effect is the 0x83AA store; the int 0x10 is a pure platform
      * op (BIOS set video mode) kept as an @asm-cited comment per project
      * convention (cf. func_077ADE).  No meaningful return value. */
-    *(uint16_t near *)0x83AA = arg0_bp_06;     /* @asm 0x00F517 record mode */
+    DG16(0x83AA) = arg0_bp_06;     /* @asm 0x00F517 record mode */
     if (arg1_bp_08 != 0) {                      /* @asm 0x00F51D / 0x00F521 */
         /* @asm 0x00F528 int 0x10  AH=0 (set video mode), AL = (uint8_t)arg0 */
         /* set_video_mode((uint8_t)arg0_bp_06); */

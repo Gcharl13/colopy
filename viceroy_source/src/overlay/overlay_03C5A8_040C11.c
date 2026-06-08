@@ -61,6 +61,7 @@
  *     04002C 04007E} are TRUNCATED; trust the reseg `size=` cited per function.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
@@ -83,7 +84,7 @@
  *   - UnitRecord[] base is DGROUP 0x3144, stride 0x1C (BYTE_VERIFIED, see
  *     MEMORY project_unit_table_correction): +0x00 mapX, +0x01 mapY,
  *     +0x02 type, +0x03 owner(&0xF). Field at base+rec is reached as
- *       *(uint8_t near*)(rec*0x1C + 0x3144 + field).
+ *       DG8(rec*0x1C + 0x3144 + field).
  *   - PowerRecord[] stride 0x34 here (the 0x540E AIPersonality family) and
  *     0x13C elsewhere; cited per use.
  *   - Platform leaves (the RTLink thunk table at 0x181F/0x191F/0x1A1F and the
@@ -1932,12 +1933,12 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
     }
 
     /* @0x03E5F5..0x03E663  affordability gate + accept/charge */
-    if (price <= *(int32_t near*)(G16(0x84FC) + 0x2A)) {  /* @0x03E5FD treasury */
+    if (price <= DGS32(G16(0x84FC) + 0x2A)) {  /* @0x03E5FD treasury */
         overlay_call_191F_0AC8(); /* fmt_power_name([0x53D6],0,0) @0x03E615 */
         overlay_call_181F_09AE(); /* fmt_int32(price) @0x03E621 */
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E630 */
         if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x1340) */ == 2) {
-            *(int32_t near*)(G16(0x84FC) + 0x2A) -= price;   /* @0x03E651 debit */
+            DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E651 debit */
             func_03EA42(); /* (1) accept side-effects @0x03E659 */
         }
     }
@@ -2044,12 +2045,12 @@ int func_03E664_logic_sz_15(void)
     }
 
     /* @0x03E7D4..0x03E842  affordability + accept/charge */
-    if (price <= *(int32_t near*)(G16(0x84FC) + 0x2A)) {  /* @0x03E7DC treasury */
+    if (price <= DGS32(G16(0x84FC) + 0x2A)) {  /* @0x03E7DC treasury */
         overlay_call_191F_0AC8(); /* fmt_power_name([0x53D6],0,0) @0x03E7F4 */
         overlay_call_181F_09AE(); /* fmt_int32(price) @0x03E800 */
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E80F */
         if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x134C) */ == 2) {
-            *(int32_t near*)(G16(0x84FC) + 0x2A) -= price;   /* @0x03E830 debit */
+            DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E830 debit */
             func_03EA42(); /* (1) @0x03E839 */
         }
     }

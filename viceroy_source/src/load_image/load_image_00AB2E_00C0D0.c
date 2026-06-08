@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x00AB2E..0x00AB77  (73 bytes)  region=load_image
@@ -42,7 +43,7 @@ int func_00AB2E_logic_sz_73(void)
     int i, j;
     for (i = 0; i < 5; i++) {
         for (j = 0; j < 5; j++) {
-            if (*(uint8_t near *)(0x8DF0 + i + j * 5) != 0)
+            if (DG8(0x8DF0 + i + j * 5) != 0)
                 func_008982((uint16_t)j, (uint16_t)i, (uint16_t)-1);
         }
     }
@@ -237,9 +238,9 @@ int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int pos = (int16_t)func_00B2A2(arg0_bp_06, arg1_bp_08);
     if (pos >= 0) {
         int i;
-        *(uint16_t near *)0x8DC4 = (uint16_t)func_00B2F0(arg0_bp_06, arg1_bp_08);
+        DG16(0x8DC4) = (uint16_t)func_00B2F0(arg0_bp_06, arg1_bp_08);
         for (i = (int)arg1_bp_08;
-             (int)*(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C) - 1 > i;
+             (int)DG8(0x3150 + arg0_bp_06 * 0x1C) - 1 > i;
              i++) {
             uint16_t kind = func_00B2A2(arg0_bp_06, (uint16_t)(i + 1));
             func_00B31A(arg0_bp_06, (uint16_t)i, kind);
@@ -248,7 +249,7 @@ int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
                 func_00B304(arg0_bp_06, (uint16_t)i, qty);
             }
         }
-        *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C) -= 1;
+        DG8(0x3150 + arg0_bp_06 * 0x1C) -= 1;
     }
     return pos;
 }
@@ -295,15 +296,15 @@ int func_00B4B8_logic_sz_11(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t n
      *      push [bp-2]; push [bp+6]; push cs; call 0xB2F0; add sp,4; sub ax,0x64;
      *      neg ax (ax = 100-qty); bx=[bp+0xA]; add [bx],ax (*out += room).
      *      0x00B538 inc [bp-2] (i++); fall to test.  0x00B54A mov ax,[bp-4]; leave; retf. */
-    uint16_t type     = *(uint8_t near *)(0x3146 + arg0_bp_06 * 0x1C);
-    uint16_t used     = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
-    uint16_t capacity = *(uint8_t near *)(0x5237 + type * 14);
+    uint16_t type     = DG8(0x3146 + arg0_bp_06 * 0x1C);
+    uint16_t used     = DG8(0x3150 + arg0_bp_06 * 0x1C);
+    uint16_t capacity = DG8(0x5237 + type * 14);
     int free_holds = (int)capacity - (int)used;
 
     *out_bp_0A = (uint16_t)(free_holds * 0x64);
     if (free_holds == 0) {
         int i;
-        int slot_count = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
+        int slot_count = DG8(0x3150 + arg0_bp_06 * 0x1C);
         for (i = 0; slot_count > i; i++) {
             if (func_00B2A2(arg0_bp_06, (uint16_t)i) != arg1_bp_08)
                 continue;
@@ -355,7 +356,7 @@ int func_00B550_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int found = -1;
     int k = 0;
     while (found < 0) {
-        uint16_t slot_count = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
+        uint16_t slot_count = DG8(0x3150 + arg0_bp_06 * 0x1C);
         if ((int16_t)slot_count <= k)
             break;
         if (func_00B2A2(arg0_bp_06, (uint16_t)k) == arg1_bp_08)
@@ -363,7 +364,7 @@ int func_00B550_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         k++;
     }
     if (found >= 0)
-        *(uint16_t near *)0x8DC4 = (uint16_t)func_00B2F0(arg0_bp_06, (uint16_t)found);
+        DG16(0x8DC4) = (uint16_t)func_00B2F0(arg0_bp_06, (uint16_t)found);
     return found;
 }
 
@@ -737,8 +738,8 @@ int func_00BD28_op_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * NOTE: overlay_call_037F_000A is declared (void); the 2 pushed args follow
      *      the project's auto-extern convention (args travel on the stack). */
     if (overlay_call_037F_000A() != 0) {        /* @asm 0x00BD31 / 0x00BD38 / 0x00BD3A */
-        *(uint16_t near *)0x8540 = arg0_bp_06;  /* @asm 0x00BD3C mov ax,[bp+6]; 0x00BD3F mov [0x8540],ax */
-        *(uint16_t near *)0x853E = arg1_bp_08;  /* @asm 0x00BD42 mov ax,[bp+8]; 0x00BD45 mov [0x853E],ax */
+        DG16(0x8540) = arg0_bp_06;  /* @asm 0x00BD3C mov ax,[bp+6]; 0x00BD3F mov [0x8540],ax */
+        DG16(0x853E) = arg1_bp_08;  /* @asm 0x00BD42 mov ax,[bp+8]; 0x00BD45 mov [0x853E],ax */
         return arg1_bp_08;                      /* ax = [bp+8] at leave/retf */
     }
     return 0;                                   /* @asm 0x00BD48 leave; retf (ax=0 from the probe) */
@@ -895,12 +896,12 @@ int func_00BF3C_logic_sz_182(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     int16_t col_hi = (col_b >= col_a) ? col_b : col_a;
     int16_t row_lo = (row_b <= row_a) ? row_b : row_a;
     int16_t row_hi = (row_b >= row_a) ? row_b : row_a;
-    int16_t view_col0   = (int16_t)*(uint16_t near *)0x8328;
-    int16_t view_row0   = (int16_t)*(uint16_t near *)0x832E;
-    int16_t view_maxcol = (int16_t)*(uint16_t near *)0x8804;
-    int16_t view_maxrow = (int16_t)*(uint16_t near *)0x8806;
-    int16_t map_w       = (int16_t)*(uint16_t near *)0x853A;
-    int16_t map_h       = (int16_t)*(uint16_t near *)0x853C;
+    int16_t view_col0   = (int16_t)DG16(0x8328);
+    int16_t view_row0   = (int16_t)DG16(0x832E);
+    int16_t view_maxcol = (int16_t)DG16(0x8804);
+    int16_t view_maxrow = (int16_t)DG16(0x8806);
+    int16_t map_w       = (int16_t)DG16(0x853A);
+    int16_t map_h       = (int16_t)DG16(0x853C);
     int near_edge = 0;
 
     if (col_lo < view_col0 + 2 && view_col0 > 1)

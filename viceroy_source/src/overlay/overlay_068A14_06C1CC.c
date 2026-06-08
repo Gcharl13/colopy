@@ -88,6 +88,7 @@
  *   cs:0x2D17 func_06B697 / 0x2D1C func_06B69C / 0x2D26 func_06B6A6 ... (0x1A1F:0x9DE/0x9EC/0xA08)
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
@@ -464,8 +465,8 @@ int func_069156_price_pos_from_index(uint16_t idx, uint16_t *out_val, uint16_t *
 int func_0691A4_list_hit_test(void)
 {
     int result = -1;                                    /* @asm 0x0691A8 0xFFFF */
-    if (*(int16_t near*)0x07EA <= 0xF) {                /* @asm 0x0691AD cmp [0x7EA],0xF jg */
-        if (*(int16_t near*)0x07E8 >= 0xA0)             /* @asm 0x0691B4 cmp [0x7E8],0xA0 jge */
+    if (DGS16(0x07EA) <= 0xF) {                /* @asm 0x0691AD cmp [0x7EA],0xF jg */
+        if (DGS16(0x07E8) >= 0xA0)             /* @asm 0x0691B4 cmp [0x7E8],0xA0 jge */
             result = -3;                                /* @asm 0x0691C4 0xFFFD */
         else
             result = -2;                                /* @asm 0x0691BC 0xFFFE */
@@ -550,12 +551,12 @@ int func_06929C_tile_info_panel_draw(uint16_t arg0)
 {
     overlay_call_181F_0444();                           /* @asm 0x0692C8 draw frame */
     overlay_call_181F_040A();                           /* @asm 0x0692CD open panel */
-    *(uint8_t near*)0x1F56 |= 0x20;                     /* @asm 0x0692D2 render flag */
-    *(uint16_t near*)0x1F9E = *(uint16_t near*)0x089E;  /* @asm 0x0692D7 */
-    *(uint16_t near*)0x1FA0 = *(uint16_t near*)0x08A0;  /* @asm 0x0692DE */
+    DG8(0x1F56) |= 0x20;                     /* @asm 0x0692D2 render flag */
+    DG16(0x1F9E) = DG16(0x089E);  /* @asm 0x0692D7 */
+    DG16(0x1FA0) = DG16(0x08A0);  /* @asm 0x0692DE */
     overlay_call_181F_0998();                           /* @asm 0x0692EE compose tile name */
-    *(uint16_t near*)0x1F9E = *(uint16_t near*)0x268A;  /* @asm 0x0692F3 */
-    *(uint16_t near*)0x1FA0 = *(uint16_t near*)0x268C;  /* @asm 0x0692FD */
+    DG16(0x1F9E) = DG16(0x268A);  /* @asm 0x0692F3 */
+    DG16(0x1FA0) = DG16(0x268C);  /* @asm 0x0692FD */
     (void)arg0;
     return 0;                                           /* @asm 0x069302 RETF */
 }
@@ -821,7 +822,7 @@ int func_0696C6_unit_detail_dialog(uint16_t arg0)
     overlay_call_181F_013C();                            /* @asm 0x069D04 formatted draw (x=*(0x60), color *(0x830)) */
     overlay_call_0D1D_07E4();                            /* @asm 0x069D13 copy literal @0x1ED3 */
     overlay_call_181F_0182();                            /* @asm 0x069D23 label(arg @[bp+6]) */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x069D32 *(0x1F5A) = running y (=[bp-0x58]+0xC) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x069D32 *(0x1F5A) = running y (=[bp-0x58]+0xC) */
     overlay_call_181F_0438();                            /* @asm 0x069D51 draw unit icon [type*6+0x5230] */
     func_06B68D();                                       /* @asm 0x069D5E present helper (cs:0x2D0D) */
 
@@ -989,7 +990,7 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
     overlay_call_181F_0182();                            /* @asm 0x06A65C magnitude (0x19 * *(0x2F77)) */
     overlay_call_181F_010A();                            /* @asm 0x06A668 row commit */
     overlay_call_181F_013C();                            /* @asm 0x06A687 caption draw */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x06A6C7 *(0x1F5A) = running y (si) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x06A6C7 *(0x1F5A) = running y (si) */
     overlay_call_0D1D_07E4();                            /* @asm 0x06A6AF copy literal @0x1EDC */
     overlay_call_181F_0182();                            /* @asm 0x06A6BF label(arg0) */
     overlay_call_181F_0416();                            /* @asm 0x06A6D2 commit title overlay (ss:[bp-0x2c],0) */
@@ -1118,7 +1119,7 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
     /* footer caption + arg-keyed label + icon. */
     overlay_call_0D1D_07E4();                            /* @asm 0x06AA31 copy literal @0x1EED */
     overlay_call_181F_0182();                            /* @asm 0x06AA41 label(arg0) */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x06AA4C *(0x1F5A) = running y ([bp-0x5A]) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x06AA4C *(0x1F5A) = running y ([bp-0x5A]) */
     overlay_call_181F_0438();                            /* @asm 0x06AA5B draw icon [arg0*8 - 0x715E] */
     func_06B68D();                                       /* @asm 0x06AA68 present helper (cs:0x2D0D) */
 
@@ -1246,7 +1247,7 @@ int func_06AA88_terrain_detail_dialog(uint16_t arg0)
     /* footer caption + arg-keyed label + icon. */
     overlay_call_0D1D_07E4();                            /* @asm 0x06ADAA copy literal @0x1EF1 */
     overlay_call_181F_0182();                            /* @asm 0x06ADBA label(arg0) */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x06ADC2 *(0x1F5A) = running y ([bp-0x5A]) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x06ADC2 *(0x1F5A) = running y ([bp-0x5A]) */
     overlay_call_181F_0438();                            /* @asm 0x06ADDA draw icon [arg0*0xC - 0x707E] */
     func_06B68D();                                       /* @asm 0x06ADE7 present helper (cs:0x2D0D) */
 
@@ -1290,7 +1291,7 @@ int func_06AE08_single_label_value_dialog(uint16_t arg0)
     overlay_call_181F_0100();                           /* @asm 0x06AEA8 place title */
     overlay_call_0D1D_07E4();                           /* @asm 0x06AECB copy literal @0x1EFA */
     overlay_call_181F_0182();                           /* @asm 0x06AEDB label(arg0) */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x06AEE3 *(0x1F5A) = y (running) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x06AEE3 *(0x1F5A) = y (running) */
     overlay_call_181F_0438();                           /* @asm 0x06AEEF draw icon */
     func_06B68D();                                      /* @asm 0x06AEFC present helper */
     overlay_call_181F_00E2();                           /* @asm 0x06AF0F present */
@@ -1329,7 +1330,7 @@ int func_06AF1C_single_label_value_dialog_b(uint16_t arg0)
     overlay_call_181F_0100();                           /* @asm 0x06AFB6 place title */
     overlay_call_0D1D_07E4();                           /* @asm 0x06AFD9 copy literal @0x1F01 */
     overlay_call_181F_0182();                           /* @asm 0x06AFE9 label(arg0) */
-    *(uint16_t near*)0x1F5A = 0;                         /* @asm 0x06AFF1 *(0x1F5A) = y (running) */
+    DG16(0x1F5A) = 0;                         /* @asm 0x06AFF1 *(0x1F5A) = y (running) */
     overlay_call_181F_0438();                           /* @asm 0x06AFFD draw icon */
     func_06B68D();                                      /* @asm 0x06B00A present helper */
     overlay_call_181F_00E2();                           /* @asm 0x06B01D present */
@@ -1461,7 +1462,7 @@ int func_06B202_build_map_overlay_legend(uint16_t cat_arg0)
             func_06B683();                              /* @asm 0x06B348 cs:0x2D03(i,5,table[i*6-0x69AE]) */
         break;
     case 6:
-        for (int i = 0; i < *(int16_t near*)0x0846; i++)/* @asm 0x06B35B cmp *(0x846) jge done */
+        for (int i = 0; i < DGS16(0x0846); i++)/* @asm 0x06B35B cmp *(0x846) jge done */
             func_06B683();                              /* @asm 0x06B372 cs:0x2D03(i,6,table[i*2-0x6CA4]) */
         break;
     default:
@@ -1726,7 +1727,7 @@ int func_06B722_treaty_or_message_dialog(int16_t arg0)
 
         func_06BAEC();                                   /* @asm 0x06B842 cs:0x316C commit overlay region */
         if (!variantFlag)                                /* @asm 0x06B845 cmp [bp-0x3C8],0 jne */
-            *(uint16_t near*)0x0372 = 0;                 /* @asm 0x06B84C blit mode = 0 */
+            DG16(0x0372) = 0;                 /* @asm 0x06B84C blit mode = 0 */
         overlay_call_181F_03F4();                        /* @asm 0x06B858 restore clip rect (ss:rectD) */
         func_06B6EE_draw_centered_label(0, 0);           /* @asm 0x06B865 centered title label(recB) */
 
@@ -1770,10 +1771,10 @@ cleanup:                                                 /* @asm 0x06BA92 (label
     if (!variantFlag) {                                  /* @asm 0x06BA92 cmp [bp-0x3C8],0 jne */
         overlay_call_181F_03F4();                        /* @asm 0x06BA9F restore window(0xFC00,0xA000) */
         /* *(0x372) = ((*(0x5383) & 0x100) != 1)  (@asm 0x06BAA4..0x06BAB2). */
-        *(uint16_t near*)0x0372 = ((*(uint8_t near*)0x5383 & 1) != 0) ? 0 : 1;
+        DG16(0x0372) = ((DG8(0x5383) & 1) != 0) ? 0 : 1;
     }
-    *(uint16_t near*)0x23F4 = 0;                         /* @asm 0x06BAB7 clear clip seg */
-    *(uint16_t near*)0x23F2 = 0;                         /* @asm 0x06BABA clear clip off */
+    DG16(0x23F4) = 0;                         /* @asm 0x06BAB7 clear clip seg */
+    DG16(0x23F2) = 0;                         /* @asm 0x06BABA clear clip off */
     if (recA != 0)                                       /* @asm 0x06BABD or ax,[..] je 0x3154 */
         overlay_call_191F_01A8();                        /* @asm 0x06BACF free recA */
     overlay_call_191F_0AAC();                            /* @asm 0x06BAD4 */
@@ -1844,10 +1845,10 @@ int func_06BE50_ui_draw_string_field(uint16_t wdg_lo, uint16_t wdg_hi)
  * ============================================================================ */
 int func_06BE92_ui_label_player_or_score(uint16_t wdg_lo, uint16_t wdg_hi)
 {
-    if (*(int16_t near*)0x1F5C > 7) {                   /* @asm 0x06BE96 cmp 7 jle */
+    if (DGS16(0x1F5C) > 7) {                   /* @asm 0x06BE96 cmp 7 jle */
         overlay_call_0D1D_07E4();                       /* @asm 0x06BEA4 copy literal @0x1F72 */
-        *(uint16_t near*)0x1F6E = 1;                    /* @asm 0x06BEAF */
-        *(uint16_t near*)0xA5AE = 1;                    /* @asm 0x06BEB2 */
+        DG16(0x1F6E) = 1;                    /* @asm 0x06BEAF */
+        DG16(0xA5AE) = 1;                    /* @asm 0x06BEB2 */
         overlay_call_0C0C_0006();                       /* @asm 0x06BEB5 C-runtime helper (+0xF0) */
         /* @asm 0x06BEC0 *(0xA5B0:0xA5B2) = result + 0xF0 (adc dx,0). */
     } else {
@@ -1928,20 +1929,20 @@ int func_06BF66_popup_overlay_swap(void)
      * [bp+4]; only the externally-visible state writes are reproduced here. */
     overlay_call_181F_002C();                           /* @asm 0x06BF9F alloc 0x14 -> field[+0x68] */
     overlay_call_0D1D_117E();                           /* @asm 0x06BFFE sprintf -> [bp-0x80] */
-    *(uint16_t near*)0x0372 = 0;                        /* @asm 0x06C00D save/clear blit mode */
+    DG16(0x0372) = 0;                        /* @asm 0x06C00D save/clear blit mode */
     overlay_call_181F_0EA4();                           /* @asm 0x06C015 gfx state on(1) */
     overlay_call_0D1D_0FB2();                            /* @asm 0x06C02A save screen region */
-    *(uint16_t near*)0x23F2 = 0xFC00;                   /* @asm 0x06C032 clip window */
-    *(uint16_t near*)0x23F4 = 0xA000;                   /* @asm 0x06C038 */
+    DG16(0x23F2) = 0xFC00;                   /* @asm 0x06C032 clip window */
+    DG16(0x23F4) = 0xA000;                   /* @asm 0x06C038 */
     overlay_call_1A1F_0372();                            /* @asm 0x06C043 plot overlay -> field[+0xC] */
     /* @asm 0x06C05A: null-result fallback via 0x191F:0xFDE / 0xFD0. */
     overlay_call_0D1D_0FB2();                            /* @asm 0x06C08A restore screen region */
-    *(uint16_t near*)0x23F4 = 0;                        /* @asm 0x06C094 clear clip */
-    *(uint16_t near*)0x23F2 = 0;                        /* @asm 0x06C097 */
+    DG16(0x23F4) = 0;                        /* @asm 0x06C094 clear clip */
+    DG16(0x23F2) = 0;                        /* @asm 0x06C097 */
     overlay_call_181F_0EA4();                           /* @asm 0x06C12A gfx state off(0) */
     overlay_call_181F_03F4();                           /* @asm 0x06C172 restore blit window */
-    *(uint16_t near*)0x23F4 = 0;                        /* @asm 0x06C179 */
-    *(uint16_t near*)0x23F2 = 0;                        /* @asm 0x06C17C */
+    DG16(0x23F4) = 0;                        /* @asm 0x06C179 */
+    DG16(0x23F2) = 0;                        /* @asm 0x06C17C */
     /* @asm 0x06C17F: *(0x372) = saved [bp-0x8C]. */
     return 0;                                           /* @asm 0x06C189 RET 4 */
 }
@@ -1970,8 +1971,8 @@ int func_06BF66_popup_overlay_swap(void)
 int func_06C18C_popup_draw_callback(uint16_t mode_arg0, uint16_t ctx1, uint16_t ctx2,
                                     uint16_t ctx3, uint16_t ctx4, uint16_t ctx5)
 {
-    if (*(uint16_t near*)0x1F6C != 0 && (uint8_t)mode_arg0 == 7) { /* @asm 0x06C190/0x06C197 */
-        if (*(uint16_t near*)0x1F8A != 0) {             /* @asm 0x06C19D cmp 0 je */
+    if (DG16(0x1F6C) != 0 && (uint8_t)mode_arg0 == 7) { /* @asm 0x06C190/0x06C197 */
+        if (DG16(0x1F8A) != 0) {             /* @asm 0x06C19D cmp 0 je */
             overlay_call_181F_0444();                   /* @asm 0x06C1C3 direct boxed frame */
             return 0;                                   /* @asm 0x06C1C9 ret 0x18 */
         }

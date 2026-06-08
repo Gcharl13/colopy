@@ -40,6 +40,7 @@
  * re-verified against VICEROY.EXE.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* Thunks used below that are absent from the auto-generated overlay_externs.h
@@ -89,27 +90,27 @@ void mouse_hover_popup_helper(void)
 {
     int tile_col, tile_row;
 
-    if (*(int16_t near*)DGROUP_PTR(0x07F4) == 0)   /* @asm 0x0245CA cmp [0x7F4],0 / je 0x024630 */
+    if (DGS16(0x07F4) == 0)   /* @asm 0x0245CA cmp [0x7F4],0 / je 0x024630 */
         return;
 
     /* tile_row from mouse_y: ((mouse_y - 9) + scroll_y) -> 0x181F:0x35C below */
-    tile_row = (*(int16_t near*)DGROUP_PTR(0x07EA) - 9)   /* @asm 0x0245D1 mov ax,[0x7EA]; sub ax,9 */
-             + *(int16_t near*)DGROUP_PTR(0x9CCA);         /* @asm 0x0245D7 add ax,[0x9CCA] */
+    tile_row = (DGS16(0x07EA) - 9)   /* @asm 0x0245D1 mov ax,[0x7EA]; sub ax,9 */
+             + DGS16(0x9CCA);         /* @asm 0x0245D7 add ax,[0x9CCA] */
 
     /* col = xform(mouse_x - 0xFC + scroll_x, mode 1, [0x853A]-2)  @asm 0x0245DE..0x0245F6 */
     /* args: push ([0x853A]-2); push 1; push (mouse_x-0xFC+[0x9CCC]); LCALL 0x181F:0x35C */
-    (void)(*(int16_t near*)DGROUP_PTR(0x853A));            /* @asm 0x0245DE mov ax,[0x853A]; dec;dec */
-    (void)(*(int16_t near*)DGROUP_PTR(0x07E8));            /* @asm 0x0245E6 mov ax,[0x7E8]; sub ax,0xFC */
-    (void)(*(int16_t near*)DGROUP_PTR(0x9CCC));            /* @asm 0x0245EC add ax,[0x9CCC] */
+    (void)(DGS16(0x853A));            /* @asm 0x0245DE mov ax,[0x853A]; dec;dec */
+    (void)(DGS16(0x07E8));            /* @asm 0x0245E6 mov ax,[0x7E8]; sub ax,0xFC */
+    (void)(DGS16(0x9CCC));            /* @asm 0x0245EC add ax,[0x9CCC] */
     tile_col = overlay_call_181F_035C();                   /* @asm 0x0245F1 LCALL 0x181F:0x35C -> col */
 
     /* row = xform([0x853C]-2, 1, tile_row)   @asm 0x0245FC..0x02460F */
-    (void)(*(int16_t near*)DGROUP_PTR(0x853C));            /* @asm 0x0245FC mov ax,[0x853C]; dec;dec */
+    (void)(DGS16(0x853C));            /* @asm 0x0245FC mov ax,[0x853C]; dec;dec */
     tile_row = overlay_call_181F_035C();                   /* @asm 0x024607 LCALL 0x181F:0x35C -> row */
 
     /* if ([0x17C]==col && [0x17E]==row) nothing changed -> return  @asm 0x024612..0x024620 */
-    if (*(int16_t near*)DGROUP_PTR(0x017C) == tile_col &&
-        *(int16_t near*)DGROUP_PTR(0x017E) == tile_row)    /* @asm 0x024615 cmp / 0x02461D cmp */
+    if (DGS16(0x017C) == tile_col &&
+        DGS16(0x017E) == tile_row)    /* @asm 0x024615 cmp / 0x02461D cmp */
         return;
 
     /* open context popup at (col,row,1)  @asm 0x024622..0x02462A LCALL 0x181F:0xE08 */
@@ -135,19 +136,19 @@ int hover_redraw_helper(void)
 {
     int did = 0;                                           /* [bp-2] */
 
-    if (*(int16_t near*)DGROUP_PTR(0x933E)
-            != *(int16_t near*)DGROUP_PTR(0x9328))         /* @asm 0x02463B..0x024642 cmp [0x933E],[0x9328] / jne ret */
+    if (DGS16(0x933E)
+            != DGS16(0x9328))         /* @asm 0x02463B..0x024642 cmp [0x933E],[0x9328] / jne ret */
         return 0;
-    if (*(int16_t near*)DGROUP_PTR(0x07F4) == 0)           /* @asm 0x024644 cmp [0x7F4],0 / je ret */
+    if (DGS16(0x07F4) == 0)           /* @asm 0x024644 cmp [0x7F4],0 / je ret */
         return 0;
 
     did = 1;                                               /* @asm 0x02464B mov [bp-2],1 */
-    if (*(int16_t near*)DGROUP_PTR(0x929C) != 0)           /* @asm 0x024650 cmp [0x929C],0 / je */
+    if (DGS16(0x929C) != 0)           /* @asm 0x024650 cmp [0x929C],0 / je */
         overlay_call_181F_0DCC();                          /* @asm 0x024657 LCALL 0x181F:0xDCC begin-frame */
 
-    if (*(int16_t near*)DGROUP_PTR(0x53C6) != 0) {         /* @asm 0x02465C cmp [0x53C6],0 / je */
-        *(int16_t near*)DGROUP_PTR(0x53C4) = 0;            /* @asm 0x024663 mov [0x53C4],0 */
-    } else if (*(int16_t near*)DGROUP_PTR(0x5390) == 1) {  /* @asm 0x02466C cmp [0x5390],1 (Spring) */
+    if (DGS16(0x53C6) != 0) {         /* @asm 0x02465C cmp [0x53C6],0 / je */
+        DGS16(0x53C4) = 0;            /* @asm 0x024663 mov [0x53C4],0 */
+    } else if (DGS16(0x5390) == 1) {  /* @asm 0x02466C cmp [0x5390],1 (Spring) */
         /* push 0; push cs; call 0x024B50(trampoline) -> 0x181F:0xF9C  @asm 0x024673 */
         overlay_call_181F_0F9C();                          /* @asm 0x024676 (near call 0x024B50) */
     } else {
@@ -180,16 +181,16 @@ int active_slot_refresh_dispatch(void)
     int sel;
 
     /* push cs; call 0x024B96 -> trampoline ljmp 0x191F:0x48  @asm 0x02469B..0x02469C */
-    *(int16_t near*)DGROUP_PTR(0x933E)
+    DGS16(0x933E)
         = (int16_t)overlay_call_191F_0048();               /* @asm 0x02469F mov [0x933E],ax */
-    if (*(int16_t near*)DGROUP_PTR(0x07EC) != 0)           /* @asm 0x0246A2 cmp [0x7EC],0 / je */
-        *(int16_t near*)DGROUP_PTR(0x9328)
-            = *(int16_t near*)DGROUP_PTR(0x933E);          /* @asm 0x0246A9 mov [0x9328],ax */
+    if (DGS16(0x07EC) != 0)           /* @asm 0x0246A2 cmp [0x7EC],0 / je */
+        DGS16(0x9328)
+            = DGS16(0x933E);          /* @asm 0x0246A9 mov [0x9328],ax */
 
-    if (*(int16_t near*)DGROUP_PTR(0x07F6) == 0)           /* @asm 0x0246AC cmp [0x7F6],0 / je 0x0246DD */
+    if (DGS16(0x07F6) == 0)           /* @asm 0x0246AC cmp [0x7F6],0 / je 0x0246DD */
         return result;                                     /* @asm 0x0246DD mov ax,[bp-2]; leave; retf */
 
-    sel = *(int16_t near*)DGROUP_PTR(0x9328);              /* @asm 0x0246B3 mov ax,[0x9328] */
+    sel = DGS16(0x9328);              /* @asm 0x0246B3 mov ax,[0x9328] */
     /* selector switch via DEC chain @asm 0x0246D4..0x0246DB (jmp 0x024B?? at 0x0246B6) */
     if (sel == 1) {                                        /* @asm 0x0246D4 dec ax; je 0x024B48 */
         result = overlay_call_191F_0060();                 /* @asm 0x0246B9 call 0x024BA0 -> 0x191F:0x60 */
@@ -252,17 +253,17 @@ int begin_season_loop(void)
     int progress;                                          /* [bp-2] */
     uint32_t now, fence;                                   /* [bp-6]:[bp-4] */
 
-    *(int16_t near*)DGROUP_PTR(0x53C4) = 1;                /* @asm 0x024A4C..0x024A4F mov [0x53C4],1 */
+    DGS16(0x53C4) = 1;                /* @asm 0x024A4C..0x024A4F mov [0x53C4],1 */
     overlay_call_181F_0E1C();                              /* @asm 0x024A53 LCALL 0x181F:0xE1C(1) begin-turn */
 
-    *(int16_t near*)DGROUP_PTR(0x5392) = (int16_t)0xFFFF;  /* @asm 0x024A5B active unit = none */
-    *(int16_t near*)DGROUP_PTR(0x97B0) = 0;                /* @asm 0x024A61..0x024A63 latch = 0 */
+    DGS16(0x5392) = (int16_t)0xFFFF;  /* @asm 0x024A5B active unit = none */
+    DGS16(0x97B0) = 0;                /* @asm 0x024A61..0x024A63 latch = 0 */
     overlay_call_181F_0F9C();                              /* @asm 0x024A68 call 0x024B50(0) -> 0x181F:0xF9C */
     overlay_call_191F_04A2();                              /* @asm 0x024A6E advance to next unit */
 
     progress = 0;                                          /* @asm 0x024A73 mov [bp-2],0 */
     do {
-        if (*(int16_t near*)DGROUP_PTR(0x5390) == 0) {     /* @asm 0x024A78 cmp [0x5390],0 (Spring) */
+        if (DGS16(0x5390) == 0) {     /* @asm 0x024A78 cmp [0x5390],0 (Spring) */
             if (overlay_call_181F_07F4() == 0) {           /* @asm 0x024A82 LCALL 0x181F:0x7F4(unit) */
                 now = game_timer_ticks();                  /* @asm 0x024A8B LCALL 0xC0C:6 -> DX:AX */
                 progress = overlay_call_181F_0F9C();        /* @asm 0x024A99 call 0x024B50(0) -> 0x181F:0xF9C */
@@ -271,22 +272,22 @@ int begin_season_loop(void)
                     do { now = game_timer_ticks(); }       /* @asm 0x024AA6 LCALL 0xC0C:6 */
                     while (now < fence);                   /* @asm 0x024AB7..0x024ABF cmp/jb spin */
                     overlay_call_191F_04A2();              /* @asm 0x024AC1 advance to next unit */
-                    if (*(uint8_t near*)DGROUP_PTR(0x5382) & 0x80) /* @asm 0x024AC6 test [0x5382],0x80 */
+                    if (DG8(0x5382) & 0x80) /* @asm 0x024AC6 test [0x5382],0x80 */
                         func_020F50();                     /* @asm 0x024ACD autosave path */
                 }
             }
         }
-        if (*(int16_t near*)DGROUP_PTR(0x53C4) != 0) {     /* @asm 0x024AD0 cmp [0x53C4],0 / je 0x024AFA */
+        if (DGS16(0x53C4) != 0) {     /* @asm 0x024AD0 cmp [0x53C4],0 / je 0x024AFA */
             if (progress == 0)                             /* @asm 0x024AD7 cmp [bp-2],0 / jne */
                 overlay_call_181F_055E();                  /* @asm 0x024AE1 LCALL 0x181F:0x55E(1,0) */
-            if (*(int16_t near*)DGROUP_PTR(0x5390) == 0)   /* @asm 0x024AE9 cmp [0x5390],0 (Spring) */
+            if (DGS16(0x5390) == 0)   /* @asm 0x024AE9 cmp [0x5390],0 (Spring) */
                 overlay_call_191F_0018();                  /* @asm 0x024AF1 call 0x024B82 -> 0x191F:0x18 */
             else
                 overlay_call_191F_00F0();                  /* @asm 0x024AF7 call 0x024BDC -> 0x191F:0xF0 */
         }
-    } while (*(int16_t near*)DGROUP_PTR(0x53C2) != 0       /* @asm 0x024AFA cmp [0x53C2],0 */
-          && *(int16_t near*)DGROUP_PTR(0x53C4) != 0       /* @asm 0x024B01 cmp [0x53C4],0 */
-          && *(int16_t near*)DGROUP_PTR(0x0826) == 0);     /* @asm 0x024B08 cmp [0x826],0 -> loop 0x024A73 */
+    } while (DGS16(0x53C2) != 0       /* @asm 0x024AFA cmp [0x53C2],0 */
+          && DGS16(0x53C4) != 0       /* @asm 0x024B01 cmp [0x53C4],0 */
+          && DGS16(0x0826) == 0);     /* @asm 0x024B08 cmp [0x826],0 -> loop 0x024A73 */
     return 0;                                              /* @asm 0x024B12 leave; retf */
 }
 
@@ -363,8 +364,8 @@ int colony_survey_adjacent_tiles(int near *out_best_dir,
 
     for (dir = 0; dir < 8; dir++) {               /* @asm 0x025940..0x0259E? loop [bp-6] < 8 */
         int ntile, nx, ny;
-        ny = (int8_t)(*(uint8_t near*)DGROUP_PTR(0x00BE + dir)) + c->map_y; /* @asm 0x025967..0x025977 */
-        nx = (int8_t)(*(uint8_t near*)DGROUP_PTR(0x00B4 + dir)) + c->map_x; /* @asm 0x025979..0x025980 */
+        ny = (int8_t)(DG8(0x00BE + dir)) + c->map_y; /* @asm 0x025967..0x025977 */
+        nx = (int8_t)(DG8(0x00B4 + dir)) + c->map_x; /* @asm 0x025979..0x025980 */
         (void)nx; (void)ny;
         ntile = overlay_call_181F_07E0();         /* @asm 0x025982 LCALL 0x181F:0x7E0(nx,ny) */
         if (ntile < 0) continue;                  /* @asm 0x02598A or ax,ax / jl -> next dir */
@@ -522,8 +523,8 @@ void colony_reassign_after_sort(void)
     }
 
     /* remap selected-colonist index [0x8D7C] through perm  @asm 0x025CFC..0x025D07 */
-    *(int16_t near*)DGROUP_PTR(0x8D7C)
-        = perm[ *(int16_t near*)DGROUP_PTR(0x8D7C) ];
+    DGS16(0x8D7C)
+        = perm[ DGS16(0x8D7C) ];
 
     /* rewrite the 20 surrounding tile_state assignments  @asm 0x025D08..0x025D2E */
     for (i = 0; i < 0x14; i++) {                    /* loop i < 0x14 (20 tiles) */
@@ -567,8 +568,8 @@ void colony_draw_random_layout(void)
     overlay_call_181F_0D62();                     /* @asm 0x025D3A begin layout pass */
 
     for (i = 0; i < 0xF; i++) {                   /* @asm 0x025D44..0x025D61 clear 15 slots */
-        *(uint8_t near*)DGROUP_PTR(0x8E92 + i) = 0xFF; /* @asm 0x025D49 [bx-0x716E]=0xFF */
-        *(uint8_t near*)DGROUP_PTR(0x8E82 + i) = 0xFF; /* @asm 0x025D4D [bx-0x717E]=0xFF */
+        DG8(0x8E92 + i) = 0xFF; /* @asm 0x025D49 [bx-0x716E]=0xFF */
+        DG8(0x8E82 + i) = 0xFF; /* @asm 0x025D4D [bx-0x717E]=0xFF */
         slot_taken[i] = -1;                        /* @asm 0x025D55 word[bp+si-0x36]=0xFFFF */
     }
     for (i = 0; i < 5; i++)                        /* @asm 0x025D63..0x025D79 zero 5 counters */
@@ -576,24 +577,24 @@ void colony_draw_random_layout(void)
 
     /* flatten the (5 x N) config at 0x224/0x22A into the 42-entry list 0x8D62 */
     for (row = 0; row < 5; row++) {                /* @asm 0x025D7B..0x025E07 */
-        int cnt = *(uint8_t near*)DGROUP_PTR(0x0224 + row); /* @asm 0x025D88 [bx+0x224] */
+        int cnt = DG8(0x0224 + row); /* @asm 0x025D88 [bx+0x224] */
         for (k = 0; k < cnt; k++) {                 /* @asm 0x025D8E cmp ax,[bp-4]; jle */
-            int val = *(uint8_t near*)DGROUP_PTR(0x022A + row); /* @asm 0x025D98 [si+0x22A] */
-            *(uint8_t near*)DGROUP_PTR(0x8D62 + k) = (uint8_t)val; /* @asm 0x025DA3 [bx+si-0x729E]=val */
+            int val = DG8(0x022A + row); /* @asm 0x025D98 [si+0x22A] */
+            DG8(0x8D62 + k) = (uint8_t)val; /* @asm 0x025DA3 [bx+si-0x729E]=val */
         }
     }
 
     /* randomized claim pass: slot = random_int(0, val-1) + base  @asm 0x025E09..0x025E5A */
     for (i = 0; i < 0xF; i++) {                    /* loop [bp-0x12] < 0xF */
-        int e   = *(uint8_t near*)DGROUP_PTR(0x8D62 + i); /* @asm 0x025DC2 [bx-0x729E] */
-        int base= *(uint8_t near*)DGROUP_PTR(0x022A + e); /* @asm 0x025DCB [bx+0x22A] */
-        int val = *(uint8_t near*)DGROUP_PTR(0x0224 + e); /* @asm 0x025DD4 [bx+0x224] */
+        int e   = DG8(0x8D62 + i); /* @asm 0x025DC2 [bx-0x729E] */
+        int base= DG8(0x022A + e); /* @asm 0x025DCB [bx+0x22A] */
+        int val = DG8(0x0224 + e); /* @asm 0x025DD4 [bx+0x224] */
         int slot;
         do {
             slot = overlay_call_181F_04D4()        /* @asm 0x025DE2 LCALL 0x181F:0x4D4 = random_int(0, val-1) */
                  + base;                            /* @asm 0x025DEA add ax,base */
-        } while (*(int8_t near*)DGROUP_PTR(0x8E92 + slot) >= 0); /* @asm 0x025DF2 cmp [bx-0x716E],0; jge retry */
-        *(uint8_t near*)DGROUP_PTR(0x8E92 + slot) = (uint8_t)i;  /* @asm 0x025DFC claim slot */
+        } while (DGS8(0x8E92 + slot) >= 0); /* @asm 0x025DF2 cmp [bx-0x716E],0; jge retry */
+        DG8(0x8E92 + slot) = (uint8_t)i;  /* @asm 0x025DFC claim slot */
         (void)val;
     }
 
@@ -608,7 +609,7 @@ void colony_draw_random_layout(void)
         /* record produced good index into 0x8E82 via the 0x8F88 column + slot_taken */
         {
             int col = *(int8_t far*)(MK_FP(0,0x8F88) + i*12); /* @asm 0x025E81 [bx*12-0x7078] */
-            *(uint8_t near*)DGROUP_PTR(0x8E82 + slot_taken[col]) = (uint8_t)i; /* @asm 0x025E9F [bx-0x717E]=i */
+            DG8(0x8E82 + slot_taken[col]) = (uint8_t)i; /* @asm 0x025E9F [bx-0x717E]=i */
         }
     }
 }
@@ -817,8 +818,8 @@ void colony_draw_units_panel(void)
     struct colony_t far *c = ctx;
     int count, i;
 
-    *(int16_t near*)DGROUP_PTR(0x017C) = c->map_x;  /* @asm 0x02637D [0x17C]=ctx[+0] */
-    *(int16_t near*)DGROUP_PTR(0x017E) = c->map_y;  /* @asm 0x026384 [0x17E]=ctx[+1] */
+    DGS16(0x017C) = c->map_x;  /* @asm 0x02637D [0x17C]=ctx[+0] */
+    DGS16(0x017E) = c->map_y;  /* @asm 0x026384 [0x17E]=ctx[+1] */
 
     overlay_call_181F_0C5E();                        /* @asm 0x02638A -> render-info ptr (dx) */
     overlay_call_191F_08A4();                        /* @asm 0x02639A prime sub-render (owner_power) */
@@ -905,8 +906,8 @@ void colony_draw_workgrid(int show_close_button)
     struct colony_t far *c = ctx;
     int r, col, flags;
 
-    *(int16_t near*)DGROUP_PTR(0x0070)
-        = *(uint8_t near*)DGROUP_PTR(0x0336);       /* @asm 0x0264AD [0x70]=[0x336] */
+    DGS16(0x0070)
+        = DG8(0x0336);       /* @asm 0x0264AD [0x70]=[0x336] */
 
     overlay_call_181F_0506();                       /* @asm 0x0264E1 map backdrop (0x78x0x78 @8,0xC8) */
     func_02CAC3();                                  /* @asm 0x0264F3 panel frame @ (0xE0,0x20) */
@@ -946,7 +947,7 @@ void colony_draw_workgrid(int show_close_button)
 
             if (flags & 8) {                        /* @asm 0x02663E test al,8 (special resource) */
                 overlay_call_181F_0236();           /* @asm 0x02665D bonus sprite 0x17 ([0xA891] pal) */
-                if (*(int8_t near*)DGROUP_PTR(0xA893) >= 0) /* @asm 0x026662 cmp [0xA893],0 / jl */
+                if (DGS8(0xA893) >= 0) /* @asm 0x026662 cmp [0xA893],0 / jl */
                     overlay_call_181F_0236();       /* @asm 0x02668A second bonus sprite */
             }
 
@@ -962,19 +963,19 @@ void colony_draw_workgrid(int show_close_button)
                 overlay_call_181F_024A();           /* @asm 0x02677C draw pip */
             }
 
-            if (*(int16_t near*)DGROUP_PTR(0x0B98) == 0) { /* @asm 0x026781 cmp [0xB98],0 / je 0x1BD6 */
+            if (DGS16(0x0B98) == 0) { /* @asm 0x026781 cmp [0xB98],0 / je 0x1BD6 */
                 /* selected-colonist highlight  @asm 0x0267C6..0x026815 */
-                if (*(int16_t near*)DGROUP_PTR(0x8D7C) == /*idx*/0) /* @asm 0x0267E8 cmp [0x8D7C],ax */
+                if (DGS16(0x8D7C) == /*idx*/0) /* @asm 0x0267E8 cmp [0x8D7C],ax */
                     overlay_call_181F_00CE();       /* @asm 0x026810 highlight border (id 0xA) */
                 /* cursor-cell highlight when [0x330]/[0x332] match (col,r) */
-                if (*(int16_t near*)DGROUP_PTR(0x0330) == col && /* @asm 0x026857 cmp [0x330] */
-                    *(int16_t near*)DGROUP_PTR(0x0332) == r)      /* @asm 0x026862 cmp [0x332] */
+                if (DGS16(0x0330) == col && /* @asm 0x026857 cmp [0x330] */
+                    DGS16(0x0332) == r)      /* @asm 0x026862 cmp [0x332] */
                     overlay_call_181F_00CE();       /* @asm 0x026891 cursor border (id 0xF) */
             }
         }
     }
 
-    *(int16_t near*)DGROUP_PTR(0x0070) = 0;         /* @asm 0x0268AC [0x70]=0 */
+    DGS16(0x0070) = 0;         /* @asm 0x0268AC [0x70]=0 */
     if (show_close_button)                          /* @asm 0x0268B2 cmp [bp+6],0 / je */
         overlay_call_181F_00E2();                   /* @asm 0x0268C6 close button @ (0xC8,8,0x78) */
 }
@@ -1013,8 +1014,8 @@ void colony_draw_header(int year_or_flag)
     if (c->owner_power < 4 &&                        /* @asm 0x0268D7 cmp ctx[+0x1A],4 / jae */
         *(uint8_t far*)(MK_FP(0,0x543F) + c->owner_power*0x34) == 0) /* @asm 0x0268E5 cmp [bx+0x543F],0 */
         goto inactive;                               /* @asm 0x0268EB jmp 0x1E08 */
-    if (*(int16_t near*)DGROUP_PTR(0x0B98) != 0) goto inactive; /* @asm 0x0268EE cmp [0xB98],0 */
-    if (*(uint8_t near*)DGROUP_PTR(0x0828) != 0) goto inactive; /* @asm 0x0268F8 cmp [0x828],0 */
+    if (DGS16(0x0B98) != 0) goto inactive; /* @asm 0x0268EE cmp [0xB98],0 */
+    if (DG8(0x0828) != 0) goto inactive; /* @asm 0x0268F8 cmp [0x828],0 */
 
     buf[0] = 0;                                      /* @asm 0x026902 byte[bp-0x50]=0 */
     overlay_call_181F_01A0();                        /* @asm 0x026915 (ctx[+0x1B] name id) -> str */
@@ -1088,9 +1089,9 @@ void colony_anim_worked_tiles(int x, int y, int phase)
         if (idx < 0) break;                         /* @asm 0x026B5E or ax,ax / jl 0x1FDA -> ret */
         if (overlay_call_181F_0B28() == 0) continue;/* @asm 0x026B63 (idx) filter; or/je */
 
-        n = *(int16_t near*)DGROUP_PTR(0x8D72);     /* @asm 0x026B6F [0x8D72] count bound */
+        n = DGS16(0x8D72);     /* @asm 0x026B6F [0x8D72] count bound */
         /* (inner draw of the selected colonist sprite via [0x83E]:[0x840]) */
-        sel = *(int16_t near*)DGROUP_PTR(0x8D7C);   /* @asm 0x026AFC [0x8D7C] selected idx */
+        sel = DGS16(0x8D7C);   /* @asm 0x026AFC [0x8D7C] selected idx */
         if (/*[bp-0xA]*/ sel == sel)                /* @asm 0x026B05 cmp [bp-4],[bp-0xA] (selected match) */
             overlay_call_181F_00CE();               /* @asm 0x026B48 draw sprite from [idx*0xC+0x3E/0x40] */
         (void)n; (void)x; (void)y; (void)c;
@@ -1099,8 +1100,8 @@ void colony_anim_worked_tiles(int x, int y, int phase)
         overlay_call_181F_0C4A();                   /* @asm 0x026B8B (idx) */
         overlay_call_181F_0A74();                   /* @asm 0x026B97 (idx) -> sprite */
         overlay_call_181F_024A();                   /* @asm 0x026BAA (7,x,y) draw pip */
-        if (*(int16_t near*)DGROUP_PTR(0x07EE) == 0) continue; /* @asm 0x026BAF cmp [0x7EE],0 / jne */
-        if (*(int16_t near*)DGROUP_PTR(0x8D54) == 0) continue; /* @asm 0x026BB9 cmp [0x8D54],0 / je */
+        if (DGS16(0x07EE) == 0) continue; /* @asm 0x026BAF cmp [0x7EE],0 / jne */
+        if (DGS16(0x8D54) == 0) continue; /* @asm 0x026BB9 cmp [0x8D54],0 / je */
         /* selected-index latch refresh from [0x8D7E]  @asm 0x026BC3 */
     }
 }
@@ -1136,11 +1137,11 @@ void colony_draw_colonist_at(int slot, int x, int y, int kind)
         overlay_call_181F_0A74();                   /* @asm 0x026C8D (i) -> sprite [bp-8] */
         overlay_call_181F_024A();                   /* @asm 0x026CA1 (7,x,y) */
         /* draw selected colonist sprite from [0x83E]:[0x840]  @asm 0x026C1F..0x026C5F */
-        if (*(int16_t near*)DGROUP_PTR(0x8D7C) == i)/* @asm 0x026C1A cmp [0x8D7C],[bp-0xA] */
+        if (DGS16(0x8D7C) == i)/* @asm 0x026C1A cmp [0x8D7C],[bp-0xA] */
             overlay_call_181F_00CE();               /* @asm 0x026C5F blit @ [idx*0xC+0x40/+0x3E]+(x+1,y) */
         x += step;                                  /* @asm 0x026C67 add [bp+8],step */
-        if (*(int16_t near*)DGROUP_PTR(0x07EE) == 0) continue; /* @asm 0x026CA6 */
-        if (*(int16_t near*)DGROUP_PTR(0x8D54) == 0) continue; /* @asm 0x026CB0 */
+        if (DGS16(0x07EE) == 0) continue; /* @asm 0x026CA6 */
+        if (DGS16(0x8D54) == 0) continue; /* @asm 0x026CB0 */
     }
 }
 
@@ -1171,12 +1172,12 @@ int colony_bar_metrics(int item, int near *out_min, int near *out_max,
     int sprite = 0;
 
     if (item == 0x13 || item == 0x14) {            /* @asm 0x026CD6/0x026CDC */
-        sprite = *(uint8_t near*)DGROUP_PTR(0xA892);/* @asm 0x026CE2 [0xA892] */
+        sprite = DG8(0xA892);/* @asm 0x026CE2 [0xA892] */
         mx = 0x3F;                                  /* @asm 0x026CEA mov [bp-4],0x3F */
         goto store;                                 /* @asm 0x026CEF jmp 0x21B4 */
     }
     if (item == 0x11) {                            /* @asm 0x026CF2 */
-        sprite = *(int16_t near*)DGROUP_PTR(0x8DD8);/* @asm 0x026CF8 [0x8DD8] work-points */
+        sprite = DGS16(0x8DD8);/* @asm 0x026CF8 [0x8DD8] work-points */
         mx = 0x1F;                                  /* @asm 0x026CFE mov [bp-4],0x1F */
         goto store;                                 /* @asm 0x026D03 jmp 0x21B4 */
     }
@@ -1198,7 +1199,7 @@ int colony_bar_metrics(int item, int near *out_min, int near *out_max,
     }
     sprite = *(int8_t far*)(MK_FP(0,0x8DC8) + mn);  /* @asm 0x026D8F [bx*2-0x7238] sprite cat */
     if (cat == 0x11)                                /* @asm 0x026D96 cmp [bp-0xC],0x11 */
-        sprite -= *(uint8_t near*)DGROUP_PTR(0xA892); /* @asm 0x026D9C sub [0xA892] */
+        sprite -= DG8(0xA892); /* @asm 0x026D9C sub [0xA892] */
 
 store:
     if (out_min)   *out_min   = mn;                 /* @asm 0x026DA4 cmp [bp+8],0 / store [bp-6] */
@@ -1236,8 +1237,8 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
     int icon, qty, count;
     char numbuf[0x14];                              /* [bp-0x54] */
 
-    *(int16_t near*)DGROUP_PTR(0x0070)
-        = *(uint8_t near*)DGROUP_PTR(0x0336);       /* @asm 0x026DDD [0x70]=[0x336] */
+    DGS16(0x0070)
+        = DG8(0x0336);       /* @asm 0x026DDD [0x70]=[0x336] */
 
     icon = item + 1;                                /* @asm 0x026DE5 [bp-0x58] = item+1 */
     if (item == 0 && overlay_call_181F_09FC() == 0) /* @asm 0x026DEC cmp item,0; 0x026DF2 0x9FC(0) */
@@ -1285,7 +1286,7 @@ count_phase:
         overlay_call_181F_013C();                    /* @asm 0x026FE4 draw count text (half-sprite offset) */
         (void)numbuf;
     }
-    *(int16_t near*)DGROUP_PTR(0x0070) = 0;          /* @asm 0x026FE9 [0x70]=0 */
+    DGS16(0x0070) = 0;          /* @asm 0x026FE9 [0x70]=0 */
 }
 
 /* ============================================================================
@@ -1374,36 +1375,36 @@ void colony_screen_render(int show_close_button)
 
     func_02CAC3();                                  /* @asm 0x0270E0 backdrop @ (0x82,0x78,0x30) */
 
-    count = c->population + *(int16_t near*)DGROUP_PTR(0x8D72); /* @asm 0x0270E6 ctx[+0x1F]+[0x8D72] */
+    count = c->population + DGS16(0x8D72); /* @asm 0x0270E6 ctx[+0x1F]+[0x8D72] */
     for (i = 0; i < count; i++) {                   /* @asm 0x027107..0x027141 pre-sum widths */
         overlay_call_181F_0C0E();                   /* @asm 0x02710B (i) colonist->building */
         overlay_call_181F_0A74();                   /* @asm 0x027119 (i) -> sprite; sum [idx*0xC+0x3E] */
     }
 
-    *(uint8_t near*)DGROUP_PTR(0xA890) = 2;         /* @asm 0x027143 [0xA890]=2 layout mode */
+    DG8(0xA890) = 2;         /* @asm 0x027143 [0xA890]=2 layout mode */
     /* colonist spread/draw loop with overlap-avoidance  @asm 0x027148..0x0272ED */
     for (i = 0; i < count; i++) {                   /* @asm 0x0272B0..0x0272B9 i, [bp-0x6E] */
         overlay_call_181F_0C0E();                   /* @asm 0x0272BC (i) */
         overlay_call_181F_0A74();                   /* @asm 0x0272CA (i) -> sprite [bp-0x66] */
-        if (*(int16_t near*)DGROUP_PTR(0x8D7E) == i &&  /* @asm 0x0271F4 cmp [0x8D7E] (selected) */
-            *(int16_t near*)DGROUP_PTR(0x07EE) != 0)
+        if (DGS16(0x8D7E) == i &&  /* @asm 0x0271F4 cmp [0x8D7E] (selected) */
+            DGS16(0x07EE) != 0)
             overlay_call_181F_00CE();               /* @asm 0x02724B selected highlight (id 0xF) */
         overlay_call_181F_0254();                   /* @asm 0x0272E7 blit colonist sprite */
         (void)c;
     }
 
     /* WAREHOUSE bars  @asm 0x02731E..0x0273DB */
-    *(int16_t near*)DGROUP_PTR(0x0070)
-        = *(uint8_t near*)DGROUP_PTR(0x0336);       /* @asm 0x02731E [0x70]=[0x336] */
+    DGS16(0x0070)
+        = DG8(0x0336);       /* @asm 0x02731E [0x70]=[0x336] */
     overlay_call_181F_0218();                       /* @asm 0x02732B newline/advance */
     /* stock [0x8DC8] vs cap [0x8E0A]/[0xA895] (yellow 0x4017)  @asm 0x027330..0x0273A1 */
     overlay_call_181F_0222();                       /* @asm 0x02736E draw-bar stock */
     overlay_call_181F_0222();                       /* @asm 0x027388 draw-bar overflow */
-    if (*(int16_t near*)DGROUP_PTR(0x8E32) != 0)    /* @asm 0x02738D cmp [0x8E32],0 / je */
+    if (DGS16(0x8E32) != 0)    /* @asm 0x02738D cmp [0x8E32],0 / je */
         overlay_call_181F_0222();                   /* @asm 0x02739D draw-bar surplus (0x8017) */
-    if (*(int16_t near*)DGROUP_PTR(0x8DEA) != 0)    /* @asm 0x0273A2 cmp [0x8DEA],0 / je (bells) */
+    if (DGS16(0x8DEA) != 0)    /* @asm 0x0273A2 cmp [0x8DEA],0 / je (bells) */
         overlay_call_181F_0222();                   /* @asm 0x0273B2 draw-bar bells (id 0x39) */
-    if (*(int16_t near*)DGROUP_PTR(0x8DEC) != 0)    /* @asm 0x0273B7 cmp [0x8DEC],0 / je (crosses) */
+    if (DGS16(0x8DEC) != 0)    /* @asm 0x0273B7 cmp [0x8DEC],0 / je (crosses) */
         overlay_call_181F_0222();                   /* @asm 0x0273C7 draw-bar crosses (id 0x3F) */
     overlay_call_181F_022C();                       /* @asm 0x0273D7 draw-label (4,...,0x76) */
 
@@ -1414,7 +1415,7 @@ void colony_screen_render(int show_close_button)
     /* colour tier from difficulty [0x53A6]: base = (0x53A6-0xA)*-1, or 0x32 for
      * non-active powers (AIPersonality [owner*0x34+0x543F]==0)  @asm 0x027416..0x027449 */
     {
-        int thresh = -((int)*(uint8_t near*)DGROUP_PTR(0x53A6) - 0xA); /* @asm 0x027416 [0x53A6] difficulty */
+        int thresh = -((int)DG8(0x53A6) - 0xA); /* @asm 0x027416 [0x53A6] difficulty */
         if (!(c->owner_power < 4 &&
               *(uint8_t far*)(MK_FP(0,0x543F) + c->owner_power*0x34) != 0)) /* @asm 0x027423/0x027431 */
             thresh = 0x32;                          /* @asm 0x027437 non-active -> 0x32 */
@@ -1442,7 +1443,7 @@ void colony_screen_render(int show_close_button)
         overlay_call_181F_0254();                   /* @asm 0x0275A6 Tory face sprite (id 0x7D) */
     }
 
-    *(int16_t near*)DGROUP_PTR(0x0070) = 0;         /* @asm 0x0275AB [0x70]=0 */
+    DGS16(0x0070) = 0;         /* @asm 0x0275AB [0x70]=0 */
     if (show_close_button)                          /* @asm 0x0275B1 cmp [bp+6],0 / je */
         overlay_call_181F_00E2();                   /* @asm 0x0275C5 close button @ (0x82,0x78,0x30) */
 }
@@ -1468,8 +1469,8 @@ void colony_draw_warehouse_bars(void)
 {
     int g, y;
 
-    *(int16_t near*)DGROUP_PTR(0x0070)
-        = *(uint8_t near*)DGROUP_PTR(0x0336);       /* @asm 0x0275D3 [0x70]=[0x336] */
+    DGS16(0x0070)
+        = DG8(0x0336);       /* @asm 0x0275D3 [0x70]=[0x336] */
     y = 0x86;                                        /* @asm 0x0275DB [bp-4]=0x86 */
     overlay_call_181F_0218();                        /* @asm 0x0275E0 newline */
 
@@ -1496,23 +1497,23 @@ void colony_draw_warehouse_bars(void)
     overlay_call_181F_0218();                          /* @asm 0x0276AA newline */
 
     /* food gauge [0x8DD2] vs cap [0x8E14]  @asm 0x0276AF..0x0276FE */
-    if (*(int16_t near*)DGROUP_PTR(0x8E14) >= *(int16_t near*)DGROUP_PTR(0x8DD2)) { /* @asm 0x0276B2 */
-        if (*(int16_t near*)DGROUP_PTR(0x8E14) != 0) overlay_call_181F_0222(); /* @asm 0x0276D8 (id 0x1C) */
+    if (DGS16(0x8E14) >= DGS16(0x8DD2)) { /* @asm 0x0276B2 */
+        if (DGS16(0x8E14) != 0) overlay_call_181F_0222(); /* @asm 0x0276D8 (id 0x1C) */
         overlay_call_181F_0222();                     /* @asm 0x0276E5 surplus part (0x4017) */
     } else {
-        if (*(int16_t near*)DGROUP_PTR(0x8E14) != 0) overlay_call_181F_0222(); /* @asm 0x0276F5 */
+        if (DGS16(0x8E14) != 0) overlay_call_181F_0222(); /* @asm 0x0276F5 */
     }
-    if (*(int16_t near*)DGROUP_PTR(0x8E3C) != 0)      /* @asm 0x0276EA cmp [0x8E3C],0 / je */
+    if (DGS16(0x8E3C) != 0)      /* @asm 0x0276EA cmp [0x8E3C],0 / je */
         overlay_call_181F_0222();                     /* @asm 0x0276FA draw-bar (0x8017) */
 
     /* bells/crosses [0x8E64] vs [0x8DE8]  @asm 0x0276FF..0x027728 */
-    if (*(int16_t near*)DGROUP_PTR(0x8DE8) != *(int16_t near*)DGROUP_PTR(0x8E64)) /* @asm 0x027702 */
+    if (DGS16(0x8DE8) != DGS16(0x8E64)) /* @asm 0x027702 */
         overlay_call_181F_0222();                     /* @asm 0x027713 draw-bar (id 0x37) */
-    if (*(int16_t near*)DGROUP_PTR(0x8E64) != 0)      /* @asm 0x027718 cmp [0x8E64],0 / je */
+    if (DGS16(0x8E64) != 0)      /* @asm 0x027718 cmp [0x8E64],0 / je */
         overlay_call_181F_0222();                     /* @asm 0x027728 draw-bar (id 0x8037) */
 
     overlay_call_181F_022C();                          /* @asm 0x027738 label row (4,id 0xD5,y) */
-    *(int16_t near*)DGROUP_PTR(0x0070) = 0;            /* @asm 0x02773D [0x70]=0 */
+    DGS16(0x0070) = 0;            /* @asm 0x02773D [0x70]=0 */
     (void)y;
 }
 
@@ -1544,7 +1545,7 @@ void colony_draw_buildings_panel(void)
     char hdr[0x60];                                 /* [bp-0x60] header buffer */
     int u, colnum;
 
-    if (*(int16_t near*)DGROUP_PTR(0x0B98) != 0) {  /* @asm 0x02774A cmp [0xB98],0 / je 0x2BBC */
+    if (DGS16(0x0B98) != 0) {  /* @asm 0x02774A cmp [0xB98],0 / je 0x2BBC */
         hdr[0] = 0;                                  /* @asm 0x027751 byte[bp-0x60]=0 */
         overlay_call_181F_0AC4();                    /* @asm 0x027763 (ctx->byte[+0x94]) */
         /* 32-bit value of current build  @asm 0x02776E..0x027786 */
@@ -1569,9 +1570,9 @@ void colony_draw_buildings_panel(void)
         /* draw profession sprite + selected highlight  @asm 0x027814..0x0278AA */
         overlay_call_181F_02DA();                    /* @asm 0x027829 (advance/sprite) */
         overlay_call_181F_02F8();                    /* @asm 0x02783A (draw colonist) */
-        if (*(int16_t near*)DGROUP_PTR(0x8D7A) == /*[bp-0x66]*/0 && /* @asm 0x027842 cmp [0x8D7A] */
-            *(int16_t near*)DGROUP_PTR(0x07EE) != 0 &&               /* @asm 0x02784C cmp [0x7EE],0 */
-            *(int16_t near*)DGROUP_PTR(0x8D54) == 4)                 /* @asm 0x027853 cmp [0x8D54],4 */
+        if (DGS16(0x8D7A) == /*[bp-0x66]*/0 && /* @asm 0x027842 cmp [0x8D7A] */
+            DGS16(0x07EE) != 0 &&               /* @asm 0x02784C cmp [0x7EE],0 */
+            DGS16(0x8D54) == 4)                 /* @asm 0x027853 cmp [0x8D54],4 */
             overlay_call_181F_00CE();                /* @asm 0x0278AA highlight (id 0xA/0xF) */
         /* per-column placement: col0 x=0x9E; col1 0x98; col2 0x90  @asm 0x0278D7..0x027908 */
         overlay_call_181F_02BC();                    /* @asm 0x02794A draw building icon (id 0x64) */
@@ -1597,7 +1598,7 @@ void draw_bevel_button(int str_id, int near *out_x, int near *out_y)
 
     overlay_call_181F_0022();                        /* @asm 0x02795B (str_id) -> DX:AX string ptr */
     width = overlay_call_181F_0114();                /* @asm 0x027965 measure width [bp-2] */
-    first = *(uint8_t far*)(*(uint32_t near*)DGROUP_PTR(0x089E)); /* @asm 0x02796D les bx,[0x89E]; es:[bx] */
+    first = *(uint8_t far*)(DG32(0x089E)); /* @asm 0x02796D les bx,[0x89E]; es:[bx] */
     if (out_x) *out_x = width + 6;                   /* @asm 0x02797A add cx,6; store [bp+8] */
     if (out_y) *out_y = (first - 1) + 4;             /* @asm 0x027982 dec ax; add 4; store [bp+0xA] */
     (void)str_id;
@@ -1665,9 +1666,9 @@ void colony_draw_queue_arrows(void)
     struct colony_t far *c = ctx;
     int sel = -1;                                    /* [bp-2] = 0xFFFF */
 
-    if (*(int16_t near*)DGROUP_PTR(0x07EE) != 0 &&  /* @asm 0x027AE3 cmp [0x7EE],0 / je */
-        *(int16_t near*)DGROUP_PTR(0x8D54) == 4)    /* @asm 0x027AEA cmp [0x8D54],4 / jne */
-        sel = *(int16_t near*)DGROUP_PTR(0x0342);   /* @asm 0x027AF1 [0x342] */
+    if (DGS16(0x07EE) != 0 &&  /* @asm 0x027AE3 cmp [0x7EE],0 / je */
+        DGS16(0x8D54) == 4)    /* @asm 0x027AEA cmp [0x8D54],4 / jne */
+        sel = DGS16(0x0342);   /* @asm 0x027AF1 [0x342] */
 
     func_02CAC3();                                  /* @asm 0x027B02 backdrop @ (0xD8,0x8A,0x1E,9) */
     func_02CAC3();                                  /* @asm 0x027B13 backdrop @ (0x10E,0x8A,0x1E,9) */

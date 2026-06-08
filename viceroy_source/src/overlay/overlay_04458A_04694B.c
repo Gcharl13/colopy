@@ -50,6 +50,7 @@
  * shared overlay_externs.h is out of scope for this edit).
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 
 /* ---------------------------------------------------------------------------
  * DGROUP globals referenced by this cluster (byte-cited to the .asm sites).
@@ -57,9 +58,6 @@
  * Addresses are DGROUP offsets exactly as they appear in the disassembly's
  * "[0xNNNN]" operands.
  * ------------------------------------------------------------------------- */
-#define DG8(off)   (*(uint8_t  near*)DGROUP_PTR(off))
-#define DG16(off)  (*(uint16_t near*)DGROUP_PTR(off))
-#define DGS16(off) (*(int16_t  near*)DGROUP_PTR(off))
 
 /* --- GUI engine globals (page 0x0A) -------------------------------------- */
 #define G_ACTIVE_DLG     DG16 (0x14BA)  /* @asm near ptr to the active window  */

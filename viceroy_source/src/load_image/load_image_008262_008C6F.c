@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x008262..0x008276  (20 bytes)  region=load_image
@@ -45,7 +46,7 @@ int func_0082A0_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      *      0x0082AA shl bx,1; 0x0082AC mov ax,[bx+0x5b1c].
      * Word-array load: base 0x5b1c, element (row*0x27 + col) scaled by 2.
      * Returns the 16-bit entry table[arg0][arg1] (row pitch 0x27 words). */
-    return *(uint16_t near *)(0x5B1C + ((unsigned)arg0_bp_06 * 0x27 + arg1_bp_08) * 2);
+    return DG16(0x5B1C + ((unsigned)arg0_bp_06 * 0x27 + arg1_bp_08) * 2);
 }
 
 /* @asm        0x0082B2..0x0082D8  (38 bytes)  region=load_image
@@ -115,24 +116,24 @@ int func_0082DC_logic_sz_118(uint16_t arg0_bp_06)
     unsigned char near *ctx;
     int oob = 0;
     int owned_human;
-    *(uint16_t near *)0x8DC6 = arg0_bp_06;               /* g_current_colony_index */
+    DG16(0x8DC6) = arg0_bp_06;               /* g_current_colony_index */
     if ((int16_t)arg0_bp_06 < 0
-        || (int16_t)arg0_bp_06 >= (int16_t)*(uint16_t near *)0x539E) { /* g_colony_count */
+        || (int16_t)arg0_bp_06 >= (int16_t)DG16(0x539E)) { /* g_colony_count */
         arg0_bp_06 = 0;
         oob = 1;
     }
     ctx = (unsigned char near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
     *(unsigned char near * near *)0x8542 = ctx;          /* ctx = current ColonyRecord */
-    owned_human = (ctx[0x1A] == *(uint8_t near *)0x5396);  /* owner_power == player */
+    owned_human = (ctx[0x1A] == DG8(0x5396));  /* owner_power == player */
     if (owned_human
         && ctx[0x1A] < 4                                  /* EU power */
-        && *(uint8_t near *)(0x540E + (unsigned)ctx[0x1A] * 0x34 + 0x31) == 0  /* human */
+        && DG8(0x540E + (unsigned)ctx[0x1A] * 0x34 + 0x31) == 0  /* human */
         && oob == 0)
-        *(uint8_t near *)0xA897 = 1;
+        DG8(0xA897) = 1;
     else
-        *(uint8_t near *)0xA897 = 0;
-    *(uint16_t near *)0x0348 = 0;                         /* clear render flag (word) */
-    *(uint8_t near *)0x034C = 0;                          /* clear render flag (byte) */
+        DG8(0xA897) = 0;
+    DG16(0x0348) = 0;                         /* clear render flag (word) */
+    DG8(0x034C) = 0;                          /* clear render flag (byte) */
     return 0;
 }
 
@@ -236,7 +237,7 @@ int func_0084DC_logic_sz_21(uint16_t arg0_bp_06)
      *      0x0084E6 mov bx,ax; shl bx,3; 0x0084EB mov ax,[bx-0x715e].
      * Reads the 16-bit field at 0x8ea2 + func_0084C8(arg0)*8 (-0x715e ==
      * DGROUP +0x8EA2). 8-byte record table keyed by the normalized type. */
-    return *(uint16_t near *)(0x8EA2 + (unsigned)func_0084C8(arg0_bp_06) * 8);
+    return DG16(0x8EA2 + (unsigned)func_0084C8(arg0_bp_06) * 8);
 }
 
 /* @asm        0x0084F2..0x008507  (21 bytes)  region=load_image
@@ -260,7 +261,7 @@ int func_0084F2_logic_sz_21(uint16_t arg0_bp_06)
      *      0x0084FC mov bx,ax; shl bx,3; 0x008501 mov ax,[bx-0x715c].
      * Reads the 16-bit field at 0x8ea4 + func_0084C8(arg0)*8 (-0x715c ==
      * DGROUP +0x8EA4), the +2 word of the same 8-byte record as func_0084DC. */
-    return *(uint16_t near *)(0x8EA4 + (unsigned)func_0084C8(arg0_bp_06) * 8);
+    return DG16(0x8EA4 + (unsigned)func_0084C8(arg0_bp_06) * 8);
 }
 
 /* @asm        0x008508..0x008511  (9 bytes)  region=load_image
@@ -284,8 +285,8 @@ int func_008508_logic_sz_9(uint16_t arg0_bp_06)
      * (library-implementation-only; body in the overlay thunk page).
      * ColonyRecord stride 0xCA @0x5D46 (DGROUP_MEMORY_MAP §3.4). The call is shown
      * 0-arg to match the overlay_externs.h prototype; real args are in comment. */
-    uint16_t x = (uint8_t)*(uint8_t near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x00);
-    uint16_t y = (uint8_t)*(uint8_t near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x01);
+    uint16_t x = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x00);
+    uint16_t y = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x01);
     (void)x; (void)y;
     return overlay_call_037F_02A0(/* x, y */);
 }
@@ -333,7 +334,7 @@ int func_00860E_logic_sz_15(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if ((int16_t)arg1_bp_08 < 0)
         return 0;
     {
-        uint8_t byte = *(uint8_t near *)(0x5DCA + (unsigned)arg0_bp_06 * 0xCA
+        uint8_t byte = DG8(0x5DCA + (unsigned)arg0_bp_06 * 0xCA
                                          + ((int16_t)arg1_bp_08 >> 3));
         return byte & (1 << (arg1_bp_08 & 7));
     }
@@ -358,7 +359,7 @@ int func_00863E_wrapper_with_global_8DC6(uint16_t arg0_bp_06)
     /* @asm 0x008641 push [bp+6]; 0x008644 push [0x8dc6]; 0x008649 call 0x860e.
      * Tests bit arg0 of the ColonyRecord-bitmap selected by global 0x8dc6:
      * func_00860E(record=*(uint16*)0x8dc6, bit=arg0). */
-    return func_00860E(*(uint16_t near *)0x8DC6, arg0_bp_06);  /* func_00860E_logic_sz_15 */
+    return func_00860E(DG16(0x8DC6), arg0_bp_06);  /* func_00860E_logic_sz_15 */
 }
 
 /* @asm        0x00864E..0x00866D  (31 bytes)  region=load_image
@@ -390,7 +391,7 @@ int func_00864E_logic_sz_31(uint16_t arg0_bp_06)
         if (func_00863E(arg0_bp_06) != 0)   /* func_00863E_wrapper_with_global_8DC6 */
             n++;
         arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
-            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+            DG8(0x8F86 + (unsigned)arg0_bp_06 * 12);
     } while ((int16_t)arg0_bp_06 >= 0);
     return n;
 }
@@ -424,7 +425,7 @@ int func_008686_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (func_00860E(arg0_bp_06, arg1_bp_08) != 0)   /* func_00860E_logic_sz_15 */
             n++;
         arg1_bp_08 = (uint16_t)(int16_t)(int8_t)
-            *(uint8_t near *)(0x8F86 + (unsigned)arg1_bp_08 * 12);
+            DG8(0x8F86 + (unsigned)arg1_bp_08 * 12);
     } while ((int16_t)arg1_bp_08 >= 0);
     return n;
 }
@@ -449,9 +450,9 @@ int func_0086C0_logic_sz_19(uint16_t arg0_bp_06)
      *      cmp byte[bx-0x707a],0; jge 0x86c6. Returns ax == final arg0.
      * Follows the signed-byte chain at 0x8f86 (-0x707a, pitch 12) while the next
      * link is non-negative, and returns the terminal (root) index. */
-    while ((int8_t)*(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12) >= 0)
+    while ((int8_t)DG8(0x8F86 + (unsigned)arg0_bp_06 * 12) >= 0)
         arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
-            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+            DG8(0x8F86 + (unsigned)arg0_bp_06 * 12);
     return arg0_bp_06;
 }
 
@@ -488,7 +489,7 @@ int func_0086E4_logic_sz_34(uint16_t arg0_bp_06)
             break;
         result = arg0_bp_06;
         arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
-            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+            DG8(0x8F86 + (unsigned)arg0_bp_06 * 12);
     }
     return result;
 }
@@ -585,7 +586,7 @@ uint32_t func_0087F4_logic_sz_18(uint16_t arg0_bp_06)
      *      0x008800 mov dx,[bx-0x77cc]  -> returns dx:ax (32-bit).
      * -0x77CE == DGROUP +0x8832 == PowerRecord base 0x8808 + 0x2A = gold dword
      * (DGROUP_MEMORY_MAP §3.5). Reads PowerRecord[arg0].gold. */
-    return *(uint32_t near *)(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A);
+    return DG32(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A);
 }
 
 /* @asm        0x008806..0x008845  (63 bytes)  region=load_image
@@ -623,7 +624,7 @@ int func_008806_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
         gold = 0;
     else if (gold > 999999L)               /* 0x000F423F */
         gold = 999999L;
-    *(uint32_t near *)(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A) = (uint32_t)gold;
+    DG32(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A) = (uint32_t)gold;
     return (int)(uint16_t)((uint32_t)gold & 0xFFFF);
 }
 
@@ -855,8 +856,8 @@ int func_008BB2_logic_sz_20(uint16_t arg0_bp_06)
      *      (UnitRecord.type, +0x02); 0x008BBF mov al,[bx+0x30e]; cwde.
      * Looks up a signed per-unit-type attribute byte from the DGROUP table at
      * 0x030E, indexed by unit_table[arg0].type (DGROUP_MEMORY_MAP §3.1). */
-    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
-    return (int8_t)*(uint8_t near *)(0x030E + type);
+    uint8_t type = DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    return (int8_t)DG8(0x030E + type);
 }
 
 /* @asm        0x008BC6..0x008BD3  (13 bytes)  region=load_image
@@ -877,7 +878,7 @@ int func_008BC6_logic_sz_13(uint16_t arg0_bp_06)
      * Signed-byte lookup into the per-good attribute table at DGROUP:0x02F5,
      * indexed by arg0 (a good/commodity id). Sits beside the GOOD_TO_* tables
      * at 0x2AA/0x2F4/0x2FD (audit.py). */
-    return (int8_t)*(uint8_t near *)(0x02F5 + (unsigned)arg0_bp_06);
+    return (int8_t)DG8(0x02F5 + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x008BD4..0x008C1D  (73 bytes)  region=load_image

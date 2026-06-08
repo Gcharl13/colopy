@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x005DF0..0x005E18  (40 bytes)  region=load_image
@@ -336,7 +337,7 @@ int func_00603A_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
     val = (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
     if (val < 0 || val >= 4 || val == (int16_t)arg2_bp_0A)
         return -1;
-    if (*(uint8_t near *)(0x8808 + (unsigned)arg2_bp_0A * 0x13C + 0x34 + val) & 0x40)
+    if (DG8(0x8808 + (unsigned)arg2_bp_0A * 0x13C + 0x34 + val) & 0x40)
         return val;
     return -1;
 }
@@ -442,7 +443,7 @@ int func_006204_logic_sz_46(uint16_t arg0_bp_06)
      * mode==2 (@0x006216): if 8<=id<0x18 return (id&7)|8, else return id.
      * mode==3 (@0x006232): if id<0x18 return id&7, else return id. */
     uint16_t id = arg0_bp_06 & 0x1F;
-    uint16_t mode = *(uint16_t near *)0x018E;
+    uint16_t mode = DG16(0x018E);
     if (mode == 2) {
         if ((int16_t)id >= 8 && (int16_t)id < 0x18)
             id = (id & 7) | 8;
@@ -691,15 +692,15 @@ int func_0065C4_logic_sz_67(uint16_t idx_ax, uint16_t passthru_dx)
 
     /* @asm 0x0065D2 cmp byte[bx+0x3146],0xD; jb ; 0x0065D9 cmp ...,0x12; ja ->
      * is_band = (0x0D <= UnitRecord[idx].type <= 0x12) ? 1 : 0  (type = +0x02). */
-    uint8_t type = *(uint8_t near *)(0x3144 + rec + 0x02);
+    uint8_t type = DG8(0x3144 + rec + 0x02);
     int is_band = (type >= 0x0D && type <= 0x12) ? 1 : 0;
 
     /* @asm 0x0065EA al = UnitRecord[idx].map_x (+0x00);
      * @asm 0x0065F0 bl = UnitRecord[idx].owner_flags (+0x03) & 0x0F;
      * @asm 0x0065FA dl = UnitRecord[idx].map_y (+0x01). */
-    uint8_t map_x = *(uint8_t near *)(0x3144 + rec + 0x00);
-    uint8_t owner = *(uint8_t near *)(0x3144 + rec + 0x03) & 0x0F;
-    uint8_t map_y = *(uint8_t near *)(0x3144 + rec + 0x01);
+    uint8_t map_x = DG8(0x3144 + rec + 0x00);
+    uint8_t owner = DG8(0x3144 + rec + 0x03) & 0x0F;
+    uint8_t map_y = DG8(0x3144 + rec + 0x01);
 
     /* @asm 0x0065E8 push dx(=passthru); 0x0065E9 push di(=is_band);
      * @asm 0x006600 call func_006468 (returns its result).  The true call is
@@ -828,8 +829,8 @@ int func_0067F0_logic_sz_44(uint16_t start_ax, uint16_t which_dx)
     while (i >= 0 && found < 0) {
         /* @asm 0x006811 imul bx,si,0x1C; bl=UnitRecord[i].type (+0x02);
          * @asm 0x00681A bx = type*0x0E; 0x006826 cmp byte[bx+0x5237],0; jne skip. */
-        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x02);
-        if (*(uint8_t near *)(0x5237 + (unsigned)type * 0x0E) == 0) {
+        uint8_t type = DG8(0x3144 + (unsigned)i * 0x1C + 0x02);
+        if (DG8(0x5237 + (unsigned)type * 0x0E) == 0) {
             /* @asm 0x006830 inc count; 0x006833 cmp count,which; jne skip;
              * @asm 0x006838 else found = i. */
             count++;

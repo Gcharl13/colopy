@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x0102EA..0x010315  (43 bytes)  region=load_image
@@ -190,7 +191,7 @@ int func_0103C2_logic_sz_17(uint16_t arg0_bp_06)
      * arg0, high word forced 0). 0x28EE/0x28F0 sits in the C-runtime stream
      * working area; this is a "set 32-bit position/length" assignment. ax is
      * left = arg0, so the call also returns arg0. */
-    *(uint32_t near *)0x28EE = (uint32_t)(uint16_t)arg0_bp_06;
+    DG32(0x28EE) = (uint32_t)(uint16_t)arg0_bp_06;
     return (int)(uint16_t)arg0_bp_06;
 }
 

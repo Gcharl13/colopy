@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x008C70..0x008CB2  (66 bytes)  region=load_image
@@ -98,7 +99,7 @@ int func_008D9C_lookup_table_2F4_signed(uint16_t arg0_bp_06)
      * (cf. func_008BC6 reading 0x02F5). */
     if ((int16_t)arg0_bp_06 >= 0x13)
         return -1;
-    return (int8_t)*(uint8_t near *)(0x02F4 + (unsigned)arg0_bp_06);
+    return (int8_t)DG8(0x02F4 + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x008DBC..0x008E01  (69 bytes)  region=load_image
@@ -130,11 +131,11 @@ int func_008DBC_logic_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * good via the per-good byte table at 0x02A2, subtracts that chained good's
      * g_over_high[] entry (0x8E5A) and (when arg1!=0) writes it back through arg1.
      * Returns the resulting spread. (Market arrays: globals.h §0x8DC8 block.) */
-    int16_t diff = (int16_t)(*(uint16_t near *)(0x8DC8 + (unsigned)arg0_bp_06 * 2)
-                             - *(uint16_t near *)(0x8E0A + (unsigned)arg0_bp_06 * 2));
-    int8_t chained = (int8_t)*(uint8_t near *)(0x02A2 + (unsigned)arg0_bp_06);
+    int16_t diff = (int16_t)(DG16(0x8DC8 + (unsigned)arg0_bp_06 * 2)
+                             - DG16(0x8E0A + (unsigned)arg0_bp_06 * 2));
+    int8_t chained = (int8_t)DG8(0x02A2 + (unsigned)arg0_bp_06);
     if (chained >= 0) {
-        uint16_t over_high = *(uint16_t near *)(0x8E5A + (unsigned)(uint16_t)chained * 2);
+        uint16_t over_high = DG16(0x8E5A + (unsigned)(uint16_t)chained * 2);
         diff = (int16_t)(diff - over_high);
         if (arg1_bp_08 != 0)
             *(uint16_t near *)arg1_bp_08 = over_high;
@@ -179,7 +180,7 @@ int func_008E84_logic_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * more than 2 members, then re-scales the over-high marker g_over_high[arg0]
      * (0x8E5A): restore the original on an exact-match, otherwise raise it to
      * floor(3*over_high/2). Returns the (rescaled) over-high value left in ax. */
-    int16_t amount = (int16_t)*(uint16_t near *)(0x8DC8 + (unsigned)arg1_bp_08 * 2);
+    int16_t amount = (int16_t)DG16(0x8DC8 + (unsigned)arg1_bp_08 * 2);
     int16_t orig = amount;
     int chained = func_008D9C(arg1_bp_08);            /* func_008D9C_lookup_table_2F4_signed */
     if (func_00864E((uint16_t)chained) > 2)           /* func_00864E_logic_sz_31 */
@@ -258,7 +259,7 @@ int func_008FB4_colony_sz_138(uint16_t arg0_bp_06)
                 ctx[j + 0x70]--;
         }
         ctx[0x1F]--;                                   /* population-- */
-        *(uint32_t near *)(ctx + 0xC6) -= 0x64;        /* bells numerator -= 100 */
+        DG32(ctx + 0xC6) -= 0x64;        /* bells numerator -= 100 */
     }
     return 0;
 }
@@ -347,7 +348,7 @@ int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         ctx[arg0_bp_06 + 0x40] = (uint8_t)arg1_bp_08;   /* in-colony unit_type[slot] */
     } else {
         int16_t u = (int16_t)func_008BD4((uint16_t)(arg0_bp_06 - (int8_t)ctx[0x1F]));
-        *(uint8_t near *)(0x3144 + (unsigned)u * 0x1C + 0x17) = (uint8_t)arg1_bp_08;
+        DG8(0x3144 + (unsigned)u * 0x1C + 0x17) = (uint8_t)arg1_bp_08;
     }
     return 0;
 }
@@ -453,9 +454,9 @@ int func_00975A_logic_sz_25(uint16_t arg0_bp_06)
      * (Sister of func_0086C0 which uses the adjacent 0x8f86 chain.) */
     if ((int16_t)arg0_bp_06 < 0)
         return arg0_bp_06;
-    while ((int8_t)*(uint8_t near *)(0x8F85 + (unsigned)arg0_bp_06 * 12) >= 0)
+    while ((int8_t)DG8(0x8F85 + (unsigned)arg0_bp_06 * 12) >= 0)
         arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
-            *(uint8_t near *)(0x8F85 + (unsigned)arg0_bp_06 * 12);
+            DG8(0x8F85 + (unsigned)arg0_bp_06 * 12);
     return arg0_bp_06;
 }
 
@@ -477,7 +478,7 @@ int func_009786_logic_sz_12(uint16_t arg0_bp_06)
      * Signed-byte lookup into the DGROUP table at 0x02CA indexed by arg0 (a
      * good/commodity id), in the per-good static-table band near 0x2AA/0x2F4/0x2FD
      * (cf. func_008BC6 @0x2F5, func_008D9C @0x2F4). */
-    return (int8_t)*(uint8_t near *)(0x02CA + (unsigned)arg0_bp_06);
+    return (int8_t)DG8(0x02CA + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x009794..0x0097D5  (66 bytes)  region=load_image
@@ -517,8 +518,8 @@ int func_009794_logic_sz_66(uint16_t arg0_bp_06)
     int8_t b;
     if (func_00863E((uint16_t)r) == 0)                  /* func_00863E colony bit-test */
         return -1;
-    b = (int8_t)*(uint8_t near *)(0x8F88 + (unsigned)(uint16_t)r * 12);  /* chain +2 */
-    return (int8_t)*(uint8_t near *)(0x8E92 + (unsigned)(uint16_t)b);
+    b = (int8_t)DG8(0x8F88 + (unsigned)(uint16_t)r * 12);  /* chain +2 */
+    return (int8_t)DG8(0x8E92 + (unsigned)(uint16_t)b);
 }
 
 /* @asm        0x0097D6..0x009817  (66 bytes)  region=load_image
@@ -555,9 +556,9 @@ int func_0097D6_logic_sz_66(uint16_t arg0_bp_06)
     int8_t b, c;
     if (func_00863E(arg0_bp_06) == 0)                   /* func_00863E colony bit-test */
         return -1;
-    b = (int8_t)*(uint8_t near *)(0x8F88 + (unsigned)arg0_bp_06 * 12);
-    c = (int8_t)*(uint8_t near *)(0x8E92 + (unsigned)(uint16_t)b);
-    if (*(uint8_t near *)(0x8E82 + (unsigned)(uint16_t)c) != (uint8_t)arg0_bp_06)
+    b = (int8_t)DG8(0x8F88 + (unsigned)arg0_bp_06 * 12);
+    c = (int8_t)DG8(0x8E92 + (unsigned)(uint16_t)b);
+    if (DG8(0x8E82 + (unsigned)(uint16_t)c) != (uint8_t)arg0_bp_06)
         return -1;
     return (uint16_t)c;
 }
@@ -633,7 +634,7 @@ int func_009876_logic_sz_62(uint16_t arg0_bp_06)
     c = func_008D9C(arg0_bp_06);                       /* func_008D9C_lookup_table_2F4_signed */
     if (c < 0)
         return 0;
-    if ((int8_t)*(uint8_t near *)(0x8F86 + (unsigned)(uint16_t)c * 12) < 0)
+    if ((int8_t)DG8(0x8F86 + (unsigned)(uint16_t)c * 12) < 0)
         return 1;
     return 2;
 }
@@ -1366,14 +1367,14 @@ int func_00A93E_logic_sz_86(void)
      * grid based at 0x8DF0 (-0x7210), storing func_00A6A2(row,col) at index
      * (row + col*5) for row,col in 0..4, then sets 0x034C=1 so it runs once.
      * func_00A6A2 is a sibling helper. */
-    if (*(uint8_t near *)0x034C == 0) {
+    if (DG8(0x034C) == 0) {
         int row, col;
         for (row = 0; row < 5; row++)
             for (col = 0; col < 5; col++)
-                *(uint8_t near *)(0x8DF0 + (unsigned)row + (unsigned)col * 5) =
+                DG8(0x8DF0 + (unsigned)row + (unsigned)col * 5) =
                     (uint8_t)func_00A6A2((uint16_t)row, (uint16_t)col);  /* func_00A6A2 */
     }
-    *(uint8_t near *)0x034C = 1;                          /* latch: initialised */
+    DG8(0x034C) = 1;                          /* latch: initialised */
     return 0;
 }
 

@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x00693A..0x006948  (14 bytes)  region=load_image
@@ -67,8 +68,8 @@ int func_0069EE_logic_sz_33(uint16_t arg0_bp_06)
      *      (push UnitRecord[arg0].map_x, +0x00); 0x006A06 call 0x69D2.
      * Forwards UnitRecord[arg0]'s (map_x, map_y) to func_0069D2 along with the
      * unit index (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C @0x3144). */
-    uint16_t map_x = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
-    uint16_t map_y = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
+    uint16_t map_x = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
+    uint16_t map_y = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
     return func_0069D2(arg0_bp_06, map_x, map_y);
 }
 
@@ -116,10 +117,10 @@ int func_006A10_logic_sz_108(uint16_t arg0_bp_06)
     unsigned ubase = 0x3144 + (unsigned)si * 0x1C;
     int16_t di;
     uint8_t saved_x, saved_y;
-    if ((int16_t)*(uint16_t near *)(ubase + 0x1A) < 0)  /* chain_next < 0: not chained */
+    if ((int16_t)DG16(ubase + 0x1A) < 0)  /* chain_next < 0: not chained */
         return 0;
-    saved_x = *(uint8_t near *)(ubase + 0x00);
-    saved_y = *(uint8_t near *)(ubase + 0x01);
+    saved_x = DG8(ubase + 0x00);
+    saved_y = DG8(ubase + 0x01);
     di = (int16_t)func_006672(arg0_bp_06);              /* chain head (walk prev +0x18) */
     if (di == si)
         di = (int16_t)func_0066BA(arg0_bp_06);          /* head==self: take chain_next */
@@ -127,11 +128,11 @@ int func_006A10_logic_sz_108(uint16_t arg0_bp_06)
     {
         int16_t tail = (int16_t)func_006696((uint16_t)di); /* walk chain_next to tail */
         unsigned tbase = 0x3144 + (unsigned)tail * 0x1C;
-        *(uint16_t near *)(tbase + 0x1A) = (uint16_t)si;   /* tail.chain_next = unit */
-        *(uint16_t near *)(ubase + 0x18) = (uint16_t)tail; /* unit.chain_prev = tail */
-        *(uint16_t near *)(ubase + 0x1A) = 0xFFFF;         /* unit.chain_next = -1   */
-        *(uint8_t near *)(ubase + 0x00) = saved_x;
-        *(uint8_t near *)(ubase + 0x01) = saved_y;
+        DG16(tbase + 0x1A) = (uint16_t)si;   /* tail.chain_next = unit */
+        DG16(ubase + 0x18) = (uint16_t)tail; /* unit.chain_prev = tail */
+        DG16(ubase + 0x1A) = 0xFFFF;         /* unit.chain_next = -1   */
+        DG8(ubase + 0x00) = saved_x;
+        DG8(ubase + 0x01) = saved_y;
     }
     return 0;
 }
@@ -347,19 +348,19 @@ int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
     if (di < 0)
         return 0;
     ubase = 0x3144 + (unsigned)di * 0x1C;
-    owner = *(uint8_t near *)(ubase + 0x03) & 0x0F;
+    owner = DG8(ubase + 0x03) & 0x0F;
     if (owner >= 0 && owner < 4) {                       /* EU power: dec unit counter */
-        if (*(uint8_t near *)(0x8CFC + (unsigned)owner) != 0)
-            (*(uint8_t near *)(0x8CFC + (unsigned)owner))--;
+        if (DG8(0x8CFC + (unsigned)owner) != 0)
+            (DG8(0x8CFC + (unsigned)owner))--;
     } else {                                             /* native: flag its settlement */
-        if ((int8_t)*(uint8_t near *)(ubase + 0x06) >= 0) {
-            unsigned sidx = *(uint8_t near *)(ubase + 0x06);
-            *(uint8_t near *)(0x54EC + sidx * 0x12 + 0x03) |= 0x01;
+        if ((int8_t)DG8(ubase + 0x06) >= 0) {
+            unsigned sidx = DG8(ubase + 0x06);
+            DG8(0x54EC + sidx * 0x12 + 0x03) |= 0x01;
         }
     }
     func_0068AA(arg0_bp_06);                             /* unlink from tile chain */
     {
-        uint16_t count = *(uint16_t near *)0x539C;       /* g_unit_count */
+        uint16_t count = DG16(0x539C);       /* g_unit_count */
         /* compact records (di+1 .. count-1) down by one slot */
         if ((uint16_t)(count - 1) > (uint16_t)di) {
             unsigned dst = 0x3144 + (unsigned)di * 0x1C;
@@ -371,20 +372,20 @@ int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
                 dst += 0x1C;
             }
         }
-        count = (uint16_t)(*(uint16_t near *)0x539C - 1);
-        *(uint16_t near *)0x539C = count;                /* g_unit_count-- */
+        count = (uint16_t)(DG16(0x539C) - 1);
+        DG16(0x539C) = count;                /* g_unit_count-- */
         if ((int16_t)count > 0) {                        /* renumber chain links */
             unsigned p = 0x315C;                         /* record-0 chain_prev (+0x18) */
             int k;
             for (k = count; k > 0; k--) {
-                if ((int16_t)*(uint16_t near *)(p)     > di) (*(uint16_t near *)(p))--;
-                if ((int16_t)*(uint16_t near *)(p + 2) > di) (*(uint16_t near *)(p + 2))--;
+                if ((int16_t)DG16(p)     > di) (DG16(p))--;
+                if ((int16_t)DG16(p + 2) > di) (DG16(p + 2))--;
                 p += 0x1C;
             }
         }
-        if (*(uint16_t near *)0x5392 != 0                /* fix selected-unit index */
-            && di <= (int16_t)*(uint16_t near *)0x5392)
-            (*(uint16_t near *)0x5392)--;
+        if (DG16(0x5392) != 0                /* fix selected-unit index */
+            && di <= (int16_t)DG16(0x5392))
+            (DG16(0x5392))--;
     }
     return 0;
 }
@@ -446,7 +447,7 @@ void func_006FC4_logic_sz_20(uint16_t arg0_bp_06)
      * Clears the high nibble of UnitRecord[arg0] field +0x03 (0x3147), keeping
      * only owner (&0x0F) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
     if ((int16_t)arg0_bp_06 >= 0)
-        *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03) &= 0x0F;
+        DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03) &= 0x0F;
 }
 
 /* @asm        0x006FD8..0x007002  (42 bytes)  region=load_image
@@ -499,7 +500,7 @@ void func_007002_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * Sets bit (0x10 << arg1) in the high nibble of UnitRecord[arg0] field
      * +0x03 (0x3147) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
     if ((int16_t)arg0_bp_06 >= 0)
-        *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03)
+        DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03)
             |= (uint8_t)(0x10 << (arg1_bp_08 & 0xFF));
 }
 
@@ -902,8 +903,8 @@ int func_00757E_op_sz_33(uint16_t arg0_bp_06)
      * (library-implementation-only; body lives in the overlay thunk page).
      * UnitRecord stride 0x1C @0x3144 (DGROUP_MEMORY_MAP §3.1). The call is shown
      * 0-arg to match the overlay_externs.h prototype; real args are in comment. */
-    uint16_t map_x = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
-    uint16_t map_y = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
+    uint16_t map_x = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
+    uint16_t map_y = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
     (void)map_x; (void)map_y;
     return overlay_call_037F_02A0(/* map_x, map_y */);
 }
@@ -958,7 +959,7 @@ int func_0075D4_logic_sz_16(uint16_t arg0_bp_06)
      *      0x0075DF and ax,0x0f.
      * Returns the low nibble of UnitRecord[arg0] field +0x17 (0x315b); the
      * byte packs two 4-bit fields (DGROUP_MEMORY_MAP §3.1, stride 0x1C). */
-    return *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) & 0x0F;
+    return DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) & 0x0F;
 }
 
 /* @asm        0x0075E4..0x0075FE  (26 bytes)  region=load_image
@@ -1002,6 +1003,6 @@ int func_0075FE_logic_sz_17(uint16_t arg0_bp_06)
      *      0x007609 sar al,4; 0x00760C cwde.
      * Returns the high nibble of UnitRecord[arg0] field +0x17 (0x315b),
      * arithmetic-shifted (sign-extended) (cf. func_0075D4 for the low nibble). */
-    return (int8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) >> 4;
+    return (int8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) >> 4;
 }
 

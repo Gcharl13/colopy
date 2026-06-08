@@ -47,6 +47,7 @@
  *     difficulty byte 0x53A6; chosen-nation index word 0x5398 (0..3).
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
@@ -314,7 +315,7 @@ int func_070580_difficulty_pick_dispatch(void)
 
     do {                                                 /* @asm 0x070636 LOOP top (input/present) */
         overlay_call_181F_0466();                        /* @asm 0x070638 hit-test */
-        old_row = (int)*(uint16_t near*)0xA60A;          /* @asm 0x07063D [bp-4]=[0xA60A] */
+        old_row = (int)DG16(0xA60A);          /* @asm 0x07063D [bp-4]=[0xA60A] */
 
         if (overlay_call_181F_00F6() != 0) {             /* @asm 0x070643 cursor over the panel? */
             key = overlay_call_181F_03E0();              /* @asm 0x07064C kbd_poll -> [bp-0x312] */
@@ -343,8 +344,8 @@ int func_070580_difficulty_pick_dispatch(void)
         }
 
         /* mouse-rect row scan — only if both mouse-present words are set. */
-        if (*(uint16_t near*)0x07F0 != 0 &&              /* @asm 0x070677 */
-            *(uint16_t near*)0x07F6 != 0) {              /* @asm 0x070681 */
+        if (DG16(0x07F0) != 0 &&              /* @asm 0x070677 */
+            DG16(0x07F6) != 0) {              /* @asm 0x070681 */
             for (row = 0; row < 5; row++) {              /* @asm 0x0706E5 cmp 5 */
                 func_070C46();                           /* @asm 0x0706F7 row geometry (-> 0x1A1F:0x0B90) -> [bp-0x10]/[bp-0xC] */
                 if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070707 or ax,ax; je 0x706e2 (else select) */
@@ -355,9 +356,9 @@ int func_070580_difficulty_pick_dispatch(void)
                 }
             }
             /* @asm 0x07073A clicked inside the panel area? -> commit */
-            if (*(uint16_t near*)0x07F4 != 0 &&          /* @asm 0x07073A */
-                *(int16_t near*)0x07EA < 0x67 &&         /* @asm 0x070741 */
-                *(int16_t near*)0x07E8 < 0x80)           /* @asm 0x070748 */
+            if (DG16(0x07F4) != 0 &&          /* @asm 0x07073A */
+                DGS16(0x07EA) < 0x67 &&         /* @asm 0x070741 */
+                DGS16(0x07E8) < 0x80)           /* @asm 0x070748 */
                 done = 0;                                /* @asm 0x070750 */
         }
 
@@ -527,7 +528,7 @@ int func_070A1A_nation_pick_dispatch(void)
     /* @asm 0x070A42 cc_bg_load_44E -> nonzero means an accelerator key was queued. */
     if (overlay_call_181F_044E() != 0) {
         int r;
-        *(uint16_t near*)0x1F5C = 4;                     /* @asm 0x070A4E menu context = 4 nations */
+        DG16(0x1F5C) = 4;                     /* @asm 0x070A4E menu context = 4 nations */
         r = overlay_call_181F_0998();                   /* @asm 0x070A5E ovl_popup_simple(0x204B) */
         if (r <= 0)                                      /* @asm 0x070A66 or ax,ax; jg; else jmp 0x70c27 */
             goto teardown;                               /* @asm 0x070A6A (abort, done stays 1) */
@@ -547,7 +548,7 @@ int func_070A1A_nation_pick_dispatch(void)
 
     do {                                                 /* @asm 0x070AD8 LOOP top (input/present) */
         overlay_call_181F_0466();                        /* @asm 0x070ADA hit-test */
-        old_row = (int)*(uint16_t near*)0xA60A;          /* @asm 0x070ADF [bp-6]=[0xA60A] */
+        old_row = (int)DG16(0xA60A);          /* @asm 0x070ADF [bp-6]=[0xA60A] */
 
         if (overlay_call_181F_00F6() != 0) {             /* @asm 0x070AE5 cursor over the panel? */
             key = overlay_call_181F_03E0();              /* @asm 0x070AEE kbd_poll -> [bp-0x314] */
@@ -575,9 +576,9 @@ int func_070A1A_nation_pick_dispatch(void)
 
         /* mouse-rect grid scan — only if both mouse-present words are set.
          * count = 5 when MULTI ([0x201E]==1) else 4. */
-        if (*(uint16_t near*)0x07F0 != 0 &&              /* @asm 0x070B1C */
-            *(uint16_t near*)0x07F6 != 0) {              /* @asm 0x070B26 */
-            nation_count = (*(uint16_t near*)0x201E == 1) ? 5 : 4;   /* @asm 0x070B9F cmp 1; sbb; add 5 */
+        if (DG16(0x07F0) != 0 &&              /* @asm 0x070B1C */
+            DG16(0x07F6) != 0) {              /* @asm 0x070B26 */
+            nation_count = (DG16(0x201E) == 1) ? 5 : 4;   /* @asm 0x070B9F cmp 1; sbb; add 5 */
             for (row = 0; row < nation_count; row++) {   /* @asm 0x070BA9 cmp [bp-4] */
                 func_070C5A();                           /* @asm 0x070BBA cell geometry (-> 0x1A1F:0x0BC8) -> [bp-0x12]/[bp-0xE] */
                 if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070BCA point_in_rect(x0x58,w0x52) */
@@ -588,8 +589,8 @@ int func_070A1A_nation_pick_dispatch(void)
                 }
             }
             /* @asm 0x070BFC clicked inside the panel area? -> commit */
-            if (*(uint16_t near*)0x07F4 != 0 &&          /* @asm 0x070BFC */
-                *(int16_t near*)0x07E8 < 0x70)           /* @asm 0x070C03 */
+            if (DG16(0x07F4) != 0 &&          /* @asm 0x070BFC */
+                DGS16(0x07E8) < 0x70)           /* @asm 0x070C03 */
                 done = 0;                                /* @asm 0x070C0A */
         }
 

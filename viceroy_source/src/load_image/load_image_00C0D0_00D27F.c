@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x00C0D0..0x00C109  (57 bytes)  region=load_image
@@ -355,7 +356,7 @@ int func_00C7DF_logic_sz_12(uint16_t arg0_bp_06)
     /* @asm 0x00C7E3 mov ax,[bp+6]; 0x00C7E6 mov [0x0383],al; leave; retf.
      * Stores the low byte of the argument into the DGROUP byte global at
      * 0x0383 (a static-region scalar) and returns the argument (ax). */
-    *(uint8_t near *)0x0383 = (uint8_t)arg0_bp_06;
+    DG8(0x0383) = (uint8_t)arg0_bp_06;
     return arg0_bp_06;
 }
 
@@ -378,8 +379,8 @@ int func_00C899_logic_sz_18(uint16_t arg0_bp_06)
      * Stores the argument into DGROUP word 0x92F6 and clears the companion
      * word 0x92F4 (both BSS runtime globals).  Returns the argument (ax).
      * Sister of func_00C7DF; 0x92F4/0x92F6 are reset together by func_00CA0C. */
-    *(uint16_t near *)0x92F6 = arg0_bp_06;
-    *(uint16_t near *)0x92F4 = 0;
+    DG16(0x92F6) = arg0_bp_06;
+    DG16(0x92F4) = 0;
     return arg0_bp_06;
 }
 
@@ -525,8 +526,8 @@ int func_00CB59_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * DGROUP word pair 0x0590/0x0592 (static-region globals, paired with the
      * 0x05AE..0x05C0 block written by func_00CECF/func_00CF19).  Returns
      * arg0 & 0xF (ax). */
-    *(uint16_t near *)0x0590 = arg0_bp_06 & 0x000F;
-    *(uint16_t near *)0x0592 = arg1_bp_08 & 0x000F;
+    DG16(0x0590) = arg0_bp_06 & 0x000F;
+    DG16(0x0592) = arg1_bp_08 & 0x000F;
     return arg0_bp_06 & 0x000F;
 }
 
@@ -617,9 +618,9 @@ int func_00CD0B_logic_sz_67(uint16_t near *out_x /*bp+6*/, uint16_t near *out_y 
      * that was stacked beforehand, so only the cached coordinates are reported. */
     uint16_t mx = 0, my = 0;       /* cx, dx — mouse position           */
     uint16_t buttons = 0;          /* bx     — button mask (0 if absent) */
-    int frozen = (*(uint16_t near *)0x92F8 != 0);
+    int frozen = (DG16(0x92F8) != 0);
 
-    if (*(uint16_t near *)0x83AC != 0) {
+    if (DG16(0x83AC) != 0) {
         /* @asm 0x00CD2B mov ax,3; int 0x33  -> cx=x, dx=y, bx=buttons */
         /* @asm 0x00CD30 call 0xCCEB  (transform live cx/dx in place)   */
         func_00CCEB();
@@ -628,12 +629,12 @@ int func_00CD0B_logic_sz_67(uint16_t near *out_x /*bp+6*/, uint16_t near *out_y 
     }
     if (frozen) {
         /* @asm 0x00CD18 / 0x00CD3A: report the cached coordinate pair */
-        mx = *(uint16_t near *)0x92FC;
-        my = *(uint16_t near *)0x92FE;
+        mx = DG16(0x92FC);
+        my = DG16(0x92FE);
     }
     *out_x = mx;
     *out_y = my;
-    return (int)(buttons | *(uint16_t near *)0x92FA);   /* @asm 0x00CD47 or ax,[0x92FA] */
+    return (int)(buttons | DG16(0x92FA));   /* @asm 0x00CD47 or ax,[0x92FA] */
 }
 
 /* @asm        0x00CECF..0x00CEE8  (25 bytes)  region=load_image
@@ -662,9 +663,9 @@ int func_00CECF_logic_sz_25(void far *src_ptr /*bp+6:bp+8*/, uint16_t scale_bp_0
      * word arg [bp+0xA] into 0x05B0.  0x05B0 is later used as the row-stride
      * multiplier by func_00CF19 (the 0x05AC..0x05C0 block is this module's
      * blit/coordinate context). */
-    *(uint16_t near *)0x05AE = (uint16_t)(uint32_t)src_ptr;          /* offset  */
-    *(uint16_t near *)0x05AC = (uint16_t)((uint32_t)src_ptr >> 16);  /* segment */
-    *(uint16_t near *)0x05B0 = scale_bp_0A;                          /* stride  */
+    DG16(0x05AE) = (uint16_t)(uint32_t)src_ptr;          /* offset  */
+    DG16(0x05AC) = (uint16_t)((uint32_t)src_ptr >> 16);  /* segment */
+    DG16(0x05B0) = scale_bp_0A;                          /* stride  */
     return 0;
 }
 
@@ -715,13 +716,13 @@ int func_00CF19_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * Returns the absolute address word (ax = 0x05C0). */
     uint16_t col    = arg0_bp_06;
     uint16_t row    = arg1_bp_08;
-    uint16_t stride = *(uint16_t near *)0x05B0;
+    uint16_t stride = DG16(0x05B0);
     uint16_t linear = (uint16_t)(row * stride) + col;
-    uint16_t addr   = linear + *(uint16_t near *)0x05AE;
-    *(uint16_t near *)0x05BA = col;
-    *(uint16_t near *)0x05BC = row;
-    *(uint16_t near *)0x05BE = linear;
-    *(uint16_t near *)0x05C0 = addr;
+    uint16_t addr   = linear + DG16(0x05AE);
+    DG16(0x05BA) = col;
+    DG16(0x05BC) = row;
+    DG16(0x05BE) = linear;
+    DG16(0x05C0) = addr;
     return addr;
 }
 
@@ -899,7 +900,7 @@ int func_00D1E4_logic_sz_52(const void far *rgb /*bp+6:bp+8*/)
     uint16_t remaining = 0x300;          /* 256 colours x 3 components */
     uint16_t i;
 
-    *(uint16_t near *)0x808 = 1;         /* @asm 0x00D1E9 palette-busy flag */
+    DG16(0x808) = 1;         /* @asm 0x00D1E9 palette-busy flag */
     outp(0x3C8, 0);                      /* @asm 0x00D200 DAC write index = 0 */
     /* @asm 0x00D205..0x00D212 vertical-retrace sync on port 0x3DA bit 3 */
     while (inp(0x3DA) & 0x08) { }        /* wait for any retrace to end   */
@@ -907,7 +908,7 @@ int func_00D1E4_logic_sz_52(const void far *rgb /*bp+6:bp+8*/)
     /* @asm 0x00D214 cli; 0x00D21F outsb x 0x300 to 0x3C9; 0x00D222 sti */
     for (i = 0; i < remaining; i++)
         outp(0x3C9, *src++);             /* stream all 768 component bytes */
-    *(uint16_t near *)0x808 = 0;         /* @asm 0x00D229 clear busy flag */
+    DG16(0x808) = 0;         /* @asm 0x00D229 clear busy flag */
     return 0;
 }
 

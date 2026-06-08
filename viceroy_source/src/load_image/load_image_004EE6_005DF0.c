@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x004EE6..0x00500F  (297 bytes)  region=load_image
@@ -113,7 +114,7 @@ int func_0050F0_logic_sz_11(uint16_t arg0_bp_06)
 {
     /* @asm 0x0050F3 mov ax,[bp+6]; 0x0050F6 mov [0x9a],ax -- setter for the
      * DGROUP word at 0x009A; returns the value written (left in ax). */
-    *(uint16_t near *)0x009A = arg0_bp_06;
+    DG16(0x009A) = arg0_bp_06;
     return arg0_bp_06;
 }
 
@@ -133,7 +134,7 @@ int func_0050FC_logic_sz_11(uint16_t arg0_bp_06)
 {
     /* @asm 0x0050FF mov ax,[bp+6]; 0x005102 mov [0x98],ax -- setter for the
      * DGROUP word at 0x0098; returns the value written (left in ax). */
-    *(uint16_t near *)0x0098 = arg0_bp_06;
+    DG16(0x0098) = arg0_bp_06;
     return arg0_bp_06;
 }
 

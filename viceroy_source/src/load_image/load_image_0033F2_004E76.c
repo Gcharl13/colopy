@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x0033F2..0x00341D  (43 bytes)  region=load_image
@@ -654,8 +655,8 @@ int func_004B16_logic_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
      * @asm 0x004B2C dx=[0x7ea]; bx=[bp+8]; cmp bx,dx; jg -> y0 > py : fail.
      * @asm 0x004B37 bx += [bp+0xc]; dec bx; cmp bx,dx; jl -> (y0+h-1) < py : fail.
      * else return 1.  Signed compares.  (0x7E8/0x7EA = a cursor/probe point.) */
-    int px = (int16_t)*(uint16_t near *)0x07E8;
-    int py = (int16_t)*(uint16_t near *)0x07EA;
+    int px = (int16_t)DG16(0x07E8);
+    int py = (int16_t)DG16(0x07EA);
     int x0 = (int16_t)arg0_bp_06, y0 = (int16_t)arg1_bp_08;
     int w  = (int16_t)arg2_bp_0A, h  = (int16_t)arg3_bp_0C;
     if (x0 > px || (x0 + w - 1) < px ||

@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x0024C6..0x002544  (126 bytes)  region=load_image
@@ -137,10 +138,10 @@ void func_00273E_logic_sz_10(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
      * @asm 0x00274d mov ax,[bp+0xa]; mov [0x2cc6],ax
      * @asm 0x002753 mov ax,[bp+0xc]; mov [0x2cc8],ax
      * Plain setter for the four adjacent DGROUP words. */
-    *(uint16_t near *)0x2CCA = arg0_bp_06;
-    *(uint16_t near *)0x2CCC = arg1_bp_08;
-    *(uint16_t near *)0x2CC6 = arg2_bp_0A;
-    *(uint16_t near *)0x2CC8 = arg3_bp_0C;
+    DG16(0x2CCA) = arg0_bp_06;
+    DG16(0x2CCC) = arg1_bp_08;
+    DG16(0x2CC6) = arg2_bp_0A;
+    DG16(0x2CC8) = arg3_bp_0C;
 }
 
 /* @asm        0x00275C..0x002783  (39 bytes)  region=load_image
@@ -659,9 +660,9 @@ void func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     /* @asm 0x002D30 or si,si; jl 0x2D42 -> if (code >= 0) style = word[code*0x10 + 0x2F74]
      * @asm 0x002D45 else style = [0x2E0A]. */
     if (code >= 0)
-        style = *(uint16_t near *)(0x2F74 + (unsigned)arg1_bp_08 * 0x10);
+        style = DG16(0x2F74 + (unsigned)arg1_bp_08 * 0x10);
     else
-        style = *(uint16_t near *)0x2E0A;
+        style = DG16(0x2E0A);
 
     /* @asm 0x002D49 push arg0; 0x002D4B call func_002992(arg0, style). */
     func_002992_rtl_sz_26(arg0_bp_06, style);
@@ -671,7 +672,7 @@ void func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         /* @asm 0x002D5D call func_0028B0(arg0)  (return value discarded). */
         func_0028B0(/* @asm arg0 */);
         /* @asm 0x002D63 push [0x2DB0]; 0x002D69 call func_002992(arg0, [0x2DB0]). */
-        func_002992_rtl_sz_26(arg0_bp_06, *(uint16_t near *)0x2DB0);
+        func_002992_rtl_sz_26(arg0_bp_06, DG16(0x2DB0));
     }
 }
 

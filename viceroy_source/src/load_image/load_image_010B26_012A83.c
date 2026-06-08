@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x010B26..0x010BBB  (149 bytes)  region=load_image
@@ -1067,12 +1068,12 @@ void func_012214_logic_sz_33(uint16_t arg0_bp_06)
      * 0x012228 cmp [0x2780],bx; 0x01222B jbe return; 0x01222D mov [0x2780],bx
      *   (lower the low-water pointer to this block). No defined return value. */
     uint16_t blk = arg0_bp_06;
-    if (*(uint16_t near *)(0x2778 + 6) >= blk)   /* @asm cmp [si+6],bx; jae */
+    if (DG16(0x2778 + 6) >= blk)   /* @asm cmp [si+6],bx; jae */
         return;
     blk -= 2;                                     /* @asm dec bx; dec bx */
     *(uint8_t near *)(uint16_t)blk |= 1;          /* @asm or byte [bx],1 */
-    if (*(uint16_t near *)(0x2778 + 8) > blk)     /* @asm cmp [si+8],bx; jbe */
-        *(uint16_t near *)(0x2778 + 8) = blk;     /* @asm mov [si+8],bx */
+    if (DG16(0x2778 + 8) > blk)     /* @asm cmp [si+8],bx; jbe */
+        DG16(0x2778 + 8) = blk;     /* @asm mov [si+8],bx */
 }
 
 /* @asm        0x012235..0x01225D  (40 bytes)  region=load_image

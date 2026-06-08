@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x007610..0x00762F  (31 bytes)  region=load_image
@@ -52,7 +53,7 @@ int func_007630_logic_sz_37(uint16_t arg0_bp_06)
      *      each je 0x7656 (mov ax,1; ret); fall-through 0x7651 sub ax,ax (ret 0).
      * Returns 1 iff the unit's type is one of {4,5,0x15,0x16}, else 0
      * (DGROUP_MEMORY_MAP §3.1, type addr 0x3146). */
-    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    uint8_t type = DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
     return (type == 0x04 || type == 0x05 || type == 0x15 || type == 0x16) ? 1 : 0;
 }
 
@@ -75,7 +76,7 @@ int func_00765C_logic_sz_42(uint16_t arg0_bp_06)
      *      each je 0x7686 (mov ax,1; ret); fall-through 0x7682 sub ax,ax (ret 0).
      * Returns 1 iff the unit's type is one of {1,4,0xb,0x14,0x16}, else 0
      * (DGROUP_MEMORY_MAP §3.1, type addr 0x3146). */
-    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    uint8_t type = DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
     return (type == 0x01 || type == 0x04 || type == 0x0B
             || type == 0x14 || type == 0x16) ? 1 : 0;
 }
@@ -134,13 +135,13 @@ int func_00768C_logic_sz_161(uint16_t arg0_bp_06)
      * under-declares its arity from a false 71-byte boundary (true size 365B). */
     func_006B46(arg0_bp_06, 0);                          /* func_006B46 (result discarded) */
     head = (int16_t)func_006672(arg0_bp_06);             /* chain head */
-    hx = (int16_t)*(uint8_t near *)(0x3144 + (unsigned)head * 0x1C + 0x00);
-    hy = (int16_t)*(uint8_t near *)(0x3144 + (unsigned)head * 0x1C + 0x01);
+    hx = (int16_t)DG8(0x3144 + (unsigned)head * 0x1C + 0x00);
+    hy = (int16_t)DG8(0x3144 + (unsigned)head * 0x1C + 0x01);
     for (;;) {
         int flag = 0;
         int16_t cur = (int16_t)func_0066CC((uint16_t)hx, (uint16_t)hy); /* unit_tile_head */
         while (cur >= 0 && flag == 0) {
-            uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)cur * 0x1C + 0x02);
+            uint8_t type = DG8(0x3144 + (unsigned)cur * 0x1C + 0x02);
             if (type >= 0x0D && type <= 0x12) {
                 result = cur;                            /* record processed unit */
                 func_00772E((uint16_t)cur);              /* func_00772E (process unit) */
@@ -235,7 +236,7 @@ int func_0078F4_logic_sz_66(uint16_t arg0_bp_06)
     int found = 0;
     int16_t i = (int16_t)func_006672(arg0_bp_06);      /* func_006672 = chain head */
     while (i >= 0 && !found) {
-        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x02);
+        uint8_t type = DG8(0x3144 + (unsigned)i * 0x1C + 0x02);
         if (type >= 0x0D && type <= 0x12)
             found = 1;
         i = (int16_t)func_0066BA(i);                   /* func_0066BA = chain next */
@@ -270,7 +271,7 @@ void func_007936_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * UnitRecord[i] field +0x08 (0x314c) for every member (stride 0x1C). */
     int16_t i = (int16_t)func_006672(arg0_bp_06);
     while (i >= 0) {
-        *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x08) = (uint8_t)arg1_bp_08;
+        DG8(0x3144 + (unsigned)i * 0x1C + 0x08) = (uint8_t)arg1_bp_08;
         i = (int16_t)func_0066BA(i);
     }
 }
@@ -302,7 +303,7 @@ void func_007966_logic_sz_41(uint16_t arg0_bp_06)
     if ((int16_t)arg0_bp_06 < 0)
         return;
     {
-        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+        uint8_t type = DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
         if (type >= 0x0D && type <= 0x12)
             func_00772E(arg0_bp_06);
         else
@@ -398,17 +399,17 @@ int func_007A20_logic_sz_96(uint16_t arg0_ax /* unit index, in AX */)
     unsigned base;
     if (si < 0)
         return 0;
-    if (*(uint16_t near *)0x539C <= (uint16_t)si)       /* g_unit_count */
+    if (DG16(0x539C) <= (uint16_t)si)       /* g_unit_count */
         return 0;
     base = 0x3144 + (unsigned)si * 0x1C;
-    if ((int8_t)*(uint8_t near *)(base + 0x00) < 0)     /* map_x off-map */
+    if ((int8_t)DG8(base + 0x00) < 0)     /* map_x off-map */
         return 0;
-    if ((*(uint8_t near *)(base + 0x03) & 0x0F) != *(uint8_t near *)0x5394)  /* owner */
+    if ((DG8(base + 0x03) & 0x0F) != DG8(0x5394))  /* owner */
         return 0;
-    if ((*(uint8_t near *)(base + 0x04) & 0x80) != 0
-        && *(uint8_t near *)(base + 0x02) != 0x0B)      /* bit 0x80 => type 0x0B */
+    if ((DG8(base + 0x04) & 0x80) != 0
+        && DG8(base + 0x02) != 0x0B)      /* bit 0x80 => type 0x0B */
         return 0;
-    if (*(uint8_t near *)(base + 0x05)
+    if (DG8(base + 0x05)
         >= (uint8_t)func_006CCA(arg0_ax))               /* func_006CCA cap (unsigned) */
         return 0;
     return 1;
@@ -500,7 +501,7 @@ int func_007B10_logic_sz_83(uint16_t arg0_ax /* start index, in AX */)
      * func_007A80 holds. A valid arg0 scans (arg0+1 .. wrap .. arg0); an invalid
      * arg0 scans (0 .. count-1). Returns that index, or 0xFFFF when none qualifies
      * (or there are no units). g_unit_count @0x539C. */
-    uint16_t count = *(uint16_t near *)0x539C;          /* g_unit_count */
+    uint16_t count = DG16(0x539C);          /* g_unit_count */
     uint16_t si, stop;
     if (count <= arg0_ax || (int16_t)arg0_ax < 0) {
         si = 0xFFFF;
@@ -582,7 +583,7 @@ void func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
      * Stores the low byte of func_006CCA(arg0) into UnitRecord[arg0] field +0x05
      * (0x3149) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
     uint8_t v = (uint8_t)func_006CCA(arg0_bp_06);
-    *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x05) = v;
+    DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x05) = v;
 }
 
 /* @asm        0x007BE8..0x007C2A  (66 bytes)  region=load_image
@@ -743,8 +744,8 @@ int func_007F34_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * arg1 is a byte offset into the selected per-index record; result is the
      * unsigned byte (sub ah,ah -> zero-extended). */
     if ((int16_t)arg0_bp_06 >= 4)
-        return (uint8_t)*(uint8_t near *)(0x59D8 + (unsigned)arg0_bp_06 * 0x4E + arg1_bp_08);
-    return (uint8_t)*(uint8_t near *)(0x8808 + 0x34 + (unsigned)arg0_bp_06 * 0x13C + arg1_bp_08);
+        return (uint8_t)DG8(0x59D8 + (unsigned)arg0_bp_06 * 0x4E + arg1_bp_08);
+    return (uint8_t)DG8(0x8808 + 0x34 + (unsigned)arg0_bp_06 * 0x13C + arg1_bp_08);
 }
 
 /* @asm        0x007F62..0x007F80  (30 bytes)  region=load_image
@@ -955,8 +956,8 @@ uint16_t func_0081A4_logic_sz_28(uint16_t arg0_bp_06)
      * stored index [0x53d2], idx is remapped to the active player [0x5398];
      * otherwise idx == arg0 (DGROUP_MEMORY_MAP §3.2). */
     uint16_t idx = arg0_bp_06;
-    if ((*(uint8_t near *)0x5382 & 1) && *(uint16_t near *)0x53D2 == arg0_bp_06)
-        idx = *(uint16_t near *)0x5398;
+    if ((DG8(0x5382) & 1) && DG16(0x53D2) == arg0_bp_06)
+        idx = DG16(0x5398);
     return 0x5426 + (unsigned)idx * 0x34;
 }
 
@@ -981,11 +982,11 @@ void func_0081C6_logic_sz_44(uint16_t arg0_bp_06)
      * Stores the raw selector in 0x8d52, clamps arg0 to [0,7] (else 0), then
      * publishes the derived index (+4) in 0x8d50 and a pointer to record
      * 0x5ad6 + arg0*0x4e (stride 0x4e) in 0x8d4e. */
-    *(uint16_t near *)0x8D52 = arg0_bp_06;
+    DG16(0x8D52) = arg0_bp_06;
     if ((int16_t)arg0_bp_06 < 0 || (int16_t)arg0_bp_06 >= 8)
         arg0_bp_06 = 0;
-    *(uint16_t near *)0x8D50 = arg0_bp_06 + 4;
-    *(uint16_t near *)0x8D4E = 0x5AD6 + (unsigned)arg0_bp_06 * 0x4E;
+    DG16(0x8D50) = arg0_bp_06 + 4;
+    DG16(0x8D4E) = 0x5AD6 + (unsigned)arg0_bp_06 * 0x4E;
 }
 
 /* @asm        0x0081F2..0x008214  (34 bytes)  region=load_image
@@ -1010,15 +1011,15 @@ void func_0081F2_logic_sz_34(uint16_t arg0_bp_06)
      * Publishes the selector in 0x8d4c, and (for arg0>=0) a pointer to
      * NativeSettlement[arg0] (stride 0x12 @0x54ec, DGROUP_MEMORY_MAP §3.3) in
      * 0x8d4a, then forwards (owner-4) to func_0081C6. */
-    *(uint16_t near *)0x8D4C = arg0_bp_06;
+    DG16(0x8D4C) = arg0_bp_06;
     if ((int16_t)arg0_bp_06 < 0)
         return;
-    if (!((int16_t)*(uint16_t near *)0x539A > (int16_t)arg0_bp_06))
+    if (!((int16_t)DG16(0x539A) > (int16_t)arg0_bp_06))
         arg0_bp_06 = 0;
     {
         uint16_t rec = 0x54EC + (unsigned)arg0_bp_06 * 0x12;
-        uint8_t owner = *(uint8_t near *)(rec + 0x02);
-        *(uint16_t near *)0x8D4A = rec;
+        uint8_t owner = DG8(rec + 0x02);
+        DG16(0x8D4A) = rec;
         func_0081C6((uint16_t)(owner - 4));   /* -> func_0081C6_logic_sz_44 */
     }
 }
@@ -1042,7 +1043,7 @@ int func_00822A_logic_sz_36(uint16_t arg0_bp_06)
      *      dec ax; je 0x824e (ret 2); jmp 0x8258 (ret 3).
      * Reads the status byte at 0x5ad8 + arg0*0x4e (same stride-0x4e record family
      * as func_0081C6, 0x5ad6 base +2) and maps {0,1}->1, 2->2, else->3. */
-    uint8_t t = *(uint8_t near *)(0x5AD8 + (unsigned)arg0_bp_06 * 0x4E);
+    uint8_t t = DG8(0x5AD8 + (unsigned)arg0_bp_06 * 0x4E);
     if (t == 0 || t == 1) return 1;
     if (t == 2) return 2;
     return 3;
