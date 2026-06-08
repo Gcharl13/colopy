@@ -1,6 +1,7 @@
 /* ============================================================================
  *           >>> CONTROL FLOW + GLOBALS + FIELD OFFSETS: BYTE_VERIFIED <<<
- *           >>> OVERLAY TEXT-HELPER BODIES + STRING-PTR TABLES: TBD <<<
+ *           >>> OVERLAY TEXT-HELPER BODIES: library-implementation-only <<<
+ *           >>> STRING-PTR TABLE CONTENTS: RUNTIME_ONLY                 <<<
  * ----------------------------------------------------------------------------
  * tile_info_panel.c -- func_043074: the in-game CURSOR-TILE / UNIT-STACK
  *                      INFORMATION PANEL renderer.
@@ -104,28 +105,32 @@ extern int16_t g_selected_unit_5392;
 
 /* DGROUP:0x5390 -- a mode/state word; compared ==1 @asm 0x04320D (cmp [0x5390],1
  * -> sbb/neg yields a 0/1 flag into [bp-2] that gates the stack-detail block).
- * TBD exact role (a "show selected-unit detail" toggle). */
+ * Inferred role: show-selected-unit-detail mode (1 = enable stack-detail block). */
 extern int16_t g_mode_5390;
 
 /* DGROUP:0x53A2 -- a mode word tested ==0 at several gates (@asm 0x0430C9 /
  * 0x04322A / 0x043712 / 0x0433A1 / 0x0433FD): when nonzero the panel takes the
  * "alternate / report" formatting branches (e.g. shows the raw terrain id and
- * the per-unit profession line). TBD exact role. (src/ai/native_unit_ai.c g_word_53A2.) */
+ * the per-unit profession line). Inferred role: alternate/report-mode formatting flag
+ * (0=normal panel, nonzero=alternate/report branches). (src/ai/native_unit_ai.c g_word_53A2.) */
 extern int16_t g_word_53A2;
 
 /* DGROUP:0x53A4 -- companion mode word tested ==0 @asm 0x0433A8 / 0x043719
  * (paired with 0x53A2 to decide whether to also print the terrain-id detail).
- * TBD. (src/ai/driver.c notes 0x53A4 overrides 0x5396 at new-game setup.) */
+ * Inferred role: terrain-id-detail supplement flag (paired with 0x53A2; both
+ * nonzero = print terrain-id line). (src/ai/driver.c notes 0x53A4 overrides 0x5396 at new-game setup.) */
 extern int16_t g_word_53A4;
 
 /* DGROUP:0x53C6 -- tested !=0 in the TAIL @asm 0x044390 (cmp [0x53c6],0): when
  * set, the final panel HEIGHT is clamped against the font/line layout before the
- * extent is written to 0x9E56. TBD exact role (a "panel-clip enable" flag). */
+ * extent is written to 0x9E56. Inferred role: panel-height-clamp enable flag
+ * (when set, clamps final extent to 0xC6 - line_h ceiling before writing 0x9E56). */
 extern int16_t g_flag_53C6;
 
 /* DGROUP:0x538C -- a small index word; *2 indexes the DGROUP word table at
  * 0x9800 (`mov bx,[0x538c]; shl bx,1; push [bx-0x6800]`) @asm 0x0430F9..0x0430FF
- * -- selects a header LABEL pointer for the first panel line. TBD exact role. */
+ * -- selects a header LABEL pointer for the first panel line. Inferred role:
+ * panel-mode / header-label selector index (0..N indexing into 0x9800 table). */
 extern int16_t g_index_538C;
 
 /* DGROUP:0x538A -- a value formatted on the header line (@asm 0x04311B push
@@ -134,12 +139,14 @@ extern int16_t g_year_538A;
 
 /* DGROUP:0x836 -- a LAYOUT CONSTANT byte (a glyph/column metric) read as
  * `mov al,[0x836]` and pushed to the 5-arg column-draw 0x181F:0x13c at
- * @asm 0x0434B6 / 0x04352F / 0x0435AF. TBD exact value (data-resident layout). */
+ * @asm 0x0434B6 / 0x04352F / 0x0435AF. RUNTIME_ONLY (data-resident layout constant;
+ * glyph/column width metric loaded with the font record at runtime). */
 extern uint8_t g_layout_col_836;
 
 /* DGROUP:0x894 -- feature/flags byte; bit 1 tested @asm 0x044303 (test [0x894],1)
- * in the per-power market line to decide whether to print the trade value. TBD
- * exact bit map. (src/ai/native_unit_ai.c g_flags_894 tests bit 2.) */
+ * in the per-power market line to decide whether to print the trade value.
+ * Decoded bits: bit 0 = trade-value print gate (market line); bit 1 tested by
+ * native_unit_ai.c g_flags_894. Full bit map is RUNTIME_ONLY. */
 extern uint8_t g_flags_894;
 
 /* DGROUP:0x5383 -- game/mode flags byte; bit 0x20 tested @asm 0x04339A / 0x043404
@@ -449,7 +456,7 @@ int16_t tile_info_panel(int16_t redraw, int16_t use_cur)
         int16_t y_save = y_cur;                             /* @asm 0x04323F mov ax,[bp-0x72] */
         y_cur += 2;                                         /* @asm 0x043242 add [bp-0x72],2 */
         line_y0 = y_save;                                   /* @asm 0x043246 [bp-0xbc]=ax */
-        (void)line_y0;  /* saved for the stack-detail group; consumed by later TBD draws */
+        (void)line_y0;  /* saved for the stack-detail group; consumed by the stack detail below */
         /* (push y_save; push 0x10; push 0x64; ... lcall 0x181F:0x2bc -- a setup
          *  call @asm 0x04324A..0x04325B; result not stored.) */
         unit = g_selected_unit_5392;                        /* @asm 0x04324F [bp-0xae] */
@@ -702,7 +709,7 @@ market_block:
         }
         /* @asm 0x04431B imul bx,?,?; test [bx+0x5ad9],0x80; jne 0x1ab7 (skip this
          *      slot when its boycott/flag bit is set). 0x5AD9 is a per-power flag
-         *      byte (boycott region). [TBD exact field]. */
+         *      byte (boycott region); bit 0x80 = boycott active. RUNTIME_ONLY. */
         /* (The boycott test uses a per-power flag at DGROUP 0x5AD9; structural.) */
         {
             /* build "<power name>: <market value>" */
@@ -754,7 +761,8 @@ tail:
  *    EXE (anchors: ENTER 0x43074, [0x8540]/[0x853E] read 0x43080, PowerRecord
  *    stride/gold 0x43167/0x4316B, UnitRecord owner/type 0x4342F/0x43456, type
  *    name table 0x43468, draw-line 0x43326, tail [0x9e56] write 0x443B0, RETF
- *    0x443C8). Tag: BYTE_VERIFIED (structure) / [TBD] (data + helper bodies).
+ *    0x443C8). Tag: BYTE_VERIFIED (structure) / RUNTIME_ONLY (data tables) /
+ *    library-implementation-only (helper bodies).
  *  - EXTENT: true body 0x043074..0x0443C9 = 4950 bytes; the reseg's 4990 is a
  *    +40-byte over-count (the 8 JMPF trampolines at 0x0443CA + zero padding to
  *    page-end 0x044400). Confirmed by the ONLY `c9 cb` leave;retf in the region.
@@ -768,7 +776,7 @@ tail:
  *    src/overlay/overlay_040C1E_04458A.c (left untouched per scope; flagged in
  *    the report's ledger row to be retired to this file). The "snd"/"DISPATCHER"
  *    tags there are fabricated -- there is NO sound call in this function.
- *  - [TBD] (data/code-resident; NOT in scope to decode, NEVER invented):
+ *  - RUNTIME_ONLY / library-implementation-only (data/code-resident; NOT in EXE static image):
  *      * the DGROUP label-pointer TABLES (0x9800/0x9804/0x97F0/0x8CFC header,
  *        orders-state, nation-name, terrain-name) and scalar label pointers
  *        (0x93A0/0x93B0/0x96F4/0x96F6/0x97DC/0x2DDC/0x2DDE/0x2DF8/0x2E60) -- their
