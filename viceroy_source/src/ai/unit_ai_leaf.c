@@ -232,7 +232,9 @@ extern int16_t ovly_candidate_eval_05AF70(int16_t tile_unit);
 extern int16_t ovly_postcombat_05C69C(int16_t atk_str, int16_t def_str, int16_t target);
 
 /* ----------------------------------------------------------------------------
- * Overlay helpers (RTLink far-thunks). Semantics from call context; bodies TBD.
+ * Overlay helpers (RTLink far-thunks). Semantics from call context; body in
+ * thunk page (0x181F/0x191F/0x1A1F overlay thunk table; not decodable from
+ * overlay bytecode alone).
  * ------------------------------------------------------------------------- */
 extern int16_t random_int_4D4(int16_t lo, int16_t hi);       /* 0x181F:0x4D4 = random_int(lo,hi) */
 extern int16_t ovly_finalize_unit_90C(int16_t unit);         /* @asm 0x05CAC6 */
@@ -460,7 +462,8 @@ int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
      * This is the byte-verified "spawn a defender of the appropriate class for
      * this terrain/settlement" path. The class CONSTANTS (0x13/0x14/+2) and the
      * 0x5230/0x5232/0x5235 table contents are byte-cited as ACCESSED; their
-     * MEANINGS are TBD. */
+     * MEANINGS are RUNTIME_ONLY (NAMES.TXT/data-file; loaded by func_0749E0
+     * / loader @0x74EDA). */
     {
         int16_t cls = 0x13;                                  /* @asm 0x05CD08 */
         /* settlement/state-derived class adjustments: structural (see @asm) */
@@ -736,7 +739,7 @@ cleanup_far:
 extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
                                         int16_t flag, int16_t one);
 
-/* int16_t ai_move_eval(int16_t unit_index);  -- body TBD (see note above). */
+/* int16_t ai_move_eval(int16_t unit_index);  -- body in overlay page (page 0x0D; see note above). */
 
 /* ============================================================================
  * NOTES / TODO_VERIFY
