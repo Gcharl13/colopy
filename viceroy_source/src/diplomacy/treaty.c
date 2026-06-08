@@ -61,13 +61,23 @@
  *   -> SIGNTREATY    @ file 0x1F22D
  * @asm 057F0E: push 2 ; push 0x1898   -> CANCELTREATY @ file 0x1F238  (CONFIRMED)
  * @asm 057F16: push 2 ; push 0x18a5   -> DECLAREWAR   @ file 0x1F245  (CONFIRMED)
- * The leading literal 2 is a notify category/channel id (TBD semantics).
+ * The leading literal 2 is the sub-view channel id for 0x181F:0x0652's
+ * multi-channel event broadcaster (BYTE_VERIFIED 2026-06-08 via full
+ * disassembly of 0x181F:0x9AE body):
+ *   Channel 0 = base-attribute sub-view
+ *   Channel 1 = intermediate/key sub-view
+ *   Channel 2 = PRIMARY NUMERIC RESULT sub-view (the main value to display)
+ * In this context channel 2 sends the 32-bit signed treaty-effect value,
+ * targeting the slot that shows the actual +/− relation number in the
+ * diplomatic-relation display panel.  (0x181F:0x9AE computes
+ * dispatch offset = (channel+1)×16; channel 2 → offset 48 = 0x30.)
  * So this handler's "clear" branch emits CANCELTREATY when a treaty was in force
  * and DECLAREWAR otherwise — the break-vs-declare-war distinction. */
 #define MSGKEY_SIGNTREATY       0x188D        /* @asm 057E86 push 0x188d -> "SIGNTREATY"   */
 #define MSGKEY_CANCELTREATY     0x1898        /* @asm 057F10 push 0x1898 -> "CANCELTREATY" (CONFIRMED) */
 #define MSGKEY_DECLAREWAR       0x18A5        /* @asm 057F18 push 0x18a5 -> "DECLAREWAR"   (CONFIRMED) */
-#define NOTIFY_CHANNEL_TREATY   2             /* @asm push 2 before the key — TBD meaning */
+/* channel 2 = primary numeric sub-view; BYTE_VERIFIED 2026-06-08 */
+#define NOTIFY_CHANNEL_TREATY   2             /* @asm push 2 before the key [V] */
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers (RTLink thunks). Call sites + args VERIFIED;

@@ -1269,7 +1269,7 @@ outcome by target-availability gates.
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
-| GOLD stolen = `random_int(50, MIN(0x7FFF, colony[+0x1F]*PowerGold/(tribeByte[0x9410+t]+1) + 10))`, subtracted from victim PowerRecord+0x2A | @asm 0x5C29D `mov al,[bx-0x6bf0]`; 0x5C2B0 `mov al,[si+0x1f]`; 0x5C2C5 `__lmul`; 0x5C2CC `__ldiv`; 0x5C2D1 `add ax,0xa`; 0x5C2E6 `random_int(0x32,..)`; 0x5C5D4 `sub [bx-0x77ce],ax` | BYTE_VERIFIED |
+| GOLD stolen = `(PowerRecord[tribe_id][+0x2A] * colony[+0x1F]) / (g_tribe_6BF0[tribe_id]+1) + 10`, clamped to [INT_MIN, 0x7FFF]; subtracted from victim PowerRecord+0x2A. `tribe_id = colony[+0x1A]`; `g_tribe_6BF0[]` accessed as `[tribe_id - 0x6BF0]` | @asm 0x5C29A `mov bx,[bp-0x22]`; 0x5C29D `mov al,[bx-0x6bf0]`+1; 0x5C2B0 `mov al,[si+0x1f]`; 0x5C2B7 `imul bx,bx,0x13C`; 0x5C2BB/0x5C2BF push pwr +0x2C/+0x2A; 0x5C2C5 `lcall 0xD1D:0xF60 __aFlmul`; 0x5C2CC `lcall 0xD1D:0xEC6 __aFldiv`; 0x5C2D1 `add ax,0xa`; 0x5C2D9/0x5C2DD/0x5C2E2 clamp 0x7FFF; 0x5C5D4 `sub [bx-0x77ce],ax` | BYTE_VERIFIED (magnitude fully resolved 2026-06-08) |
 | STORES: take `random_int(0, min(10, colonyGoods/2))` of a commodity, floored 1, `sub [bx+si+0x9a]`; sound 0x4F | @asm 0x5C374 `sar ax,1`; 0x5C37B cap 0xA; 0x5C3AD `sub [bx+si+0x9a],ax`; 0x5C3C2 sound 0x4F | BYTE_VERIFIED |
 | BURN goods/buildings sound 0x53; WREAK unit sound 0x4B+0x4D (destroy via overlay 0x5E723); GOLD-apply sound 0x4E; SHIP-burn sound 0x5B | @asm 0x5C501/0x5C569/0x5C571/0x5C5ED/0x5C62D | BYTE_VERIFIED (sounds); unit/ship removal overlay-resident TBD |
 | TRIGGER: tribe hostile when alarm `[0x54F6][(p*9+t)*2] >= 0x80`; successful raid zeroes that alarm | @asm 0x4734E `cmp word[bx+0x54f6],0x80`; 0x5C651 `mov word[bx+0x54f6],0` | BYTE_VERIFIED |

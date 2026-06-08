@@ -88,8 +88,12 @@ void boycott_init(void)
  * 3. Colony 32-bit accumulator at +0xC0 (DGROUP:0x5e08):
  *    @asm 0x0346A9: add word ptr [bx+0x5e08], ax   (lo word)
  *    @asm 0x0346AD: adc word ptr [bx+0x5e0a], dx   (hi word)
- *      → Colony[selected].at_0xC0 += dumped_amount  (32-bit, exact semantics TBD)
- *    (This field is ONLY written here; it must be read elsewhere to have effect.)
+ *      → Colony[selected].at_0xC0 += dumped_amount  (32-bit)
+ *    This field sits in the persistent-record-only tail (offset +0xC0 within the
+ *    0xCA-byte record, beyond the 0xAE working buffer; see colony.h pad_ca_tail).
+ *    No read of this field was found anywhere in the EXE image — it is consumed
+ *    by the save/score subsystem from the persisted record (likely a "goods
+ *    destroyed" tally for final scoring).  [V write-site; read-site overlay/save]
  *
  * 4. Boycott mask [BYTE_VERIFIED]:
  *    @asm 0x034717: or word ptr [bx+0x20], ax

@@ -194,8 +194,14 @@ Strength columns and terrain-defense table DS:0x2F77 are `[ext]` (NAMES.TXT @UNI
 ## Native raid — `func_05BE84`
 ```
 outcome = random_int(1,4)  -> forced to a feasible target (STORES/BURN/WREAK/GOLD/SHIP)
-GOLD  = random_int(50, min(0x7FFF, colony[+0x1F] * PowerGold / (tribeByte[0x9410+t]+1) + 10))
-        subtracted from victim PowerRecord+0x2A
+GOLD  = (PowerRecord[tribe_id][+0x2A] * colony[+0x1F]) / (g_tribe_6BF0[tribe_id] + 1) + 10
+        clamped to [INT_MIN, 0x7FFF]   [BYTE_VERIFIED @0x05C29A..0x05C2E5]
+        where:  tribe_id     = colony[+0x1A]       (victim tribe index)
+                g_tribe_6BF0 = per-tribe strength bytes at DGROUP:0x6BF0
+                               (accessed as [tribe_id - 0x6BF0])
+                PowerRecord[tribe_id][+0x2A] = 32-bit victim treasury
+                colony[+0x1F]               = colony prosperity/size byte
+        then subtracted from victim PowerRecord+0x2A   (@0x05C5CF..0x05C5D8)
 STORES = random_int(0, min(10, colonyGoods/2)) of one commodity (floor 1), from colony+0x9A
 trigger: tribe raids when alarm DS:0x54F6[(power*9+tribe)*2] >= 0x80 (zeroed after a raid;
          normal accumulation clamped to [0x20,0x60])
