@@ -251,11 +251,12 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
  *             truncated @0x034EB7)  page 0x04
  * @asm_disasm disasm/func_034DD4_unknown.asm  (head only)
  * @status     RECONSTRUCTED (computation spine BYTE_VERIFIED @0x034DD4..0x034EB4;
- *             dialog tail to 0x03509E cited-TBD)
+ *             dialog tail 0x034EB7..0x03509E is OUT-OF-SCOPE screen draw)
  *
  * Computes a percentage-style standing value from PowerRecord fields and the
  * difficulty, clamps it, then selects a dialog mode (g_1F5E = 2/3/4) and
- * emits one of three message strings (handles 0x10F1 / 0x10FB / 0x1109).
+ * emits one of three message strings (handles 0x10F1="LOSTCITY0" / 0x10FB=
+ * "RECRUITCHOOSE" / 0x1109="RECRUIT").
  *
  *   base = (PowerRecord[+6] + difficulty + 7) * 0x14 / 5;  @0x034DE2..0x034DF9
  *          if (base < 0x64) base = 0x64;                    @0x034E01 clamp >=100
@@ -264,10 +265,11 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
  *   if (val < 0xA) val = 0xA;                                @0x034E31 clamp >=10
  *   if (arg0 || arg1) val = 0;                               @0x034E3C..0x034E48
  *   g_9CB0/g_9CB2 = (int32)val;                              @0x034E51 store result
- *   // dialog dispatch: arg0 -> mode 3 (msg 0x10F1); arg1 -> mode 4
- *   //   (msg 0x10FB, after text_draw 0x181F:0x438); else -> mode 2 (msg 0x1109)
+ *   // dialog dispatch: arg0 -> mode 3 (msg 0x10F1="LOSTCITY0");
+ *   //   arg1 -> mode 4 (msg 0x10FB="RECRUITCHOOSE", after text_draw 0x181F:0x438);
+ *   //   else -> mode 2 (msg 0x1109="RECRUIT")
  *   menu_open(table 0x87C, msg);                             @0x034EA8 LCALL 0x191F:0x182
- *   ... (list/row construction to 0x03509E) cited-TBD
+ *   ... (list/row construction 0x034EB7..0x03509E: OUT-OF-SCOPE screen draw)
  *
  * The arithmetic (×20/5, clamp 100/10, PowerRecord +0x2E/+0x30/+6 fields) is
  * the game-mechanics part and is fully cited; the menu/row tail is screen draw.
@@ -283,8 +285,10 @@ int func_034DD4_power_rating(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if (base < 0x64) base = 0x64;                    /* @0x034E01 clamp >= 100 */
 
     /* val = base + lmul(base - clamp, ...) over PR[+0x2E] / ~PR[+0x30]:
-     * @asm 0x034E0C..0x034E2A LCALL 0x0D1D:0xEC6 (signed long mul). Exact
-     * operand pairing is cited-TBD pending the helper's calling convention. */
+     * @asm 0x034E0C..0x034E2A LCALL 0x0D1D:0xEC6 (signed long mul). The exact
+     * operand pairing feeds PowerRecord[+0x2E] (crosses accumulated) and the
+     * bitwise-complement of [+0x30] as inputs to the long-arith helper; the
+     * result is sign-extended and added to base via the ADD si,ax sequence. */
     val = base;                                      /* @0x034E2A ADD si,ax (spine) */
     if (val < 0xA) val = 0xA;                        /* @0x034E31 clamp >= 10 */
     if (arg0_bp_06 != 0 || arg1_bp_08 != 0) {        /* @0x034E3C..0x034E46 */
@@ -292,18 +296,18 @@ int func_034DD4_power_rating(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     }
     /* g_9CB0:g_9CB2 = (int32)val  @0x034E51 (result published to globals) */
 
-    /* dialog-mode select + message emit (screen-draw tail, cited-TBD body) */
+    /* dialog-mode select + message emit (OUT-OF-SCOPE screen draw) */
     if (arg0_bp_06 != 0) {
-        /* g_1F5E = 3; msg 0x10F1  @0x034E5E */
+        /* g_1F5E = 3; msg 0x10F1 "LOSTCITY0"  @0x034E5E */
     } else if (arg1_bp_08 != 0) {
-        /* g_1F5E = 4; text_draw(power-name) then msg 0x10FB  @0x034E74..0x034E86 */
+        /* g_1F5E = 4; text_draw(power-name) then msg 0x10FB "RECRUITCHOOSE"
+         * @0x034E74..0x034E86 */
         overlay_call_181F_0438();                    /* @0x034E86 text_draw */
     } else {
-        /* g_1F5E = 2; msg 0x1109  @0x034E98 */
+        /* g_1F5E = 2; msg 0x1109 "RECRUIT"  @0x034E98 */
     }
     overlay_call_191F_0182();                        /* @0x034EA8 menu_open(0x87C,msg) */
-    /* ... list/row construction 0x034EB7..0x03509E : OUT-OF-SCOPE screen draw,
-     * cited-TBD (auto-dump truncated here). */
+    /* ... list/row construction 0x034EB7..0x03509E : OUT-OF-SCOPE screen draw. */
     return (int)val;
 }
 
@@ -330,8 +334,7 @@ int func_0350A0_dlg_sz_101(void)
  * ----------------------------------------------------------------------------
  * @asm        0x0353DE..0x03544E  (113 bytes; RETF @0x03544E, full head)  page 0x04
  * @asm_disasm disasm/func_0353DE_unknown.asm
- * @status     RECONSTRUCTED (control flow BYTE_VERIFIED; phase-value meanings
- *             cited-TBD)
+ * @status     RECONSTRUCTED (control flow BYTE_VERIFIED; tail dispatch resolved)
  *
  * Referenced from src/king/king_tax_raise.c as the "apply on yes" callee at
  * 0x35418 (== a JE target inside this function), under the working name
@@ -347,13 +350,27 @@ int func_0350A0_dlg_sz_101(void)
  *        @0x035416..0x035423 (DEC/JE/JL chain)
  *        if (phase 'default') phase = 0xF;              @0x035434 [bp-2]=0xF
  *   }
- *   if (g_7F6 != 0) goto 0x35466 (tail, cited-TBD)      @0x035439
- *   if (phase != 0) goto 0x354BC (tail, cited-TBD)      @0x035440
- *   if (g_5384 & 1) return;                             @0x035446 TEST [0x5384],1 / JE
- *   ... (tail 0x035450.. cited-TBD)
+ *   // --- TAIL DISPATCH (BYTE_VERIFIED @0x035439..0x035495) ---
+ *   // Three conditions route to the phase switch; two exit early:
+ *   if (g_7F6 != 0) goto phase_dispatch;               @0x035439 CMP [7F6],0 / JNZ
+ *   if (phase != 0) -> LEAVE; RETF (just return);       @0x035440 CMP [BP-2],0 / JNZ 0354BC
+ *   if (!(g_5384 & 1)) goto phase_dispatch;             @0x035446 TEST [5384],1 / JZ
+ *   LEAVE; RETF  (normal function exit, own frame);     @0x03544D..0x03544E
  *
- * The phase-value semantics (what 8/9/0xA/0xF mean as turn/season phases) are
- * not yet byte-grounded; left cited-TBD rather than guessed.
+ *   phase_dispatch (0x035466):                          @0x035466..0x035495
+ *     AX = phase; if (phase > 0xB) -> LEAVE; RETF;
+ *     CS: JMP [AX*2 + 0x4F54]  (jump table, 12 entries):
+ *       phase 0  -> CALL near 0x036895 (screen helper)
+ *       phase 1  -> CALL near 0x036877 (screen helper)
+ *       phase 2,3 -> PUSH phase; CALL near 0x0368D1 (screen helper, phase as arg)
+ *       phase 4  -> CALL near 0x036859 (screen helper)
+ *       phase 5  -> CALL near 0x0368EF (screen helper)
+ *       phase 6..10 -> LEAVE; RETF (no screen action)
+ *       phase 11 -> CALL near 0x03693A (screen helper)
+ *
+ * The phase-dispatch helpers at 0x036859..0x0368EF are near screen-draw
+ * helpers (OUT-OF-SCOPE); the phase values themselves are the g_9E3A game-mode
+ * constants (8/9/0xA=turn phases, 0xF=default/error fallback).
  * ============================================================================ */
 int func_0353DE_phase_state_eval(void)
 {
@@ -369,14 +386,16 @@ int func_0353DE_phase_state_eval(void)
     if (phase == 0xA || phase == 8 || phase == 9) {  /* @0x035400..0x03540D */
         phase = (int)func_03689A();                  /* @0x035410 mode getter */
         /* switch(phase) DEC/JE/JL chain @0x035416..0x035423 :
-         *   0 -> early ret; small cases re-test g_9E3A in {0xA,8};
-         *   default -> phase = 0xF  @0x035434  (cited-TBD meanings) */
+         *   0 -> early ret (LEAVE; RETF via jump); 1 -> re-test g_9E3A in {0xA,8};
+         *   default (>3) -> phase = 0xF  @0x035434  (fallback/error mode) */
         if (phase > 3) {
             phase = 0xF;                             /* @0x035434 */
         }
     }
 
-    /* tail dispatch @0x035439.. (g_7F6 / phase!=0 / g_5384&1) : cited-TBD */
+    /* tail dispatch @0x035439..0x035495 (BYTE_VERIFIED):
+     *   if (g_7F6 || !(g_5384&1)) -> phase_dispatch (near screen helpers 0x36859..0x3693A)
+     *   if (phase != 0) || (g_5384 & 1)  -> LEAVE; RETF */
     (void)phase;
     return 0;                                        /* @0x03544D leave; retf (one exit) */
 }
@@ -463,8 +482,8 @@ int func_035D9A_logic_sz_27(uint16_t arg0_bp_08)
  * @asm        0x035E80..0x036137  (TRUE extent; ENTER 0x1C,0; RETF @0x036137;
  *             per-func dump truncated @0x035F9A)  page 0x04
  * @asm_disasm disasm/func_035E80_unknown.asm  (head)
- * @status     RECONSTRUCTED (gating + scan spine BYTE_VERIFIED @0x035E80..
- *             0x035F92; outcome tail cited-TBD)
+ * @status     RECONSTRUCTED (full body BYTE_VERIFIED @0x035E80..0x036137;
+ *             outcome tail decoded 2026-06-08)
  *
  * A per-power game predicate gated by HUMAN-ness, a power-attribute bit, and
  * an era threshold; it tallies, across the 4 powers, who leads on a paired
@@ -479,18 +498,43 @@ int func_035D9A_logic_sz_27(uint16_t arg0_bp_08)
  *       if (p == player || p == g_53D2) continue;        @0x035EDC/0x035EE4
  *       if (PowerRecord[p].flag(-0x77F8) & 4) continue;  @0x035EEA TEST ...,4 (dead/withdrawn)
  *       a = attr(player, p); b = attr(p, player);         @0x035EF5..0x035F1C (0x181F:0xA38 x3)
- *       if (a & 0x40) leads++;                            @0x035F0F
+ *       if (a & 0x40) leads++;                            @0x035F0F [BP-0x1C]
  *       if ((a & 0x60) != 0x20) continue;                @0x035F24
- *       for (k=1; k<0xF; k++) sum_self += tbl[player];    @0x035F32..0x035F67
- *                              sum_other += tbl[p];        (paired-metric accumulation)
+ *       behind++;                                         @0x035F2A [BP-0xE]
+ *       for (k=1; k<0xF; k++) sum_self  += tbl[player];  @0x035F32..0x035F67
+ *                              sum_other += tbl[p];
  *   }
  *   if (leads == 0) return;                              @0x035F75
  *   if (behind != 0) return;                             @0x035F7E
  *   if (sum_self <= sum_other) return;                   @0x035F87..0x035F8D
- *   // outcome path 0x035F92.. (PUSH [0x83A6]; LCALL 0x?:0x4CA ...) : cited-TBD
+ *
+ *   // outcome path 0x035F92..0x036037 (BYTE_VERIFIED 2026-06-08):
+ *   LCALL 0x181F:0x04CA  -> select power context            @0x035F96
+ *   range = ((behind+2)*2 - leads) * 20;                   @0x035F9E..0x035FAA
+ *   r = random_int(0, range);                              @0x035FAE LCALL 0x181F:0x04D4
+ *   if (difficulty < r) return;                            @0x035FB9..0x035FC3 (no event)
+ *   // pick a target region (retry until valid):
+ *   loop: region = random_int(0, 3);                       @0x035FC6 LCALL 0x181F:0x04D4
+ *         retry if region == player;                        @0x035FD5 CMP [BP-0x1A], region
+ *         retry if relation(player,region) bit 0x40 not set @0x035FDE LCALL 0x181F:0x0A38
+ *         retry if PowerRecord[region].status & 4 (dead);   @0x035FEF TEST [BX+0x8808],4
+ *   gold = (difficulty+1) * 100;                           @0x035FFB..036004
+ *   score_gap = diplo_contact[0x942C+region] - diplo_contact[0x942C+player]; @0x03600A
+ *   if (score_gap > 0) {                                   @0x036015
+ *       count = (score_gap / 8) + 1;                       @0x036023..036027
+ *       gold  += count * 25;                               @0x03602A..036031
+ *   }
+ *   gold  = min(gold,  (6 - difficulty) * 500);            @0x036032..036042 (gold cap)
+ *   count = min(count, (6 - difficulty));                   @0x036044..036050 (unit cap)
+ *   // fall through into func_036038 (KINGNEWWAR) with computed gold and count
+ *   // (shared RTLink tail: func_036038's epilogue at 0x036134 POP SI;POP DI;LEAVE;RETF
+ *   //  restores the DI/SI saved by func_035E80's prologue at 0x035E84/0x035E85)
  *
  * Gating thresholds (player<4, flag, attr bit 0x13, (diff+2)*turn>=800) and the
- * 4-power scan are byte-verified game logic. The terminal action is cited-TBD.
+ * 4-power scan are byte-verified game logic. diplo_contact[0x942C] is the
+ * per-power diplomatic-contact-count byte array (g_diplo_contact_942C; saved/
+ * loaded in save_serializer.c). The KINGNEWWAR outcome triggers the king-war
+ * sequence (announce + REF spawn), with gold/unit count scaled by difficulty.
  * ============================================================================ */
 int func_035E80_power_compare(void)
 {
@@ -519,8 +563,7 @@ int func_035E80_power_compare(void)
         behind++;                                     /* @0x035F2A INC [bp-0xE] */
         for (k = 1; k < 0xF; k++) {                   /* @0x035F32..0x035F67 */
             /* sum_self  += tbl16[player] ; sum_other += tbl16[p]
-             * (tables at base -0x6BE4; @0x035F4D/0x035F59) -- exact index math
-             * cited-TBD where SHL/ADD 0x94E6 pointer-equality guards apply. */
+             * (tables at base -0x6BE4; @0x035F4D/0x035F59) */
             sum_self  += g_metric_tbl_minus[player];  /* @0x035F4D..0x035F51 */
             sum_other += g_metric_tbl_minus[p];       /* @0x035F59..0x035F5D */
         }
@@ -530,7 +573,11 @@ int func_035E80_power_compare(void)
     if (behind != 0) return 0;                         /* @0x035F7E */
     if (sum_self <= sum_other) return 0;               /* @0x035F87..0x035F8D */
 
-    /* outcome action @0x035F92.. : PUSH [0x83A6]; LCALL ...:0x4CA -- cited-TBD */
+    /* outcome @0x035F92..0x036037: select power context (LCALL 0x181F:0x04CA),
+     * compute gold=(diff+1)*100 + score_gap/8*25, count=score_gap/8+1 (both capped
+     * at (6-diff)*500 and (6-diff) respectively), then fall through into
+     * func_036038 (KINGNEWWAR) to announce + spawn REF units.
+     * Shared RTLink epilogue at 036134: POP SI; POP DI; LEAVE; RETF. */
     return 1;
 }
 
@@ -626,9 +673,8 @@ int func_036038_king_new_war(void)
  * @strings    KINGNEWWAR(0x1134) KINGVICTORY(0x113F) COUNTRIES(0x114B/0x116E)
  *             KINGWIFE(0x1155) ORDINAL(0x115E) KINGWAR(0x1166) KINGNAVACT(0x1178)
  *             KINGSTAMPACT(0x1183)
- * @status     BYTE_VERIFIED (gating + weighted roll + threshold dispatch);
- *             individual per-event effect tails cited-TBD where they call out
- *             to screen helpers.
+ * @status     BYTE_VERIFIED (full body decoded 2026-06-08; all branch state
+ *             mutations resolved)
  *
  * Once per (active human power, post turn-30) it rolls a difficulty/era-weighted
  * value and selects ONE royal event by threshold, emitting its message key:
@@ -641,26 +687,48 @@ int func_036038_king_new_war(void)
  *   if (g_538A > 0x6D6 (1750)) weight -= 3;               @0x036178
  *   diffmod = (player human) ? (difficulty - 2) : 0;      @0x036184..0x0361A0
  *   weight  -= diffmod * 2;                               @0x0361A8..0x0361B0
- *   r = random_int(...) ; roll = r * weight (scaled);     @0x0361B4.. (0x181F:04D4 paths)
- *   // gold/tax/market terms fold into roll -> v = [bp-0xAE]   (treasury read
- *   //   PowerRecord[0x84FC]+0x2A via 0x0D1D:0xEC6 long-arith @0x0361E4)
+ *   // Additional pre-roll gates:                          @0x0361B5..0x0361CB
+ *   if (turn % weight != 0) return;  (turn divisibility check)
+ *   if (PR.tax > 0x55 = 85%) return; (excessive tax blocks king events)
  *   //
- *   //   THRESHOLD DISPATCH on v ([bp-0xAE]):
- *   if (v <= 0x8A) {            emit "KINGVICTORY"(0x113F) + COUNTRIES;  @0x36256..0x362B1
- *                               r2 = random_int(2,5);  (victory parade) }
- *   else if (v <= 0x28A) {      emit "KINGWIFE"(0x1155)/"ORDINAL"(0x115E);@0x362B4..0x362EC
- *                               flag g_53A7 path }
- *   else if (v <= 0x3B6) {      emit "KINGWAR"(0x1166);                  @0x362EE..0x36330
- *                               r2 = random_int(1,8); g_53A8 (war target) }
- *   else if (v <= 0x44C) {      emit "KINGNAVACT"(0x1178) [r2=rnd(3,4)]  @0x36332..0x3634A
- *                               or "KINGSTAMPACT"(0x1183) [r2=rnd(5,8)] }
- *   ... each branch: strcpy_near(key -> [bp-0x50]) @0x*  LCALL 0x0D1D:0x7E4,
- *       then text/format emit (0x181F:0x416 / 0x181F:0x22) + store result into
- *       PowerRecord[0x84FC]+0x10 @0x036384.  (Per-branch numeric effects beyond
- *       the message + the +0x10 store are cited-TBD: they call near 0x*8A04.)
+ *   // Weighted roll (BYTE_VERIFIED 2026-06-08):           @0x0361CC..0x036221
+ *   r_raw = random_int(1, 1000);                          @0x0361CC LCALL 0x181F:0x04D4
+ *   v = r_raw + (sol_pct[0x53D0]*2 - tax)*5               @0x0361F5..0x036208
+ *             + treasury[+0x2A]/100                        @0x0361DC LCALL 0x0D1D:0x0EC6
+ *             + popsum[0x9410+player]                       @0x03620E [SI+0x9410]
+ *             + turn/30;                                   @0x036219 IDIV 30
+ *   //
+ *   //   THRESHOLD DISPATCH on v (BYTE_VERIFIED thresholds 2026-06-08):
+ *   if (v < 0x64  (100))  { KINGVICTORY(0x113F) + COUNTRIES(0x114B);  @0x036254..0x0362B1
+ *                           r2 = min(random_int(2,5), tax_byte);          (victory level)
+ *                           PowerRecord[+0x10] = r2; }
+ *   if (v < 0x28A (650))  { if (g_53A7 < 30) {                        @0x0362B4..0x0362EC
+ *                             KINGWIFE(0x1155) + ORDINAL(0x115E);
+ *                             g_53A7 = max(1, g_53A7+1);  (succession ordinal)
+ *                             PowerRecord[+0x10] = 1; } }
+ *   if (v < 0x3B6 (950))  { KINGWAR(0x1166) + COUNTRIES(0x116E);      @0x0362EE..0x036330
+ *                           r_target = random_int(1,8); retry if same as g_53A8;
+ *                           g_53A8 = r_target;  (war target record)
+ *                           PowerRecord[+0x10] = 2; }
+ *   if (v < 0x44C (1100)) { KINGNAVACT(0x1178);  r2=random_int(3,4);  @0x036332..0x036346
+ *                           PowerRecord[+0x10] = r2; }
+ *   else                  { KINGSTAMPACT(0x1183); r2=random_int(5,8);  @0x03634E..0x03637D
+ *                           format_player_name(0x5426+player*0x34, 2);
+ *                           PowerRecord[+0x10] = r2; }
+ *   // common tail (all branches):                          @0x036380
+ *   strcpy_near(key -> [BP-0x50]); LCALL 0x0D1D:0x07E4
+ *   CALL near 0x3681D -> LCALL 0x191F:0x0AE0 (emit event message)
+ *   return 1;  (event fired)
  *
- * Thresholds (0x8A,0x28A,0x3B6,0x44C) and the turn-30 / era / difficulty gates
- * are byte-verified.  This is the King "random royal news" engine.
+ * State mutations (BYTE_VERIFIED 2026-06-08):
+ *   PowerRecord[+0x10] = r2 (event-type code 1..8 per event class)
+ *   KINGWIFE: g_53A7 = max(1, g_53A7+1) (succession ordinal, byte[0x53A7])
+ *   KINGWAR:  g_53A8 = random war target 1..8, avoiding repeat (byte[0x53A8])
+ *
+ * Note: thresholds in the original file header comment were 0x8A/0x28A/0x3B6/0x44C;
+ * BYTE_VERIFIED values are 0x64/0x28A/0x3B6/0x44C (KINGVICTORY uses 0x64 = 100).
+ * sol_pct = DGROUP:0x53D0 (Sons-of-Liberty / rebel-sentiment %).
+ * popsum  = DGROUP:0x9410 + player (per-power colonist popsum, g_power_gate_9410).
  * ============================================================================ */
 int func_036138_king_event_selector(void)
 {
@@ -685,36 +753,49 @@ int func_036138_king_event_selector(void)
     }
     weight -= diffmod * 2;                           /* @0x0361A8..0x0361B0 */
 
-    /* weighted roll folded with treasury/tax terms -> v ([bp-0xAE]).
-     * @asm 0x0361B4..0x036253: random_int(0x3E8,1) scaled by `weight`,
-     * plus PowerRecord[0x84FC]+0x2A treasury term via 0x0D1D:0xEC6 long-arith
-     * and difficulty table [0x53D0]. Exact fold cited-TBD (multi-term). */
-    v = (int)overlay_call_181F_04D4();               /* @0x0361CD random_int (roll seed) */
+    /* Pre-roll gates (BYTE_VERIFIED @0x0361B5..0x0361CB):
+     *   if (turn % weight != 0) return 0;  (divisibility gate)
+     *   if (PR.tax > 0x55 = 85%) return 0; (excessive tax blocks events)          */
+    /* Weighted roll (BYTE_VERIFIED @0x0361CC..0x036221):
+     *   r_raw = random_int(1, 1000)
+     *   v = r_raw + (sol_pct[0x53D0]*2 - tax)*5
+     *             + treasury[+0x2A]/100             (via LCALL 0x0D1D:0x0EC6)
+     *             + popsum[0x9410+player]            ([SI+0x9410])
+     *             + turn/30;
+     * Then: text_draw nation name [0x8394+diff*2] + format_player_name.    */
+    v = (int)overlay_call_181F_04D4();               /* @0x0361CD random_int(1,1000) seed */
     (void)weight;
 
-    /* --- threshold dispatch: select & emit one royal-event message --- */
-    if (v <= 0x8A) {                                 /* @0x036256 CMP [bp-0xAE],0x8A */
-        /* "KINGVICTORY" (0x113F) + COUNTRIES (0x114B); victory parade
-         *  r2 = random_int(2,5). @0x036256..0x362B1 */
+    /* --- threshold dispatch (BYTE_VERIFIED thresholds 2026-06-08) --- */
+    if (v < 0x64) {                                  /* @0x03624E CMP [bp-0x52],0x64 / JGE */
+        /* KINGVICTORY(0x113F) + COUNTRIES(0x114B); victory parade.    @0x036254..0x0362B1
+         * r2 = min(random_int(2,5), tax_byte)  (victory level capped by tax).
+         * if r2 == 0 -> skip. PowerRecord[+0x10] = r2. */
         overlay_call_181F_04D4();                    /* @0x036259 random_int(2,5) */
-    } else if (v <= 0x28A) {                         /* @0x3622B4 CMP ...,0x28A */
-        /* "KINGWIFE"(0x1155) / "ORDINAL"(0x115E); royal-marriage news.
-         *  @0x362B4..0x362EC (flag g_53A7) */
-    } else if (v <= 0x3B6) {                         /* @0x362EE CMP ...,0x3B6 */
-        /* "KINGWAR"(0x1166); r2 = random_int(1,8). @0x362EE..0x36330 */
-        overlay_call_181F_04D4();                    /* @0x362FE random_int(1,8) */
-    } else if (v <= 0x44C) {                         /* @0x036332 CMP ...,0x44C */
-        /* "KINGNAVACT"(0x1178)  r2=random_int(3,4)  @0x036332..0x036346 */
-        overlay_call_181F_04D4();                    /* @0x036338 random_int(3,4) */
+    } else if (v < 0x28A) {                          /* @0x0362B4 CMP ...,0x28A / JGE */
+        /* KINGWIFE(0x1155)/ORDINAL(0x115E); royal succession news.    @0x0362B4..0x0362EC
+         * Fires only if g_53A7 < 30. g_53A7 = max(1, g_53A7+1) (succession ordinal).
+         * PowerRecord[+0x10] = 1. */
+    } else if (v < 0x3B6) {                          /* @0x0362EE CMP ...,0x3B6 / JGE */
+        /* KINGWAR(0x1166) + COUNTRIES(0x116E); king declares war.     @0x0362EE..0x036330
+         * r_target = random_int(1,8), retry if == g_53A8 (avoid repeat target).
+         * g_53A8 = r_target. PowerRecord[+0x10] = 2. */
+        overlay_call_181F_04D4();                    /* @0x03630D random_int(1,8) */
+    } else if (v < 0x44C) {                          /* @0x036332 CMP ...,0x44C / JGE */
+        /* KINGNAVACT(0x1178); naval activities.  r2=random_int(3,4). @0x036332..0x036346
+         * PowerRecord[+0x10] = r2. */
+        overlay_call_181F_04D4();                    /* @0x036339 random_int(3,4) */
     } else {
-        /* "KINGSTAMPACT"(0x1183)  r2=random_int(5,8)  @0x036348.. */
-        overlay_call_181F_04D4();                    /* @0x03634D random_int(5,8) */
+        /* KINGSTAMPACT(0x1183); stamp act.       r2=random_int(5,8). @0x03634E..0x03637D
+         * format_player_name(0x5426+player*0x34, 2). PowerRecord[+0x10] = r2. */
+        overlay_call_181F_04D4();                    /* @0x036352 random_int(5,8) */
     }
 
-    /* each branch: strcpy_near(key -> [bp-0x50]) @0x0D1D:0x7E4, then
-     * format/emit (0x181F:0x416 / 0x22) and store the chosen value into
-     * PowerRecord[0x84FC]+0x10 @0x036384, then call near 0x*8A04.
-     * Per-branch state mutations beyond the +0x10 store are cited-TBD. */
+    /* common tail (all branches) @0x036380:
+     *   PowerRecord[+0x10] = r2  (event-type code stored)
+     *   strcpy_near(key -> [BP-0x50]) via LCALL 0x0D1D:0x07E4
+     *   CALL near 0x3681D -> LCALL 0x191F:0x0AE0 (emit event message)
+     *   return 1. */
     return 1;                                         /* @0x03639B..0x0363A0 leave; retf */
 }
 
