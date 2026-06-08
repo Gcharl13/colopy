@@ -91,11 +91,11 @@ extern int   count_adjacent_terrain(int x, int y, int lo, int hi);/* 0x99EE adja
  * step_100_or_level_scaled 0x8D00, lookup_byte_from_pair 0x8956,
  * current_unit_field_at_40 0x9102) is BYTE_VERIFIED and declared in colony.h. */
 
-/* unit_individual_handler_9FFC — per-colonist bells/crosses producer.
- * @asm 0x009FFC..0x00A221 (550 bytes); jump-table at CS:0x1F44 dispatches on
- * (output_index-9). Writes its output commodity index to *meta and returns the
- * amount. @ref func_009FFC_unknown.asm.  (Still SKELETON — out of scope of this
- * batch; the colony_turn_update phase-2 call to it is byte-verified below.) */
+/* unit_individual_handler_9FFC — per-colonist bells/crosses/manufactured-goods
+ * producer.  @asm 0x009FFC..0x00A221 (550 bytes); jump-table at CS:0x1F44
+ * dispatches on (job_byte-9).  Writes output commodity index to *meta; returns
+ * the yield amount.  BYTE_VERIFIED 2026-06-08.
+ * @ref src/colony/colonist_handler.c (full body). */
 extern int   unit_individual_handler_9FFC(int colonist_idx, int *meta);
 
 /* PowerRecord byte read for founding-father op 0x11 bonus.

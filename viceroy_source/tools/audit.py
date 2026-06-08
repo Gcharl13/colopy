@@ -227,6 +227,21 @@ check_bytes("raid TRIGGER alarm>=0x80 cmp [bx+0x54f6]", 0x04734E, "81 bf f6 54 8
 check_bytes("colony ptr idx*0xca+0x5d46", 0x008302, "69 5e 06 ca 00")
 check_bytes("tribe ptr tribe*0x4e+0x5ad6 (TribeData)", 0x0081E6, "6b 46 06 4e")
 
+# ---- unit_individual_handler_9FFC (BYTE_VERIFIED 2026-06-08) -------------
+# per-colonist bells/crosses/manufactured-goods producer
+check_bytes("colonist handler func_9FFC enter 0x1c", 0x009FFC, "c8 1c 00 00")
+check_ins("colonist handler call sol_membership_pct", 0x00A02A, "call", "0x8524")
+check_bytes("colonist handler meta_out=-1 default", 0x00A0BD, "c7 46 e8 ff ff")
+check_bytes("colonist handler job13 meta=0x10 (Bells)", 0x00A100, "c7 46 e8 10 00")
+check_bytes("colonist handler job16 meta=0x11 (Crosses)", 0x00A144, "c7 46 e8 11 00")
+check_bytes("colonist handler job17 meta=0x12 (Flags)", 0x00A1D1, "c7 46 e8 12 00")
+check_bytes("colonist handler JMP CS:[BX+0x1F44] dispatch", 0x00A1EF, "2e ff a7 44 1f")
+check_bytes("colonist handler jump table 18 bytes @A1F4",  0x00A1F4,
+            "d8 1e d8 1e d8 1e d8 1e 50 1e d8 1e d8 1e 82 1e 18 1f")
+check_bytes("colonist handler NULL guard CMP [bp+8],0", 0x00A206, "83 7e 08 00")
+check_bytes("colonist handler yield clamp OR ax,ax",  0x00A217, "0b c0")
+check_bytes("colonist handler RETF", 0x00A221, "cb")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
