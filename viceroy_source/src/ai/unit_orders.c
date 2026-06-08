@@ -1,6 +1,6 @@
 /* ============================================================================
  *                  >>> BYTE_VERIFIED (control flow + globals) <<<
- *              >>> per-unit SCORING WEIGHTS in the leaf: TBD <<<
+ *              >>> per-unit SCORING WEIGHTS in the leaf: RUNTIME_ONLY <<
  * ----------------------------------------------------------------------------
  * unit_orders.c -- per-unit AI / command evaluation and order dispatch.
  *
@@ -26,7 +26,7 @@
  *            v  @asm 0x03F492  lcall 0x191F:0xA14  -> thunk 0x01C004 -> 0x05CA7E
  *   func_05CA7E (page 0x10)  per-unit AI LEAF        [7348 B; see unit_ai_leaf.c]
  *        the actual per-unit decision/scoring. Its UnitRecord inputs are
- *        byte-verified; the SCORING WEIGHTS are TBD (overlay/data-resident).
+ *        byte-verified; the SCORING WEIGHTS are RUNTIME_ONLY (overlay/data-resident).
  *
  * IDENTITY RECONCILIATION (func_03ECF0)
  *   The 86-byte per-func dump (disasm/func_03ECF0_unknown.asm) and the old

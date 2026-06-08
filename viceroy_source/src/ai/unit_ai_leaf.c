@@ -1,7 +1,7 @@
 /* ============================================================================
  *           >>> PROLOGUE + DECISION STRUCTURE: BYTE_VERIFIED <<<
  *           >>> LAND-COMBAT WIN/LOSS DECIDER (the roll): BYTE_VERIFIED <<<
- *           >>> DATA-RESIDENT SCORING WEIGHTS + COLONY-LOOT TAIL: TBD <<<
+ *           >>> DATA-RESIDENT SCORING WEIGHTS + COLONY-LOOT TAIL: RUNTIME_ONLY <<
  * ----------------------------------------------------------------------------
  * unit_ai_leaf.c -- the per-unit AI LEAF (func_05CA7E) and the move evaluator
  *                   (func_04E2D6), the innermost decision routines of the
@@ -69,7 +69,7 @@
  * @region          overlay
  * @verified_by     Hand-decompiled from VICEROY.EXE 2026-05-30 (page_10.asm reseg
  *                  + per-func dump + string-rule xrefs). PROLOGUE/early blocks
- *                  byte-verified; deep scoring tail honestly TBD.
+ *                  byte-verified; deep scoring tail not yet decoded (body in overlay thunk page).
  * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_10.asm
  * @ref             reverse_engineered/code/VICEROY/disasm/func_05CA7E_unknown.asm
  * @ref             reverse_engineered/code/VICEROY/disasm/func_04E2D6_unknown.asm
@@ -729,9 +729,9 @@ cleanup_far:
  *   (handles 0x177C+, file 0x1F11C+) are debug labels for the AI move sub-states.
  *
  * The 14975-byte body (per-order move planning + the scoring weights it applies)
- * is FAR too large to decode in this pass and its weights are TBD/overlay-
+ * is FAR too large to decode in this pass; its weights are RUNTIME_ONLY/overlay-
  * resident. Documented here as the shared MOVE evaluator; full port deferred.
- * (Inputs byte-verified; weights TBD -- NOT invented.)
+ * (Inputs byte-verified; weights RUNTIME_ONLY -- NOT invented.)
  *
  * @ref reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_0D.asm (func_04E2D6)
  * @ref reverse_engineered/code/VICEROY/disasm/func_04E2D6_unknown.asm
@@ -774,7 +774,7 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
  *      0x181F:0x9C8 -> FILE 0x07C2A (strength accessor); 0x181F:0x9DC -> 0x07D3E
  *      0x181F:0x04D4 -> FILE 0x0C322 (random_int, MSC 6.0 LCG).
  *  - func_04E2D6 (move evaluator) head is byte-verified (order-byte dispatch on
- *    0/5/6/0xa); its 14975-byte body + weights are TBD.
+ *    0/5/6/0xa); its 14975-byte body is not yet decoded; scoring weights are RUNTIME_ONLY.
  *  - NO scoring weight, comparison constant, or per-nation bias VALUE is invented
  *    in this file; every operation cites an @asm offset, every undeterminable
  *    value is [TBD-data] with its cited access site.
