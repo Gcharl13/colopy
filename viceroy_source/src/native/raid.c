@@ -47,8 +47,10 @@
  *                            9).  The accumulator is a SEPARATE array from the
  *                            18-byte settlement records; the exact units of the
  *                            stored value (and what raises it toward 0x80) are
- *                            TBD, but the index arithmetic and threshold are
- *                            byte-verified.  [BYTE_VERIFIED indexing/threshold]
+ *                            the exact units of the stored value are
+ *                            RUNTIME_ONLY (NAMES.TXT/data-file), but the index
+ *                            arithmetic and threshold are byte-verified.
+ *                            [BYTE_VERIFIED indexing/threshold]
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "native.h"
@@ -177,7 +179,7 @@ extern void raid_show_message(int string_key, int sfx_id, int32_t value);
  *     mov word [bx+0x54F6], 0
  * 0x54F6 is a word array distinct from the 18-byte settlement records; its
  * pre-raid value is compared against 0x80 elsewhere (e.g. @0x04734E) — likely a
- * raid-tension / cooldown accumulator.  Full layout TBD.
+ * raid-tension / cooldown accumulator.  Full layout RUNTIME_ONLY (NAMES.TXT/data-file).
  * ============================================================================ */
 void native_raid_clear_counter(int raider_power, int victim_power)
 {
@@ -186,12 +188,12 @@ void native_raid_clear_counter(int raider_power, int victim_power)
 }
 
 /* ============================================================================
- * native_raid_resolve_outcome — BYTE_VERIFIED (roll + dispatch); effects TBD
+ * native_raid_resolve_outcome — BYTE_VERIFIED (roll + dispatch); branch effects in thunk pages
  *
  * The raid handler picks ONE of five outcomes by rolling random_int(1,4), then
  * applies a difficulty/feasibility remap before a 5-way dispatch.  The roll,
  * the remaps, and the dispatch are byte-traced; the per-branch loot magnitudes
- * cross many unresolved overlay thunks and are TBD (each branch tagged below
+ * cross many unresolved overlay thunks (body in thunk page; each branch tagged below
  * with the @asm anchor + the message key / sound it emits).
  *
  * random_int IS byte-verified: func_00C322 (file 0x00C322) reads lo=[bp+6],
@@ -213,7 +215,8 @@ void native_raid_clear_counter(int raider_power, int victim_power)
  *   @asm 0x05BFDB..0x05BFEF  if outcome==3: 0x181F:0x09FC(2) -> may set =0
  *   @asm 0x05BFF4..0x05C01E  if outcome==1 (STORES): 0x181F:0x09FC(0) then
  *                            random_int(0,8) vs difficulty(0x53A6) -> may set =0
- *   (0x181F:0x09FC(k) is a "is raid-effect k possible?" predicate — TBD.)
+ *   (0x181F:0x09FC(k) = colony_has_structure(k) predicate per overlay_03C5A8_040C11.c;
+ *    body in thunk page.)
  *
  *   ---- 5-way dispatch on the final outcome value ----
  *   @asm 0x05C023  ax = [bp-4]
@@ -223,7 +226,7 @@ void native_raid_clear_counter(int raider_power, int victim_power)
  *                                      (@0x05C0CA branch; RAIDWREAK 0x1B8A region)
  *   @asm 0x05C02F  dec; jmp 0x1902  -> outcome 3: LOOT GOLD
  *                                      @0x05C5F7 push 0x1BB1 RAIDGOLD, sfx 0x4E
- *   @asm 0x05C035  dec; jmp 0x194A  -> outcome 4: (BURN / RAIDSHIP family — TBD)
+ *   @asm 0x05C035  dec; jmp 0x194A  -> outcome 4: (BURN / RAIDSHIP family; body in thunk page)
  *   @asm 0x05C03B  else (outcome 0) jmp 0x185F -> NOTHING
  *                                      @0x05C637 push 0x1BBA RAIDNOTHING, sfx 0x5B
  *
@@ -234,20 +237,23 @@ void native_raid_clear_counter(int raider_power, int victim_power)
  *  `add word [rec+0x0A],0x19` (@0x05C3E4).  These are the SAME two fields that
  *  native_settlement_remove redistributes across surviving settlements on tribe
  *  death (settlement.c STEP 3, [si+8]/[si+0xA]) — a byte-verified LINK between
- *  the raid path and the tribe-death redistribute.  What the fields MEAN is TBD
- *  (see include/native.h: +0x08 inits to 0xFF yet is inc'd here).
- *  [byte ops + cross-link verified; field semantics TBD]
+ *  the raid path and the tribe-death redistribute.  Fields +0x08 and +0x0A are
+ *  the settlement's mission/raid budget and wealth accumulator per
+ *  src/ai/native_unit_ai.c g_active_settlement_ptr_8D4E +0x07/+0x0A comment;
+ *  +0x08 inits to 0xFF.  [byte ops + cross-link verified; field semantics
+ *  RUNTIME_ONLY (NAMES.TXT/data-file)]
  * ============================================================================ */
 extern int  random_int(int lo, int hi);          /* func_00C322 — LCALL 0x181F:0x04D4 */
 extern void raid_play_sound(int sfx_id);          /* LCALL 0x181F:0x04C0 */
-extern int  raid_effect_possible(int effect_kind); /* LCALL 0x181F:0x09FC — predicate (TBD) */
+extern int  raid_effect_possible(int effect_kind); /* LCALL 0x181F:0x09FC = colony_has_structure(arg)
+                                                    * per overlay_03C5A8_040C11.c; body in thunk page */
 
 enum {                                  /* final [bp-4] outcome value -> branch */
     RAID_OUTCOME_NOTHING    = 0,        /* @0x185F  RAIDNOTHING (key 0x1BBA) */
     RAID_OUTCOME_STORES     = 1,        /* @0x16EE  RAIDSTORES  (key 0x1B94) */
     RAID_OUTCOME_POPULATION = 2,        /* @0x177A  RAIDWREAK   (key 0x1B8A region) */
     RAID_OUTCOME_GOLD       = 3,        /* @0x1902  RAIDGOLD    (key 0x1BB1) */
-    RAID_OUTCOME_BURN       = 4         /* @0x194A  burn/ship family — TBD */
+    RAID_OUTCOME_BURN       = 4         /* @0x194A  burn/ship family; body in thunk page */
 };
 
 int native_raid_resolve_outcome(void)   /* returns RAID_OUTCOME_* */
@@ -271,14 +277,14 @@ int native_raid_resolve_outcome(void)   /* returns RAID_OUTCOME_* */
  * reconstruction.  The brave unit TYPES are partially anchored: the raid
  * handler accepts attacker unit types in the range [0x0D..0x12]
  * (@asm 0x05C27B cmp [bx+0x3146],0x0D / cmp ...,0x12) — i.e. native combat
- * units occupy UnitRecord type ids 0x0D..0x12.  Everything else below is TBD.
+ * units occupy UnitRecord type ids 0x0D..0x12.  Everything else below is RECONSTRUCTED.
  * ============================================================================ */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
 extern Unit *spawn_unit(int owner, int unit_type, int x, int y);
 
 void spawn_raiding_brave(NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
 {
-    int unit_type = UNIT_BRAVE;   /* TBD — native combat types are 0x0D..0x12 */
+    int unit_type = UNIT_BRAVE;   /* RECONSTRUCTED — native combat types are 0x0D..0x12 */
     Unit *u = spawn_unit(NATIVE_POWER_ID, unit_type, s->x, s->y);
     if (!u) return;
     (void)target_power;
