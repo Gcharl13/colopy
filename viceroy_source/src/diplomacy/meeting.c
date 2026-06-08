@@ -151,7 +151,10 @@
 #define WAR_FLAG_MATRIX_BASE   0x883C   /* @asm -0x77C4 == PowerRecord+0x34 */
 #define POWER_STRIDE           0x13C
 #define WAR_FLAG_AT_WAR        0x02     /* @asm 0x27CB or [..],2 */
-#define WAR_FLAG_BIT3          0x08     /* @asm 0x3839 or [..],8 — TBD meaning */
+#define WAR_FLAG_BIT3          0x08     /* @asm 0x3839 or [..],8 — "pending" activation flag;
+                                         * BYTE_VERIFIED 2026-06-08 via func_052F7E Phase 4:
+                                         * bit3=pending → slot awaits countdown+random_int(0,3)==0
+                                         * to arm (set bit0=armed); set here during treaty/hostility. */
 #define WAR_FLAG_HIGH          0x80     /* @asm 0x2931 and [..],0x7f clears it */
 
 /* PowerRecord gold is a 32-bit field at +0x2A.  As an absolute DGROUP byte it
