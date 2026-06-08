@@ -61,11 +61,23 @@ accounted for and need no byte-faithful port.
 
 ## Recommended next step
 
-Resolve the overlay lcall thunks to named, real-signature externs (sourced from
-`src/overlay/*.c` + `lcall_resolution_VICEROY.json`), then the 174
-overlay-dependent load_image functions become faithfully portable — and the
-load_image ↔ overlay call graph closes. Grinding the remaining ~32 hard
-self-contained leaves is lower leverage.
+**The overlay-thunk foundation is now built** (`tools/harvest_thunk_signatures.py`
+→ `docs/thunk_signatures.json`): 924 distinct thunks consolidated, **361 with
+real named signatures** (the most-called ones — `txt_lookup`, `market_price`,
+`draw_text_clip`, `menu_add_item`, `select_player_ctx`, `num_to_str` — are
+named), joined to their overlay file offsets via `lcall_resolution_VICEROY.json`.
+
+With that reference in hand, the 174 overlay-dependent load_image functions can
+be ported **faithfully** — calling the real identified function (and its real
+signature) instead of a void `overlay_call_*` stub — closing the load_image ↔
+overlay call graph. Remaining identification work: 168 placeholder-only + 395
+undeclared thunks (mostly low call-frequency), plus reconciling a few naming
+conflicts (e.g. `0x181F:0x0438` is named both `power_set_flag` and
+`ov_unit_stat_format` in different files).
+
+Grinding the remaining ~32 hard self-contained leaves is lower leverage than
+either (a) the faithful overlay-dependent port above, or (b) deepening the
+overlay game-logic files directly (where the real mechanics live).
 
 ---
 
