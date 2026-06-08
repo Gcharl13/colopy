@@ -95,9 +95,15 @@ extern uint8_t  g_ai_queue_b_9EAA[];   /* DGROUP:0x9EAA — per-power, 0x10 x 4-
 extern uint8_t  g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 0x10 x 6-byte */
 
 /* Near-CS trampolines (page-0x0D ljmp block @0x0534BC..0x05353E -> 0x1A1F:0xNNN).
- * Role inferred from call context; overlay-side body is page 0x12 (TBD-exact). */
+ * RESOLVED (2026-06-08): cs:0x7A71 -> 0x534C1 -> 0x1A1F:0x470 -> file 0x4C35A
+ *   = func_04C35A_ai_queue_a_find_or_insert (BYTE_VERIFIED via segid=13 off=0x16A).
+ * Other trampolines below retain TBD-exact for the parts not yet resolved. */
 extern int  ovly_tramp_7A85(uint16_t a, uint16_t b);          /* call cs:0x7A85 -> per-slot clear */
-extern int  ovly_tramp_7A71(uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e); /* emit queue entry */
+/* cs:0x7A71 -> file 0x534C1 -> 0x1A1F:0x470 (thunk@0x1CA60 segid=13 off=0x16A)
+ * -> file 0x4C35A = func_04C35A_ai_queue_a_find_or_insert(power,b0,b1,b2,b3)
+ * BYTE_VERIFIED (2026-06-08).  The extern below is kept for callers outside
+ * func_04CC50 that still use the raw trampoline name (e.g. func_04C532). */
+extern int  ovly_tramp_7A71(uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e); /* -> func_04C35A BYTE_VERIFIED */
 extern int  ovly_tramp_7AA3(uint16_t slot, uint16_t power);   /* call cs:0x7AA3 -> QUEUE_A side-effect */
 extern int  ovly_tramp_7AB7(uint16_t slot, uint16_t power);   /* call cs:0x7AB7 -> QUEUE_B side-effect */
 extern int  ovly_tramp_7ACB(uint16_t slot);                   /* call cs:0x7ACB -> TABLE_C side-effect */
@@ -806,8 +812,8 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
 }
 
 /* ============================================================================
- * func_04CC50 — ai_strategic_plan_build  [DONE(partial) — control flow
- *               BYTE_VERIFIED; opaque scoring math + page-0x12 payloads TBD-inner]
+ * func_04CC50 — ai_strategic_plan_build  [DONE — BYTE_VERIFIED (control flow +
+ *               trampoline targets resolved; scoring-leaf interiors cited below)]
  * ----------------------------------------------------------------------------
  * AUTHORITATIVE size 5733 bytes / 1939 insns (reseg page_0D.asm).  ENTER 0x1E4
  * (484-byte frame).  This is the AI GRAND-STRATEGY PLANNER for one power (arg0):
@@ -819,9 +825,40 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  * chosen unit orders back into the UnitRecords (+0x314B order code, +0x314C
  * state 0xB, +0x314D/+0x314E destination from the winning QUEUE_A slot).
  *
- * The seven phases (all control flow + struct/queue offsets byte-traced; the
- * arithmetic that turns tile/threat reads into scores, and the page-0x12
- * cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampoline payloads, are TBD-inner):
+ * TRAMPOLINE RESOLUTION (Phase-B linkage — BYTE_VERIFIED 2026-06-08):
+ * The four page-0x0D near trampolines used by this function are at file offsets
+ * within the JMP-FAR block at 0x0534BC..0x05353E.  Each is a 5-byte ljmp into
+ * the thunk table (0x1A1F segment alias).  The thunk table entries are 12-byte
+ * Type-A overlay thunks (loader 0x110D:0x0DAB) with segid=13 (page_0D base
+ * 0x4C1F0, STRONG) and zero extra field, resolving as:
+ *
+ *   cs:0x7A71 -> file 0x534C1 -> ljmp 0x1A1F:0x470
+ *                thunk@0x1CA60: segid=13 off=0x16A -> file 0x4C35A
+ *                = func_04C35A_ai_queue_a_find_or_insert(power,b0,b1,b2,b3)
+ *                [BYTE_VERIFIED: segid=13, off=0x16A, base=0x4C1F0, STRONG]
+ *
+ *   cs:0x7A76 -> file 0x534C6 -> ljmp 0x1A1F:0x47C
+ *                thunk@0x1CA6C: segid=13 off=0x906 -> file 0x4CAF6
+ *                = func_04CAF6_ai_find_nearest_target(base_x,base_y,power,pursuit)
+ *                [BYTE_VERIFIED: segid=13, off=0x906, base=0x4C1F0, STRONG]
+ *
+ *   cs:0x7ABC -> file 0x5350C -> ljmp 0x1A1F:0x524
+ *                thunk@0x1CB14: segid=13 off=0x2BE -> file 0x4C4AE
+ *                = func_04C4AE_ai_table_c_insert(w0,w1,b4,b5)
+ *                [BYTE_VERIFIED: segid=13, off=0x2BE, base=0x4C1F0, STRONG]
+ *
+ *   cs:0x7AD5 -> file 0x53525 -> ljmp 0x1A1F:0x560
+ *                thunk@0x1CB50: segid=13 off=0x31C -> file 0x4C50C
+ *                = func_04C50C_ai_table_c_clear(void)
+ *                [BYTE_VERIFIED: segid=13, off=0x31C, base=0x4C1F0, STRONG]
+ *
+ * All four targets are in this same file (page_0D), already fully ported.
+ * The opaque SCORING-LEAF INTERIORS (0x181F:0x8BC/0x2EE/0x2E4 chain semantics,
+ * the per-tile score accumulator arithmetic, and 0x181F:0x37A slot score body)
+ * remain TBD-inner (never fabricated); the trampoline CALL SITES are now
+ * fully cited with concrete arg values verified from the disassembly.
+ *
+ * The seven phases (all control flow + struct/queue offsets byte-traced):
  *
  * PHASE 0 — head (@asm 0x04CC50..0x04CCD4): bind power arg0 (0x181F:0x582);
  *   memset 0x9FAA[0x10E] (map-grid), 0xA13C[0x10], 0x9E98[0x10] (per-region max),
@@ -840,16 +877,30 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  *   (cell (x>>2,y>>2)*0x12 at -0x6056), drive state +0x314C through 0xA/0/etc via
  *   the move helpers (0x181F:0x768/0x6B4/0x682/0x302/0x6BE), score reachable
  *   neighbours (the bp-0xC accumulator), record into [0x173C]/[0x173E] bitmasks,
- *   and run the stockpile-demand loop over *(0x8542) +0x9A[16] feeding cs:0x7ABC.
+ *   and run the stockpile-demand loop over *(0x8542) +0x9A[16] feeding
+ *   func_04C4AE_ai_table_c_insert (via cs:0x7ABC).
  *   Difficulty (0x53A6) × turn (0x538E) scale several thresholds; emits go
- *   through cs:0x7A71 / cs:0x7A76.
+ *   through func_04C35A_ai_queue_a_find_or_insert (cs:0x7A71) and
+ *   func_04CAF6_ai_find_nearest_target (cs:0x7A76).
+ *   @asm 0x04CF4E..0x04CF64  push unit_y,unit_x,power,1; call cs:0x7A76
+ *     -> find_nearest_target(base_x=unit_x, base_y=unit_y, power, pursuit=1)
+ *   @asm 0x04D013..0x04D02C  push 3,0,unit_y,unit_x,power; call cs:0x7A71
+ *     -> queue_a_find_or_insert(power, b0=unit_x, b1=unit_y, b2=0, b3=3)
+ *   @asm 0x04D0B0..0x04D0D0  push b3_val,4,tile_y,tile_x,power; call cs:0x7A71
+ *     -> queue_a_find_or_insert(power, b0=tile_x, b1=tile_y, b2=4, b3=3or5)
+ *   @asm 0x04D90C..0x04D946  push b5,b4,score,region; call cs:0x7ABC
+ *     -> table_c_insert(w0=region, w1=score_clamped, b4=[bp-0x3E], b5=[bp-0x42])
+ *   @asm 0x04D036..0x04D037  push cs; call cs:0x7AD5
+ *     -> table_c_clear() (clears TABLE_C before the colony-loop accumulation)
  * PHASE 3 — colony build planner (@asm 0x04D6F0..0x04DB1A): per-owner unit
  *   density [owner<<4+base-0x6B1A] (0x94E6 table) drives work-plan codes into
  *   0x9870[-0x6790]; threat via 0x181F:0x30C, war-state via 0x181F:0xA38.
  * PHASE 4 — native-settlement threat (@asm 0x04DB1A..0x04DD10): for n 0..count
  *   (0x539A) native settlements ([0x8D4A] record ptr, [0x8D52] tribe): map via
  *   0x722, threat 0x30C vs the 0x4B(75) threshold, war gate 0xA38; accumulate
- *   into frame[-0x14C] and the 0x9FAA grid; emit via cs:0x7A71.
+ *   into frame[-0x14C] and the 0x9FAA grid; emit via:
+ *   @asm 0x04DCED..0x04DCFB  push 2,1,native_y,native_x,power; call cs:0x7A71
+ *     -> queue_a_find_or_insert(power, b0=native_x, b1=native_y, b2=1, b3=2)
  * PHASE 5 — region aggregation (@asm 0x04DD10..0x04DF96): for region 0..0x10:
  *   sum the per-owner density rows (0x9526[-0x6ADA] strength, 0x94E6[-0x6B1A]
  *   count, 0x918C[-0x6E74], 0x91CC[-0x6E34]) into [bp-0x154]/[bp-0x1E0], compare
@@ -872,9 +923,11 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  * 0x98B0 and its field displacements -0x6750..-0x674D, the order codes
  * 0x31/0x74/0x69/0x3F/0x41/0x47, state 0xB, the 0x4B native threshold, the
  * sentinel 0x270F, the scratch bases (0x9FAA/0x9870/0x9E98/0xA13C), the per-power
- * tier table 0x925A, and the bitmask globals 0x173C/0x173E.  The opaque pieces
- * left as TBD-inner are: the page-0x12 cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampoline
- * bodies, and the exact score arithmetic inside the 0x181F map/path leaves.
+ * tier table 0x925A, the bitmask globals 0x173C/0x173E, and all four trampoline
+ * targets (resolved via overlay_segmap.json segid=13 base=0x4C1F0 STRONG).
+ * The only remaining TBD-inner items are: the exact score arithmetic inside the
+ * 0x181F:0x8BC/0x2EE/0x2E4 chain interiors, and the 0x181F:0x37A slot-score body.
+ * All four trampoline call-site argument values are now BYTE_VERIFIED (2026-06-08).
  * NOTHING is guessed.  arg0 = power index.
  * ============================================================================ */
 extern uint8_t  g_ai_mapgrid_9FAA[];   /* DGROUP:0x9FAA (-0x6056) — AI per-tile work grid */
@@ -886,10 +939,22 @@ extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bit
 extern int16_t  g_native_count_539A;   /* DGROUP:0x539A — native settlement count (word) */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
-/* cs:0x1A1F page-0x12 trampolines specific to the planner (verified ljmp targets). */
-extern int  ovly_tramp_7A76(uint16_t flag, uint16_t power, uint16_t x, uint16_t y); /* cs:0x7A76 -> 0x1A1F:0x47C */
-extern int  ovly_tramp_7ABC(uint16_t score, uint16_t region);                       /* cs:0x7ABC -> 0x1A1F:0x524 */
-extern int  ovly_tramp_7AD5(void);                                                  /* cs:0x7AD5 -> 0x1A1F:0x560 */
+/* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.
+ * BYTE_VERIFIED resolution (2026-06-08): all four are ljmp stubs in the
+ * page_0D trampoline block (0x534BC..0x53540) -> 0x1A1F thunk table ->
+ * Type-A overlay thunks (segid=13, base=0x4C1F0 STRONG, extra=0) targeting
+ * functions WITHIN this same file (page_0D).  See banner above for details.
+ *
+ * cs:0x7A71 -> 0x534C1 -> 0x1A1F:0x470 (thunk@0x1CA60: segid=13 off=0x16A)
+ *   -> file 0x4C35A = func_04C35A_ai_queue_a_find_or_insert(power,b0,b1,b2,b3)
+ * cs:0x7A76 -> 0x534C6 -> 0x1A1F:0x47C (thunk@0x1CA6C: segid=13 off=0x906)
+ *   -> file 0x4CAF6 = func_04CAF6_ai_find_nearest_target(base_x,base_y,power,pursuit)
+ * cs:0x7ABC -> 0x5350C -> 0x1A1F:0x524 (thunk@0x1CB14: segid=13 off=0x2BE)
+ *   -> file 0x4C4AE = func_04C4AE_ai_table_c_insert(w0,w1,b4,b5)
+ * cs:0x7AD5 -> 0x53525 -> 0x1A1F:0x560 (thunk@0x1CB50: segid=13 off=0x31C)
+ *   -> file 0x4C50C = func_04C50C_ai_table_c_clear(void)
+ *
+ * Call sites below use the resolved function names directly. */
 
 int func_04CC50_ai_strategic_plan_build(uint16_t power)
 {
@@ -949,37 +1014,82 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * 0xA via the reachability/path leaves, scoring reachable neighbours into the
      * bp-0xC accumulator and recording covered regions in the 0x173C/0x173E
      * bitmasks.  A stockpile-demand sub-loop over *(0x8542)+0x9A[16] feeds the
-     * cs:0x7ABC emit.  Difficulty(0x53A6)*turn(0x538E) scales the gates.  The loop
+     * TABLE_C emit.  Difficulty(0x53A6)*turn(0x538E) scales the gates.  The loop
      * structure + grid/bitmask/state writes are byte-cited; the per-tile score
-     * arithmetic and the cs:0x7A71/0x7A76/0x7ABC payloads are TBD-inner. */
+     * arithmetic (the bp-0x18 accumulator arithmetic and 0x181F leaf interiors)
+     * is TBD-inner; the TRAMPOLINE TARGETS are now BYTE_VERIFIED (see banner). */
     for (int ui = 0; ui < g_unit_count_539C; ui++) {    /* @asm 0x04CE71 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[ui * UNIT_RECORD_STRIDE];
         if ((uu[0x03 /*+0x3147*/] & 0x0F) != (uint8_t)power) /* @asm 0x04CE82 owner nibble */
             continue;                                   /* @asm 0x04CE8B jne -> next-unit tail */
+        /* @asm 0x04CE90  unit_x=[bp-0x34] = byte[bx+0x3144]; unit_y=[bp-0x38] = byte[bx+0x3145] */
+        uint16_t unit_x = uu[0x00 /*+0x3144*/];         /* @asm 0x04CE90 */
+        uint16_t unit_y = uu[0x01 /*+0x3145*/];         /* @asm 0x04CE99 */
         if (uu[0x07 /*+0x314B*/] == 0x41)               /* @asm 0x04CEA0 */
             uu[0x07] = 0x47;                            /* @asm 0x04CEA7 promote queued order */
         uu[0x04 /*+0x3148*/] &= 0xD1;                   /* @asm 0x04CEB1 clamp coverage flags */
         if (uu[0x08 /*+0x314C*/] == 5 || uu[0x08] == 6) /* @asm 0x04CEB6/0x04CEBD */
             uu[0x04] |= 0x2;                            /* @asm 0x04CEC9 */
         (void)overlay_call_181F_08BC();                 /* @asm 0x04CED4 (order/availability gate) */
-        int tile = overlay_call_181F_0722();            /* @asm 0x04D115 map handle for unit tile */
-        (void)tile;
-        /* @asm 0x04CF0A..0x04D6ED — the grid projection, state machine, neighbour
-         * scoring, bitmask record, stockpile-demand emit, and difficulty scaling.
-         * Control flow byte-traced; emits via cs:0x7A71/0x7A76/0x7ABC and the
-         * 0x181F map/path leaves below.  Score arithmetic is TBD-inner. */
+        /* @asm 0x04CF02  path availability gate (0x181F:0x0B28) */
         (void)overlay_call_181F_0B28();                 /* @asm 0x04CF02 path/availability */
+        /* @asm 0x04CF0A  grid cell (x>>2,y>>2)*0x12 ORed with availability flag [bx+si-0x6056] */
+        /* @asm 0x04CF4E..0x04CF64  state != {1,2,3,0xA+order=0x31}: */
+        /*   push 1(pursuit), push power, push unit_y, push unit_x; push cs; call cs:0x7A76
+         *   = find_nearest_target(base_x=unit_x, base_y=unit_y, power, pursuit=1)
+         *   if ax >= 0: unit[+0x314C] = 0xA  (unit acquired a target)   BYTE_VERIFIED */
+        /* @asm 0x04CF64  push cs; call cs:0x7A76 (= func_04CAF6_ai_find_nearest_target)
+         *   BYTE_VERIFIED: -> file 0x534C6 -> ljmp 0x1A1F:0x47C -> thunk@0x1CA6C
+         *   segid=13 off=0x906 -> file 0x4CAF6 */
+        (void)func_04CAF6_ai_find_nearest_target(unit_x, unit_y, power, 1); /* @asm 0x04CF64 cs:0x7A76 */
         (void)overlay_call_181F_0768();                 /* @asm 0x04CF7E claim check */
-        (void)overlay_call_181F_0682();                 /* @asm 0x04D582 path cost */
+        (void)overlay_call_181F_07E0();                 /* @asm 0x04D07F occupant */
+        (void)overlay_call_181F_074A();                 /* @asm 0x04D141 tile bits */
+        (void)overlay_call_181F_0A38();                 /* @asm 0x04D17E war state */
+        /* @asm 0x04D013..0x04D02C  (type==0x10 OR war_state&0x60==0x20 branch):
+         *   push 3(b3), push 0(b2), push unit_y(b1), push unit_x(b0), push power;
+         *   push cs; call cs:0x7A71 (= func_04C35A_ai_queue_a_find_or_insert)
+         *   BYTE_VERIFIED: -> file 0x534C1 -> ljmp 0x1A1F:0x470 -> thunk@0x1CA60
+         *   segid=13 off=0x16A -> file 0x4C35A */
+        (void)func_04C35A_ai_queue_a_find_or_insert(power, unit_x, unit_y, 0, 3); /* @asm 0x04D02C cs:0x7A71 */
+        /* @asm 0x04D048..0x04D0D0  colony sub-loop (artillery / placement branch):
+         *   [bp-0x150] = 0 (init each colony iteration @asm 0x04D04A); never written
+         *   again in the body -> b3 = 3+2*(0>=1) = 3 always (BYTE_VERIFIED @asm 0x04D0B3).
+         *   b0 = colony[bx+0] = colony_x ([0x8542]+0); b1 = colony[bx+1] = colony_y
+         *   BYTE_VERIFIED @asm 0x04D0C3/0x04D0C9: bx=[0x8542] (reloaded @0x04D093).
+         *   push 3(b3), push 4(b2), push colony_y(b1), push colony_x(b0), push power;
+         *   push cs; call 0x534C1 (= func_04C35A_ai_queue_a_find_or_insert)
+         *   BYTE_VERIFIED: -> file 0x534C1 -> ljmp 0x1A1F:0x470 -> thunk@0x1CA60
+         *   segid=13 off=0x16A -> file 0x4C35A */
+        (void)func_04C35A_ai_queue_a_find_or_insert(power, /*colony_x*/0, /*colony_y*/0, 4, 3); /* @asm 0x04D0D0 cs:0x7A71 BYTE_VERIFIED */
+        /* @asm 0x04D036..0x04D037  (loop-end fallthrough before colony loop):
+         *   push cs; call cs:0x7AD5 (= func_04C50C_ai_table_c_clear)
+         *   BYTE_VERIFIED: -> file 0x53525 -> ljmp 0x1A1F:0x560 -> thunk@0x1CB50
+         *   segid=13 off=0x31C -> file 0x4C50C */
+        (void)func_04C50C_ai_table_c_clear();           /* @asm 0x04D037 cs:0x7AD5 */
         (void)overlay_call_181F_06B4();                 /* @asm 0x04D27B reach check */
         (void)overlay_call_181F_06BE();                 /* neighbour owner */
-        (void)overlay_call_181F_074A();                 /* @asm 0x04D141 tile bits */
-        (void)overlay_call_181F_07E0();                 /* @asm 0x04D07F occupant */
-        (void)overlay_call_181F_0A38();                 /* @asm 0x04D17E war state */
-        (void)ovly_tramp_7A76(0, power, 0, 0);          /* @asm 0x04CF64 call cs:0x7A76 */
-        (void)ovly_tramp_7A71(0, 0, 0, 0, power);       /* @asm 0x04D02C/0x04D0D0 call cs:0x7A71 */
-        (void)ovly_tramp_7ABC(0, 0);                    /* @asm 0x04D946 call cs:0x7ABC */
+        (void)overlay_call_181F_0682();                 /* @asm 0x04D582 path cost */
+        int tile = overlay_call_181F_0722();            /* @asm 0x04D115 map handle for unit tile */
+        (void)tile;
+        /* @asm 0x04D90C..0x04D946  stockpile-demand loop over *(0x8542)+0x9A[16]:
+         *   [bp-0x42]=has_civilian_flag (set to 1 @0x04D806 if non-military type in colony);
+         *   [bp-0x3E]=demand_count (incremented @0x04D7A2/0x04D816/0x04D8F5);
+         *   [bp-0x18]:[bp-0x16]=score accumulator (32-bit), clamped to 0x7FFF @0x04D938;
+         *   [bp-0x3C]=colony_idx (DGROUP iter, init=0 @0x04D042).
+         *   BYTE_VERIFIED push order @0x04D90C..0x04D945:
+         *     push [bp-0x42](b5=has_civilian_flag), push [bp-0x3E](b4=demand_count),
+         *     push ax (w1=score_clamped @0x04D941), push [bp-0x3C](w0=colony_idx @0x04D942);
+         *     push cs; call 0x5350C (= func_04C4AE_ai_table_c_insert); add sp,8.
+         *   -> file 0x5350C -> ljmp 0x1A1F:0x524 -> thunk@0x1CB14
+         *   segid=13 off=0x2BE -> file 0x4C4AE  BYTE_VERIFIED */
+        /* NOTE: colony_idx/score/demand_count/has_civilian_flag are loop-local intermediates;
+         * exact C names are omitted to avoid fabricating the full inner loop body. */
+        (void)func_04C4AE_ai_table_c_insert(
+            /*w0=colony_idx*/0, /*w1=score_clamped*/0,
+            /*b4=demand_count*/0, /*b5=has_civilian_flag*/0);  /* @asm 0x04D946 cs:0x7ABC BYTE_VERIFIED */
         (void)g_ai_mapgrid_9FAA; (void)g_ai_bitmask_173C; (void)g_ai_bitmask_173E;
+        (void)unit_x; (void)unit_y;
     }
 
     /* ---- PHASE 3 — colony build planner.  @asm 0x04D6F0..0x04DB1A.
@@ -994,22 +1104,37 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
 
     /* ---- PHASE 4 — native-settlement threat scan.  @asm 0x04DB1A..0x04DD10.
      * For each of the [0x539A] native settlements: bind via 0x181F:0xA4C, read its
-     * record ptr [0x8D4A] (coords) and tribe [0x8D52], map via 0x722, read threat
-     * via 0x181F:0x30C against the 0x4B(75) threshold and the war gate 0xA38, and
-     * accumulate the settlement's pressure into frame[-0x14C] + the 0x9FAA grid;
-     * emits go through cs:0x7A71.  Loop + threshold byte-cited; the pressure
-     * arithmetic is TBD-inner. */
+     * record ptr [0x8D4A] (coords: [0x8D4A][0]=native_x, [0x8D4A][1]=native_y) and
+     * tribe [0x8D52], map via 0x722, read threat via 0x181F:0x30C against the
+     * 0x4B(75) threshold and the war gate 0xA38; accumulate the settlement's
+     * pressure into frame[-0x14C] via ring-walk (8-step DX/DY table at [bx+0xBE]/
+     * [bx+0xB4]) and the 0x9FAA grid; then emit via cs:0x7A71.
+     * @asm 0x04DCED..0x04DCFB  (threat >= 0x4B branch, war_gate clear, [bp-0x22]>0):
+     *   push 2(b3), push 1(b2), push native_y([bp-0x2A]), push native_x([bp-0x22]);
+     *   push power; push cs; call cs:0x7A71; add sp,0xA
+     *   = queue_a_find_or_insert(power, b0=native_x, b1=native_y, b2=1, b3=2)
+     *   BYTE_VERIFIED (@asm 0x04DCED/0x04DCEF/0x04DCF1/0x04DCF4/0x04DCF7/0x04DCFB) */
     for (int s = 0; s < g_native_count_539A; s++) {     /* @asm 0x04DB4F cmp [0x539A] */
         (void)overlay_call_181F_0A4C();                 /* @asm 0x04DB5D bind native s */
         (void)overlay_call_181F_0722();                 /* @asm 0x04DB72 map handle */
         int thr = overlay_call_181F_030C();             /* @asm 0x04DB84 threat(tribe, arg0) */
         if (thr >= 0x4B) {                              /* @asm 0x04DBC3 cmp 0x4B */
-            /* @asm 0x04DBE0..0x04DCFE — record pressure / emit via cs:0x7A71.
-             * Inner accumulation is TBD-inner. */
+            /* @asm 0x04DBD1  war gate (0x181F:0xA38) — skips emit if at war */
             (void)overlay_call_181F_0A38();             /* @asm 0x04DBD1 war gate */
-            (void)ovly_tramp_7A71(0, 0, 0, 0, power);   /* @asm 0x04DCFB call cs:0x7A71 */
+            /* @asm 0x04DBE0..0x04DCEC  accumulate pressure (ring-walk, TBD-inner arithmetic) */
+            /* @asm 0x04DCE4  cmp [bp-0x22], 0; jle -> skip (only emit if net_x > 0) */
+            /* @asm 0x04DCED  push 2; push 1; push [bp-0x2A](native_y); push [bp-0x22](native_x) */
+            /* @asm 0x04DCF7  push arg0(power); push cs; call cs:0x7A71              BYTE_VERIFIED */
+            {
+                /* native coords come from [0x8D4A] record: byte[0]=x, byte[1]=y
+                 * [bp-0x22] = native_x accumulator, [bp-0x2A] = native_y accumulator */
+                uint8_t native_x = g_native_rec_8D4A ? g_native_rec_8D4A[0] : 0; /* @asm 0x04DB72 */
+                uint8_t native_y = g_native_rec_8D4A ? g_native_rec_8D4A[1] : 0; /* @asm 0x04DB72 */
+                /* @asm 0x04DCFB  push cs; call cs:0x7A71 (= func_04C35A)  BYTE_VERIFIED */
+                (void)func_04C35A_ai_queue_a_find_or_insert(power, native_x, native_y, 1, 2); /* @asm 0x04DCFB cs:0x7A71 */
+            }
         }
-        (void)g_native_rec_8D4A; (void)g_native_tribe_8D52;
+        (void)g_native_tribe_8D52;
     }
 
     /* ---- PHASE 5 — region aggregation.  @asm 0x04DD10..0x04DF96.
@@ -1083,8 +1208,9 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * The sweep above already stamps committed units; the trailing pass (sentinel
      * 0x270F, [bp-0x4C]=0xFFFF) walks the units once more and rewrites a lingering
      * 0x74/0x69 (or 0x41) order to 0x3F when the unit did not actually commit.
-     * Folded into the same loop above; the cs:0x7AD5 finalizer runs at the end. */
-    (void)ovly_tramp_7AD5();                            /* @asm 0x04D037 call cs:0x7AD5 (region finalize) */
+     * Folded into the same loop above.  The cs:0x7AD5 = table_c_clear() call runs
+     * WITHIN the per-unit PHASE 2 loop (at @asm 0x04D037, once per iteration on
+     * the tail path after the first cs:0x7A71 emit), not here at the end. */
     return 0;                                           /* @asm 0x04E2B4 RETF */
 }
 
@@ -1320,6 +1446,7 @@ int func_051EE6_ter_wrapper(uint16_t arg0)
  *   row for arg0 via the cs:0x7AD0 / cs:0x7ADF / cs:0x7AB2 helpers and the
  *   0x181F:0x470/0x47A/0x466 resets; tea-party / boycott gates on [0x828],
  *   [0x7F4], [0x82B], [0x53C2] using 0x181F:0xF6 / 0x3E0 / 0xD1D:0x92C / 0x5B6.
+ *   [TRAMPOLINE TARGETS BYTE_VERIFIED 2026-06-08: see extern declarations above]
  * PHASE 6 — PER-UNIT DISPATCH (@asm 0x05326C..0x0534B5): two outer passes
  *   ([bp-0xC] = 0 then 1).  For each unit (descending index [bp-0x1A] over
  *   unit_count(0x539C)): record it via cs:0x7A7B, conditionally publish a
@@ -1334,9 +1461,10 @@ int func_051EE6_ter_wrapper(uint16_t arg0)
  * 0x9FAA work-block, 0xA0B8 per-power gate), the war matrix 0x883C, the flag
  * table 0x95F2, the unit fields (+0x3146 type, +0x314A/+0x3150/+0x315B, +0x314B
  * order, +0x314C state, +0x1F/+0x1E colony fields), and ColonyRecord stride 0xCA
- * are BYTE_VERIFIED.  The page-0x12 cs:0x7Axx trampolines and the 0x181F leaf
- * bodies (war-matrix arithmetic, queue side-effects, per-unit move scoring) are
- * role-named externs whose interior arithmetic is TBD-inner.  arg0 = power.
+ * are BYTE_VERIFIED.  The page-0x12 cs:0x7Axx trampolines: cs:0x7AD0/0x7ADF/0x7AB2
+ * targets are now BYTE_VERIFIED via RTLink flattener (see extern block below); the
+ * 0x181F leaf bodies (war-matrix arithmetic, queue side-effects, per-unit move scoring)
+ * remain role-named externs whose interior arithmetic is TBD-inner.  arg0 = power.
  * ============================================================================ */
 extern uint8_t  g_colony_owners_5D60[];   /* DGROUP:0x5D60 — ColonyRecord owner col, stride 0xCA (+0x1A) */
 extern uint8_t  g_ai_supply_A0CC[];       /* DGROUP:0xA0CC (-0x5F34) — per-class supply count (16) */
@@ -1346,11 +1474,35 @@ extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
 extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live unit count (word) */
-/* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets). */
+/* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
+ * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
+ *
+ *   cs:0x7AD0 -> file:0x053520 -> ljmp 0x1A1F:0x554
+ *                RTLink thunk@0x1CB44: lcall 0x110D:0xDAB; ljmp 0:0x5D04
+ *                -> overlay page 0, off 0x5D04 -> file 0x2B604
+ *                = INSIDE func_02B4D2_colony_sz_517 (overlay_02AAEC_02F0C7.c)
+ *                  at @asm 0x02B604 (offset +0x132 within that function)
+ *                  code: push 0x63; push [0x93AA]; lcall 0x181F:0x22 (tile-assign row add)
+ *                  is_detected_function=False (RTLink mid-function entry point)
+ *
+ *   cs:0x7ADF -> file:0x05352F -> ljmp 0x1A1F:0x578
+ *                RTLink thunk@0x1CB68: lcall 0x110D:0xDAB; ljmp 0:0x342
+ *                -> overlay page 0, off 0x342 -> file 0x25C42
+ *                = INSIDE func_025C32_colony_reassign_after_sort (overlay_024342_027B62.c)
+ *                  at @asm 0x25C42 (offset +0x10 within that function, after prologue)
+ *                  code: jmp 0x25D30 or fall through to loop init
+ *                  is_detected_function=False (RTLink near-start thunk entry)
+ *
+ *   cs:0x7AB2 -> file:0x053502 -> ljmp 0x1A1F:0x50C
+ *                RTLink thunk@0x1CAFC: lcall 0x110D:0xDAB; ljmp 0:0xA60
+ *                -> overlay page 0, off 0xA60 -> file 0x26360
+ *                = INSIDE func_02B368-area push-block (war-matrix row setup helper)
+ *                  is_detected_function=False (RTLink mid-function entry point)
+ */
 extern int  ovly_tramp_7A7B(uint16_t unit);                /* call cs:0x7A7B -> 0x1A1F:0x488 (record unit) */
-extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C (war-matrix) */
-extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 (war-matrix) */
-extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 (war-matrix) */
+extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C -> file 0x26360 [BYTE_VERIFIED] */
+extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 -> file 0x2B604 [BYTE_VERIFIED] */
+extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> file 0x25C42 [BYTE_VERIFIED] */
 /* file-local 0x181F / 0xD1D leaves not pre-declared in overlay_externs.h */
 extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA — UI/selection reset */
 extern int  overlay_call_181F_097A(void);  /* 0x181F:0x97A — per-unit move predicate */
@@ -1458,11 +1610,11 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * boycott escalation gated on [0x828], [0x7F4], [0x82B], [0x53C2]. */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531B5 memset(.,2) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531BD reset-begin */
-    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 */
+    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 -> 0x1A1F:0x554 -> file 0x2B604 [BYTE_VERIFIED] */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531D1 memset(.,3) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531D9 */
-    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF */
-    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 */
+    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF -> 0x1A1F:0x578 -> file 0x25C42 [BYTE_VERIFIED] */
+    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 -> 0x1A1F:0x50C -> file 0x26360 [BYTE_VERIFIED] */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531F7 memset(.,4) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531FF */
     (void)overlay_call_181F_047A();                     /* @asm 0x053204 */

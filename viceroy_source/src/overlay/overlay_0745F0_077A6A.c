@@ -129,7 +129,10 @@ extern int overlay_call_181F_05CE(void);  /* 0x181F:0x05CE -- helper */
 extern int overlay_call_181F_0EAE(void);  /* 0x181F:0x0EAE -- config write/flag */
 extern int overlay_call_0D1D_0ABE(void);  /* 0x0D1D:0x0ABE -- C buffered read */
 extern int overlay_call_1A1F_0EBA(void);  /* 0x1A1F:0x0EBA -- emit packed record (returns coord) */
-extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- bind buffered region (returns ptr) */
+extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- cursor-gate predicate
+                                              RTLink: thunk@0x1D4D4 -> overlay 0:0x82 -> file 0x25982
+                                              = inside func_025900 (colony_survey_adjacent_tiles)
+                                              tests if tile/unit at cursor position is valid [BYTE_VERIFIED] */
 
 extern int overlay_call_181F_000E(void);  /* 0x181F:0x000E -- module init */
 extern int overlay_call_181F_0182(void);  /* 0x181F:0x0182 -- strcat / format-append */
@@ -2489,6 +2492,16 @@ void func_0772DA_register_stream_callbacks(uint16_t a0, uint16_t a1,
  *   if [bp-0xc]==1 && [bp-8]==0: 0x1A1F:0xEE4([bp-0xc],[bp-4]) (alt bind) ;
  *     else walk the cursor [bp-6] entries calling 0x1A1F:0xEE4 until a nonzero,
  *     raising err 0xFFE4 on overflow.
+ *
+ *   0x1A1F:0xEE4 TRAMPOLINE RESOLVED (BYTE_VERIFIED 2026-06-08):
+ *     file:0x1D4D4 -> RTLink thunk: lcall 0x110D:0xDAB; ljmp 0:0x82
+ *     -> overlay page 0, off 0x82 -> file 0x25982
+ *     = INSIDE func_025900 (colony_survey_adjacent_tiles, overlay_024342_027B62.c)
+ *       at @asm 0x025982 (offset +0x82 within function, mid-loop-body)
+ *       code: lcall 0x181F:0x7E0 (tile-at-xy query for neighbour dir loop)
+ *       Acts as cursor-gate predicate: tests if tile/unit at cursor position is valid
+ *       Returns nonzero when cursor entry yields an acceptable tile/unit match
+ *       is_detected_function=False (RTLink mid-function entry point)
  *   finalize (0x83f): if callback [0x245A] absent free the bound block via
  *     0x191F:0x1A8 (when nonzero) else near 0x872 ; return cursor [bx]:[bx+2].
  *
@@ -2600,11 +2613,11 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
 
     /* alt-bind / cursor walk via 0x1A1F:0xEE4 (TBD-inner gate math) */
     if (count_ax == 1 && submode_bx == 0) {    /* @asm 0x077536/07753C */
-        overlay_call_1A1F_0EE4();              /* @asm 0x077548 alt bind */
+        overlay_call_1A1F_0EE4();  /* @asm 0x077548 alt bind [0x1A1F:0xEE4 -> file 0x25982 BYTE_VERIFIED] */
     } else {
         /* walk cursor [bp-6] entries until 0x1A1F:0xEE4 returns nonzero;
          * on overflow raise err 0xFFE4 (@asm 0x07756C..0x0775AA) */
-        overlay_call_1A1F_0EE4();              /* @asm 0x077583 */
+        overlay_call_1A1F_0EE4();  /* @asm 0x077583 cursor-gate pred [0x1A1F:0xEE4 -> file 0x25982 BYTE_VERIFIED] */
     }
 
     /* finalize (0x83f): release the bound block when no registered cb */

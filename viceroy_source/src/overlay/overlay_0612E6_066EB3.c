@@ -1760,6 +1760,15 @@ int func_0645F6_genpass_orchestrator(void)
  *   TBD-inner: the precise scoring inside 0x181F:0xd84 (distance metric to [0x8db8])
  *   and the property bytes returned by the 0x1A1F:0x88a quadruple — call sites and
  *   storage are cited, the numeric meaning is not invented.
+ *
+ *   0x1A1F:0x88A TRAMPOLINE RESOLVED (BYTE_VERIFIED 2026-06-08):
+ *     RTLink thunk@0x1CE7A: lcall 0x110D:0xDAB; ljmp 0:0x198
+ *     -> overlay page 0, off 0x198 -> file 0x25A98
+ *     = INSIDE func_025A1E_colony_build_advisor (overlay_024342_027B62.c)
+ *       at @asm 0x025A98 (offset +0x7A within that function, after guards)
+ *       code: push cs; call 0x2CAEB (build-advisor predicate via 0x191F:0x84C)
+ *       Returns a build-advisor reason code (0x03/0x04/0x14/0x15/0x16 etc.)
+ *       is_detected_function=False (RTLink mid-function entry point)
  * @asm_disasm page_14.asm (func_065D26)
  * ============================================================================ */
 int func_065D26_postgen_large(void)
@@ -1800,10 +1809,10 @@ int func_065D26_postgen_large(void)
         /* @asm 0x065DFC..0x065E19 : zero 0xc more flag bytes + 0x10 word slots. */
         overlay_call_181F_0A42();                        /* @asm 0x065E28 per-tribe setup */
         overlay_call_191F_091C();                        /* @asm 0x065E30 */
-        (void)overlay_call_1A1F_088A();                  /* @asm 0x065E35 prop 0 */
-        (void)overlay_call_1A1F_088A();                  /* @asm 0x065E3A prop 1 */
-        (void)overlay_call_1A1F_088A();                  /* @asm 0x065E3F prop 2 */
-        (void)overlay_call_1A1F_088A();                  /* @asm 0x065E44 prop 3 -> struct+2 */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E35 prop 0 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3A prop 1 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3F prop 2 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E44 prop 3 -> struct+2 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
         /* struct flags +1,+2 := 1; +4..+8 := 0; +0xa,+0xc := 0  @asm 0x065E50.. */
     }
     display_flush();                                     /* @asm 0x065E7C 0x3ac */

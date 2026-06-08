@@ -14,7 +14,14 @@
 >
 > **A. Cross-page overlay-target opacity** — inner calls a 0x191F/0x1A1F target in
 > another page. Closeable via Phase-B linkage (the target pages are already ported):
-> `func_04CC50` (cs:0x7A71/0x7ABC→pg0x12 score payloads) · `func_052F7E`
+> ~~`func_04CC50` (cs:0x7A71/0x7ABC→pg0x12 score payloads)~~ **RESOLVED 2026-06-08**
+> → All 4 trampolines (cs:0x7A71/0x7A76/0x7ABC/0x7AD5) trace via segid=13
+> (base=0x4C1F0 STRONG) to functions WITHIN page_0D itself: 0x7A71→func_04C35A
+> (queue_a_find_or_insert), 0x7A76→func_04CAF6 (find_nearest_target),
+> 0x7ABC→func_04C4AE (table_c_insert), 0x7AD5→func_04C50C (table_c_clear).
+> Banner updated with BYTE_VERIFIED chain; call sites now cite resolved names.
+> Remaining TBD-inner: score-leaf interiors (0x181F:0x8BC/0x2EE/0x37A) only.
+> `func_052F7E`
 > (cs:0x7AD0/0x7ADF war-matrix) · `func_065D26` (0x1A1F:0x88A property reads) ·
 > ~~`func_0749E0` (0x1A1F:0xD20 per-entry name sub-loader)~~ **DECODED 2026-05-31**
 > → NAMES.TXT data-table loader, full section→DS-base map in `docs/NAMES_LOADER.md`;
