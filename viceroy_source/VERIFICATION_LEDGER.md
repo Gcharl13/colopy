@@ -1252,3 +1252,33 @@ accumulators before the roll, not as a literal "+50%" at the comparison.
 | winner veteran promotion gated on flag [+0x3148]&0x40, promote-table scan, vet count [-0x77f7]-- | @asm 0x5BD1E `test [bx+0x3148],0x40`; 0x5BD34 scan; 0x5BD93 dec | BYTE_VERIFIED (mechanism); promote-table values TBD |
 
 audit.py 116/116.
+
+---
+
+## Native raid magnitudes — `func_05BE84` (verified 2026-06-07)
+
+The raid dispatcher loot/damage magnitudes are now byte-traced (file 0x5BE84,
+ENTER 0x24, RETF 0x5C659). Outcome = random_int(1,4), then forced to a feasible
+outcome by target-availability gates.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| GOLD stolen = `random_int(50, MIN(0x7FFF, colony[+0x1F]*PowerGold/(tribeByte[0x9410+t]+1) + 10))`, subtracted from victim PowerRecord+0x2A | @asm 0x5C29D `mov al,[bx-0x6bf0]`; 0x5C2B0 `mov al,[si+0x1f]`; 0x5C2C5 `__lmul`; 0x5C2CC `__ldiv`; 0x5C2D1 `add ax,0xa`; 0x5C2E6 `random_int(0x32,..)`; 0x5C5D4 `sub [bx-0x77ce],ax` | BYTE_VERIFIED |
+| STORES: take `random_int(0, min(10, colonyGoods/2))` of a commodity, floored 1, `sub [bx+si+0x9a]`; sound 0x4F | @asm 0x5C374 `sar ax,1`; 0x5C37B cap 0xA; 0x5C3AD `sub [bx+si+0x9a],ax`; 0x5C3C2 sound 0x4F | BYTE_VERIFIED |
+| BURN goods/buildings sound 0x53; WREAK unit sound 0x4B+0x4D (destroy via overlay 0x5E723); GOLD-apply sound 0x4E; SHIP-burn sound 0x5B | @asm 0x5C501/0x5C569/0x5C571/0x5C5ED/0x5C62D | BYTE_VERIFIED (sounds); unit/ship removal overlay-resident TBD |
+| TRIGGER: tribe hostile when alarm `[0x54F6][(p*9+t)*2] >= 0x80`; successful raid zeroes that alarm | @asm 0x4734E `cmp word[bx+0x54f6],0x80`; 0x5C651 `mov word[bx+0x54f6],0` | BYTE_VERIFIED |
+| alarm accumulation clamped to [0x20,0x60] normally; AIPersonality active flag +0x31 (DS:0x543F) gates sound/message | @asm 0x45F9B/0x45FB9; many `cmp byte[bx+0x543f],0` | BYTE_VERIFIED |
+
+### Pointer-base CORRECTIONS (byte-verified)
+- colony record ptr `[0x8542]` = `colony_idx*0xCA + 0x5D46` (stride 0xCA, base 0x5D46) — @asm 0x8302
+- raiding-tribe TribeData ptr `[0x8D4E]` = `tribe*0x4E + 0x5AD6` (stride 78, = TribeData 0x59D8 + 0xFE) — @asm 0x81E6
+- owner id `[0x8D50]` = tribe + 4 — @asm 0x81E0
+- **CORRECTION:** the STORES `inc [bx+8]`/`add [bx+0xa],0x19` (@0x5C3E1/0x5C3E4) write **TribeData[tribe]+8/+0xA** (via [0x8D4E]), a per-tribe raid tally — NOT the NativeSettlement +0x08 field. The prior note attributing these to the settlement was wrong.
+- NativeSettlement (DS:0x54EC stride 0x12): +0x00 x, +0x01 y, +0x02 owner(tribe+4); fields +0x07/+0x08/+0x09 (0x54F3/4/5) written 0xFF at create (@0x46EAE) with **no other code reference** — semantics TBD.
+
+### NATIVE_GROWTH_PCT — remains TBD (correction)
+No per-turn NativeSettlement population/goods growth write exists in the static
+code region. The prior "field += field/(0xFFFF-n)" growth claim was a
+mis-reading: that site (@0x4700B) scales the **global** word DS:0x538E (~×24/25),
+not a settlement field. Native settlement growth (if modeled) is overlay-resident
+-> TBD. audit.py 128/128.

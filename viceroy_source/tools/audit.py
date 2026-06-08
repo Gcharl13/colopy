@@ -213,6 +213,20 @@ check_ins("land win iff roll<=ATK cmp ax,[bp-0x90]", 0x05D194, "cmp", "[bp-0x90]
 check_ins("combat difficulty mul [0x5325]", 0x05B9A2, "mul", "[0x5325]")
 check_bytes("combat KILLED flag or [bx+0x3148],0x80", 0x05BB9E, "80 8f 48 31 80")
 
+# ---- native raid dispatcher func_05BE84 (verified 2026-06-07) -------------
+check_bytes("raid dispatcher func_05BE84 enter 0x24", 0x05BE84, "c8 24 00 00")
+check_bytes("raid outcome random_int(1,4)", 0x05BF35, "6a 04 6a 01 9a d4 04 1f 18")
+check_ins("raid GOLD tribe byte [bx-0x6bf0] (DS:0x9410)", 0x05C29D, "mov", "[bx-0x6bf0]")
+check_ins("raid GOLD colony +0x1f mov al,[si+0x1f]", 0x05C2B0, "mov", "[si+0x1f]")
+check_bytes("raid GOLD +10 add ax,0xa", 0x05C2D1, "05 0a 00")
+check_bytes("raid GOLD random_int(50,..) lo=0x32", 0x05C2E6, "6a 32")
+check_ins("raid GOLD subtract PowerRecord [bx-0x77ce]", 0x05C5D4, "sub", "[bx-0x77ce]")
+check_ins("raid STORES sub colony goods [bx+si+0x9a]", 0x05C3AD, "sub", "0x9a")
+check_bytes("raid alarm reset [bx+0x54f6]=0 on success", 0x05C651, "c7 87 f6 54 00 00")
+check_bytes("raid TRIGGER alarm>=0x80 cmp [bx+0x54f6]", 0x04734E, "81 bf f6 54 80 00")
+check_bytes("colony ptr idx*0xca+0x5d46", 0x008302, "69 5e 06 ca 00")
+check_bytes("tribe ptr tribe*0x4e+0x5ad6 (TribeData)", 0x0081E6, "6b 46 06 4e")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
