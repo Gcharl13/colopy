@@ -107,7 +107,7 @@ extern int16_t   g_cc_rect_839E[4];     /* DGROUP:0x839E..0x83A4 popup rect (03B
 extern uint8_t   g_cheat_5383;          /* DGROUP:0x5383 cheat flags; bit 0x01(hi byte test) (03BB4A) */
 extern int16_t   g_word_0372;           /* DGROUP:0x0372 transient flag word (03BB4A/03BB4A) */
 
-/* --- near-call helpers (page-0x05/0x06 resident trampolines); bodies TBD --- */
+/* --- near-call helpers (page-0x05/0x06 resident trampolines); bodies in their origin pages */
 extern int  func_039E53(int sel);       /* report-frame open helper (038ED4 etc.) */
 extern int  func_03C415(int power, int slot); /* FF portrait/name drawer (03BB4A) */
 extern int  func_03C410(int power);     /* FF name/label drawer (03BB4A) */
@@ -118,12 +118,12 @@ extern int32_t aFldiv_0F92(int32_t *acc, int32_t n);/* 0x0D1D:0x0F92 long divmod
 extern int32_t colony_field_C86(void);  /* 0x181F:0x0C86 colony 32-bit field getter */
 extern void    select_player_ctx(int colony_idx);   /* 0x181F:0x09E6 re-point ctx */
 
-/* per-power score/flag setters used by eliminate_power (03C528); bodies TBD. */
+/* per-power score/flag setters used by eliminate_power (03C528); bodies in 0x181F thunk page. */
 extern void    power_set_a10(int power, int marker, int code);  /* 0x181F:0x0A10 */
 extern void    power_set_a06(int power, int marker, int code);  /* 0x181F:0x0A06 */
 extern void    destroy_unit_808(int unit_idx);                  /* 0x181F:0x0808 (ledger) */
 
-/* FF picker helpers used by 03BAA6; bodies TBD. */
+/* FF picker helpers used by 03BAA6; bodies in 0x181F/0x191F thunk pages. */
 extern int     ff_recognized_7B4(int category, int power);     /* 0x181F:0x07B4 */
 extern void    strcpy_near_7E4(char *dst, int str_handle);     /* 0x0D1D:0x07E4 */
 extern void    strcat_near_7A4(char *dst, int str_handle);     /* 0x0D1D:0x07A4 */
@@ -132,7 +132,7 @@ extern int     list_add_FDE(void);                             /* 0x191F:0x0FDE 
 extern int32_t list_next_FD0(char *buf, int zero);             /* 0x191F:0x0FD0 */
 extern void    list_draw_2F8(int a, int b, int c, int d, int e, int16_t *rect); /* 0x181F:0x02F8 */
 
-/* CC-screen compositor helpers used by 03BB4A; bodies TBD. */
+/* CC-screen compositor helpers used by 03BB4A; bodies in 0x181F thunk page. */
 extern int  cc_bg_load_44E(int strkey, int x0, int y0, int x1, int y1, int z); /* 0x181F:0x044E "CCBKGD" */
 extern void cc_clip_3B6(void);                                 /* 0x181F:0x03B6 */
 extern void cc_blit_3F4(char *buf, int a, int b);              /* 0x181F:0x03F4 */
