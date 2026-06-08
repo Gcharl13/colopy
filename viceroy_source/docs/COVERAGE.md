@@ -4,13 +4,13 @@ This is the hard answer to "what is still required to finish." It cross-referenc
 every `@asm` file-offset cited in `src/**/*.c` against the 1,248-function census
 (`re_work/functions.json`, regenerable from the binary by `tools/funcscan.py`).
 
-## Current state (2026-06-07)
+## Current state (2026-06-08)
 
 | region | funcs | with @asm citation | with BYTE_VERIFIED cite |
 |--------|------:|-------------------:|------------------------:|
-| resident load image (0x02400–0x20665) | 542 | 537 (99%) | 101 (18%) |
-| overlay region (0x20665–EOF)          | 706 | 699 (99%) | 241 (34%) |
-| **all**                               | **1248** | **1236 (99%)** | **342 (27%)** |
+| resident load image (0x02400–0x20665) | 542 | 537 (99%) | 102 (18%) |
+| overlay region (0x20665–EOF)          | 706 | 699 (99%) | 244 (35%) |
+| **all**                               | **1248** | **1236 (99%)** | **346 (28%)** |
 
 **Reading these numbers honestly:**
 - *with @asm citation* ≈ the function's byte boundary is referenced from source.
