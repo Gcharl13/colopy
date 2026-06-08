@@ -40,17 +40,19 @@ extern uint8_t g_unit_table_3146[];   /* UnitRecord[N] base, stride 0x1C — BYT
  *   if outcome was 0 AND UnitRecord[idx].byte_at_+0x15 == 24:
  *       outcome = 3
  *
- * Conjectured unit-type mapping (TODO_VERIFY against unit_classes table):
- *    0  Free Colonist
- *    1  Indentured Servant         → demotes to 0 (Free Colonist)
- *    2  Petty Criminal
- *    3  ?
- *    4  Soldier                    → demotes to 1 (Indentured Servant)
- *    5  Veteran Soldier
- *    6  Continental Army Soldier
- *    7  Dragoon                    → demotes to 9 (?)
- *    8  Veteran Dragoon            → demotes to 6 (Continental Soldier??)
- *    9  ?                          → demotes to 0
+ * NAMES.TXT @UNIT mapping (BYTE_VERIFIED 2026-06-08 from data/unit_classes.c):
+ *    0  Colonists (Free Colonist)
+ *    1  Soldiers                   → demotes to 0 (Colonists)
+ *    2  Pioneers
+ *    3  Missionaries
+ *    4  Dragoons                   → demotes to 1 (Soldiers)
+ *    5  Scouts
+ *    6  Regulars
+ *    7  Cont. Cav.                 → demotes to 9 (Cont. Army)
+ *    8  Cavalry                    → demotes to 6 (Regulars)
+ *    9  Cont. Army                 → demotes to 0 (Colonists)
+ * Special override: outcome==0 AND vet_type==0x18 → outcome=3 (Missionaries).
+ *   (Profession 0x18 is likely Missionary, causing reversion to Missionaries unit type.)
  * ============================================================================ */
 
 int8_t combat_demote_unit(int unit_idx, int promote_flag /* [BP+0xA] */)

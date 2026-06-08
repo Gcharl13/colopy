@@ -99,9 +99,13 @@ void king_attempt_tax_change(void)
 do_kingnothing: /* @asm 0x034B33 — guard-3 target and normal-path fall-through */
     {
         /* KINGNOTHING: king does nothing this turn.
-         * BYTE_VERIFIED 2026-06-08: 0x034B33 is the confirmed jump target.
-         * Call form TBD — string "KINGNOTHING" at 2b5a:0x109C; likely same overlay form. */
-        ovly_181F_0998(NULL, "KINGNOTHING" /*0x109C*/, 0);  /* [TBD: exact args] */
+         * BYTE_VERIFIED 2026-06-08 call form @0x034B33..0x034B43:
+         *   8d 1e 7c 08  LEA BX, [0x087C]   ; BX = text-section ptr (DS:0x087C = "GAME\0NAMES\0LABELS\0")
+         *   8d 06 9c 10  LEA AX, [0x109C]   ; AX = "KINGNOTHING" key (file 0x1EA3C, BYTE_VERIFIED)
+         *   2b d2        SUB DX, DX          ; DX = 0
+         *   9a 98 09 1f 18  LCALL 0x181F:0x0998 (register-args: BX/AX/DX, no stack push)
+         *   c9 cb        LEAVE / RETF */
+        ovly_181F_0998((void*)0x087C, (const void*)0x109C, 0);
         return;
     }
 
@@ -190,10 +194,13 @@ do_kingraise: /* @asm 0x034B62 — guards-1+2 target */
  *       normal path rolls random_int(1, diff+1): prob 1/(diff+1) → KINGLOWER.
  *     - Refuse-path anger model: DEFINITIVELY ABSENT. func_034318 refuse branch
  *       (choice ≠ 2 at 0x034673) jumps directly to RETF at 0x03471A — zero writes.
+ *     - RESOLVED 2026-06-08:
+ *       · KINGNOTHING call form at 0x034B33 BYTE_VERIFIED: LEA BX,[0x087C] / LEA AX,[0x109C] /
+ *         SUB DX,DX / LCALL 0x181F:0x0998 (register-args) / LEAVE/RETF.
+ *         "KINGNOTHING" string at DS:0x109C (file 0x1EA3C) confirmed.
  *     - STILL UNKNOWN (TODO_VERIFY):
  *       · Whether 0x191F:0x0AE0 internally calls func_034318 (tax_apply_delta)
  *         to write the new tax rate, or handles the write itself.
  *       · Frequency of king_attempt_tax_change being called per turn
  *         (find via "KINGTAX" PUSH at file 0x02f392).
- *       · KINGNOTHING exact overlay call form at 0x034B33 (call site TBD).
  * ============================================================================ */

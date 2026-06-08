@@ -468,10 +468,10 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (owner >= 4)
             goto announce_target;     /* @0x03C99C jae 0x03C9CF */
 
-        /* @0x03C99E..0x03C9A7  if (AIPersonality[owner].byte_at_0x31 != 0) skip;
-         *   AIPersonality base 0x540E stride 0x34; offset +0x31 = 0x543F.
-         *   Non-zero = "skip special encounter" / hostile-aggression active.
-         *   Also gates native-raid eligibility in func_05BE84 (@asm owner<4 check). */
+        /* @0x03C99E..0x03C9A7  if (AI_CTRL_543F[owner] != 0) skip;
+         *   AI_CTRL_543F = AIPersonality base 0x540E + 0x31, stride 0x34.
+         *   0 = human player; non-zero = AI-controlled. BYTE_VERIFIED:
+         *   auto_manage.c confirms AI_CTRL_543F @asm 0x53E5C/0x54646/0x54C46. */
         if (G8((uint16_t)owner * 0x34 + 0x543F) != 0)
             goto announce_target;     /* @0x03C9A7 jne 0x03C9CF */
 
