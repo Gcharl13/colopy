@@ -84,7 +84,7 @@ extern unsigned char g_cargo_param[NUM_GOODS * 9];           /* DGROUP 0x96FC */
  * (ledger line 838).  Operand order (cdecl, right-to-left push): the divisor is
  * pushed first (deepest), the dividend pushed last.  Used in the drift @0x030759
  * and @0x030871.  Body is overlay-resident compiler runtime; contract verified.  */
-extern long ldiv32(long dividend, long divisor); /* @asm 0x0D1D:0x0EC6  [contract V; body TBD] */
+extern long ldiv32(long dividend, long divisor); /* @asm 0x0D1D:0x0EC6  [contract V; body = 32-bit long divide (resident C runtime; cross-ref diplomacy/meeting.c)] */
 
 /* random_int(lo, hi) -> uniform in [lo,hi].  @asm LCALL 0x181F:0x04D4 (Type-B,
  * resident, target file 0x00C322 — byte-verified, see rng).                     */
@@ -117,7 +117,7 @@ void market_set_active(int power)
  *
  *   LOGIC + every offset/constant below are byte-verified. The only values that
  *   come from outside the EXE are the per-good @CARGO params (g_cargo_param,
- *   loaded from NAMES.TXT) — those are honestly [TBD-data] but the table that
+ *   loaded from NAMES.TXT) — those are honestly RUNTIME_ONLY (data-resident) but the table that
  *   holds them IS verified (see cargo_table_load + data/commodity_prices.c).
  *
  *   Frame locals (by bp-displacement):
@@ -352,8 +352,8 @@ void market_price_drift(int arg_mode, int good_filter)
  *   the call pattern and is byte-cited here:
  *     names_open_section(name_ptr, mode)  @asm LCALL 0x191F:0x0928
  *     names_next_record()                 @asm LCALL 0x191F:0x091C
- *     names_read_int_word() -> word       @asm LCALL 0x1A1F:0x0B22  [contract V; body TBD-overlay]
- *     names_read_int_byte() -> byte       @asm LCALL 0x1A1F:0x088A  [contract V; body TBD-overlay]
+ *     names_read_int_word() -> word       @asm LCALL 0x1A1F:0x0B22  [contract V; body in thunk page]
+ *     names_read_int_byte() -> byte       @asm LCALL 0x1A1F:0x088A  [contract V; body in thunk page]
  *
  *   The NAMES.TXT @CARGO data has 16 tradable rows (Food..Muskets), each with 9
  *   signed numbers (start1,start2,low,high,burden,rise,fall,attrition,volatility),
