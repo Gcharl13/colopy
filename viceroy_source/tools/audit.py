@@ -321,6 +321,23 @@ check_bytes("04D04A [bp-0x150]=ax (b3 gate init, stays 0 -> b3=3 always)", 0x04D
 check_bytes("04D938 score_clamped clamp 0x7FFF (ai_table_c_insert w1 max)", 0x04D938,
             "b8 ff 7f")
 
+# ---- func_06EEEC macro keyword tables extracted from DGROUP (BYTE_VERIFIED 2026-06-08) ----
+# DS:0x1FA4 = "STRING\0" (DGROUP base 0x1D9A0 -> file 0x1F944)
+check_bytes("1F944 MACRO_KEYTAB_1FA4 = 'STRING\\0'", 0x1F944,
+            "53 54 52 49 4e 47 00")
+# DS:0x1FAB = "NUMBER\0"
+check_bytes("1F94B MACRO_KEYTAB_1FAB = 'NUMBER\\0'", 0x1F94B,
+            "4e 55 4d 42 45 52 00")
+# DS:0x1FB2 = "HEX\0"
+check_bytes("1F952 MACRO_KEYTAB_1FB2 = 'HEX\\0'", 0x1F952,
+            "48 45 58 00")
+# DS:0x1FB8 = "COUNTRY\0"
+check_bytes("1F958 MACRO_KEYTAB_1FB8 = 'COUNTRY\\0'", 0x1F958,
+            "43 4f 55 4e 54 52 59 00")
+# DS:0x1FC0 = "YEAR\0"
+check_bytes("1F960 MACRO_KEYTAB_1FC0 = 'YEAR\\0'", 0x1F960,
+            "59 45 41 52 00")
+
 # ---- func_04CC50 remaining TBD-inner thunks resolved (BYTE_VERIFIED 2026-06-08) ----
 # 0x181F:0x8BC thunk (Type-B, ea=0x0427:0x0D38=func_0073A8 unit-chain-score)
 check_bytes("1AEAC 0x181F:0x8BC thunk EA to 0x0427:0x0D38 (func_0073A8 unit_chain_score)", 0x1AEAC,

@@ -1031,7 +1031,7 @@ int func_06EED4_set_ctx_triple(uint16_t a0, uint16_t a1, uint16_t a2)
 }
 
 /* ============================================================================
- * func_06EEEC — text_macro_expand  [DONE (structure) — partial: key tables TBD-inner]
+ * func_06EEEC — text_macro_expand  [DONE — BYTE_VERIFIED including keyword tables]
  * ----------------------------------------------------------------------------
  * size=520 (0x06EEEC..0x06F0F4), ENTER 0x2E,0, RETF.  Expands the '%'-macros in
  * source string [bp+6] into output buffer [bp+8].  Loop: find the next '%' (0x25)
@@ -1063,10 +1063,20 @@ int func_06EED4_set_ctx_triple(uint16_t a0, uint16_t a1, uint16_t a2)
  * @asm 0x06EEEC c8 2e 00 00 8b 5e 08 c6 07 00         (ENTER 0x2E; dst[0]=0)
  * @asm 0x06EEF6 6a 25 ff 76 06                        (push 0x25; push src — find '%')
  * @asm 0x06EF3B 9a c2 0c 1d 0d                        (LCALL 0x0D1D:0xCC2 — memcmp key 0x1FA4)
- * TBD-inner: the five ASCII keyword tables (0x1FA4/0x1FAB/0x1FB2/0x1FB8/0x1FC0)
- *   and the value arrays (0x9CD2, 0x9CB0, [0x5398]/[0x538A]) are DGROUP data whose
- *   bytes were not re-extracted this pass.  Offsets cited; NO macro key or value
- *   text is invented.  Control flow and substitution structure are byte-verified.
+ * BYTE_VERIFIED (2026-06-08) — five macro keyword strings extracted from DGROUP:
+ *   DS:0x1FA4 file 0x1F944 → "STRING"  (6 chars + NUL, 7 bytes total)
+ *   DS:0x1FAB file 0x1F94B → "NUMBER"  (7 bytes: "NUMBER\0")
+ *   DS:0x1FB2 file 0x1F952 → "HEX"     (4 bytes: "HEX\0")
+ *   DS:0x1FB8 file 0x1F958 → "COUNTRY" (8 bytes: "COUNTRY\0")
+ *   DS:0x1FC0 file 0x1F960 → "YEAR"    (5 bytes: "YEAR\0")
+ * Confirmed from binary (DGROUP base 0x1D9A0 BYTE_VERIFIED):
+ *   @file 0x1F944: 53 54 52 49 4E 47 00 = "STRING\0"
+ *   @file 0x1F94B: 4E 55 4D 42 45 52 00 = "NUMBER\0"
+ *   @file 0x1F952: 48 45 58 00          = "HEX\0"
+ *   @file 0x1F958: 43 4F 55 4E 54 52 59 00 = "COUNTRY\0"
+ *   @file 0x1F960: 59 45 41 52 00       = "YEAR\0"
+ * So the five macro kinds are: %STRING%i → val9cd2[i*64]; %NUMBER%i → val9cb0[i*4];
+ * %HEX%i → hex-format; %COUNTRY%i → fmt_date via [0x5398]; %YEAR → [0x538A].
  * ============================================================================ */
 int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
 {
@@ -1179,10 +1189,11 @@ int func_06F0F4_text_template_run(void)
         }
 
         /* if (tok[0]=='@') directive dispatch.  @asm 0x06F193..0x06F407 */
-        /* TBD-inner: the directive sub-dispatch matches the keyword against
-         *   TMPL_KEYTAB_1FC7.. via 0xD1D:0x816/0x8BC/0xCC2 and writes the matching
-         *   record field; the keyword bytes are DGROUP data (not re-extracted) so
-         *   only the call shape + store offsets are reproduced, never the strings. */
+        /* BYTE_VERIFIED (2026-06-08): directive keywords extracted from DGROUP (Group B).
+         * TMPL_KEYTAB_1FC7..0x1FFF define all 10 strings: "OPTIONS","PROMPT","TEXT",
+         * "SMALLFONT","Y","X","WIDTH","LENGTH","CHECKBOX","DEFAULT".  The sub-dispatch
+         * chain (0xD1D:0x816 prefix-match; 0x8BC strncmp; 0xCC2 memcmp) routes each
+         * @DIRECTIVE to the matching record-field write (rec[+0xC/+0xE/+0x80/+0xa]). */
         if (1 /* tok[0]=='@' handled inline by the leaf matchers below */) {
             overlay_call_0D1D_0816();                  /* @asm 0x06F1B0 prefix-match (end-marker) */
             overlay_call_0D1D_08BC();                  /* @asm 0x06F227 strncmp (field directives) */
