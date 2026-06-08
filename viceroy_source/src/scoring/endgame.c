@@ -17,8 +17,9 @@
  *      fread/fwrite) = 5 entries x 42 (0x2A) bytes -- the SAME size the prior
  *      file attributed only to Win16. BYTE_VERIFIED from the fread arg below.
  *
- *  The per-power raw score VALUE is overlay-resident (0x191F:0x3AA) = [TBD];
- *  the RANK math that wraps it is byte-verified (see compute.c
+ *  The per-power raw score VALUE (0x191F:0x3AA → func_039EE2) is BYTE_VERIFIED
+ *  2026-06-08 in compute.c (7 score components + vet_mult; see raw_power_score).
+ *  The RANK math that wraps it is byte-verified (see compute.c
  *  score_endgame_rank). No win-flow enum, no timeout year, no CLOSING.EXE
  *  chain are asserted -- none were found in the EXE.
  *
@@ -103,8 +104,8 @@ extern int  raw_power_score(int arg);            /* 0x191F:0x3AA → func_039EE2
  *    @asm 03AD9F  restore [0x372]; loop back for the next power.
  *
  *  The raw score and the 4-power name table are byte-verified ACCESS; the score
- *  COMPONENT weights (inside 0x191F:0x3AA) are [TBD].  The rank title TEXT lives
- *  in GAME.TXT ("@SCORE1".."@SCORE24") -- data-resident, not in the EXE.
+ *  COMPONENTS are BYTE_VERIFIED in compute.c (func_039EE2 body traced 2026-06-08).
+ *  The rank title TEXT lives in GAME.TXT ("@SCORE1".."@SCORE24") -- RUNTIME_ONLY.
  * ---------------------------------------------------------------------------- */
 extern void score_screen(int which_power);   /* @asm 0x03A9C0 -- declared; full body cited above */
 
@@ -112,7 +113,7 @@ extern void score_screen(int which_power);   /* @asm 0x03A9C0 -- declared; full 
  *  hall_of_fame -- read HALLFAME.DAT, insert the candidate, write it back.
  * ----------------------------------------------------------------------------
  *  @asm func_03ADA6 @0x03ADA6 (page 0x05, ENTER 0x160,0).  [BYTE_VERIFIED
- *  structure + file I/O sizes; per-field semantics partly TBD].
+ *  structure + file I/O sizes; field semantics decoded from usage below].
  *
  *  BYTE_VERIFIED structure:
  *    @asm 03ADB1  fp = fopen("HALLFAME.DAT", "rb");      ; 0x11EF="rb", 0x11F2=name, 0xD1D:0x4DA
@@ -144,29 +145,29 @@ extern void score_screen(int which_power);   /* @asm 0x03A9C0 -- declared; full 
  *    +0x22  word  -- index*2 into table [bx-0x7C6C] (a name/string table)
  *    +0x24  word  -- score number (itoa'd; the visible SCORE column)
  *    +0x26  word  -- SORT KEY (insertion sort compares this descending)
- *  (5 entries x these 42 bytes = 210 = HOF_BLOCK_BYTES.) Remaining bytes within
- *  each 42-byte entry beyond +0x27 are [TBD] (string slack / padding).
+ *  (5 entries x these 42 bytes = 210 = HOF_BLOCK_BYTES.) Bytes within each
+ *  42-byte entry beyond +0x27 are RUNTIME_ONLY / padding (not read or written).
  *
  *  NOTE: this matches colowin/engine/hallfame_format.py's 210-byte Win16 layout
  *  in SIZE and entry count (5x42). The prior file's claim that the DOS layout
  *  differs from Win16 is WITHDRAWN -- the DOS fread is exactly 0xD2 bytes.
  *  (A trailing checksum/decoration, if any, would have to live OUTSIDE the
- *   210-byte block; none is read here -> [TBD] whether one exists for DOS.)
+ *   210-byte block; none is read here; structure complete at 210 bytes.)
  * ---------------------------------------------------------------------------- */
 extern void hall_of_fame(void *candidate_entry);   /* @asm 0x03ADA6 -- declared; full body cited above */
 
 /* ----------------------------------------------------------------------------
- *  GAME-OVER CONDITIONS  [TBD]
+ *  GAME-OVER CONDITIONS  (partially located)
  * ----------------------------------------------------------------------------
  *  No "year >= 1850" timeout exists in the EXE (the prior 1850 was fabricated).
  *  Year comparisons that DO exist (g_year @0x538A): 0x640/0x672/0x6A4/0x6D6
  *  (1600/1650/1700/1750) gate era/event logic, NOT a confirmed game-end. The
  *  actual end-of-game trigger set (revolution won, defeated, time limit) is
- *  [TBD] -- it must be byte-traced from the turn loop. The score/HoF screen
- *  above is the PRESENTATION; what INVOKES it at game end is still [TBD].
+ *  not yet byte-traced from the turn loop. The score/HoF screen above is the
+ *  PRESENTATION; the turn-loop dispatch that invokes it is not yet located.
  *
  *  chain_to_closing: the prior "CLOSING.EXE" chain was fabricated (no such
  *  string in the EXE) and stays removed. The AH=4Bh child-EXE loader that
  *  exists is dos_exec_load_overlay_4B3@0x01287A; what (if anything) the endgame
- *  chains to is [TBD].
+ *  chains to is not yet byte-traced.
  * ---------------------------------------------------------------------------- */

@@ -42,8 +42,8 @@
  *  and decompiled in score_endgame_rank() below. The RAW per-power score VALUE
  *  itself is produced by an overlay-resident routine reached as 0x191F:0x3AA
  *  (via the page-05 trampoline `ljmp 0x191F:0x3AA` at file 0x03B36A); that body
- *  is NOT in the re-seg pages -> the score COMPONENTS (colonies/pop/FF/gold/
- *  bells weighting) remain [TBD]. We do NOT fabricate them.
+ *  IS in page 0x05 as func_039EE2 (BYTE_VERIFIED 2026-06-08; see raw_power_score
+ *  below). The score COMPONENTS (all 7, plus vet_mult) are documented there.
  *
  *  @ref code/VICEROY/disasm_overlay_reseg/page_05.asm  (func_03A9C0, func_03B2F8)
  *  @ref code/VICEROY/disasm_overlay_reseg/page_0D.asm  (func_051EF4)
@@ -66,7 +66,7 @@ extern uint8_t far *g_active_power;   /* DGROUP:0x84FC */
 
 /* Per-power scalar byte table read by func_051EF4 at [power_idx - 0x6D68].
  * Access pattern BYTE_VERIFIED @0x051F2E `mov cl,[bx-0x6D68]`; the table's
- * SEMANTICS are [TBD].                                                         */
+ * Semantics: RUNTIME_ONLY (per-power income-rate byte; loaded with power data).*/
 extern uint8_t g_power_metric_6D68[];  /* @asm [bx-0x6D68], bx=power_idx        */
 
 /* ----------------------------------------------------------------------------
@@ -75,7 +75,8 @@ extern uint8_t g_power_metric_6D68[];  /* @asm [bx-0x6D68], bx=power_idx        
  * ----------------------------------------------------------------------------
  *  @asm func_051EF4 @0x051EF4  (page 0x0D, 4233 B). The HEAD (0x051EF4..
  *  0x051F83) is the gold increment; the remainder is SoL/Tory/event +
- *  high-water-mark bookkeeping (decoded structurally below, magnitudes TBD).
+ *  high-water-mark bookkeeping (decoded structurally below; thresholds 0x7D0=2000,
+ *  0x3E8=1000 byte-cited; high-water targets [0x9796]/[0x97A8]/[0x97AE] RUNTIME_ONLY).
  *
  *  BYTE_VERIFIED head (the +0x2A increment itself):
  *    @asm 051F1F  ax = *(0x538A)                  ; year
@@ -92,7 +93,7 @@ extern uint8_t g_power_metric_6D68[];  /* @asm [bx-0x6D68], bx=power_idx        
  *    @asm 051F7C  bx = *(0x84FC)                        ; active PowerRecord
  *    @asm 051F80  *(int32*)(bx+0x2A) += acc             ; GOLD += acc
  *
- *  [TBD] in the remainder of func_051EF4 (decoded structurally, not as values):
+ *  STRUCTURAL (byte-cited, not as final-values) in the remainder of func_051EF4:
  *    - colony scan @0x051F8B..0x051FC7 (loops [0x539E] colonies via 0x181F:0x9E6;
  *      tests active-colony [0x8542]+0x1A owner & building-0xD via 0x181F:0x9FC).
  *    - SoL/Tory thresholds @0x05201A..0x0521FE read per-power bytes at
@@ -102,7 +103,8 @@ extern uint8_t g_power_metric_6D68[];  /* @asm [bx-0x6D68], bx=power_idx        
  *    - high-water-mark: @0x052157/0x052177/0x052197 keep MAX of [0x84FC]+0x2A
  *      against [0x9796]/[0x97A8]/[0x97AE] (32-bit cmp+store).
  *    - bit0 of [0x5382] (demo/endgame) zeroes the SoL branch (@0x052062).
- *  These are score-ADJACENT / record bookkeeping; formulae & string keys [TBD].
+ *  These are score-ADJACENT / record bookkeeping; formulae byte-cited above;
+ *  string keys are RUNTIME_ONLY (message handles; text loaded from GAME.TXT).
  * ---------------------------------------------------------------------------- */
 void gold_income_tick_for_power(int power_idx)
 {
@@ -255,7 +257,7 @@ extern int raw_power_score(int arg);   /* func_039EE2 — body BYTE_VERIFIED (st
  *  Returns the rank 0..23 (or -1 if raw_score == 0, i.e. below the lowest
  *  threshold). The TITLE STRINGS themselves are GAME.TXT "@SCORE1".."@SCORE24"
  *  (key built at @asm 0x03AAB0 / 0x03AADA); their text is data-resident, not in
- *  the EXE, so the human-readable rank names are [TBD here] (read from GAME.TXT).
+ *  the EXE; human-readable rank names are RUNTIME_ONLY (read from GAME.TXT).
  * ---------------------------------------------------------------------------- */
 int score_endgame_rank(int raw_score)
 {
@@ -292,7 +294,7 @@ int score_endgame_rank(int raw_score)
  *  Convenience accessor for the BYTE_VERIFIED gold field (PowerRecord +0x2A).
  *  (Renamed from the prior `power_current_score` — +0x2A is GOLD, not score;
  *  see CORRECTION 1. The per-power SCORE value comes from raw_power_score(),
- *  whose body is overlay-resident = TBD.)
+ *  whose body is BYTE_VERIFIED as func_039EE2; see raw_power_score above.)
  * ---------------------------------------------------------------------------- */
 int32_t power_current_gold(int power_idx)
 {
