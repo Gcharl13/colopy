@@ -34,6 +34,33 @@ if tory_count >= (10 - difficulty):  colony -> INEFFICIENT (overload)
 ```
 Latch bits ColonyRecord+0x1C: 0x02 unanimous, 0x04 majority, 0x08 overload.
 
+## Colony surrounding-tile production potential — `func_048F34`
+Scans the 5×5 tiles around a colony (centre worked free), skipping tiles already
+claimed by another colony's units, and tallies terrain-type buckets, then folds
+them into two contiguous 16-slot output arrays: `cap[16]` @DS:0x9E58 and
+`yield[16]` @DS:0x9E78 (one 32-word block, cleared each call).
+```
+base  = colony_level + 1 ;  tiles = base*base ;  mkt = MarketRecord[+2]
+# per non-claimed tile, terrain id t (from overlay 0x181F:0x078C):
+#   t==0x1B forest++ ; t==0x1C mineral++ ; t==0x18 grain+=4
+#   t in 8..0x17  -> food++ , sub=t&7 ; sub<3: special++/grain+=2
+#                                       sub>=3: ore++/fish++ (+cotton/sugar/tobacco)
+#   t in 0..7     -> per-id cotton/sugar/tobacco/fur/fish/grain buckets
+#   t==0x19/0x1A  -> hills: accum+=mkt+1, every 3 -> food+=2
+# finalize:
+yield[0] (food)  += (mkt+base)*food / (7-mkt)        ; cap[0] = (tiles*4) >> (mkt>1)
+yield[7] (lumber) = market[+0xc]/max(1,saw) + forest*(mkt>2?8:4)   # saw = power byte [cur-0x69D6]
+yield[4] (silver) += (special*2 + ore/2) / (mkt+1)
+cap[11] (grain)   = (mkt+base)*base + fish/2 + grain
+# + ~15 more per-slot writes (cotton/sugar/tobacco/fur/fish), each a fixed
+#   market-and-base polynomial; full table in src/overlay/overlay_046D70_04C2E1.c
+per-slot: cap[i] = normalize(cap[i],0,50) ; demand=market[i*2+0xe] shifts cap/yield
+if colony fort flag *(0x8D4A)[+3]&4:  cap[0..7]*=2 ; cap[13..15]*=1.5 ; yield[7..15]*=2
+decay each turn: yield -= cap/2 (floor 1) ; cap -= prevyield/2 (floor 1)
+```
+Terrain-id → bucket weights are code-resident (byte-verified); the market record
+fields [+2/+7/+8/+0xa/+0xc] and per-power saw level `[cur-0x69D6]` are runtime state.
+
 ## Lost City Rumor — `func_061454`
 ```
 outcome = max(1, random_int(1,9))      # then remapped by ~10 gates (below)
