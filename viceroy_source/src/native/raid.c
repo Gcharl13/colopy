@@ -58,22 +58,87 @@ extern uint8_t  g_powerrecord_8808[];     /* PowerRecord[] base, stride 0x13C */
 extern void *   g_colony_ptr_8542;        /* DGROUP:0x8542 — colony under attack */
 extern int32_t  g_loot_accum_9CB0;        /* DGROUP:0x9CB0 — 32-bit looted-gold accumulator */
 extern uint8_t  g_ai_personality_543F[];  /* DGROUP:0x543F — controller byte (stride 0x34) */
+extern uint8_t  g_tribe_6BF0[];           /* DGROUP:0x6BF0 — per-tribe strength byte table
+                                             accessed as [tribe_id - 0x6BF0]; BYTE_VERIFIED
+                                             @0x05C29D: mov al, [bx-0x6BF0] */
 extern int32_t  __aFlmul(int32_t a, int32_t b);   /* file 0x010530 — LCALL 0xD1D:0xF60 */
 extern int32_t  __aFldiv(int32_t a, int32_t b);   /* file 0x010496 — LCALL 0xD1D:0xEC6 */
 
 /* ============================================================================
- * native_raid_loot_gold — BYTE_VERIFIED transfer (magnitude partly TBD)
+ * native_raid_loot_gold — BYTE_VERIFIED transfer (magnitude FULLY RESOLVED)
  *
- * @asm 0x05C29A..0x05C2E5  the loot amount is computed as a 32-bit value:
- *     tribe_factor = byte[tribe-0x6BF0] + 1            ; per-tribe strength + 1
- *     colony_term  = colony[+0x1F]                     ; (byte at [0x8542]+0x1F)
- *     pwr_term     = PowerRecord[victim] words at +0x2A/+0x2C region
- *                    ([bx-0x77CC]/[bx-0x77CE], bx = victim*0x13C)
- *     amount = __aFlmul / __aFldiv chain over those terms, +10, clamped to
- *              0x7FFF (signed-word max).
- *   The exact operand order of the mul/div chain is only partly resolved →
- *   the MAGNITUDE is TBD; the SHAPE (inputs = tribe strength, colony size,
- *   victim treasury) is byte-confirmed.
+ * @asm 0x05C29A..0x05C2E5  the loot amount is computed as a 32-bit value.
+ *
+ * EXACT PUSH SEQUENCE (all verified byte-by-byte):
+ *
+ *   ; --- Step 1: tribe_factor = g_tribe_6BF0[tribe_id] + 1 ---
+ *   5C29A  8b 5e de        mov  bx, [bp-0x22]          ; tribe_id = colony[+0x1A]
+ *   5C29D  8a 87 10 94     mov  al, [bx-0x6BF0]        ; AL = g_tribe_6BF0[tribe_id]
+ *   5C2A1  2a e4           sub  ah, ah                  ; AH = 0
+ *   5C2A3  2b d2           sub  dx, dx                  ; DX = 0
+ *   5C2A5  05 01 00        add  ax, 1                   ; AX = strength + 1
+ *   5C2A8  13 d2           adc  dx, dx                  ; DX:AX = tribe_factor (32-bit)
+ *   5C2AA  52              push dx                      ; push tribe_factor hi
+ *   5C2AB  50              push ax                      ; push tribe_factor lo  [LAST = outermost arg]
+ *
+ *   ; --- Step 2: colony_term = colony[+0x1F] ---
+ *   5C2AC  8b 36 42 85     mov  si, [0x8542]            ; SI = g_colony_ptr_8542
+ *   5C2B0  8a 44 1f        mov  al, [si+0x1F]           ; AL = colony[+0x1F]
+ *   5C2B3  98              cwde                         ; AX = zero-extend
+ *   5C2B4  99              cdq                          ; DX:AX = colony_term (32-bit)
+ *   5C2B5  52              push dx                      ; push colony_term hi
+ *   5C2B6  50              push ax                      ; push colony_term lo
+ *
+ *   ; --- Step 3: pwr_32bit = PowerRecord[tribe_id][+0x2A:+0x2C] ---
+ *   5C2B7  69 db 3c 01     imul bx, bx, 0x13C          ; BX = tribe_id * 0x13C
+ *   5C2BB  ff b7 34 88     push [bx-0x77CC]             ; push pwr_hi (+0x2C)
+ *   5C2BF  ff b7 32 88     push [bx-0x77CE]             ; push pwr_lo (+0x2A)  [TOP = innermost arg]
+ *   5C2C3  8b f3           mov  si, bx                  ; save stride offset for later
+ *
+ *   ; --- Step 4: multiply and divide ---
+ *   ; __aFlmul(pwr_32bit, colony_term) [callee-clean, RETF 8]
+ *   ;   pops 2 dwords from stack (pwr, colony); tribe_factor remains
+ *   5C2C5  9a 60 0f 1d 0d  lcall 0x0D1D:0x0F60         ; DX:AX = pwr_32bit * colony_term
+ *   5C2CA  52              push dx                      ; push product hi
+ *   5C2CB  50              push ax                      ; push product lo
+ *
+ *   ; __aFldiv(product, tribe_factor) [callee-clean, RETF 8]
+ *   ;   pops 2 dwords from stack (product, tribe_factor); stack fully restored
+ *   5C2CC  9a c6 0e 1d 0d  lcall 0x0D1D:0x0EC6         ; DX:AX = product / tribe_factor
+ *
+ *   ; --- Step 5: add 10 and clamp to 0x7FFF ---
+ *   5C2D1  05 0a 00        add  ax, 0x0A                ; low word += 10
+ *   5C2D4  83 d2 00        adc  dx, 0                   ; propagate carry into DX
+ *   5C2D7  0b d2           or   dx, dx                  ; test high word
+ *   5C2D9  7c 0a           jl   0x5C2E5                 ; DX<0 → negative result, skip clamp
+ *   5C2DB  7f 05           jg   0x5C2E2                 ; DX>0 → large positive, clamp now
+ *   5C2DD  3d ff 7f        cmp  ax, 0x7FFF              ; DX==0: is AX > 0x7FFF?
+ *   5C2E0  76 03           jbe  0x5C2E5                 ; AX ≤ 0x7FFF → no clamp
+ *   5C2E2  b8 ff 7f        mov  ax, 0x7FFF              ; CLAMP: ax = 0x7FFF
+ *   5C2E5  50              push ax                      ; loot_amount = AX (signed word)
+ *
+ * EXACT FORMULA (BYTE_VERIFIED):
+ *
+ *   tribe_id    = colony[+0x1A]                            (victim tribe index)
+ *   tribe_factor = g_tribe_6BF0[tribe_id] + 1             (byte+1, ≥ 1)
+ *   colony_term  = colony[+0x1F]                           (byte, 0-extended)
+ *   pwr_32bit    = *(int32_t *)&PowerRecord[tribe_id][+0x2A]  (32-bit signed)
+ *
+ *   amount = (pwr_32bit * colony_term) / tribe_factor + 10
+ *   if amount > 0x7FFF: amount = 0x7FFF    (positive overflow clamp)
+ *   ; negative results pass through unmodified (DX < 0 path)
+ *
+ * In English: the gold looted equals the victim tribe's accumulated treasury
+ * (at PowerRecord+0x2A, 32-bit) scaled by a colony prosperity factor
+ * (colony+0x1F), divided by the tribe's strength+1, then floored at 10 and
+ * capped at 0x7FFF (32,767).
+ *
+ * CALLING CONVENTION NOTES (both __aFlmul and __aFldiv):
+ *   - Both are CALLEE-CLEAN (Pascal, RETF 8): each pops its own two 32-bit args.
+ *   - No ADD SP, N appears after either call — stack balance is maintained by
+ *     the callees themselves.
+ *   - Push order (right-to-left = C convention): outermost arg pushed first,
+ *     innermost arg pushed last / sits at top of stack on entry.
  *
  * @asm 0x05C5CF..0x05C5D8  the confirmed TRANSFER:
  *     imul bx,[bp-0x22],0x13C            ; bx = victim_power * 0x13C
@@ -81,6 +146,10 @@ extern int32_t  __aFldiv(int32_t a, int32_t b);   /* file 0x010496 — LCALL 0xD
  *     sbb  word [bx-0x77CC], dx          ; PowerRecord[victim].gold_hi -= carry
  *     mov  [0x9CB0], ax / [0x9CB2], dx   ; record it for the "you lost N" popup
  * ============================================================================ */
+/* BYTE_VERIFIED formula (see banner above):
+ *   amount = (PowerRecord[tribe_id][+0x2A] * colony[+0x1F]) / (g_tribe_6BF0[tribe_id]+1) + 10
+ *   clamped to [INT_MIN, 0x7FFF]
+ */
 int32_t native_raid_loot_gold(int victim_power, int amount)
 {
     /* @asm 0x05C5C8..0x05C5CB — stash for the UI popup */

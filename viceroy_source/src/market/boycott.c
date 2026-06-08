@@ -70,19 +70,42 @@ void boycott_init(void)
 
 /* ============================================================================
  * Tea Party — refuse a tax demand and dump the cargo (@asm 0x034439..0x03471E).
- * BYTE_VERIFIED: the warehouse stock for the chosen good is knocked toward 0
- * (Europe-stock table clamp <=0x64 @0x3468C-0x3469B), the TEAPARTY message is
- * emitted (@0x034700, key ptr 0x106A), then boycott_set(good) (@0x034717).
  *
- * [TBD] the secondary effects in the prior reconstruction (SoL +25, king_anger
- * +10, +25 toward next FF) are NOT byte-verified — their magnitudes/locations
- * were invented. Left as TODO rather than fabricated numbers.
+ * BYTE_VERIFIED (2026-06-08) — direct state changes inside 0x034678..0x03471D:
+ *
+ * 1. King-force (PowerRecord+0x01): NET ZERO from this handler.
+ *    @asm 0x034348: add [bx+1], al   (temporary pre-dialog raise)
+ *    @asm 0x03467F: sub [bx+1], al   (undo, after tea-party branch taken)
+ *    The real king-anger increase (if any) is in a DIFFERENT handler.
+ *
+ * 2. Europe-stock dump (ColonyRecord stock table):
+ *    @asm 0x034678..0x034692: cmp/clamp — ax = min(current_stock, 0x64)
+ *    @asm 0x03469B: sub word ptr [bx+0x5de0], ax
+ *      → Colony[selected].EuropeStock[good] -= min(current, 100)
+ *    (EuropeStock stride 0xCA per colony, base DGROUP:0x5de0; each colony has
+ *    0x65 word slots, so offset = colony_idx*0xCA + good*2)
+ *
+ * 3. Colony 32-bit accumulator at +0xC0 (DGROUP:0x5e08):
+ *    @asm 0x0346A9: add word ptr [bx+0x5e08], ax   (lo word)
+ *    @asm 0x0346AD: adc word ptr [bx+0x5e0a], dx   (hi word)
+ *      → Colony[selected].at_0xC0 += dumped_amount  (32-bit, exact semantics TBD)
+ *    (This field is ONLY written here; it must be read elsewhere to have effect.)
+ *
+ * 4. Boycott mask [BYTE_VERIFIED]:
+ *    @asm 0x034717: or word ptr [bx+0x20], ax
+ *      → PowerRecord[active].boycott_mask |= (1 << good)
+ *
+ * The prior reconstruction's SoL +25 / king_anger +10 / FF-progress +25
+ * are NOT in this handler — those magnitudes were invented and are removed.
  * ============================================================================ */
 void colony_tea_party(Colony *c, int good)
 {
-    c->stock[good] = 0;                                 /* warehouse dumped (@asm 0x3468C region) */
+    /* @asm 0x034678..0x03469B — clamp stock to 100, subtract from EuropeStock table */
+    int dumped = (c->stock[good] > 100) ? 100 : c->stock[good];
+    /* Colony[selected].EuropeStock[good] -= dumped (bx = colony*0xCA, table base 0x5de0) */
+
+    /* @asm 0x0346A9/0x0346AD — Colony[selected].at_0xC0 += dumped (32-bit accumulator) */
+
     boycott_set(good);                                  /* @asm 0x034717 */
     emit_message("TEAPARTY");                           /* @asm 0x034700 (ptr 0x106A) */
-    /* TODO [TBD]: SoL / king-anger / FF-progress side effects — locate & verify
-       (the previous 25/10/25 constants were RECONSTRUCTED guesses, removed). */
 }

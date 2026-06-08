@@ -30,6 +30,11 @@ extern int16_t g_turn_counter_538E;           /* DGROUP:0x538E — turn counter 
  * needs a re-trace to recover what it actually does with the random draws. */
 extern uint16_t ovly_181F_04D4(uint16_t lo, uint16_t hi);  /* random_int(lo,hi) — see warning */
 extern void   ovly_181F_0998(void *buf, void *src, int16_t arg);  /* output_message_with_value */
+/* RTLink thunk at file 0x3681D -> LJMP 0x191F:0x0AE0 (king_announce_tax_raise).
+ * Called by the raise_was_blocked path with (adjusted_delta, "KINGRAISE" offset).
+ * Overlay internals TBD. BYTE_VERIFIED call site: file 0x034B78..0x034B7D
+ *   0e e8 a1 1c  (push cs; call near [+0x1CA1] -> file 0x3681D = LJMP 0x191F:0x0AE0) */
+extern void   ovly_191F_0AE0(uint16_t delta, uint16_t str_off); /* king_announce_tax_raise — TBD */
 
 /* ============================================================================
  * king_attempt_tax_change — invoked when the king considers raising taxes
@@ -95,14 +100,47 @@ void king_attempt_tax_change(void)
      * the raised value via 0x181F:0x998 with KINGRAISE message at 0x10B2. */
 raise_was_blocked:
     {
-        /* @asm 0x034B62..0x034B7D */
+        /* @asm 0x034B62..0x034B7D (file 0x034B62, Convention A: file offset = named address)
+         *
+         * BYTE_VERIFIED 2026-06-08: the raise/guard path draws a random delta and
+         * calls through an RTLink thunk into overlay function 0x191F:0x0AE0.
+         *
+         * The call sequence (BYTE_VERIFIED at file 0x034B62..0x034B7D):
+         *   a0 a6 53        mov al, [0x53a6]      ; difficulty
+         *   2a e4           sub ah, ah
+         *   50              push ax                ; arg lo = difficulty
+         *   6a 01           push 1                 ; arg hi = 1
+         *   9a d4 04 1f 18  lcall 0x181f:0x4d4     ; random_int(difficulty, 1) -> AX
+         *   83 c4 04        add sp, 4
+         *   d1 e0           shl ax, 1              ; adjusted = random * 2
+         *   50              push ax                ; push adjusted
+         *   68 b2 10        push 0x10b2            ; push string offset "KINGRAISE"
+         *   0e              push cs
+         *   e8 a1 1c        call near [+0x1CA1]   ; -> file 0x3681D (RTLink thunk)
+         *
+         * File 0x3681D: EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0 (RTLink thunk stub)
+         * -> calls overlay function king_announce_tax_raise(adjusted, "KINGRAISE")
+         * Internals of 0x191F:0x0AE0 are TBD (overlay not yet dumped).
+         *
+         * CORRECTION (BYTE_VERIFIED 2026-06-08):
+         *   The earlier note "CALL near 0x35418 = func_0353DE" was DOUBLY WRONG:
+         *   - 0x35418 is NOT a function entry point; it is mid-instruction (the JE
+         *     opcode byte within "or ax,ax ; je 0x35450") inside func_0353DE's body.
+         *   - func_0353DE (file 0x0353DE, segment 65, ENTER 2,0) is an INPUT/ACTION
+         *     DISPATCHER for a game screen — it reads [0x7ec]/[0x7f6] event queues,
+         *     calls get_pending_action (near 0x3689a), and dispatches via a 12-entry
+         *     jump table at CS:0x4F54.  It does NOT touch the king's tax-rate field.
+         *   - func_0354BE (file 0x0354BE, ENTER 0xE,0, segment 65) is a keyboard
+         *     handler for a dialog (likely the king tax-raise dialog); it also does
+         *     not write the tax rate directly.
+         *   - The actual NEAR CALL target resolves to file 0x3681D which is an RTLink
+         *     thunk (EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0), NOT an internal entry
+         *     into func_034318 at +0x105.
+         */
         uint16_t adjusted = ovly_181F_04D4(g_difficulty_53A6, 1);
         adjusted *= 2;
-        /* CALL near 0x35418 = func_0353DE — "actually apply the tax change to
-         * game state".  This is NOT func_034318 (see src/king/tax_apply.c,
-         * tax_apply_delta — the signed-delta apply+cap-75 routine); 0x35418
-         * falls inside func_0353DE, a separate function (TBD body). */
-        apply_tax_change(adjusted);   /* func_0353DE — TBD internals */
+        /* push "KINGRAISE" then jump through RTLink thunk at file 0x3681D -> 0x191F:0x0AE0 */
+        ovly_191F_0AE0(adjusted, 0x10b2 /* "KINGRAISE" */);  /* TBD: internals of king_announce_tax_raise */
         return;
     }
 }
@@ -112,7 +150,7 @@ raise_was_blocked:
  *
  * Per-event tax raise amount = ((diff & 0xFE) * 2 + 4) * (turn/400 + 1)
  *
- * For Discoverer (diff=0): +4 → +4 → +4 → ... per era (turn 0, 400, 800, ...)
+ * For Discoverer (diff=0): +4 -> +4 -> +4 -> ... per era (turn 0, 400, 800, ...)
  *                          (always 4 since era_mult * 4)
  *                          actually: 4, 8, 12, 16 (era_mult = 1, 2, 3, 4)
  * For Conquistador (diff=2): 8, 16, 24, 32
@@ -121,12 +159,52 @@ raise_was_blocked:
  * The 5-point safety margin (`proposed_change + 5 >= current_tax`) prevents
  * the king from raising taxes when current tax is already near maximum.
  *
- * STILL UNKNOWN (TODO_VERIFY):
- *   - [RESOLVED 2026-05-30] `[0x53A6]` is difficulty (NOT player_idx) — see decl comment
- *     (other functions use it as player_idx; here it appears to set the
- *     base_amount which suggests difficulty)
- *   - The "current_tax" interpretation: is it a percentage or a flat amount?
- *   - What `apply_tax_change` (CALL near 0x35418) actually does with the value
- *   - The chance/frequency of this function being called per turn
- *     (handled by another function — find via "KINGTAX" PUSH at 0x02f392)
+ * BYTE_VERIFIED SUMMARY (func_0353DE / segment 65) — 2026-06-08:
+ *
+ *  1. Project naming convention: function addresses are FILE OFFSETS (not
+ *     asm_addr + 0x2400).  "func_0353DE" = bytes at file offset 0x0353DE.
+ *
+ *  2. func_0353DE (file 0x0353DE..0x0354BD, ENTER 2,0, 224 bytes):
+ *     - Reads event queues [DGROUP:0x7ec] and [DGROUP:0x7f6].
+ *     - Calls get_pending_action (near 0x3689a) to pop the current action code
+ *       into [DGROUP:0x9e3a] and [DGROUP:0x9e3c].
+ *     - Special-cases action codes 0x08/0x09/0x0A (navigation/arrow group):
+ *       calls get_pending_action a second time to get a sub-code (0..3).
+ *     - Falls through to a 12-entry CS-relative jump table at CS:0x4F54.
+ *     - Jump table branches all use "push cs; call near" to invoke sub-handlers
+ *       at 0x36877, 0x36859, 0x36895, 0x3689a, 0x368D1, 0x368EF, 0x3693A, 0x36930.
+ *     - Guard: if action_code == 0 AND [DGROUP:0x5384] bit 0 clear -> early RETF.
+ *     - Does NOT touch king tax rate, boycott mask, or any king record field.
+ *     - Identity: input/action dispatcher for an in-game screen (likely
+ *       "king audience" or "Europe view" mode).
+ *
+ *  3. func_0354BE (file 0x0354BE..0x0355A5, ENTER 0xE,0):
+ *     - Takes arg [bp+6] = key/scan code.
+ *     - Dispatches on ASCII values 0x09, 0x1B, 0x21, 0x31, 0x50, 0x52, 0x58.
+ *     - References [DGROUP:0x9e38], [DGROUP:0x5383] bit 5, [DGROUP:0x5384].
+ *     - Calls sub-handlers in the same segment (0x36903, 0x36930, 0x36935).
+ *     - Also calls 0x191f:0x934 and 0x191f:0x942 (audio/overlay helpers).
+ *     - Identity: keyboard handler for a dialog (likely the king tax-raise dialog).
+ *
+ *  4. The "CALL near 0x35418 = func_0353DE" note in the original king_tax_raise.c
+ *     was doubly wrong: 0x35418 is mid-instruction (JE opcode byte) in func_0353DE,
+ *     and king_attempt_tax_change actually calls through RTLink thunk at file 0x3681D
+ *     to overlay function 0x191F:0x0AE0 — not into func_034318 or func_0353DE.
+ *
+ *  5. The actual call from king_attempt_tax_change (BYTE_VERIFIED):
+ *       push adjusted_delta    ; random * 2
+ *       push 0x10b2            ; "KINGRAISE" string offset
+ *       push cs
+ *       call near [+0x1CA1]    ; -> file 0x3681D (RTLink thunk)
+ *       ; file 0x3681D: EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0
+ *     Resolves to overlay function 0x191F:0x0AE0 (king_announce_tax_raise).
+ *     Internals of that overlay are TBD (segment not yet dumped).
+ *     Note: file 0x3441D (Convention A) is mid-function boycott loop code INSIDE
+ *     func_034318 (not a call target from king_attempt_tax_change).
+ *
+ *  6. STILL UNKNOWN (TODO_VERIFY):
+ *     - Whether 0x191F:0x0AE0 internally calls func_034318 (tax_apply_delta) to
+ *       write the new tax rate, or handles the write itself.
+ *     - The chance/frequency of king_attempt_tax_change being called per turn
+ *       (find via "KINGTAX" PUSH at file 0x02f392).
  * ============================================================================ */
