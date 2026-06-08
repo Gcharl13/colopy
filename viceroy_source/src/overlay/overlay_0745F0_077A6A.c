@@ -380,7 +380,7 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
 
 /* ============================================================================
  * func_0749E0 — load_names_data_tables  [DONE — section dispatch BYTE_VERIFIED;
- *               two inner name sub-loaders TBD-inner]
+ *               sub-loader chain resolved: func_07637F@0x7637F→ljmp 0x1A1F:0xD20→file 0x72DB0]
  * ----------------------------------------------------------------------------
  * THE NAMES.TXT DATA-TABLE LOADER (project mem: NAMES.TXT is the canonical
  * source for all VICEROY game-data tables; this routine reads 38 named
@@ -450,9 +450,10 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
  *                                    @DS:0x22EC ("PEDIA") via 0x191F:0x91C +
  *                                    0x0D1D:0x8F6(@0x833c) -> [0x846]
  *
- * Two per-entry name sub-loaders (UNFORESTED/FORESTED/OTHER via near 0x4eef =
- * ljmp 0x1A1F:0xD20) are opaque overlay helpers (TBD-inner); everything else is
- * traced field-for-field.
+ * Per-entry name sub-loaders (UNFORESTED/FORESTED/OTHER) call func_07637F@0x7637F
+ * (near call target) which does ljmp 0x1A1F:0xD20 → file 0x72DB0 (terrain-name
+ * string-intern + terrain-cost-table store). Chain BYTE_VERIFIED; all other
+ * sections traced field-for-field.
  *
  * @asm 0x0749EB  lcall 0x181F:0x000E         (NAMES init, name @DS:0x1A2C "EUROPE")
  * @asm 0x0749F9  lcall 0x191F:0x928          (find @SECTION @DS:0x21AC "SEASONS")
@@ -2623,7 +2624,8 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
         *((uint16_t near *)0xA624) = *((uint16_t near *)0x245C); /* @asm 0x077532 */
     }
 
-    /* alt-bind / cursor walk via 0x1A1F:0xEE4 (TBD-inner gate math) */
+    /* alt-bind / cursor walk via 0x1A1F:0xEE4 BYTE_VERIFIED:
+     * count==1 && submode==0 → single bind (0x077548); else walk loop (0x077583) */
     if (count_ax == 1 && submode_bx == 0) {    /* @asm 0x077536/07753C */
         overlay_call_1A1F_0EE4();  /* @asm 0x077548 alt bind [0x1A1F:0xEE4 -> file 0x25982 BYTE_VERIFIED] */
     } else {

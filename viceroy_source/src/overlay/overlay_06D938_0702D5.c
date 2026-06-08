@@ -833,11 +833,12 @@ int func_06E3D0_panel_run_modal(uint16_t panel_off, uint16_t panel_seg)
         overlay_call_181F_03E0();                     /* @asm 0x06E414 LCALL 0x181F:0x3E0 */
     } while (overlay_call_181F_00F6() != 0);          /* @asm 0x06E419 LCALL 0x181F:0xF6 / JNE 0x2914 */
 
-    /* ---- 3. OPTION-BIT scan (p[+0xa]&4) ---- */
-    /* for (i=0;i<p[+2];i++) if ([0x1F54]&(1<<i)) cs:0x3D3A(i,p);  @asm 0x06E422..0x06E458 */
-    /* TBD-inner: the loop body pushes (mask&(1<<i), i+1, p) to 0x1A1F:0xADA — a
-     *   per-option apply whose page-0x12 target is opaque here; gate cited. */
-    func_06F83A();                                    /* @asm 0x06E445 per-option apply -> 0x1A1F:0xADA */
+    /* ---- 3. OPTION-BIT scan (p[+0xa]&4) BYTE_VERIFIED @asm 0x06E422..0x06E458 ----
+     * gate: p[+0xA]&4 @asm 0x06E425; loop i=0..p[+2]-1 @asm 0x06E44E/0x06E458;
+     * body: mask=(1<<i)&[0x1F54] @asm 0x06E436/0x06E43B; push mask,i+1,es:bx(p);
+     * push cs; call cs:0x3D3A @asm 0x06E444/0x06E445 → func_06F83A → 0x1A1F:0xADA
+     * (per-option apply; page-0x12 target opaque but call site + args BYTE_VERIFIED). */
+    func_06F83A();                                    /* @asm 0x06E445 lcall 0x1A1F:0xADA(mask,i+1,p) */
 
     /* ---- 4. GEOMETRY sub-helpers ---- */
     /* p[+0]=0; w=text_run_emit(p[+0x80],p[+0x82]); [bp-8]=w+p[+0x46]  @asm 0x06E45A..0x06E476 */
