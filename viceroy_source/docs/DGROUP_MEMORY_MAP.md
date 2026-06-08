@@ -232,9 +232,11 @@ over the §5.2 residual; everything else is a clean named field.
    itself a **pointer** (`mov bx,[0x8D4A]` then deref) = current-native-settlement
    cursor, parallel to `ctx`@`0x8542`. Native "powers" 4..11 (from
    `NativeSettlement.owner`) do **not** own `0x13C` records; their per-tribe state
-   lives in the `0x54EC` settlement records + the alarm array. *Remaining:*
-   reconcile `power.h` prose (drop "8 powers", flag the market-array widths as
-   RECONSTRUCTED).
+   lives in the `0x54EC` settlement records + the alarm array. **`power.h`
+   reconciled 2026-06-08**: verified fields surfaced from pads (FF bitmap +0x07,
+   pending +0x12, boycott +0x20, home x/y +0x32, war matrix +0x34), market arrays
+   flagged RECONSTRUCTED, `[8]` documented as 4 physical EU records; struct
+   offsets re-verified consistent (total `0x13C`).
 4. **Native alarm array overlaps settlement record 0** — **RESOLVED 2026-06-08:
    no conflict; the "alarm array" is an in-record field, not a separate table.**
    `0x54F6 = 0x54EC + 0x0A`, and a "row" of `9 words = 18 bytes = 0x12` equals the
