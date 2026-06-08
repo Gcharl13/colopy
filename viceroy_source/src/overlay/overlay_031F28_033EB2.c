@@ -89,7 +89,7 @@ extern void hud_finish(int a, int b, int z);                 /* 0x181F:0x088-pai
 extern void score_accum_long(long v, int chan);              /* 0x181F:0x9AE draw long at channel  */
 extern int  weight_scale(int lo, int hi, int val);           /* 0x181F:0x35C scale helper          */
 extern void *dlg_open(void *ctx_key, void *title_key, int z);/* 0x191F:0x182 open dialog            */
-extern void names_open_section(int name_handle, int mode);   /* 0x191F:0x928 open NAMES/text section (sig per market.h) */
+extern int  names_open_section(int name_handle, int mode);   /* 0x191F:0x928 open NAMES/text section; returns status (tested at @asm 0x033DB2) */
 extern void dlg_draw_row(void);                              /* 0x191F:0x230 draw sprite/text row   */
 
 /* These resident near helpers (CALL cs:0x6Dxx etc.) are the page-04 dispatch
@@ -453,7 +453,8 @@ int func_032294(int amount)
  * =========================================================================== */
 extern int8_t  g_good_shift_9704[];   /* per-good shift table, base abs 0x9704 (ds-0x68FC) */
 extern int16_t g_market_hist_8864[];  /* 4x rolling history, base abs 0x8864 (ds-0x779C) */
-extern int     near_6DA0(int v);      /* resident CALL cs:0x6DA0 (per-good scale) */
+extern int     near_6DA0(int v, ...); /* resident CALL cs:0x6DA0 (per-good scale; cdecl,
+                                       * 1 arg here, 3 args (cell,1,0x64) at func_033A52) */
 void func_0322D0(int good, int qty)
 {
     int k;
@@ -961,8 +962,8 @@ int func_03334E(int unit_idx)
  *
  *  best = -1 ([bp-0x12])
  *  for i in 0..[0xFA2)-1:                                 @asm 0x03343E..0x033490
- *      near_6DAF(i,0x92,5,2,&y0,&x0,&y1,&x1)  -- get unit i's screen rect
- *      if (point_in_rect(y0,x0,y1,x1)) best = i           @asm 0x033456..0x033489
+ *      near_6DAF(i,0x92,5,2,&p0,&p1,&p2,&p3,&p4)  -- unit i screen rect (9 args)
+ *      if (point_in_rect(p1,p2,p3,p4)) best = i           @asm 0x033456..0x033489
  *  if (best < 0) goto done                                @asm 0x033492..0x033498
  *  -- a unit IS under the cursor; branch on map mode [0x9E3A] --
  *  if ([0x9E3A]==0xA):                                    @asm 0x03349B normal mode
@@ -991,7 +992,11 @@ int func_03334E(int unit_idx)
  *      near_6E5E(near_6E13(best), 0x1A)                    @asm 0x0335E2..0x0335F1
  *  done: return; (label 0x3B07)                           @asm 0x0335F7
  * =========================================================================== */
-extern void near_6DAF(int i, int a, int b, int c, int *y0, int *x0, int *y1, int *x1);
+/* near_6DAF -- get unit i's screen rect.  ARITY CORRECTED 2026-06-08: the call
+ * pushes 0x12 = 9 words (verified at @asm 0x033465 add sp,0x12 and @asm 0x33991),
+ * i.e. FIVE out-pointers, not four.  p0 is a 5th coord output the rect test does
+ * not consume; point_in_rect() takes (*p1,*p2,*p3,*p4). */
+extern void near_6DAF(int i, int a, int b, int c, int *p0, int *p1, int *p2, int *p3, int *p4);
 extern int  near_6E54(int a, int b, int c, int d);
 extern int  near_6DD7(int v);
 extern int  near_6D8C(int v);
@@ -1006,9 +1011,9 @@ void func_03342C(void)
     int best = -1;                                       /* @asm 0x033431 */
     int i;
     for (i = 0; i < G16(0xFA2); i++) {                   /* @asm 0x03343E..0x033490 */
-        int y0, x0, y1, x1;
-        near_6DAF(i, 0x92, 5, 2, &y0, &x0, &y1, &x1);    /* @asm 0x033446..0x033468 */
-        if (point_in_rect(y0, x0, y1, x1)) best = i;     /* @asm 0x03346B..0x033486 */
+        int p0, p1, p2, p3, p4;
+        near_6DAF(i, 0x92, 5, 2, &p0, &p1, &p2, &p3, &p4); /* @asm 0x033446..0x033468 (9 args) */
+        if (point_in_rect(p1, p2, p3, p4)) best = i;     /* @asm 0x03346B..0x033486 ([bp-6],[bp-0xa],[bp-0xe],[bp-0x10]) */
     }
     if (best < 0) return;                                /* @asm 0x033492..0x033498 */
 
@@ -1073,7 +1078,8 @@ void func_03342C(void)
  *  done: return; (label 0x3C22)                            @asm 0x033712
  * =========================================================================== */
 extern int  overlay_call_191F_0934(void);  /* 0x191F:0x934 path/select by hit */
-extern int  near_6D96(int a, int b);
+extern int  near_6D96(int a, int b, ...); /* resident CALL cs:0x6D96; cdecl, 4 args
+                                           * (key,scaled,1,0x64) at func_033A52/0335FA */
 extern void near_6E0E(int a, int b);
 void func_0335FA(void)
 {
@@ -1180,15 +1186,137 @@ void func_033778(int cmd)
         return;                                          /* @asm 0x03379E */
     }
     if (G16(0x9E3A) == 9) {                              /* @asm 0x0337A2 mode 9 move-cost */
+        int cur;                                         /* [bp-0x1C] */
+        int budget;                                      /* [bp-0x1A]  cost - moves-spent */
         if (G16(0x7F4) == 0) return;                     /* @asm 0x0337AC */
-        /* stack-walk move-cost accumulation @asm 0x0337B6..0x03388D; issues the
-         * move via 0x181F:0x880; then advisory + near_6E31 @asm 0x033896..0x0338AB */
-        return;                                          /* @asm 0x0338AF */
+
+        cur = G16(0x9E42);                               /* @asm 0x0337B6 */
+        unit_table[cur].orders = 0;                      /* @asm 0x0337BC..0x0337BF clear +0x08 (0x314C) */
+        if (G16(0x9E44) == cmd)                          /* @asm 0x0337C4..0x0337CA */
+            goto m9_advisory;                            /* @asm 0x0337CC -> 0x338AA (near_6E31 only) */
+
+        /* budget = per-type move-cost table[type][7] (0x5237) - UnitRecord[cur]
+         * +0x0C byte (cargo_slot_count, reused here as the move-units spent). */
+        budget = (int)g_unittype_attr_5230[unit_table[cur].type][7]
+                 - (int)unit_table[cur].cargo_slot_count;            /* @asm 0x0337CF..0x0337F3 */
+
+        /* Walk the on-tile unit STACK via chain_next (+0x1A / 0x315E), charging
+         * each unit the terrain move-cost the picked move would incur; the picked
+         * unit ([0x9E42]) always moves, land units (type 0xD..0x12) end the walk. */
+        while (cur >= 0) {                               /* @asm 0x0337F6 (jl signed) */
+            int next = unit_table[cur].chain_next;       /* @asm 0x0337FC..0x033804 [bp-0x22] */
+            if (cur == G16(0x9E42)) {                    /* @asm 0x033807..0x03380D */
+                overlay_call_181F_0880(/* cur, -2, -2 */); /* @asm 0x03380F..0x03381B move */
+                goto m9_advance;                         /* @asm 0x03381E -> 0x3388D */
+            }
+            if (unit_table[cur].type < 0xD ||            /* @asm 0x033820..0x033829 (jb) */
+                unit_table[cur].type > 0x12) {           /* @asm 0x03382B..0x033830 (ja) non-land */
+                int c = g_unittype_attr_5230[unit_table[cur].type][8]; /* @asm 0x033840..0x03385D (0x5238) */
+                if (c > budget)                          /* @asm 0x033861 (ja) cost exceeds budget */
+                    goto m9_advance;                     /* @asm 0x033861 -> 0x3388D */
+                overlay_call_181F_0880(/* cur, -2, -2 */); /* @asm 0x033863..0x033871 move */
+                budget -= g_unittype_attr_5230[unit_table[cur].type][8]; /* @asm 0x033874..0x03388A */
+                goto m9_advance;                         /* fall @asm 0x03388D */
+            }
+            /* land unit (type 0xD..0x12): the walk ends here (no loop-back) */
+            break;                                       /* @asm 0x033830 fall -> 0x33832 */
+        m9_advance:
+            cur = next;                                  /* @asm 0x03388D..0x033890 */
+        }                                                /* @asm 0x033893 jmp 0x337F6 */
+
+        /* Loop-exit finish (0x33832): the land-type / end-of-chain path issues the
+         * advisory LCALL 0x181F:0x948([0x9E42], pwr, pwr) where pwr = [0x9E12] minus
+         * 0x18 when cmd==2 (@asm 0x033838) else minus 0xC (@asm 0x033896), then the
+         * near_6E31 advisory.  (The [0x9E44]==cmd early-out above skips the 0x948.) */
+        if (cmd == 2)                                    /* @asm 0x033832..0x033836 */
+            overlay_call_181F_0948(/* [0x9E42], [0x9E12]-0x18 x2 */); /* @asm 0x033838..0x0338A7 */
+        else
+            overlay_call_181F_0948(/* [0x9E42], [0x9E12]-0xC x2 */);  /* @asm 0x033896..0x0338A7 */
+    m9_advisory:
+        near_6E31();                                     /* @asm 0x0338AA..0x0338AB */
+        return;                                          /* @asm 0x0338AE..0x0338AF */
     }
-    /* modes 2/3 (8-direction offset scan) @asm 0x0338B2..0x033A4C — direction
-     * offset tables, 0x181F:0x2E4 scan, 0x181F:0x7E0 seed, near_6DAF hit-test,
-     * then either board (0x191F:0x942) or inspect (near_6E7C). */
-    (void)cmd;
+
+    /* ----- modes 2/3: 8-direction offset scan + hit-test ----- @asm 0x0338B2 */
+    {
+        int dir[2];                                      /* [bp-0x20]=dir0, [bp-0x1E]=dir1 */
+        int lo;                                          /* [bp-4]  near_6DAF arg a */
+        int hi;                                          /* [bp-8]  set but unused here */
+        int k;                                           /* [bp-2]  near_6E7C arg */
+        int count = 0;                                   /* [bp-6]  (zeroed at entry @asm 0x0337D) */
+        int j, r, best, sel;
+
+        if (G16(0x9E3A) == 2) {                          /* @asm 0x0338B2 mode 2 (offset set A) */
+            dir[0] = (int16_t)0xFFE4; dir[1] = (int16_t)0xFFE8; /* @asm 0x0338B9..0x0338BE */
+            lo = 0x49; hi = 0x76; k = 0xA;               /* @asm 0x0338C3..0x0338CD */
+        } else if (G16(0x9E3A) == 3) {                   /* @asm 0x0338D4 mode 3 (offset set B) */
+            dir[0] = (int16_t)0xFFF0; dir[1] = (int16_t)0xFFF4; /* @asm 0x0338DE..0x0338E3 */
+            lo = 2; hi = 0x76; k = 9;                    /* @asm 0x0338E8..0x0338F2 */
+        } else {
+            return;                                      /* @asm 0x0338DB -> 0x33A4F done */
+        }
+        (void)hi;                                        /* written by both modes; never read */
+
+        /* count phase: enumerate scan hits across both directions @asm 0x0338F7 */
+        for (j = 0; j < 2; j++) {                        /* @asm 0x033910..0x033917 (jge) */
+            int seed = (int16_t)(dir[j] + G16(0x9E12));  /* @asm 0x033919..0x033925 */
+            (void)seed;                                  /* input to the 0x7E0 thunk (abstracted) */
+            r = overlay_call_181F_07E0(/* seed */);      /* @asm 0x033927 prime iterator */
+            while (r >= 0) {                             /* @asm 0x033906 (jl) */
+                count++;                                 /* @asm 0x03390A */
+                r = overlay_call_181F_02E4();            /* @asm 0x0338FE next */
+            }
+        }
+        if (count > 0x19) count = 0x19;                  /* @asm 0x033931..0x033936 (jle) */
+        if (count == 0) {                                /* @asm 0x03393C..0x03393E */
+            G16(0x9E3A) = 0xF;                           /* @asm 0x033940 */
+            return;                                      /* @asm 0x033946 */
+        }
+
+        /* pick phase: first scan result whose screen rect contains the cursor */
+        best = -1;                                       /* @asm 0x03394A [bp-0x14] = 0xFFFF */
+        {
+            int idx = 0;                                 /* [bp-0xa] running result index */
+            for (j = 0; j < 2; j++) {                    /* @asm 0x339b8..0x339bf (jge) */
+                int seed = (int16_t)(dir[j] + G16(0x9E12)); /* @asm 0x339c1..0x339cd */
+                (void)seed;                              /* input to the 0x7E0 thunk (abstracted) */
+                r = overlay_call_181F_07E0(/* seed */);  /* @asm 0x339cf prime dir j */
+                while (r >= 0) {                         /* @asm 0x339(62/65) (jl) */
+                    int p0, p1, p2, p3, p4;
+                    if (best >= 0) break;                /* @asm 0x033969 (jge) stop once found */
+                    near_6DAF(idx, lo, 0xd, 1,           /* @asm 0x03396F..0x033991 (9 args) */
+                              &p0, &p1, &p2, &p3, &p4);
+                    if (point_in_rect(p1, p2, p3, p4))   /* @asm 0x033994..0x0339AA */
+                        best = r;                        /* @asm 0x0339AC..0x0339AF [bp-0x14]=[bp-0x1C] */
+                    idx++;                               /* @asm 0x0339B2 */
+                    r = overlay_call_181F_02E4();        /* @asm 0x03395A..0x033962 next */
+                }
+            }
+        }
+        sel = best;                                      /* @asm 0x0339D6..0x0339D9 */
+
+        if (G16(0x7E4) != 0) {                           /* @asm 0x0339DC board path */
+            if (G16(0x7F4) == 0) return;                 /* @asm 0x0339E3 */
+            if (sel < 0) return;                         /* @asm 0x0339EA (jl) */
+            overlay_call_191F_0942(/* unit_table[sel].type */); /* @asm 0x0339EE..0x0339FD */
+            near_6E40();                                 /* @asm 0x033A01 */
+            return;                                      /* @asm 0x033A06 */
+        }
+        /* inspect path @asm 0x033A08: only land types 0xD..0x12 (or 0xB w/ flag
+         * 0x80) and [0x7F6] set; otherwise reset to mode 0xF. */
+        if (unit_table[sel].type < 0xD ||                /* @asm 0x033A0C..0x033A13 (jae) */
+            unit_table[sel].type > 0x12) {               /* @asm 0x033A16..0x033A1D (jbe) */
+            G16(0x9E3A) = 0xF; return;                   /* @asm 0x033940 */
+        }
+        if ((unit_table[sel].flags & 0x80) &&            /* @asm 0x033A20..0x033A25 (test 0x80) */
+            unit_table[sel].type != 0xB) {               /* @asm 0x033A27..0x033A2C (cmp 0xB) */
+            G16(0x9E3A) = 0xF; return;                   /* @asm 0x033A2E -> 0x033940 */
+        }
+        if (G16(0x7F6) == 0) return;                     /* @asm 0x033A31..0x033A36 -> done */
+        G16(0x9E44) = G16(0x9E3A);                       /* @asm 0x033A38..0x033A3B */
+        G16(0x9E42) = sel;                               /* @asm 0x033A41..0x033A44 */
+        near_6E7C(sel, k);                               /* @asm 0x033A3E/0x033A47..0x033A4C */
+    }
     /* @asm 0x033A4F done */
 }
 
@@ -1205,22 +1333,25 @@ void func_033778(int cmd)
  *  else:  -- the minimap region ( /0x13 cells ) --        @asm 0x033AB6
  *      cell = weight_scale([0x7E8],0,0x131) / 0x13         @asm 0x033AB6..0x033ACD [bp-8]
  *      if (cell >= 0x10) done                              @asm 0x033AD0
- *      if (![0x7F6]):  -- press: remember [0xFA6], pulse near_15C4(0), draw
- *          marker 0x181F:0xE2 at (0,0xB3,0x15,...); [0xFA7]=1                @asm 0x033AD8..0x033B19
+ *      if (![0x7F6]):  -- press: [0xFA7]=1; if([0xFA6]==cell) done; [0xFA6]=cell;
+ *          near_15C4(0); near_6DFA(cell); draw marker 0x181F:0xE2(0,0xB3,0x15..) @asm 0x033AD8..0x033B19
  *      else:  -- drag --
- *          if ([0xF9A]==0 && [0xF9E]==cell) skip;                            @asm 0x033B1C..0x033B29
- *          [0xF9A]=0; [0xF9E]=cell; near_6D3C();                             @asm 0x033B2B..0x033B38
+ *          if (!([0xF9A]==0 && [0xF9E]==cell)): [0xF9A]=0;[0xF9E]=cell;near_6D3C() @asm 0x033B1C..0x033B38
  *          if ([0x7E4]): if(![0x7F4]) done; LCALL 0x191F:0x934(cell); near_6E40(); @asm 0x033B3B..0x033B5B
  *          elif ([0x7F4] && near_6DD7(cell)): near_6D8C(cell); return;        @asm 0x033B5E..0x033B7D
  *          elif (!near_6DD7(cell)):  -- select map column cell --
- *              if (near_6D4B(cell, near_6E13([0x9E1C]))) done;                @asm 0x033B80..0x033BA8
- *              [0x9E22]=1; [0x9E24]=cell; [0x9E26]=0x64;
- *              [0x9E26]=near_6D23(near_6DA0(cell,1,0x64)); near_6D96(...);
- *              near_6E0E([0x9E26],cell);                                      @asm 0x033BAA..0x033BDF
+ *              if (near_6D4B(near_6E13([0x9E1C]), cell, 0, 0)) done;          @asm 0x033B80..0x033BA8
+ *              [0x9E22]=1; [0x9E24]=cell; [0x9E26]=0x64;                       (0x9E26 STAYS 0x64)
+ *              near_6D96(cell, near_6DA0(cell,1,0x64), 1, 0x64);              @asm 0x033BBE..0x033BD4
+ *              near_6E0E([0x9E26],cell);                                      @asm 0x033BD7..0x033BDF
  *  done: return; (label 0x40F2)                            @asm 0x033BE2
+ * CORRECTIONS 2026-06-08: press branch was missing near_6DFA(cell); near_6D4B
+ * arg order is (sel=near_6E13, t=cell, 0, 0); [0x9E26] is not reassigned (the
+ * near_6D23 in the older note was a mis-read of the near_6D96 nesting).
  * =========================================================================== */
 extern void near_6DE6(int unit, int t, int d);
 extern void near_15C4(int v);
+extern int  near_6DFA(int cell);          /* resident CALL cs:0x6DFA (trampoline 0x368EA) */
 /* overlay_call_181F_00E2 (draw marker rect) is declared in overlay_externs.h */
 void func_033A52(void)
 {
@@ -1239,11 +1370,38 @@ void func_033A52(void)
             if (G8(0xFA6) == (uint8_t)cell) return;      /* @asm 0x033AE4..0x033AED */
             G8(0xFA6) = (uint8_t)cell;                   /* @asm 0x033AF0 */
             near_15C4(0);                                /* @asm 0x033AF3..0x033AF8 */
+            near_6DFA(cell);                             /* @asm 0x033AFB..0x033B02 (was MISSING) */
             /* draw cursor marker @asm 0x033B05..0x033B14 LCALL 0x181F:0xE2 */
             overlay_call_181F_00E2();
             return;                                      /* @asm 0x033B19 */
         }
-        /* drag @asm 0x033B1C..0x033BDF — pan/select the clicked minimap column */
+        /* ----- drag @asm 0x033B1C..0x033BDF: pan/select clicked minimap column ----- */
+        if (G16(0xF9A) == 0 && G8(0xF9E) == (uint8_t)cell) {
+            /* unchanged column while latch clear: skip the reset @asm 0x033B1C..0x033B29 */
+        } else {
+            G16(0xF9A) = 0;                              /* @asm 0x033B2B */
+            G8(0xF9E) = (uint8_t)cell;                   /* @asm 0x033B31..0x033B34 */
+            near_6D3C();                                 /* @asm 0x033B37 */
+        }
+        if (G16(0x7E4) != 0) {                           /* @asm 0x033B3B board path */
+            if (G16(0x7F4) == 0) return;                 /* @asm 0x033B42 */
+            overlay_call_191F_0934(/* cell */);          /* @asm 0x033B4C..0x033B54 */
+            near_6E40();                                 /* @asm 0x033B58 */
+            return;                                      /* @asm 0x033B5C */
+        }
+        if (G16(0x7F4) != 0 && near_6DD7(cell)) {        /* @asm 0x033B5E..0x033B71 */
+            near_6D8C(cell);                             /* @asm 0x033B73 */
+            return;                                      /* @asm 0x033B7D */
+        }
+        if (near_6DD7(cell) != 0) return;                /* @asm 0x033B80..0x033B8C -> done */
+        /* select map column cell */
+        if (near_6D4B(near_6E13(G16(0x9E1C)), cell, 0, 0) != 0) /* @asm 0x033B8E..0x033BA6 */
+            return;                                      /* @asm 0x033BA8 -> done */
+        G16(0x9E22) = 1;                                 /* @asm 0x033BAA */
+        G16(0x9E24) = (uint8_t)cell;                     /* @asm 0x033BB0..0x033BB5 */
+        G16(0x9E26) = 0x64;                              /* @asm 0x033BB8 */
+        near_6D96(cell, near_6DA0(cell, 1, 0x64), 1, 0x64); /* @asm 0x033BBE..0x033BD4 */
+        near_6E0E(G16(0x9E26), cell);                    /* @asm 0x033BD7..0x033BDF */
     }
     /* @asm 0x033BE2 done */
 }
@@ -1293,13 +1451,12 @@ void func_033BE4(void)
 /* ===========================================================================
  * func_033C96 -- UNIT-SELECTION PANEL renderer + per-type order classifier.
  *
- * @asm        0x033C96..0x033F6A  (724 bytes; runs to PAGE END)  page_04 @0x41A6
- * @args       (none)  (auto-skeleton "540 B"; truncated at the trailing switch)
+ * @asm        0x033C96..0x0341D4  (~1342 bytes; two inline jump tables)  page_04 @0x41A6
+ * @args       (none)   @status BYTE_VERIFIED (full body, 2026-06-08)
  *
- * NOTE EXTENT: this function spills to the page end at file 0x033F6A — slightly
- * past the nominal 0x033EB2 range cap.  The trailing instruction is the jump
- * table `JMP word ptr cs:[bx+0x3A1A]` (@asm 0x033F65); the 0x3A1A table and the
- * per-type cases are in this same code page.  (PHANTOM note: the apparent
+ * NOTE EXTENT: 0x033F6A is NOT the end — it is the inline DATA of the row jump
+ * table (`JMP word ptr cs:[bx+0x3A1A]` @0x033F65).  Real code continues; the true
+ * terminator is `leave; retf` @ file 0x0341D4.  (PHANTOM note: the apparent
  * "func_033F6A size=10788 insns=0" that the segmenter lists next is the page's
  * trailing DATA / jump-table region, NOT a real function.)
  *
@@ -1335,31 +1492,193 @@ void func_033BE4(void)
  * order glyphs/bars are shown, i.e. pure LAYOUT/eligibility (IN SCOPE).  Type
  * codes referenced: 0,1,2,3,4,5 (and the land band 0xD..0x12 elsewhere); state
  * sentinels 0x18/0x1B/0x1C at UnitRecord +0x17 (vet_type, abs 0x315B).
+ *
+ * EXTENT CORRECTION 2026-06-08: the function does NOT end at 0x033F6A — that is
+ * the inline jump table for the row switch (`jmp cs:[bx+0x3A1A]` @0x033F65, table
+ * data at file 0x033F6A).  Real code continues through the row loop, a second
+ * inline jump table (`jmp cs:[bx+0x3C5A]` @0x0341A5, data at file 0x0341AA) for
+ * the action switch, and the true terminator is `leave; retf` @ file 0x0341D4
+ * (~1342 bytes total).  Both jump tables are CS-relative with table-base file
+ * 0x30550 (verified: table[k] = file 0x30550 + word; all entries land inside the
+ * handler blocks 0x033DDE..0x034199).  @status BYTE_VERIFIED (full body).
+ *
+ * Row loop (row=1..0xC): switch(row) [TABLE1] sets elig=[bp-0x66] and an optional
+ * cost=[bp-0x6A]; eligible rows are posted (0x191F:0x176) and, if cost!=0 and the
+ * active power's gold (+0x2A) < cost, flagged unaffordable (0x191F:0x1B6).
+ * After the loop a selection is read (0x191F:0x16A -> [bp-0x52]) and switch(sel)
+ * [TABLE2] performs the chosen order: set orders, disband (0x181F:0x89E), or a
+ * profession/role morph (type field +0x3146) paired with a gold debit/credit and
+ * a market poke (near_6D91 buy / near_6D28 sell).
  * =========================================================================== */
+extern int  overlay_call_191F_0910(void);  /* 0x191F:0x910 row sub-context close */
+extern int  overlay_call_181F_089E(void);  /* 0x181F:0x89E disband/remove active unit */
 void func_033C96(void)
 {
-    int active = near_6E45(G16(0x9E2C));                  /* @asm 0x033CA2..0x033CAD */
-    if (active < 0) return;                               /* @asm 0x033CB0 */
+    int active = near_6E45(G16(0x9E2C));                  /* @asm 0x033CA2..0x033CAD [bp-0x6C] */
+    void far *dlg;                                        /* far ptr [bp-0x56/0x54] */
+    int barF50, barE64, bar850, barF50b, barE64b, bar850b;
+    int type;
+    int row, sel;
+    int elig, cost;                                       /* [bp-0x66], [bp-0x6A] */
+
+    if (active < 0) return;                               /* @asm 0x033CB0 -> done */
 
     /* six stat bars @asm 0x033CB7..0x033D0E */
-    {
-        int barF50  = near_6DA0(0xF) * 0x32;             /* @asm 0x033CB7..0x033CC3 */
-        int barE64  = near_6DA0(0xE) * 0x64;             /* @asm 0x033CC6..0x033CD2 */
-        int bar850  = near_6DA0(8)   * 0x32;             /* @asm 0x033CD5..0x033CE1 */
-        int barF50b = near_6D23(0xF) * 0x32;             /* @asm 0x033CE4..0x033CF0 */
-        int barE64b = near_6D23(0xE) * 0x64;             /* @asm 0x033CF3..0x033CFF */
-        int bar850b = near_6D23(8)   * 0x32;             /* @asm 0x033D02..0x033D0E */
+    barF50  = near_6DA0(0xF) * 0x32;                      /* @asm 0x033CB7..0x033CC3 [bp-0x64] */
+    barE64  = near_6DA0(0xE) * 0x64;                      /* @asm 0x033CC6..0x033CD2 [bp-0x62] */
+    bar850  = near_6DA0(8)   * 0x32;                      /* @asm 0x033CD5..0x033CE1 [bp-0x60] */
+    barF50b = near_6D23(0xF) * 0x32;                      /* @asm 0x033CE4..0x033CF0 [bp-0x5E] */
+    barE64b = near_6D23(0xE) * 0x64;                      /* @asm 0x033CF3..0x033CFF [bp-0x5C] */
+    bar850b = near_6D23(8)   * 0x32;                      /* @asm 0x033D02..0x033D0E [bp-0x5A] */
 
-        if (dlg_open((void *)0x87C, (void *)0x104A, 0) == 0) return; /* @asm 0x033D11..0x033D28 */
+    dlg = dlg_open((void *)0x87C, (void *)0x104A, 0);     /* @asm 0x033D11..0x033D1B */
+    if (dlg == 0) return;                                 /* @asm 0x033D28 -> done */
 
-        {
-            int type = unit_table[active].type;          /* @asm 0x033D2D +0x3146 */
-            score_accum_long((long)((type == 1 || type == 4) ? barF50b : barF50), 0); /* @asm 0x033D31..0x033D54 */
-            score_accum_long((long)((type == 2) ? barE64b : barE64), 1);              /* @asm 0x033D58..0x033D74 */
-            score_accum_long((long)((type == 5 || type == 4) ? bar850b : bar850), 2); /* @asm 0x033D78..0x033D99 */
+    type = unit_table[active].type;                       /* @asm 0x033D2D +0x3146 */
+    score_accum_long((long)((type == 1 || type == 4) ? barF50b : barF50), 0); /* @asm 0x033D31..0x033D54 */
+    score_accum_long((long)((type == 2) ? barE64b : barE64), 1);              /* @asm 0x033D58..0x033D74 */
+    score_accum_long((long)((type == 5 || type == 4) ? bar850b : bar850), 2); /* @asm 0x033D78..0x033D99 */
+
+    ((uint8_t far *)dlg)[0xA] |= 3;                       /* @asm 0x033D9C..0x033DA2 es:[bx+0xA] |= 3 */
+    if (names_open_section(0x87C, 0x1054) != 0) goto done; /* @asm 0x033DA4..0x033DB6 */
+    overlay_call_191F_0230(/* dlg, [0x83E],[0x840], active, 0,0,0 */); /* @asm 0x033DB9..0x033DD2 draw header row */
+
+    /* ---- row loop @asm 0x033DD5..0x033FF1: per-row eligibility + post ---- */
+    for (row = 1; row <= 0xC; row++) {                    /* @asm 0x033DD5 / 0x033FCE (jg 0x33FF4) */
+        elig = 0;
+        cost = 0;                                         /* [bp-0x6A] re-zeroed each row @asm 0x033FE9 */
+        /* per-row sub-context open @asm 0x033FD4..0x033FE6 (0x191F:0x91C/0x910) */
+        overlay_call_191F_091C(/* &rowbuf */);            /* @asm 0x033FD4..0x033FDD [bp-0x58] */
+        overlay_call_191F_0910(/* [bp-0x58] */);          /* @asm 0x033FE0..0x033FE6 */
+
+        switch (row) {                                    /* @asm 0x033F5C..0x033F65 jmp cs:[bx+0x3A1A] */
+        case 1:                                           /* @asm 0x033DDE handler */
+            elig = (unit_table[active].orders == 1);      /* @asm 0x033DE2 (+0x08) */
+            break;
+        case 2:                                           /* @asm 0x033DF2 */
+            elig = (unit_table[active].orders != 1);      /* @asm 0x033DF6 */
+            break;
+        case 3:                                           /* @asm 0x033E00 */
+            elig = (G16(0x9E2C) > 0);                     /* @asm 0x033E00 (jle) */
+            break;
+        case 4:                                           /* @asm 0x033E0C */
+            elig = (type == 0 || type == 5);              /* @asm 0x033E10..0x033E26 */
+            if (unit_table[active].vet_type == 0x1B) elig = 0; /* @asm 0x033E2F..0x033E36 (+0x17) */
+            cost = barF50;                                /* @asm 0x033E3B [bp-0x64] */
+            if (near_6DD7(0xF) != 0) elig = 0;            /* @asm 0x033E41..0x033E51 */
+            break;
+        case 5:                                           /* @asm 0x033E5A */
+            elig = (type == 1 || type == 4);              /* @asm 0x033E5E..0x033E74 */
+            cost = barF50;                                /* shares case-4 tail @asm 0x033E3B */
+            if (near_6DD7(0xF) != 0) elig = 0;            /* @asm 0x033E41..0x033E51 */
+            break;
+        case 6:                                           /* @asm 0x033E7C */
+            elig = (type == 0);                           /* @asm 0x033E80 cmp,1;sbb;neg => (type<1) */
+            if (unit_table[active].vet_type == 0x1B) elig = 0; /* @asm 0x033E8C..0x033E93 */
+            if (near_6DD7(0xE) != 0) elig = 0;            /* @asm 0x033E98..0x033EA5 */
+            cost = barE64;                                /* @asm 0x033EAA [bp-0x62] */
+            break;
+        case 7:                                           /* @asm 0x033EB4 */
+            elig = (type == 2);                           /* @asm 0x033EB8..0x033EC6 */
+            if (near_6DD7(0xE) != 0) elig = 0;            /* @asm 0x033EC9 push 0xE -> T_6DD7call */
+            break;                                        /* (no cost) */
+        case 8:                                           /* @asm 0x033ECE */
+            elig = (type == 0 || type == 1);              /* @asm 0x033ED2..0x033EE8 */
+            cost = bar850;                                /* @asm 0x033EED [bp-0x60] */
+            if (unit_table[active].vet_type == 0x1B) elig = 0; /* @asm 0x033EF3..0x033EFE */
+            if (near_6DD7(8) != 0) elig = 0;              /* @asm 0x033F03 push 8 -> T_6DD7call */
+            break;
+        case 9:                                           /* @asm 0x033F08 */
+            elig = (type == 5 || type == 4);              /* @asm 0x033F0C..0x033F1A (else 0 @0x33EFE) */
+            if (near_6DD7(8) != 0) elig = 0;              /* @asm 0x033F03 push 8 -> T_6DD7call */
+            break;                                        /* (no cost) */
+        case 10:                                          /* @asm 0x033F22 */
+            elig = (type == 0);                           /* @asm 0x033F26 cmp,1;sbb;neg */
+            if (unit_table[active].vet_type == 0x1B) elig = 0; /* @asm 0x033F32..0x033F39 */
+            break;
+        case 11:                                          /* @asm 0x033F3C */
+            if (type != 3) elig = 0;                      /* @asm 0x033F40 (else -> elig0) */
+            else if (unit_table[active].vet_type == 0x18) elig = 0; /* @asm 0x033F4A..0x033F51 */
+            else elig = 1;                                /* @asm 0x033F54 */
+            break;
+        case 12:                                          /* @asm 0x033F54 */
+            elig = 1;                                     /* @asm 0x033F54 */
+            break;
         }
-        /* dlg flags |= 3 @asm 0x033D9C; row build/draw + per-type eligibility
-         * switch + jump table cs:[bx+0x3A1A] @asm 0x033DA4..0x033F65. */
+
+        /* loop tail @asm 0x033F82..0x033FCB */
+        if (elig != 0) {                                  /* @asm 0x033F82 */
+            overlay_call_191F_0176(/* dlg, &rowbuf, row */); /* @asm 0x033F88..0x033F9B post row */
+            if (cost != 0 && (int32_t)PREC()->gold < cost) /* @asm 0x033F9E..0x033FB6 gold<cost (+0x2A) */
+                overlay_call_191F_01B6(/* dlg, row, 1 */); /* @asm 0x033FB8..0x033FC8 mark unaffordable */
+        }
     }
-    /* done: closes dialog and returns (label 0x46D0, past the 0x033EB2 window) */
+
+    /* ---- read the chosen action & dispatch @asm 0x033FF4..0x034199 ---- */
+    sel = overlay_call_191F_016A(/* dlg */);              /* @asm 0x033FFA..0x033FFF -> [bp-0x52] */
+    overlay_call_191F_01A8(/* dlg */);                    /* @asm 0x034008 close dialog */
+    dlg = 0;                                              /* @asm 0x03400D..0x034012 [bp-0x54/0x56]=0 */
+    if (sel < 1 || sel >= 0xC) goto done;                 /* @asm 0x034015..0x034024 */
+
+    switch (sel) {                                        /* @asm 0x03419C..0x0341A5 jmp cs:[bx+0x3C5A] */
+    case 1:                                               /* @asm 0x03402E */
+        unit_table[active].orders = 0;                    /* @asm 0x034032 (+0x08) */
+        break;
+    case 2:                                               /* @asm 0x03403A */
+        unit_table[active].orders = 1;                    /* @asm 0x03403E */
+        break;
+    case 3:                                               /* @asm 0x034046 */
+        overlay_call_181F_089E(/* active */);             /* @asm 0x034049 disband */
+        G16(0x9E2C) = 0;                                  /* @asm 0x034051 */
+        break;
+    case 4:                                               /* @asm 0x03405A: type 5->4 else ->1, pay barF50 */
+        overlay_call_181F_04C0(/* 0x58 */);               /* @asm 0x03405D (ax=0x58) */
+        if (unit_table[active].type == 5) unit_table[active].type = 4; /* @asm 0x034062..0x03406D */
+        else unit_table[active].type = 1;                 /* @asm 0x034074..0x034078 */
+        PREC()->gold -= (uint32_t)barF50;                 /* @asm 0x03407D..0x034088 (-=, +0x2A) */
+        near_6D91(0xF, 0x32);                             /* @asm 0x03408B..0x034090 */
+        break;
+    case 5:                                               /* @asm 0x03409A: type 4->5 else ->0, refund barF50b */
+        if (unit_table[active].type == 4) unit_table[active].type = 5; /* @asm 0x03409E..0x0340A5 */
+        else unit_table[active].type = 0;                 /* @asm 0x0340AC..0x0340B0 */
+        PREC()->gold += (uint32_t)barF50b;                /* @asm 0x0340B5..0x0340C0 (+=, +0x2A) */
+        near_6D28(0xF, 0x32);                             /* @asm 0x0340C3..0x0340C8 */
+        break;
+    case 6:                                               /* @asm 0x0340CE: become type 2, pay barE64 */
+        unit_table[active].type = 2;                      /* @asm 0x0340D2 */
+        unit_table[active].cargo_qty[5] = 0x64;           /* @asm 0x0340D7 (+0x15 = 0x3159) */
+        PREC()->gold -= (uint32_t)barE64;                 /* @asm 0x0340DC..0x0340E7 */
+        near_6D91(0xE, 0x64);                             /* @asm 0x0340EA push 0x64,0xE -> 0x3408F */
+        break;
+    case 7:                                               /* @asm 0x0340F0: become type 0, refund barE64b */
+        unit_table[active].type = 0;                      /* @asm 0x0340F4 */
+        PREC()->gold += (uint32_t)barE64b;                /* @asm 0x0340F9..0x034104 */
+        near_6D28(0xE, 0x64);                             /* @asm 0x034107 push 0x64,0xE -> 0x340C7 */
+        break;
+    case 8:                                               /* @asm 0x03410E: type 1->4 else ->5, pay bar850 */
+        if (unit_table[active].type == 1) unit_table[active].type = 4; /* @asm 0x034112..0x034119 */
+        else unit_table[active].type = 5;                 /* @asm 0x034120..0x034124 */
+        overlay_call_181F_04C0(/* 0x5C */);               /* @asm 0x034129..0x03412C (ax=0x5C) */
+        near_6D91(8, 0x32);                               /* @asm 0x034131..0x034136 */
+        PREC()->gold -= (uint32_t)bar850;                 /* @asm 0x03413C..0x034147 [bp-0x60] */
+        break;
+    case 9:                                               /* @asm 0x03414C: type 4->1 else ->0, refund bar850b */
+        if (unit_table[active].type == 4) unit_table[active].type = 1; /* @asm 0x034150..0x034157 */
+        else unit_table[active].type = 0;                 /* @asm 0x03415E..0x034162 */
+        PREC()->gold += (uint32_t)bar850b;                /* @asm 0x034167..0x034172 [bp-0x5A] */
+        near_6D28(8, 0x32);                               /* @asm 0x034175 push 0x32,8 -> 0x340C7 */
+        break;
+    case 10:                                              /* @asm 0x03417C */
+        unit_table[active].type = 3;                      /* @asm 0x034180 */
+        overlay_call_181F_04C0(/* 0x8024 */);             /* @asm 0x034185..0x034188 (ax=0x8024) */
+        break;
+    case 11:                                              /* @asm 0x034190 */
+        unit_table[active].type = 0;                      /* @asm 0x034194 */
+        break;
+    }
+
+done:                                                     /* @asm 0x0341C0 */
+    if (dlg != 0)                                         /* @asm 0x0341C3 if [bp-0x56]|[bp-0x54] */
+        overlay_call_191F_01A8(/* dlg */);                /* @asm 0x0341CE close dialog */
+    /* @asm 0x0341D3 leave; 0x0341D4 retf */
 }
