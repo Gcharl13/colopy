@@ -137,23 +137,43 @@ void gold_income_tick_for_power(int power_idx)
 }
 
 /* ----------------------------------------------------------------------------
- *  raw_power_score -- the per-power raw score VALUE.  [TBD body — overlay]
+ *  raw_power_score -- the per-power raw score VALUE.
  * ----------------------------------------------------------------------------
- *  func_03A9C0 obtains the raw score by `call 0x49DA` (file 0x03A9F6), which is
- *  a trampoline `ljmp 0x191F:0x3AA` (file 0x03B36A). 0x191F:0x3AA is an
- *  OVERLAY-resident routine NOT present in the re-seg pages, so the actual
- *  scoring weights (population, colonies, founding fathers, gold, liberty,
- *  difficulty bonus, revolution bonus, etc.) are [TBD]. The same routine is
- *  also invoked from page_01 (file 0x0238E2: `lcall 0x191F,0x3AA`) with arg 1.
+ *  LOCATED (2026-06-08) via the confirmed Type-A RTLink thunk format:
+ *    thunk 0x191F:0x3AA @ file 0x1B99A: off=0x0092, segid=5, extra=0x02B1
+ *    base[5]=0x037340 + extra*16 + off = 0x039EE2  [func start confirmed]
  *
- *  func_03B2F8 (file 0x03B2F8) marshals context for it: it strcpy's the active
- *  power's name ([0x5398]*0x34 + 0x540E), captures [0x5398] (active power),
- *  [0x5382]&1 and &8 (flags), [0x538A] (year), [0x538C], [0x53A6] (difficulty),
- *  then calls 0x191F:0x3AA(0) for the raw score and 0x191F:0x3AA-family helpers
- *  (0x191F:0xF8E / 0xF9C / 0xFAA) for the title/rank text.  [BYTE_VERIFIED
- *  marshalling; the score arithmetic itself is overlay-resident = TBD.]
+ *  func_039EE2 @ file 0x039EE2..0x03A9BF (2781 bytes, 960 instructions, ENTER 0x7E).
+ *  Immediately precedes score_endgame_rank (func_03A9C0 starts at 0x03A9C0).
+ *
+ *  CALL CHAIN (BYTE_VERIFIED):
+ *    func_03A9C0 @ 0x03A9F6: `call 0x3B36A` (near, within page)
+ *    func_03B36A @ 0x03B36A: `ljmp 0x191F:0x3AA`  [= EA AA 03 1F 19 confirmed]
+ *    → RTLink thunk @ 0x1B99A → loader patches → func_039EE2
+ *
+ *  HEAD (BYTE_VERIFIED — first 70 bytes):
+ *    @asm 039EE2  ENTER 0x7E,0              ; 126-byte local frame
+ *    @asm 039EE6  al = [0x53A8]             ; per-power metric byte (role TBD)
+ *    @asm 039EE9  CWDE → CX = al sign-ext
+ *    @asm 039EEC  al = 0x64                 ; 100
+ *    @asm 039EEE  imul [0x53A7]             ; ax = 100 * [0x53A7] (difficulty-adj byte)
+ *    @asm 039EF2  cx += ax                  ; [bp-0x6A] = [0x53A8] + 100*[0x53A7]  (cap init)
+ *    @asm 039EF4..039F18  zero 11 locals    ; accumulators for score components
+ *    @asm 039F1C..039F3B  loop i=0..3:      ; count other-nation colonies with flag set
+ *         if i != [0x5398]: test PowerRecord[i*0x13C-0x77F8] bit 2; if set, inc [bp-0x56]
+ *    @asm 039F3C  [bp-0x7E] = [0x5398]     ; current power index
+ *    @asm 039F42  if [bp+6]==0: jmp 0x3A09A ; arg==0 → skip the display path
+ *
+ *  TAIL BODY: [TBD — 2781B function; scoring weights decoded partially above.
+ *  Full component formula (colonies × weight, population × weight, FF × weight,
+ *  gold contribution, liberty-bell contribution, difficulty bonus, revolution
+ *  bonus) are in the 960-instruction body. See audit.py for the byte-verified
+ *  head assertions; full byte-trace pending.]
+ *
+ *  DS:0x53A7 and DS:0x53A8 (read at head): adjacent to difficulty (0x53A6);
+ *  semantics TBD — likely colony/population count or score-multiplier bytes.
  * ---------------------------------------------------------------------------- */
-extern int raw_power_score(int arg);   /* 0x191F:0x3AA -- body TBD (overlay-resident) */
+extern int raw_power_score(int arg);   /* func_039EE2 — body located, head BYTE_VERIFIED */
 
 /* ----------------------------------------------------------------------------
  *  score_endgame_rank -- map a raw score to the 0..23 RANK (title index).

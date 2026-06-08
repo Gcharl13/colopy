@@ -10,20 +10,38 @@ WITHOUT a runtime dump.  This is the piece the coverage notes called the
 ------------------------------------------------------------------------------
 How RTLink overlay calls work in this image
 ------------------------------------------------------------------------------
-Every inter-segment call goes through a 10/12-byte thunk in the table block at
-file 0x1A5F0 (aliased as seg 0x181F / 0x191F / 0x1A1F).  Two shapes:
+Every inter-segment call goes through a thunk in the table block at file
+0x1A5F0 (aliased as seg 0x181F / 0x191F / 0x1A1F).  Three shapes:
 
   RESIDENT target (10 bytes):
       9A <loader off,seg>        ; call far the dynamic linker (0x110D:0x0D9x)
       EA <off:u16> <seg:u16>     ; jmp far  -> resolves NOW: foff(seg,off)
 
-  OVERLAY target (12 bytes):
-      9A <loader off,seg>        ; call far the dynamic linker
-      EA <off:u16> 00 00         ; jmp far with a PLACEHOLDER segment (0x0000)
+  OVERLAY target Type-B (12 bytes, loader at 0x110D:0x0D91):
+      9A 91 0D 0D 11             ; call far Type-B loader
+      EA <off:u16> 00 00         ; jmp far with a PLACEHOLDER segment
       <segid:u16>                ; RTLink overlay-segment id (patched at load)
 
-  The loader, on first hit, loads overlay segment `segid`, patches the EA
-  placeholder with the runtime segment, and the jmp proceeds to <seg>:<off>.
+  OVERLAY target Type-A (14 bytes, loader at 0x110D:0x0DAB):
+      9A AB 0D 0D 11             ; call far Type-A loader
+      EA <off:u16> 00 00         ; jmp far with a PLACEHOLDER segment
+      <segid:u16>                ; RTLink overlay-segment id
+      <extra:u16>                ; paragraph adjustment (added to resolved seg
+                                 ; when overlay descriptor bit 6 is set; 0 if not)
+
+  Confirmed by disassembling the loader at 0x1427B and the patching code at
+  0x110D:0x1111.  The extra field: `add ax, es:[di+7]` (si=EA offset) then
+  `mov es:[di+3], ax` patches the placeholder.  When extra==0 the patching is
+  identical to Type-B.
+
+  TYPE-A RESOLUTION:
+    file_offset = base[segid] + extra * 16 + off
+  TYPE-B RESOLUTION (and Type-A with extra==0):
+    file_offset = base[segid] + off
+
+  VERIFIED EXAMPLE — raw_power_score (func_039EE2):
+    thunk at file 0x1B99A (0x191F:0x3AA):  off=0x0092, segid=5, extra=0x02B1
+    base[5] = 0x037340  ->  0x037340 + 0x02B1*16 + 0x0092 = 0x039EE2  [confirmed]
 
 ------------------------------------------------------------------------------
 The fingerprint that recovers segid -> file base
@@ -36,14 +54,19 @@ STARTS.  So for each segid we collect its set of thunk offsets {o_i} and find th
 file base F that maximises | {F + o_i} ∩ function_starts |.  The winning F is
 dominant and unambiguous for every segment with enough thunks (see confidence).
 
-Then any overlay call resolves as:  file_offset = base[segid] + offset.
+Note: thunks with non-zero extra target a DIFFERENT effective base
+(base + extra*16).  The fingerprint uses extra=0 thunks to recover the primary
+base; thunks with extra≠0 require the explicit formula above.
+
+Then any overlay call resolves as:  file_offset = base[segid] + extra*16 + offset.
 
 Outputs:
   re_work/overlay_segmap.json   {segid: {base, match, total, second, confidence}}
 
 CLI:
-  python3 flatten.py                 # print the recovered map
-  python3 flatten.py 5 0x92          # resolve overlay seg 5 : offset 0x92
+  python3 flatten.py                    # print the recovered map
+  python3 flatten.py 5 0x92            # resolve overlay seg 5:0x92 (extra=0)
+  python3 flatten.py 5 0x92 0x2b1      # resolve with explicit extra paragraph
 """
 import json
 import os
@@ -57,29 +80,46 @@ THUNK_SCAN_HI = 0x1E000
 OUT = os.path.join(_REPO, "re_work", "overlay_segmap.json")
 
 
+TYPE_A_LOADER = (0xAB, 0x0D, 0x0D, 0x11)   # bytes [1..4] of a Type-A thunk
+TYPE_B_LOADER = (0x91, 0x0D, 0x0D, 0x11)   # bytes [1..4] of a Type-B thunk
+
+
 def scan_thunks(exe):
-    """Return (overlay, resident):
-        overlay  = {segid: set(offset)}     EA placeholder-seg thunks
-        resident = [(seg, off, foff)]       EA real-seg thunks (for validation)
+    """Return (overlay, resident, type_a_extras):
+        overlay      = {segid: set(offset)}   EA placeholder-seg thunks (extra=0 only)
+        resident     = [(seg, off, foff)]      EA real-seg thunks (validation)
+        type_a_extra = {(segid,off): extra}   Type-A thunks with nonzero extra field
     """
     d = exe.data
-    overlay, resident = {}, []
+    overlay, resident, type_a_extra = {}, [], {}
     i = THUNK_SCAN_LO
     while i < THUNK_SCAN_HI - 12:
         if d[i] == 0x9A and d[i + 5] == 0xEA:
             off = d[i + 6] | (d[i + 7] << 8)
             seg = d[i + 8] | (d[i + 9] << 8)
+            # check loader variant
+            loader_bytes = (d[i+1], d[i+2], d[i+3], d[i+4])
+            is_type_a = (loader_bytes == TYPE_A_LOADER)
             if seg == 0x0000:
                 segid = d[i + 10] | (d[i + 11] << 8)
+                if is_type_a and i + 14 <= THUNK_SCAN_HI:
+                    extra = d[i + 12] | (d[i + 13] << 8)
+                    if extra:
+                        type_a_extra[(segid, off)] = extra
+                        i += 14
+                        continue
+                    i += 14
+                else:
+                    i += 12
+                # add to fingerprint only when extra==0 (primary base is extra-0 base)
                 overlay.setdefault(segid, set()).add(off)
-                i += 12
                 continue
             else:
                 resident.append((seg, off, exe.foff(seg, off)))
                 i += 10
                 continue
         i += 1
-    return overlay, resident
+    return overlay, resident, type_a_extra
 
 
 def func_starts(exe, overlay_only=True):
@@ -117,7 +157,7 @@ def confidence(match, total, second):
 
 def build_map(exe):
     starts = func_starts(exe)
-    overlay, _ = scan_thunks(exe)
+    overlay, _, _extras = scan_thunks(exe)
     lo, hi = exe.image_len, len(exe.data)
     out = {}
     for segid, offs in overlay.items():
@@ -135,19 +175,32 @@ def build_map(exe):
     return out
 
 
+def resolve(exe, segmap, segid, off, extra=0):
+    """Resolve overlay segid:off (with optional extra paragraph) to a file offset.
+    Returns (file_offset, entry) or (None, None) if segid not in segmap.
+    file_offset = base[segid] + extra*16 + off
+    """
+    e = segmap.get(segid)
+    if not e:
+        return None, None
+    foff = e["base"] + extra * 16 + off
+    return foff, e
+
+
 def main(argv):
     exe = EXE()
     segmap = build_map(exe)
 
-    if len(argv) >= 3:                       # resolve one seg:off
+    if len(argv) >= 3:                       # resolve one seg:off [extra]
         segid = int(argv[1], 0)
         off = int(argv[2], 0)
-        e = segmap.get(segid)
-        if not e:
+        extra = int(argv[3], 0) if len(argv) >= 4 else 0
+        foff, e = resolve(exe, segmap, segid, off, extra)
+        if foff is None:
             print(f"seg {segid}: not resolved")
             return
-        foff = e["base"] + off
-        print(f"overlay {segid}:{off:#06x} -> file {foff:#08x}  "
+        extra_note = f" extra={extra:#06x} (+{extra*16:#x}B)" if extra else ""
+        print(f"overlay {segid}:{off:#06x}{extra_note} -> file {foff:#08x}  "
               f"(base {e['base']:#08x}, {e['confidence']})")
         print(exe.disasm_str(foff, 48))
         return
@@ -157,11 +210,12 @@ def main(argv):
     # hit resident function starts — an independent check that the thunk model
     # (and the foff translation) is correct.
     all_starts = func_starts(exe, overlay_only=False)
-    _, resident = scan_thunks(exe)
+    _, resident, type_a_extras = scan_thunks(exe)
     rhit = sum(1 for _, _, fo in resident if fo in all_starts)
     print(f"overlay segments resolved: {len(segmap)}  "
           f"(STRONG {sum(1 for v in segmap.values() if v['confidence']=='STRONG')})")
-    print(f"resident-thunk control: {rhit}/{len(resident)} land on function starts\n")
+    print(f"resident-thunk control: {rhit}/{len(resident)} land on function starts")
+    print(f"Type-A thunks with nonzero extra field: {len(type_a_extras)}\n")
     print(f"{'seg':>4} {'file_base':>10} {'match':>9}  confidence")
     for segid in sorted(segmap):
         v = segmap[segid]

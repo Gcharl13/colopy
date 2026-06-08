@@ -53,14 +53,23 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
    segment-id → file-base map by fingerprinting thunk-offset/function-start
    overlap. It is validated two ways: 23/31 segments resolve STRONG, and the
    resident-thunk control lands on resident function starts 323/362 (89%). So
-   overlay-only call targets reached via `0x181F` (Type-B) thunks are now
-   statically resolvable (`base[segid] + off`) — the wall is largely down.
-   - **Remaining caveat:** the `0x191F` (Type-A, 14-byte) thunk records have a
-     field-position nuance still being pinned. The endgame score-total component
-     sum at `0x191F:0x3AA` resolves under the current parse to `func_0373CA`
-     (seg5:0x92), which is actually a UI glyph-draw routine — so the score raw
-     value is NOT yet correctly located. score-total stays `[TBD]` pending the
-     Type-A fix (no longer "needs a memory dump", just the format detail).
+   overlay-only call targets reached via `0x181F` / `0x191F` thunks are now
+   statically resolvable — the wall is down.
+   - **Type-A format CONFIRMED (2026-06-08):** the `0x191F` (Type-A, 14-byte)
+     thunk records share the same `off@[6:8]` / `segid@[10:12]` layout as Type-B,
+     plus a 2-byte `extra` paragraph-adjustment field at `[12:14]`. Confirmed by
+     disassembling the post-load patching code at `0x110D:0x1111` which does
+     `add ax, es:[di+7]; mov es:[di+3], ax`. Resolution formula:
+     `file_offset = base[segid] + extra*16 + off`.
+   - **Score total LOCATED (2026-06-08):** thunk `0x191F:0x3AA` (file 0x1B99A)
+     has off=0x0092, segid=5, extra=0x02B1.
+     `base[5] + 0x02B1*16 + 0x0092 = 0x037340 + 0x2B10 + 0x0092 = 0x039EE2`.
+     `func_039EE2` is a confirmed function start (2781 bytes, 960 instructions),
+     immediately before `score_endgame_rank` (func_03A9C0 @ 0x039EE2+0x0ADD).
+     The head reads [0x53A8] + 100*[0x53A7] as a cap initializer, loops over 4
+     powers counting flag-set colonies, and dispatches on arg=0/1. Full scoring
+     component weights (population/colonies/FF/gold/bells) are in the 960-instruction
+     body — byte-trace of the full body is IN PROGRESS.
    - **CORRECTION (2026-06-08):** the buy/sell bid-ask spread is NOT here. The
      prior `0x181F:0xcc2/0xac4` lead was a misattribution — those thunks resolve
      to RESIDENT `func_00B5A8`/`func_00B65A` (jmp far 0x05EB:0x32F8/0x33AA, file

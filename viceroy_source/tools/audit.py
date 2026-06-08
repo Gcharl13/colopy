@@ -278,6 +278,21 @@ check_bytes("unit_band tier2 byte @0x5239[adj*14]", 0x00B6B1, "8a 87 39 52")
 check_bytes("unit_band tier2 clamp >=0x28", 0x00B6BD, "3d 28 00")
 check_bytes("unit_band RETF", 0x00B703, "cb")
 
+# ---- raw_power_score func_039EE2 (LOCATED 2026-06-08 via Type-A extra field) -
+# Thunk 0x191F:0x3AA @ file 0x1B99A: off=0x0092, segid=5, extra=0x02B1
+# base[5]=0x37340 + 0x02B1*16 + 0x0092 = 0x039EE2  (function start confirmed)
+check_bytes("score_thunk 0x191F:0x3AA Type-A header", 0x1B99A, "9a ab 0d 0d 11")
+check_bytes("score_thunk off=0x0092", 0x1B9A0, "92 00")
+check_bytes("score_thunk segid=5", 0x1B9A4, "05 00")
+check_bytes("score_thunk extra=0x02B1", 0x1B9A6, "b1 02")
+check_bytes("raw_power_score ENTER 0x7E at 0x039EE2", 0x039EE2, "c8 7e 00 00")
+check_bytes("raw_power_score reads [0x53A8]", 0x039EE6, "a0 a8 53")
+check_bytes("raw_power_score imul 100*[0x53A7]", 0x039EEC, "b0 64")
+check_bytes("raw_power_score arg==0 gate jmp", 0x039F46, "75 03")
+# trampoline chain: call->ljmp->thunk
+check_bytes("score trampoline ljmp 0x191F:0x3AA", 0x03B36A, "ea aa 03 1f 19")
+check_bytes("score_endgame_rank call trampoline", 0x03A9F6, "e8 71 09")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

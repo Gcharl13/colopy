@@ -7,17 +7,47 @@ is the tool the coverage notes referred to as the "missing RTLink V2 flattener".
 
 ## The problem
 
-Inter-segment calls go through 10/12-byte thunks in the table block at file
+Inter-segment calls go through thunks in the table block at file
 `0x1A5F0` (aliased as seg `0x181F` / `0x191F` / `0x1A1F`):
 
 ```
 RESIDENT target (10 B):   9A <loader>   EA <off:u16> <seg:u16>     ; jmp far, resolves now
-OVERLAY  target (12 B):   9A <loader>   EA <off:u16> 00 00  <segid:u16>
+OVERLAY Type-B (12 B):    9A 91 0D 0D 11  EA <off:u16> 00 00  <segid:u16>
+OVERLAY Type-A (14 B):    9A AB 0D 0D 11  EA <off:u16> 00 00  <segid:u16>  <extra:u16>
 ```
 
 For overlay targets the `EA` segment is a **placeholder (0x0000)** patched at load
 time, so the file location of the target cannot be read from the thunk alone — you
 need to know which file region each `segid` occupies.
+
+### Type-A vs Type-B loaders (CONFIRMED 2026-06-08)
+
+Two loaders coexist (both at `0x110D`):
+- **Type-B loader (0x0D91):** handles 10-byte (resident) and 12-byte (overlay) thunks.
+  Field layout: `off@[6:8]`, `segid@[10:12]`.
+- **Type-A loader (0x0DAB):** handles 14-byte overlay thunks.
+  Field layout: **identical** — `off@[6:8]`, `segid@[10:12]`, plus a 2-byte `extra` field at `[12:14]`.
+
+The `extra` field is a paragraph count added to the resolved runtime segment
+when the overlay descriptor's bit 6 is set (confirmed by disassembling the
+post-load patching code at `0x110D:0x1111`):
+```asm
+add  ax, word ptr es:[di+7]   ; di = EA byte offset -> [di+7] = thunk[12]
+mov  word ptr es:[di+3], ax   ; patch the placeholder with runtime seg
+```
+
+**Type-A resolution formula:**
+```
+file_offset = base[segid] + extra * 16 + off
+```
+
+**CONFIRMED EXAMPLE — `raw_power_score` (func_039EE2):**
+```
+thunk at file 0x1B99A (alias 0x191F:0x3AA):
+  off=0x0092, segid=5, extra=0x02B1
+  base[5] = 0x037340
+  0x037340 + 0x02B1*16 + 0x0092 = 0x039EE2  ← func_039EE2 confirmed function start
+```
 
 ## The fingerprint
 
@@ -25,11 +55,14 @@ Overlay code already sits at fixed file offsets (`funcscan.py` finds 706 overlay
 functions). Each overlay segment is a contiguous file region, and the thunk
 **offsets** targeting a `segid` are its segment-relative call targets — most of
 which are **function starts**. So for each `segid` we take its thunk-offset set
-`{o_i}` and pick the file base `F` that maximises `|{F + o_i} ∩ function_starts|`.
-The winner is dominant and unambiguous wherever a segment has enough thunks.
+`{o_i}` from thunks with `extra=0` and pick the file base `F` that maximises
+`|{F + o_i} ∩ function_starts|`.
+
+Thunks with `extra≠0` target a different effective base (`base + extra*16`) and
+are collected separately for per-thunk resolution.
 
 ```
-file_offset(segid, off) = base[segid] + off
+file_offset(segid, off, extra=0) = base[segid] + extra*16 + off
 ```
 
 ## Validation (two independent checks)
@@ -45,22 +78,17 @@ file_offset(segid, off) = base[segid] + off
 
 ```
 cd viceroy_source/tools
-python3 rtlink/flatten.py            # print the map; writes re_work/overlay_segmap.json
-python3 rtlink/flatten.py 5 0x92     # resolve overlay seg 5 : offset 0x92 (+ disasm)
+python3 rtlink/flatten.py                    # print the map; writes re_work/overlay_segmap.json
+python3 rtlink/flatten.py 5 0x92            # resolve overlay seg 5:0x92 (extra=0)
+python3 rtlink/flatten.py 5 0x92 0x2b1      # resolve with explicit extra paragraph (Type-A)
 ```
 
 ## Caveats
 
 - Low-thunk segments (`weak`/`AMBIG` in the table) are not reliable — they have too
   few offsets to pin a unique base; treat only `STRONG` rows as resolved.
-- `0x181F`/`0x191F` use two loaders (`0x110D:0x0D91` "Type-B" 10/12-byte records,
-  `0x0DAB` "Type-A" **14-byte** records). The fingerprint (which aggregates all
-  windows and is self-correcting on the `9A` re-scan) yields the correct segment
-  bases either way — but an INDIVIDUAL Type-A resolution is not yet fully trusted:
-  resolving the endgame raw-score thunk `0x191F:0x3AA` lands on `func_0373CA`
-  (seg5:0x92), which disassembles as a UI glyph-draw routine, not a score sum.
-  So the Type-A `(off, segid)` field positions need pinning before per-thunk
-  Type-A resolutions (e.g. the score) are relied upon. Type-B (`0x181F`) and the
-  segment-base map are validated (resident control 323/362).
+- Thunks with `extra≠0` (Type-A) target a different effective base than the primary
+  fingerprint base; use `resolve(exe, segmap, segid, off, extra)` or pass `extra` on
+  the CLI.
 - Needs `re_work/VICEROY.EXE` (gitignored) and `re_work/functions.json`
   (`funcscan.py`). Output `re_work/overlay_segmap.json` is regenerable.
