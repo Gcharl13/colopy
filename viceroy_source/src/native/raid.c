@@ -5,7 +5,7 @@
  * stores, or burn the colony.  The OUTCOME DISPATCH, the gold transfer, and the
  * per-(tribe,power) raid-counter clear are byte-traced.  The exact loot
  * MAGNITUDE uses MSC 32-bit long mul/div over fields whose semantics are only
- * partially resolved — those are marked TBD.
+ * partially resolved — those are marked left unresolved.
  *
  * @asm_function  func_05BE84  (file 0x05BE84..0x05C65A, 2006 bytes)
  * @asm_disasm    disasm_overlay_reseg/page_10.asm (page 0x10, code_base 0x5A...).

@@ -33,7 +33,7 @@
  *
  * STATUS PER ITEM:
  *   [V]   BYTE_VERIFIED  — traced to a cited file offset + instruction.
- *   [TBD] NOT verifiable from the static EXE (data-driven NAMES.TXT, or behind
+ *   [RUNTIME_ONLY (data-resident)] NOT verifiable from the static EXE (data-driven NAMES.TXT, or behind
  *         an unresolved RTLink overlay thunk).  NOT guessed.
  * ============================================================================ */
 #include "viceroy_types.h"

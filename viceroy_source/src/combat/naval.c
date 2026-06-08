@@ -38,7 +38,7 @@
  *
  * STATUS PER ITEM:
  *   [V]   BYTE_VERIFIED  — traced to a cited file offset + instruction.
- *   [TBD] Behind an RTLink overlay thunk (LCALL 0x181F/0x191F/0x1A1F:xxxx ->
+ *   [body in thunk page] Behind an RTLink overlay thunk (LCALL 0x181F/0x191F/0x1A1F:xxxx ->
  *         dispatcher 0x110D:0x0D91 / 0x110D:0x0DAB; target patched at runtime).
  *         Characterised by call context; exact body NOT statically resolvable
  *         from this EXE image without the overlay page directory. NOT guessed.

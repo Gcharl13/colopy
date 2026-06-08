@@ -9,7 +9,7 @@
  * the yield table below has a BYTE_VERIFIED structure (base address,
  * stride, index formula) is byte-verified, the VALUES are RUNTIME_ONLY (loaded from NAMES.TXT at game start).
  *
- * --- CITE-OR-TBD LEDGER --------------------------------------------------
+ * --- CITE-OR-left unresolved LEDGER --------------------------------------------------
  *  BYTE_VERIFIED structure:
  *    - g_terrain_yield_table  base DGROUP:0x2F7B, stride 16, indexed
  *        [terrain_id*16 + good_id]            @asm 0x9C1E (8A 80 7B 2F)

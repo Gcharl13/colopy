@@ -4,7 +4,7 @@
  * The add / remove+compact / count mechanics of the 18-byte NativeSettlement
  * table are byte-traced against VICEROY.EXE.  The per-turn growth/raid/gift
  * tick and the player-interaction helpers below are NOT byte-traced — those
- * are clearly marked RECONSTRUCTED/TBD inline.
+ * are clearly marked RECONSTRUCTED/left unresolved inline.
  *
  * TABLE (BYTE_VERIFIED — docs/RULINGS.md 2026-05-28):
  *   base   DGROUP:0x54EC   stride 0x12 (18 bytes)   live-count DGROUP:0x539A

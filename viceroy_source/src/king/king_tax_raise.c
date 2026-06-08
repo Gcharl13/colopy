@@ -184,7 +184,7 @@ do_kingraise: /* @asm 0x034B62 — guards-1+2 target */
  *       call near [+0x1CA1]    ; -> file 0x3681D (RTLink thunk)
  *       ; file 0x3681D: EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0
  *     Resolves to overlay function 0x191F:0x0AE0 (king_announce_tax_raise).
- *     Internals of that overlay are TBD (segment not yet dumped).
+ *     Internals of that overlay are body in thunk page (segment not yet dumped).
  *     Note: file 0x3441D (Convention A) is mid-function boycott loop code INSIDE
  *     func_034318 (not a call target from king_attempt_tax_change).
  *

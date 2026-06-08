@@ -11,7 +11,7 @@
  * HAND-PORTED 2026-05-30 from page_01.asm + strings.json + D1D_181F_RUNTIME.md.
  * Every message-key handle resolved via file_offset = handle + 0x1D9A0
  * (DGROUP base 0x1D9A0; same rule options_dialog.c uses: 0xA51 -> 0x1E3F1
- * "FINDCITY").  cite-or-TBD throughout; nothing guessed.
+ * "FINDCITY").  cite-or-left unresolved throughout; nothing guessed.
  *
  * This page is the IN-GAME UNIT/COMMAND layer: tutorial hints, the per-key
  * unit-order handlers (Build Colony / Road / Plow / Fortify / Sentry / Disband

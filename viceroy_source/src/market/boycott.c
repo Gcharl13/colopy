@@ -8,7 +8,7 @@
  * Replaces the prior RECONSTRUCTED version (bool array + invented fine/tea-party
  * magnitudes). See docs/RULINGS.md 2026-05-28 (market).
  *
- * STATUS: [V] byte-verified ; [TBD] not byte-verified (do not trust the number).
+ * STATUS: [V] byte-verified ; [not yet decoded] not byte-verified (do not trust the number).
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"

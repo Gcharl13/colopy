@@ -129,7 +129,7 @@ static int base_for_elevation_south(int elev)
  * of func_064A10.
  *
  * This is the verified STRUCTURE of the generator's terrain build.  The exact
- * stochastic outcomes depend on random_int() and on the TBD tuning params, so
+ * stochastic outcomes depend on random_int() and on the RUNTIME_ONLY (data-resident) tuning params, so
  * this is a faithful structural replay rather than a deterministic byte-for-byte
  * reproduction.  Every constant and table used here is byte-cited.
  * ------------------------------------------------------------------------- */

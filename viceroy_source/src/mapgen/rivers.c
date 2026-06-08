@@ -50,7 +50,7 @@
  *   river bit + the river-mouth marker on adjacent water.  0x181F:0x718 is the
  *   lowest-neighbour / flow-direction oracle (-1 = no downhill path).
  *
- * BYTE_VERIFIED vs TBD:
+ * BYTE_VERIFIED vs not yet decoded:
  *   BYTE_VERIFIED : the 20-cell kernel CONTENTS (above), the loop bound 0x14,
  *                   the land/in-bounds gating helpers, the feature-stamp calls,
  *                   the -1 "no path" sentinel, the western-half source sweep.

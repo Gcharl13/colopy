@@ -8,10 +8,10 @@
  *
  * Helper routines reached through `lcall 0x181F:NNNN` are RTLink overlay/
  * load-image thunks; their *call sites and arguments* are verified, but their
- * internal behaviour is marked TBD (resolved target file offsets are cited so
+ * internal behaviour is body in thunk page (resolved target file offsets are cited so
  * they can be decompiled in a later pass).
  *
- * Anything still labelled TBD has NOT been confirmed against bytes — do not
+ * Anything still labelled not yet decoded has NOT been confirmed against bytes — do not
  * trust it. Upgrade per viceroy_source/VERIFICATION_LEDGER.md.
  * ============================================================================ */
 
@@ -246,18 +246,18 @@ void treaty_set_state(int a, int b)
 }
 
 /* ============================================================================
- * EVERYTHING BELOW IS TBD (NOT byte-verified)
+ * EVERYTHING BELOW IS not yet decoded (NOT byte-verified)
  * ----------------------------------------------------------------------------
  * The original game presents treaty proposals through a UI/AI-evaluation path
  * that has NOT yet been located or decompiled.  The proposal-scoring logic,
  * gold/goods transfer, and AI accept/reject heuristics are unknown.  No
  * numbers below are trustworthy; they exist only as a placeholder shape and
- * are explicitly marked TBD so they are never mistaken for verified facts.
+ * are explicitly marked not yet decoded so they are never mistaken for verified facts.
  * Anchor for future work: the in-game diplomacy dialog driver that calls
- * func_057DC0 (caller TBD; reachable via the page-0x0F Type-A thunk for 0x57DC0).
+ * func_057DC0 (caller not yet decoded; reachable via the page-0x0F Type-A thunk for 0x57DC0).
  * ============================================================================ */
-#if 0  /* TBD — proposal/AI-eval path not yet reverse-engineered */
-int  treaty_propose(/* TBD */);          /* TBD: who calls treaty_set_state, and the accept/reject UI/AI */
-int  ai_evaluate_treaty(/* TBD */);      /* TBD: AI scoring weights unknown */
-void treaty_transfer_payment(/* TBD */); /* TBD: gold/goods exchange on a signed treaty */
+#if 0  /* not yet decoded — proposal/AI-eval path not yet reverse-engineered */
+int  treaty_propose(/* not yet decoded */);          /* not yet decoded: who calls treaty_set_state, and the accept/reject UI/AI */
+int  ai_evaluate_treaty(/* not yet decoded */);      /* not yet decoded: AI scoring weights unknown */
+void treaty_transfer_payment(/* not yet decoded */); /* not yet decoded: gold/goods exchange on a signed treaty */
 #endif

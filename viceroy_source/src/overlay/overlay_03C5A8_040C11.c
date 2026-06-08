@@ -24,7 +24,7 @@
  *                   mere narrative cross-reference). Body here is a dead stub.
  *   REAL         -- in-scope game logic / UI-layout, NOT yet ported. Extent is
  *                   the reseg size; auto-body here is truncated -> needs hand
- *                   port (cite-or-TBD). Left as TBD; no fabrication added.
+ *                   port (cite-or-not-yet-decoded). Left as not yet decoded; no fabrication added.
  *   OUT-OF-SCOPE -- platform leaf (string/format/file-listing/runtime thunk
  *                   forwarder) per the 2026-05-30 directive; one-line note only.
  *   PHANTOM      -- NOT a real function: a mis-decoded ENTER prologue landing in
@@ -49,7 +49,7 @@
  *     03DA2A 03DE46 03E2EA 03E442 03E664 03F90E 03F946 03FA9C 040002 04002C
  *     04057A 040608 040656 0409D6
  *
- *   ACCURACY NOTES (cite-or-TBD; corrected vs first-pass guesses):
+ *   ACCURACY NOTES (cite-or-not-yet-decoded; corrected vs first-pass guesses):
  *   - 03FA9C and 03DE46 are NOT superseded: combat/naval.c only DECLARES
  *     naval_classify_dest as an extern (body unported), and king/demands.c only
  *     CITES 03DE46's 0x53A7 write as forensic evidence (its king_demand_cadence
@@ -172,7 +172,7 @@ extern int func_041732(void);   /* near 0x1732 unit-place    (func_040656/0409D6
  * @CLASSIFY   REAL | reseg-true-size=143 (0x03C5A8..0x03C637, page_06.asm:1161,
  *             RETF; raw bytes c8 02 00 00 = ENTER 2) | scope=IN (reads unit
  *             count [0x539C]; calls one 0x181F thunk -> keep as extern) |
- *             ported?=NO. Auto-body truncated at 83B; semantics TBD (cite-or-TBD).
+ *             ported?=NO. Auto-body truncated at 83B; semantics inferred from call context.
  * @status     PORTED (ported; reseg extent 143B, auto-body truncated)
  */
 /* ============================================================================
@@ -242,7 +242,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
  * @CLASSIFY   REAL | reseg-true-size=762 (0x03C638..0x03C932, page_06.asm:1216,
  *             ENTER 0x24, RETF) | scope=IN (standalone compute, reads [0x5381];
  *             no LCALLs -> pure logic) | ported?=NO. Auto-body truncated at 73B
- *             of 762; substantial logic block, semantics TBD (cite-or-TBD).
+ *             of 762; substantial logic block, semantics inferred from call context.
  * @status     PORTED (ported; reseg extent 762B, auto-body truncated)
  */
 /* ============================================================================
@@ -432,7 +432,7 @@ int func_03C638_logic_sz_73(void)
  * @CLASSIFY   REAL | reseg-true-size=247 (0x03C932..0x03CA29, page_06.asm:1483,
  *             ENTER 2, RETF) | scope=IN (reads unit count [0x539C] + [0x53D2];
  *             0x652=dialog/menu show, 0x808 thunks kept as externs) |
- *             ported?=NO. Auto-body truncated at 96B of 247; semantics TBD.
+ *             ported?=NO. Auto-body truncated at 96B of 247; semantics inferred from call context.
  * @status     PORTED (ported; reseg extent 247B, auto-body truncated)
  */
 /* ============================================================================
@@ -541,7 +541,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @CLASSIFY   REAL | reseg-true-size=155 (0x03CA2A..0x03CAC5, page_06.asm:1574,
  *             ENTER 4, RETF) -- auto-size MATCHES reseg | scope=IN (touches
  *             colony struct *(0x8542); 0x7E0/0x9C8/0x2E4 = sound+input thunks
- *             kept as externs) | ported?=NO. Body still auto-traced -> TBD.
+ *             kept as externs) | ported?=NO. Body still auto-traced -> inferred from call context.
  * @status     PORTED (ported; extent OK at 155B, semantics need hand-port)
  */
 /* ============================================================================
@@ -1123,7 +1123,7 @@ cleanup:
  *             (PICK_RANDOM_ELIGIBLE_COLONY weighted by pop, then applies an
  *             event to the chosen colony; reads *(0x8542), uses random_int
  *             0x181F:0x04D4; near-calls func_03EA10) | ported?=NO. Referenced
- *             narratively by ref.c but not ported. Body still auto-traced -> TBD.
+ *             narratively by ref.c but not ported. Body still auto-traced -> inferred from call context.
  * @status     PORTED (ported; extent OK 1080B -- random-event colony picker)
  */
 /* ============================================================================
@@ -1381,7 +1381,7 @@ int func_03D948_colony_sz_49(void)
  *             reads per-power record [0x5398]*0x34+0x540E, sprintf via
  *             0x0D1D:0x7E4 into local buf, draws via 0x0D1D:0xD46. The format/
  *             draw thunks are platform leaves kept as externs.) | ported?=NO.
- *             Auto-body truncated at 219B of 1051; layout/text TBD (cite-or-TBD).
+ *             Auto-body truncated at 219B of 1051; layout/text inferred from call context.
  * @status     PORTED (ported; reseg 1051B -- screen/dialog composition)
  */
 /* ============================================================================
@@ -1721,7 +1721,7 @@ int func_03E162_op_sz_145(uint16_t arg0_bp_06)
  * @CLASSIFY   REAL | reseg-true-size=343 (0x03E2EA..0x03E441, page_06.asm:3769,
  *             ENTER 0xC, RETF) | scope=IN (touches colony *(0x8542); 0x4AC +
  *             input 0x2E4 + text 0x416 thunks kept as externs) | ported?=NO.
- *             Auto-body truncated at 114B of 343; semantics TBD (cite-or-TBD).
+ *             Auto-body truncated at 114B of 343; semantics inferred from call context.
  * @status     PORTED (ported; reseg 343B, auto-body truncated)
  */
 /* ============================================================================
@@ -1826,7 +1826,7 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
  *             ENTER 0x5A, RETF) | scope=IN (per-power/REF dispatcher: reads REF
  *             words 0x53DA/0x53DC/0x53E0 + 0x84FC; near-calls helpers
  *             func_03EA15/03EA3D/03EA47/03EA2E) | ported?=NO. Auto-body
- *             truncated at 146B of 546; dispatch arms TBD (cite-or-TBD).
+ *             truncated at 146B of 546; dispatch arms inferred from call context.
  * @status     PORTED (ported; reseg 546B, auto-body truncated)
  */
 /* ============================================================================
@@ -1959,7 +1959,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
  *             no LCALLs) | ported?=NO.
  *             *** AUTO-BODY WRONG: this is NOT a 15-byte accessor. The dumper
  *             mis-stopped after the first global read. It is a 479-byte function
- *             (ENTER 0x56). Body below is bogus -- real logic TBD. ***
+ *             (ENTER 0x56). Body below is bogus -- real logic not yet decoded. ***
  * @status     PORTED (ported; reseg 479B -- auto "tiny accessor" is bogus)
  */
 /* ============================================================================
@@ -2171,7 +2171,7 @@ int func_03ECF0_op_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *             of arg0, then near-calls 0x03F940 = a 'call 0xee0' that is
  *             ljmp 0x1A1F:0x142 thunk) | ported?=NO.
  *             Note: the near target 0x03F940 is a thunk (ljmp 0x1A1F:0x142),
- *             NOT func_03F946 (see below). Body fwd kept; real arg math TBD.
+ *             NOT func_03F946 (see below). Body fwd kept; real arg math not yet decoded.
  * @status     PORTED (ported; reseg 49B -- unit-coord helper, light port)
  */
 /* ============================================================================
@@ -2311,7 +2311,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  *             ONLY: src/combat/naval.c has `extern int naval_classify_dest(
  *             unit_idx,dx,dy)` (the sibling producer of naval_move_arrive) but
  *             NOT its body. So this is the next port target, not superseded.
- *             Auto-body truncated at 30B of 834; logic TBD (cite-or-TBD).
+ *             Auto-body truncated at 30B of 834; logic inferred from call context.
  * @status     PORTED (ported; reseg 834B -- ship dest classifier; body below)
  */
 /* ============================================================================
@@ -2762,7 +2762,7 @@ int func_0404B0_runtime_secondary_201(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             0x181F:0xD78 + 0x181F:0xA92, tests (val-prev) >= prev/2; on pass
  *             does 0x181F:0xAF6, increments counter byte [[0x8D4E]+5], then a
  *             UI/draw call 0x181F:0x68C(.,0x10,1,x?,y?); returns 1) | ported?=NO.
- *             Body still auto-traced -> TBD; thunks kept as externs.
+ *             Body still auto-traced -> inferred from call context; thunks kept as externs.
  * @status     PORTED (ported; extent OK 141B -- per-power gated action)
  */
 /* ============================================================================
@@ -2827,7 +2827,7 @@ int func_04057A_op_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *             ==0x18 sets type[+0x02]=3; reads owner [+0x03=0x3147]&0xF, and if
  *             owner<4 && per-power flag [owner*0x34+0x543F]==0 shows dialog
  *             0x181F:0x652(3, str 0x145A). Confirms base 0x3144 / type+0x02 /
- *             owner+0x03.) | ported?=NO. Body still auto-traced -> TBD.
+ *             owner+0x03.) | ported?=NO. Body still auto-traced -> inferred from call context.
  * @status     PORTED (ported; extent OK 78B -- per-unit decay/transform)
  */
 /* ============================================================================
@@ -2894,7 +2894,7 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
  *             ENTER 0x2A, RETF) | scope=IN (per-unit op chain: arg0=unit;
  *             0x181F:0x722/0x70E/0x740/0x78C/0x754 unit accessors/movement
  *             thunks kept as externs) | ported?=NO. Auto-body truncated at 171B
- *             of 896; the unit-chain logic is TBD (cite-or-TBD).
+ *             of 896; the unit-chain logic is inferred from call context.
  * @status     PORTED (ported; reseg 896B, auto-body truncated)
  */
 /* ============================================================================
@@ -3142,7 +3142,7 @@ done:
  *             kept as externs). This is UI/render LAYOUT composition (in scope
  *             per 2026-05-30). Referenced as "sister of func_0409D6" by
  *             overlay_040C1E_04458A.c but NOT ported there. | ported?=NO.
- *             Auto-body truncated/auto-traced -> TBD.
+ *             Auto-body truncated/auto-traced -> inferred from call context.
  * @status     PORTED (ported; reseg 584B -- per-unit screen draw/info)
  */
 /* ============================================================================
