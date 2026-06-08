@@ -81,7 +81,7 @@
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers (RTLink thunks). Call sites + args VERIFIED;
- * internal behaviour TBD. Resolved target file offsets cited for follow-up.
+ * internal behaviour: body in thunk page. Resolved target file offsets cited for follow-up.
  * (lcall_resolution_VICEROY.json)
  * ---------------------------------------------------------------------------- */
 /* 0x181F:0x0A38 -> Type-B, file 0x5FC30 : relation-flag accessor.

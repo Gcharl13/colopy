@@ -117,7 +117,7 @@ void native_village_raze_gold(int attacker_unit_idx,
     int8_t  population = ((int8_t *)g_settlement_ptr_8D4E)[4];   /* +0x04 = pop */
     int16_t gold       = step1 * (population + 1);
     /* CAPITAL bonus (capitals only) is added on top by the capital/Cibola
-     * handler, not here — magnitude TBD (docs/CAPITAL_BONUS_ANALYSIS.md). */
+     * handler, not here — magnitude not yet decoded (see docs/CAPITAL_BONUS_ANALYSIS.md). */
 
     /* @asm 0x04AB30..0x04AB3A — display the value via overlay messaging */
     display_gold_value(gold);

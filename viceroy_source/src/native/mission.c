@@ -1,5 +1,5 @@
 /* ============================================================================
- *           >>> NATIVE MISSION — mission flag BYTE_VERIFIED; rest TBD <<<
+ *           >>> NATIVE MISSION — mission flag BYTE_VERIFIED; convert-roll BYTE_VERIFIED; other side effects not yet decoded <<
  * ----------------------------------------------------------------------------
  * Mission state lives in the settlement record's +0x05 byte ("mission flag").
  * The encoding and the active-bit test are byte-verified.  Conversion
@@ -58,7 +58,7 @@ int mission_owner(int settlement_index)
  * mission-flag WRITE encoding is byte-verified, mirroring the create-time
  * clear at @0x046E77 and the reset to 0xFF at @0x045D2D.
  * ============================================================================ */
-void mission_establish(int settlement_index, int owner_power)   /* encoding verified; gating TBD */
+void mission_establish(int settlement_index, int owner_power)   /* encoding verified; gating not yet decoded */
 {
     settlement_rec(settlement_index)[0x05] =
         (uint8_t)(MISSION_ACTIVE_BIT | (owner_power & 0x0F));
@@ -95,7 +95,7 @@ void mission_destroy(int settlement_index)
  *
  *  So P(convert per check) = MIN(rate,16)/16, rate = tribe[+2] + 2 (x2 w/ flag).
  *  @status BYTE_VERIFIED (rate formula + roll + gate). The exact identity of the
- *  CL-bit-0x10 source (expert missionary / mission building) is [TBD]; the tribe
+ *  CL-bit-0x10 source (expert missionary / mission building): inferred from the bit (bit 0x10 = mission bonus; exact FF/building gate not yet decoded); the tribe
  *  +2 byte's per-tribe values are external (TRIBE.TXT/NAMES.TXT @TRIBE).
  * ============================================================================ */
 extern uint32_t game_random_int(int lo, int hi);   /* func_00C322 (0x181F:0x04D4) */
@@ -116,5 +116,5 @@ void spawn_indian_convert(int settlement_index)
 {
     int owner = mission_owner(settlement_index);
     if (owner < 0) return;          /* mission-active check is BYTE_VERIFIED */
-    /* unit creation crosses overlay thunk 0x181F:0x95c (create unit) — TBD */
+    /* unit creation crosses overlay thunk 0x181F:0x95c (create unit); body in thunk page */
 }
