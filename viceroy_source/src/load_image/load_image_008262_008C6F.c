@@ -36,13 +36,16 @@ int func_008262_logic_sz_20(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  2D word-table reader at 0x5b1c (row stride 0x27 words)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0082A0_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0082A3 imul bx,[bp+6],0x27; 0x0082A7 add bx,[bp+8];
+     *      0x0082AA shl bx,1; 0x0082AC mov ax,[bx+0x5b1c].
+     * Word-array load: base 0x5b1c, element (row*0x27 + col) scaled by 2.
+     * Returns the 16-bit entry table[arg0][arg1] (row pitch 0x27 words). */
+    return *(uint16_t near *)(0x5B1C + ((unsigned)arg0_bp_06 * 0x27 + arg1_bp_08) * 2);
 }
 
 /* @asm        0x0082B2..0x0082D8  (38 bytes)  region=load_image
@@ -54,23 +57,19 @@ int func_0082A0_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (38 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: 0 if arg0 in {0x13,0x19,0x1a,0x1b,0x1c} else 1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0082B2_logic_sz_38(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0082B9 JE 0x0082D8 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0082BF JE 0x0082D8 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0082C5 JE 0x0082D8 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x0082CB JE 0x0082D8 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x0082D1 JE 0x0082D8 */ {
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0082B5 cmp [bp+6],0x1c; je 0x82d8; cmp [bp+6],0x13; je 0x82d8;
+     *      cmp 0x19 je; cmp 0x1a je; cmp 0x1b je 0x82d8;
+     *      fall-through 0x82d3 mov ax,1; ret. 0x82d8 sub ax,ax; ret.
+     * Returns 0 when arg0 is one of {0x13,0x19,0x1a,0x1b,0x1c}, else 1. */
+    if (arg0_bp_06 == 0x1C || arg0_bp_06 == 0x13 || arg0_bp_06 == 0x19
+        || arg0_bp_06 == 0x1A || arg0_bp_06 == 0x1B)
+        return 0;
+    return 1;
 }
 
 /* @asm        0x0082DC..0x008308  (44 bytes)  region=load_image
@@ -164,13 +163,18 @@ int func_0083F2_op_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (19 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  type normalizer: maps 0x1c -> 0x13, else identity
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0084C8_logic_sz_19(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0084CB cmp [bp+6],0x1c; jne 0x84d6; 0x0084D1 mov [bp+6],0x13;
+     *      0x0084D6 mov ax,[bp+6]; ret.
+     * Returns arg0, but folds type 0x1c onto 0x13 (the same alias used by the
+     * predicate in func_0082B2). */
+    if (arg0_bp_06 == 0x1C)
+        arg0_bp_06 = 0x13;
+    return arg0_bp_06;
 }
 
 /* @asm        0x0084DC..0x0084F1  (21 bytes)  region=load_image
@@ -185,13 +189,16 @@ int func_0084C8_logic_sz_19(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0084C8
- * @inferred_role  WRAPPER_NEARCALL (21 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  word lookup at 0x8ea2 (stride 8) keyed by normalized type
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0084DC_logic_sz_21(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x0084C8. */
-    return func_0084C8();
+    /* @asm 0x0084DF push [bp+6]; call 0x84c8 (func_0084C8 normalizes type);
+     *      0x0084E6 mov bx,ax; shl bx,3; 0x0084EB mov ax,[bx-0x715e].
+     * Reads the 16-bit field at 0x8ea2 + func_0084C8(arg0)*8 (-0x715e ==
+     * DGROUP +0x8EA2). 8-byte record table keyed by the normalized type. */
+    return *(uint16_t near *)(0x8EA2 + (unsigned)func_0084C8(arg0_bp_06) * 8);
 }
 
 /* @asm        0x0084F2..0x008507  (21 bytes)  region=load_image
@@ -206,13 +213,16 @@ int func_0084DC_logic_sz_21(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0084C8
- * @inferred_role  WRAPPER_NEARCALL (21 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  word lookup at 0x8ea4 (stride 8) keyed by normalized type
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0084F2_logic_sz_21(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x0084C8. */
-    return func_0084C8();
+    /* @asm 0x0084F5 push [bp+6]; call 0x84c8 (func_0084C8 normalizes type);
+     *      0x0084FC mov bx,ax; shl bx,3; 0x008501 mov ax,[bx-0x715c].
+     * Reads the 16-bit field at 0x8ea4 + func_0084C8(arg0)*8 (-0x715c ==
+     * DGROUP +0x8EA4), the +2 word of the same 8-byte record as func_0084DC. */
+    return *(uint16_t near *)(0x8EA4 + (unsigned)func_0084C8(arg0_bp_06) * 8);
 }
 
 /* @asm        0x008508..0x008511  (9 bytes)  region=load_image
@@ -224,13 +234,22 @@ int func_0084F2_logic_sz_21(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (9 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  forwards ColonyRecord[arg0] (x,y) to overlay 0x037F:0x02A0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008508_logic_sz_9(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x00850B imul bx,[bp+6],0xca; 0x008510 mov al,[bx+0x5d47]; sub ah,ah
+     *      (push ColonyRecord[arg0].y, +0x01); 0x008517 mov al,[bx+0x5d46]
+     *      (push ColonyRecord[arg0].x, +0x00); 0x00851C lcall 0x37f:0x2a0.
+     * Passes the colony's tile (x,y) to overlay 0x037F:0x02A0
+     * (library-implementation-only; body in the overlay thunk page).
+     * ColonyRecord stride 0xCA @0x5D46 (DGROUP_MEMORY_MAP §3.4). The call is shown
+     * 0-arg to match the overlay_externs.h prototype; real args are in comment. */
+    uint16_t x = (uint8_t)*(uint8_t near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x00);
+    uint16_t y = (uint8_t)*(uint8_t near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x01);
+    (void)x; (void)y;
+    return overlay_call_037F_02A0(/* x, y */);
 }
 
 /* @asm        0x008524..0x008536  (18 bytes)  region=load_image
@@ -260,13 +279,26 @@ int func_008524_colony_sz_18(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  bit-test in ColonyRecord[arg0] bitmap at +0x84 (0x5dca)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00860E_logic_sz_15(uint16_t arg0_bp_08)
+int func_00860E_logic_sz_15(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x008612 cmp [bp+8],0; jge 0x861e (else 0x8618 sub ax,ax; ret 0);
+     *      0x00861E imul si,[bp+6],0xca; 0x008623 mov bx,[bp+8]; sar bx,3
+     *      (bit>>3 = byte index); 0x008629 mov al,[bx+si+0x5dca]; cwde;
+     *      0x00862E mov cl,[bp+8]; and cl,7; mov dx,1; shl dx,cl;
+     *      0x008639 and ax,dx.
+     * Tests bit number arg1 in the ColonyRecord[arg0] bitmap based at +0x84
+     * (0x5dca = 0x5d46+0x84). Returns (1<<(arg1&7)) if set, else 0; returns 0
+     * when arg1 < 0 (ColonyRecord stride 0xCA @0x5D46, DGROUP_MEMORY_MAP §3.4). */
+    if ((int16_t)arg1_bp_08 < 0)
+        return 0;
+    {
+        uint8_t byte = *(uint8_t near *)(0x5DCA + (unsigned)arg0_bp_06 * 0xCA
+                                         + ((int16_t)arg1_bp_08 >> 3));
+        return byte & (1 << (arg1_bp_08 & 7));
+    }
 }
 
 /* @asm        0x00863E..0x00864D  (15 bytes)  region=load_image
@@ -281,12 +313,14 @@ int func_00860E_logic_sz_15(uint16_t arg0_bp_08)
  *
  * Near CALL targets:
  *   - 0x00860E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00863E_wrapper_with_global_8DC6(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x00860E. */
-    return func_00860E();
+    /* @asm 0x008641 push [bp+6]; 0x008644 push [0x8dc6]; 0x008649 call 0x860e.
+     * Tests bit arg0 of the ColonyRecord-bitmap selected by global 0x8dc6:
+     * func_00860E(record=*(uint16*)0x8dc6, bit=arg0). */
+    return func_00860E(*(uint16_t near *)0x8DC6, arg0_bp_06);  /* func_00860E_logic_sz_15 */
 }
 
 /* @asm        0x00864E..0x00866D  (31 bytes)  region=load_image
@@ -301,13 +335,26 @@ int func_00863E_wrapper_with_global_8DC6(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x00863E
- * @inferred_role  WRAPPER_NEARCALL (31 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  counts func_00863E hits while walking chain 0x8f86 (stride 12)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00864E_logic_sz_31(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x00863E. */
-    return func_00863E();
+    /* @asm 0x008652 mov [bp-2],0 (n=0); do { 0x008657 push [bp+6]; call 0x863e;
+     *      or ax,ax; je 0x8668; inc [bp-2] (n++ when func_00863E(arg0)!=0);
+     *      0x008668 mov bx,arg0; shl bx,1; add bx,arg0; shl bx,2 (bx=arg0*12);
+     *      mov al,[bx-0x707a]; cwde; mov [bp+6],ax (arg0 = (int8)chain[arg0]);
+     *      } while (arg0 >= 0); 0x008680 return n.
+     * Walks the signed-byte chain at 0x8f86 (-0x707a, element pitch 12) starting
+     * from arg0 and returns how many visited indices satisfy func_00863E. */
+    int n = 0;
+    do {
+        if (func_00863E(arg0_bp_06) != 0)   /* func_00863E_wrapper_with_global_8DC6 */
+            n++;
+        arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
+            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+    } while ((int16_t)arg0_bp_06 >= 0);
+    return n;
 }
 
 /* @asm        0x008686..0x0086A8  (34 bytes)  region=load_image
@@ -322,13 +369,26 @@ int func_00864E_logic_sz_31(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x00860E
- * @inferred_role  WRAPPER_NEARCALL (34 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  counts func_00860E(arg0,*) hits while walking chain 0x8f86
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008686_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x00860E. */
-    return func_00860E();
+    /* @asm 0x00868a mov [bp-2],0 (n=0); do { 0x00868f push [bp+8]; push [bp+6];
+     *      call 0x860e; or ax,ax; je 0x86a3; inc [bp-2]
+     *      (n++ when func_00860E(arg0, idx)!=0); 0x0086a3 mov bx,idx; shl bx,1;
+     *      add bx,idx; shl bx,2 (bx=idx*12); mov al,[bx-0x707a]; cwde;
+     *      mov [bp+8],ax (idx=(int8)chain[idx]); } while (idx>=0); return n.
+     * Walks the signed-byte chain at 0x8f86 (pitch 12) from arg1, counting how
+     * many visited indices set the colony bit-test func_00860E(arg0, idx). */
+    int n = 0;
+    do {
+        if (func_00860E(arg0_bp_06, arg1_bp_08) != 0)   /* func_00860E_logic_sz_15 */
+            n++;
+        arg1_bp_08 = (uint16_t)(int16_t)(int8_t)
+            *(uint8_t near *)(0x8F86 + (unsigned)arg1_bp_08 * 12);
+    } while ((int16_t)arg1_bp_08 >= 0);
+    return n;
 }
 
 /* @asm        0x0086C0..0x0086D3  (19 bytes)  region=load_image
@@ -340,13 +400,21 @@ int func_008686_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (19 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  walks chain 0x8f86 (stride 12) to its root, returns root index
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0086C0_logic_sz_19(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0086C3 jmp 0x86ce; loop 0x86c6: mov al,[bx-0x707a]; cwde;
+     *      mov [bp+6],ax (arg0 = (int8)chain[arg0]); 0x0086ce mov bx,[bp+6];
+     *      mov ax,bx; shl bx,1; add bx,ax; shl bx,2 (bx=arg0*12);
+     *      cmp byte[bx-0x707a],0; jge 0x86c6. Returns ax == final arg0.
+     * Follows the signed-byte chain at 0x8f86 (-0x707a, pitch 12) while the next
+     * link is non-negative, and returns the terminal (root) index. */
+    while ((int8_t)*(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12) >= 0)
+        arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
+            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+    return arg0_bp_06;
 }
 
 /* @asm        0x0086E4..0x008706  (34 bytes)  region=load_image
@@ -361,13 +429,30 @@ int func_0086C0_logic_sz_19(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x00863E
- * @inferred_role  WRAPPER_NEARCALL (34 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  last chain index (walking 0x8f86) for which func_00863E holds
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0086E4_logic_sz_34(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x00863E. */
-    return func_00863E();
+    /* @asm 0x0086e8 mov [bp-4],0xffff (result=-1); jmp 0x8715;
+     *      0x0086f0 push [bp+6]; call 0x863e; or ax,ax; je 0x871b
+     *      (stop on first func_00863E(arg0)==0, return result);
+     *      mov [bp-4],[bp+6] (result=arg0); mov bx,arg0; shl bx,1; add bx,arg0;
+     *      shl bx,2 (bx=arg0*12); mov al,[bx-0x707a]; cwde; mov [bp+6],ax
+     *      (arg0=(int8)chain[arg0]); 0x008715 cmp [bp+6],0; jge 0x86f0;
+     *      0x00871b return result.
+     * Walks the chain at 0x8f86 (pitch 12) from arg0 and returns the last index
+     * (or 0xFFFF) for which func_00863E is true, stopping at the first failure
+     * or a negative link. */
+    uint16_t result = 0xFFFF;
+    while ((int16_t)arg0_bp_06 >= 0) {
+        if (func_00863E(arg0_bp_06) == 0)   /* func_00863E_wrapper_with_global_8DC6 */
+            break;
+        result = arg0_bp_06;
+        arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
+            *(uint8_t near *)(0x8F86 + (unsigned)arg0_bp_06 * 12);
+    }
+    return result;
 }
 
 /* @asm        0x008734..0x008752  (30 bytes)  region=load_image
@@ -382,13 +467,22 @@ int func_0086E4_logic_sz_34(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x008720
- * @inferred_role  WRAPPER_NEARCALL (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  maps func_008720() result {1,2,3,else} -> {4,8,0xc,0x20}
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008734_logic_sz_30(void)
 {
-    /* @auto: wrapper forwards to near CALL 0x008720. */
-    return func_008720();
+    /* @asm 0x008739 call 0x8720 (func_008720); 0x00873c dec ax; je 0x8748
+     *      (ret 4); dec ax; je 0x8752 (ret 8); dec ax; je 0x875c (ret 0xc);
+     *      jmp 0x8766 (ret 0x20).
+     * Translates the small enum returned by func_008720 into a magnitude:
+     * 1->4, 2->8, 3->0xC, anything else->0x20. */
+    switch (func_008720()) {
+    case 1:  return 0x04;
+    case 2:  return 0x08;
+    case 3:  return 0x0C;
+    default: return 0x20;
+    }
 }
 
 /* @asm        0x008770..0x0087F4  (132 bytes)  region=load_image
@@ -500,13 +594,18 @@ int func_008806_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *
  * Near CALL targets:
  *   - 0x008806
- * @inferred_role  WRAPPER_NEARCALL (27 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  negates the 32-bit (arg2:arg1) and forwards to func_008806
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008846_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: wrapper forwards to near CALL 0x008806. */
-    return func_008806();
+    /* @asm 0x008849 mov ax,[bp+8]; mov dx,[bp+0xa]; 0x00884f neg ax; adc dx,0;
+     *      neg dx (32-bit two's-complement negate of dx:ax); push dx; push ax;
+     *      push [bp+6]; 0x00885c call 0x8806.
+     * Calls func_008806(arg0, lo, hi) with (hi:lo) == -((int32)arg2<<16 | arg1).
+     * The 64-bit-style negate is the standard MSC sequence for negating a long. */
+    int32_t v = -(int32_t)(((uint32_t)arg2_bp_0A << 16) | arg1_bp_08);
+    return func_008806(arg0_bp_06, (uint16_t)(v & 0xFFFF), (uint16_t)((uint32_t)v >> 16));
 }
 
 /* @asm        0x008862..0x00887B  (25 bytes)  region=load_image
@@ -524,15 +623,23 @@ int func_008846_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *
  * Near CALL targets:
  *   - 0x0087F4
- * @inferred_role  UNKNOWN (25 bytes). 0x004B:0x01E8
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  forwards PowerRecord[arg0].gold + DS + arg1 to overlay 0x004B:0x01E8
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_008862_op_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_008862_op_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x008869 */ func_0087F4();
-        /* @0x008874 */ overlay_call_004B_01E8();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x008865 push [bp+6]; call 0x87f4 (func_0087F4 -> gold in dx:ax);
+     *      0x00886c mov sp,bp (drop the arg); push dx (gold hi); push ax (gold lo);
+     *      push ds; push [bp+8] (far buffer ds:arg1); 0x008874 lcall 0x4b:0x1e8.
+     * Formats PowerRecord[arg0].gold (func_0087F4) into the caller's buffer via
+     * the C-runtime helper at 0x004B:0x01E8 -- the same long->string routine
+     * wrapped by format_via_lib_4B_1E8 in iolib/format.c, called there as
+     * overlay_call_004B_01E8(lo, hi, buf). buf is the near offset arg1 (DS).
+     * The call is shown 0-arg to match the overlay_externs.h prototype; the real
+     * argument list (gold_lo, gold_hi, (char near*)arg1) is in the comment. */
+    uint32_t gold = func_0087F4(arg0_bp_06);   /* func_0087F4_logic_sz_18 */
+    (void)gold; (void)arg1_bp_08;
+    overlay_call_004B_01E8(/* (uint16)gold, (uint16)(gold>>16), (char near*)arg1 */);
 }
 
 /* @asm        0x00887C..0x008891  (21 bytes)  region=load_image
@@ -547,13 +654,21 @@ int func_008862_op_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x0087F4
- * @inferred_role  WRAPPER_NEARCALL (21 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  forwards PowerRecord[arg0].gold (32-bit) to C-runtime 0x0009:0x01FC
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00887C_logic_sz_21(uint16_t arg0_bp_06)
+void func_00887C_logic_sz_21(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x0087F4. */
-    return func_0087F4();
+    /* @asm 0x00887F push [bp+6]; call 0x87f4 (func_0087F4 -> gold in dx:ax);
+     *      0x008886 mov sp,bp (drop the arg); push dx (gold hi); push ax (gold lo);
+     *      0x00888a lcall 0x0009:0x01fc.
+     * Passes the 32-bit gold of PowerRecord[arg0] (func_0087F4) to the library
+     * routine at 0x0009:0x01FC (segment 9 = C-runtime page; library-implementation-
+     * only, body lives in the thunk page -- a long-consuming helper, args lo,hi).
+     * Not in overlay_externs.h, so the raw lcall is documented rather than called. */
+    uint32_t gold = func_0087F4(arg0_bp_06);   /* func_0087F4_logic_sz_18 */
+    (void)gold;
+    /* then: lcall 0x0009:0x01FC with args (gold_lo, gold_hi) -- library page. */
 }
 
 /* @asm        0x0088D0..0x008917  (71 bytes)  region=load_image

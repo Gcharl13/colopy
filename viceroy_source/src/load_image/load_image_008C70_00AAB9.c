@@ -85,14 +85,20 @@ int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  signed-byte lookup into table 0x2F4 for arg0<0x13, else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008D9C_lookup_table_2F4_signed(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x008DA9 JGE 0x008DB6 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x008DA0 mov [bp-2],0xffff (result=-1); 0x008DA5 cmp [bp+6],0x13;
+     *      jge 0x8db6; 0x008DAB mov bx,[bp+6]; mov al,[bx+0x2f4]; cwde;
+     *      mov [bp-2],ax; 0x008DB6 mov ax,[bp-2]; ret.
+     * Returns the signed byte at DGROUP table 0x02F4 indexed by arg0 when
+     * arg0 < 0x13, otherwise -1. Sits beside the per-good tables 0x2AA/0x2F5/0x2FD
+     * (cf. func_008BC6 reading 0x02F5). */
+    if ((int16_t)arg0_bp_06 >= 0x13)
+        return -1;
+    return (int8_t)*(uint8_t near *)(0x02F4 + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x008DBC..0x008E01  (69 bytes)  region=load_image
@@ -316,13 +322,24 @@ int func_009726_logic_sz_52(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  walks chain 0x8f85 (stride 12) to its root, returns root index
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00975A_logic_sz_25(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00975D cmp [bp+6],0; jl 0x9781 (return arg0 when arg0<0);
+     *      jmp 0x976e; loop 0x9766: mov al,[bx-0x707b]; cwde; mov [bp+6],ax;
+     *      0x00976e mov bx,[bp+6]; mov ax,bx; shl bx,1; add bx,ax; shl bx,2
+     *      (bx=arg0*12); cmp byte[bx-0x707b],0; jge 0x9766; 0x009781 ret arg0.
+     * Follows the signed-byte chain at 0x8f85 (-0x707b, pitch 12) while the next
+     * link is non-negative and returns the root index; arg0<0 is returned as-is.
+     * (Sister of func_0086C0 which uses the adjacent 0x8f86 chain.) */
+    if ((int16_t)arg0_bp_06 < 0)
+        return arg0_bp_06;
+    while ((int8_t)*(uint8_t near *)(0x8F85 + (unsigned)arg0_bp_06 * 12) >= 0)
+        arg0_bp_06 = (uint16_t)(int16_t)(int8_t)
+            *(uint8_t near *)(0x8F85 + (unsigned)arg0_bp_06 * 12);
+    return arg0_bp_06;
 }
 
 /* @asm        0x009786..0x009792  (12 bytes)  region=load_image
@@ -334,13 +351,16 @@ int func_00975A_logic_sz_25(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (12 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  signed per-good byte lookup at table 0x2CA
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_009786_logic_sz_12(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00978A mov bx,[bp+6]; 0x00978D mov al,[bx+0x2ca]; 0x009791 cwde.
+     * Signed-byte lookup into the DGROUP table at 0x02CA indexed by arg0 (a
+     * good/commodity id), in the per-good static-table band near 0x2AA/0x2F4/0x2FD
+     * (cf. func_008BC6 @0x2F5, func_008D9C @0x2F4). */
+    return (int8_t)*(uint8_t near *)(0x02CA + (unsigned)arg0_bp_06);
 }
 
 /* @asm        0x009794..0x0097BB  (39 bytes)  region=load_image
@@ -524,17 +544,21 @@ int func_0098F6_logic_sz_85(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * Near CALL targets:
  *   - 0x0098F6
  *   - 0x008982
- * @inferred_role  UNKNOWN (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  if func_0098F6 resolves a pair, forwards it to func_008982
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00994C_logic_sz_40(uint16_t arg0_bp_06)
+void func_00994C_logic_sz_40(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00995C */ func_0098F6();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009964 JE 0x009972 */ {
-            /* @0x00996F */ func_008982();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x009950 lea ax,[bp-4]; push ax; lea cx,[bp-2]; push cx;
+     *      push [bp+6]; call 0x98f6 (func_0098F6(arg0, &a, &b) fills two locals);
+     *      0x009962 or ax,ax; je 0x9972 (do nothing on 0);
+     *      0x009966 push -1; push [bp-4]; push [bp-2];
+     *      call 0x8982 (func_008982(a, b, -1)).
+     * Resolves a coordinate/index pair via func_0098F6 and, on success, hands
+     * it (with sentinel -1) to func_008982. */
+    uint16_t a = 0, b = 0;
+    if (func_0098F6(arg0_bp_06, &a, &b) != 0)
+        func_008982(a, b, (uint16_t)-1);
 }
 
 /* @asm        0x009974..0x009986  (18 bytes)  region=load_image
@@ -546,13 +570,27 @@ int func_00994C_logic_sz_40(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  resolves func_008956(arg0,arg1); maps via func_0090C8/func_009102
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x009978 mov [bp-2],0xffff (result=-1); push [bp+8]; push [bp+6];
+     *      call 0x8956 (func_008956(arg0,arg1)); cwde; mov [bp-4],ax (r, signed);
+     *      or ax,ax; jl 0x99a9 (return -1 if r<0);
+     *      0x009992 push ax; call 0x90c8 (result=func_0090C8(r));
+     *      0x00999d push [bp-4]; call 0x9102; mov bx,[bp+0xa]; mov [bx],ax
+     *      (*arg2 = func_009102(r)); 0x0099a9 return result.
+     * Maps a resolved index r=func_008956(arg0,arg1) through func_0090C8 (return
+     * value) and func_009102 (written to the out-pointer arg2); -1 when r<0.
+     * NOTE: the auto-trace under-counted args; the real function reads [bp+0xa]. */
+    int16_t r = (int16_t)func_008956(arg0_bp_06, arg1_bp_08);
+    int result;
+    if (r < 0)
+        return -1;
+    result = (int)func_0090C8(r);                       /* @0x009994 (first) */
+    *(uint16_t near *)arg2_bp_0A = (uint16_t)func_009102(r);  /* @0x0099a1 (second) */
+    return result;
 }
 
 /* @asm        0x0099AE..0x0099ED  (63 bytes)  region=load_image
@@ -623,19 +661,24 @@ int func_0099EE_logic_sz_67(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * LCALL targets:
  *   - 0x037F:0x000A
  *   - 0x037F:0x0142
- * @inferred_role  UNKNOWN (56 bytes). 0x037F:0x000A + 0x037F:0x0142
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: overlay 0x000A(arg0,arg1) AND (0x0142(arg0,arg1)&arg2)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_009A32_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x009A41 */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009A4B JE 0x009A65 */ {
-            /* @0x009A53 */ overlay_call_037F_0142();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009A5E JE 0x009A65 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x009A3B push [bp+8]; push [bp+6]; lcall 0x37f:0xa; or ax,ax;
+     *      je 0x9a65 (result stays 0 when overlay 0x000A returns 0);
+     *      0x009A4D push [bp+8]; push [bp+6]; lcall 0x37f:0x142; 0x009A5B
+     *      test [bp+0xa],al; je 0x9a65; 0x009A60 mov [bp-2],1; 0x009A65 ret.
+     * Returns 1 iff overlay 0x037F:0x000A(arg0,arg1) is non-zero AND the low byte
+     * of overlay 0x037F:0x0142(arg0,arg1) shares a set bit with arg2's low byte.
+     * Overlay calls shown 0-arg to match overlay_externs.h; real args in comment. */
+    if (overlay_call_037F_000A(/* arg0, arg1 */) != 0) {
+        int mask = overlay_call_037F_0142(/* arg0, arg1 */);
+        if ((arg2_bp_0A & mask & 0xFF) != 0)
+            return 1;
+    }
+    return 0;
 }
 
 /* @asm        0x009A6A..0x009AA9  (63 bytes)  region=load_image

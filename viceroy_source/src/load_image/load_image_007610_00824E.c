@@ -18,13 +18,19 @@
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (31 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord field +0x17 high-nibble setter (arg1<<4)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_007610_logic_sz_31(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_007610_logic_sz_31(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x007617 imul bx,si,0x1c; 0x00761A mov al,[bx+0x315b]; and al,0x0f;
+     *      0x007620 mov cl,[bp+8]; shl cl,4; or al,cl;
+     *      0x007628 mov [bx+0x315b],al.
+     * Stores arg1 into the high nibble of UnitRecord[arg0] field +0x17 (0x315b)
+     * while preserving the low nibble (inverse of func_0075FE reader). The byte
+     * stored is left in al on exit but no caller relies on a return value. */
+    uint8_t near *p = (uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17);
+    *p = (uint8_t)((*p & 0x0F) | ((uint8_t)arg1_bp_08 << 4));
 }
 
 /* @asm        0x007630..0x007655  (37 bytes)  region=load_image
@@ -36,21 +42,18 @@ int func_007610_logic_sz_31(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (37 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord.type predicate (type in {4,5,0x15,0x16})
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_007630_logic_sz_37(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007640 JE 0x007656 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007645 JE 0x007656 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00764A JE 0x007656 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x00764F JE 0x007656 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007633 imul bx,[bp+6],0x1c; 0x007637 mov bl,[bx+0x3146]; sub bh,bh
+     *      (UnitRecord[arg0].type, +0x02); then cmp bx against 4/5/0x15/0x16,
+     *      each je 0x7656 (mov ax,1; ret); fall-through 0x7651 sub ax,ax (ret 0).
+     * Returns 1 iff the unit's type is one of {4,5,0x15,0x16}, else 0
+     * (DGROUP_MEMORY_MAP §3.1, type addr 0x3146). */
+    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    return (type == 0x04 || type == 0x05 || type == 0x15 || type == 0x16) ? 1 : 0;
 }
 
 /* @asm        0x00765C..0x007686  (42 bytes)  region=load_image
@@ -62,23 +65,19 @@ int func_007630_logic_sz_37(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (42 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord.type predicate (type in {1,4,0xb,0x14,0x16})
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00765C_logic_sz_42(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00766C JE 0x007686 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007671 JE 0x007686 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x007676 JE 0x007686 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x00767B JE 0x007686 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x007680 JE 0x007686 */ {
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00765F imul bx,[bp+6],0x1c; 0x007663 mov bl,[bx+0x3146]; sub bh,bh
+     *      (UnitRecord[arg0].type, +0x02); then cmp bx against 1/4/0xb/0x14/0x16,
+     *      each je 0x7686 (mov ax,1; ret); fall-through 0x7682 sub ax,ax (ret 0).
+     * Returns 1 iff the unit's type is one of {1,4,0xb,0x14,0x16}, else 0
+     * (DGROUP_MEMORY_MAP §3.1, type addr 0x3146). */
+    uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    return (type == 0x01 || type == 0x04 || type == 0x0B
+            || type == 0x14 || type == 0x16) ? 1 : 0;
 }
 
 /* @asm        0x00768C..0x00772D  (161 bytes)  region=load_image
@@ -216,19 +215,23 @@ int func_0078F4_logic_sz_66(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x006672
  *   - 0x0066BA
- * @inferred_role  UNKNOWN (48 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  sets UnitRecord field +0x08 (orders) along a unit chain
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_007936_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_007936_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007941 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007948 JL 0x007962 */ {
-            /* @0x007959 */ func_0066BA();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x007960 JGE 0x00794D */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00793E mov ax,si; call 0x6672 (func_006672 = chain head from arg0);
+     *      si=ax; 0x007946 or si,si; jl 0x7962 (stop when index<0);
+     *      loop 0x794d: imul bx,si,0x1c; mov [bx+0x314c],(uint8)arg1 (+0x08);
+     *      mov ax,si; call 0x66ba (func_0066BA = chain next); si=ax;
+     *      or si,si; jge 0x794d.
+     * Walks the unit chain starting at func_006672(arg0) and writes arg1 into
+     * UnitRecord[i] field +0x08 (0x314c) for every member (stride 0x1C). */
+    int16_t i = (int16_t)func_006672(arg0_bp_06);
+    while (i >= 0) {
+        *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x08) = (uint8_t)arg1_bp_08;
+        i = (int16_t)func_0066BA(i);
+    }
 }
 
 /* @asm        0x007966..0x00798F  (41 bytes)  region=load_image
@@ -243,13 +246,27 @@ int func_007936_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x00772E
- * @inferred_role  WRAPPER_NEARCALL (41 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  type-gated dispatch: func_00772E for type 0xd..0x12 else func_0069D2
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_007966_logic_sz_41(uint16_t arg0_bp_06)
+void func_007966_logic_sz_41(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x00772E. */
-    return func_00772E();
+    /* @asm 0x00796E or si,si; jl 0x799c (return if arg0<0);
+     *      0x007972 imul bx,si,0x1c; mov al,[bx+0x3146] (UnitRecord.type, +0x02);
+     *      cmp al,0xd; jb 0x7990; cmp al,0x12; ja 0x7990;
+     *      in [0xd,0x12]: push si; call 0x772e (func_00772E(arg0));
+     *      else 0x7990: push -2; push -2; push si; call 0x69d2
+     *      (func_0069D2(arg0, -2, -2)).
+     * Dispatches on the unit's type (DGROUP_MEMORY_MAP §3.1, type 0x3146). */
+    if ((int16_t)arg0_bp_06 < 0)
+        return;
+    {
+        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+        if (type >= 0x0D && type <= 0x12)
+            func_00772E(arg0_bp_06);
+        else
+            func_0069D2(arg0_bp_06, (uint16_t)-2, (uint16_t)-2);
+    }
 }
 
 /* @asm        0x0079A0..0x007A17  (119 bytes)  region=load_image
@@ -477,13 +494,17 @@ int func_007B64_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * Near CALL targets:
  *   - 0x006CCA
- * @inferred_role  WRAPPER_NEARCALL (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  caches func_006CCA(arg0) into UnitRecord[arg0] field +0x05
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
+void func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x006CCA. */
-    return func_006CCA();
+    /* @asm 0x007BD2 mov si,[bp+6]; push si; call 0x6cca (func_006CCA returns a
+     *      byte in al); 0x007BDD imul bx,si,0x1c; 0x007BE0 mov [bx+0x3149],al.
+     * Stores the low byte of func_006CCA(arg0) into UnitRecord[arg0] field +0x05
+     * (0x3149) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
+    uint8_t v = (uint8_t)func_006CCA(arg0_bp_06);
+    *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x05) = v;
 }
 
 /* @asm        0x007BE8..0x007C2A  (66 bytes)  region=load_image
@@ -629,13 +650,23 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (27 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unsigned-byte reader: PowerRecord (arg0<4) vs 0x4e-stride table
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_007F34_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x007F39 cmp [bp+6],4; jl 0x7f50 selects the arm:
+     *   arg0>=4: 0x007F3F imul si,[bp+6],0x4e; mov bx,[bp+8];
+     *            mov al,[bx+si+0x59d8]; sub ah,ah  -> table[0x59d8] stride 0x4e.
+     *   arg0<4 : 0x007F50 imul si,[bp+6],0x13c; mov bx,[bp+8];
+     *            mov al,[bx+si-0x77c4]; sub ah,ah  -> PowerRecord[arg0] byte
+     *            (-0x77c4 == DGROUP +0x883C == PowerRecord base 0x8808+0x34),
+     *            stride 0x13c (DGROUP_MEMORY_MAP §3.5).
+     * arg1 is a byte offset into the selected per-index record; result is the
+     * unsigned byte (sub ah,ah -> zero-extended). */
+    if ((int16_t)arg0_bp_06 >= 4)
+        return (uint8_t)*(uint8_t near *)(0x59D8 + (unsigned)arg0_bp_06 * 0x4E + arg1_bp_08);
+    return (uint8_t)*(uint8_t near *)(0x8808 + 0x34 + (unsigned)arg0_bp_06 * 0x13C + arg1_bp_08);
 }
 
 /* @asm        0x007F62..0x007F80  (30 bytes)  region=load_image
@@ -832,13 +863,23 @@ int func_00817E_logic_sz_14(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (28 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  AIPersonality slot-base getter (+0x18) with active-player remap
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0081A4_logic_sz_28(uint16_t arg0_bp_06)
+uint16_t func_0081A4_logic_sz_28(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor reads DGROUP:0x5382. */
-    return *((uint16_t near*)0x5382);
+    /* @asm 0x0081A7 test [0x5382],1; je 0x81c0; 0x0081AE mov ax,[0x53d2];
+     *      cmp [bp+6],ax; jne 0x81c0; 0x0081B6 imul ax,[0x5398],0x34;
+     *      0x0081BB add ax,0x5426; ret. 0x0081C0 imul ax,[bp+6],0x34;
+     *      jmp 0x81bb (also +0x5426).
+     * Returns &AIPersonality[idx] + 0x18 (table @0x540E stride 0x34;
+     * 0x5426 == 0x540E+0x18). When game_phase(0x5382)&1 and arg0 equals the
+     * stored index [0x53d2], idx is remapped to the active player [0x5398];
+     * otherwise idx == arg0 (DGROUP_MEMORY_MAP §3.2). */
+    uint16_t idx = arg0_bp_06;
+    if ((*(uint8_t near *)0x5382 & 1) && *(uint16_t near *)0x53D2 == arg0_bp_06)
+        idx = *(uint16_t near *)0x5398;
+    return 0x5426 + (unsigned)idx * 0x34;
 }
 
 /* @asm        0x0081C6..0x0081F2  (44 bytes)  region=load_image
@@ -850,20 +891,23 @@ int func_0081A4_logic_sz_28(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  selects a stride-0x4e record (0x5ad6) into globals 0x8D4E/50/52
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0081C6_logic_sz_44(uint16_t arg0_bp_06)
+void func_0081C6_logic_sz_44(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x8D4E, 0x8D50, 0x8D52
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0081D1 JL 0x0081D8 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x0081D6 JL 0x0081DD */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0081C9 mov [0x8d52],arg0; 0x0081CF or ax,ax; jl 0x81d8;
+     *      0x0081D3 cmp ax,8; jl 0x81dd; 0x0081D8 mov [bp+6],0 (clamp);
+     *      0x0081DD mov [0x8d50], arg0+4; 0x0081E6 imul ax,[bp+6],0x4e;
+     *      0x0081EA add ax,0x5ad6; 0x0081ED mov [0x8d4e],ax.
+     * Stores the raw selector in 0x8d52, clamps arg0 to [0,7] (else 0), then
+     * publishes the derived index (+4) in 0x8d50 and a pointer to record
+     * 0x5ad6 + arg0*0x4e (stride 0x4e) in 0x8d4e. */
+    *(uint16_t near *)0x8D52 = arg0_bp_06;
+    if ((int16_t)arg0_bp_06 < 0 || (int16_t)arg0_bp_06 >= 8)
+        arg0_bp_06 = 0;
+    *(uint16_t near *)0x8D50 = arg0_bp_06 + 4;
+    *(uint16_t near *)0x8D4E = 0x5AD6 + (unsigned)arg0_bp_06 * 0x4E;
 }
 
 /* @asm        0x0081F2..0x008214  (34 bytes)  region=load_image
@@ -875,23 +919,30 @@ int func_0081C6_logic_sz_44(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (34 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  selects a NativeSettlement (0x54ec) then calls func_0081C6
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0081F2_logic_sz_34(uint16_t arg0_bp_06)
+void func_0081F2_logic_sz_34(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x539A
-     * Writes DGROUP: 0x8D4C
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0081FD JL 0x008227 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x008201 JL 0x008209 */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x008207 JG 0x00820E */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0081F5 mov [0x8d4c],arg0; or ax,ax; jl 0x8227 (return if arg0<0);
+     *      0x008203 cmp [0x539a],ax; jg 0x820e (keep arg0 if settle_count>arg0,
+     *      else 0x8209 clamp arg0 to 0); 0x00820E imul bx,[bp+6],0x12;
+     *      add bx,0x54ec; mov [0x8d4a],bx; 0x00821A mov al,[bx+2]; sub ah,ah
+     *      (NativeSettlement[arg0].owner, +0x02); sub ax,4; call func_0081C6.
+     * Publishes the selector in 0x8d4c, and (for arg0>=0) a pointer to
+     * NativeSettlement[arg0] (stride 0x12 @0x54ec, DGROUP_MEMORY_MAP §3.3) in
+     * 0x8d4a, then forwards (owner-4) to func_0081C6. */
+    *(uint16_t near *)0x8D4C = arg0_bp_06;
+    if ((int16_t)arg0_bp_06 < 0)
+        return;
+    if (!((int16_t)*(uint16_t near *)0x539A > (int16_t)arg0_bp_06))
+        arg0_bp_06 = 0;
+    {
+        uint16_t rec = 0x54EC + (unsigned)arg0_bp_06 * 0x12;
+        uint8_t owner = *(uint8_t near *)(rec + 0x02);
+        *(uint16_t near *)0x8D4A = rec;
+        func_0081C6((uint16_t)(owner - 4));   /* -> func_0081C6_logic_sz_44 */
+    }
 }
 
 /* @asm        0x00822A..0x00824E  (36 bytes)  region=load_image
@@ -903,19 +954,19 @@ int func_0081F2_logic_sz_34(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (36 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  classifies a 0x4e-stride record byte (0x5ad8) into 1/2/3
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00822A_logic_sz_36(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00823A JE 0x008244 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00823D JE 0x008244 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x008240 JE 0x00824E */ {
-                    goto label_008258;  /* @0x008242 */
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00822E imul bx,[bp+6],0x4e; 0x008232 mov al,[bx+0x5ad8]; sub ah,ah;
+     *      or ax,ax; je 0x8244 (ret 1); dec ax; je 0x8244 (ret 1);
+     *      dec ax; je 0x824e (ret 2); jmp 0x8258 (ret 3).
+     * Reads the status byte at 0x5ad8 + arg0*0x4e (same stride-0x4e record family
+     * as func_0081C6, 0x5ad6 base +2) and maps {0,1}->1, 2->2, else->3. */
+    uint8_t t = *(uint8_t near *)(0x5AD8 + (unsigned)arg0_bp_06 * 0x4E);
+    if (t == 0 || t == 1) return 1;
+    if (t == 2) return 2;
+    return 3;
 }
 

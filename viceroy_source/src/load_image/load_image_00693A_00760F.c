@@ -58,12 +58,18 @@ int func_0069D2_logic_sz_12(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x0069D2
  * @inferred_role  WRAPPER_NEARCALL (33 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0069EE_logic_sz_33(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x0069D2. */
-    return func_0069D2();
+    /* @asm 0x0069F5 imul bx,si,0x1c; 0x0069F8 mov al,[bx+0x3145]; sub ah,ah
+     *      (push UnitRecord[arg0].map_y, +0x01); 0x0069FF mov al,[bx+0x3144]
+     *      (push UnitRecord[arg0].map_x, +0x00); 0x006A06 call 0x69D2.
+     * Forwards UnitRecord[arg0]'s (map_x, map_y) to func_0069D2 along with the
+     * unit index (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C @0x3144). */
+    uint16_t map_x = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
+    uint16_t map_y = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
+    return func_0069D2(arg0_bp_06, map_x, map_y);
 }
 
 /* @asm        0x006A10..0x006A7C  (108 bytes)  region=load_image
@@ -339,13 +345,18 @@ int func_006F5A_op_sz_105(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord.owner low-nibble clearer (+0x03, &0x0F)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_006FC4_logic_sz_20(uint16_t arg0_bp_06)
+void func_006FC4_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x006FC7 mov bx,[bp+6]; 0x006FCA or bx,bx; 0x006FCC jl 0x6FD6
+     *      (skip when arg0 < 0); 0x006FCE imul bx,bx,0x1c;
+     *      0x006FD1 and byte[bx+0x3147],0x0f.
+     * Clears the high nibble of UnitRecord[arg0] field +0x03 (0x3147), keeping
+     * only owner (&0x0F) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
+    if ((int16_t)arg0_bp_06 >= 0)
+        *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03) &= 0x0F;
 }
 
 /* @asm        0x006FD8..0x007002  (42 bytes)  region=load_image
@@ -387,13 +398,19 @@ int func_006FD8_logic_sz_42(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord field +0x03 bit-setter (OR 0x10<<arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_007002_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_007002_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x007005 mov bx,[bp+6]; or bx,bx; jl 0x701a (skip if arg0<0);
+     *      0x00700C mov cl,[bp+8]; mov al,0x10; shl al,cl;
+     *      0x007013 imul bx,bx,0x1c; 0x007016 or byte[bx+0x3147],al.
+     * Sets bit (0x10 << arg1) in the high nibble of UnitRecord[arg0] field
+     * +0x03 (0x3147) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
+    if ((int16_t)arg0_bp_06 >= 0)
+        *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03)
+            |= (uint8_t)(0x10 << (arg1_bp_08 & 0xFF));
 }
 
 /* @asm        0x00701C..0x00704C  (48 bytes)  region=load_image
@@ -725,13 +742,19 @@ int func_007356_logic_sz_56(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord.owner low-nibble toggler (+0x03, XOR arg1 &0x0F)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00738E_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_00738E_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x007395 imul bx,si,0x1c; 0x007398 mov al,[bx+0x3147];
+     *      0x00739C xor al,[bp+8]; 0x00739F and al,0x0f;
+     *      0x0073A1 xor byte[bx+0x3147],al.
+     * Toggles, in UnitRecord[arg0] field +0x03 (0x3147), exactly the low-nibble
+     * bits where (current ^ arg1) differ -- i.e. sets owner(&0x0F) := arg1&0x0F
+     * leaving the high nibble intact (DGROUP_MEMORY_MAP §3.1, stride 0x1C). */
+    uint8_t near *p = (uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x03);
+    *p ^= (uint8_t)((*p ^ (uint8_t)arg1_bp_08) & 0x0F);
 }
 
 /* @asm        0x0073A8..0x00740B  (99 bytes)  region=load_image
@@ -777,13 +800,22 @@ int func_0073A8_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * LCALL targets:
  *   - 0x037F:0x02A0
- * @inferred_role  WRAPPER_LCALL (33 bytes). 0x037F:0x02A0
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  forwards UnitRecord[arg0] (map_x,map_y) to overlay 0x037F:0x02A0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00757E_op_sz_33(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to LCALL 0x037F:0x02A0. */
-    return overlay_call_037F_02A0();
+    /* @asm 0x007585 imul bx,si,0x1c; 0x007588 mov al,[bx+0x3145]; sub ah,ah
+     *      (push UnitRecord[arg0].map_y, +0x01); 0x00758F mov al,[bx+0x3144]
+     *      (push UnitRecord[arg0].map_x, +0x00); 0x007594 lcall 0x37f:0x2a0.
+     * Thin wrapper: passes the unit's tile coordinates to overlay 0x037F:0x02A0
+     * (library-implementation-only; body lives in the overlay thunk page).
+     * UnitRecord stride 0x1C @0x3144 (DGROUP_MEMORY_MAP §3.1). The call is shown
+     * 0-arg to match the overlay_externs.h prototype; real args are in comment. */
+    uint16_t map_x = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
+    uint16_t map_y = (uint8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
+    (void)map_x; (void)map_y;
+    return overlay_call_037F_02A0(/* map_x, map_y */);
 }
 
 /* @asm        0x0075A0..0x0075D3  (51 bytes)  region=load_image
@@ -827,13 +859,16 @@ int func_0075A0_logic_sz_51(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (16 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord field +0x17 low-nibble reader (&0x0F)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0075D4_logic_sz_16(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0075D7 imul bx,[bp+6],0x1c; 0x0075DB mov al,[bx+0x315b];
+     *      0x0075DF and ax,0x0f.
+     * Returns the low nibble of UnitRecord[arg0] field +0x17 (0x315b); the
+     * byte packs two 4-bit fields (DGROUP_MEMORY_MAP §3.1, stride 0x1C). */
+    return *(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) & 0x0F;
 }
 
 /* @asm        0x0075E4..0x0075FE  (26 bytes)  region=load_image
@@ -845,13 +880,18 @@ int func_0075D4_logic_sz_16(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord field +0x17 low-nibble toggler (XOR arg1 &0x0F)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0075E4_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_0075E4_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0075EB imul bx,si,0x1c; 0x0075EE mov al,[bx+0x315b];
+     *      0x0075F2 xor al,[bp+8]; 0x0075F5 and al,0x0f;
+     *      0x0075F7 xor byte[bx+0x315b],al.
+     * Sets the low nibble of UnitRecord[arg0] field +0x17 (0x315b) to arg1&0x0F
+     * while leaving the high nibble intact (cf. func_0075D4 reader). */
+    uint8_t near *p = (uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17);
+    *p ^= (uint8_t)((*p ^ (uint8_t)arg1_bp_08) & 0x0F);
 }
 
 /* @asm        0x0075FE..0x00760F  (17 bytes)  region=load_image
@@ -863,12 +903,15 @@ int func_0075E4_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (17 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  UnitRecord field +0x17 high-nibble reader (signed, >>4)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0075FE_logic_sz_17(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x007601 imul bx,[bp+6],0x1c; 0x007605 mov al,[bx+0x315b];
+     *      0x007609 sar al,4; 0x00760C cwde.
+     * Returns the high nibble of UnitRecord[arg0] field +0x17 (0x315b),
+     * arithmetic-shifted (sign-extended) (cf. func_0075D4 for the low nibble). */
+    return (int8_t)*(uint8_t near *)(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x17) >> 4;
 }
 
