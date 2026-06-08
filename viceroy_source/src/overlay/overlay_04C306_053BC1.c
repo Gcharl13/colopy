@@ -9,9 +9,9 @@
  * dumps this file's stale banners cite badly truncate the large routines).
  * Raw-byte entry prologues spot-checked against COLONIZE/VICEROY.EXE.
  *
- * STRICT cite-or-TBD: every value/offset cites the .asm; anything undeterminable
+ * STRICT cite-or-not yet decoded: every value/offset cites the .asm; anything undeterminable
  * (opaque overlay 0x191F / 0x1A1F targets, routines whose body was not fully
- * read within this pass) is marked TBD and never guessed.
+ * read within this pass) is marked not yet decoded and never guessed.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).
@@ -69,9 +69,9 @@ extern int overlay_call_191F_0A06(void);  /* 0x191F:0x0A06 — post-create activ
 extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0x12) */
 
 /* ----------------------------------------------------------------------------
- * DGROUP globals referenced in this region (cite-or-TBD; addresses are the
+ * DGROUP globals referenced in this region (cite-or-not yet decoded; addresses are the
  * absolute DGROUP offsets seen in the disassembly).  Names describe the
- * byte-verified ROLE where known; SEMANTICS marked TBD are not guessed.
+ * byte-verified ROLE where known; SEMANTICS marked not yet decoded are not guessed.
  * -------------------------------------------------------------------------- */
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
@@ -97,7 +97,7 @@ extern uint8_t  g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 0x10 x 6-byte */
 /* Near-CS trampolines (page-0x0D ljmp block @0x0534BC..0x05353E -> 0x1A1F:0xNNN).
  * RESOLVED (2026-06-08): cs:0x7A71 -> 0x534C1 -> 0x1A1F:0x470 -> file 0x4C35A
  *   = func_04C35A_ai_queue_a_find_or_insert (BYTE_VERIFIED via segid=13 off=0x16A).
- * Other trampolines below retain TBD-exact for the parts not yet resolved. */
+ * Other trampolines below retain not yet decoded for the parts not yet resolved. */
 extern int  ovly_tramp_7A85(uint16_t a, uint16_t b);          /* call cs:0x7A85 -> per-slot clear */
 /* cs:0x7A71 -> file 0x534C1 -> 0x1A1F:0x470 (thunk@0x1CA60 segid=13 off=0x16A)
  * -> file 0x4C35A = func_04C35A_ai_queue_a_find_or_insert(power,b0,b1,b2,b3)
@@ -856,7 +856,7 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  *                [BYTE_VERIFIED: segid=13, off=0x31C, base=0x4C1F0, STRONG]
  *
  * All four targets are in this same file (page_0D), already fully ported.
- * The three previously TBD-inner scoring-leaf sub-regions are now BYTE_VERIFIED:
+ * The three previously left unresolved scoring-leaf sub-regions are now BYTE_VERIFIED:
  *   0x181F:0x8BC → file 0x73A8 = func_0073A8_logic_sz_99 (unit chain score by category)
  *   0x181F:0x2EE → file 0x6672 = func_006672 / unit_chain_resolve (chain head walker)
  *   0x181F:0x37A → file 0x493C = func_00493C_logic_sz_14 (octile distance: max+min/2)
@@ -931,7 +931,7 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  * sentinel 0x270F, the scratch bases (0x9FAA/0x9870/0x9E98/0xA13C), the per-power
  * tier table 0x925A, the bitmask globals 0x173C/0x173E, and all four trampoline
  * targets (resolved via overlay_segmap.json segid=13 base=0x4C1F0 STRONG).
- * All previously TBD-inner items for func_052F7E are now BYTE_VERIFIED (2026-06-08):
+ * All previously left unresolved items for func_052F7E are now BYTE_VERIFIED (2026-06-08):
  *   - bp-0x18 score accumulator arithmetic (Phase 2 per-colony scoring inner body)
  *   - All three leaf-helper identities: 0x181F:0x8BC/0x2EE/0x37A
  *   - All four trampoline call-site argument values

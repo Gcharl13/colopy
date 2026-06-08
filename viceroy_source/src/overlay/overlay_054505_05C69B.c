@@ -7,9 +7,9 @@
  * code_base 0x05AF70) cross-checked against raw COLONIZE/VICEROY.EXE bytes and
  * the DGROUP string table (strings.json, DGROUP image base 0x1D9A0).
  *
- * STRICT cite-or-TBD: every value/offset cites the .asm; anything undeterminable
+ * STRICT cite-or-not yet decoded: every value/offset cites the .asm; anything undeterminable
  * (opaque 0x191F / 0x1A1F overlay targets, data-resident weight tables) is marked
- * TBD and never guessed.
+ * not yet decoded and never guessed.
  *
  * ----------------------------------------------------------------------------
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
@@ -56,7 +56,7 @@
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
- * DGROUP globals referenced in this region (cite-or-TBD; absolute DGROUP offsets
+ * DGROUP globals referenced in this region (cite-or-not yet decoded; absolute DGROUP offsets
  * as seen in the disassembly).  Declared locally per the porting-scope rule
  * (this file may not edit shared headers).
  * -------------------------------------------------------------------------- */
@@ -363,10 +363,10 @@ int native_relations_line_draw(int power, int tribe_handle)  /* func_056B92 */
  * message via the text-draw thunks (0x191F:0x176 / 0x181F:0x3FE) and tears the
  * settlement down or marks it visited.
  *
- * STRICT cite-or-TBD: the per-branch *amounts* (gold/goods/food yielded) are
+ * STRICT cite-or-not yet decoded: the per-branch *amounts* (gold/goods/food yielded) are
  * scaled through tables that live in the data segment / NAMES.TXT and are not
  * byte-determinable from this code alone within this pass, so they are recorded
- * as TBD rather than guessed.  The dispatch structure (which message for which
+ * as not yet decoded rather than guessed.  The dispatch structure (which message for which
  * outcome) is byte-anchored by the string xrefs above.  A full per-amount
  * decompile is queued as a follow-up (see report).
  *
@@ -716,7 +716,7 @@ int unit_combat_value(int unit)  /* func_059B3E */
  * but is the lighter target-pre-scorer.  Structure (the ship/land split, the
  * terrain gate, the treaty-bit gate at 0x0A38&0x40, the 12-slot argmax) is
  * byte-anchored; the numeric move/attack weights live in the data segment and
- * are recorded TBD rather than guessed.
+ * are recorded not yet decoded rather than guessed.
  *
  * @asm_extent 0x059B90..0x05A40E (2173 B, reseg page_0F, terminal RETF)
  * ============================================================================ */

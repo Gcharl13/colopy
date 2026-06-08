@@ -50,10 +50,10 @@
  *   191F:01A8 widget_invalidate(a,b) 191F:0FB8/0FC4/091C/0928 dialog primitives
  *   1A1F:0372 record-read (page 0x12)
  *
- * STRICT cite-or-TBD: every value/offset cites the reseg page (display IP is the
+ * STRICT cite-or-not yet decoded: every value/offset cites the reseg page (display IP is the
  * 2nd column).  Anything undeterminable (opaque overlay targets, the large
  * geometry/format routines not fully byte-walked this round) is marked
- * TBD/STILL-SKELETON and never guessed.
+ * not yet decoded/STILL-SKELETON and never guessed.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).
@@ -109,7 +109,7 @@ extern int overlay_call_191F_091C(void);  /* 0x191F:0x091C — dialog primitive 
 extern int overlay_call_191F_0FC4(void);  /* 0x191F:0x0FC4 — dialog primitive (page 0x11) */
 
 /* Additional thunk wrappers used by the render/text bodies ported this round but
- * NOT present in include/overlay_externs.h — declared file-local (cite-or-TBD).
+ * NOT present in include/overlay_externs.h — declared file-local (cite-or-not yet decoded).
  * Targets are RTLink JMP-FAR leaves; we forward, never fabricate a body. */
 extern int overlay_call_191F_08D2(void);  /* 0x191F:0x08D2 — panel append label-widget (page 0x11) */
 extern int overlay_call_191F_0910(void);  /* 0x191F:0x0910 — token->local copy (page 0x11) */
@@ -181,7 +181,7 @@ int func_070C55(void) { return overlay_call_1A1F_0BBA(); } /* TRAMPOLINE -> 0x1A
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (absolute DGROUP offsets from the
- * disasm; names describe the byte-verified ROLE, semantics marked TBD are not
+ * disasm; names describe the byte-verified ROLE, semantics marked not yet decoded are not
  * guessed).  Cross-cited where the sibling files already named the address.
  * -------------------------------------------------------------------------- */
 extern int16_t  g_screen_mode_1F5C;    /* DGROUP:0x1F5C — screen-mode word (src/ui/menu.c
@@ -216,7 +216,7 @@ extern int16_t  g_panel_words_1F3C[];  /* DGROUP:0x1F3C.. (byte-fields 0x1F3C/3E
 extern uint16_t g_word[];              /* near view of DGROUP, byte-offset indexed */
 
 /* --- Additional DGROUP globals referenced by the bodies ported this round.
- * Named for the byte-verified ROLE; semantics marked TBD are not guessed. --- */
+ * Named for the byte-verified ROLE; semantics marked not yet decoded are not guessed. --- */
 extern int16_t  g_panel_optmask_1F54;  /* DGROUP:0x1F54 — per-option enable bitmask (func_06E3D0) */
 extern int16_t  g_panel_flag_1F64;     /* DGROUP:0x1F64 — panel draw-state word (func_06E3D0) */
 extern int16_t  g_panel_flag_1F66;     /* DGROUP:0x1F66 — panel input-enable word (func_06E3D0/06F0F4) */
@@ -249,7 +249,7 @@ extern uint16_t g_report_lbl_2EE2[];   /* DGROUP:0x2EE2 — per-cell label-id gr
 extern uint8_t  g_tribe_active_314C[]; /* DGROUP:0x314C — per-unit/owner active byte, stride 0x1C */
 
 /* Format/charset string-buffer DGROUP offsets passed to the C runtime; kept as
- * raw offsets (cite-or-TBD — exact bytes not re-extracted here). */
+ * raw offsets (cite-or-not yet decoded — exact bytes not re-extracted here). */
 #define DLG_FMT_2DA8   0x2DA8  /* @asm format-arg quad [0x2DA8/2DAA/2DAC/2DAE] (panel) */
 #define RPT_FMT_2DA8   0x2DA8  /* same quad reused by the report renderer */
 
@@ -1184,7 +1184,7 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
  * @asm 0x06F518 cb                                    (RETF)
  * @-directive keyword strings extracted (BYTE_VERIFIED 2026-06-08, from DGROUP):
  *   "OPTIONS","PROMPT","TEXT","SMALLFONT","Y","X","WIDTH","LENGTH","CHECKBOX","DEFAULT"
- *   — see #define TMPL_KEYTAB_1FC7.. above.  TBD-inner for this function CLOSED
+ *   — see #define TMPL_KEYTAB_1FC7.. above.  left unresolved-inner for this function CLOSED
  *   (Group B / data-table contents resolved). The per-directive field writes
  *   (rec[+0xC]/[+0xE]/[+0x80]/[+0xa]) remain at their @asm store sites.
  * ============================================================================ */

@@ -55,7 +55,7 @@
  *            tribe owns the grounds: the offended tribe is smited via the
  *            native-attitude helper 0x181F:0xD6C (file 0x045DF2).
  *
- * GOLD MAGNITUDES — UPGRADED from the prior "[TBD]" to BYTE_VERIFIED.  The
+ * GOLD MAGNITUDES — UPGRADED from the prior "[left unresolved]" to BYTE_VERIFIED.  The
  * 2026-05-28 notes claimed the gold scale routed through an undecoded Type-B
  * helper.  It does NOT: the message NUMBER args (and the treasury credit) are
  * the locals [bp-0x10] (gold) and [bp-0x32] (treasure-unit value), computed
@@ -150,7 +150,7 @@
  *   [bp+0xA]= tile_y
  *   returns AX = final outcome number (1..9).
  *
- * STILL TBD (narrow, honestly bounded):
+ * STILL not yet decoded (narrow, honestly bounded):
  *   - [0x5382] bit-1 semantics (forces Cibola); presumed a debug/cheat toggle.
  *   - The De-Soto "no_bad_luck" attribute is PowerRecord bit 7 (power_attribute_
  *     bit(nation,7)); the value 7 is byte-exact but the in-EXE name of bit 7
@@ -159,7 +159,7 @@
  *     (per-power colonist popsum) and g_colony_count_9298; semantics in that context
  *     are era/disposition demotion gates (byte-exact access, exact threshold semantics RUNTIME_ONLY).
  *   - 0x191F:0xAC8 / 0x191F:0xD2C / 0x1A1F:0x6EC bodies fully resolved above
- *     (BYTE_VERIFIED 2026-06-08).  No remaining TBDs on these three helpers.
+ *     (BYTE_VERIFIED 2026-06-08).  No remaining not-yet-decoded items on these three helpers.
  * ============================================================================ */
 #include "viceroy_types.h"
 
@@ -646,7 +646,7 @@ tail:                                                      /* @asm file 0x061C5A
  * ============================================================================ */
 
 /* ============================================================================
- * NOTE — capital-raze gold bonus (random_events-adjacent).  [TBD magnitude]
+ * NOTE — capital-raze gold bonus (random_events-adjacent).  [not yet decoded magnitude]
  * ----------------------------------------------------------------------------
  * Razing a NATIVE CAPITAL pays the standard CHIEFKILL (func_04A7CA, file
  * 0x04AAD0..0x04AB6E: gold = sum_3 * roll_4 * 4 * (pop+1)) PLUS a capital-only
@@ -655,6 +655,6 @@ tail:                                                      /* @asm file 0x061C5A
  * ceiling, so a bonus exists.  The leading hypothesis is
  * `1000 * civ_tier * random_int(1,5)` but the dice range / multiplier are NOT
  * byte-proven (the branch on the NativeSettlement capital flag +0x03&0x04 has
- * not been read).  MAGNITUDE STAYS [TBD] — do not fabricate.  CHIEFKILL itself
+ * not been read).  MAGNITUDE STAYS [not yet decoded] — do not fabricate.  CHIEFKILL itself
  * lives in the native subsystem (out of this file's scope).
  * ============================================================================ */

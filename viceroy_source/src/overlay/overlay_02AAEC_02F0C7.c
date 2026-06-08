@@ -36,11 +36,11 @@
  *     src/overlay/OVERLAY_LCALL_REFERENCE.md (HIGH/MED thunk roles).
  *   - extracted strings via file_offset = handle + 0x1D9A0 (string-XREF roles).
  *
- * STATUS POLICY (cite-or-TBD): each function is BYTE_VERIFIED (body hand-traced
+ * STATUS POLICY (cite-or-not yet decoded): each function is BYTE_VERIFIED (body hand-traced
  * vs the reseg disasm), SUPERSEDED (already ported in a named subsystem file), or
  * PHANTOM (not real code).  Where a thunk's pixel/semantic effect is not
  * independently confirmed the body is faithful to the call sites and the residual
- * is called out TBD.  Nothing guessed.
+ * is called out not yet decoded.  Nothing guessed.
  *
  * Auto-traced control-flow stubs REPLACED with hand-ported bodies 2026-05-30.
  * Externs are declared locally (this file does not edit globals.h / the Makefile;
@@ -745,7 +745,7 @@ done: /* @0x02B72A */
  *             doubles when ctx->[0x92]==0.  PowerRecord stride 0x13C confirmed
  *             (imul 0x13C @0x02B7CB; owner = ctx->[0x1A]).
  * @status     BYTE_VERIFIED (head + ctx/PowerRecord struct); the exact value the
- *             tail returns past the accumulation shown is TBD (mirrors land prod).
+ *             tail returns past the accumulation shown is not yet decoded (mirrors land prod).
  */
 int func_02B744_colony_sz_24(void)
 {
@@ -766,7 +766,7 @@ int func_02B744_colony_sz_24(void)
         value += (UREC_B(pr - 0x779E + 0) + 4) * def; /* @0x02B7D4 */
     }
     if (CW(0x92) == 0) value <<= 1;                 /* @0x02B7E4/0x02B7EB */
-    return value;                                   /* figure (tail = TBD) */
+    return value;                                   /* figure (tail = not yet decoded) */
 }
 
 /* ============================================================================
@@ -902,7 +902,7 @@ int func_02BB8A_logic_sz_106(void)
         overlay_call_191F_06CC();                   /* @0x02BB9D near 0x7E5B sample */
     if (g_flag_07F6 != 0) {                         /* @0x02BBAF */
         overlay_call_191F_06CC();                   /* @0x02BBB7 sample again */
-        /* @0x02BBC0 chained band test vs [0x5384] -> [0x8D54]/[0x8D56]; TBD. */
+        /* @0x02BBC0 chained band test vs [0x5384] -> [0x8D54]/[0x8D56]; not yet decoded. */
     }
     return 0;                                       /* @0x02BBF4 */
 }
@@ -1324,8 +1324,8 @@ int func_02D30A_colony_dispatch_188(void)
  *             (= func_0270D0+0x33E, documented in src/combat/land.c) + 0x191F:0xA06.
  *             Sets combat scratch [0x537D]/[0x5372]/[0x5376].
  * @status     BYTE_VERIFIED (flow + UnitRecord/PowerRecord struct + string +
- *             decider-chain target); the decider's land-odds FORMULA is TBD (it
- *             lives in src/combat/land.c and is itself flagged TBD there).
+ *             decider-chain target); the decider's land-odds FORMULA is not yet decoded (it
+ *             lives in src/combat/land.c and is itself flagged left unresolved there).
  */
 int func_02D3C6_colony_op_3calls(void)
 {

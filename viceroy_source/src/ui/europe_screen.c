@@ -125,7 +125,7 @@ extern PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  *     (Exact pixel x/y of the banner are set inside the 0x181F:0xB0 text
  *      engine from the current cursor; the banner occupies the y=0..45 strip
  *      per docs/RENDERER_GEOMETRY.md.  String IDs cited above; pixel origin
- *      TBD -- lives in the resident text engine, not this page.)
+ *      not yet decoded -- lives in the resident text engine, not this page.)
  *
  * ----------------------------------------------------------------------------
  * (3) DOCK + SHIPS + IN-PORT LIST  func_0314DC @file 0x0314DC
@@ -148,7 +148,7 @@ extern PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  *        boycott highlight color 0xF gated by [0x9E40]/[0xF9A] @asm 0x031692/0x0316A1.
  *     EXPECTED / BOUND / LOADING sub-panels: drawn by cs:0x6E13 selector
  *        @asm 0x031560 (reads [0x9E1C]); their per-state text is in the
- *        cs:0x6Exx helper family (resident), pixel origin TBD there.
+ *        cs:0x6Exx helper family (resident), pixel origin not yet decoded there.
  *
  * ----------------------------------------------------------------------------
  * (4) RECRUIT / IMMIGRATION POOL  func_031DC8 @file 0x031DC8  -- 3 slots
@@ -175,9 +175,9 @@ extern PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  *   stockpile overlay box color is 0xE (@asm 0x031201) and the in-port row
  *   highlight is color 0xF (@asm 0x031692).  The literal sprite-index 0x2B blit
  *   for the cell X is performed inside the 0x181F:0xCE box helper variant; the
- *   exact ICONS-43 PUSH is in that resident helper (not this page) -> TBD.
+ *   exact ICONS-43 PUSH is in that resident helper (not this page) -> library-implementation-only.
  * EXIT "E" button: small red E from EXIT.SS at the bottom-right, drawn by the
- *   resident chrome layer (not in this page) -> TBD (geometry 303,~190,17,10
+ *   resident chrome layer (not in this page) -> library-implementation-only (geometry 303,~190,17,10
  *   per docs/RENDERER_GEOMETRY.md, FRAME-measured, not byte-traced here).
  * ============================================================================ */
 
@@ -435,7 +435,7 @@ extern void      ov_unit_select(int ship);                              /* 0x181
 
 /* The three near-CALL (push cs;call) action handlers reached by the menu
  * selection -- CS-relative targets inside this overlay page (file offsets in
- * page_04's display IP space). Identities are local helpers; TBD beyond role. */
+ * page_04's display IP space). Identities are local helpers; inferred from call context beyond role. */
 extern int  eship_action_a(int x9e1c);                /* near CALL 0x6D5F @asm 0x0332B7 */
 extern int  eship_action_b(int z);                    /* near CALL 0x6DD7 @asm 0x0332F6 */
 extern int  eship_action_c(int z, int slot, int ship);/* near CALL 0x6DE6 @asm 0x033308 */

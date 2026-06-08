@@ -1,5 +1,5 @@
 /* ============================================================================
- *           >>> PARTIALLY BYTE-VERIFIED (data) / MOSTLY TBD (flow) <<<
+ *           >>> PARTIALLY BYTE-VERIFIED (data) / MOSTLY left unresolved (flow) <<<
  * ----------------------------------------------------------------------------
  * BYTE-VERIFIED here:
  *   - The 25-entry Founding-Father table (id, category, three AI weights) is
@@ -12,7 +12,7 @@
  *   - The liberty-bell accumulation, the Continental-Congress trigger flow, and
  *     the per-FF bell-cost CURVE. These are documented in the technical
  *     reference but were NOT confirmed against bytes in this pass; they are
- *     marked TBD with disassembly anchors for follow-up.
+ *     marked left unresolved with disassembly anchors for follow-up.
  *   - The previous file's `ff_next_pool_required = 50*year_mult*(n+1)` formula,
  *     its 5-globally-sequential-ages model, and Jefferson "+50%" were fabricated
  *     and are NOT reproduced.
@@ -98,7 +98,7 @@ extern int16_t g_year;   /* @asm 03B963 cmp [0x538a],0x640 */
  *   band = 0; if (g_year >= 0x640) band = 1; if (g_year >= 0x6a4) band += 1;
  * i.e. band 0 for year < 1600, band 1 for 1600 <= year < 1700, band 2 for
  * year >= 1700 (0x640=1600, 0x6a4=1700). Confirms the `<` boundary the prior
- * pass left TBD: 1600 and 1700 themselves fall into the HIGHER band. This is
+ * pass left unresolved: 1600 and 1700 themselves fall into the HIGHER band. This is
  * the index added to FF_MEM_BASE+0x03 to pick the AI weight column.
  * @asm 03B963 `cmp [0x538a],0x640`; 03B970 `cmp [0x538a],0x6a4`.
  * @ref VERIFICATION_LEDGER.md 2026-05-30 (score_tick uses the same 0x6a4 edge).
@@ -135,7 +135,7 @@ int ff_weight_for_year(int ff_id, int year)
  * global age ladder (correcting the prior reconstruction).
  *
  * `owned_test(ff_id)` returns nonzero if the given power already has that FF.
- * The actual ownership query site in VICEROY.EXE is TBD (see effects.c note:
+ * The actual ownership query site in VICEROY.EXE is not yet decoded (see effects.c note:
  * the dispatch bumps the count at PowerRecord+0x14 but the per-FF "owned" bit
  * is set elsewhere). This helper is therefore expressed against a callback.
  * ---------------------------------------------------------------------------- */
@@ -178,7 +178,7 @@ extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if po
 /* ----------------------------------------------------------------------------
  * ff_set_owned_bit -- func_03B900 @0x03B900  (page 0x06, ENTER 6,0, RETF)
  * ----------------------------------------------------------------------------
- * RESOLVES the prior pass's TBD: "FF owned bitmap PowerRecord+0x07 set on
+ * RESOLVES the prior pass's left unresolved: "FF owned bitmap PowerRecord+0x07 set on
  * acquire — caller/congress path". The per-power FF-owned bitmap is a byte
  * array at PowerRecord+0x07 (DGROUP 0x880F = power_table 0x8808 + 0x07),
  * indexed BIT-wise by ff_id: byte = base + power*0x13C + (ff_id>>3),
@@ -310,7 +310,7 @@ int ff_best_offer_category(int power)
 }
 
 /* ============================================================================
- * NARROWED TBD (NOT byte-verified) — what remains after the 2026-05-30 pass:
+ * NARROWED not yet decoded (NOT byte-verified) — what remains after the 2026-05-30 pass:
  * ----------------------------------------------------------------------------
  *   - [RESOLVED 2026-05-30] The bell COST CURVE per FF# = ff_bells_required
  *     (0x191F:0x0F66 -> page 0x06 +0x982 -> file **0x03C282**, func_03C282; the

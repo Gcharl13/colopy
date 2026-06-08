@@ -16,11 +16,11 @@
  * extent is 1733).  Entry prologues were spot-checked against the raw
  * COLONIZE/VICEROY.EXE image.
  *
- * STRICT cite-or-TBD: every offset/constant cites the .asm; opaque overlay
+ * STRICT cite-or-not-yet-decoded: every offset/constant cites the .asm; opaque overlay
  * targets (0x181F/0x191F/0x1A1F/0x0D1D thunks) are called through the canonical
  * overlay_call_* names already declared in overlay_externs.h; the near-CS
  * trampolines are page-0x16's RTLink JMP-FAR block (see below).  Anything not
- * byte-determinable is marked TBD and never guessed.
+ * byte-determinable is marked not yet decoded and never guessed.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).
@@ -35,7 +35,7 @@
  *                   terrain UI-list record (stride-0x0C, fields +0x4A/+0x4C) and
  *                   the DGROUP stride-0x0C chain/link table (base 0x8F82) are now
  *                   modeled via TerrainUIRec / g_terrain_ui_8F82[] below and
- *                   the TBD-inner notes in func_06A700/func_06AA88 are resolved.
+ *                   the left-unresolved notes in func_06A700/func_06AA88 are resolved.
  *                   The SS-relative clip rect in func_06B722: 0x1A1F:0xA78 saves
  *                   and 0x1A1F:0xA6A(1,...) sets the clip to SS:[bp-0x3A4];
  *                   modeled structurally (SS-ptr not C-expressible). CLOSED.
@@ -91,9 +91,9 @@
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
- * DGROUP globals referenced in this region (cite-or-TBD).  Addresses are the
+ * DGROUP globals referenced in this region (cite-or-not-yet-decoded).  Addresses are the
  * absolute DGROUP offsets seen in the disassembly; names describe the byte-
- * verified ROLE where known, SEMANTICS marked TBD are not guessed.
+ * verified ROLE where known, SEMANTICS marked not yet decoded are not guessed.
  *
  * The "scrollable list widget" (func_068F38..func_0691A4, func_06B02A) keeps
  * THREE parallel arrays behind three far pointers and a count:

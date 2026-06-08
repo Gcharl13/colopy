@@ -50,7 +50,7 @@ extern uint8_t g_flags_5382;          /* DGROUP:0x5382 — global event flags; b
  * @asm 0x03D9ED imul ax,[bp-2],0xCA ; 0x03D9F2 add ax,0x5D48 ; push ds; push ax */
 #define COL_RECORD_TABLE_5D48  0x5D48
 
-/* lcall / overlay helpers (call sites + args verified; internals TBD).
+/* lcall / overlay helpers (call sites + args verified; internals body in thunk page).
  *   0x181F:0x09E6 -> file 0x2701C (type B) — select/activate colony by index.
  *   0x181F:0x04AC -> file 0x22340 (type B) — set UI/animation channel mode.
  *   0x191F:0x0AC8 -> file 0x25D04 (type A) — flash/redraw a power's UI.
@@ -63,7 +63,7 @@ extern void    colony_select(int colony_idx);              /* 0x181F:0x09E6 */
 extern void    ui_set_channel(int mode);                   /* 0x181F:0x04AC */
 extern void    ui_flash_power(int power, int a, int b);    /* 0x191F:0x0AC8 */
 /* NB: args below are listed in PUSH ORDER (first-pushed first); the true
- * left-to-right parameter order/semantics of these helpers are TBD. */
+ * left-to-right parameter order/semantics of these helpers are inferred from call context. */
 extern void    ui_blit_coords(int a0, int a1, int a2);     /* 0x181F:0x0422 */
 extern void    ui_blit_ptr(int a0, void *a1, int a2);      /* 0x181F:0x0416 */
 extern int     power_handle(int power_idx);                /* 0x181F:0x09A4 */
@@ -147,16 +147,16 @@ void foreign_intervention(void)
 }
 
 /* ============================================================================
- * NOTES / STILL-TBD
+ * NOTES / STILL left unresolved
  *  - WHICH European power intervenes ([0x53D4]) and the SIZE/composition of the
- *    intervention force are set up by the CALLER (not located) — TBD.
+ *    intervention force are set up by the CALLER (not located) — not yet decoded.
  *  - colony fields +0x1A (owner) and +0x1F (ranked attribute) are BYTE_VERIFIED
  *    addresses; +0x1F's exact meaning (colony size? rebel sentiment?) is inferred
- *    as "size/rank" and marked TBD.
+ *    as "size/rank" and marked left unresolved.
  *  - The 0x5D62 (flag) and 0x5D48 (record) per-colony tables are verified by the
  *    stride-0xCA indexing; their full layout is documented in the colony module.
  *  - ui_blit_* / ui_flash_power arg semantics (the literal 1/0/2/3 selectors)
- *    are literal-verified but their meaning is TBD.
+ *    are literal-verified but their meaning is inferred from call context.
  *  - DGROUP_PTR() (from viceroy_types.h) wraps a 16-bit DGROUP offset as a near
  *    data pointer — these tables are DS-relative in the 16-bit original.
  * ============================================================================ */

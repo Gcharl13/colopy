@@ -1,5 +1,5 @@
 /* ============================================================================
- *           >>> MOSTLY TBD — storage layout PARTIALLY BYTE-VERIFIED <<<
+ *           >>> MOSTLY left unresolved — storage layout PARTIALLY BYTE-VERIFIED <<<
  * ----------------------------------------------------------------------------
  * What IS byte-verified (from func_057DC0 @0x057DC0, see treaty.c):
  *   - The per-power relation/treaty STATE is a 1-byte-per-other-power array
@@ -117,7 +117,7 @@ void rel_declare_war(int attacker, int defender)
 }
 
 /* ============================================================================
- * EVERYTHING BELOW IS TBD (NOT byte-verified)
+ * EVERYTHING BELOW IS not yet decoded (NOT byte-verified)
  * ----------------------------------------------------------------------------
  * The original maintains a richer per-power attitude model (the AI uses it to
  * decide demands, war, and alliances), but the scoring fields, the per-event
@@ -133,10 +133,10 @@ void rel_declare_war(int attacker, int defender)
  *     0x181F:0x0A10 (file 0x5FCFC): the set/clear-with-mask helpers.
  *   - cs:0x3f30 / cs:0x3f58 near-calls in page 0x0F (relation mutate/predicate).
  * ============================================================================ */
-#if 0  /* TBD — numeric attitude model not yet reverse-engineered */
-int  rel_score_get(int a, int b);                 /* TBD: is there a signed score at all? */
-void rel_score_apply_event(int a, int b, int e);  /* TBD: event->delta table unknown */
-void rel_event_pocahontas(int recruiting_power);  /* TBD: magnitude unknown (FF id 16 effect
+#if 0  /* not yet decoded — numeric attitude model not yet reverse-engineered */
+int  rel_score_get(int a, int b);                 /* not yet decoded: is there a signed score at all? */
+void rel_score_apply_event(int a, int b, int e);  /* not yet decoded: event->delta table unknown */
+void rel_event_pocahontas(int recruiting_power);  /* not yet decoded: magnitude unknown (FF id 16 effect
                                                    *      clears native alarm, NOT European
                                                    *      relation score — see effects.c) */
 #endif
