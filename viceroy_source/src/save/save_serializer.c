@@ -5,10 +5,10 @@
  *    [BYTE_VERIFIED]   bytes read directly from COLONIZE/VICEROY.EXE
  *    [ANCHOR_VERIFIED] a confirmed function / string anchor exists, but the
  *                      specific value or field order is not byte-traced
- *    [TBD]             not located / not verified -- do NOT trust
+ *    [not yet decoded] not located / not verified -- do NOT trust
  *
  *  -------------------------------------------------------------------------
- *  2026-05-30 BREAKTHROUGH (supersedes the "serializer is unreachable/[TBD]"
+ *  2026-05-30 BREAKTHROUGH (supersedes the "serializer is unreachable/[left unresolved]"
  *  framing of the 2026-05-30 morning revision):
  *  -------------------------------------------------------------------------
  *  The RTLink overlay wall is cracked (tools/rtlink/rtlink_decode.py +
@@ -100,9 +100,9 @@ extern uint8_t  g_power_table[];   /* DGROUP:0x8808, stride 0x13C @0x735F4 push 
 extern uint8_t  g_native_table[];  /* DGROUP:0x54EC, stride 0x12  @0x73616 push 0x54EC */
 
 /* Live record counts. NOW ALL BYTE_VERIFIED from the SAVE-driver imul operands
- * (this resolves the previously-[TBD] g_unit_count):
+ * (this resolves the previously-[left unresolved] g_unit_count):
  *   g_colony_count @0x539E   (imul @0x735B3)   [BYTE_VERIFIED]
- *   g_unit_count   @0x539C   (imul @0x735D6)   [BYTE_VERIFIED -- was [TBD]]
+ *   g_unit_count   @0x539C   (imul @0x735D6)   [BYTE_VERIFIED -- was [left unresolved]]
  *   g_native_count @0x539A   (imul @0x73610)   [BYTE_VERIFIED]
  * Note the layout: 0x539A native / 0x539C unit / 0x539E colony, contiguous words
  * inside the 0x8E-byte global block @0x5380 written first. */

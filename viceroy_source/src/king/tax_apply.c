@@ -22,7 +22,7 @@
  * SEGMENTS NOTE: the per-function disasm available for this address ends at
  * 0x034437 (boundary detector under-counted); the tail of the ENTER 0xCE frame
  * (the boycott-message/effect after the price-table compare) is NOT in any dump
- * we have, so it is marked TBD below — only the anchors are cited.
+ * we have, so it is marked left unresolved below — only the anchors are cited.
  * @ref  src/king/king_tax_raise.c   (func_034AE0 — the raise/lower DECISION)
  * @ref  FUNCTION_INVENTORY.md       ("func_034318 — Tea Party / tax application")
  * ============================================================================ */
@@ -112,19 +112,19 @@ void tax_apply_delta(int delta)
      *
      * The branch TARGETS past 0x034437 (where a good's boycott is actually set/
      * cleared and the SOMEBOYCOTT message shown) fall in the un-dumped tail of
-     * this function and are TBD — DO NOT invent the set/clear rule. */
-    /* TBD: boycott set/clear + SOMEBOYCOTT notification (tail not in any disasm). */
+     * this function and are not yet decoded — DO NOT invent the set/clear rule. */
+    /* not yet decoded: boycott set/clear + SOMEBOYCOTT notification (tail not in any disasm). */
 }
 
 /* ============================================================================
- * NOTES / STILL-TBD
+ * NOTES / STILL-not yet decoded
  *  - CORE (sign-normalise, apply, cap-75, change-credit, human gate):
  *    BYTE_VERIFIED.
  *  - The exact tax-rate field is PowerRecord+0x01 (cross-confirmed in
  *    king_tax_raise.c and FUNCTION_INVENTORY.md "King record byte +1 = tax").
  *  - The boycott bitmask king[+0x20] and the 0x5DE0 market price table are
  *    BYTE_VERIFIED addresses, but the per-good boycott DECISION (the code after
- *    0x034437) is not in any available disasm and is left TBD.
+ *    0x034437) is not in any available disasm and is left unresolved.
  *  - crt_lmul / crt_aFldiv: crt_aFldiv (0xD1D:0xEC6) is confirmed as the __aFldiv-style
  *    32-bit long divide (cross-confirmed in diplomacy/meeting.c); crt_lmul (0xD1D:0xDDC)
  *    is the corresponding long-multiply (approx, not independently verified in this file).

@@ -11,7 +11,7 @@
  * in the EXE, so those stay layout-base; only the backdrop/border geometry and
  * the menu-key handles are static and cited below.  The opening CINEMATIC is a
  * SEPARATE executable (OPENING.EXE) and is not in this resident loop.
- * cite-or-TBD.
+ * cite-or-not yet decoded.
  *
  * @asm_disasm  code/VICEROY/disasm_overlay_reseg/page_1A.asm (lines 5048..)
  * raw-EXE spot-checks (this session):
@@ -37,7 +37,7 @@
 #include "iolib.h"
 
 /* ----------------------------------------------------------------------------
- * Boot / main-menu assets (VERIFIED-by-catalog; load call sites TBD).
+ * Boot / main-menu assets (VERIFIED-by-catalog; load call sites not yet decoded).
  * Source: docs/SESSION_UI_CATALOG.md + COLONIZE_DATA_FILES_INDEX.md.
  *
  *   MPSLOGO.PIK  -- MicroProse logo (boot screen)
@@ -55,7 +55,7 @@
  *
  * NOTE: PIK filenames are not in the resident VICEROY.EXE string table
  * (strings.json: 0 ".PIK" hits) -> the names are catalogued, the load call
- * site is TBD. There is NO "TITLE.PIK" anywhere in the catalog.
+ * site is not yet decoded. There is NO "TITLE.PIK" anywhere in the catalog.
  *
  * The OPENING CINEMATIC is played by a separate program, OPENING.EXE
  * (ASSET_ROLES.md: "Title-screen / cinematic player"), driven by OPENING.TXT
@@ -66,7 +66,7 @@
 /* ----------------------------------------------------------------------------
  * Menu / new-game text strings (LABELS_TXT_CATALOG.md). These confirm the
  * setup-screen vocabulary; the exact main-menu item list and its layout are
- * still TBD (overlay-resident).
+ * still not yet decoded (overlay-resident).
  *
  *   Difficulty: "Choose","Difficulty Level","Level",
  *               "Easiest","Easy","Moderate","Tough","Toughest"

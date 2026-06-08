@@ -13,7 +13,7 @@
  *   helper sketch) was a structurally-incomplete RECONSTRUCTION; this version is
  *   a per-basic-block hand-port of the real 524-instruction function.
  *
- * STATUS: [V] byte-verified ; [TBD] data-driven (NAMES.TXT) or overlay-blocked.
+ * STATUS: [V] byte-verified ; [not yet decoded] data-driven (NAMES.TXT) or overlay-blocked.
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"
@@ -409,15 +409,15 @@ void cargo_table_load(void)
  * (the jump-table at 0x033F65 truncates page_04 into a data blob; the per-func
  * pass also misses the body around 0x352CA). The leaf at the price-coin thunk
  * 0x181F:0x09A4 -> file 0x008110 is only a 14-byte difficulty clamp, not the
- * full curve. So the exact coin formula remains *** [TBD] — do NOT fabricate it.
+ * full curve. So the exact coin formula remains *** [not yet decoded] — do NOT fabricate it.
  * ============================================================================ */
-extern long market_good_value(int good, int qty);   /* [TBD] trade-dialog-resident */
+extern long market_good_value(int good, int qty);   /* [not yet decoded] trade-dialog-resident */
 
 long market_buy(int good, int qty)
 {
     if (boycott_is_active(good) || qty <= 0) return 0;
     {
-        long value = market_good_value(good, qty);      /* [TBD] */
+        long value = market_good_value(good, qty);      /* [not yet decoded] */
         PR_GOLD(g_market) -= value;                      /* @asm 0x352CA SUB/SBB (29 47 2a 19 57 2c) [V] */
         PR_VOL_ACCUM(g_market, good) -= (short)qty;      /* buy lowers traffic accumulator */
         return value;
@@ -428,7 +428,7 @@ long market_sell(int good, int qty)
 {
     if (boycott_is_active(good) || qty <= 0) return 0;
     {
-        long value = market_good_value(good, qty);      /* [TBD] (net of tax @+0x01) */
+        long value = market_good_value(good, qty);      /* [not yet decoded] (net of tax @+0x01) */
         PR_GOLD(g_market) += value;
         PR_VOL_ACCUM(g_market, good) += (short)qty;      /* sell raises traffic accumulator */
         return value;

@@ -4,7 +4,7 @@
  * The REF composition array, its initial values at the start of the War of
  * Independence, and the per-event buildup (which arm grows, by how much, and
  * the rebel-sentiment accumulator that triggers it) are byte-traced against
- * VICEROY.EXE.  Deployment/landing-site selection is NOT byte-traced (TBD).
+ * VICEROY.EXE.  Deployment/landing-site selection is NOT byte-traced (not yet decoded).
  *
  * REF COMPOSITION — 4 contiguous words at DGROUP:0x53DA (BYTE_VERIFIED;
  *                   matches user runtime ground-truth and memory note):
@@ -46,7 +46,7 @@ extern void *   g_king_record_84FC;    /* DGROUP:0x84FC — far ptr to king Powe
  *
  * (Just before this, file 0x075671 zeroes the 4-word REF array and the
  *  adjacent 0x53E2 array; file 0x075645 fills a 16-word table @0x53EA with
- *  random_int(0x258,0x3E8) = random(600,1000) — purpose TBD.)
+ *  random_int(0x258,0x3E8) = random(600,1000) — purpose not yet decoded.)
  *
  * Initial REF by difficulty (Discoverer..Viceroy, d = 0..4):
  *   d=0:  Reg=15  Cav=5   Art=2   MoW=2
@@ -151,7 +151,7 @@ extern void     king_register_ref_unit(int slot);
  * are NOT byte-traced.  The REF landing/intervention path crosses the
  * revolution overlay (page 0x06 func_03CDA2 sums the four REF words and
  * decrements them on landing @0x03D4C0, but the spawn coords and the
- * Tory-uprising / foreign-intervention numbers are TBD).
+ * Tory-uprising / foreign-intervention numbers are not yet decoded).
  *
  * UPDATE 2026-05-30 (BYTE_VERIFIED landing decrement): the per-arm REF
  * decrement-on-landing is confirmed in func_03CDA2 (file 0x03CDA2..~0x03D510,
@@ -164,7 +164,7 @@ extern void     king_register_ref_unit(int slot);
  *   The companion per-turn LANDING-ELIGIBILITY logic (which arm, how many, and
  *   the target colony) is the func_02F3A2 war-tail matrix — see
  *   src/king/war_turn.c (king[+0x19]/[+0x1A], budget = (8-difficulty)*10) — but
- *   the exact spawn COORDS remain TBD.
+ *   the exact spawn COORDS remain not yet decoded.
  * ============================================================================ */
 int ref_effective_strength(PowerRecord *target)   /* RECONSTRUCTED */
 {
@@ -173,5 +173,5 @@ int ref_effective_strength(PowerRecord *target)   /* RECONSTRUCTED */
                (g_ref_artillery_53E0 * 4) +
                (g_ref_manowar_53DE   * 6);
     (void)target;
-    return base;   /* FF / SoL modifiers are TBD */
+    return base;   /* FF / SoL modifiers are not yet decoded */
 }

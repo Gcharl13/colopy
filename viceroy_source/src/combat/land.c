@@ -26,7 +26,7 @@
  * STATUS LEGEND:
  *   [V]   BYTE_VERIFIED  — traced to a cited file offset + raw bytes (verified
  *                          against the EXE image in this session).
- *   [TBD] NOT statically resolvable (behind an RTLink overlay thunk: the actual
+ *   [left unresolved] NOT statically resolvable (behind an RTLink overlay thunk: the actual
  *         decision-maker for the land win/loss is a CALLER, see HEADLINE) — NOT
  *         guessed.
  *
@@ -70,7 +70,7 @@
  *   capture and the on-screen message. This confirms the open hypothesis in
  *   combat_demotion_ladder.c (lines 109-111).                               [V]
  *
- *   >>> CALLER RESOLVED 2026-05-30 (overturns the earlier [TBD] here). <<<
+ *   >>> CALLER RESOLVED 2026-05-30 (overturns the earlier [left unresolved] here). <<<
  *   The decider is NOT behind a runtime wall — the RTLink cross-page call graph
  *   is statically recoverable (see docs/OVERLAY_THUNKS.md). The land-combat
  *   decider is **func_05CA7E** (file 0x05CA7E, ENTER 0xDE, overlay page 0x10) =
@@ -170,7 +170,7 @@
  * question — see the loader note below.                                  [V/RUNTIME_ONLY (data-resident)]
  *
  * ============================================================================
- * THE @UNIT COLUMN -> STAT-OFFSET MAPPING (loader @0x74EDA) — BOUNDED, [TBD-data]
+ * THE @UNIT COLUMN -> STAT-OFFSET MAPPING (loader @0x74EDA) — BOUNDED, [not yet decoded]
  * ----------------------------------------------------------------------------
  * The 0x5230-family table (base DGROUP:0x5230, stride 14) is filled at game
  * start by the loader near @0x74EDA..0x74F59 (each field via the NAMES.TXT field
@@ -208,7 +208,7 @@ extern struct UnitRecord g_units[];      /* DGROUP:0x3144 stride 0x1C */
 /* Per-power military-strength arrays — the resolver reads these ONLY in the
  * post-roll (ship-path) compare @0x5B85B..0x5BA2D, NOT on the land path.
  * Re-declared here only so this file documents that they are NOT land terms.
- * (Live use & citations are in combat_modifiers.c.)  Per-array semantics [TBD]. */
+ * (Live use & citations are in combat_modifiers.c.)  Per-array semantics [not yet decoded]. */
 
 /* UI/message helpers (load-image segment 0x181F; bodies behind RTLink). */
 extern int  random_int(int lo, int hi);                 /* 0x181F:0x04D4 (rng.c) [V] */
@@ -268,7 +268,7 @@ int combat_land_apply(int unit_a, int unit_b, int fort_present, int show_ui)
     }
 
     /* fort_present != 0 -> @0x5B74B (colony defense path; ship-vs-ship sub-call
-     * lcall via trampoline @0x5E70F = 0x1A1F:0x6B0, behind RTLink).        [TBD] */
+     * lcall via trampoline @0x5E70F = 0x1A1F:0x6B0, behind RTLink).        [not yet decoded] */
     return 1;
 }
 
