@@ -156,12 +156,12 @@ owned by sibling agent A. **[sib-B]** = Europe/Colony body, owned by sibling B.
     (nation 87×81, difficulty 67×89) — tabulated in B2/B3 and the PORT FIXES
     selection-box summary.
   - B9 menu-bar "strip fill" was `0x100` = centered TEXT, not a color fill.
-- **NEEDS VERIFICATION (0 hard-blocked surfaces).** Soft TBDs carried forward
+- **NEEDS VERIFICATION (0 hard-blocked surfaces).** Soft not yet decodeds carried forward
   from the source docs (not introduced here): exact per-label x of the menu-bar
   line (falls out of the single centered string, not per-label draw-immediates);
   the OK/Cancel button SS sprite index; FONTTINY numeric line-pitch (font FF
   byte0); the exact y-pitch of the picker NAME/DESCRIPTION lines within the cell
-  (the `[0x89E]` font byte0 sets it — formula cited, byte0 value is the TBD).
+  (the `[0x89E]` font byte0 sets it — formula cited, byte0 value is the not yet decoded).
 
 ---
 
@@ -430,7 +430,7 @@ These three share the title composer's stack frame and the file/name dialogs.
 The name/file dialogs are file-selector widgets (resident near-funcs 0x76375 /
 0x763b6 / 0x763c0) — they present a directory list + text-entry, sized by the
 shared dialog engine. **The text-entry cursor/field draw is inside these
-resident helpers; the exact per-char x-step is TBD** (not a literal in page
+resident helpers; the exact per-char x-step is not yet decoded** (not a literal in page
 0x1A). The *strings* and *call sites* are byte-verified above.
 
 ### Scenario-list ("AMERICA") (title menu opt 3 = setup)
@@ -483,7 +483,7 @@ clamp: if X+box_w>0x140 shift left; if Y+box_h>0xC8 shift up  ; @0x06D563 / 0x06
 - **Body font: FONTTINY** ([0x89E] engine default) — UI_FIDELITY Fonts row
   "generic dialog/popup body". **[V]**
 - **OK/Cancel buttons = FONTTINY TEXT** rows (the @OPTIONS list), NOT sprites.
-  The button SS art index is **TBD** (UI_FIDELITY Open items). Button-row Y is
+  The button SS art index is **not yet decoded** (UI_FIDELITY Open items). Button-row Y is
   height-reserved `rows+3` and sub-centered.
 
 ### GAME.TXT event templates (~30) — same engine
@@ -742,7 +742,7 @@ i.e. (x, y) top-left, (w, h) as tabulated.
    report bodies (pages 05/06/12). See SCREEN_LAYOUTS §2/§3 + the sibling
    agents' output.
 
-5. **Carried-forward TBDs (from UI_FIDELITY, not new):** menu-bar per-label x
+5. **Carried-forward not yet decodeds (from UI_FIDELITY, not new):** menu-bar per-label x
    draw-call; OK/Cancel button SS sprite index; FONTTINY numeric line-pitch
    (font FF byte0); the file/name-entry per-char cursor step. None block any
    surface in the index; all are soft "absence/leaf-not-isolated" items.

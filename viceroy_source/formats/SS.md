@@ -42,18 +42,18 @@ stream until EOF, counting sprites. Specific files have known counts:
 |--------------|---------|---------------------------------------------|
 | ICONS.SS     | 131     | All units, ships, buildings, cargo icons    |
 | PHYS0.SS     | 154+    | Terrain edges, roads, rivers, beach halos  |
-| BUILDING.SS  | TBD     | Colony-screen building sprites              |
+| BUILDING.SS  | not yet decoded     | Colony-screen building sprites              |
 | TERRAIN.SS   | 12+     | Per-terrain texture tiles                   |
-| WOODFRAM.SS  | TBD     | Wood frame UI border                         |
-| WOODTILE.SS  | TBD     | Wood tile UI background                      |
-| BDARK.SS     | TBD     | Suspected orphan, NEVER LOADED at runtime   |
+| WOODFRAM.SS  | not yet decoded     | Wood frame UI border                         |
+| WOODTILE.SS  | not yet decoded     | Wood tile UI background                      |
+| BDARK.SS     | not yet decoded     | Suspected orphan, NEVER LOADED at runtime   |
 | CC-NN.SS     | varies  | Founding Father portraits (NN = age slot)   |
 
 ## Loader
 
 The decoded loader is in the Python port at
 `colonize_sdl/sprites.py` (the `load_ss()` function). The DOS-side
-loader is in the overlay; specific function offset TBD pending overlay
+loader is in the overlay; specific function offset not yet decoded pending overlay
 cross-reference.
 
 ## Verification

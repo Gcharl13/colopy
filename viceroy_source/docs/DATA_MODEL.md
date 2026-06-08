@@ -267,10 +267,10 @@ struct NativeSettlement {       /* 18 bytes (0x12) — BYTE_VERIFIED 2026-05-28 
     uint8_t  x;                 /* +0x00  map X (cmp [bx+0x54EC]) */
     uint8_t  y;                 /* +0x01  map Y (cmp [bx+0x54ED]) */
     uint8_t  owner;             /* +0x02  owning tribe id (cmp [bx+0x54EE]) */
-    uint8_t  field_03;          /* +0x03  TBD */
+    uint8_t  field_03;          /* +0x03  not yet decoded */
     uint8_t  population;        /* +0x04  population (CHIEFKILL raze input) */
     uint8_t  mission;           /* +0x05  mission flag (0x10 | owner_idx) */
-    uint8_t  data_06_11[12];    /* +0x06..0x11  TBD */
+    uint8_t  data_06_11[12];    /* +0x06..0x11  not yet decoded */
 };                              /* total 18 bytes (0x12); live-count @0x539A, max 84 */
 ```
 
@@ -426,7 +426,7 @@ above.
 | @SECTION       | DGROUP table base / stride                         | Notes |
 |----------------|----------------------------------------------------|-------|
 | SEASONS        | word[-0x6800]                                      | |
-| UNFORESTED     | per-entry sub-loader (ljmp 0x1A1F:0xD20)            | TBD-inner |
+| UNFORESTED     | per-entry sub-loader (ljmp 0x1A1F:0xD20)            | not yet decoded-inner |
 | FORESTED       | sub + row[+0x3074]                                 | |
 | OTHER          | sub                                                | |
 | OTHER_NAMES    | [+0x2DB0]                                           | |

@@ -3,8 +3,8 @@
 ## File inventory
 3 .DAT files in COLONIZE/:
 - `CYCLE.DAT` (34 bytes) — palette cycling parameters
-- `PATH.DAT` — pathfinding cost-table (TBD)
-- `INSTALL.DAT` — installation manifest (TBD)
+- `PATH.DAT` — pathfinding cost-table (not yet decoded)
+- `INSTALL.DAT` — installation manifest (not yet decoded)
 
 Plus user-state files (typically in saves/ rather than COLONIZE/):
 - `HALLFAME.DAT` — high-score / hall-of-fame data
@@ -36,7 +36,7 @@ The Hall of Fame format is documented in the Python port at
 ## Format (PATH.DAT)
 
 PATH.DAT contains the AI's precomputed pathfinding cost table.
-Specifics TBD.
+Specifics not yet decoded.
 
 ## Format (INSTALL.DAT)
 

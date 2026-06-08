@@ -20,7 +20,7 @@ named samples followed by raw PCM data:
 +---------------------------------------------------------------+
 ```
 
-Exact byte layout TBD. The Python port doesn't yet have a verified
+Exact byte layout not yet decoded. The Python port doesn't yet have a verified
 COLDIG.BIN decoder.
 
 ## Sample inventory (suspected)
@@ -47,11 +47,11 @@ PSOUND.COL alone).
 
 - @verified  Audio playback in DOSBox confirms the sample IDs roughly
              match the suspected inventory above.
-- @ref       ../../../docs/AUDIO_NOTES.md  (TBD — to be created)
+- @ref       ../../../docs/AUDIO_NOTES.md  (not yet decoded — to be created)
 
 ## Citations
 
-- @asm_file  TBD
+- @asm_file  not yet decoded
 - @ref       ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1
 - @python    The Python port currently uses pre-generated WAV samples;
              a future BIN extractor would write per-sample WAVs from the

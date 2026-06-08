@@ -17,7 +17,7 @@
 
 ```
 +---------------------------------------------------------------+
-| Magic + header (TBD bytes — exact size pending verification)  |
+| Magic + header (not yet decoded bytes — exact size pending verification)  |
 +---------------------------------------------------------------+
 | Layer 1: Terrain    (4,176 bytes = 58 × 72)                   |
 |   Each byte = packed terrain attributes (see below)            |
@@ -33,7 +33,7 @@
 |   2 = land tile, no special resource                            |
 |   3-14 = resource id (matches NAMES.TXT @RESOURCE)             |
 +---------------------------------------------------------------+
-| Continent / region IDs (TBD; possibly per-tile or per-mass)   |
+| Continent / region IDs (not yet decoded; possibly per-tile or per-mass)   |
 +---------------------------------------------------------------+
 | Tribe village positions (read from layer or follow-up record) |
 +---------------------------------------------------------------+
@@ -113,7 +113,7 @@ Bits 4-0 Base terrain type    (0-26)
 
 The DOS-side loader is in the overlay. Cross-references:
 - `AMER2.MP` string at file 0x01FB06 in VICEROY.EXE
-- Loader function: TBD (the cross-references at 0x011A62 / 0x01A0CC /
+- Loader function: not yet decoded (the cross-references at 0x011A62 / 0x01A0CC /
   0x034E93 from `code/VICEROY/asset_xrefs.md` were partially false
   positives; the real loader is constructed via `sprintf` of "AMER2.MP"
   in the overlay's asset-loader region)
@@ -132,6 +132,6 @@ identify the exact byte layout.
 
 ## Citations
 
-- @asm_file  TBD (overlay-resident map loader)
+- @asm_file  not yet decoded (overlay-resident map loader)
 - @ref       ../../../MAP_FORMAT.md   (full byte-level spec)
 - @ref       ../../docs/RULINGS.md    (terrain-ordering rulings)

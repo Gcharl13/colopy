@@ -70,7 +70,7 @@ Ordered calls:
 | 4 | func_031DC8 | **3-immigrant recruit/immigration pool** | (281,89,37,32); **3 slots**; bevel func_031BE6; labels @EUROLABEL | [V @0x031DCC / 3-slots @0x031E2B] |
 | 5 | (lcall 0x181F:0xE2) | outer frame | full 320×200 | [V @0x031EA0] |
 
-**Honest TBD (resident helpers, not page 04):** banner pixel origin;
+**Honest not yet decoded (resident helpers, not page 04):** banner pixel origin;
 EXPECTED/BOUND/LOADING sub-panel text; the ICONS-43 boycott-X blit; the EXIT "E"
 button. Each flagged in-file with the function/handle to decode next.
 
@@ -209,6 +209,6 @@ These are not screens but the byte-verified geometry the screens build on:
 | Reports | ui/report_screen.c | func_06FF94 + dispatcher 0x0235D6 | **[V] done** |
 | Title / menu | ui/title_screen.c | func_0759E8 | **[V] done** |
 | Hall of Fame | ui/hall_of_fame.c | func_03A9C0 / func_03ADA6 | **[V] done** |
-| Continental Congress / FF | (TBD) | — | not yet coded |
-| Naval adviser | (TBD) | — | not yet coded |
+| Continental Congress / FF | (not yet decoded) | — | not yet coded |
+| Naval adviser | (not yet decoded) | — | not yet coded |
 | Opening cutscene | — | — | OUT-OF-SCOPE (separate OPENING.EXE media player) |

@@ -23,7 +23,7 @@ Step is always **±1**. rise_factor=rec+3, fall_factor=rec+4, demand=rec+5 (all 
 from NAMES.TXT @CARGO).
 
 **Bid/ask transaction prices** (RESOLVED — resident, not overlay; the prior
-"overlay-resident [TBD]" note was a misattribution — see VERIFICATION_LEDGER):
+"overlay-resident [not yet decoded]" note was a misattribution — see VERIFICATION_LEDGER):
 ```
 sell_price(good) = price_level[good] + cargo_burden[good]   # func_030566, player receives  [V]
 buy_price(good)  = price_level[good] - 1                    # func_030590, player pays       [V]
@@ -103,7 +103,7 @@ score_ff_pts = 5 × count(FFs recognized by ff_recognized_7B4)   # loop i=0..24
 # --- treasury ---
 score_gold = PowerRecord.gold / 1000     (0 if gold < 1000)
 
-# --- REF penalty [PowerRecord+0x18 semantics TBD] ---
+# --- REF penalty [PowerRecord+0x18 semantics not yet decoded] ---
 score_ref = PowerRecord[+0x18] × -(difficulty + 1)    # NEGATIVE; field init=0
 
 # --- Bolivar/SoL meter [DGROUP:0x53D0] ---
@@ -206,8 +206,8 @@ STORES = random_int(0, min(10, colonyGoods/2)) of one commodity (floor 1), from 
 trigger: tribe raids when alarm DS:0x54F6[(power*9+tribe)*2] >= 0x80 (zeroed after a raid;
          normal accumulation clamped to [0x20,0x60])
 ```
-WREAK/SHIP unit removal is overlay-resident `[TBD]`. Native settlement growth: no static
-growth write exists — `[TBD]` / overlay.
+WREAK/SHIP unit removal is overlay-resident `[not yet decoded]`. Native settlement growth: no static
+growth write exists — `[not yet decoded]` / overlay.
 
 ## Subsystems confirmed ABSENT (byte-verified by absence)
 No disease/plague and no weather/storm subsystem exist in VICEROY.EXE (zero matching

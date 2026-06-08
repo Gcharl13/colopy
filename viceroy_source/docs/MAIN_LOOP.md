@@ -64,7 +64,7 @@ jumps. The anchor analysis (`code/VICEROY/anchor_map.md` §"Signal 4")
 records: *"segment 0x0000 (661 thunks) — main code segment, contains
 `_main`."*
 
-### Status: STRUCTURALLY PINNED, exact entry offset = TBD (loader-computed)
+### Status: STRUCTURALLY PINNED, exact entry offset = not yet decoded (loader-computed)
 
 - **What is byte-certain:** `_main` is entered from `cstart` @0xF7D8 via
   the RTLink overlay loader, into the **main code segment (overlay record
@@ -89,8 +89,8 @@ records: *"segment 0x0000 (661 thunks) — main code segment, contains
   (`anchor_map.md` "Where to go next" #1: "Decode the segment-id ↔
   overlay-file-offset mapping … unlocks all 1,020 thunk targets").
 
-  ⇒ **cite-or-TBD verdict: the `_main` *call* is byte-verified; its
-  resident-overlay *entry offset* is TBD pending a loader emulation /
+  ⇒ **cite-or-not yet decoded verdict: the `_main` *call* is byte-verified; its
+  resident-overlay *entry offset* is not yet decoded pending a loader emulation /
   page-directory decode.** It is NOT one of `func_0759E8` / `func_0755CC` /
   `func_07431E` (those are the menu and new-game functions `_main`
   eventually drives, in page 0x1A — see OPENING_SEQUENCE.md).
@@ -296,7 +296,7 @@ Handle→file base verification: `VICEROY\0`@0x1FCD4, `LANDHO\0`@0x1E242,
 |---|---|
 | `_main` **call** from cstart (@0xF7D8 → thunk 0x1A5F0) | **BYTE-VERIFIED** |
 | `_main` resident-overlay segment (main code seg / overlay record 0 / page 0x01) | **IDENTIFIED** |
-| `_main` exact function-entry offset | **TBD** — loader-computed LJMP; needs page-directory emulation (same seam as `anchor_map.md` open item #1) |
+| `_main` exact function-entry offset | **not yet decoded** — loader-computed LJMP; needs page-directory emulation (same seam as `anchor_map.md` open item #1) |
 | Per-turn phase dispatcher `func_0235D6` (27-case event/report switch) | **DECODED** (control flow) |
 | `@VICEROY`/`@VICEROY2` emitter `func_075594` + variant gate `[0x5398]==3` | **BYTE-VERIFIED** |
 | `@VICEROY` trigger/caller (coronation, `func_0755CC` tail, indirect dispatch) | attributed (enrich + OPENING_SEQUENCE); dispatch pointer = loader seam |
@@ -304,7 +304,7 @@ Handle→file base verification: `VICEROY\0`@0x1FCD4, `LANDHO\0`@0x1E242,
 | `@LANDHO` trigger: `func_03FDDE` landfall case 6 + flag `[0x543E + power*0x34] bit 0x80` | **BYTE-VERIFIED end-to-end** |
 
 **Supersedes** in `docs/OPENING_SEQUENCE.md`: gap #1 (`_main` not pinned →
-now structurally pinned, exact-entry TBD with reason) and gap #3
+now structurally pinned, exact-entry not yet decoded with reason) and gap #3
 (`@VICEROY`/`@LANDHO` emitter call sites → @LANDHO fully traced; @VICEROY
 emitter+condition byte-verified, caller attributed). Gaps #2 (`system_init`
 regions 2–4) and #4 (`func_065D26` world-gen tail) are untouched.

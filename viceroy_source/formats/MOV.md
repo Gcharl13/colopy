@@ -20,7 +20,7 @@ than a Smacker/AVI video.
 
 ```
 +---------------------------------------------------------------+
-| Header (signature TBD)                                          |
+| Header (signature not yet decoded)                              |
 +---------------------------------------------------------------+
 | Sequence of timed commands:                                     |
 |   byte cmd                                                       |
@@ -34,7 +34,7 @@ than a Smacker/AVI video.
 |   0x04 = palette_cycle(start, end, ticks)                        |
 |   0x05 = sound_trigger(sample_id)                                |
 |   0x06 = text_show(string_id, x, y, color)                       |
-|   ... (TBD)                                                       |
+|   ... (not yet decoded)                                           |
 +---------------------------------------------------------------+
 ```
 
@@ -49,6 +49,6 @@ toolchain. It's not yet hand-decoded but the Python port at
 
 ## Citations
 
-- @asm_file  TBD (OPENING.EXE's MOV-player main loop)
+- @asm_file  not yet decoded (OPENING.EXE's MOV-player main loop)
 - @ref       ../../../docs/MOV_FORMAT.md  (existing format notes)
 - @ref       ../../../COLONIZE/AMERICA.MOV (the file itself, 572 bytes)

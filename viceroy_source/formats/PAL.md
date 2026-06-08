@@ -10,7 +10,7 @@ VGA-mode-13h-style 256-color palette. Each color is a 6-bit RGB triple
 
 ```
 Offset 0x000..0x2FF (768 bytes): 256 × { R, G, B } 6-bit values
-Offset 0x300..0x30E (15 bytes):  TBD trailer (palette-cycle range table?)
+Offset 0x300..0x30E (15 bytes):  not yet decoded trailer (palette-cycle range table?)
 ```
 
 The trailer 15 bytes likely encode palette-cycling ranges (start_index,
@@ -24,7 +24,7 @@ via the asset-name-construction code in `src/load_image/load_image_*.c`.
 
 ## Citations
 
-- @asm_file ../code/VICEROY/disasm/  (loader is overlay-resident; specific offset TBD)
+- @asm_file ../code/VICEROY/disasm/  (loader is overlay-resident; specific offset not yet decoded)
 - @python  ../../../colonize_sdl/palette.py
 - @verified Round-trip byte-equal: `tools/extract_pal.py` decodes to JSON,
   `tools/encode_pal.py` repacks; SHA256 matches original.
@@ -51,5 +51,5 @@ the actual game colors. The palette is shared across:
 
 Cycling ranges (animated):
 - Water shimmer (typically indices 240..247 or similar)
-- Fire / smoke effects (TBD)
-- Title-screen logo gradient (TBD)
+- Fire / smoke effects (not yet decoded)
+- Title-screen logo gradient (not yet decoded)
