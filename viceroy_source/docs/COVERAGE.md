@@ -69,7 +69,9 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
      The head reads [0x53A8] + 100*[0x53A7] as a cap initializer, loops over 4
      powers counting flag-set colonies, and dispatches on arg=0/1. Full scoring
      component weights (population/colonies/FF/gold/bells) are in the 960-instruction
-     body — byte-trace of the full body is IN PROGRESS.
+     body — BYTE_TRACED (2026-06-08): 7 score components fully documented
+     (score_founding, score_ff_pts, score_gold, score_ref, score_sol,
+      score_liberty, score_congress) plus veterans multiplier; see FORMULAS.md.
    - **CORRECTION (2026-06-08):** the buy/sell bid-ask spread is NOT here. The
      prior `0x181F:0xcc2/0xac4` lead was a misattribution — those thunks resolve
      to RESIDENT `func_00B5A8`/`func_00B65A` (jmp far 0x05EB:0x32F8/0x33AA, file
@@ -80,9 +82,23 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
 
 ## Regenerate
 
+## Recent completions (2026-06-08)
+
+- **raw_power_score (func_039EE2) BODY TRACED:** All 7 score components documented;
+  DS:0x53A7 = year/100, DS:0x53A8 = year%100 confirmed (write sites); score_liberty
+  formula (1780-year)×2 at @asm 03A609 BYTE_VERIFIED. audit.py: 184/184 PASS.
+- **native_settlement_remove (func_046EC0) COMPLETE:** 258-byte full body; unit
+  loop, table compaction, tribe extinction path all BYTE_VERIFIED. New DGROUP
+  symbols: g_tribe_settlement_count_962A[] @0x962A, tribe-bound ptrs @0x8D4E/50/52.
+- **func_06F0F4 @-directive keyword table (Group B CLOSED):** 10 string values
+  extracted from DGROUP — "OPTIONS","PROMPT","TEXT","SMALLFONT","Y","X","WIDTH",
+  "LENGTH","CHECKBOX","DEFAULT" — all confirmed from binary @file 0x01F967.
+
+## Regenerate
+
 ```
 cd viceroy_source/tools
 python3 funcscan.py            # re_work/functions.json (needs re_work/VICEROY.EXE)
 python3 coverage.py            # this table + re_work/coverage.json
-python3 audit.py               # 159/159 byte-claim regression check
+python3 audit.py               # 184/184 byte-claim regression check
 ```
