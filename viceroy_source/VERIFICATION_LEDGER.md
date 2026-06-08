@@ -1280,14 +1280,14 @@ outcome by target-availability gates.
 - raiding-tribe TribeData ptr `[0x8D4E]` = `tribe*0x4E + 0x5AD6` (stride 78, = TribeData 0x59D8 + 0xFE) — @asm 0x81E6
 - owner id `[0x8D50]` = tribe + 4 — @asm 0x81E0
 - **CORRECTION:** the STORES `inc [bx+8]`/`add [bx+0xa],0x19` (@0x5C3E1/0x5C3E4) write **TribeData[tribe]+8/+0xA** (via [0x8D4E]), a per-tribe raid tally — NOT the NativeSettlement +0x08 field. The prior note attributing these to the settlement was wrong.
-- NativeSettlement (DS:0x54EC stride 0x12): +0x00 x, +0x01 y, +0x02 owner(tribe+4); fields +0x07/+0x08/+0x09 (0x54F3/4/5) written 0xFF at create (@0x46EAE) with **no other code reference** — semantics TBD.
+- NativeSettlement (DS:0x54EC stride 0x12): +0x00 x, +0x01 y, +0x02 owner(tribe+4); fields +0x07/+0x08/+0x09 (0x54F3/4/5) written 0xFF at create (@0x46EAE) with **no other code reference** — semantics not yet decoded.
 
-### NATIVE_GROWTH_PCT — remains TBD (correction)
+### NATIVE_GROWTH_PCT — remains not yet decoded (correction)
 No per-turn NativeSettlement population/goods growth write exists in the static
 code region. The prior "field += field/(0xFFFF-n)" growth claim was a
 mis-reading: that site (@0x4700B) scales the **global** word DS:0x538E (~×24/25),
 not a settlement field. Native settlement growth (if modeled) is overlay-resident
--> TBD. audit.py 128/128.
+-> not yet decoded. audit.py 128/128.
 
 ---
 
