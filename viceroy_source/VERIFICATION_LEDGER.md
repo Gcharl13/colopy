@@ -1087,15 +1087,21 @@ confirm — and tighten — the existing source.
 
 ---
 
-## Endgame scoring rank ladder — `func_03A9C0` (verified 2026-06-07)
+## Endgame scoring rank ladder — `func_03A9C0` (verified 2026-06-07) + raw_power_score LOCATED (2026-06-08)
 
-The Hall-of-Fame rank ladder is now byte-traced (display/ranking layer; the raw
-score-total sum is overlay-resident, see TBD). `func_03A9C0` file 0x03A9C0
-(ENTER 0x3C4), early-return RETF @0x3AA08 for score<=0, body extends to 0x3B2F8.
+The Hall-of-Fame rank ladder is byte-traced (display/ranking layer). The raw
+score-total sum function `raw_power_score` is now **located** at `func_039EE2`
+(file 0x039EE2, 2781 bytes, ENTER 0x7E) via the confirmed Type-A RTLink thunk
+formula (see Type-A section below). `func_03A9C0` file 0x03A9C0 (ENTER 0x3C4),
+early-return RETF @0x3AA08 for score<=0, body extends to 0x3B2F8.
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
-| raw score from overlay routine 0x191F:0x3AA via thunk 0x3B36A | @asm 0x3A9F5 `push cs; call 0x3b36a`; result -> [bp-0xBE] @0x3A9FC | BYTE_VERIFIED (call); body TBD (overlay) |
+| raw_power_score = func_039EE2 @ file 0x039EE2 (2781 B, ENTER 0x7E) via Type-A thunk `0x191F:0x3AA` | thunk @ file 0x1B99A: `9A AB 0D 0D 11` (Type-A), off=0x0092, segid=5, extra=0x02B1; base[5]=0x037340; 0x037340+0x02B1×16+0x0092=0x039EE2 (confirmed ENTER `C8 7E 00 00`). Call chain: 03A9F6 `call 0x3B36A` → 03B36A `EA AA 03 1F 19` → thunk → func_039EE2 | BYTE_VERIFIED (location + head) |
+| raw_power_score head: reads [0x53A8] + 100×[0x53A7] as cap init | @asm 039EE6 `A0 A8 53` (mov al,[0x53A8]); 039EEC `B0 64` (mov al,0x64); then IMUL [0x53A7] | BYTE_VERIFIED |
+| raw_power_score loops i=0..3 counting other-nation colonies with flag set | @asm 039F1C..039F3B loop body: tests PowerRecord[i×0x13C-0x77F8] bit 2; inc [bp-0x56] | BYTE_VERIFIED (loop structure) |
+| raw_power_score arg gate: arg==0 → skip display path | @asm 039F42 `75 03` (jne +3); jmp → 0x3A09A | BYTE_VERIFIED |
+| raw score from overlay routine 0x191F:0x3AA via thunk 0x3B36A | @asm 0x3A9F5 `push cs; call 0x3b36a`; result -> [bp-0xBE] @0x3A9FC | BYTE_VERIFIED |
 | difficulty multiplier = diff+4, +1 if diff>=3, +1 if diff>=4 (0..4 -> 4,5,6,8,10) | @asm 0x3AA0A `mov al,[0x53a6]`; 0x3AA0F `add ax,4`; 0x3AA15 `cmp [0x53a6],3`/inc; 0x3AA20 `cmp ...,4`/inc | BYTE_VERIFIED |
 | scaled = (mult * rawScore) / 100 | @asm 0x3AA34 `imul [bp-0xbe]`; 0x3AA38 `mov cx,0x64`; 0x3AA3C `idiv cx` | BYTE_VERIFIED |
 | rank = largest i-1 (i=1..24) with i*i/3 < scaled; loop bound 24, cap 23 | @asm 0x3AA4D `imul cx`; 0x3AA4F `mov bx,3`; 0x3AA53 `idiv bx`; 0x3AA63 `cmp ...,0x18`; 0x3AA71 `cmp ax,0x17`/`mov ax,0x17` | BYTE_VERIFIED |
@@ -1105,10 +1111,10 @@ score-total sum is overlay-resident, see TBD). `func_03A9C0` file 0x03A9C0
 | HALLFAME.DAT load/sort/insert func_03ADA6: rep-movsw sort up to 6 records (0x2A words) by descending score field +0x26 | @asm 0x3AED0/0x3AED8 | BYTE_VERIFIED (structure) |
 | win-state master flag word [0x5382]: bit0=independence (set @func_03DE46 0x3E031 `or [0x5382],1`), bit3 -> HOF, bit4 suppresses interactive HOF | @asm 0x3E031; 0x3B320; 0x3A9BB `test [0x5382],0x10` | BYTE_VERIFIED |
 
-TBD: (1) the score-TOTAL component formula (colonists/FFs/treasure/rebel
-sentiment) is computed inside the RTLink-swapped overlay at 0x191F:0x3AA (thunk
-descriptor `05 00 b1 02` -> overlay seg 0x02B1) — not statically resolvable from
-the thunk chain; needs the RTLink flattener or a runtime dump. (2) Rank-title
+TBD: (1) the score-TOTAL component formula (colonies/population/FFs/gold/bells/
+difficulty-bonus/revolution-bonus weights) is in the 2781-byte body of
+func_039EE2. The head (first 70 bytes) is BYTE_VERIFIED; the weight payloads for
+each component remain to be traced (ongoing — see compute.c). (2) Rank-title
 text (Discoverer..Viceroy) is loaded by key+rank from an external message file;
 the EXE holds only keys ("SCORE" DG 0x11CF, "EXPLOITS" DG 0x11E0). The string
 "Colonization_Rating" is NOT in the EXE (external).
@@ -1343,11 +1349,16 @@ is the **second-stage `EA` operand**:
 |--------------------------|-----------:|-------------------|------------:|---------|
 | buy  spread `0x181F:0xCC2` | 0x1B2B2 | `EA F8 32 EB 05` → 0x05EB:0x32F8 | 0x0B5A8 | **RESIDENT** (func_00B5A8) |
 | sell spread `0x181F:0xAC4` | 0x1B0B4 | `EA AA 33 EB 05` → 0x05EB:0x33AA | 0x0B65A | **RESIDENT** (func_00B65A) |
-| score total `0x191F:0x3AA` | 0x1B99A | `EA 92 00 00 00` → 0x0000:0x0092 | (overlay 5) | **OVERLAY** (seg=0 placeholder, patched at load) |
+| score total `0x191F:0x3AA` | 0x1B99A | Type-A: `9A AB 0D 0D 11`; off=0x0092, segid=5, extra=0x02B1 | 0x039EE2 | **CONFIRMED** (func_039EE2; Type-A formula: base[5]+extra×16+off) |
 
 Findings:
-- **score-total IS genuinely overlay** (placeholder seg 0x0000 + overlay-id byte
-  0x05). Stays `[TBD]` pending the flattener — confirmed, not just assumed.
+- **score-total CONFIRMED at func_039EE2** (2026-06-08) via Type-A RTLink thunk
+  formula: `file_offset = base[segid] + extra*16 + off`. The thunk at 0x1B99A is
+  a 14-byte Type-A shape (`9A AB 0D 0D 11`) with off=0x0092, segid=5,
+  extra=0x02B1. `base[5]=0x037340`; `0x037340 + 0x02B1×16 + 0x0092 = 0x039EE2`.
+  func_039EE2 confirmed (ENTER `C8 7E 00 00`). See Type-A section in COVERAGE.md.
+  Score component weights (colonies/pop/FF/gold/bells) are in the 2781-byte body
+  — head BYTE_VERIFIED; full trace in progress.
 - **bid/ask spread is NOT at these thunks.** func_00B5A8/00B65A read the
   per-unit-TYPE stat table (base 0x5230 stride 14; cols +9=0x5239, +10=0x523A —
   same block as DEFENSE 0x5235 / ATTACK 0x5236) via a price-band index from a
@@ -1360,3 +1371,37 @@ Findings:
 - func_00B5A8 (buy-band classifier, 82B) / func_00B65A (170B; the auto-skeleton's
   "39B" is a truncation) are decodable resident stubs but low-value (murky
   unit-stat semantics); left unported, no longer counted as RTLink-blocked.
+
+---
+
+## RTLink Type-A thunk format CONFIRMED (2026-06-08)
+
+The 14-byte overlay thunk shape ("Type-A", loader 0x110D:0x0DAB) carries an
+`extra` paragraph-count field at bytes [12:14], confirmed by disassembling the
+post-load patching code at 0x110D:0x1111:
+
+```
+add  ax, word ptr es:[di+7]   ; di = EA byte offset → [di+7] = thunk[12] = extra
+mov  word ptr es:[di+3], ax   ; patch placeholder segment with base+extra
+```
+
+**Type-A resolution formula:** `file_offset = base[segid] + extra * 16 + off`
+
+Three thunk shapes (all confirmed by byte scan of the thunk table 0x1A000–0x1E000):
+
+| Shape | Size | Loader | segid field | extra field |
+|-------|-----:|--------|-------------|-------------|
+| RESIDENT | 10B | (none; `EA <real-seg>`) | — | — |
+| OVERLAY Type-B | 12B | 0x110D:0x0D91 | [10:12] | (none) |
+| OVERLAY Type-A | 14B | 0x110D:0x0DAB | [10:12] | [12:14] |
+
+Fingerprint validation (tools/rtlink/flatten.py):
+- 23/31 overlay segments resolve STRONG (≥50% thunk offsets hit exact function starts)
+- Resident-thunk control: 323/362 (89%) land on resident function starts
+
+**Audit assertions added** to audit.py (all PASS, total 179/179):
+- Score thunk at 0x1B99A: Type-A header `9A AB 0D 0D 11`, off=`92 00`, segid=`05 00`, extra=`B1 02`
+- func_039EE2 ENTER `C8 7E 00 00` at file 0x039EE2
+- raw_power_score reads [0x53A8] at 0x039EE6; imul operand at 0x039EEC
+- arg gate `75 03` at 0x039F46; trampoline ljmp `EA AA 03 1F 19` at 0x03B36A
+- score_endgame_rank call-site `E8 71 09` at 0x03A9F6
