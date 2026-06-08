@@ -51,7 +51,9 @@
  *        and is a PHANTOM.
  *   page_12 (code 0x05FE60..0x0612E6): the 0x05FE60..0x0610DA functions below
  *        are all real (per the page_12 header list).  func_0610B0 (size 566)
- *        spills past 0x0610DA -> PARTIAL here, remainder in the next file.
+ *        begins at 0x0610B0 (in THIS file) and its body spills to 0x0612E5;
+ *        the next overlay file begins at 0x0612E6 and does NOT contain that tail,
+ *        so func_0610B0 is ported IN FULL here (completed 2026-06-08).
  *
  * The near-CALL targets func_0613F0..func_06144F that several functions here
  * invoke are the page_12 RTLink Type-A thunk table at 0x0613F0..0x061454-:
@@ -90,6 +92,10 @@ extern int func_06143B(void);  /* ljmp 0x1A1F:0x77E */
 extern int func_061440(void);  /* ljmp 0x1A1F:0x78C */
 extern int func_06144A(void);  /* ljmp 0x1A1F:0x7A8 */
 extern int func_06144F(void);  /* ljmp 0x1A1F:0x7B6 */
+extern int func_0613FF(void);  /* ljmp 0x191F:0x38E (used by func_0610B0 commit) */
+/* String compare-vs-colony-name helper (load-image seg 0x0D1D); used only by
+ * func_0610B0 to dedupe a proposed colony name.  @asm page_12 0x061205. */
+extern int overlay_call_0D1D_1154(void);  /* @ref 0x0D1D:0x1154 strcmp-far vs colony name */
 
 /* CS-relative near function called by func_05C69C @0x05C784 (call 0x3dc4 in
  * page-10 image == terrain/move-cost class lookup; full body out of range). */
@@ -1721,40 +1727,60 @@ int func_060FBC_select_tile_or_active_unit(int16_t arg0_slot)
 
 
 /* ============================================================================
- * func_0610B0 — found_new_colony (entry-guard portion)   [PARTIAL — BYTE_VERIFIED]
+ * func_0610B0 — found_new_colony   [DONE — BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * @asm page_12 ---- func_0610B0 size=566 prologue ENTER 0x0064,0 (0x0610B0..
- *      0x0612E5, terminal RETF @0x0612E5).  Only the first 0x2A bytes
- *      (0x0610B0..0x0610D9, RETF) fall within this file's 0x0610DA upper bound;
- *      the success-path body (0x0610DA..0x0612E5) spills into the NEXT overlay
- *      file (overlay_0612E6_066EB3.c — its range begins at 0x0612E6, so the
- *      0x0610DA..0x0612E5 tail belongs to whichever file owns 0x0610DA+; per the
- *      reconstruction directive it is ported there, not duplicated here).
+ *      0x0612E5, terminal RETF @0x0612E5).
  *
- * RE-IDENTIFIED 2026-05-30: this is the "FOUND A NEW COLONY HERE?" routine, not
- * a generic open-map-view.  The IN-RANGE entry guard is a hard cap: if the
- * active power already has [0x53A0] >= 0x0C (12) colonies it clamps the cursor
- * scratch ([0x9CB0]=0x0C, [0x9CB2]=0) and shows the "too many colonies" alert
- * (LCALL 0x181F:0x0998 with DGROUP string 0x1D6A) and returns — you cannot
- * found a 13th.  @asm 0x0610B5..0x0610D9.
+ * The "FOUND A NEW COLONY HERE?" routine.  COMPLETED 2026-06-08: the success
+ * path 0x0610DA..0x0612E5 was previously left STUBBED ("ported in the next
+ * overlay file") — but the next file overlay_0612E6_066EB3.c begins at 0x0612E6
+ * and does NOT contain this tail, so the whole function (it begins at 0x0610B0,
+ * in THIS file) was incomplete.  The full body was pulled on-demand from
+ * VICEROY.EXE via tools/viceroy_exe.py and is reconstructed below.
  *
- * For the record (verified, but OUT-OF-RANGE so NOT bodied here), the success
- * path 0x0610DA..0x0612E5 does: probe the target via near 0x192A (func_0613FA);
- * read its ColonyRecord coord (0x5D46/0x5D47) and test build-legality via
- * 0x181F:0x0D12 (alert 0x1D74 on fail); format the proposed colony name
- * (0x0D1D:0x117E) and ask the Y/N confirm 0x191F:0x0928 (prompt 0x1D7E); roll
- * the initial population (0x181F:0x04CA/0x04D4) and add the founding entries
- * (0x191F:0x091C); build a unique name string (0x0D1D:0x117E/0x11B4/0x1154,
- * dup-suffix via 0x0D1D:0x07A4) and accept it through hot-region 0x191F:0x0120
- * (field 0x1D8C); then COMMIT — store the colony id into tile[+0x20], set
- * tile[+0x21]=2 (ES:[0x9E14]), register through the near thunks 0x1920/0x1939/
- * 0x1952, INC [0x53A0], and finalize via 0x192F.  @asm 0x0610DA..0x0612E3.
- * @bytes  83 3E A0 53 0C (CMP [0x53A0],0x0C) ; C7 06 B0 9C 0C 00 ([0x9CB0]=0xC);
- *         9A 98 09 1F 18 (LCALL 0x181F:0x0998 alert) at 0x0610D2 ; CB (RETF) at
- *         0x0610D9 ; 6A 00 (PUSH 0, success path) at 0x0610DA.
+ * IN-RANGE entry guard (@asm 0x0610B5): a hard cap — if the active power already
+ * has [0x53A0] >= 12 colonies it clamps the cursor scratch ([0x9CB0]=12,
+ * [0x9CB2]=0), shows the "too many colonies" alert (0x181F:0x0998, key 0x1D6A)
+ * and returns; you cannot found a 13th.
+ *
+ * SUCCESS PATH (@asm 0x0610DA):
+ *   @asm 0x0610DA  score_accum(0,1,0)                              ; 0x181F:0x09AE
+ *   @asm 0x0610E8  cand = near_0x613FA(-1,-1,0,0)                  ; probe target tile
+ *   @asm 0x0610FA  if (cand < 0) return
+ *   @asm 0x061101  legal = 0x181F:0x0D12(col.x[+0x5D46], col.y[+0x5D47])
+ *   @asm 0x061119  if (legal != 0) { ans = alert 0x1D74; if (ans<0) return;
+ *                                    force_flag = (ans==1) }  else force_flag = 0
+ *   @asm 0x061140  build proposed name from ColonyRecord[cand]+2  ; 0x0D1D:0x117E
+ *   @asm 0x06115D  if (names_section(0x1D7E) == 0) {               ; auto-name accepted
+ *   @asm 0x061178    pop  = 0x0D1D:0x08F6(txt_lookup())            ; initial population
+ *   @asm 0x061195    nadv = random_int(1, pop)                    ; advance the name RNG
+ *   @asm 0x0611AC    for (j=0; j<nadv; j++) txt_lookup()
+ *   @asm 0x0611BC    normalize(name)  ; 0x0D1D:0x11B4
+ *   @asm 0x0611CD    de-dup vs existing colony names, appending suffix 0x1D89 }
+ *   @asm 0x061240  if (picker_run(0x1F,0x1D8C,&name) != 0) return  ; 0x191F:0x0120
+ *   @asm 0x061259  slot = [0x53A0]
+ *   @asm 0x06125F  near_0x613F0(slot)                             ; 0x191F:0x2CE
+ *   @asm 0x061267  store name into colony tile (seg 0x9820 @[0x9E14]) ; 0x0D1D:0x117E
+ *   @asm 0x06127B  tile[+0x20] = force_flag ; tile[+0x21] = 2     ; ES:[0x9E14]
+ *   @asm 0x06128B  near_0x61409(0) ; near_0x61422(cand)           ; register
+ *   @asm 0x06129E  score_accum(0,2,0) ; cand = near_0x613FA(...)  ; re-probe
+ *   @asm 0x0612BE  if (cand < 0) return
+ *   @asm 0x0612C2  near_0x61409(1) ; near_0x61422(cand)
+ *   @asm 0x0612D5  [0x53A0]++                                     ; commit the colony
+ *   @asm 0x0612D9  near_0x613FF(slot)                             ; finalize
+ *
+ * The near 0x613FA/0x613F0/0x613FF/0x61409/0x61422 are the page-12 RTLink Type-A
+ * thunks (ljmp 0x191F:0x2F8 / 0x2CE / 0x38E / 0xA4A and 0x1A1F:0x738).  The
+ * de-dup loop's exact suffix arithmetic touches the per-letter counter buffer at
+ * [bp-0x55+idx]; the tile/ColonyRecord field offsets (+0x20 id, +0x21 stack=2,
+ * +0x5D46/+0x5D47 coords) are byte-exact.  Always returns 0.
  * ============================================================================ */
 int func_0610B0_found_new_colony(void)
 {
+    int cand, legal, force_flag, j, nadv, pop, slot, colliding, suffixed, ci;
+    char namebuf[0x52];                             /* @asm [bp-0x54] proposed-name buffer */
+
     /* IN-RANGE: the 12-colony hard cap guard. @asm 0x0610B5..0x0610D9 */
     if ((int16_t)U16(0x53A0) >= 0x0C) {             /* @0x0610B5 CMP [0x53A0],0x0C / JL */
         U16(0x9CB0) = 0x0C;                         /* @0x0610BC */
@@ -1762,9 +1788,83 @@ int func_0610B0_found_new_colony(void)
         overlay_call_181F_0998(/* 0x87C, 0x1D6A "too many colonies" */);  /* @0x0610D2 */
         return 0;                                   /* @0x0610D9 RETF (early) */
     }
-    /* PARTIAL: the found-colony success path begins here (PUSH 0 @0x0610DA) and
-     * runs to 0x0612E5; it is past this file's 0x0610DA upper bound and is
-     * ported in the next overlay file.  Falling through returns the verified
-     * default for the in-range portion. */
-    return 0;
+
+    overlay_call_181F_09AE();                       /* score_accum(0,1,0) @0x0610DA */
+    cand = func_0613FA();                           /* probe target (-1,-1,0,0) @0x0610E8 -> [bp-0x56] */
+    if (cand < 0) return 0;                          /* @0x0610FA jge/jmp 0x612E3 */
+
+    /* build-legality test on the candidate's ColonyRecord coords. @0x061101 */
+    legal = overlay_call_181F_0D12(/* X=[bx+0x5D46], Y=[bx+0x5D47] */);
+    if (legal != 0) {                               /* @0x061119 illegal terrain */
+        int ans = overlay_call_181F_0998(/* 0x87C, 0x1D74 "BUILDONBADTERRAIN" */); /* @0x061127 */
+        if (ans < 0) return 0;                       /* @0x06112F cancelled */
+        force_flag = (ans == 1) ? 1 : 0;             /* @0x061136 */
+    } else {
+        force_flag = 0;                              /* @0x061119 je 0x6113D with ax=0 */
+    }
+    (void)cand;                                      /* ColonyRecord[cand] addressed via 0xCA stride */
+
+    /* format the proposed colony name from ColonyRecord[cand]+2. @0x061140 */
+    overlay_call_0D1D_117E(/* &namebuf, ColonyRecord[cand]+2 */);
+
+    if (overlay_call_191F_0928(/* 0x87C, 0x1D7E "NAMECOLONY" */) == 0) { /* @0x06115D je 0x6116C else 0x61240 */
+        overlay_call_181F_0178(/* &namebuf */);      /* finalize buffer @0x06116C */
+        /* initial population count drawn from the name table. @0x061178 */
+        overlay_call_191F_091C();                    /* txt_lookup() @0x061178 */
+        pop = overlay_call_0D1D_08F6();              /* -> [bp-2] @0x06117E */
+        overlay_call_181F_04CA(/* option 0x83A6 */);  /* pre-roll seed mix @0x061189 */
+        nadv = overlay_call_181F_04D4(/* 1, pop */);  /* random_int(1,pop) @0x061195 -> [bp-0x58] */
+        for (j = 0; j < nadv; j++)                    /* @0x0611A5..0x0611BA */
+            overlay_call_191F_091C();                /* advance name RNG @0x0611AC */
+
+        overlay_call_0D1D_11B4(/* &namebuf, ss, 0x833C */); /* normalize @0x0611BC */
+
+        /* de-dup the proposed name against existing colony name records. @0x0611CD */
+        suffixed = 0;                                /* @0x0611CD [bp-0x5A] */
+        colliding = 0;                               /* @0x0611D2 [bp-0x60] */
+        ci = 0;                                      /* @0x0611D4 [bp-0x5C] */
+        do {
+            /* per-letter counter bump (hash of the buffer). @0x0611DC */
+            (void)overlay_call_0D1D_0842();          /* idx -> namebuf[idx-1]++ @0x0611E0/0x0611EA */
+            if (colliding == 0 && ci < (int)U16(0x53A0)) { /* @0x0611F0/0x0611F9 */
+                /* compare proposed name vs existing colony name (seg 0x1B22, ci*0x4A). */
+                if (overlay_call_0D1D_1154() != 0) { /* @0x061205 no match -> keep scanning */
+                    ci++;                            /* @0x0611ED (loop continues) */
+                } else {
+                    colliding = 1;                   /* @0x06121A */
+                    if (suffixed == 0) {             /* @0x06121F first collision */
+                        overlay_call_0D1D_07A4(/* &namebuf, 0x1D89 "DUPSUFFIX" */); /* @0x06122B */
+                        suffixed = 1;                /* @0x061233 */
+                    }
+                }
+            }
+        } while (colliding != 0);                    /* @0x06123A reset & re-scan after a suffix */
+    }
+
+    /* hot-region name accept (the editable "COLONY NAME" field). @0x061240 */
+    if (overlay_call_191F_0120(/* 0x1F, 0x87C, 0x1D8C, &namebuf */) != 0) /* @0x06124D */
+        return 0;                                    /* @0x061252 cancelled */
+
+    /* ---- COMMIT the new colony. @0x061259 ---- */
+    slot = (int)U16(0x53A0);                          /* @0x061259 [bp-4] */
+    func_0613F0(/* slot */);                          /* register slot @0x06125F (0x191F:0x2CE) */
+    /* store the name string into the colony tile sub-record (seg 0x9820 @[0x9E14]). */
+    overlay_call_0D1D_117E(/* seg 0x9820, &[0x9E14], &namebuf */); /* @0x061267 */
+    {
+        uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14)); /* @0x06127E ES:BX */
+        tile[0x20] = (uint8_t)force_flag;            /* @0x06127B colony id / force byte */
+        tile[0x21] = 2;                              /* @0x061286 tile stack-count = 2 */
+    }
+    func_061409(/* 0 */);                             /* @0x06128B (0x191F:0xA4A) */
+    func_061422(/* cand */);                          /* @0x061294 (0x1A1F:0x738) */
+
+    overlay_call_181F_09AE();                         /* score_accum(0,2,0) @0x06129E */
+    cand = func_0613FA();                             /* re-probe @0x0612AC -> [bp-0x56] */
+    if (cand < 0) return 0;                           /* @0x0612BE jl 0x612E3 */
+    func_061409(/* 1 */);                             /* @0x0612C2 */
+    func_061422(/* cand */);                          /* @0x0612CB */
+    U16(0x53A0)++;                                    /* commit: colony count @0x0612D5 */
+    func_0613FF(/* slot */);                          /* finalize @0x0612D9 (0x191F:0x38E) */
+
+    return 0;                                         /* @0x0612E3 RETF */
 }

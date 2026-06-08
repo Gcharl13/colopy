@@ -689,76 +689,243 @@ int unit_combat_value(int unit)  /* func_059B3E */
 }
 
 /* ============================================================================
- * func_059B90 — ai_evaluate_unit_targets  [DONE — BYTE_VERIFIED]
- * (ship-type base scores code-resident: 0x10→4,0x11→6,0x12→8; secondary weights
- *  in 0x181F resident segment — out-of-scope; BSS peer_weight@DS:0x9566 runtime)
+ * func_059B90 — ai_evaluate_unit_targets  [DONE — control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
- * The per-unit AI move/target evaluator: given unit `arg0`(bp+6) and a goal tile
- * (arg2=bp+8 x, arg3=bp+0xA y), it scores candidate destinations/targets and
- * returns the chosen one.  Reseg size 2173 B (ENTER 0x4A).
+ * EXTENT + SEMANTICS CORRECTED 2026-06-08 (full body pulled on-demand from
+ * VICEROY.EXE via tools/viceroy_exe.py).  Two prior errors are fixed here:
  *
- * @asm 0x059B95  for (j = 0; j < 0xC; j++) cand[j] = 0           ; 12-slot scratch (bp+si-0x1E)
- * @asm 0x059BB3  owner   = unit.owner & 0xF                      ; bp-0x4A
- * @asm 0x059BC6  base    = LCALL 0x181F:0x090C(unit) & 0xFF      ; unit base stat ; bp-0x3C
- * @asm 0x059BD4  terr    = LCALL 0x181F:0x0768(goalX,goalY)      ; terrain at goal ; bp-0x34
- * @asm 0x059BE5  occ     = (LCALL 0x181F:0x0696(goalX,goalY) >= 0) ; tile occupied? ; bp-0x32
- * @asm 0x059C06  for (target = …; …; …) {                        ; main scan (to 0x3D8C)
- * @asm 0x059C2A    if (unit.type not in [0x0D..0x12]) … land path  ; ships vs land split
- * @asm 0x059C42    if (terr == 0) skip                           ; impassable
- * @asm 0x059C4B    if (LCALL 0x181F:0x0768(tx,ty) == 0) skip
- * @asm 0x059C6B    rel = LCALL 0x181F:0x0A38(owner, candPower)
- * @asm 0x059C79    if ((rel & 0x40) && cand.type != 0x10) skip   ; treaty blocks attack
- * @asm 0x059C8D    … per-candidate scoring loop accumulates into cand[] …
- *                  (scoring weights are data-resident tables (RUNTIME_ONLY))
- * @asm  (tail)     pick argmax(cand[]) and return it
+ *  (1) WRONG EXTENT.  The banner claimed 2173 B (0x059B90..0x05A40E).  The real
+ *      function is 1605 B (0x059B90..0x05A1D5, terminal RETF @0x05A1D4) —
+ *      confirmed by re_work/functions.json {foff 367504, end 369109, size 1605}.
+ *      The 0x05A1D6..0x05A20D bytes are this routine's RTLink trampoline table
+ *      (10 ljmp entries its near `call`s resolve through), and 0x05A20E begins a
+ *      SEPARATE 511-B function (see func_05A20E below) — NOT interior to this one.
  *
- * This mirrors the EUROPEAN per-unit AI leaf func_05CA7E (src/ai/unit_ai_leaf.c)
- * but is the lighter target-pre-scorer.  Structure (the ship/land split, the
- * terrain gate, the treaty-bit gate at 0x0A38&0x40, the 12-slot argmax) is
- * byte-anchored; the numeric move/attack weights live in the data segment and
- * are recorded not yet decoded rather than guessed.
+ *  (2) WRONG SEMANTICS.  The prior stub declared `int … return best` and returned
+ *      a -1 sentinel.  There is NO `mov ax,…` before the RETF at 0x05A1D4: the
+ *      routine returns no meaningful value.  It is a SIDE-EFFECTING evaluator that
+ *      scans the 8 tiles around (goalX,goalY) and, for every neighbouring unit,
+ *      applies combat-target bookkeeping (the scanning unit's interest counter and
+ *      the per-power strength matrix at DGROUP 0x5ADE) and, when a target clears
+ *      every gate, spawns/activates a follow-up unit via 0x181F:0x0A06.
  *
- * @asm_extent 0x059B90..0x05A40E (2173 B, reseg page_0F, terminal RETF)
+ * STRUCTURE (byte-traced; inner numeric weights are data-resident RUNTIME):
+ *   setup   @asm 0x059B95 cand[0..11]=0 ; @asm 0x059BB9 owner=unit.owner&0xF
+ *           @asm 0x059BC6 base=unit_maxmoves&0xFF ; @asm 0x059BD4 terr=tile_land(goal)
+ *           @asm 0x059BE5 occ=(tile_occupied(goal)>=0)
+ *   outer   @asm 0x05A03C for (dir=0; dir<8; dir++)
+ *           @asm 0x05A045   tx=goalX+dy8[dir] ; ty=goalY+dx8[dir]
+ *           @asm 0x05A060   reach=helper_6BE(tx,ty) ; @asm 0x05A071 occu=first_unit(0x7E0)
+ *           @asm 0x05A079   if (occu>=0) -> walk the tile's unit chain (0x059C0A)
+ *           @asm 0x05A08E   else if (terr) -> empty-land placement / strength swap
+ *   chain   @asm 0x059C2A   ship/land split (unit.type in [0x0D..0x12])
+ *           @asm 0x059C6B   rel=tribe_or_ff_flags() ; @asm 0x059C79 skip if (rel&0x40)&&type!=0x10
+ *           @asm 0x059C90   base score by type: 0x10->4, 0x11->6, 0x12->8
+ *           @asm 0x059DD7   commit: UnitRecord[unit]+0x05 (abs 0x3149) interest counter += score
+ *           @asm 0x059E56   next = 0x181F:0x02E4(cur)  (chain advance)
+ *   empty   @asm 0x05A0D4   swap the two powers' cached strength bytes (DGROUP 0x5ADE,
+ *                           stride 0x4E) — keep the larger in both — mark cand slot
+ *           @asm 0x05A1C6   on a clear target: 0x181F:0x0A06 (spawn/activate, type 0x20)
+ *
+ * The ship base scores (0x10->4/0x11->6/0x12->8) are code-resident MOV constants;
+ * the strength matrix at DGROUP 0x5ADE, the fort-defence weights at DS:0x8F8E /
+ * DS:0x8F9A, and the combat rolls inside the 0x181F leaves are RUNTIME data (not
+ * in the EXE).  Every gate, the 8-direction scan, the type scoring, the diplomacy
+ * bits, the strength swap and the spawn are byte-exact.  Returns no value.
+ *
+ * @asm_extent 0x059B90..0x05A1D5 (1605 B, reseg page_0F, terminal RETF @0x05A1D4)
  * ============================================================================ */
-int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 */
+extern int8_t  g_compass_dy8_00BE[];   /* DGROUP:0x00BE — 8-dir dy table (N,NE,E,..) */
+extern int8_t  g_compass_dx8_00B4[];   /* DGROUP:0x00B4 — 8-dir dx table */
+/* overlay_call_181F_0A06 (spawn/activate unit) is declared in overlay_externs.h. */
+
+void ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 */
 {
     int cand[12];                                      /* @asm bp+si-0x1E, 0xC slots */
-    int owner, base, terr, occ, j;
-    int best = -1;                                     /* @asm 0x059C0A bp-0x40 init (sentinel) */
+    int owner, base, terr, occ, j, dir;
 
     for (j = 0; j < 12; j++) cand[j] = 0;              /* @asm 0x059B95..0x059BB1 */
 
-    owner = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x059BB9 */
-    base  = overlay_call_181F_090C() & 0xFF;           /* unit base stat @asm 0x059BC6 */
-    terr  = overlay_call_181F_0768();                  /* terrain(goal)  @asm 0x059BD4 */
-    occ   = (overlay_call_181F_0696() >= 0) ? 1 : 0;   /* occupied?      @asm 0x059BE5 */
+    owner = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x059BB9 [bp-0x4A] */
+    base  = overlay_call_181F_090C() & 0xFF;           /* unit max-moves   @asm 0x059BC6 [bp-0x3C] */
+    terr  = overlay_call_181F_0768();                  /* terrain(goal)    @asm 0x059BD4 [bp-0x34] */
+    occ   = (overlay_call_181F_0696() >= 0) ? 1 : 0;   /* occupied?        @asm 0x059BE5 [bp-0x32] */
 
-    /* MAIN TARGET SCAN (structure byte-verified; weights RUNTIME_ONLY — data-resident, see banner):
-     *   for each candidate target reachable for this unit type, gated by:
-     *     - ship vs land (unit.type in [0x0D..0x12])         @asm 0x059C2A
-     *     - terrain passable                                 @asm 0x059C42/0x059C4B
-     *     - relation: skip if (rel & 0x40 treaty) unless cand.type==0x10 @asm 0x059C79
-     *   accumulate a weighted score into cand[] and finally pick argmax.
-     * The type-based base scores (0x10→4, 0x11→6, 0x12→8) are hardcoded MOV
-     * instructions in the scan loop (@asm 0x059C90–0x059CC8) and are code-resident
-     * constants, not a lookup table.  The secondary scaling (combat effectiveness
-     * via 0x181F:0x04D4/0x09A4) lives in the 0x181F resident segment (out-of-scope).
-     * Per-power territory matrix at DS:0x8F8E/0x8F9A (fort defence bonus) is used
-     * in the post-selection evaluation region.  The BSS peer_weight table at
-     * DS:0x9566 (stride 3) is runtime-populated from NAMES.TXT; unreadable from EXE.
-     * best holds the chosen target index (argmax of cand[]) at RETF. */
-    (void)owner; (void)base; (void)terr; (void)occ; (void)goal_x; (void)goal_y;
+    /* ---- 8-direction neighbour scan around the goal tile. @asm 0x05A03C ---- */
+    for (dir = 0; dir < 8; dir++) {                    /* @asm 0x05A03C cmp 8; jl */
+        int tx = goal_x + g_compass_dy8_00BE[dir];     /* @asm 0x05A045 [bx+0xBE] -> [bp-0x46] */
+        int ty = goal_y + g_compass_dx8_00B4[dir];     /* @asm 0x05A054 [bx+0xB4] -> [bp-0x3E] */
+        int occu, cand_owner, score;
 
-    return best;                                       /* @asm RETF (chosen target) */
+        (void)overlay_call_181F_06BE();                /* reachable(tx,ty) @asm 0x05A060 [bp-0x40] */
+        occu = overlay_call_181F_07E0();               /* first unit on tile @asm 0x05A071 [bp-0x42] */
+        (void)tx; (void)ty;
+
+        if (occu >= 0) {
+            /* ---- occupied: evaluate every unit in the tile's stack. @asm 0x059C0A ---- */
+            cand_owner = *(uint8_t *)(occu * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05A080 */
+            while (occu >= 0) {                        /* @asm 0x059E5E..0x05A02B chain */
+                uint8_t ctype = *(uint8_t *)(occu * UNIT_STRIDE + UNIT_TYPE); /* @asm 0x059C2E */
+
+                /* ship/land split + passability gates. @asm 0x059C2A..0x059C66 */
+                if (ctype >= SHIP_TYPE_LO && ctype <= SHIP_TYPE_HI &&
+                    terr != 0 && overlay_call_181F_0768() != 0 && cand_owner >= 0) {
+                    /* treaty gate: a 0x40-treaty blocks attacking unless type 0x10.
+                     * @asm 0x059C6B rel=tribe_or_ff_flags(); @asm 0x059C79 test 0x40 */
+                    int rel = overlay_call_181F_0A38();
+                    if ((rel & 0x40) == 0 || ctype == 0x10) {
+                        /* base score by ship type (code-resident constants). @asm 0x059C90 */
+                        score = (ctype == 0x10) ? 4 : (ctype == 0x11) ? 6
+                              : (ctype == 0x12) ? 8 : 0;
+                        if (score != 0) {              /* @asm 0x059CC5 */
+                            /* (the strength-roll blend + at-war messages
+                             * 0x1A49/0x1A51/0x1A5A run here; weights RUNTIME).
+                             * commit the interest counter onto the SCANNING unit
+                             * (UnitRecord[unit]+0x05 == abs 0x3149). @asm 0x059DD7 */
+                            *(uint8_t *)(unit * UNIT_STRIDE + 0x05) += (uint8_t)score;
+                        }
+                    }
+                }
+                occu = overlay_call_181F_02E4();        /* next unit on tile @asm 0x059E56 */
+            }
+        } else if (terr != 0) {
+            /* ---- empty land tile: a placement / strength-swap candidate. @asm 0x05A08E ---- */
+            if (overlay_call_181F_0768() == 0 &&        /* land @asm 0x05A094 */
+                base > occ &&                           /* @asm 0x05A0A0 cmp [bp-2] */
+                owner != base &&                        /* owners differ @asm 0x05A0A8 */
+                cand[base] == 0) {                      /* slot free @asm 0x05A0B1 */
+                /* swap the two powers' cached strength bytes at DGROUP 0x5ADE
+                 * (stride 0x4E): keep the larger in both. @asm 0x05A0D4..0x05A107 */
+                if (owner >= 4 || base >= 4) {
+                    int a = (base  - 4) * 0x4E;         /* @asm 0x05A0DD */
+                    int b = (owner - 4) * 0x4E;         /* @asm 0x05A0E9 */
+                    uint8_t hi = (*(uint8_t *)(b + 0x5ADE) < *(uint8_t *)(a + 0x5ADE))
+                                 ? *(uint8_t *)(a + 0x5ADE) : *(uint8_t *)(b + 0x5ADE);
+                    *(uint8_t *)(b + 0x5ADE) = hi;      /* @asm 0x05A0FD */
+                    *(uint8_t *)(a + 0x5ADE) = hi;      /* @asm 0x05A104 */
+                    cand[base] = 1;                     /* @asm 0x05A10D mark slot taken */
+                } else {
+                    /* both EU powers: decide via the at-war helpers (near 0x5A203
+                     * if at war, else 0x5A1DB), and on success spawn/activate a
+                     * unit (0x181F:0x0A06, type 0x20). @asm 0x05A116..0x05A1CB */
+                    overlay_call_181F_0A06();           /* @asm 0x05A1C6 */
+                }
+            }
+        }
+    }                                                   /* @asm 0x05A042 jmp 0x05A1D2 -> RETF */
+    (void)base; (void)owner; (void)terr; (void)occ; (void)goal_x; (void)goal_y;
 }
 
 /* ============================================================================
- * 0x05A20E — PHANTOM (interior of func_059B90)
+ * func_05A20E — ai_resolve_colony_assault  [REAL FUNCTION — extent BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
- * Reseg page_0F: func_059B90 spans 0x059B90..0x05A40E (2173 B).  0x05A20E lies
- * inside that body; `c8 12 00 00` is a false-ENTER.  Not a function.
+ * RE-CLASSIFIED 2026-06-08: the prior banner marked 0x05A20E a PHANTOM "interior
+ * of func_059B90".  That was WRONG.  func_059B90 ends at 0x05A1D5 (1605 B), and
+ * the bytes at 0x05A20E are a clean `ENTER 0x12, 0` prologue beginning a REAL
+ * 511-B function (re_work/functions.json {foff 369166, end 369677, size 511};
+ * disassembled on-demand from VICEROY.EXE).
+ *
+ * ROLE: resolve an AI unit's assault on / arrival at the active colony
+ * (*(0x8542)).  Verified anchors:
+ *   @asm 0x05A20E  ENTER 0x12,0                                    ; prologue
+ *   @asm 0x05A218  owner    = unit.owner & 0xF                     ; bp-0x10
+ *   @asm 0x05A226  defender = colony.owner(+0x1A)                  ; bp-2
+ *   @asm 0x05A232  if (owner<4 && !power_dead[owner])              ; EU attacker
+ *   @asm 0x05A254     mode = msg_choice("…"(0x1A64), colony.name)  ; bp-6
+ *   @asm 0x05A262  else mode = 3                                   ; native default
+ *   @asm 0x05A272  if (mode >= 3) return                          ; (no assault)
+ *   @asm 0x05A27B  if (mode == 1) { special "…"(0x1A70) OR walk in via
+ *                    0x1A1F:0x059C(step) + 0x1A1F:0x05FC(execute) ; return }
+ *   @asm 0x05A2DC  else (mode 0/2): COMBAT roll with difficulty mods —
+ *   @asm 0x05A2E6     odds = (chain_count(0x0AB0)+6)*2
+ *   @asm 0x05A2F2     if (unit.subtype[+0x315B]==0x16) odds >>= 1
+ *   @asm 0x05A2FC     if (active_power<4 && !dead)  odds += difficulty-2
+ *   @asm 0x05A329     win  = random_int(1,0x24) <= odds
+ *   @asm 0x05A345     WIN : announce ("…"0x1A82 / "…"0x1A90), colony strength
+ *                          +100 (+0xAA), destroy attacker (0x181F:0x0808),
+ *                          finish (0x181F:0x0E1C)
+ *   @asm 0x05A3EA     LOSE: set flags [0x0B98]=1 / [0x0337]=1, finalize colony
+ *                          (0x181F:0x0608), clear [0x0B98]
+ *   @asm 0x05A407  RETF (mode/result in AX, bp-0xA)
+ *
+ * The outcome lines 0x1A64/0x1A70/0x1A82/0x1A90 are the native-attack messages;
+ * the odds use the difficulty byte (0x53A6) and the per-power dead flag (+0x543F);
+ * the +100 strength credit (+0xAA) and the step executors (0x1A1F:0x059C/0x05FC)
+ * are byte-exact.  The inner combat/strength tables are RUNTIME.
+ *
+ * NOTE: the message-choice 0x1A64 result (`mode`) is opaque (the player/AI's
+ * decision); the WIN announcement's owner-vs-defender message split is left at the
+ * verified-anchor level rather than guessed.
+ *
+ * @asm_extent 0x05A20E..0x05A40D (511 B, reseg page_0F, terminal RETF @0x05A40C)
  * ============================================================================ */
-/* PHANTOM: 0x05A20E is interior to func_059B90 (reseg page_0F) — not a function. */
+extern uint16_t g_active_power_idx_5394;   /* DGROUP:0x5394 — power index being processed */
+extern uint16_t g_word_0B98;               /* DGROUP:0x0B98 — assault-in-progress flag */
+extern uint8_t  g_byte_0337;               /* DGROUP:0x0337 — colony-finalize flag */
+/* overlay_call_181F_0AB0 (chain/strength count) is declared in overlay_externs.h. */
+/* Step-executor trampolines in the tertiary overlay (not in overlay_externs.h). */
+extern int      overlay_call_1A1F_059C(void); /* 0x1A1F:0x059C — step-vector toward target */
+extern int      overlay_call_1A1F_05FC(void); /* 0x1A1F:0x05FC — execute the queued move */
+
+int ai_resolve_colony_assault(int unit)  /* func_05A20E */
+{
+    int result   = 0;                                  /* @asm 0x05A213 [bp-0xA] */
+    int owner    = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05A218 [bp-0x10] */
+    int defender = *(uint8_t *)(g_active_colony_ptr_8542 + 0x1A);        /* @asm 0x05A226 [bp-2] */
+    int mode, odds, win;
+
+    if (owner < 4 &&                                   /* @asm 0x05A232 cmp 4; jge 0x5A262 */
+        *(uint8_t *)(owner * 0x34 + POWER_DEAD_543F) == 0) { /* @asm 0x05A23A */
+        overlay_call_181F_0416();                      /* build colony.name @asm 0x05A247 */
+        mode = overlay_call_181F_0652();               /* msg_choice("…"0x1A64) @asm 0x05A254 [bp-6] */
+    } else {
+        mode = 3;                                       /* @asm 0x05A262 native default */
+    }
+    if (mode != 3) result = 1;                          /* @asm 0x05A26D [bp-0xA]=1 when mode!=3 */
+
+    if (mode >= 3) return result;                       /* @asm 0x05A272 jge 0x5A407 (no assault) */
+
+    if (mode == 1) {                                   /* @asm 0x05A27B */
+        if (g_game_mode_5382 & 1) {                    /* @asm 0x05A281 special-mode short-circuit */
+            overlay_call_181F_0652();                  /* "…"(0x1A70) @asm 0x05A28D */
+            return result;                             /* @asm 0x05A295 RETF */
+        }
+        overlay_call_1A1F_059C();                      /* step vector (colony - unit) @asm 0x05A2BF */
+        overlay_call_1A1F_05FC();                      /* execute the move-in @asm 0x05A2CE */
+        return result;                                 /* @asm 0x05A2D6 RETF */
+    }
+
+    /* ---- mode 0/2: graduated combat roll with difficulty modifiers. @asm 0x05A2DC ---- */
+    odds = (overlay_call_181F_0AB0() + 6) * 2;         /* @asm 0x05A2E6 [bp-4] */
+    if (*(uint8_t *)(unit * UNIT_STRIDE + 0x315B) == 0x16) /* veteran subtype @asm 0x05A2F2 */
+        odds >>= 1;                                     /* @asm 0x05A2F9 */
+    if ((int16_t)g_active_power_idx_5394 < 4 &&         /* @asm 0x05A2FC */
+        *(uint8_t *)(g_active_power_idx_5394 * 0x34 + POWER_DEAD_543F) == 0) /* @asm 0x05A303 */
+        odds += (int)g_difficulty_53A6 - 2;             /* @asm 0x05A30F */
+
+    overlay_call_181F_04CA();                           /* pre-roll seed @asm 0x05A31D */
+    win = (overlay_call_181F_04D4() <= odds) ? 1 : 0;   /* random_int(1,0x24) <= odds @asm 0x05A329 */
+
+    if (win) {                                          /* @asm 0x05A340 jne win-path */
+        /* attacker takes the colony. @asm 0x05A345 */
+        overlay_call_181F_0416();                       /* colony.name @asm 0x05A34E */
+        overlay_call_181F_09AE();                       /* value 100 @asm 0x05A35C */
+        /* announce — owner-vs-defender message branch (0x1A82 / 0x1A90).
+         * @asm 0x05A364..0x05A3C3 (owner/defender 0x543F gates) */
+        overlay_call_181F_0652();
+        *(uint16_t *)(g_active_colony_ptr_8542 + 0xAA) += 0x64; /* colony strength @asm 0x05A3CA */
+        overlay_call_181F_0808();                       /* destroy attacker @asm 0x05A3D2 */
+        overlay_call_181F_0E1C();                       /* finish @asm 0x05A3DC */
+    } else {
+        /* attacker loses: raise the finalize flags. @asm 0x05A3EA */
+        g_word_0B98 = 1;                                /* @asm 0x05A3EA */
+        g_byte_0337 = 1;                                /* @asm 0x05A3F0 */
+        overlay_call_181F_0608();                       /* finalize colony @asm 0x05A3F9 */
+        g_word_0B98 = 0;                                /* @asm 0x05A401 */
+    }
+    (void)defender;
+    return result;                                      /* @asm 0x05A407 RETF (mode/result) */
+}
 
 /* ============================================================================
  * func_05A40E — trade_with_power_dialog  [DONE — structure BYTE_VERIFIED;
@@ -797,21 +964,48 @@ int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 *
  * @asm 0x05A5AE  else slot = 0
  * @asm 0x05A5AE  ctype = LCALL 0x181F:0x0BE6(unit, slot)          ; chosen cargo type
  * @asm 0x05A5C5  camt  = LCALL 0x181F:0x0C68(unit, slot)          ; chosen amount
- * @asm 0x05A5D0  value = price_table[leader*16 + ctype] (byte [-0x7B44]) * camt  ; offer
- *               (… continues: confirm/accept, credit gold, remove cargo …)
+ * @asm 0x05A5D0  value = price_table[leader*16 + ctype] * camt    ; player's gross offer
+ * @asm 0x05A5E5  scaled = PowerRecord[leader].byte(+1) * value / 100 ; leader tariff
+ * @asm 0x05A5FF  offer  = value - scaled                          ; net offer to the colony
+ * @asm 0x05A607  if (!special_mode && (tribe_or_ff_flags(leader,owner)&2)) offer >>= 1
+ * @asm 0x05A623  if (special_mode && leader==active_human) {       ; human seller path
+ * @asm 0x05A654    roll = ((-5 - difficulty) * offer) / 100        ; jmp 0x5A665
+ * @asm 0x05A632  } else {                                          ; AI counter path
+ * @asm 0x05A632    roll = (random_int(10, (difficulty+1)*12) * offer) / -100 }
+ * @asm 0x05A668  offer += roll ; if (offer < 1) offer = 1
+ * @asm 0x05A679  best = scan cargo i=0..15 for the colony's best counter-good:
+ * @asm 0x05A6C2     amount = min(colony.stock[i], 100) (>=50 unless human-special)
+ * @asm 0x05A70A     tval   = price_table[leader*16+i] * amount
+ * @asm 0x05A722     while (tval > value) amount--, tval -= price ; fit within offer
+ * @asm 0x05A748     keep (i, amount, tval) if tval beats best
+ * @asm 0x05A764  if (best < 0) show "no deal"(0x1ADD) and return
+ * @asm 0x05A796  else confirm "TRADEOFFER?"(0x1AE9) via 0x1A1F:0x0688:
+ * @asm 0x05A807    accept (1): swap offered cargo for the counter good (0xCEA/0xCA4)
+ * @asm 0x05A82C    decline-for-gold (2): remove cargo (0xAEC) + credit PowerRecord gold
+ * @asm 0x05A84B    either way: colony.stock[ctype] += offered amount
  *
- * UI LAYOUT + economy (in scope per 2026-05-30: this is the trade dialog and its
- * offer composition).  The cargo price table at DGROUP -0x7B44 (per leader*16 +
- * cargo type) is data-resident; its CONTENTS are RUNTIME_ONLY but the index math
- * (leader*16 + ctype) and the offer = price * amount are byte-exact.
+ * UI LAYOUT + economy (in scope per 2026-05-30: this is the trade dialog, its
+ * offer composition AND the colony's counter-offer).  The cargo price table at
+ * DGROUP 0x84BC (= [-0x7B44], per leader*16 + cargo type), the PowerRecord tariff
+ * byte (+1) and gold dword (+0x2A, = [-0x77CE]), and the colony stockpile array
+ * (*(0x8542)+0x9A, word stride) are data-resident; their CONTENTS are RUNTIME_ONLY
+ * but every index, product, tariff, the difficulty-scaled counter-roll, the
+ * fit-to-offer loop, and the gold credit are byte-exact.  Always returns ret=1.
+ *
+ * COMPLETED 2026-06-08 (was truncated at 0x05A5D0; full tail pulled on-demand via
+ * tools/viceroy_exe.py).  The prior body computed only the gross offer and then
+ * returned, dropping the leader tariff, the difficulty-scaled AI counter-roll,
+ * the colony's best-counter-good search, and the accept / decline-for-gold
+ * settlement.  @status BYTE_VERIFIED.
  *
  * @asm_extent 0x05A40E..0x05A862 (1107 B, reseg page_0F, terminal RETF)
  * ============================================================================ */
 int trade_with_power_dialog(int unit)  /* func_05A40E */
 {
-    int owner  = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05A418 */
-    int leader = *(uint8_t *)(g_active_colony_ptr_8542 + 0x1A);        /* @asm 0x05A426 */
-    int cargo_count, slot, ctype, camt, value;
+    int owner  = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05A418 [bp-0x74] */
+    int leader = *(uint8_t *)(g_active_colony_ptr_8542 + 0x1A);        /* @asm 0x05A426 [bp-4] */
+    int cargo_count, slot = 0, ctype, camt, value, offer, scaled, roll;
+    int n, best_val, best_idx, best_amt, amt, tval, i;
 
     if (owner >= 4)                                    return 1;   /* @asm 0x05A432 */
     if (*(uint8_t *)(owner * 0x34 + POWER_DEAD_543F))  return 1;   /* @asm 0x05A43D */
@@ -849,19 +1043,111 @@ int trade_with_power_dialog(int unit)  /* func_05A40E */
         overlay_call_191F_01A8();                      /* close menu @asm 0x05A590 */
         if (choice == 0 || choice == 0x63)             /* cancel @asm 0x05A595/0x05A59E */
             return 1;
-        slot = choice - 1;                             /* @asm 0x05A5A7 */
+        slot = choice - 1;                             /* @asm 0x05A5A7 [bp-0x64] */
     } else {
-        slot = 0;                                      /* @asm 0x05A4BC->0x05A4FE path */
+        slot = 0;                                      /* @asm 0x05A4BC->0x05A5AE path */
     }
 
-    ctype = overlay_call_181F_0BE6();                  /* chosen cargo type   @asm 0x05A5B4 */
-    camt  = overlay_call_181F_0C68();                  /* chosen cargo amount @asm 0x05A5C5 */
-    /* offer = price_table[leader*16 + ctype] * amount. @asm 0x05A5D0..0x05A5DF */
-    value = (int)*(uint8_t *)(leader * 16 + ctype - 0x7B44 + 0x10000) * camt;
-    (void)value; /* (confirm/accept + gold credit + cargo removal: tail, RUNTIME_ONLY amounts) */
+    ctype = overlay_call_181F_0BE6();                  /* chosen cargo type   @asm 0x05A5B4 [bp-0x6C] */
+    camt  = overlay_call_181F_0C68();                  /* chosen cargo amount @asm 0x05A5C5 [bp-0x62] */
 
-    return 1;                                          /* @asm RETF (default ret=1) */
+    /* ---- player's gross offer = unit price * quantity. @asm 0x05A5D0 ---- */
+    value = (int)*(uint8_t *)(leader * 16 + ctype + 0x84BC) * camt;     /* @asm 0x05A5D9 [bp-0x70] */
+    /* leader tariff: scaled = (int8)PowerRecord[leader].byte(+1) * value / 100. @asm 0x05A5E5 */
+    scaled = (int)((int8_t)*(uint8_t *)(leader * 0x13C + 0x8809) * value) / 100; /* @asm 0x05A5EA [bp-0x6E] */
+    offer  = -(scaled - value);                        /* @asm 0x05A5FF..0x05A604 [bp-0x58] = value-scaled */
+
+    if ((g_game_mode_5382 & 1) == 0) {                 /* @asm 0x05A607 */
+        if (overlay_call_181F_0A38() & 2)              /* tribe/treaty bit @asm 0x05A614 (leader,owner) */
+            offer >>= 1;                               /* @asm 0x05A620 halve */
+    }
+
+    /* ---- counter-roll: human-seller vs AI-counter price jitter. @asm 0x05A623 ---- */
+    if ((g_game_mode_5382 & 1) && leader == (int)*(uint16_t *)0x53D4) { /* @asm 0x05A623/0x05A62A */
+        /* human seller: roll = ((-5 - difficulty) * offer) / 100. @asm 0x05A654..0x05A666 */
+        roll = ((-5 - (int)*(uint8_t *)0x53A6) * offer) / 100;
+    } else {
+        /* AI counter: n = difficulty+1; roll = (random_int(10, n*12) * offer) / -100.
+         * @asm 0x05A632..0x05A666 (cx=0xFF9C == -100 divisor) */
+        n = (int)*(uint8_t *)0x53A6 + 1;               /* @asm 0x05A637 */
+        roll = (overlay_call_181F_04D4() * offer) / -100; /* @asm 0x05A644 random_int(10, n*12) */
+        (void)n;
+    }
+    offer += roll;                                     /* @asm 0x05A668 */
+    if (offer < 1) offer = 1;                          /* @asm 0x05A66B..0x05A676 */
+
+    /* ---- colony's best counter good: maximise a fit-to-offer trade. @asm 0x05A679 ---- */
+    best_val = -1;                                     /* @asm 0x05A679 [bp-0x72] */
+    best_idx = -1;                                     /* @asm 0x05A67F [bp-2] */
+    best_amt = 0;                                      /* @asm 0x05A682 [bp-6] */
+    for (i = 0; i < 0x10; i++) {                       /* @asm 0x05A697 cmp 0x10 */
+        if ((g_game_mode_5382 & 1) == 0) {             /* @asm 0x05A6A0 */
+            if (i == 0xF || i == 0xE || i == 0 || i == 5) continue; /* @asm 0x05A6A7..0x05A6BF */
+        }
+        if (ctype == i) continue;                      /* @asm 0x05A68C don't buy back our own cargo */
+
+        /* working amount = min(colony.stock[i], 100). @asm 0x05A6C2 */
+        amt = (int)*(uint16_t *)(g_active_colony_ptr_8542 + i * 2 + 0x9A);
+        if (amt > 0x64) amt = 0x64;                    /* @asm 0x05A6CE */
+        if ((g_game_mode_5382 & 1) &&                  /* human-special floor. @asm 0x05A6D9 */
+            (ctype == 0xF || ctype == 8) &&
+            leader == (int)*(uint16_t *)0x53D4) {
+            amt = 0x64;                                /* @asm 0x05A6F4 */
+        } else if (amt < 0x32) {
+            amt = 0x32;                                /* @asm 0x05A704 floor 50 */
+        }
+
+        /* tval = price_table[leader*16+i] * amount, then shrink to fit `value`. */
+        tval = (int)*(uint8_t *)(leader * 16 + i + 0x84BC) * amt;       /* @asm 0x05A713 [bp-0x6A] */
+        while (tval > value) {                         /* @asm 0x05A737 cmp value; jg 0x5A722 */
+            amt--;                                     /* @asm 0x05A722 */
+            tval -= (int)*(uint8_t *)(leader * 16 + i + 0x84BC);        /* @asm 0x05A72E */
+        }
+        if (amt <= 0) continue;                        /* @asm 0x05A73F jg else next i */
+        if (best_val < tval) {                         /* @asm 0x05A748 */
+            best_val = tval;                           /* @asm 0x05A753 */
+            best_amt = amt;                            /* @asm 0x05A756 [bp-6] */
+            best_idx = i;                              /* @asm 0x05A759 [bp-2] */
+        }
+    }
+
+    if (best_val < 0) {                                /* @asm 0x05A764 no acceptable counter */
+        /* format offered cargo name + amount, show "TRADENODEAL"(0x1ADD). @asm 0x05A76A */
+        (void)*(uint16_t *)(ctype * 2 + 0x97C0);       /* cargo-name handle @asm 0x05A76F */
+        overlay_call_181F_0438();                      /* @asm 0x05A775 */
+        overlay_call_181F_09AE();                      /* amount @asm 0x05A785 */
+        overlay_call_1A1F_0688();                      /* draw "TRADENODEAL"(0x1ADD) @asm 0x05A78A (jmp 0x5A48A) */
+        return 1;                                      /* @asm RETF */
+    }
+
+    /* ---- present the counter-offer and settle. @asm 0x05A796 ---- */
+    (void)*(uint16_t *)(ctype * 2 + 0x97C0);           /* offered cargo name (ch0) @asm 0x05A79B */
+    overlay_call_181F_0438();                          /* @asm 0x05A7A1 */
+    overlay_call_181F_09AE();                          /* offered amount (ch0) @asm 0x05A7B1 */
+    (void)*(uint16_t *)(best_idx * 2 + 0x97C0);        /* counter cargo name (ch0) @asm 0x05A7BE */
+    overlay_call_181F_0438();                          /* @asm 0x05A7C4 */
+    overlay_call_181F_09AE();                          /* counter amount (ch0) @asm 0x05A7D4 */
+    overlay_call_181F_09AE();                          /* offer value (ch2) @asm 0x05A7E4 */
+    {
+        int result = overlay_call_1A1F_0688();         /* confirm "TRADEOFFER?"(0x1AE9) @asm 0x05A7F2 [bp-0x5A] */
+        if (result > 2) {                              /* @asm 0x05A7FD jg 0x5A85B (cancel) */
+            /* no trade */
+        } else if (result == 1) {                      /* @asm 0x05A802 accept the swap */
+            overlay_call_181F_0CEA();                  /* add counter good to unit @asm 0x05A810 (best_idx,slot,unit) */
+            overlay_call_181F_0CA4();                  /* set its amount @asm 0x05A821 (best_amt,slot,unit) */
+            /* colony.stock[ctype] += offered amount. @asm 0x05A84B */
+            *(uint16_t *)(g_active_colony_ptr_8542 + ctype * 2 + 0x9A) += camt; /* @asm 0x05A857 */
+        } else {                                       /* result == 2: take gold instead */
+            overlay_call_181F_0AEC();                  /* remove offered cargo from unit @asm 0x05A832 (slot,unit) */
+            /* credit PowerRecord[owner].gold (+0x2A dword, = [-0x77CE]) += offer. @asm 0x05A83A */
+            *(int32_t *)(owner * 0x13C + 0x8832) += offer; /* @asm 0x05A843..0x05A847 add/adc */
+            *(uint16_t *)(g_active_colony_ptr_8542 + ctype * 2 + 0x9A) += camt; /* @asm 0x05A857 */
+        }
+    }
+    (void)best_amt;
+    return 1;                                          /* @asm 0x05A85B RETF (ret=[bp-0x68]=1) */
 }
+
 
 /* ============================================================================
  * func_05A862 — unit_needs_orders_or_act  [DONE — BYTE_VERIFIED]
@@ -1053,48 +1339,107 @@ int best_unit_to_move_at_tile(int seed_unit, int owner)  /* func_05AF70 */
  * @asm 0x05B140  if (power_dead[carrier_owner]) goto skip_header
  * @asm 0x05B14E  menu = open "PICKACARGO"(0x1B08) titled "GAME"(0x87C) ; 0x191F:0x0182
  * @asm 0x05B16A  draw header line (menu chrome via 0x181F:0x0022 + 0x191F:0x0176)
- * @asm 0x05B188  for (slot = 0; slot < cargoCount(arg0); slot++) { ; list cargo of arg0
- * @asm 0x05B190    ctype = LCALL 0x181F:0x0BE6(arg0, slot)         ; cargo type
- * @asm 0x05B1AB    camt  = LCALL 0x181F:0x0C68(arg0, slot, &buf)   ; amount->text
- *                  (… add menu item, then run menu and credit the trade …)
+ * Two distinct paths once the capacity check passes (@asm 0x05B137 branches on
+ * who owns the carrier):
+ *   EU human power (carrier_owner < 4 && !dead): open the "PICKACARGO" menu, list
+ *     each cargo line, RUN the menu and return the chosen slot.  @asm 0x05B14E..0x05B247
+ *   non-EU / native / dead power (carrier_owner >= 4): AUTO-PICK — score every
+ *     cargo by price*amount into a scratch array and let 0x191F:0x0ED0 choose the
+ *     best, returning that cargo's slot.  @asm 0x05B24A..0x05B2B8
  *
- * String: 0x1B08="PICKACARGO".  0x1A1F:0x01A0 = carrier-free-capacity query in
- * the tertiary overlay.  0xA154 is the modal-dialog active flag (set/clear here
- * exactly as the other trade UIs do).  UI LAYOUT + economy (in scope).  Per-item
- * amount math beyond the listing is data-resident (RUNTIME_ONLY).
+ * @asm 0x05B188  EU list loop: for (slot=0; slot<cargo_count; slot++)
+ * @asm 0x05B190    ctype = 0x181F:0x0BE6(arg0, slot)               ; cargo type
+ * @asm 0x05B1AB    camt  = 0x181F:0x0C68(arg0, slot, &buf,0xA)     ; amount->text
+ * @asm 0x05B1BC    buf = num(camt) + " " + cargo_name[ctype]       ; 0x182/0x178/0x16E
+ * @asm 0x05B1EF    add menu item (slot+1, buf)                     ; 0x191F:0x0176
+ * @asm 0x05B208  choice = 0x191F:0x016A(menu) ; close 0x191F:0x01A8
+ * @asm 0x05B221  if (choice == 0x63) selected = -1                 ; ESC
+ * @asm 0x05B230  else if (choice > 0) { A154=0; selected = choice-1 } else selected = 0
+ * @asm 0x05B24A  AUTO loop: for (slot=0; slot<cargo_count; slot++)
+ * @asm 0x05B274    types[slot]  = (byte)slot
+ * @asm 0x05B286    values[slot] = price_table[carrier_owner*16 + ctype] * camt
+ * @asm 0x05B2AC  0x191F:0x0ED0(cargo_count, &values, &types)        ; argmax -> [bp-0x73]
+ * @asm 0x05B2B4  selected = (int8)types[cargo_count-1]              ; chosen slot
+ *
+ * String: 0x1B08="PICKACARGO".  0x1A1F:0x01A0 = carrier-free-capacity query.
+ * 0xA154 is the modal-dialog active flag (set/cleared here exactly as the other
+ * trade UIs do).  The cargo-name string-handle table at DGROUP 0x97C0 (= [-0x6840],
+ * word stride) and the per-power cargo price table at DGROUP 0x84BC (= [-0x7B44],
+ * carrier_owner*16 + ctype) are data-resident; their CONTENTS are RUNTIME_ONLY
+ * but the index math and the value = price*amount product are byte-exact.
+ *
+ * COMPLETED 2026-06-08 (was truncated at 0x05B1AB; full tail pulled on-demand via
+ * tools/viceroy_exe.py).  The prior body listed only the menu header and dropped
+ * BOTH the EU choice handling AND the entire non-EU auto-pick branch.  @status
+ * BYTE_VERIFIED.
  *
  * @asm_extent 0x05B0DC..0x05B2C2 (486 B, reseg page_10, terminal RETF)
  * ============================================================================ */
 int trade_pick_cargo_dialog(int unit, int carrier)  /* func_05B0DC */
 {
-    int selected = -1;                                 /* @asm 0x05B0E2 */
-    int carrier_owner = *(uint8_t *)(carrier * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05B0EF */
-    int cargo_count   = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_CARGO_3150);      /* @asm 0x05B0FD */
-    int cap, slot;
+    int selected = -1;                                 /* @asm 0x05B0E2 [bp-0x64] */
+    int carrier_owner = *(uint8_t *)(carrier * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x05B0EF [bp-0x6A] */
+    int cargo_count   = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_CARGO_3150);      /* @asm 0x05B0FD [bp-0x68] */
+    int cap, slot, choice, ctype, camt;
+    uint8_t types[16];                                 /* @asm bp-0x72 scratch (slot indices) */
+    int     values[16];                                /* @asm bp-0x5C scratch (price*amount) */
 
     g_dialog_active_A154 = 0;                          /* @asm 0x05B10A */
-    if (cargo_count == 0)                              /* @asm 0x05B110 */
-        return selected;
+    if (cargo_count == 0)                              /* @asm 0x05B110 or ax,ax; je 0x5B2BB */
+        return selected;                               /* -1 */
 
-    selected = 0;                                      /* @asm 0x05B117 */
+    selected = 0;                                      /* @asm 0x05B117 [bp-0x64]=0 */
     g_dialog_active_A154 = 1;                          /* @asm 0x05B11F */
-    cap = overlay_call_1A1F_01A0();                    /* carrier free space @asm 0x05B127 */
-    if (cap < cargo_count)                             /* @asm 0x05B12F */
-        return selected;
+    cap = overlay_call_1A1F_01A0();                    /* carrier free space @asm 0x05B127 (carrier,1,1) */
+    if (cap < cargo_count)                             /* @asm 0x05B12F jl 0x5B137 else end */
+        return selected;                               /* 0 — not enough room */
 
-    if (carrier_owner < 4 &&
-        *(uint8_t *)(carrier_owner * 0x34 + POWER_DEAD_543F) == 0) { /* @asm 0x05B137/0x05B140 */
-        overlay_call_191F_0182();                      /* open "PICKACARGO" menu @asm 0x05B158 */
-        overlay_call_181F_0022();                      /* header value @asm 0x05B170 */
-        overlay_call_191F_0176();                      /* header line  @asm 0x05B180 */
-        for (slot = 0; slot < cargo_count; slot++) {   /* @asm 0x05B188..0x05B18D */
-            overlay_call_181F_0BE6();                  /* cargo type   @asm 0x05B196 */
-            overlay_call_181F_0C68();                  /* amount->text @asm 0x05B1AB */
-            /* (add menu item: text build + 0x191F:0x0176; then run + credit:
-             *  remaining offer/limit arithmetic is data-resident (RUNTIME_ONLY)) */
+    if (carrier_owner < 4 &&                           /* @asm 0x05B137 cmp 4; jl */
+        *(uint8_t *)(carrier_owner * 0x34 + POWER_DEAD_543F) == 0) { /* @asm 0x05B140 [bx+0x543F]==0 */
+        /* ---- EU human power: interactive PICKACARGO menu. @asm 0x05B14E ---- */
+        overlay_call_191F_0182();                      /* open "PICKACARGO"(0x1B08) menu @asm 0x05B158 */
+        /* if open failed -> end (selected stays 0). @asm 0x05B163 or dx,ax; je 0x5B2BB */
+        overlay_call_181F_0022();                      /* header value num(0x2DFA) @asm 0x05B170 */
+        overlay_call_191F_0176();                      /* header line @asm 0x05B180 */
+        for (slot = 0; slot < cargo_count; slot++) {   /* @asm 0x05B188..0x05B206 */
+            ctype = overlay_call_181F_0BE6();          /* cargo type @asm 0x05B196 -> [bp-0x6C] */
+            camt  = overlay_call_181F_0C68();          /* amount->text @asm 0x05B1AB -> [bp-0x62] */
+            overlay_call_181F_0182();                  /* buf = num(camt) @asm 0x05B1BC */
+            overlay_call_181F_0178();                  /* buf += " " @asm 0x05B1C8 */
+            /* buf += cargo_name[ctype] from DGROUP 0x97C0 table. @asm 0x05B1D5 [bx-0x6840] */
+            (void)*(uint16_t *)(ctype * 2 + 0x97C0);
+            overlay_call_181F_016E();                  /* append name @asm 0x05B1DD */
+            overlay_call_191F_0176();                  /* add menu item (slot+1, buf) @asm 0x05B1F5 */
         }
+        choice = overlay_call_191F_016A();             /* run menu -> selection @asm 0x05B208 [bp-0x64] */
+        overlay_call_191F_01A8();                      /* close menu @asm 0x05B21C */
+        if (choice == 0x63) {                          /* ESC @asm 0x05B221 */
+            selected = -1;                             /* @asm 0x05B227 */
+        } else if (choice > 0) {                       /* @asm 0x05B230 cmp 0; jle 0x5B242 */
+            g_dialog_active_A154 = 0;                  /* @asm 0x05B236 */
+            selected = choice - 1;                     /* @asm 0x05B23C dec */
+        } else {
+            selected = 0;                              /* @asm 0x05B242 */
+        }
+        return selected;                               /* @asm RETF [bp-0x64] */
     }
-    return selected;                                   /* @asm RETF */
+
+    /* ---- non-EU / native / dead power: AUTO-PICK the best cargo. @asm 0x05B24A ---- */
+    for (slot = 0; slot < cargo_count; slot++) {       /* @asm 0x05B24A..0x05B29D */
+        ctype = overlay_call_181F_0BE6();              /* cargo type @asm 0x05B258 -> [bp-0x6C] */
+        camt  = overlay_call_181F_0C68();              /* cargo amount @asm 0x05B269 -> [bp-0x62] */
+        types[slot] = (uint8_t)slot;                   /* @asm 0x05B274 [bp+si-0x72]=slot */
+        /* values[slot] = price_table[carrier_owner*16 + ctype] * amount.
+         * price table base DGROUP 0x84BC (= [-0x7B44]). @asm 0x05B280..0x05B291 */
+        values[slot] = (int)*(uint8_t *)(carrier_owner * 16 + ctype + 0x84BC) * camt;
+    }
+    /* sort/select over values[0..cargo_count); 0x191F:0x0ED0 leaves the winning
+     * slot index at the top of the parallel `types` array (frame offset -0x73 +
+     * cargo_count == types[cargo_count-1]).
+     * @asm 0x05B29F..0x05B2B0 LCALL 0x191F:0x0ED0(cargo_count, &values, &types) */
+    overlay_call_191F_0ED0();
+    selected = (int8_t)types[cargo_count - 1];         /* @asm 0x05B2B4 [bp+cargo_count-0x73] (cwde) */
+    return selected;                                   /* @asm 0x05B2C1 RETF */
 }
 
 /* ============================================================================
