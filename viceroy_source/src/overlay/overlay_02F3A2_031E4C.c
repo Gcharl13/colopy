@@ -47,15 +47,31 @@
  *   0x84FC  near*  g_market          active PowerRecord ptr (0x8808+power*0x13C)[V]
  *   0x9E1C  word   g_cursor_unit_a   selected/active unit-record index          [V]
  *   0x9E20  word   g_cursor_unit_b   secondary highlighted unit index           [V]
- *   0x9E28  word   g_blink_phase_a   blink/animation phase gate                 [TBD]
+ *   0x9E28  word   g_end_turn_btn    end-turn/Next button hover-press state      [V]
+ *                 0=button up/outside rect, 1=held/inside rect.
+ *                 BYTE_VERIFIED: func_033716 @overlay_031F28_033EB2 toggles it
+ *                 based on point_in_rect(0x93,0xA5,0x48,0x0C) @asm 0x03374D.
  *   0x9E2A  word   g_ship_count      # ships of active power (func_030D16)       [V]
  *   0x9E2C  word   g_ship_cursor     selected-ship cursor (clamped to count)     [V]
- *   0x9E3A  word   g_anim_phase      report/animation sub-phase                  [TBD]
- *   0x9E40  word   g_flash_gate      flash-highlight enable                      [TBD]
+ *   0x9E3A  word   g_phase_9E3A      game-phase / screen-mode word               [V]
+ *                 Same register named g_phase_9E3A in overlay_0341D6_0388DE.c
+ *                 and g_map_mode in overlay_031F28_033EB2.c.  Written to 8/9/10/
+ *                 0xF by map transitions; checked here as 0,1,4 for report-panel
+ *                 flash gates (phase values active during report sub-panel views).
+ *   0x9E40  word   g_boycott_9E40    boycott-active flag                         [V]
+ *                 BYTE_VERIFIED: europe_screen.c names it g_boycott_9E40; line
+ *                 148 "boycott highlight color 0xF gated by [0x9E40]/[0xF9A]".
  *   0x07EE  word   g_flash_active    global "flash enabled" flag                 [V]
- *   0x0F9A  word   g_flash_kind      which list is flashing (1/2/...)            [TBD]
+ *   0x0F9A  word   g_report_panel    active report-panel ID                      [V]
+ *                 0=16-row table, 1=unit-detail, 2=cargo-list.
+ *                 BYTE_VERIFIED: overlay_031F28 writes 1 @asm 0x03359B (unit
+ *                 select), 0 @asm 0x033B2B (clear); overlay_0341D6 writes 2
+ *                 @asm 0x342A5 (cargo panel).
  *   0x0FA2  word   g_detail_unit     unit whose detail panel is shown (0=list)   [V]
- *   0x0FA7  byte   g_flash_suppress  suppress-flash one-shot                     [TBD]
+ *   0x0FA7  byte   g_boycott_sat     boycott saturation one-shot suppress flag   [V]
+ *                 BYTE_VERIFIED: europe_screen.c line 109 "gated by [0x9E40]
+ *                 (boycott) / [0xFA7] (saturation)"; written 1 @asm 0x033ADF,
+ *                 cleared 0 @asm 0x035ADA.
  *   0x0F9E  byte   g_sel_row         currently-selected report row              [V]
  *   0x089E  far*   g_font_metrics    far ptr to active font (byte0 = line h)     [V]
  *   0x083E  far*   g_str_table       far ptr into the string/measure table       [V]
@@ -578,7 +594,7 @@ void report_header_row(int draw_arg)
  *              report_row_value(0x6DA0)+strfmt               @asm 0x031122/0x03115A
  *   - centred via text_measure(0x204): x = -(w/2 - col) + 8  @asm 0x031186..0x03119B
  *   - selected row (g_sel_row 0xF9E == i): colour 0xA, or
- *     0xE when flash gate (0x7EE && !0x9E3A) etc.            @asm 0x0311E5..0x03121A
+ *     0xE when flash gate (0x7EE && g_phase_9E3A==0) or boycott gate  @asm 0x0311E5..0x03121A
  *   - draw row cell via 0x181F:0x0CE                         @asm 0x031247
  *   - footer rule (0xF,0xB3,0x132,[0x2F5E]) via 0x22+0x13C   @asm 0x03125C
  *   - if (input_enabled (bp+4)) clear/activate input box
@@ -773,7 +789,7 @@ void column_rect(int col, int *x, int *y, int *w, int *h)
  *       title string from g_unit_name_tbl[type*7+0x5230]; draw_text_at(0x100)
  *       if (type==0x0E) special label; then row table              @asm 0x031560..0x031631
  *   - inner per-slot loop (bp-0x5C 0..g_detail_unit): highlight colour
- *       0xA (==g_cursor_unit_a) or 0xF (flash gates 0x7EE/0x9E3A/0x9E28/0x9E40)
+ *       0xA (==g_cursor_unit_a) or 0xF (flash gates 0x7EE/g_phase_9E3A==1/g_end_turn_btn==0/g_boycott_9E40)
  *       draw via draw_table_row(near 0x6E3B)                        @asm 0x031641..0x0316BB
  *   - second 6-slot loop draws cargo icons per unit using
  *       glyph_value(0xBE6)+order_assign(0xC68!) results             @asm 0x0316E1..0x0317A8
@@ -1027,7 +1043,7 @@ void unit_icon_row(int unit_idx, int x, int *state, int draw_flag)
  *   - for each unit of (active_power - 0x14):
  *       if (type 0x0D..0x12 ship):
  *         colour = -1; if (g_ship_cursor(0x9E2C)==row) colour=0xA;
- *         flash gates 0x7EE/0x9E3A==4/0x9E40 -> colour 0xF;
+ *         flash gates 0x7EE/g_phase_9E3A==4 or g_report_panel==2/g_boycott_9E40 -> colour 0xF;
  *         draw_list_row2(near 0x6E04)                                  @asm 0x031B28..0x031B83
  *   - if (input_enabled) box_clear(0xE2) at (0x78,0x60,0x3B,0xE0)      @asm 0x031B95
  * ============================================================================ */
