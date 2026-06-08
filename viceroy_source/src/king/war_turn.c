@@ -134,7 +134,7 @@ extern int16_t g_ref_artillery_53E0;    /* DGROUP:0x53E0 (@asm 0x02F4EE) */
  *   0x181F:0x0A06 / 0x0A10 -> per-(power,arm) matrix accessor (set/get)
  *   0x181F:0x056A -> open a yes/no prompt (returns via the 0x3FE lookup)
  *   0x181F:0x0182 -> (string compose helper)
- * (Prototypes are LITERAL-faithful to push args; semantics inferred from call context.) */
+ * (Prototypes are LITERAL-faithful to push args; semantics inferred -> TBD.) */
 extern void  ui_redraw_power(int power);                   /* 0x191F:0x0A74 */
 extern void  msg_set_int(int slot, int value);             /* 0x181F:0x0438 (int) */
 extern void  msg_set_ptr(int slot, void *p, int a);        /* 0x181F:0x0416 */
@@ -383,7 +383,7 @@ war_tail:
                 kr[0] |= 4;                                   /* @asm 0x02F956 or [bx],4 */
                 /* @asm 0x02F959 — reset inner loop var and continue scanning. */
             }
-            /* (Secondary king[+0x1A] adjust path @0x2C74/0x2D01 — not yet decoded.) */
+            /* (Secondary king[+0x1A] adjust path @0x2C74/0x2D01 — see TBD note.) */
         }
     }
 
@@ -452,11 +452,11 @@ finish:
     /* @asm 0x02FAE5 — pop si/di; leave; retf. */
 }
 
-/* Forward-declared local helpers (call sites byte-verified; semantics inferred from call context). */
+/* Forward-declared local helpers (call sites byte-verified; semantics TBD). */
 extern void ui_fmt_two(int a, int h0, int h1);   /* 0x181F:0x422 */
 
 /* ============================================================================
- * NOTES / STILL NOT YET DECODED
+ * NOTES / STILL-TBD
  *  - CONTROL FLOW + every cited DGROUP read/write + the year gates (1600 / 1790
  *    / 1800 / 1840 / 1850 = 0x640/0x6FE/0x708/0x730/0x73A) + REF-arm references
  *    (0x53DA/0x53DC/0x53E0) + the colony-count, land-military (types 6/8/0xB) and
@@ -465,13 +465,13 @@ extern void ui_fmt_two(int a, int h0, int h1);   /* 0x181F:0x422 */
  *  - The inner REF land-deployment MATRIX (king[+0x19]/[+0x1A], the per-(power,
  *    arm) accessors 0x181F:0xA06/0xA10, and the secondary "adjust toward target"
  *    path at 0x2C74..0x2D01) is structurally traced but the exact spawn coords /
- *    per-arm unit counts are NOT fully decompiled here -> not yet decoded (cross-ref
+ *    per-arm unit counts are NOT fully decompiled here -> TBD (cross-ref
  *    src/king/ref.c king_ref_buildup + the func_03CDA2/0x03D4C0 landing path).
  *  - Helper PROTOTYPES (ui_*, msg_*, crt_keyed_to_buf) are LITERAL-faithful to
- *    push args; their precise semantics are inferred from call context.
+ *    push args; their precise semantics are inferred -> TBD.
  *  - [0x53C2] is zeroed twice (entry-of-finish and the no-colonies branch); its
- *    exact role (defeat flag vs end-screen score) is inferred from call context.
+ *    exact role (defeat flag vs end-screen score) is inferred -> TBD.
  *  - The b_lvl/a_lvl severity ladder values (pct >= 80 / 90, generals < 3 / == 0)
  *    are BYTE_VERIFIED constants; their mapping to OTHER* message variants is
- *    inferred from the push order -> inferred from call context.
+ *    inferred from the push order -> TBD.
  * ============================================================================ */

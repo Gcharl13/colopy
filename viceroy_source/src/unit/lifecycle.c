@@ -1,6 +1,6 @@
 /* ============================================================================
  *                       >>> BYTE_VERIFIED (control flow + all UnitRecord
- *                           writes); a few helper targets / side tables not yet decoded <<<
+ *                           writes); a few helper targets / side tables TBD <<<
  * ----------------------------------------------------------------------------
  * unit/lifecycle.c -- unit CREATION, PLACEMENT, tile-CHAIN unlink, and
  * DESTRUCTION (table compaction) for the flat UnitRecord table.
@@ -59,7 +59,7 @@ extern uint8_t  g_power_unit_count_7304[];
 
 /* DGROUP:(0x54EF + k*0x12) -- a stride-0x12 flag table OR'd with 1 on destroy,
  * indexed by the destroyed unit's +0x314A byte. @asm 0x06ED7/0x06EDA.
- * Table contents/role not yet decoded; the index math and the |=1 are byte-verified. */
+ * Table contents/role TBD; the index math and the |=1 are byte-verified. */
 extern uint8_t  g_table_54EF[];
 
 /* ---- helpers (byte offsets within a record image) -------------------------- */
@@ -141,7 +141,7 @@ extern void    map_tile_notify_037F_228(int16_t owner, int16_t y, int16_t x);/* 
  *   AND 0x0D selects 0x0D or 0. The new record is created OFF-MAP (0xFF,0xFF)
  *   with full moves and no cargo; the caller later places it via
  *   unit_place_on_tile. Args [bp+8]/[bp+0xA] are forwarded to the 0x844 hook
- *   (their meaning is inferred from call context). [bp+0xC] is pushed first
+ *   (their meaning is owned by that helper -- TBD). [bp+0xC] is pushed first
  *   but only consumed by the 0x894 hook's caller frame.
  * ============================================================================ */
 int16_t unit_create(int16_t kind_flag, int16_t arg_b, int16_t arg_a, int16_t arg_c)
@@ -218,7 +218,7 @@ int16_t unit_create(int16_t kind_flag, int16_t arg_b, int16_t arg_a, int16_t arg
  * up (the short path). If the tile was empty, the longer path registers the
  * tile occupancy (0x037F:0x0A), sets the occupant (0x037F:0x15E), and -- for an
  * EU-owned unit -- runs a reveal/notify pair (0x037F:0x598 / 0x037F:0x228). The
- * map-side 0x037F:* helpers — body in thunk page; the UnitRecord writes and the link surgery
+ * map-side 0x037F:* helpers are TBD; the UnitRecord writes and the link surgery
  * are byte-verified.
  *
  * NB the two `push 1` before the 0x037F:0x15E call: bytes `6A 01 6A 01` push
@@ -379,7 +379,7 @@ void unit_chain_unlink(int16_t unit_idx)
  * The canonical "delete element from a packed array" routine:
  *   1. Decrement the owner's per-power unit count (EU powers only).
  *   2. (native / moves>=0 branch) set a flag in the stride-0x12 table at 0x54EF
- *      indexed by the +0x314A byte. (Table role not yet decoded.)
+ *      indexed by the +0x314A byte. (Table role TBD.)
  *   3. Unlink the unit from its tile chain (func_0068AA).
  *   4. If the unit is not the last slot, REP MOVSW-shift every higher record
  *      down by one stride (0x1C bytes = 0xE words).
@@ -466,6 +466,6 @@ void unit_destroy(int16_t unit_idx)
  *    layout/role is owned by the power subsystem -- declared extern here.
  *  - unit_create arg mapping: [bp+6]=kind_flag (type 0/0x0D), [bp+8] and
  *    [bp+0xA] are forwarded to the 0x844 init hook (likely x,y or owner,type),
- *    [bp+0xC] is consumed by the 0x894 spawn hook. Exact roles inferred from call context with those
+ *    [bp+0xC] is consumed by the 0x894 spawn hook. Exact roles TBD with those
  *    helper bodies; the modelled param names reflect the forwarding order.
  * ============================================================================ */
