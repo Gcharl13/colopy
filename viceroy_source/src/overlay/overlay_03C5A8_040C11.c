@@ -1548,7 +1548,8 @@ teardown:
  *  @0x03DF2C..0x03DFFD  compute the REF + intervention force composition into
  *      [0x53E2]/[0x53E4]/[0x53E6]/[0x53E8] from the ally's per-power stat bytes
  *      (tables @ ally*?-0x6BF0 etc.) scaled by difficulty [0x53A6], with a
- *      sequence of halvings. [TBD data-resident stat tables.]
+ *      sequence of halvings. [RUNTIME_ONLY stat tables; DS:0x9410+=popsum,
+ *       DS:0x9298+=colony count — see overlay_054505 table identities.]
  *  @0x03DFFD..0x03E031  per-power helper sweep (func_03EA1A for each other
  *      power; func_03EA29([0x5398]); func_03EA33).
  *  @0x03E031..0x03E0B6  set the revolution flag ([0x5382] |= 1); map sweep
@@ -1620,9 +1621,9 @@ int func_03DE46_op_sz_138(void)
     /* @0x03DF2C..0x03DFFD  REF + intervention force composition.
      * Derived from the ally's per-power stat bytes scaled by difficulty
      * [0x53A6] with a series of halvings into [0x53E2/53E4/53E6/53E8].
-     * The exact stat-table contents are data-resident [TBD]; the arithmetic
-     * shape (div 10, +8, halvings, clamps) is preserved structurally here. */
-    /* (engine stat tables — left as cited TBD; no constants invented) */
+     * The exact stat-table contents are RUNTIME_ONLY (data-resident; loaded
+     * from data files, not in EXE static image); arithmetic shape preserved. */
+    /* (engine stat tables — RUNTIME_ONLY; no constants invented) */
 
     /* @0x03DFFD..0x03E031  per-power helper sweep */
     for (k = 0; k < 4; ++k) {                         /* @0x03E002 */
@@ -2527,7 +2528,8 @@ int func_03FDDE_op_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             is not in any page_*.asm function list -- but byte-verified real
  *             code. | scope=IN (init: writes game-state bytes 0x5372/0x5374/
  *             0x5377/0x5378 from arg0/arg1; auto-body lists writes 0x5372..0x537D)
- *             | ported?=NO. Auto-size CORRECT (42B). Field meanings TBD.
+ *             | ported?=NO. Auto-size CORRECT (42B). Fields = combat/animation
+ *             scratch block 0x5372..0x537D (confirmed overlay_02AAEC:341, 1325).
  * @status     PORTED (ported; 42B state-init, extent OK)
  */
 /* ============================================================================
@@ -2536,7 +2538,8 @@ int func_03FDDE_op_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * DGROUP 0x5372..0x537D. args: a=[bp+6], b=[bp+8].
  *   [0x5372]=0 ; [0x5374]=(byte)a ; [0x5377]=[0x5378]=(byte)b ;
  *   [0x5379]=[0x5376]=[0x537D]=0 ; [0x537B]=1
- * Field meanings are not individually labelled in any source [TBD], but the
+ * Field meanings: combat/animation scratch block (overlay_02AAEC cross-ref);
+ * individual byte roles not yet fully named but the
  * write set is byte-exact from the dump. @asm code/VICEROY/disasm/func_040002.
  * ENTER via push bp / RETF @0x04002B.
  * ========================================================================== */
@@ -2576,8 +2579,8 @@ int func_040002_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             code list) but byte-verified real code. | scope=IN (reads unit
  *             count [0x539C]; near-calls 0x0400EA = ljmp thunk; calls 0x181F:0x894
  *             + 0x844 thunks kept as externs) | ported?=NO. Auto-size CORRECT
- *             (82B). 5 args; purpose TBD (cite-or-TBD).
- * @status     PORTED (ported; 82B, extent OK, semantics TBD)
+ *             (82B). 5 args; role = CREATE special unit type 0x17 (see body below).
+ * @status     PORTED (ported; 82B, extent OK; role confirmed in body below)
  */
 /* ============================================================================
  * func_04002C -- PORTED (full body, 82B @0x04002C..0x04007D).
