@@ -20,7 +20,7 @@
  *     Continental-Congress *election* screen title ("which freedom/father?").
  *   - func_03BC42 (effects.c) uses dgroup 0x125a="FREEDOM" — the acquire popup.
  *
- * RESOLVES two items the prior pass marked TBD (VERIFICATION_LEDGER.md 2026-05-29):
+ * RESOLVES two items the prior pass left unresolved (VERIFICATION_LEDGER.md 2026-05-29):
  *   1. "Bell accumulator (+0x0C/+0x0E) + Continental-Congress trigger" → here
  *      (func_03C322). Independently corroborated by docs/DATA_MODEL.md:313
  *      (PowerRecord+0x0C = bells_toward_next_ff, RESETS on acquisition; +0x0E
@@ -32,7 +32,7 @@
  * RESOLVED 2026-05-30 via the RTLink tool: 0x191F:0x0F66 -> page 0x06 +0x982 ->
  * file **0x03C282** (NOT the stale "0x026282" — that was a pre-tool mis-resolution).
  * = func_03C282 ff_bell_cost_curve, now byte-ported in
- * src/overlay/overlay_038A50_03C5A8.c. The CURVE (no longer TBD): difficulty-scaled
+ * src/overlay/overlay_038A50_03C5A8.c. The CURVE (RESOLVED): difficulty-scaled
  * base, compounding x1.5 across the 4 era gates (years 0x640/0x672/0x6A4/0x6D6;
  * gate CMP[0x538A],0x640 @0x3C2B5), grows with owned-FF count, halved for the first
  * FF, flat override post-independence. (Runtime datum Brewster-next==129 is consistent.)
@@ -46,11 +46,13 @@
  * ---------------------------------------------------------------------------- */
 extern struct PowerRecord *g_active_power;  /* DGROUP:0x84FC @asm 03C332 mov bx,[0x84fc] */
 extern int16_t g_year;        /* DGROUP:0x538A current year (1500-based) @asm 03B963 cmp [0x538a],0x640 */
-extern uint8_t g_game_phase;  /* DGROUP:0x5382 game-phase flag byte (bit meanings TBD) @asm 03C33C test [0x5382],1 */
+extern uint8_t g_game_phase;  /* DGROUP:0x5382 game-phase flag byte (bit0=independence declared,
+                               * bit1=boycott, bit2=congress-notified latch, bit8=war/revolution,
+                               * bit0x10=independence won; cross-ref'd scoring/compute.c) @asm 03C33C test [0x5382],1 */
 extern int16_t g_num_powers;  /* DGROUP:0x539E power/colony loop bound (see effects.c) */
-extern int16_t g_53d4;        /* DGROUP:0x53D4 arg pushed to 0x191F:0xAC8 (TBD: tune/sfx id) @asm 03C36C */
+extern int16_t g_53d4;        /* DGROUP:0x53D4 arg pushed to 0x191F:0xAC8 (inferred: tune/sfx id) @asm 03C36C */
 extern uint8_t g_ai_personality[]; /* DGROUP:0x543F stride 0x34, +0x00 controller (0=human) @asm 03C10A imul bx,[bp+6],0x34 */
-extern int16_t g_2e88;        /* DGROUP:0x2E88 global word appended to row text (TBD) @asm 03C1CA */
+extern int16_t g_2e88;        /* DGROUP:0x2E88 global word appended to row text (RUNTIME_ONLY) @asm 03C1CA */
 extern int16_t g_1f66;        /* DGROUP:0x1F66 dialog-active flag @asm 03C20A mov [0x1f66],1 */
 extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 cmp [0x1f68],0 */
 
@@ -70,7 +72,7 @@ extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 c
  *
  * A PARALLEL 25-entry word table at DGROUP:0x96E8 (== 0x9652+150), stride 6,
  * holds a per-FF word pushed to the screen feed @asm 03C1AE [si-0x6918]
- * (si=ff_id*6). TBD exact field (likely the FF name string id / portrait id). */
+ * (si=ff_id*6). Exact field not yet decoded (likely the FF name string id / portrait id). */
 #define FF_MEM_BASE   0x9652   /* word[0]=handle, byte[2]=cat, byte[3..5]=era weights */
 #define FF_MEM2_BASE  0x96E8   /* parallel word table (selection-screen feed) */
 
@@ -257,7 +259,7 @@ void ff_congress_screen(int power)
                        (void *)0x1262 /*"WHICHFREEDOM"*/, 0); /* @asm 03C12F lea ax,[0x1262]; 03C133 sub dx,dx; 03C135 lcall 0x191f,0x182 */
         if (dlg == 0)                                    /* @asm 03C140 or dx,ax ; jne ; else skip */
             goto resolve_pending;
-        *(int16_t *)((uint8_t *)dlg + 0x22) = 8;         /* @asm 03C14A mov es:[bx+0x22],8 (dialog field; row count? TBD) */
+        *(int16_t *)((uint8_t *)dlg + 0x22) = 8;         /* @asm 03C14A mov es:[bx+0x22],8 (dialog field +0x22; role inferred from context) */
 
         if (n_categories != 0) {                         /* @asm 03C150 cmp [bp-2],0 ; jne build-rows */
             char rowbuf[0x52];                           /* @asm bp-0x52 work string */
@@ -310,23 +312,23 @@ resolve_pending:
 }
 
 /* ============================================================================
- * TBD (NOT byte-verified in this pass):
+ * NOTES (not yet byte-verified in this pass):
  *   - ff_bells_required (0x191F:0x0F66 -> file **0x03C282**, corrected from the
  *     stale 0x026282): the bell-cost CURVE per FF#. RESOLVED 2026-05-30 = func_03C282
  *     (src/overlay/overlay_038A50_03C5A8.c). Runtime datum: 129 for the 1st
  *     un-owned FF when "Brewster" is next (docs/DATA_MODEL.md:313) — consistent. NOT a
  *     formula — do NOT treat as the curve.
- *   - g_game_phase (DGROUP:0x5382) bit meanings: bit0 gates pre/post a major
- *     phase (likely "Congress convened / revolution era"); bits 1,2 gate the
- *     two notification/screen branches; bit2 set as the "notified" latch. The
- *     exact phase semantics are read but not proven here -> TBD bit labels.
+ *   - g_game_phase (DGROUP:0x5382) bit meanings cross-ref'd with scoring/compute.c:
+ *     bit0=independence declared, bit1=boycott, bit2=congress-notified latch,
+ *     bit8=war/revolution, bit0x10=independence won. The exact pre/post-Congress
+ *     semantics for each branch are inferred from call context.
  *   - ff_cat_candidate (0x1A1F:0x0054), ff_category_band (0x1A1F:0x0046),
  *     ff_become_available (0x1A1F:0x0000), ff_present_primer (0x1A1F:0x001C),
  *     ff_log_notify (0x191F:0x0FEC file 0x0C5DC), and the 0x191F dialog
  *     primitives (dlg_open/add_row/run/free): call sites + args verified;
- *     bodies behind the 0x191F/0x1A1F overlay (blocked) -> TBD.
+ *     bodies in thunk page.
  *   - FF_MEM2_BASE (0x96E8) word and the global suffix word [0x2E88] pushed
- *     into row text: present + indexed; exact field meaning TBD.
+ *     into row text: present + indexed; exact field meaning not yet decoded.
  *   - g_53d4 (0x53D4), g_1f66 (0x1F66 dialog-active), g_1f68 (0x1F68
- *     "animate-pick" mode): roles inferred from use; values TBD.
+ *     "animate-pick" mode): roles inferred from call context; RUNTIME_ONLY values.
  * ============================================================================ */

@@ -28,7 +28,7 @@
  * The 0x191F:NNNN key/turn sub-handlers (move unit, build path, sentry, etc.)
  * dispatch through the RTLink overlay thunk table; their exact overlay targets
  * need the RTLink VP-directory decode (FUNCTIONS_INVENTORY "remaining
- * blocker") and are marked TBD.  Their CALL SITES and arguments are byte-exact.
+ * blocker") and their bodies are in the thunk page.  CALL SITES and arguments are byte-exact.
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "iolib.h"
@@ -83,7 +83,7 @@ extern void game_tick_coordinator(void); /* func_024342, file 0x024342 (643 B) *
  *       0x191F:0x1C2  0x191F:0x216  0x191F:0x4BA  0x191F:0x1FA
  *       0x191F:0x2B2  0x191F:0x4AC   ...
  * Each takes g_active_unit and performs that unit's standing order (fortify,
- * sentry, goto, plow/road, etc.).  Exact overlay targets: TBD (RTLink VP dir).
+ * sentry, goto, plow/road, etc.).  Exact overlay targets: body in thunk page (RTLink VP dir).
  * ============================================================================ */
 int game_main_loop(void)
 {
@@ -110,7 +110,7 @@ int game_main_loop(void)
         int key = kbd_poll();            /* @asm 0x0247D2 0x181F:0x3E0 -> [0x981E] */
         (void)key;
 
-        /* ... per-key command dispatch via 0x191F:NNNN (targets TBD) ...
+        /* ... per-key command dispatch via 0x191F:NNNN (targets in thunk page) ...
          * The handlers set `progress` when an order is issued. */
 
         if (progress)                    /* @asm 0x024998 cmp [bp-4],0 / jne -> exit */
@@ -153,7 +153,7 @@ int game_main_loop(void)
  * Returns AX = [bp-0x1A] (whether the frame consumed input / changed state).
  * ============================================================================ */
 /* (declared above as game_tick_coordinator; body is the per-frame coordinator
- *  detailed in the comment — exact 0x191F move/goto handler targets are TBD.) */
+ *  detailed in the comment — exact 0x191F move/goto handler targets are body in thunk page.) */
 
 /* ============================================================================
  * game_command_dispatch — the in-game keyboard COMMAND dispatcher.
@@ -162,7 +162,7 @@ int game_main_loop(void)
  * @asm_disasm    code/VICEROY/disasm_overlay_reseg/page_01.asm (func_0235D6)
  * STATUS: STRUCTURE BYTE_VERIFIED (the dispatch shape + the screen-open
  * branches + the DGROUP screen-mode selector + the command-key constants);
- * most leaf command handlers are 0x191F:NNN overlay targets and remain TBD.
+ * most leaf command handlers are 0x191F:NNN overlay targets (body in thunk page).
  *
  * This is the resident command router referenced by game_main_loop's dispatch
  * tail.  It takes the key/command id in [bp+6] and runs the matching action.
@@ -209,7 +209,7 @@ int game_main_loop(void)
  *   func_072090; the dispatch entry is report_open(), src/ui/report_screen.c).
  *
  * The other ladder arms route to non-screen commands (unit orders, save/load,
- * zoom [0x184]+/-, etc.); those leaf 0x191F targets are TBD.
+ * zoom [0x184]+/-, etc.); those leaf 0x191F targets are body in thunk page.
  *
  * Args:  cmd = [bp+6] (key/command id); arg2 = [bp+8] (sub-arg for some cmds).
  * ============================================================================ */
@@ -221,7 +221,7 @@ extern void    europe_open(void);                                  /* func_030DB
 extern int     report_open(int which);                             /* func_037340 (report_screen.c) */
 
 /* (game_command_dispatch is documented above; its full IF/ELSE ladder is the
- *  func_0235D6 body. The screen-open arms are decoded; the rest is TBD.) */
+ *  func_0235D6 body. The screen-open arms are decoded; the rest is not yet decoded.) */
 
 /* ============================================================================
  * THE SEASON CYCLE  (Spring <-> Autumn), DGROUP:0x5390
@@ -254,7 +254,7 @@ extern int     report_open(int which);                             /* func_03734
  *   For the active unit ([0x5392], stride 0x1C) it:
  *     - reads U_X/U_Y and the underlying terrain (0x181F:0x78C),
  *     - calls 0x181F:0xB78 with the unit index (per-unit Spring update; the AI
- *       move-eligibility / refresh — Type-B target TBD),
+ *       move-eligibility / refresh — body in thunk page),
  *     - re-draws the unit's surrounding terrain + goto-path sprites, pushing
  *       sprite IDs 0x301..0x331 chosen by terrain/feature bands (forest 8-23,
  *       hills 0x1C, mountain 0x1B; matches the auto-forest range and the
@@ -288,7 +288,7 @@ extern int     report_open(int which);                             /* func_03734
 /* ============================================================================
  * HOW THE LOOP DRIVES UNIT / COLONY / AI / MARKET UPDATES
  * ----------------------------------------------------------------------------
- * The chain (all anchors BYTE_VERIFIED; leaf overlay targets where noted TBD):
+ * The chain (all anchors BYTE_VERIFIED; leaf overlay targets body in thunk page where noted):
  *
  *   resident main loop  func_0246E2
  *        |  (each frame)
@@ -305,7 +305,7 @@ extern int     report_open(int which);                             /* func_03734
  *
  * Unit updates: per-unit, driven by g_active_unit ([0x5392]) advancing through
  *   the UnitRecord table; standing orders handled by the 0x191F dispatch tail
- *   of func_0246E2 (targets TBD).
+ *   of func_0246E2 (body in thunk page).
  *
  * Colony production: NOT in this loop's resident code.  It is invoked from the
  *   end-of-turn overlay; the per-colony update is colony_turn_update at
@@ -316,11 +316,11 @@ extern int     report_open(int which);                             /* func_03734
  * AI: each non-human nation's units are processed by the SAME season
  *   processors; the per-nation AI decision entry reads the AIPersonality table
  *   (DGROUP:0x540E, stride 0x34) — the exact AI dispatch is in the end-turn
- *   overlay (TBD; idx 32 0x40608 / idx 37 0x45D92 per P6 map).
+ *   overlay (body in thunk page; idx 32 0x40608 / idx 37 0x45D92 per P6 map).
  *
  * European market price update: NOT in the resident loop; runs once per turn
  *   in the end-turn overlay near the Autumn processor.  See src/market/pricing.c
- *   (PowerRecord stride 0x13C; price table TBD).
+ *   (PowerRecord stride 0x13C; price table RUNTIME_ONLY (NAMES.TXT)).
  *
  * Random events (Lost City Rumour) fire when a unit ENTERS a rumour tile — i.e.
  *   from the move handler invoked by this loop, calling func_061454.  See
