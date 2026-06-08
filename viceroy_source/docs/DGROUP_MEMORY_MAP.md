@@ -145,7 +145,8 @@ prefix). Count = `g_colony_count`@`0x539E`. Field highlights from `colony.h`
 | `+0x20 / +0x40 / +0x60` | job / unit_type / expertise per-colonist arrays | |
 | `+0x70..0x83` | tile_state[20] | surrounding-tile state |
 | `+0x84 / +0x8A` | building-present / feature bit-arrays | |
-| `+0x95` | **OPEN CONFLICT** (food-stock vs era/level) | see §5 |
+| `+0x95` | 8-bit counter (level/stage; drawlist pile 0xf) — **NOT food** | §5.2 |
+| `+0x96` | 8-bit counter companion (drawlist pile 0x1e) | §5.2 |
 | `+0x9A..0xC1` | stockpile[20] (15 commodities + slack) | |
 | `+0xAA` | liberty/rebellion counter | |
 | `+0xC2/0xC4/0xC6` | SoL "bells" 32-bit numerator/denominator | |
@@ -205,9 +206,18 @@ byte-trace before its field can be named with confidence.
    base — the identical base-vs-field trap. The same block confirms `0x8542` =
    current-colony ptr and that `owner_power` indexes AIPersonality
    (`imul *,0x34; [bx+0x543F]`). `colony.h` prose corrected to match.
-2. **ColonyRecord `+0x95`** — two verified reads disagree: food-stock (colony
-   widget draws it as a pile, `+0x96`=horses) vs era/level (`step=([+0x95]+1)*100`).
-   Display evidence favors food; not flipped definitively.
+2. **ColonyRecord `+0x95`** — **RESOLVED 2026-06-08: NOT food stock.** The real
+   food stock is the 16-bit `+0x9A[0]` stockpile array (independently verified).
+   `+0x95` is a small **8-bit per-colony counter**: zeroed at colony init
+   (`func_02EB78 @0x2EC00`), inc/dec by 1 (`func_02BC72 @0x2C240` does
+   `inc [bx+0x95]; inc [bx+0x96]` as a pair; `dec` @0x5C44E), drawn as drawlist
+   pile item `0xf` (`func_026DD4 @0x26F8D`; companion `+0x96` = item `0x1e`). The
+   `0x8D00` helper's `(val+1)*100` is used only as a **threshold** vs food
+   (`+0x9A`) and liberty (`+0xAA`), never as a coordinate — so `+0x95` is a
+   level/stage multiplier feeding a population-scaled food-growth gate
+   (`population/6` test @`func_055760 0x55B3F`). Both reads hit the same field
+   consistently (not overloaded). *Residual:* exact gameplay name (growth tier vs
+   building level) not pinned; food misread is decisively rejected.
 3. **PowerRecord count** — **RESOLVED 2026-06-08: 4 EU records** (`0x8808..0x8CF8`).
    The next global `0x8D4A` sits exactly `0x542 = 4·0x13C` above the base, and is
    itself a **pointer** (`mov bx,[0x8D4A]` then deref) = current-native-settlement

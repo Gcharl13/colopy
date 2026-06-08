@@ -87,21 +87,22 @@ struct colony_t {
                                 * @ref test_bit_at_8a         @ 0x85B2
                                 * @ref set_or_clear_bit_at_8a @ 0x85D6 */
     uint8_t  pad_92_94[3];     /* +0x92..+0x94  not yet decoded */
-    uint8_t  field_at_95;      /* +0x95  *** OPEN CONFLICT — canonical meaning not yet decoded ***
-                                * Two byte-verified reads of THIS SAME offset disagree:
-                                *  (a) FOOD stock — the colony-screen food widget draws
-                                *      [bx+0x95] as a pile count (overlay_024342 @0x26F8D
-                                *      `mov al,[bx+0x95]`; +0x96 = HORSE count @0x26FA0).
-                                *      This DISPLAY evidence is the stronger candidate.
-                                *  (b) era/level — step_100_or_level_scaled @0x8D00 does
-                                *      `if [bx+0x95]: step=([bx+0x95]+1)*100` (the basis of
-                                *      the old "era counter" label; just USES the value).
-                                * Both confirmed to read +0x95. Leaning FOOD (the widget
-                                * displays it), but not flipped definitively — needs one
-                                * more trace (what consumes 0x8D00's step). Left unresolved, not
-                                * guessed. (+0x94 "build selector", +0x96 "horse" from the
-                                * same overlay are likewise candidate-but-unconfirmed.) */
-    uint8_t  pad_96_99[4];     /* +0x96..+0x99  not yet decoded */
+    uint8_t  counter_at_95;    /* +0x95  small 8-bit per-colony level/stage COUNTER.
+                                * RESOLVED 2026-06-08: NOT the food stock (food is the
+                                * 16-bit stockpile_9a[0] below). Zeroed at colony init
+                                * (func_02EB78 @0x2EC00); inc/dec by 1 (func_02BC72 @0x2C240
+                                * `inc [bx+0x95]; inc [bx+0x96]`; dec @0x5C44E); drawn as
+                                * drawlist pile item 0xf (func_026DD4 @0x26F8D). The 0x8D00
+                                * helper's (val+1)*100 is used only as a THRESHOLD vs food
+                                * (+0x9A) / liberty (+0xAA), never as a coordinate -> +0x95 is
+                                * a level multiplier for a population-scaled food-growth gate
+                                * (population/6 test @func_055760 0x55B3F). Exact gameplay name
+                                * (growth tier vs building level) not pinned; food misread
+                                * rejected. (+0x94 = gating flag/selector, read @0xAC0C.) */
+    uint8_t  counter_at_96;    /* +0x96  8-bit counter companion to +0x95 (drawlist pile
+                                * item 0x1e; paired inc/dec). Was mislabeled "horses" — the
+                                * horse STOCKPILE is stockpile_9a[8]. @0x26FA0 / @0x5C474 */
+    uint8_t  pad_97_99[3];     /* +0x97..+0x99  not yet decoded */
     uint16_t stockpile_9a[20]; /* +0x9A..+0xC1  per-commodity stockpile (15 commodities + 5 slack);
                                 * indexed by commodity_id 0..14:
                                 *   [0]=Food   [1]=Sugar [2]=Tobacco [3]=Cotton
