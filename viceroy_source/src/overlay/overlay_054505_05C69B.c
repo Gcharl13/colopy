@@ -585,7 +585,9 @@ int should_two_powers_war(int power_a, int power_b)  /* func_057AFC */
  * @asm 0x057D46  for (u = 0; u < g_unit_count; u++) {            ; phase 2
  * @asm 0x057D4E    if ((unit[u].owner & 0xF) != arg1) continue
  * @asm 0x057D61    if (unit[u].type not in [0x0D..0x12]) continue ; ships only
- * @asm 0x057D6F    if (per_type[ unit[u].type ] (-0x... byte 0x5236, stride6) <= 1) continue
+ * @asm 0x057D6F    if (g_unit_stat[type].field6 (-0x... byte 0x5236, stride14) <= 1) continue
+ *                  EXE: IMUL BX,[BP-E],1C; MOV BL,[BX+3146]; SHL*2+ADD x3=*14;
+ *                  CMP byte [BX+5236],1 @0x057D83 → field+6 = ATK in g_unit_stat
  * @asm 0x057D8C    x = unit[u].x ; y = unit[u].y
  * @asm 0x057DA7    if (LCALL 0x181F:0x0302(x,y) == 0) continue
  * @asm 0x057DB5    restart phase 1 (slot = 0)
@@ -593,8 +595,9 @@ int should_two_powers_war(int power_a, int power_b)  /* func_057AFC */
  *
  * Net effect: wakes/repaths owned ships near the colony when tile arg0 changes
  * occupancy.  0x181F:0x0696 = unit_index_at(x,y); 0x181F:0x0302 = path/reachable
- * test.  Table 0x5236 (stride 6 per unit type) is the per-type capability table
- * (movement/наval) — contents data-resident (TBD); the >1 gate is byte-exact.
+ * test.  The >1 gate reads g_unit_stat[type].ATK (+6 of stride-14 table at 0x5230):
+ * BYTE_VERIFIED @0x057D6F: IMUL BX,[BP-E],1C; MOV BL,[BX+3146]; *14 via SHL/ADD;
+ * CMP byte [BX+5236],1. ATK field at g_unit_stat+6 (0x5236 = 0x5230+6).
  * ============================================================================ */
 int clear_sentry_for_owner_at_match(int tile_id, int owner)  /* func_057CE0 */
 {
@@ -619,7 +622,7 @@ phase1:
             continue;
         if (type < SHIP_TYPE_LO || type > SHIP_TYPE_HI)                  /* @asm 0x057D61 */
             continue;
-        if (*(uint8_t *)(type * 6 + 0x5236) <= 1)                       /* @asm 0x057D85 */
+        if (*(uint8_t *)(type * 14 + 0x5236) <= 1)  /* ATK field, stride-14 @asm 0x057D85 */
             continue;
         if (overlay_call_181F_0302() == 0)             /* path test @asm 0x057DA7 */
             continue;

@@ -342,10 +342,11 @@ int func_03C638_logic_sz_73(void)
     overlay_call_181F_06A0(); /* layerB = ptr ; [bp-4:-2] */
     /* maskA = 0x10<<loser  [bp-6] ; maskB = 0x10<<winner  [bp-0x24] */
 
-    /* @0x03C7AF..0x03C80C  map sweep y=0..[0x853C), x=0..[0x853A):
+    /* @0x03C7AF..0x03C80C  map sweep y=0..g_map_height(0x853C), x=0..g_map_width(0x853A):
      *   if (layerA[tile] & maskA) layerA[tile] |= (byte)maskB;
      *   if (layerB[tile]>>4 == loser) layerB[tile] = (layerB[tile]&0xF)|(winner<<4);
-     *   advancing both layer pointers in lockstep. [TBD map layout @0x853A/0x853C] */
+     *   advancing both layer pointers in lockstep.
+     *   0x853A = g_map_width, 0x853C = g_map_height (BYTE_VERIFIED: overlay_0612E6). */
     /* (faithful nested-loop transfer of ownership/visibility bits) */
 
     /* @0x03C80C..0x03C87C  unit transfer: for (i = g_unit_count-1; i>=0; --i)
@@ -386,10 +387,12 @@ int func_03C638_logic_sz_73(void)
         }
     }
 
-    /* @0x03C8CA..0x03C900  native-mission transfer: for (k=0; k <= [0x539A]; ++k)
-     *   { settlement_iter(); rec=[0x8D4A];
-     *     if ((rec[5] & 0xF) == loser) rec[5] = (rec[5]&0xF0)|winner; }
-     *   [TBD settlement record @0x8D4A; count [0x539A]] */
+    /* @0x03C8CA..0x03C900  native-mission transfer: for (k=0; k < [0x539A]; ++k)
+     *   { settlement_iter(k) @0x181F:0x0A4C sets G16(0x8D4A) = ptr to current
+     *     NativeSettlement record; rec[5] low nibble = owner power.
+     *   0x539A = g_native_count_539A (native settlement count; BYTE_VERIFIED:
+     *     overlay_04C306_053BC1.c line 943). 0x8D4A = current record pointer
+     *     (same ptr used in native_unit_ai.c / unit_ai_leaf.c). */
     for (k = 0; (int16_t)G16(0x539A) > k; ++k) {
         uint16_t rec;
         overlay_call_181F_0A4C(); /* settlement_iter(k) */
@@ -1561,8 +1564,12 @@ teardown:
  *      (cur*0x13C-0x77E2) and clear a status bit at (bx-0x77F8)&0xFB.
  *
  * @asm page_06.asm:3343  ENTER 0x324,0 / RETF @0x03E160.
- * Near helpers (ljmp 0x1A1F/0x191F): func_03EA0B/1A/1F/29/33. Strings 0x130B
- *   [TBD]. Tables @0x9418/0x9298/0x9410 (score) and the ally stat tables [TBD].
+ * Near helpers (ljmp 0x1A1F/0x191F): func_03EA0B/1A/1F/29/33.
+ * String 0x130B = "INDEPENDENCE" (BYTE_VERIFIED: EXE @file 0x1ECAB).
+ * Tables 0x9418 = per-power ship count (×3), 0x9298 = colony count (×2),
+ * 0x9410 = colonist popsum (×1) — score formula BYTE_VERIFIED 2026-06-08.
+ * Ally stat tables (REF force composition 0x53E2..0x53E8) are data-resident;
+ * arithmetic shape preserved structurally (see lines 1615-1617 below).
  * ========================================================================== */
 int func_03DE46_op_sz_138(void)
 {
@@ -1725,7 +1732,9 @@ int func_03E162_op_sz_145(uint16_t arg0_bp_06)
  * the per-type arg; afterwards apply_terrain_change + announce how many
  * converted (str 0x132D for one, str 0x1336 with count for many).
  * @asm page_06.asm:3769  ENTER 0xC,0 / RETF @0x03E440.
- * Tables: g_unit_stat name-str-handle @0x5230 stride 14 (BYTE_VERIFIED 2026-06-08: NAMES.TXT @UNIT loader); strings 0x132D/0x1336 [TBD].
+ * Tables: g_unit_stat name-str-handle @0x5230 stride 14 (BYTE_VERIFIED 2026-06-08).
+ * Strings: 0x132D = "MOBILIZE" (single conversion), 0x1336 = "MOBILIZE2" (many).
+ * BYTE_VERIFIED: EXE @file 0x1ECCD / 0x1ECD6 respectively.
  * ========================================================================== */
 int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
 {
