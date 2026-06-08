@@ -1930,36 +1930,50 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
  * @asm 0x04A3A3  [bp-2] = roll
  * @asm 0x04A3A6  push [bp+0xC] ; LCALL 0x181F:0x09A4(arg2) ; v = lookup(arg2)
  * @asm 0x04A3B1  push v ; push 0 ; LCALL 0x181F:0x0438(0, v) ; (format/scale v)
- * @asm 0x04A3BC  if roll > threshold goto 0x4A3E6        ; (success path, truncated)
- * @asm 0x04A3C4  push 3 ; …                              ; (failure branch, truncated)
+ * @asm 0x04A3BC  if roll > threshold goto 0x4A3E6
+ * @asm 0x04A3C4  (roll<=threshold)   msg 0x15C3; call 0x808; return 1
+ * @asm 0x04A3E6  (roll>threshold)    if 2*threshold < roll goto 0x4A402
+ * @asm 0x04A3ED  (threshold<roll<=2t) msg 0x15CE; return 0
+ * @asm 0x04A402  (roll>2*threshold)  msg 0x15DA; call 0x4BA48(all args); return 0
  *
- * The per-func dump TRUNCATES at 0x04A3C8 (the success/failure tails past the
- * compare are cut).  The threshold/roll/compare core is BYTE_VERIFIED; the two
- * outcome branches are not yet decoded.  random_int(0,500) and the 0x030C table read match
- * the documented opcodes.  Marked DONE for the decision core.
+ * COMPLETED 2026-06-08 (was truncated at 0x04A3C8 in the prior per-func dump;
+ * full tail pulled on-demand from VICEROY.EXE via tools/viceroy_exe.py). The
+ * prior body was INVERTED (it returned 1 on roll>threshold) and collapsed a
+ * THREE-tier graduated outcome into a 2-way. The real result depends on how far
+ * the roll exceeds the threshold: best (<=t), middle (<=2t), worst (>2t), each
+ * with its own message key (0x15C3 / 0x15CE / 0x15DA). @status BYTE_VERIFIED.
  * ============================================================================ */
 extern uint16_t g_current_power_8D52;   /* DGROUP:0x8D52 — current/active power index */
+extern int  overlay_call_191F_019C(void);                 /* 0x191F:0x019C — keyed message show */
+extern void native_attack_apply_4BA48(int a, int b, int c, int d); /* near call cs:0x4BA48 */
 
-int native_attack_reward_roll(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)  /* func_04A37C */
+/* func_04A37C -- graduated native wagon-train-attack outcome roll.
+ * Returns 1 only on the best tier (roll <= threshold); 0 on the two worse tiers.
+ * args: bp+6, bp+8 passed through to the tier-3 applier; bp+0xA selects the
+ * threshold table column; bp+0xC selects the reward magnitude. Message keys
+ * 0x15C3/0x15CE/0x15DA distinguish the three outcome tiers. */
+int native_attack_reward_roll(uint16_t a_bp_06, uint16_t b_bp_08,
+                              uint16_t col_bp_0A, uint16_t reward_bp_0C)  /* func_04A37C */
 {
-    /* @asm 0x04A387 — per-power threshold from the 2-D table. */
-    int threshold = overlay_call_181F_030C();       /* table(current_power, arg0) */
+    int threshold = overlay_call_181F_030C();   /* @asm 0x04A387 table(0x8D52, col) -> [bp-6] */
+    int roll      = overlay_call_181F_04D4();    /* @asm 0x04A39B random_int(0,500) -> [bp-2] */
+    int result    = 0;                            /* @asm 0x04A397 [bp-4]=0 */
 
-    /* @asm 0x04A39B — uniform roll in [0,500). */
-    int roll = overlay_call_181F_04D4();             /* random_int(0, 0x1F4) */
+    overlay_call_181F_09A4();                     /* @asm 0x04A3A9 v = lookup(reward) */
+    overlay_call_181F_0438();                     /* @asm 0x04A3B4 format/scale(0, v) */
 
-    /* @asm 0x04A3A6..0x04A3B9 — fetch & format the reward magnitude. */
-    overlay_call_181F_09A4();                        /* v = lookup(arg1) */
-    overlay_call_181F_0438();                        /* format/scale v */
-
-    /* @asm 0x04A3BF — success when the roll beats the threshold. */
-    if (roll > threshold) {
-        /* @asm 0x04A3C2 success branch — bytes past 0x04A3C8 truncated (not yet decoded). */
-        return 1;
+    if (roll <= threshold) {                      /* @asm 0x04A3BF cmp roll,threshold; jg 0x4A3E6 */
+        overlay_call_181F_0652();                 /* @asm 0x04A3C9 best-tier message key 0x15C3 */
+        overlay_call_181F_0808();                 /* @asm 0x04A3D4 (a_bp_06) */
+        result = 1;                               /* @asm 0x04A3DC [bp-4]=1 */
+    } else if (roll <= 2 * threshold) {           /* @asm 0x04A3E6 shl threshold,1; cmp; jl 0x4A402 */
+        overlay_call_191F_019C();                 /* @asm 0x04A3F4 middle-tier message key 0x15CE, power 0x8D52 */
+    } else {                                      /* @asm 0x04A402 roll > 2*threshold */
+        overlay_call_191F_019C();                 /* @asm 0x04A409 worst-tier message key 0x15DA, power 0x8D52 */
+        native_attack_apply_4BA48(a_bp_06, b_bp_08, col_bp_0A, reward_bp_0C); /* @asm 0x04A41E */
     }
-    /* @asm 0x04A3C4 failure branch — truncated (not yet decoded). */
-    (void)arg0_bp_0A; (void)arg1_bp_0C;
-    return 0;
+    (void)g_current_power_8D52;
+    return result;                                /* @asm 0x04A421 mov ax,[bp-4] */
 }
 
 /* ============================================================================
