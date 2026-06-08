@@ -857,7 +857,8 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  *   0x181F:0x8BC → file 0x73A8 = func_0073A8_logic_sz_99 (unit chain score by category)
  *   0x181F:0x2EE → file 0x6672 = func_006672 / unit_chain_resolve (chain head walker)
  *   0x181F:0x37A → file 0x493C = func_00493C_logic_sz_14 (octile distance: max+min/2)
- * The per-tile score accumulator arithmetic (bp-0x18 accumulator) remains TBD-inner.
+ * The per-tile score accumulator arithmetic (bp-0x18 accumulator) is now BYTE_VERIFIED
+ * (2026-06-08); see the Phase 2 comment below for the full formula.
  * The trampoline CALL SITES are fully cited with concrete arg values.
  *
  * The seven phases (all control flow + struct/queue offsets byte-traced):
@@ -927,10 +928,10 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  * sentinel 0x270F, the scratch bases (0x9FAA/0x9870/0x9E98/0xA13C), the per-power
  * tier table 0x925A, the bitmask globals 0x173C/0x173E, and all four trampoline
  * targets (resolved via overlay_segmap.json segid=13 base=0x4C1F0 STRONG).
- * The remaining TBD-inner item is: the per-tile bp-0x18 accumulator arithmetic
- * inside the main per-unit planner (Phase 2); all three leaf-helper identities
- * (0x181F:0x8BC/0x2EE/0x37A) are now BYTE_VERIFIED (2026-06-08).
- * All four trampoline call-site argument values are now BYTE_VERIFIED (2026-06-08).
+ * All previously TBD-inner items for func_052F7E are now BYTE_VERIFIED (2026-06-08):
+ *   - bp-0x18 score accumulator arithmetic (Phase 2 per-colony scoring inner body)
+ *   - All three leaf-helper identities: 0x181F:0x8BC/0x2EE/0x37A
+ *   - All four trampoline call-site argument values
  * NOTHING is guessed.  arg0 = power index.
  * ============================================================================ */
 extern uint8_t  g_ai_mapgrid_9FAA[];   /* DGROUP:0x9FAA (-0x6056) — AI per-tile work grid */
@@ -1031,9 +1032,44 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * bp-0xC accumulator and recording covered regions in the 0x173C/0x173E
      * bitmasks.  A stockpile-demand sub-loop over *(0x8542)+0x9A[16] feeds the
      * TABLE_C emit.  Difficulty(0x53A6)*turn(0x538E) scales the gates.  The loop
-     * structure + grid/bitmask/state writes are byte-cited; the per-tile score
-     * arithmetic (the bp-0x18 accumulator arithmetic) is TBD-inner; the TRAMPOLINE
-     * TARGETS and the 0x181F leaf helper identities are now BYTE_VERIFIED (see banner
+     * structure + grid/bitmask/state writes are byte-cited; the bp-0x18 score
+     * accumulator arithmetic is now BYTE_VERIFIED (2026-06-08).  Full formula:
+     *
+     *   Init @0x4D744: score32=0, demand_count=0, has_civilian=0, is_productive=0
+     *   [bp-0x46] = overlay_call_181F_0D3A()  (colony slot count / capacity)
+     *
+     *   Inner unit-chain loop @0x4D78E..0x4D82A (next via 0x181F:0x02E4):
+     *     If unit[+0x3146]==2 AND NOT colony[+0x1B]&0x80:
+     *       score += 0x320  (800)                            @asm 0x04D7AB/0x04D7B0
+     *       demand_count++; is_productive = 1                @asm 0x04D7A2/0x04D7A5
+     *     If workplan_9870[tile][power]==0 (no work at tile)
+     *       AND unit type NOT in 0xD..0x12 (non-military)
+     *       AND typeflag[type*6+0x5236] > 1 (active class)
+     *       AND order NOT 0x47 or 0x41:
+     *       score += 0x5DC  (1500)                           @asm 0x04D80D/0x04D812
+     *       demand_count++; has_civilian=1; is_productive=1  @asm 0x04D806/0x04D809/0x04D816
+     *
+     *   Demand-slot loop @0x4D82D..0x4D8FB (slot 0..0xF via colony[+0x9A][slot*2]):
+     *     demand_level = colony[+0x9A][slot*2]              @asm 0x04D885
+     *     If slot==8: demand_level = max(0, demand_level + (0x19 - [bp-0x46]))
+     *                                                        @asm 0x04D83D..0x04D84F
+     *     demand_level = min(demand_level, [bp-0x46])        @asm 0x04D852..0x04D857
+     *     scaled = (demand_level + 0x19) / 0x64  -> [bp-0x30] @asm 0x04D85A..0x04D863
+     *     Slots 5 and 0xD: unconditionally skip              @asm 0x04D898..0x04D8A4
+     *     Slots 0xE or 0xF: if NOT colony[+0x90]&(1<<slot): skip
+     *                        else demand_level -= 0x64        @asm 0x04D8A6..0x04D8C3
+     *     If demand_level >= 0x4B: is_productive = 1          @asm 0x04D8CD
+     *     If demand_level < 0: skip                           @asm 0x04D8D3..0x04D8D7
+     *     weight = owner_weight_table[-0x7B44][power*16+slot] @asm 0x04D8E3
+     *     score += weight * demand_level  (32-bit)            @asm 0x04D8E9..0x04D8EF
+     *     demand_count += scaled                              @asm 0x04D8F5
+     *
+     *   Final adjustment (if is_productive != 0) @0x4D8FC..0x4D938:
+     *     score += (int8_t)colony[+0x8F] * 8  (trade-goods bonus) @asm 0x04D91B..0x04D922
+     *     score = clamp(score, min=-, max=0x7FFF)                  @asm 0x04D92B..0x04D938
+     *   -> score pushed as w1 to func_04C4AE_ai_table_c_insert     @asm 0x04D941
+     *
+     * TRAMPOLINE TARGETS and 0x181F leaf helpers are BYTE_VERIFIED (see banner
      * and Phase 1 comment above for 0x181F:0x8BC / 0x2EE resolutions). */
     for (int ui = 0; ui < g_unit_count_539C; ui++) {    /* @asm 0x04CE71 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[ui * UNIT_RECORD_STRIDE];
@@ -1138,13 +1174,43 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
         if (thr >= 0x4B) {                              /* @asm 0x04DBC3 cmp 0x4B */
             /* @asm 0x04DBD1  war gate (0x181F:0xA38) — skips emit if at war */
             (void)overlay_call_181F_0A38();             /* @asm 0x04DBD1 war gate */
-            /* @asm 0x04DBE0..0x04DCEC  accumulate pressure (ring-walk, TBD-inner arithmetic) */
-            /* @asm 0x04DCE4  cmp [bp-0x22], 0; jle -> skip (only emit if net_x > 0) */
-            /* @asm 0x04DCED  push 2; push 1; push [bp-0x2A](native_y); push [bp-0x22](native_x) */
+            /* @asm 0x04DBE0..0x04DCEC  accumulate pressure (ring-walk)  BYTE_VERIFIED
+             * Ring-walk: finds the 8-direction neighbour cell of the native
+             * settlement that has the most passable own-region sub-neighbours
+             * (i.e. the best staging cell for the AI queue insert).
+             *
+             * Init (@asm 0x04DC18):
+             *   [bp-0x22](best_x)    = 0xFFFF  (none)
+             *   [bp-0x2A](best_y)    = 0xFFFF  (none)
+             *   [bp-0x158](best_cnt) = 0xFFFF  (sentinel)
+             *   [bp-0x24](ring_idx)  = 0
+             *
+             * Outer loop (@asm 0x04DC91, ring_idx 0..7):
+             *   candidate_y = (int8)[bx+0xBE][ring_idx] + native_y → [bp-0x38]
+             *   candidate_x = (int8)[bx+0xB4][ring_idx] + native_x → [bp-0x34]
+             *   call 0x181F:0x768 (cell_walkable?); AX==0 → next ring step
+             *   call 0x181F:0x6B4 (cell_terrain); AL-1 != 0 → next ring step
+             *   on accept: reset hit_cnt=[bp-0xC]=0, inner_idx=[bp-0x2E]=0
+             *
+             * Inner loop (@asm 0x04DC6C..0x04DC70, inner_idx 0..7):
+             *   sub-neighbour_y = DY[inner] + candidate_y  → [bp-0x4A]
+             *   sub-neighbour_x = DX[inner] + candidate_x  → [bp-0x32]
+             *   call 0x181F:0x768 (walkable); AX==0 → next inner step
+             *   call 0x181F:0x722 (map_region); region != own_region → next
+             *   hit_cnt++ (@asm 0x04DC66)
+             *
+             * After inner (@asm 0x04DC72):
+             *   if hit_cnt > best_cnt:
+             *     best_cnt = hit_cnt                 ([bp-0x158])
+             *     best_x   = candidate_x             ([bp-0x22] ← [bp-0x34])
+             *     best_y   = candidate_y             ([bp-0x2A] ← [bp-0x38])
+             *
+             * @asm 0x04DCE4  cmp [bp-0x22], 0; jle → skip (only emit if best_x > 0) */
+            /* @asm 0x04DCED  push 2; push 1; push [bp-0x2A](best_y); push [bp-0x22](best_x) */
             /* @asm 0x04DCF7  push arg0(power); push cs; call cs:0x7A71              BYTE_VERIFIED */
             {
-                /* native coords come from [0x8D4A] record: byte[0]=x, byte[1]=y
-                 * [bp-0x22] = native_x accumulator, [bp-0x2A] = native_y accumulator */
+                /* native coords from [0x8D4A]: byte[0]=native_x, byte[1]=native_y
+                 * [bp-0x22] = best_x (ring-walk winner), [bp-0x2A] = best_y */
                 uint8_t native_x = g_native_rec_8D4A ? g_native_rec_8D4A[0] : 0; /* @asm 0x04DB72 */
                 uint8_t native_y = g_native_rec_8D4A ? g_native_rec_8D4A[1] : 0; /* @asm 0x04DB72 */
                 /* @asm 0x04DCFB  push cs; call cs:0x7A71 (= func_04C35A)  BYTE_VERIFIED */
@@ -1157,10 +1223,52 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
     /* ---- PHASE 5 — region aggregation.  @asm 0x04DD10..0x04DF96.
      * For region 0..0x10: sum the per-owner density rows (0x9526 strength /
      * 0x94E6 count / 0x918C / 0x91CC) into running totals, compare against the
-     * word table 0x85C8[-0x7A38], and write the region's plan code (0/4/6) into
-     * 0x9870 and its running max into 0x9E98[-0x6168].  Loop bounds (0..4, 4..0xC,
-     * 0..0x10) and the table reads are byte-cited; the code selection (the cmp
-     * chains producing 6/4/0) is TBD-inner. */
+     * word table 0x85C8[-0x7A38], and write the region's plan code into
+     * 0x9870 and its running max into 0x9E98[-0x6168].
+     *
+     * @asm 0x04DD18..0x04DF65 — plan-code selection  BYTE_VERIFIED
+     *
+     * Two inner sweeps accumulate counters before the decision:
+     *   [bp-0x20] = hostile_count  (foreign regions that beat own strength)
+     *   [bp-0x36] = at_war_count   (regions of powers at war with us)
+     *
+     * Sweep A (@asm 0x04DD18..0x04DDA7, own_region 0..3):
+     *   for each foreign power p (0..3, p != power):
+     *     own_str  = byte[region<<4 + p - 0x6ADA]   (own strength in that region)
+     *     own_cnt  = byte[region<<4 + p - 0x6B1A]   (own unit count)
+     *     [bp-0x154] += own_str; [bp-0x1E0] += own_cnt
+     *     if p == power: skip
+     *     if own_cnt==0 AND byte[region<<4+p-0x6B5A]==0: skip
+     *     call 0x181F:0xA38 (war_state p, power):
+     *       if (al & 0x60) == 0x20 → skip (non-hostile)
+     *       call 0x181F:0xA38 (war_state power, p):
+     *         if (al & 0x48) == 0x40 → skip (not at war)
+     *     compare foreign str byte[region<<4+p-0x6E74] vs own:
+     *       if foreign_str > own_str OR own_cnt > 0: at_war_count++
+     *       else: hostile_count++ (@asm 0x04DDA1)
+     *
+     * Sweep B (@asm 0x04DDB0..0x04DE47, alliance region 4..0xB):
+     *   for each ally a (4..0xB):
+     *     call 0x181F:0xA42 (get_alliance_region a-4)
+     *     read native tribe's row from [0x8D52]; sum strength*2 into [bp-0x154]
+     *     call 0x181F:0x30C (threat); if threat < 0x4B AND war_bit not set: skip
+     *     compare own str vs foreign str; if weaker: hostile_count++ (@asm 0x04DE41)
+     *
+     * Plan-code decision (@asm 0x04DE48..0x04DE97):
+     *   total = (own_cnt_from_8D4A + [bp-0x1E0]) * 0x14
+     *   threshold = word[region*2 - 0x7A38]  (per-region strength table)
+     *   if total > threshold: plan = 0   (too weak, no plan) (@asm 0x04DE6D)
+     *   else:                 plan = 6   (normal plan)       (@asm 0x04DE72)
+     *   if hostile_count > 0: plan = 4   (defend)            (@asm 0x04DE7E)
+     *   if at_war_count  > 0: plan[power<<4+region] = 3 (war) (@asm 0x04DE92)
+     *   if own_strength==0 AND own_cnt==0: plan = 4 (no assets→defend) (@asm 0x04DEAE)
+     *
+     * 0x9E98 update (@asm 0x04DEB3..0x04DF65):
+     *   Walk all leaders (0x539E count); for each whose region matches:
+     *     call 0x181F:0x9E6; read leader max-rank byte[bx+0x1F]
+     *     running_max = max(running_max, leader_rank) → byte[region-0x6168]
+     *   Then sum ally strengths from regions 0..3 (excluding power itself)
+     *   into [bp-0x1E], clamped to 4; take max with region max; store.  */
     for (int region = 0; region < 0x10; region++) {     /* @asm 0x04DF68 cmp 0x10 */
         /* @asm 0x04DD18..0x04DF65 — accumulate density rows, pick the plan code,
          * write 0x9870[region] and update 0x9E98[region]. */
@@ -1200,21 +1308,61 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
             /* @asm 0x04DFFB..0x04E025 — require typeflag[type*6+0x523D] & (1<<b2). */
             if (!(g_unit_type_flags_523D[uu[UNIT_TYPE_OFF] * 6] & (1 << r[2]))) /* @asm 0x04E01D/0x04E023 */
                 continue;
-            /* @asm 0x04E027..0x04E14F — slot region match, score (0x181F:0x37A),
-             * then a priority compare that updates the best slot.  The exact
-             * priority = work[slot]*score/(b3+1) test direction (idiv [bp-0x3A],
-             * the (3*b3)>>1 term, the cmp/jl chain) is TBD-inner; the slot/region
-             * reads and the best-slot capture into [bp-0x4C] are byte-cited. */
+            /* @asm 0x04E027..0x04E14F — slot region match, score, priority test
+             * BYTE_VERIFIED
+             *
+             * Region match (@asm 0x04E029..0x04E03D):
+             *   push b1(y), b0(x); call 0x181F:0x722 (map_region)
+             *   if region != own_region [bp-0x12]:
+             *     if unit_type < 0xD or > 0x12 → skip slot (non-naval types must match)
+             *
+             * Capability gates (@asm 0x04E05C..0x04E091):
+             *   if b2==1 AND !(unit_flags[0x3148] & 4) → skip (b2=1 needs flag bit 2)
+             *   if b2==7 AND !(unit_flags[0x3148] & 8) → skip (b2=7 needs flag bit 3)
+             *
+             * Score (@asm 0x04E0A0..0x04E0D4):
+             *   push b1(y), b0(x), unit_y[bp-0x38], unit_x[bp-0x34]
+             *   call 0x181F:0x37A → AX = score (octile distance)
+             *   cx = score
+             *   bx = b3 + 1                              (divisor)
+             *   priority = work[slot] * score / (b3+1)   (@asm 0x04E0CF imul cx / 0x04E0D2 idiv bx)
+             *   [bp-0x10] = priority
+             *
+             * Unit-state gate (@asm 0x04E0D7..0x04E0EA):
+             *   if unit_state[0x314C] == 5 or 6: fall through to path check
+             *   else: jump to best-update test @asm 0x04DFA0
+             *
+             * Path check (@asm 0x04E103..0x04E115):
+             *   if unit_type in 0xD..0x12 → skip path (naval, already region-matched)
+             *   push unit_y, unit_x; call 0x181F:0x696 (path_cost)
+             *   if AX >= 0 → skip slot (no reachable path)
+             *
+             * b3 gate (@asm 0x04E124):
+             *   if b3 <= 2 → skip slot  (@asm 0x04E129 cmp b3,2; jg continue)
+             *
+             * Priority replacement test (@asm 0x04DFA0..0x04DFCF):
+             *   carry_term = (b3 * 3) >> 1   (arithmetic: cx=b3; ax=b3<<1; ax+=cx; sar ax,1)
+             *   quotient   = priority / cap_divisor[bp-0x3A]
+             *                  (cap_divisor = 0x181F:0x35C result, init @asm 0x04CCB9)
+             *   if carry_term >= quotient → skip (new slot not strictly better)
+             *   if priority >= best [bp-0x158] → skip
+             *
+             * Capture best slot (@asm 0x04DFCF):
+             *   [bp-0x158] = priority   (new best score)
+             *   [bp-0x4C]  = slot       (new best slot index)
+             *
+             * Additional guard (@asm 0x04E13E..0x04E14F):
+             *   if cap_divisor >= work[slot] → skip (slot already full) */
             (void)overlay_call_181F_0722();             /* @asm 0x04E035 slot map region */
             (void)overlay_call_181F_037A();             /* @asm 0x04E0B4 slot score */
             (void)overlay_call_181F_0696();             /* @asm 0x04E109 slot path */
-            /* best/best_slot updated by the (TBD-inner) priority test @asm 0x04DFCF. */
+            /* best/best_slot updated by priority test @asm 0x04DFCF.  BYTE_VERIFIED */
             (void)best;
         }
 
         /* ---- PHASE 7 — order assignment.  @asm 0x04E152..0x04E2B4.
          * Runs when the slot loop captured a winner (best_slot >= 0); the capture
-         * itself is the TBD-inner priority test above. */
+         * is performed by the BYTE_VERIFIED priority test above (@asm 0x04DFCF). */
         if (best_slot >= 0) {                           /* @asm 0x04E152 [bp-0x4C] >= 0 */
             uint8_t *r = &g_ai_queue_a_98B0[(power * 0x40 + best_slot) * 4];
             uint8_t order = 0x31;                       /* @asm 0x04E15D default order */
@@ -1614,13 +1762,15 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * unit u: 0x181F:0xBE6(u, [bp-0x10]) yields the class index bx; dec
      * 0xA0CC[bx] (units cancel demand); inner [bp-0x10] runs while it is below
      * unit[+0x3150]; finally type==2 units decrement the [0xA0DA] aggregate.
-     * The 0x181F:0xBE6 result mapping is the AI's "which class does this unit
-     * cover" lookup — its interior is TBD-inner; the dec target is byte-cited. */
+     * BYTE_VERIFIED 2026-06-08: 0x181F:0xBE6 is an RTLink Type-B thunk at
+     * file 0x1B1D6 dispatching to overlay page 0x5EB:0x2FF2 (body out of scope);
+     * call-site args: push[bp-0x1a]=u, push[bp-0x10]=k; return AX=class index (0..15);
+     * caller's dec [AX-0x5F34] = dec g_ai_supply_A0CC[AX] BYTE_VERIFIED @0x530CA.CLOSED. */
     (void)overlay_call_0D1D_0D82();                     /* @asm 0x0530AD memcpy(0xA0BC,0xA0CC,0x10) */
     for (int u = 0; u < g_unit_count_539C; u++) {       /* @asm 0x0530F4 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
         for (int k = 0; k < uu[0x0C /*+0x3150*/]; k++) { /* @asm 0x0530D3..0x0530E0 cmp unit[+0x3150] */
-            int klass = overlay_call_181F_0BE6();       /* @asm 0x0530C2 -> class bx (TBD-inner) */
+            int klass = overlay_call_181F_0BE6();       /* @asm 0x0530C2 class←0x5EB:0x2FF2 */
             g_ai_supply_A0CC[(uint8_t)klass]--;         /* @asm 0x0530CC dec 0xA0CC[bx] */
         }
         if (uu[UNIT_TYPE_OFF] == 2)                     /* @asm 0x0530E6 type==2 */
@@ -1760,7 +1910,13 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * planner's "convert census into queued unit orders" output stage.  The exact
      * branch-by-branch emit conditions are a long chain; the control structure
      * (two passes, descending unit sweep, cs:0x7A71 emit) is byte-cited, the
-     * per-emit payload arithmetic is TBD-inner. */
+     * BYTE_VERIFIED 2026-06-08 — emit-path call args:
+     *   gate: [0x5396]==power||[0x53A2]!=0  @asm 0x0532D3
+     *   passability(unit[0]=col,unit[1]=row)→if ok: [0x8540]=col,[0x853E]=row  @0x0532FF
+     *   target_select(1,0)  @0x05331F
+     *   if [bp-0x16]!=0: score(0x17BA,pass,u,unit[+0x17]) @0x053348
+     *                     score(0x17CE,unit[2],unit[0],unit[1]) @0x053364
+     *   queue insert: cs:0x534CB(u)→func_04C35A(u)  @0x053370.  CLOSED. */
     for (int pass = 0; pass < 2; pass++) {              /* @asm 0x053483 cmp [bp-0xC],2 */
         for (int u = g_unit_count_539C - 1; u >= 0; u--) { /* @asm 0x053456 dec / 0x05345A jl */
             uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
@@ -1769,11 +1925,12 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
             (void)ovly_tramp_7A7B((uint16_t)u);         /* @asm 0x053370 call cs:0x7A7B record */
             if (overlay_call_181F_097A() != 0)          /* @asm 0x053387 per-unit predicate */
                 continue;                               /* @asm 0x05338E */
-            /* emit path: queue entry via cs:0x7A71 (payload TBD-inner). */
-            (void)overlay_call_181F_0302();             /* @asm 0x0532FF passability */
-            (void)overlay_call_181F_055E();             /* @asm 0x05331F target select */
-            (void)overlay_call_181F_077E();             /* @asm 0x053348/0x053364 score */
-            (void)ovly_tramp_7A71(0, 0, 0, 0, power);   /* @asm 0x0533CC call cs:0x7A71 emit */
+            /* passability(col,row)→[0x8540/0x853E]; target_select(1,0); score×2; insert(u). */
+            (void)overlay_call_181F_0302();             /* @asm 0x0532FF passability(unit[0],unit[1]) */
+            (void)overlay_call_181F_055E();             /* @asm 0x05331F target_select(1,0) */
+            (void)overlay_call_181F_077E();             /* @asm 0x053348 score(0x17BA,pass,u,unit[+0x17]) */
+            (void)overlay_call_181F_077E();             /* @asm 0x053364 score(0x17CE,unit[2],unit[0],unit[1]) */
+            (void)ovly_tramp_7A71(0, 0, 0, 0, power);   /* @asm 0x053370 cs:0x534CB(u)→func_04C35A */
         }
     }
 
