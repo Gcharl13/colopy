@@ -250,7 +250,8 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
  * @asm        0x034DD4..0x03509E  (TRUE extent; ENTER 0x62,0; per-func dump
  *             truncated @0x034EB7)  page 0x04
  * @asm_disasm disasm/func_034DD4_unknown.asm  (head only)
- * @status     RECONSTRUCTED (computation spine BYTE_VERIFIED @0x034DD4..0x034EB4;
+ * @status     RECONSTRUCTED (computation spine BYTE_VERIFIED @0x034DD4..0x034E58
+ *             incl. the aFldiv correction term, completed 2026-06-08;
  *             dialog tail 0x034EB7..0x03509E is OUT-OF-SCOPE screen draw)
  *
  * Computes a percentage-style standing value from PowerRecord fields and the
@@ -258,10 +259,11 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
  * emits one of three message strings (handles 0x10F1="LOSTCITY0" / 0x10FB=
  * "RECRUITCHOOSE" / 0x1109="RECRUIT").
  *
- *   base = (PowerRecord[+6] + difficulty + 7) * 0x14 / 5;  @0x034DE2..0x034DF9
- *          if (base < 0x64) base = 0x64;                    @0x034E01 clamp >=100
- *   // long-arith term over PowerRecord[+0x2E] and (0xFFFFFFFF - [+0x30])
- *   val = base + crt_lmul(...);                             @0x034E0C..0x034E2A (0x0D1D:0xEC6)
+ *   num  = (PowerRecord[+6] + difficulty + 7) * 0x14;       @0x034DE6..0x034DF6 (si)
+ *   base = num / 5;  if (base < 0x64) base = 0x64;           @0x034DF9..0x034E06 (ax,[bp-2])
+ *   // signed long-divide correction (0x0D1D:0xEC6 = aFldiv):
+ *   //   val = num + aFldiv( (num-base)*(int16)PR[+0x2E],  ~(int32)PR[+0x30] )
+ *   val  = num + (int16)aFldiv(...);                          @0x034E0C..0x034E2A
  *   if (val < 0xA) val = 0xA;                                @0x034E31 clamp >=10
  *   if (arg0 || arg1) val = 0;                               @0x034E3C..0x034E48
  *   g_9CB0/g_9CB2 = (int32)val;                              @0x034E51 store result
@@ -271,44 +273,58 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
  *   menu_open(table 0x87C, msg);                             @0x034EA8 LCALL 0x191F:0x182
  *   ... (list/row construction 0x034EB7..0x03509E: OUT-OF-SCOPE screen draw)
  *
- * The arithmetic (×20/5, clamp 100/10, PowerRecord +0x2E/+0x30/+6 fields) is
- * the game-mechanics part and is fully cited; the menu/row tail is screen draw.
+ * CORRECTION 2026-06-08: the prior pass stubbed the middle term as `val = base`,
+ * dropping the entire aFldiv correction AND substituting `base` for the
+ * un-divided numerator `si`.  The real result is `num + low16(aFldiv(...))`,
+ * pulled on-demand from VICEROY.EXE.  Note all of num/base/val are 16-bit
+ * registers (si/ax); only the aFldiv divide is a true int32, its low word added
+ * back to num.  The arithmetic is the game-mechanics part and is now fully
+ * cited; the menu/row tail is screen draw.
  * ============================================================================ */
+extern int32_t aFldiv(int32_t a, int32_t b);   /* 0x0D1D:0x0EC6 — MSC signed long divide */
+
 int func_034DD4_power_rating(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    long base, val;
+    /* num = (PR[+6] + difficulty + 7) * 20   (16-bit, as the original imul;
+     * PR via cached ptr 0x84FC). */
+    int16_t num = (int16_t)(((int)g_power_cur_84FC[6]   /* @0x034DE6 MOV al,[bx+6] */
+                             + g_difficulty_53A6 + 7) * 0x14); /* @0x034DEB..0x034DF6 +diff +7 *0x14 (si) */
 
-    /* base = (PR[+6] + difficulty + 7) * 20 / 5  (PR via cached ptr 0x84FC) */
-    base = ((long)g_power_cur_84FC[6]                /* @0x034DE6 MOV al,[bx+6] */
-            + g_difficulty_53A6 + 7) * 0x14;         /* @0x034DEB..0x034DF6 +diff +7 *0x14 */
-    base /= 5;                                       /* @0x034DF9 IDIV 5 */
-    if (base < 0x64) base = 0x64;                    /* @0x034E01 clamp >= 100 */
+    /* base = num / 5, clamped >= 100. */
+    int16_t base = (int16_t)((int)num / 5);             /* @0x034DF9 CDQ/IDIV 5 (ax) */
+    if (base < 0x64) base = 0x64;                       /* @0x034E01 clamp >= 100 ([bp-2]) */
 
-    /* val = base + lmul(base - clamp, ...) over PR[+0x2E] / ~PR[+0x30]:
-     * @asm 0x034E0C..0x034E2A LCALL 0x0D1D:0xEC6 (signed long mul). The exact
-     * operand pairing feeds PowerRecord[+0x2E] (crosses accumulated) and the
-     * bitwise-complement of [+0x30] as inputs to the long-arith helper; the
-     * result is sign-extended and added to base via the ADD si,ax sequence. */
-    val = base;                                      /* @0x034E2A ADD si,ax (spine) */
-    if (val < 0xA) val = 0xA;                        /* @0x034E31 clamp >= 10 */
-    if (arg0_bp_06 != 0 || arg1_bp_08 != 0) {        /* @0x034E3C..0x034E46 */
-        val = 0;                                     /* @0x034E48 */
+    /* val = num + low16( aFldiv( (num-base)*(int16)PR[+0x2E],  ~(int32)PR[+0x30] ) ).
+     * @asm 0x034E0C  dx:ax = sign_ext(PR_word[+0x30]); @0x034E10..0x034E17
+     *               di:cx = 0xFFFFFFFF - PR[+0x30]  (= ~PR[+0x30], the divisor b);
+     * @asm 0x034E1B  ax = num - base;  @0x034E20 imul word[bx+0x2E] -> dx:ax (dividend a);
+     * @asm 0x034E25  aFldiv(a, b)  (cdecl: b pushed first / rightmost). */
+    {
+        int16_t prc   = *(int16_t *)&g_power_cur_84FC[0x2E];   /* @0x034E20 PR word +0x2E */
+        int32_t pr30  = *(int16_t *)&g_power_cur_84FC[0x30];   /* @0x034E0C PR word +0x30 (sign-ext) */
+        int32_t a     = (int32_t)((int16_t)(num - base)) * prc;/* @0x034E1B..0x034E20 (num-base)*PR[0x2E] */
+        int32_t b     = 0xFFFFFFFF - pr30;                     /* @0x034E10..0x034E17 ~PR[0x30] */
+        int16_t val   = (int16_t)(num + (int16_t)aFldiv(a, b));/* @0x034E25 LCALL 0x0D1D:0xEC6; @0x034E2A ADD si,ax */
+
+        if (val < 0xA) val = 0xA;                       /* @0x034E31 clamp >= 10 */
+        if (arg0_bp_06 != 0 || arg1_bp_08 != 0)         /* @0x034E3C..0x034E46 */
+            val = 0;                                    /* @0x034E48 */
+        /* g_9CB0:g_9CB2 = (int32)val  @0x034E50..0x034E54 (result published to globals) */
+
+        /* dialog-mode select + message emit (OUT-OF-SCOPE screen draw) */
+        if (arg0_bp_06 != 0) {
+            /* g_1F5E = 3; msg 0x10F1 "LOSTCITY0"  @0x034E5E */
+        } else if (arg1_bp_08 != 0) {
+            /* g_1F5E = 4; text_draw(power-name) then msg 0x10FB "RECRUITCHOOSE"
+             * @0x034E74..0x034E86 */
+            overlay_call_181F_0438();                   /* @0x034E86 text_draw */
+        } else {
+            /* g_1F5E = 2; msg 0x1109 "RECRUIT"  @0x034E98 */
+        }
+        overlay_call_191F_0182();                       /* @0x034EA8 menu_open(0x87C,msg) */
+        /* ... list/row construction 0x034EB7..0x03509E : OUT-OF-SCOPE screen draw. */
+        return (int)val;
     }
-    /* g_9CB0:g_9CB2 = (int32)val  @0x034E51 (result published to globals) */
-
-    /* dialog-mode select + message emit (OUT-OF-SCOPE screen draw) */
-    if (arg0_bp_06 != 0) {
-        /* g_1F5E = 3; msg 0x10F1 "LOSTCITY0"  @0x034E5E */
-    } else if (arg1_bp_08 != 0) {
-        /* g_1F5E = 4; text_draw(power-name) then msg 0x10FB "RECRUITCHOOSE"
-         * @0x034E74..0x034E86 */
-        overlay_call_181F_0438();                    /* @0x034E86 text_draw */
-    } else {
-        /* g_1F5E = 2; msg 0x1109 "RECRUIT"  @0x034E98 */
-    }
-    overlay_call_191F_0182();                        /* @0x034EA8 menu_open(0x87C,msg) */
-    /* ... list/row construction 0x034EB7..0x03509E : OUT-OF-SCOPE screen draw. */
-    return (int)val;
 }
 
 /* ============================================================================
@@ -371,7 +387,15 @@ int func_0350A0_dlg_sz_101(void)
  * The phase-dispatch helpers at 0x036859..0x0368EF are near screen-draw
  * helpers (OUT-OF-SCOPE); the phase values themselves are the g_9E3A game-mode
  * constants (8/9/0xA=turn phases, 0xF=default/error fallback).
+ *
+ * COMPLETED 2026-06-08: the tail-dispatch control flow (gate conditions + the
+ * 12-entry jump table) was decoded from VICEROY.EXE and is expressed below; the
+ * jump-table leaves are folded into one OUT-OF-SCOPE near-helper call.
  * ============================================================================ */
+extern uint8_t g_byte_5384;                  /* DGROUP:0x5384 — phase/option gate bit0 */
+extern void phase_dispatch_screen_helper(int phase);  /* near jump table @cs:0x4F54 ->
+                                              * 0x036859..0x03693A screen helpers (OUT-OF-SCOPE) */
+
 int func_0353DE_phase_state_eval(void)
 {
     int phase;
@@ -393,11 +417,25 @@ int func_0353DE_phase_state_eval(void)
         }
     }
 
-    /* tail dispatch @0x035439..0x035495 (BYTE_VERIFIED):
-     *   if (g_7F6 || !(g_5384&1)) -> phase_dispatch (near screen helpers 0x36859..0x3693A)
-     *   if (phase != 0) || (g_5384 & 1)  -> LEAVE; RETF */
-    (void)phase;
-    return 0;                                        /* @0x03544D leave; retf (one exit) */
+    /* tail dispatch @0x035439..0x035495 (BYTE_VERIFIED control flow).  The three
+     * gate conditions decide whether to run the per-phase screen helper; the
+     * helpers themselves (near 0x36859..0x3693A) are OUT-OF-SCOPE screen draw. */
+    if (g_word_7F6 == 0) {                           /* @0x035439 cmp [0x7F6],0; jne dispatch */
+        if (phase != 0)                              /* @0x035440 cmp [bp-2],0; jne exit @0x354BC */
+            return 0;                                /* @0x354BC leave; retf */
+        if (g_byte_5384 & 1)                         /* @0x035446 test [0x5384],1; jz dispatch */
+            return 0;                                /* @0x03544D leave; retf */
+    }
+
+    /* phase_dispatch @0x035466: bounded jump table [phase*2 + 0x4F54], 12 arms;
+     * phase>0xB falls through to the normal exit.  Each arm calls a near screen
+     * helper (OUT-OF-SCOPE) then returns:
+     *   0->0x036895  1->0x036877  2,3->0x0368D1(phase)  4->0x036859
+     *   5->0x0368EF  6..10->ret   11->0x03693A   (per @0x03546C..0x035495) */
+    if ((unsigned)phase <= 0xB) {                    /* @0x035496 cmp ax,0xB; ja exit */
+        phase_dispatch_screen_helper(phase);         /* near 0x36859..0x3693A (OUT-OF-SCOPE) */
+    }
+    return 0;                                        /* @0x0354BC / @0x03544E leave; retf */
 }
 
 /* ============================================================================

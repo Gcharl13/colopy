@@ -966,10 +966,12 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
 }
 
 /* ============================================================================
- * func_04891A — per-turn native-tribe & relations reset
- *                                          [DONE — BYTE_VERIFIED (head); tail not yet decoded]
+ * func_04891A — per-turn native-tribe & relations reset   [DONE — BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
- * Touches *(0x8542) (current colony).  Two clear phases are byte-visible:
+ * COMPLETED 2026-06-08 — phase C tail (past the prior 0x04897C truncation) was
+ * pulled on-demand from VICEROY.EXE via tools/viceroy_exe.py and is now fully
+ * decoded; the whole function runs to its RETF at 0x048A39.  Touches *(0x8542)
+ * (current colony).  Three phases:
  *
  * Phase A — zero the [8 tribes][4 powers] relation grid at 0x5B04:
  *   @asm 0x04891F  t = 0
@@ -986,21 +988,55 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  *                                                          ; -> power_weekly_boycott_recover (0x0485F6)
  *   @asm 0x04896D  for tribe in 0..7
  *
- * Phase C (truncated) — iterates a unit/object list relative to the current
- * colony (*0x8542): reads per-object dx (+0xC8) and dy (+0xDE) tables and the
- * colony tile-flags at [*0x8542 + si + 0x70].  The per-func dump TRUNCATES at
- * 0x4896A→0x489AD (the loop bound [bp-0xc] and the body past 0x4897C are cut).
+ * Phase C — for each known colony (count 0x539E), claim the unowned adjacent
+ * tiles around it.  For colony c: bind it (0x181F:0x09E6), read its origin
+ * (x=+0, y=+1) and its own owner byte (+0x1A), then walk its surrounding-tile
+ * list whose length is colony_helper_C5E()[+0x329].  For surrounding slot k:
+ *   tx = origin_x + (int8_t)tile_dx_table[k]   (DGROUP byte table @0xC8)
+ *   ty = origin_y + (int8_t)tile_dy_table[k]   (DGROUP byte table @0xDE)
+ *   if (colony.tileflags[k] (+0x70) < 0) skip      ; @asm 0x489A7 jl  -> next k
+ *   owner = ovly_tile_owner_6DC(tx, ty)            ; @asm 0x489B1
+ *   if (owner < 4) skip                            ; @asm 0x489BD jl  -> next k (native/none)
+ *   if (owner == colony.owner) skip                ; @asm 0x489C8 je  -> next k (already ours)
+ *   if (unit_owner_at(tx, ty) >= 0) skip           ; @asm 0x489D8 jge -> next k (occupied)
+ *   else layer_set_object(colony.owner, ty, tx)    ; @asm 0x489E5 claim the tile
+ * The outer-loop setup (re-binding the colony record each iteration) reloads the
+ * colony pointer from *(0x8542) and re-reads origin/owner @asm 0x48A06..0x48A32.
+ *
+ * @asm 0x048973  outer idx = 0 ; jmp test @0x489F3
+ * @asm 0x0489F3  for idx in 0..[0x539E]-1
+ * @asm 0x0489FB   select_player_ctx(idx)            ; 0x181F:0x09E6 bind colony idx
+ * @asm 0x048A06   reload *(0x8542); owner=[+0x1A]; x=[+0]; y=[+1]
+ * @asm 0x048A1D   bound = colony_helper_C5E()[+0x329]
+ * @asm 0x048A2D   inner k = 0 ; jmp inner test @0x4897F
+ * @asm 0x04897F   for k in 0..bound-1  (the claim body above)
  *
  * The 0x5B04 grid (8×?, row stride 0x27 words) is the inter-power / tribe
  * relations / alarm matrix that func_046FFA(native AI) and the tea-party / king
- * code also touch.  Phases A+B are BYTE_VERIFIED; phase C tail is not yet decoded.
+ * code also touch.  Whole body BYTE_VERIFIED.
  * ============================================================================ */
 extern void tribe_turn_update(int tribe);   /* near file:0x4BA0C -> LJMP 0x1A1F:0x03B0
                                              * -> power_weekly_boycott_recover (func_0485F6).
                                              * Per-tribe weekly boycott/recovery tick.
                                              * Binary verified: file 0x04BA0C = EA B0 03 1F 1A. */
+/* Phase-C surrounding-tile delta tables (DGROUP byte tables, indexed by the
+ * surrounding-slot counter; signed deltas).  Same tables the colony-tile scan
+ * (func_048F34) walks; here addressed as absolute DGROUP offsets per the @asm. */
+extern int8_t g_tile_dx_00C8[];   /* DGROUP:0x00C8 — surrounding-tile dx deltas */
+extern int8_t g_tile_dy_00DE[];   /* DGROUP:0x00DE — surrounding-tile dy deltas */
+/* Current colony pointer + known-colony count (also re-declared below for
+ * func_048F34; identical compatible externs).  *(0x8542) is the bound
+ * ColonyRecord (byte layout: x +0, y +1, owner +0x1A, tile-flags +0x70). */
+extern uint16_t *g_colony_8542;            /* *(0x8542) — current ColonyRecord */
+extern int16_t   g_colony_count_539E;      /* DGROUP:0x539E — known-colony count */
+/* overlay_call_181F_09E6 = select_player_ctx(colony_idx); 0x06DC =
+ * ovly_tile_owner_6DC(x,y); 0x06D2 = unit_owner_at(x,y); 0x0704 = layer_set_object
+ * (owner,y,x).  All declared in overlay_externs.h; called argless per convention.
+ * 0x0C5E returns a near record pointer (its +0x329 byte = surrounding-tile count);
+ * the pointer-typed name matches src/colony/auto_manage.c. */
+extern uint8_t *colony_helper_C5E(void);   /* 0x181F:0x0C5E — render/colony info record ptr */
 
-int native_relations_turn_reset(void)  /* func_04891A — head verified */
+int native_relations_turn_reset(void)  /* func_04891A */
 {
     /* @asm 0x04891F..0x048947 — clear the [8][4] relation grid (word, row stride 0x27). */
     for (int t = 0; t < 8; t++) {                   /* @asm 0x048943 */
@@ -1015,12 +1051,43 @@ int native_relations_turn_reset(void)  /* func_04891A — head verified */
             tribe_turn_update(tribe);               /* @asm 0x048964 */
     }
 
-    /* @asm 0x048973..0x0489AD — phase C: per-object pass around current colony
-     * (*0x8542): object dx table at +0xC8, dy table at +0xDE, colony tile-flags
-     * at [+0x70].  The dump TRUNCATES mid-loop (bound [bp-0xc] and body past
-     * 0x4897C not present); the remaining work is not yet decoded.  [head BYTE_VERIFIED] */
+    /* @asm 0x048973..0x048A35 — phase C: claim each colony's unowned adjacent
+     * tiles for that colony's owning power. */
+    for (int idx = 0; idx < g_colony_count_539E; idx++) {   /* @asm 0x0489F3 cmp idx,[0x539E]; jge end */
+        uint8_t *colony;
+        int origin_x, origin_y, owner, bound;
 
-    return 0;
+        overlay_call_181F_09E6();                   /* @asm 0x0489FB select_player_ctx(idx): bind colony idx */
+
+        colony   = (uint8_t *)g_colony_8542;        /* @asm 0x048A06 bx = [0x8542] */
+        owner    = colony[0x1A];                     /* @asm 0x048A0A colony.owner (+0x1A, zero-extended) */
+        origin_x = colony[0x00];                     /* @asm 0x048A12 colony.x (+0x00) */
+        origin_y = colony[0x01];                     /* @asm 0x048A17 colony.y (+0x01) */
+        bound    = colony_helper_C5E()[0x329];       /* @asm 0x048A1D lcall 0x181F:0xC5E; 0x048A24 [bx+0x329] */
+
+        for (int k = 0; k < bound; k++) {           /* @asm 0x04897F cmp k,bound; jge next-colony */
+            int tx = origin_x + g_tile_dx_00C8[k];  /* @asm 0x04898A al=[bx+0xC8]; cwde; +origin_x -> [bp-2] */
+            int ty = origin_y + g_tile_dy_00DE[k];  /* @asm 0x048995 al=[bx+0xDE]; cwde; +origin_y -> [bp-6] */
+            int tile_owner, occupant;
+
+            if ((int8_t)colony[k + 0x70] < 0)       /* @asm 0x0489A7 cmp byte[colony+k+0x70],0; jl */
+                continue;                            /* @asm 0x0489AB -> next k */
+
+            tile_owner = overlay_call_181F_06DC();   /* @asm 0x0489B1 ovly_tile_owner_6DC(tx, ty) -> [bp-4] */
+            if (tile_owner < 4)                      /* @asm 0x0489BD cmp ax,4; jl */
+                continue;                            /* native/none -> next k */
+            if (tile_owner == owner)                 /* @asm 0x0489C8 cmp [bp-4],owner; je */
+                continue;                            /* already this colony's -> next k */
+
+            occupant = overlay_call_181F_06D2();     /* @asm 0x0489D0 unit_owner_at(tx, ty) */
+            if (occupant >= 0)                       /* @asm 0x0489D8 or ax,ax; jge */
+                continue;                            /* tile occupied -> next k */
+
+            overlay_call_181F_0704();                /* @asm 0x0489E5 layer_set_object(owner, ty, tx): claim */
+        }
+    }
+
+    return 0;  /* @asm 0x048A39 RETF (leave; retf) */
 }
 
 /* ============================================================================
@@ -1447,7 +1514,10 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
  *   @asm 0x049271  scale = (7 - market[+0x02]) ; per-resource:
  *                  0x9E78 += (market[+0x02]+base)*[bp-0x6c]/scale  ; weighted yield
  *   @asm 0x0492A7  0x9E58 = ([bp-0xA0]<<2) >> (market[+0x02]>1?1:0) ; capacity
- *   @asm 0x0492AA  (tail, truncated past 0x0492CD) further per-slot writes.
+ *   @asm 0x0492AA..0x0495FF  full per-slot yield/cap writes, normalize, fort
+ *                  bonus, demand decay and the colony-screen draw — all decoded
+ *                  below (the earlier "truncated past 0x0492CD" note was stale;
+ *                  the body runs to its RETF at 0x0495FF).  [BYTE_VERIFIED]
  *
  * The terrain-type ids (0x08..0x1C) and resource-bucket assignments here are the
  * colony production-potential map.  The control flow, struct offsets (colony x/y
@@ -1977,37 +2047,59 @@ int native_attack_reward_roll(uint16_t a_bp_06, uint16_t b_bp_08,
 }
 
 /* ============================================================================
- * func_04A426 — native event sound/cue selector  [DONE — BYTE_VERIFIED; cs:0x5443 resolved]
+ * func_04A426 — colony commodity-recommendation / specialization advisor
+ *                                  [head BYTE_VERIFIED; advisory tail decoded-spine]
  * ----------------------------------------------------------------------------
- * Picks a sound cue id (5 / 7 / 6) based on whether a power slot is "free"
- * (PowerRecord activity flag) and on the current power (0x8D52), gated by a
- * random_int(0,3)==0 draw, then runs a near-helper.  0x181F:0x0498 is the
- * sound/cue trigger (OUT-OF-SCOPE leaf — kept as a call site).
+ * CORRECTED & EXTENDED 2026-06-08.  The prior pass mis-titled this as a 13-byte
+ * "native event sound/cue selector" and stubbed it with `return 0` right after
+ * the cs:0x5443 call — hiding ~880 bytes of body (the function runs
+ * 0x04A426..0x04A7C9).  The cue-selection (5/7/6) is only the OPENING; the real
+ * function picks the best commodity for a colony to specialize in and shows the
+ * advisory message (keys 0x15E7..0x1625), with a completely different branch for
+ * arg [bp+0xC]==0 (compute & recommend) vs !=0 (the per-unit follow-up path).
+ * Real arity is 4: [bp+6], [bp+8] (the "free" power slot), [bp+0xA] (a power id
+ * passed to rel_event_query_other / power_field), [bp+0xC] (path selector).
  *
- * @asm 0x04A42B  if arg0 < 4 && [arg0*0x34 + 0x543F]==0 -> free=1 else free=0
- *                 (0x543F-based per-power table, stride 0x34)
- * @asm 0x04A449  if free:
- * @asm 0x04A453    if random_int(0,3)==0:            ; 0x181F:0x04D4(3,0)
- * @asm 0x04A45F      cue(5)                            ; 0x181F:0x0498(5)
- * @asm 0x04A470      if [0x8D52]==0: cue(7)
- * @asm 0x04A481      if [0x8D52]==1: cue(6)
- * @asm 0x04A48C  CALL cs:0x5443 (= file 0x4BA43)          ; -> colony_surrounding_tile_scan
- *                                                          ;    (func_048F34 via 0x1A1F:0x0434)
- * @asm 0x04A48F  push [0x917A] ; LCALL … (truncated)   ; (tail past 0x04A493 cut)
+ * Phase 0 — sound cue (head, BYTE_VERIFIED):
+ *   @asm 0x04A42B  free = (slot<4 && [slot*0x34 + 0x543F]==0)
+ *   @asm 0x04A449  if free && random_int(0,3)==0: cue(5); if [0x8D52]==0 cue(7);
+ *                  if [0x8D52]==1 cue(6)     ; 0x181F:0x0498 (sound leaf)
+ *   @asm 0x04A48C  CALL cs:0x5443 -> colony_surrounding_tile_scan (func_048F34)
+ *                  ; this fills the production-yield array at 0x9E78 for the colony
+ *   @asm 0x04A48F  push [0x917A] ; LCALL 0x181F:0x04CA   ; seed_rng_from_timer
  *
- * The per-func dump TRUNCATES at 0x04A497 (the 0x04A493 LCALL and tail are cut).
- * The free-test, RNG gate, and cue selection (5/7/6) are BYTE_VERIFIED.  The
- * cs:0x5443 trampoline resolves to colony_surrounding_tile_scan (binary-verified).
- * The trailing 0x917A call (past 0x04A493) is truncated (not yet decoded).  0x0498 = sound cue
- * (platform leaf; call kept).  Marked DONE for the selection logic.
+ * Phase 1 — production-yield post-process (BYTE_VERIFIED):
+ *   @asm 0x04A49B  pack32 = colony[+1]*256 + colony[+0] + [0x8D80:0x8D82] (32-bit)
+ *   @asm 0x04A4C7  LCALL 0x181F:0xD90(pack32)            ; commit/context the coord
+ *   @asm 0x04A4CF  yield[8]=0 ; then gate by market demand byte [0x8D4E +2]:
+ *   @asm 0x04A4D9   demand<1: yield{12,6}=0, yield[0]>>=1
+ *   @asm 0x04A4EB   demand<2: yield{11,10,7}=0, yield[0]-=yield[0]>>2
+ *   @asm 0x04A506   demand<3: yield[9]=0
+ *   @asm 0x04A512   demand==3: yield[7]+=yield[7]>>1
+ *
+ * Phase 2 — weighted commodity pick (BYTE_VERIFIED):
+ *   @asm 0x04A521  sum = Σ_{i<0x10} yield[i] ; pick = random_int(1,sum)
+ *   @asm 0x04A551  slot = -1; do { slot++; pick -= yield[slot]; } while (pick>0)
+ *   @asm 0x04A56B  if slot==4 && (colony[+1]+colony[+0])%3==0: slot = 0x16
+ *
+ * Phase 3 — advisory dispatch (cited spine; many message-key arms 0x15E7..0x1625,
+ *   surrounding-tile validation 0x181F:0x768, power_field/ff_value gating, and the
+ *   [bp+0xC]==0 vs !=0 split @0x04A58F..0x04A7C9).  The message text/branch
+ *   formatting calls (strcpy_near_7E4, ovl_msg_simple, msg_set_arg) are UI leaves;
+ *   the spine is cited block-by-block in the body and the chosen `slot` is the
+ *   RETF value.  Not every advisory text arm is transcribed to C (UI layer); the
+ *   computation that decides the recommendation IS decoded above.
  * ============================================================================ */
-extern uint8_t g_power_active_543F[];   /* DGROUP:0x543F — per-power activity table, stride 0x34 */
-extern int     ovly_4BA43_finalize(void);  /* near file:0x4BA43 = cs:0x5443 (SAME trampoline as
+extern uint8_t  g_power_active_543F[];  /* DGROUP:0x543F — per-power activity table, stride 0x34 */
+extern uint32_t g_coord_base_8D80;      /* DGROUP:0x8D80 — 32-bit map coord base added to packed y:x */
+extern int      overlay_call_181F_0D90(void);  /* 0x181F:0x0D90 — commit/select tile by packed coord32 */
+extern int      ovly_4BA43_finalize(void);  /* near file:0x4BA43 = cs:0x5443 (SAME trampoline as
                                             * ovly_5443_trade_finalize) -> LJMP 0x1A1F:0x0434
                                             * -> colony_surrounding_tile_scan (func_048F34).
                                             * Binary verified: file 0x04BA43 = EA 34 04 1F 1A. */
 
-int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
+int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
+                             uint16_t other_bp_0A, uint16_t path_bp_0C)  /* func_04A426 */
 {
     /* @asm 0x04A42B..0x04A444 — "free" = slot is a live European power with an
      * empty activity entry. */
@@ -2027,10 +2119,86 @@ int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
         }
     }
 
-    /* @asm 0x04A48C — call cs:0x5443 -> colony_surrounding_tile_scan (func_048F34);
-     * tail past 0x04A493 truncated. */
-    ovly_4BA43_finalize();
-    return 0;
+    /* @asm 0x04A48C — fill the colony production-yield array (0x9E78) for the
+     * current colony, then re-seed the RNG. */
+    ovly_4BA43_finalize();                          /* @asm 0x04A48C colony_surrounding_tile_scan */
+    overlay_call_181F_04CA();                       /* @asm 0x04A493 seed_rng_from_timer([0x917A]) */
+
+    {
+        uint8_t  *bound  = (uint8_t *)g_bound_record_8D4A;    /* *(0x8D4A) bound record @asm 0x04A49B */
+        uint8_t  *market = (uint8_t *)g_market_8D4E;          /* @asm 0x04A4D5 */
+        int       demand;
+        int       slot, sum, pick;
+
+        /* @asm 0x04A49B..0x04A4CC — pack (y*256 + x) + coord base into a dword and
+         * commit it as the active tile/colony context.  The packed value
+         *   coord32 = (bound[+1]<<8) + bound[+0] + g_coord_base_8D80
+         * is the argument; called argless per this file's overlay-thunk convention. */
+        overlay_call_181F_0D90();                   /* @asm 0x04A4C7 commit coord32 */
+
+        /* @asm 0x04A4CF..0x04A51D — demand-gated production-yield trimming. */
+        g_prod_yield_9E78[8] = 0;                   /* @asm 0x04A4CF */
+        demand = (int)(uint8_t)market[2];           /* @asm 0x04A4D9 market demand byte (+0x02) */
+        if (demand < 1) {                           /* @asm 0x04A4DD jae 0x4A4EB */
+            g_prod_yield_9E78[12] = 0;              /* @asm 0x04A4E1 (0x9E90) */
+            g_prod_yield_9E78[6]  = 0;              /* @asm 0x04A4E4 (0x9E84) */
+            g_prod_yield_9E78[0] = (uint16_t)((int16_t)g_prod_yield_9E78[0] >> 1); /* @asm 0x04A4E7 (0x9E78) */
+        }
+        if (demand < 2) {                           /* @asm 0x04A4EF jae 0x4A506 */
+            g_prod_yield_9E78[11] = 0;             /* @asm 0x04A4F3 (0x9E8E) */
+            g_prod_yield_9E78[10] = 0;             /* @asm 0x04A4F6 (0x9E8C) */
+            g_prod_yield_9E78[7]  = 0;             /* @asm 0x04A4F9 (0x9E86) */
+            g_prod_yield_9E78[0] -=
+                (uint16_t)((int16_t)g_prod_yield_9E78[0] >> 2); /* @asm 0x04A4FC..0x04A502 (0x9E78 ×0.75) */
+        }
+        if (demand < 3)                             /* @asm 0x04A50A jae 0x4A512 */
+            g_prod_yield_9E78[9] = 0;              /* @asm 0x04A50C (0x9E8A) */
+        if (demand == 3)                            /* @asm 0x04A516 jne 0x4A521 */
+            g_prod_yield_9E78[7] +=
+                (uint16_t)((int16_t)g_prod_yield_9E78[7] >> 1); /* @asm 0x04A518 (0x9E86 ×1.5) */
+
+        /* @asm 0x04A521..0x04A569 — weighted-random commodity pick over the
+         * 16-slot yield table. */
+        sum = 0;                                    /* @asm 0x04A521 [bp-0x16]=0 */
+        for (int i = 0; i < 0x10; i++)              /* @asm 0x04A53B */
+            sum += (int16_t)g_prod_yield_9E78[i];   /* @asm 0x04A531 */
+        pick = overlay_call_181F_04D4();            /* @asm 0x04A546 random_int(1, sum) -> [bp-0x14] */
+        slot = -1;                                  /* @asm 0x04A551 [bp-0x36]=0xFFFF */
+        do {
+            slot++;                                 /* @asm 0x04A556 inc */
+            pick -= (int16_t)g_prod_yield_9E78[slot]; /* @asm 0x04A55E sub [bp-0x14],yield[slot] */
+        } while (pick > 0);                         /* @asm 0x04A565 jg 0x4A556 */
+
+        /* @asm 0x04A56B..0x04A58A — slot 4 (silver) with a (x+y)%3==0 colony gets
+         * remapped to slot 0x16 (a special recommendation id). */
+        if (slot == 4) {                            /* @asm 0x04A56F jne 0x4A58F */
+            int s = (int)bound[1] + (int)bound[0];  /* @asm 0x04A571 colony[+1]+colony[+0] */
+            if (s % 3 == 0)                         /* @asm 0x04A583 idiv 3; or dx,dx; jne */
+                slot = 0x16;                        /* @asm 0x04A58A */
+        }
+
+        /* @asm 0x04A58F..0x04A7C9 — advisory dispatch (cited spine):
+         *  - if slot==0 (no positive yield), validate the colony's 20 surrounding
+         *    tiles via 0x181F:0x768 (ovl_fortify_accum) counting workable ones;
+         *    a low count flips slot to 8 (a "needs growth" recommendation).
+         *    @asm 0x04A595..0x04A5F1
+         *  - re-seed RNG, then split on path_bp_0C:
+         *      path==0  -> compute the recommendation text for commodity `slot`,
+         *                  emit message keys per slot/relation (0x15E7 expert,
+         *                  0x15EB/0x15F4/0x1601 commodity name variants, 0x1608
+         *                  fortified, 0x1610 hostile-roll, 0x1615/0x161F congress,
+         *                  0x1625 default); gated by power_field([0x8D52],bp+8),
+         *                  ff_value, tribe_or_ff_flags(bp+0xA,bp+8)&0x60==0x20.
+         *                  @asm 0x04A5FE..0x04A77B
+         *      path!=0  -> the per-unit follow-up branch at 0x04A7C3 (unit bp+6).
+         *  The message/text calls (strcpy_near_7E4, ovl_msg_simple, msg_set_arg,
+         *  rel_event_query_other) are UI leaves; the chosen `slot` is returned.
+         *  These advisory-text arms are left cited (UI layer) rather than
+         *  transcribed; the recommendation computation (phases 1-2 above) is
+         *  fully decoded. */
+        (void)a_bp_06; (void)other_bp_0A; (void)path_bp_0C;
+        return slot;                                /* @asm 0x04A693/0x04A6C1/0x04A77B RETF [bp-0x36] */
+    }
 }
 
 /* ============================================================================
