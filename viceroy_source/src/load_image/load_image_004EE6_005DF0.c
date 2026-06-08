@@ -551,24 +551,25 @@ int func_005760_op_sz_127(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  is_xy_in_map_bounds: 1 if (x,y) is a valid 1-based map cell, else 0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005BFA_logic_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x853A, 0x853C
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x005C07 JL 0x005C21 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x005C0D JL 0x005C21 */ {
-                if (/* JLE fallthrough cond: */ ax > 0) /* @0x005C16 JLE 0x005C21 */ {
-                    if (/* JG fallthrough cond: */ ax <= 0) /* @0x005C1F JG 0x005C26 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x005BFE mov [bp-2],1 (result=1).
+     * @asm 0x005C03 cmp [bp+6],1; jl  -> x<1 fails.
+     * @asm 0x005C09 cmp [bp+8],1; jl  -> y<1 fails.
+     * @asm 0x005C0F mov ax,[0x853a]; dec ax; cmp ax,[bp+6]; jle -> (width-1)<=x fails.
+     * @asm 0x005C18 mov ax,[0x853c]; dec ax; cmp ax,[bp+8]; jg ok, else (height-1)<=y fails.
+     * On any failure result is cleared to 0 (@0x005C21).  Signed compares.
+     * g_map_width=0x853A, g_map_height=0x853C (DGROUP_MEMORY_MAP §2). */
+    int x = (int16_t)arg0_bp_06;
+    int y = (int16_t)arg1_bp_08;
+    if (x < 1 || y < 1 ||
+        (int16_t)(g_map_width  - 1) <= x ||
+        (int16_t)(g_map_height - 1) <= y)
+        return 0;
+    return 1;
 }
 
 /* @asm        0x005C2C..0x005CB0  (132 bytes)  region=load_image
@@ -651,13 +652,17 @@ int func_005CB0_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (24 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_addr_layer_15C: far address of tile (x,y) in map layer 0x15C
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005CE6_logic_sz_24(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void far *func_005CE6_logic_sz_24(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x015C. */
-    return *((uint16_t near*)0x015C);
+    /* @asm 0x005CEA mov ax,[bp+8]; 0x005CED imul [0x853a] (ax = y*width);
+     * 0x005CF1 add ax,[0x15c]; 0x005CF5 mov dx,[0x15e] (far ptr 0x15C off/seg);
+     * 0x005CF9 add ax,[bp+6] -> returns dx:ax = &g_map_layer_15c[width*y + x].
+     * Offset-only pointer arithmetic (segment unchanged) per the asm. */
+    return (uint8_t far *)g_map_layer_15c
+         + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
 }
 
 /* @asm        0x005CFE..0x005D1A  (28 bytes)  region=load_image
@@ -669,12 +674,16 @@ int func_005CE6_logic_sz_24(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_read_layer_15C: byte at tile (x,y) in map layer 0x15C
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005CFE_map_tile_read_layer_15C(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x015C. */
-    return *((uint16_t near*)0x015C);
+    /* @asm 0x005D02 mov ax,[0x853a]; 0x005D05 imul [bp+8]; 0x005D08 mov bx,ax;
+     * 0x005D0A add bx,[0x15c]; 0x005D0E mov es,[0x15e]; 0x005D12 add bx,[bp+6];
+     * 0x005D15 mov al,es:[bx] -> reads the byte g_map_layer_15c[width*y + x]. */
+    return ((uint8_t far *)g_map_layer_15c)
+        [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
 }
 
 /* @asm        0x005D1A..0x005D31  (23 bytes)  region=load_image
@@ -686,13 +695,15 @@ int func_005CFE_map_tile_read_layer_15C(uint16_t arg0_bp_06, uint16_t arg1_bp_08
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_addr_layer_160: far address of tile (x,y) in map layer 0x160
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005D1A_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void far *func_005D1A_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0160. */
-    return *((uint16_t near*)0x0160);
+    /* @asm 0x005D1E mov ax,[0x853a]; imul [bp+8]; add ax,[0x160]; mov dx,[0x162];
+     * add ax,[bp+6] -> returns dx:ax = &g_map_layer_160[width*y + x]. */
+    return (uint8_t far *)g_map_layer_160
+         + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
 }
 
 /* @asm        0x005D32..0x005D4E  (28 bytes)  region=load_image
@@ -704,12 +715,15 @@ int func_005D1A_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_read_layer_160: byte at tile (x,y) in map layer 0x160
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005D32_map_tile_read_layer_160(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0160. */
-    return *((uint16_t near*)0x0160);
+    /* @asm 0x005D36 mov ax,[0x853a]; imul [bp+8]; mov bx,ax; add bx,[0x160];
+     * mov es,[0x162]; add bx,[bp+6]; mov al,es:[bx] -> byte g_map_layer_160[width*y+x]. */
+    return ((uint8_t far *)g_map_layer_160)
+        [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
 }
 
 /* @asm        0x005D4E..0x005D76  (40 bytes)  region=load_image
@@ -724,13 +738,24 @@ int func_005D32_map_tile_read_layer_160(uint16_t arg0_bp_06, uint16_t arg1_bp_08
  *
  * Near CALL targets:
  *   - 0x005D1A
- * @inferred_role  WRAPPER_NEARCALL (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set/clear mask bits on tile (x,y) in map layer 0x160
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005D4E_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
+void func_005D4E_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: wrapper forwards to near CALL 0x005D1A. */
-    return func_005D1A();
+    /* @asm 0x005D52 push [bp+8],[bp+6]; call 0x5d1a -> far addr of layer-160 tile,
+     * saved to [bp-4..bp-2].
+     * @asm 0x005D65 cmp [bp+0xc],0; je 0x5d76 -> if arg3 (set-flag) != 0:
+     *   @asm 0x005D6B al=[bp+0xa]; les bx,[bp-4]; 0x005D71 or es:[bx],al  (set mask bits)
+     * else (arg3==0):
+     *   @asm 0x005D79 al=[bp+0xa]; not al; les bx,[bp-4]; and es:[bx],al  (clear mask bits)
+     * arg2 (bp+0xa) is the byte mask; no value returned. */
+    uint8_t far *tile = (uint8_t far *)func_005D1A_logic_sz_23(arg0_bp_06, arg1_bp_08);
+    uint8_t mask = (uint8_t)arg2_bp_0A;
+    if (arg3_bp_0C != 0)
+        *tile |= mask;
+    else
+        *tile &= (uint8_t)~mask;
 }
 
 /* @asm        0x005D84..0x005D9B  (23 bytes)  region=load_image
@@ -742,13 +767,17 @@ int func_005D4E_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_addr_layer_164: far address of tile (x,y) in map layer 0x164
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005D84_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void far *func_005D84_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0164. */
-    return *((uint16_t near*)0x0164);
+    /* @asm 0x005D88 mov ax,[0x853a]; imul [bp+8]; add ax,[0x164]; mov dx,[0x166];
+     * add ax,[bp+6] -> returns dx:ax = &(map layer 0x164)[width*y + x].
+     * Layer 0x164 far ptr lives at DGROUP 0x0164(off)/0x0166(seg); not yet a
+     * named global (cf. g_map_layer_15c/160). */
+    return (uint8_t far *)(*(void far * near *)0x0164)
+         + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
 }
 
 /* @asm        0x005D9C..0x005DB9  (29 bytes)  region=load_image
@@ -760,13 +789,15 @@ int func_005D84_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (29 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_read_layer_164: byte at tile (x,y) in map layer 0x164
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005D9C_logic_sz_29(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0164. */
-    return *((uint16_t near*)0x0164);
+    /* @asm 0x005DA0 mov ax,[bp+8]; imul [0x853a]; mov bx,ax; add bx,[0x164];
+     * mov es,[0x166]; add bx,[bp+6]; mov al,es:[bx] -> byte (layer 0x164)[width*y+x]. */
+    return ((uint8_t far *)(*(void far * near *)0x0164))
+        [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
 }
 
 /* @asm        0x005DBA..0x005DCB  (17 bytes)  region=load_image
@@ -781,13 +812,14 @@ int func_005D9C_logic_sz_29(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005D9C
- * @inferred_role  WRAPPER_NEARCALL (17 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  low nibble of tile (x,y) in map layer 0x164
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005DBA_logic_sz_17(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x005D9C. */
-    return func_005D9C();
+    /* @asm 0x005DBD push [bp+8],[bp+6]; call 0x5d9c (read layer-164 byte);
+     * 0x005DC7 and al,0xf -> returns the low nibble of the tile. */
+    return func_005D9C_logic_sz_29(arg0_bp_06, arg1_bp_08) & 0x0F;
 }
 
 /* @asm        0x005DCC..0x005DF0  (36 bytes)  region=load_image
@@ -802,12 +834,17 @@ int func_005DBA_logic_sz_17(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005D84
- * @inferred_role  WRAPPER_NEARCALL (36 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set low nibble of tile (x,y) in map layer 0x164 to arg2&0xF
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005DCC_logic_sz_36(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+void func_005DCC_logic_sz_36(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: wrapper forwards to near CALL 0x005D84. */
-    return func_005D84();
+    /* @asm 0x005DD0 push [bp+8],[bp+6]; call 0x5d84 -> far addr of layer-164 tile.
+     * @asm 0x005DE0 les bx,[bp-4]; al=es:[bx]; 0x005DE6 xor al,[bp+0xa];
+     *      0x005DE9 and al,0xf; 0x005DEB xor es:[bx],al.
+     * Net effect: tile ^= ((tile ^ arg2) & 0xF), i.e. replace the tile's low
+     * nibble with arg2's low nibble while preserving the high nibble. */
+    uint8_t far *tile = (uint8_t far *)func_005D84_logic_sz_23(arg0_bp_06, arg1_bp_08);
+    *tile ^= (uint8_t)((*tile ^ (uint8_t)arg2_bp_0A) & 0x0F);
 }
 

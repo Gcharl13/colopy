@@ -122,13 +122,25 @@ int func_0026D4_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (10 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  store four words into the DGROUP rect/coord cluster at 0x2CC6..0x2CCD
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 29 bytes (0x00273E..0x00275A) and takes four args; the
+ * skeleton header's 10-byte span and 1-arg signature were a false auto-segmentation
+ * cut (the @args_seen pass only saw the first store).
  */
-int func_00273E_logic_sz_10(uint16_t arg0_bp_06)
+void func_00273E_logic_sz_10(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                             uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x002741 mov ax,[bp+6];  mov [0x2cca],ax
+     * @asm 0x002747 mov ax,[bp+8];  mov [0x2ccc],ax
+     * @asm 0x00274d mov ax,[bp+0xa]; mov [0x2cc6],ax
+     * @asm 0x002753 mov ax,[bp+0xc]; mov [0x2cc8],ax
+     * Plain setter for the four adjacent DGROUP words. */
+    *(uint16_t near *)0x2CCA = arg0_bp_06;
+    *(uint16_t near *)0x2CCC = arg1_bp_08;
+    *(uint16_t near *)0x2CC6 = arg2_bp_0A;
+    *(uint16_t near *)0x2CC8 = arg3_bp_0C;
 }
 
 /* @asm        0x00275C..0x002783  (39 bytes)  region=load_image

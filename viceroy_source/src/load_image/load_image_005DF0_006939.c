@@ -21,13 +21,19 @@
  *
  * Near CALL targets:
  *   - 0x005D9C
- * @inferred_role  WRAPPER_NEARCALL (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  high nibble of tile (x,y) in map layer 0x164 (0xF -> -1 sentinel)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005DF0_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x005D9C. */
-    return func_005D9C();
+    /* @asm 0x005DF4 push [bp+8],[bp+6]; call 0x5d9c (read layer-164 byte);
+     * 0x005E01 shr al,4 (high nibble); 0x005E04 sub ah,ah (zero-extend);
+     * 0x005E09 cmp ax,0xf; jne -> if nibble==0xF set result=0xFFFF;
+     * 0x005E13 mov al,[bp-2] -> returns low byte of result (-1 becomes 0xFF here). */
+    int nib = (func_005D9C_logic_sz_29(arg0_bp_06, arg1_bp_08) >> 4) & 0x0F;
+    if (nib == 0x0F)
+        nib = 0xFFFF;
+    return (uint8_t)nib;
 }
 
 /* @asm        0x005E18..0x005E90  (120 bytes)  region=load_image
@@ -82,20 +88,21 @@ int func_005E18_op_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * Near CALL targets:
  *   - 0x005BFA
  *   - 0x005DBA
- * @inferred_role  UNKNOWN (64 bytes). 0x03E4:0x0074
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  layer-164 low nibble at (x,y), or -1 if out of bounds / gated off
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005E90_op_sz_64(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x005EA0 */ func_005BFA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005EA8 JE 0x005ECB */ {
-            /* @0x005EB0 */ overlay_call_03E4_0074();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x005EBA JNE 0x005ECB */ {
-                /* @0x005EC3 */ func_005DBA();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x005E94 result=0xffff.
+     * @asm 0x005EA0 call 0x5bfa (is_xy_in_map_bounds); 0x005EA6 or ax,ax; je -> OOB: -1.
+     * @asm 0x005EB0 lcall 0x3e4:0x74 (x,y on stack); 0x005EB8 or ax,ax; jne -> nonzero: -1.
+     * @asm 0x005EC3 call 0x5dba (layer-164 low nibble); 0x005EC6 sub ah,ah (zero-extend)
+     *      -> result = that nibble.  Returns result. */
+    if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
+        return -1;
+    if (overlay_call_03E4_0074() /* @asm args x=[bp+6], y=[bp+8] */ != 0)
+        return -1;
+    return (uint8_t)func_005DBA_logic_sz_17(arg0_bp_06, arg1_bp_08);
 }
 
 /* @asm        0x005ED0..0x005EE7  (23 bytes)  region=load_image
@@ -107,13 +114,16 @@ int func_005E90_op_sz_64(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_addr_layer_168: far address of tile (x,y) in map layer 0x168
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_005ED0_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void far *func_005ED0_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0168. */
-    return *((uint16_t near*)0x0168);
+    /* @asm 0x005ED4 mov ax,[0x853a]; imul [bp+8]; add ax,[0x168]; mov dx,[0x16a];
+     * add ax,[bp+6] -> returns dx:ax = &(map layer 0x168)[width*y + x].
+     * Layer 0x168 far ptr at DGROUP 0x0168(off)/0x016A(seg). */
+    return (uint8_t far *)(*(void far * near *)0x0168)
+         + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
 }
 
 /* @asm        0x005EE8..0x005F04  (28 bytes)  region=load_image
@@ -125,13 +135,15 @@ int func_005ED0_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (28 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  map_tile_read_layer_168: byte at tile (x,y) in map layer 0x168
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005EE8_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x0168. */
-    return *((uint16_t near*)0x0168);
+    /* @asm 0x005EEC mov ax,[0x853a]; imul [bp+8]; mov bx,ax; add bx,[0x168];
+     * mov es,[0x16a]; add bx,[bp+6]; mov al,es:[bx] -> byte (layer 0x168)[width*y+x]. */
+    return ((uint8_t far *)(*(void far * near *)0x0168))
+        [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
 }
 
 /* @asm        0x005F04..0x005F23  (31 bytes)  region=load_image
@@ -146,12 +158,21 @@ int func_005EE8_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005BFA
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  layer-164 high nibble at (x,y) when in-bounds and layer-160 bit0 set; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005F04_map_xy_bounds_or_neg1(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x005BFA. */
-    return func_005BFA();
+    /* @asm 0x005F08 result=0xffff.
+     * @asm 0x005F14 call 0x5bfa; or ax,ax; je -> OOB: -1.
+     * @asm 0x005F2B call 0x5d32 (layer-160 byte); 0x005F31 test al,1; je -> bit0 clear: -1.
+     * @asm 0x005F3C call 0x5df0 (layer-164 high nibble); 0x005F3F cwde -> result (sign-ext;
+     *      0xFF sentinel becomes -1).  Returns result. */
+    if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
+        return -1;
+    if ((func_005D32_map_tile_read_layer_160(arg0_bp_06, arg1_bp_08) & 1) == 0)
+        return -1;
+    return (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
 }
 
 /* @asm        0x005F48..0x005F82  (58 bytes)  region=load_image
@@ -167,19 +188,22 @@ int func_005F04_map_xy_bounds_or_neg1(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * Near CALL targets:
  *   - 0x005D32
  *   - 0x005DF0
- * @inferred_role  UNKNOWN (58 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  layer-164 power index (0..3) at (x,y) when layer-160 bit1 set; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005F48_logic_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x005F58 */ func_005D32();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005F60 JE 0x005F7D */ {
-            /* @0x005F69 */ func_005DF0();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x005F76 JL 0x005F7D */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x005F4C result=0xffff.  No bounds check here.
+     * @asm 0x005F58 call 0x5d32 (layer-160 byte); 0x005F5E test al,2; je -> bit1 clear: -1.
+     * @asm 0x005F69 call 0x5df0 (layer-164 high nibble); 0x005F6F cwde -> result.
+     * @asm 0x005F73 cmp ax,4; jl keep, else -> -1.  Returns result (a power index 0..3). */
+    int val;
+    if ((func_005D32_map_tile_read_layer_160(arg0_bp_06, arg1_bp_08) & 2) == 0)
+        return -1;
+    val = (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
+    if (val >= 4)
+        return -1;
+    return val;
 }
 
 /* @asm        0x005F82..0x005FA1  (31 bytes)  region=load_image
@@ -194,13 +218,26 @@ int func_005F48_logic_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005BFA
- * @inferred_role  WRAPPER_NEARCALL (31 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  bounds-checked layer-164 power index (0..3) at (x,y) when layer-160 bit1 set; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005F82_logic_sz_31(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x005BFA. */
-    return func_005BFA();
+    /* @asm same shape as 0x005F48 but with a leading bounds check:
+     * @asm 0x005F92 call 0x5bfa; or ax,ax; je -> OOB: -1.
+     * @asm 0x005FA9 call 0x5d32; test al,2; je -> bit1 clear: -1.
+     * @asm 0x005FBA call 0x5df0; cwde; cmp ax,4; jge -> >=4: -1; else result.
+     * (The full body actually lives at 0x005F82..0x005FD3, 81 bytes; the skeleton
+     *  header's 31-byte span was a false auto-segmentation cut.) */
+    int val;
+    if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
+        return -1;
+    if ((func_005D32_map_tile_read_layer_160(arg0_bp_06, arg1_bp_08) & 2) == 0)
+        return -1;
+    val = (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
+    if (val >= 4)
+        return -1;
+    return val;
 }
 
 /* @asm        0x005FD4..0x005FF3  (31 bytes)  region=load_image
@@ -215,12 +252,22 @@ int func_005F82_logic_sz_31(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005BFA
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  layer-164 high nibble at (x,y) when in-bounds and layer-160 bit1 set; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x005BFA. */
-    return func_005BFA();
+    /* @asm identical to 0x005F04 (map_xy_bounds_or_neg1) except the layer-160 gate
+     * tests bit1 instead of bit0:
+     * @asm 0x005FE4 call 0x5bfa; or ax,ax; je -> OOB: -1.
+     * @asm 0x005FFB call 0x5d32; 0x006001 test al,2; je -> bit1 clear: -1.
+     * @asm 0x00600C call 0x5df0; 0x00600F cwde -> result.  (Full body 68 bytes,
+     *  0x005FD4..0x006017; skeleton header's 31-byte span was a false cut.) */
+    if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
+        return -1;
+    if ((func_005D32_map_tile_read_layer_160(arg0_bp_06, arg1_bp_08) & 2) == 0)
+        return -1;
+    return (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
 }
 
 /* @asm        0x006018..0x006039  (33 bytes)  region=load_image
@@ -236,17 +283,18 @@ int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t arg0_bp_06, uint16_t arg1_bp_
  * Near CALL targets:
  *   - 0x005FD4
  *   - 0x005F04
- * @inferred_role  UNKNOWN (33 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  layer-164 nibble preferring the bit1 gate (0x5FD4), falling back to bit0 (0x5F04)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_006018_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x006023 */ func_005FD4();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00602B JGE 0x006037 */ {
-            /* @0x006034 */ func_005F04();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006023 call 0x5fd4 (alt/bit1 variant); 0x006029 or ax,ax;
+     * 0x00602B jge -> if result >= 0 return it; else fall through to
+     * @asm 0x006034 call 0x5f04 (bit0 variant) and return that. */
+    int r = func_005FD4_map_xy_bounds_or_neg1_alt(arg0_bp_06, arg1_bp_08);
+    if (r >= 0)
+        return r;
+    return func_005F04_map_xy_bounds_or_neg1(arg0_bp_06, arg1_bp_08);
 }
 
 /* @asm        0x00603A..0x00605B  (33 bytes)  region=load_image
@@ -261,13 +309,36 @@ int func_006018_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x005BFA
- * @inferred_role  WRAPPER_NEARCALL (33 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  owner-power of adjacent tile (x,y) iff that power is at war with arg2's power; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 102 bytes (0x00603A..0x00609F); the skeleton's 33-byte span
+ * and 2-arg signature were a false auto-segmentation cut.  Real signature takes a
+ * third arg (the querying power index at [bp+0xa]).
  */
-int func_00603A_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00603A_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: wrapper forwards to near CALL 0x005BFA. */
-    return func_005BFA();
+    /* @asm 0x00603F result=0xffff.
+     * @asm 0x00604B call 0x5bfa; or ax,ax; je -> OOB: -1.
+     * @asm 0x006063 call 0x5d32 (layer-160 byte); 0x006069 test al,0x48; je -> bits3|6 clear: -1.
+     * @asm 0x006074 call 0x5df0 (layer-164 high nibble); 0x00607A cwde;
+     *      or ax,ax; jl -> <0: -1;  0x00607F cmp ax,4; jge -> >=4: -1;
+     *      0x006084 cmp ax,[bp+0xa]; je -> equals querying power: -1.
+     * @asm 0x00608B imul bx,[bp+0xa],0x13c; 0x006090 test [bx+si-0x77c4],0x40
+     *      where si=val.  -0x77C4 == 0x883C == PowerRecord base 0x8808 + 0x34
+     *      = war matrix (DGROUP_MEMORY_MAP §3.5): tests
+     *      PowerRecord[arg2].war_matrix[val] & 0x40; if set, result = val. */
+    int val;
+    if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
+        return -1;
+    if ((func_005D32_map_tile_read_layer_160(arg0_bp_06, arg1_bp_08) & 0x48) == 0)
+        return -1;
+    val = (int8_t)func_005DF0_logic_sz_40(arg0_bp_06, arg1_bp_08);
+    if (val < 0 || val >= 4 || val == (int16_t)arg2_bp_0A)
+        return -1;
+    if (*(uint8_t near *)(0x8808 + (unsigned)arg2_bp_0A * 0x13C + 0x34 + val) & 0x40)
+        return val;
+    return -1;
 }
 
 /* @asm        0x0060A0..0x006120  (128 bytes)  region=load_image
@@ -360,21 +431,26 @@ int func_006188_op_sz_91(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (46 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  normalize a tile/sprite id (low 5 bits) per the variant mode at DGROUP:0x018E
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_006204_logic_sz_46(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x018E
-     */
-        goto label_006242;  /* @0x006214 */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00621A JGE 0x006249 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x006220 JL 0x006249 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006207 al=[bp+6]; and al,0x1f; sub ah,ah; [bp+6]=ax  (id &= 0x1F).
+     * @asm 0x006211 ax=[0x18e]; jmp 0x6242: dec ax; dec ax; je (mode==2);
+     *      dec ax; je (mode==3); else default -> return id.
+     * mode==2 (@0x006216): if 8<=id<0x18 return (id&7)|8, else return id.
+     * mode==3 (@0x006232): if id<0x18 return id&7, else return id. */
+    uint16_t id = arg0_bp_06 & 0x1F;
+    uint16_t mode = *(uint16_t near *)0x018E;
+    if (mode == 2) {
+        if ((int16_t)id >= 8 && (int16_t)id < 0x18)
+            id = (id & 7) | 8;
+    } else if (mode == 3) {
+        if ((int16_t)id < 0x18)
+            id = id & 7;
+    }
+    return (uint8_t)id;
 }
 
 /* @asm        0x00624E..0x006256  (8 bytes)  region=load_image
@@ -386,13 +462,22 @@ int func_006204_logic_sz_46(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (8 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  decode a packed tile/unit flag byte into a profession/variant id
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 43 bytes (0x00624E..0x006278); the skeleton header's 8-byte
+ * span was a false auto-segmentation cut.
  */
 int func_00624E_logic_sz_8(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x006251 bx=[bp+6]; 0x006254 test bl,0x20; je 0x626e.
+     * If bit5 set: 0x006259 al=bl; and ax,0x80; cmp ax,1; sbb dx,dx; and dx,1;
+     *   add dx,0x1b -> dx = (bit7 set ? 0x1B : 0x1C); return dx.
+     * If bit5 clear (@0x00626e): dx=bx; and dl,0x1f; sub dh,dh -> return bx & 0x1F.
+     * Profession/vet ids live in 0x13..0x1C (DGROUP_MEMORY_MAP §3.1). */
+    if (arg0_bp_06 & 0x20)
+        return (arg0_bp_06 & 0x80) ? 0x1B : 0x1C;
+    return arg0_bp_06 & 0x1F;
 }
 
 /* @asm        0x00627A..0x0062B3  (57 bytes)  region=load_image
@@ -411,18 +496,20 @@ int func_00624E_logic_sz_8(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x00624E
- * @inferred_role  UNKNOWN (57 bytes). 0x037F:0x000A + 0x037F:0x010E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  profession id of unit at (x,y) (default 0x19 if the 0x037F:0x000A probe is false)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00627A_op_sz_57(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x006289 */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x006293 JE 0x0062AD */ {
-            /* @0x006299 */ overlay_call_037F_010E();
-            /* @0x0062A5 */ func_00624E();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00627F di=[bp+8]; 0x006282 si=0x19 (default result).
+     * @asm 0x006289 lcall 0x37f:0xa (x=[bp+6], y=[bp+8]); 0x006291 or ax,ax;
+     *      je 0x62ad -> if probe false, return 0x19.
+     * @asm 0x006299 lcall 0x37f:0x10e (x,y) (tile/unit flag byte); sub ah,ah;
+     * @asm 0x0062A5 push it; call 0x624e -> si = func_00624E(flag).  Returns si. */
+    if (overlay_call_037F_000A() /* @asm args x,y */ == 0)
+        return 0x19;
+    return func_00624E_logic_sz_8(
+        (uint8_t)overlay_call_037F_010E() /* @asm args x,y */);
 }
 
 /* @asm        0x0062B4..0x0062DB  (39 bytes)  region=load_image
@@ -437,13 +524,16 @@ int func_00627A_op_sz_57(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * LCALL targets:
  *   - 0x037F:0x010E
- * @inferred_role  WRAPPER_LCALL (39 bytes). 0x037F:0x010E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if terrain id at (x,y) is 0x19 or 0x1A, else 0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0062B4_op_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to LCALL 0x037F:0x010E. */
-    return overlay_call_037F_010E();
+    /* @asm 0x0062BE lcall 0x37f:0x10e (x=[bp+6], y=[bp+8]); 0x0062C6 sub ah,ah;
+     *      and al,0x1f -> id = terrain(x,y) & 0x1F.
+     * @asm 0x0062CC cmp si,0x19; je -> 1; 0x0062D1 cmp si,0x1a; je -> 1; else 0. */
+    int id = (int)(uint8_t)overlay_call_037F_010E() /* @asm args x,y */ & 0x1F;
+    return (id == 0x19 || id == 0x1A) ? 1 : 0;
 }
 
 /* @asm        0x0062E2..0x006314  (50 bytes)  region=load_image
@@ -458,13 +548,17 @@ int func_0062B4_op_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * LCALL targets:
  *   - 0x037F:0x010E
- * @inferred_role  WRAPPER_LCALL (50 bytes). 0x037F:0x010E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if terrain id at (x,y) is in range 8..0x17, else 0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0062E2_op_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to LCALL 0x037F:0x010E. */
-    return overlay_call_037F_010E();
+    /* @asm 0x0062EC lcall 0x37f:0x10e (x,y); 0x0062F4 sub ah,ah; and al,0x1f
+     *      -> id = terrain(x,y) & 0x1F.
+     * @asm branch lattice (0x0062FA..0x00630C): returns 1 iff 8<=id<0x10 OR
+     *      0x10<=id<0x18, i.e. 8<=id<0x18; otherwise 0.  Signed compares. */
+    int id = (int)(uint8_t)overlay_call_037F_010E() /* @asm args x,y */ & 0x1F;
+    return (id >= 8 && id < 0x18) ? 1 : 0;
 }
 
 /* @asm        0x00631A..0x006333  (25 bytes)  region=load_image

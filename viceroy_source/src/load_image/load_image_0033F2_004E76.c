@@ -395,13 +395,23 @@ int func_004566_op_sz_326(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C, uint16_t arg
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  return min(max(arg0,arg1), arg2): clamp arg1 up to arg0, then down to arg2
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 29 bytes (0x0048CC..0x0048E8) and takes three args; the
+ * skeleton header's 13-byte / 2-arg shape was a false auto-segmentation cut.
  */
-int func_0048CC_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_0048CC_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0048CF dx=[bp+6]; ax=[bp+8]; cmp ax,dx; jge -> if ax<dx: ax=dx
+     *      (ax = max(arg0,arg1)).
+     * @asm 0x0048DD cmp ax,[bp+0xa]; jle -> if ax>arg2: ax=arg2.  Signed. */
+    int a = (int16_t)arg0_bp_06;
+    int b = (int16_t)arg1_bp_08;
+    int c = (int16_t)arg2_bp_0A;
+    if (b < a) b = a;
+    if (b > c) b = c;
+    return b;
 }
 
 /* @asm        0x0048EA..0x0048FF  (21 bytes)  region=load_image
@@ -413,13 +423,18 @@ int func_0048CC_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (21 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  swap the two near words pointed to by arg0 and arg1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0048EA_logic_sz_21(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_0048EA_logic_sz_21(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0048EE di=[bp+6]; bx=[bp+8]; dx=*di; ax=*bx; *di=ax; *bx=dx.
+     * Classic in-place swap of two DGROUP words addressed by the arg pointers. */
+    uint16_t near *pa = (uint16_t near *)arg0_bp_06;
+    uint16_t near *pb = (uint16_t near *)arg1_bp_08;
+    uint16_t tmp = *pa;
+    *pa = *pb;
+    *pb = tmp;
 }
 
 /* @asm        0x004900..0x00490F  (15 bytes)  region=load_image
@@ -431,13 +446,25 @@ int func_0048EA_logic_sz_21(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  octagonal distance metric: larger(|a|,|b|) + smaller(|a|,|b|)/2
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 59 bytes (0x004900..0x00493A) and takes two args; the
+ * skeleton header's 15-byte / 1-arg shape was a false auto-segmentation cut.
  */
-int func_004900_logic_sz_15(uint16_t arg0_bp_06)
+int func_004900_logic_sz_15(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x004904 dx=[bp+6]; if dx<=0 -> dx=-dx (abs).
+     * @asm 0x004912 bx=[bp+8]; if bx<=0 -> bx=-bx (abs).  So dx=|a|, bx=|b|.
+     * @asm 0x004920 cmp bx,dx; jge 0x4930.
+     *   bx<dx (@0x4924): di=bx; sar di,1; di+=dx -> dx + bx/2.
+     *   bx>=dx (@0x4930): di=dx; sar di,1; di+=bx -> bx + dx/2.
+     * Both branches = max(|a|,|b|) + min(|a|,|b|)/2 (arithmetic shift = /2). */
+    int a = (int16_t)arg0_bp_06; if (a < 0) a = -a;
+    int b = (int16_t)arg1_bp_08; if (b < 0) b = -b;
+    if (b < a)
+        return a + (b >> 1);
+    return b + (a >> 1);
 }
 
 /* @asm        0x00493C..0x00494A  (14 bytes)  region=load_image
@@ -449,13 +476,21 @@ int func_004900_logic_sz_15(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  octagonal distance between points (x0,y0) and (x1,y1) via 0x004900
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 72 bytes (0x00493C..0x004983) and takes four args; the
+ * skeleton header's 14-byte / 2-arg shape was a false auto-segmentation cut.
  */
-int func_00493C_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+int func_00493C_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                            uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x004948 di = |[bp+6]-[bp+0xa]|  (abs of dx delta).
+     * @asm 0x004963 si = |[bp+8]-[bp+0xc]|  (abs of dy delta).
+     * @asm 0x004979 call 0x4900 (push si, di) -> octagonal metric of the deltas. */
+    int dx = (int16_t)arg0_bp_06 - (int16_t)arg2_bp_0A; if (dx < 0) dx = -dx;
+    int dy = (int16_t)arg1_bp_08 - (int16_t)arg3_bp_0C; if (dy < 0) dy = -dy;
+    return func_004900_logic_sz_15((uint16_t)dx, (uint16_t)dy);
 }
 
 /* @asm        0x004984..0x004990  (12 bytes)  region=load_image
@@ -467,13 +502,19 @@ int func_00493C_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (12 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  return max(|arg0|, |arg1|) (Chebyshev component)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 48 bytes (0x004984..0x0049B3) and takes two args; the
+ * skeleton header's 12-byte / 1-arg shape was a false auto-segmentation cut.
  */
-int func_004984_logic_sz_12(uint16_t arg0_bp_06)
+int func_004984_logic_sz_12(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x004987 bx=|[bp+6]|; 0x004995 dx=|[bp+8]|; 0x0049a3 cmp dx,bx; jge ->
+     *      if dx>=bx return dx else return bx (= max of the two absolute values). */
+    int a = (int16_t)arg0_bp_06; if (a < 0) a = -a;
+    int b = (int16_t)arg1_bp_08; if (b < 0) b = -b;
+    return (b >= a) ? b : a;
 }
 
 /* @asm        0x0049B4..0x0049C2  (14 bytes)  region=load_image
@@ -485,13 +526,20 @@ int func_004984_logic_sz_12(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  Chebyshev distance between points (x0,y0) and (x1,y1) via 0x004984
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 72 bytes (0x0049B4..0x0049FB) and takes four args; the
+ * skeleton header's 14-byte / 2-arg shape was a false auto-segmentation cut.
  */
-int func_0049B4_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+int func_0049B4_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                            uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0049C0 di = |[bp+6]-[bp+0xa]|; 0x0049D5 si = |[bp+8]-[bp+0xc]|;
+     * @asm 0x0049F1 call 0x4984 (push si, di) -> max(|dx|,|dy|). */
+    int dx = (int16_t)arg0_bp_06 - (int16_t)arg2_bp_0A; if (dx < 0) dx = -dx;
+    int dy = (int16_t)arg1_bp_08 - (int16_t)arg3_bp_0C; if (dy < 0) dy = -dy;
+    return func_004984_logic_sz_12((uint16_t)dx, (uint16_t)dy);
 }
 
 /* @asm        0x0049FC..0x004A10  (20 bytes)  region=load_image
@@ -503,13 +551,21 @@ int func_0049B4_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if direction arg0 is adjacent (+/-1 mod 8) to direction arg1, else 0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0049FC_logic_sz_20(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0049FF cx=[bp+8]; bx=[bp+6]; dx=0.
+     * @asm 0x004A07 al=cl+1; ax=(cl+1)&7; cmp ax,bx; je -> set dx=1.
+     * @asm 0x004A12 cl--; cx=(cl-1)&7; cmp cx,bx; jne skip; else dx=1.
+     * Returns 1 iff arg0 == (arg1+1)&7 or arg0 == (arg1-1)&7 (8-way direction). */
+    uint16_t d = arg1_bp_08;
+    if (arg0_bp_06 == (uint16_t)(((d + 1) & 7)))
+        return 1;
+    if (arg0_bp_06 == (uint16_t)(((d - 1) & 7)))
+        return 1;
+    return 0;
 }
 
 /* @asm        0x004A5C..0x004A80  (36 bytes)  region=load_image
@@ -588,24 +644,24 @@ int func_004AFA_op_sz_28(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (46 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if the global point (0x7E8,0x7EA) lies inside rect [arg0..arg0+arg2-1]x[arg1..arg1+arg3-1]
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_004B16_logic_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x07E8, 0x07EA
-     */
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x004B22 JG 0x004B44 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x004B2A JL 0x004B44 */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x004B35 JG 0x004B44 */ {
-                    if (/* JL fallthrough cond: */ ax >= 0) /* @0x004B3D JL 0x004B44 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x004B19 bx=[bp+6]; dx=[0x7e8]; cmp bx,dx; jg 0x4b44 -> x0 > px : fail.
+     * @asm 0x004B24 bx += [bp+0xa]; dec bx; cmp bx,dx; jl 0x4b44 -> (x0+w-1) < px : fail.
+     * @asm 0x004B2C dx=[0x7ea]; bx=[bp+8]; cmp bx,dx; jg -> y0 > py : fail.
+     * @asm 0x004B37 bx += [bp+0xc]; dec bx; cmp bx,dx; jl -> (y0+h-1) < py : fail.
+     * else return 1.  Signed compares.  (0x7E8/0x7EA = a cursor/probe point.) */
+    int px = (int16_t)*(uint16_t near *)0x07E8;
+    int py = (int16_t)*(uint16_t near *)0x07EA;
+    int x0 = (int16_t)arg0_bp_06, y0 = (int16_t)arg1_bp_08;
+    int w  = (int16_t)arg2_bp_0A, h  = (int16_t)arg3_bp_0C;
+    if (x0 > px || (x0 + w - 1) < px ||
+        y0 > py || (y0 + h - 1) < py)
+        return 0;
+    return 1;
 }
 
 /* @asm        0x004B48..0x004B61  (25 bytes)  region=load_image
@@ -617,13 +673,21 @@ int func_004B16_logic_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  wrap/clamp coord arg0 into 0..arg1-1 (arg0<0 maps to the top, arg1-1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_004B48_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x004B4B dx=[bp+6]; or dx,dx; jge 0x4b56 -> if arg0<0: dx=[bp+8]-1.
+     * @asm 0x004B56 cmp [bp+8],dx; jg 0x4b5d -> if !(arg1 > dx): dx=0.  return dx.
+     * Net: arg0<0 -> arg1-1; else (arg1>arg0 ? arg0 : 0).  Signed. */
+    int v = (int16_t)arg0_bp_06;
+    int n = (int16_t)arg1_bp_08;
+    if (v < 0)
+        v = n - 1;
+    if (!(n > v))
+        v = 0;
+    return v;
 }
 
 /* @asm        0x004B72..0x004D1D  (427 bytes)  region=load_image
