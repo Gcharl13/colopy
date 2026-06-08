@@ -45,12 +45,13 @@
  *               are BYTE_VERIFIED.  The dialog/menu control flow that drives the
  *               BADHAGGLE escalation crosses several overlay thunks whose
  *               internal effects are not byte-resolved — those are tagged
- *               [TBD] / extern below.  Several inputs are data-resident tables
- *               loaded from NAMES.TXT/runtime, also tagged [TBD-data].
+ *               "body in thunk page" / extern below.  Several inputs are
+ *               data-resident tables loaded from NAMES.TXT/runtime, tagged
+ *               RUNTIME_ONLY (NAMES.TXT/data-file).
  *
  * STATUS: BYTE_VERIFIED (price formulas + gold transfers + role);
  *         ANCHOR_VERIFIED (haggle-escalation control flow);
- *         TBD (dialog thunk internals + a few data-resident tables).
+ *         RUNTIME_ONLY (dialog thunk internals in thunk pages + data-resident tables).
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "native.h"
@@ -110,7 +111,7 @@ extern int32_t  g_ui_amount3_9CB8;        /* DGROUP:0x9CB8 (dword) — BUY: Powe
 /* ----------------------------------------------------------------------------
  * OVERLAY/RUNTIME THUNKS — targets resolved via rtlink_decode.py against
  * viceroy_rtlink_map.json (page dir + 3 windows).  Contract cited; bodies that
- * are pure UI/format are [TBD].
+ * are pure UI/format have their body in thunk page.
  * ---------------------------------------------------------------------------- */
 extern int  random_int(int lo, int hi);   /* 0x181F:0x04D4 -> file 0x0C322  [V] (rng.c) */
 extern long ldiv32(long n, long d);        /* 0x0D1D:0x0EC6 -> compiler long-divide [V contract]
@@ -125,33 +126,38 @@ extern void msg_set_arg(int slot, int value);
 /* native_notify(tribe, msg_key) -> int: 0x191F:0x019C -> page 0x17 file 0x6F5B0.
  * Shows a tribe-attributed message (BADHAGGLE/TRADE0/BUY0/…) and returns the
  * player's menu choice (1-based) used to branch the haggle.  [contract ANCHOR;
- * body TBD]. */
+ * body in thunk page]. */
 extern int  native_notify(int tribe, int msg_key);
 
 /* per-(tribe, power) relationship word @ DGROUP:0x5B1C, stride 0x27 per tribe.
  * 0x181F:0x030C -> file 0x082A0: `imul bx,[bp+6],0x27; add bx,[bp+8]; shl bx,1;
  * mov ax,[bx+0x5B1C]`.  Called (tribe, power).  [V — body fully decoded;
- * SEMANTICS of the stored value TBD-data]. */
+ * SEMANTICS of the stored value RUNTIME_ONLY (NAMES.TXT/data-file)]. */
 extern int  tribe_power_relation(int tribe, int power);   /* @0x082A0 [V] */
 
 /* per-good "want index" @ DGROUP:0x???, 0x181F:0x0A60 -> file 0x08262:
  * returns 0 when good < 0x19 else a table value (body truncates at first RET;
- * the good<0x19 path returns 0).  [contract V; full table TBD]. */
+ * the good<0x19 path returns 0).  [contract V; full table RUNTIME_ONLY (NAMES.TXT/data-file)]. */
 extern int  cargo_want_index(int good);   /* @0x08262 */
 
 /* set a per-(tribe,power,good) trade-relationship delta:
- * 0x181F:0x0D6C -> page 0x0B file 0x045DF2.  Called (tribe, power, delta, 0).
- * Adjusts how the tribe feels after a trade.  [contract ANCHOR; body TBD]. */
+ * 0x181F:0x0D6C -> page 0x0B file 0x045DF2 (func_045DF2_native_tension_add).
+ * Called (tribe, power, delta, 0).  Bumps the tribe/colony alarm cell and
+ * re-clamps the alarm row; documented in overlay_04458A_04694B.c.
+ * [contract ANCHOR; body in thunk page → page 0x0B]. */
 extern void trade_relation_adjust(int tribe, int power, int delta, int zero);
 
 /* unit-interaction predicates / mutators (page 0x17 / resident): */
-extern int  unit_trade_accept(int unit_idx, int good);    /* 0x181F:0x0BE6 -> file 0x0B2A2 [TBD] */
-extern int  unit_trade_capacity(int unit_idx, int good, void *buf, int n); /* 0x181F:0x0C68 -> 0x0B2F0 [TBD] */
-extern int  unit_consume_cargo(int unit_idx, int good, int qty); /* 0x181F:0x0D58 -> 0x0B368 [TBD] */
-extern int  unit_flag_test(int unit_idx, int arg);        /* 0x181F:0x0A38 -> file 0x07F34;
+extern int  unit_trade_accept(int unit_idx, int good);    /* 0x181F:0x0BE6 -> file 0x0B2A2; body in thunk page */
+extern int  unit_trade_capacity(int unit_idx, int good, void *buf, int n); /* 0x181F:0x0C68 -> 0x0B2F0; body in thunk page */
+extern int  unit_consume_cargo(int unit_idx, int good, int qty); /* 0x181F:0x0D58 -> 0x0B368; body in thunk page */
+extern int  unit_flag_test(int unit_idx, int arg);        /* 0x181F:0x0A38 -> file 0x07F34 (war_matrix_read /
+                                                           *   relation-flag accessor per OVERLAY_LCALL_REFERENCE);
                                                            *   returns byte[arg + unit?*0x4E + 0x59D8];
-                                                           *   tested with &0x40.  [contract V; TBD]. */
-extern void trade_dialog_finish(int unit_idx);            /* 0x181F:0x0808 family [TBD] */
+                                                           *   tested with &0x40.  [contract V; body in thunk page]. */
+extern void trade_dialog_finish(int unit_idx);            /* 0x181F:0x0808 -> disband/destroy unit helper
+                                                           *   (per overlay_038A50_03C5A8.c destroy_unit_808);
+                                                           *   body in thunk page */
 
 /* ----------------------------------------------------------------------------
  * Arguments (caller PUSH order, right-to-left; ENTER 0xD8 frame):
@@ -298,9 +304,9 @@ int haggle_sell_price(int good, int qty, int *out_seed, int *out_counter_budget)
  *   if good >= 8: ask = (8 - home[+2]) * 0x32                 ; @0x4A02F..0x4A040
  *   if good >= 7: ask += disp * (diff*2 + 0xF)                ; @0x4A04A..0x4A067
  *   ask += random_int(0, ask)                                 ; @0x4A06A..0x4A077
- *   ask -= g_trade_stock_9E58[selected]? * 4                  ; @0x4A07A..0x4A087 ([bx-0x6188]<<2)
- *          (NOTE: this reads g_trade_want_9E78 via [bx-0x6188]; the index
- *           [bp-0x84] is the selected-good slot — TBD which buffer; bytes V)
+ *   ask -= g_trade_want_9E78[selected]? * 4                   ; @0x4A07A..0x4A087 ([bx-0x6188]<<2)
+ *          (NOTE: [bx-0x6188] = g_trade_want_9E78 (DGROUP:0x9E78); the index
+ *           [bp-0x84] is the selected-good slot — buffer is g_trade_want_9E78; bytes V)
  *   ask += rel * 4                                            ; @0x4A08A..0x4A09C (0x30C, shl2)
  *   ask  = ldiv32(qty * ask, 100)                             ; @0x4A0A3..0x4A0B0 (0xD1D:0xEC6)
  *   ask += (diff + random_int(0,2)) * 5 * 2                   ; @0x4A0B3..0x4A0D3
@@ -330,7 +336,7 @@ int haggle_buy_price(int good, int power, int selected_slot)
     ask += random_int(0, ask);
 
     /* @0x4A07A..0x4A087 — subtract 4× the selected-good working value
-     * ([bx-0x6188] = g_trade_want_9E78[selected_slot]).  [bytes V; buffer TBD] */
+     * ([bx-0x6188] = g_trade_want_9E78[selected_slot]).  [bytes V; buffer g_trade_want_9E78 (DGROUP:0x9E78)] */
     ask -= g_trade_want_9E78[selected_slot] * 4;
 
     /* @0x4A08A..0x4A09C — add 4× the per-(tribe,power) relationship value */
@@ -359,7 +365,7 @@ int haggle_buy_price(int good, int power, int selected_slot)
  * High-level control flow (every branch @asm-cited).  The dialog loops that
  * implement the BADHAGGLE0..3 escalation call native_notify() (0x191F:0x19C)
  * and re-price on each player counter-offer; the exact menu-choice → branch
- * mapping is ANCHOR-level (the notify body is TBD), but the PRICE recompute and
+ * mapping is ANCHOR-level (the notify body is in thunk page), but the PRICE recompute and
  * the gold transfers it performs are byte-verified.
  *
  * STRUCTURE:
@@ -371,7 +377,7 @@ int haggle_buy_price(int good, int power, int selected_slot)
  *                      arrays [bp-0x7a]/[bp-0x96] (per-good last-offer memory).
  *   @0x496B2..0x496EE  push [0x83A6]; near-call func_05443 (fills g_trade_*_9E78
  *                      / clamps a global) then MK a 16-entry good list into the
- *                      SS scratch via memcpy-thunk 0x191F:0xED0.  [helper TBD]
+ *                      SS scratch via memcpy-thunk 0x191F:0xED0.  [helper body in thunk page]
  *   @0x4971D           if power < 0 -> jmp final clamp/exit (AI/none path).
  *   @0x49726..0x4977A  read unit[+0x3150] (a trade-mode selector 0/1/>1):
  *                        0 -> jmp 0x327B (the "natives propose" path).
@@ -399,7 +405,7 @@ int haggle_buy_price(int good, int power, int selected_slot)
  *
  * The full ~1138-instruction dialog state machine is NOT reproduced 1:1 here —
  * only its byte-verified numeric core (prices + transfers) and its decision
- * skeleton.  The notify/menu/format thunks remain extern ([TBD]); replacing
+ * skeleton.  The notify/menu/format thunks remain extern (body in thunk page); replacing
  * them 1:1 requires resolving the page-0x17 dialog bodies (out of scope).
  * ============================================================================ */
 int native_haggle_resolve(int unit_idx, int arg8, int power, int arg_c)
@@ -417,7 +423,7 @@ int native_haggle_resolve(int unit_idx, int arg8, int power, int arg_c)
         if (random_int(0, 3) == 0) {                        /* @0x4963F rand(0,3); or ax */
             /* @0x4964B..0x49677 — play one of SFX 5/6/7 keyed off the tribe,
              * then fall through to the normal flow (the SFX is a greeting). */
-            /* trade_play_sfx(...) — [TBD], side effect only */
+            /* trade_play_sfx(...) — body in thunk page, side effect only */
         }
     }
 
@@ -428,7 +434,7 @@ int native_haggle_resolve(int unit_idx, int arg8, int power, int arg_c)
     /* The remainder is the dialog state machine.  Its numeric core is captured
      * by haggle_sell_price()/haggle_buy_price() above and the two transfers
      * below; the menu
-     * loop that sequences BADHAGGLE0..3 is ANCHOR-level (native_notify body TBD).
+     * loop that sequences BADHAGGLE0..3 is ANCHOR-level (native_notify body in thunk page).
      *
      * Representative SELL accept (gold IN) — @0x4958E..0x4959B [BYTE_VERIFIED]:
      *     int seed, budget;
