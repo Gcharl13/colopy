@@ -217,31 +217,40 @@ int func_012D4A_rtl_sz_95(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (99 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  hex-string -> int parser (accumulates [0-9A-Fa-f] base-16)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the input string pointer is passed in BX (no stack arg; args_seen []).
+ * Models it as a `char near *str` parameter.  Uses the C-runtime ctype table at
+ * DGROUP base+0x27ED ([c+0x27ED]: bit1=0x02 lowercase, bit2=0x04 digit); a
+ * lowercase letter is folded to uppercase by `sub 0x20`.  Accumulates each hex
+ * digit into di (acc = acc*16 + value).  On the first non-hex character it
+ * fast-forwards `str` to the terminating NUL (stops parsing) and returns acc.
+ * Returns the parsed value in ax.
  */
-int func_012DAA_logic_sz_99(void)
+/* NAME kept as auto-generated func_012DAA_logic_sz_99; takes the string in BX. */
+int func_012DAA_logic_sz_99(char near *str /*in bx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012DB6 JE 0x012E07 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012DC5 JE 0x012DCA */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012DCF JE 0x012DDC */ {
-                goto label_012DFF;  /* @0x012DD9 */
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x012DDF JL 0x012DEE */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x012DE4 JG 0x012DEE */ {
-                    goto label_012DD7;  /* @0x012DEC */
-                }
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012DF4 JE 0x012DFF */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x012DFA JNE 0x012DF6 */ {
-                }
-            }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012E05 JNE 0x012DB8 */ {
+    /* @asm 0x012DB1 di=0 (acc); 0x012DB3 cmp [bx],0; je 0x12E07 (empty -> 0). */
+    uint16_t acc = 0;                                          /* @asm di */
+    uint8_t near *p = (uint8_t near *)str;                     /* @asm [bp-6] = saved bx */
+    while (*p != 0) {                                          /* @asm 0x12DFF cmp [bx],0; jne 0x12DB8 */
+        uint16_t si = (uint16_t)(int16_t)(int8_t)*p;           /* @asm al=[bx]; cwde; si=ax */
+        p++;                                                   /* @asm inc [bp-6] */
+        if (*(uint8_t near *)(uint16_t)(si + 0x27ED) & 2)      /* @asm test [si+0x27ED],2 */
+            si -= 0x20;                                        /* @asm sub si,0x20 (to upper) */
+        if (*(uint8_t near *)(uint16_t)(si + 0x27ED) & 4) {    /* @asm test [si+0x27ED],4 (digit) */
+            acc = (uint16_t)(acc << 4) + (uint16_t)(si - 0x30);/* @asm shl di,4; add di,si-0x30 */
+        } else if (si >= 0x41 && si <= 0x46) {                 /* @asm cmp 0x41/0x46 ('A'..'F') */
+            acc = (uint16_t)(acc << 4) + (uint16_t)(si - 0x37);/* @asm shl di,4; add di,si-0x37 */
+        } else {
+            /* @asm 0x012DEE non-hex char: fast-forward to the NUL and stop. */
+            if (*p != 0) {                                     /* @asm cmp [bx],0; je 0x12DFF */
+                while (*p != 0) p++;                           /* @asm inc bx; cmp [bx],0; jne */
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return (int)(uint16_t)acc;                                 /* @asm mov ax,di */
 }
 
 /* @asm        0x012E56..0x012E6A  (20 bytes)  region=load_image

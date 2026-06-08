@@ -20,38 +20,76 @@
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x011CD2
- *   - 0x0114E4
- * @inferred_role  MEDIUM_LOGIC (149 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x011CD2   (_getbuf: allocate the stream's I/O buffer)
+ *   - 0x0114E4   (read syscall wrapper: read(fd, buf, n))
+ * @inferred_role  _filbuf: refill a buffered input stream, return next byte
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 _filbuf(fp).  FILE layout (si): [si+0]=cursor, [si+2]=bytes left,
+ * [si+4]=buffer base, [si+6]=flags, [si+7]=fd.  di=0x29AE+(si-0x290E) is the
+ * parallel per-stream flag entry: [di]=mode (bit0=buffer allocated, bit5=text),
+ * [di+2]=buffer size.  Returns the first byte read (0..255) or 0xFFFF on EOF/err.
  */
+/* NAME kept as auto-generated func_010B26_logic_sz_149 (the _filbuf primitive). */
 int func_010B26_logic_sz_149(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010B33 JE 0x010B8E */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B37 JNE 0x010B8E */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B3B JNE 0x010B7F */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B4E JNE 0x010B5A */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B53 JNE 0x010B5A */ {
-                            /* @0x010B56 */ func_011CD2();
-                        }
-                    }
-                    /* @0x010B6A */ func_0114E4();
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010B72 JE 0x010B85 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B77 JNE 0x010B93 */ {
-                            goto label_010B89;  /* @0x010B7D */
-                            goto label_010B8E;  /* @0x010B83 */
-                            goto label_010BB7;  /* @0x010B91 */
-                        }
-                    }
-                }
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010B9D JNE 0x010BAA */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010BA5 JNE 0x010BAA */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t si = arg0_bp_06;                                   /* FILE* */
+    uint16_t di;
+    uint8_t flags = *(uint8_t near *)(uint16_t)(si + 6);        /* @asm mov al,[si+6] */
+    int rd;
+
+    /* @asm 0x010B31 test al,0x83; je 0x10B8E (not open-for-read -> error). */
+    if ((flags & 0x83) == 0) goto err;
+    /* @asm 0x010B35 test al,0x40; jne 0x10B8E (sticky error -> error). */
+    if (flags & 0x40) goto err;
+    /* @asm 0x010B39 test al,2; jne 0x10B7F (write-mode stream): set EOF, error. */
+    if (flags & 2) { *(uint8_t near *)(uint16_t)(si + 6) |= 0x20; goto err; }
+
+    flags |= 1;                                                 /* @asm or al,1 (reading) */
+    *(uint8_t near *)(uint16_t)(si + 6) = flags;                /* @asm mov [si+6],al */
+    di = (uint16_t)(0x29AE + (si - 0x290E));                    /* @asm di mapping */
+
+    /* @asm 0x010B4C if neither flags&0xC nor [di]&1, allocate a buffer. */
+    if (!(flags & 0x0C) && !(*(uint8_t near *)(uint16_t)di & 1))
+        func_011CD2(si);                                       /* @asm call 0x11CD2 _getbuf(fp) */
+
+    /* @asm 0x010B5A reset cursor to base, read a buffer-full. */
+    *(uint16_t near *)(uint16_t)si = *(uint16_t near *)(uint16_t)(si + 4); /* @asm [si]=[si+4] */
+    rd = func_0114E4((uint8_t)*(uint8_t near *)(uint16_t)(si + 7),         /* fd=[si+7] */
+                     *(uint16_t near *)(uint16_t)(si + 4),                 /* buf base */
+                     *(uint16_t near *)(uint16_t)(di + 2));                /* @asm read(fd,base,size) */
+
+    if (rd == 0) {                                              /* @asm or ax,ax; je 0x10B85 */
+        *(uint8_t near *)(uint16_t)(si + 6) |= 0x10;           /* @asm or [si+6],0x10 (EOF) */
+        *(uint16_t near *)(uint16_t)(si + 2) = 0;              /* @asm mov [si+2],0 */
+        goto err;
+    }
+    if ((uint16_t)rd == 0xFFFF) {                              /* @asm cmp ax,0xFFFF */
+        *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;           /* @asm or [si+6],0x20 (error) */
+        *(uint16_t near *)(uint16_t)(si + 2) = 0;              /* @asm mov [si+2],0 */
+        goto err;
+    }
+
+    /* @asm 0x010B93 text-mode marker setup: if file_flags[fd]&0x82==0x82 and
+     *      stream flags&0x82==0, mark parallel entry [di]|=0x20. */
+    {
+        uint8_t fd = (uint8_t)*(uint8_t near *)(uint16_t)(si + 7);
+        if ((*(uint8_t near *)(uint16_t)(fd + 0x27BB) & 0x82) == 0x82 &&
+            (*(uint8_t near *)(uint16_t)(si + 6) & 0x82) == 0)
+            *(uint8_t near *)(uint16_t)di |= 0x20;             /* @asm or [di],0x20 */
+    }
+
+    /* @asm 0x010BAA consume the first byte: bytes_left = rd-1; return *cursor++. */
+    *(uint16_t near *)(uint16_t)(si + 2) = (uint16_t)(rd - 1); /* @asm dec ax; mov [si+2],ax */
+    {
+        uint16_t bx = *(uint16_t near *)(uint16_t)si;          /* @asm mov bx,[si] */
+        uint8_t ch = *(uint8_t near *)(uint16_t)bx;            /* @asm mov al,[bx] */
+        *(uint16_t near *)(uint16_t)si = (uint16_t)(bx + 1);   /* @asm inc bx; mov [si],bx */
+        return (int)ch;                                        /* @asm xor ah,ah */
+    }
+
+err:
+    return 0xFFFF;                                             /* @asm mov ax,0xFFFF */
 }
 
 /* @asm        0x010BBC..0x010C53  (151 bytes)  region=load_image
@@ -65,43 +103,96 @@ int func_010B26_logic_sz_149(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x0115CE
- *   - 0x011CD2
- * @inferred_role  MEDIUM_LOGIC (151 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0115CE   (write syscall wrapper: write(fd, buf, n))
+ *   - 0x011CD2   (_getbuf: allocate the stream's I/O buffer)
+ *   - 0x01146A   (lseek syscall wrapper: lseek(fd, off, whence))
+ * @inferred_role  _flsbuf(c, fp): flush the output buffer and append byte c
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 _flsbuf(c, fp).  FILE layout (si): [si+0]=cursor, [si+2]=bytes left,
+ * [si+4]=buffer base, [si+6]=flags, [si+7]=fd.  di=0x29AE+(si-0x290E) parallel
+ * entry ([di]bit0=buffer allocated, [di+2]=buffer size).  Stream addresses
+ * 0x2916/0x291E/0x292E are stdout/stdin/stderr.  Returns the written byte
+ * (0..255) or 0xFFFF on error.  The auto-banner "size 151 / 2 near_calls" was
+ * short; func_010BBC.asm reports size 227 with 3 near calls.
  */
+/* NAME kept as auto-generated func_010BBC_logic_sz_151 (the _flsbuf primitive). */
 int func_010BBC_logic_sz_151(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010BC9 JE 0x010C34 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010BCD JNE 0x010C34 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x010BD6 JE 0x010BE3 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010BDA JE 0x010C34 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010BFB JNE 0x010C4A */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010BFF JNE 0x010C1F */ {
-                                if (/* JNE fallthrough cond: */ ax == 0) /* @0x010C04 JNE 0x010C4A */ {
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010C0A JE 0x010C18 */ {
-                                        if (/* JE fallthrough cond: */ ax != 0) /* @0x010C10 JE 0x010C18 */ {
-                                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010C16 JNE 0x010C3D */ {
-                                                if (/* JE fallthrough cond: */ ax != 0) /* @0x010C1D JE 0x010C3D */ {
-                                                    /* @0x010C29 */ func_0115CE();
-                                                    goto label_010C73;  /* @0x010C32 */
-                                                    goto label_010C9B;  /* @0x010C3B */
-                                                }
-                                            }
-                                        }
-                                    }
-                                    /* @0x010C3F */ func_011CD2();
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010C48 JE 0x010C1F */ {
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t si = arg1_bp_08;                                  /* FILE* */
+    uint16_t di;
+    uint8_t al = *(uint8_t near *)(uint16_t)(si + 6);          /* @asm mov al,[si+6] */
+    uint16_t bx;                                               /* fd */
+    uint16_t cx;
+    int wrote;
+
+    /* @asm 0x010BC7 test al,0x82; je 0x10C34 (not writable -> error). */
+    if ((al & 0x82) == 0) goto err;
+    /* @asm 0x010BCB test al,0x40; jne 0x10C34 (sticky error -> error). */
+    if (al & 0x40) goto err;
+    *(uint16_t near *)(uint16_t)(si + 2) = 0;                  /* @asm mov [si+2],0 */
+    /* @asm 0x010BD4 test al,1; je 0x10BE3 (if last op was a read, rewind). */
+    if (al & 1) {
+        if (!(al & 0x10)) goto err;                            /* @asm test al,0x10; je 0x10C34 */
+        *(uint16_t near *)(uint16_t)si = *(uint16_t near *)(uint16_t)(si + 4); /* @asm [si]=[si+4] */
+        al &= 0xFE;                                            /* @asm and al,0xFE (clear read) */
+    }
+    al = (uint8_t)((al | 2) & 0xEF);                           /* @asm or al,2; and al,0xEF */
+    *(uint8_t near *)(uint16_t)(si + 6) = al;                  /* @asm mov [si+6],al */
+    di = (uint16_t)(0x29AE + (si - 0x290E));                   /* @asm di mapping */
+    bx = *(uint8_t near *)(uint16_t)(si + 7);                  /* @asm bl=[si+7] (fd) */
+
+    /* @asm 0x010BF9 select path: bit3 -> flush; bit2 -> single-byte write;
+     *      no buffer & not a console stream -> allocate; else single-byte. */
+    if (al & 8) goto flush;                                    /* @asm test al,8; jne 0x10C4A */
+    if (al & 4) goto write1;                                   /* @asm test al,4; jne 0x10C1F */
+    if (*(uint8_t near *)(uint16_t)di & 1) goto flush;         /* @asm test [di],1; jne 0x10C4A */
+    if ((si == 0x2916 || si == 0x291E || si == 0x292E) &&      /* @asm cmp si,console FILEs */
+        (*(uint8_t near *)(uint16_t)(bx + 0x27BB) & 0x40))     /* @asm test [bx+0x27BB],0x40 */
+        goto write1;                                           /* unbuffered console */
+    /* @asm 0x010C3D allocate a buffer, then re-check the unbuffered bit. */
+    func_011CD2(si);                                           /* @asm call 0x11CD2 _getbuf(fp) */
+    if (!(*(uint8_t near *)(uint16_t)(si + 6) & 8))            /* @asm test [si+6],8; je 0x10C1F */
+        goto write1;
+    /* fallthrough to flush */
+
+flush:
+    /* @asm 0x010C4A flush the filled buffer, reserving one slot for byte c. */
+    cx = (uint16_t)(*(uint16_t near *)(uint16_t)si - *(uint16_t near *)(uint16_t)(si + 4));
+                                                               /* @asm cx = cursor - base */
+    *(uint16_t near *)(uint16_t)si = (uint16_t)(*(uint16_t near *)(uint16_t)(si + 4) + 1);
+                                                               /* @asm inc dx; [si]=dx (base+1) */
+    *(uint16_t near *)(uint16_t)(si + 2) =
+        (uint16_t)(*(uint16_t near *)(uint16_t)(di + 2) - 1);  /* @asm [si+2]=bufsize-1 */
+    if (cx == 0) {                                             /* @asm jcxz 0x10C7E */
+        /* @asm 0x010C7E empty buffer: if append-mode (file_flags bit5) seek end. */
+        if (*(uint8_t near *)(uint16_t)(bx + 0x27BB) & 0x20)   /* @asm test [bx+0x27BB],0x20 */
+            func_01146A(bx, 0, 0, 2);                          /* @asm call 0x1146A lseek(fd,0L,SEEK_END) */
+        cx = 0;
+        goto store_char;                                       /* @asm jmp 0x10C6B */
+    }
+    wrote = func_0115CE(bx, *(uint16_t near *)(uint16_t)(si + 4), cx); /* @asm call 0x115CE write(fd,base,cx) */
+    *(uint8_t near *)(uint16_t)(*(uint16_t near *)(uint16_t)(si + 4)) = (uint8_t)arg0_bp_06;
+                                                               /* @asm [base]=c (store new byte) */
+    if ((uint16_t)wrote != cx) goto err;                       /* @asm cmp ax,cx; jne 0x10C34 */
+    return (int)(uint8_t)arg0_bp_06;                           /* @asm xor ax,ax; al=[bp+6] */
+
+write1:
+    /* @asm 0x010C1F unbuffered: write the single byte c directly. */
+    wrote = func_0115CE(bx, (uint16_t)arg0_bp_06 /*&c at [bp+6]*/, 1); /* @asm write(fd,&c,1) */
+    cx = 1;
+    if ((uint16_t)wrote != cx) goto err;                       /* @asm jmp 0x10C73; cmp ax,cx; jne */
+    return (int)(uint8_t)arg0_bp_06;                           /* @asm al=[bp+6] */
+
+store_char:
+    /* @asm 0x010C6B store c at buffer base, then validate the (no-op) write. */
+    *(uint8_t near *)(uint16_t)(*(uint16_t near *)(uint16_t)(si + 4)) = (uint8_t)arg0_bp_06;
+    if ((uint16_t)0 != cx) goto err;          /* @asm cmp ax,cx (ax=0,cx=0 here) */
+    return (int)(uint8_t)arg0_bp_06;                           /* @asm al=[bp+6] */
+
+err:
+    *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;               /* @asm or [si+6],0x20 (error) */
+    return 0xFFFF;                                             /* @asm mov ax,0xFFFF */
 }
 
 /* @asm        0x010CA0..0x010CCC  (44 bytes)  region=load_image
@@ -235,21 +326,41 @@ int func_010DB4_rtl_sz_115(void)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x010E66
- * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x010E66   (stream flush, func_010E66)
+ * @inferred_role  _freebuf-style: flush+release an auto-allocated stream buffer
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: NEAR function (ends with `ret`, 0x010E65).  It takes TWO args: a "force"
+ * flag at [bp+4] and the FILE* at [bp+6]; the auto-banner saw only [6].  Frees
+ * the stream's buffer when it was library-allocated (parallel flag bit 0x10) and
+ * the buffer is the shared/temp one (file_flags[fd] bit 0x40).
+ * di = 0x29AE+(si-0x290E) is the parallel per-stream flag entry.
  */
-int func_010E27_logic_sz_63(uint16_t arg0_bp_06)
+/* NAME kept as auto-generated func_010E27_logic_sz_63; arity widened to 2 args. */
+int func_010E27_logic_sz_63(uint16_t force_bp_04, uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010E3C JE 0x010E62 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010E48 JE 0x010E62 */ {
-                /* @0x010E4C */ func_010E66();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x010E54 JE 0x010E62 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x010E2C si=fp; di=0x29AE+(si-0x290E) (flag entry).
+     * 0x010E39 test [di],0x10; je 0x10E62 (buffer not lib-allocated -> done).
+     * 0x010E3E bl=[si+7] (fd); test [bx+0x27BB],0x40; je 0x10E62.
+     * 0x010E4A push si; call 0x10E66 (flush stream); pop.
+     * 0x010E50 cmp [bp+4],0; je 0x10E62 (force==0 -> keep buffer).
+     * 0x010E56 zero [di], [di+2], [si], [si+4] (drop buffer association). */
+    uint16_t si = arg0_bp_06;                                   /* FILE* */
+    uint16_t di = (uint16_t)(0x29AE + (si - 0x290E));           /* flag entry */
+    if (!(*(uint8_t near *)(uint16_t)di & 0x10))                /* @asm test [di],0x10 */
+        return 0;
+    {
+        uint8_t fd = *(uint8_t near *)(uint16_t)(si + 7);       /* @asm mov bl,[si+7] */
+        if (!(*(uint8_t near *)(uint16_t)(fd + 0x27BB) & 0x40)) /* @asm test [bx+0x27BB],0x40 */
+            return 0;
+    }
+    func_010E66(si);                                            /* @asm call 0x10E66 flush(fp) */
+    if (force_bp_04 == 0) return 0;                             /* @asm cmp [bp+4],0; je */
+    *(uint8_t near *)(uint16_t)di = 0;                          /* @asm mov [di],al(0) */
+    *(uint16_t near *)(uint16_t)(di + 2) = 0;                   /* @asm mov [di+2],ax */
+    *(uint16_t near *)(uint16_t)si = 0;                         /* @asm mov [si],ax */
+    *(uint16_t near *)(uint16_t)(si + 4) = 0;                   /* @asm mov [si+4],ax */
+    return 0;
 }
 
 /* @asm        0x010E66..0x010EDA  (116 bytes)  region=load_image

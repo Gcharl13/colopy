@@ -74,37 +74,97 @@ int func_00FAC0_rtl_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x010352
- * @inferred_role  FIND_LOOP (135 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x010352   (memcpy, func_010352)
+ *   - 0x010B26   (_filbuf, func_010B26)
+ *   - 0x0114E4   (read syscall wrapper)
+ * @inferred_role  fread(buf=arg0, size=arg1, count=arg2, fp=arg3): buffered read
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner "size 135 / 1 near_call" was wrong; func_00FAF8.asm
+ * reports size 227 with 3 near calls (memcpy + _filbuf + read).  Full body
+ * decompiled below.  This is the MSC 6.0 fread() implementation.
+ * Signature widened to 4 args (count*size product, plus the FILE*).
+ * FILE layout (si): [si+0]=buffer cursor, [si+2]=bytes left in buffer,
+ * [si+6]=flags byte, [si+7]=fd.  Parallel flag entry di=0x29AE+(si-0x290E):
+ * [di]=stream-mode byte (bit0 set => buffer allocated), [di+2]=buffer size.
  */
 int func_00FAF8_logic_sz_135(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00FB08 JCXZ 0x00FB67 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FB21 JNE 0x00FB28 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FB26 JE 0x00FB2D */ {
-                    goto label_00FB30;  /* @0x00FB2B */
-                }
-            }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FB37 JNE 0x00FB3E */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FB3C JE 0x00FB6D */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x00FB43 JE 0x00FB6D */ {
-                        if (/* JBE fallthrough cond: */ ax > 0) /* @0x00FB47 JBE 0x00FB4B */ {
-                        }
-                        /* @0x00FB53 */ func_010352();
-                        goto label_00FB69;  /* @0x00FB65 */
-                        goto label_00FBD5;  /* @0x00FB67 */
-                        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00FB69 JCXZ 0x00FBC4 */ {
-                            goto label_00FB33;  /* @0x00FB6B */
-                            if (/* JB fallthrough cond: */ ax >= 0) /* @0x00FB70 JB 0x00FB9F */ {
-                            }
-                        }
-                    }
-                }
-            }
+    /* @asm 0x00FB00 ax = size(bp+8) * count(bp+0xa) -> cx = total bytes;
+     *      0x00FB08 jcxz -> total==0 returns the product (0). */
+    uint16_t total = (uint16_t)(arg1_bp_08 * arg2_bp_0A);
+    uint16_t cx = total;                                  /* bytes remaining */
+    uint16_t bx = arg0_bp_06;                             /* dest cursor [bx] */
+    uint16_t si = arg3_bp_0C;                             /* FILE* */
+    uint16_t di;                                          /* flag-array entry */
+    uint16_t bufsize;
+    if (cx == 0) return (int)(uint16_t)total;             /* @asm jcxz 0xFB67 -> ret */
+
+    di = (uint16_t)(0x29AE + (si - 0x290E));              /* @asm di mapping */
+
+    /* @asm 0x00FB1D compute working buffer size into [bp-4]: if [si+6]&0xC or
+     *      [di]&1 use [di+2] else default 0x200. */
+    if ((*(uint8_t near *)(uint16_t)(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
+        (*(uint8_t near *)(uint16_t)di & 1))              /* @asm test [di],1 */
+        bufsize = *(uint16_t near *)(uint16_t)(di + 2);   /* @asm mov ax,[di+2] */
+    else
+        bufsize = 0x200;                                  /* @asm mov ax,0x200 */
+
+    for (;;) {
+        /* @asm 0x00FB33 drain any bytes already in the FILE buffer via memcpy. */
+        if (!((*(uint8_t near *)(uint16_t)(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
+              (*(uint8_t near *)(uint16_t)di & 1)))             /* @asm test [di],1 */
+            goto refill;                                  /* @asm je 0xFB6D */
+        {
+            uint16_t avail = *(uint16_t near *)(uint16_t)(si + 2);  /* @asm mov ax,[si+2] */
+            if (avail == 0) goto refill;                  /* @asm or ax,ax; je 0xFB6D */
+            if (avail > cx) avail = cx;                   /* @asm cmp ax,cx; jbe; mov ax,cx */
+            func_010352(bx, *(uint16_t near *)(uint16_t)si, avail); /* @asm memcpy(dest=bx,src=[si],avail) */
+            cx -= avail;                                  /* @asm sub cx,ax */
+            *(uint16_t near *)(uint16_t)(si + 2) -= avail;/* @asm sub [si+2],ax */
+            bx += avail;                                  /* @asm add bx,ax */
+            *(uint16_t near *)(uint16_t)si += avail;      /* @asm add [si],ax */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (cx == 0) goto done;                           /* @asm 0xFB69 jcxz 0xFBC4 */
+        continue;                                         /* @asm jmp 0xFB33 */
+
+    refill:
+        /* @asm 0x00FB6D if cx >= bufsize, read whole sectors directly. */
+        if (cx >= bufsize) {                              /* @asm cmp cx,[bp-4]; jb 0xFB9F */
+            uint16_t whole = (uint16_t)(cx - (cx % bufsize));  /* @asm div [bp-4]; sub cx,dx */
+            int rd = func_0114E4((uint8_t)*(uint8_t near *)(uint16_t)(si + 7), bx, whole);
+                                                          /* @asm call 0x114E4 read(fd,bx,whole) */
+            if (rd == 0) {                                /* @asm or ax,ax; je 0xFBBA */
+                *(uint8_t near *)(uint16_t)(si + 6) |= 0x10;  /* @asm or [si+6],0x10 (EOF) */
+                goto done;
+            }
+            if ((uint16_t)rd == 0xFFFF) {                 /* @asm cmp ax,0xFFFF; je 0xFBC0 */
+                *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;  /* @asm or [si+6],0x20 (err) */
+                goto done;
+            }
+            cx -= (uint16_t)rd;                           /* @asm sub cx,ax */
+            bx += (uint16_t)rd;                           /* @asm add bx,ax */
+            if (cx == 0) goto done;                        /* @asm jmp 0xFB69 */
+            continue;
+        } else {
+            /* @asm 0x00FB9F last partial sector: pull one byte via _filbuf. */
+            int ch = func_010B26(si);                     /* @asm call 0x10B26 _filbuf(fp) */
+            if ((uint16_t)ch == 0xFFFF) goto done;        /* @asm cmp ax,0xFFFF; je 0xFBC4 */
+            *(uint8_t near *)(uint16_t)bx = (uint8_t)ch;  /* @asm mov [bx],al */
+            bx++;                                          /* @asm inc bx */
+            cx--;                                          /* @asm dec cx */
+            bufsize = *(uint16_t near *)(uint16_t)(di + 2); /* @asm mov ax,[di+2]; mov [bp-4],ax */
+            if (cx == 0) goto done;                        /* @asm jmp 0xFB69 */
+            continue;
+        }
+    }
+
+done:
+    /* @asm 0x00FBC4 if cx!=0 return whole-objects read = (total-cx)/size; else
+     *      (cx==0) return count(bp+0xa). */
+    if (cx != 0)                                          /* @asm jcxz 0xFBD2 */
+        return (int)(uint16_t)((uint16_t)(total - cx) / arg1_bp_08); /* @asm (total-cx)/size */
+    return (int)(uint16_t)arg2_bp_0A;                     /* @asm mov ax,[bp+0xa] (count) */
 }
 
 /* @asm        0x00FBDC..0x00FC7F  (163 bytes)  region=load_image
@@ -801,19 +861,36 @@ int func_010226_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (66 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  stricmp-like (near): case-insensitive compare s1(arg0) vs s2(arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_010250_logic_sz_66(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01025F JE 0x01028D */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010267 JE 0x01025D */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010287 JE 0x01025D */ {
-            }
+    /* @asm stricmp(s1=arg0_bp_06 [bx], s2=arg1_bp_08 [si]), near pointers.
+     * 0x010255 mov si,s2; 0x010258 mov bx,s1; 0x01025B al=0xFF (loop primer).
+     * loop top 0x01025D or al,al; je 0x1028D (al==0 means prev pair both NUL ->
+     *   equal, fall to 0x01028D cwde with al=0 -> return 0).
+     * 0x010261 lodsb (al=*s2++); 0x010262 ah=*s1 [bx]; 0x010264 inc bx;
+     * 0x010265 cmp ah,al; je 0x1025D (raw-equal bytes -> next iter).
+     * else fold s2 char (al): 0x010269 sub al,0x41; cmp 0x1A; sbb cl,cl;
+     *   and cl,0x20; add al,cl; add al,0x41  (al in 'A'..'Z' -> +0x20 lower).
+     * 0x010276 xchg al,ah; fold s1 char identically.
+     * 0x010285 cmp al,ah (s1 vs s2, folded); je 0x1025D (equal -> next iter);
+     * else 0x010289 sbb al,al; sbb al,0xFF -> -1 if s1<s2 else +1; cwde. */
+    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    for (;;) {
+        uint8_t c1 = *s1++;                     /* @asm ah=[bx]; inc bx */
+        uint8_t c2 = *s2++;                     /* @asm lodsb */
+        if (c1 != c2) {                         /* @asm cmp ah,al; jne -> fold */
+            uint8_t f1 = c1, f2 = c2;
+            if ((uint8_t)(f1 - 0x41) < 0x1A) f1 += 0x20;  /* @asm fold s1 'A'-'Z' */
+            if ((uint8_t)(f2 - 0x41) < 0x1A) f2 += 0x20;  /* @asm fold s2 'A'-'Z' */
+            if (f1 != f2)                        /* @asm cmp al,ah; jne */
+                return (f1 < f2) ? -1 : 1;       /* @asm sbb al,al; sbb al,0xFF */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (c1 == 0) return 0;                  /* @asm or al,al; je (both NUL) */
+    }
 }
 
 /* @asm        0x010292..0x0102C8  (54 bytes)  region=load_image
@@ -825,24 +902,38 @@ int func_010250_logic_sz_66(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  COUNT_LOOP (54 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strnicmp-like (near): case-insensitive compare <=n of s1(arg0) vs s2(arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "size 54" was short; func_010292.asm reports size 87
+ * (body runs 0x010292..0x0102E8 retf).  Full body decompiled below.
  */
 int func_010292_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x0102A2 JCXZ 0x0102E1 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0102B0 JE 0x0102D2 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0102B4 JE 0x0102D2 */ {
-                    if (/* JB fallthrough cond: */ ax >= 0) /* @0x0102BA JB 0x0102C2 */ {
-                        if (/* JA fallthrough cond: */ ax <= 0) /* @0x0102BE JA 0x0102C2 */ {
-                        }
-                    }
-                    if (/* JB fallthrough cond: */ ax >= 0) /* @0x0102C4 JB 0x0102CC */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strnicmp(s1=arg0_bp_06 [si], s2=arg1_bp_08 [di], n=arg2_bp_0A [cx]).
+     * 0x0102A2 jcxz 0x102E1 (n==0 -> cx stays 0 -> return 0).
+     * bh=0x41 ('A'), bl=0x5A ('Z'), dh=0x20 (case bit).
+     * loop 0x0102AA: ah=*s1 [si]; al=*s2 [di]; 0x0102AE or ah,ah; je 0x102D2;
+     *   0x0102B2 or al,al; je 0x102D2 (NUL in either -> finalize).
+     * 0x0102B6 inc si; inc di; fold ah ('A'..'Z' -> +0x20) at 0x0102B8;
+     *   fold al at 0x0102C2; 0x0102CC cmp ah,al; jne 0x102D8; loop 0x102AA.
+     * finalize 0x0102D2: xor cx,cx; cmp ah,al; je 0x102E1 (equal -> 0);
+     *   0x0102D8 mov cx,0; jb 0x102DF (ah<al skip); else dec cx;dec cx;
+     *   0x0102DF not cx -> -1 if s1<s2 else +1. ax=cx. */
+    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    uint16_t n = arg2_bp_0A;
+    uint8_t c1 = 0, c2 = 0;
+    while (n != 0) {                            /* @asm jcxz / loop */
+        c1 = *s1; c2 = *s2;                     /* @asm ah=[si]; al=[di] */
+        if (c1 == 0 || c2 == 0) break;          /* @asm or ah,ah/or al,al; je */
+        s1++; s2++;                             /* @asm inc si; inc di */
+        if ((uint8_t)(c1 - 0x41) < 0x1A) c1 += 0x20;  /* @asm fold s1 'A'-'Z' */
+        if ((uint8_t)(c2 - 0x41) < 0x1A) c2 += 0x20;  /* @asm fold s2 'A'-'Z' */
+        if (c1 != c2) break;                    /* @asm cmp ah,al; jne 0x102D8 */
+        n--;
+    }
+    if (c1 == c2) return 0;                     /* @asm xor cx,cx; cmp; je */
+    return (c1 < c2) ? -1 : 1;                  /* @asm not cx (-1 / +1) */
 }
 

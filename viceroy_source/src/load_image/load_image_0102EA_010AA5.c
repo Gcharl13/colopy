@@ -281,32 +281,32 @@ int func_01046D_logic_sz_5(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (154 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  __aFldiv: signed 32-bit long division (dividend/divisor)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 large-model signed long-divide helper.  Operands arrive as two
+ * dwords on the stack: dividend = [bp+8]:[bp+6], divisor = [bp+0xc]:[bp+0xa].
+ * Returns the 32-bit quotient in dx:ax.  retf 8 (callee pops 8 arg bytes).
+ * Signature widened/typed to (int32_t, int32_t) -> int32_t to model this.
  */
-int func_010496_logic_sz_154(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
+/* NAME kept as auto-generated func_010496_logic_sz_154; return type/arity widened
+ * to (int32_t, int32_t)->int32_t to model the two dword stack operands. */
+int32_t func_010496_logic_sz_154(int32_t dividend /*bp+6:bp+8*/, int32_t divisor /*bp+0xa:bp+0xc*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x0104A3 JGE 0x0104B6 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x0104BB JGE 0x0104CE */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0104D0 JNE 0x0104E7 */ {
-            goto label_01051F;  /* @0x0104E5 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0104FC JNE 0x0104F2 */ {
-        }
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x01050D JB 0x01051B */ {
-            if (/* JA fallthrough cond: */ ax <= 0) /* @0x010512 JA 0x01051B */ {
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x010514 JB 0x01051C */ {
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x010519 JBE 0x01051C */ {
-                    }
-                }
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010520 JNE 0x010529 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0104A1..0x0104CE sign reduction: di counts negative operands; if
+     *      dividend hi<0 negate it (neg lo; sbb 0; neg hi) and inc di; same for
+     *      divisor.  Both operands are now non-negative magnitudes.
+     * 0x0104D0 or ax,ax (divisor hi); jne 0x104E7 -> full 32/32 path.
+     *   divisor-fits-in-16 path (0x0104D2): cx=div_lo; bx=hi/cx (q hi, dx=rem);
+     *   ax=(rem:dvd_lo)/cx (q lo); dx=bx -> dx:ax = quotient.
+     *   full path (0x0104E7): normalize-shift dividend & divisor right until
+     *   divisor hi==0; div -> quotient estimate si; recompute si*divisor and
+     *   compare against dividend (0x01050B..0x010519) to correct si down by 1 if
+     *   it overshot; dx=0; ax=si.
+     * 0x01051F dec di; jne 0x10529 -> if exactly one operand was negative,
+     *   negate the result (neg dx; neg ax; sbb dx,0).
+     * Net semantics: truncate-toward-zero signed long division. */
+    return dividend / divisor;
 }
 
 /* @asm        0x010530..0x010549  (25 bytes)  region=load_image
@@ -395,19 +395,40 @@ int func_0105E0_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (69 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  stricmp-like (FAR): case-insensitive compare s1(arg0) vs s2(arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: both args are FAR pointers.  s1 = es:bx from les bx,[bp+6] (offset
+ * [bp+6], segment [bp+8]); s2 = ds:si from lds si,[bp+0xa] (offset [bp+0xa],
+ * segment [bp+0xc]).  Signature widened to char far* to model the seg:off pairs;
+ * the auto-banner args_seen [6,10] saw only the offset halves.  Logic is the
+ * far twin of the near stricmp at func_010250.
  */
-int func_01060E_logic_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+/* NAME kept as auto-generated func_01060E_logic_sz_69; args widened to far ptrs. */
+int func_01060E_logic_sz_69(const char far *s1 /*bp+6:bp+8*/, const char far *s2 /*bp+0xa:bp+0xc*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01061E JE 0x01064D */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010627 JE 0x01061C */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010647 JE 0x01061C */ {
-            }
+    /* @asm stricmp(s1=es:bx, s2=ds:si), far pointers.
+     * 0x010614 lds si,[bp+0xa] (s2); 0x010617 les bx,[bp+6] (s1);
+     * 0x01061A al=0xFF primer; loop top 0x01061C or al,al; je 0x1064D (prev
+     *   pair both NUL -> equal, fall to cwde al=0 -> ret 0).
+     * 0x010620 lodsb (al=*s2++); 0x010621 ah=es:[bx]; inc bx;
+     * 0x010625 cmp ah,al; je 0x1061C (raw-equal -> next iter).
+     * else fold s2 (al) 'A'..'Z' -> +0x20; xchg al,ah; fold s1 (ah);
+     * 0x010645 cmp al,ah; je 0x1061C; else sbb al,al; sbb al,0xFF -> -1/+1; cwde. */
+    const uint8_t far *p1 = (const uint8_t far *)s1;
+    const uint8_t far *p2 = (const uint8_t far *)s2;
+    for (;;) {
+        uint8_t c1 = *p1++;                     /* @asm ah=es:[bx]; inc bx */
+        uint8_t c2 = *p2++;                     /* @asm lodsb (ds:si) */
+        if (c1 != c2) {                         /* @asm cmp ah,al; jne -> fold */
+            uint8_t f1 = c1, f2 = c2;
+            if ((uint8_t)(f1 - 0x41) < 0x1A) f1 += 0x20;  /* @asm fold s1 'A'-'Z' */
+            if ((uint8_t)(f2 - 0x41) < 0x1A) f2 += 0x20;  /* @asm fold s2 'A'-'Z' */
+            if (f1 != f2)                        /* @asm cmp al,ah; jne */
+                return (f1 < f2) ? -1 : 1;       /* @asm sbb al,al; sbb al,0xFF */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (c1 == 0) return 0;                  /* @asm or al,al; je (both NUL) */
+    }
 }
 
 /* @asm        0x010654..0x01066E  (26 bytes)  region=load_image
@@ -562,15 +583,31 @@ int func_01074E_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (70 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strcat-like (FAR): append src(arg1) to dest(arg0), return dest
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: both args are FAR pointers.  dest = [bp+6]:[bp+8], src = [bp+0xa]:[bp+0xc].
+ * Returns the dest far pointer in dx:ax.  Far twin of the near strcat at
+ * func_00FD74.  Signature widened to char far* (auto args_seen [6,8,10] saw
+ * the dest offset, dest segment, and src offset but the prototype models the
+ * full seg:off pairs).
  */
-int func_010784_logic_sz_70(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* NAME kept as auto-generated func_010784_logic_sz_70; return/args widened to far. */
+char far *func_010784_logic_sz_70(char far *dest /*bp+6:bp+8*/, const char far *src /*bp+0xa:bp+0xc*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0107B5 JE 0x0107B9 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strcat(dest=es:[bp+6], src=[bp+0xa]), far.
+     * 0x01078C les di,[bp+6]; repne scasb scans dest for NUL; lea si,[di-1]
+     *   (si = dest NUL position).
+     * 0x010799 les di,[bp+0xa]; repne scasb measures src; not cx; sub di,cx
+     *   (di back to src start).
+     * 0x0107A5 ds = src seg; es = dest seg([bp+8]); xchg si,di -> si=src,di=dest
+     *   end; movsw/movsb copies src incl. NUL to dest end (byte-equivalent).
+     * 0x0107AE returns dx:ax = [bp+8]:[bp+6] (dest). */
+    uint8_t far *d = (uint8_t far *)dest;
+    const uint8_t far *s = (const uint8_t far *)src;
+    while (*d) d++;                          /* @asm repne scasb over dest */
+    while ((*d++ = *s++) != 0) ;             /* @asm movs src incl. NUL */
+    return dest;                             /* @asm mov ax,[bp+6]; mov dx,es */
 }
 
 /* @asm        0x0107CA..0x0107FB  (49 bytes)  region=load_image
@@ -582,19 +619,31 @@ int func_010784_logic_sz_70(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  memset-like (FAR): fill arg2 bytes of dest(arg0) with arg1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: dest is a FAR pointer [bp+6]:[bp+8]; fill byte = [bp+0xa]; count =
+ * [bp+0xc].  Returns the dest far pointer in dx:ax.  Far twin of the near
+ * memset at func_01037E.  The asm splits the run at the 64K segment boundary
+ * (cx = min(count, 0x10000-off) in this segment, dx = remainder in es+0x1000)
+ * which is a real-mode addressing detail; the net byte effect is a flat fill
+ * of `count` bytes, written below.
  */
-int func_0107CA_logic_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C)
+/* NAME kept as auto-generated func_0107CA_logic_sz_49; dest widened to far ptr. */
+char far *func_0107CA_logic_sz_49(char far *dest /*bp+6:bp+8*/, uint16_t fill_bp_0A, uint16_t count_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x0107D0 JCXZ 0x01080A */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0107DA JE 0x0107E8 */ {
-            }
-            if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x0107F7 JCXZ 0x010809 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm memset(dest=es:[bp+6], c=(uint8_t)[bp+0xa], n=[bp+0xc]), far.
+     * 0x0107CD mov cx,n; jcxz 0x1080A (n==0 -> just return dest).
+     * 0x0107D3 les di,dest; 0x0107D8 split count at 64K boundary into
+     *   cx=min(n, 0x10000-off) and dx=remainder.
+     * 0x0107E8 al=ah=(uint8_t)c; rep stosw + stosb fills cx bytes;
+     * 0x0107F5 if remainder dx, advance es by 0x1000 paragraphs and fill it.
+     * 0x01080A returns dx:ax = [bp+8]:[bp+6] (dest). */
+    uint8_t far *d = (uint8_t far *)dest;
+    uint8_t c = (uint8_t)fill_bp_0A;
+    uint16_t n = count_bp_0C;
+    while (n-- != 0) *d++ = c;               /* @asm rep stosw / stosb (with seg wrap) */
+    return dest;                             /* @asm mov ax,[bp+6]; mov dx,[bp+8] */
 }
 
 /* @asm        0x010812..0x010834  (34 bytes)  region=load_image
