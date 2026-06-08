@@ -207,11 +207,14 @@ int tribe_settlement_count_dec(void *tribe_ptr)
  * @asm 0x46F92  mov bx,[0x8D4E]            ; the removed settlement record
  * @asm 0x46F96  or  byte [bx+3],0x80       ; +0x03 |= 0x80  (tribe eliminated flag)
  * @asm 0x46F9A..0x46FBB  follow-up overlay calls (announce extinction):
- *        push [0x8D50]; LCALL 0x181F:0x9A4 -> AX                 ; (format tribe name?)
- *        push AX; push 0; LCALL 0x181F:0x438                     ; (format/build string)
+ *        push [0x8D50]; LCALL 0x181F:0x9A4 -> AX                 ; power_handle(tribe_power_index)
+ *                                                                 ;   per overlay_046D70_04C2E1.c
+ *        push AX; push 0; LCALL 0x181F:0x438                     ; (string/event dispatch;
+ *                                                                 ;   body in thunk page)
  *        push 3; push 0x14D4; LCALL 0x181F:0x652                 ; emit message @seg 0x14D4
+ *                                                                 ;   (screen-clear/draw; body in thunk page)
  *      (0x14D4 string id + the three thunks are ANCHOR_VERIFIED via the call
- *       sites; their precise effect is TBD.)
+ *       sites; thunk bodies in thunk page.)
  * ============================================================================ */
 void native_tribe_eliminate(void *settlement_record)
 {
@@ -280,7 +283,8 @@ extern uint8_t native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weig
  * The numeric rates (NATIVE_GROWTH_PCT, MISSION_CONVERT_PCT, attitude deltas,
  * tribute formulas) are NOT in VICEROY.EXE as literals — most native behaviour
  * tables load from NAMES.TXT @TRIBES / TRIBE.TXT at runtime, and the per-turn
- * scoring crosses RTLink overlay thunks.  Treat every number here as TBD.
+ * scoring crosses RTLink overlay thunks.  Treat every number here as RUNTIME_ONLY
+ * (NAMES.TXT/data-file) — no static EXE values.
  *
  * What IS anchored: the in-game settlement scoring/attitude builder is
  * func at file 0x048AE0+ in page_0C (pushes the "MISSION0" message key
