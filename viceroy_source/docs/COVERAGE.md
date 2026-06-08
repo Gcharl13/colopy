@@ -8,9 +8,9 @@ every `@asm` file-offset cited in `src/**/*.c` against the 1,248-function census
 
 | region | funcs | with @asm citation | with BYTE_VERIFIED cite |
 |--------|------:|-------------------:|------------------------:|
-| resident load image (0x02400–0x20665) | 542 | 537 (99%) | 102 (18%) |
+| resident load image (0x02400–0x20665) | 542 | 537 (99%) | 104 (19%) |
 | overlay region (0x20665–EOF)          | 706 | 699 (99%) | 244 (35%) |
-| **all**                               | **1248** | **1236 (99%)** | **346 (28%)** |
+| **all**                               | **1248** | **1236 (99%)** | **348 (28%)** |
 
 **Reading these numbers honestly:**
 - *with @asm citation* ≈ the function's byte boundary is referenced from source.
