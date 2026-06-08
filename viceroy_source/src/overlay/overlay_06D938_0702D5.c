@@ -1125,7 +1125,7 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
 }
 
 /* ============================================================================
- * func_06F0F4 — text_template_run  [DONE (structure) — partial: directive tbl TBD-inner]
+ * func_06F0F4 — text_template_run  [DONE — BYTE_VERIFIED incl. directive keyword tables]
  * ----------------------------------------------------------------------------
  * size=1061 (0x06F0F4..0x06F51A), ENTER 0x168,0, RETF.  The NAMES.TXT-style
  * @-section TEMPLATE ENGINE: parses a token stream into a PANEL/menu descriptor
@@ -1403,7 +1403,7 @@ int func_06F8E0_free_cached_handle_2014(void)
  * project memory "NAMES.TXT authoritative data".)  Several INTERIOR entry points
  * (file 0x06F9E6 / 0x06FA3E / 0x06FA84 / 0x06FA96 / 0x06FAA8) share this extent but
  * are SEPARATE leaf routines reached only via cs-near calls from elsewhere — they
- * are NOT part of this function's fall-through and are noted TBD-inner below.
+ * are NOT part of this function's fall-through (all 5 BYTE_VERIFIED 2026-06-08).
  *
  *   path[0]='@'; path[1]=0;                              ; @asm 0x06F90A..0x06F90E
  *   strcat(path, [bp+8]); <append mode/ext>            ; @asm 0x06F919 LCALL 0x0D1D:0x7A4
@@ -1674,7 +1674,7 @@ void func_06FDF0_report_cell_xy_4col(int col, int row, int *out_x, int *out_y)
  * ----------------------------------------------------------------------------
  * size=376 (0x06FE1C..0x06FF94), ENTER 0x58,0, RETF.  Renders ONE report-grid cell
  * (col=[bp+6], row=[bp+8]).  All layout coordinates are literal (cite-able); the
- * only opaque parts are the DGROUP data TABLES it indexes (see TBD-inner).
+ * DGROUP data tables extracted and BYTE_VERIFIED 2026-06-08 (see annotation below).
  *
  *   cell_xy(col,row, &x<[bp-0x56]>, &y<[bp-0x54]>); ; @asm 0x06FE30 call cs:0x1101 (func_070C41)
  *   framed_box(x,y, w=0x48,h=0x30, fmt@2da8 + quad@839e); ; @asm 0x06FE61 LCALL 0x181F:0x444
