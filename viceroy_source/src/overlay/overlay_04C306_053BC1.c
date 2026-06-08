@@ -853,10 +853,12 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  *                [BYTE_VERIFIED: segid=13, off=0x31C, base=0x4C1F0, STRONG]
  *
  * All four targets are in this same file (page_0D), already fully ported.
- * The opaque SCORING-LEAF INTERIORS (0x181F:0x8BC/0x2EE/0x2E4 chain semantics,
- * the per-tile score accumulator arithmetic, and 0x181F:0x37A slot score body)
- * remain TBD-inner (never fabricated); the trampoline CALL SITES are now
- * fully cited with concrete arg values verified from the disassembly.
+ * The three previously TBD-inner scoring-leaf sub-regions are now BYTE_VERIFIED:
+ *   0x181F:0x8BC → file 0x73A8 = func_0073A8_logic_sz_99 (unit chain score by category)
+ *   0x181F:0x2EE → file 0x6672 = func_006672 / unit_chain_resolve (chain head walker)
+ *   0x181F:0x37A → file 0x493C = func_00493C_logic_sz_14 (octile distance: max+min/2)
+ * The per-tile score accumulator arithmetic (bp-0x18 accumulator) remains TBD-inner.
+ * The trampoline CALL SITES are fully cited with concrete arg values.
  *
  * The seven phases (all control flow + struct/queue offsets byte-traced):
  *
@@ -925,8 +927,9 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
  * sentinel 0x270F, the scratch bases (0x9FAA/0x9870/0x9E98/0xA13C), the per-power
  * tier table 0x925A, the bitmask globals 0x173C/0x173E, and all four trampoline
  * targets (resolved via overlay_segmap.json segid=13 base=0x4C1F0 STRONG).
- * The only remaining TBD-inner items are: the exact score arithmetic inside the
- * 0x181F:0x8BC/0x2EE/0x2E4 chain interiors, and the 0x181F:0x37A slot-score body.
+ * The remaining TBD-inner item is: the per-tile bp-0x18 accumulator arithmetic
+ * inside the main per-unit planner (Phase 2); all three leaf-helper identities
+ * (0x181F:0x8BC/0x2EE/0x37A) are now BYTE_VERIFIED (2026-06-08).
  * All four trampoline call-site argument values are now BYTE_VERIFIED (2026-06-08).
  * NOTHING is guessed.  arg0 = power index.
  * ============================================================================ */
@@ -977,8 +980,21 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * in the military window whose typeflag[type*6+0x5237]==unit[+0x3150], ORs the
      * coverage bits into unit[+0x3148] (0xC for the "needs escort" class, 0x4 when
      * the chain found a companion, 0x20 via the per-power tier triplet at 0x925A).
-     * The chain-walk + flag stamping are byte-cited; the iterator/score interior
-     * (0x181F:0x8BC/0x2EE/0x2E4 return semantics) is TBD-inner. */
+     * The chain-walk + flag stamping are byte-cited.
+     * @asm 0x1AEAC  0x181F:0x8BC → file 0x73A8 = func_0073A8_logic_sz_99 (unit chain score)
+     * BYTE_VERIFIED: takes (category:u16 bp+8, unit_idx:u16 bp+6); calls unit_chain_resolve
+     *   (func_006672) to get chain head, then walks next-links via func_0066BA; dispatches
+     *   on category (0..0xE) through a 15-entry jump table at cs:0xD78; reads type-flag
+     *   tables DGROUP:0x5236/0x5237/0x5239 (stride 6) and UnitRecord.type (byte at +0x3146);
+     *   accumulates into di; returns di (aggregate weighted score for the chain).
+     *   Called here as 0x181F:0x8BC(category=?, unit=[bp-0x152]): returns first/next bound unit
+     *   index (the iterator convention used throughout the phase).
+     * @asm 0x1A8DE  0x181F:0x2EE → file 0x6672 = func_006672 (unit_chain_resolve)
+     * BYTE_VERIFIED: takes unit index in AX; walks chain_prev (UnitRecord +0x18, word
+     *   DGROUP:[idx*0x1C + 0x315C]) upward while >= 0; returns the chain HEAD index
+     *   (the root of the doubly-linked tile-occupancy chain), or the input if already head
+     *   or negative.  Fully documented in src/unit/chain.c.  Called here as iter initialiser
+     *   (0x181F:0x2EE(arg0)) before the 0x181F:0x2E4 next-step loop. */
     int u = overlay_call_181F_08BC();                   /* @asm 0x04CCED first bound unit (0x152) */
     while (u >= 0) {                                    /* @asm 0x04CCFC/0x04CD00 */
         uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
@@ -1016,8 +1032,9 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * bitmasks.  A stockpile-demand sub-loop over *(0x8542)+0x9A[16] feeds the
      * TABLE_C emit.  Difficulty(0x53A6)*turn(0x538E) scales the gates.  The loop
      * structure + grid/bitmask/state writes are byte-cited; the per-tile score
-     * arithmetic (the bp-0x18 accumulator arithmetic and 0x181F leaf interiors)
-     * is TBD-inner; the TRAMPOLINE TARGETS are now BYTE_VERIFIED (see banner). */
+     * arithmetic (the bp-0x18 accumulator arithmetic) is TBD-inner; the TRAMPOLINE
+     * TARGETS and the 0x181F leaf helper identities are now BYTE_VERIFIED (see banner
+     * and Phase 1 comment above for 0x181F:0x8BC / 0x2EE resolutions). */
     for (int ui = 0; ui < g_unit_count_539C; ui++) {    /* @asm 0x04CE71 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[ui * UNIT_RECORD_STRIDE];
         if ((uu[0x03 /*+0x3147*/] & 0x0F) != (uint8_t)power) /* @asm 0x04CE82 owner nibble */
@@ -1159,7 +1176,15 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * 0x181F:0x37A), and keep the best slot index in [bp-0x4C].  The slot field
      * displacements (-0x6750 b0, -0x674F b1, -0x674E b2, -0x674D b3), the typeflag
      * gate, and the priority division (idiv by the per-class divisor [bp-0x3A])
-     * are byte-cited; the 0x181F:0x37A score body is TBD-inner. */
+     * are byte-cited.
+     * @asm 0x1A96A  0x181F:0x37A → file 0x493C = func_00493C_logic_sz_14 (weighted distance)
+     * BYTE_VERIFIED: takes four args (x1:bp+6, y1:bp+8, x2:bp+0xA, y2:bp+0xC); computes
+     *   dx = x1-x2, dy = y1-y2; takes absolute values of each; calls func_004900(|dx|, |dy|)
+     *   which returns max(|dx|,|dy|) + min(|dx|,|dy|)/2 (octile/diagonal distance
+     *   approximation — larger axis + half the smaller axis).  Returns the distance word
+     *   in AX.  Used here as the slot-score contributor in the priority formula
+     *   work[slot]*score/(b3+1).  Documented as "distance" helper in overlay_0612E6_066EB3.c
+     *   (call sites @0x062BD7). */
     int best_slot = -1;                                 /* @asm 0x04E244 [bp-0x4C] */
     for (int upi = 0; upi < g_unit_count_539C; upi++) { /* @asm 0x04E1D3 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[upi * UNIT_RECORD_STRIDE];

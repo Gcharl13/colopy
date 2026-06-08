@@ -321,6 +321,23 @@ check_bytes("04D04A [bp-0x150]=ax (b3 gate init, stays 0 -> b3=3 always)", 0x04D
 check_bytes("04D938 score_clamped clamp 0x7FFF (ai_table_c_insert w1 max)", 0x04D938,
             "b8 ff 7f")
 
+# ---- func_04CC50 remaining TBD-inner thunks resolved (BYTE_VERIFIED 2026-06-08) ----
+# 0x181F:0x8BC thunk (Type-B, ea=0x0427:0x0D38=func_0073A8 unit-chain-score)
+check_bytes("1AEAC 0x181F:0x8BC thunk EA to 0x0427:0x0D38 (func_0073A8 unit_chain_score)", 0x1AEAC,
+            "9a 91 0d 0d 11 ea 38 0d 27 04")
+# 0x181F:0x2EE thunk (Type-B, ea=0x0427:0x0002=func_006672 unit_chain_resolve)
+check_bytes("1A8DE 0x181F:0x2EE thunk EA to 0x0427:0x0002 (func_006672 unit_chain_resolve)", 0x1A8DE,
+            "9a 91 0d 0d 11 ea 02 00 27 04")
+# 0x181F:0x37A thunk (Type-B, ea=0x024C:0x007C=func_00493C octile_distance)
+check_bytes("1A96A 0x181F:0x37A thunk EA to 0x024C:0x007C (func_00493C octile_distance)", 0x1A96A,
+            "9a 91 0d 0d 11 ea 7c 00 4c 02")
+# func_0073A8 prologue: ENTER 6,0 PUSH DI PUSH SI
+check_bytes("0073A8 func_0073A8 unit_chain_score ENTER 6 prologue", 0x73A8,
+            "c8 06 00 00 57 56")
+# func_00493C prologue: ENTER 4,0 PUSH DI PUSH SI
+check_bytes("00493C func_00493C octile_distance ENTER 4 prologue", 0x493C,
+            "c8 04 00 00 57 56")
+
 # ---- Group D: func_06E3D0 hit-scan + func_070060 key-nav (BYTE_VERIFIED 2026-06-08) ----
 # Phase 2 adj formula: mov al,es:[bx+0xa]; and ax,0x10; cmp ax,1; sbb ax,ax
 check_bytes("06E6B6 panel Phase2 adj=(p[+0xa]&0x10)?0:3 (wide-mode gate)", 0x06E6B6,
