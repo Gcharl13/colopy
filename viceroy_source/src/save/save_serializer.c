@@ -65,7 +65,7 @@
  *    @bytes file 0x1FB26: 72 62 00 = "rb\0"  (DGROUP 0x2186, fopen mode, LOAD)
  *
  *  Filename built by func_072C4E: strcpy(buf,"COLONY"); <slot>; strcat(buf,".SAV").
- *  The slot infix formatting (between stem and ext) is still [TBD].
+ *  The slot infix formatting (between stem and ext) is not yet byte-traced.
  * ---------------------------------------------------------------------------- */
 #define SAVE_NAME_STEM   "COLONY"     /* @bytes file 0x1FA82  [BYTE_VERIFIED] */
 #define SAVE_NAME_EXT    ".SAV"       /* @bytes file 0x1FA89  [BYTE_VERIFIED] */
@@ -119,9 +119,9 @@ extern uint16_t g_map_h;           /* @asm 0x853C */
 /* Save-format version word @0x81A. Written as a 2-byte field right after the
  * magic; on load the saved value is range-checked against this (LOADOLD gate).
  * Its runtime value is set during startup and is NOT statically determinable
- * from the image (no static xref) -> exact value [TBD]; the variable/role is
+ * from the image (no static xref) -> exact value RUNTIME_ONLY; the variable/role is
  * [BYTE_VERIFIED]. */
-extern uint16_t g_save_version;    /* @asm 0x81A   value [TBD], role BYTE_VERIFIED */
+extern uint16_t g_save_version;    /* @asm 0x81A   value RUNTIME_ONLY, role BYTE_VERIFIED */
 
 /* ----------------------------------------------------------------------------
  *  MSC-6.0 buffered C-runtime FILE primitives used by the serializer.

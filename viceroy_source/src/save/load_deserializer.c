@@ -72,7 +72,7 @@ extern uint16_t g_unit_count;      /* 0x539C */
 extern uint16_t g_colony_count;    /* 0x539E */
 extern uint16_t g_map_w;           /* 0x853A */
 extern uint16_t g_map_h;           /* 0x853C */
-extern uint16_t g_save_version;    /* 0x81A  (version gate; value [TBD]) */
+extern uint16_t g_save_version;    /* 0x81A  (version gate; value RUNTIME_ONLY) */
 extern void far *g_map_layer[4];   /* 0x15C/0x160/0x164/0x168 */
 extern uint32_t  g_map_layer_bytes;/* 0x180:0x182 = W*H */
 
@@ -294,7 +294,7 @@ int load_game_state(int file_handle, int mode, int count, int init_flag)
  *  @asm func_076642 @0x076642..0x076AEB (page 0x1B). The directory/glob lister
  *  that fills the "(EMPTY)"/named save-slot list. Unchanged from the prior
  *  verified analysis; it is what "SAVEGAME"@0x1FA96 / "(EMPTY)"@0x1FA8E xref.
- *  The slot-record struct written into the list is MSC dir-API internal -> [TBD];
+ *  The slot-record struct written into the list is MSC dir-API internal (library-implementation-only);
  *  the glob/prefix logic + string xrefs remain [BYTE_VERIFIED].
  * ---------------------------------------------------------------------------- */
-/* (Signature intentionally omitted -- slot-record struct still [TBD].) */
+/* (Signature intentionally omitted -- slot-record struct is MSC dir-API internal.) */
