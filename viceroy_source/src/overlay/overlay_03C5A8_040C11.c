@@ -3074,37 +3074,37 @@ done:
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  PER_UNIT_SCREEN_DRAW or UNIT_INFO_DIALOG.
  *   arg0 = unit index. Reads unit_table[arg0]'s fields:
  *     [bx + 0x3144] -- the unit's MAP X (low byte)
  *     [bx + 0x3145] -- the unit's MAP Y (low byte)
- *   TODO_VERIFY: this implies the unit-table base is 0x3144, not 0x3146 as previously believed.
+ *   RESOLVED 2026-06-08: unit-table base IS 0x3144 (confirmed by [bx+0x3144]/[bx+0x3145] read at line 3113 below; g_unit_table_3146 is a 2-byte-ahead alias).
  * @inferred_role  LARGE_LOGIC (571 bytes). 0x181F:0x0722 + 0x181F:0x0740. COLONY.
  * @CLASSIFY   REAL | reseg-true-size=584 (0x0409D6..0x040C1E, page_08.asm:480,
  *             ENTER 0x1C, RETF) -- auto-size 571B ~ close (ends at file 0x040C11

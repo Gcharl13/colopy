@@ -44,11 +44,24 @@ extern int16_t g_sol_prev10_53D8;     /* DGROUP:0x53D8 — last announced rebel%
 #define POWER_STRIDE        0x13C
 #define POWER_SOL_PCT_OFF   0x19      /* @asm -0x77DF -> +0x8821 -> PowerRecord+0x19 */
 
-/* Per-power gate table at DGROUP:0x9410 (1 byte per power, stride 0x13C):
- * @asm 0x03E8D0  cmp byte [bx-0x6bf0], 4   ; bx = power*0x13C
- *   −0x6BF0 ≡ +0x9410.  Read as "does this power have >= 4 of <something>" (TBD
- *   which counter; gates whether the milestone messages are worth showing). */
-#define POWER_GATE_9410     0x9410   /* @asm -0x6BF0 -> +0x9410 (per-power, stride 0x13C) */
+/* Per-power accumulated colonial-strength score table DGROUP:0x9410 — BYTE_VERIFIED 2026-06-08.
+ * Compact byte array (stride 1, NOT 0x13C): DS[0x9410 + power_idx].
+ *
+ * @asm 0x03E8D0: cmp byte [bx-0x6bf0], 4   ; HERE bx = raw power_idx (NOT power*0x13C)
+ *   −0x6BF0 ≡ +0x9410 (unsigned 16-bit), so [bx-0x6BF0] = DS[0x9410 + power_idx].
+ *
+ * The field is ZEROED at turn-start (@asm 0x03FD5D) then rebuilt by a per-power
+ * statistics-recount function (func_03FD38, 1518 B):
+ *   Write 1 (0x03FEBC): += 1 for each colonist in/adjacent to a colony
+ *             (via lcall 0x181F:0xB78 "entity in colony?" predicate)
+ *   Write 2 (0x040251): += entity[+0x1F] (colony population byte, 0..32 cap) per owned entity
+ * Net effect: accumulated total colonist count (popsum) across all of a power's colonies.
+ *
+ * Thresholds (BYTE_VERIFIED from the recount function's callers):
+ *   >= 4: display SoL milestone messages (this site, @0x03E8D0)
+ *   >= 8: affects cavalry event probability + military outcomes (@0x055FFA, @0x05F450)
+ * Parameter 1 in OTHERMIGHT/OTHERLESS messages (displayed to player as "opposing strength"). */
+#define POWER_GATE_9410     0x9410   /* @asm -0x6BF0 -> +0x9410, stride 1 (compact array) */
 
 /* Near-call thunk trampolines inside page 0x06 (each is an `ljmp` to a far
  * overlay/load-image routine; internals TBD, call sites verified):
@@ -143,11 +156,11 @@ void sons_of_liberty_update(int power_id)
     if (pct >= 0x32 && g_rebel_power_53D2 < 0)             /* @asm 0x03E8C0 jl / 0x03E8C2 cmp [0x53D2],0 */
         sol_mark_rebel_power();                            /* @asm 0x03E8CA call 0x368B */
 
-    /* @asm 0x03E8CD — gate: only announce for a power with >= 4 of <table 0x9410>
-     * (TBD which counter; likely colony/pop count). Else just return. */
+    /* @asm 0x03E8CD — gate: only announce for a power whose accumulated colonial-strength
+     * score (DS[0x9410+power], = total colonist popsum) is >= 4. Else just return. */
     {
         const uint8_t *gate = (const uint8_t *)POWER_GATE_9410;
-        if (gate[(unsigned)power_id * POWER_STRIDE] < 4)   /* @asm 0x03E8D0 cmp [bx-0x6bf0],4 */
+        if (gate[(unsigned)power_id] < 4)                  /* @asm 0x03E8D0 cmp [bx-0x6bf0],4  (bx=power_id, stride 1) */
             return;                                        /* @asm 0x03E8D5 jae / 0x03E8D7 -> 0x3601 */
     }
 
@@ -177,10 +190,12 @@ void sons_of_liberty_update(int power_id)
 }
 
 /* ============================================================================
- * NOTES / STILL-TBD
+ * NOTES
  *  - The PowerRecord+0x19 SoL-byte offset is BYTE_VERIFIED from the write
- *    operand (−0x77DF), but the *meaning* of the −0x6BF0 (+0x9410) ">= 4" gate
- *    is inferred (likely colony count); marked TBD.
+ *    operand (−0x77DF).
+ *  - POWER_GATE_9410 ">= 4" gate: BYTE_VERIFIED 2026-06-08 (see define above).
+ *    Stride is 1 (compact byte array); "bx = power*0x13C" in the original comment
+ *    was WRONG — bx = raw power_idx here. Values = total colonist popsum.
  *  - sol_recompute_pct / sol_recompute_lowpath / sol_helper_3695 are RTLink
  *    thunks (ljmp into 0x1A1F:...) — the actual rebel% arithmetic lives in those
  *    targets and is NOT byte-traced here (TBD).  This routine is the *driver*
