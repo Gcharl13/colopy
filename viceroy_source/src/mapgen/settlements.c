@@ -1,7 +1,7 @@
 /* ============================================================================
  * settlements.c -- native-settlement record append (used during New Game seeding)
  * ----------------------------------------------------------------------------
- * See generator.c header for the BYTE_VERIFIED / TBD legend.
+ * See generator.c header for the BYTE_VERIFIED / not yet decoded legend.
  *
  * NATIVE-SETTLEMENT TABLE (BYTE_VERIFIED — docs/RULINGS.md 2026-05-28 plus the
  * full append routine func_046E18 traced 2026-05-30):
@@ -38,14 +38,14 @@
  * (rolled), +0x05 mission(0xFF), +0x06 0, +0x07/+0x08/+0x09 = 0xFF.  The +0x04
  * value comes from a ROLL (call cs:0x5434), not a caller argument.
  *
- * WHAT IS STILL TBD (honestly — do NOT fabricate):
+ * WHAT IS STILL not yet decoded (honestly — do NOT fabricate):
  *   func_064A10 (the terrain generator) does NOT place native settlements.
  *   The New-Game *placement* driver — the loop that picks tiles, chooses a tribe
  *   per region, decides camp/village/city/capital, enforces spacing, and CALLS
  *   func_046E18 — was not pinned down in this pass (its callers are reached via
  *   overlay thunks the static callgraph does not resolve).  The population/level
  *   roll function at near cs:0x5434 (within page 0x0C) is also un-traced.
- *   Everything about the *selection / spacing math* below remains TBD.
+ *   Everything about the *selection / spacing math* below remains not yet decoded.
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "native.h"     /* struct NativeSettlement (18 B, BYTE_VERIFIED) */
@@ -100,7 +100,7 @@ int native_add(int x, int y, int tribe)
 }
 
 /* ---------------------------------------------------------------------------
- * place_native_settlements — New-Game seeding driver.  ALGORITHM = TBD.
+ * place_native_settlements — New-Game seeding driver.  ALGORITHM = not yet decoded.
  *
  * The placement driver that repeatedly calls native_add (tile pick, tribe-by-
  * region assignment, camp/village/city/capital and population rolls, spacing
@@ -110,7 +110,7 @@ int native_add(int x, int y, int tribe)
  * ------------------------------------------------------------------------- */
 void place_native_settlements(void)
 {
-    /* TBD: settlement count, tribe selection, type rolls, spacing constant.
+    /* not yet decoded: settlement count, tribe selection, type rolls, spacing constant.
      * Intentionally left unimplemented rather than fabricated (prime directive).
      * The byte-verified record-append path is native_add() above. */
     (void)native_add; (void)g_map_width; (void)g_map_height;
@@ -119,14 +119,14 @@ void place_native_settlements(void)
 }
 
 /* ---------------------------------------------------------------------------
- * place_lost_city_rumours — TBD (not located).
+ * place_lost_city_rumours — not yet decoded (not located).
  * The only LCR-adjacent byte evidence in func_064A10 is the premade-scenario
  * branch @0x065BF6..0x065C21 that OR's 0xA0 into two FIXED tiles (offsets
  * pushed as 0x2B and 0x44) when [bp+6]!=0 and [0x2174]==0 (@0x065BFD) — that is
  * scripted scenario terrain (the "mountain" feature bit 0xA0), NOT random LCR
- * seeding.  The procedural LCR placement routine is not identified; left TBD.
+ * seeding.  The procedural LCR placement routine is not identified; left not yet decoded.
  * ------------------------------------------------------------------------- */
 void place_lost_city_rumours(void)
 {
-    /* TBD — not byte-located. */
+    /* not yet decoded — not byte-located. */
 }

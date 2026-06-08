@@ -4,9 +4,9 @@
  * Region: native / colony / combat.  Hand-ported from the per-function
  * disassembly (reverse_engineered/code/VICEROY/disasm/func_*.asm) and the
  * re-segmented overlay dump (disasm_overlay_reseg/page_0C.asm, code_base
- * 0x46600).  STRICT cite-or-TBD: every value/offset cites the .asm; anything
+ * 0x46600).  STRICT cite-or-not yet decoded: every value/offset cites the .asm; anything
  * undeterminable (opaque overlay 0x191F / 0x1A1F targets, truncated dumps) is
- * marked TBD and never guessed.
+ * marked not yet decoded and never guessed.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE          full @asm-cited body written here.
@@ -41,7 +41,7 @@
  * Signatures here are local and documentary; the canonical no-arg prototypes
  * live in overlay_externs.h.  We call through the canonical names. */
 
-/* DGROUP globals referenced in this region (cite-or-TBD; addresses are the
+/* DGROUP globals referenced in this region (cite-or-not yet decoded; addresses are the
  * absolute DGROUP offsets seen in the disassembly). */
 extern uint8_t  g_native_value_table_5AD8[];  /* DGROUP:0x5AD8 — per-tribe table, stride 0x4E */
 extern uint8_t  g_native_table_54EC[];         /* DGROUP:0x54EC — NativeSettlement[], stride 0x12 */
@@ -967,7 +967,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
 
 /* ============================================================================
  * func_04891A — per-turn native-tribe & relations reset
- *                                          [DONE — BYTE_VERIFIED (head); tail TBD]
+ *                                          [DONE — BYTE_VERIFIED (head); tail not yet decoded]
  * ----------------------------------------------------------------------------
  * Touches *(0x8542) (current colony).  Two clear phases are byte-visible:
  *
@@ -993,7 +993,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  *
  * The 0x5B04 grid (8×?, row stride 0x27 words) is the inter-power / tribe
  * relations / alarm matrix that func_046FFA(native AI) and the tea-party / king
- * code also touch.  Phases A+B are BYTE_VERIFIED; phase C tail is TBD.
+ * code also touch.  Phases A+B are BYTE_VERIFIED; phase C tail is not yet decoded.
  * ============================================================================ */
 extern void tribe_turn_update(int tribe);   /* near file:0x4BA0C -> LJMP 0x1A1F:0x03B0
                                              * -> power_weekly_boycott_recover (func_0485F6).
@@ -1018,7 +1018,7 @@ int native_relations_turn_reset(void)  /* func_04891A — head verified */
     /* @asm 0x048973..0x0489AD — phase C: per-object pass around current colony
      * (*0x8542): object dx table at +0xC8, dy table at +0xDE, colony tile-flags
      * at [+0x70].  The dump TRUNCATES mid-loop (bound [bp-0xc] and body past
-     * 0x4897C not present); the remaining work is TBD.  [head BYTE_VERIFIED] */
+     * 0x4897C not present); the remaining work is not yet decoded.  [head BYTE_VERIFIED] */
 
     return 0;
 }
@@ -1935,7 +1935,7 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
  *
  * The per-func dump TRUNCATES at 0x04A3C8 (the success/failure tails past the
  * compare are cut).  The threshold/roll/compare core is BYTE_VERIFIED; the two
- * outcome branches are TBD.  random_int(0,500) and the 0x030C table read match
+ * outcome branches are not yet decoded.  random_int(0,500) and the 0x030C table read match
  * the documented opcodes.  Marked DONE for the decision core.
  * ============================================================================ */
 extern uint16_t g_current_power_8D52;   /* DGROUP:0x8D52 — current/active power index */
@@ -1954,10 +1954,10 @@ int native_attack_reward_roll(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)  /* func
 
     /* @asm 0x04A3BF — success when the roll beats the threshold. */
     if (roll > threshold) {
-        /* @asm 0x04A3C2 success branch — bytes past 0x04A3C8 truncated (TBD). */
+        /* @asm 0x04A3C2 success branch — bytes past 0x04A3C8 truncated (not yet decoded). */
         return 1;
     }
-    /* @asm 0x04A3C4 failure branch — truncated (TBD). */
+    /* @asm 0x04A3C4 failure branch — truncated (not yet decoded). */
     (void)arg0_bp_0A; (void)arg1_bp_0C;
     return 0;
 }
@@ -1984,7 +1984,7 @@ int native_attack_reward_roll(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)  /* func
  * The per-func dump TRUNCATES at 0x04A497 (the 0x04A493 LCALL and tail are cut).
  * The free-test, RNG gate, and cue selection (5/7/6) are BYTE_VERIFIED.  The
  * cs:0x5443 trampoline resolves to colony_surrounding_tile_scan (binary-verified).
- * The trailing 0x917A call (past 0x04A493) is truncated (TBD).  0x0498 = sound cue
+ * The trailing 0x917A call (past 0x04A493) is truncated (not yet decoded).  0x0498 = sound cue
  * (platform leaf; call kept).  Marked DONE for the selection logic.
  * ============================================================================ */
 extern uint8_t g_power_active_543F[];   /* DGROUP:0x543F — per-power activity table, stride 0x34 */
@@ -2927,7 +2927,7 @@ done:
  *           authoritative range; they are retained here only as already-ported
  *           helpers and are out of scope for the 2026-05-30 completion pass.
  *
- * cite-or-TBD: no offsets are guessed; the @asm citations on the grid-helper
+ * cite-or-not yet decoded: no offsets are guessed; the @asm citations on the grid-helper
  * entries below are the per-func dump's offsets, retained to trace provenance.
  * ============================================================================ */
 

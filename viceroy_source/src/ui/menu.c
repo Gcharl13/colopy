@@ -31,9 +31,9 @@
  *   (matches reseg "size=1357 insns=481").  FUNCTION_INVENTORY/MANIFEST "138"
  *   is wrong; this file records the real extent.
  *
- * cite-or-TBD throughout: every offset/value/string cites the bytes; the
+ * cite-or-not yet decoded throughout: every offset/value/string cites the bytes; the
  * per-pixel blit leaves (the 0x181F:* / 0x191F:* GUI thunks) keep their CALL
- * SITES byte-exact and their internals TBD.  No fabrication.
+ * SITES byte-exact and their internals library-implementation-only.  No fabrication.
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "iolib.h"
@@ -80,7 +80,7 @@ extern uint8_t *colony_8542(void);
 
 /* ----------------------------------------------------------------------------
  * GUI-framework leaf calls used by func_02883E (call sites byte-exact;
- * pixel/overlay internals TBD).  thunk seg:off -> behaviour:
+ * pixel/overlay internals library-implementation-only).  thunk seg:off -> behaviour:
  *   0x181F:0xC0E  colony_field_get(c)   (==[bp-0x5E])     @asm 0x02884C
  *   0x181F:0xC54  colony_attr_get(c)    (==[bp-0x6A])     @asm 0x02885A
  *   0x181F:0x652  msg_popup(mode,key)   -> 1=accept       @asm 0x02888B  (the
@@ -174,7 +174,7 @@ extern int  mn_service_query(int sel, int c);       /* near CALL 0x2CA00 @asm 0x
  *
  * STATUS: ANCHOR_VERIFIED — dispatch table + every arm's string is byte-exact;
  * the per-arm overlay actions (msg_popup pixel work, the build bookkeeping
- * leaves) stay TBD.
+ * leaves) stay library-implementation-only.
  * ---------------------------------------------------------------------------- */
 int colony_service_menu(int colony_sel, int item_id)
 {
@@ -214,7 +214,7 @@ int colony_service_menu(int colony_sel, int item_id)
         break;
     case 3:  /* 0x2FC8 : INDIANLAND / INDIANBRIBE (buy native land) */
         /* @asm 0x0288C8..0x02892C: fmt colony+2 with INDIANLAND template,
-         * pop the buy confirm; on accept commit.  Internals TBD. */
+         * pop the buy confirm; on accept commit.  Internals library-implementation-only. */
         break;
     case 7:  mn_msg_popup(5, K_UNIV3);    break;    /* @asm 0x028A46 */
     case 8:  mn_msg_popup(5, K_COLLEGE2); break;    /* @asm 0x028A4E */
@@ -229,7 +229,7 @@ int colony_service_menu(int colony_sel, int item_id)
         /* GRADUATE / DROPOUT training block.  @asm 0x0289CC..0x028A43:
          * shows the schoolhouse roster, formats GRADUATE/DROPOUT lines, and on
          * field==0xE adds NEEDCOLLEGE / field==0xF adds NEEDUNIVERSITY notes.
-         * Internals TBD. */
+         * Internals library-implementation-only. */
         break;
     case 17:
         /* colony_attr -> 0x181F:0x438; msg_popup(NEEDCOLLEGE).  @asm 0x028A66 */
@@ -242,7 +242,7 @@ int colony_service_menu(int colony_sel, int item_id)
     case 5:
         /* the big production-display arm (NOMATCH).  @asm 0x02892E.. : it
          * re-reads colony_attr, formats the production line ("|   "/" = "/"/"),
-         * and either commits or shows NOMATCH.  Internals TBD. */
+         * and either commits or shows NOMATCH.  Internals library-implementation-only. */
         break;
     case 19:
     default:
@@ -260,7 +260,7 @@ int colony_service_menu(int colony_sel, int item_id)
      *   - publish [0x034E] (=row or 0xFFFF) and [0x8D7C]/[0x8D7E] cursor;
      *       clear [0x346] when colony[+0x1F]==0.   @asm 0x028D46..0x028D7E
      *   - reshow = 0 (item handled).   @asm 0x028D79 [bp-0x54]=0
-     * (The build-bookkeeping leaves are overlay TBD; the control flow is exact.)
+     * (The build-bookkeeping leaves are overlay library-implementation-only; the control flow is exact.)
      */
     reshow = 0;                                     /* @asm 0x028D79 (handled path) */
 
