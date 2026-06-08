@@ -1405,3 +1405,94 @@ Fingerprint validation (tools/rtlink/flatten.py):
 - raw_power_score reads [0x53A8] at 0x039EE6; imul operand at 0x039EEC
 - arg gate `75 03` at 0x039F46; trampoline ljmp `EA AA 03 1F 19` at 0x03B36A
 - score_endgame_rank call-site `E8 71 09` at 0x03A9F6
+
+---
+
+## Group D modal-loop TBD-inner closure (2026-06-08)
+
+### func_06E3D0 — panel_run_modal
+
+Full cursor hit-scan and key-dispatch path byte-traced. Both TBD-inner
+regions are now BYTE_VERIFIED.
+
+#### Cursor hit-scan (Phases 0/1/2)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Phase 0: outer-rect early-exit guard (cursor outside panel boundary skips all hit-testing) | @asm phase-0 outer-rect cmp sequence in func_06E3D0 | BYTE_VERIFIED |
+| Phase 1: row-list walk tests `row.y−1 <= cursor.y <= row.y+1`; disabled-bit check gates hit | @asm row-list loop with y±1 comparisons; disabled-bit test | BYTE_VERIFIED |
+| Phase 2: button-list walk; adj = (p[+0xa]&0x10) ? 0 : 3 (extra inset when flag 0x10 clear) | @asm button-walk; `test byte[bx+0xa],0x10`; conditional adj assignment | BYTE_VERIFIED |
+
+#### Key dispatch
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Edit-field path: BS/Enter/ESC/F1/F3 handled directly; printable keys classified via char-class table CS:[key+0x27ED]&0x57 | @asm edit-path key switch; `mov al,cs:[bx+0x27ed]`; `and al,0x57` | BYTE_VERIFIED |
+| Non-edit row path: Space/Enter activate; UP/DOWN follow prev/next ptrs in row-list | @asm non-edit row branch; `mov bx,[bx+prev]`/`[bx+next]` | BYTE_VERIFIED |
+| Non-edit button path: separate dispatch after row path falls through | @asm button-path tail | BYTE_VERIFIED |
+
+### func_070060 — report_screen_run
+
+Full key-navigation and mouse hit-scan byte-traced. Both TBD-inner regions
+are now BYTE_VERIFIED.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Key-nav: row = (row ± 1) % 4; col = (col ± 1) % 3 | @asm key-nav section; modulo via idiv/sub pattern | BYTE_VERIFIED |
+| Redraw after nav via func_070C4B | @asm `call func_070C4B` after row/col update | BYTE_VERIFIED |
+| Mouse hit-scan: 3×4 grid double loop; cell size w=0x30 h=0x48 | @asm mouse hit-scan outer/inner loop; `mov cx,0x30`; `mov ax,0x48` | BYTE_VERIFIED |
+| Point-in-rect test: func_070C41 for preliminary rect + 0x181F:0x3CA for cell rect | @asm `call func_070C41`; `lcall 0x181F,0x3ca` | BYTE_VERIFIED |
+
+---
+
+## Group A overlay-call resolution (2026-06-08)
+
+### func_04CC50 — ai_strategic_plan_build (TBD-inner substantially reduced)
+
+All four intra-page trampolines in the function body resolved to named targets.
+
+| Lead (cs: offset) | Target | Resolved file offset | Status |
+|-------------------|--------|---------------------|--------|
+| cs:0x7A71 | func_04C35A | 0x04C35A | BYTE_VERIFIED |
+| cs:0x7A76 | func_04CAF6 | 0x04CAF6 | BYTE_VERIFIED |
+| cs:0x7ABC | func_04C4AE | 0x04C4AE | BYTE_VERIFIED |
+| cs:0x7AD5 | func_04C50C | 0x04C50C | BYTE_VERIFIED |
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Second ai_queue_a_find_or_insert call: b3=3 always, b0=colony_x, b1=colony_y | @asm second call-site arg pushes; constant 3 for b3 | BYTE_VERIFIED |
+| ai_table_c_insert call: w0=colony_idx, w1=score_clamped, b4=demand_count, b5=has_civilian_flag | @asm ai_table_c_insert call-site arg pushes | BYTE_VERIFIED |
+| Remaining TBD: 0x181F far-call chain interiors at thunks 0x8BC/0x2EE/0x37A | targets not yet decoded | TBD |
+
+### func_052F7E — war-matrix (TBD-inner CLOSED)
+
+All three RTLink overlay leads resolved via 0x1A1F thunk table.
+
+| Lead (cs: offset) | Thunk offset | Resolved target | Status |
+|-------------------|-------------|-----------------|--------|
+| cs:0x7AD0 | 0x1A1F:0x554 | func_02B4D2_colony_sz_517 | BYTE_VERIFIED |
+| cs:0x7ADF | 0x1A1F:0x578 | func_025C32_colony_reassign_after_sort | BYTE_VERIFIED |
+| cs:0x7AB2 | 0x1A1F:0x50C | war-matrix row setup helper @file 0x26360 | BYTE_VERIFIED |
+
+### func_065D26 — TBD-inner CLOSED
+
+| Lead | Thunk file offset | Resolved target | Status |
+|------|------------------|-----------------|--------|
+| 0x1A1F:0x88A | 0x1CE7A | func_025A1E_colony_build_advisor (mid-function entry; returns build-advisor reason codes) | BYTE_VERIFIED |
+
+### func_0772FA — TBD-inner CLOSED
+
+| Lead | Thunk file offset | Resolved target | Status |
+|------|------------------|-----------------|--------|
+| 0x1A1F:0xEE4 | 0x1D4D4 | func_025900_colony_survey_adjacent_tiles (mid-loop cursor gate) | BYTE_VERIFIED |
+
+---
+
+## raw_power_score cite corrections (2026-06-08)
+
+Two corrections to previously-documented byte cites in func_039EE2:
+
+| Claim | Correction | Status |
+|-------|-----------|--------|
+| score_ff_pts loop @asm cite was 0x03A2E8 | Correct cite is **0x03A2BE** | BYTE_VERIFIED (corrected) |
+| vet_mult formula: gate=`100>>n_other`, factor=`8>>n_other` (both right-shift the base constant by the other-power count); total = raw × (8+factor)/8 | @asm 0x03A8B4 recomputed | BYTE_VERIFIED |

@@ -31,12 +31,12 @@
  *                   report renderers formerly carried here (func_0696C6,
  *                   func_069D8C, func_06A700, func_06AA88, func_06B398,
  *                   func_06B722) are now DONE: full @asm-cited bodies with the
- *                   control flow byte-traced from page_16.asm.  A few INNER
- *                   regions that index unmodeled far-DGROUP tables (the *(0x842)
- *                   stride-0x24 record set in func_06A700/func_06AA88, the
- *                   threaded next-link, and the SS-relative clip rect in
- *                   func_06B722) are left as explicit TBD-inner notes -- the
- *                   verified outer structure is ported around them.
+ *                   control flow byte-traced from page_16.asm.  The *(0x842)
+ *                   terrain UI-list record (stride-0x0C, fields +0x4A/+0x4C) and
+ *                   the DGROUP stride-0x0C chain/link table (base 0x8F82) are now
+ *                   modeled via TerrainUIRec / g_terrain_ui_8F82[] below and
+ *                   the TBD-inner notes in func_06A700/func_06AA88 are resolved.
+ *                   The SS-relative clip rect in func_06B722 remains TBD-inner.
  *   SUPERSEDED / OUT-OF-SCOPE: none in this file (no def is duplicated
  *                   elsewhere -- every call site in src/ui/report_screen.c and
  *                   src/overlay/overlay_06D938_0702D5.c merely *calls* these;
@@ -159,6 +159,71 @@ extern int overlay_call_181F_0B00(void);  /* 0x181F:0x0B00 -- terrain-detail pro
 extern int overlay_call_181F_0B78(void);  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
 extern int overlay_call_181F_0808(void);  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
 extern int overlay_call_1A1F_01CA(void);  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
+
+/* ----------------------------------------------------------------------------
+ * Stride-0x0C DGROUP terrain/good UI-list table  (BYTE_VERIFIED 2026-06-08)
+ * ----------------------------------------------------------------------------
+ * Resident in DGROUP starting at 0x8F82 (equivalently: DS displacement -0x707E).
+ * Accessed by func_06A700, func_06AA88, func_07464C, colony_draw_random_layout,
+ * count_building_chain_present, and other helpers throughout the codebase.
+ * Each element is exactly 12 (0x0C) bytes.  Element[n] starts at DS:0x8F82+n*12.
+ *
+ * DS displacement aliases (for cross-referencing the disasm):
+ *   element[n]+0x00  = DS:[n*12 - 0x707E]  name/sprite string-token (word)
+ *   element[n]+0x02  = DS:[n*12 - 0x707C]  field_2 (byte; set by func_07464C arg2_bp_m2)
+ *   element[n]+0x03  = DS:[n*12 - 0x707B]  qualifier_flag (int8_t; <0 => no qualifier row)
+ *                      also exposed as g_tbl_8F85[] in overlay_04C306_053BC1.c
+ *   element[n]+0x04  = DS:[n*12 - 0x707A]  link_next (int8_t; -1 ends chain)
+ *                      also exposed as g_table_8F86_stride12[] in globals.h
+ *   element[n]+0x05  = DS:[n*12 - 0x7079]  back_ref (byte; cross-index into -0x729E table)
+ *   element[n]+0x06  = DS:[n*12 - 0x7078]  column (byte; colony layout column assignment)
+ *   element[n]+0x07  = DS:[n*12 - 0x7077]  band_byte (byte; tier/band classifier)
+ *                      also exposed as g_band_rec_8F89[] field 0 in load_image code
+ *   element[n]+0x08  = DS:[n*12 - 0x7076]  (byte; unknown)
+ *   element[n]+0x09  = DS:[n*12 - 0x7075]  (byte; unknown)
+ *   element[n]+0x0A  = DS:[n*12 - 0x7074]  band_word (uint16_t; tier/band info word)
+ *                      also exposed as g_band_rec_8F89[] field 3 in load_image code
+ *
+ * NOTE: the NEXT_TARGETS.md reference to "stride-0x24" was an estimation error;
+ * the correct element stride is 0x0C (12) as confirmed by the disassembly at
+ * 0x06AB6C, 0x06A7EC, 0x06A8A1, 0x06A930, 0x07465A, 0x07699E, and elsewhere.
+ * -------------------------------------------------------------------------- */
+typedef struct {
+    uint16_t name_token;    /* +0x00: sprite/terrain name string token */
+    uint8_t  field_2;       /* +0x02: set by func_07464C (arg2_bp_m2) */
+    int8_t   qualifier_flag;/* +0x03: <0 => no qualifier row in terrain_detail_dialog */
+    int8_t   link_next;     /* +0x04: chain next id (-1 = end of chain) */
+    uint8_t  back_ref;      /* +0x05: cross-index back-pointer ([cx-0x729E]) */
+    uint8_t  column;        /* +0x06: colony layout column assignment */
+    uint8_t  band_byte;     /* +0x07: tier/band classifier byte (g_band_rec_8F89[n*12+0]) */
+    uint8_t  unk_8;         /* +0x08: (unknown) */
+    uint8_t  unk_9;         /* +0x09: (unknown) */
+    uint16_t band_word;     /* +0x0A: tier/band info word (g_band_rec_8F89[n*12+3]) */
+} TerrainUIRec;             /* sizeof = 12 = 0x0C */
+
+/* DGROUP:0x8F82 -- the terrain/good UI-list table; stride 0x0C per entry.
+ * Populated at game init by func_07464C (func_07464C_colony_or_unit_record_setter6).
+ * Indices 0..0x2A correspond to terrain/commodity ids used throughout the dialogs. */
+extern TerrainUIRec g_terrain_ui_8F82[];
+
+/* Far bitmap loaded from file @DS:0x23DC by func_076594 (terrain_layer_load3).
+ * Stored as a near/segment pair at DGROUP:0x842/0x844.  The bitmap contains
+ * sprite-column layout data for each terrain/good entry (indexed by the same
+ * id used for g_terrain_ui_8F82[]):
+ *   element[idx].pos  = *(uint16_t at ES:*(0x842) + idx*12 + 0x4A)
+ *   element[idx].size = *(uint16_t at ES:*(0x842) + idx*12 + 0x4C)
+ * Within the element (stride 0x0C, array starts at absolute offset 0x42 from
+ * the segment base *(0x842)):
+ *   element+0x00: uint16_t accum_lo  -- accumulated file/column offset (lo word)
+ *   element+0x02: uint16_t accum_hi  -- accumulated file/column offset (hi word)
+ *   element+0x04: uint16_t col_width -- sprite column width (from SS source +0x08)
+ *   element+0x06: uint16_t col_x     -- sprite column x-pos (from SS source +0x0A)
+ *   element+0x08: uint16_t pos       -- y-offset for sprite column draw
+ *   element+0x0A: uint16_t size      -- height of sprite column (pixels)
+ * The 0x42-byte prefix before the element array is the SS-record header built by
+ * func_076642 (load_game_record); see that function for field layout +0x00..+0x41. */
+extern uint16_t g_terrain_bmp_ptr_842;  /* DGROUP:0x842 -- near offset of terrain bitmap */
+extern uint16_t g_terrain_bmp_seg_844;  /* DGROUP:0x844 -- segment of terrain bitmap */
 
 /* ============================================================================
  * func_068A14 -- PHANTOM (reloc-header bytes, NOT a function)
@@ -906,18 +971,20 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
 }
 
 /* ============================================================================
- * func_06A700 -- colony_site_report_dialog  [DONE -- control flow BYTE_VERIFIED]
+ * func_06A700 -- colony_site_report_dialog  [DONE -- control flow + record layout BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * @asm 0x06A700..0x06AA87  (904 bytes, ENTER 0x6A, 315 insns; terminal RETF.
  * Raw EXE prologue verified 0x06A700: c8 6a 00 00 56.)
  *
  * The boxed terrain/colony-site detail report keyed on terrain id arg0 [bp+6]
  * (special-cased 0x1B).  Standard dialog template open, then it walks an entry
- * list from the far ptr table *(0x842) (records of stride 0x24, fields at
- * +0x4A pos / +0x4C size).  Each list node draws a label row (name from table
- * @[arg0*8 - 0x715E] / @[arg0*8 - 0x715C]) and per-row sprite-name (@[si-0x707E])
- * via the row text op 0x181F:0x254 and the formatted draw 0x181F:0x13C; the
- * list is threaded through the signed-byte "next" link @[node*0x24 - 0x707A].
+ * list from the far bitmap *(0x844):*(0x842) (elements of stride 0x0C, fields at
+ * element+0x08 pos / element+0x0A size; absolute offsets 0x4A/0x4C for node[0]).
+ * Each list node draws a label row (name from table @[arg0*8 - 0x715E] /
+ * @[arg0*8 - 0x715C]) and per-row sprite-name (g_terrain_ui_8F82[node].name_token
+ * = @[node*0x0C - 0x707E]) via the row text op 0x181F:0x254 and the formatted
+ * draw 0x181F:0x13C; the list is threaded through the signed-byte "next" link
+ * g_terrain_ui_8F82[node].link_next (= @[node*0x0C - 0x707A]).
  *
  * Frame + title:
  *   @asm 0x06A706  cs:0x2D12 (dialog_open)
@@ -937,13 +1004,13 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
  *   @asm 0x06A837  0x181F:0x254(baseId, x=*(0x83E)/*(0x840), y) ; the title glyph row
  *   @asm 0x06A84E  0x181F:0x16E append [arg0*8 - 0x715C] ; 0x181F:0x13C(color, x=yOff+6, y) caption
  *
- * Entry walk -- threaded list from head, link @[node*0x24 - 0x707A]:
- *   @asm 0x06A89C  loop: rec = *(0x842)[node] ; val=rec[+0x4C] ; yOff=(val>>1)-7
+ * Entry walk -- threaded list from head, link g_terrain_ui_8F82[node].link_next:
+ *   @asm 0x06A89C  loop: si=node*12; val=bmp[si+0x4C](=elem[node].size); yOff=(val>>1)-7
  *   @asm 0x06A8BB  0x181F:0x254(node+1, x=*(0x5A), y=[bp-0x5E])          ; index glyph
- *   @asm 0x06A8D0  pos = rec[+0x4A] + y + 3 ; 0x181F:0x16E [node*0x24 - 0x707E] sprite name
+ *   @asm 0x06A8D0  pos=bmp[si+0x4A](=elem[node].pos)+y+3 ; 0x16E g_terrain_ui_8F82[node].name_token
  *   @asm 0x06A90D  0x181F:0x13C(color, x=yOff+6, pos) caption ; advance running x
- *   @asm 0x06A924  y += rec[+0x4C value] + 4
- *   @asm 0x06A939  node = (int8_t)*(byte)[node*0x24 - 0x707A]            ; next link
+ *   @asm 0x06A924  y += elem[node].size + 4
+ *   @asm 0x06A939  node = g_terrain_ui_8F82[node].link_next  ; bx=node*12; al=[bx-0x707A]
  *   @asm 0x06A941  while (node >= 0)
  *
  * Modifier rows (only for ground terrain ids < 0x13):
@@ -985,19 +1052,28 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
 
     /* ---- entry walk: threaded list from head. ----
      * Per node the body draws an index glyph + sprite-name caption; the loop
-     * then re-reads `node` from the signed-byte next-link @[node*0x24 - 0x707A]
-     * (@asm 0x06A939 cwde) and continues while node >= 0 (@asm 0x06A941).
-     * TBD-inner: the *(0x842) far-record fetch (rec[+0x4A]/[+0x4C]) and the
-     * [-0x707A] link table are far-DGROUP arrays not yet modeled as externs in
-     * this file, so the index arithmetic itself is left to the disasm cite. */
+     * re-reads `node` from g_terrain_ui_8F82[node].link_next (signed byte at
+     * DS:[node*12 - 0x707A] @asm 0x06A939 cwde) and continues while node >= 0
+     * (@asm 0x06A941).  The far-bitmap pos/size fields are:
+     *   si = node * 12  (@asm 0x06A89F d1e6 / 03f0 / c1e602)
+     *   size = *(uint16_t at ES:[g_terrain_bmp_ptr_842 + si + 0x4C])
+     *        = g_terrain_ui_bmp[node].size   (@asm 0x06A8AC 26 8b 40 4c)
+     *   pos  = *(uint16_t at ES:[g_terrain_bmp_ptr_842 + si + 0x4A])
+     *        = g_terrain_ui_bmp[node].pos    (@asm 0x06A8D4 26 8b 40 4a) */
     {
         int node = head;                                 /* @asm 0x06A89C si = [bp-2] */
         while (node >= 0) {                               /* @asm 0x06A941 cmp [bp-2],0 jl exits */
+            /* si = node*12 (@asm 0x06A89F); size = bmp[si+0x4C] (@asm 0x06A8AC);
+             * yOff = (size>>1)-7 (@asm 0x06A8B3); push es:bx for 0x254 (@asm 0x06A8BB) */
             overlay_call_181F_0254();                    /* @asm 0x06A8CB index glyph (node+1) */
-            overlay_call_181F_016E();                    /* @asm 0x06A8ED sprite name [node*0x24 - 0x707E] */
+            /* pos = bmp[si+0x4A] + y + 3 (@asm 0x06A8D4/0x06A8D8/0x06A8DB) */
+            /* sprite name token = g_terrain_ui_8F82[node].name_token (@asm 0x06A8E5 [si-0x707E]) */
+            overlay_call_181F_016E();                    /* @asm 0x06A8ED sprite name token */
             overlay_call_181F_013C();                    /* @asm 0x06A90D entry caption draw */
-            /* @asm 0x06A939 node = (int8_t)link[node]; TBD: far link table @[node*0x24-0x707A]. */
-            break;  /* single verified pass; the next-link fetch is the TBD-inner above */
+            /* y += size + 4 (@asm 0x06A924/0x06A927/0x06A92A) */
+            /* node = (int8_t)g_terrain_ui_8F82[node].link_next
+             *      = (int8_t)DS:[node*12 - 0x707A]  (@asm 0x06A939 8a 87 86 8f / cwde) */
+            node = (int8_t)g_terrain_ui_8F82[node].link_next; /* @asm 0x06A939 */
         }
     }
 
@@ -1022,17 +1098,18 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
 }
 
 /* ============================================================================
- * func_06AA88 -- terrain_detail_dialog  [DONE -- control flow BYTE_VERIFIED]
+ * func_06AA88 -- terrain_detail_dialog  [DONE -- control flow + record layout BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * @asm 0x06AA88..0x06AE06  (895 bytes, ENTER 0x6C, 312 insns; terminal RETF.
  * Raw EXE prologue verified 0x06AA88: c8 6c 00 00 56.)
  *
  * Sibling of func_06A700: the boxed per-terrain DETAIL pop-up keyed on terrain
  * id arg0 [bp+6] (special-cased 0x10/0x1F -> fixed height 0x18; 0x11 -> table
- * index 0x2E).  Reads the stride-0x24 record at *(0x842) / segment *(0x844)
- * (fields +0x4A pos, +0x4C size), draws a title glyph row + caption, then a
- * secondary yield row (probe 0x181F:0xACE) and an optional qualifier row from
- * the stride-0xC table @[arg0*0xC - 0x707E].
+ * index 0x2E).  Reads the stride-0x0C far bitmap at *(0x844):*(0x842) (element
+ * fields elem+0x08=pos, elem+0x0A=size; absolute offsets 0x4A/0x4C from seg base),
+ * draws a title glyph row + caption, then a secondary yield row (probe
+ * 0x181F:0xACE) and an optional qualifier row keyed on
+ * g_terrain_ui_8F82[arg0].qualifier_flag (= DS:[arg0*0xC - 0x707B]).
  *
  * Frame + title:
  *   @asm 0x06AA8E  cs:0x2D12 (dialog_open)
@@ -1042,10 +1119,11 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
  *   @asm 0x06AB38  y += (*(0x89E))[0] + 0xE ; xCol [bp-0x58] = 0xA
  *
  * Record fetch + header row:
- *   @asm 0x06AB43  if (arg0==0x10 || arg0==0x1F) { size(+0x4C)=0x18 ; pos(+0x4A)=0 }
+ *   @asm 0x06AB43  if (arg0==0x10 || arg0==0x1F) { size=0x18 ; pos=0 }   ; fixed-height ids
  *   @asm 0x06AB5C  else { idx = (arg0==0x11) ? 0x2E : arg0 ;
- *                        rec = *(0x844):*(0x842) + idx*0x24 ; pos=rec[+0x4A] ; size=rec[+0x4C] ;
- *                        0x181F:0x254(idx+1, x=*(0x842) seg rect, y=xCol) }    ; header glyph
+ *                        bx = idx*12 + g_terrain_bmp_ptr_842 ;  ES = g_terrain_bmp_seg_844 ;
+ *                        pos=ES:[bx+0x4A] ; size=ES:[bx+0x4C] ;  (@asm 0x06AB78..0x06AB8B)
+ *                        0x181F:0x254(idx+1, x:g_terrain_bmp_seg_844:g_terrain_bmp_ptr_842, y=xCol) }
  *   @asm 0x06ABA6  yTop  = pos + 3 ([bp-2]) ; yOff = max(0,(size>>1)-7) ([bp-4]) ; xLbl = yOff + y ([bp-0x6C])
  *   @asm 0x06ABC4  caption token [arg0*0xC - 0x707E] ; 0x181F:0x13C(color, x=xLbl+6, y=xCol+yTop) ; advance +0x18
  *
@@ -1058,10 +1136,13 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
  *   @asm 0x06ACCD      0x181F:0x254(altGlyph, ...) ; 0x181F:0x16E [altId*2 - 0x6840] ; 0x181F:0x13C
  *                  }
  *
- * Optional qualifier row (only when the per-terrain flag byte is non-negative):
+ * Optional qualifier row (gate = g_terrain_ui_8F82[arg0].qualifier_flag >= 0):
  *   @asm 0x06AD27  y += size + 0xC
- *   @asm 0x06AD3C  if ((int8_t)*(byte)[arg0*0xC - 0x707B] >= 0) {        ; flag present
- *   @asm 0x06AD47      token *(0x2F32) ; 0x16E/0x1BE ; name [link*0xC - 0x707E] ; 0x16E ; 0x181F:0x13C ; y += 0x14
+ *   @asm 0x06AD3C  qflag = (int8_t)DS:[arg0*12 - 0x707B] ; if qflag < 0 jmp skip (0x6ADA3)
+ *   @asm 0x06AD47      token *(0x2F32) ; 0x16E/0x1BE
+ *   @asm 0x06AD65      link = (int8_t)[si-0x707B]  (= qflag re-read from si = arg0*12)
+ *   @asm 0x06AD73      name = [link*12 - 0x707E] = g_terrain_ui_8F82[link].name_token
+ *   @asm 0x06AD7B      0x181F:0x16E ; 0x181F:0x13C ; y += 0x14
  *                  }
  *
  * Footer:
@@ -1083,13 +1164,19 @@ int func_06AA88_terrain_detail_dialog(uint16_t arg0)
     overlay_call_181F_0128();                            /* @asm 0x06AB0C measure */
     overlay_call_181F_0100();                            /* @asm 0x06AB27 place title */
 
-    /* record fetch + header glyph row.  TBD-inner: pos/size come from the
-     * *(0x842):*(0x844) far record (fields +0x4A/+0x4C), a far-DGROUP array not
-     * modeled as an extern here; the special-case heights are byte-cited. */
+    /* record fetch + header glyph row.
+     * For fixed-height ids 0x10/0x1F: pos=0, size=0x18 (no bitmap lookup, no glyph).
+     * Otherwise: idx = (arg0==0x11) ? 0x2E : arg0; look up in the terrain bitmap:
+     *   bx = idx*12 + g_terrain_bmp_ptr_842  (idx*12 via shl/add/shl @asm 0x06AB6F)
+     *   ES = g_terrain_bmp_seg_844
+     *   pos  = *(uint16_t at ES:[bx + 0x4A])   (@asm 0x06AB80 26 8b 47 4a)
+     *   size = *(uint16_t at ES:[bx + 0x4C])   (@asm 0x06AB87 26 8b 47 4c)
+     * both are fields of g_terrain_ui_bmp[idx] (= elem at stride-0x0C array +0x42). */
     if (arg0 == 0x10 || arg0 == 0x1F) {                  /* @asm 0x06AB43/0x06AB49 fixed-height ids */
         /* size=0x18, pos=0 (@asm 0x06AB4F/0x06AB54); no header glyph. */
     } else {
-        /* idx = (arg0==0x11)?0x2E:arg0 ; rec=*(0x844):*(0x842)+idx*0x24 (@asm 0x06AB5C..0x06AB8B). */
+        /* idx=(arg0==0x11)?0x2E:arg0; bx=idx*12+g_terrain_bmp_ptr_842 (@asm 0x06AB5C..0x06AB8B).
+         * pos = ES:[bx+0x4A]; size = ES:[bx+0x4C]; then push es:g_terrain_bmp_ptr_842 for 0x254. */
         overlay_call_181F_0254();                        /* @asm 0x06ABA1 header glyph (idx+1) */
     }
 
@@ -1109,16 +1196,18 @@ int func_06AA88_terrain_detail_dialog(uint16_t arg0)
         overlay_call_181F_013C();                        /* @asm 0x06AD1C alt caption draw */
     }
 
-    /* optional qualifier row.  Gate = (int8_t)*(byte)[arg0*0xC - 0x707B] >= 0
-     * (@asm 0x06AD3C cmp ..,0 jl).  TBD-inner: that flag byte lives in the same
-     * stride-0xC terrain table (DGROUP @ -0x707E base) not modeled as an extern
-     * here; the row's draw sequence below is byte-verified. */
+    /* optional qualifier row.  Gate = g_terrain_ui_8F82[arg0].qualifier_flag >= 0
+     * (= DS:[arg0*12 - 0x707B]; @asm 0x06AD3C 80 bf 85 8f 00; cmp byte,0; jl skip).
+     * When the flag is non-negative it is ALSO the index into g_terrain_ui_8F82[]:
+     * link = (int8_t)DS:[si-0x707B]  (@asm 0x06AD65 8a 84 85 8f / cwde)
+     * name = g_terrain_ui_8F82[link].name_token (bx=link*12; [bx-0x707E] @asm 0x06AD73). */
     {
-        int qualifier_present = 1;                       /* @asm 0x06AD3C flag test (TBD source) */
-        if (qualifier_present) {
+        int8_t qflag = g_terrain_ui_8F82[(int16_t)arg0].qualifier_flag; /* @asm 0x06AD3C */
+        if (qflag >= 0) {                                /* @asm 0x06AD41 jl skip */
             overlay_call_181F_016E();                    /* @asm 0x06AD51 token *(0x2F32) */
             overlay_call_181F_01BE();                    /* @asm 0x06AD5D finalize */
-            overlay_call_181F_016E();                    /* @asm 0x06AD7B name [link*0xC - 0x707E] */
+            /* link = qflag; name = g_terrain_ui_8F82[link].name_token (@asm 0x06AD65..0x06AD7B) */
+            overlay_call_181F_016E();                    /* @asm 0x06AD7B qualifier name token */
             overlay_call_181F_013C();                    /* @asm 0x06AD94 qualifier caption draw */
         }
     }

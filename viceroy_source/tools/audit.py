@@ -302,6 +302,33 @@ check_bytes("score_liberty 0x6F4(1780) const @03A609", 0x03A609, "b8 f4 06")
 check_bytes("score_liberty sub year @03A60C", 0x03A60C, "2b 46 96")
 check_bytes("score_liberty *2 (shl 1) @03A60F", 0x03A60F, "d1 e0")
 
+# ---- Group A: func_052F7E / func_065D26 / func_0772FA trampoline targets -------
+# 0x1A1F:0x554 -> Type-A thunk (0x110D:0xDAB loader) -> page 0 off 0x5D04
+check_bytes("1A1F:554 thunk->page0:5D04 (func_052F7E war-matrix cs:0x7AD0)", 0x1CB44,
+            "9a ab 0d 0d 11 ea 04 5d 00 00")
+# 0x1A1F:0x88A -> Type-A thunk -> page 0 off 0x198 (func_025A1E build-advisor)
+check_bytes("1A1F:88A thunk->page0:198 (func_065D26 property-read cs:0x088A)", 0x1CE7A,
+            "9a ab 0d 0d 11 ea 98 01 00 00")
+# 0x1A1F:0xEE4 -> Type-A thunk -> page 0 off 0x82 (func_025900 survey-adjacent)
+check_bytes("1A1F:EE4 thunk->page0:082 (func_0772FA cursor-gate 0x1A1F:0xEE4)", 0x1D4D4,
+            "9a ab 0d 0d 11 ea 82 00 00 00")
+
+# ---- Group A: func_04CC50 inner argument traces (BYTE_VERIFIED 2026-06-08) ----
+# [bp-0x150] init to 0 (b3=3 always gate): mov [bp-0x150],ax
+check_bytes("04D04A [bp-0x150]=ax (b3 gate init, stays 0 -> b3=3 always)", 0x04D04A,
+            "89 86 b0 fe")
+# score_clamped upper clamp: mov ax, 0x7FFF
+check_bytes("04D938 score_clamped clamp 0x7FFF (ai_table_c_insert w1 max)", 0x04D938,
+            "b8 ff 7f")
+
+# ---- Group D: func_06E3D0 hit-scan + func_070060 key-nav (BYTE_VERIFIED 2026-06-08) ----
+# Phase 2 adj formula: mov al,es:[bx+0xa]; and ax,0x10; cmp ax,1; sbb ax,ax
+check_bytes("06E6B6 panel Phase2 adj=(p[+0xa]&0x10)?0:3 (wide-mode gate)", 0x06E6B6,
+            "26 8a 47 0a 25 10 00 3d 01 00")
+# func_070060 3x4 hit-scan cell dimensions w=0x30 h=0x48
+check_bytes("070201 report cell w=0x30 h=0x48 (push 0x30; push 0x48)", 0x070201,
+            "6a 30 6a 48")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

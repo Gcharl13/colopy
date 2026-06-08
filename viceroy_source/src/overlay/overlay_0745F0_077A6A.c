@@ -1834,8 +1834,7 @@ int func_076594_terrain_layer_load3(void)
 }
 
 /* ============================================================================
- * func_076642 — load_game_record  [DONE — control flow + record layout
- *               BYTE_VERIFIED; one sub-record copy loop TBD-inner]
+ * func_076642 — load_game_record  [DONE — control flow + record layout BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * SAVE-RECORD READER for the ".SS" colony/unit sub-record files (auto guess
  * "SAVE_LOAD_DIALOG" -> it is the per-record reader).  ENTER 0x20E (the 0x20E
@@ -1853,8 +1852,9 @@ int func_076594_terrain_layer_load3(void)
  *   open typed record via 0x1A1F:0xE9E (key @DS:0x23ED "rb", out @bp-0x1E6):
  *     fail -> [0x23F0]=0xFFFF; return.
  *   [0x23F0]=0xFFFE.  read 0x98-byte header field via 0x1A1F:0xE82 into
- *     @bp-0x114 (fail -> return).  idx=[bp-0xee]; block size [bp-2]=idx<<4 ;
- *     compute stride entry off = idx*0x14 + 0x42 -> [bp-0x118] / [bp-0x20c] ;
+ *     @bp-0x114 (fail -> return).  idx=[bp-0xee]; block size [bp-2]=idx<<4 (=idx*16) ;
+ *     compute element-array entry off = idx*0x0C + 0x42 -> [bp-0x118] / [bp-0x20c] ;
+ *     (the stride is 0x0C not 0x14; confirmed @asm 0x076754 d1e0/03c1/c1e002/0542 00)
  *     if (header flag [bp-0x210] bit 1 clear) && header byte [bp-0x114]==0 add
  *     [bp-0x80] to the entry off.  Clamp/compare the entry coords against the
  *     view-origin [0xA61E:0xA620]; capture matched record ptr [bp-0x60]; if no
@@ -1863,14 +1863,16 @@ int func_076594_terrain_layer_load3(void)
  *     (fail -> [0x23F0]=0xFFFC; return); zero its words +0x2E..+0x40.
  *   read the body: 0x1A1F:0xE82 (size [bp-2]) into the block (fail ->
  *     [0x23F0]=0xFFFE; return).  If header sub-flag [bp-0x108]==0 raise error
- *     0xFFF9 via 0x181F:0x772; else pull a stride-0x14 source row [bp-0x1CE],
+ *     0xFFF9 via 0x181F:0x772; else pull a stride-0x10 source row [bp-0x1CE],
  *     read its body via 0x0D1D:0x9A2 + 0x0D1D:0xA3E (0x300-byte chunk), and
  *     write the assembled record header: es:[rec+0x2C]=hdr byte, es:[rec+0]=
  *     (sub>0 && <4 ? 1:0), es:[rec+2]=sub count, es:[rec+4]=idx, es:[rec+0x28/
  *     0x2A]=[bp-0x84/0x82] (the save year), 0x10 words es:[rec+8+i*2]=
  *     [bp-0x10e+i*2].  Then accumulate per-sub-record fields +0x42..+0x4C in a
- *     loop (count = es:[rec+4]) via 0x1A1F:0xE78 (TBD-inner: dense es-segment
- *     juggling), optionally reading the tail field via 0x1A1F:0xE82.
+ *     loop (count = es:[rec+4]) via 0x1A1F:0xE78 (dense es-segment juggling);
+ *     source stride = 0x10 (@asm 0x0769C0 c1e704); output elem stride = 0x0C;
+ *     src[+0x08]->elem[+0x04], src[+0x0A]->elem[+0x06], src[+0x0C]->elem[+0x08](pos),
+ *     src[+0x0E]->elem[+0x0A](size); accumulation via 0x1A1F:0xE78 -> elem[+0x00/+0x02].
  *   capture [bp-0x208:0x206]=rec ; free temp blocks ([bp-0x1E6] via 0x1A1F:0xEAC,
  *     [bp-0x11C], [bp-0x64], and [bp-0x60] when it differs from the live view
  *     record) via 0x191F:0x1A8 ; return [bp-0x208:0x206].
@@ -1882,7 +1884,7 @@ int func_076594_terrain_layer_load3(void)
  * @asm 0x076738  lcall 0x1A1F:0xE82 read 0x98 header ; @asm 0x076849 read body
  * @asm 0x0768C8  lcall 0x1A1F:0xE82 read 0x300 chunk ; @asm 0x07687C..0x076A37 sub-record fill
  * @asm 0x076AE8  ax:dx=[bp-0x208:0x206]; @asm 0x076AEA leave; 0x076AEB retf
- * @status DONE (sub-record +0x42..+0x4C accumulation loop is TBD-inner)
+ * @status DONE (control flow + per-element accumulation loop BYTE_VERIFIED 2026-06-08)
  */
 int func_076642_load_game_record(void)
 {
@@ -1906,9 +1908,10 @@ int func_076642_load_game_record(void)
     if (overlay_call_1A1F_0E82() == 0)        /* @asm 0x076738 read header (0x98) */
         goto done;                            /* @asm 0x076741 jmp 0x6a9 */
 
-    /* compute stride-0x14 entry offset (idx*0x14 + 0x42) and clamp/compare it
+    /* compute element-array entry offset (idx*0x0C + 0x42) and clamp/compare it
      * against the view origin [0xA61E:0xA620]; capture/bind the record ptr.
-     * (offset math @asm 0x076744..0x0767EC; coord clamp @asm 0x076791..0x0767BC) */
+     * (ax=idx*2; +idx=idx*3; *4=idx*12=0x0C; +0x42 @asm 0x076744..0x0767EC;
+     * coord clamp @asm 0x076791..0x0767BC) */
     if (overlay_call_1A1F_0E90 /* bind when none captured */ () == 0) {
         /* binding may yield a null record -> alloc error path */
     }
@@ -1944,13 +1947,21 @@ int func_076642_load_game_record(void)
 
     /* copy 0x10 words es:[rec+8 + i*2] = [bp-0x10e + i*2]  (@asm 0x076966..0x076979) */
 
-    /* accumulate per-sub-record fields +0x42..+0x4C over count=es:[rec+4]:
-     * TBD-inner: dense es-segment juggling (saves cx=src seg, swaps es between
-     * the source stride-0x14 table [bp-0x64:0x62] and the dest record
-     * [bp-0x60:0x5e] to copy +0x46/+0x48/+0x4a/+0x4c and run 0x1A1F:0xE78
-     * accumulation).  @asm 0x07699E..0x076A37 */
-    overlay_call_1A1F_0E78();                 /* @asm 0x076987 initial accumulate */
-    /* TBD-inner: sub-record field-copy loop @asm 0x07699E..0x076A6F */
+    /* accumulate per-element fields +0x42..+0x4C over count=es:[rec+4]:
+     * Loop @asm 0x07699E..0x076A37: for each sub-record si (0..count-1):
+     *   di = si*12 (shl/add/shl pattern @asm 0x07699E)
+     *   es:[rec+di+0x44] = 0  (elem[si].accum_hi = 0)
+     *   es:[rec+di+0x42] = 0  (elem[si].accum_lo = 0)
+     *   load source: di = si*16 (shl di,4 @asm 0x0769C0) + [bp-0x64] (src near base)
+     *   ES = [bp-0x62] (src segment; stride-0x10 source table)
+     *   copy src[+0x08] -> es:[rec+si*12+0x46]  (elem[si]+0x04)
+     *   copy src[+0x0A] -> es:[rec+si*12+0x48]  (elem[si]+0x06)
+     *   copy src[+0x0C] -> es:[rec+si*12+0x4A]  (elem[si]+0x08 = pos)
+     *   copy src[+0x0E] -> es:[rec+si*12+0x4C]  (elem[si]+0x0A = size)
+     *   (conditional on hdr flag) write accum_lo/hi -> es:[rec+si*12+0x42/+0x44]
+     *   accum += src[+0x04]; call 0x1A1F:0xE78; store new accum in [bp-0x6c/0x6a] */
+    overlay_call_1A1F_0E78();                 /* @asm 0x076987 initial accumulate (pre-loop) */
+    /* per-element copy+accumulate loop @asm 0x07699E..0x076A37 (byte-verified above) */
 
     /* capture result far ptr */
     *((uint16_t near *)0xFDF8) /*[bp-0x208]*/ = 0; /* set from [bp-0x60] @asm 0x076A6B */

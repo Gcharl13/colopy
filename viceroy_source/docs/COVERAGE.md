@@ -93,6 +93,34 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
 - **func_06F0F4 @-directive keyword table (Group B CLOSED):** 10 string values
   extracted from DGROUP — "OPTIONS","PROMPT","TEXT","SMALLFONT","Y","X","WIDTH",
   "LENGTH","CHECKBOX","DEFAULT" — all confirmed from binary @file 0x01F967.
+- **func_06E3D0 (panel_run_modal) TBD-inner CLOSED (Group D):** cursor hit-scan
+  Phases 0/1/2 — outer-rect guard, row-list walk with y±1 and disabled-bit test,
+  button-list walk with adj=(p[+0xa]&0x10)?0:3; key switch — edit path (BS/Enter/
+  ESC/F1/F3/printable via char-class table CS:[key+0x27ED]&0x57), non-edit row path
+  (Space/Enter/UP/DOWN follow next/prev ptrs), non-edit button path. Both TBD-inner
+  regions replaced with BYTE_VERIFIED documentation.
+- **func_070060 (report_screen_run) TBD-inner CLOSED (Group D):** key-nav
+  row=(row±1)%4, col=(col±1)%3, redraws via func_070C4B; mouse hit-scan 3×4 grid
+  double loop w=0x30 h=0x48 per cell, func_070C41+0x181F:0x3CA point-in-rect. Both
+  TBD-inner regions replaced with BYTE_VERIFIED documentation.
+- **func_04CC50 (ai_strategic_plan_build) TBD-inner substantially reduced (Group A):**
+  all 4 intra-page trampolines resolved: cs:0x7A71→func_04C35A, cs:0x7A76→
+  func_04CAF6, cs:0x7ABC→func_04C4AE, cs:0x7AD5→func_04C50C; second
+  ai_queue_a_find_or_insert call b3=3/b0=colony_x/b1=colony_y; ai_table_c_insert
+  call w0=colony_idx/w1=score_clamped/b4=demand_count/b5=has_civilian_flag.
+  Remaining TBD: 0x181F far-call chain interiors (0x8BC/0x2EE/0x37A).
+- **func_052F7E (war-matrix) TBD-inner CLOSED (Group A):** cs:0x7AD0→0x1A1F:0x554→
+  func_02B4D2_colony_sz_517; cs:0x7ADF→0x1A1F:0x578→
+  func_025C32_colony_reassign_after_sort; cs:0x7AB2→0x1A1F:0x50C→war-matrix row
+  setup helper @file 0x26360.
+- **func_065D26 TBD-inner CLOSED (Group A):** 0x1A1F:0x88A→RTLink thunk 0x1CE7A→
+  func_025A1E_colony_build_advisor (mid-function entry, returns build-advisor reason
+  codes).
+- **func_0772FA TBD-inner CLOSED (Group A):** 0x1A1F:0xEE4→RTLink thunk 0x1D4D4→
+  func_025900_colony_survey_adjacent_tiles (mid-loop cursor gate).
+- **raw_power_score (func_039EE2) corrections:** score_ff_pts @asm cite corrected
+  0x03A2E8→0x03A2BE; vet_mult formula recomputed — gate=100>>count, factor=8>>count
+  (@asm 0x03A8B4), total×(8+factor)/8.
 
 ## Regenerate
 
