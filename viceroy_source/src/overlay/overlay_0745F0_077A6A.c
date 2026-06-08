@@ -459,7 +459,8 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
  * @asm 0x074A06  loop: lcall 0x191F:0x91C ; 0x1A1F:0xB22 -> word[bx-0x6800]
  * @asm 0x074A7C  rep movsw cx=8              (copy 16-byte FORESTED config row)
  * @asm 0x07534D  pop si; pop di; leave; @asm 0x075350 retf
- * @status DONE (section dispatch byte-verified; 2 name sub-loaders TBD-inner)
+ * @status DONE (section dispatch byte-verified; sub-loader func_07637F chain
+ *   resolved: @0x7637F → ljmp 0x1A1F:0xD20 → file 0x72DB0 terrain-name intern)
  */
 int func_0749E0_load_names_data_tables(void)
 {
@@ -481,13 +482,13 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- UNFORESTED @DS:0x21B4 : 8 entries via sub-loader ---- @asm 0x074A22 */
     overlay_call_191F_0928();                                  /* @asm 0x074A27 find UNFORESTED */
     for (i = 0; i < 8; i++)                                    /* @asm 0x074A41 cmp,8 */
-        page1A_names_subloader(i);                             /* @asm 0x074A38 near 0x4eef (TBD-inner) */
+        page1A_names_subloader(i);                             /* @asm 0x074A38 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
 
     /* ---- FORESTED @DS:0x21BF : 8 entries; sub-loader(idx+8) then copy a
      * 16-byte config row [bx+0x3074] <- [bx+0x2ff4] ---- @asm 0x074A47 */
     overlay_call_191F_0928();                                  /* @asm 0x074A4C find FORESTED */
     for (i = 0; i < 8; i++) {                                  /* @asm 0x074A81 cmp,8 */
-        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 near 0x4eef (TBD-inner) */
+        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
         {   /* @asm 0x074A7C rep movsw cx=8 : 16-byte row copy */
             uint16_t near *dst = (uint16_t near *)((i << 4) + 0x3074); /* @asm 0x074A6D */
             uint16_t near *src = (uint16_t near *)((i << 4) + 0x2FF4); /* @asm 0x074A71 */
@@ -499,7 +500,7 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- OTHER @DS:0x21C8 : 5 entries via sub-loader(idx+0x18) ---- @asm 0x074A87 */
     overlay_call_191F_0928();                                  /* @asm 0x074A8C find OTHER */
     for (i = 0; i < 5; i++)                                    /* @asm 0x074AAA cmp,5 */
-        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 near 0x4eef (TBD-inner) */
+        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
 
     /* ---- OTHER_NAMES @DS:0x21CE : 5 ints -> word[i+0x2db0] ---- @asm 0x074AB0 */
     overlay_call_191F_0928();                                  /* @asm 0x074AB5 find OTHER_NAMES */

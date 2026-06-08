@@ -385,6 +385,13 @@ check_bytes("0531A3 war_slot countdown dec [bx+si-0x77B8]", 0x0531A3, "fe 88 48 
 # ---- func_061F02 Dijkstra cost-blend BYTE_VERIFIED 2026-06-08 ----
 # mov al,[bx+0x2F76]  — terrain-cost table read (type*16 + DS:0x2F76)
 check_bytes("062563 Dijkstra terrain_cost[type*16+0x2F76] read", 0x062563, "8a 87 76 2f")
+
+# ---- func_062D84 automove 8-dir cost BYTE_VERIFIED 2026-06-08 ----
+# shl bx,4; mov al,[bx+0x2F76]  — terrain-cost table read in 8-dir search
+check_bytes("06323A automove 8-dir shl bx,4; mov al,[bx+0x2F76]", 0x06323A, "c1 e3 04 8a 87 76 2f")
+# shl cx,2; add cx,[bp-0xa]; add cx,[bp-4]  — direction_score *= 4 + |dx|+|dy|
+check_bytes("063258 automove direction_score: shl cx,2; add cx,..;..", 0x063258,
+            "c1 e1 02 03 4e f6 03 4e")
 # add [bp-0x22], cx  — g_cost += move_cost accumulation
 check_bytes("062578 Dijkstra g_cost accumulate: add [bp-0x22],cx", 0x062578, "01 4e de")
 

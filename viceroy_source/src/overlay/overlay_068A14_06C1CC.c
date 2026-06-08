@@ -36,7 +36,9 @@
  *                   the DGROUP stride-0x0C chain/link table (base 0x8F82) are now
  *                   modeled via TerrainUIRec / g_terrain_ui_8F82[] below and
  *                   the TBD-inner notes in func_06A700/func_06AA88 are resolved.
- *                   The SS-relative clip rect in func_06B722 remains TBD-inner.
+ *                   The SS-relative clip rect in func_06B722: 0x1A1F:0xA78 saves
+ *                   and 0x1A1F:0xA6A(1,...) sets the clip to SS:[bp-0x3A4];
+ *                   modeled structurally (SS-ptr not C-expressible). CLOSED.
  *   SUPERSEDED / OUT-OF-SCOPE: none in this file (no def is duplicated
  *                   elsewhere -- every call site in src/ui/report_screen.c and
  *                   src/overlay/overlay_06D938_0702D5.c merely *calls* these;

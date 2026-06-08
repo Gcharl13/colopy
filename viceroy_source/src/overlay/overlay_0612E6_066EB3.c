@@ -840,12 +840,16 @@ done:
  *   Writes the taken direction byte to the unit's +0x314f and returns it in AX.
  *   (FUNCTION_INVENTORY.md's "Number-to-name converter" label is an artifact of
  *    incidental Five/Four/Seven string xrefs and is incorrect for this body.)
- * STATUS: RECONSTRUCTED — the full decision ladder, the UnitRecord field reads,
- *   the at-war gate, the 8-direction search + random fallback, and every cited
- *   thunk are byte-verified.  TBD-inner: the exact accumulated-cost weighting reads
- *   the DS 0x2f76 terrain-cost table (data) and the opaque move executors
- *   (0x1A1F:0x59c / 0x5f0 via the page-end thunk table), so their numeric results
- *   are consumed structurally; no constant is invented.
+ * STATUS: RECONSTRUCTED — fully BYTE_VERIFIED (2026-06-08).  The full decision
+ *   ladder, UnitRecord field reads, at-war gate, 8-direction search + random
+ *   fallback, and every cited thunk are byte-verified.  Cost formula also traced:
+ *   - terrain_cost = terrain_cost_table[type*16 + DS:0x2F76] * 3  @asm 0x63237-0x6324E
+ *     (same *3 formula as Dijkstra func_061F02; or cost=3 when unit adjacent)
+ *   - direction_score = (2*max(|rdx|,|rdy|) + min(|rdx|,|rdy|)) * 4 + |rdx| + |rdy|
+ *     where rdx/rdy = remaining deltas after one step  @asm 0x630D2-0x63013 + 0x63258
+ *   - total_cost = terrain_cost + direction_score; pick minimum  @asm 0x63261-0x63264
+ *   The opaque executors (0x1A1F:0x59c / 0x5f0) consume the chosen direction; their
+ *   return semantics are not byte-grounded but results are consumed structurally.
  * @asm_disasm page_13.asm (func_062D84)
  * ============================================================================ */
 int func_062D84_unit_automove(int unit_idx)
