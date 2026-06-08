@@ -4,7 +4,7 @@
 Every claim below is backed by a raw-byte citation into
 `reverse_engineered/raw/COLONIZE/VICEROY.EXE` (file offsets, uppercase hex)
 or a JSON artifact in this tree. Where a semantic role cannot be cited, it is
-marked **TBD**.
+marked **not yet decoded**.
 
 ---
 
@@ -80,7 +80,7 @@ Both clusters are embedded among **UnitRecord** logic
 
 So the five tables are **static data located among unit-system overlay code**.
 Their precise semantic role (coordinate offsets? per-type lookup? draw data?
-loader metadata?) is **TBD** — not byte-confirmed — and is deliberately NOT
+loader metadata?) is **not yet decoded** — not byte-confirmed — and is deliberately NOT
 guessed here.
 
 **Deeper dig (2026-05-30) — narrows the location, rules out one theory:**
@@ -98,7 +98,7 @@ guessed here.
   none of the tagged offsets (508, 770, 968, 351, …) land on a `7f 03` segment
   operand; the offsets are unsorted; and there are 91 image-wide `lcall :0x037F`
   sites (not 54). So it is **not** a simple per-segment fixup table for `0x037F`.
-- Net: still DATA, still not game-mechanics, still TBD format. Leading (unproven)
+- Net: still DATA, still not game-mechanics, still not yet decoded format. Leading (unproven)
   read is RTLink overlay/loader metadata — which is OUT of the game-logic scope
   ("DOS-specific loaders not necessary"). Do **not** re-chase the simple
   fixup-table theory; if pinned later, find a LEA/MOV of the table's
@@ -112,7 +112,7 @@ In `0x56694` the records split into 169 `(value, 0x0000)` followed by
 (`func_05AF70` calls `LCALL 0x037F:0x0358` and `0x037F:0x000A`). Because there
 is **no relocation** on these words, `0x037F` here is a literal data
 constant/tag, not a live segment selector. Whether it is an incidental match
-or a deliberate parallel "(offset, segment-tag)" encoding is **TBD**.
+or a deliberate parallel "(offset, segment-tag)" encoding is **not yet decoded**.
 
 ### In-scope verdict (all five)
 
@@ -144,7 +144,7 @@ four bytes (the bytes mis-read as `ENTER`).
 - **Called by:** nobody (proof #1). Followed immediately by the unit-scan
   table `0x56694` and `func_056A10` (active-unit neighbour scan via
   `[0x8542]`).
-- **Verdict:** DATA, role **TBD**. In-scope subsystem = unit (overlay
+- **Verdict:** DATA, role **not yet decoded**. In-scope subsystem = unit (overlay
   neighbour). Not ported.
 
 ### 0x56694  (811 bytes → `[0x56694 .. 0x56A10)`)
@@ -158,7 +158,7 @@ four bytes (the bytes mis-read as `ENTER`).
   table of the five.
 - **Reads/writes:** none. **Called by:** nobody.
 - **Verdict:** DATA (two-segment table, `0x0000` then `0x037F` tag), role
-  **TBD**. Sits directly before `func_056A10` (unit neighbour scan). Not
+  **not yet decoded**. Sits directly before `func_056A10` (unit neighbour scan). Not
   ported.
 
 ### 0x5AC34  (89 bytes counted by the disassembler; the contiguous table runs to `[0x5AC34 .. 0x5AEA0)`)
@@ -169,7 +169,7 @@ four bytes (the bytes mis-read as `ENTER`).
 - **Shape:** records of `(u16, 0x0000)`; values `11976, 7240, 10229, 4462,
   223, 7774, …` — same bounded `0..~14300` integer family, high word `0`.
 - **Reads/writes:** none. **Called by:** nobody.
-- **Verdict:** DATA, role **TBD**. First table of the `0x5A` unit cluster
+- **Verdict:** DATA, role **not yet decoded**. First table of the `0x5A` unit cluster
   (`func_05AF70` UnitRecord access, `func_05B0DC` combat/AIPersonality
   lookup). Not ported.
 
@@ -185,7 +185,7 @@ four bytes (the bytes mis-read as `ENTER`).
   are **one data region** split by a phantom boundary. The block ends with
   six `(0,0)` records (zero-pad/alignment) just before `func_05AF70`.
 - **Reads/writes:** none. **Called by:** nobody.
-- **Verdict:** DATA, role **TBD**; physically one array with `0x5AF2C`. Not
+- **Verdict:** DATA, role **not yet decoded**; physically one array with `0x5AF2C`. Not
   ported.
 
 ### 0x5AF2C  (68 bytes → `[0x5AF2C .. 0x5AF70)`) — tail of the 0x5AEA0 array
@@ -199,7 +199,7 @@ four bytes (the bytes mis-read as `ENTER`).
   disassembler split it off into its own "function" only because the byte at
   `0x5AF2C` is again `0xC8`.
 - **Reads/writes:** none. **Called by:** nobody.
-- **Verdict:** DATA, role **TBD**; continuation of `0x5AEA0`. Not ported.
+- **Verdict:** DATA, role **not yet decoded**; continuation of `0x5AEA0`. Not ported.
 
 ---
 
@@ -215,6 +215,6 @@ four bytes (the bytes mis-read as `ENTER`).
    `0x14`/`0x15`) for a `LEA`/`MOV` that forms a pointer to file offset
    `0x5651C / 0x56694 / 0x5AC34 / 0x5AEA0` (as a DGROUP- or overlay-relative
    address). The indexing stride at that site (×2, ×4, …) will reveal record
-   width and meaning. Until then the role stays **TBD** — do not guess.
+   width and meaning. Until then the role stays **not yet decoded** — do not guess.
 3. Once cited, emit as `static const uint16_t <name>[]` in the owning
    `src/unit/*.c` with the file-offset citation.

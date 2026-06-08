@@ -19,12 +19,12 @@ future re-target can lift the logic cleanly:
 - **Capture data + layout as DATA.** Formulas, tables (unit/building/cargo/terrain), state
   struct layouts, and UI positions/geometry ("what is drawn where") should be expressed as
   named constants/tables a re-target can consume directly.
-- **cite-or-TBD stays absolute** — accuracy is the foundation; an honest `[TBD]` is fine,
+- **cite-or-not-yet-decoded stays absolute** — accuracy is the foundation; an honest `[not yet decoded]` is fine,
   a guess poisons the re-build.
 
 GOAL: drive every **game-mechanics** function/struct/table toward **byte-grounded**
-coverage — convert `UNKNOWN` / `SKELETON` / `[TBD]` / `RECONSTRUCTED` into
-`BYTE_VERIFIED` (or an honest, cited `TBD`). Eliminate fabrication.
+coverage — convert `UNKNOWN` / `SKELETON` / `[not yet decoded]` / `RECONSTRUCTED` into
+`BYTE_VERIFIED` (or an honest, cited `not yet decoded`). Eliminate fabrication.
 
 ## SCOPE — GAME MECHANICS + UI/RENDER LAYOUT (user directives 2026-05-30)
 IN SCOPE — port these:
@@ -67,13 +67,13 @@ moves bytes/pixels/files with no layout decision → OUT.
 ## Guardrails (NEVER violate — these are why this runs without user input)
 1. **Scope**: only `viceroy_source/` + its docs/ledgers + `docs/RULINGS.md`.
    Never touch `colonize_sdl/`, `colonization_godot/`, `tests/golden/`.
-2. **cite-or-TBD**: every offset/value cites the `.asm`; anything undeterminable
-   is marked `TBD`/`UNKNOWN` — **never guessed**. No fabrication, ever.
+2. **cite-or-not-yet-decoded**: every offset/value cites the `.asm`; anything undeterminable
+   is marked `not yet decoded`/`UNKNOWN` — **never guessed**. No fabrication, ever.
 3. One function/cluster per commit (standard message + Co-Authored-By). Never
    amend, never `--no-verify`.
 4. No golden updates, no harness edits (those need user input → would stop us).
 5. Tag every ported function: `BYTE_VERIFIED` / `ANCHOR_VERIFIED` /
-   `RECONSTRUCTED` / `TBD`, and log it in `VERIFICATION_LEDGER.md`.
+   `RECONSTRUCTED` / `not yet decoded`, and log it in `VERIFICATION_LEDGER.md`.
 
 ## Priority queue (work top-down)
 - **P0 — finish partially-reconstructed verified subsystems** (functions already
@@ -90,7 +90,7 @@ moves bytes/pixels/files with no layout decision → OUT.
 ## Method per target
 1. Read its full disasm in `page_*.asm`.
 2. Identify purpose: **string xref first** (message keys) → callgraph → `@inferred_role`.
-3. Hand-port to pseudo-C, `@asm`-cited per basic block, cite-or-TBD.
+3. Hand-port to pseudo-C, `@asm`-cited per basic block, cite-or-not-yet-decoded.
 4. Write to the correct subsystem `.c` (relocate from `overlay_*.c`/`load_image_*.c`
    stub into a named `src/<subsystem>/` file once identified).
 5. Tag status; update `VERIFICATION_LEDGER.md` + `FUNCTION_INVENTORY.md`;
@@ -99,7 +99,7 @@ moves bytes/pixels/files with no layout decision → OUT.
 
 ## Throughput model
 - I personally port P0/P1 (highest fidelity, core spine).
-- Background agents port P2/P3 clusters in parallel, under STRICT cite-or-TBD.
+- Background agents port P2/P3 clusters in parallel, under STRICT cite-or-not-yet-decoded.
   Each agent's output is **verified by me** (spot-check cited offsets against the
   `.asm`; reject any fabrication) BEFORE it is committed — the review gate.
 

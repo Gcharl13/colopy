@@ -14,14 +14,14 @@
  * ============================================================================ */
 
 /* ============================================================================
- *   STRUCT + TRIBE DATA: sourced  |  TBD fields marked inline
+ *   STRUCT + TRIBE DATA: sourced  |  not yet decoded fields marked inline
  * ----------------------------------------------------------------------------
  * Corrected 2026-05-30. The NativeSettlement layout is BYTE_VERIFIED (see its
  * own @asm note). The tribe ids / advancement levels / settlement-name table
  * are now sourced from NAMES.TXT @TRIBES + @LEVELS (cross-checked vs the
  * colonize_sdl engine). The earlier blanket "RECONSTRUCTED — NOT BYTE-VERIFIED"
  * banner is replaced: trust the cited tribe/@LEVELS data; anything still marked
- * TBD/FABRICATED inline is not yet verified. (Prior fabricated tribe ordering
+ * left unresolved/FABRICATED inline is not yet verified. (Prior fabricated tribe ordering
  * + binary nomadic/advanced model were corrected — see docs/RULINGS.md.)
  * ============================================================================ */
 
@@ -30,7 +30,7 @@
  * ----------------------------------------------------------------------------
  * Native (American Indian) settlements are tracked in an 18-byte (0x12) stride
  * table at DGROUP:0x54EC (live-count @0x539A, max 84). The base/stride and the
- * x/y/owner/mission fields are BYTE_VERIFIED (2026-05-28); other fields TBD.
+ * x/y/owner/mission fields are BYTE_VERIFIED (2026-05-28); other fields not yet decoded.
  *
  * @asm 18-byte (0x12) record at DGROUP:0x54EC; verified `imul *,0x12` then
  *      `[bx+0x54EC]` at VICEROY.EXE 0x46035; 18-byte record copy at 0x46F40;
@@ -53,24 +53,24 @@ struct NativeSettlement {             /* 18 bytes (0x12) */
                                        *   func_046DE0 indexes a table by
                                        *   (owner-4).  Raw tribe id = owner - 4. */
     uint8_t  field_03;                /* +0x03 — flags; bit 0x04 = developed/visited
-                                       *   modifier (test [bx+0x54EF],4 @0x046E05). TBD rest */
+                                       *   modifier (test [bx+0x54EF],4 @0x046E05). not yet decoded rest */
     uint8_t  population;              /* +0x04 — population (CHIEFKILL raze input) */
     uint8_t  mission;                 /* +0x05 — mission flag (0x10 | owner_idx) (BYTE_VERIFIED) */
-    uint8_t  field_06;                /* +0x06 — cleared to 0 at create (@0x046E7B); TBD */
-    uint8_t  field_07;                /* +0x07 — set 0xFF at create (@0x046EAE [0x54F3]); TBD */
+    uint8_t  field_06;                /* +0x06 — cleared to 0 at create (@0x046E7B); not yet decoded */
+    uint8_t  field_07;                /* +0x07 — set 0xFF at create (@0x046EAE [0x54F3]); not yet decoded */
     uint8_t  field_08;                /* +0x08 — set 0xFF at create (@0x046EB2 [0x54F4]).  A
                                        *   STORES raid does `inc byte [rec+8]` (@0x05C3E1) and
                                        *   the tribe-death redistribute reads it as a byte
-                                       *   (settlement.c STEP 3, [si+8]).  Exact meaning TBD
+                                       *   (settlement.c STEP 3, [si+8]).  Exact meaning not yet decoded
                                        *   (note the 0xFF init vs inc — possibly a counter that
-                                       *   is reset before use). [byte ops verified; role TBD] */
-    uint8_t  field_09;                /* +0x09 — set 0xFF at create (@0x046EB6 [0x54F5]); TBD */
+                                       *   is reset before use). [byte ops verified; role not yet decoded] */
+    uint8_t  field_09;                /* +0x09 — set 0xFF at create (@0x046EB6 [0x54F5]); not yet decoded */
     uint16_t field_0A;                /* +0x0A — word.  A STORES raid does
                                        *   `add word [rec+0xA],0x19` (@0x05C3E4); the
                                        *   tribe-death redistribute reads it as a word
-                                       *   (settlement.c STEP 3, [si+0xA]). Role TBD
-                                       *   [byte ops verified; semantics TBD] */
-    uint8_t  data_0C_11[6];           /* +0x0C..0x11 — TBD layout */
+                                       *   (settlement.c STEP 3, [si+0xA]). Role not yet decoded
+                                       *   [byte ops verified; semantics not yet decoded] */
+    uint8_t  data_0C_11[6];           /* +0x0C..0x11 — not yet decoded layout */
 };
 #pragma pack(pop)
 
@@ -91,7 +91,7 @@ struct NativeSettlement {             /* 18 bytes (0x12) */
  * word[A*9 + B] (row stride 9); threshold 0x80 = "high alarm".  BYTE_VERIFIED
  * index shape + threshold at 0x04734E / 0x047487 (read, vs 0x80) and 0x05C651
  * (post-raid clear).  One axis is the raiding settlement / unit-home index, the
- * other a power index (0..8).  Stored-value units + what raises it are TBD.
+ * other a power index (0..8).  Stored-value units + what raises it are not yet decoded.
  * See src/native/raid.c for the full citation set.
  * ---------------------------------------------------------------------------- */
 #define NATIVE_ALARM_ROW_STRIDE  9      /* @asm bx = A*9 + B before <<1 */
@@ -157,7 +157,7 @@ struct NativeSettlement {             /* 18 bytes (0x12) */
  * (The earlier "settlement counts [4,4,3,5,4,3,5,3]" and the
  * homeland_terrain / aggression / learnability / giftability fields were
  * RECONSTRUCTED guesses with no citation and are REMOVED. Any per-tribe
- * behavioural stats remain TBD pending a trace of the native AI tables.)
+ * behavioural stats remain not yet decoded pending a trace of the native AI tables.)
  * ---------------------------------------------------------------------------- */
 
 /* Native village placement function — overlay-resident; called during

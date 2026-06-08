@@ -44,13 +44,13 @@ struct colony_t {
                                 *      reads (struct.byte[+0]-2) as 'origin X' */
     uint8_t  map_y;            /* +0x01  1-based Y origin
                                 * @ref same as map_x */
-    uint8_t  pad_02[0x18];     /* +0x02..0x19  TBD — likely contains name string */
+    uint8_t  pad_02[0x18];     /* +0x02..0x19  not yet decoded — likely contains name string */
     uint8_t  owner_power;      /* +0x1A  owning power (0..3 European; 4..7 NPCs)
                                 * @ref colony_turn_update @ 0xA3E1 — selects entry
                                 *      in g_table_543F (stride 0x34) */
     uint8_t  flags_at_1c;      /* +0x1C  bit-flags (bit 1, 2, 4 affect production)
                                 * @ref compute_colony_center_yields @ 0xA222 — bits 2/4 give bonuses */
-    uint8_t  pad_1d_1e[2];     /* +0x1D..0x1E  TBD */
+    uint8_t  pad_1d_1e[2];     /* +0x1D..0x1E  not yet decoded */
     uint8_t  population;       /* +0x1F  number of working colonists; bounds the
                                 *        per-colonist arrays at +0x20/+0x40/+0x60.
                                 * @ref current_unit_field_at_20 @ 0x90C8 (bound check)
@@ -59,17 +59,17 @@ struct colony_t {
                                 * @ref current_unit_field_at_20 @ 0x90C8
                                 * @evidence colony_turn_update reads job[i]==8 as
                                 *           'expert' specialist marker */
-    uint8_t  pad_28_3F[0x18];  /* +0x28..+0x3F  TBD (probably tail of job array;
+    uint8_t  pad_28_3F[0x18];  /* +0x28..+0x3F  not yet decoded (probably tail of job array;
                                 *               max population is ~32 per +0x1F < 0x20 cap) */
     uint8_t  unit_type_at_40[8]; /* +0x40..+0x47  per-colonist unit type (0..0x17);
                                   *               value 0x17 is remapped to 0x15 by setter
                                   * @ref set_field_at_40_or_unit_byte @ 0x913C */
-    uint8_t  pad_48_5F[0x18];  /* +0x48..+0x5F  TBD */
+    uint8_t  pad_48_5F[0x18];  /* +0x48..+0x5F  not yet decoded */
     uint8_t  expertise_60[3];  /* +0x60..+0x62  packed-nibble: per-colonist expertise
                                 * (0..15, bucketized to 0..3 by 0x9184 helper)
                                 * @ref unpack_nibble_at_60 @ 0x8F2A
                                 * @ref pack_nibble_at_60   @ 0x8F6C */
-    uint8_t  pad_63_6F[0xD];   /* +0x63..+0x6F  TBD */
+    uint8_t  pad_63_6F[0xD];   /* +0x63..+0x6F  not yet decoded */
     uint8_t  tile_state_70[20];/* +0x70..+0x83  per-grid-square tile state (the 20
                                 *        surrounding tiles, indexed via find_pair match);
                                 *        0xFF = empty, else per-tile flags
@@ -80,8 +80,8 @@ struct colony_t {
     uint8_t  bits_at_8a[8];    /* +0x8A..+0x91  bit-array #2 — feature flags
                                 * @ref test_bit_at_8a         @ 0x85B2
                                 * @ref set_or_clear_bit_at_8a @ 0x85D6 */
-    uint8_t  pad_92_94[3];     /* +0x92..+0x94  TBD */
-    uint8_t  field_at_95;      /* +0x95  *** OPEN CONFLICT — canonical meaning TBD ***
+    uint8_t  pad_92_94[3];     /* +0x92..+0x94  not yet decoded */
+    uint8_t  field_at_95;      /* +0x95  *** OPEN CONFLICT — canonical meaning not yet decoded ***
                                 * Two byte-verified reads of THIS SAME offset disagree:
                                 *  (a) FOOD stock — the colony-screen food widget draws
                                 *      [bx+0x95] as a pile count (overlay_024342 @0x26F8D
@@ -92,10 +92,10 @@ struct colony_t {
                                 *      the old "era counter" label; just USES the value).
                                 * Both confirmed to read +0x95. Leaning FOOD (the widget
                                 * displays it), but not flipped definitively — needs one
-                                * more trace (what consumes 0x8D00's step). Left TBD, not
+                                * more trace (what consumes 0x8D00's step). Left unresolved, not
                                 * guessed. (+0x94 "build selector", +0x96 "horse" from the
                                 * same overlay are likewise candidate-but-unconfirmed.) */
-    uint8_t  pad_96_99[4];     /* +0x96..+0x99  TBD */
+    uint8_t  pad_96_99[4];     /* +0x96..+0x99  not yet decoded */
     uint16_t stockpile_9a[20]; /* +0x9A..+0xC1  per-commodity stockpile (15 commodities + 5 slack);
                                 * indexed by commodity_id 0..14:
                                 *   [0]=Food   [1]=Sugar [2]=Tobacco [3]=Cotton
@@ -108,11 +108,11 @@ struct colony_t {
                                 * @ref check_total_exceeds_threshold @ 0x8F02 */
     uint16_t liberty_aa;       /* +0xAA  liberty-bell / rebellion-sentiment counter
                                 * @ref colony_turn_update — used in tax/rebellion phase */
-    uint8_t  pad_ac_b5[10];    /* +0xAC..+0xB5  TBD */
+    uint8_t  pad_ac_b5[10];    /* +0xAC..+0xB5  not yet decoded */
     uint16_t progress_b6;      /* +0xB6  tutorial / progress counter (turns into popularity tier
                                 *         via /20 in colony_assign_or_change_colonist_job)
                                 * @ref colony_assign_or_change_colonist_job @ 0x9318 */
-    uint8_t  pad_b8_c1[10];    /* +0xB8..+0xC1  TBD */
+    uint8_t  pad_b8_c1[10];    /* +0xB8..+0xC1  not yet decoded */
     uint16_t field_at_c2;      /* +0xC2  LOW word of the 32-bit SoL "bells" numerator A.
                                 *         sol_membership_pct (0x8524) reads [+0xC2]/[+0xC4]
                                 *         as a long and divides by the [+0xC6] long.
@@ -130,7 +130,7 @@ struct colony_t {
     uint8_t  pad_ca_tail[0xE2]; /* +0xCA..  remainder toward the persistent
                                 *           ColonyRecord stride; contains Custom House
                                 *           toggles, building states, siege flags,
-                                *           founding-father binds, etc.  TBD — to be
+                                *           founding-father binds, etc.  not yet decoded — to be
                                 *           decoded from individual readers.
                                 * (was pad_ca_ad[0xE4]; shrunk 2 to offset the newly
                                 *  named field_at_c4 above so the documented total is

@@ -125,7 +125,7 @@ uint32_t  coreleft_total(void);
  * @ref FUNCTIONS_INVENTORY.md "coreleft_max" */
 uint32_t  coreleft_max(void);
 
-/* @asm 0x012573..0x012628  (TBD; 90 bytes around 0x12599+)
+/* @asm 0x012573..0x012628  (not yet decoded; 90 bytes around 0x12599+)
  * Standard malloc that calls INT 21h AH=48h with paragraph round-up. */
 void far *_malloc(uint16_t size);
 

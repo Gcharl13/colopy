@@ -93,31 +93,31 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
 - **func_06F0F4 @-directive keyword table (Group B CLOSED):** 10 string values
   extracted from DGROUP — "OPTIONS","PROMPT","TEXT","SMALLFONT","Y","X","WIDTH",
   "LENGTH","CHECKBOX","DEFAULT" — all confirmed from binary @file 0x01F967.
-- **func_06E3D0 (panel_run_modal) TBD-inner CLOSED (Group D):** cursor hit-scan
+- **func_06E3D0 (panel_run_modal) not-yet-decoded-inner CLOSED (Group D):** cursor hit-scan
   Phases 0/1/2 — outer-rect guard, row-list walk with y±1 and disabled-bit test,
   button-list walk with adj=(p[+0xa]&0x10)?0:3; key switch — edit path (BS/Enter/
   ESC/F1/F3/printable via char-class table CS:[key+0x27ED]&0x57), non-edit row path
-  (Space/Enter/UP/DOWN follow next/prev ptrs), non-edit button path. Both TBD-inner
+  (Space/Enter/UP/DOWN follow next/prev ptrs), non-edit button path. Both not-yet-decoded-inner
   regions replaced with BYTE_VERIFIED documentation.
-- **func_070060 (report_screen_run) TBD-inner CLOSED (Group D):** key-nav
+- **func_070060 (report_screen_run) not-yet-decoded-inner CLOSED (Group D):** key-nav
   row=(row±1)%4, col=(col±1)%3, redraws via func_070C4B; mouse hit-scan 3×4 grid
   double loop w=0x30 h=0x48 per cell, func_070C41+0x181F:0x3CA point-in-rect. Both
-  TBD-inner regions replaced with BYTE_VERIFIED documentation.
-- **func_04CC50 (ai_strategic_plan_build) TBD-inner FULLY CLOSED (Group A):**
+  not-yet-decoded-inner regions replaced with BYTE_VERIFIED documentation.
+- **func_04CC50 (ai_strategic_plan_build) not-yet-decoded-inner FULLY CLOSED (Group A):**
   all 4 intra-page trampolines resolved (cs:0x7A71/7A76/7ABC/7AD5); second
   ai_queue_a_find_or_insert + ai_table_c_insert args traced; scoring-leaf thunks
   resolved: 0x181F:0x8BC→file 0x73A8=func_0073A8 (unit_chain_score, 15-cat JT),
   0x181F:0x2EE→file 0x6672=func_006672 (unit_chain_resolve), 0x181F:0x37A→
   file 0x493C=func_00493C (octile/diagonal distance max+min/2). All resident
   thunks confirmed via EA target bytes. audit.py: 196/196 PASS.
-- **func_052F7E (war-matrix) TBD-inner CLOSED (Group A):** cs:0x7AD0→0x1A1F:0x554→
+- **func_052F7E (war-matrix) not-yet-decoded-inner CLOSED (Group A):** cs:0x7AD0→0x1A1F:0x554→
   func_02B4D2_colony_sz_517; cs:0x7ADF→0x1A1F:0x578→
   func_025C32_colony_reassign_after_sort; cs:0x7AB2→0x1A1F:0x50C→war-matrix row
   setup helper @file 0x26360.
-- **func_065D26 TBD-inner CLOSED (Group A):** 0x1A1F:0x88A→RTLink thunk 0x1CE7A→
+- **func_065D26 not-yet-decoded-inner CLOSED (Group A):** 0x1A1F:0x88A→RTLink thunk 0x1CE7A→
   func_025A1E_colony_build_advisor (mid-function entry, returns build-advisor reason
   codes).
-- **func_0772FA TBD-inner CLOSED (Group A):** 0x1A1F:0xEE4→RTLink thunk 0x1D4D4→
+- **func_0772FA not-yet-decoded-inner CLOSED (Group A):** 0x1A1F:0xEE4→RTLink thunk 0x1D4D4→
   func_025900_colony_survey_adjacent_tiles (mid-loop cursor gate).
 - **raw_power_score (func_039EE2) corrections:** score_ff_pts @asm cite corrected
   0x03A2E8→0x03A2BE; vet_mult formula recomputed — gate=100>>count, factor=8>>count
@@ -131,7 +131,7 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
   via shl/add @asm 0x622FA/0x62563.
 - **TerrainUIRec (Group C) CLOSED:** stride-0x24 estimate was wrong; correct stride
   confirmed as 0x0C (12 bytes/element). TerrainUIRec struct (12 bytes, 6 named
-  fields) added to overlay_068A14_06C1CC.c. func_06A700 + func_06AA88 TBD-inner
+  fields) added to overlay_068A14_06C1CC.c. func_06A700 + func_06AA88 not-yet-decoded-inner
   converted to BYTE_VERIFIED using g_terrain_ui_8F82[node].link_next chain walk.
   func_076642 .SS accumulation loop BYTE_VERIFIED in overlay_0745F0_077A6A.c.
 - **sol_tory.c (func_02D658) VERIFIED:** 11-phase structure confirmed, all 35

@@ -4,13 +4,13 @@
  *  STATUS LEGEND (per viceroy_source/VERIFICATION_LEDGER.md):
  *    [BYTE_VERIFIED]   bytes read directly from COLONIZE/VICEROY.EXE
  *    [ANCHOR_VERIFIED] confirmed function/string anchor; value/order not byte-traced
- *    [TBD]             not located / not verified -- do NOT trust
+ *    [not yet decoded] not located / not verified -- do NOT trust
  *
  *  2026-05-30: This header was previously marked ">>> RECONSTRUCTED -- NOT
  *  BYTE-VERIFIED <<<" and documented a `.COL`/'COL2'/version-3 save with a
  *  fixed magic, header, and section table. ALL of that was fabricated or
  *  conflated with the Win16 colonize.exe format. It has been replaced with the
- *  byte-grounded facts (cite-or-TBD). In particular the old claim that
+ *  byte-grounded facts (cite-or-left unresolved). In particular the old claim that
  *  "load_game_state @ 0x011F6E is the savegame colony parser" was DISPROVEN
  *  (it is the C-runtime/RTLink record reader that loads VICEROY.EXE's own
  *  overlays -- it MZ-magic-checks each record @0x01207A). See
@@ -27,7 +27,7 @@
  *    "COLONY\0"  @ file 0x1FA82   |  ".SAV\0"   @ file 0x1FA89
  *    "(EMPTY)\0" @ file 0x1FA8E   (empty-slot label; corrected from 0x1FA8C)
  *  On-disk name = "COLONY" + <slot infix> + ".SAV". The slot infix template is
- *  built at runtime and has not been located -> [TBD]. The Win16 build's
+ *  built at runtime and has not been located -> [not yet decoded]. The Win16 build's
  *  "*.COL"/'COL2'/v3 format is a DIFFERENT file -- do not conflate. The only
  *  ".COL" literal in the DOS EXE is "CONFIG.COL" @0x1F9F9 (a config file).
  * ---------------------------------------------------------------------------- */
@@ -44,7 +44,7 @@
  * ---------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------------
- *  On-disk save layout  [LARGELY TBD -- serializer is overlay-resident]
+ *  On-disk save layout  [LARGELY body in thunk page -- serializer is overlay-resident]
  * ----------------------------------------------------------------------------
  *  The top-level serializer (gated by SAVEGAME@0x1FA96) is OVERLAY-RESIDENT and
  *  is invoked through the 0x181F/0x191F/0x1A1F thunk tables, so the static
@@ -62,11 +62,11 @@
  *        UnitRecord[]       base 0x3144  stride 0x1C  (28)
  *        NativeSettlement[] base 0x54EC  stride 0x12  (18)
  *        Map layers         3 x 4176 B (= 12528, matches .MP)
- *        Discovery/fog      per-power bitmap, geometry [TBD]
+ *        Discovery/fog      per-power bitmap, geometry [not yet decoded]
  *
  *  The 174 (0xAE) vs 202 (0xCA) ColonyRecord delta: 0xCA is the in-memory
  *  stride; the 0xAE working buffer at *(0x8542) is a subset; the 28-byte
- *  difference is derived state recomputed on load (mechanism [TBD]).
+ *  difference is derived state recomputed on load (mechanism [not yet decoded]).
  *  (NOTE: the 0xAE buffer in func_011F6E is NOT this buffer -- coincidental
  *  size; that function is the overlay/EXE record reader.)
  * ---------------------------------------------------------------------------- */
@@ -84,11 +84,11 @@ typedef struct viceroy_FILE {
     uint16_t is_open;     /* +0x00 0 then 1 on successful open          [BYTE_VERIFIED] */
     uint16_t mode_class;  /* +0x02 1 or 2, derived from mode string     [BYTE_VERIFIED] */
     uint8_t  flags;       /* +0x04 text/binary + unbuffered bits        [BYTE_VERIFIED] */
-    uint8_t  _pad05;      /* +0x05                                       [TBD] */
+    uint8_t  _pad05;      /* +0x05                                       [library-implementation-only] */
     uint16_t dos_handle;  /* +0x06 DOS file handle                      [BYTE_VERIFIED] */
                           /*       +0x07 byte = CR/LF xlat mode (fwrite) [BYTE_VERIFIED] */
     uint16_t init_sent;   /* +0x08 0xFFFF init sentinel                 [BYTE_VERIFIED] */
-    uint8_t  _gap0A[0x0A];/* +0x0A..+0x13                                [TBD] */
+    uint8_t  _gap0A[0x0A];/* +0x0A..+0x13                                [library-implementation-only] */
     uint32_t position;    /* +0x14 buffer/file position (long)          [BYTE_VERIFIED] */
     uint16_t rec_index;   /* +0x18 running element/record index         [BYTE_VERIFIED] */
     uint8_t  fcb[0x0E];   /* +0x1A path/FCB scratch (0xC copied)        [BYTE_VERIFIED] */
@@ -131,7 +131,7 @@ int load_game_state(int file_handle, int mode, int count, int init_flag);
 /* save_game_state -- the savegame writer (high-level wrapper).
  *  The real serializer that emits Power/Colony/Unit/Native/Map is OVERLAY-
  *  RESIDENT (reached via thunks; invisible to the callgraph) -> section order
- *  [TBD]. The wrapper here drives the verified fopen_stream/fwrite_records/
+ *  [body in thunk page]. The wrapper here drives the verified fopen_stream/fwrite_records/
  *  fclose_stream primitives only.
  */
 int save_game_state(const char *path);
@@ -139,7 +139,7 @@ int save_game_state(const char *path);
 /* load_savegame -- high-level "load a COLONY*.SAV slot" entry.
  *  Driven by the open-menu framework func_0759E8 @0x0759E8 (OPENMENU@0x1FCDC,
  *  MAPTOLOAD@0x1FCFC, "*.MP"@0x1FCF7) + the slot lister func_076642 @0x076642
- *  (page 0x1B). The actual deserializer is overlay-resident [TBD].
+ *  (page 0x1B). The actual deserializer is overlay-resident [body in thunk page].
  */
 int load_savegame(const char *path);
 

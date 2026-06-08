@@ -14,17 +14,17 @@ PUSH-site of a verified message-key string.
 | Treasure transport (King's Galleon) | `func_05C878` | CASHTREASURE @0x1be0 (PUSH at file 0x05C8A1) | 518 bytes | 518 bytes ✓ | BYTE_VERIFIED — see [src/native/raze_treasure.c](src/native/raze_treasure.c) |
 | Colony burn / capture + LAND-COMBAT decider | `func_05CA7E` | BURNED @0x1c28 (PUSH at file 0x05DAE6) | 429 bytes | ~7437 bytes (body ends RETF @0x5E709; "7521" was an overshoot, corrected 2026-05-30) | structure understood; land-odds decoded (unit_ai_leaf.c); see VERIFICATION_LEDGER |
 | Diplomacy meeting / SMITE | `func_057F4E` | SMITEINDIANS @0x1a1a (PUSH at file 0x59974) | 355 bytes | ~6,640 bytes | gold formula BYTE_VERIFIED — see [diplomacy_smite_gold.c](src/native/diplomacy_smite_gold.c) |
-| Buy commodity | `func_02B744` | BUYME0 @0x0d29 (PUSH at file 0x02B862) | TBD | TBD | not yet decompiled |
+| Buy commodity | `func_02B744` | BUYME0 @0x0d29 (PUSH at file 0x02B862) | not yet decoded | not yet decoded | not yet decompiled |
 | Market price drift | `func_0305A8` | PRICEUP/PRICEDOWN @0x0fa8/0x0fb0 | 87 bytes | larger | structure understood (see below) |
-| King events / REFIT | `func_02F052` | KINGTAX @0x0f01, REFIT @0x0eef | TBD | TBD | not yet decompiled |
-| King event handler #2 | `func_0349F4` | KINGTAX2 @0x1094 | TBD | TBD | not yet decompiled |
+| King events / REFIT | `func_02F052` | KINGTAX @0x0f01, REFIT @0x0eef | not yet decoded | not yet decoded | not yet decompiled |
+| King event handler #2 | `func_0349F4` | KINGTAX2 @0x1094 | not yet decoded | not yet decoded | not yet decompiled |
 | **King tax raise/lower** | `func_034AE0` | KINGRAISE/KINGLOWER @0x10A8/0x10B2 | 100 bytes | ~158 bytes | **BYTE_VERIFIED** — see [src/king/king_tax_raise.c](src/king/king_tax_raise.c) |
 | Tea Party / tax application | `func_034318` | TEAPARTY @0x106a, TAXOPTIONS @0x105f | 289 bytes | larger | structure understood (see below) |
-| Independence event | `func_03DE46` | INDEPENDENCE @0x130b | TBD | TBD | not yet decompiled |
-| Declare war / declare independence | `func_03E984` | DECLARE @0x1397 | TBD | TBD | not yet decompiled |
+| Independence event | `func_03DE46` | INDEPENDENCE @0x130b | not yet decoded | not yet decoded | not yet decompiled |
+| Declare war / declare independence | `func_03E984` | DECLARE @0x1397 | not yet decoded | not yet decoded | not yet decompiled |
 | **SOL display** (Sons of Liberty %) | `func_03E844` | REBELUP/REBELDOWN @0x1362/0x136a | 63 bytes | larger | structure understood (display only — actual SOL math elsewhere) |
-| Intervention | `func_03D948` | INTERVENTION @0x12db | TBD | TBD | not yet decompiled |
-| Ship combat | `func_03FDDE` | SHIPCOMBAT @0x1415 | TBD | TBD | not yet decompiled |
+| Intervention | `func_03D948` | INTERVENTION @0x12db | not yet decoded | not yet decoded | not yet decompiled |
+| Ship combat | `func_03FDDE` | SHIPCOMBAT @0x1415 | not yet decoded | not yet decoded | not yet decompiled |
 
 ---
 

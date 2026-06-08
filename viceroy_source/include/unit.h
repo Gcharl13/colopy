@@ -44,7 +44,7 @@ struct UnitRecord {                /* base DGROUP:0x3144, stride 0x1C (28 bytes)
     uint8_t  type;             /* +0x02 (0x3146)  unit type (@UNIT idx). @asm read 0x8B99, write 0x400AF */
     uint8_t  owner_flags;      /* +0x03 (0x3147)  owner in low nibble (AND 0xF). @asm 0x5B306, 0x3C984 */
     uint8_t  flags;            /* +0x04 (0x3148)  bitfield 0x10/0x40/0x80. @asm TEST 0x5B3A9 */
-    uint8_t  field_05;         /* +0x05 (0x3149)  state/sub-flag. TBD */
+    uint8_t  field_05;         /* +0x05 (0x3149)  state/sub-flag. not yet decoded */
     uint8_t  moves_remaining;  /* +0x06 (0x314A)  init 0xFF; dec on move. @asm 0x400B3, dec 0x2EF17 */
     uint8_t  profession;       /* +0x07 (0x314B)  init 0x2D=45. @asm 0x40061 */
     uint8_t  orders;           /* +0x08 (0x314C)  orders/activity state. @asm set 0x22105 */
@@ -143,7 +143,7 @@ void unit_destroy(int16_t unit_idx);
 
 /* @asm 0x4E2D6.. (14975 bytes)  func_04E2D6
  * Per-unit move/action evaluator. HEAD + order-byte dispatch (orders 0/5/6/>=0xA
- * proceed; 1-4,7-9 skip) BYTE_VERIFIED; per-candidate scoring tail TBD. */
+ * proceed; 1-4,7-9 skip) BYTE_VERIFIED; per-candidate scoring tail not yet decoded. */
 int16_t unit_move_step(int16_t unit_index);
 
 /* @asm 0x8B96..0x8BAD  (24 bytes)

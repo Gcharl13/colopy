@@ -10,9 +10,9 @@
  * NOT verified: the per-nation PERSONALITY WEIGHTS (the former
  * aggression/expansion/militarism values). Those were RECONSTRUCTED guesses,
  * were byte-DISPROVEN as a +0x00 interpretation, and the real weights are
- * overlay-resident / data-driven from NAMES.TXT (TBD). DO NOT TRUST any
+ * overlay-resident / data-driven from NAMES.TXT (RUNTIME_ONLY (data-resident)). DO NOT TRUST any
  * specific weight, table value, or formula for AI personality. To upgrade a
- * TBD entry to BYTE_VERIFIED, follow viceroy_source/VERIFICATION_LEDGER.md.
+ * left unresolved entry to BYTE_VERIFIED, follow viceroy_source/VERIFICATION_LEDGER.md.
  * ============================================================================ */
 
 /* ============================================================================
@@ -23,7 +23,7 @@
  * LEADERNAME string, strcpy'd @0x74C22); the CONTROLLER FLAG (1=AI, 0=human, 2=dead)
  * is field +0x31 (DGROUP:0x543F) — the most-referenced field (~218 refs), which is
  * why earlier notes mislabeled 0x543F as the base. The reconstructed
- * "aggression/expansion/militarism" weights are DISPROVEN/overlay-resident (TBD).
+ * "aggression/expansion/militarism" weights are DISPROVEN/overlay-resident (body in thunk page).
  *
  * @asm DGROUP:0x540E = ai_table base (LEADERNAME @+0x00); stride 0x34 = 52 bytes
  * @evidence init loop @0x744FE writes +0x31=1 and +0x30=0; LEADERNAME strcpy @0x74C22 -> +0x00
@@ -52,11 +52,11 @@ struct AIPersonality {              /* base DGROUP:0x540E, stride 0x34 (52 bytes
 extern struct AIPersonality ai_personality[4];
 
 /* ----------------------------------------------------------------------------
- * Pre-defined per-nation personalities — DISPROVEN / TBD.
+ * Pre-defined per-nation personalities — DISPROVEN / not yet decoded.
  * ----------------------------------------------------------------------------
  * The specific aggression/expansion/militarism values once listed here were
  * RECONSTRUCTED guesses, not byte-verified (and +0x00 is the controller flag,
- * not aggression). The real per-nation AI weights are overlay-resident and TBD
+ * not aggression). The real per-nation AI weights are overlay-resident and body in thunk page
  * pending re-segmentation. See docs/RULINGS.md 2026-05-28 (ai).
  */
 

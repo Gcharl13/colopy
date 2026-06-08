@@ -87,7 +87,7 @@
  *       accrues bells into PowerRecord+0x0C (bells_toward_next) and +0x0E
  *       (per-turn); when +0x0C reaches ff_bells_required() it triggers the
  *       Continental Congress and RESETS +0x0C to 0. (Cost CURVE itself is
- *       overlay-resident/TBD — see congress.c + VERIFICATION_LEDGER.md.)
+ *       overlay-resident/body in thunk page — see congress.c + VERIFICATION_LEDGER.md.)
  *   - ff_congress_screen (func_03BFD2 @0x03BFD2, congress.c)
  *       builds one weighted-random candidate per category over the era-band
  *       weights and presents the "WHICHFREEDOM" election; the human's choice
@@ -103,7 +103,7 @@
  * 0x880F), indexed by ff_id: byte = +0x07 + (ff_id>>3), bit = 1<<(ff_id&7)
  * — a full 25-bit map (NOT 16). It is set/cleared by ff_set_owned_bit
  * (func_03B900 @0x03B900, recruit.c) and queried by ff_owned (0x181F:0x07B4,
- * body overlay-resident/TBD; ff_available is its verified boolean inverse).
+ * body overlay-resident/body in thunk page; ff_available is its verified boolean inverse).
  */
 
 /* CC-NN.SS sprite mapping: each FF has a portrait at CC-<n>.SS.

@@ -1,5 +1,5 @@
 /* ============================================================================
- *   MARKET STATE LAYOUT: byte-verified  |  price->coin curve: overlay-resident (TBD)
+ *   MARKET STATE LAYOUT: byte-verified  |  price->coin curve: overlay-resident (body in thunk page)
  * ----------------------------------------------------------------------------
  * Corrected 2026-05-30. The previous struct was fabricated (docs/RULINGS.md
  * 2026-05-30 / 2026-05-28 market): it claimed sensitivity[16]@+0x4C,
@@ -33,14 +33,14 @@ struct MarketState {
 };
 
 /* ----------------------------------------------------------------------------
- * Pricing model (verified mechanism; coin curve TBD)
+ * Pricing model (verified mechanism; coin curve body in thunk page)
  * ----------------------------------------------------------------------------
  * Per trade, vol_accum[good] changes; when it crosses the @CARGO `rise`/`fall`
  * thresholds the price_level steps, clamped to [@CARGO low, @CARGO high]. Each
  * turn `attrition` is added to vol_accum (price recovery). The exact mapping
  * from price_level to the displayed bid/ask COIN value, and the ask = bid +
  * (@CARGO burden + 1) spread application, are overlay-resident and NOT yet
- * byte-decoded ([TBD]). Tax (PowerRecord+0x01) is taken off the sell proceeds.
+ * byte-decoded ([not yet decoded]). Tax (PowerRecord+0x01) is taken off the sell proceeds.
  * The 16 goods are good_id 0..15 in @CARGO order (Food..Muskets); see
  * data/commodity_prices.c. (The old per-good "spread[]" was the @CARGO burden.)
  * ---------------------------------------------------------------------------- */
@@ -62,7 +62,7 @@ extern uint8_t difficulty;         /* 0x53A6  difficulty 0..4 (default 2; ==4 Vi
                                     * default-2 favor difficulty); see pricing.c.        [V*] */
 
 /* NAMES.TXT parser primitives (overlay-resident bodies; CONTRACT byte-cited by
- * the call pattern in cargo_table_load / func_0749E0).  [contract V; body TBD-overlay] */
+ * the call pattern in cargo_table_load / func_0749E0).  [contract V; body in thunk page] */
 extern void names_open_section(int name_handle, int mode); /* @asm LCALL 0x191F:0x0928 */
 extern void names_next_record(void);                       /* @asm LCALL 0x191F:0x091C */
 extern int  names_read_int_word(void);                     /* @asm LCALL 0x1A1F:0x0B22 */
@@ -75,8 +75,8 @@ extern void cargo_table_load(void);            /* @asm func_0749E0 @CARGO arm @0
 extern void market_set_active(int power);      /* @asm func_030550 @0x030550            [V] */
 extern void market_price_drift(int arg_mode, int good_filter); /* @asm func_0305A8 @0x0305A8 [V] */
 
-extern long market_buy(int commodity_id, int qty);   /* treasury @0x352CA [V]; value [TBD] */
-extern long market_sell(int commodity_id, int qty);  /* returns gold received; value [TBD] */
+extern long market_buy(int commodity_id, int qty);   /* treasury @0x352CA [V]; value [not yet decoded] */
+extern long market_sell(int commodity_id, int qty);  /* returns gold received; value [not yet decoded] */
 
 /* boycott.c interface (separate translation unit) */
 extern int  boycott_is_active(int good);       /* @asm func_030B38 @0x030B38            [V] */

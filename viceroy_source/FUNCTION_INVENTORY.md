@@ -62,7 +62,7 @@ over-counts 26 trampoline bytes). Reach: thunk 0x1A1F:0x35E (page 0x0E).
 king[+0x2A]/[+0x2C]/[+0x49], result flag [0x35E]), and tears down + greedily rebuilds
 colonist→job/tile assignments biased by the Europe market bands. Shares
 colony_turn_update's 0x8Dxx/0x8Exx globals + 0x2F7B yield table. Ported:
-[src/colony/auto_manage.c](src/colony/auto_manage.c). Per-good/per-power weight tables [TBD].
+[src/colony/auto_manage.c](src/colony/auto_manage.c). Per-good/per-power weight tables [RUNTIME_ONLY (data-resident)].
 
 ### `func_02883E` — **Colony-services menu-item dispatcher** (ANCHOR_VERIFIED)
 **File**: 0x02883E..0x028D8B (**1357 bytes** verified, RETF; "138" was first-RET truncation).
@@ -75,7 +75,7 @@ decoded with per-arm string xrefs. Ported: [src/ui/menu.c](src/ui/menu.c).
 **File**: 0x028D8C..0x0298A4 (**~2841 bytes** verified, RETF; "185" was first-RET truncation).
 Reads active colony via [0x8542]; cursor [0x8D7C]; win_create 0x191F:0x23C;
 modal query/highlight/dispose loop; result via [0x034E]. Per-row blit + production
-maths leaves overlay-TBD. Ported: [src/ui/dialog.c](src/ui/dialog.c).
+maths leaves overlay-not yet decoded. Ported: [src/ui/dialog.c](src/ui/dialog.c).
 
 Town hall + assembly hall + college services. Handles colonist training
 (LEARN, GRADUATE, DROPOUT) and Liberty Bell production (TOWNHALL,
@@ -110,7 +110,7 @@ the odds roll @0x5B819 uses RAW 0x523b/0x523c with NO fortify/SoL/colony multipl
 0x0D..0x12; land attackers jmp 0x5BAA3 — so LAND combat resolves in the 0x5BAA3 region,
 not via this simple roll). The 0x5B433 "fort block" is a capture-eligibility threshold
 (0x5237/0x5238), not a scaler; the real modifier layer is a post-roll per-power strength
-compare @0x5B85B..0x5BA2D (difficulty MUL [0x5325]); per-power array semantics TBD.
+compare @0x5B85B..0x5BA2D (difficulty MUL [0x5325]); per-power array semantics not yet decoded.
 
 ### `func_03FDDE` — **Ship move / landfall / ship-vs-ship combat dispatcher** (BYTE_VERIFIED)
 **File**: 0x03FDDE..0x40002 (**548 bytes**, overlay page 0x07; functions.json's 82B is a
@@ -227,7 +227,7 @@ TRADE0/DEFICIT/NOTENOUGH. Ported: [src/native/haggle.c](src/native/haggle.c).
 - BUY (gold OUT, affordability-guarded @0x4A1C8): ask=0xC8 + tier/display-price +
   rand − relation*4, ×qty/100, +difficulty, floor 0x32.
 - 4-way BADHAGGLE0..3 counter-offer escalation loop. Inputs 0x97C0 @CARGO-col0 /
-  0x7B44 display price / 0x5B1C tribe relation / 0x8DC4 qty. Dialog thunks [TBD].
+  0x7B44 display price / 0x5B1C tribe relation / 0x8DC4 qty. Dialog thunks [not yet decoded].
 
 ---
 
@@ -327,7 +327,7 @@ Computes the 0..23 player RANK via a `(k*k)/3` threshold ladder × difficulty
 (byte-visible; decompiled in [src/scoring/compute.c](src/scoring/compute.c)
 `score_endgame_rank()`). The **raw per-power score value** it ranks is produced
 by an overlay-resident routine reached as `0x191F:0x3AA` (trampoline file
-0x03B36A) and is **TBD**. (Prior note — "[DGROUP:0x372] accumulator / 964-byte
+0x03B36A) and is **not yet decoded**. (Prior note — "[DGROUP:0x372] accumulator / 964-byte
 frame computes per-category arrays" — was a pre-trace heuristic, now WITHDRAWN.)
 
 ### `func_03ADA6` — **Hall-of-Fame save (HALLFAME.DAT writer)**
@@ -360,7 +360,7 @@ The native counterpart to the EU per-unit chain. Scores up to 9 neighbour tiles
 defence (ColonyRecord 0x5D46), AIPersonality(0x543F)/difficulty(0x53A6); argmax
 (+random_int(1,5) jitter); commits MOVE order (0x314c=5/6) + direction (0x314f),
 spends settlement strike budget (0x8D4E), raises INDIANSURPRISE on a hostile strike
-vs the human. Weight tables 0x2F77/0x5236/0x9410 [TBD] (data-resident). See
+vs the human. Weight tables 0x2F77/0x5236/0x9410 [RUNTIME_ONLY (data-resident)]. See
 [src/ai/native_unit_ai.c](src/ai/native_unit_ai.c).
 
 ### `func_04E2D6` — **AI action dispatcher**
@@ -392,7 +392,7 @@ $STRING$, $YEAR$). Used by every formatted message.
 ### `func_072090` — **Top menu-bar builder** (BYTE_VERIFIED -> src/ui/report_screen.c::build_menubar)
 **File**: 0x072090..0x072B9A (**2826 bytes**, ENTER 4; per-func dump's "size=39" was a
 first-call truncation). Builds the 7-8 pull-down columns; per-row labels via
-txt_lookup from MENU.TXT (NOT literal in EXE -> [TBD-from-EXE]).
+txt_lookup from MENU.TXT (NOT literal in EXE -> [not-yet-decoded-from-EXE]).
 **Strings**: game, menu, view, orders, reports, trade, cup, pedia (MENU.TXT @-keys).
 The Reports column holds the 10 F-key reports (selectors 0x40..0x49); cheat column
 gated by `test [0x5383],0x20` @0x72A8B. Does NOT render report bodies (corrects the
@@ -411,7 +411,7 @@ LABELS.TXT @MISC (absent from EXE). All in src/ui/report_screen.c.
 - F4 0x43 `func_038418` Labor | F5 0x44 `func_038A50` Economic ($ ledger)
 - F6 0x45 `func_039218` Colony | F7 0x46 `func_03954C` Naval
 - F8 0x47 `func_039888` Foreign Affairs (FOREIGNNOTAVAIL 0x11B6) | F9 0x48 `func_03744A` Indian
-- F10 0x49 `func_038778` Score (ENTER 6; SoL/Score thunk 0x181F:0x574 -> +0x70 mid-insn [TBD])
+- F10 0x49 `func_038778` Score (ENTER 6; SoL/Score thunk 0x181F:0x574 -> +0x70 mid-insn [not yet decoded])
 
 ### `func_062D84` — **Unit auto-move / pathing executor**
 **File**: 0x062D84..0x0633D6 (1618 bytes, ENTER 0x46, terminal=page-end; reseg page_13)

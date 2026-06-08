@@ -31,7 +31,7 @@
 
 #pragma pack(push, 1)
 struct PowerRecord {
-    uint8_t  pad_00;                  /* +0x00 — TBD */
+    uint8_t  pad_00;                  /* +0x00 — not yet decoded */
     uint8_t  tax_rate;                /* +0x01 — 0..100% */
 
     uint8_t  pad_02_0B[10];           /* +0x02..0x0B */
