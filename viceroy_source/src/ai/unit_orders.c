@@ -132,7 +132,8 @@ extern uint8_t g_power_const_2F76[/* power */][16];
 /* DGROUP:0x5236 / 0x5230 -- per-unit-type tables, stride 14 (the `*14` build at
  * @asm 0x03EED4..0x03EEE2 and 0x03F64D..0x03F659). 0x5236[type*14] is a flag
  * tested == 0 (@asm 0x03EEE4); 0x5230[type*14] a word pushed to a query
- * (@asm 0x03F65B). TBD: table contents. */
+ * (@asm 0x03F65B). Table contents RUNTIME_ONLY (NAMES.TXT/data-file; loaded
+ * by func_0749E0 / loader @0x74EDA). */
 extern uint8_t g_unittype_tbl_5236[/* type */][14];
 extern uint8_t g_unittype_tbl_5230[/* type */][14];
 
@@ -159,7 +160,8 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit_index, int16_t tile_x,
 
 /* Capability / position query helpers (overlay 0x181F:* thunks). The bitmask
  * tests (`test al,0xa` = attack-ish; `test al,0x40` = occupant-present-ish) are
- * byte-clear; the exact ability semantics are TBD. */
+ * byte-clear; the exact ability semantics require the thunk bodies (body in
+ * thunk page; not decodable from overlay bytecode alone). */
 extern int16_t ovly_unit_ability_754(int16_t x, int16_t y);  /* @asm 0x03ED4A/0x03ED5C */
 extern int16_t ovly_unit_ability_72C(int16_t x, int16_t y);  /* @asm 0x03ED73/0x03ED85 */
 extern int16_t ovly_occupant_at_6BE(int16_t x, int16_t y);   /* @asm 0x03EDBA -> owner-nibble holder */
@@ -215,7 +217,8 @@ extern void    ovly_route_helper_181F_DF4(int16_t unit);     /* @asm 0x040F6C */
  *   [bp-0x3e]priority  per-power const *3, capped at 3           (`bp-0x3e`)
  *
  * Faithful, basic-block-cited port. Capability/dialog/animation helpers are
- * shown as opaque overlay calls (their bodies are on other pages / TBD). The
+ * shown as opaque overlay calls (their bodies are on other overlay pages;
+ * body in thunk page). The
  * many goto-style branches mirror the binary's jump structure exactly; the
  * common error/exit target 0xe61 (file 0x03F8C1) is reproduced as `goto done`.
  * ============================================================================ */
@@ -609,7 +612,7 @@ bookkeep:
         choice = occ_colony;                                  /* @asm 0x03F6CC mov ax,[bp-4]; [bp-0xa]=ax */
     }
     /* (occupant resolution + relation queries + cross-page human handlers:
-     *  @asm 0x03F6D2..0x03F8AB -- structural; helper bodies TBD.) */
+     *  @asm 0x03F6D2..0x03F8AB -- structural; helper bodies in thunk pages.) */
 
 done:
     /* @asm 0x03F8AB cmp [bp-0xa],0; jle 0xe5c -- if a choice (>0) was made,
