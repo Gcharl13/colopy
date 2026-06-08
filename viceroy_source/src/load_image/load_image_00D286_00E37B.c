@@ -584,48 +584,118 @@ int func_00DFB6_logic_sz_15(uint16_t arg0_bp_06)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00DFCC..0x00DFF3  (39 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DFCC_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 6
- * @args_seen  [8, 10]
+/* @asm        0x00DFCC..0x00E036  (106 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DFCC.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 6  ; then push bx,dx,ax,di (register args + saves)
+ * @args_seen  [8, 10]  (stack) PLUS register args ax, bx, dx
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (39 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  draw a clipped horizontal run (single-row memset) into a 2D
+ *                 byte buffer at seg:[base + row*stride + x0]
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "39 bytes / ends 0xDFF3" truncated at the first `jle`;
+ * the real body is 0xDFCC..0xE035 (106 B, `retf 0xA`), next func at 0xE036.
+ * Register args: ax = x0 (left), bx = row, dx = x1_in (right).  Stack args:
+ * [bp+6]=fill byte, [bp+8]=height, [bp+0xA]=stride/width, [bp+0xC]=base offset,
+ * [bp+0xE]=destination segment.  Clips: requires 0 <= row < height; clamps x0>=0
+ * and x1 = min(stride-1, x1_in); fills [x0..x1] with the byte.  Returns the
+ * clamped x0 (the `retf 0xA` pops the five stack words).
  */
-int func_00DFCC_logic_sz_39(uint16_t arg0_bp_08, uint16_t arg1_bp_0A)
+int func_00DFCC_logic_sz_39(int x0 /*ax*/, int row /*bx*/, int x1_in /*dx*/,
+                            uint16_t fill_bp_06, uint16_t height_bp_08,
+                            uint16_t stride_bp_0A, uint16_t base_bp_0C,
+                            uint16_t seg_bp_0E)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00DFD6 JL 0x00E031 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x00DFDD JGE 0x00E031 */ {
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x00DFE4 JGE 0x00DFE8 */ {
-                }
-                if (/* JLE fallthrough cond: */ ax > 0) /* @0x00DFF1 JLE 0x00DFF5 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DFD4 or bx,bx; jl 0xE031 (row<0 -> bail); 0x00DFD8 ax=[bp+8];
+     *      cmp bx,ax; jge 0xE031 (row>=height -> bail).
+     *      0x00DFDF ax=[bp-0xC](x0); or ax,ax; jge 0xDFE8 else ax=0; mov [bp-0xC],ax
+     *      (x0 = max(x0,0)).  0x00DFEB ax=[bp+0xA]-1; cmp ax,dx; jle 0xDFF5 else
+     *      ax=dx; mov [bp-0xA],ax (x1 = min(stride-1, x1_in)).
+     *      0x00DFF8 [bp-6]=[bp+0xE] (seg); [bp-4]=[bp+0xC] (base); [bp-2]=[bp+0xA] (stride).
+     *      0x00E00A push es; es=[bp-6]; 0x00E010 ax=[bp-2]=stride; bx=[bp-8]=row;
+     *      mul bx (ax = stride*row); add ax,[bp-0xC]=x0; di=ax; add di,[bp-4]=base
+     *      (di = base + row*stride + x0).  0x00E020 cx=[bp-0xA]=x1; sub cx,[bp-0xC]=x0;
+     *      inc cx (run = x1-x0+1).  0x00E027 al=[bp+6] (fill); 0x00E02A mov es:[di],al;
+     *      inc di; loopne 0xE02A (write `run` bytes).  0x00E030 pop es.
+     *      0x00E031 mov ax,[bp-0xC]=x0; pop di; leave; retf 0xA. */
+    if (row < 0 || row >= (int)height_bp_08)
+        return x0;                         /* clipped out: returns raw x0 ([bp-0xC]) */
+    if (x0 < 0)
+        x0 = 0;                            /* clamp left */
+    {
+        int x1 = (int)stride_bp_0A - 1;
+        uint8_t far *p;
+        int run, i;
+        if (x1 > x1_in)
+            x1 = x1_in;                    /* clamp right to x1_in */
+        p = (uint8_t far *)(((uint32_t)seg_bp_0E << 16)
+                            | (uint16_t)(base_bp_0C + (uint16_t)(stride_bp_0A * row) + x0));
+        run = x1 - x0 + 1;                 /* loopne: count loop (ZF quirk inert here) */
+        for (i = 0; i < run; i++)
+            p[i] = (uint8_t)fill_bp_06;
+    }
+    return x0;
 }
 
-/* @asm        0x00E036..0x00E04E  (24 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E036_unknown.asm
- * @pattern    TINY_ACCESSOR
- * @prologue   ENTER 6
- * @args_seen  [10]
+/* @asm        0x00E036..0x00E0A1  (107 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E036.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 6  ; then push bx,dx,ax,di (register args + saves)
+ * @args_seen  [10]  (stack) PLUS register args ax, bx, dx
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (24 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  draw a clipped VERTICAL run (one-column memset) into a 2D byte
+ *                 buffer at seg:[y0*stride + col], stepping by `stride` per row
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Vertical sibling of func_00DFCC; the auto-banner's "24 bytes" truncated at the
+ * clip prologue.  Real body 0xE036..0xE0A1 (107 B, `retf 0xA`), next func 0xE0A2.
+ * Register args: ax = col (x), bx = y1_in (bottom), dx = y0_in (top).  Stack args:
+ * [bp+6]=fill byte, [bp+8]=height, [bp+0xA]=stride/width, [bp+0xC]=base (LOADED
+ * BUT UNUSED here — a dead store, unlike func_00DFCC which adds it), [bp+0xE]=seg.
+ * Clips: requires 0 <= col < stride; clamps y0=max(y0,0), y1=min(height-1,y1_in);
+ * writes rows y0..y1 of column `col`.  Returns the unmodified col ([bp-0xC]).
  */
-int func_00E036_logic_sz_24(uint16_t arg0_bp_0A)
+int func_00E036_logic_sz_24(int col /*ax*/, int y1_in /*bx*/, int y0_in /*dx*/,
+                            uint16_t fill_bp_06, uint16_t height_bp_08,
+                            uint16_t stride_bp_0A, uint16_t base_bp_0C,
+                            uint16_t seg_bp_0E)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E03E or ax,ax; jl 0xE09C (col<0 -> bail); 0x00E042 ax=[bp+0xA];
+     *      cmp [bp-0xC],ax; jge 0xE09C (col>=stride -> bail).
+     *      0x00E04A ax=dx; or ax,ax; jge 0xE052 else ax=0; mov [bp-0xA],ax
+     *      (y0 = max(y0_in,0)).  0x00E055 ax=[bp+8]-1; cmp ax,bx; jle 0xE05F else
+     *      ax=bx; mov [bp-8],ax (y1 = min(height-1, y1_in)).
+     *      0x00E062 [bp-6]=[bp+0xE](seg); [bp-4]=[bp+0xC](base, unused); [bp-2]=[bp+0xA](stride).
+     *      0x00E074 push es; es=[bp-6]; 0x00E07A ax=[bp-2]=stride; bx=[bp-0xA]=y0;
+     *      mul bx (stride*y0); add ax,[bp-0xC]=col; di=ax (di = y0*stride + col).
+     *      0x00E087 cx=[bp-8]=y1; sub cx,[bp-0xA]=y0; inc cx (rows = y1-y0+1).
+     *      0x00E08E bx=[bp-2]=stride (vertical step); al=[bp+6] (fill);
+     *      0x00E094 mov es:[di],al; add di,bx; loopne 0xE094 (write `rows` cells).
+     *      0x00E09B pop es.  0x00E09C mov ax,[bp-0xC]=col; pop di; leave; retf 0xA. */
+    if (col < 0 || col >= (int)stride_bp_0A)
+        return col;                        /* clipped out: returns raw col */
+    {
+        int y0 = (y0_in < 0) ? 0 : y0_in;          /* clamp top */
+        int y1 = (int)height_bp_08 - 1;
+        uint8_t far *p;
+        int rows, i;
+        (void)base_bp_0C;                          /* @asm 0x00E068: dead store */
+        if (y1 > y1_in)
+            y1 = y1_in;                            /* clamp bottom to y1_in */
+        p = (uint8_t far *)(((uint32_t)seg_bp_0E << 16)
+                            | (uint16_t)((uint16_t)(stride_bp_0A * y0) + col));
+        rows = y1 - y0 + 1;                         /* loopne: count loop (ZF inert) */
+        for (i = 0; i < rows; i++)
+            p[(size_t)i * stride_bp_0A] = (uint8_t)fill_bp_06;
+        return col;
+    }
 }
 
 /* @asm        0x00E0A2..0x00E0B0  (14 bytes)  region=load_image

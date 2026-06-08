@@ -144,26 +144,47 @@ int func_00E68A_set_global_269E_byte_pair(void)
  * @asm_file   ../code/VICEROY/disasm/func_00E6A6_unknown.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 2
- * @args_seen  [6, 10, 12]
+ * @args_seen  [6, 10, 12]  (plus far-ptr seg half [bp+8] and register arg ax)
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (72 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  measure the pixel width of a counted/NUL-terminated string via a
+ *                 per-glyph width table; adds inter-character spacing between glyphs
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: [bp+6]:[bp+8] = far pointer to the string (ds:si); [bp+0xA] = glyph-table
+ *       base index; [bp+0xC] = glyph-table segment (es); ax (register) = per-glyph
+ *       inter-character spacing, saved to [bp-4].  Each glyph's advance width is
+ *       the byte at table_seg:[(glyph-1) + base + 2]; spacing is added after every
+ *       glyph except the last.  Returns the accumulated width (retf 8 pops the four
+ *       stack words; the prototype is widened to model the far ptr + register arg).
  */
-int func_00E6A6_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C)
+int func_00E6A6_logic_sz_72(void far *str /*bp+6:bp+8*/, uint16_t tbl_base_bp_0A,
+                            uint16_t tbl_seg_bp_0C, uint16_t spacing /*ax*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E6B8 JE 0x00E6E0 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00E6CF JLE 0x00E6D8 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00E6D3 JE 0x00E6D8 */ {
-                }
-            }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E6DE JNE 0x00E6BD */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00E6AD lds si,[bp+6] (ds:si = string); 0x00E6B0 mov [bp-2],0 (total=0);
+     *      0x00E6B5 cmp byte [si],0; je 0xE6E0 (empty string).
+     *      Loop @0x00E6BD: mov es,[bp+0xC]; al=*si; cwde; di=al; dec di; inc si;
+     *      0x00E6C4 add di,[bp+0xA] (di = glyph-1 + base); mov cl,es:[di+2]; sub ch,ch
+     *      (cx = width byte); 0x00E6CD or cx,cx; jle 0xE6D8 (skip non-positive);
+     *      0x00E6D1 cmp byte [si],ch(=0); je 0xE6D8 (last glyph -> no spacing);
+     *      0x00E6D5 add cx,[bp-4] (+ spacing).  0x00E6D8 add [bp-2],cx (total += width);
+     *      0x00E6DB cmp byte [si],0; jne 0xE6BD (next glyph).
+     *      0x00E6E0 mov ax,0x1B5A; mov ds,ax (restore DGROUP); mov ax,[bp-2];
+     *      pop si; pop di; leave; retf 8. */
+    const uint8_t far *s = (const uint8_t far *)str;
+    uint16_t total = 0;
+    while (*s != 0) {
+        uint8_t glyph = *s++;
+        uint8_t far *tbl = (uint8_t far *)
+            (((uint32_t)tbl_seg_bp_0C << 16) | (uint16_t)((glyph - 1) + tbl_base_bp_0A));
+        int16_t width = (int16_t)(uint8_t)tbl[2];   /* es:[di+2], zero-extended */
+        if (width > 0 && *s != 0)                   /* spacing between glyphs only */
+            width += (int16_t)spacing;
+        total += (uint16_t)width;                   /* @asm 0x00E6D8: always added */
+    }
+    return total;
 }
 
 /* @asm        0x00E6EE..0x00E702  (20 bytes)  region=load_image
@@ -192,22 +213,63 @@ int func_00E6EE_logic_sz_20(void)
     return 0;
 }
 
-/* @asm        0x00E702..0x00E717  (21 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E702_unknown.asm
- * @pattern    TINY_ACCESSOR
- * @prologue   ENTER 4
- * @args_seen  []
+/* @asm        0x00E702..0x00E769  (103 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E702.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 4  ; then push dx,ax,di,si (register args + saves)
+ * @args_seen  []  (stack arg [bp+6]:[bp+8] far ptr) PLUS register args ax, dx
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (21 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00E702_logic_sz_21(void)
+ * @inferred_role  upload a VGA DAC palette block (DAC ports 0x3C8/0x3C9), in
+ *                 retrace-synced bursts capped by [0x806]; sets busy flag 0x808
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: auto-banner "21 bytes" truncated at the prologue; real body 0xE702..0xE769
+ * (103 B, `retf 4`; 0xE769 NOP pad, next func 0xE76A).  Args: ax = first DAC color
+ * index, dx = color count, [bp+6]:[bp+8] = far ptr to packed RGB (3 bytes/color).
+ * Writes color index to 0x3C8 then streams `count*3` component bytes to 0x3C9 in
+ * bursts of at most [0x806] bytes, each burst preceded by a vertical-retrace sync
+ * (port 0x3DA bit 3) with interrupts disabled during the burst.  DGROUP word 0x808
+ * is set to 1 for the duration (palette-busy) and cleared to 0 on exit.  The port
+ * I/O is a pure platform op, modelled with inp()/outp() per project convention
+ * (cf. func_00E6EE).  `retf 4` pops the one stack far-ptr; no return value. */
+int func_00E702_logic_sz_21(const void far *rgb /*bp+6:bp+8*/,
+                            uint16_t first_index /*ax*/, uint16_t count /*dx*/)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E70A cx=ax; ax=ax*3; mov [bp-2],ax (start byte offset = first*3);
+     *      0x00E713 ax=dx; dx=dx*3; mov [bp-4],dx (total bytes = count*3).
+     *      0x00E71C mov [0x808],1 (busy); 0x00E722 bx=[0x806] (burst cap);
+     *      0x00E726 di=[bp-4] (bytes remaining); push ds; lds si,[bp+6];
+     *      0x00E72D add si,[bp-2] (si -> first color's bytes); 0x00E730 dx=0x3C8;
+     *      ax=[bp-8](first_index); out dx,al (DAC write index); inc dx (0x3C9).
+     *      Burst @0x00E738 push dx; vsync wait on 0x3DA bit 8 (wait end, then start);
+     *      0x00E748 cli; pop dx(=0x3C9); cx=di; cmp cx,bx; jbe 0xE752 else cx=bx
+     *      (burst = min(remaining, [0x806])); push cx; 0x00E753 outsb / loop
+     *      (stream cx bytes ds:[si]->0x3C9); 0x00E756 sti; pop cx; sub di,cx;
+     *      jne 0xE738 (more bursts).  0x00E75C pop ds; mov [0x808],0 (clear busy);
+     *      pop si; pop di; leave; retf 4. */
+    const uint8_t far *src = (const uint8_t far *)rgb + (uint16_t)(first_index * 3);
+    uint16_t remaining = (uint16_t)(count * 3);
+    uint16_t burst_cap = *(uint16_t near *)0x806;
+
+    *(uint16_t near *)0x808 = 1;                 /* @asm 0x00E71C palette-busy flag */
+    /* @asm 0x00E730 outp(0x3C8, (uint8_t)first_index)  -- DAC write index */
+    outp(0x3C8, (uint8_t)first_index);
+    while (remaining != 0) {
+        uint16_t burst = (remaining <= burst_cap) ? remaining : burst_cap;
+        uint16_t i;
+        /* @asm 0x00E738..0x00E746 vertical-retrace sync on port 0x3DA bit 3 */
+        while (inp(0x3DA) & 0x08) { }            /* wait for any retrace to end   */
+        while (!(inp(0x3DA) & 0x08)) { }         /* wait for next retrace to start */
+        /* @asm 0x00E748 cli; 0x00E753 outsb x burst to 0x3C9; 0x00E756 sti */
+        for (i = 0; i < burst; i++)
+            outp(0x3C9, *src++);                 /* stream component bytes to DAC data */
+        remaining -= burst;                      /* @asm 0x00E758 sub di,cx */
+    }
+    *(uint16_t near *)0x808 = 0;                 /* @asm 0x00E75D clear busy flag */
+    return 0;
 }
 
 /* @asm        0x00E76A..0x00E79B  (49 bytes)  region=load_image
@@ -295,13 +357,49 @@ int func_00EADE_logic_sz_15(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (100 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  scale a source record's (w,h) by a percentage and write a
+ *                 placed/centered bounding box into a destination struct
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args (stack): [bp+6]:[bp+8] = es:bx destination struct (far);
+ *               [bp+0xA] = scale percent; [bp+0xC]:[bp+0xE] = ds:di source table (far).
+ * Args (register): ax = record index (stride 12 in the source table); bx = anchor
+ *               row; dx = anchor col.  The source record is at table + index*12 +
+ *               0x36; its +8/+0xA words are the unscaled width/height.  Each is
+ *               scaled with rounding ((v*scale + 50) / 100).  Destination layout:
+ *               +8 = scaled width, +0xA = scaled height, +4 = dx - scaled_w/2
+ *               (horizontally centred on the anchor), +6 = bx - scaled_h + 1
+ *               (bottom-anchored).  `retf 0xA` pops the five stack words; the
+ *               prototype is widened to model the far ptrs + register args.
  */
-int func_00EC32_logic_sz_100(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C)
+int func_00EC32_logic_sz_100(void far *dst /*bp+6:bp+8*/, uint16_t scale_bp_0A,
+                             const void far *src_tbl /*bp+0xC:bp+0xE*/,
+                             uint16_t index /*ax*/, int anchor_row /*bx*/,
+                             int anchor_col /*dx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00EC39 lds di,[bp+0xC] (ds:di=table); les bx,[bp+6] (es:bx=dst);
+     *      0x00EC3F si=ax; si=si*3; si=si*4 (si = index*12); add si,di; add si,0x36
+     *      (si -> source record).  0x00EC4D ax=[si+8]; mul [bp+0xA]; add ax,0x32;
+     *      cx=100; sub dx,dx; div cx (ax = (w*scale+50)/100); mov es:[bx+8],ax (scaled w).
+     *      0x00EC61 dx=ax; ax=[si+0xA]; si=dx (stash scaled w); mul [bp+0xA]; add ax,0x32;
+     *      sub dx,dx; div cx (ax = (h*scale+50)/100); mov es:[bx+0xA],ax (scaled h).
+     *      0x00EC76 shr si,1 (scaled_w/2); sub si,[bp-4](dx_in=col); neg si
+     *      (si = col - scaled_w/2); mov es:[bx+4],si.
+     *      0x00EC81 sub ax,[bp-2](bx_in=row); neg ax; inc ax (ax = row - scaled_h + 1);
+     *      mov es:[bx+6],ax.  0x00EC8B cx=0x1B5A; mov ds,cx (restore DGROUP);
+     *      pop si; pop di; leave; retf 0xA. */
+    const uint8_t far *rec = (const uint8_t far *)src_tbl + (size_t)index * 12 + 0x36;
+    uint16_t raw_w   = *(const uint16_t far *)(rec + 8);
+    uint16_t raw_h   = *(const uint16_t far *)(rec + 0xA);
+    uint16_t scaled_w = (uint16_t)(((uint32_t)raw_w * scale_bp_0A + 0x32) / 0x64);
+    uint16_t scaled_h = (uint16_t)(((uint32_t)raw_h * scale_bp_0A + 0x32) / 0x64);
+    uint8_t far *d = (uint8_t far *)dst;
+
+    *(uint16_t far *)(d + 8)   = scaled_w;
+    *(uint16_t far *)(d + 0xA) = scaled_h;
+    *(uint16_t far *)(d + 4)   = (uint16_t)(anchor_col - (scaled_w >> 1));   /* centred X */
+    *(uint16_t far *)(d + 6)   = (uint16_t)(anchor_row - scaled_h + 1);      /* bottom Y  */
+    return 0;
 }
 
 /* @asm        0x00EC96..0x00ECC7  (49 bytes)  region=load_image
@@ -418,45 +516,154 @@ int func_00F281_logic_sz_15(void)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00F38A..0x00F3B8  (46 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00F38A_unknown.asm
- * @pattern    TINY_ACCESSOR
- * @prologue   ENTER 0x10
- * @args_seen  [6]
+/* @asm        0x00F38A..0x00F44F  (197 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00F38A.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 0x10  ; then push ax,di,si (n in ax + saves)
+ * @args_seen  [6]  (plus far ptr seg [bp+8], satellite far ptr [bp+0xA]:[bp+0xC], reg n=ax)
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (46 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  in-place insertion sort of a WORD key array carrying a parallel
+ *                 BYTE satellite array (ascending by key)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: auto-banner "46 bytes" truncated at the first basic block; real body
+ * 0xF38A..0xF44E (197 B, `retf 8`).  Args: [bp+6]:[bp+8] = far ptr to key[n]
+ * (uint16_t), [bp+0xA]:[bp+0xC] = far ptr to sat[n] (uint8_t), ax = n (register).
+ * It repeatedly scans for the first adjacent inversion key[i+1] < key[i], extracts
+ * that element, closes the gap by shifting the tail down one (key[i+2..]→key[i+1..],
+ * same for sat), finds the insertion point j (first key[j] >= extracted), opens a
+ * gap there by shifting key[j..]/sat[j..] up one, and drops the element at j.  This
+ * is a stable insertion sort.  `retf 8` pops the four stack words.  No return value.
  */
-int func_00F38A_logic_sz_46(uint16_t arg0_bp_06)
+int func_00F38A_logic_sz_46(uint16_t key_off_bp_06, uint16_t key_seg_bp_08,
+                            uint16_t sat_off_bp_0A, uint16_t sat_seg_bp_0C,
+                            uint16_t n /*ax*/)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00F391 mov [bp-0x10],0 (i=0).  Outer reload @0x00F39A: les di,[bp+6];
+     *      si=i; bx=i*2; dx=n-1; cmp si,dx; jl 0xF3AC else jmp 0xF448 (done when i>=n-1).
+     *      0x00F3AC ax=key[i+1] (es:[bx+di+2]); cmp ax,key[i] (es:[bx+di]); jae 0xF3B5:
+     *      i++; bx+=2; [bp-0x10]=i; jmp 0xF3A5 (advance over sorted adjacents).
+     *      Inversion @0x00F3BE: cx=(n-1)-i-1 (tail count); di+=bx+2 (->&key[i+1]);
+     *      push si(i); push cx; ds=es; si=di+2 (->&key[i+2]); if cx!=0 rep movsw
+     *      (shift key[i+2..]→key[i+1..]); pop cx; lds si,[bp+0xA]; les di,[bp+0xA];
+     *      pop bx(=i); inc bx; si+=bx; di+=bx; inc si (si=&sat[i+2], di=&sat[i+1]);
+     *      dl=sat[i+1] (save satellite); if cx!=0 rep movsb (shift sat down).
+     *      Find j @0x00F3F1: les di,[bp+6]; si=0(j); bx=0; cx=n-1; loop while j<n-1 and
+     *      key[j] < ax: 0x00F400 cmp ax,key[j]; jbe 0xF40C (stop at first key[j]>=ax);
+     *      j++; bx+=2.  @0x00F40C push bx(j*2); push si(j); cx-=j; je 0xF437 (no shift):
+     *      else open gap: push cx; cx<<=1; di+=bx; ds=es; di+=cx (->&key[n-1]); si=di-2;
+     *      std; cx>>=1; rep movsw (shift key[j..n-2]→key[j+1..n-1]); lds si,[bp+0xA];
+     *      pop cx; pop di(=j); push di; di+=si; ds->es; di+=cx (->&sat[n-1]); si=di-1;
+     *      rep movsb (shift sat[j..]→sat[j+1..]); cld.
+     *      @0x00F437 lds si,[bp+0xA]; pop bx(=j); sat[j]=dl; les di,[bp+6]; pop bx(=j*2);
+     *      key[j]=ax; jmp 0xF39A (restart outer at same i).  @0x00F448 done: retf 8. */
+    uint16_t far *key = (uint16_t far *)(((uint32_t)key_seg_bp_08 << 16) | key_off_bp_06);
+    uint8_t  far *sat = (uint8_t  far *)(((uint32_t)sat_seg_bp_0C << 16) | sat_off_bp_0A);
+    int i = 0;
+
+    while (i < (int)n - 1) {
+        uint16_t k;
+        uint8_t  s;
+        int j, t;
+        if (key[i + 1] >= key[i]) {           /* @asm 0xF3B0 jae: already in order */
+            i++;
+            continue;
+        }
+        k = key[i + 1];                       /* extract the small element */
+        s = sat[i + 1];
+        for (t = i + 1; t <= (int)n - 2; t++) {   /* @asm 0xF3D5/0xF3EC: close gap (down) */
+            key[t] = key[t + 1];
+            sat[t] = sat[t + 1];
+        }
+        for (j = 0; j < (int)n - 1; j++)          /* @asm 0xF400: insertion point */
+            if (key[j] >= k)
+                break;
+        for (t = (int)n - 1; t >= j + 1; t--) {   /* @asm 0xF423/0xF434: open gap (up) */
+            key[t] = key[t - 1];
+            sat[t] = sat[t - 1];
+        }
+        key[j] = k;                               /* @asm 0xF442 / 0xF43B: drop it in */
+        sat[j] = s;
+        /* i not advanced: restart the scan from the same position */
+    }
+    return 0;
 }
 
-/* @asm        0x00F450..0x00F47C  (44 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00F450_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x10
- * @args_seen  [6]
+/* @asm        0x00F450..0x00F50F  (191 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00F450.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 0x10  ; then push ax,di,si (n in ax + saves)
+ * @args_seen  [6]  (plus far ptr seg [bp+8], satellite far ptr [bp+0xA]:[bp+0xC], reg n=ax)
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  in-place insertion sort of a BYTE key array carrying a parallel
+ *                 BYTE satellite array (ascending by key) — byte-key twin of func_00F38A
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: auto-banner "44 bytes" truncated mid-loop; real body 0xF450..0xF50F
+ * (191 B, `retf 8`; 0xF50F NOP pad, next func 0xF510).  Identical structure to
+ * func_00F38A but the key array is uint8_t (byte compares, movsb shifts) instead
+ * of uint16_t.  Args: [bp+6]:[bp+8] = far ptr to key[n] (uint8_t),
+ * [bp+0xA]:[bp+0xC] = far ptr to sat[n] (uint8_t), ax = n (register).  Scans for
+ * the first adjacent inversion key[i+1] < key[i], extracts it, closes the gap
+ * (shift tail down), finds insertion point j (first key[j] >= extracted), opens a
+ * gap (shift up), and drops it at j.  Stable insertion sort.  `retf 8` pops the
+ * four stack words.  No return value.
  */
-int func_00F450_logic_sz_44(uint16_t arg0_bp_06)
+int func_00F450_logic_sz_44(uint16_t key_off_bp_06, uint16_t key_seg_bp_08,
+                            uint16_t sat_off_bp_0A, uint16_t sat_seg_bp_0C,
+                            uint16_t n /*ax*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00F46B JL 0x00F470 */ {
-            goto label_00F508;  /* @0x00F46D */
+    /* @asm 0x00F457 mov [bp-0x10],0 (i=0).  Outer reload @0x00F460: les di,[bp+6];
+     *      si=i; bx=si; dx=n-1; cmp si,dx; jl 0xF470 else jmp 0xF508 (done i>=n-1).
+     *      0x00F470 al=key[i+1] (es:[bx+di+1]); cmp al,key[i] (es:[bx+di]); jae 0xF479:
+     *      i++; bx+=1; [bp-0x10]=i; jmp 0xF469 (advance over sorted adjacents).
+     *      Inversion @0x00F482: cx=(n-1)-i-1; di+=bx+1 (->&key[i+1]); push si; push cx;
+     *      ds=es; si=di+1 (->&key[i+2]); if cx!=0 rep movsb (shift key down);
+     *      pop cx; lds si,[bp+0xA]; les di,[bp+0xA]; pop bx(=i); inc bx; si+=bx; di+=bx;
+     *      inc si; dl=sat[i+1] (save); if cx!=0 rep movsb (shift sat down).
+     *      Find j @0x00F4B5: les di,[bp+6]; si=0; bx=0; cx=n-1; loop while j<n-1 and
+     *      key[j] < al: 0x00F4C4 cmp al,key[j]; jbe 0xF4D0 (stop at first key[j]>=al);
+     *      j++; bx+=1.  @0x00F4D0 push bx(j); push si(j); cx-=j; je 0xF4F7 else open gap:
+     *      push cx; di+=bx; ds=es; di+=cx (->&key[n-1]); si=di-1; std; rep movsb
+     *      (shift key[j..n-2]→key[j+1..n-1]); lds si,[bp+0xA]; pop cx; pop di(=j);
+     *      push di; di+=si; ds->es; di+=cx (->&sat[n-1]); si=di-1; rep movsb (shift sat);
+     *      cld.  @0x00F4F7 lds si,[bp+0xA]; pop bx(=j); sat[j]=dl; les di,[bp+6];
+     *      pop bx(=j); key[j]=al; jmp 0xF460 (restart at same i).  @0x00F508 retf 8. */
+    uint8_t far *key = (uint8_t far *)(((uint32_t)key_seg_bp_08 << 16) | key_off_bp_06);
+    uint8_t far *sat = (uint8_t far *)(((uint32_t)sat_seg_bp_0C << 16) | sat_off_bp_0A);
+    int i = 0;
+
+    while (i < (int)n - 1) {
+        uint8_t k, s;
+        int j, t;
+        if (key[i + 1] >= key[i]) {           /* @asm 0xF474 jae: already in order */
+            i++;
+            continue;
         }
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x00F477 JB 0x00F482 */ {
+        k = key[i + 1];                       /* extract the small element */
+        s = sat[i + 1];
+        for (t = i + 1; t <= (int)n - 2; t++) {   /* @asm 0xF499/0xF4B0: close gap (down) */
+            key[t] = key[t + 1];
+            sat[t] = sat[t + 1];
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        for (j = 0; j < (int)n - 1; j++)          /* @asm 0xF4C4: insertion point */
+            if (key[j] >= k)
+                break;
+        for (t = (int)n - 1; t >= j + 1; t--) {   /* @asm 0xF4E3/0xF4F4: open gap (up) */
+            key[t] = key[t - 1];
+            sat[t] = sat[t - 1];
+        }
+        key[j] = k;                               /* @asm 0xF502 / 0xF4FB: drop it in */
+        sat[j] = s;
+        /* i not advanced: restart the scan from the same position */
+    }
+    return 0;
 }
 
 /* @asm        0x00F510..0x00F52C  (28 bytes)  region=load_image
@@ -490,22 +697,103 @@ int func_00F510_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return 0;
 }
 
-/* @asm        0x00F52C..0x00F54F  (35 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00F52C_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x00F52C..0x00F5BF  (147 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00F52C.asm
+ * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 4
- * @args_seen  [6, 12]
+ * @args_seen  [6, 12]  (really 7 stack params: [bp+6..bp+0x14])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (35 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00F52C_logic_sz_35(uint16_t arg0_bp_06, uint16_t arg1_bp_0C)
+ * @inferred_role  blit a rectangular sprite from a source bitmap to the 0xA000
+ *                 VGA framebuffer (320-wide), row by row, with src segment wrap
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: auto-banner "35 bytes" truncated at the address setup; real body
+ * 0xF52C..0xF5BE (147 B, `retf`).  Args:
+ *   [bp+6]:[bp+8] = far ptr to a source descriptor {+2 = src_stride (bytes/row),
+ *                   +4 = src_offset_base, +6 = src_segment_base};
+ *   [bp+0xA] = extra source byte offset;  [bp+0xC] = source row index;
+ *   [bp+0xE] = destination X (byte column);  [bp+0x10] = destination Y (row);
+ *   [bp+0x12] = copy width in bytes;  [bp+0x14] = height in rows.
+ * The source far address = base_seg:base_off normalized for (row*src_stride +
+ * extra_off), so wide sheets crossing 64K are addressed correctly.  Destination
+ * = 0xA000:([bp+0xE] + 320*[bp+0x10]).  Per row it copies `width` bytes (as
+ * words + a trailing byte when width is odd), advancing src by src_stride-width
+ * and dst by 320-width.  The even-width path also wraps the source segment when
+ * the source offset passes 0x8000.  No return value (caller pops args). */
+/* Prototype widened to the seven stack params the body actually consumes
+ * ([bp+6..bp+0x14]); the auto-banner only spotted [bp+6] and [bp+0xC]. */
+int func_00F52C_logic_sz_35(uint16_t src_desc_off_bp_06, uint16_t src_desc_seg_bp_08,
+                            uint16_t extra_off_bp_0A, uint16_t row_idx_bp_0C,
+                            uint16_t dst_x_bp_0E, uint16_t dst_y_bp_10,
+                            uint16_t width_bp_12, uint16_t height_bp_14)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00F534 les di,[bp+6]; bx=es:[di+2](src_stride); si=es:[di+4](src_off);
+     *      cx=es:[di+6](src_seg).  0x00F543 ax=[bp+0xC]; mul bx (row*src_stride);
+     *      0x00F548 shl dx,0xC; add cx,dx (carry high word into seg<<12);
+     *      0x00F54D dx=ax; and dx,0xFFF0; shr dx,4; add cx,dx (seg += offset>>4);
+     *      0x00F557 and ax,0xF; add si,ax; add si,[bp+0xA] (si = src offset).
+     *      0x00F55F es=0xA000; 0x00F564 ax=0x140(320); mul [bp+0x10]; di=[bp+0xE]+ax
+     *      (dst VGA offset).  0x00F56F dx=[bp+0x12](width); bx-=dx (src row leftover);
+     *      ax=[bp+0x14](height); push bp; bp=0x140-dx (dst row leftover); ds=cx.
+     *      0x00F57F or ax,ax; je 0xF5B8 (no rows).  0x00F586 shr dx,1 (words=width/2);
+     *      jae 0xF59D (even): odd path @0xF58A loop ax rows: if dx!=0 {cx=dx; rep movsw};
+     *      movsb; add si,bx; add di,bp; dec ax; jne.  Even path @0xF59D: if dx==0 done;
+     *      loop ax rows: cx=dx; rep movsw; add si,bx; jns else {si-=0x8000; ds+=0x800}
+     *      (src seg wrap); add di,bp; dec ax; jne.  0xF5B8 pop bp; restore; retf.
+     * Note: each row's copy advances si/di by `width`; the explicit src_stride/0x140
+     * advances below fold the in-copy advance + the bx/bp leftovers into one step. */
+    const uint8_t far *desc =
+        (const uint8_t far *)(((uint32_t)src_desc_seg_bp_08 << 16) | (uint16_t)src_desc_off_bp_06);
+    uint16_t src_stride = *(const uint16_t far *)(desc + 2);
+    uint16_t src_off    = *(const uint16_t far *)(desc + 4);
+    uint16_t src_seg    = *(const uint16_t far *)(desc + 6);
+
+    uint16_t row_idx   = row_idx_bp_0C;
+    uint16_t extra_off = extra_off_bp_0A;
+    uint16_t dst_x     = dst_x_bp_0E;
+    uint16_t dst_y     = dst_y_bp_10;
+    uint16_t width     = width_bp_12;
+    uint16_t height    = height_bp_14;
+
+    /* normalize the source far address for row*src_stride + extra_off */
+    {
+        uint32_t prod = (uint32_t)row_idx * src_stride;     /* dx:ax */
+        src_seg += (uint16_t)((prod >> 16) << 12);          /* shl dx,0xC */
+        src_seg += (uint16_t)(((uint16_t)prod & 0xFFF0) >> 4);
+        src_off += (uint16_t)((uint16_t)prod & 0x000F) + extra_off;
+    }
+
+    {
+        /* per-row pointer advance = (in-copy `width`) + (asm leftovers bx / bp):
+         *   src: width + (src_stride - width) = src_stride
+         *   dst: width + (0x140    - width)   = 0x140                              */
+        int odd          = (int)(width & 1);
+        uint8_t far *dst = (uint8_t far *)(((uint32_t)0xA000u << 16)
+                                           | (uint16_t)(dst_x + (uint16_t)(0x140 * dst_y)));
+        const uint8_t far *src =
+            (const uint8_t far *)(((uint32_t)src_seg << 16) | src_off);
+        uint16_t r;
+
+        if (height == 0)
+            return 0;
+        /* The odd path (@0xF58A) copies words+1 byte = `width` bytes; the even path
+         * (@0xF59D) returns early when width<2 (words==0) and otherwise copies `width`
+         * bytes per row.  Both reduce to a `width`-byte row copy, so a single loop
+         * (advancing by the full src_stride / 0x140 strides) reproduces either. */
+        if (odd || width >= 2) {
+            for (r = 0; r < height; r++) {
+                uint16_t b;
+                for (b = 0; b < width; b++)
+                    dst[b] = src[b];
+                src += src_stride;          /* @asm in-copy advance + bx leftover */
+                dst += 0x140;               /* @asm in-copy advance + bp leftover */
+            }
+        }
+    }
+    return 0;
 }
 
 /* @asm        0x00F5E6..0x00F62A  (68 bytes)  region=load_image

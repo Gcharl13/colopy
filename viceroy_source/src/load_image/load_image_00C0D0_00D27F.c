@@ -404,30 +404,83 @@ int func_00C8AB_logic_sz_48(uint16_t arg0_bp_06)
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x00C8FC..0x00C954  (88 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00C8FC_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 4
- * @args_seen  [6, 8]
+/* @asm        0x00C8FC..0x00C986  (138 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00C8FC.asm
+ * @pattern    MEDIUM_LOGIC
+ * @prologue   ENTER 4  ; then push dx,ax,bx,di,si (register args + saves)
+ * @args_seen  [6, 8]  (stack) PLUS register args ax, bx, dx
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (88 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  2D rectangle clip-to-bounds (blit pre-clip); returns 1 if the
+ *                 rectangle is fully clipped away, 0 if a non-empty rect remains
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "88 bytes / ends 0xC954" was a truncation at a `jle`
+ * boundary; the real body runs 0xC8FC..0xC985 (138 B; the .asm header's "size
+ * 130" stops at the first `retf 4` and omits the second return path at 0xC97E),
+ * with the next function (a far-ptr stub) at 0xC986.  This routine takes THREE
+ * register pointer args in addition to the two stack pointer args:
+ *   ax -> origin_a (signed), dx -> origin_b (signed),
+ *   bx -> bounds struct {int lim_b @ +0, int lim_a @ +2},
+ *   [bp+6] -> extent_b, [bp+8] -> extent_a.
+ * The original `retf 4` only pops the two stack args.  The prototype is widened
+ * to model the register args explicitly (this tree is a decompilation artifact,
+ * not a compiled unit, so the calling convention is documented, not enforced).
+ * Axis A = (origin_a, extent_a) clamped to bounds->lim_a (+2);
+ * Axis B = (origin_b, extent_b) clamped to bounds->lim_b (+0).
  */
-int func_00C8FC_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00C8FC_logic_sz_88(int near *origin_a /*ax*/, int near *origin_b /*dx*/,
+                            int near *bounds /*bx; [0]=lim_b,[2]=lim_a*/,
+                            int near *extent_b /*bp+6*/, int near *extent_a /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00C90A JGE 0x00C917 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00C91D JGE 0x00C92A */ {
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00C93E JLE 0x00C942 */ {
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00C952 JLE 0x00C956 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00C905 mov bx,ax; 0x00C907 cmp [bx],0; jge 0xC917 (origin_a>=0 skip):
+     *      0x00C90C cx=*origin_a; si=[bp+8]; 0x00C911 add [si],cx (extent_a+=origin_a);
+     *      0x00C913 mov [bx],0 (origin_a=0).
+     *      0x00C917 bx=[bp-6](origin_b); cmp [bx],0; jge 0xC92A (origin_b>=0 skip):
+     *      0x00C91F ax=*origin_b; si=[bp+6]; add [si],ax (extent_b+=origin_b);
+     *      mov [bx],0 (origin_b=0).
+     *      0x00C92A bx=[bp+8]; ax=*extent_a; si=[bp-8](origin_a); add ax,*origin_a;
+     *      dec ax (right = origin_a+extent_a-1); di=[bp-0xA](bounds); cx=di[2]-1
+     *      (lim_a-1); cmp ax,cx; jle 0xC942 else ax=cx (clamp right<=lim_a-1).
+     *      0x00C942 bx=[bp+6]; cx=*extent_b; bx=[bp-6](origin_b); add cx,*origin_b;
+     *      dec cx (bottom = origin_b+extent_b-1); dx=di[0]-1 (lim_b-1); cmp cx,dx;
+     *      jle 0xC956 else cx=dx; mov [bp-4],cx (clamped bottom).
+     *      0x00C959 ax-=*origin_a (si); inc ax (extent_a' = right-origin_a+1);
+     *      si=[bp+8]; mov [si],ax (store extent_a).
+     *      0x00C961 ax=[bp-4]; ax-=*origin_b (bx=[bp-6]); inc ax
+     *      (extent_b' = bottom-origin_b+1); bx=[bp+6]; mov [bx],ax (store extent_b).
+     *      0x00C96C cmp [si],0; jle 0xC975 (extent_a<=0 -> return 1);
+     *      0x00C971 or ax,ax; jg 0xC97E (extent_b>0 -> return 0); else fall to 1.
+     *      0xC975 mov ax,1; pop si; pop di; leave; retf 4.
+     *      0xC97E sub ax,ax (0); pop si; pop di; leave; retf 4. */
+    if (*origin_a < 0) {            /* clamp negative origin, shrink extent */
+        *extent_a += *origin_a;
+        *origin_a = 0;
+    }
+    if (*origin_b < 0) {
+        *extent_b += *origin_b;
+        *origin_b = 0;
+    }
+    {
+        int right = *origin_a + *extent_a - 1;     /* far edge, axis A */
+        int lim_a = bounds[1] - 1;                  /* @asm [di+2] = word at byte +2 */
+        int bottom;
+        int lim_b = bounds[0] - 1;                  /* @asm [di]   = word at byte +0 */
+        if (right > lim_a)
+            right = lim_a;
+        bottom = *origin_b + *extent_b - 1;        /* far edge, axis B */
+        if (bottom > lim_b)
+            bottom = lim_b;
+
+        *extent_a = right - *origin_a + 1;         /* clipped extents */
+        *extent_b = bottom - *origin_b + 1;
+
+        if (*extent_a > 0 && *extent_b > 0)
+            return 0;                              /* non-empty rect remains */
+        return 1;                                  /* fully clipped away */
+    }
 }
 
 /* @asm        0x00CA0C..0x00CA56  (74 bytes)  region=load_image
@@ -530,24 +583,57 @@ int func_00CC8F_op_sz_92(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x00CCEB
- * @inferred_role  PROLOGUE_HEAVY (67 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00CCEB   mouse-coordinate post-transform (operates on cx/dx register pair)
+ * @inferred_role  poll the DOS mouse (int 0x33 fn 3) and report position+buttons,
+ *                 honouring a "frozen position" flag and a "mouse present" flag
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: arg0 ([bp+6]) -> out_x, arg1 ([bp+8]) -> out_y (both written).
+ * Globals: 0x83AC = mouse-present flag (gate the int 0x33 call); 0x92F8 =
+ * frozen-position flag (when set, report the cached 0x92FC/0x92FE pair instead
+ * of the live cursor); 0x92FA = status bits OR'd into the returned button mask.
+ * Returns (button_mask | 0x92FA); button_mask comes from int 0x33 fn 3 in BX,
+ * or 0 when the mouse is absent.
  */
-int func_00CD0B_logic_sz_67(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00CD0B_logic_sz_67(uint16_t near *out_x /*bp+6*/, uint16_t near *out_y /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x83AC, 0x92F8, 0x92FA, 0x92FC, 0x92FE
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00CD16 JE 0x00CD24 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00CD29 JE 0x00CD33 */ {
-            /* @0x00CD30 */ func_00CCEB();
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00CD38 JE 0x00CD3C */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00CD0F xor bx,bx (buttons=0);
+     *      0x00CD11 cmp [0x92F8],0; je 0xCD24 (not frozen): else
+     *        0x00CD18 cx=[0x92FC]; dx=[0x92FE]; xor bx,bx; push cx; push dx (cache pos).
+     *      0x00CD24 cmp [0x83AC],0; je 0xCD33 (no mouse): else
+     *        0x00CD2B ax=3; int 0x33 (cx=x, dx=y, bx=buttons); call 0xCCEB (transform).
+     *      0x00CD33 cmp [0x92F8],0; je 0xCD3C (not frozen): else pop dx; pop cx
+     *        (restore cached x/y over the live read).
+     *      0x00CD3C push bx; bx=[bp+6]; mov [bx],cx (*out_x=x);
+     *        bx=[bp+8]; mov [bx],dx (*out_y=y); pop ax (buttons);
+     *        or ax,[0x92FA]; leave; retf.
+     *
+     * The int 0x33 (DOS mouse driver, AX=3 = read button status + cursor) is a
+     * pure platform op, kept as an @asm-cited comment per project convention (cf.
+     * func_00F510 int 0x10).  Its CX/DX/BX outputs feed cx=x, dx=y, bx=buttons,
+     * with func_00CCEB post-transforming the live cx/dx coordinates.  When the
+     * frozen flag (0x92F8) is set, the int 0x33 read is performed (and may set
+     * `buttons`) but the position is overwritten by the cached 0x92FC/0x92FE pair
+     * that was stacked beforehand, so only the cached coordinates are reported. */
+    uint16_t mx = 0, my = 0;       /* cx, dx — mouse position           */
+    uint16_t buttons = 0;          /* bx     — button mask (0 if absent) */
+    int frozen = (*(uint16_t near *)0x92F8 != 0);
+
+    if (*(uint16_t near *)0x83AC != 0) {
+        /* @asm 0x00CD2B mov ax,3; int 0x33  -> cx=x, dx=y, bx=buttons */
+        /* @asm 0x00CD30 call 0xCCEB  (transform live cx/dx in place)   */
+        func_00CCEB();
+        /* live mx/my/buttons land in cx/dx/bx; modelled via the globals below
+         * when frozen, and left as the platform read otherwise. */
+    }
+    if (frozen) {
+        /* @asm 0x00CD18 / 0x00CD3A: report the cached coordinate pair */
+        mx = *(uint16_t near *)0x92FC;
+        my = *(uint16_t near *)0x92FE;
+    }
+    *out_x = mx;
+    *out_y = my;
+    return (int)(buttons | *(uint16_t near *)0x92FA);   /* @asm 0x00CD47 or ax,[0x92FA] */
 }
 
 /* @asm        0x00CECF..0x00CEE8  (25 bytes)  region=load_image
@@ -775,30 +861,54 @@ int func_00D1CA_logic_sz_26(void)
     return *((uint16_t near*)0x07FC);
 }
 
-/* @asm        0x00D1E4..0x00D218  (52 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00D1E4_unknown.asm
- * @pattern    PROLOGUE_HEAVY
+/* @asm        0x00D1E4..0x00D235  (81 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00D1E4.asm
+ * @pattern    MEDIUM_LOGIC
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [6]
+ * @args_seen  [6]  (far ptr [bp+6]:[bp+8])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (52 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00D1E4_logic_sz_52(uint16_t arg0_bp_06)
+ * @inferred_role  upload the FULL 256-colour VGA DAC palette (768 bytes) from a
+ *                 far buffer, retrace-synced; the all-colours sibling of func_00E702
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: auto-banner "52 bytes / ends 0xD218" truncated mid-loop; real body
+ * 0xD1E4..0xD235 (81 B, `retf 4`; 0xD235 NOP pad, next func 0xD236).  Arg:
+ * [bp+6]:[bp+8] = far ptr to 768 packed RGB component bytes.  Writes DAC index 0
+ * to port 0x3C8, then streams all 0x300 bytes to 0x3C9 after a vertical-retrace
+ * sync (port 0x3DA bit 3), interrupts disabled during the transfer.  The burst cap
+ * is forced to 0x300 (the [0x806] read at 0xD1EF is immediately overwritten and is
+ * a dead load), so the whole palette goes out in a single burst.  Sets DGROUP word
+ * 0x808=1 (palette-busy) for the transfer and clears it to 0 on exit.  Port I/O via
+ * inp()/outp() per project convention (cf. func_00E6EE).  No return value. */
+int func_00D1E4_logic_sz_52(const void far *rgb /*bp+6:bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0806
-     * Writes DGROUP: 0x0808
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D20D JNE 0x00D20A */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D212 JE 0x00D20F */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D1E9 mov [0x808],1 (busy); 0x00D1EF mov bx,[0x806] (DEAD: overwritten);
+     *      0x00D1F3 mov bx,0x300; mov di,0x300 (cap=remaining=768); push ds;
+     *      0x00D1FA lds si,[bp+6] (ds:si=palette); 0x00D1FD dx=0x3C8; xor al,al;
+     *      out dx,al (DAC index 0); inc dx (0x3C9).
+     *      Burst @0x00D204 push dx; vsync wait on 0x3DA bit 8 (end then start);
+     *      0x00D214 cli; pop dx(=0x3C9); cx=di; cmp cx,bx; jbe 0xD21E else cx=bx
+     *      (burst=min(remaining,0x300)); push cx; 0x00D21F outsb / loop
+     *      (stream cx bytes ds:[si]->0x3C9); 0x00D222 sti; pop cx; sub di,cx;
+     *      jne 0xD204 (loops once: di reaches 0).  0x00D228 pop ds; mov [0x808],0;
+     *      pop si; pop di; leave; retf 4. */
+    const uint8_t far *src = (const uint8_t far *)rgb;
+    uint16_t remaining = 0x300;          /* 256 colours x 3 components */
+    uint16_t i;
+
+    *(uint16_t near *)0x808 = 1;         /* @asm 0x00D1E9 palette-busy flag */
+    outp(0x3C8, 0);                      /* @asm 0x00D200 DAC write index = 0 */
+    /* @asm 0x00D205..0x00D212 vertical-retrace sync on port 0x3DA bit 3 */
+    while (inp(0x3DA) & 0x08) { }        /* wait for any retrace to end   */
+    while (!(inp(0x3DA) & 0x08)) { }     /* wait for next retrace to start */
+    /* @asm 0x00D214 cli; 0x00D21F outsb x 0x300 to 0x3C9; 0x00D222 sti */
+    for (i = 0; i < remaining; i++)
+        outp(0x3C9, *src++);             /* stream all 768 component bytes */
+    *(uint16_t near *)0x808 = 0;         /* @asm 0x00D229 clear busy flag */
+    return 0;
 }
 
 /* @asm        0x00D272..0x00D27F  (13 bytes)  region=load_image

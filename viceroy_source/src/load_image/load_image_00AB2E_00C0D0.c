@@ -21,23 +21,32 @@
  *
  * Near CALL targets:
  *   - 0x008982
- * @inferred_role  PROLOGUE_HEAVY (73 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  redraw a 5x5 byte grid: for each set cell, re-render tile
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Locals:  [bp-8] = col index i (outer, 0..4); [bp-6] = row index j (inner, 0..4).
+ * The grid is a 5x5 byte array at DGROUP 0x8DF0 (= -0x7210 as a 16-bit
+ * displacement), addressed [i + j*5 + 0x8DF0]; non-zero cells get re-rendered.
  */
 int func_00AB2E_logic_sz_73(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_00AB67;  /* @0x00AB38 */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00AB41 JGE 0x00AB64 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00AB55 JE 0x00AB3A */ {
-            }
-            /* @0x00AB5C */ func_008982();
-            goto label_00AB3A;  /* @0x00AB62 */
+    /* @asm 0x00AB33 mov [bp-8],0 (i=0); 0x00AB38 jmp 0xAB67 (test outer first).
+     *      Outer test @0x00AB67 cmp [bp-8],5; jge 0xAB74 (exit).  Outer body
+     *      @0x00AB6D mov [bp-6],0 (j=0); jmp 0xAB3D (test inner first).
+     *      Inner test @0x00AB3D cmp [bp-6],5; jge 0xAB64 (inc i, loop outer).
+     *      Inner body @0x00AB43: si=[bp-6]=j, ax=si; 0x00AB48 shl si,2; add si,ax
+     *      (si = j*5); 0x00AB4D bx=[bp-8]=i; 0x00AB50 cmp byte [bx+si-0x7210],0;
+     *      0x00AB55 je 0xAB3A (skip empty cell); 0x00AB57 push -1; push bx(=i);
+     *      push ax(=j); push cs; call 0x8982 (func_008982(j, i, -1)); add sp,6;
+     *      0x00AB62 jmp 0xAB3A.  0x00AB3A inc [bp-6] (j++); fall to inner test. */
+    int i, j;
+    for (i = 0; i < 5; i++) {
+        for (j = 0; j < 5; j++) {
+            if (*(uint8_t near *)(0x8DF0 + i + j * 5) != 0)
+                func_008982((uint16_t)j, (uint16_t)i, (uint16_t)-1);
         }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00AB6B JGE 0x00AB74 */ {
-            goto label_00AB3D;  /* @0x00AB72 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return 0;
 }
 
 /* @asm        0x00AB78..0x00AB95  (29 bytes)  region=load_image
@@ -146,15 +155,40 @@ int func_00B23E_colony_sz_46(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (77 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  packed-nibble setter into UnitRecord[idx] cargo region (+0x0D..)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: arg0=unit index (×0x1C), arg1=nibble selector, arg2=4-bit value.
+ * UnitRecord base 0x3144 (stride 0x1C); 0x3151 = base + 0x0D, so the target
+ * byte is unit[idx].cargo_packed[arg1>>1] (+0x0D + arg1/2).  An even selector
+ * writes the low nibble (keep high via mask 0xF0), an odd selector writes the
+ * high nibble (keep low via mask 0x0F, value<<4).  Returns the merged byte.
  */
 int func_00B31A_logic_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00B33F JE 0x00B34A */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00B31F mov [bp-4],0xF0 (keep-mask, even-slot default);
+     *      0x00B324 mov ax,[bp+8]; sar ax,1 (ax = arg1>>1, signed); mov [bp-2],ax;
+     *      mov si,ax; 0x00B32E imul bx,[bp+6],0x1C (bx = idx*0x1C);
+     *      0x00B332 mov al,[bx+si+0x3151] (current byte at +0x0D+arg1/2); sub ah,ah;
+     *      mov [bp-6],ax (old byte).  0x00B33B test [bp+8],1; je 0xB34A:
+     *      if arg1 odd -> 0x00B341 mov [bp-4],0x0F (keep low nibble);
+     *                     0x00B346 shl [bp+0xA],4 (value into high nibble).
+     *      0x00B34A mov ax,[bp-4]; and ax,[bp-6]; or ax,[bp+0xA]; mov [bp-6],ax
+     *      (merge: (old & keepmask) | value).  0x00B356 imul si,[bp+6],0x1C;
+     *      mov bx,[bp-2]; 0x00B35D mov [bx+si+0x3151],al (store merged byte).
+     *      0x00B361 mov ax,[bp-6]; leave; retf. */
+    uint16_t keep_mask = 0x00F0;
+    int      byte_off  = (int)(int16_t)arg1_bp_08 >> 1;   /* sar ax,1 (signed) */
+    uint8_t near *cell = (uint8_t near *)(0x3151 + arg0_bp_06 * 0x1C + byte_off);
+    uint16_t old_byte  = *cell;
+    uint16_t value     = arg2_bp_0A;
+    if (arg1_bp_08 & 1) {
+        keep_mask = 0x000F;
+        value   <<= 4;
+    }
+    old_byte = (old_byte & keep_mask) | value;
+    *cell = (uint8_t)old_byte;
+    return old_byte;
 }
 
 /* @asm        0x00B42C..0x00B4B7  (139 bytes)  region=load_image
@@ -168,49 +202,118 @@ int func_00B31A_logic_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x00B2A2  (2x)
- *   - 0x00B2F0  (2x)
- *   - 0x00B31A
- *   - 0x00B304
- * @inferred_role  DISPATCHER (139 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00B2A2  (2x)   cargo-kind getter  (idx, slot) -> nibble
+ *   - 0x00B2F0  (2x)   cargo-qty  getter  (idx, slot) -> byte
+ *   - 0x00B31A         cargo-kind setter  (idx, slot, value)
+ *   - 0x00B304         cargo-qty  setter  (idx, slot, value)
+ * @inferred_role  remove cargo slot `arg1` from UnitRecord[idx]: shift higher
+ *                 slots (kind+qty arrays) down one, then decrement slot_count
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: arg0=unit index (×0x1C), arg1=slot to remove.
+ * UnitRecord base 0x3144; 0x3150 = base + 0x0C = slot_count.  Mirror of the
+ * accessors decoded just above: kind nibbles live at +0x0D (func_00B2A2/00B31A),
+ * quantities at +0x10 (func_00B2F0/00B304).  func_00B2F0(idx,arg1) of the
+ * removed slot is cached to 0x8DC4 before the shift.  Returns the slot position
+ * reported by func_00B2A2(idx,arg1) (negative when arg1 is out of range).
  */
 int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x8DC4
-     */
-        /* @0x00B438 */ func_00B2A2();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00B443 JL 0x00B4B1 */ {
-            /* @0x00B44C */ func_00B2F0();
-            goto label_00B499;  /* @0x00B45B */
-            /* @0x00B469 */ func_00B2A2();
-            /* @0x00B477 */ func_00B31A();
-            /* @0x00B482 */ func_00B2F0();
-            /* @0x00B490 */ func_00B304();
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x00B4A7 JG 0x00B45E */ {
+    /* @asm 0x00B431 push [bp+8]; push [bp+6]; push cs; call 0xB2A2;
+     *      0x00B43E mov [bp-2],ax (pos); 0x00B441 or ax,ax; jl 0xB4B1 (bail if <0).
+     *      0x00B445 push [bp+8]; push [bp+6]; push cs; call 0xB2F0; mov [0x8DC4],ax
+     *      (cache removed slot's qty); 0x00B455 mov ax,[bp+8]; mov [bp-4],ax (i=arg1);
+     *      0x00B45B jmp 0xB499 (loop test).
+     *      Test @0x00B499 imul bx,[bp+6],0x1C; mov al,[bx+0x3150]; sub ah,ah; dec ax
+     *      (slot_count-1); cmp ax,[bp-4]; jg 0xB45E (continue while slot_count-1 > i).
+     *      Body @0x00B45E mov ax,[bp-4]+1 (i+1); push ax; push [bp+6]; mov si,ax;
+     *      push cs; call 0xB2A2 (kind of i+1); push ax; push [bp-4]; push [bp+6];
+     *      push cs; call 0xB31A (write kind into slot i); add sp,6;
+     *      0x00B47D push si(=i+1); push [bp+6]; push cs; call 0xB2F0 (qty of i+1);
+     *      push ax; push [bp-4]; push [bp+6]; push cs; call 0xB304 (write qty into i);
+     *      add sp,6; 0x00B496 inc [bp-4] (i++); fall to test.
+     *      After loop @0x00B4A9 imul bx,[bp+6],0x1C; dec byte [bx+0x3150]
+     *      (slot_count--).  0x00B4B1 mov ax,[bp-2]; leave; retf. */
+    int pos = (int16_t)func_00B2A2(arg0_bp_06, arg1_bp_08);
+    if (pos >= 0) {
+        int i;
+        *(uint16_t near *)0x8DC4 = (uint16_t)func_00B2F0(arg0_bp_06, arg1_bp_08);
+        for (i = (int)arg1_bp_08;
+             (int)*(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C) - 1 > i;
+             i++) {
+            uint16_t kind = func_00B2A2(arg0_bp_06, (uint16_t)(i + 1));
+            func_00B31A(arg0_bp_06, (uint16_t)i, kind);
+            {
+                uint16_t qty = func_00B2F0(arg0_bp_06, (uint16_t)(i + 1));
+                func_00B304(arg0_bp_06, (uint16_t)i, qty);
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C) -= 1;
+    }
+    return pos;
 }
 
-/* @asm        0x00B4B8..0x00B4C3  (11 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00B4B8_unknown.asm
- * @pattern    TINY_RETURN
+/* @asm        0x00B4B8..0x00B550  (152 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00B4B8.asm
+ * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 4
- * @args_seen  [6]
+ * @args_seen  [6, 8, 10]
  * @lcalls     0
- * @near_calls 0
+ * @near_calls 2   (0x00B2A2 cargo-kind getter, 0x00B2F0 cargo-qty getter)
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  free cargo capacity of UnitRecord[idx] for commodity `match`,
+ *                 expressed in 1/100-of-a-hold units; *out gets the room in cargo
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "11 bytes / TINY_RETURN" truncated at the first basic
+ * block; the real body is 0xB4B8..0xB54F (152 B), next func at 0xB550.  Args:
+ * [bp+6]=unit index (×0x1C), [bp+8]=commodity to match, [bp+0xA]=out pointer.
+ * UnitRecord: type at +0x02 (0x3146); used slot_count at +0x0C (0x3150).  The
+ * per-unit-type table at 0x5237 (stride 14) holds the type's total cargo holds at
+ * field +0; one hold = 100 units.  free_holds = capacity - used.  *out is seeded
+ * with free_holds*100.  If the unit is full (free_holds==0), partially-filled
+ * holds carrying `match` (qty < 100) each count as one free hold and contribute
+ * their remaining room (100-qty) to *out.  Returns the free-hold count.
  */
-int func_00B4B8_logic_sz_11(uint16_t arg0_bp_06)
+int func_00B4B8_logic_sz_11(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t near *out_bp_0A)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x00B4BD imul bx,[bp+6],0x1C; mov ax,bx; mov bl,[bx+0x3146] (type);
+     *      0x00B4C7 si=ax; mov al,[si+0x3150] (used slot_count); sub ah,ah; sub bh,bh;
+     *      0x00B4D1 cx=bx; bx=type*14 via shl/add chain;
+     *      0x00B4DD mov cl,[bx+0x5237] (type capacity, holds); sub ch,ch;
+     *      0x00B4E3 sub cx,ax (free = capacity - used); mov [bp-4],cx;
+     *      0x00B4E8 imul ax,cx,0x64 (free*100); bx=[bp+0xA]; mov [bx],ax (*out=free*100);
+     *      0x00B4F0 or cx,cx; jne 0xB54A (if free!=0 -> return free).
+     *      0x00B4F4 mov [bp-2],cx (i=0); jmp 0xB53B (loop test).
+     *      Test @0x00B53B imul bx,[bp+6],0x1C; al=[bx+0x3150]; sub ah,ah;
+     *      cmp ax(slot_count),[bp-2]; jg 0xB4FA (loop while slot_count > i).
+     *      Body @0x00B4FA push [bp-2](i); push [bp+6]; push cs; call 0xB2A2;
+     *      add sp,4; cmp ax,[bp+8]; jne 0xB538 (kind != match -> skip);
+     *      0x00B50C push [bp-2]; push [bp+6]; push cs; call 0xB2F0; add sp,4;
+     *      cmp ax,0x64; jge 0xB538 (qty >= 100 -> skip); 0x00B51E inc [bp-4] (free++);
+     *      push [bp-2]; push [bp+6]; push cs; call 0xB2F0; add sp,4; sub ax,0x64;
+     *      neg ax (ax = 100-qty); bx=[bp+0xA]; add [bx],ax (*out += room).
+     *      0x00B538 inc [bp-2] (i++); fall to test.  0x00B54A mov ax,[bp-4]; leave; retf. */
+    uint16_t type     = *(uint8_t near *)(0x3146 + arg0_bp_06 * 0x1C);
+    uint16_t used     = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
+    uint16_t capacity = *(uint8_t near *)(0x5237 + type * 14);
+    int free_holds = (int)capacity - (int)used;
+
+    *out_bp_0A = (uint16_t)(free_holds * 0x64);
+    if (free_holds == 0) {
+        int i;
+        int slot_count = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
+        for (i = 0; slot_count > i; i++) {
+            if (func_00B2A2(arg0_bp_06, (uint16_t)i) != arg1_bp_08)
+                continue;
+            if ((int)func_00B2F0(arg0_bp_06, (uint16_t)i) >= 0x64)
+                continue;
+            free_holds++;
+            *out_bp_0A += (uint16_t)(0x64 - (int)func_00B2F0(arg0_bp_06, (uint16_t)i));
+        }
+    }
+    return free_holds;
 }
 
 /* @asm        0x00B550..0x00B5A8  (88 bytes)  region=load_image
@@ -226,27 +329,42 @@ int func_00B4B8_logic_sz_11(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x00B2A2
  *   - 0x00B2F0
- * @inferred_role  UNKNOWN (88 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  find first cargo slot of UnitRecord[idx] matching arg1, then
+ *                 resolve it via func_00B2F0 and cache the result at 0x8DC4
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: arg0=unit index (×0x1C), arg1=target value to match.
+ * UnitRecord base 0x3144; 0x3150 = base + 0x0C = cargo slot_count.  Scans slot
+ * k=0.. while k < slot_count, calling func_00B2A2(idx,k); the first k whose
+ * result equals arg1 is the answer.  If found (>=0), func_00B2F0(idx,found) is
+ * evaluated and stored to DGROUP 0x8DC4.  Returns the slot index, or -1.
  */
 int func_00B550_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x8DC4
-     */
-        goto label_00B58A;  /* @0x00B55E */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00B56D JLE 0x00B590 */ {
-            /* @0x00B576 */ func_00B2A2();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00B57F JNE 0x00B587 */ {
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x00B58E JL 0x00B560 */ {
-            }
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00B594 JL 0x00B5A3 */ {
-            /* @0x00B59D */ func_00B2F0();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00B554 mov [bp-4],0xFFFF (found=-1); 0x00B559 mov [bp-6],0 (k=0);
+     *      0x00B55E jmp 0xB58A (loop test).  Test @0x00B58A cmp [bp-4],0; jl 0xB560
+     *      (continue while found still <0).  Body @0x00B560 imul bx,[bp+6],0x1C;
+     *      mov al,[bx+0x3150] (slot_count); sub ah,ah; 0x00B56A cmp ax,[bp-6];
+     *      jle 0xB590 (exit when slot_count <= k).  0x00B56F push [bp-6](k);
+     *      push [bp+6](idx); push cs; call 0xB2A2; add sp,4; 0x00B57C cmp ax,[bp+8];
+     *      jne 0xB587 (no match); 0x00B581 mov ax,[bp-6]; mov [bp-4],ax (found=k).
+     *      0x00B587 inc [bp-6] (k++); fall to test.  After loop @0x00B590
+     *      cmp [bp-4],0; jl 0xB5A3 (skip if not found); 0x00B596 push [bp-4](found);
+     *      push [bp+6](idx); push cs; call 0xB2F0; mov [0x8DC4],ax.
+     *      0x00B5A3 mov ax,[bp-4]; leave; retf. */
+    int found = -1;
+    int k = 0;
+    while (found < 0) {
+        uint16_t slot_count = *(uint8_t near *)(0x3150 + arg0_bp_06 * 0x1C);
+        if ((int16_t)slot_count <= k)
+            break;
+        if (func_00B2A2(arg0_bp_06, (uint16_t)k) == arg1_bp_08)
+            found = k;
+        k++;
+    }
+    if (found >= 0)
+        *(uint16_t near *)0x8DC4 = (uint16_t)func_00B2F0(arg0_bp_06, (uint16_t)found);
+    return found;
 }
 
 /* @asm        0x00B5A8..0x00B5F9  (82 bytes)  region=load_image  [BYTE_VERIFIED 2026-06-08]
@@ -447,24 +565,42 @@ int func_00BB6A_logic_sz_45(void)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x00B900
- * @inferred_role  PROLOGUE_HEAVY (71 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00B900   per-candidate predicate (idx) -> nonzero if it qualifies
+ * @inferred_role  return the (arg0)-th candidate v in [-1..0x30] for which
+ *                 func_00B900(v) is true; -2 if there is no such candidate
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Arg: arg0 = ordinal (which qualifying candidate to return).
+ * Counter starts at -1 and is bumped for every qualifying v; when it reaches
+ * arg0 the current v is latched as the result.  The result sentinel -2 (0xFFFE)
+ * keeps the outer loop running (result < -1) until a hit or v exceeds 0x30.
  */
 int func_00BB98_logic_sz_71(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_00BBD4;  /* @0x00BBAA */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BBB0 JGE 0x00BBDA */ {
-            /* @0x00BBB6 */ func_00B900();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00BBBE JE 0x00BBD1 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x00BBC9 JNE 0x00BBD1 */ {
-                }
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x00BBD8 JL 0x00BBAC */ {
-            }
+    /* @asm 0x00BB9C mov [bp-6],0xFFFE (result=-2); 0x00BBA1 mov ax,0xFFFF;
+     *      mov [bp-4],ax (counter=-1); mov [bp-2],ax (v=-1); 0x00BBAA jmp 0xBBD4.
+     *      Test @0x00BBD4 cmp [bp-6],-1; jl 0xBBAC (loop while result < -1).
+     *      Body @0x00BBAC cmp [bp-2],0x31; jge 0xBBDA (stop once v >= 0x31);
+     *      0x00BBB2 push [bp-2]; push cs; call 0xB900; or ax,ax; je 0xBBD1
+     *      (skip when predicate false); 0x00BBC0 mov ax,[bp+6]; inc [bp-4]
+     *      (counter++); cmp [bp-4],ax; jne 0xBBD1 (not the arg0-th yet);
+     *      0x00BBCB mov ax,[bp-2]; mov [bp-6],ax (result=v).
+     *      0x00BBD1 inc [bp-2] (v++); fall to test.
+     *      0x00BBDA mov ax,[bp-6]; leave; retf. */
+    int result  = -2;
+    int counter = -1;
+    int v       = -1;
+    while (result < -1) {
+        if (v >= 0x31)
+            break;
+        if (func_00B900((uint16_t)v) != 0) {
+            counter++;
+            if (counter == (int)arg0_bp_06)
+                result = v;
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        v++;
+    }
+    return result;
 }
 
 /* @asm        0x00BC10..0x00BC20  (16 bytes)  region=load_image
@@ -719,44 +855,66 @@ int func_00BEDE_op_sz_93(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x00BEDE
- * @inferred_role  MEDIUM_LOGIC (182 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00BEDE   viewport scroll/redraw trigger (col, row, arg4)
+ * @inferred_role  edge-proximity test: if the bounding box of corners
+ *                 (arg0,arg1)/(arg2,arg3) comes within 2 cells of a viewport
+ *                 edge that is not already at the map boundary, fire func_00BEDE
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Args: (arg0=col_a, arg1=row_a) and (arg2=col_b, arg3=row_b) are two corners;
+ *       arg4 is forwarded opaquely to func_00BEDE.
+ * Viewport window globals: 0x8328 col0 (left), 0x832E row0 (top), 0x8804 maxcol
+ * (right), 0x8806 maxrow (bottom); map size 0x853A width / 0x853C height.
+ * Normalizes the corners to [col_lo..col_hi] x [row_lo..row_hi], then checks all
+ * four edges; any edge inside the 2-cell margin (and not pinned to the map edge)
+ * sets `near_edge`.  Returns near_edge (1 fired func_00BEDE, else 0).
  */
 int func_00BF3C_logic_sz_182(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8328, 0x832E, 0x853A, 0x853C, 0x8804, 0x8806
-     */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BF4B JLE 0x00BF50 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BF56 JGE 0x00BF5B */ {
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BF64 JLE 0x00BF69 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BF72 JGE 0x00BF77 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BF82 JGE 0x00BF90 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BF89 JLE 0x00BF90 */ {
-            }
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BF98 JLE 0x00BFA6 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BF9F JLE 0x00BFA6 */ {
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BFAE JGE 0x00BFC0 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BFB9 JLE 0x00BFC0 */ {
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00BFC8 JGE 0x00BFDA */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00BFD3 JLE 0x00BFDA */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00BFDE JE 0x00BFED */ {
-            /* @0x00BFEA */ func_00BEDE();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00BF40 mov [bp-2],0 (near_edge=0).
+     *      0x00BF45 ax=arg2; cmp ax,arg0; jle 0xBF50 else ax=arg0  -> ax = col_lo = min(arg2,arg0).
+     *      0x00BF50 cx=arg2; cmp cx,arg0; jge 0xBF5B else cx=arg0; mov [bp-8],cx -> col_hi = max(arg2,arg0).
+     *      0x00BF5E cx=arg3; cmp cx,arg1; jle 0xBF69 else cx=arg1; mov [bp-6],cx -> row_lo = min(arg3,arg1).
+     *      0x00BF6C cx=arg3; cmp cx,arg1; jge 0xBF77 else cx=arg1; mov [bp-0xA],cx -> row_hi = max(arg3,arg1).
+     *      0x00BF7A cx=[0x8328]+2; cmp ax(col_lo),cx; jge 0xBF90; cmp [0x8328],1;
+     *               jle 0xBF90; mov [bp-2],1  -> col_lo < col0+2 && col0>1.
+     *      0x00BF90 ax=[0x832E]+2; cmp ax,[bp-6](row_lo); jle 0xBFA6; cmp [0x832E],1;
+     *               jle 0xBFA6; mov [bp-2],1  -> row_lo < row0+2 && row0>1.
+     *      0x00BFA6 ax=[0x8804]-2; cmp ax,[bp-8](col_hi); jge 0xBFC0;
+     *               ax=[0x853A]-2; cmp ax,[0x8804]; jle 0xBFC0; mov [bp-2],1
+     *               -> col_hi > maxcol-2 && maxcol < width-2.
+     *      0x00BFC0 ax=[0x8806]-2; cmp ax,[bp-0xA](row_hi); jge 0xBFDA;
+     *               ax=[0x853C]-2; cmp ax,[0x8806]; jle 0xBFDA; mov [bp-2],1
+     *               -> row_hi > maxrow-2 && maxrow < height-2.
+     *      0x00BFDA cmp [bp-2],0; je 0xBFED; push [bp+0xE]; push [bp+8]; push [bp+6];
+     *               push cs; call 0xBEDE (func_00BEDE(arg0, arg1, arg4)).
+     *      0x00BFED mov ax,[bp-2]; leave; retf. */
+    int16_t col_a = (int16_t)arg0_bp_06, row_a = (int16_t)arg1_bp_08;
+    int16_t col_b = (int16_t)arg2_bp_0A, row_b = (int16_t)arg3_bp_0C;
+    int16_t col_lo = (col_b <= col_a) ? col_b : col_a;
+    int16_t col_hi = (col_b >= col_a) ? col_b : col_a;
+    int16_t row_lo = (row_b <= row_a) ? row_b : row_a;
+    int16_t row_hi = (row_b >= row_a) ? row_b : row_a;
+    int16_t view_col0   = (int16_t)*(uint16_t near *)0x8328;
+    int16_t view_row0   = (int16_t)*(uint16_t near *)0x832E;
+    int16_t view_maxcol = (int16_t)*(uint16_t near *)0x8804;
+    int16_t view_maxrow = (int16_t)*(uint16_t near *)0x8806;
+    int16_t map_w       = (int16_t)*(uint16_t near *)0x853A;
+    int16_t map_h       = (int16_t)*(uint16_t near *)0x853C;
+    int near_edge = 0;
+
+    if (col_lo < view_col0 + 2 && view_col0 > 1)
+        near_edge = 1;
+    if (row_lo < view_row0 + 2 && view_row0 > 1)
+        near_edge = 1;
+    if (col_hi > view_maxcol - 2 && view_maxcol < map_w - 2)
+        near_edge = 1;
+    if (row_hi > view_maxrow - 2 && view_maxrow < map_h - 2)
+        near_edge = 1;
+
+    if (near_edge)
+        func_00BEDE(arg0_bp_06, arg1_bp_08, arg4_bp_0E);
+    return near_edge;
 }
 
 /* @asm        0x00BFF2..0x00C009  (23 bytes)  region=load_image
