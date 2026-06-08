@@ -1367,7 +1367,7 @@ Findings:
 - The real market transaction spread was already resident & ported:
   `market_sell_price` func_030566 = price_level[good]+cargo_burden[good];
   `market_buy_price` func_030590 = price_level[good]-1 (both clamp >=0). The
-  FORMULAS.md "overlay-resident [TBD]" spread note is corrected accordingly.
+  FORMULAS.md "overlay-resident [not yet decoded]" spread note is corrected accordingly.
 - func_00B5A8 (buy-band classifier, 82B) / func_00B65A (170B; the auto-skeleton's
   "39B" is a truncation) are decodable resident stubs but low-value (murky
   unit-stat semantics); left unported, no longer counted as RTLink-blocked.
@@ -1408,11 +1408,11 @@ Fingerprint validation (tools/rtlink/flatten.py):
 
 ---
 
-## Group D modal-loop TBD-inner closure (2026-06-08)
+## Group D modal-loop not-yet-decoded-inner closure (2026-06-08)
 
 ### func_06E3D0 — panel_run_modal
 
-Full cursor hit-scan and key-dispatch path byte-traced. Both TBD-inner
+Full cursor hit-scan and key-dispatch path byte-traced. Both previously-unresolved-inner
 regions are now BYTE_VERIFIED.
 
 #### Cursor hit-scan (Phases 0/1/2)
@@ -1433,7 +1433,7 @@ regions are now BYTE_VERIFIED.
 
 ### func_070060 — report_screen_run
 
-Full key-navigation and mouse hit-scan byte-traced. Both TBD-inner regions
+Full key-navigation and mouse hit-scan byte-traced. Both previously-unresolved-inner regions
 are now BYTE_VERIFIED.
 
 | Claim | Evidence | Status |
@@ -1447,7 +1447,7 @@ are now BYTE_VERIFIED.
 
 ## Group A overlay-call resolution (2026-06-08)
 
-### func_04CC50 — ai_strategic_plan_build (TBD-inner substantially reduced)
+### func_04CC50 — ai_strategic_plan_build (unresolved-inner substantially reduced)
 
 All four intra-page trampolines in the function body resolved to named targets.
 
@@ -1464,7 +1464,7 @@ All four intra-page trampolines in the function body resolved to named targets.
 | ai_table_c_insert call: w0=colony_idx, w1=score_clamped, b4=demand_count, b5=has_civilian_flag | @asm ai_table_c_insert call-site arg pushes | BYTE_VERIFIED |
 | Remaining not yet decoded: 0x181F far-call chain interiors at thunks 0x8BC/0x2EE/0x37A | targets not yet decoded | not yet decoded |
 
-### func_052F7E — war-matrix (TBD-inner CLOSED)
+### func_052F7E — war-matrix (unresolved-inner CLOSED)
 
 All three RTLink overlay leads resolved via 0x1A1F thunk table.
 
@@ -1474,13 +1474,13 @@ All three RTLink overlay leads resolved via 0x1A1F thunk table.
 | cs:0x7ADF | 0x1A1F:0x578 | func_025C32_colony_reassign_after_sort | BYTE_VERIFIED |
 | cs:0x7AB2 | 0x1A1F:0x50C | war-matrix row setup helper @file 0x26360 | BYTE_VERIFIED |
 
-### func_065D26 — TBD-inner CLOSED
+### func_065D26 — unresolved-inner CLOSED
 
 | Lead | Thunk file offset | Resolved target | Status |
 |------|------------------|-----------------|--------|
 | 0x1A1F:0x88A | 0x1CE7A | func_025A1E_colony_build_advisor (mid-function entry; returns build-advisor reason codes) | BYTE_VERIFIED |
 
-### func_0772FA — TBD-inner CLOSED
+### func_0772FA — unresolved-inner CLOSED
 
 | Lead | Thunk file offset | Resolved target | Status |
 |------|------------------|-----------------|--------|
@@ -1503,7 +1503,7 @@ Two corrections to previously-documented byte cites in func_039EE2:
 
 ### Tea party secondary effects (func_034318, file 0x034439..0x03471E)
 
-Full re-trace of the tea-party handler closed all prior TBDs:
+Full re-trace of the tea-party handler closed all prior not-yet-decoded items:
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
