@@ -1328,3 +1328,35 @@ Last remaining STILL-SKELETON game-logic stub. The per-func dump is the COMPLETE
 audit.py 159/159. With these two functions, no explicitly-marked game-logic
 SKELETON stub remains in src/; the residual work is OUT-OF-SCOPE leaves,
 EXTERNAL-DATA `.TXT` values, and RTLink overlay-swapped bodies (see COVERAGE.md).
+
+---
+
+## RTLink thunk resolution — bid/ask-spread + score-total leads (verified 2026-06-08)
+
+Resolved the three "overlay-blocked" formula leads by decoding the RTLink/Plus
+dynamic-link thunks directly (no flattener needed). Each LCALL `0x18xx/0x19xx:off`
+lands on a 10-byte thunk: `9A lo hi lo hi` (call far the loader 0x110D:0x0D9x)
+immediately followed by `EA off seg` (jmp far the real target). The real target
+is the **second-stage `EA` operand**:
+
+| Lead (FORMULAS/COVERAGE) | thunk file | 2nd-stage jmp far | target file | verdict |
+|--------------------------|-----------:|-------------------|------------:|---------|
+| buy  spread `0x181F:0xCC2` | 0x1B2B2 | `EA F8 32 EB 05` → 0x05EB:0x32F8 | 0x0B5A8 | **RESIDENT** (func_00B5A8) |
+| sell spread `0x181F:0xAC4` | 0x1B0B4 | `EA AA 33 EB 05` → 0x05EB:0x33AA | 0x0B65A | **RESIDENT** (func_00B65A) |
+| score total `0x191F:0x3AA` | 0x1B99A | `EA 92 00 00 00` → 0x0000:0x0092 | (overlay 5) | **OVERLAY** (seg=0 placeholder, patched at load) |
+
+Findings:
+- **score-total IS genuinely overlay** (placeholder seg 0x0000 + overlay-id byte
+  0x05). Stays `[TBD]` pending the flattener — confirmed, not just assumed.
+- **bid/ask spread is NOT at these thunks.** func_00B5A8/00B65A read the
+  per-unit-TYPE stat table (base 0x5230 stride 14; cols +9=0x5239, +10=0x523A —
+  same block as DEFENSE 0x5235 / ATTACK 0x5236) via a price-band index from a
+  0x8F89-stride-12 record; their game role is unit/combat-adjacent, NOT market.
+  The `0x181F:0xcc2/0xac4` "bid-ask spread" citation was a **misattribution**.
+- The real market transaction spread was already resident & ported:
+  `market_sell_price` func_030566 = price_level[good]+cargo_burden[good];
+  `market_buy_price` func_030590 = price_level[good]-1 (both clamp >=0). The
+  FORMULAS.md "overlay-resident [TBD]" spread note is corrected accordingly.
+- func_00B5A8 (buy-band classifier, 82B) / func_00B65A (170B; the auto-skeleton's
+  "39B" is a truncation) are decodable resident stubs but low-value (murky
+  unit-stat semantics); left unported, no longer counted as RTLink-blocked.

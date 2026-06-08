@@ -20,7 +20,17 @@ price_level[i] (PowerRecord+0x4C) clamped to [min_i, max_i]   # record +0/+1  [e
 supply_target -= (sum_euro_supply >> 8)            # euro-supply PowerRecord+0xFC, /256
 ```
 Step is always **±1**. rise_factor=rec+3, fall_factor=rec+4, demand=rec+5 (all `[ext]`
-from NAMES.TXT @CARGO). Bid/ask spread for buy/sell is overlay-resident `[TBD]`.
+from NAMES.TXT @CARGO).
+
+**Bid/ask transaction prices** (RESOLVED — resident, not overlay; the prior
+"overlay-resident [TBD]" note was a misattribution — see VERIFICATION_LEDGER):
+```
+sell_price(good) = price_level[good] + cargo_burden[good]   # func_030566, player receives  [V]
+buy_price(good)  = price_level[good] - 1                    # func_030590, player pays       [V]
+```
+both clamped >=0. `cargo_burden` = CARGO_FIELD(good,4) `[ext]` (NAMES.TXT @CARGO);
+the buy/sell gap is the classic ±-around-price_level spread. Ported in
+`src/overlay/overlay_02F3A2_031E4C.c` (market_sell_price / market_buy_price).
 
 ## Sons of Liberty / Tory — `func_02D658`, `func_008524`
 ```

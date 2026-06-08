@@ -48,10 +48,18 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
    their *values* need those data files (see `DATA_TABLES.md`). The combat/AI
    weight columns at DS:0x5235.. are the same story.
 
-4. **OVERLAY-SWAPPED bodies behind RTLink.** A few formulas (e.g. the score-total
-   component sum at `0x191F:0x3AA`, buy/sell bid-ask spread at `0x181F:0xcc2/0xac4`)
-   live in overlays reached through the loader; statically resolving them needs
-   the RTLink V2 flattener (`tools/rtlink/`, in progress) or a memory dump.
+4. **OVERLAY-SWAPPED bodies behind RTLink.** The score-total component sum at
+   `0x191F:0x3AA` is genuinely overlay-resident: its 0x181F-style thunk's second
+   stage is `jmp far 0x0000:0x0092` — a **load-time-patched placeholder segment**
+   (overlay id 5), so static resolution needs the RTLink V2 flattener
+   (`tools/rtlink/`, in progress) or a memory dump.
+   - **CORRECTION (2026-06-08):** the buy/sell bid-ask spread is NOT here. The
+     prior `0x181F:0xcc2/0xac4` lead was a misattribution — those thunks resolve
+     to RESIDENT `func_00B5A8`/`func_00B65A` (jmp far 0x05EB:0x32F8/0x33AA, file
+     0xB5A8/0xB65A), which read the per-unit-TYPE stat table (0x5230 stride 14),
+     not market data. The actual transaction spread is already resident & ported:
+     `market_sell_price` func_030566 (= price_level+burden) and `market_buy_price`
+     func_030590 (= price_level-1). See FORMULAS.md / VERIFICATION_LEDGER.
 
 ## Regenerate
 
