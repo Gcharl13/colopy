@@ -330,6 +330,9 @@ int func_061E96_vector_to_dir(int dx, int dy)
  *   weighting reads DS data tables (0x2f76 stride-16 terrain cost, the at-war
  *   table 0x543f) whose CONTENTS are data, so the scoring arithmetic is expressed
  *   structurally with the cited constants.
+ *   Group B DS:0x2F76 CLOSED: table is BSS (not EXE static data); populated at
+ *   runtime by func_0745F0 (power-record rows) and NAMES.TXT @UNFORESTED/
+ *   @FORESTED/@OTHER sub-loaders (terrain-type rows). See inline comment below.
  * @asm_disasm page_13.asm (func_061F02)
  * ----------------------------------------------------------------------------
  * REGISTER ARGS (from the prologue saves bx@[bp-0x86], dx@[bp-0x88], ax@[bp-0x8a]):
@@ -414,8 +417,23 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
          * tile thunks (0x754 move-class, 0x72c feature, 0x78c terrain, 0x6b4/0x6d2
          * owner, 0x6e6 path-cost, 0x7e0 unit-at) and the DS 0x2f76 stride-16
          * terrain-cost table; an improved neighbour is stamped into the grid and
-         * pushed onto queue[tail] ([0x2d16]).  TBD-inner: the exact cost blend
-         * reads the 0x2f76 data table, so it is summarised here, not invented. */
+         * pushed onto queue[tail] ([0x2d16]).
+         * DS:0x2F76 TABLE — BSS (runtime-populated; NOT static EXE data):
+         *   DS:0x2F76 is at DGROUP offset 0x2F76, which is beyond the initialized
+         *   data window (DGROUP init ends at DS:0x2CC5; see dgroup_map.py).  The
+         *   stride-16 table is written at runtime from two sources:
+         *     (a) func_0745F0 (@asm 0x074612 MOV [si+0x2f76],al) fills the
+         *         power-record rows (row = power_index, byte +0..+3 = random AI
+         *         constants from 0x1A1F:0x088A).
+         *     (b) page1A_names_subloader (ljmp 0x1A1F:0xD20, called by
+         *         func_0749E0_load_names_data_tables for NAMES.TXT @UNFORESTED /
+         *         @FORESTED / @OTHER sections) fills the terrain-type rows
+         *         (row = terrain-type index, byte +0 = movement-cost byte).
+         *   The lookup pattern here: bx = tile_entity_type * 16;
+         *   al = [bx+0x2F76]; cost_addend = al * 3 (@asm 0x0622FA/0x062563).
+         * TBD-inner: the exact cost-blend arithmetic inside the neighbour fan-out
+         * reads the 0x2f76 data table, so it is summarised structurally, not
+         * invented. */
         for (dir = 0; dir < 8; dir++) {                  /* @asm 0x062374 */
             ncol = qx + (signed char)g_dir_dx[dir];      /* @asm 0x062380 [bx+0xb4] */
             nrow = qy + (signed char)g_dir_dy[dir];      /* @asm 0x06238C [bx+0xbe] */
