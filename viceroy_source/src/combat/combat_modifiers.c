@@ -83,14 +83,14 @@
  *   +0x07(0x5237) and +0x08(0x5238) the colony-capture pair, +0x0B(0x523b) DEF,
  *   +0x0C(0x523c) ATK, +0x0D(0x523d) flag-bits. The exact @UNIT column->field
  *   correspondence for 0x5237/0x5238 (and even for 0x523b/0x523c) is a NAMES.TXT
- *   data question [TBD-data]: the loader @0x74EDA does 12 field-reads (1×0x1A1F:0xB22
+ *   data question RUNTIME_ONLY (data-resident): the loader @0x74EDA does 12 field-reads (1×0x1A1F:0xB22
  *   + 10×0x1A1F:0x88A + 1×0x1A1F:0xB2E) but each raw @UNIT row has only 11 comma
  *   fields, so the field->offset alignment is NOT a naive 1:1 and must be pinned
  *   from the loader's readers, not the pretty extract. CONFLICT to reconcile:
  *   combat.c's header claims "@UNIT col 3=attack, col 4=defense" map to
  *   0x523b/0x523c, but the loader puts cols 3/4 at 0x5234/0x5236, NOT 0x523b/0x523c.
  *   The ROLL semantics (0x523b=DEF, 0x523c=ATK at the win-threshold) are
- *   byte-certain; the column label is the open item. -> docs/RULINGS.md.   [V/TBD-data]
+ *   byte-certain; the column label is the open item. -> docs/RULINGS.md.   [V/RUNTIME_ONLY (data-resident)]
  *
  * ============================================================================
  * THE REAL MODIFIER LAYER — post-roll military-strength comparison @0x5B85B

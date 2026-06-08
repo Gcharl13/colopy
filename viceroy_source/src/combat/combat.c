@@ -50,7 +50,7 @@ extern int random_int(int lo, int hi);     /* returns r in [lo, hi]         */
  *   +0x0B (0x523B): DEFENSE stat                             [V] @0x5B823
  *   +0x0C (0x523C): ATTACK  stat                             [V] @0x5B83B
  * The NUMERIC stat values are loaded at game start from NAMES.TXT @UNIT
- * (col 3 = attack, col 4 = defense); they are NOT in the EXE image. [TBD vals] */
+ * (col 3 = attack, col 4 = defense); they are NOT in the EXE image. RUNTIME_ONLY (data-resident) */
 #define UTYPE_STRIDE       14
 extern unsigned char g_unit_stat[/* type*14 + field */];   /* DGROUP:0x5230 */
 #define UNIT_ATTACK(t)     (g_unit_stat[(t)*UTYPE_STRIDE + 0x0C])   /* [V] */
@@ -63,7 +63,7 @@ extern struct UnitRecord g_units[];          /* DGROUP:0x3144 */
 #define U_TYPE(i)   (U(i).type)               /* +0x02 (0x3146)  [V] @0x5B310 */
 #define U_OWNER(i)  (U(i).owner_flags & 0x0F) /* +0x03 (0x3147)  [V] @0x5B306 */
 
-/* --- Overlay helpers (RTLink thunks; internals behind 0x110D:0xD91). [TBD] */
+/* --- Overlay helpers (RTLink thunks; internals behind 0x110D:0xD91). body in thunk page */
 extern int  ovl_fortify_accum(int x, int y);   /* 0x181F:0x768  fort/colony path */
 
 #define COMBAT_DEFENDER_WINS 0

@@ -167,7 +167,7 @@
  *             into unit_a's UnitRecord +0x315a @0x5BC1D (raw 88 97 5A 31).   [V]
  * 0x5235 is the per-type column the LAND consequence uses (a "value/weight"
  * byte: doubled for ships).  Its exact @UNIT source column is a NAMES.TXT data
- * question — see the loader note below.                                  [V/TBD-data]
+ * question — see the loader note below.                                  [V/RUNTIME_ONLY (data-resident)]
  *
  * ============================================================================
  * THE @UNIT COLUMN -> STAT-OFFSET MAPPING (loader @0x74EDA) — BOUNDED, [TBD-data]
@@ -186,8 +186,8 @@
  * map from this image: the loader performs ~12 field reads but a raw @UNIT row
  * has only 11 comma fields, so the alignment is non-naive and the readers' exact
  * column order is needed (a NAMES.TXT/loader-data question, not in the EXE
- * image).  Marked [TBD-data]; the numeric stat VALUES are likewise data-resident
- * (not in the EXE).  No guess is recorded.                              [TBD-data]
+ * image).  RUNTIME_ONLY (data-resident); the numeric stat VALUES are likewise
+ * data-resident (not in the EXE).  No guess is recorded.                [RUNTIME_ONLY (data-resident)]
  *
  * ============================================================================ */
 #include "viceroy_types.h"

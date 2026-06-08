@@ -83,8 +83,8 @@ extern struct UnitRecord g_units[];
 extern int naval_classify_dest(int unit_idx, int dx, int dy);   /* func_03FA9C */
 
 /* --- RTLink overlay thunks (LCALL <seg>:<off> -> 0x110D dispatcher). Each is
- * cited by its call site; internal body is [TBD overlay thunk] (target paragraph
- * patched at runtime; not statically resolvable). Roles inferred from args. --- */
+ * cited by its call site; body in thunk page (target paragraph patched at
+ * runtime; not statically resolvable). Roles inferred from args. --- */
 extern void ovl_popup_simple   (const char *key, void *p, int z);  /* 0x181F:0x998 @0x3FE26 NODOCKS popup */
 extern int  ovl_yesno_dialog   (const char *key, int flag);        /* 0x181F:0x652 @0x3FE43/@0x3FEC3/@0x3FF1B (returns choice) */
 extern void ovl_unload_at      (int aux);                          /* 0x181F:0x86C @0x3FE5A */
