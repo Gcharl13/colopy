@@ -1433,9 +1433,99 @@ int func_06F8E0_free_cached_handle_2014(void)
  * @asm 0x06F90A c6 46 ae 40                           (mov byte[bp-0x52],0x40 — seed '@')
  * @asm 0x06F982 9a ca 09 1d 0d                        (LCALL 0x0D1D:0x9CA — strtok ',' over [0x833C])
  * @asm 0x06F95C 9a 86 0e 1f 18                        (LCALL 0x181F:0xE86 — file open; [0x2014]=ax)
- * TBD-inner: the interior entries (0x06F9E6 token-extract -> [0xA5B8]; 0x06FA3E;
- *   0x06FA84; 0x06FA96; 0x06FAA8) are distinct cs-near-called leaves folded into
- *   this extent by the segmenter; ported only as the main reader's fall-through.
+ * BYTE_VERIFIED interior leaf functions folded into this extent by the auto-segmenter.
+ * All five are standalone far procedures (RETF) exported from this overlay page.
+ * No static LCALL in the binary resolves to any of them: callers live in other overlay
+ * pages and reach them via the Borland overlay manager's runtime-patched dispatch
+ * (segment word in the caller's LCALL is zeroed at link time and filled at load time).
+ * A sixth 6-byte stub exists at 0x06FA78 between entries 2 and 3; it is not listed
+ * here because it was not identified as a named entry point by the segmenter.
+ *
+ * ┌─────────────┬──────┬───────────────────────────────────────────────────────────┐
+ * │  file off   │ size │ role                                                      │
+ * ├─────────────┼──────┼───────────────────────────────────────────────────────────┤
+ * │  0x06F9E6   │  87B │ read_token_blank_underscore                               │
+ * │  0x06FA3E   │  58B │ extract_csv_token  →  [0xA5B8]                           │
+ * │  0x06FA84   │  18B │ seek_cursor_to_end_of_833C                                │
+ * │  0x06FA96   │  18B │ next_token_then_write_833C                                │
+ * │  0x06FAA8   │  17B │ advance_token_then_write_A5B8                             │
+ * └─────────────┴──────┴───────────────────────────────────────────────────────────┘
+ *
+ * ── 0x06F9E6  read_token_blank_underscore  [87 bytes, 0x06F9E6..0x06FA3C RETF] ──
+ *   Callers: none found statically; called via Borland overlay manager from other pages.
+ *   Reads next line from open file-handle [0x2014] into [0x833C] via strtok
+ *     (LCALL 0x0D1D:0x9CA, max 0x50 chars); on EOF returns ax=0.
+ *   Normalizes via 0x1A1F:0xB4E; trims via 0x1A1F:0xB44.
+ *   Then scans [0x833C] for '_' (LCALL 0x0D1D:0xC56 strchr); blanks all chars from
+ *     that position onward ([si]=0x20 loop until si==0).
+ *   Stores &[0x833C] in [0xA608] (si = 0x833C).
+ *   If EOF (ax==0 from strtok): calls flush_token (PUSH CS; CALL 0x6FB28
+ *     → LJMP 0x191F:0xFB8), then returns 0.
+ *   Returns: ax = &[0x833C] (0x833C) on success, 0 on EOF.
+ * @asm 0x06F9E6 56 2b f6                 (push si; sub si,si)
+ * @asm 0x06F9E9 ff 36 14 20 6a 50        (push [0x2014]; push 0x50)
+ * @asm 0x06F9EF 68 3c 83 9a ca 09 1d 0d  (push 0x833C; LCALL 0x0D1D:0x09CA — strtok)
+ * @asm 0x06F9FC 74 33                    (JE 0x6FA31 — EOF branch)
+ * @asm 0x06FA15 9a 56 0c 1d 0d           (LCALL 0x0D1D:0x0C56 — strchr([0x833C],'_'))
+ * @asm 0x06FA23 c6 04 20                 (mov byte[si],0x20 — blank char at '_')
+ * @asm 0x06FA2D 89 36 08 a6              (mov [0xA608],si)
+ * @asm 0x06FA35 0e e8 ef 00              (push cs; CALL 0x6FB28 — flush_token)
+ * @asm 0x06FA3C cb                       (RETF)
+ *
+ * ── 0x06FA3E  extract_csv_token → [0xA5B8]  [58 bytes, 0x06FA3E..0x06FA77 RETF] ──
+ *   Callers: none found statically; called via Borland overlay manager from other pages.
+ *   Extracts the next comma-delimited field from the cursor at [0xA608] into [0xA5B8].
+ *   Copies bytes from [0xA608] to [0xA5B8] while *src != '\0' and *src != ','.
+ *   If the terminator was ',' (not NUL), advances src past it; updates [0xA608].
+ *   NUL-terminates [0xA5B8]; trims via 0x1A1F:0xB44.
+ *   Returns: ax = 0xA5B8 (pointer to extracted token buffer).
+ * @asm 0x06FA3E 57 56                    (push di; push si)
+ * @asm 0x06FA40 8b 36 08 a6              (mov si,[0xA608])
+ * @asm 0x06FA44 bf b8 a5                 (mov di,0xA5B8)
+ * @asm 0x06FA47 80 3c 00                 (cmp byte[si],0  — NUL check)
+ * @asm 0x06FA4C 80 3c 2c                 (cmp byte[si],','  — comma check)
+ * @asm 0x06FA51 8a 04 88 05              (mov al,[si]; mov [di],al — copy byte)
+ * @asm 0x06FA62 89 36 08 a6              (mov [0xA608],si — update cursor)
+ * @asm 0x06FA66 c6 05 00                 (mov byte[di],0 — NUL-terminate)
+ * @asm 0x06FA6D 9a 44 0b 1f 1a           (LCALL 0x1A1F:0x0B44 — trim [0xA5B8])
+ * @asm 0x06FA72 b8 b8 a5                 (mov ax,0xA5B8)
+ * @asm 0x06FA77 cb                       (RETF)
+ *
+ * ── 0x06FA84  seek_cursor_to_end_of_833C  [18 bytes, 0x06FA84..0x06FA95 RETF] ──
+ *   Callers: none found statically; called via Borland overlay manager from other pages.
+ *   Computes strlen([0x833C]) via LCALL 0x0D1D:0x0842; sets [0xA608] = 0x833C + len.
+ *   Effect: advances the parse cursor [0xA608] past the entire current token string.
+ *   Returns: nothing meaningful (ax = 0x833C + len, but caller ignores it).
+ * @asm 0x06FA84 68 3c 83                 (push 0x833C)
+ * @asm 0x06FA87 9a 42 08 1d 0d           (LCALL 0x0D1D:0x0842 — strlen([0x833C]))
+ * @asm 0x06FA8C 83 c4 02                 (add sp,2)
+ * @asm 0x06FA8F 05 3c 83                 (add ax,0x833C)
+ * @asm 0x06FA92 a3 08 a6                 (mov [0xA608],ax)
+ * @asm 0x06FA95 cb                       (RETF)
+ *
+ * ── 0x06FA96  next_token_then_write_833C  [18 bytes, 0x06FA96..0x06FAA6 RETF] ──
+ *   Callers: none found statically; called via Borland overlay manager from other pages.
+ *   Calls next_token via near thunk (PUSH CS; CALL 0x6FB1E → LJMP 0x191F:0x91C).
+ *   Then writes the string at [0x833C] to the output stream via LCALL 0x181F:0x18
+ *     (push ds; push 0x833C = far ptr to [0x833C]; Borland stream fputs-like call).
+ *   Returns: nothing (ax = return value of stream write, ignored by callers).
+ * @asm 0x06FA96 0e e8 84 00              (push cs; CALL 0x6FB1E — next_token → 0x191F:0x91C)
+ * @asm 0x06FA9A 1e 68 3c 83              (push ds; push 0x833C — far ptr to token buf)
+ * @asm 0x06FA9E 9a 18 00 1f 18           (LCALL 0x181F:0x0018 — stream write)
+ * @asm 0x06FAA3 83 c4 04                 (add sp,4)
+ * @asm 0x06FAA6 cb                       (RETF)
+ *
+ * ── 0x06FAA8  advance_token_then_write_A5B8  [17 bytes, 0x06FAA8..0x06FAB8 RETF] ──
+ *   Callers: none found statically; called via Borland overlay manager from other pages.
+ *   Calls advance_token via near thunk (PUSH CS; CALL 0x6FB2D → LJMP 0x191F:0xFC4).
+ *   Then writes the string at [0xA5B8] to the output stream via LCALL 0x181F:0x18
+ *     (push ds; push 0xA5B8 = far ptr to extracted CSV token buffer).
+ *   Returns: nothing (ax = return value of stream write, ignored by callers).
+ * @asm 0x06FAA8 0e e8 81 00              (push cs; CALL 0x6FB2D — advance_token → 0x191F:0xFC4)
+ * @asm 0x06FAAC 1e 68 b8 a5              (push ds; push 0xA5B8 — far ptr to token buf)
+ * @asm 0x06FAB0 9a 18 00 1f 18           (LCALL 0x181F:0x0018 — stream write)
+ * @asm 0x06FAB5 83 c4 04                 (add sp,4)
+ * @asm 0x06FAB8 cb                       (RETF)
  * ============================================================================ */
 int func_06F8FA_load_namelist_section(uint16_t name_ptr, uint16_t mode)
 {

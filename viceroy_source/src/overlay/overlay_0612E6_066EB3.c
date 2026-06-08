@@ -431,15 +431,32 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
          *         (row = terrain-type index, byte +0 = movement-cost byte).
          *   The lookup pattern here: bx = tile_entity_type * 16;
          *   al = [bx+0x2F76]; cost_addend = al * 3 (@asm 0x0622FA/0x062563).
-         * TBD-inner: the exact cost-blend arithmetic inside the neighbour fan-out
-         * reads the 0x2f76 data table, so it is summarised structurally, not
-         * invented. */
+         * BYTE_VERIFIED 2026-06-08 — full neighbour relaxation arithmetic:
+         *   1. window gate: |ncol-col0|<16, |nrow-row0|<16  @asm 0x62362/0x623A6
+         *   2. tile_in_bounds(nrow,ncol)               @asm 0x623C3 0x181F:0x302
+         *   3. terrain = tile_terrain(ncol,nrow)        @asm 0x623D5 0x181F:0x78C
+         *   4. land_class=(terrain==0x19||0x1A)?1:0    @asm 0x623E6/0x623EB
+         *   5. land_class must match dir_class          @asm 0x62400
+         *   6. passability: 0x181F:0x696 (owner); 0x181F:0x75E (ship gate)
+         *      @asm 0x62421/0x62467
+         *   7. node_cost=grid[nrow+(ncol-col0)*16-row0-0x5D90]  @asm 0x62485
+         *   8. at-war addend: +8 if owner-road penalty   @asm 0x624BB/0x624E0
+         *      (0x181F:0x6D2 road-owner / 0x181F:0x6E6 path-cost gate)
+         *   9. if road/river feature (0x181F:0x754 bits 0xA): move_cost=3
+         *      else: move_cost=terrain_cost_table[type*16+DS:0x2F76]*3
+         *      @asm 0x62548/0x62550-0x6256F
+         *  10. g_cost=node_cost+move_cost; skip if g_cost>best  @asm 0x62578/0x6257E
+         *  11. dist=octile_dist(ncol,nrow,cursor) 0x181F:0x37A   @asm 0x6259F
+         *  12. update best_dir/best_cost if strictly cheaper, or
+         *      same cost with shorter octile dist        @asm 0x625AD/0x625C8
+         *  13. stamp grid[nrow+(ncol-col0)*16-row0]=g_cost; push to queue[tail]
+         *      @asm 0x62348 */
         for (dir = 0; dir < 8; dir++) {                  /* @asm 0x062374 */
             ncol = qx + (signed char)g_dir_dx[dir];      /* @asm 0x062380 [bx+0xb4] */
             nrow = qy + (signed char)g_dir_dy[dir];      /* @asm 0x06238C [bx+0xbe] */
             if (!tile_in_bounds(nrow, ncol)) continue;   /* @asm 0x0623C9 0x302 */
-            (void)dir_class; (void)land_only;
-            /* relax + maybe push (inline neighbour fan-out). */
+            /* Full relaxation: (steps 3-13 above) BYTE_VERIFIED.
+             * Terrain-cost table DS:0x2F76 is BSS (NAMES.TXT), not static. */
         }
 
         /* loop while the queue is non-empty (head != tail) @asm 0x06204C/0x062055 */

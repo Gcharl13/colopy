@@ -374,6 +374,27 @@ check_bytes("06E6B6 panel Phase2 adj=(p[+0xa]&0x10)?0:3 (wide-mode gate)", 0x06E
 check_bytes("070201 report cell w=0x30 h=0x48 (push 0x30; push 0x48)", 0x070201,
             "6a 30 6a 48")
 
+# ---- func_052F7E war-slot activation + boycott BYTE_VERIFIED 2026-06-08 ----
+# test al,8  — pending bit check before slot arm
+check_bytes("053165 war_slot pending-bit: test al,8", 0x053165, "a8 08")
+# and [si-0x77C4],0xB7 ; or [si-0x77C4],1  — slot arm sequence
+check_bytes("05318A war_slot arm: and [si-0x77C4],0xB7 / or 1", 0x05318A, "80 a4 3c 88 b7 80")
+# dec [bx+si-0x77B8]  — unconditional countdown decrement
+check_bytes("0531A3 war_slot countdown dec [bx+si-0x77B8]", 0x0531A3, "fe 88 48 88")
+
+# ---- func_061F02 Dijkstra cost-blend BYTE_VERIFIED 2026-06-08 ----
+# mov al,[bx+0x2F76]  — terrain-cost table read (type*16 + DS:0x2F76)
+check_bytes("062563 Dijkstra terrain_cost[type*16+0x2F76] read", 0x062563, "8a 87 76 2f")
+# add [bp-0x22], cx  — g_cost += move_cost accumulation
+check_bytes("062578 Dijkstra g_cost accumulate: add [bp-0x22],cx", 0x062578, "01 4e de")
+
+# ---- Interior leaf routines in func_06F8FA extent BYTE_VERIFIED 2026-06-08 ----
+# extract_csv_token 0x06FA3E: push di; push si; mov si,[0xA608]
+check_bytes("06FA3E extract_csv_token: push di; push si", 0x06FA3E, "57 56 8b 36")
+# seek_cursor_to_end_of_833C 0x06FA84: push 0x833C; lcall 0x0D1D:0x0842
+check_bytes("06FA84 seek_cursor: push 0x833C; lcall 0x0D1D:0x0842", 0x06FA84,
+            "68 3c 83 9a 42 08 1d 0d")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

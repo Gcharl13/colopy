@@ -1463,14 +1463,23 @@ int func_051EE6_ter_wrapper(uint16_t arg0)
  *   for u 0..unit_count(0x539C): credit u against the per-class scratch via
  *   0x181F:0xBE6 then dec 0xA0CC[that class]; while [bp-0x10] < unit[+0x3150];
  *   then if unit.type(+0x3146)==2 -> dec [0xA0DA].
- * PHASE 4 — COLONY-FLAG PASS (@asm 0x0530F4..0x0531B0): for u 0..unit_count:
- *   only units owned by arg0; type 0xC w/ +0x314A>=0 binds its colony (0x181F:
- *   0x9E6) and sets colony +0x1C bit5 (0x20) when that colony's owner==arg0;
- *   military window 0xD..0x12 restarts the per-class [bp-0x10] inner loop.
- * PHASE 5 — WAR-MATRIX THREAT (@asm 0x0531B0..0x05326C): clear 0x883C war-matrix
- *   row for arg0 via the cs:0x7AD0 / cs:0x7ADF / cs:0x7AB2 helpers and the
- *   0x181F:0x470/0x47A/0x466 resets; tea-party / boycott gates on [0x828],
- *   [0x7F4], [0x82B], [0x53C2] using 0x181F:0xF6 / 0x3E0 / 0xD1D:0x92C / 0x5B6.
+ * PHASE 4 — COLONY-FLAG PASS + WAR-SLOT ACTIVATION (@asm 0x0530F4..0x0531AF
+ *   BYTE_VERIFIED): for u 0..unit_count: only units owned by arg0; type 0xC w/
+ *   +0x314A>=0 binds its colony (0x181F:0x9E6) and sets colony +0x1C bit5 (0x20)
+ *   when that colony's owner==arg0; military-window units (type 0xD..0x12) reset
+ *   k=0 and re-run the phase-3 class-credit inner loop for the current unit (@asm
+ *   0x053139..0x053150, jmp 0x530D3).  After the unit loop exits (jge 0x53152):
+ *   a 4-wide slot loop (k=0..3) reads war-class slot flags via 0x181F:0xA38(power,k);
+ *   if bit3 (pending) set and countdown [0x8848+power*0x13C+k]==0, calls random_int
+ *   (0x181F:0x4D4(0,3)) and on result==0 arms the slot (war_matrix[power][k] =
+ *   (old & ~0x48)|1); countdown decrement is unconditional (both paths merge at
+ *   @asm 0x053194, before the dec at @asm 0x0531A3).
+ * PHASE 5 — WAR-MATRIX THREAT (@asm 0x0531B0..0x05326C BYTE_VERIFIED): clear
+ *   0x883C war-matrix row for arg0 via cs:0x7AD0/0x7ADF/0x7AB2 helpers and the
+ *   0x181F:0x470/0x47A/0x466 resets; tea-party/boycott gate on [0x828]: if active,
+ *   do_party = ([0x7F4]!=0 || 0x181F:0xF6()!=0); when do_party: 0x181F:0x3E0()
+ *   returns event code, 0xD1D:0x92C(code) shows dialog; response 'J'(0x4A) sets
+ *   [0x82B]=1 (accepted), else 0x181F:0x5B6(5) escalation + [0x53C2]=0.
  *   [TRAMPOLINE TARGETS BYTE_VERIFIED 2026-06-08: see extern declarations above]
  * PHASE 6 — PER-UNIT DISPATCH (@asm 0x05326C..0x0534B5): two outer passes
  *   ([bp-0xC] = 0 then 1).  For each unit (descending index [bp-0x1A] over
@@ -1483,13 +1492,14 @@ int func_051EE6_ter_wrapper(uint16_t arg0)
  * The colony field offsets (+0x1A owner / +0x8D selected-class / +0xAA/+0xB6/
  * +0xB8 word fields / +0x1B / +0x1C flags), the scratch arrays (0xA0CC per-class
  * supply, 0xA0BC snapshot, 0xA0D4/0xA0DA/0xA0DB aggregate counters, 0xA89C,
- * 0x9FAA work-block, 0xA0B8 per-power gate), the war matrix 0x883C, the flag
- * table 0x95F2, the unit fields (+0x3146 type, +0x314A/+0x3150/+0x315B, +0x314B
- * order, +0x314C state, +0x1F/+0x1E colony fields), and ColonyRecord stride 0xCA
- * are BYTE_VERIFIED.  The page-0x12 cs:0x7Axx trampolines: cs:0x7AD0/0x7ADF/0x7AB2
- * targets are now BYTE_VERIFIED via RTLink flattener (see extern block below); the
- * 0x181F leaf bodies (war-matrix arithmetic, queue side-effects, per-unit move scoring)
- * remain role-named externs whose interior arithmetic is TBD-inner.  arg0 = power.
+ * 0x9FAA work-block, 0xA0B8 per-power gate), the war matrix 0x883C (flags) and
+ * 0x8848 (countdown, both stride 0x13C per power), the flag table 0x95F2, the unit
+ * fields (+0x3146 type, +0x314A/+0x3150/+0x315B, +0x314B order, +0x314C state,
+ * +0x1F/+0x1E colony fields), and ColonyRecord stride 0xCA are BYTE_VERIFIED.
+ * The page-0x12 cs:0x7Axx trampolines: cs:0x7AD0/0x7ADF/0x7AB2 targets are now
+ * BYTE_VERIFIED via RTLink flattener (see extern block below); the 0x181F leaf
+ * bodies (war-matrix arithmetic, queue side-effects, per-unit move scoring) remain
+ * role-named externs whose interior arithmetic is TBD-inner.  arg0 = power.
  * ============================================================================ */
 extern uint8_t  g_colony_owners_5D60[];   /* DGROUP:0x5D60 — ColonyRecord owner col, stride 0xCA (+0x1A) */
 extern uint8_t  g_ai_supply_A0CC[];       /* DGROUP:0xA0CC (-0x5F34) — per-class supply count (16) */
@@ -1543,6 +1553,16 @@ extern uint8_t g_flag_828;             /* DGROUP:0x828 */
 extern int16_t g_flag_7F4;             /* DGROUP:0x7F4 */
 extern uint8_t g_flag_82B;             /* DGROUP:0x82B */
 extern int16_t g_flag_53C2;            /* DGROUP:0x53C2 */
+/* War-matrix slot tables used in the Phase 4 slot-activation loop.
+ * Both arrays are indexed as [power * 0x13C + k] (k = 0..3 war-class slots).
+ * @asm 0x053169/0x053194: imul bx/si, [bp+6], 0x13C; add bx/si, [bp-0x10] (k).
+ * g_war_matrix_883C [bx-0x77C4]: flags byte; bit0=armed/active, bit3=pending
+ *   order, bit6=done.  The slot-activation loop clears bits 3,6 and sets bit0
+ *   (and [si-0x77c4], 0xB7; or [si-0x77c4], 1) @asm 0x05318A/0x05318F.
+ * g_war_matrix_cdown_8848 [bx-0x77B8]: per-slot countdown; decremented each
+ *   tick; slot not re-activated until it reaches 0.  @asm 0x053171/0x0531A3. */
+extern uint8_t g_war_matrix_883C[];       /* DGROUP:0x883C — war-matrix flags [power*0x13C+k] */
+extern uint8_t g_war_matrix_cdown_8848[]; /* DGROUP:0x8848 — war-matrix countdown [power*0x13C+k] */
 
 int func_052F7E_ai_power_asset_census(uint16_t power)
 {
@@ -1607,13 +1627,14 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
             g_ai_count_A0DA--;                          /* @asm 0x0530ED dec [0xA0DA] */
     }
 
-    /* ---- PHASE 4 — colony-flag pass over this power's units.
-     * @asm 0x0530F4..0x0531B0.  For each unit owned by arg0 (owner nibble
+    /* ---- PHASE 4 — colony-flag pass + war-slot activation. BYTE_VERIFIED.
+     * @asm 0x0530F4..0x0531AF.  For each unit owned by arg0 (owner nibble
      * +0x3147 & 0xF == arg0): a type-0xC unit with +0x314A >= 0 binds its colony
      * (0x181F:0x9E6) and, when that colony's owner is arg0, sets colony +0x1C
      * bit5 (0x20); military-window units (type 0xD..0x12) restart the per-class
-     * inner loop.  This is a flag/coverage marking pass — no scratch writes
-     * beyond the colony bit5; the per-unit binding semantics are byte-cited. */
+     * inner loop (re-run 0x181F:0xBE6 from k=0 for that unit).  After the unit
+     * loop exits, a 4-wide slot activation loop (k=0..3) processes war-class slots
+     * via 0x181F:0xA38(power,k) / 0x181F:0x4D4(0,3) / war_matrix_883C/cdown_8848. */
     for (int u = 0; u < g_unit_count_539C; u++) {       /* @asm 0x0530F7 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
         if ((uu[0x03 /*+0x3147*/] & 0x0F) != (uint8_t)power) /* @asm 0x053100 owner nibble */
@@ -1623,10 +1644,63 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
             if (((uint8_t *)g_colony_8542)[0x1A] == (uint8_t)power) /* @asm 0x053130 colony owner */
                 ((uint8_t *)g_colony_8542)[0x1C] |= 0x20; /* @asm 0x053135 set bit5 */
         }
-        /* @asm 0x053139..0x05314B — military window restarts the inner class loop
-         * (a re-coverage scan whose body folds into the credit done in PHASE 3). */
-        (void)0;                                        /* military 0xD..0x12 inner restart (TBD-inner) */
+        /* @asm 0x053139..0x053150 — BYTE_VERIFIED: military-window units (type 0xD..0x12)
+         * reset k ([bp-0x10]) to 0 and jump back to the phase-3 inner-loop head at
+         * 0x530D3, re-running the 0x181F:0xBE6 class-index lookup from scratch for
+         * the current unit.  Non-military units (type < 0xD or > 0x12) fall through
+         * to the outer unit-loop increment at 0x530E2 without re-scanning.
+         * @asm 0x05313D cmp [bx+0x3146],0xD; jb 0x530E2 (below window -> skip)
+         * @asm 0x053144 cmp [bx+0x3146],0x12; ja 0x530E2 (above window -> skip)
+         * @asm 0x05314B mov [bp-0x10],0; jmp 0x530D3 (restart inner loop k=0) */
+        if (uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12) { /* @asm 0x05313D/0x053144 */
+            /* military-window restart: re-run phase-3 class-credit from k=0
+             * for this unit (the actual re-scan loop body is shared with PHASE 3
+             * at @asm 0x530D3..0x530E0; effect: dec g_ai_supply_A0CC[class] again). */
+            for (int k2 = 0; k2 < uu[0x0C /*+0x3150*/]; k2++) { /* @asm 0x053150 jmp 0x530D3 */
+                int klass2 = overlay_call_181F_0BE6();  /* @asm 0x0530C2 -> class bx */
+                g_ai_supply_A0CC[(uint8_t)klass2]--;   /* @asm 0x0530CC dec 0xA0CC[bx] */
+            }
+        }                                               /* @asm 0x053142/0x053149 jb/ja 0x530E2 */
     }
+
+    /* @asm 0x053152..0x0531AF — BYTE_VERIFIED: war-class slot activation loop.
+     * Runs AFTER the unit outer loop exits (jge 0x53152 at @asm 0x0530FA).
+     * For each of the 4 war-class slots k=0..3 for this power:
+     *   - read flags via 0x181F:0xA38(power, k); if bit3 (0x08) set (pending):
+     *       if countdown [0x8848+power*0x13C+k]==0: call random_int(0,3) via
+     *       0x181F:0x4D4; on result==0 (25% chance) arm the slot:
+     *       war_matrix[power][k] = (old & ~0x48)|0x01 (clear bits3,6; set bit0).
+     *   - countdown decrement is UNCONDITIONAL (not gated on pending): both the
+     *     pending-true and pending-false paths converge at @asm 0x053194 where
+     *     imul si,[bp+6],0x13C; add si,k; cmp [bx+si-0x77B8],0; dec if nonzero.
+     * DGROUP reads: g_war_matrix_883C[power*0x13C+k] @asm 0x05318A/0x05318F;
+     *               g_war_matrix_cdown_8848[power*0x13C+k] @asm 0x053171/0x0531A3.
+     * @asm 0x053157 push k; push power; lcall 0x181F:0xA38 (slot predicate)
+     * @asm 0x053165 test al,8; je 0x53194 -> jump over pending body if not pending
+     * @asm 0x053169 imul bx,[bp+6],0x13C; add bx,[bp-0x10] -> slot linear index
+     * @asm 0x053171 cmp [bx-0x77B8],0 -> cmp g_war_matrix_cdown_8848[idx],0
+     * @asm 0x053178 push 3; push 0; lcall 0x181F:0x4D4 -> random_int(0,3)
+     * @asm 0x05318A and [si-0x77C4],0xB7; or [si-0x77C4],1 -> arm slot
+     * @asm 0x053194 imul si,[bp+6],0x13C (both paths merge here for countdown)
+     * @asm 0x0531A3 dec [bx+si-0x77B8] -> decrement countdown (unconditional)
+     * @asm 0x0531AA cmp [bp-0x10],4; jl 0x53157 */
+    for (int k = 0; k < 4; k++) {                      /* @asm 0x053152 mov [bp-0x10],0 */
+        int slot_flags = overlay_call_181F_0A38();      /* @asm 0x053157 lcall 0x181F:0xA38(power,k) */
+        if (slot_flags & 0x08) {                        /* @asm 0x053165 test al,8 (pending?) */
+            int idx = (int)power * 0x13C + k;           /* @asm 0x053169 imul/add */
+            if (g_war_matrix_cdown_8848[idx] == 0) {    /* @asm 0x053171 cmp [bx-0x77B8],0 */
+                if (overlay_call_181F_04D4() == 0)      /* @asm 0x053178 random_int(0,3)==0 */
+                    g_war_matrix_883C[idx] = (g_war_matrix_883C[idx] & 0xB7) | 0x01; /* @asm 0x05318A/0x05318F */
+            }
+        }
+        /* countdown decrement is unconditional (not gated on pending):
+         * both paths from je 0x53167 converge at @asm 0x053194 for this update. */
+        {
+            int idx = (int)power * 0x13C + k;           /* @asm 0x053194 imul si; 0x053199 mov bx */
+            if (g_war_matrix_cdown_8848[idx] != 0)      /* @asm 0x05319C cmp [bx+si-0x77B8],0 */
+                g_war_matrix_cdown_8848[idx]--;          /* @asm 0x0531A3 dec */
+        }
+    }                                                   /* @asm 0x0531AA cmp k,4; jl 0x53157 */
 
     /* ---- PHASE 5 — war-matrix threat reset + tea-party/boycott gates.
      * @asm 0x0531B0..0x05326C.  Clears power arg0's 0x883C war-matrix row through
@@ -1645,23 +1719,33 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
     (void)overlay_call_181F_047A();                     /* @asm 0x053204 */
     (void)overlay_call_181F_0470();                     /* @asm 0x053209 */
     (void)overlay_call_181F_0466();                     /* @asm 0x053210 reset-end(0) */
-    /* @asm 0x053215..0x05326C — boycott/tea-party escalation; gate semantics
-     * (0x181F:0xF6 success, 0x3E0 lookup, 0xD1D:0x92C text, 0x82B==1 flag,
-     *  0x181F:0x5B6, [0x53C2]=0) are byte-cited as a control chain; the inner
-     * arithmetic that decides escalation is TBD-inner. */
-    if (g_flag_828 != 0) {                              /* @asm 0x053215 */
-        int do_party = (g_flag_7F4 != 0);               /* @asm 0x05321C */
+    /* @asm 0x053215..0x05326C — BYTE_VERIFIED: tea-party / boycott escalation.
+     * Gate: g_flag_828 (DGROUP:0x828) must be non-zero (Boston Harbour active).
+     * do_party condition: g_flag_7F4 (DGROUP:0x7F4) != 0 OR 0x181F:0xF6() != 0.
+     * When do_party: default event code 0x1B (Tea Party) at @asm 0x05322C, then
+     * immediately overwritten by 0x181F:0x3E0() actual-event lookup @asm 0x053239
+     * (the 0x1B assign is dead — a compiler artifact; the mov ax,0x181F;or ax,0xF6;je
+     * at 0x53231..0x53237 is a dead branch that always falls through to the lcall).
+     * 0xD1D:0x92C(code) displays the dialog and returns the player key response
+     * @asm 0x053244.  Response 0x4A ('J', yes) sets g_flag_82B=1 (joined/accepted
+     * @asm 0x053254); any other response calls 0x181F:0x5B6(5) (escalation penalty
+     * level 5) and clears g_flag_53C2 (DGROUP:0x53C2) @asm 0x05325E/0x053266.
+     * DGROUP reads: [0x828] @asm 0x053215; [0x7F4] @asm 0x05321C;
+     *               [0x82B]=1 write @asm 0x053254; [0x53C2]=0 write @asm 0x053266. */
+    if (g_flag_828 != 0) {                              /* @asm 0x053215 cmp [0x828],0 */
+        int do_party = (g_flag_7F4 != 0);               /* @asm 0x05321C cmp [0x7F4],0 */
         if (!do_party)
-            do_party = (overlay_call_181F_00F6() != 0); /* @asm 0x053223 */
+            do_party = (overlay_call_181F_00F6() != 0); /* @asm 0x053223 lcall 0x181F:0xF6 */
         if (do_party) {                                 /* @asm 0x05322A */
-            int code = 0x1B;                            /* @asm 0x05322C [bp-0x1C]=0x1B */
-            code = overlay_call_181F_03E0();            /* @asm 0x053239 (0x181F:0x3E0) */
-            code = overlay_call_0D1D_092C();            /* @asm 0x053244 (0xD1D:0x92C text) */
-            if (code == 0x4A)                           /* @asm 0x05324F */
-                g_flag_82B = 1;                         /* @asm 0x053254 */
+            /* @asm 0x05322C mov [bp-0x1C],0x1B  (dead assign; overwritten by 0x3E0 below) */
+            /* @asm 0x053231..0x053237  dead branch: mov ax,0x181F; or ax,0xF6; je [skipped] */
+            int code = overlay_call_181F_03E0();        /* @asm 0x053239 lcall 0x181F:0x3E0 */
+            code = overlay_call_0D1D_092C();            /* @asm 0x053244 lcall 0xD1D:0x92C(code) */
+            if (code == 0x4A)                           /* @asm 0x05324F cmp ax,0x4A ('J'=yes) */
+                g_flag_82B = 1;                         /* @asm 0x053254 mov [0x82B],1 */
             else {
-                (void)overlay_call_181F_05B6();         /* @asm 0x05325E (0x181F:0x5B6, arg 5) */
-                g_flag_53C2 = 0;                        /* @asm 0x053266 */
+                (void)overlay_call_181F_05B6();         /* @asm 0x05325E lcall 0x181F:0x5B6(5) */
+                g_flag_53C2 = 0;                        /* @asm 0x053266 mov [0x53C2],0 */
             }
         }
     }
