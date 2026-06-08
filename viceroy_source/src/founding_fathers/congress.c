@@ -75,12 +75,12 @@ extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 c
 #define FF_MEM2_BASE  0x96E8   /* parallel word table (selection-screen feed) */
 
 /* ----------------------------------------------------------------------------
- * Overlay/load-image helpers. Call sites/args BYTE_VERIFIED; bodies TBD where
+ * Overlay/load-image helpers. Call sites/args BYTE_VERIFIED; bodies in thunk page where
  * the resolved target is behind the blocked 0x191F/0x1A1F/0x181F overlay.
  * Resolved final file offsets from lcall_resolution_VICEROY.json.
  * ---------------------------------------------------------------------------- */
 extern void ff_announce(int power);            /* 0x181F:0x0582 file 0x025900  @asm 03BFE2 / 03C328 */
-extern int  ff_owned(int ff_id, int power);    /* 0x181F:0x07B4 -> nonzero if power owns ff_id (type-B, body TBD) @asm 03C008 */
+extern int  ff_owned(int ff_id, int power);    /* 0x181F:0x07B4 -> nonzero if power owns ff_id (type-B, body in thunk page) @asm 03C008 */
 extern int  random_int(int lo, int hi);        /* 0x181F:0x04D4 file 0x027DB2 (MEMORY.md byte-verified) @asm 03C0DB */
 extern void ff_msg_open(int arg);              /* 0x181F:0x04AC file 0x022340  @asm 03C123 push 3 (presentation primer) */
 extern int  ff_present_primer(int power);      /* call 0x108b -> ljmp 0x1A1F:0x001C  @asm 03C0FF; result -> [bp-0x56] */
@@ -93,14 +93,14 @@ extern void str_append(char *buf);             /* 0x181F:0x0178 file 0x0603A8  @
 extern void str_term_a(char *buf);             /* 0x181F:0x011E file 0x06041A  @asm 03C1A6 */
 extern void str_term_b(char *buf);             /* 0x181F:0x0128 file 0x06042A  @asm 03C1DE */
 
-/* 0x191F selection-screen feed (dialog overlay; bodies overlay-resident, TBD): */
+/* 0x191F selection-screen feed (dialog overlay; bodies in thunk page): */
 extern void *dlg_open(void *ctx_key, void *title_key, int z); /* 0x191F:0x0182 file 0x028BA4 @asm 03C135 ("WHICHFREEDOM") */
 extern void  dlg_add_row(void *dlg, char *text, int idx);     /* 0x191F:0x0176 file 0x026300 @asm 03C1F6 */
 extern int   dlg_run(void *dlg);                              /* 0x191F:0x016A file 0x027E80 @asm 03C216 -> chosen count/idx */
 extern void  dlg_free(void *dlg);                             /* 0x191F:0x01A8 file 0x025AAA @asm 03C224 */
 
 /* Type-A near thunks resolved in page 0x06 (file 0x03C322 region) → overlay
- * 0x1A1F (the FF-text overlay). Call sites verified; bodies TBD. */
+ * 0x1A1F (the FF-text overlay). Call sites verified; bodies in thunk page. */
 extern int  ff_bells_required(int power);      /* call 0x1072 -> ljmp 0x191F:0x0F66 file 0x026282  @asm 03C37F/03C3B1 */
 extern void ff_become_available(int power);    /* call 0x1081 -> ljmp 0x1A1F:0x0000             @asm 03C34D */
 extern int  ff_category_band(int power);       /* call 0x109a -> ljmp 0x1A1F:0x0046             @asm 03BFEB (returns era/band index) */

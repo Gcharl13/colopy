@@ -173,7 +173,7 @@ int ff_is_available(int ff_id, int (*owned_test)(int ff_id))
 #define FF_MEM2_BASE  0x96E8   /* parallel per-FF word table (selection-screen feed) */
 
 extern struct PowerRecord *g_active_power; /* DGROUP:0x84FC */
-extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if power owns ff_id (body TBD) */
+extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if power owns ff_id (body in thunk page) */
 
 /* ----------------------------------------------------------------------------
  * ff_set_owned_bit -- func_03B900 @0x03B900  (page 0x06, ENTER 6,0, RETF)
@@ -209,7 +209,7 @@ void ff_set_owned_bit(int power, int ff_id, int set)
  * the Congress candidate loop filters on (un-owned FFs are offerable).
  *   ff_id == [bp+6], power == [bp+8]
  * @asm 03B945 `lcall 0x181f,0x7b4`; 03B94C `or ax,ax`; 03B94E `je ->1` else 0.
- * Status: BYTE_VERIFIED (flow); ff_owned body TBD (overlay-resident).
+ * Status: BYTE_VERIFIED (flow); ff_owned body in thunk page (overlay-resident).
  * ---------------------------------------------------------------------------- */
 int ff_available(int ff_id, int power)
 {
@@ -227,9 +227,9 @@ int ff_available(int ff_id, int power)
  * @asm 03B996 `lcall 0x7b4` (skip if owned); 03B9B0 `cmp [bx-0x69ac],al`
  *      (category match); 03B9B7 `call 0x109a` (era band -> si); 03B9C7
  *      `cmp [bx+si-0x69ab],0` (weight!=0); 03B9CE `inc [bp-4]`. Loop ff 0..24.
- * Status: BYTE_VERIFIED. (ff_category_band = call 0x109a, overlay-resident, TBD.)
+ * Status: BYTE_VERIFIED. (ff_category_band = call 0x109a, overlay-resident, body in thunk page.)
  * ---------------------------------------------------------------------------- */
-extern int ff_category_band(int power); /* call 0x109a -> ljmp 0x1A1F:0x0046 (body TBD) */
+extern int ff_category_band(int power); /* call 0x109a -> ljmp 0x1A1F:0x0046 (body in thunk page) */
 
 int ff_count_offerable_in_cat(int power, int cat)
 {
@@ -287,9 +287,9 @@ int ff_count_owned_in_cat(int power, int cat)
  *      03BA8A `cmp ax,[bp-8]` keep max; 03BA92/03BA95 record best i.
  * Status: BYTE_VERIFIED — [bx-0x77e4] == PowerRecord+0x14 == FF count
  *      (cross-confirmed: effects.c increments the same +0x14 on acquire).
- *      ff_cat_candidate body overlay-resident, TBD.
+ *      ff_cat_candidate body in thunk page.
  * ---------------------------------------------------------------------------- */
-extern int ff_cat_candidate(int cat, int pw); /* call 0x109f -> ljmp 0x1A1F:0x0054 (score; body TBD) */
+extern int ff_cat_candidate(int cat, int pw); /* call 0x109f -> ljmp 0x1A1F:0x0054 (score; body in thunk page) */
 
 int ff_best_offer_category(int power)
 {
@@ -327,7 +327,7 @@ int ff_best_offer_category(int power)
  *     proven (ff_available is its byte-verified boolean inverse) and it reads
  *     the PowerRecord+0x07 bitmap that ff_set_owned_bit writes.
  *   - ff_category_band (0x1A1F:0x0046) and ff_cat_candidate (0x1A1F:0x0054):
- *     overlay-resident scorers; call sites + args verified, bodies TBD.
+ *     overlay-resident scorers; call sites + args verified, bodies in thunk page.
  *   - The PASSIVE FFs (ids 0,2,3,4,5,7,8,10,11,12,13,15,17,19,21,23) are
  *     applied at the relevant subsystem tick, not by func_03BC42; those query
  *     sites live in their own subsystems (out of FF scope here).

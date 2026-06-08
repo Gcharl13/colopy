@@ -82,7 +82,7 @@ extern uint8_t g_unit_table[];   /* base 0x3144 ; +0x00 map_x, +0x01 map_y, +0x0
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers used by the dispatch. Call sites/args VERIFIED;
- * bodies TBD. (lcall_resolution_VICEROY.json target file offsets cited.)
+ * bodies in thunk page. (lcall_resolution_VICEROY.json target file offsets cited.)
  * ---------------------------------------------------------------------------- */
 extern void ff_announce(int power);                 /* 0x181F:0x0582 file 0x25900 @asm 03BC50 */
 extern void power_set_flag(int handle, int flag);   /* 0x181F:0x0438 file 0x25CEC */

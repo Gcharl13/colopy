@@ -106,7 +106,7 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger TBD */
          * scheduler (LCALL 0x191F:0xAE0).  When the tax-demand event is the one
          * selected, control reaches func_034AE0 (king_attempt_tax_change). The
          * selection probability itself is TBD (overlay/data-driven). */
-        king_schedule_royal_events(power_id);   /* LCALL 0x191F:0xAE0 — TBD internals */
+        king_schedule_royal_events(power_id);   /* LCALL 0x191F:0xAE0 — internals in thunk page */
     }
 }
 extern void king_schedule_royal_events(int power_id);

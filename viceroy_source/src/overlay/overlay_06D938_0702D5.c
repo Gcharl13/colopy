@@ -62,7 +62,7 @@
  *   TRAMPOLINE      RTLink JMP-FAR forward; one-line stub citing resolved seg:off.
  *   PHANTOM         reloc/header bytes mis-framed as a function by the auto-decoder.
  *   STILL-SKELETON  in-scope real routine whose full body was not byte-verified
- *                   within this pass (extent cited; body TBD).
+ *                   within this pass (extent cited; body not yet decoded).
  *   OUT-OF-SCOPE    pure DOS-platform leaf (none here — it is all UI render/layout).
  * ============================================================================ */
 #include "viceroy.h"

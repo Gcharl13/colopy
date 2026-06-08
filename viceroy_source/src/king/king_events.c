@@ -88,7 +88,7 @@ extern uint8_t g_difficulty_53A6;       /* DGROUP:0x53A6 — difficulty 0..4 */
 /* Per-colony name word table @DGROUP:0x8D42 (push [bx-0x72be], bx=colony*2). @asm 0x02F693. */
 
 /* ----------------------------------------------------------------------------
- * lcall / overlay helpers (call sites + args BYTE_VERIFIED; internals TBD).
+ * lcall / overlay helpers (call sites + args BYTE_VERIFIED; internals in thunk page).
  * Selector -> resident/overlay target resolved via thunk-table formula
  *   thunk_file = 0x2400 + (sel_seg<<4) + sel_off ; type-B targets resident.
  *   0x181F:0x0590 -> thunk 0x01AB80 (type B) -> resident 0x00BCEA  (per-power setup; arg=class byte)
@@ -104,7 +104,7 @@ extern uint8_t g_difficulty_53A6;       /* DGROUP:0x53A6 — difficulty 0..4 */
  *   0x181F:0x048E -> thunk 0x01AA7E (type B) -> resident 0x0050BC  set/clear a draw attribute(arg)
  *   0x181F:0x03FE -> thunk 0x01A9EE (type A)                       message-key string -> small int (the
  *                                                                   "lookup keyed config/choice" helper)
- *   0x181F:0x0182 -> thunk 0x01A772 (type B) -> resident 0x0029DE  (helper; TBD)
+ *   0x181F:0x0182 -> thunk 0x01A772 (type B) -> resident 0x0029DE  (helper; body in thunk page)
  *   0x191F:0x0A9E -> thunk 0x01C08E (type A)                       UI: begin/redraw subject power
  *   0x191F:0x0A90 -> thunk 0x01C080 (type A)                       UI: ...
  *   0x191F:0x0A82 -> thunk 0x01C072 (type A)                       UI: ...

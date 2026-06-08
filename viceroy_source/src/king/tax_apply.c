@@ -43,11 +43,12 @@ extern uint8_t g_ai_personality_543F[];/* DGROUP:0x543F — controller byte, str
 #define MARKET_PRICE_5DE0   0x5DE0
 #define MARKET_BLOCK_STRIDE 0x65
 
-/* lcall helpers (call sites + args verified; internals TBD):
+/* lcall helpers (call sites + args verified; internals in thunk page):
  *   0xD1D:0xDDC / 0xD1D:0xEC6 -> C runtime long-arith helpers (mul/div on the
- *     +0xBC/+0xBE price dwords).  0xD1D is the C library overlay. */
+ *     +0xBC/+0xBE price dwords).  0xD1D is the C library overlay.
+ *     0xD1D:0xEC6 = __aFldiv-style 32-bit long divide (confirmed in diplomacy/meeting.c). */
 extern int32_t crt_lmul(int32_t a, int32_t b);   /* 0xD1D:0xDDC (approx) */
-extern int32_t crt_lop (int32_t a, int32_t b);   /* 0xD1D:0xEC6 (approx) */
+extern int32_t crt_aFldiv(int32_t a, int32_t b); /* 0xD1D:0xEC6 = __aFldiv 32-bit long divide */
 
 /* ============================================================================
  * tax_apply_delta — func_034318 — core BYTE_VERIFIED
@@ -124,7 +125,7 @@ void tax_apply_delta(int delta)
  *  - The boycott bitmask king[+0x20] and the 0x5DE0 market price table are
  *    BYTE_VERIFIED addresses, but the per-good boycott DECISION (the code after
  *    0x034437) is not in any available disasm and is left TBD.
- *  - crt_lmul / crt_lop signatures are placeholders for the 0xD1D C-runtime
- *    long-arithmetic helpers; their exact operation is TBD (not needed for the
- *    verified tax-cap core).
+ *  - crt_lmul / crt_aFldiv: crt_aFldiv (0xD1D:0xEC6) is confirmed as the __aFldiv-style
+ *    32-bit long divide (cross-confirmed in diplomacy/meeting.c); crt_lmul (0xD1D:0xDDC)
+ *    is the corresponding long-multiply (approx, not independently verified in this file).
  * ============================================================================ */

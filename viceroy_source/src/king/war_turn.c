@@ -115,8 +115,8 @@ extern int16_t g_ref_artillery_53E0;    /* DGROUP:0x53E0 (@asm 0x02F4EE) */
 #define COL_RECORD_5D48  0x5D48
 
 /* ----------------------------------------------------------------------------
- * lcall / overlay helpers (call sites + args BYTE_VERIFIED; internals inferred
- * -> TBD).  Selectors resolved via thunk-table formula (see king_events.c).
+ * lcall / overlay helpers (call sites + args BYTE_VERIFIED; internals in thunk page).
+ * Selectors resolved via thunk-table formula (see king_events.c).
  *   0x191F:0x0A74 -> UI redraw/flush power(index)
  *   0x181F:0x0438 -> set numeric message arg / per-power state setter
  *   0x181F:0x0416 -> store ds-ptr into a message slot

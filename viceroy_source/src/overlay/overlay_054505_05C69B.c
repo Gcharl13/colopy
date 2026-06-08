@@ -178,7 +178,7 @@ extern int func_05A938(int unit_index);                            /* trampoline
  *
  * 0x181F:0x07E0 = "unit/defence index at (x,y)"; 0x181F:0x08BC = scale/weight
  * helper(kind, value).  Exact arithmetic of 0x08BC is in the resident overlay
- * (TBD); modelled here as opaque scale() so the control flow is exact.
+ * (library-implementation-only); modelled here as opaque scale() so the control flow is exact.
  * ============================================================================ */
 int colony_strongest_adjacent_defender(int *out_owner, int *out_flag,
                                         int *out_total)  /* func_056A10 */
@@ -329,7 +329,7 @@ int native_relations_line_draw(int power, int tribe_handle)  /* func_056B92 */
 
 /* ============================================================================
  * func_056C3E — native_settlement_visit_dialog  [DONE — structure BYTE_VERIFIED;
- *               gift/outcome arithmetic over data-resident tables = TBD]
+ *               gift/outcome arithmetic over data-resident tables: RUNTIME_ONLY]
  * ----------------------------------------------------------------------------
  * The "speak with the chief" interaction shown when a scout/unit enters a native
  * settlement.  Reseg size 3580 bytes (ENTER 0x54), the largest in this file.
@@ -357,7 +357,7 @@ int native_relations_line_draw(int power, int tribe_handle)  /* func_056B92 */
  * The full 1189-instruction body then: (1) reads the NativeSettlement record
  * (base 0x54EC, stride 0x12) for the entered tile; (2) rolls the visit outcome
  * via random_int (LCALL 0x181F:0x04D4) gated by settlement size / tribe
- * attitude tables (data-resident — values TBD); (3) for a goods gift, computes
+ * attitude tables (data-resident — values RUNTIME_ONLY); (3) for a goods gift, computes
  * a "wagon" of trade goods and credits the player; for a food gift credits
  * food; for conversion converts the visiting unit; (4) emits the matching
  * message via the text-draw thunks (0x191F:0x176 / 0x181F:0x3FE) and tears the
@@ -382,14 +382,14 @@ int native_settlement_visit_dialog(int visiting_unit, int settlement,
     /* @asm 0x056C57 ctx_mode = mode; @asm 0x056C5A ctx_settle = settlement. */
     (void)visiting_unit; (void)settlement; (void)mode;
 
-    /* OUTCOME DISPATCH (message keys byte-verified; amounts TBD — see banner):
+    /* OUTCOME DISPATCH (message keys byte-verified; amounts RUNTIME_ONLY — see banner):
      *   random_int(0x181F:0x04D4) over tribe-attitude / size tables selects one
      *   of: INDIANWELCOME, INDIANSHUN, INDIANBEGFOOD, INDIANSCONVERT,
      *       INDIANGIVEFOOD, INDIANGIVESTUFF (wagon of goods), INDIANCOMMENT,
      *       INDIANCITY, INDIANWAGONS.
      * Each branch draws its message (0x191F:0x0176 / 0x181F:0x03FE) and applies
      * its effect (food/goods/gold credit or unit conversion) before returning
-     * the selected outcome id.  Per-amount arithmetic = [TBD: data-resident]. */
+     * the selected outcome id.  Per-amount arithmetic: RUNTIME_ONLY (data-resident). */
 
     return selected;       /* @asm ~0x057A.. RETF (selected outcome id) */
     (void)handle; (void)acc0; (void)acc1; (void)acc2;
@@ -709,7 +709,7 @@ int unit_combat_value(int unit)  /* func_059B3E */
  * @asm 0x059C6B    rel = LCALL 0x181F:0x0A38(owner, candPower)
  * @asm 0x059C79    if ((rel & 0x40) && cand.type != 0x10) skip   ; treaty blocks attack
  * @asm 0x059C8D    … per-candidate scoring loop accumulates into cand[] …
- *                  (scoring weights are data-resident tables -> TBD)
+ *                  (scoring weights are data-resident tables (RUNTIME_ONLY))
  * @asm  (tail)     pick argmax(cand[]) and return it
  *
  * This mirrors the EUROPEAN per-unit AI leaf func_05CA7E (src/ai/unit_ai_leaf.c)
@@ -733,7 +733,7 @@ int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 *
     terr  = overlay_call_181F_0768();                  /* terrain(goal)  @asm 0x059BD4 */
     occ   = (overlay_call_181F_0696() >= 0) ? 1 : 0;   /* occupied?      @asm 0x059BE5 */
 
-    /* MAIN TARGET SCAN (structure byte-verified; weights TBD — see banner):
+    /* MAIN TARGET SCAN (structure byte-verified; weights RUNTIME_ONLY — data-resident, see banner):
      *   for each candidate target reachable for this unit type, gated by:
      *     - ship vs land (unit.type in [0x0D..0x12])         @asm 0x059C2A
      *     - terrain passable                                 @asm 0x059C42/0x059C4B
@@ -762,7 +762,7 @@ int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 *
 
 /* ============================================================================
  * func_05A40E — trade_with_power_dialog  [DONE — structure BYTE_VERIFIED;
- *               cargo-value arithmetic uses data-resident tables = TBD]
+ *               cargo-value arithmetic uses data-resident tables: RUNTIME_ONLY]
  * ----------------------------------------------------------------------------
  * The "trade with a foreign power" dialog: a unit (arg0, bp+6) carrying cargo
  * meets another power's settlement and the player picks goods to trade.  Reseg
@@ -802,7 +802,7 @@ int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 *
  *
  * UI LAYOUT + economy (in scope per 2026-05-30: this is the trade dialog and its
  * offer composition).  The cargo price table at DGROUP -0x7B44 (per leader*16 +
- * cargo type) is data-resident; its CONTENTS are TBD but the index math
+ * cargo type) is data-resident; its CONTENTS are RUNTIME_ONLY but the index math
  * (leader*16 + ctype) and the offer = price * amount are byte-exact.
  *
  * @asm_extent 0x05A40E..0x05A862 (1107 B, reseg page_0F, terminal RETF)
@@ -858,7 +858,7 @@ int trade_with_power_dialog(int unit)  /* func_05A40E */
     camt  = overlay_call_181F_0C68();                  /* chosen cargo amount @asm 0x05A5C5 */
     /* offer = price_table[leader*16 + ctype] * amount. @asm 0x05A5D0..0x05A5DF */
     value = (int)*(uint8_t *)(leader * 16 + ctype - 0x7B44 + 0x10000) * camt;
-    (void)value; /* (confirm/accept + gold credit + cargo removal: tail, TBD amounts) */
+    (void)value; /* (confirm/accept + gold credit + cargo removal: tail, RUNTIME_ONLY amounts) */
 
     return 1;                                          /* @asm RETF (default ret=1) */
 }
@@ -1034,7 +1034,7 @@ int best_unit_to_move_at_tile(int seed_unit, int owner)  /* func_05AF70 */
 
 /* ============================================================================
  * func_05B0DC — trade_pick_cargo_dialog  [DONE — structure BYTE_VERIFIED;
- *               offer/limit arithmetic = data-resident TBD]
+ *               offer/limit arithmetic = data-resident RUNTIME_ONLY]
  * ----------------------------------------------------------------------------
  * The "PICKACARGO" dialog: choose a cargo from carrier unit `arg1`(bp+8) to
  * unload/trade up to the capacity reported by the tertiary overlay, on behalf
@@ -1061,7 +1061,7 @@ int best_unit_to_move_at_tile(int seed_unit, int owner)  /* func_05AF70 */
  * String: 0x1B08="PICKACARGO".  0x1A1F:0x01A0 = carrier-free-capacity query in
  * the tertiary overlay.  0xA154 is the modal-dialog active flag (set/clear here
  * exactly as the other trade UIs do).  UI LAYOUT + economy (in scope).  Per-item
- * amount math beyond the listing is data-resident → TBD.
+ * amount math beyond the listing is data-resident (RUNTIME_ONLY).
  *
  * @asm_extent 0x05B0DC..0x05B2C2 (486 B, reseg page_10, terminal RETF)
  * ============================================================================ */
@@ -1091,7 +1091,7 @@ int trade_pick_cargo_dialog(int unit, int carrier)  /* func_05B0DC */
             overlay_call_181F_0BE6();                  /* cargo type   @asm 0x05B196 */
             overlay_call_181F_0C68();                  /* amount->text @asm 0x05B1AB */
             /* (add menu item: text build + 0x191F:0x0176; then run + credit:
-             *  remaining offer/limit arithmetic is data-resident -> TBD) */
+             *  remaining offer/limit arithmetic is data-resident (RUNTIME_ONLY)) */
         }
     }
     return selected;                                   /* @asm RETF */

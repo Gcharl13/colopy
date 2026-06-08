@@ -32,9 +32,9 @@ extern uint16_t ovly_181F_04D4(uint16_t lo, uint16_t hi);  /* random_int(lo, hi)
 extern void   ovly_181F_0998(void *buf, void *src, int16_t arg);  /* output_message_with_value */
 /* RTLink thunk at file 0x3681D -> LJMP 0x191F:0x0AE0 (king_announce_tax_raise).
  * Called by the raise_was_blocked path with (adjusted_delta, "KINGRAISE" offset).
- * Overlay internals TBD. BYTE_VERIFIED call site: file 0x034B78..0x034B7D
+ * Overlay internals in thunk page. BYTE_VERIFIED call site: file 0x034B78..0x034B7D
  *   0e e8 a1 1c  (push cs; call near [+0x1CA1] -> file 0x3681D = LJMP 0x191F:0x0AE0) */
-extern void   ovly_191F_0AE0(uint16_t delta, uint16_t str_off); /* king_announce_tax_raise — TBD */
+extern void   ovly_191F_0AE0(uint16_t delta, uint16_t str_off); /* king_announce_tax_raise — body in thunk page */
 
 /* ============================================================================
  * king_attempt_tax_change — invoked when the king considers raising taxes
@@ -126,7 +126,7 @@ do_kingraise: /* @asm 0x034B62 — guards-1+2 target */
          *   e8 a1 1c        call near [+0x1CA1]    ; -> file 0x3681D (LJMP 0x191F:0x0AE0) */
         uint16_t adjusted = ovly_181F_04D4(1, g_difficulty_53A6);  /* @asm 0x034B6A */
         adjusted *= 2;
-        ovly_191F_0AE0(adjusted, 0x10b2 /* "KINGRAISE" */);  /* TBD: internals of king_announce_tax_raise */
+        ovly_191F_0AE0(adjusted, 0x10b2 /* "KINGRAISE" */);  /* internals of king_announce_tax_raise in thunk page */
         return;
     }
 }

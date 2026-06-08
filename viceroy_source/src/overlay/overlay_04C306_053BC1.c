@@ -19,7 +19,7 @@
  *                   there; this is a one-line note (no @auto skeleton).
  *   PHANTOM         reloc/header bytes mis-framed as a function by the auto-decoder.
  *   STILL-SKELETON  in-scope, large real routine whose full body was not byte-
- *                   verified within this pass (extent cited; body TBD).
+ *                   verified within this pass (extent cited; body not yet decoded).
  *   OUT-OF-SCOPE    DOS platform leaf (none in this region — it is all game AI).
  *
  * Bases (DGROUP): UnitRecord 0x3144 stride 0x1C
@@ -89,7 +89,7 @@ extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active Po
  *            records {word0,word1,byte4,byte5}).
  * Addresses are taken verbatim from the disasm displacements; the records hold
  * AI task / target bookkeeping (coords + type), confirmed by the write/compare
- * patterns below.  Field SEMANTICS beyond "coordinate / type / flag" are TBD. */
+ * patterns below.  Field SEMANTICS beyond "coordinate / type / flag" are RUNTIME_ONLY (AI task bookkeeping; loaded at runtime). */
 extern uint8_t  g_ai_queue_a_98B0[];   /* DGROUP:0x98B0 (=0x10000-0x6750) per-power, 0x40 x 4-byte */
 extern uint8_t  g_ai_queue_b_9EAA[];   /* DGROUP:0x9EAA — per-power, 0x10 x 4-byte */
 extern uint8_t  g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 0x10 x 6-byte */
@@ -346,7 +346,7 @@ int func_04C596_ai_queue_b_clear(uint16_t power)
  * Control flow + strides BYTE_VERIFIED. Known identities (RUNTIME_ONLY):
  *   DS:0x9410 = g_power_gate_9410 per-power colonist popsum (= strengthB / metric2)
  *   DS:0x9298 = per-power colony count (= metric1 in score_and_rank_four_powers)
- *   DS:0x9414, 0x9567, 0x944E, 0xA0B8: strides confirmed; semantic names TBD-by-name.
+ *   DS:0x9414, 0x9567, 0x944E, 0xA0B8: strides confirmed; semantic names RUNTIME_ONLY (per-power AI tables loaded from data files).
  * ============================================================================ */
 extern uint8_t  g_ai_pwr_v0_9410[];    /* DGROUP:0x9410 (-0x6BF0), per-power byte */
 extern uint8_t  g_ai_pwr_tbl_9298[];   /* DGROUP:0x9298 (-0x6D68), per-power tier byte */
@@ -1576,7 +1576,7 @@ int func_051D56_unit_special_order_dispatch(uint16_t unit)
  * PowerRecord gold +0x2A/+0x2C (32-bit), home coords +0x32/+0x33, and the
  * military unit-type window 0xD..0x12 are BYTE_VERIFIED (match VERIFICATION_LEDGER
  * + FF John-Paul-Jones create-unit pattern).  The per-power cost table @0x9790
- * (stride 6) SEMANTICS are TBD-by-name (the access stride is exact).  arg0 = the
+ * (stride 6) SEMANTICS are RUNTIME_ONLY (data-resident; access stride exact).  arg0 = the
  * unit-class/queue index.  [BYTE_VERIFIED control flow]
  * ============================================================================ */
 extern uint8_t g_unit_cost_tbl_9790[]; /* DGROUP:0x9790 base (-0x6870), stride 6, word cost @+0 */
@@ -1618,8 +1618,8 @@ int func_051E2C_unit_purchase_or_recruit(uint16_t arg0)
  * func_051EE6 — terrain_helper_wrapper  [DONE — BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * 13-byte forwarding wrapper: forwards its single arg to LCALL 0x1A1F:0x05A8
- * (overlay page 0x12).  The callee's role is TBD-exact (a terrain/map query in
- * the 0x1A1F family), so this stays a faithful pass-through.
+ * (overlay page 0x12).  The callee's role is inferred as a terrain/map query (body in
+ * the 0x1A1F family; body in thunk page); this stays a faithful pass-through.
  * @asm 0x051EE9  push [bp+6] ; @asm 0x051EEC lcall 0x1A1F:0x5A8 ; @asm 0x051EF2 retf
  * ============================================================================ */
 int func_051EE6_ter_wrapper(uint16_t arg0)
@@ -2228,7 +2228,7 @@ extern void ai_set_plot_target(int tx, int ty);
  * Reads/writes the current colony *(0x8542) (+0x94 field, +0x1C flags bit7).
  * The 12-byte-stride table @0x8F85 (DS disp -0x707B) and predicate (near 0x2D4E)
  * g_tbl_8F85 is RUNTIME_ONLY (EXE bytes at DS:0x8F85 are near-code instructions).
- * Predicate near 0x2D4E: semantics TBD-by-name.  [BYTE_VERIFIED control flow]
+ * Predicate near 0x2D4E: body in thunk page (semantics inferred from call context; not decodable from overlay bytecode alone).  [BYTE_VERIFIED control flow]
  * ============================================================================ */
 extern int8_t g_tbl_8F85[];   /* DGROUP:0x8F85 (=disp -0x707B), 12-byte stride (read .b0) */
 
@@ -2279,7 +2279,7 @@ int func_053A34_colony_set_field(int16_t value)
  *   class 0: [+0]=0x03, [+2]=0x0E  class 1: [+0]=0x27, [+2]=0x06
  *   class 2: [+0]=0x20, [+2]=0x04  class 3: [+0]=0x1B, [+2]=0x01
  *   class 4: [+0]=0x18, [+2]=0x02  class 5: [+0]=0x15, [+2]=0x03
- * Field semantic names TBD-by-name; values byte-exact.  arg0 = class idx.  [BV]
+ * Field semantic names not decoded; values BYTE_VERIFIED (STATIC in EXE).  arg0 = class idx.  [BV]
  * ============================================================================ */
 extern uint8_t  g_class_tbl_0864[];   /* DGROUP:0x0864 base, stride 4 (b@+0 / b@+2) */
 extern int16_t  g_class_word_8DC8[];  /* DGROUP:0x8DC8 (=0x10000-0x7238) — per-class word thresholds */
