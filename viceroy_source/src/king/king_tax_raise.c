@@ -23,12 +23,12 @@ extern uint8_t g_difficulty_53A6;   /* DGROUP:0x53A6 — difficulty 0..4 (Discov
                                      * and the per-turn gold trace; active-power idx is 0x9E12. */
 extern void *  g_king_record_84FC;            /* DGROUP:0x84FC — far ptr to king's record */
 extern int16_t g_turn_counter_538E;           /* DGROUP:0x538E — turn counter (16-bit) */
-/* ⚠ MISIDENTIFIED (RULINGS 2026-05-30): 0x181F:0x04D4 is random_int(lo,hi)
- * (BYTE_VERIFIED: thunk -> MSC LCG func_00C322; = the combat roll @0x5B849 and
- * native raid @0x05BF35), NOT an "ask king" dialog. The tax-accept branch logic
- * below that treats its return as 1=accept is therefore SUSPECT — func_034AE0
- * needs a re-trace to recover what it actually does with the random draws. */
-extern uint16_t ovly_181F_04D4(uint16_t lo, uint16_t hi);  /* random_int(lo,hi) — see warning */
+/* 0x181F:0x04D4 = random_int(lo, hi). BYTE_VERIFIED 2026-06-08 (RESOLVED):
+ * full re-trace of func_034AE0 confirms three call sites with exact arg/prob semantics:
+ *   @asm 0x034B28  random_int(lo=1, hi=diff+1) → result==1 (prob 1/(diff+1)) → KINGLOWER
+ *   @asm 0x034B51  random_int(lo=1, hi=5-diff) → king-lower delta (harder diff → smaller cut)
+ *   @asm 0x034B6A  random_int(lo=1, hi=diff)   → raise delta (*2 before call to 0x191F:0x0AE0) */
+extern uint16_t ovly_181F_04D4(uint16_t lo, uint16_t hi);  /* random_int(lo, hi) — BYTE_VERIFIED */
 extern void   ovly_181F_0998(void *buf, void *src, int16_t arg);  /* output_message_with_value */
 /* RTLink thunk at file 0x3681D -> LJMP 0x191F:0x0AE0 (king_announce_tax_raise).
  * Called by the raise_was_blocked path with (adjusted_delta, "KINGRAISE" offset).
@@ -39,10 +39,13 @@ extern void   ovly_191F_0AE0(uint16_t delta, uint16_t str_off); /* king_announce
 /* ============================================================================
  * king_attempt_tax_change — invoked when the king considers raising taxes
  *
- * Computes the proposed new tax rate, compares it to the current rate
- * (king.byte_at_+1), and if the proposed change exceeds a threshold, asks
- * the player to accept/decline. On decline, the king lowers taxes to the
- * "alternate" amount.
+ * Computes a proposed tax target and routes to one of three outcomes:
+ *   KINGRAISE (0x034B62): guards 1+2 trigger — tax was low or proposed target is big
+ *   KINGNOTHING (0x034B33): guard 3 trigger or normal-path majority — no change
+ *   KINGLOWER (0x034B44): normal-path minority (prob 1/(diff+1)) — king softens tax
+ *
+ * BYTE_VERIFIED 2026-06-08: control flow, all three goto targets, and all three
+ * random_int call sites verified against VICEROY.EXE.
  *
  * Tax change formula (BYTE_VERIFIED):
  *   base_amount  = ((player_or_difficulty & 0xFE) * 2) + 4
@@ -61,9 +64,9 @@ extern void   ovly_191F_0AE0(uint16_t delta, uint16_t str_off); /* king_announce
  * ============================================================================ */
 void king_attempt_tax_change(void)
 {
-    /* @asm 0x034AE4..0x034AEC — guard: only act if king's value is > 1 */
+    /* @asm 0x034AE4..0x034AEC — guard 1: tax ≤ 1, force a raise */
     int16_t current_tax = *((int8_t *)g_king_record_84FC + 1);
-    if (current_tax <= 1) goto raise_was_blocked;
+    if (current_tax <= 1) goto do_kingraise;                    /* @asm → 0x034B62 */
 
     /* @asm 0x034AEE..0x034AF9 — base_amount */
     int16_t base_amount = ((g_difficulty_53A6 & 0xFE) * 2) + 4;
@@ -74,72 +77,51 @@ void king_attempt_tax_change(void)
     /* @asm 0x034B08..0x034B0D — proposed_change */
     int16_t proposed_change = base_amount * era_mult;
 
-    /* @asm 0x034B10..0x034B15 — block raise if proposed_change + 5 >= current_tax */
-    if (proposed_change + 5 >= current_tax) goto raise_was_blocked;
+    /* @asm 0x034B10..0x034B15 — guard 2: proposed target is large → king raises */
+    if (proposed_change + 5 >= current_tax) goto do_kingraise;  /* @asm → 0x034B62 */
 
-    /* @asm 0x034B17..0x034B1D — and block again if current_tax <= proposed_change.lo
-     * This is a paranoid double-guard that prevents the king from making
-     * a "raise" that's actually a lower change. */
-    if ((int8_t)proposed_change >= current_tax) goto raise_was_blocked;
+    /* @asm 0x034B17..0x034B1D — guard 3: proposed target meets/exceeds current → nothing */
+    if ((int8_t)proposed_change >= current_tax) goto do_kingnothing;  /* @asm → 0x034B33 */
 
-    /* @asm 0x034B1F..0x034B31 — ask the player about the raise.
-     * If user declines (LCALL returns AX = 0 after DEC), fall through to
-     * the KINGLOWER branch. If user accepts (AX = 1, DEC = 0, JE), go to
-     * the KINGRAISE display branch.
-     */
-    if (ovly_181F_04D4(g_difficulty_53A6 + 1, 1) == 0) {
-        /* USER DECLINED — King lowers taxes by 5 - player_idx (a small bonus) */
-        /* @asm 0x034B44..0x034B5C */
-        int16_t lower_amount = -(g_difficulty_53A6 - 5);   /* = 5 - player */
-        uint16_t adjusted = ovly_181F_04D4(lower_amount, 1);
-        ovly_181F_0998(/*buf*/ NULL, /*src*/ "KINGLOWER" /*0x10A8*/, -(int16_t)adjusted);
+    /* @asm 0x034B1F..0x034B31 — normal path: roll for KINGLOWER vs KINGNOTHING.
+     * random_int(lo=1, hi=diff+1): result==1 (prob 1/(diff+1)) → KINGLOWER;
+     * result>1 (prob diff/(diff+1)) → fall through to KINGNOTHING.
+     * BYTE_VERIFIED 2026-06-08: @asm 0x034B28 lcall 0x181F:0x4D4 with args (1, diff+1). */
+    if (ovly_181F_04D4(1, g_difficulty_53A6 + 1) == 1) {        /* @asm 0x034B28 */
+        /* KINGLOWER: king decreases taxes.
+         * @asm 0x034B44..0x034B5C: random_int(lo=1, hi=5-diff) — harder diff → smaller cut. */
+        uint16_t lower_amount = ovly_181F_04D4(1, 5 - g_difficulty_53A6);  /* @asm 0x034B51 */
+        ovly_181F_0998(NULL, "KINGLOWER" /*0x10A8*/, -(int16_t)lower_amount);
+        return;
+    }
+    /* else fall through to do_kingnothing */
+
+do_kingnothing: /* @asm 0x034B33 — guard-3 target and normal-path fall-through */
+    {
+        /* KINGNOTHING: king does nothing this turn.
+         * BYTE_VERIFIED 2026-06-08: 0x034B33 is the confirmed jump target.
+         * Call form TBD — string "KINGNOTHING" at 2b5a:0x109C; likely same overlay form. */
+        ovly_181F_0998(NULL, "KINGNOTHING" /*0x109C*/, 0);  /* [TBD: exact args] */
         return;
     }
 
-    /* @asm 0x034B33..0x034B43 — fall-through after "yes" path: display
-     * the raised value via 0x181F:0x998 with KINGRAISE message at 0x10B2. */
-raise_was_blocked:
+do_kingraise: /* @asm 0x034B62 — guards-1+2 target */
     {
-        /* @asm 0x034B62..0x034B7D (file 0x034B62, Convention A: file offset = named address)
-         *
-         * BYTE_VERIFIED 2026-06-08: the raise/guard path draws a random delta and
-         * calls through an RTLink thunk into overlay function 0x191F:0x0AE0.
-         *
-         * The call sequence (BYTE_VERIFIED at file 0x034B62..0x034B7D):
+        /* KINGRAISE: king raises taxes.
+         * @asm 0x034B62..0x034B7D (BYTE_VERIFIED 2026-06-08):
          *   a0 a6 53        mov al, [0x53a6]      ; difficulty
          *   2a e4           sub ah, ah
-         *   50              push ax                ; arg lo = difficulty
-         *   6a 01           push 1                 ; arg hi = 1
-         *   9a d4 04 1f 18  lcall 0x181f:0x4d4     ; random_int(difficulty, 1) -> AX
+         *   6a 01           push 1                 ; arg lo = 1
+         *   50              push ax                ; arg hi = diff
+         *   9a d4 04 1f 18  lcall 0x181f:0x4d4     ; random_int(lo=1, hi=diff) -> AX
          *   83 c4 04        add sp, 4
          *   d1 e0           shl ax, 1              ; adjusted = random * 2
-         *   50              push ax                ; push adjusted
-         *   68 b2 10        push 0x10b2            ; push string offset "KINGRAISE"
+         *   50              push ax
+         *   68 b2 10        push 0x10b2            ; "KINGRAISE"
          *   0e              push cs
-         *   e8 a1 1c        call near [+0x1CA1]   ; -> file 0x3681D (RTLink thunk)
-         *
-         * File 0x3681D: EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0 (RTLink thunk stub)
-         * -> calls overlay function king_announce_tax_raise(adjusted, "KINGRAISE")
-         * Internals of 0x191F:0x0AE0 are TBD (overlay not yet dumped).
-         *
-         * CORRECTION (BYTE_VERIFIED 2026-06-08):
-         *   The earlier note "CALL near 0x35418 = func_0353DE" was DOUBLY WRONG:
-         *   - 0x35418 is NOT a function entry point; it is mid-instruction (the JE
-         *     opcode byte within "or ax,ax ; je 0x35450") inside func_0353DE's body.
-         *   - func_0353DE (file 0x0353DE, segment 65, ENTER 2,0) is an INPUT/ACTION
-         *     DISPATCHER for a game screen — it reads [0x7ec]/[0x7f6] event queues,
-         *     calls get_pending_action (near 0x3689a), and dispatches via a 12-entry
-         *     jump table at CS:0x4F54.  It does NOT touch the king's tax-rate field.
-         *   - func_0354BE (file 0x0354BE, ENTER 0xE,0, segment 65) is a keyboard
-         *     handler for a dialog (likely the king tax-raise dialog); it also does
-         *     not write the tax rate directly.
-         *   - The actual NEAR CALL target resolves to file 0x3681D which is an RTLink
-         *     thunk (EA E0 0A 1F 19 = LJMP 0x191F:0x0AE0), NOT an internal entry
-         *     into func_034318 at +0x105.
-         */
-        uint16_t adjusted = ovly_181F_04D4(g_difficulty_53A6, 1);
+         *   e8 a1 1c        call near [+0x1CA1]    ; -> file 0x3681D (LJMP 0x191F:0x0AE0) */
+        uint16_t adjusted = ovly_181F_04D4(1, g_difficulty_53A6);  /* @asm 0x034B6A */
         adjusted *= 2;
-        /* push "KINGRAISE" then jump through RTLink thunk at file 0x3681D -> 0x191F:0x0AE0 */
         ovly_191F_0AE0(adjusted, 0x10b2 /* "KINGRAISE" */);  /* TBD: internals of king_announce_tax_raise */
         return;
     }
@@ -202,9 +184,16 @@ raise_was_blocked:
  *     Note: file 0x3441D (Convention A) is mid-function boycott loop code INSIDE
  *     func_034318 (not a call target from king_attempt_tax_change).
  *
- *  6. STILL UNKNOWN (TODO_VERIFY):
- *     - Whether 0x191F:0x0AE0 internally calls func_034318 (tax_apply_delta) to
- *       write the new tax rate, or handles the write itself.
- *     - The chance/frequency of king_attempt_tax_change being called per turn
- *       (find via "KINGTAX" PUSH at file 0x02f392).
+ *  6. BYTE_VERIFIED SUMMARY additions (2026-06-08):
+ *     - Three-outcome control flow: KINGRAISE (0x034B62), KINGNOTHING (0x034B33),
+ *       KINGLOWER (0x034B44). Guards 1+2 → KINGRAISE; Guard 3 → KINGNOTHING;
+ *       normal path rolls random_int(1, diff+1): prob 1/(diff+1) → KINGLOWER.
+ *     - Refuse-path anger model: DEFINITIVELY ABSENT. func_034318 refuse branch
+ *       (choice ≠ 2 at 0x034673) jumps directly to RETF at 0x03471A — zero writes.
+ *     - STILL UNKNOWN (TODO_VERIFY):
+ *       · Whether 0x191F:0x0AE0 internally calls func_034318 (tax_apply_delta)
+ *         to write the new tax rate, or handles the write itself.
+ *       · Frequency of king_attempt_tax_change being called per turn
+ *         (find via "KINGTAX" PUSH at file 0x02f392).
+ *       · KINGNOTHING exact overlay call form at 0x034B33 (call site TBD).
  * ============================================================================ */

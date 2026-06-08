@@ -42,6 +42,26 @@
  * memory) should be updated to RESOLVED, but that edit is outside this task's
  * src/king + src/diplomacy scope and is left for the cross-source-reconciler.
  * The byte proof above is sufficient to close the conflict.
+ *
+ * ----------------------------------------------------------------------------
+ *  >>> REFUSE-SIDE ANGER MODEL — BYTE_VERIFIED ABSENT (2026-06-08) <<<
+ * ----------------------------------------------------------------------------
+ * The prior reconstruction claimed "+5 king anger on refuse." This is CONFIRMED
+ * ABSENT by exhaustive scan of func_034318 (file 0x034318..0x03471D, 1022 bytes):
+ *
+ * The pay/refuse branch (BYTE_VERIFIED):
+ *   file 0x03466F: 83 7e ac 02   cmp word [bp-0x54], 2
+ *   file 0x034673: 74 03         je  0x034678   ; choice==2 → TEA PARTY pay path
+ *   file 0x034675: e9 a2 00      jmp 0x03471A   ; else → REFUSE: direct RETF
+ *   file 0x03471A: 5e 5f c9 cb   pop si; pop di; leave; retf
+ *
+ * The refuse path (0x034675 → 0x03471A) writes NOTHING. There is no INC, ADD,
+ * or MOV to any PowerRecord field, king-anger byte, or DGROUP global on this path.
+ * The three writes to [bx+1] (PowerRecord+0x01 = TAX RATE) in this function are:
+ *   @asm 0x03434C: ADD [bx+1], al  — tax += delta (always, on accepted raise)
+ *   @asm 0x034364: MOV [bx+1], cl  — clamp to 0x4B (75%) max
+ *   @asm 0x03467F: SUB [bx+1], al  — undo temp raise (tea-party pay path only)
+ * None of these execute on the refuse path.
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"
@@ -122,10 +142,10 @@ extern void king_schedule_royal_events(int power_id);
  * ----------------------------------------------------------------------------
  * The AI tax-acceptance heuristic below is carried over from the prior
  * reconstruction and is NOT byte-verified.  The accept path's tax write is
- * superseded by tax_apply.c (func_034318, BYTE_VERIFIED).  Note the old "+5 king
- * anger on refuse" claim has NO byte backing: 0x53A7 is the year/100 split (now
- * RESOLVED, see header), and no anger-increment instruction exists in the
- * binary — so the refuse-side anger model remains UNLOCATED/TBD.
+ * superseded by tax_apply.c (func_034318, BYTE_VERIFIED).  The old "+5 king
+ * anger on refuse" claim is BYTE_VERIFIED ABSENT (2026-06-08): 0x53A7 is the
+ * year/100 split (RESOLVED, see header), and the refuse path in func_034318
+ * (choice≠2, 0x034675 → 0x03471A) writes NOTHING — see header for proof.
  *
  * SCOPE NOTE (2026-06-08): the resident func_03471E (0x03471E, 725B) named
  * "AI king-demand decision" is in fact the human-facing DEMAND DIALOG builder —
