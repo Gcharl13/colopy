@@ -23,7 +23,7 @@
  *   - 0x0A58:0x038B
  *   - 0x0262:0x00DA
  * @inferred_role  MEDIUM_LOGIC (126 bytes). 0x0A58:0x038B + 0x0262:0x00DA
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_0024C6_op_sz_126(void)
 {
@@ -72,7 +72,7 @@ int func_0024C6_op_sz_126(void)
  * Near CALL targets:
  *   - 0x0024C6
  * @inferred_role  PROLOGUE_HEAVY (60 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002544_logic_sz_60(uint16_t arg0_bp_06)
 {
@@ -105,7 +105,7 @@ int func_002544_logic_sz_60(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x0024C6
  * @inferred_role  WRAPPER_NEARCALL (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_0026D4_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -123,7 +123,7 @@ int func_0026D4_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_RETURN (10 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_00273E_logic_sz_10(uint16_t arg0_bp_06)
 {
@@ -141,7 +141,7 @@ int func_00273E_logic_sz_10(uint16_t arg0_bp_06)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  PROLOGUE_HEAVY (39 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_00275C_logic_sz_39(uint16_t arg0_bp_08, uint16_t arg1_bp_0A)
 {
@@ -167,7 +167,7 @@ int func_00275C_logic_sz_39(uint16_t arg0_bp_08, uint16_t arg1_bp_0A)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002783_logic_sz_13(void)
 {
@@ -189,7 +189,7 @@ int func_002783_logic_sz_13(void)
  *   - 0x0026D4
  *   - 0x00275C
  * @inferred_role  UNKNOWN (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002892_logic_sz_30(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -212,7 +212,7 @@ int func_002892_logic_sz_30(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * LCALL targets:
  *   - 0x0D1D:0x11B4
  * @inferred_role  WRAPPER_LCALL (26 bytes). 0x0D1D:0x11B4
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002992_rtl_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -237,7 +237,7 @@ int func_002992_rtl_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x002942
  *   - 0x002952
  * @inferred_role  UNKNOWN (49 bytes). 0x0D1D:0x11B4
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_0029AC_rtl_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -262,7 +262,7 @@ int func_0029AC_rtl_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x0D1D:0x08FA
  *   - 0x0D1D:0x11B4
  * @inferred_role  UNKNOWN (39 bytes). 0x0D1D:0x08FA + 0x0D1D:0x11B4
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_0029DE_rtl_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -287,7 +287,7 @@ int func_0029DE_rtl_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *   - 0x0D1D:0x0842
  *   - 0x0D1D:0x11B4  (2x)
  * @inferred_role  DISPATCHER (104 bytes). 0x0D1D:0x08FA + 0x0D1D:0x0842
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002A06_rtl_sz_104(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -317,7 +317,7 @@ int func_002A06_rtl_sz_104(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  *   - 0x0D1D:0x0916
  *   - 0x0D1D:0x11B4
  * @inferred_role  UNKNOWN (42 bytes). 0x0D1D:0x0916 + 0x0D1D:0x11B4
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002A6E_rtl_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
@@ -343,7 +343,7 @@ int func_002A6E_rtl_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * Near CALL targets:
  *   - 0x002A6E
  * @inferred_role  UNKNOWN (46 bytes). 0x0D1D:0x11B4
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002A98_rtl_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
@@ -363,7 +363,7 @@ int func_002A98_rtl_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (27 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002AC6_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -381,7 +381,7 @@ int func_002AC6_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (27 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002AE2_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -403,7 +403,7 @@ int func_002AE2_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (58 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002AFE_op_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
@@ -430,7 +430,7 @@ int func_002AFE_op_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (58 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002B38_op_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
@@ -454,7 +454,7 @@ int func_002B38_op_sz_58(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (85 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002B72_op_sz_85(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
@@ -478,7 +478,7 @@ int func_002B72_op_sz_85(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x002AC6
  *   - 0x002B38
  * @inferred_role  UNKNOWN (68 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002BC8_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
@@ -504,7 +504,7 @@ int func_002BC8_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (62 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002C0C_op_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
@@ -531,7 +531,7 @@ int func_002C0C_op_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (56 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002C4A_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
@@ -555,7 +555,7 @@ int func_002C4A_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  UNKNOWN (94 bytes). 0x0C28:0x000A + 0x0C11:0x000C
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002C82_op_sz_94(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
@@ -579,7 +579,7 @@ int func_002C82_op_sz_94(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x002AE2
  *   - 0x002C4A
  * @inferred_role  UNKNOWN (71 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002CE0_logic_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12)
 {
@@ -605,7 +605,7 @@ int func_002CE0_logic_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *   - 0x002992  (2x)
  *   - 0x0028B0
  * @inferred_role  DISPATCHER (75 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -633,7 +633,7 @@ int func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  LARGE_LOGIC (218 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002D74_logic_sz_218(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_12)
 {
@@ -682,7 +682,7 @@ int func_002D74_logic_sz_218(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  *   - 0x0C28:0x000A
  *   - 0x0C11:0x000C
  * @inferred_role  DISPATCHER (149 bytes). 0x0D1D:0x08FA + 0x0B9E:0x000A
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002E4E_rtl_sz_149(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
@@ -717,7 +717,7 @@ int func_002E4E_rtl_sz_149(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  *   - 0x002D74
  *   - 0x002E4E  (2x)
  * @inferred_role  LARGE_LOGIC (358 bytes). 0x0C36:0x000A + 0x0C36:0x000A
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_002EE4_op_sz_358(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
@@ -776,7 +776,7 @@ int func_002EE4_op_sz_358(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * Near CALL targets:
  *   - 0x002D74
  * @inferred_role  MEDIUM_LOGIC (142 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_00304A_logic_sz_142(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
@@ -803,7 +803,7 @@ int func_00304A_logic_sz_142(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @callers    0
  * @touches_8542 False
  * @inferred_role  MEDIUM_LOGIC (143 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_003104_logic_sz_143(void)
 {
@@ -840,7 +840,7 @@ int func_003104_logic_sz_143(void)
  * Near CALL targets:
  *   - 0x002E4E  (2x)
  * @inferred_role  LARGE_LOGIC (598 bytes). 0x0C36:0x000A + 0x0C36:0x000A
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
 int func_003193_op_sz_598(uint16_t arg0_bp_06)
 {

@@ -19,7 +19,7 @@
  *
  * @ref code/VICEROY/disasm/func_009FFC_unknown.asm
  *
- * --- CITE-OR-TBD LEDGER ---------------------------------------------------
+ * --- CITE-OR-NOT-YET-DECODED LEDGER ---------------------------------------
  *  BYTE_VERIFIED (offset + operand bytes confirmed in COLONIZE/VICEROY.EXE):
  *    0x9FFC: c8 1c 00 00             ENTER 0x1c,0
  *    0xA000: CALL 0x90C8             get job byte (current_unit_field_at_20)
@@ -37,7 +37,7 @@
  *  RESOLVED:
  *    meta_out 0x12 = Rebel Flags commodity (NAMES.TXT @CARGO row 0x12 = "Flags";
  *    cross-ref market/pricing.c: "Hammers,Crosses,Liberty Bells,Flags" = rows 0xF..0x12).
- *  TBD:
+ *  not yet decoded:
  *    ov_power_flag op 0x15 founding-father identity (Crosses +50% bonus)
  * ============================================================================ */
 #include "viceroy.h"

@@ -1,5 +1,5 @@
 /* ============================================================================
- *      >>> BYTE_VERIFIED (calling convention) / pixel poke TBD (cited) <<<
+ *      >>> BYTE_VERIFIED (calling convention) / pixel poke not yet decoded (cited) <<<
  * ----------------------------------------------------------------------------
  * The four leaf SPRITE-EMIT primitives the tile-render chain (O513/O512) calls
  * to paint one sprite cell. Hand-decompiled from the FULL bodies in
@@ -28,7 +28,7 @@
  * through func_067EEC / func_067E28, which DO push AX (the sprite index) into
  * their resident blit. Both facts are byte-verified below.
  *
- * STILL TBD (cited): the pixel format of the resident blit. Every path ends in
+ * STILL not yet decoded (cited): the pixel format of the resident blit. Every path ends in
  * an LCALL whose target is in a load-image overlay (0x181F:0x254/0x25E/0x268/
  * 0x272/0x286/0x2F8 -> overlay segs 0x0C36/0x0101/0x0C56; 0x1A1F:0x984/0x98E ->
  * 0x0CAA/0x0C89 per lcall_resolution_VICEROY.json). Those bytes are not in the

@@ -15,7 +15,7 @@
  * trusted here.  Raw entry prologues + every literal were spot-checked against
  * COLONIZE/VICEROY.EXE (DGROUP image base = file 0x1D9A0).
  *
- * STRICT cite-or-TBD: every value/offset cites the reseg .asm (@asm 0xXXXXXX);
+ * STRICT cite-or-not-yet-decoded: every value/offset cites the reseg .asm (@asm 0xXXXXXX);
  * string literals cite their DGROUP byte offset (@bytes); anything undeterminable
  * (opaque 0x191F/0x1A1F overlay-page-0x11/0x12 targets) is left as the canonical
  * overlay_call_* thunk and never guessed.
@@ -52,7 +52,7 @@
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced below (absolute offsets from the disassembly).
  * Roles are byte-verified from the access patterns; pure-coordinate / opaque
- * runtime tables keep neutral names.  cite-or-TBD applies to SEMANTICS.
+ * runtime tables keep neutral names.  cite-or-not-yet-decoded applies to SEMANTICS.
  * -------------------------------------------------------------------------- */
 /* g_difficulty_53A6 (DGROUP:0x53A6, uint8_t) comes from globals.h via viceroy.h. */
 extern uint16_t g_sel_nation_5398;        /* DGROUP:0x5398 -- chosen / current power index (0..3) */

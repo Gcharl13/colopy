@@ -164,11 +164,11 @@ extern void trade_dialog_finish(int unit_idx);            /* 0x181F:0x0808 -> di
  *   [BP+6]  = unit_idx   — trading unit (UnitRecord stride 0x1C, base 0x3144;
  *                          type byte @ +0x3146).  [V] @0x49677 `imul bx,*,0x1C`.
  *   [BP+8]  = arg8       — secondary unit/context (passed through to func_05448
- *                          and unit helpers).  [observed; role TBD]
+ *                          and unit helpers).  [observed; role not yet decoded]
  *   [BP+0xA]= power      — the EU power index doing the trade (0..3); indexes
  *                          PowerRecord (×0x13C) and g_disp_price_7B44 (×0x10).
  *                          [V] @0x49592 `imul bx,[bp+0xa],0x13c`.
- *   [BP+0xC]= arg_c      — passed to unit_flag_test as the 2nd arg.  [role TBD]
+ *   [BP+0xC]= arg_c      — passed to unit_flag_test as the 2nd arg.  [role not yet decoded]
  * Return: AX (int).  Several exit paths return [bp-0xC4] / [bp-0x5C] / a menu
  *   choice; the common "done" exit @0x49D62 clamps the current-good stock and
  *   returns the last computed value in AX. [exit values ANCHOR]

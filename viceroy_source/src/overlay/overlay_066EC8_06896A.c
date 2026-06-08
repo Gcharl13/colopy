@@ -18,11 +18,11 @@
  *    func_068898 into a phantom 9 B stub).
  * Entry prologues + key displacements spot-checked against raw COLONIZE/VICEROY.EXE.
  *
- * STRICT cite-or-TBD: every value/offset cites the .asm as `@asm 0xXXXXXX`.
+ * STRICT cite-or-not-yet-decoded: every value/offset cites the .asm as `@asm 0xXXXXXX`.
  * The overlay thunks these routines call (0x181F:* draw/text primitives,
  * 0x191F:* / 0x1A1F:* secondary-overlay handlers) live in other overlay pages;
  * their exact bodies are opaque from page 0x15, so their ROLE is inferred from
- * call context and the precise behaviour is marked TBD where it cannot be read.
+ * call context and the precise behaviour is not yet decoded where it cannot be read.
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).

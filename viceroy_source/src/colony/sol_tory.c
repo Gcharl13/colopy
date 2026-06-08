@@ -10,7 +10,7 @@
  *       resident thunk 0x191F:0x688 (RTLINK_V2 §4; 0x2CFD0+0x688 = 0x2D658,
  *       byte-confirmed).  Caller is the master per-turn colony loop (overlay-
  *       resident; the pre-wave-11 lcall map did not resolve the 0x191F window,
- *       so the exact caller offset is [TBD]; the entry & extent are byte-proven).
+ *       so the exact caller offset is [not yet decoded]; the entry & extent are byte-proven).
  * @ref  code/VICEROY/disasm_overlay_reseg/page_03.asm
  *       (line 607: "func_02D658 size=5220 insns=1789 prologue=ENTER 0x012C,0").
  * @ref  code/VICEROY/disasm/func_02D658_unknown.asm  (TRUNCATED at 0x2DA7C —
@@ -58,7 +58,7 @@
  *   constant turn_update.c uses at 0x9D49 — confirming the shared model.
  *
  * ============================================================================
- * CITE-OR-TBD LEDGER
+ * CITE-OR-NOT-YET-DECODED LEDGER
  * ----------------------------------------------------------------------------
  *  BYTE_VERIFIED (offset + operand bytes confirmed in COLONIZE/VICEROY.EXE):
  *    - extent 0x2D658..0x2EABB, ENTER 0x12C, true RETF      @asm 0x2D658 / 0x2EAB8

@@ -4,12 +4,12 @@
  *  STATUS LEGEND (per viceroy_source/VERIFICATION_LEDGER.md):
  *    [BYTE_VERIFIED]   bytes read directly from COLONIZE/VICEROY.EXE
  *    [ANCHOR_VERIFIED] confirmed function / string anchor, body not byte-traced
- *    [TBD]             not located / not verified -- do NOT trust
+ *    [not yet decoded]  not located / not verified -- do NOT trust
  *
  *  Rewritten 2026-05-30 against code/VICEROY/disasm_overlay_reseg/page_05.asm.
  *  This supersedes the 2026-05-29 version, which (a) could not locate the
  *  score/HoF screen and (b) declared the 210-byte HALLFAME.DAT layout to be
- *  "Win16-only / DOS TBD". BOTH are now resolved:
+ *  "Win16-only / DOS left unresolved". BOTH are now resolved:
  *
  *    * The end-of-game SCORE + RANK screen is func_03A9C0@0x03A9C0 (page 0x05).
  *    * The Hall-of-Fame reader/writer is func_03ADA6@0x03ADA6 (page 0x05).
