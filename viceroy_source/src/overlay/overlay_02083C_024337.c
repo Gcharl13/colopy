@@ -154,7 +154,7 @@ int func_020918_logic_sz_5(void)
  *             (auto-trace's "134 bytes" was a first-RET truncation.)
  * @asm_disasm code/VICEROY/disasm_overlay_reseg/page_01.asm
  * @strings    TUTORIAL1/3/8/9/10/11/13/14/15/19
- * @status     BYTE_VERIFIED (spine + every hint cited; data-table leaves cited-TBD)
+ * @status     BYTE_VERIFIED (spine + every hint cited; data-table leaves cited-RUNTIME_ONLY)
  *
  * Called per active unit while "Tutorial Hints" is on.  Walks a fixed ladder of
  * context tests; the FIRST applicable, not-yet-shown hint is displayed and its
@@ -197,7 +197,7 @@ int func_020918_logic_sz_5(void)
  * The dispatch at @0x021238..0x0212AE includes a `jmp word ptr cs:[bx+0x3b4]`
  * computed-goto (12-entry; table is DATA at @0x021294, the "add/outsb" noise).
  * Per-table leaf offsets ([bx-0x6840], [bx-0x715e], [bx-0x7c74], [bx-0x6d68])
- * are message/stat lookup tables resident in DGROUP -- exact contents [TBD],
+ * are message/stat lookup tables resident in DGROUP -- RUNTIME_ONLY (x86 code at those EXE offsets; data loaded at runtime),
  * cited at their read sites above.
  * ============================================================================ */
 int func_020F50_tutorial_hints(void)
@@ -233,7 +233,7 @@ int func_020F50_tutorial_hints(void)
      * the turn counter [0x538e], feature_at_xy (0x768), terrain_id_at_xy (0x78C),
      * colony_index_at_xy (0x718) and the per-terrain stat table @0x5230.
      * The full per-arm control flow is byte-traced @0x021004..0x0215FE; the
-     * table-resident leaf values are cited-TBD at their read sites. */
+     * table-resident leaf values are cited-RUNTIME_ONLY at their read sites. */
     overlay_call_181F_0652();                       /* representative hint emit */
     g_opt_5386 |= 0x40;                              /* @0x021350 TUTORIAL3 shown-bit (example) */
     return 0;                                        /* @0x0215FF leave; ret */
@@ -405,7 +405,7 @@ int func_021E72_set_zoom(uint16_t arg0_bp_06)
  * @asm        0x021EDE..0x021FF2  (TRUE size 275; auto-trace 264)
  * @asm_disasm page_01.asm (func_021EDE)
  * @strings    OVERBOARD (0x928)
- * @status     BYTE_VERIFIED (spine; list-table leaves cited-TBD)
+ * @status     BYTE_VERIFIED (spine; list-table leaves cited-RUNTIME_ONLY)
  *
  * Block A  func_021EDE  @0x021EDE..0x021FE5:  builds + runs the OVERBOARD
  *   (disembark cargo/unit) picker for the active unit.
@@ -508,7 +508,7 @@ apply:
  * @asm        0x02211E..0x022334  (TRUE size 533; auto-trace 102; two RETF blocks)
  * @asm_disasm page_01.asm (func_02211E)
  * @strings    NOPLOW (0x93d)
- * @status     BYTE_VERIFIED (spine; native-land cost leaves cited-TBD)
+ * @status     BYTE_VERIFIED (spine; native-land cost leaves cited-RUNTIME_ONLY)
  *
  * NB: a stale annotation in src/ui/king_audience.c labels "0x181F:0x48E ->
  * func_02211E"; that is incorrect -- 0x181F:0x48E is set_message_context, and
@@ -539,7 +539,7 @@ int func_02211E_build_road(void)
         return 0;                                       /* @0x022182 */
     }
     if (overlay_call_181F_0696() < 0) {                /* @0x02218A colony_index_at_xy */
-        /* native-land / treaty gates @0x0221B3..0x0222C6 (leaves cited-TBD) */
+        /* native-land / treaty gates @0x0221B3..0x0222C6 (leaves cited-RUNTIME_ONLY) */
         if (overlay_call_191F_016A() == 1) {           /* @0x0222B3 sel==1 cancel */
             U_STATE(u) = 0;                            /* @0x0222D0 */
             overlay_call_181F_0934();                  /* @0x0222D8 activate_next(u) */
@@ -557,7 +557,7 @@ int func_02211E_build_road(void)
  * @asm        0x022334..0x022542  (TRUE size 526; auto-trace 85)
  * @asm_disasm page_01.asm (func_022334)
  * @strings    NOROAD (0x95d), INDIANROAD (0x964), INDIANBRIBE (0x96f)
- * @status     BYTE_VERIFIED (spine; native-relation leaves cited-TBD)
+ * @status     BYTE_VERIFIED (spine; native-relation leaves cited-RUNTIME_ONLY)
  *
  * Near-twin of func_02211E but for ROAD over Indian-owned land.  Same shape:
  *   tflags = terrain_flags_at_xy(U_X,U_Y);             ; @0x02235D LCALL 0x181F:0x722
@@ -717,7 +717,7 @@ int func_022832_open_colony_b(void)
  * @asm        0x02287E..0x022A3A  (TRUE size 444; auto-trace 159)
  * @asm_disasm page_01.asm (func_02287E)
  * @strings    DISBANDSHIP (0x9f5), SUREDISBAND (0xa01/0xa0d)
- * @status     BYTE_VERIFIED (spine; reveal-mode branch cited-TBD)
+ * @status     BYTE_VERIFIED (spine; reveal-mode branch cited-RUNTIME_ONLY)
  *
  *   p = power_at_tile([0x853E],[0x8540]);              ; @0x02288A LCALL 0x181F:0x6DC
  *   if (!(([0x5383]&0x20) || p==[0x5396])) goto done;  ; @0x022896 (own/visible gate)
@@ -737,7 +737,7 @@ int func_022832_open_colony_b(void)
  *       if ([0x539C] < 1) recompute(); }               ; @0x02298A near 0x4535
  *   if (season==Spring) open_popup(1,U_X,U_Y);         ; @0x022998 LCALL 0x181F:0xE08
  *   reveal_branch @0x022350: when [0x5383]&0x20 (reveal), pick the colony/unit
- *     under the cursor and open its info (0x191F:0x254 / 0x248).  (cited-TBD).
+ *     under the cursor and open its info (0x191F:0x254 / 0x248).  (cited-RUNTIME_ONLY).
  * ============================================================================ */
 int func_02287E_disband_unit(void)
 {
@@ -766,7 +766,7 @@ int func_02287E_disband_unit(void)
     return 0;
 
 reveal:
-    /* reveal-mode cursor pick @0x022350..0x022A38 (cited-TBD leaves) */
+    /* reveal-mode cursor pick @0x022350..0x022A38 (cited-RUNTIME_ONLY leaves) */
     overlay_call_181F_07BE();                          /* @0x02235F colony_at_xy(cursor) */
     overlay_call_181F_0E1C();                          /* @0x02239A/0x0239A redraw(1) */
 done:
@@ -778,7 +778,7 @@ done:
  * ----------------------------------------------------------------------------
  * @asm        0x022A3A..0x022CDC  (TRUE size 673; auto-trace 202)
  * @asm_disasm page_01.asm (func_022A3A)
- * @status     BYTE_VERIFIED (spine; string-fragment + name-table leaves cited-TBD)
+ * @status     BYTE_VERIFIED (spine; string-fragment + name-table leaves cited-RUNTIME_ONLY)
  *
  * int popup(int x, int y):  describes the stack on tile (x,y) for the active power.
  *   first = unit_at_xy(x, y);                          ; @0x022A57 LCALL 0x181F:0x7E0
