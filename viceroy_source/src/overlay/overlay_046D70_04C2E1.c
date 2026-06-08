@@ -196,73 +196,262 @@ int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* f
 }
 
 /* ============================================================================
- * func_046EC0 — native_settlement_remove_and_recall_units
- *                                          [DONE — BYTE_VERIFIED (head); tail TBD]
+ * func_046EC0 — native_settlement_remove  [DONE — BYTE_VERIFIED, full body]
  * ----------------------------------------------------------------------------
- * Removes / abandons the settlement whose index is arg0 and walks the
- * UnitRecord table decrementing the "home-settlement index" field of any native
- * unit that referenced a settlement past the removed one (table-compaction
- * fix-up, the mirror of native_foreach_settlement_of_tribe's reverse walk).
+ * 258 bytes, 95 insns (authoritative: disasm_overlay_reseg/page_0C.asm).
+ * Removes the NativeSettlement at slot settlement_index from the map and the
+ * live table; recalls (disbands) any native unit homed to that slot; compacts
+ * the settlement table by shifting entries down; decrements the owning tribe's
+ * settlement count and (if not extinct) proportionally reduces two tracked
+ * tribe attributes.  If the tribe's count hits zero it is marked EXTINCT and
+ * an announcement is emitted.
  *
+ * UNIT LOOP (0x046EED..0x046F32) — reverse scan of UnitRecord table:
  * @asm 0x046EC6  push [bp+6] ; LCALL 0x181F:0x0A4C   ; select the doomed record
+ *                              (sets [0x8D4E], [0x8D50], [0x8D52] via tribe bind)
  * @asm 0x046ED5  imul bx,[bp+6],0x12                 ; bx = idx * 0x12
  * @asm 0x046ED9  push [bx+0x54ED] (rec.y, +0x01)
  * @asm 0x046EE0  push [bx+0x54EC] (rec.x, +0x00)
- * @asm 0x046EE5  push 2 ; push 0 ; LCALL 0x181F:0x068C  ; map_set_tile(x,y,2,0)
+ * @asm 0x046EE5  push 2 ; push 0 ; LCALL 0x181F:0x068C ; map_set_tile(x,y,2,0)
  *                                                        (clear the map marker)
- * @asm 0x046EED  ax = [0x539C] - 1                   ; i = unit_count - 1  (0x539C)
- * @asm 0x046EF6 (body) al = (byte)[bp+6]             ; al = removed index
- * @asm 0x046EF9  imul bx,i,0x1C                      ; UnitRecord stride 0x1C
- * @asm 0x046EFD  cmp [bx+0x314A],al ; jle +          ; rec.home (+0x06=0x314A) > idx?
- * @asm 0x046F03  dec [bx+0x314A]                     ; shift home index down
- * @asm 0x046F0A (test) i >= 0 continues …
- * @asm 0x046F10  imul bx,i,0x1C ; al=[bx+0x3147]&0xF ; owner nibble
- * @asm 0x046F1A  cmp al,4 ; jb (skip)                ; only native-owned units
- * @asm 0x046F1E  cmp [bx+0x314A],al(removed) ; jne body ; (re-check this unit)
+ * @asm 0x046EED  [bp-2] = [0x539C] - 1               ; i = unit_count - 1
+ * @asm 0x046EF4  jmp 0x046F0A                        ; enter loop at test
+ * @asm 0x046EF6 (BODY) al = (byte)[bp+6]             ; al = settlement_index
+ * @asm 0x046EF9  imul bx,[bp-2],0x1C                 ; bx = i * UnitRecord stride
+ * @asm 0x046EFD  cmp [bx+0x314A],al ; jle 0x046F07   ; u[+0x06] > idx → decrement
+ * @asm 0x046F03  dec [bx+0x314A]                     ; u.home_idx--
+ * @asm 0x046F07  dec [bp-2]                          ; i--
+ * @asm 0x046F0A (TEST) cmp [bp-2],0 ; jl 0x046F34   ; i < 0 → exit unit loop
+ * @asm 0x046F10  imul bx,[bp-2],0x1C                 ; bx = i * 0x1C (re-read i)
+ * @asm 0x046F14  al = [bx+0x3147] & 0x0F             ; owner nibble (+0x03 field)
+ * @asm 0x046F1A  cmp al,4 ; jb 0x046F07              ; skip non-native owners
+ * @asm 0x046F1E  cmp [bx+0x314A],al(removed)         ; al is now settlement_index
+ *              NOTE: at 0x046F1E 'al' is reloaded from [bp+6] at 0x046F1E
+ *              — jne 0x046EF6                        ; not homed here → body
+ * @asm 0x046F27  push [bp-2]                         ; push unit index i
+ * @asm 0x046F2A  LCALL 0x181F:0x0808                 ; recall/disband native unit
+ * @asm 0x046F2F  add sp, 2
+ * @asm 0x046F32  jmp 0x046F07                        ; dec i, continue
  *
- * EXTENT NOTE (authoritative reseg page_0C): the REAL function is 258 bytes
- * (insns=95); the per-func dump truncates at 0x046F27 (103 bytes) mid second
- * loop.  The visible body establishes: (1) clear the settlement's map tile via
- * 0x068C(x,y,2,0); (2) iterate UnitRecords decrementing the home-settlement
- * field (+0x06 at absolute 0x314A) for indices above the removed one.  The
- * native-owner test ([+0x03]&0xF >= 4) matches raid.c / func_046FFA.  Status:
- * HEAD BYTE_VERIFIED (clear-tile + compaction fix-up shown); the ~155 bytes of
- * loop tail past 0x046F27 (the action on units still homed to the removed slot,
- * and any table compaction) are STILL-SKELETON — not guessed.
+ * TABLE COMPACTION (0x046F34..0x046F5D):
+ * @asm 0x046F34  [bp-2] = [bp+6]                     ; j = settlement_index
+ * @asm 0x046F3A  jmp 0x046F54                        ; enter at test
+ * @asm 0x046F3C (BODY) imul bx,[bp-2],0x12           ; bx = j * 0x12
+ * @asm 0x046F40  di = bx + 0x54EC                    ; di = &NativeTable[j]
+ * @asm 0x046F44  si = bx + 0x54FE                    ; si = &NativeTable[j+1]
+ *                                                     ; (0x54FE = 0x54EC + 0x12)
+ * @asm 0x046F48  ES = DS
+ * @asm 0x046F4C  cx = 9 ; rep movsw                  ; copy 18 bytes [j+1]->[j]
+ * @asm 0x046F51  inc [bp-2]                          ; j++
+ * @asm 0x046F54 (TEST) ax = [0x539A] - 1
+ * @asm 0x046F58  cmp ax,[bp-2] ; jg 0x046F3C         ; (count-1) > j → continue
+ * @asm 0x046F5D  dec [0x539A]                        ; g_native_count_539A--
+ *
+ * TRIBE ATTRIBUTE UPDATE (0x046F61..0x046FC1):
+ * @asm 0x046F61  bx = [0x8D52]                       ; tribe_0based_id (set by 0x0A4C)
+ * @asm 0x046F65  dec [bx - 0x69D6]                   ; DGROUP[tribe+0x962A]-- (settlement count)
+ *                (Equivalent: g_tribe_settlement_count_962A[tribe_id]--)
+ * @asm 0x046F69  je 0x046F92                         ; if count==0 → tribe extinct
+ * --- Non-extinct path (tribe still has settlements): ---
+ * @asm 0x046F6B  si = [0x8D4E]                       ; ptr to bound tribe record
+ * @asm 0x046F6F  al = [si+8]                         ; tribe rec field +0x08 (byte)
+ * @asm 0x046F72  cwde                                ; zero-extend al → ax
+ * @asm 0x046F73  cx = 0xFFFF
+ * @asm 0x046F76  dl = [bx - 0x69D6]                  ; dl = new count (after dec)
+ * @asm 0x046F7A  dh = 0
+ * @asm 0x046F7C  cx -= dx                            ; cx = 0xFFFF - new_count
+ *                                                     ; = -(new_count + 1) signed
+ *                                                     ; = -(count_before) signed
+ * @asm 0x046F7E  cdq                                 ; DX:AX = sign-extend(ax)
+ * @asm 0x046F7F  idiv cx                             ; AX = ax / -(count_before)
+ *                                                     ; = -attr / count_before
+ * @asm 0x046F81  add [si+8], al                      ; attr -= attr/count_before
+ *                                                     ; (removes removed-slot share)
+ * @asm 0x046F84  ax = [si+0xA]                       ; tribe rec field +0x0A (word)
+ * @asm 0x046F87  cdq
+ * @asm 0x046F88  idiv cx                             ; same ratio formula
+ * @asm 0x046F8A  add [si+0xA], ax                    ; attr2 -= attr2/count_before
+ * @asm 0x046F8D  pop si ; pop di ; leave ; retf      ; return
+ * @asm 0x046F91  nop                                 ; alignment
+ * --- Extinct path (0x046F92): tribe count hit 0 ---
+ * @asm 0x046F92  bx = [0x8D4E]                       ; ptr to bound tribe record
+ * @asm 0x046F96  or [bx+3], 0x80                     ; tribe_rec.flags |= 0x80 (EXTINCT)
+ * @asm 0x046F9A  push [0x8D50]                       ; push tribe power index
+ * @asm 0x046F9E  LCALL 0x181F:0x09A4                 ; query/notify (role TBD); → ax
+ * @asm 0x046FA3  add sp, 2
+ * @asm 0x046FA6  push ax ; push 0
+ * @asm 0x046FA9  LCALL 0x181F:0x0438                 ; announce action (role TBD)
+ * @asm 0x046FAE  add sp, 4
+ * @asm 0x046FB1  push 3 ; push 0x14D4                ; DGROUP:0x14D4 = "EXTINCT"
+ * @asm 0x046FB6  LCALL 0x181F:0x0652                 ; display_message(3, "EXTINCT")
+ * @asm 0x046FBB  add sp, 4
+ * @asm 0x046FBE  pop si ; pop di ; leave ; retf      ; return
+ *
+ * DGROUP globals (all new in this tail):
+ *   0x8D4E  g_tribe_bound_rec_8D4E — ptr to bound tribe record (via 0x0A4C→0x0A42)
+ *   0x8D50  g_tribe_power_index_8D50 — tribe power index bound by 0x0A42 (word)
+ *   0x8D52  g_tribe_id_8D52 — 0-based tribe index bound by 0x0A4C/0x0A42 (word)
+ *   0x962A  g_tribe_settlement_count_962A[] — per-tribe settlement counts, 8 bytes
+ *            BSS array; element for tribe T at DGROUP[T + 0x962A]
+ *            (accessed as [T − 0x69D6] in 16-bit wrap, i.e. T + 0x962A unsigned)
+ *   0x14D4  (DGROUP data string) "EXTINCT\0" — shown when tribe is wiped out
+ *
+ * 0x181F:0x0808 = disband/recall native unit (arg: unit table index).
+ * 0x181F:0x09A4 = query tribe (arg: tribe power index); role TBD; returns word.
+ * 0x181F:0x0438 = announce/notification (args: return-of-0x09A4, mode=0); TBD.
+ * 0x181F:0x0652 = display_message(type, str_offset) — emits "EXTINCT" banner.
  * ============================================================================ */
-extern int16_t g_unit_count_539C;   /* DGROUP:0x539C — live UnitRecord count (word) */
-extern uint8_t g_unit_table_3144[]; /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
+extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live UnitRecord count (word) */
+extern uint8_t  g_unit_table_3144[];      /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 /* 0x181F:0x068C — map_set_tile(x, y, layer=2, val=0): clears a map overlay cell.
  * Role inferred from the (x,y,2,0) argument shape; exact semantics TBD. */
 
-void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — head verified */
-{
-    uint8_t *rec = &g_native_table_54EC[settlement_index * NATIVE_SETTLEMENT_STRIDE];
+/* New DGROUP globals for the tail (first cited by func_046EC0 tail): */
+extern uint8_t *g_tribe_bound_rec_8D4E;   /* DGROUP:0x8D4E — ptr to bound tribe record;
+                                            * set by LCALL 0x181F:0x0A42 (bind-tribe) which
+                                            * is invoked internally by 0x0A4C(settlement). */
+extern uint16_t g_tribe_power_index_8D50; /* DGROUP:0x8D50 — tribe power index (word);
+                                            * set by 0x0A42; pushed to 0x09A4 in extinct path. */
+extern uint16_t g_tribe_id_8D52;          /* DGROUP:0x8D52 — 0-based tribe id (0..7);
+                                            * set by 0x0A4C/0x0A42.  Used as an integer
+                                            * index; [T − 0x69D6] wraps to DGROUP:0x962A+T. */
+extern uint8_t  g_tribe_settlement_count_962A[]; /* DGROUP:0x962A — per-tribe settlement
+                                            * count, 8 bytes (BSS).  Element for tribe T is
+                                            * at g_tribe_settlement_count_962A[T].
+                                            * In the 16-bit code accessed as the 8086 byte at
+                                            * DS:(tribe_id − 0x69D6) ≡ DS:(tribe_id + 0x962A). */
 
-    /* @asm 0x046EC6 — select the doomed record. */
+void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYTE_VERIFIED */
+{
+    /* rec is the address of the settlement record in the DGROUP table; the
+     * platform (overlay call) uses it implicitly (pushed before 0x0A4C). */
+    uint8_t *rec = &g_native_table_54EC[settlement_index * NATIVE_SETTLEMENT_STRIDE];
+    (void)rec;  /* see 0x046ED5..0x046EE5 — args computed from table directly */
+
+    /* @asm 0x046EC6 — select/bind the doomed settlement record (also internally
+     * binds its owning tribe, setting [0x8D4E], [0x8D50], [0x8D52]). */
     overlay_call_181F_0A4C();
 
     /* @asm 0x046ED5..0x046EE5 — clear the settlement's map marker at (x,y). */
     overlay_call_181F_068C();   /* map_set_tile(rec.x, rec.y, 2, 0) */
 
-    /* @asm 0x046EED..0x046F25 — UnitRecord compaction fix-up: any native unit
-     * whose home-settlement index (+0x06, abs 0x314A) is greater than the
-     * removed index gets decremented, so home references stay valid after the
-     * table is compacted.  Reverse walk from the last live unit. */
-    for (int i = g_unit_count_539C - 1; i >= 0; i--) {
-        uint8_t *u = &g_unit_table_3144[i * UNIT_RECORD_STRIDE];
+    /* @asm 0x046EED..0x046F32 — UnitRecord walk (reverse, i = unit_count-1..0):
+     *   (a) For any unit with home > settlement_index: decrement home to fix up
+     *       the index after the table will be compacted (step 2 below).
+     *   (b) For native-owned units (owner nibble >= 4) whose home == settlement_index:
+     *       call 0x181F:0x0808 to disband/recall that unit.
+     * The loop structure is a "do-while with body restart":
+     *   jmp → test (i >= 0?); if yes: check native owner; if native+homed → call 0x808;
+     *   else if home > idx: dec home; then always dec i and loop. */
+    {
+        int i = (int)g_unit_count_539C - 1;  /* @asm 0x046EED..0x046EF1 */
+        goto unit_loop_test;                  /* @asm 0x046EF4 jmp 0x046F0A */
+    unit_loop_body:
+        {                                     /* @asm 0x046EF6 */
+            uint8_t *u = &g_unit_table_3144[(uint16_t)i * UNIT_RECORD_STRIDE];
+            /* @asm 0x046EFD..0x046F05 — shift home down if above removed slot. */
+            if (u[0x06] > (uint8_t)settlement_index)  /* @asm 0x046EFD cmp [bx+0x314A],al */
+                u[0x06]--;                             /* @asm 0x046F03 dec [bx+0x314A]    */
+        }
+        i--;                                  /* @asm 0x046F07 dec [bp-2] */
+    unit_loop_test:                           /* @asm 0x046F0A */
+        if (i < 0)
+            goto unit_loop_exit;              /* @asm 0x046F0E jl 0x046F34 */
+        {
+            uint8_t *u = &g_unit_table_3144[(uint16_t)i * UNIT_RECORD_STRIDE];
+            /* @asm 0x046F10..0x046F1C — skip non-native units. */
+            if ((u[0x03] & 0x0F) < 4)        /* @asm 0x046F14 al=[bx+0x3147]&0xF ; 0x046F1A cmp al,4 */
+                goto unit_loop_dec;           /* @asm 0x046F1C jb 0x046F07 */
+            /* @asm 0x046F1E..0x046F25 — if home != removed slot, fall back to body. */
+            if (u[0x06] != (uint8_t)settlement_index) /* @asm 0x046F1E..0x046F25 */
+                goto unit_loop_body;          /* @asm 0x046F25 jne 0x046EF6 */
+            /* @asm 0x046F27..0x046F32 — disband native unit homed to removed slot. */
+            overlay_call_181F_0808();         /* LCALL 0x181F:0x0808(i) @asm 0x046F2A */
+            /* (arg i is pushed at @asm 0x046F27; add sp,2 at @asm 0x046F2F) */
+        }
+    unit_loop_dec:
+        i--;                                  /* @asm 0x046F07 (shared dec via jmp 0x046F07) */
+        goto unit_loop_test;
+    unit_loop_exit:;                          /* @asm 0x046F34 */
+    }
 
-        /* @asm 0x046EFD — shift home index down if it points past the removed slot. */
-        if (u[0x06] > (uint8_t)settlement_index)
-            u[0x06]--;
+    /* @asm 0x046F34..0x046F5D — NativeSettlement table compaction:
+     * Slide every record from [settlement_index+1 .. count-1] down by one slot,
+     * then decrement the live count.  Each slot is 0x12 (18) bytes = 9 words. */
+    {
+        int j = (int)settlement_index;        /* @asm 0x046F34..0x046F37 [bp-2] = [bp+6] */
+        /* @asm 0x046F3A jmp 0x046F54 (enter at test) */
+        while ((int)g_native_count_539A - 1 > j) { /* @asm 0x046F54..0x046F5B */
+            /* @asm 0x046F3C..0x046F4F — copy NativeTable[j+1] → NativeTable[j] (18 bytes). */
+            uint8_t *dst = &g_native_table_54EC[j * NATIVE_SETTLEMENT_STRIDE];        /* @asm 0x046F40 lea di,[bx+0x54EC] */
+            uint8_t *src = &g_native_table_54EC[j * NATIVE_SETTLEMENT_STRIDE + NATIVE_SETTLEMENT_STRIDE]; /* @asm 0x046F44 lea si,[bx+0x54FE] */
+            /* @asm 0x046F48 ES=DS ; @asm 0x046F4C cx=9 ; @asm 0x046F4F rep movsw */
+            {
+                int k;
+                for (k = 0; k < NATIVE_SETTLEMENT_STRIDE; k++)
+                    dst[k] = src[k];
+            }
+            j++;                              /* @asm 0x046F51 inc [bp-2] */
+        }
+        g_native_count_539A--;                /* @asm 0x046F5D dec [0x539A] */
+    }
 
-        /* @asm 0x046F10..0x046F25 — only native-owned units; re-check.  The dump
-         * truncates here; the remaining branch back to the body is TBD. */
-        if (((u[0x03] & 0x0F) >= 4) && (u[0x06] == (uint8_t)settlement_index)) {
-            /* TBD: action on a unit still homed to the removed settlement
-             * (disband / reassign) — bytes past 0x046F27 not in this dump. */
+    /* @asm 0x046F61..0x046FC1 — decrement the owning tribe's settlement count
+     * (accessed via the 16-bit wrap trick: g_tribe_id_8D52 − 0x69D6 mod 0x10000 =
+     * 0x962A + tribe_id = DGROUP address of the per-tribe count byte), then
+     * either redistribute tribe attributes or mark the tribe extinct. */
+    {
+        uint16_t tribe_id = g_tribe_id_8D52;  /* @asm 0x046F61 bx = [0x8D52] */
+
+        /* @asm 0x046F65 dec byte [bx − 0x69D6]  →  g_tribe_settlement_count_962A[tribe_id]--
+         * The 8086 instruction uses bx as an offset within DS with displacement
+         * −0x69D6 (= +0x962A unsigned), reaching DGROUP:0x962A + tribe_id. */
+        g_tribe_settlement_count_962A[tribe_id]--;  /* @asm 0x046F65 */
+
+        if (g_tribe_settlement_count_962A[tribe_id] == 0) { /* @asm 0x046F69 je 0x046F92 */
+
+            /* --- Extinct path (0x046F92..0x046FC1) --- */
+            uint8_t *trec = g_tribe_bound_rec_8D4E;  /* @asm 0x046F92 bx=[0x8D4E] */
+            trec[0x03] |= 0x80;               /* @asm 0x046F96 or [bx+3],0x80 — EXTINCT flag */
+
+            /* @asm 0x046F9A push [0x8D50] ; lcall 0x181F:0x09A4 ; add sp,2 */
+            overlay_call_181F_09A4();          /* query_tribe(g_tribe_power_index_8D50) → ax */
+            /* @asm 0x046FA6 push ax ; push 0 ; lcall 0x181F:0x0438 ; add sp,4 */
+            overlay_call_181F_0438();          /* announce(ax, 0) — role TBD */
+            /* @asm 0x046FB1 push 3 ; push 0x14D4 ; lcall 0x181F:0x0652 ; add sp,4 */
+            overlay_call_181F_0652();          /* display_message(3, "EXTINCT") */
+
+        } else {
+
+            /* --- Non-extinct path (0x046F6B..0x046F90):
+             * Remove the just-deleted settlement's proportional share from two
+             * tracked tribe attributes.  Formula (for each attr):
+             *   new_attr = attr − (attr / count_before)
+             * Encoded as: cx = 0xFFFF − new_count = −(new_count + 1) = −count_before
+             * (signed 16-bit); idiv gives −(attr / count_before); adding that
+             * to attr subtracts the removed share.
+             * new_count = remaining count AFTER the dec above. --- */
+            uint8_t *trec = g_tribe_bound_rec_8D4E; /* @asm 0x046F6B si=[0x8D4E] */
+            int8_t   attr8  = (int8_t)trec[0x08];   /* @asm 0x046F6F al=[si+8]; cwde (byte read) */
+            int16_t  attr16;                          /* @asm 0x046F84 ax=word[si+0xA] */
+            { uint16_t tmp; __builtin_memcpy(&tmp, &trec[0x0A], 2); attr16 = (int16_t)tmp; }
+
+            /* @asm 0x046F73..0x046F7C — cx = 0xFFFF − new_count = −count_before */
+            uint8_t new_count = g_tribe_settlement_count_962A[tribe_id]; /* @asm 0x046F76 dl=[bx-0x69D6] */
+            int16_t divisor   = (int16_t)((uint16_t)0xFFFF - (uint16_t)new_count); /* @asm 0x046F7C sub cx,dx */
+
+            /* @asm 0x046F7E..0x046F81 — trec[+8] += (int8_t)((int16_t)attr8 / divisor) */
+            int16_t q8 = (int16_t)attr8 / divisor; /* @asm 0x046F7E cdq; 0x046F7F idiv cx */
+            trec[0x08] += (uint8_t)(uint16_t)q8;   /* @asm 0x046F81 add [si+8],al */
+
+            /* @asm 0x046F84..0x046F8A — word[trec+0xA] += (int16_t)(attr16 / divisor) */
+            int16_t q16 = attr16 / divisor;           /* @asm 0x046F87 cdq; 0x046F88 idiv cx */
+            { uint16_t tmp16; __builtin_memcpy(&tmp16, &trec[0x0A], 2);
+              tmp16 = (uint16_t)((int16_t)tmp16 + q16);
+              __builtin_memcpy(&trec[0x0A], &tmp16, 2); }  /* @asm 0x046F8A add [si+0xA],ax */
         }
     }
+    /* @asm 0x046F8D pop si; pop di; leave; retf  (or 0x046FBE same) */
 }
 
 /* ============================================================================

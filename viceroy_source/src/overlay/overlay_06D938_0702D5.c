@@ -263,16 +263,28 @@ extern uint8_t  g_tribe_active_314C[]; /* DGROUP:0x314C — per-unit/owner activ
 #define MACRO_PCT_1FC5     0x1FC5  /* literal "%" emitted for "%%" */
 #define MACRO_VAL_9CD2     0x9CD2  /* kind-A value table base ([idx<<6]+this) */
 #define MACRO_VAL_9CB0     0x9CB0  /* kind-B/C value table base ([idx<<2]-0x6350 == this-region) */
-#define TMPL_KEYTAB_1FC7   0x1FC7  /* @-directive keyword: end-marker (prefix) */
-#define TMPL_KEYTAB_1FCF   0x1FCF  /* @-directive keyword: end-marker (alt) */
-#define TMPL_KEYTAB_1FD6   0x1FD6  /* @-directive keyword: continue */
-#define TMPL_KEYTAB_1FDB   0x1FDB  /* @-directive keyword: sprite-dims */
-#define TMPL_KEYTAB_1FE5   0x1FE5  /* @-directive keyword: field +0xE (strncmp len 1) */
-#define TMPL_KEYTAB_1FE7   0x1FE7  /* @-directive keyword: field +0xC */
-#define TMPL_KEYTAB_1FE9   0x1FE9  /* @-directive keyword: width (strncmp len 5) */
-#define TMPL_KEYTAB_1FEF   0x1FEF  /* @-directive keyword: msg-arg (memcmp len 6) */
-#define TMPL_KEYTAB_1FF6   0x1FF6  /* @-directive keyword: flags|=5 (strncmp len 7) */
-#define TMPL_KEYTAB_1FFF   0x1FFF  /* @-directive keyword: assign (strncmp len 7) */
+/* @-directive keyword table strings (extracted from DGROUP 2026-06-08; BYTE_VERIFIED):
+ * DS:0x1FC7 = "OPTIONS"  (7B)   — rec.flags |= 5
+ * DS:0x1FCF = "PROMPT"   (6B)   — sets state=2 / prompt mode
+ * DS:0x1FD6 = "TEXT"     (4B)   — continue / text body token
+ * DS:0x1FDB = "SMALLFONT"(9B)   — sprite-dims field +0x80..
+ * DS:0x1FE5 = "Y"        (1B)   — rec field +0xE (y-position)
+ * DS:0x1FE7 = "X"        (1B)   — rec field +0xC (x-position)
+ * DS:0x1FE9 = "WIDTH"    (5B)   — rec field width
+ * DS:0x1FEF = "LENGTH"   (6B)   — msg-arg length field
+ * DS:0x1FF6 = "CHECKBOX" (8B)   — rec.flags |= 5 (checkbox widget)
+ * DS:0x1FFF = "DEFAULT"  (7B)   — default-value assignment
+ */
+#define TMPL_KEYTAB_1FC7   0x1FC7  /* "OPTIONS"  — rec.flags|=5 */
+#define TMPL_KEYTAB_1FCF   0x1FCF  /* "PROMPT"   — state=2 / prompt */
+#define TMPL_KEYTAB_1FD6   0x1FD6  /* "TEXT"     — text body continue */
+#define TMPL_KEYTAB_1FDB   0x1FDB  /* "SMALLFONT"— sprite-dims */
+#define TMPL_KEYTAB_1FE5   0x1FE5  /* "Y"        — rec field +0xE */
+#define TMPL_KEYTAB_1FE7   0x1FE7  /* "X"        — rec field +0xC */
+#define TMPL_KEYTAB_1FE9   0x1FE9  /* "WIDTH"    — rec width */
+#define TMPL_KEYTAB_1FEF   0x1FEF  /* "LENGTH"   — msg-arg length */
+#define TMPL_KEYTAB_1FF6   0x1FF6  /* "CHECKBOX" — rec.flags|=5 */
+#define TMPL_KEYTAB_1FFF   0x1FFF  /* "DEFAULT"  — default-value assign */
 #define TMPL_FMT_2478      0x2478  /* str_format template used to seed the work buffer */
 #define TMPL_FMT_2022      0x2022  /* report acc_label format-arg block (page 0x19) */
 #define DLG_NUM_5398       0x5398  /* number-format source word (kind D, 0x181F:0x42E) */
@@ -1039,10 +1051,11 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
  * @asm 0x06F11C 9a e4 07 1d 0d                        (LCALL 0x0D1D:0x7E4 — seed work buffer)
  * @asm 0x06F142 e8 c3 06                              (call cs:0x3D08 -> 0x191F:0x23C ctx->rec)
  * @asm 0x06F518 cb                                    (RETF)
- * TBD-inner: the @-directive keyword tables 0x1FC7/0x1FCF/0x1FD6/0x1FDB/0x1FE5/
- *   0x1FE7/0x1FE9/0x1FEF/0x1FF6/0x1FFF are DGROUP ASCII strings not re-extracted
- *   this pass; offsets cited, contents not invented.  The per-directive field
- *   writes (rec[+0xC]/[+0xE]/[+0x80]/[+0xa]) are byte-verified at their store sites.
+ * @-directive keyword strings extracted (BYTE_VERIFIED 2026-06-08, from DGROUP):
+ *   "OPTIONS","PROMPT","TEXT","SMALLFONT","Y","X","WIDTH","LENGTH","CHECKBOX","DEFAULT"
+ *   — see #define TMPL_KEYTAB_1FC7.. above.  TBD-inner for this function CLOSED
+ *   (Group B / data-table contents resolved). The per-directive field writes
+ *   (rec[+0xC]/[+0xE]/[+0x80]/[+0xa]) remain at their @asm store sites.
  * ============================================================================ */
 int func_06F0F4_text_template_run(void)
 {

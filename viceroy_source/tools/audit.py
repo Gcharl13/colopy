@@ -293,6 +293,15 @@ check_bytes("raw_power_score arg==0 gate jmp", 0x039F46, "75 03")
 check_bytes("score trampoline ljmp 0x191F:0x3AA", 0x03B36A, "ea aa 03 1f 19")
 check_bytes("score_endgame_rank call trampoline", 0x03A9F6, "e8 71 09")
 
+# ---- raw_power_score body components (BYTE_VERIFIED 2026-06-08) --------
+# DS:0x53A7=year/100, DS:0x53A8=year%100 -- write sites in func_03DE46
+check_bytes("year%100 -> [0x53A8] write @03DE65", 0x03DE65, "88 16 a8 53")
+check_bytes("year/100 -> [0x53A7] write @03DE6F", 0x03DE6F, "a2 a7 53")
+# score_liberty formula: mov ax,0x6F4(=1780); sub ax,[bp-0x6a](=year); shl ax,1
+check_bytes("score_liberty 0x6F4(1780) const @03A609", 0x03A609, "b8 f4 06")
+check_bytes("score_liberty sub year @03A60C", 0x03A60C, "2b 46 96")
+check_bytes("score_liberty *2 (shl 1) @03A60F", 0x03A60F, "d1 e0")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
