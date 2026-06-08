@@ -393,9 +393,16 @@ int func_06D938_panel_draw_value_pair(uint16_t panel_off, uint16_t panel_seg)
  * @asm 0x06DB4B 9a ba 00 1f 18                        (LCALL 0x181F:0xBA — separator bar)
  * @asm 0x06DBAD 9a 10 10 1d 0d                        (LCALL 0x0D1D:0x1010 — find '|' 0x7C far)
  * @asm 0x06DC61 c2 04 00                              (RET 4)
- * TBD-inner: the per-cell x arithmetic (imul/shl over node +0x20/+0x22/+0x46/
- *   +0x48) is reproduced structurally; the exact pixel offsets feed the leaf draw
- *   thunks (no DGROUP table) so they are faithful by construction, not re-derived.
+ * BYTE_VERIFIED: per-cell x arithmetic (0x06DA1E..0x06DA63 and 0x06DB2B..0x06DB4B).
+ *   base_x=[bp-8]=p[+0x24]+p[+0x48]+p[+0x22]; base_y=[bp-0xa]=p[+0x26].
+ *   Row text (call 0x68c): x=base_x-p[+0x22]-1; bx=(1-p[+0x48])*2+p[+0x20]; y=base_y.
+ *     (0x06DA44 mov ax,es:[bx+48]; 0x06DA4C mov bx,1; 0x06DA4F sub bx,ax;
+ *      0x06DA54 mov ax,[bp-8]; 0x06DA57 sub ax,es:[si+22]; 0x06DA5B dec ax;
+ *      0x06DA5C shl bx,1; 0x06DA5E add bx,cx)
+ *   Separator bar (LCALL 0x181F:0xBA): x=base_x-p[+0x22]; bx=p[+0x20]-p[+0x48]*2;
+ *      y=base_y+text_width/2.
+ *     (0x06DB35 mov ax,[bp-8]; 0x06DB38 sub ax,es:[bx+22]; 0x06DB3C mov cx,es:[bx+48];
+ *      0x06DB40 mov bx,es:[bx+20]; 0x06DB44 shl cx,1; 0x06DB46 sub bx,cx)
  * ============================================================================ */
 int func_06D9CC_panel_draw_row_chain(void)
 {
@@ -498,8 +505,17 @@ int func_06D9CC_panel_draw_row_chain(void)
  * @asm 0x06DCAE 9a 7e 11 1d 0d                        (LCALL 0x0D1D:0x117E strncpy)
  * @asm 0x06DD68 9a ce 00 1f 18                        (LCALL 0x181F:0xCE cell/box blit)
  * @asm 0x06DE6B c2 04 00                              (RET 4)
- * TBD-inner: the click-box inset arithmetic feeds the leaf blit thunks directly
- *   (no DGROUP table); reproduced structurally, faithful by construction.
+ * BYTE_VERIFIED: click-box inset arithmetic (0x06DD07..0x06DDC2).
+ *   ox=[bp-0x66]=p[+0x24]+p[+0x48]; oy=[bp-0x68]=p[+0x26].
+ *   box_x_right=[bp-4]=node[+2]+ox (0x06DD0A add ax,es:[bx+2]; add ax,[bp-66]).
+ *   cell_h=[bp-0x60]=node[+4]+6   (0x06DD1A mov cx,es:[bx+4]; 0x06DD1E add cx,6).
+ *   LCALL 0x181F:0xCE: bx=box_x_right+cell_h-1=node[+2]+node[+4]+ox+5; dx=oy.
+ *     (0x06DD5A mov ax,[bp-4]; 0x06DD5D mov bx,[bp-60]; 0x06DD60 add bx,ax;
+ *      0x06DD62 lea bx,[bx-1]; 0x06DD65 mov dx,[bp-68])
+ *   Inner text run (call 0x68c): x=box_x_right+2; bx=cell_h-4=node[+4]+2; y=oy+2.
+ *     (0x06DD70 inc ax x2 -> [bp-2]; 0x06DD78 sub cx,4 -> [bp-5e]; 0x06DD81 inc dx x2)
+ *   Centred label (call 0x888): x=box_x_right+3; y=oy+3; bx=0.
+ *     (0x06DE2F add ax,3; 0x06DE35 add dx,3; 0x06DE38 sub bx,bx)
  * ============================================================================ */
 int func_06DC64_panel_draw_button_row(void)
 {
@@ -570,8 +586,13 @@ int func_06DC64_panel_draw_button_row(void)
  * @asm 0x06DFC3 9a 54 02 1f 18                        (LCALL 0x181F:0x254 — acc label/value)
  * @asm 0x06E022 9a ce 00 1f 18                        (LCALL 0x181F:0xCE — inverse cursor cell)
  * @asm 0x06E0C4 c2 04 00                              (RET 4)
- * TBD-inner: per-node cell-width table read [es:[bx+0xc]+si*12+0x3e] is a widget
- *   layout array built by the sibling; indices reproduced, contents not re-derived.
+ * BYTE_VERIFIED: per-node cell-width table read (0x06DF00..0x06DF18).
+ *   si=node[+4]*12 via: mov si,es:[bx+4]; mov ax,si; shl si,1; add si,ax; shl si,2.
+ *     (bytes: 268b7704 / 8bc6 / d1e6 / 03f0 / c1e602)
+ *   bx = *(far ptr at node[+0xc/+0xe]) via les bx,es:[bx+0c] (bytes: 26c45f0c).
+ *   cell_width = es:[bx+si+0x3e]  (bytes: 268b403e) -> [bp-0x12].
+ *   Style indent = (node[+0xa]&0x10) ? 0 : 3 via SBB trick (0x06DED0..0x06DED8):
+ *     and ax,0x10; cmp ax,1; sbb ax,ax; and ax,3.
  * ============================================================================ */
 int func_06DE6E_panel_draw_label_chain(void)
 {
