@@ -249,32 +249,46 @@ int func_00B550_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x00B5A8..0x00B5FA  (82 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00B5A8_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 4
- * @args_seen  [6, 8]
- * @lcalls     0
- * @near_calls 0
- * @callers    0
- * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (82 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+/* @asm        0x00B5A8..0x00B5F9  (82 bytes)  region=load_image  [BYTE_VERIFIED 2026-06-08]
+ * @asm_file   re_work/disasm/func_00B5A8.asm
+ * @prologue   ENTER 4 ; locals [bp-4]=tier, [bp-2]=adj ; args [bp+6]=value, [bp+8]=out-ptr
+ *
+ * value-band CLASSIFIER.  Partitions a signed input `value` into three tiers and
+ * returns the tier (0/1/2); optionally writes an adjusted value to *out.
+ *   value < 0        -> tier 0 , adj = 0
+ *   0 <= value < 0x2A-> tier 1 , adj = value
+ *   value >= 0x2A:   d = value - 0x2A
+ *       d < 7        -> tier 2 , adj = d + 0xB        (= value - 0x1F)
+ *       d >= 7       -> tier 0 , adj = d              (= value - 0x2A)
+ * Reached resident via the 0x181F:0xCC2 thunk (jmp far 0x05EB:0x32F8 = file 0xB5A8).
+ * NOTE: despite the FORMULAS.md "buy spread" lead pointing at that thunk, the
+ * consumer (func_00B65A below) indexes the per-unit-TYPE stat table by `adj`, so
+ * the game role is unit/combat-adjacent, not the market price spread (that is
+ * func_030566/func_030590).  Control flow + arithmetic BYTE_VERIFIED; the table
+ * SEMANTICS remain [TBD].
  */
-int func_00B5A8_logic_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00B5A8_value_band(int value /*bp+6*/, uint16_t *out_adj /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00B5B5 JGE 0x00B5BE */ {
-            goto label_00B5E4;  /* @0x00B5BC */
+    int tier = 0;                       /* @asm 0x00B5AC mov [bp-4],0 */
+    int adj;
+    if (value < 0) {                    /* @asm 0x00B5B1 cmp [bp+6],0 / jge 0xB5BE */
+        tier = 0;                       /* @asm 0x00B5B7 sub ax,ax / mov [bp-4],ax */
+        adj  = 0;                       /* @asm 0x00B5BC jmp 0xB5E4 (ax=0) */
+    } else if (value < 0x2A) {          /* @asm 0x00B5BE cmp [bp+6],0x2A / jge 0xB5CE */
+        tier = 1;                       /* @asm 0x00B5C4 mov [bp-4],1 */
+        adj  = value;                   /* @asm 0x00B5C9 mov ax,[bp+6] / jmp 0xB5E4 */
+    } else {
+        adj = value - 0x2A;             /* @asm 0x00B5CE..0x00B5D4 sub ax,0x2A / mov [bp-2],ax */
+        if (adj < 7) {                  /* @asm 0x00B5D7 cmp ax,7 / jge 0xB5E7 */
+            tier = 2;                   /* @asm 0x00B5DC mov [bp-4],2 */
+            adj += 0xB;                 /* @asm 0x00B5E1 add ax,0xB (-> [bp-2] @0xB5E4) */
         }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00B5C2 JGE 0x00B5CE */ {
-            goto label_00B5E4;  /* @0x00B5CC */
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00B5DA JGE 0x00B5E7 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00B5EB JE 0x00B5F5 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        /* else adj stays value-0x2A, tier stays 0  @asm 0x00B5DA jge 0xB5E7 */
+    }
+    /* @asm 0x00B5E4 mov [bp-2],ax  (adj) */
+    if (out_adj != NULL)                /* @asm 0x00B5E7 cmp [bp+8],0 / je 0xB5F5 */
+        *out_adj = (uint16_t)adj;       /* @asm 0x00B5F0..0x00B5F3 mov [bx],ax */
+    return tier;                        /* @asm 0x00B5F5 mov ax,[bp-4] ; 0xB5F9 retf */
 }
 
 /* @asm        0x00B5FA..0x00B629  (47 bytes)  region=load_image
@@ -298,25 +312,57 @@ int func_00B5FA_logic_sz_47(uint16_t arg0_bp_06)
     return func_00B5A8();
 }
 
-/* @asm        0x00B65A..0x00B681  (39 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00B65A_unknown.asm
- * @pattern    WRAPPER_NEARCALL
- * @prologue   ENTER 8
- * @args_seen  [6]
- * @lcalls     0
- * @near_calls 1
- * @callers    0
- * @touches_8542 False
+/* Tables read by func_00B65A (byte-cited; values [ext]/data):
+ *   g_band_rec_8F89 : DGROUP:0x8F89, stride 12 — byte field +0 (0x8F89),
+ *                     word field +3 (0x8F8C).  [TBD record identity]
+ *   g_unit_stat_5230: DGROUP:0x5230, stride 14 — per-unit-TYPE attribute table
+ *                     (same block as DEFENSE 0x5235 / ATTACK 0x5236); this
+ *                     function reads columns +9 (0x5239) and +10 (0x523A). */
+extern uint8_t g_band_rec_8F89[];
+extern uint8_t g_unit_stat_5230[];
+
+/* @asm        0x00B65A..0x00B703  (170 bytes)  region=load_image  [BYTE_VERIFIED 2026-06-08]
+ * @asm_file   re_work/disasm/func_00B65A.asm
+ * @prologue   ENTER 8 ; locals [bp-8]=aux, [bp-6]=adj, [bp-4]=result, [bp-2]=tier
  *
- * Near CALL targets:
- *   - 0x00B5A8
- * @inferred_role  WRAPPER_NEARCALL (39 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics TBD)
+ * The REAL body is 170 bytes (0xB65A..0xB703); the old auto-skeleton's "39 bytes
+ * WRAPPER_NEARCALL" was a truncation at the first near-CALL boundary (0xB681).
+ * Classifies `value` via func_00B5A8 (tier+adj), then per tier reads a record by
+ * `adj` and returns a value, writing a *10-scaled byte to *out_aux.
+ *   tier 1: result = word @ g_band_rec_8F89[adj*12 + 3]
+ *           aux    = (int8) g_band_rec_8F89[adj*12] * 10
+ *   tier 2: result = clamp((uint8)g_unit_stat_5230[adj*14 + 9] << 5):
+ *                      <0x28 -> 0x28 ; 0x28..0x33 -> 0x34 ; else as-is
+ *           aux    = (uint8) g_unit_stat_5230[adj*14 + 10] * 10
+ *   tier 0: result = 0
+ * Reached resident via the 0x181F:0xAC4 thunk (jmp far 0x05EB:0x33AA = file
+ * 0xB65A).  Control flow + arithmetic BYTE_VERIFIED; record SEMANTICS [TBD].
  */
-int func_00B65A_logic_sz_39(uint16_t arg0_bp_06)
+int func_00B65A_unit_band_lookup(int value /*bp+6*/, uint16_t *out_aux /*bp+8*/)
 {
-    /* @auto: wrapper forwards to near CALL 0x00B5A8. */
-    return func_00B5A8();
+    uint16_t adj = 0;        /* [bp-6] — receives the band classifier's adjusted value */
+    int aux      = 0;        /* [bp-8] @asm 0x00B65E */
+    int result   = 0;        /* [bp-4] */
+    int tier = func_00B5A8_value_band(value, &adj);  /* @asm 0x00B663..0x00B66B call 0xB5A8 */
+
+    if (tier == 1) {         /* @asm 0x00B674 dec ax / je 0xB67C */
+        result = *(uint16_t *)&g_band_rec_8F89[adj * 12 + 3];  /* @asm 0x00B688 [bx-0x7074] */
+        int b  = (int8_t)g_band_rec_8F89[adj * 12];            /* @asm 0x00B68F [bx-0x7077] cbw=signed */
+        aux    = b * 10;                                       /* @asm 0x00B694 (b*5*2) */
+    } else if (tier == 2) {  /* @asm 0x00B677 dec ax / je 0xB6A2 */
+        int v = (int)(uint8_t)g_unit_stat_5230[adj * 14 + 9] << 5; /* @asm 0x00B6B1 [bx+0x5239]<<5 */
+        if (v < 0x28)      v = 0x28;                           /* @asm 0x00B6BD..0x00B6C2 */
+        else if (v < 0x34) v = 0x34;                           /* @asm 0x00B6CA..0x00B6CF */
+        result = v;                                            /* [bp-4] */
+        int b  = (uint8_t)g_unit_stat_5230[adj * 14 + 10];     /* @asm 0x00B6E3 [bx+0x523A] sub ah,ah */
+        aux    = b * 10;                                       /* @asm 0x00B6E9->0xB694 (shared tail) */
+    } else {
+        result = 0;          /* @asm 0x00B6EC tier 0 */
+    }
+
+    if (out_aux != NULL)     /* @asm 0x00B6F1 cmp [bp+8],0 / je 0xB6FF */
+        *out_aux = (uint16_t)aux;   /* @asm 0x00B6FA mov [bx],ax */
+    return result;           /* @asm 0x00B6FF mov ax,[bp-4] ; 0xB703 retf */
 }
 
 /* @asm        0x00B704..0x00B72D  (41 bytes)  region=load_image

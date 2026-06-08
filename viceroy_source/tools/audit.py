@@ -266,6 +266,18 @@ check_bytes("table_c shift es=ds + movsw x3",     0x04C2EF, "8c d8 8e c0 a5 a5 a
 check_bytes("table_c shift loop r >= stop_row",   0x04C2F9, "8b 46 06 39 46 fe 7d db")
 check_bytes("table_c shift RETF", 0x04C304, "cb")
 
+# ---- func_00B5A8 value-band + func_00B65A lookup (BYTE_VERIFIED 2026-06-08) --
+check_bytes("value_band enter 4", 0x00B5A8, "c8 04 00 00")
+check_bytes("value_band tier1 threshold cmp 0x2A", 0x00B5BE, "83 7e 06 2a")
+check_bytes("value_band tier2 adj += 0xB", 0x00B5E1, "05 0b 00")
+check_bytes("value_band RETF", 0x00B5F9, "cb")
+check_bytes("unit_band enter 8", 0x00B65A, "c8 08 00 00")
+check_bytes("unit_band calls value_band 0xB5A8", 0x00B66B, "e8 3a ff")
+check_bytes("unit_band tier1 word @0x8F8C[adj*12]", 0x00B688, "8b 87 8c 8f")
+check_bytes("unit_band tier2 byte @0x5239[adj*14]", 0x00B6B1, "8a 87 39 52")
+check_bytes("unit_band tier2 clamp >=0x28", 0x00B6BD, "3d 28 00")
+check_bytes("unit_band RETF", 0x00B703, "cb")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
