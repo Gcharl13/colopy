@@ -267,7 +267,11 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
  *   [bp-0xc]=x  [bp-0xe]=y  [bp-0x10]=generic loop k  [bp-0x1e]=unit i
  *   [bp-0x22:-0x20] far ptr map layer A ; [bp-4:-2] far ptr map layer B
  *   [bp-6]  = 0x10<<loser   [bp-0x24] = 0x10<<winner
- * Tables: [0x9418],[0x9298],[0x9410] per-power score inputs [TBD data-resident].
+ * Tables (BYTE_VERIFIED 2026-06-08):
+ *   [0x9418] = per-power ship count (naval units 0x0D..0x12); census by func_042138.
+ *   [0x9298] = per-power colony count; census by func_042138 / func_02EB78.
+ *   [0x9410] = per-power colonist popsum (g_power_gate_9410); same as sons_of_liberty.c.
+ *   Score formula: naval×3 + colonies×2 + popsum = strength ranking for secession.
  * Engine leaves kept as externs: 0x191F:0xED0 sort4; 0x191F:0xAC8 fmt_power_name;
  *   0x181F:0x4AC msg_ctx; 0x181F:0x416 msg_set_ptr; 0x181F:0xA1A power_accessor;
  *   0x181F:0x736/0x6A0 get_map_layer_ptr; 0x181F:0x704 place_marker;
@@ -287,7 +291,8 @@ int func_03C638_logic_sz_73(void)
         return 0;                     /* jmp 0x15af exit */
 
     /* @0x03C647..0x03C67F  build rank[k]=k and score[k] for k=0..3:
-     *   score[k] = tbl9418[k]*3 + tbl9298[k]*2 + tbl9410[k]   [TBD tables] */
+     *   score[k] = ship_count[k]*3 + colony_count[k]*2 + popsum[k]
+     *              (0x9418=ships, 0x9298=colonies, 0x9410=popsum) */
     for (k = 0; k < 4; ++k) {
         rank[k]  = (uint8_t)k;
         score[k] = (int16_t)((uint8_t)G8(0x9418 + k) * 3
@@ -890,7 +895,9 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
  * @asm page_06.asm:1902  ENTER 0x82,0 / RETF @0x03D50F.
  * Near helpers (ljmp 0x1A1F thunks, platform leaves): func_03EA10 (0x70),
  *   func_03EA24 (0xA8), func_03EA38 (0xEE). Tables: g_unit_stat @0x5230 stride 14, ATK field +6 (BYTE_VERIFIED 2026-06-08);
- *   per-player byte @ (player*0x13 - 0x6DA2) i.e. base 0x925E [TBD]; cap word
+ *   per-player byte @ (player*0x13 - 0x6DA2) = colony_by_region_map[player][0x12]
+ *   = per-player Man-of-War (type 0x12) ship count from census. BYTE_VERIFIED
+ *   2026-06-08: 6B 1E D2 53 13 / 80 BF 5E 92 00 @file 0x3CDE8. Cap word
  *   [0x5333]; str 0x12BB [TBD]. Engine thunks kept as externs (roles in line).
  * ========================================================================== */
 int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
@@ -1416,7 +1423,9 @@ int func_03D948_colony_sz_49(void)
  * @asm page_06.asm:3017  ENTER 0x51E,0 (1310-byte frame) / RETF @0x03DE44.
  * LAYOUT: screen 320x200; dialog rect [0x839E..0x83A4]; pen origin (148,126);
  *   wrap at X=220; column deltas {3,10,10,7}. Char-class table @0x27ed and
- *   strings 0x12E8/0x12F0/0x12F9/0x1302 are data-resident [TBD]. Format/draw/
+ *   strings: 0x12E8="DECOIND" (seal graphic), 0x12F0="DEC-UPP0" (upper parchment
+ *   panel), 0x12F9="DEC-LOW0" (lower panel), 0x1302="DEC-SQIG" (squiggle flourish).
+ *   BYTE_VERIFIED 2026-06-08: EXE at file 0x1EC88/0x1EC90/0x1EC99/0x1ECA2. Format/draw/
  *   input thunks are platform leaves (kept extern, roles noted inline).
  * ========================================================================== */
 int func_03DA2A_format_chain_219(void)

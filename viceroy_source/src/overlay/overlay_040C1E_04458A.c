@@ -1408,7 +1408,7 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
     DG8(player - 0x6BF0) = 0;          /* @0x04215D */
     DG8(player - 0x6E80) = 0;          /* @0x042161 */
     DG8(player - 0x6BEC) = 0;          /* @0x042165 */
-    DG8(player - 0x6BE8) = 0;          /* @0x042169 veteran-eligible count    */
+    DG8(player - 0x6BE8) = 0;          /* @0x042169 per-power ship count (0x9418); also veteran gate */
     DG8(player - 0x6BDC) = 0;          /* @0x04216D */
     DG8(player - 0x6BD4) = 0;          /* @0x042171 */
     /* @0x042175 zero the 0x13-wide colony-by-region map for this power. */
