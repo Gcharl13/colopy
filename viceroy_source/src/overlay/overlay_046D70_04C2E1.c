@@ -1217,30 +1217,27 @@ extern uint8_t  *g_bound_record_8D4A;      /* DGROUP:0x8D4A — *(word) = ptr to
 /* Market record pointer; [+2]=mkt demand byte, [+7]=fur-base, [+0xa]=lumber-base,
  * [+0xc]=lumber-market-base, [+i*2+0xe]=demand word for slot i */
 extern uint8_t  *g_market_8D4E;            /* DGROUP:0x8D4E — *(word) = ptr to MarketRecord */
-/* Current power record pointer base (used for sawmill level at [ptr-0x69d6]) */
-extern uint8_t  *g_current_power_8D52;     /* DGROUP:0x8D52 — *(word) = ptr to PowerRecord */
+/* g_current_power_8D52 (power index) is declared above @line 850; the sawmill-level
+ * byte [cur_record-0x69D6] is reached via the per-power array g_power_scalar_962A
+ * (DGROUP:0x962A == 0x10000-0x69D6), matching the file-wide idiom (see @line 2079). */
 
-/* Individual DGROUP production-slot words (BYTE_VERIFIED offsets 2026-06-08): */
-extern uint16_t  g_9e86;                   /* DGROUP:0x9E86 — lumber yield */
-extern uint16_t  g_9e84;                   /* DGROUP:0x9E84 — minerals yield */
-extern uint16_t  g_9e80;                   /* DGROUP:0x9E80 — silver yield */
-extern uint16_t  g_9e90;                   /* DGROUP:0x9E90 — silver cap */
-extern uint16_t  g_9e7c;                   /* DGROUP:0x9E7C — sugar yield */
-extern uint16_t  g_9e7a;                   /* DGROUP:0x9E7A — cotton yield */
-extern uint16_t  g_9e6e;                   /* DGROUP:0x9E6E — grain yield */
-extern uint16_t  g_9e7e;                   /* DGROUP:0x9E7E — tobacco accumulator */
-extern uint16_t  g_9e8e;                   /* DGROUP:0x9E8E — tobacco cap */
-extern uint16_t  g_9e5e;                   /* DGROUP:0x9E5E — tobacco yield / fish cap */
-extern uint16_t  g_9e5c;                   /* DGROUP:0x9E5C — grain cap slot */
-extern uint16_t  g_9e6c;                   /* DGROUP:0x9E6C — production cap slot */
-extern uint16_t  g_9e70;                   /* DGROUP:0x9E70 — silver/grain combined slot */
-extern uint16_t  g_9e6a;                   /* DGROUP:0x9E6A — fish yield */
-extern uint16_t  g_9e72;                   /* DGROUP:0x9E72 — cap slot */
-extern uint16_t  g_9e74;                   /* DGROUP:0x9E74 — cap slot */
-extern uint16_t  g_9e76;                   /* DGROUP:0x9E76 — fur cap */
-extern uint16_t  g_9e88;                   /* DGROUP:0x9E88 — lumber cap slot */
-extern uint16_t  g_9e68;                   /* DGROUP:0x9E68 — fur yield slot */
-extern uint16_t  g_9e96_scan;              /* DGROUP:0x9E96 — zeroed at scan entry */
+/* The "g_9eXX" per-resource production-slot words are NOT independent globals:
+ * they are elements of the two contiguous 16-word arrays above.
+ *   g_prod_cap_9E58[k]   lives at 0x9E58 + 2*k   (cap   array, 0x9E58..0x9E76)
+ *   g_prod_yield_9E78[k] lives at 0x9E78 + 2*k   (yield array, 0x9E78..0x9E96)
+ * Together they form one 32-word block 0x9E58..0x9E96 that the Phase-D clear
+ * loop zeroes in full, and that the cap-normalize / fort-bonus loops re-scan.
+ * The original `mov [0x9eXX],..` writes therefore MUST be modelled as indexed
+ * array writes (so the zeroing + later loops see the same storage); writing them
+ * as standalone scalars would silently drop the aliasing.  Slot map (addr→index):
+ *   yield[1]=0x9E7A cotton  yield[2]=0x9E7C sugar   yield[3]=0x9E7E tobacco-acc
+ *   yield[4]=0x9E80 silver  yield[6]=0x9E84 mineral yield[7]=0x9E86 lumber
+ *   yield[8]=0x9E88 lumber2 yield[11]=0x9E8E tob-cap yield[12]=0x9E90 silver-cap
+ *   yield[15]=0x9E96 (zeroed)
+ *   cap[2]=0x9E5C grain-cap cap[3]=0x9E5E tob-yld  cap[8]=0x9E68 fur-yld
+ *   cap[9]=0x9E6A fish      cap[10]=0x9E6C slot     cap[11]=0x9E6E grain-yld
+ *   cap[12]=0x9E70 slot     cap[13]=0x9E72 slot     cap[14]=0x9E74 slot
+ *   cap[15]=0x9E76 fur-cap                                              */
 /* g_flags_894 declared in native_unit_ai.c; re-declare locally (bit 2 = colony screen) */
 extern uint8_t   g_flags_894;             /* DGROUP:0x894 — options/display flags bitfield */
 /* g_trade_after_97C0 (DGROUP:0x97C0) declared below func_04AC00 as g_trade_after_97C0[];
@@ -1399,12 +1396,16 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
                         } else {
                             /* @asm 0x0490f4 — 2<=id<6: food_cnt++ */
                             food_cnt++;                          /* @asm 0x0490f4 */
-                            /* @asm 0x0490f7 — if id&4: fish_cnt+=2; else special+grain */
+                            /* @asm 0x0490f7 — if id&4: fish_cnt+=2; else grain+=2.
+                             * NOTE: the !(id&4) arm is `jmp 0x04905f` (e9 5f ff =>
+                             * 0x049100-0xA1=0x04905f), the GRAIN-ONLY entry — it does
+                             * NOT pass through 0x04905c (special_cnt++).  Only the
+                             * food-branch terrain_sub<3 path (jmp 0x04905c) bumps
+                             * special_cnt; ids 2/3 here add grain alone. */
                             if (tt & 4) {
                                 fish_cnt += 2;                   /* @asm 0x049100 */
                             } else {
-                                special_cnt++;                   /* @asm 0x04905c */
-                                grain_cnt   += 2;                /* @asm 0x04905f */
+                                grain_cnt += 2;                  /* @asm 0x04905f (grain only) */
                             }
                         }
                     } else {
@@ -1455,111 +1456,111 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
     /* @asm 0x0492aa — gate mkt >= 1 for lumber+minerals */
     if (mkt >= 1) {                                           /* @asm 0x0492af */
         if (mkt >= 2) {                                       /* @asm 0x0492b6 */
-            /* @asm 0x0492b8..0x0492f0 — lumber slot (g_9e86):
+            /* @asm 0x0492b8..0x0492f0 — lumber slot (yield[7] = 0x9E86):
              *   divisor = max(1, saw_level)
-             *   g_9e86 = market[+0xc] / divisor
+             *   yield[7] = market[+0xc] / divisor
              *   forest_adj = (mkt>2) ? forest_cnt*8 : forest_cnt*4
-             *   g_9e86 += forest_adj */
+             *   yield[7] += forest_adj */
             int lmb_base = (int)(uint16_t)(*(uint16_t *)(g_market_8D4E + 0xc)); /* [bx+0xc] @asm 0x0492b8 */
-            int saw = (int)(uint8_t)g_current_power_8D52[-0x69d6];  /* [bx-0x69d6] @asm 0x0492c3 */
+            int saw = (int)g_power_scalar_962A[g_current_power_8D52]; /* [cur-0x69d6] saw level @asm 0x0492bb..0x0492c3 */
             /* @asm 0x0492c3..0x0492cc — divisor = max(1, saw) via sub/sbb/not/and/add */
             int divisor = (saw < 1) ? 1 : saw;               /* @asm 0x0492d1 */
-            g_9e86 = (uint16_t)((int16_t)(lmb_base / divisor)); /* @asm 0x0492d5..0x0492d7 */
+            g_prod_yield_9E78[7] = (uint16_t)((int16_t)(lmb_base / divisor)); /* 0x9E86 @asm 0x0492d5..0x0492d7 */
             /* @asm 0x0492da..0x0492ed — forest_adj */
             int forest_adj = forest_cnt * 4;                  /* @asm 0x0492de */
             if (mkt > 2) forest_adj = forest_cnt * 8;         /* @asm 0x0492eb */
-            g_9e86 += (uint16_t)forest_adj;                   /* @asm 0x0492f0 */
+            g_prod_yield_9E78[7] += (uint16_t)forest_adj;     /* 0x9E86 @asm 0x0492f0 */
         }
 
-        /* @asm 0x0492f4..0x04930b — minerals/ore slot (g_9e84):
-         *   g_9e84 += mineral_cnt*2 + forest_cnt + fur_cnt */
-        g_9e84 += (uint16_t)(int16_t)(mineral_cnt * 2 + forest_cnt + fur_cnt); /* @asm 0x04930b */
+        /* @asm 0x0492f4..0x04930b — minerals/ore slot (yield[6] = 0x9E84):
+         *   yield[6] += mineral_cnt*2 + forest_cnt + fur_cnt */
+        g_prod_yield_9E78[6] += (uint16_t)(int16_t)(mineral_cnt * 2 + forest_cnt + fur_cnt); /* 0x9E84 @asm 0x04930b */
     }
 
-    /* @asm 0x04930f..0x049328 — silver/ore yield (g_9e80):
-     *   g_9e80 += (special_cnt*2 + ore_cnt/2) / (mkt+1) */
+    /* @asm 0x04930f..0x049328 — silver/ore yield (yield[4] = 0x9E80):
+     *   yield[4] += (special_cnt*2 + ore_cnt/2) / (mkt+1) */
     {
         int sv = (special_cnt * 2) + (ore_cnt >> 1);          /* @asm 0x04930f..0x049319 */
-        g_9e80 += (uint16_t)((int16_t)(sv / (mkt + 1)));      /* @asm 0x049326..0x049328 */
+        g_prod_yield_9E78[4] += (uint16_t)((int16_t)(sv / (mkt + 1)));  /* 0x9E80 @asm 0x049326..0x049328 */
     }
 
-    /* @asm 0x04932c..0x049341 — silver capacity (g_9e90):
-     *   g_9e90 = abs((g_9e80+mkt)*2) / 4 * 2
-     * The cdq/xor/sub/sar/xor/sub/shl pattern = (abs(x*2)/4)*2 */
+    /* @asm 0x04932c..0x049341 — silver capacity (yield[12] = 0x9E90):
+     *   yield[12] = abs((yield[4]+mkt)*2) / 4 * 2
+     * cdq/xor/sub/sar/xor/sub/shl = signed (x/4)*2; x>=0 here so abs is exact. */
     {
-        int sv2 = ((int16_t)g_9e80 + mkt) * 2;               /* @asm 0x04932f..0x049331 */
+        int sv2 = ((int16_t)g_prod_yield_9E78[4] + mkt) * 2;  /* @asm 0x04932f..0x049331 */
         int absv = (sv2 < 0) ? -sv2 : sv2;                    /* @asm 0x049334..0x049336 */
-        g_9e90 = (uint16_t)((absv / 4) * 2);                  /* @asm 0x049338..0x049341 */
+        g_prod_yield_9E78[12] = (uint16_t)((absv / 4) * 2);   /* 0x9E90 @asm 0x049338..0x049341 */
     }
 
-    /* @asm 0x049344..0x04934e — sugar and cotton direct writes */
-    g_9e7c += (uint16_t)(int16_t)sugar_cnt;                   /* @asm 0x049344..0x049347 */
-    g_9e7a += (uint16_t)(int16_t)cotton_cnt;                  /* @asm 0x04934b..0x04934e */
+    /* @asm 0x049344..0x04934e — sugar (yield[2]=0x9E7C) and cotton (yield[1]=0x9E7A) */
+    g_prod_yield_9E78[2] += (uint16_t)(int16_t)sugar_cnt;     /* 0x9E7C @asm 0x049344..0x049347 */
+    g_prod_yield_9E78[1] += (uint16_t)(int16_t)cotton_cnt;    /* 0x9E7A @asm 0x04934b..0x04934e */
 
-    /* @asm 0x049352..0x049366 — grain/food yield (g_9e6e):
-     *   g_9e6e = (mkt+base)*base + fish_cnt/2 + grain_cnt */
-    g_9e6e = (uint16_t)(int16_t)(
-        (mkt + base) * base + (fish_cnt >> 1) + grain_cnt);   /* @asm 0x049352..0x049366 */
+    /* @asm 0x049352..0x049366 — grain yield (cap[11] = 0x9E6E):
+     *   cap[11] = (mkt+base)*base + fish_cnt/2 + grain_cnt */
+    g_prod_cap_9E58[11] = (uint16_t)(int16_t)(
+        (mkt + base) * base + (fish_cnt >> 1) + grain_cnt);   /* 0x9E6E @asm 0x049352..0x049366 */
 
-    /* @asm 0x049369..0x049386 — tobacco cap (g_9e7e accumulator, g_9e8e cap):
-     *   g_9e7e += tobacco_cnt
-     *   g_9e8e = abs((mkt + g_9e7e)*2) / 4 * 2 */
-    g_9e7e += (uint16_t)(int16_t)tobacco_cnt;                 /* @asm 0x04936e */
+    /* @asm 0x049369..0x049386 — tobacco accumulator (yield[3]=0x9E7E) → cap (yield[11]=0x9E8E):
+     *   yield[3] += tobacco_cnt
+     *   yield[11] = abs((mkt + yield[3])*2) / 4 * 2 */
+    g_prod_yield_9E78[3] += (uint16_t)(int16_t)tobacco_cnt;   /* 0x9E7E @asm 0x04936e */
     {
-        int tb2 = (mkt + (int16_t)g_9e7e) * 2;               /* @asm 0x049372..0x049376 */
+        int tb2 = (mkt + (int16_t)g_prod_yield_9E78[3]) * 2;  /* @asm 0x049372..0x049376 */
         int absv = (tb2 < 0) ? -tb2 : tb2;
-        g_9e8e = (uint16_t)((absv / 4) * 2);                  /* @asm 0x049386 */
+        g_prod_yield_9E78[11] = (uint16_t)((absv / 4) * 2);   /* 0x9E8E @asm 0x049386 */
     }
 
-    /* @asm 0x049389..0x04938c — g_9e5e = g_9e8e + fish_cnt */
-    g_9e5e = (uint16_t)((int16_t)g_9e8e + fish_cnt);          /* @asm 0x049389..0x04938c */
+    /* @asm 0x049389..0x04938c — cap[3]=0x9E5E = yield[11] + fish_cnt */
+    g_prod_cap_9E58[3] = (uint16_t)((int16_t)g_prod_yield_9E78[11] + fish_cnt); /* 0x9E5E @asm 0x049389..0x04938c */
 
-    /* @asm 0x04938f..0x0493a2 — g_9e5c = (6-mkt)*base + grain_cnt*2 + 5 */
-    g_9e5c = (uint16_t)(int16_t)(
-        (6 - mkt) * base + grain_cnt * 2 + 5);                /* @asm 0x04938f..0x0493a2 */
+    /* @asm 0x04938f..0x0493a2 — cap[2]=0x9E5C = (6-mkt)*base + grain_cnt*2 + 5 */
+    g_prod_cap_9E58[2] = (uint16_t)(int16_t)(
+        (6 - mkt) * base + grain_cnt * 2 + 5);                /* 0x9E5C @asm 0x04938f..0x0493a2 */
 
-    /* @asm 0x0493a5..0x0493b2 — g_9e6c = (base*2 - mkt + 7) * 2 */
-    g_9e6c = (uint16_t)(int16_t)((base * 2 - mkt + 7) * 2);  /* @asm 0x0493a5..0x0493b2 */
+    /* @asm 0x0493a5..0x0493b2 — cap[10]=0x9E6C = (base*2 - mkt + 7) * 2 */
+    g_prod_cap_9E58[10] = (uint16_t)(int16_t)((base * 2 - mkt + 7) * 2);  /* 0x9E6C @asm 0x0493a5..0x0493b2 */
 
-    /* @asm 0x0493b5..0x0493bf — g_9e70 = grain_cnt*8 + g_9e80 */
-    g_9e70 = (uint16_t)(int16_t)(grain_cnt * 8 + (int16_t)g_9e80); /* @asm 0x0493b5..0x0493bf */
+    /* @asm 0x0493b5..0x0493bf — cap[12]=0x9E70 = grain_cnt*8 + yield[4] */
+    g_prod_cap_9E58[12] = (uint16_t)(int16_t)(grain_cnt * 8 + (int16_t)g_prod_yield_9E78[4]); /* 0x9E70 @asm 0x0493b5..0x0493bf */
 
-    /* @asm 0x0493c2..0x0493d1 — g_9e6a = ((mkt*2 + base)*2 + fish_cnt)*2 */
-    g_9e6a = (uint16_t)(int16_t)(
-        ((mkt * 2 + base) * 2 + fish_cnt) * 2);               /* @asm 0x0493c2..0x0493d1 */
+    /* @asm 0x0493c2..0x0493d1 — cap[9]=0x9E6A = ((mkt*2 + base)*2 + fish_cnt)*2 */
+    g_prod_cap_9E58[9] = (uint16_t)(int16_t)(
+        ((mkt * 2 + base) * 2 + fish_cnt) * 2);               /* 0x9E6A @asm 0x0493c2..0x0493d1 */
 
-    /* @asm 0x0493d5..0x0493e7 — g_9e72 = (mkt+2)*(base+3) + 8 */
-    g_9e72 = (uint16_t)(int16_t)((mkt + 2) * (base + 3) + 8); /* @asm 0x0493e2..0x0493e7 */
+    /* @asm 0x0493d5..0x0493e7 — cap[13]=0x9E72 = (mkt+2)*(base+3) + 8 */
+    g_prod_cap_9E58[13] = (uint16_t)(int16_t)((mkt + 2) * (base + 3) + 8); /* 0x9E72 @asm 0x0493e2..0x0493e7 */
 
-    /* @asm 0x0493ea..0x0493f9 — g_9e74 = (mkt*base) << (grain_cnt/2 + 1) */
+    /* @asm 0x0493ea..0x0493f9 — cap[14]=0x9E74 = (mkt*base) << (grain_cnt/2 + 1) */
     {
         int shift74 = (grain_cnt >> 1) + 1;                   /* @asm 0x0493f3..0x0493f5 */
-        g_9e74 = (uint16_t)(int16_t)((mkt * base) << shift74); /* @asm 0x0493f7..0x0493f9 */
+        g_prod_cap_9E58[14] = (uint16_t)(int16_t)((mkt * base) << shift74); /* 0x9E74 @asm 0x0493f7..0x0493f9 */
     }
 
-    /* @asm 0x0493fc..0x04940a — fur cap (g_9e76):
-     *   g_9e76 = (7 - market[+7] - mkt) * 4 */
+    /* @asm 0x0493fc..0x04940a — fur cap (cap[15]=0x9E76):
+     *   cap[15] = (7 - market[+7] - mkt) * 4 */
     {
         int fur_base7 = (int)(uint8_t)g_market_8D4E[7];       /* [bx+7] @asm 0x0493fc */
-        g_9e76 = (uint16_t)(int16_t)((7 - fur_base7 - mkt) * 4); /* @asm 0x049400..0x04940a */
+        g_prod_cap_9E58[15] = (uint16_t)(int16_t)((7 - fur_base7 - mkt) * 4); /* 0x9E76 @asm 0x049400..0x04940a */
     }
 
-    /* @asm 0x04940d..0x049420 — g_9e88 = market[+0xa] / ((saw_level>>1)+1) */
+    /* @asm 0x04940d..0x049420 — yield[8]=0x9E88 = market[+0xa] / ((saw_level>>1)+1) */
     {
         int lmb10 = (int)(uint16_t)(*(uint16_t *)(g_market_8D4E + 0xa)); /* [bx+0xa] @asm 0x04940d */
-        int saw2  = (int)(uint8_t)g_current_power_8D52[-0x69d6]; /* [di-0x69d6] @asm 0x049414 */
+        int saw2  = (int)g_power_scalar_962A[g_current_power_8D52]; /* [cur-0x69d6] saw level @asm 0x049410..0x049414 */
         int div88 = (saw2 >> 1) + 1;                           /* @asm 0x049418..0x04941c */
-        g_9e88 = (uint16_t)((int16_t)(lmb10 / div88));         /* @asm 0x04941d..0x049420 */
+        g_prod_yield_9E78[8] = (uint16_t)((int16_t)(lmb10 / div88)); /* 0x9E88 @asm 0x04941d..0x049420 */
     }
 
-    /* @asm 0x049423..0x049431 — g_9e68 = (9 - market[+8] - mkt) * 4 */
+    /* @asm 0x049423..0x049431 — cap[8]=0x9E68 = (9 - market[+8] - mkt) * 4 */
     {
         int mb8 = (int)(uint8_t)g_market_8D4E[8];              /* [bx+8] @asm 0x049423 */
-        g_9e68 = (uint16_t)(int16_t)((9 - mb8 - mkt) * 4);    /* @asm 0x049427..0x049431 */
+        g_prod_cap_9E58[8] = (uint16_t)(int16_t)((9 - mb8 - mkt) * 4); /* 0x9E68 @asm 0x049427..0x049431 */
     }
 
-    /* @asm 0x049434..0x049436 — zero g_9e96_scan */
-    g_9e96_scan = 0;                                            /* @asm 0x049436 */
+    /* @asm 0x049434..0x049436 — zero yield[15]=0x9E96 */
+    g_prod_yield_9E78[15] = 0;                                  /* 0x9E96 @asm 0x049436 */
 
     /* @asm 0x04943e..0x049460 — per-slot cap normalize:
      *   g_prod_cap_9E58[i] = overlay_call_181F_035C(g_prod_cap_9E58[i], 0, 50) */
