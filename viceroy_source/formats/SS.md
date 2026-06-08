@@ -16,7 +16,7 @@ Each .SS file is a sprite-sheet container. Multi-sprite layout (MS_SPRITE).
 | LE16 width                                                     |
 | LE16 height                                                    |
 +---------------------------------------------------------------+
-| 13 metadata bytes         (purpose TBD; varies per file)       |
+| 13 metadata bytes         (purpose not yet decoded; varies per file)       |
 +---------------------------------------------------------------+
 | 25-byte header total                                           |
 +---------------------------------------------------------------+
