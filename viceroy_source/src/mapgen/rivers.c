@@ -98,7 +98,7 @@ static const signed char k_river_dy[RIVER_KERNEL_LEN] = {
  * downhill path, probe all 20 kernel neighbours; if every probed neighbour is
  * land/in-bounds (the [bp-2] "all surrounded" flag survives), stamp the river
  * feature (code 4) on the centre tile and let the helper fold the 0x40 bit and
- * the adjacent river-mouth marker.  The helper internals are TBD as documented.
+ * the adjacent river-mouth marker.  The helper internals are library-implementation-only (body in thunk page).
  * ------------------------------------------------------------------------- */
 void trace_all_rivers(void)
 {

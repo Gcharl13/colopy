@@ -61,7 +61,7 @@ extern uint8_t *g_layer_terrain; /* [0x15C] */
 extern int      random_int(int lo, int hi);          /* 0x181F:0x04D4 */
 extern uint8_t  tile_read(uint8_t *layer, int x, int y);
 
-/* population/level roll — near call cs:0x5434 in page 0x0C (internals TBD). */
+/* population/level roll — near call cs:0x5434 in page 0x0C (body in thunk page / page 0x0C). */
 extern int native_roll_population(int idx);
 
 /* ---------------------------------------------------------------------------

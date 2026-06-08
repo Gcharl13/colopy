@@ -237,7 +237,7 @@ void place_sea_lane_borders(int premade)
  *
  * The 4-nation rotation @0x065C75 (ax = p + [0x5398]; idiv 4) selects which
  * physical nation slot gets band p; [0x5398] is the per-game start-nation
- * offset (its VALUE is runtime/setup-driven -> TBD).
+ * offset (its VALUE is RUNTIME_ONLY (runtime/setup-driven; set at new-game start)).
  * ------------------------------------------------------------------------- */
 extern uint8_t *power_record(int idx);   /* &DGROUP:0x8808 + idx*0x13C */
 /* DGROUP:0x5398 = g_active_power_5398 — active/chosen power index (0..3).

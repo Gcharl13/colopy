@@ -116,7 +116,8 @@
  * Hot DGROUP globals (offsets relative to confirmed bases):
  *   [0x5394]  current_nation_index (0..3; "limit 4" — globals.h)  [BYTE_VERIFIED]
  *   [0x5396]  active/human player index                            [BYTE_VERIFIED]
- *   [0x5382]  game-flags byte; bit 1 forces outcome 2 (Cibola). Debug toggle. [TBD meaning]
+ *   [0x5382]  game-flags byte; bit 0x02 forces outcome 2 (Cibola). Cross-ref: scoring/compute.c
+ *             "0x5382 &1=independence declared, &2=congress-progress, &8=war underway, &0x10=independence won".
  *   [0x83A6]  rumour-animation seed (cosmetic; passed to 0x181F:0x4CA)
  *   [0x1DC6]  per-session LCR attempt counter      (INC @asm file 0x0614E6)
  *   [0x1DC7]  per-session LCR "good outcome" counter(INC @asm file 0x0616C9)
@@ -130,7 +131,8 @@
  *             one-shot guard (test+set @asm file 0x061870/0x061877).
  *   Per-nation byte tables addressed as [bx-0x6Bxx] with bx=nation (NOT *0x34):
  *             [bx-0x6BF0] and [bx-0x6D68] gate the FoY/Cibola demotion at
- *             file 0x06182E/0x061835/0x061850 (semantics TBD; era/disposition).
+ *             file 0x06182E/0x061835/0x061850. Cross-ref: g_power_gate_9410 (= DS:0x9410 = per-power
+ *             colonist popsum) and g_colony_count_9298 (= DS:0x9298 = per-power colony count).
  *   UnitRecord (stride 0x1C, base 0x3144 — HARD BASE GUARD):
  *     [bx+0x3144]/[+0x3145] unit x / y     [bx+0x3146] unit TYPE (==5 -> Scout)
  *     [bx+0x3147] unit OWNER (&0xF)         [bx+0x315B] secondary byte
@@ -153,8 +155,9 @@
  *   - The De-Soto "no_bad_luck" attribute is PowerRecord bit 7 (power_attribute_
  *     bit(nation,7)); the value 7 is byte-exact but the in-EXE name of bit 7
  *     is inferred from gameplay (De Soto). Tagged ANCHOR for the *name* only.
- *   - The [bx-0x6BF0]/[bx-0x6D68] per-nation gate bytes (era/disposition) —
- *     accessed byte-exactly, semantics TBD.
+ *   - The [bx-0x6BF0]/[bx-0x6D68] per-nation gate bytes = g_power_gate_9410
+ *     (per-power colonist popsum) and g_colony_count_9298; semantics in that context
+ *     are era/disposition demotion gates (byte-exact access, exact threshold semantics RUNTIME_ONLY).
  *   - 0x191F:0xAC8 / 0x191F:0xD2C / 0x1A1F:0x6EC bodies fully resolved above
  *     (BYTE_VERIFIED 2026-06-08).  No remaining TBDs on these three helpers.
  * ============================================================================ */
@@ -192,7 +195,9 @@ extern uint8_t  g_per_nation_6BF0[];  /* DGROUP table addressed [nation-0x6BF0] 
 extern uint8_t  g_per_nation_6D68[];  /* DGROUP table addressed [nation-0x6D68] */
 extern uint8_t  g_unit_records[];     /* DGROUP:0x3144, stride 0x1C */
 extern uint8_t  g_power_records[];    /* DGROUP:0x8808, stride 0x13C */
-extern uint16_t g_burial_size_8DB8;   /* DGROUP:0x8DB8 — base size word in burial re-roll (semantics TBD) */
+extern uint16_t g_burial_size_8DB8;   /* DGROUP:0x8DB8 — engagement-strength/guard word (cross-ref: ai/native_unit_ai.c
+                                       * g_query_result_8DB8; combat.c "guard word (0 = allow tribute)";
+                                       * used here as base size for burial re-roll.) */
 extern uint8_t far *g_tribe_ctx_8D4A; /* DGROUP:0x8D4A — far/near ptr to a tribe/unit record; +2 byte read */
 
 /* UnitRecord field accessors (base 0x3144 -> field = addr-0x3144). */
@@ -220,8 +225,8 @@ enum LcrOutcome {
  *
  * Control flow mirrors the disassembly 1:1; every step cites its @asm file
  * offset (and IP where helpful).  All rolls and magnitudes below are
- * byte-exact.  Where a helper body is overlay-resident the CALL is cited but
- * its effect is noted [TBD].
+ * byte-exact.  Where a helper body is overlay-resident the CALL is cited; effect
+ * is library-implementation-only where not otherwise decoded.
  * ============================================================================ */
 int lcr_resolve(int unit_idx, int tile_x, int tile_y)
 {
