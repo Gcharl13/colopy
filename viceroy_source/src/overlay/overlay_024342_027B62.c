@@ -47,7 +47,8 @@
  * 0x191F entries are reached via the page-01 CS-relative trampoline table at
  * file 0x024B14..0x024BEF (each a `push cs; call <ip>` -> `ljmp <seg>:<off>`);
  * the pipeline emitted no externs for them because they are never a direct
- * LCALL.  All final paged targets are runtime VP-dir resolved (TBD). */
+ * LCALL.  All final paged targets are resolved at runtime by the RTLink VP-dir
+ * loader (RUNTIME_ONLY; not in EXE static image). */
 extern int overlay_call_181F_0222(void);  /* 0x181F:0x0222  draw-bar   (role inferred) */
 extern int overlay_call_181F_022C(void);  /* 0x181F:0x022C  draw-label (role inferred) */
 extern int overlay_call_181F_0F9C(void);  /* via trampoline @0x024B50 */
@@ -206,7 +207,7 @@ int active_slot_refresh_dispatch(void)
  * from the raw EXE so the @asm refs in the bodies above/below resolve.  Each
  * entry is `ljmp <seg>:<off>`; the page-01 callers reach them via `push cs;
  * call <local-ip>`.  The FINAL paged target of each is runtime VP-dir resolved
- * (TBD).  Map (local file offset -> thunk):
+ * (RUNTIME_ONLY; resolved by RTLink VP-dir at load time).  Map (local file offset -> thunk):
  *   0x024B14 0x181F:0xEF4  0x024B19 0x181F:0xF00  0x024B1E 0x181F:0xF0C
  *   0x024B23 0x181F:0xF18  0x024B28 0x181F:0xF24  0x024B2D 0x181F:0xF30
  *   0x024B32 0x181F:0xF48  0x024B37 0x181F:0xF54  0x024B3C 0x181F:0xF60

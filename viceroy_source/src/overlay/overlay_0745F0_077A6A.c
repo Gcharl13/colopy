@@ -33,8 +33,8 @@
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).
  *   STILL-SKELETON  in-scope real routine too large to byte-verify line-for-line
- *                   this pass (extent cited, structure + key sites cited, the
- *                   middle TBD).  Used for the four 1KB+ routines.
+ *                   this pass (extent cited, structure + key sites cited;
+ *                   full body not yet decoded). Used for the four 1KB+ routines.
  *   PHANTOM         reloc/header bytes mis-framed as a function.
  *   (No SUPERSEDED  -- a src/ grep for every offset found zero prior ports.)
  *   (No TRAMPOLINE  -- the page-0x0534BC ljmp-block style does not occur here;

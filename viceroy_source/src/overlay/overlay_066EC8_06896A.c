@@ -31,7 +31,7 @@
  *   PHANTOM         reloc/header bytes mis-framed as a function by the auto-decoder.
  *   OUT-OF-SCOPE    DOS platform leaf (none here — this is all UI composition).
  *   STILL-SKELETON  in-scope real routine whose full body was not byte-verified
- *                   this pass (extent cited; body TBD).
+ *                   this pass (extent cited; body in thunk page or not yet decoded).
  *
  * Bases (DGROUP):
  *   UnitRecord       0x3144 stride 0x1C  (+0x00 col, +0x01 row, +0x02 type=0x3146,

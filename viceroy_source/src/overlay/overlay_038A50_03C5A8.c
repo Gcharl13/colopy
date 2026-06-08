@@ -19,7 +19,8 @@
  *   cite-or-TBD is absolute: nothing here is guessed. Externs are declared
  *   file-local per task scope (no globals.h / other-src / Makefile / ledger
  *   edits). LCALL thunks use the existing overlay_call_<seg>_<off>() prototypes
- *   from overlay_externs.h; their resident BODIES remain ANCHOR/TBD.
+ *   from overlay_externs.h; their resident BODIES are in overlay thunk pages
+ *   (ANCHOR_VERIFIED call sites; bodies not decoded from overlay bytecode).
  *
  * PER-FUNCTION DISPOSITION TABLE (offset | role | status | already-ported?)
  * --------------------------------------------------------------------------
@@ -299,7 +300,7 @@ int func_038ED4_draw_report_two_row_bg(void)
  * DGROUP:0x2D0E (read/written) and emits one text row via 0x181F:0x0254
  * (icon_at / text-cell draw, per report_screen.c primitive table). The auto
  * trace shows two guard branches around 0x2D0E and a single 0x181F:0x254 call.
- * Exact arg→column mapping is in the resident leaf (TBD); the row-advance and
+ * Exact arg→column mapping is in the resident leaf (library-implementation-only); the row-advance and
  * the single draw are the load-bearing layout behavior.
  * ---------------------------------------------------------------------------- */
 int func_039E98_report_text_row_helper(void)
