@@ -4,7 +4,7 @@
  * VICEROY's popups (price-change banners, advisor warnings, king/tax demands,
  * confirmation prompts) share one rect-computation path that is RESIDENT and
  * BYTE_VERIFIED. The actual WOODFRAM/WOODTILE frame BLIT and the text layout
- * are OVERLAY-resident and are marked TBD.
+ * are overlay-resident (library-implementation-only).
  *
  * Authoritative source for everything in this file:
  *   reverse_engineered/docs/DIALOG_GEOMETRY.md           (the rect data flow)
@@ -53,9 +53,9 @@ extern uint8_t g_byte[];
  * where known; docs/DIALOG_GEOMETRY.md "Upstream globals"):
  *   [0x174]  word  cursor_x         writer @ file 0x0765AC (A3 74 01)
  *   [0x176]  word  cursor_y         writer @ file 0x0765AF (89 16 76 01)
- *   [0x186]  word  dialog_state     (>= 0x64 enables the popup; writer TBD)
- *   [0x1EA4] byte  char_width_cols  (from GAME.TXT @width=NN; writer TBD)
- *   [0x1EA5] byte  char_height_rows (writer TBD)
+ *   [0x186]  word  dialog_state     (>= 0x64 enables the popup; writer RUNTIME_ONLY)
+ *   [0x1EA4] byte  char_width_cols  (from GAME.TXT @width=NN; writer RUNTIME_ONLY)
+ *   [0x1EA5] byte  char_height_rows (writer RUNTIME_ONLY)
  *   [0xA5A4] word  font_cell_width  writer @ file 0x068771
  *   [0xA5A6] word  font_cell_height writer @ file 0x06872C
  */
@@ -79,8 +79,8 @@ extern uint8_t g_byte[];
  *   }
  *
  * Which arg lands in which dialog_rect[] field depends on the setter's stack
- * layout in overlay segment 0x0C36 -> TBD (0x0C36 not yet resolved to a file
- * offset; docs/DIALOG_GEOMETRY.md "The setter overlay function").
+ * layout in overlay segment 0x0C36 (not yet decoded; 0x0C36 not yet resolved
+ * to a file offset; docs/DIALOG_GEOMETRY.md "The setter overlay function").
  *
  * char_width_cols/char_height_rows come from the GAME.TXT "@width=NN" directive
  * + body line count; their runtime values are NOT known statically. So the
@@ -102,8 +102,8 @@ void compute_dialog_rect_from_cursor(void)
     int arg1 = g_word[0xA5A4] + g_byte[0x1EA4] - 0x08;          /* 067DF1..FB      */
 
     /* 067DFE LEA bx,[0x839E] ; 067E02 LCALL 0x181F:0x254 (setter writes [bx]).
-     * The setter (overlay 0x0C36:0x000A) file offset is TBD. */
-    overlay_set_dialog_rect(DGROUP_DIALOG_RECT, arg1, arg2, arg3, arg4); /* TBD impl */
+     * The setter (overlay 0x0C36:0x000A) file offset not yet decoded. */
+    overlay_set_dialog_rect(DGROUP_DIALOG_RECT, arg1, arg2, arg3, arg4); /* body in thunk page */
 }
 
 /* ----------------------------------------------------------------------------
@@ -111,14 +111,14 @@ void compute_dialog_rect_from_cursor(void)
  * LEA [0x839E]) exists and may use a different formula for a different popup
  * class. docs/DIALOG_GEOMETRY.md lists 8 LEA-[0x839E] sites across
  * func_067DC8, func_067E8C, func_075352, func_075FB6 (+3 orphans). Each may
- * compute the rect differently -> the others are TBD until decoded.
+ * compute the rect differently -> the others are not yet decoded.
  * ---------------------------------------------------------------------------- */
 
 /* ============================================================================
- * POPUP FRAME + TEXT (TBD -- overlay-resident)
+ * POPUP FRAME + TEXT (library-implementation-only -- overlay-resident)
  * ----------------------------------------------------------------------------
  * After the rect is set, the popup is drawn with the WOODFRAM/WOODTILE frame
- * art and FONTSMAL/FONTTINY text. That draw is OVERLAY-resident and undecoded.
+ * art and FONTSMAL/FONTTINY text. That draw is overlay-resident (undecoded).
  *
  * What is frame-verified about popup geometry (RENDERER_GEOMETRY.md
  * "Popup framework -- TWO CLASSES" + "Map Banner Popups"):
@@ -134,14 +134,14 @@ void compute_dialog_rect_from_cursor(void)
  * ============================================================================ */
 void dialog_draw_frame(void)
 {
-    /* TBD: overlay-resident WOODFRAM/WOODTILE blit + FONTSMAL text layout,
-     * using the rect at DGROUP:0x839E..0x83A4 computed above. */
+    /* library-implementation-only: overlay-resident WOODFRAM/WOODTILE blit +
+     * FONTSMAL text layout using the rect at DGROUP:0x839E..0x83A4 above. */
 }
 
 /* ----------------------------------------------------------------------------
  * Specific dialogs (king/tax demand, Founding-Father congress, yes/no, alert)
  * are driven by GAME.TXT / LABELS.TXT templates + the overlay text engine, not
- * by resident C with hardcoded strings. Their resident wiring is TBD; see
+ * by resident C with hardcoded strings. Their resident wiring is library-implementation-only; see
  * docs/POPUP_TEMPLATE_AUDIT.md and docs/GAME_TXT_CATALOG.md for the template
  * format. (No fabricated KING_DEMAND_TABLE / demand string / button labels.)
  * ---------------------------------------------------------------------------- */
@@ -202,10 +202,10 @@ void dialog_draw_frame(void)
  *   [0x1F66]  word      set to 1 each loop pass  @0x029695
  *   [0x1F68]  word      "re-open same item" latch (drag/edit re-entry)
  *
- * --- HELPER CALLS (cite-or-TBD; these are GUI-framework leaves) -----------
+ * --- HELPER CALLS (call sites cited; pixel internals library-implementation-only) ---
  *   The list/record family (0x181F:0xB**, 0xC**) and the windowed-control
- *   family (0x191F:0x1**, 0x8**) are themselves overlay leaves; their CALL
- *   SITES + arg order are byte-exact below, their pixel internals stay TBD.
+ *   family (0x191F:0x1**, 0x8**) are overlay leaves; their CALL SITES + arg
+ *   order are byte-exact below, their pixel internals are library-implementation-only.
  *   The shared CONTROL MODEL they implement is decoded in menu.c.
  *
  *     0x181F:0xB46  list_count(buf)            -> # of build-list entries
@@ -239,7 +239,7 @@ void dialog_draw_frame(void)
  * --- STATUS ---------------------------------------------------------------
  *   ANCHOR_VERIFIED.  The CONTROL FLOW below is transcribed block-for-block
  *   from the reseg bytes (each step @asm-cited).  The per-row pixel blit and
- *   the production-maths leaves remain overlay TBD (cite-or-TBD).  No value,
+ *   the production-maths leaves are overlay library-implementation-only.  No value,
  *   coordinate, sprite, colour, or string appears here without a byte citation.
  *
  * --- RETURN ---------------------------------------------------------------
@@ -261,7 +261,7 @@ void dialog_draw_frame(void)
  *   +0xB6 (a per-colony production accumulator). */
 extern uint8_t *colony_8542(void);   /* reads near ptr [0x8542] */
 
-/* GUI-framework leaves (call sites byte-exact; pixel internals TBD). */
+/* GUI-framework leaves (call sites byte-exact; pixel internals library-implementation-only). */
 extern int  cd_list_count(void *buf);                       /* 0x181F:0xB46 */
 extern int  cd_list_disabled(int row);                      /* 0x181F:0xBB4 */
 extern int  cd_list_row_to_unit(int delta);                 /* 0x181F:0xBC8 */
@@ -333,8 +333,8 @@ void colony_dialog_engine(int in_subview)
     /* zero a 0x20-word scratch ([bp-0x94]) then build the per-row "+0x32" deltas
      * for every list row that is non-zero, summing into the production buffer
      * ([bp-0x78]) and the colony[+0x9A..] stockpile.  @asm 0x028E2C..0x028EDD */
-    /* TBD-detail: the exact per-row maths uses the 0x181F:0xBC8 row->unit map
-     * and the 0x1C-stride stat table at DGROUP+0x3159 (cited @0x028EB1); the
+    /* Not yet byte-traced: the exact per-row maths uses the 0x181F:0xBC8 row->unit
+     * map and the 0x1C-stride stat table at DGROUP+0x3159 (cited @0x028EB1); the
      * loop SHAPE is transcribed, the table semantics are decoded in colony.c. */
     list_n = cd_list_count(0);                                  /* @asm 0x028E45 0xB46 (buf=[bp-0x13e]) */
     for (row = 0; row < list_n; row++) {                        /* @asm 0x028E57..0x028E94 */

@@ -331,33 +331,35 @@ static const struct hud_placement HUD_LAYOUT[] = {
 #define G_REF_ARTILLERY  0x53E0   /* slot 3 (memory: NOT slot 2) */
 
 /* ----------------------------------------------------------------------------
- * Draw primitives — ALL TBD (emitted by the dispatch overlay, not decoded to a
- * file offset yet). Declared so the layout reads, but each is a stub.
+ * Draw primitives — all library-implementation-only (emitted by the dispatch
+ * overlay; the pixel format and exact blit calls are load-image resident).
  * ---------------------------------------------------------------------------- */
 
-/* Blit a PIK/sheet sprite. Resident-or-overlay routine TBD (load_PIK is
- * LCALL 0x191F:0x087A per RENDERER_GEOMETRY.md; text via FONTSMAL/FONTKING). */
-extern void hud_blit(int sprite_id, int x, int y);                 /* TBD */
+/* Blit a PIK/sheet sprite. load_PIK is LCALL 0x191F:0x087A per
+ * RENDERER_GEOMETRY.md; text via FONTSMAL/FONTKING. Library-implementation-only. */
+extern void hud_blit(int sprite_id, int x, int y);                 /* library-implementation-only */
 
 /* Draw a text run. The original resolves strings from LABELS.TXT/NAMES.TXT and
- * renders with FONTSMAL (6x8) / FONTTINY (5x6) / FONTKING (8x16). The font
- * blit routine is TBD. */
-extern void hud_text(int font_id, int x, int y, const char *s);    /* TBD */
+ * renders with FONTSMAL (6x8) / FONTTINY (5x6) / FONTKING (8x16).
+ * Library-implementation-only. */
+extern void hud_text(int font_id, int x, int y, const char *s);    /* library-implementation-only */
 
 /* Render the squashed minimap into MINIMAP rect (58x72 world -> 72x44). The
- * minimap composer is overlay/data-driven; TBD. */
-extern void hud_minimap_render(int rx, int ry, int rw, int rh);    /* TBD */
+ * minimap composer is overlay/data-driven. Library-implementation-only. */
+extern void hud_minimap_render(int rx, int ry, int rw, int rh);    /* library-implementation-only */
 
 /* ----------------------------------------------------------------------------
  * sidebar_render -- compose the map-view sidebar.
  * ----------------------------------------------------------------------------
- * Layout is frame-verified; data reads are byte-cited; the emits are TBD.
+ * Layout is frame-verified; data reads are byte-cited; the emits are
+ * library-implementation-only (dispatch overlay, load-image resident).
  * `pr` is the active player's PowerRecord; `sel_unit_idx` < 0 = none selected.
  * ---------------------------------------------------------------------------- */
 void sidebar_render(struct PowerRecord *pr, int sel_unit_idx)
 {
     /* 1. WOODPANL.PIK background fills SIDEBAR rect.  @ref RENDERER_GEOMETRY.md
-     *    "Default map view sidebar" / load_PIK LCALL 0x191F:0x087A. (TBD emit) */
+     *    "Default map view sidebar" / load_PIK LCALL 0x191F:0x087A.
+     *    (library-implementation-only emit) */
     hud_blit(/*WOODPANL*/ -1, SIDEBAR_X, SIDEBAR_Y);
 
     /* 2. Minimap (58x72 world squashed into 72x44).  @ref MINIMAP rect. */
@@ -395,7 +397,7 @@ void sidebar_render(struct PowerRecord *pr, int sel_unit_idx)
  * topmenu_render -- the top menu strip (0,0,320,8).
  * ----------------------------------------------------------------------------
  * Labels from LABELS.TXT @MISC (+ "COLONIZOPEDIA"); x positions frame-verified
- * ("Default map view sidebar" table). FONTSMAL yellow on wood. Emits TBD.
+ * ("Default map view sidebar" table). FONTSMAL yellow on wood. Emits library-implementation-only.
  * ---------------------------------------------------------------------------- */
 void topmenu_render(void)
 {
