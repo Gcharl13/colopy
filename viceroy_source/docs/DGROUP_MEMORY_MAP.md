@@ -59,14 +59,16 @@ detailed definition.
 | `0x2916 / 0x290E` | stdout / stdin `FILE` structs | far ptr | verified | iolib |
 | `0x2B01–0x2D52` | C-runtime: open-mode, iob dispatch, printf stream | scalars | verified | iolib |
 | `0x2F7B` | **Terrain-yield table** (16 B/terrain, ~64 ids) | `0x10` | verified base | globals.h |
-| **`0x3144`** | **UnitRecord table** | **`0x1C`** | **BYTE_VERIFIED** | unit.h · §3.1 |
-| `0x3995–0x39FF` | RTLink overlay layout (written by system_init) | `0xAA` words | verified | globals.h |
+| **`0x3144–0x5214`** | **UnitRecord table** (300 records, §5.5) | **`0x1C`** | **BYTE_VERIFIED** | unit.h · §3.1 |
 | `0x5237` | Per-unit-type table (stride 14) | `0x0E` | verified base | globals.h |
+
+> Note: `0x3995` (formerly "RTLink overlay layout") is **CS-relative, not
+> DGROUP** — see §5.6; it is not part of this segment's map.
 | `0x5382–0x53A6` | **Game phase / progress / counts / difficulty** | scalars | verified | §4 |
 | **`0x540E`** | **AIPersonality table** (4 EU) | **`0x34`** | **BYTE_VERIFIED layout** | ai_personality.h · §3.2 |
-| **`0x54EC`** | **NativeSettlement table** | **`0x12`** | **BYTE_VERIFIED base** | native.h · §3.3 |
-| `0x54F6` | Native per-pair **alarm** word array | word`[9·N]` | verified shape | native.h · §6 ⚠ |
-| **`0x5D46`** | **ColonyRecord table** (persistent, 0xCA) | **`0xCA`** | mostly verified | colony.h · §3.4 |
+| **`0x54EC–0x5AD4`** | **NativeSettlement table** (84 live, ~88 sized) | **`0x12`** | **BYTE_VERIFIED base** | native.h · §3.3 |
+| `0x5B1C` | `word[N·0x27]` table (row stride 39) — *newly found §5.4* | `0x4E` | base verified | §5.4 |
+| **`0x5D46`** | **ColonyRecord table** (persistent, 0xCA) | **`0xCA`** | base BYTE_VERIFIED | colony.h · §3.4 |
 | `0x84FC` | `g_active_power` — far ptr to active PowerRecord | far ptr | verified | effects.c |
 | `0x8542` | `ctx` — far ptr to **current colony** (102 callers) | far ptr | verified | globals.h |
 | `0x853A / 0x853C` | Map width / height | scalars | verified | globals.h |
@@ -100,8 +102,8 @@ Flat table; index-addressed (`imul reg,idx,0x1C; [reg+0x3144+field]`). Count =
 | `+0x17` | vet_type | profession `0x13..0x1C` |
 | `+0x18 / +0x1A` | chain_prev / chain_next (word) | tile-occupancy chain; `0xFFFF`=null |
 
-**Physical extent UNRESOLVED:** bounded dynamically by `g_unit_count`; the
-contiguous cap is not pinned (next known global is `0x3995`).
+**Physical extent:** **300 records** (`g_unit_count`@`0x539C` capped at `0x12C`),
+spanning `0x3144..0x5214`; next table `g_table_5237`@`0x5237`. (§5.5)
 
 ### 3.2 AIPersonality — base `0x540E`, stride `0x34` (52 B) — **BYTE_VERIFIED layout**
 
@@ -128,7 +130,11 @@ Count = `g_settle_count`@`0x539A` (max 84). x/y/owner/mission verified; rest par
 | `+0x03` | flags | bit `0x04` = developed/visited |
 | `+0x04` | population | CHIEFKILL raze input |
 | `+0x05` | mission | `0x10 | owner` (verified) |
-| `+0x06..0x0A` | byte/word ops verified, **roles not yet decoded** | |
+| `+0x06..0x09` | byte fields, set `0xFF` at create; roles not yet decoded | |
+| `+0x0A..0x11` | **`uint16_t alarm_by_power[4]`** — per-EU-power tension; threshold `0x80` | §5.4 |
+
+Table extent: `0x54EC..0x5AD4` (84 live, sized ~88 → `0x5B1C`). Cursor pointers at
+`0x8D4A`/`0x8D4E`. Next table: `0x5B1C` `word[N·0x27]` (stride 39).
 
 ### 3.4 ColonyRecord — base `0x5D46`, stride `0xCA` (202 B persistent) — base BYTE_VERIFIED
 
@@ -194,10 +200,13 @@ Full per-scalar list with citations: `include/globals.h`.
 
 ---
 
-## 5. Open conflicts & boundaries to resolve
+## 5. Conflicts & boundaries — ALL RESOLVED (2026-06-08)
 
-These are the items the refactor must **not** paper over. Each needs one more
-byte-trace before its field can be named with confidence.
+Every item below was closed by reading the actual instructions from the `.asm`
+dumps. One residual naming nuance remains in §5.2 (exact gameplay label of the
+`+0x95` counter), and a `power.h` prose cleanup is noted in §5.3, but no
+structural ambiguity blocks the refactor. The refactor must still **not** paper
+over the §5.2 residual; everything else is a clean named field.
 
 1. ~~**ColonyRecord base `0x5D46` vs `0x5D60`**~~ — **RESOLVED 2026-06-08: base is
    `0x5D46`.** `func_0082DC` @`0x008307` does `imul bx,idx,0xCA; add bx,0x5D46;
@@ -226,14 +235,32 @@ byte-trace before its field can be named with confidence.
    lives in the `0x54EC` settlement records + the alarm array. *Remaining:*
    reconcile `power.h` prose (drop "8 powers", flag the market-array widths as
    RECONSTRUCTED).
-4. **Native alarm array overlaps settlement record 0** — `0x54F6` = `0x54EC`+`0xA`;
-   `native.h` says the alarm word array is *separate* from the 18-B settlement
-   records, yet it numerically sits inside record 0's `+0x0A`. Either the
-   settlement table is not contiguous from `0x54EC` or the alarm array has a
-   different base. Trace the alarm read/write (`0x04734E`, `0x05C651`) vs a
-   settlement-record write to disambiguate.
-5. **UnitRecord physical cap** — dynamic count known (`0x539C`); contiguous
-   maximum not pinned.
+4. **Native alarm array overlaps settlement record 0** — **RESOLVED 2026-06-08:
+   no conflict; the "alarm array" is an in-record field, not a separate table.**
+   `0x54F6 = 0x54EC + 0x0A`, and a "row" of `9 words = 18 bytes = 0x12` equals the
+   settlement stride, so the addressing `[(idx·9 + power)·2 + 0x54F6]` resolves
+   *exactly* to `settlement[idx].field_0A + power·2`. The field is therefore a
+   per-EU-power `uint16_t alarm_by_power[4]` at `+0x0A..+0x11` (power gated `<4`
+   at the clear site), threshold `0x80`. Verified read/cmp at `0x04CAD7` and
+   `0x053D4E`, clear at `0x05C651` (the `native.h` citations `0x4734E/0x47487`
+   were wrong — no such instructions). Settlement table = `0x54EC..0x5AD4`
+   (84·`0x12`), physically sized to ~88 records (ends `0x5B1C`). **New table found**
+   at `0x5B1C`: `word[N·0x27]` (row stride 39) — next global after settlements.
+   The STORES raid mutates a settlement via pointer `[0x8D4E]`
+   (`inc [bx+8]; add [bx+0xA],0x19` @`0x05C3DD`).
+5. **UnitRecord physical cap** — **RESOLVED 2026-06-08: 300 records (`0x12C`).**
+   `cmp [0x539C],0x12C` gates allocation (`0x006D4A`, `0x02397A`); `0x124`=292 is
+   a near-full threshold (`0x006D3F`). `unit_create@0x40085` (`mov ax,[0x539C];
+   inc [0x539C]`) appends at the tail. Table spans `0x3144..0x5214`
+   (`0x3144 + 0x12C·0x1C`), bounded above by `g_table_5237`@`0x5237` — a clean fit.
+
+6. **`globals.h` `g_overlay_layout`@`0x3995` is mislabeled** — **RESOLVED
+   2026-06-08: it is CS-relative, not DGROUP.** All accesses use the `2e` CS
+   override (`mov byte cs:[0x39E3],0xFF` @`0x013BD5`; `test cs:[0x39DE],8`;
+   `add cs:[0x39B7],ax`), so `0x3995` lives in the **code segment** (self-modified
+   overlay state), not DGROUP — hence no collision with the unit table that now
+   occupies `0x3144..0x5214`. `globals.h` comment corrected. *Caveat:* audit
+   other `globals.h` entries for the same DS-vs-CS mislabel.
 
 ---
 

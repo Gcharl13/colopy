@@ -183,7 +183,14 @@ extern uint16_t g_load_seg_26A7;          /* DGROUP:0x26A7 */
 
 /* ----------------------------------------------------------------------------
  * RTLink overlay globals (set by system_init / overlay loader)
- * ---------------------------------------------------------------------------- */
-extern uint16_t g_overlay_layout[0xAA];   /* DGROUP:0x3995..0x39FF (layout written by system_init) */
+ * ----------------------------------------------------------------------------
+ * NOTE (CORRECTED 2026-06-08): 0x3995 is **CS-RELATIVE** (code segment), NOT a
+ * DGROUP global. Every access uses the 0x2E CS override (e.g. @0x013BD5
+ * `mov byte cs:[0x39E3],0xFF`; `test cs:[0x39DE],8`; `add cs:[0x39B7],ax`). It is
+ * self-modified overlay-dispatch state living in the code image, and it does NOT
+ * occupy DGROUP (where 0x3144..0x5214 is the 300-record UnitRecord table). This
+ * `extern` is retained for callers but is NOT a true DS datum; do not place it in
+ * the DGROUP struct map. @ref docs/DGROUP_MEMORY_MAP.md §5.6 */
+extern uint16_t g_overlay_layout_CS[0xAA];   /* CS:0x3995.. (NOT DGROUP); RTLink overlay dispatch state */
 
 #endif /* VICEROY_GLOBALS_H */

@@ -65,12 +65,18 @@ struct NativeSettlement {             /* 18 bytes (0x12) */
                                        *   (note the 0xFF init vs inc — possibly a counter that
                                        *   is reset before use). [byte ops verified; role not yet decoded] */
     uint8_t  field_09;                /* +0x09 — set 0xFF at create (@0x046EB6 [0x54F5]); not yet decoded */
-    uint16_t field_0A;                /* +0x0A — word.  A STORES raid does
-                                       *   `add word [rec+0xA],0x19` (@0x05C3E4); the
-                                       *   tribe-death redistribute reads it as a word
-                                       *   (settlement.c STEP 3, [si+0xA]). Role not yet decoded
-                                       *   [byte ops verified; semantics not yet decoded] */
-    uint8_t  data_0C_11[6];           /* +0x0C..0x11 — not yet decoded layout */
+    uint16_t alarm_by_power[4];       /* +0x0A..0x11 — per-EU-power tension/alarm vector
+                                       *   (BYTE_VERIFIED 2026-06-08, DGROUP_MEMORY_MAP §5.4).
+                                       *   Indexed by EU power 0..3 (gated <4). Threshold 0x80
+                                       *   = "high alarm". The `[(settle*9+power)*2 + 0x54F6]`
+                                       *   addressing used by the AI is just record-relative
+                                       *   access: 0x54F6 = base 0x54EC + 0x0A, and a 9-word row
+                                       *   == the 0x12 settlement stride, so it resolves to
+                                       *   settlement[settle].alarm_by_power[power]. Verified
+                                       *   read/cmp 0x80 @0x04CAD7 / @0x053D4E; clear @0x05C651;
+                                       *   STORES raid `add word [rec+0xA],0x19` @0x05C3E4 bumps
+                                       *   alarm_by_power[0]. (Replaces the prior bogus "separate
+                                       *   alarm word array at 0x54F6" model.) */
 };
 #pragma pack(pop)
 
@@ -86,16 +92,18 @@ struct NativeSettlement {             /* 18 bytes (0x12) */
 #define POWER_TO_TRIBE(power)    ((power) - NATIVE_POWER_BASE)
 
 /* ----------------------------------------------------------------------------
- * Per-pair ALARM / raid-tension accumulator — a SEPARATE word array at
- * DGROUP:0x54F6 (NOT part of the 18-byte settlement records).  Indexed
- * word[A*9 + B] (row stride 9); threshold 0x80 = "high alarm".  BYTE_VERIFIED
- * index shape + threshold at 0x04734E / 0x047487 (read, vs 0x80) and 0x05C651
- * (post-raid clear).  One axis is the raiding settlement / unit-home index, the
- * other a power index (0..8).  Stored-value units + what raises it are not yet decoded.
- * See src/native/raid.c for the full citation set.
+ * Per-power ALARM / raid-tension — CORRECTED 2026-06-08 (DGROUP_MEMORY_MAP §5.4).
+ * This is NOT a separate array: it is the in-record `alarm_by_power[4]` field at
+ * settlement +0x0A..+0x11 (see struct above). The AI's `[(settle*9 + power)*2 +
+ * 0x54F6]` addressing is record-relative — 0x54F6 = base 0x54EC + 0x0A, and a
+ * 9-word row equals the 0x12 settlement stride — so it resolves to
+ * settlement[settle].alarm_by_power[power]. Threshold 0x80. BYTE_VERIFIED at
+ * 0x04CAD7 / 0x053D4E (read, vs 0x80) and 0x05C651 (clear). The earlier
+ * 0x4734E/0x047487 citations were wrong (no such instructions). power axis is
+ * gated <4 (the 4 EU powers).
  * ---------------------------------------------------------------------------- */
-#define NATIVE_ALARM_ROW_STRIDE  9      /* @asm bx = A*9 + B before <<1 */
-#define NATIVE_ALARM_THRESHOLD   0x80   /* @asm cmp word [bx+0x54F6],0x80 */
+#define NATIVE_ALARM_ROW_STRIDE  9      /* @asm bx = settle*9 + power (== 0x12-byte stride) */
+#define NATIVE_ALARM_THRESHOLD   0x80   /* @asm cmp word [bx+0x54F6],0x80 @0x04CAD7 */
 
 /* ----------------------------------------------------------------------------
  * Tribe ids = the line index of the 8 playable tribes in NAMES.TXT @TRIBES,
