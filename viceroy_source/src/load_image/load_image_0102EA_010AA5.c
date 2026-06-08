@@ -18,16 +18,26 @@
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (43 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strrchr-like (near): last occurrence of byte arg1 in str arg0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0102EA_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010307 JE 0x01030D */ {
-            goto label_01030F;  /* @0x01030B */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strrchr(s=arg0_bp_06, c=(uint8_t)arg1_bp_08), near pointer.
+     * 0x0102F0 mov di,s; measure length via repne scasb (cx=len incl NUL);
+     * 0x0102FD dec di -> di now at the NUL; 0x0102FE mov al,c; 0x010301 std;
+     * 0x010302 repne scasb scans BACKWARD for c; 0x010304 inc di;
+     * 0x010305 cmp [di],al; je hit -> ax=di else 0x010309 xor ax,ax. */
+    uint16_t start = arg0_bp_06;
+    uint8_t c = (uint8_t)arg1_bp_08;
+    uint16_t p = start;
+    while (*(const uint8_t near *)(uint16_t)p) p++;   /* @asm fwd scan to NUL */
+    /* scan backward from the NUL (inclusive) toward start */
+    for (;;) {
+        if (*(const uint8_t near *)(uint16_t)p == c) return (int)(uint16_t)p; /* @asm cmp [di],al; je */
+        if (p == start) return 0;                     /* @asm exhausted -> xor ax,ax */
+        p--;
+    }
 }
 
 /* @asm        0x010316..0x010334  (30 bytes)  region=load_image
@@ -39,18 +49,24 @@ int func_0102EA_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strlwr-like (near): lowercase A-Z in place, return string
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_010316_logic_sz_30(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_01032B;  /* @0x01031E */
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x010324 JAE 0x01032A */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01032F JNE 0x010320 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strlwr(s=arg0_bp_06), near, in place.
+     * 0x010319 mov bx,s; dx=s (saved for return); loop over bytes:
+     * 0x010320 sub al,0x41; 0x010322 cmp al,0x1A; 0x010324 jae skip (not A-Z);
+     * 0x010326 add al,0x61 -> al = c+0x20 (to lowercase); 0x010328 mov [bx],al;
+     * 0x01032A inc bx; 0x01032B mov al,[bx]; or al; jne loop. ret dx (=s). */
+    uint16_t p = arg0_bp_06;
+    uint8_t c;
+    while ((c = *(uint8_t near *)(uint16_t)p) != 0) {   /* @asm mov al,[bx]; or al; jne */
+        if ((uint8_t)(c - 0x41) < 0x1A)                 /* @asm sub al,0x41; cmp 0x1A; jae */
+            *(uint8_t near *)(uint16_t)p = (uint8_t)(c + 0x20); /* @asm add al,0x61; mov [bx],al */
+        p++;
+    }
+    return (int)(uint16_t)arg0_bp_06;                   /* @asm xchg dx,ax */
 }
 
 /* @asm        0x010334..0x010352  (30 bytes)  region=load_image
@@ -62,18 +78,24 @@ int func_010316_logic_sz_30(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strupr-like (near): uppercase a-z in place, return string
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_010334_logic_sz_30(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_010349;  /* @0x01033C */
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x010342 JAE 0x010348 */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01034D JNE 0x01033E */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strupr(s=arg0_bp_06), near, in place.
+     * 0x010337 mov bx,s; dx=s; loop over bytes:
+     * 0x01033E sub al,0x61; 0x010340 cmp al,0x1A; 0x010342 jae skip (not a-z);
+     * 0x010344 add al,0x41 -> al = c-0x20 (to uppercase); 0x010346 mov [bx],al;
+     * 0x010348 inc bx; 0x010349 mov al,[bx]; or al; jne loop. ret dx (=s). */
+    uint16_t p = arg0_bp_06;
+    uint8_t c;
+    while ((c = *(uint8_t near *)(uint16_t)p) != 0) {   /* @asm mov al,[bx]; or al; jne */
+        if ((uint8_t)(c - 0x61) < 0x1A)                 /* @asm sub al,0x61; cmp 0x1A; jae */
+            *(uint8_t near *)(uint16_t)p = (uint8_t)(c - 0x20); /* @asm add al,0x41; mov [bx],al */
+        p++;
+    }
+    return (int)(uint16_t)arg0_bp_06;                   /* @asm xchg dx,ax */
 }
 
 /* @asm        0x010352..0x01037E  (44 bytes)  region=load_image
@@ -85,17 +107,20 @@ int func_010334_logic_sz_30(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  memcpy-like (near): copy arg2 bytes src(arg1)->dest(arg0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_010352_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x010368 JCXZ 0x010378 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01036C JE 0x010370 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm memcpy(dest=arg0_bp_06, src=arg1_bp_08, n=arg2_bp_0A), near.
+     * 0x01035D mov si,src; 0x010360 mov di,dest; 0x010365 mov cx,n;
+     * 0x010368 jcxz done; word-aligned rep movsw + odd-byte movsb (byte-
+     * equivalent to the loop below). 0x010363 mov ax,di -> returns dest. */
+    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    uint16_t n = arg2_bp_0A;
+    while (n-- != 0) *dst++ = *src++;      /* @asm rep movsw / movsb */
+    return (int)(uint16_t)arg0_bp_06;      /* @asm mov ax,di (=dest) */
 }
 
 /* @asm        0x01037E..0x0103AB  (45 bytes)  region=load_image
@@ -107,17 +132,20 @@ int func_010352_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (45 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  memset-like (near): fill arg2 bytes of dest(arg0) with arg1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_01037E_logic_sz_45(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x01038F JCXZ 0x0103A6 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01039A JE 0x01039E */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm memset(dest=arg0_bp_06, c=(uint8_t)arg1_bp_08, n=arg2_bp_0A), near.
+     * 0x010387 mov di,dest; bx=dest (saved); 0x01038C mov cx,n; 0x01038F jcxz
+     * done; 0x010391 al=ah=(uint8_t)c; word-aligned rep stosw + odd byte stosb
+     * (byte-equivalent to the loop below). 0x0103A8 xchg bx,ax -> returns dest. */
+    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
+    uint8_t c = (uint8_t)arg1_bp_08;
+    uint16_t n = arg2_bp_0A;
+    while (n-- != 0) *dst++ = c;           /* @asm rep stosw / stosb */
+    return (int)(uint16_t)arg0_bp_06;      /* @asm xchg bx,ax (=dest) */
 }
 
 /* @asm        0x0103AC..0x0103C2  (22 bytes)  region=load_image
@@ -129,13 +157,17 @@ int func_01037E_logic_sz_45(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (22 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  labs-like: absolute value of the 32-bit arg (dx:ax = [bp+8]:[bp+6])
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_0103AC_logic_sz_22(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+uint32_t func_0103AC_logic_sz_22(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm labs(x) where x = (int32_t)((arg1_bp_08<<16)|arg0_bp_06).
+     * 0x0103AF mov ax,[bp+6]; 0x0103B2 mov dx,[bp+8]; 0x0103B5 or dx,dx;
+     * 0x0103B7 jge done (already non-negative); else negate the dword:
+     * 0x0103B9 neg ax; 0x0103BB adc dx,0; 0x0103BE neg dx. Returns dx:ax. */
+    int32_t x = (int32_t)(((uint32_t)arg1_bp_08 << 16) | (uint16_t)arg0_bp_06);
+    return (uint32_t)(x < 0 ? -x : x);     /* @asm neg-with-carry if high word < 0 */
 }
 
 /* @asm        0x0103C2..0x0103D3  (17 bytes)  region=load_image
@@ -147,13 +179,19 @@ int func_0103AC_logic_sz_22(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (17 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  setter: store arg0 (zero-extended) into 32-bit global @0x28EE
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0103C2_logic_sz_17(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0103C5 mov ax,[bp+6]; 0x0103C8 mov [0x28EE],ax;
+     *      0x0103CB mov word [0x28F0],0; 0x0103D2 retf.
+     * Writes the dword global at DGROUP:0x28EE = (uint16_t)arg0 (low word =
+     * arg0, high word forced 0). 0x28EE/0x28F0 sits in the C-runtime stream
+     * working area; this is a "set 32-bit position/length" assignment. ax is
+     * left = arg0, so the call also returns arg0. */
+    *(uint32_t near *)0x28EE = (uint32_t)(uint16_t)arg0_bp_06;
+    return (int)(uint16_t)arg0_bp_06;
 }
 
 /* @asm        0x0103FC..0x010419  (29 bytes)  region=load_image

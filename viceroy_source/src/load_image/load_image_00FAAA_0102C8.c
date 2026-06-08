@@ -21,12 +21,17 @@
  *
  * LCALL targets:
  *   - 0x0D1D:0x04AE
- * @inferred_role  WRAPPER_LCALL (21 bytes). 0x0D1D:0x04AE
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  C-runtime print-to-buffer wrapper (vsprintf-style thunk)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FAAA_rtl_sz_21(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to LCALL 0x0D1D:0x04AE. */
+    /* @asm 0x00FAAD sub ax,ax; 0x00FAAF push ax; 0x00FAB0 push [bp+8];
+     *      0x00FAB3 push [bp+6]; 0x00FAB6 lcall 0xD1D:0x4AE; 0x00FABE retf.
+     * Pushes (arg0, arg1, 0) and tail-calls the C-runtime formatter at
+     * 0x0D1D:0x04AE (a print-into-string primitive: dest=arg0, fmt=arg1,
+     * 0 = "unbounded length"). Thin wrapper; real body lives in the thunk
+     * page (library-implementation-only). Returns the formatter's result. */
     return overlay_call_0D1D_04AE();
 }
 
@@ -184,13 +189,25 @@ int func_00FCE2_logic_sz_14(void)
  *
  * Near CALL targets:
  *   - 0x010BBC
- * @inferred_role  WRAPPER_NEARCALL (37 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  putc-style buffered character output (fp buffer at arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FD28_logic_sz_37(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x010BBC. */
-    return func_010BBC();
+    /* @asm putc(c=arg0_bp_06, fp=arg1_bp_08).  fp is a near pointer to a
+     *      buffer descriptor: +0 = current write cursor, +2 = bytes left.
+     * 0x00FD2B mov bx,[bp+8]; 0x00FD2E dec [bx+2]; 0x00FD31 js refill;
+     * 0x00FD33 inc [bx]; 0x00FD35 mov bx,[bx]; 0x00FD37 mov al,[bp+6];
+     * 0x00FD3A mov [bx-1],al; 0x00FD3D xor ah,ah  -> return (uint8_t)c.
+     * refill: 0x00FD41 push bx; push [bp+6]; call 0x10BBC (_flsbuf-style
+     *         flush; args (c, fp)). Returns its result. */
+    uint16_t near *fp = (uint16_t near *)(uint16_t)arg1_bp_08;
+    if ((int16_t)(--fp[1]) >= 0) {                 /* @asm dec [bx+2]; jns */
+        fp[0]++;                                    /* @asm inc [bx] */
+        *(uint8_t near *)(uint16_t)(fp[0] - 1) = (uint8_t)arg0_bp_06; /* @asm mov [bx-1],al */
+        return (uint8_t)arg0_bp_06;                 /* @asm xor ah,ah */
+    }
+    return func_010BBC(arg0_bp_06, arg1_bp_08);     /* @asm call 0x10BBC */
 }
 
 /* @asm        0x00FD56..0x00FD74  (30 bytes)  region=load_image
@@ -205,13 +222,22 @@ int func_00FD28_logic_sz_37(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x010B26
- * @inferred_role  WRAPPER_NEARCALL (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  getc-style buffered character input (fp buffer at arg0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FD56_logic_sz_30(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x010B26. */
-    return func_010B26();
+    /* @asm getc(fp=arg0_bp_06).  fp near-> {+0 cursor, +2 bytes left}.
+     * 0x00FD59 mov bx,[bp+6]; 0x00FD5C dec [bx+2]; 0x00FD5F js refill;
+     * 0x00FD61 inc [bx]; 0x00FD63 mov bx,[bx]; 0x00FD65 mov al,[bx-1];
+     * 0x00FD68 xor ah,ah -> return (uint8_t)*cursor++.
+     * refill: 0x00FD6C push bx; call 0x10B26 (_filbuf-style refill). */
+    uint16_t near *fp = (uint16_t near *)(uint16_t)arg0_bp_06;
+    if ((int16_t)(--fp[1]) >= 0) {                 /* @asm dec [bx+2]; jns */
+        fp[0]++;                                    /* @asm inc [bx] */
+        return *(uint8_t near *)(uint16_t)(fp[0] - 1); /* @asm mov al,[bx-1]; xor ah,ah */
+    }
+    return func_010B26(arg0_bp_06);                 /* @asm call 0x10B26 */
 }
 
 /* @asm        0x00FD74..0x00FDB3  (63 bytes)  region=load_image
@@ -223,15 +249,23 @@ int func_00FD56_logic_sz_30(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strcat-like (near): append src(arg1) to dest(arg0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FD74_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00FDA1 JE 0x00FDA5 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strcat(dest=arg0_bp_06, src=arg1_bp_08), near pointers.
+     * 0x00FD7F mov di,[bp+6]; scan dest for NUL (repne scasb) -> end;
+     * 0x00FD8C mov di,[bp+8]; scan src for NUL to get its length;
+     * then copy src (incl. NUL) to dest end via rep movs.
+     * 0x00FD9A mov ax,[bp+6] -> returns dest. (movsw/movsb word-aligned
+     * fast path is byte-equivalent to the byte copy below.) */
+    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    uint8_t near *p = dst;
+    while (*p) p++;                 /* @asm repne scasb over dest */
+    while ((*p++ = *src++) != 0) ;  /* @asm rep movs (src incl. NUL) */
+    return (int)(uint16_t)arg0_bp_06; /* @asm mov ax,[bp+6] */
 }
 
 /* @asm        0x00FDB4..0x00FDE6  (50 bytes)  region=load_image
@@ -243,15 +277,19 @@ int func_00FD74_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (50 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strcpy-like (near): copy src(arg1) into dest(arg0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FDB4_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00FDD4 JE 0x00FDD8 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strcpy(dest=arg0_bp_06, src=arg1_bp_08), near pointers.
+     * 0x00FDBB mov si,[bp+8]; scan src for NUL (repne scasb) to get length;
+     * 0x00FDCD mov di,[bp+6]; rep movs the bytes (incl. NUL) src->dest.
+     * 0x00FDD0 mov ax,di -> returns dest. */
+    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    while ((*dst++ = *src++) != 0) ;   /* @asm rep movs (src incl. NUL) */
+    return (int)(uint16_t)arg0_bp_06;  /* @asm mov ax,di (=dest) */
 }
 
 /* @asm        0x00FDE6..0x00FE11  (43 bytes)  region=load_image
@@ -263,15 +301,20 @@ int func_00FDB4_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (43 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strcmp-like (near): compare s1(arg0) vs s2(arg1)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FDE6_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00FE04 JE 0x00FE0B */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strcmp(s1=arg0_bp_06, s2=arg1_bp_08), near pointers.
+     * 0x00FDF1 mov si,[bp+6]; 0x00FDF4 mov di,[bp+8]; measure s2 length via
+     * repne scasb; 0x00FE02 repe cmpsb s1 vs s2; 0x00FE04 je equal -> ax=0;
+     * else 0x00FE06 sbb ax,ax; 0x00FE08 sbb ax,0xFFFF -> -1 if s1<s2 else +1. */
+    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    while (*s1 && *s1 == *s2) { s1++; s2++; }   /* @asm repe cmpsb */
+    if (*s1 == *s2) return 0;                    /* @asm je 0xFE0B */
+    return (*s1 < *s2) ? -1 : 1;                 /* @asm sbb ax,ax; sbb ax,-1 */
 }
 
 /* @asm        0x00FE12..0x00FE2D  (27 bytes)  region=load_image
@@ -283,13 +326,19 @@ int func_00FDE6_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (27 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strlen-like (near): length of NUL-terminated string arg0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FE12_logic_sz_27(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm strlen(s=arg0_bp_06), near pointer.
+     * 0x00FE1B mov di,[bp+6]; 0x00FE1E xor ax,ax; 0x00FE20 mov cx,0xFFFF;
+     * 0x00FE23 repne scasb; 0x00FE25 not cx; 0x00FE27 dec cx -> length in cx;
+     * 0x00FE28 xchg cx,ax -> return length. */
+    const uint8_t near *s = (const uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *p = s;
+    while (*p) p++;            /* @asm repne scasb */
+    return (int)(uint16_t)(p - s);
 }
 
 /* @asm        0x00FE2E..0x00FE61  (51 bytes)  region=load_image
@@ -301,15 +350,25 @@ int func_00FE12_logic_sz_27(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (51 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strncat-like (near): append <=n chars of src(arg1) to dest(arg0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FE2E_logic_sz_51(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FE4E JNE 0x00FE51 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strncat(dest=arg0_bp_06, src=arg1_bp_08, n=arg2_bp_0A), near.
+     * 0x00FE35 mov di,[bp+6]; find dest end via repne scasb (si = end-at-NUL).
+     * 0x00FE44 mov di,[bp+8]; mov cx,n; repne scasb -> copy_len = #src bytes
+     *   before NUL, capped at n (0x00FE4E jne / inc cx; sub cx,n; neg cx).
+     * 0x00FE5A rep movsb copies copy_len bytes; 0x00FE5C stosb writes the NUL.
+     * 0x00FE5D mov ax,dx -> returns dest. */
+    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
+    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    uint16_t n = arg2_bp_0A;
+    uint8_t near *p = dst;
+    while (*p) p++;                                  /* @asm repne scasb (dest end) */
+    while (n-- != 0 && *src) *p++ = *src++;          /* @asm rep movsb (<=n src bytes) */
+    *p = 0;                                          /* @asm stosb (NUL terminate) */
+    return (int)(uint16_t)arg0_bp_06;               /* @asm mov ax,dx (=dest) */
 }
 
 /* @asm        0x00FE64..0x00FE86  (34 bytes)  region=load_image
@@ -398,13 +457,15 @@ int func_00FEE6_logic_sz_10(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  scalar adjust: arg0 - 0x20 (FILE*-to-base / un-bias helper)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FEF0_logic_sz_11(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x00FEF3 mov ax,[bp+6]; 0x00FEF6 sub ax,0x20; 0x00FEFA retf.
+     * Returns arg0 - 0x20 (subtracts the 0x20-byte FILE-header bias; the
+     * companion at 0x00FEFC adds it back conditionally). */
+    return (int)(uint16_t)(arg0_bp_06 - 0x20);
 }
 
 /* @asm        0x00FEFC..0x00FF10  (20 bytes)  region=load_image
@@ -416,13 +477,20 @@ int func_00FEF0_logic_sz_11(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  FILE*-base resolver: returns arg0 or arg0-0x20 per a flag bit
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00FEFC_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm body runs 0x00FEFC..0x00FF11 (retf), 22 bytes (auto-range END was
+     *      2 bytes short; verified against func_00FEFC.asm "size 22").
+     * 0x00FEFF mov bx,[bp+6]; 0x00FF02 test byte [bx+0x27ed],2; 0x00FF07 je;
+     * 0x00FF09 lea ax,[bx-0x20] (flag set) else 0x00FF0E mov ax,bx.
+     * [bx+0x27ed] is a per-stream flag byte in the C-runtime FILE-flags
+     * region (cf. 0x27BB file_flags); bit 1 selects the -0x20 base form. */
+    if (*(uint8_t near *)(uint16_t)(arg0_bp_06 + 0x27ed) & 2)  /* @asm test [bx+0x27ed],2 */
+        return (int)(uint16_t)(arg0_bp_06 - 0x20);             /* @asm lea ax,[bx-0x20] */
+    return (int)(uint16_t)arg0_bp_06;                          /* @asm mov ax,bx */
 }
 
 /* @asm        0x00FF12..0x00FF69  (87 bytes)  region=load_image
@@ -704,15 +772,24 @@ int func_010172_rtl_sz_134(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (42 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strchr-like (near): first occurrence of byte arg1 in str arg0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_010226_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010245 JE 0x010249 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strchr(s=arg0_bp_06, c=(uint8_t)arg1_bp_08), near pointer.
+     * 0x01022A mov di,s; measure length incl. NUL (repne scasb; inc cx;
+     *   neg cx) so the scan can also match the terminator; 0x01023B mov al,c;
+     * 0x010240 repne scasb; 0x010242 dec di; 0x010243 cmp [di],al; je hit ->
+     *   di points at the match, else 0x010247 xor di,di. 0x010249 mov ax,di. */
+    uint16_t p = arg0_bp_06;
+    uint8_t c = (uint8_t)arg1_bp_08;
+    for (;;) {
+        uint8_t ch = *(const uint8_t near *)(uint16_t)p;
+        if (ch == c) return (int)(uint16_t)p;   /* @asm cmp [di],al; je -> ax=di */
+        if (ch == 0) return 0;                  /* @asm no match -> xor di,di */
+        p++;
+    }
 }
 
 /* @asm        0x010250..0x010292  (66 bytes)  region=load_image

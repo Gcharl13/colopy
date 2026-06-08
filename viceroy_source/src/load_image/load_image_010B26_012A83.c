@@ -943,17 +943,25 @@ int func_012102_rtl_sz_273(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (33 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  near-heap free helper: mark block @(arg0-2) free, lower arena low-water
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_012214_logic_sz_33(uint16_t arg0_bp_06)
+void func_012214_logic_sz_33(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x012221 JAE 0x012230 */ {
-            if (/* JBE fallthrough cond: */ ax > 0) /* @0x01222B JBE 0x012230 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm near-heap control struct at DGROUP:0x2778 (+6 = boundary ptr,
+     *      +8 = low-water / break ptr). bx = arg0 (a block payload pointer).
+     * 0x01221E cmp [0x277E],bx; 0x012221 jae return  (only act if [0x277E] < bx);
+     * 0x012223 dec bx; dec bx -> header word at (arg0-2);
+     * 0x012225 or byte [bx],1  (set the "free" bit on the block header);
+     * 0x012228 cmp [0x2780],bx; 0x01222B jbe return; 0x01222D mov [0x2780],bx
+     *   (lower the low-water pointer to this block). No defined return value. */
+    uint16_t blk = arg0_bp_06;
+    if (*(uint16_t near *)(0x2778 + 6) >= blk)   /* @asm cmp [si+6],bx; jae */
+        return;
+    blk -= 2;                                     /* @asm dec bx; dec bx */
+    *(uint8_t near *)(uint16_t)blk |= 1;          /* @asm or byte [bx],1 */
+    if (*(uint16_t near *)(0x2778 + 8) > blk)     /* @asm cmp [si+8],bx; jbe */
+        *(uint16_t near *)(0x2778 + 8) = blk;     /* @asm mov [si+8],bx */
 }
 
 /* @asm        0x012235..0x01225D  (40 bytes)  region=load_image
