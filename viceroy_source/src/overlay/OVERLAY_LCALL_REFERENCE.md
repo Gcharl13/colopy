@@ -36,7 +36,7 @@ upgraded from LOW to HIGH confidence.
 | 0x191F:0x0176   |    20 | secondary draw                           | LOW        |
 | 0x181F:0x0302   |    19 | predicate (returns 0/1)                  | LOW        |
 | 0x181F:0x078C   |    19 | unit/cargo helper                        | LOW        |
-| 0x181F:0x0A38   |    19 | save/load helper                         | LOW        |
+| 0x181F:0x0A38   |    19 | **war_matrix_read(power,k)** -> relation/war-slot byte; power<4: 0x883C+power*0x13C+k, power>=4: 0x59D8+power*0x4E+k — BYTE_VERIFIED 2026-06-08 | LOW |
 | 0x181F:0x0444   |    19 | text formatting                          | LOW        |
 | 0x181F:0x0722   |    18 | dialog/menu                              | LOW        |
 | 0x181F:0x0582   |    18 | per-power state setup                    | MEDIUM (called immediately before per-power processing) |
@@ -48,7 +48,7 @@ upgraded from LOW to HIGH confidence.
 | 0x181F:0x011E   |    17 | dialog primitive H                       | LOW        |
 | 0x181F:0x0416   |    16 | text/string                              | LOW        |
 | 0x181F:0x07B4   |    16 | sound/music                              | LOW        |
-| 0x181F:0x030C   |    16 | predicate                                | LOW        |
+| 0x181F:0x030C   |    16 | **threat_table_read(row,col)** -> word[0x5B1C + (row*0x27+col)*2]; 2-D power-vs-power relation matrix stride 0x27 — BYTE_VERIFIED 2026-06-08 | LOW |
 | 0x181F:0x0074   |    15 | dialog primitive I                       | LOW        |
 | 0x181F:0x0056   |    15 | dialog primitive J                       | LOW        |
 | 0x181F:0x09AE   |    15 | colony helper                            | LOW        |

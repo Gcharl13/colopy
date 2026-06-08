@@ -1799,11 +1799,28 @@ int func_0645F6_genpass_orchestrator(void)
  *   indexing, the random rolls (0x181F:0x4d4), the validation gates and every
  *   cited thunk are byte-verified.  Several inner results depend on opaque
  *   resident thunks whose return semantics are not byte-grounded here
- *   (0x181F:0xa42/0xa4c/0x88a/0xd84, 0x1A1F:0x440/0x88a, 0x191F:0x91c/0x928); those
- *   are called at their verified sites and their results consumed structurally.
- *   TBD-inner: the precise scoring inside 0x181F:0xd84 (distance metric to [0x8db8])
- *   and the property bytes returned by the 0x1A1F:0x88a quadruple — call sites and
+ *   (0x181F:0xa42/0xa4c/0x88a, 0x1A1F:0x440/0x88a, 0x191F:0x91c/0x928); those
+ *   are called at their verified sites and their results consumed structurally;
+ *   the property bytes returned by the 0x1A1F:0x88a quadruple — call sites and
  *   storage are cited, the numeric meaning is not invented.
+ *
+ *   0x181F:0xD84 TRAMPOLINE RESOLVED (BYTE_VERIFIED 2026-06-08):
+ *     RTLink stub is polymorphic; in the func_065D26 context (page 0x0B loaded)
+ *     it resolves to file 0x046056 = find_nearest_settlement(col,row,owner,nation).
+ *     Signature: int find_nearest_settlement(int col, int row,
+ *                                            int owner_filter, int nation_filter)
+ *     Called here as: find_nearest_settlement(col, row, -1, -1)
+ *       (-1,-1 = accept any owner, skip nation/flow filter)
+ *     Algorithm: iterates all [0x539A] NativeSettlement entries (table DS:0x54EC,
+ *       stride 0x12, +0=col +1=row +2=owner), optionally filters by owner/nation,
+ *       computes octile distance via 0x181F:0x370 = max(|dx|,|dy|)+min(|dx|,|dy|)/2
+ *       (same formula as func_0627BE_distance), tracks the minimum.
+ *     Side-effect: writes [0x8DB8] = minimum octile distance to nearest settlement
+ *       (0x270F = 9999 if no settlement passes filters; 0 means settlement at same tile).
+ *     Return value (AX): index of nearest settlement (0-based), or -1 if none found.
+ *     [0x8DB8] is therefore the "nearest native settlement distance" used as a
+ *       placement-pressure gate: candidate positions too close to existing settlements
+ *       are rejected (gate at 0x065FD1: if [0x8DB8]==0 reject).
  *
  *   0x1A1F:0x88A TRAMPOLINE RESOLVED (BYTE_VERIFIED 2026-06-08):
  *     RTLink thunk@0x1CE7A: lcall 0x110D:0xDAB; ljmp 0:0x198
@@ -1890,10 +1907,17 @@ int func_065D26_postgen_large(void)
             row = random_int(0xc,(int)g_map_height - 0xc); /* @asm 0x065F72..0x065F83 */
             if (tile_is_land(col, row) != 0) continue;   /* @asm 0x065F8C 0x768 (land==0) */
             if ((tile_feature_bits(col, row) & 0x20)==0) continue; /* @asm 0x065FA3 0x72c */
-            (void)overlay_call_181F_0D84();              /* @asm 0x065FDE nearest-actor dist */
-            /* @asm 0x065FCA..0x06603D : distance gate vs [0x8db8], scaled by the
-             * pressure ramp (8-[0x8db8])*0x3e8, the *8 col band, etc.  TBD-inner:
-             * the [0x8db8] metric is opaque; the gate is expressed via its read. */
+            /* @asm 0x065FBE find_nearest_settlement(col,row,-1,-1) BYTE_VERIFIED 2026-06-08:
+             * file 0x046056 (page 0x0B); iterates NativeSettlement table DS:0x54EC
+             * (stride 0x12, +0=col +1=row +2=owner), computes octile dist via 0x181F:0x370
+             * = max(|dx|,|dy|)+min(|dx|,|dy|)/2; writes min dist to [0x8DB8]; returns
+             * nearest settlement index (-1 if none).  [0x8DB8]=0 means on same tile. */
+            (void)overlay_call_181F_0D84();              /* @asm 0x065FBE (col,row,-1,-1) */
+            /* @asm 0x065FCA..0x06603D : distance gate vs [0x8db8] (nearest-settlement
+             * octile dist), scaled by the placement-pressure ramp:
+             * reject if dist==0 (exact same tile as a settlement); reject if the
+             * pressure-derived minimum (tries/4 - 90, negated) > dist; when dist<8
+             * additionally reject unless (8-dist)*0x3e8 <= tries; etc. */
             if (*(volatile uint16_t *)0x8db8 == 0) continue; /* @asm 0x065FD1 */
             ok = 1;                                      /* @asm 0x066038 */
         } while (!ok && tries < 0x2ee0);                 /* @asm 0x06603D iter cap 0x2ee0 */

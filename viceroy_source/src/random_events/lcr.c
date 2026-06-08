@@ -86,9 +86,32 @@
  *   0x181F:0x0652 -> page 0x17 file 0x06F5F2  message-line append helper
  *   0x181F:0x0998 -> page 0x17 file 0x06F51A  message-box present helper
  *   0x181F:0x048E/0x498/0x4AC/0x524/0x3EA -> resident sound/anim cues
- *   0x191F:0x0AC8 -> queue-immigrant (survivors join, outcome 9)            [TBD body]
- *   0x191F:0x0D2C -> per-immigrant Fountain-of-Youth loop body (outcome 1)  [TBD body]
- *   0x1A1F:0x06EC -> per-owner notify after Cibola/burial treasure spawn    [TBD body]
+ *   0x191F:0x0AC8 -> page 0x17 file 0x06C254  survivors_join(nation,a,b)     [BYTE_VERIFIED]
+ *     segid=23:0x0404, base=0x6BE50.  40-byte function.  Builds a string via
+ *     0x181F:0x42E(buf,a,b) (resident @0x008074) and copies it into DGROUP:0x9CD2
+ *     + nation*64 (per-nation survivor-pending slot).  Does NOT spawn the colonist
+ *     unit — that happens in case LCR_SURVIVORS (spawn_unit type 0 at tile).
+ *     ABI: void survivors_join(int nation, int a, int b); a=b=0 at call site.
+ *   0x191F:0x0D2C -> page 0x04 file 0x034DD4  queue_immigrant(a,b)          [BYTE_VERIFIED]
+ *     segid=4:0x4884, base=0x30550.  715-byte function.  Selects recruitment
+ *     key and pool context based on args: a=1 -> key=LOSTCITY0 + [0x1F5E]=3
+ *     (Fountain-of-Youth passage); a=0,b=0 -> key=RECRUIT + [0x1F5E]=2 (free);
+ *     a=0,b!=0 -> key=RECRUITCHOOSE + [0x1F5E]=4 (purchase).  Computes
+ *     passage-cost into [0x9CB0]:[0x9CB2] (zeroed when a!=0 or b!=0).  Calls
+ *     0x191F:0x182 (file 0x06F0F4, 360-byte add-to-pool routine) with register
+ *     args AX=key_dg_off, BX=DGROUP:0x87C (recruit table), DX=0.  Returns
+ *     DX:AX = far ptr to new colonist record (NULL = pool full); sets
+ *     rec[+0xA] |= 1 (free-flag) and rec[+0x22] = 8 (colonist class) on free path.
+ *     ABI: colonist_record_far_ptr queue_immigrant(int a, int b);
+ *          called as queue_immigrant(1, 0) from FoY loop (8 times).
+ *   0x1A1F:0x06EC -> page 0x10 file 0x05C878  notify_treasure_spawn(owner)  [BYTE_VERIFIED]
+ *     segid=16:0x1906, base=0x5AF70 (thunk lands at 0x5C876 = CB 90 prefix;
+ *     real ENTER at 0x5C878).  518-byte function.  Already documented in the
+ *     func_05C878 block below as "Treasure delivery to Europe".
+ *     arg1 = owner_idx = U_OWNER(nu) & 0xF (nation 0-3 of the treasure unit).
+ *     gross_val = 100 * U_SEC(owner_idx)  (@asm 0x5C882: mov al,0x64; mul [bx+0x315B]).
+ *     Uses strings CASHTREASURE/KINGGALLEON/LOOTCASH.  Called only from within
+ *     lcr_resolve (@asm 0x0616D5 Cibola, 0x061AD1 Burial3) — no other callers.
  *
  * Hot DGROUP globals (offsets relative to confirmed bases):
  *   [0x5394]  current_nation_index (0..3; "limit 4" — globals.h)  [BYTE_VERIFIED]
@@ -132,8 +155,8 @@
  *     is inferred from gameplay (De Soto). Tagged ANCHOR for the *name* only.
  *   - The [bx-0x6BF0]/[bx-0x6D68] per-nation gate bytes (era/disposition) —
  *     accessed byte-exactly, semantics TBD.
- *   - 0x191F:0xAC8 / 0x191F:0xD2C / 0x1A1F:0x6EC bodies are overlay-resident
- *     (not in the re-seg pages) -> the immigrant TYPE / exact spawn args TBD.
+ *   - 0x191F:0xAC8 / 0x191F:0xD2C / 0x1A1F:0x6EC bodies fully resolved above
+ *     (BYTE_VERIFIED 2026-06-08).  No remaining TBDs on these three helpers.
  * ============================================================================ */
 #include "viceroy_types.h"
 
@@ -147,8 +170,16 @@ extern int      treasure_spawn_at(int x, int y);            /* 0x181F:0xD84 file
 extern void     native_attitude_smite(int a, int b, int owner, int tribe); /* 0x181F:0xD6C file 0x045DF2 */
 extern void     msg_append_key(int n, const char far *key); /* 0x181F:0x652 file 0x06F5F2 */
 extern void     msg_present(const char far *buf);           /* 0x181F:0x998 file 0x06F51A */
-extern void     queue_immigrant(int a, int b);              /* 0x191F:0xD2C — TBD body */
-extern void     survivors_join(int nation, int a, int b);   /* 0x191F:0xAC8 — TBD body */
+/* queue_immigrant: 0x191F:0xD2C -> file 0x034DD4 (segid=4:0x4884, BYTE_VERIFIED)
+ * a=1 -> Fountain-of-Youth free immigrant (LOSTCITY0 key, [0x1F5E]=3)
+ * returns far ptr to new colonist record; but return value unused at this call site. */
+extern void     queue_immigrant(int a, int b);              /* 0x191F:0xD2C file 0x034DD4 [BYTE_VERIFIED] */
+/* survivors_join: 0x191F:0xAC8 -> file 0x06C254 (segid=23:0x0404, BYTE_VERIFIED)
+ * Writes survivor-pending string to DGROUP:0x9CD2+nation*64 slot. */
+extern void     survivors_join(int nation, int a, int b);   /* 0x191F:0xAC8 file 0x06C254 [BYTE_VERIFIED] */
+/* notify_treasure_spawn: 0x1A1F:0x6EC -> file 0x05C878 (segid=16:0x1906+2, BYTE_VERIFIED)
+ * arg = owner_idx = U_OWNER(nu) & 0xF; gross = 100 * U_SEC(owner_idx). */
+extern void     notify_treasure_spawn(int owner_idx);       /* 0x1A1F:0x6EC file 0x05C878 [BYTE_VERIFIED] */
 
 /* DGROUP globals (byte-verified bases). */
 extern int16_t  g_current_nation;     /* DGROUP:0x5394 (0..3) */
@@ -351,7 +382,7 @@ reroll:                                                    /* @asm file 0x0614F6
                 U_SEC(unit_idx) = (uint8_t)treasure_val;   /* @asm 0x0616BC [bx+0x315b] */
                 did_action = 1;                            /* @asm 0x0616C0 [bp-2]=[bp-0xc]=1 */
                 g_lcr_good_results++;                      /* @asm 0x0616C9 inc [0x1DC7] */
-                /* 0x1A1F:0x6EC(owner) per-owner notify (overlay body TBD) @asm 0x0616D5 */
+                notify_treasure_spawn(U_OWNER(unit_idx)); /* @asm 0x0616D5 0x1A1F:0x6EC file 0x05C878 */
             }
         }
     }
@@ -517,7 +548,7 @@ reroll:                                                    /* @asm file 0x0614F6
                 unit_idx = nu;                             /* @asm 0x061A9A */
                 U_SEC(unit_idx) = (uint8_t)treasure_val;   /* @asm 0x061AAB [bx+0x315b] */
                 did_action = 1;                            /* @asm 0x061AD9 */
-                /* 0x1A1F:0x6EC(owner) per-owner notify (TBD)  @asm 0x061AD1 */
+                notify_treasure_spawn(U_OWNER(unit_idx)); /* @asm 0x061AD1 0x1A1F:0x6EC file 0x05C878 */
             }
         }
         /* build "BURIAL"+burial_sub, present, and SCREWED smite — see header */
@@ -591,10 +622,17 @@ tail:                                                      /* @asm file 0x061C5A
  * @verified_by    BYTE_VERIFIED 2026-05-02 (full writeup in
  *                 src/native/raze_treasure.c #if 0 block — that file MIS-NAMES
  *                 this as "raze"; it is the treasure-galleon transport event).
+ * @thunk_resolved BYTE_VERIFIED 2026-06-08: also reachable as 0x1A1F:0x6EC
+ *                 (segid=16:0x1906, base=0x5AF70; thunk at file 0x1CCDC lands on
+ *                 the 2-byte CB 90 prefix at 0x5C876; ENTER starts at 0x5C878).
+ *                 Called from lcr_resolve Cibola (@asm 0x0616D5) and Burial3
+ *                 (@asm 0x061AD1) with arg = owner_idx (U_OWNER(nu) & 0xF).
  *
  * Tagged strings: "CASHTREASURE" / "KINGGALLEON" / "LOOTCASH".
  * gross = 100 * unit_secondary_byte([unit].0x315B)   <-- the treasure_val this
  *          LCR resolver stored above (Cibola/BURIAL3 = value byte; UI shows ×100).
+ *          Accessed as U_SEC(owner_idx) = DGROUP[0x315B + owner_idx*0x1C].
+ *          @asm 0x5C87E: imul bx,[bp+6],0x1c; @asm 0x5C882: mov al,0x64; mul [bx+0x315B].
  * king_cut governed by PowerRecord.tax_rate (+0x01) and the bit-10 De-Soto/
  * Cortés attribute (power_attribute_bit). Net credited to PowerRecord gold u32s.
  *

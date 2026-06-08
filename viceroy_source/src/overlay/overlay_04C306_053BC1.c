@@ -1697,9 +1697,64 @@ int func_051EE6_ter_wrapper(uint16_t arg0)
  * fields (+0x3146 type, +0x314A/+0x3150/+0x315B, +0x314B order, +0x314C state,
  * +0x1F/+0x1E colony fields), and ColonyRecord stride 0xCA are BYTE_VERIFIED.
  * The page-0x12 cs:0x7Axx trampolines: cs:0x7AD0/0x7ADF/0x7AB2 targets are now
- * BYTE_VERIFIED via RTLink flattener (see extern block below); the 0x181F leaf
- * bodies (war-matrix arithmetic, queue side-effects, per-unit move scoring) remain
- * role-named externs whose interior arithmetic is TBD-inner.  arg0 = power.
+ * BYTE_VERIFIED via RTLink flattener (see extern block below).
+ *
+ * 0x181F LEAF BODIES — BYTE_VERIFIED 2026-06-08 (RTLink thunk chain traced):
+ *
+ *   0x181F:0x4CA  RTLink Type-A thunk header (4-byte prefix 2C00EF09 = offset/seg of target).
+ *                 Resolves to 0x09EF:0x002C (file 0x0C31C) = seed_rng_from_timer().
+ *                 Chain: 0x002C { push cs; call near 0x0008; retf }
+ *                        0x0008 { lcall 0x0C0C:0x0012 (read BIOS timer 0x40:0x6C-6E
+ *                                 into AX:DX); AX &= 0x7FFF;
+ *                                 push AX; lcall 0xD1D:0xDF2 (set LCG seed:
+ *                                   [0x28EE]=AX, [0x28F0]=0); add sp,2; retf }
+ *                 Called at Phase 0 as: push [0x83A6]; lcall 0x181F:0x4CA; add sp,2
+ *                 [0x83A6] is ignored by the actual function (sits below the far
+ *                 return address on entry; the near-called 0x0008 does not access it).
+ *                 Purpose: re-seed the LCG RNG from the BIOS tick counter at the
+ *                 start of each AI power's asset-census/dispatch run.
+ *
+ *   0x181F:0x97A  Resolves to 0x0427:0x13B0 (file 0x07A20).
+ *                 Input: AX = unit_index (register convention, no stack push).
+ *                 Body (enter 2,0):
+ *                   si = AX; BX_result = 0 (default)
+ *                   if si < 0 or si >= unit_count[0x539C]: return 0
+ *                   di = si*0x1C; if unit_tbl[di+0x3144] < 0 (flag byte): return 0
+ *                   al = unit[di+0x3147] & 0xF (owner nibble)
+ *                   if owner != [0x5394] (current AI power): return 0
+ *                   if NOT (unit[di+0x3148]&0x80 AND unit[di+0x3146]==0x0B): return 0
+ *                   threshold = call 0x0427:0x065A(si)  [unit-type table lookup,
+ *                               base 0x5234, stride 14, +3 for military class 0xD-0x12]
+ *                   if unit[di+0x3149] < threshold: return 1  else: return 0
+ *                 Returns 1 = "skip unit" when unit is an in-progress type-0xB
+ *                 special-order unit whose order-step counter is below the
+ *                 type-class threshold; returns 0 otherwise (including all
+ *                 invalid/dead/wrong-owner cases).
+ *                 Phase 6 caller: "if (predicate != 0) continue" -> units still
+ *                 executing a type-0xB order below threshold are NOT re-dispatched.
+ *
+ *   0x181F:0xA38  Resolves to 0x05B3:0x0004 (file 0x07F34).
+ *                 Args: [bp+6]=power (0-based), [bp+8]=slot_k (0-3).
+ *                 Body (enter 2,0):
+ *                   if power < 4:  imul si,power,0x13C; al=byte[bx+si+(-0x77C4)]
+ *                                  = g_war_matrix_883C[power*0x13C + slot_k]
+ *                   if power >= 4: imul si,power,0x4E;  al=byte[bx+si+0x59D8]
+ *                                  = g_extended_war_59D8[power*0x4E + slot_k]
+ *                   AH = 0; return AX
+ *                 Two distinct flat arrays: 0x883C (stride 0x13C, main 4-power matrix)
+ *                 and 0x59D8 (stride 0x4E, extended/allied powers).  Bit semantics
+ *                 of the returned byte: bit0=armed, bit3=pending, bit6=done (as
+ *                 documented for g_war_matrix_883C in the Phase 4 comment above).
+ *
+ *   0x181F:0x30C  Resolves to 0x05DC:0x00E0 (file 0x082A0).
+ *                 Args: [bp+6]=row_idx, [bp+8]=col_idx.
+ *                 Body (push bp / mov bp,sp — no ENTER):
+ *                   bx = row_idx*0x27 + col_idx; bx <<= 1
+ *                   AX = word[bx + 0x5B1C]
+ *                 Returns: 16-bit entry from a 2-D word table at DGROUP:0x5B1C,
+ *                 row-stride 0x27 (39 columns).  Likely a power-vs-power
+ *                 threat/relation matrix (indices are power numbers or similar).
+ *                 arg0 = power.
  * ============================================================================ */
 extern uint8_t  g_colony_owners_5D60[];   /* DGROUP:0x5D60 — ColonyRecord owner col, stride 0xCA (+0x1A) */
 extern uint8_t  g_ai_supply_A0CC[];       /* DGROUP:0xA0CC (-0x5F34) — per-class supply count (16) */
@@ -1738,9 +1793,16 @@ extern int  ovly_tramp_7A7B(uint16_t unit);                /* call cs:0x7A7B -> 
 extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C -> file 0x26360 [BYTE_VERIFIED] */
 extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 -> file 0x2B604 [BYTE_VERIFIED] */
 extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> file 0x25C42 [BYTE_VERIFIED] */
-/* file-local 0x181F / 0xD1D leaves not pre-declared in overlay_externs.h */
-extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA — UI/selection reset */
-extern int  overlay_call_181F_097A(void);  /* 0x181F:0x97A — per-unit move predicate */
+/* file-local 0x181F / 0xD1D leaves not pre-declared in overlay_externs.h.
+ * BYTE_VERIFIED 2026-06-08: bodies traced via RTLink thunk resolution (see block above). */
+extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer:
+                                            *   reads BIOS tick 0x40:0x6C-6E, masks &0x7FFF,
+                                            *   seeds LCG [0x28EE/0x28F0] via 0xD1D:0xDF2.
+                                            *   arg [0x83A6] is pushed by caller but ignored. */
+extern int  overlay_call_181F_097A(void);  /* 0x181F:0x97A -> 0x0427:0x13B0 per_unit_type0B_gate:
+                                            *   input in AX (unit_index, register convention).
+                                            *   returns 1 if unit is valid/owned/type-0xB with
+                                            *   order_step[+0x3149] < type_threshold; else 0. */
 extern int  overlay_call_0D1D_092C(void);  /* 0xD1D:0x92C — string/text helper */
 
 /* DGROUP:0x848 — per-power byte (indexed by the power INDEX, not PowerRecord);
@@ -1769,7 +1831,10 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
     /* ---- PHASE 0 — head: bind power, clear scratch. @asm 0x052F83..0x052FE4 */
     g_sel_2D12 = -1;                                    /* @asm 0x052F83 [0x2D12]=0xFFFF */
     g_flag_1740 = 0;                                    /* @asm 0x052F8E [0x1740]=0 */
-    (void)overlay_call_181F_04CA();                     /* @asm 0x052F95 reset([0x83A6]) */
+    (void)overlay_call_181F_04CA();                     /* @asm 0x052F95 seed_rng_from_timer([0x83A6]):
+                                                         *   reads BIOS tick 0x40:0x6C, seeds LCG
+                                                         *   [0x28EE/0x28F0]; [0x83A6] arg ignored.
+                                                         *   BYTE_VERIFIED 2026-06-08. */
     g_self_power_5394 = power;                          /* @asm 0x052FA0 [0x5394]=arg0 */
     (void)overlay_call_181F_0582();                     /* @asm 0x052FA4 bind power arg0 */
     (void)overlay_call_181F_0590();                     /* @asm 0x052FB6 bind(0x848[arg0]) */
@@ -1887,7 +1952,11 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * @asm 0x0531A3 dec [bx+si-0x77B8] -> decrement countdown (unconditional)
      * @asm 0x0531AA cmp [bp-0x10],4; jl 0x53157 */
     for (int k = 0; k < 4; k++) {                      /* @asm 0x053152 mov [bp-0x10],0 */
-        int slot_flags = overlay_call_181F_0A38();      /* @asm 0x053157 lcall 0x181F:0xA38(power,k) */
+        int slot_flags = overlay_call_181F_0A38();      /* @asm 0x053157 lcall 0x181F:0xA38(power,k)
+                                                         *   -> 0x05B3:0x0004 war_matrix_read:
+                                                         *   power<4: byte[0x883C+power*0x13C+k]
+                                                         *   power>=4: byte[0x59D8+power*0x4E+k]
+                                                         *   BYTE_VERIFIED 2026-06-08. */
         if (slot_flags & 0x08) {                        /* @asm 0x053165 test al,8 (pending?) */
             int idx = (int)power * 0x13C + k;           /* @asm 0x053169 imul/add */
             if (g_war_matrix_cdown_8848[idx] == 0) {    /* @asm 0x053171 cmp [bx-0x77B8],0 */
@@ -1975,7 +2044,10 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
             if ((uu[0x03] & 0x0F) != (uint8_t)power)    /* @asm 0x0532EE-ish owner gate */
                 continue;
             (void)ovly_tramp_7A7B((uint16_t)u);         /* @asm 0x053370 call cs:0x7A7B record */
-            if (overlay_call_181F_097A() != 0)          /* @asm 0x053387 per-unit predicate */
+            if (overlay_call_181F_097A() != 0)          /* @asm 0x053387 per_unit_type0B_gate(AX=u):
+                                                         *   skip if unit is valid/owned/type-0xB
+                                                         *   with order_step < type_threshold.
+                                                         *   BYTE_VERIFIED 2026-06-08. */
                 continue;                               /* @asm 0x05338E */
             /* passability(col,row)→[0x8540/0x853E]; target_select(1,0); score×2; insert(u). */
             (void)overlay_call_181F_0302();             /* @asm 0x0532FF passability(unit[0],unit[1]) */
