@@ -110,17 +110,36 @@ int func_008D9C_lookup_table_2F4_signed(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (69 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  Europe-market spread: g_global_amount[g]-g_band_base[g], minus chained good
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008DBC_logic_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x008DD8 JL 0x008DFC */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x008DF1 JE 0x008DFC */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x008DC0 mov bx,[bp+6]; shl bx,1; mov ax,[bx-0x7238];
+     *      sub ax,[bx-0x71f6]; mov [bp-2],ax  (diff = g_global_amount[g]
+     *      - g_band_base[g]);  -0x7238==0x8DC8, -0x71f6==0x8E0A.
+     *      0x008DD0 mov bx,[bp+6]; cmp byte[bx+0x2a2],0; jl 0x8dfc (skip if the
+     *      good has no chained good); 0x008DDA mov al,[bx+0x2a2]; cwde; bx=ax*2;
+     *      ax=[bp-2]-[bx-0x71a6]; mov [bp-2],ax  (-0x71a6==0x8E5A=g_over_high;
+     *      subtract the chained good's over-high value);
+     *      0x008DED cmp [bp+8],0; je 0x8dfc; mov ax,[bx-0x71a6]; mov bx,[bp+8];
+     *      mov [bx],ax  (when arg1!=0, write that chained over-high to *arg1);
+     *      0x008DFC mov ax,[bp-2]; ret.
+     * Computes the Europe-market spread for good arg0: g_global_amount[arg0]
+     * (0x8DC8) minus g_band_base[arg0] (0x8E0A); if good arg0 maps to a chained
+     * good via the per-good byte table at 0x02A2, subtracts that chained good's
+     * g_over_high[] entry (0x8E5A) and (when arg1!=0) writes it back through arg1.
+     * Returns the resulting spread. (Market arrays: globals.h §0x8DC8 block.) */
+    int16_t diff = (int16_t)(*(uint16_t near *)(0x8DC8 + (unsigned)arg0_bp_06 * 2)
+                             - *(uint16_t near *)(0x8E0A + (unsigned)arg0_bp_06 * 2));
+    int8_t chained = (int8_t)*(uint8_t near *)(0x02A2 + (unsigned)arg0_bp_06);
+    if (chained >= 0) {
+        uint16_t over_high = *(uint16_t near *)(0x8E5A + (unsigned)(uint16_t)chained * 2);
+        diff = (int16_t)(diff - over_high);
+        if (arg1_bp_08 != 0)
+            *(uint16_t near *)arg1_bp_08 = over_high;
+    }
+    return diff;
 }
 
 /* @asm        0x008E84..0x008EFC  (120 bytes)  region=load_image
@@ -137,25 +156,48 @@ int func_008DBC_logic_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x008D9C
  *   - 0x00864E
  *   - 0x008E46
- * @inferred_role  DISPATCHER (120 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  market adjust: dispatch g_global_amount[arg1] to arg0, then re-scale g_over_high[arg0]
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008E84_logic_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x008E9B */ func_008D9C();
-        /* @0x008EA3 */ func_00864E();
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x008EAC JLE 0x008EBC */ {
-        }
-        /* @0x008EC3 */ func_008E46();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x008ED3 JE 0x008F00 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x008EDB JE 0x008F00 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x008EE1 JNE 0x008EE8 */ {
-                    goto label_008EFC;  /* @0x008EE6 */
-                }
+    /* @asm 0x008E88 bx=[bp+8]*2; ax=[bx-0x7238] (g_global_amount[arg1]);
+     *      mov [bp-6],ax; mov [bp-4],ax  (orig = amount = g_global_amount[arg1]).
+     *      0x008E97 push [bp+8]; call 0x8d9c (chained=func_008D9C(arg1));
+     *      push chained; call 0x864e (cnt=func_00864E(chained));
+     *      0x008EA9 cmp ax,2; jle 0x8ebc; (if cnt>2) ax=[bp-4]; shl ax,1; cx=3;
+     *      cdq; idiv cx; mov [bp-4],ax  (amount = amount*2/3).
+     *      0x008EBC push [bp-4]; push [bp+6]; call 0x8e46 (func_008E46(arg0,amount)).
+     *      0x008EC9 bx=[bp+6]*2; cmp [bx-0x71a6],0; je 0x8f00 (g_over_high[arg0]==0:
+     *      no rescale); 0x008ED5 ax=[bp-4]; cmp [bp-6],ax; je 0x8f00 (unchanged:
+     *      done); cmp [bx-0x71a6],ax; jne 0x8ee8; (==amount) ax=[bp-6];
+     *      jmp store (restore original); 0x008EE8 bx=[bp+6]*2; ax=[bx-0x71a6];
+     *      cx=ax; ax<<=1; ax+=cx (3*go); cdq; ax-=dx; sar ax,1 (floor(3*go/2));
+     *      0x008EFC mov [bx-0x71a6],ax  (g_over_high[arg0]=ax).
+     * Posts the amount g_global_amount[arg1] (0x8DC8) into commodity arg0 via
+     * func_008E46, scaled to 2/3 when arg1's chain (func_008D9C/func_00864E) has
+     * more than 2 members, then re-scales the over-high marker g_over_high[arg0]
+     * (0x8E5A): restore the original on an exact-match, otherwise raise it to
+     * floor(3*over_high/2). Returns the (rescaled) over-high value left in ax. */
+    int16_t amount = (int16_t)*(uint16_t near *)(0x8DC8 + (unsigned)arg1_bp_08 * 2);
+    int16_t orig = amount;
+    int chained = func_008D9C(arg1_bp_08);            /* func_008D9C_lookup_table_2F4_signed */
+    if (func_00864E((uint16_t)chained) > 2)           /* func_00864E_logic_sz_31 */
+        amount = (int16_t)((int32_t)(int16_t)(amount << 1) / 3);  /* (amount*2)/3, 16-bit shl */
+    func_008E46(arg0_bp_06, (uint16_t)amount);        /* @asm 0x8E46 (61B): set commodity arg0's market value */
+    {
+        uint16_t near *over_high = (uint16_t near *)(0x8E5A + (unsigned)arg0_bp_06 * 2);
+        if (*over_high != 0 && orig != amount) {
+            if ((int16_t)*over_high == amount)
+                *over_high = (uint16_t)orig;
+            else {
+                int16_t go = (int16_t)*over_high;
+                int16_t triple = (int16_t)((go << 1) + go);   /* 3*go in 16-bit */
+                *over_high = (uint16_t)(int16_t)((int32_t)triple / 2);  /* floor toward 0 */
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        return (int16_t)*over_high;
+    }
 }
 
 /* @asm        0x008FB4..0x00903E  (138 bytes)  region=load_image
@@ -171,47 +213,97 @@ int func_008E84_logic_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * Near CALL targets:
  *   - 0x008F2A
  *   - 0x008F6C
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  remove colonist #arg0 from current colony (compact arrays, renumber tiles, dec pop/bells)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008FB4_colony_sz_138(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542
-     */
-        goto label_008FEB;  /* @0x008FBF */
-        /* @0x008FD7 */ func_008F2A();
-        /* @0x008FE2 */ func_008F6C();
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x008FF7 JG 0x008FC2 */ {
+    /* @asm 0x008FB9 mov [bp-4],[bp+6] (i=arg0); jmp test.
+     *   loop body 0x008FC2: bx=ctx+i; byte[bx+0x20]=byte[bx+0x21] (job[i]=job[i+1]);
+     *     byte[bx+0x40]=byte[bx+0x41] (unit_type[i]=unit_type[i+1]); push i+1;
+     *     call 0x8f2a (e=func_008F2A(i+1) reads packed expertise[i+1]); push e;
+     *     push i; call 0x8f6c (func_008F6C(i,e) writes packed expertise[i]); i++.
+     *   test 0x008FEB: bx=[0x8542]; ax=(int8)ctx->pop(+0x1f); ax--; cmp ax,i;
+     *     jg 0x8fc2  (continue while ctx->pop-1 > i).
+     *   0x008FF9 mov [bp-2],0 (j=0); tile_state renumber loop:
+     *     0x00900E cmp j,0x14; jge done; 0x009014 al=arg0; bx=[0x8542]; si=j;
+     *     cmp byte[bx+si+0x70],arg0; jne 0x9000 (decrement scan):
+     *       0x009000 cmp byte[bx+si+0x70],arg0; jle 0x900b; dec byte[bx+si+0x70];
+     *     match: 0x009023 mov byte[bx+si+0x70],0xff; j++.
+     *   0x00902A bx=[0x8542]; dec byte[bx+0x1f] (pop--); sub word[bx+0xc6],0x64;
+     *     sbb word[bx+0xc8],0  (32-bit bells numerator -= 100).
+     * Removes colonist #arg0 from the current colony (ctx@0x8542): shifts the
+     * per-colonist job (+0x20), unit_type (+0x40) and packed-nibble expertise
+     * (+0x60, via func_008F2A/func_008F6C) arrays down one slot, renumbers the
+     * tile_state[20] array at +0x70 (entries > arg0 decremented, the matching
+     * one set to 0xFF), then decrements population (+0x1f) and the 32-bit bells
+     * numerator (+0xC6) by 100. ColonyRecord fields per DGROUP_MEMORY_MAP §3.4. */
+    int i;
+    for (i = arg0_bp_06; ; i++) {
+        unsigned char near *ctx = *(unsigned char near * near *)0x8542;
+        if (!(((int8_t)ctx[0x1F] - 1) > i))
+            break;
+        ctx[i + 0x20] = ctx[i + 0x21];                /* job[i]      = job[i+1]      */
+        ctx[i + 0x40] = ctx[i + 0x41];                /* unit_type[i]= unit_type[i+1]*/
+        func_008F6C((uint16_t)i,                       /* expertise[i]= expertise[i+1]*/
+                    (uint16_t)func_008F2A((uint16_t)(i + 1)));
+    }
+    {
+        unsigned char near *ctx = *(unsigned char near * near *)0x8542;
+        int j;
+        for (j = 0; j < 0x14; j++) {
+            if (ctx[j + 0x70] == (uint8_t)arg0_bp_06)
+                ctx[j + 0x70] = 0xFF;
+            else if ((int8_t)ctx[j + 0x70] > (int8_t)(uint8_t)arg0_bp_06)
+                ctx[j + 0x70]--;
         }
-        goto label_00900E;  /* @0x008FFE */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x009006 JLE 0x00900B */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x009012 JGE 0x00902A */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009021 JNE 0x009000 */ {
-            }
-            goto label_00900B;  /* @0x009027 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        ctx[0x1F]--;                                   /* population-- */
+        *(uint32_t near *)(ctx + 0xC6) -= 0x64;        /* bells numerator -= 100 */
+    }
+    return 0;
 }
 
-/* @asm        0x00903E..0x009063  (37 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00903E_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x00903E..0x0090C7  (138 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_00903E.asm
+ * @pattern    JUMP_TABLE
  * @prologue   ENTER 2
  * @args_seen  [6, 8]
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (37 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  emit the building-class word list for category arg1 into arg0[]; return count
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 37 bytes / TINY_ACCESSOR: a FALSE cut at 0x9063
+ *         (before the jump table). True function is 0x903E..0x90C7 (138 bytes), a
+ *         switch on arg1 via `jmp cs:[bx+0xE06]`; span/role corrected here.
  */
-int func_00903E_logic_sz_37(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00903E_logic_sz_138(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x009043 mov [bp-2],0 (i=0); ax=[bp+8] (arg1); jmp 0x90a6.
+     *      dispatch 0x0090A6: sub ax,0x13; cmp ax,5; ja 0x90c2 (default);
+     *      shl ax,1; xchg bx,ax; jmp cs:[bx+0xe06]  (6-entry table at CS:0x0E06).
+     *      table -> case arg1=0x14 -> 0x9064; 0x15 -> 0x904e; 0x16 -> 0x9072;
+     *      0x17 -> 0x9080; 0x13 & 0x18 -> 0x90c2 (default).
+     *      Each writer uses bx=i*2, si=arg0 (bp+6): mov word[bx+si],VAL; inc i.
+     *      0x00904E (0x15): out[i]=0xf; i++; return i.
+     *      0x009064 (0x14): out[i]=0xe; jmp 0x905a (i++; return i).
+     *      0x009072 (0x16): out[i]=8;   jmp 0x905a (i++; return i).
+     *      0x009080 (0x17): out[i]=0xf; i++; out[i]=8; i++; return i.
+     *      0x0090C2 default: return i (0).
+     * For the colony building/feature category arg1, appends the matching tile
+     * IDs to the caller's word array arg0[] and returns how many were written:
+     * 0x14->{0xE}, 0x15->{0xF}, 0x16->{8}, 0x17->{0xF,8}, else {} (0). */
+    uint16_t near *out = (uint16_t near *)arg0_bp_06;
+    int i = 0;
+    switch (arg1_bp_08) {
+    case 0x14:  out[i++] = 0x0E; break;
+    case 0x15:  out[i++] = 0x0F; break;
+    case 0x16:  out[i++] = 0x08; break;
+    case 0x17:  out[i++] = 0x0F; out[i++] = 0x08; break;
+    default:    break;                                  /* 0x13, 0x18, others -> none */
+    }
+    return i;
 }
 
 /* @asm        0x00913C..0x009165  (41 bytes)  region=load_image
@@ -226,13 +318,38 @@ int func_00903E_logic_sz_37(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x008BD4
- * @inferred_role  MISSING_ASM (41 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set unit_type for colony slot arg0 (in-colony +0x40 array, else UnitRecord vet +0x17)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 41 bytes / pure wrapper: a FALSE cut at 0x9165.
+ *         True function is 0x913C..0x9183 (72 bytes); the in-colony store branch
+ *         that precedes the func_008BD4 path was truncated and is decompiled here.
  */
-int func_00913C_logic_sz_41(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x008BD4. */
-    return func_008BD4();
+    /* @asm 0x009141 cmp [bp+8],0x17; jne 0x914c; mov [bp+8],0x15 (fold type
+     *      0x17 -> 0x15).  0x00914C mov bx,[0x8542]; al=(int8)ctx->pop(+0x1f);
+     *      cwde; cmp ax,[bp+6]; jle 0x9166 (slot >= population: external unit).
+     *      in-colony 0x009159: al=(uint8)[bp+8]; si=[bp+6];
+     *      mov byte[bx+si+0x40],al (ctx->unit_type[slot] = type); ret.
+     *      external 0x009166: al=(int8)ctx->pop(+0x1f); cwde; sub ax,[bp+6];
+     *      neg ax (= slot - pop); push ax; call 0x8bd4
+     *      (u = func_008BD4(slot - pop)); imul bx,u,0x1c; al=(uint8)[bp+8];
+     *      mov byte[bx+0x315b],al (UnitRecord[u].vet_type +0x17 = type); ret.
+     * Sets the unit-type for colony slot arg0 to arg1 (folding 0x17->0x15). When
+     * arg0 is within the current colony's population (ctx@0x8542, +0x1F) it writes
+     * the per-colonist unit_type array at +0x40; otherwise arg0 indexes a unit
+     * outside the colony, resolved via func_008BD4(arg0 - pop), whose UnitRecord
+     * vet_type (+0x17 == 0x315B, DGROUP_MEMORY_MAP §3.1) is set instead. */
+    unsigned char near *ctx = *(unsigned char near * near *)0x8542;
+    if (arg1_bp_08 == 0x17)
+        arg1_bp_08 = 0x15;                              /* fold type 0x17 -> 0x15 */
+    if ((int16_t)(int8_t)ctx[0x1F] > (int16_t)arg0_bp_06) {
+        ctx[arg0_bp_06 + 0x40] = (uint8_t)arg1_bp_08;   /* in-colony unit_type[slot] */
+    } else {
+        int16_t u = (int16_t)func_008BD4((uint16_t)(arg0_bp_06 - (int8_t)ctx[0x1F]));
+        *(uint8_t near *)(0x3144 + (unsigned)u * 0x1C + 0x17) = (uint8_t)arg1_bp_08;
+    }
+    return 0;
 }
 
 /* @asm        0x0091CC..0x009281  (181 bytes)  region=load_image
@@ -363,8 +480,8 @@ int func_009786_logic_sz_12(uint16_t arg0_bp_06)
     return (int8_t)*(uint8_t near *)(0x02CA + (unsigned)arg0_bp_06);
 }
 
-/* @asm        0x009794..0x0097BB  (39 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_009794_unknown.asm
+/* @asm        0x009794..0x0097D5  (66 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_009794.asm
  * @pattern    UNKNOWN
  * @prologue   ENTER 2
  * @args_seen  [6]
@@ -376,22 +493,37 @@ int func_009786_logic_sz_12(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x00975A
  *   - 0x00863E
- * @inferred_role  UNKNOWN (39 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  if the colony-bit for root(arg0) is set, return table_8E92[table_8F88[root]]; else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 39 bytes ending 0x97BB: a FALSE cut. True function
+ *         is 0x9794..0x97D5 (66 bytes); the table walk after the bit-test was
+ *         truncated and is decompiled here.
  */
-int func_009794_logic_sz_39(uint16_t arg0_bp_06)
+int func_009794_logic_sz_66(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0097A1 */ func_00975A();
-        /* @0x0097AC */ func_00863E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0097B4 JE 0x0097D1 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x009798 mov [bp-2],0xffff (result=-1); push [bp+6]; call 0x975a
+     *      (r=func_00975A(arg0)=chain root on the 0x8F85 chain); mov [bp+6],ax;
+     *      push ax; call 0x863e (func_00863E(r) colony bit-test); or ax,ax;
+     *      je 0x97d1 (bit clear -> return -1);
+     *      0x0097B6 bx=r*12 (shl1; add r; shl2); al=(int8)byte[bx-0x7078]; cwde
+     *      (b = table_8F88[r], the +2 field of the stride-12 chain record);
+     *      bx=b; al=(int8)byte[bx-0x716e]; cwde; mov [bp-2],ax
+     *      (result = table_8E92[b]); 0x0097D1 mov ax,[bp-2]; ret.
+     * Resolves arg0 to its chain root r (func_00975A on the 0x8F85 chain) and, if
+     * the colony bit func_00863E(r) is set, returns table_8E92[ table_8F88[r] ]
+     * (signed bytes). -0x7078==0x8F88 (chain record +2, stride 12 @0x8F86),
+     * -0x716e==0x8E92. Returns -1 when the bit is clear. */
+    int16_t r = (int16_t)func_00975A(arg0_bp_06);       /* chain root (func_00975A) */
+    int8_t b;
+    if (func_00863E((uint16_t)r) == 0)                  /* func_00863E colony bit-test */
+        return -1;
+    b = (int8_t)*(uint8_t near *)(0x8F88 + (unsigned)(uint16_t)r * 12);  /* chain +2 */
+    return (int8_t)*(uint8_t near *)(0x8E92 + (unsigned)(uint16_t)b);
 }
 
-/* @asm        0x0097D6..0x0097F2  (28 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_0097D6_unknown.asm
- * @pattern    WRAPPER_NEARCALL
+/* @asm        0x0097D6..0x009817  (66 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_0097D6.asm
+ * @pattern    UNKNOWN
  * @prologue   ENTER 4
  * @args_seen  [6]
  * @lcalls     0
@@ -401,13 +533,33 @@ int func_009794_logic_sz_39(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x00863E
- * @inferred_role  WRAPPER_NEARCALL (28 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  reverse lookup: chain index c with table_8E82[c]==arg0 (gated by func_00863E); else -1
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 28 bytes ending 0x97F2: a FALSE cut. True function
+ *         is 0x97D6..0x9817 (66 bytes); the table walk and match test after the
+ *         bit-test were truncated and are decompiled here.
  */
-int func_0097D6_logic_sz_28(uint16_t arg0_bp_06)
+int func_0097D6_logic_sz_66(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x00863E. */
-    return func_00863E();
+    /* @asm 0x0097DA mov [bp-4],0xffff (result=-1); push [bp+6]; call 0x863e
+     *      (func_00863E(arg0) colony bit-test); or ax,ax; je 0x9813 (clear -> -1);
+     *      0x0097ED bx=arg0*12 (shl1; add; shl2); al=(int8)byte[bx-0x7078]; cwde
+     *      (b = table_8F88[arg0]); bx=b; al=(int8)byte[bx-0x716e]; cwde
+     *      (c = table_8E92[b]); bx=c; al=(uint8)arg0;
+     *      cmp byte[bx-0x717e],al; jne 0x9813 (table_8E82[c] != arg0 -> -1);
+     *      mov [bp-4],bx (result=c); 0x009813 mov ax,[bp-4]; ret.
+     * If the colony bit func_00863E(arg0) is set, follows the parallel tables
+     * table_8F88[arg0] -> b, table_8E92[b] -> c, and returns c when
+     * table_8E82[c] equals arg0 (i.e. c is the chain index that maps back to
+     * arg0); otherwise -1. -0x7078==0x8F88, -0x716e==0x8E92, -0x717e==0x8E82. */
+    int8_t b, c;
+    if (func_00863E(arg0_bp_06) == 0)                   /* func_00863E colony bit-test */
+        return -1;
+    b = (int8_t)*(uint8_t near *)(0x8F88 + (unsigned)arg0_bp_06 * 12);
+    c = (int8_t)*(uint8_t near *)(0x8E92 + (unsigned)(uint16_t)b);
+    if (*(uint8_t near *)(0x8E82 + (unsigned)(uint16_t)c) != (uint8_t)arg0_bp_06)
+        return -1;
+    return (uint16_t)c;
 }
 
 /* @asm        0x009818..0x00985A  (66 bytes)  region=load_image
@@ -460,20 +612,30 @@ int func_009818_op_sz_66(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x008D9C
- * @inferred_role  PROLOGUE_HEAVY (62 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  classify good arg0 -> 0 (none) / 1 (chain leaf) / 2 (chain has successor)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_009876_logic_sz_62(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x009883 JL 0x0098AF */ {
-            /* @0x009889 */ func_008D9C();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x009891 JL 0x0098AF */ {
-                if (/* JL fallthrough cond: */ ax >= 0) /* @0x0098A8 JL 0x0098AF */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00987A mov [bp-4],0 (result=0); cmp [bp+6],0; jl 0x98af (arg0<0 ->0);
+     *      0x009885 push [bp+6]; call 0x8d9c (c=func_008D9C(arg0)); or ax,ax;
+     *      jl 0x98af (c<0 -> 0); 0x009893 mov [bp-4],1 (result=1);
+     *      bx=c*12 (shl1; add c; shl2); al=(int8)byte[bx-0x707a]; cwde; or ax,ax;
+     *      jl 0x98af (chain[c]<0 -> result stays 1);
+     *      0x0098aa mov [bp-4],2 (result=2); 0x0098af mov ax,[bp-4]; ret.
+     * Classifies good arg0 by resolving it (func_008D9C, table 0x2F4) to a chain
+     * index c and inspecting the stride-12 chain table at 0x8F86 (-0x707a):
+     * 0 if arg0<0 or unresolved, 1 if c is a chain leaf (chain[c]<0), 2 if c has
+     * a non-negative successor. Chain table per DGROUP_MEMORY_MAP §2 (0x8F86). */
+    int c;
+    if ((int16_t)arg0_bp_06 < 0)
+        return 0;
+    c = func_008D9C(arg0_bp_06);                       /* func_008D9C_lookup_table_2F4_signed */
+    if (c < 0)
+        return 0;
+    if ((int8_t)*(uint8_t near *)(0x8F86 + (unsigned)(uint16_t)c * 12) < 0)
+        return 1;
+    return 2;
 }
 
 /* @asm        0x0098B4..0x0098F5  (65 bytes)  region=load_image
@@ -485,19 +647,34 @@ int func_009876_logic_sz_62(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (65 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  return 200; *arg1=20; *arg0=clamp((farptr[0x83E]->+0x152 +1)*20 -1, 118)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0098B4_logic_sz_65(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0098C6 JE 0x0098CF */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0098D3 JE 0x0098F0 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x0098E6 JLE 0x0098EB */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0098B8 mov [bp-4],0x14 (=20); mov [bp-6],0xc8 (=200);
+     *      0x0098C2 cmp [bp+8],0; je 0x98cf; mov bx,[bp+8]; mov word[bx],0x14
+     *      (when arg1!=0, *arg1 = 20);
+     *      0x0098CF cmp [bp+6],0; je 0x98f0; les bx,[0x83e];
+     *      mov ax,es:[bx+0x152]; inc ax; imul [bp-4] (ax=(field+1)*20); dec ax;
+     *      cmp ax,0x76; jle 0x98eb; mov ax,0x76 (clamp to 118);
+     *      0x0098eb mov bx,[bp+6]; mov [bx],ax (*arg0 = clamped);
+     *      0x0098f0 mov ax,[bp-6]; ret  (return 200).
+     * Always returns 200. When arg1!=0 writes 20 to *arg1. When arg0!=0 writes
+     * clamp((far[0x83E]->word[+0x152] + 1) * 20 - 1, max 118) to *arg0 -- the
+     * same (val+1)*N stage/threshold idiom noted in DGROUP_MEMORY_MAP §5.2, here
+     * with N=20 and an upper bound of 0x76. far ptr at DGROUP 0x083E. */
+    if (arg1_bp_08 != 0)
+        *(uint16_t near *)arg1_bp_08 = 0x14;            /* 20 */
+    if (arg0_bp_06 != 0) {
+        uint16_t field = *(uint16_t far *)((uint8_t far *)(*(void far * near *)0x083E)
+                                           + 0x152);
+        int16_t v = (int16_t)((uint16_t)((field + 1) * 0x14) - 1); /* low-16 of (field+1)*20, -1 */
+        if (v > 0x76)
+            v = 0x76;                                   /* clamp to 118 (signed jle) */
+        *(uint16_t near *)arg0_bp_06 = (uint16_t)v;
+    }
+    return 0xC8;                                        /* 200 */
 }
 
 /* @asm        0x0098F6..0x00994B  (85 bytes)  region=load_image
@@ -512,23 +689,36 @@ int func_0098B4_logic_sz_65(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x008956
- * @inferred_role  PROLOGUE_HEAVY (85 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  scan 5x5 grid for func_008956(i,j)==arg0; write j->*arg1, i->*arg2; ret 1 if found
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0098F6_logic_sz_85(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_009939;  /* @0x009902 */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00990B JGE 0x009936 */ {
-            /* @0x009914 */ func_008956();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00991D JNE 0x009904 */ {
+    /* @asm 0x0098FA sub ax,ax; mov [bp-6],ax (found=0); mov [bp-4],ax (i=0);
+     *      jmp 0x9939.  outer test 0x009939: cmp [bp-4],5; jge 0x9946 (done);
+     *      0x00993F mov [bp-2],0 (j=0); jmp 0x9907.
+     *      inner test 0x009907: cmp [bp-2],5; jge 0x9936 (i++ at 0x9936);
+     *      body 0x00990D: push [bp-4]; push [bp-2]; call 0x8956
+     *      (func_008956(i,j)); cmp al,[bp+6]; jne 0x9904 (j++);
+     *      match: mov ax,[bp-2]; mov bx,[bp+8]; mov [bx],ax (*arg1=j);
+     *      mov ax,[bp-4]; mov bx,[bp+0xa]; mov [bx],ax (*arg2=i); mov [bp-6],1;
+     *      0x009904 inc [bp-2] (j++); jmp 0x9907.  0x009946 mov ax,[bp-6]; ret.
+     * Scans the 5x5 grid (i,j in 0..4) calling func_008956(i,j); on each match
+     * with the low byte of arg0 it writes j to *arg1 and i to *arg2 and sets the
+     * found flag (the loop keeps going, so the LAST match wins). Returns 1 if any
+     * cell matched, else 0. */
+    int found = 0;
+    int i, j;
+    for (i = 0; i < 5; i++) {
+        for (j = 0; j < 5; j++) {
+            if ((uint8_t)func_008956((uint16_t)i, (uint16_t)j) == (uint8_t)arg0_bp_06) {
+                *(uint16_t near *)arg1_bp_08 = (uint16_t)j;
+                *(uint16_t near *)arg2_bp_0A = (uint16_t)i;
+                found = 1;
             }
-            goto label_009904;  /* @0x009934 */
         }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00993D JGE 0x009946 */ {
-            goto label_009907;  /* @0x009944 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return found;
 }
 
 /* @asm        0x00994C..0x009974  (40 bytes)  region=load_image
@@ -635,17 +825,31 @@ int func_0099AE_op_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *
  * Near CALL targets:
  *   - 0x0099AE
- * @inferred_role  PROLOGUE_HEAVY (67 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  sum func_0099AE(x+dx[i], y+dy[i], arg2, arg3) over the 8 neighbours
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0099EE_logic_sz_67(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_009A26;  /* @0x0099FA */
-        /* @0x009A1A */ func_0099AE();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x009A2A JL 0x0099FC */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0099F2 sub ax,ax; mov [bp-2],ax (sum=0); mov [bp-4],ax (i=0);
+     *      jmp 0x9a26.  test 0x009A26: cmp [bp-4],8; jl 0x99fc.
+     *      body 0x0099FC: push (byte)[bp+0xc] (arg3); push (byte)[bp+0xa] (arg2);
+     *      bx=i; ax=(int8)byte[bx+0xbe](dy[i]) + [bp+8](y); push ax;
+     *      ax=(int8)byte[bx+0xb4](dx[i]) + [bp+6](x); push ax;
+     *      call 0x99ae (func_0099AE(x+dx[i], y+dy[i], arg2, arg3));
+     *      add [bp-2],ax (sum += result); inc [bp-4] (i++).
+     *      0x009A2C mov ax,[bp-2]; ret.
+     * Accumulates func_0099AE over the eight neighbouring tiles of (arg0,arg1),
+     * using the 8-direction delta tables dx@0x00B4 {0,1,1,1,0,-1,-1,-1} and
+     * dy@0x00BE {-1,-1,0,1,1,1,0,-1}. arg2/arg3 pass through (as bytes). */
+    static const signed char dx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };  /* DGROUP 0x00B4 */
+    static const signed char dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };  /* DGROUP 0x00BE */
+    int sum = 0;
+    int i;
+    for (i = 0; i < 8; i++)
+        sum += func_0099AE((uint16_t)(arg0_bp_06 + dx[i]),  /* func_0099AE_op_sz_63 */
+                           (uint16_t)(arg1_bp_08 + dy[i]),
+                           (uint8_t)arg2_bp_0A, (uint8_t)arg3_bp_0C);
+    return sum;
 }
 
 /* @asm        0x009A32..0x009A6A  (56 bytes)  region=load_image
@@ -693,17 +897,31 @@ int func_009A32_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *
  * Near CALL targets:
  *   - 0x009A32
- * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  count func_009A32(x+dx[i], y+dy[i], arg2) over the 8 neighbours
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_009A6A_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_009A9E;  /* @0x009A76 */
-        /* @0x009A92 */ func_009A32();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x009AA2 JL 0x009A78 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x009A6E sub ax,ax; mov [bp-2],ax (sum=0); mov [bp-4],ax (i=0);
+     *      jmp 0x9a9e.  test 0x009A9E: cmp [bp-4],8; jl 0x9a78.
+     *      body 0x009A78: push (byte)[bp+0xa] (arg2); bx=i;
+     *      ax=(int8)byte[bx+0xbe](dy[i]) + [bp+8](y); push ax;
+     *      ax=(int8)byte[bx+0xb4](dx[i]) + [bp+6](x); push ax;
+     *      call 0x9a32 (func_009A32(x+dx[i], y+dy[i], arg2));
+     *      add [bp-2],ax (sum += result); inc [bp-4] (i++).
+     *      0x009AA4 mov ax,[bp-2]; ret.
+     * Accumulates the tile predicate func_009A32 (returns 0/1) over the eight
+     * neighbours of (arg0,arg1) using dx@0x00B4 / dy@0x00BE; effectively counts
+     * how many of the 8 surrounding tiles satisfy func_009A32(.,.,arg2). */
+    static const signed char dx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };  /* DGROUP 0x00B4 */
+    static const signed char dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };  /* DGROUP 0x00BE */
+    int sum = 0;
+    int i;
+    for (i = 0; i < 8; i++)
+        sum += func_009A32((uint16_t)(arg0_bp_06 + dx[i]),  /* func_009A32_op_sz_56 */
+                           (uint16_t)(arg1_bp_08 + dy[i]),
+                           (uint8_t)arg2_bp_0A);
+    return sum;
 }
 
 /* @asm        0x009AAA..0x009B9B  (241 bytes)  region=load_image
@@ -715,69 +933,49 @@ int func_009A6A_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  LARGE_LOGIC (241 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  (arg0,arg1) matchup score table: sums per-pair bonuses/penalties
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_009AAA_logic_sz_241(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AB7 JNE 0x009AC4 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009ABD JNE 0x009AC4 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AC8 JNE 0x009AD4 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009ACE JNE 0x009AD4 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AD8 JNE 0x009AE4 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009ADE JNE 0x009AE4 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AE8 JNE 0x009AF4 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AEE JNE 0x009AF4 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AF8 JNE 0x009B04 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009AFE JNE 0x009B04 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B08 JNE 0x009B15 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B0E JNE 0x009B15 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B19 JNE 0x009B26 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B1F JNE 0x009B26 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B2A JNE 0x009B37 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B30 JNE 0x009B37 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B3B JNE 0x009B47 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B41 JNE 0x009B47 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B4B JNE 0x009B57 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B51 JNE 0x009B57 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B5B JNE 0x009B67 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B61 JNE 0x009B67 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B6B JNE 0x009B76 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B71 JNE 0x009B76 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B7A JNE 0x009B86 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B80 JNE 0x009B86 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B8A JNE 0x009B96 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009B90 JNE 0x009B96 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x009AAE mov [bp-2],0 (score=0); then a flat sequence of
+     *      `cmp [bp+6],A; jne .; cmp [bp+8],B; jne .; <op> [bp-2]` tests, each
+     *      adjusting the score when (arg0==A && arg1==B), evaluated in order:
+     *        (9,0): mov  [bp-2],2     (set 2)
+     *        (1,0): add  [bp-2],2
+     *        (2,0): add  [bp-2],2
+     *        (9,4): add  [bp-2],2
+     *        (8,4): add  [bp-2],3
+     *        (3,3): mov  [bp-2],0xffff (set -1)
+     *        (4,2): mov  [bp-2],0xffff (set -1)
+     *        (5,1): mov  [bp-2],0xffff (set -1)
+     *        (10,5):add  [bp-2],2
+     *        (6,6): add  [bp-2],3
+     *        (13,6):add  [bp-2],2
+     *        (6,7): inc  [bp-2]
+     *        (12,7):add  [bp-2],2
+     *        (7,8): add  [bp-2],3
+     *      0x009B96 mov ax,[bp-2]; ret.
+     * Maps an ordered pair (arg0,arg1) -- two small category ids -- to a matchup
+     * score, accumulating the listed per-pair bonuses and applying the -1/2 SET
+     * overrides for the (3,3)/(4,2)/(5,1) pairs. The checks run sequentially (not
+     * a switch), so the exact order and set-vs-add semantics are preserved. */
+    int16_t score = 0;
+    if (arg0_bp_06 == 9  && arg1_bp_08 == 0) score = 2;
+    if (arg0_bp_06 == 1  && arg1_bp_08 == 0) score += 2;
+    if (arg0_bp_06 == 2  && arg1_bp_08 == 0) score += 2;
+    if (arg0_bp_06 == 9  && arg1_bp_08 == 4) score += 2;
+    if (arg0_bp_06 == 8  && arg1_bp_08 == 4) score += 3;
+    if (arg0_bp_06 == 3  && arg1_bp_08 == 3) score = -1;
+    if (arg0_bp_06 == 4  && arg1_bp_08 == 2) score = -1;
+    if (arg0_bp_06 == 5  && arg1_bp_08 == 1) score = -1;
+    if (arg0_bp_06 == 10 && arg1_bp_08 == 5) score += 2;
+    if (arg0_bp_06 == 6  && arg1_bp_08 == 6) score += 3;
+    if (arg0_bp_06 == 13 && arg1_bp_08 == 6) score += 2;
+    if (arg0_bp_06 == 6  && arg1_bp_08 == 7) score += 1;
+    if (arg0_bp_06 == 12 && arg1_bp_08 == 7) score += 2;
+    if (arg0_bp_06 == 7  && arg1_bp_08 == 8) score += 3;
+    return score;
 }
 
 /* @asm        0x009B9C..0x009FFC  (1120 bytes)  region=load_image
@@ -1151,27 +1349,32 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x00A6A2
- * @inferred_role  PROLOGUE_HEAVY (86 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  lazily fill the 5x5 byte grid at 0x8DF0 with func_00A6A2(row,col); latch flag 0x34C
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00A93E_logic_sz_86(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x034C
-     * Writes DGROUP: 0x034C
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A948 JNE 0x00A98C */ {
-            goto label_00A97F;  /* @0x00A94F */
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x00A959 JGE 0x00A97C */ {
-                /* @0x00A962 */ func_00A6A2();
-                goto label_00A952;  /* @0x00A979 */
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x00A983 JGE 0x00A98C */ {
-                goto label_00A955;  /* @0x00A98A */
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00A943 cmp byte[0x34c],0; jne 0xa98c (already initialised: done).
+     *      0x00A94A mov [bp-4],0 (row=0); outer test 0x00A97F: cmp [bp-4],5;
+     *      jge 0xa98c; mov [bp-2],0 (col=0); inner test 0x00A955: cmp [bp-2],5;
+     *      jge 0xa97c (row++); body 0x00A95B: push [bp-4](row); push [bp-2](col);
+     *      call 0xa6a2 (al=func_00A6A2(row,col)); si=[bp-2](col); cx=si;
+     *      shl si,2; add si,cx (si=col*5); bx=[bp-4](row);
+     *      mov byte[bx+si-0x7210],al (grid_8DF0[row + col*5] = result);
+     *      0x00A952 inc [bp-2] (col++).  0x00A98C mov byte[0x34c],1 (latch done).
+     * One-shot initialiser: when the latch at 0x034C is clear, fills the 5x5 byte
+     * grid based at 0x8DF0 (-0x7210), storing func_00A6A2(row,col) at index
+     * (row + col*5) for row,col in 0..4, then sets 0x034C=1 so it runs once.
+     * func_00A6A2 is a sibling helper. */
+    if (*(uint8_t near *)0x034C == 0) {
+        int row, col;
+        for (row = 0; row < 5; row++)
+            for (col = 0; col < 5; col++)
+                *(uint8_t near *)(0x8DF0 + (unsigned)row + (unsigned)col * 5) =
+                    (uint8_t)func_00A6A2((uint16_t)row, (uint16_t)col);  /* func_00A6A2 */
+    }
+    *(uint8_t near *)0x034C = 1;                          /* latch: initialised */
+    return 0;
 }
 
 /* @asm        0x00A994..0x00AAB9  (293 bytes)  region=load_image

@@ -97,30 +97,63 @@ int func_00765C_logic_sz_42(uint16_t arg0_bp_06)
  *   - 0x00772E
  *   - 0x0066BA
  *   - 0x006A7C
- * @inferred_role  DISPATCHER (161 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  process every type-[0xd,0x12] unit on arg0's tile via func_00772E, then finalize
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00768C_logic_sz_161(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00769E */ func_006B46();
-        /* @0x0076A7 */ func_006672();
-        /* @0x0076C9 */ func_0066CC();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0076D7 JL 0x007704 */ {
-            if (/* JB fallthrough cond: */ ax >= 0) /* @0x0076E2 JB 0x0076F6 */ {
-                if (/* JA fallthrough cond: */ ax <= 0) /* @0x0076E6 JA 0x0076F6 */ {
-                    /* @0x0076ED */ func_00772E();
-                }
+    /* @asm 0x007692 mov si,[bp+6] (arg0); mov [bp-0xa],0xffff (result=-1);
+     *      push 0; push si; call 0x6b46 (func_006B46(arg0,0), result discarded);
+     *      0x0076A4 mov ax,si; call 0x6672 (head=func_006672(arg0)=chain head);
+     *      bx=head*0x1c; mov [bp-8],(uint8)head.map_x(+0x00); mov [bp-6],
+     *      (uint8)head.map_y(+0x01)  (hx,hy = head's tile).
+     *   outer 0x0076BD: mov [bp-4],0 (flag=0); ax=[bp-8]; dx=[bp-6];
+     *      call 0x66cc (cur=unit_tile_head(hx,hy)); mov [bp-2],ax;
+     *      si=[bp-4](flag); di=[bp-0xa](result).
+     *   inner 0x0076D5: or ax,ax; jl 0x7704 (cur<0: end chain walk);
+     *      bx=cur*0x1c; al=cur.type(+0x02=0x3146); cmp al,0xd; jb 0x76f6;
+     *      cmp al,0x12; ja 0x76f6 (type outside [0xd,0x12]: skip);
+     *      (match) mov di,[bp-2] (result=cur); push cur; call 0x772e
+     *      (func_00772E(cur)); mov si,1 (flag=1);
+     *      0x0076F6 ax=[bp-2]; call 0x66ba (cur=unit_chain_next(cur));
+     *      mov [bp-2],ax; or si,si; je 0x76d5 (flag still 0: keep walking chain).
+     *   0x007704 mov [bp-0xa],di (result=di); or si,si; jne 0x76bd
+     *      (flag set this pass: rescan the tile from the head again).
+     *   finalize 0x00770B: di=hx; ax=di; dx=hy; call 0x66cc
+     *      (ret=unit_tile_head(hx,hy)); push hy; push hx; push [bp-0xa];
+     *      call 0x6a7c (func_006A7C(result, hx, hy)); 0x007727 mov ax,ret; ret.
+     * Repeatedly walks the unit chain on arg0's tile (head = func_006672(arg0),
+     * tile = unit_tile_head(hx,hy)=func_0066CC) and hands each unit whose type is
+     * in [0x0D,0x12] to func_00772E, restarting the scan after each hit until a
+     * full pass finds none. Then calls func_006A7C(last_processed, hx, hy) and
+     * returns the tile's current head unit. UnitRecord type +0x02, map x/y at
+     * +0x00/+0x01 (DGROUP_MEMORY_MAP §3.1). func_006B46/func_00772E are siblings. */
+    int16_t head, hx, hy;
+    int16_t result = -1;
+    /* NB the asm pushes TWO args here (push 0; push si); func_006B46's skeleton
+     * under-declares its arity from a false 71-byte boundary (true size 365B). */
+    func_006B46(arg0_bp_06, 0);                          /* func_006B46 (result discarded) */
+    head = (int16_t)func_006672(arg0_bp_06);             /* chain head */
+    hx = (int16_t)*(uint8_t near *)(0x3144 + (unsigned)head * 0x1C + 0x00);
+    hy = (int16_t)*(uint8_t near *)(0x3144 + (unsigned)head * 0x1C + 0x01);
+    for (;;) {
+        int flag = 0;
+        int16_t cur = (int16_t)func_0066CC((uint16_t)hx, (uint16_t)hy); /* unit_tile_head */
+        while (cur >= 0 && flag == 0) {
+            uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)cur * 0x1C + 0x02);
+            if (type >= 0x0D && type <= 0x12) {
+                result = cur;                            /* record processed unit */
+                func_00772E((uint16_t)cur);              /* func_00772E (process unit) */
+                flag = 1;
             }
-            /* @0x0076FA */ func_0066BA();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007702 JE 0x0076D5 */ {
-            }
+            cur = (int16_t)func_0066BA((uint16_t)cur);   /* chain next */
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x007709 JNE 0x0076BD */ {
-        }
-        /* @0x007714 */ func_0066CC();
-        /* @0x007721 */ func_006A7C();
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (flag == 0)
+            break;                                       /* a full pass found nothing */
+        /* else: rescan the tile from the head again */
+    }
+    func_006A7C((uint16_t)result, (uint16_t)hx, (uint16_t)hy);  /* func_006A7C_logic_sz_50 */
+    return (int)(int16_t)func_0066CC((uint16_t)hx, (uint16_t)hy);
 }
 
 /* @asm        0x00772E..0x0077C3  (149 bytes)  region=load_image
@@ -181,25 +214,33 @@ int func_00772E_op_sz_149(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x006672
  *   - 0x0066BA
- * @inferred_role  UNKNOWN (66 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if any unit in arg0's tile chain has type in [0x0d,0x12], else 0
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_0078F4_logic_sz_66(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007902 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007909 JL 0x007930 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00790D JNE 0x007930 */ {
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x00791B JB 0x007924 */ {
-                    if (/* JA fallthrough cond: */ ax <= 0) /* @0x00791F JA 0x007924 */ {
-                    }
-                }
-                /* @0x007927 */ func_0066BA();
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x00792E JGE 0x00790B */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0078FA mov si,[bp+6]; sub di,di (found=0); mov ax,si;
+     *      call 0x6672 (si = func_006672(arg0) = chain head); or si,si; jl 0x7930
+     *      (return found if head<0).
+     *      loop test 0x00790B: or di,di; jne 0x7930 (stop once found);
+     *      body 0x00790F: imul bx,si,0x1c; al=unit[si].type(+0x02=0x3146);
+     *      mov [bp-2],al; cmp al,0xd; jb 0x7924; cmp al,0x12; ja 0x7924;
+     *      in [0xd,0x12]: mov di,1 (found);
+     *      0x007924 mov ax,si; call 0x66ba (si = func_0066BA(si) = chain next);
+     *      or si,si; jge 0x790b.  0x007930 mov ax,di; ret.
+     * Walks the unit tile-chain starting at the head of arg0's chain (func_006672)
+     * via chain_next (func_0066BA) and returns 1 as soon as a member has unit
+     * type in [0x0D,0x12] (the colonist/specialist band), else 0. UnitRecord
+     * type at +0x02 (DGROUP_MEMORY_MAP §3.1). */
+    int found = 0;
+    int16_t i = (int16_t)func_006672(arg0_bp_06);      /* func_006672 = chain head */
+    while (i >= 0 && !found) {
+        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x02);
+        if (type >= 0x0D && type <= 0x12)
+            found = 1;
+        i = (int16_t)func_0066BA(i);                   /* func_0066BA = chain next */
+    }
+    return found;
 }
 
 /* @asm        0x007936..0x007966  (48 bytes)  region=load_image
@@ -316,11 +357,11 @@ int func_0079A0_op_sz_119(void)
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x007A20..0x007A73  (83 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_007A20_unknown.asm
+/* @asm        0x007A20..0x007A7F  (96 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_007A20.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 2
- * @args_seen  []
+ * @args_seen  []  (arg passed in AX — register convention)
  * @lcalls     0
  * @near_calls 1
  * @callers    0
@@ -328,31 +369,49 @@ int func_0079A0_op_sz_119(void)
  *
  * Near CALL targets:
  *   - 0x006CCA
- * @inferred_role  PROLOGUE_HEAVY (83 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: unit arg0 is current-player & under its func_006CCA cap
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 83 bytes / (void): a FALSE cut at 0x7A73. True
+ *         function is 0x7A20..0x7A7F (96 bytes) and takes one unit index in AX;
+ *         signature and @asm span corrected here.
  */
-int func_007A20_logic_sz_83(void)
+int func_007A20_logic_sz_96(uint16_t arg0_ax /* unit index, in AX */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x5394, 0x539C
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007A2C JL 0x007A7A */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x007A32 JLE 0x007A7A */ {
-                if (/* JL fallthrough cond: */ ax >= 0) /* @0x007A3F JL 0x007A7A */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x007A4D JNE 0x007A78 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x007A54 JE 0x007A5D */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007A5B JNE 0x007A78 */ {
-                                /* @0x007A5F */ func_006CCA();
-                                if (/* JAE fallthrough cond: */ ax < 0) /* @0x007A6C JAE 0x007A78 */ {
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007A26 mov si,ax (unit_idx); sub bx,bx (result=0);
+     *      or si,si; jl 0x7a7a (si<0 -> 0); cmp [0x539c],si; jle 0x7a7a
+     *      (si >= g_unit_count -> 0); imul di,si,0x1c; mov [bp-2],di;
+     *      cmp byte[di+0x3144],0; jl 0x7a7a (unit.map_x signed<0 i.e. off-map ->0).
+     *      0x007A41 mov bx,di; al=unit.owner_flags(+0x03=0x3147)&0xf;
+     *      cmp al,[0x5394]; jne 0x7a78 (owner != current player -> 0).
+     *      0x007A4F test unit.(+0x04=0x3148),0x80; je 0x7a5d;
+     *        (bit 0x80 set) cmp unit.type(+0x02=0x3146),0xb; jne 0x7a78
+     *        (require type==0xb).
+     *      0x007A5D push si; call 0x6cca (cap=func_006CCA(si), byte in al);
+     *      bx=[bp-2]; cmp unit.(+0x05=0x3149),al; jae 0x7a78
+     *      (unit.+0x05 >= cap, unsigned -> 0); mov bx,1.
+     *      0x007A71 mov ax,bx; ret  /  0x007A78 sub bx,bx; 0x007A7A mov ax,bx; ret.
+     * Returns 1 iff unit arg0 is a valid, on-map unit owned by the current player
+     * (0x5394), satisfies the +0x04 bit-0x80 => type==0x0B rule, and its +0x05
+     * counter is below the per-unit cap func_006CCA(arg0) (unsigned). Else 0.
+     * UnitRecord fields per DGROUP_MEMORY_MAP §3.1. */
+    int16_t si = (int16_t)arg0_ax;
+    unsigned base;
+    if (si < 0)
+        return 0;
+    if (*(uint16_t near *)0x539C <= (uint16_t)si)       /* g_unit_count */
+        return 0;
+    base = 0x3144 + (unsigned)si * 0x1C;
+    if ((int8_t)*(uint8_t near *)(base + 0x00) < 0)     /* map_x off-map */
+        return 0;
+    if ((*(uint8_t near *)(base + 0x03) & 0x0F) != *(uint8_t near *)0x5394)  /* owner */
+        return 0;
+    if ((*(uint8_t near *)(base + 0x04) & 0x80) != 0
+        && *(uint8_t near *)(base + 0x02) != 0x0B)      /* bit 0x80 => type 0x0B */
+        return 0;
+    if (*(uint8_t near *)(base + 0x05)
+        >= (uint8_t)func_006CCA(arg0_ax))               /* func_006CCA cap (unsigned) */
+        return 0;
+    return 1;
 }
 
 /* @asm        0x007A80..0x007B0F  (143 bytes)  region=load_image
@@ -406,11 +465,11 @@ int func_007A80_op_sz_143(void)
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x007B10..0x007B5C  (76 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_007B10_unknown.asm
+/* @asm        0x007B10..0x007B62  (83 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_007B10.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 4
- * @args_seen  []
+ * @args_seen  []  (start index passed in AX — register convention)
  * @lcalls     0
  * @near_calls 1
  * @callers    0
@@ -418,32 +477,51 @@ int func_007A80_op_sz_143(void)
  *
  * Near CALL targets:
  *   - 0x007A80
- * @inferred_role  PROLOGUE_HEAVY (76 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  next unit index (cyclic from arg0+1) satisfying func_007A80; -1 if none
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 76 bytes / (void): a FALSE cut at 0x7B5C. True
+ *         function is 0x7B10..0x7B62 (83 bytes) and takes a start index in AX;
+ *         signature and @asm span corrected here.
  */
-int func_007B10_logic_sz_76(void)
+int func_007B10_logic_sz_83(uint16_t arg0_ax /* start index, in AX */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x539C
-     */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x007B1A JLE 0x007B24 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x007B1E JL 0x007B24 */ {
-                goto label_007B33;  /* @0x007B22 */
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007B31 JE 0x007B5F */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x007B3D JG 0x007B41 */ {
-            }
-            /* @0x007B44 */ func_007A80();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007B4B JNE 0x007B52 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x007B50 JNE 0x007B38 */ {
-                }
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007B54 JE 0x007B5C */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007B16 cmp [0x539c],ax; jle 0x7b24 (start>=count -> rescan from 0);
+     *      or ax,ax; jl 0x7b24 (start<0 -> rescan from 0); mov dx,ax; jmp 0x7b33
+     *      (valid start: stop-marker = start).
+     *      0x007B24 mov ax,0xffff; mov dx,[0x539c]; dec dx (stop-marker=count-1);
+     *      cmp [0x539c],0; je 0x7b5f (no units -> return 0xffff).
+     *      0x007B33 mov [bp-2],dx (stop); mov si,ax;
+     *      loop 0x007B38: inc si; cmp [0x539c],si; jg 0x7b41; sub si,si (wrap to 0);
+     *      0x007B41 mov ax,si; call 0x7a80 (di=func_007A80(si)); or di,di;
+     *      jne 0x7b52; cmp [bp-2],si; jne 0x7b38 (loop until back at stop);
+     *      0x007B52 or di,di; je 0x7b5c (none -> 0xffff); mov ax,si; ret (return si).
+     *      0x007B5C mov ax,0xffff; ret.
+     * Cyclic search for the next unit index after arg0 for which the predicate
+     * func_007A80 holds. A valid arg0 scans (arg0+1 .. wrap .. arg0); an invalid
+     * arg0 scans (0 .. count-1). Returns that index, or 0xFFFF when none qualifies
+     * (or there are no units). g_unit_count @0x539C. */
+    uint16_t count = *(uint16_t near *)0x539C;          /* g_unit_count */
+    uint16_t si, stop;
+    if (count <= arg0_ax || (int16_t)arg0_ax < 0) {
+        si = 0xFFFF;
+        stop = count - 1;
+        if (count == 0)
+            return (int)(uint16_t)0xFFFF;
+    } else {
+        si = arg0_ax;
+        stop = arg0_ax;
+    }
+    for (;;) {
+        int di;
+        si++;
+        if (count <= si)
+            si = 0;                                     /* wrap */
+        di = func_007A80(si);                           /* func_007A80_op_sz_143 (predicate) */
+        if (di != 0)
+            return (int)si;
+        if (stop == si)
+            return (int)(uint16_t)0xFFFF;
+    }
 }
 
 /* @asm        0x007B64..0x007BCD  (105 bytes)  region=load_image

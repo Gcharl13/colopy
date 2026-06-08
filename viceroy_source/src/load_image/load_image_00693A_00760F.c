@@ -87,21 +87,53 @@ int func_0069EE_logic_sz_33(uint16_t arg0_bp_06)
  *   - 0x0066BA
  *   - 0x0068AA
  *   - 0x006696
- * @inferred_role  DISPATCHER (108 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  move unit arg0 to the TAIL of its tile chain (unlink + relink at end)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_006A10_logic_sz_108(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006A24 JL 0x006A78 */ {
-            /* @0x006A39 */ func_006672();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x006A40 JNE 0x006A4A */ {
-                /* @0x006A45 */ func_0066BA();
-            }
-            /* @0x006A4D */ func_0068AA();
-            /* @0x006A53 */ func_006696();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006A16 mov si,[bp+6]; imul bx,si,0x1c; mov [bp-6],bx;
+     *      cmp word[bx+0x315e],0; jl 0x6a78  (return if unit.chain_next(+0x1A)<0,
+     *      i.e. not chained).  0x006A26 al=unit.map_x(+0x00=0x3144); sub ah,ah;
+     *      mov [bp-2],ax; al=unit.map_y(+0x01=0x3145); mov [bp-4],ax (save x,y).
+     *      0x006A36 mov ax,si; call 0x6672 (di=func_006672(si)=chain head);
+     *      cmp di,si; jne 0x6a4a; (head==self) mov ax,si; call 0x66ba
+     *      (di=func_0066BA(si)=chain next).
+     *      0x006A4A mov ax,si; call 0x68aa (func_0068AA(si)=unlink from chain).
+     *      0x006A50 mov ax,di; call 0x6696 (ax=func_006696(di)=walk chain_next to
+     *      the tail of di's chain); imul bx,ax,0x1c; mov word[bx+0x315e],si
+     *      (tail.chain_next = si); mov bx,[bp-6]; mov word[bx+0x315c],ax
+     *      (unit.chain_prev = tail); mov word[bx+0x315e],0xffff
+     *      (unit.chain_next = -1, now the new tail); al=[bp-2]; mov [bx+0x3144],al;
+     *      al=[bp-4]; mov [bx+0x3145],al (restore x,y).  0x006A78 ret.
+     * Relocates unit arg0 to the END of its tile-occupancy chain: if it is chained
+     * (+0x1A>=0), it preserves (x,y), unlinks the unit (func_0068AA), walks to the
+     * chain tail from the head (func_006672/func_0066BA then func_006696 following
+     * chain_next +0x1A), and re-appends the unit there (tail.next=unit,
+     * unit.prev=tail, unit.next=-1), then restores (x,y). UnitRecord chain links
+     * at +0x18/+0x1A (DGROUP_MEMORY_MAP §3.1). */
+    int16_t si = (int16_t)arg0_bp_06;
+    unsigned ubase = 0x3144 + (unsigned)si * 0x1C;
+    int16_t di;
+    uint8_t saved_x, saved_y;
+    if ((int16_t)*(uint16_t near *)(ubase + 0x1A) < 0)  /* chain_next < 0: not chained */
+        return 0;
+    saved_x = *(uint8_t near *)(ubase + 0x00);
+    saved_y = *(uint8_t near *)(ubase + 0x01);
+    di = (int16_t)func_006672(arg0_bp_06);              /* chain head (walk prev +0x18) */
+    if (di == si)
+        di = (int16_t)func_0066BA(arg0_bp_06);          /* head==self: take chain_next */
+    func_0068AA(arg0_bp_06);                            /* unlink from chain */
+    {
+        int16_t tail = (int16_t)func_006696((uint16_t)di); /* walk chain_next to tail */
+        unsigned tbase = 0x3144 + (unsigned)tail * 0x1C;
+        *(uint16_t near *)(tbase + 0x1A) = (uint16_t)si;   /* tail.chain_next = unit */
+        *(uint16_t near *)(ubase + 0x18) = (uint16_t)tail; /* unit.chain_prev = tail */
+        *(uint16_t near *)(ubase + 0x1A) = 0xFFFF;         /* unit.chain_next = -1   */
+        *(uint8_t near *)(ubase + 0x00) = saved_x;
+        *(uint8_t near *)(ubase + 0x01) = saved_y;
+    }
+    return 0;
 }
 
 /* @asm        0x006A7C..0x006AAE  (50 bytes)  region=load_image
@@ -259,8 +291,8 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x006E94..0x006F18  (132 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_006E94_unknown.asm
+/* @asm        0x006E94..0x006F59  (198 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_006E94.asm
  * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 8
  * @args_seen  [6]
@@ -271,32 +303,90 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * Near CALL targets:
  *   - 0x0068AA
- * @inferred_role  MEDIUM_LOGIC (132 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unit_destroy: release owner/settlement state, unlink, compact table, renumber links
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 132 bytes ending 0x6F18: a FALSE cut. True
+ *         function is 0x6E94..0x6F59 (198 bytes); the array-compaction memmove,
+ *         chain-link renumber loop and selected-index fix-up were truncated and
+ *         are decompiled here. Matches unit.h's unit_destroy (0x6E94, 198 B).
  */
-int func_006E94_logic_sz_132(uint16_t arg0_bp_06)
+int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x539C
-     */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x006E9F JGE 0x006EA4 */ {
-            goto label_006F56;  /* @0x006EA1 */
+    /* @asm 0x006E9A mov di,[bp+6]; or di,di; jge 0x6ea4; jmp 0x6f56 (di<0 -> ret).
+     *      0x006EA4 imul bx,di,0x1c; mov [bp-8],bx; bl=unit.owner_flags(+0x03=
+     *      0x3147); and bx,0xf (owner); jl 0x6ec3; cmp bx,4; jge 0x6ec3;
+     *      cmp byte[bx-0x7304],0; je 0x6ec3; dec byte[bx-0x7304]  (EU owner 0..3:
+     *      decrement per-power unit counter at 0x8CFC[owner] if >0).
+     *      0x006EC3 cmp bx,4; jl 0x6edf; bx=[bp-8]; cmp byte[bx+0x314a],0; jl
+     *      0x6edf; al=unit.(+0x06=0x314a); cwde; imul bx,ax,0x12;
+     *      or byte[bx+0x54ef],1  (native owner>=4: OR bit 0x01 into NativeSettlement
+     *      [unit.+0x06].flags(+0x03=0x54ef)).
+     *      0x006EDF mov ax,di; call 0x68aa (func_0068AA(di)=unlink from tile chain).
+     *      0x006EE5 mov si,di; ax=[0x539c]-1; cmp ax,di; jle 0x6f1f (skip compaction
+     *      if di is the last unit).  compaction: dst=[bp-2]=&unit[si]; cnt=[bp-4]=
+     *      g_unit_count-si-1; do { es=ds; di=dst; si=dst+0x1c; cx=0xe;
+     *      rep movsw (copy unit[k+1] -> unit[k], 0x1c bytes); dst+=0x1c; } while
+     *      (--cnt); di=[bp+6].
+     *      0x006F1F sub cx,cx; ax=g_unit_count; dec ax; mov [0x539c],ax
+     *      (g_unit_count--); or ax,ax; jle 0x6f45; bx=0x315c (record-0 chain_prev);
+     *      dx=ax (count); loop: if (word[bx] > di) dec word[bx] (chain_prev);
+     *      if (word[bx+2] > di) dec word[bx+2] (chain_next); bx+=0x1c; while(--dx)
+     *      (renumber every link index > di because records shifted down).
+     *      0x006F45 cmp word[0x5392],0; je 0x6f56; cmp di,[0x5392]; jg 0x6f56;
+     *      dec word[0x5392]  (fix the selected/active unit index if it was at or
+     *      after the removed slot).  0x006F56 ret.
+     * Destroys unit arg0: releases its owner's per-power counter (0x8CFC, EU 0..3)
+     * or marks its native settlement (+0x03 flag bit 0x01), unlinks it from the
+     * tile chain (func_0068AA), compacts the UnitRecord table down over the gap
+     * (28-byte records, stride 0x1C @0x3144), decrements g_unit_count (0x539C),
+     * renumbers all chain_prev/chain_next links above the removed index, and
+     * decrements the selected-unit index at 0x5392 when affected. */
+    int16_t di = (int16_t)arg0_bp_06;
+    unsigned ubase;
+    int owner;
+    if (di < 0)
+        return 0;
+    ubase = 0x3144 + (unsigned)di * 0x1C;
+    owner = *(uint8_t near *)(ubase + 0x03) & 0x0F;
+    if (owner >= 0 && owner < 4) {                       /* EU power: dec unit counter */
+        if (*(uint8_t near *)(0x8CFC + (unsigned)owner) != 0)
+            (*(uint8_t near *)(0x8CFC + (unsigned)owner))--;
+    } else {                                             /* native: flag its settlement */
+        if ((int8_t)*(uint8_t near *)(ubase + 0x06) >= 0) {
+            unsigned sidx = *(uint8_t near *)(ubase + 0x06);
+            *(uint8_t near *)(0x54EC + sidx * 0x12 + 0x03) |= 0x01;
         }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006EB1 JL 0x006EC3 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x006EB6 JGE 0x006EC3 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x006EBD JE 0x006EC3 */ {
-                }
+    }
+    func_0068AA(arg0_bp_06);                             /* unlink from tile chain */
+    {
+        uint16_t count = *(uint16_t near *)0x539C;       /* g_unit_count */
+        /* compact records (di+1 .. count-1) down by one slot */
+        if ((uint16_t)(count - 1) > (uint16_t)di) {
+            unsigned dst = 0x3144 + (unsigned)di * 0x1C;
+            int n = count - di - 1;
+            for (; n > 0; n--) {
+                int w;
+                for (w = 0; w < 0x0E; w++)               /* rep movsw, 0xE words = 0x1C */
+                    ((uint16_t near *)dst)[w] = ((uint16_t near *)(dst + 0x1C))[w];
+                dst += 0x1C;
             }
         }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006EC6 JL 0x006EDF */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x006ED0 JL 0x006EDF */ {
+        count = (uint16_t)(*(uint16_t near *)0x539C - 1);
+        *(uint16_t near *)0x539C = count;                /* g_unit_count-- */
+        if ((int16_t)count > 0) {                        /* renumber chain links */
+            unsigned p = 0x315C;                         /* record-0 chain_prev (+0x18) */
+            int k;
+            for (k = count; k > 0; k--) {
+                if ((int16_t)*(uint16_t near *)(p)     > di) (*(uint16_t near *)(p))--;
+                if ((int16_t)*(uint16_t near *)(p + 2) > di) (*(uint16_t near *)(p + 2))--;
+                p += 0x1C;
             }
         }
-        /* @0x006EE2 */ func_0068AA();
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x006EED JLE 0x006F1F */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (*(uint16_t near *)0x5392 != 0                /* fix selected-unit index */
+            && di <= (int16_t)*(uint16_t near *)0x5392)
+            (*(uint16_t near *)0x5392)--;
+    }
+    return 0;
 }
 
 /* @asm        0x006F5A..0x006FC3  (105 bytes)  region=load_image

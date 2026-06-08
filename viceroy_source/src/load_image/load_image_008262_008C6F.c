@@ -72,30 +72,68 @@ int func_0082B2_logic_sz_38(uint16_t arg0_bp_06)
     return 1;
 }
 
-/* @asm        0x0082DC..0x008308  (44 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_0082DC_unknown.asm
+/* @asm        0x0082DC..0x008351  (118 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_0082DC.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 2
  * @args_seen  [6]
  * @lcalls     0
  * @near_calls 0
  * @callers    0
- * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @touches_8542 True
+ * @inferred_role  select ColonyRecord[arg0] as current colony; set 0xA897 if owned by human current player
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 44 bytes ending 0x8308: a FALSE cut right after
+ *         the ctx-pointer store (the proof at 0x8307 cited in DGROUP_MEMORY_MAP
+ *         §5.1). True function is 0x82DC..0x8351 (118 bytes); the ownership test
+ *         and flag/render-flag writes that follow are decompiled here.
  */
-int func_0082DC_logic_sz_44(uint16_t arg0_bp_06)
+int func_0082DC_logic_sz_118(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x5396, 0x539E
-     * Writes DGROUP: 0x8DC6
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0082ED JL 0x0082F5 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x0082F3 JL 0x0082FF */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0082E0 mov [bp-2],0 (oob=0); mov ax,[bp+6]; mov [0x8dc6],ax
+     *      (g_current_colony_index = arg0); or ax,ax; jl 0x82f5;
+     *      cmp ax,[0x539e]; jl 0x82ff (in range when 0<=arg0<g_colony_count);
+     *      0x0082F5 mov [bp+6],0; mov [bp-2],1 (out of range: clamp to 0, oob=1).
+     *      0x0082FF mov al,[0x5396] (current player); imul bx,[bp+6],0xca;
+     *      add bx,0x5d46; mov [0x8542],bx (ctx = &ColonyRecord[arg0]);
+     *      cmp byte[bx+0x1a],al; jne 0x8318; mov al,1; jmp 0x831a;
+     *      0x008318 sub al,al  (al = (ColonyRecord.owner_power(+0x1a)==player)).
+     *      0x00831A or al,al; je 0x8340; cmp byte[bx+0x1a],4; jae 0x8340
+     *      (owner must be an EU power 0..3); al=ColonyRecord.owner(+0x1a); cwde;
+     *      imul bx,ax,0x34; cmp byte[bx+0x543f],ah (ah==0)  -> controller==0=human;
+     *      jne 0x8340; cmp [bp-2],0; jne 0x8340 (must be in range);
+     *      0x008338 mov byte[0xa897],1; jmp 0x8345;
+     *      0x008340 mov byte[0xa897],0.
+     *      0x008345 mov word[0x348],0; mov byte[0x34c],0 (clear render/tutorial flags).
+     * Selects ColonyRecord[arg0] as the current colony: stores the index at
+     * 0x8DC6 and the record pointer at ctx@0x8542 (base 0x5D46, stride 0xCA,
+     * DGROUP_MEMORY_MAP §3.4), clamping an out-of-range arg0 to 0. Sets the flag
+     * at 0xA897 to 1 iff arg0 was in range AND the colony's owner_power (+0x1A)
+     * equals the current player (0x5396), is an EU power (<4), and is human
+     * (AIPersonality[owner].controller +0x31==0x543f == 0). Always clears the
+     * render flags at 0x0348 (word) and 0x034C (byte). */
+    unsigned char near *ctx;
+    int oob = 0;
+    int owned_human;
+    *(uint16_t near *)0x8DC6 = arg0_bp_06;               /* g_current_colony_index */
+    if ((int16_t)arg0_bp_06 < 0
+        || (int16_t)arg0_bp_06 >= (int16_t)*(uint16_t near *)0x539E) { /* g_colony_count */
+        arg0_bp_06 = 0;
+        oob = 1;
+    }
+    ctx = (unsigned char near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
+    *(unsigned char near * near *)0x8542 = ctx;          /* ctx = current ColonyRecord */
+    owned_human = (ctx[0x1A] == *(uint8_t near *)0x5396);  /* owner_power == player */
+    if (owned_human
+        && ctx[0x1A] < 4                                  /* EU power */
+        && *(uint8_t near *)(0x540E + (unsigned)ctx[0x1A] * 0x34 + 0x31) == 0  /* human */
+        && oob == 0)
+        *(uint8_t near *)0xA897 = 1;
+    else
+        *(uint8_t near *)0xA897 = 0;
+    *(uint16_t near *)0x0348 = 0;                         /* clear render flag (word) */
+    *(uint8_t near *)0x034C = 0;                          /* clear render flag (byte) */
+    return 0;
 }
 
 /* @asm        0x008352..0x0083AE  (92 bytes)  region=load_image
@@ -562,24 +600,31 @@ uint32_t func_0087F4_logic_sz_18(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0087F4
- * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set PowerRecord[arg0].gold = clamp(gold + (arg2:arg1), 0, 999999)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_008806_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00880E */ func_0087F4();
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x00881C JG 0x008824 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x00881E JGE 0x008824 */ {
-            }
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x008827 JL 0x008836 */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x008829 JG 0x008830 */ {
-                if (/* JBE fallthrough cond: */ ax > 0) /* @0x00882E JBE 0x008836 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00880E call 0x87f4 (func_0087F4 -> gold dword in dx:ax);
+     *      0x008814 add ax,[bp+8]; adc dx,[bp+0xa] (gold += (arg2:arg1) as int32);
+     *      0x00881a or dx,dx; jg 0x8824; jge 0x8824 (if hi<0 i.e. result<0:
+     *      0x008820 sub dx,dx; sub ax,ax -> clamp to 0);
+     *      0x008824 cmp dx,0xf; jl 0x8836 (store); jg 0x8830 (clamp high);
+     *      else hi==0xf: cmp ax,0x423f; jbe 0x8836 (store);
+     *      0x008830 mov dx,0xf; mov ax,0x423f (clamp to 0xF423F = 999999);
+     *      0x008836 imul bx,[bp+6],0x13c; mov [bx-0x77ce],ax; mov [bx-0x77cc],dx.
+     * Adds the signed 32-bit delta (arg2:arg1) to PowerRecord[arg0].gold and
+     * stores the result back, clamped to [0, 999999]. -0x77CE == DGROUP +0x8832
+     * == PowerRecord base 0x8808 + 0x2A = gold dword (DGROUP_MEMORY_MAP §3.5).
+     * Returns the clamped value (in ax:dx; the int return carries the low word). */
+    int32_t gold = (int32_t)func_0087F4(arg0_bp_06);   /* func_0087F4_logic_sz_18 */
+    gold += (int32_t)(((uint32_t)arg2_bp_0A << 16) | arg1_bp_08);
+    if (gold < 0)
+        gold = 0;
+    else if (gold > 999999L)               /* 0x000F423F */
+        gold = 999999L;
+    *(uint32_t near *)(0x8808 + (unsigned)arg0_bp_06 * 0x13C + 0x2A) = (uint32_t)gold;
+    return (int)(uint16_t)((uint32_t)gold & 0xFFFF);
 }
 
 /* @asm        0x008846..0x008861  (27 bytes)  region=load_image
