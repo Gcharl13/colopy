@@ -2590,15 +2590,42 @@ void overlay_grid16_shift_down(uint16_t col, uint16_t stop_row)  /* per-func fun
 }
 
 /* ============================================================================
- * func_04C2CE — overlay_grid16_shift variant  [STILL-SKELETON; MIS-ADDRESSED]
+ * overlay_table_c_shift_down — shift the 6-byte TABLE_C array down one slot
+ *                                          [DONE — BYTE_VERIFIED]
+ * (per-func label func_04C2CE; 55 bytes 0x04C2CE..0x04C304, fully terminated)
  * ----------------------------------------------------------------------------
- * Same 0x9EAA grid family as overlay_grid16_shift_down (16-wide, r from 0x0E,
- * uses di+si), but the per-func dump truncates after init and the entry is past
- * page_0C code_end with an inflated offset.  Body TBD against the spill-page
- * reseg.  (cite-or-TBD)
+ * The sibling of overlay_grid16_shift_down (func_04C298), but for the OTHER AI
+ * grid: TABLE_C at DGROUP:0xA0DC — a flat 16-slot array of 6-byte (3-word)
+ * records (NOT the per-power 4-byte QUEUE_B at 0x9EAA).  Walks r from 0x0E down
+ * to stop_row and copies record[r] into record[r+1] (the slot 6 bytes higher),
+ * opening a gap at `stop_row` — a top-of-list insert/scroll.  Uses `rep movsw`
+ * (es=ds) for the 3-word copy.
+ *
+ * @asm 0x04C2CE  ENTER 2,0 / PUSH di / PUSH si       ; local [bp-2]=r, arg stop_row=[bp+6]
+ * @asm 0x04C2D4  [bp-2] = 0x0E
+ * @asm 0x04C2DC  bx = r*6 (shl/add/shl: r<<1 + r, <<1)
+ * @asm 0x04C2E7  di = bx - 0x5F1E  (= &TABLE_C[r*6 + 6])
+ * @asm 0x04C2EB  si = bx - 0x5F24  (= &TABLE_C[r*6])      ; 0xA0DC == 0x10000-0x5F24
+ * @asm 0x04C2EF  es = ds
+ * @asm 0x04C2F3  movsw ×3                                 ; copy 3 words si->di
+ * @asm 0x04C2F6  r--
+ * @asm 0x04C2F9  while r >= stop_row([bp+6]): loop
+ * @asm 0x04C304  RETF
+ *
+ * The earlier "MIS-ADDRESSED / truncated" note was wrong: the per-func dump is
+ * the complete 55-byte body (ENTER..RETF).  TABLE_C base 0xA0DC matches the
+ * companion declaration in overlay_04C306_053BC1.c (g_ai_table_c_A0DC).
  * ============================================================================ */
-int overlay_grid16_shift_variant(void)  /* per-func func_04C2CE (mis-addr, truncated) */
+extern uint8_t g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 16 slots × 6-byte AI records */
+
+void overlay_table_c_shift_down(uint16_t stop_row)  /* func_04C2CE */
 {
-    /* STILL-SKELETON: truncated + mis-addressed — see OFFSET RECONCILIATION. */
-    return 0;
+    /* @asm 0x04C2D4 / 0x04C2F9..0x04C2FF — r = 0x0E downto stop_row (inclusive) */
+    for (int r = 0x0E; r >= (int)stop_row; r--) {
+        uint16_t *src = (uint16_t *)&g_ai_table_c_A0DC[r * 6];      /* si @asm 0x04C2EB */
+        uint16_t *dst = (uint16_t *)&g_ai_table_c_A0DC[r * 6 + 6];  /* di = si+6 @asm 0x04C2E7 */
+        dst[0] = src[0];                                            /* @asm 0x04C2F3 movsw */
+        dst[1] = src[1];                                           /* @asm 0x04C2F4 movsw */
+        dst[2] = src[2];                                           /* @asm 0x04C2F5 movsw */
+    }
 }

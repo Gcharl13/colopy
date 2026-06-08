@@ -257,6 +257,15 @@ check_bytes("tile_scan Phase D per-slot cap normalize", 0x04944d, "9a 5c 03 1f 1
 check_bytes("tile_scan Phase D per-slot decay sub cap/2", 0x049549, "29 87 78 9e")
 check_bytes("tile_scan epilogue RETF", 0x0495ff, "cb")
 
+# ---- overlay_table_c_shift_down func_04C2CE (BYTE_VERIFIED 2026-06-08) ------
+check_bytes("table_c shift enter + r init 0x0E", 0x04C2CE, "c8 02 00 00")
+check_bytes("table_c shift bx = r*6 (shl/add/shl)", 0x04C2DC, "8b 5e fe 8b c3 d1 e3 03 d8 d1 e3")
+check_bytes("table_c shift di = &TABLE_C[r*6+6]", 0x04C2E7, "8d bf e2 a0")
+check_bytes("table_c shift si = &TABLE_C[r*6]",   0x04C2EB, "8d b7 dc a0")
+check_bytes("table_c shift es=ds + movsw x3",     0x04C2EF, "8c d8 8e c0 a5 a5 a5")
+check_bytes("table_c shift loop r >= stop_row",   0x04C2F9, "8b 46 06 39 46 fe 7d db")
+check_bytes("table_c shift RETF", 0x04C304, "cb")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
