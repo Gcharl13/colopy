@@ -399,8 +399,8 @@ Two args: `a`=`[bp+6]`, `b`=`[bp+8]` (European power indices). Status:
 | Relation flag bits: 0x02=war, 0x20=peace-pending, 0x40=treaty-in-force | @asm 057E05 `test al,2`; 057DF0 `test al,0x20`; 057E7D `test al,0x40` | BYTE_VERIFIED (bit→meaning labels inferred from branch targets) |
 | Emits "SIGNTREATY" on establish | @asm 057E84 `push 2`; 057E86 `push 0x188d`; 057E89 `lcall 0x181f,0x652`; string "SIGNTREATY" @ file 0x1F22D (strings.json) | BYTE_VERIFIED (call site); key→string mapping ANCHOR_VERIFIED |
 | Early-out guard `[0x5382]&1`; phase gate `(a+[0x538e]+b)%3` | @asm 057DC4 / 057DCE..057DE0 (`idiv cx`=3) | BYTE_VERIFIED |
-| `rel_query`/`power_handle`/`power_set_flag`/`ui_notify_key`/`rel_apply_event`/`rel_clear_event` helper BODIES | resolved targets cited (e.g. 0x181F:0x0A38→file 0x5FC30) but not decompiled | TBD |
-| Treaty PROPOSAL / AI accept-reject / gold-goods transfer | caller not located | TBD (RECONSTRUCTED removed from treaty.c) |
+| `rel_query`/`power_handle`/`power_set_flag`/`ui_notify_key`/`rel_apply_event`/`rel_clear_event` helper BODIES | resolved targets cited (e.g. 0x181F:0x0A38→file 0x5FC30) but not decompiled | not yet decoded |
+| Treaty PROPOSAL / AI accept-reject / gold-goods transfer | caller not located | not yet decoded (reconstructed content removed from treaty.c) |
 
 `relations.c`: the prior file's numeric "relationship score" (−100..100), per-
 event deltas, REL_* enum values, and "+20 Pocahontas" were **fabricated** and
@@ -429,9 +429,9 @@ increment INSIDE this function.
 | id 20 William Brewster → dock-pool 0x19/0x1A→0x1C, 3 slots at PowerRecord+0x02..+0x04 | @asm 03BF98/03BF9F `cmp [bx+si-0x77f6],0x19/0x1a`; 03BFAB set 0x1C | BYTE_VERIFIED → PowerRecord+0x02 begins the 3-byte immigration pool |
 | FF_TABLE (id, category, 3 era weights) | NAMES.TXT @FATHERS @ file 0x3047 (verbatim) | BYTE_VERIFIED (data) |
 | In-CATEGORY unlock rule (not global age ladder) | NAMES.TXT @FOUNDING @ file 0x2F03 comment | BYTE_VERIFIED (data) |
-| FF "owned" bitmap PowerRecord+0x07 set on acquire | NOT written in this function (only count+0x14 / slot+0x12) | TBD — caller/congress path |
-| Bell accumulator (+0x0C/+0x0E) + Continental-Congress trigger + bell COST curve (85,103,…) | not located; cost table not in NAMES.TXT, no cited EXE offset | TBD (RECONSTRUCTED formulas removed from recruit.c) |
-| Helper bodies behind every `0x181F:NNNN` lcall | resolved target file offsets cited in effects.c | TBD |
+| FF "owned" bitmap PowerRecord+0x07 set on acquire | NOT written in this function (only count+0x14 / slot+0x12) | not yet decoded — caller/congress path |
+| Bell accumulator (+0x0C/+0x0E) + Continental-Congress trigger + bell COST curve (85,103,…) | not located; cost table not in NAMES.TXT, no cited EXE offset | not yet decoded (reconstructed formulas removed from recruit.c) |
+| Helper bodies behind every `0x181F:NNNN` lcall | resolved target file offsets cited in effects.c | not yet decoded |
 
 ### Note / follow-up
 ~~`include/ff.h` still contains a WRONG reconstructed FF-id ordering~~ —
@@ -444,7 +444,7 @@ matching effects.c/recruit.c. Do NOT "re-fix" ff.h — it is already correct.
 
 ## SAVE/LOAD format + SCORING byte-trace (2026-05-29)
 
-Four `src/` files rewritten from fabricated content to strict cite-or-TBD:
+Four `src/` files rewritten from fabricated content to strict cite-or-not-yet-decoded:
 `src/save/save_serializer.c`, `src/save/load_deserializer.c`,
 `src/scoring/compute.c`, `src/scoring/endgame.c`. Fabrications removed:
 "COLONY94" magic, save version byte, XOR-rotate checksum, `DIFFICULTY_SCORE_MULT
@@ -460,14 +460,14 @@ MUSIC_VICTORY, "year>=1850" timeout, "CLOSING.EXE" chain, HallFameEntry layout.
 | `.COL` / `COL2` magic / version 3 is the **Win16** format, NOT DOS | DOS EXE has no "COL2"; `CONFIG.COL` @0x1F9F9 is the only `.COL` (a config file). col_to_trace.py / colowin SAVE_FORMAT.md describe Win16 colonize.exe | BYTE_VERIFIED (the conflation is the bug) |
 | Save/Load UI message keys | @bytes "SAVEGAME"@0x1FA96, "SAVEGOOD"@0x1FA9F, "SAVEMEM"@0x1FAA8, "SAVEERROR"@0x1FAB0, "LOADGAME"@0x1FABA, "LOADGOOD"@0x1FAC3, "LOADNOT"@0x1FACC, "LOADOLD"@0x1FAD4 | BYTE_VERIFIED (locations); key→meaning ANCHOR_VERIFIED |
 | Save/Load uses a buffered STREAM layer (not direct INT 21h from game state) | page_1C.asm: stream OPEN func_076E50@0x076E50 (LCALL 0x181F:0xE86=DOS open), WRITE func_0775EC@0x0775EC, READ func_077100@0x077100, SEEK func_0772FA@0x0772FA, CLOSE func_07706C@0x07706C; struct +0x06 handle/+0x04 mode/+0x14-0x16 buf/+0x28 count | BYTE_VERIFIED (structural) |
-| ~~Colony record reader~~ → RTLink/overlay-EXE record reader (CORRECTED 2026-05-30) | func_011F6E @**0x011F6E** (403 B) is the C-runtime/RTLink reader for VICEROY's own overlay/EXE segments, NOT the savegame colony loader: MZ/ZM exe-magic @0x01207A `81 7e e2 5a 4d` / @0x012081 `81 7e e2 4d 5a`; caller chain 0x0103FC→0x011B56(_searchenv)→0x012102(fopen+searchpath)→0x011F6E; malloc(0xAE)=RTLink scratch (ColonyRecord match coincidental) | BYTE_VERIFIED — supersedes the "fills colony array" misattribution. Real game-state SERIALIZER is overlay-resident (0x181F/0x191F/0x1A1F thunks) → on-disk order/header/checksum TBD for a verified reason |
+| ~~Colony record reader~~ → RTLink/overlay-EXE record reader (CORRECTED 2026-05-30) | func_011F6E @**0x011F6E** (403 B) is the C-runtime/RTLink reader for VICEROY's own overlay/EXE segments, NOT the savegame colony loader: MZ/ZM exe-magic @0x01207A `81 7e e2 5a 4d` / @0x012081 `81 7e e2 4d 5a`; caller chain 0x0103FC→0x011B56(_searchenv)→0x012102(fopen+searchpath)→0x011F6E; malloc(0xAE)=RTLink scratch (ColonyRecord match coincidental) | BYTE_VERIFIED — supersedes the "fills colony array" misattribution. Real game-state SERIALIZER is overlay-resident (0x181F/0x191F/0x1A1F thunks) → on-disk order/header/checksum not yet decoded for a verified reason |
 | Load menu framework | func_0759E8 @0x0759E8: "OPENMENU"@0x1FCDC, "MAPTOLOAD"@0x1FCFC, "*.MP"@0x1FCF7, "AMER2.MP"@0x1F2166 | BYTE_VERIFIED (structural, 2026-05-04) |
-| On-disk SECTION ORDER (Power/Colony/Unit/Native/Map/discovery), header, checksum | serializer not isolated to one offset; not traced | **TBD** |
+| On-disk SECTION ORDER (Power/Colony/Unit/Native/Map/discovery), header, checksum | serializer not isolated to one offset; not traced | **not yet decoded** |
 
 In-memory table strides used by the serializer (all per docs/RULINGS.md
 2026-05-28): UnitRecord 0x3144/0x1C, ColonyRecord 0x5D46/0xCA (work buf 0xAE),
 PowerRecord 0x8808/0x13C, NativeSettlement 0x54EC/0x12 — BYTE_VERIFIED strides;
-their *disk* strides are TBD.
+their *disk* strides are not yet decoded.
 
 ### SCORING — `func_051EF4` @0x051EF4 (page 0x0D) — ROLE CORRECTED 2026-05-30
 
@@ -480,7 +480,7 @@ their *disk* strides are TBD.
 > BYTE_VERIFIED (they correctly trace what gets computed and added); only the
 > word "score" is wrong — read it as "the per-turn gold credit". The real
 > end-of-game SCORE is the rank ladder in `func_03A9C0` (compute.c CORRECTION 2)
-> over an overlay-resident raw value at 0x191F:0x3AA (TBD).
+> over an overlay-resident raw value at 0x191F:0x3AA (not yet decoded).
 
 Per-power per-turn **gold/income** increment, hand-decompiled from
 `code/VICEROY/disasm/func_051EF4_unknown.asm`. The amount is **accumulated
@@ -489,13 +489,13 @@ incrementally** into the 32-bit gold field at PowerRecord+0x2A.
 | Claim | Evidence | Status |
 |-------|----------|--------|
 | Score accumulator = `int32 *(0x84FC)+0x2A` (active power's PowerRecord+0x2A) | @asm 051F7C `mov bx,[0x84FC]`; 051F80 `add [bx+0x2a],ax`; 051F83 `adc [bx+0x2c],dx`. 0x84FC = g_active_power (ledger 2026-05-02 + FF entry 2026-05-29) | BYTE_VERIFIED |
-| `base = metric[power] + (year-1500)/50` | @asm 051F1F `ax=[0x538A]`; 051F22 `-0x5DC`; 051F29 `idiv 50`; 051F2E `cl=[bx-0x6D68]`; 051F34 `add` | BYTE_VERIFIED (metric byte table semantics TBD) |
+| `base = metric[power] + (year-1500)/50` | @asm 051F1F `ax=[0x538A]`; 051F22 `-0x5DC`; 051F29 `idiv 50`; 051F2E `cl=[bx-0x6D68]`; 051F34 `add` | BYTE_VERIFIED (metric byte table semantics not yet decoded) |
 | `if (turn < 20) base = 0` | @asm 051F39 `cmp [0x538E],0x14`; 051F40 `mov [bp-0x10],0` | BYTE_VERIFIED |
 | `if (year >= 1700) base *= 2` | @asm 051F45 `cmp [0x538A],0x6A4`; 051F4D `shl …,1` | BYTE_VERIFIED |
 | difficulty scaling: `acc = base*diff; diff==3 → *1.5; diff==4 → *2; then *4` | @asm 051F50 `al=[0x53A6]`/`imul`; 051F5B `cmp 3`/`sar+add`; 051F6A `cmp 4`/`shl`; 051F74 `shl …,2` | BYTE_VERIFIED — supersedes fabricated {50,100,150,200,250} table |
 | year @0x538A, turn @0x538E, difficulty @0x53A6, colony-count @0x539E | cross-confirmed (king tax, raze, FF) | BYTE_VERIFIED |
-| high-water-mark tracking vs `[0x9796]/[0x97A8]/[0x97AE]`; SoL/event bonuses @0x5206E.. | @asm 0x52157/0x52177/0x52197 (32-bit max+store); 0x5206E reads [bx-0x6D68]/[bx-0x6BF4]/[bx-0x6BEC]/[bx-0x6BDC] | BYTE_VERIFIED present; purpose/formula **TBD** |
-| FINAL endgame total + revolution/year bonus + component breakdown | endgame total render lives in func_0759E8/075xxx region; not decompiled | **TBD** |
+| high-water-mark tracking vs `[0x9796]/[0x97A8]/[0x97AE]`; SoL/event bonuses @0x5206E.. | @asm 0x52157/0x52177/0x52197 (32-bit max+store); 0x5206E reads [bx-0x6D68]/[bx-0x6BF4]/[bx-0x6BEC]/[bx-0x6BDC] | BYTE_VERIFIED present; purpose/formula **not yet decoded** |
+| FINAL endgame total + revolution/year bonus + component breakdown | endgame total render lives in func_0759E8/075xxx region; not decompiled | **not yet decoded** |
 
 ### ENDGAME / Hall of Fame
 
@@ -503,9 +503,9 @@ incrementally** into the 32-bit gold field at PowerRecord+0x2A.
 |-------|----------|--------|
 | Win-state strings exist | @bytes "VICTORY"@0x1EAE3, "REVOLUTION"@0x1ED1B, "CONTINENTAL"@0x1F566, "INDEPENDENT"@0x1EBA8 | BYTE_VERIFIED (locations) |
 | Hall of Fame file = `HALLFAME.DAT`, fopen("rb")/("wb") | @bytes "HALLFAME.DAT"@0x1EB92 & 0x1EBC7, "rb"/"wb" flanking; "SCORE"@0x1EB6F/0x1EB89 | BYTE_VERIFIED (file+mode) |
-| HALLFAME.DAT DOS record layout (3×42 + 82 deco + u16 csum) | only the **Win16** 210-byte file is decoded (colowin hallfame_format.py); DOS reader/writer not traced | **TBD** for DOS |
-| Game-over trigger set / "1850 timeout" | no 1850/0x73A threshold in EXE; only era gates 0x640/0x672/0x6A4/0x6D6 | **TBD** (1850 was fabricated) |
-| Endgame `chain_to_exe("CLOSING.EXE")` | "CLOSING.EXE" string NOT in EXE; AH=4Bh loader = dos_exec_load_overlay_4B3@0x01287A | **TBD** (fabricated, removed) |
+| HALLFAME.DAT DOS record layout (3×42 + 82 deco + u16 csum) | only the **Win16** 210-byte file is decoded (colowin hallfame_format.py); DOS reader/writer not traced | **not yet decoded for DOS** |
+| Game-over trigger set / "1850 timeout" | no 1850/0x73A threshold in EXE; only era gates 0x640/0x672/0x6A4/0x6D6 | **not yet decoded** (1850 was fabricated) |
+| Endgame `chain_to_exe("CLOSING.EXE")` | "CLOSING.EXE" string NOT in EXE; AH=4Bh loader = dos_exec_load_overlay_4B3@0x01287A | **not yet decoded** (fabricated, removed) |
 
 ### Follow-ups (single-function traces to close the gaps)
 1. Turn-loop caller of func_051EF4 → end-of-game branch + win-state enum + final total.
@@ -516,11 +516,11 @@ incrementally** into the 32-bit gold field at PowerRecord+0x2A.
 
 ## UI screens byte-trace + de-fabrication (2026-05-29)
 
-Five `src/ui/` files rewritten from fabricated content to strict cite-or-TBD:
+Five `src/ui/` files rewritten from fabricated content to strict cite-or-not-yet-decoded:
 `colony_screen.c`, `europe_screen.c`, `dialog.c`, `title_screen.c`,
 `hall_of_fame.c`. The in-game HUD and full-screen UIs are OVERLAY-emitted
 (resident EXE sets state + clip rect + dispatches; the pixel draw is overlay-
-resident), so most per-screen draw code is honestly TBD. What was citable was
+resident), so most per-screen draw code is honestly not yet decoded. What was citable was
 cited; fabricated PIK names, coordinates, structs, and strings were removed.
 
 ### dialog.c — `compute_dialog_rect_from_cursor` = func_067DC8 (BYTE_VERIFIED)
@@ -533,16 +533,16 @@ docs/DIALOG_GEOMETRY.md). File 0x067DC8..0x067E09 (65 B).
 | Popup rect = 4 DGROUP words at 0x839E/0x83A0/0x83A2/0x83A4; only ever written via `LEA bx,[0x839E]`+indirect call (0 direct-MOV hits EXE-wide) | @asm 067DFE `LEA bx,[0x839E]`; docs/DIALOG_GEOMETRY.md byte-scan | BYTE_VERIFIED |
 | Gate: setter runs only if `[0x186] >= 0x64` | @asm 067DDA `CMP [0x186],0x64`; 067DDF `JL` | BYTE_VERIFIED |
 | `arg1(x) = [0xA5A4] + [0x1EA4] - 8` ; `arg2(y) = [0xA5A6] + [0x1EA5] - 0xF` ; arg3=cursor_x [0x174] ; arg4=cursor_y [0x176] | @asm 067DE1..067DFB (PUSH order R-to-L) | BYTE_VERIFIED |
-| Setter call `LCALL 0x181F:0x254` → thunk @file 0x01A844 (type B) → overlay 0x0C36:0x000A | @asm 067E02; typeA_thunk_targets.json | BYTE_VERIFIED (target); setter **file offset TBD** (seg 0x0C36 unresolved) |
-| arg→field mapping in [0x839E..0x83A4]; the WOODFRAM/WOODTILE frame + FONTSMAL text DRAW | overlay-resident, undecoded | **TBD** |
-| Upstream writers: cursor_x [0x174]@0x0765AC, cursor_y [0x176]@0x0765AF, font_cell_w [0xA5A4]@0x068771, font_cell_h [0xA5A6]@0x06872C | docs/DIALOG_GEOMETRY.md | BYTE_VERIFIED; [0x186]/[0x1EA4]/[0x1EA5] writers **TBD** |
+| Setter call `LCALL 0x181F:0x254` → thunk @file 0x01A844 (type B) → overlay 0x0C36:0x000A | @asm 067E02; typeA_thunk_targets.json | BYTE_VERIFIED (target); setter **file offset not yet decoded** (seg 0x0C36 unresolved) |
+| arg→field mapping in [0x839E..0x83A4]; the WOODFRAM/WOODTILE frame + FONTSMAL text DRAW | overlay-resident, undecoded | **not yet decoded** |
+| Upstream writers: cursor_x [0x174]@0x0765AC, cursor_y [0x176]@0x0765AF, font_cell_w [0xA5A4]@0x068771, font_cell_h [0xA5A6]@0x06872C | docs/DIALOG_GEOMETRY.md | BYTE_VERIFIED; [0x186]/[0x1EA4]/[0x1EA5] writers **not yet decoded** |
 
 Sibling setters at func_067E8C / func_075352 / func_075FB6 (other LEA-[0x839E]
-sites) may use different formulas → TBD. Removed fabrications: Dialog/
+sites) may use different formulas → not yet decoded. Removed fabrications: Dialog/
 DialogButton structs, DIALOG_X/Y/W/H=(40,40,240,120), save/restore_screen_region,
 show_yes_no/alert/error labels, KING_DEMAND_TABLE[7] + demand string, FF picker.
 
-### colony_screen.c / europe_screen.c (data + geometry cited; draw TBD)
+### colony_screen.c / europe_screen.c (data + geometry cited; draw not yet decoded)
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
@@ -550,8 +550,8 @@ show_yes_no/alert/error labels, KING_DEMAND_TABLE[7] + demand string, FF picker.
 | Colony band geometry (title 0..8, scene 0..199, minimap 224..296, mid-band 128..178, stockpile 8..178 16×19px) | docs/RENDERER_GEOMETRY.md "Colony screen VERIFIED v3" (frame 1310196718) | FRAME_VERIFIED |
 | Europe data: PowerRecord 0x8808/0x13C; boycott +0x20, gold +0x2A, market_sensitivity +0x4C (0xC8=saturated) | docs/DATA_MODEL.md | BYTE_VERIFIED |
 | Europe geometry (title 0..8, transaction 8..45, dock 45..135, button col 270, stockpile 179) + @EUROLABEL {RECRUIT,PURCHASE,TRAIN,x} | docs/RENDERER_GEOMETRY.md "Europe v3"; docs/LABELS_TXT_CATALOG.md | FRAME_VERIFIED / BYTE_VERIFIED (strings) |
-| Assets: colony = composed BUILDING.SS scene + COLONY.PIK strip + WOODPANL.PIK; europe = EUROPE.PIK + COLONY.PIK strip; @CTITLE label set | SCREEN_ASSET_REQUIREMENTS.md; COLONIZE_DATA_FILES_INDEX.md (.PIK names) | VERIFIED-by-catalog (PIK load call sites TBD; names not in resident strings.json) |
-| Per-sprite blit order, building (x,y) placement, build-menu hit-test, market/recruit/ship click dispatch | overlay-resident, undecoded | **TBD** |
+| Assets: colony = composed BUILDING.SS scene + COLONY.PIK strip + WOODPANL.PIK; europe = EUROPE.PIK + COLONY.PIK strip; @CTITLE label set | SCREEN_ASSET_REQUIREMENTS.md; COLONIZE_DATA_FILES_INDEX.md (.PIK names) | VERIFIED-by-catalog (PIK load call sites not yet decoded; names not in resident strings.json) |
+| Per-sprite blit order, building (x,y) placement, build-menu hit-test, market/recruit/ship click dispatch | overlay-resident, undecoded | **not yet decoded** |
 
 Removed fabrications: full-screen "COLONY.PIK", ring/building/stock pixel coords,
 worker_slots[16], building[]/hammers/hammers_required/sol_pct/tory_pct/
@@ -559,7 +559,7 @@ defense_strength, BUILDING_SS_SPRITE/GOOD_ICON_SPRITE/SPRITE_EMPTY_SLOT (colony)
 sell_price[]/buy_price[]/recruit_pool[]/recruit_cost_for_type/custom_house_enabled
 /ship cargo layout + market/recruit/dock coords (europe).
 
-### title_screen.c (asset/string facts cited; menu+dispatch TBD)
+### title_screen.c (asset/string facts cited; menu+dispatch not yet decoded)
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
@@ -567,19 +567,19 @@ sell_price[]/buy_price[]/recruit_pool[]/recruit_cost_for_type/custom_house_enabl
 | New-game PIKs: NATIONS (4 flag plaques), DIFFICUL (Discoverer/Explorer/Conquistador/Governor/Viceroy), CUSTOMIZ | docs/SESSION_UI_CATALOG.md; COLONIZE_DATA_FILES_INDEX.md | VERIFIED-by-catalog |
 | Opening cinematic is a SEPARATE program OPENING.EXE (OPENING.TXT + PATH.DAT + AMERICA.MOV), not a resident loop | docs/ASSET_ROLES.md | BYTE_VERIFIED (file roles) |
 | Setup label strings (Easiest..Toughest, European Power, CUSTOMIZE NEW WORLD, Land Mass/Form, …) | docs/LABELS_TXT_CATALOG.md | BYTE_VERIFIED (strings) |
-| Main-menu item list/order, layout, dispatch targets | overlay-resident, undecoded | **TBD** |
+| Main-menu item list/order, layout, dispatch targets | overlay-resident, undecoded | **not yet decoded** |
 
 Removed fabrications: "TITLE.PIK", SPRITE_LOGO@(32,32), 5-item menu literals at
 (120,100), chain_to_exe("OPENING.EXE")/ask_difficulty/ask_power/ask_map flow.
 
-### hall_of_fame.c (file+strings cited; DOS record layout TBD)
+### hall_of_fame.c (file+strings cited; DOS record layout not yet decoded)
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
 | HALLFAME.DAT @0x1EB92/0x1EBC7, fopen("rb")/("wb"); "SCORE"@0x1EB6F/0x1EB89 | VERIFICATION_LEDGER "ENDGAME" 2026-05-29; strings.json | BYTE_VERIFIED |
 | Column strings: "COLONIZATION HALL OF FAME","President","General, Continental Army","Leader","Score","Colonization_Rating","to","A.D." | docs/LABELS_TXT_CATALOG.md "Hall of Fame" | BYTE_VERIFIED (strings) |
 | Writer ~func_03ADA6; ~1362 B detected | docs/DATA_MODEL.md | ANCHOR (heuristic size, not record-traced) |
-| DOS per-record byte layout / entry count / sort+insert | only Win16 210-B form decoded (colowin) | **TBD for DOS** |
+| DOS per-record byte layout / entry count / sort+insert | only Win16 210-B form decoded (colowin) | **not yet decoded for DOS** |
 
 Removed fabrications: HallFameEntry{player_name[20]/nation[16]/score/year_won/
 difficulty/reserved/timestamp}, g_hof[10] array, "HOF.PIK", "HALL OF FAME"
@@ -595,7 +595,7 @@ price formulas + gold transfers (PowerRecord+0x2A via [bx-0x77ce] @0x49B92/0x4A1
 SELL `(base-diff-want2+mood+4)*2 *stock +mood*5 *qty/100 /2`; BUY `ask 0xC8 + tier/
 display-price + rand - relation*4, *qty/100, +diff, floor 0x32`; 4-way BADHAGGLE
 escalation. Inputs 0x97C0/@CARGO-col0, 0x7B44 display price, 0x5B1C relation, 0x8DC4
-qty. Dialog/format thunk bodies + data-table contents [TBD].
+qty. Dialog/format thunk bodies + data-table contents not yet decoded.
 
 Continued the NATIVE subsystem from the re-segmented overlay
 (`code/VICEROY/disasm_overlay_reseg/`). Touched only
@@ -622,7 +622,7 @@ overlay_pages.json + the disasm file/page-offset columns).
 |-------|----------|--------|
 | Descending walk `i = count(0x539A)-1 .. 0`, stride 0x12 | @asm 0x046FCF..0x046FF6 | BYTE_VERIFIED |
 | Match key = `tribe+4` vs record +0x02 | @asm 0x046FC9 / 0x046FDF | BYTE_VERIFIED |
-| Per-match action = near `call 0x5402` → `ljmp 0x191F:0x0248` | @asm 0x046FE9; trampoline @0x04BA02 | ANCHOR_VERIFIED (target in opaque overlay 0x191F → action TBD) |
+| Per-match action = near `call 0x5402` → `ljmp 0x191F:0x0248` | @asm 0x046FE9; trampoline @0x04BA02 | ANCHOR_VERIFIED (target in opaque overlay 0x191F → action not yet decoded) |
 
 ### func_05BE84 raid outcome roll + dispatch (BYTE_VERIFIED control flow)
 
@@ -633,9 +633,9 @@ breakdown" table (sound codes 0x4F/0x4E/0x5B independently re-derived — MATCH)
 |-------|----------|--------|
 | Outcome = `random_int(1,4)` | @asm 0x05BF35 `push 4;push 1;LCALL 0x181F:0x04D4`; random_int = func_00C322 (ledger row 2) | BYTE_VERIFIED |
 | 5-way dispatch on final `[bp-4]` (0=NOTHING,1=STORES,2=WREAK,3=GOLD,4=BURN/SHIP) | @asm 0x05C023..0x05C03B (dec/je/jmp chain to 0x16EE/0x177A/0x1902/0x194A/0x185F) | BYTE_VERIFIED |
-| Difficulty/feasibility remaps reduce outcome via `0x181F:0x09FC(k)` predicates | @asm 0x05BF44..0x05C01E | ANCHOR_VERIFIED (predicate semantics TBD) |
+| Difficulty/feasibility remaps reduce outcome via `0x181F:0x09FC(k)` predicates | @asm 0x05BF44..0x05C01E | ANCHOR_VERIFIED (predicate semantics not yet decoded) |
 | `0x181F:0x04C0` = play_sound (SFX before each message) | @asm 0x05C39C / 0x05C5ED / 0x05C62D `mov ax,SFX;LCALL 0x181F:0x04C0` | ANCHOR_VERIFIED |
-| Per-branch loot magnitudes | branches cross many unresolved thunks | TBD |
+| Per-branch loot magnitudes | branches cross many unresolved thunks | not yet decoded |
 
 ### 0x54F6 alarm/tension array (BYTE_VERIFIED index shape + threshold)
 
@@ -643,7 +643,7 @@ breakdown" table (sound codes 0x4F/0x4E/0x5B independently re-derived — MATCH)
 |-------|----------|--------|
 | Word array, index `A*9 + B` (row stride 9), threshold 0x80 | @asm 0x04734E `cmp [bx+0x54F6],0x80` & 0x047487 (read) with bx=`(link*9+j)*2`; @asm 0x05C651 clear with bx=`(raider*9+victim)*2` | BYTE_VERIFIED (indexing + threshold) |
 | One axis = raiding settlement/unit-home index; other = power index | the two index expressions (link / raider vs j / victim) | BYTE_VERIFIED (axes) |
-| Stored-value units + what raises it toward 0x80 | not traced | TBD |
+| Stored-value units + what raises it toward 0x80 | not traced | not yet decoded |
 
 ### Tribe eliminate / redistribute (BYTE_VERIFIED; CORRECTION)
 
@@ -657,7 +657,7 @@ scaling each field down by `n/(n+1)`.
 | `tribe_settlement_count_dec`: `dec byte [tribe-0x69D6]`, eliminate when 0 | @asm 0x46F65 `dec [bx-0x69D6]`; 0x46F69 `je` | BYTE_VERIFIED |
 | `native_tribe_eliminate`: `[removed+3] \|= 0x80` + extinction message @seg 0x14D4 | @asm 0x46F96 `or [bx+3],0x80`; 0x46FB3 `push 0x14D4;LCALL 0x181F:0x652` | BYTE_VERIFIED (flag); ANCHOR_VERIFIED (message) |
 | `native_tribe_redistribute`: `field += field / (0xFFFF-n)` = `field*n/(n+1)` (byte +0x08, word +0x0A) | @asm 0x46F6F..0x46F8A (`cwd;idiv cx`, cx=0xFFFF-n=-(n+1)) | BYTE_VERIFIED arithmetic |
-| Meaning of +0x08 (0xFF at create, inc'd by STORES raid) / +0x0A fields | create @0x46EAE sets 0xFF; STORES raid @0x05C3E1/0x05C3E4 inc/add | byte ops verified; semantics TBD |
+| Meaning of +0x08 (0xFF at create, inc'd by STORES raid) / +0x0A fields | create @0x46EAE sets 0xFF; STORES raid @0x05C3E1/0x05C3E4 inc/add | byte ops verified; semantics not yet decoded |
 
 ### Cross-source flag (not resolved here)
 
@@ -754,9 +754,9 @@ offsets byte-exact (0x4007E=c8 02 00 00; 0x6958=88 87 44 31; 0x66C4=8b 9c 5e 31;
 | unit_chain_unlink (func_0068AA) patches prev.next & next.prev, off-maps unit | @asm 0x068CB/0x068E7/0x0692D | BYTE_VERIFIED |
 | unit_destroy (func_006E94, ENTER 8) count--, REP-MOVSW compaction, renumber links>idx, fix [0x5392] | @asm 0x06EE2(call→0x68AA)/0x06F0B(rep movsw cx=0xE)/0x06F52 | BYTE_VERIFIED |
 | **CORRECTION**: func_0066BA returns chain_next (UnitRecord+0x1A), NOT type | @asm 0x066C4 mov bx,[si+0x315E] (0x3144+0x1A) | BYTE_VERIFIED |
-| func_006672 walks chain_prev (+0x18) to head; func_0066CC tile→head via 0x037F:0xA/0x314 | @asm 0x0667C/0x06689/0x066DF | BYTE_VERIFIED (edges; helper bodies TBD) |
+| func_006672 walks chain_prev (+0x18) to head; func_0066CC tile→head via 0x037F:0xA/0x314 | @asm 0x0667C/0x06689/0x066DF | BYTE_VERIFIED (edges; helper bodies not yet decoded) |
 | unit_move_step (func_04E2D6, ENTER 0xEE) order-byte dispatch: 0/5/6/>=0xA proceed; 1-4,7-9 busy-skip | @asm 0x04E2FE/0x04E313(jae)/0x04E347(validity gate 0x181F:0x302) | BYTE_VERIFIED (head/dispatch) |
-| unit_move_step per-candidate scoring tail (file 0x6218+, data-resident weight tables) | — | **TBD** |
+| unit_move_step per-candidate scoring tail (file 0x6218+, data-resident weight tables) | — | **not yet decoded** |
 
 Files: src/unit/{lifecycle,chain,move}.c (committed 0b4aae4); duplicate-symbol collision with
 src/render/units.c stubs resolved centrally (those stubs removed — chain.c owns the real bodies).
@@ -770,9 +770,9 @@ cursor 0x8540/0x853E, PowerRecord gold +0x2A / tax +0x01 for DISPLAY, UnitRecord
 fields; ONLY write = panel extent [0x9E56] @0x443B0; ZERO turn-counter refs.
 ROLE-CORRECTED from the NEXT_TARGETS "per-power turn dispatcher" guess (false).
 Supersedes the fabricated 85B func_043074_snd_sz_85 stub in overlay_040C1E_04458A.c
-(to retire when that file is batch-promoted). label-ptr tables / 0x5230 / text-helper bodies [TBD].
+(to retire when that file is batch-promoted). label-ptr tables / 0x5230 / text-helper bodies not yet decoded.
 
-Prior `src/ui/` work wrongly tagged these "overlay-resident TBD"; they are fully
+Prior `src/ui/` work wrongly tagged these "overlay-resident not yet decoded"; they are fully
 byte-readable in `disasm_overlay_reseg/page_*.asm`. Found via string-key xref
 (file_offset = handle + 0x1D9A0); 8 keys re-confirmed exact + push/prologue bytes.
 
@@ -780,10 +780,10 @@ byte-readable in `disasm_overlay_reseg/page_*.asm`. Found via string-key xref
 |-------|----------|--------|
 | europe_ship_click=func_03314E: keys EUROPESHIPCLICK(0x1005)/EUROPESHIPOPTIONS(0x1015)/SOMEBOYCOTT(0x1027); UnitRecord type [bx+0x3146]; stat row stride-14 @0x5230 | @asm 0x03318D/0x0331AD/0x033152(6b 5e 06 1c)/0x03331A | BYTE_VERIFIED (struct+keys); GUI-leaf calls ANCHOR |
 | europe_open=func_030DBC: key EUROPE(0xFBA), dispatch 0x191F:0x87A, enter-view 0x181F:0x772 | @asm 0x030DCE(68 ba 0f)/0x030DD1/0x030DEE | BYTE_VERIFIED (struct); leaf internals ANCHOR |
-| report_open=func_037340: strcpy REPORT(0x11A2)→lookup(0x181F:0x182)→dispatch(0x181F:0x44E) over region[0x2DA8]; content engine func_072090 IDENTIFIED (body TBD) | @asm 0x037344(68 a2 11)/0x03735B/0x03737F | BYTE_VERIFIED (dispatch) |
+| report_open=func_037340: strcpy REPORT(0x11A2)→lookup(0x181F:0x182)→dispatch(0x181F:0x44E) over region[0x2DA8]; content engine func_072090 IDENTIFIED (body not yet decoded) | @asm 0x037344(68 a2 11)/0x03735B/0x03737F | BYTE_VERIFIED (dispatch) |
 | king_audience=func_075352: nation portrait by [0x5398] (ENGLND/FRANCE/SPAIN/DUTCH); KING1/KINGLOSE/KINGWIN; FONTKING(0x232B) font swap; 2 portraits rect[0x839E..0x83A4] | @asm 0x07536E(68 f2 22)/0x0753B8/0x0754F2 | BYTE_VERIFIED (sites); draw thunks ANCHOR |
 | func_022F08 over-merged record SPLIT into 4 RETF funcs: find_city@0x022F08(ENTER 4)/game_options@0x022FD6/colony_report_options@0x02311A/sound_options@0x0232AE; GAME.TXT bit maps 0x5382..0x5386 | @asm 0x022F08(c8 04 00 00)/0x022FD6(9a..)/page_01 RETF boundaries | BYTE_VERIFIED |
-| game_command_dispatch=func_0235D6: screen-mode arm [0x1F5E] (Europe=4/Report=5); F-key report sub-dispatch 0x41..0x49 | @asm 0x0236D3(c7 06 5e 1f 04 00)/0x02381D/0x023843 | STRUCTURE BYTE_VERIFIED; leaf cmds TBD |
+| game_command_dispatch=func_0235D6: screen-mode arm [0x1F5E] (Europe=4/Report=5); F-key report sub-dispatch 0x41..0x49 | @asm 0x0236D3(c7 06 5e 1f 04 00)/0x02381D/0x023843 | STRUCTURE BYTE_VERIFIED; leaf cmds not yet decoded |
 
 Files: src/ui/{europe_screen,report_screen,king_audience,options_dialog,main_loop,colony_screen}.c
 (committed f59e2b6). Makefile OBJS_UI added. SCOPE FLAG: func_02F052/func_02F3A2
@@ -796,17 +796,17 @@ Both per-func dumps for these targets were truncated 7×–30×; raw EXE + reseg
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
-| func_02F052=king_process_power_events: ship REFIT + KINGTAX grant; REFIT key 0xEEF; sets [0x14C]=1; spawn king unit type 0x11 | @asm 0x2F052(c8 0a 00 00)/0x2F1D7(68 ef 0e)/0x2F201(c7 06 4c 01 01 00); file 0x2F052..0x2F3A0 (847B) | BYTE_VERIFIED (flow); helper semantics TBD |
-| func_02F3A2=king_war_turn (WoI): defeat yr>=1600, king-warning gate, at-war REF-landing matrix budget (8-diff)*10, dated msgs 1790/1800/1840/1850; 15 keys verified | @asm 0x2F3A2(c8 78 00 00)/0x2F3FD(cmp yr,1600)/0x2FAE8(cb); file 1869B | BYTE_VERIFIED (structure); per-arm spawn coords TBD |
-| func_03CDA2 REF per-arm landing decrement | @asm 0x3D4C0 dec word[bx+0x53DA], bx=arm*2 | BYTE_VERIFIED (resolves a ref.c TBD) |
-| func_02883E=colony-services menu dispatcher: 22-entry CS jump-table @0x028AF0 decoded w/ per-arm string xrefs | @asm 0x2883E(c8 6a 00 00)/0x28AEB(2e ff a7 f0 31 JMP cs:[bx+0x31f0])/0x28D88(tail); file 0x2883E..0x028D8B (1357B, NOT 138) | ANCHOR_VERIFIED (dispatch+strings; per-arm popups TBD) |
-| func_028D8C=colony build/dialog engine: colony [0x8542], cursor [0x8D7C], win_create 0x191F:0x23C, modal loop, result [0x034E] | @asm 0x28D8C(c8 48 01 00)/0x28DA9(3b 06 7c 8d)/0x29238(win_create)/0x298A2(tail); file ~2841B (NOT 185) | ANCHOR_VERIFIED (control flow; blit leaves TBD) |
+| func_02F052=king_process_power_events: ship REFIT + KINGTAX grant; REFIT key 0xEEF; sets [0x14C]=1; spawn king unit type 0x11 | @asm 0x2F052(c8 0a 00 00)/0x2F1D7(68 ef 0e)/0x2F201(c7 06 4c 01 01 00); file 0x2F052..0x2F3A0 (847B) | BYTE_VERIFIED (flow); helper semantics not yet decoded |
+| func_02F3A2=king_war_turn (WoI): defeat yr>=1600, king-warning gate, at-war REF-landing matrix budget (8-diff)*10, dated msgs 1790/1800/1840/1850; 15 keys verified | @asm 0x2F3A2(c8 78 00 00)/0x2F3FD(cmp yr,1600)/0x2FAE8(cb); file 1869B | BYTE_VERIFIED (structure); per-arm spawn coords not yet decoded |
+| func_03CDA2 REF per-arm landing decrement | @asm 0x3D4C0 dec word[bx+0x53DA], bx=arm*2 | BYTE_VERIFIED (resolves a ref.c not-yet-decoded item) |
+| func_02883E=colony-services menu dispatcher: 22-entry CS jump-table @0x028AF0 decoded w/ per-arm string xrefs | @asm 0x2883E(c8 6a 00 00)/0x28AEB(2e ff a7 f0 31 JMP cs:[bx+0x31f0])/0x28D88(tail); file 0x2883E..0x028D8B (1357B, NOT 138) | ANCHOR_VERIFIED (dispatch+strings; per-arm popups not yet decoded) |
+| func_028D8C=colony build/dialog engine: colony [0x8542], cursor [0x8D7C], win_create 0x191F:0x23C, modal loop, result [0x034E] | @asm 0x28D8C(c8 48 01 00)/0x28DA9(3b 06 7c 8d)/0x29238(win_create)/0x298A2(tail); file ~2841B (NOT 185) | ANCHOR_VERIFIED (control flow; blit leaves not yet decoded) |
 | page-0x17 control model: menu_lookup_run=func_06F51A (signature (void), reads staged descriptor); opt-flag bitmask [0x1F54]; descriptor base [0x87C]; screen-mode builder [0x1F5E]=func_06F5F2 | @asm 0x6F5F8 (a3 5e 1f mov[0x1F5E],ax) | BYTE_VERIFIED |
 
 Files: src/king/{king_events,war_turn}.c + ref.c (75bumped); src/ui/{menu(new),dialog}.c.
 GUI reconciliation: (1) king_audience.c's "0x181F:0x3FE→func_028D8C" was imprecise →
 func_06F594 (corrected in that file). (2) main_loop.c's `menu_lookup_key(int,int,int)`
-== func_06F51A which is (void) — 3-arg form is a caller-side approximation (symbol-unify TBD).
+== func_06F51A which is (void) — 3-arg form is a caller-side approximation (symbol-unify not yet decoded).
 
 ### RTLink overlay wall — STATICALLY RESOLVABLE (2026-05-30, wave-8 + dreammaster ref)
 
@@ -821,8 +821,8 @@ tools/rtlink/. See docs/OVERLAY_THUNKS.md for the full per-thunk verdicts.
 |-------|----------|--------|
 | Thunk table = ONE block @file 0x1A5F0..0x1D5E6, three overlapping windows: file_base = codeOffset(0x2400)+seg*16 -> 0x181F=0x1A5F0/0x191F=0x1B5F0/0x1A1F=0x1C5F0 | verified 0x2400+0x181F*16=0x1A5F0; thunks at all three start `9a ab 0d 0d 11` | BYTE_VERIFIED |
 | Thunk format: `9A AB 0D 0D 11` (LCALL 0x110D:0x0DAB loader) + `EA off seg` (JMPF) + trailer word = target PAGE-ID. 0x110D = resident loader seg (entry CS), never a target | @0x1A5F0/0x1C004/0x1CCD0 verified | BYTE_VERIFIED |
-| LAND-COMBAT DECIDER = func_05CA7E (file 0x5CA7E, ENTER 0xDE c8 de 00 00, page 0x10) -> wrapper func_05BE30 (ENTER 2) -> applier func_05B2C2; chain via trampoline 0x5E723 `EA e0 06 1f 1a` = JMPF 0x1A1F:0x06E0 = thunk @0x1CCD0 (page 0x10 +0x0352). func_05CA7E reached by LCALL 0x191F:0x0A14 (thunk @0x1C004) from func_02D3C6/func_03ECF0/func_04E2D6. (Same routine as the per-unit AI leaf in src/ai/unit_ai_leaf.c — land-combat is one facet; its land-odds FORMULA is [TBD], next decode target.) OVERTURNS land.c's [TBD]/0x1BAAA framing. | all bytes verified | BYTE_VERIFIED (chain); decider formula TBD |
-| REPORT-CONTENT renderers = 9 page-0x05 functions (file 0x37958/0x37A10/0x38418/0x38A50/0x39218/0x3954C/0x39888/0x3744A/0x387E8), reached by the static CMP/LCALL ladder in func_0235D6 (NOT func_072090, which only builds the menu) | prologues all `c8 NN 00 00` (ENTER) verified | BYTE_VERIFIED (entries); bodies TBD |
+| LAND-COMBAT DECIDER = func_05CA7E (file 0x5CA7E, ENTER 0xDE c8 de 00 00, page 0x10) -> wrapper func_05BE30 (ENTER 2) -> applier func_05B2C2; chain via trampoline 0x5E723 `EA e0 06 1f 1a` = JMPF 0x1A1F:0x06E0 = thunk @0x1CCD0 (page 0x10 +0x0352). func_05CA7E reached by LCALL 0x191F:0x0A14 (thunk @0x1C004) from func_02D3C6/func_03ECF0/func_04E2D6. (Same routine as the per-unit AI leaf in src/ai/unit_ai_leaf.c — land-combat is one facet; its land-odds FORMULA is not yet decoded, next decode target.) OVERTURNS land.c's not-yet-decoded/0x1BAAA framing. | all bytes verified | BYTE_VERIFIED (chain); decider formula not yet decoded |
+| REPORT-CONTENT renderers = 9 page-0x05 functions (file 0x37958/0x37A10/0x38418/0x38A50/0x39218/0x3954C/0x39888/0x3744A/0x387E8), reached by the static CMP/LCALL ladder in func_0235D6 (NOT func_072090, which only builds the menu) | prologues all `c8 NN 00 00` (ENTER) verified | BYTE_VERIFIED (entries); bodies not yet decoded |
 
 #### `src/` system modules — formulas need byte-traced derivation
 
@@ -832,9 +832,9 @@ tools/rtlink/. See docs/OVERLAY_THUNKS.md for the full per-thunk verdicts.
 | `src/render/units.c`              | ICONS_UNIT_SPRITE per-type indices (SOME verified, others reconstructed) |
 | `src/combat/combat.c`             | **BYTE_VERIFIED** resolver (func_05B2C2). Roll @0x5B819 = `random_int(1,DEF+ATK); atk wins if roll<=ATK` — but it is **SHIP-ATTACKER-ONLY** (gate @0x5B7B6, type 0x0D..0x12; land jmp 0x5BAA3). Modifiers RESOLVED 2026-05-30 (see combat_modifiers.c). (SUPERSEDES never-existed resolve.c/modifiers.c rows.) |
 | `src/combat/combat_demotion_ladder.c` | **BYTE_VERIFIED** demotion sub-table of func_05B2C2 (SUPERSEDES the never-existed demotion.c row) |
-| `src/combat/combat_modifiers.c`   | **BYTE_VERIFIED mechanism** — "+50% fortified" REFUTED (roll uses raw 0x523b/0x523c, no scale); 0x5B433 fort block = capture-eligibility threshold (0x5237/0x5238); real modifier layer = post-roll per-power strength compare @0x5B85B..0x5BA2D (difficulty MUL [0x5325]); per-power array SoL/defense semantics TBD. **Land-combat DECIDER decoded 2026-05-30 (wave-9, src/ai/unit_ai_leaf.c func_05CA7E):** land = ATK/(ATK+DEF) `random_int(1,atk+def)` @0x5D188 on DERIVED strengths from columns 0x5235/0x5236 (accessors 0x07C2A/0x07D3E) — same odds form as ships, different stat pair; func_05B2C2 stays consequence-only. |
+| `src/combat/combat_modifiers.c`   | **BYTE_VERIFIED mechanism** — "+50% fortified" REFUTED (roll uses raw 0x523b/0x523c, no scale); 0x5B433 fort block = capture-eligibility threshold (0x5237/0x5238); real modifier layer = post-roll per-power strength compare @0x5B85B..0x5BA2D (difficulty MUL [0x5325]); per-power array SoL/defense semantics not yet decoded. **Land-combat DECIDER decoded 2026-05-30 (wave-9, src/ai/unit_ai_leaf.c func_05CA7E):** land = ATK/(ATK+DEF) `random_int(1,atk+def)` @0x5D188 on DERIVED strengths from columns 0x5235/0x5236 (accessors 0x07C2A/0x07D3E) — same odds form as ships, different stat pair; func_05B2C2 stays consequence-only. |
 | `src/combat/naval.c`              | **BYTE_VERIFIED** func_03FDDE ship move/landfall/ship-combat dispatch @0x3FDDE..0x40002 (548B; overrules functions.json 82B truncation + reseg phantom func_03FF4C); 9-entry jump table @0x3FF44; strings LANDFALL/SHIPCOMBAT/SHIPLAKE/SAILHOME/NODOCKS/EUROPENOTLEAVE/LANDFIRST |
-| `src/combat/land.c`               | **BYTE_VERIFIED control flow (wave-7)** — func_05B2C2 is the combat-CONSEQUENCE applier, NOT the land decider. LAND combat has NO ATK/DEF roll in the EXE (0x523b/0x523c each read exactly once — independently re-scanned — both ship-gated). Land attacker bypasses roll+compare via gate @0x5B7B6 (jmp 0x5BAA3). Outcome router @0x5BAA3 (cmp [bp-0x3a],0) dispatches WIN (@0x5BAAC: msg-table @0x5D48, unit flags\|=0x80 @0x5BB9E, spoils via per-type 0x5235) vs LOSE (@0x5BC84: DEMOTE ladder/destroy). The land win/loss DECIDER is the CALLER, behind RTLink (thunk file 0x1BAAA = 0x110D:0xA9DA) = [TBD]. @UNIT col->offset map [TBD-data]. |
+| `src/combat/land.c`               | **BYTE_VERIFIED control flow (wave-7)** — func_05B2C2 is the combat-CONSEQUENCE applier, NOT the land decider. LAND combat has NO ATK/DEF roll in the EXE (0x523b/0x523c each read exactly once — independently re-scanned — both ship-gated). Land attacker bypasses roll+compare via gate @0x5B7B6 (jmp 0x5BAA3). Outcome router @0x5BAA3 (cmp [bp-0x3a],0) dispatches WIN (@0x5BAAC: msg-table @0x5D48, unit flags\|=0x80 @0x5BB9E, spoils via per-type 0x5235) vs LOSE (@0x5BC84: DEMOTE ladder/destroy). The land win/loss DECIDER is the CALLER, behind RTLink (thunk file 0x1BAAA = 0x110D:0xA9DA) = not yet decoded. @UNIT col->offset map not yet decoded from data. |
 | `src/market/pricing.c`            | Drift/decay arithmetic |
 | `src/market/boycott.c`            | Tea Party SoL +25 / king anger +10 |
 | `src/king/demands.c`              | Demand fire-chance formula |
@@ -847,21 +847,21 @@ tools/rtlink/. See docs/OVERLAY_THUNKS.md for the full per-thunk verdicts.
 | `src/random_events/lcr.c`         | LCR_WEIGHTS table (11 outcomes), `lcr_resolve()` |
 | `src/random_events/weather.c`     | 5% bad-weather chance, -1 movement, -25% production |
 | `src/random_events/disease.c`     | Disease-risk table per terrain |
-| `src/scoring/compute.c`           | **PARTIAL — ROLE CORRECTED 2026-05-30**: func_051EF4@0x051EF4 credits `*(0x84FC)+0x2A` each turn, but **+0x2A = GOLD** (UI-verified, LCR-corroborated; wave-3 RULINGS) — so func_051EF4 is a per-turn **gold/income tick**, NOT a "score tick". The arithmetic (base + difficulty x1/1.5/2 then x4) stays BYTE_VERIFIED; only the "score" framing is WITHDRAWN. Real endgame score = the rank ladder in func_03A9C0 over an overlay-resident raw value (0x191F:0x3AA, TBD). Prior {5,50,1000,...} numbers were fabricated, removed. |
-| `src/scoring/endgame.c`           | **PARTIAL** — win-state strings + HALLFAME.DAT fopen BYTE_VERIFIED; win-flow, HoF layout, 1850 timeout, CLOSING.EXE all TBD/removed (see 2026-05-29 entry). |
-| `src/ai/*`                        | EU per-unit chain (func_03ECF0/func_040E22/func_05CA7E) + driver/unit_orders ported; **native_unit_ai.c (func_046FFA, wave-8) BYTE_VERIFIED structure** (native per-unit AI: 0x54F6 alarm thr 0x80, INDIANSURPRISE, argmax move-tasking; weight tables 0x2F77/0x5236 [SAVE-GAME BSS]; 0x9410 RESOLVED 2026-06-08 = g_power_gate_9410 per-power popsum indexed by ColonyRecord.owner_power (+0x1A from 0x5D46=0x5D60), same table as sons_of_liberty.c). Remaining 0x2F77/0x5236 weight values are data-resident [TBD]. |
+| `src/scoring/compute.c`           | **PARTIAL — ROLE CORRECTED 2026-05-30**: func_051EF4@0x051EF4 credits `*(0x84FC)+0x2A` each turn, but **+0x2A = GOLD** (UI-verified, LCR-corroborated; wave-3 RULINGS) — so func_051EF4 is a per-turn **gold/income tick**, NOT a "score tick". The arithmetic (base + difficulty x1/1.5/2 then x4) stays BYTE_VERIFIED; only the "score" framing is WITHDRAWN. Real endgame score = the rank ladder in func_03A9C0 over an overlay-resident raw value (0x191F:0x3AA, not yet decoded). Prior {5,50,1000,...} numbers were fabricated, removed. |
+| `src/scoring/endgame.c`           | **PARTIAL** — win-state strings + HALLFAME.DAT fopen BYTE_VERIFIED; win-flow, HoF layout, 1850 timeout, CLOSING.EXE all not yet decoded/removed (see 2026-05-29 entry). |
+| `src/ai/*`                        | EU per-unit chain (func_03ECF0/func_040E22/func_05CA7E) + driver/unit_orders ported; **native_unit_ai.c (func_046FFA, wave-8) BYTE_VERIFIED structure** (native per-unit AI: 0x54F6 alarm thr 0x80, INDIANSURPRISE, argmax move-tasking; weight tables 0x2F77/0x5236 [SAVE-GAME BSS]; 0x9410 RESOLVED 2026-06-08 = g_power_gate_9410 per-power popsum indexed by ColonyRecord.owner_power (+0x1A from 0x5D46=0x5D60), same table as sons_of_liberty.c). Remaining 0x2F77/0x5236 weight values are data-resident not yet decoded. |
 | `src/diplomacy/treaty.c`          | **BYTE_VERIFIED** — treaty/war/peace state machine `treaty_set_state` decompiled from func_057DC0 @0x057DC0 (see 2026-05-29 entry) |
-| `src/diplomacy/relations.c`       | **PARTIAL** — relation-state storage (PowerRecord+0x40 matrix) + flag bits BYTE_VERIFIED; numeric attitude/score model still TBD |
+| `src/diplomacy/relations.c`       | **PARTIAL** — relation-state storage (PowerRecord+0x40 matrix) + flag bits BYTE_VERIFIED; numeric attitude/score model still not yet decoded |
 | `src/diplomacy/* (proposal/AI)`   | Treaty proposal scoring — RECONSTRUCTED |
 | `src/mapgen/*`                    | All map generation parameters |
-| `src/save/*`                      | **SERIALIZER DECODED wave-10** (via RTLink tool) — SAVE driver func_0734F8@0x734F8, LOAD func_073BB0@0x73BB0 (page 0x1A 2nd-seg base 0x73270; reached 0x1A1F:0xCF6/0xD12 from SAVEGAME/LOADGAME orchestrators func_072F7A/func_073158). **DOS magic = "COLONIZE"+0x1A** (file 0x1FB1A; "COL2" is Win16-only). On-disk order BYTE_VERIFIED (header→globals 0x5380→names 0x540E→ColonyRecord ×**0xCA**→UnitRecord count[0x539C]×0x1C→PowerRecord 4×0x13C→NativeSettlement count[0x539A]×0x12→…→4 map layers); NO checksum (verified by absence); I/O via resident MSC lib (window 0xD1D). Resolves g_unit_count 0x539C. (func_011F6E remains the overlay-EXE record reader, not savegame.) [TBD]: version@0x81A runtime value; ~30 per-power scalar blocks' field meanings. |
+| `src/save/*`                      | **SERIALIZER DECODED wave-10** (via RTLink tool) — SAVE driver func_0734F8@0x734F8, LOAD func_073BB0@0x73BB0 (page 0x1A 2nd-seg base 0x73270; reached 0x1A1F:0xCF6/0xD12 from SAVEGAME/LOADGAME orchestrators func_072F7A/func_073158). **DOS magic = "COLONIZE"+0x1A** (file 0x1FB1A; "COL2" is Win16-only). On-disk order BYTE_VERIFIED (header→globals 0x5380→names 0x540E→ColonyRecord ×**0xCA**→UnitRecord count[0x539C]×0x1C→PowerRecord 4×0x13C→NativeSettlement count[0x539A]×0x12→…→4 map layers); NO checksum (verified by absence); I/O via resident MSC lib (window 0xD1D). Resolves g_unit_count 0x539C. (func_011F6E remains the overlay-EXE record reader, not savegame.) not yet decoded: version@0x81A runtime value; ~30 per-power scalar blocks' field meanings. |
 | `src/audio/*`                     | Audio device probes (mix of standard DOS + reconstructed) |
-| `src/ui/title_screen.c`           | **PARTIAL** — boot/menu PIK asset names (MPSLOGO/OPENING/OPENMENU/OPENBORD, NATIONS/DIFFICUL/CUSTOMIZ) + setup label strings VERIFIED-by-catalog; menu item list/layout/dispatch overlay-resident TBD. Fabricated TITLE.PIK/SPRITE_LOGO/menu coords/dispatch removed (see UI entry 2026-05-29) |
-| `src/ui/colony_screen.c`          | **UPGRADED 2026-05-30 (wave-5)** — colony OPEN path (func_0321B4) + colony_report_options decoded BYTE_VERIFIED (NOT "overlay-resident TBD" — that prior claim was wrong; handlers are byte-readable in reseg). ColonyRecord sources (0x5D46/0xCA; stockpile +0x9A) cited. See "UI screens byte-trace" section. |
-| `src/ui/europe_screen.c`          | **UPGRADED 2026-05-30 (wave-5)** — europe_ship_click=func_03314E + europe_open=func_030DBC + europe_clip_blit BYTE_VERIFIED (NOT "overlay-resident TBD"). PowerRecord sources (boycott +0x20, gold +0x2A, market +0x4C) cited; GUI-leaf draw thunks ANCHOR. See "UI screens byte-trace" section. |
-| `src/ui/dialog.c`                 | **PARTIAL** — `compute_dialog_rect_from_cursor`=func_067DC8 @0x067DC8 BYTE_VERIFIED (rect formula + globals 0x174/0x176/0x186/0x1EA4/0x1EA5/0xA5A4/0xA5A6 + setter LCALL 0x181F:0x254); overlay setter file offset + WOODFRAM frame/text draw TBD. Fabricated Dialog struct/DIALOG_X.../save_region/KING_DEMAND_TABLE removed (see UI entry 2026-05-29) |
-| `src/ui/hall_of_fame.c`           | **PARTIAL** — HALLFAME.DAT fopen("rb"/"wb") @0x1EB92/0x1EBC7 + @MISC column strings ("COLONIZATION HALL OF FAME"/President/Leader/Score/Colonization_Rating) BYTE_VERIFIED; DOS record layout TBD (only Win16 210-B decoded). Fabricated HallFameEntry/g_hof[10]/HOF.PIK/insert logic removed (see UI entry 2026-05-29) |
-| `src/ui/main_loop.c`              | **PARTIAL (wave-5)** — game_command_dispatch=func_0235D6 structure BYTE_VERIFIED (screen-mode arm [0x1F5E] Europe=4/Report=5; F-key sub-dispatch 0x41..0x49); leaf command handlers (unit orders/save/zoom) TBD. See "UI screens byte-trace" section. |
+| `src/ui/title_screen.c`           | **PARTIAL** — boot/menu PIK asset names (MPSLOGO/OPENING/OPENMENU/OPENBORD, NATIONS/DIFFICUL/CUSTOMIZ) + setup label strings VERIFIED-by-catalog; menu item list/layout/dispatch overlay-resident not yet decoded. Fabricated TITLE.PIK/SPRITE_LOGO/menu coords/dispatch removed (see UI entry 2026-05-29) |
+| `src/ui/colony_screen.c`          | **UPGRADED 2026-05-30 (wave-5)** — colony OPEN path (func_0321B4) + colony_report_options decoded BYTE_VERIFIED (NOT "overlay-resident not yet decoded" — that prior claim was wrong; handlers are byte-readable in reseg). ColonyRecord sources (0x5D46/0xCA; stockpile +0x9A) cited. See "UI screens byte-trace" section. |
+| `src/ui/europe_screen.c`          | **UPGRADED 2026-05-30 (wave-5)** — europe_ship_click=func_03314E + europe_open=func_030DBC + europe_clip_blit BYTE_VERIFIED (NOT "overlay-resident not yet decoded"). PowerRecord sources (boycott +0x20, gold +0x2A, market +0x4C) cited; GUI-leaf draw thunks ANCHOR. See "UI screens byte-trace" section. |
+| `src/ui/dialog.c`                 | **PARTIAL** — `compute_dialog_rect_from_cursor`=func_067DC8 @0x067DC8 BYTE_VERIFIED (rect formula + globals 0x174/0x176/0x186/0x1EA4/0x1EA5/0xA5A4/0xA5A6 + setter LCALL 0x181F:0x254); overlay setter file offset + WOODFRAM frame/text draw not yet decoded. Fabricated Dialog struct/DIALOG_X.../save_region/KING_DEMAND_TABLE removed (see UI entry 2026-05-29) |
+| `src/ui/hall_of_fame.c`           | **PARTIAL** — HALLFAME.DAT fopen("rb"/"wb") @0x1EB92/0x1EBC7 + @MISC column strings ("COLONIZATION HALL OF FAME"/President/Leader/Score/Colonization_Rating) BYTE_VERIFIED; DOS record layout not yet decoded (only Win16 210-B decoded). Fabricated HallFameEntry/g_hof[10]/HOF.PIK/insert logic removed (see UI entry 2026-05-29) |
+| `src/ui/main_loop.c`              | **PARTIAL (wave-5)** — game_command_dispatch=func_0235D6 structure BYTE_VERIFIED (screen-mode arm [0x1F5E] Europe=4/Report=5; F-key sub-dispatch 0x41..0x49); leaf command handlers (unit orders/save/zoom) not yet decoded. See "UI screens byte-trace" section. |
 | `src/ui/report_screen.c`          | **wave-5 + wave-9** — report_open=func_037340 dispatch; func_072090=build_menubar (NOT report content); the 9 page-0x05 F-key report renderers DECODED (wave-9, via RTLink tool): F2 Religious 0x37958 / F3 Congress 0x37A10 / F4 Labor 0x38418 / F5 Economic 0x38A50 / F6 Colony 0x39218 / F7 Naval 0x3954C / F8 Foreign 0x39888 / F9 Indian 0x3744A / F10 Score 0x38778. CONTENT byte-verified; per-row draw primitives ANCHOR. Player-context selector func_030550 (0x181F:0x582): [bp+6]=active player, sets [0x9E12] + [0x84FC]=0x8808+player*0x13C (re-confirms PowerRecord base/stride). |
 | `src/ui/king_audience.c`          | **NEW wave-5** — func_075352 BYTE_VERIFIED (nation portrait by [0x5398]; FONTKING font swap; rect 0x839E..0x83A4); draw thunks ANCHOR. |
 | `src/ui/options_dialog.c`         | **NEW wave-5** — func_022F08 cluster (find_city/game_options/colony_report_options/sound_options) BYTE_VERIFIED; GAME.TXT bit maps 0x5382..0x5386. |
@@ -954,16 +954,16 @@ fields named at +0xC2/+0xC4 (a latent 2-byte struct hole that had pushed
 | `test_building_or_father_bit(bit)` | 0x863E..0x864D | **BYTE_VERIFIED** | 0x8644 `PUSH [0x8DC6]`; 0x8649 `CALL 0x860E` |
 | `count_building_chain_present(start)` | 0x864E..0x8684 | **BYTE_VERIFIED** | 0x865B `CALL 0x863E`; 0x8674 `MOV al,[bx-0x707A]` (=0x8F86, stride 12 via `(idx*3)<<2`) |
 | `count_building_chain_present_colony` | 0x8686..0x86BF | **BYTE_VERIFIED** (no LI caller) | 0x8696 `CALL 0x860E`; 0x86AF chain read |
-| `building_chain_walk_to_top(start)` | 0x86C0..0x86E2 | **BYTE_VERIFIED** (1st-iter ret edge-case TBD; no LI caller) | 0x86C3 `JMP 0x86CE`; 0x86DA `CMP [bx-0x707A],0` |
+| `building_chain_walk_to_top(start)` | 0x86C0..0x86E2 | **BYTE_VERIFIED** (1st-iter ret edge-case not yet decoded; no LI caller) | 0x86C3 `JMP 0x86CE`; 0x86DA `CMP [bx-0x707A],0` |
 | `highest_building_chain_bit_set(start)` | 0x86E4..0x871F | **BYTE_VERIFIED** | 0x86F4 `CALL 0x863E`; 0x870D chain read; 0x8715 `CMP [bp+6],0/JGE` |
 | `sol_membership_pct()` (= `rebel_sentiment_pct`) | 0x8524..0x85B1 | **BYTE_VERIFIED** | 0x8531/0x8535 read [+0xC2]/[+0xC4]; 0x8557 `LCALL 0xD1D:0xF60` (x100); 0x855E `LCALL 0xD1D:0xEC6` (/B); 0x859F `ADD ax,0x14` |
-| `func_2D658` SoL/Tory+training+food turn handler (UPDATES what sol_membership_pct reads) — wave-12, src/colony/sol_tory.c | 0x2D658..0x2EABB (5220B, thunk 0x191F:0x688) | **BYTE_VERIFIED** (extent+formulas) | bell EMA `A+=bells-(A>>6)` @0x2DA9C, threshold `B-=B>>6` @0x2DA3C (ColonyRecord +0xC2/+0xC6); Tory div 10-diff @0x2DCBC; REBELMAJORITY rebel%>=50 @0x2DB29; per-power bells tally **PowerRecord+0x2E** (0x8836) @0x2E6C0 — NEW field, distinct from +0x0C/0x0E FF bells; report-format leaves [TBD] |
-| `func_053B7E` colony AI auto-manage (work re-alloc + build planner + status flags) — wave-12, src/colony/auto_manage.c. **NOT KINGTAX** (NEXT_TARGETS tag was false; 0 king handles pushed). | 0x53B7E..0x5628C (9999B, ENTER 0x1C0, thunk 0x1A1F:0x35E) | **BYTE_VERIFIED** (spine + all 0x8542/king/0x35E writes; 14 spot-checks) | status flags *(0x8542)+0x1B bit4 @0x5419E; king build debit king[+0x2A]/[+0x2C] @0x5493B (cost 0x14*kingcost[owner<<4 @0x84CA]); result [0x35E]=1 @0x54FC9; mfg-goods jump tbl @0x5563E. Per-good/per-power weight tables [TBD] |
+| `func_2D658` SoL/Tory+training+food turn handler (UPDATES what sol_membership_pct reads) — wave-12, src/colony/sol_tory.c | 0x2D658..0x2EABB (5220B, thunk 0x191F:0x688) | **BYTE_VERIFIED** (extent+formulas) | bell EMA `A+=bells-(A>>6)` @0x2DA9C, threshold `B-=B>>6` @0x2DA3C (ColonyRecord +0xC2/+0xC6); Tory div 10-diff @0x2DCBC; REBELMAJORITY rebel%>=50 @0x2DB29; per-power bells tally **PowerRecord+0x2E** (0x8836) @0x2E6C0 — NEW field, distinct from +0x0C/0x0E FF bells; report-format leaves not yet decoded |
+| `func_053B7E` colony AI auto-manage (work re-alloc + build planner + status flags) — wave-12, src/colony/auto_manage.c. **NOT KINGTAX** (NEXT_TARGETS tag was false; 0 king handles pushed). | 0x53B7E..0x5628C (9999B, ENTER 0x1C0, thunk 0x1A1F:0x35E) | **BYTE_VERIFIED** (spine + all 0x8542/king/0x35E writes; 14 spot-checks) | status flags *(0x8542)+0x1B bit4 @0x5419E; king build debit king[+0x2A]/[+0x2C] @0x5493B (cost 0x14*kingcost[owner<<4 @0x84CA]); result [0x35E]=1 @0x54FC9; mfg-goods jump tbl @0x5563E. Per-good/per-power weight tables not yet decoded |
 | `lookup_signed_2F4(index)` | 0x8D9C..0x8DBA | **BYTE_VERIFIED** | 0x8DA5 `CMP [bp+6],0x13/JGE`; 0x8DAE `MOV al,[bx+0x2F4]`; CWDE |
 | `commodity_net_minus_chain(idx,*out)` | 0x8DBC..0x8E00 | **BYTE_VERIFIED** (no LI caller) | 0x8DC5/0x8DC9 `[0x8DC8]-[0x8E0A]`; 0x8DD3 `CMP [bx+0x2A2],0`; 0x8DE6 `SUB ...,[0x8E5A]` |
 | `update_finished_good_from_raw(raw,fin)` | 0x8E84..0x8F01 | **BYTE_VERIFIED** | 0x8E9B `CALL 0x8D9C`; 0x8EA3 `CALL 0x864E`; 0x8EA9 `CMP ax,2/JLE`+`x2/3`; 0x8EC3 `CALL 0x8E46`; 0x8EED `x3/2` |
 
-### Identification basis (cite-or-TBD honesty)
+### Identification basis (cite-or-not-yet-decoded honesty)
 None of these leaves has a direct message-key STRING xref — they are pure
 bit/table/arithmetic helpers. Roles established by **byte-trace + callgraph**
 (which big colony function calls them, with what args). The SoL% role
@@ -981,21 +981,21 @@ founding father (FF flag op 0x12 via `LCALL 0x981:0`).
 - `highest_building_le` walks that same chain to the highest **set** link.
 - The building/feature bit-array is keyed on the **persistent ColonyRecord**
   (DGROUP:0x5DCA + colony_idx*0xCA), not the +0x84/+0x8A working-buffer arrays;
-  `g_8DC6` is the current-colony INDEX (writer overlay-resident -> TBD).
+  `g_8DC6` is the current-colony INDEX (writer overlay-resident -> not yet decoded).
 
-### New globals discovered (declared `extern` w/ cited addrs; BSS defs TBD by data owner)
+### New globals discovered (declared `extern` w/ cited addrs; BSS defs not yet decoded by data owner)
 `g_8DC6` (0x8DC6 current-colony idx), `g_colony_bits_5DCA` (0x5DCA),
 `g_byte_2F4` (0x2F4 chain-start id per good), `g_byte_2A2` (0x2A2 related-raw id
-per good). Numeric contents are NAMES.TXT/overlay-driven -> values TBD.
+per good). Numeric contents are NAMES.TXT/overlay-driven -> values not yet decoded.
 
-### Still TBD
+### Still not yet decoded
 - numeric cells of DGROUP:0x2F4 / 0x2A2 / the 0x8F86 chain table (data-driven)
 - which @BUILDING the >2 chain-count maps to (the forge/factory production cap)
 - the writer of `g_8DC6` (overlay-resident)
 - advances backlog item **9 (SoL / Tory percentages)**: SoL membership % formula
   now byte-verified; the bell-per-colonist threshold lives in the +0xC6
   accumulator (incremented +100/colonist-growth @asm 0x9453). TORY% and the
-  REBEL*/TORY* threshold dispatch remain overlay-resident TBD.
+  REBEL*/TORY* threshold dispatch remain overlay-resident not yet decoded.
 
 ---
 
@@ -1039,7 +1039,7 @@ confirm — and tighten — the existing source.
 ### Market price drift — `func_0305A8` (file 0x0305A8 .. 0x030B37, ENTER 0x66)
 - Per-turn loop over **16 commodities × 4 powers**; commodity record stride **9**
   (fields +0 min, +1 max, +3 rise_factor, +4 fall_factor, +5 demand) — BSS, loaded
-  from NAMES.TXT @CARGO (values [TBD-external]).
+  from NAMES.TXT @CARGO (values external, not yet decoded).
 - Drift step is **exactly ±1** price unit: `inc byte[bx+di+0x4c]` @0x309B5 (rise),
   `dec` @0x30A4C (fall) on `price_level[16]` = active PowerRecord+0x4C.
 - Trigger: volume accumulator `vol_accum[16]` (PowerRecord+0x5C) crossing
@@ -1049,7 +1049,7 @@ confirm — and tighten — the existing source.
 - Euro-supply read per power at **DS:0x8904 = PowerRecord+0xFC**, dword stride 0x13C
   (`imul ...,0x4f` ×4 @0x305CE). Price-target word array **DS:0x53EA** decayed
   @0x30639. Emits **PRICEUP**(DG 0xfa8)/**PRICEDOWN**(DG 0xfb0). Bell-curve reprice
-  cap **0x19(25)** @0x30ACE. [TBD] bid/ask spread = overlay thunks 0x181F:0xcc2/0xac4.
+  cap **0x19(25)** @0x30ACE. not yet decoded: bid/ask spread = overlay thunks 0x181F:0xcc2/0xac4.
 
 ### Sons-of-Liberty / Tory — `func_02D658` + `func_008524` (sol_membership_pct)
 - membership% = **bell_EMA×100 / threshold_accum**, fields ColonyRecord
@@ -1082,7 +1082,7 @@ confirm — and tighten — the existing source.
   0x191F:0xd2c). Outcome 9 = Cibola treasure-train (create unit via 0x181F:0x95c).
 - Gold to all paths: `imul bx,[0x5394],0x13c; add [bx-0x77ce],ax; adc [bx-0x77cc],dx`
   @0x61C4C = **PowerRecord+0x2A gold dword** (DS:0x8832). UI suppressed for AI
-  (guard [bp-8], set only when active==local human player). [TBD] overlay helper
+  (guard [bp-8], set only when active==local human player). not yet decoded: overlay helper
   identities behind the 0x181F/0x191F thunks; caller of the dispatcher.
 
 ---
@@ -1107,11 +1107,11 @@ early-return RETF @0x3AA08 for score<=0, body extends to 0x3B2F8.
 | rank = largest i-1 (i=1..24) with i*i/3 < scaled; loop bound 24, cap 23 | @asm 0x3AA4D `imul cx`; 0x3AA4F `mov bx,3`; 0x3AA53 `idiv bx`; 0x3AA63 `cmp ...,0x18`; 0x3AA71 `cmp ax,0x17`/`mov ax,0x17` | BYTE_VERIFIED |
 | displayed score = scaled / 2 | @asm 0x3AA6A `sar [bp-2],1` | BYTE_VERIFIED |
 | fanfare id by tier: rank 23->0x24, 7..22->0x25, <=6->0x21 | @asm 0x3AD51 `cmp [bp-0xc0],0x17`; 0x3AD58 `mov ax,0x24`; else 0x25/0x21 | BYTE_VERIFIED |
-| HOF record builder func_03B2F8 (file 0x3B2F8, ENTER 0x2C, RETF 0x3B368): country-name @[0x5398]*0x34+0x540E, indep flag [0x5382]&1, year [0x538A], difficulty [0x53A6], score from same overlay routine | @asm 0x3B2FC/0x3B317/0x3B329/0x3B335/0x3B33D | BYTE_VERIFIED (record fields); component sum TBD |
+| HOF record builder func_03B2F8 (file 0x3B2F8, ENTER 0x2C, RETF 0x3B368): country-name @[0x5398]*0x34+0x540E, indep flag [0x5382]&1, year [0x538A], difficulty [0x53A6], score from same overlay routine | @asm 0x3B2FC/0x3B317/0x3B329/0x3B335/0x3B33D | BYTE_VERIFIED (record fields); component sum not yet decoded |
 | HALLFAME.DAT load/sort/insert func_03ADA6: rep-movsw sort up to 6 records (0x2A words) by descending score field +0x26 | @asm 0x3AED0/0x3AED8 | BYTE_VERIFIED (structure) |
 | win-state master flag word [0x5382]: bit0=independence (set @func_03DE46 0x3E031 `or [0x5382],1`), bit3 -> HOF, bit4 suppresses interactive HOF | @asm 0x3E031; 0x3B320; 0x3A9BB `test [0x5382],0x10` | BYTE_VERIFIED |
 
-TBD: (1) the score-TOTAL component formula (colonies/population/FFs/gold/bells/
+Not yet decoded: (1) the score-TOTAL component formula (colonies/population/FFs/gold/bells/
 difficulty-bonus/revolution-bonus weights) is in the 2781-byte body of
 func_039EE2. The head (first 70 bytes) is BYTE_VERIFIED; the weight payloads for
 each component remain to be traced (ongoing — see compute.c). (2) Rank-title
@@ -1136,14 +1136,14 @@ INDIANSCONVERT key DG 0x182A pushed @0x57341). func_0572E6 file 0x0572E6
 | Claim | Evidence | Status |
 |-------|----------|--------|
 | convert_rate = `*(0x8D4E)[+2] + 2` (active tribe record field +2) | @asm 0x572F2 `mov bx,[0x8d4e]`; 0x572F6 `mov al,[bx+2]`; 0x572FB `inc ax;inc ax` | BYTE_VERIFIED |
-| rate doubled when mission-bonus flag CL&0x10 set | @asm 0x57300 `test cl,0x10`; 0x57305 `shl ax,1` | BYTE_VERIFIED (mechanism); CL source TBD |
+| rate doubled when mission-bonus flag CL&0x10 set | @asm 0x57300 `test cl,0x10`; 0x57305 `shl ax,1` | BYTE_VERIFIED (mechanism); CL source not yet decoded |
 | convert occurs iff `random_int(0,15) < rate` | @asm 0x5730A `push 0xf;push 0`; 0x5730E `lcall 0x181F:0x4D4`; 0x57316 `cmp ax,[bp-4]`; 0x57319 `jge` exit | BYTE_VERIFIED |
 | INDIANSCONVERT message shown on success, human-visible only | @asm 0x57341 `push 0x182a`; gate 0x5731B `cmp [bp+6],4`/0x57325 `cmp [bx+0x543f],0` | BYTE_VERIFIED |
 
 So P(convert per eligible check) = MIN(rate,16)/16 where rate = tribe[+2]+2
 (×2 with the mission-bonus flag). The tribe +2 byte's per-tribe values are
 external (TRIBE.TXT/NAMES.TXT @TRIBE); the CL bit-0x10 source (expert missionary
-vs mission building) is TBD. mission.c updated; audit 75/75.
+vs mission building) is not yet decoded. mission.c updated; audit 75/75.
 
 ---
 
@@ -1152,7 +1152,7 @@ vs mission building) is TBD. mission.c updated; audit 75/75.
 ### King tax adjust `func_034AE0` (file 0x34AE0, RETFs 0x34B43/0x34B7D)
 Per-evaluation RAISE/LOWER/NOTHING decision (KINGRAISE DG 0x10b2 / KINGLOWER
 0x10a8 / KINGNOTHING 0x109c). There is NO internal random gate on whether to run
-(cadence is overlay-driven, TBD); the only randomness is the step amounts and the
+(cadence is overlay-driven, not yet decoded); the only randomness is the step amounts and the
 LOWER fire-chance.
 
 | Claim | Evidence | Status |
@@ -1212,15 +1212,15 @@ are overlay-blocked.
 | map dims map_width DS:0x853A / map_height DS:0x853C (BSS, runtime) | @asm 0x64B33/0x64C5D word reads | BYTE_VERIFIED |
 | equator row = map_height/2; climate-band divisor = map_height/4 | @asm 0x64C8D `sar ax,1`; 0x64DE5 `sar ax,2` | BYTE_VERIFIED |
 | forest/moisture budget = random_int(0, \|height/4 - lat\| + 4*climate[0x1E84]) -> denser at equator | @asm 0x64DFE `mov cx,[0x1e84]`; 0x64E02 `shl cx,2`; 0x64E0A `lcall 0x4d4` | BYTE_VERIFIED |
-| gen params (CUSTOMIZE outputs, real defaults): DS:0x1E7E..0x1E84=1, 0x1E86=0 (land-form iters); 0x1E82 water-level, 0x1E84 climate | @bytes file 0x1F81E..0x1F826 (initialized data) | BYTE_VERIFIED (values); label binding TBD |
+| gen params (CUSTOMIZE outputs, real defaults): DS:0x1E7E..0x1E84=1, 0x1E86=0 (land-form iters); 0x1E82 water-level, 0x1E84 climate | @bytes file 0x1F81E..0x1F826 (initialized data) | BYTE_VERIFIED (values); label binding not yet decoded |
 | terrain byte: type = low 5 bits; 0x19 base land, 0x1A forest, 0x18 mountain; flags 0x20/0x40(land)/0x80 | @asm 0x64D0E `mov [bp-0x2e],0x19`; 0x65552 `mov bx,0x18`; 0x64764 `or [bp-4],0x40` | BYTE_VERIFIED |
-| terrain-type dispatch via CS-relative jump tables (6/6/8-way) | @asm 0x64CF6 `jmp cs:[bx+0xbac]`; 0x65048 `jmp cs:[bx+0xefe]`; 0x65318 `jmp cs:[bx+0x11ce]` | BYTE_VERIFIED (tables); per-arm terrain semantics TBD |
+| terrain-type dispatch via CS-relative jump tables (6/6/8-way) | @asm 0x64CF6 `jmp cs:[bx+0xbac]`; 0x65048 `jmp cs:[bx+0xefe]`; 0x65318 `jmp cs:[bx+0x11ce]` | BYTE_VERIFIED (tables); per-arm terrain semantics not yet decoded |
 | river/coast tracer walks 8-dir deltas, dir=random_int(0,8), +8/+0x10 elevation tiers | @asm 0x653A3 `random_int(0,8)`; 0x653B9 `add ...,[bx+0xb4]`; 0x653F8 `add ...,8` | BYTE_VERIFIED |
 | 4 player starts: struct DS:0x883A stride 0x13C, scattered into vertical fifths (map/5), rotation via [0x5398]%4 | @asm 0x65CC6 `imul [bp-0x28],0x13c`; 0x65CCB row/0x65CD2 col writes; 0x65C78 `add [0x5398]`/idiv 4 | BYTE_VERIFIED |
 | AMER2 fixed-start override gated by DS:0x2174, hard coords (0x2B,0x44) | @asm 0x65BF6 `cmp [0x2174],0`; 0x65C11 `push 0x44;push 0x2b` | BYTE_VERIFIED |
 | 4-cardinal delta table DS:0xA8 dx{0,1,0,-1}/DS:0xAE dy{-1,0,1,0}; 20-entry ring DS:0xC8/0xDE | @asm 0x646EC/0x65B43/0x65B4F | BYTE_VERIFIED |
 
-TBD: generation invoker + RNG seed source (overlay-swapped, trail ends at RTLink
+Not yet decoded: generation invoker + RNG seed source (overlay-swapped, trail ends at RTLink
 loader 0x110D:0x0D91); CUSTOMIZE-form -> DS:0x1E7E.. parameter wiring (form-handler
 overlay); per-terrain-arm semantics of the CS jump-table targets. The 4-cardinal and
 20-ring delta tables are now in data/embedded_control_tables.c. audit.py 108/108.
