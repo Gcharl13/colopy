@@ -103,12 +103,13 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
   row=(row±1)%4, col=(col±1)%3, redraws via func_070C4B; mouse hit-scan 3×4 grid
   double loop w=0x30 h=0x48 per cell, func_070C41+0x181F:0x3CA point-in-rect. Both
   TBD-inner regions replaced with BYTE_VERIFIED documentation.
-- **func_04CC50 (ai_strategic_plan_build) TBD-inner substantially reduced (Group A):**
-  all 4 intra-page trampolines resolved: cs:0x7A71→func_04C35A, cs:0x7A76→
-  func_04CAF6, cs:0x7ABC→func_04C4AE, cs:0x7AD5→func_04C50C; second
-  ai_queue_a_find_or_insert call b3=3/b0=colony_x/b1=colony_y; ai_table_c_insert
-  call w0=colony_idx/w1=score_clamped/b4=demand_count/b5=has_civilian_flag.
-  Remaining TBD: 0x181F far-call chain interiors (0x8BC/0x2EE/0x37A).
+- **func_04CC50 (ai_strategic_plan_build) TBD-inner FULLY CLOSED (Group A):**
+  all 4 intra-page trampolines resolved (cs:0x7A71/7A76/7ABC/7AD5); second
+  ai_queue_a_find_or_insert + ai_table_c_insert args traced; scoring-leaf thunks
+  resolved: 0x181F:0x8BC→file 0x73A8=func_0073A8 (unit_chain_score, 15-cat JT),
+  0x181F:0x2EE→file 0x6672=func_006672 (unit_chain_resolve), 0x181F:0x37A→
+  file 0x493C=func_00493C (octile/diagonal distance max+min/2). All resident
+  thunks confirmed via EA target bytes. audit.py: 196/196 PASS.
 - **func_052F7E (war-matrix) TBD-inner CLOSED (Group A):** cs:0x7AD0→0x1A1F:0x554→
   func_02B4D2_colony_sz_517; cs:0x7ADF→0x1A1F:0x578→
   func_025C32_colony_reassign_after_sort; cs:0x7AB2→0x1A1F:0x50C→war-matrix row
@@ -122,11 +123,25 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
   0x03A2E8→0x03A2BE; vet_mult formula recomputed — gate=100>>count, factor=8>>count
   (@asm 0x03A8B4), total×(8+factor)/8.
 
+- **Group B DS:0x2F76 terrain-cost table CLOSED:** Table confirmed BSS (not in EXE).
+  DGROUP initialized data ends at DS:0x2CC5; 0x2F76 is 0x2B1 bytes past that, in
+  BSS. Written at runtime by page1A_names_subloader from NAMES.TXT @UNFORESTED/
+  @FORESTED/@OTHER (dispatched via 0x1A1F:0xD20 from func_0749E0). Lookup pattern
+  BYTE_VERIFIED: tile_entity_type*16 + DS:0x2F76 → cost byte; cost_addend = al*3
+  via shl/add @asm 0x622FA/0x62563.
+- **TerrainUIRec (Group C) CLOSED:** stride-0x24 estimate was wrong; correct stride
+  confirmed as 0x0C (12 bytes/element). TerrainUIRec struct (12 bytes, 6 named
+  fields) added to overlay_068A14_06C1CC.c. func_06A700 + func_06AA88 TBD-inner
+  converted to BYTE_VERIFIED using g_terrain_ui_8F82[node].link_next chain walk.
+  func_076642 .SS accumulation loop BYTE_VERIFIED in overlay_0745F0_077A6A.c.
+- **sol_tory.c (func_02D658) VERIFIED:** 11-phase structure confirmed, all 35
+  message key pushes byte-verified (REBELMAJORITY..TUTORIAL6). No fabrications.
+
 ## Regenerate
 
 ```
 cd viceroy_source/tools
 python3 funcscan.py            # re_work/functions.json (needs re_work/VICEROY.EXE)
 python3 coverage.py            # this table + re_work/coverage.json
-python3 audit.py               # 184/184 byte-claim regression check
+python3 audit.py               # 196/196 byte-claim regression check (2026-06-08)
 ```
