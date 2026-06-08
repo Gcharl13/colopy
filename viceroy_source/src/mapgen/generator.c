@@ -240,7 +240,11 @@ void place_sea_lane_borders(int premade)
  * offset (its VALUE is runtime/setup-driven -> TBD).
  * ------------------------------------------------------------------------- */
 extern uint8_t *power_record(int idx);   /* &DGROUP:0x8808 + idx*0x13C */
-extern uint16_t g_start_nation_offset;   /* DGROUP:0x5398 (value TBD) */
+/* DGROUP:0x5398 = g_active_power_5398 — active/chosen power index (0..3).
+ * Cross-confirmed: war_turn.c, sons_of_liberty.c, intervention.c all use the
+ * same address with the same semantics. Used here as the band-rotation seed
+ * at @0x065C75 so that band 0 is always assigned to the player's nation. */
+extern uint16_t g_active_power_5398;   /* DGROUP:0x5398 — active power / start-nation rotation seed */
 
 #define PR_START_X 0x32   /* PowerRecord +0x32 = start column  @0x065CCB (DS 0x883A) */
 #define PR_START_Y 0x33   /* PowerRecord +0x33 = start row     @0x065CD2 (DS 0x883B) */
@@ -250,7 +254,7 @@ void pick_starting_positions(void)
     int p;
     /* 4 European powers (literal 4, BYTE_VERIFIED — @asm 0x065CD9 cmp [bp-0x22],4). */
     for (p = 0; p < 4; p++) {
-        int nation  = (p + (int)g_start_nation_offset) % 4;     /* @0x065C75 idiv 4 */
+        int nation  = (p + (int)g_active_power_5398) % 4;        /* @0x065C75 idiv 4 */
         int band_y  = ((int)g_map_height / 5) * (p + 1);        /* @0x065CE9..0x065CF5 */
         int start_x = (int)g_map_width - 2;                     /* @0x065CFA W-2 */
 
