@@ -212,7 +212,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
 
         /* @0x03C5F3..0x03C611  arg = type_table[type] (word @0x5230, stride 14):
          *   bx = type*14 ; msg_set_arg(word[bx+0x5230], 0).
-         *   [TBD data-resident] table @0x5230 lives in the data segment. */
+         *   BYTE_VERIFIED 2026-06-08: name string handle from NAMES.TXT @UNIT loader (page_1A). */
         /*   bx = type*14 -> see asm (shl/add chain) */
         overlay_call_181F_0438(); /* msg_set_arg( G16(UNIT_TYPE(i)*14 + 0x5230), 0 ) */
 
@@ -468,13 +468,15 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (owner >= 4)
             goto announce_target;     /* @0x03C99C jae 0x03C9CF */
 
-        /* @0x03C99E..0x03C9A7  if (PowerFlag[owner*0x34 + 0x543F] != 0) skip;
-         *   [TBD] per-power byte flag table @0x543F stride 0x34. */
+        /* @0x03C99E..0x03C9A7  if (AIPersonality[owner].byte_at_0x31 != 0) skip;
+         *   AIPersonality base 0x540E stride 0x34; offset +0x31 = 0x543F.
+         *   Non-zero = "skip special encounter" / hostile-aggression active.
+         *   Also gates native-raid eligibility in func_05BE84 (@asm owner<4 check). */
         if (G8((uint16_t)owner * 0x34 + 0x543F) != 0)
             goto announce_target;     /* @0x03C9A7 jne 0x03C9CF */
 
         /* @0x03C9A9..0x03C9D0  msg_set_arg(type_table[type], 0)
-         *   bx = type*14 ; word@0x5230[bx].  [TBD data-resident @0x5230] */
+         *   bx = type*14 ; word@0x5230[bx].  BYTE_VERIFIED 2026-06-08: name string handle. */
         overlay_call_181F_0438(); /* msg_set_arg( G16(UNIT_TYPE(i)*14 + 0x5230), 0 ) */
 
         /* @0x03C9D3..0x03C9E9  if (tile_has_target(mapX,mapY) == 0)
@@ -635,7 +637,7 @@ clamp:
  *       susceptibility = colony.field_1F * ((100 - SoL%) * 2) / 100
  *                        + difficulty + 1                         (@0x03CBE6)
  *       for each unit garrisoning the colony tile:
- *           susceptibility -= def_table[type*6 + 0x5236]          (@0x03CAF4)
+ *           susceptibility -= g_unit_stat[type*14 + 0x5236]          (@0x03CAF4, BYTE_VERIFIED)
  *       for each of the 8 surrounding work-tiles, if a unit owned by the
  *           CURRENT player is adjacent, susceptibility = -1 (suppressed)
  *                                                            (@0x03CB2C/@0x03CB3B)
@@ -655,7 +657,7 @@ clamp:
  *     str 0x12AE (msg_show); else clear the colony flag and return.
  *
  * @asm page_06.asm:1633  ENTER 0x18,0 / RETF @0x03CDA1.
- * Tables: def_table @0x5236 stride 6 [TBD data-resident]; str 0x12AE [TBD].
+ * Tables: g_unit_stat @0x5230 stride 14, ATK byte +6 (BYTE_VERIFIED 2026-06-08: 3×SHL+2×ADD=×14 @0x03CB00); str 0x12AE [TBD].
  * Thunks (engine leaves): 0x4D4 random_int; 0xC86 colony_SoL%; 0x768
  *   tile_has_target; 0x6BE tile_bounds; 0x682 unit_at_tile; 0x95C place_worker;
  *   0x7E0 iter_units_at; 0x2E4 iter_next_unit; 0x9E6 get_colony_by_slot;
@@ -699,11 +701,11 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
 
         /* @0x03CC12..0x03CC1B + @0x03CAF4 loop: subtract garrison defense.
          *   iter_units_at(colony.X, colony.Y); for each unit u:
-         *     suscept -= def_table[type(u)*6 + 0x5236]; */
+         *     suscept -= g_unit_stat[type(u)*14 + 0x5236]; /* ATK byte */ */
         overlay_call_181F_07E0(); /* iter_units_at(colony.X,colony.Y) */
         u = (int16_t)overlay_call_181F_07E0(); /* first (returns slot) */
         while (u >= 0) {                              /* @0x03CB1E jge 0x1774 */
-            suscept -= (uint8_t)G8((uint16_t)UNIT_TYPE(u) * 6 + 0x5236);
+            suscept -= (uint8_t)G8((uint16_t)UNIT_TYPE(u) * 14 + 0x5236); /* ATK; BYTE_VERIFIED stride 14 */
             u = (int16_t)overlay_call_181F_02E4(); /* iter_next_unit(u) */
         }
 
@@ -887,7 +889,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
  *
  * @asm page_06.asm:1902  ENTER 0x82,0 / RETF @0x03D50F.
  * Near helpers (ljmp 0x1A1F thunks, platform leaves): func_03EA10 (0x70),
- *   func_03EA24 (0xA8), func_03EA38 (0xEE). Tables: def_table @0x5236 stride 6;
+ *   func_03EA24 (0xA8), func_03EA38 (0xEE). Tables: g_unit_stat @0x5230 stride 14, ATK field +6 (BYTE_VERIFIED 2026-06-08);
  *   per-player byte @ (player*0x13 - 0x6DA2) i.e. base 0x925E [TBD]; cap word
  *   [0x5333]; str 0x12BB [TBD]. Engine thunks kept as externs (roles in line).
  * ========================================================================== */
@@ -963,7 +965,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
         colony = G16(0x8542);
         /* scan 8 work tiles, requiring tile_has_target==0 and a current-player
          * unit present whose remaining capacity[i] > 0 and whose type's
-         * def_table[type*6 + 0x5236] != 0 (a real defender slot). @0x03CEB6.. */
+         * g_unit_stat[type*14 + 0x5236] != 0 (ATK != 0 = real combatant slot). @0x03CEB6.. */
         for (j = 0; j < 8; ++j) {                     /* @0x03CEB9 cmp 8 */
             absy = (int16_t)((int8_t)G8(colony + 0xBE + j) + (int8_t)G8(colony + 1));
             absx = (int16_t)((int8_t)G8(colony + 0xB4 + j) + (int8_t)G8(colony + 0));
@@ -972,7 +974,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
             if ((UNIT_OWNER(u) != G_CUR_PLAYER))     /* @0x03CEFC (u = prev iter) */
                 continue;
             overlay_call_181F_07E0(); /* iter_units_at(absx,absy) -> u */
-            /* for each unit u: if capacity slot > 0 and def_table[type*6]!=0
+            /* for each unit u: if capacity slot > 0 and g_unit_stat[type*14+0x5236]!=0
              *   capacity[i]-- ; (counts available defender room) @0x03CF1F.. */
             u = (int16_t)overlay_call_181F_02E4(); /* iter_next_unit */
         }
@@ -1714,7 +1716,7 @@ int func_03E162_op_sz_145(uint16_t arg0_bp_06)
  * the per-type arg; afterwards apply_terrain_change + announce how many
  * converted (str 0x132D for one, str 0x1336 with count for many).
  * @asm page_06.asm:3769  ENTER 0xC,0 / RETF @0x03E440.
- * Tables: type label word @0x5230 stride 14 [TBD]; strings 0x132D/0x1336 [TBD].
+ * Tables: g_unit_stat name-str-handle @0x5230 stride 14 (BYTE_VERIFIED 2026-06-08: NAMES.TXT @UNIT loader); strings 0x132D/0x1336 [TBD].
  * ========================================================================== */
 int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
 {
@@ -2184,10 +2186,10 @@ int func_03F90E_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  *  @0x03F94A..0x03F963  result=0; n=0; if (arg1!=0) helper 0x8C6(arg0).
  *  @0x03F963..0x03F9BC  iter_begin(arg0) (0x2EE); for each land unit u
- *      (type 0x0D..0x12): slot[n] = stat_table[type*6 + 0x5237] - unit[+0x3150];
- *      n++.  (gathers each unit's "headroom" into a local array.)
+ *      (type 0x0D..0x12): slot[n] = g_unit_stat[type*14 + 0x5237] - unit[+0x3150];
+ *      n++.  (gathers each unit's "headroom" = cargo_capacity - used into a local array.)
  *  @0x03F9BE..0x03FA44  re-iterate; for each land unit whose
- *      stat_table[type*6 + 0x5238] < 0x63, run the inner redistribution: walk
+ *      g_unit_stat[type*14 + 0x5238] < 0x63 (size < 99, i.e. not a ship), run the inner redistribution: walk
  *      slot[] subtracting that unit's demand where it fits, repeating until a
  *      full pass makes no change ([bp-2] settles).
  *  @0x03FA44..0x03FA68  if (arg1!=0): return slot[n-1] if it is >= arg2's low
@@ -2195,7 +2197,8 @@ int func_03F90E_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *  @0x03FA6A..0x03FA9B  else: return the max slot[] entry that is <= arg2.
  *
  * @asm page_07.asm:1029  ENTER 0x4E,0 / RETF @0x03FA9B.
- * Stat tables @0x5237 / 0x5238 (stride 6) [TBD data-resident]. Thunks 0x8C6/
+ * Stat tables g_unit_stat @0x5230 stride 14; fields: +7=0x5237 cargo, +8=0x5238 size.
+ * BYTE_VERIFIED 2026-06-08: stride is 14 (3×SHL+2×ADD @0x03F990/@0x03FA20), not 6. Thunks 0x8C6/
  *   0x2EE/0x2E4 kept as externs.
  * ========================================================================== */
 int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
@@ -2218,7 +2221,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
     while (u >= 0) {                                  /* @0x03F9B7/@0x03F9BC */
         uint8_t t = (uint8_t)UNIT_TYPE(u);
         if (t >= 0x0D && t <= 0x12) {                /* @0x03F971/@0x03F978 */
-            slot[n] = (int16_t)((uint8_t)G8((uint16_t)t * 6 + 0x5237)
+            slot[n] = (int16_t)((uint8_t)G8((uint16_t)t * 14 + 0x5237)  /* cargo; BYTE_VERIFIED stride 14 @0x03F990 */
                               - (uint8_t)G8((uint16_t)u*UNIT_STRIDE + 0x3150));
             ++n;                                     /* @0x03F9AC */
         }
@@ -2231,7 +2234,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
     while (u >= 0) {                                  /* @0x03F9FD/@0x03FA02 */
         uint8_t t = (uint8_t)UNIT_TYPE(u);
         if (t >= 0x0D && t <= 0x12) {                /* @0x03FA07/@0x03FA0E */
-            demand = (int16_t)(uint8_t)G8((uint16_t)t * 6 + 0x5238);  /* @0x03FA2A */
+            demand = (int16_t)(uint8_t)G8((uint16_t)t * 14 + 0x5238);  /* size; BYTE_VERIFIED stride 14 @0x03FA20 */
             if (demand < 0x63) {                     /* @0x03FA33 */
                 changed = 1;                         /* @0x03FA38 */
                 do {                                 /* @0x03FA42 -> 0x03F986 */
@@ -2324,7 +2327,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  *       helper 0x1598(unit, stat) says OK, continue; else abort to 0x1367.
  *   @0x03FBDA..0x03FC5E  land-vs-water dock logic -> may set [0x9E4E]=8 (dock).
  *   @0x03FC62..0x03FCFA  scan dest-tile units (0x2EE/0x2E4) for a foreign unit
- *       whose stat[type*6+0x5238] < 0x63 and whose [+0x3149] exceeds the
+ *       whose g_unit_stat[type*14+0x5238] < 0x63 (size<99 = not ship) and whose [+0x3149] exceeds the
  *       mover's -> remember it in [bp-0x10].
  *   @0x03FD00..0x03FD24  if such a unit found: [0x9E50]=it; [0x9E4E]=3 if the
  *       mover is embarked ([bp-6]&0x40) else 2.
@@ -2336,7 +2339,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  *
  * @asm page_07.asm:1156  ENTER 0x1C,0 / RETF @0x03FDDD.
  * Globals: [0x9E4E] result, [0x9E50] target unit; map dims [0x853A]/[0x853C].
- * Stat table @0x5238 stride 6 [TBD]. Near helper 0x1598 (file func) kept extern
+ * Stat table g_unit_stat @0x5230 stride 14; +8=size. BYTE_VERIFIED 2026-06-08: stride 14 (3×SHL+2×ADD). Near helper 0x1598 kept extern
  * as func_03F___; tile-query thunks (0x6BE/0x6D2/0x72C/0x7E0/0x682/0x6B4/0x696/
  * 0x90C/0x916/0x948/0x2EE/0x2E4) are platform leaves kept extern.
  * ========================================================================== */
@@ -2386,7 +2389,7 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
             /* same-power transport present? @0x03FB94..0x03FBA7 */
             if ((G8((uint16_t)u*UNIT_STRIDE + 0x3147) ^ G8(rec + 0x3147)) & 0xF)
                 goto abort;                          /* different power -> abort */
-            /* helper 0x1598(unit, stat[type*6+0x5238]) gate @0x03FBCD */
+            /* helper 0x1598(unit, g_unit_stat[type*14+0x5238]) gate @0x03FBCD */
             if (func_03F1598() == 0)                 /* capacity check */
                 goto abort;
         }

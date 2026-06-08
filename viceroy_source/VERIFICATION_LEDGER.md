@@ -1539,3 +1539,61 @@ Full re-trace of the tea-party handler closed all prior TBDs:
 | Prior `gate[power_id * POWER_STRIDE]` (= power×0x13C) was a **BUG** in sons_of_liberty.c | Fixed to `gate[power_id]` | CORRECTED |
 | Semantic: accumulated total colonist count (popsum) per power | func_03FD38: zero on entry, +1/colonist-in-colony, +entity[+0x1F] per entity (pop byte 0..32) | BYTE_VERIFIED |
 | Threshold >= 4 → SoL milestone messages; >= 8 → cavalry/military effects | @asm 0x03E8D0 (SoL), @0x055FFA/@0x05F450 (cavalry) | BYTE_VERIFIED |
+
+---
+
+## Diplomacy tables + clamp resolution (2026-06-08, commit c434295)
+
+### ovly_181F_035C = pure clamp(value, lo, hi)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| `ovly_181F_035C` is a pure clamp — not random, not modulo | Implementation at file 0x0048CC (runtime 0x024C:0x000C); dispatched via overlay stub 0x181F:0x035C at file 0x1A94C | BYTE_VERIFIED |
+| Arg order: `clamp(value=[bp+6], lo=[bp+8], hi=[bp+0xa])` = `max(lo, min(value, hi))` | Hand-traced from file 0x0048CC | BYTE_VERIFIED |
+| File 0x28792 is a DIFFERENT function (calls 0x181F:0x0092 then 0x181F:0x00B0) | Bytes at 0x28792 confirmed ≠ clamp body | BYTE_VERIFIED |
+
+### DGROUP:0x942C — g_diplo_contact_942C / DGROUP:0x941C — g_trade_accum_941C
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| 0x942C: per-power byte[4]; diplomatic contact count 0..255 saturating | Reset @0x042171; saturating increment @0x042126; display read @0x03DF67 | BYTE_VERIFIED |
+| 0x941C: per-power word[4]; cumulative trade/gold accumulator | Zeroed @0x042142; accumulated @0x042335; trade-partner selection @0x03F0C5 | BYTE_VERIFIED |
+| Smite-gold: `player_factor = contact_count + trade_volume`; full formula gold = clamp((treasury/50 × factor)/50, 10, 200) × 50 ∈ [500, 10000] | meeting.c / diplomacy_smite_gold.c | BYTE_VERIFIED |
+
+### DS:0x2F77 offset +0 correction / DS:0x5236 renamed combat strength
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| `g_occtype_weight_2F77[occt]` byte is at struct offset +0 (not +1) | @asm 0x07461B: `[bx+0x2F77]` with bx=type×16 | BYTE_VERIFIED |
+| Field `g_unittype_combatstr_5236` is combat strength (not boolean flag) | Accumulated at 0x04619D | BYTE_VERIFIED |
+
+---
+
+## KINGNOTHING + unit-type names + g_unit_stat stride-14 (2026-06-08)
+
+### KINGNOTHING call form at 0x034B33
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| "KINGNOTHING" string at DS:0x109C (file 0x1EA3C) | @bytes `4b 49 4e 47 4e 4f 54 48 49 4e 47 00` at file 0x1EA3C | BYTE_VERIFIED |
+| Call form: `LEA BX,[0x087C]` / `LEA AX,[0x109C]` / `SUB DX,DX` / `LCALL 0x181F:0x0998` / `LEAVE/RETF` | @bytes `8d 1e 7c 08 8d 06 9c 10 2b d2 9a 98 09 1f 18 c9 cb` at file 0x034B33 | BYTE_VERIFIED |
+| Register-based arg passing (BX/AX/DX — no PUSH before LCALL) | No PUSH between ADD-SP cleanup and LCALL | BYTE_VERIFIED |
+
+### NAMES.TXT @UNIT type-id mapping (BYTE_VERIFIED via data/unit_classes.c)
+
+23 types; row = `UnitRecord.type`. Key demotion entries (func_05B2C2 combat resolver):
+types 1→0 (Soldiers→Colonists), 4→1 (Dragoons→Soldiers), 7→9 (Cont.Cav.→Cont.Army),
+8→6 (Cavalry→Regulars), 9→0 (Cont.Army→Colonists).
+Special: outcome==0 AND vet_type==0x18 → outcome=3 (Missionaries).
+`combat_demotion_ladder.c` TODO_VERIFY cleared.
+
+### g_unit_stat stride-14 correction
+
+Prior `overlay_03C5A8_040C11.c` comments and code used stride 6 for g_unit_stat accesses. Wrong.
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Stride is 14 (not 6) | @asm 0x03CB00: `d1 e3 03 d8 d1 e3 03 d8 d1 e3` = 3×SHL+2×ADD = ×14; same @0x03F990 / @0x03FA20 | BYTE_VERIFIED |
+| `type*14+0x5236`=ATK, `+0x5237`=cargo, `+0x5238`=size | Matches @UNIT loader @0x074F11/0x074F1E/0x074F27 | BYTE_VERIFIED |
+
+Code bugs fixed: `t * 6` → `t * 14` at two sites (lines 2221, 2234) in `overlay_03C5A8_040C11.c`.
