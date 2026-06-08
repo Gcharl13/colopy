@@ -56,7 +56,7 @@
  *   uses the RE-SEGMENTED page_0C body (full 4835 bytes) and is cross-checked
  *   byte-for-byte against the raw EXE.
  *
- * WHAT IS BYTE_VERIFIED vs TBD HERE
+ * WHAT IS BYTE_VERIFIED vs NOT YET VERIFIED HERE
  *   BYTE_VERIFIED: the entire control-flow graph, every DGROUP global address,
  *   every UnitRecord/ColonyRecord/NativeSettlement field offset, and every INLINE
  *   IMMEDIATE score weight (e.g. +0x32/+0x23/+0x14/+0xa/+8/+5/+4/+2/-1/-2/-0x19/
