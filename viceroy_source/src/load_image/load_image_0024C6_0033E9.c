@@ -489,17 +489,31 @@ int func_002B72_op_sz_85(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * Near CALL targets:
  *   - 0x002AC6
  *   - 0x002B38
- * @inferred_role  UNKNOWN (68 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  vertically-centre a glyph/sprite: compute a clamped y from the
+ *                 measured height (func_002AC6) and forward to the blit (func_002B38)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the two near targets are far functions called via the `push cs; call near`
+ * large-model idiom (both do `retf`).  func_002AC6 takes (arg0,arg1) and returns a
+ * size-1; func_002B38 takes 5 stack args.  Caller is cdecl (cleans its own pushes).
  */
-int func_002BC8_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
+void func_002BC8_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x002BDE */ func_002AC6();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x002BF8 JGE 0x002BFC */ {
-        }
-        /* @0x002C02 */ func_002B38();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x002BD0 args arg5,arg4 pre-pushed for the outer func_002B38 call.
+     * @asm 0x002BD9 push arg1,arg0; 0x002BDE call func_002AC6 -> ax (a measured span). */
+    int measured = func_002AC6_logic_sz_27(arg0_bp_06, arg1_bp_08);
+
+    /* @asm 0x002BE4 sar ax,1 (measured/2, signed); 0x002BE6 cx=arg3; sar cx,1 (arg3/2).
+     * @asm 0x002BEF si = arg3/2 - measured/2; 0x002BF1 si += arg2.
+     * @asm 0x002BF4 or si,si; jge -> if si < 0 si = 0 (clamp to >= 0).
+     * (sar = arithmetic >>1, floor-toward-negative; rendered as signed >> 1.) */
+    int y = ((int16_t)arg3_bp_0C >> 1) - (measured >> 1) + (int16_t)arg2_bp_0A;
+    if (y < 0)
+        y = 0;
+
+    /* @asm 0x002BFE push si(=y),arg1,arg0; 0x002C02 call func_002B38 with
+     * (arg0, arg1, y, arg4, arg5); 0x002C05 add sp,0xa cleans all 5 words. */
+    func_002B38_op_sz_58(arg0_bp_06, arg1_bp_08, (uint16_t)y, arg4_bp_0E, arg5_bp_10);
 }
 
 /* @asm        0x002C0C..0x002C4A  (62 bytes)  region=load_image
@@ -590,17 +604,30 @@ int func_002C82_op_sz_94(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * Near CALL targets:
  *   - 0x002AE2
  *   - 0x002C4A
- * @inferred_role  UNKNOWN (71 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  vertically-centre variant (twin of func_002BC8): clamp a y from
+ *                 func_002AE2's measured span and forward to the blit func_002C4A
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: same shape as func_002BC8; func_002AE2 measures (arg0,arg1), func_002C4A
+ * takes 6 stack args.  Both far, called via `push cs; call near`.
  */
-int func_002CE0_logic_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12)
+void func_002CE0_logic_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x002CF9 */ func_002AE2();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x002D13 JGE 0x002D17 */ {
-        }
-        /* @0x002D1D */ func_002C4A();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x002CE8 args arg6,arg5,arg4 pre-pushed for the outer func_002C4A call.
+     * @asm 0x002CF5 push arg1,arg0; 0x002CF9 call func_002AE2 -> ax (measured span). */
+    int measured = func_002AE2_logic_sz_27(arg0_bp_06, arg1_bp_08);
+
+    /* @asm 0x002CFF sar ax,1; 0x002D01 cx=arg3; sar cx,1; 0x002D0A si=arg3/2-measured/2;
+     * @asm 0x002D0C si += arg2; 0x002D0F or si,si; jge -> if si < 0 si = 0.
+     * (sar = arithmetic >>1; rendered as signed >> 1.) */
+    int y = ((int16_t)arg3_bp_0C >> 1) - (measured >> 1) + (int16_t)arg2_bp_0A;
+    if (y < 0)
+        y = 0;
+
+    /* @asm 0x002D19 push si(=y),arg1,arg0; 0x002D1D call func_002C4A with
+     * (arg0, arg1, y, arg4, arg5, arg6); 0x002D20 add sp,0xc cleans all 6 words. */
+    func_002C4A_op_sz_56(arg0_bp_06, arg1_bp_08, (uint16_t)y,
+                         arg4_bp_0E, arg5_bp_10, arg6_bp_12);
 }
 
 /* @asm        0x002D28..0x002D73  (75 bytes)  region=load_image
@@ -616,23 +643,36 @@ int func_002CE0_logic_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * Near CALL targets:
  *   - 0x002992  (2x)
  *   - 0x0028B0
- * @inferred_role  DISPATCHER (75 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  draw a glyph (arg0) using a colour/style word selected by code arg1:
+ *                 table[arg1] when arg1>=0 (else default), plus a second overdraw pass
+ *                 when arg1 is in the 8..0x17 band.
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: word table at DGROUP 0x2F74, stride 0x10 (BSS runtime, DGROUP_MEMORY_MAP §2);
+ * 0x2E0A and 0x2DB0 are default-style near words.  Targets are far (`push cs; call near`).
  */
-int func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+void func_002D28_logic_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x002D32 JL 0x002D42 */ {
-            goto label_002D49;  /* @0x002D40 */
-        }
-        /* @0x002D4B */ func_002992();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x002D54 JL 0x002D6F */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x002D59 JGE 0x002D6F */ {
-                /* @0x002D5D */ func_0028B0();
-                /* @0x002D69 */ func_002992();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    int code = (int16_t)arg1_bp_08;
+    uint16_t style;
+
+    /* @asm 0x002D30 or si,si; jl 0x2D42 -> if (code >= 0) style = word[code*0x10 + 0x2F74]
+     * @asm 0x002D45 else style = [0x2E0A]. */
+    if (code >= 0)
+        style = *(uint16_t near *)(0x2F74 + (unsigned)arg1_bp_08 * 0x10);
+    else
+        style = *(uint16_t near *)0x2E0A;
+
+    /* @asm 0x002D49 push arg0; 0x002D4B call func_002992(arg0, style). */
+    func_002992_rtl_sz_26(arg0_bp_06, style);
+
+    /* @asm 0x002D51 cmp si,8; jl ; 0x002D56 cmp si,0x18; jge -> only when 8 <= code < 0x18: */
+    if (code >= 8 && code < 0x18) {
+        /* @asm 0x002D5D call func_0028B0(arg0)  (return value discarded). */
+        func_0028B0(/* @asm arg0 */);
+        /* @asm 0x002D63 push [0x2DB0]; 0x002D69 call func_002992(arg0, [0x2DB0]). */
+        func_002992_rtl_sz_26(arg0_bp_06, *(uint16_t near *)0x2DB0);
+    }
 }
 
 /* @asm        0x002D74..0x002E4E  (218 bytes)  region=load_image

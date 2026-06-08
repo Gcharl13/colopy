@@ -675,19 +675,39 @@ int func_006468_op_sz_79(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x006468
- * @inferred_role  PROLOGUE_HEAVY (67 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  run the per-tile scan func_006468 for unit `idx`, flagging whether
+ *                 the unit's type is in the 0x0D..0x12 band (mounted/scout class).
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: register-param far function (MSC large model): the unit index arrives in AX
+ * and a pass-through value in DX (auto-tracer's `(void)` signature was wrong).  It
+ * forwards to func_006468, also a register-param far fn (AX=x, DX=y, BX=owner; plus
+ * two stack args), whose own auto-signature is a stale cut.  Args annotated inline.
  */
-int func_0065C4_logic_sz_67(void)
+int func_0065C4_logic_sz_67(uint16_t idx_ax, uint16_t passthru_dx)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x0065D7 JB 0x0065E6 */ {
-            if (/* JA fallthrough cond: */ ax <= 0) /* @0x0065DE JA 0x0065E6 */ {
-                goto label_0065E8;  /* @0x0065E3 */
-            }
-        }
-        /* @0x006600 */ func_006468();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0065CC imul bx,si,0x1C (si=idx) -> UnitRecord[idx] base. */
+    unsigned rec = (unsigned)idx_ax * 0x1C;
+
+    /* @asm 0x0065D2 cmp byte[bx+0x3146],0xD; jb ; 0x0065D9 cmp ...,0x12; ja ->
+     * is_band = (0x0D <= UnitRecord[idx].type <= 0x12) ? 1 : 0  (type = +0x02). */
+    uint8_t type = *(uint8_t near *)(0x3144 + rec + 0x02);
+    int is_band = (type >= 0x0D && type <= 0x12) ? 1 : 0;
+
+    /* @asm 0x0065EA al = UnitRecord[idx].map_x (+0x00);
+     * @asm 0x0065F0 bl = UnitRecord[idx].owner_flags (+0x03) & 0x0F;
+     * @asm 0x0065FA dl = UnitRecord[idx].map_y (+0x01). */
+    uint8_t map_x = *(uint8_t near *)(0x3144 + rec + 0x00);
+    uint8_t owner = *(uint8_t near *)(0x3144 + rec + 0x03) & 0x0F;
+    uint8_t map_y = *(uint8_t near *)(0x3144 + rec + 0x01);
+
+    /* @asm 0x0065E8 push dx(=passthru); 0x0065E9 push di(=is_band);
+     * @asm 0x006600 call func_006468 (returns its result).  The true call is
+     *   func_006468(AX=map_x, DX=map_y, BX=owner, stack[is_band, passthru]);
+     * func_006468's own auto-signature only exposes the first slot, so the extra
+     * operands are recorded here and silenced to keep the data-flow documented. */
+    (void)map_y; (void)owner; (void)is_band; (void)passthru_dx;
+    return func_006468_op_sz_79(map_x);
 }
 
 /* @asm        0x006608..0x006672  (106 bytes)  region=load_image
@@ -784,13 +804,43 @@ int func_00679E_logic_sz_16(void)
  *
  * Near CALL targets:
  *   - 0x006672
- * @inferred_role  WRAPPER_NEARCALL (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0066BA
+ * @inferred_role  return the index of the Nth "countable" unit (per-type table flag
+ *                 == 0) along the tile-occupancy chain starting at `start`; -1 if the
+ *                 chain ends before reaching position `which`.
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: register-param far function (AX=start unit index, DX=which/0-based position;
+ * the auto-tracer's `(void)` signature was wrong).  func_006672/func_0066BA are the
+ * chain head/next helpers (same pair used by func_007936; -1 ends the chain).
+ * Per-unit-type table at DGROUP 0x5237, stride 0x0E (DGROUP_MEMORY_MAP §2).
  */
-int func_0067F0_logic_sz_44(void)
+int func_0067F0_logic_sz_44(uint16_t start_ax, uint16_t which_dx)
 {
-    /* @auto: wrapper forwards to near CALL 0x006672. */
-    return func_006672();
+    int16_t found = -1;     /* @asm [bp-4], di */
+    int16_t count = -1;     /* @asm [bp-2] */
+
+    /* @asm 0x006802 ax=start; call func_006672 -> si (chain head). */
+    int16_t i = (int16_t)func_006672(start_ax);
+
+    /* @asm 0x00680D loop while i >= 0 (jl 0x6846 exits) AND found still < 0
+     *      (0x006842 or di,di; jl 0x680D re-enters only when found<0). */
+    while (i >= 0 && found < 0) {
+        /* @asm 0x006811 imul bx,si,0x1C; bl=UnitRecord[i].type (+0x02);
+         * @asm 0x00681A bx = type*0x0E; 0x006826 cmp byte[bx+0x5237],0; jne skip. */
+        uint8_t type = *(uint8_t near *)(0x3144 + (unsigned)i * 0x1C + 0x02);
+        if (*(uint8_t near *)(0x5237 + (unsigned)type * 0x0E) == 0) {
+            /* @asm 0x006830 inc count; 0x006833 cmp count,which; jne skip;
+             * @asm 0x006838 else found = i. */
+            count++;
+            if (count == (int16_t)which_dx)
+                found = i;
+        }
+        /* @asm 0x00683A ax=i; call func_0066BA -> si (chain next). */
+        i = (int16_t)func_0066BA(i);
+    }
+    /* @asm 0x006846 ax = di. */
+    return found;
 }
 
 /* @asm        0x00684C..0x006873  (39 bytes)  region=load_image

@@ -832,25 +832,43 @@ int func_004D1E_op_sz_217(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (126 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  remap an input code (1..26) to an output id via a 26-entry jump
+ *                 table; codes 13..22 map to code+0x1B; unmapped codes return 0x25.
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 237 bytes (0x004DF8..0x004EE4); the skeleton header's 126-byte
+ * span was a false auto-segmentation cut (it stopped at the jump-table data).
+ * The compiler emitted `jmp word cs:[bx+0xbc]` with bx=(code-1)*2 over a word table
+ * at file 0x004EAC (CS frame base 0x004DF0); every entry was resolved to its handler
+ * and constant below.  Signed/unsigned: the range guard `cmp (code-1),0x19; ja` is
+ * an UNSIGNED bound, so code 0 and code > 26 both fall through to the default 0x25.
  */
 int func_004DF8_logic_sz_126(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_004E9E;  /* @0x004E04 */
-        goto label_004EE0;  /* @0x004E0D */
-        goto label_004EE0;  /* @0x004E15 */
-        goto label_004EE0;  /* @0x004E1D */
-        goto label_004EE0;  /* @0x004E25 */
-        goto label_004EE0;  /* @0x004E2D */
-        goto label_004EE0;  /* @0x004E35 */
-        goto label_004EE0;  /* @0x004E3D */
-        goto label_004EE0;  /* @0x004E45 */
-        goto label_004EE0;  /* @0x004E4D */
-        goto label_004EE0;  /* @0x004E55 */
-        goto label_004EE0;  /* @0x004E5D */
-        goto label_004EE0;  /* @0x004E65 */
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x004DFC result = 0x25 (default).
+     * @asm 0x004E9E dec ax (code-1); cmp ax,0x19; ja 0x4EE0 -> out of [1,26]: default. */
+    switch (arg0_bp_06) {
+    case 1:  return 0x20;   /* @asm 0x004E08 */
+    case 2:  return 0x21;   /* @asm 0x004E10 */
+    case 3:  return 0x22;   /* @asm 0x004E18 */
+    case 4:  return 0x23;   /* @asm 0x004E20 */
+    case 5:  return 0x3A;   /* @asm 0x004E28 */
+    case 6:  return 0x3B;   /* @asm 0x004E30 */
+    case 7:  return 0x38;   /* @asm 0x004E38 */
+    case 8:  return 0x24;   /* @asm 0x004E40 */
+    case 9:  return 0x25;   /* @asm 0x004E48 */
+    case 10: return 0x26;   /* @asm 0x004E50 */
+    case 11: return 0x27;   /* @asm 0x004E58 */
+    case 12: return 0x39;   /* @asm 0x004E60 */
+    case 13: case 14: case 15: case 16: case 17:
+    case 18: case 19: case 20: case 21: case 22:
+        /* @asm 0x004E68 ax = code + 0x1B (the 10 jump-table slots all = 0x78). */
+        return arg0_bp_06 + 0x1B;
+    case 23: return 0x33;   /* @asm 0x004E76 */
+    case 24: return 0x32;   /* @asm 0x004E80 */
+    case 25: return 0x35;   /* @asm 0x004E8A */
+    case 26: return 0x36;   /* @asm 0x004E94 */
+    default: return 0x25;   /* @asm 0x004EE0 (returns the entry default in [bp-2]) */
+    }
 }
 

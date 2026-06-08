@@ -280,13 +280,68 @@ int func_005234_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (22 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  nudge an animated/auto-tiling sprite id by a sub-tile direction:
+ *                 derive a direction 0..15 from (dir + ((x&3)+((y&3)<<2))) and step
+ *                 the sprite within its group, bouncing at the group edge.
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: true body is 134 bytes (0x005296..0x00531B); the skeleton header's 22-byte
+ * span and `(void)` signature were a false auto-segmentation cut.  Register-param far
+ * function: AL=sprite id, BL=direction nibble, SI=tile x, DI=tile y (no stack args).
+ * All arithmetic is 8-bit; the final edge test (cmp/jae) is UNSIGNED.
  */
-int func_005296_logic_sz_22(void)
+int func_005296_logic_sz_22(uint16_t sprite_al, uint16_t dir_bl,
+                            uint16_t x_si, uint16_t y_di)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00529C shift_a=2, mask_b=7 (defaults).
+     * @asm 0x0052A6 dh=(x&3); 0x0052B1 ch=((y&3)<<2); 0x0052B7 dh += ch
+     *      -> subtile = (x & 3) + ((y & 3) << 2)  (0..15). */
+    int shift_a = 2;
+    int mask_b  = 7;
+    uint8_t sprite = (uint8_t)sprite_al;
+    uint8_t subtile = (uint8_t)((x_si & 3) + ((y_di & 3) << 2));
+    uint8_t dir, base;
+    int8_t delta;
+
+    /* @asm 0x0052B9 cmp al,0x10; jb -> if (sprite < 0x10)  return sprite (unchanged).
+     * @asm 0x0052BD cmp al,0x88; jae -> if (sprite >= 0x88) return sprite. */
+    if (sprite < 0x10 || sprite >= 0x88)
+        return sprite;
+
+    /* @asm 0x0052C1 cmp al,0x30; ja 0x52D0 -> if (sprite <= 0x30): shift_a=0,mask_b=0x1F
+     * @asm 0x0052D0 else cmp al,0x40; ja 0x52DC -> if (sprite <= 0x40): shift_a=2,mask_b=0xF
+     *      else keep the defaults (shift_a=2, mask_b=7). */
+    if (sprite <= 0x30) {
+        shift_a = 0;
+        mask_b  = 0x1F;
+    } else if (sprite <= 0x40) {
+        shift_a = 2;
+        mask_b  = 0x0F;
+    }
+
+    /* @asm 0x0052DC dl = (dir + subtile) & 0x0F. */
+    dir = (uint8_t)((uint8_t)dir_bl + subtile) & 0x0F;
+
+    /* @asm 0x0052E3 if (dir == 0) return sprite;  0x0052E8 if (dir == 8) return sprite. */
+    if (dir == 0 || dir == 8)
+        return sprite;
+
+    /* @asm 0x0052ED ja 0x52F8: if (dir > 8)  delta =  (dir - 7) >> shift_a
+     * @asm 0x0052EF else (dir < 8) delta = -((dir + 1) >> shift_a). */
+    if (dir > 8)
+        delta = (int8_t)((uint8_t)(dir - 7) >> shift_a);
+    else
+        delta = (int8_t)(-(int)((uint8_t)(dir + 1) >> shift_a));
+
+    /* @asm 0x0052FD base = ((sprite - 0x10) & mask_b) + delta;
+     * @asm 0x00530B cmp base,(mask_b+1); jae -> if stepping leaves the group
+     *      (unsigned base >= mask_b+1) negate delta (bounce). */
+    base = (uint8_t)(((uint8_t)(sprite - 0x10) & (uint8_t)mask_b) + (uint8_t)delta);
+    if (base >= (uint8_t)(mask_b + 1))
+        delta = (int8_t)(-(int)delta);
+
+    /* @asm 0x005314 sprite += delta. */
+    return (uint8_t)(sprite + (uint8_t)delta);
 }
 
 /* @asm        0x00531C..0x005375  (89 bytes)  region=load_image
@@ -581,37 +636,48 @@ int func_005BFA_logic_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (132 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  proximity predicate: 1 if delta (arg0,arg1) lies inside the
+ *                 neighbourhood selected by arg2 (1=king/orthogonal-adjacent,
+ *                 2=immediate 3x3, 3=within-2 diamond, else within-2 cross), else 0.
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * Bands OR-accumulate into the result and arg2 short-circuits after its band; all
+ * compares are signed.  arg0/arg1 are deltas (abs-folded in place at entry).
  */
 int func_005C2C_logic_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x005C34 JG 0x005C3F */ {
-        }
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x005C43 JG 0x005C4E */ {
-        }
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x005C57 JG 0x005C5E */ {
-            goto label_005C60;  /* @0x005C5C */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005C67 JE 0x005CAB */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x005C6D JGE 0x005C79 */ {
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x005C73 JGE 0x005C79 */ {
-                }
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x005C7D JE 0x005CAB */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x005C88 JG 0x005C90 */ {
-                    goto label_005C92;  /* @0x005C8D */
-                }
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x005C99 JE 0x005CAB */ {
-                    if (/* JL fallthrough cond: */ ax >= 0) /* @0x005C9F JL 0x005CA7 */ {
-                        if (/* JGE fallthrough cond: */ ax < 0) /* @0x005CA5 JGE 0x005CAB */ {
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x005C30 if arg0 <= 0: arg0 = -arg0;  0x005C3F if arg1 <= 0: arg1 = -arg1. */
+    int ax_ = (int16_t)arg0_bp_06; if (ax_ <= 0) ax_ = -ax_;   /* |dx| */
+    int ay  = (int16_t)arg1_bp_08; if (ay  <= 0) ay  = -ay;    /* |dy| */
+    int result;
+
+    /* @asm 0x005C4E ax=|dy|+|dx|; cmp ax,1; jg -> result = (|dx|+|dy| <= 1) ? 1 : 0. */
+    result = ((ay + ax_) <= 1) ? 1 : 0;
+
+    /* @asm 0x005C63 cmp arg2,1; je 0x5CAB -> done. */
+    if ((int16_t)arg2_bp_0A == 1)
+        return result;
+
+    /* @asm 0x005C69 if (|dx| < 2 && |dy| < 2) result |= 1. */
+    if (ax_ < 2 && ay < 2)
+        result |= 1;
+
+    /* @asm 0x005C79 cmp arg2,2; je 0x5CAB -> done. */
+    if ((int16_t)arg2_bp_0A == 2)
+        return result;
+
+    /* @asm 0x005C7F ax=|dy|+|dx|; cmp ax,2; jg -> result |= (|dx|+|dy| <= 2) ? 1 : 0. */
+    result |= ((ay + ax_) <= 2) ? 1 : 0;
+
+    /* @asm 0x005C95 cmp arg2,3; je 0x5CAB -> done. */
+    if ((int16_t)arg2_bp_0A == 3)
+        return result;
+
+    /* @asm 0x005C9B if (|dx| < 2 || |dy| < 2) result |= 1. */
+    if (ax_ < 2 || ay < 2)
+        result |= 1;
+
+    return result;
 }
 
 /* @asm        0x005CB0..0x005CE6  (54 bytes)  region=load_image
