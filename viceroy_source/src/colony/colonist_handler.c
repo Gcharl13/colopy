@@ -34,8 +34,10 @@
  *    0xA206: 83 7e 08 00             CMP [bp+8],0  (NULL guard before *meta write)
  *    0xA217: 0b c0                   OR ax,ax (yield clamp >=0 gate)
  *    0xA221: cb                      RETF
+ *  RESOLVED:
+ *    meta_out 0x12 = Rebel Flags commodity (NAMES.TXT @CARGO row 0x12 = "Flags";
+ *    cross-ref market/pricing.c: "Hammers,Crosses,Liberty Bells,Flags" = rows 0xF..0x12).
  *  TBD:
- *    exact game-mechanic meaning of meta_out 0x12 ("Liberty Flags" — working name)
  *    ov_power_flag op 0x15 founding-father identity (Crosses +50% bonus)
  * ============================================================================ */
 #include "viceroy.h"
@@ -147,7 +149,9 @@ int unit_individual_handler_9FFC(int colonist_idx, int *meta)
         }
         break;
 
-    case 17:  /* Liberty Flags [TBD: working name; meta 0x12] */
+    case 17:  /* Rebel Flags (commodity 0x12 = "Flags" per NAMES.TXT @CARGO row 18).
+               * Cross-ref: market/pricing.c "followed by 4 nameless non-traded rows
+               * (Hammers,Crosses,Liberty Bells,Flags)" — row index 0x12 = Flags. */
         /* @asm 0xA1C8..0xA1CE */
         yield    = base_mult + sol_adj;
         /* @asm 0xA1D1: c7 46 e8 12 00 */

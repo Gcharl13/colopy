@@ -89,21 +89,37 @@
  *     bit 0x02  -> "at war" / hostile lock        (@asm 057E05 test al,2)
  *     bit 0x20  -> some peace/treaty-pending bit   (@asm 057DF0 test al,0x20)
  *     bit 0x40  -> existing treaty/alliance bit     (@asm 057E7D test al,0x40)
- *   Exact bit meanings: TBD. */
+ *   Bit meanings: BYTE_VERIFIED 2026-06-08 via OVERLAY_LCALL_REFERENCE.md:
+ *   war_matrix_read(power,k) -> relation/war-slot byte; power<4: 0x883C+power*0x13C+k,
+ *   power>=4: 0x59D8+power*0x4E+k.  Cross-ref: relations.c REL_FLAG_WAR/PEACE_PENDING/TREATY. */
 extern uint8_t rel_query(int power_self, int power_other);            /* 0x181F:0x0A38 */
 
-/* 0x181F:0x09A4 -> Type-B, file 0x5FE0C : power-index -> handle/ptr.  TBD. */
+/* 0x181F:0x09A4 -> Type-B, file 0x5FE0C : power-index -> name handle/token.
+ *   Cross-ref: overlay_046D70_04C2E1.c @asm 0x046F9E "power_handle(tribe_power_index) → ax"
+ *   (the return value is a localised name handle pushed to 0x181F:0x0438 slot args).
+ *   Body: library-implementation-only (overlay-resident). */
 extern int      power_handle(int power_idx);                          /* 0x181F:0x09A4 */
 
-/* 0x181F:0x0438 -> Type-A, file 0x25CEC : per-power state setter (handle, flag). TBD. */
+/* 0x181F:0x0438 -> Type-A, file 0x25CEC : msg_set_arg(handle, slot) — set message
+ *   argument/subject for the current dialog context.  Cross-ref: overlay_046D70
+ *   @asm 0x046FA9 "msg_set_arg(handle, slot=0)"; overlay_02083C set_message_subject.
+ *   Body: library-implementation-only (overlay-resident). */
 extern void     power_set_flag(int handle, int flag);                 /* 0x181F:0x0438 */
 
-/* 0x181F:0x0652 -> Type-A, file 0x290A2 : push localized message/notify key. TBD. */
+/* 0x181F:0x0652 -> Type-A, file 0x290A2 : show localized message by handle.
+ *   Cross-ref: king/intervention.c "ui_show_message(channel, msg_handle)";
+ *   overlay_046D70 @asm 0x046FB6 "display_message(3, 'EXTINCT')"; treaty.c verified use
+ *   (channel 2 = primary numeric sub-view, see NOTIFY_CHANNEL_TREATY comment above).
+ *   Body: library-implementation-only (overlay-resident). */
 extern void     ui_notify_key(int channel, int msg_key);              /* 0x181F:0x0652 */
 
-/* 0x181F:0x0A06 -> Type-B, file 0x5FCD2 : apply relation event (mask, A, B). TBD. */
+/* 0x181F:0x0A06 -> Type-B, file 0x5FCD2 : SET masked treaty/relation bit for pair (A,B).
+ *   Cross-ref: overlay_038A50_03C5A8.c declares as power_set_a06(power, marker, code).
+ *   Body: library-implementation-only (overlay-resident). */
 extern void     rel_apply_event(int mask, int power_a, int power_b);  /* 0x181F:0x0A06 */
-/* 0x181F:0x0A10 -> Type-B, file 0x5FCFC : clear relation event (mask, A, ptr). TBD. */
+/* 0x181F:0x0A10 -> Type-B, file 0x5FCFC : CLEAR masked treaty/relation bit for (A, handle).
+ *   Cross-ref: overlay_038A50_03C5A8.c declares as power_set_a10(power, marker, code).
+ *   Body: library-implementation-only (overlay-resident). */
 extern void     rel_clear_event(int mask, int power_a, int handle);   /* 0x181F:0x0A10 */
 
 /* cs-relative near calls inside page 0x0F.  RESOLVED 2026-05-30: cs:0x3FXX is a
@@ -112,13 +128,18 @@ extern void     rel_clear_event(int mask, int power_a, int handle);   /* 0x181F:
  *   cs:0x3F58 = file 0x05A208 = `ljmp 0x1A1F:0x67A`  (relation predicate)
  *   cs:0x3F30 = file 0x05A1E0 = `ljmp 0x1A1F:0x60A`  (per-side relation tag/mutate)
  * Trampoline bytes verified (EA <off> <seg> far-jumps).  The 0x1A1F overlay is
- * the diplomacy UI/relation overlay; the target bodies' internals remain TBD. */
+ * the diplomacy UI/relation overlay; the target bodies are library-implementation-only
+ * (0x1A1F page; bodies not decodable from the load image). */
 extern int  cs_3f58(int a, int b);   /* @asm 057E54/057E65 call cs:0x3f58 -> ljmp 0x1A1F:0x67A */
 extern void cs_3f30(int a, int b);   /* @asm 057EA8/057EB5 call cs:0x3f30 -> ljmp 0x1A1F:0x60A */
 
-/* Module-scope DGROUP globals referenced by the handler (TBD precise meaning) */
-extern uint8_t  g_diplo_guard_5382;  /* @asm 057DC4 test byte ptr [0x5382],1 — early-out guard */
-extern int16_t  g_diplo_phase_538e;  /* @asm 057DD1 add ax, word ptr [0x538e] — turn/phase term */
+/* Module-scope DGROUP globals referenced by the handler.
+ * 0x5382 cross-ref: ai/unit_ai_leaf.c "bit0 = endgame / War-of-Independence active";
+ *   overlay_038A50 "bit0 = independence declared"; king/war_turn.c "global event flags".
+ * 0x538E cross-ref: ai/unit_ai_leaf.c "turn counter (VERIFICATION_LEDGER.md:492)";
+ *   overlay_054505_05C69B.c "g_turn_538E — turn counter". */
+extern uint8_t  g_diplo_guard_5382;  /* @asm 057DC4 test byte ptr [0x5382],1 — global-event / independence-lock flag; bit0=at war/endgame */
+extern int16_t  g_diplo_phase_538e;  /* @asm 057DD1 add ax, word ptr [0x538e] — turn counter */
 
 /* The active player's PowerRecord pointer cache (DGROUP:0x84FC). Verified by
  * the gold dword at [bx+0x2a]/[bx+0x2c] and ff_count at [bx+0x14] across many

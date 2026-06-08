@@ -51,8 +51,8 @@
  *     0x5236, 0x5DE0, 0x942C/0x941C) and difficulty scaler [0x53A6] are cited
  *     literally but their *meaning* is not all decoded.  The numeric thresholds
  *     (e.g. score>100 -> PROVOKE) are byte-cited constants, not invented.
- *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6 (a 32-bit op on
- *     gold) — call sites + args verified, internal behaviour TBD.
+ *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6: RUNTIME_ONLY
+ *     (C-runtime __aFldiv 32-bit long divide; body in segment 0x0D1D, not in load image).
  *
  * Upgrade per viceroy_source/VERIFICATION_LEDGER.md. Do not trust any value
  * not carrying an @asm citation in this file.
@@ -197,7 +197,10 @@ extern int     random_int(int lo, int hi);                     /* 0x181F:0x04D4 
  * via overlay stub 0x181F:0x035C. clamp(value, lo, hi) = max(lo, min(value, hi)).
  * Note: file 0x28792 is a DIFFERENT function (calls 0x181F:0x0092 then 0x181F:0x00B0). */
 extern int16_t diplo_scale_181F_035C(int16_t v, int16_t lo, int16_t hi); /* clamp — VERIFIED */
-extern int     diplo_182_pair(int a, int b);                   /* 0x181F:0x0D6C -> file 0x259F2 (TBD; (b-4,a,100,0)) */
+extern int     diplo_182_pair(int a, int b);                   /* 0x181F:0x0D6C -> file 0x259F2. Cross-ref: overlay_046D70 / native/haggle.c
+                                                                * identify this as "adjust native/power attitude(tribe,power,delta,0)";
+                                                                * here called with (b-4, a, 100, 0) — attitude delta +100 for power pair.
+                                                                * Body: library-implementation-only (page 0x0B overlay). */
 extern void    ui_set_long_arg(int hi, int lo, int idx);       /* 0x181F:0x09AE (long %arg) */
 /* 0x1A1F:0x0688 -> file 0x290CC.  Second arg is a 16-bit word that is EITHER a
  * near pointer to a composed buffer OR a bare message-key handle (both forms
@@ -225,10 +228,17 @@ extern void diplo_native_meeting(int self, int other);/* cs:0x3F4E -> 0x1A1F:0x6
 /* String concat/format helpers in the 0x0D1D overlay (load-image text lib). */
 extern void str_set(int key, char *buf);              /* 0x0D1D:0x07E4 (set buf = key text) */
 extern void str_cat(int key_or_buf, char *buf);       /* 0x0D1D:0x07A4 (append) */
-extern long gold_scale_0D1D_0EC6(int hi, int lo, int mul, int z); /* 0x0D1D:0xEC6 (32-bit gold op, TBD) */
+extern long gold_scale_0D1D_0EC6(int hi, int lo, int mul, int z); /* 0x0D1D:0xEC6 — 32-bit long divide (__aFldiv-style).
+                                                                    * Cross-ref: production_support.c "LCALL 0xD1D:0xEC6 — 32-bit divide";
+                                                                    * colony/sol_tory.c "0xD1D:0xEC6 = 32-bit div: (gross*tax)/100";
+                                                                    * overlay_031F28 extern ldiv_D1D_EC6(long a, long b).
+                                                                    * Used here to scale other.gold down to a peace-payment base amount.
+                                                                    * Body: RUNTIME_ONLY (C-runtime long-arith, segment 0x0D1D). */
 
-/* DGROUP globals (precise meaning cited where known; else TBD). */
-extern uint8_t  g_diplo_guard_5382;   /* @asm 0x1D04 test byte[0x5382],1 — global diplomacy lock */
+/* DGROUP globals (precise meaning cited where known).
+ * 0x5382 cross-ref: ai/unit_ai_leaf.c "bit0 = endgame/War-of-Independence active";
+ *   king/war_turn.c "global event flags; bit0=independence declared". */
+extern uint8_t  g_diplo_guard_5382;   /* @asm 0x1D04 test byte[0x5382],1 — global-event flag; bit0=independence/endgame lock */
 extern uint8_t  g_perpower_flag_543F[]; /* @asm 0x1CE6 byte[bx+0x543f] (bx=power*0x34) — meeting-eligible flag */
 extern int16_t  g_word_539E;          /* @asm word[0x539e] — outer item-loop bound (#15 below) */
 extern int16_t  g_word_539C;          /* @asm word[0x539c] — unit-loop bound */
@@ -464,7 +474,9 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
                         (int)((uint32_t)*power_gold(power_other) & 0xFFFF), /* [bx-0x77ce] low */
                         0, 0);
             /* @asm 0x2ED7 third arg = (([bp-0xcc] secondary acc) - 2) * 2 */
-            payment = (int)diplo_scale_181F_035C(g, 0, 0); /* @asm 0x2EE0 lcall 0x181f,0x35c (3rd arg TBD) */
+            payment = (int)diplo_scale_181F_035C(g, 0, 0); /* @asm 0x2EE0 lcall 0x181f,0x35c — clamp(g, 0, hi).
+                                                              * 3rd arg = (secondary-acc-2)*2 from [bp-0xcc]; modelled as 0
+                                                              * here (secondary acc arithmetic is in the elided score block). */
             payment = payment * 0x64;                     /* @asm 0x2EE8 imul ax,ax,0x64 */
             if (payment != 0) {                           /* @asm 0x2EF1 or ax,ax;je */
                 /* build MEEK(0x196A)+GIVECASH(0x196F); show dialog @0x2F28 */
@@ -533,9 +545,10 @@ present_screen:
  *   - The attitude-score accumulator's per-table economics (tables at -0x6A4E,
  *     -0x6B1A, -0x6ADA, -0x6BD4, -0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).
  *   - diplo_scale_181F_035C: RESOLVED 2026-06-08 — pure clamp(v, lo, hi).
- *   - gold_scale_0D1D_0EC6 (0x0D1D:0xEC6): the 32-bit gold scaler used to size a
- *     peace payment.
- *   - diplo_182_pair (0x181F:0x0D6C, file 0x259F2) called (other-4,self,100,0).
+ *   - gold_scale_0D1D_0EC6 (0x0D1D:0xEC6): RUNTIME_ONLY — C-runtime __aFldiv 32-bit
+ *     long divide (body in segment 0x0D1D); cross-ref production_support.c / sol_tory.c.
+ *   - diplo_182_pair (0x181F:0x0D6C, file 0x259F2): cross-ref overlay_046D70 / native/haggle.c
+ *     identifies as "adjust native/power attitude(tribe,power,delta,0)"; body library-implementation-only.
  *   - Exact field roles of UnitRecord +0x314D/+0x314E written on transfer.
  *
  * Three tractable follow-up traces (each one cited entry point):

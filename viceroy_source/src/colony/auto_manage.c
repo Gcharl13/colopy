@@ -111,7 +111,10 @@ extern int16_t g_year_538A;            /* DGROUP:0x538A — current year (cmp 0x
 extern uint8_t g_war_flags_5382;       /* DGROUP:0x5382 — global event flags; bit0 = at war
                                         *   (revolution); @asm 0x53C90/0x53F00/0x55842/... */
 extern int16_t g_active_power_5398;    /* DGROUP:0x5398 — active power index (@asm 0x5582F) */
-extern uint8_t g_difficulty_53A6;      /* DGROUP:0x53A6 — difficulty 0..4 (read but role here TBD) */
+extern uint8_t g_difficulty_53A6;      /* DGROUP:0x53A6 — difficulty 0..4 (Discoverer..Viceroy).
+                                        * Cross-ref: ai/unit_ai_leaf.c "difficulty/current-player index 0..4";
+                                        * combat/combat.c "difficulty_level (0=easiest, 3=hardest) [V]";
+                                        * turn_update.c uses same at 0x9D49/0x9D56 for tory-divisor (10-diff). */
 extern void *  g_king_record_84FC;     /* DGROUP:0x84FC — far ptr to king PowerRecord;
                                         *   +0x00 bit2 (granted), +0x2A/+0x2C treasury lo/hi,
                                         *   +0x49 a per-king counter (cap 0x14) */
@@ -119,10 +122,12 @@ extern void *  g_king_record_84FC;     /* DGROUP:0x84FC — far ptr to king Powe
 /* Result / control flags written by this routine. */
 extern int16_t g_result_flag_035E;     /* DGROUP:0x35E — set 1 @0x54FC9, cleared 0 @0x56283
                                         *   (the "this colony was (re)managed / changed" flag;
-                                        *   exact consumer TBD — overlay-resident) */
+                                        *   consumer is overlay-resident — body in thunk page). */
 extern uint8_t g_flag_034C;            /* DGROUP:0x34C — cleared 0 @0x548F1 before 0x181F:0xBD2 */
-extern uint8_t g_byte_524E;            /* DGROUP:0x524E — pushed to 0x191F:0xA20 (@asm 0x54D09);
-                                        *   a colonist-spawn parameter byte (role TBD) */
+extern uint8_t g_byte_524E;            /* DGROUP:0x524E — pushed as 4th arg to 0x191F:0xA20 (place_colonist).
+                                        *   Cross-ref: overlay_04C306 @asm 0x053A0A "lcall 0x191F:0xA20(terr,ty,tx,[0x524E])";
+                                        *   the parameter selects the unit terrain/subtype for the spawned colonist.
+                                        *   Exact runtime value is RUNTIME_ONLY (set by the colony-init path). */
 
 /* The colony commodity-economy globals (the SAME ones colony_turn_update uses;
  * full role docs live in src/data/production.c — cited there, not re-derived). */
@@ -145,8 +150,8 @@ extern uint16_t g_8D52;                /* DGROUP:0x8D52 — context word; indexe
 
 /* ----------------------------------------------------------------------------
  * Data tables addressed by base+disp (BYTE_VERIFIED bases; the *values* are
- * data-resident — NAMES.TXT / overlay colony-init — and are [TBD], exactly as
- * in production_support.c / turn_update.c).
+ * data-resident — NAMES.TXT / overlay colony-init — and are RUNTIME_ONLY
+ * (data-resident), exactly as in production_support.c / turn_update.c).
  * ---------------------------------------------------------------------------- */
 #define UNIT_BASE_3144     0x3144      /* UnitRecord table, stride 0x1C (project memory) */
 #define UNIT_STRIDE_1C     0x1C

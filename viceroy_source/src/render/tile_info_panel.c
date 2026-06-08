@@ -158,7 +158,7 @@ extern int16_t g_panel_extent_9E56;
  * the tail clamp @asm 0x044397. NOTE: 0x89E is documented ELSEWHERE (e.g.
  * src/ui/dialog.c, src/overlay/*) as the WORD mouse_x; here it is read as a
  * 4-byte FAR POINTER -- a different access width at the same address. The
- * pointed-to font record layout is [TBD]. */
+ * pointed-to font record layout: library-internal (byte[0] = line height; full layout in 0x181F page). */
 extern uint8_t far *g_font_ptr_89E;
 
 /* DGROUP:0x3144 -- UnitRecord table; stride 0x1C (28). Fields READ for the
@@ -179,14 +179,14 @@ extern uint8_t g_units_3144[/* unit */][0x1C];
 /* DGROUP:0x5230 -- per-unit-TYPE NAME-pointer table, stride 14 (`type*14`); the
  * word at [type*14 + 0x5230] is the unit-type label pointer pushed to the
  * append-label helper @asm 0x043468 (push [bx+0x5230]; lcall 0x181F:0x16e).
- * TABLE CONTENTS [TBD] (data-resident; same table src/ai/unit_orders.c indexes
+ * TABLE CONTENTS RUNTIME_ONLY (data-resident; same table src/ai/unit_orders.c indexes
  * as g_unittype_tbl_5230). */
 extern uint16_t g_unittype_name_5230[/* type */][7];
 
 /* ----------------------------------------------------------------------------
  * DGROUP string/label POINTER tables and scalar label pointers consumed by the
  * append-label helper 0x181F:0x16e. All are READ-ONLY localized label sources;
- * their CONTENTS are data-resident -> [TBD]. Declared so the cited reads are
+ * their CONTENTS are data-resident (RUNTIME_ONLY — loaded from data files, not EXE). Declared so the cited reads are
  * documented (addresses byte-verified), never invented. The negative-displaced
  * bases are the assembler's signed form of the unsigned DGROUP address shown.
  * ------------------------------------------------------------------------- */
@@ -217,7 +217,7 @@ extern struct { uint8_t b[0x13C]; } g_power_8808[/* power */];
  * Overlay text-formatting + tile-query helpers (resident, reached via the
  * 0x181F:* thunk window). Semantics are taken from the call sites (arg count /
  * how the result is used) and match the conventions used across src/ai/*.c and
- * src/ui/*.c; the helper BODIES live in the resident text/IO library and are TBD
+ * src/ui/*.c; the helper BODIES live in the resident text/IO library (library-implementation-only)
  * here. NONE are invented. The text buffer they share is the stack array
  * `buf` ([bp-0x56], reset to 0 with `mov byte [bp-0x56],0` before each line).
  * ------------------------------------------------------------------------- */
@@ -273,7 +273,7 @@ extern void    res_format_label_D1D_7A4(uint16_t arg, char far *buf);
  *   call 0x1b13 -> 0x0443E3 ljmp 0x1A1F:0x2ae   (redraw flush @asm 0x0443C3)
  *   call 0x1b18 -> 0x0443E8 ljmp 0x1A1F:0x2ba   (terrain-kind line @asm 0x04387B)
  *   call 0x1b1d -> 0x0443ED ljmp 0x1A1F:0x2c6   (terrain-detail line @asm 0x043835/0x0438A7)
- * Helper BODIES are on other pages / resident -> TBD; arg shapes are from the
+ * Helper BODIES are on other pages / resident (library-implementation-only); arg shapes from the
  * call sites. */
 extern int16_t tramp_entry_helper_1B09(void);
 extern void    tramp_unit_detail_1B0E(int16_t one, int16_t unit, char far *buf);
@@ -315,8 +315,8 @@ extern void    tramp_detail_line_1B1D(int16_t *yp, int16_t *xp, int16_t which);
  *
  * Faithful, basic-block-cited port. The MANY draw-a-line sequences share the
  * idiom { reset buf; append parts; draw; advance y_cur } and are reproduced
- * structurally. The DGROUP label-pointer TABLES and the overlay text-helper
- * BODIES are [TBD] (data/code-resident); every address and field offset is
+ * structurally. The DGROUP label-pointer TABLES (RUNTIME_ONLY) and the overlay text-helper
+ * BODIES are library-implementation-only (data/code-resident); every address and field offset is
  * @asm-cited. The original's goto-heavy flow (shared targets 0x800, 0xddc, 0xf3f,
  * 0x1148, 0x1ac0, 0x1a42-loop) is mirrored with labels/loops.
  * ============================================================================ */
