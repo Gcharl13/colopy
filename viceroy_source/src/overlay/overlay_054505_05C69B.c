@@ -241,12 +241,15 @@ int colony_strongest_adjacent_defender(int *out_owner, int *out_flag,
  * @asm 0x056B6E  for (p = 0; p < 4; p++)                           ; second pass
  * @asm 0x056B79    final_rank[ rank_index[p] ] = p                 ; [bx-0x6E84]=p
  *
- * The three tables at DGROUP -0x6D68 / -0x6BF0 / -0x6BE4 are score-component
- * tables (per-power); their numeric contents are data-resident (NAMES.TXT /
- * init) → semantics TBD, but the COMPOSITION (helper + 2*t1 + t2 + t3word) is
- * byte-exact.  0x0D1D:0x0EC6 is an MSC-runtime arithmetic helper (likely a
- * 32-bit multiply/scale of the two PowerRecord words against 0x64); modelled
- * opaque.  0x191F:0x0ED0 = generic sort (qsort-like) over the 4 entries.
+ * Table identities (all RUNTIME_ONLY — values loaded from data files, not in EXE):
+ *   metric1  DS:0x9298+p  stride 1   = per-power colony count      (×2 weight)
+ *   metric2  DS:0x9410+p  stride 1   = g_power_gate_9410 per-power colonist popsum
+ *                                       (same address as strengthB in func_057AFC)
+ *   word3    DS:0x941C+p×2 stride 2  = per-power strength word (= strengthW)
+ *   rank_index scratch: DS:0xA150–0xA153 (rank_index[3] = g_byte_A153 extern)
+ *   final_rank output:  DS:0x917C–0x917F (per-power final sorted rank, stride 1)
+ * 0x0D1D:0x0EC6 = MSC-runtime arithmetic helper (32-bit scale of PowerRecord words).
+ * 0x191F:0x0ED0 = dual-sort descending over composite[] + rank_index[] in tandem.
  * ============================================================================ */
 void score_and_rank_four_powers(void)  /* func_056B08 */
 {
@@ -463,8 +466,8 @@ void native_meekness_menu_line(int anchor_x, int selector)  /* func_057AA2 */
 }
 
 /* ============================================================================
- * func_057AFC — should_two_powers_war  [DONE — structure BYTE_VERIFIED; relative-
- *               strength tables = data-resident TBD]
+ * func_057AFC — should_two_powers_war  [DONE — BYTE_VERIFIED structure + table
+ *               identities resolved (see banner below function)]
  * ----------------------------------------------------------------------------
  * AI predicate: decides whether powers `arg0`(bp+6) and `arg1`(bp+8) should go
  * to war, by comparing each against the current-power cursor (*(0x5398)) on a
@@ -496,11 +499,15 @@ void native_meekness_menu_line(int anchor_x, int selector)  /* func_057AA2 */
  * @asm 0x057CD1     if (acc2 != 0) return 0 }
  * @asm 0x057CDA  return 1
  *
- * The matrices at DGROUP -0x6BE4/-0x6BF0/-0x6A9A/-0x6B1A/-0x6B5A/-0x6A8E are the
- * per-power military/relations tables maintained elsewhere; their *contents* are
- * data-resident (TBD) but the comparison/accumulation STRUCTURE below is byte-
- * exact.  0x181F:0x0A38(a,b) returns a relation byte whose bits 5-6 (&0x60==0x20)
- * mean "at peace"; same predicate is reused throughout this region.
+ * Table identities (all RUNTIME_ONLY — no static EXE data):
+ *   strengthW  DS:0x941C+p×2 stride 2 = per-power strength word (=word3 in scoring)
+ *   strengthB  DS:0x9410+p   stride 1 = g_power_gate_9410 colonist popsum (=metric2)
+ *   power_flag DS:0x940C+p   stride 1 = per-power activity flag (gate < 8)
+ *   peer_weight DS:0x9566+p×3 stride 3 = per-power peer-weight scalar
+ *   matrixA[p][k] DS:0x94E6+p×16+k = per-power presence matrix (4×16 bytes)
+ *   matrixB[p][k] DS:0x94A6+p×16+k = per-power attack-strength matrix (4×16 bytes)
+ *   matrixC[p][k] DS:0x9572+p×16+k = per-power defense matrix (4×16 bytes)
+ * 0x181F:0x0A38(a,b) returns a relation byte; bits 5-6 (&0x60==0x20) = at peace.
  * ============================================================================ */
 int should_two_powers_war(int power_a, int power_b)  /* func_057AFC */
 {
