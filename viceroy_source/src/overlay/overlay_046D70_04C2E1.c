@@ -756,7 +756,7 @@ static void power_market_drift_apply(uint16_t power_index)
  * @asm 0x0487B0  (two passes 0..0x10) reconcile market [0x8D4E]+0xE word table:
  * @asm 0x0487D6     w = [bx+si*2+0xE] ; if w>0: w -= [bx+2]+1 (clamp >=0) ; store back
  * @asm 0x0487F8  if verbose: LCALL 0x0D1D:0x712(0x150F)            ; log
- * @asm 0x048809  push arg0 ; LCALL 0x1A1F:0x0270(arg0)             ; (per-power AI hook; TBD)
+ * @asm 0x048809  push arg0 ; LCALL 0x1A1F:0x0270(arg0)             ; (per-power AI/boycott hook; role cited in externs below)
  * @asm 0x048814  LCALL 0x181F:0x0470()                             ; commit
  * @asm 0x048819  bx=[0x8D4E]; if [bx+8] != 0: [bx+0xA] += [bx+8] ; ; market +0xA recompute,
  * @asm 0x04882D     clamp [bx+0xA] to <= ([arg0_base-0x69DE]+0x19)*2          (PowerRecord cap)
@@ -1110,8 +1110,8 @@ extern uint16_t g_current_power_8D52;       /* (re-decl) DGROUP:0x8D52 current p
 extern uint8_t  g_power_active_543F[];      /* (re-decl) DGROUP:0x543F per-power activity, stride 0x34 */
 /* DGROUP word tables read [arg1*2 - disp]: base = 0x10000 - disp.  In native
  * framing these are message-arg string-pointer tables (nationality / fallback
- * place-name / year-indexed), not price tables.  Exact per-entry role TBD-data;
- * the base/stride (word, [idx*2 - disp]) is byte-cited. */
+ * place-name / year-indexed), not price tables.  Contents RUNTIME_ONLY
+ * (loaded from nationality data file; per-entry strings not in EXE static image).
 extern uint16_t g_msgptr_natn_97F8[];       /* DGROUP:0x97F8 (= 0x10000-0x6808) STRING0 (nationality) */
 extern uint16_t g_msgptr_name_838C[];       /* DGROUP:0x838C (= 0x10000-0x7C74) fallback place name */
 extern uint16_t g_msgptr_year_9800[];       /* DGROUP:0x9800 (= 0x10000-0x6800) [0x538C]-indexed */
