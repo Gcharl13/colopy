@@ -181,7 +181,7 @@ void gold_income_tick_for_power(int power_idx)
  *
  *    [bp-0x58]  score_ff_pts     — 5 points per Founding Father owned by this power
  *                                   loop i=0..24: if ff_recognized_7B4(i,power)→ +5
- *                @asm 03A2AC..03A327  (0x181F:0x7B4 = ff_recognized; @0x03A2E8 add 5)
+ *                @asm 03A2AC..03A327  (0x181F:0x7B4 = ff_recognized; @0x03A2BE add 5)
  *
  *    [bp-2]     score_gold       — PowerRecord.gold / 1000  (gold ≥ 1000 to get any credit)
  *                @asm 03A3D9..03A4A3  (0x181F:0x84FC + 0x2A:0x2C = 32-bit gold; /1000)
@@ -201,14 +201,19 @@ void gold_income_tick_for_power(int power_idx)
  *                                   when [0x5382]&2 and congress_progress≥100
  *                @asm 03A704..03A782
  *
- *    [bp-0x54]  vet_mult         — 100>>num_other_EU_powers  when [0x5382]&8
+ *    [bp-0x54]  vet_mult (gate)  — 100>>num_other_EU_powers  when [0x5382]&8
+ *                                   [bp-0x54] stores 100>>count as the gate check;
+ *                                   the actual multiplier factor is 8>>count (recomputed
+ *                                   fresh at @asm 03A8B4 into [bp-0x54] before the mul).
  *                                   Total scaled: total×(8+(8>>num_other_EU))/8
- *                @asm 03A783..03A87A  (sar; lcall 0xD1D:0xF60 32-bit mul; then sar×3)
+ *                @asm 03A783..03A87A  (sar ax,cl [ax=0x64]; lcall 0xD1D:0xF60 32-bit mul; sar×3)
  *
  *  TOTAL (@asm 03A896):
  *    raw = score_liberty + score_ff_pts + score_ref + score_congress
  *        + score_sol + score_gold + score_founding
- *    if vet_mult != 0: raw = raw × (8 + vet_mult) / 8
+ *    if vet_mult_gate != 0:          ; gate = 100>>count; skip if count>=7
+ *        factor = 8 >> num_other_EU  ; recomputed at @asm 03A8B4
+ *        raw = raw × (8 + factor) / 8  ; @asm 03A8C0..03A8DD (32-bit mul; sar×3)
  *    return raw in AX  (@asm 03A9BA)
  *
  *  0x5382 flag bits used:  &1 = independence declared;  &2 = congress progress active;

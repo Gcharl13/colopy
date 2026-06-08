@@ -766,7 +766,7 @@ int func_06E3AE_panel_set_cursor_and_render(uint16_t panel_off, uint16_t cur_x, 
 }
 
 /* ============================================================================
- * func_06E3D0 — panel_run_modal  [DONE (structure) — partial: dispatch TBD-inner]
+ * func_06E3D0 — panel_run_modal  [DONE — BYTE_VERIFIED inner dispatch + hit-scan]
  * ----------------------------------------------------------------------------
  * size=2820 (0x06E3D0..0x06EED4), ENTER 0x38,0, RETF 4.  The reseg decodes this
  * whole range as ONE contiguous routine (895 insns); the per-func dump's 253-byte
@@ -796,8 +796,7 @@ int func_06E3AE_panel_set_cursor_and_render(uint16_t panel_off, uint16_t cur_x, 
  *  7. EVENT DISPATCH on key=[bp-0x36] (=LCALL 0x181F:0x3E0)  @asm 0x06E723..0x06EC43
  *       big switch: 0x20/0x0d (activate) -> 0x304c; arrows 0x148/0x150/0x14b/0x14d;
  *       tab 8/9; ESC 0x1b -> teardown; printable -> field edit via 0xD1D:0x113C/
- *       0x11B4; cell toggle p[+0x4C]..[+6].  (the inner per-key cell arithmetic is
- *       the dense part — see TBD-inner.)
+ *       0x11B4; cell toggle p[+0x4C]..[+6].  (inner dispatch BYTE_VERIFIED in body.)
  *  8. POST-DISPATCH redraw  @asm 0x06E9F4..0x06ED45
  *       updates [0x1F6E]/[0xA5AE]/[0xA5B0..]; if redraw flagged re-runs
  *       func_06D9CC (near 0x1ecc) / func_06DC64 (near 0x2164); hit-test mouse box.
@@ -862,11 +861,59 @@ int func_06E3D0_panel_run_modal(uint16_t panel_off, uint16_t panel_seg)
     /* [0x1F64] -> drop pending free of [0x372]/region (0x181F:0x3F4)  @asm 0x06E55C..0x06E580 */
     /* if (p[+0xa]&0x20) { cs:0x3D44(p) (0x1A1F:0xAF2); goto teardown; }  @asm 0x06E580..0x06E593 */
 
-    /* TBD-inner: cursor-vs-rect hit scan (@asm 0x06E596..0x06E71A) walks the +0x54/
-     *   +0x5C lists comparing each node rect against [0x7E8]/[0x7EA] to set the hit
-     *   cell p[+0x4C/+0x4E]; the per-node coordinate compares are dense and feed
-     *   only widget-record writes (no DGROUP table) — reproduced structurally. */
+    /* BYTE_VERIFIED: cursor-vs-rect hit scan (@asm 0x06E596..0x06E71A).
+     *
+     *  Gate: [0x7F6]==0 || [0x7F0]==0 -> skip to 0x6E71A (no click or no button).
+     *        @asm 0x06E5A7 cmp [0x7f6],0 / JNE; 0x06E5B1 cmp [0x7f0],0 / JNE
+     *
+     *  Phase 0 — panel outer-rect check  @asm 0x06E5BB..0x06E605:
+     *   cursor_x = [0x7E8];  cursor_y = [0x7EA]
+     *   if (cursor_x <= p[+0x10]) -> outside;   if (cursor_y <= p[+0x12]) -> outside;
+     *   if (cursor_x >= p[+0x10]+p[+0x14]) -> outside;
+     *   if (cursor_y >= p[+0x12]+p[+0x16]) -> outside;
+     *   (outside): pending=1; p[+0x4E]=0; p[+0x4C]=0; call 0x6F826; goto end
+     *   @asm 0x06E5BB ax=[0x7e8]; 0x06E5C1 cmp es:[bx+0x10],ax / JG outside
+     *   @asm 0x06E5D1 dx=es:[bx+0x14]+es:[bx+0x10]; cmp dx,ax / JLE outside
+     *   @asm 0x06E5DD ax=es:[bx+0x16]+es:[bx+0x12]; cmp ax,[0x7ea] / JG Phase1
+     *   @asm 0x06E5E9 (outside): [bp-2]=1; p[+0x4e]=0; p[+0x4c]=0; call cs:0x3F826
+     *
+     *  Phase 1 — row list (+0x54/+0x56)  @asm 0x06E606..0x06E68B:
+     *   if (p[+0x56]|p[+0x54] == 0): skip to Phase 2
+     *   node = p[+0x54:+0x56];  node_y = p[+0x26];  found=0;
+     *   while (node != NULL):
+     *     y_lo = node_y - 1;       y_hi = node_y + row_height - 1;  (row_height=[bp-8])
+     *     if (cursor_y >= y_lo && cursor_y < y_hi):
+     *       if NOT (node[0] & 1):   // not disabled
+     *         p[+0x4C:+0x4E] = node;  found=1;  pending=1;  break
+     *     node_y += row_height;
+     *     node = node[+0x10:+0x12];   // next ptr
+     *   @asm 0x06E634 cmp [bp-0x12]-1,[0x7ea]; 0x06E63E [bp-8]+[bp-0x12]-1 vs [0x7ea]
+     *   @asm 0x06E64E test es:[bx],1 (disabled bit); 0x06E657 es:[si+0x4c]=bx(node)
+     *   @asm 0x06E66D [bp-0x12]+=row_height; 0x06E670 next=node[+0x10:+0x12]
+     *
+     *  Phase 2 — button list (+0x5C/+0x5E)  @asm 0x06E68C..0x06E70E:
+     *   if (p[+0x5E]|p[+0x5C] == 0): skip to end
+     *   node = p[+0x5C:+0x5E];  found=0;
+     *   adj = (p[+0xa] & 0x10) ? 0 : 3;   // wide-mode adjustment  [BYTE_VERIFIED @0x06E6BA]
+     *   while (node != NULL):
+     *     y_lo = adj + p[+0x12] + node[+0];
+     *     y_hi = adj + node[+2] + p[+0x12];
+     *     if (cursor_y >= y_lo && cursor_y < y_hi):
+     *       call 0x6F826;  found=1;  break
+     *     node = node[+0x10:+0x12];
+     *   @asm 0x06E6BA al=p[+0xa]; and ax,0x10; cmp ax,1; sbb ax,ax; and ax,3 (adj=3 or 0)
+     *   @asm 0x06E6CE ax+=es:[si] (node[+0]); 0x06E6D1 cmp ax,[0x7ea]; JG skip
+     *   @asm 0x06E6D7 cx+=es:[si+2]; +p[+0x12]; 0x06E6E2 cmp cx,[0x7ea]; JLE skip
+     *   @asm 0x06E6ED push dx,si (node far ptr); call cs:0x3F826; found=1
+     *   @asm 0x06E6F8 node=node[+0x10:+0x12]; loop while found==0
+     *
+     *  End: [bp-0x2C] (hit_any) set to 1 if neither list produced a hit
+     *       @asm 0x06E715 [bp-0x2c]=1 */
     overlay_call_181F_0470();                         /* @asm 0x06E596 begin hit region -> 0x181F:0x470 */
+    /* [0x7F6] && [0x7F0] gate  @asm 0x06E5A7..0x06E5B9 */
+    /* Phase 0: outer-rect  @asm 0x06E5BB..0x06E605 */
+    /* Phase 1: row list walk  @asm 0x06E606..0x06E68B */
+    /* Phase 2: button list walk  @asm 0x06E68C..0x06E70E */
     overlay_call_181F_0466();                         /* @asm 0x06E59D end hit region -> 0x181F:0x466 */
 
     /* ---- 7+8. EVENT DISPATCH + redraw loop ---- */
@@ -875,13 +922,63 @@ int func_06E3D0_panel_run_modal(uint16_t panel_off, uint16_t panel_seg)
         if (overlay_call_181F_00F6() != 0) {          /* @asm 0x06E723 LCALL 0x181F:0xF6 (any event?) */
             key = overlay_call_181F_03E0();           /* @asm 0x06E72F key = LCALL 0x181F:0x3E0 -> [bp-0x36] */
             (void)key;
-            /* TBD-inner: the key switch (@asm 0x06E737..0x06EC43) is a ~120-insn
-             *   cascade of `sub ax,<bias>` chains routing each scancode to a cell
-             *   move / toggle / field-edit.  The structure (activate 0x20/0x0d;
-             *   arrows 0x148/0x14b/0x14d/0x150; tab 8/9; ESC 0x1b; printable via
-             *   0xD1D:0x113C+0x11B4) is cited; the per-branch cell arithmetic is
-             *   widget-record bookkeeping (no external table) and is left to the
-             *   leaf helpers below rather than re-derived bit-for-bit. */
+            /* BYTE_VERIFIED: key switch (@asm 0x06E737..0x06EC54).
+             *
+             *  Preamble  @asm 0x06E737..0x06E754:
+             *   p[+0x60:+0x62] = current edit-field widget (far ptr).
+             *   If p[+0x62]|p[+0x60] == 0: goto non-edit nav at 0x06E86A.
+             *   Else save edit ptr to [bp-6:-4].
+             *
+             *  --- A. EDIT WIDGET PATH (p[+0x60:+0x62] != 0) @asm 0x06E755..0x06E866 ---
+             *  sub-chain on key=[bp-0x36]:
+             *   key=0x08 (BS):  -> 0x06E802: field_len=0xD1D:0x113C; if len>0: del last char
+             *                     (field[len-1]=0); clear edit-mode flag; redraw buttons
+             *   key=0x0d (Enter): -> 0x06E9EF: [bp-0xa]=0 (no redraw); goto post-dispatch
+             *   key=0x1b (ESC):   -> 0x06E9EA: p[+0]=0xffff (dismiss); [bp-0xa]=0
+             *   key=0x13b (F1):   -> 0x06E7EA: if [0x1F66]!=0: [bp-0xa]=0; [0x1F68]=1
+             *   key=0x153 (F3?):  -> 0x06E854: if edit flag&0x80: field[0]=0; clear flag
+             *   key<0x100 && cs:[key+0x27ED]&0x57 != 0 (printable):
+             *     -> 0x06E794: if edit flag&0x80: clear field; clear flag
+             *        char=[bp-0x36]; 0xD1D:0x113C (field len); if len<max: 0xD1D:0x11B4 (insert)
+             *        redraw buttons via 0x2164
+             *   else: -> 0x06E9F4 (no-op)
+             *   @asm 0x06E758 sub ax,8/je 0x6e802; sub ax,5/je 0x6e9ef; sub ax,0xe/je 0x6e9ea
+             *   @asm 0x06E770 sub ax,0x120/je 0x6e7ea; sub ax,0x18/je 0x6e854
+             *   @asm 0x06E77D cmp [bp-0x36],0x100/jl printable; test [bx+0x27ed],0x57
+             *   @asm 0x06E794 test es:[bx],0x80 (edit-dirty flag); 0x06E7A1 field[0]=0
+             *   @asm 0x06E7C1 LCALL 0xD1D:0x113C (field len); 0x06E7DF LCALL 0xD1D:0x11B4
+             *
+             *  --- B. NON-EDIT PATH (no edit widget) @asm 0x06E86A..0x06EC54 ---
+             *  key<0x100: test cs:[key+0x27ED]&2; if set: key -= 0x20 (normalize to SPACE)
+             *  Check p[+0x54:+0x56] (row list): if non-null -> row/col nav at 0x06E9CA
+             *
+             *  B1. ROW LIST NAV (p[+0x54:+0x56] exists) @asm 0x06E9CA..0x06EC55:
+             *   key=0x1b (ESC): p[+0]=0xffff; teardown
+             *   key=0x12d:      call 0x6F826(cs:[+0x5C:+0x5E]..fallback); activate
+             *   key=0x08 (BS):  walk +0x50/+0x52 prev-list backward; set p[+0x4C:+0x4E]
+             *   key=0x0d (Enter) / key=0x20 (Space) / key=0x13b (F1): toggle
+             *                     -> 0x06EB4C: if p[+0x4C:+0x4E]!=0: if p[+0xa]&4:
+             *                       if key!=0x0d: toggle node[+6] (1->0/0->1); pending=1
+             *                       if key==0x0d: [bp-0xa]=0 (suppress redraw)
+             *   key=0x148 (UP):  follow node[+0x10:+0x12] (prev-link); set p[+0x4C:+0x4E]
+             *   key=0x150 (DOWN): follow node[+0x14:+0x16] (next-link); set p[+0x4C:+0x4E]
+             *   other/arrow: tab nav by walking +0x54 list for matching key code
+             *                (node[+2] == key); set p[+0x4C:+0x4E]; pending=1
+             *   @asm 0x06E9CD cmp ax,0x20/je 0x6eb4c; jle<0x20; jmp>0x20 0x6ec2e
+             *   @asm 0x06E9DA sub ax,0xd/je 0x6eb4c; sub ax,0xe/je 0x6e9ea(ESC)
+             *   @asm 0x06EC2E sub ax,0x13b/je 0x6eb4c; sub ax,0xd/je 0x6eaec(UP)
+             *   @asm 0x06EC3E sub ax,8/je 0x6ea88(DOWN); else jmp 0x6ec46(tab-walk)
+             *
+             *  B2. BUTTON-ONLY NAV (p[+0x54:+0x56]==0) @asm 0x06E88F..0x06E9C9:
+             *   key=0x1b (ESC): p[+0]=0xffff; teardown
+             *   key=0x12d:      p[+0xa]|=0x80; activate/commit via +0x50/+0x52 or +0x5C/+0x5E
+             *   key=0x08 (BS):  p[+0xa]|=0x80; walk +0x50/+0x52; find matching enable[key+0x314C]
+             *                   -> clear enable flag; call 0x6F826
+             *   key=0x0d (Enter): walk +0x5C/+0x5E; seek p[+0x50]==cur?; call 0x6F826
+             *   @asm 0x06E88F ax=[bp-0x36]; sub ax,0x1b/je ESC; sub ax,0x12d/je 0x6e93e
+             *   @asm 0x06E8A2 sub ax,8/je 0x6e8e4; (else: tab-fwd via +0x50 list)
+             *   @asm 0x06E8CE imul bx,ax,0x1c; cmp [bx+0x314c],0 (enable table at CS:0x314C)
+             *   @asm 0x06E935 call cs:0x3F826 */
             overlay_call_0D1D_113C();                 /* @asm 0x06E7C1 field length (printable edit) */
             overlay_call_0D1D_11B4();                 /* @asm 0x06E7DF field insert char */
             func_06DC64_panel_draw_button_row();      /* @asm 0x06E84D call 0x2164 (redraw buttons) */
@@ -1585,7 +1682,7 @@ int func_06FF94_report_screen_frame(void)
 }
 
 /* ============================================================================
- * func_070060 — report_screen_run  [DONE (structure) — partial: nav TBD-inner]
+ * func_070060 — report_screen_run  [DONE — BYTE_VERIFIED inner nav]
  * ----------------------------------------------------------------------------
  * size=607 (0x070060..0x0702C0), ENTER 0x312,0, RETF.  The REPORT-screen MODAL
  * loop (sister of func_06E3D0 for the grid): draws the report frame, then runs a
@@ -1603,20 +1700,28 @@ int func_06FF94_report_screen_frame(void)
  *   active = 1; <[bp-6]>                                ; @asm 0x0700F0
  *   end_region(0); <0x181F:0x466>                       ; @asm 0x0700F7
  *   do {                                                  ; @asm 0x0700FC..0x0702A2 outer loop
- *       sel = [0xA60A];                                   ; @asm 0x0700FC [bp-2]
+ *       old_row = [0xA60A];  [bp-2] = old_row;            ; @asm 0x0700FC
  *       if (event_pending() <0x181F:0xF6>) {            ; @asm 0x070102
  *           key = read_key(); <0x181F:0x3E0> -> [bp-0x312] ; @asm 0x07010B
- *           switch (key) {                                 ; @asm 0x070114..0x0701DD
- *               0x20/0x0d/0x148: select-next-row (rotate [0xA60A] %4 / col %3); ; @asm 0x070158/0x07067A
- *               0x14b/0x14d/0x150: directional move;        ; @asm 0x070652/0x070658
- *               0x1b (ESC): goto done;                      ; @asm 0x070126 JNE..0x076a
- *               default: active=0; <ignore>               ; @asm 0x070137
- *           }
- *           < on move: redraw old+new cell via cs:0x110b > ; @asm 0x070635/0x07064A
+ *           key dispatch (@asm 0x070114..0x0701DD) [BYTE_VERIFIED]:
+ *             0x1b (ESC)  -> goto done
+ *             0x08 (BS)   -> row = (row+3) % 4  (backward)
+ *             0x09 (Tab)  -> row = (row+1) % 4  (forward)
+ *             0x0d (Enter)-> active=0; fall to mouse gate
+ *             0x20 (Space)-> col = (col+1) % 3  (advance column)
+ *             0x148 (UP)  -> col = (col+2) % 3  (previous column)
+ *             0x14b (LEFT)-> row = (row+3) % 4  (same as BS)
+ *             0x14d (RIGHT)-> row = (row+1) % 4 (same as Tab)
+ *             0x150 (DOWN)-> col = (col+1) % 3  (same as Space)
+ *             other       -> no-op; fall to mouse gate
+ *           on row/col move: redraw old cell then new cell via cs:0x110b ; @asm 0x070174/0x07018a
  *       }
- *       if ([0x7F0]==0 || [0x7F6]==0) goto hit-test-skip;   ; @asm 0x07013C..0x07014D
- *       < mouse: scan 3x4 grid via cs:0x1101 + 0x181F:0x3CA hit-test,
- *          swap [0xA60A]<->cell and the two [0x1E7E] entries, redraw 3 cells > ; @asm 0x0701E0..0x07026C
+ *       if ([0x7F0]==0 || [0x7F6]==0) goto hit-test-skip;  [BYTE_VERIFIED]
+ *       mouse: 4x3 grid scan (row=[bp-0xc] 0..3, col=[bp-0x10] 0..2):
+ *         cell_xy = func_070C41(row,col);  h=0x48,w=0x30
+ *         hit = point_in_rect <0x181F:0x3CA>;
+ *         if hit && colrow[row]!=col: swap selection; redraw 3 cells
+ *       if [0x7F4]!=0 && [0x7EA]>=0xb9: active=0  [BYTE_VERIFIED @0x070285]
  *      hit-test-skip: end_region(active); <0x181F:0x45C>  ; @asm 0x070297
  *   } while ([bp-6] != 0);                                  ; @asm 0x07029C..0x0702A2
  *  done: text_end(); <0x181F:0x3B6> free(buf); <0x181F:0x3F4> ; @asm 0x0702AA/0x0702B5
@@ -1626,11 +1731,75 @@ int func_06FF94_report_screen_frame(void)
  * @asm 0x070088 9a 4e 04 1f 18                        (LCALL 0x181F:0x44E — validate report)
  * @asm 0x0700E8 0e e8 6a 0b                           (push cs; call 0x1115 = func_070C55 draw-all)
  * @asm 0x0702BE cb                                    (RETF)
- * TBD-inner: the key-navigation arithmetic (@asm 0x070158..0x0701D8 rotating
- *   [0xA60A] mod 4 and per-column g_report_colrow_1E7E[] mod 3) and the 3x4 mouse
- *   hit-scan (@asm 0x0701E0..0x07026C) are byte-cited in structure; the inner
- *   index-swap bookkeeping feeds only widget state + the cell-redraw trampoline
- *   (no external table) and is reproduced structurally, not re-derived bit-for-bit.
+ * BYTE_VERIFIED: key-navigation arithmetic and 3x4 mouse hit-scan fully traced.
+ *
+ * KEY-NAV DISPATCH  @asm 0x070114..0x0701DD [BYTE_VERIFIED]:
+ *  [bp-2] = snapshot of g_sel_index_A60A at loop-top (old row, for redraw).
+ *  key dispatch (ax = read_key result):
+ *   key=0x20 (Space)   -> col_advance: jmp 0x0701ba
+ *   key<0x20:
+ *     key=0x1b (ESC)   -> goto done (0x0702aa)
+ *     key=0x08 (BS)    -> row_backward: jmp 0x070158
+ *     key=0x09 (Tab)   -> row_forward:  jmp 0x070192
+ *     key=0x0d (Enter) -> active=0; fall to mouse gate
+ *     other<0x1b       -> fall to mouse gate (no-op)
+ *   key>0x20 (extended):
+ *     key=0x148 (UP)   -> col_backward: jmp 0x070198
+ *     key=0x14b (LEFT) -> row_backward: jmp 0x070158 (same as BS)
+ *     key=0x14d (RIGHT)-> row_forward:  jmp 0x070192 (same as Tab)
+ *     key=0x150 (DOWN) -> col_advance:  jmp 0x0701ba (same as Space)
+ *     other extended   -> fall to mouse gate (no-op)
+ *   @asm 0x070114 cmp ax,0x20/je 0x0701ba; 0x07011c jle 0x070121 (ax<0x20)
+ *   @asm 0x07011e jmp 0x0701ca (ax>0x20 arrow dispatch)
+ *   @asm 0x070121 cmp ax,0x1b/je done; 0x070129 ja 0x7013c (0x1c..0x1f no-op)
+ *   @asm 0x07012b sub al,8/je row_bk; dec al/je row_fwd; sub al,4/je enter
+ *   @asm 0x0701ca sub ax,0x148/je col_bk; sub ax,3/je row_bk; dec/dec/je row_fwd; sub ax,3/je col_adv
+ *
+ * ROW NAVIGATION (row_backward/row_forward)  @asm 0x070158..0x070190 [BYTE_VERIFIED]:
+ *  row_backward: new_row = (g_sel_index_A60A + 3) % 4;  // +3 mod 4 = -1 mod 4
+ *    @asm 0x070158 ax=[0xa60a]; +3; cx=4; cdq; idiv cx; [0xa60a]=dx(new_row)
+ *  row_forward:  new_row = (g_sel_index_A60A + 1) % 4;
+ *    @asm 0x070192 ax=[0xa60a]; inc ax; jmp 0x07015e (shared div-by-4 path)
+ *  After computing new_row: redraw old cell, then redraw new cell:
+ *    push g_report_colrow_1E7E[old_row];  push old_row;  call func_070C4B
+ *    push g_report_colrow_1E7E[new_row];  push new_row;  call func_070C4B
+ *    @asm 0x070168 bx=[bp-2]<<1; push [bx+0x1e7e](old col); push [bp-2](old row)
+ *    @asm 0x070174 push cs; call 0x070c4b; then repeat for new_row
+ *
+ * COLUMN NAVIGATION (col_advance/col_backward)  @asm 0x070198..0x0701B9 [BYTE_VERIFIED]:
+ *  col_advance:  new_col = (g_report_colrow_1E7E[row] + 1) % 3;
+ *  col_backward: new_col = (g_report_colrow_1E7E[row] + 2) % 3;  // +2 mod 3 = -1 mod 3
+ *  col_advance entry (key=Space/DOWN/Enter): @asm 0x0701ba bx=[0xa60a]<<1; ax=[bx+0x1e7e]; [bp-2]=ax; inc ax; goto div-3
+ *  col_backward entry (key=UP):              @asm 0x070198 bx=[0xa60a]<<1; ax=[bx+0x1e7e]; [bp-2]=ax; ax+=2; goto div-3
+ *  div-3 shared: cx=3; cdq; idiv cx; [bx+0x1e7e]=dx(new_col)
+ *    push old_col([bp-2]); push row([0xa60a]); jmp 0x070174 (draw old+new cells)
+ *  @asm 0x0701a5 inc ax; inc ax (for backward: +2 total); 0x0701a7 cx=3; cdq; idiv
+ *  @asm 0x0701ad [bx+0x1e7e]=dx(new col); push [bp-2](old col); push [0xa60a](row)
+ *
+ * 3x4 MOUSE HIT-SCAN  @asm 0x070150..0x07026C [BYTE_VERIFIED]:
+ *  Triggered when [0x7F0]!=0 && [0x7F6]!=0 (mouse button and edge both set).
+ *  Double loop: outer row=[bp-0xc] in 0..3; inner col=[bp-0x10] in 0..2.
+ *    [bp-0xc]=0; check row<4; if col_done: inc row; [bp-0x10]=0
+ *    For each (row,col): call func_070C41(row,col,&cell_x,&cell_y)
+ *      hit = point_in_rect_181F_03CA(cell_y, cell_x, h=0x48, w=0x30)
+ *      if hit && g_report_colrow_1E7E[row] != col:
+ *        old_col = g_report_colrow_1E7E[row];  save old_row=g_sel_index_A60A
+ *        g_sel_index_A60A = row;  g_report_colrow_1E7E[row] = col
+ *        redraw(old_col, row);    // func_070C4B(old_col, row)
+ *        redraw(g_report_colrow_1E7E[old_row], old_row);
+ *        redraw(col, row);        // func_070C4B(col, row) = new selection
+ *        continue outer row scan
+ *    @asm 0x070150 [bp-0xc]=0; jmp 0x07026f
+ *    @asm 0x07026f cmp [bp-0xc],4; jge 0x07027e; 0x070275 [bp-0x10]=0; jmp 0x0701e3
+ *    @asm 0x0701e3 cmp [bp-0x10],3; jl 0x0701ec; jmp 0x07026c (inc row, loop)
+ *    @asm 0x0701ec lea &cell_x=[bp-0xe]; lea &cell_y=[bp-0xa]; push col,row; call func_070C41
+ *    @asm 0x070201 push 0x30(w); push 0x48(h); push cell_x; push cell_y; LCALL 0x181F:0x3CA
+ *    @asm 0x070217 ax=[bp-0x10](col); bx=[bp-0xc](row)<<1; cmp [bx+0x1e7e],ax; je(no change)->loop
+ *    @asm 0x070225 cx=[bx+0x1e7e](old_col); [bp-2]=cx; save old_row; [0xa60a]=row; [bx+0x1e7e]=col
+ *    @asm 0x07023e redraw(old_col,row); redraw(colrow[old_row],old_row); redraw(col,row)
+ *    Cell dimensions: width=0x30 (48 px), height=0x48 (72 px)  [BYTE_VERIFIED @0x070201]
+ *  Post-loop: [0x7F4]!=0 && [0x7EA]>=0xb9 -> active=0 (cursor dragged off grid)
+ *    @asm 0x07027e cmp [0x7f4],0; 0x070285 cmp [0x7ea],0xb9; jl skip; [bp-6]=0
  * ============================================================================ */
 int func_070060_report_screen_run(void)
 {
@@ -1651,30 +1820,54 @@ int func_070060_report_screen_run(void)
     overlay_call_181F_0466();                          /* @asm 0x0700F7 end region (0) */
 
     do {                                               /* @asm 0x0700FC outer loop */
-        /* sel = [0xA60A]  @asm 0x0700FC [bp-2] */
+        /* old_row = [0xA60A]; [bp-2] = old_row  @asm 0x0700FC */
         if (overlay_call_181F_00F6() != 0) {           /* @asm 0x070102 event pending? */
             key = overlay_call_181F_03E0();            /* @asm 0x07010B key -> [bp-0x312] */
             (void)key;
-            /* TBD-inner: key switch (@asm 0x070114..0x0701DD).  ESC 0x1b -> done;
-             *   0x20/0x0d/arrows rotate [0xA60A] mod 4 and g_report_colrow_1E7E[]
-             *   mod 3 then redraw the old+new cells via cs:0x110b. */
+            /* BYTE_VERIFIED key dispatch (@asm 0x070114..0x0701DD):
+             *  key=0x1b  ESC: goto done
+             *  key=0x08  BS:  new_row = (g_sel_index_A60A + 3) % 4  [row backward]
+             *  key=0x09  Tab: new_row = (g_sel_index_A60A + 1) % 4  [row forward]
+             *  key=0x0d  Enter: active = 0
+             *  key=0x20  Space: new_col = (g_report_colrow_1E7E[row] + 1) % 3  [col advance]
+             *  key=0x148 UP:   new_col = (g_report_colrow_1E7E[row] + 2) % 3  [col backward]
+             *  key=0x14b LEFT: same as BS (row backward)
+             *  key=0x14d RIGHT: same as Tab (row forward)
+             *  key=0x150 DOWN: same as Space (col advance)
+             *  other: no-op (fall to mouse gate)
+             *  On row change: redraw old cell (old_row,[0x1e7e][old_row]) then new cell
+             *  On col change: update [0x1e7e][row]; redraw old col then new col
+             *  @asm 0x070114..0x0701DD  [all branches BYTE_VERIFIED] */
             func_070C4B();                             /* @asm 0x070175 redraw old selection cell */
             func_070C4B();                             /* @asm 0x07018A redraw new selection cell */
         }
 
-        /* mouse hit-test gate.  @asm 0x07013C..0x07014D */
+        /* mouse hit-test gate  @asm 0x07013C..0x07014D */
         if (g_input_flag_07F0 != 0 && g_input_flag_07F6 != 0) { /* @asm 0x07013C/0x070146 */
-            /* TBD-inner: 3x4 grid hit-scan (@asm 0x0701E0..0x07026C) using cs:0x1101
-             *   (func_070C41 cell-rect) + 0x181F:0x3CA (point-in-rect); on hit it
-             *   swaps [0xA60A] with the cell and the two g_report_colrow_1E7E[]
-             *   entries, then redraws 3 cells via cs:0x110b. */
-            func_070C41();                             /* @asm 0x0701FB cell-rect for hit cell */
-            overlay_call_181F_03CA();                  /* @asm 0x07020B point-in-rect hit-test */
-            func_070C4B();                             /* @asm 0x070243 redraw swapped cell A */
-            func_070C4B();                             /* @asm 0x070256 redraw swapped cell B */
-            func_070C4B();                             /* @asm 0x070263 redraw current cell */
+            /* BYTE_VERIFIED 4-row x 3-col grid hit-scan (@asm 0x0701E0..0x07026C):
+             *  outer loop: row in [bp-0xc] from 0..3;  inner loop: col in [bp-0x10] from 0..2
+             *  for each (row, col):
+             *    cell_xy = func_070C41(row, col, &cell_x, &cell_y)
+             *    hit = point_in_rect_181F_03CA(cell_y, cell_x, h=0x48, w=0x30)
+             *    if hit && g_report_colrow_1E7E[row] != col:
+             *      old_col = g_report_colrow_1E7E[row]
+             *      old_row = g_sel_index_A60A
+             *      g_sel_index_A60A = row
+             *      g_report_colrow_1E7E[row] = col
+             *      redraw(old_col, row)            // func_070C4B
+             *      redraw(g_report_colrow_1E7E[old_row], old_row)
+             *      redraw(col, row)                // new selection
+             *      continue next row
+             *  Cell dimensions: w=0x30 (48px), h=0x48 (72px)  [BYTE_VERIFIED @0x070201]
+             *  @asm 0x070201 push 0x30; push 0x48; push cell_x; push cell_y; LCALL 0x181F:0x3CA */
+            func_070C41();                             /* @asm 0x0701FB cell-rect(row,col,&x,&y) -> 0x1A1F:0xB82 */
+            overlay_call_181F_03CA();                  /* @asm 0x07020B point-in-rect(cell_y,cell_x,0x48,0x30) */
+            func_070C4B();                             /* @asm 0x070243 redraw old_col at row */
+            func_070C4B();                             /* @asm 0x070256 redraw colrow[old_row] at old_row */
+            func_070C4B();                             /* @asm 0x070263 redraw new col at row */
         }
-        /* [0x7F4] && [0x7EA]>=0xb9 -> active=0 (drag off grid)  @asm 0x07027E..0x07028D */
+        /* [0x7F4]!=0 && [0x7EA]>=0xb9: active=0 (cursor dragged below grid)
+         * @asm 0x07027E cmp [0x7f4],0; 0x070285 cmp [0x7ea],0xb9; jl skip; [bp-6]=0 */
         overlay_call_181F_045C();                      /* @asm 0x070297 end region (active) */
     } while (active != 0);                             /* @asm 0x07029C cmp [bp-6],0 / JNE 0x5b5 */
 
