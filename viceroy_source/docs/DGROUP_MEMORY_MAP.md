@@ -71,7 +71,8 @@ detailed definition.
 | `0x8542` | `ctx` — far ptr to **current colony** (102 callers) | far ptr | verified | globals.h |
 | `0x853A / 0x853C` | Map width / height | scalars | verified | globals.h |
 | **`0x8808`** | **PowerRecord table** (4 EU; ends ~`0x8CF8`) | **`0x13C`** | partial | power.h · §3.5 |
-| `0x8D4A–0x8D7A` | Native-settlement cursors, unit-iter chain, render aux | scalars/ptr | partial | globals.h |
+| `0x8D4A` | **current-native-settlement pointer** (`mov bx,[0x8D4A]`; deref [bx+field]) | far ptr | verified | native/ |
+| `0x8D4C–0x8D7A` | unit-iter chain, render aux | scalars/ptr | partial | globals.h |
 | `0x8DC8–0x8E66` | **Europe market** parallel WORD arrays (×4, 20 ea) | `0x28` | verified | globals.h |
 | `0x8F86` | Stride-12 chain table | `0x0C` | verified base | globals.h |
 | `0x917A / 0x9E12` | Render field / **active-power index** (`0x9E12`) | scalars | verified | globals.h |
@@ -207,10 +208,14 @@ byte-trace before its field can be named with confidence.
 2. **ColonyRecord `+0x95`** — two verified reads disagree: food-stock (colony
    widget draws it as a pile, `+0x96`=horses) vs era/level (`step=([+0x95]+1)*100`).
    Display evidence favors food; not flipped definitively.
-3. **PowerRecord count & `power.h` staleness** — physical extent is 4 EU records;
-   native "powers" 4..11 (used by `NativeSettlement.owner`) do **not** appear to
-   own 0x13C records. Confirm where native power-slot state lives, then reconcile
-   `power.h` (drop "8 powers", correct the market-array section).
+3. **PowerRecord count** — **RESOLVED 2026-06-08: 4 EU records** (`0x8808..0x8CF8`).
+   The next global `0x8D4A` sits exactly `0x542 = 4·0x13C` above the base, and is
+   itself a **pointer** (`mov bx,[0x8D4A]` then deref) = current-native-settlement
+   cursor, parallel to `ctx`@`0x8542`. Native "powers" 4..11 (from
+   `NativeSettlement.owner`) do **not** own `0x13C` records; their per-tribe state
+   lives in the `0x54EC` settlement records + the alarm array. *Remaining:*
+   reconcile `power.h` prose (drop "8 powers", flag the market-array widths as
+   RECONSTRUCTED).
 4. **Native alarm array overlaps settlement record 0** — `0x54F6` = `0x54EC`+`0xA`;
    `native.h` says the alarm word array is *separate* from the 18-B settlement
    records, yet it numerically sits inside record 0's `+0x0A`. Either the
