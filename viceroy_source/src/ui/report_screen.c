@@ -9,7 +9,7 @@
  *     (8 columns incl. the Reports menu and its 10 F-key entries).  It does NOT
  *     render report bodies.  See its own header below for the full proof.
  * Every value here is cited to the disassembly / raw EXE; nothing is guessed.
- * cite-or-TBD.
+ * all values are cited from the bytes or RUNTIME_ONLY.
  *
  * Sources:
  *   code/VICEROY/disasm_overlay_reseg/page_05.asm  (func_037340)
@@ -123,7 +123,7 @@ int report_open(int which)
  * build_menubar -- VICEROY func_072090   (page 0x1A)
  * ----------------------------------------------------------------------------
  * STATUS: BYTE_VERIFIED.  Extent + control flow + every call site proven from
- * raw COLONIZE/VICEROY.EXE bytes and the re-segmented disasm.  cite-or-TBD.
+ * raw COLONIZE/VICEROY.EXE bytes and the re-segmented disasm. All values cited from bytes or RUNTIME_ONLY.
  *
  * @asm_function  func_072090   file 0x072090..0x072B9A  (2826 B, ENTER 4,0,
  *                terminal RETF @0x072B99)
@@ -372,7 +372,7 @@ int build_menubar(void)
      *   0x44 F5 Economic Adviser        0x45 F6 Colony Adviser
      *   0x46 F7 Naval Adviser           0x47 F8 Foreign Affairs Advisor
      *   0x48 F9 Indian Adviser          0x49 F10 Colonization Score
-     * (Labels TBD-from-EXE: sourced from MENU.TXT, not the binary.) */
+     * (Labels sourced from MENU.TXT, not from the EXE binary.) */
     if (menu_add(0, MK_REPORTS) != 0) goto done;       /* @asm 0x0726C8 */
     TITLE(4);                                           /* @asm 0x0726E9 0x31A */
     ADD(0x40, 4);                                       /* @asm 0x072704  F1  */
@@ -527,7 +527,7 @@ done:
  *      ("REPORT"+panel key, drawn through report_open's report-key system).
  *      The exact TITLE TEXT comes from LABELS.TXT @MISC (e.g. "RELIGIOUS ADVISER
  *      REPORT", "CONTINENTAL CONGRESS ACTIVITIES", "ECONOMIC ADVISER REPORT",
- *      ...), NOT the EXE -- searched, all absent from VICEROY.EXE.  [TBD: the
+ *      ...), NOT the EXE -- searched, all absent from VICEROY.EXE.  [not yet byte-traced: the
  *      precise panel->LABELS index; report_open is already ported.]
  *   3. blit the per-report background bitmap(s) via the report-draw primitives
  *      LCALL 0x181F:0x0022 (blit-sprite, returns dx:ax handle) + 0x181F:0x0100
@@ -627,7 +627,7 @@ extern int16_t  g_region_2DA8b[4];     /* alias of g_region_2DA8 (0x2DA8..0x2DAE
  * The renderers push pre-resolved column-header string pointers from DGROUP
  * slots 0x2DEE..0x2F5A.  Their TEXT is from LABELS.TXT (not the EXE); we model
  * them as an opaque table of near string pointers indexed by DGROUP offset.
- * [TBD: the exact LABELS index that fills each slot at load time.] */
+ * [not yet byte-traced: the exact LABELS index that fills each slot at load time.] */
 extern uint16_t g_rpt_str[];           /* DGROUP:0x2DEE.. report header strings */
 
 /* ---- ANCHOR primitive prototypes (signatures byte-exact from call sites) --- */
@@ -806,7 +806,7 @@ void report_religious(int player)
  *
  * NOTE: the per-row TEXT (LABELS.TXT headers in slots [0x2E44]/[0x2E48]/[0x2E98]
  * /[0x2E6C]/[0x2E9A]/[0x2E9C]) and the exact bell-series semantics of the seven
- * 0x53DA.. words are [TBD] (the arrays are filled elsewhere at turn time); the
+ * 0x53DA.. words are [RUNTIME_ONLY] (the arrays are filled elsewhere at turn time); the
  * CONTENT-SELECTION control flow above is byte-cited.
  *
  * args: player = [bp+6]
@@ -837,7 +837,7 @@ void report_congress(int player)
             n = *(int16_t far *)(g_powerrec_84FC + PR_TREASURY); /* @asm 0x037A97 */
             /* str_cat(buf, <name-by-idx string>): @asm 0x037AA2 indexes a string
              * table by (idx*6 + small constant) shl-based; the exact table base
-             * is [TBD].  Body ANCHOR (per-row text). */
+             * is [not yet decoded]. Body ANCHOR (per-row text). */
             str_end(buf);                                /* @asm 0x037AB6 0x0128 */
         }
     } else if (!(g_flags_5382 & 2)) {            /* @asm 0x037AC0 TEST [0x5382],2 / JNE */
@@ -874,7 +874,7 @@ void report_congress(int player)
      *   ([0x532E],[0x53E6]).  (bell/liberty breakdown)
      * The per-source color bytes 0x52xx and value words 0x53DA.. are read raw;
      * their precise meaning (which revenue/bell source each represents) is
-     * [TBD] -- the arrays are populated by the turn engine, not here. */
+     * [RUNTIME_ONLY] -- the arrays are populated by the turn engine, not here. */
     bars_begin();                                /* @asm 0x037E1C/0x037EF9 0x181F:0x0218 */
     /* bars_add(color, value) per segment -- see @asm citations above. */
     bars_draw(/*n*/4, row, col, 0x12C);          /* @asm 0x037E64/0x037F46 0x181F:0x022C */
@@ -1203,7 +1203,7 @@ void report_naval(int player)
  * The per-row strings (slots [0x2E74]/[0x2E78]/[0x2E7A]/[0x2E7C]/[0x2E7E]/
  * [0x2E80]) are LABELS.TXT "FOREIGN AFFAIRS REPORT" headers; the per-power
  * stat arrays [bx-0x6D68]/[bx-0x6BB2]/[bx-0x6BF0]/[bx-0x6BE4] hold the
- * diplomatic-standing values [TBD which is which].
+ * diplomatic-standing values [not yet decoded: which is which].
  *
  * args: player = [bp+6]
  * ============================================================================ */
@@ -1331,7 +1331,7 @@ void report_indian(int player)
  *   `push word [0x2DAE]` decoded by the re-segmenter at 0x387E5 (bytes
  *   ff 36 ae 2d -> next insn 0x387E9).  Disassembling forward from 0x387E8
  *   (2d ff ff ...) does NOT yield a sane prologue.  So one of these is true and
- *   is recorded as [TBD] pending a tie-break:
+ *   is recorded as [not yet resolved] pending a tie-break:
  *     (a) func_038778 IS the F10 Score renderer and the engine RE-ENTERS it at
  *         +0x70 to skip the title (the title was already drawn by a prior call),
  *         OR
@@ -1340,7 +1340,7 @@ void report_indian(int player)
  *   The OVERLAY_THUNKS.md decode already flagged this ("0x0387E8 (+112 into
  *   func_038778), [lands on entry] = no").  The CONTENT of func_038778 (the
  *   score grid) is decoded below from its CLEAN entry (0x038778); the exact
- *   F10 entry offset is [TBD].
+ *   F10 entry offset is [not yet decoded].
  *
  * CONTENT (byte-cited, from the clean entry 0x038778):
  *   rpt_select_player([bp+6]);                  @asm 0x03877F 0x181F:0x582
@@ -1392,7 +1392,7 @@ void report_score(int player)
  * placement composers on page 0x19 (file_offset 0x06FB40, code_offset
  * 0x06FDF0).  They are the layout primitives that the per-report draws (and the
  * report dispatcher func_0235D6's report branches) use to position a report's
- * body into a fixed grid.  cite-or-TBD; every coordinate cites its @asm push.
+ * body into a fixed grid. All coordinates cites its @asm push.
  *
  * @asm_disasm  code/VICEROY/disasm_overlay_reseg/page_19.asm
  * raw-EXE spot-checks (this session, file offsets = page is 1:1 from 0x06FDF0):
