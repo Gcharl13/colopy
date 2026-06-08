@@ -201,6 +201,18 @@ check_bytes("mapgen start slot imul [bp-0x28],0x13c", 0x065CC6, "69 5e d8 3c 01"
 check_bytes("CARDINAL_DX[4] @DS:0xa8", 0x1DA48, "00 01 00 ff")
 check_bytes("CARDINAL_DY[4] @DS:0xae", 0x1DA4E, "ff 00 01 00")
 
+# ---- combat strength modifier stack (verified 2026-06-07) ----------------
+check_bytes("ATK/DEF accessor func_07C2A enter 6", 0x07C2A, "c8 06 00 00")
+check_ins("ATTACK column mov al,[bx+0x5236]", 0x07C62, "mov", "[bx+0x5236]")
+check_ins("DEFENSE column mov al,[bx+0x5235]", 0x07C7E, "mov", "[bx+0x5235]")
+check_bytes("combat strength x8 shl ax,3", 0x07CA9, "c1 e0 03")
+check_bytes("DEF composite func_07D3E enter 0x18", 0x07D3E, "c8 18 00 00")
+check_bytes("land combat decider func_05CA7E enter 0xde", 0x05CA7E, "c8 de 00 00")
+check_bytes("land roll random_int(1,ATK+DEF)", 0x05D188, "9a d4 04 1f 18")
+check_ins("land win iff roll<=ATK cmp ax,[bp-0x90]", 0x05D194, "cmp", "[bp-0x90]")
+check_ins("combat difficulty mul [0x5325]", 0x05B9A2, "mul", "[0x5325]")
+check_bytes("combat KILLED flag or [bx+0x3148],0x80", 0x05BB9E, "80 8f 48 31 80")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

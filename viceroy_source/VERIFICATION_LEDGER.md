@@ -1218,3 +1218,37 @@ TBD: generation invoker + RNG seed source (overlay-swapped, trail ends at RTLink
 loader 0x110D:0x0D91); CUSTOMIZE-form -> DS:0x1E7E.. parameter wiring (form-handler
 overlay); per-terrain-arm semantics of the CS jump-table targets. The 4-cardinal and
 20-ring delta tables are now in data/embedded_control_tables.c. audit.py 108/108.
+
+---
+
+## Combat strength modifier stack — `func_07C2A`/`func_07D3E`/`func_05CA7E` (verified 2026-06-07)
+
+The pre-roll modifier layer (previously TBD in combat_modifiers.c) is now
+byte-traced. **Fortification IS a real multiplier** — applied to the strength
+accumulators before the roll, not as a literal "+50%" at the comparison.
+
+### Base accessors
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| func_07C2A (file 0x7C2A, ENTER 6, RETF 0x7D3D): ATTACK = column DS:0x5236, DEFENSE = column DS:0x5235, indexed by unit type×6 | @asm 0x7C62 `mov al,[bx+0x5236]` (sel!=0); 0x7C7E `mov al,[bx+0x5235]` (sel==0) | BYTE_VERIFIED (column semantics); values external (NAMES.TXT @UNIT) |
+| strength held ×8 internally (`shl ax,3`); scout/criminal type 0x0B w/ flag 0x80 → −2; artillery type 0x10 → ×3/2; colonist on feature 0x15 → ×3/2; ship type 0x0D..0x12 → − hull damage [+0x3150] | @asm 0x7CA9 `shl ax,3`; 0x7C99 `sub [bp-6],2`; 0x7CFC ×3/2; 0x7CCC ×3/2; 0x7D20 `sub [bp-2],ax` | BYTE_VERIFIED |
+| func_07D3E (file 0x7D3E, ENTER 0x18, RETF 0x7F33): DEF = ((fort/terrain_factor + 4) × base) / 4 (factor 0→×1, 2→×1.5, 4→×2) | @asm 0x7F26 `add ax,4; imul [bp-0xa]; sar ax,2` | BYTE_VERIFIED |
+| terrain-defense table DS:0x2F77 (stride 16) added to factor; settlement+ship → +2 | @asm 0x7E5D/0x7EEA `mov al,[bx+0x2f77]`; 0x7EFE `add [bp-0x18],2` | BYTE_VERIFIED (mechanism); table values TBD/external |
+
+### Land combat (func_05CA7E, file 0x5CA7E, ENTER 0xDE, RETF 0x5E709)
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| ATK normalized ((0x8d04+4)/4 then ×3/2); player terrain bonus +(4-difficulty) to each side | @asm 0x5CE05/0x5CE16; 0x5CE29 ATK / 0x5CE49 DEF `add ...,(4-[0x53a6])` | BYTE_VERIFIED |
+| amphibious penalty ATK×(k/3); weak-attacker DEF÷2; artillery-vs-fort DEF÷4; settlement DEF×2; scout ambush ATK×3/2; cross-terrain ATK×3/2 | @asm 0x5CE69 idiv 3; 0x5CEB7 `sar [bp-0xa6],1`; 0x5CF11 `sar [bp-0xa6],2`; 0x5CF2B `shl [bp-0xa6],1`; 0x5CF43/0x5CF82 `sar/add` ATK | BYTE_VERIFIED |
+| roll = random_int(1, ATK+DEF); attacker wins iff roll <= ATK (on MODIFIED strengths) | @asm 0x5D188 `lcall 0x181F:0x4D4`; 0x5D194 `cmp ax,[bp-0x90]/jg` | BYTE_VERIFIED |
+| difficulty<=1 AI returns odds = ATK*8/(DEF+1) | @asm 0x5D032 `shl ax,3; .. idiv (DEF+1)`; RETF 0x5D044 | BYTE_VERIFIED |
+| difficulty MUL DS:0x5325 scales the AI bombardment THREAT assessment (func_05B2C2 @0x5B9A2), NOT the roll | @asm 0x5B9A2 `mul byte[0x5325]` | BYTE_VERIFIED |
+
+### Outcome (func_05B2C2, file 0x5B2C2, ENTER 0x3A, RETF 0x5BE2E)
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| win/lose dispatch on [bp-0x3a]; loser captured (convert-table DS:0x5D46 scan) or destroyed (KILLED flag) | @asm 0x5BAA3 `cmp [bp-0x3a],0`; 0x5BB9E `or byte[bx+0x3148],0x80` | BYTE_VERIFIED |
+| ships demote via hull-damage ladder [+0x315A] (type 0x11 floor 4, 0x12 floor 8) not destroyed | @asm 0x5BC1D `mov [bx+0x315a],al`; 0x5BC2C/0x5BC49 floors | BYTE_VERIFIED |
+| winner veteran promotion gated on flag [+0x3148]&0x40, promote-table scan, vet count [-0x77f7]-- | @asm 0x5BD1E `test [bx+0x3148],0x40`; 0x5BD34 scan; 0x5BD93 dec | BYTE_VERIFIED (mechanism); promote-table values TBD |
+
+audit.py 116/116.
