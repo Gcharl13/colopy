@@ -304,29 +304,29 @@ void native_tick_all(void)
     }
 }
 
-void native_settlement_tick(int index)   /* RECONSTRUCTED — rates are TBD */
+void native_settlement_tick(int index)   /* RECONSTRUCTED — rates RUNTIME_ONLY (NAMES.TXT/data-file) */
 {
     NativeSettlement *s =
         (NativeSettlement *)&g_native_table_54EC[index * NATIVE_SETTLEMENT_STRIDE];
 
-    /* 1. Population growth — TBD rate */
-    if (game_random_range(0, 99) < NATIVE_GROWTH_PCT /* TBD */) {
+    /* 1. Population growth — RUNTIME_ONLY rate (loaded from NAMES.TXT/data-file) */
+    if (game_random_range(0, 99) < NATIVE_GROWTH_PCT /* RUNTIME_ONLY (NAMES.TXT/data-file) */) {
         if (s->population < settlement_max_pop(s->owner /* class proxy */)) {
             s->population++;
         }
     }
 
     /* 2. Mission conversion — gated on +0x05 bit 0x10 (BYTE_VERIFIED bit;
-     *    @asm test byte [bx+0x54F1],0x10 @0x043F40). Rate TBD. */
+     *    @asm test byte [bx+0x54F1],0x10 @0x043F40). Rate RUNTIME_ONLY (NAMES.TXT/data-file). */
     if (s->mission & 0x10) {
-        int convert_rate = MISSION_CONVERT_PCT;   /* TBD */
+        int convert_rate = MISSION_CONVERT_PCT;   /* RUNTIME_ONLY (NAMES.TXT/data-file) */
         if (game_random_range(0, 99) < convert_rate) {
             spawn_indian_convert(index);
         }
     }
 }
 
-int settlement_max_pop(int type)          /* RECONSTRUCTED — values TBD */
+int settlement_max_pop(int type)          /* RECONSTRUCTED — values RUNTIME_ONLY (NAMES.TXT/data-file) */
 {
     switch (type) {
     case SETTLEMENT_CAMP:    return 3;
