@@ -143,7 +143,7 @@ void gold_income_tick_for_power(int power_idx)
  *    thunk 0x191F:0x3AA @ file 0x1B99A: off=0x0092, segid=5, extra=0x02B1
  *    base[5]=0x037340 + extra*16 + off = 0x039EE2  [func start confirmed]
  *
- *  func_039EE2 @ file 0x039EE2..0x03A9BF (2781 bytes, 960 instructions, ENTER 0x7E).
+ *  func_039EE2 @ file 0x039EE2..0x03A9BF (2781 bytes, ENTER 0x7E, retf 0x03A9BE).
  *  Immediately precedes score_endgame_rank (func_03A9C0 starts at 0x03A9C0).
  *
  *  CALL CHAIN (BYTE_VERIFIED):
@@ -151,29 +151,70 @@ void gold_income_tick_for_power(int power_idx)
  *    func_03B36A @ 0x03B36A: `ljmp 0x191F:0x3AA`  [= EA AA 03 1F 19 confirmed]
  *    → RTLink thunk @ 0x1B99A → loader patches → func_039EE2
  *
+ *  DUAL PURPOSE: arg==0 → compute-only (turn-loop call from endgame tick).
+ *                arg!=0 → compute + render the per-component score display panel.
+ *    @asm 039F42  if [bp+6]==0: jmp 0x3A09A  (arg gate, BYTE_VERIFIED)
+ *
  *  HEAD (BYTE_VERIFIED — first 70 bytes):
  *    @asm 039EE2  ENTER 0x7E,0              ; 126-byte local frame
- *    @asm 039EE6  al = [0x53A8]             ; per-power metric byte (role TBD)
- *    @asm 039EE9  CWDE → CX = al sign-ext
+ *    @asm 039EE6  al = [0x53A8]             ; year % 100  (confirmed write sites)
+ *    @asm 039EE9  CWDE → CX = al
  *    @asm 039EEC  al = 0x64                 ; 100
- *    @asm 039EEE  imul [0x53A7]             ; ax = 100 * [0x53A7] (difficulty-adj byte)
- *    @asm 039EF2  cx += ax                  ; [bp-0x6A] = [0x53A8] + 100*[0x53A7]  (cap init)
- *    @asm 039EF4..039F18  zero 11 locals    ; accumulators for score components
- *    @asm 039F1C..039F3B  loop i=0..3:      ; count other-nation colonies with flag set
- *         if i != [0x5398]: test PowerRecord[i*0x13C-0x77F8] bit 2; if set, inc [bp-0x56]
+ *    @asm 039EEE  imul [0x53A7]             ; ax = 100 * (year/100)
+ *    @asm 039EF2  [bp-0x6A] = cx + ax       ; = current game year  (e.g. 0x640=1600)
+ *    @asm 039EF4..039F18  zero 11 locals    ; score component accumulators
+ *    @asm 039F1C..039F3B  loop i=0..3:      ; count other active EU powers (≠ self)
+ *         if i != [0x5398]: test PowerRecord[i×0x13C-0x77F8] bit 2; if set, [bp-0x56]++
  *    @asm 039F3C  [bp-0x7E] = [0x5398]     ; current power index
- *    @asm 039F42  if [bp+6]==0: jmp 0x3A09A ; arg==0 → skip the display path
  *
- *  TAIL BODY: [TBD — 2781B function; scoring weights decoded partially above.
- *  Full component formula (colonies × weight, population × weight, FF × weight,
- *  gold contribution, liberty-bell contribution, difficulty bonus, revolution
- *  bonus) are in the 960-instruction body. See audit.py for the byte-verified
- *  head assertions; full byte-trace pending.]
+ *  DS:0x53A7 = year / 100 (century byte).  DS:0x53A8 = year % 100.
+ *  Confirmed from write sites in func_03DE46 @0x03DE65 (year%100 → [0x53A8])
+ *  and @0x03DE6F (year/100 → [0x53A7]). (Previously mis-identified as king-anger.)
  *
- *  DS:0x53A7 and DS:0x53A8 (read at head): adjacent to difficulty (0x53A6);
- *  semantics TBD — likely colony/population count or score-multiplier bytes.
+ *  SCORE COMPONENTS (BYTE_VERIFIED structure; per byte-trace of body 2026-06-08):
+ *
+ *    [bp-0x6e]  score_founding   — colonist-class points over all colonies:
+ *                                   per unit: class==0x1C→+2; class∈{0x19,0x1A,0x1B}→+1; else→+4
+ *                                   Applied in colony loop AND native-settlement loop.
+ *                @asm 03A0B5..03A153  colony loop (0x181F:0x9E6 / 0x181F:0xC54)
+ *                @asm 03A154..03A1FB  unit/settlement loop (0x181F:0xB78 / 0x181F:0x2C6)
+ *
+ *    [bp-0x58]  score_ff_pts     — 5 points per Founding Father owned by this power
+ *                                   loop i=0..24: if ff_recognized_7B4(i,power)→ +5
+ *                @asm 03A2AC..03A327  (0x181F:0x7B4 = ff_recognized; @0x03A2E8 add 5)
+ *
+ *    [bp-2]     score_gold       — PowerRecord.gold / 1000  (gold ≥ 1000 to get any credit)
+ *                @asm 03A3D9..03A4A3  (0x181F:0x84FC + 0x2A:0x2C = 32-bit gold; /1000)
+ *
+ *    [bp-0x6c]  score_ref        — PowerRecord[+0x18] × -(difficulty+1)  [NEGATIVE penalty]
+ *                                   Field +0x18 semantics TBD (initialized 0; updated during game)
+ *                @asm 03A4A4..03A543  (cmp [bx+0x18],0; mov cx,0xffff; sub cx,difficulty; imul)
+ *
+ *    [bp-0x5a]  score_sol        — g_bolivar_meter (DGROUP:0x53D0); Bolivar/SoL meter 0..100
+ *                @asm 03A544..03A5F4
+ *
+ *    [bp-0x64]  score_liberty    — (1780 - year) × 2  when [0x5382]&8 and year<1780
+ *                                   (threshold 0x6F4=1780; revolution/war-active gate)
+ *                @asm 03A5F5..03A6DB  (cmp [0x5382],8; cmp year,0x6F4; sub; shl 1)
+ *
+ *    [bp-0x60]  score_congress   — min(PowerRecord.congress_progress/100, 100)
+ *                                   when [0x5382]&2 and congress_progress≥100
+ *                @asm 03A704..03A782
+ *
+ *    [bp-0x54]  vet_mult         — 100>>num_other_EU_powers  when [0x5382]&8
+ *                                   Total scaled: total×(8+(8>>num_other_EU))/8
+ *                @asm 03A783..03A87A  (sar; lcall 0xD1D:0xF60 32-bit mul; then sar×3)
+ *
+ *  TOTAL (@asm 03A896):
+ *    raw = score_liberty + score_ff_pts + score_ref + score_congress
+ *        + score_sol + score_gold + score_founding
+ *    if vet_mult != 0: raw = raw × (8 + vet_mult) / 8
+ *    return raw in AX  (@asm 03A9BA)
+ *
+ *  0x5382 flag bits used:  &1 = independence declared;  &2 = congress progress active;
+ *                           &8 = revolution/war underway;  &0x10 = independence won.
  * ---------------------------------------------------------------------------- */
-extern int raw_power_score(int arg);   /* func_039EE2 — body located, head BYTE_VERIFIED */
+extern int raw_power_score(int arg);   /* func_039EE2 — body BYTE_VERIFIED (structure) */
 
 /* ----------------------------------------------------------------------------
  *  score_endgame_rank -- map a raw score to the 0..23 RANK (title index).

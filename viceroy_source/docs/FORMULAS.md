@@ -82,10 +82,55 @@ Outcomes: 1 trinkets, 2 burial/treasure, 3/7 gold (Σ random_int rolls ×6), 5 F
 of Youth (8 immigrants queued), 6 nothing, 8 vanish, 9 Cibola (treasure-train unit).
 Gold credited to PowerRecord+0x2A. AI rumors resolve silently.
 
-## Endgame score rank — `func_03A9C0`
+## Endgame score — `func_039EE2` (raw) + `func_03A9C0` (rank)
+
+**Raw score components** (func_039EE2 @ 0x039EE2, BYTE_VERIFIED structure 2026-06-08):
+
+```
+# --- input variables ---
+year     = [0x53A8] + 100*[0x53A7]          # current game year (e.g. 1620)
+n_other  = count(EU powers with flag bit 2, excluding self)   # 0..3
+
+# --- per-colonist class score (loop over all owned colonies + units) ---
+score_founding = Σ per_unit:
+    class == 0x1C  → +2       # expert/master-class colonist
+    class ∈ {0x19,0x1A,0x1B} → +1   # skilled colonist
+    else           → +4       # standard colonist
+
+# --- founding fathers ---
+score_ff_pts = 5 × count(FFs recognized by ff_recognized_7B4)   # loop i=0..24
+
+# --- treasury ---
+score_gold = PowerRecord.gold / 1000     (0 if gold < 1000)
+
+# --- REF penalty [PowerRecord+0x18 semantics TBD] ---
+score_ref = PowerRecord[+0x18] × -(difficulty + 1)    # NEGATIVE; field init=0
+
+# --- Bolivar/SoL meter [DGROUP:0x53D0] ---
+score_sol = g_bolivar_meter      # 0..100
+
+# --- liberty pressure (when [0x5382]&8 = revolution/war active AND year < 1780) ---
+score_liberty = (1780 - year) × 2     (0 if year >= 1780 or not in war)
+
+# --- congress progress (when [0x5382]&2 and congress_progress >= 100) ---
+score_congress = min(PowerRecord.congress_progress / 100, 100)
+
+# --- total ---
+raw = score_founding + score_ff_pts + score_gold + score_ref
+    + score_sol + score_liberty + score_congress
+
+# --- diplomatic isolation multiplier (when [0x5382]&8) ---
+vet_mult = 100 >> n_other     # 100/1/12/25/50 for 0/1/2/3 other powers
+raw = raw × (8 + (8 >> n_other)) / 8
+```
+
+**0x5382 gate bits:** &1=independence declared; &2=congress-progress active;
+&8=revolution/war underway; &0x10=independence won (triggers alternate display branch).
+
+**Rank ladder** (func_03A9C0 @ 0x03A9C0, BYTE_VERIFIED):
 ```
 mult   = difficulty + 4 (+1 if diff>=3, +1 if diff>=4)   # 4,5,6,8,10
-scaled = mult * raw_score / 100                          # raw_score from overlay 0x191F:0x3AA [TBD]
+scaled = mult × raw / 100
 rank   = largest i-1 (i in 1..24) with i*i/3 < scaled    # 24 tiers, capped at 23
 display_score = scaled / 2
 ```
