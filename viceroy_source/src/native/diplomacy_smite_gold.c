@@ -37,8 +37,19 @@
  * ============================================================================ */
 #include "viceroy_types.h"
 
-extern uint8_t  g_byte_DGROUP_942C[];   /* byte table at DGROUP:0x942C — TODO_VERIFY semantics */
-extern uint16_t g_word_DGROUP_941C[];   /* word table at DGROUP:0x941C — TODO_VERIFY semantics */
+/* BYTE_VERIFIED 2026-06-08: per-power (0..3) flat arrays — NOT stride-0x13C.
+ *   942C: per-power diplomatic contact/activity count, uint8 [4], saturating 0..255.
+ *         Zeroed on power init @0x042171; saturating-incremented via helper @0x042126.
+ *         Read @0x03DF67 as (byte+1)/16 for display/score.
+ *   941C: per-power cumulative trade/gold accumulator, uint16 [4].
+ *         Zeroed @0x042142 (bx=power*2; [bx-0x6BE4]=0); accumulated from unit
+ *         trade values via 0x181F:0x09C8 @0x042335.
+ *         Read @0x03DF7A as (word+1)/32 for display; summed all 4 @0x035E80;
+ *         compared between powers for preferred-trade-partner selection @0x03F0C5.
+ *   In the smite formula the byte (contact count) + word (trade volume) form the
+ *   player_factor; local_C8 is a power index (0..3) — likely attacker power. */
+extern uint8_t  g_diplo_contact_942C[4]; /* per-power contact count (0..255 sat.) */
+extern uint16_t g_trade_accum_941C[4];   /* per-power trade/gold accumulator */
 extern uint8_t  g_powerrecord_8809[];   /* PowerRecord[] base, stride 0x13C (BYTE_VERIFIED) */
 extern void *   g_payer_record_84FC;    /* DGROUP:0x84FC — far ptr to current "payer"
                                          * record (the tribe being smited).  Has a
@@ -46,7 +57,11 @@ extern void *   g_payer_record_84FC;    /* DGROUP:0x84FC — far ptr to current 
 extern uint16_t power_attribute_bit(uint16_t power, int16_t bit);
 extern int32_t  __aFlmul(int32_t a, int32_t b);
 extern int32_t  __aFldiv(int32_t a, int32_t b);
-extern int32_t  ovly_181F_035C(int32_t value, int16_t lo, int16_t hi);  /* clamp or random — TODO_VERIFY */
+/* BYTE_VERIFIED 2026-06-08: pure clamp. Implementation at file 0x0048CC (runtime
+ * 0x024C:0x000C, dispatched via overlay stub 0x181F:0x035C at file 0x1A94C).
+ * Arg order: clamp(value=[bp+6], lo=[bp+8], hi=[bp+0xa]) = max(lo, min(value, hi)).
+ * Call in smite: ovly_181F_035C(step3, 10, 200) → result ∈ [10, 200] → gold ∈ [500, 10000]. */
+extern int16_t  ovly_181F_035C(int16_t value, int16_t lo, int16_t hi);
 
 /* ============================================================================
  * SMITE branch — byte-verified formula
@@ -80,17 +95,21 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
     /* ---- 2. Multiply by player_factor (table-driven) ---------------------
      *
      * @asm 0x05999D..0x0599B0
-     *   MOV bx, [bp-0xC8]                   ; bx = local_C8 (TODO_VERIFY: which lookup index?)
-     *   MOV al, [bx + 0x942C]               ; AL = byte_table_942C[local_C8]
+     *   MOV bx, [bp-0xC8]                   ; bx = local_C8 (power index 0..3)
+     *   MOV al, [bx + 0x942C]               ; AL = g_diplo_contact_942C[power]
      *   SUB ah, ah                          ; AX = AL (zero-extended)
-     *   SHL bx, 1                           ; bx *= 2
-     *   ADD ax, [bx + 0x941C]               ; AX += word_table_941C[local_C8]
+     *   SHL bx, 1                           ; bx *= 2 (word index for 941C)
+     *   ADD ax, [bx + 0x941C]               ; AX += g_trade_accum_941C[power]
      *   PUSH 0; PUSH AX                     ; long: player_factor as int32
      *   LCALL __aFlmul                      ; DX:AX = player_factor * step1
+     *
+     * player_factor = contact_count + trade_volume:
+     *   contact_count  = g_diplo_contact_942C[power] (diplomatic meetings, 0..255)
+     *   trade_volume   = g_trade_accum_941C[power] (cumulative gold/trade activity)
      */
-    int idx = /* local_C8 — TODO_VERIFY */ 0;
+    int power_idx = attacker_power_idx; /* local_C8 = power index 0..3 (TBD: attacker vs opponent) */
     int32_t player_factor =
-        (int32_t)g_byte_DGROUP_942C[idx] + (int32_t)g_word_DGROUP_941C[idx];
+        (int32_t)g_diplo_contact_942C[power_idx] + (int32_t)g_trade_accum_941C[power_idx];
     int32_t step2 = __aFlmul(player_factor, step1);
 
     /* ---- 3. Divide by 50 again — the previously-pushed 50 long is consumed -
@@ -102,21 +121,17 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
      */
     int32_t step3 = __aFldiv(step2, 50);     /* = player_factor × treasury / 2500 */
 
-    /* ---- 4. Clamp / scale via ovly_181F_035C(value, 10, 200) -------------
+    /* ---- 4. Clamp to [10, 200] via ovly_181F_035C — BYTE_VERIFIED 2026-06-08 -----
      *
      * @asm 0x0599BD..0x0599C5
-     *   LCALL 0x181F:0x035C                 ; clamp(step3, 10, 200) — TODO_VERIFY
+     *   LCALL 0x181F:0x035C                 ; clamp(step3, 10, 200) — VERIFIED
      *   ADD SP, 6                           ; pop the 3 word args
      *   IMUL AX, AX, 0x32                   ; AX = result × 50
      *   MOV [BP-0x94], AX                   ; gold = result × 50
      *
-     * Default behavior matches: gold ∈ [500, 10000] if 035C is clamp.
-     * Real observed range 4000..15000 implies either:
-     *   - 035C is random in [10, 200] (uniform), giving 500..10000 per smite
-     *     plus tribe-treasury variability across plays
-     *   - or the (10, 200) args are bounds + something more complex
-     */
-    int16_t clamped = (int16_t)ovly_181F_035C(step3, 10, 200);
+     * ovly_181F_035C IS a pure clamp: file 0x0048CC (runtime 0x024C:0x000C).
+     * Result = max(10, min(step3, 200)).  gold = clamp × 50 ∈ [500, 10000]. */
+    int16_t clamped = ovly_181F_035C((int16_t)step3, 10, 200);
     int16_t gold = clamped * 50;
 
     /* ---- 5. Optional halving: bit 19 of attacker's PowerRecord bitfield --
@@ -190,38 +205,33 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
 }
 
 /* ============================================================================
- * SUMMARY (BYTE_VERIFIED FORMULA)
+ * SUMMARY (BYTE_VERIFIED FORMULA — fully resolved 2026-06-08)
  *
  * For a player smiting a native tribe:
  *
  *   step1    = tribe_treasury / 50                               (32-bit)
  *   step2    = player_factor × step1                              (32-bit)
  *   step3    = step2 / 50              = pf × treasury / 2500
- *   clamped  = ovly_181F_035C(step3, 10, 200)                    (TODO_VERIFY semantics)
- *   gold     = clamped × 50
+ *   clamped  = clamp(step3, 10, 200)   [ovly_181F_035C CONFIRMED CLAMP]
+ *   gold     = clamped × 50            ∈ [500, 10000]
  *   if (PowerBitfield[attacker].bit19 set):
  *       gold = gold / 2
  *
  *   payer.gold        -= gold       (the tribe being smited)
  *   recipient.gold    += gold       (the player's PowerRecord +0x29)
  *
- * If `ovly_181F_035C` is `clamp(value, lo, hi)`, then for default bit19=0:
- *   gold ∈ [500, 10000]   (matches 4000..10000 part of user's range)
+ *   player_factor = g_diplo_contact_942C[power] + g_trade_accum_941C[power]
+ *                 = diplomatic_contact_count (0..255) + cumulative_trade_gold
+ *     (power index TBD: attacker or opponent; resolved tables from 0x042138 init)
  *
- * If `ovly_181F_035C` is `random_int(lo, hi)` ignoring `value`, then gold
- * is uniform in [500, 10000] per smite — variability across smites would
- * give the user's observed 4000..15000 spread, with treasury growth over
- * time pushing the upper end as tribes accumulate gold.  (The 15000 upper
- * end exceeds the apparent 10000 cap, so 035C may have a more complex
- * behavior than simple clamp/random; needs decoding to pin down.)
- *
- * Three things STILL not byte-verified (each is one tractable trace):
- *   1. What `local_C8` is and what `byte_DGROUP_942C` / `word_DGROUP_941C`
- *      represent (the player_factor source).
- *   2. Whether `ovly_181F_035C(value, lo, hi)` is `clamp`, `random_int`,
- *      or `value % (hi-lo) + lo`, or something else.  Decoding it requires
- *      finding what 0x181F:0x035C points to (Type B thunk lookup needed).
- *   3. What sets bit 19 of the attacker's PowerRecord bitfield (likely a
- *      Founding Father or scenario flag — same pattern as the bit-10 case
- *      in the prior trace).
+ * RESOLVED 2026-06-08:
+ *   - ovly_181F_035C: PURE CLAMP (file 0x0048CC, runtime 0x024C:0x000C)
+ *     clamp(value=[bp+6], lo=[bp+8], hi=[bp+a]) = max(lo, min(value, hi))
+ *   - g_byte_DGROUP_942C → g_diplo_contact_942C: per-power uint8[4] contact count
+ *     (reset to 0 @0x042171; saturating increment @0x042126; /16 for display)
+ *   - g_word_DGROUP_941C → g_trade_accum_941C: per-power uint16[4] trade volume
+ *     (accumulated from unit trade values @0x042335; /32 for display)
+ * STILL TBD:
+ *   - exact power index for local_C8 (attacker vs opponent)
+ *   - bit 19 of attacker PowerRecord (Founding Father or scenario flag)
  * ============================================================================ */

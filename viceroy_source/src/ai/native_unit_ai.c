@@ -1,6 +1,6 @@
 /* ============================================================================
  *           >>> CONTROL FLOW + INLINE WEIGHTS + GLOBALS: BYTE_VERIFIED <<<
- *           >>> DATA-RESIDENT WEIGHT TABLES (0x2F77/0x5236/0x9410): TBD <<<
+ *    DATA-RESIDENT WEIGHT TABLES (0x2F77/0x5236): SAVE-GAME BSS — resolved 2026-06-08
  * ----------------------------------------------------------------------------
  * native_unit_ai.c -- func_046FFA: the NATIVE (Indian) per-unit STRATEGIC AI
  *                     driver. This is the per-turn brain of an AI-controlled
@@ -62,11 +62,10 @@
  *   IMMEDIATE score weight (e.g. +0x32/+0x23/+0x14/+0xa/+8/+5/+4/+2/-1/-2/-0x19/
  *   -0x28, the random_int bounds (0x32,0x64)/(1,5)/(0,7)/(1,2)/(0,7), and the two
  *   cs-relative score JUMP TABLES whose 13 entries were decoded from raw bytes).
- *   TBD (data-resident, NOT invented): the CONTENTS of the per-occupant-type
- *   weight table 0x2F77 (stride 16, read ×4), the per-unit-type flag table 0x5236
- *   (stride 14), and the colony-attribute table at DGROUP 0x9410 (`[bx-0x6bf0]`
- *   relative to a 0x5D60-derived index). Their ACCESS SITES are byte-cited; their
- *   table values live in overlay/initialized data this pass did not decode.
+ *   RESOLVED 2026-06-08: 0x2F77 and 0x5236 are SAVE-GAME BSS arrays (zero in EXE,
+ *   loaded at runtime from save file). 0x2F77 byte is at struct+0 (not +1) within
+ *   the 16-byte per-occupant entry; 0x5236 is a combat strength byte (not a flag).
+ *   Still TBD: colony-attribute table 0x9410 (`[bx-0x6bf0]`, idx from 0x5D60, >>3).
  *
  * @region          overlay (page 0x0C, code seg base 0x046600 / data-CS 0x046DE0)
  * @verified_by     Hand-decompiled from RAW VICEROY.EXE 2026-05-30 (reseg page_0C
@@ -204,17 +203,23 @@ extern int16_t g_native_cargo_8D52;
 extern int16_t g_query_result_8DB8;
 
 /* DGROUP:0x2F77 -- per-occupant-TYPE weight table, stride 16 (`shl bx,4`); byte
- * +1 of each 16-byte record read and (×4) ADDED to the candidate score
- * @asm 0x0477D1 (`mov al,[bx+0x2f77]`; bx = occ_type*16). TABLE CONTENTS [TBD]
- * (data-resident). This is the native "how much do I want to attack THIS kind of
- * unit/colony" weight. */
+ * +0 of each 16-byte struct read and (×4) ADDED to the candidate score
+ * @asm 0x0477D1 (`mov al,[bx+0x2f77]`; bx = occ_type*16). The struct base is
+ * DS:0x2F74 (not 0x2F77); the byte at [bx+0x2F77] = struct[+3].
+ * SAVE-GAME BSS (2026-06-08): populated at runtime from save file by loader at
+ * file 0x07461B (`mov [si+0x2F77], al` where si = entry * 16). EXE bytes are
+ * zero-initialized BSS — no static values exist. */
 extern uint8_t g_occtype_weight_2F77[/* occ_type */][16];
 
-/* DGROUP:0x5236 -- per-unit-TYPE flag table, stride 14; byte read and compared
- * >1 @asm 0x04729C (`cmp byte [bx+0x5236],1`; bx = type*14) -- counts "real
- * combatants" stacked on a tile. TABLE CONTENTS [TBD] (data-resident; same table
- * the EU evaluator uses, unit_orders.c g_unittype_tbl_5236). */
-extern uint8_t g_unittype_flag_5236[/* type */][14];
+/* DGROUP:0x5236 -- per-unit-TYPE combat strength byte, stride 14; byte read and
+ * compared >1 @asm 0x04729C (`cmp byte [bx+0x5236],1`; bx = type*14) — counts
+ * "real combatants" on a tile; also READ DIRECTLY @asm 0x04619D and accumulated
+ * into a strength sum. NOT a simple 0/1 flag — it is a per-type combat-strength
+ * value (>1 = real combatant; value directly added to threat score).
+ * Part of the g_unit_stat table at DS:0x5230 (stride 14), byte offset +6.
+ * SAVE-GAME BSS (2026-06-08): populated from save file at 0x074ECC–0x074F64
+ * (same loader that fills 0x523B=DEF, 0x523C=ATK). EXE bytes are BSS. */
+extern uint8_t g_unittype_combatstr_5236[/* type */][14];
 
 /* DGROUP:0x9410 -- colony-attribute byte table indexed by ColonyRecord[+0x5D60]
  * (the defence word, used as a byte index): `mov cl,[bx-0x6bf0]` @asm 0x0476F1 /
@@ -483,7 +488,7 @@ int16_t native_unit_ai(int16_t self)
                 while (cur >= 0) {
                     uint8_t ty = g_units_3144[cur][0x02];  /* @asm 0x047278 (0x3146) */
                     if (!(ty >= 0x0D && ty <= 0x12)) {     /* @asm 0x047278/0x04727F */
-                        if (g_unittype_flag_5236[ty][0] > 1) /* @asm 0x04729C [TBD table] */
+                        if (g_unittype_combatstr_5236[ty][0] > 1) /* @asm 0x04729C (combat strength; save-game BSS) */
                             attackers++;                   /* @asm 0x0472A3 */
                     }
                     cur = ovly_step_unit_2E4(cur);        /* @asm 0x0472A9 next on tile */
@@ -737,8 +742,9 @@ int16_t native_unit_ai(int16_t self)
                  * specific per-type deltas above are byte-verified. */
                 {
                     uint8_t occt = (uint8_t)occ_kind;      /* dispatch key occ unit type */
-                    /* @asm 0x0477D1 score += g_occtype_weight_2F77[occt][1] * 4; [TBD value] */
-                    score += (int16_t)g_occtype_weight_2F77[occt][1] * 4;
+                    /* @asm 0x0477D1 score += g_occtype_weight_2F77[occt][0] * 4;
+                     * (byte at +0 of 16-byte struct; save-game BSS, values TBD) */
+                    score += (int16_t)g_occtype_weight_2F77[occt][0] * 4;
                     switch (occt <= 0x0C ? occt : 0x0C) {  /* @asm 0x047890 cmp ax,0xc; ja default */
                         case 0:  score += 5;       break;  /* t[0]  @asm 0x047822 */
                         case 1:                            /* t[1]  @asm 0x0477FE */
@@ -1210,11 +1216,15 @@ finish:
  *        hostile strike vs the human;
  *      * NativeSettlement (0x54EC) + active-settlement pointer (0x8D4E) usage;
  *      * the native-class ladder UnitRecord[+0x3146]++ at @0x048003/0x04803F.
- *  - DATA-RESIDENT WEIGHT TABLES left [TBD] (accessed, never invented):
- *      * 0x2F77 per-occupant-type weight (stride 16, byte+1 ×4) @0x0477D1;
- *      * 0x5236 per-unit-type "real combatant" flag (stride 14) @0x04729C;
+ *  - DATA-RESIDENT WEIGHT TABLES (resolved 2026-06-08):
+ *      * 0x2F77 per-occupant-type weight (stride 16, byte at struct+0 ×4) @0x0477D1
+ *        — SAVE-GAME BSS; struct base DS:0x2F74, byte at +3; no EXE static values.
+ *        CODE FIX: was g_occtype_weight_2F77[occt][1]; corrected to [occt][0].
+ *      * 0x5236 per-unit-type combat strength (stride 14) @0x04729C and @0x04619D
+ *        — SAVE-GAME BSS (same table as g_unit_stat at DS:0x5230, byte +6); renamed
+ *        from g_unittype_flag_5236 to g_unittype_combatstr_5236.
  *      * 0x9410 colony-attribute byte (`[bx-0x6bf0]`, idx from 0x5D60, >>3)
- *        @0x0476F1 / @0x048210.
+ *        @0x0476F1 / @0x048210 — still TBD.
  *    All INLINE immediate weights ARE byte-verified (the +0x32/+0x23/+0x14/+0xa/
  *    +8/+5/+4/+3/+2/-1/-2/-6/-0x19/-0x28 deltas, the random_int bounds, and the
  *    two cs-relative score JUMP TABLES decoded from raw bytes at file 0x04789E

@@ -51,7 +51,7 @@
  *     0x5236, 0x5DE0, 0x942C/0x941C) and difficulty scaler [0x53A6] are cited
  *     literally but their *meaning* is not all decoded.  The numeric thresholds
  *     (e.g. score>100 -> PROVOKE) are byte-cited constants, not invented.
- *   - 0x181F:0x035C (used as a clamp/scale), 0x0D1D:0x0EC6 (a 32-bit op on
+ *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6 (a 32-bit op on
  *     gold) — call sites + args verified, internal behaviour TBD.
  *
  * Upgrade per viceroy_source/VERIFICATION_LEDGER.md. Do not trust any value
@@ -193,7 +193,10 @@ extern int     power_handle(int power_idx);                    /* 0x181F:0x09A4 
 extern void    power_set_slot(int handle, int slot);           /* 0x181F:0x0438 -> file 0x25CEC (UI/role slot setter) */
 extern void    ui_set_text_arg(int ds_seg, void *str, int idx);/* 0x181F:0x0416 -> file 0x25CD0 (format %arg substitution) */
 extern int     random_int(int lo, int hi);                     /* 0x181F:0x04D4 -> file 0x27DB2 (random_int, GROUND TRUTH) */
-extern long    diplo_scale_181F_035C(long v, int lo, int hi);  /* 0x181F:0x035C -> file 0x28792 (clamp/scale, TBD) */
+/* BYTE_VERIFIED 2026-06-08: pure clamp. Implementation file 0x0048CC (runtime 0x024C:0x000C)
+ * via overlay stub 0x181F:0x035C. clamp(value, lo, hi) = max(lo, min(value, hi)).
+ * Note: file 0x28792 is a DIFFERENT function (calls 0x181F:0x0092 then 0x181F:0x00B0). */
+extern int16_t diplo_scale_181F_035C(int16_t v, int16_t lo, int16_t hi); /* clamp — VERIFIED */
 extern int     diplo_182_pair(int a, int b);                   /* 0x181F:0x0D6C -> file 0x259F2 (TBD; (b-4,a,100,0)) */
 extern void    ui_set_long_arg(int hi, int lo, int idx);       /* 0x181F:0x09AE (long %arg) */
 /* 0x1A1F:0x0688 -> file 0x290CC.  Second arg is a 16-bit word that is EITHER a
@@ -529,8 +532,7 @@ present_screen:
  * guessed):
  *   - The attitude-score accumulator's per-table economics (tables at -0x6A4E,
  *     -0x6B1A, -0x6ADA, -0x6BD4, -0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).
- *   - diplo_scale_181F_035C (0x181F:0x035C, file 0x28792): clamp vs random vs
- *     modulo — same open question as the SMITE branch.
+ *   - diplo_scale_181F_035C: RESOLVED 2026-06-08 — pure clamp(v, lo, hi).
  *   - gold_scale_0D1D_0EC6 (0x0D1D:0xEC6): the 32-bit gold scaler used to size a
  *     peace payment.
  *   - diplo_182_pair (0x181F:0x0D6C, file 0x259F2) called (other-4,self,100,0).
@@ -541,5 +543,5 @@ present_screen:
  *      how a "key + modifier" composes a numbered choice.
  *   2. Decode 0x1A1F:0x0688 (file 0x290CC) = the dialog show, to confirm the
  *      return-code convention (1=accept / 2=alt as used above).
- *   3. Decode 0x181F:0x035C (file 0x28792) to pin the score/payment scaler.
+ *   3. (DONE 2026-06-08) 0x181F:0x035C = pure clamp(v, lo, hi) at file 0x0048CC.
  * ============================================================================ */
