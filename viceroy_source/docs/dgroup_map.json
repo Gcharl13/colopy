@@ -1,0 +1,10956 @@
+{
+ "tables": [
+  {
+   "name": "UnitRecord",
+   "base": 12612,
+   "stride": 28,
+   "count": "g_unit_count @0x539C",
+   "fields_touched": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    17,
+    18,
+    21,
+    22,
+    23,
+    24,
+    26
+   ],
+   "refs": 273
+  },
+  {
+   "name": "AIPersonality",
+   "base": 21518,
+   "stride": 52,
+   "count": "4 EU powers (init @0x744FE)",
+   "fields_touched": [
+    48,
+    49,
+    50
+   ],
+   "refs": 54
+  },
+  {
+   "name": "NativeSettlement",
+   "base": 21740,
+   "stride": 18,
+   "count": "g_settle_count @0x539A (max 84)",
+   "fields_touched": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7,
+    8,
+    9,
+    10
+   ],
+   "refs": 47
+  },
+  {
+   "name": "ColonyRecord",
+   "base": 23878,
+   "stride": 202,
+   "count": "g_colony_count @0x539E",
+   "fields_touched": [
+    0,
+    26,
+    28,
+    31,
+    132,
+    154,
+    194,
+    196
+   ],
+   "refs": 13
+  },
+  {
+   "name": "PowerRecord",
+   "base": 34824,
+   "stride": 316,
+   "count": "4 EU (+native slots 4..11)",
+   "fields_touched": [
+    1,
+    42,
+    44
+   ],
+   "refs": 12
+  }
+ ],
+ "addresses": [
+  {
+   "addr": 162,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 256,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 260,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "king/war_turn.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 266,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06C220_06D938.c"
+   ]
+  },
+  {
+   "addr": 270,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 316,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 332,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 338,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 1,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 342,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 344,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 20,
+   "idx": 0,
+   "refs": 20,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 346,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 17,
+   "idx": 0,
+   "refs": 17,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c",
+    "render/tile_chain.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 348,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c",
+    "mapgen/rivers.c",
+    "mapgen/settlements.c",
+    "render/tile_chain.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 350,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 352,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/tile_chain.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 354,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 356,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "mapgen/generator.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 358,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 360,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "mapgen/generator.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/tile_chain.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 362,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 364,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/blit.c",
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 366,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/blit.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 372,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/blit.c",
+    "render/terrain.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 374,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 380,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 16,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 382,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 16,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 384,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 388,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 31,
+   "idx": 0,
+   "refs": 31,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/blit.c",
+    "render/hud.c",
+    "render/terrain.c",
+    "render/tile_chain.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 390,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 22,
+   "idx": 0,
+   "refs": 22,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 392,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 394,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 396,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 398,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 400,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 432,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 548,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 554,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 560,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 566,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 587,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 608,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 614,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 616,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 674,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 5,
+   "refs": 5,
+   "files": [
+    "colony/auto_manage.c",
+    "colony/production_support.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 756,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "colony/production_support.c"
+   ]
+  },
+  {
+   "addr": 768,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c",
+    "ui/king_audience.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 809,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 2,
+   "refs": 3,
+   "files": [
+    "colony/auto_manage.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 814,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 816,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 818,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 820,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 822,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 823,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 26,
+   "idx": 0,
+   "refs": 26,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 824,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 825,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 15,
+   "idx": 0,
+   "refs": 15,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 826,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 828,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 830,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 832,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 834,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 836,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 838,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 840,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 842,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/sol_tory.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 844,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "colony/auto_manage.c"
+   ]
+  },
+  {
+   "addr": 846,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/dialog.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 860,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 862,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "colony/auto_manage.c"
+   ]
+  },
+  {
+   "addr": 876,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 882,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 3,
+   "abs": 28,
+   "idx": 0,
+   "refs": 31,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "scoring/endgame.c",
+    "ui/hall_of_fame.c",
+    "ui/king_audience.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 948,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 1012,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 1024,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "data/production.c",
+    "inc:globals.h"
+   ]
+  },
+  {
+   "addr": 1546,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 1696,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 1846,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 2020,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 2024,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 23,
+   "idx": 0,
+   "refs": 24,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/main_loop.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2026,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 25,
+   "idx": 0,
+   "refs": 26,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/main_loop.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2028,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 2030,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 16,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 2032,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 2036,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 27,
+   "idx": 0,
+   "refs": 27,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 2038,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 15,
+   "idx": 0,
+   "refs": 15,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 2050,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 2074,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 2076,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 2078,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 2082,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2086,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 2088,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 26,
+   "idx": 0,
+   "refs": 26,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/colony_screen.c",
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 2089,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2090,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2091,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 2092,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 2094,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2096,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "ui/hall_of_fame.c"
+   ]
+  },
+  {
+   "addr": 2097,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06C220_06D938.c",
+    "ui/hall_of_fame.c"
+   ]
+  },
+  {
+   "addr": 2099,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/hall_of_fame.c"
+   ]
+  },
+  {
+   "addr": 2101,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 2102,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 2106,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2108,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 2110,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 26,
+   "idx": 0,
+   "refs": 26,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "ui/europe_screen.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2112,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 21,
+   "idx": 0,
+   "refs": 21,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "ui/europe_screen.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2114,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 2116,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 2118,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 6,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2120,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 6,
+   "refs": 6,
+   "files": [
+    "king/king_events.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2124,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 2148,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 2150,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 2172,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "combat/naval.c",
+    "founding_fathers/congress.c",
+    "king/king_tax_raise.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 2192,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 2194,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 2196,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "ai/native_unit_ai.c",
+    "overlay/overlay_02083C_024337.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 2198,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "ui/main_loop.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2200,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "ui/main_loop.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2206,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 38,
+   "idx": 0,
+   "refs": 39,
+   "files": [
+    "asset/asset_loader.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c",
+    "render/tile_info_panel.c",
+    "ui/dialog.c",
+    "ui/king_audience.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2208,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 15,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_070302_074405.c",
+    "ui/dialog.c",
+    "ui/king_audience.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 2750,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "ai/native_unit_ai.c"
+   ]
+  },
+  {
+   "addr": 2962,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 2964,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 2966,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 2968,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 20,
+   "idx": 0,
+   "refs": 20,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 2970,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 2971,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 2973,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 2974,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 2988,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 2989,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3000,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3029,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 3039,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 3257,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3264,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3266,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3286,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 3332,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 3829,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 3838,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 3864,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/war_turn.c"
+   ]
+  },
+  {
+   "addr": 3921,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/war_turn.c"
+   ]
+  },
+  {
+   "addr": 3968,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "king/war_turn.c"
+   ]
+  },
+  {
+   "addr": 3977,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "king/war_turn.c"
+   ]
+  },
+  {
+   "addr": 3987,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/war_turn.c"
+   ]
+  },
+  {
+   "addr": 3994,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_02F3A2_031E4C.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 3998,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4002,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4004,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4006,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4007,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_02F3A2_031E4C.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 4040,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4101,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 4164,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "ai/native_unit_ai.c",
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 4252,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/king_tax_raise.c"
+   ]
+  },
+  {
+   "addr": 4558,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 4666,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 4706,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "founding_fathers/congress.c"
+   ]
+  },
+  {
+   "addr": 5090,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "combat/naval.c"
+   ]
+  },
+  {
+   "addr": 5276,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5278,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5280,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5282,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5284,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5286,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5288,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5290,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5292,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5294,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5296,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5298,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5300,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5304,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5306,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 5308,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 5366,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 5904,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 5948,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 5950,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 5952,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 7529,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 7622,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 7623,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 7634,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 7636,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 7638,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "ai/unit_orders.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 7710,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "colony/auto_manage.c"
+   ]
+  },
+  {
+   "addr": 7806,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 10,
+   "refs": 17,
+   "files": [
+    "mapgen/climate.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 7808,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "mapgen/climate.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 7810,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "mapgen/climate.c"
+   ]
+  },
+  {
+   "addr": 7812,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "mapgen/climate.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 7814,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "mapgen/climate.c"
+   ]
+  },
+  {
+   "addr": 7842,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 7844,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 7845,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 7846,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7848,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7850,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7852,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7854,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7856,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 7996,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 7998,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8000,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8002,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8004,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8006,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8008,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8010,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8012,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8014,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8016,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8018,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8020,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 8022,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 3,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8026,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 6,
+   "abs": 0,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 8028,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 33,
+   "idx": 0,
+   "refs": 34,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/dialog.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 8030,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 31,
+   "idx": 0,
+   "refs": 31,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "random_events/lcr.c",
+    "ui/europe_screen.c",
+    "ui/main_loop.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 8032,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 8034,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 20,
+   "idx": 0,
+   "refs": 20,
+   "files": [
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8036,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8038,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 15,
+   "idx": 0,
+   "refs": 15,
+   "files": [
+    "founding_fathers/congress.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 8040,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "founding_fathers/congress.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 8042,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06C220_06D938.c"
+   ]
+  },
+  {
+   "addr": 8044,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 8046,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 6,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8048,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8074,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 5,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8091,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8094,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 2,
+   "abs": 8,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8096,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 2,
+   "abs": 7,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 8098,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 8100,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8107,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8114,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8118,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8120,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8128,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8133,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8200,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8202,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8212,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 18,
+   "idx": 0,
+   "refs": 18,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8214,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8218,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8222,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 8224,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8226,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 8550,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 8564,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "mapgen/settlements.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 9003,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 9029,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 9158,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9160,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9162,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9164,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9166,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9168,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9174,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9180,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9200,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9202,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 4,
+   "abs": 0,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 9204,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 4,
+   "abs": 0,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c"
+   ]
+  },
+  {
+   "addr": 9206,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9208,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9306,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9308,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9310,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9312,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9322,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9326,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9328,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9330,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9332,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9334,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9416,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9596,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9607,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9652,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9659,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9712,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9714,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9732,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9734,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 9736,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 9740,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 9807,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9808,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9842,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 9866,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 9,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "asset/asset_loader.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 9868,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 2,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 9930,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9932,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9936,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9940,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9944,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9948,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9952,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 9958,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 10156,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 10221,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 7,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 10478,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 10480,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 11534,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 11536,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 11538,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 11542,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 11544,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 11546,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 11548,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 11550,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 11551,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 11552,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "mapgen/generator.c"
+   ]
+  },
+  {
+   "addr": 11554,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 11556,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 11688,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 11690,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11692,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11694,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11696,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 11700,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11702,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11706,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 11714,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c"
+   ]
+  },
+  {
+   "addr": 11722,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ai/unit_orders.c"
+   ]
+  },
+  {
+   "addr": 11728,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 11740,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 11742,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 11744,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 11752,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 11766,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11768,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 11770,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 11774,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 11776,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 11786,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11792,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 11794,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 11800,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "colony/sol_tory.c"
+   ]
+  },
+  {
+   "addr": 11802,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "colony/sol_tory.c"
+   ]
+  },
+  {
+   "addr": 11806,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11808,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 11822,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11826,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c"
+   ]
+  },
+  {
+   "addr": 11830,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11832,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11836,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11844,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11848,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11858,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11860,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11866,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11868,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11870,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11872,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 11874,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11884,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11886,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11892,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11896,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11898,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11900,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11902,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11904,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11912,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "founding_fathers/congress.c"
+   ]
+  },
+  {
+   "addr": 11914,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11928,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11930,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11932,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 11950,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11952,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 11960,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 11962,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ai/unit_orders.c"
+   ]
+  },
+  {
+   "addr": 11964,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11970,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 11972,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 12026,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 12028,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 12084,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_06C220_06D938.c"
+   ]
+  },
+  {
+   "addr": 12090,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/hall_of_fame.c"
+   ]
+  },
+  {
+   "addr": 12120,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 12124,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 12126,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02F3A2_031E4C.c",
+    "ui/colony_screen.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 12148,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 12150,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 3,
+   "refs": 3,
+   "files": [
+    "ai/unit_orders.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 12151,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 3,
+   "refs": 3,
+   "files": [
+    "ai/native_unit_ai.c"
+   ]
+  },
+  {
+   "addr": 12154,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 12155,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 6,
+   "refs": 6,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 12276,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 12404,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 12612,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 0,
+   "poke": 0,
+   "abs": 0,
+   "idx": 28,
+   "refs": 28,
+   "files": [
+    "ai/driver.c",
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "inc:unit.h",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "random_events/lcr.c",
+    "render/units.c",
+    "unit/lifecycle.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12613,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 1,
+   "poke": 0,
+   "abs": 0,
+   "idx": 26,
+   "refs": 26,
+   "files": [
+    "ai/driver.c",
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "inc:unit.h",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/units.c",
+    "unit/lifecycle.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12614,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 2,
+   "poke": 0,
+   "abs": 1,
+   "idx": 45,
+   "refs": 46,
+   "files": [
+    "ai/driver.c",
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "founding_fathers/effects.c",
+    "inc:unit.h",
+    "king/king_events.c",
+    "native/raid.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02F3A2_031E4C.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "random_events/lcr.c",
+    "render/tile_info_panel.c",
+    "ui/europe_screen.c",
+    "ui/report_screen.c",
+    "unit/lifecycle.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12615,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 3,
+   "poke": 0,
+   "abs": 0,
+   "idx": 36,
+   "refs": 36,
+   "files": [
+    "ai/driver.c",
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "founding_fathers/effects.c",
+    "native/settlement.c",
+    "native/tribe_query.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "random_events/lcr.c",
+    "render/tile_info_panel.c",
+    "ui/report_screen.c",
+    "unit/lifecycle.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12616,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 4,
+   "poke": 0,
+   "abs": 2,
+   "idx": 9,
+   "refs": 11,
+   "files": [
+    "ai/native_unit_ai.c",
+    "king/king_events.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 12617,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 5,
+   "poke": 0,
+   "abs": 0,
+   "idx": 11,
+   "refs": 11,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 12618,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 6,
+   "poke": 0,
+   "abs": 0,
+   "idx": 15,
+   "refs": 15,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "native/settlement.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 12619,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 7,
+   "poke": 0,
+   "abs": 0,
+   "idx": 8,
+   "refs": 8,
+   "files": [
+    "ai/native_unit_ai.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12620,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 8,
+   "poke": 0,
+   "abs": 1,
+   "idx": 25,
+   "refs": 26,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "founding_fathers/effects.c",
+    "king/king_events.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_054505_05C69B.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "render/tile_info_panel.c",
+    "unit/move.c"
+   ]
+  },
+  {
+   "addr": 12621,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 9,
+   "poke": 0,
+   "abs": 0,
+   "idx": 6,
+   "refs": 6,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "founding_fathers/effects.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 12622,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 10,
+   "poke": 0,
+   "abs": 0,
+   "idx": 6,
+   "refs": 6,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "founding_fathers/effects.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 12623,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 11,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "ai/native_unit_ai.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 12624,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 12,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "ui/europe_screen.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 12629,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 17,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 12630,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 18,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "ai/native_unit_ai.c"
+   ]
+  },
+  {
+   "addr": 12633,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 21,
+   "poke": 0,
+   "abs": 0,
+   "idx": 3,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 12634,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 22,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "colony/auto_manage.c",
+    "founding_fathers/effects.c",
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 12635,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 23,
+   "poke": 0,
+   "abs": 0,
+   "idx": 16,
+   "refs": 16,
+   "files": [
+    "ai/unit_ai_leaf.c",
+    "combat/combat_demotion_ladder.c",
+    "founding_fathers/effects.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "random_events/lcr.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 12636,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 24,
+   "poke": 0,
+   "abs": 0,
+   "idx": 12,
+   "refs": 12,
+   "files": [
+    "ai/native_unit_ai.c",
+    "render/units.c",
+    "unit/chain.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 12638,
+   "table": "UnitRecord",
+   "record": 0,
+   "offset": 26,
+   "poke": 0,
+   "abs": 0,
+   "idx": 11,
+   "refs": 11,
+   "files": [
+    "ai/native_unit_ai.c",
+    "render/units.c",
+    "unit/chain.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 12784,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 12944,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 14874,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 3,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 21040,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 13,
+   "refs": 16,
+   "files": [
+    "ai/unit_orders.c",
+    "king/king_events.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 21042,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 2,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21044,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21045,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "ai/unit_ai_leaf.c",
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 21046,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_orders.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 21047,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "colony/auto_manage.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 21049,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "load_image/load_image_00AB2E_00C0D0.c"
+   ]
+  },
+  {
+   "addr": 21050,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "load_image/load_image_00AB2E_00C0D0.c"
+   ]
+  },
+  {
+   "addr": 21053,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21070,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "colony/auto_manage.c",
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 21096,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21124,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21126,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21140,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21152,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21154,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21168,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21194,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21196,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21285,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "combat/combat_modifiers.c"
+   ]
+  },
+  {
+   "addr": 21294,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21299,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21362,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21364,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21366,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21367,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21368,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21369,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21371,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21373,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21376,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 21377,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "ai/driver.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 21378,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 90,
+   "idx": 0,
+   "refs": 91,
+   "files": [
+    "ai/driver.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "colony/auto_manage.c",
+    "colony/sol_tory.c",
+    "combat/naval.c",
+    "diplomacy/meeting.c",
+    "diplomacy/treaty.c",
+    "founding_fathers/congress.c",
+    "king/intervention.c",
+    "king/king_events.c",
+    "king/ref.c",
+    "king/sons_of_liberty.c",
+    "king/war_turn.c",
+    "native/raze_treasure.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_054505_05C69B.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "random_events/lcr.c",
+    "save/load_deserializer.c",
+    "scoring/compute.c",
+    "ui/main_loop.c",
+    "ui/menu.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c",
+    "ui/title_screen.c"
+   ]
+  },
+  {
+   "addr": 21379,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 33,
+   "idx": 0,
+   "refs": 34,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "save/load_deserializer.c",
+    "ui/main_loop.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21380,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/options_dialog.c"
+   ]
+  },
+  {
+   "addr": 21381,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "colony/sol_tory.c",
+    "ui/options_dialog.c"
+   ]
+  },
+  {
+   "addr": 21382,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "save/load_deserializer.c",
+    "ui/options_dialog.c"
+   ]
+  },
+  {
+   "addr": 21383,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "colony/sol_tory.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 21384,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21386,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 27,
+   "idx": 0,
+   "refs": 27,
+   "files": [
+    "colony/sol_tory.c",
+    "founding_fathers/congress.c",
+    "founding_fathers/recruit.c",
+    "king/demands.c",
+    "king/war_turn.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 21388,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "king/war_turn.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 21390,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 16,
+   "idx": 0,
+   "refs": 17,
+   "files": [
+    "ai/native_unit_ai.c",
+    "colony/auto_manage.c",
+    "diplomacy/meeting.c",
+    "diplomacy/treaty.c",
+    "king/king_events.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21392,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 21,
+   "idx": 0,
+   "refs": 21,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 21394,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 51,
+   "idx": 0,
+   "refs": 51,
+   "files": [
+    "ai/unit_orders.c",
+    "combat/naval.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 21396,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 39,
+   "idx": 0,
+   "refs": 39,
+   "files": [
+    "ai/driver.c",
+    "ai/unit_orders.c",
+    "combat/naval.c",
+    "king/king_events.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "random_events/lcr.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 21398,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 50,
+   "idx": 0,
+   "refs": 50,
+   "files": [
+    "ai/driver.c",
+    "ai/unit_orders.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "random_events/lcr.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c",
+    "ui/options_dialog.c"
+   ]
+  },
+  {
+   "addr": 21400,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 77,
+   "idx": 0,
+   "refs": 77,
+   "files": [
+    "ai/driver.c",
+    "ai/unit_orders.c",
+    "king/war_turn.c",
+    "mapgen/generator.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_06D938_0702D5.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "scoring/compute.c",
+    "scoring/endgame.c",
+    "ui/hall_of_fame.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 21402,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 42,
+   "idx": 0,
+   "refs": 42,
+   "files": [
+    "ai/native_unit_ai.c",
+    "founding_fathers/effects.c",
+    "mapgen/settlements.c",
+    "native/settlement.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21404,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 63,
+   "idx": 0,
+   "refs": 64,
+   "files": [
+    "ai/unit_orders.c",
+    "diplomacy/meeting.c",
+    "founding_fathers/effects.c",
+    "king/war_turn.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_054505_05C69B.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c",
+    "ui/report_screen.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 21406,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 36,
+   "idx": 0,
+   "refs": 36,
+   "files": [
+    "diplomacy/meeting.c",
+    "founding_fathers/effects.c",
+    "king/intervention.c",
+    "king/war_turn.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c",
+    "scoring/compute.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21408,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 15,
+   "idx": 0,
+   "refs": 15,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 21410,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 35,
+   "idx": 0,
+   "refs": 35,
+   "files": [
+    "king/war_turn.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21412,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "ai/driver.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 21414,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 50,
+   "idx": 0,
+   "refs": 50,
+   "files": [
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "colony/colonist_handler.c",
+    "colony/sol_tory.c",
+    "colony/turn_update.c",
+    "diplomacy/meeting.c",
+    "king/king_events.c",
+    "king/king_tax_raise.c",
+    "king/ref.c",
+    "native/native_village_raze.c",
+    "native/raze_treasure.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/hall_of_fame.c"
+   ]
+  },
+  {
+   "addr": 21415,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 15,
+   "idx": 0,
+   "refs": 15,
+   "files": [
+    "king/demands.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "scoring/compute.c"
+   ]
+  },
+  {
+   "addr": 21416,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "king/demands.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "scoring/compute.c"
+   ]
+  },
+  {
+   "addr": 21442,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "king/war_turn.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21444,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 21446,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 21448,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "diplomacy/meeting.c"
+   ]
+  },
+  {
+   "addr": 21456,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "ai/driver.c",
+    "founding_fathers/effects.c",
+    "king/sons_of_liberty.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21458,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 25,
+   "idx": 0,
+   "refs": 25,
+   "files": [
+    "ai/unit_orders.c",
+    "diplomacy/meeting.c",
+    "king/sons_of_liberty.c",
+    "king/war_turn.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21460,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "founding_fathers/congress.c",
+    "king/intervention.c",
+    "king/war_turn.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21462,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 10,
+   "idx": 0,
+   "refs": 10,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21464,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/sons_of_liberty.c"
+   ]
+  },
+  {
+   "addr": 21466,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 2,
+   "refs": 8,
+   "files": [
+    "king/ref.c",
+    "king/war_turn.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21468,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21470,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21472,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "king/war_turn.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21474,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 1,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21476,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21478,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21480,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21482,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "market/pricing.c"
+   ]
+  },
+  {
+   "addr": 21566,
+   "table": "AIPersonality",
+   "record": 0,
+   "offset": 48,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "combat/naval.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 21567,
+   "table": "AIPersonality",
+   "record": 0,
+   "offset": 49,
+   "poke": 0,
+   "abs": 2,
+   "idx": 46,
+   "refs": 48,
+   "files": [
+    "ai/driver.c",
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "colony/production_support.c",
+    "colony/sol_tory.c",
+    "diplomacy/meeting.c",
+    "founding_fathers/congress.c",
+    "king/demands.c",
+    "king/king_events.c",
+    "king/tax_apply.c",
+    "king/war_turn.c",
+    "native/mission.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_054505_05C69B.c",
+    "overlay/overlay_070302_074405.c",
+    "random_events/lcr.c",
+    "render/units.c",
+    "scoring/compute.c",
+    "ui/colony_screen.c"
+   ]
+  },
+  {
+   "addr": 21568,
+   "table": "AIPersonality",
+   "record": 0,
+   "offset": 50,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 21726,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 21740,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 0,
+   "poke": 0,
+   "abs": 0,
+   "idx": 5,
+   "refs": 5,
+   "files": [
+    "inc:native.h",
+    "native/settlement.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21741,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 1,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21742,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 2,
+   "poke": 0,
+   "abs": 2,
+   "idx": 8,
+   "refs": 10,
+   "files": [
+    "native/settlement.c",
+    "native/tribe_query.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 21743,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 3,
+   "poke": 0,
+   "abs": 0,
+   "idx": 8,
+   "refs": 8,
+   "files": [
+    "inc:native.h",
+    "native/settlement.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 21745,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 5,
+   "poke": 0,
+   "abs": 0,
+   "idx": 6,
+   "refs": 6,
+   "files": [
+    "native/mission.c",
+    "native/settlement.c",
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 21747,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 7,
+   "poke": 0,
+   "abs": 1,
+   "idx": 2,
+   "refs": 3,
+   "files": [
+    "inc:native.h",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21748,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 8,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "inc:native.h",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21749,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 9,
+   "poke": 0,
+   "abs": 1,
+   "idx": 1,
+   "refs": 2,
+   "files": [
+    "inc:native.h",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 21750,
+   "table": "NativeSettlement",
+   "record": 0,
+   "offset": 10,
+   "poke": 0,
+   "abs": 0,
+   "idx": 9,
+   "refs": 9,
+   "files": [
+    "ai/native_unit_ai.c",
+    "inc:native.h",
+    "native/raid.c"
+   ]
+  },
+  {
+   "addr": 21758,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "native/settlement.c",
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 22944,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 23000,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 23252,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 18,
+   "idx": 0,
+   "refs": 18,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 23256,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 23257,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 23300,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 23324,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "native/haggle.c",
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  },
+  {
+   "addr": 23594,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 23878,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 0,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 23904,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 26,
+   "poke": 0,
+   "abs": 1,
+   "idx": 3,
+   "refs": 4,
+   "files": [
+    "king/king_events.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 23906,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 28,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "king/intervention.c"
+   ]
+  },
+  {
+   "addr": 23909,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 31,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "ai/native_unit_ai.c"
+   ]
+  },
+  {
+   "addr": 24010,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 132,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "colony/production_support.c"
+   ]
+  },
+  {
+   "addr": 24032,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 154,
+   "poke": 0,
+   "abs": 0,
+   "idx": 3,
+   "refs": 3,
+   "files": [
+    "king/tax_apply.c",
+    "market/boycott.c"
+   ]
+  },
+  {
+   "addr": 24072,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 194,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "market/boycott.c"
+   ]
+  },
+  {
+   "addr": 24074,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 196,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "market/boycott.c"
+   ]
+  },
+  {
+   "addr": 33574,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 14,
+   "idx": 0,
+   "refs": 14,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 33576,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 20,
+   "idx": 0,
+   "refs": 20,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 33578,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 16,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 33580,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 18,
+   "idx": 0,
+   "refs": 18,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 33582,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 20,
+   "idx": 0,
+   "refs": 20,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 33592,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 33594,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 33596,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 19,
+   "idx": 0,
+   "refs": 19,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 33694,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 16,
+   "idx": 0,
+   "refs": 16,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/blit.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "ui/dialog.c",
+    "ui/king_audience.c"
+   ]
+  },
+  {
+   "addr": 33696,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 33698,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 33700,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 33702,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 26,
+   "idx": 0,
+   "refs": 26,
+   "files": [
+    "native/haggle.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "random_events/lcr.c",
+    "save/load_deserializer.c",
+    "save/save_serializer.c"
+   ]
+  },
+  {
+   "addr": 33704,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 33706,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 33708,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_06C220_06D938.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 34044,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 50,
+   "idx": 0,
+   "refs": 50,
+   "files": [
+    "colony/auto_manage.c",
+    "colony/sol_tory.c",
+    "diplomacy/meeting.c",
+    "founding_fathers/congress.c",
+    "founding_fathers/effects.c",
+    "king/demands.c",
+    "king/king_events.c",
+    "native/diplomacy_smite_gold.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "scoring/compute.c",
+    "ui/europe_screen.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 34106,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 34,
+   "idx": 0,
+   "refs": 34,
+   "files": [
+    "mapgen/generator.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/hud.c",
+    "render/tile_chain.c",
+    "save/load_deserializer.c"
+   ]
+  },
+  {
+   "addr": 34108,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 31,
+   "idx": 0,
+   "refs": 31,
+   "files": [
+    "mapgen/climate.c",
+    "mapgen/generator.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 34110,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 14,
+   "idx": 0,
+   "refs": 14,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 34112,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 14,
+   "idx": 0,
+   "refs": 14,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0745F0_077A6A.c",
+    "render/tile_info_panel.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 34114,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 43,
+   "idx": 0,
+   "refs": 44,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "colony/auto_manage.c",
+    "combat/combat.c",
+    "diplomacy/meeting.c",
+    "king/war_turn.c",
+    "native/raid.c",
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "overlay/overlay_038A50_03C5A8.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_054505_05C69B.c",
+    "render/units.c",
+    "scoring/compute.c",
+    "ui/colony_screen.c",
+    "ui/dialog.c",
+    "ui/options_dialog.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 34116,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 34118,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 34120,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 34122,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 34124,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 34126,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c"
+   ]
+  },
+  {
+   "addr": 34128,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34130,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34212,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 34214,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_070302_074405.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 34216,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34218,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34224,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34226,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34232,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34234,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34240,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34242,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_070302_074405.c"
+   ]
+  },
+  {
+   "addr": 34820,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 34822,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "overlay/overlay_066EC8_06896A.c",
+    "render/hud.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 34825,
+   "table": "PowerRecord",
+   "record": 0,
+   "offset": 1,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 34866,
+   "table": "PowerRecord",
+   "record": 0,
+   "offset": 42,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "native/diplomacy_smite_gold.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 34868,
+   "table": "PowerRecord",
+   "record": 0,
+   "offset": 44,
+   "poke": 0,
+   "abs": 0,
+   "idx": 4,
+   "refs": 4,
+   "files": [
+    "native/diplomacy_smite_gold.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 36092,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 36098,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 36100,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "ai/unit_ai_leaf.c",
+    "combat/land.c"
+   ]
+  },
+  {
+   "addr": 36170,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 40,
+   "idx": 0,
+   "refs": 40,
+   "files": [
+    "ai/native_unit_ai.c",
+    "ai/unit_ai_leaf.c",
+    "ai/unit_orders.c",
+    "mapgen/settlements.c",
+    "native/haggle.c",
+    "native/settlement.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 36172,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 36174,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 39,
+   "idx": 0,
+   "refs": 39,
+   "files": [
+    "ai/unit_ai_leaf.c",
+    "combat/combat.c",
+    "native/haggle.c",
+    "native/mission.c",
+    "native/raid.c",
+    "native/settlement.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 36176,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 14,
+   "idx": 0,
+   "refs": 14,
+   "files": [
+    "native/settlement.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "random_events/lcr.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 36178,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 45,
+   "idx": 0,
+   "refs": 45,
+   "files": [
+    "ai/unit_orders.c",
+    "colony/auto_manage.c",
+    "native/haggle.c",
+    "native/settlement.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 36180,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 19,
+   "idx": 0,
+   "refs": 19,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36182,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36184,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 36186,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36190,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 36192,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 36210,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 36214,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36216,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36218,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36220,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 21,
+   "idx": 0,
+   "refs": 21,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "ui/dialog.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 36222,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c",
+    "ui/dialog.c",
+    "ui/menu.c"
+   ]
+  },
+  {
+   "addr": 36280,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 23,
+   "idx": 0,
+   "refs": 24,
+   "files": [
+    "ai/native_unit_ai.c",
+    "overlay/overlay_02083C_024337.c",
+    "overlay/overlay_03C5A8_040C11.c",
+    "overlay/overlay_04458A_04694B.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 36282,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 36284,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 36292,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 36294,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 10,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "colony/production_support.c",
+    "founding_fathers/effects.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 36296,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "colony/auto_manage.c",
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36306,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36312,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36324,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36326,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36328,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36330,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "colony/sol_tory.c",
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36332,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36362,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/auto_manage.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36372,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36402,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "colony/auto_manage.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36412,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36442,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "colony/auto_manage.c"
+   ]
+  },
+  {
+   "addr": 36452,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "colony/sol_tory.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 36458,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "colony/turn_update.c"
+   ]
+  },
+  {
+   "addr": 36750,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 36762,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 37242,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c",
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 37324,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c"
+   ]
+  },
+  {
+   "addr": 37528,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 37532,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 37534,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 37642,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 37672,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 37674,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37676,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37678,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37682,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37684,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37686,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37688,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37690,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37692,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 37694,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 37786,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 37792,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "render/tile_info_panel.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 37794,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 37796,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 37798,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 37800,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 37802,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_04C306_053BC1.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 37806,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 37808,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/tile_info_panel.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 37904,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 37912,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 37932,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0341D6_0388DE.c"
+   ]
+  },
+  {
+   "addr": 38476,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 38642,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_038A50_03C5A8.c"
+   ]
+  },
+  {
+   "addr": 38644,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38646,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38652,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0341D6_0388DE.c"
+   ]
+  },
+  {
+   "addr": 38806,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "scoring/compute.c"
+   ]
+  },
+  {
+   "addr": 38824,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "scoring/compute.c"
+   ]
+  },
+  {
+   "addr": 38830,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "scoring/compute.c"
+   ]
+  },
+  {
+   "addr": 38832,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 38876,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38880,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 38896,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38912,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38916,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 38942,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_02083C_024337.c",
+    "ui/main_loop.c"
+   ]
+  },
+  {
+   "addr": 38944,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 40112,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "native/raid.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_077ADE_078D3E.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 40114,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "native/raid.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "overlay/overlay_077ADE_078D3E.c",
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 40116,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 40118,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 40120,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 40122,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 40136,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c",
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 40138,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/hud.c",
+    "unit/lifecycle.c"
+   ]
+  },
+  {
+   "addr": 40140,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_0612E6_066EB3.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 40142,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 40144,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 40146,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "random_events/lcr.c"
+   ]
+  },
+  {
+   "addr": 40466,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0341D6_0388DE.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 40468,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_05C69C_0610DA.c",
+    "render/hud.c"
+   ]
+  },
+  {
+   "addr": 40472,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_02AAEC_02F0C7.c",
+    "overlay/overlay_040C1E_04458A.c",
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 40476,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 12,
+   "idx": 0,
+   "refs": 12,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 40478,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40480,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 40482,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40484,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 11,
+   "idx": 0,
+   "refs": 11,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40486,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40488,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40492,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40504,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40506,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 19,
+   "idx": 0,
+   "refs": 19,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c",
+    "overlay/overlay_0341D6_0388DE.c"
+   ]
+  },
+  {
+   "addr": 40510,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40512,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_02F3A2_031E4C.c",
+    "ui/europe_screen.c"
+   ]
+  },
+  {
+   "addr": 40514,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40516,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_031F28_033EB2.c"
+   ]
+  },
+  {
+   "addr": 40518,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 40520,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 40524,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 40526,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 19,
+   "idx": 0,
+   "refs": 19,
+   "files": [
+    "combat/naval.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 40528,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "combat/naval.c",
+    "overlay/overlay_03C5A8_040C11.c"
+   ]
+  },
+  {
+   "addr": 40534,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_040C1E_04458A.c",
+    "render/tile_info_panel.c"
+   ]
+  },
+  {
+   "addr": 40598,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_046D70_04C2E1.c"
+   ]
+  },
+  {
+   "addr": 40616,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 41172,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 41178,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 41179,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 41292,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 41294,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c",
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 41299,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "diplomacy/meeting.c"
+   ]
+  },
+  {
+   "addr": 41308,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 41310,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 41312,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 41840,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0612E6_066EB3.c"
+   ]
+  },
+  {
+   "addr": 42388,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42390,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42392,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42394,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42396,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42398,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42400,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42402,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42404,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 42406,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "render/blit.c",
+    "render/tile_chain.c",
+    "ui/dialog.c"
+   ]
+  },
+  {
+   "addr": 42408,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 42414,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 3,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_068A14_06C1CC.c",
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42416,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42418,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42420,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42422,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42424,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 9,
+   "idx": 0,
+   "refs": 9,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42504,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 13,
+   "idx": 0,
+   "refs": 13,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c"
+   ]
+  },
+  {
+   "addr": 42506,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 14,
+   "idx": 0,
+   "refs": 14,
+   "files": [
+    "overlay/overlay_06D938_0702D5.c",
+    "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 42518,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42520,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42522,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42524,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42530,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42532,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42534,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 8,
+   "idx": 0,
+   "refs": 8,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42536,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42538,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42544,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42546,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42548,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42550,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42552,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42554,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42562,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42564,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 42566,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_0745F0_077A6A.c"
+   ]
+  },
+  {
+   "addr": 43146,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 43147,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 43152,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_024342_027B62.c",
+    "overlay/overlay_027BB6_02A92B.c"
+   ]
+  },
+  {
+   "addr": 43153,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 43154,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 43155,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "colony/sol_tory.c",
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 43156,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 43157,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "colony/turn_update.c",
+    "overlay/overlay_024342_027B62.c"
+   ]
+  },
+  {
+   "addr": 43158,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "colony/sol_tory.c",
+    "colony/turn_update.c"
+   ]
+  },
+  {
+   "addr": 43159,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "colony/sol_tory.c",
+    "overlay/overlay_02AAEC_02F0C7.c"
+   ]
+  },
+  {
+   "addr": 43160,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "colony/sol_tory.c"
+   ]
+  },
+  {
+   "addr": 43162,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 43163,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "king/king_events.c"
+   ]
+  },
+  {
+   "addr": 43164,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 43165,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 5,
+   "idx": 0,
+   "refs": 5,
+   "files": [
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 43166,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 43167,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 43168,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 43169,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 6,
+   "idx": 0,
+   "refs": 6,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 43170,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 4,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 43171,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "render/terrain.c"
+   ]
+  },
+  {
+   "addr": 43172,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/terrain.c"
+   ]
+  },
+  {
+   "addr": 43173,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 3,
+   "idx": 0,
+   "refs": 3,
+   "files": [
+    "render/terrain.c"
+   ]
+  },
+  {
+   "addr": 43174,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 7,
+   "idx": 0,
+   "refs": 7,
+   "files": [
+    "overlay/overlay_066EC8_06896A.c",
+    "render/terrain.c",
+    "render/tile_chain.c"
+   ]
+  },
+  {
+   "addr": 4194327,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 0,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "overlay/overlay_04458A_04694B.c"
+   ]
+  }
+ ]
+}
