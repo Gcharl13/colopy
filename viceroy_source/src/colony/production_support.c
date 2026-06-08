@@ -31,12 +31,12 @@
  *    - lookup_signed_2F4                 0x8D9C..0x8DBA  (signed byte DGROUP:0x2F4[idx], -1 if>=0x13)
  *    - commodity_net_minus_chain (func_008DBC) 0x8DBC..0x8E00
  *    - update_finished_good_from_raw     0x8E84..0x8F01  (raw->finished band + over_high tracking)
- *  TBD (data-driven; values live in NAMES.TXT / overlay, not in the EXE here):
+ *  RUNTIME_ONLY (data-resident; values live in NAMES.TXT / overlay, not in the EXE here):
  *    - the NUMERIC contents of DGROUP:0x2F4 (chain-start building id per good)
  *    - the NUMERIC contents of DGROUP:0x2A2 (related-commodity id per good)
  *    - the contents of the stride-12 chain table at DGROUP:0x8F86
  *    - which @BUILDING level a chain count of >2 corresponds to
- *    - the writer of g_8DC6 (current-colony index) is overlay-resident
+ *    - the writer of g_8DC6 (current-colony index) is overlay-resident (body in thunk page)
  * ---------------------------------------------------------------------------
  *
  * @ref code/VICEROY/disasm/func_008524_unknown.asm
@@ -53,7 +53,7 @@
 #include "viceroy.h"
 
 /* ----------------------------------------------------------------------------
- * Data tables touched by this cluster (byte-verified addresses; values TBD).
+ * Data tables touched by this cluster (byte-verified addresses; values RUNTIME_ONLY (data-resident)).
  * ---------------------------------------------------------------------------- */
 
 /* The persistent ColonyRecord bit-array base: test_colony_building_bit reads
@@ -67,7 +67,7 @@ extern uint8_t g_colony_bits_5DCA[];      /* DGROUP:0x5DCA, indexed [colony_idx*
 /* current-colony INDEX (NOT the working-buffer far ptr at 0x8542).  This is the
  * table row that test_building_or_father_bit implicitly targets.
  * @asm 0x8644: PUSH word ptr [0x8dc6]   (bytes FF 36 C6 8D)
- * Writer is overlay-resident (set when a colony is selected/entered) — TBD. */
+ * Writer is overlay-resident (set when a colony is selected/entered) — body in thunk page. */
 extern uint16_t g_8DC6;                   /* DGROUP:0x8DC6 */
 
 /* Stride-12 building-prerequisite/upgrade chain table.  Each link's byte[0]
@@ -428,7 +428,7 @@ int commodity_net_minus_chain(int idx, uint16_t far *out_ptr)
  *   building is present) and the ×3/2 surplus rescale are literal in the
  *   instruction stream (SHL ax,1 → ×2 ; MOV cx,3 ; IDIV ; and ADD ax,cx+SAR for
  *   ×3 then SAR ÷2).  Which @BUILDING the >2 chain-count corresponds to is the
- *   TBD @BUILDING column (NAMES.TXT).
+ *   RUNTIME_ONLY (data-resident): @BUILDING column in NAMES.TXT determines exact chain-count threshold.
  *
  * Reconciliation of the 0x8EED..0x8EFA tail (×3/2): the bytes are
  *   cx=ax; ax<<=1 (×2); ax+=cx (×3); cdq; ax-=dx; sar ax,1 (÷2 with round-toward

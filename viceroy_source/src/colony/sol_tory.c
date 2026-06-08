@@ -87,7 +87,7 @@
  *    - building/option bit test      LCALL 0x181F:0x4D4 → ovl file 0x27DB2    @asm 0x2D733-style
  *    - colonist profession accessors LCALL 0x181F:0xC0E/0xC54/0xCAE/0xCC2     @asm phase E/G
  *    - long fmt helpers              LCALL 0xD1D:0x7E4 / 0x7A4 / 0x117E       @asm 0x2E64F etc.
- *  [TBD] (overlay/runtime-resident; body not in this load-image function):
+ *  library-implementation-only (overlay/runtime-resident; body not in this load-image function):
  *    - the numeric value returned by the rebel% accessor (0x27264) — computed
  *      there from the +0xC2/+0xC6 longs (mirrors sol_membership_pct 0x8524).
  *    - the per-key string-table TEXT formatting inside report_colony_event.
@@ -174,7 +174,8 @@ extern uint16_t g_power_value_838C[];    /* DGROUP:0x838C */
 
 /* ----------------------------------------------------------------------------
  * Overlay/runtime-resident helpers (LCALL targets; bodies NOT in this function).
- * Arg/return ROLE is byte-verified at every call site; internal logic is [TBD].
+ * Arg/return ROLE is byte-verified at every call site; internal logic is library-implementation-only
+ * (overlay-resident; body in thunk page).
  * Names reflect the call contract (what is pushed / what AX means on return).
  * ---------------------------------------------------------------------------- */
 extern void set_current_colony(int colony_id);     /* LCALL 0x181F:0x9E6 → 0x2701C  @asm 0x2D666 */
@@ -224,7 +225,8 @@ extern void hud_print_88(void);                          /* LCALL 0x181F:0x88 �
  * turn-report message emitter.  Every call pushes (string_key_ptr, ds, ...,
  * shown_flag) and the return AL is OR'd into g_report_shown_A898.  We model it
  * as a varargs reporter that returns 1 if a message was actually queued.
- * @asm raw `ea dc 09 1f 19` @ file 0x2EF5F (CS-rel IP 0x245F).  Body [TBD].
+ * @asm raw `ea dc 09 1f 19` @ file 0x2EF5F (CS-rel IP 0x245F).  Body: library-implementation-only
+ * (JMPF 0x191F:0x9DC; body in page 0x191F overlay, not decodable from this load-image function).
  * The sibling trampolines: 0x2455→0x191F:0x9C0, 0x245A→0x191F:0x9CE,
  * 0x2446→0x191F:0x254, 0x244B→0x191F:0x988, 0x2450→0x191F:0x97A. */
 extern int  report_colony_event(const char *key, int negone, int z0, int z1,

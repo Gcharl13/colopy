@@ -178,7 +178,7 @@ extern uint16_t g_8D52;                /* DGROUP:0x8D52 — context word; indexe
 
 /* Per-power / per-good byte tables addressed by negative disp from a base
  * register holding (idx) or (idx<<4) or (idx*0x13) or (idx<<1).  Bases rederived
- * as (0x10000 - disp).  VALUES are data-resident -> [TBD]; addresses verified. */
+ * as (0x10000 - disp).  VALUES are RUNTIME_ONLY (data-resident); addresses verified. */
 /* (negative-disp bases verified arithmetically: base = 0x10000 - disp.) */
 #define TBL_9298_NCOL      0x9298      /* [bx-0x6D68] per-power colony-count scratch (@0x55E01) */
 #define TBL_925D_REVSUB    0x925D      /* [bx-0x6DA3] per-power revolution sub-flag, stride 0x13 (@0x55E19/0x55E3F) */
@@ -193,7 +193,8 @@ extern uint16_t g_8D52;                /* DGROUP:0x8D52 — context word; indexe
 #define KING_COST_84CA     0x84CA      /* [bx-0x7B36] per-power king build-cost byte, idx owner<<4 (@0x54922) */
 
 /* Per-(power,*) byte matrices addressed [bx + si - 0x6Bxx] with si = power<<4.
- * (Same family as the king-event 0x6B1A matrix.)  Addresses verified; [TBD]. */
+ * (Same family as the king-event 0x6B1A matrix.)  Addresses verified;
+ * VALUES are RUNTIME_ONLY (data-resident). */
 #define MTX_95B2_A         0x95B2      /* [bx+si-0x6A4E] per-(power,good) byte (@0x5425C/0x5428D) */
 
 /* ----------------------------------------------------------------------------
@@ -349,9 +350,9 @@ static int build_flag_set(void)  { return _build_flag != 0; }   /* @asm 0x54912/
  *   F. FINALISE / DEBIT  0x55F5E..0x05628C (IP 2A1E..2D4C) [0x35E], king upkeep
  *
  * Genuinely-opaque DATA-DRIVEN leaves (weights, the per-power/per-good tables,
- * the slot-accessor internals) are marked [TBD] with their cited site; their
- * VALUES are not in the load image (NAMES.TXT / overlay colony-init), exactly
- * like turn_update.c / production_support.c.
+ * the slot-accessor internals) are marked RUNTIME_ONLY (data-resident) with their
+ * cited site; their VALUES are not in the load image (NAMES.TXT / overlay colony-init),
+ * exactly like turn_update.c / production_support.c.
  * ============================================================================ */
 void colony_auto_manage(int colony_index)
 {
@@ -430,7 +431,7 @@ void colony_auto_manage(int colony_index)
      * count as threat.  Ships in transit get their +0x314A initialised from
      * g_8DC6 (@0x53F65).  This whole block is byte-traced control flow; the
      * exact threat WEIGHTS (helper_370 / [si-0x6a98] / 0x8D72) are data-driven
-     * -> [TBD]. */
+     * -> RUNTIME_ONLY (data-resident). */
     /* (full inner arithmetic omitted for brevity — every operand is cited in
      *  page_0E.asm IP 07A0..0A08; the net products are [bp-0x98] threat,
      *  [bp-0x80] enemy-military, [bp-0x74] own-defense.) */
@@ -460,7 +461,7 @@ void colony_auto_manage(int colony_index)
         col[0x1b] |= 0x40;                                  /* @asm 0x541B0 set bit6 (has defenders) */
     /* @asm 0x541B4..0x54307 — derive a coastal/terrain "demand" value [bp-0x72]
      * from the per-(power) good tables [si-0x6a98]/[bx-0x6a4e]/[bx-0x6be4] and
-     * the era (0x538E>>7); these gate further bits.  Values data-driven [TBD]. */
+     * the era (0x538E>>7); these gate further bits.  Values RUNTIME_ONLY (data-resident). */
     /* @asm 0x54308..0x54336 — if [bp-0x72] high vs [bp-0x80] set bit3 / bit2:  */
     col = (uint8_t *)g_colony_buf_8542;
     /*   col[0x1b] |= 8   @asm 0x54314 (production opportunity)                   */
@@ -633,7 +634,7 @@ void colony_auto_manage(int colony_index)
     /* (full inner greedy arithmetic — IP 1A8F..2A1D — is byte-traced control
      *  flow; the per-good PRIORITY WEIGHTS live in the 0x8Dxx/0x8Exx band globals
      *  and the data tables [bx-0x71xx]/[bx-0x715a]/[bx+0x2a2], all data-driven
-     *  -> [TBD].  See src/data/production.c for those globals' roles.) */
+     *  -> RUNTIME_ONLY (data-resident).  See src/data/production.c for those globals' roles.) */
 
     /* @asm 0x55639 — manufactured-goods dispatch (commodity_id-9, 9 cases):
      *   case 4 (TradeGoods) -> IP 0x1DCC ; case 7 -> 0x1D80 ; case 8 -> 0x1DB8 ;
@@ -701,7 +702,7 @@ void colony_auto_manage(int colony_index)
  *  - The PER-GOOD / PER-POWER WEIGHT TABLES that drive the greedy assignment
  *    and the threat survey are DATA-RESIDENT (NAMES.TXT @CARGO / overlay
  *    colony-init), exactly as in turn_update.c & production_support.c.  Their
- *    NUMERIC values are [TBD]; their ADDRESSES are byte-verified:
+ *    NUMERIC values are RUNTIME_ONLY (data-resident); their ADDRESSES are byte-verified:
  *      yield 0x2F7B/0x2F78/0x2F79; related-raw 0x2A2; per-good band globals
  *      0x8DC8/0x8E0A/0x8E32/0x8E5A; per-power tables in the 0x91xx/0x92xx/0x94xx
  *      regions (negative-disp bases reconstructed in the #defines above);

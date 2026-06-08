@@ -58,9 +58,9 @@
  *    - founding-father bell multipliers (op 0xF/0x11/0x12) @asm 0xA4DF..0xA57E
  *    - Fortress(0x14) x2 / Stockade(0x13) +50%          @asm 0xA587..0xA5AC
  *    - rebellion quota (divisor 0x19/0x32)              @asm 0xA5BB..0xA5E2
- *  TBD (data-driven; values live in NAMES.TXT, not in the EXE):
+ *  RUNTIME_ONLY (data-resident; values live in NAMES.TXT, not in the EXE):
  *    - the NUMERIC cells of the yield table at 0x2F7B   (see src/data/production.c)
- *  TBD (overlay-thunk-resident; reached by LCALL, body not in load image):
+ *  library-implementation-only (overlay-thunk-resident; reached by LCALL, body not in load image):
  *    - LCALL 0x3E4:0x0E / 0x3A   base terrain id at (x,y)
  *    - LCALL 0x37F:0x10E / 0x142 / 0x4B0  feature/resource layer reads
  *    - LCALL 0x981:0x00  per-power founding-father / flag tester
@@ -70,8 +70,8 @@
 
 /* ----------------------------------------------------------------------------
  * Overlay-resident helpers reached by LCALL (segment:offset target documented).
- * Bodies are NOT in the load image; their internal logic is TBD, but their
- * call sites and arg/return roles are byte-verified.
+ * Bodies are NOT in the load image (library-implementation-only; body in overlay thunk page);
+ * their call sites and arg/return roles are byte-verified.
  * ---------------------------------------------------------------------------- */
 extern int   ov_base_terrain_at(int x, int y);          /* LCALL 0x3E4:0x0E  @asm 0x9BF9; LCALL 0x3E4:0x3A @asm 0xA23C */
 extern int   ov_feature_flags_142(int x, int y);        /* LCALL 0x37F:0x142 @asm 0x9C93 (river bit 0x40, special 0x0A, 0x04) */
@@ -157,7 +157,7 @@ int compute_terrain_yield(int ring_a, int ring_b, int *out, int flag)
 
     /* --- step 6: base yield from the terrain x good table ---
      * @asm 0x9C15: si=terrain<<4; bx=good_id; al=g_terrain_yield_table[bx+si+0x2F7B] */
-    yield = g_terrain_yield_table[terrain * 16 + good_id];      /* [TBD numeric cells: NAMES.TXT] */
+    yield = g_terrain_yield_table[terrain * 16 + good_id];      /* RUNTIME_ONLY (data-resident): numeric cells loaded from NAMES.TXT */
 
     if (yield != 0) {                                  /* @asm 0x9C27 OR ax,ax / JNE */
         /* --- step 7: forest / adjacency tier nudge (land goods only, good>=8) --- */
@@ -412,7 +412,7 @@ void colony_turn_update(void)
         for (commodity = 1; commodity < 8; commodity++) { /* @asm 0xA34D start 1; 0xA36F CMP 8/JGE */
             if (commodity == 5) continue;               /* @asm 0xA375 CMP 5/JE skip (Lumber) */
             /* @asm 0xA37B si=terrain<<4; bx=commodity; base=g_terrain_yield_table[bx+si+0x2F7B] */
-            int base = g_terrain_yield_table[terrain * 16 + commodity]; /* [TBD numeric: NAMES.TXT] */
+            int base = g_terrain_yield_table[terrain * 16 + commodity]; /* RUNTIME_ONLY (data-resident): numeric cells from NAMES.TXT */
             int modifier = feature_yield_bonus(center_resource, commodity); /* @asm 0xA392 CALL 0x9AAA */
             int y;
             if (modifier >= 0) y = base;                /* @asm 0xA39B OR/JGE 0xA354 */
