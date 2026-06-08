@@ -68,12 +68,12 @@ the true RETF when porting (a few have reseg `terminal: page-end` size inflation
 | 2 | 0x4CC50 | 5733 | 0x0D | 0x1A1F:0xA60 | ENTER 0x1E4 | Big LARGE_LOGIC by the AI dispatcher (0x4E2D6) |
 | 3 | **0x2D658** | 5220 | 0x03 | 0x191F:0x688 | colony_t*, difficulty, REBELMAJORITY/TORYMAJORITY/SONSUP/TRAINPROFESSION/FOOD1 | **Colony SoL/Tory% + colonist-training handler** — long-standing backlog item |
 | 4 | ~~0x43074~~ DONE | 4950 | 0x09 | 0x181F:0x424 | **= cursor-tile / unit-stack INFO PANEL renderer** (read-only draw; "turn dispatcher" guess was FALSE — no turn/rebel/tax write). Ported wave-14 → src/render/tile_info_panel.c | — |
-| 5 | 0x5E9B0 | 4371 | 0x11 | 0x1A1F:0x0 | ENTER 0xCC; DISPATCHER | First fn of page 0x11 (combat/consequence neighbourhood) |
+| 5 | ~~0x5E9B0~~ DONE | 4371 | 0x11 | 0x1A1F:0x0 | **= tile/unit-stack info-panel renderer** (two-pass measure/render, 11 args, ~18 conditional panel lines); "combat/consequence dispatcher" role was FALSE — no combat writes. Already BYTE_VERIFIED in overlay_05C69C_0610DA.c | — |
 | 6 | ~~0x49600~~ DONE | 3451 | 0x0C | thunk @0x1CA3C | Native trade haggling resolver (BUY/SELL prices) — ported wave-13 → src/native/haggle.c | — |
-| 7 | 0x2BC72 | 2259 | 0x02 | 0x191F:0x6372 | ENTER 0x18 | Large UI/colony-screen-segment fn |
-| 8 | 0x69D8C | 2420 | 0x16 | 0x191F:0xEAC | "TERRAIN" | Terrain/mapgen LARGE_LOGIC (mapgen mostly TBD) |
-| 9 | 0x61F02 | 2067 | 0x13 | 0x1A1F:0xF2 | rect `(%d,%d)-(%d,%d)` | Geometry/region engine (underpins UI/report draw) |
-| 10 | 0x48F34 | 1740 | 0x0C | 0x1A1F:0x2154 | colony_t* 0x8542; `%Fs %d %d` | Colony-struct toucher (native/colony page) |
+| 7 | ~~0x2BC72~~ DONE | 2259 | 0x02 | 0x191F:0x6372 | **= colony-screen command/keyboard dispatcher** (3-layer: primary switch 0x4E/0x4D/0x2D/0x09/0x1B; submode [0x32E] 0..4; fn-key block 0x13C..0x142). BYTE_VERIFIED in overlay_02AAEC_02F0C7.c | — |
+| 8 | ~~0x69D8C~~ DONE | 2420 | 0x16 | 0x191F:0xEAC | **= terrain_report_dialog (F1)** — boxed terrain report dialog; 4 phases: frame, title token from stride-0x10 table @0x2F74, terrain-yield row draw, scroll. BYTE_VERIFIED in overlay_068A14_06C1CC.c | — |
+| 9 | ~~0x61F02~~ RECONSTRUCTED | 2067 | 0x13 | 0x1A1F:0xF2 | **= goto-destination flood / path preview** (16-stride Dijkstra, frontier queue, 8-dir relax, back-walk to cursor, preview render 0x191F:0x12c). RECONSTRUCTED in overlay_0612E6_066EB3.c — terrain-cost table DS:0x2F76 values are GROUP B data (not in EXE static) | — |
+| 10 | ~~0x48F34~~ DONE | 1740 | 0x0C | 0x1A1F:0x2154 | **= colony surrounding-tile / production map scan** (4-phase: clear visited, mark adjacent owned units, classify 5×5 terrain types, write summary to 0x9E58/0x9E78). BYTE_VERIFIED in overlay_046D70_04C2E1.c | — |
 | 11 | 0x4B308 | ~1861 | 0x0C | 0x1A1F:0x4528 | HAPPY/MEDIUM/SAVAGE/MADATSHIPS/VILLAGE | Tribe-attitude compute (5 levels) |
 
 **False positive to avoid:** `0x33F6A` (would-be #1 at ~10788B) is a CS-relative
