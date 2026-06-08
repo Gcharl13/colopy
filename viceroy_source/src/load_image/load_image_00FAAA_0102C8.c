@@ -482,7 +482,7 @@ int func_00FE8C_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (28 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00FECA_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -500,7 +500,7 @@ int func_00FECA_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_RETURN (10 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_00FEE6_logic_sz_10(void)
 {
@@ -567,7 +567,7 @@ int func_00FEFC_logic_sz_20(uint16_t arg0_bp_06)
  *   - 0x0D1D:0x0842  (2x)
  *   - 0x0D1D:0x08BC
  * @inferred_role  DISPATCHER (87 bytes). 0x0D1D:0x0842 + 0x0D1D:0x0842
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_00FF12_rtl_sz_87(uint16_t arg0_bp_06)
 {
@@ -608,7 +608,7 @@ int func_00FF12_rtl_sz_87(uint16_t arg0_bp_06)
  * LCALL targets:
  *   - 0x0D1D:0x2290
  * @inferred_role  WRAPPER_LCALL (39 bytes). 0x0D1D:0x2290
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_00FF72_rtl_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -626,7 +626,7 @@ int func_00FF72_rtl_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  FIND_LOOP (34 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_00FF9A_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -657,7 +657,7 @@ int func_00FF9A_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *   - 0x0D1D:0x1896
  *   - 0x0D1D:0x1E9A
  * @inferred_role  DISPATCHER (127 bytes). 0x0D1D:0x2290 + 0x0D1D:0x1896
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_01000E_rtl_sz_127(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
@@ -700,7 +700,7 @@ int func_01000E_rtl_sz_127(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  * LCALL targets:
  *   - 0x0D1D:0x0A3E
  * @inferred_role  WRAPPER_LCALL (26 bytes). 0x0D1D:0x0A3E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_01008E_rtl_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -721,7 +721,7 @@ int func_01008E_rtl_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * LCALL targets:
  *   - 0x0D1D:0x1896
  * @inferred_role  WRAPPER_LCALL (33 bytes). 0x0D1D:0x1896
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_0100A8_rtl_sz_33(uint16_t arg0_bp_06)
 {
@@ -742,7 +742,7 @@ int func_0100A8_rtl_sz_33(uint16_t arg0_bp_06)
  * LCALL targets:
  *   - 0x0D1D:0x2406
  * @inferred_role  WRAPPER_LCALL (44 bytes). 0x0D1D:0x2406
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_0100EC_rtl_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -764,7 +764,7 @@ int func_0100EC_rtl_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x0D1D:0x196E
  *   - 0x0D1D:0x15EC
  * @inferred_role  UNKNOWN (90 bytes). 0x0D1D:0x196E + 0x0D1D:0x15EC
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_010118_rtl_sz_90(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -794,7 +794,7 @@ int func_010118_rtl_sz_90(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * LCALL targets:
  *   - 0x0D1D:0x1E9A  (3x)
  * @inferred_role  DISPATCHER (134 bytes). 0x0D1D:0x1E9A + 0x0D1D:0x1E9A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
 int func_010172_rtl_sz_134(uint16_t arg0_bp_06)
 {

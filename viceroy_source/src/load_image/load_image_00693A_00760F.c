@@ -860,7 +860,7 @@ void func_00738E_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * Near CALL targets:
  *   - 0x006672
  * @inferred_role  PROLOGUE_HEAVY (99 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (hardware port I/O; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_0073A8_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {

@@ -83,7 +83,7 @@ int func_00AB78_colony_sz_29(void)
  * Near CALL targets:
  *   - 0x008D00
  * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00AB78; auto-segmentation artifact, not a standalone function)
  */
 int func_00AB95_colony_sz_78(uint16_t arg0_bp_06)
 {

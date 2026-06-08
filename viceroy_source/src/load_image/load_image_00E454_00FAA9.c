@@ -302,7 +302,7 @@ int func_00E76A_logic_sz_49(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00E76A; auto-segmentation artifact, not a standalone function)
  */
 int func_00E867_logic_sz_15(void)
 {
@@ -340,7 +340,7 @@ int func_00E964_logic_sz_54(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00E964; auto-segmentation artifact, not a standalone function)
  */
 int func_00EADE_logic_sz_15(void)
 {
@@ -432,7 +432,7 @@ int func_00EC96_logic_sz_49(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00EC96; auto-segmentation artifact, not a standalone function)
  */
 int func_00ED93_logic_sz_15(void)
 {
@@ -470,7 +470,7 @@ int func_00EEA4_logic_sz_54(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00EEA4; auto-segmentation artifact, not a standalone function)
  */
 int func_00F01E_logic_sz_15(void)
 {
@@ -508,7 +508,7 @@ int func_00F184_logic_sz_49(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00F184; auto-segmentation artifact, not a standalone function)
  */
 int func_00F281_logic_sz_15(void)
 {
@@ -809,7 +809,7 @@ int func_00F52C_logic_sz_35(uint16_t src_desc_off_bp_06, uint16_t src_desc_seg_b
  * Near CALL targets:
  *   - 0x00F69A
  * @inferred_role  FIND_LOOP (68 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00F5E6_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
@@ -861,7 +861,7 @@ int func_00F702_rtl_sz_29(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_RETURN (10 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00F8DD; auto-segmentation artifact, not a standalone function)
  */
 int func_00F8EC_logic_sz_10(void)
 {
@@ -886,7 +886,7 @@ int func_00F8EC_logic_sz_10(void)
  *   - 0x00F98D  (4x)
  *   - 0x00F960
  * @inferred_role  DISPATCHER (106 bytes). 0x0D1D:0x126A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00F8DD; auto-segmentation artifact, not a standalone function)
  */
 int func_00F8F6_rtl_sz_106(uint16_t arg0_bp_06)
 {

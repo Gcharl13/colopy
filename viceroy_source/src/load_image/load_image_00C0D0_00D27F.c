@@ -493,7 +493,7 @@ int func_00C8FC_logic_sz_88(int near *origin_a /*ax*/, int near *origin_b /*dx*/
  * @callers    0
  * @touches_8542 False
  * @inferred_role  PROLOGUE_HEAVY (74 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00CA0C_logic_sz_74(uint16_t arg0_bp_08)
 {
@@ -547,7 +547,7 @@ int func_00CB59_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x0A58:0x0207
  *   - 0x0A58:0x02E0
  * @inferred_role  DISPATCHER (92 bytes). 0x0A58:0x0054 + 0x0A58:0x02CE
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (BIOS interrupt; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00CC8F_op_sz_92(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -921,7 +921,7 @@ int func_00D1E4_logic_sz_52(const void far *rgb /*bp+6:bp+8*/)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (BIOS interrupt; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00D272_logic_sz_13(void)
 {

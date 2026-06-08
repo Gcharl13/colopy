@@ -19,7 +19,7 @@
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (BIOS interrupt; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00D286_logic_sz_15(void)
 {
@@ -118,7 +118,7 @@ int func_00D41E_logic_sz_29(void)
  * LCALL targets:
  *   - 0x09F6:0x00B0
  * @inferred_role  MEDIUM_LOGIC (129 bytes). 0x09F6:0x00B0
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00D642_op_sz_129(uint16_t arg0_bp_06)
 {

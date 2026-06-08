@@ -614,7 +614,7 @@ int func_0063B6_logic_sz_14(uint16_t arg0_bp_06)
  *   - 0x037F:0x000A
  *   - 0x037F:0x02E0
  * @inferred_role  UNKNOWN (69 bytes). 0x037F:0x000A + 0x037F:0x02E0
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_0063B6; auto-segmentation artifact, not a standalone function)
  */
 int func_0063D5_op_sz_69(uint16_t arg0_bp_08)
 {

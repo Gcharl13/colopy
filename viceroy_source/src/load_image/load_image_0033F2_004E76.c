@@ -334,7 +334,7 @@ int func_004314_logic_sz_14(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_004314; auto-segmentation artifact, not a standalone function)
  */
 int func_0043B1_logic_sz_40(void)
 {

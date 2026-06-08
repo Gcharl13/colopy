@@ -179,7 +179,7 @@ int func_00275C_logic_sz_39(uint16_t arg0_bp_08, uint16_t arg1_bp_0A)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_00275C; auto-segmentation artifact, not a standalone function)
  */
 int func_002783_logic_sz_13(void)
 {
@@ -892,7 +892,7 @@ int func_003104_logic_sz_143(void)
  * Near CALL targets:
  *   - 0x002E4E  (2x)
  * @inferred_role  LARGE_LOGIC (598 bytes). 0x0C36:0x000A + 0x0C36:0x000A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_003104; auto-segmentation artifact, not a standalone function)
  */
 int func_003193_op_sz_598(uint16_t arg0_bp_06)
 {

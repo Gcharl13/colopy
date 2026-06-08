@@ -127,7 +127,7 @@ int func_012BC2_op_sz_145(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg
  * LCALL targets:
  *   - 0x0D1D:0x113C
  * @inferred_role  PROLOGUE_HEAVY (60 bytes). 0x0D1D:0x113C
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_012C8C_rtl_sz_60(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -443,7 +443,7 @@ int func_01347C_logic_sz_21(uint16_t arg0_bp_08)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (17 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_013B4E_logic_sz_17(void)
 {
@@ -461,7 +461,7 @@ int func_013B4E_logic_sz_17(void)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (22 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_013B4E; auto-segmentation artifact, not a standalone function)
  */
 int func_013B9F_logic_sz_22(uint16_t arg0_bp_06)
 {
@@ -655,7 +655,7 @@ int func_014293_rtlink_sz_1018(void)
  *   - 0x0189A0
  *   - 0x01892F
  * @inferred_role  DISPATCHER (69 bytes). 0x110D:0x1341
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_015094_rtlink_sz_69(uint16_t arg0_bp_06)
 {
@@ -691,7 +691,7 @@ int func_015094_rtlink_sz_69(uint16_t arg0_bp_06)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_015131_logic_sz_20(uint16_t arg0_bp_06)
 {
@@ -733,7 +733,7 @@ int func_015145_logic_sz_19(uint16_t arg0_bp_06)
  * LCALL targets:
  *   - 0x110D:0x1341
  * @inferred_role  PROLOGUE_HEAVY (75 bytes). 0x110D:0x1341
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_015166_rtlink_sz_75(uint16_t arg0_bp_0A)
 {
@@ -762,7 +762,7 @@ int func_015166_rtlink_sz_75(uint16_t arg0_bp_0A)
  * Near CALL targets:
  *   - 0x015219
  * @inferred_role  PROLOGUE_HEAVY (65 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     SHADOWED (interior of func_015166; auto-segmentation artifact, not a standalone function)
  */
 int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
 {
@@ -786,7 +786,7 @@ int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
  * Near CALL targets:
  *   - 0x016127
  * @inferred_role  WRAPPER_NEARCALL (19 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_016073_logic_sz_19(void)
 {
@@ -858,7 +858,7 @@ int func_01A283_logic_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @callers    0
  * @touches_8542 False
  * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_01A425_logic_sz_23(void)
 {
