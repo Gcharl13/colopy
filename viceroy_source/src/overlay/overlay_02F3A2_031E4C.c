@@ -1098,27 +1098,33 @@ void num_badge_metrics(int value, int *w_out, int *y_out)
 }
 
 /* ============================================================================
- * func_031BE6  --  beveled_num_cell(int mode, int x, int y)  [REAL -- UI LAYOUT]
+ * func_031BE6  --  beveled_num_cell(int value, int x, int y, int mode) -> height
  *   @asm func_031BE6 @ file 0x031BE6..0x031DC7  (481 B, ENTER 0xB6,0, RET) [V]
  *
- * Draws a beveled numeric CELL/badge (a 3-D button showing a number). Colours
- * and bevel direction depend on `mode` bit0 (raised vs sunken); bit1 selects
- * "no-bevel" variant. This IS layout/widget composition -> IN SCOPE.
+ * Draws a beveled numeric CELL/badge (a 3-D button showing a number) and RETURNS
+ * its text height (ax = [bp-0xAE]).  Colours and bevel direction depend on `mode`
+ * bit0 (raised vs sunken); bit1 selects the "no-bevel" variant.  This IS layout/
+ * widget composition -> IN SCOPE.
+ *
+ * ABI CORRECTION (byte-verified from the bp+ reads): the auto-port typed this as
+ *   void beveled_num_cell(mode,x,y) -- WRONG.  The real args are
+ *   value=[bp+4], x=[bp+6], y=[bp+8], mode=[bp+0xA] (FOUR words) and it returns
+ *   an int height in ax (used by func_031DC8 to advance its row cursor).
  *
  * @asm:
- *   - mode bit0 picks the colour set (raised: fg0/edge0x30/text0x39/light7 ;
- *     sunken: fg0xF/edge0x39/text0x30/light0xE)                   @asm 0x031BEC..0x031C24
- *   - num_badge_metrics(value=bp+4, &w, &h0) via near 0x031BB0     @asm 0x031C3A
- *   - cell x = (w_text - w)/2 + x(bp+6) ; cell y = y(bp+8)+2        @asm 0x031C40..0x031C55
+ *   - mode([bp+0xA]) bit0 picks the colour set (raised: fg0/edge0x30/text0x39/
+ *     light7 ; sunken: fg0xF/edge0x39/text0x30/light0xE)          @asm 0x031BEC..0x031C24
+ *   - num_badge_metrics(value=[bp+4], &w, &h0) via near 0x031BB0   @asm 0x031C3A
+ *   - cell x = (w_text - w)/2 + x([bp+6]) ; cell y = y([bp+8])+2    @asm 0x031C40..0x031C55
  *   - if (mode bit1 == 0) draw 4 bevel edges:
  *       edge_light(0x191F:0x8BC) x2 (top + left) ;
  *       edge_shadow(0x191F:0x8B2) x2 (bottom + right)              @asm 0x031C62..0x031D04
  *     and if light-colour>=0 a final box_bevel(0x181F:0xBA)        @asm 0x031D09..0x031D3A
  *   - number text: num_to_str(value)+strcat_far(0x117E); if a 2nd
  *     token via 0x0D1D:0x842/0x7E4 ; draw via draw_text_clip(0x13C)
- *     twice (shadow + face)                                        @asm 0x031D3F..0x031DB9
+ *     twice (shadow + face); RETURN the second draw's height       @asm 0x031D3F..0x031DBF
  * ============================================================================ */
-void beveled_num_cell(int mode, int x, int y)
+int beveled_num_cell(int value, int x, int y, int mode)
 {
     char buf[0x52];                                      /* @asm bp-0x56 number text */
     int  fg, edge, text_col, light;                      /* colour set */
@@ -1134,7 +1140,7 @@ void beveled_num_cell(int mode, int x, int y)
     }
     (void)fg;
 
-    num_badge_metrics(/*value=*/0 /*bp+4*/, &w, &h0);    /* @asm 0x031C3A near 0x031BB0 */
+    num_badge_metrics(value, &w, &h0);                   /* @asm 0x031C3A near 0x031BB0 (&w = [bp-0xAE]) */
     cell_x = (/*w_text*/0 - w) / 2 + x;                  /* @asm 0x031C40..0x031C4C */
     cell_y = y + 2;                                      /* @asm 0x031C50 */
     (void)cell_x; (void)cell_y;
@@ -1150,42 +1156,58 @@ void beveled_num_cell(int mode, int x, int y)
     }
 
     /* number text (shadow + face) */
-    num_to_str(/*value*/0);                              /* @asm 0x031D42 0x181F:0x22 */
+    num_to_str(value);                                   /* @asm 0x031D42 0x181F:0x22 */
     strcat_far(buf);                                     /* @asm 0x031D51 0x0D1D:0x117E */
     /* optional second token @asm 0x031D5D 0x0D1D:0x842 -> 0x7E4 */
     draw_text_clip(/* buf, edge colour (shadow) */);     /* @asm 0x031DA2 0x181F:0x13C */
-    draw_text_clip(/* buf, text_col (face) */);          /* @asm 0x031DB4 0x181F:0x13C */
+    draw_text_clip(/* buf, text_col (face) */);          /* @asm 0x031DB4 0x181F:0x13C ([bp-4]=h) */
     (void)edge; (void)text_col;
+    return w;                                            /* @asm 0x031DBF mov ax,[bp-0xAE] (cell width) */
 }
 
 /* ============================================================================
- * func_031DC8  --  beveled_cell_grid(void)   [REAL -- UI LAYOUT]
- *   @asm func_031DC8 @ file 0x031DC8..0x031E4C  (132 B shown; real size 351 B,
- *   ENTER 0xA,0, RETF -- auto stub truncated at file-range end 0x031E4C) [V]
+ * func_031DC8  --  beveled_cell_grid(int redraw)   [REAL -- UI LAYOUT]
+ *   @asm func_031DC8 @ file 0x031DC8..0x031E4B  (132 B, ENTER 0xA,0, near RET) [V]
  *
- * Draws a panel/grid of beveled numeric cells (uses beveled_num_cell). This is
- * the top of a larger function whose body spills past this file's nominal range;
- * the portion in range sets up the frame and the first cells.
+ * EXTENT CORRECTION (byte-verified): the auto stub claimed "real size 351 B,
+ * truncated at file-range end 0x031E4C" and that the tail ported in the next
+ * overlay file.  WRONG: this function ends at a NEAR `ret` @0x031E4B (132 bytes,
+ * fully inside this file).  The "351 B / spill" reading swept in the SEPARATE
+ * function that begins at 0x031E4C.  No body spills anywhere; the complete grid
+ * loop is reproduced below.
+ *
+ * Draws the right-side panel of three stacked beveled numeric cells.  arg0
+ * ([bp+4], `redraw`) when nonzero clears the panel rectangle afterwards.
  * @asm:
- *   - frame (0x20,0x25,0x59,0x119) via draw_window_frame(near 0x6DDC)  @asm 0x031DCC
- *   - cell origin x=0x119 (bp-2), y=0x59 (bp-4), index=0 (bp-6)         @asm 0x031DDC..0x031DE6
- *   - (loop body continues beyond 0x031E4C) calls beveled_num_cell
- *     (func_031BE6) per cell                                            @asm 0x031E1D
- * NOTE: extent verified from the re-segmented disasm (func_031DC8 size=351);
- * the tail (>0x031E4C) belongs to the NEXT overlay file's range and is ported
- * there. Only the in-range setup is reproduced here.
+ *   - frame (0x20,0x25,0x59,0x119) via draw_window_frame(near 0x6DDC)  @asm 0x031DD6
+ *   - cell origin x=0x119 ([bp-2]), y=0x59 ([bp-4]), idx=0 ([bp-6])    @asm 0x031DDC..0x031DE6
+ *   - for idx=0..2 (@0x031DEB loop, JL 0x031DEB @0x031E2F):
+ *       highlight = (idx == [0x9E2E] && [0x07EE] != 0 && g_phase_9E3A == 5)
+ *                                                                      @asm 0x031DF0..0x031E07
+ *       h = beveled_num_cell(table_93D8[idx], x, y, highlight)         @asm 0x031E0C..0x031E20
+ *           (table at DGROUP 0x93D8 = {0x1430,0x143E,0x1430})          @asm 0x031E19 [bx-0x6C28]
+ *       y += h + 2                                                     @asm 0x031E23..0x031E25
+ *   - if (redraw != 0) box_clear(0x119,0x59,0x20,0x25) via 0x181F:0xE2 @asm 0x031E31..0x031E45
  * ============================================================================ */
-void beveled_cell_grid(void)
+void beveled_cell_grid(int redraw)
 {
-    int x = 0x119;                                       /* @asm 0x031DDC bp-2 */
-    int y = 0x59;                                        /* @asm 0x031DE1 bp-4 */
-    int idx = 0;                                         /* @asm 0x031DE6 bp-6 */
+    static const int cell_value[3] = { 0x1430, 0x143E, 0x1430 };  /* DGROUP 0x93D8 */
+    int x = 0x119;                                       /* @asm 0x031DDC [bp-2] */
+    int y = 0x59;                                        /* @asm 0x031DE1 [bp-4] */
+    int idx;                                             /* @asm 0x031DE6 [bp-6] */
 
     draw_window_frame(0x20, 0x25, 0x59, 0x119);          /* @asm 0x031DD6 near 0x6DDC */
 
-    /* per-cell draw loop (spills past 0x031E4C):
-     *   beveled_num_cell(mode, x, y) for each cell    @asm 0x031E1D near func_031BE6
-     * Body continuation is ported in the adjoining overlay file. */
-    beveled_num_cell(/*mode*/0, x, y);                   /* @asm 0x031E1D near 0x031BE6 */
-    (void)idx;
+    for (idx = 0; idx < 3; idx++) {                      /* @asm 0x031DE6/0x031E2B..0x031E2F JL */
+        int highlight = 0;                               /* @asm 0x031DEB [bp-8]=0 */
+        if (idx == (int)G16(0x9E2E) &&                   /* @asm 0x031DF0/0x031DF3 JNE */
+            G16(0x07EE) != 0 &&                          /* @asm 0x031DF9 JE  */
+            G16(0x9E3A) == 5)                            /* @asm 0x031E00 JNE */
+            highlight = 1;                               /* @asm 0x031E07 */
+        y += beveled_num_cell(cell_value[idx], x, y, highlight) + 2;
+                                                         /* @asm 0x031E1D near 0x031BE6; ret+2 @0x031E23 */
+    }
+
+    if (redraw != 0)                                     /* @asm 0x031E31 JE 0x031E4A */
+        box_clear(/* 0x119,0x59,0x20,0x25 */);           /* @asm 0x031E45 0x181F:0xE2 */
 }

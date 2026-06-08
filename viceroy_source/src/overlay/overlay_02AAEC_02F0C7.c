@@ -276,6 +276,17 @@ extern int overlay_call_191F_0648(void);  /* near 0x7E24 -> draw helper (02CA14)
 extern int overlay_call_191F_0708(void);  /* near 0x7E74 -> click feedback (02CA64) */
 extern int overlay_call_191F_0720(void);  /* near 0x7E83 -> NEXT colony (02CA73)    */
 extern int overlay_call_191F_0678(void);  /* near 0x7E38 -> PREV colony (02CA28)    */
+extern int overlay_call_191F_078C(void);  /* near 0x78C (02CA9B) -> finalise (func_07EAB) */
+/* func_02BB8A release-dispatch action set (jump table cs:0x635A; mode 0..0xA):  */
+extern int overlay_call_191F_063C(void);  /* mode 0  (02CA0F)                      */
+extern int overlay_call_191F_07A4(void);  /* mode 1  (02CAA5)                      */
+extern int overlay_call_191F_0810(void);  /* mode 2  (02CAD2)                      */
+extern int overlay_call_191F_0624(void);  /* mode 3  (02CA05)                      */
+extern int overlay_call_191F_04F8(void);  /* mode 4  (02C988)                      */
+extern int overlay_call_191F_0570(void);  /* mode 5  (02C9BA)                      */
+extern int overlay_call_191F_0588(void);  /* mode 8  (02C9C4)                      */
+extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                      */
+extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
 extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE*/BUILT*/DEPLETION) */
 
@@ -735,38 +746,99 @@ done: /* @0x02B72A */
 }
 
 /* ============================================================================
- * func_02B744  — defender PRODUCTION/VALUE figure for the colony's active worker
+ * func_02B744  — active-worker "UPGRADE?" cost figure + confirm + apply
  * @asm        0x02B744..0x02B8C5  (386 bytes)  ENTER 0x12  RETF  touches *(0x8542)
  * @asm_ref    page_02.asm "func_02B744 size=386 insns=140"
- * @role       Reached via 0x191F:0xA90 (from king_events.c func_02F052).  For the
- *             active worker ctx->[0x94] computes value = attr*13 (the *3<<2 + *1
- *             pattern @0x02B7B2) + ((PowerRecord[owner].byte[-0x779E] + 4) * delta)
- *             when the worker's defence delta (attr - ctx->[0xB6]) is positive;
- *             doubles when ctx->[0x92]==0.  PowerRecord stride 0x13C confirmed
- *             (imul 0x13C @0x02B7CB; owner = ctx->[0x1A]).
- * @status     BYTE_VERIFIED (head + ctx/PowerRecord struct); the exact value the
- *             tail returns past the accumulation shown is not yet decoded (mirrors land prod).
+ * @role       Reached via 0x191F:0xA90 (from king_events.c weekly redraw).  For the
+ *             active worker ctx->[0x94]:
+ *               value = defbonus*13 (the *3<<2 + *1 pattern @0x02B7B2)
+ *                     + ((PowerRecord[owner].byte[-0x779E] + 4) * def)   when def>0
+ *               and doubled when ctx->[0x92]==0.
+ *             defbonus = unit_attr_return - ctx->[0x92]  (clamped >=0)
+ *             def      = unit_attr_outparam - ctx->[0xB6] (clamped >=0)
+ *             PowerRecord stride 0x13C (imul 0x13C @0x02B7CB; owner=ctx->[0x1A]).
+ *             Then it FORMATS the worker name + `value` into the panel buffers
+ *             ([0x9CD2] name via 0x181F:0xD4E+0x0D1D:0x117E; [0x9CB0]=value),
+ *             reads the owner's resource via 0x181F:0xA92 into [0x9CB4], and
+ *             pops a Yes/No box (0x181F:0x652): key 0xD22 when funds>=value,
+ *             key 0xD29 otherwise.  On CONFIRM (box==2) it commits the upgrade:
+ *               if (defbonus>0) ctx->[0x98] += defbonus;
+ *               ctx->[0x92] = attr_return;
+ *               spend(value, owner)            via 0x181F:0xAF6;
+ *               if (attr_outparam!=0) ctx->[0xB6] += def;
+ *               finalise (func_07EAB)          via 0x191F:0x78C.
+ * @status     BYTE_VERIFIED (full body hand-traced).  CORRECTION: the prior stub
+ *             stopped at the value computation, returned `value`, and conflated
+ *             unit_attr's out-param ([bp-2]) with its return ([bp-0xE]).  The
+ *             real function is an interactive prompt called for SIDE EFFECTS; its
+ *             return register is undefined at the early `jmp` exits (callers, e.g.
+ *             ui_redraw_power, discard it), so this port returns 0 by convention.
  */
 int func_02B744_colony_sz_24(void)
 {
-    int kind, attr, def, defbonus, value;
+    int kind, base, attr, def, defbonus, value, box;
+    int owner;
 
-    kind = overlay_call_181F_0CC2();                /* @0x02B758 unit_class(&loc,ctx->[0x94]) */
-    attr = overlay_call_181F_0AC4();                /* @0x02B771 unit_attr(&loc,ctx->[0x94]) */
-    def  = /*[bp-2]*/ attr - CW(0xB6);              /* @0x02B783 ctx->[0xB6] */
-    if (def < 0) def = 0;
-    if (kind == 0) return 0;                        /* @0x02B78E */
-    defbonus = attr - CW(0x92);                     /* @0x02B79A ctx->[0x92] */
-    if (defbonus < 0) defbonus = 0;
-    if (defbonus <= 0 && def == 0) return 0;        /* @0x02B7A5 */
+    kind = overlay_call_181F_0CC2();                /* @0x02B758 unit_class(&base,ctx->[0x94]) */
+    attr = overlay_call_181F_0AC4();                /* @0x02B771 unit_attr(&base,ctx->[0x94]) ret=[bp-0xE] */
+    /* 0x181F:0xAC4 also writes an out-param into [bp-2] ("base"); the `def` delta
+     * and the final ctx->[0xB6] bump use THAT out-param, whereas `defbonus`/ctx
+     * ->[0x92] use the call's RETURN value ([bp-0xE]).  The void-returning thunk
+     * here exposes only the return, so we model base==attr; if the library writes
+     * a distinct out-param the two deltas could differ (documented, not guessed). */
+    base = attr;                                    /* [bp-2] out-param (see note) */
+
+    def = (int16_t)base - (int16_t)CW(0xB6);        /* @0x02B77F/0x02B783 */
+    if (def < 0) def = 0;                           /* @0x02B787 JNS */
+    if (kind == 0) goto done;                        /* @0x02B78E -> 0x02B8C2 */
+
+    defbonus = (int16_t)attr - (int16_t)CW(0x92);   /* @0x02B797/0x02B79A */
+    if (defbonus < 0) defbonus = 0;                 /* @0x02B79E JNS */
+    if (defbonus <= 0 && def == 0) goto done;       /* @0x02B7A5/0x02B7AD -> 0x02B8C2 */
 
     value = defbonus * 13;                          /* @0x02B7B2 (*3<<2 + *1) */
-    if (def != 0) {                                 /* @0x02B7C0 */
-        int pr = CB(0x1A) * 0x13C;                  /* @0x02B7CB PowerRecord[owner] */
-        value += (UREC_B(pr - 0x779E + 0) + 4) * def; /* @0x02B7D4 */
+    if (def != 0) {                                 /* @0x02B7C0 JE 0x02B7E0 */
+        int pr = CB(0x1A) * 0x13C;                  /* @0x02B7C6/0x02B7CB PowerRecord[owner] */
+        value += (UREC_B(pr - 0x779E + 0) + 4) * def; /* @0x02B7CF..0x02B7DD */
     }
     if (CW(0x92) == 0) value <<= 1;                 /* @0x02B7E4/0x02B7EB */
-    return value;                                   /* figure (tail = not yet decoded) */
+
+    /* ---- format the worker name + value into the panel buffers -------------- */
+    overlay_call_181F_0D4E();                       /* @0x02B7F4 unit_def(ctx->[0x94]) -> DX:AX */
+    overlay_call_0D1D_117E();                       /* @0x02B802 sprintf([0x9CD2], name) */
+    DG_W(0x9CB0) = (int16_t)value;                  /* @0x02B80E [0x9CB0..2] = (long)value */
+    DG_W(0x9CB2) = (int16_t)(value < 0 ? -1 : 0);
+
+    owner = CB(0x1A);                               /* @0x02B819 ctx->[0x1A] */
+    DG_W(0x9CB4) = overlay_call_181F_0A92();        /* @0x02B823 resource(owner) -> [0x9CB4..6] */
+    DG_W(0x9CB6) = 0;
+    /* second 0x181F:0xA92(owner) -> funds, compared (signed 32-bit) vs value. */
+    {
+        long funds = (long)(int16_t)overlay_call_181F_0A92();   /* @0x02B83C */
+        if (funds >= (long)value) {                 /* @0x02B844 cmp hi (jl), lo (jb) -> afford */
+            box = overlay_call_181F_0652();         /* @0x02B853 msg_box(5, key 0xD22) -> [bp-4] */
+        } else {
+            overlay_call_181F_0652();               /* @0x02B865 msg_box(5, key 0xD29) */
+            box = 0;                                /* @0x02B86D [bp-4]=0 */
+        }
+    }
+
+    if (box != 2) goto done;                        /* @0x02B872/0x02B876 -> 0x02B8C2 */
+
+    /* ---- CONFIRMED: commit the upgrade. ------------------------------------- */
+    {
+        int gain = (int16_t)attr - (int16_t)CW(0x92);   /* @0x02B878..0x02B883 [bp-0xA] */
+        if (gain > 0) CW(0x98) += (uint16_t)gain;       /* @0x02B886/0x02B88A */
+    }
+    CW(0x92) = (uint16_t)attr;                      /* @0x02B895 */
+    overlay_call_181F_0AF6();                       /* @0x02B8A5 spend((long)value, owner) */
+    if (/*out-param [bp-2]*/ base != 0)             /* @0x02B8AD JE 0x02B8BE */
+        CW(0xB6) += (uint16_t)def;                  /* @0x02B8B3/0x02B8BA ctx->[0xB6] += def */
+    overlay_call_191F_078C();                       /* @0x02B8BE finalise (func_07EAB) */
+
+done: /* @0x02B8C2 */
+    (void)owner;
+    return 0;                                        /* return register undefined; callers discard */
 }
 
 /* ============================================================================
@@ -884,27 +956,88 @@ int func_02B9DC_op_sz_72(void)
 }
 
 /* ============================================================================
- * func_02BB8A  — colony three-button RELEASE sampler (companion of func_02C546)
+ * func_02BB8A  — colony three-button RELEASE sampler + ACTION dispatcher
  * @asm        0x02BB8A..0x02BC71  (232 bytes)  ENTER 2  RETF
  * @asm_ref    page_02.asm "func_02BB8A size=232 insns=100"
- * @role       Reads input edges ([0x7EC]/[0x7F6]); two near 0x7E5B (= func_02CA4B
- *             trampoline -> 0x191F:0x6CC) sample button state; a chained range
- *             test vs [0x5384] selects which colony toggle changed and updates
- *             [0x8D54]/[0x8D56].  Pure UI state.
- * @status     BYTE_VERIFIED (flow + globals).
- *             0x191F:0x6CC = read_click_state(); returns 0=none, 1=down, 2=act
- *             (CONFIRMED: overlay_027BB6 @0x029DE4). Band-test body after 0x02BBC0
- *             is incomplete (logic not yet ported; structure confirmed).
+ * @role       Samples the click state (0x191F:0x6CC, returns 0=none/1=down/2=act)
+ *             and dispatches the matching colony-toggle action.
+ *   (1) If [0x7EC]!=0 OR ([0x7EC]==0 && [0x7F6]==0): sample once and latch the
+ *       result into BOTH [0x8D54] and [0x8D56].
+ *   (2) m = [0x8D54].  When the latched screen is the grid (m==6 || m==7),
+ *       re-sample and REMAP the raw sample band -> action code:
+ *         raw==8                       -> 0x2BBF4 (keep iff [0x8D54]==7, else 0x14)
+ *         raw>8 or raw<0               -> 0x14 (none)
+ *         raw in {0,1,2}               -> 0x2BBD2 (keep iff [0x8D54]==6, else 0x14)
+ *         raw==5                       -> 0x2BBF4 (keep iff [0x8D54]==7, else 0x14)
+ *         else                         -> 0x14 (none)
+ *   (3) Gate the dispatch: if [0x7F6]!=0 dispatch m directly; otherwise only
+ *       m==2 (needs [0x5384] bit1 CLEAR), m==1 and m==5 (need [0x5384] bit0
+ *       CLEAR) dispatch -- every other m returns without acting.
+ *   (4) Dispatch via the 11-entry jump table at cs:0x635A (m must be <=0xA):
+ *         0->0x63C 1->0x7A4 2->0x810 3->0x624 4->0x4F8 5->0x570
+ *         6,7->none 8->0x588 9->0x6FC 0xA->0x6A8  (all 0x191F window).
+ * @status     BYTE_VERIFIED (full control flow + remap bands + the cs:0x635A jump
+ *             table + the [0x5384]/[0x7F6] dispatch gates all traced).
+ *             CORRECTION: the prior stub inverted the sampler gate (it had
+ *             `if ([0x7EC]==0) sample()` and omitted the [0x8D54]/[0x8D56] latch),
+ *             and left the entire remap/dispatch body unported.
+ *             0x191F:0x6CC = read_click_state(); 0=none, 1=down, 2=act.
  */
 int func_02BB8A_logic_sz_106(void)
 {
-    if (g_flag_07EC == 0)                           /* @0x02BB8E */
-        overlay_call_191F_06CC();                   /* @0x02BB9D near 0x7E5B sample */
-    if (g_flag_07F6 != 0) {                         /* @0x02BBAF */
-        overlay_call_191F_06CC();                   /* @0x02BBB7 sample again */
-        /* @0x02BBC0 chained band test vs [0x5384] -> [0x8D54]/[0x8D56]; not yet decoded. */
+    int m;      /* [bp-2] action code / sample */
+
+    /* (1) sample + latch (when [0x7EC]!=0, or both edges idle). */
+    if (g_flag_07EC != 0 || g_flag_07F6 == 0) {     /* @0x02BB8E/0x02BB95 */
+        m = overlay_call_191F_06CC();               /* @0x02BB9D sample */
+        g_screen_mode_8D54 = (int16_t)m;            /* @0x02BBA0 [0x8D54]=ax */
+        DG_W(0x8D56)       = (int16_t)m;            /* @0x02BBA3 [0x8D56]=ax */
     }
-    return 0;                                       /* @0x02BBF4 */
+
+    m = g_screen_mode_8D54;                         /* @0x02BBA6 */
+
+    /* (2) grid screens 6/7: re-sample and remap the raw band to an action code. */
+    if (m == 6 || m == 7) {                         /* @0x02BBAC/0x02BBB1 */
+        int raw = overlay_call_191F_06CC();         /* @0x02BBB7 re-sample -> [bp-2] */
+        m = raw;
+        if (raw == 8) {                             /* @0x02BBBD JE 0x02BBF4 */
+            if (g_screen_mode_8D54 != 7) m = 0x14;  /* @0x02BBF4/0x02BBD7 keep iff ==7 */
+        } else if (raw > 8 || raw < 0) {            /* @0x02BBC2 JA / @0x02BBC6 JL */
+            m = 0x14;                               /* @0x02BBD9 none */
+        } else if (raw <= 2) {                      /* @0x02BBC8 sub 2; JLE 0x02BBD2 (raw in 0..2) */
+            if (g_screen_mode_8D54 != 6) m = 0x14;  /* @0x02BBD2/0x02BBD7 keep iff ==6 */
+        } else if (raw == 5) {                      /* @0x02BBCC sub 3; JE 0x02BBF4 */
+            if (g_screen_mode_8D54 != 7) m = 0x14;  /* @0x02BBF4/0x02BBD7 keep iff ==7 */
+        } else {
+            m = 0x14;                               /* @0x02BBD0 -> 0x02BBD9 none */
+        }
+    }
+
+    /* (3) dispatch gate. */
+    if (g_flag_07F6 == 0) {                          /* @0x02BBDE JNE 0x02BBFC dispatch */
+        if (m == 2) {                                /* @0x02BBE5 */
+            if (DG_W(0x5384) & 2) return 0;          /* @0x02BBEB bit1 set -> no action */
+        } else if (m == 5 || m == 1) {               /* @0x02BC02/0x02BC08 */
+            if (DG_W(0x5384) & 1) return 0;          /* @0x02BC0E/0x02BBF0 bit0 set -> no action */
+        } else {
+            return 0;                                /* @0x02BC70 other modes: no action */
+        }
+    }
+
+    /* (4) jump-table dispatch (cs:0x635A), index m in 0..0xA. */
+    switch (m) {                                     /* @0x02BC4C if (m>0xA) end; jmp tbl[m] */
+        case 0:  overlay_call_191F_063C(); break;    /* @0x02BC16 */
+        case 1:  overlay_call_191F_07A4(); break;    /* @0x02BC1C */
+        case 2:  overlay_call_191F_0810(); break;    /* @0x02BC22 */
+        case 3:  overlay_call_191F_0624(); break;    /* @0x02BC28 */
+        case 4:  overlay_call_191F_04F8(); break;    /* @0x02BC34 */
+        case 5:  overlay_call_191F_0570(); break;    /* @0x02BC2E */
+        case 8:  overlay_call_191F_0588(); break;    /* @0x02BC3A */
+        case 9:  overlay_call_191F_06FC(); break;    /* @0x02BC46 */
+        case 0xA: overlay_call_191F_06A8(); break;   /* @0x02BC40 */
+        default: break;                              /* 6,7,>0xA -> 0x02BC70 (none) */
+    }
+    return 0;                                        /* @0x02BC70 leave; retf */
 }
 
 /* ============================================================================

@@ -1567,52 +1567,109 @@ out:
 }
 
 /* ============================================================================
- * func_02A8EC  -- commodity amount-prompt + max-clamp helper.
+ * func_02A8EC  -- unit<->unit cargo TRANSFER amount-prompt + apply.
  * ----------------------------------------------------------------------------
  * @asm        0x02A8EC..0x02AAEB  (512 bytes)  prologue ENTER 8,0  RETF
- * @asm_extent IMPORTANT: this function's TRUE body is 0x02A8EC..0x02AAEB; the
- *             nominal file split ends at 0x02A92B (the auto-skeleton's "63
- *             bytes" was a first-RET truncation).  Only the FIRST RETF arm
- *             (0x02A8EC..0x02A92A) lies inside this file's stated range; the
- *             remainder (0x02A92C..0x02AAEB) physically belongs to the next
- *             segment file overlay_02AAEC_02F0C7.c's predecessor span and is
- *             documented here but ports there.  Extents BYTE_VERIFIED.
+ * @asm_extent The TRUE body is 0x02A8EC..0x02AAEB (terminal RETF @0x02AAEB).
+ *             The function STARTS in this file (its nominal split ends at the
+ *             first RETF 0x02A92A); the continuation 0x02A92C..0x02AAEB sits in
+ *             the orphan span between this file (ends 0x02A92B) and the next
+ *             (overlay_02AAEC_02F0C7.c, begins 0x02AAEC) -- it belongs to NO
+ *             other file's range, so it is completed HERE (a prior note that it
+ *             "ports there" was incorrect).  Full body now traced.
  * @args       (unit=[bp+6], unit2=[bp+8], cargo=[bp+0xA], mode=[bp+0xC])
- * @thunks     0x181F:0xBE6 cargo_query(unit,cargo)->idx, 0x181F:0xB96
- *               ask_quantity(idx,unit2)->ok, 0x181F:0xC68 max_available,
- *               191F:0x81C (func_07EE7) draw_no_qty, 0x181F:0x438 fmt_name,
- *               UnitRecord type -> disp[0x5230] for both unit and unit2 glyphs.
- * @purpose    First arm (in-range): cargo_query the source, ask_quantity; if the
- *               user entered nothing (ask returns 0) draw the "no quantity" panel
- *               (func_07EE7, colour 4) and return 1.  The continuation
- *               (out-of-range) clamps the amount to 0x64 and to max_available
- *               (0x181F:0xC68), then formats both unit glyphs for the
- *               transfer-between-units confirmation.  This is the shared
- *               amount-entry front-end for unit<->unit cargo moves.
- * @status     BYTE_VERIFIED for the in-range arm (cargo_query/ask_quantity/the
- *               draw_no_qty panel).  The continuation is cited but ported in the
- *               adjacent segment file (see @asm_extent).
+ * @thunks     0x181F:0xBE6 cargo_query(unit,cargo,&qty)->idx, 0x181F:0xB96
+ *               ask_quantity(idx,unit2)->ok, 0x181F:0xC68 max_available(unit,cargo),
+ *               0x181F:0x438 fmt_name(handle,slot), 0x181F:0x9AE fmt_number,
+ *               191F:0x436 confirm_dialog()->cancel, 0x181F:0x35C compute_value
+ *               (qty,[0x9CC8]), 0x181F:0xAEC do_transfer(qty,unit)->applied,
+ *               0x181F:0xD58 post_transfer(extra,applied,unit), 0x181F:0x56/0x7E/
+ *               0x74 draw begin/draw-qty/select, 191F:0x7B0 blit, 191F:0x81C
+ *               draw_no_qty panel (func_07EE7), 191F:0x78C finalise (func_07EAB).
+ *               cargo name handle = [cargo*2 - 0x6840]; both unit glyphs via
+ *               UnitRecord type [u*0x1C+0x3146] -> disp[type*12 + 0x5230].
+ * @purpose    Shared amount-entry front-end for unit<->unit cargo moves.
+ *               cargo_query the source; ask_quantity.  If the user entered
+ *               nothing -> "no quantity" panel (colour 4) and return 1.  Else
+ *               clamp the amount to 0x64 and to max_available; when mode!=0 show
+ *               the transfer-between-units confirmation (both glyphs + number),
+ *               let the user cancel, and clamp again to compute_value([0x9CC8]).
+ *               Finally do_transfer the amount: if the destination has no room
+ *               (applied < 0) draw the "no qty" panel (colour 0xB) and return 1;
+ *               otherwise top up the source's [0x8DC4] staging count, deliver to
+ *               unit2, clear unit2's order byte (UnitRecord +0x314C, unless ==2),
+ *               redraw both glyphs, finalise, and return 0.
+ * @status     BYTE_VERIFIED (full control flow + both clamp tiers + the
+ *               do_transfer/post_transfer apply chain + glyph draws traced).
+ *               Library pixel/price internals: library-implementation-only.
+ * @touches_8542 yes ([0x8DC4] staging qty; glyph tables relative to ctx page).
  * ---------------------------------------------------------------------------- */
 int func_02A8EC_cargo_amount_prompt(uint16_t unit, uint16_t unit2,
                                     uint16_t cargo, uint16_t mode)
 {
     int ret = 1;        /* [bp-4]  */
-    int qty = 0;        /* [bp-2]  */
-    int idx;            /* [bp-8]  cargo_query result */
+    int qty = 0;        /* [bp-2]  amount entered/clamped */
+    int idx;            /* [bp-8]  cargo_query / do_transfer result */
+    int mx, applied;
     (void)unit; (void)unit2; (void)cargo; (void)mode;
 
-    idx = overlay_call_181F_0BE6();                   /* @0x02A8FF cargo_query(unit,cargo) */
-    if (overlay_call_181F_0B96() == 0) {              /* @0x02A90E ask_quantity(idx,unit2) -> &qty */
+    idx = overlay_call_181F_0BE6();                   /* @0x02A8FF cargo_query(unit,cargo,&qty) */
+    if (overlay_call_181F_0B96() == 0) {              /* @0x02A90E ask_quantity(idx,unit2)==0 */
         /* user cancelled / entered nothing: draw the "no qty" panel, ret=1. */
         overlay_call_191F_081C();                     /* @0x02A920 draw_no_qty(qty,0x78,4) (func_07EE7) */
-        (void)idx; (void)qty;
-        return ret;                                   /* @0x02A926 */
+        return ret;                                   /* @0x02A926 retf */
     }
-    /* --- continuation @0x02A92C.. (ported in the adjacent segment file): ---
-     *   if (qty > 0x64) qty = 0x64;
-     *   if (qty > max_available(unit,cargo)) qty = max_available(...); [0x181F:0xC68]
-     *   if (mode != 0) { fmt unit glyph (disp[type*12]); fmt unit2 glyph; ... }
-     * Left documented (not duplicated) so this file's body stops at its first
-     * RETF, matching the stated 0x027BB6..0x02A92B range.                      */
-    return ret;
+
+    /* --- continuation @0x02A92C: clamp the amount. --- */
+    if (qty > 0x64) qty = 0x64;                       /* @0x02A92F JLE 0x02A937 */
+    mx = overlay_call_181F_0C68();                    /* @0x02A940 max_available(unit,cargo) */
+    if (mx <= qty)                                    /* @0x02A948 JG 0x02A95E keeps qty */
+        qty = overlay_call_181F_0C68();               /* @0x02A953 re-fetch -> qty */
+
+    if (mode != 0) {                                  /* @0x02A95E [bp+0xC]; JNE 0x02A967 */
+        /* --- confirm the unit<->unit transfer (both glyphs + number). --- */
+        idx = overlay_call_181F_0BE6();               /* @0x02A96D cargo_query(unit,cargo) */
+        overlay_call_181F_0438();                     /* @0x02A982 fmt cargo name[cargo] (slot 0) */
+        /* unit glyph: disp[ UnitRecord[unit].type * 12 + 0x5230 ] (slot 1) @0x02A98A */
+        overlay_call_181F_0438();                     /* @0x02A9A6 fmt unit glyph (slot 1) */
+        /* unit2 glyph: disp[ UnitRecord[unit2].type * 12 + 0x5230 ] (slot 2) @0x02A9AE */
+        overlay_call_181F_0438();                     /* @0x02A9CA fmt unit2 glyph (slot 2) */
+        overlay_call_181F_09AE();                     /* @0x02A9DA fmt_number(qty) (slot 0) */
+        if (overlay_call_191F_0436() != 0)            /* @0x02A9ED confirm_dialog()!=0 -> cancel */
+            return ret;                               /* @0x02A9F6 goto out (ret=1) */
+        {   int val = overlay_call_181F_035C();       /* @0x02AA01 compute_value(qty, [0x9CC8]) */
+            if (qty > val) qty = val;                 /* @0x02AA0F clamp -> [bp-6] */
+        }
+        if (qty <= 0)                                 /* @0x02AA1A JG 0x02AA21 */
+            return ret;                               /* @0x02AA1E goto out (ret=1) */
+    }
+
+    /* @0x02AA21: apply the transfer. */
+    idx = overlay_call_181F_0AEC();                   /* @0x02AA27 do_transfer(qty,unit) -> applied */
+    applied = idx;
+    if (applied < 0) {                                /* @0x02AA32 JGE 0x02AA40 */
+        /* destination full: reuse the "no qty" panel with colour 0xB. */
+        overlay_call_191F_081C();                     /* @0x02AA3C->0x02A91F draw_no_qty(0,0x78,0xB) */
+        return ret;                                   /* @0x02A926 (shared) ret=1 */
+    }
+
+    if ((int)qty < (int)g_8DC4) {                     /* @0x02AA43 cmp [0x8DC4],qty; JGE 0x02AA60 */
+        overlay_call_181F_0D58();                     /* @0x02AA52 post_transfer([0x8DC4]-qty,applied,unit) */
+        g_8DC4 = (uint16_t)qty;                       /* @0x02AA5A [0x8DC4]=qty */
+    }
+    /* second leg uses (qty | old [0x8DC4]) per the branch above as 1st arg. */
+    overlay_call_181F_0D58();                         /* @0x02AA67 post_transfer(.,applied,unit2) */
+    if (g_unit_type_3146[unit2 * 0x1C + 6] /*+0x314C*/ != 2) /* @0x02AA6F/0x02AA73 */
+        g_unit_type_3146[unit2 * 0x1C + 6] = 0;       /* @0x02AA7A clear order byte */
+
+    overlay_call_181F_0056();                         /* @0x02AA7F begin(1) */
+    overlay_call_181F_007E();                         /* @0x02AA89 draw qty [0x8DC4] */
+    overlay_call_181F_0074();                         /* @0x02AA9E select cargo name[idx] ([bx-0x6840]) */
+    overlay_call_191F_07D4();                         /* @0x02AAA9->191F:0x7D4 set_attr(2) */
+    /* unit2 glyph: disp[ UnitRecord[unit2].type * 12 + 0x5230 ] @0x02AAAF */
+    overlay_call_181F_0074();                         /* @0x02AAC9 select unit2 glyph */
+    overlay_call_191F_07B0();                         /* @0x02AAD8->191F:0x7B0 blit(1,0x78,0) */
+    overlay_call_191F_078C();                         /* @0x02AADF finalise (func_07EAB) */
+    ret = 0;                                          /* @0x02AAE2 */
+    return ret;                                        /* @0x02AAE7 retf */
 }
