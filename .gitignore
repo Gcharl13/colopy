@@ -10,6 +10,9 @@ Thumbs.db
 .DS_Store
 *.swp
 
+# Claude Code session artifacts
+.claude/
+
 # reverse-engineering working dir (binary + generated disasm; do not commit)
 re_work/
 *.EXE
