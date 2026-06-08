@@ -27,7 +27,7 @@
     24,
     26
    ],
-   "refs": 273
+   "refs": 293
   },
   {
    "name": "AIPersonality",
@@ -66,6 +66,7 @@
    "count": "g_colony_count @0x539E",
    "fields_touched": [
     0,
+    1,
     26,
     28,
     31,
@@ -74,7 +75,7 @@
     194,
     196
    ],
-   "refs": 13
+   "refs": 16
   },
   {
    "name": "PowerRecord",
@@ -90,6 +91,32 @@
   }
  ],
  "addresses": [
+  {
+   "addr": 152,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_004EE6_005DF0.c"
+   ]
+  },
+  {
+   "addr": 154,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_004EE6_005DF0.c"
+   ]
+  },
   {
    "addr": 162,
    "table": null,
@@ -248,10 +275,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 6,
+   "abs": 8,
    "idx": 0,
-   "refs": 6,
+   "refs": 8,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "mapgen/climate.c",
     "mapgen/generator.c",
     "mapgen/rivers.c",
@@ -266,10 +294,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 1,
+   "abs": 3,
    "idx": 0,
-   "refs": 1,
+   "refs": 3,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "render/tile_chain.c"
    ]
   },
@@ -279,10 +308,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 7,
+   "abs": 9,
    "idx": 0,
-   "refs": 7,
+   "refs": 9,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "mapgen/climate.c",
     "mapgen/generator.c",
     "overlay/overlay_0612E6_066EB3.c",
@@ -296,10 +326,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 1,
+   "abs": 3,
    "idx": 0,
-   "refs": 1,
+   "refs": 3,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "render/tile_chain.c"
    ]
   },
@@ -309,10 +340,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 4,
+   "abs": 6,
    "idx": 0,
-   "refs": 4,
+   "refs": 6,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "mapgen/generator.c",
     "overlay/overlay_0612E6_066EB3.c",
     "save/save_serializer.c"
@@ -324,10 +356,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 1,
+   "abs": 3,
    "idx": 0,
-   "refs": 1,
+   "refs": 3,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "overlay/overlay_0612E6_066EB3.c"
    ]
   },
@@ -337,10 +370,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 6,
+   "abs": 8,
    "idx": 0,
-   "refs": 6,
+   "refs": 8,
    "files": [
+    "load_image/load_image_005DF0_006939.c",
     "mapgen/generator.c",
     "overlay/overlay_0612E6_066EB3.c",
     "render/tile_chain.c",
@@ -353,10 +387,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 1,
+   "abs": 3,
    "idx": 0,
-   "refs": 1,
+   "refs": 3,
    "files": [
+    "load_image/load_image_005DF0_006939.c",
     "render/tile_chain.c"
    ]
   },
@@ -560,11 +595,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 6,
+   "poke": 1,
+   "abs": 7,
    "idx": 0,
-   "refs": 6,
+   "refs": 8,
    "files": [
+    "load_image/load_image_005DF0_006939.c",
     "overlay/overlay_02083C_024337.c",
     "render/tile_chain.c"
    ]
@@ -717,7 +753,7 @@
    ]
   },
   {
-   "addr": 756,
+   "addr": 714,
    "table": null,
    "record": null,
    "offset": null,
@@ -726,7 +762,34 @@
    "idx": 1,
    "refs": 1,
    "files": [
-    "colony/production_support.c"
+    "load_image/load_image_008C70_00AAB9.c"
+   ]
+  },
+  {
+   "addr": 756,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "colony/production_support.c",
+    "load_image/load_image_008C70_00AAB9.c"
+   ]
+  },
+  {
+   "addr": 757,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "load_image/load_image_008262_008C6F.c"
    ]
   },
   {
@@ -742,6 +805,19 @@
     "overlay/overlay_038A50_03C5A8.c",
     "ui/king_audience.c",
     "ui/report_screen.c"
+   ]
+  },
+  {
+   "addr": 782,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 0,
+   "idx": 1,
+   "refs": 1,
+   "files": [
+    "load_image/load_image_008262_008C6F.c"
    ]
   },
   {
@@ -1089,6 +1165,19 @@
    ]
   },
   {
+   "addr": 899,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
    "addr": 948,
    "table": null,
    "record": null,
@@ -1126,6 +1215,123 @@
    "files": [
     "data/production.c",
     "inc:globals.h"
+   ]
+  },
+  {
+   "addr": 1424,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1426,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1452,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1454,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 2,
+   "abs": 2,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1456,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 2,
+   "abs": 2,
+   "idx": 0,
+   "refs": 4,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1466,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1468,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1470,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 1472,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
    ]
   },
   {
@@ -1186,11 +1392,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 1,
-   "abs": 23,
+   "poke": 2,
+   "abs": 24,
    "idx": 0,
-   "refs": 24,
+   "refs": 26,
    "files": [
+    "load_image/load_image_0033F2_004E76.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_024342_027B62.c",
     "overlay/overlay_027BB6_02A92B.c",
@@ -1208,11 +1415,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 1,
-   "abs": 25,
+   "poke": 2,
+   "abs": 26,
    "idx": 0,
-   "refs": 26,
+   "refs": 28,
    "files": [
+    "load_image/load_image_0033F2_004E76.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_024342_027B62.c",
     "overlay/overlay_027BB6_02A92B.c",
@@ -4257,6 +4465,32 @@
    ]
   },
   {
+   "addr": 10110,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_010B26_012A83.c"
+   ]
+  },
+  {
+   "addr": 10112,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_010B26_012A83.c"
+   ]
+  },
+  {
    "addr": 10156,
    "table": null,
    "record": null,
@@ -4276,9 +4510,10 @@
    "offset": null,
    "poke": 0,
    "abs": 0,
-   "idx": 7,
-   "refs": 7,
+   "idx": 10,
+   "refs": 10,
    "files": [
+    "load_image/load_image_00FAAA_0102C8.c",
     "overlay/overlay_04458A_04694B.c",
     "overlay/overlay_06C220_06D938.c",
     "overlay/overlay_06D938_0702D5.c",
@@ -4290,11 +4525,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 1,
+   "poke": 1,
+   "abs": 2,
    "idx": 0,
-   "refs": 1,
+   "refs": 3,
    "files": [
+    "load_image/load_image_0102EA_010AA5.c",
     "overlay/overlay_04C306_053BC1.c"
    ]
   },
@@ -4304,11 +4540,64 @@
    "record": null,
    "offset": null,
    "poke": 0,
+   "abs": 2,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_0102EA_010AA5.c",
+    "overlay/overlay_04C306_053BC1.c"
+   ]
+  },
+  {
+   "addr": 11462,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
    "abs": 1,
    "idx": 0,
-   "refs": 1,
+   "refs": 2,
    "files": [
-    "overlay/overlay_04C306_053BC1.c"
+    "load_image/load_image_0024C6_0033E9.c"
+   ]
+  },
+  {
+   "addr": 11464,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_0024C6_0033E9.c"
+   ]
+  },
+  {
+   "addr": 11466,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_0024C6_0033E9.c"
+   ]
+  },
+  {
+   "addr": 11468,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_0024C6_0033E9.c"
    ]
   },
   {
@@ -5470,13 +5759,14 @@
    "offset": 0,
    "poke": 0,
    "abs": 0,
-   "idx": 28,
-   "refs": 28,
+   "idx": 30,
+   "refs": 30,
    "files": [
     "ai/driver.c",
     "ai/native_unit_ai.c",
     "ai/unit_orders.c",
     "inc:unit.h",
+    "load_image/load_image_00693A_00760F.c",
     "overlay/overlay_03C5A8_040C11.c",
     "overlay/overlay_04C306_053BC1.c",
     "overlay/overlay_0612E6_066EB3.c",
@@ -5494,13 +5784,14 @@
    "offset": 1,
    "poke": 0,
    "abs": 0,
-   "idx": 26,
-   "refs": 26,
+   "idx": 28,
+   "refs": 28,
    "files": [
     "ai/driver.c",
     "ai/native_unit_ai.c",
     "ai/unit_orders.c",
     "inc:unit.h",
+    "load_image/load_image_00693A_00760F.c",
     "overlay/overlay_03C5A8_040C11.c",
     "overlay/overlay_04C306_053BC1.c",
     "overlay/overlay_0612E6_066EB3.c",
@@ -5517,8 +5808,8 @@
    "offset": 2,
    "poke": 0,
    "abs": 1,
-   "idx": 45,
-   "refs": 46,
+   "idx": 49,
+   "refs": 50,
    "files": [
     "ai/driver.c",
     "ai/native_unit_ai.c",
@@ -5527,6 +5818,8 @@
     "founding_fathers/effects.c",
     "inc:unit.h",
     "king/king_events.c",
+    "load_image/load_image_007610_00824E.c",
+    "load_image/load_image_008262_008C6F.c",
     "native/raid.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_02F3A2_031E4C.c",
@@ -5553,14 +5846,15 @@
    "offset": 3,
    "poke": 0,
    "abs": 0,
-   "idx": 36,
-   "refs": 36,
+   "idx": 40,
+   "refs": 40,
    "files": [
     "ai/driver.c",
     "ai/native_unit_ai.c",
     "ai/unit_ai_leaf.c",
     "ai/unit_orders.c",
     "founding_fathers/effects.c",
+    "load_image/load_image_00693A_00760F.c",
     "native/settlement.c",
     "native/tribe_query.c",
     "overlay/overlay_024342_027B62.c",
@@ -5599,12 +5893,13 @@
    "offset": 5,
    "poke": 0,
    "abs": 0,
-   "idx": 11,
-   "refs": 11,
+   "idx": 12,
+   "refs": 12,
    "files": [
     "ai/native_unit_ai.c",
     "ai/unit_ai_leaf.c",
     "ai/unit_orders.c",
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_04C306_053BC1.c",
     "render/tile_info_panel.c"
    ]
@@ -5649,13 +5944,14 @@
    "offset": 8,
    "poke": 0,
    "abs": 1,
-   "idx": 25,
-   "refs": 26,
+   "idx": 26,
+   "refs": 27,
    "files": [
     "ai/native_unit_ai.c",
     "ai/unit_orders.c",
     "founding_fathers/effects.c",
     "king/king_events.c",
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_04C306_053BC1.c",
     "overlay/overlay_054505_05C69B.c",
@@ -5793,12 +6089,14 @@
    "offset": 23,
    "poke": 0,
    "abs": 0,
-   "idx": 16,
-   "refs": 16,
+   "idx": 22,
+   "refs": 22,
    "files": [
     "ai/unit_ai_leaf.c",
     "combat/combat_demotion_ladder.c",
     "founding_fathers/effects.c",
+    "load_image/load_image_00693A_00760F.c",
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_0341D6_0388DE.c",
     "overlay/overlay_046D70_04C2E1.c",
     "overlay/overlay_05C69C_0610DA.c",
@@ -5862,6 +6160,45 @@
    "refs": 1,
    "files": [
     "overlay/overlay_02083C_024337.c"
+   ]
+  },
+  {
+   "addr": 14775,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "inc:globals.h"
+   ]
+  },
+  {
+   "addr": 14814,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "inc:globals.h"
+   ]
+  },
+  {
+   "addr": 14819,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 0,
+   "abs": 1,
+   "idx": 0,
+   "refs": 1,
+   "files": [
+    "inc:globals.h"
    ]
   },
   {
@@ -6324,10 +6661,10 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 1,
-   "abs": 90,
+   "poke": 2,
+   "abs": 91,
    "idx": 0,
-   "refs": 91,
+   "refs": 93,
    "files": [
     "ai/driver.c",
     "ai/unit_ai_leaf.c",
@@ -6343,6 +6680,7 @@
     "king/ref.c",
     "king/sons_of_liberty.c",
     "king/war_turn.c",
+    "load_image/load_image_007610_00824E.c",
     "native/raze_treasure.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_024342_027B62.c",
@@ -6619,14 +6957,15 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 77,
+   "poke": 1,
+   "abs": 79,
    "idx": 0,
-   "refs": 77,
+   "refs": 80,
    "files": [
     "ai/driver.c",
     "ai/unit_orders.c",
     "king/war_turn.c",
+    "load_image/load_image_007610_00824E.c",
     "mapgen/generator.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_038A50_03C5A8.c",
@@ -6648,13 +6987,14 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 42,
+   "poke": 1,
+   "abs": 43,
    "idx": 0,
-   "refs": 42,
+   "refs": 44,
    "files": [
     "ai/native_unit_ai.c",
     "founding_fathers/effects.c",
+    "load_image/load_image_007610_00824E.c",
     "mapgen/settlements.c",
     "native/settlement.c",
     "overlay/overlay_03C5A8_040C11.c",
@@ -6932,15 +7272,16 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 25,
+   "poke": 1,
+   "abs": 27,
    "idx": 0,
-   "refs": 25,
+   "refs": 28,
    "files": [
     "ai/unit_orders.c",
     "diplomacy/meeting.c",
     "king/sons_of_liberty.c",
     "king/war_turn.c",
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_038A50_03C5A8.c",
     "overlay/overlay_03C5A8_040C11.c",
     "overlay/overlay_046D70_04C2E1.c"
@@ -7368,10 +7709,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 0,
-   "idx": 1,
-   "refs": 1,
+   "abs": 1,
+   "idx": 2,
+   "refs": 3,
    "files": [
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_04C306_053BC1.c"
    ]
   },
@@ -7397,9 +7739,10 @@
    "offset": null,
    "poke": 0,
    "abs": 0,
-   "idx": 1,
-   "refs": 1,
+   "idx": 2,
+   "refs": 2,
    "files": [
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_046D70_04C2E1.c"
    ]
   },
@@ -7437,9 +7780,10 @@
    "offset": null,
    "poke": 0,
    "abs": 0,
-   "idx": 4,
-   "refs": 4,
+   "idx": 5,
+   "refs": 5,
    "files": [
+    "load_image/load_image_008262_008C6F.c",
     "native/haggle.c",
     "overlay/overlay_04458A_04694B.c"
    ]
@@ -7464,10 +7808,24 @@
    "offset": 0,
    "poke": 0,
    "abs": 0,
+   "idx": 2,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_008262_008C6F.c",
+    "overlay/overlay_05C69C_0610DA.c"
+   ]
+  },
+  {
+   "addr": 23879,
+   "table": "ColonyRecord",
+   "record": 0,
+   "offset": 1,
+   "poke": 0,
+   "abs": 0,
    "idx": 1,
    "refs": 1,
    "files": [
-    "overlay/overlay_05C69C_0610DA.c"
+    "load_image/load_image_008262_008C6F.c"
    ]
   },
   {
@@ -7518,10 +7876,11 @@
    "offset": 132,
    "poke": 0,
    "abs": 0,
-   "idx": 1,
-   "refs": 1,
+   "idx": 2,
+   "refs": 2,
    "files": [
-    "colony/production_support.c"
+    "colony/production_support.c",
+    "load_image/load_image_008262_008C6F.c"
    ]
   },
   {
@@ -7786,11 +8145,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 2,
+   "poke": 1,
+   "abs": 3,
    "idx": 0,
-   "refs": 2,
+   "refs": 4,
    "files": [
+    "load_image/load_image_00E454_00FAA9.c",
     "overlay/overlay_0745F0_077A6A.c"
    ]
   },
@@ -7840,10 +8200,12 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 34,
+   "abs": 43,
    "idx": 0,
-   "refs": 34,
+   "refs": 43,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
+    "load_image/load_image_005DF0_006939.c",
     "mapgen/generator.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_024342_027B62.c",
@@ -7864,10 +8226,11 @@
    "record": null,
    "offset": null,
    "poke": 0,
-   "abs": 31,
+   "abs": 32,
    "idx": 0,
-   "refs": 31,
+   "refs": 32,
    "files": [
+    "load_image/load_image_004EE6_005DF0.c",
     "mapgen/climate.c",
     "mapgen/generator.c",
     "overlay/overlay_02083C_024337.c",
@@ -7887,11 +8250,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 14,
+   "poke": 1,
+   "abs": 15,
    "idx": 0,
-   "refs": 14,
+   "refs": 16,
    "files": [
+    "load_image/load_image_00AB2E_00C0D0.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_04C306_053BC1.c",
     "overlay/overlay_0745F0_077A6A.c",
@@ -7904,11 +8268,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 14,
+   "poke": 1,
+   "abs": 15,
    "idx": 0,
-   "refs": 14,
+   "refs": 16,
    "files": [
+    "load_image/load_image_00AB2E_00C0D0.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_04C306_053BC1.c",
     "overlay/overlay_0745F0_077A6A.c",
@@ -7922,15 +8287,16 @@
    "record": null,
    "offset": null,
    "poke": 1,
-   "abs": 43,
+   "abs": 44,
    "idx": 0,
-   "refs": 44,
+   "refs": 45,
    "files": [
     "ai/native_unit_ai.c",
     "ai/unit_ai_leaf.c",
     "colony/auto_manage.c",
     "combat/combat.c",
     "diplomacy/meeting.c",
+    "inc:colony.h",
     "king/war_turn.c",
     "native/raid.c",
     "overlay/overlay_024342_027B62.c",
@@ -8313,14 +8679,15 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 40,
+   "poke": 1,
+   "abs": 41,
    "idx": 0,
-   "refs": 40,
+   "refs": 42,
    "files": [
     "ai/native_unit_ai.c",
     "ai/unit_ai_leaf.c",
     "ai/unit_orders.c",
+    "load_image/load_image_007610_00824E.c",
     "mapgen/settlements.c",
     "native/haggle.c",
     "native/settlement.c",
@@ -8336,11 +8703,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 9,
+   "poke": 1,
+   "abs": 10,
    "idx": 0,
-   "refs": 9,
+   "refs": 11,
    "files": [
+    "load_image/load_image_007610_00824E.c",
     "overlay/overlay_046D70_04C2E1.c"
    ]
   },
@@ -8349,13 +8717,14 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 39,
+   "poke": 1,
+   "abs": 40,
    "idx": 0,
-   "refs": 39,
+   "refs": 41,
    "files": [
     "ai/unit_ai_leaf.c",
     "combat/combat.c",
+    "load_image/load_image_007610_00824E.c",
     "native/haggle.c",
     "native/mission.c",
     "native/raid.c",
@@ -8373,11 +8742,12 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 14,
+   "poke": 1,
+   "abs": 15,
    "idx": 0,
-   "refs": 14,
+   "refs": 16,
    "files": [
+    "load_image/load_image_007610_00824E.c",
     "native/settlement.c",
     "overlay/overlay_02083C_024337.c",
     "overlay/overlay_046D70_04C2E1.c",
@@ -8390,13 +8760,14 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 0,
-   "abs": 45,
+   "poke": 1,
+   "abs": 46,
    "idx": 0,
-   "refs": 45,
+   "refs": 47,
    "files": [
     "ai/unit_orders.c",
     "colony/auto_manage.c",
+    "load_image/load_image_007610_00824E.c",
     "native/haggle.c",
     "native/settlement.c",
     "overlay/overlay_02083C_024337.c",
@@ -8639,13 +9010,14 @@
    "table": null,
    "record": null,
    "offset": null,
-   "poke": 1,
-   "abs": 10,
+   "poke": 2,
+   "abs": 11,
    "idx": 0,
-   "refs": 11,
+   "refs": 13,
    "files": [
     "colony/production_support.c",
     "founding_fathers/effects.c",
+    "load_image/load_image_008262_008C6F.c",
     "overlay/overlay_02AAEC_02F0C7.c",
     "overlay/overlay_04C306_053BC1.c",
     "ui/report_screen.c"
@@ -8949,6 +9321,32 @@
    "refs": 1,
    "files": [
     "overlay/overlay_077ADE_078D3E.c"
+   ]
+  },
+  {
+   "addr": 37620,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
+   ]
+  },
+  {
+   "addr": 37622,
+   "table": null,
+   "record": null,
+   "offset": null,
+   "poke": 1,
+   "abs": 1,
+   "idx": 0,
+   "refs": 2,
+   "files": [
+    "load_image/load_image_00C0D0_00D27F.c"
    ]
   },
   {

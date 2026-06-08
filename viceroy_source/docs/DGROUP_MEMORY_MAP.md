@@ -284,6 +284,49 @@ verified status. Everything else routes through §5 first.
 
 ---
 
+## 7. Globals/tables discovered during load_image porting (2026-06-08)
+
+Surfaced and byte-cited while porting ~115 tiny load_image functions. Each is
+tied to the function that revealed it; fold into the §2 spine / headers as they
+mature.
+
+**Map-data layers** (far-pointer byte arrays, indexed `width*y + x`):
+| Addr | Role | Source |
+|---|---|---|
+| `0x015C` / `0x0160` | map layers (already in globals.h) | — |
+| `0x0164` / `0x0168` | **additional** map layers (same read shape) | func_005DF0/005ED0 (grp A/?) |
+
+**Per-unit-type attribute tables** (keyed by `unit_table[idx].type`, +0x02):
+| Addr | Stride | Role | Source |
+|---|---|---|---|
+| `0x030E` | 1 | signed per-unit-type attribute byte | func_008BB2 |
+| `0x8EA2` | 8 | per-type 8-byte record (type normalized via 0x1C→0x13 fold) | func_0084DC/func_0084C8 |
+
+**Per-good/commodity attribute tables** (static init data, < `0x2CC5`; beside the
+known GOOD_TO_* tables at `0x2AA`/`0x2FD`):
+| Addr | Role | Source |
+|---|---|---|
+| `0x02CA` | signed per-good byte | func_009786 |
+| `0x02F4` | good→chain byte (audit.py) | — |
+| `0x02F5` | signed per-good byte | func_008BC6 |
+
+**Render/blit working cluster** (`0x05AE–0x05C0`): `0x5AE` base offset, `0x5B0`
+row stride, `0x5BA`/`0x5BC` col/row inputs, `0x5BE` `row*stride+col`, `0x5C0`
+final blit address = base + row*stride + col (func_00CF19). Coord nibble pair at
+`0x0590`/`0x0592` (func_00CB59). Video-mode global `0x83AA` (func_00F510).
+
+**Misc setters surfaced:** `0x0098`/`0x009A` (func_0050FC/0050F0), `0x0383` byte
+(func_00C7DF), `0x92F4`/`0x92F6` word pair (func_00C899), `0x853E`/`0x8540` pair
+(func_00BD28), `0x28EE` dword (func_0103C2). Word table `0x5B1C` `[N·0x27]` —
+see §5.4.
+
+**C-runtime library (functions, not DGROUP):** the MSC 6.0 string/mem layer is
+now pinned — `strcpy@0xFDB4`, `strcmp@0xFDE6`, `strlen@0xFE12`, `memcpy@0x10352`,
+`memset@0x1037E`, `strchr@0x10226`, `labs@0x103AC`, etc. (grp D). These are the
+natural swap-points for native libc in the eventual modern port (milestone 3).
+
+---
+
 *Generated narrative over `tools/extract_dgroup_map.py` output. Field layouts
 consolidated from `include/{unit,colony,power,native,ai_personality,globals}.h`
 and the `@asm`-cited bodies in `src/`. Update the `.json` (re-run the extractor)
