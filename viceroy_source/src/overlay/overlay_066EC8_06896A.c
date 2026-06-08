@@ -58,7 +58,7 @@
 /* ----------------------------------------------------------------------------
  * Overlay thunks NOT declared in overlay_externs.h that this region calls.
  * (Canonical no-arg prototype, matching the file convention of calling thunks
- *  through their canonical names; role inferred from call context, body TBD.)
+ *  through their canonical names; role inferred from call context; bodies in thunk pages (0x181F/0x191F/0x1A1F).)
  * -------------------------------------------------------------------------- */
 extern int overlay_call_181F_02B2(void);  /* 0x181F:0x2B2 — draw settlement marker sprite */
 extern int overlay_call_191F_0996(void);  /* 0x191F:0x996 — colony-visible predicate (pg 0x11) */

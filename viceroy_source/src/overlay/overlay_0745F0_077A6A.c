@@ -27,7 +27,8 @@
  * overlay targets (0x181F:* / 0x191F:* / 0x1A1F:* helpers, the 0x0D1D:* C
  * runtime) are called through their canonical overlay_call_* names and never
  * fabricated.  DS-relative string-literal offsets (0x22xx/0x23xx/0x24xx) are
- * cited as addresses; their exact glyphs need a DS-segment dump (TBD).
+ * cited as addresses; STATIC in EXE — many decoded in function banners below
+ * (e.g. "LEADERNAME" @0x2218, "PEDIA"@0x22EC, "OPENMENU"@0x233C, etc.).
  *
  * PORT STATUS (per 2026-05-30 directive; see per-function banners):
  *   DONE            full @asm-cited body written here (control flow byte-traced).

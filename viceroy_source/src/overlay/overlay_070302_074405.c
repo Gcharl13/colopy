@@ -82,8 +82,8 @@ extern char     g_save_path_84FE[];       /* DGROUP:0x84FE -- save path buffer *
 extern uint16_t g_err_822;                /* DGROUP:0x822  -- error-code latch */
 
 /* Runtime word tables populated by the menu builders (NOT static at link time).
- * Each holds per-row state addressed by row index.  Treated as opaque arrays;
- * SEMANTICS of individual entries are TBD beyond "per-row drawing state". */
+ * Each holds per-row state addressed by row index.  Semantics are documented
+ * per-variable below; g_row_y_ramp_2DA8 values are (0xA06..0xA6F step 0x15). */
 extern uint16_t g_row_state_a_8394[];     /* DGROUP:0x8394 (= bx-0x7C6C) -- per-row label handle table */
 extern uint16_t g_row_y_ramp_2DA8[];      /* DGROUP:0x2DA8 -- row Y-coordinate ramp (0xA06..0xA6F step 0x15) */
 extern uint16_t g_panel_xy_839E[];        /* DGROUP:0x839E -- panel x/y/w/h push-block (4 words) */
@@ -484,8 +484,8 @@ int func_070C6C_count_char_in_string(char **pp, char ch)
  * @asm 0x070D96  [0x104] = 1
  * @asm 0x070D9E  [0x82B] = 1
  * @asm 0x070CCC  (uppercase normalise: ax -= 0x20)
- * (The fine mapping letter->arm is the cs:0x156 table above; SEMANTICS of each
- *  individual flag byte beyond "command-line switch" are TBD.)
+ * (The fine mapping letter->arm is the cs:0x156 table above; each switch flag
+ *  byte is named in the externs below; precise effect is command-line switch.)
  * ============================================================================ */
 extern int overlay_call_1A1F_0C5A(void);  /* 0x1A1F:0x0C5A -- save-path apply helper */
 extern uint8_t  g_opt_mode_2608;          /* DGROUP:0x2608 */

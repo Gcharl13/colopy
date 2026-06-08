@@ -58,7 +58,8 @@ extern int overlay_call_1A1F_0F26(void);   /* 0x1A1F:0x0F26 — page-0x12 report
 
 /* DGROUP diagnostics globals (absolute offsets from the disassembly; file base
  * 0x1D9A0).  These are the error-reporter's scratch + last-state cells; their
- * exact field semantics beyond "diagnostic scratch" are TBD and not guessed. */
+ * exact field semantics beyond "diagnostic scratch": library-internal to the
+ * error-reporting subsystem; not recoverable from overlay bytecode alone. */
 extern uint16_t g_dbg_modptr_2470;   /* DGROUP:0x2470/0x246E — module-cleanup callback ptr */
 extern uint16_t g_dbg_errptr_2474;   /* DGROUP:0x2474/0x2472 — error-cleanup callback ptr */
 extern uint16_t g_dbg_memchk_27AC;   /* DGROUP:0x27AC — "most recent memory check" value */
@@ -150,7 +151,7 @@ void func_077ADE_error_screen_teardown(void)
  *
  * String IDs cited verbatim from DGROUP (file base 0x1D9A0); all are diagnostic
  * literals.  The exact value packed into each %-slot beyond "the arg / the
- * formatter output" is TBD only where the helper's return is opaque.
+ * formatter output" — return value of opaque helper is library-internal.
  * -------------------------------------------------------------------------- */
 void func_077B10_fatal_error_report(uint16_t arg_si, uint16_t arg_di,
                                      uint16_t code_bp04, uint16_t mod_bp06,

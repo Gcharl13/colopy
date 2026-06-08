@@ -482,7 +482,7 @@ void ship_cursor_recount(void)
  *
  * The string-builder / measure / draw calls are leaves (externs). The geometry
  * (row pitch 0x13, top 0x0A, centring) is the LAYOUT and is reproduced.
- * Detailed per-pixel arg packing left as the leaf contract (TBD-leaf).
+ * Detailed per-pixel arg packing left as the leaf contract (library-implementation-only).
  * ============================================================================ */
 extern unsigned short g_word_table[];   /* DGROUP word table; title ptr @ [menu_id - 0x3420] (word) */
 
