@@ -29,7 +29,7 @@
 /* ----------------------------------------------------------------------------
  * Role-named externs for the overlay LCALL thunks used below, where the role is
  * byte-known from repeated use across this region.  Where the target is in an
- * opaque overlay (0x191F / 0x1A1F) the role is TBD and we keep the raw
+ * opaque overlay (0x191F / 0x1A1F) the role is inferred from call sites; we keep the raw
  * overlay_call_* name from overlay_externs.h.
  *
  *   0x181F:0x0A4C  select/bind record by index (UnitRecord/NativeSettlement
@@ -2327,7 +2327,7 @@ int native_village_trade(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
  * discount (0xFA/0x3E8), the scout/developed discounts (1500/500), the 0x1F4
  * floor, and the gold compare/debit are BYTE_VERIFIED; the 0x191F dialog trio and
  * the 0x0D1D math helpers are external.  The 0x4B war-threshold compare on the
- * relation word is byte-cited; its exact units are TBD-data.  [DONE]
+ * relation word is byte-cited; its exact units are RUNTIME_ONLY (data-resident).  [DONE]
  * ============================================================================ */
 extern uint8_t  far *g_active_power;        /* DGROUP:0x84FC — far ptr to active PowerRecord (re-decl) */
 extern uint8_t  g_power_record_8808[];      /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */

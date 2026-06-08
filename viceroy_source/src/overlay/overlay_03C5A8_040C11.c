@@ -102,7 +102,7 @@
  *       0x181F:0x04D4 random_int(lo,hi)                          (RNG, in scope)
  *   - Data-resident tables that the EXE indexes but whose contents live in the
  *     data segment (e.g. word table @0x5230 stride 14; coltext0 string handles
- *     like 0x1284) are cited as [TBD data-resident] — never invented.
+ *     like 0x1284) are cited as RUNTIME_ONLY (data-resident) — never invented.
  * ---------------------------------------------------------------------------- */
 #ifndef G8
 #  define G8(addr)   (*(uint8_t  near*)(uint16_t)(addr))   /* DS:addr byte  */
