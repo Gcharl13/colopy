@@ -1150,7 +1150,59 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * per-owner unit-density table 0x94E6[owner<<4+base] (same table func_053820
      * reads) to assign work-plan codes into 0x9870[-0x6790], gated by threat
      * (0x181F:0x30C) and war state (0x181F:0xA38).  The colony loop + work-plan
-     * writes are byte-cited; the code-selection arithmetic is TBD-inner. */
+     * writes are byte-cited; the code-selection arithmetic is TBD-inner.
+     *
+     * BYTE_VERIFIED (2026-06-08) — code-selection arithmetic for [bp-0x9a] flags:
+     *
+     * Flags byte [bp-0x9a] accumulates two independent bits before the final write:
+     *
+     *   bit 0x40 — "civilian/passive" indicator.  Set by three earlier checks
+     *     (@asm 0x04D6E2/0x04D6EE/0x04D701): [bp-0x9c]!=0 (civilian unit type),
+     *     [bp-0x16ff]!=0 (secondary civilian flag), or bitmask [0x173e]&(1<<region)!=0.
+     *     Cleared (@asm 0x04D6C2/0x04D6D7) if various pre-conditions fail.
+     *     Passed as (flags & 0x40) to func_0x510DA (@asm 0x04D94B) to select code.
+     *
+     *   bit 0x10 — "military pressure" indicator.  Built up across six tests:
+     *     SET   @0x04D724: colony_count>0 AND war_state[0x5382]&1 AND
+     *                      density_table[owner*16 + region - 0x6b1a] != 0
+     *     SET   @0x04D74D: colony_type[colony*16 + region - 0x6790] == 4
+     *     CLEAR @0x04D794: (density_a*4 + density_b) > ([0x538e]>>4) AND
+     *                      colony_table[colony*2 + 0x1734] < 20
+     *                      (density_a = table[col*16+rgn-0x6b1a], density_b = table[...-0x6b5a])
+     *     SET   @0x04D7B7: density_table[col*16+rgn-0x6b1a]==0 AND extra_flags&4 AND
+     *                      [bp-0x72] < 7
+     *     SET   @0x04D7C3: extra_flags & 8  (unconditional)
+     *     SET   @0x04D7E7: func_0x51134(arg=7, col_x, col_y, col_idx) returns nonzero
+     *     SET   @0x04D805: func_0x51134(arg=1, col_x, col_y, col_idx) returns nonzero
+     *     SET   @0x04D818: bitmask [0x173c] & (1 << region_idx) != 0
+     *
+     * Colony loop (@asm 0x04D81D..0x04D8C4, ring-walk, 8 directions):
+     *   [bp-0x4e] steps 0..7; for each direction d:
+     *     candidate_x = (int8)[bx+0xBE][d] + col_x → [bp-0x1a]  (@0x04D82C/0x04D831)
+     *     candidate_y = (int8)[bx+0xB4][d] + col_y → [bp-0x16]  (@0x04D839/0x04D83E)
+     *     0x181F:0x302 (in-bounds check); skip if AX==0              @0x04D846/0x04D850
+     *     0x181F:0x768 (walkable check);  skip if AX!=0              @0x04D858/0x04D862
+     *     0x181F:0x6D2 (region query) → AX; skip if AX < 0 AND AX != colony_idx
+     *                                                                 @0x04D864/0x04D87D
+     *     On match: reset [bp-0x9a]=0 (@0x04D87F); call 0x181F:0x722 (map_handle)
+     *       → [bp-0x5e]; verify table[col*16+rgn-0x6790]!=0 and candidate_x>=2
+     *       and ([0x853c]-3) >= candidate_x; if all pass jmp 0x04D598 (density path).
+     *
+     * Work-plan code write (@asm 0x04D944..0x04D9CD, inner loop per colony slot):
+     *   col_slot_type = *[bp-0xec]  (pointer into unit record +0x3146)
+     *   keytab_idx    = col_slot_type * 6  (multiply: bl*3 via shl+add, then shl 1)
+     *                                                                 @0x04D96F..0x04D979
+     *   keytab_entry  = byte ptr [keytab_idx + 0x523D]               @0x04D97D
+     *   Pass (flags_masked = flags & keytab_entry) to gating:
+     *     if flags_masked == 0: skip (no pressure → no work order)   @0x04D981
+     *     if func_0x510DA returns 8: skip (no valid slot)            @0x04D983/0x04D987
+     *   else: call 0x1A1F:0x150 to write work-plan code              @0x04D99D
+     *   Code values: 8 = "no assignment" (skip sentinel returned by 0x510DA);
+     *     2 = peaceful/build order (pushed @0x04CC3A in score-driven path);
+     *     6 = military/develop order (pushed @0x04CC3C in score-driven path).
+     *   Score path activated from @0x04DD33: score = ([bp-0x46]==1 ? 0xFC19 : 0) vs
+     *     [bp-0xe0] (best_score); if score > best: jmp 0x4CC33 → push work_code 2/6.
+     */
     /* (folded into the PHASE 2 owner-mismatch tail at @asm 0x04D6F0; the work-plan
      *  writes occur at @asm 0x04D6FF or [bx+si-0x6056],2 and the 0x9870 region
      *  assignment in PHASE 5.) */
