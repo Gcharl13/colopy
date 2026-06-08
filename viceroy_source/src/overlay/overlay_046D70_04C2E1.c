@@ -1198,29 +1198,65 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
  * per-colony units) are role-named externs.
  *
  * EXTENT NOTE (authoritative reseg page_0C): the REAL function is 1740 bytes
- * (insns=624), NOT the 922 the per-func dump showed — the dump truncates at the
- * first segment spill (~0x0492CD).  So phases A/B/C/D above are byte-cited for
- * the FIRST ~922 bytes; the remaining ~818 bytes (further per-resource writes,
- * additional terrain classes, and the final 0x9E58/0x9E78 fold) are NOT yet
- * ported.  Status: HEAD DONE (scan + claim-mask + classify framing + finalize
- * skeleton), TAIL STILL-SKELETON.  Re-dispatch with the full page_0C body to
- * complete.  cite-or-TBD: nothing past the dump is guessed.
+ * (insns=624).  All four phases (A/B/C/D) are now BYTE_VERIFIED from the full
+ * page_0C body.  Phase C: terrain classify + accumulator arithmetic 0x049066..
+ * 0x049223.  Phase D: base/tiles init 0x049242, output-array zero 0x049259,
+ * food/silver/sugar/cotton/grain/tobacco/fish/lumber/minerals weighted writes
+ * 0x049271..0x049366, slot writes 0x04938F..0x049431, cap-normalize loop
+ * 0x04943E..0x049460, fort-bonus doubles 0x049462..0x0494B5, per-slot
+ * yield/cap decay + demand-price adjustment 0x0494B7..0x0495DD, epilogue
+ * draw + RETF 0x0495DE..0x0495FF.  BYTE_VERIFIED 2026-06-08.
  * ============================================================================ */
 extern uint16_t *g_colony_8542;            /* *(0x8542) — current ColonyRecord (x +0, y +1) */
 extern int16_t   g_colony_count_539E;      /* DGROUP:0x539E — known-colony count */
 extern uint16_t  g_prod_yield_9E78[16];    /* DGROUP:0x9E78 — per-resource weighted yield out */
 extern uint16_t  g_prod_cap_9E58[16];      /* DGROUP:0x9E58 — per-resource capacity out */
 
+/* Scan/render base record pointer; byte layout: [+0]=scan_x, [+1]=scan_y, [+4]=colony level */
+extern uint8_t  *g_bound_record_8D4A;      /* DGROUP:0x8D4A — *(word) = ptr to BoundRecord */
+/* Market record pointer; [+2]=mkt demand byte, [+7]=fur-base, [+0xa]=lumber-base,
+ * [+0xc]=lumber-market-base, [+i*2+0xe]=demand word for slot i */
+extern uint8_t  *g_market_8D4E;            /* DGROUP:0x8D4E — *(word) = ptr to MarketRecord */
+/* Current power record pointer base (used for sawmill level at [ptr-0x69d6]) */
+extern uint8_t  *g_current_power_8D52;     /* DGROUP:0x8D52 — *(word) = ptr to PowerRecord */
+
+/* Individual DGROUP production-slot words (BYTE_VERIFIED offsets 2026-06-08): */
+extern uint16_t  g_9e86;                   /* DGROUP:0x9E86 — lumber yield */
+extern uint16_t  g_9e84;                   /* DGROUP:0x9E84 — minerals yield */
+extern uint16_t  g_9e80;                   /* DGROUP:0x9E80 — silver yield */
+extern uint16_t  g_9e90;                   /* DGROUP:0x9E90 — silver cap */
+extern uint16_t  g_9e7c;                   /* DGROUP:0x9E7C — sugar yield */
+extern uint16_t  g_9e7a;                   /* DGROUP:0x9E7A — cotton yield */
+extern uint16_t  g_9e6e;                   /* DGROUP:0x9E6E — grain yield */
+extern uint16_t  g_9e7e;                   /* DGROUP:0x9E7E — tobacco accumulator */
+extern uint16_t  g_9e8e;                   /* DGROUP:0x9E8E — tobacco cap */
+extern uint16_t  g_9e5e;                   /* DGROUP:0x9E5E — tobacco yield / fish cap */
+extern uint16_t  g_9e5c;                   /* DGROUP:0x9E5C — grain cap slot */
+extern uint16_t  g_9e6c;                   /* DGROUP:0x9E6C — production cap slot */
+extern uint16_t  g_9e70;                   /* DGROUP:0x9E70 — silver/grain combined slot */
+extern uint16_t  g_9e6a;                   /* DGROUP:0x9E6A — fish yield */
+extern uint16_t  g_9e72;                   /* DGROUP:0x9E72 — cap slot */
+extern uint16_t  g_9e74;                   /* DGROUP:0x9E74 — cap slot */
+extern uint16_t  g_9e76;                   /* DGROUP:0x9E76 — fur cap */
+extern uint16_t  g_9e88;                   /* DGROUP:0x9E88 — lumber cap slot */
+extern uint16_t  g_9e68;                   /* DGROUP:0x9E68 — fur yield slot */
+extern uint16_t  g_9e96_scan;              /* DGROUP:0x9E96 — zeroed at scan entry */
+/* g_flags_894 declared in native_unit_ai.c; re-declare locally (bit 2 = colony screen) */
+extern uint8_t   g_flags_894;             /* DGROUP:0x894 — options/display flags bitfield */
+/* g_trade_after_97C0 (DGROUP:0x97C0) declared below func_04AC00 as g_trade_after_97C0[];
+ * here it serves as the per-slot resource-name id array for the colony screen draw. */
+extern uint16_t  g_prod_name_97C0[16];    /* DGROUP:0x97C0 — resource name ids [16] */
+
 int colony_surrounding_tile_scan(void)  /* func_048F34 */
 {
     /* 25-cell (5x5) visited bitmap; indices [bp-0x98 .. -0x80]. */
     uint8_t visited[25];
 
-    /* @asm 0x048F6C..0x048F7B — clear the visited bitmap. */
+    /* Phase A: @asm 0x048F6C..0x048F7B — clear the visited bitmap. */
     for (int i = 0; i < 0x19; i++)
         visited[i] = 0;
 
-    /* @asm 0x048F86..0x04901D — Phase B: mark cells claimed by OTHER colonies'
+    /* Phase B: @asm 0x048F86..0x04901D — mark cells claimed by OTHER colonies'
      * units so this colony cannot also work them.  Iterates the known colonies
      * (0x539E) and, per colony, its units (0x181F:0x09E6), doing the 5x5
      * adjacency test (0x181F:0x0302) against THIS colony at *0x8542 and the
@@ -1241,27 +1277,372 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
         }
     }
 
-    /* @asm 0x049122..0x049223 — Phase C: classify each non-visited tile by
-     * terrain type and add to the per-resource accumulators.  Terrain id comes
-     * from 0x181F:0x078C(row,col); the id->bucket mapping (ids 0x00..0x1C) is
-     * cited in the banner.  Accumulators are frame locals folded into the
-     * weighted-yield computation in Phase D. */
-    /* (Accumulation arithmetic per terrain id — see banner classify block.) */
+    /* -----------------------------------------------------------------------
+     * Phase C: @asm 0x04904A..0x049241 — classify each non-visited tile by
+     * terrain type; accumulate into resource bucket locals.
+     * ----------------------------------------------------------------------- */
+    int forest_cnt  = 0;   /* [bp-0x9e] — terrain 0x1B tiles */
+    int terrain_sub = 0;   /* [bp-0x9c] — scratch: terrain-8 or terrain-0x10 */
+    int mineral_cnt = 0;   /* [bp-0x9a] — terrain 0x1C tiles */
+    int special_cnt = 0;   /* [bp-0x5c] — special-terrain counter */
+    int ore_cnt     = 0;   /* [bp-0x72] */
+    int grain_cnt   = 0;   /* [bp-0x58] */
+    int fish_cnt    = 0;   /* [bp-0x68] */
+    int food_cnt    = 0;   /* [bp-0x6c] */
+    int cotton_cnt  = 0;   /* [bp-0x56] */
+    int hills_accum = 0;   /* [bp-0x78] — batch-converts to food_cnt */
+    int tobacco_cnt = 0;   /* [bp-0x66] */
+    int sugar_cnt   = 0;   /* [bp-0x7c] */
+    int fur_cnt     = 0;   /* [bp-0x64] */
 
-    /* @asm 0x049242..0x0492A7 — Phase D: finalize per-resource outputs.
-     *   base  = colony.level(*0x8D4A +4) + 1
-     *   tiles = base*base
-     *   zero g_prod_yield_9E78[] and g_prod_cap_9E58[]
-     *   weighted yield += (market[+0x02]+base) * bucket / (7 - market[+0x02])
-     *   capacity = (accum<<2) >> (market[+0x02] > 1 ? 1 : 0)
-     * The tail past 0x0492CD is truncated in the per-func dump (TBD). */
-    for (int i = 0; i < 16; i++) {       /* @asm 0x049259..0x04926F */
+    /* @asm 0x04904A — scan_x/scan_y from BoundRecord at *g_bound_record_8D4A */
+    int scan_x = (int)(int8_t)g_bound_record_8D4A[0]; /* [bx+0] cast to signed */
+    int scan_y = (int)(int8_t)g_bound_record_8D4A[1]; /* [bx+1] cast to signed */
+
+    /* @asm 0x049055 — outer row loop: row = scan_y-2 .. scan_y+2 */
+    for (int row_c = scan_y - 2; row_c <= scan_y + 2; row_c++) { /* @asm 0x049229..0x049233 */
+        /* @asm 0x04923B — inner col loop: col = scan_x-2 .. scan_x+2 */
+        for (int col_c = scan_x - 2; col_c <= scan_x + 2; col_c++) { /* @asm 0x04912F..0x049132 */
+            /* @asm 0x04913D — valid tile? push row_c, col_c */
+            if (overlay_call_181F_0302() == 0)  /* LCALL 0x181F:0x0302(row_c,col_c) */
+                continue;                        /* @asm 0x049147 */
+
+            /* @asm 0x049149..0x049173 — compute visited-array index */
+            int row_idx = (row_c - scan_y) + 2; /* [bp-0x5a] */
+            int col_idx = (col_c - scan_x) + 2; /* [bp-4]    */
+            int vi = row_idx * 5 + col_idx;      /* [bp-0x6e] */
+
+            /* @asm 0x049178 — skip if already claimed by another colony */
+            if (visited[vi])                     /* @asm 0x04917d */
+                continue;
+
+            /* @asm 0x049185 — terrain_type = get_terrain_type(row_c, col_c) */
+            int tt = overlay_call_181F_078C();   /* LCALL 0x181F:0x078C(row_c,col_c) */
+            /* [bp-0x7e] = tt */
+
+            /* @asm 0x049190 — special exact-match checks first */
+            if (tt == 0x1b) forest_cnt++;                        /* @asm 0x049195 */
+            if (tt == 0x1c) mineral_cnt++;                       /* @asm 0x04919e */
+            if (tt == 0x18) grain_cnt += 4;                      /* @asm 0x0491a7 */
+
+            /* @asm 0x0491ab — range dispatch: 8..15 -> food; 16..23 -> food;
+             * <8 or >=0x18 -> secondary classifier at 0x049066 */
+            if ((tt >= 8 && tt < 0x10) || (tt >= 0x10 && tt < 0x18)) {
+                /* @asm 0x0491c5 — food_cnt++ */
+                food_cnt++;
+
+                /* @asm 0x0491d2..0x0491d5 — terrain_sub = tt-8 for 8..15 */
+                if (tt >= 8 && tt < 0x10) {
+                    terrain_sub = tt - 8;
+                }
+                /* @asm 0x0491e5..0x0491eb — terrain_sub = tt-0x10 for 16..23 */
+                if (tt >= 0x10 && tt < 0x18) {
+                    terrain_sub = tt - 0x10;
+                }
+
+                /* @asm 0x0491ef — terrain_sub < 3: special_cnt++, grain_cnt+=2 */
+                if (terrain_sub < 3) {
+                    special_cnt++;                               /* @asm 0x04905c */
+                    grain_cnt += 2;                              /* @asm 0x04905f */
+                } else {
+                    /* @asm 0x0491f9 — ore_cnt++, fish_cnt++ */
+                    ore_cnt++;                                   /* @asm 0x0491f9 */
+                    fish_cnt++;                                  /* @asm 0x0491fc */
+                    /* @asm 0x0491ff — terrain_sub==5: cotton_cnt+=2 */
+                    if (terrain_sub == 5) cotton_cnt += 2;      /* @asm 0x049206 */
+                    /* @asm 0x04920a — terrain_sub==4: sugar_cnt+=2 */
+                    if (terrain_sub == 4) sugar_cnt  += 2;      /* @asm 0x049211 */
+                    /* @asm 0x049215 — terrain_sub==3: tobacco_cnt+=2 */
+                    if (terrain_sub == 3) tobacco_cnt += 2;     /* @asm 0x04921f */
+                }
+            } else {
+                /* Secondary classifier @asm 0x049066 — terrain 0x19/0x1A and 0..7 */
+
+                /* @asm 0x049066..0x049070 — hills types 0x19 or 0x1A */
+                if (tt == 0x19 || tt == 0x1a) {
+                    /* @asm 0x049072..0x04907c — hills_accum += market[+2]+1 */
+                    int mkt2 = (int)(uint8_t)g_market_8D4E[2]; /* [bx+2] */
+                    hills_accum += mkt2 + 1;                    /* @asm 0x04907c */
+                    /* @asm 0x04907f..0x049090 — batch: while hills_accum>=3: food_cnt+=2 */
+                    while (hills_accum >= 3) {                  /* @asm 0x04907f */
+                        food_cnt    += 2;                       /* @asm 0x049088 */
+                        hills_accum -= 3;                       /* @asm 0x04908c */
+                    }
+                } else if (tt < 8) {
+                    /* @asm 0x049092..0x04909b — terrain 0..7 classify */
+
+                    /* @asm 0x04909b — id==5: cotton_cnt+=4 */
+                    if (tt == 5) cotton_cnt  += 4;              /* @asm 0x0490a1 */
+                    /* @asm 0x0490a5 — id==7: cotton_cnt+=2 */
+                    if (tt == 7) cotton_cnt  += 2;              /* @asm 0x0490ab */
+                    /* @asm 0x0490af — id==4: sugar_cnt+=4 */
+                    if (tt == 4) sugar_cnt   += 4;              /* @asm 0x0490b5 */
+                    /* @asm 0x0490b9 — id==6: sugar_cnt+=2 */
+                    if (tt == 6) sugar_cnt   += 2;              /* @asm 0x0490bf */
+                    /* @asm 0x0490c3 — id==3: tobacco_cnt+=4 */
+                    if (tt == 3) tobacco_cnt += 4;              /* @asm 0x0490c9 */
+                    /* @asm 0x0490cd — id==0: fur_cnt+=2 */
+                    if (tt == 0) fur_cnt     += 2;              /* @asm 0x0490d3 */
+
+                    /* @asm 0x0490d7 — id==2: tobacco_cnt++, food_cnt+=2 */
+                    if (tt == 2) {
+                        tobacco_cnt++;                           /* @asm 0x0490dd */
+                        food_cnt    += 2;                       /* @asm 0x0490e0 */
+                    }
+
+                    /* @asm 0x0490e4 — id >= 2: food_cnt+=2 (cumulative with above) */
+                    if (tt >= 2) {
+                        food_cnt += 2;                          /* @asm 0x0490ea */
+                        if (tt >= 6) {
+                            /* @asm 0x049106 — id>=6: fur_cnt++ */
+                            fur_cnt++;                           /* @asm 0x049106 */
+                        } else {
+                            /* @asm 0x0490f4 — 2<=id<6: food_cnt++ */
+                            food_cnt++;                          /* @asm 0x0490f4 */
+                            /* @asm 0x0490f7 — if id&4: fish_cnt+=2; else special+grain */
+                            if (tt & 4) {
+                                fish_cnt += 2;                   /* @asm 0x049100 */
+                            } else {
+                                special_cnt++;                   /* @asm 0x04905c */
+                                grain_cnt   += 2;                /* @asm 0x04905f */
+                            }
+                        }
+                    } else {
+                        /* @asm 0x04910c — id <= 1 */
+                        if (tt == 1) {
+                            fish_cnt  += 4;                      /* @asm 0x049112 */
+                        } else if (tt == 0) {
+                            grain_cnt += 3;                      /* @asm 0x04911e */
+                        }
+                    }
+                }
+                /* tt >= 0x18 (already handled above) or tt >= 8 already done */
+            }
+        } /* col loop */
+    } /* row loop */
+
+    /* -----------------------------------------------------------------------
+     * Phase D: @asm 0x049242..0x0495FF — finalize per-resource output arrays.
+     * ----------------------------------------------------------------------- */
+
+    /* @asm 0x049242..0x049250 — base = colony_level+1; tiles = base*base */
+    int base  = (int)(uint8_t)g_bound_record_8D4A[4] + 1;  /* [bx+4]=level @asm 0x049242 */
+    int tiles = base * base;                                  /* @asm 0x04924e..0x049250 */
+
+    /* @asm 0x049254..0x04926f — zero output arrays */
+    for (int i = 0; i < 16; i++) {                           /* @asm 0x049259..0x04926f */
         g_prod_yield_9E78[i] = 0;
-        g_prod_cap_9E58[i] = 0;
+        g_prod_cap_9E58[i]   = 0;
     }
-    /* @asm 0x049271.. — weighted accumulation into 0x9E78 / 0x9E58 (see banner). */
 
-    return 0;
+    /* @asm 0x049271 — bx = g_market_8D4E; mkt = market[+2] */
+    int mkt = (int)(uint8_t)g_market_8D4E[2];                /* @asm 0x049275 */
+
+    /* @asm 0x049281..0x04928b — food slot (yield array [0]):
+     *   g_prod_yield_9E78[0] += (mkt+base)*food_cnt / (7-mkt) */
+    {
+        int scale = 7 - mkt;                                  /* @asm 0x04927f */
+        g_prod_yield_9E78[0] += (uint16_t)(int16_t)(((mkt + base) * food_cnt) / scale); /* @asm 0x049285..0x04928b */
+    }
+
+    /* @asm 0x049293..0x0492a7 — food capacity [0]:
+     *   shift = (mkt>1)?1:0 ; g_prod_cap_9E58[0] = (tiles*4) >> shift */
+    {
+        int shift = (mkt > 1) ? 1 : 0;                       /* @asm 0x049293..0x04929c */
+        g_prod_cap_9E58[0] = (uint16_t)((tiles * 4) >> shift); /* @asm 0x04929e..0x0492a7 */
+    }
+
+    /* @asm 0x0492aa — gate mkt >= 1 for lumber+minerals */
+    if (mkt >= 1) {                                           /* @asm 0x0492af */
+        if (mkt >= 2) {                                       /* @asm 0x0492b6 */
+            /* @asm 0x0492b8..0x0492f0 — lumber slot (g_9e86):
+             *   divisor = max(1, saw_level)
+             *   g_9e86 = market[+0xc] / divisor
+             *   forest_adj = (mkt>2) ? forest_cnt*8 : forest_cnt*4
+             *   g_9e86 += forest_adj */
+            int lmb_base = (int)(uint16_t)(*(uint16_t *)(g_market_8D4E + 0xc)); /* [bx+0xc] @asm 0x0492b8 */
+            int saw = (int)(uint8_t)g_current_power_8D52[-0x69d6];  /* [bx-0x69d6] @asm 0x0492c3 */
+            /* @asm 0x0492c3..0x0492cc — divisor = max(1, saw) via sub/sbb/not/and/add */
+            int divisor = (saw < 1) ? 1 : saw;               /* @asm 0x0492d1 */
+            g_9e86 = (uint16_t)((int16_t)(lmb_base / divisor)); /* @asm 0x0492d5..0x0492d7 */
+            /* @asm 0x0492da..0x0492ed — forest_adj */
+            int forest_adj = forest_cnt * 4;                  /* @asm 0x0492de */
+            if (mkt > 2) forest_adj = forest_cnt * 8;         /* @asm 0x0492eb */
+            g_9e86 += (uint16_t)forest_adj;                   /* @asm 0x0492f0 */
+        }
+
+        /* @asm 0x0492f4..0x04930b — minerals/ore slot (g_9e84):
+         *   g_9e84 += mineral_cnt*2 + forest_cnt + fur_cnt */
+        g_9e84 += (uint16_t)(int16_t)(mineral_cnt * 2 + forest_cnt + fur_cnt); /* @asm 0x04930b */
+    }
+
+    /* @asm 0x04930f..0x049328 — silver/ore yield (g_9e80):
+     *   g_9e80 += (special_cnt*2 + ore_cnt/2) / (mkt+1) */
+    {
+        int sv = (special_cnt * 2) + (ore_cnt >> 1);          /* @asm 0x04930f..0x049319 */
+        g_9e80 += (uint16_t)((int16_t)(sv / (mkt + 1)));      /* @asm 0x049326..0x049328 */
+    }
+
+    /* @asm 0x04932c..0x049341 — silver capacity (g_9e90):
+     *   g_9e90 = abs((g_9e80+mkt)*2) / 4 * 2
+     * The cdq/xor/sub/sar/xor/sub/shl pattern = (abs(x*2)/4)*2 */
+    {
+        int sv2 = ((int16_t)g_9e80 + mkt) * 2;               /* @asm 0x04932f..0x049331 */
+        int absv = (sv2 < 0) ? -sv2 : sv2;                    /* @asm 0x049334..0x049336 */
+        g_9e90 = (uint16_t)((absv / 4) * 2);                  /* @asm 0x049338..0x049341 */
+    }
+
+    /* @asm 0x049344..0x04934e — sugar and cotton direct writes */
+    g_9e7c += (uint16_t)(int16_t)sugar_cnt;                   /* @asm 0x049344..0x049347 */
+    g_9e7a += (uint16_t)(int16_t)cotton_cnt;                  /* @asm 0x04934b..0x04934e */
+
+    /* @asm 0x049352..0x049366 — grain/food yield (g_9e6e):
+     *   g_9e6e = (mkt+base)*base + fish_cnt/2 + grain_cnt */
+    g_9e6e = (uint16_t)(int16_t)(
+        (mkt + base) * base + (fish_cnt >> 1) + grain_cnt);   /* @asm 0x049352..0x049366 */
+
+    /* @asm 0x049369..0x049386 — tobacco cap (g_9e7e accumulator, g_9e8e cap):
+     *   g_9e7e += tobacco_cnt
+     *   g_9e8e = abs((mkt + g_9e7e)*2) / 4 * 2 */
+    g_9e7e += (uint16_t)(int16_t)tobacco_cnt;                 /* @asm 0x04936e */
+    {
+        int tb2 = (mkt + (int16_t)g_9e7e) * 2;               /* @asm 0x049372..0x049376 */
+        int absv = (tb2 < 0) ? -tb2 : tb2;
+        g_9e8e = (uint16_t)((absv / 4) * 2);                  /* @asm 0x049386 */
+    }
+
+    /* @asm 0x049389..0x04938c — g_9e5e = g_9e8e + fish_cnt */
+    g_9e5e = (uint16_t)((int16_t)g_9e8e + fish_cnt);          /* @asm 0x049389..0x04938c */
+
+    /* @asm 0x04938f..0x0493a2 — g_9e5c = (6-mkt)*base + grain_cnt*2 + 5 */
+    g_9e5c = (uint16_t)(int16_t)(
+        (6 - mkt) * base + grain_cnt * 2 + 5);                /* @asm 0x04938f..0x0493a2 */
+
+    /* @asm 0x0493a5..0x0493b2 — g_9e6c = (base*2 - mkt + 7) * 2 */
+    g_9e6c = (uint16_t)(int16_t)((base * 2 - mkt + 7) * 2);  /* @asm 0x0493a5..0x0493b2 */
+
+    /* @asm 0x0493b5..0x0493bf — g_9e70 = grain_cnt*8 + g_9e80 */
+    g_9e70 = (uint16_t)(int16_t)(grain_cnt * 8 + (int16_t)g_9e80); /* @asm 0x0493b5..0x0493bf */
+
+    /* @asm 0x0493c2..0x0493d1 — g_9e6a = ((mkt*2 + base)*2 + fish_cnt)*2 */
+    g_9e6a = (uint16_t)(int16_t)(
+        ((mkt * 2 + base) * 2 + fish_cnt) * 2);               /* @asm 0x0493c2..0x0493d1 */
+
+    /* @asm 0x0493d5..0x0493e7 — g_9e72 = (mkt+2)*(base+3) + 8 */
+    g_9e72 = (uint16_t)(int16_t)((mkt + 2) * (base + 3) + 8); /* @asm 0x0493e2..0x0493e7 */
+
+    /* @asm 0x0493ea..0x0493f9 — g_9e74 = (mkt*base) << (grain_cnt/2 + 1) */
+    {
+        int shift74 = (grain_cnt >> 1) + 1;                   /* @asm 0x0493f3..0x0493f5 */
+        g_9e74 = (uint16_t)(int16_t)((mkt * base) << shift74); /* @asm 0x0493f7..0x0493f9 */
+    }
+
+    /* @asm 0x0493fc..0x04940a — fur cap (g_9e76):
+     *   g_9e76 = (7 - market[+7] - mkt) * 4 */
+    {
+        int fur_base7 = (int)(uint8_t)g_market_8D4E[7];       /* [bx+7] @asm 0x0493fc */
+        g_9e76 = (uint16_t)(int16_t)((7 - fur_base7 - mkt) * 4); /* @asm 0x049400..0x04940a */
+    }
+
+    /* @asm 0x04940d..0x049420 — g_9e88 = market[+0xa] / ((saw_level>>1)+1) */
+    {
+        int lmb10 = (int)(uint16_t)(*(uint16_t *)(g_market_8D4E + 0xa)); /* [bx+0xa] @asm 0x04940d */
+        int saw2  = (int)(uint8_t)g_current_power_8D52[-0x69d6]; /* [di-0x69d6] @asm 0x049414 */
+        int div88 = (saw2 >> 1) + 1;                           /* @asm 0x049418..0x04941c */
+        g_9e88 = (uint16_t)((int16_t)(lmb10 / div88));         /* @asm 0x04941d..0x049420 */
+    }
+
+    /* @asm 0x049423..0x049431 — g_9e68 = (9 - market[+8] - mkt) * 4 */
+    {
+        int mb8 = (int)(uint8_t)g_market_8D4E[8];              /* [bx+8] @asm 0x049423 */
+        g_9e68 = (uint16_t)(int16_t)((9 - mb8 - mkt) * 4);    /* @asm 0x049427..0x049431 */
+    }
+
+    /* @asm 0x049434..0x049436 — zero g_9e96_scan */
+    g_9e96_scan = 0;                                            /* @asm 0x049436 */
+
+    /* @asm 0x04943e..0x049460 — per-slot cap normalize:
+     *   g_prod_cap_9E58[i] = overlay_call_181F_035C(g_prod_cap_9E58[i], 0, 50) */
+    for (int i = 0; i < 16; i++) {                             /* @asm 0x04945c */
+        /* push 50; push 0; push g_prod_cap_9E58[i]; LCALL 0x181F:0x035c */
+        g_prod_cap_9E58[i] = (uint16_t)overlay_call_181F_035C(); /* @asm 0x04944d..0x049455 */
+    }
+
+    /* @asm 0x049462..0x0494b5 — fort bonus if colony has fort-flag bit 2 set */
+    if ((uint8_t)g_bound_record_8D4A[3] & 4) {                 /* [bx+3] @asm 0x049466 */
+        /* @asm 0x049471..0x049481 — double cap slots 0..7 */
+        for (int i = 0; i <= 7; i++)
+            g_prod_cap_9E58[i] <<= 1;                          /* @asm 0x049476 */
+        /* @asm 0x049488..0x04949e — boost cap slots 13..15 by x1.5 */
+        for (int i = 0xd; i <= 0xf; i++) {
+            g_prod_cap_9E58[i] += (uint16_t)((int16_t)g_prod_cap_9E58[i] >> 1); /* @asm 0x049493 */
+        }
+        /* @asm 0x0494a5..0x0494b5 — double yield slots 7..15 */
+        for (int i = 7; i < 16; i++)
+            g_prod_yield_9E78[i] <<= 1;                        /* @asm 0x0494aa */
+    }
+
+    /* @asm 0x0494b7..0x0495dd — per-slot yield/cap decay + demand-price adjust */
+    for (int i = 0; i < 16; i++) {                             /* @asm 0x049598..0x04959c */
+        /* Load this slot */
+        int yld_val = (int16_t)g_prod_yield_9E78[i];          /* [bp-0x6a] @asm 0x0495a7 */
+        int cap_val = (int16_t)g_prod_cap_9E58[i];            /* [bp-0x60] @asm 0x0495ae */
+
+        /* @asm 0x0495b3..0x0495b9 — demand word from market[i*2+0xe] */
+        int demand = (int16_t)(*(int16_t *)(g_market_8D4E + i * 2 + 0xe)); /* @asm 0x0495b9 */
+
+        if (demand > 0) {
+            /* @asm 0x0495c6..0x0495d6 — supply-pressure cap adjust:
+             *   g_prod_cap_9E58[i] = cap_val + 2*(-50-demand)/100 */
+            g_prod_cap_9E58[i] = (uint16_t)(int16_t)(
+                cap_val + 2 * ((-50 - demand) / 100));         /* @asm 0x0495c6..0x0495d6 */
+        } else if (demand < 0) {
+            /* @asm 0x0494c6..0x0494d6 — negative demand yield boost:
+             *   g_prod_yield_9E78[i] += 2*(demand+50)/100 */
+            g_prod_yield_9E78[i] += (uint16_t)(int16_t)(
+                2 * ((demand + 50) / 100));                    /* @asm 0x0494c6..0x0494d6 */
+        }
+
+        /* @asm 0x0494da — display gate (bit 2 = colony screen active) */
+        if (g_flags_894 & 4) {                                  /* @asm 0x0494da */
+            /* @asm 0x0494e6..0x0494ed — only draw if yield or cap non-zero */
+            if ((int16_t)g_prod_yield_9E78[i] != 0 || (int16_t)g_prod_cap_9E58[i] != 0) {
+                /* push g_prod_cap_9E58[i]; push g_prod_yield_9E78[i]; push g_prod_name_97C0[i] */
+                overlay_call_181F_0022();  /* LCALL 0x181F:0x0022 draw_resource_slot @asm 0x049505 */
+                /* LCALL 0x0D1D:0x0B48 sprintf into [bp-0x54] format 0x154b @asm 0x049516 */
+                overlay_call_0D1D_0B48();
+                /* LCALL 0x181F:0x013C draw_text_at(ss:[bp-0x54],1,(i+1)*8,15) @asm 0x04952f */
+                overlay_call_181F_013C();
+            }
+        }
+
+        /* @asm 0x049537..0x049591 — yield/cap decay:
+         *   saved_yld = yield
+         *   yield  -= cap/2       ; yield = max(0_or_1_if_yld_val>0, yield)
+         *   cap    -= saved_yld/2 ; cap   = max(0_or_1_if_cap_val>0, cap) */
+        {
+            int saved_yld = (int16_t)g_prod_yield_9E78[i];    /* @asm 0x049540 */
+            int new_yld   = saved_yld - ((int16_t)g_prod_cap_9E58[i] >> 1); /* @asm 0x049547 */
+            int yld_floor = (yld_val > 0) ? 1 : 0;            /* @asm 0x049551..0x04955c */
+            if (new_yld < yld_floor) new_yld = yld_floor;
+            g_prod_yield_9E78[i] = (uint16_t)(int16_t)new_yld; /* @asm 0x049568 */
+
+            int new_cap   = (int16_t)g_prod_cap_9E58[i] - (saved_yld >> 1); /* @asm 0x049583 */
+            int cap_floor = (cap_val > 0) ? 1 : 0;            /* @asm 0x04956c..0x049578 */
+            if (new_cap < cap_floor) new_cap = cap_floor;
+            g_prod_cap_9E58[i] = (uint16_t)(int16_t)new_cap;  /* @asm 0x049591 */
+        }
+    }
+
+    /* @asm 0x0495de..0x0495fb — epilogue: if display flag set, draw rect + flip */
+    if (g_flags_894 & 4) {                                      /* @asm 0x0495de */
+        /* push 0; push 0x140; push 0xc8; LCALL 0x181F:0x00e2 draw_rect @asm 0x0495f2 */
+        overlay_call_181F_00E2();
+        /* LCALL 0x181F:0x03e0 refresh/flip @asm 0x0495f7 */
+        overlay_call_181F_03E0();
+    }
+
+    return 0;  /* @asm 0x0495fe LEAVE / 0x0495ff RETF */
 }
 
 /* ============================================================================

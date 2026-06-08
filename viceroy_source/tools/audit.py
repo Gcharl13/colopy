@@ -242,6 +242,21 @@ check_bytes("colonist handler NULL guard CMP [bp+8],0", 0x00A206, "83 7e 08 00")
 check_bytes("colonist handler yield clamp OR ax,ax",  0x00A217, "0b c0")
 check_bytes("colonist handler RETF", 0x00A221, "cb")
 
+# ---- colony_surrounding_tile_scan tail (BYTE_VERIFIED 2026-06-08) -----------
+check_bytes("tile_scan Phase C terrain classify entry", 0x049066, "83 7e 82 19")
+check_bytes("tile_scan Phase C hills batch to food", 0x049088, "83 46 94 02")
+check_bytes("tile_scan Phase D base/tiles init", 0x049242, "8a 47 04 2a e4")
+check_bytes("tile_scan Phase D food yield weighted", 0x049285, "f7 6e 94")
+check_bytes("tile_scan Phase D food cap write", 0x0492a7, "a3 58 9e")
+check_bytes("tile_scan Phase D minerals fold", 0x04930b, "01 06 84 9e")
+check_bytes("tile_scan Phase D silver yield", 0x049328, "01 06 80 9e")
+check_bytes("tile_scan Phase D silver cap", 0x049341, "a3 90 9e")
+check_bytes("tile_scan Phase D grain yield 9e6e", 0x049366, "a3 6e 9e")
+check_bytes("tile_scan Phase D fort bonus double cap 0..7", 0x049476, "d1 a7 58 9e")
+check_bytes("tile_scan Phase D per-slot cap normalize", 0x04944d, "9a 5c 03 1f 18")
+check_bytes("tile_scan Phase D per-slot decay sub cap/2", 0x049549, "29 87 78 9e")
+check_bytes("tile_scan epilogue RETF", 0x0495ff, "cb")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")
