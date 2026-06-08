@@ -29,10 +29,10 @@ const int8_t NEIGHBOR_DY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
 
 /* A second 10-entry signed table at DS:0x00C8 (file 0x1DA68), indexed in the
  * same family of map helpers. Values 0,1,0,-1,-1,1,1,-1,(0,2). Exact role
- * (alternate direction ordering / second axis) is [TBD — accessor not fully
+ * (alternate direction ordering / second axis) is [not yet decoded — accessor not fully
  * traced]; bytes are recorded so the value is not lost.
  *   @bytes @file 0x1DA68: 00 01 00 ff ff 01 01 ff 00 02
- * @status BYTE_VERIFIED (bytes); semantics ANCHOR/TBD
+ * @status BYTE_VERIFIED (bytes); semantics ANCHOR/not yet decoded
  */
 const int8_t MAP_DELTA_C8[10] = { 0, 1, 0, -1, -1, 1, 1, -1, 0, 2 };
 

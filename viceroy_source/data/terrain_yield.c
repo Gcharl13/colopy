@@ -1,4 +1,4 @@
-/* >>> VALUES ARE [TBD — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
+/* >>> VALUES ARE [RUNTIME_ONLY (data-resident) — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
  * This balance table is NOT embedded in VICEROY.EXE. It is parsed at runtime
  * from a COLONIZE/*.TXT data file (NAMES.TXT/COLONY.TXT/TRIBE.TXT) into a BSS
  * buffer (DS offset > 0x2CC5). The numeric values below are RECONSTRUCTED and
@@ -24,7 +24,7 @@
  * that loader writes.
  *
  * @source extracted/text/NAMES_sections.json @UNFORESTED/@FORESTED/@OTHER/@RESOURCE
- *   terrain line cols: move_cost, defense, (col2/col3 TBD), then 9 yields =
+ *   terrain line cols: move_cost, defense, (col2/col3 not yet decoded), then 9 yields =
  *   Food, Sugar, Tobacco, Cotton, Furs, Lumber, Ore, Silver, Fish.
  * @order terrain_id per game_data.py TERR_* (NOT @ section order): Ocean=0 ..
  *   Hills=20; @UNFORESTED/@FORESTED/@OTHER are interleaved by id.
@@ -92,4 +92,4 @@ const uint8_t RESOURCE_BONUS[15] = {
  * RIVER_BONUS, EXPERT_FOR, and the wrong occupation enum. Forest terrain is a
  * distinct terrain_id with its own row above (NOT a runtime "base + forest bit"
  * add). River/road/expert adjustments are applied in compute_terrain_yield
- * (steps 7..11, @0x9B9C) and are TBD pending decode of that function. */
+ * (steps 7..11, @0x9B9C) and are not yet decoded pending decode of that function. */

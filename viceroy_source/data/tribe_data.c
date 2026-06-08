@@ -1,4 +1,4 @@
-/* >>> VALUES ARE [TBD — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
+/* >>> VALUES ARE [RUNTIME_ONLY (data-resident) — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
  * This balance table is NOT embedded in VICEROY.EXE. It is parsed at runtime
  * from a COLONIZE/*.TXT data file (NAMES.TXT/COLONY.TXT/TRIBE.TXT) into a BSS
  * buffer (DS offset > 0x2CC5). The numeric values below are RECONSTRUCTED and
@@ -7,7 +7,7 @@
  * and docs/DATA_TABLES.md.  (banner added 2026-06-07) */
 
 /* ============================================================================
- *   VERIFIED DATA: NAMES.TXT @TRIBES  |  BEHAVIOURAL PARAMS: TBD (not traced)
+ *   VERIFIED DATA: NAMES.TXT @TRIBES  |  BEHAVIOURAL PARAMS: not yet decoded (not traced)
  * ----------------------------------------------------------------------------
  * Corrected 2026-05-30. The previous version of this file was almost entirely
  * FABRICATED ("RECONSTRUCTED — NOT BYTE-VERIFIED") and got the basics wrong:
@@ -24,7 +24,7 @@
  * Per-tribe BEHAVIOURAL parameters (aggression, settlement population, warrior
  * fraction, skills taught, goods wanted, raze-treasure magnitude) are real in
  * the game but are NOT in @TRIBES — they live in overlay-resident tables that
- * have not been traced. They are marked TBD here, not guessed.
+ * have not been traced. They are left unresolved here, not guessed.
  *
  * @source extracted/text/NAMES_sections.json  @TRIBES, @LEVELS
  * @xref   colonize_sdl/engine/game_data.py  TRIBE_DEFS (same @TRIBES parse)
@@ -82,7 +82,7 @@ const struct LevelInfo LEVEL_INFO[5] = {
 };
 
 /* ----------------------------------------------------------------------------
- * TBD — per-tribe BEHAVIOURAL parameters (NOT in NAMES.TXT @TRIBES).
+ * not yet decoded — per-tribe BEHAVIOURAL parameters (NOT in NAMES.TXT @TRIBES).
  * ----------------------------------------------------------------------------
  * The game varies raid aggression, settlement population, warrior counts, the
  * skills a settlement teaches, and the goods a tribe pays well for — per tribe

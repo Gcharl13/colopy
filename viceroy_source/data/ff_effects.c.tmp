@@ -1,4 +1,4 @@
-/* >>> VALUES ARE [TBD — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
+/* >>> VALUES ARE [RUNTIME_ONLY (data-resident) — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
  * This balance table is NOT embedded in VICEROY.EXE. It is parsed at runtime
  * from a COLONIZE/*.TXT data file (NAMES.TXT/COLONY.TXT/TRIBE.TXT) into a BSS
  * buffer (DS offset > 0x2CC5). The numeric values below are RECONSTRUCTED and

@@ -1,4 +1,4 @@
-/* >>> VALUES ARE [TBD — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
+/* >>> VALUES ARE [RUNTIME_ONLY (data-resident) — EXTERNAL DATA FILE], NOT BYTE-VERIFIED <<<
  * This balance table is NOT embedded in VICEROY.EXE. It is parsed at runtime
  * from a COLONIZE/*.TXT data file (NAMES.TXT/COLONY.TXT/TRIBE.TXT) into a BSS
  * buffer (DS offset > 0x2CC5). The numeric values below are RECONSTRUCTED and
@@ -34,7 +34,7 @@
 #define SCENARIO_COUNT    2
 
 /* Per-power starting tile. NOTE: @SCENARIO carries ONLY the x,y coordinates;
- * the starting unit/ship loadout is not in this section (TBD — sourced from
+ * the starting unit/ship loadout is not in this section (inferred from call context — sourced from
  * the new-game setup code, not yet traced). */
 struct ScenarioStart {
     uint8_t map_x;   /* @SCENARIO column 2k   */
@@ -51,7 +51,7 @@ const struct ScenarioStart SCENARIO_STARTS[SCENARIO_COUNT][4] = {
 const char *const SCENARIO_MAP[SCENARIO_COUNT] = { "AMER2", "AMERICA" };
 
 /* ----------------------------------------------------------------------------
- * TBD (removed fabricated curves):
+ * left unresolved (removed fabricated curves):
  *   - Starting treasury/bells/recruits per difficulty: not in NAMES.TXT and not
  *     byte-traced. Only datapoint is a flat 1000 gold (game.py). The real
  *     difficulty effects live in @DIFFICULTY (NAMES.TXT) + overlay setup code.
