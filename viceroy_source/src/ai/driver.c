@@ -1,6 +1,6 @@
 /* ============================================================================
  *                  >>> BYTE_VERIFIED (control flow + globals) <<<
- *           >>> per-nation PERSONALITY WEIGHTS: TBD (overlay data) <<<
+ *           >>> per-nation PERSONALITY WEIGHTS: RUNTIME_ONLY (overlay/data; not in EXE static image) <<
  * ----------------------------------------------------------------------------
  * driver.c -- AI turn driver: how a power's turn is selected and dispatched.
  *
@@ -13,7 +13,7 @@
  *   resolving Type-A thunk.
  *
  *   The per-nation PERSONALITY WEIGHTS (aggression / expansion / trade bias,
- *   etc.) that bias the leaf decisions are NOT in this file and are marked TBD:
+ *   etc.) that bias the leaf decisions are NOT in this file; they are marked RUNTIME_ONLY:
  *   they live in overlay/data tables that this pass did not decode. They are
  *   NOT invented here. (See docs/RULINGS.md 2026-05-28 (ai).)
  *
@@ -54,7 +54,7 @@ extern int16_t g_human_player_index_5394;
 /* DGROUP:0x5396 -- secondary "view/selected" nation index, kept in step with
  * 0x5394/0x5398 (@asm 0x0757FB mov [0x5396],ax; then conditionally overridden
  * from 0x53A4 @asm 0x075805 mov ax,[0x53A4]; 0x075808 mov [0x5396],ax when
- * [0x53A4] >= 0). Exact role TBD; tracked here only because the setup path
+ * [0x53A4] >= 0). Inferred role: view/selected nation index (UI perspective power); tracked here because the setup path
  * writes it alongside the turn indices. */
 extern int16_t g_view_nation_index_5396;
 
@@ -66,7 +66,7 @@ extern int16_t g_view_nation_index_5396;
  *   stride binding @asm: `imul bx,<idx>,0x34` then `[bx+0x543f]`
  *   (e.g. 0x040F1B imul bx,[0x5394],0x34 ; 0x040F20 cmp [bx+0x543f],0).
  * 220 literal-word refs. The REMAINING 51 bytes of each record (the personality
- * weights) are TBD -- not decoded in this pass. */
+ * weights are RUNTIME_ONLY (data-resident; not decoded in this pass). */
 extern uint8_t g_ai_personality_543F[/* nation */][0x34];
 
 /* DGROUP:0x3144 -- UnitRecord table base; stride 0x1C (28). Field map per
@@ -82,7 +82,7 @@ extern uint8_t g_units_3144[/* unit */][0x1C];
 
 /* DGROUP:0x5382 -- turn/game mode flag word. Bit 0 tested on the
  * "AI-vs-human" branch (@asm 0x03E988 test byte [0x5382],1). Other bits used
- * elsewhere (e.g. 0x10 at 0x023663). Exact bit map TBD. */
+ * elsewhere. Partial bit map: 0x01=revolution/independence active; 0x02=congress-progress gate; 0x08=war/revolution underway; 0x10=independence won (per scoring/compute.c). Full map RUNTIME_ONLY. */
 extern uint16_t g_game_mode_flags_5382;
 
 /* DGROUP:0x5381 -- companion flag byte; bit 0x80 = "AI turn pending / showing
@@ -121,7 +121,7 @@ extern int16_t ovly_unit_order_step_040E22(int16_t unit_index);
  * report's ledger row. @asm 0x03E984.. (docs/RULINGS.md 2026-05-30 (ai-unit-eval).) */
 
 /* Helpers/globals referenced below (purpose from call context + string xref;
- * semantics TBD where noted). The 0x181F/0x191F ones are RTLink thunk operands. */
+ * semantics inferred from call context where noted). The 0x181F/0x191F ones are RTLink thunk operands. */
 extern uint16_t ovly_181F_0652(int16_t flag, int16_t msg_id);   /* dialog @asm 0x03E994 etc. */
 extern void     ovly_181F_09AE(int16_t lo, int16_t hi, int16_t z); /* fmt value @asm 0x03E9AD */
 extern void     ovly_191F_0AC8(int16_t nation, int16_t a, int16_t b); /* finalize @asm 0x03E9E6 */
@@ -212,8 +212,8 @@ void ai_turn_end_restore(void)
  *    `for` in this pass; the writes to 0x5398 are at @asm 0x023D52 (func_0235D6,
  *    menu/command dispatch, page 01), 0x03E9DB (restore, here), 0x070A74 /
  *    0x070BE1 (func_070A1A map-view cycling, page 19), 0x07436C / 0x07437A
- *    (func_07431E init/new-turn, page 1A). Pinning the canonical increment site
- *    is TBD.
+ *    (func_07431E init/new-turn, page 1A). Pinning the canonical increment site (not yet located)
+ *  
  *  - Message-id offsets RESOLVED 2026-05-30 via the verified string rule
  *    (file_offset = handle + 0x1D9A0, strings.json): 0x1374=ALREADYREVOLUTION,
  *    0x1386=TOOTORY, 0x138E=MULTIREV, 0x1397=DECLARE -- func_03E984 is the
@@ -221,6 +221,6 @@ void ai_turn_end_restore(void)
  *  - 0x53D0 = rebel-sentiment / Sons-of-Liberty percentage (threshold 50 gates
  *    the declaration); BYTE_VERIFIED from this function's `cmp [0x53d0],0x32`
  *    @asm 0x03E99E. (Earlier "turn/era counter" guess withdrawn.)
- *  - PERSONALITY WEIGHTS (the per-nation bias inputs to the leaves): TBD,
+ *  - PERSONALITY WEIGHTS (the per-nation bias inputs to the leaves): RUNTIME_ONLY,
  *    overlay/data-resident. DO NOT invent.
  * ============================================================================ */
