@@ -1496,3 +1496,46 @@ Two corrections to previously-documented byte cites in func_039EE2:
 |-------|-----------|--------|
 | score_ff_pts loop @asm cite was 0x03A2E8 | Correct cite is **0x03A2BE** | BYTE_VERIFIED (corrected) |
 | vet_mult formula: gate=`100>>n_other`, factor=`8>>n_other` (both right-shift the base constant by the other-power count); total = raw × (8+factor)/8 | @asm 0x03A8B4 recomputed | BYTE_VERIFIED |
+
+---
+
+## Tea party, king-tax control flow, SoL gate corrections (2026-06-08)
+
+### Tea party secondary effects (func_034318, file 0x034439..0x03471E)
+
+Full re-trace of the tea-party handler closed all prior TBDs:
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| King force net change on tea party = **ZERO** | @asm 0x034348 `add [bx+1],al` (pre-dialog raise) then @asm 0x03467F `sub [bx+1],al` (undo after branch taken) | BYTE_VERIFIED |
+| EuropeStock dump: `Colony[c][good] -= min(current_stock, 100)` | @asm 0x034678..0x03469B: cmp/clamp ax=min(stock,0x64); sub from [bx+0x5de0] | BYTE_VERIFIED |
+| Colony +0xC0 (DGROUP:0x5e08) += dumped_amount (32-bit) | @asm 0x0346A9/0x0346AD: add/adc word ptr [...] | BYTE_VERIFIED write-site; no read-site found — consumed by save/score overlay |
+| Boycott mask set: `PowerRecord[active]+0x20 \|= (1<<good)` | @asm 0x034717: or word ptr [bx+0x20],ax | BYTE_VERIFIED |
+| SoL +25 / king_anger +10 / FF +25 on tea party | ABSENT — not in this handler | BYTE_VERIFIED absent |
+
+### King-tax raise control flow corrections (func_034AE0, func_034318)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Three-outcome routing: KINGRAISE@0x034B62 (guards 1+2), KINGNOTHING@0x034B33 (guard 3 + normal fall-through), KINGLOWER@0x034B44 (prob 1/(diff+1)) | Full re-trace; all goto targets byte-confirmed | BYTE_VERIFIED |
+| Prior label `raise_was_blocked` (= 0x034B62) was WRONG | 0x034B62 IS the raise path; guarded by `tax≤1` OR `proposed+5≥current` | CORRECTED |
+| `random_int(lo=1, hi=diff+1)` at @0x034B28 — KINGLOWER prob = 1/(diff+1) | lcall 0x181F:0x4D4 arg sequence | BYTE_VERIFIED |
+| `random_int(lo=1, hi=5-diff)` at @0x034B51 — KINGLOWER lower delta | @asm 0x034B51 | BYTE_VERIFIED |
+| `random_int(lo=1, hi=diff)×2` at @0x034B6A — KINGRAISE delta | @asm 0x034B6A | BYTE_VERIFIED |
+| Refuse-side anger model "+5 king anger on refuse" | ABSENT — func_034318 refuse path (choice≠2, 0x034675→0x03471A RETF) writes NOTHING | BYTE_VERIFIED absent |
+
+### PowerRecord+0x18 = king-enforcement counter (not "battles_won")
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Two write sites: zeroed @0x034206 (per-nation init); INC @0x05BF21 (human player wins vs REF, guarded by atk_power<4 AND [bx+0x543F]==0) | @asm operands at both sites | BYTE_VERIFIED |
+| Score formula: `PowerRecord[+0x18] × -(difficulty+1)` = larger penalty if more king-force engagements won | @asm 0x03A4A4..0x03A543 | BYTE_VERIFIED |
+
+### POWER_GATE_9410 stride correction + semantics (sons_of_liberty.c)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| Table DGROUP:0x9410 stride = **1** (compact array per power_idx) NOT 0x13C | Agent trace: read site @0x03E8D0 uses bx=raw_power_idx; [bx-0x6BF0] = DS[0x9410+power_idx] | BYTE_VERIFIED |
+| Prior `gate[power_id * POWER_STRIDE]` (= power×0x13C) was a **BUG** in sons_of_liberty.c | Fixed to `gate[power_id]` | CORRECTED |
+| Semantic: accumulated total colonist count (popsum) per power | func_03FD38: zero on entry, +1/colonist-in-colony, +entity[+0x1F] per entity (pop byte 0..32) | BYTE_VERIFIED |
+| Threshold >= 4 → SoL milestone messages; >= 8 → cavalry/military effects | @asm 0x03E8D0 (SoL), @0x055FFA/@0x05F450 (cavalry) | BYTE_VERIFIED |
