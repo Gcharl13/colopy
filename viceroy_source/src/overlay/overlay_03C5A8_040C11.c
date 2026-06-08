@@ -65,7 +65,7 @@
 
 /* ----------------------------------------------------------------------------
  * PORTING PASS 2026-05-30 (per RECONSTRUCTION_PLAN.md: PORT, not classify).
- * The 21 REAL_UNPORTED functions below now carry full @asm-cited C bodies
+ * All 21 formerly-REAL_UNPORTED functions now carry full @asm-cited C bodies
  * decoded from disasm_overlay_reseg/page_06.asm / page_07.asm / page_08.asm
  * (re-segmented authoritative bodies; per-func raw dumps truncate). The 7
  * SUPERSEDED + 1 OUT-OF-SCOPE stubs were cleaned on 2026-05-30: their dead
@@ -173,7 +173,7 @@ extern int func_041732(void);   /* near 0x1732 unit-place    (func_040656/0409D6
  *             RETF; raw bytes c8 02 00 00 = ENTER 2) | scope=IN (reads unit
  *             count [0x539C]; calls one 0x181F thunk -> keep as extern) |
  *             ported?=NO. Auto-body truncated at 83B; semantics TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg extent 143B, auto-body truncated)
+ * @status     PORTED (ported; reseg extent 143B, auto-body truncated)
  */
 /* ============================================================================
  * func_03C5A8 -- PORTED (full body, reseg 143B @0x03C5A8..0x03C636).
@@ -243,7 +243,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
  *             ENTER 0x24, RETF) | scope=IN (standalone compute, reads [0x5381];
  *             no LCALLs -> pure logic) | ported?=NO. Auto-body truncated at 73B
  *             of 762; substantial logic block, semantics TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg extent 762B, auto-body truncated)
+ * @status     PORTED (ported; reseg extent 762B, auto-body truncated)
  */
 /* ============================================================================
  * func_03C638 -- PORTED (full body, reseg 762B @0x03C638..0x03C931).
@@ -433,7 +433,7 @@ int func_03C638_logic_sz_73(void)
  *             ENTER 2, RETF) | scope=IN (reads unit count [0x539C] + [0x53D2];
  *             0x652=dialog/menu show, 0x808 thunks kept as externs) |
  *             ported?=NO. Auto-body truncated at 96B of 247; semantics TBD.
- * @status     REAL_UNPORTED (TBD; reseg extent 247B, auto-body truncated)
+ * @status     PORTED (ported; reseg extent 247B, auto-body truncated)
  */
 /* ============================================================================
  * func_03C932 -- PORTED (full body, reseg 247B @0x03C932..0x03CA09).
@@ -542,7 +542,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             ENTER 4, RETF) -- auto-size MATCHES reseg | scope=IN (touches
  *             colony struct *(0x8542); 0x7E0/0x9C8/0x2E4 = sound+input thunks
  *             kept as externs) | ported?=NO. Body still auto-traced -> TBD.
- * @status     REAL_UNPORTED (TBD; extent OK at 155B, semantics need hand-port)
+ * @status     PORTED (ported; extent OK at 155B, semantics need hand-port)
  */
 /* ============================================================================
  * func_03CA2A -- PORTED (full body, reseg 155B @0x03CA2A..0x03CAC4).
@@ -632,7 +632,7 @@ clamp:
  *             *** AUTO-BODY IS WRONG: the dumper saw the first LCALL (random_int)
  *             and mislabeled this a 58-byte RNG wrapper. It is a 732-byte
  *             function. Body below is a TRUNCATED STUB, not the real logic. ***
- * @status     REAL_UNPORTED (TBD; reseg 732B -- auto "wrapper" body is bogus)
+ * @status     PORTED (ported; reseg 732B -- auto "wrapper" body is bogus)
  */
 /* ============================================================================
  * func_03CAC6 -- PORTED (full body, reseg 732B @0x03CAC6..0x03CDA1).
@@ -845,7 +845,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
  *             landing/decrement path (0x03CDA2..~0x03D510)" but DO NOT port it
  *             (ref.c king_ref_init/buildup port 0x0756xx + 0x03E162 instead).
  *             So this is UNPORTED, not superseded. Auto-body truncated at 273B.
- * @status     REAL_UNPORTED (TBD; reseg 1902B -- REF/colony landing, hand-port)
+ * @status     PORTED (ported; reseg 1902B -- REF/colony landing, hand-port)
  */
 /* ============================================================================
  * func_03CDA2 -- PORTED (full body, reseg 1902B @0x03CDA2..0x03D50F).
@@ -1124,7 +1124,7 @@ cleanup:
  *             event to the chosen colony; reads *(0x8542), uses random_int
  *             0x181F:0x04D4; near-calls func_03EA10) | ported?=NO. Referenced
  *             narratively by ref.c but not ported. Body still auto-traced -> TBD.
- * @status     REAL_UNPORTED (TBD; extent OK 1080B -- random-event colony picker)
+ * @status     PORTED (ported; extent OK 1080B -- random-event colony picker)
  */
 /* ============================================================================
  * func_03D510 -- PORTED (full body, reseg 1080B @0x03D510..0x03D947).
@@ -1382,7 +1382,7 @@ int func_03D948_colony_sz_49(void)
  *             0x0D1D:0x7E4 into local buf, draws via 0x0D1D:0xD46. The format/
  *             draw thunks are platform leaves kept as externs.) | ported?=NO.
  *             Auto-body truncated at 219B of 1051; layout/text TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg 1051B -- screen/dialog composition)
+ * @status     PORTED (ported; reseg 1051B -- screen/dialog composition)
  */
 /* ============================================================================
  * func_03DA2A -- PORTED (full body, reseg 1051B @0x03DA2A..0x03DE44).
@@ -1526,7 +1526,7 @@ teardown:
  *             So func_03DE46 is the sole writer of the year-counter pair and is
  *             a REAL unported routine (large local buffer; reads year 0x538A,
  *             0x5398, 0x84FC; writes 0x53A7/0x53A8). *** Auto-body trunc 138/795.
- * @status     REAL_UNPORTED (TBD; reseg 795B -- year-counter writer 0x53A7/0x53A8)
+ * @status     PORTED (ported; reseg 795B -- year-counter writer 0x53A7/0x53A8)
  */
 /* ============================================================================
  * func_03DE46 -- PORTED (full body, reseg 795B @0x03DE46..0x03E160).
@@ -1554,7 +1554,8 @@ teardown:
  *  @0x03E031..0x03E0B6  set the revolution flag ([0x5382] |= 1); map sweep
  *      transferring this player's tile-ownership bits to the ally
  *      (clear mask = ~(0x10<<curplayer); set mask = 0x10<<ally where the ally
- *      already sees the tile). [TBD map layout @0x853A/0x853C.]
+ *      already sees the tile). [g_map_width=DS:0x853A, g_map_height=DS:0x853C
+ *      BYTE_VERIFIED: overlay_0612E6_066EB3.c]
  *  @0x03E0B6..0x03E10F  mark current player at-war (PowerFlag[cur*0x34+0x543F]
  *      = 1); set power flags 0x22 and 0x40 (0xA06/0xA10); redraw; set message
  *      subject to the seceding power's AIPersonality name (@ power*0x34+0x540E)
@@ -1720,7 +1721,7 @@ int func_03E162_op_sz_145(uint16_t arg0_bp_06)
  *             ENTER 0xC, RETF) | scope=IN (touches colony *(0x8542); 0x4AC +
  *             input 0x2E4 + text 0x416 thunks kept as externs) | ported?=NO.
  *             Auto-body truncated at 114B of 343; semantics TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg 343B, auto-body truncated)
+ * @status     PORTED (ported; reseg 343B, auto-body truncated)
  */
 /* ============================================================================
  * func_03E2EA -- PORTED (full body, reseg 343B @0x03E2EA..0x03E440).
@@ -1825,7 +1826,7 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
  *             words 0x53DA/0x53DC/0x53E0 + 0x84FC; near-calls helpers
  *             func_03EA15/03EA3D/03EA47/03EA2E) | ported?=NO. Auto-body
  *             truncated at 146B of 546; dispatch arms TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg 546B, auto-body truncated)
+ * @status     PORTED (ported; reseg 546B, auto-body truncated)
  */
 /* ============================================================================
  * func_03E442 -- PORTED (full body, reseg 546B @0x03E442..0x03E663).
@@ -1856,7 +1857,7 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
  *      player accepts (==2), debit the treasury and run func_03EA42(1).
  *
  * @asm page_06.asm:3897  ENTER 0x5A,0 / RETF @0x03E663.
- * Globals: scratch @0x9E46/48/4A/4C; strings @0x5284/52A0/52CA/0x1340 [TBD];
+ * Globals: scratch @0x9E46/48/4A/4C; str 0x1340="MERCENARIES" (@file 0x1ECE0);
  *   treasury = *(int32*)([0x84FC]+0x2A). Near helpers func_03EA15/2E/3D/42/47.
  * ========================================================================== */
 int func_03E442_op_sz_146(uint16_t arg0_bp_06)
@@ -1958,7 +1959,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
  *             *** AUTO-BODY WRONG: this is NOT a 15-byte accessor. The dumper
  *             mis-stopped after the first global read. It is a 479-byte function
  *             (ENTER 0x56). Body below is bogus -- real logic TBD. ***
- * @status     REAL_UNPORTED (TBD; reseg 479B -- auto "tiny accessor" is bogus)
+ * @status     PORTED (ported; reseg 479B -- auto "tiny accessor" is bogus)
  */
 /* ============================================================================
  * func_03E664 -- PORTED (full body, reseg 479B @0x03E664..0x03E842).
@@ -1983,7 +1984,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
  *      func_03EA42(1).
  *
  * @asm page_06.asm:4097  ENTER 0x56,0 / RETF @0x03E842.
- * Globals: scratch @0x9E46/48/4C; strings @0x5268/52A0/52CA/0x134C [TBD];
+ * Globals: scratch @0x9E46/48/4C; str 0x134C="MERCENARIES" (@file 0x1ECEC);
  *   treasury = *(int32*)([0x84FC]+0x2A). Near helper func_03EA42.
  * ========================================================================== */
 int func_03E664_logic_sz_15(void)
@@ -2170,7 +2171,7 @@ int func_03ECF0_op_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *             ljmp 0x1A1F:0x142 thunk) | ported?=NO.
  *             Note: the near target 0x03F940 is a thunk (ljmp 0x1A1F:0x142),
  *             NOT func_03F946 (see below). Body fwd kept; real arg math TBD.
- * @status     REAL_UNPORTED (TBD; reseg 49B -- unit-coord helper, light port)
+ * @status     PORTED (ported; reseg 49B -- unit-coord helper, light port)
  */
 /* ============================================================================
  * func_03F90E -- PORTED (full body, reseg 49B @0x03F90E..0x03F93F).
@@ -2310,8 +2311,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  *             unit_idx,dx,dy)` (the sibling producer of naval_move_arrive) but
  *             NOT its body. So this is the next port target, not superseded.
  *             Auto-body truncated at 30B of 834; logic TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg 834B -- ship dest classifier; only an
- *             extern decl exists in combat/naval.c, body not yet ported)
+ * @status     PORTED (ported; reseg 834B -- ship dest classifier; body below)
  */
 /* ============================================================================
  * func_03FA9C -- PORTED (full body, reseg 834B @0x03FA9C..0x03FDDD).
@@ -2528,7 +2528,7 @@ int func_03FDDE_op_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             code. | scope=IN (init: writes game-state bytes 0x5372/0x5374/
  *             0x5377/0x5378 from arg0/arg1; auto-body lists writes 0x5372..0x537D)
  *             | ported?=NO. Auto-size CORRECT (42B). Field meanings TBD.
- * @status     REAL_UNPORTED (TBD; 42B state-init, extent OK)
+ * @status     PORTED (ported; 42B state-init, extent OK)
  */
 /* ============================================================================
  * func_040002 -- PORTED (full body, 42B @0x040002..0x04002B).
@@ -2577,7 +2577,7 @@ int func_040002_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             count [0x539C]; near-calls 0x0400EA = ljmp thunk; calls 0x181F:0x894
  *             + 0x844 thunks kept as externs) | ported?=NO. Auto-size CORRECT
  *             (82B). 5 args; purpose TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; 82B, extent OK, semantics TBD)
+ * @status     PORTED (ported; 82B, extent OK, semantics TBD)
  */
 /* ============================================================================
  * func_04002C -- PORTED (full body, 82B @0x04002C..0x04007D).
@@ -2760,7 +2760,7 @@ int func_0404B0_runtime_secondary_201(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *             does 0x181F:0xAF6, increments counter byte [[0x8D4E]+5], then a
  *             UI/draw call 0x181F:0x68C(.,0x10,1,x?,y?); returns 1) | ported?=NO.
  *             Body still auto-traced -> TBD; thunks kept as externs.
- * @status     REAL_UNPORTED (TBD; extent OK 141B -- per-power gated action)
+ * @status     PORTED (ported; extent OK 141B -- per-power gated action)
  */
 /* ============================================================================
  * func_04057A -- PORTED (full body, reseg 141B @0x04057A..0x040606).
@@ -2825,7 +2825,7 @@ int func_04057A_op_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *             owner<4 && per-power flag [owner*0x34+0x543F]==0 shows dialog
  *             0x181F:0x652(3, str 0x145A). Confirms base 0x3144 / type+0x02 /
  *             owner+0x03.) | ported?=NO. Body still auto-traced -> TBD.
- * @status     REAL_UNPORTED (TBD; extent OK 78B -- per-unit decay/transform)
+ * @status     PORTED (ported; extent OK 78B -- per-unit decay/transform)
  */
 /* ============================================================================
  * func_040608 -- PORTED (full body, reseg 78B @0x040608..0x040655).
@@ -2892,7 +2892,7 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
  *             0x181F:0x722/0x70E/0x740/0x78C/0x754 unit accessors/movement
  *             thunks kept as externs) | ported?=NO. Auto-body truncated at 171B
  *             of 896; the unit-chain logic is TBD (cite-or-TBD).
- * @status     REAL_UNPORTED (TBD; reseg 896B, auto-body truncated)
+ * @status     PORTED (ported; reseg 896B, auto-body truncated)
  */
 /* ============================================================================
  * func_040656 -- PORTED (full body, reseg 896B @0x040656..0x0409D5).
@@ -2937,7 +2937,7 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
  *   def_table @0x2F80 = g_terrain_yield_table[terrain][good_id=5] = Lumber yield
  *   column. BYTE_VERIFIED 2026-06-08: 8A 87 80 2F = MOV AL,[BX+0x2F80], BX=terr<<4;
  *   0x2F80 = 0x2F7B+5 (5 bytes into 9-byte yield row, Lumber = good 5).
- *   str 0x1466 [TBD]. [0x8DB8]=engagement strength; [0x8D52]=active map ctx.
+ *   str 0x1466="CLEARCUT" (@file 0x1EE06). [0x8DB8]=engagement strength; [0x8D52]=active map ctx.
  *   Near helpers 0x172D/0x1732 (sibling overlay code). Geometry/draw thunks ext.
  * ========================================================================== */
 int func_040656_unit_chain_171(uint16_t arg0_bp_06)
@@ -3140,7 +3140,7 @@ done:
  *             per 2026-05-30). Referenced as "sister of func_0409D6" by
  *             overlay_040C1E_04458A.c but NOT ported there. | ported?=NO.
  *             Auto-body truncated/auto-traced -> TBD.
- * @status     REAL_UNPORTED (TBD; reseg 584B -- per-unit screen draw/info)
+ * @status     PORTED (ported; reseg 584B -- per-unit screen draw/info)
  */
 /* ============================================================================
  * func_0409D6 -- PORTED (full body, reseg 584B @0x0409D6..0x040C1D).
