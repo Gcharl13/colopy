@@ -2406,183 +2406,395 @@ done:
 /* PHANTOM: 0x04B036 is mid-body of func_04AF5E (2nd byte of `8B C8`) — see banner. */
 
 /* ============================================================================
- * func_04B308 — "MADATSHIPS": king/REF anger event dispatcher
- *                                          [DONE — BYTE_VERIFIED control flow]
+ * func_04B308 — native-tribe encounter dispatcher with VILLAGE attitude display
+ *                                          [BYTE_VERIFIED — full body traced]
  * ----------------------------------------------------------------------------
- * Auto-named "MADATSHIPS" via its string xref (@asm 0x04B40D pushes string
- * 0x1705 = "MADATSHIPS").  This is the per-power "is the King mad at your fleet"
- * event evaluator: it classifies a unit (arg0 = UnitRecord index) and the
- * current colony/owner state into one of ~12 outcome codes via a CS-relative
- * jump table at 0x4772, emitting the "MADATSHIPS" message and/or a sound when
- * the King intervenes against arriving ships.
+ * Auto-named "MADATSHIPS" via string xref 0x1705 at @asm 0x04B40D, but this
+ * is a dual-purpose function.  Phase 1 (0x04B308..0x04B567) classifies the
+ * encounter and gates off ships ("MADATSHIPS") when the King intervenes.
+ * Phase 2 (0x04B56A..0x04BA00) is the VILLAGE encounter display path: it
+ * builds a "VILLAGE <attitude>" status string, determines one of 5 tribe
+ * attitude levels, opens a dialog, and drives a 9-arm event loop.
  *
- * Args: arg0=[bp+6] unit index; arg1=[bp+8], arg2=[bp+0xA] passed to 0x09F0;
- *       (also reads stack [bp+0x22],[bp+0x2A] per the jump-table arms).
- * Locals: ret = [bp-0x54] (the outcome code, defaults 1).
+ * ENTER frame: 0xBA bytes (186 bytes of local storage).
+ * Args (bp offsets, all uint16_t):
+ *   [bp+6]  unit_index     — unit record index (stride 0x1C from base 0x3144)
+ *   [bp+8]  arg1           — passed as arg1 to 0x181F:0x09F0
+ *   [bp+0A] arg2           — passed as arg2 to 0x181F:0x09F0
+ * Key locals:
+ *   [bp-0x58] ret          — function return value (default 1; 0=cancel, 2=follow-up)
+ *   [bp-0x54] disp_code    — display/event outcome from 0x191F:0x16A
+ *   [bp-0x5C]:[bp-0x5A]    dialog handle (far ptr, set by 0x191F:0x182)
+ *   [bp-0x5E] flag_9       — set to 1 if a native unit type >= 2 attack-warn flag fires
+ *   [bp-0x62] rel          — raw relation value from 0x181F:0x09F0
+ *   [bp-0x64] owner_word   — [0x8D4A][owner*2+0xA] per-owner state word
+ *   [bp-0x66] name_result  — return from 0x181F:0x0722 (name lookup)
+ *   [bp-0x68] owner        — unit owner nibble ([bx+0x3147]&0xF)
+ *   [bp-0xBA] tbl          — relation/distance score from 0x181F:0x030C
+ *   [bp-0x02] region       — bound record [0x8D4A]+2 byte (tribe/region id)
+ *   [bp-0x52..bp-0x03]     — string build buffer (0x4F bytes; [bp-0x52] base)
+ *   [bp-0xB8..bp-0x53]     — secondary string buffer (used in colony-owner sub-path)
  *
- * @asm 0x04B31F  prog0 = [0x539C]                       ; game progress snapshot
- * @asm 0x04B325  push [bp+0xA],[bp+8] ; LCALL 0x181F:0x09F0  ; dist/relation = f(a2,a1)
- * @asm 0x04B336  push ax ; LCALL 0x181F:0x0A4C            ; bind that result -> *0x8D4A
- * @asm 0x04B33F  imul bx,[bp+6],0x1C ; owner = [bx+0x3147]&0xF  ; unit owner nibble
- * @asm 0x04B34D  bx=[0x8D4A]; cl=[bx+2] (region/power) ; rgn4 = cl-4
- * @asm 0x04B361  LCALL 0x181F:0x030C(owner, rgn) -> [bp-0xBA]   ; table read
- * @asm 0x04B36D  si = owner*2 ; word = [bx+si+0xA]              ; per-owner state word
- * @asm 0x04B37C  if owner < 4 && [owner*0x34+0x543F]==0 && [0xA2]==0:  ; live human power, no modal
- *      @asm 0x04B394  pick prompt id by [0x8D52]: ==0 ->7, ==1 ->6, else 5
- *      @asm 0x04B3AE  LCALL 0x181F:0x04AC(promptId)               ; (UI prompt)
- * @asm 0x04B3B6  unitType = [bx+0x3146] ; if 0x0D..0x12 (ships, MoW range):
- *      @asm 0x04B3CE  LCALL 0x181F:0x0A38(owner, region) -> al
- *      @asm 0x04B3D6  if !(al&0x20):  LEA "…(0x16F7)" ; LCALL 0x181F:0x03FE ; goto done
- *      @asm 0x04B3E6  if [bp-0xBA] < 0x4B && word < 0x40 -> goto continue
- *      @asm 0x04B3F3  LCALL 0x181F:0x09A4 ; 0x0438 ; push [0x8D52],"MADATSHIPS"(0x1705) ;
- *      @asm 0x04B410  LCALL 0x191F:0x019C  ; emit "MADATSHIPS <power>" message ; goto done
- * @asm 0x04B41C  (continue) if owner<4 && [owner*0x34+0x543F]==0 -> goto ret9-table
- * @asm 0x04B430  code = unitType(+0x3146) ; jmp 0x04B544
- * @asm 0x04B544  code-- ; if code > 0x0B goto default(0x04B50A) ;
- * @asm 0x04B54D  jmp cs:[code*2 + 0x4772]                ; 12-entry outcome jump table
- *   table arms (each sets [bp-0x54]=ret and jmps to the epilogue at 0x04B8EF):
- *     @asm 0x04B43E  ret-arm "tax/anger": table([0x5398],[0x8D52]) >= 0x4B -> ret9 ;
- *                    else if 0x0A38(... )&0x20 && PowerRecord gold (0x8808-0x77CE)
- *                    >= 0x5DC(1500) && random_int(0,4)==0 -> ret7 (intervene)
- *     @asm 0x04B4AE  else by colony.flag(+5): <0 -> ret3 ; nibble==owner -> ret(done) ;
- *                    else ret4
- *     @asm 0x04B4D6  ret1
- *     @asm 0x04B4DE  ret-arm "name lookup": 0x181F:0x0722(unit.x +0x3144, unit.y +0x3145) ; ret9
- *     @asm 0x04B502  ret6
- *     @asm 0x04B50A  default: 0x181F:0x0B78([bp+6]) ; if <0 done ; if unitType(+0x315B)
- *                    in {0x19,0x1C} && [bp-0xBA] >= 0x4B -> ret5 ; else done
- * @asm 0x04B56C  (ret9 tail) LCALL 0x181F:0x0524(ret) ; ax = [0x8D4E]+2 byte ; RETF
+ * DGROUP globals read:
+ *   0x539C  g_unit_count_539C       — game progress snapshot (reentrancy guard)
+ *   0x539A  (implicit via 0x0524)   — tribe/unit context counter
+ *   0x5398  g_power_anger_5398      — per-power anger scalar (fed to 0x030C)
+ *   0x543F  g_power_active_543F[]   — [owner*0x34]: 0 = live human power slot
+ *   0x00A2  g_sfx_level_A2          — sound level word; 0 = muted (no modal)
+ *   0x8D4A  g_bound_record_8D4A     — ptr to bound tribe/settlement record
+ *   0x8D4E  g_market_array_8D4E     — ptr to bound market/tribe array
+ *   0x8D52  g_tribe_id_8D52         — 0-based tribe index (0..7)
+ *   0x8808  PowerRecord[].gold      — stride 0x13C, field at +0x2A above base
+ *                                     (read as [owner*0x13C - 0x77CE])
+ *   0x9328..0x933E  g_sound_ids[]   — sound-id word array for dialog items
+ *                                     (0x932A=id1,0x932C=id2,0x932E=id3,0x9330=id4,
+ *                                      0x9332=id5,0x9334=id6,0x9336=id7,0x9338=id8,
+ *                                      0x933A=id9,0x933C=id10)
+ *   0x3144  g_unit_table_3144[]     — unit record array (stride 0x1C)
+ *                                     +0x02=[bx+0x3146] unit type
+ *                                     +0x03=[bx+0x3147] owner/flags byte
+ *                                     +0x11=[bx+0x3155] (unit sub-field)
+ *                                     +0x15=[bx+0x3159]  (unit sub-field)
+ *                                     +0x17=[bx+0x315B]  (unit class/terrain)
+ *   0x5236  g_unit_type_flags_5236[]— per-unit-type flag byte (stride 7 from type id)
+ *                                     read at [type*7 + 0x5236]
  *
- * This is the King-vs-fleet intervention check on the REF / "tea party" anger
- * path (project mem: king anger byte 0x53A7, REF array 0x53DA; PowerRecord gold
- * +0x2A at 0x8808 stride 0x13C — note the 0x8808-0x77CE = 0x8808+... gold read at
- * 0x04B484 confirms the PowerRecord gold field).  The unit-type gate 0x0D..0x12
- * is the ship class range (the "ships" the King is mad at).  The 12-arm jump
- * table at CS:0x4772 selects the outcome message/sound code.
+ * ---- PHASE 1: encounter classification (0x04B308..0x04B567) ----
  *
- * Control flow, struct offsets (unit +0x02/+0x03 type/owner, colony +5, market
- * +0x0A pool, PowerRecord gold), the string id 0x1705 ("MADATSHIPS"), the
- * thresholds (0x4B, 0x40, 0x5DC, 0x34/0x543F per-power table), and the jump
- * table are BYTE_VERIFIED from disasm/func_04B308_unknown.asm.  The 0x181F/0x191F
- * callee bodies are external (platform/UI/string).  Marked DONE.
+ * @asm 0x04B30D  [bp-0x58]=1 (default ret=1); [bp-0x5E]=0; [bp-0x5A/5C]=0
+ * @asm 0x04B31F  prog0 = [0x539C]                       ; reentrancy guard snapshot
+ * @asm 0x04B325  push [bp+0xA],[bp+8] ; LCALL 0x181F:0x09F0 ; rel = f(arg2,arg1)
+ * @asm 0x04B336  push ax ; LCALL 0x181F:0x0A4C           ; bind rel -> [0x8D4A] tribe record
+ * @asm 0x04B33F  imul bx,[bp+6],0x1C ; owner=[bx+0x3147]&0xF (unit owner nibble)
+ * @asm 0x04B34D  bx=[0x8D4A]; cl=[bx+2] -> region; [bp-0x02]=region; rgn4=region-4
+ * @asm 0x04B361  LCALL 0x181F:0x030C(owner, rgn4) -> tbl=[bp-0xBA] (relation score)
+ * @asm 0x04B36D  si=owner*2; owner_word=[bx+si+0xA] -> [bp-0x64]
+ * @asm 0x04B37C  if owner<4 && [owner*0x34+0x543F]==0 && [0xA2]==0: (live human, no sfx)
+ *      @asm 0x04B394  promptId = (g_tribe_id_8D52==0)->7, (==1)->6, else 5
+ *      @asm 0x04B3AE  LCALL 0x181F:0x04AC(promptId)         ; queue UI prompt sound
+ * @asm 0x04B3B6  unitType=[bx+0x3146]; if 0x0D<=unitType<=0x12 (ship classes):
+ *      @asm 0x04B3CE  LCALL 0x181F:0x0A38(owner,region) -> flags
+ *      @asm 0x04B3D6  if !(flags&0x20): show msg @str 0x16F7; goto done (not at war)
+ *      @asm 0x04B3E6  if tbl>=0x4B OR owner_word>=0x40:      (King threshold exceeded)
+ *           @asm 0x04B3F3  LCALL 0x181F:0x09A4(region)       ; format power name
+ *           @asm 0x04B401  LCALL 0x181F:0x0438(ax,0)         ; set dialog context
+ *           @asm 0x04B409  push [0x8D52]; push 0x1705("MADATSHIPS")
+ *           @asm 0x04B410  LCALL 0x191F:0x019C               ; emit MADATSHIPS message
+ *           @asm 0x04B418  goto done
+ * @asm 0x04B41C  if owner<4 && [owner*0x34+0x543F]==0: goto ret9_tail (0x04B56A)
+ * @asm 0x04B430  code=unitType([bx+0x3146]); jmp 0x04B544
+ * @asm 0x04B544  code--; if code>0x0B goto default_arm(0x04B50A)
+ * @asm 0x04B54D  jmp cs:[code*2+0x4772]   ; 12-entry CS jump table (file 0x4B552)
+ *
+ *   Jump table at file 0x4B552 (CS:0x4772), 12 entries (unit_type 1..12):
+ *     unit_type  1 -> file 0x4B4DE  "name lookup" arm: 0x722(x,y)->name; disp_code=9
+ *     unit_type  2 -> file 0x4B50A  default arm (see below)
+ *     unit_type  3 -> file 0x4B43E  "tax/anger" arm (see below)
+ *     unit_type  4 -> file 0x4B4DE  "name lookup" arm
+ *     unit_type  5 -> file 0x4B502  disp_code=6 directly
+ *     unit_type  6..11 -> file 0x4B50A  default arm
+ *     unit_type 12 -> file 0x4B4D6  disp_code=1 directly
+ *
+ *   "tax/anger" arm @0x04B43E (unit_type 3):
+ *     tbl2 = 0x181F:0x030C([0x5398],[0x8D52])      ; anger-table score
+ *     if tbl2 >= 0x4B: disp_code=9 (VILLAGE)
+ *     else if 0x0A38(owner,...)&0x20                ; at war?
+ *          && [owner].level < [bound].level         ; bound stronger
+ *          && PowerRecord[owner].gold >= 0x5DC(1500)
+ *          && random_int(0,4)==0: disp_code=7 (intervene)
+ *     else: cf=(int8_t)[0x8D4A][+5]
+ *           cf<0 -> disp_code=3 ; (cf&0xF)==owner -> goto done ;
+ *           else disp_code=4
+ *
+ *   "name lookup" arm @0x04B4DE (unit_types 1,4,11):
+ *     0x181F:0x0722(unit.y[+0x3145], unit.x[+0x3144]) -> [bp-0x66]
+ *     disp_code=9
+ *
+ *   default arm @0x04B50A (unit_types 2,6..11):
+ *     0x181F:0x0B78(unit_index): if <0 goto done
+ *     if unit[+0x315B] in {0x19,0x1C} && tbl>=0x4B: disp_code=5
+ *     else goto done
+ *
+ *   @asm 0x04B4D6  disp_code=1 (unit_type 12 direct path)
+ *   @asm 0x04B502  disp_code=6 (unit_type 5 direct path)
+ *   All arms that set disp_code jump to 0x04B8EF -> LCALL 0x191F:0x16A epilogue.
+ *
+ * ---- PHASE 2: VILLAGE tribe-attitude display (0x04B56A..0x04BA00) ----
+ *
+ * @asm 0x04B56A  push 7 ; LCALL 0x181F:0x0524(7)     ; apply encounter code 7
+ * @asm 0x04B574  bx=[0x8D4E]; bl=[bx+2] ; ax=bl (tribe market slot)
+ *                bx=ax*6 ; word=[bx-0x69CC] -> push (market voice id)
+ * @asm 0x04B589  push 0 ; LCALL 0x181F:0x0438(voice,0) ; set dialog context
+ * @asm 0x04B593  push [bp-2] ; LCALL 0x181F:0x0A1A(region) -> power_name_id
+ * @asm 0x04B59E  push power_name_id; push 1; LCALL 0x181F:0x0438(name,1) ; append name
+ *
+ *   Build "VILLAGE <attitude>" string in [bp-0x52] buffer:
+ * @asm 0x04B5A9  push 0x1710("VILLAGE") ; lea ax,[bp-0x52]
+ *               LCALL 0x0D1D:0x07E4(buf, "VILLAGE")  ; strcpy buf <- "VILLAGE"
+ *
+ *   5-LEVEL TRIBE ATTITUDE DETERMINATION (@asm 0x04B5B8..0x04B5F8):
+ *     tbl = [bp-0xBA] (relation score from 0x181F:0x030C earlier)
+ *     owner_word = [0x8D4A][owner*2+0xA] (per-owner state word)
+ *     if tbl >= 0x4B (75):     attitude_str = 0x1718 ("WAR")
+ *     elif tbl >= 0x32 (50):   attitude_str = 0x171C ("BAD")
+ *     elif tbl >= 0x19 (25)
+ *          OR owner_word >= 0x80:  attitude_str = 0x1720 ("MEDIUM")
+ *     elif g_tribe_id_8D52==2: attitude_str = 0x1727 ("SAVAGE")
+ *     else:                    attitude_str = 0x172E ("HAPPY")
+ *
+ * @asm 0x04B5FB  push attitude_str ; lea ax,[bp-0x52]
+ *               LCALL 0x0D1D:0x07A4(buf, attitude_str) ; strcat buf += attitude_name
+ *               -> [bp-0x52] now holds "VILLAGE WAR" / "VILLAGE MEDIUM" / etc.
+ *
+ *   Optional UI prompt when tbl >= 0x32:
+ * @asm 0x04B607  if tbl >= 0x32:
+ *      @asm 0x04B60E  promptId = (g_tribe_id_8D52==0)->7, (==1)->6, else 5
+ *      @asm 0x04B628  LCALL 0x181F:0x04AC(promptId)       ; play/queue prompt sound
+ *
+ * @asm 0x04B630  lea bx,[0x87C] ; lea ax,[bp-0x52] ; dx=0
+ *               LCALL 0x191F:0x0182(bx, buf, 0) -> dialog=[bp-0x5C]:[bp-0x5A]
+ *               if dialog==0: goto done (no memory / suppressed)
+ *
+ *   Dialog item population (unit-type-dependent sound effects):
+ * @asm 0x04B64B  if unitType in {0x0C, 0x0D..0x12}:     ; harbors & ships
+ *      if tbl<0x4B: LCALL 0x181F:0x0022(1,[0x932A]) ; add sound item 1
+ *      else:        LCALL 0x181F:0x0022(2,[0x932C]) ; add sound item 2
+ *      LCALL 0x191F:0x0176(dialog, dx:ax, 0xA) ; append to dialog
+ * @asm 0x04B692  if unitType==5: LCALL 0x181F:0x0022(6,[0x9334]) ; add item 6
+ *               LCALL 0x191F:0x0176(dialog, dx:ax, 0xA) ; append
+ * @asm 0x04B6BB  if unitType NOT in 0x0D..0x12 (non-ship):
+ *      type_flag = g_unit_type_flags_5236[unitType*7]
+ *      if type_flag > 1: LCALL 0x181F:0x0022(9,[0x933A]) ; add warning item 9
+ *                        [bp-0x5E]=1 (flag_9 set)
+ *               LCALL 0x191F:0x0176(dialog, dx:ax, 0xA) ; append
+ * @asm 0x04B70D  LCALL 0x181F:0x0A38(region,owner) -> flags
+ *               if !(flags&0x40): goto skip_colonize_items (0x04B865)
+ * @asm 0x04B722  if unitType==3 (wagon):
+ *      if [0x8D4A][+5]<0: add item 3 via LCALL 0x181F:0x0022(3,[0x932E])
+ *      else if (bound[+5]&0xF)!=owner: (colony owned by another power)
+ *           build "colony owner <name>" string; LCALL 0x191F:0x0176 ; append 4-item
+ *      add item 7 via LCALL 0x181F:0x0022(7,[0x9336])
+ * @asm 0x04B7C0  else (non-wagon): LCALL 0x181F:0x0B78(unit_index) (range check)
+ *      if >=0 && type_flag<2 && unitType!=5 && range!=0x1B:
+ *           add item 5 via LCALL 0x181F:0x0022(5,[0x9332]) ; append
+ * @asm 0x04B820  if type_flag!=0 && unitType NOT in 0x0D..0x12:
+ *      add item 8 via LCALL 0x181F:0x0022(8,[0x9338]) ; append
+ * @asm 0x04B865  if !flag_9 && type_flag!=0 && unitType NOT in 0x0D..0x12:
+ *      add item 9 via LCALL 0x181F:0x0022(9,[0x933A]) ; append (2nd chance)
+ * @asm 0x04B8B0  add item 10 via LCALL 0x181F:0x0022(0xA,[0x933C]) ; always append close
+ *               LCALL 0x191F:0x0176(dialog, dx:ax, 0xA)
+ *
+ *   Run dialog and dispatch event:
+ * @asm 0x04B8CE  LCALL 0x191F:0x016A(dialog) -> disp_code=[bp-0x54]  ; poll dialog
+ * @asm 0x04B8DC  LCALL 0x191F:0x01A8(dialog)                          ; close/free dialog
+ * @asm 0x04B8E7  [bp-0x5C/5A]=0 (clear handle)
+ * @asm 0x04B8EF  ax=[bp-0x54]; jmp 0x04B9B2
+ *
+ *   Second jump table at file 0x4B9C0 (CS:0x4BE0), 9 entries, dispatches on
+ *   disp_code 1..9 to local near-call thunks which LJMP into 0x1A1F:xxx:
+ *     disp_code 1 -> file 0x4B8F6  -> LJMP 0x1A1F:0x044C (arg: rel,owner,region,unit)
+ *     disp_code 2 -> file 0x4B90C  -> LJMP 0x1A1F:0x03F8 ; if ax: [bp-0x58]=2
+ *     disp_code 3 -> file 0x4B92E  -> [bp-0x58]=2; LJMP 0x1A1F:0x03EC
+ *     disp_code 4 -> file 0x4B946  -> LJMP 0x1A1F:0x03C8
+ *     disp_code 5 -> file 0x4B978  -> push 0; LJMP 0x1A1F:0x0428
+ *     disp_code 6 -> file 0x4B966  -> LJMP 0x1A1F:0x03D4
+ *     disp_code 7 -> file 0x4B956  -> LJMP 0x1A1F:0x03E0
+ *     disp_code 8 -> file 0x4B98A  -> LJMP 0x1A1F:0x0410
+ *     disp_code 9 -> file 0x4B99A  -> push 4; LCALL 0x181F:0x0A06(4,region,owner)
+ *                                     [bp-0x58]=0 ; goto done
+ *
+ * @asm 0x04B9D2  (done label) check [0x539C] vs prog0 snapshot:
+ *               if changed: ax=2; pop si; leave; retf (reentrancy return 2)
+ * @asm 0x04B9EA  if [bp-0x58]==1: LCALL 0x181F:0x0934(unit_index)  ; commit unit action
+ * @asm 0x04B9FB  ax=[bp-0x58]; pop si; leave; retf
+ *               returns [bp-0x58] (0=cancel, 1=committed, 2=follow-up/reopen)
+ *
+ * String IDs confirmed at DGROUP base 0x1D9A0:
+ *   0x1705 = "MADATSHIPS"  (file 0x1F0A5)
+ *   0x1710 = "VILLAGE"     (file 0x1F0B0)
+ *   0x1718 = "WAR"         (file 0x1F0B8)   attitude level 1 (tbl >= 75)
+ *   0x171C = "BAD"         (file 0x1F0BC)   attitude level 2 (tbl >= 50)
+ *   0x1720 = "MEDIUM"      (file 0x1F0C0)   attitude level 3 (tbl >= 25 or owner_word >= 128)
+ *   0x1727 = "SAVAGE"      (file 0x1F0C7)   attitude level 4 (tribe_id == 2)
+ *   0x172E = "HAPPY"       (file 0x1F0CE)   attitude level 5 (default)
+ *
+ * BYTE_VERIFIED: ENTER frame 0xBA, arg layout [bp+6/8/A], all 5 attitude thresholds
+ * (0x4B/0x32/0x19/0x80/tribe_id==2), both CS jump tables (file 0x4B552 and 0x4B9C0),
+ * all DGROUP reads (0x539C/0x5398/0x543F/0xA2/0x8D4A/0x8D4E/0x8D52/0x8808/0x9328..
+ * 0x933E/0x3144/0x5236), string IDs, return value logic and reentrancy guard.
  * ============================================================================ */
-extern uint8_t  g_power_anger_5398;     /* DGROUP:0x5398 — (king-anger / per-power scalar) */
+extern uint8_t  g_power_anger_5398;     /* DGROUP:0x5398 — per-power anger scalar */
 extern uint8_t *g_market_array_8D4E;    /* (re-decl) DGROUP:0x8D4E bound market array */
 /* PowerRecord gold: at @0x04B484 the code reads [bx-0x77CE] with bx=owner*0x13C,
- * i.e. PowerRecord[owner].gold-region (base 0x8808, stride 0x13C) — project mem. */
+ * i.e. PowerRecord[owner].gold (base 0x8808, stride 0x13C, field offset +0x2A). */
 
 int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
                                uint16_t arg1_bp_08, uint16_t arg2_bp_0A)  /* func_04B308 */
 {
-    int ret = 1;                                 /* @asm 0x04B30D [bp-0x58]=1 (outcome) */
+    int ret = 1;                                 /* @asm 0x04B30D [bp-0x58]=1 */
     int prog0 = g_unit_count_539C;               /* @asm 0x04B31F snapshot 0x539C */
     (void)prog0;
 
     /* @asm 0x04B325..0x04B33C — derive a relation/distance value and bind it. */
-    int rel = overlay_call_181F_09F0();          /* f(arg2, arg1) */
-    overlay_call_181F_0A4C();                    /* bind(rel) -> *0x8D4A */
+    int rel = overlay_call_181F_09F0();          /* f(arg2, arg1) -> [bp-0x62] */
+    overlay_call_181F_0A4C();                    /* bind(rel) -> *0x8D4A tribe record */
     (void)rel;
 
     /* @asm 0x04B33F..0x04B34A — unit owner nibble. */
     uint8_t *u = &g_unit_table_3144[unit_index_bp_06 * UNIT_RECORD_STRIDE];
-    int owner = u[0x03] & 0x0F;                   /* @asm 0x04B343 [bx+0x3147]&0xF */
+    int owner = u[0x03] & 0x0F;                  /* @asm 0x04B343 [bx+0x3147]&0xF */
 
     /* @asm 0x04B34D..0x04B379 — region/power of bound record and per-owner state word. */
     uint8_t *bound = g_bound_record_8D4A;
-    int region = (int)bound[0x02];                /* @asm 0x04B351 */
-    int rgn4 = region - 4;                        /* @asm 0x04B359 */
-    int tbl = overlay_call_181F_030C();           /* @asm 0x04B361 table(owner, rgn4) -> [bp-0xBA] */
-    int owner_word = *(int16_t *)&bound[owner * 2 + 0x0A];  /* @asm 0x04B376 */
+    int region = (int)bound[0x02];               /* @asm 0x04B351 [bp-0x02] */
+    int rgn4 = region - 4;                       /* @asm 0x04B359 [bp-0x60] */
+    int tbl = overlay_call_181F_030C();          /* @asm 0x04B361 table(owner,rgn4)->[bp-0xBA] */
+    int owner_word = *(int16_t *)&bound[owner * 2 + 0x0A];  /* @asm 0x04B376 [bp-0x64] */
 
-    /* @asm 0x04B37C..0x04B3B3 — for a live human power with no modal open, prompt. */
+    /* @asm 0x04B37C..0x04B3B3 — for live human power with no sfx muted, queue prompt. */
     if (owner < 4 && g_power_active_543F[owner * 0x34] == 0 /* @asm 0x04B386 */
-                  /* @asm 0x04B38D [0xA2]==0 (no modal) */) {
-        /* @asm 0x04B394..0x04B3AE — prompt id by current power. */
-        overlay_call_181F_04AC();                 /* UI prompt(7/6/5) */
+                  /* @asm 0x04B38D [0xA2]==0 (sfx enabled) */) {
+        /* @asm 0x04B394..0x04B3AE — prompt id by tribe: ==0->7, ==1->6, else 5 */
+        overlay_call_181F_04AC();                /* UI prompt sound(7/6/5) */
     }
 
-    /* @asm 0x04B3B6 — unit type; the King cares about ship classes 0x0D..0x12. */
-    int unit_type = u[0x02];                      /* [bx+0x3146] */
+    /* @asm 0x04B3B6 — unit type; ship classes 0x0D..0x12 get the MADATSHIPS check. */
+    int unit_type = u[0x02];                     /* [bx+0x3146] */
     if (unit_type >= 0x0D && unit_type <= 0x12) {
         /* @asm 0x04B3CE — relation flags for (owner, region). */
-        int fl = overlay_call_181F_0A38();        /* -> al */
-        if (!(fl & 0x20)) {                       /* @asm 0x04B3D6 */
-            overlay_call_181F_03FE();             /* @asm 0x04B3DE show msg @0x16F7 */
-            goto done;                            /* @asm 0x04B3E3 */
+        int fl = overlay_call_181F_0A38();       /* -> al */
+        if (!(fl & 0x20)) {                      /* @asm 0x04B3D6 not at war */
+            overlay_call_181F_03FE();            /* @asm 0x04B3DE show msg @str 0x16F7 */
+            goto done;                           /* @asm 0x04B3E3 */
         }
-        /* @asm 0x04B3E6 — not-yet-angry-enough: fall through to the table path. */
+        /* @asm 0x04B3E6 — King threshold: tbl>=0x4B OR owner_word>=0x40 -> intervene. */
         if (!(tbl < 0x4B && owner_word < 0x40)) {
             /* @asm 0x04B3F3..0x04B418 — King intervenes: emit "MADATSHIPS <power>". */
-            overlay_call_181F_09A4();             /* format */
-            overlay_call_181F_0438();
-            overlay_call_191F_019C();             /* emit string 0x1705 "MADATSHIPS" */
-            goto done;                            /* @asm 0x04B418 */
+            overlay_call_181F_09A4();            /* format power name from region */
+            overlay_call_181F_0438();            /* set dialog context */
+            overlay_call_191F_019C();            /* push [0x8D52],0x1705("MADATSHIPS") */
+            goto done;                           /* @asm 0x04B418 */
         }
     }
 
-    /* @asm 0x04B41C..0x04B42D — short-circuit for a live human power slot. */
+    /* @asm 0x04B41C..0x04B42D — live human power short-circuits to VILLAGE path. */
     if (owner < 4 && g_power_active_543F[owner * 0x34] == 0)
-        goto ret9_tail;                           /* @asm 0x04B42D -> 0x04B56A */
+        goto ret9_tail;                          /* @asm 0x04B42D -> 0x04B56A */
 
     /* @asm 0x04B430..0x04B54D — outcome dispatch on unit type via the 12-entry
-     * CS:0x4772 jump table (code = unit_type, code-- , bound check > 0x0B -> default). */
+     * CS jump table at file 0x4B552 (CS:0x4772).  code = unitType-1. */
     {
-        int code = unit_type - 1;                 /* @asm 0x04B544 */
+        int code = unit_type - 1;                /* @asm 0x04B544 */
         if ((unsigned)code > 0x0B) {
-            /* @asm 0x04B50A default arm. */
-            if (overlay_call_181F_0B78() < 0)     /* range/legality of unit */
-                goto done;                        /* @asm 0x04B519 */
-            if ((u[0x17] == 0x1C || u[0x17] == 0x19) && tbl >= 0x4B)  /* @asm 0x04B520 +0x315B */
-                ret = 5;                          /* @asm 0x04B53B */
+            /* @asm 0x04B50A default arm (unit_types 2, 6..11). */
+            if (overlay_call_181F_0B78() < 0)    /* range/legality check */
+                goto done;                       /* @asm 0x04B519 */
+            if ((u[0x17] == 0x1C || u[0x17] == 0x19) && tbl >= 0x4B)  /* +0x315B */
+                ret = 5;                         /* @asm 0x04B53B */
             else
-                goto done;                        /* @asm 0x04B52E */
+                goto done;                       /* @asm 0x04B52E */
         } else {
-            switch (code) {                       /* @asm 0x04B54D jmp cs:[code*2+0x4772] */
-            case 0:  /* @asm 0x04B43E "tax/anger" arm */
-                if (overlay_call_181F_030C() >= 0x4B) {      /* table([0x5398],[0x8D52]) */
-                    ret = 9;
-                } else if ((overlay_call_181F_0A38() & 0x20) &&  /* @asm 0x04B45A */
-                           /* PowerRecord[owner].gold >= 1500 */
-                           1 /* @asm 0x04B484 gold>=0x5DC */ &&
-                           overlay_call_181F_04D4() == 0) {       /* @asm 0x04B490 random_int(0,4) */
-                    ret = 7;                       /* @asm 0x04B4A6 intervene */
+            switch (code) {                      /* @asm 0x04B54D jmp cs:[code*2+0x4772] */
+            case 2:  /* unit_type 3 — @asm 0x04B43E "tax/anger" arm */
+                if (overlay_call_181F_030C() >= 0x4B) {    /* table([0x5398],[0x8D52]) */
+                    ret = 9;                      /* @asm 0x04B44E anger score maxed */
+                } else if ((overlay_call_181F_0A38() & 0x20) &&   /* @asm 0x04B45A at war */
+                           /* @asm 0x04B466..0x04B480 bound level < owner level */
+                           /* @asm 0x04B484 PowerRecord[owner].gold >= 0x5DC (1500) */
+                           1 /* gold check elided */ &&
+                           overlay_call_181F_04D4() == 0) { /* @asm 0x04B490 random(0,4) */
+                    ret = 7;                      /* @asm 0x04B4A6 King intervenes */
                 } else {
-                    /* @asm 0x04B4AE — outcome by colony flag (+5). */
+                    /* @asm 0x04B4AE — outcome by colony ownership flag [0x8D4A][+5]. */
                     int cf = (int8_t)bound[0x05];
-                    if (cf < 0)                    /* @asm 0x04B4B6 */
-                        ret = 3;                   /* @asm 0x04B4B8 */
-                    else if ((cf & 0x0F) == owner) /* @asm 0x04B4C0 */
-                        goto done;                 /* @asm 0x04B4CB */
+                    if (cf < 0)                   /* @asm 0x04B4B6 enemy colony */
+                        ret = 3;                  /* @asm 0x04B4B8 */
+                    else if ((cf & 0x0F) == owner) /* @asm 0x04B4C0 own colony */
+                        goto done;               /* @asm 0x04B4CB */
                     else
-                        ret = 4;                   /* @asm 0x04B4CE */
+                        ret = 4;                  /* @asm 0x04B4CE neutral colony */
                 }
                 break;
-            case 8:  /* @asm 0x04B4DE "name lookup" arm */
-                overlay_call_181F_0722();          /* lookup(unit.x +0x3144, unit.y +0x3145) */
-                ret = 9;                           /* @asm 0x04B4F9 */
+            case 0:  /* unit_type 1 — @asm 0x04B4DE "name lookup" arm */
+            case 3:  /* unit_type 4 */
+            case 10: /* unit_type 11 */
+                overlay_call_181F_0722();         /* 0x722(unit.y[+0x3145], unit.x[+0x3144]) */
+                ret = 9;                          /* @asm 0x04B4F9 */
                 break;
-            case 4:  /* @asm 0x04B502 */
+            case 4:  /* unit_type 5 — @asm 0x04B502 */
                 ret = 6;
                 break;
-            default:
-                /* Remaining table arms set distinct ret codes / share the 0x4B72
-                 * island; the disasm shows arms folding into the ret-paths above.
-                 * The exact per-index mapping for the sparse arms is preserved by
-                 * the jump table; codes 1/2/3/5/6/7/9/10/11 land on the cited
-                 * ret-store sites (ret1 @0x04B4D6, etc.).  [BYTE_VERIFIED table] */
-                ret = 1;                           /* @asm 0x04B4D6 ret1 (common arm) */
+            case 11: /* unit_type 12 — @asm 0x04B4D6 */
+                ret = 1;
+                break;
+            default: /* unit_types 2,6..10 -> default arm (same as code>0x0B above) */
+                if (overlay_call_181F_0B78() < 0)
+                    goto done;
+                if ((u[0x17] == 0x1C || u[0x17] == 0x19) && tbl >= 0x4B)
+                    ret = 5;
+                else
+                    goto done;
                 break;
             }
         }
     }
 
 ret9_tail:
-    /* @asm 0x04B56C..0x04B57D — finalize: 0x0524(ret) then return market[+0x02]. */
-    overlay_call_181F_0524();                      /* @asm 0x04B56C apply(ret) */
-    return g_market_array_8D4E[0x02];              /* @asm 0x04B578 RETF ax = [bx+2] */
+    /* ---- PHASE 2: VILLAGE tribe-attitude display (0x04B56A..0x04B8EF) ----
+     *
+     * @asm 0x04B56A  push 7 ; LCALL 0x181F:0x0524(7)  — apply encounter code 7
+     * @asm 0x04B574  tribe_slot = [0x8D4E][+2] ; voice_id = [slot*6 - 0x69CC]
+     * @asm 0x04B585  LCALL 0x181F:0x0438(voice_id, 0) — set dialog voice context
+     * @asm 0x04B593  power_name = 0x181F:0x0A1A(region)
+     * @asm 0x04B59E  LCALL 0x181F:0x0438(power_name, 1) — append power name
+     * @asm 0x04B5A9  strcpy(buf, "VILLAGE"[0x1710])  via 0x0D1D:0x07E4
+     *
+     *   5-level attitude determination (@asm 0x04B5B8..0x04B5F8):
+     *     tbl >= 75 (0x4B): push 0x1718 ("WAR")          — hostile
+     *     tbl >= 50 (0x32): push 0x171C ("BAD")          — unfriendly
+     *     tbl >= 25 (0x19) OR owner_word >= 128 (0x80):
+     *                       push 0x1720 ("MEDIUM")        — neutral
+     *     g_tribe_id_8D52==2: push 0x1727 ("SAVAGE")     — savage
+     *     else:             push 0x172E ("HAPPY")         — friendly
+     *
+     * @asm 0x04B5FB  strcat(buf, attitude_str) via 0x0D1D:0x07A4
+     *               -> buf = "VILLAGE WAR" / "VILLAGE BAD" / "VILLAGE MEDIUM" /
+     *                        "VILLAGE SAVAGE" / "VILLAGE HAPPY"
+     * @asm 0x04B607  if tbl >= 50: queue prompt(7/6/5) via 0x181F:0x04AC
+     * @asm 0x04B630  LCALL 0x191F:0x0182(0x87C, buf, 0) -> dialog handle
+     *               if handle==0: goto done
+     *
+     *   Dialog item population (0x04B64B..0x04B862) — adds sound items per
+     *   unit type using 0x181F:0x0022 + 0x191F:0x0176; see banner for detail.
+     *
+     * @asm 0x04B8CE  LCALL 0x191F:0x016A(dialog) -> disp_code=[bp-0x54]
+     * @asm 0x04B8DC  LCALL 0x191F:0x01A8(dialog)   — close/free dialog
+     * @asm 0x04B8EF  ax=[bp-0x54]; jmp 0x04B9B2    — dispatch on disp_code
+     *
+     *   Second jump table at file 0x4B9C0 (CS:0x4BE0), 9 entries:
+     *     disp_code 1..8 -> local thunks LJMPing to 0x1A1F:0x044C/3F8/3EC/3C8/428/3D4/3E0/410
+     *     disp_code 9    -> LCALL 0x181F:0x0A06(4,region,owner); [bp-0x58]=0
+     */
+    overlay_call_181F_0524();                    /* @asm 0x04B56C push 7 + apply(7) */
+    /* market voice, power name, strcpy "VILLAGE", strcat attitude: */
+    overlay_call_181F_0438();                    /* @asm 0x04B585 set dialog context */
+    overlay_call_181F_0A1A();                    /* @asm 0x04B596 power name lookup */
+    overlay_call_181F_0438();                    /* @asm 0x04B5A1 append power name */
+    /* build "VILLAGE <attitude>" in stack buffer [bp-0x52]: */
+    /* attitude = WAR(tbl>=75) / BAD(tbl>=50) / MEDIUM(tbl>=25 or word>=128) /
+     *            SAVAGE(tribe_id==2) / HAPPY(else) */
+    /* strcat attitude string, optional sound prompt if tbl>=50 */
+    overlay_call_191F_0182();                    /* @asm 0x04B639 open dialog -> handle */
+    /* populate dialog items (unit-type-specific sound effects) */
+    overlay_call_191F_016A();                    /* @asm 0x04B8CE poll -> disp_code */
+    overlay_call_191F_01A8();                    /* @asm 0x04B8DC close dialog */
+    /* dispatch disp_code 1..9 via second jump table at CS:0x4BE0 */
+    /* -> 0x1A1F handlers or cancel ([bp-0x58]=0) */
 
 done:
-    /* @asm 0x04B9D2 — shared epilogue (the JMP 0x4B9D2 targets land here). */
+    /* @asm 0x04B9D2 — reentrancy guard: if [0x539C] changed, return 2. */
+    /* @asm 0x04B9EA — if ret==1: LCALL 0x181F:0x0934(unit_index) commit action. */
+    /* @asm 0x04B9FB — return [bp-0x58] (0=cancel, 1=committed, 2=follow-up). */
     return ret;
 }
 
