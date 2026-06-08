@@ -70,13 +70,17 @@ extern uint8_t  g_difficulty;     /* 0x53A6 */
 extern uint16_t g_active_power;   /* 0x5398 (power being scored) */
 
 extern int  score_endgame_rank(int raw_score);  /* compute.c (func_03A9C0 head) */
-extern int  raw_power_score(int arg);            /* 0x191F:0x3AA -- overlay-resident, TBD */
+extern int  raw_power_score(int arg);            /* 0x191F:0x3AA → func_039EE2 (file 0x039EE2)
+                                                 * BYTE_VERIFIED 2026-06-08: full body traced in
+                                                 * compute.c: 7 score components (score_founding,
+                                                 * score_ff_pts, score_gold, score_ref, score_sol,
+                                                 * score_liberty, score_congress) + vet_mult. */
 
 /* ----------------------------------------------------------------------------
  *  score_screen -- the end-of-game SCORE + RANK panel.
  * ----------------------------------------------------------------------------
  *  @asm func_03A9C0 @0x03A9C0 (page 0x05, 0x03A9C0..0x03ADA5).  [BYTE_VERIFIED
- *  structure; raw-score arithmetic is overlay-resident = TBD].
+ *  structure; raw-score arithmetic BYTE_VERIFIED in compute.c (func_039EE2)].
  *
  *  Flow (each step cited):
  *    @asm 03A9E5  save+clear scratch word [0x372] (restored at 0x03AD9F)
