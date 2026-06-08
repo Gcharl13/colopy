@@ -402,6 +402,21 @@ check_bytes("06FA3E extract_csv_token: push di; push si", 0x06FA3E, "57 56 8b 36
 check_bytes("06FA84 seek_cursor: push 0x833C; lcall 0x0D1D:0x0842", 0x06FA84,
             "68 3c 83 9a 42 08 1d 0d")
 
+# Automove 8-dir cost BYTE_VERIFIED
+check_bytes("06323A automove 8-dir shl bx,4; mov al,[bx+0x2F76]", 0x06323A,
+            "c1 e3 04 8a 87 76 2f")
+check_bytes("063258 automove direction_score: shl cx,2; add cx,..", 0x063258,
+            "c1 e1 02 03 4e f6 03 4e")
+
+# page1A_names_subloader body BYTE_VERIFIED 2026-06-08
+check_bytes("07637F thunk ljmp 0x1A1F:0xD20", 0x07637F, "ea 20 0d 1f 1a")
+check_bytes("72CC2 subloader ENTER 0x276,0", 0x72CC2, "c8 76 02 00")
+
+# func_063BD8 register layout BYTE_VERIFIED 2026-06-08
+check_bytes("63C12 find_tile_owned: cmp ax,[bp+4] match_val", 0x63C12, "3b 46 04")
+check_bytes("63C34 find_tile_owned: mov [bx],di  *out_col=di", 0x63C34, "89 3f")
+check_bytes("63C36 find_tile_owned: mov bx,[bp+6] out_row_ptr", 0x63C36, "8b 5e 06")
+
 # ------------------------------------------------------------------ REPORT
 npass = sum(1 for r in results if r[0])
 print(f"AUDIT: {npass}/{len(results)} claims verified against VICEROY.EXE\n")

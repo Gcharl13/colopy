@@ -1096,9 +1096,9 @@ int func_063880_continent_relabel(void)
  *   whose terrain == `value`, qualified by tile_owner==1 (or value==0), and
  *   return its (col=di, row=si) through out-pointers. Column-major double loop
  *   bounded by [bp-0x10]/[bp-0xe].
- * STATUS: RECONSTRUCTED — thunk roles + match/owner test byte-verified; the two
- *   loop bounds (col_lo/row_lo, both caller locals) are inferred from the jl
- *   directions (caller not yet decompiled).
+ * STATUS: BYTE_VERIFIED 2026-06-08 — thunk roles, match/owner test, and loop bounds
+ *   confirmed from call site in func_063C58: AX→DI=col_start, DX→[bp-0xE]=row_start;
+ *   BX=&out_col ([bp-0xC]), stack[bp+4]=match_val, stack[bp+6]=&out_row.  CLOSED.
  * @asm_disasm page_14.asm (func_063BD8)
  * ============================================================================ */
 int func_063BD8_find_tile_owned(int col_bound, int value, int *out_row,
@@ -1162,9 +1162,12 @@ int func_063BD8_find_tile_owned(int col_bound, int value, int *out_row,
  *   byte-verified; the histogram-bucket arithmetic reads DS scratch tables (data)
  *   so it is expressed structurally; no constant invented.
  * ----------------------------------------------------------------------------
- * The page-internal near call 0x7f8 resolves to the SIBLING owner-scan already
- * ported in this file: func_063BD8_find_tile_owned (file 0x63BD8); its register
- * marshalling here is approximate (TBD-inner) — site + role byte-verified.
+ * BYTE_VERIFIED 2026-06-08 — register layout confirmed for both call sites:
+ *   Call 1 @0x63CC1: AX=[bp-0x12]=1(col_start), DX=[bp-0xC]=1(row_start),
+ *     BX=lea[bp-0x18]=&out_col; push(lea[bp-0x1a])→callee[bp+6]=&out_row,
+ *     push([bp-0x14]=dir_bit_base)→callee[bp+4]=match_val.  RET 4. CLOSED.
+ *   Call 2 @0x63D0F: AX=DI(dy*4+[bp-0xe]), DX=SI(dx*4+[bp-6]), BX=lea[bp-0x1c]=&n_col;
+ *     push(lea[bp-0x1e])→callee[bp+6]=&n_row, push([bp-0x14])→callee[bp+4]=match_val.
  * @asm_disasm page_14.asm (func_063C58)
  * ============================================================================ */
 int func_063C58_place_feature_driver(void)

@@ -215,8 +215,14 @@ extern int      page1A_read_hdr(void);         /* page-0x1A near 0x4ee5 (read sa
 extern int      page1A_file_pick(void);        /* page-0x1A near 0x4f30 (file picker) */
 extern int      page1A_msgbox(void);           /* page-0x1A near 0x4ee0 (simple message box) */
 extern int      page1A_names_subloader(int idx); /* page-0x1A near 0x4eef = ljmp 0x1A1F:0xD20
-                                                  * (per-entry NAMES.TXT name sub-loader;
-                                                  * @asm 0x07637F ea200d1f1a ljmp 0x1a1f:0xd20) */
+                                                  * BYTE_VERIFIED 2026-06-08: thunk @0x7637F→
+                                                  * ljmp 0x1A1F:0xD20→body @file 0x72CC2 (695B).
+                                                  * Args: (int max_entries[bp+8], int idx[bp+6]).
+                                                  * Returns DX:AX = far ptr to section struct.
+                                                  * Writes DS:0xA60C+entry_idx loading-flag byte;
+                                                  * interns terrain names via lcall 0x191F:0x176.
+                                                  * idx=0..7 = @UNFORESTED, idx=0x18..0x1C = @OTHER.
+                                                  * Section table: DS:0x087C "GAME\0\0NAMES\0..." */
 extern int      page1A_newgame_postinit(void); /* page-0x1A near 0x4ef9 = ljmp 0x1A1F:0xD3C
                                                   * @asm 0x076389 (new-game module post-init) */
 extern int      page1A_newgame_mapinit(void);  /* page-0x1A near 0x4f2b = ljmp 0x1A1F:0xDC8
@@ -380,7 +386,7 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
 
 /* ============================================================================
  * func_0749E0 — load_names_data_tables  [DONE — section dispatch BYTE_VERIFIED;
- *               sub-loader chain resolved: func_07637F@0x7637F→ljmp 0x1A1F:0xD20→file 0x72DB0]
+ *               sub-loader fully traced: func_07637F@0x7637F→ljmp 0x1A1F:0xD20→body @0x72CC2]
  * ----------------------------------------------------------------------------
  * THE NAMES.TXT DATA-TABLE LOADER (project mem: NAMES.TXT is the canonical
  * source for all VICEROY game-data tables; this routine reads 38 named
@@ -451,17 +457,20 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
  *                                    0x0D1D:0x8F6(@0x833c) -> [0x846]
  *
  * Per-entry name sub-loaders (UNFORESTED/FORESTED/OTHER) call func_07637F@0x7637F
- * (near call target) which does ljmp 0x1A1F:0xD20 → file 0x72DB0 (terrain-name
- * string-intern + terrain-cost-table store). Chain BYTE_VERIFIED; all other
- * sections traced field-for-field.
+ * (near call) → ljmp 0x1A1F:0xD20 → body @file 0x72CC2 (695 bytes, ENTER 0x276).
+ * BYTE_VERIFIED 2026-06-08: args (max_entries=[bp+8], idx=[bp+6]); reads NAMES.TXT
+ * section via get_section(DS:0x087C, idx) @0x191F:0x182; per-entry loading-flag
+ * written at DS:0xA60C+entry_idx; terrain names interned via lcall 0x191F:0x176;
+ * far-ptr strncpy dest via DS:0x9800 table.  Note: DS:0x2F76 terrain-cost table
+ * is NOT written here (linker-initialized; populated by a different function).
  *
  * @asm 0x0749EB  lcall 0x181F:0x000E         (NAMES init, name @DS:0x1A2C "EUROPE")
  * @asm 0x0749F9  lcall 0x191F:0x928          (find @SECTION @DS:0x21AC "SEASONS")
  * @asm 0x074A06  loop: lcall 0x191F:0x91C ; 0x1A1F:0xB22 -> word[bx-0x6800]
  * @asm 0x074A7C  rep movsw cx=8              (copy 16-byte FORESTED config row)
  * @asm 0x07534D  pop si; pop di; leave; @asm 0x075350 retf
- * @status DONE (section dispatch byte-verified; sub-loader func_07637F chain
- *   resolved: @0x7637F → ljmp 0x1A1F:0xD20 → file 0x72DB0 terrain-name intern)
+ * @status DONE — section dispatch byte-verified; sub-loader chain fully traced:
+ *   func_07637F@0x7637F → ljmp 0x1A1F:0xD20 → body @0x72CC2 BYTE_VERIFIED 2026-06-08
  */
 int func_0749E0_load_names_data_tables(void)
 {
@@ -483,13 +492,13 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- UNFORESTED @DS:0x21B4 : 8 entries via sub-loader ---- @asm 0x074A22 */
     overlay_call_191F_0928();                                  /* @asm 0x074A27 find UNFORESTED */
     for (i = 0; i < 8; i++)                                    /* @asm 0x074A41 cmp,8 */
-        page1A_names_subloader(i);                             /* @asm 0x074A38 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
+        page1A_names_subloader(i);                             /* @asm 0x074A38 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
 
     /* ---- FORESTED @DS:0x21BF : 8 entries; sub-loader(idx+8) then copy a
      * 16-byte config row [bx+0x3074] <- [bx+0x2ff4] ---- @asm 0x074A47 */
     overlay_call_191F_0928();                                  /* @asm 0x074A4C find FORESTED */
     for (i = 0; i < 8; i++) {                                  /* @asm 0x074A81 cmp,8 */
-        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
+        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
         {   /* @asm 0x074A7C rep movsw cx=8 : 16-byte row copy */
             uint16_t near *dst = (uint16_t near *)((i << 4) + 0x3074); /* @asm 0x074A6D */
             uint16_t near *src = (uint16_t near *)((i << 4) + 0x2FF4); /* @asm 0x074A71 */
@@ -501,7 +510,7 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- OTHER @DS:0x21C8 : 5 entries via sub-loader(idx+0x18) ---- @asm 0x074A87 */
     overlay_call_191F_0928();                                  /* @asm 0x074A8C find OTHER */
     for (i = 0; i < 5; i++)                                    /* @asm 0x074AAA cmp,5 */
-        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 file 0x72DB0 */
+        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
 
     /* ---- OTHER_NAMES @DS:0x21CE : 5 ints -> word[i+0x2db0] ---- @asm 0x074AB0 */
     overlay_call_191F_0928();                                  /* @asm 0x074AB5 find OTHER_NAMES */
