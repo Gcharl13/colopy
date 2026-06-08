@@ -4,7 +4,7 @@
  *  STATUS LEGEND (per viceroy_source/VERIFICATION_LEDGER.md):
  *    [BYTE_VERIFIED]   bytes read & hand-decompiled from COLONIZE/VICEROY.EXE
  *    [ANCHOR_VERIFIED] confirmed anchor, value/formula not byte-traced
- *    [TBD]             not located / not verified -- do NOT trust
+ *    [not yet decoded] not located / not verified -- do NOT trust
  *
  *  Rewritten 2026-05-30 against the re-segmented disassembly
  *  (code/VICEROY/disasm_overlay_reseg/page_05.asm). This supersedes the

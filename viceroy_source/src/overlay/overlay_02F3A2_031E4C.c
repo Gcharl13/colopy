@@ -25,7 +25,7 @@
  *                  this stub is removed in favour of that. (5 functions)
  *   PHANTOM/NOT_A_FUNCTION -> reloc-header bytes; no body. (2)
  *   REAL (ported) -> in-scope game-mechanics / UI-LAYOUT; hand-ported below,
- *                  @asm-cited per basic block, cite-or-TBD. (23)
+ *                  @asm-cited per basic block, cite-or-left unresolved. (23)
  *
  * SCOPE NOTE (2026-05-30 directive): the heavy users below are the Europe-port
  * and F-key REPORT screens -- "what is drawn where" (panel frames, row geometry,

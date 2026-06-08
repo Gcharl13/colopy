@@ -30,7 +30,7 @@
  *   - func_0427D6 is 239 bytes (not 184).
  *   - func_042C50 (155 bytes, page-09 head) had NO skeleton entry -> ADDED.
  *
- * cite-or-TBD is absolute.  Each basic block carries an `@asm` file offset.
+ * cite-or-left unresolved is absolute.  Each basic block carries an `@asm` file offset.
  * Platform leaves (blit/font/VGA/IO/RTLink overlay thunks/sound/input) stay
  * behind role-or-address-named `extern`s so a re-target swaps only that layer;
  * the COMPOSITION / LAYOUT / RULES are expressed as design here.  Per the

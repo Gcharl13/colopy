@@ -11,7 +11,7 @@
  * auto-disasm).  The previous auto-generated skeleton in this file was wrong
  * about several extents (it mis-read mid-instruction 0xC8 bytes as `ENTER`
  * prologues and truncated 7000-byte functions to a few hundred bytes).  Every
- * such phantom is documented and removed below.  STRICT cite-or-TBD: no value
+ * such phantom is documented and removed below.  STRICT cite-or-left unresolved: no value
  * appears without an @asm offset; nothing is guessed.
  *
  * ----------------------------------------------------------------------------

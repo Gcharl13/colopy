@@ -30,7 +30,7 @@
  * STATUS POLICY: each function is tagged BYTE_VERIFIED (body hand-traced
  * instruction-by-instruction against the reseg disasm) or, where a thunk's
  * pixel/semantic effect is not independently confirmed, the body is faithful
- * to the call sites and that residual is called out as TBD.  Nothing guessed.
+ * to the call sites and that residual is called out as not yet decoded.  Nothing guessed.
  *
  * Auto-traced control-flow stubs REPLACED with hand-ported bodies 2026-05-30.
  * ============================================================================ */

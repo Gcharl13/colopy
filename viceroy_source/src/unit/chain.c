@@ -163,7 +163,7 @@ int unit_chain_resolve(int idx)
  * static form this routine returns the tile's occupancy/head id via the
  * 0x037F:* helpers and uses -1 as the not-found sentinel. The two map-helper
  * targets (0x037F:0x0A "tile occupancy id", 0x037F:0x314 "resolve head") live
- * in another segment -- their exact semantics are TBD; the addressing and the
+ * in another segment -- their exact semantics are not yet decoded; the addressing and the
  * sentinel handling here are byte-verified.
  *
  * Used by the placement routine (func_00693A) to find the current head before

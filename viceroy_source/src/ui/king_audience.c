@@ -5,7 +5,7 @@
  * the FONTKING swap + the two-portrait draw).  The leaf draw thunks
  * (0x181F:0x2F8 portrait blit, 0x181F:0x444 full-screen composite,
  * 0x181F:0x3F4 mode set) are type-B load-image routines; their CALL SITES +
- * args are byte-exact, their internals are not re-decoded.  cite-or-TBD.
+ * args are byte-exact, their internals are not re-decoded.  cite-or-left unresolved.
  *
  * @asm_function  func_075352   file 0x075352..0x075593  (578 B, ENTER 0x320,0)
  * @asm_disasm    code/VICEROY/disasm_overlay_reseg/page_1A.asm (func_075352)

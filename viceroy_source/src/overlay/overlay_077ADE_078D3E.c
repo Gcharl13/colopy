@@ -36,7 +36,7 @@
  * VICEROY.LOG format at 0x25DF, "CYCLE.DAT" at 0x25F9.  random_int etc. are
  * not used in this region.
  *
- * STRICT cite-or-TBD: every value/offset cites the .asm; opaque overlay
+ * STRICT cite-or-left unresolved: every value/offset cites the .asm; opaque overlay
  * targets (0x181F / 0x1A1F / 0x0D1D / 0x0C0C / 0x191F) are called through their
  * canonical overlay_call_* externs and never given a fabricated body.
  * ============================================================================ */

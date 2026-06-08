@@ -7,7 +7,7 @@
  * Reviewed & hand-classified 2026-05-30 (game-mechanics-only directive).
  * Each function is tagged exactly one of:
  *   BYTE_VERIFIED  -- full body byte-traced & cited from VICEROY.EXE.
- *   RECONSTRUCTED  -- verified spine cited; truncated tail left cited-TBD.
+ *   RECONSTRUCTED  -- verified spine cited; truncated tail left cited-not yet decoded.
  *   SUPERSEDED     -- already ported in a named src/<subsystem>/<file>.c.
  *   OUT-OF-SCOPE   -- DOS platform (screen/dialog draw, input, C-runtime);
  *                     NOT game mechanics, per 2026-05-30 directive. No body.

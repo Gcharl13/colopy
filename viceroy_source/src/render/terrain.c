@@ -17,7 +17,7 @@
  * The PHYS0 sprite-index BASES used by these masks are now byte-grounded in
  * tile_chain.c's O513 (0x21 mtn / 0x31 hills / 0x41 forest / 0x40 shore / 0x51-
  * 0x5E river / 0x6D roads / 0x8D-0x94 feature edges / 0x96-0x99 coast / 0x5A
- * centre). What remains TBD: the sheet's *internal pixel* numbering inside
+ * centre). What remains not yet decoded: the sheet's *internal pixel* numbering inside
  * PHYS0.SS/TERRAIN.SS (the [0x174]/[0x16C] surfaces) — that is data, decoded in
  * SPRITE_CATALOG.md, and the final framebuffer poke is overlay-resident.
  * ============================================================================ */

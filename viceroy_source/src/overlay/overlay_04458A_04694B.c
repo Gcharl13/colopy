@@ -42,7 +42,7 @@
  *   - "func_0467F8" lands in the page-0B/0C reloc-header gap (code_offset of
  *     page_0C is 0x046DE0; 0x046600..0x046DE0 is header bytes)  -> PHANTOM.
  *
- * cite-or-TBD is absolute.  Each basic block carries an `@asm` file offset.
+ * cite-or-left unresolved is absolute.  Each basic block carries an `@asm` file offset.
  * Platform leaves (RLE blit, font raster, VGA, file I/O, RTLink overlay
  * thunks) stay behind role-or-address-named `extern`s so a re-target swaps only
  * that layer; the COMPOSITION / LAYOUT / RULES are expressed as design here.

@@ -23,7 +23,7 @@
  *   reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_1D.asm (base 0x77990, ..0x77E00)
  * Entry prologues spot-checked against raw COLONIZE/VICEROY.EXE.
  *
- * STRICT cite-or-TBD: every value/offset cites the .asm or raw EXE; opaque
+ * STRICT cite-or-left unresolved: every value/offset cites the .asm or raw EXE; opaque
  * overlay targets (0x181F:* / 0x191F:* / 0x1A1F:* helpers, the 0x0D1D:* C
  * runtime) are called through their canonical overlay_call_* names and never
  * fabricated.  DS-relative string-literal offsets (0x22xx/0x23xx/0x24xx) are

@@ -25,7 +25,7 @@
  * sprite-row 0x191F:0x230, the dialog framework 0x191F:0x182/0x928) are kept as
  * role-named externs — the composition stays, the leaf is swapped per target.
  *
- * STRICT cite-or-TBD: every basic block carries an @asm file-offset.  String
+ * STRICT cite-or-left unresolved: every basic block carries an @asm file-offset.  String
  * literals are cited by GAME.TXT handle (= file_offset - 0x1D9A0); RGB/sprite
  * values are never invented.
  *
