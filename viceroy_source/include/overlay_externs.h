@@ -493,6 +493,7 @@ extern int overlay_call_191F_09F8(void);  /* @ref RTLink seg 0x191F off 0x09F8 *
 extern int overlay_call_191F_0A2E(void);  /* @ref RTLink seg 0x191F off 0x0A2E */
 extern int overlay_call_191F_0A74(void);  /* @ref RTLink seg 0x191F off 0x0A74 */
 extern int overlay_call_191F_0AAC(void);  /* @ref RTLink seg 0x191F off 0x0AAC */
+extern int overlay_call_191F_0CBC(int a, int b);  /* @ref RTLink seg 0x191F off 0x0CBC → file 0x8F6C (colony price-band screen update) */
 extern int overlay_call_191F_0AC8(void);  /* @ref RTLink seg 0x191F off 0x0AC8 */
 extern int overlay_call_191F_0AD4(void);  /* @ref RTLink seg 0x191F off 0x0AD4 */
 extern int overlay_call_191F_0ED0(void);  /* @ref RTLink seg 0x191F off 0x0ED0 */

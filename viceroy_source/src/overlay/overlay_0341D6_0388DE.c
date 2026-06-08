@@ -928,7 +928,12 @@ int func_036574_newgame_player_setup(void)
      *    Screen-side; carries no game-state writes.                          */
     for (good = 0; good < 4; good++) {                  /* @0x0367E8 init / @0x036805 CMP ,4 JL */
         overlay_call_181F_0582();                       /* @0x0367F1 CALL 0x3680E -> 0x181F:0x582 */
-        /* @0x0367F7 PUSH -1; PUSH 1; CALL 0x368BD (screen finalise) -- TBD-inner */
+        /* @0x0367F7  6a ff 6a 01 0e e8 be 00  BYTE_VERIFIED
+         * Exact bytes: PUSH -1; PUSH 1; PUSH CS; CALL near 0x368BD
+         * The PUSH CS before CALL turns it into a pseudo-far-call (RTLink pattern).
+         * 0x368BD → LJMP 0x191F:0xCBC → thunk @file 0x1B073 → file 0x8F6C = func_008F6C.
+         * args: [bp+6]=1, [bp+8]=-1.  Screen-side colony-band update; no game-state writes. */
+        overlay_call_191F_0CBC(1, -1);                  /* @0x0367F7 screen finalize (1,-1) */
     }
 
     return 0;                                           /* @0x03680B POP si; LEAVE; RETF        */
