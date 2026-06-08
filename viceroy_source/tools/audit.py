@@ -412,6 +412,25 @@ check_bytes("063258 automove direction_score: shl cx,2; add cx,..", 0x063258,
 check_bytes("07637F thunk ljmp 0x1A1F:0xD20", 0x07637F, "ea 20 0d 1f 1a")
 check_bytes("72CC2 subloader ENTER 0x276,0", 0x72CC2, "c8 76 02 00")
 
+# ---- func_04CC50 Phase2 bp-0x18 score accumulator BYTE_VERIFIED 2026-06-08 ----
+# Zero-init: sub ax,ax; mov [bp-0x16],ax; mov [bp-0x18],ax
+check_bytes("4D744 score32 zero-init: sub ax,ax; mov [bp-0x16],ax; mov [bp-0x18],ax",
+            0x4D744, "2b c0 89 46 ea 89 46 e8")
+# Per-worker add: add word ptr [bp-0x18], 0x320 (800)
+check_bytes("4D7AB score+=0x320 (800) per type-2 worker (adc hi,0 next)",
+            0x4D7AB, "81 46 e8 20 03")
+# Per-civilian add: add word ptr [bp-0x18], 0x5DC (1500)
+check_bytes("4D80D score+=0x5DC (1500) per active non-military civilian",
+            0x4D80D, "81 46 e8 dc 05")
+# Demand-slot multiply-accumulate: imul [bp-0x28]; add [bp-0x18],ax; adc [bp-0x16],dx
+check_bytes("4D8EC score+=weight*demand_level lo (add [bp-0x18],ax)", 0x4D8EC, "01 46 e8")
+check_bytes("4D8EF score+=weight*demand_level hi (adc [bp-0x16],dx)", 0x4D8EF, "11 56 ea")
+# Trade-goods bonus: shl ax,3; cdq; add [bp-0x18],ax
+check_bytes("4D91B trade-goods bonus shl ax,3; cdq; add [bp-0x18],ax",
+            0x4D91B, "c1 e0 03 99 01 46 e8")
+# Score clamp to 0x7FFF
+check_bytes("4D938 score clamp mov ax,0x7FFF", 0x4D938, "b8 ff 7f")
+
 # func_063BD8 register layout BYTE_VERIFIED 2026-06-08
 check_bytes("63C12 find_tile_owned: cmp ax,[bp+4] match_val", 0x63C12, "3b 46 04")
 check_bytes("63C34 find_tile_owned: mov [bx],di  *out_col=di", 0x63C34, "89 3f")
