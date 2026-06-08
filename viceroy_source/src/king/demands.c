@@ -126,6 +126,16 @@ extern void king_schedule_royal_events(int power_id);
  * anger on refuse" claim has NO byte backing: 0x53A7 is the year/100 split (now
  * RESOLVED, see header), and no anger-increment instruction exists in the
  * binary — so the refuse-side anger model remains UNLOCATED/TBD.
+ *
+ * SCOPE NOTE (2026-06-08): the resident func_03471E (0x03471E, 725B) named
+ * "AI king-demand decision" is in fact the human-facing DEMAND DIALOG builder —
+ * it assembles a 0x1C-entry option array (8-byte-stride source table @[-0x7158])
+ * and makes ~50 LCALLs to overlay list-builder / dialog / sprintf thunks
+ * (0x191F:*, 0x181F:*, 0xD1D:*).  It carries no standalone "AI accepts iff X"
+ * computation to byte-anchor (the game consequence — the tax write — is already
+ * BYTE_VERIFIED in tax_apply.c).  So this heuristic stays RECONSTRUCTED/TBD by
+ * design, not for lack of trying; a full port would be UI plumbing over TBD
+ * overlay thunks, not game logic.
  * ============================================================================ */
 int ai_decide_king_demand(PowerRecord *p, int proposed_tax)   /* RECONSTRUCTED */
 {
