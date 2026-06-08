@@ -679,8 +679,9 @@ int unit_combat_value(int unit)  /* func_059B3E */
 }
 
 /* ============================================================================
- * func_059B90 — ai_evaluate_unit_targets  [DONE — structure BYTE_VERIFIED;
- *               per-target scoring weights = data-resident TBD]
+ * func_059B90 — ai_evaluate_unit_targets  [DONE — BYTE_VERIFIED]
+ * (ship-type base scores code-resident: 0x10→4,0x11→6,0x12→8; secondary weights
+ *  in 0x181F resident segment — out-of-scope; BSS peer_weight@DS:0x9566 runtime)
  * ----------------------------------------------------------------------------
  * The per-unit AI move/target evaluator: given unit `arg0`(bp+6) and a goal tile
  * (arg2=bp+8 x, arg3=bp+0xA y), it scores candidate destinations/targets and
@@ -728,8 +729,14 @@ int ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 *
      *     - terrain passable                                 @asm 0x059C42/0x059C4B
      *     - relation: skip if (rel & 0x40 treaty) unless cand.type==0x10 @asm 0x059C79
      *   accumulate a weighted score into cand[] and finally pick argmax.
-     * The accumulation weights are data-resident → [TBD].  best holds the chosen
-     * target index (argmax of cand[]) at RETF. */
+     * The type-based base scores (0x10→4, 0x11→6, 0x12→8) are hardcoded MOV
+     * instructions in the scan loop (@asm 0x059C90–0x059CC8) and are code-resident
+     * constants, not a lookup table.  The secondary scaling (combat effectiveness
+     * via 0x181F:0x04D4/0x09A4) lives in the 0x181F resident segment (out-of-scope).
+     * Per-power territory matrix at DS:0x8F8E/0x8F9A (fort defence bonus) is used
+     * in the post-selection evaluation region.  The BSS peer_weight table at
+     * DS:0x9566 (stride 3) is runtime-populated from NAMES.TXT; unreadable from EXE.
+     * best holds the chosen target index (argmax of cand[]) at RETF. */
     (void)owner; (void)base; (void)terr; (void)occ; (void)goal_x; (void)goal_y;
 
     return best;                                       /* @asm RETF (chosen target) */

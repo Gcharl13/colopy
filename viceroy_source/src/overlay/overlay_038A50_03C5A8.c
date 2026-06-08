@@ -595,41 +595,50 @@ int func_03C424_colony_pop_weighted_avg(uint16_t arg0_power_bp_06)
  * ROLE (in scope: GAME-STATE selector / small mechanic): maps a (mode, power)
  * pair to a small status code -- used to pick the row color/state for a power
  * in the Congress/diplomacy listing. args: mode = [bp+6], power = [bp+8].
- *   switch (mode) {                                  @asm 03C4A6 DEC ax chain
- *     case 1: goto L_3C4F0;   // (case bodies past this function's RETF;
- *     case 2: goto L_3C4DC;   //  the falls-through default path is below)
- *     case 3: goto L_3C4E6;
- *   }
- *   // default (mode==0 / other):
- *   if (power >= 4) return ...(L_3C51E);             @asm 03C4B2 CMP [bp+8],4 / JGE
- *   if (AIPersonality[power].ctrl(+0x543F) != 0) return ...(L_3C51E); @asm 03C4BC/03C4C1
- *   // human, in-range power:
- *   r = (([0x5382]&1)==1) ? (9 & 0xFB) : 9;          @asm 03C4C3..03C4D0
- *     // i.e. independence declared -> 9&0xFB = 8 (0x8), else 9.
- *   return r;                                        @asm 03C4D6 MOV ax,[bp-2]
- * The SBB/AND/ADD idiom computes: if independence flag set, clear bit 0 of 9
- * (-> 8), else leave 9. The case 1/2/3 targets jump to code that physically
- * follows this RETF (a shared tail in func_03C4DB+, out of this function's
- * extent); only the default arithmetic path is owned here.
+ *
+ * Full return map (all paths byte-verified from shared tails beyond 0x03C4DA):
+ *   mode==3: L_3C4DC: C7 46 FE 12 00 @0x3C4DC         -> return 18 (0x12)
+ *   mode==2: L_3C4E6: C7 46 FE 0B 00 @0x3C4E6         -> return 11 (0x0B)
+ *   mode==1, power>=4 or AI: L_3C514: C7 46 FE 08 00  -> return 8
+ *   mode==1, human, indep. set:  SBB/AND 0xFD/ADD 7   -> return 7
+ *   mode==1, human, no indep.:   SBB/AND 0xFD/ADD 7   -> return 4
+ *   mode==0, power>=4 or AI: L_3C51E: C7 46 FE 06 00  -> return 6
+ *   mode==0, human, indep. set:  SBB/AND 0xFB/ADD 9   -> return 9
+ *   mode==0, human, no indep.:   SBB/AND 0xFB/ADD 9   -> return 4
+ *
+ * SBB/AND/ADD idiom (independence flag):
+ *   MOV al,[0x5382]; AND ax,1; CMP ax,1; SBB ax,ax
+ *   -> AX=0 if indep set (CMP==equal, SBB no borrow), AX=0xFFFF if not.
+ *   AND al, mask; ADD ax, base -> base if indep, base-complement if not.
+ *
+ * Modes 1/2/3 jump to code physically after the main RETF @0x03C4DA; the
+ * mode==1 handler at L_3C4F0 repeats the power/AI guard (same logic).
  * ---------------------------------------------------------------------------- */
 int func_03C4A2_ff_offer_color_for_power(uint16_t arg0_mode_bp_06, uint16_t arg1_power_bp_08)
 {
-    /* @asm 03C4A6 MOV ax,[bp+6]; DEC/JE x3 -- modes 1/2/3 dispatch to the
-     * shared tail beyond 0x03C4DB (outside this function). Modeled as a guard;
-     * the in-extent body is the default branch below. */
-    if (arg0_mode_bp_06 == 1 || arg0_mode_bp_06 == 2 || arg0_mode_bp_06 == 3) {
-        /* @asm 03C4AA/03C4AD/03C4B0 JE to L_3C4F0/3C4DC/3C4E6 (tail outside extent). */
-        return 0;  /* tail-shared path; @asm targets past RETF @0x03C4DA — [TBD body] */
+    /* @asm 03C4A6 MOV ax,[bp+6]; DEC/JE x3 chain dispatch */
+    if (arg0_mode_bp_06 == 3)                        /* @asm 03C4B0 JE L_3C4DC */
+        return 18;   /* L_3C4DC: C7 46 FE 12 00 @0x3C4DC [BYTE_VERIFIED] */
+    if (arg0_mode_bp_06 == 2)                        /* @asm 03C4AD JE L_3C4E6 */
+        return 11;   /* L_3C4E6: C7 46 FE 0B 00 @0x3C4E6 [BYTE_VERIFIED] */
+
+    if (arg0_mode_bp_06 == 1) {                      /* @asm 03C4AA JE L_3C4F0 */
+        /* L_3C4F0: same power/AI guard then SBB/AND 0xFD/ADD 7. @asm 03C4F0..03C513 */
+        if ((int)arg1_power_bp_08 >= 4)
+            return 8;  /* L_3C514: C7 46 FE 08 00 @0x3C514 [BYTE_VERIFIED] */
+        if (g_ai_personality_543F[(unsigned)arg1_power_bp_08 * 0x34] != 0)
+            return 8;  /* L_3C514 @0x3C4FF JNZ 03C514 [BYTE_VERIFIED] */
+        /* @asm 0x3C501 MOV al,[0x5382]/AND 1/CMP 1/SBB ax,ax/AND al,0xFD/ADD 7 */
+        return (g_flags_5382 & 1) ? 7 : 4;          /* [BYTE_VERIFIED] */
     }
 
+    /* default (mode==0 / other): @asm 0x03C4B2..0x03C4D3 */
     if ((int)arg1_power_bp_08 >= 4)                  /* @asm 03C4B2 CMP [bp+8],4 / JGE 03C51E */
-        return 0;                                    /* L_3C51E shared tail — [TBD] */
-    /* @asm 03C4B8 IMUL bx,[bp+8],0x34 / 03C4BC CMP [bx+0x543F],0 / JNE 03C51E. */
+        return 6;    /* L_3C51E: C7 46 FE 06 00 @0x3C51E [BYTE_VERIFIED] */
     if (g_ai_personality_543F[(unsigned)arg1_power_bp_08 * 0x34] != 0)
-        return 0;                                    /* AI-controlled -> shared tail [TBD] */
-
-    /* @asm 03C4C3 MOV al,[0x5382] / AND 1 / CMP 1 / SBB ax,ax / AND al,0xFB / ADD 9. */
-    return (g_flags_5382 & 1) ? (9 & 0xFB) : 9;      /* indep -> 8, else 9 */
+        return 6;    /* L_3C51E @0x03C4C1 JNE 03C51E [BYTE_VERIFIED] */
+    /* @asm 03C4C3 MOV al,[0x5382]/AND 1/CMP 1/SBB ax,ax/AND al,0xFB/ADD 9 */
+    return (g_flags_5382 & 1) ? 9 : 4;              /* [BYTE_VERIFIED] */
 }
 
 /* ----------------------------------------------------------------------------
