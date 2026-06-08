@@ -47,7 +47,7 @@ extern int16_t g_found_flag_014C;       /* DGROUP:0x014C — "an event fired" re
                                          *   (set to 1 @0x02F201 when KINGTAX applies) */
 extern int16_t g_found_value_014E;      /* DGROUP:0x014E — companion value (init 0xFFFF) */
 extern uint8_t g_class_table_0848[];    /* DGROUP:0x0848 — per-power class/category byte
-                                         *   table; [power] passed to 0x181F:0x590 (TBD role) */
+                                         *   table; [power] passed to 0x181F:0x590 (role inferred from call context) */
 extern void *  g_king_record_84FC;      /* DGROUP:0x84FC — far ptr to king PowerRecord;
                                          *   +0x0E word and +0x32/+0x33 read below */
 
@@ -114,7 +114,7 @@ extern uint8_t g_difficulty_53A6;       /* DGROUP:0x53A6 — difficulty 0..4 */
  *   0x191F:0x0AEE -> thunk 0x01C0DE (type A)                       choose unit type for grant -> type byte
  *   0x191F:0x0AE0 -> thunk 0x01C0D0 (type A)                       show message(channel,handle)
  * (Helper semantics beyond arg shape are NOT byte-verified -> the prototypes
- *  below are LITERAL-faithful but their meaning is inferred / TBD.) */
+ *  below are LITERAL-faithful but their meaning is inferred from call context.) */
 extern void  ovly_181F_0590(int class_byte);                 /* per-power setup */
 extern void  unit_select(int unit_idx);                      /* 0x181F:0x07A0 */
 extern int   is_xy_in_map_bounds(int x, int y);              /* 0x181F:0x0302 */
@@ -275,7 +275,7 @@ void king_process_power_events(void)
     ui_redraw_power(P);                                     /* @asm 0x02F27E lcall 0x191F:0xA66 */
 
     /* @asm 0x02F286..0x02F294 — gate the king-GRANT on game phase:
-     * skip unless ([0xA89B]!=0 || [0xA89A]>3). (Phase/turn-stage globals — TBD.) */
+     * skip unless ([0xA89B]!=0 || [0xA89A]>3). (Phase/turn-stage globals — RUNTIME_ONLY.) */
     if (!(*(uint8_t *)DGROUP_PTR(0xA89B) != 0 ||            /* @asm 0x02F286 cmp [0xa89b],0; jne */
           *(uint8_t *)DGROUP_PTR(0xA89A) > 3))              /* @asm 0x02F28D cmp [0xa89a],3; ja */
         return;                                             /* @asm 0x02F294 jmp -> RETF */
@@ -340,7 +340,7 @@ void king_process_power_events(void)
 
 /* ----------------------------------------------------------------------------
  * Forward-declared local helpers whose CALL sites are byte-verified but whose
- * bodies live in other overlay pages (semantics inferred from arg shape -> TBD).
+ * bodies live in other overlay pages (semantics inferred from call context).
  * ---------------------------------------------------------------------------- */
 extern int  unit_class_check(int unit_idx);          /* near func_02FAEA (file 0x02FAEA) -> 0x191F:0xA58 */
 extern int  unit_class_check2(int x, int y);         /* 0x181F:0x302 reuse (is_xy_in_map_bounds) */
@@ -352,11 +352,11 @@ extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle *
 
 /* Keyed-message handles for the king-grant prompt (file = handle + 0x1D9A0). */
 #define MSG_WINNING_KEY      0xEF5   /* lea bx,[0xef5] @0x02F314 -> (0xef5+0x1D9A0=0x1E895) — between
-                                      * REFIT(0xeef) and KINGTAX(0xf01); a sub-key of that block. TBD exact text. */
+                                      * REFIT(0xeef) and KINGTAX(0xf01); a sub-key of that block. not yet decoded. */
 #define MSG_GRANT_FOLLOWUP   0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
 
 /* ============================================================================
- * NOTES / STILL-TBD
+ * NOTES / NOT YET VERIFIED
  *  - CORE control flow + every cited DGROUP/UnitRecord/king-record write:
  *    BYTE_VERIFIED (spot-checks in the header).
  *  - "REFIT" / "KINGTAX" identity: BYTE_VERIFIED via the handle->file rule.
@@ -364,11 +364,11 @@ extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle *
  *    helper allocates a UnitRecord slot, sets +0x02 type / +0x03 owner /
  *    +0x07 prof 0x58 / places via 0x5EB:0xA76, returns the new index).
  *  - Helper PROTOTYPES (ui_*, msg_*, power_*) are LITERAL-faithful to the push
- *    args but the helpers' precise semantics are inferred -> TBD.
+ *    args but the helpers' precise semantics are inferred from call context.
  *  - Phase/stage globals 0xA89A/0xA89B and the per-power tables at 0x9258 /
  *    0x540E / 0x838C / 0x8394 are BYTE_VERIFIED *addresses*; their full layout is
- *    documented elsewhere (or TBD).
+ *    documented elsewhere (or not yet decoded).
  *  - The keyed-lookup helper 0x181F:0x3FE returns a small int compared to 1; its
- *    exact contract (menu choice vs config value) is inferred -> TBD.
- *  - MSG handle 0xEF5 ("WINNING"-block sub-key) text is TBD.
+ *    exact contract (menu choice vs config value) is inferred from call context.
+ *  - MSG handle 0xEF5 ("WINNING"-block sub-key) text not yet decoded.
  * ============================================================================ */

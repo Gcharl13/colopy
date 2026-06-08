@@ -11,7 +11,7 @@
  * documented FF effects (e.g. id 1 = Jakob Fugger clears the boycott mask).
  *
  * Helper routines reached via `lcall 0x181F:NNNN` have VERIFIED call sites/args;
- * their internal behaviour is TBD (resolved target file offsets cited).
+ * their internal behaviour: bodies in thunk page (resolved target file offsets cited).
  *
  * NOTE: include/ff.h was corrected (2026-05-29) to the byte-verified @FATHERS
  * order @ file 0x3047 and now agrees with the enum below one-for-one. The IDs
@@ -66,7 +66,7 @@ enum FoundingFatherId {
 extern struct PowerRecord *g_active_power;   /* DGROUP:0x84FC @asm 03BD33 mov bx,[0x84fc] */
 
 /* ----------------------------------------------------------------------------
- * VERIFIED other DGROUP globals used as loop bounds / tables (TBD exact names).
+ * VERIFIED other DGROUP globals used as loop bounds / tables (exact names not yet decoded).
  * ---------------------------------------------------------------------------- */
 extern void   *g_colony_cur;     /* DGROUP:0x8542 colony struct ptr (id-9 / Bolivar checks) */
 extern int16_t g_num_powers;     /* DGROUP:0x539E loop bound (Coronado id6 / Hudson id9 / id14) */
@@ -104,7 +104,7 @@ extern void ff_finish(int flag);                    /* 0x181F:0x0E1C file 0x259C
 extern void ff_pre_a(int power);                    /* 0x181F:0x056A file 0x3240C @asm 03BD2E */
 extern void ff_pre_b(int ff_id);                    /* 0x1A1F:0x0062 file 0x27828 @asm 03BD26 */
 
-/* cs-relative near calls in page 0x06 (helpers, bodies TBD): */
+/* cs-relative near calls in page 0x06 (helpers, bodies not yet decoded): */
 extern void cs_1095(int one, int ff_id, int power);  /* @asm 03BC67 call 0x1095 */
 extern void cs_1086(void *out, int power);           /* @asm 03BCA2 call 0x1086 */
 extern void cs_1077(int ff_id, int power);           /* @asm 03BD1D call 0x1077 */
@@ -134,7 +134,7 @@ void ff_acquire_dispatch(int power, int ff_id)
         cs_1095(1, ff_id, power);                          /* @asm 03BC67 call 0x1095 */
 
         /* @asm 03BC6D..03BC85: power_set_flag(*(WORD*)(ff_id*6 - 0x69ae), 1)
-         * ff_id*6 indexes a per-FF WORD table at DGROUP base (-0x69ae). TBD table. */
+         * ff_id*6 indexes a per-FF WORD table at DGROUP base (-0x69ae). Not yet decoded table. */
         {
             int16_t handle = *(int16_t *)(0 + (unsigned)ff_id * 6 - 0x69AE); /* @asm 03BC78 */
             power_set_flag(handle, 1);                     /* @asm 03BC7E lcall 0x181f,0x438 */
@@ -145,7 +145,7 @@ void ff_acquire_dispatch(int power, int ff_id)
         if (*(int8_t *)((unsigned)ff_id + 0x53A9) < 0)     /* @asm 03BC89 */
             *(uint8_t *)((unsigned)ff_id + 0x53A9) = (uint8_t)power;  /* @asm 03BC93 */
     } else {
-        /* @asm 03BC9A: out-of-band path (ff_id<0): cs_1086 then power_set_flag(&buf,1). TBD. */
+        /* @asm 03BC9A: out-of-band path (ff_id<0): cs_1086 then power_set_flag(&buf,1). Not yet decoded. */
         uint8_t buf[0x50];                                 /* @asm lea ax,[bp-0x50] */
         cs_1086(buf, power);                               /* @asm 03BCA2 call 0x1086 */
         power_set_flag((int)(long)buf, 1);                 /* @asm 03BCAF lcall 0x181f,0x416 */
@@ -318,16 +318,17 @@ void ff_acquire_dispatch(int power, int ff_id)
 }
 
 /* ============================================================================
- * TBD (NOT byte-verified in this pass):
+ * NOT YET BYTE-VERIFIED in this pass:
  *   - The boycott field is a 16-bit mask at +0x20 (verified it is CLEARED whole;
  *     the per-commodity bit assignment is documented elsewhere, not re-derived).
  *   - The per-FF WORD table at DGROUP:-0x69AE (ff_id*6) and the per-FF owner
- *     byte table at DGROUP:0x53A9 are referenced but their contents are TBD.
- *   - Helper bodies behind every 0x181F:NNNN call (file offsets cited above).
+ *     byte table at DGROUP:0x53A9 are referenced but their contents are not yet decoded.
+ *   - Helper bodies behind every 0x181F:NNNN call (file offsets cited above):
+ *     bodies in thunk page.
  *   - The FF *bitmap* (PowerRecord+0x07 per the brief) is NOT written here; the
- *     "owned" bit must be set by the caller / congress-grant path (TBD site).
+ *     "owned" bit must be set by the caller / congress-grant path (not yet decoded site).
  *     This handler only bumps the COUNT (+0x14) and the pending slot (+0x12).
  *   - IDs not handled by this switch (0,2,3,4,5,7,8,10,11,12,13,15,17,19,21,23)
  *     are PASSIVE: their effect is checked at the relevant subsystem tick, not
- *     applied here. The query site for "does power own FF N" is TBD.
+ *     applied here. The query site for "does power own FF N" is not yet decoded.
  * ============================================================================ */

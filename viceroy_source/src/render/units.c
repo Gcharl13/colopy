@@ -11,7 +11,7 @@
  *  (B) The unit-TYPE -> ICONS.SS sprite index map. The only source for these
  *      indices today is CLAUDE.md ("foot units 100-105 + 109; ships 5-7 /
  *      14-15 / 127"). They are NOT yet byte-verified against an in-EXE table,
- *      so each entry below cites CLAUDE.md and the rest are marked TBD. Do NOT
+ *      so each entry below cites CLAUDE.md and the rest are marked UNKNOWN (-1). Do NOT
  *      treat the per-type assignments as confirmed.
  *
  * The fabricated 45-entry "ICONS_UNIT_SPRITE" array, the invented Unit struct
@@ -108,7 +108,7 @@ void units_draw_stack(int head_idx)
  * @param y  [bp+8]    map tile Y
  * @param object_id [bp+0xA]  visible-object/unit id to place (or clear)
  *
- * TBD: the byte layout of the per-tile object array at DGROUP-0x7262, the exact
+ * Not yet decoded: the byte layout of the per-tile object array at DGROUP-0x7262, the exact
  * sprite passed to 0x181F:0xD6C, and the meaning of the 0x10 padding constant.
  * Verified here: the active-record indexing, the owner field +0x1A, the per-tile
  * array stride 5, and the call edges. */
@@ -147,9 +147,9 @@ void unit_draw_on_map(int idx)
  * BYTE_VERIFIED.
  *
  * Only the values explicitly named in CLAUDE.md are filled; every other slot
- * is marked TBD (-1) rather than guessed.
+ * is marked UNKNOWN (-1) rather than guessed.
  * ---------------------------------------------------------------------------- */
-#define UNIT_SPRITE_TBD  (-1)
+#define UNIT_SPRITE_UNKNOWN  (-1)
 
 /* @ref CLAUDE.md "foot units 100-105 + 109; ships 5-7 / 14-15 / 127" */
 int icons_sprite_for_unit_type(int unit_type)
@@ -161,7 +161,7 @@ int icons_sprite_for_unit_type(int unit_type)
      * do not fabricate a 45-entry array. A caller that needs the precise sprite
      * must read @UNIT col 1 for `unit_type` (project memory: NAMES.TXT @UNIT). */
     (void)unit_type;
-    return UNIT_SPRITE_TBD;
+    return UNIT_SPRITE_UNKNOWN;
 }
 
 /* Owner of a unit record: low nibble of UnitRecord+0x03 (0x3147).

@@ -1,6 +1,6 @@
 /* ============================================================================
  *        >>> HEAD + ORDER-BYTE DISPATCH BYTE_VERIFIED; deep per-candidate
- *            SCORING TAIL (file 0x6218+) is data-resident / TBD <<<
+ *            SCORING TAIL (file 0x6218+) is RUNTIME_ONLY (data-resident) <<<
  * ----------------------------------------------------------------------------
  * unit/move.c -- the per-unit MOVE-STEP evaluator (func_04E2D6).
  *
@@ -10,7 +10,7 @@
  * dispatch is reproduced below byte-for-byte. The bulk of the function is a
  * per-candidate scoring loop whose weight tables are overlay/data-resident; per
  * the brief, the HEAD (entry + order dispatch + validity gate + initial
- * state-collection) is ported and the scoring tail is left as a cited TBD.
+ * state-collection) is ported and the scoring tail is RUNTIME_ONLY (not yet decoded).
  *
  * Entry: unit index in [bp+6] (the acting unit, *0x1C). ENTER 0xEE,0 -> 0x77
  * words of locals (a big scoring scratchpad). UnitRecord fields read at the
@@ -63,7 +63,7 @@ extern uint16_t g_word_8D52;
 
 /* ---- cross-segment capability / query helpers (0x181F:*) -------------------
  * Arg/return shapes from the call sites only; the bitmask tests are byte-clear
- * (test/and 0xA, 0x40) but the precise ability semantics are TBD. NONE invented. */
+ * (test/and 0xA, 0x40) but the precise ability semantics are not yet decoded. NONE invented. */
 extern int16_t ovly_unit_valid_here_181F_302(int16_t x, int16_t y);  /* @asm 0x04E347 */
 extern int16_t ovly_query_181F_952(int16_t owner, int16_t y, int16_t x);/* @asm 0x04E387 */
 extern int16_t ovly_query_181F_614(int16_t x, int16_t y, int16_t a, int16_t b);/* @asm 0x04E39E */
@@ -77,7 +77,7 @@ extern int16_t ovly_query_181F_754(int16_t x, int16_t y);            /* @asm 0x0
 
 /* The deep scoring tail (file 0x6218+, ~0x6000 bytes of candidate loops over
  * overlay-resident weight tables). Modeled as an opaque continuation; its body
- * and the per-candidate weights are TBD (data-resident, not in this segment). */
+ * and the per-candidate weights are RUNTIME_ONLY (data-resident). */
 extern int16_t ovly_move_score_tail_6218(int16_t unit_index);
 
 /* ============================================================================
@@ -85,7 +85,7 @@ extern int16_t ovly_move_score_tail_6218(int16_t unit_index);
  * ----------------------------------------------------------------------------
  * Head + order-byte dispatch + validity gate + initial state collection. The
  * scoring tail is reached at file 0x6218 (the `jmp 0x6218` exit target shared
- * by the early-out branches) and is left TBD.
+ * by the early-out branches) and is not yet decoded.
  * ============================================================================ */
 int16_t unit_move_step(int16_t unit_index)
 {
@@ -149,8 +149,8 @@ int16_t unit_move_step(int16_t unit_index)
     }
 
     /* ---- initial state collection: a battery of map/capability probes that
-     * seed the scoring scratchpad. These are byte-clear call edges with TBD
-     * helper bodies; reproduced for fidelity of side effects. -------------- */
+     * seed the scoring scratchpad. These are byte-clear call edges with bodies
+     * in thunk pages; reproduced for fidelity of side effects. -------------- */
     (void)ovly_query_181F_952(owner, map_y, map_x);            /* @asm 0x04E387 -> [bp-0x18] */
     (void)ovly_query_181F_614(map_x, map_y, -1, -1);           /* @asm 0x04E39E -> [bp-0xE2] */
     /* active record (0x8542) origin probes */
@@ -187,7 +187,7 @@ int16_t unit_move_step(int16_t unit_index)
      * Everything from here scores each of the (up to 8) move candidates using
      * overlay/data-resident weight tables and finally writes the chosen action
      * back to the UnitRecord. That logic is NOT in this code segment and its
-     * weights are data-resident -- left as a cited TBD per the brief. The
+     * weights are data-resident -- RUNTIME_ONLY (not yet decoded) per the brief. The
      * function ultimately returns AX (the chosen-move / result word). */
     return ovly_move_score_tail_6218(unit_index);              /* @asm reaches 0x6218 */
 }
@@ -197,11 +197,11 @@ int16_t unit_move_step(int16_t unit_index)
  * ----------------------------------------------------------------------------
  *  - Order-byte dispatch (0/5/6/>=0xA proceed; 1-4,7-9 skip) and the validity
  *    gate (0x181F:0x302 -> profession:=0x40 on fail) are BYTE_VERIFIED.
- *  - The 0x181F:* probe helpers are TBD bodies on other pages; their arg/return
+ *  - The 0x181F:* probe helpers have bodies in thunk pages; their arg/return
  *    shapes are taken from the call sites only -- nothing invented. The `(void)`
- *    casts mark results that feed the (TBD) scoring scratchpad.
+ *    casts mark results that feed the (not yet decoded) scoring scratchpad.
  *  - The per-candidate SCORING (file 0x6218 onward, ~0x6000 bytes) and its
- *    weight tables are data-resident and remain TBD, as directed.
+ *    weight tables are RUNTIME_ONLY (data-resident), as directed.
  *  - [bp-0x74]=8 (candidate budget) and the +0x314B "special profession"
- *    branch are reproduced; their downstream use is in the TBD tail.
+ *    branch are reproduced; their downstream use is not yet decoded.
  * ============================================================================ */

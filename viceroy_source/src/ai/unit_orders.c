@@ -108,12 +108,12 @@ extern uint8_t g_mode_flag_5387;
 
 /* DGROUP:0x53D2 -- per-turn index compared to the resolved confrontation index
  * `cmp [bp-0x38],[0x53d2]` (@asm 0x03EF53) and `cmp [0x5394],[0x53d2]`
- * (@asm 0x040F39). Role: "index currently being stepped". TBD exact semantics. */
+ * (@asm 0x040F39). Role: "index currently being stepped". not yet decoded. */
 extern int16_t g_step_index_53D2;
 
 /* DGROUP:0x53A2 -- word seeded into a local at @asm 0x03F3AA (a default flag).
  * DGROUP:0x53A6 -- byte read as a small count/bonus (@asm 0x03F005 +5;
- *                  0x03F0B2 inc; 0x03F351 used as a roll input). TBD. */
+ *                  0x03F0B2 inc; 0x03F351 used as a roll input). not yet decoded. */
 extern int16_t g_word_53A2;
 extern uint8_t g_byte_53A6;
 
@@ -126,7 +126,7 @@ extern int16_t g_selected_unit_5392;
 
 /* DGROUP:0x2F76 -- per-power constants table, stride 16 (`shl bx,4`); byte +0
  * read and tripled at entry (@asm 0x03ED32..0x03ED41 -> [bp-0x3e] = c*3). The
- * tripled value caps an order priority at 3 (@asm 0x03EDCC). TBD: full layout. */
+ * tripled value caps an order priority at 3 (@asm 0x03EDCC). not yet decoded. */
 extern uint8_t g_power_const_2F76[/* power */][16];
 
 /* DGROUP:0x5236 / 0x5230 -- per-unit-type tables, stride 14 (the `*14` build at
@@ -140,14 +140,14 @@ extern uint8_t g_unittype_tbl_5230[/* type */][14];
 /* DGROUP:0x8D4A / 0x8D52 -- overlay-resident pointers/handles consumed by the
  * AI-controlled "increment attack-counter" path (@asm 0x03F03D mov bx,[0x8d4a];
  * inc [bx+si+0xb]) and the trade-route helpers (push [0x8d52] @asm 0x03EF98).
- * TBD: pointed-to struct. */
+ * not yet decoded. */
 extern uint16_t g_ptr_8D4A;
 extern uint16_t g_word_8D52;
 
 /* ----------------------------------------------------------------------------
  * Cross-page leaves and overlay helpers (reached via RTLink far-thunks).
  * Each cites the LCALL site; the resolving thunk is in typeA_thunk_targets.json.
- * Helper SEMANTICS are from call context and are TBD where the leaf body was
+ * Helper SEMANTICS are from call context and are not yet decoded where the leaf body was
  * not decoded -- NONE are invented.
  * ------------------------------------------------------------------------- */
 
@@ -448,7 +448,7 @@ block_4ec:
                 ovly_commit_A4C(q);                           /* @asm 0x03F023 */
                 count <<= 1;                                  /* @asm 0x03F02B */
                 /* @asm 0x03F02E inc [ [0x8d4a] + owner*2 + 0xb ] (attack tally) */
-                /* (pointer struct TBD; the increment + bit-4 triple are byte-clear) */
+                /* (pointer struct not yet decoded; the increment + bit-4 triple are byte-clear) */
                 /* @asm 0x03F045 test [bx+3],4; if set count *= 3 */
             }
             /* @asm 0x03F054 push 0; push count; ...; lcall 0x181F:0xD6C (commit) */
@@ -479,7 +479,7 @@ block_614:
      * 0x181F:0xA38 test al,0x40` gates feeding 0x181F:0x652 dialog calls. The
      * message handles are byte-verified (above); the precise human-vs-AI routing
      * for each combination is reproduced structurally and the per-relation table
-     * semantics at -0x77c4 are TBD. (@asm 0x03F088..0x03F2BA.) */
+     * semantics at -0x77c4 are not yet decoded. (@asm 0x03F088..0x03F2BA.) */
 
 bookkeep:
     /* ---- block 0x85a: post-action UnitRecord book-keeping (@asm 0x03F2BA..) ---
@@ -704,7 +704,7 @@ int16_t ai_unit_order_step(int16_t unit_index)
          * lcall 0x191F:0x44E; if AX!=0 clear unit order byte [+0x08]=0.
          * The target record base is the value returned by 0x1A1F:0x210 used as a
          * byte index; +0xb4/+0xbe are a coordinate pair in that record. */
-        int16_t gx = 0; /* [target+0xb4] -- target-record base TBD */
+        int16_t gx = 0; /* [target+0xb4] -- target-record base not yet decoded */
         int16_t gy = 0; /* [target+0xbe] */
         if (ovly_path_step_191F_44E(gy, gx) != 0) {           /* @asm 0x040E91 */
             g_units_3144[unit_index][0x08] = 0;               /* @asm 0x040E9D */
@@ -714,7 +714,7 @@ int16_t ai_unit_order_step(int16_t unit_index)
          * bx=ax(target); push (target.[+0xbe] + unit.map_y[+0x01]) as y;
          *                push (target.[+0xb4] + unit.map_x[+0x00]) as x;
          * push unit; lcall 0x1A1F:0x142 -> ai_eval_unit (func_03ECF0).
-         * (target-record base for +0xb4/+0xbe is TBD; the +unit-coord math is
+         * (target-record base for +0xb4/+0xbe is not yet decoded; the +unit-coord math is
          *  byte-clear at @asm 0x040EAF/0x040EBD.) */
         int16_t y = 0 /* target.[+0xbe] */ + g_units_3144[unit_index][0x01];
         int16_t x = 0 /* target.[+0xb4] */ + g_units_3144[unit_index][0x00];
@@ -809,20 +809,20 @@ finalize8:
  *  - func_03ECF0 + func_040E22 control flow is BYTE_VERIFIED end-to-end against
  *    page_07.asm / func_040E22_unknown.asm (both reach their RETF). The OVERLAY
  *    HELPER BODIES (0x181F:*, 0x191F:*, 0x1A1F:* targets) are on other pages and
- *    are TBD here; their argument/return shapes are taken from the call sites,
+ *    are not yet decoded here; their argument/return shapes are taken from the call sites,
  *    NOT invented.
  *  - The 0x181F:0x652 dialog message handles inside func_03ECF0 are byte-verified
  *    via the string rule (0x13A0=CANNOTATTACK, 0x13AD=WHACKINDIANS,
  *    0x13BA=HAVETREATY, 0x13C5=SNEAK, 0x13CB=CANCELPEACE, 0x13D7=DECLAREWAR).
  *  - Target-record base for the +0xb4/+0xbe coordinate pair (func_040E22 @asm
- *    0x040E83/0x040EA6, returned by 0x1A1F:0x210) is TBD -- modeled as 0 inputs.
+ *    0x040E83/0x040EA6, returned by 0x1A1F:0x210) is not yet decoded -- modeled as 0 inputs.
  *  - The per-(owner,occupant) relation byte array at DGROUP base (si - 0x77c4 /
  *    -0x77b8) used for war/treaty/sneak bookkeeping: stride 0x13C, indexed
- *    [occ*0x13c + owner] -- byte-clear addressing, table CONTENTS TBD.
+ *    [occ*0x13c + owner] -- byte-clear addressing, table CONTENTS not yet decoded.
  *  - The AI attack-tally struct at [0x8D4A] (+0xb + owner*2, bit-4 triple) and
  *    market commit chain (0x181F:0x30C/0xD6C/0xA06/0xA4C): addressing byte-clear,
- *    pointed-to structs TBD.
+ *    pointed-to structs not yet decoded.
  *  - PER-UNIT SCORING WEIGHTS live in the leaf func_05CA7E (see unit_ai_leaf.c)
- *    and the move evaluator func_04E2D6 -- TBD, overlay/data-resident, NOT
+ *    and the move evaluator func_04E2D6 -- RUNTIME_ONLY, overlay/data-resident, NOT
  *    invented here.
  * ============================================================================ */

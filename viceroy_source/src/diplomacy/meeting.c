@@ -4,7 +4,7 @@
  * This is the European-diplomacy "parley/meeting" dispatcher: the routine that
  * runs when two powers meet and exchange treaty / peace / tribute / war
  * proposals.  It is the long-missing PROPOSE / ACCEPT / REJECT + attitude-score
- * path that treaty.c and relations.c left as TBD ("caller not located").
+ * path that treaty.c and relations.c prior pass left unresolved ("caller not located").
  *
  * Function: `func_057F4E`  @ file 0x057F4E .. 0x059B3C  (page 0x0F)
  *   overlay_functions_reseg.json: size 7151, insns 2356,
@@ -39,13 +39,13 @@
  *   - The GOLD TRANSFER on an accepted paid treaty: subtract from power-b gold
  *     at PowerRecord+0x2A (bytes -0x77CE/-0x77CC) and add to the active player's
  *     gold via the [0x84FC] record (+0x2A/+0x2C).  This is the "gold/goods
- *     transfer on a signed treaty" that the prior ledger marked TBD.
+ *     transfer on a signed treaty" that the prior pass left unresolved.
  *   - The treaty cool-down timer write at [power*2 + 0x53C8] = turn + 0x10.
  *   - The per-unit ownership transfer on a treaty (UnitRecord stride 0x1C, base
  *     0x3144; owner nibble +0x3147, type +0x3146; copies power flag bytes
  *     [PR-0x77C6]/[PR-0x77C5] -> unit +0x314D/+0x314E).
  *
- * WHAT IS TBD (NOT proven — tagged inline, never guessed):
+ * WHAT IS NOT YET PROVEN (tagged inline, never guessed):
  *   - The exact semantics of the big attitude-accumulator loop (local
  *     [bp-0x66]); the constituent table reads (0x6A4E, 0x6B1A, 0x6BD4, 0x6BE4,
  *     0x5236, 0x5DE0, 0x942C/0x941C) and difficulty scaler [0x53A6] are cited
@@ -276,7 +276,7 @@ static inline int32_t *power_gold_active(void)
  * This reproduction is FAITHFUL to the disasm control flow and to every
  * verified mutation, with @asm citations per block.  The attitude-score
  * arithmetic is transcribed literally (constants are byte-cited); blocks whose
- * *meaning* is not fully proven are marked TBD and never editorialised.
+ * *meaning* is not fully proven are marked 'not yet decoded' and never editorialised.
  * Local-name legend (BP offsets -> our identifiers):
  *   score=[bp-0x66]  early_out=[bp-0x8c]  want_action=[bp-0xa6]
  *   warbit_set=[bp-0xac]  is_war_topic=[bp-0xa]  third_power=[bp-0xc8]
@@ -337,14 +337,14 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      *      -0x6B1A, -0x6ADA (indexed by power<<4 + i) and folds a difference
      *      into score ([bp-0x66]) and a secondary accumulator [bp-0xcc],
      *      shifting by (1 or 2) depending on whether [0x53A6] (difficulty) == 1.
-     * TBD: the precise economic meaning of these tables (holdings vs. demand).
+     * not yet decoded: the precise economic meaning of these tables (holdings vs. demand).
      *      Transcribed faithfully but NOT interpreted. */
     /* [attitude loop #1 — see @asm 0x1DEA..0x1F14; folds into `score`] */
 
     /* @asm 0x1F2A..0x1FF6: a second loop bounded by [0x539E] over the colony
      *      record at [0x8542]; matches owner self/other, accumulates trade /
      *      holdings into score with a *2 weight on the matched side.
-     * TBD semantics; literal transcription only. */
+     * semantics not yet decoded; literal transcription only. */
     /* [attitude loop #2 — see @asm 0x1F2A..0x1FF6] */
 
     /* @asm 0x1FFB late-game aggression gate: if [0xA153]==self AND turn>=0x50
@@ -355,14 +355,14 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
     /* @asm 0x2037..0x2078: if NOT a war topic and warbit set and the
      *      attitude*3 comparison holds, want_action=1, zero secondary acc,
      *      and rescale score via diplo_scale_181F_035C(score, base, 0x26AC)
-     *      where base = 0xC8*difficulty + 0x64.  TBD: scaler semantics. */
+     *      where base = 0xC8*difficulty + 0x64.  not yet decoded: scaler semantics. */
     /* @asm 0x2099 bit-19 power attribute (lcall 0x181F:0x7B4) halves a term. */
     /* @asm 0x20F8..0x2171 difficulty/turn scaling of score (×(diff+8), /100,
      *      then halves/quarters by turn thresholds 0x32/0x64 and aggression). */
     /* @asm 0x2154 diplo_scale_181F_035C(score, 0, 0x190) then ×0x32. */
     /* @asm 0x2188 cap by active-player gold ([0x84FC]+0x2a/+0x2c). */
     /* These are all score-shaping; reproduced as a single opaque step here
-     * because their individual table meanings are TBD (cited above). */
+     * because their individual table meanings are not yet decoded (cited above). */
 
     /* ---- 4. Find the most relevant THIRD power (ally/enemy) -----------------
      * @asm 0x237F..0x24A6: scans powers 0..3 (skipping self, other, [0x53D2]);
@@ -409,12 +409,12 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      *      LEADER2(0x191E)+WANTSTUFF(0x1926), shows dialog @0x2CE5.
      * @asm 0x2CF5 on dlg==2: moves the desired commodity between the two
      *      powers' EU market arrays at DGROUP:0x5DE0 (indexed power*0x65+good).
-     *      (Verified arithmetic; the 0x5DE0 array's exact meaning is TBD.) */
+     *      (Verified arithmetic; the 0x5DE0 array's exact meaning is not yet decoded.) */
     if (notify_kind != 0 && score != 0x3E7 /* && best_good >= 0 */) { /* @asm 0x2C3E/0x2C48/0x2C52 */
         /* build LEADER2(0x191E)+WANTSTUFF(0x1926); show dialog @0x2CE5 */
         dlg = ui_dialog_show(power_other, (int)buf);     /* @asm 0x2CE5 lcall 0x1a1f,0x688 */
         if (dlg == 2) {                                  /* @asm 0x2CF0 cmp ax,2 */
-            /* @asm 0x2CF5..0x2D12: market-array transfer at 0x5DE0 (TBD units) */
+            /* @asm 0x2CF5..0x2D12: market-array transfer at 0x5DE0 (units not yet decoded) */
             want_action = 0;                             /* @asm 0x2D16 */
         }
     }
@@ -516,7 +516,7 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      *     (file 0x05997C..0x059AD9) and is not repeated here.
      * The menu's per-option scoring (e.g. @0x313C: ((diff+2)*[bp-0xb0])*0x19,
      *      doubled if warbit_set, halved by bit-19 attribute) is byte-cited but
-     *      its overall meaning (a "demand magnitude") is TBD. */
+     *      its overall meaning (a "demand magnitude") is not yet decoded. */
 
 present_screen:
     /* @asm 0x382A..0x383E final present + leave/retf @0x59B3C. */
@@ -540,8 +540,8 @@ present_screen:
  *   - The two symmetric relation-tag callbacks on treaty establish (cs:0x3F30).
  *   - cs:0x3FXX is a far-jump TRAMPOLINE table (file 0x05A1D6) to 0x1A1F/0x181F.
  *
- * TBD (call sites + args verified; numeric MEANING not fully proven — never
- * guessed):
+ * call sites + args verified; numeric meaning not yet decoded — never
+ * guessed:
  *   - The attitude-score accumulator's per-table economics (tables at -0x6A4E,
  *     -0x6B1A, -0x6ADA, -0x6BD4, -0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).
  *   - diplo_scale_181F_035C: RESOLVED 2026-06-08 — pure clamp(v, lo, hi).

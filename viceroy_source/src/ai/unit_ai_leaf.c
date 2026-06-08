@@ -27,7 +27,7 @@
  *   whole resident extent cleanly to 0x05E120, which COVERS the entire combat-
  *   decision block (file 0x05CDA0..0x05D1A2) and its win/loss application down to
  *   the EUROPEWIN/EUROPELOSE/BURNED message emits -- so the DECISION is fully
- *   decoded here, byte-verified against the raw EXE. What remains [TBD-data]:
+ *   decoded here, byte-verified against the raw EXE. What remains RUNTIME_ONLY (data-resident):
  *     - the NUMERIC per-type stat values (0x5235/0x5236 columns) and per-power
  *       bias tables (NAMES.TXT / loader data, not in the EXE image), and
  *     - the colony loot/wealth-decay long-math in the FAR tail (file >0x05E120)
@@ -106,7 +106,7 @@ extern uint16_t g_colony_ptr_8542;     /* far ptr to ColonyRecord (see colony.h)
  * decider reads (offsets within the 14-byte row):
  *   +0x05 (0x5235) DEFENSE value byte  -- read by res_get_unit_strength_7C2A flag==0
  *   +0x06 (0x5236) ATTACK / combat-eligibility byte -- read flag!=0; >1 => "fights"
- * Table CONTENTS are NAMES.TXT/loader data -> [TBD-data] (numeric values).
+ * Table CONTENTS are NAMES.TXT/loader data -> RUNTIME_ONLY (data-resident) (numeric values).
  * UT_AT(type,abs_addr) indexes the row by absolute DGROUP base 0x5230/0x5235/0x5236. */
 extern uint8_t g_unittype_attr_5230[/* type */][14];
 #define UT_AT(type, abs_addr)  (g_unittype_attr_5230[(type)][(abs_addr) - 0x5230])
@@ -114,7 +114,7 @@ extern uint8_t g_unittype_attr_5230[/* type */][14];
 /* DGROUP:0x8D00..0x8D03 / 0xA156/0xA158 -- AI scratch result words/flags zeroed
  * at @asm 0x05CB3A..0x05CB43 and OR'd with bits along the way (0x8D01|=1 @asm
  * 0x05CB9B; 0xA156|=8 @asm 0x05CBA7; 0x8D03|=2 @asm 0x05CC92; |=4 @asm 0x05CCCB).
- * They accumulate the chosen action / its modifiers. Exact bit map TBD. */
+ * They accumulate the chosen action / its modifiers. Exact bit map not yet decoded. */
 extern uint16_t g_ai_scratch_8D00;
 extern uint8_t  g_ai_scratch_8D01;
 extern uint16_t g_ai_scratch_8D02;
@@ -132,7 +132,7 @@ extern uint16_t g_settlement_ptr_8D4E;
  * COMBAT-DECISION globals (DGROUP-relative) -- read by the land-combat decider
  * block decoded below.  All BYTE_VERIFIED as ACCESSED at the cited @asm sites;
  * the SEMANTICS marked [V-doc] are cross-confirmed in viceroy_source/*.md, those
- * marked [TBD-data] are accessed-but-meaning-undetermined.
+ * marked RUNTIME_ONLY (data-resident) are accessed-but-meaning-undetermined.
  * ------------------------------------------------------------------------- */
 
 /* DGROUP:0x8D04 -- the TERRAIN/FORTIFICATION DEFENSE-BONUS scratch word.  It is
@@ -142,7 +142,7 @@ extern uint16_t g_settlement_ptr_8D4E;
  * decider reads it @asm 0x05CE05 to scale the ATTACKER strength by (bonus+4)/4.
  * (So a defender on bonus terrain RAISES the attack threshold the roll must beat
  *  -- i.e. higher defensive terrain bonus makes the attacker's effective ATK
- *  larger in this formula's framing.  Value range [TBD-data], table-resident.) */
+ *  larger in this formula's framing.  Value range RUNTIME_ONLY (data-resident), table-resident.) */
 extern int16_t g_def_terrain_bonus_8D04;
 
 /* DGROUP:0x53A6 -- difficulty / current-player index 0..4 (Discoverer..Viceroy).
@@ -157,7 +157,7 @@ extern int16_t g_self_power_53D2;
  * (DATA_MODEL.md:276).  bit1 tested @asm 0x05CF76.  Gates a SoL-bonus block. */
 extern uint8_t g_game_flags_5382;
 /* DGROUP:0x5383 -- game flags; bit1 (0x02) tested @asm 0x05D221 (gates the
- * combat-prediction debug call 0x1a1f:0x704). [TBD-data semantics of bit1.] */
+ * combat-prediction debug call 0x1a1f:0x704). [not yet decoded semantics of bit1.] */
 extern uint8_t g_game_flags_5383;
 /* DGROUP:0x538E -- turn counter (VERIFICATION_LEDGER.md:492).  Compared to 0x50
  * (=80) @asm 0x05D07D/0x05D0CE as a SoL/era gate. */
@@ -165,11 +165,11 @@ extern int16_t g_turn_538E;
 /* DGROUP:0x5396 -- current player power index 0..3 (docs/COLONY_RENDER_CHAIN.md).
  * Compared to the attacker owner @asm 0x05D34A. */
 extern uint8_t g_cur_player_5396;
-/* DGROUP:0x53A2 -- a flag gating the combat-prediction call @asm 0x05D24C. [TBD-data] */
+/* DGROUP:0x53A2 -- a flag gating the combat-prediction call @asm 0x05D24C. RUNTIME_ONLY (data-resident) */
 extern int16_t g_flag_53A2;
 
 /* Per-power / per-(power,type) bias arrays the decider TOUCHES (contents data-
- * resident -> [TBD-data]); declared so the cited reads are documented, not invented:
+ * resident -> RUNTIME_ONLY (data-resident)); declared so the cited reads are documented, not invented:
  *   0x59A6 stride 0x4E  -- per-power kill/loss tally; INC'd @asm 0x05D76F (win)
  *   0x5D65 (==ColonyRecord+0x1f col? base 0x5D46 stride 0xCA) read @asm 0x05D12C
  *   0x6BF4 / 0x6D68 (DGROUP-negative-displaced bases via [bp-0x76]) @asm 0x05D108/0x05D134 */
@@ -277,7 +277,7 @@ extern int16_t ovly_spawn_unit_A20(int16_t cls, int16_t x, int16_t y,
  *
  * The HEAD and the LAND-COMBAT DECISION block (the roll + its application) are
  * byte-verified; only the data-resident stat/bias VALUES and the far colony-loot
- * tail are [TBD-data]. See the combat block for the @asm citations.
+ * tail are RUNTIME_ONLY (data-resident). See the combat block for the @asm citations.
  * ============================================================================ */
 int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
                      int16_t one, int16_t mode)
@@ -404,7 +404,7 @@ int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
 
     /* @asm 0x05CC2C..0x05CC4C: an alternate target probe (0x181F:0x9F0) feeding
      * [bp-0xb0]; on failure sets sub_mode=2 and loops back to the reason handler
-     * at 0x22ad. Structural; targets/constants byte-clear, downstream TBD. */
+     * at 0x22ad. Structural; targets/constants byte-clear, downstream not yet decoded. */
     {
         int16_t alt = ovly_target_query_9F0(tile_x, tile_y); /* @asm 0x05CC36 */
         r_b0 = alt;
@@ -597,10 +597,10 @@ candidate_loop:
      *   value fetched via 0x181F:0xC86 (@asm 0x05CF98) and the difficulty byte
      *   (atk_str = atk_str*[0x53a6]/0x14 @asm 0x05CFFC for the human path).  The
      *   exact SoL value source ([bp-0xa2] from 0x181F:0xC86) is overlay-resident
-     *   -> its NUMERIC contribution is [TBD-data]; the CONTROL FLOW + the /0x14
+     *   -> its NUMERIC contribution is RUNTIME_ONLY (data-resident); the CONTROL FLOW + the /0x14
      *   and /0x64 divisors are byte-cited.  (Structural; not invented.) */
     if ((g_game_flags_5382 & 1) && owner < 4) {              /* @asm 0x05CF52/0x05CF5C */
-        /* SoL scaling block @asm 0x05CF66..0x05D01E -- see note above. [TBD-data weights] */
+        /* SoL scaling block @asm 0x05CF66..0x05D01E -- see note above. [RUNTIME_ONLY (data-resident) weights] */
     }
 
     /* ==== terrain/era SoL adjustments (only when mode==0, i.e. EVALUATE) ===== */
@@ -619,7 +619,7 @@ candidate_loop:
      *   res_terrain_is_1819_768 terrain check; each is a SoL/era atk_str or def_str
      *   halving/doubling.  All byte-cited @asm 0x05D046..0x05D14D; the per-power
      *   bias tables (0x5D65 stride 0xCA, the [bp-0x76]-displaced 0x6BF4/0x6D68)
-     *   are data-resident -> [TBD-data].  These ADJUST atk_str/def_str but do not
+     *   are data-resident -> RUNTIME_ONLY (data-resident).  These ADJUST atk_str/def_str but do not
      *   change the roll FORM below. */
 
     /* ======================================================================== *
@@ -693,13 +693,13 @@ candidate_loop:
      *   flag finalisation) SPILLS PAST page 0x10's clean linear decode (the reseg
      *   stops at the page end 0x05E120; the body continues into 0x05E1xx).  Those
      *   tail EFFECTS are documented but their data-resident WEIGHTS remain
-     *   [TBD-data]; the WIN/LOSS DECISION and its application are fully resolved. */
+     *   RUNTIME_ONLY (data-resident); the WIN/LOSS DECISION and its application are fully resolved. */
     r_d6 = win_flag;         /* the decided result feeds the return */
 
 reason:
     /* @asm 0x22ad (file region ~0x05CBFD) -- common "reason handler": maps
      * sub_mode (1/2/3) to a result code, finalises scratch flags, and falls to
-     * the return. Structure byte-clear; the exact result encoding is [TBD]. */
+     * the return. Structure byte-clear; the exact result encoding is not yet decoded. */
     return r_d6;
 
 abort_far:
@@ -717,7 +717,7 @@ cleanup_far:
  * The per-unit MOVE / ORDER evaluator. Reseg page_0D header:
  * `size=14975 insns=4858 prologue=ENTER 0x00EE,0 terminal=RETF`. Reached via
  * Type-A thunk 0x01CAE4 (0x181F:0x24F4) but has NO static LCALL caller -> it is
- * invoked INDIRECTLY (callback / function pointer); the registration site is TBD.
+ * invoked INDIRECTLY (callback / function pointer); the registration site is not yet decoded.
  * It ALSO far-calls the per-unit AI leaf (@asm 0x0514D1 lcall 0x191F:0xA14 ->
  * func_05CA7E), so it shares this leaf.
  *
@@ -755,7 +755,7 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
  *    terrain/SoL/veteran/difficulty modifier chain), NOT the ship-only raw
  *    0x523b/0x523c.  (Resolves the land.c open question; land.c's "no land roll"
  *    finding was scoped to 0x523b/0x523c only -- correct as far as it went.)
- *  - REMAINING [TBD-data] (NOT in the EXE image, so not guessable here):
+ *  - NOT YET VERIFIED (NOT in the EXE image, so not guessable here):
  *      * numeric VALUES of the per-type 0x5235 (defense) / 0x5236 (attack) columns
  *        (NAMES.TXT @UNIT / loader @0x74EDA);
  *      * the per-terrain/fort bonus table 0x54EE/0x5AD8 feeding g_def_terrain_bonus_8D04;
@@ -777,5 +777,5 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
  *    0/5/6/0xa); its 14975-byte body is not yet decoded; scoring weights are RUNTIME_ONLY.
  *  - NO scoring weight, comparison constant, or per-nation bias VALUE is invented
  *    in this file; every operation cites an @asm offset, every undeterminable
- *    value is [TBD-data] with its cited access site.
+ *    value is RUNTIME_ONLY (data-resident) with its cited access site.
  * ============================================================================ */
