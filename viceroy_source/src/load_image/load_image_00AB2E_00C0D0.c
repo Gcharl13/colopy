@@ -586,13 +586,26 @@ int func_00BCEA_op_sz_61(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x037F:0x000A
- * @inferred_role  WRAPPER_LCALL (34 bytes). 0x037F:0x000A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  guarded global-pair setter (commits arg pair to 0x853E/0x8540)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00BD28_op_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to LCALL 0x037F:0x000A. */
-    return overlay_call_037F_000A();
+    /* @asm 0x00BD2B push [bp+8]; 0x00BD2E push [bp+6]; 0x00BD31 lcall 0x37F:0xA
+     *      -> the 0x037F overlay dispatch (validity/availability probe) over the
+     *      (arg0,arg1) pair.  0x00BD38 or ax,ax / 0x00BD3A je 0xBD48: only when it
+     *      returns non-zero do we commit the pair to the DGROUP word globals
+     *      0x8540 (= arg0) and 0x853E (= arg1).  These sit immediately after the
+     *      map width/height words 0x853A/0x853C (DGROUP_MEMORY_MAP §map scalars)
+     *      and are the pair read back by func_00C00A.
+     * NOTE: overlay_call_037F_000A is declared (void); the 2 pushed args follow
+     *      the project's auto-extern convention (args travel on the stack). */
+    if (overlay_call_037F_000A() != 0) {        /* @asm 0x00BD31 / 0x00BD38 / 0x00BD3A */
+        *(uint16_t near *)0x8540 = arg0_bp_06;  /* @asm 0x00BD3C mov ax,[bp+6]; 0x00BD3F mov [0x8540],ax */
+        *(uint16_t near *)0x853E = arg1_bp_08;  /* @asm 0x00BD42 mov ax,[bp+8]; 0x00BD45 mov [0x853E],ax */
+        return arg1_bp_08;                      /* ax = [bp+8] at leave/retf */
+    }
+    return 0;                                   /* @asm 0x00BD48 leave; retf (ax=0 from the probe) */
 }
 
 /* @asm        0x00BD4A..0x00BE27  (221 bytes)  region=load_image
@@ -758,13 +771,17 @@ int func_00BF3C_logic_sz_182(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  *
  * Near CALL targets:
  *   - 0x00BF3C
- * @inferred_role  WRAPPER_NEARCALL (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  thin forwarder to func_00BF3C (duplicates arg pair, appends 0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00BFF2_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x00BF3C. */
-    return func_00BF3C();
+    /* @asm 0x00BFF5 push 0; 0x00BFF7 push [bp+8]; 0x00BFFA push [bp+6];
+     *      0x00BFFD push [bp+8]; 0x00C000 push [bp+6]; 0x00C004 call 0xBF3C.
+     * Pushes (arg0, arg1, arg0, arg1, 0) and tail-calls the 5-arg worker
+     * func_00BF3C, returning its result verbatim (no post-processing before
+     * leave/retf at 0x00C007). */
+    return func_00BF3C(arg0_bp_06, arg1_bp_08, arg0_bp_06, arg1_bp_08, 0);
 }
 
 /* @asm        0x00C00A..0x00C07A  (112 bytes)  region=load_image

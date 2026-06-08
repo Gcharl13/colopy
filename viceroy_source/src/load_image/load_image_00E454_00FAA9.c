@@ -18,13 +18,24 @@
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  normalize_far_pointer (segment += offset>>4, offset &= 0xF)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00E454_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+uint32_t func_00E454_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E457 mov ax,[bp+6] (offset); 0x00E45A mov dx,[bp+8] (segment);
+     *      0x00E45D mov bx,ax; 0x00E45F shr bx,4; 0x00E462 add dx,bx;
+     *      0x00E464 and ax,0xF; leave; retf 4  -> returns the normalised far
+     *      pointer in DX:AX.
+     * Canonical real-mode far-pointer normalisation: fold the high 12 bits of
+     * the offset into the segment (segment += offset>>4) and reduce the offset
+     * to its low nibble (offset &= 0xF).  Returns segment:offset as a dword
+     * (DX=segment, AX=offset). */
+    uint16_t offset  = arg0_bp_06;
+    uint16_t segment = arg1_bp_08;
+    segment += (uint16_t)(offset >> 4);
+    offset  &= 0x000F;
+    return ((uint32_t)segment << 16) | offset;
 }
 
 /* @asm        0x00E46C..0x00E49C  (48 bytes)  region=load_image
@@ -74,13 +85,24 @@ int func_00E4C6_read_far_dword_via_267A(void)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  PIT channel-0 reload (set system-timer divisor)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00E508_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E50B cli; 0x00E50C mov al,0x36 / 0x00E50E out 0x43,al
+     *      (8253/8254 command: channel 0, lo/hi byte, mode 3, binary);
+     *      0x00E510 mov ax,[bp+6]; 0x00E513 out 0x40,al (divisor low byte);
+     *      0x00E515 mov al,ah; 0x00E517 out 0x40,al (divisor high byte);
+     *      0x00E519 sti; leave; retf.
+     * Reprograms PIT channel 0 (port 0x40) with the 16-bit reload value in the
+     * argument, i.e. sets the system tick rate.  Pure hardware op; no return. */
+    /* cli — interrupts disabled around the reload (@asm 0x00E50B) */
+    outp(0x43, 0x36);                       /* @asm 0x00E50C/0x00E50E command word */
+    outp(0x40, (uint8_t)arg0_bp_06);        /* @asm 0x00E513 low  byte */
+    outp(0x40, (uint8_t)(arg0_bp_06 >> 8)); /* @asm 0x00E517 high byte */
+    /* sti — interrupts re-enabled (@asm 0x00E519) */
+    return 0;
 }
 
 /* @asm        0x00E51C..0x00E534  (24 bytes)  region=load_image
@@ -153,13 +175,21 @@ int func_00E6A6_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  wait_for_vertical_retrace (poll CGA status port 0x3DA bit 3)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00E6EE_logic_sz_20(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E6F1 mov dx,0x3DA; 0x00E6F4 mov ah,8;
+     *      0x00E6F6 in al,dx / 0x00E6F7 and al,ah / 0x00E6F9 jne 0x00E6F6
+     *        -> spin while the vertical-retrace bit (0x08) is SET (wait for it
+     *           to fall, i.e. wait out any retrace already in progress);
+     *      0x00E6FB in al,dx / 0x00E6FC and al,ah / 0x00E6FE je 0x00E6FB
+     *        -> then spin until the bit goes SET (wait for the next retrace to
+     *           begin).  Classic CGA vsync-sync.  Pure hardware poll; no return. */
+    while (inp(0x3DA) & 0x08) { }   /* @asm 0x00E6F6..0x00E6F9 wait for retrace end   */
+    while (!(inp(0x3DA) & 0x08)) { }/* @asm 0x00E6FB..0x00E6FE wait for retrace start */
+    return 0;
 }
 
 /* @asm        0x00E702..0x00E717  (21 bytes)  region=load_image
@@ -438,13 +468,26 @@ int func_00F450_logic_sz_44(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (28 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set_video_mode (record mode @0x83AA; optionally call BIOS int 10h)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00F510_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00F514 mov ax,[bp+6]; 0x00F517 mov [0x83AA],ax  -> record the
+     *      requested video mode in the DGROUP word 0x83AA (mode-shadow global).
+     *      0x00F51D cmp word [bp+8],0; 0x00F521 je 0x00F52A: only when the second
+     *      argument is non-zero does it actually program the adapter:
+     *      0x00F523 mov ax,[bp+6]; 0x00F526 xor ah,ah; 0x00F528 int 0x10
+     *      (BIOS video, AH=0 set-mode, AL=mode).  leave; retf.
+     * The C-visible effect is the 0x83AA store; the int 0x10 is a pure platform
+     * op (BIOS set video mode) kept as an @asm-cited comment per project
+     * convention (cf. func_077ADE).  No meaningful return value. */
+    *(uint16_t near *)0x83AA = arg0_bp_06;     /* @asm 0x00F517 record mode */
+    if (arg1_bp_08 != 0) {                      /* @asm 0x00F51D / 0x00F521 */
+        /* @asm 0x00F528 int 0x10  AH=0 (set video mode), AL = (uint8_t)arg0 */
+        /* set_video_mode((uint8_t)arg0_bp_06); */
+    }
+    return 0;
 }
 
 /* @asm        0x00F52C..0x00F54F  (35 bytes)  region=load_image

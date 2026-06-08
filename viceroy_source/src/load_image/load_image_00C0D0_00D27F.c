@@ -99,12 +99,17 @@ int func_00C276_logic_sz_20(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x0D1D:0x0DF2
- * @inferred_role  WRAPPER_LCALL (17 bytes). 0x0D1D:0x0DF2
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  thin C-runtime wrapper (clears arg bit15, forwards to 0x0D1D:0x0DF2)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00C30A_rtl_sz_17(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to LCALL 0x0D1D:0x0DF2. */
+    /* @asm 0x00C30D mov ax,[bp+6]; 0x00C310 and ah,0x7f; 0x00C313 push ax;
+     *      0x00C314 lcall 0x0D1D:0x0DF2 -> forwards the argument with bit 15
+     *      cleared (ah &= 0x7F) to the C-runtime/overlay library routine and
+     *      returns its result (leave/retf at 0x00C319, no post-processing).
+     * library-implementation-only / body in the 0x0D1D thunk page. */
+    (void)(arg0_bp_06 & 0x7FFF);   /* the masked value is what the lcall receives */
     return overlay_call_0D1D_0DF2();
 }
 
@@ -236,13 +241,17 @@ int func_00C45A_rtl_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * LCALL targets:
  *   - 0x0B22:0x0022
- * @inferred_role  TINY_RETURN (11 bytes). 0x0B22:0x0022
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  thin C-runtime wrapper (passes register BX through to 0x0B22:0x0022)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00C498_op_sz_11(void)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    /* @asm 0x00C49B push bx; 0x00C49C lcall 0x0B22:0x0022; 0x00C4A1 leave; retf.
+     * Thin forwarder: pushes the incoming register argument BX and tail-calls
+     * the 0x0B22 C-runtime/overlay library routine, returning its result.
+     * library-implementation-only / body in the 0x0B22 thunk page.  (BX is a
+     * register-convention input, so it is not visible in this (void) signature.) */
+    return overlay_call_0B22_0022();
 }
 
 /* @asm        0x00C4A4..0x00C4DB  (55 bytes)  region=load_image
@@ -338,13 +347,16 @@ int func_00C646_rtl_sz_74(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (12 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  byte setter (commits arg low byte to DGROUP:0x0383)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00C7DF_logic_sz_12(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00C7E3 mov ax,[bp+6]; 0x00C7E6 mov [0x0383],al; leave; retf.
+     * Stores the low byte of the argument into the DGROUP byte global at
+     * 0x0383 (a static-region scalar) and returns the argument (ax). */
+    *(uint8_t near *)0x0383 = (uint8_t)arg0_bp_06;
+    return arg0_bp_06;
 }
 
 /* @asm        0x00C899..0x00C8AB  (18 bytes)  region=load_image
@@ -356,13 +368,19 @@ int func_00C7DF_logic_sz_12(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  word setter (0x92F6 = arg, 0x92F4 = 0)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00C899_logic_sz_18(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00C89D mov ax,[bp+6]; 0x00C8A0 mov [0x92F6],ax;
+     *      0x00C8A3 mov word [0x92F4],0; leave; retf.
+     * Stores the argument into DGROUP word 0x92F6 and clears the companion
+     * word 0x92F4 (both BSS runtime globals).  Returns the argument (ax).
+     * Sister of func_00C7DF; 0x92F4/0x92F6 are reset together by func_00CA0C. */
+    *(uint16_t near *)0x92F6 = arg0_bp_06;
+    *(uint16_t near *)0x92F4 = 0;
+    return arg0_bp_06;
 }
 
 /* @asm        0x00C8AB..0x00C8DB  (48 bytes)  region=load_image
@@ -442,13 +460,21 @@ int func_00CA0C_logic_sz_74(uint16_t arg0_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  nibble-masked coordinate-pair setter (0x0590, 0x0592)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00CB59_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00CB5D mov ax,[bp+6]; 0x00CB60 and ax,0xF;
+     *      0x00CB63 mov bx,[bp+8]; 0x00CB66 and bx,0xF;
+     *      0x00CB69 mov [0x0590],ax; 0x00CB6C mov [0x0592],bx; leave; retf.
+     * Masks both arguments to their low nibble (0..15) and stores them to the
+     * DGROUP word pair 0x0590/0x0592 (static-region globals, paired with the
+     * 0x05AE..0x05C0 block written by func_00CECF/func_00CF19).  Returns
+     * arg0 & 0xF (ax). */
+    *(uint16_t near *)0x0590 = arg0_bp_06 & 0x000F;
+    *(uint16_t near *)0x0592 = arg1_bp_08 & 0x000F;
+    return arg0_bp_06 & 0x000F;
 }
 
 /* @asm        0x00CC8F..0x00CCEB  (92 bytes)  region=load_image
@@ -533,13 +559,27 @@ int func_00CD0B_logic_sz_67(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  far-pointer + scale setter (0x05AC:0x05AE = ptr, 0x05B0 = scale)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: arg0 is a FAR pointer occupying [bp+6] (offset) and [bp+8] (segment);
+ * the auto-banner's args_seen [6,10] missed the [bp+8] segment half consumed by
+ * the `les` instruction.  Widened the prototype to a far pointer to model it.
  */
-int func_00CECF_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+int func_00CECF_logic_sz_25(void far *src_ptr /*bp+6:bp+8*/, uint16_t scale_bp_0A)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00CED4 les ax,[bp+6]; 0x00CED7 mov [0x05AE],ax (offset);
+     *      0x00CEDA mov ax,es; 0x00CEDC mov [0x05AC],ax (segment);
+     *      0x00CEDF mov ax,[bp+0xA]; 0x00CEE2 mov [0x05B0],ax; leave; retf.
+     * Splits the far pointer arg into its offset/segment halves and stores them
+     * to the DGROUP far-ptr global at 0x05AC(segment):0x05AE(offset); stores the
+     * word arg [bp+0xA] into 0x05B0.  0x05B0 is later used as the row-stride
+     * multiplier by func_00CF19 (the 0x05AC..0x05C0 block is this module's
+     * blit/coordinate context). */
+    *(uint16_t near *)0x05AE = (uint16_t)(uint32_t)src_ptr;          /* offset  */
+    *(uint16_t near *)0x05AC = (uint16_t)((uint32_t)src_ptr >> 16);  /* segment */
+    *(uint16_t near *)0x05B0 = scale_bp_0A;                          /* stride  */
+    return 0;
 }
 
 /* @asm        0x00CEE8..0x00CF12  (42 bytes)  region=load_image
@@ -572,13 +612,31 @@ int func_00CEE8_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (25 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  blit-address computer (col=arg0, row=arg1; offset=row*stride+col)
+ * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
 int func_00CF19_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x05B0. */
-    return *((uint16_t near*)0x05B0);
+    /* @asm 0x00CF1D mov bx,[bp+6]; 0x00CF20 mov [0x05BA],bx;
+     *      0x00CF24 mov ax,[bp+8]; 0x00CF27 mov [0x05BC],ax;
+     *      0x00CF2A mov dx,[0x05B0]; 0x00CF2E mul dx (ax = arg1 * stride);
+     *      0x00CF30 add ax,bx (+ arg0); 0x00CF32 mov [0x05BE],ax;
+     *      0x00CF35 add ax,[0x05AE] (+ ptr offset); 0x00CF39 mov [0x05C0],ax; retf.
+     * Records the (col=arg0 @0x05BA, row=arg1 @0x05BC) pair, computes the linear
+     * pixel offset  row*stride + col  into 0x05BE, then adds the framebuffer base
+     * offset (0x05AE, set by func_00CECF) to form the absolute address in 0x05C0.
+     * `mul dx` is an unsigned 16-bit multiply; only the low word (ax) is kept.
+     * Returns the absolute address word (ax = 0x05C0). */
+    uint16_t col    = arg0_bp_06;
+    uint16_t row    = arg1_bp_08;
+    uint16_t stride = *(uint16_t near *)0x05B0;
+    uint16_t linear = (uint16_t)(row * stride) + col;
+    uint16_t addr   = linear + *(uint16_t near *)0x05AE;
+    *(uint16_t near *)0x05BA = col;
+    *(uint16_t near *)0x05BC = row;
+    *(uint16_t near *)0x05BE = linear;
+    *(uint16_t near *)0x05C0 = addr;
+    return addr;
 }
 
 /* @asm        0x00CF3E..0x00CFC4  (134 bytes)  region=load_image
