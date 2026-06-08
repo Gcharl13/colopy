@@ -129,10 +129,12 @@ Count = `g_settle_count`@`0x539A` (max 84). x/y/owner/mission verified; rest par
 | `+0x05` | mission | `0x10 | owner` (verified) |
 | `+0x06..0x0A` | byte/word ops verified, **roles not yet decoded** | |
 
-### 3.4 ColonyRecord — base `0x5D46`, stride `0xCA` (202 B persistent) — mostly verified
+### 3.4 ColonyRecord — base `0x5D46`, stride `0xCA` (202 B persistent) — base BYTE_VERIFIED
 
+Base proven at `func_0082DC` @`0x008307` (`imul bx,idx,0xCA; add bx,0x5D46`).
 **Pointer-addressed** via `ctx`@`0x8542` (174-B working buffer shares the 202-B
-prefix). Count = `g_colony_count`@`0x539E`. Field highlights from `colony.h`:
+prefix). Count = `g_colony_count`@`0x539E`. Field highlights from `colony.h`
+(`+0x1A` owner_power == absolute `0x5D60` for record 0):
 
 | Off | Field | Notes |
 |---|---|---|
@@ -195,11 +197,13 @@ Full per-scalar list with citations: `include/globals.h`.
 These are the items the refactor must **not** paper over. Each needs one more
 byte-trace before its field can be named with confidence.
 
-1. **ColonyRecord base `0x5D46` vs `0x5D60`** — `colony.h` prose cites `0x5D60`;
-   project memory and the table classification use `0x5D46` (a `0x1A` delta —
-   the same base-vs-field trap that put UnitRecord at `0x3146` instead of
-   `0x3144`). Resolve by finding a colony **allocation/write** site, as was done
-   for units.
+1. ~~**ColonyRecord base `0x5D46` vs `0x5D60`**~~ — **RESOLVED 2026-06-08: base is
+   `0x5D46`.** `func_0082DC` @`0x008307` does `imul bx,idx,0xCA; add bx,0x5D46;
+   mov [0x8542],bx` — the canonical record-pointer idiom (same proof shape as
+   UnitRecord `0x3144`). `0x5D60` is therefore `+0x1A` = **owner_power**, not the
+   base — the identical base-vs-field trap. The same block confirms `0x8542` =
+   current-colony ptr and that `owner_power` indexes AIPersonality
+   (`imul *,0x34; [bx+0x543F]`). `colony.h` prose corrected to match.
 2. **ColonyRecord `+0x95`** — two verified reads disagree: food-stock (colony
    widget draws it as a pile, `+0x96`=horses) vs era/level (`step=([+0x95]+1)*100`).
    Display evidence favors food; not flipped definitively.

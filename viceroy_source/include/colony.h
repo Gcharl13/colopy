@@ -24,9 +24,13 @@
  *   "current colony" struct used by the live simulation. load_game_state
  *   at 0x011F6E allocates a 174-byte buffer matching this stride.
  * - **202 bytes (0xCA)** — the PERSISTENT RECORD stride in the colony
- *   table at DGROUP:0x5D60. Each colony in the saved table occupies 202
+ *   table at DGROUP:0x5D46. Each colony in the saved table occupies 202
  *   bytes; the additional 28 bytes (vs the 174-byte working buffer) hold
  *   computed/derived state that's reconstituted on load.
+ *   (BASE CORRECTED 2026-06-08: base is 0x5D46, NOT 0x5D60. Proven at
+ *    func_0082DC @0x008307 `imul bx,idx,0xCA; add bx,0x5D46; mov [0x8542],bx`.
+ *    0x5D60 is base+0x1A = the owner_power field, not the table base — the same
+ *    base-vs-field trap that put UnitRecord at 0x3146 instead of 0x3144.)
  *
  * The two structs share their common 174-byte prefix. The full 202-byte
  * version adds: continent_id, region_id, last_visited_turn, lookup-cache
@@ -35,7 +39,9 @@
  * @ref load_game_state @ 0x011F6E (allocates 0xAE-byte working buffer)
  * @ref decompiled.md "load_game_state — 0xAE-byte working buffer"
  * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §2 ColonyRecord (202)
- * @asm DGROUP:0x5D60 = colony_table base; stride 0xCA = 202 bytes per colony
+ * @asm DGROUP:0x5D46 = colony_table base (proven func_0082DC @0x008307:
+ *      `imul bx,idx,0xCA; add bx,0x5D46`); stride 0xCA = 202 bytes per colony.
+ *      (0x5D60 = base+0x1A = owner_power, formerly mis-cited as the base.)
  * Field offsets are confirmed by direct disassembly references; widths
  * with `?` are pending exact verification. */
 struct colony_t {
