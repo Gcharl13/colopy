@@ -190,7 +190,9 @@ extern int16_t  g_font_latch_1F62;     /* DGROUP:0x1F62 — current font/style l
 extern int16_t  g_panel_h_1F6E;        /* DGROUP:0x1F6E — panel height/visible accumulator (sibling) */
 extern int16_t  g_panel_flag_1F8A;     /* DGROUP:0x1F8A — secondary dialog-state flag (sibling) */
 extern int16_t  g_panel_flag_1F68;     /* DGROUP:0x1F68 — panel draw-state word */
-extern int16_t  g_report_count_A5AE;   /* DGROUP:0xA5AE — count read by func_06D938 (TBD exact) */
+extern int16_t  g_report_count_A5AE;   /* DGROUP:0xA5AE — panel data-row count (>0 gates second value column
+                                        *   in wide mode; also aliased as g_msg_count_A5AE for func_06E3D0;
+                                        *   updated in func_06E3D0 post-dispatch at @asm 0x06E9F4..0x06ED45) */
 extern int16_t  g_handle_2014;         /* DGROUP:0x2014 — cached far-handle word (func_06F8E0 frees) */
 extern int16_t  g_flag_2008;           /* DGROUP:0x2008 — menu-run reentrancy gate (func_06F64C) */
 extern int16_t  g_msg_arg_lo_A5B4;     /* DGROUP:0xA5B4 — menu-run arg lo (func_06F64C) */
@@ -315,8 +317,8 @@ extern uint8_t  g_tribe_active_314C[]; /* DGROUP:0x314C — per-unit/owner activ
  * @asm 0x06D938 c8 0c 00 00 56 83 3e 5c 1f 07 7e 06  (ENTER 0xc; push si; cmp [0x1f5c],7; JLE)
  * @asm 0x06D98B 9a 54 02 1f 18                        (LCALL 0x181F:0x254 — acc_value)
  * The two pushed far fields (+0xc/+0xe label ptr, +0x0 value, +0x4 sub) match the
- * widget node layout documented in the sibling builder. [0xA5AE] gate semantics
- * (a row-count) are TBD beyond ">0 enables the paired second value".
+ * widget node layout documented in the sibling builder. [0xA5AE] = g_report_count_A5AE
+ * = panel data-row count; >0 enables the second value column in wide mode.
  * ============================================================================ */
 /* Far field-load helpers (local; the codebase reproduces es:[bx+off] this way). */
 #define PW(base, off)  (*(uint16_t far *)((uint8_t far *)(base) + (off)))  /* word es:[bx+off] */
