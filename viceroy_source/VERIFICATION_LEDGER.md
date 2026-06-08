@@ -1229,7 +1229,7 @@ overlay); per-terrain-arm semantics of the CS jump-table targets. The 4-cardinal
 
 ## Combat strength modifier stack — `func_07C2A`/`func_07D3E`/`func_05CA7E` (verified 2026-06-07)
 
-The pre-roll modifier layer (previously TBD in combat_modifiers.c) is now
+The pre-roll modifier layer (previously not yet decoded in combat_modifiers.c) is now
 byte-traced. **Fortification IS a real multiplier** — applied to the strength
 accumulators before the roll, not as a literal "+50%" at the comparison.
 
@@ -1239,7 +1239,7 @@ accumulators before the roll, not as a literal "+50%" at the comparison.
 | func_07C2A (file 0x7C2A, ENTER 6, RETF 0x7D3D): ATTACK = column DS:0x5236, DEFENSE = column DS:0x5235, indexed by unit type×6 | @asm 0x7C62 `mov al,[bx+0x5236]` (sel!=0); 0x7C7E `mov al,[bx+0x5235]` (sel==0) | BYTE_VERIFIED (column semantics); values external (NAMES.TXT @UNIT) |
 | strength held ×8 internally (`shl ax,3`); scout/criminal type 0x0B w/ flag 0x80 → −2; artillery type 0x10 → ×3/2; colonist on feature 0x15 → ×3/2; ship type 0x0D..0x12 → − hull damage [+0x3150] | @asm 0x7CA9 `shl ax,3`; 0x7C99 `sub [bp-6],2`; 0x7CFC ×3/2; 0x7CCC ×3/2; 0x7D20 `sub [bp-2],ax` | BYTE_VERIFIED |
 | func_07D3E (file 0x7D3E, ENTER 0x18, RETF 0x7F33): DEF = ((fort/terrain_factor + 4) × base) / 4 (factor 0→×1, 2→×1.5, 4→×2) | @asm 0x7F26 `add ax,4; imul [bp-0xa]; sar ax,2` | BYTE_VERIFIED |
-| terrain-defense table DS:0x2F77 (stride 16) added to factor; settlement+ship → +2 | @asm 0x7E5D/0x7EEA `mov al,[bx+0x2f77]`; 0x7EFE `add [bp-0x18],2` | BYTE_VERIFIED (mechanism); table values TBD/external |
+| terrain-defense table DS:0x2F77 (stride 16) added to factor; settlement+ship → +2 | @asm 0x7E5D/0x7EEA `mov al,[bx+0x2f77]`; 0x7EFE `add [bp-0x18],2` | BYTE_VERIFIED (mechanism); table values not yet decoded/external |
 
 ### Land combat (func_05CA7E, file 0x5CA7E, ENTER 0xDE, RETF 0x5E709)
 | Claim | Evidence | Status |
@@ -1255,7 +1255,7 @@ accumulators before the roll, not as a literal "+50%" at the comparison.
 |-------|----------|--------|
 | win/lose dispatch on [bp-0x3a]; loser captured (convert-table DS:0x5D46 scan) or destroyed (KILLED flag) | @asm 0x5BAA3 `cmp [bp-0x3a],0`; 0x5BB9E `or byte[bx+0x3148],0x80` | BYTE_VERIFIED |
 | ships demote via hull-damage ladder [+0x315A] (type 0x11 floor 4, 0x12 floor 8) not destroyed | @asm 0x5BC1D `mov [bx+0x315a],al`; 0x5BC2C/0x5BC49 floors | BYTE_VERIFIED |
-| winner veteran promotion gated on flag [+0x3148]&0x40, promote-table scan, vet count [-0x77f7]-- | @asm 0x5BD1E `test [bx+0x3148],0x40`; 0x5BD34 scan; 0x5BD93 dec | BYTE_VERIFIED (mechanism); promote-table values TBD |
+| winner veteran promotion gated on flag [+0x3148]&0x40, promote-table scan, vet count [-0x77f7]-- | @asm 0x5BD1E `test [bx+0x3148],0x40`; 0x5BD34 scan; 0x5BD93 dec | BYTE_VERIFIED (mechanism); promote-table values not yet decoded |
 
 audit.py 116/116.
 
@@ -1271,7 +1271,7 @@ outcome by target-availability gates.
 |-------|----------|--------|
 | GOLD stolen = `(PowerRecord[tribe_id][+0x2A] * colony[+0x1F]) / (g_tribe_6BF0[tribe_id]+1) + 10`, clamped to [INT_MIN, 0x7FFF]; subtracted from victim PowerRecord+0x2A. `tribe_id = colony[+0x1A]`; `g_tribe_6BF0[]` accessed as `[tribe_id - 0x6BF0]` | @asm 0x5C29A `mov bx,[bp-0x22]`; 0x5C29D `mov al,[bx-0x6bf0]`+1; 0x5C2B0 `mov al,[si+0x1f]`; 0x5C2B7 `imul bx,bx,0x13C`; 0x5C2BB/0x5C2BF push pwr +0x2C/+0x2A; 0x5C2C5 `lcall 0xD1D:0xF60 __aFlmul`; 0x5C2CC `lcall 0xD1D:0xEC6 __aFldiv`; 0x5C2D1 `add ax,0xa`; 0x5C2D9/0x5C2DD/0x5C2E2 clamp 0x7FFF; 0x5C5D4 `sub [bx-0x77ce],ax` | BYTE_VERIFIED (magnitude fully resolved 2026-06-08) |
 | STORES: take `random_int(0, min(10, colonyGoods/2))` of a commodity, floored 1, `sub [bx+si+0x9a]`; sound 0x4F | @asm 0x5C374 `sar ax,1`; 0x5C37B cap 0xA; 0x5C3AD `sub [bx+si+0x9a],ax`; 0x5C3C2 sound 0x4F | BYTE_VERIFIED |
-| BURN goods/buildings sound 0x53; WREAK unit sound 0x4B+0x4D (destroy via overlay 0x5E723); GOLD-apply sound 0x4E; SHIP-burn sound 0x5B | @asm 0x5C501/0x5C569/0x5C571/0x5C5ED/0x5C62D | BYTE_VERIFIED (sounds); unit/ship removal overlay-resident TBD |
+| BURN goods/buildings sound 0x53; WREAK unit sound 0x4B+0x4D (destroy via overlay 0x5E723); GOLD-apply sound 0x4E; SHIP-burn sound 0x5B | @asm 0x5C501/0x5C569/0x5C571/0x5C5ED/0x5C62D | BYTE_VERIFIED (sounds); unit/ship removal overlay-resident not yet decoded |
 | TRIGGER: tribe hostile when alarm `[0x54F6][(p*9+t)*2] >= 0x80`; successful raid zeroes that alarm | @asm 0x4734E `cmp word[bx+0x54f6],0x80`; 0x5C651 `mov word[bx+0x54f6],0` | BYTE_VERIFIED |
 | alarm accumulation clamped to [0x20,0x60] normally; AIPersonality active flag +0x31 (DS:0x543F) gates sound/message | @asm 0x45F9B/0x45FB9; many `cmp byte[bx+0x543f],0` | BYTE_VERIFIED |
 
