@@ -139,14 +139,18 @@ int native_settlement_display_value(uint16_t settlement_index)  /* func_046DE0 *
  *
  * Field map confirmed: +0x00 x, +0x01 y, +0x02 power idx, +0x03 flags, +0x04
  * value, +0x05/+0x06 state, +0x07..+0x09 mission/relation slots (init 0xFF).
- * 0x5434 (cs near) is the page-0C RTLink trampoline → an "initial value" getter
- * (same trampoline family as tribe_query.c's 0x5402; its overlay target is in
- * the 0x191F family, exact body TBD — but its result is just stored).
+ * cs:0x5434 (file 0x04BA34) is the page-0C RTLink trampoline → LJMP 0x1A1F:0x0410
+ * (same trampoline as ovly_4BA34_substate; binary: file 0x04BA34 = EA 10 04 1F 1A).
+ * 0x1A1F:0x0410 thunk EA-placeholder = 0x0000 (unpatched in static binary, page=0x0C).
+ * Role: returns an initial/sub-state value for the settlement/power record.
  * 0x181F:0x0740 = map_cell_ptr(y,x), 0x181F:0x0704 = map_register(owner,y,x)
  * (role-named platform externs).  [BYTE_VERIFIED — full body]
  * ============================================================================ */
 extern uint8_t *g_bound_record_8D4A;   /* DGROUP:0x8D4A — pointer to currently-bound record */
-extern int  native_settlement_initial_value(int new_index);  /* near 0x5434 (cs) -> 0x191F getter */
+extern int  native_settlement_initial_value(int new_index);  /* near cs:0x5434 (file 0x04BA34)
+                                                               * -> LJMP 0x1A1F:0x0410 (same
+                                                               * trampoline as ovly_4BA34_substate).
+                                                               * Returns initial value for new entry. */
 
 int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* func_046E18 */
 {
@@ -499,9 +503,9 @@ void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYT
  * @asm 0x048304  push arg0 ; lcall 0x181F:0x0934     ; handler_b(arg0)
  * @asm 0x04830C  leave ; retf
  *
- * 0x541B is the page-0C RTLink near trampoline (same family as 0x5402/0x5434);
- * it bridges to a classifier whose overlay target (0x1A1F / 0x191F group) is not
- * yet resolved — its RESULT drives the dispatch but its internals are TBD.
+ * 0x541B is the page-0C RTLink near trampoline: cs:0x541B -> LJMP 0x1A1F:0x03D4
+ * -> func_046FFA (native_per_unit_AI_step; ported to src/ai/native_unit_ai.c).
+ * Binary verified: file 0x04BA1B = EA D4 03 1F 1A.
  * 0x1A1F:0x0150 = page_0A tile/unit action handler (class, arg0); one of the nine
  *   disp_code dispatchers seen in func_04B308 (second CS jump table at 0x4B9C0 ->
  *   0x1A1F:0x044C/3F8/3EC/3C8/428/3D4/3E0/410/0150 family).  Not yet cross-
@@ -511,7 +515,11 @@ void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYT
  *   overlay_02083C_024337.c "unit_finish_and_advance(idx)".
  * Control flow + the class==8 / signed-class arms are BYTE_VERIFIED.
  * ============================================================================ */
-extern int  ovly_541B_classify(uint16_t arg);     /* near 0x541B (cs) — classifier, target TBD */
+extern int  ovly_541B_classify(uint16_t arg);     /* near cs:0x541B -> LJMP 0x1A1F:0x03D4
+                                                   * -> func_046FFA (native_per_unit_AI_step,
+                                                   * SUPERSEDED; ported to src/ai/native_unit_ai.c).
+                                                   * Classifies unit arg0 using native AI logic.
+                                                   * Binary verified: file 0x04BA1B = EA D4 03 1F 1A. */
 
 int unit_tile_action_dispatch(uint16_t arg0_bp_06)  /* func_0482DE */
 {
@@ -545,7 +553,7 @@ int unit_tile_action_dispatch(uint16_t arg0_bp_06)  /* func_0482DE */
  *
  * Phase 1 — advance the power's "phase counter":
  *   @asm 0x04831B  LCALL 0x181F:0x0A4C(arg0)        ; bind power state -> *0x8D4A
- *   @asm 0x048327  CALL 0x4BA34(arg0)               ; al = sub-state(arg0)
+ *   @asm 0x048327  CALL file:0x4BA34 (cs) -> LJMP 0x1A1F:0x0410 ; al = sub-state(arg0)
  *   @asm 0x048331  cmp al,[bx+4] ; jbe +            ; if al > state.level (+0x04)
  *   @asm 0x048336    mode = 2                        ; ([bp-0x14])
  *   @asm 0x04833B  test [bx+3],1 ; jne -> mode = 1  ; flag (+0x03) bit0 = "grow"
@@ -604,7 +612,13 @@ extern uint8_t  g_power_state_8D4A_alias;  /* *(0x8D4A) bound power-state struct
 extern uint8_t *g_market_array_8D4E;       /* DGROUP:0x8D4E — bound 4-slot price/drift array */
 extern uint8_t  g_difficulty_53A6;         /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_econ_flags_5382;         /* DGROUP:0x5382 — economy/option flags (bit0 gates path) */
-extern int      ovly_4BA34_substate(uint16_t power);  /* near 0x4BA34 (cs) — sub-state getter, TBD */
+extern int      ovly_4BA34_substate(uint16_t power);  /* near file:0x4BA34 -> LJMP 0x1A1F:0x0410.
+                                                        * Binary verified: file 0x04BA34 = EA 10 04 1F 1A.
+                                                        * 0x1A1F:0x0410 thunk EA-placeholder = 0x0000
+                                                        * (unpatched in the static binary; page=0x0C).
+                                                        * Returns sub-state word read from the bound
+                                                        * power record; compared against +0x04 in
+                                                        * power_weekly_economy_tick (0x048327). */
 
 static void power_market_drift_apply(uint16_t power_index);  /* fwd: phase-2 drift loop */
 
@@ -736,7 +750,8 @@ static void power_market_drift_apply(uint16_t power_index)
  * @asm 0x048769  for i in 0..[0x539A]:  (colony/settlement scan)   ; tag this power's lines
  * @asm 0x048770    if [i*0x12 + 0x54EE] == [0x5394]:               ; settlement.power == self
  * @asm 0x04877D      if verbose: LCALL 0x0D1D:0x712(0x1503, i)     ; log line
- * @asm 0x048791      push cs ; call 0x5420(i)                      ; per-settlement recover [TBD]
+ * @asm 0x048791      push cs ; call cs:0x5420(i)                  ; power_weekly_economy_tick(i)
+ *                                                                  ; -> LJMP 0x1A1F:0x03E0
  * @asm 0x04879B      LCALL 0x181F:0x0470()                         ; (commit/flush)
  * @asm 0x0487B0  (two passes 0..0x10) reconcile market [0x8D4E]+0xE word table:
  * @asm 0x0487D6     w = [bx+si*2+0xE] ; if w>0: w -= [bx+2]+1 (clamp >=0) ; store back
@@ -750,7 +765,8 @@ static void power_market_drift_apply(uint16_t power_index)
  * @asm 0x04886C  LCALL 0x181F:0x0470()                             ; commit
  * @asm 0x048871  for i in 0..[0x539C]: (second UnitRecord pass — "FREEDOM" milestone)
  * @asm 0x04887C    if verbose: LCALL 0x0D1D:0x712(0x1516, i, unit.x +0x3144, unit.y +0x3145) ; log
- * @asm 0x0488A4    push cs ; call 0x5411(i)                        ; per-unit recover [TBD]
+ * @asm 0x0488A4    push cs ; call cs:0x5411(i)                    ; unit_tile_action_dispatch(i)
+ *                                                                  ; -> LJMP 0x1A1F:0x03BC
  * @asm 0x0488B5  for i in 0..[0x539C]: (third pass) if 0x181F:0x097A(i):  ; unit eligible?
  * @asm 0x0488D3      if ++unit[+0x315A] > 0x14: LCALL 0x181F:0x0934(i) ; unit[+0x315A]=0  ; trip
  * @asm 0x0488FB  if verbose: LCALL 0x0D1D:0x712(0x1528)            ; log
@@ -760,9 +776,10 @@ static void power_market_drift_apply(uint16_t power_index)
  * Strings (xref-confirmed inside this extent): "FREEDOM" @0x48878,
  * "MISCELLANEOUS" @0x488B6, "VICEROY.LOG" @0x486EF — i.e. the verbose path
  * appends Sons-of-Liberty / boycott-lift lines to VICEROY.LOG.  0x5420 / 0x5411
- * are page-0C near trampolines (same family as 0x5402/0x5434) into the 0x191F
- * recover helpers — their result is consumed by the commit (0x0470) so their
- * internals are TBD-exact.  0x1A1F:0x0398 = page_0B shared redraw/update dispatcher
+ * are page-0C near trampolines:
+ *   cs:0x5420 -> LJMP 0x1A1F:0x03E0 -> power_weekly_economy_tick (func_04830E)
+ *   cs:0x5411 -> LJMP 0x1A1F:0x03BC -> unit_tile_action_dispatch (func_0482DE)
+ * Both verified at file 0x04BA20 / 0x04BA11 (EA xx 03 1F 1A pattern).  0x1A1F:0x0398 = page_0B shared redraw/update dispatcher
  * (cross-ref: overlay_04458A_04694B.c "near 0x9ce -> page-0B redraw dispatcher LJMP
  * 1A1F:0398"; args here are anger scalar [0x5398] and current power [0x8D52]).
  * 0x1A1F:0x0270 = per-power AI/boycott hook (page_0A/0B; exact body not cross-ref'd
@@ -781,8 +798,16 @@ extern uint8_t  g_unit_table_3144[];        /* (re-decl) DGROUP:0x3144 UnitRecor
 extern uint8_t  g_native_table_54EC[];      /* (re-decl) DGROUP:0x54EC NativeSettlement[] */
 extern uint8_t *g_bound_record_8D4A;        /* (re-decl) *(0x8D4A) bound record */
 extern uint8_t *g_market_array_8D4E;        /* (re-decl) DGROUP:0x8D4E bound market array */
-extern int  ovly_5420_settlement_recover(uint16_t idx);  /* near 0x5420 (cs) -> 0x191F recover; TBD */
-extern int  ovly_5411_unit_recover(uint16_t idx);        /* near 0x5411 (cs) -> 0x191F recover; TBD */
+extern int  ovly_5420_settlement_recover(uint16_t idx);  /* near cs:0x5420 -> LJMP 0x1A1F:0x03E0
+                                                          * -> power_weekly_economy_tick (func_04830E).
+                                                          * Called per-settlement in the boycott-recovery
+                                                          * colony scan loop (0x048791).  Binary verified:
+                                                          * file 0x04BA20 = EA E0 03 1F 1A. */
+extern int  ovly_5411_unit_recover(uint16_t idx);        /* near cs:0x5411 -> LJMP 0x1A1F:0x03BC
+                                                          * -> unit_tile_action_dispatch (func_0482DE).
+                                                          * Called per-unit in the FREEDOM-milestone loop
+                                                          * (0x0488A4).  Binary verified:
+                                                          * file 0x04BA11 = EA BC 03 1F 1A. */
 extern int  overlay_call_181F_04CA(void);   /* 0x181F:0x04CA — seed_rng_from_timer([0x83A6]):
                                              * seeds the RNG / primes the log context from
                                              * the timer value at [0x83A6].
@@ -956,7 +981,9 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  * Phase B — for each of the 8 tribes, if it is active, run a per-tribe helper:
  *   @asm 0x048955  imul bx,tribe,0x4E                       ; per-tribe record stride 0x4E
  *   @asm 0x048959  test [bx+0x5AD9],0x80 ; jne skip         ; +0x01 bit7 = "destroyed/absent"
- *   @asm 0x048960  push tribe ; CALL 0x4BA0C (cs)           ; tribe_turn_update(tribe) [target TBD]
+ *   @asm 0x048960  push tribe ; CALL 0x4BA0C (cs)           ; tribe_turn_update(tribe)
+ *                                                          ; -> LJMP 0x1A1F:0x03B0
+ *                                                          ; -> power_weekly_boycott_recover (0x0485F6)
  *   @asm 0x04896D  for tribe in 0..7
  *
  * Phase C (truncated) — iterates a unit/object list relative to the current
@@ -968,7 +995,10 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  * relations / alarm matrix that func_046FFA(native AI) and the tea-party / king
  * code also touch.  Phases A+B are BYTE_VERIFIED; phase C tail is TBD.
  * ============================================================================ */
-extern void tribe_turn_update(int tribe);   /* near 0x4BA0C (cs) — per-tribe tick; target TBD */
+extern void tribe_turn_update(int tribe);   /* near file:0x4BA0C -> LJMP 0x1A1F:0x03B0
+                                             * -> power_weekly_boycott_recover (func_0485F6).
+                                             * Per-tribe weekly boycott/recovery tick.
+                                             * Binary verified: file 0x04BA0C = EA B0 03 1F 1A. */
 
 int native_relations_turn_reset(void)  /* func_04891A — head verified */
 {
@@ -1933,7 +1963,7 @@ int native_attack_reward_roll(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)  /* func
 }
 
 /* ============================================================================
- * func_04A426 — native event sound/cue selector  [DONE — BYTE_VERIFIED; callee TBD]
+ * func_04A426 — native event sound/cue selector  [DONE — BYTE_VERIFIED; cs:0x5443 resolved]
  * ----------------------------------------------------------------------------
  * Picks a sound cue id (5 / 7 / 6) based on whether a power slot is "free"
  * (PowerRecord activity flag) and on the current power (0x8D52), gated by a
@@ -1947,16 +1977,21 @@ int native_attack_reward_roll(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)  /* func
  * @asm 0x04A45F      cue(5)                            ; 0x181F:0x0498(5)
  * @asm 0x04A470      if [0x8D52]==0: cue(7)
  * @asm 0x04A481      if [0x8D52]==1: cue(6)
- * @asm 0x04A48C  CALL 0x4BA43 (cs)                     ; finalize [target TBD]
+ * @asm 0x04A48C  CALL cs:0x5443 (= file 0x4BA43)          ; -> colony_surrounding_tile_scan
+ *                                                          ;    (func_048F34 via 0x1A1F:0x0434)
  * @asm 0x04A48F  push [0x917A] ; LCALL … (truncated)   ; (tail past 0x04A493 cut)
  *
  * The per-func dump TRUNCATES at 0x04A497 (the 0x04A493 LCALL and tail are cut).
- * The free-test, RNG gate, and cue selection (5/7/6) are BYTE_VERIFIED; the
- * 0x4BA43 finalize and the trailing 0x917A call are TBD.  0x0498 = sound cue
+ * The free-test, RNG gate, and cue selection (5/7/6) are BYTE_VERIFIED.  The
+ * cs:0x5443 trampoline resolves to colony_surrounding_tile_scan (binary-verified).
+ * The trailing 0x917A call (past 0x04A493) is truncated (TBD).  0x0498 = sound cue
  * (platform leaf; call kept).  Marked DONE for the selection logic.
  * ============================================================================ */
 extern uint8_t g_power_active_543F[];   /* DGROUP:0x543F — per-power activity table, stride 0x34 */
-extern int     ovly_4BA43_finalize(void);  /* near 0x4BA43 (cs) — finalize; target TBD */
+extern int     ovly_4BA43_finalize(void);  /* near file:0x4BA43 = cs:0x5443 (SAME trampoline as
+                                            * ovly_5443_trade_finalize) -> LJMP 0x1A1F:0x0434
+                                            * -> colony_surrounding_tile_scan (func_048F34).
+                                            * Binary verified: file 0x04BA43 = EA 34 04 1F 1A. */
 
 int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
 {
@@ -1978,7 +2013,8 @@ int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
         }
     }
 
-    /* @asm 0x04A48C — finalize (target TBD); tail past 0x04A493 truncated. */
+    /* @asm 0x04A48C — call cs:0x5443 -> colony_surrounding_tile_scan (func_048F34);
+     * tail past 0x04A493 truncated. */
     ovly_4BA43_finalize();
     return 0;
 }
@@ -2028,7 +2064,8 @@ int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
  * @asm 0x04AD40    refuse-A: format arg2 ; emit 0x167D via 0x191F:0x019C ; -> done
  * @asm 0x04AD8B    refuse-B: AIPersonality(arg1*2 + 0x540E) via 0x416 ; emit 0x1689
  * @asm 0x04ADD4    if !(bound[+3]&0x10) && won==0: emit 0x1692 ("MERCS"?) ; -> done
- * @asm 0x04AE38  ACCEPT: diff1 <<= 1 ; bound[+3] |= 0x10 ; CALL cs:0x5443 (finalize)
+ * @asm 0x04AE38  ACCEPT: diff1 <<= 1 ; bound[+3] |= 0x10 ; CALL cs:0x5443
+ *                                                           ; -> colony_surrounding_tile_scan
  * @asm 0x04AE43    zero buf[0..0x10) ; 0x191F:0xED0(ss:buf, ds:0x9E78, 0x10)   ; snapshot prod[16]
  * @asm 0x04AE6B    0x181F:0x09E6(target) ; qtyOut = 0x181F:0x0D3A()             ; pull qty
  * @asm 0x04AE7E    stockIdx = buf[+9] ; transfer = clamp(qtyOut - colony.stock[stockIdx],
@@ -2044,18 +2081,22 @@ int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
  * stockpile[16] u16 at +0x9A (base 0x5D46 via the *0x8542 alias).  0x191F:0xED0
  * is the 16-word block copy of the production array at 0x9E78 (the colony's
  * per-resource output, computed by colony_surrounding_tile_scan).  CALL cs:0x5443
- * is the page-0C near trampoline (near 0x5443) → fills g_trade_*_9E78 / clamps a
- * global (cross-ref: haggle.c @0x496B2 "near-call func_05443 fills g_trade_*_9E78
- * / clamps a global").  Control flow,
+ * (file 0x04BA43) is the page-0C near trampoline -> LJMP 0x1A1F:0x0434 ->
+ * colony_surrounding_tile_scan (func_048F34).  Binary-verified: file 0x04BA43 =
+ * EA 34 04 1F 1A; thunk@0x1CA24 -> CS:0x2154 = file 0x048F34 (ENTER 0xA4).
+ * NOTE: haggle.c "near-call func_05443" @0x496B2 is a DIFFERENT call-site in a
+ * different overlay page (file offset 0x05443, not page-0C cs:0x5443).  Control flow,
  * the demand/supply table displacements, the dual random_int roll, the clamp
  * bounds (0xA..0x64), and the message ids are BYTE_VERIFIED; the inner 0x191F
  * callee bodies (0xED0 copy, 0x019C emit, 0x0D3A pull) are external.  [DONE]
  * ============================================================================ */
 extern uint16_t *g_colony_8542;             /* (re-decl) *(0x8542) current ColonyRecord */
 extern uint8_t   g_difficulty_53A6;         /* (re-decl) DGROUP:0x53A6 */
-extern int  ovly_5443_trade_finalize(void); /* near 0x5443 (cs) — fills g_trade_*_9E78 and
-                                             * clamps a global (cross-ref: native/haggle.c
-                                             * @0x496B2 "func_05443 fills g_trade_*_9E78"). */
+extern int  ovly_5443_trade_finalize(void); /* near cs:0x5443 (file 0x04BA43) -> LJMP 0x1A1F:0x0434
+                                             * -> colony_surrounding_tile_scan (func_048F34).
+                                             * Recomputes the production array DS:0x9E78 so the
+                                             * 0x191F:0xED0 snapshot copies fresh data.
+                                             * Binary verified: file 0x04BA43 = EA 34 04 1F 1A. */
 /* DGROUP tables read DS-relative (base = 0x10000 - disp):
  *   0x95B2 ([bx+si-0x6A4E]) per-(region,commodity) byte, region + commodity*16;
  *   0x941C ([bx-0x6BE4])   per-commodity word;
@@ -2641,9 +2682,9 @@ done:
  *     disp_code 3 -> file 0x4B92E  -> [bp-0x58]=2; LJMP 0x1A1F:0x03EC
  *     disp_code 4 -> file 0x4B946  -> LJMP 0x1A1F:0x03C8
  *     disp_code 5 -> file 0x4B978  -> push 0; LJMP 0x1A1F:0x0428
- *     disp_code 6 -> file 0x4B966  -> LJMP 0x1A1F:0x03D4
- *     disp_code 7 -> file 0x4B956  -> LJMP 0x1A1F:0x03E0
- *     disp_code 8 -> file 0x4B98A  -> LJMP 0x1A1F:0x0410
+ *     disp_code 6 -> file 0x4B966  -> LJMP 0x1A1F:0x03D4  (-> func_046FFA native_per_unit_AI)
+ *     disp_code 7 -> file 0x4B956  -> LJMP 0x1A1F:0x03E0  (-> power_weekly_economy_tick 0x04830E)
+ *     disp_code 8 -> file 0x4B98A  -> LJMP 0x1A1F:0x0410  (-> ovly_4BA34_substate, unpatched)
  *     disp_code 9 -> file 0x4B99A  -> push 4; LCALL 0x181F:0x0A06(4,region,owner)
  *                                     [bp-0x58]=0 ; goto done
  *
