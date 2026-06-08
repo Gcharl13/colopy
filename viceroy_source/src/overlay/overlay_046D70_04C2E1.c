@@ -277,10 +277,10 @@ int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* f
  * @asm 0x046F92  bx = [0x8D4E]                       ; ptr to bound tribe record
  * @asm 0x046F96  or [bx+3], 0x80                     ; tribe_rec.flags |= 0x80 (EXTINCT)
  * @asm 0x046F9A  push [0x8D50]                       ; push tribe power index
- * @asm 0x046F9E  LCALL 0x181F:0x09A4                 ; query/notify (role TBD); → ax
+ * @asm 0x046F9E  LCALL 0x181F:0x09A4                 ; power_handle(tribe_power_index) → ax
  * @asm 0x046FA3  add sp, 2
  * @asm 0x046FA6  push ax ; push 0
- * @asm 0x046FA9  LCALL 0x181F:0x0438                 ; announce action (role TBD)
+ * @asm 0x046FA9  LCALL 0x181F:0x0438                 ; msg_set_arg(handle, slot=0)
  * @asm 0x046FAE  add sp, 4
  * @asm 0x046FB1  push 3 ; push 0x14D4                ; DGROUP:0x14D4 = "EXTINCT"
  * @asm 0x046FB6  LCALL 0x181F:0x0652                 ; display_message(3, "EXTINCT")
@@ -297,14 +297,21 @@ int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* f
  *   0x14D4  (DGROUP data string) "EXTINCT\0" — shown when tribe is wiped out
  *
  * 0x181F:0x0808 = disband/recall native unit (arg: unit table index).
- * 0x181F:0x09A4 = query tribe (arg: tribe power index); role TBD; returns word.
- * 0x181F:0x0438 = announce/notification (args: return-of-0x09A4, mode=0); TBD.
+ * 0x181F:0x09A4 = power_handle(power_idx) — power index → name handle/token.
+ *                Cross-ref: report_screen.c "market_price(cargo)"; king_events.c;
+ *                diplomacy/treaty.c; random_events/lcr.c "tribe-index lookup".
+ *                Returns a word (the handle/id) pushed to 0x0438.
+ * 0x181F:0x0438 = msg_set_arg(handle, slot) — set message argument for the
+ *                subsequent display call.  Cross-ref: overlay_03C5A8_040C11.c
+ *                "msg_set_arg(slot,value)" and overlay_02083C_024337.c same.
  * 0x181F:0x0652 = display_message(type, str_offset) — emits "EXTINCT" banner.
  * ============================================================================ */
 extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live UnitRecord count (word) */
 extern uint8_t  g_unit_table_3144[];      /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
-/* 0x181F:0x068C — map_set_tile(x, y, layer=2, val=0): clears a map overlay cell.
- * Role inferred from the (x,y,2,0) argument shape; exact semantics TBD. */
+/* 0x181F:0x068C = set_map_tile(a, b, x, y) / draw_marker(x, y, layer, val):
+ * clears/sets a map overlay cell.  Cross-ref: overlay_02AAEC_02F0C7.c
+ * "set_map_tile(a,b,x,y)"; overlay_03C5A8_040C11.c "draw_marker(x,y,0x10,1)".
+ * Args here are (x, y, layer=2, val=0) — clearing a settlement tile marker. */
 
 /* New DGROUP globals for the tail (first cited by func_046EC0 tail): */
 extern uint8_t *g_tribe_bound_rec_8D4E;   /* DGROUP:0x8D4E — ptr to bound tribe record;
@@ -415,9 +422,9 @@ void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYT
             trec[0x03] |= 0x80;               /* @asm 0x046F96 or [bx+3],0x80 — EXTINCT flag */
 
             /* @asm 0x046F9A push [0x8D50] ; lcall 0x181F:0x09A4 ; add sp,2 */
-            overlay_call_181F_09A4();          /* query_tribe(g_tribe_power_index_8D50) → ax */
+            overlay_call_181F_09A4();          /* power_handle(g_tribe_power_index_8D50) → ax */
             /* @asm 0x046FA6 push ax ; push 0 ; lcall 0x181F:0x0438 ; add sp,4 */
-            overlay_call_181F_0438();          /* announce(ax, 0) — role TBD */
+            overlay_call_181F_0438();          /* msg_set_arg(handle, slot=0) */
             /* @asm 0x046FB1 push 3 ; push 0x14D4 ; lcall 0x181F:0x0652 ; add sp,4 */
             overlay_call_181F_0652();          /* display_message(3, "EXTINCT") */
 
@@ -486,7 +493,7 @@ void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYT
  * @asm 0x0482E2  push arg0 ; call 0x541B (cs)        ; class = classify(arg0)
  * @asm 0x0482EC  cmp ax,8 ; je 0x048300              ; class 8 -> alt arm
  * @asm 0x0482F1  push ax ; push arg0 ;
- * @asm 0x0482F5  lcall 0x1A1F:0x0150                 ; handler_a(class, arg0) [target TBD]
+ * @asm 0x0482F5  lcall 0x1A1F:0x0150                 ; handler_a(class, arg0) [page_0A/UI thunk]
  * @asm 0x0482FD  leave ; retf                        ; return
  * @asm 0x048300  (alt arm) or ax,ax ; jl 0x04830C    ; if class < 0 -> return
  * @asm 0x048304  push arg0 ; lcall 0x181F:0x0934     ; handler_b(arg0)
@@ -495,8 +502,14 @@ void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYT
  * 0x541B is the page-0C RTLink near trampoline (same family as 0x5402/0x5434);
  * it bridges to a classifier whose overlay target (0x1A1F / 0x191F group) is not
  * yet resolved — its RESULT drives the dispatch but its internals are TBD.
- * 0x1A1F:0x0150 and 0x181F:0x0934 are the two action handlers (platform/UI
- * externs).  Control flow + the class==8 / signed-class arms are BYTE_VERIFIED.
+ * 0x1A1F:0x0150 = page_0A tile/unit action handler (class, arg0); one of the nine
+ *   disp_code dispatchers seen in func_04B308 (second CS jump table at 0x4B9C0 ->
+ *   0x1A1F:0x044C/3F8/3EC/3C8/428/3D4/3E0/410/0150 family).  Not yet cross-
+ *   referenced by name in a sibling file; role-inferred from arg shape (class, unit).
+ * 0x181F:0x0934 = unit_finish_activity(idx) — end this unit's current order/turn.
+ *   Cross-ref: overlay_040C1E_04458A.c "unit_finish_activity" (3×), and
+ *   overlay_02083C_024337.c "unit_finish_and_advance(idx)".
+ * Control flow + the class==8 / signed-class arms are BYTE_VERIFIED.
  * ============================================================================ */
 extern int  ovly_541B_classify(uint16_t arg);     /* near 0x541B (cs) — classifier, target TBD */
 
@@ -517,7 +530,7 @@ int unit_tile_action_dispatch(uint16_t arg0_bp_06)  /* func_0482DE */
         return 0;                       /* @asm 0x048302 JL epilogue */
 
     /* @asm 0x048304..0x04830C — secondary handler. */
-    overlay_call_181F_0934();           /* handler_b(arg0) */
+    overlay_call_181F_0934();           /* unit_finish_activity(arg0) */
     return 0;
 }
 
@@ -581,7 +594,10 @@ int unit_tile_action_dispatch(uint16_t arg0_bp_06)  /* func_0482DE */
  * Bernoulli draws scaled by difficulty and event flags, then converted into
  * discrete price up/down ticks via 0x181F:0x0D6C (the price-adjust opcode, seen
  * elsewhere with the (dir, step, slot, power) shape).  The 0x181F callee
- * semantics for 0x095C / 0x0316 / 0x07B4 / 0x0D6C are role-inferred (TBD-exact);
+ * semantics: 0x095C = unit_select_for_order / place_worker (cross-ref:
+ *   overlay_02F3A2_031E4C.c / overlay_03C5A8_040C11.c); 0x0316 = load base price /
+ *   standing-word accessor; 0x07B4 = power_attribute_bit(selector, power);
+ *   0x0D6C = price-adjust / adjust_native_attitude (page 0x0B, lcr.c).
  * the control flow, struct offsets, and constants (0x14, 0x32, ÷5, step 8,
  * 0xF8) are BYTE_VERIFIED from disasm/func_04830E_unknown.asm. */
 extern uint8_t  g_power_state_8D4A_alias;  /* *(0x8D4A) bound power-state struct (see *_8D4A) */
@@ -627,7 +643,10 @@ int power_weekly_economy_tick(uint16_t power_index)  /* func_04830E */
                     *(int16_t *)&mk[0x0A] -= 0x32;  /* @asm 0x0483A5 */
                     line += 2;                      /* @asm 0x0483A9 */
                 }
-                /* @asm 0x0483C1 — resolve (state bytes +0,+1,+2 and line) -> unit slot. */
+                /* @asm 0x0483C1 — place/select a unit slot for this power and line.
+                 * 0x181F:0x095C = unit_select_for_order(args...) or place_worker —
+                 * cross-ref: overlay_02F3A2_031E4C.c "unit_select_for_order(code, power, ...)";
+                 * overlay_03C5A8_040C11.c "place_worker(...)". Returns slot index. */
                 int slot = overlay_call_181F_095C();/* @asm 0x0483C1 */
                 if (slot >= 0) {                    /* @asm 0x0483CC */
                     g_unit_table_3144[slot * UNIT_RECORD_STRIDE + 0x06] =
@@ -690,10 +709,10 @@ static void power_market_drift_apply(uint16_t power_index)
  *   (boycott-lift decision); i = [bp-6] (colony/unit loop cursor).
  *
  * @asm 0x0485FB  [bp-8] = 0                              ; verbose-log flag off
- * @asm 0x048600  push [0x83A6] ; LCALL 0x181F:0x04CA     ; (init/select log ctx)
+ * @asm 0x048600  push [0x83A6] ; LCALL 0x181F:0x04CA     ; seed_rng_from_timer([0x83A6])
  * @asm 0x04860C  [0x5394] = arg0 + 4                     ; "self power" (native-id base)
  * @asm 0x048615  LCALL 0x181F:0x0A42(arg0)               ; bind power -> *0x8D4A
- * @asm 0x048623  al = [arg0_base + 0x84C] ; LCALL 0x181F:0x0590(al)  ; (per-power gate)
+ * @asm 0x048623  al = [arg0_base + 0x84C] ; LCALL 0x181F:0x0590(al)  ; per-power setup(class byte)
  * @asm 0x048632  test [0x5382],1 ; je -> 0x048759        ; econ-option flag gates phase A
  * @asm 0x04863C  bx=[0x8D4E]; test [bx+3],0x20 ; jne -> 0x048759  ; market "boycott active"?
  * @asm 0x048649  LCALL 0x181F:0x030C([0x5398], arg0) -> [bp-0xC]  ; recover = tax-table(tax,power)
@@ -708,7 +727,7 @@ static void power_market_drift_apply(uint16_t power_index)
  * @asm 0x0486E3  lea [0x14F6] ; LCALL 0x181F:0x03FE     ; (push fixed string ptr)
  * @asm 0x0486EC  LCALL 0x181F:0x0D6C(0x190=+400, 0x64, [0x5398], [0x8D52])   ; price tick +
  * @asm 0x048700  LCALL 0x181F:0x0D6C(0x9C=-100, 0, [0x53D2], [0x8D52])       ; tax tick -
- * @asm 0x048714  LCALL 0x1A1F:0x0398([0x5398], [0x8D52])  ; (AI/strength note; target TBD)
+ * @asm 0x048714  LCALL 0x1A1F:0x0398([0x5398], [0x8D52])  ; page_0B shared dispatcher(anger,power)
  * @asm 0x048724  bx=[0x8D52]; cl=[bx-0x69D6] (PowerRecord field) ; bx=[0x8D4E]
  * @asm 0x048732  [bx+7] = min(cl, [bx+7]) ; [bx+7] <<= 2          ; market +7 clamp & scale
  * @asm 0x048743  [bx+8] = min(cl, [bx+8]) ; [bx+0xA] = cl * 0x19  ; market +8 / +0xA recompute
@@ -743,8 +762,12 @@ static void power_market_drift_apply(uint16_t power_index)
  * appends Sons-of-Liberty / boycott-lift lines to VICEROY.LOG.  0x5420 / 0x5411
  * are page-0C near trampolines (same family as 0x5402/0x5434) into the 0x191F
  * recover helpers — their result is consumed by the commit (0x0470) so their
- * internals are TBD-exact.  0x1A1F:0x0398 / 0x1A1F:0x0270 are AI/strength hooks
- * (target TBD).  Control flow, the difficulty roll ((5-diff)*2, 1/N lift gate),
+ * internals are TBD-exact.  0x1A1F:0x0398 = page_0B shared redraw/update dispatcher
+ * (cross-ref: overlay_04458A_04694B.c "near 0x9ce -> page-0B redraw dispatcher LJMP
+ * 1A1F:0398"; args here are anger scalar [0x5398] and current power [0x8D52]).
+ * 0x1A1F:0x0270 = per-power AI/boycott hook (page_0A/0B; exact body not cross-ref'd
+ * in sibling files; called immediately before commit 0x0470; role: update power AI
+ * state after boycott recovery).  Control flow, the difficulty roll ((5-diff)*2, 1/N lift gate),
  * the price/tax ticks (0x0D6C with +400/-100), the 0x14 unit-counter trip, and
  * the struct offsets (market +3/+7/+8/+0xA, unit +0x315A, settlement +0x54EE)
  * are BYTE_VERIFIED.  [DONE — control flow]
@@ -760,16 +783,33 @@ extern uint8_t *g_bound_record_8D4A;        /* (re-decl) *(0x8D4A) bound record 
 extern uint8_t *g_market_array_8D4E;        /* (re-decl) DGROUP:0x8D4E bound market array */
 extern int  ovly_5420_settlement_recover(uint16_t idx);  /* near 0x5420 (cs) -> 0x191F recover; TBD */
 extern int  ovly_5411_unit_recover(uint16_t idx);        /* near 0x5411 (cs) -> 0x191F recover; TBD */
-extern int  overlay_call_181F_04CA(void);   /* 0x181F:0x04CA — log/ctx init (local decl) */
-extern int  overlay_call_181F_097A(void);   /* 0x181F:0x097A — unit-eligibility predicate (local) */
-extern int  overlay_call_1A1F_0270(void);   /* 0x1A1F:0x0270 — per-power AI hook (local; TBD) */
-extern int  overlay_call_1A1F_0398(void);   /* 0x1A1F:0x0398 — AI/strength note (local; TBD) */
+extern int  overlay_call_181F_04CA(void);   /* 0x181F:0x04CA — seed_rng_from_timer([0x83A6]):
+                                             * seeds the RNG / primes the log context from
+                                             * the timer value at [0x83A6].
+                                             * Cross-ref: overlay_04C306_053BC1.c
+                                             * "0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer";
+                                             * overlay_0341D6_0388DE.c same. */
+extern int  overlay_call_181F_097A(void);   /* 0x181F:0x097A — per_unit_type0B_gate(unit_idx):
+                                             * returns non-zero if unit is eligible for the
+                                             * Sons-of-Liberty / freedom counter.
+                                             * Cross-ref: overlay_04C306_053BC1.c
+                                             * "0x181F:0x97A -> 0x0427:0x13B0 per_unit_type0B_gate". */
+extern int  overlay_call_1A1F_0270(void);   /* 0x1A1F:0x0270 — per-power AI/boycott hook;
+                                             * called before commit 0x0470 at boycott-lift;
+                                             * exact page_0A/0B body not cross-ref'd here. */
+extern int  overlay_call_1A1F_0398(void);   /* 0x1A1F:0x0398 — page_0B shared redraw/update
+                                             * dispatcher (cross-ref: overlay_04458A_04694B.c
+                                             * "LJMP 1A1F:0398 = shared redraw dispatcher");
+                                             * args here are anger-scalar [0x5398], power [0x8D52]. */
 /* Per-power byte tables read DS-relative as [power - disp] (power is the small
  * index from [0x8D52], NOT ×stride):  base = 0x10000 - disp.
  *   0x962A region ([bx-0x69D6]) and 0x9622 region ([si-0x69DE]) — per-power
- *   PowerRecord-adjacent scalars (exact field role TBD). */
-extern uint8_t g_power_scalar_962A[];  /* DGROUP:0x962A (= 0x10000-0x69D6), per-power byte */
-extern uint8_t g_power_scalar_9622[];  /* DGROUP:0x9622 (= 0x10000-0x69DE), per-power byte */
+ *   PowerRecord-adjacent scalars; 0x962A is the sawmill-level byte (confirmed by
+ *   colony_surrounding_tile_scan which uses it as "saw_level" divisor for lumber
+ *   yield); 0x9622 is the per-power max-pool/capacity scalar used to cap market +0xA
+ *   (see @asm 0x048830 power_scalar_9622 × 0x19 × 2 cap). */
+extern uint8_t g_power_scalar_962A[];  /* DGROUP:0x962A (= 0x10000-0x69D6), per-power saw-level byte */
+extern uint8_t g_power_scalar_9622[];  /* DGROUP:0x9622 (= 0x10000-0x69DE), per-power capacity scalar */
 
 int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
 {
@@ -781,7 +821,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
     /* @asm 0x04860C..0x04862F — set "self power", bind the PowerRecord, run the gate. */
     g_self_power_5394 = (uint8_t)(power_index + 4);  /* @asm 0x04860F */
     overlay_call_181F_0A42();                        /* @asm 0x048618 bind(power) */
-    overlay_call_181F_0590();                        /* @asm 0x04862A gate([+0x84C]) */
+    overlay_call_181F_0590();                        /* @asm 0x04862A per-power setup/bind([+0x84C]) */
 
     /* @asm 0x048632..0x048644 — phase A runs only if the econ-option is set AND the
      * power's market currently has the "boycott active" bit (+3 bit5). */
@@ -811,7 +851,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
             overlay_call_181F_0D6C();                /* price tick +400 @ ([0x5398],power) */
             overlay_call_181F_0D6C();                /* tax  tick -100 @ ([0x53D2],power) */
 
-            /* @asm 0x048714 — AI/strength note (target TBD). */
+            /* @asm 0x048714 — page_0B redraw/update dispatcher(anger, power). */
             overlay_call_1A1F_0398();
 
             /* @asm 0x048724..0x048757 — recompute the market accumulators from the
@@ -851,7 +891,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
         }
     }
 
-    /* @asm 0x0487F8 / 0x048809 — log + per-power AI hook (target TBD), then commit. */
+    /* @asm 0x0487F8 / 0x048809 — log + per-power AI/boycott hook (0x1A1F:0x0270), then commit. */
     if (verbose)
         overlay_call_0D1D_0712();                    /* log(0x150F) */
     overlay_call_1A1F_0270();                        /* @asm 0x04880C */
@@ -2004,14 +2044,18 @@ int native_event_cue_select(uint16_t power_slot_bp_08)  /* func_04A426 */
  * stockpile[16] u16 at +0x9A (base 0x5D46 via the *0x8542 alias).  0x191F:0xED0
  * is the 16-word block copy of the production array at 0x9E78 (the colony's
  * per-resource output, computed by colony_surrounding_tile_scan).  CALL cs:0x5443
- * is the page-0C near trampoline → a 0x191F finalize (target TBD).  Control flow,
+ * is the page-0C near trampoline (near 0x5443) → fills g_trade_*_9E78 / clamps a
+ * global (cross-ref: haggle.c @0x496B2 "near-call func_05443 fills g_trade_*_9E78
+ * / clamps a global").  Control flow,
  * the demand/supply table displacements, the dual random_int roll, the clamp
  * bounds (0xA..0x64), and the message ids are BYTE_VERIFIED; the inner 0x191F
  * callee bodies (0xED0 copy, 0x019C emit, 0x0D3A pull) are external.  [DONE]
  * ============================================================================ */
 extern uint16_t *g_colony_8542;             /* (re-decl) *(0x8542) current ColonyRecord */
 extern uint8_t   g_difficulty_53A6;         /* (re-decl) DGROUP:0x53A6 */
-extern int  ovly_5443_trade_finalize(void); /* near 0x5443 (cs) -> 0x191F finalize; TBD */
+extern int  ovly_5443_trade_finalize(void); /* near 0x5443 (cs) — fills g_trade_*_9E78 and
+                                             * clamps a global (cross-ref: native/haggle.c
+                                             * @0x496B2 "func_05443 fills g_trade_*_9E78"). */
 /* DGROUP tables read DS-relative (base = 0x10000 - disp):
  *   0x95B2 ([bx+si-0x6A4E]) per-(region,commodity) byte, region + commodity*16;
  *   0x941C ([bx-0x6BE4])   per-commodity word;

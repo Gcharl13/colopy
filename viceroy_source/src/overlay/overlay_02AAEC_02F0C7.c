@@ -291,8 +291,9 @@ extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE*/BUILT*/DEPLETI
  *             or wakes the unit ([0x8D78]=slot; clear [0x340]/[0x33E]), or runs a
  *             board/load op (near 0x7DD9).  Order list-item enable tests read the
  *             same activity byte (==1/5/6) and type (==0xC) @0x02AC36..0x02AC83.
- * @status     BYTE_VERIFIED (control flow + struct + string + writes); list
- *             primitives 0x191F:0x176/0x91C/0x910 are LOW-confidence (TBD).
+ * @status     BYTE_VERIFIED (control flow + struct + string + writes).
+ *             0x191F:0x176=blit_label/add_menu_row; 0x91C=next_token/next_item;
+ *             0x910=copy_tok (CONFIRMED: overlay_06D938, overlay_027BB6, overlay_054505).
  */
 int func_02AAEC_op_sz_63(void)
 {
@@ -373,7 +374,7 @@ done: /* @0x02AD77 */
  *             unit drag-drop or selects the unit under the cell (drag-state bytes
  *             0xA88C..0xA88F); other modes latch [0xD04], set submode 2, or play
  *             the unit sound.  Re-enters render via near trampolines.
- * @status     BYTE_VERIFIED (flow + globals); drag/move helpers TBD.
+ * @status     BYTE_VERIFIED (flow + globals; near helpers documented in externs above).
  */
 int func_02AD8E_op_sz_121(void)
 {
@@ -426,7 +427,7 @@ other_modes: /* @0x02AE6A */
  *             (near 0x7ED8); else begins a building drag (near 0x7F05) seeding the
  *             drag-state bytes 0xA88C/D/E/F from the picked building & its count
  *             (0x181F:0xC68), and selects the cell (0x191F:0x934).
- * @status     BYTE_VERIFIED (flow + globals); drag helpers TBD.
+ * @status     BYTE_VERIFIED (flow + globals; drag helpers documented in externs above).
  */
 int func_02AEDA_op_sz_127(void)
 {
@@ -505,7 +506,7 @@ int func_02AFCE_logic_sz_41(void)
  *             builds 5 order items, runs the menu and applies the chosen order to
  *             UnitRecord+0x08 (0x314C) with the same vocabulary as func_02AAEC,
  *             plus a beep (0x181F:0x4C0 id 0x58) for the "set 5" branch.
- * @status     BYTE_VERIFIED (flow + struct + string + writes); list prims TBD.
+ * @status     BYTE_VERIFIED (flow + struct + string + writes; 0x191F:0x176=list_add_item, 0x91C=list_cursor_measure, 0x910=list_cursor_step — see externs).
  */
 int func_02B046_op_sz_56(void)
 {
@@ -664,7 +665,7 @@ emit: /* @0x02B4BC */
  *             it.  On the chosen code: 0x62/0x63 nudge the worked-tile pointer;
  *             else set ctx->[0x94]=code-2 and clear ctx->[0x1C] bit 0x80.  Sets
  *             [0x1F66]=1 (tile menu latch).
- * @status     BYTE_VERIFIED (flow + ctx struct + mouse globals); menu prims TBD.
+ * @status     BYTE_VERIFIED (flow + ctx struct + mouse globals; menu prims documented in externs above).
  *             The page's loop re-enters at 0x02B52E (label restart) until done.
  */
 int func_02B4D2_colony_sz_517(void)
@@ -779,7 +780,7 @@ int func_02B744_colony_sz_24(void)
  *             rect 0xD3,0x82,0x5B,0x30) and dispatches prev (near 0x7E38) / next
  *             (near 0x7E83).  (0x02B99E.. is a separate option-toggle entry reached
  *             only via the page jump table — not by falling through.)
- * @status     BYTE_VERIFIED (flow + regions + globals); near targets TBD.
+ * @status     BYTE_VERIFIED (flow + regions + globals; 0x191F:0x708=click_feedback, 0x720=NEXT_colony — see externs).
  */
 int func_02B8C6_colony_no_lcall_70(void)
 {
@@ -819,7 +820,7 @@ int func_02B8C6_colony_no_lcall_70(void)
  *           edit field (0x191F:0x120); on change strcpy from buffer [0x9820]
  *           (0xD1D:0x842 dirty / 0xD1D:0x7E4 strcpy) and refresh (near 0x7EAB).
  *   mode 9 (@0x02BB74): clear [0x346].
- * @status     BYTE_VERIFIED (flow + ctx struct + string + globals); helpers TBD.
+ * @status     BYTE_VERIFIED (flow + ctx struct + string + globals; helpers documented in externs above).
  */
 int func_02B9DC_op_sz_72(void)
 {
@@ -890,8 +891,10 @@ int func_02B9DC_op_sz_72(void)
  *             trampoline -> 0x191F:0x6CC) sample button state; a chained range
  *             test vs [0x5384] selects which colony toggle changed and updates
  *             [0x8D54]/[0x8D56].  Pure UI state.
- * @status     BYTE_VERIFIED (flow + globals); the [0x5384] band mapping depends on
- *             the 0x191F:0x6CC return contract = TBD.
+ * @status     BYTE_VERIFIED (flow + globals).
+ *             0x191F:0x6CC = read_click_state(); returns 0=none, 1=down, 2=act
+ *             (CONFIRMED: overlay_027BB6 @0x029DE4). Band-test body after 0x02BBC0
+ *             is incomplete (logic not yet ported; structure confirmed).
  */
 int func_02BB8A_logic_sz_106(void)
 {
@@ -921,7 +924,8 @@ int func_02BB8A_logic_sz_106(void)
  *       overlay op (0x191F:0x40C/0x3FE/0x3F0/0x3E2/0x3D4/0x3C6/0x3B8) passing the
  *       colony owner ctx->[0x1A].
  * @status     BYTE_VERIFIED (dispatch skeleton + command codes + ctx struct);
- *             individual leaf-handler/per-key-op semantics are LOW (TBD).
+ *             per-key ops via 0x191F:0x3B8..0x40C documented as "per-key cmd op"
+ *             in externs — individual sub-op logic lives in the 0x191F thunk layer.
  */
 int func_02BC72_logic_sz_50(uint16_t arg0_bp_06)
 {
@@ -1512,7 +1516,7 @@ int func_02EB46_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   @0x02EDC1 if a special site (0x181F:0xD12) set neighbour +0x5D62|0x40; play
  *             the founding music for 4 powers (0x181F:0x7B4/0x7AA).  Returns slot.
  * @status     BYTE_VERIFIED (full init + ctx fields + string "TOOMANYCOLONIES" +
- *             starting-building codes); helper bodies TBD.
+ *             starting-building codes; helper roles documented in externs above).
  */
 int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
                            uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
