@@ -322,8 +322,14 @@ static void draw_map(void)
     uint8_t *fb = vid_framebuffer();
     memset(fb, 0, VID_W * VID_H);
 
-    DG16(0x8328) = (uint16_t)g_cam_x;       /* G_VIEW_ORIGIN_COL */
-    DG16(0x832E) = (uint16_t)g_cam_y;       /* G_VIEW_ORIGIN_ROW */
+    /* the ported func_06787C derives the origin from the view CENTER
+     * [0x17C]/[0x17E] (clamped); the shell tracks the center */
+    DG16(0x017C) = (uint16_t)(g_cam_x + 7);
+    DG16(0x017E) = (uint16_t)(g_cam_y + 6);
+    /* map-viewport clip rect (shell-level; the original's screen init sets
+     * [0x839E] -- chrome wiring next) */
+    DG16(0x839E) = 0; DG16(0x83A0) = 0;
+    DG16(0x83A2) = 239; DG16(0x83A4) = 191;
     map_view_render(-1, 0);                  /* no fog layer; full visibility */
     g_cam_x = (int16_t)DG16(0x8328);         /* read back the clamped origin */
     g_cam_y = (int16_t)DG16(0x832E);

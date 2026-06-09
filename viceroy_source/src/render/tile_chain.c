@@ -726,7 +726,6 @@ void map_view_render(int active_layer, int y_extent)
     int origin_col, origin_row;
     int max_col, max_row;
     int relrow;
-    extern void render_frame_setup(void);   /* 0x191F:0x18E via cs-thunk @0x6896A */
 
     /* 1. Fog mask = 1 << (active_layer+4), or 0 when active_layer<0.
      * @verify cmp [bp+6],0 @0x685E9; add cl,4 @0x685F2; shl al,cl @0x685F7;
@@ -803,4 +802,107 @@ void map_view_render(int active_layer, int y_extent)
          *   add [0xa5a6],ax @0x68822/@0x68825; add map_width to bases @0x68832. */
         (void)relrow;
     }
+}
+
+/* ----------------------------------------------------------------------------
+ * render_frame_setup -- func_06787C (file 0x6787C..0x67A22, page 0x15).
+ * PORTED 2026-06-09 from the raw EXE (thunk 0x191F:0x18E target; the prior
+ * platform-glue reimplementation from the spec summary is superseded).
+ * Computes the frame geometry from the view CENTER [0x17C]/[0x17E] + zoom.
+ * ---------------------------------------------------------------------------- */
+#define G_VIEW_CENTER_X  0x017C
+#define G_VIEW_CENTER_Y  0x017E
+#define G_STRAT_VIEW     0x018A
+#define G_LAYERS_RESIDENT 0x015A
+#define G_WIN_BASE_COL   0x854C
+#define G_WIN_BASE_ROW   0x854E
+#define G_WIN_ROWS       0x854A
+#define G_SHEET_METRIC2  0x0186
+#define G_METRIC_188     0x0188
+#define G_MAP_W          0x853A
+#define G_MAP_H          0x853C
+
+void render_frame_setup(void)
+{
+    int zoom, cx;
+
+    /* spans = 0xF/0xC << zoom; strat view forces 5x5 at zoom 0.
+     * @verify 0x67880-0x678AA */
+    zoom = (int16_t)DG16(G_ZOOM_LEVEL);
+    DG16(G_SPAN_W) = (uint16_t)(0x0F << zoom);
+    DG16(G_SPAN_H) = (uint16_t)(0x0C << zoom);
+    if (DG16(G_STRAT_VIEW) != 0) {
+        DG16(G_SPAN_W) = 5;                       /* @0x6789B-0x678A1 */
+        DG16(G_SPAN_H) = 5;
+        DG16(G_ZOOM_LEVEL) = 0;                   /* @0x678A4 */
+        zoom = 0;
+    }
+    DG16(G_TILE_PX_W) = (uint16_t)(0x10 >> zoom); /* @0x678AE-0x678B6 */
+    DG16(G_TILE_PX_H) = (uint16_t)(0x10 >> zoom);
+
+    /* origin = center - span/2, clamped to [1, dim-span-1].
+     * @verify 0x678B9.. (head) + 0x67900-0x6790E (row clamp tail) */
+    cx = (int16_t)DG16(G_VIEW_CENTER_X) - ((int16_t)DG16(G_SPAN_W) >> 1);
+    if (cx < 1) cx = 1;
+    if (cx > (int16_t)DG16(G_MAP_W) - (int16_t)DG16(G_SPAN_W) - 1)
+        cx = (int16_t)DG16(G_MAP_W) - (int16_t)DG16(G_SPAN_W) - 1;
+    DG16(G_VIEW_ORIGIN_COL) = (uint16_t)cx;
+    cx = (int16_t)DG16(G_VIEW_CENTER_Y) - ((int16_t)DG16(G_SPAN_H) >> 1);
+    if (cx < 1) cx = 1;
+    if (cx > (int16_t)DG16(G_MAP_H) - (int16_t)DG16(G_SPAN_H) - 1)
+        cx = (int16_t)DG16(G_MAP_H) - (int16_t)DG16(G_SPAN_H) - 1;
+    DG16(G_VIEW_ORIGIN_ROW) = (uint16_t)cx;       /* @0x6790E */
+
+    /* small-map centering: pix_base = (span-dim+2)/2, origin pinned to 1,
+     * span clipped to dim-2.  @verify 0x67912-0x6795F */
+    DG16(G_PIX_BASE_COL) = 0;
+    DG16(G_PIX_BASE_ROW) = 0;
+    if ((int16_t)DG16(G_MAP_W) - 2 < (int16_t)DG16(G_SPAN_W)) {
+        DG16(G_VIEW_ORIGIN_COL) = 1;
+        DG16(G_PIX_BASE_COL) = (uint16_t)
+            (((int16_t)DG16(G_SPAN_W) - (int16_t)DG16(G_MAP_W) + 2) >> 1);
+        DG16(G_SPAN_W) = (uint16_t)((int16_t)DG16(G_MAP_W) - 2);
+    }
+    if ((int16_t)DG16(G_MAP_H) - 2 < (int16_t)DG16(G_SPAN_H)) {
+        DG16(G_VIEW_ORIGIN_ROW) = 1;
+        DG16(G_PIX_BASE_ROW) = (uint16_t)
+            (((int16_t)DG16(G_SPAN_H) - (int16_t)DG16(G_MAP_H) + 2) >> 1);
+        DG16(G_SPAN_H) = (uint16_t)((int16_t)DG16(G_MAP_H) - 2);
+    }
+
+    /* staging-window base = origin-1 (the border ring). @verify 0x67962-0x6796D */
+    DG16(G_WIN_BASE_COL) = (uint16_t)((int16_t)DG16(G_VIEW_ORIGIN_COL) - 1);
+    DG16(G_WIN_BASE_ROW) = (uint16_t)((int16_t)DG16(G_VIEW_ORIGIN_ROW) - 1);
+
+    /* layer-window stride/rows. FAST path ([0x15A]!=0): stride=(0xF<<z)+2,
+     * rows=(0xC<<z)+2 (strat: clipped window @0x67996-0x679E5).  SLOW path:
+     * stride = FULL MAP W, rows = MAP H  @verify 0x679E8-0x679F1 -- this is
+     * the path the modern host plumbing implements (wp_* read the whole map
+     * with map-width stride; [0x15A]=0).  */
+    if (DG16(G_LAYERS_RESIDENT) != 0 && DG16(G_STRAT_VIEW) == 0) {
+        DG16(G_RENDER_STRIDE) = (uint16_t)((0x0F << zoom) + 2);  /* @0x67982-0x67989 */
+        DG16(G_WIN_ROWS)      = (uint16_t)((0x0C << zoom) + 2);  /* @0x6798C-0x67992 */
+    } else if (DG16(G_LAYERS_RESIDENT) != 0) {
+        int x1 = (int16_t)DG16(G_WIN_BASE_COL) + 6;              /* @0x67996-0x6799C */
+        int y1 = (int16_t)DG16(G_WIN_BASE_ROW) + 6;
+        int ax = (int16_t)DG16(G_MAP_W) - 1; if (ax > x1) ax = x1;
+        cx = (int16_t)DG16(G_WIN_BASE_COL); if (cx < 0) cx = 0;
+        DG16(G_WIN_BASE_COL) = (uint16_t)cx;
+        DG16(G_RENDER_STRIDE) = (uint16_t)(ax - cx + 1);         /* @0x679C2-0x679C5 */
+        ax = (int16_t)DG16(G_MAP_H) - 1; if (ax > y1) ax = y1;
+        cx = (int16_t)DG16(G_WIN_BASE_ROW); if (cx < 0) cx = 0;
+        DG16(G_WIN_BASE_ROW) = (uint16_t)cx;
+        DG16(G_WIN_ROWS) = (uint16_t)(ax - cx + 1);              /* @0x679E2-0x679E4 */
+    } else {
+        DG16(G_RENDER_STRIDE) = DG16(G_MAP_W);                   /* @0x679E8-0x679EB */
+        DG16(G_WIN_ROWS)      = DG16(G_MAP_H);                   /* @0x679EE-0x679F1 */
+    }
+
+    /* metrics + window max. @verify 0x679F4-0x67A1E */
+    DG16(G_SHEET_METRIC2) = (uint16_t)(0x64 >> zoom);            /* @0x679F8-0x679FD */
+    DG16(G_METRIC_188)    = (uint16_t)((5 << zoom) + 5);         /* @0x67A00-0x67A08 */
+    DG16(G_VIEW_MAX_COL) = (uint16_t)((int16_t)DG16(G_SPAN_W)
+                          + (int16_t)DG16(G_VIEW_ORIGIN_COL) - 1);
+    DG16(G_VIEW_MAX_ROW) = (uint16_t)((int16_t)DG16(G_SPAN_H)
+                          + (int16_t)DG16(G_VIEW_ORIGIN_ROW) - 1);
 }

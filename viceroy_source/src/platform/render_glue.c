@@ -85,8 +85,10 @@ void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
     g_layer_len = (long)w * h;
     DG16(G_MAP_W) = (uint16_t)w;
     DG16(G_MAP_H) = (uint16_t)h;
-    DG16(G_RENDER_STRIDE) = (uint16_t)w;   /* row stride in the layer arrays */
-    DG16(G_LAYERS_RESIDENT) = 1;           /* fast path */
+    /* SLOW path ([0x15A]=0): the ported render_frame_setup then sets
+     * stride = full map width (@0x679E8) -- exactly what the host-side
+     * wp_* plumbing implements. */
+    DG16(G_LAYERS_RESIDENT) = 0;
 }
 
 /* commit the 3 working pointers for the CURRENT tile.
@@ -116,39 +118,9 @@ uint8_t wp_terrain_rel(int16_t off) { return wp_rel(0, off); }
 uint8_t wp_feature_rel(int16_t off) { return wp_rel(1, off); }
 uint8_t wp_resfog_rel(int16_t off)  { return wp_rel(2, off); }
 
-/* ---- render_frame_setup (func_06787C semantics) ---------------------------- */
-void render_frame_setup(void)
-{
-    int zoom = (int16_t)DG16(G_ZOOM_LEVEL);
-    int px   = 0x10 >> zoom;
-    DG16(G_TILE_PX_W) = (uint16_t)px;
-    DG16(G_TILE_PX_H) = (uint16_t)px;
-    DG8(G_SHEET_METRIC) = (uint8_t)(0x64 >> zoom);
-
-    int span_w = 0x0F << zoom, span_h = 0x0C << zoom;
-    DG16(G_SPAN_W) = (uint16_t)span_w;
-    DG16(G_SPAN_H) = (uint16_t)span_h;
-
-    int w = (int16_t)DG16(G_MAP_W), h = (int16_t)DG16(G_MAP_H);
-    int oc = (int16_t)DG16(G_VIEW_ORIGIN_COL);
-    int orow = (int16_t)DG16(G_VIEW_ORIGIN_ROW);
-    if (oc < 1) oc = 1;
-    if (orow < 1) orow = 1;
-    if (oc > w - span_w - 1) oc = w - span_w - 1;
-    if (orow > h - span_h - 1) orow = h - span_h - 1;
-    DG16(G_VIEW_ORIGIN_COL) = (uint16_t)oc;
-    DG16(G_VIEW_ORIGIN_ROW) = (uint16_t)orow;
-    DG16(G_VIEW_MAX_COL) = (uint16_t)(oc + span_w - 1);
-    DG16(G_VIEW_MAX_ROW) = (uint16_t)(orow + span_h - 1);
-    DG16(G_PIX_BASE_COL) = 0;
-    DG16(G_PIX_BASE_ROW) = 0;
-
-    /* default clip = map viewport area */
-    DG16(G_CLIP_RECT + 0) = 0;
-    DG16(G_CLIP_RECT + 2) = 0;
-    DG16(G_CLIP_RECT + 4) = (uint16_t)(span_w * px - 1);
-    DG16(G_CLIP_RECT + 6) = (uint16_t)(span_h * px - 1);
-}
+/* render_frame_setup: now PORTED byte-cited in src/render/tile_chain.c
+ * (func_06787C, file 0x6787C..0x67A22); the spec-based reimplementation that
+ * lived here is removed. */
 
 /* ---- sheet registry -------------------------------------------------------- */
 static const ss_sheet_t *g_sheets[8];
