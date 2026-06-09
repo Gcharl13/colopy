@@ -24,6 +24,7 @@ file(GLOB_RECURSE VICEROY_SOURCES CONFIGURE_DEPENDS
 
 # Exclude DOS platform files + unrealised SDL platform-layer stubs
 # (audio, asset, render: replaced by SDL/modern implementations in milestone 3)
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/main_modern\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/boot/entry\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/runtime/cstart\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
@@ -58,11 +59,23 @@ target_compile_options(viceroy_rules PRIVATE
 )
 
 # ============================================================================
-# Stub main (milestone 3 placeholder — SDL front end goes here)
+# viceroy_modern — the modern-host executable (milestone 3 first-light)
+# ----------------------------------------------------------------------------
+# Links the rules library against the GENERATED link floor:
+#   tools/generated/linkfloor.ld      byte-exact DGROUP-global aliases
+#   tools/generated/thunk_wiring.ld   overlay-thunk -> real-target aliases
+#   tools/linkfloor_extra.ld          committed aliases (non-hex-named globals)
+#   tools/generated/linkfloor_stubs.c weak no-op floor for everything else
+#   tools/generated/thunk_keepalive.c forces alias targets out of the archive
+# Regenerate after library changes:
+#   python3 tools/thunkwire.py && python3 tools/linkgap.py
 # ============================================================================
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main_modern.c")
+set(VICEROY_GEN "${CMAKE_CURRENT_SOURCE_DIR}/tools/generated")
+if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wiring.ld")
     add_executable(viceroy_modern
         src/main_modern.c
+        "${VICEROY_GEN}/linkfloor_stubs.c"
+        "${VICEROY_GEN}/thunk_keepalive.c"
     )
     target_link_libraries(viceroy_modern PRIVATE viceroy_rules)
     target_include_directories(viceroy_modern PRIVATE
@@ -71,4 +84,12 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main_modern.c")
     target_compile_definitions(viceroy_modern PRIVATE
         _VICEROY_MODERN
     )
+    # linker-script INPUTS (not -T: they augment, never replace, the default)
+    target_link_options(viceroy_modern PRIVATE
+        "${VICEROY_GEN}/linkfloor.ld"
+        "${VICEROY_GEN}/thunk_wiring.ld"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/linkfloor_extra.ld"
+    )
+else()
+    message(STATUS "viceroy_modern skipped: run tools/thunkwire.py + tools/linkgap.py first")
 endif()
