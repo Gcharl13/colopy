@@ -58,6 +58,12 @@
 #include "iolib.h"
 #include "power.h"
 
+/* Screen-state id returned to the reconstruction-layer screen dispatcher.
+ * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2B (Europe view);
+ * same value as SCREEN_ID_EUR below. Defined file-locally; the SCREEN_* ids
+ * belong in a shared ui screen-id header for consolidation. */
+#define SCREEN_EUROPE  0x2B
+
 /* ----------------------------------------------------------------------------
  * Active power record (the player's nation).  BYTE_VERIFIED PowerRecord table
  * base DGROUP:0x8808 stride 0x13C; active via far ptr DGROUP:0x84FC.

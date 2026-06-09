@@ -36,6 +36,13 @@
 #include "viceroy_types.h"
 #include "iolib.h"
 
+/* Screen-state id returned to the reconstruction-layer screen dispatcher.
+ * No DOS-traced view id exists for the title menu (the screen-state return is a
+ * project convention). Assigned the unused id 0x29, extending the verified
+ * view-id block (Europe 0x2B, Colony 0x2C) downward. Defined file-locally; the
+ * SCREEN_* ids belong in a shared ui screen-id header for consolidation. */
+#define SCREEN_TITLE  0x29
+
 /* ----------------------------------------------------------------------------
  * Boot / main-menu assets (VERIFIED-by-catalog; load call sites not yet decoded).
  * Source: docs/SESSION_UI_CATALOG.md + COLONIZE_DATA_FILES_INDEX.md.

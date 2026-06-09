@@ -280,12 +280,23 @@ int native_raid_resolve_outcome(void)   /* returns RAID_OUTCOME_* */
  * units occupy UnitRecord type ids 0x0D..0x12.  Everything else below is RECONSTRUCTED.
  * ============================================================================ */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
-extern Unit *spawn_unit(int owner, int unit_type, int x, int y);
+/* spawn_unit returns a unit INDEX (int), not a pointer — matches the sibling
+ * declaration in src/random_events/lcr.c (overlay thunk 0x181F:0x095C, file
+ * 0x006D24).  -1 means "no slot". (There is no `Unit` typedef; the prior
+ * `Unit *` here was a RECONSTRUCTED invention.) */
+extern int spawn_unit(int owner, int unit_type, int x, int y);
 
-void spawn_raiding_brave(NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
+/* RECONSTRUCTED tuning ids (NOT byte-verified) — native combat unit types occupy
+ * UnitRecord type ids 0x0D..0x12 (@asm 0x05C27B); natives are powers 4..11
+ * (NATIVE_POWER_BASE, include/native.h). */
+#define UNIT_BRAVE       0x0D   /* RECONSTRUCTED — low end of native combat range 0x0D..0x12 */
+#define NATIVE_POWER_ID  4      /* RECONSTRUCTED — NATIVE_POWER_BASE (native.h) */
+
+void spawn_raiding_brave(struct NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
 {
     int unit_type = UNIT_BRAVE;   /* RECONSTRUCTED — native combat types are 0x0D..0x12 */
-    Unit *u = spawn_unit(NATIVE_POWER_ID, unit_type, s->x, s->y);
-    if (!u) return;
+    int u = spawn_unit(NATIVE_POWER_ID, unit_type, s->x, s->y);
+    if (u < 0) return;
     (void)target_power;
+    (void)u;
 }

@@ -9,6 +9,7 @@
  *
  * Callers must invoke dgroup_init() at startup before touching game state.
  * ============================================================================ */
+#include <stddef.h>   /* NULL */
 #include "dgroup.h"
 #include "unit.h"
 #include "power.h"

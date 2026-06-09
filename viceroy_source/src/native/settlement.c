@@ -29,6 +29,29 @@ extern void *   g_cur_settlement_8D4A;   /* DGROUP:0x8D4A — far ptr to "settle
 extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settlement being removed" record */
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */
 
+/* ----------------------------------------------------------------------------
+ * Forward declarations — declared here (before first use) so the C11 compiler
+ * does not synthesize an implicit `int()` prototype that then conflicts with the
+ * fuller `extern` decls further down. Signatures match those later decls exactly.
+ * None of these are in include/ headers (resident/overlay helpers). [ANCHOR_VERIFIED]
+ * ---------------------------------------------------------------------------- */
+extern uint8_t  settlement_initial_population(int settlement_index); /* CALL near 0x5434 */
+extern void     map_mark_settlement_tile(int x, int y, int owner);
+extern uint8_t *unit_record(int index);                              /* &UnitRecord[i] (base 0x3144) */
+extern void     unit_detach_from_settlement(int unit_index);         /* LCALL 0x181F:0x808 */
+extern uint8_t  native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
+
+/* Per-turn settlement-tick tuning rates — NOT byte-resident as literals (native
+ * behaviour tables load from NAMES.TXT @TRIBES at runtime; see banner below).
+ *   MISSION_CONVERT_PCT: byte-verified convert mechanic in src/native/mission.c
+ *     (mission_convert_roll, @asm 0x572F6..0x57316) is P = MIN(tribe[+2]+2,16)/16;
+ *     the smallest propensity gives rate=2 -> 2/16 = 12.5%.  Mapped to a /100
+ *     percent here as floor(2*100/16) = 12 to match that verified base rate.
+ *   NATIVE_GROWTH_PCT: no growth percentage exists in the EXE as a literal — the
+ *     growth table is RUNTIME_ONLY (NAMES.TXT). 10% is a defensible placeholder. */
+#define MISSION_CONVERT_PCT  12   /* @asm-derived from mission_convert_roll: 2/16 base */
+#define NATIVE_GROWTH_PCT    10   /* TODO: verify value (RUNTIME_ONLY, NAMES.TXT @TRIBES) */
+
 /* ============================================================================
  * native_settlement_add — BYTE_VERIFIED
  *
@@ -306,8 +329,8 @@ void native_tick_all(void)
 
 void native_settlement_tick(int index)   /* RECONSTRUCTED — rates RUNTIME_ONLY (NAMES.TXT/data-file) */
 {
-    NativeSettlement *s =
-        (NativeSettlement *)&g_native_table_54EC[index * NATIVE_SETTLEMENT_STRIDE];
+    struct NativeSettlement *s =
+        (struct NativeSettlement *)&g_native_table_54EC[index * NATIVE_SETTLEMENT_STRIDE];
 
     /* 1. Population growth — RUNTIME_ONLY rate (loaded from NAMES.TXT/data-file) */
     if (game_random_range(0, 99) < NATIVE_GROWTH_PCT /* RUNTIME_ONLY (NAMES.TXT/data-file) */) {

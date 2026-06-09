@@ -105,6 +105,12 @@ void king_ref_init(void)
  * the REF: one event adds only d*8+10 points (≥ era multiplier), far short of
  * the 1800-point threshold for a unit.
  * ============================================================================ */
+/* Forward declarations (ahead of first use so king_sentiment_accum_22's real
+ * int32_t* return type is in scope — an implicit int decl would conflict). */
+extern int      revolution_flag_5382(void);   /* DGROUP:0x5382 bit 0 = at war */
+extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */
+extern void     king_register_ref_unit(int slot);
+
 void king_ref_buildup(int active_power)
 {
     (void)active_power;
@@ -138,10 +144,6 @@ void king_ref_buildup(int active_power)
     *accum -= 0x708;
     king_register_ref_unit(slot);   /* CALL near 0x3690 + king[+0xE] += cost */
 }
-
-extern int      revolution_flag_5382(void);   /* DGROUP:0x5382 bit 0 = at war */
-extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */
-extern void     king_register_ref_unit(int slot);
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<

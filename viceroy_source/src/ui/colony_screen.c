@@ -54,6 +54,12 @@
 #include "iolib.h"
 #include "colony.h"
 
+/* Screen-state id returned to the reconstruction-layer screen dispatcher.
+ * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2C (colony view);
+ * see enter_screen_view(0x2C) @asm 0x025EE8 above. Defined file-locally; the
+ * SCREEN_* ids belong in a shared ui screen-id header for consolidation. */
+#define SCREEN_COLONY  0x2C
+
 /* ----------------------------------------------------------------------------
  * Active colony record + screen-state globals (BYTE_VERIFIED).
  *   DGROUP:0x8542  -> active ColonyRecord (near ptr).  Read by the composer

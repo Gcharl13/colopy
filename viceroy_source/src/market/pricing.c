@@ -38,7 +38,7 @@
  *                                line 206 labels 0x53A6 "current_player_idx" —
  *                                the ==0..4 compares + default-2 contradict that;
  *                                flagged for central RULINGS resolution.        [V*]
- *                                (active power index is the separate 0x9E12.)     */
+ *                                (active power index is the separate 0x9E12.)
  * 0x543F  byte[ ] power_is_AI    per-power flag, stride 0x34; ==0 => human
  *                                (gates auto PRICEUP/PRICEDOWN popups)          [V]
  * 0x7B44  byte[pwr*0x10+good]    published display price snapshot               [V]

@@ -128,7 +128,7 @@ void compute_dialog_rect_from_cursor(void)
  *     quoted response options highlighted per the GAME.TXT @default directive.
  *   - Body width comes from GAME.TXT "@width=NN" (pixels); WOODFRAM border adds
  *     ~10px each side. Centering/Y depend on game state + the rect above.
- *   - Frame art: WOODFRAM.SS (stretched/tiled). Speaker sprites: MSS*/MYR*.
+ *   - Frame art: WOODFRAM.SS (stretched/tiled). Speaker sprites: MSS* / MYR*.
  *
  * No resident byte evidence for the frame/text draw calls -> not reconstructed.
  * ============================================================================ */

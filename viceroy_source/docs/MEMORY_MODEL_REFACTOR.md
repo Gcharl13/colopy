@@ -102,9 +102,13 @@ pass; the remaining ~26 are being reconciled.
   file I/O (the MSC C-runtime layer `strcpy@0xFDB4`/`fread`/... → native libc),
   and the RTLink overlay loader → a flat linked binary.
 - `load_image/*` decompilation backlog: materialise the `goto label_XXXXXX`
-  targets (label name = absolute EXE file offset; place via the per-line `@asm`
-  offset annotations) and replace `ax`/register pseudo-vars with real locals, then
-  fold each function into its organised module and drop the CMake exclusion.
+  targets (label name = absolute EXE file offset) and replace `ax`/register
+  pseudo-vars with real locals, then fold each function into its organised module
+  and drop the CMake exclusion. **Not scriptable** (verified 2026-06-09): the jump
+  TARGET offsets do not appear as annotated instruction offsets in the decompiled
+  output (e.g. target `0x002890` falls between annotated lines `@0x00289F` /
+  `@0x0028AB`), so labels can't be placed by offset-match — each function needs
+  real control-flow reconstruction. Do per-function, not bulk.
 
 ## Order of attack
 ~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → **C (build wiring) — library compiling,

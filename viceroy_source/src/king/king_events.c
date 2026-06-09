@@ -136,6 +136,13 @@ extern void  ui_show_message2(int a, int handle);            /* 0x191F:0x0AE0 */
 #define MSG_REFIT     0xEEF   /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
 #define MSG_KINGTAX   0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result; @asm 0x02F392 in sibling) */
 
+/* Keyed-message handles for the king-grant prompt (file = handle + 0x1D9A0).
+ * Defined here (ahead of first use) so the preprocessor sees them at the call
+ * sites in king_process_power_events below. */
+#define MSG_WINNING_KEY      0xEF5   /* lea bx,[0xef5] @0x02F314 -> (0xef5+0x1D9A0=0x1E895) — between
+                                      * REFIT(0xeef) and KINGTAX(0xf01); a sub-key of that block. not yet decoded. */
+#define MSG_GRANT_FOLLOWUP   0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
+
 /* ============================================================================
  * king_process_power_events — func_02F052 — BYTE_VERIFIED (control flow + writes)
  *
@@ -350,10 +357,8 @@ extern void msg_set_int(int slot, int value);        /* 0x181F:0x438 (int form) 
 extern void ui_flush(void);                          /* 0x191F:0xA82 */
 extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle */
 
-/* Keyed-message handles for the king-grant prompt (file = handle + 0x1D9A0). */
-#define MSG_WINNING_KEY      0xEF5   /* lea bx,[0xef5] @0x02F314 -> (0xef5+0x1D9A0=0x1E895) — between
-                                      * REFIT(0xeef) and KINGTAX(0xf01); a sub-key of that block. not yet decoded. */
-#define MSG_GRANT_FOLLOWUP   0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
+/* (MSG_WINNING_KEY / MSG_GRANT_FOLLOWUP are defined ahead of their use near the
+ *  top of this file, alongside MSG_REFIT/MSG_KINGTAX.) */
 
 /* ============================================================================
  * NOTES / NOT YET VERIFIED

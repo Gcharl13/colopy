@@ -44,7 +44,10 @@ extern int16_t g_region_2DA8[4];   /* DGROUP:0x2DA8..0x2DAE */
 extern int16_t g_word_372;         /* DGROUP:0x0372  cursor-active latch */
 
 /* ---- leaf helpers (resolved targets; call sites + args byte-exact) -------- */
-extern void strcpy_near(char *dst, int src_handle);  /* LCALL 0xD1D:0x7E4 (MSC strcpy) */
+/* strcpy_near declared canonically in iolib.h (char near *(char near*, const
+ * char near*)); call sites pass an int message handle as src (cast is harmless
+ * under -Wno-int-to-pointer-cast). The bad local `void(char*,int)` decl was
+ * removed — it conflicted with the iolib.h prototype. */
 extern void ov_lookup_report_key(int which, void *buf);/* 0x181F:0x182 (page-05 ctx) */
 extern int  ov_report_dispatch(void *titlebuf, int z, int r0,int r1,int r2,int r3,
                                void *keybuf);          /* 0x181F:0x44E */

@@ -36,6 +36,7 @@
  * with the value, and on YES executes the gold transfer.
  * ============================================================================ */
 #include "viceroy_types.h"
+#include <stdbool.h>   /* for `bool` used by the dialog-confirmation return (display_smite_dialog) */
 
 /* BYTE_VERIFIED 2026-06-08: per-power (0..3) flat arrays — NOT stride-0x13C.
  *   942C: per-power diplomatic contact/activity count, uint8 [4], saturating 0..255.
