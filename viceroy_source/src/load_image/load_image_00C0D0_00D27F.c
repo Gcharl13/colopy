@@ -717,11 +717,17 @@ int func_00C8FC_logic_sz_88(int near *origin_a /*ax*/, int near *origin_b /*dx*/
  */
 int func_00CA0C_logic_sz_74(uint16_t arg0_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x83AC, 0x92F8, 0x9300, 0x9302, 0x9304, 0x9306, 0x9308
-     */
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm Detects/initialises the DOS mouse driver: hooks the INT 0x21 get-vector
+     *      (AX=0x3533) to confirm an INT 0x33 handler is installed, runs INT 0x33
+     *      fn 0/0x0F/3/0x14 to reset and configure the cursor, and seeds the driver
+     *      context globals (0x9300..0x9308 = bounds/handler far ptr, 0x83AC =
+     *      mouse-present flag, 0x92F8 = frozen flag).  When arg0 ([bp+6]) is set it
+     *      also installs the per-module cursor state (0x92FC/0x92FE/0x5AB/...).
+     *      Returns the mouse-present flag [0x83AC].
+     * PLATFORM_LAYER: the INT 0x21/0x33 host plumbing is replaced by the modern
+     * front end; the rules layer does not perform real driver I/O, so this reports
+     * "no mouse" (0).  Kept as a documented platform stub per project convention. */
+    return 0;  /* @asm mov ax,[0x83AC] — host-replaced; no driver in the rules layer */
 }
 
 /* @asm        0x00CB59..0x00CB72  (25 bytes)  region=load_image
