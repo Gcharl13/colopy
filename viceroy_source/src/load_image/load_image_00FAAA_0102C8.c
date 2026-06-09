@@ -181,43 +181,100 @@ done:
  * Near CALL targets:
  *   - 0x010352
  *   - 0x010E66
- * @inferred_role  FIND_LOOP (163 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  fwrite(buf=arg0, size=arg1, count=arg2, fp=arg3): buffered write
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner "size 163 / 2 near_call" was wrong; func_00FBDC.asm
+ * reports size 261 with 4 near calls (memcpy 0x10352 + flush 0x10E66 +
+ * write 0x115CE + _flsbuf 0x10BBC).  This is the MSC 6.0 fwrite()
+ * implementation — the write twin of fread() at func_00FAF8.  Signature
+ * widened to 4 args.  FILE layout (si): [si+0]=buffer write cursor,
+ * [si+2]=bytes free in buffer, [si+6]=flags byte, [si+7]=fd.  Parallel flag
+ * entry di=0x29AE+(si-0x290E): [di]=stream-mode byte (bit0 => buffer
+ * allocated), [di+2]=buffer size.
  */
+/* PORTED 2026-06-09 from func_00FBDC.asm — this is fwrite_buffered (MSC fwrite). */
 int func_00FBDC_logic_sz_163(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00FBEC JCXZ 0x00FC4B */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FC05 JNE 0x00FC0C */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FC0A JE 0x00FC11 */ {
-                    goto label_00FC14;  /* @0x00FC0F */
-                }
+    /* @asm 0x00FBE4 ax = size(bp+8) * count(bp+0xa) -> cx = total bytes;
+     *      0x00FBEC jcxz -> total==0 returns the product (ax, =0). */
+    uint16_t total = (uint16_t)(arg1_bp_08 * arg2_bp_0A);
+    uint16_t cx = total;                                  /* bytes remaining */
+    uint16_t bx = arg0_bp_06;                             /* user-buf cursor [bx] */
+    uint16_t si = arg3_bp_0C;                             /* FILE* */
+    uint16_t di;                                          /* flag-array entry */
+    uint16_t bufsize;
+    if (cx == 0) return (int)(uint16_t)total;             /* @asm 0xFBEC jcxz -> ret ax */
+
+    di = (uint16_t)(0x29AE + (si - 0x290E));              /* @asm di mapping */
+
+    /* @asm 0x00FC01 bufsize([bp-4]) = ([si+6]&0xC || [di]&1) ? [di+2] : 0x200. */
+    if ((DG8(si + 6) & 0x0C) || (DG8(di) & 1))            /* @asm test [si+6],0xc / test [di],1 */
+        bufsize = DG16(di + 2);                           /* @asm mov ax,[di+2] */
+    else
+        bufsize = 0x200;                                  /* @asm mov ax,0x200 */
+
+    for (;;) {                                            /* @asm 0xFC17 loop top */
+        /* @asm 0x00FC17 if buffer is active, fill it from the user buffer first. */
+        if ((DG8(si + 6) & 0x08) || (DG8(di) & 1)) {      /* @asm test [si+6],8 / test [di],1 */
+            uint16_t avail = DG16(si + 2);                /* @asm mov ax,[si+2] (free space) */
+            if (avail != 0) {                             /* @asm or ax,ax; je 0xFC54 */
+                if (avail > cx) avail = cx;               /* @asm cmp ax,cx; jbe; mov ax,cx */
+                func_010352(DG16(si), bx, avail);         /* @asm memcpy(dest=[si],src=bx,avail) */
+                cx -= avail;                              /* @asm sub cx,ax */
+                DG16(si + 2) -= avail;                    /* @asm sub [si+2],ax */
+                bx += avail;                              /* @asm add bx,ax */
+                DG16(si) += avail;                        /* @asm add [si],ax */
+                if (cx == 0) break;                       /* @asm 0xFC4E or cx,cx; jne loop */
+                continue;                                 /* @asm jne 0xFC17 */
             }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FC1B JNE 0x00FC22 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FC20 JE 0x00FC54 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x00FC27 JE 0x00FC54 */ {
-                        if (/* JBE fallthrough cond: */ ax > 0) /* @0x00FC2B JBE 0x00FC2F */ {
-                        }
-                        /* @0x00FC37 */ func_010352();
-                        goto label_00FC4E;  /* @0x00FC49 */
-                        goto label_00FCDB;  /* @0x00FC4B */
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FC50 JNE 0x00FC17 */ {
-                        }
-                        goto label_00FCCA;  /* @0x00FC52 */
-                    }
-                }
-            }
+            /* avail==0 -> fall through to flush/direct path @0xFC54 */
         }
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x00FC57 JB 0x00FCA1 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FC5D JNE 0x00FC64 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FC62 JE 0x00FC72 */ {
-                    /* @0x00FC68 */ func_010E66();
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FC70 JNE 0x00FCCA */ {
-                    }
-                }
+
+        /* @asm 0x00FC54 flush/direct path. */
+        if (cx >= bufsize) {                              /* @asm cmp cx,[bp-4]; jb 0xFCA1 */
+            /* If there is buffered output, flush it first. */
+            if ((DG8(si + 6) & 0x08) || (DG8(di) & 1)) {  /* @asm test [si+6],8 / test [di],1 */
+                if (func_010E66(si) != 0)                 /* @asm call 0x10E66 flush(fp) */
+                    break;                                /* @asm or ax,ax; jne 0xFCCA (error) */
             }
+            /* @asm 0x00FC72 write whole buffer-sized blocks directly. */
+            {
+                uint16_t rem = (uint16_t)(cx % bufsize);  /* @asm div [bp-4] -> dx=rem */
+                uint16_t whole = (uint16_t)(cx - rem);    /* @asm mov ax,cx; sub ax,dx */
+                int wr = func_0115CE((uint8_t)DG8(si + 7), bx, whole);
+                                                          /* @asm call 0x115CE write(fd,bx,whole) */
+                if ((uint16_t)wr == 0xFFFF) {             /* @asm cmp ax,0xFFFF; je 0xFCC6 */
+                    DG8(si + 6) |= 0x20;                  /* @asm or [si+6],0x20 (err) */
+                    break;
+                }
+                cx -= (uint16_t)wr;                       /* @asm sub cx,ax */
+                if ((uint16_t)wr != rem) {                /* @asm cmp ax,dx; jne 0xFCC6 (short) */
+                    DG8(si + 6) |= 0x20;                  /* @asm or [si+6],0x20 (err) */
+                    break;
+                }
+                bx += (uint16_t)wr;                       /* @asm add bx,ax */
+                if (cx == 0) break;                       /* @asm 0xFC4E or cx,cx; jne loop */
+                continue;                                 /* @asm jmp 0xFC4E */
+            }
+        } else {
+            /* @asm 0x00FCA1 fewer than bufsize bytes left: emit one via _flsbuf. */
+            int rc = func_010BBC((uint8_t)DG8(bx), si);   /* @asm mov al,[bx]; call 0x10BBC putc(c,fp) */
+            if ((uint16_t)rc == 0xFFFF) break;            /* @asm cmp ax,0xFFFF; je 0xFCCA */
+            bx++;                                         /* @asm inc bx */
+            cx--;                                         /* @asm dec cx */
+            bufsize = DG16(di + 2);                       /* @asm mov ax,[di+2] */
+            if (bufsize == 0) bufsize = 1;                /* @asm or ax,ax; jne; inc ax */
+            if (cx == 0) break;                           /* @asm 0xFC4E or cx,cx; jne loop */
+            continue;                                     /* @asm jmp 0xFC4E */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x00FCCA if cx!=0 return whole-objects written = (total-cx)/size;
+     *      else (cx==0) return count(bp+0xa). */
+    if (cx != 0)                                          /* @asm jcxz 0xFCD8 */
+        return (int)(uint16_t)((uint16_t)(total - cx) / arg1_bp_08); /* @asm (total-cx)/size */
+    return (int)(uint16_t)arg2_bp_0A;                     /* @asm mov ax,[bp+0xa] (count) */
 }
 
 /* @asm        0x00FCE2..0x00FCF0  (14 bytes)  region=load_image
@@ -313,20 +370,20 @@ int func_00FD56_logic_sz_30(uint16_t arg0_bp_06)
  * @inferred_role  strcat-like (near): append src(arg1) to dest(arg0)
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00FD74_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_00FD74_strcat_near.asm — this is strcat_near
+ * (iolib.h, 0xFD74).  Signature widened to the canonical near form. */
+char near *strcat_near(char near *dst, const char near *src)
 {
-    /* @asm strcat(dest=arg0_bp_06, src=arg1_bp_08), near pointers.
+    /* @asm strcat(dest=[bp+6], src=[bp+8]), near pointers.
      * 0x00FD7F mov di,[bp+6]; scan dest for NUL (repne scasb) -> end;
      * 0x00FD8C mov di,[bp+8]; scan src for NUL to get its length;
      * then copy src (incl. NUL) to dest end via rep movs.
      * 0x00FD9A mov ax,[bp+6] -> returns dest. (movsw/movsb word-aligned
      * fast path is byte-equivalent to the byte copy below.) */
-    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
-    uint8_t near *p = dst;
+    char near *p = dst;
     while (*p) p++;                 /* @asm repne scasb over dest */
     while ((*p++ = *src++) != 0) ;  /* @asm rep movs (src incl. NUL) */
-    return (int)(uint16_t)arg0_bp_06; /* @asm mov ax,[bp+6] */
+    return dst;                     /* @asm mov ax,[bp+6] */
 }
 
 /* @asm        0x00FDB4..0x00FDE6  (50 bytes)  region=load_image
@@ -341,16 +398,17 @@ int func_00FD74_logic_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  strcpy-like (near): copy src(arg1) into dest(arg0)
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00FDB4_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_00FDB4_strcpy_near.asm — this is strcpy_near
+ * (iolib.h, 0xFDB4).  Signature widened to the canonical near form. */
+char near *strcpy_near(char near *dst, const char near *src)
 {
-    /* @asm strcpy(dest=arg0_bp_06, src=arg1_bp_08), near pointers.
+    /* @asm strcpy(dest=[bp+6], src=[bp+8]), near pointers.
      * 0x00FDBB mov si,[bp+8]; scan src for NUL (repne scasb) to get length;
      * 0x00FDCD mov di,[bp+6]; rep movs the bytes (incl. NUL) src->dest.
      * 0x00FDD0 mov ax,di -> returns dest. */
-    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
-    while ((*dst++ = *src++) != 0) ;   /* @asm rep movs (src incl. NUL) */
-    return (int)(uint16_t)arg0_bp_06;  /* @asm mov ax,di (=dest) */
+    char near *d = dst;
+    while ((*d++ = *src++) != 0) ;     /* @asm rep movs (src incl. NUL) */
+    return dst;                        /* @asm mov ax,di (=dest) */
 }
 
 /* @asm        0x00FDE6..0x00FE11  (43 bytes)  region=load_image
@@ -365,17 +423,18 @@ int func_00FDB4_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  strcmp-like (near): compare s1(arg0) vs s2(arg1)
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00FDE6_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_00FDE6.asm — this is strcmp_near (near strcmp). */
+int strcmp_near(const char near *s1, const char near *s2)
 {
-    /* @asm strcmp(s1=arg0_bp_06, s2=arg1_bp_08), near pointers.
+    /* @asm strcmp(s1=[bp+6], s2=[bp+8]), near pointers.
      * 0x00FDF1 mov si,[bp+6]; 0x00FDF4 mov di,[bp+8]; measure s2 length via
      * repne scasb; 0x00FE02 repe cmpsb s1 vs s2; 0x00FE04 je equal -> ax=0;
      * else 0x00FE06 sbb ax,ax; 0x00FE08 sbb ax,0xFFFF -> -1 if s1<s2 else +1. */
-    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
-    while (*s1 && *s1 == *s2) { s1++; s2++; }   /* @asm repe cmpsb */
-    if (*s1 == *s2) return 0;                    /* @asm je 0xFE0B */
-    return (*s1 < *s2) ? -1 : 1;                 /* @asm sbb ax,ax; sbb ax,-1 */
+    const uint8_t near *p1 = (const uint8_t near *)s1;
+    const uint8_t near *p2 = (const uint8_t near *)s2;
+    while (*p1 && *p1 == *p2) { p1++; p2++; }    /* @asm repe cmpsb */
+    if (*p1 == *p2) return 0;                     /* @asm je 0xFE0B */
+    return (*p1 < *p2) ? -1 : 1;                  /* @asm sbb ax,ax; sbb ax,-1 */
 }
 
 /* @asm        0x00FE12..0x00FE2D  (27 bytes)  region=load_image
@@ -390,16 +449,17 @@ int func_00FDE6_logic_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  strlen-like (near): length of NUL-terminated string arg0
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00FE12_logic_sz_27(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_00FE12_strlen_near.asm — this is strlen_near
+ * (iolib.h, 0xFE12).  Signature widened to the canonical near form. */
+int strlen_near(const char near *s)
 {
-    /* @asm strlen(s=arg0_bp_06), near pointer.
+    /* @asm strlen(s=[bp+6]), near pointer.
      * 0x00FE1B mov di,[bp+6]; 0x00FE1E xor ax,ax; 0x00FE20 mov cx,0xFFFF;
      * 0x00FE23 repne scasb; 0x00FE25 not cx; 0x00FE27 dec cx -> length in cx;
      * 0x00FE28 xchg cx,ax -> return length. */
-    const uint8_t near *s = (const uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *p = s;
+    const char near *p = s;
     while (*p) p++;            /* @asm repne scasb */
-    return (int)(uint16_t)(p - s);
+    return (int)(p - s);
 }
 
 /* @asm        0x00FE2E..0x00FE61  (51 bytes)  region=load_image
@@ -414,22 +474,20 @@ int func_00FE12_logic_sz_27(uint16_t arg0_bp_06)
  * @inferred_role  strncat-like (near): append <=n chars of src(arg1) to dest(arg0)
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_00FE2E_logic_sz_51(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* PORTED 2026-06-09 from func_00FE2E.asm — this is strncat_near (near strncat). */
+char near *strncat_near(char near *dst, const char near *src, uint16_t n)
 {
-    /* @asm strncat(dest=arg0_bp_06, src=arg1_bp_08, n=arg2_bp_0A), near.
+    /* @asm strncat(dest=[bp+6], src=[bp+8], n=[bp+0xa]), near.
      * 0x00FE35 mov di,[bp+6]; find dest end via repne scasb (si = end-at-NUL).
      * 0x00FE44 mov di,[bp+8]; mov cx,n; repne scasb -> copy_len = #src bytes
      *   before NUL, capped at n (0x00FE4E jne / inc cx; sub cx,n; neg cx).
      * 0x00FE5A rep movsb copies copy_len bytes; 0x00FE5C stosb writes the NUL.
      * 0x00FE5D mov ax,dx -> returns dest. */
-    uint8_t near *dst = (uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *src = (const uint8_t near *)(uint16_t)arg1_bp_08;
-    uint16_t n = arg2_bp_0A;
-    uint8_t near *p = dst;
+    char near *p = dst;
     while (*p) p++;                                  /* @asm repne scasb (dest end) */
     while (n-- != 0 && *src) *p++ = *src++;          /* @asm rep movsb (<=n src bytes) */
     *p = 0;                                          /* @asm stosb (NUL terminate) */
-    return (int)(uint16_t)arg0_bp_06;               /* @asm mov ax,dx (=dest) */
+    return dst;                                     /* @asm mov ax,dx (=dest) */
 }
 
 /* @asm        0x00FE64..0x00FE86  (34 bytes)  region=load_image
@@ -441,18 +499,28 @@ int func_00FE2E_logic_sz_51(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (34 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  strncpy-like (near): copy <=n of src(arg1) into dest(arg0), NUL-pad
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
-int func_00FE64_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* PORTED 2026-06-09 from func_00FE64.asm — this is strncpy_near (near strncpy). */
+char near *strncpy_near(char near *dst, const char near *src, uint16_t n)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00FE76 JCXZ 0x00FE84 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00FE7B JE 0x00FE80 */ {
-                /* @0x00FE7E LOOP back to 0x00FE78 */
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm strncpy(dest=[bp+6], src=[bp+8], n=[bp+0xa]), near.
+     * 0x00FE6B mov di,dest; 0x00FE6E mov si,src; 0x00FE71 bx=di (save dest);
+     * 0x00FE73 mov cx,n; 0x00FE76 jcxz done.
+     * 0x00FE78 lodsb; or al,al; je 0xFE80 (src NUL -> stop copying);
+     *   0x00FE7D stosb; loop 0xFE78  (copy up to n bytes).
+     * 0x00FE80 xor al,al; rep stosb (NUL-pad the remaining count).
+     * 0x00FE84 mov ax,bx -> returns dest. */
+    char near *d = dst;
+    uint16_t i = 0;
+    for (; i < n; i++) {                         /* @asm loop 0xFE78 */
+        char ch = src[i];                        /* @asm lodsb */
+        if (ch == 0) break;                      /* @asm or al,al; je 0xFE80 */
+        d[i] = ch;                               /* @asm stosb */
+    }
+    for (; i < n; i++) d[i] = 0;                 /* @asm rep stosb (NUL pad) */
+    return dst;                                  /* @asm mov ax,bx */
 }
 
 /* @asm        0x00FE8C..0x00FEA7  (27 bytes)  region=load_image
@@ -567,33 +635,38 @@ int func_00FEFC_logic_sz_20(uint16_t arg0_bp_06)
  * LCALL targets:
  *   - 0x0D1D:0x0842  (2x)
  *   - 0x0D1D:0x08BC
- * @inferred_role  DISPATCHER (87 bytes). 0x0D1D:0x0842 + 0x0D1D:0x0842
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  getenv(name=arg0): search the environment table at 0x27D3
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 getenv().  The environment is a NUL-pointer-terminated array of
+ * far-string pointers at DGROUP:0x27D3 (envp).  For each entry, the routine
+ * checks that the entry is at least strlen(name) long, that the char right
+ * after the name is '=' (0x3D), and that the first strlen(name) bytes match
+ * the name; on a hit it returns a pointer to the value (entry + namelen + 1).
+ * LCALL helpers: 0x0D1D:0x842 = strlen, 0x0D1D:0x8BC = memcmp(s1,s2,n).
  */
-int func_00FF12_rtl_sz_87(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_00FF12.asm — this is getenv (MSC getenv). */
+int func_00FF12_rtl_sz_87(uint16_t arg0_bp_06 /* name */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27D3
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00FF1D JE 0x00FF69 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00FF23 JE 0x00FF69 */ {
-                /* @0x00FF28 */ overlay_call_0D1D_0842();
-                goto label_00FF64;  /* @0x00FF32 */
-                /* @0x00FF36 */ overlay_call_0D1D_0842();
-                if (/* JLE fallthrough cond: */ ax > 0) /* @0x00FF40 JLE 0x00FF62 */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FF47 JNE 0x00FF62 */ {
-                        /* @0x00FF4E */ overlay_call_0D1D_08BC();
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FF58 JNE 0x00FF62 */ {
-                            goto label_00FF6B;  /* @0x00FF5F */
-                        }
-                    }
-                }
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FF67 JNE 0x00FF34 */ {
-                }
-            }
+    uint16_t si = DG16(0x27d3);                  /* @asm mov si,[0x27D3] (envp) */
+    uint16_t di;                                 /* namelen */
+    if (si == 0) return 0;                        /* @asm or si,si; je 0xFF69 (ax=0) */
+    if (arg0_bp_06 == 0) return 0;                /* @asm cmp [bp+6],0; je 0xFF69 */
+
+    di = (uint16_t)overlay_call_0D1D_0842();      /* @asm strlen(name) -> di */
+
+    /* @asm 0x00FF64 while ([si] != 0) over the env-pointer array. */
+    while (DG16(si) != 0) {                        /* @asm cmp [si],0; jne 0xFF34 */
+        uint16_t entry = DG16(si);                /* @asm mov bx,[si] (entry string) */
+        int elen = overlay_call_0D1D_0842();      /* @asm strlen([si]) -> ax */
+        if (elen > (int)di &&                      /* @asm cmp ax,di; jle skip */
+            DG8(entry + di) == 0x3D) {             /* @asm cmp [bx+di],'='; jne skip */
+            if (overlay_call_0D1D_08BC() == 0)     /* @asm memcmp(bx,name,di)==0 */
+                return (int)(uint16_t)(DG16(si) + di + 1); /* @asm [si]+di+1 (value) */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        si += 2;                                   /* @asm inc si; inc si */
+    }
+    return 0;                                      /* @asm 0xFF69 sub ax,ax */
 }
 
 /* @asm        0x00FF72..0x00FF99  (39 bytes)  region=load_image
@@ -626,21 +699,72 @@ int func_00FF72_rtl_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (34 bytes). no LCALLs
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  fgets(dest=arg0, count=arg1, fp=arg2): read a line from a stream
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner "size 34" was short; func_00FF9A.asm reports size 115
+ * (body runs 0x00FF9A..0x01000C retf).  This is the MSC 6.0 fgets()
+ * implementation.  It copies at most (count-1) bytes into dest, stopping after
+ * a newline (0x0A), then NUL-terminates.  Returns dest, or 0 on EOF/error with
+ * nothing read.  FILE* (bx): [bx+0]=read cursor, [bx+2]=bytes left in buffer,
+ * [bx+6]=flags (bit5=0x20 error).  Refill uses _filbuf at 0x10B26.
  */
+/* PORTED 2026-06-09 from func_00FF9A.asm — this is fgets (MSC fgets). */
 int func_00FF9A_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00FFA4 JLE 0x00FFFA */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00FFB1 JE 0x010003 */ {
-                if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00FFB6 JCXZ 0x00FFD6 */ {
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x00FFBA JBE 0x00FFBE */ {
-                    }
-                }
+    int16_t dx = (int16_t)arg1_bp_08;            /* @asm mov dx,[bp+8]=count */
+    uint16_t bx = arg2_bp_0A;                    /* @asm fp = [bp+0xa] */
+    uint16_t di = arg0_bp_06;                    /* @asm di = dest cursor [bp+6] */
+    if (dx <= 0) return 0;                        /* @asm or dx,dx; jle 0xFFFA (NULL) */
+    dx--;                                         /* @asm dec dx (room for n-1 + NUL) */
+
+    for (;;) {                                    /* @asm 0xFFAF loop */
+        uint16_t cx;
+        if (dx == 0) goto terminate;             /* @asm or dx,dx; je 0x10003 */
+        cx = DG16(bx + 2);                        /* @asm mov cx,[bx+2] (bytes in buffer) */
+        if (cx == 0) {                            /* @asm jcxz 0xFFD6 (refill) */
+            /* @asm 0x00FFD6 buffer empty: refill one byte via _filbuf. */
+            int ch = func_010B26(bx);            /* @asm call 0x10B26 _filbuf(fp) */
+            if ((uint16_t)ch == 0xFFFF) {        /* @asm cmp ax,0xFFFF; je 0xFFEF (EOF) */
+                /* @asm 0x00FFEF EOF: if nothing was read, or stream error, NULL. */
+                if (di == arg0_bp_06) return 0;  /* @asm cmp di,[bp+6]; je 0xFFFA */
+                if (!(DG8(bx + 6) & 0x20))        /* @asm test [bx+6],0x20; je 0x10003 */
+                    goto terminate;              /* no error -> finish line OK */
+                return 0;                         /* @asm 0xFFFA xor ax,ax (NULL) */
             }
+            DG8(di) = (uint8_t)ch; di++;         /* @asm stosb */
+            if ((uint8_t)ch == 0x0A) goto terminate; /* @asm cmp al,0x0A; je 0x10003 */
+            dx--;                                 /* @asm dec dx */
+            continue;                             /* @asm jmp 0xFFAF */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        /* @asm 0x00FFB8 buffered fast path: copy until newline or count. */
+        if ((int16_t)cx > dx) cx = (uint16_t)dx; /* @asm cmp cx,dx; jbe; mov cx,dx */
+        {
+            uint16_t si = DG16(bx);              /* @asm mov si,[bx] (cursor) */
+            uint16_t orig = cx;                  /* @asm push cx (save count) */
+            uint8_t al = 0;
+            /* @asm 0xFFC4 loopne: lodsb;stosb;cmp al,0x0A;loopne (until NL or cx==0) */
+            while (cx != 0) {
+                al = DG8(si++);                  /* @asm lodsb */
+                DG8(di++) = al;                  /* @asm stosb */
+                cx--;
+                if (al == 0x0A) break;           /* @asm cmp al,0x0A -> ZF stops loopne */
+            }
+            DG16(bx) = si;                       /* @asm mov [bx],si (advance cursor) */
+            if (al == 0x0A) {                     /* @asm je 0xFFFE (newline found) */
+                uint16_t consumed = (uint16_t)(orig - cx); /* @asm sub ax,cx */
+                DG16(bx + 2) -= consumed;        /* @asm sub [bx+2],ax */
+                goto terminate;
+            }
+            DG16(bx + 2) -= orig;                /* @asm sub [bx+2],ax (all consumed) */
+            dx -= (int16_t)orig;                 /* @asm sub dx,ax */
+            continue;                             /* @asm jmp 0xFFAF */
+        }
+    }
+
+terminate:
+    DG8(di) = 0;                                 /* @asm 0x10003 xor al,al; stosb (NUL) */
+    return (int)(uint16_t)arg0_bp_06;            /* @asm mov ax,[bp+6] (return dest) */
 }
 
 /* @asm        0x01000E..0x01008D  (127 bytes)  region=load_image
@@ -657,35 +781,55 @@ int func_00FF9A_logic_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  *   - 0x0D1D:0x2290
  *   - 0x0D1D:0x1896
  *   - 0x0D1D:0x1E9A
- * @inferred_role  DISPATCHER (127 bytes). 0x0D1D:0x2290 + 0x0D1D:0x1896
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  fseek(fp=arg0, offset=arg1:arg2(32-bit), whence=arg3)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 fseek().  arg0=FILE* (si).  The 32-bit byte offset arrives as
+ * [bp+8]:[bp+0xa]; whence = [bp+0xc] (0=SET,1=CUR,2=END).  Validates the
+ * stream flags ([si+6]&0x83) and the whence range, clears the EOF bit, folds
+ * a SEEK_CUR into an absolute offset via the position helper, flushes the
+ * buffer, then issues the lseek syscall.  Returns 0 on success, -1 on error
+ * (errno=0x16=EINVAL).  LCALL helpers: 0x2290=ftell-core, 0x1896=flush,
+ * 0x1E9A=lseek(fd,off_lo,off_hi,whence).
  */
+/* PORTED 2026-06-09 from func_01000E.asm — this is fseek (MSC fseek). */
 int func_01000E_rtl_sz_127(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x27AC
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010019 JE 0x010027 */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x01001F JG 0x010027 */ {
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x010025 JGE 0x010030 */ {
-                    goto label_010081;  /* @0x01002D */
-                }
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010038 JNE 0x01004E */ {
-            /* @0x01003B */ overlay_call_0D1D_2290();
-        }
-        /* @0x01004F */ overlay_call_0D1D_1896();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01005B JE 0x010061 */ {
-        }
-        /* @0x010070 */ overlay_call_0D1D_1E9A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01007B JNE 0x010086 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x01007F JNE 0x010086 */ {
-                goto label_010088;  /* @0x010084 */
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t si = arg0_bp_06;                    /* @asm mov si,[bp+6] (FILE*) */
+    uint16_t off_lo = arg1_bp_08;                /* @asm [bp+8] offset low word */
+    uint16_t off_hi = arg2_bp_0A;                /* @asm [bp+0xa] offset high word */
+    int16_t whence = (int16_t)arg3_bp_0C;        /* @asm [bp+0xc] whence */
+
+    /* @asm 0x01001B argument validation: valid open stream and whence in 0..2. */
+    if (!(DG8(si + 6) & 0x83) ||                  /* @asm test [si+6],0x83; je err */
+        whence > 2 || whence < 0) {               /* @asm cmp 2 jg / cmp 0 jge */
+        DG16(0x27ac) = 0x16;                      /* @asm 0x10027 mov [0x27AC],0x16 (EINVAL) */
+        return (int)(uint16_t)0xFFFF;             /* @asm jmp 0x10081 -> ax=0xFFFF (-1) */
+    }
+
+    DG8(si + 6) &= 0xEF;                          /* @asm 0x10030 and [si+6],0xEF (clear EOF) */
+
+    if (whence == 1) {                            /* @asm cmp [bp+0xc],1; jne 0x1004E */
+        /* fold SEEK_CUR into an absolute SEEK_SET offset. */
+        uint32_t cur = (uint32_t)(int32_t)overlay_call_0D1D_2290(); /* @asm ftell-core(si) -> dx:ax */
+        uint32_t newoff = ((uint32_t)off_hi << 16 | off_lo) + cur;  /* @asm add [bp+8],ax; adc [bp+0xa],dx */
+        off_lo = (uint16_t)newoff;
+        off_hi = (uint16_t)(newoff >> 16);
+        whence = 0;                               /* @asm mov [bp+0xc],0 */
+    }
+
+    overlay_call_0D1D_1896();                     /* @asm 0x1004F flush(si) */
+    if (DG8(si + 6) & 0x80)                        /* @asm test [si+6],0x80; je 0x10061 */
+        DG8(si + 6) &= 0xFC;                      /* @asm and [si+6],0xFC */
+
+    /* @asm 0x010070 lseek(fd=[si+7], off_lo, off_hi, whence) -> dx:ax */
+    {
+        int r = overlay_call_0D1D_1E9A();
+        (void)off_lo; (void)off_hi; (void)whence;
+        if ((uint16_t)r == 0xFFFF)                /* @asm cmp ax,0xFFFF & cmp dx,ax */
+            return (int)(uint16_t)0xFFFF;         /* @asm 0x10081 ax=0xFFFF (-1) */
+        return 0;                                 /* @asm 0x10086 sub ax,ax */
+    }
 }
 
 /* @asm        0x01008E..0x0100A8  (26 bytes)  region=load_image
@@ -764,22 +908,41 @@ int func_0100EC_rtl_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * LCALL targets:
  *   - 0x0D1D:0x196E
  *   - 0x0D1D:0x15EC
- * @inferred_role  UNKNOWN (90 bytes). 0x0D1D:0x196E + 0x0D1D:0x15EC
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  sprintf(dest=arg0, fmt=arg1, ...=arg2): format into a buffer
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 sprintf().  It builds a throw-away in-memory FILE descriptor in the
+ * DGROUP scratch area (0x2D30=write cursor, 0x2D32=bytes-left=0x7FFF,
+ * 0x2D34=buffer base, 0x2D36=flags=0x42 "string/unbuffered"), runs the shared
+ * formatter at 0x0D1D:0x196E (the vfprintf core, also used by func_00FAAA /
+ * func_00FAC0) against that pseudo-stream, then writes the terminating NUL at
+ * the final cursor.  Returns the character count produced by the formatter.
+ * If the scratch buffer "overflows" (0x2D32 underflows) it finalizes via
+ * 0x0D1D:0x15EC instead of writing the NUL.
  */
-int func_010118_rtl_sz_90(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* PORTED 2026-06-09 from func_010118.asm — this is sprintf (MSC sprintf). */
+int func_010118_rtl_sz_90(uint16_t arg0_bp_06 /* dest */, uint16_t arg1_bp_08 /* fmt */,
+                          uint16_t arg2_bp_0A /* first vararg */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2D30, 0x2D32
-     * Writes DGROUP: 0x2D32, 0x2D34, 0x2D36
-     */
-        /* @0x010140 */ overlay_call_0D1D_196E();
-        if (/* JS fallthrough cond: */ ax !signed 0) /* @0x01014E JS 0x01015E */ {
-            goto label_01016A;  /* @0x01015B */
-        }
-        /* @0x010162 */ overlay_call_0D1D_15EC();
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t di;                                 /* formatter result (char count) */
+    DG8(0x2d36) = 0x42;                           /* @asm mov byte [0x2D36],0x42 (flags) */
+    DG16(0x2d34) = arg0_bp_06;                    /* @asm mov [0x2D34],ax (buffer base) */
+    DG16(0x2d30) = arg0_bp_06;                    /* @asm mov [si],ax (write cursor) */
+    DG16(0x2d32) = 0x7FFF;                         /* @asm mov [0x2D32],0x7FFF (bytes left) */
+
+    /* @asm 0x010136 lea ax,[bp+0xa]; push ax(va); push [bp+8](fmt); push si(stream);
+     *      lcall 0xD1D:0x196E -> formatter, result in ax. */
+    (void)arg1_bp_08; (void)arg2_bp_0A;
+    di = (uint16_t)overlay_call_0D1D_196E();      /* @asm mov di,ax */
+
+    if ((int16_t)(--DG16(0x2d32)) >= 0) {         /* @asm dec [0x2D32]; js 0x1015E */
+        uint16_t bx = DG16(0x2d30);              /* @asm mov bx,[0x2D30] */
+        DG16(0x2d30)++;                           /* @asm inc [0x2D30] */
+        DG8(bx) = 0;                              /* @asm mov byte [bx],0 (NUL terminate) */
+    } else {
+        overlay_call_0D1D_15EC();                 /* @asm push si; push 0; lcall 0xD1D:0x15EC */
+    }
+    return (int)(uint16_t)di;                      /* @asm mov ax,di */
 }
 
 /* @asm        0x010172..0x0101F8  (134 bytes)  region=load_image
@@ -794,34 +957,40 @@ int func_010118_rtl_sz_90(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * LCALL targets:
  *   - 0x0D1D:0x1E9A  (3x)
- * @inferred_role  DISPATCHER (134 bytes). 0x0D1D:0x1E9A + 0x0D1D:0x1E9A
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  filelength(fd=arg0): byte length of an open file (32-bit)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * MSC 6.0 filelength().  fd = [bp+6] (si).  Validated against g_NFILE at
+ * DGROUP:0x27B9.  It snapshots the current position (lseek whence=1), seeks to
+ * the end (whence=2) to get the length, then — if the position changed —
+ * restores the original position (whence=0).  Returns the end offset (dx:ax),
+ * i.e. the file length, or -1L (errno=9=EBADF) for a bad descriptor.
+ * Return type widened to int32_t to model the dx:ax dword result.
+ * LCALL helper 0x0D1D:0x1E9A = lseek(fd, off_lo, off_hi, whence).
  */
-int func_010172_rtl_sz_134(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_010172.asm — this is filelength (MSC filelength). */
+int32_t func_010172_rtl_sz_134(uint16_t arg0_bp_06 /* fd */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27B9
-     * Writes DGROUP: 0x27AC
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x01017E JL 0x010186 */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x010184 JG 0x010192 */ {
-                goto label_0101F3;  /* @0x010190 */
-            }
-        }
-        /* @0x01019B */ overlay_call_0D1D_1E9A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0101AC JNE 0x0101BA */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0101B0 JNE 0x0101BA */ {
-                goto label_0101ED;  /* @0x0101B8 */
-            }
-        }
-        /* @0x0101C3 */ overlay_call_0D1D_1E9A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0101D4 JNE 0x0101DB */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0101D9 JE 0x0101ED */ {
-                /* @0x0101E5 */ overlay_call_0D1D_1E9A();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    int16_t si = (int16_t)arg0_bp_06;            /* @asm mov si,[bp+6]; or si,si */
+    int32_t cur, end;
+
+    /* @asm 0x01017C validate fd: 0 <= fd <= g_NFILE([0x27B9]). */
+    if (si < 0 || (int16_t)DG16(0x27b9) <= si) {  /* @asm jl err / cmp [0x27B9],si; jg ok */
+        DG16(0x27ac) = 9;                         /* @asm 0x10186 mov [0x27AC],9 (EBADF) */
+        return -1;                                /* @asm ax=0xFFFF; cdq -> -1L */
+    }
+
+    /* @asm 0x010192 cur = lseek(fd, 0, 0, SEEK_CUR=1) -> dx:ax */
+    cur = (int32_t)overlay_call_0D1D_1E9A();      /* @asm [bp-8]:[bp-6] = cur */
+    if ((uint32_t)cur == 0xFFFFFFFFu)             /* @asm cmp ax,0xFFFF & cmp dx,ax */
+        return -1;                                /* @asm [bp-4]:[bp-2]=cur; jmp ret */
+
+    /* @asm 0x0101BA end = lseek(fd, 0, 0, SEEK_END=2) -> dx:ax */
+    end = (int32_t)overlay_call_0D1D_1E9A();      /* @asm [bp-4]:[bp-2] = end */
+    if (end != cur)                               /* @asm cmp ax,[bp-8]; cmp dx,[bp-6]; je ret */
+        overlay_call_0D1D_1E9A();                 /* @asm lseek(fd, cur, SEEK_SET=0) restore */
+
+    return end;                                   /* @asm 0x0101ED mov ax,[bp-4]; mov dx,[bp-2] */
 }
 
 /* @asm        0x010226..0x010250  (42 bytes)  region=load_image
@@ -836,19 +1005,21 @@ int func_010172_rtl_sz_134(uint16_t arg0_bp_06)
  * @inferred_role  strchr-like (near): first occurrence of byte arg1 in str arg0
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_010226_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_010226_strchr_near.asm — this is strchr_near
+ * (iolib.h, 0x10226).  Signature widened to the canonical near form. */
+char near *strchr_near(const char near *s, int c)
 {
-    /* @asm strchr(s=arg0_bp_06, c=(uint8_t)arg1_bp_08), near pointer.
+    /* @asm strchr(s=[bp+6], c=(uint8_t)[bp+8]), near pointer.
      * 0x01022A mov di,s; measure length incl. NUL (repne scasb; inc cx;
      *   neg cx) so the scan can also match the terminator; 0x01023B mov al,c;
      * 0x010240 repne scasb; 0x010242 dec di; 0x010243 cmp [di],al; je hit ->
-     *   di points at the match, else 0x010247 xor di,di. 0x010249 mov ax,di. */
-    uint16_t p = arg0_bp_06;
-    uint8_t c = (uint8_t)arg1_bp_08;
+     *   di points at the match, else 0x010247 xor di,di. 0x010249 mov ax,di.
+     * NOTE: the NUL is included in the scan (ANSI strchr matches a search for 0). */
+    const char near *p = s;
+    char ch = (char)c;
     for (;;) {
-        uint8_t ch = *(const uint8_t near *)(uint16_t)p;
-        if (ch == c) return (int)(uint16_t)p;   /* @asm cmp [di],al; je -> ax=di */
-        if (ch == 0) return 0;                  /* @asm no match -> xor di,di */
+        if (*p == ch) return (char near *)p;    /* @asm cmp [di],al; je -> ax=di */
+        if (*p == 0) return (char near *)0;     /* @asm no match -> xor di,di */
         p++;
     }
 }
@@ -865,9 +1036,10 @@ int func_010226_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  stricmp-like (near): case-insensitive compare s1(arg0) vs s2(arg1)
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_010250_logic_sz_66(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_010250.asm — this is stricmp_near (near stricmp). */
+int stricmp_near(const char near *s1in, const char near *s2in)
 {
-    /* @asm stricmp(s1=arg0_bp_06 [bx], s2=arg1_bp_08 [si]), near pointers.
+    /* @asm stricmp(s1=[bp+6] [bx], s2=[bp+8] [si]), near pointers.
      * 0x010255 mov si,s2; 0x010258 mov bx,s1; 0x01025B al=0xFF (loop primer).
      * loop top 0x01025D or al,al; je 0x1028D (al==0 means prev pair both NUL ->
      *   equal, fall to 0x01028D cwde with al=0 -> return 0).
@@ -878,8 +1050,8 @@ int func_010250_logic_sz_66(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * 0x010276 xchg al,ah; fold s1 char identically.
      * 0x010285 cmp al,ah (s1 vs s2, folded); je 0x1025D (equal -> next iter);
      * else 0x010289 sbb al,al; sbb al,0xFF -> -1 if s1<s2 else +1; cwde. */
-    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
+    const uint8_t near *s1 = (const uint8_t near *)s1in;
+    const uint8_t near *s2 = (const uint8_t near *)s2in;
     for (;;) {
         uint8_t c1 = *s1++;                     /* @asm ah=[bx]; inc bx */
         uint8_t c2 = *s2++;                     /* @asm lodsb */
@@ -909,9 +1081,10 @@ int func_010250_logic_sz_66(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * NOTE: the auto-banner's "size 54" was short; func_010292.asm reports size 87
  * (body runs 0x010292..0x0102E8 retf).  Full body decompiled below.
  */
-int func_010292_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* PORTED 2026-06-09 from func_010292.asm — this is strnicmp_near (near strnicmp). */
+int strnicmp_near(const char near *s1in, const char near *s2in, uint16_t n)
 {
-    /* @asm strnicmp(s1=arg0_bp_06 [si], s2=arg1_bp_08 [di], n=arg2_bp_0A [cx]).
+    /* @asm strnicmp(s1=[bp+6] [si], s2=[bp+8] [di], n=[bp+0xa] [cx]).
      * 0x0102A2 jcxz 0x102E1 (n==0 -> cx stays 0 -> return 0).
      * bh=0x41 ('A'), bl=0x5A ('Z'), dh=0x20 (case bit).
      * loop 0x0102AA: ah=*s1 [si]; al=*s2 [di]; 0x0102AE or ah,ah; je 0x102D2;
@@ -921,9 +1094,8 @@ int func_010292_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
      * finalize 0x0102D2: xor cx,cx; cmp ah,al; je 0x102E1 (equal -> 0);
      *   0x0102D8 mov cx,0; jb 0x102DF (ah<al skip); else dec cx;dec cx;
      *   0x0102DF not cx -> -1 if s1<s2 else +1. ax=cx. */
-    const uint8_t near *s1 = (const uint8_t near *)(uint16_t)arg0_bp_06;
-    const uint8_t near *s2 = (const uint8_t near *)(uint16_t)arg1_bp_08;
-    uint16_t n = arg2_bp_0A;
+    const uint8_t near *s1 = (const uint8_t near *)s1in;
+    const uint8_t near *s2 = (const uint8_t near *)s2in;
     uint8_t c1 = 0, c2 = 0;
     while (n != 0) {                            /* @asm jcxz / loop */
         c1 = *s1; c2 = *s2;                     /* @asm ah=[si]; al=[di] */

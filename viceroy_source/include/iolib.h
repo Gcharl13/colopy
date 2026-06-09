@@ -141,6 +141,11 @@ char near *strcpy_near(char near *dst, const char near *src);   /* 0xFDB4 */
 char near *strcat_near(char near *dst, const char near *src);   /* 0xFD74 */
 int        strlen_near(const char near *s);                      /* 0xFE12 */
 char near *strchr_near(const char near *s, int c);               /* 0x10226 */
+int        strcmp_near (const char near *s1, const char near *s2);            /* 0xFDE6 */
+char near *strncat_near(char near *dst, const char near *src, uint16_t n);    /* 0xFE2E */
+char near *strncpy_near(char near *dst, const char near *src, uint16_t n);    /* 0xFE64 */
+int        stricmp_near(const char near *s1, const char near *s2);            /* 0x10250 */
+int        strnicmp_near(const char near *s1, const char near *s2, uint16_t n);/* 0x10292 */
 
 char  far *strcpy_far (char  far *dst, const char  far *src);   /* 0x1074E */
 char  far *strcat_far (char  far *dst, const char  far *src);   /* 0x10784 */
