@@ -55,22 +55,42 @@ int func_005DF0_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * Near CALL targets:
  *   - 0x005F82
  *   - 0x005D84
- * @inferred_role  DISPATCHER (120 bytes). 0x181F:0x077E + 0x181F:0x05B6
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set HIGH nibble of layer-0x164 tile (x,y) = power index arg2; when
+ *                 arg2<4 and the tile already holds a valid power, repaint/announce it.
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
-int func_005E18_op_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+/* PORTED 2026-06-09 from func_005E18.asm — writes the power-ownership nibble of a map
+ * tile. If arg2 (new power index) is < 4 and func_005F82 reports the tile currently
+ * holds a valid power (>=0), it first repaints the tile (overlay 0x181F:0x077E with
+ * 0x1CC), advances an animation counter (0x181F:0x05B6 push 5) and posts a status
+ * message (0x181F:0x0772 with the tile coords and code 0x2D). It then always stores
+ * arg2 into the HIGH nibble of the layer-0x164 byte at (x,y) (far ptr via func_005D84),
+ * preserving the low nibble. This is the inverse of func_005DF0 (which reads the high
+ * nibble back). */
+void func_005E18_op_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x005E20 JGE 0x005E6B */ {
-            /* @0x005E29 */ func_005F82();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x005E31 JL 0x005E6B */ {
-                /* @0x005E3F */ overlay_call_181F_077E();
-                /* @0x005E49 */ overlay_call_181F_05B6();
-                /* @0x005E66 */ overlay_call_181F_0772();
-            }
+    uint8_t far *tile;
+
+    /* @asm 0x005E1C cmp [bp+0xa],4; jge 0x5e6b -> skip the repaint block if arg2>=4. */
+    if ((int16_t)arg2_bp_0A < 4) {
+        /* @asm 0x005E29 call 0x5f82(x,y); or ax,ax; jl 0x5e6b -> only when a valid
+         *      power currently owns the tile. */
+        if ((int16_t)func_005F82_logic_sz_31(arg0_bp_06, arg1_bp_08) >= 0) {
+            /* @asm 0x005E3F lcall 0x181F:0x077E (x, y, arg2, 0x1CC) — repaint tile. */
+            overlay_call_181F_077E();
+            /* @asm 0x005E49 lcall 0x181F:0x05B6 (push 5) — bump animation/sound. */
+            overlay_call_181F_05B6();
+            /* @asm 0x005E66 lcall 0x181F:0x0772 (ax=0xFFAC, dx=1, bx=0x2D; pushes
+             *      sign-extended y then x) — post the change message. */
+            overlay_call_181F_0772();
         }
-        /* @0x005E72 */ func_005D84();
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x005E72 call 0x5d84(x,y) -> es:bx = &layer164[width*y+x];
+     * @asm 0x005E7E al = es:[bx] & 0x0F; cl=[bp+0xa]; shl cl,4; al |= cl;
+     *      es:[bx] = al   (store arg2 into the high nibble, keep low nibble). */
+    tile = (uint8_t far *)func_005D84_logic_sz_23(arg0_bp_06, arg1_bp_08);
+    *tile = (uint8_t)((*tile & 0x0F) | ((uint8_t)arg2_bp_0A << 4));
 }
 
 /* @asm        0x005E90..0x005ED0  (64 bytes)  region=load_image

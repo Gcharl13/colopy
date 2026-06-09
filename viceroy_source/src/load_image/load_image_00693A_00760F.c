@@ -151,54 +151,101 @@ int func_006A10_logic_sz_108(uint16_t arg0_bp_06)
  *   - 0x006672
  *   - 0x0066BA
  *   - 0x0069D2
- * @inferred_role  DISPATCHER (50 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  move every unit on arg0's tile chain to (arg1,arg2) via func_0069D2
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_006A7C.asm — relocate a whole tile chain to (x,y) */
 int func_006A7C_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x006A85 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006A8C JL 0x006AAA */ {
-            /* @0x006A91 */ func_0066BA();
-            /* @0x006A9E */ func_0069D2();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x006AA8 JGE 0x006A8E */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006A81 ax=[bp+6]; call 0x6672 (si=func_006672(arg0)=chain head);
+     *      or si,si; jl 0x6aaa (head<0: nothing to do).
+     *      loop 0x006A8E: ax=si; call 0x66ba (di=func_0066BA(si)=chain next, saved
+     *      BEFORE relocation); push [bp+0xa]; push [bp+8]; push si; call 0x69d2
+     *      (func_0069D2(si, arg1, arg2)=unlink+replace member at (arg1,arg2));
+     *      si=di; or si,si; jge 0x6a8e (continue while next>=0).  0x006A8A ret.
+     * Walks the tile-occupancy chain whose head is func_006672(arg0) and moves
+     * every member to tile (arg1,arg2): for each unit it first reads chain_next
+     * (the chain is mutated by the relocate), then calls func_0069D2 (unlink +
+     * place) on that unit. UnitRecord chain via func_006672/func_0066BA. */
+    int16_t si = (int16_t)func_006672(arg0_bp_06);   /* chain head */
+    while (si >= 0) {
+        int16_t di = (int16_t)func_0066BA((uint16_t)si);  /* save chain_next first */
+        func_0069D2((uint16_t)si, arg1_bp_08, arg2_bp_0A);
+        si = di;
+    }
+    return 0;
 }
 
-/* @asm        0x006AAE..0x006B15  (103 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_006AAE_unknown.asm
+/* @asm        0x006AAE..0x006B46  (152 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_006AAE.asm
  * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 2
  * @args_seen  [6, 8]
- * @lcalls     1
+ * @lcalls     2
  * @near_calls 1
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x024C:0x002A
+ *   - 0x024C:0x002A  (word-swap helper: xchg *p1,*p2)
  *
  * Near CALL targets:
  *   - 0x0066BA
- * @inferred_role  MEDIUM_LOGIC (103 bytes). 0x024C:0x002A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  swap two units (arg0,arg1) inside their shared tile chain
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 103 bytes ending 0x6B15: a FALSE cut. True span is
+ *         0x6AAE..0x6B46 (152 bytes, per functions.json); the link-swap tail
+ *         (0x6B16..0x6B45) was truncated and is decompiled here. 0x024C:0x002A is
+ *         a 2-pointer word-swap (xchg *p1,*p2), modelled inline as swap16().
  */
+/* PORTED 2026-06-09 from func_006AAE.asm — swap units A,B within their tile chain */
 int func_006AAE_op_sz_103(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006AB8 JL 0x006ADE */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x006ABD JNE 0x006AD2 */ {
-                /* @0x006AC7 */ overlay_call_024C_002A();
-            }
-            /* @0x006AD5 */ func_0066BA();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x006ADC JGE 0x006ABA */ {
-            }
+    /* @asm 0x006AB3 si=[bp+8] (B); or si,si; jl 0x6ade (B<0: skip adjacency scan).
+     *      scan 0x006ABA: cmp [bp+6](A),si; jne 0x6ad2; (A found later in B's
+     *      forward chain) lea &arg1; lea &arg0; lcall 0x24c:0x2a (swap the two
+     *      local indices A<->B); si=0xffff (stop scan).  0x006AD2 ax=si;
+     *      call 0x66ba (si=func_0066BA(si)=chain next); or si,si; jge 0x6aba.
+     *   0x006ADE ax=[bp+8](B); bx=A*0x1c; [bp-2]=bx; cmp unit[A].next(+0x1A=
+     *      0x315e),B; jne 0x6b16.
+     *      ADJACENT case (unit[A].next == B): bx=B*0x1c; ax=unit[B].next;
+     *      si=&unit[A]; unit[A].next = unit[B].next; ax=unit[A].prev(+0x18=0x315c);
+     *      unit[B].prev = unit[A].prev; unit[A].next(?) wait: [bx+0x315e]=A i.e.
+     *      unit[B].next = A; unit[A].prev = B  -> splice B in front of A. ret.
+     *   0x006B16 NON-ADJACENT: swap16(&unit[B].prev, &unit[A].prev) via 0x24c:0x2a;
+     *      swap16(&unit[B].next, &unit[A].next) via 0x24c:0x2a. ret.
+     * Swaps units arg0 and arg1 inside the tile-occupancy chain they share. First
+     * it walks B's forward chain; if A lies ahead of B it swaps the roles so A is
+     * the earlier node. If the two are directly adjacent (A.next==B) it relinks
+     * them by hand; otherwise it exchanges both nodes' prev/next link words with
+     * the generic word-swap helper 0x024C:0x002A. UnitRecord links +0x18/+0x1A
+     * (DGROUP_MEMORY_MAP §3.1, stride 0x1C @0x3144). */
+    int16_t A = (int16_t)arg0_bp_06;
+    int16_t B = (int16_t)arg1_bp_08;
+    int16_t si = B;
+    while (si >= 0) {                       /* @asm scan B's forward chain for A */
+        if (A == si) {                      /* @asm 0x6ABA cmp [bp+6],si */
+            int16_t t = A; A = B; B = t;     /* @asm swap16(&arg0,&arg1) via 0x24c:0x2a */
+            si = -1;
+            break;
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x006AEC JNE 0x006B16 */ {
+        si = (int16_t)func_0066BA((uint16_t)si);
+    }
+    {
+        unsigned abase = 0x3144 + (unsigned)A * 0x1C;
+        unsigned bbase = 0x3144 + (unsigned)B * 0x1C;
+        if ((int16_t)DG16(abase + 0x1A) == B) {       /* @asm 0x6AE8 adjacent A.next==B */
+            DG16(abase + 0x1A) = DG16(bbase + 0x1A);  /* @asm A.next = B.next */
+            DG16(bbase + 0x18) = DG16(abase + 0x18);  /* @asm B.prev = A.prev */
+            DG16(bbase + 0x1A) = (uint16_t)A;         /* @asm B.next = A */
+            DG16(abase + 0x18) = (uint16_t)B;         /* @asm A.prev = B */
+        } else {                                       /* @asm 0x6B16 non-adjacent */
+            uint16_t t;
+            t = DG16(bbase + 0x18); DG16(bbase + 0x18) = DG16(abase + 0x18); DG16(abase + 0x18) = t;
+            t = DG16(bbase + 0x1A); DG16(bbase + 0x1A) = DG16(abase + 0x1A); DG16(abase + 0x1A) = t;
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return 0;
 }
 
 /* @asm        0x006B46..0x006B8D  (71 bytes)  region=load_image
