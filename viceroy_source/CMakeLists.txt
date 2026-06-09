@@ -49,6 +49,7 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
 set(VICEROY_LOADIMAGE_PORTED
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0102EA_010AA5.c"  # C-runtime far-string lib
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00FAAA_0102C8.c"  # C-runtime near-string lib + stdio (fwrite/getenv/fgets/fseek/sprintf/filelength)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0033F2_004E76.c"  # input/terrain helpers ported; 11 tile-blit/render fns stubbed (SDL plug-in points)
 )
 list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 
