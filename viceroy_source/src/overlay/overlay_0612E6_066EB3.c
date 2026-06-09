@@ -170,6 +170,10 @@ extern unsigned char g_unit_bytes[];   /* byte view, [unit*0x1C + field] */
  *   — all CONFIRMED at call sites @0x061378/0x06138D/0x06139A below).
  * @asm_disasm code/VICEROY/disasm_overlay_reseg/page_12.asm (func_0612E6)
  * ============================================================================ */
+/* Forward declarations — call sites precede bodies in this file */
+extern int  func_0612E6_select_route_dialog(void);  /* near 0x1925 -> list-select */
+extern void func_0612E6_highlight_route(int sel);   /* near 0x1920 -> highlight  */
+extern void func_0612E6_route_shift_down(int dst);  /* far rep movsw, seg 0x1b22 */
 int func_0612E6_trade_route_delete(void)
 {
     int sel;          /* [bp-2]  selected route id (-1 = cancel) */
@@ -218,10 +222,9 @@ int func_0612E6_trade_route_delete(void)
 }
 /* Local helpers modelling the page-internal near calls / segment copies above
  * (their bodies are the resident list-dialog + the far rep-movsw; kept as thin
- * shims so the delete logic reads clearly). */
-extern int  func_0612E6_select_route_dialog(void);  /* near 0x1925 -> list-select */
-extern void func_0612E6_highlight_route(int sel);   /* near 0x1920 -> highlight  */
-extern void func_0612E6_route_shift_down(int dst);  /* far rep movsw, seg 0x1b22 */
+ * shims so the delete logic reads clearly).
+ * (func_0612E6_select_route_dialog, func_0612E6_highlight_route,
+ *  func_0612E6_route_shift_down declared above, before func_0612E6_trade_route_delete) */
 extern int  overlay_call_181F_0858(void);  /* 0x181F:0x858 route-of-unit (not in shared header) */
 
 /* ============================================================================
@@ -2063,9 +2066,6 @@ int func_066884_sprite_descriptor_B(uint16_t index)
     return overlay_call_181F_025E();
 }
 
-/* Forward declaration for helper called within func_066968 before its definition. */
-extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
-
 /* ============================================================================
  * func_066968  @ 0x066968..0x066B95  (558 bytes, ENTER 0x38, RETF)  page 0x15
  * ROLE: STRATEGIC (mini-)MAP ROW COMPOSITOR — "what colour goes where" on the
@@ -2091,6 +2091,8 @@ extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x18
  *   DS:0x5A8A accessed as DS[base-0x5A8A] = DS:0xA576+base = RUNTIME_ONLY.
  * @asm_disasm page_15.asm (func_066968)
  * ============================================================================ */
+extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
+extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
 int func_066968_minimap_compose(int sx, int sy, int width, int height,
                                 int player, int fog_mode)
 {
@@ -2170,8 +2172,7 @@ next_row:
     }
     return 0;                                                 /* @asm 0x066B92 retf */
 }
-/* func_066968_framebuf_addr declared above. */
-extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
+/* Declarations moved above func_066968_minimap_compose */
 
 /* ============================================================================
  * func_066B96  @ 0x066B96..0x066BAF  (26 bytes, push bp, RETF)  page 0x15
@@ -2202,6 +2203,9 @@ extern int func_066968_rect_fill(int x, int y, int w, int h, int color, int z); 
  *   blit/line leaves are platform; calling convention kept).
  * @asm_disasm page_15.asm (func_066BB0)
  * ============================================================================ */
+/* Forward declarations — call sites precede bodies in this section */
+extern void func_066BB0_prep(void);              /* near 0x772 -> 0x181F:0x59a */
+extern void func_066CD6_draw_contents(int src);  /* near 0x786 -> 0x1A1F:0x8ce */
 int func_066BB0_minimap_update(int col, int row, int w, int h)
 {
     int x0, y0;
@@ -2238,7 +2242,7 @@ int func_066BB0_minimap_update(int col, int row, int w, int h)
 done:
     return 0;                                      /* @asm 0x066DEB retf */
 }
-extern void func_066BB0_prep(void);                /* near 0x772 -> 0x181F:0x59a */
+/* (func_066BB0_prep declared above, before func_066BB0_minimap_update) */
 
 /* ============================================================================
  * func_066CD6  @ 0x066CD6..0x066DEB  (379 bytes, push bp, RETF)  page 0x15
@@ -2277,7 +2281,7 @@ int func_066CD6_minimap_panel(int highlight, int src)
     }
     return 0;                                       /* @asm 0x066DEA retf */
 }
-extern void func_066CD6_draw_contents(int src);    /* near 0x786 -> 0x1A1F:0x8ce */
+/* (func_066CD6_draw_contents declared above, before func_066BB0_minimap_update) */
 
 /* ============================================================================
  * func_066E0C  @ 0x066E0C..0x066E51  (69 bytes, push bp, RETF)  page 0x15

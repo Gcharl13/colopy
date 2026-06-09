@@ -379,12 +379,16 @@ int func_010582_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t a
  * @inferred_role  PROLOGUE_HEAVY (42 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_0105E0_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+/* PORTED 2026-06-09 from func_0105E0.asm — this is strchr_far (far strchr).
+ * (The auto "SHADOWED/PROLOGUE_HEAVY" banner above was a mis-segmentation; the
+ *  .asm is a complete push bp..retf routine.) */
+char far *strchr_far(const char far *s, int c)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0105FE JE 0x010604 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm les di,[bp+6]=s; xor al,al;repne scasb -> len(cx); di=start; al=[bp+0xa]=c;
+     * repne scasb FWD over cx; dec di; 0x0105FB cmp es:[di],al; je found(es:di) else NULL. */
+    const char far *p = s;
+    while (*p && *p != (char)c) p++;            /* first c (or stop at NUL) */
+    return (*p == (char)c) ? (char far *)p : (char far *)0;  /* incl NUL (ANSI) */
 }
 
 /* @asm        0x01060E..0x010653  (69 bytes)  region=load_image
@@ -462,15 +466,19 @@ int func_010654_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_0E)
  * @inferred_role  FIND_LOOP (33 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_010690_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0E)
+/* PORTED 2026-06-09 from func_010690.asm — this is strncpy_far. */
+char far *strncpy_far(char far *dest, const char far *src, uint16_t n)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x0106A1 JCXZ 0x0106AF */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0106A6 JE 0x0106AB */ {
-                /* @0x0106A9 LOOP back to 0x0106A3 */
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm les di,[bp+6]=dest; lds si,[bp+0xa]=src; cx=[bp+0xe]=n; jcxz done;
+     * loop: lodsb;or al,al;je pad;stosb;loop. pad: xor al,al;rep stosb. ret dest(bx). */
+    uint16_t i = 0;
+    for (; i < n; i++) {                         /* copy until NUL or n */
+        char ch = src[i];
+        if (ch == 0) break;
+        dest[i] = ch;
+    }
+    for (; i < n; i++) dest[i] = 0;              /* NUL-pad the remainder */
+    return dest;
 }
 
 /* @asm        0x0106BA..0x0106E4  (42 bytes)  region=load_image
@@ -485,13 +493,18 @@ int func_010690_logic_sz_33(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t a
  * @inferred_role  PROLOGUE_HEAVY (42 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_0106BA_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+/* PORTED 2026-06-09 from func_0106BA.asm — this is strrchr_far (iolib.h, 0x106BA). */
+char far *strrchr_far(const char far *s, int c)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0106D6 JE 0x0106DE */ {
-            goto label_0106E2;  /* @0x0106DC */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm les di,[bp+6]=s; scan FWD for NUL (len); std; repne scasb BACKWARD for
+     * c; 0x0106D3 cmp es:[di],al; je found(es:di); else 0x0106D8 xor ax,ax (NULL),
+     * jmp 0x0106E2 (cld;ret). Returns the LAST occurrence (incl the NUL). */
+    const char far *end = s;
+    while (*end) end++;                          /* end -> NUL */
+    for (const char far *p = end; ; p--) {
+        if (*p == (char)c) return (char far *)p; /* last c (or NUL if c==0) */
+        if (p == s) return (char far *)0;        /* not found */
+    }
 }
 
 /* @asm        0x0106E8..0x01070C  (36 bytes)  region=load_image
@@ -506,15 +519,19 @@ int func_0106BA_logic_sz_42(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @inferred_role  PROLOGUE_HEAVY (36 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_0106E8_logic_sz_36(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_0106E8.asm — this is strupr_far (far strupr). */
+char far *strupr_far(char far *s)
 {
-    /* @auto: control-flow trace from disassembly. */
-        goto label_0106FF;  /* @0x0106F2 */
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x0106F8 JAE 0x0106FE */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010703 JNE 0x0106F4 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm lds bx,[bp+6]=s; loop 0x0106FF: al=[bx];or al,al;jne body; body 0x0106F4:
+     * sub al,0x61;cmp al,0x1a;jae skip;add al,0x41 (a-z -> A-Z); [bx]=al; inc bx.
+     * Returns the string start. */
+    char far *p = s;
+    for (; *p; p++) {
+        uint8_t al = (uint8_t)*p;
+        if ((uint8_t)(al - 0x61) < 0x1A)         /* lowercase 'a'..'z' */
+            *p = (char)(al - 0x20);              /* -> uppercase */
+    }
+    return s;
 }
 
 /* @asm        0x01070C..0x010723  (23 bytes)  region=load_image
@@ -529,10 +546,12 @@ int func_0106E8_logic_sz_36(uint16_t arg0_bp_06)
  * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_01070C_logic_sz_23(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_01070C_strlen_far.asm — this is strlen_far (iolib.h). */
+int strlen_far(const char far *s)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    const char far *p = s;                       /* @asm les di,s; xor al,al;repne scasb;not cx;dec */
+    while (*p) p++;
+    return (int)(p - s);
 }
 
 /* @asm        0x010724..0x01074D  (41 bytes)  region=load_image
@@ -547,12 +566,16 @@ int func_01070C_logic_sz_23(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (41 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_010724_logic_sz_41(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+/* PORTED 2026-06-09 from func_010724.asm — this is strcmp_far. */
+int strcmp_far(const char far *s1, const char far *s2)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01073F JE 0x010746 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm lds si,[bp+6]=s1; les di,[bp+0xa]=s2; cx=len(s2)+1; repe cmpsb;
+     * 0x01073F je equal(0); else sbb ax,ax; sbb ax,0xFFFF -> -1/+1. */
+    for (;;) {
+        uint8_t a = (uint8_t)*s1++, b = (uint8_t)*s2++;
+        if (a != b) return (a < b) ? -1 : 1;
+        if (b == 0) return 0;
+    }
 }
 
 /* @asm        0x01074E..0x010784  (54 bytes)  region=load_image
@@ -567,12 +590,14 @@ int func_010724_logic_sz_41(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * @inferred_role  PROLOGUE_HEAVY (54 bytes). no LCALLs
  * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
  */
-int func_01074E_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+/* PORTED 2026-06-09 from func_01074E_strcpy_far.asm — this is strcpy_far (iolib.h, 0x1074E). */
+char far *strcpy_far(char far *dst, const char far *src)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01076F JE 0x010773 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm lds si,[bp+0xa]=src; les di,[bp+6]=dst; word-optimized rep movs of
+     * strlen(src)+1 bytes; 0x01076F align test; returns es:dest. */
+    char far *d = dst;
+    while ((*d++ = *src++) != 0) { }
+    return dst;
 }
 
 /* @asm        0x010784..0x0107CA  (70 bytes)  region=load_image
@@ -664,15 +689,16 @@ char far *func_0107CA_logic_sz_49(char far *dest /*bp+6:bp+8*/, uint16_t fill_bp
  */
 int func_010812_logic_sz_34(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x28F4
-     */
-        /* @0x01081A */ func_010A99();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010822 JE 0x010828 */ {
-        }
-        /* @0x01082D */ func_010A99();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* PORTED 2026-06-09 from func_010812.asm — brackets an optional runtime hook
+     * between two calls to func_010A99 (mode bytes 0xFC then 0xFF). */
+    func_010A99();                               /* @asm push 0xfc;push cs;call 0x10a99 */
+    if (DG16(0x28F4) != 0) {                      /* @asm cmp [0x28f4],0; jne -> lcall */
+        /* @asm lcall [0x28f2] — far indirect call through a runtime-installed
+         * hook (seg:off far pointer at DGROUP 0x28F2). Inert in the rules layer
+         * until the front end installs the handler; documented no-op here. */
+    }
+    func_010A99();                               /* @asm push 0xff;push cs;call 0x10a99 */
+    return 0;
 }
 
 /* @asm        0x0109F0..0x0109FF  (15 bytes)  region=load_image

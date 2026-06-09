@@ -76,7 +76,7 @@ extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
 extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRecord */
-extern int16_t  g_colony_count_539E;   /* DGROUP:0x539E — live colony count (word) */
+/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
@@ -435,11 +435,6 @@ int func_04C682_ai_power_strength_delta(uint16_t arg0, int16_t arg1)
     return acc;                                         /* @asm 0x04C715 RETF */
 }
 
-/* Forward declarations for helpers used inside func_04C71C below. */
-extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
-extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
-extern uint8_t g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
-
 /* ============================================================================
  * func_04C71C — ai_unit_task_priority  [DONE — control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
@@ -465,6 +460,8 @@ extern uint8_t g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], s
  *                  prio += (turn[0x538E] - pwr[-0x77B2]) >> 4 ; (staleness term)
  * @asm 0x04C7E4  return (prio > 0) ? 0 : prio
  * ============================================================================ */
+extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
+extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
 int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t dest)
 {
     int prio = 0;                                       /* @asm 0x04C720 [bp-2]=0 */
@@ -506,7 +503,7 @@ int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t de
 
     return (prio > 0) ? 0 : prio;                       /* @asm 0x04C7E4..0x04C7EB RETF */
 }
-/* ai_path_budget_8DB8, ai_turn_counter_538E, g_power_table_8808 declared above. */
+/* Declarations moved before first use (above); g_power_table_8808 is a macro from globals.h */
 
 /* ============================================================================
  * func_04C7F0 — ai_unit_task_total_score  [DONE — control flow BYTE_VERIFIED]
@@ -945,7 +942,7 @@ extern uint8_t  g_ai_regionmax_9E98[]; /* DGROUP:0x9E98 (-0x6168) — per-region
 extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power tier triplet */
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
-extern int16_t  g_native_count_539A;   /* DGROUP:0x539A — native settlement count (word) */
+/* g_native_count_539A: DGS16(0x539A) macro from globals.h */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.
@@ -964,10 +961,6 @@ extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe
  *   -> file 0x4C50C = func_04C50C_ai_table_c_clear(void)
  *
  * Call sites below use the resolved function names directly. */
-
-/* Forward declarations for globals used inside func_04CC50 and later. */
-extern uint8_t g_unit_type_flags_5237[];  /* DGROUP:0x5237 — per-type flags, byte[1] of 6-byte row */
-extern int16_t g_unit_count_539C;         /* DGROUP:0x539C — live unit count (word) */
 
 int func_04CC50_ai_strategic_plan_build(uint16_t power)
 {
@@ -1777,7 +1770,7 @@ extern uint8_t  g_ai_count_A89C;          /* DGROUP:0xA89C — active-entry coun
 extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
-/* g_unit_count_539C declared above. */
+/* g_unit_count_539C: DGS16(0x539C) macro from globals.h */
 /* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
  * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
  *
@@ -2134,6 +2127,7 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
 /* g_ai_sub_tbl_94E6 (DGROUP:0x94E6, declared above) is the same per-owner
  * map-density table this routine reads at [owner<<4 + base - 0x6B1A]. */
 extern int16_t  g_active_colony_8DC6;        /* DGROUP:0x8DC6 — current/source colony index */
+extern void     ai_set_plot_target(int tx, int ty); /* forward decl — defined below */
 
 int func_053820_ai_dispatch_unit_to_colony(void)
 {
@@ -2207,8 +2201,8 @@ int func_053820_ai_dispatch_unit_to_colony(void)
 }
 /* Publish the AI move-plot target into the DGROUP path-request globals.
  * @asm 0x053908 [0x1DD6]=0xFFFF; 0x05390E [0xA14E]=tx; 0x053917 [0xA14C]=ty;
- *      0x05391D [0x1DD4]=1; 0x053920 [0x1DD2]=1. */
-extern void ai_set_plot_target(int tx, int ty);
+ *      0x05391D [0x1DD4]=1; 0x053920 [0x1DD2]=1.
+ * (ai_set_plot_target declared above, before func_053820_ai_dispatch_unit_to_colony) */
 
 /* ============================================================================
  * func_053A34 — colony_set_or_validate_field  [DONE — control flow BYTE_VERIFIED]

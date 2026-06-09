@@ -66,6 +66,7 @@
  *   OUT-OF-SCOPE    pure DOS-platform leaf (none here — it is all UI render/layout).
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 #include "dgroup.h"
 

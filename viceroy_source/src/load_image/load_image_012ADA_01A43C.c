@@ -22,10 +22,36 @@
  * @inferred_role  TINY_ACCESSOR (28 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_012ADA_logic_sz_28(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_012ADA.asm — buffered output-stream write.
+ * (The auto banner "TINY_ACCESSOR [6]" only saw the first DGROUP read; the real
+ *  routine is a 109-byte push bp..retf 8 buffered writer.)  Appends up to
+ *  *cntp bytes from src into the stream buffer at DGROUP:0xA63E, debiting the
+ *  remaining-budget dword @0xA62C and crediting the consumed dword @0xA628, then
+ *  calls the overlay flush 0x0C05:0x0004 and updates the buffer pointer.  retf 8
+ *  -> four word args = two far pointers (cntp = es:di@bp+6, src = ds:si@bp+0xa).
+ *  Returns the overlay flush result (ax). */
+int func_012ADA_logic_sz_28(uint16_t cntp_off /*bp+6*/, uint16_t cntp_seg /*bp+8*/,
+                            uint16_t src_off  /*bp+0xa*/, uint16_t src_seg  /*bp+0xc*/)
 {
-    /* @auto: tiny accessor reads DGROUP:0xA62C. */
-    return *((uint16_t near*)0xA62C);
+    uint16_t cx = *((uint16_t far *)MK_FP(cntp_seg, cntp_off)); /* @asm les di,[bp+6]; cx=es:[di] */
+    uint32_t remaining = DG32(0xA62C);                /* @asm ax=[0xa62c]; dx=[0xa62e] (32-bit budget) */
+    if ((remaining >> 16) != 0xFFFF) {                /* @asm cmp dx,-1; je 0x12b0d (unlimited budget) */
+        if (remaining == 0) goto flush;               /* @asm or ax,dx; je 0x12b2d (budget exhausted) */
+        if ((remaining >> 16) == 0 && cx > (uint16_t)remaining)
+            cx = (uint16_t)remaining;                 /* @asm cmp cx,ax; jbe; mov cx,ax (clamp) */
+        DG32(0xA62C) = remaining - cx;                /* @asm sub ax,cx; sbb dx,0 */
+    }
+    DG32(0xA628) += cx;                               /* @asm add [0xa628],cx; adc [0xa62a],0 */
+    if (cx != 0) {                                    /* @asm or cx,cx; je 0x12b2d */
+        uint8_t  far *d = (uint8_t far *)MK_FP(DG16(0xA640), DG16(0xA63E)); /* @asm les di,[0xa63e] */
+        const uint8_t far *s = (const uint8_t far *)MK_FP(src_seg, src_off);/* @asm lds si,[bp+0xa] */
+        uint16_t n = cx;
+        while (n-- != 0) *d++ = *s++;                 /* @asm rep movsb */
+        DG16(0xA63E) = (uint16_t)(DG16(0xA63E) + cx); /* @asm mov dx,di; mov [0xa63e],dx (advance off) */
+    }
+flush:
+    /* @asm 0x12b2d push [0xa640]; push [0xa63e]; lcall 0xc05,4; [0xa63e]=ax; [0xa640]=dx. */
+    return overlay_call_0C05_0004();                  /* overlay flush; returns ax */
 }
 
 /* @asm        0x012B48..0x012BC1  (121 bytes)  region=load_image
@@ -43,31 +69,41 @@ int func_012ADA_logic_sz_28(uint16_t arg0_bp_06)
  * @inferred_role  MEDIUM_LOGIC (121 bytes). 0x0B01:0x000E
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_012B48_op_sz_121(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C)
+/* PORTED 2026-06-09 from func_012B48.asm — clamped buffered transfer (16-bit count).
+ * Clamps the requested count *cntp (far ptr @bp+6) to the signed remaining budget
+ * dword @0xA630/0xA632 (a negative high word means "unlimited"), then performs the
+ * transfer through overlay 0x0B01:0x000E using the stream handle @0xA642 (long-1
+ * mode, payload far ptr = bp+0xa:bp+0xc), debits the budget @0xA630 by the actual
+ * count and credits the transferred-total dword @0xA634.  retf 8 -> four words =
+ * far cntp (bp+6:bp+8) + payload far ptr (bp+0xa:bp+0xc).  Returns actual count. */
+int func_012B48_op_sz_121(uint16_t cntp_off /*bp+6*/, uint16_t cntp_seg /*bp+8*/,
+                          uint16_t pay_off  /*bp+0xa*/, uint16_t pay_seg  /*bp+0xc*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0xA630, 0xA632, 0xA634, 0xA642
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x012B51 JL 0x012B74 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x012B5F JL 0x012B70 */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x012B61 JG 0x012B69 */ {
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x012B67 JBE 0x012B70 */ {
-                    }
-                }
-            }
-            goto label_012B7A;  /* @0x012B72 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012B7C JE 0x012BBA */ {
-            /* @0x012B8F */ overlay_call_0B01_000E();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x012B9B JL 0x012BB0 */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x012B9D JG 0x012BA6 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x012BA4 JE 0x012BB0 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t si;
+    if ((int16_t)DG16(0xA632) < 0) {                  /* @asm cmp [0xa632],0; jl 0x12b74 (unlimited) */
+        si = *((uint16_t far *)MK_FP(cntp_seg, cntp_off));   /* @asm si=es:[bx] (raw count) */
+    } else {
+        uint16_t v = *((uint16_t far *)MK_FP(cntp_seg, cntp_off)); /* @asm ax=es:[bx]; dx=0 */
+        /* clamp value to the 32-bit limit [0xA632]:[0xA630]: compare (0:v) vs limit
+         * (signed).  v fits whenever limit_hi>0, or limit_hi==0 and v<=limit_lo. */
+        if ((int16_t)DG16(0xA632) > 0 ||              /* @asm cmp dx,[0xa632]; jl 0x12b70 (0<hi) */
+            ((int16_t)DG16(0xA632) == 0 && v <= DG16(0xA630))) /* @asm jg/je; cmp v,lo; jbe */
+            si = v;                                   /* @asm si=v (within limit) */
+        else
+            si = DG16(0xA630);                        /* @asm clamp: si=[0xa630] (limit lo) */
+    }
+    if (si == 0) return 0;                            /* @asm or si,si; je 0x12bba */
+
+    /* @asm push [bp+0xc]; push [bp+0xa]; push 0; push si; ax=1; cdq; bx=[0xa642];
+     *      lcall 0xb01,0xe -> si = actual count transferred. */
+    (void)pay_off; (void)pay_seg;
+    si = (uint16_t)overlay_call_0B01_000E();
+
+    if ((int16_t)DG16(0xA632) >= 0 &&                 /* @asm cmp [0xa632],0; debit budget if >=0 */
+        !((int16_t)DG16(0xA632) == 0 && DG16(0xA630) == 0))
+        DG32(0xA630) -= si;                           /* @asm sub [0xa630],si; sbb [0xa632],0 */
+    DG32(0xA634) += si;                               /* @asm add [0xa634],si; adc [0xa636],0 */
+    return (int)si;                                   /* @asm mov ax,si */
 }
 
 /* @asm        0x012BC2..0x012C53  (145 bytes)  region=load_image
@@ -85,34 +121,41 @@ int func_012B48_op_sz_121(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg
  * @inferred_role  MEDIUM_LOGIC (145 bytes). 0x1A1F:0x0C9C
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_012BC2_op_sz_145(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C)
+/* PORTED 2026-06-09 from func_012BC2.asm — clamped buffered transfer (32-bit budget).
+ * The long twin of func_012B48: clamps the requested count *cntp (far ptr @bp+6)
+ * to the signed remaining budget dword @0xA62C/0xA62E (negative high word =
+ * unlimited), zero-extends it to a long, and transfers through overlay
+ * 0x1A1F:0x0C9C with stream handle @0xA638 (mode 1, payload far ptr bp+0xa:bp+0xc).
+ * On overlay success it debits the budget @0xA62C and credits the transferred-total
+ * dword @0xA628, both by the requested long count.  retf 8.  Returns count low word. */
+int func_012BC2_op_sz_145(uint16_t cntp_off /*bp+6*/, uint16_t cntp_seg /*bp+8*/,
+                          uint16_t pay_off  /*bp+0xa*/, uint16_t pay_seg  /*bp+0xc*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0xA628, 0xA62C, 0xA62E, 0xA638
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x012BCC JL 0x012BF0 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x012BDA JL 0x012BEB */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x012BDC JG 0x012BE4 */ {
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x012BE2 JBE 0x012BEB */ {
-                    }
-                }
-            }
-            goto label_012BF6;  /* @0x012BED */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012BF8 JE 0x012C4C */ {
-            /* @0x012C12 */ overlay_call_1A1F_0C9C();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012C19 JNE 0x012C20 */ {
-                goto label_012C4C;  /* @0x012C1D */
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x012C25 JL 0x012C3E */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x012C27 JG 0x012C30 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x012C2E JE 0x012C3E */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t si;
+    if ((int16_t)DG16(0xA62E) < 0) {                  /* @asm cmp [0xa62e],0; jl 0x12bf0 (unlimited) */
+        si = *((uint16_t far *)MK_FP(cntp_seg, cntp_off));   /* @asm si=es:[bx] */
+    } else {
+        uint16_t v = *((uint16_t far *)MK_FP(cntp_seg, cntp_off)); /* @asm ax=es:[bx]; dx=0 */
+        if ((int16_t)DG16(0xA62E) > 0 ||              /* @asm cmp dx,[0xa62e]; jl 0x12bf6 (0<hi) */
+            ((int16_t)DG16(0xA62E) == 0 && v <= DG16(0xA62C))) /* @asm jg/je; cmp v,lo; jbe */
+            si = v;                                   /* @asm si=v */
+        else
+            si = DG16(0xA62C);                        /* @asm clamp: si=[0xa62c] (limit lo) */
+    }
+    if (si == 0) return 0;                            /* @asm or si,si; je 0x12c4c */
+
+    /* @asm [bp-4:bp-2] = (dx:ax) = (0:si) (the requested long count); push payload,
+     *      push 0, push 1; bx=[0xa638]; lcall 0x1a1f,0xc9c -> (dx:ax) result. */
+    uint32_t reqlen = (uint32_t)si;
+    (void)pay_off; (void)pay_seg;
+    uint32_t result = (uint32_t)overlay_call_1A1F_0C9C();
+    if (result == 0) return 0;                        /* @asm or dx,ax; je 0x12c4c (si=0) */
+
+    if ((int16_t)DG16(0xA62E) >= 0 &&                 /* @asm cmp [0xa62e],0; debit if >=0 */
+        !((int16_t)DG16(0xA62E) == 0 && DG16(0xA62C) == 0))
+        DG32(0xA62C) -= reqlen;                       /* @asm sub [0xa62c],ax; sbb [0xa62e],dx */
+    DG32(0xA628) += reqlen;                           /* @asm add [0xa628],ax; adc [0xa62a],dx */
+    return (int)si;                                   /* @asm mov ax,si */
 }
 
 /* @asm        0x012C8C..0x012CC8  (60 bytes)  region=load_image
@@ -130,13 +173,16 @@ int func_012BC2_op_sz_145(uint16_t arg0_bp_06, uint16_t arg1_bp_0A, uint16_t arg
  * @inferred_role  PROLOGUE_HEAVY (60 bytes). 0x0D1D:0x113C
  * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
-int func_012C8C_rtl_sz_60(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PLATFORM_LAYER (DOS INT 21h AH=40h).  func_012C8C.asm writes the NUL-terminated
+ * string at the far ptr (bp+6:bp+8) to stdout (handle 1): it measures the length
+ * via overlay strlen 0x0D1D:0x113C, issues INT 21h AH=40h (write), then if the
+ * caller's trailing-newline flag is set emits LF (0x0A) + CR (0x0D) via INT 21h
+ * AH=02h.  The DOS console I/O is provided by the modern host, so the syscall body
+ * is not reconstructed here.  retf 4 -> one far ptr (bp+6:bp+8). */
+int func_012C8C_rtl_sz_60(uint16_t str_off /*bp+6*/, uint16_t str_seg /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x012C97 */ overlay_call_0D1D_113C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012CB6 JE 0x012CC4 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)str_off; (void)str_seg;
+    return 0; /* TODO: port from func_012C8C.asm — DOS INT 21h stdout write (host layer) */
 }
 
 /* @asm        0x012CC8..0x012D4A  (130 bytes)  region=load_image
@@ -155,26 +201,24 @@ int func_012C8C_rtl_sz_60(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  MEDIUM_LOGIC (130 bytes). 0x1103:0x000A + 0x1103:0x004C
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_012CC8.asm — XMS/HMA detection + init (no-XMS branch).
+ * The original probes for an XMS manager (INT 2Fh AX=4300h -> AL==0x80) and, when
+ * present, fetches the driver entry (AX=4310h, stored as the far ptr @0x26E8/0x26EA),
+ * queries free XMS (>= 0x200 KB) to set the "XMS available" flag @0x26E4, and if
+ * enabled allocates a transfer block via overlay 0x1103:0x000A / 0x1103:0x004C.
+ * The modern host has no XMS manager, so detection always fails: this faithfully
+ * reproduces the no-XMS fall-through, which clears the enable flag and writes the
+ * sentinel state.  @status PLATFORM_LAYER (DOS INT 2Fh / XMS host layer). */
 int func_012CC8_op_sz_130(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x26E4, 0x26E6
-     * Writes DGROUP: 0x264E, 0x2666, 0x2668, 0x26E4, 0x26E8, 0x26EA, 0x26EC, 0xA668
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012CD7 JNE 0x012D03 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012CE0 JNE 0x012D03 */ {
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x012CFB JB 0x012D03 */ {
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012D19 JE 0x012D45 */ {
-            /* @0x012D1F */ overlay_call_1103_000A();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012D2F JE 0x012D45 */ {
-                /* @0x012D40 */ overlay_call_1103_004C();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    DG16(0x26E4) = 0;          /* @asm mov [0x26e4],0 — XMS-available flag (no manager) */
+    /* @asm INT 2Fh AX=4300h/4310h + driver free-mem query — absent on the host. */
+    DG16(0x2666) = 0xFFFF;     /* @asm mov [0x2666],0xffff */
+    DG16(0x2668) = 0xFFFF;     /* @asm mov [0x2668],0xffff */
+    DG8(0x264E)  = 0;          /* @asm mov byte [0x264e],0 */
+    /* @asm cmp [0x26e4],0; je 0x12d45 — flag is 0, so the overlay 0x1103 XMS-block
+     *      allocation is skipped. */
+    return (int)DG16(0x26E4);  /* @asm mov ax,[0x26e4] */
 }
 
 /* @asm        0x012D4A..0x012DA9  (95 bytes)  region=load_image
@@ -192,21 +236,25 @@ int func_012CC8_op_sz_130(void)
  * @inferred_role  UNKNOWN (95 bytes). 0x0D1D:0x113C + 0x0D1D:0x113C
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_012D4A_rtl_sz_95(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_012D4A.asm — rtrim: strip trailing spaces/tabs in place.
+ * On each pass it measures the string length with overlay strlen 0x0D1D:0x113C
+ * (byte-identical to the inline scan below), looks at the last character, and if it
+ * is a space (0x20) or tab (0x09) overwrites it with NUL; it repeats until the last
+ * character is neither (or the string becomes empty).  retf 4 -> one far ptr
+ * (str = bp+6:bp+8).  (The first overlay strlen call at 0x12D56 is dead — its result
+ * is discarded before the loop re-measures.) */
+int func_012D4A_rtl_sz_95(uint16_t str_off /*bp+6*/, uint16_t str_seg /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x012D56 */ overlay_call_0D1D_113C();
-        /* @0x012D67 */ overlay_call_0D1D_113C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012D81 JE 0x012D8E */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012D87 JE 0x012D8E */ {
-                goto label_012D95;  /* @0x012D8B */
-            }
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x012D9B JAE 0x012D9F */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012DA1 JNE 0x012D5E */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    char far *s = (char far *)MK_FP(str_seg, str_off);
+    for (;;) {
+        uint16_t len = 0;                     /* @asm lcall 0x0d1d,0x113c -> ax = strlen(s) */
+        while (s[len] != 0) len++;
+        if (len == 0) break;                  /* @asm lea ax,[di-1]; cmp ax,start; jb -> stop */
+        char c = s[len - 1];                  /* @asm es:[bx] = last char */
+        if (c != 0x20 && c != 0x09) break;    /* @asm cmp 0x20 / cmp 9; jne -> done */
+        s[len - 1] = 0;                       /* @asm mov es:[di],0 (truncate) */
+    }
+    return 0;                                 /* @asm retf 4 (no defined return value) */
 }
 
 /* @asm        0x012DAA..0x012E0D  (99 bytes)  region=load_image
@@ -266,10 +314,15 @@ int func_012DAA_logic_sz_99(char near *str /*in bx*/)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* C-runtime far-block helper (truncated slice).  func_012E56.asm normalizes the far
+ * pointer at bp+6 to a paragraph boundary (dx = es + ((off+0xf)>>4)); a result of 0
+ * (the canonical NULL) returns error 0x382C, otherwise it switches DS to the block
+ * and relocates words via the saved PSP fields — the disassembly window cuts off at
+ * 0x012E82 (mid-copy), so the full body is not present to port.  retf 0xc. */
 int func_012E56_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_012E56.asm — .asm slice truncated mid-routine */
 }
 
 /* @asm        0x012EE0..0x012F1F  (63 bytes)  region=load_image
@@ -287,17 +340,16 @@ int func_012E56_logic_sz_20(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* Decompressor entry (LZ-style bit unpacker), prologue only.  func_012EE0.asm does
+ * ENTER 0x5A2 to reserve a ~1442-byte sliding-window buffer, derives the literal/length
+ * decode masks from AH into the locals [8]/[0xA]/[6], primes the bit stream from SI
+ * via LODSW (bit counter DX), and calls the window-refill helper at 0x013013 whenever
+ * SI crosses the 0x081B boundary.  The auto-segmented .asm window stops after the
+ * first refill check (0x012F34), so the unpack loop body is not available to port
+ * faithfully.  retf 0xc. */
 int func_012EE0_logic_sz_63(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x000A
-     */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x012F07 JB 0x012F0C */ {
-            /* @0x012F09 */ func_013013();
-        }
-        goto label_012F1F;  /* @0x012F12 */
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_012EE0.asm — only the decompressor prologue is in the slice */
 }
 
 /* @asm        0x0130A4..0x0130B8  (20 bytes)  region=load_image
@@ -312,10 +364,15 @@ int func_012EE0_logic_sz_63(void)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* C-runtime far-block helper (truncated slice), twin of func_012E56.  func_0130A4.asm
+ * normalizes the far pointer at bp+6 to a paragraph boundary (dx = es + ((off+0xf)>>4));
+ * a normalized NULL (0) returns error 0x0820, otherwise it relocates words through the
+ * block.  The disassembly window cuts off at 0x0130D0 (mid-routine), so the full body
+ * is not present to port.  retf 0xc. */
 int func_0130A4_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_0130A4.asm — .asm slice truncated mid-routine */
 }
 
 /* @asm        0x01311B..0x01315A  (63 bytes)  region=load_image
@@ -333,17 +390,14 @@ int func_0130A4_logic_sz_20(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (63 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* Decompressor entry (LZ-style bit unpacker), prologue only — twin of func_012EE0.
+ * func_01311B.asm reserves the 0x5A2-byte window, derives the decode masks from AH,
+ * primes the bit stream from SI, and calls the window-refill helper at 0x013274 when
+ * SI crosses the 0x080F boundary.  The auto-segmented .asm stops after the first
+ * refill check (0x01316F), so the unpack loop body is not available to port.  retf 0xc. */
 int func_01311B_logic_sz_63(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x000A
-     */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x013142 JB 0x013147 */ {
-            /* @0x013144 */ func_013274();
-        }
-        goto label_01315A;  /* @0x01314D */
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_01311B.asm — only the decompressor prologue is in the slice */
 }
 
 /* @asm        0x0132B0..0x0132CA  (26 bytes)  region=load_image
@@ -358,10 +412,16 @@ int func_01311B_logic_sz_63(void)
  * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* Compressed-archive header validator (truncated slice).  func_0132B0.asm checks the
+ * output far pointer (es:di @bp+6) for NULL -> error 4, then reads the header at the
+ * far source (bp+0xe) and verifies the magic word 0x4146 ('FA') followed by 0x42 ('B')
+ * — i.e. an "AFB"/"FAB" archive signature — before dispatching the unpacker.  The
+ * disassembly window ends at 0x0132D8 (just inside the magic check), so the validation
+ * tail and dispatch are not present to port faithfully.  retf 0xc. */
 int func_0132B0_logic_sz_26(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_0132B0.asm — .asm slice truncated mid-routine */
 }
 
 /* @asm        0x01340E..0x01342E  (32 bytes)  region=load_image
@@ -376,19 +436,19 @@ int func_0132B0_logic_sz_26(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (32 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_01340E.asm — XMS free-memory linear address (no-XMS branch).
+ * When XMS is enabled (@0x26E4 != 0) it calls the XMS driver entry @0x26E8 with AH=0x10
+ * (request UMB, DX=0xFFFF) and, if it returns BL==0xB0 ("only a smaller block available")
+ * with the largest size in DX, converts that paragraph size to a linear byte address
+ * (ax = dx<<4, dx = dx>>12) and returns it in dx:ax.  The modern host exposes no XMS
+ * manager, so @0x26E4 is 0 and the routine returns the zero result.
+ * @status PLATFORM_LAYER (DOS XMS driver via far-indirect call). */
 int func_01340E_logic_sz_32(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x26E4
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x013416 JE 0x013434 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x013423 JNE 0x013434 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x013428 JNE 0x013434 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    if (DG16(0x26E4) == 0)             /* @asm mov ax,[0x26e4]; or ax,ax; je 0x13434 */
+        return 0;                      /* @asm xor ax,ax; xor dx,dx (no XMS) */
+    /* @asm AH=0x10; DX=0xFFFF; lcall [0x26e8]; if BL==0xB0: ax=dx<<4, dx=dx>>12. */
+    return 0;                          /* XMS host layer absent: zero linear address */
 }
 
 /* @asm        0x01343A..0x01347B  (65 bytes)  region=load_image
@@ -403,17 +463,22 @@ int func_01340E_logic_sz_32(void)
  * @inferred_role  PROLOGUE_HEAVY (65 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_01343A.asm — XMS UMB allocate + record handle (no-XMS branch).
+ * If fewer than 16 UMB handles are in use (count @0x2770 < 0x10) it rounds the requested
+ * size (bp+6) up to paragraphs, packs the high size bits from bp+8, and calls the XMS
+ * driver @0x26E8 with AH=0x10 (request UMB).  On success (AL!=0) it appends the returned
+ * handle to the 16-entry table at DGROUP:0xA66A (stride 4, index @0x2770) and bumps the
+ * count.  The modern host has no XMS driver, so the request fails and neither the table
+ * nor the count is touched.  retf -> two words (size lo/hi).  Returns dx:ax (0 here).
+ * @status PLATFORM_LAYER (DOS XMS driver via far-indirect call). */
 int func_01343A_logic_sz_65(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2770
-     */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x013448 JGE 0x013479 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x013464 JE 0x013479 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08;
+    if ((int16_t)DG16(0x2770) >= 0x10)   /* @asm cmp [0x2770],0x10; jge 0x13479 (table full) */
+        return 0;
+    /* @asm size paragraphs from bp+6/bp+8; AH=0x10; lcall [0x26e8]; on AL!=0 store handle
+     *      at [0x2770]*4 + 0xA66A and inc [0x2770].  XMS absent -> request fails. */
+    return 0;                            /* @asm xor dx,dx; or al,al; je 0x13479 (no XMS) */
 }
 
 /* @asm        0x01347C..0x013491  (21 bytes)  region=load_image
@@ -428,10 +493,35 @@ int func_01343A_logic_sz_65(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  TINY_ACCESSOR (21 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_01347C_logic_sz_21(uint16_t arg0_bp_08)
+/* PORTED 2026-06-09 from func_01347C.asm — XMS UMB free: drop a handle + release.
+ * (Auto banner "TINY_ACCESSOR" only saw the count read; the real routine is a
+ *  table-compacting free.)  It scans the in-use UMB handle table at DGROUP:0xA66A
+ *  (count @0x2770) for the handle dx=bp+8; on a hit it shifts the remaining entries
+ *  down over it and decrements the count, then calls the XMS driver @0x26E8 with
+ *  AH=0x11 (release UMB).  The table/counter edits are faithful game state; the XMS
+ *  release itself is the absent host layer.  With no XMS the table is empty (the scan
+ *  finds nothing).  @status PLATFORM_LAYER for the final driver call only. */
+int func_01347C_logic_sz_21(uint16_t handle_bp_08)
 {
-    /* @auto: tiny accessor reads DGROUP:0x2770. */
-    return *((uint16_t near*)0x2770);
+    uint16_t cx = DG16(0x2770);                    /* @asm cx=[0x2770] (handles in use) */
+    uint16_t bx = 0xA66A;                          /* @asm bx=0xa66a (handle table base) */
+    if (cx != 0) {                                 /* @asm jcxz 0x134a9 */
+        while (cx != 0) {                          /* @asm loop 0x1348b: find handle */
+            if (DG16(bx) == handle_bp_08) {        /* @asm mov ax,[bx]; cmp ax,dx; je 0x13498 */
+                /* compact: shift trailing entries down over the matched slot */
+                for (cx--; cx != 0; cx--) {        /* @asm dec cx; loop 0x1349b */
+                    DG16(bx) = DG16(bx + 2);       /* @asm mov ax,[bx+2]; mov [bx],ax */
+                    bx += 2;                        /* @asm add bx,2 */
+                }
+                DG16(0x2770) -= 1;                 /* @asm dec word [0x2770] */
+                break;
+            }
+            bx += 2;                                /* @asm add bx,2 */
+            cx--;
+        }
+    }
+    /* @asm AH=0x11; lcall [0x26e8] — XMS "release UMB" (host layer absent). */
+    return 0;
 }
 
 /* @asm        0x013B4E..0x013B5F  (17 bytes)  region=load_image
@@ -446,10 +536,16 @@ int func_01347C_logic_sz_21(uint16_t arg0_bp_08)
  * @inferred_role  TINY_ACCESSOR (17 bytes). no LCALLs
  * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
+/* PLATFORM_LAYER (RTLink overlay-manager trampoline).  func_013B4E.asm is NOT an
+ * accessor (the auto banner mis-segmented it): it is loader interrupt-frame code that
+ * computes a CS-relative overlay-window bound from cs:[0x5DA5]/[0x5DA7]/[0x663], may
+ * call the overlay state routine at 0x015094, and tail-transfers via `ljmp cs:[0x56C]`
+ * into the RTLink dispatcher (iret/far-jump).  This host overlay machinery is replaced
+ * wholesale in the modern build, so it is not reconstructed.  (The raw `*(near*)0x5DA5`
+ * the auto pass emitted would also fault under the modern flat memory model.) */
 int func_013B4E_logic_sz_17(void)
 {
-    /* @auto: tiny accessor reads DGROUP:0x5DA5. */
-    return *((uint16_t near*)0x5DA5);
+    return 0;  /* TODO: port from func_013B4E.asm — RTLink overlay-manager host layer */
 }
 
 /* @asm        0x013B9F..0x013BB5  (22 bytes)  region=load_image
@@ -464,10 +560,16 @@ int func_013B4E_logic_sz_17(void)
  * @inferred_role  TINY_ACCESSOR (22 bytes). no LCALLs
  * @status     SHADOWED (interior of func_013B4E; auto-segmentation artifact, not a standalone function)
  */
+/* PLATFORM_LAYER (RTLink overlay-manager trampoline), interior of func_013B4E.
+ * func_013B9F.asm is loader interrupt code (saves flags, compares the current ES
+ * against the overlay window seg cs:[0x5DA5]+cs:[0x5DA3]+1, conditionally calls the
+ * overlay state routine 0x015094 twice, pokes loader flags @cs:[0x396C]/[0x39E3]/
+ * [0x39DE]) — host overlay machinery, not a DGROUP accessor.  Not reconstructed.
+ * (The raw `*(near*)0x5DA3` the auto pass emitted would fault under modern memory.) */
 int func_013B9F_logic_sz_22(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor reads DGROUP:0x5DA3. */
-    return *((uint16_t near*)0x5DA3);
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_013B9F.asm — RTLink overlay-manager host layer */
 }
 
 /* @asm        0x014293..0x01468D  (1018 bytes)  region=load_image
@@ -495,147 +597,18 @@ int func_013B9F_logic_sz_22(uint16_t arg0_bp_06)
  * @inferred_role  LARGE_LOGIC (1018 bytes). 0x110D:0x1AC4 + 0x110D:0x1EBD
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* HONEST STUB — func_014293 is the shared RTLink overlay-loader core (1018 bytes,
+ * "rtlink_loader_shared").  Its disassembly is NOT present in re_work/disasm
+ * (the @asm_file path above points outside the available analysis tree), so there is
+ * no source of truth to port from.  Even if present it is pure host/runtime overlay
+ * machinery: it drives the loader state @cs:[0x3958..0x39E0], issues the overlay
+ * service LCALLs 0x110D:0x1AC4 / 0x110D:0x1EBD, and orchestrates ~15 near helpers
+ * (0x0164A2, 0x015AD7, 0x015B2A, 0x015E52, 0x015B54, 0x01622A, 0x015A60) — all of
+ * which are themselves RTLink loader internals replaced wholesale in the modern build.
+ * @status PLATFORM_LAYER (RTLink overlay loader; .asm unavailable). */
 int func_014293_rtlink_sz_1018(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0018, 0x3958, 0x395A, 0x395C, 0x3983, 0x3987, 0x399B, 0x39DD, 0x39DE, 0x39DF ...
-     * Writes DGROUP: 0x1550, 0x1552, 0x3958, 0x395A, 0x397D, 0x397F, 0x3983, 0x3985, 0x3987, 0x39E0 ...
-     */
-        /* @0x0142C7 */ func_0164A2();
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x0142CF JB 0x01430F */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0142D1 JE 0x0142F1 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0142E4 JE 0x0142EC */ {
-                }
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x014302 JE 0x01430A */ {
-            }
-        }
-        goto label_0142D8;  /* @0x014316 */
-        /* @0x014318 */ overlay_call_110D_1AC4();
-        goto label_01436B;  /* @0x01431D */
-        goto label_01414F;  /* @0x01431F */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01432A JNE 0x01431F */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x014332 JNE 0x01431F */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x014369 JNE 0x014318 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x014383 JE 0x0143D0 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x014390 JE 0x0143D3 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0143AC JNE 0x01442A */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x0143B5 JNE 0x0143D3 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0143C0 JNE 0x0143C5 */ {
-                        }
-                        goto label_014500;  /* @0x0143CD */
-                        goto label_014454;  /* @0x0143D0 */
-                    }
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x0143D9 JE 0x01442D */ {
-                        /* @0x0143E7 */ func_015AD7();
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x0143EC JE 0x01440E */ {
-                            /* @0x0143EE */ func_015B2A();
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x014402 JE 0x014418 */ {
-                                /* @0x014415 */ func_015E52();
-                            }
-                        }
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x01441E JE 0x01442A */ {
-                        }
-                        goto label_014500;  /* @0x01442A */
-                    }
-                }
-            }
-        }
-        /* @0x014436 */ func_015AD7();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01443B JE 0x014447 */ {
-            /* @0x01443D */ func_015B2A();
-        }
-        goto label_014500;  /* @0x014451 */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01445B JE 0x0144A7 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x014469 JNE 0x0144A7 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x014478 JE 0x0144AC */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x014481 JE 0x0144D8 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x014489 JNE 0x0144AC */ {
-                            if (/* JBE fallthrough cond: */ ax > 0) /* @0x014499 JBE 0x0144AA */ {
-                                goto label_015E52;  /* @0x0144A4 */
-                                goto label_01453E;  /* @0x0144A7 */
-                            }
-                        }
-                        /* @0x0144AE */ func_015B54();
-                        if (/* JB fallthrough cond: */ ax >= 0) /* @0x0144B1 JB 0x0144EB */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x0144B5 JE 0x0144DA */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x0144BC JE 0x0144F8 */ {
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x0144C4 JE 0x0144F8 */ {
-                                        /* @0x0144CB */ func_015E52();
-                                        /* @0x0144D5 */ func_015E52();
-                                        goto label_014500;  /* @0x0144D8 */
-                                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0144E7 JNE 0x0144EB */ {
-                                            goto label_014500;  /* @0x0144E9 */
-                                        }
-                                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0144F1 JNE 0x0144F5 */ {
-                                            goto label_014500;  /* @0x0144F3 */
-                                        }
-                                        goto label_014B65;  /* @0x0144F5 */
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        /* @0x0144FD */ func_015E52();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x014506 JE 0x01455D */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x014531 JNE 0x0145AA */ {
-                /* @0x014536 */ overlay_call_110D_1EBD();
-                goto label_0145E1;  /* @0x01453B */
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x014544 JNE 0x014584 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x01454C JE 0x01455B */ {
-                        /* @0x014558 */ func_015E52();
-                    }
-                    goto label_014500;  /* @0x01455B */
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x014563 JNE 0x014508 */ {
-                    }
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x01456C JE 0x014508 */ {
-                    }
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x01457A JNE 0x014508 */ {
-                    }
-                    /* @0x01457C */ func_01622A();
-                    goto label_014508;  /* @0x01457F */
-                    goto label_0146D0;  /* @0x014581 */
-                }
-                /* @0x014592 */ func_015B54();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x014597 JE 0x014546 */ {
-                }
-                /* @0x01459E */ func_015E52();
-                goto label_014546;  /* @0x0145A8 */
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0145B5 JNE 0x0145E1 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0145CD JE 0x014581 */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0145E8 JE 0x0145ED */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x014602 JE 0x01463E */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01460A JE 0x01464E */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x01461A JE 0x01463E */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x014622 JNE 0x014626 */ {
-                    }
-                    /* @0x014626 */ func_015A60();
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x01462B JE 0x01463E */ {
-                        goto label_014657;  /* @0x01463C */
-                    }
-                }
-                goto label_01462D;  /* @0x01464C */
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01465E JNE 0x01466E */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x014674 JE 0x0146AB */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x01467D JNE 0x014660 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_014293_rtlink_loader_shared.asm — .asm missing; RTLink host layer */
 }
 
 /* @asm        0x015094..0x0150D9  (69 bytes)  region=load_image
@@ -658,28 +631,16 @@ int func_014293_rtlink_sz_1018(void)
  * @inferred_role  DISPATCHER (69 bytes). 0x110D:0x1341
  * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
+/* PLATFORM_LAYER (RTLink overlay state dispatcher).  func_015094.asm takes a signed
+ * overlay-delta (bp+6) and adjusts the loaded-overlay set: it calls the overlay manager
+ * (LCALL 0x110D:0x1341, tail `ljmp 0x110D:0x1BDD`), grows/shrinks the resident window via
+ * the near helpers 0x0189A0 / 0x01892F, fixes up cs:[0x39B7], and on the zero-delta path
+ * returns cs:[0x5DA7]-cs:[0x5DA5] (the current window size).  All CS-relative loader state
+ * + far overlay transfers — replaced wholesale in the modern build, not reconstructed. */
 int func_015094_rtlink_sz_69(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x39B7
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01509F JE 0x0150D9 */ {
-            /* @0x0150A3 */ overlay_call_110D_1341();
-            if (/* JS fallthrough cond: */ ax !signed 0) /* @0x0150AD JS 0x0150C0 */ {
-                /* @0x0150AF */ func_015113();
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x0150B2 JB 0x0150D5 */ {
-                    /* @0x0150B4 */ func_0189A0();
-                    goto label_0150D8;  /* @0x0150BE */
-                    /* @0x0150C3 */ func_01892F();
-                    if (/* JB fallthrough cond: */ ax >= 0) /* @0x0150CC JB 0x0150D5 */ {
-                        /* @0x0150CE */ func_015113();
-                        goto label_0150D8;  /* @0x0150D3 */
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_015094.asm — RTLink overlay-loader host layer */
 }
 
 /* @asm        0x015131..0x015145  (20 bytes)  region=load_image
@@ -694,10 +655,16 @@ int func_015094_rtlink_sz_69(uint16_t arg0_bp_06)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
-int func_015131_logic_sz_20(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_015131.asm — store loader global @0x3952 into *out.
+ * (The auto banner returned the value; the .asm actually writes it through the caller's
+ *  far out-pointer.)  @asm lds si,[bp+6]; ax=cs:[0x3952]; mov [si],ax; retf.  The word
+ *  at 0x3952 is the RTLink loader's "current overlay segment" state (@status
+ *  PLATFORM_LAYER), exposed here via the DGROUP-consistent accessor.
+ *  retf -> one far ptr out (bp+6:bp+8). */
+int func_015131_logic_sz_20(uint16_t out_off /*bp+6*/, uint16_t out_seg /*bp+8*/)
 {
-    /* @auto: tiny accessor reads DGROUP:0x3952. */
-    return *((uint16_t near*)0x3952);
+    *((uint16_t far *)MK_FP(out_seg, out_off)) = DG16(0x3952); /* @asm mov [si],ax */
+    return 0;
 }
 
 /* @asm        0x015145..0x015158  (19 bytes)  region=load_image
@@ -717,8 +684,10 @@ int func_015131_logic_sz_20(uint16_t arg0_bp_06)
  */
 int func_015145_logic_sz_19(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x015219. */
-    return func_015219();
+    /* PORTED 2026-06-09 from func_015145.asm — thin wrapper: loads the far record at
+     * bp+6 into DS:SI and tail-calls the near worker 0x015219, returning its result. */
+    (void)arg0_bp_06;
+    return func_015219();              /* @asm lds si,[bp+6]; call 0x15219 */
 }
 
 /* @asm        0x015166..0x0151B1  (75 bytes)  region=load_image
@@ -736,18 +705,16 @@ int func_015145_logic_sz_19(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (75 bytes). 0x110D:0x1341
  * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
  */
+/* PLATFORM_LAYER (RTLink overlay loader, CS-relative).  func_015166.asm reads the
+ * loader's saved far DTA cs:[0x3952] and emits a 10-byte overlay descriptor into the
+ * caller's far buffer (bp+0xa) — either copying the live record (`rep movsb` of 10
+ * bytes from cs:[0x3952]-10) or synthesizing it from cs:[0x395C]/[0x3958] — then clears
+ * loader flag bit cs:[0x39DE]&~4 and tail-transfers via LCALL 0x110D:0x1341 /
+ * `ljmp 0x110D:0x1CDE`.  All CS-relative loader state; replaced in the modern build. */
 int func_015166_rtlink_sz_75(uint16_t arg0_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x3958, 0x395C, 0x39DE
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01517D JE 0x01518A */ {
-            goto label_0151D7;  /* @0x015188 */
-        }
-        goto label_0151D7;  /* @0x01519C */
-        /* @0x0151A4 */ overlay_call_110D_1341();
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_0A;
+    return 0;  /* TODO: port from func_015166.asm — RTLink overlay-loader host layer */
 }
 
 /* @asm        0x0151B1..0x0151F2  (65 bytes)  region=load_image
@@ -765,13 +732,15 @@ int func_015166_rtlink_sz_75(uint16_t arg0_bp_0A)
  * @inferred_role  PROLOGUE_HEAVY (65 bytes). no LCALLs
  * @status     SHADOWED (interior of func_015166; auto-segmentation artifact, not a standalone function)
  */
+/* PLATFORM_LAYER (RTLink overlay loader, CS-relative) — interior/tail of func_015166.
+ * func_0151B1.asm calls the loader query 0x015219 on the far record at bp+0xa, copies
+ * a 10-byte overlay descriptor into the CS-relative loader table cs:[0x3952]-10, then
+ * marshals the 10-byte result structure from bp+0xe down to bp+2.  CS-relative loader
+ * state; replaced in the modern build, not reconstructed. */
 int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0151BD */ func_015219();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0151CC JE 0x0151F2 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_0A; (void)arg1_bp_0E;
+    return 0;  /* TODO: port from func_0151B1.asm — RTLink overlay-loader host layer */
 }
 
 /* @asm        0x016073..0x016086  (19 bytes)  region=load_image
@@ -791,8 +760,9 @@ int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
  */
 int func_016073_logic_sz_19(void)
 {
-    /* @auto: wrapper forwards to near CALL 0x016127. */
-    return func_016127();
+    /* PORTED 2026-06-09 from func_016073.asm — thin wrapper: tail-calls the near worker
+     * 0x016127 and returns its result. */
+    return func_016127();             /* @asm call 0x016127 */
 }
 
 /* @asm        0x019E64..0x019E6F  (11 bytes)  region=load_image
@@ -807,10 +777,16 @@ int func_016073_logic_sz_19(void)
  * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PLATFORM_LAYER (RTLink loader config parse).  The auto banner ("TINY_RETURN, 11 bytes")
+ * badly mis-segmented this — func_019E64.asm is a 121-byte routine that parses the
+ * CS-relative config string at cs:[0x547] into flag byte cs:[0x56F] and the two words
+ * cs:[0x572]/cs:[0x570] (returned in AL/BX/CX): it issues LCALL 0x175D:0x8AD and the near
+ * field-scanners 0x19FF4 / 0x19FBD, splitting on ',' (0x2C).  All CS-relative loader
+ * state — replaced wholesale in the modern build, so it is not reconstructed; the real
+ * body also runs past the captured slice. */
 int func_019E64_logic_sz_11(void)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    return 0;  /* TODO: port from func_019E64.asm — RTLink loader config (host layer) */
 }
 
 /* @asm        0x01A283..0x01A2D9  (86 bytes)  region=load_image
@@ -825,28 +801,47 @@ int func_019E64_logic_sz_11(void)
  * @inferred_role  COUNT_LOOP (86 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_01A283_logic_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_01A283.asm — getenv: look up NAME in the DOS environment
+ * and copy its value into a caller buffer.  Custom register ABI (no callers): the PSP
+ * segment arrives in AX, the variable name offset at [bp+6], the destination offset at
+ * [bp+8] and the destination segment in the caller-pushed ES at [bp+2]; it returns with
+ * carry set on "not found" (modeled here as return -1, success 0).
+ *   @asm es=ax; cx=es:[0x2c] (PSP environment pointer); jcxz fail; es=cx (env block).
+ *   For each NUL-terminated "KEY=VALUE" entry: compare against name; on a full key match
+ *   immediately followed by '=' (0x3D) copy the value string (incl. NUL) to dest and
+ *   succeed; a double-NUL (empty entry) ends the environment -> fail.
+ * Modeled with explicit far pointers so the byte-exact scan is preserved. */
+int func_01A283_getenv(uint16_t env_seg /*ax*/, uint16_t name_off /*bp+6*/,
+                       uint16_t dst_seg /*bp+2*/, uint16_t dst_off /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x002C
-     */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x01A28D JCXZ 0x01A2D0 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01A298 JE 0x01A2D0 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x01A2A0 JNE 0x01A2AA */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x01A2A6 JE 0x01A2BB */ {
-                        goto label_01A2B2;  /* @0x01A2A8 */
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x01A2B0 JE 0x01A29D */ {
-                        }
-                        goto label_01A293;  /* @0x01A2B9 */
-                    }
+    uint16_t env_ptr = *((uint16_t far *)MK_FP(env_seg, 0x2C)); /* @asm cx=es:[0x2c] */
+    if (env_ptr == 0) return -1;                               /* @asm jcxz 0x1a2d0 (stc) */
+    const uint8_t far *env = (const uint8_t far *)MK_FP(env_ptr, 0); /* @asm es=cx; di=0 */
+    /* NOTE: the variable name lives in the caller's DS (`mov si,[bp+6]`); modeled as a
+     * near offset in the DGROUP via MK_FP(0, name_off). */
+
+    while (*env != 0) {                       /* @asm al=es:[di]; or al; je 0x1a2d0 (end) */
+        const uint8_t far *n = (const uint8_t far *)MK_FP(0, name_off); /* @asm si=[bp+6] */
+        const uint8_t far *e = env;
+        for (;;) {
+            uint8_t nc = *n++;                /* @asm lodsb (name) */
+            if (nc == 0) {                    /* @asm or al; jne 0x1a2aa (name exhausted) */
+                if (*e == 0x3D) {             /* @asm cmp es:[di],0x3d; je 0x1a2bb (match) */
+                    const uint8_t far *v = e + 1;            /* @asm si=di+1 (skip '=') */
+                    uint8_t far *d = (uint8_t far *)MK_FP(dst_seg, dst_off);
+                    while ((*d++ = *v++) != 0) { }            /* @asm lodsb;stosb;or al;jne */
+                    return 0;                                /* @asm jmp 0x1a2d1 (success) */
                 }
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x01A2CC JNE 0x01A2C8 */ {
-                }
-                goto label_01A2D1;  /* @0x01A2CE */
+                break;                        /* @asm jmp 0x1a2b2 (mismatch, skip entry) */
             }
+            if (nc != *e) break;              /* @asm cmp al,ah; jne -> skip entry */
+            e++;                              /* @asm inc di (chars match) */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        /* @asm 0x1a2b2 skip to end of this entry, past its NUL, then next entry. */
+        while (*env != 0) env++;              /* @asm repne scasb (al=0) */
+        env++;                                /* step over the entry NUL */
+    }
+    return -1;                                /* @asm 0x1a2d0 stc (not found) */
 }
 
 /* @asm        0x01A425..0x01A43C  (23 bytes)  region=load_image
@@ -861,9 +856,14 @@ int func_01A283_logic_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
  * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
+/* PLATFORM_LAYER (DOS INT 21h).  func_01A425_dos_version_far.asm gates on the DOS
+ * version (INT 21h AX=3000h; requires major >= 3, else returns carry/failure), then
+ * walks the PSP environment block (es:[0x2c]) with a 0x8000-byte scasb scan — the
+ * far/version-checked twin of the getenv at func_01A283.  The DOS version service and
+ * real-mode PSP environment are provided by the modern host, so the body is not
+ * reconstructed.  (The auto slice captured only the version-check prologue.) */
 int func_01A425_logic_sz_23(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    return 0;  /* TODO: port from func_01A425_dos_version_far.asm — DOS INT 21h host layer */
 }
 

@@ -25,6 +25,8 @@
  *               command-dispatch -- the SETREPORT branch of func_0235D6)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
+#include "dgroup.h"
 #include "iolib.h"
 
 #define KEY_REPORT   0x11A2   /* "REPORT" @asm 0x037344 / @file 0x1F142 */
@@ -44,7 +46,7 @@ extern int16_t g_region_2DA8[4];   /* DGROUP:0x2DA8..0x2DAE */
 extern int16_t g_word_372;         /* DGROUP:0x0372  cursor-active latch */
 
 /* ---- leaf helpers (resolved targets; call sites + args byte-exact) -------- */
-/* strcpy_near: see iolib.h — second arg is a DGROUP offset (int), cast at each site */
+/* strcpy_near declared in iolib.h */
 extern void ov_lookup_report_key(int which, void *buf);/* 0x181F:0x182 (page-05 ctx) */
 extern int  ov_report_dispatch(void *titlebuf, int z, int r0,int r1,int r2,int r3,
                                void *keybuf);          /* 0x181F:0x44E */
@@ -91,7 +93,7 @@ int report_open(int which)
     int  ok;
 
     /* 1. copy the "REPORT" key into the local buffer (MSC strcpy_near). */
-    strcpy_near(titlebuf, (const char *)(uintptr_t)KEY_REPORT); /* @asm 0x03734B 0xD1D:0x7E4 */
+    strcpy_near(titlebuf, KEY_REPORT);                 /* @asm 0x03734B 0xD1D:0x7E4 */
 
     /* 2. resolve the requested report by key + selector. */
     ov_lookup_report_key(which, titlebuf);             /* @asm 0x03735B 0x181F:0x182 */
@@ -586,11 +588,7 @@ done:
  * globals.h; the rest are new locals.)
  * ============================================================================ */
 
-/* ---- count globals (RULINGS 2026-05-28): 0x539E colonies, 0x539C units ----- */
-extern uint16_t g_colony_count_539A;  /* DGROUP:0x539A  (player colony count;
-                                        * @asm 0x037667 F9 CMP [0x539A]) */
-extern uint16_t g_unit_count_539C;    /* DGROUP:0x539C  total unit count (=globals.h g_progress_539C) */
-extern uint16_t g_colony_count_539E;  /* DGROUP:0x539E  colony-table count   (=globals.h g_progress_539E) */
+/* g_native_count_539A, g_unit_count_539C, g_colony_count_539E — DGS16 macros in globals.h */
 
 /* ---- the report player-context pointer set by func_030550 ------------------ */
 extern uint8_t  far *g_powerrec_84FC; /* DGROUP:0x84FC -> PowerRecord[player]
@@ -688,7 +686,7 @@ extern void     labor_drilldown(int player, int prof, int bins_k); /* call 0x34B
  * reports iterate colonies by re-pointing it via select_player_ctx().  Declared
  * here as a byte pointer to keep this file's externs self-contained (no
  * globals.h edit); fields read: +0x00/+0x01 x/y, +0x1A owner, +0x1F population. */
-extern uint8_t  far *ctx;                         /* DGROUP:0x8542 colony_t base */
+/* ctx declared as struct colony_t far *ctx in globals.h; cast to uint8_t far * at each use below */
 
 /* PowerRecord field offsets (base 0x8808 stride 0x13C; project-verified +
  * confirmed by these renderers' reads of [0x84FC]+disp). */
@@ -760,7 +758,7 @@ void report_religious(int player)
 
     if (g_cheat_5383 & 0x20) {                    /* @asm 0x0379B9 TEST [0x5383],0x20 / JE */
         /* cheat overlay: literal "(%d of %d)" raw cross counts (handle 0x11A9). */
-        strcpy_near(buf, (const char *)(uintptr_t)0x11A9); /* @asm 0x0379D1 0xD1D:0xB48 (sprintf form) */
+        strcpy_near(buf, 0x11A9);                 /* @asm 0x0379D1 0xD1D:0xB48 (sprintf form) */
         text_draw(/*ss*/0, buf, col, row, 0xF);   /* @asm 0x0379E4 0x181F:0x013C */
     }
 

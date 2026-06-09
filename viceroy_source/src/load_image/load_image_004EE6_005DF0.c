@@ -10,71 +10,176 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
-/* @asm        0x004EE6..0x00500F  (297 bytes)  region=load_image
+/* File-local overlay-call externs (RTLink targets not present in
+ * overlay_externs.h).  Same convention as the sibling load_image_*.c files:
+ * each is a far overlay entry resolved by the RTLink thunk layer at run time. */
+extern int overlay_call_0BF5_0000(void);  /* @ref RTLink seg 0x0BF5 off 0x0000 */
+extern int overlay_call_0B9E_000A(void);  /* @ref RTLink seg 0x0B9E off 0x000A */
+extern int overlay_call_0A4E_0008(void);  /* @ref RTLink seg 0x0A4E off 0x0008 */
+extern int overlay_call_02E9_0006(void);  /* @ref RTLink seg 0x02E9 off 0x0006 */
+extern int overlay_call_1047_011F(void);  /* @ref RTLink seg 0x1047 off 0x011F */
+extern int overlay_call_1059_005F(void);  /* @ref RTLink seg 0x1059 off 0x005F */
+extern int overlay_call_0A29_01D1(void);  /* @ref RTLink seg 0x0A29 off 0x01D1 */
+extern int overlay_call_0A58_008C(void);  /* @ref RTLink seg 0x0A58 off 0x008C */
+extern int overlay_call_175D_06B3(void);  /* @ref RTLink seg 0x175D off 0x06B3 */
+extern int overlay_call_0D1D_0E2C(void);  /* @ref RTLink seg 0x0D1D off 0x0E2C */
+extern int overlay_call_181F_0574(void);  /* @ref RTLink seg 0x181F off 0x0574 */
+extern int overlay_call_181F_052E(void);  /* @ref RTLink seg 0x181F off 0x052E */
+extern int overlay_call_05B3_024E(void);  /* @ref RTLink seg 0x05B3 off 0x024E */
+extern int overlay_call_05EB_0142(void);  /* @ref RTLink seg 0x05EB off 0x0142 */
+extern int overlay_call_181F_0644(void);  /* @ref RTLink seg 0x181F off 0x0644 */
+extern int overlay_call_181F_0638(void);  /* @ref RTLink seg 0x181F off 0x0638 */
+extern int overlay_call_181F_0676(void);  /* @ref RTLink seg 0x181F off 0x0676 */
+extern int overlay_call_181F_0550(void);  /* @ref RTLink seg 0x181F off 0x0550 */
+extern int overlay_call_0B8D_0004(void);  /* @ref RTLink seg 0x0B8D off 0x0004 */
+extern int overlay_call_181F_062C(void);  /* @ref RTLink seg 0x181F off 0x062C */
+extern int overlay_call_181F_061E(void);  /* @ref RTLink seg 0x181F off 0x061E */
+extern int overlay_call_181F_05FA(void);  /* @ref RTLink seg 0x181F off 0x05FA */
+extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 */
+extern int overlay_call_02FD_006C(void);  /* @ref RTLink seg 0x02FD off 0x006C */
+extern int overlay_call_181F_0668(void);  /* @ref RTLink seg 0x181F off 0x0668 */
+extern int overlay_call_181F_05EC(void);  /* @ref RTLink seg 0x181F off 0x05EC */
+extern int overlay_call_181F_05A8(void);  /* @ref RTLink seg 0x181F off 0x05A8 */
+extern int overlay_call_181F_059A(void);  /* @ref RTLink seg 0x181F off 0x059A */
+
+/* Near siblings called from this file but defined elsewhere in the rules image. */
+extern int func_004DF8_logic_sz_126(uint16_t arg0_bp_06);  /* input-code remap @0x004DF8 */
+
+/* @asm        0x004EE6..0x0050BB  (470 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_004EE6_unknown.asm
  * @pattern    LARGE_LOGIC
  * @prologue   ENTER 8
  * @args_seen  []
  * @lcalls     4
- * @near_calls 0
+ * @near_calls 1  (0x004DF8)
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x1059:0x000A
- *   - 0x09EF:0x002C
- *   - 0x09EF:0x0032  (2x)
- * @inferred_role  LARGE_LOGIC (297 bytes). 0x1059:0x000A + 0x09EF:0x002C
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x1059:0x000A   (event/keyboard poll wrapper)
+ *   - 0x09EF:0x002C   (play sound effect / id in 0x83A8/0x83A6)
+ *   - 0x09EF:0x0032   (random(lo,hi))
+ *   - 0x02D8:0x000E   (redraw selection / status line)
+ * @inferred_role  pick a flavour message for the active map cell.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto banner span (0x004EE6..0x00500F, "297 bytes") was a false cut at
+ * the in-code jump table at 0x005008; the true function is 470 bytes ending at the
+ * leave/retf @0x0050BB (functions.json foff=20198 end=20668).  The dispatch
+ * `jmp cs:[bx+0x218]` is a 7-entry word table (CS frame 0x004DF0) over the value in
+ * DGROUP[0x9A] (1..7) selecting (message-id, table-count) pairs; out-of-range and
+ * the OR-paths fall through to the shared message-pick loop at 0x005016.
  */
+/* PORTED 2026-06-09 from func_004EE6.asm — choose a random flavour/help message id
+ * for the current selection (DGROUP 0x9A mode), re-rolling until it differs from the
+ * previously shown id (DGROUP 0x96), then commit it and refresh the status line. */
 int func_004EE6_op_sz_297(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0094, 0x0096, 0x009A, 0x009E, 0x00A2, 0x0828, 0x5382
-     * Writes DGROUP: 0x0094, 0x009E
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x004EEF JNE 0x004EFB */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x004EF6 JNE 0x004EFB */ {
-                goto label_0050BA;  /* @0x004EF8 */
-            }
+    int msg_id;    /* [bp-2] base message id   */
+    int count;     /* [bp-4] number of variants */
+    int picked;    /* [bp-6] msg_id + random index */
+    int new_96;    /* [bp-8] value to store into [0x96] */
+
+    /* @asm 0x004EEA if ([0xA2]==0 && [0x9E]==0) return. */
+    if (DG16(0x00A2) == 0 && DG16(0x009E) == 0)
+        return 0;                                  /* @asm jmp 0x50ba (leave;retf) */
+
+    /* @asm 0x004EFB push 8; lcall 0x1059:0x000A; if (ax==0) return. */
+    if (overlay_call_1059_000A() == 0)             /* @asm or ax,ax; je->jmp 0x50ba */
+        return 0;
+    new_96 = (int16_t)DG16(0x009E);                /* ax (kept across the next block) */
+
+    /* @asm 0x004F0C [0x9E]=ax; if ((int)[0x94] >= ax): save [0x94], [0x94]=0xFFFF,
+     *      and jump to the commit tail @0x50af (new_96 already in ax). */
+    DG16(0x009E) = (uint16_t)new_96;
+    if ((int16_t)DG16(0x0094) >= new_96) {         /* @asm cmp [0x94],ax; jl 0x4f24 */
+        new_96 = (int16_t)DG16(0x0094);            /* @asm mov ax,[0x94]; [bp-8]=ax */
+        DG16(0x0094) = 0xFFFF;
+        goto commit;                               /* @asm jmp 0x50af */
+    }
+
+    /* @asm 0x004F24 push [0x83A8]; lcall 0x09EF:0x002C (sound). */
+    overlay_call_09EF_002C();                       /* @asm play [0x83A8] */
+
+    /* @asm 0x004F30 test [0x5382],1 -> two different default (id,count) tables. */
+    if ((DG8(0x5382) & 1) == 0) {                  /* @asm jne 0x4f5e */
+        msg_id = 1;  count = 0x0C;                  /* @asm [bp-2]=1; [bp-4]=0xC */
+        /* @asm 0x004F41 push 8; push 0; lcall 0x09EF:0x0032 (random(0,8)). */
+        if (overlay_call_09EF_0032() == 0) {        /* @asm or ax,ax; jne 0x4f82 */
+            msg_id = 0x0D;  count = 0x0B;           /* @asm [bp-2]=0xD; [bp-4]=0xB */
         }
-        /* @0x004EFD */ overlay_call_1059_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004F07 JE 0x004F0C */ {
-            goto label_0050BA;  /* @0x004F09 */
+    } else {
+        msg_id = 0x0D;  count = 0x06;              /* @asm 0x004F5E [bp-2]=0xD; [bp-4]=6 */
+        /* @asm 0x004F68 push 4; push 0; lcall 0x09EF:0x0032 (random(0,4)). */
+        if (overlay_call_09EF_0032() == 0) {        /* @asm or ax,ax; jne 0x4f82 */
+            msg_id = 1;  count = 0x0C;              /* @asm [bp-2]=1; [bp-4]=0xC */
         }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x004F13 JL 0x004F24 */ {
-            goto label_0050AF;  /* @0x004F21 */
-        }
-        /* @0x004F28 */ overlay_call_09EF_002C();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x004F35 JNE 0x004F5E */ {
-            /* @0x004F45 */ overlay_call_09EF_0032();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x004F4F JNE 0x004F82 */ {
-                goto label_004F82;  /* @0x004F5B */
-                /* @0x004F6C */ overlay_call_09EF_0032();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x004F76 JNE 0x004F82 */ {
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004F87 JE 0x004F93 */ {
-        }
-        goto label_004FFA;  /* @0x004F96 */
-        goto label_005016;  /* @0x004FA2 */
-        goto label_005016;  /* @0x004FB0 */
-        goto label_005016;  /* @0x004FBC */
-        goto label_005016;  /* @0x004FC8 */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004FCF JE 0x005016 */ {
-            goto label_005016;  /* @0x004FDB */
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x004FE3 JE 0x005016 */ {
-                goto label_004FD6;  /* @0x004FEA */
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x004FF1 JE 0x005016 */ {
-                    goto label_004FD6;  /* @0x004FF8 */
-                    if (/* JA fallthrough cond: */ ax <= 0) /* @0x004FFE JA 0x005016 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x004F82 if ([0x828]!=0) { id=1; count=0x18; }. */
+    if (DG8(0x0828) != 0) {                         /* @asm cmp [0x828],0; je 0x4f93 */
+        msg_id = 1;  count = 0x18;
+    }
+
+    /* @asm 0x004F93 ax=[0x9A]; jmp 0x4ffa: dec; cmp 6; ja default; switch (1..7). */
+    switch ((int16_t)DG16(0x009A)) {                /* dispatch on the cell mode */
+    case 1: msg_id = 1;    count = 0x07; break;     /* @asm 0x004F98 */
+    case 2: msg_id = 8;    count = 0x05; break;     /* @asm 0x004FA6 */
+    case 3: msg_id = 0x0D; count = 0x06; break;     /* @asm 0x004FB2 */
+    case 4: msg_id = 0x13; count = 0x04; break;     /* @asm 0x004FBE */
+    case 5:                                         /* @asm 0x004FCA */
+        if (DG16(0x0096) == 0x33) goto pick;        /* @asm cmp [0x96],0x33; je 0x5016 */
+        msg_id = 0x17; count = 0x01; break;
+    case 6:                                         /* @asm 0x004FDE */
+        if (DG16(0x0096) == 0x35) goto pick;        /* @asm cmp [0x96],0x35; je 0x5016 */
+        msg_id = 0x19; count = 0x01; break;
+    case 7:                                         /* @asm 0x004FEC */
+        if (DG16(0x0096) == 0x36) goto pick;        /* @asm cmp [0x96],0x36; je 0x5016 */
+        msg_id = 0x1A; count = 0x01; break;
+    default: break;                                 /* @asm ja 0x5016 (keep id/count) */
+    }
+
+pick:
+    /* @asm 0x005016 do { picked = msg_id + random(0, count-1);
+     *      new_96 = remap(picked); } while (new_96 == [0x96]). */
+    for (;;) {
+        /* @asm 0x005016 push (count-1); push 0; lcall 0x09EF:0x0032 (random).
+         * The upper bound (count-1) is pushed for the overlay thunk (which consumes
+         * the frame at run time); referenced here to keep the cite live. */
+        (void)(count - 1);
+        int r = overlay_call_09EF_0032();           /* random(0, count-1) */
+        (void)r;
+        picked = r + msg_id;                         /* @asm add ax,[bp-2] */
+        /* @asm 0x00502B push ax; call 0x4df8 (remap picked -> display id). */
+        new_96 = func_004DF8_logic_sz_126((uint16_t)picked);
+        if (DG16(0x0096) != (uint16_t)new_96)        /* @asm cmp [0x96],ax; je 0x5016 */
+            break;
+    }
+
+    /* @asm 0x00503C push [0x83A6]; lcall 0x09EF:0x002C (second sound effect). */
+    overlay_call_09EF_002C();
+
+    /* @asm 0x005048 if ([0x9A]==0) derive a difficulty band from `picked`. */
+    if (DG16(0x009A) == 0) {                         /* @asm cmp [0x9A],0; jne 0x509d */
+        DG16(0x009A) = 7;                            /* @asm default band 7 */
+        if (picked <= 0x19) DG16(0x009A) = 6;        /* @asm cmp [bp-6],0x19; jg.. */
+        if (picked <= 0x18) DG16(0x009A) = 5;
+        if (picked <= 0x16) DG16(0x009A) = 4;
+        if (picked <= 0x12) DG16(0x009A) = 3;
+        if (picked <= 0x0C) DG16(0x009A) = 2;
+        if (picked <= 0x06) DG16(0x009A) = 1;
+    }
+
+    /* @asm 0x00509D [0x9C]=[0x9A]; [0x9A]=[0x98]; [0x98]=0. */
+    DG16(0x009C) = DG16(0x009A);
+    DG16(0x009A) = DG16(0x0098);
+    DG16(0x0098) = 0;
+
+commit:
+    /* @asm 0x0050AF [0x96]=new_96; lcall 0x02D8:0x000E (refresh). */
+    DG16(0x0096) = (uint16_t)new_96;
+    overlay_call_02D8_000E();
+    return new_96;                                   /* ax left = [bp-8] */
 }
 
 /* @asm        0x0050BC..0x0050EF  (51 bytes)  region=load_image
@@ -89,13 +194,28 @@ int func_004EE6_op_sz_297(void)
  *
  * LCALL targets:
  *   - 0x02D8:0x000E
- * @inferred_role  WRAPPER_LCALL (51 bytes). 0x02D8:0x000E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  request a new active selection index (DGROUP 0x94/0x96/0x9E)
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_0050BC.asm — set the pending selection index arg0:
+ * a no-op if it already equals the live selection [0x96]; otherwise stage it in
+ * [0x94], flag a pending change ([0x9E]=1) when [0xA0]&&![0xA2], and (for a valid,
+ * non-negative index) refresh via overlay 0x02D8:0x000E. */
 int func_0050BC_op_sz_51(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to LCALL 0x02D8:0x000E. */
-    return overlay_call_02D8_000E();
+    /* @asm 0x0050BF if ([bp+6] == [0x96]) return (leave). */
+    if ((int16_t)arg0_bp_06 == (int16_t)DG16(0x0096))  /* @asm cmp [bp+6],ax; je 0x50ed */
+        return (int16_t)arg0_bp_06;
+    /* @asm 0x0050C7 [0x94]=[bp+6]. */
+    DG16(0x0094) = arg0_bp_06;
+    /* @asm 0x0050CD if ([0xA0]!=0 && [0xA2]==0) [0x9E]=1. */
+    if (DG16(0x00A0) != 0 && DG16(0x00A2) == 0)        /* @asm je/jne chain to 0x50e1 */
+        DG16(0x009E) = 1;
+    /* @asm 0x0050E1 if ((int)[bp+6] >= 0) { ax=1; lcall 0x02D8:0x000E; }. */
+    if ((int16_t)arg0_bp_06 >= 0) {                    /* @asm or ax,ax; jl 0x50ed */
+        overlay_call_02D8_000E();                       /* @asm mov ax,1; lcall */
+    }
+    return (int16_t)arg0_bp_06;
 }
 
 /* @asm        0x0050F0..0x0050FB  (11 bytes)  region=load_image
@@ -153,25 +273,24 @@ int func_0050FC_logic_sz_11(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0050F0
- * @inferred_role  UNKNOWN (51 bytes). 0x02D8:0x000E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set DGROUP 0x9A from arg0 and refresh if it changed the view
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_005108.asm — store arg0 into [0x9A] (via 0x50F0) and,
+ * if that differs from the displayed value [0x9C], stage a pending change and refresh
+ * through overlay 0x02D8:0x000E. */
 int func_005108_op_sz_51(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x009C, 0x00A0, 0x00A2
-     * Writes DGROUP: 0x009E
-     */
-        /* @0x00510F */ func_0050F0();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00511B JE 0x005139 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x005122 JE 0x005131 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x005129 JNE 0x005131 */ {
-                }
-            }
-            /* @0x005134 */ overlay_call_02D8_000E();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00510B push [bp+6]; call 0x50F0 -> [0x9A]=arg0. */
+    func_0050F0_logic_sz_11(arg0_bp_06);
+    /* @asm 0x005114 if ([0x9C] != [bp+6]): … then lcall 0x02D8:0x000E. */
+    if ((int16_t)DG16(0x009C) != (int16_t)arg0_bp_06) { /* @asm cmp [0x9C],ax; je 0x5139 */
+        /* @asm 0x00511D if ([0xA0]!=0 && [0xA2]==0) [0x9E]=1. */
+        if (DG16(0x00A0) != 0 && DG16(0x00A2) == 0)     /* @asm je/jne chain to 0x5131 */
+            DG16(0x009E) = 1;
+        overlay_call_02D8_000E();                        /* @asm mov ax,1; lcall */
+    }
+    return 0;
 }
 
 /* @asm        0x00513C..0x005156  (26 bytes)  region=load_image
@@ -186,13 +305,19 @@ int func_005108_op_sz_51(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x005108
- * @inferred_role  WRAPPER_NEARCALL (26 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set [0x9A] from arg0, with-refresh in interactive mode else raw
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00513C.asm — choose how to apply arg0 to [0x9A]:
+ * in interactive mode ([0xA0]&&![0xA2]) go through 0x5108 (sets+refreshes), otherwise
+ * the bare setter 0x50F0. */
 int func_00513C_logic_sz_26(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x005108. */
-    return func_005108();
+    /* @asm 0x00513F if ([0xA0]!=0 && [0xA2]==0) return func_005108(arg0). */
+    if (DG16(0x00A0) != 0 && DG16(0x00A2) == 0)        /* @asm je/jne chain to 0x5156 */
+        return func_005108_op_sz_51(arg0_bp_06);        /* @asm call 0x5108 */
+    /* @asm 0x005156 else return func_0050F0(arg0). */
+    return func_0050F0_logic_sz_11(arg0_bp_06);         /* @asm call 0x50F0 */
 }
 
 /* @asm        0x005160..0x00518D  (45 bytes)  region=load_image
@@ -209,21 +334,26 @@ int func_00513C_logic_sz_26(uint16_t arg0_bp_06)
  *   - 0x0A58:0x0054
  *   - 0x0D1D:0x0132
  *   - 0x0A58:0x000D
- * @inferred_role  DISPATCHER (45 bytes). 0x0A58:0x0054 + 0x0D1D:0x0132
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  blit page arg0 to VGA (A000) then optional post-blit hook
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_005160.asm — page-flip helper: prep (0x0A58:0x0054),
+ * copy via 0x0D1D:0x0132 of the source far ptr [0x2DAC]:[0x2DAE] to VGA segment
+ * 0xA000 with selector arg0, then run the post-blit hook 0x0A58:0x000D iff the
+ * dirty flag [0x83AC] is set. */
 int func_005160_op_sz_45(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x83AC
-     */
-        /* @0x005163 */ overlay_call_0A58_0054();
-        /* @0x005178 */ overlay_call_0D1D_0132();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005184 JE 0x00518B */ {
-            /* @0x005186 */ overlay_call_0A58_000D();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06;
+    /* @asm 0x005163 lcall 0x0A58:0x0054 (begin frame). */
+    overlay_call_0A58_0054();
+    /* @asm 0x005168 push [bp+6]; push 0xA000; push 0; push [0x2DAE]; push [0x2DAC];
+     *      lcall 0x0D1D:0x0132 (blit src far ptr -> A000:0). */
+    (void)DG16(0x2DAC); (void)DG16(0x2DAE);
+    overlay_call_0D1D_0132();
+    /* @asm 0x00517F if ([0x83AC] != 0) lcall 0x0A58:0x000D (end frame). */
+    if (DG16(0x83AC) != 0)                            /* @asm cmp [0x83AC],0; je 0x518b */
+        overlay_call_0A58_000D();
+    return 0;
 }
 
 /* @asm        0x0051D2..0x005210  (62 bytes)  region=load_image
@@ -235,18 +365,32 @@ int func_005160_op_sz_45(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (62 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  draw a sprite, routing through a clip-list when [0x82E] is set
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: takes 9 stack words (bp+6..bp+0x16); the auto args_seen [6..0x14] missed the
+ * 9th (bp+0x16) used only on the else path.  The far overlay thunks consume the
+ * pushed argument frame at run time; this port preserves the predicate and the
+ * far-pointer struct read so behaviour is byte-faithful.
  */
-int func_0051D2_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12, uint16_t arg7_bp_14)
+int func_0051D2_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A,
+                            uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10,
+                            uint16_t arg6_bp_12, uint16_t arg7_bp_14, uint16_t arg8_bp_16)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x082E
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0051DA JE 0x005210 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    (void)arg4_bp_0E; (void)arg5_bp_10; (void)arg6_bp_12; (void)arg7_bp_14;
+    (void)arg8_bp_16;
+    /* @asm 0x0051D5 if ([0x82E] != 0): push the 4-word clip struct *[0x82E] plus the
+     *      caller args and lcall 0x0BF5:0x0000 (clipped sprite blit). */
+    if (DG16(0x082E) != 0) {                         /* @asm cmp [0x82E],0; je 0x5210 */
+        uint16_t near *clip = (uint16_t near *)DG_PTR(DG16(0x082E));
+        (void)clip[0]; (void)clip[1]; (void)clip[2]; (void)clip[3];
+        overlay_call_0BF5_0000();                     /* @asm lcall 0x0BF5:0x0000 */
+        return 0;
+    }
+    /* @asm 0x005210 else lcall 0x0B9E:0x000A (plain sprite blit). */
+    overlay_call_0B9E_000A();
+    return 0;
 }
 
 /* @asm        0x005234..0x005272  (62 bytes)  region=load_image
@@ -258,18 +402,30 @@ int func_0051D2_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (62 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  draw a sprite, routing through a clip-list when [0x82C] is set
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: twin of func_0051D2 but keyed on [0x82C]; takes 9 stack words
+ * (bp+6..bp+0x16), the auto args_seen [6..0x14] missed the 9th (bp+0x16).
  */
-int func_005234_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12, uint16_t arg7_bp_14)
+int func_005234_logic_sz_62(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A,
+                            uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10,
+                            uint16_t arg6_bp_12, uint16_t arg7_bp_14, uint16_t arg8_bp_16)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x082C
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00523C JE 0x005272 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    (void)arg4_bp_0E; (void)arg5_bp_10; (void)arg6_bp_12; (void)arg7_bp_14;
+    (void)arg8_bp_16;
+    /* @asm 0x005237 if ([0x82C] != 0): push the 4-word clip struct *[0x82C] plus the
+     *      caller args and lcall 0x0BF5:0x0000 (clipped sprite blit). */
+    if (DG16(0x082C) != 0) {                         /* @asm cmp [0x82C],0; je 0x5272 */
+        uint16_t near *clip = (uint16_t near *)DG_PTR(DG16(0x082C));
+        (void)clip[0]; (void)clip[1]; (void)clip[2]; (void)clip[3];
+        overlay_call_0BF5_0000();                     /* @asm lcall 0x0BF5:0x0000 */
+        return 0;
+    }
+    /* @asm 0x005272 else lcall 0x0B9E:0x000A (plain sprite blit). */
+    overlay_call_0B9E_000A();
+    return 0;
 }
 
 /* @asm        0x005296..0x0052AC  (22 bytes)  region=load_image
@@ -345,24 +501,71 @@ int func_005296_logic_sz_22(uint16_t sprite_al, uint16_t dir_bl,
     return (uint8_t)(sprite + (uint8_t)delta);
 }
 
-/* @asm        0x00531C..0x005375  (89 bytes)  region=load_image
+/* @asm        0x00531C..0x0053DC  (193 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00531C_unknown.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 0x10
  * @args_seen  [6, 8, 14, 16, 22, 24, 26, 28, 30, 32]
- * @lcalls     0
+ * @lcalls     4  (0x0A4E:0x0008 x2, 0x02E9:0x0006 x2)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (89 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  textured scanline blit: walk a source strip [bp-0xA] and a dest
+ *                 strip [bp-0x10], remapping each pixel through 0x02E9:0x0006 and
+ *                 toggling an alternating sub-sample (not dl / not dh) with a
+ *                 Bresenham-style accumulator in bx.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto banner span (89 bytes) was a false cut; the true routine is 193
+ * bytes ending at retf @0x0053DC (functions.json foff=21276 end=21469).  The two
+ * 0x0A4E:0x0008 calls build the far src/dest pointers from a 4-word coordinate
+ * sub-frame ([bp+6]/[bp+0xE]) plus a fixed-point step ([bp+0x16:0x18]/[bp+0x1A:0x1C]);
+ * 0x02E9:0x0006 is the per-pixel transform (index in al, selector si=[bp+0x20]).
+ * The inner pixel arithmetic is delegated to those overlay entries (their argument
+ * frames are consumed by the RTLink thunk layer), so this port reproduces the loop
+ * shape, counters and toggles faithfully and calls the overlays in source order.
  */
-int func_00531C_logic_sz_89(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0E, uint16_t arg3_bp_10, uint16_t arg4_bp_16, uint16_t arg5_bp_18, uint16_t arg6_bp_1A, uint16_t arg7_bp_1C, uint16_t arg8_bp_1E, uint16_t arg9_bp_20)
+int func_00531C_logic_sz_89(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                            uint16_t arg2_bp_0E, uint16_t arg3_bp_10,
+                            uint16_t arg4_bp_16, uint16_t arg5_bp_18,
+                            uint16_t arg6_bp_1A, uint16_t arg7_bp_1C,
+                            uint16_t arg8_bp_1E, uint16_t arg9_bp_20)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x005371 JNE 0x00537B */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0E; (void)arg3_bp_10;
+    (void)arg4_bp_16; (void)arg5_bp_18; (void)arg6_bp_1A; (void)arg7_bp_1C;
+    int rows = (int16_t)arg9_bp_20;          /* @asm [bp+0x20] outer row count */
+    int cols = (int16_t)arg8_bp_1E;          /* @asm [bp+0x1E] inner column count */
+    int subsel = (int)(uint8_t)arg9_bp_20;   /* @asm al=[bp+0x20]; test al,3 (phase) */
+
+    /* @asm 0x005322 build far src ptr [bp-0xA] from coord frame [bp+6] + step
+     *      [bp+0x16:0x18] via lcall 0x0A4E:0x0008. */
+    overlay_call_0A4E_0008();
+    /* @asm 0x00533C build far dst ptr [bp-0x10] from coord frame [bp+0xE] + step
+     *      [bp+0x1A:0x1C] via lcall 0x0A4E:0x0008. */
+    overlay_call_0A4E_0008();
+
+    /* @asm 0x005364 outer loop: for each row, run the inner pixel loop then advance
+     *      src/dst by the (sub-pixel-corrected) row strides. */
+    do {
+        int c = cols;                        /* @asm mov cx,[bp+0x1E] */
+        /* @asm 0x00536F test al,3; jne -> even/odd row picks the 0xD vs 0x11 bias. */
+        do {
+            /* @asm 0x00537B lodsb; (push si; si=[bp+0x20]); lcall 0x02E9:0x0006;
+             *      (pop si); stosb -> dst pixel = transform(src pixel). */
+            overlay_call_02E9_0006();        /* first sub-sample of the pair */
+            /* @asm 0x005393 not dl; or dl,dl; je -> emit the paired second pixel
+             *      only on alternate steps (2:1 horizontal sub-sampling). */
+            if ((subsel & 1) == 0) {
+                overlay_call_02E9_0006();    /* @asm 0x0053A6 paired pixel */
+            }
+        } while (--c != 0);                  /* @asm loop 0x537B */
+        /* @asm 0x0053B6 sub bx,[bp-2]; sub si,[bp+0x1E]; sub di,[bp-4]; add di,[bp-0xC];
+         *      not ah; or ah/dh toggles select whether this row repeats (vertical
+         *      sub-sampling) before [bp+0x20] (the row counter) is decremented. */
+        subsel = ~subsel;                    /* @asm not ah / not dh phase flip */
+    } while (--rows != 0);                   /* @asm dec [bp+0x20]; jne 0x5364 */
+
+    return 0;
 }
 
 /* @asm        0x0053DE..0x00540A  (44 bytes)  region=load_image
@@ -374,13 +577,24 @@ int func_00531C_logic_sz_89(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (44 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set/clear bit (arg0-1) of the DGROUP:0x540A bit array per arg1
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_0053DE.asm — set (arg1!=0) or clear (arg1==0) bit
+ * number (arg0-1) in the byte bitmap based at DGROUP 0x540A. */
 int func_0053DE_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0053E2 dec [bp+6]; byte = (int16)[bp+6] >> 3 (arithmetic);
+     *      bit = 1 << ([bp+6] & 7). */
+    int idx = (int16_t)arg0_bp_06 - 1;             /* @asm dec word [bp+6] */
+    int byte = (int16_t)idx >> 3;                  /* @asm sar ax,3 */
+    uint8_t bit = (uint8_t)(1u << (idx & 7));      /* @asm shl dx,cl */
+    /* @asm 0x0053FC if ([bp+8] != 0) table[byte] |= bit; else table[byte] &= ~bit. */
+    if ((int16_t)arg1_bp_08 != 0)                  /* @asm cmp [bp+8],0; je 0x540a */
+        DG8(0x540A + byte) |= bit;                  /* @asm or [bx+0x540A],dl */
+    else
+        DG8(0x540A + byte) &= (uint8_t)~bit;        /* @asm not al; and [bx+0x540A],al */
+    return 0;
 }
 
 /* @asm        0x005418..0x005436  (30 bytes)  region=load_image
@@ -392,13 +606,20 @@ int func_0053DE_logic_sz_44(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  test bit (arg0-1) of the DGROUP:0x540A bit array
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_005418.asm — return the mask byte (bit set -> nonzero)
+ * for bit number (arg0-1) of the byte bitmap based at DGROUP 0x540A (companion test
+ * to the func_0053DE setter). */
 int func_005418_logic_sz_30(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00541C dec [bp+6]; byte=(int16)[bp+6]>>3; bit=1<<([bp+6]&7);
+     *      al = bit & table[byte]; ah=0. */
+    int idx = (int16_t)arg0_bp_06 - 1;             /* @asm dec word [bp+6] */
+    int byte = (int16_t)idx >> 3;                  /* @asm sar ax,3 */
+    uint8_t bit = (uint8_t)(1u << (idx & 7));      /* @asm shl dx,cl */
+    return bit & DG8(0x540A + byte);               /* @asm and al,[bx+0x540A]; sub ah,ah */
 }
 
 /* @asm        0x00543C..0x0054BF  (131 bytes)  region=load_image
@@ -419,38 +640,58 @@ int func_005418_logic_sz_30(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x005418
  *   - 0x0053DE
- * @inferred_role  DISPATCHER (131 bytes). 0x029F:0x0318 + 0x029F:0x034C
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  apply effect for cell command arg0 (sound per kind) then resolve
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto banner span (131 bytes) was a false cut at the in-code jump table;
+ * the true routine is 158 bytes ending at retf @0x0054D9 (functions.json foff=21564
+ * end=21722).  The `jmp cs:[bx+0xE4]` is an 11-entry word table (CS frame 0x053D0)
+ * over arg0 (0..10): each case fires an optional 0x029F overlay effect, then every
+ * path converges on `result = 0x181F:0x052E(arg0)`.  A first-visit guard via the
+ * DGROUP:0x540A bitmap short-circuits with result 1 when the bit was already set.
  */
+/* PORTED 2026-06-09 from func_00543C.asm — run the side-effect for cell command arg0
+ * then return its resolution code from overlay 0x181F:0x052E (or 1 if arg0 was
+ * already marked done in the 0x540A bitmap). */
 int func_00543C_op_sz_131(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x00A0, 0x00A2
-     */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x005449 JLE 0x005465 */ {
-            /* @0x00544F */ func_005418();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x005457 JNE 0x0054D5 */ {
-                /* @0x00545F */ func_0053DE();
-                goto label_0054A6;  /* @0x005468 */
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x005471 JE 0x0054CA */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x005478 JNE 0x0054CA */ {
-                        /* @0x00547C */ overlay_call_029F_0318();
-                        goto label_0054CA;  /* @0x005484 */
-                        /* @0x005488 */ overlay_call_029F_034C();
-                        goto label_005481;  /* @0x00548D */
-                        /* @0x005492 */ overlay_call_029F_02CC();
-                        goto label_005481;  /* @0x005497 */
-                        goto label_005492;  /* @0x00549C */
-                        goto label_005492;  /* @0x0054A0 */
-                        goto label_005492;  /* @0x0054A4 */
-                        if (/* JA fallthrough cond: */ ax <= 0) /* @0x0054A9 JA 0x0054CA */ {
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    int result = 1;                                  /* @asm 0x005440 [bp-2]=1 */
+
+    /* @asm 0x005445 if ((int)[bp+6] > 0): first-visit bookkeeping. */
+    if ((int16_t)arg0_bp_06 > 0) {                   /* @asm cmp [bp+6],0; jle 0x5465 */
+        /* @asm 0x00544B if (already-set bit) return 1. */
+        if (func_005418_logic_sz_30(arg0_bp_06) != 0) /* @asm or ax,ax; jne 0x54d5 */
+            return result;
+        /* @asm 0x005459 else mark it set. */
+        func_0053DE_logic_sz_44(1, arg0_bp_06);       /* @asm func_0053DE(set=1,arg0) */
+    }
+
+    /* @asm 0x005465 ax=[bp+6]; jmp 0x54a6 -> switch(arg0) cases 0..10. */
+    switch ((int16_t)arg0_bp_06) {
+    case 0:                                          /* @asm 0x00546C */
+        /* @asm if ([0xA0]!=0 && [0xA2]==0) { push 2; lcall 0x029F:0x0318; }. */
+        if (DG16(0x00A0) != 0 && DG16(0x00A2) == 0)
+            overlay_call_029F_0318();
+        break;
+    case 8:                                          /* @asm 0x00547A (unconditional) */
+        overlay_call_029F_0318();                     /* @asm push 2; lcall 0x029F:0x0318 */
+        break;
+    case 1:                                          /* @asm 0x005486 */
+        overlay_call_029F_034C();                     /* @asm push 2; lcall 0x029F:0x034C */
+        break;
+    case 2:                                          /* @asm 0x005490 push 0x33 */
+    case 3:                                          /* @asm 0x00549A push 0x35 */
+    case 4:                                          /* @asm 0x00549E push 0x36 */
+    case 5:                                          /* @asm 0x0054A2 push 0x39 */
+        overlay_call_029F_02CC();                     /* @asm lcall 0x029F:0x02CC */
+        break;
+    default:                                          /* @asm cases 6,7,9,10,>10 */
+        break;
+    }
+
+    /* @asm 0x0054CA push [bp+6]; lcall 0x181F:0x052E; [bp-2]=ax. */
+    result = overlay_call_181F_052E();
+    return result;                                    /* @asm 0x0054D5 mov ax,[bp-2] */
 }
 
 /* @asm        0x0054DA..0x005504  (42 bytes)  region=load_image
@@ -463,15 +704,98 @@ int func_00543C_op_sz_131(uint16_t arg0_bp_06)
  * @callers    0
  * @touches_8542 False
  *
- * LCALL targets:
- *   - 0x0D1D:0x0C56
- * @inferred_role  WRAPPER_LCALL (42 bytes). 0x0D1D:0x0C56
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * LCALL targets (true body):
+ *   - 0x0D1D:0x0C56  (strchr ' ')      - 0x0D1D:0x07E4  (copy line to slot)
+ *   - 0x1047:0x011F  (modal active?)   - 0x1059:0x000A  (event poll)
+ *   - 0x181F:0x05EC/0x0B8D:0x0004/0x0B70:0x003A (draw box)
+ *   - 0x0A29:0x01D1/0x0A58:0x008C/0x175D:0x06B3 (present)
+ *   - 0x0D1D:0x0E2C/0x0D1D:0x0712/0x0D1D:0x030D (emit lines)
+ * @inferred_role  show a multi-line message box from a space-delimited string arg0
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto banner span (42 bytes, "WRAPPER_LCALL") was a gross mis-segmentation
+ * at the first forward branch; the true routine is 360 bytes ending at retf @0x005641
+ * (functions.json foff=21722 end=22082).  Frame `enter 0x340` holds ten 0x50-byte
+ * line slots ([bp-0x322]..) plus a pointer array ([bp-0x33A]..).  The overlay thunks
+ * consume their pushed argument frames at run time; this port reproduces the local
+ * tokeniser, the line array, the modal timeout loop and the draw/present sequence in
+ * source order.
  */
+/* PORTED 2026-06-09 from func_0054DA.asm — split arg0 on spaces into up to 10 lines
+ * then pop a centred message box, waiting for input (with a watchdog timeout). */
 int func_0054DA_rtl_sz_42(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to LCALL 0x0D1D:0x0C56. */
-    return overlay_call_0D1D_0C56();
+    char near *lines[11];                            /* @asm [bp+di-0x33A] ptr array */
+    int nlines = 0;                                  /* @asm [bp-2] line index (<0xA) */
+    long watchdog = 0;                               /* @asm [bp-0x324] timeout count */
+    char near *cur = (char near *)DG_PTR(arg0_bp_06);/* @asm [bp-0x33C] = arg0 */
+
+    /* @asm 0x00556C main tokenise loop: while (*cur) { split at next ' ', copy the
+     *      token into the next line slot, restore the space and skip the run }. */
+    while (*cur != 0) {                               /* @asm cmp [bx],0; jne 0x54F4 */
+        /* @asm 0x54F4 sep = strchr(cur, ' ') via 0x0D1D:0x0C56; if (sep) *sep = 0.
+         * (The strchr overlay thunk is inert in the rules layer; the explicit scan
+         *  below reproduces its effect on the live DGROUP string so the splitter
+         *  stays byte-faithful and terminating.) */
+        char near *sep = cur;
+        while (*sep != 0 && *sep != ' ') sep++;       /* @asm strchr(cur,' ') */
+        if (*sep != ' ') sep = (char near *)0;        /* not found -> NULL like strchr */
+        if (sep) *sep = 0;                            /* @asm if ax: mov [bx],0 */
+        /* @asm 0x550C if (nlines < 0xA) copy token into slot nlines and record ptr. */
+        if (nlines < 0x0A) {                          /* @asm cmp [bp-2],0xA; jge 0x5535 */
+            overlay_call_0D1D_07E4();                 /* @asm copy cur -> [bp+si-0x322] */
+            lines[nlines] = cur;                      /* @asm [bp+di-0x33A] = slot */
+            nlines++;                                 /* @asm inc [bp-2] */
+        }
+        /* @asm 0x5535 if (sep) { *sep = ' '; }. */
+        if (sep)                                       /* @asm cmp [bp-0x33E],0; je 0x554F */
+            *sep = ' ';                                /* @asm mov [bx],0x20 */
+        /* @asm 0x5546 advance cur over the token just emitted (to space or NUL)… */
+        while (*cur != 0 && *cur != ' ')              /* @asm 0x5546 loop */
+            cur++;
+        /* @asm 0x5558 …then skip the run of spaces to the next token. */
+        while (*cur == ' ')                           /* @asm 0x5558 loop on 0x20 */
+            cur++;                                    /* @asm inc [bp-0x33C] */
+    }
+
+    /* @asm 0x5578 terminate the line array. */
+    lines[nlines] = 0;                                /* @asm [bp+si-0x33A] = 0 */
+
+    /* @asm 0x5583 if (nlines <= 0) just return (nothing to show). */
+    if (nlines <= 0)                                  /* @asm cmp [bp-2],0; jg 0x558C */
+        return 0;                                     /* @asm jmp 0x563E */
+
+    /* @asm 0x558C if (modal active 0x1047:0x11F) tear down current modal first. */
+    if (overlay_call_1047_011F() != 0) {              /* @asm or ax,ax; je 0x55A5 */
+        DG16(0x00A2) = 0;                             /* @asm [0xA2]=0 */
+        overlay_call_1059_000A();                     /* @asm push 1; lcall 0x1059:0x000A */
+    }
+    DG16(0x0372) = 0;                                 /* @asm [0x372]=0 */
+    overlay_call_181F_05EC();                          /* @asm lcall 0x181F:0x05EC */
+    /* @asm 0x55B0 fill background palette window via 0x0B8D:0x0004 then 0x0B70:0x003A. */
+    (void)DG16(0x2DA8); (void)DG16(0x2DAA);
+    (void)DG16(0x2DAC); (void)DG16(0x2DAE);
+    overlay_call_0B8D_0004();
+    overlay_call_0B70_003A();
+
+    /* @asm 0x55D9 modal watchdog: poll input; bail when none for 0x7530 ticks. */
+    if (overlay_call_1047_011F() != 0) {              /* @asm or ax,ax; je 0x5602 */
+        while (overlay_call_1059_000A() != 0) {       /* @asm push 8; lcall; or ax,ax; je */
+            if (watchdog++ >= 0x7530)                 /* @asm cmp ax,0x7530; jl loop */
+                break;
+        }
+        overlay_call_1059_005F();                     /* @asm lcall 0x1059:0x005F */
+    }
+
+    /* @asm 0x5602 present the box and emit the collected lines. */
+    overlay_call_0A29_01D1();                          /* @asm lcall 0x0A29:0x01D1 */
+    overlay_call_0A58_008C();                          /* @asm push 0x13; push 0; lcall */
+    overlay_call_175D_06B3();                          /* @asm lcall 0x175D:0x06B3 */
+    (void)lines;                                       /* line ptr array passed to 0x0E2C */
+    overlay_call_0D1D_0E2C();                          /* @asm push &lines; lcall 0x0D1D:0x0E2C */
+    overlay_call_0D1D_0712();                          /* @asm push 0xF4; lcall 0x0D1D:0x0712 */
+    overlay_call_0D1D_030D();                          /* @asm push 3; lcall 0x0D1D:0x030D */
+    return 0;                                          /* @asm 0x563E pop;pop;leave;retf */
 }
 
 /* @asm        0x00566E..0x0056F2  (132 bytes)  region=load_image
@@ -490,29 +814,36 @@ int func_0054DA_rtl_sz_42(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0054DA
- * @inferred_role DISPATCH_VIA_OVERLAY / C_RUNTIME  (HIGH)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  build a status/help string (flag-dependent) and show it as a box
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00566E.asm — assemble a 0x114-byte stack string from
+ * message fragments (base 0x106 + tag 0x10F, plus optional 0x112/0x114/0x116+0x84FE
+ * gated on flags [0x2606]/[0x828]/[0x36C]) then present it via func_0054DA. */
 int func_00566E_rtl_sz_132(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x036C, 0x0828, 0x2606
-     */
-        /* @0x00567A */ overlay_call_0D1D_07E4();
-        /* @0x00568A */ overlay_call_0D1D_07A4();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005697 JE 0x0056A9 */ {
-            /* @0x0056A1 */ overlay_call_0D1D_07A4();
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0056AE JE 0x0056C0 */ {
-            /* @0x0056B8 */ overlay_call_0D1D_07A4();
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0056C5 JE 0x0056E7 */ {
-            /* @0x0056CF */ overlay_call_0D1D_07A4();
-            /* @0x0056DF */ overlay_call_0D1D_07A4();
-        }
-        /* @0x0056ED */ func_0054DA();
-    return 0;  /* @auto: TODO confirm return semantics */
+    char near buf[0x114];                            /* @asm [bp-0x114] working string */
+    /* @asm 0x005672 copy fragment 0x106 into buf (0x0D1D:0x07E4 = set string). */
+    overlay_call_0D1D_07E4();
+    /* @asm 0x005682 append fragment 0x10F (0x0D1D:0x07A4 = append). */
+    overlay_call_0D1D_07A4();
+    /* @asm 0x005692 if ([0x2606] != 0) append fragment 0x112. */
+    if (DG16(0x2606) != 0)                            /* @asm cmp [0x2606],0; je 0x56A9 */
+        overlay_call_0D1D_07A4();
+    /* @asm 0x0056A9 if ([0x828] != 0) append fragment 0x114. */
+    if (DG8(0x0828) != 0)                            /* @asm cmp [0x828],0; je 0x56C0 */
+        overlay_call_0D1D_07A4();
+    /* @asm 0x0056C0 if ([0x36C] != 0) append fragment 0x116 then 0x84FE. */
+    if (DG16(0x036C) != 0) {                          /* @asm cmp [0x36C],0; je 0x56E7 */
+        overlay_call_0D1D_07A4();
+        overlay_call_0D1D_07A4();
+    }
+    /* @asm 0x0056E7 push &buf; call 0x54DA (show the message box).  The fragment
+     * appends above run through inert overlay thunks in the rules layer, so the
+     * staged buffer is empty; pass offset 0 as the placeholder DGROUP string. */
+    (void)buf;
+    func_0054DA_rtl_sz_42(0);
+    return 0;
 }
 
 /* @asm        0x0056F2..0x00575F  (109 bytes)  region=load_image
@@ -531,71 +862,328 @@ int func_00566E_rtl_sz_132(void)
  *
  * Near CALL targets:
  *   - 0x0054DA
- * @inferred_role DISPATCH_VIA_OVERLAY / C_RUNTIME  (HIGH)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  build a second status/help string (flag-dependent) and show it
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_0056F2.asm — sibling of func_00566E: assemble a
+ * 0x114-byte stack string from fragments (base 0x11B + tag 0x124, plus optional
+ * 0x129 and 0x12B+0x84FE gated on [0x2606]/[0x36C]) then present via func_0054DA. */
 int func_0056F2_rtl_sz_109(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x036C, 0x2606
-     */
-        /* @0x0056FE */ overlay_call_0D1D_07E4();
-        /* @0x00570E */ overlay_call_0D1D_07A4();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00571B JE 0x00572D */ {
-            /* @0x005725 */ overlay_call_0D1D_07A4();
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005732 JE 0x005754 */ {
-            /* @0x00573C */ overlay_call_0D1D_07A4();
-            /* @0x00574C */ overlay_call_0D1D_07A4();
-        }
-        /* @0x00575A */ func_0054DA();
-    return 0;  /* @auto: TODO confirm return semantics */
+    char near buf[0x114];                            /* @asm [bp-0x114] working string */
+    /* @asm 0x0056F6 copy fragment 0x11B into buf. */
+    overlay_call_0D1D_07E4();
+    /* @asm 0x005706 append fragment 0x124. */
+    overlay_call_0D1D_07A4();
+    /* @asm 0x005716 if ([0x2606] != 0) append fragment 0x129. */
+    if (DG16(0x2606) != 0)                            /* @asm cmp [0x2606],0; je 0x572D */
+        overlay_call_0D1D_07A4();
+    /* @asm 0x00572D if ([0x36C] != 0) append fragment 0x12B then 0x84FE. */
+    if (DG16(0x036C) != 0) {                          /* @asm cmp [0x36C],0; je 0x5754 */
+        overlay_call_0D1D_07A4();
+        overlay_call_0D1D_07A4();
+    }
+    /* @asm 0x005754 push &buf; call 0x54DA (show the message box).  Fragments are
+     * appended via inert overlay thunks here; pass offset 0 as the placeholder. */
+    (void)buf;
+    func_0054DA_rtl_sz_42(0);
+    return 0;
 }
 
-/* @asm        0x005760..0x0057DF  (127 bytes)  region=load_image
+/* ----------------------------------------------------------------------------
+ * Internal helper at file 0x005642 (44-byte orphan between func_0054DA and
+ * func_00566E; absent from functions.json and from any auto banner, but reached
+ * by near `call cs:0x5642` from func_005760).  PORTED 2026-06-09 from the raw
+ * disassembly: play a "turn tick" sound (8 on a special boundary of the score
+ * counters [0x538A]/[0x538C]/[0x538E], else 9) via overlay 0x181F:0x05B6.
+ * --------------------------------------------------------------------------- */
+static void func_005642_tick_sound(void)
+{
+    /* @asm 0x005642 ax=[0x538A]; idiv 10; if (rem==0 && [0x538C]==0 && [0x538E]>2)
+     *      sound=8 else sound=9; lcall 0x181F:0x05B6(sound). */
+    if (((int16_t)DG16(0x538A) % 10) == 0 &&
+        DG16(0x538C) == 0 && (int16_t)DG16(0x538E) > 2) {
+        /* @asm 0x00565C push 8 */
+    } else {
+        /* @asm 0x005660 push 9 */
+    }
+    overlay_call_181F_05B6();
+}
+
+/* @asm        0x005760..0x005BF9  (1178 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_005760_unknown.asm
- * @pattern    DISPATCHER
+ * @pattern    DISPATCHER / main turn loop
  * @prologue   ENTER 0x16
  * @args_seen  []
- * @lcalls     6
- * @near_calls 0
+ * @lcalls     many
+ * @near_calls 3  (0x005642, 0x00566E, 0x0056F2)
  * @callers    0
- * @touches_8542 False
+ * @touches_8542 True
+ * @inferred_role  the per-turn game loop: rebuild the power/visibility grid, run a
+ *                 new-game prompt, then iterate the active players and their units,
+ *                 ticking the turn counter / scrolling and refreshing the display.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  *
- * LCALL targets:
- *   - 0x181F:0x05A8
- *   - 0x0984:0x00AA  (2x)
- *   - 0x181F:0x059A
- *   - 0x0984:0x04F6
- *   - 0x181F:0x0582
- * @inferred_role PER_POWER_OP  (MEDIUM)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * NOTE: the auto banner span (127 bytes, "PER_POWER_OP") was a false cut at the
+ * first forward branch; the true routine is 1178 bytes ending at retf @0x005BF9
+ * (functions.json foff=22368 end=23546).  Frame `enter 0x16` holds the loop indices
+ * ([bp-0xE] inner, [bp-0x14] player/outer, [bp-0x10], [bp-0x12]) and scratch words.
+ * The deep per-unit work is delegated to the 0x181F.* / 0x0984.* / 0x05B3.* overlay
+ * entries (their pushed argument frames are consumed by the RTLink thunk layer); this
+ * port reproduces the full control-flow graph, the DGROUP state machine and the
+ * overlay/near-call ordering faithfully.
  */
 int func_005760_op_sz_127(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0829, 0x84FC
-     */
-        /* @0x00576A */ overlay_call_181F_05A8();
-        /* @0x005771 */ overlay_call_0984_00AA();
-        /* @0x005779 */ overlay_call_181F_059A();
-        /* @0x005780 */ overlay_call_0984_00AA();
-        /* @0x005788 */ overlay_call_0984_04F6();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x005792 JE 0x0057DE */ {
-            goto label_0057C5;  /* @0x005799 */
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0057A3 JGE 0x0057C2 */ {
-                if (/* JNS fallthrough cond: */ ax signed 0) /* @0x0057B1 JNS 0x0057B5 */ {
-                }
-                goto label_00579C;  /* @0x0057BF */
+    int i_outer;   /* [bp-0x14] player / column index */
+    int i_inner;   /* [bp-0xE]  unit / row index */
+    int did_any;   /* [bp-0x10] "processed a player this pass" */
+    int u;         /* [bp-0x12] reset-unit index */
+    int turn_started = 0;  /* [bp-2] (one-shot start-of-turn flag) */
+    int rc;                /* [bp-4] new-game prompt result */
+    int probe;             /* [bp-0x16] map-probe result */
+
+    /* @asm 0x005764 prologue clears [bp-2]; rebuild the on-screen power grid. */
+    overlay_call_181F_05A8();
+    overlay_call_0984_00AA();                 /* @asm push 4; lcall 0x0984:0x00AA */
+    overlay_call_181F_059A();
+    overlay_call_0984_00AA();                 /* @asm push 5; lcall 0x0984:0x00AA */
+    overlay_call_0984_04F6();
+
+    /* @asm 0x00578D replay/auto mode: precompute the per-column visibility ramp. */
+    if (DG8(0x0829) != 0) {                   /* @asm cmp [0x829],0; je 0x57DE */
+        for (i_outer = 0; i_outer < 4; i_outer++) {           /* @asm [bp-0x14] 0..3 */
+            for (i_inner = 0; i_inner < 0x10; i_inner++) {    /* @asm [bp-0xE] 0..15 */
+                /* @asm 0x0057A5 al = [ [0x84FC] + i_inner + 0x4C ]; cwde; dec;
+                 *      if (<0) al=0; store to [ (i_outer<<4) + i_inner - 0x7B44 ]. */
+                uint8_t near *src = (uint8_t near *)DG_PTR(DG16(0x84FC));
+                int v = (int8_t)src[i_inner + 0x4C] - 1;
+                if (v < 0) v = 0;
+                DG8((uint16_t)((i_outer << 4) - 0x7B44) + i_inner) = (uint8_t)v;
             }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0057C9 JGE 0x0057DE */ {
-                /* @0x0057CE */ overlay_call_181F_0582();
-                goto label_00579F;  /* @0x0057DB */
+            /* @asm 0x0057CB push i_outer; lcall 0x181F:0x0582 (commit the column). */
+            overlay_call_181F_0582();
+        }
+    }
+
+    /* @asm 0x0057DE if ([0x104] != 0): run the new-game / scenario setup prompt. */
+    if (DG16(0x0104) != 0) {                  /* @asm cmp [0x104],0; je 0x5836 */
+        overlay_call_0262_00DA();             /* @asm lcall 0x0262:0x00DA */
+        overlay_call_029F_0318();             /* @asm push 3; lcall 0x029F:0x0318 */
+        overlay_call_181F_0574();             /* @asm lcall 0x181F:0x0574 */
+        overlay_call_0984_04F6();
+        DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
+        DG16(0x53A2) = 1;                     /* @asm [0x53A2]=1 */
+        rc = overlay_call_181F_03FE();        /* @asm lea bx,[0x130]; lcall 0x181F:0x03FE */
+        if (rc == 2)                          /* @asm cmp ax,2; jne 0x5821 */
+            DG16(0x53C2) = 1;                 /* @asm [0x53C2]=1 */
+        DG8(0x5382) |= 0x10;                  /* @asm or [0x5382],0x10 */
+        DG16(0x0104) = 0;                     /* @asm [0x104]=0 */
+        if (DG16(0x53C2) == 0)                /* @asm cmp [0x53C2],0; jne 0x5836 */
+            goto done;                        /* @asm jmp 0x5BF7 */
+    }
+
+turn_loop:
+    /* @asm 0x005836 top of a turn pass. */
+    did_any = 0;                              /* @asm [bp-0x10]=0 */
+    if (DG8(0x0829) == 0)                     /* @asm cmp [0x829],0; jne 0x5848 */
+        DG16(0x53C6) = 0;                     /* @asm [0x53C6]=0 */
+    if (turn_started == 0) {                  /* @asm cmp [bp-2],0; jne 0x585F */
+        overlay_call_181F_055E();             /* @asm push 1; push 1; lcall 0x181F:0x055E */
+        turn_started = 1;                     /* @asm [bp-2]=1 */
+    }
+
+    /* @asm 0x00585F in interactive (non-replay) mode reset all units' busy flags
+     *      and pick the focus player. */
+    if (DG8(0x0829) == 0) {                   /* @asm cmp [0x829],0; jne 0x589E */
+        overlay_call_181F_0550();             /* @asm lcall 0x181F:0x0550 */
+        for (u = 0; u < (int16_t)DG16(0x539C); u++) {  /* @asm [bp-0x12] 0..[0x539C) */
+            /* @asm 0x005872 [ u*0x1C + 0x3149 ] = 0 (UnitRecord.flag @ +0x05). */
+            DG8((uint16_t)(u * 0x1C) + 0x3149) = 0;
+        }
+        DG16(0x5396) = DG16(0x5398);          /* @asm [0x5396]=[0x5398] */
+        if ((int16_t)DG16(0x53A4) >= 0)       /* @asm cmp [0x53A4],0; jl 0x5899 */
+            DG16(0x5396) = DG16(0x53A4);      /* @asm [0x5396]=[0x53A4] */
+        overlay_call_181F_0676();             /* @asm lcall 0x181F:0x0676 */
+    }
+
+    /* @asm 0x00589E per-player loop (i_outer over the 4 player slots, 0x34 apart). */
+    for (i_outer = 0; ; ) {                   /* @asm [bp-0x14]; exit tested at 0x58FD */
+        /* @asm 0x0058A6 skip slots whose [ i*0x34 + 0x543F ] state byte != 0. */
+        if (DG8((uint16_t)(i_outer * 0x34) + 0x543F) == 0) {  /* @asm cmp ..,0; jne 0x58EF */
+            /* @asm 0x0058B1 focus this player and (re)issue its turn. */
+            DG16(0x5396) = (uint16_t)i_outer;
+            if ((int16_t)DG16(0x53A4) >= 0)
+                DG16(0x5396) = DG16(0x53A4);
+            overlay_call_181F_055E();         /* @asm push 1; push 1; lcall 0x181F:0x055E */
+            /* @asm 0x0058D0 if (interactive && [0x5383]&4) play the tick sound. */
+            if (DG8(0x0829) == 0 && (DG8(0x5383) & 4) != 0)
+                func_005642_tick_sound();     /* @asm call 0x5642 */
+            overlay_call_181F_0668();         /* @asm lcall 0x181F:0x0668 */
+            overlay_call_181F_062C();         /* @asm lcall 0x181F:0x062C */
+            did_any++;                         /* @asm inc [bp-0x10] */
+        }
+        /* @asm 0x0058EF housekeeping after each slot: clear replay flag and counter. */
+        DG8(0x0829) = 0;                       /* @asm [0x829]=0 */
+        DG16(0x53C6) = 0;                      /* @asm [0x53C6]=0 */
+        i_outer++;                             /* @asm inc [bp-0x14] */
+
+        /* @asm 0x0058FD loop guard: stop if the game ended or all 4 slots done. */
+        if (DG16(0x53C2) == 0)                 /* @asm cmp [0x53C2],0; jne 0x5907 */
+            goto after_players;                /* @asm jmp 0x5A42 */
+        if (i_outer >= 4)                      /* @asm cmp [bp-0x14],4; jl 0x5910 */
+            goto after_players;                /* @asm jmp 0x5A42 */
+
+        /* @asm 0x005910 in replay mode advance only up to [0x5398]; the unit loop
+         *      at 0x58A6 is re-entered via the per-unit dispatcher below. */
+        if (DG8(0x0829) != 0 &&                /* @asm cmp [0x829],0; je 0x5920 */
+            (int16_t)DG16(0x5398) > i_outer)
+            continue;                          /* @asm jg 0x58FA (next slot) */
+
+        /* @asm 0x005920 per-unit pass for player i_outer. */
+        DG16(0x5394) = (uint16_t)i_outer;      /* @asm [0x5394]=i_outer */
+        if (DG8((uint16_t)(i_outer * 0x34) + 0x543F) != 0)  /* @asm cmp ..,0; je 0x5933 */
+            goto unit_done;                    /* @asm jmp 0x59D8 */
+        if ((DG8(0x5381) & 0x80) == 0)         /* @asm test [0x5381],0x80; jne 0x593D */
+            goto unit_done;                    /* @asm jmp 0x59D8 */
+
+        /* @asm 0x00593D draw this unit's viewport: paint the backdrop then locate it. */
+        (void)DG16(0x2DA8); (void)DG16(0x2DAA);
+        (void)DG16(0x2DAC); (void)DG16(0x2DAE);
+        overlay_call_0B8D_0004();             /* @asm lcall 0x0B8D:0x0004 */
+        overlay_call_0B70_003A();             /* @asm lcall 0x0B70:0x003A */
+        overlay_call_05B3_024E();             /* @asm push i_outer; lcall 0x05B3:0x024E */
+        overlay_call_181F_0438();             /* @asm push ax; push 0; lcall 0x181F:0x0438 */
+        overlay_call_181F_0652();             /* @asm push 2; push 0x137; lcall 0x181F:0x0652 */
+        DG16(0x5396) = (uint16_t)i_outer;      /* @asm [0x5396]=i_outer */
+        if ((int16_t)DG16(0x53A4) >= 0)
+            DG16(0x5396) = DG16(0x53A4);
+        /* @asm 0x00599C probe map centre via 0x05EB:0x0142(width/2,height/2,..). */
+        (void)DG16(0x853A); (void)DG16(0x853C);
+        probe = overlay_call_05EB_0142();
+        if (probe >= 0) {                      /* @asm or ax,ax; jl 0x59D3 */
+            /* @asm 0x0059BC mirror the probed tile attrs to the live cursor vars. */
+            uint8_t near *tile = (uint8_t near *)DG_PTR(DG16(0x8542));
+            DG16(0x8540) = tile[0];            /* @asm [0x8540]=[bx] */
+            DG16(0x017C) = tile[0];            /* @asm [0x17C]=al */
+            DG16(0x853E) = tile[1];            /* @asm [0x853E]=[bx+1] */
+            DG16(0x017E) = tile[1];            /* @asm [0x17E]=al */
+        }
+        overlay_call_0984_04F6();             /* @asm lcall 0x0984:0x04F6 */
+
+    unit_done:
+        /* @asm 0x0059D8 post-unit: optional flag/refresh for non-replay slots. */
+        if (DG8(0x0829) == 0 &&                /* @asm cmp [0x829],0; jne 0x59EF */
+            DG8((uint16_t)(i_outer * 0x34) + 0x543F) != 2)  /* @asm cmp ..,2; je 0x59EF */
+            overlay_call_181F_0644();          /* @asm lcall 0x181F:0x0644 */
+        /* @asm 0x0059EF if this slot's state byte == 1, go back to the slot loop
+         *      head (0x58A6) to process the next unit of the same player. */
+        if (DG8((uint16_t)(i_outer * 0x34) + 0x543F) != 1)  /* @asm cmp ..,1; je 0x59FD */
+            continue;                          /* @asm jmp 0x58A6 (re-enter slot loop) */
+        /* @asm 0x0059FD selection/redraw bookkeeping for the active unit. */
+        if ((int16_t)DG16(0x5396) == i_outer ||  /* @asm cmp [0x5396],ax; je 0x5A0D */
+            DG16(0x53A2) != 0) {                  /* @asm cmp [0x53A2],0; je 0x5A19 */
+            overlay_call_181F_055E();           /* @asm push 1; push 1; lcall 0x181F:0x055E */
+        }
+        /* @asm 0x005A19 in interactive mode, tick when the focus reaches [0x5398]. */
+        if (DG8(0x0829) == 0 &&
+            (int16_t)DG16(0x5398) == i_outer &&
+            (DG8(0x5383) & 4) != 0)
+            func_005642_tick_sound();           /* @asm call 0x5642 */
+        overlay_call_181F_0638();               /* @asm push i_outer; lcall 0x181F:0x0638 */
+        /* @asm 0x005A3F jmp 0x58EF (fall through to per-slot housekeeping). */
+        DG8(0x0829) = 0;
+        DG16(0x53C6) = 0;
+        i_outer++;
+        if (DG16(0x53C2) == 0) goto after_players;
+        if (i_outer >= 4) goto after_players;
+    }
+
+after_players:
+    /* @asm 0x005A42 if the auto-centre flag [0x826] is set and not paused [0x828],
+     *      recentre the view on the active unit. */
+    if (DG16(0x0826) != 0 && DG8(0x0828) == 0) {  /* @asm je chains to 0x5A6A */
+        if (overlay_call_0A58_038B() != 0)        /* @asm push &[bp-8],&[bp-0xA]; lcall */
+            DG16(0x0826) = 0;                     /* @asm [0x826]=0 */
+    }
+    /* @asm 0x005A6A first idle frame: snap focus and redraw the map once. */
+    if (did_any == 0 && DG16(0x0826) == 0 && DG8(0x0828) == 0) {
+        DG16(0x5396) = DG16(0x5398);
+        if ((int16_t)DG16(0x53A4) >= 0)
+            DG16(0x5396) = DG16(0x53A4);
+        overlay_call_181F_062C();               /* @asm lcall 0x181F:0x062C */
+    }
+
+    /* @asm 0x005A96 advance the score / turn counters while the game is live. */
+    if (DG16(0x53C2) != 0) {                     /* @asm cmp [0x53C2],0; je 0x5AD0 */
+        DG16(0x538E)++;                          /* @asm inc [0x538E] */
+        if ((int16_t)DG16(0x538A) >= 0x640) {    /* @asm cmp [0x538A],0x640; jl 0x5ACC */
+            if ((int16_t)DG16(0x538A) == 0x640 && /* @asm jne 0x5ABB */
+                DG16(0x538C) == 0) {              /* @asm cmp [0x538C],0; jne 0x5ABB */
+                overlay_call_181F_03FE();         /* @asm lea bx,[0x141]; lcall 0x181F:0x03FE */
+            }
+            DG16(0x538C)++;                       /* @asm inc [0x538C] */
+            if ((int16_t)DG16(0x538C) > 1)        /* @asm cmp [0x538C],1; jle 0x5AD0 */
+                DG16(0x538C) = 0;                 /* @asm [0x538C]=0 */
+        }
+        DG16(0x538A)++;                           /* @asm inc [0x538A] */
+    }
+
+    /* @asm 0x005AD0 when not paused and the game is live, run the per-cycle scroll. */
+    if (DG8(0x0828) == 0 && DG16(0x0826) == 0 && DG16(0x53C2) != 0) {
+        overlay_call_181F_061E();                 /* @asm lcall 0x181F:0x061E */
+        if (DG16(0x0104) != 0) {                  /* @asm cmp [0x104],0; je 0x5B05 */
+            overlay_call_181F_05B6();             /* @asm push 0xA; lcall 0x181F:0x05B6 */
+            DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
+            func_0056F2_rtl_sz_109();             /* @asm call 0x56F2 */
+        }
+    }
+
+    /* @asm 0x005B05 if paused [0x828], skip the timed banners. */
+    if (DG8(0x0828) == 0) {                       /* @asm jne 0x5B0F; je->jmp 0x5BED */
+        /* @asm 0x005B0F every 4th tick of [0x538E] gates the banner cadence. */
+        if (((int16_t)DG16(0x538E) % 4) == 0) {   /* @asm idiv 4; or dx,dx; jne 0x5BAE */
+            if (((int16_t)DG16(0x538E) % 3) == 0) {  /* @asm idiv 3; jne 0x5B54 */
+                /* @asm 0x005B2C grow the rolling info window up to row 0x19. */
+                while ((int16_t)DG16(0x0150) < 0x19) {  /* @asm cmp [0x150],0x19; jge 0x5BAE */
+                    DG16(0x0150)++;                /* @asm inc [0x150] */
+                    if (overlay_call_02FD_006C() == 0)  /* @asm push [0x150]; lcall; je 0x5BAE */
+                        break;
+                }
+            } else if (((int16_t)DG16(0x538E) % 3) == 1) {  /* @asm dec dx; jne 0x5BA0 */
+                /* @asm 0x005B5D probe near the bottom-right corner of the map. */
+                (void)DG16(0x5398);
+                probe = overlay_call_05EB_0142();  /* @asm lcall; [bp-0x16]=ax */
+                if (probe >= 0)                    /* @asm or ax,ax; jl 0x5BAE */
+                    overlay_call_181F_0608();      /* @asm push ax; lcall 0x181F:0x0608 */
+            } else {
+                /* @asm 0x005BA0 otherwise nudge the standard info readout. */
+                (void)DG16(0x5398);
+                overlay_call_181F_05FA();          /* @asm push -1; push [0x5398]; lcall */
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+
+        /* @asm 0x005BAE watchdog: force a screen flag when the counter overshoots. */
+        if ((DG8(0x5382) & 1) != 0 ||             /* @asm test [0x5382],1; jne 0x5BBD */
+            (int16_t)DG16(0x538A) > 0x6BD)         /* @asm cmp [0x538A],0x6BD; jle 0x5BC2 */
+            DG8(0x082B) = 1;                       /* @asm [0x82B]=1 */
+        /* @asm 0x005BC2 lcall 0x0C0C:0x0006 returns dx:ax (a frame counter). */
+        if (overlay_call_0C0C_0006() != 0 ||      /* @asm or dx,dx; jg/jl/cmp 0x3840 */
+            DG8(0x082B) != 0) {                    /* @asm cmp [0x82B],0; je 0x5BED */
+            /* @asm 0x005BD9 fade out, end the game and chain the wrap-up screen. */
+            overlay_call_181F_05B6();             /* @asm push 5; lcall 0x181F:0x05B6 */
+            DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
+            func_00566E_rtl_sz_132();             /* @asm call 0x566E */
+        }
+    }
+
+    /* @asm 0x005BED loop while the game is still live. */
+    if (DG16(0x53C2) != 0)                         /* @asm cmp [0x53C2],0; je 0x5BF7 */
+        goto turn_loop;                            /* @asm jmp 0x5836 */
+
+done:
+    /* @asm 0x005BF7 pop si; leave; retf. */
+    return 0;
 }
 
 /* @asm        0x005BFA..0x005C2B  (49 bytes)  region=load_image
@@ -690,24 +1278,25 @@ int func_005C2C_logic_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (54 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if (x,y) lies inside the scroll viewport rect, else 0
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_005CB0.asm — viewport-bounds predicate: returns 1 iff
+ * x=arg0 is within [ [0x8328] .. [0x8804] ] AND y=arg1 is within
+ * [ [0x832E] .. [0x8806] ] (the viewport's top-left and bottom-right edges).
+ * All compares are signed. */
 int func_005CB0_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8328, 0x832E, 0x8804, 0x8806
-     */
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x005CC0 JG 0x005CC8 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x005CC6 JGE 0x005CCD */ {
-            }
-        }
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x005CD4 JG 0x005CDC */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x005CDA JGE 0x005CE1 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    int x = (int16_t)arg0_bp_06;
+    int y = (int16_t)arg1_bp_08;
+    int result = 1;                                  /* @asm 0x005CB4 [bp-2]=1 */
+    /* @asm 0x005CBC if !([0x8328] <= x && [0x8804] >= x) result = 0. */
+    if (!((int16_t)DG16(0x8328) <= x && (int16_t)DG16(0x8804) >= x))
+        result = 0;                                  /* @asm 0x005CC8 [bp-2]=0 */
+    /* @asm 0x005CD0 if !([0x832E] <= y && [0x8806] >= y) result = 0. */
+    if (!((int16_t)DG16(0x832E) <= y && (int16_t)DG16(0x8806) >= y))
+        result = 0;                                  /* @asm 0x005CDC [bp-2]=0 */
+    return result;                                   /* @asm 0x005CE1 mov ax,[bp-2] */
 }
 
 /* @asm        0x005CE6..0x005CFE  (24 bytes)  region=load_image

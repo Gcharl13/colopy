@@ -185,8 +185,9 @@ uint8_t  g_difficulty_53A6 = 0;   /* DGROUP:0x53A6  difficulty 0..4 (was g_progr
 uint16_t g_progress_5398   = 0;   /* DGROUP:0x5398 */
 uint16_t g_progress_5392   = 0;   /* DGROUP:0x5392 */
 uint16_t g_progress_5396   = 0;   /* DGROUP:0x5396 */
-uint16_t g_progress_539E   = 0;   /* DGROUP:0x539E  colony count */
-uint16_t g_progress_539C   = 0;   /* DGROUP:0x539C  unit count */
+/* 0x539E (colony count) / 0x539C (unit count): now DGROUP-resident aliases
+ * g_colony_count_539E / g_unit_count_539C in globals.h (no standalone storage —
+ * they live in g_dgroup[] like every other DS byte). CONSOLIDATED 2026-06-09. */
 uint16_t g_progress_5382   = 0;   /* DGROUP:0x5382 */
 
 /* C runtime / boot globals — definitions kept here for link completeness. */

@@ -30,7 +30,8 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
-# load_image/ files contain raw asm artifacts (ax, label_*, etc.) — excluded until ported
+# Exclude load_image first-pass skeletons (all still have raw ax/label artifacts;
+# milestone 3 will port these one by one and add them back via VICEROY_LOADIMAGE_PORTED)
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
 
 # Rules library — all game logic, compiled in modern mode

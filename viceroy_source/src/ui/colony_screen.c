@@ -51,8 +51,17 @@
  * from the recol-0.2.0 flat-linked twin colonize.exe; layout-faithful).
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 #include "colony.h"
+#include "globals.h"
+#include "dgroup.h"
+
+/* Screen-state id returned to the reconstruction-layer screen dispatcher.
+ * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2C (colony view);
+ * see enter_screen_view(0x2C) @asm 0x025EE8 above. CONSOLIDATED 2026-06-09 into
+ * the shared ui screen-id header. */
+#include "ui_screen.h"
 
 #define SCREEN_COLONY 2   /* RECONSTRUCTED — screen-id constant, not yet decoded */
 

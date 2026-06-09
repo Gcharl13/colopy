@@ -29,16 +29,12 @@ extern void *   g_cur_settlement_8D4A;   /* DGROUP:0x8D4A — far ptr to "settle
 extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settlement being removed" record */
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */
 
-/* Forward declarations for helpers called before their definitions below. */
-extern uint8_t settlement_initial_population(int settlement_index); /* CALL near 0x5434 */
+/* Forward declarations — must precede first use */
+extern uint8_t settlement_initial_population(int settlement_index);
 extern void    map_mark_settlement_tile(int x, int y, int owner);
 extern uint8_t *unit_record(int index);
 extern void     unit_detach_from_settlement(int unit_index);
-extern uint8_t native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
-
-/* RECONSTRUCTED rates — loaded from NAMES.TXT at runtime, not in the EXE image. */
-#define NATIVE_GROWTH_PCT    15   /* RUNTIME_ONLY (NAMES.TXT/data-file) */
-#define MISSION_CONVERT_PCT  10   /* RUNTIME_ONLY (NAMES.TXT/data-file) */
+extern uint8_t  native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
 
 /* ============================================================================
  * native_settlement_add — BYTE_VERIFIED
@@ -110,7 +106,8 @@ int native_settlement_add(int owner, int x, int y)
     return new_index;
 }
 
-/* settlement_initial_population and map_mark_settlement_tile declared above. */
+/* CALL near 0x5434 — resident helper returning the starting population byte.
+ * Not yet byte-traced (resident segment). ANCHOR_VERIFIED via the call site. */
 
 /* ============================================================================
  * native_settlement_remove — BYTE_VERIFIED (add/remove/compact)
@@ -156,6 +153,12 @@ int native_settlement_add(int owner, int x, int y)
  *       removed record, which the table compaction in STEP 2 leaves as a stale
  *       tail copy; this scaling runs on that record before the slot is reused.)
  * ============================================================================ */
+/* Forward declarations — defined later in this file; call sites precede bodies */
+extern void native_tribe_eliminate(void *settlement_record);
+extern void native_tribe_announce_extinction(void);
+extern void native_tribe_redistribute(void *settlement_record, void *tribe_ptr);
+extern void native_settlement_tick(int index);
+extern void spawn_indian_convert(int settlement_index);
 void native_settlement_remove(int index)
 {
     /* @asm 0x46EED..0x46F32 — STEP 1: fix up unit links (stride 0x1C). */
@@ -189,8 +192,6 @@ void native_settlement_remove(int index)
                                   g_tribe_ptr_8D52);      /* @0x46F6B scale +8/+0xA down */
     }
 }
-
-/* unit_record and unit_detach_from_settlement declared above. */
 
 /* ============================================================================
  * tribe_settlement_count_dec — BYTE_VERIFIED
@@ -228,7 +229,7 @@ void native_tribe_eliminate(void *settlement_record)
     ((uint8_t *)settlement_record)[0x03] |= 0x80;   /* @asm 0x46F96 or [bx+3],0x80 */
     native_tribe_announce_extinction();             /* @asm 0x46F9A..0x46FBB (thunks) */
 }
-extern void native_tribe_announce_extinction(void);
+/* (native_tribe_announce_extinction declared above, before native_settlement_remove) */
 
 /* ============================================================================
  * native_tribe_redistribute — BYTE_VERIFIED arithmetic
@@ -280,7 +281,6 @@ int native_settlement_value_for_display(int index)
         value = tribe_w + value + 1;
     return value;
 }
-/* native_class_weight_5AD8 declared above. */
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED below this line — NOT BYTE-VERIFIED <<<
@@ -300,6 +300,10 @@ int native_settlement_value_for_display(int index)
  * The numeric attitude deltas it feeds, however, are not byte-resolved.
  * ============================================================================ */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
+
+/* RUNTIME_ONLY — loaded from NAMES.TXT/data-file; placeholder compile values */
+#define NATIVE_GROWTH_PCT    10
+#define MISSION_CONVERT_PCT   5
 
 void native_tick_all(void)
 {
@@ -343,5 +347,4 @@ int settlement_max_pop(int type)          /* RECONSTRUCTED — values RUNTIME_ON
     }
     return 6;
 }
-
-extern void spawn_indian_convert(int settlement_index);
+/* (spawn_indian_convert declared above, before native_settlement_remove) */

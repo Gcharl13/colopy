@@ -51,7 +51,6 @@
  *   power_is_ai[i*0x34]== globals.h g_power_records[i][0]  (DGROUP:0x543F)
  * Declared here (not redefined) to keep this TU consistent with boycott.c.
  * ---------------------------------------------------------------------------- */
-extern struct PowerRecord *g_market;     /* DGROUP:0x84FC active PowerRecord ptr [V] */
 extern int                 g_active_power_index; /* DGROUP:0x9E12 active power 0..3 [V] */
 typedef struct PowerRecord PowerRecord;  /* match the (PowerRecord*) cast convention */
 

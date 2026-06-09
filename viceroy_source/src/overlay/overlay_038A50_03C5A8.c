@@ -75,8 +75,8 @@ extern uint8_t   g_flags_5382;          /* DGROUP:0x5382 bit0 = independence dec
 extern uint16_t  g_year_538A;           /* DGROUP:0x538A current year (ledger; era gates) */
 extern uint16_t  g_human_player_5398;   /* DGROUP:0x5398 current human player marker */
 extern uint16_t  g_self_marker_53D2;    /* DGROUP:0x53D2 self power marker */
-extern uint16_t  g_colony_count_539E;   /* DGROUP:0x539E colony-table count */
-extern uint16_t  g_unit_count_539C;     /* DGROUP:0x539C total unit count */
+/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
+/* g_unit_count_539C:   DGS16(0x539C) macro from globals.h */
 extern uint8_t   far *g_colony_ctx_8542;/* DGROUP:0x8542 current colony_t base */
 
 /* AIPersonality controller flag: base 0x540E stride 0x34, +0x31 controller byte

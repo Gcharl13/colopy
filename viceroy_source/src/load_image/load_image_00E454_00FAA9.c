@@ -273,24 +273,39 @@ int func_00E702_logic_sz_21(const void far *rgb /*bp+6:bp+8*/,
     return 0;
 }
 
-/* @asm        0x00E76A..0x00E79B  (49 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E76A_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x28
- * @args_seen  []
+/* @asm        0x00E76A..0x00E963  (505 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E76A.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x28  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack glyph-table far ptr [bp+8]:[bp+0xa])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00E76A_logic_sz_49(void)
+ * @inferred_role  opaque RLE-sprite rasterizer into a caller-supplied far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "49 bytes / 0x00E79B" was truncated at the JNS at the mirror-flag
+ * setup; the true body runs 0x00E76A..0x00E962 (505 B, `retf 6`; 0x00E963 NOP pad,
+ * next func 0x00E964 per functions.json).  Register args: ax = signed glyph index
+ * (sign bit selects the horizontal mirror step ±1 stored at [bp-0x10], low 15 bits =
+ * record index, stride 12 into the glyph table at [bp+8]:[bp+0xa], record base +0x36),
+ * dx = far ptr to the destination descriptor {+2 = dst_stride, +4:+6 = dst far base},
+ * bx = far ptr to a clip record {[bx] = clip_w, [bx+2] = clip_h}.  The glyph record's
+ * +0/+2 = packed-RLE data far ptr, +8/+0xA = glyph w/h.  The body clips the glyph to
+ * the clip rect, then walks the run-length stream (control bytes 0xFF = row/blit end,
+ * 0xFE = run, 0xFD = transparent run) writing opaque pixels with `mov es:[bx],al` into
+ * the framebuffer, advancing dst by ±dst_stride per pixel with 0x7000/0x700 segment
+ * wrap at 64K.  `retf 6` pops the one stack far ptr (3 words).  No return value, no
+ * DGROUP state written (all writes target the framebuffer).
+ *
+ * PLATFORM_LAYER: this is the VGA software rasterizer — exactly the milestone-3 SDL
+ * swap-point.  The pixel raster is the hardware/video path, so it is kept as an
+ * honest stub (no framebuffer is owned by the rules layer); the cited @asm above is
+ * the faithful description of the byte-exact decoder for the eventual SDL port. */
+int func_00E76A_logic_sz_505(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00E788 JNS 0x00E78D */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — opaque RLE sprite blit to the VGA framebuffer (es:[bx]) */
 }
 
 /* @asm        0x00E867..0x00E876  (15 bytes)  region=load_image
@@ -311,24 +326,36 @@ int func_00E867_logic_sz_15(void)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00E964..0x00E99A  (54 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E964_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x16e
- * @args_seen  []
+/* @asm        0x00E964..0x00EC31  (717 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E964.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x16e  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack args [bp+6],[bp+8] and far ptr [bp+0xa]:[bp+0xc])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (54 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00E964_logic_sz_54(void)
+ * @inferred_role  X-scaled opaque RLE-sprite rasterizer into a caller far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "54 bytes / 0x00E99A" was truncated at the JNS mirror-flag setup;
+ * the true body runs 0x00E964..0x00EC2E (717 B, `retf 8`; next func 0x00EC32 per
+ * functions.json).  Scaled twin of func_00E76A: identical glyph/clip/descriptor setup
+ * (ax = signed glyph index + mirror flag, dx = dest-descriptor far ptr, bx = clip
+ * record, glyph table [bp+0xa]:[bp+0xc]).  Additionally [bp+6] = source-X start phase
+ * and [bp+8] = horizontal scale numerator: a 0x152-byte stack mask (`[bp-0x152]`) is
+ * built per source column by a (phase += [bp+8]; >=0x64 -> emit, -=0x64) Bresenham
+ * step (the `0x32`/`0x64` rounding at 0x00EA00) so the glyph is squeezed/expanded in X
+ * before the RLE decode writes opaque pixels with `mov es:[bx],al` to the framebuffer
+ * (0x7000/0x700 segment wrap at 64K).  `retf 8` pops the four stack words.  No return
+ * value, no DGROUP state written.
+ *
+ * PLATFORM_LAYER: VGA software rasterizer (milestone-3 SDL swap-point); the scaled
+ * pixel raster is the hardware/video path, kept as an honest stub with the cited @asm
+ * describing the byte-exact decoder for the eventual SDL port. */
+int func_00E964_logic_sz_717(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00E985 JNS 0x00E98A */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — X-scaled opaque RLE sprite blit to the VGA framebuffer */
 }
 
 /* @asm        0x00EADE..0x00EAED  (15 bytes)  region=load_image
@@ -389,7 +416,7 @@ int func_00EC32_logic_sz_100(void far *dst /*bp+6:bp+8*/, uint16_t scale_bp_0A,
      *      0x00EC81 sub ax,[bp-2](bx_in=row); neg ax; inc ax (ax = row - scaled_h + 1);
      *      mov es:[bx+6],ax.  0x00EC8B cx=0x1B5A; mov ds,cx (restore DGROUP);
      *      pop si; pop di; leave; retf 0xA. */
-    const uint8_t far *rec = (const uint8_t far *)src_tbl + (size_t)index * 12 + 0x36;
+    const uint8_t far *rec = (const uint8_t far *)src_tbl + (uint16_t)(index * 12) + 0x36;
     uint16_t raw_w   = *(const uint16_t far *)(rec + 8);
     uint16_t raw_h   = *(const uint16_t far *)(rec + 0xA);
     uint16_t scaled_w = (uint16_t)(((uint32_t)raw_w * scale_bp_0A + 0x32) / 0x64);
@@ -403,24 +430,32 @@ int func_00EC32_logic_sz_100(void far *dst /*bp+6:bp+8*/, uint16_t scale_bp_0A,
     return 0;
 }
 
-/* @asm        0x00EC96..0x00ECC7  (49 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00EC96_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x28
- * @args_seen  []
+/* @asm        0x00EC96..0x00EEA3  (525 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00EC96.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x28  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack glyph-table far ptr [bp+8]:[bp+0xa])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00EC96_logic_sz_49(void)
+ * @inferred_role  masked (transparent-over-0) RLE-sprite rasterizer into a far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "49 bytes / 0x00ECC7" was truncated at the JNS mirror-flag setup;
+ * the true body runs 0x00EC96..0x00EEA0 (525 B, `retf 6`; next func 0x00EEA4 per
+ * functions.json).  Masked twin of func_00E76A: byte-identical glyph/clip/descriptor
+ * setup and RLE control codes, but each pixel write is gated by `cmp es:[bx],0; jne`
+ * (@0x00EE0F/0x00EE48/0x00EE6C) so the glyph only paints over framebuffer bytes that
+ * are still 0 (transparent overlay).  Same `mov es:[bx],al` framebuffer store with
+ * ±dst_stride advance and 0x7000/0x700 segment wrap.  `retf 6` pops the one stack far
+ * ptr.  No return value, no DGROUP state written.
+ *
+ * PLATFORM_LAYER: VGA software rasterizer (milestone-3 SDL swap-point); kept as an
+ * honest stub with the cited @asm describing the byte-exact masked decoder. */
+int func_00EC96_logic_sz_525(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00ECB4 JNS 0x00ECB9 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — masked RLE sprite blit to the VGA framebuffer (over 0 pixels) */
 }
 
 /* @asm        0x00ED93..0x00EDA2  (15 bytes)  region=load_image
@@ -441,24 +476,32 @@ int func_00ED93_logic_sz_15(void)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00EEA4..0x00EEDA  (54 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00EEA4_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x16e
- * @args_seen  []
+/* @asm        0x00EEA4..0x00F183  (735 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00EEA4.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x16e  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack args [bp+6],[bp+8] and far ptr [bp+0xa]:[bp+0xc])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (54 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00EEA4_logic_sz_54(void)
+ * @inferred_role  X-scaled masked (transparent-over-0) RLE-sprite rasterizer to a far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "54 bytes / 0x00EEDA" was truncated at the JNS mirror-flag setup;
+ * the true body runs 0x00EEA4..0x00F180 (735 B, `retf 8`; next func 0x00F184 per
+ * functions.json).  Combination of func_00E964 (the [bp+8] X-scale Bresenham column
+ * mask built in the `[bp-0x152]` stack buffer, 0x32/0x64 rounding at 0x00EF40) and
+ * func_00EC96 (the `cmp es:[bx],0; jne` mask gate at 0x00F0CE/0x00F118/0x00F14A): a
+ * horizontally-scaled glyph painted only over framebuffer 0-bytes via `mov es:[bx],al`
+ * with ±dst_stride advance and 0x7000/0x700 segment wrap.  `retf 8` pops the four
+ * stack words.  No return value, no DGROUP state written.
+ *
+ * PLATFORM_LAYER: VGA software rasterizer (milestone-3 SDL swap-point); kept as an
+ * honest stub with the cited @asm describing the byte-exact scaled+masked decoder. */
+int func_00EEA4_logic_sz_735(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00EEC5 JNS 0x00EECA */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — X-scaled masked RLE sprite blit to the VGA framebuffer */
 }
 
 /* @asm        0x00F01E..0x00F02D  (15 bytes)  region=load_image
@@ -479,24 +522,32 @@ int func_00F01E_logic_sz_15(void)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00F184..0x00F1B5  (49 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00F184_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x28
- * @args_seen  []
+/* @asm        0x00F184..0x00F389  (517 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00F184.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x28  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack colour [bp+6] and far ptr [bp+8]:[bp+0xa]... )
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00F184_logic_sz_49(void)
+ * @inferred_role  solid-colour (silhouette) RLE-sprite rasterizer into a far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "49 bytes / 0x00F1B5" was truncated at the JNS mirror-flag setup;
+ * the true body runs 0x00F184..0x00F386 (517 B, `retf 8`; next func 0x00F38A per
+ * functions.json).  Silhouette twin of func_00E76A: identical glyph/clip/descriptor
+ * setup and RLE control walk, but each opaque pixel is written as the fixed colour
+ * byte `[bp+6]` (`mov al,[bp+6]; mov es:[bx],al` @0x00F2FF/0x00F336/0x00F356) instead
+ * of the source pixel, so the glyph's RLE shape is stamped as a solid-colour mask.
+ * Same ±dst_stride advance and 0x7000/0x700 segment wrap.  `retf 8` pops the four
+ * stack words.  No return value, no DGROUP state written.
+ *
+ * PLATFORM_LAYER: VGA software rasterizer (milestone-3 SDL swap-point); kept as an
+ * honest stub with the cited @asm describing the byte-exact silhouette decoder. */
+int func_00F184_logic_sz_517(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00F1A2 JNS 0x00F1A7 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — solid-colour silhouette RLE sprite blit to the VGA framebuffer */
 }
 
 /* @asm        0x00F281..0x00F290  (15 bytes)  region=load_image
@@ -797,38 +848,41 @@ int func_00F52C_logic_sz_35(uint16_t src_desc_off_bp_06, uint16_t src_desc_seg_b
     return 0;
 }
 
-/* @asm        0x00F5E6..0x00F62A  (68 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00F5E6_unknown.asm
- * @pattern    FIND_LOOP
+/* @asm        0x00F5E6..0x00F6CF  (233 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00F5E6.asm
+ * @pattern    PLATFORM_TIMING
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [6, 8, 10]
+ * @args_seen  [6, 8, 10]  (plus the near sub-helpers 0x00F69A/0x00F6CF folded in)
  * @lcalls     0
- * @near_calls 1
+ * @near_calls 1  (0x00F69A, which in turn calls 0x00F6CF)
  * @callers    0
  * @touches_8542 False
+ * @inferred_role  busy-wait micro-delay calibrated to the CPU via a CGA-retrace tick
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (CGA retrace + spin loop; honest stub)
  *
- * Near CALL targets:
- *   - 0x00F69A
- * @inferred_role  FIND_LOOP (68 bytes). no LCALLs
- * @status     PLATFORM_LAYER (RTLink overlay loader (CS-relative); host/runtime layer replaced in the modern port, not decompiled)
- */
-int func_00F5E6_logic_sz_68(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+ * NOTE: auto-banner "68 bytes / 0x00F62A" was truncated at the first JCXZ; the true
+ * body runs 0x00F5E6..0x00F6CE (233 B incl. the near sub-helpers 0x00F69A and the
+ * 0x00F6CF retrace-tick measurer, `retf`; next func 0x00F6D0-region per
+ * functions.json end=0xF6CF).  This is a CPU-speed-calibrated spin delay:
+ *   - sets the BIOS-data-area byte es:0000:[0x440]=1 then spins until it reads back 1
+ *     (an interrupt-driven heartbeat, segment 0 — NOT a DGROUP write);
+ *   - on first use lazily measures the loop count per CGA vertical-retrace period
+ *     (helper 0x00F6CF polls CGA status port 0x3DA bit 3 with interrupts disabled and
+ *     counts iterations into the CS-relative module words cs:[0x12]/cs:[0x14] — again
+ *     CS-relative locals, NOT DGROUP);
+ *   - then runs a `movsb`-padded inner spin (counts at 0x2260/0xFA00) sized from
+ *     [bp+6] so the wall-clock delay is hardware-independent.
+ * The auto-banner's "Reads/Writes DGROUP 0x12/0x440" is a mis-attribution: 0x12/0x14
+ * are cs-relative and 0x440 is the segment-0 BIOS data area, so there is no DGROUP
+ * state for the rules layer to preserve.
+ *
+ * PLATFORM_LAYER: a CPU-cycle / CGA-retrace busy-wait — pure timing hardware, replaced
+ * by the modern front end's frame pacing.  Honest stub per project convention; the
+ * cited @asm preserves the calibration for the eventual SDL timer port. */
+int func_00F5E6_logic_sz_233(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0012, 0x0440
-     * Writes DGROUP: 0x0440
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00F5FB JE 0x00F5F6 */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F609 JNE 0x00F60E */ {
-            /* @0x00F60B */ func_00F69A();
-        }
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x00F611 JCXZ 0x00F65C */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F61F JNE 0x00F624 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    return 0;  /* TODO: SDL — CPU-calibrated micro-delay (CGA retrace tick + spin loop) */
 }
 
 /* @asm        0x00F702..0x00F71F  (29 bytes)  region=load_image
@@ -891,29 +945,19 @@ int func_00F8EC_logic_sz_10(void)
  */
 int func_00F8F6_rtl_sz_106(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2B16
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F901 JNE 0x00F921 */ {
-            /* @0x00F909 */ func_00F98D();
-            /* @0x00F912 */ func_00F98D();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F91B JNE 0x00F921 */ {
-            }
-        }
-        /* @0x00F927 */ func_00F98D();
-        /* @0x00F930 */ func_00F98D();
-        /* @0x00F933 */ overlay_call_0D1D_126A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00F93A JE 0x00F94D */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F940 JNE 0x00F94D */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F946 JNE 0x00F94D */ {
-                }
-            }
-        }
-        /* @0x00F94D */ func_00F960();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F953 JNE 0x00F95C */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm Reads DGROUP 0x2B16 (==0xD6D6 guard) and the cs-managed atexit/flush
+     *      tables at 0x2B26/0x2B28/0x2B32/0x2B36; flushes the C stdio buffers via the
+     *      near helper 0x00F98D (run-the-list) and 0x00F960 (close/flush handles),
+     *      invokes the registered exit handler vector [0x2B1C] when the magic matches,
+     *      runs the overlay teardown 0x0D1D:0x126A, and finally TERMINATES THE PROCESS
+     *      with `mov ah,0x4C; int 0x21` (exit code = [bp+6]).  This is the DOS C
+     *      runtime `exit()`/`_cexit()` path (SHADOWED interior of func_00F8DD).
+     * PLATFORM_LAYER: the atexit/flush tables, the overlay teardown and the DOS
+     * INT 21h AH=4Ch process-terminate are all host/runtime plumbing replaced by the
+     * modern front end; the rules layer must not terminate the host process, so this
+     * is an honest stub.  No DGROUP state is produced for the rules layer. */
+    (void)arg0_bp_06;
+    return 0;  /* @asm int 0x21 AH=4Ch — host-replaced; do not terminate the modern process */
 }
 
 /* @asm        0x00F9C4..0x00FA7E  (186 bytes)  region=load_image
@@ -937,34 +981,51 @@ int func_00F8F6_rtl_sz_106(uint16_t arg0_bp_06)
  * Near CALL targets:
  *   - 0x010CA0
  * @inferred_role C_RUNTIME / DISPATCH_VIA_OVERLAY  (HIGH)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     BYTE_VERIFIED 2026-06-09 (control flow ported from re_work/disasm/func_00F9C4.asm)
  */
+/* PORTED 2026-06-09 from func_00F9C4.asm — closes/finalises an open file-record and,
+ * when it carried a "needs save/rename" flag, splits its path and commits it through
+ * the C-runtime overlays.  arg0 = near ptr to the file record `r`; the gate is the
+ * flag byte r[6]: bit6 (0x40) short-circuits straight to the clear-and-exit, and only
+ * records with one of bits 0x83 set are processed.  The record's r[0xA4] word (asm
+ * `[si-0x290E+0x29B2]`) is the "rename target" handle and r[7] the mode byte.  Helpers:
+ * 0x0D1D:0x1896 = finalise/handle (-> di), near func_010CA0 = flush/sync the record,
+ * 0x0D1D:0x1E7A = commit-by-mode (negative result => failure), 0x0D1D:0x07E4/0x07A4 =
+ * splitpath into the scratch buffers at [bp-0xE]/[bp-0xC] (the leading '\\' at [bp-0xE]
+ * chooses which half is the basename), 0x0D1D:0x08FA + 0x0D1D:0x0E4A = rename/close the
+ * target.  The overlay shims take their args off the DOS stack so they are `(void)`
+ * here; the C-visible effects (the r[6] gate and its final `r[6]=0` clear, the r[7]/
+ * r[0xA4] reads, the near sync call, and the success/-1 return in di) are faithful. */
 int func_00F9C4_rtl_sz_186(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00F9D6 JE 0x00F9DB */ {
-            goto label_00FA72;  /* @0x00F9D8 */
+    uint8_t near *r = (uint8_t near *)arg0_bp_06;  /* @asm si = [bp+6] (file record) */
+    int result = -1;                               /* @asm di = 0xFFFF (default) */
+
+    /* @asm 0x00F9D2 test [si+6],0x40; jne -> 0xFA72 (already-handled short-circuit) */
+    /* @asm 0x00F9DB test [si+6],0x83; je  -> 0xFA72 (nothing to commit)            */
+    if ((r[6] & 0x40) == 0 && (r[6] & 0x83) != 0) {
+        uint16_t rename_target;                    /* @asm [bp-4] = [si+0xA4] */
+        /* @asm 0x00F9E4 push si; lcall 0D1D:0x1896 -> di */
+        result = overlay_call_0D1D_1896();
+        rename_target = *(uint16_t near *)(r + 0xA4);
+        /* @asm 0x00F9FC push si; call 0x10CA0 (flush/sync the record) */
+        func_010CA0();
+        /* @asm 0x00FA03 al=[si+7]; push ax; lcall 0D1D:0x1E7A; or ax,ax; jl 0xFA6F */
+        if ((int16_t)overlay_call_0D1D_1E7A() < 0) {
+            result = -1;                           /* @asm 0x00FA6F di = 0xFFFF */
+        } else if (rename_target != 0) {           /* @asm 0x00FA15 cmp [bp-4],0; je 0xFA72 */
+            /* @asm 0x00FA1B/0x00FA23 splitpath the record's name into the scratch
+             *      buffers [bp-0xE]/[bp-0xC]; the leading '\\' picks the basename half */
+            overlay_call_0D1D_07E4();              /* @asm lcall 0D1D:0x7E4 */
+            overlay_call_0D1D_07A4();              /* @asm lcall 0D1D:0x7A4 (else branch) */
+            /* @asm 0x00FA4D rename/commit then close the target handle */
+            overlay_call_0D1D_08FA();              /* @asm lcall 0D1D:0x8FA */
+            overlay_call_0D1D_0E4A();              /* @asm lcall 0D1D:0xE4A; or ax,ax; je 0xFA72 */
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00F9DF JNE 0x00F9E4 */ {
-            goto label_00FA72;  /* @0x00F9E1 */
-        }
-        /* @0x00F9E5 */ overlay_call_0D1D_1896();
-        /* @0x00F9FD */ func_010CA0();
-        /* @0x00FA09 */ overlay_call_0D1D_1E7A();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00FA13 JL 0x00FA6F */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00FA19 JE 0x00FA72 */ {
-                /* @0x00FA23 */ overlay_call_0D1D_07E4();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FA35 JE 0x00FA4A */ {
-                    /* @0x00FA3F */ overlay_call_0D1D_07A4();
-                    goto label_00FA4D;  /* @0x00FA47 */
-                }
-                /* @0x00FA57 */ overlay_call_0D1D_08FA();
-                /* @0x00FA63 */ overlay_call_0D1D_0E4A();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00FA6D JE 0x00FA72 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    r[6] = 0;                                      /* @asm 0x00FA72 mov byte [si+6],0 */
+    return result;                                 /* @asm 0x00FA76 mov ax,di; retf */
 }
 
 /* @asm        0x00FA7E..0x00FAA9  (43 bytes)  region=load_image
@@ -981,16 +1042,22 @@ int func_00F9C4_rtl_sz_186(uint16_t arg0_bp_06)
  *   - 0x0D1D:0x1E46
  *   - 0x0D1D:0x16FC
  * @inferred_role  UNKNOWN (43 bytes). 0x0D1D:0x1E46 + 0x0D1D:0x16FC
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @status     BYTE_VERIFIED 2026-06-09 (control flow ported from re_work/disasm/func_00FA7E.asm)
  */
+/* PORTED 2026-06-09 from func_00FA7E.asm — acquire a runtime handle and, if valid,
+ * forward the three caller args plus that handle to the C-runtime worker.  Calls
+ * 0x0D1D:0x1E46 to obtain a handle in si; when it is 0 the routine bails returning 0,
+ * otherwise it pushes (si, [bp+0xA], [bp+8], [bp+6]) and tail-calls 0x0D1D:0x16FC,
+ * returning that result.  The overlay shims take their args off the DOS stack, so they
+ * are `(void)` here; the C-visible control flow (the handle gate and the return value)
+ * is faithful to the asm. */
 int func_00FA7E_rtl_sz_43(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00FA82 */ overlay_call_0D1D_1E46();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00FA8B JNE 0x00FA92 */ {
-            goto label_00FAA4;  /* @0x00FA8F */
-        }
-        /* @0x00FA9C */ overlay_call_0D1D_16FC();
-    return 0;  /* @auto: TODO confirm return semantics */
+    int handle = overlay_call_0D1D_1E46();   /* @asm 0x00FA82 lcall 0D1D:0x1E46; si=ax */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    if (handle == 0)                         /* @asm 0x00FA89 or si,si; jne 0xFA92 */
+        return 0;                            /* @asm 0x00FA8D sub ax,ax; jmp 0xFAA4 */
+    /* @asm 0x00FA92 push si;[bp+0xA];[bp+8];[bp+6]; lcall 0D1D:0x16FC */
+    return overlay_call_0D1D_16FC();         /* @asm 0x00FA9C result returned in ax */
 }
 

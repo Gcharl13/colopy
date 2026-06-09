@@ -55,8 +55,17 @@
  * NATIVE resolution 320x200, VGA mode 13h.  All coordinates are native px.
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 #include "power.h"
+#include "globals.h"
+#include "dgroup.h"
+
+/* Screen-state id returned to the reconstruction-layer screen dispatcher.
+ * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2B (Europe view);
+ * same value as SCREEN_ID_EUR below. CONSOLIDATED 2026-06-09 into the shared
+ * ui screen-id header. */
+#include "ui_screen.h"
 
 #define SCREEN_EUROPE 3   /* RECONSTRUCTED — screen-id constant, not yet decoded */
 

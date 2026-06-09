@@ -94,7 +94,9 @@ struct PowerRecord {
  * modern build it points at g_dgroup+0x8808, in DOS at DS:0x8808. `power[p]`
  * indexes it; local vars/params named `power` shadow it normally. (Changed from
  * `power[8]` array to a pointer for the aliasing -- no sizeof/&array reliance.) */
+typedef struct PowerRecord PowerRecord;
 extern struct PowerRecord *power;
+extern struct PowerRecord *g_market; /* DGROUP:0x84FC — active-market PowerRecord ptr */
 
 /* ----------------------------------------------------------------------------
  * Power index conventions

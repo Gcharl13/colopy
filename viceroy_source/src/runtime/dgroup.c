@@ -9,6 +9,7 @@
  *
  * Callers must invoke dgroup_init() at startup before touching game state.
  * ============================================================================ */
+#include <stddef.h>
 #include "dgroup.h"
 #include "unit.h"
 #include "power.h"
@@ -23,6 +24,7 @@ struct UnitRecord    far *unit_table;       /* DG_UNIT_TABLE @0x3144 */
 struct PowerRecord       *power;            /* DG_POWER_TABLE @0x8808 */
 struct AIPersonality     *ai_personality;   /* DG_AI_TABLE    @0x540E */
 struct colony_t     far *ctx = NULL;        /* DGROUP:0x8542 current-colony pointer */
+struct PowerRecord      *g_market = NULL;   /* DGROUP:0x84FC active-market PowerRecord ptr */
 
 #ifdef _VICEROY_MODERN
 uint8_t g_dgroup[DGROUP_SIZE];   /* zero-initialized; static window filled below */

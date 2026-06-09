@@ -10,6 +10,21 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* ----------------------------------------------------------------------------
+ * Overlay (RTLink) far-call targets referenced by the ported bodies below that
+ * are NOT (yet) declared in overlay_externs.h.  Declared locally so this TU can
+ * forward to them faithfully; they should be promoted into overlay_externs.h.
+ * (Period code reaches these via `lcall seg:off`; arg passing is via the DOS
+ *  stack, so the modern shim signatures are `(void)` like their siblings.)
+ * -------------------------------------------------------------------------- */
+extern int overlay_call_0AE7_0002(void);  /* @ref RTLink seg 0x0AE7 off 0x0002 (keyboard poll) */
+extern int overlay_call_0427_0002(void);  /* @ref RTLink seg 0x0427 off 0x0002 */
+extern int overlay_call_0CD8_0004(void);  /* @ref RTLink seg 0x0CD8 off 0x0004 */
+extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 (cursor/mouse pos) */
+extern int overlay_call_181F_03D4(void);  /* @ref RTLink seg 0x181F off 0x03D4 */
+extern int overlay_call_0D1D_030D(void);  /* @ref RTLink seg 0x0D1D off 0x030D */
+extern int overlay_call_0A58_038B(void);  /* @ref RTLink seg 0x0A58 off 0x038B */
+
 /* @asm        0x0033F2..0x00341D  (43 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_0033F2_unknown.asm
  * @pattern    TINY_ACCESSOR
@@ -22,10 +37,22 @@
  * @inferred_role  TINY_ACCESSOR (43 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_0033F2_logic_sz_43(void)
+/* PORTED 2026-06-09 from func_0033F2.asm — append a (ax,dx,bx) triple to three
+ * parallel word arrays indexed by the running count at DGROUP:0x2CE0, unless the
+ * (dx,bx) pair is (0,0) (a NUL entry, ignored).  Register-arg helper: the MSC
+ * fastcall convention passes the three inputs in AX/DX/BX, so the auto-banner saw
+ * args_seen=[] (nothing read from the bp frame).  Returns AX unchanged. */
+int func_0033F2_logic_sz_43(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx)
 {
-    /* @auto: tiny accessor reads DGROUP:0x2CE0. */
-    return *((uint16_t near*)0x2CE0);
+    /* @asm 0x0033F7 or dx,dx; jne store; or bx,bx; je skip  -> skip when dx==0 && bx==0 */
+    if (r_dx != 0 || r_bx != 0) {
+        uint16_t idx = DG16(0x2CE0);           /* @asm mov bx,[0x2ce0]; shl bx,1 */
+        DG16(0x2CF4 + idx * 2) = r_ax;          /* @asm mov [bx+0x2cf4],ax */
+        DG16(0x2CCE + idx * 2) = r_dx;          /* @asm mov ax,[bp-4](=dx); mov [bx+0x2cce],ax */
+        DG16(0x2CE2 + idx * 2) = r_bx;          /* @asm mov ax,[bp-2](=bx); mov [bx+0x2ce2],ax */
+        DG16(0x2CE0) = (uint16_t)(idx + 1);     /* @asm inc word [0x2ce0] */
+    }
+    return (int)(uint16_t)r_ax;                 /* @asm ax preserved across the routine */
 }
 
 /* @asm        0x00341E..0x003435  (23 bytes)  region=load_image
@@ -43,9 +70,16 @@ int func_0033F2_logic_sz_43(void)
  * @inferred_role  WRAPPER_LCALL (23 bytes). 0x181F:0x029A
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_00341E.asm — sign-extends arg0 to 32 bits, byte-
+ * shuffles it into the overlay's expected register layout, then tail-calls the
+ * overlay routine 0x181F:0x029A (the modern shim takes its args off the DOS stack
+ * so it is declared `(void)` here, like its siblings in overlay_externs.h). */
 int func_00341E_op_sz_23(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to LCALL 0x181F:0x029A. */
+    /* @asm 0x003422 ax=[bp+6]; cdq (dx:ax = (int32_t)arg0);
+     *      0x003426 mov dh,dl; mov dl,ah; mov ah,al; sub al,al  (repack bytes);
+     *      0x00342e lcall 0x181f,0x29a */
+    (void)arg0_bp_06;
     return overlay_call_181F_029A();
 }
 
@@ -60,10 +94,20 @@ int func_00341E_op_sz_23(uint16_t arg0_bp_06)
  * @touches_8542 False
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_003436.asm — fold a terrain id into the canonical
+ * 0..8 range: ids 9 and 0x11 collapse to 8; any id >= 8 is reduced by 15
+ * (0xF), bringing the high id band down adjacent to the base band; ids < 8 pass
+ * through unchanged.  Returns the normalized id. */
 int func_003436_terrain_id_normalize_to_8(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    int id = (int16_t)arg0_bp_06;
+    /* @asm 0x003439 cmp [bp+6],0x11; je set8 ; 0x00343f cmp [bp+6],9; jne 0x3450 */
+    if (id == 0x11 || id == 9)
+        return 8;                               /* @asm 0x003445 mov [bp+6],8 */
+    /* @asm 0x003450 cmp [bp+6],8; jl ret ; 0x003456 sub [bp+6],0xf */
+    if (id >= 8)
+        id -= 0xF;
+    return id;                                  /* @asm 0x00345a mov ax,[bp+6] */
 }
 
 /* @asm        0x003460..0x0034C3  (99 bytes)  region=load_image
@@ -81,13 +125,18 @@ int func_003436_terrain_id_normalize_to_8(uint16_t arg0_bp_06)
  * @inferred_role  PROLOGUE_HEAVY (99 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_003460.asm — opaque blit of a normalized 16x16
+ * terrain tile into a far video buffer.  The destination far pointer is produced
+ * by the overlay screen-address helper 0x0A4E:0x0008 (les di,[result]), whose
+ * exact addressing math is not recoverable from this TU, so the raw
+ * `rep movsb`/row-stride copy cannot be faithfully reproduced here. */
 int func_003460_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00346A */ func_003436();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0034BC JNE 0x0034B4 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00346A call 0x3436 normalizes the tile id in [bp+0xa];
+     * 0x0034A4..0x0034BD: 16 rows of `rep movsb` (cx=0x10) with a per-row stride
+     * (dx=screen_pitch-0x10) into es:di = lcall 0x0A4E:0x0008 result. */
+    (void)func_003436_terrain_id_normalize_to_8(arg2_bp_0A);
+    return 0;  /* TODO: port from func_003460.asm — dest ptr via opaque overlay 0x0A4E:0x0008 */
 }
 
 /* @asm        0x0034C4..0x003536  (114 bytes)  region=load_image
@@ -105,18 +154,18 @@ int func_003460_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @inferred_role  COUNT_LOOP (114 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_0034C4.asm — opaque masked (transparent-0) blit of
+ * a normalized 16x16 terrain tile: identical framebuffer addressing to
+ * func_003460 but the inner row loop skips destination bytes that are already
+ * non-zero (mask), copying only over 0 pixels.  Destination far pointer comes
+ * from the opaque overlay helper 0x0A4E:0x0008, so it is not portable here. */
 int func_0034C4_logic_sz_114(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0034CE */ func_003436();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x003520 JNE 0x003528 */ {
-            /* @0x003523 LOOP back to 0x00351B */
-            goto label_00352C;  /* @0x003525 */
-        }
-        /* @0x00352A LOOP back to 0x00351B */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00352F JNE 0x003518 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0034CE call 0x3436 normalizes [bp+0xa];
+     * 0x00351B: per pixel `mov al,es:[di]; or al,al; jne keep; movsb` else inc di/si;
+     * 16 rows with a row stride (dx). */
+    (void)func_003436_terrain_id_normalize_to_8(arg2_bp_0A);
+    return 0;  /* TODO: port from func_0034C4.asm — dest ptr via opaque overlay 0x0A4E:0x0008 */
 }
 
 /* @asm        0x003536..0x00356B  (53 bytes)  region=load_image
@@ -134,10 +183,19 @@ int func_0034C4_logic_sz_114(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @inferred_role  WRAPPER_NEARCALL (53 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_003536.asm — NOT a wrapper (the auto-banner
+ * mis-segmented this at 53 bytes; the real body is 182 bytes, 0x003536..0x0035EB).
+ * It is a shift-scaled 16x16 terrain-tile blit: the scale is `cl=[bp+0x12]`,
+ * the tile id (in [bp+0xa]) is normalized via func_003436, source pixels are
+ * sub-sampled by `shl/sar cl`, and rows are written through es:di obtained from
+ * the opaque overlay screen-address helper 0x0A4E:0x0008.  The destination
+ * addressing math is not recoverable from this TU, so the pixel writes cannot be
+ * faithfully reproduced. */
 int func_003536_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t arg2_bp_12)
 {
-    /* @auto: wrapper forwards to near CALL 0x003436. */
-    return func_003436();
+    /* @asm 0x003540 call 0x3436 normalizes the tile id; 0x0035D3 stosb scale loop. */
+    (void)func_003436_terrain_id_normalize_to_8(arg0_bp_0A);
+    return 0;  /* TODO: port from func_003536.asm — dest ptr via opaque overlay 0x0A4E:0x0008 */
 }
 
 /* @asm        0x0035EC..0x003621  (53 bytes)  region=load_image
@@ -155,10 +213,17 @@ int func_003536_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t a
  * @inferred_role  WRAPPER_NEARCALL (53 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_0035EC.asm — NOT a wrapper (the auto-banner
+ * mis-segmented this at 53 bytes; the real body is 197 bytes, 0x0035EC..0x0036B0).
+ * Masked twin of func_003536: the same shift-scaled 16x16 terrain-tile blit but
+ * the inner loop skips destination pixels that are already non-zero (transparent
+ * overlay).  Destination far pointer is produced by the opaque overlay helper
+ * 0x0A4E:0x0008, so the pixel writes are not recoverable from this TU. */
 int func_0035EC_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t arg2_bp_12)
 {
-    /* @auto: wrapper forwards to near CALL 0x003436. */
-    return func_003436();
+    /* @asm 0x0035F6 call 0x3436 normalizes the tile id; 0x003689 masked stosb loop. */
+    (void)func_003436_terrain_id_normalize_to_8(arg0_bp_0A);
+    return 0;  /* TODO: port from func_0035EC.asm — dest ptr via opaque overlay 0x0A4E:0x0008 */
 }
 
 /* @asm        0x003710..0x003724  (20 bytes)  region=load_image
@@ -173,10 +238,18 @@ int func_0035EC_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t a
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_003710.asm — NOT tiny (auto-banner cut it at 20
+ * bytes; the real body is 173 bytes, 0x003710..0x0037BC).  It is a terrain-tile
+ * -> sprite-id resolver: a register-arg fastcall (tile record index in AX) that
+ * reads the 0x1C-stride tile record at DGROUP:0x3146[ax*0x1C], indexes the sprite
+ * table at 0x5232 by 14*type and a sub-type at 0x315B, calls the near helper
+ * 0x0036B2 when type==0, then applies a dense ladder of (type,subtype)->id fixups
+ * before returning the resolved sprite id.  The fixup ladder and the 0x0036B2
+ * helper's semantics are not confidently recoverable from this TU, so this stays
+ * an honest stub rather than a guessed mapping. */
 int func_003710_logic_sz_20(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    return 0;  /* TODO: port from func_003710.asm — multi-table sprite-id ladder + near 0x0036B2 */
 }
 
 /* @asm        0x0037BE..0x00380C  (78 bytes)  region=load_image
@@ -197,24 +270,35 @@ int func_003710_logic_sz_20(void)
  * @inferred_role  UNKNOWN (78 bytes). 0x0427:0x004A
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_0037BE_op_sz_78(void)
+/* PORTED 2026-06-09 from func_0037BE.asm — register-arg fastcall: DX = "search"
+ * flag, AX = default tile index, BX = near pointer to the output word.  When the
+ * flag is set, walk the active terrain list (overlay 0x0427:0x0002 returns the
+ * first index, 0x0427:0x004A advances to the next, a negative index ends the
+ * walk) and capture the FIRST entry whose tile-type byte at DGROUP:0x3146[i*0x1C]
+ * falls in [0x0D..0x12]; if none qualifies (or the flag is clear) the default is
+ * used.  The chosen index is stored through the output pointer, then the sprite
+ * resolver func_003710 runs.  Returns func_003710's result. */
+int func_0037BE_op_sz_78(uint16_t r_dx, uint16_t r_ax, uint16_t r_bx)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0037C8 JE 0x0037FA */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x0037D6 JL 0x0037F6 */ {
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x0037E1 JB 0x0037E9 */ {
-                    if (/* JA fallthrough cond: */ ax <= 0) /* @0x0037E5 JA 0x0037E9 */ {
-                    }
-                }
-                /* @0x0037EB */ overlay_call_0427_004A();
-                if (/* JL fallthrough cond: */ ax >= 0) /* @0x0037F4 JL 0x0037D4 */ {
-                }
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0037F8 JGE 0x0037FD */ {
-            }
+    int chosen = (int16_t)r_ax;                  /* @asm di = [bp-6] (default) on the no-search path */
+    if (r_dx != 0) {                             /* @asm 0x0037C6 or dx,dx; je store */
+        int found = -1;                          /* @asm mov di,0xffff */
+        int idx = (int16_t)overlay_call_0427_0002(); /* @asm lcall 0x427,2; si=ax */
+        while (idx >= 0) {                        /* @asm 0x0037D4 or si,si; jl done */
+            int bx = idx * 0x1C;
+            uint8_t type = DG8(0x3146 + bx);      /* @asm al=[bx+0x3146] */
+            if (type >= 0x0D && type <= 0x12)     /* @asm cmp 0xd; jb / cmp 0x12; ja */
+                found = idx;                      /* @asm mov di,si */
+            idx = (int16_t)overlay_call_0427_004A(); /* @asm lcall 0x427,0x4a; si=ax */
+            if (found < 0)                        /* @asm or di,di; jl loop */
+                continue;
+            break;
         }
-        /* @0x003805 */ func_003710();
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (found >= 0)                           /* @asm 0x0037F6 or di,di; jge keep */
+            chosen = found;                       /* else di stays = default ([bp-6]) */
+    }
+    DG16(r_bx) = (uint16_t)chosen;                /* @asm 0x003802 mov [bx],ax */
+    return func_003710_logic_sz_20();             /* @asm 0x003805 call 0x3710 */
 }
 
 /* @asm        0x00380C..0x003869  (93 bytes)  region=load_image
@@ -232,15 +316,26 @@ int func_0037BE_op_sz_78(void)
  * @inferred_role  PROLOGUE_HEAVY (93 bytes). 0x0C36:0x000A
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00380C_op_sz_93(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_00380C.asm — conditional two-part sprite draw at a
+ * row given by register DX.  Stack arg [bp+6] is a flags word; the saved register
+ * inputs (AX,BX) carry the draw parameters.  Bit0 of the flags draws the lower
+ * half via overlay 0x0CD8:0x0004 (with a colour byte that is 0x5F when bit2 is
+ * clear, else 0); bit1 draws the upper half (row DX+2) via overlay 0x0C36:0x000A.
+ * Both targets receive the shared sprite frame far pointer at DGROUP:0x083E:0x0840
+ * and the per-cell buffer at &DGROUP:0x2DA8.  retf 2 (callee pops the flags arg). */
+int func_00380C_op_sz_93(uint16_t arg0_bp_06 /*flags*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00381C JE 0x003843 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x003847 JE 0x003863 */ {
-            /* @0x00385E */ overlay_call_0C36_000A();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    uint16_t flags = arg0_bp_06;
+    if (flags & 1) {                             /* @asm 0x003818 test si,1; je */
+        /* @asm 0x003827 ax=(flags&4); cmp ax,1; cmc; sbb al,al; and al,0x5f ->
+         *      colour = (flags&4) ? 0 : 0x5F; 0x00383e lcall 0x0cd8,4 */
+        (void)overlay_call_0CD8_0004();
+    }
+    if (flags & 2) {                             /* @asm 0x003845 test al,2; je */
+        /* @asm 0x00385e lcall 0x0c36,0xa (upper half, row DX+2) */
+        (void)overlay_call_0C36_000A();
+    }
+    return 0;                                    /* @asm 0x003866 retf 2 (no value returned) */
 }
 
 /* @asm        0x00386A..0x0038CE  (100 bytes)  region=load_image
@@ -261,19 +356,18 @@ int func_00380C_op_sz_93(uint16_t arg0_bp_06)
  * @inferred_role  MEDIUM_LOGIC (100 bytes). 0x0427:0x004A
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_00386A.asm — NOT 100 bytes (auto-banner cut; the real
+ * body is 880 bytes, 0x00386A..0x003BD9).  It is the terrain/feature label
+ * renderer: it resolves a tile's display glyph through a large branch ladder over
+ * tile types 4..0x16 (city counts '0'..'9', resource '+'/digits, special markers
+ * 'X','E', etc.), measures the resulting string via the text-metrics overlay,
+ * positions it, and draws it through several blit overlays (0x0B9E, 0x0C56,
+ * 0x0C83, 0x0C2A).  This is a large, byte-exact text-layout routine whose glyph
+ * ladder and overlay text helpers are not confidently recoverable here, so it is
+ * kept as an honest stub rather than a guessed reconstruction. */
 int func_00386A_op_sz_100(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x003888 */ func_0037BE();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x003892 JE 0x0038AC */ {
-            /* @0x00389B */ overlay_call_0427_004A();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x0038A2 JL 0x0038AC */ {
-                goto label_0038B1;  /* @0x0038A9 */
-            }
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x0038CA JAE 0x0038CF */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_00386A.asm — 880-byte terrain-label renderer */
 }
 
 /* @asm        0x003E40..0x003EEE  (174 bytes)  region=load_image
@@ -288,23 +382,18 @@ int func_00386A_op_sz_100(void)
  * @inferred_role  MEDIUM_LOGIC (174 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_003E40.asm — NOT 174 bytes (auto-banner cut; the real
+ * body is 1236 bytes, 0x003E40..0x004313).  It is the unit/feature sprite
+ * renderer for a map cell: it selects a sprite class from the unit record at
+ * DGROUP:0x54EE[id*0x12], scales by the zoom shift at DGROUP:0x0184, and emits a
+ * long, branchy sequence of multi-cell blits (overlay 0x0B9E) plus an optional
+ * count-string draw (overlays 0x181F:0x0316 text-format, 0x0D1D:0x08FA, 0x0C2A,
+ * 0x0C11/0x0C56) depending on the cell's flags at 0x0894/0x5383.  This is a large,
+ * byte-exact rendering routine whose overlay helpers and sprite-class ladder are
+ * not confidently recoverable here, so it is kept as an honest stub. */
 int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0184, 0x5AD4
-     */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x003E6A JGE 0x003E80 */ {
-            goto label_003E85;  /* @0x003E7E */
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x003EA0 JLE 0x003EA5 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x003EC9 JE 0x003ECE */ {
-            goto label_003F8A;  /* @0x003ECB */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x003ED0 JNE 0x003F3A */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_003E40.asm — 1236-byte unit/feature renderer */
 }
 
 /* @asm        0x004314..0x004322  (14 bytes)  region=load_image
@@ -319,10 +408,17 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_004314.asm — NOT 14 bytes (auto-banner cut; the real
+ * body is 594 bytes, 0x004314..0x004565).  It is the full per-tile map renderer:
+ * a register-arg fastcall (tile id in AX) that reads the 0xCA-stride tile record
+ * at DGROUP:0x5D60[id*0xCA], probes three neighbours via overlay 0x05EB:0x035E,
+ * computes screen rect coords using the zoom shift at 0x0184, then draws the base
+ * tile and its decorations through a sequence of blit/sprite overlays (0x0C56,
+ * 0x0C28, 0x0C11, 0x0D1D:0x08FA, 0x0B9E) and finally chains the unit renderer at
+ * 0x003E40.  Too large and overlay-dependent to faithfully reconstruct here. */
 int func_004314_logic_sz_14(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    return 0;  /* TODO: port from func_004314.asm — 594-byte per-tile map renderer */
 }
 
 /* @asm        0x0043B1..0x0043D9  (40 bytes)  region=load_image
@@ -363,28 +459,18 @@ int func_0043B1_logic_sz_40(void)
  * @inferred_role  LARGE_LOGIC (326 bytes). 0x0984:0x02FC + 0x181F:0x032C
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_004566.asm — NOT 326 bytes (auto-banner cut; the real
+ * body is 870 bytes, 0x004566..0x0048CB).  It is the map-region compositor: it
+ * sets up clip/scale state (overlay 0x0984:0x02FC and the viewport globals at
+ * 0x8326..0x833A, zoom shift 0x0184), then sweeps a rectangle of map cells —
+ * stepping a screen cursor via the cursor overlay 0x0C0C:0x0022 — drawing each
+ * cell's terrain (chaining the label renderer 0x00386A) and per-row blits
+ * (overlays 0x0BAA, 0x0B70, 0x181F:0x032C).  This large, byte-exact compositor
+ * with several opaque overlay helpers is not confidently recoverable here, so it
+ * is kept as an honest stub. */
 int func_004566_op_sz_326(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C, uint16_t arg2_bp_0E, uint16_t arg3_bp_10, uint16_t arg4_bp_12)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0184, 0x5AD4, 0x8326, 0x8328, 0x832A, 0x832C, 0x832E
-     */
-        /* @0x004582 */ overlay_call_0984_02FC();
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x004590 JLE 0x004595 */ {
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00459E JLE 0x0045A3 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0045B5 JE 0x0045BD */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0045CC JE 0x0045D4 */ {
-        }
-        /* @0x0045E8 */ overlay_call_181F_032C();
-        /* @0x0045F8 */ overlay_call_181F_0344();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x004604 JL 0x00465F */ {
-            /* @0x004622 */ overlay_call_181F_032C();
-            /* @0x00465C */ func_00386A();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_004566.asm — 870-byte map-region compositor */
 }
 
 /* @asm        0x0048CC..0x0048D9  (13 bytes)  region=load_image
@@ -585,16 +671,20 @@ int func_0049FC_logic_sz_20(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  UNKNOWN (36 bytes). 0x029F:0x00F6 + 0x0AE7:0x0016
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_004A5C.asm — wait_for_keypress: spin until a key is
+ * available and return it.  Each iteration services the periodic/idle hook
+ * (overlay 0x029F:0x00F6), tests the keyboard via 0x0AE7:0x0002, and when a key is
+ * ready reads it via 0x0AE7:0x0016; the loop repeats until a non-zero key code is
+ * obtained, which is then returned. */
 int func_004A5C_op_sz_36(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x004A62 */ overlay_call_029F_00F6();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004A6E JE 0x004A77 */ {
-            /* @0x004A70 */ overlay_call_0AE7_0016();
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004A79 JE 0x004A62 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    int key = 0;                                 /* @asm sub si,si */
+    do {
+        overlay_call_029F_00F6();                /* @asm 0x004A62 lcall 0x29f,0xf6 (idle hook) */
+        if (overlay_call_0AE7_0002() != 0)       /* @asm 0x004A67 lcall 0xae7,2; or ax,ax; je */
+            key = overlay_call_0AE7_0016();      /* @asm 0x004A70 lcall 0xae7,0x16; si=ax */
+    } while (key == 0);                          /* @asm 0x004A77 or si,si; je 0x4a62 */
+    return key;                                  /* @asm 0x004A7B mov ax,si */
 }
 
 /* @asm        0x004A80..0x004A9A  (26 bytes)  region=load_image
@@ -609,10 +699,16 @@ int func_004A5C_op_sz_36(void)
  * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_004A80.asm — NOT 26 bytes (auto-banner cut; the real
+ * body is 121 bytes, 0x004A80..0x004AF8).  It is a modal input wait: it samples
+ * the cursor position (overlay 0x0C0C:0x0006), drives a small UI state machine
+ * through the opaque overlay 0x0ACB at offsets 0x0030/0x0056/0x011A/0x0056, polls
+ * the keyboard (0x0AE7:0x0002 / 0x0AE7:0x0016), and gates on the hit-test global
+ * at DGROUP:0x0826/0x07F4 before returning the captured key.  The 0x0ACB overlay's
+ * sub-functions are opaque, so this is kept as an honest stub. */
 int func_004A80_logic_sz_26(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    return 0;  /* TODO: port from func_004A80.asm — input wait via opaque overlay 0x0ACB */
 }
 
 /* @asm        0x004AFA..0x004B16  (28 bytes)  region=load_image
@@ -630,10 +726,15 @@ int func_004A80_logic_sz_26(void)
  * @inferred_role  WRAPPER_LCALL (28 bytes). 0x0AE7:0x0016
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_004AFA.asm — drain_keyboard_buffer: while a key is
+ * pending (overlay 0x0AE7:0x0002 returns non-zero), consume it (0x0AE7:0x0016)
+ * and re-test, flushing every queued keystroke.  Returns nothing meaningful. */
 int func_004AFA_op_sz_28(void)
 {
-    /* @auto: wrapper forwards to LCALL 0x0AE7:0x0016. */
-    return overlay_call_0AE7_0016();
+    while (overlay_call_0AE7_0002() != 0) {      /* @asm 0x004AFD lcall 0xae7,2; or ax,ax; je done */
+        overlay_call_0AE7_0016();                /* @asm 0x004B06 lcall 0xae7,0x16 (discard key) */
+    }                                            /* @asm 0x004B0B re-test; jne loop */
+    return 0;
 }
 
 /* @asm        0x004B16..0x004B44  (46 bytes)  region=load_image
@@ -718,47 +819,18 @@ int func_004B48_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role TEXT_DRAW / C_RUNTIME / DISPATCH_VIA_OVERLAY  (HIGH)
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* NOTE 2026-06-09 from func_004B72.asm — the "info panel" composer for the cell
+ * under the cursor (arg0 = panel mode 1..4).  It formats the panel title/strings
+ * via the text overlays at 0x0D1D:0x07E4/0x07A4 and 0x004B:0x012E, then runs a
+ * 4-way dispatch (overlays 0x181F:0x0438/0x0416/0x0422/0x040A, 0x05B3:0x0144) to
+ * paint the body, toggles the redraw flags at DGROUP:0x1F56/0x1F64/0x1F6A around
+ * a panel blit (0x181F:0x044E / 0x181F:0x03FE), and on mode 1 chains the near
+ * helper at 0x004A32 and the audio cue 0x02D6:0x0000.  This 427-byte routine is
+ * driven end-to-end by opaque overlay helpers, so it is kept as an honest stub
+ * (its callers in this TU — e.g. func_004D1E — tolerate the no-op). */
 int func_004B72_rtl_sz_427(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x1F4A, 0x1F50, 0x5398, 0x53A6
-     * Writes DGROUP: 0x1F4A, 0x1F50, 0x1F56, 0x1F64, 0x1F6A
-     */
-        /* @0x004B7F */ overlay_call_0D1D_07E4();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x004B8B JGE 0x004B9C */ {
-            /* @0x004B94 */ overlay_call_0D1D_07A4();
-        }
-        /* @0x004BA4 */ overlay_call_004B_012E();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x004BB0 JNE 0x004BB6 */ {
-            /* @0x004BB3 */ func_004A32();
-        }
-        /* @0x004BD2 */ overlay_call_181F_044E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004BDC JE 0x004BE1 */ {
-            goto label_004D0D;  /* @0x004BDE */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004C12 JE 0x004C1C */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x004C15 JE 0x004C3E */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x004C18 JE 0x004C54 */ {
-                    goto label_004C99;  /* @0x004C1A */
-                    /* @0x004C2A */ overlay_call_181F_0438();
-                    goto label_004C8F;  /* @0x004C3C */
-                    /* @0x004C4A */ overlay_call_181F_0438();
-                    goto label_004C99;  /* @0x004C52 */
-                }
-            }
-        }
-        /* @0x004C62 */ overlay_call_05B3_0144();
-        /* @0x004C71 */ overlay_call_181F_0416();
-        /* @0x004C83 */ overlay_call_181F_0422();
-        /* @0x004C91 */ overlay_call_181F_0416();
-        /* @0x004C99 */ overlay_call_181F_040A();
-        /* @0x004CB6 */ overlay_call_0D1D_07E4();
-        /* @0x004CC6 */ overlay_call_004B_012E();
-        /* @0x004CE5 */ overlay_call_181F_03FE();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x004CF6 JNE 0x004D03 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: port from func_004B72.asm — 427-byte info-panel composer (opaque overlays) */
 }
 
 /* @asm        0x004D1E..0x004DF7  (217 bytes)  region=load_image
@@ -783,45 +855,72 @@ int func_004B72_rtl_sz_427(uint16_t arg0_bp_06)
  * @inferred_role  LARGE_LOGIC (217 bytes). 0x0AE7:0x0016 + 0x181F:0x03D4
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_004D1E.asm — the per-frame cursor/keyboard poll and
+ * hover-dwell detector.  It samples the cursor coordinate (overlay 0x0C0C:0x0006,
+ * a dword in dx:ax), and while a hover anchor is armed (DGROUP:0x0092 >= 0) checks
+ * whether the cursor has moved at least 0x23A units from the anchor; if it has not
+ * and the dwell counter 0x008C has reached 0xA it latches the anchor (sets the
+ * "dirty" flag 0x008A) , otherwise it advances the dwell counter and pops the info
+ * panel via func_004B72.  It then services the keyboard: on a pending key it reads
+ * (0x0AE7:0x0016) and drains (func_004AFA), and special keys 0x12D/0x110 set the
+ * mode flag 0x0828, which (when set) fires the overlay action 0x181F:0x03D4 +
+ * 0x0D1D:0x030D.  Finally it consults the hit-test overlay 0x0A58:0x038B and
+ * repeats the same 0x0828-gated action.  Returns the dirty flag DGROUP:0x008A.
+ *
+ * NOTE: the modern overlay shims return only AX (one word) and currently no-op, so
+ * the dword cursor coordinate degenerates to its low word here; the control flow,
+ * the DGROUP state transitions, and the return value are faithful to the asm. */
 int func_004D1E_op_sz_217(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x008A, 0x008C, 0x0090, 0x0092, 0x0828
-     * Writes DGROUP: 0x008A, 0x0090, 0x0092, 0x0828
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x004D33 JL 0x004D48 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x004D3F JL 0x004D80 */ {
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x004D41 JG 0x004D48 */ {
-                    if (/* JB fallthrough cond: */ ax >= 0) /* @0x004D46 JB 0x004D80 */ {
-                        if (/* JL fallthrough cond: */ ax >= 0) /* @0x004D4D JL 0x004D64 */ {
-                            goto label_004D80;  /* @0x004D62 */
-                        }
-                        /* @0x004D7A */ func_004B72();
-                    }
-                }
-            }
+    /* @asm 0x004D23 lcall 0xc0c,6 -> cursor pos (dx:ax); [bp-4]=ax,[bp-2]=dx */
+    int32_t pos = (uint16_t)overlay_call_0C0C_0006();
+
+    if ((int16_t)DGS16(0x0092) >= 0) {           /* @asm 0x004D2E cmp [0x92],0; jl 0x4d48 */
+        /* @asm 0x004D35 (dx:ax) -= ([0x92]:[0x90]); compare |delta| against 0x23A */
+        int32_t anchor = (int32_t)(((uint32_t)DG16(0x0092) << 16) | DG16(0x0090));
+        int32_t delta  = pos - anchor;
+        if (delta < 0x23A) {                     /* @asm jl 0x4d80 / jb 0x4d80 (no significant move) */
+            goto poll_keyboard;                  /* @asm 0x004D62 jmp 0x4d80 */
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004D87 JE 0x004DC1 */ {
-            /* @0x004D89 */ overlay_call_0AE7_0016();
-            /* @0x004D91 */ func_004AFA();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x004D9E JE 0x004DA6 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x004DA4 JNE 0x004DAB */ {
-                }
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x004DB0 JE 0x004DC1 */ {
-                /* @0x004DB2 */ overlay_call_181F_03D4();
-                /* @0x004DB9 */ overlay_call_0D1D_030D();
-            }
+        /* fall through to the dwell branch @0x4d48 */
+    }
+
+    /* @asm 0x004D48 cmp [0x8c],0xa; jl 0x4d64 */
+    if ((int16_t)DGS16(0x008C) >= 0xA) {
+        DG16(0x008A) = 1;                        /* @asm 0x004D4F mov [0x8a],1 */
+        DG16(0x0090) = (uint16_t)pos;            /* @asm 0x004D5B mov [0x90],ax */
+        DG16(0x0092) = (uint16_t)(pos >> 16);    /* @asm 0x004D5E mov [0x92],dx */
+    } else {
+        DG16(0x0090) = (uint16_t)pos;            /* @asm 0x004D64 mov [0x90],ax */
+        DG16(0x0092) = (uint16_t)(pos >> 16);    /* @asm 0x004D67 mov [0x92],dx */
+        DG16(0x008C) = (uint16_t)(DG16(0x008C) + 1); /* @asm 0x004D71 inc [0x8c] */
+        func_004B72_rtl_sz_427(DG16(0x008C));    /* @asm 0x004D75 push [0x8c]; call 0x4b72 */
+    }
+
+poll_keyboard:
+    /* @asm 0x004D80 lcall 0xae7,2; or ax,ax; je 0x4dc1 */
+    if (overlay_call_0AE7_0002() != 0) {
+        int key = overlay_call_0AE7_0016();      /* @asm 0x004D89 lcall 0xae7,0x16; si=ax */
+        func_004AFA_op_sz_28();                  /* @asm 0x004D91 call 0x4afa (drain) */
+        DG16(0x008A) = 1;                        /* @asm 0x004D94 mov [0x8a],1 */
+        if (key == 0x12D || key == 0x110)        /* @asm 0x004D9A cmp si,0x12d / 0x110 */
+            DG8(0x0828) = 1;                     /* @asm 0x004DA6 mov byte [0x828],1 */
+        if (DG8(0x0828) != 0) {                  /* @asm 0x004DAB cmp byte [0x828],0; je 0x4dc1 */
+            overlay_call_181F_03D4();            /* @asm 0x004DB2 lcall 0x181f,0x3d4 */
+            overlay_call_0D1D_030D();            /* @asm 0x004DB9 push 3; lcall 0xd1d,0x30d */
         }
-        /* @0x004DC9 */ overlay_call_0A58_038B();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x004DD3 JE 0x004DF1 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x004DE0 JE 0x004DF1 */ {
-                /* @0x004DE2 */ overlay_call_181F_03D4();
-                /* @0x004DE9 */ overlay_call_0D1D_030D();
-            }
+    }
+
+    /* @asm 0x004DC9 lcall 0xa58,0x38b; or ax,ax; je 0x4df1 */
+    if (overlay_call_0A58_038B() != 0) {
+        DG16(0x008A) = 1;                        /* @asm 0x004DD5 mov [0x8a],1 */
+        if (DG8(0x0828) != 0) {                  /* @asm 0x004DDB cmp byte [0x828],0; je 0x4df1 */
+            overlay_call_181F_03D4();            /* @asm 0x004DE2 lcall 0x181f,0x3d4 */
+            overlay_call_0D1D_030D();            /* @asm 0x004DE9 push 3; lcall 0xd1d,0x30d */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    return (int)DG16(0x008A);                    /* @asm 0x004DF1 mov ax,[0x8a] */
 }
 
 /* @asm        0x004DF8..0x004E76  (126 bytes)  region=load_image

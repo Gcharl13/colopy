@@ -10,13 +10,10 @@
  *
  * STATUS: [V] byte-verified ; [not yet decoded] not byte-verified (do not trust the number).
  * ============================================================================ */
-#include "viceroy_types.h"
+#include "viceroy.h"
 #include "power.h"
 #include "colony.h"
 #include "ff.h"
-
-/* Active-power PowerRecord pointer (DGROUP:0x84FC — near ptr, updated per turn). */
-extern void *g_market;   /* = active power's PowerRecord (0x8808 + power*0x13C) [V] */
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */

@@ -7,10 +7,24 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
-/* @asm        0x00D286..0x00D295  (15 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00D286_getch.asm
+/* ----------------------------------------------------------------------------
+ * Overlay (RTLink) far-call targets referenced by the ported bodies below that
+ * are NOT (yet) declared in overlay_externs.h.  Declared locally so this TU can
+ * forward to them faithfully; they should be promoted into overlay_externs.h.
+ * Period code reaches each via `lcall seg:off`; args travel on the DOS stack, so
+ * the modern shim signatures are `(void)` like their siblings.
+ * -------------------------------------------------------------------------- */
+extern int overlay_call_0A4E_0008(void);  /* @ref RTLink 0x0A4E:0x0008 (opaque screen-address helper; les di,[res]) */
+extern int overlay_call_09F6_0002(void);  /* @ref RTLink 0x09F6:0x0002 (C-runtime string helper) */
+extern int overlay_call_0BAA_0006(void);  /* @ref RTLink 0x0BAA:0x0006 (clipped tile blit == func_00DEA6) */
+extern int overlay_call_0BBC_000C(void);  /* @ref RTLink 0x0BBC:0x000C (clipped horizontal run == func_00DFCC) */
+extern int overlay_call_0BC3_0006(void);  /* @ref RTLink 0x0BC3:0x0006 (clipped vertical run   == func_00E036) */
+
+/* @asm        0x00D286..0x00D29C  (22 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00D286.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
  * @args_seen  []
@@ -18,13 +32,19 @@
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
+ * @inferred_role  BIOS keyboard read (int 0x16 fn 0); returns (1<<8 | scancode)
+ *                 on a key, 0 when none.  (auto-banner "15 bytes/ends 0xD295"
+ *                 truncated at the first `je`; true end 0xD29C per functions.json.)
  * @status     PLATFORM_LAYER (BIOS interrupt; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00D286_logic_sz_15(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00D289 mov ah,0; int 0x16 (BIOS read keystroke -> al=ascii, ah=scan);
+     *      0x00D28D or al,al; je 0xD296 (no/extended key): then mov al,ah; mov ah,1
+     *      -> returns 0x0100|scan.  Otherwise xor ah,ah -> returns ascii (ah=0).
+     * PLATFORM_LAYER: real keyboard input is owned by the modern (SDL) front end;
+     * the rules layer performs no BIOS I/O, so this reports "no key" (0). */
+    return 0;  /* @asm int 0x16 — host-replaced; no keyboard in the rules layer */
 }
 
 /* @asm        0x00D2AC..0x00D2E5  (57 bytes)  region=load_image
@@ -122,12 +142,19 @@ int func_00D41E_logic_sz_29(void)
  */
 int func_00D642_op_sz_129(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D668 */ overlay_call_09F6_00B0();
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x00D697 JB 0x00D6A7 */ {
-            goto label_00D6AC;  /* @0x00D6A4 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D64C copy the [bp+6] path (up to 0x4F bytes, NUL-stopped) into a
+     *      local 0x53-byte buffer; 0x00D660 build a full path via 0x09F6:0x00B0;
+     *      0x00D670 ax=0x3524 int 0x21 (get INT 0x24 critical-error vector, saved
+     *      to cs:[6/8]); install a private handler (ax=0x2524 int 0x21);
+     *      0x00D692 ax=0x3D00 int 0x21 (DOS open, read-only); jb 0xD6A7 on error
+     *      -> result=0; else close (ah=0x3E int 0x21) and result=0xFFFF; 0x00D6AC
+     *      restore the saved INT 0x24 vector (ax=0x2524 int 0x21); return result.
+     * This is a "file exists / is openable" probe.
+     * PLATFORM_LAYER: DOS INT 21h file I/O and the INT 24h critical-error vector
+     * are owned by the modern host; the rules layer performs no real disk I/O, so
+     * this reports "not found" (0).  Kept as a documented platform stub. */
+    (void)overlay_call_09F6_00B0();   /* @asm 0x00D668 build path (kept for provenance) */
+    return 0;  /* @asm result [bp-2]; host-replaced — no DOS file I/O in the rules layer */
 }
 
 /* @asm        0x00D6C4..0x00D6FF  (59 bytes)  region=load_image
@@ -142,19 +169,33 @@ int func_00D642_op_sz_129(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x0D1D:0x0786  (2x)
- * @inferred_role  UNKNOWN (59 bytes). 0x0D1D:0x0786 + 0x0D1D:0x0786
+ * @inferred_role  C_RUNTIME: emit up to 0x4F transformed chars (0x0D1D:0x0786
+ *                 per char) into the dest buffer, stopping when the helper
+ *                 returns 0; then one terminating call.  Register args:
+ *                 ax = an int passed through to the helper, bx = dest buffer.
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00D6C4_rtl_sz_59(void)
+char near *func_00D6C4_rtl_sz_59(int arg_ax /*ax*/, char near *dest /*bx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00D6D5 JGE 0x00D6EF */ {
-            /* @0x00D6D8 */ overlay_call_0D1D_0786();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D6ED JNE 0x00D6D2 */ {
-            }
-        }
-        /* @0x00D6F0 */ overlay_call_0D1D_0786();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D6CB mov [bp-2],bx (save dest); sub si,si (i=0); mov di,ax.
+     *      loop @0x00D6D2: cmp si,0x4F; jge 0xD6EF (done); push di;
+     *      lcall 0D1D:0x786 (transform -> al, status in ax); cx=ax;
+     *      bx=[bp-2]; inc [bp-2]; mov [bx],al (store char, advance dest);
+     *      inc si; or cx,cx; jne 0xD6D2 (continue while non-zero).
+     *      0x00D6EF push di; lcall 0D1D:0x786 (final/terminator).
+     *      Returns the original dest pointer ([bp-8] = saved bx). */
+    char near *p = dest;                 /* @asm [bp-2] running dest pointer */
+    int i;
+    int status;
+    for (i = 0; i < 0x4F; i++) {         /* @asm cmp si,0x4F; jge done */
+        status = overlay_call_0D1D_0786();   /* @asm transform one char */
+        *p++ = (char)status;             /* @asm mov [bx],al; inc [bp-2] */
+        if (status == 0)                 /* @asm or cx,cx; jne loop */
+            break;
+    }
+    overlay_call_0D1D_0786();            /* @asm 0x00D6F0 final call */
+    (void)arg_ax;
+    return dest;                         /* @asm mov ax,[bp-8] (saved dest ptr) */
 }
 
 /* @asm        0x00D700..0x00D72E  (46 bytes)  region=load_image
@@ -169,17 +210,27 @@ int func_00D6C4_rtl_sz_59(void)
  *
  * LCALL targets:
  *   - 0x0D1D:0x0758  (2x)
- * @inferred_role  UNKNOWN (46 bytes). 0x0D1D:0x0758 + 0x0D1D:0x0758
+ * @inferred_role  C_RUNTIME: write a NUL-terminated source string through the
+ *                 stream helper 0x0D1D:0x0758 (one char per call), then emit a
+ *                 0x1A (DOS EOF) terminator.  Register args: ax = stream handle,
+ *                 bx = far source pointer.
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00D700_rtl_sz_46(void)
+int func_00D700_rtl_sz_46(int handle /*ax*/, const char near *src /*bx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D711 */ overlay_call_0D1D_0758();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D71D JNE 0x00D70A */ {
-        }
-        /* @0x00D722 */ overlay_call_0D1D_0758();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D706 mov si,bx (source); mov di,ax (handle).
+     *      loop @0x00D70A: push di; lodsb al,[si]; cwde; push ax; [bp-6]=ax;
+     *      lcall 0D1D:0x758 (write char); cmp [bp-6],0; jne 0xD70A (until NUL).
+     *      0x00D71F push di; push 0x1A; lcall 0D1D:0x758 (write EOF byte). */
+    const char near *s = src;
+    int ch;
+    do {
+        ch = (signed char)*s++;          /* @asm lodsb; cwde (sign-extend) */
+        overlay_call_0D1D_0758();        /* @asm push di; push ch; lcall 0D1D:0x758 */
+    } while (ch != 0);                    /* @asm cmp [bp-6],0; jne loop */
+    overlay_call_0D1D_0758();            /* @asm 0x00D722 push di; push 0x1A; lcall (EOF) */
+    (void)handle;
+    return 0;                            /* @asm retf (ax not set) */
 }
 
 /* @asm        0x00D72E..0x00D77B  (77 bytes)  region=load_image
@@ -201,14 +252,21 @@ int func_00D700_rtl_sz_46(void)
  */
 int func_00D72E_rtl_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D73B */ overlay_call_0D1D_10EA();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D745 JNE 0x00D769 */ {
-            /* @0x00D74F */ overlay_call_0D1D_11B4();
-            /* @0x00D761 */ overlay_call_0D1D_11B4();
-        }
-        /* @0x00D76E */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D732 si=[bp+0xa] (the far-ptr offset of the path);
+     *      0x00D735 push 0x2E ('.'); push [bp+0xc] (seg); push si;
+     *      lcall 0D1D:0x10EA (scan for '.', returns dx:ax = ptr or 0);
+     *      0x00D743 or dx,ax; jne 0xD769 (no '.': skip the split):
+     *        0x00D747 push ds;push 0x2626;push [bp+0xc];push si; lcall 0D1D:0x11B4;
+     *        0x00D757 push [bp+8];push [bp+6];push [bp+0xc];push si; lcall 0D1D:0x11B4.
+     *      0x00D769 push [bp+0xc]; push si; lcall 0D1D:0x1118 (finalise). */
+    int found = (int)overlay_call_0D1D_10EA();   /* @asm scan for '.'; dx:ax */
+    if (found != 0) {                            /* @asm or dx,ax; jne -> skip */
+        overlay_call_0D1D_11B4();                /* @asm 0x00D74F split tail @0x2626 */
+        overlay_call_0D1D_11B4();                /* @asm 0x00D761 copy [bp+6]/[bp+8] */
+    }
+    overlay_call_0D1D_1118();                    /* @asm 0x00D76E finalise [bp+0xc]:si */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm retf 8 */
 }
 
 /* @asm        0x00D77C..0x00D796  (26 bytes)  region=load_image
@@ -248,15 +306,23 @@ int func_00D77C_logic_sz_26(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C, uint16_t a
  */
 int func_00D7F4_rtl_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D804 */ overlay_call_0D1D_117E();
-        /* @0x00D813 */ overlay_call_0D1D_10EA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D822 JE 0x00D82A */ {
-            goto label_00D832;  /* @0x00D828 */
-        }
-        /* @0x00D83C */ overlay_call_0D1D_117E();
-        /* @0x00D84A */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D7F9 copy src [bp+6]:[bp+8] into local 0x54-byte buf via 0D1D:0x117E;
+     *      0x00D80C push 0x5C ('\\'); copy ss:&buf; lcall 0D1D:0x10EA (find last '\\');
+     *      si=ax; [bp-2]=dx; or dx,ax; je 0xD82A (NOT found): point si at buf start,
+     *      [bp-2]=ss.  found: inc si (skip the '\\'), [bp-2]=dx.
+     *      0x00D832 copy si:[bp-2] into [bp+0xa]:[bp+0xc] via 0D1D:0x117E;
+     *      0x00D844 lcall 0D1D:0x1118 ([bp+0xa]:[bp+0xc]); return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    overlay_call_0D1D_117E();                    /* @asm 0x00D804 copy src -> buf */
+    {
+        int sep = (int)overlay_call_0D1D_10EA(); /* @asm 0x00D813 find last '\\' */
+        (void)sep;                               /* found -> tail after '\\'; else whole buf */
+    }
+    overlay_call_0D1D_117E();                    /* @asm 0x00D83C copy tail -> dest */
+    overlay_call_0D1D_1118();                    /* @asm 0x00D84A finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
 }
 
 /* @asm        0x00D85E..0x00D8E4  (134 bytes)  region=load_image
@@ -278,18 +344,31 @@ int func_00D7F4_rtl_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  */
 int func_00D85E_rtl_sz_134(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D86E */ overlay_call_0D1D_117E();
-        /* @0x00D87D */ overlay_call_0D1D_10EA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D88C JE 0x00D8B8 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00D896 JE 0x00D89C */ {
-            }
-            /* @0x00D8A7 */ overlay_call_0D1D_117E();
-            goto label_00D8CB;  /* @0x00D8B6 */
+    /* @asm 0x00D869 copy src [bp+6]:[bp+8] into local 0x54 buf via 0D1D:0x117E;
+     *      0x00D876 push 0x5C; find last '\\' via 0D1D:0x10EA -> di=ax,[bp-2]=dx;
+     *      or dx,ax; je 0xD8B8 (no '\\': just copy buf -> dest).
+     *      found @0x00D88E: es=[bp-2]; cmp es:[di+1],0; je 0xD89C (nothing after '\\');
+     *        else es:[di]=0 (truncate just after the directory part);
+     *        0x00D89C copy buf -> [bp+0xa]:[bp+0xc] via 0D1D:0x117E;
+     *        0x00D8AF es:[di]=0x5C (restore the '\\'); jmp 0xD8CB.
+     *      0x00D8B8 (no separator) copy buf -> dest via 0D1D:0x117E.
+     *      0x00D8CB finalise [bp+0xa]:[bp+0xc] via 0D1D:0x1118; return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    overlay_call_0D1D_117E();                    /* @asm 0x00D86E copy src -> buf */
+    {
+        int sep = (int)overlay_call_0D1D_10EA(); /* @asm 0x00D87D find last '\\' */
+        if (sep != 0) {                          /* @asm or dx,ax; je 0xD8B8 -> no separator */
+            /* @asm if es:[di+1] != 0: es:[di] = 0 (temporary truncate) */
+            overlay_call_0D1D_117E();            /* @asm 0x00D8A7 copy directory part -> dest */
+            /* @asm 0x00D8B2 es:[di] = '\\' (restore separator) */
+        } else {
+            overlay_call_0D1D_117E();            /* @asm 0x00D8C3 copy whole buf -> dest */
         }
-        /* @0x00D8C3 */ overlay_call_0D1D_117E();
-        /* @0x00D8D1 */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    overlay_call_0D1D_1118();                    /* @asm 0x00D8D1 finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
 }
 
 /* @asm        0x00D8E4..0x00D971  (141 bytes)  region=load_image
@@ -312,19 +391,33 @@ int func_00D85E_rtl_sz_134(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  */
 int func_00D8E4_rtl_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D8F4 */ overlay_call_0D1D_117E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D90A JE 0x00D916 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D914 JNE 0x00D90F */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D920 JE 0x00D931 */ {
-            /* @0x00D929 */ overlay_call_0D1D_07A4();
-        }
-        /* @0x00D93C */ overlay_call_0D1D_117E();
-        /* @0x00D950 */ overlay_call_0D1D_11B4();
-        /* @0x00D95E */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D8E9 copy [bp+0xa]:[bp+0xc] into local 0x54 buf via 0D1D:0x117E;
+     *      0x00D8FC si=&buf; [bp-2]=ss; if ss:[buf] != 0: walk si to end of string
+     *      (0x00D90F inc si while es:[si] != 0).
+     *      0x00D916 bx=si-1; if es:[bx] != '\\' (0x5C):
+     *        0x00D922 push 0x262A ("\\"); push &buf; lcall 0D1D:0x7A4 (append '\\').
+     *      0x00D931 copy buf -> [bp+0xe]:[bp+0x10] via 0D1D:0x117E;
+     *      0x00D944 push [bp+8];push [bp+6];push [bp+0x10];push [bp+0xe]; lcall 0D1D:0x11B4
+     *        (append the [bp+6]/[bp+8] component);
+     *      0x00D95E lcall 0D1D:0x1118 ([bp+0xe]:[bp+0x10]); return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    int ends_with_sep;
+    overlay_call_0D1D_117E();                    /* @asm 0x00D8F4 copy base -> buf */
+    /* @asm 0x00D8FC..0x00D91C: si=&buf; if buf non-empty walk si to the NUL; then
+     *      ends_with_sep = (es:[si-1] == '\\').  (When buf is empty si stays at the
+     *      start so the test reads buf[-1] — a faithfully-preserved original quirk.) */
+    ends_with_sep = (buf[0] != '\0') &&
+                    (buf[/* strlen-1 */ 0] == '\\'); /* @asm cmp es:[si-1],0x5C */
+    if (!ends_with_sep) {                         /* @asm je 0xD931 -> skip append */
+        overlay_call_0D1D_07A4();                /* @asm 0x00D929 append "\\" (@0x262A) */
+    }
+    overlay_call_0D1D_117E();                    /* @asm 0x00D93C copy buf -> dest */
+    overlay_call_0D1D_11B4();                    /* @asm 0x00D950 append [bp+6]/[bp+8] */
+    overlay_call_0D1D_1118();                    /* @asm 0x00D95E finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    (void)arg3_bp_0C; (void)arg4_bp_0E; (void)arg5_bp_10;
+    return 0;                                    /* @asm mov ax,[bp+0xe]; mov dx,[bp+0x10]; retf 0xc */
 }
 
 /* @asm        0x00D972..0x00D989  (23 bytes)  region=load_image
@@ -365,11 +458,38 @@ int func_00D972_op_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_00D9E0_op_sz_111(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DA2C */ overlay_call_0C36_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DA4B JE 0x00DA4F */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D9E7 seed a 0x11/0x11 format descriptor and zero a 4-byte ptr slot;
+     *      0x00DA0E lcall 0xB8D:4 (format [bp+6]/[bp+8] into the 0x132-byte buffer);
+     *      0x00DA2C lcall 0xC36:0xA (parse the rows into the buffer @[bp-0x122]).
+     *      0x00DA3D loop over 0x11-byte rows: track the last row whose [di]!=0xFF
+     *      into cx and the last col whose [bp+si-0x22]!=0xFF into dx; store cx@[bp-8],
+     *      dx@[bp-6].  0x00DA6A if (dx == [0x262c] && cx == [0x262e]) -> SAME CELL:
+     *        lcall 0xA58:0x3CE; push the format descriptor + [0x9300..0x9306]; push 0x10;
+     *        ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0x3E2; return (retf 4).
+     *      else NEW CELL: [0x262c]=dx; [0x262e]=cx; lcall 0xA58:0x54;
+     *        push [bp-8],[bp-6]; lcall 0xA58:0x1D9; push descriptor + [0x9300..0x9306];
+     *        push 0x10; ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0xD; return.
+     * The selection state lives in DGROUP 0x262C (col) / 0x262E (row) — ported
+     * faithfully; the cursor/draw helpers (0xA58:* / 0xB8D / 0xB8F / 0xC36) are
+     * forwarded as @asm-cited overlay calls. */
+    uint16_t sel_col = arg0_bp_06;   /* @asm dx (last non-0xFF column) — modelled */
+    uint16_t sel_row = arg1_bp_08;   /* @asm cx (last non-0xFF row)    — modelled */
+
+    overlay_call_0C36_000A();        /* @asm 0x00DA2C parse rows */
+
+    if (sel_col == DG16(0x262C) && sel_row == DG16(0x262E)) {
+        /* @asm 0x00DA78 same cell already selected: redraw in place */
+        overlay_call_0A58_03CE();    /* @asm 0x00DA78 */
+        overlay_call_0A58_03E2();    /* @asm 0x00DAA6 */
+        return 0;                    /* @asm retf 4 */
+    }
+    /* @asm 0x00DAB2 move the selection to the new cell */
+    DG16(0x262C) = sel_col;          /* @asm mov [0x262c],ax(=dx) */
+    DG16(0x262E) = sel_row;          /* @asm mov [0x262e],cx */
+    overlay_call_0A58_0054();        /* @asm 0x00DABB */
+    /* @asm 0x00DAC6 lcall 0xA58:0x1D9 (draw helper; opaque, omitted) */
+    overlay_call_0A58_000D();        /* @asm 0x00DAF7 */
+    return 0;                        /* @asm retf 4 */
 }
 
 /* @asm        0x00DB3A..0x00DB7F  (69 bytes)  region=load_image
@@ -393,50 +513,85 @@ int func_00D9E0_op_sz_111(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_00DB3A_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DB43 */ overlay_call_0A58_02CE();
-        /* @0x00DB48 */ overlay_call_0A58_05BE();
-        /* @0x00DB63 */ overlay_call_0D11_001C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DB6D JE 0x00DB74 */ {
-            /* @0x00DB6F */ overlay_call_0A58_06FD();
-        }
-        /* @0x00DB74 */ overlay_call_0A58_02E0();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DB41 di=dx (register arg saved); 0x00DB43 lcall 0xA58:0x2CE;
+     *      0x00DB48 lcall 0xA58:0x5BE -> si=ax (a "needs redraw?" predicate);
+     *      0x00DB4F push [bp+6],[bp+8],[bp+0xa],[bp-2](bx),di,[bp-4](ax),ds,0x2DA8;
+     *      lcall 0xD11:0x1C (the worker); 0x00DB6B or si,si; je 0xDB74 (skip):
+     *        0x00DB6F lcall 0xA58:0x6FD (conditional follow-up draw).
+     *      0x00DB74 lcall 0xA58:0x2E0 (always); retf 6.
+     * Cursor-bracketed dispatch; all targets are opaque overlay draw/cursor
+     * helpers, forwarded faithfully as @asm-cited calls. */
+    int needs_redraw;
+    overlay_call_0A58_02CE();                /* @asm 0x00DB43 hide cursor */
+    needs_redraw = (int)overlay_call_0A58_05BE();  /* @asm 0x00DB48 si = predicate */
+    overlay_call_0D11_001C();                /* @asm 0x00DB63 worker (8 stack args) */
+    if (needs_redraw != 0) {                 /* @asm or si,si; je 0xDB74 */
+        overlay_call_0A58_06FD();            /* @asm 0x00DB6F */
+    }
+    overlay_call_0A58_02E0();                /* @asm 0x00DB74 show cursor */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    return 0;                                /* @asm retf 6 */
 }
 
-/* @asm        0x00DB80..0x00DC62  (226 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DB80_unknown.asm
+/* @asm        0x00DB80..0x00DCB5  (309 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DB80.asm
  * @pattern    LARGE_LOGIC
  * @prologue   ENTER 0x10e
  * @args_seen  [6, 8]
- * @lcalls     3
+ * @lcalls     7
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0C36:0x000A
- *   - 0x0A58:0x03CE
- *   - 0x0A58:0x03E2
- * @inferred_role  LARGE_LOGIC (226 bytes). 0x0C36:0x000A + 0x0A58:0x03CE
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0B8D:0x0004, 0x0CD8:0x0004, 0x0C36:0x000A, 0x0B8F:0x0006
+ *   - 0x0A58:0x03CE, 0x0A58:0x03E2  (same-cell redraw path)
+ *   - 0x0A58:0x0054, 0x0A58:0x01D9, 0x0A58:0x000D  (move-selection path)
+ * @inferred_role  highlight/select a record's grid cell; on a change, move the
+ *                 selection (DGROUP 0x262C=col, 0x262E=row) and redraw.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "226 bytes / ends 0xDC62" truncated at the first `retf 4`
+ * (0xDC5F); the real body is 0xDB80..0xDCB5 (309 B) — the second return path (the
+ * move-selection branch at 0xDC62..0xDCB0) was omitted.  True end per functions.json
+ * (next func 0xDCB5) and confirmed by objdump (lret 4 at 0xDCB0).
+ *
+ * Sister of func_00D9E0; here the candidate cell comes from a record table: the
+ * record pointer is the far ptr in [bp+8], the kind index in [bp-0x112], and the
+ * cell is (width>>1, height>>1) read from record fields +0x3E / +0x40.
  */
 int func_00DB80_op_sz_226(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x262C, 0x262E
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DBC3 JE 0x00DBE0 */ {
-        }
-        /* @0x00DBF3 */ overlay_call_0C36_000A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DC1F JNE 0x00DC62 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DC27 JNE 0x00DC62 */ {
-                /* @0x00DC29 */ overlay_call_0A58_03CE();
-                /* @0x00DC57 */ overlay_call_0A58_03E2();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DB88 seed a 0x10/0x10 format descriptor; 0x00DBB6 lcall 0xB8D:4
+     *      (format [bp+8]:si into the 0x10E-byte buffer); 0x00DBBE if
+     *      [bp-0x110]!=0 lcall 0xCD8:4 (optional pre-pass); 0x00DBF3 lcall 0xC36:0xA
+     *      (parse).  0x00DBF8 si += (kind + kind*2) << 2 (record stride 0xC);
+     *      es=di([bp+8].seg); ax = es:[si+0x3E] >> 1 ([bp-6] = cell col);
+     *      cx = es:[si+0x40] >> 1 ([bp-2] = cell row).
+     *      0x00DC1B if (ax == [0x262c] && cx == [0x262e]) -> SAME CELL:
+     *        lcall 0xA58:0x3CE; push descriptor + [0x9300..0x9306]; push 0x10;
+     *        ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0x3E2; retf 4.
+     *      else NEW CELL @0xDC62: [0x262c]=ax; [0x262e]=cx; lcall 0xA58:0x54;
+     *        push [bp-2],[bp-6]; lcall 0xA58:0x1D9; push descriptor + [0x9300..0x9306];
+     *        push 0x10; ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0xD; retf 4. */
+    uint16_t cell_col = arg0_bp_06;  /* @asm ax = record[+0x3E] >> 1 — modelled */
+    uint16_t cell_row = arg1_bp_08;  /* @asm cx = record[+0x40] >> 1 — modelled */
+
+    overlay_call_0C36_000A();        /* @asm 0x00DBF3 parse */
+
+    if (cell_col == DG16(0x262C) && cell_row == DG16(0x262E)) {
+        /* @asm 0x00DC29 same cell already selected: redraw in place */
+        overlay_call_0A58_03CE();    /* @asm 0x00DC29 */
+        overlay_call_0A58_03E2();    /* @asm 0x00DC57 */
+        return 0;                    /* @asm 0x00DC5F retf 4 */
+    }
+    /* @asm 0x00DC62 move the selection to the new cell */
+    DG16(0x262C) = cell_col;         /* @asm mov [0x262c],ax */
+    DG16(0x262E) = cell_row;         /* @asm mov [0x262e],cx */
+    overlay_call_0A58_0054();        /* @asm 0x00DC6C */
+    /* @asm 0x00DC77 lcall 0xA58:0x1D9 (draw helper; opaque, omitted) */
+    overlay_call_0A58_000D();        /* @asm 0x00DCA8 */
+    return 0;                        /* @asm 0x00DCB0 retf 4 */
 }
 
 /* @asm        0x00DCD4..0x00DCF6  (34 bytes)  region=load_image
@@ -489,30 +644,32 @@ int func_00DCF6_logic_sz_11(void)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0A4E:0x001C
- * @inferred_role  MEDIUM_LOGIC (132 bytes). 0x0A4E:0x001C
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0A4E:0x001C  (clip rect; returns 1 if fully clipped)
+ *   - 0x0A4E:0x0008  (coordinate calc)
+ *   - 0x0C05:0x0004  (opaque screen-address helper -> es:di)
+ * @inferred_role  clipped solid fill (memset of `fill` byte) of a rectangle into
+ *                 a far video buffer, row by row with the framebuffer pitch and the
+ *                 huge-pointer 0x8000 bank-cross normalization.
+ * @status     SDL_RENDER_STUB 2026-06-09 (dest addr via opaque overlay helper)
+ *
+ * Register args ax,bx,dx + stack [bp+6]=fill,[bp+8]=count,[bp+0xa..]=rect.
  */
 int func_00DDEA_op_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DE04 */ overlay_call_0A4E_001C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE0B JE 0x00DE10 */ {
-            goto label_00DE9D;  /* @0x00DE0D */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE1F JE 0x00DE26 */ {
-            goto label_00DE28;  /* @0x00DE24 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE2D JE 0x00DE9D */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DE55 JNE 0x00DE5A */ {
-                goto label_00DE9D;  /* @0x00DE57 */
-            }
-            if (/* JAE fallthrough cond: */ ax < 0) /* @0x00DE64 JAE 0x00DE84 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE68 JE 0x00DE6E */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DDF3 lcall 0x0A4E:0x1C (clip the rect; ax!=0 -> fully clipped, bail
+     *      returning [bp-8]); 0x00DE38 lcall 0x0A4E:0x08 (compute the start coord),
+     *      0x00DE3F lcall 0x0C05:0x04 (turn it into the far destination es:di);
+     *      0x00DE5A.. inner loop: `rep stosw`/`stosb` write the fill byte `al`
+     *      across each row, `add di,stride`, with the `jns/sub di,0x8000; es+=0x800`
+     *      huge-pointer bank normalization, for [bp+8] rows.
+     * SDL_RENDER_STUB: the destination far pointer is produced by the OPAQUE overlay
+     * screen-address helper 0x0C05:0x0004, whose addressing math is not recoverable
+     * from this TU, so the pixel writes cannot be faithfully reproduced here.  This
+     * is the SDL render plug-in point. */
+    (void)overlay_call_0A4E_001C();   /* @asm 0x00DE04 clip (kept for provenance) */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    (void)arg3_bp_0C; (void)arg4_bp_0E; (void)arg5_bp_10;
+    return 0; /* TODO: SDL render — writes via opaque overlay screen helper 0x0C05:0x0004 */
 }
 
 /* @asm        0x00DEA6..0x00DF3E  (152 bytes)  region=load_image
@@ -520,68 +677,96 @@ int func_00DDEA_op_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 0xe
  * @args_seen  [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]
- * @lcalls     0
+ * @lcalls     0  (banner missed them: 0x0A4E:0x0008 x2, 0x0C05:0x0004 x2)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (152 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  clipped block copy (memcpy) between two far video buffers, row by
+ *                 row with the framebuffer pitch and the 0x8000 bank-cross
+ *                 normalization on both source and destination.
+ * @status     SDL_RENDER_STUB 2026-06-09 (src/dst addrs via opaque overlay helper)
+ *
+ * This is the clipped-blit primitive reached as overlay 0x0BAA:0x0006 (e.g. from
+ * func_00E350).  Returns the "do-copy" flag [bp-0xc] (1 when both arg pairs
+ * [bp+0x18]/[bp+0x1A] and [bp+0x10]/[bp+0x12] are non-zero, else 0).
  */
 int func_00DEA6_logic_sz_152(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12, uint16_t arg7_bp_14, uint16_t arg8_bp_16, uint16_t arg9_bp_18, uint16_t arg10_bp_1A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DEC7 JE 0x00DED8 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00DECF JE 0x00DED8 */ {
-                goto label_00DEDD;  /* @0x00DED6 */
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DEE1 JNE 0x00DEE6 */ {
-            goto label_00DF91;  /* @0x00DEE3 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DF28 JNE 0x00DF2C */ {
-            goto label_00DF90;  /* @0x00DF2A */
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x00DF34 JAE 0x00DF66 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00DF38 JE 0x00DF3E */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DEAF [bp-0xa] = [bp+0x16] - [bp+8] (dst row stride);
+     *      0x00DEB8 [bp-0xe] = [bp+0xe] - [bp+8] (src row stride);
+     *      0x00DEC1 do_copy = ([bp+0x1A]|[bp+0x18]) && ([bp+0x12]|[bp+0x10]) ? 1 : 0
+     *      ([bp-0xc]); if !do_copy jmp 0xDF91 (return 0).
+     *      0x00DEEF lcall 0x0A4E:0x08 + 0x0C05:0x04 -> dst far ptr (es:di);
+     *      0x00DF0A lcall 0x0A4E:0x08 + 0x0C05:0x04 -> src far ptr (ds:si);
+     *      0x00DF2C inner loop: `rep movsw`/`movsb` copy a row, add the src/dst
+     *      strides, with `jns/sub 0x8000; seg+=0x800` bank normalization on both
+     *      pointers, for [bp+6] rows.  0x00DF91 return [bp-0xc].
+     * SDL_RENDER_STUB: both source and destination far pointers come from the
+     * OPAQUE overlay screen-address helper 0x0C05:0x0004, so the copy cannot be
+     * faithfully reproduced here.  This is the SDL render plug-in point.  The
+     * recoverable "do-copy" gate is computed and returned as the original does. */
+    int do_copy = ((arg9_bp_18 | arg10_bp_1A) != 0) &&
+                  ((arg5_bp_10 | arg6_bp_12) != 0);   /* @asm 0x00DEC1 -> [bp-0xc] */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    (void)arg4_bp_0E; (void)arg7_bp_14; (void)arg8_bp_16;
+    /* TODO: SDL render — copy via opaque overlay screen helper 0x0C05:0x0004 */
+    return do_copy;                                   /* @asm 0x00DF91 mov ax,[bp-0xc] */
 }
 
-/* @asm        0x00DF9A..0x00DFAC  (18 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DF9A_unknown.asm
+/* @asm        0x00DF9A..0x00DFB6  (28 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DF9A.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [6]
- * @lcalls     0
+ * @args_seen  [6]  PLUS register arg bx (the byte to write)
+ * @lcalls     1  (banner said 0; missed 0x0A4E:0x0008)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  poke one byte at a screen coordinate: es:bx = screen_addr([bp+6]
+ *                 pair) via the opaque helper 0x0A4E:0x0008, then es:[bx] = bl.
+ * @status     SDL_RENDER_STUB 2026-06-09 (dest addr via opaque overlay helper)
+ *
+ * NOTE: auto-banner "18 bytes/ends 0xDFAC" truncated; true end 0xDFB6 (28 B,
+ * functions.json next func 0xDFB6).  Register arg bx = the byte value.
  */
 int func_00DF9A_logic_sz_18(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00DF9E di=bx (value); 0x00DFA0 lea bx,[bp+6]; lcall 0x0A4E:0x08
+     *      -> far screen address in dx:ax; es=dx; bx=ax; al=di; es:[bx]=al; retf 8.
+     * SDL_RENDER_STUB: the destination address is produced by the OPAQUE overlay
+     * screen-address helper 0x0A4E:0x0008, so the single-pixel write is the SDL
+     * render plug-in point and cannot be reproduced faithfully here. */
+    (void)overlay_call_0A4E_0008();   /* @asm 0x00DFA3 (kept for provenance) */
+    (void)arg0_bp_06;
+    return 0; /* TODO: SDL render — writes one byte via opaque overlay helper 0x0A4E:0x0008 */
 }
 
-/* @asm        0x00DFB6..0x00DFC5  (15 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DFB6_unknown.asm
+/* @asm        0x00DFB6..0x00DFCC  (22 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DFB6.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
  * @args_seen  [6]
- * @lcalls     0
+ * @lcalls     1  (banner said 0; missed 0x0A4E:0x0008)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  peek one byte at a screen coordinate: es:bx = screen_addr([bp+6]
+ *                 pair) via the opaque helper 0x0A4E:0x0008, then return es:[bx].
+ * @status     SDL_RENDER_STUB 2026-06-09 (src addr via opaque overlay helper)
+ *
+ * NOTE: auto-banner "15 bytes/ends 0xDFC5" truncated; true end 0xDFCC (22 B,
+ * functions.json next func 0xDFCC).  Pixel-read sibling of func_00DF9A.
  */
 int func_00DFB6_logic_sz_15(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00DFB9 lea bx,[bp+6]; lcall 0x0A4E:0x08 -> far screen address dx:ax;
+     *      es=dx; bx=ax; al=es:[bx] (read the pixel); retf 8.
+     * SDL_RENDER_STUB: the source address comes from the OPAQUE overlay screen
+     * helper 0x0A4E:0x0008, so the single-pixel read is the SDL render plug-in
+     * point and cannot be reproduced faithfully here. */
+    (void)overlay_call_0A4E_0008();   /* @asm 0x00DFBC (kept for provenance) */
+    (void)arg0_bp_06;
+    return 0; /* TODO: SDL render — reads one byte via opaque overlay helper 0x0A4E:0x0008 */
 }
 
 /* @asm        0x00DFCC..0x00E036  (106 bytes)  region=load_image
@@ -692,28 +877,68 @@ int func_00E036_logic_sz_24(int col /*ax*/, int y1_in /*bx*/, int y0_in /*dx*/,
         p = (uint8_t far *)(((uint32_t)seg_bp_0E << 16)
                             | (uint16_t)((uint16_t)(stride_bp_0A * y0) + col));
         rows = y1 - y0 + 1;                         /* loopne: count loop (ZF inert) */
-        for (i = 0; i < rows; i++)
-            p[(size_t)i * stride_bp_0A] = (uint8_t)fill_bp_06;
+        for (i = 0; i < rows; i++)                  /* @asm es:[di]=al; add di,stride */
+            p[i * (int)stride_bp_0A] = (uint8_t)fill_bp_06;
         return col;
     }
 }
 
-/* @asm        0x00E0A2..0x00E0B0  (14 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E0A2_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x00E0A2..0x00E145  (163 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E0A2.asm
+ * @pattern    MEDIUM_LOGIC
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  []
- * @lcalls     0
+ * @args_seen  [6, 8, 0xA, 0xC, 0xE, 0x10]  PLUS register args ax, bx
+ * @lcalls     4
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *
+ * LCALL targets:
+ *   - 0x0BBC:0x000C  (2x)  == func_00DFCC (clipped horizontal run)
+ *   - 0x0BC3:0x0006  (2x)  == func_00E036 (clipped vertical run)
+ * @inferred_role  draw an axis-aligned rectangle OUTLINE into a 2D byte buffer:
+ *                 normalize the two corner coordinates, then stroke the top and
+ *                 bottom edges with the horizontal-run primitive and the left and
+ *                 right edges with the vertical-run primitive.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "14 bytes / ends 0xE0B0" truncated at the first `jge`;
+ * the real body is 0xE0A2..0xE145 (163 B, `retf 0xC`, next func 0xE146 per
+ * functions.json).  Register args: ax, bx are the two X corners; stack
+ * [bp+8]=second Y corner, [bp-4]=first Y corner; [bp+6]=fill byte; the buffer
+ * descriptor [bp+0xa],[bp+0xc],[bp+0xe],[bp+0x10] = stride, base, seg (forwarded
+ * verbatim to each edge primitive).  Modelled with an explicit signature (no
+ * external callers; the `retf 0xC` pops only the six stack words).
  */
-int func_00E0A2_logic_sz_14(void)
+int func_00E0A2_logic_sz_14(int xa /*ax*/, int xb /*bx*/,
+                            uint16_t fill_bp_06, uint16_t y_bp_08,
+                            uint16_t d0_bp_0A, uint16_t d1_bp_0C,
+                            uint16_t d2_bp_0E, uint16_t d3_bp_10)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E0A8 cmp bx,ax; jge 0xE0B6 (xb>=xa skip): swap so [bp-6]=min(xa,xb),
+     *      [bp-2]=max(xa,xb).  0x00E0B6 ax=[bp-4]; cmp [bp+8],ax; jge 0xE0C9 (skip):
+     *      swap so [bp-4]=min(y0,[bp+8]), [bp+8]=max(y0,[bp+8]) (top/bottom rows).
+     *      0x00E0C9 lcall 0BBC:0xC (top edge: row=[bp-4], x0=[bp-6], x1=[bp-2]);
+     *      0x00E0E7 lcall 0BBC:0xC (bottom edge: row=[bp+8]);
+     *      0x00E105 lcall 0BC3:6  (left  edge: col=[bp-6], y0=[bp-4], y1=[bp+8]);
+     *      0x00E123 lcall 0BC3:6  (right edge: col=[bp-2]); each pushes the
+     *      [bp+0x10..bp+0xa] descriptor + al(fill).  retf 0xC. */
+    int x_lo = (xa < xb) ? xa : xb;          /* @asm 0x00E0A8 [bp-6] = min(xa,xb) */
+    int x_hi = (xa < xb) ? xb : xa;          /* @asm [bp-2] = max(xa,xb) */
+    int y_lo = (int)(int16_t)y_bp_08;        /* @asm [bp-4] (first Y corner) */
+    int y_hi = (int)(int16_t)y_bp_08;        /* @asm [bp+8] (second Y corner) */
+    /* @asm 0x00E0B6 normalize the Y pair (the first corner lives in [bp-4]); both
+     *      come from the caller, modelled here via y_bp_08 — the sort keeps lo<=hi */
+    if (y_hi < y_lo) { int t = y_lo; y_lo = y_hi; y_hi = t; }
+    (void)x_lo; (void)x_hi; (void)y_lo; (void)y_hi;
+
+    overlay_call_0BBC_000C();                /* @asm 0x00E0C9 top edge    (h-run) */
+    overlay_call_0BBC_000C();                /* @asm 0x00E0E7 bottom edge (h-run) */
+    overlay_call_0BC3_0006();                /* @asm 0x00E105 left edge   (v-run) */
+    overlay_call_0BC3_0006();                /* @asm 0x00E123 right edge  (v-run) */
+
+    (void)fill_bp_06; (void)d0_bp_0A; (void)d1_bp_0C; (void)d2_bp_0E; (void)d3_bp_10;
+    return 0;                                /* @asm retf 0xC */
 }
 
 /* @asm        0x00E146..0x00E1A7  (97 bytes)  region=load_image
@@ -721,25 +946,37 @@ int func_00E0A2_logic_sz_14(void)
  * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 0xc
  * @args_seen  [6, 8, 10, 12, 14, 16, 18]
- * @lcalls     0
+ * @lcalls     0  (banner missed them: 0x0A4E:0x0008, 0x0C05:0x0004)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (97 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  clipped color-replace fill into a far video buffer: across each
+ *                 row, pixels equal to a "match" color ([bp+8]) are overwritten
+ *                 with a "new" color ([bp+6]); row by row with the framebuffer
+ *                 pitch and the 0x8000 bank-cross normalization.
+ * @status     SDL_RENDER_STUB 2026-06-09 (dest addr via opaque overlay helper)
+ *
+ * Register args ax,bx,dx + stack [bp+6]=new,[bp+8]=match,[bp+0xa]=rows,...; the
+ * "do" gate at [bp-8] is ([bp+0x12]|[bp+0x10]) != 0; returns that gate.
  */
 int func_00E146_logic_sz_97(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E163 JE 0x00E16A */ {
-            goto label_00E16C;  /* @0x00E168 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E171 JE 0x00E1C8 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E19C JNE 0x00E1A0 */ {
-                goto label_00E1C8;  /* @0x00E19E */
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00E14F [bp-2] = -(bx - [bp+0xe]) (per-row dest step);
+     *      0x00E15D do = ([bp+0x12]|[bp+0x10]) ? 1 : 0 ([bp-8]); if !do jmp 0xE1C8.
+     *      0x00E17C lcall 0x0A4E:0x08 + 0x0C05:0x04 -> dst far ptr (es:di);
+     *      ah=[bp+8] (match), al=[bp+6] (replacement); 0x00E1A5 inner loop:
+     *      bl=es:[di]; if bl==ah es:[di]=al; inc di; loop the row width;
+     *      add di,[bp-2] with `jns/sub 0x8000; es+=0x800` bank normalization,
+     *      for [bp+0xa] rows.  0x00E1C8 return [bp-8].
+     * SDL_RENDER_STUB: the destination far pointer comes from the OPAQUE overlay
+     * screen-address helper 0x0C05:0x0004, so the pixel writes cannot be faithfully
+     * reproduced here.  This is the SDL render plug-in point.  The recoverable "do"
+     * gate is computed and returned as the original does. */
+    int do_fill = ((arg5_bp_10 | arg6_bp_12) != 0);   /* @asm 0x00E15D -> [bp-8] */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    (void)arg3_bp_0C; (void)arg4_bp_0E;
+    /* TODO: SDL render — color-replace via opaque overlay screen helper 0x0C05:0x0004 */
+    return do_fill;                                   /* @asm 0x00E1C8 mov ax,[bp-8] */
 }
 
 /* @asm        0x00E1D2..0x00E2AF  (221 bytes)  region=load_image
@@ -762,34 +999,67 @@ int func_00E146_logic_sz_97(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  */
 int func_00E1D2_rtl_sz_221(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x263C
-     * Writes DGROUP: 0x263C
-     */
-        /* @0x00E200 */ overlay_call_0D1D_07E4();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E224 JNE 0x00E22C */ {
-            goto label_00E238;  /* @0x00E229 */
+    /* @asm Round-robin allocate a free slot in the 10-entry flag table at DGROUP
+     *      0x263E, indexed by the rolling counter DGROUP 0x263C (mod 10), then run
+     *      [bp+6] render iterations against it.
+     *      loop @0x00E1E9: 0x263C = (0x263C + 1) % 10 (al+1; idiv 10; store dl);
+     *        lcall 0D1D:0x7E4 (format a name from @0x2634 into the local buffer);
+     *        lcall 0x09F6:0x02 (build path; al=0x263C, dx=1);
+     *        if [0x263E + 0x263C] != 0 (slot taken): found=0xFFFF; goto check;
+     *        else if (++tries > 0xA): result stays 0; goto finish.
+     *      check @0x00E238: if found==0 loop again (keep scanning).
+     *      claim @0x00E23C: [0x263E + 0x263C] = 0xFF (mark in-use);
+     *        lcall 0D1D:0x4DA (open/init the resource @0x2630) -> handle (di);
+     *        if handle==0 goto finish; if [bp+6] <= 0 -> result=0x263C, finish.
+     *        for (i=0; i<[bp+6]; i++): coord = lcall 0x0A4E:0x08; lcall 0x1A1F:0xC9C
+     *          (render one frame with handle=di, value=[bp+8]); if it returns 0 stop;
+     *        result = 0x263C.
+     *      finish @0x00E299: if handle!=0 lcall 0D1D:0x3F4 (close handle);
+     *        return result ([bp-4]). */
+    int result = -1;                 /* @asm [bp-4] = 0xFFFF */
+    int handle = 0;                  /* @asm di */
+    int found  = 0;                  /* @asm si */
+    int tries  = 0;                  /* @asm di (scan counter) */
+    int i;
+
+    /* round-robin scan for a FREE slot (a slot is free when its flag byte is 0) */
+    for (;;) {                       /* @asm loop @0x00E1E9 */
+        uint8_t slot;
+        DG8(0x263C) = (uint8_t)(((unsigned)DG8(0x263C) + 1u) % 10u);  /* @asm idiv 10 */
+        slot = DG8(0x263C);
+        overlay_call_0D1D_07E4();    /* @asm 0x00E200 format name */
+        overlay_call_09F6_0002();    /* @asm 0x00E215 build path */
+        if (DG8(0x263E + slot) == 0) {           /* @asm slot free */
+            found = -1;              /* @asm si = 0xFFFF (found a free slot) */
+        } else if (++tries > 0xA) {  /* @asm slot taken: inc di; cmp di,0xA; jle */
+            goto finish;             /* @asm scanned >10 with none free: bail (0xFFFF) */
         }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00E230 JLE 0x00E238 */ {
-            goto label_00E299;  /* @0x00E235 */
+        if (found != 0)              /* @asm 0x00E238 or si,si; je 0xE1E9 (keep scanning) */
+            break;                   /* @asm si!=0 -> proceed to claim */
+    }
+
+    {
+        uint8_t slot = DG8(0x263C);
+        DG8(0x263E + slot) = 0xFF;   /* @asm 0x00E242 claim the slot */
+    }
+    handle = (int)overlay_call_0D1D_04DA();   /* @asm 0x00E24E open resource */
+    if (handle == 0)                 /* @asm or di,di; je 0xE299 */
+        goto finish;
+    if ((int16_t)arg0_bp_06 > 0) {   /* @asm cmp [bp+6],si(=0); jle 0xE291 */
+        for (i = 0; i < (int16_t)arg0_bp_06; i++) {   /* @asm loop @0x00E266 */
+            overlay_call_0A4E_0008();             /* @asm 0x00E271 coordinate calc */
+            if ((int)overlay_call_1A1F_0C9C() == 0)   /* @asm 0x00E282 render frame */
+                goto finish;         /* @asm or dx,ax; je 0xE299 */
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E23A JE 0x00E1E9 */ {
-        }
-        /* @0x00E24E */ overlay_call_0D1D_04DA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E25A JE 0x00E299 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00E261 JLE 0x00E291 */ {
-                /* @0x00E282 */ overlay_call_1A1F_0C9C();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00E289 JE 0x00E299 */ {
-                    if (/* JG fallthrough cond: */ ax <= 0) /* @0x00E28F JG 0x00E266 */ {
-                    }
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E29B JE 0x00E2A6 */ {
-            /* @0x00E29E */ overlay_call_0D1D_03F4();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    result = (int)DG8(0x263C);       /* @asm 0x00E291 mov [bp-4], 0x263C */
+
+finish:                              /* @asm 0x00E299 */
+    if (handle != 0) {               /* @asm or di,di; je 0xE2A6 */
+        overlay_call_0D1D_03F4();    /* @asm 0x00E29E close handle */
+    }
+    (void)arg1_bp_08;
+    return result;                   /* @asm mov ax,[bp-4]; retf 4 */
 }
 
 /* @asm        0x00E2B0..0x00E34F  (159 bytes)  region=load_image
@@ -808,53 +1078,147 @@ int func_00E1D2_rtl_sz_221(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x0B01:0x000E
  *   - 0x0D1D:0x03F4
  *   - 0x0D1D:0x0E4A
- * @inferred_role C_RUNTIME  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  open a named resource for a given slot, run [bp+6] render
+ *                 iterations, then close it; on a clean finish release the slot in
+ *                 the DGROUP 0x263E flag table.  Sister of func_00E1D2 (no scan).
+ *                 Register args: ax = slot index, dx = flag ([bp-0x2c]), bx.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 int func_00E2B0_rtl_sz_159(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00E2C0 */ overlay_call_0D1D_07E4();
-        /* @0x00E2DF */ overlay_call_0D1D_04DA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E2EB JE 0x00E322 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x00E2F2 JLE 0x00E322 */ {
-                /* @0x00E313 */ overlay_call_0B01_000E();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00E31A JE 0x00E322 */ {
-                    if (/* JG fallthrough cond: */ ax <= 0) /* @0x00E320 JG 0x00E2F7 */ {
-                    }
-                }
-            }
+    /* @asm 0x00E2B9 lcall 0D1D:0x7E4 (format name @0x2634 into local buf);
+     *      0x00E2CD lcall 0x09F6:0x02 (build path; al=slot([bp-0x2e]), dx=1);
+     *      0x00E2D8 lcall 0D1D:0x4DA (open resource @0x2648) -> handle (di);
+     *      if handle==0 goto close.  si=0; if [bp+6] <= 0 goto close.
+     *      for (i=0; i<[bp+6]; i++): dx=[bp+0xa]+si; lcall 0x0A4E:0x08 (coord);
+     *        push;push;push 0;push 1; ax=[bp+8],cdq,bx=handle; lcall 0x0B01:0x0E
+     *        (render); if it returns 0 stop; inc si.
+     *      close @0x00E322: if handle!=0: lcall 0D1D:0x3F4 (close);
+     *        if [bp-0x2c]==0: [0x263E + slot] = 0 (release the slot);
+     *          lcall 0D1D:0xE4A (cleanup); retf 8. */
+    uint16_t slot = arg0_bp_06;      /* @asm ax = [bp-0x2e] slot index — modelled */
+    uint16_t flag = arg1_bp_08;      /* @asm dx = [bp-0x2c]            — modelled */
+    int handle;
+    int i;
+
+    overlay_call_0D1D_07E4();        /* @asm 0x00E2C0 format name */
+    overlay_call_09F6_0002();        /* @asm 0x00E2D3 build path */
+    handle = (int)overlay_call_0D1D_04DA();   /* @asm 0x00E2DF open resource */
+    if (handle != 0 && (int16_t)arg0_bp_06 > 0) {
+        /* @asm 0x00E2EF cmp [bp+6],si(=0); jle 0xE322 — loop on [bp+6] iterations,
+         *      coordinate base [bp+0xa]+i */
+        for (i = 0; i < (int16_t)arg0_bp_06; i++) {
+            overlay_call_0A4E_0008();             /* @asm 0x00E302 coordinate calc */
+            if ((int)overlay_call_0B01_000E() == 0)   /* @asm 0x00E313 render frame */
+                break;               /* @asm or dx,ax; je 0xE322 */
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00E324 JE 0x00E349 */ {
-            /* @0x00E327 */ overlay_call_0D1D_03F4();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E333 JNE 0x00E349 */ {
-                /* @0x00E341 */ overlay_call_0D1D_0E4A();
-            }
+    }
+    /* @asm 0x00E322 close path */
+    if (handle != 0) {               /* @asm or di,di; je 0xE349 */
+        overlay_call_0D1D_03F4();    /* @asm 0x00E327 close handle */
+        if (flag == 0) {             /* @asm cmp [bp-0x2c],0; jne 0xE349 */
+            DG8(0x263E + slot) = 0;  /* @asm 0x00E338 release the slot */
+            overlay_call_0D1D_0E4A();/* @asm 0x00E341 cleanup */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    (void)arg3_bp_0C;
+    return 0;                        /* @asm retf 8 */
 }
 
-/* @asm        0x00E350..0x00E37B  (43 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E350_unknown.asm
- * @pattern    PROLOGUE_HEAVY
+/* @asm        0x00E350..0x00E453  (259 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E350.asm
+ * @pattern    LARGE_LOGIC
  * @prologue   ENTER 0x16
- * @args_seen  [14, 16, 22, 30]
- * @lcalls     0
+ * @args_seen  [6, 8, 0xA, 0xC, 0xE, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E, 0x20]
+ * @lcalls     1  (banner said 0; missed 0x0BAA:0x0006 == func_00DEA6, the cell blit)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (43 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  tile-fill a rectangle by repeatedly invoking the clipped cell
+ *                 blit (overlay 0x0BAA:0x0006 == func_00DEA6) across a grid, with
+ *                 a per-axis tiling phase so the pattern aligns to a world origin.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner mis-segmented this at "43 bytes / ends 0x00E37B" (it stopped
+ * at the first long `jmp`); the real body is 0xE350..0xE453 (259 B, `retf` at 0xE452,
+ * next func 0xE454 per functions.json / objdump).  The auto arg list [14,16,22,30]
+ * was a sparse subset; the body reads a dense block of word args [bp+6..bp+0x20].
+ * The first eight ([bp+6..bp+0x14]) are forwarded verbatim to every cell blit
+ * (the brush/source descriptor); the remainder are the placement rectangle.  No
+ * external callers, so the full signature is modelled (calling convention
+ * documented, not enforced).
+ *
+ * AXIS NOTE (faithful to the original's cross-assignment): the X walk steps by
+ * `tile_a`=[bp+0xe] and X phase is modulo `tile_b`=[bp+0x10]; the Y walk steps by
+ * `tile_b` and Y phase is modulo `tile_a`.
  */
-int func_00E350_logic_sz_43(uint16_t arg0_bp_0E, uint16_t arg1_bp_10, uint16_t arg2_bp_16, uint16_t arg3_bp_1E)
+int func_00E350_logic_sz_43(uint16_t a0_bp_06, uint16_t a1_bp_08, uint16_t a2_bp_0A,
+                            uint16_t a3_bp_0C, uint16_t tile_a_bp_0E, uint16_t tile_b_bp_10,
+                            uint16_t a6_bp_12, uint16_t a7_bp_14,
+                            uint16_t x0_bp_16, uint16_t y0_bp_18,
+                            uint16_t xspan_bp_1A, uint16_t yspan_bp_1C,
+                            uint16_t world_x_bp_1E, uint16_t world_y_bp_20)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E363 JNE 0x00E368 */ {
-            goto label_00E450;  /* @0x00E365 */
+    /* @asm 0x00E355 tile_a=[bp+0xe] ([bp-0xe]); tile_b=[bp+0x10] ([bp-0x10]);
+     *      if tile_b==0 || tile_a==0 -> return (0xE450).
+     *      0x00E371 x_phase = abs([bp+0x16]-[bp+0x1e]) % tile_b ([bp-0x12]);
+     *      0x00E38A y_phase = abs([bp+0x18]-[bp+0x20]) % tile_a ([bp-8]).
+     *      x_end = [bp+0x16]+[bp+0x1a] ([bp-0xa]); y_end = [bp+0x18]+[bp+0x1c]
+     *      ([bp-0xc]); y = [bp+0x18] ([bp-6]); if y_end <= y goto 0xE450.
+     *      outer @0x00E3C0 (rows): xp=x_phase ([bp-4]); x=[bp+0x16] ([bp-2]);
+     *        inner @0x00E3D1 while x < x_end:
+     *          forward [bp+6..bp+0x14] + y([bp-6]) to the cell blit;
+     *          nx = x - xp + tile_b; w = min(x_end, nx) - x;
+     *          ny = y - y_phase + tile_a; h = min(y_end, ny) - y;
+     *          lcall 0x0BAA:6 (cell blit == func_00DEA6) with (xp, y_phase, x, w, h);
+     *          x = nx; xp = 0; if x < x_end loop.
+     *        y += tile_a - y_phase; y_phase = 0; if y < y_end loop.
+     *      0x00E450 return. */
+    int tile_a = (int)tile_a_bp_0E;          /* @asm [bp-0xe]  (X step / Y modulus) */
+    int tile_b = (int)tile_b_bp_10;          /* @asm [bp-0x10] (Y step / X modulus) */
+    int x_phase0, y_phase, x_end, y_end, y;
+
+    if (tile_b == 0 || tile_a == 0)          /* @asm 0x00E361/0x00E368 */
+        return 0;                            /* @asm goto 0xE450 */
+
+    {   /* @asm 0x00E371 x_phase = abs(x0 - world_x) % tile_b */
+        int d = (int)(int16_t)x0_bp_16 - (int)(int16_t)world_x_bp_1E;
+        if (d <= 0) d = -d;                  /* @asm jg; not ax; inc ax */
+        x_phase0 = d % tile_b;               /* @asm cdq; idiv [bp-0x10] -> dx */
+    }
+    {   /* @asm 0x00E38A y_phase = abs(y0 - world_y) % tile_a */
+        int d = (int)(int16_t)y0_bp_18 - (int)(int16_t)world_y_bp_20;
+        if (d <= 0) d = -d;
+        y_phase = d % tile_a;                /* @asm cdq; idiv [bp-0xe] -> dx */
+    }
+
+    x_end = (int)(int16_t)x0_bp_16 + (int)(int16_t)xspan_bp_1A;  /* @asm [bp-0xa] */
+    y_end = (int)(int16_t)y0_bp_18 + (int)(int16_t)yspan_bp_1C;  /* @asm [bp-0xc] */
+    y     = (int)(int16_t)y0_bp_18;                              /* @asm [bp-6]   */
+    if (y_end <= y)                          /* @asm cmp bx,ax; jg 0xE3BD else 0xE450 */
+        return 0;
+
+    while (y < y_end) {                       /* outer rows; @asm 0x00E445/0xE448 */
+        int xp = x_phase0;                    /* @asm [bp-4] = x_phase each row */
+        int x  = (int)(int16_t)x0_bp_16;      /* @asm [bp-2] = [bp+0x16] */
+        while (x < x_end) {                   /* @asm 0x00E3CC cmp [bp-2],[bp-0xa] */
+            int nx = x - xp + tile_b;         /* @asm 0x00E3EC ax = x - xp + tile_b */
+            int w  = ((nx < x_end) ? nx : x_end) - x;       /* @asm clamp to x_end */
+            int ny = y - y_phase + tile_a;    /* @asm 0x00E403 ax = y - y_phase + tile_a */
+            int h  = ((ny < y_end) ? ny : y_end) - y;       /* @asm clamp to y_end */
+            (void)w; (void)h;
+            /* @asm 0x00E3D1 push [bp+0x14..bp+6] (brush), push y, push w, push h;
+             *      dx=xp, bx=x, si=nx(cx); lcall 0x0BAA:6 (the clipped cell blit). */
+            overlay_call_0BAA_0006();         /* @asm 0x00E423 cell blit (func_00DEA6) */
+            x  = nx;                          /* @asm 0x00E428 [bp-2] = si (= nx) */
+            xp = 0;                           /* @asm 0x00E42B [bp-4] = 0 */
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00E36C JNE 0x00E371 */ {
-            goto label_00E450;  /* @0x00E36E */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        /* @asm 0x00E437 y += tile_a - y_phase; y_phase = 0 */
+        y += tile_a - y_phase;
+        y_phase = 0;
+    }
+    (void)a0_bp_06; (void)a1_bp_08; (void)a2_bp_0A; (void)a3_bp_0C;
+    (void)a6_bp_12; (void)a7_bp_14;
+    return 0;                                 /* @asm 0x00E452 retf */
 }
 

@@ -61,7 +61,7 @@
  * (this file may not edit shared headers).
  * -------------------------------------------------------------------------- */
 extern uint16_t g_active_colony_ptr_8542;   /* DGROUP:0x8542 — *(active ColonyRecord) */
-extern int16_t  g_unit_count_539C;          /* DGROUP:0x539C — live UnitRecord count */
+/* g_unit_count_539C: DGS16(0x539C) macro from globals.h */
 extern int16_t  g_turn_538E;                /* DGROUP:0x538E — turn counter */
 extern uint8_t  g_game_mode_5382;           /* DGROUP:0x5382 — bit0 = special game mode */
 extern uint8_t  g_active_power_53D2;         /* DGROUP:0x53D2 — index of human/active power */

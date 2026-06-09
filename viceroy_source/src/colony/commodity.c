@@ -77,8 +77,8 @@ int check_total_exceeds_threshold(int idx)
  * colony_transfer_commodity_to_unit — 80 bytes
  * @asm 0x00B880..0x00B8CF
  * ============================================================================ */
-extern int  unit_cargo_action_pad_15_get(int unit_idx);    /* +0x15 = cargo_qty[5] reader */
-extern void unit_cargo_action_pad_15_set(int unit_idx, int v);
+extern int  unit_cargo_action_qty5_get(int unit_idx);    /* +0x15 reader (cargo_qty[5]) */
+extern void unit_cargo_action_qty5_set(int unit_idx, int v);
 
 void colony_transfer_commodity_to_unit(int unit_idx, int commodity_idx, int max_qty)
 {

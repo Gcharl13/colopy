@@ -196,4 +196,23 @@ extern uint16_t g_load_seg_26A7;          /* DGROUP:0x26A7 */
  * the DGROUP struct map. @ref docs/DGROUP_MEMORY_MAP.md §5.6 */
 extern uint16_t g_overlay_layout_CS[0xAA];   /* CS:0x3995.. (NOT DGROUP); RTLink overlay dispatch state */
 
+/* ----------------------------------------------------------------------------
+ * DGS16 convenience aliases — DGROUP-relative signed-word scalars.
+ * In the modern build (dgroup.h) DGS16(off) is (int16_t)DG16(off).
+ * These match the names used in king_events.c / report_screen.c / overlay files.
+ * ---------------------------------------------------------------------------- */
+#include "dgroup.h"
+#define g_colony_count_539E  DGS16(0x539E)
+#define g_unit_count_539C    DGS16(0x539C)
+#define g_native_count_539A  DGS16(0x539A)
+
+/* Per-unit-type 14-byte stride table (alias for g_table_5237_stride14) */
+#define g_unit_type_flags_5237  ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
+
+/* Per-power 0x34-byte records base pointer */
+#define g_power_table_8808  ((uint8_t near *)(DG_BASE + (uint16_t)0x8808))
+
+/* Native class-weight table used by settlement scoring */
+#define native_class_weight_5AD8  ((uint8_t near *)(DG_BASE + (uint16_t)0x5AD8))
+
 #endif /* VICEROY_GLOBALS_H */

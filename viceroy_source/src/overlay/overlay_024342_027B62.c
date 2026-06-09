@@ -1277,7 +1277,7 @@ count_phase:
         item = 0xF;                                 /* @asm 0x026F79 remap back */
     count = 0;                                       /* @asm 0x026F7E [bp-0x5C]=0 */
     if (item == 0xF)                                 /* @asm 0x026F83 cmp item,0xF */
-        count = c->counter_at_95;                    /* @asm 0x026F8D ctx->byte[+0x95] drawn as level/tier count */
+        count = c->counter_at_95;                    /* @asm 0x026F8D ctx->byte[+0x95] drawn as FOOD pile count (counter_at_95: open era-vs-food conflict, see colony.h) */
     if (item == 0x1E)                                /* @asm 0x026F96 cmp item,0x1E */
         count = *(uint8_t far*)((uint8_t far*)c + 0x96); /* @asm 0x026FA0 ctx->byte[+0x96] HORSE stock */
 

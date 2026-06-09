@@ -45,6 +45,7 @@
  * @ref  src/king/intervention.c (foreign_intervention — same helper conventions)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from operands).  LOCAL externs only.
@@ -60,8 +61,6 @@ extern uint8_t g_flags_5382;            /* DGROUP:0x5382 — global event flags:
 extern int16_t g_year_538A;             /* DGROUP:0x538A — current year (1492..) */
 extern int16_t g_turn_in_year_538C;     /* DGROUP:0x538C — within-year sub-turn (0 = year boundary) */
 extern int16_t g_event_bits_538E;       /* DGROUP:0x538E — per-turn event bits (&7 tested @0x?) */
-extern int16_t g_unit_count_539C;       /* DGROUP:0x539C — number of UnitRecords */
-extern int16_t g_colony_count_539E;     /* DGROUP:0x539E — number of colonies */
 extern int16_t g_score_result_53C2;     /* DGROUP:0x53C2 — defeat/score-result accumulator */
 extern int16_t g_retire_flag_53A2;      /* DGROUP:0x53A2 — "king retiring" flag (set @0x02FABE) */
 extern uint8_t g_difficulty_53A6;       /* DGROUP:0x53A6 — difficulty 0..4 */
@@ -145,7 +144,6 @@ extern void  msg_set_long(int slot, int32_t value);        /* 0x181F:0x09AE */
 extern int   power_handle(int power_idx);                  /* 0x181F:0x09A4 */
 extern int   msg_key_lookup(void *key);                    /* 0x181F:0x03FE */
 extern void  ui_flash_power(int power, int a, int b);      /* 0x191F:0x0AC8 */
-extern void  ui_fmt_two(int a, int h0, int h1);            /* 0x181F:0x422 */
 extern void  ui_show_message_3(int handle, int a, int b);  /* 0x191F:0x0ABA */
 extern void  ui_show_message_0(void);                      /* 0x191F:0x0AAC */
 extern void  crt_keyed_to_buf(int handle, char *buf);      /* 0x0D1D:0x07E4 */
@@ -154,6 +152,7 @@ extern int   ref_matrix_get(int power, int arm);           /* 0x181F:0x0A06 */
 extern void  ref_matrix_set(int power, int arm, int v);    /* 0x181F:0x0A10 */
 extern int   ui_yesno_prompt(void *key);                   /* 0x181F:0x056A + 0x3FE */
 extern void  ovly_181F_0182(int a, void *seg_off, int b);  /* 0x181F:0x0182 */
+extern void  ui_fmt_two(int a, int h0, int h1);            /* 0x181F:0x422 */
 
 /* Message handles (file = handle + 0x1D9A0 — BYTE_VERIFIED). */
 #define MSG_LOSENOCOLONIES 0xF09
@@ -453,7 +452,7 @@ finish:
     /* @asm 0x02FAE5 — pop si/di; leave; retf. */
 }
 
-/* ui_fmt_two declared above with other overlay helpers */
+/* (ui_fmt_two declared above, before king_war_turn) */
 
 /* ============================================================================
  * NOTES / STILL-LEFT-UNRESOLVED

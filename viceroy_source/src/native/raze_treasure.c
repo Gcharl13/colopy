@@ -183,8 +183,8 @@ extern void     ovly_181F_0808(uint16_t settlement_idx);     /* destroy settleme
 extern uint16_t ovly_181F_03FE(char *buf);                   /* dialog confirm — returns 1 if accepted */
 extern void     ovly_181F_09AE(uint16_t hi, uint16_t lo, uint16_t fmt);  /* format int32 */
 extern void     ovly_191F_0AC8(uint16_t a, uint16_t b, uint16_t c);
-extern void     strcpy_near(char *dst, const char *src);              /* file 0x00FDB4 */
-extern void     strcat_near(char *dst, const char *src);              /* file 0x00FD74 */
+extern char near *strcpy_near(char near *dst, const char near *src);  /* file 0x00FDB4 (iolib.h) */
+extern char near *strcat_near(char near *dst, const char near *src);  /* file 0x00FD74 (iolib.h) */
 
 /* ============================================================================
  * The function — fully decompiled, byte-verified.

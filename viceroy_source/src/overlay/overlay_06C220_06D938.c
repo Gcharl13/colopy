@@ -107,12 +107,14 @@ extern int overlay_call_1A1F_0AE6(void); /* 0x1A1F:0x0AE6 — panel string-buf h
 
 /* func_06F7EA — TRAMPOLINE -> ljmp 0x181F:0x0416 (page-tail thunk @file 0x06F7EA) */
 int func_06F7EA(void) { return overlay_call_181F_0416(); }
-/* func_06F7FE — TRAMPOLINE -> ljmp 0x191F:0x0176 (page-tail thunk @file 0x06F7FE) */
-int func_06F7FE(void) { return overlay_call_191F_0176(); }
-/* func_06F821 — TRAMPOLINE -> ljmp 0x1A1F:0x0A9E (page-tail thunk @file 0x06F821) */
-int func_06F821(void) { return overlay_call_1A1F_0A9E(); }
-/* func_06F83F — TRAMPOLINE -> ljmp 0x1A1F:0x0AE6 (page-tail thunk @file 0x06F83F) */
-int func_06F83F(void) { return overlay_call_1A1F_0AE6(); }
+/* func_06F7FE/06F821/06F83F — page-tail TRAMPOLINE thunks physically at file
+ * 0x06F7xx, i.e. inside the 06D938_0702D5 segment, which OWNS the definitions.
+ * This file (06C220) only CALLS them, so it just declares them here. (These were
+ * duplicate definitions; dedup 2026-06-09 to unblock the eventual executable
+ * link — see docs/MEMORY_MODEL_REFACTOR.md item D.) */
+extern int func_06F7FE(void);  /* def in overlay_06D938_0702D5 -> 0x191F:0x0176 */
+extern int func_06F821(void);  /* def in overlay_06D938_0702D5 -> 0x1A1F:0x0A9E */
+extern int func_06F83F(void);  /* def in overlay_06D938_0702D5 -> 0x1A1F:0x0AE6 */
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (absolute DGROUP offsets from the
