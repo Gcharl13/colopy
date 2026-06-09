@@ -748,7 +748,7 @@ int func_007F34_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return (uint8_t)DG8(0x8808 + 0x34 + (unsigned)arg0_bp_06 * 0x13C + arg1_bp_08);
 }
 
-/* @asm        0x007F62..0x007F80  (30 bytes)  region=load_image
+/* @asm        0x007F62..0x007F95  (52 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_007F62_unknown.asm
  * @pattern    PROLOGUE_HEAVY
  * @prologue   PUSH-BP-MOV-BP-SP
@@ -757,15 +757,27 @@ int func_007F34_logic_sz_27(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (30 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unsigned-byte writer: PowerRecord (arg0<4) vs 0x4e-stride table
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 30 bytes: a FALSE cut at the 0x7F80 branch target
+ *         (the arg0<4 arm). True function is 0x7F62..0x7F95 (52 bytes); corrected.
  */
+/* PORTED 2026-06-09 from func_007F62.asm — the WRITER twin of func_007F34: store
+ * byte arg2 at field offset arg1 of the per-index record, returning arg2. */
 int func_007F62_logic_sz_30(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007F6A JL 0x007F80 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x7F66 cmp [bp+6],4; jl 0x7F80 selects the arm:
+     *   arg0>=4: 0x7F6C al=[bp+0xA]; si=arg0*0x4E; bx=[bp+8];
+     *            [bx+si+0x59D8]=al  -> table[0x59D8] stride 0x4E.
+     *   arg0<4 : 0x7F80 al=[bp+0xA]; si=arg0*0x13C; bx=[bp+8];
+     *            [bx+si-0x77C4]=al  -> PowerRecord[arg0] byte
+     *            (-0x77C4 == DGROUP +0x883C == PowerRecord base 0x8808+0x34),
+     *            stride 0x13C. Both arms: 0x7F7A/0x7F8F mov ax,[bp+0xA] (return). */
+    if ((int16_t)arg0_bp_06 >= 4)
+        DG8(0x59D8 + (unsigned)arg0_bp_06 * 0x4E + arg1_bp_08) = (uint8_t)arg2_bp_0A;
+    else
+        DG8(0x8808 + 0x34 + (unsigned)arg0_bp_06 * 0x13C + arg1_bp_08) = (uint8_t)arg2_bp_0A;
+    return (int)(uint16_t)arg2_bp_0A;
 }
 
 /* @asm        0x007F96..0x007FFF  (105 bytes)  region=load_image
@@ -861,7 +873,7 @@ int func_008074_op_sz_83(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
     return 0;  /* @auto: TODO confirm return semantics */
 }
 
-/* @asm        0x0080C8..0x0080D6  (14 bytes)  region=load_image
+/* @asm        0x0080C8..0x00810F  (72 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_0080C8_unknown.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
@@ -870,16 +882,35 @@ int func_008074_op_sz_83(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-power word getter (+0 field) with active/stored-player remap
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 14 bytes: a FALSE cut at the 0x80E2 branch target.
+ *         True function is 0x80C8..0x810F (72 bytes); span corrected here.
  */
+/* PORTED 2026-06-09 from func_0080C8.asm — reads a per-index WORD: for arg0>=4 a
+ * stride-6 table at 0x8CFA; for arg0<4 (the 4 EU powers) it remaps to 0x2E66/
+ * 0x2E68 when game_phase(0x5382)&1 and arg0 is the active(0x5398)/stored(0x53D2)
+ * player, else a stride-2 table at 0x8D0A. */
 int func_0080C8_logic_sz_14(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x80CB cmp [bp+6],4; jl 0x80E2;
+     *      arg0>=4: 0x80D1 bx=arg0; bx=arg0*6; ax=[bx-0x7306](0x8CFA); ret.
+     *      arg0<4 (0x80E2): test [0x5382],1; je 0x8104;
+     *        cmp [0x5398],arg0; jne 0x80F8; -> ax=[0x2E66]; ret.
+     *        0x80F8 cmp [0x53D2],arg0; jne 0x8104; -> ax=[0x2E68]; ret.
+     *      0x8104: bx=arg0*2; ax=[bx-0x72F6](0x8D0A); ret. */
+    if ((int16_t)arg0_bp_06 >= 4)
+        return (int)DG16(0x8CFA + (unsigned)arg0_bp_06 * 6);
+    if ((DG8(0x5382) & 1)) {
+        if (DG16(0x5398) == arg0_bp_06)
+            return (int)DG16(0x2E66);
+        if (DG16(0x53D2) == arg0_bp_06)
+            return (int)DG16(0x2E68);
+    }
+    return (int)DG16(0x8D0A + (unsigned)arg0_bp_06 * 2);
 }
 
-/* @asm        0x008110..0x00811E  (14 bytes)  region=load_image
+/* @asm        0x008110..0x008157  (72 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008110_unknown.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
@@ -888,16 +919,34 @@ int func_0080C8_logic_sz_14(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-power word getter (+2 field) with active/stored-player remap
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 14 bytes: a FALSE cut at the 0x812A branch target.
+ *         True function is 0x8110..0x8157 (72 bytes); span corrected here.
  */
+/* PORTED 2026-06-09 from func_008110.asm — twin of func_0080C8 on the +2 field:
+ * arg0>=4 reads stride-6 table 0x8CFC; arg0<4 remaps to 0x2E44/0x2E46 (active/
+ * stored player when game_phase&1) else stride-2 table 0x8D0A. */
 int func_008110_logic_sz_14(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x8113 cmp [bp+6],4; jl 0x812A;
+     *      arg0>=4: bx=arg0*6; ax=[bx-0x7304](0x8CFC); ret.
+     *      arg0<4 (0x812A): test [0x5382],1; je 0x814C;
+     *        ax=[0x5398]; cmp [bp+6],ax; jne 0x813E; -> ax=[0x2E44]; ret.
+     *        0x813E ax=[0x53D2]; cmp [bp+6],ax; jne 0x814C; -> ax=[0x2E46]; ret.
+     *      0x814C: bx=arg0*2; ax=[bx-0x72F6](0x8D0A); ret. */
+    if ((int16_t)arg0_bp_06 >= 4)
+        return (int)DG16(0x8CFC + (unsigned)arg0_bp_06 * 6);
+    if ((DG8(0x5382) & 1)) {
+        if (DG16(0x5398) == arg0_bp_06)
+            return (int)DG16(0x2E44);
+        if (DG16(0x53D2) == arg0_bp_06)
+            return (int)DG16(0x2E46);
+    }
+    return (int)DG16(0x8D0A + (unsigned)arg0_bp_06 * 2);
 }
 
-/* @asm        0x008158..0x008166  (14 bytes)  region=load_image
+/* @asm        0x008158..0x00817D  (38 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008158_unknown.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
@@ -906,16 +955,24 @@ int func_008110_logic_sz_14(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-power word getter (+0 field), no player remap
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 14 bytes: a FALSE cut at the 0x8172 branch target.
+ *         True function is 0x8158..0x817D (38 bytes); span corrected here.
  */
+/* PORTED 2026-06-09 from func_008158.asm — un-remapped twin of func_0080C8:
+ * arg0>=4 reads stride-6 table 0x8CFA, else stride-2 table 0x8D0A. */
 int func_008158_logic_sz_14(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x815B cmp [bp+6],4; jl 0x8172;
+     *      arg0>=4: bx=arg0*6; ax=[bx-0x7306](0x8CFA); ret.
+     *      0x8172: bx=arg0*2; ax=[bx-0x72F6](0x8D0A); ret. */
+    if ((int16_t)arg0_bp_06 >= 4)
+        return (int)DG16(0x8CFA + (unsigned)arg0_bp_06 * 6);
+    return (int)DG16(0x8D0A + (unsigned)arg0_bp_06 * 2);
 }
 
-/* @asm        0x00817E..0x00818C  (14 bytes)  region=load_image
+/* @asm        0x00817E..0x0081A3  (38 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00817E_unknown.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
@@ -924,13 +981,21 @@ int func_008158_logic_sz_14(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-power word getter (+2 field), no player remap
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 14 bytes: a FALSE cut at the 0x8198 branch target.
+ *         True function is 0x817E..0x81A3 (38 bytes); span corrected here.
  */
+/* PORTED 2026-06-09 from func_00817E.asm — un-remapped twin of func_008110:
+ * arg0>=4 reads stride-6 table 0x8CFC, else stride-2 table 0x8D0A. */
 int func_00817E_logic_sz_14(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x8181 cmp [bp+6],4; jl 0x8198;
+     *      arg0>=4: bx=arg0*6; ax=[bx-0x7304](0x8CFC); ret.
+     *      0x8198: bx=arg0*2; ax=[bx-0x72F6](0x8D0A); ret. */
+    if ((int16_t)arg0_bp_06 >= 4)
+        return (int)DG16(0x8CFC + (unsigned)arg0_bp_06 * 6);
+    return (int)DG16(0x8D0A + (unsigned)arg0_bp_06 * 2);
 }
 
 /* @asm        0x0081A4..0x0081C0  (28 bytes)  region=load_image
