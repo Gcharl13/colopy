@@ -101,6 +101,11 @@ extern void ovl_post_landfall  (void);                             /* 0x181F:0xF
 
 #define DEST_OK 0
 
+/* power-scan flag helpers — DGROUP table 0x543e, stride 0x34 per power, bit
+ * 0x80 = "landfall scan complete for this power this turn".  @0x3FF86 / @0x3FFC0 */
+extern int  power_scan_done(int power);   /* TEST [power*0x34 + 0x543e],0x80  [V] */
+extern void power_scan_mark(int power);   /* OR   [power*0x34 + 0x543e],0x80  [V] */
+
 /* ============================================================================
  * naval_move_arrive  --  @asm func_03FDDE @ file 0x3FDDE
  *   dx [bp+6], dy [bp+8].  Far function; ret value [bp-2] (default 1 = handled).
@@ -259,8 +264,4 @@ done:
     ret = ret;                                 /* @0x3FFF2 MOV AX,[bp-2] */
     return ret;                                /* LEAVE/RETF @0x3FFF5/0x3FFF6 */
 }
-
-/* power-scan flag helpers — DGROUP table 0x543e, stride 0x34 per power, bit
- * 0x80 = "landfall scan complete for this power this turn".  @0x3FF86 / @0x3FFC0 */
-extern int  power_scan_done(int power);   /* TEST [power*0x34 + 0x543e],0x80  [V] */
-extern void power_scan_mark(int power);   /* OR   [power*0x34 + 0x543e],0x80  [V] */
+/* (power_scan_done / power_scan_mark declared above, before naval_move_arrive) */

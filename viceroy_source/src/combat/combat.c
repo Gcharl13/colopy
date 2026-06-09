@@ -81,6 +81,7 @@ extern int  ovl_fortify_accum(int x, int y);   /* 0x181F:0x768  fort/colony path
  *   ATK/DEF are the RAW per-type bytes from g_unit_stat; NO terrain/fortified/
  *   SoL/FoundingFather multiplier scales them inside this function.        [V]
  * ============================================================================ */
+extern void combat_demote_loser(int slot);   /* defined below; forward decl */
 int combat_resolve(int attacker_idx, int defender_idx,
                    int show_ui, int tgt_x, int tgt_y)
 {

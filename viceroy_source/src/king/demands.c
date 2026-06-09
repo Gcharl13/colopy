@@ -97,6 +97,7 @@ extern void king_attempt_tax_change(void);     /* func_034AE0 — see king_tax_r
  *     per-event raise = ((difficulty & 0xFE) * 2 + 4) * (year/400 + 1)
  *     (blocked when proposed_change + 5 >= current tax)
  * ============================================================================ */
+extern void king_schedule_royal_events(int power_id);   /* forward decl — defined below */
 void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not yet decoded */
 {
     /* @asm 0x02F385..0x02F38E — only the human-controlled power runs the
@@ -109,7 +110,7 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not ye
         king_schedule_royal_events(power_id);   /* LCALL 0x191F:0xAE0 — internals in thunk page */
     }
 }
-extern void king_schedule_royal_events(int power_id);
+/* (king_schedule_royal_events declared above, before king_demand_cadence) */
 
 /* ============================================================================
  * king_tax_options_dialog — ANCHOR_VERIFIED (TAXOPTIONS / TEAPARTY menu)

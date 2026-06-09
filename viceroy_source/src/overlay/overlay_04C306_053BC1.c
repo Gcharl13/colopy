@@ -2127,6 +2127,7 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
 /* g_ai_sub_tbl_94E6 (DGROUP:0x94E6, declared above) is the same per-owner
  * map-density table this routine reads at [owner<<4 + base - 0x6B1A]. */
 extern int16_t  g_active_colony_8DC6;        /* DGROUP:0x8DC6 — current/source colony index */
+extern void     ai_set_plot_target(int tx, int ty); /* forward decl — defined below */
 
 int func_053820_ai_dispatch_unit_to_colony(void)
 {
@@ -2200,8 +2201,8 @@ int func_053820_ai_dispatch_unit_to_colony(void)
 }
 /* Publish the AI move-plot target into the DGROUP path-request globals.
  * @asm 0x053908 [0x1DD6]=0xFFFF; 0x05390E [0xA14E]=tx; 0x053917 [0xA14C]=ty;
- *      0x05391D [0x1DD4]=1; 0x053920 [0x1DD2]=1. */
-extern void ai_set_plot_target(int tx, int ty);
+ *      0x05391D [0x1DD4]=1; 0x053920 [0x1DD2]=1.
+ * (ai_set_plot_target declared above, before func_053820_ai_dispatch_unit_to_colony) */
 
 /* ============================================================================
  * func_053A34 — colony_set_or_validate_field  [DONE — control flow BYTE_VERIFIED]

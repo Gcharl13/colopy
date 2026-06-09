@@ -153,6 +153,12 @@ int native_settlement_add(int owner, int x, int y)
  *       removed record, which the table compaction in STEP 2 leaves as a stale
  *       tail copy; this scaling runs on that record before the slot is reused.)
  * ============================================================================ */
+/* Forward declarations — defined later in this file; call sites precede bodies */
+extern void native_tribe_eliminate(void *settlement_record);
+extern void native_tribe_announce_extinction(void);
+extern void native_tribe_redistribute(void *settlement_record, void *tribe_ptr);
+extern void native_settlement_tick(int index);
+extern void spawn_indian_convert(int settlement_index);
 void native_settlement_remove(int index)
 {
     /* @asm 0x46EED..0x46F32 — STEP 1: fix up unit links (stride 0x1C). */
@@ -223,7 +229,7 @@ void native_tribe_eliminate(void *settlement_record)
     ((uint8_t *)settlement_record)[0x03] |= 0x80;   /* @asm 0x46F96 or [bx+3],0x80 */
     native_tribe_announce_extinction();             /* @asm 0x46F9A..0x46FBB (thunks) */
 }
-extern void native_tribe_announce_extinction(void);
+/* (native_tribe_announce_extinction declared above, before native_settlement_remove) */
 
 /* ============================================================================
  * native_tribe_redistribute — BYTE_VERIFIED arithmetic
@@ -341,5 +347,4 @@ int settlement_max_pop(int type)          /* RECONSTRUCTED — values RUNTIME_ON
     }
     return 6;
 }
-
-extern void spawn_indian_convert(int settlement_index);
+/* (spawn_indian_convert declared above, before native_settlement_remove) */

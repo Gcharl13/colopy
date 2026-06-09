@@ -152,6 +152,7 @@ extern int   ref_matrix_get(int power, int arm);           /* 0x181F:0x0A06 */
 extern void  ref_matrix_set(int power, int arm, int v);    /* 0x181F:0x0A10 */
 extern int   ui_yesno_prompt(void *key);                   /* 0x181F:0x056A + 0x3FE */
 extern void  ovly_181F_0182(int a, void *seg_off, int b);  /* 0x181F:0x0182 */
+extern void  ui_fmt_two(int a, int h0, int h1);            /* 0x181F:0x422 */
 
 /* Message handles (file = handle + 0x1D9A0 — BYTE_VERIFIED). */
 #define MSG_LOSENOCOLONIES 0xF09
@@ -451,8 +452,7 @@ finish:
     /* @asm 0x02FAE5 — pop si/di; leave; retf. */
 }
 
-/* Forward-declared local helpers (call sites byte-verified; semantics inferred from call context). */
-extern void ui_fmt_two(int a, int h0, int h1);   /* 0x181F:0x422 */
+/* (ui_fmt_two declared above, before king_war_turn) */
 
 /* ============================================================================
  * NOTES / STILL-LEFT-UNRESOLVED

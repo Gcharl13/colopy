@@ -157,6 +157,10 @@ extern void  ui_show_message2(int a, int handle);            /* 0x191F:0x0AE0 */
  * this routine sets the "an event fired" flag [0x014C]=1 (@0x02F201) used by the
  * caller to know a king interaction happened this turn.
  * ============================================================================ */
+/* Forward declarations — call sites below; bodies live in other overlay pages */
+extern void ui_select_on_map(int handle, int a);     /* 0x181F:0x438 */
+extern void msg_set_int(int slot, int value);        /* 0x181F:0x438 (int form) */
+extern void ui_flush(void);                          /* 0x191F:0xA82 */
 void king_process_power_events(void)
 {
     int  P     = g_subject_power_5394;        /* [bp-8]  @asm 0x02F058 */
@@ -347,9 +351,6 @@ void king_process_power_events(void)
 extern int  unit_class_check(int unit_idx);          /* near func_02FAEA (file 0x02FAEA) -> 0x191F:0xA58 */
 extern int  unit_class_check2(int x, int y);         /* 0x181F:0x302 reuse (is_xy_in_map_bounds) */
 extern int  find_landing_slot(int x, int y);         /* 0x181F:0x7BE */
-extern void ui_select_on_map(int handle, int a);     /* 0x181F:0x438 */
-extern void msg_set_int(int slot, int value);        /* 0x181F:0x438 (int form) */
-extern void ui_flush(void);                          /* 0x191F:0xA82 */
 extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle */
 
 /* MSG_WINNING_KEY and MSG_GRANT_FOLLOWUP defined above near MSG_REFIT */
