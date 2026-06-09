@@ -336,3 +336,35 @@ A tile would (per the fabrication) be marked dirty when:
 - Asset roles: [ASSET_ROLES.md](ASSET_ROLES.md)
 - MS_SPRITE format: [../formats/SS.md](../formats/SS.md)
 - PIK format: [../formats/PIK.md](../formats/PIK.md)
+
+## Render decode status — modern integration (2026-06-09/10)
+
+The map frame is composed by the PORTED chain (tile_chain.c func_O514/O513/
+O512); the platform leaf layer (src/platform/render_glue.c) is byte-cited:
+- ground blits 0x181F:0x25E/0x268 -> files 0x3460/0x34C4: flat 256-byte cells,
+  code transform func_03436 (0x11|0x09->8; >=8 -> -0xF; else id; 0-based)
+- marker blit 0x181F:0x254 -> file 0xE76A: dir entry = code*12+0x36 (code =
+  0-based frame), sign bit = X-flip
+- render_frame_setup = func_06787C PORTED (file 0x6787C..0x67A22); slow path
+  ([0x15A]=0) stride = map width @0x679E8 == the modern host plumbing.
+  tests/test_frame_setup.c asserts the geometry (ALL PASS).
+
+### Next decode wave — chrome/text leaves (thunk targets resolved)
+| thunk | role (hud.c cites) | target |
+|---|---|---|
+| 0x181F:0x100 | menu-strip fill (0,0x140,5,0xF) | resident 0x02BC8 |
+| 0x181F:0x13C | text row blit (color,y,x) | resident 0x02B38 |
+| 0x181F:0x16E | text append | resident 0x02992 |
+| 0x181F:0x178 | text begin/clear | resident 0x028B0 |
+| 0x181F:0x484 | region/palette set (al=0x22) | resident 0x0DCD4 |
+| 0x181F:0x2B2 | minimap unit/settlement blip | resident 0x03E40 |
+| 0x181F:0x74A | minimap on-screen test | resident 0x05EE8 |
+| 0x181F:0x59A | minimap palette latch | overlay seg 21 (AMBIG base) |
+| 0x1A1F:0x8CE | minimap contents redraw | overlay seg 21 (AMBIG base) |
+| box composites 0x181F:0xBA/0xCE/0xE2 | outline/fill | resident 0xDDEA/0xE0A2/0xDB3A — chain into the region manager 0x0A4E:* / 0x0A58:* / 0x0BBC:* (the deep tree) |
+
+Wiring plan: argrestore pass over func_06083A_draw_map_view_chrome +
+func_066CD6 minimap chain call sites (args are in comments), implement the
+text/fill primitives at their decoded signatures over the platform layer,
+then the map screen chrome + minimap render from the PORTED composers with
+their byte-cited rects (HUD_LAYOUT in src/render/hud.c).
