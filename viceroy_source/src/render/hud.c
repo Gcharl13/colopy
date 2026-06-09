@@ -276,6 +276,8 @@ static const struct hud_placement HUD_LAYOUT[] = {
     { "minimap_inner_strip",  0xFB,     8, 0x30,     6,  "0x066D4B",  "minimap_panel(066CD6)"   }, /* -> 0x181F:0xCE */
     { "minimap_content",      0xFC,     9,   -1,    -1,  "0x0669CF",  "minimap_compose(066968)" }, /* anchor px (252,9) */
     { "minimap_viewport_box", 0xF1,     8, 0x29,  0x4F,  "0x066DD7",  "minimap_panel(066CD6)"   }, /* "you are here" -> 0x181F:0xE2 */
+    /* NOTE 2026-06-10: rows citing 0x0608.. / 0x060B.. belong to func_06083A =
+ * the TRADE ROUTE EDIT screen (role corrected; see CHROME_PORT_SPEC.md). */
     { "top_menu_strip",          0,      5, 0x140,   -1,  "0x060898",  "draw_map_view_chrome"    }, /* fill -> 0x181F:0x100 */
     { "menu_text_row",        0x0A,  0x19,   -1,    -1,  "0x0608CE",  "draw_map_view_chrome"    }, /* -> 0x181F:0x13C */
     { "dateturn_readout_f2",  0x7D,  0x19,   -1,    -1,  "0x0609C1",  "draw_map_view_chrome"    }, /* x=125 */

@@ -30,6 +30,8 @@
 
 extern void dgroup_init(void);
 extern int  viceroy_load_names(const char *dir);
+extern int  viceroy_load_labels(const char *dir);
+extern const char *viceroy_str(uint16_t handle);
 extern void title_screen_render(void);
 extern int  title_screen_update(void);
 
@@ -499,6 +501,11 @@ int main(int argc, char **argv)
                &DG8(0x540E + 2*0x34), &DG8(0x540E + 3*0x34));
     else
         printf("  NAMES.TXT : not found under '%s' (set $VICEROY_DATA)\n", g_data);
+    int nl = viceroy_load_labels(g_data);
+    if (nl >= 0)
+        printf("  LABELS    : %d entries (MISC[0]='%s' INFO[0]='%s' CTITLE[0]='%s')\n",
+               nl, viceroy_str(DG16(0x2DBA)), viceroy_str(DG16(0x96F4)),
+               viceroy_str(DG16(0x939E)));
 
     if (load_beginmenu() == 0)
         printf("  @BEGINMENU: %d options, width=%d y=%d\n",

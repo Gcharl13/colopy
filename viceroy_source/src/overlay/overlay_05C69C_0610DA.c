@@ -1306,7 +1306,12 @@ int func_06076A_pick_from_power_list_menu(uint16_t highlight)
 
 
 /* ============================================================================
- * func_06083A — draw_map_view_chrome   [DONE (structure) — BYTE_VERIFIED]
+ * func_06083A — trade_route_edit_screen   [ROLE CORRECTED 2026-06-10]
+ * (was "draw_map_view_chrome" — REFUTED by the LABELS loader decode: this
+ * screen's string ids are the @ROUTE block [0x93DE..] = "EDIT TRADE ROUTE",
+ * "Route Name:", "Route Type:", Sea/Land, Destination/Unload/Load Cargo.
+ * Full call-by-call port spec: docs/CHROME_PORT_SPEC.md.  The REAL map-view
+ * chrome composer is still to be located.)
  * ----------------------------------------------------------------------------
  * @asm page_12 ---- func_06083A size=1017 prologue ENTER 0x0060,0 (0x06083A..
  *      0x060C33, terminal RETF).

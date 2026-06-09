@@ -1,4 +1,8 @@
-# func_06083A draw_map_view_chrome — full port spec (disasm transcription)
+# func_06083A trade_route_edit_screen — full port spec (disasm transcription)
+
+> ROLE CORRECTED 2026-06-10: the @ROUTE label block [0x93DE..] proves this is
+> the TRADE ROUTE EDIT screen, not the map chrome. Spec below stands as the
+> port reference; the real map chrome composer is still to be located.
 
 From `re_work/disasm/func_06083A.asm` (file 0x06083A..0x060C33, 1017 B).
 Local frame: `buf[bp-0x50]` text buffer; locals x/y in bp-0x52..bp-0x60.
