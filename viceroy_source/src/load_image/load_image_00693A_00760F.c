@@ -1095,14 +1095,28 @@ int func_00726E_op_sz_116(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x0066BA
- * @inferred_role  WRAPPER_NEARCALL (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0066BA  (chain next)
+ * @inferred_role  OR arg1 into UnitRecord owner byte (+0x03) along arg0's chain
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   The auto-tracer mis-modelled this as a 1-call wrapper (`return
+ *         func_0066BA()`); it is actually a chain-walk that ORs arg1 into each
+ *         member's owner/flags byte.
  */
-int func_0072E2_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_0072E2.asm — OR arg1 into +0x03 across a tile chain */
+void func_0072E2_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: wrapper forwards to near CALL 0x0066BA. */
-    return func_0066BA();
+    /* @asm 0x0072E7 si=[bp+6](arg0); or si,si; jl 0x7306 (arg0<0: nothing).
+     *      di=[bp+8](arg1).  loop 0x72f1: bx=si*0x1c; byte[bx+0x3147] |= (uint8)
+     *      arg1 (OR into UnitRecord.+0x03); ax=si; call 0x66ba (si=func_0066BA(si)
+     *      =chain next); or si,si; jge 0x72f1.  ret.
+     * Walks the tile chain starting AT arg0 (not its head) via chain_next and ORs
+     * arg1's low byte into UnitRecord[i] field +0x03 (0x3147, owner/flags) for
+     * every member (stride 0x1C @0x3144). */
+    int16_t si = (int16_t)arg0_bp_06;
+    while (si >= 0) {
+        DG8(0x3144 + (unsigned)si * 0x1C + 0x03) |= (uint8_t)arg1_bp_08;
+        si = (int16_t)func_0066BA((uint16_t)si);
+    }
 }
 
 /* @asm        0x00730A..0x007355  (75 bytes)  region=load_image
