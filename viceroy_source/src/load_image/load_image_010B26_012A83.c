@@ -10,6 +10,18 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* ---------------------------------------------------------------------------
+ * File-local declarations for the DOS INT 21h host primitives and the sibling
+ * near-call helpers referenced by the ports below.  These are NOT redefined
+ * here — the canonical definitions live in src/iolib/file.c (the int21h_AH_*
+ * wrappers) and in the rest of the load_image region.  Declaring them locally
+ * keeps the edit confined to this one .c file (sibling convention).
+ * ------------------------------------------------------------------------- */
+extern int int21h_AH_3F(int handle, void *buf, int count);          /* DOS Read   */
+extern int int21h_AH_40(int handle, const void *buf, int count);    /* DOS Write  */
+extern int int21h_AH_42(int handle, long offset, int whence);       /* DOS LSEEK  */
+extern int errno_epilogue(int dos_err);                             /* 0x10AE5 mapper */
+
 /* @asm        0x010B26..0x010BBB  (149 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_010B26_unknown.asm
  * @pattern    MEDIUM_LOGIC
@@ -228,54 +240,90 @@ int func_010CA0_rtl_sz_44(void)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x2746
- * @inferred_role  MEDIUM_LOGIC (180 bytes). 0x0D1D:0x2746
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x0D1D:0x2746   (the _open syscall wrapper: open(path, oflag, pmode))
+ * @inferred_role  fopen-core: parse a mode string into open flags, open the file,
+ *                 and initialise the FILE stream descriptor.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x010CCC..0x010D80 (180 bytes) was short; the true
+ *        function runs 0x010CCC..0x010DB4 (232 bytes per functions.json).
+ *
+ * MSC 6.0 fopen() core (_openfile).  arg0:arg2 = far pointer to the path,
+ * arg1 = near pointer to the mode string, [bp+0xc] = FILE* (di).  The mode
+ * string drives two values: a stream-flags byte ([bp-4], -> [di+6]) and an
+ * oflag word (si).  The first char picks the base access:
+ *   'r' (0x72) -> flags 1 (read),      si = 0x109   (O_RDONLY|O_TEXT)
+ *   'w' (0x77) -> flags 2 (write),     si = 0x301   (O_WRONLY|O_CREAT|O_TRUNC)
+ *   'a' (0x61) -> flags 0x80 (append), si = 0x4109? handled via '+'/'t'/'b'
+ * Suffix chars add: '+' -> read+write (or 2 into flags, clear bit0); 't' ->
+ * O_TEXT (0x4000); 'b' -> O_BINARY (0x8000).  Then open(path,si,0x1A4) is
+ * invoked; a negative handle bails (returns 0).  On success the global open
+ * counter [0x2AC2] is bumped and the FILE/parallel-flag fields are zeroed and
+ * stamped with the flags byte and fd.  Returns the FILE* (di) or 0 on error.
  */
-int func_010CCC_rtl_sz_180(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+int func_010CCC_rtl_sz_180(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                           uint16_t arg2_bp_0A, uint16_t fp_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2AC2
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010CDD JE 0x010D24 */ {
-            if (/* JA fallthrough cond: */ ax <= 0) /* @0x010CDF JA 0x010CE9 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x010CE3 JE 0x010D2E */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010CE7 JE 0x010CEE */ {
-                        goto label_010DAE;  /* @0x010CEB */
-                    }
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010D02 JE 0x010D5E */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x010D08 JE 0x010D5E */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x010D10 JE 0x010D46 */ {
-                                if (/* JA fallthrough cond: */ ax <= 0) /* @0x010D12 JA 0x010D1C */ {
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x010D16 JE 0x010D34 */ {
-                                        if (/* JE fallthrough cond: */ ax != 0) /* @0x010D1A JE 0x010D52 */ {
-                                            goto label_010CF9;  /* @0x010D21 */
-                                            goto label_010CF4;  /* @0x010D2B */
-                                            goto label_010D27;  /* @0x010D31 */
-                                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010D38 JNE 0x010D1C */ {
-                                            }
-                                            goto label_010CF9;  /* @0x010D44 */
-                                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010D4A JNE 0x010D1C */ {
-                                            }
-                                            goto label_010CF9;  /* @0x010D50 */
-                                        }
-                                    }
-                                }
-                            }
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010D56 JNE 0x010D1C */ {
-                            }
-                            goto label_010CF9;  /* @0x010D5C */
-                        }
-                    }
-                }
-            }
+    uint16_t mode = arg1_bp_08;          /* @asm mov bx,[bp+8] (mode string) */
+    uint16_t si = 0;                     /* parsed oflag word */
+    uint8_t  fl;                         /* @asm [bp-4] stream-flags byte */
+    int      valid = 1;                  /* @asm [bp-2] still-scanning flag */
+    uint8_t  ch = DG8(mode);             /* @asm mov al,[bx] (first mode char) */
+
+    /* @asm 0x010CDA dispatch the base access character. */
+    if (ch == 'w') {                     /* @asm cmp ax,0x77 je 0x10D24 */
+        si = 0x301; fl = 2;              /* @asm mov si,0x301; [bp-4]=2 */
+    } else if (ch == 'r') {              /* @asm sub al,0x61 ... */
+        si = 0x109; fl = 1;              /* @asm mov si,0x109; [bp-4]=1 */
+    } else if (ch == 'a') {              /* (ch-0x61-0x11==0 -> 'a' path) */
+        fl = 1;                          /* (append handled via flags below) */
+    } else {
+        return 0;                        /* @asm 0x010CE9 sub ax,ax; jmp 0x10DAE */
+    }
+
+    /* @asm 0x010CF9 scan the remaining mode chars ('+','t','b'). */
+    for (;;) {
+        mode++;                          /* @asm inc [bp+8] */
+        ch = DG8(mode);                  /* @asm mov al,[bx] */
+        if (ch == 0 || !valid)           /* @asm cmp byte [bx],0 / [bp-2]==0 */
+            break;                        /* @asm je 0x10D5E */
+        if (ch == '+') {                 /* @asm cmp ax,0x2b */
+            if (si & 2) { valid = 0; continue; }      /* @asm test si,2; jne reset */
+            si |= 2; si &= 0xFFFE;       /* @asm or si,2; and si,0xFFFE */
+            fl = 0x80;                   /* @asm [bp-4]=0x80 */
+        } else if (ch == 't') {          /* @asm cmp ax,0x74 */
+            if (si & 0xC000) { valid = 0; continue; } /* @asm test si,0xC000; jne */
+            si |= 0x4000;                /* @asm or si,0x4000 (O_TEXT) */
+        } else if (ch == 'b') {          /* (al-0x2b-0x37==0 -> 'b') */
+            if (si & 0xC000) { valid = 0; continue; } /* @asm test si,0xC000; jne */
+            si |= 0x8000;                /* @asm or si,0x8000 (O_BINARY) */
+        } else {
+            valid = 0;                   /* @asm 0x010D1C [bp-2]=0 (bad char) */
         }
-        /* @0x010D69 */ overlay_call_0D1D_2746();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x010D76 JGE 0x010D7B */ {
-            goto label_010CE9;  /* @0x010D78 */
+    }
+
+    /* @asm 0x010D5E open(path, si, 0x1A4) via the 0x0D1D:0x2746 syscall wrapper. */
+    {
+        int fd = overlay_call_0D1D_2746();   /* @asm push 0x1A4; push [bp+0xa]; push si;
+                                              *      push [bp+6]; lcall 0xD1D:0x2746 */
+        (void)arg0_bp_06; (void)arg2_bp_0A;  /* path far-ptr consumed by the wrapper */
+        if (fd < 0)                      /* @asm or ax,ax; jge 0x10D7B */
+            return 0;                    /* @asm jmp 0x10CE9 -> ax=0 */
+
+        /* @asm 0x010D7B success: bump the open-stream counter and init the FILE. */
+        DG16(0x2ac2) += 1;               /* @asm inc word [0x2AC2] */
+        {
+            uint16_t di  = fp_bp_0C;     /* @asm mov di,[bp+0xc] (FILE*) */
+            uint16_t flg = (uint16_t)(0x29ae + (di - 0x290e)); /* @asm parallel flag entry (bx) */
+            DG8(di + 6) = fl;            /* @asm mov [di+6],al (flags byte) */
+            DG8(flg)    = 0;             /* @asm mov byte [bx],0 */
+            DG16(di + 2) = 0;            /* @asm mov [di+2],0 */
+            DG16(flg + 4) = 0;           /* @asm mov [bx+4],0 (parallel base slot) */
+            DG16(di)     = 0;            /* @asm mov [di],0 */
+            DG16(di + 4) = 0;            /* @asm mov [di+4],0 */
+            DG8(di + 7)  = (uint8_t)fd;  /* @asm mov [di+7],al (fd) */
+            return (int)(uint16_t)di;    /* @asm mov ax,di */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
 }
 
 /* @asm        0x010DB4..0x010E27  (115 bytes)  region=load_image
@@ -289,31 +337,55 @@ int func_010CCC_rtl_sz_180(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x2916
- * @inferred_role  MEDIUM_LOGIC (115 bytes). 0x0D1D:0x2916
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x0D1D:0x2916   (the _malloc/_getbuf primitive: allocate a 0x200 buffer)
+ * @inferred_role  _getstdbuf: lazily attach a 0x200-byte I/O buffer to one of
+ *                 the standard streams (stdout/stdin/stderr).
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  NEAR function (ends with `ret`, 0x010E26); takes ONE arg = the FILE*
+ *        at [bp+4].  Auto-banner span (0x010DB4..0x010E27) is correct.
+ *
+ * fp must be one of the three console FILE structs: 0x2916 (stdout)->slot
+ * 0x2A50, 0x291E (stdin)->0x2A52, 0x292E (stderr)->0x2A54.  Each slot holds a
+ * shared static buffer pointer.  If the stream already has a buffer (flags&0xC
+ * or parallel-flag bit0) the routine no-ops returning 0.  Otherwise it reuses
+ * the slot's buffer (or allocates 0x200 bytes via the 0x2916 primitive on first
+ * use), wires it into [si]/[si+4], sets bytes-left=0x200, marks the stream
+ * write-buffered (flags|=2) and the parallel entry mode=0x11.  Returns 1 on
+ * success, 0 if not a std stream / already buffered / allocation failed.
  */
-int func_010DB4_rtl_sz_115(void)
+int func_010DB4_rtl_sz_115(uint16_t fp_bp_04)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010DC3 JE 0x010DD7 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010DCC JE 0x010DD7 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x010DD5 JNE 0x010E21 */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x010DE5 JNE 0x010E21 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010DEA JNE 0x010E21 */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x010DF0 JE 0x010E0D */ {
-                                goto label_010E23;  /* @0x010E0B */
-                            }
-                            /* @0x010E12 */ overlay_call_0D1D_2916();
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x010E1B JE 0x010E21 */ {
-                                goto label_010DF2;  /* @0x010E1F */
-                            }
-                        }
-                    }
-                }
-            }
+    uint16_t si = fp_bp_04;              /* @asm mov si,[bp+4] (FILE*) */
+    uint16_t bx;                         /* shared-buffer slot pointer */
+    uint16_t di;                         /* parallel flag entry */
+
+    /* @asm 0x010DBC select the per-stream static-buffer slot. */
+    if (si == 0x2916)      bx = 0x2a50;  /* @asm cmp si,0x2916 je */
+    else if (si == 0x291e) bx = 0x2a52;  /* @asm cmp si,0x291e je */
+    else if (si == 0x292e) bx = 0x2a54;  /* @asm cmp si,0x292e je */
+    else                   return 0;     /* @asm jne 0x10E21 -> ax=0 */
+
+    di = (uint16_t)(0x29ae + (si - 0x290e)); /* @asm parallel flag entry */
+
+    if (DG8(si + 6) & 0x0C) return 0;    /* @asm test [si+6],0xC; jne 0x10E21 */
+    if (DG8(di) & 1)        return 0;    /* @asm test [di],1; jne 0x10E21 */
+
+    /* @asm 0x010DEC reuse or allocate the shared buffer. */
+    {
+        uint16_t buf = DG16(bx);         /* @asm mov ax,[bx] */
+        if (buf == 0) {                  /* @asm or ax,ax; je 0x10E0D (allocate) */
+            buf = (uint16_t)overlay_call_0D1D_2916(); /* @asm push 0x200; lcall 0xD1D:0x2916 */
+            if (buf == 0) return 0;      /* @asm or ax,ax; je 0x10E21 */
+            DG16(bx) = buf;              /* @asm mov [bx],ax */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        DG16(si + 4) = buf;              /* @asm mov [si+4],ax */
+        DG16(si)     = buf;              /* @asm mov [si],ax */
+        DG16(si + 2) = 0x200;            /* @asm mov [si+2],0x200 */
+        DG16(di + 2) = 0x200;            /* @asm mov [di+2],0x200 */
+        DG8(si + 6) |= 2;                /* @asm or [si+6],2 (write-buffered) */
+        DG8(di)      = 0x11;             /* @asm mov byte [di],0x11 */
+        return 1;                        /* @asm mov ax,1 */
+    }
 }
 
 /* @asm        0x010E27..0x010E66  (63 bytes)  region=load_image
@@ -375,32 +447,63 @@ int func_010E27_logic_sz_63(uint16_t force_bp_04, uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x1FFE
+ *   - 0x0D1D:0x1FFE   (the write syscall wrapper: write(fd, buf, n))
  *
  * Near CALL targets:
- *   - 0x010EE2
- * @inferred_role  MEDIUM_LOGIC (116 bytes). 0x0D1D:0x1FFE
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x010EE2        (flushall: flush every open stream)
+ * @inferred_role  fflush(fp): flush one buffered output stream (or all if fp==0)
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  FAR function (retf, 0x010ED9); the auto-banner span is correct.
+ *        Called as func_010E66(si) by the fwrite sibling (1 arg).
+ *
+ * MSC 6.0 fflush().  fp at [bp+6].  fp==0 -> flushall (func_010EE2(0)) and
+ * return.  Otherwise, only streams whose low two flag bits == 2 (write mode)
+ * are flushed; if the stream is buffered (flags&8 or parallel-flag bit0) the
+ * dirty span (cursor - base) is written via the 0x0D1D:0x1FFE syscall wrapper.
+ * A short write sets the error bit (0x20) and the routine returns 0xFFFF.  The
+ * cursor is then reset to the buffer base and bytes-left zeroed.  Returns 0 on
+ * success, 0xFFFF on error.
  */
 int func_010E66_rtl_sz_116(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010E73 JNE 0x010E7E */ {
-            /* @0x010E78 */ func_010EE2();
-            goto label_010ED4;  /* @0x010E7B */
+    uint16_t si = arg0_bp_06;            /* @asm [bp+6] (FILE*) */
+    uint16_t di = 0;                     /* result accumulator (0 / 0xFFFF) */
+    int16_t  dirty;
+
+    if (si == 0) {                       /* @asm cmp [bp+6],0; jne 0x10E7E */
+        func_010EE2(0);                  /* @asm push 0; call 0x10EE2 (flushall) */
+        return 0;                        /* @asm jmp 0x10ED4 (ax=di=0) */
+    }
+
+    /* @asm 0x010E81 only act on write-mode streams (low 2 flag bits == 2). */
+    {
+        uint8_t fl = DG8(si + 6);        /* @asm mov al,[si+6] */
+        if ((fl & 3) != 2) goto reset;   /* @asm and al,3; cmp al,2; jne 0x10EC8 */
+
+        /* @asm 0x010E8C buffered? (flags bit3, else parallel-flag bit0). */
+        if (!(fl & 8)) {                 /* @asm test cl,8; jne 0x10E9E */
+            uint16_t flg = (uint16_t)(si - 0x290e);     /* @asm sub bx,0x290e */
+            if (!(DG8(flg + 0x29ae) & 1)) goto reset;   /* @asm test [bx+0x29ae],1; je */
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010E8A JNE 0x010EC8 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x010E8F JNE 0x010E9E */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x010E9C JE 0x010EC8 */ {
-                    if (/* JLE fallthrough cond: */ ax > 0) /* @0x010EA8 JLE 0x010EC8 */ {
-                        /* @0x010EB4 */ overlay_call_0D1D_1FFE();
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x010EBF JE 0x010EC8 */ {
-                        }
-                    }
-                }
+
+        /* @asm 0x010E9E flush the dirty span cursor-base. */
+        dirty = (int16_t)(DG16(si) - DG16(si + 4));     /* @asm mov ax,[si]; sub ax,[si+4] */
+        if (dirty <= 0) goto reset;      /* @asm or ax,ax; jle 0x10EC8 */
+        {
+            int wrote = overlay_call_0D1D_1FFE();        /* @asm push ax; push [si+4];
+                                                          * push fd=[si+7]; lcall 0xD1D:0x1FFE */
+            if (wrote != dirty) {        /* @asm cmp [bp-2],ax; je 0x10EC8 */
+                DG8(si + 6) |= 0x20;     /* @asm or [si+6],0x20 (error) */
+                di = 0xFFFF;             /* @asm mov di,0xFFFF */
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+reset:
+    /* @asm 0x010EC8 reset cursor to base, bytes-left = 0. */
+    DG16(si)     = DG16(si + 4);         /* @asm mov ax,[si+4]; mov [si],ax */
+    DG16(si + 2) = 0;                    /* @asm mov [si+2],0 */
+    return (int)(uint16_t)di;            /* @asm mov ax,di */
 }
 
 /* @asm        0x010EE2..0x010F2D  (75 bytes)  region=load_image
@@ -414,153 +517,84 @@ int func_010E66_rtl_sz_116(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x1896
- * @inferred_role  PROLOGUE_HEAVY (75 bytes). 0x0D1D:0x1896
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x0D1D:0x1896   (fflush-via-overlay: flush one stream, returns -1 on error)
+ * @inferred_role  flushall: flush every open buffered stream; report count or status
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  NEAR function (ret 2, 0x010F2A); takes ONE arg = a "return count" flag
+ *        at [bp+4].  Auto-banner span (0x010EE2..0x010F2D) is correct.
+ *
+ * MSC 6.0 _flushall().  Walks the FILE table from 0x290E to the high-water mark
+ * [0x2A4E] in 8-byte strides.  Each stream that is open for I/O ([si+6]&0x83) is
+ * flushed via the 0x0D1D:0x1896 wrapper; a -1 result records a global error
+ * ([bp-2] -> 0xFFFF) while a success bumps the flushed-stream count (di).  If
+ * the caller passed a non-zero count flag it returns the count, else the
+ * error status word.
  */
-int func_010EE2_rtl_sz_75(void)
+int func_010EE2_rtl_sz_75(uint16_t want_count_bp_04)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2A4E
-     */
-        goto label_010EFC;  /* @0x010EF2 */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x010F00 JB 0x010F18 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010F06 JE 0x010EF9 */ {
-            }
-            /* @0x010F09 */ overlay_call_0D1D_1896();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x010F12 JE 0x010EF4 */ {
-            }
-            goto label_010EF9;  /* @0x010F15 */
+    uint16_t si = 0x290e;                /* @asm mov si,0x290e (first FILE) */
+    uint16_t di = 0;                     /* @asm sub di,di (flushed count) */
+    uint16_t status = 0;                 /* @asm [bp-2] error status */
+
+    /* @asm 0x010EFC for each FILE up to the high-water mark [0x2A4E]. */
+    while (DG16(0x2a4e) >= si) {         /* @asm cmp [0x2A4E],si; jb 0x10F18 */
+        if (DG8(si + 6) & 0x83) {        /* @asm test [si+6],0x83; je next */
+            int r = overlay_call_0D1D_1896();    /* @asm push si; lcall 0xD1D:0x1896 */
+            if (r + 1 == 0)              /* @asm inc ax; je 0x10F4 (==-1 -> error) */
+                status = 0xFFFF;         /* @asm [bp-2]=0xFFFF */
+            else
+                di++;                    /* @asm inc di */
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010F1C JNE 0x010F22 */ {
-            goto label_010F25;  /* @0x010F20 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        si += 8;                         /* @asm add si,8 */
+    }
+
+    /* @asm 0x010F18 return either the count or the error status. */
+    if (want_count_bp_04 == 1)           /* @asm cmp [bp+4],1; jne 0x10F22 */
+        return (int)(uint16_t)di;        /* @asm mov ax,di */
+    return (int)(uint16_t)status;        /* @asm mov ax,[bp-2] */
 }
 
-/* @asm        0x010F3E..0x0110FE  (448 bytes)  region=load_image
+/* @asm        0x010F3E..0x01140F  (1233 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_010F3E_unknown.asm
  * @pattern    LARGE_LOGIC
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [8]
+ * @args_seen  [8, 0xa]
  * @lcalls     0
- * @near_calls 6
+ * @near_calls many (internal helpers)
  * @callers    0
  * @touches_8542 False
+ * @note  Auto-banner span 0x010F3E..0x0110FE (448 bytes) was wrong; the true
+ *        function runs 0x010F3E..0x01140F (1233 bytes per functions.json).
  *
- * Near CALL targets:
- *   - 0x00F9A0
- *   - 0x0113C2
- *   - 0x011349  (3x)
- *   - 0x01135D
- * @inferred_role  LARGE_LOGIC (448 bytes). no LCALLs
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * Near CALL targets (all SHADOWED interiors of this function):
+ *   - 0x00F9A0          (stack-probe / __chkstk on a 0x171-byte frame)
+ *   - 0x011349          (fetch next 16-bit varargs argument)
+ *   - 0x011351          (fetch next 32-bit varargs argument)
+ *   - 0x01135D          (fetch next far-pointer varargs argument)
+ *   - 0x0113A4 / 0x0113C2 (emit a counted string / N copies of a pad char)
+ *   - 0x0113DE          (binary-to-ASCII radix conversion, std-direction)
+ *   - 0x0113C2/0x01137A (emit one char to the output sink via putc/_flsbuf 0x10BBC)
+ * @inferred_role  _output: the MSC 6.0 printf-family core formatter (vfprintf).
+ * @status     STUB 2026-06-09 — printf-core format interpreter.
+ *
+ * This is the Microsoft C 6.0 `_output` engine: a 1233-byte format-string
+ * interpreter driven by an indirect jump table at CS:0x195E.  It walks the
+ * format string at [bp+8], pulls width/precision/flags, dispatches each
+ * conversion (%d %i %u %o %x %X %c %s %n %p %e %E %f %g %G) through six
+ * register-interfaced internal helpers, and streams the result via the
+ * single-char emitter at 0x0113C2/0x01137A (which falls through to _flsbuf at
+ * 0x010BBC).  The control flow hinges on a CS-relative computed jump and on
+ * register state that the opaque overlay/near-call thunks do not preserve, so a
+ * byte-accurate portable-C reconstruction is not recoverable from the skeleton.
+ * In the modern build the printf family is serviced by the host C runtime; this
+ * definition is retained only to satisfy the original symbol/offset.
  */
-int func_010F3E_logic_sz_448(uint16_t arg0_bp_08)
+int func_010F3E_logic_sz_448(uint16_t fmt_bp_08, uint16_t args_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2AB5
-     */
-        /* @0x010F45 */ func_00F9A0();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x010F5E JE 0x010F66 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x010F64 JGE 0x010F6C */ {
-                goto label_01140F;  /* @0x010F69 */
-            }
-        }
-        if (/* JA fallthrough cond: */ ax <= 0) /* @0x010F73 JA 0x010F7A */ {
-            goto label_010F7C;  /* @0x010F78 */
-        }
-        /* @0x010F9B */ func_0113C2();
-        goto label_010F52;  /* @0x010F9E */
-        goto label_010F52;  /* @0x010FB2 */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010FB9 JNE 0x010FC1 */ {
-            goto label_010F52;  /* @0x010FBF */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010FC3 JNE 0x010FCB */ {
-            goto label_010F52;  /* @0x010FC9 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010FCD JNE 0x010FD6 */ {
-            goto label_010F52;  /* @0x010FD3 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010FD8 JNE 0x010FE1 */ {
-            goto label_010F52;  /* @0x010FDE */
-        }
-        goto label_010F52;  /* @0x010FE5 */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x010FEE JNE 0x010FFF */ {
-            /* @0x010FF0 */ func_011349();
-            if (/* JNS fallthrough cond: */ ax signed 0) /* @0x010FF5 JNS 0x01100E */ {
-                goto label_01100E;  /* @0x010FFD */
-            }
-        }
-        goto label_010F52;  /* @0x011011 */
-        goto label_010F52;  /* @0x011019 */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011022 JNE 0x011030 */ {
-            /* @0x011024 */ func_011349();
-            if (/* JNS fallthrough cond: */ ax signed 0) /* @0x011029 JNS 0x01103F */ {
-                goto label_01103F;  /* @0x01102E */
-            }
-        }
-        goto label_010F52;  /* @0x011042 */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01104A JNE 0x011052 */ {
-            goto label_011074;  /* @0x011050 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011054 JNE 0x01105C */ {
-            goto label_011074;  /* @0x01105A */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01105E JNE 0x011066 */ {
-            goto label_011074;  /* @0x011064 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011068 JNE 0x011070 */ {
-            goto label_011074;  /* @0x01106E */
-        }
-        goto label_010F52;  /* @0x011074 */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01107C JNE 0x011081 */ {
-            goto label_01120F;  /* @0x01107E */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011083 JNE 0x011088 */ {
-            goto label_01120F;  /* @0x011085 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01108A JNE 0x01108F */ {
-            goto label_011213;  /* @0x01108C */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011091 JNE 0x011096 */ {
-            goto label_011219;  /* @0x011093 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011098 JNE 0x01109D */ {
-            goto label_01121F;  /* @0x01109A */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01109F JNE 0x0110A4 */ {
-            goto label_011240;  /* @0x0110A1 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0110A6 JE 0x0110C2 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0110AA JE 0x0110D3 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0110AE JE 0x011101 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x0110B2 JE 0x011114 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x0110B6 JE 0x0110BF */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x0110BA JE 0x0110BF */ {
-                                goto label_01117A;  /* @0x0110BC */
-                            }
-                        }
-                        goto label_011177;  /* @0x0110BF */
-                        /* @0x0110C2 */ func_011349();
-                        goto label_0112BE;  /* @0x0110D0 */
-                        /* @0x0110D3 */ func_01135D();
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0110D8 JNE 0x0110EC */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0110DE JNE 0x0110EC */ {
-                                goto label_0112BE;  /* @0x0110E9 */
-                            }
-                        }
-                        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x0110F0 JCXZ 0x0110F9 */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0110F6 JNE 0x0110F9 */ {
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)fmt_bp_08; (void)args_bp_0A;
+    return 0;  /* TODO: port from func_010F3E.asm — MSC _output printf-core
+                * (CS:0x195E indirect jump table + register-interfaced helpers;
+                * replaced by the host formatter in the modern build). */
 }
 
 /* @asm        0x01146A..0x0114E4  (122 bytes)  region=load_image
@@ -572,36 +606,66 @@ int func_010F3E_logic_sz_448(uint16_t arg0_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (122 bytes). no LCALLs
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  __lseek: low-level file seek (INT 21h AH=42h) with overflow
+ *                 clamping for negative offsets.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x01146A..0x0114E4 (122 bytes) was short; this is the
+ *        true 122-byte body, but functions.json groups it with the read/write
+ *        wrappers up to 0x1179A — the seek proper ends at 0x0114E4 (jmp 0x10AE5).
+ *        Called as func_01146A(fd,off_lo,off_hi,whence) by the fwrite sibling.
+ *
+ * MSC 6.0 __lseek(fd=[bp+6], off=[bp+8]:[bp+0xa], whence=[bp+0xc]).  fd is
+ * range-checked against g_NFILE_QQ ([0x27B9]).  When the high word's sign bit is
+ * set (a "logically negative" 32-bit displacement) the routine first probes the
+ * file size / current position with INT 21h 4201h/4202h, adds the displacement,
+ * and either clamps the result to 0 (errno 0x16 = EINVAL on underflow) or
+ * re-seeks absolutely (4200h).  Otherwise it issues a single INT 21h AH=42h with
+ * the raw whence in AL.  On success the per-fd flag bit1 is cleared (drops the
+ * "at-EOF" marker).  Returns the new file position via the 0x10AE5 epilogue
+ * (the syscall result, or -1 with errno mapped).
  */
-int func_01146A_logic_sz_122(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
+int func_01146A_logic_sz_122(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                             uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27B9
-     */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x011477 JB 0x01147E */ {
-            goto label_0114A8;  /* @0x01147C */
+    int      fd       = (int)arg0_bp_06;             /* @asm mov bx,[bp+6] */
+    uint16_t off_lo   = arg1_bp_08;                  /* @asm [bp+8]  */
+    uint16_t off_hi   = arg2_bp_0A;                  /* @asm [bp+0xa] */
+    int      whence   = (int)(uint8_t)arg3_bp_0C;    /* @asm [bp+0xc] (AL only) */
+    int32_t  off      = (int32_t)(((uint32_t)off_hi << 16) | off_lo);
+    int      rc;
+
+    if (arg0_bp_06 >= DG16(0x27b9))                  /* @asm cmp bx,[0x27B9]; jb 0x1147E */
+        return errno_epilogue(0x9 << 8);             /* @asm mov ax,0x900; stc -> EBADF */
+
+    /* @asm 0x01147E negative 32-bit displacement needs current-position folding. */
+    if (off_hi & 0x8000) {                           /* @asm test [bp+0xa],0x8000; je 0x114CD */
+        if (whence == 0) {                           /* @asm cmp [bp+0xc],0; je 0x114A5 (bad) */
+            return errno_epilogue(0x16 << 8);        /* @asm mov ax,0x1600; stc -> EINVAL */
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011483 JE 0x0114CD */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x011489 JE 0x0114A5 */ {
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x011494 JB 0x0114E1 */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x01149B JNE 0x0114AB */ {
-                        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x0114A3 JNS 0x0114CD */ {
-                            goto label_0114E1;  /* @0x0114A9 */
-                            if (/* JNS fallthrough cond: */ ax signed 0) /* @0x0114BE JNS 0x0114CD */ {
-                                goto label_0114A5;  /* @0x0114CB */
-                            }
-                        }
-                    }
-                    if (/* JB fallthrough cond: */ ax >= 0) /* @0x0114DA JB 0x0114E1 */ {
-                    }
+        /* @asm 0x01148B base = lseek(fd, 0, CUR) (4201h). */
+        {
+            int32_t base = (int32_t)int21h_AH_42(fd, 0, 1);
+            if (base < 0)                            /* @asm jb 0x114E1 (syscall error) */
+                return errno_epilogue(-1);
+            if (whence & 2) {                        /* @asm test [bp+0xc],2; jne 0x114AB (END) */
+                /* @asm 0x0114AB resolve against end: probe size with 4202h. */
+                int32_t end = (int32_t)int21h_AH_42(fd, 0, 2);
+                if (end + off < 0) {                 /* @asm add; jns 0x114CD else restore */
+                    int21h_AH_42(fd, base, 0);       /* @asm 4200h restore original pos */
+                    return errno_epilogue(0x16 << 8);/* @asm mov ax,0x1600 -> EINVAL */
                 }
+            } else if (base + off < 0) {             /* @asm 0x01149D add ax,[bp+8]; jns 0x114CD */
+                return errno_epilogue(0x16 << 8);    /* @asm mov ax,0x1600 -> EINVAL */
             }
         }
-        goto label_010AE5;  /* @0x0114E1 */
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x0114CD issue the seek with the requested whence. */
+    rc = int21h_AH_42(fd, off, whence);              /* @asm AH=42h, AL=whence, CX:DX=off */
+    if (rc < 0)                                       /* @asm jb 0x114E1 */
+        return errno_epilogue(rc);
+    DG8(fd + 0x27bb) &= 0xFD;                         /* @asm and [bx+0x27BB],0xFD (clear EOF) */
+    return rc;                                        /* @asm jmp 0x10AE5 (success) */
 }
 
 /* @asm        0x0115CE..0x011687  (185 bytes)  region=load_image
@@ -615,56 +679,83 @@ int func_01146A_logic_sz_122(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x2902
+ *   - 0x0D1D:0x2902   (count the '\n' bytes in the buffer for text expansion)
  *
  * Near CALL targets:
- *   - 0x011682  (3x)
- *   - 0x00F9A0
- * @inferred_role  DISPATCHER (185 bytes). 0x0D1D:0x2902
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x011682  (3x) (inner block-write: flush the translation sub-buffer)
+ *   - 0x00F9A0        (stack-probe / __chkstk for the translation buffer)
+ * @inferred_role  __write: low-level file write (INT 21h AH=40h) with text-mode
+ *                 LF -> CR/LF expansion.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x0115CE..0x011687 (185 bytes) is the entry; the body
+ *        (incl. the text-expansion epilogue) runs through 0x0116DA per
+ *        func_0114E4.asm.  Called as func_0115CE(fd,buf,count) by fread/fwrite.
+ *
+ * MSC 6.0 __write(fd=[bp+6], buf=[bp+8], count=[bp+0xa]).  fd is range-checked
+ * against g_NFILE_QQ ([0x27B9]); the IOB-dispatch hook ([0x2B16]==0xD6D6) fires;
+ * append-mode streams (flag bit5) seek to EOF (4202h) first.  Binary streams
+ * (flag bit7 == 0) write straight through with INT 21h AH=40h.  Text streams
+ * translate every '\n' into "\r\n" through a stack scratch buffer, writing it in
+ * chunks via the inner block-write; the returned byte count reports *logical*
+ * bytes (pre-expansion).  Returns bytes written via the 0x10AE5 epilogue, or -1
+ * with errno mapped.  ^Z (0x1A) handling mirrors the read side.
+ *
+ * In the modern build the text/binary translation and the INT 21h transfer are
+ * serviced by the host runtime; the port preserves the append-seek and
+ * straight-write semantics and represents the text path as a CR/LF-expanding
+ * byte stream over the same host write primitive.
  */
 int func_0115CE_rtl_sz_185(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27B9, 0x2B16
-     */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x0115DB JB 0x0115E4 */ {
-            goto label_010AE5;  /* @0x0115E1 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0115EA JNE 0x0115F0 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0115F5 JE 0x011602 */ {
-            if (/* JB fallthrough cond: */ ax >= 0) /* @0x011600 JB 0x0115E1 */ {
+    int      fd    = (int)arg0_bp_06;                /* @asm mov bx,[bp+6] */
+    uint16_t buf   = arg1_bp_08;                     /* @asm [bp+8] (near buffer) */
+    uint16_t count = arg2_bp_0A;                     /* @asm [bp+0xa] */
+
+    if (arg0_bp_06 >= DG16(0x27b9))                  /* @asm cmp bx,[0x27B9]; jb 0x115E4 */
+        return errno_epilogue(0x9 << 8);             /* @asm mov ax,0x900; stc -> EBADF */
+
+    if (DG16(0x2b16) == 0xD6D6)                       /* @asm cmp [0x2B16],0xD6D6; jne */
+        (*(void (* near *)(void))DG_PTR(0x2b18))();    /* @asm call [0x2B18] (IOB hook) */
+
+    /* @asm 0x0115F0 append mode: seek to end before writing. */
+    if (DG8(fd + 0x27bb) & 0x20) {                    /* @asm test [bx+0x27BB],0x20; je 0x11602 */
+        if (int21h_AH_42(fd, 0, 2) < 0)               /* @asm 4202h lseek(fd,0,END) */
+            return errno_epilogue(-1);                /* @asm jb 0x115E1 */
+    }
+
+    /* @asm 0x011602 binary stream (bit7 == 0): straight write, the common path. */
+    if (!(DG8(fd + 0x27bb) & 0x80)) {                 /* @asm test [bx+0x27BB],0x80; je 0x11679 */
+        /* @asm 0x0116DA write [bp+0xa] bytes; count==0 returns 0. */
+        int wrote;
+        if (count == 0) return 0;                     /* @asm jcxz 0x116E1 */
+        wrote = int21h_AH_40(fd, DG_PTR(buf), (int)count);
+                                                       /* @asm AH=40h, DS:DX=buf, CX=count */
+        if (wrote < 0)                                 /* @asm jb 0x116D7 (error) */
+            return errno_epilogue(wrote);
+        return wrote;                                  /* @asm jmp 0x10AE5 */
+    }
+
+    /* @asm 0x011609 text stream: expand every '\n' to "\r\n" and write. */
+    {
+        const uint8_t near *src = (const uint8_t near *)DG_PTR(buf);
+        uint16_t i;
+        uint16_t logical = 0;                          /* @asm [bp-4] logical bytes done */
+        uint8_t  tmp;
+        if (count == 0) return 0;                       /* @asm jcxz 0x1165F */
+        for (i = 0; i < count; i++) {                   /* @asm loop over the buffer */
+            uint8_t c = src[i];
+            if (c == '\n') {                            /* @asm cmp al,0x0A; je 0x11661 */
+                tmp = '\r';                             /* @asm mov al,0x0D (inject CR) */
+                if (int21h_AH_40(fd, &tmp, 1) != 1)     /* @asm inner block-write (0x11682) */
+                    return errno_epilogue(-1);
             }
+            tmp = c;                                    /* @asm stosb into sub-buffer */
+            if (int21h_AH_40(fd, &tmp, 1) != 1)         /* @asm flush via 0x11682 */
+                return errno_epilogue(-1);
+            logical++;                                  /* @asm count logical bytes */
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011607 JE 0x011679 */ {
-            if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x011623 JCXZ 0x01165F */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x011629 JNE 0x011677 */ {
-                    /* @0x01162B */ overlay_call_0D1D_2902();
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x011633 JBE 0x01167B */ {
-                        if (/* JAE fallthrough cond: */ ax < 0) /* @0x011640 JAE 0x011645 */ {
-                        }
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x011653 JE 0x011661 */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x011657 JE 0x011672 */ {
-                                /* @0x01165A LOOP back to 0x011650 */
-                                /* @0x01165C */ func_011682();
-                                goto label_0116CC;  /* @0x01165F */
-                                if (/* JNE fallthrough cond: */ ax == 0) /* @0x011665 JNE 0x01166A */ {
-                                    /* @0x011667 */ func_011682();
-                                }
-                                goto label_011655;  /* @0x011670 */
-                            }
-                        }
-                        /* @0x011672 */ func_011682();
-                        goto label_011659;  /* @0x011675 */
-                        goto label_0116DA;  /* @0x011679 */
-                    }
-                }
-            }
-        }
-        /* @0x01167F */ func_00F9A0();
-    return 0;  /* @auto: TODO confirm return semantics */
+        return (int)(uint16_t)logical;                 /* @asm jmp 0x10AE5 (logical count) */
+    }
 }
 
 /* @asm        0x01180C..0x01183A  (46 bytes)  region=load_image
@@ -676,13 +767,35 @@ int func_0115CE_rtl_sz_185(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (46 bytes). no LCALLs
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  atol(near): parse a signed decimal long from a string.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x01180C..0x01183A (46 bytes) was short; the true
+ *        function runs 0x01180C..0x011860 (84 bytes per functions.json).
+ *
+ * MSC 6.0 atol() (near string).  Skips leading SPACE/TAB, takes an optional
+ * '+'/'-' sign, then accumulates decimal digits into a 32-bit value with the
+ * classic (n*8 + n*2 + digit) shift-add, and negates for '-'.  Returns the
+ * value in dx:ax (a long).  No external callers, so the return type is widened
+ * to long from the auto int.
  */
-int func_01180C_logic_sz_46(uint16_t arg0_bp_06)
+long func_01180C_logic_sz_46(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    const uint8_t near *p = (const uint8_t near *)DG_PTR(arg0_bp_06); /* @asm mov si,[bp+6] */
+    int32_t  val = 0;                    /* @asm dx:bx accumulator */
+    uint8_t  c;
+    int      neg = 0;
+
+    do { c = *p++; } while (c == ' ' || c == '\t');   /* @asm skip 0x20/0x09 */
+
+    if (c == '-') { neg = 1; c = *p++; }              /* @asm cmp al,0x2d */
+    else if (c == '+') { c = *p++; }                  /* @asm cmp al,0x2b */
+
+    while (c >= '0' && c <= '9') {                     /* @asm cmp al,0x39 ja / sub 0x30 jb */
+        val = val * 10 + (int32_t)(c - '0');           /* @asm shl/rcl x3 + add (=*10) */
+        c = *p++;                                      /* @asm next digit */
+    }
+
+    return neg ? -val : val;                           /* @asm neg dx:ax if '-' */
 }
 
 /* @asm        0x011860..0x01190C  (172 bytes)  region=load_image
@@ -696,36 +809,87 @@ int func_01180C_logic_sz_46(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x1E9A
- * @inferred_role  MEDIUM_LOGIC (172 bytes). 0x0D1D:0x1E9A
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x0D1D:0x1E9A   (the lseek syscall wrapper: lseek(fd, off, whence) -> dx:ax)
+ * @inferred_role  ftell(fp): report the current logical file position.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x011860..0x01190C (172 bytes) was short; the true
+ *        function runs 0x011860..0x0119D6 (374 bytes per functions.json).
+ *        The 0x1E9A wrapper returns a 32-bit dx:ax position, but the modern
+ *        overlay thunk is declared `int` (low word only); the buffered-position
+ *        math below is faithful and the high word is annotated where it is lost.
+ *
+ * MSC 6.0 ftell().  fp at [bp+6] (si); fd=[si+7].  A pending negative
+ * bytes-left is clamped to 0, then lseek(fd,0,SEEK_CUR) reads the OS position.
+ * For an unbuffered stream the result is simply OS_pos - bytes_remaining.  For a
+ * buffered stream the routine corrects for the in-RAM cursor (cursor - base),
+ * the read-ahead still queued ([si+2]), and — in text mode (file_flags bit7) —
+ * for every '\n' that will expand to CR/LF, by re-seeking to the buffer's start
+ * offset and rescanning.  Returns the logical position as a long (dx:ax), or -1L
+ * on lseek failure / invalid (non-seekable text) stream (errno 0x16 = EINVAL).
  */
-int func_011860_rtl_sz_172(uint16_t arg0_bp_06)
+long func_011860_rtl_sz_172(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x011882 JGE 0x011889 */ {
+    uint16_t si = arg0_bp_06;                  /* @asm mov si,[bp+6] (FILE*) */
+    uint16_t di = (uint16_t)(0x29ae + (si - 0x290e)); /* @asm parallel flag entry [bp-0xe] */
+    int      fd = (int)(uint8_t)DG8(si + 7);   /* @asm mov al,[si+7] -> [bp-0xa] */
+    int32_t  ospos;                            /* @asm [bp-4]:[bp-2] OS position */
+    int32_t  result;
+
+    if ((int16_t)DG16(si + 2) < 0)             /* @asm cmp [si+2],0; jge 0x11889 */
+        DG16(si + 2) = 0;                      /* @asm mov [si+2],0 */
+
+    /* @asm 0x011889 oslseek(fd,0,SEEK_CUR) -> dx:ax. */
+    ospos = (int32_t)overlay_call_0D1D_1E9A(); /* @asm push 1; push 0; push 0; push fd; lcall 0x1E9A */
+    if (ospos < 0)                             /* @asm or dx,dx; jge 0x118AE (else -1L) */
+        return -1L;                            /* @asm mov ax,0xFFFF; cdq; jmp 0x119D0 */
+
+    /* @asm 0x0118AE unbuffered fast path: OS_pos - bytes_remaining. */
+    if (!(DG8(si + 6) & 8) && !(DG8(di) & 1)) {     /* @asm test [si+6],8 / test [di],1 */
+        return ospos - (int32_t)(int16_t)DG16(si + 2);  /* @asm sub dx:ax,[si+2] */
+    }
+
+    /* @asm 0x0118D2 buffered: start with (cursor - base). */
+    {
+        int32_t inbuf = (int32_t)(int16_t)(DG16(si) - DG16(si + 4)); /* @asm ax=[si]-[si+4] */
+
+        if (!(DG8(si + 6) & 3)) {               /* @asm test [si+6],3; jne 0x118DE */
+            /* @asm 0x01190E neither read nor write active. */
+            if (!(DG8(si + 6) & 0x80)) {        /* @asm test [si+6],0x80; jne -> use inbuf */
+                DG16(0x27ac) = 0x16;            /* @asm mov [0x27AC],0x16 (EINVAL) */
+                return -1L;                     /* @asm jmp 0x118A6 -> -1L */
+            }
+            return ospos + inbuf;               /* @asm jmp 0x119D0 (text, no queue) */
         }
-        /* @0x011894 */ overlay_call_0D1D_1E9A();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x0118A4 JGE 0x0118AE */ {
-            goto label_0119D0;  /* @0x0118AA */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x0118B2 JNE 0x0118D2 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0118BA JNE 0x0118D2 */ {
-                goto label_0119D0;  /* @0x0118CE */
+
+        /* @asm 0x0118DE text mode read-back: count newlines preceding the cursor. */
+        if (DG8(fd + 0x27bb) & 0x80) {          /* @asm test [bx+0x27BB],0x80; je 0x118FD */
+            uint16_t q = DG16(si + 4);          /* @asm di = [si+4] (base) */
+            while (q < DG16(si)) {              /* @asm cmp [si],di; ja 0x118F0 */
+                if (DG8(q) == '\n') inbuf++;    /* @asm cmp byte [di],0x0A; inc [bp-8] */
+                q++;                            /* @asm inc di */
             }
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0118DE JE 0x01190E */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0118E8 JE 0x0118FD */ {
-                goto label_0118F9;  /* @0x0118ED */
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0118F3 JNE 0x0118F8 */ {
-                }
-                if (/* JA fallthrough cond: */ ax <= 0) /* @0x0118FB JA 0x0118F0 */ {
-                }
-            }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x011903 JNE 0x01191C */ {
-            }
+
+        /* @asm 0x0118FD if no read-ahead is queued, position is OS_pos + inbuf. */
+        if (DG16(si + 2) == 0)                  /* (write side / nothing queued) */
+            return ospos + inbuf;               /* @asm jmp 0x119D0 */
+
+        /* @asm 0x01191C read side with queued bytes: subtract the buffer span that
+         *      still corresponds to data already consumed from the OS file. */
+        if (!(DG8(si + 6) & 1))                 /* @asm test [si+6],1; jne 0x11925 */
+            return ospos + inbuf;               /* @asm jmp 0x119C4 */
+        {
+            /* span = (cursor - base) + bytes_left == total bytes the buffer holds. */
+            int32_t span = (int32_t)(int16_t)
+                ((DG16(si) - DG16(si + 4)) + DG16(si + 2)); /* @asm [bp-0xc] */
+            (void)span;
+            /* The OS file pointer is one buffer-load ahead; correct it back by the
+             * buffer size (text mode adds 1 for a pending CR, per [di] bit5).  The
+             * exact re-seek+rescan uses the 0x1E9A 32-bit result which the thunk
+             * does not surface here; we report the in-RAM correction faithfully. */
+            return ospos + inbuf - span;        /* @asm sub [bp-4]:[bp-2],[bp-0xc] */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
 }
 
 /* @asm        0x0119D6..0x011A73  (157 bytes)  region=load_image
@@ -739,44 +903,78 @@ int func_011860_rtl_sz_172(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x1896
- *   - 0x0D1D:0x2916
+ *   - 0x0D1D:0x1896   (fflush-via-overlay: drain the stream before rebuffering)
+ *   - 0x0D1D:0x2916   (the _malloc primitive: allocate a buffer when none given)
  *
  * Near CALL targets:
- *   - 0x010CA0
- * @inferred_role  MEDIUM_LOGIC (157 bytes). 0x0D1D:0x1896 + 0x0D1D:0x2916
- * @status     SHADOWED (interior of func_00FECA; auto-segmentation artifact, not a standalone function)
+ *   - 0x010CA0        (free the stream's current library-allocated buffer)
+ * @inferred_role  setvbuf(fp, buf, mode, size): install a buffering policy.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note  Auto-banner span 0x0119D6..0x011A73 (157 bytes) was short; the true
+ *        function runs 0x0119D6..0x011A95 (191 bytes per functions.json).
+ *        Args: [bp+6]=FILE*, [bp+8]=buf, [bp+0xa]=mode, [bp+0xc]=size.
+ *
+ * MSC 6.0 setvbuf().  mode must be 4 (_IONBF), 0 (_IOFBF) or 0x40 (_IOLBF);
+ * size must be in (0, 0x7FFF].  The stream is flushed (0x1896) and its old
+ * buffer released (func_010CA0).  _IONBF marks the stream unbuffered, pointing
+ * the 1-byte "buffer" at the parallel flag entry.  Otherwise, if the caller
+ * supplied no buffer one is malloc'd via 0x2916 (failure -> return -1 and the
+ * stream stays library-buffered, parallel mode=1); a caller buffer is recorded
+ * as user-owned (flags bit3 set, parallel mode=0).  Buffer base/cursor/size are
+ * then wired into the FILE and the parallel entry.  Returns 0 on success,
+ * -1 (0xFFFF) on bad args or allocation failure.
  */
-int func_0119D6_rtl_sz_157(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
+int func_0119D6_rtl_sz_157(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                           uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x2AC2
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0119E7 JE 0x011A08 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0119ED JE 0x011A02 */ {
-                if (/* JA fallthrough cond: */ ax <= 0) /* @0x0119F4 JA 0x011A02 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x0119FA JE 0x011A08 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x011A00 JE 0x011A08 */ {
-                            goto label_011A8F;  /* @0x011A05 */
-                        }
-                    }
-                }
-            }
+    uint16_t si   = arg0_bp_06;          /* @asm [bp+6] FILE* */
+    uint16_t buf  = arg1_bp_08;          /* @asm [bp+8] caller buffer (0 => allocate) */
+    uint16_t mode = arg2_bp_0A;          /* @asm [bp+0xa] _IO* mode */
+    uint16_t size = arg3_bp_0C;          /* @asm [bp+0xc] buffer size */
+    uint16_t di;                         /* parallel flag entry */
+    int16_t  ret = 0;                    /* @asm [bp-2] result */
+
+    /* @asm 0x0119E3 validate mode and size. */
+    if (mode != 4) {                                  /* @asm cmp [bp+0xa],4; je ok */
+        if (size == 0 || (int16_t)size < 0 || size > 0x7FFF) /* @asm cmp [bp+0xc],0 / 0x7FFF */
+            return (int)(uint16_t)0xFFFF;             /* @asm mov ax,0xFFFF; jmp 0x11A8F */
+        if (mode != 0 && mode != 0x40)                /* @asm cmp [bp+0xa],0 / 0x40 */
+            return (int)(uint16_t)0xFFFF;             /* @asm jmp 0x11A02 -> -1 */
+    }
+
+    di = (uint16_t)(0x29ae + (si - 0x290e));          /* @asm parallel flag entry */
+    overlay_call_0D1D_1896();                         /* @asm push si; lcall 0x1896 (flush) */
+    func_010CA0();                                    /* @asm push si; call 0x10CA0 (free buf) */
+
+    if (mode & 4) {                                   /* @asm test [bp+0xa],4; je 0x11A40 (_IONBF) */
+        DG8(si + 6) |= 4;                             /* @asm or [si+6],4 (unbuffered) */
+        DG8(di) = 0;                                  /* @asm mov byte [di],0 */
+        buf  = (uint16_t)(di + 1);                    /* @asm lea ax,[di+1]; [bp+8]=ax */
+        size = 1;                                     /* @asm mov [bp+0xc],1 */
+    } else if (buf == 0) {                            /* @asm cmp [bp+8],0; jne 0x11A6E */
+        /* @asm 0x011A46 no caller buffer: allocate one. */
+        buf = (uint16_t)overlay_call_0D1D_2916();     /* @asm push size; lcall 0x2916 (malloc) */
+        if (buf == 0) {                               /* @asm or ax,ax; jne 0x11A60 */
+            ret = (int16_t)0xFFFF;                     /* @asm [bp-2]=0xFFFF */
+            goto store;                                /* @asm jmp 0x11A8C */
         }
-        /* @0x011A16 */ overlay_call_0D1D_1896();
-        /* @0x011A1F */ func_010CA0();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011A29 JE 0x011A40 */ {
-            goto label_011A79;  /* @0x011A3D */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011A44 JNE 0x011A6E */ {
-            /* @0x011A49 */ overlay_call_0D1D_2916();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x011A56 JNE 0x011A60 */ {
-                goto label_011A8C;  /* @0x011A5D */
-            }
-            goto label_011A79;  /* @0x011A6B */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        DG8(si + 6) &= 0xFB;                          /* @asm and [si+6],0xFB */
+        DG8(si + 6) |= 8;                             /* @asm or [si+6],8 (lib-buffered) */
+        DG8(di) = 0;                                  /* @asm mov byte [di],0 */
+    } else {
+        /* @asm 0x011A6E caller-supplied buffer: user-owned, count it. */
+        DG16(0x2ac2) += 1;                            /* @asm inc [0x2AC2] */
+        DG8(si + 6) &= 0xF3;                          /* @asm and [si+6],0xF3 */
+        DG8(di) = 1;                                  /* @asm mov byte [di],1 */
+    }
+
+    /* @asm 0x011A79 wire the buffer into the FILE and parallel entry. */
+    DG16(di + 2) = size;                              /* @asm mov [di+2],size */
+    DG16(si + 4) = buf;                               /* @asm mov [si+4],buf */
+    DG16(si)     = buf;                               /* @asm mov [si],buf */
+    DG16(si + 2) = 0;                                 /* @asm mov [si+2],0 */
+store:
+    return (int)(uint16_t)(uint16_t)ret;              /* @asm mov ax,[bp-2] */
 }
 
 /* @asm        0x011B56..0x011CAB  (341 bytes)  region=load_image
