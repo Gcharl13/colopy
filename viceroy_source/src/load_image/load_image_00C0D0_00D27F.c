@@ -10,6 +10,26 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* ----------------------------------------------------------------------------
+ * Overlay (RTLink) far-call targets referenced by the ported bodies below that
+ * are NOT (yet) declared in overlay_externs.h.  Declared locally so this TU can
+ * forward to them faithfully; they should be promoted into overlay_externs.h.
+ * Period code reaches each via `lcall seg:off`; args travel on the DOS stack, so
+ * the modern shim signatures are `(void)` like their siblings.
+ * -------------------------------------------------------------------------- */
+extern int overlay_call_0009_02AE(void);  /* @ref RTLink seg 0x0009 off 0x02AE */
+extern int overlay_call_0009_02CC(void);  /* @ref RTLink seg 0x0009 off 0x02CC */
+extern int overlay_call_0009_00B4(void);  /* @ref RTLink seg 0x0009 off 0x00B4 */
+extern int overlay_call_0009_01A2(void);  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
+extern int overlay_call_0BCA_0002(void);  /* @ref RTLink seg 0x0BCA off 0x0002 (rect fill) */
+extern int overlay_call_181F_0E52(void);  /* @ref RTLink seg 0x181F off 0x0E52 */
+extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 (read cursor/mouse pos) */
+extern int overlay_call_0B4E_0004(void);  /* @ref RTLink seg 0x0B4E off 0x0004 (formatted print) */
+extern int overlay_call_0C2E_0022(void);  /* @ref RTLink seg 0x0C2E off 0x0022 */
+extern int overlay_call_0D11_0000(void);  /* @ref RTLink seg 0x0D11 off 0x0000 (DOS handle setup) */
+extern int overlay_call_0D1C_0000(void);  /* @ref RTLink seg 0x0D1C off 0x0000 (blit address calc) */
+extern int overlay_call_0D1D_0BA2(void);  /* @ref RTLink seg 0x0D1D off 0x0BA2 */
+
 /* @asm        0x00C0D0..0x00C109  (57 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00C0D0_unknown.asm
  * @pattern    PROLOGUE_HEAVY
@@ -22,16 +42,31 @@
  * @inferred_role  PROLOGUE_HEAVY (57 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00C0D0_logic_sz_57(void)
+/* PORTED 2026-06-09 from func_00C0D0.asm — clears/repaints the main play area.
+ * When the "alt-page" flag DG8(0x4A) is set it just flips to the overlay page
+ * (0009:0x2CC); otherwise it fills the 0x140-wide framebuffer (rect-fill 0BCA:2)
+ * and repaints via 181F:0xE52.  When arg0 is non-zero it also clears the page
+ * with the secondary fill 0B70:0x3A.  (The auto "args_seen []" banner missed the
+ * [bp+6] argument the body reads at 0xC11D.) */
+int func_00C0D0_logic_sz_57(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x004A
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00C0D8 JE 0x00C0E8 */ {
-            goto label_00C11B;  /* @0x00C0E5 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    if (DG8(0x4A) != 0) {                 /* @asm 0x00C0D3 cmp [0x4a],0; je -> else */
+        /* @asm 0x00C0DA push 0;push 0;push 0; lcall 0009:0x2CC */
+        overlay_call_0009_02CC();
+        /* @asm 0x00C0E5 jmp 0xC11B (skip the full repaint) */
+    } else {
+        /* @asm 0x00C0E8 push [0x2DAE],[0x2DAC],[0x2DAA],[0x2DA8]; push 7;push 0;
+         *      ax=0xFFFF;cdq;bx=0x140; lcall 0BCA:2 (rect fill, width 0x140) */
+        overlay_call_0BCA_0002();
+        /* @asm 0x00C108 push 0;push 0;push 0; push [0x898],[0x896]; lcall 181F:0xE52 */
+        overlay_call_181F_0E52();
+    }
+    /* @asm 0x00C11D cmp [bp+6],0; je 0xC134 */
+    if (arg0_bp_06 != 0) {
+        /* @asm 0x00C123 push 0;push 0x140;push 7; ax=0;cdq;bx=0; lcall 0B70:0x3A */
+        overlay_call_0B70_003A();
+    }
+    return 0;                             /* @asm 0x00C134 leave; retf */
 }
 
 /* @asm        0x00C17A..0x00C18E  (20 bytes)  region=load_image
@@ -46,10 +81,31 @@ int func_00C0D0_logic_sz_57(void)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_00C17A.asm — draws one unit-status line (row 5).
+ * arg0 = unit index into the unit table (stride 0x1C @ DGROUP 0x3144).  Reads the
+ * unit's type byte (+3) to pick a palette/string from the 0x8D0A nibble table,
+ * its class byte (+2) to index the 14-wide name table @0x5230, the active-power
+ * name (via [0x5394]) from @0x838C, and emits them through the cell drawer
+ * (0009:0x1A2), the label helper func_00C09A, the panel helper func_00C07A and a
+ * page-clear func_00C0D0.  (The auto "TINY_ACCESSOR" banner was a mis-class; this
+ * is a full draw routine.)  Sister of func_00C1F8 (row 7) and func_00C276 (row 6). */
 int func_00C17A_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);     /* @asm imul bx,[bp+6],0x1C */
+    uint8_t  typ  = DG8(0x3147 + rec) & 0x0F;          /* @asm [bx+0x3147]; and 0xF */
+    uint8_t  cls  = DG8(0x3146 + rec);                 /* @asm [si+0x3146]; sub bh,bh */
+
+    overlay_call_0009_00B4();                          /* @asm push 1; lcall 0009:0xB4 */
+    (void)DG16(0x8D0A + typ * 2);                      /* @asm push [bx-0x72F6] (palette) */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 (draw cell) */
+    (void)DG16(0x5230 + cls * 14);                     /* @asm push [bx+0x5230] (name) */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C09A();                                     /* @asm push 5; call 0xC09A */
+    (void)DG16(0x838C + DG16(0x5394) * 2);             /* @asm push [[0x5394]*2-0x7C74] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C07A();                                     /* @asm push 0;push 0x78;push 1; call 0xC07A */
+    func_00C0D0();                                     /* @asm push 1; call 0xC0D0 */
+    return 0;                                          /* @asm pop si; leave; retf */
 }
 
 /* @asm        0x00C1F8..0x00C20C  (20 bytes)  region=load_image
@@ -64,10 +120,26 @@ int func_00C17A_logic_sz_20(uint16_t arg0_bp_06)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_00C1F8.asm — unit-status line (row 7).
+ * Byte-identical to func_00C17A except the label helper is invoked with index 7
+ * (func_00C09A) instead of 5.  See func_00C17A for the field/table breakdown. */
 int func_00C1F8_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);     /* @asm imul bx,[bp+6],0x1C */
+    uint8_t  typ  = DG8(0x3147 + rec) & 0x0F;          /* @asm [bx+0x3147]; and 0xF */
+    uint8_t  cls  = DG8(0x3146 + rec);                 /* @asm [si+0x3146] */
+
+    overlay_call_0009_00B4();                          /* @asm push 1; lcall 0009:0xB4 */
+    (void)DG16(0x8D0A + typ * 2);                      /* @asm push [bx-0x72F6] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    (void)DG16(0x5230 + cls * 14);                     /* @asm push [bx+0x5230] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C09A();                                     /* @asm push 7; call 0xC09A */
+    (void)DG16(0x838C + DG16(0x5394) * 2);             /* @asm push [[0x5394]*2-0x7C74] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C07A();                                     /* @asm push 0;push 0x78;push 1; call 0xC07A */
+    func_00C0D0();                                     /* @asm push 1; call 0xC0D0 */
+    return 0;                                          /* @asm pop si; leave; retf */
 }
 
 /* @asm        0x00C276..0x00C28A  (20 bytes)  region=load_image
@@ -82,10 +154,26 @@ int func_00C1F8_logic_sz_20(uint16_t arg0_bp_06)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_00C276.asm — unit-status line (row 6).
+ * Byte-identical to func_00C17A except the label helper is invoked with index 6
+ * (func_00C09A) instead of 5.  See func_00C17A for the field/table breakdown. */
 int func_00C276_logic_sz_20(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);     /* @asm imul bx,[bp+6],0x1C */
+    uint8_t  typ  = DG8(0x3147 + rec) & 0x0F;          /* @asm [bx+0x3147]; and 0xF */
+    uint8_t  cls  = DG8(0x3146 + rec);                 /* @asm [si+0x3146] */
+
+    overlay_call_0009_00B4();                          /* @asm push 1; lcall 0009:0xB4 */
+    (void)DG16(0x8D0A + typ * 2);                      /* @asm push [bx-0x72F6] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    (void)DG16(0x5230 + cls * 14);                     /* @asm push [bx+0x5230] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C09A();                                     /* @asm push 6; call 0xC09A */
+    (void)DG16(0x838C + DG16(0x5394) * 2);             /* @asm push [[0x5394]*2-0x7C74] */
+    overlay_call_0009_01A2();                          /* @asm lcall 0009:0x1A2 */
+    func_00C07A();                                     /* @asm push 0;push 0x78;push 1; call 0xC07A */
+    func_00C0D0();                                     /* @asm push 1; call 0xC0D0 */
+    return 0;                                          /* @asm pop si; leave; retf */
 }
 
 /* @asm        0x00C30A..0x00C31B  (17 bytes)  region=load_image
