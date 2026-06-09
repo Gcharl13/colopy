@@ -16,3 +16,7 @@ Thumbs.db
 # reverse-engineering working dir (binary + generated disasm; do not commit)
 re_work/
 *.EXE
+
+# original game data (copyrighted MicroProse assets; supplied locally, never committed)
+game_data/
+col.zip

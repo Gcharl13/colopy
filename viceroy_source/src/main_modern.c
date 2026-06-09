@@ -20,12 +20,14 @@
  *   3. The in-game loop: game_main_loop() / game_tick_coordinator().
  * ============================================================================ */
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "viceroy_types.h"
 #include "dgroup.h"
 #include "ui_screen.h"
 
 extern void dgroup_init(void);
+extern int  viceroy_load_names(const char *dir);
 extern void title_screen_render(void);
 extern int  title_screen_update(void);
 
@@ -36,6 +38,24 @@ int main(void)
     dgroup_init();
     printf("  dgroup_init    : ok (DGROUP %u bytes at %p)\n",
            (unsigned)DGROUP_SIZE, (void *)g_dgroup);
+
+    /* game data dir: $VICEROY_DATA, else ./game_data (gitignored, user-
+     * supplied -- the COLONIZE install files; never committed) */
+    const char *data = getenv("VICEROY_DATA");
+    if (!data) data = "game_data";
+    int n = viceroy_load_names(data);
+    if (n >= 0) {
+        printf("  NAMES.TXT      : ok (%d entries from %s)\n", n, data);
+        printf("    countries    : %s / %s / %s / %s (colors %d/%d/%d/%d)\n",
+               &DG8(DG16(0x8D42)), &DG8(DG16(0x8D44)),
+               &DG8(DG16(0x8D46)), &DG8(DG16(0x8D48)),
+               DG8(0x848), DG8(0x849), DG8(0x84A), DG8(0x84B));
+        printf("    leaders      : %s / %s / %s / %s\n",
+               &DG8(0x540E), &DG8(0x540E + 0x34),
+               &DG8(0x540E + 2*0x34), &DG8(0x540E + 3*0x34));
+    } else {
+        printf("  NAMES.TXT      : SKIPPED (no data dir; set $VICEROY_DATA)\n");
+    }
 
     /* One pass of the real title-screen composer + menu dispatch.  All draw
      * leaves are weak no-ops, so this exercises control flow + DGROUP state,

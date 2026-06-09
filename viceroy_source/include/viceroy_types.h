@@ -7,6 +7,11 @@
 #ifndef VICEROY_TYPES_H
 #define VICEROY_TYPES_H
 
+#ifdef _VICEROY_MODERN
+/* modern host: take the fixed-width types from the system -- the manual
+ * typedefs below collide with glibc (int32_t there is int, not long) */
+#  include <stdint.h>
+#else
 typedef unsigned char  uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned long  uint32_t;
@@ -14,6 +19,7 @@ typedef signed char    int8_t;
 typedef signed short   int16_t;
 typedef signed long    int32_t;
 typedef unsigned long  uintptr_t;
+#endif
 
 /* MS C "far" pointer keyword reproduced here for documentation.
  * In a build with the period-correct compiler this is the actual keyword. */
