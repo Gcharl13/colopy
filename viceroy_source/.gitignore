@@ -6,3 +6,6 @@ build/
 # Stray compiler output
 a.out
 *.o
+
+# linkgap.py derived artifacts (regenerate: python3 tools/linkgap.py)
+tools/generated/
