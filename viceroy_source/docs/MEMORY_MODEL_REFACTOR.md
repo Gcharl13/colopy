@@ -108,6 +108,19 @@ pass; the remaining ~26 are being reconciled.
 
 ### D. Linkable binary + front end (milestone 3) — TODO
 
+- **Cross-file duplicate definitions** (found 2026-06-09 via an archive-wide
+  `nm ... | uniq -d`; harmless for the static lib, but each is a
+  multiple-definition error once an executable links). Same function defined in
+  two objects — **7 so far**: `colony_screen_render` (overlay_024342 **and**
+  ui/colony_screen.c), `native_settlement_remove` (overlay_046D70 **and**
+  native/settlement.c), `func_06F7FE/06F821/06F83F` (adjacent overlay files
+  overlay_06C220 **and** overlay_06D938 — a segmentation boundary overlap), plus
+  `power_gold` and `war_flag_cell`. Resolution: the organised module is canonical;
+  the raw overlay-decomposition copy becomes a declaration (or that span is
+  dropped from the overlay file). Re-run `nm libviceroy_rules.a | awk '/ [TtDdBb] /
+  {print $3}' | sort | uniq -d` before the first executable link to get the live
+  list.
+
 - **DGROUP global decl consolidation + type reconciliation — DONE 2026-06-09.**
   The count globals at `0x539A/0x539C/0x539E` were declared file-locally in ~12
   files (int16/uint16 drift, *undefined* at link, dual-named vs `g_progress_*`,
