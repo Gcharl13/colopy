@@ -199,7 +199,8 @@ int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* f
 }
 
 /* ============================================================================
- * func_046EC0 — native_settlement_remove  [DONE — BYTE_VERIFIED, full body]
+ * func_046EC0 — native_settlement_remove_046EC0_inline  [BYTE_VERIFIED inline port;
+ *   canonical modular version is in native/settlement.c — see rename note below]
  * ----------------------------------------------------------------------------
  * 258 bytes, 95 insns (authoritative: disasm_overlay_reseg/page_0C.asm).
  * Removes the NativeSettlement at slot settlement_index from the map and the
@@ -330,7 +331,12 @@ extern uint8_t  g_tribe_settlement_count_962A[]; /* DGROUP:0x962A — per-tribe 
                                             * In the 16-bit code accessed as the 8086 byte at
                                             * DS:(tribe_id − 0x69D6) ≡ DS:(tribe_id + 0x962A). */
 
-void native_settlement_remove(uint16_t settlement_index)  /* func_046EC0 — BYTE_VERIFIED */
+/* RENAMED 2026-06-09: this is the raw INLINE port of func_046EC0; the CANONICAL
+ * native_settlement_remove lives in src/native/settlement.c (same function, a
+ * cleaner modular port that delegates to unit_detach_from_settlement /
+ * native_tribe_eliminate / native_tribe_redistribute). Renamed to resolve the
+ * duplicate-definition link error; kept here as a byte-verified reference. */
+void native_settlement_remove_046EC0_inline(uint16_t settlement_index)  /* func_046EC0 — BYTE_VERIFIED */
 {
     /* rec is the address of the settlement record in the DGROUP table; the
      * platform (overlay call) uses it implicitly (pushed before 0x0A4C). */

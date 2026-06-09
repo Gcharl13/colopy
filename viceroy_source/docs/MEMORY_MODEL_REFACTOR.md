@@ -123,15 +123,18 @@ pass; the remaining ~26 are being reconciled.
     (the colonist-row + warehouse + SoL sub-render), ui's is `func_028592` (the
     top-level paint composer that CALLS func_0270D0 @asm 0x0285C4). No call sites
     used the name, so the overlay copy was renamed to `colony_screen_paint_body`.
-  - *REMAINING (1, deferred — genuine same-function-two-ports correctness call):*
-    `native_settlement_remove` — BOTH are `func_046EC0` (the settlement
-    remove+compact+renumber), ported twice: overlay_046D70 **131-line "full body"**
-    vs native/settlement.c **32-line**, both tagged BYTE_VERIFIED. Same address,
-    same function — so one is more complete/correct. Needs diffing both against
-    `func_046EC0.asm` to keep the authoritative one (likely the fuller 131-line
-    overlay port, since a table compact+chain-renumber is inherently large) and
-    make the other a declaration. Last GLOBAL dup; check with
-    `nm libviceroy_rules.a | awk '/ [TDB] /{print $3}' | sort | uniq -d`.
+  - *FIXED:* `native_settlement_remove` — both were `func_046EC0`. Diffing showed
+    native/settlement.c's "32-line" version is in fact the COMPLETE modular port
+    (it covers the whole @asm range 0x46EED..0x46F8A across all 3 steps —
+    unit-link fixup / table compact / count-decrement / eliminate-or-scale — just
+    delegating to helpers, hence short), while overlay_046D70's 131-line copy is
+    the same logic inlined. Kept native's as canonical; renamed the overlay copy
+    `native_settlement_remove_046EC0_inline` (preserved as a byte-verified
+    reference). 
+
+  **Result: ZERO global duplicate definitions** (`nm libviceroy_rules.a |
+  awk '/ [TDB] /{print $3}' | sort | uniq -d` is empty) — the library is now
+  duplicate-clean for the eventual executable link.
 
 - **DGROUP global decl consolidation + type reconciliation — DONE 2026-06-09.**
   The count globals at `0x539A/0x539C/0x539E` were declared file-locally in ~12
