@@ -2,3 +2,7 @@
 # CMake modern-build output (not tracked)
 build_modern/
 build/
+
+# Stray compiler output
+a.out
+*.o
