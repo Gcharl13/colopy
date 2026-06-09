@@ -654,8 +654,9 @@ int func_008734_logic_sz_30(void)
  *
  * Near CALL targets:
  *   - 0x008720
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: is tile (arg0,arg1) part of the current colony's
+ *                 footprint (origin or one of the worked-tile offsets)?
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 int func_008770_colony_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
@@ -1050,13 +1051,17 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     if (!(DG8(ctxp + 0x1A) < 4
           && DG8((unsigned)DG8(ctxp + 0x1A) * 0x34 + 0x543F) == 0)) {   /* @asm 0x8A60..0x8A72 */
         int32_t gold;
-        v = (int32_t)overlay_call_181F_0D78(/* g_8D4C, owner, nx, ny */); /* @asm 0x8A88 */
-        gold = (int32_t)func_0087F4(DG8(ctxp + 0x1A));                    /* @asm 0x8A9E gold dx:ax */
-        if ((gold - v) >= (v >> 1)) {           /* @asm 0x8AB0..0x8ABF signed 32-bit */
+        /* @asm 0x8A88 v.lo = ax = lcall 0x181F:0xD78(...); the code then uses only
+         *      ax (16-bit) sign-extended (cwd) to 32-bit -- the "cost" to compare
+         *      against the owner's gold. So model v as the sign-extended 16-bit. */
+        v = (int32_t)(int16_t)overlay_call_181F_0D78(/* g_8D4C, owner, nx, ny */);
+        gold = (int32_t)func_0087F4_logic_sz_18(DG8(ctxp + 0x1A));        /* @asm 0x8A9E gold dx:ax */
+        /* @asm 0x8AAC..0x8ABF  if ((int32)(gold - v) >= (int32)(v >> 1)) afford. */
+        if ((gold - v) >= (v >> 1)) {
             DG8(DG16(0x8D4E) + 5)++;            /* @asm 0x8AC1 inc byte[[0x8D4E]+5] */
             func_008846_logic_sz_27(DG8(ctxp + 0x1A),
                                     (uint16_t)((uint32_t)v & 0xFFFF),
-                                    (uint16_t)((uint32_t)v >> 16));      /* @asm 0x8AD5 deduct gold */
+                                    (uint16_t)((uint32_t)v >> 16));      /* @asm 0x8AD5 deduct v gold */
         } else {
             v = 0;                              /* @asm 0x8ADE */
         }
@@ -1230,8 +1235,7 @@ int func_008BD4_op_sz_73(uint16_t arg0_bp_06)
  *         81-byte disassembly exists (func_008C1E.asm, functions.json 0x8C1E..0x8C6F)
  *         and is ported below.
  */
-/* Bare func_008C1E name: load_image_008C70 calls it as the bare symbol. */
-int func_008C1E(uint16_t arg0_bp_06)
+int func_008C1E_logic_sz_81(uint16_t arg0_bp_06)
 {
     /* @asm 0x8C22 result=0xFFFF [bp-6]; counter=0xFFFF [bp-4]; node=[0x8D78] (ax).
      *      loop: store node [bp-2]; if (node<0) break. 0x8C30 if (result>=0) break.

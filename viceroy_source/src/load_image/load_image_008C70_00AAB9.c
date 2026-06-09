@@ -1176,43 +1176,155 @@ int func_009FFC_colony_sz_550(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return unit_individual_handler_9FFC((int16_t)arg0_bp_06, (int *)arg1_bp_08);
 }
 
-/* @asm        0x00A6A2..0x00A724  (130 bytes)  region=load_image
+/* @asm        0x00A6A2..0x00A93D  (668 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00A6A2_unknown.asm
- * @pattern    MEDIUM_LOGIC
- * @prologue   ENTER 0x1e
+ * @pattern    LARGE_LOGIC
+ * @prologue   ENTER 0x1e / PUSH SI
  * @args_seen  [6, 8]
- * @lcalls     2
- * @near_calls 1
+ * @lcalls     9
+ * @near_calls 2
  * @callers    0
  * @touches_8542 True
  *
  * LCALL targets:
- *   - 0x037F:0x000A
- *   - 0x037F:0x003C
+ *   - 0x037F:0x000A  (tile in-bounds)            0x037F:0x02F8 (tile owner-mask)
+ *   - 0x037F:0x003C  (radius/ownership predicate) 0x037F:0x0314 (tile owner id)
+ *   - 0x037F:0x0598  (tile blocked?)             0x03E4:0x0074 (tile water?)
+ *   - 0x0427:0x005C / 0x004A (unit iterator)     0x0427:0x0992 (mark unit)
  *
  * Near CALL targets:
- *   - 0x008720
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x008720  (current-power id)   0x008892  (colony-relative tile resolve)
+ * @inferred_role COLONY_TOUCHED — compute the candidate-tile flag byte for the 5x5
+ *                colony work grid cell (arg0,arg1): bit 0x10 unusable, 0x80 enemy
+ *                unit, 0x02 special, 0x04 wonder, 0x40 adj other-colony territory,
+ *                0x20 sits under another colony, 0x08 colony centre.
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   functions.json / auto-tracer split this at the early `retf` @0x00A723,
+ *         reporting only 130 bytes.  The TRUE function (objdump 0xA6A2..0xA93D,
+ *         668 bytes, single ENTER/leave-retf @0xA93C) continues through the whole
+ *         flag-building scan and is decompiled in full here.  Bit values are the
+ *         literal `or byte[bp-6],<imm>` constants.
  */
 int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542
-     */
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x00A6D0 JG 0x00A6DA */ {
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int flags = 0;                                          /* [bp-6] */
+    int16_t px   = (int16_t)((uint8_t)ctx_local[0] + (int16_t)arg0_bp_06 - 2);  /* [bp-2] */
+    int16_t py   = (int16_t)((uint8_t)ctx_local[1] + (int16_t)arg1_bp_08 - 2);  /* [bp-4] */
+    int16_t adx;                                            /* [bp-0x10] = abs(arg0-2) */
+    int16_t ady;                                            /* [bp-0x14] = abs(arg1-2) */
+    int16_t owner_here;                                     /* [bp-0x16] */
+    int j;                                                  /* [bp-0xc] */
+
+    /* @asm 0xA6C9..0xA6DA  adx = arg0-2; if adx<=0 adx = -(arg0-2) */
+    adx = (int16_t)((int16_t)arg0_bp_06 - 2);
+    if (adx <= 0) adx = (int16_t)(-adx);
+    /* @asm 0xA6DD..0xA6EE  ady = arg1-2; if ady<=0 ady = -(arg1-2) */
+    ady = (int16_t)((int16_t)arg1_bp_08 - 2);
+    if (ady <= 0) ady = (int16_t)(-ady);
+
+    /* @asm 0xA6F1..0xA723  if tile out of bounds, OR the (adx,ady,power) radius
+     *      predicate fails -> mark 0x10 (unusable) and return early. */
+    if (overlay_call_037F_000A(/* px, py */) == 0 ||
+        overlay_call_037F_003C(/* adx, ady, func_008720() */) == 0) {
+        (void)func_008720();   /* @0xA704 CALL 0x8720 (current-power id) */
+        flags |= 0x10;
+        return flags;
+    }
+
+    /* @asm 0xA724..0xA74C  if ctx->owner(+0x1A) < 4 and the tile's owner-mask
+     *      (037F:02F8) lacks bit (0x10<<owner) -> mark 0x10 and return. */
+    if ((uint8_t)ctx_local[0x1A] < 4) {
+        int mask = overlay_call_037F_02F8(/* px, py */) & 0xFF;
+        if ((mask & (0x10 << (uint8_t)ctx_local[0x1A])) == 0) {
+            flags |= 0x10;
+            return flags;
         }
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x00A6E4 JG 0x00A6EE */ {
-        }
-        /* @0x00A6F7 */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A701 JE 0x00A71A */ {
-            /* @0x00A704 */ func_008720();
-            /* @0x00A70E */ overlay_call_037F_003C();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A718 JNE 0x00A724 */ {
+    }
+
+    /* @asm 0xA74E..0xA763  owner_here = 037F:0314(px,py); if <0 skip to block I. */
+    owner_here = (int16_t)overlay_call_037F_0314(/* px, py */);
+    if (owner_here >= 0 &&
+        /* @asm 0xA766 owner_here != ctx->owner */
+        owner_here != (uint8_t)ctx_local[0x1A] &&
+        /* @asm 0xA776 03E4:0074(px,py) (water?) == 0 */
+        overlay_call_03E4_0074(/* px, py */) == 0 &&
+        /* @asm 0xA78B owner_here < 4 */
+        owner_here < 4) {
+        /* @asm 0xA794..0xA817  scan units on tile (px,py): for a soldier-class
+         *      (UnitRecord +8 == 5 or 6) that also passes the class/profession
+         *      gate, mark 0x80 (enemy unit) and tag it via 0427:0992. */
+        int idx = overlay_call_0427_005C(/* px, py */);
+        while (idx >= 0) {
+            uint8_t cls    = (uint8_t)DG8(0x3146 + (unsigned)idx * 0x1C);  /* +2 */
+            int gate_ok = 0;
+            if ((uint8_t)DG8(0x5236 + (unsigned)cls * 14) > 1) {
+                gate_ok = 1;                                /* @asm 0xA7C1 ja 0xA7DF */
+            } else if (cls == 2) {
+                uint8_t f3 = (uint8_t)(DG8(0x3147 + (unsigned)idx * 0x1C) & 0x0F); /* +3 */
+                if (f3 < 4 && DG8(0x543F + (unsigned)f3 * 0x34) == 0)
+                    gate_ok = 1;
             }
+            if (gate_ok) {
+                uint8_t f8 = (uint8_t)DG8(0x314C + (unsigned)idx * 0x1C);  /* +8 */
+                if (f8 == 5 || f8 == 6) {
+                    flags |= 0x80;
+                    overlay_call_0427_0992(/* idx, ctx->owner */);
+                }
+            }
+            idx = overlay_call_0427_004A(/* idx */);        /* next unit on tile */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0xA819..0xA82F  if tile is "blocked" (037F:0598) -> mark 0x02. */
+    if (overlay_call_037F_0598(/* px, py */) != 0)
+        flags |= 0x02;
+
+    /* @asm 0xA82F..0xA859  if (px,py) matches a wonder/landmark in table_54EC
+     *      (stride 0x12, count 0x539A) -> mark 0x04. */
+    for (j = 0; j < (int16_t)DG16(0x539A); j++) {
+        if (DG8(0x54EC + (unsigned)j * 0x12) == (uint8_t)px &&
+            DG8(0x54ED + (unsigned)j * 0x12) == (uint8_t)py) {
+            flags |= 0x04;
+        }
+    }
+
+    /* @asm 0xA85B..0xA927  scan all OTHER colonies (table 0x5D46, stride 0xCA,
+     *      count 0x539E; skip the current colony index at 0x8DC6):
+     *        - exact (px,py) under a colony centre  -> mark 0x20;
+     *        - within +/-2 of a colony AND its claimed tile (func_008892 +
+     *          per-colony ring table 0x5DB6) is owned -> mark 0x40.
+     * The asm reaches the |abs(dx)|<=2 test via two entry points (0xA864/0xA875)
+     * that compute (px-cx) or (cx-px); both reduce to abs(cx-px)<=2. */
+    for (j = 0; j < (int16_t)DG16(0x539E); j++) {
+        int16_t cx, cy;
+        if (j == (int16_t)DG16(0x8DC6))                     /* @asm 0xA8ED skip self */
+            continue;
+        cx = (int16_t)(uint8_t)DG8(0x5D46 + (unsigned)j * 0xCA);   /* colony[j].map_x */
+        cy = (int16_t)(uint8_t)DG8(0x5D47 + (unsigned)j * 0xCA);   /* colony[j].map_y */
+        if (cx == (uint8_t)px && cy == (uint8_t)py)         /* @asm 0xA8F5 */
+            flags |= 0x20;
+        {
+        int16_t ddx = (int16_t)(cx - px);  if (ddx < 0) ddx = (int16_t)(-ddx);
+        int16_t ddy = (int16_t)(cy - py);  if (ddy < 0) ddy = (int16_t)(-ddy);
+        if (ddx <= 2 && ddy <= 2) {
+            /* @asm 0xA8A2..0xA8C5  resolve the tile in colony[j]'s local frame */
+            int16_t nx = (int16_t)((uint8_t)ctx_local[0] - cx + (int16_t)arg0_bp_06);
+            int16_t ny = (int16_t)((uint8_t)ctx_local[1] - cy + (int16_t)arg1_bp_08);
+            int r = (int16_t)func_008892((uint16_t)nx, (uint16_t)ny);
+            if (r >= 0 &&
+                (int8_t)DG8(0x5DB6 + (unsigned)(uint16_t)r + (unsigned)j * 0xCA) >= 0)
+                flags |= 0x40;
+        }
+        }
+    }
+
+    /* @asm 0xA928..0xA934  if this is the colony centre tile (adx==0 && ady==0)
+     *      -> mark 0x08. */
+    if (adx == 0 && ady == 0)
+        flags |= 0x08;
+
+    return flags;
 }
 
 /* @asm        0x00A93E..0x00A994  (86 bytes)  region=load_image
@@ -1255,66 +1367,111 @@ int func_00A93E_logic_sz_86(void)
     return 0;
 }
 
-/* @asm        0x00A994..0x00AAB9  (293 bytes)  region=load_image
+/* @asm        0x00A994..0x00AB2D  (410 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00A994_unknown.asm
  * @pattern    LARGE_LOGIC
  * @prologue   ENTER 0x10
  * @args_seen  []
- * @lcalls     5
+ * @lcalls     10
  * @near_calls 3
  * @callers    0
  * @touches_8542 True
  *
  * LCALL targets:
- *   - 0x037F:0x02A0
- *   - 0x037F:0x000A
- *   - 0x181F:0x0D84
- *   - 0x05DC:0x006A
- *   - 0x03E4:0x0074
+ *   - 0x037F:0x02A0 (begin frame)   0x037F:0x000A (in-bounds)  0x181F:0x0D84 (resolve)
+ *   - 0x05DC:0x006A (range scale)   0x03E4:0x0074 (water?)     0x037F:0x0314 (owner)
+ *   - 0x05B3:0x0004 (relation bits) 0x0981:0x0000 (power flag) 0x037F:0x03E4 (claim?)
+ *   - 0x037F:0x0228 (commit work assignment)
  *
  * Near CALL targets:
- *   - 0x00A93E
- *   - 0x008956
- *   - 0x0088D0
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00A93E  (lazy-fill the 5x5 base grid)
+ *   - 0x008956  (tile->good id)
+ *   - 0x0088D0  (tile occupied by friendly unit?)
+ * @inferred_role COLONY_TOUCHED — recompute the 5x5 colony work-tile candidacy
+ *                grids (0x8D9E and 0x8D84), then commit (037F:0228) each usable
+ *                tile that survives the ownership/terrain/relation gauntlet.
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 293 bytes ending 0x00AAB9 (also the nominal file
+ *         range); the TRUE function is 0xA994..0xAB2D (410 bytes per functions.json,
+ *         single ENTER/leave-retf @0xAB2C) — the inner-loop tail (0xAAB9..0xAB2D)
+ *         was truncated and is decompiled here.  Two overlay LCALLs (05B3:0004,
+ *         0981:0000) declared file-locally above.
  */
 int func_00A994_colony_sz_293(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542, 0x8D4A, 0x8DB8
-     */
-        /* @0x00A9A5 */ overlay_call_037F_02A0();
-        /* @0x00A9B1 */ func_00A93E();
-        goto label_00AB1D;  /* @0x00A9B9 */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00A9C3 JL 0x00A9C8 */ {
-            goto label_00AB1A;  /* @0x00A9C5 */
-        }
-        /* @0x00A9EC */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A9F6 JE 0x00AA2D */ {
-            /* @0x00AA03 */ overlay_call_181F_0D84();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x00AA0D JL 0x00AA2D */ {
-                /* @0x00AA13 */ overlay_call_05DC_006A();
-                if (/* JG fallthrough cond: */ ax <= 0) /* @0x00AA1F JG 0x00AA2D */ {
+    /* Loop nest (asm): outer col=[bp-0xE] 0..4, inner row=[bp-0xC] 0..4.
+     * For each cell: result[bp-6] starts -1; px=ctx_map_x+row-2, py=ctx_map_y+col-2.
+     * A chain of predicates can either set result (a real good id) or force it to
+     * -1; the result is then written to grids 0x8D9E and 0x8D84 at index row*5+col,
+     * and (when the cell remains valid and its base grid 0x8DF0 slot is non-zero
+     * and the tile passes the owner/claim checks) the work assignment is committed
+     * via overlay 037F:0228. */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int frame;                                              /* [bp-8] */
+    int col, row;
+
+    /* @asm 0xA998..0xA9AD  frame = 037F:02A0(ctx_map_x, ctx_map_y) */
+    frame = overlay_call_037F_02A0(/* ctx[0], ctx[1] */);
+    (void)frame;
+    /* @asm 0xA9B1  lazily fill the 5x5 base grid (0x8DF0) */
+    func_00A93E();
+
+    for (col = 0; col < 5; col++) {                         /* [bp-0xE] outer */
+        for (row = 0; row < 5; row++) {                    /* [bp-0xC] inner */
+            int16_t result = -1;                            /* [bp-6] */
+            int16_t px = (int16_t)((uint8_t)ctx_local[0] + row - 2);  /* [bp-2] */
+            int16_t py = (int16_t)((uint8_t)ctx_local[1] + col - 2);  /* [bp-4] */
+            unsigned idx = (unsigned)row * 5 + (unsigned)col;        /* row*5+col */
+
+            /* @asm 0xA9EA..0xAA2C  if in bounds, resolvable (181F:0D84) and within
+             *      the scaled range, take the good byte from *(0x8D4A)+2. */
+            if (overlay_call_037F_000A(/* px, py */) != 0) {
+                int resolved = overlay_call_181F_0D84(/* px, py, -1, frame */);
+                if (resolved >= 0) {
+                    int scaled = overlay_call_05DC_006A(/* DG16(0x8D52) */);
+                    if ((int16_t)DG16(0x8DB8) <= scaled) {
+                        uint16_t near *p = (uint16_t near *)DG16(0x8D4A);
+                        result = (int16_t)(uint8_t)((uint8_t near *)p)[2];
+                    }
                 }
             }
-        }
-        /* @0x00AA34 */ func_008956();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00AA3C JL 0x00AA43 */ {
-        }
-        /* @0x00AA49 */ overlay_call_03E4_0074();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00AA53 JE 0x00AA5A */ {
-        }
-        /* @0x00AA61 */ func_0088D0();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00AA69 JE 0x00AA70 */ {
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00AA74 JL 0x00AA94 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00AA8D JNE 0x00AA94 */ {
+
+            /* @asm 0xAA2D..0xAA42  if func_008956(row,col) >= 0 -> invalidate. */
+            if ((int8_t)func_008956((uint16_t)row, (uint16_t)col) >= 0)
+                result = -1;
+            /* @asm 0xAA43..0xAA59  if tile is water (03E4:0074) -> invalidate. */
+            if (overlay_call_03E4_0074(/* px, py */) != 0)
+                result = -1;
+            /* @asm 0xAA5A..0xAA6F  if friendly unit occupies (func_0088D0) -> invalidate. */
+            if (func_0088D0((uint16_t)row, (uint16_t)col) != 0)
+                result = -1;
+            /* @asm 0xAA70..0xAA93  if still valid but relation bits (05B3:0004)
+             *      lack 0x20 -> invalidate. */
+            if (result >= 0) {
+                int rel = overlay_call_05B3_0004(/* ctx->owner, result */);
+                if ((rel & 0x20) == 0)
+                    result = -1;
+            }
+            /* @asm 0xAA94..0xAAB0  if power-flag (0981:0000(owner,2)) set -> invalidate. */
+            if (overlay_call_0981_0000(/* ctx->owner, 2 */) != 0)
+                result = -1;
+
+            /* @asm 0xAAB1..0xAAC8  store result into both grids at index row*5+col. */
+            DG8(0x8D9E + idx) = (uint8_t)result;
+            DG8(0x8D84 + idx) = (uint8_t)result;
+
+            /* @asm 0xAAC9..0xAB17  commit phase, only for surviving cells whose
+             *      base-grid (0x8DF0) slot is ZERO (@asm 0xAAD2 je continues) and
+             *      that pass the owner (037F:0314) / claim (037F:03E4) overlays;
+             *      otherwise fall through to the next cell. */
+            if (result >= 0 &&
+                DG8(0x8DF0 + idx) == 0 &&
+                overlay_call_037F_0314(/* px, py */) >= 0 &&
+                overlay_call_037F_03E4(/* px, py */) >= 0) {
+                overlay_call_037F_0228(/* px, py, result */);  /* commit work tile */
             }
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00AAAA JE 0x00AAB1 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return 0;
 }
 
