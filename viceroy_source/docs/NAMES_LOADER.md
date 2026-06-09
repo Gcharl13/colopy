@@ -45,12 +45,33 @@ palette/icon table the F1 Terrain report reads (`REPORTS.md` §4 `[bx+0x848]`);
 COLONYNAME/LEADERNAME confirm the **PowerRecord @0x5426 / AIPersonality @0x540E**
 stride-0x34 layout (`DATA_MODEL.md`, `project_powerrecord_layout`).
 
-## 3. Remaining inner (narrowed)
+## 3. ~~Remaining inner~~ CLOSED (2026-06-09)
 
-`func_07637F` (an orphan near-call in `orphans_overlay.asm`, called for
-UNFORESTED `i` and OTHER `i+0x18`) is the per-terrain-name entry sub-loader; its
-exact store target + its `0x1A1F:0xD20` (file 0x72DB0) helper are the last
-`not yet decoded-inner` for func_0749E0. Everything else above is byte-verified.
+`func_07637F` is a 5-byte TRAMPOLINE (`EA 20 0D 1F 1A` = `jmp far 0x1A1F:0xD20`)
+whose real body is **file 0x745F0** = `func_0745F0_terrain_row_load`
+(overlay_0745F0_077A6A.c — role corrected from "power_record_field_init"; the
+0x191F:0x91C/0x1A1F:0xB22/0x1A1F:0x88A calls are this section-read API, not
+"random bytes").  The prior "file 0x72DB0" attribution came from the AMBIG
+seg-26 fingerprint (0x72DB0 is a text-layout routine) and is WITHDRAWN.
+
+Call sites (all `push k; push cs; call 0x7637F`): UNFORESTED k=i @asm 0x074A38,
+FORESTED k=i+8 @asm 0x074A61 (the just-loaded row is then REP-MOVSW copied to
+row k+8: @asm 0x074A6D..0x074A7C `lea di,[bx+0x3074]; lea si,[bx+0x2FF4]`,
+rows 16..23 = byte-copies of 8..15), OTHER k=i+0x18 @asm 0x074AA1.
+
+**Terrain stat row @ DS:0x2F74 + k*0x10 (BYTE_VERIFIED):**
+
+| off | size | field | cite |
+|---|---|---|---|
+| +0x00 | word | name ptr (interned) | @asm 0x074607 |
+| +0x02 | byte | Movement (= the `type*16 + DS:0x2F76` cost read) | @asm 0x074612 |
+| +0x03 | byte | Defensive | @asm 0x07461B |
+| +0x04 | byte | Improvement | @asm 0x074624 |
+| +0x05 | byte | Value | @asm 0x07462D |
+| +0x06 | byte | derived max(cargo_weight×yield), filled later over all 29 rows | @asm 0x074EAD |
+| +0x07..+0x0F | 9 bytes | yields: Farmer, Planter(s/t/c), Trapper, Lumberjack, Ore Miner, Silver Miner, Fisherman (= the yield table @0x2F7B stride 0x10) | @asm 0x07463D |
+
+Modern loader: `src/runtime/data_load.c` `load_terrain()` mirrors this exactly.
 
 ## 4. Correction it forces (see REPORTS.md §13)
 

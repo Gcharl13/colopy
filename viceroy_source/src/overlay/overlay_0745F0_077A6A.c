@@ -278,13 +278,27 @@ void func_0764D0_gamewindow_view_init(void)
 }
 
 /* ============================================================================
- * func_0745F0 — power_record_field_init  [DONE — BYTE_VERIFIED]
+ * func_0745F0 — terrain_row_load  [DONE — BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
- * Initializes one per-index record (di = arg0_bp_06) in a stride-16 table:
- *   word [di*16 + 0x2F74] = (0x191F:0x91C , 0x1A1F:0xB22) value getter
- *   byte [di*16 + 0x2F76..0x2F79] = four 0x1A1F:0x88A random bytes
- *   byte [di*16 + 0x2F7B + i]     = nine 0x1A1F:0x88A random bytes (i=0..8)
- * (stride 16, base DGROUP 0x2F74; a per-power scratch/flags record.)
+ * ROLE CORRECTED 2026-06-09 (was "power_record_field_init" filling "random
+ * bytes"): this is the NAMES.TXT PER-TERRAIN-ENTRY LOADER — the real body of
+ * the func_07637F trampoline (file 0x7637F = `jmp far 0x1A1F:0xD20` -> here;
+ * NAMES_LOADER.md's old "file 0x72DB0" target came from the AMBIG seg-26
+ * fingerprint and is corrected).  Reached from func_0749E0 per entry:
+ * UNFORESTED(k=i), FORESTED(k=i+8; the just-loaded row is then REP-MOVSW
+ * copied to row k+8 @asm 0x074A6D..0x074A7C 0x2FF4->0x3074), OTHER(k=i+0x18).
+ * 0x191F:0x91C / 0x1A1F:0xB22 / 0x1A1F:0x88A are the section-read API
+ * (next-entry / intern-string / next-NUMBER — see docs/NAMES_LOADER.md §1).
+ *
+ * TERRAIN STAT ROW @ DS:0x2F74 + k*0x10 — matches the NAMES.TXT column
+ * comment "b) Movement, Defensive, Improvement, Value  c) Yield (Farmer..
+ * Fisherman)" and closes two standing cross-refs: the movement-cost read
+ * `type*16 + DS:0x2F76` and the yield table @0x2F7B stride 0x10:
+ *   +0x00 word  name ptr (interned)   +0x05 byte  Value
+ *   +0x02 byte  Movement              +0x06 byte  derived max(cargo_wt*yield)
+ *   +0x03 byte  Defensive                         (filled by the later pass
+ *   +0x04 byte  Improvement                        @asm 0x074EAD, 29 rows)
+ *   +0x07..+0x0F  9 yield bytes (Farmer..Fisherman)
  *
  * @asm 0x0745F5  mov di,[bp+6]
  * @asm 0x0745F8  lcall 0x191F:0x91C ; @asm 0x0745FD lcall 0x1A1F:0xB22
@@ -293,7 +307,7 @@ void func_0764D0_gamewindow_view_init(void)
  * @asm 0x074633  loop: lcall 0x1A1F:0x88A -> byte [bx+si+0x2f7b]; @asm 0x074645 cmp si,9 jl
  * @status DONE
  */
-void func_0745F0_power_record_field_init(uint16_t arg0_bp_06)
+void func_0745F0_terrain_row_load(uint16_t arg0_bp_06)
 {
     int di = arg0_bp_06;
     int base = di << 4;                       /* @asm 0x074604 shl bx,4 */

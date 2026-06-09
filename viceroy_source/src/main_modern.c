@@ -53,6 +53,14 @@ int main(void)
         printf("    leaders      : %s / %s / %s / %s\n",
                &DG8(0x540E), &DG8(0x540E + 0x34),
                &DG8(0x540E + 2*0x34), &DG8(0x540E + 3*0x34));
+        /* terrain rows @0x2F74 stride 0x10 (decoded func_0745F0):
+         * row 0 = Tundra, row 25 = Ocean (OTHER[1]) */
+        printf("    terrain[0]   : %s mv=%d def=%d farmer=%d ore=%d\n",
+               &DG8(DG16(0x2F74)), DG8(0x2F76), DG8(0x2F77),
+               DG8(0x2F7B), DG8(0x2F7B + 6));
+        printf("    terrain[25]  : %s mv=%d fisherman=%d\n",
+               &DG8(DG16(0x2F74 + 25*0x10)), DG8(0x2F76 + 25*0x10),
+               DG8(0x2F7B + 25*0x10 + 8));
     } else {
         printf("  NAMES.TXT      : SKIPPED (no data dir; set $VICEROY_DATA)\n");
     }
