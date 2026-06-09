@@ -878,7 +878,7 @@ int func_0696C6_unit_detail_dialog(uint16_t arg0)
  *   @asm 0x06A11B/0x06A21B  terrain-resource letters from table @0x1EE4[row*3+col]
  *
  * Yield-type legend -- [bp-0x9C] loops 0..8 (yield categories); for each it
- * string-builds the category name (*(0x2F2C)/*(0x2DF8), literal @0x1ED8 via
+ * string-builds the category name (*(0x2F2C)/ *(0x2DF8), literal @0x1ED8 via
  * 0x0D1D:0x7A4, *(0x2F2A)), probes the per-terrain magnitude with
  * 0x181F:0xA6A(category, paletteWord) -> [bp-0x8C], doubles it for category 5,
  * resolves the value label (0x181F:0x182) and draws the row (0x181F:0x13C /
@@ -888,7 +888,7 @@ int func_0696C6_unit_detail_dialog(uint16_t arg0)
  *   @asm 0x06A4FB..0x06A5DA  legend loop 2 (present-flagged bonus rows)
  *
  * Footer:
- *   @asm 0x06A5DE  caption *(0x2F2E)/*(0x2F30) + 0x182(@[arg0*0x10+0x2F76]) ; *(0x2F77) magnitude row
+ *   @asm 0x06A5DE  caption *(0x2F2E)/ *(0x2F30) + 0x182(@[arg0*0x10+0x2F76]) ; *(0x2F77) magnitude row
  *   @asm 0x06A6A6  copy literal @0x1EDC (0x0D1D:0x7E4) ; 0x182(arg0) ; *(0x1F5A)=running y
  *   @asm 0x06A6D2  0x181F:0x416(ss:title-buf[bp-0x2c], 0) ; cs:0x2D0D present helper
  *   @asm 0x06A6F2  0x181F:0xE2 present ; 0x181F:0x3C0 wait-for-input
@@ -1033,7 +1033,7 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
  *
  * Header row + its caption:
  *   @asm 0x06A808  baseId = arg0 + 0x52 ; if (arg0==0x1B) baseId = 0x43
- *   @asm 0x06A837  0x181F:0x254(baseId, x=*(0x83E)/*(0x840), y) ; the title glyph row
+ *   @asm 0x06A837  0x181F:0x254(baseId, x=*(0x83E)/ *(0x840), y) ; the title glyph row
  *   @asm 0x06A84E  0x181F:0x16E append [arg0*8 - 0x715C] ; 0x181F:0x13C(color, x=yOff+6, y) caption
  *
  * Entry walk -- threaded list from head, link g_terrain_ui_8F82[node].link_next:

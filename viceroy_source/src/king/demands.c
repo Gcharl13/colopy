@@ -72,6 +72,7 @@ extern int16_t  g_year_538A;               /* DGROUP:0x538A — current year */
 
 /* The byte-verified tax-change handler (amount/lower-bonus) lives elsewhere. */
 extern void king_attempt_tax_change(void);     /* func_034AE0 — see king_tax_raise.c */
+extern void king_schedule_royal_events(int power_id);  /* LCALL 0x191F:0xAE0 */
 
 /* ============================================================================
  * king_demand_cadence — ANCHOR_VERIFIED
@@ -109,7 +110,6 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not ye
         king_schedule_royal_events(power_id);   /* LCALL 0x191F:0xAE0 — internals in thunk page */
     }
 }
-extern void king_schedule_royal_events(int power_id);
 
 /* ============================================================================
  * king_tax_options_dialog — ANCHOR_VERIFIED (TAXOPTIONS / TEAPARTY menu)
@@ -157,7 +157,7 @@ extern void king_schedule_royal_events(int power_id);
  * design, not for lack of trying; a full port would be UI plumbing over
  * body-in-thunk-page overlay thunks, not game logic.
  * ============================================================================ */
-int ai_decide_king_demand(PowerRecord *p, int proposed_tax)   /* RECONSTRUCTED */
+int ai_decide_king_demand(struct PowerRecord *p, int proposed_tax)   /* RECONSTRUCTED */
 {
     /* Prior heuristic: AI accepts if the new tax wouldn't exceed 50%. not yet decoded. */
     return (p->tax_rate + proposed_tax) <= 50;

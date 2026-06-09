@@ -98,6 +98,7 @@ extern void ovl_landfall_unit  (int unit_idx, int dy, int dx);     /* 0x1A1F:0x1
 extern void ovl_reveal_tile    (int x, int y);                     /* 0x181F:0xDB8 @0x3FF79 */
 extern int  ovl_fortify_accum  (int x, int y);                     /* 0x181F:0x768 @0x3FFB4 (shared with resolver) */
 extern void ovl_post_landfall  (void);                             /* 0x181F:0xF6C @0x3FFCF */
+extern void power_scan_mark(int power);   /* defined below — forward decl for call at line ~250 */
 
 #define DEST_OK 0
 

@@ -73,6 +73,7 @@ extern uint16_t  g_flag_7E8;          /* 0x07E8 map/grid height (colony work gri
 extern uint16_t  g_flag_7EA;          /* 0x07EA map/grid width                    */
 extern uint16_t  g_flag_7EC;          /* 0x07EC suppress-auto-pick flag           */
 extern uint16_t  g_flag_7EE;          /* 0x07EE mouse-present / hover enabled     */
+extern uint16_t  g_flag_7F4;          /* 0x07F4 click-commit flag (@0x02A403)     */
 extern uint16_t  g_flag_7F6;          /* 0x07F6 sub-region (drill into) flag      */
 extern uint16_t  g_flag_890;          /* 0x0890 dialog-active / redraw owner      */
 extern uint16_t  g_flag_8D56;         /* 0x8D56 has-cursor-tile flag              */

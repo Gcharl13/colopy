@@ -44,7 +44,7 @@ extern int16_t g_region_2DA8[4];   /* DGROUP:0x2DA8..0x2DAE */
 extern int16_t g_word_372;         /* DGROUP:0x0372  cursor-active latch */
 
 /* ---- leaf helpers (resolved targets; call sites + args byte-exact) -------- */
-extern void strcpy_near(char *dst, int src_handle);  /* LCALL 0xD1D:0x7E4 (MSC strcpy) */
+/* strcpy_near: see iolib.h — second arg is a DGROUP offset (int), cast at each site */
 extern void ov_lookup_report_key(int which, void *buf);/* 0x181F:0x182 (page-05 ctx) */
 extern int  ov_report_dispatch(void *titlebuf, int z, int r0,int r1,int r2,int r3,
                                void *keybuf);          /* 0x181F:0x44E */
@@ -91,7 +91,7 @@ int report_open(int which)
     int  ok;
 
     /* 1. copy the "REPORT" key into the local buffer (MSC strcpy_near). */
-    strcpy_near(titlebuf, KEY_REPORT);                 /* @asm 0x03734B 0xD1D:0x7E4 */
+    strcpy_near(titlebuf, (const char *)(uintptr_t)KEY_REPORT); /* @asm 0x03734B 0xD1D:0x7E4 */
 
     /* 2. resolve the requested report by key + selector. */
     ov_lookup_report_key(which, titlebuf);             /* @asm 0x03735B 0x181F:0x182 */
@@ -760,7 +760,7 @@ void report_religious(int player)
 
     if (g_cheat_5383 & 0x20) {                    /* @asm 0x0379B9 TEST [0x5383],0x20 / JE */
         /* cheat overlay: literal "(%d of %d)" raw cross counts (handle 0x11A9). */
-        strcpy_near(buf, 0x11A9);                 /* @asm 0x0379D1 0xD1D:0xB48 (sprintf form) */
+        strcpy_near(buf, (const char *)(uintptr_t)0x11A9); /* @asm 0x0379D1 0xD1D:0xB48 (sprintf form) */
         text_draw(/*ss*/0, buf, col, row, 0xF);   /* @asm 0x0379E4 0x181F:0x013C */
     }
 

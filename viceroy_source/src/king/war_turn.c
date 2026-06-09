@@ -145,6 +145,7 @@ extern void  msg_set_long(int slot, int32_t value);        /* 0x181F:0x09AE */
 extern int   power_handle(int power_idx);                  /* 0x181F:0x09A4 */
 extern int   msg_key_lookup(void *key);                    /* 0x181F:0x03FE */
 extern void  ui_flash_power(int power, int a, int b);      /* 0x191F:0x0AC8 */
+extern void  ui_fmt_two(int a, int h0, int h1);            /* 0x181F:0x422 */
 extern void  ui_show_message_3(int handle, int a, int b);  /* 0x191F:0x0ABA */
 extern void  ui_show_message_0(void);                      /* 0x191F:0x0AAC */
 extern void  crt_keyed_to_buf(int handle, char *buf);      /* 0x0D1D:0x07E4 */
@@ -452,8 +453,7 @@ finish:
     /* @asm 0x02FAE5 — pop si/di; leave; retf. */
 }
 
-/* Forward-declared local helpers (call sites byte-verified; semantics inferred from call context). */
-extern void ui_fmt_two(int a, int h0, int h1);   /* 0x181F:0x422 */
+/* ui_fmt_two declared above with other overlay helpers */
 
 /* ============================================================================
  * NOTES / STILL-LEFT-UNRESOLVED

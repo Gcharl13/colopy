@@ -65,6 +65,7 @@ extern struct UnitRecord g_units[];          /* DGROUP:0x3144 */
 
 /* --- Overlay helpers (RTLink thunks; internals behind 0x110D:0xD91). body in thunk page */
 extern int  ovl_fortify_accum(int x, int y);   /* 0x181F:0x768  fort/colony path */
+extern void combat_demote_loser(int slot);      /* defined below — forward decl for call at line ~157 */
 
 #define COMBAT_DEFENDER_WINS 0
 #define COMBAT_ATTACKER_WINS 1

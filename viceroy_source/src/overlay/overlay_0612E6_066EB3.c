@@ -2063,6 +2063,9 @@ int func_066884_sprite_descriptor_B(uint16_t index)
     return overlay_call_181F_025E();
 }
 
+/* Forward declaration for helper called within func_066968 before its definition. */
+extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
+
 /* ============================================================================
  * func_066968  @ 0x066968..0x066B95  (558 bytes, ENTER 0x38, RETF)  page 0x15
  * ROLE: STRATEGIC (mini-)MAP ROW COMPOSITOR — "what colour goes where" on the
@@ -2167,7 +2170,7 @@ next_row:
     }
     return 0;                                                 /* @asm 0x066B92 retf */
 }
-extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
+/* func_066968_framebuf_addr declared above. */
 extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
 
 /* ============================================================================

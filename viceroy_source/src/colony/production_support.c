@@ -7,7 +7,7 @@
  * per-colonist handler 0x9FFC depend on.  Until now they were declared
  * `extern` in turn_update.c with one-line cites and left UNDEFINED, and the
  * load_image auto-skeleton (src/load_image/load_image_008262_008C6F.c) carried
- * empty `return 0; /* TODO */` stubs.  Here they are hand-ported in full from
+ * empty `return 0; /* TODO * /` stubs.  Here they are hand-ported in full from
  * the VICEROY.EXE bytes (capstone-disassembled, 16-bit real mode), with each
  * basic block cited to its file offset.
  *

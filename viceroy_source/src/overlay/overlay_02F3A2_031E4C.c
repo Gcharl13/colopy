@@ -140,7 +140,7 @@ extern int  glyph_value(/*...*/);              /* @asm 0x181F:0x0BE6 measure/ret
 extern void edge_light(/*...*/);               /* @asm 0x191F:0x08BC 3-D light edge (top/left)       */
 extern void edge_shadow(/*...*/);              /* @asm 0x191F:0x08B2 3-D shadow edge (bottom/right)  */
 extern long ldiv32_helper(/*...*/);            /* @asm 0x0D1D:... runtime long divide/format         */
-extern void strcat_far(/*...*/);               /* @asm 0x0D1D:0x117E far strcat into display buf      */
+/* strcat_far declared in iolib.h with proper signature */
 extern void strfmt_far(/*...*/);               /* @asm 0x0D1D:0x07A4 / 0x11B4 / 0x08FA formatting     */
 
 /* --- local near-call helpers (RTLink thunks: each is JMP FAR 0x191F:nnn) ---
@@ -372,7 +372,7 @@ int ship_nth_active(int n)
  *   0x14 -> 2 , 0x18 -> 3 , 0x16 -> 5 , 0x15 -> 1   (else 0)
  *
  * For key 0x15 (code 1) @asm 0x030C9D..0x030CD4:
- *   if (active_power < 4 AND g_power_flags[power*0x34] == 0 /*human*/)
+ *   if (active_power < 4 AND g_power_flags[power*0x34] == 0  [human])
  *        r = difficulty (0x53A6);  else  r = 1;
  *   if (random_int(0, r+4) == 0)  code = 4;       (0x181F:0x04D4)
  *
@@ -548,7 +548,7 @@ void report_header_row(int draw_arg)
 
     /* nation name */
     num_to_str(g_power_name_tbl[power] /* [bx-0x7C74] */);/* @asm 0x030F80/0x030F84 */
-    strcat_far(/* buf */);                               /* @asm 0x030F93 0x0D1D:0x117E */
+    strcat_far((char*)0, (char*)0 /* buf — args not yet decoded */);  /* @asm 0x030F93 0x0D1D:0x117E */
     str_pad(buf);                                        /* @asm 0x030F9F */
     /* nation adjective */
     num_to_str(0 /* [bx-0x72BE] */);                     /* @asm 0x030FAD/0x030FB1 */
@@ -559,7 +559,7 @@ void report_header_row(int draw_arg)
     str_pad(buf);                                        /* @asm 0x030FF9 */
     /* year value */
     strfmt_far(/* g_year=0x538A */);                     /* @asm 0x03100B 0x0D1D:0x08FA */
-    strcat_far(/* buf */);                               /* @asm 0x03101B 0x0D1D:0x07A4 */
+    strcat_far((char*)0, (char*)0 /* buf — args not yet decoded */); /* @asm 0x03101B 0x0D1D:0x07A4 */
     str_pad(buf);                                        /* @asm 0x031027 */
     /* label + tax */
     str_begin(buf, 0 /*0x93B0*/);                        /* @asm 0x031037 */
@@ -614,7 +614,7 @@ void report_table_16rows(int input_enabled)
         /* label = report_row_label(i); value = report_row_value(i)  */
         report_row_label(i);                             /* @asm 0x031122 near 0x6D23 */
         strfmt_far(/* buf */);                            /* @asm 0x031129 0x0D1D:0x8FA */
-        strcat_far(/* buf */);                            /* @asm 0x031139 0x0D1D:0x7A4 */
+        strcat_far((char*)0, (char*)0 /* buf — args not yet decoded */); /* @asm 0x031139 0x0D1D:0x7A4 */
         /* key 0x0FC1 appended @asm 0x031141; value @asm 0x03115A near 0x6DA0 */
         report_row_value(i);                             /* @asm 0x03115A near 0x6DA0 */
         text_measure(/* buf */);                          /* @asm 0x031186 0x181F:0x204 centre */
@@ -848,7 +848,7 @@ void unit_stack_panel(int input_enabled)
             int cargo, q;
             report_row_cells(slot, &a, &b, &c, &d);      /* @asm 0x031753 near 0x6D55 */
             cargo = glyph_value(/* slot, unit */);       /* @asm 0x031780 0x181F:0xBE6 */
-            q     = order_assign(/* per-slot query */);  /* @asm 0x031791 0x181F:0xC68 = func_030C68 */
+            q     = order_assign(0 /* per-slot query — arg not yet decoded */);  /* @asm 0x031791 0x181F:0xC68 = func_030C68 */
             (void)cargo; (void)q; (void)a; (void)b; (void)c; (void)d;
             box_fill(/* icon cell */);                   /* @asm 0x03171C/0x031731 0x181F:0x254 */
         }
@@ -925,7 +925,7 @@ void naval_list_panel(int input_enabled)
     draw_window_frame(0x33, 0x46, 0x76, 0x01);           /* @asm 0x0318D6 near 0x6DDC */
 
     num_to_str((int)G16(0x2DCC));                        /* @asm 0x0318E5 0x181F:0x22 */
-    strcat_far(/* title */);                             /* @asm 0x0318F8 0x0D1D:0x117E */
+    strcat_far((char*)0, (char*)0 /* title — args not yet decoded */); /* @asm 0x0318F8 0x0D1D:0x117E */
     draw_text_at(/* (0x45,0x78,0x46,0x01) */);           /* @asm 0x03190D 0x181F:0x100 */
 
     for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x10); /* @asm 0x031927 */
@@ -1157,7 +1157,7 @@ int beveled_num_cell(int value, int x, int y, int mode)
 
     /* number text (shadow + face) */
     num_to_str(value);                                   /* @asm 0x031D42 0x181F:0x22 */
-    strcat_far(buf);                                     /* @asm 0x031D51 0x0D1D:0x117E */
+    strcat_far(buf, (char*)0 /* 2nd arg not yet decoded */); /* @asm 0x031D51 0x0D1D:0x117E */
     /* optional second token @asm 0x031D5D 0x0D1D:0x842 -> 0x7E4 */
     draw_text_clip(/* buf, edge colour (shadow) */);     /* @asm 0x031DA2 0x181F:0x13C */
     draw_text_clip(/* buf, text_col (face) */);          /* @asm 0x031DB4 0x181F:0x13C ([bp-4]=h) */

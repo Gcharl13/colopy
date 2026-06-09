@@ -1342,7 +1342,7 @@ extern uint8_t  g_power_active_543F[];      /* (re-decl) DGROUP:0x543F per-power
 /* DGROUP word tables read [arg1*2 - disp]: base = 0x10000 - disp.  In native
  * framing these are message-arg string-pointer tables (nationality / fallback
  * place-name / year-indexed), not price tables.  Contents RUNTIME_ONLY
- * (loaded from nationality data file; per-entry strings not in EXE static image).
+ * (loaded from nationality data file; per-entry strings not in EXE static image). */
 extern uint16_t g_msgptr_natn_97F8[];       /* DGROUP:0x97F8 (= 0x10000-0x6808) STRING0 (nationality) */
 extern uint16_t g_msgptr_name_838C[];       /* DGROUP:0x838C (= 0x10000-0x7C74) fallback place name */
 extern uint16_t g_msgptr_year_9800[];       /* DGROUP:0x9800 (= 0x10000-0x6800) [0x538C]-indexed */

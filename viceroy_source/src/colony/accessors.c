@@ -102,8 +102,8 @@ void pack_nibble_at_60(int i, int value)
 int step_100_or_level_scaled(void)
 {
     /* reads ColonyRecord+0x95 (field_at_95) — OPEN CONFLICT era-vs-food, see colony.h */
-    if (ctx->field_at_95 == 0) return 100;
-    return (ctx->field_at_95 + 1) * 100;
+    if (ctx->counter_at_95 == 0) return 100;
+    return (ctx->counter_at_95 + 1) * 100;
 }
 
 /* ============================================================================

@@ -131,7 +131,7 @@ extern uint16_t g_settlement_ptr_8D4E;
 /* ----------------------------------------------------------------------------
  * COMBAT-DECISION globals (DGROUP-relative) -- read by the land-combat decider
  * block decoded below.  All BYTE_VERIFIED as ACCESSED at the cited @asm sites;
- * the SEMANTICS marked [V-doc] are cross-confirmed in viceroy_source/*.md, those
+ * the SEMANTICS marked [V-doc] are cross-confirmed in viceroy_source/ *.md, those
  * marked RUNTIME_ONLY (data-resident) are accessed-but-meaning-undetermined.
  * ------------------------------------------------------------------------- */
 

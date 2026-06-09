@@ -58,6 +58,8 @@
 #include "iolib.h"
 #include "power.h"
 
+#define SCREEN_EUROPE 3   /* RECONSTRUCTED — screen-id constant, not yet decoded */
+
 /* ----------------------------------------------------------------------------
  * Active power record (the player's nation).  BYTE_VERIFIED PowerRecord table
  * base DGROUP:0x8808 stride 0x13C; active via far ptr DGROUP:0x84FC.
@@ -66,7 +68,7 @@
  *   +0x2A  u32  gold (treasury)
  * (docs/DATA_MODEL.md / project memory PowerRecord layout.)
  * ---------------------------------------------------------------------------- */
-extern PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
+extern struct PowerRecord *g_active_power;    /* via far ptr DGROUP:0x84FC */
 
 /* ============================================================================
  * ==                       EUROPE SCREEN PLACEMENT TABLE                    ==

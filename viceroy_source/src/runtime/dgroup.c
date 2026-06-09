@@ -14,6 +14,7 @@
 #include "power.h"
 #include "ai_personality.h"
 #include "colony.h"
+#include <stddef.h>
 
 /* Record-table pointers alias the flat tables at their DGROUP_MEMORY_MAP offsets,
  * so `unit_table[i].field` / `power[p].gold` read the SAME memory the offset

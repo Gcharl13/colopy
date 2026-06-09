@@ -31,7 +31,7 @@
  *     handled in src/mapgen/climate.c — a static map property, not a runtime
  *     event.
  *   - Starvation (food deficit) — a deterministic colony mechanic, not random
- *     weather.  See @FOOD*/@STARVE*/@VANISH in GAME.TXT.
+ *     weather.  See @FOOD* /@STARVE* /@VANISH in GAME.TXT.
  *
  * This file is intentionally left as a documented stub.  Do NOT re-introduce a
  * weather mechanic without a VICEROY.EXE citation; there is none to cite.

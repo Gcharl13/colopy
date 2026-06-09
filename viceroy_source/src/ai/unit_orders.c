@@ -355,6 +355,7 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
             if (actor_owner < 4 &&                            /* @asm 0x03EEAE */
                 g_ai_personality_543F[actor_owner][0x00] == 0)/* @asm 0x03EEB4 */
                 goto block_46c;                               /* @asm 0x03EEBC */
+block_45e:
             ovly_clear_orders_934(unit_index);                /* @asm 0x03EEC1 */
             goto done;                                        /* @asm 0x03EEC9 */
         }

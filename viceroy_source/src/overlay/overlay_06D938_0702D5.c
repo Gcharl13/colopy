@@ -67,6 +67,7 @@
  * ============================================================================ */
 #include "viceroy.h"
 #include "overlay_externs.h"
+#include "dgroup.h"
 
 /* ----------------------------------------------------------------------------
  * Local declarations.
@@ -1771,9 +1772,9 @@ int func_06FAE8_namelist_skip_n(uint16_t sect_lo, uint16_t sect_hi, int16_t coun
 void func_06FDF0_report_cell_xy_4col(int col, int row, int *out_x, int *out_y)
 {
     int y_adj;
-    *out_x = col * 0x4C + 0x0A;                       < @asm 0x06FDF3 col*76 + 10 */
+    *out_x = col * 0x4C + 0x0A;                       /* @asm 0x06FDF3 col*76 + 10 */
     y_adj  = (row > 1) ? -1 : 0;                       /* @asm 0x06FDFF/0x06FE05/0x06FE0A */
-    *out_y = y_adj + row * 0x3C + 0x10;                < @asm 0x06FE0C row*60 + 16 (+adj) */
+    *out_y = y_adj + row * 0x3C + 0x10;                /* @asm 0x06FE0C row*60 + 16 (+adj) */
 }
 
 /* ============================================================================
@@ -2122,7 +2123,7 @@ void func_0702C0_report_cell_xy_3col(int idx, int *out_x, int *out_y)
     int row = q % 3;                                   /* @asm 0x0702D7 idiv 3 -> dx=remainder (bx) */
     int y_adj;
 
-    *out_x = col * 0x69 + 0x17;                         < @asm 0x0702DA col*105 + 23 */
+    *out_x = col * 0x69 + 0x17;                         /* @asm 0x0702DA col*105 + 23 */
     y_adj  = (row > 1) ? -1 : 0;                        /* @asm 0x0702E5 cmp row,1 / JLE */
-    *out_y = y_adj + row * 0x60 + 0x07;                 < @asm 0x0702F2 row*96 + 7 (+adj) */
+    *out_y = y_adj + row * 0x60 + 0x07;                 /* @asm 0x0702F2 row*96 + 7 (+adj) */
 }

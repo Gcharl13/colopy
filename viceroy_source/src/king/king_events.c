@@ -131,10 +131,15 @@ extern void  ui_redraw_power(int power);                     /* 0x191F:0x0A9E / 
 extern void  ui_refresh_colony(int colony);                  /* 0x191F:0x0950 */
 extern int   pick_grant_unit_type(int slot, int owner, int x); /* 0x191F:0x0AEE */
 extern void  ui_show_message2(int a, int handle);            /* 0x191F:0x0AE0 */
+extern void  ui_select_on_map(int handle, int a);            /* 0x181F:0x438 */
+extern void  msg_set_int(int slot, int value);               /* 0x181F:0x438 (int form) */
+extern void  ui_flush(void);                                 /* 0x191F:0xA82 */
 
 /* Resolved message handles (file = handle + 0x1D9A0 — BYTE_VERIFIED). */
-#define MSG_REFIT     0xEEF   /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
-#define MSG_KINGTAX   0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result; @asm 0x02F392 in sibling) */
+#define MSG_REFIT          0xEEF   /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
+#define MSG_KINGTAX        0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result; @asm 0x02F392 in sibling) */
+#define MSG_WINNING_KEY    0xEF5   /* lea bx,[0xef5] @0x02F314 — sub-key between REFIT/KINGTAX */
+#define MSG_GRANT_FOLLOWUP 0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
 
 /* ============================================================================
  * king_process_power_events — func_02F052 — BYTE_VERIFIED (control flow + writes)
@@ -345,15 +350,10 @@ void king_process_power_events(void)
 extern int  unit_class_check(int unit_idx);          /* near func_02FAEA (file 0x02FAEA) -> 0x191F:0xA58 */
 extern int  unit_class_check2(int x, int y);         /* 0x181F:0x302 reuse (is_xy_in_map_bounds) */
 extern int  find_landing_slot(int x, int y);         /* 0x181F:0x7BE */
-extern void ui_select_on_map(int handle, int a);     /* 0x181F:0x438 */
-extern void msg_set_int(int slot, int value);        /* 0x181F:0x438 (int form) */
-extern void ui_flush(void);                          /* 0x191F:0xA82 */
+/* ui_select_on_map, msg_set_int, ui_flush declared above with other overlay helpers */
 extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle */
 
-/* Keyed-message handles for the king-grant prompt (file = handle + 0x1D9A0). */
-#define MSG_WINNING_KEY      0xEF5   /* lea bx,[0xef5] @0x02F314 -> (0xef5+0x1D9A0=0x1E895) — between
-                                      * REFIT(0xeef) and KINGTAX(0xf01); a sub-key of that block. not yet decoded. */
-#define MSG_GRANT_FOLLOWUP   0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
+/* (MSG_WINNING_KEY and MSG_GRANT_FOLLOWUP defined above with the other message handles) */
 
 /* ============================================================================
  * NOTES / NOT YET VERIFIED

@@ -105,6 +105,8 @@ void king_ref_init(void)
  * the REF: one event adds only d*8+10 points (≥ era multiplier), far short of
  * the 1800-point threshold for a unit.
  * ============================================================================ */
+extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */
+extern void     king_register_ref_unit(int slot);
 void king_ref_buildup(int active_power)
 {
     (void)active_power;
@@ -140,8 +142,7 @@ void king_ref_buildup(int active_power)
 }
 
 extern int      revolution_flag_5382(void);   /* DGROUP:0x5382 bit 0 = at war */
-extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */
-extern void     king_register_ref_unit(int slot);
+/* king_sentiment_accum_22 and king_register_ref_unit forward-declared above king_ref_buildup */
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<
@@ -166,7 +167,7 @@ extern void     king_register_ref_unit(int slot);
  *   src/king/war_turn.c (king[+0x19]/[+0x1A], budget = (8-difficulty)*10) — but
  *   the exact spawn COORDS remain not yet decoded.
  * ============================================================================ */
-int ref_effective_strength(PowerRecord *target)   /* RECONSTRUCTED */
+int ref_effective_strength(struct PowerRecord *target)   /* RECONSTRUCTED */
 {
     int base = (g_ref_regulars_53DA  * 2) +
                (g_ref_cavalry_53DC   * 3) +

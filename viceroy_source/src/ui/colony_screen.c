@@ -54,6 +54,8 @@
 #include "iolib.h"
 #include "colony.h"
 
+#define SCREEN_COLONY 2   /* RECONSTRUCTED — screen-id constant, not yet decoded */
+
 /* ----------------------------------------------------------------------------
  * Active colony record + screen-state globals (BYTE_VERIFIED).
  *   DGROUP:0x8542  -> active ColonyRecord (near ptr).  Read by the composer

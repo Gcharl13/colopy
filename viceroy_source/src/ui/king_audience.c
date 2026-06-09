@@ -81,7 +81,7 @@ extern int16_t g_word_89E, g_word_8A0;
 extern int16_t g_word_268A, g_word_268C;
 
 /* ---- leaf helpers (call sites byte-exact; internals summarised) ----------- */
-extern void strcpy_near(char *dst, int src_handle);          /* 0xD1D:0x7E4 (MSC strcpy) */
+/* strcpy_near: see iolib.h — second arg is a DGROUP offset (int), cast at each site */
 extern void ov_lookup_msg(int idx, void *buf);              /* 0x181F:0x182 lookup by key */
 extern int  ov_region_setup(void *body, int z, int r0,int r1,int r2,int r3, void *key);
                                                             /* 0x181F:0x44E */
@@ -97,7 +97,7 @@ extern void ov_set_mode_buf(int seg, void *buf);            /* 0x181F:0x3F4 (buf
 extern void ov_full_blit(int r0,int r1,int r2,int r3, int q0,int q1,int q2,int q3,
                          int h, int ax, int dx, int w);      /* 0x181F:0x444 (type B) */
 extern void ov_clear_rect(int z0, int w, int h, int ax, int dx, int bx); /* 0x181F:0xE2 */
-extern void ov_set_font(int handle);                        /* 0x1A1F:0xA86 (FONTKING) */
+extern void far *ov_set_font(int handle);                   /* 0x1A1F:0xA86 (FONTKING) — returns font ctx far ptr */
 extern int  dialog_run(int run_arg);                        /* 0x181F:0x3FE -> func_06F594 (page-0x17
                                                              * option-run wrapper, +22 into func_06F57E),
                                                              * NOT func_028D8C — corrected 2026-05-30 by the
@@ -119,7 +119,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
     g_word_1F64 = 0;                                 /* @asm 0x07536B */
 
     /* --- look up the base KINGLSS message + set the dialog region --- */
-    strcpy_near(keybuf, KEY_KINGLSS);                /* @asm 0x07536E 0xD1D:0x7E4 */
+    strcpy_near(keybuf, (const char *)(uintptr_t)KEY_KINGLSS); /* @asm 0x07536E 0xD1D:0x7E4 */
     ov_lookup_msg(msg_idx, keybuf);                  /* @asm 0x075385 0x181F:0x182 */
     if (ov_region_setup(body, 0,
                         g_dialog_rect[0], g_dialog_rect[1],
@@ -137,7 +137,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
         case 3:  key = KEY_DUTCH;  break;            /* @asm 0x0753DC */
         default: key = 0; break;                     /* @asm 0x0753C8 JMP past strcpy */
         }
-        if (key) strcpy_near(keybuf, key);           /* @asm 0x0753E3 0xD1D:0x7E4 */
+        if (key) strcpy_near(keybuf, (const char *)(uintptr_t)key); /* @asm 0x0753E3 0xD1D:0x7E4 */
     }
 
     /* --- PASS 1: draw the KING portrait --- */
@@ -152,12 +152,12 @@ int king_audience(int msg_idx, int subcase, int run_arg)
 
     /* --- choose the audience title key, drive any intro anim --- */
     if (msg_idx == 1 && subcase == 1) {              /* @asm 0x075430/0x075436 */
-        strcpy_near(keybuf, KEY_KING1);              /* @asm 0x075443 0xD1D:0x7E4 */
+        strcpy_near(keybuf, (const char *)(uintptr_t)KEY_KING1); /* @asm 0x075443 0xD1D:0x7E4 */
         ov_play_audience_anim(0x3E);                 /* @asm 0x07544D 0x181F:0x48E (anim id 0x3E) */
     } else if (msg_idx != 1) {                       /* @asm 0x075430 JNE 0x3FCE */
-        strcpy_near(keybuf, KEY_KINGWIN);            /* @asm 0x075465 0xD1D:0x7E4 (0x2323) */
+        strcpy_near(keybuf, (const char *)(uintptr_t)KEY_KINGWIN); /* @asm 0x075465 0xD1D:0x7E4 (0x2323) */
     } else {                                         /* msg_idx==1 && subcase!=1 */
-        strcpy_near(keybuf, KEY_KINGLOSE);           /* @asm 0x075465 (0x231A) */
+        strcpy_near(keybuf, (const char *)(uintptr_t)KEY_KINGLOSE); /* @asm 0x075465 (0x231A) */
     }
 
     /* --- PASS 2: draw the player's (diplomat/leader) portrait --- */

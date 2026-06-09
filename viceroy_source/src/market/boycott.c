@@ -12,7 +12,11 @@
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"
+#include "colony.h"
 #include "ff.h"
+
+/* Active-power PowerRecord pointer (DGROUP:0x84FC — near ptr, updated per turn). */
+extern void *g_market;   /* = active power's PowerRecord (0x8808 + power*0x13C) [V] */
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */
@@ -102,10 +106,10 @@ void boycott_init(void)
  * The prior reconstruction's SoL +25 / king_anger +10 / FF-progress +25
  * are NOT in this handler — those magnitudes were invented and are removed.
  * ============================================================================ */
-void colony_tea_party(Colony *c, int good)
+void colony_tea_party(struct colony_t *c, int good)
 {
     /* @asm 0x034678..0x03469B — clamp stock to 100, subtract from EuropeStock table */
-    int dumped = (c->stock[good] > 100) ? 100 : c->stock[good];
+    int dumped = (c->stockpile_9a[good] > 100) ? 100 : c->stockpile_9a[good];
     /* Colony[selected].EuropeStock[good] -= dumped (bx = colony*0xCA, table base 0x5de0) */
 
     /* @asm 0x0346A9/0x0346AD — Colony[selected].at_0xC0 += dumped (32-bit accumulator) */

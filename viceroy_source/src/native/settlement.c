@@ -29,6 +29,17 @@ extern void *   g_cur_settlement_8D4A;   /* DGROUP:0x8D4A — far ptr to "settle
 extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settlement being removed" record */
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */
 
+/* Forward declarations for helpers called before their definitions below. */
+extern uint8_t settlement_initial_population(int settlement_index); /* CALL near 0x5434 */
+extern void    map_mark_settlement_tile(int x, int y, int owner);
+extern uint8_t *unit_record(int index);
+extern void     unit_detach_from_settlement(int unit_index);
+extern uint8_t native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
+
+/* RECONSTRUCTED rates — loaded from NAMES.TXT at runtime, not in the EXE image. */
+#define NATIVE_GROWTH_PCT    15   /* RUNTIME_ONLY (NAMES.TXT/data-file) */
+#define MISSION_CONVERT_PCT  10   /* RUNTIME_ONLY (NAMES.TXT/data-file) */
+
 /* ============================================================================
  * native_settlement_add — BYTE_VERIFIED
  *
@@ -99,10 +110,7 @@ int native_settlement_add(int owner, int x, int y)
     return new_index;
 }
 
-/* CALL near 0x5434 — resident helper returning the starting population byte.
- * Not yet byte-traced (resident segment). ANCHOR_VERIFIED via the call site. */
-extern uint8_t settlement_initial_population(int settlement_index);
-extern void    map_mark_settlement_tile(int x, int y, int owner);
+/* settlement_initial_population and map_mark_settlement_tile declared above. */
 
 /* ============================================================================
  * native_settlement_remove — BYTE_VERIFIED (add/remove/compact)
@@ -182,8 +190,7 @@ void native_settlement_remove(int index)
     }
 }
 
-extern uint8_t *unit_record(int index);
-extern void     unit_detach_from_settlement(int unit_index);
+/* unit_record and unit_detach_from_settlement declared above. */
 
 /* ============================================================================
  * tribe_settlement_count_dec — BYTE_VERIFIED
@@ -273,7 +280,7 @@ int native_settlement_value_for_display(int index)
         value = tribe_w + value + 1;
     return value;
 }
-extern uint8_t native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
+/* native_class_weight_5AD8 declared above. */
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED below this line — NOT BYTE-VERIFIED <<<
@@ -306,8 +313,8 @@ void native_tick_all(void)
 
 void native_settlement_tick(int index)   /* RECONSTRUCTED — rates RUNTIME_ONLY (NAMES.TXT/data-file) */
 {
-    NativeSettlement *s =
-        (NativeSettlement *)&g_native_table_54EC[index * NATIVE_SETTLEMENT_STRIDE];
+    struct NativeSettlement *s =
+        (struct NativeSettlement *)&g_native_table_54EC[index * NATIVE_SETTLEMENT_STRIDE];
 
     /* 1. Population growth — RUNTIME_ONLY rate (loaded from NAMES.TXT/data-file) */
     if (game_random_range(0, 99) < NATIVE_GROWTH_PCT /* RUNTIME_ONLY (NAMES.TXT/data-file) */) {

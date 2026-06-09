@@ -13,6 +13,7 @@ typedef unsigned long  uint32_t;
 typedef signed char    int8_t;
 typedef signed short   int16_t;
 typedef signed long    int32_t;
+typedef unsigned long  uintptr_t;
 
 /* MS C "far" pointer keyword reproduced here for documentation.
  * In a build with the period-correct compiler this is the actual keyword. */

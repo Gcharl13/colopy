@@ -280,12 +280,15 @@ int native_raid_resolve_outcome(void)   /* returns RAID_OUTCOME_* */
  * units occupy UnitRecord type ids 0x0D..0x12.  Everything else below is RECONSTRUCTED.
  * ============================================================================ */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
-extern Unit *spawn_unit(int owner, int unit_type, int x, int y);
+extern struct UnitRecord *spawn_unit(int owner, int unit_type, int x, int y);
 
-void spawn_raiding_brave(NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
+#define UNIT_BRAVE      0x0D   /* RECONSTRUCTED — first native combat type (range 0x0D..0x12) */
+#define NATIVE_POWER_ID 4      /* RECONSTRUCTED — native power base index (NATIVE_POWER_BASE) */
+
+void spawn_raiding_brave(struct NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
 {
     int unit_type = UNIT_BRAVE;   /* RECONSTRUCTED — native combat types are 0x0D..0x12 */
-    Unit *u = spawn_unit(NATIVE_POWER_ID, unit_type, s->x, s->y);
+    struct UnitRecord *u = spawn_unit(NATIVE_POWER_ID, unit_type, s->x, s->y);
     if (!u) return;
     (void)target_power;
 }

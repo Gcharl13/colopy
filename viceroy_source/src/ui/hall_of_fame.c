@@ -38,6 +38,8 @@
 #include "viceroy_types.h"
 #include "iolib.h"
 
+#define SCREEN_HALL_OF_FAME 7   /* RECONSTRUCTED — screen-id constant, not yet decoded */
+
 /* ----------------------------------------------------------------------------
  * Persistence file -- BYTE_VERIFIED (string + fopen mode + offsets).
  *

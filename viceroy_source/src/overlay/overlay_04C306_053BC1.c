@@ -435,6 +435,11 @@ int func_04C682_ai_power_strength_delta(uint16_t arg0, int16_t arg1)
     return acc;                                         /* @asm 0x04C715 RETF */
 }
 
+/* Forward declarations for helpers used inside func_04C71C below. */
+extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
+extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
+extern uint8_t g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
+
 /* ============================================================================
  * func_04C71C — ai_unit_task_priority  [DONE — control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
@@ -501,10 +506,7 @@ int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t de
 
     return (prio > 0) ? 0 : prio;                       /* @asm 0x04C7E4..0x04C7EB RETF */
 }
-/* Small accessors for two DGROUP scalars read above (kept inline-documentary). */
-extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
-extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
-extern uint8_t g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
+/* ai_path_budget_8DB8, ai_turn_counter_538E, g_power_table_8808 declared above. */
 
 /* ============================================================================
  * func_04C7F0 — ai_unit_task_total_score  [DONE — control flow BYTE_VERIFIED]
@@ -962,6 +964,10 @@ extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe
  *   -> file 0x4C50C = func_04C50C_ai_table_c_clear(void)
  *
  * Call sites below use the resolved function names directly. */
+
+/* Forward declarations for globals used inside func_04CC50 and later. */
+extern uint8_t g_unit_type_flags_5237[];  /* DGROUP:0x5237 — per-type flags, byte[1] of 6-byte row */
+extern int16_t g_unit_count_539C;         /* DGROUP:0x539C — live unit count (word) */
 
 int func_04CC50_ai_strategic_plan_build(uint16_t power)
 {
@@ -1771,7 +1777,7 @@ extern uint8_t  g_ai_count_A89C;          /* DGROUP:0xA89C — active-entry coun
 extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
-extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live unit count (word) */
+/* g_unit_count_539C declared above. */
 /* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
  * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
  *

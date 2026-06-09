@@ -12,6 +12,8 @@
  * ============================================================================ */
 #include "viceroy.h"
 #include "dos.h"
+#include <stdbool.h>
+#include <errno.h>
 
 extern int  errno_epilogue(int dos_err);     /* 0x10AE5 — DOS-error → errno mapper */
 

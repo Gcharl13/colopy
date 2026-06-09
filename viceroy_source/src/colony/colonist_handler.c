@@ -41,6 +41,7 @@
  *    ov_power_flag op 0x15 founding-father identity (Crosses +50% bonus)
  * ============================================================================ */
 #include "viceroy.h"
+#include <stddef.h>
 
 /* Overlay-resident; call site byte-verified at 0xA15F (LCALL 0x981:0x00) */
 extern int ov_power_flag(int owner, int op_id);

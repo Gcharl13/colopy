@@ -116,6 +116,9 @@
  *   0x2166  saved player-name buffer key   @asm 0x075D22 / 0x075D41
  * ============================================================================ */
 
+/* ---- Screen identifiers (RECONSTRUCTED — values match colony/europe/hall_of_fame pattern) */
+#define SCREEN_TITLE     1   /* RECONSTRUCTED */
+
 /* ---- @BEGINMENU key + backdrop handles (file = handle + 0x1D9A0; cited) ---- */
 #define MENU_BEGIN_KEY   0x2345   /* "@BEGINMENU" menu key  @asm 0x075C60 */
 #define BG_BOOT          0x233C   /* boot/menu backdrop     @asm 0x075AE4 */
