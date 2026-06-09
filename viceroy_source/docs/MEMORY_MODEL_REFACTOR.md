@@ -21,27 +21,21 @@ that segment onto real memory without disturbing the byte-exact logic.
    (`power[p].gold`) and offset pokes (`DG8(0x3144+i*0x1C+2)`) are the same byte.
    Local vars/params named `power` (92 of them) shadow the global as before.
 
+4. **`ctx` current-colony pointer (item A — DONE 2026-06-09)**. All 4 pointer-to-
+   pointer pokes at DGROUP:0x8542 converted. Changes:
+   - `dgroup.c` defines `struct colony_t far *ctx = NULL` (declaration was already
+     in `globals.h`).
+   - Write site (`load_image_008262_008C6F.c`): renamed local `ctx`→`ctx_local`,
+     pointer computation now uses `DG_BASE+0x5D46+...` (works in both modes),
+     global `ctx` is set via `ctx = (struct colony_t far *)ctx_local`, and
+     `DG16(0x8542)` is kept in sync for DOS compatibility.
+   - Read sites (`load_image_008C70_00AAB9.c`×3): all replaced with
+     `unsigned char near *ctx_local = (unsigned char near *)ctx` — hoisted above
+     the loop where the original re-read on every iteration. `DG32(ctx+0xC6)`
+     replaced with `*(uint32_t near *)(ctx_local+0xC6)` (the DG_BASE truncation
+     would corrupt the address in modern mode).
+
 ## Remaining
-
-### A. The `ctx` current-colony pointer (delicate — do carefully)
-`ctx` (DGROUP:0x8542) is the *mutable* pointer to the colony being viewed/simulated
-(102 functions deref it). Constraints discovered:
-- `0x8542` is touched **only** by 4 pointer-to-pointer pokes (`*(uint8_t near *
-  near *)0x8542`), never as a scalar — so there is one clean access path.
-- Several sites declare a **local** `unsigned char near *ctx` that *shadows* the
-  global, then poke `[0x8542]` to set the global current-colony. So the name
-  collides; a macro alias is impossible.
-
-Recommended model: keep a single global `struct colony_t *ctx` (DOS: located at
-DS:0x8542; modern: a plain pointer global). Convert the 4 pointer-pokes to set/get
-`ctx` directly, renaming the shadowing locals (e.g. `ctx_new`):
-```
-*(uint8_t near * near *)0x8542 = ctx_local;   ->   ctx = (struct colony_t*)ctx_local;
-ctx_local = *(uint8_t near * near *)0x8542;    ->   ctx_local = (unsigned char*)ctx;
-```
-Since nothing else pokes `0x8542`, `ctx` becomes the single source of truth. (The
-colony record itself still lives in `g_dgroup` via `DG_COLONY_TABLE`/the ColonyRecord
-the offset points at; only the *cursor* is the pointer.)
 
 ### B. ~92 remaining raw pokes (manual, `tools/poke_to_dgroup.py` reports them)
 The converter conservatively skipped these:
@@ -67,7 +61,7 @@ The converter conservatively skipped these:
   real build pass flushes these out.
 
 ## Order of attack
-A (ctx) → B (remaining pokes) → C (build wiring), each compile-verified. After A+B
+~~A (ctx)~~ ✓ → B (remaining pokes) → C (build wiring), each compile-verified. After B
 the rules layer should build clean under `-D_VICEROY_MODERN`; C makes it runnable.
 
 ---

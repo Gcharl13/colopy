@@ -13,6 +13,7 @@
 #include "unit.h"
 #include "power.h"
 #include "ai_personality.h"
+#include "colony.h"
 
 /* Record-table pointers alias the flat tables at their DGROUP_MEMORY_MAP offsets,
  * so `unit_table[i].field` / `power[p].gold` read the SAME memory the offset
@@ -20,6 +21,7 @@
 struct UnitRecord    far *unit_table;       /* DG_UNIT_TABLE @0x3144 */
 struct PowerRecord       *power;            /* DG_POWER_TABLE @0x8808 */
 struct AIPersonality     *ai_personality;   /* DG_AI_TABLE    @0x540E */
+struct colony_t     far *ctx = NULL;        /* DGROUP:0x8542 current-colony pointer */
 
 #ifdef _VICEROY_MODERN
 uint8_t g_dgroup[DGROUP_SIZE];   /* zero-initialized; static window filled below */

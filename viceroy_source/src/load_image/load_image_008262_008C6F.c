@@ -113,7 +113,7 @@ int func_0082DC_logic_sz_118(uint16_t arg0_bp_06)
      * equals the current player (0x5396), is an EU power (<4), and is human
      * (AIPersonality[owner].controller +0x31==0x543f == 0). Always clears the
      * render flags at 0x0348 (word) and 0x034C (byte). */
-    unsigned char near *ctx;
+    unsigned char near *ctx_local;
     int oob = 0;
     int owned_human;
     DG16(0x8DC6) = arg0_bp_06;               /* g_current_colony_index */
@@ -122,12 +122,13 @@ int func_0082DC_logic_sz_118(uint16_t arg0_bp_06)
         arg0_bp_06 = 0;
         oob = 1;
     }
-    ctx = (unsigned char near *)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
-    *(unsigned char near * near *)0x8542 = ctx;          /* ctx = current ColonyRecord */
-    owned_human = (ctx[0x1A] == DG8(0x5396));  /* owner_power == player */
+    ctx_local = (unsigned char near *)(DG_BASE + 0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
+    ctx = (struct colony_t far *)ctx_local;              /* set global ctx */
+    DG16(0x8542) = (uint16_t)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA); /* DOS compat slot */
+    owned_human = (ctx_local[0x1A] == DG8(0x5396));  /* owner_power == player */
     if (owned_human
-        && ctx[0x1A] < 4                                  /* EU power */
-        && DG8(0x540E + (unsigned)ctx[0x1A] * 0x34 + 0x31) == 0  /* human */
+        && ctx_local[0x1A] < 4                                  /* EU power */
+        && DG8(0x540E + (unsigned)ctx_local[0x1A] * 0x34 + 0x31) == 0  /* human */
         && oob == 0)
         DG8(0xA897) = 1;
     else

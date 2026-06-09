@@ -240,26 +240,25 @@ int func_008FB4_colony_sz_138(uint16_t arg0_bp_06)
      * one set to 0xFF), then decrements population (+0x1f) and the 32-bit bells
      * numerator (+0xC6) by 100. ColonyRecord fields per DGROUP_MEMORY_MAP §3.4. */
     int i;
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
     for (i = arg0_bp_06; ; i++) {
-        unsigned char near *ctx = *(unsigned char near * near *)0x8542;
-        if (!(((int8_t)ctx[0x1F] - 1) > i))
+        if (!(((int8_t)ctx_local[0x1F] - 1) > i))
             break;
-        ctx[i + 0x20] = ctx[i + 0x21];                /* job[i]      = job[i+1]      */
-        ctx[i + 0x40] = ctx[i + 0x41];                /* unit_type[i]= unit_type[i+1]*/
+        ctx_local[i + 0x20] = ctx_local[i + 0x21];    /* job[i]      = job[i+1]      */
+        ctx_local[i + 0x40] = ctx_local[i + 0x41];    /* unit_type[i]= unit_type[i+1]*/
         func_008F6C((uint16_t)i,                       /* expertise[i]= expertise[i+1]*/
                     (uint16_t)func_008F2A((uint16_t)(i + 1)));
     }
     {
-        unsigned char near *ctx = *(unsigned char near * near *)0x8542;
         int j;
         for (j = 0; j < 0x14; j++) {
-            if (ctx[j + 0x70] == (uint8_t)arg0_bp_06)
-                ctx[j + 0x70] = 0xFF;
-            else if ((int8_t)ctx[j + 0x70] > (int8_t)(uint8_t)arg0_bp_06)
-                ctx[j + 0x70]--;
+            if (ctx_local[j + 0x70] == (uint8_t)arg0_bp_06)
+                ctx_local[j + 0x70] = 0xFF;
+            else if ((int8_t)ctx_local[j + 0x70] > (int8_t)(uint8_t)arg0_bp_06)
+                ctx_local[j + 0x70]--;
         }
-        ctx[0x1F]--;                                   /* population-- */
-        DG32(ctx + 0xC6) -= 0x64;        /* bells numerator -= 100 */
+        ctx_local[0x1F]--;                             /* population-- */
+        *(uint32_t near *)(ctx_local + 0xC6) -= 0x64; /* bells numerator -= 100 */
     }
     return 0;
 }
@@ -341,13 +340,13 @@ int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * the per-colonist unit_type array at +0x40; otherwise arg0 indexes a unit
      * outside the colony, resolved via func_008BD4(arg0 - pop), whose UnitRecord
      * vet_type (+0x17 == 0x315B, DGROUP_MEMORY_MAP §3.1) is set instead. */
-    unsigned char near *ctx = *(unsigned char near * near *)0x8542;
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
     if (arg1_bp_08 == 0x17)
         arg1_bp_08 = 0x15;                              /* fold type 0x17 -> 0x15 */
-    if ((int16_t)(int8_t)ctx[0x1F] > (int16_t)arg0_bp_06) {
-        ctx[arg0_bp_06 + 0x40] = (uint8_t)arg1_bp_08;   /* in-colony unit_type[slot] */
+    if ((int16_t)(int8_t)ctx_local[0x1F] > (int16_t)arg0_bp_06) {
+        ctx_local[arg0_bp_06 + 0x40] = (uint8_t)arg1_bp_08; /* in-colony unit_type[slot] */
     } else {
-        int16_t u = (int16_t)func_008BD4((uint16_t)(arg0_bp_06 - (int8_t)ctx[0x1F]));
+        int16_t u = (int16_t)func_008BD4((uint16_t)(arg0_bp_06 - (int8_t)ctx_local[0x1F]));
         DG8(0x3144 + (unsigned)u * 0x1C + 0x17) = (uint8_t)arg1_bp_08;
     }
     return 0;
