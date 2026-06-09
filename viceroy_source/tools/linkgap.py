@@ -64,17 +64,20 @@ DATA_PREFIX = re.compile(r"^(g_|revolution_|ff_|king_|native_|colony_|unit_|"
                          r"turn_|sol_|ref_)")
 
 def nm_symbols(lib):
-    """Return (true_undefined, defined). true_undefined = referenced-but-
-    undefined MINUS everything the archive defines anywhere."""
+    """Return (true_undefined, defined_all, defined_data).
+    defined_data = B/C/D definitions only (actual storage) -- a T-defined
+    g_*_HEX symbol is a legitimate getter FUNCTION named after its offset,
+    not a byte-exactness leak."""
     out = subprocess.run(["nm", lib], capture_output=True, text=True).stdout
-    defined, undef = set(), set()
+    defined, defined_data, undef = set(), set(), set()
     for line in out.splitlines():
         p = line.split()
         if len(p) == 3 and p[1] in "TDBRCtdbrc":   # incl. C(ommon)/B(ss) tentative defs
             defined.add(p[2])
+            if p[1] in "DBCdbc": defined_data.add(p[2])
         elif len(p) == 2 and p[0] == "U":
             undef.add(p[1])
-    return undef - defined, defined
+    return undef - defined, defined, defined_data
 
 def is_dgroup_global(sym):
     """High-confidence DGROUP data name -> returns offset, else None."""
@@ -117,15 +120,34 @@ def main():
             if isinstance(v, dict) and v.get("name"):
                 resolved[k] = v["name"]
 
-    undef, defined = nm_symbols(args.lib)
+    undef, defined, defined_data = nm_symbols(args.lib)
     # byte-exactness leak: DGROUP-named globals with a stray tentative/strong
-    # definition in the library -> they get their OWN storage instead of
+    # DATA definition in the library -> they get their OWN storage instead of
     # aliasing into g_dgroup, so memcmp-vs-original silently diverges on them.
-    leaks = sorted(s for s in defined if is_dgroup_global(s) is not None)
+    # (T-defined g_*_HEX symbols are getter functions, not leaks.)
+    leaks = sorted(s for s in defined_data if is_dgroup_global(s) is not None)
+
+    # mixed-usage hazard: a symbol whose NAME says data but which is CALLED
+    # like a function somewhere -> aliasing it into g_dgroup would make those
+    # call sites jump into the data segment.  Demote to a weak stub + report.
+    # (comments are stripped first -- prose like "g_foo_1234 (was ...)" must
+    # not read as a call)
+    src_blob = []
+    for d, _, fs in os.walk(os.path.join(ROOT, "src")):
+        src_blob += [open(os.path.join(d, f), errors="replace").read()
+                     for f in fs if f.endswith(".c")]
+    src_blob = "\n".join(src_blob)
+    src_blob = re.sub(r"/\*.*?\*/", " ", src_blob, flags=re.S)
+    src_blob = re.sub(r"//[^\n]*", " ", src_blob)
+
     buckets = collections.defaultdict(list)
     aliases = {}                                   # sym -> offset
+    mixed = []
     for s in sorted(undef):
         kind, info = classify(s, resolved)
+        if kind == "dgroup_global" and re.search(r"\b%s\s*\(" % re.escape(s), src_blob):
+            mixed.append(s)
+            kind, info = "named_gap", None         # weak stub, never an alias
         buckets[kind].append((s, info))
         if kind == "dgroup_global":
             aliases[s] = info
@@ -149,6 +171,12 @@ def main():
     wired_path = os.path.join(GEN, "thunk_wired.json")
     if os.path.exists(wired_path):
         wired = json.load(open(wired_path))
+    # symbols aliased by the COMMITTED extra fragment (offsets cited in their
+    # former definitions) also get no stub -- PROVIDE can't override a weak def
+    extra_ld = os.path.join(HERE, "linkfloor_extra.ld")
+    if os.path.exists(extra_ld):
+        for sym in re.findall(r"PROVIDE\((\w+)\s*=", open(extra_ld).read()):
+            wired[sym] = "linkfloor_extra.ld"
     stub_syms = [s for k in ("overlay_thunk", "func_body", "named_gap")
                  for (s, _) in buckets[k] if s not in wired]
     with open(os.path.join(GEN, "linkfloor_stubs.c"), "w") as f:
@@ -189,6 +217,15 @@ def main():
                 "diverge on them. Fix: change the definition to `extern` (or delete it)\n"
                 "so the `linkfloor.ld` alias takes over.\n\n")
         for s in leaks:
+            f.write(f"- `{s}`\n")
+        f.write("\n")
+        f.write(f"## Mixed data/function usage — {len(mixed)} symbols (porter "
+                "inconsistency)\n\n"
+                "Named like DGROUP data but CALLED like a function somewhere in\n"
+                "src/ — one file modeled the offset as a variable, another as a\n"
+                "getter. NOT aliased (a call would jump into the data segment);\n"
+                "each gets a weak stub until the two models are reconciled.\n\n")
+        for s in mixed:
             f.write(f"- `{s}`\n")
         f.write("\n")
         f.write("## named_gap detail (the real worklist — sample)\n\n")

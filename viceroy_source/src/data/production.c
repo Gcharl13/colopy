@@ -119,10 +119,10 @@ uint8_t g_terrain_yield_table[0x400] = {
  * @asm 0x8DC8  g_global_amount[idx] (this-turn produced total; read by 0x8E46/0x8E84)
  * All zero-initialized at game start (BSS); filled per-turn by the economy update.
  * ============================================================================ */
-uint16_t g_global_amount[20]  = { 0 };   /* DGROUP:0x8DC8 */
-uint16_t g_band_base[20]      = { 0 };   /* DGROUP:0x8E0A */
-uint16_t g_over_low[20]       = { 0 };   /* DGROUP:0x8E32 */
-uint16_t g_over_high[20]      = { 0 };   /* DGROUP:0x8E5A (over_high[6]=0x8E66 = Ore->Tools damper) */
+extern uint16_t g_global_amount[20];   /* DGROUP:0x8DC8 */
+extern uint16_t g_band_base[20];   /* DGROUP:0x8E0A */
+extern uint16_t g_over_low[20];   /* DGROUP:0x8E32 */
+extern uint16_t g_over_high[20];   /* DGROUP:0x8E5A (over_high[6]=0x8E66 = Ore->Tools damper) */
 
 /* ============================================================================
  * Pair tables at DGROUP:0xC8 / 0xDE (20 entries) — screen-coord -> tile index.
@@ -130,81 +130,81 @@ uint16_t g_over_high[20]      = { 0 };   /* DGROUP:0x8E5A (over_high[6]=0x8E66 =
  * @ref find_pair_in_table_C8_DE @ 0x8892 — scans these parallel byte tables.
  * The initial values are written by the overlay-resident colony-init code and
  * are NOT in the load image; RUNTIME_ONLY (set on overlay-decode pass). */
-uint8_t g_pair_key1[20] = { /* RUNTIME_ONLY: set by overlay colony-init */ 0 };  /* DGROUP:0xC8 */
-uint8_t g_pair_key2[20] = { /* RUNTIME_ONLY: set by overlay colony-init */ 0 };  /* DGROUP:0xDE */
+extern uint8_t g_pair_key1[20];  /* DGROUP:0xC8 */
+extern uint8_t g_pair_key2[20];  /* DGROUP:0xDE */
 
 /* ============================================================================
  * Colony-turn scalar auxiliaries (BSS; addresses cited).
  * ============================================================================ */
-uint16_t g_8DC4 = 0;   /* DGROUP:0x8DC4 */
-uint16_t g_8D4A = 0;   /* DGROUP:0x8D4A */
-uint16_t g_8DD8 = 0;   /* DGROUP:0x8DD8  work-points cumulative (+= pop*2 @asm 0xA632) */
-uint16_t g_8DE6 = 0;   /* DGROUP:0x8DE6  Tools final band arg   (@asm 0xA692) */
-uint16_t g_8DE8 = 0;   /* DGROUP:0x8DE8  Lumber band arg        (@asm 0xA64E) */
-uint16_t g_8DEA = 0;   /* DGROUP:0x8DEA  tory counter           (@asm 0xA4B0) */
-uint16_t g_8DEC = 0;   /* DGROUP:0x8DEC  liberty-bell counter   (@asm 0xA4DB) */
-uint16_t g_8E6A = 0;   /* DGROUP:0x8E6A  (pop*2 - rebellion_quota) @asm 0xA639 */
+extern uint16_t g_8DC4;   /* DGROUP:0x8DC4 */
+extern uint16_t g_8D4A;   /* DGROUP:0x8D4A */
+extern uint16_t g_8DD8;   /* DGROUP:0x8DD8  work-points cumulative (+= pop*2 @asm 0xA632) */
+extern uint16_t g_8DE6;   /* DGROUP:0x8DE6  Tools final band arg   (@asm 0xA692) */
+extern uint16_t g_8DE8;   /* DGROUP:0x8DE8  Lumber band arg        (@asm 0xA64E) */
+extern uint16_t g_8DEA;   /* DGROUP:0x8DEA  tory counter           (@asm 0xA4B0) */
+extern uint16_t g_8DEC;   /* DGROUP:0x8DEC  liberty-bell counter   (@asm 0xA4DB) */
+extern uint16_t g_8E6A;   /* DGROUP:0x8E6A  (pop*2 - rebellion_quota) @asm 0xA639 */
 
 /* Colony center pre-pass results (set by compute_colony_center_yields). */
-uint8_t  g_table_A891 = 0;            /* DGROUP:0xA891 food yield class */
-uint8_t  g_table_A892 = 0;            /* DGROUP:0xA892 misc adjustment */
-int8_t   g_table_A893 = (int8_t)0xFF; /* DGROUP:0xA893 best non-food commodity (0xFF=none) */
-uint8_t  g_table_A894 = 0;            /* DGROUP:0xA894 best non-food amount */
-uint8_t  g_table_A895 = 0;            /* DGROUP:0xA895 specialist tally */
-uint8_t  g_table_A896 = 0;            /* DGROUP:0xA896 second tally (good 6/7/12 side-count @asm 0x9E21..) */
+extern uint8_t  g_table_A891;            /* DGROUP:0xA891 food yield class */
+extern uint8_t  g_table_A892;            /* DGROUP:0xA892 misc adjustment */
+extern int8_t   g_table_A893; /* DGROUP:0xA893 best non-food commodity (0xFF=none) */
+extern uint8_t  g_table_A894;            /* DGROUP:0xA894 best non-food amount */
+extern uint8_t  g_table_A895;            /* DGROUP:0xA895 specialist tally */
+extern uint8_t  g_table_A896;            /* DGROUP:0xA896 second tally (good 6/7/12 side-count @asm 0x9E21..) */
 
 /* ============================================================================
  * Iterator / render auxiliaries — definitions kept here (their sole home in
  * this tree) so other units (boot/entry.c, iolib/file.c, runtime/cstart.c,
  * colony/assignment.c) link.  Addresses cited from globals.h; all BSS/zero.
  * ============================================================================ */
-uint16_t g_iter_handle    = 0;   /* DGROUP:0x8D78 */
-uint16_t g_iter_aux_a     = 0;   /* DGROUP:0x8D72 */
-uint16_t g_iter_aux_b     = 0;   /* DGROUP:0x8D74 */
-uint16_t g_iter_aux_c     = 0;   /* DGROUP:0x8D76 */
-uint16_t g_iter_aux_d     = 0;   /* DGROUP:0x8D7A */
-uint16_t g_render_aux_a   = 0;   /* DGROUP:0x8D4C */
-void far *g_render_aux_b_ptr = 0;/* DGROUP:0x8D4E */
-uint16_t g_pop_or_year    = 0;   /* DGROUP:0x8DB8 */
-uint8_t  g_render_flag_34D = 0;  /* DGROUP:0x34D */
-uint16_t g_field_917A     = 0;   /* DGROUP:0x917A */
-uint32_t g_long_8D80      = 0;   /* DGROUP:0x8D80 */
+extern uint16_t g_iter_handle;   /* DGROUP:0x8D78 */
+extern uint16_t g_iter_aux_a;   /* DGROUP:0x8D72 */
+extern uint16_t g_iter_aux_b;   /* DGROUP:0x8D74 */
+extern uint16_t g_iter_aux_c;   /* DGROUP:0x8D76 */
+extern uint16_t g_iter_aux_d;   /* DGROUP:0x8D7A */
+extern uint16_t g_render_aux_a;   /* DGROUP:0x8D4C */
+extern void far *g_render_aux_b_ptr;/* DGROUP:0x8D4E */
+extern uint16_t g_pop_or_year;   /* DGROUP:0x8DB8 */
+extern uint8_t  g_render_flag_34D;  /* DGROUP:0x34D */
+extern uint16_t g_field_917A;   /* DGROUP:0x917A */
+extern uint32_t g_long_8D80;   /* DGROUP:0x8D80 */
 
 /* Tutorial flags */
-uint16_t g_tutorial_flag_35C = 0; /* DGROUP:0x35C */
-uint16_t g_tutorial_flag_348 = 0; /* DGROUP:0x348 */
+extern uint16_t g_tutorial_flag_35C; /* DGROUP:0x35C */
+extern uint16_t g_tutorial_flag_348; /* DGROUP:0x348 */
 
 /* Map dimensions — real home is BSS at DGROUP:0x853A/0x853C; written at map load.
  * (Prior fixed defaults 56/70 were unverified guesses and have been removed.) */
-uint16_t g_map_width  = 0;        /* DGROUP:0x853A  RUNTIME_ONLY (set at map load) */
-uint16_t g_map_height = 0;        /* DGROUP:0x853C  RUNTIME_ONLY (set at map load) */
+extern uint16_t g_map_width;        /* DGROUP:0x853A  RUNTIME_ONLY (set at map load) */
+extern uint16_t g_map_height;        /* DGROUP:0x853C  RUNTIME_ONLY (set at map load) */
 
 /* Game-progress cluster (addresses per globals.h). */
-uint16_t g_progress_4_5394 = 0;   /* DGROUP:0x5394 */
-uint8_t  g_difficulty_53A6 = 0;   /* DGROUP:0x53A6  difficulty 0..4 (was g_progress_5_53A6 "era counter" — RULINGS 2026-05-30) */
-uint16_t g_progress_5398   = 0;   /* DGROUP:0x5398 */
-uint16_t g_progress_5392   = 0;   /* DGROUP:0x5392 */
-uint16_t g_progress_5396   = 0;   /* DGROUP:0x5396 */
+extern uint16_t g_progress_4_5394;   /* DGROUP:0x5394 */
+extern uint8_t  g_difficulty_53A6;   /* DGROUP:0x53A6  difficulty 0..4 (was g_progress_5_53A6 "era counter" — RULINGS 2026-05-30) */
+extern uint16_t g_progress_5398;   /* DGROUP:0x5398 */
+extern uint16_t g_progress_5392;   /* DGROUP:0x5392 */
+extern uint16_t g_progress_5396;   /* DGROUP:0x5396 */
 /* 0x539E (colony count) / 0x539C (unit count): now DGROUP-resident aliases
  * g_colony_count_539E / g_unit_count_539C in globals.h (no standalone storage —
  * they live in g_dgroup[] like every other DS byte). CONSOLIDATED 2026-06-09. */
-uint16_t g_progress_5382   = 0;   /* DGROUP:0x5382 */
+extern uint16_t g_progress_5382;   /* DGROUP:0x5382 */
 
 /* C runtime / boot globals — definitions kept here for link completeness. */
-uint16_t g_NFILE_QQ           = 0; /* DGROUP:0x27B9  RUNTIME_ONLY (set by C runtime cstart) */
-uint16_t g_argc               = 0; /* DGROUP:0x27CF */
-uint16_t g_argv               = 0; /* DGROUP:0x27D1 */
-uint16_t g_envp               = 0; /* DGROUP:0x27D3 */
-uint16_t g_program_ds         = 0; /* DGROUP:0x27B2 */
-uint16_t g_default_text_mode_2B01 = 0; /* DGROUP:0x2B01 */
-uint16_t g_iob_dispatch_2B16  = 0; /* DGROUP:0x2B16 */
-void   (*g_iob_dispatch_2B18)(void) = 0; /* DGROUP:0x2B18 */
-uint16_t g_errno_27AC         = 0; /* DGROUP:0x27AC */
-uint16_t g_output_count_2D52  = 0; /* DGROUP:0x2D52 */
+extern uint16_t g_NFILE_QQ; /* DGROUP:0x27B9  RUNTIME_ONLY (set by C runtime cstart) */
+extern uint16_t g_argc; /* DGROUP:0x27CF */
+extern uint16_t g_argv; /* DGROUP:0x27D1 */
+extern uint16_t g_envp; /* DGROUP:0x27D3 */
+extern uint16_t g_program_ds; /* DGROUP:0x27B2 */
+extern uint16_t g_default_text_mode_2B01; /* DGROUP:0x2B01 */
+extern uint16_t g_iob_dispatch_2B16; /* DGROUP:0x2B16 */
+extern void   (*g_iob_dispatch_2B18)(void); /* DGROUP:0x2B18 */
+extern uint16_t g_errno_27AC; /* DGROUP:0x27AC */
+extern uint16_t g_output_count_2D52; /* DGROUP:0x2D52 */
 
-uint8_t  g_exec_param_26AB[8] = { 0 }; /* DGROUP:0x26AB */
-uint16_t g_saved_ss_26A3      = 0; /* DGROUP:0x26A3 */
-uint16_t g_saved_sp_26A5      = 0; /* DGROUP:0x26A5 */
-uint16_t g_load_seg_26A7      = 0; /* DGROUP:0x26A7 */
+extern uint8_t  g_exec_param_26AB[8]; /* DGROUP:0x26AB */
+extern uint16_t g_saved_ss_26A3; /* DGROUP:0x26A3 */
+extern uint16_t g_saved_sp_26A5; /* DGROUP:0x26A5 */
+extern uint16_t g_load_seg_26A7; /* DGROUP:0x26A7 */
 
-uint16_t g_overlay_layout[0xAA] = { 0 }; /* DGROUP:0x3995  layout written by system_init */
+extern uint16_t g_overlay_layout[0xAA]; /* DGROUP:0x3995  layout written by system_init */
