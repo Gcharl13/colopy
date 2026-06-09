@@ -12,6 +12,7 @@
  * ============================================================================ */
 #include "viceroy.h"
 #include "power.h"
+#include "colony.h"
 #include "ff.h"
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one

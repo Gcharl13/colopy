@@ -50,9 +50,9 @@
 #include "overlay_externs.h"
 
 /* ---- the active-colony far pointer (`ctx`) and field helpers --------------- */
-/* ctx is declared as struct colony_t far * in colony.h (via viceroy.h) */
-#define CB(off)  (*(uint8_t  far *)((char far *)(void far *)ctx + (off)))  /* ctx byte field  */
-#define CW(off)  (*(uint16_t far *)((char far *)(void far *)ctx + (off)))  /* ctx word field  */
+/* ctx: struct colony_t far *ctx declared in globals.h (via viceroy.h) */
+#define CB(off)  (*(uint8_t  far *)((char far *)ctx + (off)))  /* ctx byte field  */
+#define CW(off)  (*(uint16_t far *)((char far *)ctx + (off)))  /* ctx word field  */
 /* Absolute DGROUP byte access by computed offset (DGROUP_PTR per viceroy_types.h).
  * Used for the ColonyRecord (base 0x5D46/0xCA) and UnitRecord (0x3144/0x1C) tables
  * and their adjacent per-power arrays; the literal carries the table base. */
@@ -65,7 +65,7 @@ extern int16_t  g_cursor_x_07E8;     /* 0x07E8 cursor cell X (pixels)           
 extern int16_t  g_cursor_y_07EA;     /* 0x07EA cursor cell Y (pixels)            */
 extern int16_t  g_screen_mode_8D54;  /* 0x8D54 active screen id (7=colony grid)  */
 extern int16_t  g_sel_unit_033E;     /* 0x033E selected unit slot                */
-/* g_colony_count_539E is a DGS16 macro in globals.h */
+/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
 extern int16_t  g_redraw_0346;       /* 0x0346 "colony view dirty" flag          */
 extern int16_t  g_submode_032E;      /* 0x032E selection-changed / submode flag  */
 extern int16_t  g_count_033C;        /* 0x033C visible-cell count                */
@@ -288,7 +288,7 @@ extern int overlay_call_191F_0588(void);  /* mode 8  (02C9C4)                   
 extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                      */
 extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
-extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE / BUILT / DEPLETION) */
+extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE* /BUILT* /DEPLETION) */
 
 /* ============================================================================
  * func_02AAEC  — colony garrison/ship unit-orders POPUP  ("COLONYUNIT"/"SHIPOPTIONS")

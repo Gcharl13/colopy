@@ -68,6 +68,7 @@ extern uint16_t  cs_cur_tx_330;       /* 0x0330 cursor tile X within colony grid
 extern uint16_t  cs_cur_ty_332;       /* 0x0332 cursor tile Y within colony grid  */
 extern uint16_t  cs_flag_346;         /* 0x0346 redraw-needed flag                */
 extern uint16_t  g_in_combat_7F4;     /* 0x07F4 interactive (mouse) mode active   */
+#define g_flag_7F4 g_in_combat_7F4   /* alias — same address, second name used below */
 extern uint16_t  g_flag_7E4;          /* 0x07E4 popup/blocking flag               */
 extern uint16_t  g_flag_7E8;          /* 0x07E8 map/grid height (colony work grid)*/
 extern uint16_t  g_flag_7EA;          /* 0x07EA map/grid width                    */

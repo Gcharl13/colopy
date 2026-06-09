@@ -54,6 +54,8 @@
 #include "globals.h"
 #include "iolib.h"
 #include "colony.h"
+#include "globals.h"
+#include "dgroup.h"
 
 /* Screen-state id returned to the reconstruction-layer screen dispatcher.
  * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2C (colony view);

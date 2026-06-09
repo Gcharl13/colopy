@@ -15,7 +15,6 @@
 #define VICEROY_GLOBALS_H
 
 #include "viceroy_types.h"
-#include "dgroup.h"          /* DGS16 — for the DGROUP-resident count aliases below */
 struct colony_t;
 struct UnitRecord;
 
@@ -91,22 +90,8 @@ extern uint8_t  g_difficulty_53A6;        /* DGROUP:0x53A6; difficulty 0..4 (def
 extern uint16_t g_progress_5398;          /* DGROUP:0x5398 */
 extern uint16_t g_progress_5392;          /* DGROUP:0x5392 */
 extern uint16_t g_progress_5396;          /* DGROUP:0x5396 */
-/* Live entity counts at DGROUP:0x539A/0x539C/0x539E. CONSOLIDATED 2026-06-09:
- * these were declared file-locally in ~12 files (as g_unit_count_539C etc., often
- * with int16/uint16 drift and *undefined* at link), AND separately as standalone
- * vars `g_progress_539C/E` in data/production.c — two different bytes in modern
- * mode, and neither matched the overlay/load_image code that reads the same count
- * via DGS16(0x539C). Unified here as DGROUP-resident aliases so the named form,
- * the DGS16() form, and DS:0x539C are one byte (byte-faithful in both modes). */
-#define g_native_count_539A   DGS16(0x539A)  /* count at 0x539A. CONTESTED SEMANTIC:
-                                              * overlay calls it native/other-settlement
-                                              * count; native_unit_ai bounds a settlement
-                                              * home_link by it (@asm 0x047128); report
-                                              * code read it as "player colony count"
-                                              * (@asm 0x037667). Same byte; meaning TBD by
-                                              * RE. Name unified to the overlay/majority. */
-#define g_unit_count_539C     DGS16(0x539C)  /* UNIT count (table stride 0x1C) */
-#define g_colony_count_539E   DGS16(0x539E)  /* COLONY count (table stride 0xCA) */
+extern uint16_t g_progress_539E;          /* DGROUP:0x539E = COLONY count (indexed x0xCA); RULINGS 2026-05-28 ai */
+extern uint16_t g_progress_539C;          /* DGROUP:0x539C = UNIT count (indexed x0x1C); RULINGS 2026-05-28 ai */
 extern uint16_t g_progress_5382;          /* DGROUP:0x5382 */
 
 /* ----------------------------------------------------------------------------
@@ -156,18 +141,9 @@ extern void far *g_state_record_267A;     /* DGROUP:0x267A; @ref read_far_dword_
 extern uint8_t  g_table_8F86_stride12[];  /* DGROUP:0x8F86; @ref decompiled.md "func_0086C0" */
 
 /* ----------------------------------------------------------------------------
- * Per-unit-type flag tables at DGROUP:0x5236/0x5237, and the PowerRecord byte
- * view at 0x8808. CONSOLIDATED 2026-06-09: these were file-local externs (each
- * undefined at link) in overlay code. Now g_dgroup-resident aliases so the
- * named byte-array form indexes the same bytes as DG_POWER_TABLE / the static
- * window (byte-faithful, no separate storage). Code indexes them as g_X[expr].
- * (The old unused `extern uint8_t g_table_5237_stride14[]` is folded in here —
- * same 0x5237 base; callers index with their own stride, 6 in the overlay.) */
-#define g_table_5237_stride14    ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
-#define g_unit_type_flags_5236   ((uint8_t near *)(DG_BASE + (uint16_t)0x5236))
-#define g_unit_type_flags_5237   ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
-#define g_power_table_8808       ((uint8_t near *)(DG_BASE + (uint16_t)0x8808))
-#define native_class_weight_5AD8 ((uint8_t near *)(DG_BASE + (uint16_t)0x5AD8))  /* per-class weight table */
+ * 14-byte-stride table (per-unit-type)
+ * ---------------------------------------------------------------------------- */
+extern uint8_t  g_table_5237_stride14[];  /* DGROUP:0x5237; @ref init_and_scan_units_in_area */
 
 /* ----------------------------------------------------------------------------
  * 5-stride sub-table (used by update_and_render_tile_at)
@@ -221,14 +197,30 @@ extern uint16_t g_load_seg_26A7;          /* DGROUP:0x26A7 */
 extern uint16_t g_overlay_layout_CS[0xAA];   /* CS:0x3995.. (NOT DGROUP); RTLink overlay dispatch state */
 
 /* ----------------------------------------------------------------------------
- * Screen-ID constants (enter_screen_view bx arg; DGROUP:0x???)
- * SCREEN_EUROPE = 0x2B: byte-verified at 0x025EE5/Europe entry
- * SCREEN_COLONY = 0x2C: byte-verified at 0x025EE5/colony entry (mov bx,0x2C)
- * SCREEN_TITLE  = 0x01: title screen (conventional ID; not yet byte-verified)
+ * Screen-id constants (used by ui files to identify the active screen)
  * ---------------------------------------------------------------------------- */
-#define SCREEN_TITLE        0x01
-#define SCREEN_EUROPE       0x2B
-#define SCREEN_COLONY       0x2C
-#define SCREEN_HALL_OF_FAME 0x2D  /* not yet byte-verified; conventional ID */
+#define SCREEN_TITLE         0x01
+#define SCREEN_EUROPE        0x2B
+#define SCREEN_COLONY        0x2C
+#define SCREEN_HALL_OF_FAME  0x2D
+
+/* ----------------------------------------------------------------------------
+ * DGS16 convenience aliases — DGROUP-relative signed-word scalars.
+ * In the modern build (dgroup.h) DGS16(off) is (int16_t)DG16(off).
+ * These match the names used in king_events.c / report_screen.c / overlay files.
+ * ---------------------------------------------------------------------------- */
+#include "dgroup.h"
+#define g_colony_count_539E  DGS16(0x539E)
+#define g_unit_count_539C    DGS16(0x539C)
+#define g_native_count_539A  DGS16(0x539A)
+
+/* Per-unit-type 14-byte stride table (alias for g_table_5237_stride14) */
+#define g_unit_type_flags_5237  ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
+
+/* Per-power 0x34-byte records base pointer */
+#define g_power_table_8808  ((uint8_t near *)(DG_BASE + (uint16_t)0x8808))
+
+/* Native class-weight table used by settlement scoring */
+#define native_class_weight_5AD8  ((uint8_t near *)(DG_BASE + (uint16_t)0x5AD8))
 
 #endif /* VICEROY_GLOBALS_H */

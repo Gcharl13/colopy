@@ -2063,9 +2063,6 @@ int func_066884_sprite_descriptor_B(uint16_t index)
     return overlay_call_181F_025E();
 }
 
-extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
-extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
-
 /* ============================================================================
  * func_066968  @ 0x066968..0x066B95  (558 bytes, ENTER 0x38, RETF)  page 0x15
  * ROLE: STRATEGIC (mini-)MAP ROW COMPOSITOR — "what colour goes where" on the
@@ -2091,6 +2088,8 @@ extern int func_066968_unit_at(int col, int row);                        /* 0x18
  *   DS:0x5A8A accessed as DS[base-0x5A8A] = DS:0xA576+base = RUNTIME_ONLY.
  * @asm_disasm page_15.asm (func_066968)
  * ============================================================================ */
+extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
+extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
 int func_066968_minimap_compose(int sx, int sy, int width, int height,
                                 int player, int fog_mode)
 {
@@ -2170,6 +2169,7 @@ next_row:
     }
     return 0;                                                 /* @asm 0x066B92 retf */
 }
+/* Declarations moved above func_066968_minimap_compose */
 
 /* ============================================================================
  * func_066B96  @ 0x066B96..0x066BAF  (26 bytes, push bp, RETF)  page 0x15

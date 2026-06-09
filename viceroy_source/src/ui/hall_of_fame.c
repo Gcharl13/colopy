@@ -38,6 +38,8 @@
 #include "viceroy_types.h"
 #include "globals.h"
 #include "iolib.h"
+#include "globals.h"
+#include "dgroup.h"
 
 /* Screen-state id returned to the reconstruction-layer screen dispatcher.
  * No DOS-traced view id exists for the Hall of Fame (the screen-state return is

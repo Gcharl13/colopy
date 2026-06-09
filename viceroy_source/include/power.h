@@ -28,7 +28,6 @@
 #include "viceroy_types.h"
 
 #pragma pack(push, 1)
-typedef struct PowerRecord PowerRecord;
 struct PowerRecord {
     uint8_t  pad_00;                  /* +0x00 — not yet decoded */
     uint8_t  tax_rate;                /* +0x01 — 0..100% (BYTE_VERIFIED) */
@@ -84,8 +83,6 @@ struct PowerRecord {
 };
 #pragma pack(pop)
 
-typedef struct PowerRecord PowerRecord;   /* allow the bare type name */
-
 #define POWER_RECORD_STRIDE 0x13C
 #define POWER_TABLE_BASE    0x8808   /* DGROUP-relative */
 
@@ -97,16 +94,9 @@ typedef struct PowerRecord PowerRecord;   /* allow the bare type name */
  * modern build it points at g_dgroup+0x8808, in DOS at DS:0x8808. `power[p]`
  * indexes it; local vars/params named `power` shadow it normally. (Changed from
  * `power[8]` array to a pointer for the aliasing -- no sizeof/&array reliance.) */
+typedef struct PowerRecord PowerRecord;
 extern struct PowerRecord *power;
-extern struct PowerRecord *g_market;  /* DGROUP:0x84FC — active PowerRecord (market context) */
-
-/* DGROUP:0x84FC — the "active PowerRecord" pointer (g_active_power_rec), set to
- * &power[active] (= 0x8808 + index*0x13C) by market_set_active. CONSOLIDATED
- * 2026-06-09: was a file-local extern (undefined at link) in market/boycott.c
- * and market/pricing.c. Like `ctx`, it's a real pointer mirroring the DGROUP
- * slot (a 16-bit near ptr there can't hold a modern 64-bit address). Distinct
- * from g_active_power INDEX at 0x9E12. Defined in runtime/dgroup.c. */
-extern struct PowerRecord *g_market;
+extern struct PowerRecord *g_market; /* DGROUP:0x84FC — active-market PowerRecord ptr */
 
 /* ----------------------------------------------------------------------------
  * Power index conventions

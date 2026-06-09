@@ -17,39 +17,24 @@
  *               file 0x1F008; BURNED @seg 0x1C28 = file 0x1F5C8).
  * ============================================================================ */
 #include "viceroy_types.h"
-#include "globals.h"
 #include "native.h"
 
 /* ----------------------------------------------------------------------------
  * Globals (BYTE_VERIFIED bases)
  * ---------------------------------------------------------------------------- */
 extern uint8_t  g_native_table_54EC[];   /* DGROUP:0x54EC — NativeSettlement[] base, stride 0x12 */
+extern int16_t  g_native_count_539A;     /* DGROUP:0x539A — live settlement count (word, max 0x54) */
+extern int16_t  g_unit_count_539C;       /* DGROUP:0x539C — live UNIT count (word, ×0x1C) */
 extern void *   g_cur_settlement_8D4A;   /* DGROUP:0x8D4A — far ptr to "settlement being built" record */
 extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settlement being removed" record */
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */
-/* native_class_weight_5AD8 is provided as a DG_BASE macro in globals.h */
 
-/* ----------------------------------------------------------------------------
- * Forward declarations — declared here (before first use) so the C11 compiler
- * does not synthesize an implicit `int()` prototype that then conflicts with the
- * fuller `extern` decls further down. Signatures match those later decls exactly.
- * None of these are in include/ headers (resident/overlay helpers). [ANCHOR_VERIFIED]
- * ---------------------------------------------------------------------------- */
-extern uint8_t  settlement_initial_population(int settlement_index); /* CALL near 0x5434 */
-extern void     map_mark_settlement_tile(int x, int y, int owner);
-extern uint8_t *unit_record(int index);                              /* &UnitRecord[i] (base 0x3144) */
-extern void     unit_detach_from_settlement(int unit_index);         /* LCALL 0x181F:0x808 */
-
-/* Per-turn settlement-tick tuning rates — NOT byte-resident as literals (native
- * behaviour tables load from NAMES.TXT @TRIBES at runtime; see banner below).
- *   MISSION_CONVERT_PCT: byte-verified convert mechanic in src/native/mission.c
- *     (mission_convert_roll, @asm 0x572F6..0x57316) is P = MIN(tribe[+2]+2,16)/16;
- *     the smallest propensity gives rate=2 -> 2/16 = 12.5%.  Mapped to a /100
- *     percent here as floor(2*100/16) = 12 to match that verified base rate.
- *   NATIVE_GROWTH_PCT: no growth percentage exists in the EXE as a literal — the
- *     growth table is RUNTIME_ONLY (NAMES.TXT). 10% is a defensible placeholder. */
-#define MISSION_CONVERT_PCT  12   /* @asm-derived from mission_convert_roll: 2/16 base */
-#define NATIVE_GROWTH_PCT    10   /* TODO: verify value (RUNTIME_ONLY, NAMES.TXT @TRIBES) */
+/* Forward declarations — must precede first use */
+extern uint8_t settlement_initial_population(int settlement_index);
+extern void    map_mark_settlement_tile(int x, int y, int owner);
+extern uint8_t *unit_record(int index);
+extern void     unit_detach_from_settlement(int unit_index);
+extern uint8_t  native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
 
 /* ============================================================================
  * native_settlement_add — BYTE_VERIFIED
@@ -121,8 +106,8 @@ int native_settlement_add(int owner, int x, int y)
     return new_index;
 }
 
-/* settlement_initial_population: CALL near 0x5434 — resident helper.
- * Not yet byte-traced. ANCHOR_VERIFIED via the call site. */
+/* CALL near 0x5434 — resident helper returning the starting population byte.
+ * Not yet byte-traced (resident segment). ANCHOR_VERIFIED via the call site. */
 
 /* ============================================================================
  * native_settlement_remove — BYTE_VERIFIED (add/remove/compact)
@@ -310,6 +295,10 @@ int native_settlement_value_for_display(int index)
  * ============================================================================ */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
 
+/* RUNTIME_ONLY — loaded from NAMES.TXT/data-file; placeholder compile values */
+#define NATIVE_GROWTH_PCT    10
+#define MISSION_CONVERT_PCT   5
+
 void native_tick_all(void)
 {
     /* @asm-anchored loop shape: iterate g_native_count_539A records, stride
@@ -353,3 +342,4 @@ int settlement_max_pop(int type)          /* RECONSTRUCTED — values RUNTIME_ON
     return 6;
 }
 
+extern void spawn_indian_convert(int settlement_index);

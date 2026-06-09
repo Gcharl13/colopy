@@ -282,9 +282,9 @@ int native_raid_resolve_outcome(void)   /* returns RAID_OUTCOME_* */
 extern uint32_t game_random_range(uint32_t lo, uint32_t hi);
 extern struct UnitRecord *spawn_unit(int owner, int unit_type, int x, int y);
 
-void spawn_raiding_brave(struct NativeSettlement *s, int target_power) /* RECONSTRUCTED */
+void spawn_raiding_brave(struct NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
 {
-    int unit_type = 0x0D;   /* RECONSTRUCTED — native combat types 0x0D..0x12 */
+    int unit_type = 0x0D;   /* RECONSTRUCTED — native brave type id */
     struct UnitRecord *u = spawn_unit(NATIVE_POWER_BASE, unit_type, s->x, s->y);
     if (!u) return;
     (void)target_power;

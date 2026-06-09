@@ -76,13 +76,10 @@ extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
 extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRecord */
-/* g_colony_count_539E, g_unit_count_539C, g_native_count_539A — DGS16 macros in globals.h */
-/* g_unit_type_flags_5237, g_power_table_8808 — DG_BASE macros in globals.h */
+/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
-extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
-extern int16_t  ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter */
 
 /* AI per-power "plan queue" tables (two parallel arrays, each per-power blocks):
  *   QUEUE_A  base DGROUP 0x98B0  (= 0x10000 - 0x6750;  64 slots/power,
@@ -463,6 +460,8 @@ int func_04C682_ai_power_strength_delta(uint16_t arg0, int16_t arg1)
  *                  prio += (turn[0x538E] - pwr[-0x77B2]) >> 4 ; (staleness term)
  * @asm 0x04C7E4  return (prio > 0) ? 0 : prio
  * ============================================================================ */
+extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
+extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
 int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t dest)
 {
     int prio = 0;                                       /* @asm 0x04C720 [bp-2]=0 */
@@ -504,6 +503,8 @@ int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t de
 
     return (prio > 0) ? 0 : prio;                       /* @asm 0x04C7E4..0x04C7EB RETF */
 }
+/* Declarations moved before first use (above); g_power_table_8808 is a macro from globals.h */
+
 /* ============================================================================
  * func_04C7F0 — ai_unit_task_total_score  [DONE — control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
@@ -767,7 +768,7 @@ int func_04CA86_ai_move_is_provocative(uint16_t self_power, int16_t tribe, int16
  * stepper cs:0x7ADA and the 0x181F map leaves are role-named.  [DONE]
  * ============================================================================ */
 extern int16_t g_ai_best_target_9EA8; /* DGROUP:0x9EA8 — scratch "best candidate" word */
-/* g_unit_type_flags_5236 is a DG_BASE macro in globals.h */
+extern uint8_t g_unit_type_flags_5236[]; /* DGROUP:0x5236 base — per-type 6-byte rows */
 
 int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                                        uint16_t self_power, uint16_t pursuit)
@@ -941,7 +942,7 @@ extern uint8_t  g_ai_regionmax_9E98[]; /* DGROUP:0x9E98 (-0x6168) — per-region
 extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power tier triplet */
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
-/* g_native_count_539A is a DGS16 macro in globals.h */
+/* g_native_count_539A: DGS16(0x539A) macro from globals.h */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.
@@ -1769,6 +1770,7 @@ extern uint8_t  g_ai_count_A89C;          /* DGROUP:0xA89C — active-entry coun
 extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
+/* g_unit_count_539C: DGS16(0x539C) macro from globals.h */
 /* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
  * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
  *

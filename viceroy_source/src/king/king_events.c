@@ -31,8 +31,6 @@
  *       whose own TODO pointed here: "find via KINGTAX PUSH at 0x02f392").
  * ============================================================================ */
 #include "viceroy_types.h"
-#include "globals.h"
-#include "dgroup.h"
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from the operands).
@@ -42,7 +40,9 @@
 extern int16_t g_subject_power_5394;   /* DGROUP:0x5394 — the power being processed this
                                          *   call (read at entry; 49 distinct readers incl.
                                          *   0x0079A0 setup, 0x02F052). Used as owner key. */
-/* g_unit_count_539C, g_colony_count_539E — DGS16 macros in globals.h */
+extern int16_t g_unit_count_539C;       /* DGROUP:0x539C — number of UnitRecords (cross-
+                                         *   confirmed in intervention.c) */
+extern int16_t g_colony_count_539E;     /* DGROUP:0x539E — number of colonies */
 extern int16_t g_found_flag_014C;       /* DGROUP:0x014C — "an event fired" result flag
                                          *   (set to 1 @0x02F201 when KINGTAX applies) */
 extern int16_t g_found_value_014E;      /* DGROUP:0x014E — companion value (init 0xFFFF) */
@@ -133,10 +133,10 @@ extern int   pick_grant_unit_type(int slot, int owner, int x); /* 0x191F:0x0AEE 
 extern void  ui_show_message2(int a, int handle);            /* 0x191F:0x0AE0 */
 
 /* Resolved message handles (file = handle + 0x1D9A0 — BYTE_VERIFIED). */
-#define MSG_REFIT          0xEEF  /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
-#define MSG_KINGTAX        0xF01  /* -> "KINGTAX" @ file 0x1E8A1 */
-#define MSG_WINNING_KEY    0xEF5  /* lea bx,[0xef5] @0x02F314 */
-#define MSG_GRANT_FOLLOWUP 0xF01  /* "KINGTAX" @asm 0x02F392 push 0xf01 */
+#define MSG_REFIT          0xEEF   /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
+#define MSG_KINGTAX        0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result) */
+#define MSG_WINNING_KEY    0xEF5   /* -> lea bx,[0xef5] @0x02F314 */
+#define MSG_GRANT_FOLLOWUP 0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
 
 /* ============================================================================
  * king_process_power_events — func_02F052 — BYTE_VERIFIED (control flow + writes)
@@ -351,6 +351,8 @@ extern void ui_select_on_map(int handle, int a);     /* 0x181F:0x438 */
 extern void msg_set_int(int slot, int value);        /* 0x181F:0x438 (int form) */
 extern void ui_flush(void);                          /* 0x191F:0xA82 */
 extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle */
+
+/* MSG_WINNING_KEY and MSG_GRANT_FOLLOWUP defined above near MSG_REFIT */
 
 /* ============================================================================
  * NOTES / NOT YET VERIFIED
