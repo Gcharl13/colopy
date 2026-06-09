@@ -10,40 +10,71 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
-/* @asm        0x00693A..0x006948  (14 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00693A_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* File-local overlay thunks not yet in overlay_externs.h (sibling convention). */
+extern int overlay_call_057E_004A(void);  /* @ref RTLink 0x057E:0x004A — stack move-cost */
+extern int overlay_call_0981_0000(void);  /* @ref RTLink 0x0981:0x0000 — owner/role predicate */
+
+/* @asm        0x00693A..0x00697E  (68 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_00693A.asm
+ * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 2
- * @args_seen  []
- * @lcalls     0
- * @near_calls 0
- * @callers    0
+ * @args_seen  [reg: ax=idx, dx=x, bx=y]
+ * @lcalls     3 (0x037F:0x000A, 0x037F:0x015E, 0x037F:0x0228 / reveal 0x037F:0x0598)
+ * @near_calls 1 (0x0066CC unit_tile_head)
+ * @callers    func_006D24 (this file), func_0069D2 (this file), and others
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unit_place_on_tile: place unit at (x,y), insert at chain head
+ * @status     BYTE_VERIFIED 2026-06-09 (canonical body in src/unit/lifecycle.c)
+ * @note   Auto-tracer reported 14 bytes: a FALSE cut at the first near CALL. True
+ *         span is 0x693A..0x697E (68 bytes, per functions.json). This is the
+ *         canonical unit_place_on_tile (declared unit.h, defined lifecycle.c); to
+ *         avoid a second copy of the link surgery this skeleton forwards to it.
+ *         Register-arg ABI: ax=unit_idx, dx=x, bx=y.
  */
-int func_00693A_logic_sz_14(void)
+/* PORTED 2026-06-09 from func_00693A.asm — forwards to canonical unit_place_on_tile */
+int func_00693A_logic_sz_14(uint16_t unit_idx, uint16_t x, uint16_t y)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x693A places unit (ax) at (dx=x,bx=y) and links it at the HEAD of that
+     *      tile's occupancy chain (unit_tile_head 0x66CC + chain prepend, plus the
+     *      0x037F:* occupancy/reveal/notify helpers when the tile was empty).
+     * Implemented in src/unit/lifecycle.c as unit_place_on_tile(); this skeleton
+     * is a thin pass-through so callers in this file link to the single body. */
+    unit_place_on_tile((int16_t)unit_idx, (int16_t)x, (int16_t)y);
+    return 0;
 }
 
-/* @asm        0x0069D2..0x0069DE  (12 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_0069D2_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x0069D2..0x0069EE  (28 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_0069D2.asm
+ * @pattern    WRAPPER_NEARCALL
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [6]
+ * @args_seen  [6, 8, 10]
  * @lcalls     0
- * @near_calls 0
- * @callers    0
+ * @near_calls 2
+ * @callers    func_0069EE, func_006A7C, func_006B46, func_006F5A (this file), others
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (12 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *
+ * Near CALL targets:
+ *   - 0x0068AA  (unit_chain_unlink)
+ *   - 0x00693A  (unit_place_on_tile)
+ * @inferred_role  unit_chain_relocate: unlink unit from its tile chain, then re-place at (x,y)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 12 bytes: a FALSE cut at the first near CALL. True
+ *         span is 0x69D2..0x69EE (28 bytes, per functions.json). Arity is
+ *         (arg0,arg1=x,arg2=y) (the [6]-only args_seen missed [bp+8]/[bp+0xA]).
  */
-int func_0069D2_logic_sz_12(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_0069D2.asm — unlink unit then re-place it at (x,y) */
+int func_0069D2_logic_sz_12(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x0069D6 si=[bp+6]; ax=si; call 0x68aa (func_0068AA(arg0)=unlink from
+     *      tile chain); ax=si; dx=[bp+8](x); bx=[bp+0xa](y); call 0x693a
+     *      (func_00693A(arg0,x,y)=unit_place_on_tile, re-insert at head of (x,y)).
+     *      ret.
+     * Relocates a unit: splices it out of its current tile chain (func_0068AA)
+     * and re-places it at the head of tile (arg1,arg2)'s chain (func_00693A). The
+     * register-arg place call passes ax=idx, dx=x, bx=y. */
+    func_0068AA(arg0_bp_06);                              /* unlink from tile chain */
+    func_00693A(arg0_bp_06, arg1_bp_08, arg2_bp_0A);      /* place at (x,y) head */
+    return 0;
 }
 
 /* @asm        0x0069EE..0x006A0F  (33 bytes)  region=load_image
@@ -248,33 +279,134 @@ int func_006AAE_op_sz_103(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return 0;
 }
 
-/* @asm        0x006B46..0x006B8D  (71 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_006B46_unknown.asm
- * @pattern    UNKNOWN
+/* @asm        0x006B46..0x006CB3  (365 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_006B46.asm
+ * @pattern    LARGE_LOGIC
  * @prologue   ENTER 0xc
- * @args_seen  [6]
+ * @args_seen  [6, 8]
  * @lcalls     0
- * @near_calls 2
- * @callers    0
+ * @near_calls 4
+ * @callers    func_00768C, func_006CB3 (sibling), self-recursive (push 0;push si;call 0x6b46)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x006672
- *   - 0x0066BA
- * @inferred_role  UNKNOWN (71 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x006672  (chain head)
+ *   - 0x0066BA  (chain next)
+ *   - 0x0066CC  (tile head)
+ *   - 0x0069D2  (unlink + relocate member)
+ * @inferred_role  evict cargo/escort units off arg0's tile in phase order onto an
+ *                 off-map staging tile (-3,-3), then finalize the chosen one
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 71 bytes ending 0x6B8D: a FALSE cut at the first
+ *         forward branch. True span is 0x6B46..0x6CB3 (365 bytes, per
+ *         functions.json); the three eviction loops + finalize loop were
+ *         truncated and are decompiled here. Arity is (arg0,arg1) (the tracer's
+ *         [6]-only args_seen missed [bp+8], read at 0x6C2D); callers push two
+ *         words (push 0; push si).
  */
-int func_006B46_logic_sz_71(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_006B46.asm — phase-ordered chain eviction to (-3,-3) */
+int func_006B46_op_sz_365(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x006B56 JGE 0x006B5B */ {
-            goto label_006CAF;  /* @0x006B58 */
+    /* @asm 0x006B4C si=[bp+6]; [bp-8]=0xffff (result=-1); or si,si; jl ->0x6caf.
+     *      bx=si*0x1c; [bp-0xc]=hx=(uint8)unit.map_x(+0x00); [bp-0xa]=hy=(uint8)
+     *      unit.map_y(+0x01).  call 0x6672 (si=head); or si,si; jl 0x6bb3.
+     *   loop1 0x006B7A: di=func_0066BA(si); type=unit[si].type(+0x02); idx=type*14;
+     *      if (byte[idx+0x5237]!=0) { result=si; func_0069D2(si,-3,-3); } si=di;
+     *      while (si>=0).
+     *   0x006BB3 cur=func_0066CC(hx,hy); [bp+6]=cur; if (cur>=0) {
+     *     loop2 0x006BC6: di=func_0066BA(cur); if(unit[cur].type==0xa){result=cur;
+     *       func_0069D2(cur,-3,-3);} cur=di; while(cur>=0); }
+     *   0x006BED phase=6; do {  outer 0x006BF2: cur=func_0066CC(hx,hy);
+     *     if (cur<0) goto dec; di=cur;
+     *     inner 0x006C05: next=func_0066BA(di); type=unit[di].type(+0x02);
+     *       tval=byte[type*14 + 0x5238];
+     *       if (arg1==0) cls=tval;                                  (@0x6C2D)
+     *       else { if(type==5||type==4||type==7) cls=2; else cls=tval;
+     *              if(type==0xb) cls=3; }                           (@0x6C38..0x6C51)
+     *       if (cls==phase) { result=di; func_0069D2(di,-3,-3); }   (@0x6C54)
+     *       di=next; while (di>=0);
+     *     0x006C6F dec: } while (--phase >= 1);
+     *   0x006C7B if (result<0) goto ret; di=func_006672(result); if(di<0) goto ret;
+     *     [bp+6]=di; si=di;
+     *     loop4 0x006C93: di=func_0066BA(si); func_0069D2(si,hx,hy); si=di;
+     *       while (si>=0).
+     *   0x006CAF return result.
+     * Off-map-stages (to tile -3,-3) every unit on arg0's tile that matches, in
+     * three passes: (1) units whose type table-flag 0x5237[type*14] is set,
+     * (2) the lone type-0x0A occupant, (3) by descending phase 6..1, units whose
+     * 0x5238[type*14] class (remapped to 2 for types 4/5/7 and 3 for 0xB when
+     * arg1!=0) equals the current phase. It records the last matched unit; if any
+     * matched it then relocates that unit's whole chain back to the original tile
+     * (hx,hy) and returns its index. Per-type tables stride 14 @0x5234
+     * (g_table_5237_stride14); UnitRecord via func_006672/func_0066BA/func_0066CC,
+     * relocate via func_0069D2. */
+    int16_t result = -1;
+    unsigned ubase;
+    uint8_t hx, hy;
+    int16_t si, di, cur;
+    int phase;
+
+    if ((int16_t)arg0_bp_06 < 0)
+        return result;
+    ubase = 0x3144 + (unsigned)arg0_bp_06 * 0x1C;
+    hx = DG8(ubase + 0x00);                               /* @asm [bp-0xc] map_x */
+    hy = DG8(ubase + 0x01);                               /* @asm [bp-0xa] map_y */
+
+    /* pass 1: chain members whose type flag 0x5237 is set */
+    for (si = (int16_t)func_006672(arg0_bp_06); si >= 0; ) {
+        di = (int16_t)func_0066BA((uint16_t)si);          /* save next first */
+        {
+            uint8_t type = DG8(0x3144 + (unsigned)si * 0x1C + 0x02);
+            if (DG8(0x5237 + (unsigned)type * 14) != 0) {
+                result = si;
+                func_0069D2((uint16_t)si, (uint16_t)-3, (uint16_t)-3);
+            }
         }
-        /* @0x006B71 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006B78 JL 0x006BB3 */ {
-            /* @0x006B7D */ func_0066BA();
+        si = di;
+    }
+
+    /* pass 2: type-0x0A occupant on the (now possibly changed) tile head */
+    for (cur = (int16_t)func_0066CC(hx, hy); cur >= 0; ) {
+        di = (int16_t)func_0066BA((uint16_t)cur);
+        if (DG8(0x3144 + (unsigned)cur * 0x1C + 0x02) == 0x0A) {
+            result = cur;
+            func_0069D2((uint16_t)cur, (uint16_t)-3, (uint16_t)-3);
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        cur = di;
+    }
+
+    /* pass 3: by descending phase 6..1, members whose 0x5238 class == phase */
+    for (phase = 6; phase >= 1; phase--) {
+        for (cur = (int16_t)func_0066CC(hx, hy); cur >= 0; ) {
+            di = (int16_t)func_0066BA((uint16_t)cur);
+            {
+                uint8_t type = DG8(0x3144 + (unsigned)cur * 0x1C + 0x02);
+                int cls = (int)DG8(0x5238 + (unsigned)type * 14);  /* @asm tval */
+                if (arg1_bp_08 != 0) {
+                    if (type == 5 || type == 4 || type == 7) cls = 2;
+                    if (type == 0x0B) cls = 3;
+                }
+                if (cls == phase) {
+                    result = cur;
+                    func_0069D2((uint16_t)cur, (uint16_t)-3, (uint16_t)-3);
+                }
+            }
+            cur = di;
+        }
+    }
+
+    /* finalize: relocate the chosen unit's whole chain back to (hx,hy) */
+    if (result < 0)
+        return result;
+    di = (int16_t)func_006672((uint16_t)result);          /* chain head of result */
+    if (di < 0)
+        return result;
+    for (si = di; si >= 0; ) {
+        di = (int16_t)func_0066BA((uint16_t)si);
+        func_0069D2((uint16_t)si, hx, hy);
+        si = di;
+    }
+    return result;
 }
 
 /* @asm        0x006CCA..0x006CD7  (13 bytes)  region=load_image
@@ -307,36 +439,112 @@ int func_006CCA_logic_sz_13(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x05EB:0x0A76
- * @inferred_role  MEDIUM_LOGIC (197 bytes). 0x05EB:0x0A76
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unit_spawn: allocate+init a UnitRecord of type arg0 for owner arg1 at (arg2,arg3)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   True span 0x6D24..0x6E94 (368 bytes, per functions.json); banner's 197
+ *         was a FALSE cut at the first forward branch. Full init + the two
+ *         over-cap exit paths are decompiled here.
  */
+/* PORTED 2026-06-09 from func_006D24.asm — allocate & initialise a new unit */
 int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x538E, 0x539C
-     */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x006D33 JGE 0x006D3F */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x006D3D JE 0x006D4A */ {
-                if (/* JL fallthrough cond: */ ax >= 0) /* @0x006D45 JL 0x006D4A */ {
-                    goto label_006E8E;  /* @0x006D47 */
-                }
-            }
+    /* @asm 0x006D2A di=owner=[bp+8]; si=0xffff (result=-1).
+     *      cmp di,4; jge 0x6d3f; (owner<4) if (byte[owner*0x34 + 0x543f]==0)
+     *        goto 0x6d4a (AI/empty controller skips the hard cap).
+     *      0x6d3f if (word[0x539c] >= 0x124) goto 0x6e8e (return -1: table full).
+     *      0x6d4a if (word[0x539c] >= 0x12c) goto 0x6e76 (soft warn path).
+     *      0x6d55 cmp di,4; jge 0x6d64; (owner<4) if (byte[0x8cfc+owner] > 0xc8)
+     *        goto 0x6e76 (per-power unit budget exceeded).
+     *      0x6d64 si=word[0x539c]; word[0x539c]++ (allocate index at table tail).
+     *        bx=si*0x1c; [bp-4]=bx; unit.type(+0x02=0x3146)=arg0;
+     *        unit.owner(+0x03=0x3147)=owner; +0x05(0x3149)=0; +0x07(0x314b)=0x58;
+     *        +0x04(0x3148)=+0x08(0x314c)=+0x0c(0x3150)=+0x16(0x315a)=
+     *        +0x10(0x3154)=+0x11(0x3155)=0; +0x12(0x3156)=0xff.
+     *        if (owner>=4) unit.+0x12(0x3156)=word[0x538e] (g_market_phase).
+     *        unit.+0x06(0x314a)=0xff; ax=overlay_call_05EB_0A76(arg2,arg3);
+     *        if (ax>=0) unit.+0x06(0x314a)=(uint8)ax.
+     *        type=unit.type; if (byte[type*14 + 0x5237]!=0) { unit.+0x17(0x315b)=0;
+     *          if (type==0xc) unit.+0x14(0x3158)=0; } else { unit.+0x17=0x1c;
+     *          if (type==7||type==9) unit.+0x17=0x15; }
+     *        if (type==2) unit.+0x15(0x3159)=0x64;
+     *        unit.+0x18(0x315c)=unit.+0x1a(0x315e)=0xffff;
+     *        unit.map_x(+0x00)=unit.map_y(+0x01)=0xff;
+     *        call 0x693a (unit_place_on_tile(si, arg2, arg3));
+     *        overlay_call_03F1_02F8(si); return si.
+     *      0x6e76 (over-cap warn): cmp di,4; jge 0x6e8e; (owner<4) if
+     *        (byte[owner*0x34 + 0x543f]==0) overlay_call_181F_03FE(&str@0x1f3).
+     *      0x6e8e return si (-1).
+     * Allocates a UnitRecord at the table tail (0x539C count) for owner arg1,
+     * type arg0, then zero/seed-initialises every field, derives the movement
+     * allowance +0x17 from the per-type 0x5237 flag table, places it on tile
+     * (arg2,arg3) via unit_place_on_tile and runs the per-unit init overlay
+     * 0x03F1:0x02F8. Hard cap 0x124 (returns -1) and per-power budget 0xC8 / soft
+     * cap 0x12C (emit message via 0x181F:0x03FE) guard the allocation. PowerRecord
+     * stride 0x34 @0x543F-0x31; per-power unit counters at 0x8CFC. */
+    int16_t di = (int16_t)arg1_bp_08;          /* owner */
+    int16_t si = -1;                            /* result index */
+    unsigned ubase;
+
+    /* @asm 0x6d30..0x6d3d: the hard-cap test is skipped only for an owner<4 whose
+     *      controller flag (0x543F) is 0; otherwise (owner>=4, or controller!=0)
+     *      it applies. */
+    if (di >= 4 || DG8(0x543F + (unsigned)di * 0x34) != 0) {
+        if ((int16_t)DG16(0x539C) >= 0x124)     /* @asm 0x6d3f/0x6d47 table full */
+            return si;                          /* return -1 */
+    }
+    if ((int16_t)DG16(0x539C) >= 0x12c)         /* @asm 0x6d4a/0x6d52 soft cap */
+        goto soft_cap;
+    if (di < 4 && DG8(0x8CFC + (unsigned)di) > 0xC8)  /* @asm 0x6d55..0x6d61 budget */
+        goto soft_cap;
+
+    si = (int16_t)DG16(0x539C);                 /* @asm 0x6d64 allocate tail index */
+    DG16(0x539C) = (uint16_t)(DG16(0x539C) + 1);
+    ubase = 0x3144 + (unsigned)si * 0x1C;
+    DG8(ubase + 0x02) = (uint8_t)arg0_bp_06;    /* type   */
+    DG8(ubase + 0x03) = (uint8_t)di;            /* owner  */
+    DG8(ubase + 0x05) = 0;
+    DG8(ubase + 0x07) = 0x58;
+    DG8(ubase + 0x04) = 0;
+    DG8(ubase + 0x08) = 0;
+    DG8(ubase + 0x0C) = 0;
+    DG8(ubase + 0x16) = 0;
+    DG8(ubase + 0x10) = 0;
+    DG8(ubase + 0x11) = 0;
+    DG8(ubase + 0x12) = 0xFF;
+    if (di >= 4)
+        DG16(ubase + 0x12) = DG16(0x538E);      /* @asm g_market_phase (word) */
+    DG8(ubase + 0x06) = 0xFF;
+    {
+        int16_t r = (int16_t)overlay_call_05EB_0A76(/* arg2, arg3 */);
+        if (r >= 0)
+            DG8(ubase + 0x06) = (uint8_t)r;
+    }
+    {
+        uint8_t type = DG8(ubase + 0x02);
+        if (DG8(0x5237 + (unsigned)type * 14) != 0) {
+            DG8(ubase + 0x17) = 0;
+            if (type == 0x0C)
+                DG8(ubase + 0x14) = 0;
+        } else {
+            DG8(ubase + 0x17) = 0x1C;
+            if (type == 7 || type == 9)
+                DG8(ubase + 0x17) = 0x15;
         }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006D50 JL 0x006D55 */ {
-            goto label_006E76;  /* @0x006D52 */
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x006D58 JGE 0x006D64 */ {
-            if (/* JBE fallthrough cond: */ ax > 0) /* @0x006D5F JBE 0x006D64 */ {
-                goto label_006E76;  /* @0x006D61 */
-            }
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006DAB JL 0x006DB7 */ {
-        }
-        /* @0x006DC5 */ overlay_call_05EB_0A76();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006DD2 JL 0x006DDE */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        if (type == 2)
+            DG8(ubase + 0x15) = 0x64;
+    }
+    DG16(ubase + 0x18) = 0xFFFF;
+    DG16(ubase + 0x1A) = 0xFFFF;
+    DG8(ubase + 0x00) = 0xFF;
+    DG8(ubase + 0x01) = 0xFF;
+    func_00693A((uint16_t)si, arg2_bp_0A, arg3_bp_0C);   /* unit_place_on_tile */
+    overlay_call_03F1_02F8(/* si */);                    /* per-unit init overlay */
+    return si;
+
+soft_cap:                                       /* @asm 0x6e76 */
+    if (di < 4 && DG8(0x543F + (unsigned)di * 0x34) == 0)
+        overlay_call_181F_03FE(/* &message@0x1F3 */);
+    return si;                                   /* @asm 0x6e8e (-1) */
 }
 
 /* @asm        0x006E94..0x006F59  (198 bytes)  region=load_image
@@ -454,24 +662,39 @@ int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x0069D2
- * @inferred_role  DISPATCHER (105 bytes). 0x03F1:0x02F8 + 0x0984:0x02FC
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  select unit arg0: re-seat it, run its on-select overlays, set g_progress_5392
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_006F5A.asm — select/activate a unit */
 int func_006F5A_op_sz_105(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x5392
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006F65 JL 0x006FBB */ {
-            /* @0x006F7F */ func_0069D2();
-            /* @0x006F87 */ overlay_call_03F1_02F8();
-            /* @0x006F96 */ overlay_call_0984_02FC();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x006FA0 JNE 0x006FBB */ {
-                /* @0x006FB3 */ overlay_call_181F_09BA();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006F60 si=[bp+6]; or si,si; jl 0x6fbb (arg0<0: only set 0x5392).
+     *      bx=si*0x1c; di=mx=(uint8)unit.map_x(+0x00); [bp-2]=my=(uint8)unit.map_y
+     *      (+0x01).  push my; push mx; push si; call 0x69d2 (func_0069D2(arg0,mx,my)
+     *      = unlink + re-place at tile head).  ax=si; lcall 0x3f1:0x2f8
+     *      (overlay_call_03F1_02F8(arg0)).  push 0; push my; push mx; push my;
+     *      push mx; lcall 0x984:0x2fc (ax=overlay_call_0984_02FC(mx,my,mx,my,0));
+     *      add sp,0xa; or ax,ax; jne 0x6fbb.  (ax==0): push 1; push 7; push 7;
+     *      push my-3; push mx-3; lcall 0x181f:0x9ba (overlay_call_181F_09BA(mx-3,
+     *      my-3,7,7,1)).  0x006FBB mov [0x5392],si (g_progress_5392 = arg0).  ret.
+     * Selects unit arg0: re-seats it at the head of its tile chain (func_0069D2),
+     * runs the per-unit on-select overlay 0x03F1:0x02F8, then a viewport/centre
+     * query 0x0984:0x02FC; if that returns 0 it scrolls/redraws the 7x7 window
+     * around the unit via 0x181F:0x09BA. Finally stores arg0 as the selected-unit
+     * index at 0x5392. The overlay externs are 0-arg (real args in @asm). */
+    int16_t si = (int16_t)arg0_bp_06;
+    if (si >= 0) {
+        unsigned ubase = 0x3144 + (unsigned)si * 0x1C;
+        uint16_t mx = (uint8_t)DG8(ubase + 0x00);
+        uint16_t my = (uint8_t)DG8(ubase + 0x01);
+        (void)mx; (void)my;
+        func_0069D2((uint16_t)si, mx, my);          /* re-seat at tile head */
+        overlay_call_03F1_02F8(/* arg0 */);          /* per-unit on-select */
+        if (overlay_call_0984_02FC(/* mx,my,mx,my,0 */) == 0)
+            overlay_call_181F_09BA(/* mx-3,my-3,7,7,1 */);  /* recentre 7x7 window */
+    }
+    DG16(0x5392) = (uint16_t)si;                      /* g_progress_5392 = selected unit */
+    return 0;
 }
 
 /* @asm        0x006FC4..0x006FD8  (20 bytes)  region=load_image
@@ -511,20 +734,24 @@ void func_006FC4_logic_sz_20(uint16_t arg0_bp_06)
  *   - 0x006672
  *   - 0x006FC4
  *   - 0x0066BA
- * @inferred_role  DISPATCHER (42 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  clear UnitRecord owner high-nibble (func_006FC4) along arg0's chain
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_006FD8.asm — apply func_006FC4 across a tile chain */
 int func_006FD8_logic_sz_42(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x006FE2 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x006FE9 JL 0x006FFF */ {
-            /* @0x006FED */ func_006FC4();
-            /* @0x006FF6 */ func_0066BA();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x006FFD JGE 0x006FEB */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x006FDC si=[bp+6]; ax=si; call 0x6672 (si=func_006672(arg0)=chain head);
+     *      or si,si; jl 0x6fff.  loop 0x006FEB: push si; call 0x6fc4
+     *      (func_006FC4(si)=clear owner high nibble); ax=si; call 0x66ba
+     *      (si=func_0066BA(si)=chain next); or si,si; jge 0x6feb.  ret.
+     * Walks the tile chain whose head is func_006672(arg0) and clears the high
+     * nibble of UnitRecord[i].+0x03 for every member via func_006FC4. */
+    int16_t si = (int16_t)func_006672(arg0_bp_06);
+    while (si >= 0) {
+        func_006FC4((uint16_t)si);
+        si = (int16_t)func_0066BA((uint16_t)si);
+    }
+    return 0;
 }
 
 /* @asm        0x007002..0x00701C  (26 bytes)  region=load_image
@@ -565,20 +792,24 @@ void func_007002_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x006672
  *   - 0x007002
  *   - 0x0066BA
- * @inferred_role  DISPATCHER (48 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set UnitRecord +0x03 bit (func_007002) along arg0's chain
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00701C.asm — apply func_007002(.,arg1) across a chain */
 int func_00701C_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007027 */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00702E JL 0x007048 */ {
-            /* @0x007036 */ func_007002();
-            /* @0x00703F */ func_0066BA();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x007046 JGE 0x007033 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007021 si=[bp+6]; ax=si; call 0x6672 (si=func_006672(arg0)=chain head);
+     *      or si,si; jl 0x7048.  loop 0x007033: di=[bp+8](arg1); push di; push si;
+     *      call 0x7002 (func_007002(si, arg1)=set bit 0x10<<arg1); ax=si;
+     *      call 0x66ba (si=func_0066BA(si)=chain next); or si,si; jge 0x7033.  ret.
+     * Walks the tile chain whose head is func_006672(arg0) and, for every member,
+     * sets bit (0x10<<arg1) in UnitRecord[i].+0x03 via func_007002. */
+    int16_t si = (int16_t)func_006672(arg0_bp_06);
+    while (si >= 0) {
+        func_007002((uint16_t)si, arg1_bp_08);
+        si = (int16_t)func_0066BA((uint16_t)si);
+    }
+    return 0;
 }
 
 /* @asm        0x00704C..0x007119  (205 bytes)  region=load_image
@@ -595,44 +826,54 @@ int func_00701C_logic_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x03E4:0x0074  (2x)
  *   - 0x037F:0x03E4  (2x)
  *   - 0x037F:0x0314
- * @inferred_role  LARGE_LOGIC (205 bytes). 0x03E4:0x0074 + 0x037F:0x03E4
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  region-walking neighbour search for a map value != arg2 (flood-style)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   True span 0x704C..0x7120 (212 bytes, per functions.json); banner's 205
+ *         was a minor tail cut.
  */
+/* PORTED 2026-06-09 from func_00704C.asm — region-constrained neighbour value search */
 int func_00704C_op_sz_205(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8CFA
-     * Writes DGROUP: 0x8CFA
-     */
-        /* @0x00705A */ overlay_call_03E4_0074();
-        /* @0x007067 */ overlay_call_037F_03E4();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007071 JL 0x007078 */ {
-            goto label_00707A;  /* @0x007076 */
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00708C JGE 0x00710B */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0070A9 JE 0x0070B2 */ {
-                goto label_0070BC;  /* @0x0070AE */
-            }
-            /* @0x0070B4 */ overlay_call_03E4_0074();
-            /* @0x0070C1 */ overlay_call_037F_03E4();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0070CE JGE 0x0070E0 */ {
-                /* @0x0070D2 */ overlay_call_037F_0314();
-                goto label_0070E6;  /* @0x0070DD */
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x0070EB JL 0x0070FE */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0070F0 JE 0x0070FE */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x0070F8 JNE 0x0070FE */ {
-                    }
-                }
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x007106 JGE 0x00710B */ {
-                goto label_007088;  /* @0x007108 */
-            }
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007110 JL 0x00711A */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007052 si=x=[bp+6]; di=y=[bp+8]; base=[bp-6]=overlay_call_03E4_0074
+     *      (x,y).  ax=overlay_call_037F_03E4(x,y); flag=[bp-8]=(ax>=0)?1:0.
+     *      [0x8cfa]=0xffff; k=[bp-4]=0.
+     *   loop 0x7088: if (k>=8) goto 0x710b; nx=si=dx[k]+x; ny=di=dy[k]+y;
+     *      if (flag!=0) rval=base; else rval=overlay_call_03E4_0074(nx,ny);
+     *      rval=[bp-2].  v=[bp-0xa]=overlay_call_037F_03E4(nx,ny);
+     *      if (v<0) v=[bp-0xa]=overlay_call_037F_0314(nx,ny);
+     *      else base=[bp-6]=rval;
+     *      if (v>=0 && v!=arg2 && rval==base) [0x8cfa]=v;
+     *      inc k; if ([0x8cfa]<0) loop.
+     *   0x710b: return ([0x8cfa]>=0)?1:0.
+     * Searches the 8 neighbours (dx@0xB4 / dy@0xBE) of (x,y) for a map value that
+     * differs from arg2, constrained to the home region. `base`=region id from
+     * 0x03E4:0x0074; `flag` records whether the home 0x037F:0x03E4 layer is set.
+     * Per neighbour it forms `rval` (the home base when flag, else the neighbour's
+     * own region id) and probes 0x037F:0x03E4 (falling back to 0x037F:0x0314 when
+     * empty; a non-empty 0x03E4 probe also advances `base` to `rval`). A value
+     * counts only when >=0, != arg2 and rval==base; the first such is stored in
+     * 0x8CFA and the scan stops. Returns 1 iff found. Overlay externs are 0-arg. */
+    int16_t base = (int16_t)overlay_call_03E4_0074(/* x, y */);
+    int flag = ((int16_t)overlay_call_037F_03E4(/* x, y */) >= 0) ? 1 : 0;
+    int k;
+    DGS16(0x8CFA) = -1;
+    for (k = 0; k < 8; k++) {
+        int16_t nx = (int16_t)((int)DGS8(0xB4 + k) + (int16_t)arg0_bp_06);
+        int16_t ny = (int16_t)((int)DGS8(0xBE + k) + (int16_t)arg1_bp_08);
+        int16_t rval, v;
+        (void)nx; (void)ny;
+        rval = flag ? base : (int16_t)overlay_call_03E4_0074(/* nx, ny */);
+        v = (int16_t)overlay_call_037F_03E4(/* nx, ny */);
+        if (v < 0)
+            v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+        else
+            base = rval;
+        if (v >= 0 && v != (int16_t)arg2_bp_0A && rval == base)
+            DGS16(0x8CFA) = v;
+        if (DGS16(0x8CFA) >= 0)
+            break;
+    }
+    return (DGS16(0x8CFA) >= 0) ? 1 : 0;
 }
 
 /* @asm        0x007120..0x007165  (69 bytes)  region=load_image
@@ -647,26 +888,40 @@ int func_00704C_op_sz_205(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * LCALL targets:
  *   - 0x037F:0x0314
- * @inferred_role  PROLOGUE_HEAVY (69 bytes). 0x037F:0x0314
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if any 8-neighbour of (arg0,arg1) has map-value 0x037F:0x314 != arg2
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   True span 0x7120..0x7178 (88 bytes, per functions.json); the banner's
+ *         69 bytes was a FALSE cut at the first forward branch.
  */
+/* PORTED 2026-06-09 from func_007120.asm — neighbour scan for a differing map value */
 int func_007120_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8CFA
-     * Writes DGROUP: 0x8CFA
-     */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x007130 JGE 0x007163 */ {
-            /* @0x007144 */ overlay_call_037F_0314();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x007150 JL 0x00715B */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x007155 JE 0x00715B */ {
-                }
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x007161 JL 0x00712D */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007125 [0x8cfa]=0xffff; sub si,si.  loop 0x712d: cmp si,8; jge 0x7163;
+     *      al=(int8)byte[si+0xbe]; cwde; ax+=[bp+8](y); push ax (ny);
+     *      al=(int8)byte[si+0xb4]; cwde; ax+=[bp+6](x); push ax (nx);
+     *      lcall 0x37f:0x314 (di=overlay_call_037F_0314(nx,ny)); add sp,4;
+     *      or di,di; jl 0x715b; cmp [bp+0xa](arg2),di; je 0x715b; [0x8cfa]=di.
+     *      0x715b: inc si; cmp [0x8cfa],0; jl 0x712d (loop while 0x8cfa<0).
+     *      0x7163: cmp [0x8cfa],0; jl -> return 0; else return 1.
+     * Scans the 8 neighbours of tile (arg0=x,arg1=y) using the per-direction delta
+     * tables dx@0x00B4 / dy@0x00BE; for each it queries the map cell value via
+     * overlay 0x037F:0x0314 and, on the FIRST neighbour whose value is >=0 and !=
+     * arg2, stores it in scratch 0x8CFA and stops. Returns 1 iff such a neighbour
+     * was found (0x8CFA>=0), else 0. (dx/dy are DS-relative signed-byte tables.) */
+    int i;
+    DGS16(0x8CFA) = -1;
+    for (i = 0; i < 8; i++) {
+        int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
+        int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
+        int16_t v;
+        (void)nx; (void)ny;
+        v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+        if (v >= 0 && v != (int16_t)arg2_bp_0A)
+            DGS16(0x8CFA) = v;
+        if (DGS16(0x8CFA) >= 0)              /* @asm loop exits once a value is set */
+            break;
+    }
+    return (DGS16(0x8CFA) >= 0) ? 1 : 0;
 }
 
 /* @asm        0x007178..0x007238  (192 bytes)  region=load_image
@@ -683,45 +938,47 @@ int func_007120_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x03E4:0x0074  (3x)
  *   - 0x037F:0x0314
  *   - 0x037F:0x03E4
- * @inferred_role  DISPATCHER (192 bytes). 0x03E4:0x0074 + 0x037F:0x0314
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if a neighbour of (arg0,arg1) in the same 0x3E4:0x74 region has
+ *                 an adjacent map value (0x037F:0x314 or 0x037F:0x3E4) != arg2
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_007178.asm — region-gated neighbour scan (two map dirs) */
 int func_007178_op_sz_192(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8CFA
-     * Writes DGROUP: 0x8CFA
-     */
-        /* @0x00718A */ overlay_call_03E4_0074();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00719B JL 0x0071A0 */ {
-            goto label_00722A;  /* @0x00719D */
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0071A3 JL 0x0071A8 */ {
-            goto label_00722A;  /* @0x0071A5 */
-        }
-        /* @0x0071BF */ overlay_call_037F_0314();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0071CC JL 0x0071ED */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0071D4 JE 0x0071ED */ {
-                /* @0x0071DA */ overlay_call_03E4_0074();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0071E5 JNE 0x0071ED */ {
-                }
-            }
-        }
-        /* @0x0071F1 */ overlay_call_037F_03E4();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0071FE JL 0x00721F */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007206 JE 0x00721F */ {
-                /* @0x00720C */ overlay_call_03E4_0074();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x007217 JNE 0x00721F */ {
-                }
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x007225 JGE 0x00722A */ {
-            goto label_0071A0;  /* @0x007227 */
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00722F JL 0x007238 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00717E [0x8cfa]=0xffff; push [bp+8](y); push [bp+6](x);
+     *      lcall 0x3e4:0x74 (base=[bp-6]=overlay_call_03E4_0074(x,y)); sub si,si.
+     *   top 0x7197: if ([0x8cfa]>=0) jmp 0x722a (stop once found);
+     *   0x71a0: if (si>=8) jmp 0x722a; ny=dy[si]+y (di); nx=dx[si]+x ([bp-2]);
+     *      v=[bp-4]=overlay_call_037F_0314(nx,ny); if (v>=0 && v!=arg2 &&
+     *        overlay_call_03E4_0074(nx,ny)==base) [0x8cfa]=v;
+     *   0x71ed: v=[bp-4]=overlay_call_037F_03E4(nx,ny); if (v>=0 && v!=arg2 &&
+     *        overlay_call_03E4_0074(nx,ny)==base) [0x8cfa]=v;
+     *   0x721f: inc si; if ([0x8cfa]<0) jmp 0x71a0.
+     *   0x722a: return ([0x8cfa]>=0) ? 1 : 0.
+     * Computes the region id `base`=0x03E4:0x0074(x,y) of the home tile, then scans
+     * the 8 neighbours (dx@0xB4 / dy@0xBE). For each neighbour it probes two map
+     * layers (0x037F:0x0314 then 0x037F:0x03E4); a probe value counts only if it is
+     * >=0, differs from arg2, AND the neighbour is in the SAME region (its
+     * 0x03E4:0x0074 == base). The first qualifying value is stored in 0x8CFA and
+     * the scan stops; returns 1 iff one was found. Overlay externs are 0-arg. */
+    int16_t base = (int16_t)overlay_call_03E4_0074(/* x, y */);
+    int i;
+    DGS16(0x8CFA) = -1;
+    for (i = 0; i < 8 && DGS16(0x8CFA) < 0; i++) {
+        int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
+        int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
+        int16_t v;
+        (void)nx; (void)ny;
+        v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+        if (v >= 0 && v != (int16_t)arg2_bp_0A
+            && (int16_t)overlay_call_03E4_0074(/* nx, ny */) == base)
+            DGS16(0x8CFA) = v;
+        v = (int16_t)overlay_call_037F_03E4(/* nx, ny */);
+        if (v >= 0 && v != (int16_t)arg2_bp_0A
+            && (int16_t)overlay_call_03E4_0074(/* nx, ny */) == base)
+            DGS16(0x8CFA) = v;
+    }
+    return (DGS16(0x8CFA) >= 0) ? 1 : 0;
 }
 
 /* @asm        0x00723E..0x00726E  (48 bytes)  region=load_image
@@ -739,17 +996,24 @@ int func_007178_op_sz_192(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * Near CALL targets:
  *   - 0x007178
- * @inferred_role  UNKNOWN (48 bytes). 0x037F:0x03E4
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  if tile(arg0,arg1) map-layer 0x037F:0x3E4 is empty, run func_007178
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00723E.asm — guarded wrapper around func_007178 */
 int func_00723E_op_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00724C */ overlay_call_037F_03E4();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x007256 JGE 0x007268 */ {
-            /* @0x007260 */ func_007178();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x007243 di=[bp+8](arg1); sub si,si (result=0); push di; push [bp+6]
+     *      (arg0); lcall 0x37f:0x3e4 (ax=overlay_call_037F_03E4(arg0,arg1));
+     *      add sp,4; or ax,ax; jge 0x7268 (>=0: result stays 0).  (ax<0): push
+     *      [bp+0xa](arg2); push di; push [bp+6]; call 0x7178
+     *      (result=func_007178(arg0,arg1,arg2)); add sp,6.  0x7268 return result.
+     * If the 0x037F:0x03E4 map layer at (arg0,arg1) is empty (<0), defers to
+     * func_007178 to look for a qualifying neighbour value; otherwise returns 0.
+     * Overlay extern is 0-arg (real args arg0,arg1 in @asm). */
+    int16_t result = 0;
+    if ((int16_t)overlay_call_037F_03E4(/* arg0, arg1 */) < 0)
+        result = (int16_t)func_007178(arg0_bp_06, arg1_bp_08, arg2_bp_0A);
+    return result;
 }
 
 /* @asm        0x00726E..0x0072E2  (116 bytes)  region=load_image
@@ -766,28 +1030,37 @@ int func_00723E_op_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  *   - 0x037F:0x000A
  *   - 0x037F:0x0314
  *   - 0x037F:0x0358
- * @inferred_role  DISPATCHER (116 bytes). 0x037F:0x000A + 0x037F:0x0314
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  1 if a neighbour of (arg0,arg1) has 0x037F:0x314 or 0x037F:0x358 == arg2
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00726E.asm — neighbour-equals-arg2 scan on two map layers */
 int func_00726E_op_sz_116(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00727C */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007286 JE 0x0072DC */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x00728D JGE 0x0072DC */ {
-                /* @0x0072A7 */ overlay_call_037F_0314();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0072B2 JNE 0x0072BA */ {
-                    goto label_0072BC;  /* @0x0072B7 */
-                }
-                /* @0x0072C3 */ overlay_call_037F_0358();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0072CE JNE 0x0072D6 */ {
-                    goto label_0072D8;  /* @0x0072D3 */
-                }
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0072DA JE 0x00728A */ {
-                }
-            }
+    /* @asm 0x007274 sub di,di (result=0); push [bp+8](y); push [bp+6](x);
+     *      lcall 0x37f:0xa (ax=overlay_call_037F_000A(x,y)); add sp,4; or ax,ax;
+     *      je 0x72dc (0: return 0).  sub si,si.
+     *   loop 0x728a: cmp si,8; jge 0x72dc; ny=dy[si]+y ([bp-2]); nx=dx[si]+x
+     *      ([bp-4]); a=overlay_call_037F_0314(nx,ny); di=(a==arg2)?1:0; inc si;
+     *      b=overlay_call_037F_0358(nx,ny); di |= (b==arg2)?1:0; if (di==0) loop.
+     *   0x72dc: return di.
+     * Gated by overlay 0x037F:0x000A(x,y) != 0; then scans the 8 neighbours
+     * (dx@0xB4 / dy@0xBE). Returns 1 on the first neighbour whose value on EITHER
+     * map layer 0x037F:0x0314 or 0x037F:0x0358 equals arg2, else 0. Overlay
+     * externs are 0-arg (real args nx,ny in @asm). */
+    int16_t result = 0;
+    if (overlay_call_037F_000A(/* x, y */) != 0) {
+        int i;
+        for (i = 0; i < 8; i++) {
+            int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
+            int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
+            (void)nx; (void)ny;
+            result = ((int16_t)overlay_call_037F_0314(/* nx,ny */) == (int16_t)arg2_bp_0A) ? 1 : 0;
+            result |= ((int16_t)overlay_call_037F_0358(/* nx,ny */) == (int16_t)arg2_bp_0A) ? 1 : 0;
+            if (result != 0)
+                break;
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return result;
 }
 
 /* @asm        0x0072E2..0x00730A  (40 bytes)  region=load_image
@@ -826,21 +1099,36 @@ int func_0072E2_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x00726E
- * @inferred_role  UNKNOWN (75 bytes). 0x037F:0x0200
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  build adjacency bitmask: bit(0x10<<owner) per owner whose tile borders (arg0,arg1)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_00730A.asm — per-owner adjacency bitmask for tile (x,y) */
 int func_00730A_op_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x007315 JGE 0x00732C */ {
-            /* @0x00731D */ overlay_call_037F_0200();
+    /* @asm 0x00730F sub di,di (mask=0); cmp [bp+0xa](arg2),4; jge 0x732c;
+     *      (arg2<4) push [bp+8](y); push [bp+6](x); lcall 0x37f:0x200
+     *      (cl=overlay_call_037F_0200(x,y)); di=0x10<<cl.
+     *   0x732c sub si,si; loop 0x732e: push si; push [bp+8]; push [bp+6];
+     *      call 0x726e (ax=func_00726E(x,y,si)); add sp,6; or ax,ax; je 0x7349;
+     *      di |= 0x10<<si; 0x7349 inc si; cmp si,4; jl 0x732e.  return di.
+     * Builds a per-owner adjacency bitmask for tile (arg0=x,arg1=y). If arg2<4 it
+     * seeds the mask with bit (0x10 << owner-of-this-tile) from 0x037F:0x0200.
+     * Then for each owner si in 0..3 it sets bit (0x10<<si) when func_00726E finds
+     * a bordering tile belonging to owner si. Returns the mask. The 0x037F:0x0200
+     * overlay extern is 0-arg (real args x,y in @asm). */
+    int di = 0;
+    if ((int16_t)arg2_bp_0A < 4) {
+        int cl = (int)(uint8_t)overlay_call_037F_0200(/* x, y */);
+        di = 0x10 << cl;
+    }
+    {
+        int si;
+        for (si = 0; si < 4; si++) {
+            if (func_00726E(arg0_bp_06, arg1_bp_08, (uint16_t)si) != 0)
+                di |= (0x10 << si);
         }
-        /* @0x007336 */ func_00726E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00733E JE 0x007349 */ {
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x00734D JL 0x00732E */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    return di;
 }
 
 /* @asm        0x007356..0x00738E  (56 bytes)  region=load_image
@@ -856,19 +1144,29 @@ int func_00730A_op_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  * Near CALL targets:
  *   - 0x00726E
  *   - 0x00701C
- * @inferred_role  UNKNOWN (56 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  for each owner si bordering unit arg0's tile, set chain bit si (func_00701C)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
-int func_007356_logic_sz_56(uint16_t arg0_bp_06)
+/* PORTED 2026-06-09 from func_007356.asm — flag chain bits for owners bordering a unit */
+void func_007356_logic_sz_56(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007371 */ func_00726E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007379 JE 0x007384 */ {
-            /* @0x00737E */ func_00701C();
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007388 JL 0x007360 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00735B di=[bp+6](arg0); sub si,si.  loop 0x7360: push si; bx=di*0x1c;
+     *      push (uint8)unit.map_y(+0x01); push (uint8)unit.map_x(+0x00);
+     *      call 0x726e (ax=func_00726E(map_x,map_y,si)); add sp,6; or ax,ax;
+     *      je 0x7384; push si; push di; call 0x701c (func_00701C(arg0,si)); add
+     *      sp,4; 0x7384 inc si; cmp si,4; jl 0x7360.  ret.
+     * For each owner si in 0..3: if owner si borders unit arg0's tile (func_00726E
+     * on the unit's map_x/map_y), set chain bit si on arg0's whole tile chain via
+     * func_00701C. UnitRecord map_x/map_y at +0x00/+0x01 (stride 0x1C @0x3144). */
+    int16_t di = (int16_t)arg0_bp_06;
+    unsigned ubase = 0x3144 + (unsigned)di * 0x1C;
+    uint16_t mx = (uint8_t)DG8(ubase + 0x00);
+    uint16_t my = (uint8_t)DG8(ubase + 0x01);
+    int si;
+    for (si = 0; si < 4; si++) {
+        if (func_00726E(mx, my, (uint16_t)si) != 0)
+            func_00701C((uint16_t)di, (uint16_t)si);
+    }
 }
 
 /* @asm        0x00738E..0x0073A8  (26 bytes)  region=load_image
@@ -907,23 +1205,114 @@ void func_00738E_logic_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *
  * Near CALL targets:
  *   - 0x006672
- * @inferred_role  PROLOGUE_HEAVY (99 bytes). no LCALLs
- * @status     PLATFORM_LAYER (hardware port I/O; host/runtime layer replaced in the modern port, not decompiled)
+ * @inferred_role  accumulate a per-mode (arg1=0..14) count/cost over arg0's tile chain
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   True span 0x73A8..0x757D (469 bytes, per functions.json); banner's 99
+ *         bytes was a FALSE cut at the CS-relative jump table. The "PLATFORM_LAYER
+ *         / port I/O" label was a MIS-CLASSIFICATION: the auto-tracer decoded the
+ *         15-word jump table at 0x73E8 as `out 0xd,al` etc. There is NO hardware
+ *         port I/O. Dispatch is `jmp word cs:[bx+0xd78]` (cs_base 0x6670, table
+ *         @0x73E8); the recovered targets (case->file) are:
+ *           0->0x7406 1,7,8,9->0x7568 2->0x7429 3->0x7420 4->0x742e 5->0x7450
+ *           6->0x7456 10->0x7486 11->0x74b6 12->0x74fc 13->0x7504 14->0x752c.
  */
+/* PORTED 2026-06-09 from func_0073A8.asm — per-mode accumulator over a unit chain
+ * (CS jump-table dispatcher; arg1 selects how each chain member contributes). */
 int func_0073A8_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x0E94
-     */
-        /* @0x0073B6 */ func_006672();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x0073BD JGE 0x0073C2 */ {
-            goto label_007577;  /* @0x0073BF */
+    /* @asm 0x0073AE si=[bp+6]; sub di,di (acc=0); ax=si; call 0x6672
+     *      (si=func_006672(arg0)=chain head); or si,si; jl -> ret acc.
+     *   loop 0x73c2: bx=si*0x1c ([bp-6]); t=[bp-4]=[bp-2]=(uint8)unit.type(+0x02);
+     *      if (arg1>0xe) goto next; dispatch jmp cs:[arg1*2 + 0xd78].
+     *   case 0  (0x7406): acc += byte[t*14 + 0x5239].
+     *   case 1,7,8,9 (0x7568): nothing.
+     *   case 2  (0x7429): acc++.
+     *   case 3  (0x7420): if (t==2) acc++.
+     *   case 4  (0x742e): if (t==1||t==4) acc++; if (t==6||7||8||9) acc++.
+     *   case 5  (0x7450): if (t==5) acc++.
+     *   case 6  (0x7456): if (t==4||t==1 || unit.+0x17(0x315b)==0x15) acc++;
+     *                     if (t==6||7||8||9) acc++.
+     *   case 10 (0x7486): if (!(unit.type in [0xd,0x12]) && byte[t*14+0x5236]>1) acc++.
+     *   case 11 (0x74b6): m=(unit.type in [0xd,0x12])?1:0;
+     *                     if (overlay_call_03E4_0074(map_x,map_y)==m)
+     *                        acc += overlay_call_057E_004A(si,1).
+     *   case 12 (0x74fc): if (t==0xb) acc++.
+     *   case 13 (0x7504): if (unit.type in [0xd,0x12]) acc += byte[t*14+0x5237].
+     *   case 14 (0x752c): if ((unit.type in [0xd,0x12]) && (!(unit.+0x04(0x3148)&0x80)
+     *                        || unit.type==0xb)) acc = max(acc, byte[t*14+0x5237]).
+     *   next 0x7568: si=func_0066BA(si); if (si<0) ret acc; else loop.
+     *   0x7577 ret acc.
+     * Walks arg0's tile chain (head func_006672, next func_0066BA) and accumulates
+     * `acc` according to mode arg1 (0..14): a population/escort count for most
+     * modes, table-driven contributions (per-type tables 0x5236/0x5237/0x5239
+     * stride 14 @0x5234) for modes 0/10/13, a max() of the 0x5237 cost for mode 14,
+     * and (mode 11) an overlay-supplied movement cost gated by region match.
+     * UnitRecord type +0x02, +0x17 (0x315b), +0x04 (0x3148) flags. Returns acc.
+     * The 0x03E4:0x0074 / 0x057E:0x004A overlay externs are 0-arg (real args @asm). */
+    int16_t acc = 0;
+    int16_t si = (int16_t)func_006672(arg0_bp_06);   /* chain head */
+    while (si >= 0) {
+        unsigned ubase = 0x3144 + (unsigned)si * 0x1C;
+        uint8_t t = DG8(ubase + 0x02);               /* unit type (== [bp-4]/[bp-2]) */
+        if (arg1_bp_08 <= 0x0E) {
+            switch ((int)arg1_bp_08) {
+            case 0:                                  /* @asm 0x7406 */
+                acc += (int16_t)DG8(0x5239 + (unsigned)t * 14);
+                break;
+            case 1: case 7: case 8: case 9:          /* @asm 0x7568 (no contribution) */
+                break;
+            case 2:                                  /* @asm 0x7429 */
+                acc++;
+                break;
+            case 3:                                  /* @asm 0x7420 */
+                if (t == 2) acc++;
+                break;
+            case 4:                                  /* @asm 0x742e */
+                if (t == 1 || t == 4) acc++;
+                if (t == 6 || t == 7 || t == 8 || t == 9) acc++;
+                break;
+            case 5:                                  /* @asm 0x7450 */
+                if (t == 5) acc++;
+                break;
+            case 6:                                  /* @asm 0x7456 */
+                if (t == 4 || t == 1 || DG8(ubase + 0x17) == 0x15) acc++;
+                if (t == 6 || t == 7 || t == 8 || t == 9) acc++;
+                break;
+            case 10:                                 /* @asm 0x7486 */
+                if (!(t >= 0x0D && t <= 0x12)
+                    && DG8(0x5236 + (unsigned)t * 14) > 1)
+                    acc++;
+                break;
+            case 11: {                               /* @asm 0x74b6 */
+                int16_t m = (t >= 0x0D && t <= 0x12) ? 1 : 0;
+                uint16_t mx = (uint8_t)DG8(ubase + 0x00);
+                uint16_t my = (uint8_t)DG8(ubase + 0x01);
+                (void)mx; (void)my;
+                if ((int16_t)overlay_call_03E4_0074(/* mx, my */) == m)
+                    acc += (int16_t)overlay_call_057E_004A(/* si, 1 */);
+                break;
+            }
+            case 12:                                 /* @asm 0x74fc */
+                if (t == 0x0B) acc++;
+                break;
+            case 13:                                 /* @asm 0x7504 */
+                if (t >= 0x0D && t <= 0x12)
+                    acc += (int16_t)DG8(0x5237 + (unsigned)t * 14);
+                break;
+            case 14:                                 /* @asm 0x752c */
+                if ((t >= 0x0D && t <= 0x12)
+                    && (!(DG8(ubase + 0x04) & 0x80) || t == 0x0B)) {
+                    int16_t c = (int16_t)DG8(0x5237 + (unsigned)t * 14);
+                    if (c > acc) acc = c;            /* @asm di = max(di, cost) */
+                }
+                break;
+            default:
+                break;
+            }
         }
-        if (/* JBE fallthrough cond: */ ax > 0) /* @0x0073DA JBE 0x0073DF */ {
-            goto label_007568;  /* @0x0073DC */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+        si = (int16_t)func_0066BA((uint16_t)si);     /* @asm 0x7568 chain next */
+    }
+    return acc;                                      /* @asm 0x7577 */
 }
 
 /* @asm        0x00757E..0x00759F  (33 bytes)  region=load_image
@@ -970,22 +1359,32 @@ int func_00757E_op_sz_33(uint16_t arg0_bp_06)
  *   - 0x006672
  *   - 0x0066BA
  *   - 0x006E94
- * @inferred_role  DISPATCHER (51 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  destroy every unit on arg0's tile chain (func_006E94), index-compaction aware
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_0075A0.asm — destroy an entire tile chain */
 int func_0075A0_logic_sz_51(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0075AB */ func_006672();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0075B2 JL 0x0075CF */ {
-            /* @0x0075B7 */ func_0066BA();
-            /* @0x0075BE */ func_006E94();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0075C6 JGE 0x0075C9 */ {
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x0075CD JGE 0x0075B4 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x0075A5 di=[bp+6]; ax=di; call 0x6672 (di=func_006672(arg0)=chain head);
+     *      or di,di; jl 0x75cf.  loop 0x75b4: ax=di; call 0x66ba (si=func_0066BA(di)
+     *      =chain next, saved BEFORE destroy); push di; call 0x6e94
+     *      (func_006E94(di)=unit_destroy(di)); add sp,2; cmp di,si; jge 0x75c9;
+     *      dec si (next shifts down when the destroyed index di < next);
+     *      0x75c9 di=si; or di,di; jge 0x75b4.  ret.
+     * Destroys every unit on arg0's tile chain. It walks from the chain head
+     * (func_006672) via chain_next (func_0066BA), reading the next index before
+     * each unit_destroy (func_006E94) since destroy compacts the UnitRecord table;
+     * when the destroyed index was below the saved next index, next is decremented
+     * to track the shift. */
+    int16_t di = (int16_t)func_006672(arg0_bp_06);   /* chain head */
+    while (di >= 0) {
+        int16_t si = (int16_t)func_0066BA((uint16_t)di);  /* save next first */
+        func_006E94((uint16_t)di);                        /* unit_destroy */
+        if (di < si)                                      /* compaction shifted next */
+            si--;
+        di = si;
+    }
+    return 0;
 }
 
 /* @asm        0x0075D4..0x0075E4  (16 bytes)  region=load_image
