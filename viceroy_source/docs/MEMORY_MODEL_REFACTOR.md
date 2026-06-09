@@ -57,7 +57,21 @@ Remaining intentional non-conversions (all correct as-is):
   remain as direct pointer arithmetic.
 - 10 `#define` macro bodies in 4 overlay files — correctly left untouched.
 
-### C. Build wiring — IN PROGRESS 2026-06-09
+### C. Build wiring — DONE 2026-06-09
+
+**The organised rules layer compiles green.** `cmake --build build_modern`
+produces `libviceroy_rules.a` (95 objects) with **zero errors** under
+`-D_VICEROY_MODERN`. Got there by clearing a 499→0 error cascade (struct layout,
+stale field-name drift, cross-file decl/arity, comment-terminator corruption,
+missing externs/constants) across colony/, unit/, combat/, king/, market/,
+native/, diplomacy/, founding_fathers/, mapgen/, scoring/, save/, ui/, overlay/,
+random_events/, iolib/, runtime/.
+
+**Link surface (next phase).** The static archive has ~2018 undefined symbols;
+~850 are `func_0XXXXX` / `overlay_call_*` bodies that live in the excluded
+`load_image/` scaffolding (or aren't ported yet), plus ~43 render and ~26 audio
+leaves. So *compiling* is done; *linking a runnable binary* is gated on the
+load_image decompilation backlog (item D) + the SDL leaves.
 
 **CMake target (DONE).** `CMakeLists.txt` builds the `src/` rules layer +
 `runtime/dgroup.c` with `-D_VICEROY_MODERN` into a static library `viceroy_rules`.
@@ -92,7 +106,21 @@ re-declarations across `overlay/`, `native/`, `market/`, `ui/`, `king/`,
 `random_events/`. ~81 of ~107 in-scope files compiled clean on the first full
 pass; the remaining ~26 are being reconciled.
 
-### D. Front end (milestone 3) — TODO
+### D. Linkable binary + front end (milestone 3) — TODO
+
+- **DGROUP global decl consolidation + type reconciliation.** The count/flag
+  globals at `0x539A`/`0x539C`/`0x539E` (and similar) are declared *file-locally*
+  in ~15 files with two latent problems that only bite at link time (a static lib
+  doesn't resolve them): (a) **type drift** — the same address is `int16_t` in
+  some files and `uint16_t` in others; (b) **dual naming** — e.g. `0x539C` is
+  `g_unit_count_539C` in overlay/king/native but `g_progress_539C` in `globals.h`.
+  Pick one canonical name+type per address, put it in `globals.h`, and delete the
+  file-local copies. Same for the agent-flagged `g_market` (=`0x84FC` active
+  `PowerRecord*`), `g_unit_type_flags_5236/5237`, `g_power_table_8808`
+  (~`DG_POWER_TABLE`), `native_class_weight_5AD8`, and the `SCREEN_*` ids (one ui
+  screen-id enum). Pre-existing pattern, widened during the compile-fix waves —
+  must be resolved before an executable will link cleanly.
+
 - `dgroup_init()` must populate the **initialized static window** (DS 0x0000..0x2CC5)
   from the game data files — **never** from VICEROY.EXE bytes (copyright). The few
   embedded tables are documented byte-for-byte in `tools/audit.py` /
@@ -111,8 +139,8 @@ pass; the remaining ~26 are being reconciled.
   real control-flow reconstruction. Do per-function, not bulk.
 
 ## Order of attack
-~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → **C (build wiring) — library compiling,
-last ~26 files being reconciled** → D (dgroup_init population + SDL front end).
+~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → ~~C (build wiring) — `libviceroy_rules.a`
+builds green~~ ✓ → **D (load_image backlog + dgroup_init population + SDL front end)**.
 
 ---
 *Refactor tooling: `tools/poke_to_dgroup.py` (poke→accessor), `include/dgroup.h`
