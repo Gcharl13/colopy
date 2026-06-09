@@ -326,36 +326,50 @@ void func_007966_logic_sz_41(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x006CCA
- * @inferred_role  MEDIUM_LOGIC (119 bytes). 0x037F:0x000A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: unit arg0 is an active, on-map, current-player mover
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported (void): the function takes one unit index in AX
+ *         (register convention). Signature corrected to match.
  */
-int func_0079A0_op_sz_119(void)
+/* PORTED 2026-06-09 from func_0079A0.asm — sibling predicate of func_007A20.
+ * Returns 1 iff unit arg0 is a valid, current-player unit that is on the map
+ * (overlay 0x037F:0x000A), is not in orders 1 or 6, satisfies the +0x04 bit-0x80
+ * => type==0x0B rule, and its +0x05 counter is below the per-unit cap
+ * func_006CCA(arg0) (unsigned). Else 0. */
+int func_0079A0_op_sz_119(uint16_t arg0_ax /* unit index, in AX */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x5394, 0x539C
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0079AC JL 0x007A1A */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x0079B2 JLE 0x007A1A */ {
-                /* @0x0079C6 */ overlay_call_037F_000A();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0079D0 JE 0x007A1A */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x0079DF JNE 0x007A18 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x0079E6 JE 0x007A18 */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x0079ED JE 0x007A18 */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x0079F4 JE 0x0079FD */ {
-                                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x0079FB JNE 0x007A18 */ {
-                                        /* @0x0079FF */ func_006CCA();
-                                        if (/* JAE fallthrough cond: */ ax < 0) /* @0x007A0C JAE 0x007A18 */ {
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x79A6 si=ax(unit); di=0(result); or si,si; jl 0x7A1A (si<0 -> 0);
+     *      cmp [0x539C],si; jle 0x7A1A (si>=count -> 0); bx=si*0x1C; [bp-2]=bx;
+     *      push unit.map_y(+0x01); push unit.map_x(+0x00); call 0x37F:0x00A;
+     *      or ax,ax; je 0x7A1A (off-map -> 0).
+     *      0x79D2 al=unit.owner(+0x03)&0xF; cmp al,[0x5394]; jne 0x7A18 (owner != cur);
+     *      cmp unit.orders(+0x08),1; je 0x7A18; cmp unit.orders,6; je 0x7A18;
+     *      test unit.flags(+0x04),0x80; je 0x79FD; cmp unit.type(+0x02),0xB; jne 0x7A18;
+     *      0x79FD push si; call 0x6CCA (cap); cmp unit.+0x05,al; jae 0x7A18; di=1.
+     *      0x7A1A mov ax,di; ret. */
+    int16_t si = (int16_t)arg0_ax;
+    unsigned base;
+    if (si < 0)
+        return 0;
+    if (DG16(0x539C) <= (uint16_t)si)               /* g_unit_count */
+        return 0;
+    base = 0x3144 + (unsigned)si * 0x1C;
+    /* @asm push map_y; push map_x; call 0x037F:0x000A — on-map test (args documented) */
+    if (overlay_call_037F_000A() == 0)
+        return 0;
+    if ((DG8(base + 0x03) & 0x0F) != DG8(0x5394))   /* owner != current player */
+        return 0;
+    if (DG8(base + 0x08) == 1)                       /* orders == 1 */
+        return 0;
+    if (DG8(base + 0x08) == 6)                       /* orders == 6 */
+        return 0;
+    if ((DG8(base + 0x04) & 0x80) != 0
+        && DG8(base + 0x02) != 0x0B)                 /* bit 0x80 => type 0x0B */
+        return 0;
+    if (DG8(base + 0x05)
+        >= (uint8_t)func_006CCA(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
+        return 0;
+    return 1;
 }
 
 /* @asm        0x007A20..0x007A7F  (96 bytes)  region=load_image
@@ -430,40 +444,56 @@ int func_007A20_logic_sz_96(uint16_t arg0_ax /* unit index, in AX */)
  *
  * Near CALL targets:
  *   - 0x006CCA
- * @inferred_role  MEDIUM_LOGIC (143 bytes). 0x037F:0x000A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  predicate: unit arg0 selectable (on-map, or queued at home base)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported (void): the function takes one unit index in AX
+ *         (register convention; the func_007B10 cyclic search passes it). Fixed.
  */
-int func_007A80_op_sz_143(void)
+/* PORTED 2026-06-09 from func_007A80.asm — the func_007B10 cycle's predicate, an
+ * extension of func_0079A0: a unit qualifies when it is current-player, not in
+ * orders 1/6, obeys the +0x04 bit-0x80 => type==0x0B rule, and is below its
+ * func_006CCA cap; the on-map requirement (overlay 0x037F:0x000A) is RELAXED so a
+ * unit that is off-map but in orders 2 with (owner_lownib - map_x)==0x14 (queued
+ * at its home base) still qualifies. Returns 1/0. */
+int func_007A80_op_sz_143(uint16_t arg0_ax /* unit index, in AX */)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x5394, 0x539C
-     */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007A8C JL 0x007B09 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x007A92 JLE 0x007B09 */ {
-                /* @0x007AA6 */ overlay_call_037F_000A();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x007AB0 JNE 0x007ACA */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x007ABA JNE 0x007B09 */ {
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x007AC8 JNE 0x007B09 */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007AD7 JNE 0x007B09 */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x007ADE JE 0x007B09 */ {
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x007AE5 JE 0x007B09 */ {
-                                        if (/* JE fallthrough cond: */ ax != 0) /* @0x007AEC JE 0x007AF5 */ {
-                                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007AF3 JNE 0x007B09 */ {
-                                                /* @0x007AF7 */ func_006CCA();
-                                                if (/* JAE fallthrough cond: */ ax < 0) /* @0x007B04 JAE 0x007B09 */ {
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x7A86 si=ax; di=0; or si,si; jl 0x7B09; cmp [0x539C],si; jle 0x7B09;
+     *      bx=si*0x1C; [bp-2]=bx; push map_y; push map_x; call 0x37F:0x00A;
+     *      or ax,ax; jne 0x7ACA (on-map: skip the off-map allowance);
+     *        (off-map) cmp unit.orders(+0x08),2; jne 0x7B09; cmp owner_lownib-map_x,
+     *        0x14; jne 0x7B09 (off-map only OK if queued at home base).
+     *      0x7ACA al=owner(+0x03)&0xF; cmp al,[0x5394]; jne 0x7B09;
+     *      cmp orders,1; je 0x7B09; cmp orders,6; je 0x7B09;
+     *      test flags(+0x04),0x80; je 0x7AF5; cmp type(+0x02),0xB; jne 0x7B09;
+     *      0x7AF5 push si; call 0x6CCA(cap); cmp unit.+0x05,al; jae 0x7B09; di=1.
+     *      0x7B09 mov ax,di; ret. */
+    int16_t si = (int16_t)arg0_ax;
+    unsigned base;
+    if (si < 0)
+        return 0;
+    if (DG16(0x539C) <= (uint16_t)si)               /* g_unit_count */
+        return 0;
+    base = 0x3144 + (unsigned)si * 0x1C;
+    /* @asm push map_y; push map_x; call 0x037F:0x000A — on-map test (args documented) */
+    if (overlay_call_037F_000A() == 0) {
+        if (DG8(base + 0x08) != 2)                   /* off-map: must be orders==2 */
+            return 0;
+        if ((uint8_t)((DG8(base + 0x03) & 0x0F) - DG8(base + 0x00)) != 0x14)
+            return 0;                                /* ...and queued at home base */
+    }
+    if ((DG8(base + 0x03) & 0x0F) != DG8(0x5394))   /* owner != current player */
+        return 0;
+    if (DG8(base + 0x08) == 1)                       /* orders == 1 */
+        return 0;
+    if (DG8(base + 0x08) == 6)                       /* orders == 6 */
+        return 0;
+    if ((DG8(base + 0x04) & 0x80) != 0
+        && DG8(base + 0x02) != 0x0B)                 /* bit 0x80 => type 0x0B */
+        return 0;
+    if (DG8(base + 0x05)
+        >= (uint8_t)func_006CCA(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
+        return 0;
+    return 1;
 }
 
 /* @asm        0x007B10..0x007B62  (83 bytes)  region=load_image
@@ -537,28 +567,46 @@ int func_007B10_logic_sz_83(uint16_t arg0_ax /* start index, in AX */)
  *
  * LCALL targets:
  *   - 0x024C:0x0040
- * @inferred_role  MEDIUM_LOGIC (105 bytes). 0x024C:0x0040
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  nearest unit owned by player arg0 to (arg2,arg3), excluding arg1
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_007B64.asm — scans every UnitRecord, and among those
+ * owned by player arg0 (owner low-nibble) other than unit arg1, finds the one whose
+ * overlay 0x024C:0x0040 distance to point (arg2,arg3) is smallest. Publishes that
+ * minimum distance in 0x8CF8 and returns the winning unit index (-1 if none). */
 int func_007B64_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x539C
-     * Writes DGROUP: 0x8CF8
-     */
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x007B7A JLE 0x007BC0 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007B86 JNE 0x007BB6 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x007B8B JE 0x007BB6 */ {
-                    /* @0x007BA3 */ overlay_call_024C_0040();
-                    if (/* JG fallthrough cond: */ ax <= 0) /* @0x007BAE JG 0x007BB6 */ {
-                    }
-                }
-            }
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x007BBE JG 0x007B7F */ {
-            }
+    /* @asm 0x7B6A best_idx([bp-6])=0xFFFF; best_dist([bp-4])=0x270F; si=0;
+     *      if ([0x539C] <= 0) goto 0x7BC0; di=0x3147 (unit[0].owner).
+     *   loop 0x7B7F: al=[di]&0xF; if (al != arg0) -> 0x7BB6;
+     *      if (arg1 == si) -> 0x7BB6 (skip self);
+     *      push -(map_y([di-2]) - arg3); push -(map_x([di-3]) - arg2);
+     *      call 0x24C:0x40 (distance); if (ax > best_dist) -> 0x7BB6;
+     *      best_idx=si; best_dist=ax.
+     *   0x7BB6: di+=0x1C; si++; if ([0x539C] > si) loop.
+     *   0x7BC0: [0x8CF8]=best_dist; mov ax,best_idx; ret. */
+    int16_t best_idx = (int16_t)0xFFFF;
+    int16_t best_dist = 0x270F;
+    uint16_t si;
+    unsigned di;
+    int16_t count = (int16_t)DG16(0x539C);              /* g_unit_count */
+    for (si = 0, di = 0x3147; si < (uint16_t)count; si++, di += 0x1C) {
+        if ((DG8(di) & 0x0F) != (uint8_t)arg0_bp_06)    /* owner low-nibble != arg0 */
+            continue;
+        if (arg1_bp_08 == si)                           /* skip the excluded unit */
+            continue;
+        /* @asm push arg3-map_y; push arg2-map_x; call 0x024C:0x0040 — grid distance
+         * of (arg2,arg3) from this unit's tile (args documented per convention). */
+        {
+            int dist = overlay_call_024C_0040();
+            if (dist > best_dist)                       /* keep the closest */
+                continue;
+            best_idx = (int16_t)si;
+            best_dist = (int16_t)dist;
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    DG16(0x8CF8) = (uint16_t)best_dist;
+    return (int)best_idx;
 }
 
 /* @asm        0x007BCE..0x007BE7  (25 bytes)  region=load_image
@@ -601,37 +649,96 @@ void func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
  * @inferred_role  DISPATCHER (66 bytes). 0x05EB:0x038E + 0x05EB:0x038E
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_007BE8.asm — counts how many of probes 0,1,2 the
+ * overlay 0x05EB:0x038E reports set; returns that count (0..3). */
 int func_007BE8_op_sz_66(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007BF2 */ overlay_call_05EB_038E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007BFC JE 0x007C03 */ {
-        }
-        /* @0x007C05 */ overlay_call_05EB_038E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007C0F JE 0x007C14 */ {
-        }
-        /* @0x007C16 */ overlay_call_05EB_038E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007C20 JE 0x007C25 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x7BEC count=0; push 0; call 0x5EB:0x38E; if(ax) count=1;
+     *      0x7C03 push 1; call 0x5EB:0x38E; if(ax) count++;
+     *      0x7C14 push 2; call 0x5EB:0x38E; if(ax) count++; 0x7C25 mov ax,count.
+     * Each call probes a distinct slot index (0,1,2); count accumulates the
+     * number of non-zero results. (Args pushed but the overlay extern models the
+     * effect; the per-index probe is documented here per the file convention.) */
+    int count = 0;
+    if (overlay_call_05EB_038E() != 0) count = 1;   /* @asm push 0 */
+    if (overlay_call_05EB_038E() != 0) count++;     /* @asm push 1 */
+    if (overlay_call_05EB_038E() != 0) count++;     /* @asm push 2 */
+    return count;
 }
 
-/* @asm        0x007C2A..0x007C58  (46 bytes)  region=load_image
+/* @asm        0x007C2A..0x007D3D  (276 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_007C2A_unknown.asm
- * @pattern    TINY_ACCESSOR
+ * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 6
  * @args_seen  [6, 8]
- * @lcalls     0
+ * @lcalls     1
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (46 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unit combat strength (arg1: 1=attack / 0=defense), publishes flags
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 46 bytes / TINY_ACCESSOR: a FALSE cut. True function
+ *         is 0x7C2A..0x7D3D (276 bytes) with one LCALL (0x0981:0x0000); corrected.
  */
+/* PORTED 2026-06-09 from func_007C2A.asm — computes the attack(arg1!=0) or
+ * defense(arg1==0) combat value of unit arg0 from the stride-0xE stat table at
+ * 0x5236 (attack byte at +0x00, defense at -0x01, move-cost at +0x02), applying
+ * modifiers and recording an explanation bitset in the per-slot flag words at
+ * 0x8D00/0x8D02/0x8D06 (slot = arg1==0 ? 1 : 0). Returns the final value. */
 int func_007C2A_logic_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x7C2E sel=(arg1>=1)?1:0; idx0=(arg1==0)?1:0; [bp-4]=idx0;
+     *      [0x8D00 + idx0*2] |= sel.
+     *      0x7C46 if (arg1!=0) base=stat[type].+0x00(0x5236) else base=stat[type].-0x01
+     *        (0x5235), stride 0xE; v([bp-6]) = base (zx).
+     *      0x7C87 if (type==0xB && flags&0x80) v -= 2;
+     *      0x7C9D [0x8D06 + idx0*2] = v; w([bp-2]) = v*8;
+     *      0x7CAF if ((type==1||type==4) && unit.+0x17(0x315B)==0x15) { w += w/2;
+     *        [0x8D00 + idx0*2] |= 2 }
+     *      0x7CDB if (type==0x10 && overlay 0x0981:0(owner_lownib, 0xD)!=0) { w += w/2;
+     *        [0x8D01 + idx0*2] |= 0x40 }
+     *      0x7D0E if (type in [0xD,0x12]) { c=unit.+0x0C(0x3150); w -= c;
+     *        if (c!=0) [0x8D00 + idx0*2] |= 4 }
+     *      0x7D39 return w. */
+    unsigned ub = 0x3144 + (unsigned)arg0_bp_06 * 0x1C;
+    uint8_t type = DG8(ub + 0x02);
+    int sel  = (arg1_bp_08 != 0) ? 1 : 0;          /* @asm cmp [bp+8],1; sbb;inc */
+    unsigned idx0 = (arg1_bp_08 == 0) ? 1u : 0u;   /* @asm cmp [bp+8],1; sbb;neg */
+    unsigned stat = 0x5236 + (unsigned)type * 0x0E;
+    int v, w;
+
+    DG16(0x8D00 + idx0 * 2) |= (uint16_t)sel;
+
+    /* attack arm reads stat+0; defense arm reads stat-1 (0x5235 base) */
+    v = (uint8_t)(arg1_bp_08 != 0 ? DG8(stat) : DG8(stat - 1));
+
+    if (type == 0x0B && (DG8(ub + 0x04) & 0x80) != 0)
+        v -= 2;
+
+    DG16(0x8D06 + idx0 * 2) = (uint16_t)v;
+    w = v * 8;
+
+    if ((type == 1 || type == 4) && DG8(ub + 0x17) == 0x15) {
+        w += w >> 1;                               /* @asm sar ax,1; add */
+        DG8(0x8D00 + idx0 * 2) |= 2;
+    }
+
+    if (type == 0x10) {
+        /* @asm push 0xD; push owner_lownib; lcall 0x0981:0x0000 (terrain/ability
+         * predicate; called with args per the assignment.c precedent). */
+        if (overlay_call_0981_0000((uint16_t)(DG8(ub + 0x03) & 0x0F), 0x0D) != 0) {
+            w += w >> 1;
+            DG8(0x8D01 + idx0 * 2) |= 0x40;
+        }
+    }
+
+    if (type >= 0x0D && type <= 0x12) {
+        uint8_t c = DG8(ub + 0x0C);                /* unit.+0x0C */
+        w -= c;
+        if (c != 0)
+            DG8(0x8D00 + idx0 * 2) |= 4;
+    }
+    return w;
 }
 
 /* @asm        0x007D3E..0x007F34  (502 bytes)  region=load_image
@@ -655,69 +762,133 @@ int func_007C2A_logic_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * Near CALL targets:
  *   - 0x007C2A
  *   - 0x007BE8
- * @inferred_role  LARGE_LOGIC (502 bytes). 0x037F:0x0392 + 0x181F:0x09F0
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  terrain/target movement-cost evaluator for unit arg0 vs unit arg1
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+/* PORTED 2026-06-09 from func_007D3E.asm — evaluates the movement / engagement cost
+ * for moving unit arg0 onto the tile of unit arg1. Branches on the destination
+ * tile class (native settlement via 0x037F:0x0392, water via 0x037F:0x0358, else
+ * open terrain via 0x03E4:0x003A), accumulates an extra-cost term in `acc`, records
+ * an explanation bitset across the flag bytes 0x8D00/0x8D02/0x8D03/0x8D04 (and the
+ * settlement/region indices in 0x1B04/0x1B06), then returns ((acc+4) * base) >> 2
+ * where base = func_007C2A(arg0,0) (unit's defense strength). */
 int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x5382
-     * Writes DGROUP: 0x1B04, 0x1B06, 0x8D00, 0x8D02, 0x8D03, 0x8D04
-     */
-        /* @0x007D6A */ func_007C2A();
-        /* @0x007D81 */ overlay_call_037F_0392();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007D8B JL 0x007DE2 */ {
-            /* @0x007D98 */ overlay_call_181F_09F0();
-            if (/* JB fallthrough cond: */ ax >= 0) /* @0x007DBA JB 0x007DC6 */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x007DCF JE 0x007DD9 */ {
-            }
-            goto label_007EFE;  /* @0x007DDE */
+    /* @asm 0x7D42 ux([bp-0xC])=unit[arg0].map_x(+0x00); uy([bp-0xE])=map_y(+0x01);
+     *      tgt_owner([bp-2])=unit[arg1].owner(+0x03)&0xF;
+     *      base([bp-0xA])=func_007C2A(arg0,0); acc([bp-0x18])=0; [0x8D04]=0. */
+    unsigned ub0 = 0x3144 + (unsigned)arg0_bp_06 * 0x1C;
+    unsigned ub1 = 0x3144 + (unsigned)arg1_bp_08 * 0x1C;
+    int ux = DG8(ub0 + 0x00);
+    int uy = DG8(ub0 + 0x01);
+    int tgt_owner = DG8(ub1 + 0x03) & 0x0F;
+    int base = func_007C2A(arg0_bp_06, 0);
+    int acc = 0;
+    (void)ux; (void)uy;
+    DG16(0x8D04) = 0;
+
+    /* @asm 0x7D7B push uy; push ux; call 0x037F:0x0392; if (ax >= 0) settlement-tile */
+    if (overlay_call_037F_0392() >= 0) {
+        /* @asm 0x7D8D acc=2; settle=overlay 0x181F:0x09F0(ux,uy); [0x1B04]=settle;
+         *      owner = settle[settle].+0x02(0x54EE) - 4; if (rec[owner].0x5AD8 >= 2)
+         *      { acc=4; [0x8D02]|=0x10 } if (settle[settle].+0x03(0x54EF)&4)
+         *      { acc<<=1; [0x8D02]|=0x20 } [0x8D02]|=8. */
+        int settle = overlay_call_181F_09F0();      /* @asm push uy; push ux */
+        unsigned srec = (unsigned)settle * 0x12;
+        int owner = (int)DG8(srec + 0x54EE) - 4;
+        acc = 2;
+        DG16(0x1B04) = (uint16_t)settle;
+        if (DG8((unsigned)owner * 0x4E + 0x5AD8) >= 2) {
+            acc = 4;
+            DG8(0x8D02) |= 0x10;
         }
-        /* @0x007DE8 */ overlay_call_037F_0358();
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x007DF2 JL 0x007E20 */ {
-            /* @0x007DFA */ overlay_call_05EB_0A76();
-            /* @0x007E06 */ overlay_call_05EB_002C();
-            /* @0x007E0F */ func_007BE8();
-            goto label_007EFE;  /* @0x007E1D */
+        if (DG8((unsigned)settle * 0x12 + 0x54EF) & 4) {
+            acc <<= 1;
+            DG8(0x8D02) |= 0x20;
         }
-        /* @0x007E26 */ overlay_call_03E4_003A();
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x007E3D JAE 0x007E5D */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x007E43 JGE 0x007E74 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x007E4A JE 0x007E5D */ {
-                    if (/* JGE fallthrough cond: */ ax < 0) /* @0x007E50 JGE 0x007E5D */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x007E5B JE 0x007E74 */ {
-                            goto label_007EFE;  /* @0x007E71 */
-                        }
-                    }
+        DG8(0x8D02) |= 0x08;
+    }
+    /* @asm 0x7DE8 else push uy; push ux; call 0x037F:0x0358; if (ax >= 0) water-tile */
+    else if (overlay_call_037F_0358() >= 0) {
+        /* @asm 0x7DFA region=overlay 0x05EB:0x0A76(ux,uy); [0x1B06]=region;
+         *      overlay 0x05EB:0x002C(region); acc += (func_007BE8()+1)<<1;
+         *      [0x8D02]|=0x40. */
+        int region = overlay_call_05EB_0A76();       /* @asm push uy; push ux */
+        DG16(0x1B06) = (uint16_t)region;
+        overlay_call_05EB_002C();                    /* @asm push region */
+        acc += (func_007BE8() + 1) << 1;
+        DG8(0x8D02) |= 0x40;
+    }
+    /* @asm 0x7E20 else open-terrain tile */
+    else {
+        /* @asm 0x7E26 terr([bp-0x12]) = overlay 0x03E4:0x003A(ux,uy);
+         *      owner0 = unit[arg0].owner&0xF.
+         *      Decide `hostile` (fall to 0x7E74) vs `passive` (0x7E5D): */
+        int terr = overlay_call_03E4_003A();         /* @asm push uy; push ux */
+        int owner0 = DG8(ub0 + 0x03) & 0x0F;
+        int hostile;
+        /* @asm 0x7E3B cmp owner0,4; jae 0x7E5D (owner>=4 -> passive);
+         *      0x7E3F cmp tgt_owner,4; jge 0x7E74 (tgt>=4 -> hostile);
+         *      0x7E45 if (phase&1 && tgt_owner<4 && AIP[tgt].+0x31(0x543F)==0) -> 0x7E74. */
+        if (owner0 >= 4) {
+            hostile = 0;
+        } else if (tgt_owner >= 4) {
+            hostile = 1;
+        } else if ((DG8(0x5382) & 1) && tgt_owner < 4
+                   && DG8((unsigned)tgt_owner * 0x34 + 0x543F) == 0) {
+            hostile = 1;
+        } else {
+            hostile = 0;
+        }
+
+        if (!hostile) {
+            /* @asm 0x7E5D bx=terr<<4; acc += [bx+0x2F77]; [0x8D02]|=0x80. */
+            acc += DG8((unsigned)terr * 0x10 + 0x2F77);
+            DG8(0x8D02) |= 0x80;
+        } else {
+            /* @asm 0x7E74 flag([bp-4])=1; */
+            int flag = 1;
+            /* @asm 0x7E79 if (tgt_owner<4 && AIP[tgt].+0x31(0x543F)==0) { ... } */
+            if (tgt_owner < 4 && DG8((unsigned)tgt_owner * 0x34 + 0x543F) == 0) {
+                /* @asm 0x7E8A r1 = overlay 0x037F:0x0358(ux,uy);
+                 *      if (r1 < 0) { r2 = overlay 0x037F:0x0358(unit[arg1].map_x,
+                 *      unit[arg1].map_y); if (r2 < 0) goto 0x7EE4 (flag stays 1) }
+                 *      0x7EB8 flag=0; acc += [terr<<4 + 0x2F77]; [0x8D02]|=0x80. */
+                int adj = 1;
+                if (overlay_call_037F_0358() < 0) {     /* @asm push uy; push ux */
+                    if (overlay_call_037F_0358() < 0)   /* @asm push arg1.map_y/x */
+                        adj = 0;                        /* both off the move grid */
                 }
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x007E7D JGE 0x007ED4 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x007E88 JNE 0x007ED4 */ {
-                /* @0x007E90 */ overlay_call_037F_0358();
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x007E9A JGE 0x007EB8 */ {
-                    /* @0x007EAC */ overlay_call_037F_0358();
-                    if (/* JL fallthrough cond: */ ax >= 0) /* @0x007EB6 JL 0x007EE4 */ {
-                        goto label_007EE4;  /* @0x007ED1 */
-                        if (/* JNE fallthrough cond: */ ax == 0) /* @0x007EDD JNE 0x007EE4 */ {
-                        }
-                    }
+                if (adj) {
+                    flag = 0;
+                    acc += DG8((unsigned)terr * 0x10 + 0x2F77);
+                    DG8(0x8D02) |= 0x80;
                 }
+            } else {
+                /* @asm 0x7ED4 if (unit[arg0].orders(+0x08)==6) flag=0. */
+                if (DG8(ub0 + 0x08) == 6)
+                    flag = 0;
+            }
+            /* @asm 0x7EE4 if (flag) { [0x8D04] = [terr<<4 + 0x2F77]; [0x8D00]|=0x80 } */
+            if (flag) {
+                DG16(0x8D04) = DG8((unsigned)terr * 0x10 + 0x2F77);
+                DG8(0x8D00) |= 0x80;
             }
         }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007EE8 JE 0x007EFE */ {
+    }
+
+    /* @asm 0x7EFE if (unit[arg0].orders(+0x08)==6 && type(+0x02) in [0xD,0x12]
+     *      && acc < 5) { acc += 2; [0x8D03]|=0x20 }. */
+    if (DG8(ub0 + 0x08) == 6) {
+        uint8_t type = DG8(ub0 + 0x02);
+        if (type >= 0x0D && type <= 0x12 && acc < 5) {
+            acc += 2;
+            DG8(0x8D03) |= 0x20;
         }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x007F07 JNE 0x007F26 */ {
-            if (/* JB fallthrough cond: */ ax >= 0) /* @0x007F0E JB 0x007F17 */ {
-                if (/* JBE fallthrough cond: */ ax > 0) /* @0x007F15 JBE 0x007F26 */ {
-                    if (/* JGE fallthrough cond: */ ax < 0) /* @0x007F1B JGE 0x007F26 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x7F26 ax = (acc + 4) * base; sar ax,2; ret. */
+    return (int)(int16_t)(((acc + 4) * base) >> 2);
 }
 
 /* @asm        0x007F34..0x007F4F  (27 bytes)  region=load_image
@@ -799,17 +970,30 @@ int func_007F62_logic_sz_30(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @inferred_role  DISPATCHER (105 bytes). 0x181F:0x077E
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_007F96.asm — SET-bits dispatcher: OR the mask arg2
+ * into the byte at field arg1 for BOTH (arg0,arg1) and (arg1,arg0) records via the
+ * func_007F34 reader / func_007F62 writer, then notify overlay 0x181F:0x077E
+ * (op 0x202) if the two records' masked bits disagree. Returns the first record's
+ * new byte value. */
 int func_007F96_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x007FA1 */ func_007F34();
-        /* @0x007FB2 */ func_007F62();
-        /* @0x007FC2 */ func_007F34();
-        /* @0x007FD3 */ func_007F62();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x007FE7 JE 0x007FFA */ {
-            /* @0x007FF5 */ overlay_call_181F_077E();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x7FA1 ax = func_007F34(arg0,arg1) | arg2;
+     *      0x7FB2 v0 = func_007F62(arg0,arg1,ax)  ([bp-2]);
+     *      0x7FC2 ax = func_007F34(arg1,arg0) | arg2;
+     *      0x7FD3 v1 = func_007F62(arg1,arg0,ax)  ([bp-4]);
+     *      0x7FDC if ((v1 & arg2) != (arg2 & v0)) call 0x181F:0x77E(0x202,v0,v1,arg2);
+     *      0x7FFA mov ax,[bp-2] (return v0). */
+    int v0, v1;
+    v0 = func_007F62(arg0_bp_06, arg1_bp_08,
+                     (uint16_t)(func_007F34(arg0_bp_06, arg1_bp_08) | arg2_bp_0A));
+    v1 = func_007F62(arg1_bp_08, arg0_bp_06,
+                     (uint16_t)(func_007F34(arg1_bp_08, arg0_bp_06) | arg2_bp_0A));
+    if (((uint16_t)v1 & arg2_bp_0A) != (arg2_bp_0A & (uint16_t)v0)) {
+        /* @asm push arg2; push v1([bp-4]); push v0([bp-2]); push 0x202;
+         * call 0x181F:0x077E — broadcast the flag change (args documented). */
+        overlay_call_181F_077E();
+    }
+    return v0;
 }
 
 /* @asm        0x008000..0x008073  (115 bytes)  region=load_image
@@ -831,17 +1015,31 @@ int func_007F96_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @inferred_role  DISPATCHER (115 bytes). 0x181F:0x077E
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_008000.asm — CLEAR-bits dispatcher: the AND-NOT twin
+ * of func_007F96. Clears the mask arg2 from the byte at field arg1 for BOTH
+ * (arg0,arg1) and (arg1,arg0) records (read&~arg2 then write back), then notifies
+ * overlay 0x181F:0x077E (op 0x212) if the two records' masked bits disagree.
+ * Returns the first record's new byte value. */
 int func_008000_op_sz_115(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00800C */ func_007F34();
-        /* @0x008023 */ func_007F62();
-        /* @0x008033 */ func_007F34();
-        /* @0x008043 */ func_007F62();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x008057 JE 0x00806D */ {
-            /* @0x008065 */ overlay_call_181F_077E();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x800C ax = func_007F34(arg0,arg1); cx=~arg2; ax &= cx;
+     *      0x8023 v0 = func_007F62(arg0,arg1,ax)  ([bp-2]); si=cx(=~arg2);
+     *      0x8033 ax = func_007F34(arg1,arg0); si &= ax  (si = ~arg2 & read1);
+     *      0x803C v1 = func_007F62(arg1,arg0,si)  ([bp-4]);
+     *      0x804C if ((v1 & arg2) != (v0 & arg2)) call 0x181F:0x77E(0x212,v0,v1,arg2);
+     *      0x806D mov ax,[bp-2] (return v0). */
+    uint16_t notmask = (uint16_t)~arg2_bp_0A;
+    int v0, v1;
+    v0 = func_007F62(arg0_bp_06, arg1_bp_08,
+                     (uint16_t)(func_007F34(arg0_bp_06, arg1_bp_08) & notmask));
+    v1 = func_007F62(arg1_bp_08, arg0_bp_06,
+                     (uint16_t)(notmask & (uint16_t)func_007F34(arg1_bp_08, arg0_bp_06)));
+    if (((uint16_t)v1 & arg2_bp_0A) != ((uint16_t)v0 & arg2_bp_0A)) {
+        /* @asm push arg2; push v1([bp-4]); push v0([bp-2]); push 0x212;
+         * call 0x181F:0x077E — broadcast the flag change (args documented). */
+        overlay_call_181F_077E();
+    }
+    return v0;
 }
 
 /* @asm        0x008074..0x0080C7  (83 bytes)  region=load_image
@@ -859,18 +1057,35 @@ int func_008000_op_sz_115(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @inferred_role  UNKNOWN (83 bytes). 0x004B:0x00E2 + 0x004B:0x00E2
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PORTED 2026-06-09 from func_008074.asm — string emit helper. For mode arg0==3 it
+ * runs two text-output overlay calls on string arg2 and, when arg1==0, lowercases
+ * the leading character if it is flagged alphabetic in the ctype table at 0x27ED.
+ * Always finishes with overlay 0x004B:0x00E2(string, table[arg0]) where table is
+ * the stride-2 word table at 0x8D42. */
 int func_008074_op_sz_83(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00807C JNE 0x0080B0 */ {
-            /* @0x008085 */ overlay_call_004B_00E2();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00809C JNE 0x0080B0 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x0080AB JE 0x0080B0 */ {
-                }
-            }
+    /* @asm 0x8078 cmp [bp+6],3; jne 0x80B0;
+     *      arg0==3: 0x807E call 0x4B:0xE2([bp+0xA], [0x2E02]);
+     *               0x808D call 0x4B:0x00([bp+0xA]);
+     *               0x8098 if ([bp+8]==0) {  bx=[bp+0xA]; al=(int8)[bx]; si=al;
+     *                 if ([si+0x27ED] & 1) [bx]+=0x20  (lowercase 1st char) }
+     *      0x80B0 bx=arg0*2; call 0x4B:0xE2([bp+0xA], [bx-0x72BE](0x8D42)). */
+    if (arg0_bp_06 == 3) {
+        /* @asm push [0x2E02]; push arg2; call 0x004B:0x00E2 (text out) */
+        overlay_call_004B_00E2();
+        /* @asm push arg2; call 0x004B:0x0000 (text out) — offset 0 of seg 0x004B */
+        overlay_call_004B_0000();
+        if (arg1_bp_08 == 0) {
+            uint16_t s = arg2_bp_0A;
+            int16_t c = (int16_t)(int8_t)DG8(s);            /* @asm cbw of first char */
+            if ((DG8((uint16_t)(0x27ED + c)) & 1) != 0)      /* @asm ctype bit 0x1 */
+                DG8(s) = (uint8_t)(DG8(s) + 0x20);           /* @asm [bx]+=0x20 */
         }
-        /* @0x0080BC */ overlay_call_004B_00E2();
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    /* @asm push [0x8D42 + arg0*2]; push arg2; call 0x004B:0x00E2 (final text out) */
+    (void)DG16(0x8D42 + (unsigned)arg0_bp_06 * 2);
+    overlay_call_004B_00E2();
+    return 0;
 }
 
 /* @asm        0x0080C8..0x00810F  (72 bytes)  region=load_image
