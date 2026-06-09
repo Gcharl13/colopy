@@ -62,6 +62,7 @@ set(VICEROY_LOADIMAGE_PORTED
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00E454_00FAA9.c"  # VGA/video layer: 4 ported (file-record dispatch); 7 stubbed (RLE sprite blits = SDL, exit/delay = host)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_008C70_00AAB9.c"  # colony tile/work-grid + colony-at-tile + display ids (8 ported, 2 forwarders, 0 stubs)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_008262_008C6F.c"  # colony footprint/tile-render + neighbour/colony finders + chain walkers (11 ported, 0 stubs)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00D286_00E37B.c"  # path/grid/draw layer: 14 ported; 9 stubbed (clipped fills/pixel = SDL, BIOS kbd/DOS probe = host)
 )
 list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 

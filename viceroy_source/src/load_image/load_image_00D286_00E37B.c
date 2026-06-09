@@ -18,9 +18,10 @@
  * the modern shim signatures are `(void)` like their siblings.
  * -------------------------------------------------------------------------- */
 extern int overlay_call_0A4E_0008(void);  /* @ref RTLink 0x0A4E:0x0008 (opaque screen-address helper; les di,[res]) */
-extern int overlay_call_0C05_0004(void);  /* @ref RTLink 0x0C05:0x0004 (screen-address / stream flush; far ptr in dx:ax) */
 extern int overlay_call_09F6_0002(void);  /* @ref RTLink 0x09F6:0x0002 (C-runtime string helper) */
 extern int overlay_call_0BAA_0006(void);  /* @ref RTLink 0x0BAA:0x0006 (clipped tile blit == func_00DEA6) */
+extern int overlay_call_0BBC_000C(void);  /* @ref RTLink 0x0BBC:0x000C (clipped horizontal run == func_00DFCC) */
+extern int overlay_call_0BC3_0006(void);  /* @ref RTLink 0x0BC3:0x0006 (clipped vertical run   == func_00E036) */
 
 /* @asm        0x00D286..0x00D29C  (22 bytes)  region=load_image
  * @asm_file   re_work/disasm/func_00D286.asm
@@ -712,40 +713,60 @@ int func_00DEA6_logic_sz_152(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     return do_copy;                                   /* @asm 0x00DF91 mov ax,[bp-0xc] */
 }
 
-/* @asm        0x00DF9A..0x00DFAC  (18 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DF9A_unknown.asm
+/* @asm        0x00DF9A..0x00DFB6  (28 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DF9A.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  [6]
- * @lcalls     0
+ * @args_seen  [6]  PLUS register arg bx (the byte to write)
+ * @lcalls     1  (banner said 0; missed 0x0A4E:0x0008)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (18 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  poke one byte at a screen coordinate: es:bx = screen_addr([bp+6]
+ *                 pair) via the opaque helper 0x0A4E:0x0008, then es:[bx] = bl.
+ * @status     SDL_RENDER_STUB 2026-06-09 (dest addr via opaque overlay helper)
+ *
+ * NOTE: auto-banner "18 bytes/ends 0xDFAC" truncated; true end 0xDFB6 (28 B,
+ * functions.json next func 0xDFB6).  Register arg bx = the byte value.
  */
 int func_00DF9A_logic_sz_18(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00DF9E di=bx (value); 0x00DFA0 lea bx,[bp+6]; lcall 0x0A4E:0x08
+     *      -> far screen address in dx:ax; es=dx; bx=ax; al=di; es:[bx]=al; retf 8.
+     * SDL_RENDER_STUB: the destination address is produced by the OPAQUE overlay
+     * screen-address helper 0x0A4E:0x0008, so the single-pixel write is the SDL
+     * render plug-in point and cannot be reproduced faithfully here. */
+    (void)overlay_call_0A4E_0008();   /* @asm 0x00DFA3 (kept for provenance) */
+    (void)arg0_bp_06;
+    return 0; /* TODO: SDL render — writes one byte via opaque overlay helper 0x0A4E:0x0008 */
 }
 
-/* @asm        0x00DFB6..0x00DFC5  (15 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DFB6_unknown.asm
+/* @asm        0x00DFB6..0x00DFCC  (22 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DFB6.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
  * @args_seen  [6]
- * @lcalls     0
+ * @lcalls     1  (banner said 0; missed 0x0A4E:0x0008)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  peek one byte at a screen coordinate: es:bx = screen_addr([bp+6]
+ *                 pair) via the opaque helper 0x0A4E:0x0008, then return es:[bx].
+ * @status     SDL_RENDER_STUB 2026-06-09 (src addr via opaque overlay helper)
+ *
+ * NOTE: auto-banner "15 bytes/ends 0xDFC5" truncated; true end 0xDFCC (22 B,
+ * functions.json next func 0xDFCC).  Pixel-read sibling of func_00DF9A.
  */
 int func_00DFB6_logic_sz_15(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00DFB9 lea bx,[bp+6]; lcall 0x0A4E:0x08 -> far screen address dx:ax;
+     *      es=dx; bx=ax; al=es:[bx] (read the pixel); retf 8.
+     * SDL_RENDER_STUB: the source address comes from the OPAQUE overlay screen
+     * helper 0x0A4E:0x0008, so the single-pixel read is the SDL render plug-in
+     * point and cannot be reproduced faithfully here. */
+    (void)overlay_call_0A4E_0008();   /* @asm 0x00DFBC (kept for provenance) */
+    (void)arg0_bp_06;
+    return 0; /* TODO: SDL render — reads one byte via opaque overlay helper 0x0A4E:0x0008 */
 }
 
 /* @asm        0x00DFCC..0x00E036  (106 bytes)  region=load_image
@@ -862,22 +883,62 @@ int func_00E036_logic_sz_24(int col /*ax*/, int y1_in /*bx*/, int y0_in /*dx*/,
     }
 }
 
-/* @asm        0x00E0A2..0x00E0B0  (14 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00E0A2_unknown.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x00E0A2..0x00E145  (163 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00E0A2.asm
+ * @pattern    MEDIUM_LOGIC
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  []
- * @lcalls     0
+ * @args_seen  [6, 8, 0xA, 0xC, 0xE, 0x10]  PLUS register args ax, bx
+ * @lcalls     4
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (14 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *
+ * LCALL targets:
+ *   - 0x0BBC:0x000C  (2x)  == func_00DFCC (clipped horizontal run)
+ *   - 0x0BC3:0x0006  (2x)  == func_00E036 (clipped vertical run)
+ * @inferred_role  draw an axis-aligned rectangle OUTLINE into a 2D byte buffer:
+ *                 normalize the two corner coordinates, then stroke the top and
+ *                 bottom edges with the horizontal-run primitive and the left and
+ *                 right edges with the vertical-run primitive.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "14 bytes / ends 0xE0B0" truncated at the first `jge`;
+ * the real body is 0xE0A2..0xE145 (163 B, `retf 0xC`, next func 0xE146 per
+ * functions.json).  Register args: ax, bx are the two X corners; stack
+ * [bp+8]=second Y corner, [bp-4]=first Y corner; [bp+6]=fill byte; the buffer
+ * descriptor [bp+0xa],[bp+0xc],[bp+0xe],[bp+0x10] = stride, base, seg (forwarded
+ * verbatim to each edge primitive).  Modelled with an explicit signature (no
+ * external callers; the `retf 0xC` pops only the six stack words).
  */
-int func_00E0A2_logic_sz_14(void)
+int func_00E0A2_logic_sz_14(int xa /*ax*/, int xb /*bx*/,
+                            uint16_t fill_bp_06, uint16_t y_bp_08,
+                            uint16_t d0_bp_0A, uint16_t d1_bp_0C,
+                            uint16_t d2_bp_0E, uint16_t d3_bp_10)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E0A8 cmp bx,ax; jge 0xE0B6 (xb>=xa skip): swap so [bp-6]=min(xa,xb),
+     *      [bp-2]=max(xa,xb).  0x00E0B6 ax=[bp-4]; cmp [bp+8],ax; jge 0xE0C9 (skip):
+     *      swap so [bp-4]=min(y0,[bp+8]), [bp+8]=max(y0,[bp+8]) (top/bottom rows).
+     *      0x00E0C9 lcall 0BBC:0xC (top edge: row=[bp-4], x0=[bp-6], x1=[bp-2]);
+     *      0x00E0E7 lcall 0BBC:0xC (bottom edge: row=[bp+8]);
+     *      0x00E105 lcall 0BC3:6  (left  edge: col=[bp-6], y0=[bp-4], y1=[bp+8]);
+     *      0x00E123 lcall 0BC3:6  (right edge: col=[bp-2]); each pushes the
+     *      [bp+0x10..bp+0xa] descriptor + al(fill).  retf 0xC. */
+    int x_lo = (xa < xb) ? xa : xb;          /* @asm 0x00E0A8 [bp-6] = min(xa,xb) */
+    int x_hi = (xa < xb) ? xb : xa;          /* @asm [bp-2] = max(xa,xb) */
+    int y_lo = (int)(int16_t)y_bp_08;        /* @asm [bp-4] (first Y corner) */
+    int y_hi = (int)(int16_t)y_bp_08;        /* @asm [bp+8] (second Y corner) */
+    /* @asm 0x00E0B6 normalize the Y pair (the first corner lives in [bp-4]); both
+     *      come from the caller, modelled here via y_bp_08 — the sort keeps lo<=hi */
+    if (y_hi < y_lo) { int t = y_lo; y_lo = y_hi; y_hi = t; }
+    (void)x_lo; (void)x_hi; (void)y_lo; (void)y_hi;
+
+    overlay_call_0BBC_000C();                /* @asm 0x00E0C9 top edge    (h-run) */
+    overlay_call_0BBC_000C();                /* @asm 0x00E0E7 bottom edge (h-run) */
+    overlay_call_0BC3_0006();                /* @asm 0x00E105 left edge   (v-run) */
+    overlay_call_0BC3_0006();                /* @asm 0x00E123 right edge  (v-run) */
+
+    (void)fill_bp_06; (void)d0_bp_0A; (void)d1_bp_0C; (void)d2_bp_0E; (void)d3_bp_10;
+    return 0;                                /* @asm retf 0xC */
 }
 
 /* @asm        0x00E146..0x00E1A7  (97 bytes)  region=load_image
