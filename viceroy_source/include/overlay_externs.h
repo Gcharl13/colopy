@@ -69,6 +69,7 @@ extern int overlay_call_0B01_000E(void);  /* @ref RTLink seg 0x0B01 off 0x000E *
 extern int overlay_call_0B22_0022(void);  /* @ref RTLink seg 0x0B22 off 0x0022 */
 extern int overlay_call_0B70_003A(void);  /* @ref RTLink seg 0x0B70 off 0x003A */
 extern int overlay_call_0B9E_000A(void);  /* @ref RTLink seg 0x0B9E off 0x000A */
+extern int overlay_call_0C05_0004(void);  /* @ref RTLink seg 0x0C05 off 0x0004 (stream flush) */
 extern int overlay_call_0C0C_0022(void);  /* @ref RTLink seg 0x0C0C off 0x0022 */
 extern int overlay_call_0C11_000C(void);  /* @ref RTLink seg 0x0C11 off 0x000C */
 extern int overlay_call_0C28_000A(void);  /* @ref RTLink seg 0x0C28 off 0x000A */

@@ -760,8 +760,9 @@ int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
  */
 int func_016073_logic_sz_19(void)
 {
-    /* @auto: wrapper forwards to near CALL 0x016127. */
-    return func_016127();
+    /* PORTED 2026-06-09 from func_016073.asm — thin wrapper: tail-calls the near worker
+     * 0x016127 and returns its result. */
+    return func_016127();             /* @asm call 0x016127 */
 }
 
 /* @asm        0x019E64..0x019E6F  (11 bytes)  region=load_image
@@ -776,10 +777,16 @@ int func_016073_logic_sz_19(void)
  * @inferred_role  TINY_RETURN (11 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
+/* PLATFORM_LAYER (RTLink loader config parse).  The auto banner ("TINY_RETURN, 11 bytes")
+ * badly mis-segmented this — func_019E64.asm is a 121-byte routine that parses the
+ * CS-relative config string at cs:[0x547] into flag byte cs:[0x56F] and the two words
+ * cs:[0x572]/cs:[0x570] (returned in AL/BX/CX): it issues LCALL 0x175D:0x8AD and the near
+ * field-scanners 0x19FF4 / 0x19FBD, splitting on ',' (0x2C).  All CS-relative loader
+ * state — replaced wholesale in the modern build, so it is not reconstructed; the real
+ * body also runs past the captured slice. */
 int func_019E64_logic_sz_11(void)
 {
-    /* @auto: tiny return-only function. */
-    return 0;
+    return 0;  /* TODO: port from func_019E64.asm — RTLink loader config (host layer) */
 }
 
 /* @asm        0x01A283..0x01A2D9  (86 bytes)  region=load_image
