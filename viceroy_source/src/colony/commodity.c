@@ -77,8 +77,8 @@ int check_total_exceeds_threshold(int idx)
  * colony_transfer_commodity_to_unit — 80 bytes
  * @asm 0x00B880..0x00B8CF
  * ============================================================================ */
-extern int  unit_cargo_action_pad_15_get(int unit_idx);    /* +0x15 reader */
-extern void unit_cargo_action_pad_15_set(int unit_idx, int v);
+extern int  unit_cargo_action_qty5_get(int unit_idx);    /* +0x15 reader (cargo_qty[5]) */
+extern void unit_cargo_action_qty5_set(int unit_idx, int v);
 
 void colony_transfer_commodity_to_unit(int unit_idx, int commodity_idx, int max_qty)
 {
@@ -92,8 +92,8 @@ void colony_transfer_commodity_to_unit(int unit_idx, int commodity_idx, int max_
     unit_load_commodity_into_slots(unit_idx, commodity_idx, avail);
 
     /* @asm 0xB8BE..0xB8CA  reset cargo-pickup flag unless frozen at 2 */
-    if (unit(unit_idx).pad_15 != 2) {
-        unit(unit_idx).pad_15 = 0;
+    if (unit(unit_idx).cargo_qty[5] != 2) {
+        unit(unit_idx).cargo_qty[5] = 0;
     }
 }
 

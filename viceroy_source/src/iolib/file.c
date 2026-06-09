@@ -12,6 +12,12 @@
  * ============================================================================ */
 #include "viceroy.h"
 #include "dos.h"
+#include <stdbool.h>
+
+/* In the original MS C runtime `errno` is a DGROUP global int.  We reproduce it
+ * locally rather than pull in <errno.h>, whose E* values differ from the DOS
+ * mapping in iolib.h (e.g. ENOMEM is 8 here, 12 on a glibc host). */
+int errno = 0;
 
 extern int  errno_epilogue(int dos_err);     /* 0x10AE5 — DOS-error → errno mapper */
 

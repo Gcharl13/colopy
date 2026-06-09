@@ -83,6 +83,8 @@ struct PowerRecord {
 };
 #pragma pack(pop)
 
+typedef struct PowerRecord PowerRecord;   /* allow the bare type name */
+
 #define POWER_RECORD_STRIDE 0x13C
 #define POWER_TABLE_BASE    0x8808   /* DGROUP-relative */
 
