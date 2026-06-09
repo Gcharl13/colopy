@@ -50,11 +50,9 @@
 #include "overlay_externs.h"
 
 /* ---- the active-colony far pointer (`ctx`) and field helpers --------------- */
-/* `ctx` (*(0x8542) -> ColonyRecord[active], base 0x5D46) is declared canonically
- * in globals.h as `struct colony_t far *ctx`; it is NOT re-declared here (a local
- * `char far *ctx` would clash with that type).  The CB/CW macros cast it. */
-#define CB(off)  (*(uint8_t  far *)((char far *)ctx + (off)))  /* ctx byte field  */
-#define CW(off)  (*(uint16_t far *)((char far *)ctx + (off)))  /* ctx word field  */
+/* ctx is declared as struct colony_t far * in colony.h (via viceroy.h) */
+#define CB(off)  (*(uint8_t  far *)((char far *)(void far *)ctx + (off)))  /* ctx byte field  */
+#define CW(off)  (*(uint16_t far *)((char far *)(void far *)ctx + (off)))  /* ctx word field  */
 /* Absolute DGROUP byte access by computed offset (DGROUP_PTR per viceroy_types.h).
  * Used for the ColonyRecord (base 0x5D46/0xCA) and UnitRecord (0x3144/0x1C) tables
  * and their adjacent per-power arrays; the literal carries the table base. */
@@ -67,6 +65,7 @@ extern int16_t  g_cursor_x_07E8;     /* 0x07E8 cursor cell X (pixels)           
 extern int16_t  g_cursor_y_07EA;     /* 0x07EA cursor cell Y (pixels)            */
 extern int16_t  g_screen_mode_8D54;  /* 0x8D54 active screen id (7=colony grid)  */
 extern int16_t  g_sel_unit_033E;     /* 0x033E selected unit slot                */
+extern int16_t  g_colony_count_539E; /* 0x539E live colony count (max 0x30)      */
 extern int16_t  g_redraw_0346;       /* 0x0346 "colony view dirty" flag          */
 extern int16_t  g_submode_032E;      /* 0x032E selection-changed / submode flag  */
 extern int16_t  g_count_033C;        /* 0x033C visible-cell count                */

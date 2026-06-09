@@ -15,17 +15,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 #   - runtime/cstart.c : DOS C startup              (replaced by main_modern.c)
 #   - overlay/rtlink.c : RTLink overlay loader      (replaced by flat link)
 #   - audio, asset, render leaves (SDL swap-points — milestone 3)
-#
-# load_image/* : the FIRST-PASS raw decompiler output, named by EXE address
-#     range (load_image_AAAAAA_BBBBBB.c).  These were control-flow skeletons with
-#     un-materialised `goto label_XXXXXX` targets and bare x86 register pseudo-vars
-#     (`ax`, ...).  The directory is excluded wholesale below, then the HAND-PORTED
-#     files are re-included via VICEROY_LOADIMAGE_PORTED.  As of 2026-06-09 ALL 16
-#     files have been hand-ported from re_work/disasm/*.asm and re-included; honest
-#     stubs remain only at the SDL/host plug-in points (VGA rasterizers, opaque
-#     framebuffer writes, RTLink overlay loaders, printf-core, exit/keyboard/delay)
-#     and one genuine MISSING_ASM symbol.  The exclude-then-allow-list pattern is
-#     kept so any future re-decompile starts excluded until verified.
 # ============================================================================
 
 # Gather all C sources, then exclude platform-only files
@@ -41,31 +30,9 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
-# load_image/: raw first-pass decompiler scaffolding (see header note above)
+# Exclude load_image first-pass skeletons (all still have raw ax/label artifacts;
+# milestone 3 will port these one by one and add them back via VICEROY_LOADIMAGE_PORTED)
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
-
-# ...but re-include load_image files that have been HAND-PORTED (broken auto
-# bodies materialised from re_work/disasm/*.asm, verified to compile). Add each
-# file here as it is ported; this list is the live "done" set for the backlog.
-set(VICEROY_LOADIMAGE_PORTED
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0102EA_010AA5.c"  # C-runtime far-string lib
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00FAAA_0102C8.c"  # C-runtime near-string lib + stdio (fwrite/getenv/fgets/fseek/sprintf/filelength)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0033F2_004E76.c"  # input/terrain helpers ported; 11 tile-blit/render fns stubbed (SDL plug-in points)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_012ADA_01A43C.c"  # accessor/prologue-heavy
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00C0D0_00D27F.c"  # draw/status-line/palette-cycle/cursor/input (18 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_007610_00824E.c"  # unit AI / combat-strength / movement-cost / per-power get-set (15 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_004EE6_005DF0.c"  # main per-turn game loop + blit/string/cell-command (16 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_005DF0_006939.c"  # tile influence/visibility paint + chain helpers + unit-tile-head (12 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00693A_00760F.c"  # unit spawn/place/chain ops + 8-neighbour search + chain accumulator (21 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00AB2E_00C0D0.c"  # colony order validation/eligibility + map cursor + glyph cells (15 ported, 2 stubs)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0024C6_0033E9.c"  # tooltip + stacked-bar + text drawing layer (29 ported)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_010B26_012A83.c"  # C-runtime buffered file I/O (fopen/fflush/lseek/write/ftell/setvbuf; 11 ported, printf-core/overlay stubbed)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00E454_00FAA9.c"  # VGA/video layer: 4 ported (file-record dispatch); 7 stubbed (RLE sprite blits = SDL, exit/delay = host)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_008C70_00AAB9.c"  # colony tile/work-grid + colony-at-tile + display ids (8 ported, 2 forwarders, 0 stubs)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_008262_008C6F.c"  # colony footprint/tile-render + neighbour/colony finders + chain walkers (11 ported, 0 stubs)
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00D286_00E37B.c"  # path/grid/draw layer: 14 ported; 9 stubbed (clipped fills/pixel = SDL, BIOS kbd/DOS probe = host)
-)
-list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 
 # Rules library — all game logic, compiled in modern mode
 add_library(viceroy_rules STATIC ${VICEROY_SOURCES})

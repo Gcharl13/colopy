@@ -220,4 +220,15 @@ extern uint16_t g_load_seg_26A7;          /* DGROUP:0x26A7 */
  * the DGROUP struct map. @ref docs/DGROUP_MEMORY_MAP.md §5.6 */
 extern uint16_t g_overlay_layout_CS[0xAA];   /* CS:0x3995.. (NOT DGROUP); RTLink overlay dispatch state */
 
+/* ----------------------------------------------------------------------------
+ * Screen-ID constants (enter_screen_view bx arg; DGROUP:0x???)
+ * SCREEN_EUROPE = 0x2B: byte-verified at 0x025EE5/Europe entry
+ * SCREEN_COLONY = 0x2C: byte-verified at 0x025EE5/colony entry (mov bx,0x2C)
+ * SCREEN_TITLE  = 0x01: title screen (conventional ID; not yet byte-verified)
+ * ---------------------------------------------------------------------------- */
+#define SCREEN_TITLE        0x01
+#define SCREEN_EUROPE       0x2B
+#define SCREEN_COLONY       0x2C
+#define SCREEN_HALL_OF_FAME 0x2D  /* not yet byte-verified; conventional ID */
+
 #endif /* VICEROY_GLOBALS_H */

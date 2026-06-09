@@ -16,7 +16,7 @@
  *   "KINGRAISE" at 2b5a:0x10B2 (file 0x1EA52)
  * ============================================================================ */
 #include "viceroy_types.h"
-#include <stddef.h>   /* NULL */
+#include <stddef.h>
 
 extern uint8_t g_difficulty_53A6;   /* DGROUP:0x53A6 — difficulty 0..4 (Discoverer..Viceroy),
                                      * default 2. RESOLVED 2026-05-30: NOT player index — cross-

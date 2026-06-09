@@ -1277,7 +1277,7 @@ count_phase:
         item = 0xF;                                 /* @asm 0x026F79 remap back */
     count = 0;                                       /* @asm 0x026F7E [bp-0x5C]=0 */
     if (item == 0xF)                                 /* @asm 0x026F83 cmp item,0xF */
-        count = c->counter_at_95;                    /* @asm 0x026F8D ctx->byte[+0x95] drawn as FOOD pile count (counter_at_95: open era-vs-food conflict, see colony.h) */
+        count = c->counter_at_95;                    /* @asm 0x026F8D ctx->byte[+0x95] */
     if (item == 0x1E)                                /* @asm 0x026F96 cmp item,0x1E */
         count = *(uint8_t far*)((uint8_t far*)c + 0x96); /* @asm 0x026FA0 ctx->byte[+0x96] HORSE stock */
 
@@ -1345,13 +1345,7 @@ void colony_draw_roster_strip(int show_button)
 }
 
 /* ============================================================================
- * colony_screen_paint_body  (func_0270D0)
- *   RENAMED 2026-06-09: was mislabeled `colony_screen_render`, colliding with the
- *   DISTINCT top-level composer of that name (func_028592 in ui/colony_screen.c).
- *   This is func_0270D0 — the colonist-row + warehouse + SoL/Tory sub-render the
- *   composer CALLS (composer @asm 0x0285C4 -> file 0x0270D0). Two different
- *   functions; renaming this one to its real (sub-render) role resolves the
- *   duplicate-definition link error. No call sites used the old name.
+ * colony_screen_render  (func_0270D0)
  *   @asm        0x0270D0..0x0275CD  (1278 bytes, ENTER 0x7E)   page_02.asm
  *   @status     RECONSTRUCTED (extent + reads + difficulty/AIPersonality reads
  *               BYTE_VERIFIED; draw + SoL/Tory layout roles inferred)
@@ -1359,7 +1353,7 @@ void colony_draw_roster_strip(int show_button)
  *               sprite (with overlap-avoidance), draw the warehouse bar-chart
  *               and the SoL/Tory percentage display.
  *
- * Signature:  void colony_screen_paint_body(int show_close_button);
+ * Signature:  void colony_screen_render(int show_close_button);
  * Backdrop via func_02CAC3 @ (0x82,0x78,0x30).  Counts colonists
  * (ctx->population + [0x8D72]) and pre-sums their sprite widths via
  * 0x181F:0xC0E/0x181F:0xA74 + the unit far-array [0x83E]:[0x840][idx*0xC+0x3E].
@@ -1374,7 +1368,7 @@ void colony_draw_roster_strip(int show_button)
  * [owner*0x34 + 0x543F]; both formatted via 0xD1D:0x8FA + 0x181F:0x10A/0x178/
  * 0x11E/0x182/0x128/0x13C and drawn.  Optional close button (0x181F:0xE2).
  * ============================================================================ */
-void colony_screen_paint_body(int show_close_button)
+void colony_screen_render(int show_close_button)
 {
     struct colony_t far *c = ctx;
     int count, i, sol, tory;

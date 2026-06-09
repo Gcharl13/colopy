@@ -53,9 +53,18 @@ struct UnitRecord {                /* base DGROUP:0x3144, stride 0x1C (28 bytes)
     uint8_t  field_0B;         /* +0x0B (0x314F)  pad/boundary; no standalone access */
     uint8_t  cargo_slot_count; /* +0x0C (0x3150)  valid cargo slots; init 0. @asm 0x400B8; bound 0xB2A2 */
     uint8_t  cargo_kind_packed[3]; /* +0x0D..0x0F (0x3151-53)  6-slot packed nibbles. @asm 0xB2A2/0xB2C2 */
-    uint8_t  cargo_qty[6];     /* +0x10..0x15 (0x3154-59)  per-slot qty 0..100. @asm set 0xB304, read 0xB2F0 */
-    uint8_t  turn_counter;     /* +0x16 (0x315A)  inc to cap 8 then reset. @asm inc 0x2EFD6.
-                                * (colony job-assign @0x9318 also writes here — semantics to reconcile) */
+    union {
+        uint8_t  cargo_qty[6]; /* +0x10..0x15 (0x3154-59)  per-slot qty 0..100 */
+        struct {
+            uint8_t  cargo_qty_lo[4]; /* +0x10..0x13 */
+            uint8_t  field_at_14;     /* +0x14 (0x3158) */
+            uint8_t  pad_15;          /* +0x15 (0x3159)  cargo-pickup flag (0=free, 2=frozen) */
+        };
+    };
+    union {
+        uint8_t  turn_counter; /* +0x16 (0x315A)  inc to cap 8; also repurposed by job-assign */
+        uint8_t  field_at_16;  /* +0x16  alias for turn_counter */
+    };
     uint8_t  vet_type;         /* +0x17 (0x315B)  veteran/profession type 0x13..0x1C; used in MUL. @asm 0x57374, 0x41FB4 */
     uint16_t chain_prev;       /* +0x18 (0x315C)  tile-occupancy chain PREV (unit idx; 0xFFFF=null). @asm 0x06962 */
     uint16_t chain_next;       /* +0x1A (0x315E)  tile-occupancy chain NEXT (unit idx). @asm 0x06968; read 0x66BA */

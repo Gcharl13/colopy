@@ -18,37 +18,16 @@
 #include "viceroy_types.h"
 
 /* ----------------------------------------------------------------------------
- * Colony record — TWO related sizes
+ * Colony record — two related sizes
  * ----------------------------------------------------------------------------
- * - **174 bytes (0xAE)** — the WORKING BUFFER at *(0x8542). This is the
- *   "current colony" struct used by the live simulation. load_game_state
+ * - 174 bytes (0xAE) — the WORKING BUFFER at *(0x8542). load_game_state
  *   at 0x011F6E allocates a 174-byte buffer matching this stride.
- * - **202 bytes (0xCA)** — the PERSISTENT RECORD stride in the colony
- *   table at DGROUP:0x5D46. Each colony in the saved table occupies 202
- *   bytes; the additional 28 bytes (vs the 174-byte working buffer) hold
- *   computed/derived state that's reconstituted on load.
- *   (BASE CORRECTED 2026-06-08: base is 0x5D46, NOT 0x5D60. Proven at
- *    func_0082DC @0x008307 `imul bx,idx,0xCA; add bx,0x5D46; mov [0x8542],bx`.
- *    0x5D60 is base+0x1A = the owner_power field, not the table base — the same
- *    base-vs-field trap that put UnitRecord at 0x3146 instead of 0x3144.)
+ * - 202 bytes (0xCA) — the PERSISTENT RECORD stride in the colony table at
+ *   DGROUP:0x5D46. (BASE CORRECTED 2026-06-08: proven at func_0082DC @0x008307:
+ *   `imul bx,idx,0xCA; add bx,0x5D46`.)
  *
- * The two structs share their common 174-byte prefix. The full 202-byte
- * version adds: continent_id, region_id, last_visited_turn, lookup-cache
- * pointers, and a few flags.
- *
- * @ref load_game_state @ 0x011F6E (allocates 0xAE-byte working buffer)
- * @ref decompiled.md "load_game_state — 0xAE-byte working buffer"
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §2 ColonyRecord (202)
- * @asm DGROUP:0x5D46 = colony_table base (proven func_0082DC @0x008307:
- *      `imul bx,idx,0xCA; add bx,0x5D46`); stride 0xCA = 202 bytes per colony.
- *      (0x5D60 = base+0x1A = owner_power, formerly mis-cited as the base.)
- * Field offsets are confirmed by direct disassembly references; widths
- * with `?` are pending exact verification. */
-/* The struct is laid out with `#pragma pack(1)` so every field lands at its
- * EXACT documented DGROUP byte offset (the period toolchain used /Zp2 = pack 2;
- * since every multi-byte field here is already even-aligned the two are
- * byte-identical, and pack 1 makes the intent explicit). Verified field-by-field
- * against the @asm disassembly; _Static_assert below pins sizeof == 0xCA. */
+ * @asm DGROUP:0x5D46 = colony_table base; stride 0xCA = 202 bytes per colony.
+ * Field offsets confirmed by disassembly; the struct below is packed (1). */
 #pragma pack(push, 1)
 struct colony_t {
     uint8_t  map_x;            /* +0x00  1-based X origin (interior offset = x-2)
@@ -60,7 +39,7 @@ struct colony_t {
     uint8_t  owner_power;      /* +0x1A  owning power (0..3 European; 4..7 NPCs)
                                 * @ref colony_turn_update @ 0xA3E1 — selects entry
                                 *      in g_table_543F (stride 0x34) */
-    uint8_t  pad_1b;           /* +0x1B  not yet decoded (separates owner_power and flags) */
+    uint8_t  pad_1b;           /* +0x1B  not yet decoded */
     uint8_t  flags_at_1c;      /* +0x1C  bit-flags (bit 1, 2, 4 affect production)
                                 * @ref compute_colony_center_yields @ 0xA222 — bits 2/4 give bonuses */
     uint8_t  pad_1d_1e[2];     /* +0x1D..0x1E  not yet decoded */
@@ -110,59 +89,37 @@ struct colony_t {
                                 * item 0x1e; paired inc/dec). Was mislabeled "horses" — the
                                 * horse STOCKPILE is stockpile_9a[8]. @0x26FA0 / @0x5C474 */
     uint8_t  pad_97_99[3];     /* +0x97..+0x99  not yet decoded */
-    /* ------------------------------------------------------------------------
-     * +0x9A..+0xC9  Overlapping commodity-stockpile / SoL-scalar region.
-     * ------------------------------------------------------------------------
-     * In the original flat 16-bit record these bytes serve double duty by
-     * OFFSET: one code path walks them as a per-commodity stockpile word array
-     * (`[bx+si+0x9A]`), while other paths read the same bytes as named scalars
-     * (`[bx+0xAA]` liberty, `[bx+0xB6]` progress, `[bx+0xC2..0xC8]` SoL longs).
-     * We model that faithfully with a union so BOTH views resolve to the exact
-     * same address — `ctx->stockpile_9a[i]` and `ctx->liberty_aa` are byte-aliased
-     * just as in VICEROY.EXE.  (C11 anonymous struct/union.) */
     union {
-        uint16_t stockpile_9a[20]; /* +0x9A..+0xC1  per-commodity stockpile (15 commodities + 5 slack);
+        uint16_t stockpile_9a[20]; /* +0x9A..+0xC1  per-commodity stockpile (20 words);
                                     * indexed by commodity_id 0..14:
                                     *   [0]=Food   [1]=Sugar [2]=Tobacco [3]=Cotton
                                     *   [4]=Furs   [5]=Lumber [6]=Ore    [7]=Silver
                                     *   [8]=Horses [9]=Rum   [10]=Cigars [11]=Cloth
                                     *   [12]=Coats [13]=TradeGoods       [14]=Tools
-                                    * @ref colony_turn_update @ 0xA3E1
-                                    * @ref colony_transfer_commodity_to_unit @ 0xB880
-                                    * @ref colony_receive_commodity_from_unit @ 0xB8D0
-                                    * @ref check_total_exceeds_threshold @ 0x8F02 */
+                                    * @ref colony_turn_update @ 0xA3E1 */
         struct {
-            uint16_t _stock_head[8];/* +0x9A..+0xA9  stockpile[0..7] (Food..Silver) */
-            uint16_t liberty_aa;   /* +0xAA  liberty-bell / rebellion-sentiment counter
-                                    * @ref colony_turn_update — used in tax/rebellion phase */
-            uint8_t  pad_ac_b5[10];/* +0xAC..+0xB5  not yet decoded */
-            uint16_t progress_b6;  /* +0xB6  tutorial / progress counter (turns into popularity tier
-                                    *         via /20 in colony_assign_or_change_colonist_job)
-                                    * @ref colony_assign_or_change_colonist_job @ 0x9318 */
-            uint8_t  pad_b8_c1[10];/* +0xB8..+0xC1  not yet decoded */
-            uint16_t field_at_c2;  /* +0xC2  LOW word of the 32-bit SoL "bells" numerator A.
-                                    *         sol_membership_pct (0x8524) reads [+0xC2]/[+0xC4]
-                                    *         as a long and divides by the [+0xC6] long.
-                                    * @ref sol_membership_pct @ 0x8524 (BYTE_VERIFIED 2026-05-30):
-                                    *      @asm 0x8531 MOV ax,[bx+0xC2]; 0x8535 MOV dx,[bx+0xC4] */
-            uint16_t field_at_c4;  /* +0xC4  HIGH word of the SoL bells numerator A.
-                                    * @asm 0x8535 (was an unnamed 2-byte hole; named 2026-05-30) */
-            uint16_t cumulative_c6;/* +0xC6  LOW word of the 32-bit SoL threshold/divisor B
-                                    *        (increments by 100 on population growth — the
-                                    *        per-colonist bells-to-100% denominator).
-                                    * @ref colony_assign_or_change_colonist_job @ 0x9318 line 0x9453
-                                    * @ref sol_membership_pct @ 0x8524 @asm 0x8542 MOV …,[bx+0xC6] */
-            uint16_t cumulative_c8;/* +0xC8  HIGH word of threshold B (was "high word of cumulative_c6").
-                                    * @asm 0x8539 MOV dx,[bx+0xC8] / 0x853E CMP [bx+0xC8],0 */
+            uint8_t  pad_9a_a9[0x10]; /* +0x9A..+0xA9 */
+            uint16_t liberty_aa;       /* +0xAA  liberty-bell counter
+                                        * @ref colony_turn_update — tax/rebellion phase */
+            uint8_t  pad_ac_b5[10];   /* +0xAC..+0xB5 */
+            uint16_t progress_b6;      /* +0xB6  progress/popularity counter (/20 tier)
+                                        * @ref colony_assign_or_change_colonist_job @ 0x9318 */
+            uint8_t  pad_b8_c1[10];   /* +0xB8..+0xC1 */
         };
     };
-};                                 /* end at +0xCA = the persistent ColonyRecord stride */
+    uint16_t field_at_c2;      /* +0xC2  LOW word of SoL bells numerator A
+                                * @asm 0x8531 MOV ax,[bx+0xC2] */
+    uint16_t field_at_c4;      /* +0xC4  HIGH word of SoL bells numerator A
+                                * @asm 0x8535 */
+    uint16_t cumulative_c6;    /* +0xC6  LOW word of SoL threshold/divisor B
+                                * @ref sol_membership_pct @ 0x8524 */
+    uint16_t cumulative_c8;    /* +0xC8  HIGH word of threshold B
+                                * @asm 0x8539 MOV dx,[bx+0xC8] */
+};
 #pragma pack(pop)
 
-/* sanity check: the struct fills the persistent ColonyRecord stride exactly.
- * Stride 0xCA = 202 is hard @asm evidence (func_0082DC @0x008307 `imul bx,idx,0xCA`);
- * the 0xAE-byte working buffer at *(0x8542) is this struct's leading prefix. */
-_Static_assert(sizeof(struct colony_t) == 0xCA, "colony_t stride mismatch — expected 0xCA (202) per the 0x5D46 colony-table allocator");
+_Static_assert(sizeof(struct colony_t) == 0xCA,
+               "colony_t stride mismatch — expected 0xCA (202) per DGROUP:0x5D46 table");
 
 /* The current-colony pointer (DGROUP:0x8542; 102 functions touch it) */
 extern struct colony_t  far *ctx;

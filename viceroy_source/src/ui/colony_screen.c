@@ -51,6 +51,7 @@
  * from the recol-0.2.0 flat-linked twin colonize.exe; layout-faithful).
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 #include "colony.h"
 

@@ -55,6 +55,7 @@
  * NATIVE resolution 320x200, VGA mode 13h.  All coordinates are native px.
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 #include "power.h"
 

@@ -34,6 +34,7 @@
  * "TITLE.PIK"; the backdrops are loaded by string handle 0x233C / 0x2374.)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 
 /* Screen-state id returned to the reconstruction-layer screen dispatcher.

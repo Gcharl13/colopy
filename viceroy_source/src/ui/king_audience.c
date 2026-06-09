@@ -81,10 +81,7 @@ extern int16_t g_word_89E, g_word_8A0;
 extern int16_t g_word_268A, g_word_268C;
 
 /* ---- leaf helpers (call sites byte-exact; internals summarised) ----------- */
-/* strcpy_near declared canonically in iolib.h (char near *(char near*, const
- * char near*)); call sites pass an int message handle as src (cast is harmless
- * under -Wno-int-to-pointer-cast). The bad local `void(char*,int)` decl was
- * removed — it conflicted with the iolib.h prototype. */
+/* strcpy_near declared in iolib.h */
 extern void ov_lookup_msg(int idx, void *buf);              /* 0x181F:0x182 lookup by key */
 extern int  ov_region_setup(void *body, int z, int r0,int r1,int r2,int r3, void *key);
                                                             /* 0x181F:0x44E */
@@ -100,7 +97,7 @@ extern void ov_set_mode_buf(int seg, void *buf);            /* 0x181F:0x3F4 (buf
 extern void ov_full_blit(int r0,int r1,int r2,int r3, int q0,int q1,int q2,int q3,
                          int h, int ax, int dx, int w);      /* 0x181F:0x444 (type B) */
 extern void ov_clear_rect(int z0, int w, int h, int ax, int dx, int bx); /* 0x181F:0xE2 */
-extern void far *ov_set_font(int handle);                   /* 0x1A1F:0xA86 (FONTKING) -> DX:AX far ptr (text ctx) */
+extern void far *ov_set_font(int handle);                   /* 0x1A1F:0xA86 (FONTKING) -> DX:AX far ptr */
 extern int  dialog_run(int run_arg);                        /* 0x181F:0x3FE -> func_06F594 (page-0x17
                                                              * option-run wrapper, +22 into func_06F57E),
                                                              * NOT func_028D8C — corrected 2026-05-30 by the

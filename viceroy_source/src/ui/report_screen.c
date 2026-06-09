@@ -25,7 +25,6 @@
  *               command-dispatch -- the SETREPORT branch of func_0235D6)
  * ============================================================================ */
 #include "viceroy_types.h"
-#include "globals.h"
 #include "iolib.h"
 
 #define KEY_REPORT   0x11A2   /* "REPORT" @asm 0x037344 / @file 0x1F142 */
@@ -45,10 +44,7 @@ extern int16_t g_region_2DA8[4];   /* DGROUP:0x2DA8..0x2DAE */
 extern int16_t g_word_372;         /* DGROUP:0x0372  cursor-active latch */
 
 /* ---- leaf helpers (resolved targets; call sites + args byte-exact) -------- */
-/* strcpy_near declared canonically in iolib.h (char near *(char near*, const
- * char near*)); call sites pass an int message handle as src (cast is harmless
- * under -Wno-int-to-pointer-cast). The bad local `void(char*,int)` decl was
- * removed — it conflicted with the iolib.h prototype. */
+/* strcpy_near declared in iolib.h */
 extern void ov_lookup_report_key(int which, void *buf);/* 0x181F:0x182 (page-05 ctx) */
 extern int  ov_report_dispatch(void *titlebuf, int z, int r0,int r1,int r2,int r3,
                                void *keybuf);          /* 0x181F:0x44E */
@@ -590,9 +586,11 @@ done:
  * globals.h; the rest are new locals.)
  * ============================================================================ */
 
-/* ---- count globals: 0x539E colonies, 0x539C units, 0x539A native (globals.h) ----
- * (the unused 0x539A "player colony count" extern was removed in the 2026-06-09
- *  consolidation; its @asm 0x037667 cite is recorded in globals.h.) */
+/* ---- count globals (RULINGS 2026-05-28): 0x539E colonies, 0x539C units ----- */
+extern uint16_t g_colony_count_539A;  /* DGROUP:0x539A  (player colony count;
+                                        * @asm 0x037667 F9 CMP [0x539A]) */
+extern uint16_t g_unit_count_539C;    /* DGROUP:0x539C  total unit count (=globals.h g_progress_539C) */
+extern uint16_t g_colony_count_539E;  /* DGROUP:0x539E  colony-table count   (=globals.h g_progress_539E) */
 
 /* ---- the report player-context pointer set by func_030550 ------------------ */
 extern uint8_t  far *g_powerrec_84FC; /* DGROUP:0x84FC -> PowerRecord[player]
@@ -685,10 +683,12 @@ extern void     naval_footer(int player);        /* call 0x34AF -> func_0393F4 (
 extern void     naval_footer_hdr(int player);    /* call 0x34AF -> func_0393F4 (header pass) */
 extern void     labor_drilldown(int player, int prof, int bins_k); /* call 0x34BE -> func_03807E */
 
-/* DGROUP:0x8542 -- the "current colony" pointer (the colony_t struct base).
- * Now sourced from globals.h (`struct colony_t far *ctx`); the Congress/Labor/
- * Colony reports iterate colonies by re-pointing it via select_player_ctx() and
- * read raw fields via `((uint8_t far *)ctx)[+off]` (+0x1A owner, +0x1F pop, ...). */
+/* DGROUP:0x8542 -- the "current colony" pointer (the colony_t struct base;
+ * project-verified, also in globals.h as `ctx`).  The Congress/Labor/Colony
+ * reports iterate colonies by re-pointing it via select_player_ctx().  Declared
+ * here as a byte pointer to keep this file's externs self-contained (no
+ * globals.h edit); fields read: +0x00/+0x01 x/y, +0x1A owner, +0x1F population. */
+extern uint8_t  far *ctx;                         /* DGROUP:0x8542 colony_t base */
 
 /* PowerRecord field offsets (base 0x8808 stride 0x13C; project-verified +
  * confirmed by these renderers' reads of [0x84FC]+disp). */

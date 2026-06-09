@@ -10,16 +10,9 @@
  *
  * STATUS: [V] byte-verified ; [not yet decoded] not byte-verified (do not trust the number).
  * ============================================================================ */
-#include "viceroy_types.h"
+#include "viceroy.h"
 #include "power.h"
-#include "colony.h"
 #include "ff.h"
-
-/* DGROUP:0x84FC — active PowerRecord ptr (set by market_set_active in pricing.c).
- * Not declared in any header; mirror pricing.c's file-local extern so this TU and
- * pricing.c agree on the (struct PowerRecord*) type.  [V] DGROUP:0x84FC.
- * TODO: this `g_market` (DGROUP:0x84FC active PowerRecord ptr) probably belongs in
- *       include/globals.h alongside g_market_year. */
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */
@@ -111,9 +104,7 @@ void boycott_init(void)
  * ============================================================================ */
 void colony_tea_party(struct colony_t *c, int good)
 {
-    /* @asm 0x034678..0x03469B — clamp stock to 100, subtract from EuropeStock table.
-     * `stock[good]` == colony_t.stockpile_9a[good] (per-commodity stockpile word
-     * array @ +0x9A, indexed by commodity_id 0..14; see colony.h). */
+    /* @asm 0x034678..0x03469B — clamp stock to 100, subtract from EuropeStock table */
     int dumped = (c->stockpile_9a[good] > 100) ? 100 : c->stockpile_9a[good];
     /* Colony[selected].EuropeStock[good] -= dumped (bx = colony*0xCA, table base 0x5de0) */
 

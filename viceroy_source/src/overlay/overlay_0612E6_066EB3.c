@@ -2063,8 +2063,6 @@ int func_066884_sprite_descriptor_B(uint16_t index)
     return overlay_call_181F_025E();
 }
 
-/* forward decls for func_066968 leaf helpers (declared before first use so the
- * pointer-returning framebuf_addr does not clash with an implicit int decl). */
 extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px); /* 0x181F:0x290 */
 extern int func_066968_unit_at(int col, int row);                        /* 0x181F:0x7e0 */
 
@@ -2172,7 +2170,6 @@ next_row:
     }
     return 0;                                                 /* @asm 0x066B92 retf */
 }
-/* (func_066968_framebuf_addr / func_066968_unit_at forward-declared above func_066968) */
 
 /* ============================================================================
  * func_066B96  @ 0x066B96..0x066BAF  (26 bytes, push bp, RETF)  page 0x15
