@@ -197,14 +197,6 @@ extern uint16_t g_load_seg_26A7;          /* DGROUP:0x26A7 */
 extern uint16_t g_overlay_layout_CS[0xAA];   /* CS:0x3995.. (NOT DGROUP); RTLink overlay dispatch state */
 
 /* ----------------------------------------------------------------------------
- * Screen-id constants (used by ui files to identify the active screen)
- * ---------------------------------------------------------------------------- */
-#define SCREEN_TITLE         0x01
-#define SCREEN_EUROPE        0x2B
-#define SCREEN_COLONY        0x2C
-#define SCREEN_HALL_OF_FAME  0x2D
-
-/* ----------------------------------------------------------------------------
  * DGS16 convenience aliases — DGROUP-relative signed-word scalars.
  * In the modern build (dgroup.h) DGS16(off) is (int16_t)DG16(off).
  * These match the names used in king_events.c / report_screen.c / overlay files.
