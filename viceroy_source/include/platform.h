@@ -78,5 +78,7 @@ typedef struct {
 int  ss_load(const char *path, ss_sheet_t *s);
 void ss_free(ss_sheet_t *s);
 void ss_blit(const ss_sheet_t *s, int frame, int x, int y);
+void ss_blit_clip(const ss_sheet_t *s, int frame, int x, int y,
+                  int cx0, int cy0, int cx1, int cy1);
 
 #endif /* VICEROY_PLATFORM_H */

@@ -26,3 +26,12 @@ PROVIDE(g_global_amount = g_dgroup + 0x8DC8);
 PROVIDE(g_band_base = g_dgroup + 0x8E0A);
 PROVIDE(g_over_low = g_dgroup + 0x8E32);
 PROVIDE(g_over_high = g_dgroup + 0x8E5A);
+
+/* map-renderer resident helpers: render/'s extern names -> their ported
+ * load_image bodies (thunk targets resolved from the EXE thunk records) */
+PROVIDE(classify_terrain    = func_006204_logic_sz_46);            /* 0x181F:0x6AA */
+PROVIDE(subcell_priority    = func_005C2C_logic_sz_132);           /* 0x181F:0x6C8 */
+PROVIDE(is_xy_in_map_bounds = func_005BFA_logic_sz_49);            /* 0x181F:0x302 */
+PROVIDE(read_terrain_byte   = func_005CFE_map_tile_read_layer_15C);/* 0x181F:0x72C */
+PROVIDE(special_feature_at  = func_0060A0_logic_sz_128);           /* 0x181F:0x718 */
+PROVIDE(river_detail_at     = func_006188_op_sz_91);               /* 0x181F:0x75E */

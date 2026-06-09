@@ -279,6 +279,14 @@ static int terrain_frame(int t)
     return 10;
 }
 
+extern void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
+                               const uint8_t *resfog, int w, int h);
+extern int  viceroy_sheet_register(const ss_sheet_t *s);
+extern void viceroy_set_sheet_terrain(int handle);
+extern void viceroy_set_sheet_phys(int handle);
+
+static uint8_t *g_feat, *g_resfog;     /* the .MP's other two layers */
+
 static int load_map(const char *name)
 {
     char path[512];
@@ -289,44 +297,41 @@ static int load_map(const char *name)
     if (fread(hdr, 1, 6, f) != 6) { fclose(f); return -1; }
     g_map_w = hdr[0] | (hdr[1] << 8);
     g_map_h = hdr[2] | (hdr[3] << 8);
-    free(g_map);
-    g_map = malloc((size_t)g_map_w * g_map_h);
-    if (!g_map || fread(g_map, 1, (size_t)g_map_w * g_map_h, f)
-                  != (size_t)g_map_w * g_map_h) {
+    size_t n = (size_t)g_map_w * g_map_h;
+    free(g_map); free(g_feat); free(g_resfog);
+    g_map = malloc(n); g_feat = malloc(n); g_resfog = malloc(n);
+    if (!g_map || !g_feat || !g_resfog ||
+        fread(g_map, 1, n, f) != n ||
+        fread(g_feat, 1, n, f) != n ||
+        fread(g_resfog, 1, n, f) != n) {
         fclose(f); return -1;
     }
     fclose(f);
-    /* real DGROUP wiring: map dims at their byte-verified homes */
-    DG16(0x853A) = (uint16_t)g_map_w;             /* g_map_width  */
-    DG16(0x853C) = (uint16_t)g_map_h;             /* g_map_height */
+    /* hand all three layers to the real renderer's plumbing (also writes the
+     * byte-verified DGROUP homes 0x853A/0x853C/0x8548) */
+    viceroy_map_attach(g_map, g_feat, g_resfog, g_map_w, g_map_h);
     return 0;
 }
+
+/* the BYTE-VERIFIED composer (tile_chain.c func_O514) draws the frame; this
+ * shell only sets the viewport origin and overlays the unit sprite */
+extern void map_view_render(int active_layer, int y_extent);
 
 static void draw_map(void)
 {
     uint8_t *fb = vid_framebuffer();
     memset(fb, 0, VID_W * VID_H);
-    for (int ty = 0; ty < VIEW_TY; ty++) {
-        for (int tx = 0; tx < VIEW_TX; tx++) {
-            int mx = g_cam_x + tx, my = g_cam_y + ty;
-            if (mx >= g_map_w || my >= g_map_h) continue;
-            int t = g_map[my * g_map_w + mx];
-            ss_blit(&g_terrain, terrain_frame(t), tx * TILE, ty * TILE);
-            if (g_have_phys) {                     /* feature overlays */
-                if (is_forest(t))
-                    ss_blit(&g_phys, PH_FOREST + conn_mask(mx, my, is_forest),
-                            tx * TILE, ty * TILE);
-                else if (t == 27)
-                    ss_blit(&g_phys, PH_MOUNT + conn_mask(mx, my, is_mount),
-                            tx * TILE, ty * TILE);
-                else if (t == 28)
-                    ss_blit(&g_phys, PH_HILLS + conn_mask(mx, my, is_hill),
-                            tx * TILE, ty * TILE);
-            }
-            if (g_have_icons && DG16(0x539C) > 0 &&
-                mx == unit_x() && my == unit_y())
-                ss_blit(&g_icons, ICON_SHIP, tx * TILE, ty * TILE);
-        }
+
+    DG16(0x8328) = (uint16_t)g_cam_x;       /* G_VIEW_ORIGIN_COL */
+    DG16(0x832E) = (uint16_t)g_cam_y;       /* G_VIEW_ORIGIN_ROW */
+    map_view_render(-1, 0);                  /* no fog layer; full visibility */
+    g_cam_x = (int16_t)DG16(0x8328);         /* read back the clamped origin */
+    g_cam_y = (int16_t)DG16(0x832E);
+
+    if (g_have_icons && DG16(0x539C) > 0) {  /* unit sprite over the terrain */
+        int tx = unit_x() - g_cam_x, ty = unit_y() - g_cam_y;
+        if (tx >= 0 && ty >= 0 && tx < VIEW_TX && ty < VIEW_TY)
+            ss_blit(&g_icons, ICON_SHIP, tx * TILE, ty * TILE);
     }
     /* sidebar (reconstruction): nation + position readouts */
     if (g_have_font) {
@@ -358,6 +363,10 @@ static int enter_map(void)
         g_have_phys = ss_load(path, &g_phys) == 0;
         snprintf(path, sizeof path, "%s/ICONS.SS", g_data);
         g_have_icons = ss_load(path, &g_icons) == 0;
+        /* register the sheets with the renderer's leaf layer */
+        viceroy_set_sheet_terrain(viceroy_sheet_register(&g_terrain));
+        if (g_have_phys)
+            viceroy_set_sheet_phys(viceroy_sheet_register(&g_phys));
     }
     if (load_map("AMER2.MP") != 0) {
         fprintf(stderr, "shell: cannot load AMER2.MP\n");
@@ -371,6 +380,7 @@ static int enter_map(void)
         vid_set_palette(pal);
         memcpy(g_bg.pal, pal, 768);               /* for text-color picking */
     }
+    DG16(0x018E) = 2;                 /* classify mode: map view (collapses 8..0x17) */
     spawn_start_ship();
     g_cam_x = unit_x() - VIEW_TX / 2;
     g_cam_y = unit_y() - VIEW_TY / 2;
@@ -510,7 +520,10 @@ int main(int argc, char **argv)
             printf("  headless  : nations frame -> viceroy_nations.ppm\n");
         }
         DG16(0x5398) = 0;                          /* England, for the sidebar */
+        
         if (enter_map() == 0) {
+            g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
+            draw_map();
             vid_screenshot_ppm("viceroy_map.ppm");
             printf("  headless  : map frame -> viceroy_map.ppm "
                    "(%dx%d tiles)\n", g_map_w, g_map_h);

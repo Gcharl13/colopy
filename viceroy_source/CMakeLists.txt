@@ -31,7 +31,9 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/runtime/cstart\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
+# render/ INCLUDED (poke-converted 2026-06-09) except blit.c: its leaf-emitter
+# wrappers are implemented by the platform layer (src/platform/render_glue.c)
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/blit\\.c$")
 # load_image/ — all 16 files ported & verified to compile clean under
 # -D_VICEROY_MODERN (stale "raw ax/label artifacts" exclusion removed
 # 2026-06-09; these resident functions are overlay-thunk targets the
@@ -79,6 +81,7 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         src/platform/video_sdl.c
         src/platform/font.c
         src/platform/ss.c
+        src/platform/render_glue.c
         "${VICEROY_GEN}/linkfloor_stubs.c"
         "${VICEROY_GEN}/thunk_keepalive.c"
     )

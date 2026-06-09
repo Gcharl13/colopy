@@ -119,6 +119,27 @@ void ss_free(ss_sheet_t *s)
     s->nframes = 0;
 }
 
+/* blit one frame clipped to an inclusive rect */
+void ss_blit_clip(const ss_sheet_t *s, int frame, int x, int y,
+                  int cx0, int cy0, int cx1, int cy1)
+{
+    if (frame < 0 || frame >= s->nframes) return;
+    const ss_frame_t *f = &s->frames[frame];
+    uint8_t *fb = vid_framebuffer();
+    if (cx1 >= VID_W) cx1 = VID_W - 1;
+    if (cy1 >= VID_H) cy1 = VID_H - 1;
+    for (int r = 0; r < f->h; r++) {
+        int py = y + r;
+        if (py < cy0 || py > cy1) continue;
+        for (int c = 0; c < f->w; c++) {
+            int px = x + c;
+            uint8_t v = f->pixels[r * f->w + c];
+            if (v != SS_TRANSPARENT && px >= cx0 && px <= cx1)
+                fb[py * VID_W + px] = v;
+        }
+    }
+}
+
 /* blit one frame into the framebuffer, honoring transparency + clipping */
 void ss_blit(const ss_sheet_t *s, int frame, int x, int y)
 {

@@ -34,6 +34,7 @@
  * @ref            ../../code/VICEROY/disasm/func_067D54_unknown.asm
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 
 /* ----------------------------------------------------------------------------
  * 3x3 sub-cell transition table.
@@ -126,15 +127,18 @@ const int8_t DIR8_DY[8] = { -1, -1, 0,  1,  1,  1,  0, -1 };  /* @file 0x1DA5E *
 #define G_RENDER_STRIDE  0x8548   /* row stride = (0xF<<zoom)+2 */
 #define G_ZOOM_LEVEL     0x0184   /* edge/zoom guard */
 
+extern uint8_t wp_terrain_rel(int16_t off);
+extern uint8_t wp_feature_rel(int16_t off);
+
 /* Helper: read the FEATURE working-pointer byte at signed offset `off`.
  * Models es:[bx+si] reads from [0xA598]/[0xA59A]. */
 static uint8_t wp_feature_at(int off)
 {
-    return *(volatile uint8_t *)(G_WP_FEATURE + (off & 0xffff));
+    return wp_feature_rel((int16_t)off);
 }
 static uint8_t wp_terrain_at(int off)
 {
-    return *(volatile uint8_t *)(G_WP_TERRAIN + (off & 0xffff));
+    return wp_terrain_rel((int16_t)off);
 }
 
 /* ----------------------------------------------------------------------------
@@ -159,7 +163,7 @@ static uint8_t wp_terrain_at(int off)
 int nmask4_terrain(uint8_t test_mask)
 {
     int mask = 0;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
     /* edge guard modelled as "in bounds" (the dx arg is the column delta). */
     if (wp_terrain_at(-stride) & test_mask) mask += 8;  /* N @0x67D0D */
     if (wp_terrain_at(+stride) & test_mask) mask += 4;  /* S @0x67D23 */
@@ -190,7 +194,7 @@ int nmask8_terrain(uint8_t test_mask)
     int mask = 0;
     int bit  = 1;
     int dir;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
 
     for (dir = 0; dir < 8; dir++) {
         int dy = DIR8_DY[dir];
@@ -214,7 +218,7 @@ int nmask8_terrain(uint8_t test_mask)
 int nmask4_feature(uint16_t test_mask)
 {
     int mask = 0;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
     if ((uint16_t)wp_feature_at(-stride) & test_mask) mask += 8;
     if ((uint16_t)wp_feature_at(+stride) & test_mask) mask += 4;
     if ((uint16_t)wp_feature_at(-1)      & test_mask) mask += 2;
@@ -239,7 +243,7 @@ int nmask4_feature(uint16_t test_mask)
 int nmask4_feat_hi(int self_hi)
 {
     int mask = 0;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
     if ((wp_feature_at(-stride) & 0xA0) == self_hi) mask += 8;
     if ((wp_feature_at(+stride) & 0xA0) == self_hi) mask += 4;
     if ((wp_feature_at(-1)      & 0xA0) == self_hi) mask += 2;
@@ -275,7 +279,7 @@ int forest_neighbour(int off)
 int nmask4_forest(void)
 {
     int mask = 0;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
     if (forest_neighbour(-stride)) mask += 8;
     if (forest_neighbour(+stride)) mask += 4;
     if (forest_neighbour(-1))      mask += 2;
@@ -321,14 +325,14 @@ extern int classify_terrain(uint8_t raw);   /* 0x181F:0x6AA */
 int analyse_connections(void)
 {
     int dir;
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
+    int stride = (int)(DG16(G_RENDER_STRIDE));
 
-    *(volatile uint8_t *)G_CONN_BITMAP = 0;     /* @0x67A2E */
-    *(volatile uint8_t *)G_CONN_COUNT  = 0;
+    DG8(G_CONN_BITMAP) = 0;     /* @0x67A2E */
+    DG8(G_CONN_COUNT)  = 0;
     { int i; for (i = 0; i < 4; i++)            /* @0x67A36 */
-        *(volatile uint8_t *)(G_ROAD_DIR_TABLE + i) = 0; }
+        DG8(G_ROAD_DIR_TABLE + i) = 0; }
 
-    if (*(volatile uint16_t *)G_ZOOM_LEVEL != 0)   /* strat edge @0x67A47 */
+    if (DG16(G_ZOOM_LEVEL) != 0)   /* strat edge @0x67A47 */
         goto reclassify;
 
     for (dir = 0; dir < 8; dir++) {
@@ -341,27 +345,27 @@ int analyse_connections(void)
         nv = classify_terrain(nb);                /* @0x67A9E */
         if (nv == 0x19 || nv == 0x1A) continue;   /* ocean skip @0x67AA6/@0x67AAA */
 
-        *(volatile uint8_t *)G_CONN_BITMAP |= (uint8_t)(1u << dir);   /* @0x67AB5 */
-        (*(volatile uint8_t *)G_CONN_COUNT)++;                        /* @0x67AB9 */
+        DG8(G_CONN_BITMAP) |= (uint8_t)(1u << dir);   /* @0x67AB5 */
+        (DG8(G_CONN_COUNT))++;                        /* @0x67AB9 */
 
         if (dir & 1) {                            /* odd dir @0x67ABD */
             int t = ((dir + 1) & 6) >> 1;         /* @0x67AC3-@0x67ACA */
-            *(volatile uint8_t *)(G_ROAD_DIR_TABLE + t) |= 2;         /* @0x67ACC */
+            DG8(G_ROAD_DIR_TABLE + t) |= 2;         /* @0x67ACC */
         } else {                                  /* even dir @0x67AD4 */
             int t0, t1;
-            *(volatile uint8_t *)G_CONN_SCRATCH = nb;                 /* @0x67AD7 */
+            DG8(G_CONN_SCRATCH) = nb;                 /* @0x67AD7 */
             t0 = dir >> 1;                                            /* @0x67ADA */
             t1 = ((dir >> 1) + 1) & 3;                                /* @0x67AE1 */
-            *(volatile uint8_t *)(G_ROAD_DIR_TABLE + t0) |= 4;        /* @0x67AE8 */
-            *(volatile uint8_t *)(G_ROAD_DIR_TABLE + t1) |= 1;        /* @0x67AEF */
+            DG8(G_ROAD_DIR_TABLE + t0) |= 4;        /* @0x67AE8 */
+            DG8(G_ROAD_DIR_TABLE + t1) |= 1;        /* @0x67AEF */
         }
     }
 
 reclassify:
     /* reclassify the stashed scratch base into the visible-terrain slot. */
-    *(volatile uint8_t *)G_VIS_TERRAIN_R =
-        (uint8_t)classify_terrain(*(volatile uint8_t *)G_CONN_SCRATCH);   /* @0x67B10 */
-    return *(volatile uint8_t *)G_CONN_COUNT;                              /* @0x67B21 */
+    DG8(G_VIS_TERRAIN_R) =
+        (uint8_t)classify_terrain(DG8(G_CONN_SCRATCH));   /* @0x67B10 */
+    return DG8(G_CONN_COUNT);                              /* @0x67B21 */
 }
 
 /* Internal sub of func_067A24 (entry 0x67B2A, range counter): counts the 4
@@ -372,9 +376,9 @@ reclassify:
  *   driver @0x67B46-@0x67B7B. */
 int analyse_water_ring(void)
 {
-    int stride = (int)(*(volatile uint16_t *)G_RENDER_STRIDE);
-    uint8_t lo = *(volatile uint8_t *)0xA8A4;
-    uint8_t hi = *(volatile uint8_t *)0xA8A5;
+    int stride = (int)(DG16(G_RENDER_STRIDE));
+    uint8_t lo = DG8(0xA8A4);
+    uint8_t hi = DG8(0xA8A5);
     int count = 0;
     int offs[4]; int inc[4]; int i;
     offs[0] = -stride; inc[0] = 8;   /* @0x67B59 */

@@ -47,6 +47,7 @@
  * @ref            ../../../FUNCTIONS_INVENTORY.md  section A
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 
 /* ----------------------------------------------------------------------------
  * Map geometry globals (DGROUP). All byte-verified from page_15.asm.
@@ -199,6 +200,13 @@ extern const int8_t DIR4_DX[4], DIR4_DY[4];        /* @file 0x1DA48 / 0x1DA4E */
 extern const int8_t DIR8_DX[8], DIR8_DY[8];        /* @file 0x1DA54 / 0x1DA5E */
 
 /* neighbour-mask helpers in terrain.c (file offsets noted). */
+/* working-pointer plumbing (the les es:[bx] reads; implemented by the
+ * platform layer per the @verify cites -- see platform/render_glue.c) */
+extern uint8_t wp_terrain_rel(int16_t off);
+extern uint8_t wp_feature_rel(int16_t off);
+extern uint8_t wp_resfog_rel(int16_t off);
+extern void    wp_commit(int relcol, int relrow);   /* @0x68852-@0x6886E */
+
 extern int nmask4_terrain(uint8_t mask);      /* func_067CF4 @0x67CF4 */
 extern int nmask8_terrain(uint8_t mask);      /* func_067D54 @0x67D54 (== O507) */
 extern int nmask4_feature(uint16_t mask);     /* func_067B84 @0x67B84 */
@@ -281,8 +289,8 @@ void tile_compose_subcells(int composite, int edge_lo, int edge_hi)
     int nvis;               /* [bp-0x1c] classified neighbour visible id */
     int hidden;             /* [bp-0xe] fog-hidden flag */
 
-    saved_parity = (int)(*(volatile uint16_t *)G_COL_PARITY);  /* @0x67F55 */
-    *(volatile uint16_t *)G_COL_PARITY = 0;                    /* @0x67F5D */
+    saved_parity = (int)(DG16(G_COL_PARITY));  /* @0x67F55 */
+    DG16(G_COL_PARITY) = 0;                    /* @0x67F5D */
 
     /* @verify [bp-4] pass 0..3 loop @0x67F60 init / @0x68026 test */
     for (pass = 0; pass < 4; pass++) {
@@ -292,8 +300,8 @@ void tile_compose_subcells(int composite, int edge_lo, int edge_hi)
 
         /* neighbour sub-cell = dir + sub-cell map base [0xA5A0]/[0xA5A2].
          * @verify add ax,[0xa5a0] @0x68044; add cx,[0xa5a2] @0x6804B */
-        ncell_x = dx + (int)(*(volatile uint16_t *)G_SUBCELL_BX);
-        ncell_y = dy + (int)(*(volatile uint16_t *)G_SUBCELL_BY);
+        ncell_x = dx + (int)(DG16(G_SUBCELL_BX));
+        ncell_y = dy + (int)(DG16(G_SUBCELL_BY));
 
         /* gate: in-bounds -> prio = (rc==1)?-1:0 accumulated.
          * @verify lcall 0x302 @0x68054; sbb/neg @0x6805F; mov [bp-8] @0x68063 */
@@ -316,7 +324,7 @@ void tile_compose_subcells(int composite, int edge_lo, int edge_hi)
          * @verify cmp [0xa89e],0 @0x67FF7; test [0xa89e],al @0x67FFE;
          *         cmp [bp-8],0 @0x68004; set [bp-0xe] @0x6800A/@0x68012 */
         {
-            uint8_t fog  = *(volatile uint8_t *)G_FOG_MASK;
+            uint8_t fog  = DG8(G_FOG_MASK);
             uint8_t rfog = read_terrain_byte(ncell_x, ncell_y); /* resfog at runtime */
             hidden = (fog == 0 || (fog & rfog) || prio) ? 1 : 0;
         }
@@ -346,8 +354,8 @@ void tile_compose_subcells(int composite, int edge_lo, int edge_hi)
                  * @verify test bl,1 @0x680E0; bounds gate @0x680E5/@0x680EB. */
                 if (ring & 1) continue;
                 if (rcx < 0 || rcy < 0) continue;
-                if (rcx >= (int)(*(volatile uint16_t *)G_MAP_WIDTH)) continue;
-                if (rcy >= (int)(*(volatile uint16_t *)G_MAP_HEIGHT)) continue;
+                if (rcx >= (int)(DG16(G_MAP_WIDTH))) continue;
+                if (rcy >= (int)(DG16(G_MAP_HEIGHT))) continue;
                 /* reclassify the ring neighbour. @verify lcall 0x72c @0x680F8;
                  *   and 0x1f / cmp 0x18 / and 7 @0x68100..@0x6810C; lcall 0x6aa
                  *   @0x68113; store [bp-0x1c] @0x6811B. */
@@ -367,7 +375,7 @@ void tile_compose_subcells(int composite, int edge_lo, int edge_hi)
         (void)edge_hi;
     }
 
-    *(volatile uint16_t *)G_COL_PARITY = (uint16_t)saved_parity;  /* @0x681A1 */
+    DG16(G_COL_PARITY) = (uint16_t)saved_parity;  /* @0x681A1 */
 }
 
 /* ----------------------------------------------------------------------------
@@ -405,21 +413,21 @@ void tile_dispatch(int active_cell)
      * @verify les [0xa594]; mov [0xa89f] @0x681B3-@0x681BA (terrain);
      *         les [0xa598]; mov [0xa8a1] @0x681BD-@0x681C4 (feature);
      *         les [0xa59c]; mov [0xa8a0] @0x681C7-@0x681CE (resfog). */
-    raw_terrain = *(volatile uint8_t *)G_WP_TERRAIN;    /* es:[bx] modelled */
-    raw_feature = *(volatile uint8_t *)G_WP_FEATURE;
-    raw_resfog  = *(volatile uint8_t *)G_WP_RESFOG;
-    *(volatile uint8_t *)G_RAW_TERRAIN = raw_terrain;
-    *(volatile uint8_t *)G_RAW_FEATURE = raw_feature;
-    *(volatile uint8_t *)G_RAW_RESFOG  = raw_resfog;
+    raw_terrain = wp_terrain_rel(0);    /* les [0xa594]; mov al,es:[bx] */
+    raw_feature = wp_feature_rel(0);    /* les [0xa598] */
+    raw_resfog  = wp_resfog_rel(0);     /* les [0xa59c] */
+    DG8(G_RAW_TERRAIN) = raw_terrain;
+    DG8(G_RAW_FEATURE) = raw_feature;
+    DG8(G_RAW_RESFOG)  = raw_resfog;
 
     /* 2. Classify visible terrain. @verify lcall 0x6aa @0x681D5; [0xa8a2] @0x681DD */
     vis_terrain = classify_terrain(raw_terrain);
-    *(volatile uint8_t *)G_VIS_TERRAIN = (uint8_t)vis_terrain;
+    DG8(G_VIS_TERRAIN) = (uint8_t)vis_terrain;
 
     /* 3. Fog/visibility. @verify cmp [0xa89e],0 @0x681E0; test [0xa8a0],al
      *    @0x681EA; cmp [bp-0x26],0 @0x681F0; set [bp-8] @0x681F6/@0x681FE */
     {
-        uint8_t fog = *(volatile uint8_t *)G_FOG_MASK;
+        uint8_t fog = DG8(G_FOG_MASK);
         visible = (fog == 0 || (raw_resfog & fog) || active_cell) ? 1 : 0;
     }
 
@@ -434,7 +442,7 @@ void tile_dispatch(int active_cell)
      *            cmp [0x184],0 @0x68218; jmp tail @0x6821F. */
     if (visible) {
         draw_tile_marker(0x95);
-        if (*(volatile uint16_t *)G_ZOOM_LEVEL != 0)
+        if (DG16(G_ZOOM_LEVEL) != 0)
             goto tail;
     }
 
@@ -473,12 +481,12 @@ void tile_dispatch(int active_cell)
              *   call 0x18d0 (O512) @0x682BC->0x682BE (push 0,1,1). */
             if (v == 0) {
                 emit_ground_sprite(water_id);             /* @0x68285 */
-                if (*(volatile uint16_t *)G_ZOOM_LEVEL != 0) goto tail;
+                if (DG16(G_ZOOM_LEVEL) != 0) goto tail;
                 {
                     int sp = special_feature_at(
-                                 (int)(*(volatile uint16_t *)G_SUBCELL_BX),
-                                 (int)(*(volatile uint16_t *)G_SUBCELL_BY)); /* 0x718 @0x6829A */
-                    if (sp != -1 && *(volatile uint16_t *)G_STRAT_VIEW == 0)
+                                 (int)(DG16(G_SUBCELL_BX)),
+                                 (int)(DG16(G_SUBCELL_BY))); /* 0x718 @0x6829A */
+                    if (sp != -1 && DG16(G_STRAT_VIEW) == 0)
                         draw_tile_marker(0x5A + sp);       /* @0x682B5 */
                 }
                 tile_compose_subcells(1, 1, 0);            /* @0x682BC */
@@ -498,18 +506,25 @@ void tile_dispatch(int active_cell)
             land_base = 0x11;    /* @0x682FE */
         }
         emit_ground_sprite(land_base);   /* @0x68301 */
-        if (*(volatile uint16_t *)G_ZOOM_LEVEL != 0) {
+        water_id = land_base;            /* [bp-2] REUSED as the 6j emit id for
+                                          * land tiles (cite @0x68513 mov al,[bp-2];
+                                          * the prior port kept them separate, so
+                                          * 6j stamped ocean over every land tile) */
+        if (DG16(G_ZOOM_LEVEL) != 0) {
             /* zoomed: emit O512 water sub-cells then done. @verify push 0,[bp-4],0
              *   @0x6830B..; call 0x18d0 @0x68315. */
             tile_compose_subcells(0, base_drawn, 0);
             goto tail;
         }
 
-        /* 6c. Forest overlay. For the forest terrain range only, add forest-edge
-         *   mask to base 0x41. @verify cmp [bp-0x20],1 @0x6831B; forest range
-         *   tests @0x68321..@0x6833B; call 0x160e (nmask4_forest), dx=3 @0x68343;
-         *   add ax,0x41 @0x68349; call 0x1748 @0x6834C. */
-        if (land_base == 1 &&
+        /* 6c. Forest overlay: canopy for the forested vis range, EXCEPT the
+         *   land_base==1 group.  CORRECTED 2026-06-09 against the raw disasm:
+         *   @0x6831B cmp [bp-0x20],1; JE 0x6834F  = land_base==1 SKIPS forest
+         *   (the prior port had the gate inverted, which suppressed every
+         *   canopy); range tests @0x68321..@0x6833B = 8<=vis<0x18 draws;
+         *   call 0x67c8e (nmask4_forest) @0x68343; add ax,0x41 @0x68349;
+         *   call 0x67dc8 @0x6834C. */
+        if (land_base != 1 &&
             ((vis_terrain >= 8 && vis_terrain < 0x10) ||
              (vis_terrain >= 0x10 && vis_terrain < 0x18))) {
             int fmask = nmask4_forest();     /* @0x68343 */
@@ -552,16 +567,16 @@ void tile_dispatch(int active_cell)
          * @verify cmp [0x184],0 @0x683C9; cmp [0x18e],0 @0x683D0; lcall 0x718
          *   @0x683DF; add 0x5a @0x683F7; call 0x1748 @0x683FA; lcall 0x75e
          *   @0x68405; or ax,ax @0x6840D; mov ax,0x68 @0x68411; call 0x1748. */
-        if (*(volatile uint16_t *)G_ZOOM_LEVEL == 0 &&
-            *(volatile uint16_t *)0x018E == 0) {
+        if (DG16(G_ZOOM_LEVEL) == 0 &&
+            DG16(0x018E) == 0) {
             int sp = special_feature_at(
-                         (int)(*(volatile uint16_t *)G_SUBCELL_BX),
-                         (int)(*(volatile uint16_t *)G_SUBCELL_BY));   /* @0x683DF */
-            if (sp != -1 && *(volatile uint16_t *)G_STRAT_VIEW == 0)
+                         (int)(DG16(G_SUBCELL_BX)),
+                         (int)(DG16(G_SUBCELL_BY)));   /* @0x683DF */
+            if (sp != -1 && DG16(G_STRAT_VIEW) == 0)
                 draw_tile_marker(0x5A + sp);                            /* @0x683FA */
             if (river_detail_at(
-                    (int)(*(volatile uint16_t *)G_SUBCELL_BX),
-                    (int)(*(volatile uint16_t *)G_SUBCELL_BY)))         /* @0x68405 */
+                    (int)(DG16(G_SUBCELL_BX)),
+                    (int)(DG16(G_SUBCELL_BY))))         /* @0x68405 */
                 draw_tile_marker(0x68);                                 /* @0x68414 */
         }
 
@@ -572,7 +587,7 @@ void tile_dispatch(int active_cell)
          *   dx=1 @0x68431; or ax,ax @0x68437; mov ax,0x51 @0x6843B; call 0x1748;
          *   else per-bit 0x52+i loop @0x68449..@0x6846B. */
         if ((raw_terrain & 0xA) && !base_drawn &&
-            *(volatile uint16_t *)0x018E == 0) {
+            DG16(0x018E) == 0) {
             int rmask = nmask8_terrain(0xA);     /* @0x68431 (ax=0xa,dx=1) */
             if (rmask == 0) {
                 draw_tile_marker(0x51);          /* @0x6843E */
@@ -607,26 +622,26 @@ void tile_dispatch(int active_cell)
          *   then zero the nudge @0x684F7-@0x684FC. */
         if (!base_drawn) {
             int pattern = -1;
-            uint8_t conn = *(volatile uint8_t *)G_CONN_BITMAP;  /* [0xA8A6] */
+            uint8_t conn = DG8(G_CONN_BITMAP);  /* [0xA8A6] */
             if ((conn & 0xDD) == 0xC1) pattern = 0;
             if ((conn & 0x77) == 0x07) pattern = 1;
             if ((conn & 0x77) == 0x70) pattern = 2;
             if ((conn & 0xDD) == 0x1C) pattern = 3;
 
             if (pattern >= 0) {
-                *(volatile uint8_t *)G_SUBCELL_DY = 0;   /* @0x68504 */
-                *(volatile uint8_t *)G_SUBCELL_DX = 0;   /* @0x68507 */
+                DG8(G_SUBCELL_DY) = 0;   /* @0x68504 */
+                DG8(G_SUBCELL_DX) = 0;   /* @0x68507 */
                 draw_tile_marker(0x97 + pattern);        /* @0x68510 */
             } else {
                 int dir;
                 for (dir = 0; dir < 4; dir++) {
-                    uint8_t road = *(volatile uint8_t *)(G_ROAD_DIR_TABLE + dir); /* @0x684DD */
-                    *(volatile uint8_t *)G_SUBCELL_DX = (uint8_t)(((dir + 1) & 0x3e) << 2); /* @0x684CC */
-                    *(volatile uint8_t *)G_SUBCELL_DY = (uint8_t)((dir & 0xfe) << 2);       /* @0x684D7 */
+                    uint8_t road = DG8(G_ROAD_DIR_TABLE + dir); /* @0x684DD */
+                    DG8(G_SUBCELL_DX) = (uint8_t)(((dir + 1) & 0x3e) << 2); /* @0x684CC */
+                    DG8(G_SUBCELL_DY) = (uint8_t)((dir & 0xfe) << 2);       /* @0x684D7 */
                     draw_tile_marker(0x6D + (road << 2) + dir);   /* @0x684EB */
                 }
-                *(volatile uint8_t *)G_SUBCELL_DY = 0;   /* @0x684F9 */
-                *(volatile uint8_t *)G_SUBCELL_DX = 0;   /* @0x684FC */
+                DG8(G_SUBCELL_DY) = 0;   /* @0x684F9 */
+                DG8(G_SUBCELL_DX) = 0;   /* @0x684FC */
             }
         }
 
@@ -649,9 +664,9 @@ void tile_dispatch(int active_cell)
             for (sub = 0; sub < 4; sub++) {
                 int dy = DIR4_DY[sub];                           /* [bx+0xae] @0x68548 */
                 int dx = DIR4_DX[sub];                           /* [bx+0xa8] @0x68559 */
-                int off = dx + (dy > 0 ? (int)(*(volatile uint16_t *)G_RENDER_STRIDE)
-                                       : (dy < 0 ? -(int)(*(volatile uint16_t *)G_RENDER_STRIDE) : 0));
-                uint8_t nb = *(volatile uint8_t *)(G_WP_FEATURE + (off & 0xffff)); /* es:[bx+si] */
+                int off = dx + (dy > 0 ? (int)(DG16(G_RENDER_STRIDE))
+                                       : (dy < 0 ? -(int)(DG16(G_RENDER_STRIDE)) : 0));
+                uint8_t nb = wp_feature_rel((int16_t)off); /* es:[bx+si] */
                 if (nb & 0x40) {                                 /* @0x68573 */
                     int nv = classify_terrain((uint8_t)(nb & 0x1F)); /* @0x68578 */
                     if (nv != 0x19 && nv != 0x1A)                /* @0x68582/@0x68587 */
@@ -666,11 +681,11 @@ tail:
      * variant (0x5A + special_feature_at). @verify cmp [0x184],0 @0x6585AC;
      *   cmp [0x18a],0 @0x685B3; lcall 0x718 @0x685C2; add 0x5a @0x685D3;
      *   call 0x1748 @0x685D6. */
-    if (*(volatile uint16_t *)G_ZOOM_LEVEL == 0 &&
-        *(volatile uint16_t *)G_STRAT_VIEW == 0) {
+    if (DG16(G_ZOOM_LEVEL) == 0 &&
+        DG16(G_STRAT_VIEW) == 0) {
         int sp = special_feature_at(
-                     (int)(*(volatile uint16_t *)G_SUBCELL_BX),
-                     (int)(*(volatile uint16_t *)G_SUBCELL_BY));
+                     (int)(DG16(G_SUBCELL_BX)),
+                     (int)(DG16(G_SUBCELL_BY)));
         if (sp != -1)
             draw_tile_marker(0x5A + sp);
     }
@@ -685,8 +700,8 @@ tail:
 void clear_object_layer(void)
 {
     int x, y;
-    int w = (int)(*(volatile uint16_t *)G_MAP_WIDTH);
-    int h = (int)(*(volatile uint16_t *)G_MAP_HEIGHT);
+    int w = (int)(DG16(G_MAP_WIDTH));
+    int h = (int)(DG16(G_MAP_HEIGHT));
     extern void layer_set_object(int x, int y, int val);   /* 0x181F:0x704 */
     for (y = 0; y < h; y++)            /* @verify cmp [0x853c] @0x6895C */
         for (x = 0; x < w; x++)        /* @verify cmp [0x853a] @0x68940 */
@@ -717,9 +732,9 @@ void map_view_render(int active_layer, int y_extent)
      * @verify cmp [bp+6],0 @0x685E9; add cl,4 @0x685F2; shl al,cl @0x685F7;
      *   mov [0xa89e] @0x685F9 / mov 0 @0x685FE. */
     if (active_layer < 0)
-        *(volatile uint8_t *)G_FOG_MASK = 0;
+        DG8(G_FOG_MASK) = 0;
     else
-        *(volatile uint8_t *)G_FOG_MASK = (uint8_t)(1u << ((active_layer & 0xff) + 4));
+        DG8(G_FOG_MASK) = (uint8_t)(1u << ((active_layer & 0xff) + 4));
 
     /* 2. Dispatch-overlay frame setup (push cs; call 0x22ea -> ljmp 0x191F:0x18E).
      * @verify @0x68603/@0x68604; thunk @0x6896A. */
@@ -727,10 +742,10 @@ void map_view_render(int active_layer, int y_extent)
 
     /* 3. Bail if the clamped window is empty. @verify cmp [0x8804],ax @0x6860A;
      *   cmp [0x8806],ax @0x68616 (jge continue else jmp tail @0x68610/@0x6861C). */
-    origin_col = (int)(*(volatile uint16_t *)G_VIEW_ORIGIN_COL);
-    origin_row = (int)(*(volatile uint16_t *)G_VIEW_ORIGIN_ROW);
-    max_col    = (int)(*(volatile uint16_t *)G_VIEW_MAX_COL);
-    max_row    = (int)(*(volatile uint16_t *)G_VIEW_MAX_ROW);
+    origin_col = (int)(DG16(G_VIEW_ORIGIN_COL));
+    origin_row = (int)(DG16(G_VIEW_ORIGIN_ROW));
+    max_col    = (int)(DG16(G_VIEW_MAX_COL));
+    max_row    = (int)(DG16(G_VIEW_MAX_ROW));
     (void)y_extent;
 
     /* 4. Row loop. relrow = row - origin_row. Per-row Y pixel origin:
@@ -740,9 +755,9 @@ void map_view_render(int active_layer, int y_extent)
      *   vs [bp-0x22]=max_row @0x6883E. */
     for (row = origin_row; row <= max_row; row++) {
         relrow = row - origin_row;
-        *(volatile uint16_t *)G_TILE_SY =
-            (uint16_t)(((int)(*(volatile uint16_t *)G_PIX_BASE_ROW) + relrow + 1)
-                       * (int)(*(volatile uint16_t *)G_TILE_PX_H) - 1);
+        DG16(G_TILE_SY) =
+            (uint16_t)(((int)(DG16(G_PIX_BASE_ROW)) + relrow + 1)
+                       * (int)(DG16(G_TILE_PX_H)) - 1);
 
         /* 5. Column loop. relcol = col - origin_col. Per-col X pixel origin:
          *   [0xa5a4] = ([0x832a] + relcol) * [0x5ad4] + [0x5ad4]/2.
@@ -752,10 +767,10 @@ void map_view_render(int active_layer, int y_extent)
             int relcol = col - origin_col;
             int active_cell;
 
-            *(volatile uint16_t *)G_TILE_SX =
-                (uint16_t)(((int)(*(volatile uint16_t *)G_PIX_BASE_COL) + relcol)
-                           * (int)(*(volatile uint16_t *)G_TILE_PX_W)
-                           + ((int)(*(volatile uint16_t *)G_TILE_PX_W) >> 1));
+            DG16(G_TILE_SX) =
+                (uint16_t)(((int)(DG16(G_PIX_BASE_COL)) + relcol)
+                           * (int)(DG16(G_TILE_PX_W))
+                           + ((int)(DG16(G_TILE_PX_W)) >> 1));
 
             /* The 3 layer working pointers are committed here from either the
              * fast-path bases (relrow+1)*stride+relcol+1 + layer base, or the
@@ -763,6 +778,8 @@ void map_view_render(int active_layer, int y_extent)
              *   slow lcall 0x70e/0x740/0x736 @0x686E8/@0x686FA/@0x6870C; commit to
              *   [0xa594]/[0xa598]/[0xa59c] @0x68852-@0x6886E. (Pointer plumbing
              *   modelled — the math is the imul [0x8548] at @0x6868E.) */
+
+            wp_commit(relcol, relrow);          /* commit [0xa594/8/c] @0x68852 */
 
             /* active_cell = subcell_priority(...) for the cursor highlight.
              * @verify lcall 0x6c8 @0x687BC; or [bp-0xe],ax @0x687CB. */
