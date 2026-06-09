@@ -166,12 +166,25 @@ pass; the remaining ~26 are being reconciled.
   find/alloc) for the executable to link. NB reconcile the seek interface: `dos.h`
   has `int21h_AX_4200/4201/4202` (split by whence) while the 010B26 `__lseek` port
   uses a unified `int21h_AH_42(handle,offset,whence)` — pick one when implementing.
-- `load_image/*` decompilation backlog (16 files → **12 done, 4 in progress**
-  2026-06-09; the 12 ported faithfully from disassembly with near-zero stubs —
-  string libs, stdio, the main game loop, unit AI/combat, tile-influence paint,
-  unit spawn/chain ops, colony order logic, the tooltip/bar drawing layer, and
-  buffered file I/O; render/RTLink-loader/printf-core functions honest-stubbed as
-  SDL/host plug-in points):
+- `load_image/*` decompilation backlog — **COMPLETE 2026-06-09 (16/16 files
+  ported & in the build)**. Each first-pass skeleton was hand-reconstructed from
+  `re_work/disasm/*.asm` (with `functions.json` + `objdump` boundary-correction
+  for the auto-tracer's under-sized banners) and re-included via the
+  `VICEROY_LOADIMAGE_PORTED` allow-list. The vast majority of functions are
+  faithful ports — string libs, stdio + buffered file I/O, the main per-turn game
+  loop, unit AI/combat/movement-cost, tile-influence painting, unit spawn/chain
+  ops, colony order/eligibility + work-grid logic, tooltip/stacked-bar drawing,
+  per-power get/set. Honest stubs (clearly marked TODO) are confined to the
+  SDL/host plug-in points (VGA RLE rasterizers, opaque-overlay framebuffer writes,
+  RTLink overlay loaders, printf `_output` core, host exit/keyboard/busy-wait) and
+  ONE genuine `MISSING_ASM` symbol (`func_008720`). Several functions correctly
+  forward to their organised-module canonicals to avoid duplicate logic. The
+  earlier "not scriptable / per-function RE" note held — it was done per-function,
+  parallelised across agents, every file verified to compile + clean-build + leave
+  ZERO global duplicate definitions before re-inclusion. Remaining at this layer:
+  the SDL/host plug-in implementations (milestone 3) and reconciling a couple of
+  partial organised-module twins (e.g. chain.c `unit_tile_head` vs the full
+  func_0066CC) noted inline.
   materialise the `goto label_XXXXXX` targets and replace `ax`/register
   pseudo-vars with real locals. **Not scriptable** — the jump TARGET offsets are
   not annotated instruction offsets (target `0x002890` falls between `@0x00289F`/

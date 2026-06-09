@@ -16,15 +16,16 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 #   - overlay/rtlink.c : RTLink overlay loader      (replaced by flat link)
 #   - audio, asset, render leaves (SDL swap-points — milestone 3)
 #
-# Excluded scaffolding:
-#   - load_image/* : the FIRST-PASS raw decompiler output, named by EXE address
-#     range (load_image_AAAAAA_BBBBBB.c).  These are control-flow skeletons that
-#     still carry un-materialised `goto label_XXXXXX` targets and bare x86
-#     register pseudo-vars (`ax`, ...).  The semantically-organised modules
-#     (colony/, unit/, combat/, king/, market/, native/, ...) ARE the rules
-#     layer and progressively REPLACE these skeletons; each load_image function
-#     re-enters the build once it has been hand-ported into an organised module.
-#     (All 16 files are still raw as of this milestone — excluded wholesale.)
+# load_image/* : the FIRST-PASS raw decompiler output, named by EXE address
+#     range (load_image_AAAAAA_BBBBBB.c).  These were control-flow skeletons with
+#     un-materialised `goto label_XXXXXX` targets and bare x86 register pseudo-vars
+#     (`ax`, ...).  The directory is excluded wholesale below, then the HAND-PORTED
+#     files are re-included via VICEROY_LOADIMAGE_PORTED.  As of 2026-06-09 ALL 16
+#     files have been hand-ported from re_work/disasm/*.asm and re-included; honest
+#     stubs remain only at the SDL/host plug-in points (VGA rasterizers, opaque
+#     framebuffer writes, RTLink overlay loaders, printf-core, exit/keyboard/delay)
+#     and one genuine MISSING_ASM symbol.  The exclude-then-allow-list pattern is
+#     kept so any future re-decompile starts excluded until verified.
 # ============================================================================
 
 # Gather all C sources, then exclude platform-only files
