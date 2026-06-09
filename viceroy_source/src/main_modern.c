@@ -188,10 +188,77 @@ static void draw_difficulty(void)
  * the sheet; 9/10/11 = Arctic/Ocean/SeaLane).  Forest/mountain/hill OVERLAYS
  * (PHYS0.SS) and the byte-traced tile-pick of func_O513 come next; until
  * then forested tiles show their unforested base. */
-static ss_sheet_t g_terrain;
-static int        g_have_terrain;
+static ss_sheet_t g_terrain, g_phys;
+static int        g_have_terrain, g_have_phys;
 static uint8_t   *g_map;
 static int        g_map_w, g_map_h, g_cam_x, g_cam_y;
+
+/* PHYS0.SS overlay rows (16 connectivity variants each; atlas-confirmed,
+ * matching RENDER_CHAIN.md's row 0x01/0x11/0x21/0x31 notes):
+ *   0..15 minor river | 16..31 major river | 32..47 MOUNTAINS |
+ *   48..63 HILLS | 64..79 FOREST | 80.. roads/resources/shore */
+#define PH_MOUNT  32
+#define PH_HILLS  48
+#define PH_FOREST 64
+
+static int t_at(int x, int y)
+{
+    if (x < 0 || y < 0 || x >= g_map_w || y >= g_map_h) return 25; /* ocean */
+    return g_map[y * g_map_w + x];
+}
+
+static int is_forest(int t)  { return t >= 8 && t < 24; }
+
+/* 4-bit N/E/S/W same-feature connectivity -> variant frame.
+ * RECONSTRUCTED bit order pending the func_O513 neighbour-mask port. */
+static int conn_mask(int x, int y, int (*pred)(int))
+{
+    return (pred(t_at(x, y-1)) ? 1 : 0) | (pred(t_at(x+1, y)) ? 2 : 0) |
+           (pred(t_at(x, y+1)) ? 4 : 0) | (pred(t_at(x-1, y)) ? 8 : 0);
+}
+static int is_mount(int t) { return t == 27; }
+static int is_hill(int t)  { return t == 28; }
+
+/* ---- the starting unit, in the REAL UnitRecord table ----------------------
+ * UnitRecord: DGROUP:0x3144 stride 0x1C -- +0 map_x, +1 map_y, +2 type
+ * (unit.h, BYTE_VERIFIED); unit count @0x539C.  Sprite: ICONS.SS ships are
+ * frames 5..7 (project catalog; per-type table not yet byte-verified). */
+static ss_sheet_t g_icons;
+static int        g_have_icons;
+#define UREC(i, off)  DG8(0x3144 + (i)*0x1C + (off))
+#define ICON_SHIP 5
+
+static int is_water(int t) { return t == 25 || t == 26; }
+
+static void spawn_start_ship(void)
+{
+    /* first water tile scanning from mid-map east coast, biased to where the
+     * original drops the starting caravel (open Atlantic) */
+    int x = g_map_w - 3, y = g_map_h / 3;
+    while (x > 1 && !is_water(t_at(x, y))) x--;
+    UREC(0, 0) = (uint8_t)x;
+    UREC(0, 1) = (uint8_t)y;
+    UREC(0, 2) = 0x0D;                 /* first ship type (combat gate 0x0D..0x12) */
+    DG16(0x539C) = 1;                  /* unit count */
+}
+
+static int unit_x(void) { return UREC(0, 0); }
+static int unit_y(void) { return UREC(0, 1); }
+
+static void try_move_ship(int dx, int dy)
+{
+    int nx = unit_x() + dx, ny = unit_y() + dy;
+    if (nx < 0 || ny < 0 || nx >= g_map_w || ny >= g_map_h) return;
+    int t = t_at(nx, ny);
+    if (is_water(t)) {
+        UREC(0, 0) = (uint8_t)nx;
+        UREC(0, 1) = (uint8_t)ny;
+    } else {
+        /* LANDFALL -- the real handler is the naval.c dispatch; shell notes it */
+        printf("shell: LANDFALL at %d,%d (%s)\n", nx, ny,
+               (const char *)&DG8(DG16(0x2F74 + t*0x10)));
+    }
+}
 
 #define TILE 16
 #define VIEW_TX 15
@@ -245,6 +312,20 @@ static void draw_map(void)
             if (mx >= g_map_w || my >= g_map_h) continue;
             int t = g_map[my * g_map_w + mx];
             ss_blit(&g_terrain, terrain_frame(t), tx * TILE, ty * TILE);
+            if (g_have_phys) {                     /* feature overlays */
+                if (is_forest(t))
+                    ss_blit(&g_phys, PH_FOREST + conn_mask(mx, my, is_forest),
+                            tx * TILE, ty * TILE);
+                else if (t == 27)
+                    ss_blit(&g_phys, PH_MOUNT + conn_mask(mx, my, is_mount),
+                            tx * TILE, ty * TILE);
+                else if (t == 28)
+                    ss_blit(&g_phys, PH_HILLS + conn_mask(mx, my, is_hill),
+                            tx * TILE, ty * TILE);
+            }
+            if (g_have_icons && DG16(0x539C) > 0 &&
+                mx == unit_x() && my == unit_y())
+                ss_blit(&g_icons, ICON_SHIP, tx * TILE, ty * TILE);
         }
     }
     /* sidebar (reconstruction): nation + position readouts */
@@ -273,6 +354,10 @@ static int enter_map(void)
             return -1;
         }
         g_have_terrain = 1;
+        snprintf(path, sizeof path, "%s/PHYS0.SS", g_data);
+        g_have_phys = ss_load(path, &g_phys) == 0;
+        snprintf(path, sizeof path, "%s/ICONS.SS", g_data);
+        g_have_icons = ss_load(path, &g_icons) == 0;
     }
     if (load_map("AMER2.MP") != 0) {
         fprintf(stderr, "shell: cannot load AMER2.MP\n");
@@ -286,9 +371,24 @@ static int enter_map(void)
         vid_set_palette(pal);
         memcpy(g_bg.pal, pal, 768);               /* for text-color picking */
     }
-    g_cam_x = 20; g_cam_y = 20;                   /* start mid-Atlantic coast */
+    spawn_start_ship();
+    g_cam_x = unit_x() - VIEW_TX / 2;
+    g_cam_y = unit_y() - VIEW_TY / 2;
+    if (g_cam_x < 0) g_cam_x = 0;
+    if (g_cam_y < 0) g_cam_y = 0;
+    if (g_cam_x > g_map_w - VIEW_TX) g_cam_x = g_map_w - VIEW_TX;
+    if (g_cam_y > g_map_h - VIEW_TY) g_cam_y = g_map_h - VIEW_TY;
     draw_map();
     return 0;
+}
+
+static void follow_unit(void)
+{
+    int ux = unit_x(), uy = unit_y();
+    if (ux - g_cam_x < 2  && g_cam_x > 0)                  g_cam_x--;
+    if (ux - g_cam_x > 12 && g_cam_x < g_map_w - VIEW_TX)  g_cam_x++;
+    if (uy - g_cam_y < 2  && g_cam_y > 0)                  g_cam_y--;
+    if (uy - g_cam_y > 9  && g_cam_y < g_map_h - VIEW_TY)  g_cam_y++;
 }
 
 /* ---- the shell ------------------------------------------------------------ */
@@ -358,10 +458,10 @@ static int shell_loop(void)
                 if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
                 screen = SH_TITLE; break;
             }
-            if (k == KEY_UP    && g_cam_y > 0)                   { g_cam_y--; draw_map(); }
-            if (k == KEY_DOWN  && g_cam_y < g_map_h - VIEW_TY)   { g_cam_y++; draw_map(); }
-            if (k == 1073741904 && g_cam_x > 0)                  { g_cam_x--; draw_map(); } /* left  */
-            if (k == 1073741903 && g_cam_x < g_map_w - VIEW_TX)  { g_cam_x++; draw_map(); } /* right */
+            if (k == KEY_UP)     { try_move_ship( 0,-1); follow_unit(); draw_map(); }
+            if (k == KEY_DOWN)   { try_move_ship( 0, 1); follow_unit(); draw_map(); }
+            if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */
+            if (k == 1073741903) { try_move_ship( 1, 0); follow_unit(); draw_map(); } /* right */
             break;
         }
     }
