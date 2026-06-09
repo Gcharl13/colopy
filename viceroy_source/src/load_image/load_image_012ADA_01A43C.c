@@ -84,9 +84,10 @@ int func_012B48_op_sz_121(uint16_t cntp_off /*bp+6*/, uint16_t cntp_seg /*bp+8*/
         si = *((uint16_t far *)MK_FP(cntp_seg, cntp_off));   /* @asm si=es:[bx] (raw count) */
     } else {
         uint16_t v = *((uint16_t far *)MK_FP(cntp_seg, cntp_off)); /* @asm ax=es:[bx]; dx=0 */
-        /* clamp (0:v) to the 32-bit limit [0xA632]:[0xA630] (signed compare) */
-        if ((int16_t)DG16(0xA632) < 0 ||              /* @asm 0<hi -> use v */
-            ((int16_t)DG16(0xA632) == 0 && v <= DG16(0xA630)))
+        /* clamp value to the 32-bit limit [0xA632]:[0xA630]: compare (0:v) vs limit
+         * (signed).  v fits whenever limit_hi>0, or limit_hi==0 and v<=limit_lo. */
+        if ((int16_t)DG16(0xA632) > 0 ||              /* @asm cmp dx,[0xa632]; jl 0x12b70 (0<hi) */
+            ((int16_t)DG16(0xA632) == 0 && v <= DG16(0xA630))) /* @asm jg/je; cmp v,lo; jbe */
             si = v;                                   /* @asm si=v (within limit) */
         else
             si = DG16(0xA630);                        /* @asm clamp: si=[0xa630] (limit lo) */
@@ -135,8 +136,8 @@ int func_012BC2_op_sz_145(uint16_t cntp_off /*bp+6*/, uint16_t cntp_seg /*bp+8*/
         si = *((uint16_t far *)MK_FP(cntp_seg, cntp_off));   /* @asm si=es:[bx] */
     } else {
         uint16_t v = *((uint16_t far *)MK_FP(cntp_seg, cntp_off)); /* @asm ax=es:[bx]; dx=0 */
-        if ((int16_t)DG16(0xA62E) < 0 ||              /* @asm 0<hi -> use v */
-            ((int16_t)DG16(0xA62E) == 0 && v <= DG16(0xA62C)))
+        if ((int16_t)DG16(0xA62E) > 0 ||              /* @asm cmp dx,[0xa62e]; jl 0x12bf6 (0<hi) */
+            ((int16_t)DG16(0xA62E) == 0 && v <= DG16(0xA62C))) /* @asm jg/je; cmp v,lo; jbe */
             si = v;                                   /* @asm si=v */
         else
             si = DG16(0xA62C);                        /* @asm clamp: si=[0xa62c] (limit lo) */
@@ -683,8 +684,10 @@ int func_015131_logic_sz_20(uint16_t out_off /*bp+6*/, uint16_t out_seg /*bp+8*/
  */
 int func_015145_logic_sz_19(uint16_t arg0_bp_06)
 {
-    /* @auto: wrapper forwards to near CALL 0x015219. */
-    return func_015219();
+    /* PORTED 2026-06-09 from func_015145.asm — thin wrapper: loads the far record at
+     * bp+6 into DS:SI and tail-calls the near worker 0x015219, returning its result. */
+    (void)arg0_bp_06;
+    return func_015219();              /* @asm lds si,[bp+6]; call 0x15219 */
 }
 
 /* @asm        0x015166..0x0151B1  (75 bytes)  region=load_image
@@ -729,13 +732,15 @@ int func_015166_rtlink_sz_75(uint16_t arg0_bp_0A)
  * @inferred_role  PROLOGUE_HEAVY (65 bytes). no LCALLs
  * @status     SHADOWED (interior of func_015166; auto-segmentation artifact, not a standalone function)
  */
+/* PLATFORM_LAYER (RTLink overlay loader, CS-relative) — interior/tail of func_015166.
+ * func_0151B1.asm calls the loader query 0x015219 on the far record at bp+0xa, copies
+ * a 10-byte overlay descriptor into the CS-relative loader table cs:[0x3952]-10, then
+ * marshals the 10-byte result structure from bp+0xe down to bp+2.  CS-relative loader
+ * state; replaced in the modern build, not reconstructed. */
 int func_0151B1_logic_sz_65(uint16_t arg0_bp_0A, uint16_t arg1_bp_0E)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0151BD */ func_015219();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0151CC JE 0x0151F2 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_0A; (void)arg1_bp_0E;
+    return 0;  /* TODO: port from func_0151B1.asm — RTLink overlay-loader host layer */
 }
 
 /* @asm        0x016073..0x016086  (19 bytes)  region=load_image
@@ -789,28 +794,47 @@ int func_019E64_logic_sz_11(void)
  * @inferred_role  COUNT_LOOP (86 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_01A283_logic_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
+/* PORTED 2026-06-09 from func_01A283.asm — getenv: look up NAME in the DOS environment
+ * and copy its value into a caller buffer.  Custom register ABI (no callers): the PSP
+ * segment arrives in AX, the variable name offset at [bp+6], the destination offset at
+ * [bp+8] and the destination segment in the caller-pushed ES at [bp+2]; it returns with
+ * carry set on "not found" (modeled here as return -1, success 0).
+ *   @asm es=ax; cx=es:[0x2c] (PSP environment pointer); jcxz fail; es=cx (env block).
+ *   For each NUL-terminated "KEY=VALUE" entry: compare against name; on a full key match
+ *   immediately followed by '=' (0x3D) copy the value string (incl. NUL) to dest and
+ *   succeed; a double-NUL (empty entry) ends the environment -> fail.
+ * Modeled with explicit far pointers so the byte-exact scan is preserved. */
+int func_01A283_getenv(uint16_t env_seg /*ax*/, uint16_t name_off /*bp+6*/,
+                       uint16_t dst_seg /*bp+2*/, uint16_t dst_off /*bp+8*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x002C
-     */
-        if (/* JCXZ fallthrough cond: */ ax != 0) /* @0x01A28D JCXZ 0x01A2D0 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01A298 JE 0x01A2D0 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x01A2A0 JNE 0x01A2AA */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x01A2A6 JE 0x01A2BB */ {
-                        goto label_01A2B2;  /* @0x01A2A8 */
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x01A2B0 JE 0x01A29D */ {
-                        }
-                        goto label_01A293;  /* @0x01A2B9 */
-                    }
+    uint16_t env_ptr = *((uint16_t far *)MK_FP(env_seg, 0x2C)); /* @asm cx=es:[0x2c] */
+    if (env_ptr == 0) return -1;                               /* @asm jcxz 0x1a2d0 (stc) */
+    const uint8_t far *env = (const uint8_t far *)MK_FP(env_ptr, 0); /* @asm es=cx; di=0 */
+    /* NOTE: the variable name lives in the caller's DS (`mov si,[bp+6]`); modeled as a
+     * near offset in the DGROUP via MK_FP(0, name_off). */
+
+    while (*env != 0) {                       /* @asm al=es:[di]; or al; je 0x1a2d0 (end) */
+        const uint8_t far *n = (const uint8_t far *)MK_FP(0, name_off); /* @asm si=[bp+6] */
+        const uint8_t far *e = env;
+        for (;;) {
+            uint8_t nc = *n++;                /* @asm lodsb (name) */
+            if (nc == 0) {                    /* @asm or al; jne 0x1a2aa (name exhausted) */
+                if (*e == 0x3D) {             /* @asm cmp es:[di],0x3d; je 0x1a2bb (match) */
+                    const uint8_t far *v = e + 1;            /* @asm si=di+1 (skip '=') */
+                    uint8_t far *d = (uint8_t far *)MK_FP(dst_seg, dst_off);
+                    while ((*d++ = *v++) != 0) { }            /* @asm lodsb;stosb;or al;jne */
+                    return 0;                                /* @asm jmp 0x1a2d1 (success) */
                 }
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x01A2CC JNE 0x01A2C8 */ {
-                }
-                goto label_01A2D1;  /* @0x01A2CE */
+                break;                        /* @asm jmp 0x1a2b2 (mismatch, skip entry) */
             }
+            if (nc != *e) break;              /* @asm cmp al,ah; jne -> skip entry */
+            e++;                              /* @asm inc di (chars match) */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        /* @asm 0x1a2b2 skip to end of this entry, past its NUL, then next entry. */
+        while (*env != 0) env++;              /* @asm repne scasb (al=0) */
+        env++;                                /* step over the entry NUL */
+    }
+    return -1;                                /* @asm 0x1a2d0 stc (not found) */
 }
 
 /* @asm        0x01A425..0x01A43C  (23 bytes)  region=load_image
@@ -825,9 +849,14 @@ int func_01A283_logic_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role  TINY_ACCESSOR (23 bytes). no LCALLs
  * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
  */
+/* PLATFORM_LAYER (DOS INT 21h).  func_01A425_dos_version_far.asm gates on the DOS
+ * version (INT 21h AX=3000h; requires major >= 3, else returns carry/failure), then
+ * walks the PSP environment block (es:[0x2c]) with a 0x8000-byte scasb scan — the
+ * far/version-checked twin of the getenv at func_01A283.  The DOS version service and
+ * real-mode PSP environment are provided by the modern host, so the body is not
+ * reconstructed.  (The auto slice captured only the version-check prologue.) */
 int func_01A425_logic_sz_23(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    return 0;  /* TODO: port from func_01A425_dos_version_far.asm — DOS INT 21h host layer */
 }
 
