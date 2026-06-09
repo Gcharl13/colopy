@@ -78,6 +78,7 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         src/platform/pik.c
         src/platform/video_sdl.c
         src/platform/font.c
+        src/platform/ss.c
         "${VICEROY_GEN}/linkfloor_stubs.c"
         "${VICEROY_GEN}/thunk_keepalive.c"
     )

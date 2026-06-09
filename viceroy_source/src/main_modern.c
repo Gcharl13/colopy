@@ -177,8 +177,122 @@ static void draw_difficulty(void)
     vid_present();
 }
 
+/* ---- in-game map (first map light) ----------------------------------------
+ * Loads the premade America map (AMER2.MP: { w:u16, h:u16, ?:u16,
+ * terrain[w*h], layer1[w*h], layer2[w*h] } -- terrain bytes are the SAME
+ * 0..28 row indices as the decoded DS:0x2F74 terrain table) and renders the
+ * 15x12-tile viewport (16px tiles = 240x192 + sidebar) from TERRAIN.SS.
+ *
+ * RECONSTRUCTED: the terrain-type -> tile-frame mapping below (frames 0..7 =
+ * the eight UNFORESTED types in NAMES.TXT order -- visually confirmed against
+ * the sheet; 9/10/11 = Arctic/Ocean/SeaLane).  Forest/mountain/hill OVERLAYS
+ * (PHYS0.SS) and the byte-traced tile-pick of func_O513 come next; until
+ * then forested tiles show their unforested base. */
+static ss_sheet_t g_terrain;
+static int        g_have_terrain;
+static uint8_t   *g_map;
+static int        g_map_w, g_map_h, g_cam_x, g_cam_y;
+
+#define TILE 16
+#define VIEW_TX 15
+#define VIEW_TY 12
+
+static int terrain_frame(int t)
+{
+    if (t < 8)  return t;             /* unforested base */
+    if (t < 16) return t - 8;         /* forested: base for now (overlay TODO) */
+    if (t < 24) return t - 16;        /* forested working copies */
+    switch (t) {
+    case 24: return 9;                /* Arctic   */
+    case 25: return 10;               /* Ocean    */
+    case 26: return 11;               /* Sea Lane */
+    case 27: return 2;                /* Mountains: base under PHYS0 overlay */
+    case 28: return 2;                /* Hills:     base under PHYS0 overlay */
+    }
+    return 10;
+}
+
+static int load_map(const char *name)
+{
+    char path[512];
+    snprintf(path, sizeof path, "%s/%s", g_data, name);
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+    uint8_t hdr[6];
+    if (fread(hdr, 1, 6, f) != 6) { fclose(f); return -1; }
+    g_map_w = hdr[0] | (hdr[1] << 8);
+    g_map_h = hdr[2] | (hdr[3] << 8);
+    free(g_map);
+    g_map = malloc((size_t)g_map_w * g_map_h);
+    if (!g_map || fread(g_map, 1, (size_t)g_map_w * g_map_h, f)
+                  != (size_t)g_map_w * g_map_h) {
+        fclose(f); return -1;
+    }
+    fclose(f);
+    /* real DGROUP wiring: map dims at their byte-verified homes */
+    DG16(0x853A) = (uint16_t)g_map_w;             /* g_map_width  */
+    DG16(0x853C) = (uint16_t)g_map_h;             /* g_map_height */
+    return 0;
+}
+
+static void draw_map(void)
+{
+    uint8_t *fb = vid_framebuffer();
+    memset(fb, 0, VID_W * VID_H);
+    for (int ty = 0; ty < VIEW_TY; ty++) {
+        for (int tx = 0; tx < VIEW_TX; tx++) {
+            int mx = g_cam_x + tx, my = g_cam_y + ty;
+            if (mx >= g_map_w || my >= g_map_h) continue;
+            int t = g_map[my * g_map_w + mx];
+            ss_blit(&g_terrain, terrain_frame(t), tx * TILE, ty * TILE);
+        }
+    }
+    /* sidebar (reconstruction): nation + position readouts */
+    if (g_have_font) {
+        uint8_t light = 15, dark = 0;
+        pal_pick_text_colors(&dark, &light);
+        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
+        char buf[64];
+        int nat = DG16(0x5398);
+        ff_draw(&g_font, &DG8(DG16(0x8D42 + nat*2)), 244, 8, 1);
+        snprintf(buf, sizeof buf, "%d,%d", g_cam_x, g_cam_y);
+        ff_draw(&g_font, buf, 244, 24, 1);
+        ff_draw(&g_font, "ARROWS", 244, 170, 1);
+        ff_draw(&g_font, "ESC", 244, 180, 1);
+    }
+    vid_present();
+}
+
+static int enter_map(void)
+{
+    if (!g_have_terrain) {
+        char path[512];
+        snprintf(path, sizeof path, "%s/TERRAIN.SS", g_data);
+        if (ss_load(path, &g_terrain) != 0) {
+            fprintf(stderr, "shell: cannot load TERRAIN.SS\n");
+            return -1;
+        }
+        g_have_terrain = 1;
+    }
+    if (load_map("AMER2.MP") != 0) {
+        fprintf(stderr, "shell: cannot load AMER2.MP\n");
+        return -1;
+    }
+    /* the sheet's palette is VICEROY.PAL (737/768 identical); use it */
+    if (g_terrain.has_pal) {
+        uint8_t pal[768];
+        for (int i = 0; i < 768; i++)
+            pal[i] = (uint8_t)((g_terrain.pal6[i] << 2) | (g_terrain.pal6[i] >> 4));
+        vid_set_palette(pal);
+        memcpy(g_bg.pal, pal, 768);               /* for text-color picking */
+    }
+    g_cam_x = 20; g_cam_y = 20;                   /* start mid-Atlantic coast */
+    draw_map();
+    return 0;
+}
+
 /* ---- the shell ------------------------------------------------------------ */
-enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY };
+enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP };
 
 #define KEY_UP     1073741906
 #define KEY_DOWN   1073741905
@@ -235,11 +349,19 @@ static int shell_loop(void)
             if (k == 27) { if (load_bg("NATIONS.PIK") == 0) draw_nations(); screen = SH_NATIONS; break; }
             if (k >= '1' && k <= '5') {
                 DG8(0x53A6) = (uint8_t)(k - '1');        /* difficulty 0..4 */
-                printf("shell: difficulty = %d -- in-game map loop is the "
-                       "next milestone; returning to title\n", k - '1');
-                if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
-                screen = SH_TITLE;
+                printf("shell: difficulty = %d -- entering the map\n", k - '1');
+                if (enter_map() == 0) screen = SH_MAP;
             }
+            break;
+        case SH_MAP:
+            if (k == 27) {
+                if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
+                screen = SH_TITLE; break;
+            }
+            if (k == KEY_UP    && g_cam_y > 0)                   { g_cam_y--; draw_map(); }
+            if (k == KEY_DOWN  && g_cam_y < g_map_h - VIEW_TY)   { g_cam_y++; draw_map(); }
+            if (k == 1073741904 && g_cam_x > 0)                  { g_cam_x--; draw_map(); } /* left  */
+            if (k == 1073741903 && g_cam_x < g_map_w - VIEW_TX)  { g_cam_x++; draw_map(); } /* right */
             break;
         }
     }
@@ -286,6 +408,12 @@ int main(int argc, char **argv)
             draw_nations();
             vid_screenshot_ppm("viceroy_nations.ppm");
             printf("  headless  : nations frame -> viceroy_nations.ppm\n");
+        }
+        DG16(0x5398) = 0;                          /* England, for the sidebar */
+        if (enter_map() == 0) {
+            vid_screenshot_ppm("viceroy_map.ppm");
+            printf("  headless  : map frame -> viceroy_map.ppm "
+                   "(%dx%d tiles)\n", g_map_w, g_map_h);
         }
     } else {
         shell_loop();

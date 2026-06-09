@@ -58,4 +58,25 @@ void ff_free(ff_font_t *f);
 int  ff_text_width(const ff_font_t *f, const char *s, int spacew);
 void ff_draw(const ff_font_t *f, const char *s, int x, int y, int spacew);
 
+/* ---- .SS sprite sheets (MS_SPRITE RLE; see ss.c) -------------------------- */
+#define SS_MAX_FRAMES   192
+#define SS_TRANSPARENT  0xFD     /* the codec's own transparent marker */
+
+typedef struct {
+    int16_t  x, y;               /* placement hint from the sheet */
+    uint16_t w, h;
+    uint8_t *pixels;             /* w*h, SS_TRANSPARENT = skip */
+} ss_frame_t;
+
+typedef struct {
+    int        nframes;
+    ss_frame_t frames[SS_MAX_FRAMES];
+    uint8_t    pal6[768];        /* sheet's own 6-bit VGA palette */
+    int        has_pal;
+} ss_sheet_t;
+
+int  ss_load(const char *path, ss_sheet_t *s);
+void ss_free(ss_sheet_t *s);
+void ss_blit(const ss_sheet_t *s, int frame, int x, int y);
+
 #endif /* VICEROY_PLATFORM_H */
