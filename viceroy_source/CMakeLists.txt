@@ -30,9 +30,10 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
-# Exclude load_image first-pass skeletons (all still have raw ax/label artifacts;
-# milestone 3 will port these one by one and add them back via VICEROY_LOADIMAGE_PORTED)
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
+# load_image/ — all 16 files ported & verified to compile clean under
+# -D_VICEROY_MODERN (stale "raw ax/label artifacts" exclusion removed
+# 2026-06-09; these resident functions are overlay-thunk targets the
+# tools/thunkwire.py wiring resolves into)
 
 # Rules library — all game logic, compiled in modern mode
 add_library(viceroy_rules STATIC ${VICEROY_SOURCES})
