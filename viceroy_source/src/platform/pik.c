@@ -104,11 +104,9 @@ static int fab_decompress(const uint8_t *src, long srcsize,
     return out == dstsize ? 0 : -1;
 }
 
-/* ---- MADSPACK / PIK ------------------------------------------------------ */
-int pik_load(const char *path, pik_image_t *img)
+/* ---- MADSPACK container (shared by .PIK and .FF loaders) ----------------- */
+int madspack_load(const char *path, uint8_t **items, uint32_t *sizes, int max)
 {
-    memset(img, 0, sizeof *img);
-
     FILE *fp = fopen(path, "rb");
     if (!fp) return -1;
     fseek(fp, 0, SEEK_END);
@@ -126,10 +124,7 @@ int pik_load(const char *path, pik_image_t *img)
     int count = RD16(data + 14);
     const uint8_t *dir = data + 16;
     long off = 16 + 0xA0;
-
-    uint8_t *items[8] = { 0 };
-    uint32_t sizes[8] = { 0 };
-    if (count > 8) count = 8;
+    if (count > max) count = max;
 
     for (int i = 0; i < count; i++) {
         int      type  = dir[i*10];
@@ -151,6 +146,18 @@ int pik_load(const char *path, pik_image_t *img)
         }
     }
     free(data);
+    return count;
+}
+
+/* ---- .PIK backdrops ------------------------------------------------------ */
+int pik_load(const char *path, pik_image_t *img)
+{
+    memset(img, 0, sizeof *img);
+
+    uint8_t *items[8] = { 0 };
+    uint32_t sizes[8] = { 0 };
+    int count = madspack_load(path, items, sizes, 8);
+    if (count < 2) return -1;
 
     /* item 0 = dims header, 1 = pixels, 2 = 6-bit VGA palette */
     if (count >= 2 && sizes[0] >= 4) {

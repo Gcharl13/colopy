@@ -40,4 +40,22 @@ typedef struct {
 int  pik_load(const char *path, pik_image_t *img);
 void pik_free(pik_image_t *img);
 
+/* raw MADSPACK container access (shared by .PIK/.FF loaders) */
+int  madspack_load(const char *path, uint8_t **items, uint32_t *sizes, int max);
+
+/* ---- .FF bitmap fonts (see font.c) --------------------------------------- */
+typedef struct {
+    uint8_t   maxh, maxw;
+    uint8_t   widths[128];
+    uint16_t  offs[128];
+    uint8_t  *data;
+    uint32_t  datasize;
+    uint8_t   colors[4];    /* [0] unused (transparent); [1..3] palette idx */
+} ff_font_t;
+
+int  ff_load(const char *path, ff_font_t *f);
+void ff_free(ff_font_t *f);
+int  ff_text_width(const ff_font_t *f, const char *s, int spacew);
+void ff_draw(const ff_font_t *f, const char *s, int x, int y, int spacew);
+
 #endif /* VICEROY_PLATFORM_H */
