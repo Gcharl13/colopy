@@ -176,7 +176,7 @@ void viceroy_emit_log(int on) { g_emit_log = on; }
 
 static void emit(const ss_sheet_t *s, int code)
 {
-    if (!s || code < 1 || code > s->nframes) {
+    if (!s || code < 0 || code >= s->nframes) {
         if (g_emit_log)
             fprintf(stderr, "emit SKIP code=0x%X (%d) nframes=%d sheet=%s\n",
                     code, code, s ? s->nframes : -1,
@@ -192,28 +192,34 @@ static void emit(const ss_sheet_t *s, int code)
     /* honor the clip rect at [0x839E..] (x0,y0,x1,y1) like the resident blit */
     int cl[4] = { (int16_t)DG16(G_CLIP_RECT),     (int16_t)DG16(G_CLIP_RECT+2),
                   (int16_t)DG16(G_CLIP_RECT+4),   (int16_t)DG16(G_CLIP_RECT+6) };
-    ss_blit_clip(s, code - 1, x, y, cl[0], cl[1], cl[2], cl[3]);
+    ss_blit_clip(s, code, x, y, cl[0], cl[1], cl[2], cl[3]);
 }
 
-void draw_tile_marker(int sprite_idx)   { emit(sheet_at(G_SHEET_PHYS),    sprite_idx); }
-void emit_sprite_alt(int sprite_idx)    { emit(sheet_at(G_SHEET_PHYS),    sprite_idx); }
+/* PHYS-sheet markers -- BYTE-VERIFIED from the resident blit 0x181F:0x254
+ * (file 0xE76A, resolved from the thunk record): directory entry =
+ * code*12 + 0x36 (i.e. code IS the 0-based frame index, no transform,
+ * @0xE796-@0xE7A8); sign bit = horizontal flip (@0xE783-@0xE78D dx=-1,
+ * code &= 0x7FFF; flip path not yet exercised by the map codes). */
+void draw_tile_marker(int sprite_idx)   { emit(sheet_at(G_SHEET_PHYS),    sprite_idx & 0x7FFF); }
+void emit_sprite_alt(int sprite_idx)    { emit(sheet_at(G_SHEET_PHYS),    sprite_idx & 0x7FFF); }
 
-/* ground/terrain emitters receive the VIS-TERRAIN id (O513 passes vis or
- * water_id straight through); the vis -> sheet-cell map lived inside the
- * never-decoded resident blit.  It is FORCED by TERRAIN.SS itself: frames
- * 0..7 are the eight UNFORESTED types in NAMES.TXT order, frame 9 Arctic,
- * 10 Ocean, 11 Sea Lane (atlas vs NAMES.TXT; frame 8 = desert variant). */
-static int vis_to_terrain_cell(int vis)
+/* TERRAIN-sheet code transform -- BYTE-VERIFIED from the resident blits'
+ * shared helper func_03436 (file 0x3436..0x345E; called by both ground blits
+ * 0x181F:0x25E -> file 0x3460 and 0x181F:0x268 -> file 0x34C4, resolved from
+ * the thunk records):
+ *   cmp 0x11 / cmp 0x09 -> return 8         @0x3439/@0x343F/@0x3445
+ *   code >= 8           -> return code-0xF  @0x3450/@0x3456
+ *   else                -> code unchanged
+ * Cells are 0-BASED frames: the blit copies 16 rows of 16 bytes from
+ * sheet_ptr + cell*0x100 (mov ah,cell; al=0 @0x3496; rep movsb @0x34B7) --
+ * the loaded sheet is a flat 256-byte-per-cell array in frame order. */
+static int terrain_cell_transform(int code)
 {
-    if (vis >= 0 && vis <= 7) return vis + 1;       /* 1-based cell */
-    switch (vis) {
-    case 0x18: return 10;                            /* Arctic   */
-    case 0x19: return 11;                            /* Ocean    */
-    case 0x1A: return 12;                            /* Sea Lane */
-    }
-    return vis;                                      /* already a small cell code */
+    if (code == 0x11 || code == 0x09) return 8;
+    if (code >= 8) return code - 0xF;
+    return code;
 }
-void emit_ground_sprite(int sprite_idx) { emit(sheet_at(G_SHEET_TERRAIN), vis_to_terrain_cell(sprite_idx)); }
-void emit_terrain_sprite(int sprite_idx){ emit(sheet_at(G_SHEET_TERRAIN), vis_to_terrain_cell(sprite_idx)); }
+void emit_ground_sprite(int sprite_idx) { emit(sheet_at(G_SHEET_TERRAIN), terrain_cell_transform(sprite_idx)); }
+void emit_terrain_sprite(int sprite_idx){ emit(sheet_at(G_SHEET_TERRAIN), terrain_cell_transform(sprite_idx)); }
 
 #endif /* _VICEROY_MODERN */

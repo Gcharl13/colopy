@@ -521,6 +521,7 @@ int main(int argc, char **argv)
         }
         DG16(0x5398) = 0;                          /* England, for the sidebar */
         
+        
         if (enter_map() == 0) {
             g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
             draw_map();
