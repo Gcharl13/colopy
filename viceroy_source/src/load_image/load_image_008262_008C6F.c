@@ -1150,27 +1150,34 @@ int func_008BC6_logic_sz_13(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x008B96
- * @inferred_role  UNKNOWN (73 bytes). 0x0427:0x004A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  returns the arg0-th chain node (from head 0x8D78) that satisfies
+ *                 func_008B96 (a renderable/placeable unit-type predicate)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 int func_008BD4_op_sz_73(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8D78
-     */
-        goto label_008C11;  /* @0x008BE4 */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x008BEA JGE 0x008C18 */ {
-            /* @0x008BEE */ func_008B96();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x008BF6 JE 0x008C09 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x008C01 JNE 0x008C09 */ {
-                }
-            }
-            /* @0x008C0C */ overlay_call_0427_004A();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x008C16 JGE 0x008BE6 */ {
-            }
+    /* @asm 0x8BD8 result=0xFFFF [bp-6]; counter=0xFFFF [bp-4]; node=[0x8D78] (ax).
+     *      loop: store node [bp-2]; if (node<0) break (0x8C16 jge continues).
+     *      0x8BE6 if (result>=0) break. if (func_008B96(node)!=0) { counter++;
+     *        if (counter==arg0) result=node; }. 0x8C0C node = lcall 0x427:0x4A(node).
+     *      Return result.
+     * Walks the unit chain starting at head DGROUP:0x8D78 (next-link via overlay
+     * 0x0427:0x004A, node passed in AX), counting the nodes for which func_008B96
+     * holds; returns the arg0-th such node (0-based), or 0xFFFF if fewer exist. */
+    int16_t result = -1;                        /* @asm [bp-6] */
+    int16_t counter = -1;                       /* @asm [bp-4] */
+    int16_t node = (int16_t)DG16(0x8D78);       /* @asm 0x8BE1 chain head */
+    while (node >= 0) {                          /* @asm 0x8C14 or ax,ax; jge */
+        if (result >= 0)                        /* @asm 0x8BE6 */
+            break;
+        if (func_008B96((uint16_t)node) != 0) { /* @asm 0x8BEE */
+            counter++;                          /* @asm 0x8BFB */
+            if (counter == (int16_t)arg0_bp_06) /* @asm 0x8BFE */
+                result = node;                  /* @asm 0x8C03 */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        node = (int16_t)overlay_call_0427_004A(/* node in AX */);  /* @asm 0x8C0C next link */
+    }
+    return result;                              /* @asm 0x8C18 */
 }
 
 /* @asm        0x008C1E..0x008C6F  (81 bytes)  region=load_image

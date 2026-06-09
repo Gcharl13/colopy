@@ -476,24 +476,32 @@ int func_00ED93_logic_sz_15(void)
     return 0;  /* TODO */
 }
 
-/* @asm        0x00EEA4..0x00EEDA  (54 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00EEA4_unknown.asm
- * @pattern    PROLOGUE_HEAVY
- * @prologue   ENTER 0x16e
- * @args_seen  []
+/* @asm        0x00EEA4..0x00F183  (735 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00EEA4.asm
+ * @pattern    VIDEO_SPRITE_BLIT
+ * @prologue   ENTER 0x16e  ; then push dx,bx,ax,di,si (register args + saves)
+ * @args_seen  []  (register args ax,dx,bx PLUS stack args [bp+6],[bp+8] and far ptr [bp+0xa]:[bp+0xc])
  * @lcalls     0
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (54 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
- */
-int func_00EEA4_logic_sz_54(void)
+ * @inferred_role  X-scaled masked (transparent-over-0) RLE-sprite rasterizer to a far framebuffer
+ * @status     PLATFORM_LAYER / SDL milestone-3 swap-point (VGA sprite blit; honest stub)
+ *
+ * NOTE: auto-banner "54 bytes / 0x00EEDA" was truncated at the JNS mirror-flag setup;
+ * the true body runs 0x00EEA4..0x00F180 (735 B, `retf 8`; next func 0x00F184 per
+ * functions.json).  Combination of func_00E964 (the [bp+8] X-scale Bresenham column
+ * mask built in the `[bp-0x152]` stack buffer, 0x32/0x64 rounding at 0x00EF40) and
+ * func_00EC96 (the `cmp es:[bx],0; jne` mask gate at 0x00F0CE/0x00F118/0x00F14A): a
+ * horizontally-scaled glyph painted only over framebuffer 0-bytes via `mov es:[bx],al`
+ * with ±dst_stride advance and 0x7000/0x700 segment wrap.  `retf 8` pops the four
+ * stack words.  No return value, no DGROUP state written.
+ *
+ * PLATFORM_LAYER: VGA software rasterizer (milestone-3 SDL swap-point); kept as an
+ * honest stub with the cited @asm describing the byte-exact scaled+masked decoder. */
+int func_00EEA4_logic_sz_735(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JNS fallthrough cond: */ ax signed 0) /* @0x00EEC5 JNS 0x00EECA */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0;  /* TODO: SDL — X-scaled masked RLE sprite blit to the VGA framebuffer */
 }
 
 /* @asm        0x00F01E..0x00F02D  (15 bytes)  region=load_image
