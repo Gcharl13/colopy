@@ -710,7 +710,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
 
         /* @0x03CC12..0x03CC1B + @0x03CAF4 loop: subtract garrison defense.
          *   iter_units_at(colony.X, colony.Y); for each unit u:
-         *     suscept -= g_unit_stat[type(u)*14 + 0x5236]; /* ATK byte */ */
+         *     suscept -= g_unit_stat[type(u)*14 + 0x5236]; (ATK byte) */
         overlay_call_181F_07E0(); /* iter_units_at(colony.X,colony.Y) */
         u = (int16_t)overlay_call_181F_07E0(); /* first (returns slot) */
         while (u >= 0) {                              /* @0x03CB1E jge 0x1774 */

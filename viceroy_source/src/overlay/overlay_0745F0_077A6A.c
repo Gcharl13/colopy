@@ -171,7 +171,8 @@ extern int overlay_call_181F_0E68(void);  /* 0x181F:0x0E68 -- config field advan
 extern int overlay_call_181F_0E72(void);  /* 0x181F:0x0E72 -- config field getter (dword) */
 extern int overlay_call_181F_0ED6(void);  /* 0x181F:0x0ED6 -- helper */
 extern int overlay_call_181F_05C4(void);  /* 0x181F:0x05C4 -- helper */
-extern int32_t overlay_call_1A1F_0372(void); /* 0x1A1F:0x0372 -- pixel->cell convert (ret ax:dx) */
+/* overlay_call_1A1F_0372 (0x1A1F:0x0372, pixel->cell convert, ret ax:dx) is
+ * declared canonically as `int` in overlay_externs.h; not re-declared here. */
 
 extern int overlay_call_0D1D_07E4(void);  /* 0x0D1D:0x07E4 -- C strcpy */
 extern int overlay_call_0D1D_0C56(void);  /* 0x0D1D:0x0C56 -- C strchr */

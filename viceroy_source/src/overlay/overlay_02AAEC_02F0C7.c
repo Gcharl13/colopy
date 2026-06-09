@@ -50,7 +50,9 @@
 #include "overlay_externs.h"
 
 /* ---- the active-colony far pointer (`ctx`) and field helpers --------------- */
-extern char far *ctx;            /* *(0x8542) -> ColonyRecord[active] (base 0x5D46)*/
+/* `ctx` (*(0x8542) -> ColonyRecord[active], base 0x5D46) is declared canonically
+ * in globals.h as `struct colony_t far *ctx`; it is NOT re-declared here (a local
+ * `char far *ctx` would clash with that type).  The CB/CW macros cast it. */
 #define CB(off)  (*(uint8_t  far *)((char far *)ctx + (off)))  /* ctx byte field  */
 #define CW(off)  (*(uint16_t far *)((char far *)ctx + (off)))  /* ctx word field  */
 /* Absolute DGROUP byte access by computed offset (DGROUP_PTR per viceroy_types.h).
@@ -288,7 +290,7 @@ extern int overlay_call_191F_0588(void);  /* mode 8  (02C9C4)                   
 extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                      */
 extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
-extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE*/BUILT*/DEPLETION) */
+extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE / BUILT / DEPLETION) */
 
 /* ============================================================================
  * func_02AAEC  — colony garrison/ship unit-orders POPUP  ("COLONYUNIT"/"SHIPOPTIONS")

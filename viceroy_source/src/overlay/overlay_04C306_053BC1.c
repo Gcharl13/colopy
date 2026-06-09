@@ -80,6 +80,13 @@ extern int16_t  g_colony_count_539E;   /* DGROUP:0x539E — live colony count (w
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
+extern int16_t  g_unit_count_539C;     /* DGROUP:0x539C — live unit count (word) */
+extern uint8_t  g_unit_type_flags_5237[]; /* DGROUP:0x5237 base — per-type 6-byte rows (sibling of 0x5236) */
+extern uint8_t  g_power_table_8808[];  /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
+/* Two DGROUP scalar accessors (functions) read below; declared before first use
+ * so call sites do not synthesise a conflicting implicit prototype. */
+extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
+extern int16_t  ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
 
 /* AI per-power "plan queue" tables (two parallel arrays, each per-power blocks):
  *   QUEUE_A  base DGROUP 0x98B0  (= 0x10000 - 0x6750;  64 slots/power,
@@ -501,10 +508,8 @@ int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t de
 
     return (prio > 0) ? 0 : prio;                       /* @asm 0x04C7E4..0x04C7EB RETF */
 }
-/* Small accessors for two DGROUP scalars read above (kept inline-documentary). */
-extern int16_t ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
-extern int16_t ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter (BYTE_VERIFIED) */
-extern uint8_t g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
+/* (ai_path_budget_8DB8 / ai_turn_counter_538E / g_power_table_8808 are declared
+ *  in the top-of-file DGROUP extern block, before their first use above.) */
 
 /* ============================================================================
  * func_04C7F0 — ai_unit_task_total_score  [DONE — control flow BYTE_VERIFIED]
@@ -1771,7 +1776,7 @@ extern uint8_t  g_ai_count_A89C;          /* DGROUP:0xA89C — active-entry coun
 extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
-extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live unit count (word) */
+/* (g_unit_count_539C declared in the top-of-file DGROUP extern block.) */
 /* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
  * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
  *
