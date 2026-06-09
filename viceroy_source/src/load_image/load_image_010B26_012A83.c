@@ -1378,19 +1378,20 @@ int func_0129B1_logic_sz_16(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (57 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  overlay-record attribute lookup (keyed by a register-passed byte).
+ * @status     STUB 2026-06-09 — register-argument table lookup.
+ *
+ * Scans the overlay-record table at DGROUP:0x26F0..0x2770 (8-byte stride) for an
+ * entry whose first byte equals the search key passed in AX (di=ax), and returns
+ * that entry's attribute byte [si+6], defaulting to 0x4E ('N') when no entry
+ * matches.  The key arrives in a register (the function is `enter 4` with no
+ * stack args), so the auto `(void)` signature cannot receive it and the lookup
+ * cannot be faithfully reconstructed as a portable C function here.
  */
 int func_0129FC_logic_sz_57(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x012A14 JAE 0x012A2E */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012A1C JNE 0x012A27 */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012A2C JE 0x012A10 */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return 0x4E;  /* TODO: port from func_0129FC.asm — overlay-record attr lookup;
+                   * search key is passed in register AX (no stack arg). */
 }
 
 /* @asm        0x012A36..0x012A44  (14 bytes)  region=load_image
