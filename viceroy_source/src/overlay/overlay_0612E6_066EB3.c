@@ -2258,27 +2258,31 @@ done:
  * ============================================================================ */
 int func_066CD6_minimap_panel(int highlight, int src)
 {
+    extern void vid_box_outline(int,int,int,int,uint8_t);
+    extern void vid_box_fill(int,int,int,int,uint8_t);
+    extern void minimap_draw_contents(void);
+
     func_066BB0_prep();                            /* @asm 0x066CDA near 0x772 */
 
-    if (*(volatile uint16_t *)0x82c == 0) {        /* @asm 0x066CDD optional block? */
-        /* @asm 0x066CF4 box (x=0xf1,y=8,w=0x4f,h=0x29) via 0x181F:0xba. */
-        overlay_call_181F_00BA();                  /* @asm 0x066D01 */
-    } else {
-        /* @asm 0x066D08 textured box via 0x181F:0xc4 (uses [0x82c] descriptor). */
-        overlay_call_181F_00C4();                  /* @asm 0x066D34 */
+    /* panel frame, cited literals (modern: glue box prims; the 0xBA/0xC4
+     * interiors are the region manager): */
+    vid_box_fill(0xF1, 8, 0x4F, 0x29, 0);          /* @asm 0x066CF4 (0x181F:0xBA) */
+    vid_box_outline(0xF1, 8, 0x4F, 0x29, 0x0F);
+    vid_box_outline(0xFB, 8, 0x30, 6, 0x0F);       /* @asm 0x066D3B (0xCE strip) */
+
+    (void)src;
+    minimap_draw_contents();                       /* @asm 0x066D61 near 0x786 */
+
+    /* viewport box: view origin/span mapped into the minimap window
+     * (dst = world - [0x9CCC/0x9CCA] + (0xFC,9); clamp @0x066D66..0x066DCC) */
+    {
+        int col0 = (int16_t)DG16(0x9CCC), row0 = (int16_t)DG16(0x9CCA);
+        int vx = (int16_t)DG16(0x8328) - col0 + 0xFC;
+        int vy = (int16_t)DG16(0x832E) - row0 + 9;
+        vid_box_outline(vx, vy, (int16_t)DG16(0x8544), (int16_t)DG16(0x8546), 0x0F);
     }
-
-    /* inner frame strip (x=0xfb,y=8,w=0x30,h=6) (@asm 0x066D3B 0x181F:0xce). */
-    overlay_call_181F_00CE();                      /* @asm 0x066D58 */
-
-    func_066CD6_draw_contents(src);                /* @asm 0x066D61 near 0x786 */
-
-    /* viewport box redraw (@asm 0x066D66..0x066DCC, clamp to view max/origin). */
-    overlay_call_181F_00CE();                      /* @asm 0x066DCC */
-    if (highlight != 0) {                          /* @asm 0x066DD1 */
-        /* highlight rect (0xf1,8,0x29,0x4f) via 0x181F:0xe2. */
-        overlay_call_181F_00E2();                  /* @asm 0x066DE5 */
-    }
+    if (highlight != 0)                            /* @asm 0x066DD1 */
+        vid_box_outline(0xF1, 8, 0x29, 0x4F, 0x0F);/* @asm 0x066DE5 (0xE2) */
     return 0;                                       /* @asm 0x066DEA retf */
 }
 /* (func_066CD6_draw_contents declared above, before func_066BB0_minimap_update) */

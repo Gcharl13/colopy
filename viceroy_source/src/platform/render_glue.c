@@ -242,3 +242,113 @@ void vid_small_box(int x, int y, int px, int color)
             if (x + c >= 0 && y + r >= 0)
                 fb[(y + r) * VID_W + x + c] = (uint8_t)color;
 }
+
+/* ============================================================================
+ * Sidebar / panel TEXT-BUILDER leaves (tile_info_panel.c's named externs).
+ * The DOS bodies append into the caller's buffer through the text engine;
+ * these are the modern semantic implementations over the platform font.
+ * (Glyph-engine fidelity pending the 0x0C28 font-core decode.)
+ * ============================================================================ */
+#include <string.h>
+extern const char *viceroy_str(uint16_t handle);
+
+static void app(char *buf, const char *s) { strcat(buf, s); }
+
+void ovly_text_newseg_11E(char *buf)              { buf[0] = 0; }
+void ovly_text_appother_128(char *buf)            { (void)buf; }
+void ovly_text_appsep_178(char *buf)              { app(buf, " "); }
+void ovly_text_appcomma_1B4(char *buf)            { app(buf, ", "); }
+void ovly_text_appother_10A(char *buf)            { (void)buf; }
+void ovly_text_applabel_16E(uint16_t labelptr, char *buf)
+{
+    app(buf, viceroy_str(labelptr));
+}
+void ovly_text_appnum_182(uint16_t ss, char *buf, int16_t val)
+{
+    (void)ss;
+    char t[16]; snprintf(t, sizeof t, "%d", val); app(buf, t);
+}
+void ovly_text_appd8_0D8(int16_t hi, int16_t lo, uint16_t ss, char *buf)
+{
+    (void)ss;
+    long v = ((long)(uint16_t)hi << 16) | (uint16_t)lo;   /* gold dword */
+    char t[24]; snprintf(t, sizeof t, "%ld", v); app(buf, t);
+}
+void ovly_text_drawcol_132(uint16_t ss, char *buf, int16_t y, int16_t x)
+{
+    (void)ss; vid_text_xy(buf, x, y);          /* current color */
+}
+void ovly_text_draw5_13C(uint16_t ss, char *buf, int16_t y, int16_t x,
+                         int16_t col)
+{
+    (void)ss; vid_text_color(col); vid_text_xy(buf, x, y);
+}
+void ovly_panel_flush_E46(int16_t z)              { (void)z; }
+int16_t ovly_tile_owner_visbits_74A(int16_t y, int16_t x)
+{
+    return (int16_t)viceroy_layer_byte(2, x, y);
+}
+
+/* ---- box primitives (minimap/panel frames; interiors = region manager) ---- */
+void vid_box_outline(int x, int y, int w, int h, uint8_t color)
+{
+    uint8_t *fb = vid_framebuffer();
+    for (int c = 0; c < w; c++) {
+        if (y >= 0 && y < VID_H && x+c < VID_W)      fb[y*VID_W + x+c] = color;
+        if (y+h-1 < VID_H && x+c < VID_W)            fb[(y+h-1)*VID_W + x+c] = color;
+    }
+    for (int r = 0; r < h; r++) {
+        if (x >= 0 && x < VID_W && y+r < VID_H)      fb[(y+r)*VID_W + x] = color;
+        if (x+w-1 < VID_W && y+r < VID_H)            fb[(y+r)*VID_W + x+w-1] = color;
+    }
+}
+void vid_box_fill(int x, int y, int w, int h, uint8_t color)
+{
+    uint8_t *fb = vid_framebuffer();
+    for (int r = 0; r < h && y+r < VID_H; r++)
+        for (int c = 0; c < w && x+c < VID_W; c++)
+            if (x+c >= 0 && y+r >= 0) fb[(y+r)*VID_W + x+c] = color;
+}
+
+/* ============================================================================
+ * Minimap contents -- per-tile pixel plot at (0xFC,9) anchored window
+ * [col0=0x9CCC, row0=0x9CCA], 0x37 x 0x26 tiles (hud.c byte-cited geometry).
+ * Tile colors from the loaded NAMES @COLORS table [0x830..] -- role mapping
+ * RECONSTRUCTED (the picker 0x1A1F:0x8CE interior is seg-21 AMBIG):
+ * water -> [0x830], land -> [0x831], forest -> [0x832], mtn/hill -> [0x833].
+ * ============================================================================ */
+void minimap_draw_contents(void)
+{
+    int col0 = (int16_t)DG16(0x9CCC), row0 = (int16_t)DG16(0x9CCA);
+    int w = (int16_t)DG16(G_MAP_W), h = (int16_t)DG16(G_MAP_H);
+    uint8_t *fb = vid_framebuffer();
+    for (int ty = 0; ty < 0x26; ty++) {
+        for (int tx = 0; tx < 0x37; tx++) {
+            int mx = col0 + tx, my = row0 + ty;
+            if (mx < 0 || my < 0 || mx >= w || my >= h) continue;
+            uint8_t t = viceroy_layer_byte(0, mx, my) & 0x1F;
+            uint8_t f = viceroy_layer_byte(1, mx, my);
+            uint8_t c;
+            if (t == 0x19 || t == 0x1A)      c = DG8(0x830);
+            else if (f & 0x20)               c = DG8(0x833);
+            else if (viceroy_layer_byte(0, mx, my) & 0x80) c = DG8(0x832);
+            else                              c = DG8(0x831);
+            int px = 0xFC + tx, py = 9 + ty;
+            if (px < VID_W && py < VID_H) fb[py*VID_W + px] = c;
+        }
+    }
+}
+
+/* ---- text-context slots ([0x89E] default / [0x268A] restore) --------------
+ * DOS keeps far pointers to a font-context whose byte0 is the LINE HEIGHT
+ * (tile_info_panel line_h = ctx[0]+1 @0x0430E8).  Modern: the slots hold a
+ * HOST pointer (8 bytes; the 4-byte DOS slots 0x89E/0x268A are pointer-model
+ * and excluded from byte-exact comparison like every pointer slot). */
+static uint8_t g_text_ctx[8];
+void viceroy_init_text_ctx(int line_height_minus1)
+{
+    g_text_ctx[0] = (uint8_t)line_height_minus1;
+    void *p = g_text_ctx;
+    memcpy(&DG8(0x089E), &p, sizeof p);
+    memcpy(&DG8(0x268A), &p, sizeof p);
+}

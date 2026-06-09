@@ -349,18 +349,24 @@ static void draw_map(void)
         if (tx >= 0 && ty >= 0 && tx < VIEW_TX && ty < VIEW_TY)
             ss_blit(&g_icons, ICON_SHIP, tx * TILE, ty * TILE);
     }
-    /* sidebar (reconstruction): nation + position readouts */
-    if (g_have_font) {
-        uint8_t light = 15, dark = 0;
-        pal_pick_text_colors(&dark, &light);
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
-        char buf[64];
-        int nat = DG16(0x5398);
-        ff_draw(&g_font, &DG8(DG16(0x8D42 + nat*2)), 244, 8, 1);
-        snprintf(buf, sizeof buf, "%d,%d", g_cam_x, g_cam_y);
-        ff_draw(&g_font, buf, 244, 24, 1);
-        ff_draw(&g_font, "ARROWS", 244, 170, 1);
-        ff_draw(&g_font, "ESC", 244, 180, 1);
+    /* the REAL right-hand UI: minimap panel + tile/unit info panel */
+    {
+        extern int func_066CD6_minimap_panel(int highlight, int src);
+        extern int16_t tile_info_panel(int16_t redraw, int16_t use_cur);
+        /* minimap window origin: centre the view (clamped) -- the original's
+         * init helper 0x0668B8 is not yet ported */
+        int c0 = (int16_t)DG16(0x8328) + 7 - 0x37/2;
+        int r0 = (int16_t)DG16(0x832E) + 6 - 0x26/2;
+        if (c0 < 0) c0 = 0;
+        if (r0 < 0) r0 = 0;
+        if (c0 > g_map_w - 0x37) c0 = g_map_w - 0x37;
+        if (r0 > g_map_h - 0x26) r0 = g_map_h - 0x26;
+        DG16(0x9CCC) = (uint16_t)c0;
+        DG16(0x9CCA) = (uint16_t)r0;
+        func_066CD6_minimap_panel(0, 0);
+        DG16(0x8540) = (uint16_t)unit_x();   /* cursor at the unit */
+        DG16(0x853E) = (uint16_t)unit_y();
+        tile_info_panel(1, 1);
     }
     vid_present();
 }
@@ -526,8 +532,11 @@ int main(int argc, char **argv)
     char fpath[512];
     snprintf(fpath, sizeof fpath, "%s/FONTSMAL.FF", g_data);
     g_have_font = ff_load(fpath, &g_font) == 0;
-    if (g_have_font)
+    if (g_have_font) {
         printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
+        extern void viceroy_init_text_ctx(int);
+        viceroy_init_text_ctx(g_font.maxh);   /* ctx byte0+1 = line height */
+    }
 
     /* exercise the real byte-traced title logic once regardless of video */
     title_screen_render();
