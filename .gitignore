@@ -20,3 +20,5 @@ re_work/
 # original game data (copyrighted MicroProse assets; supplied locally, never committed)
 game_data/
 col.zip
+viceroy_*.ppm
+viceroy_*.png

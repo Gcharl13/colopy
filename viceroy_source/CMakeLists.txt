@@ -25,6 +25,7 @@ file(GLOB_RECURSE VICEROY_SOURCES CONFIGURE_DEPENDS
 # Exclude DOS platform files + unrealised SDL platform-layer stubs
 # (audio, asset, render: replaced by SDL/modern implementations in milestone 3)
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/main_modern\\.c$")
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/platform/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/boot/entry\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/runtime/cstart\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
@@ -74,6 +75,8 @@ set(VICEROY_GEN "${CMAKE_CURRENT_SOURCE_DIR}/tools/generated")
 if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wiring.ld")
     add_executable(viceroy_modern
         src/main_modern.c
+        src/platform/pik.c
+        src/platform/video_sdl.c
         "${VICEROY_GEN}/linkfloor_stubs.c"
         "${VICEROY_GEN}/thunk_keepalive.c"
     )
@@ -84,6 +87,20 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
     target_compile_definitions(viceroy_modern PRIVATE
         _VICEROY_MODERN
     )
+    # SDL2: window/input when available; headless (PPM dumps) otherwise
+    find_package(SDL2 QUIET)
+    if(SDL2_FOUND)
+        target_compile_definitions(viceroy_modern PRIVATE VICEROY_HAVE_SDL2)
+        target_include_directories(viceroy_modern PRIVATE ${SDL2_INCLUDE_DIRS})
+        if(TARGET SDL2::SDL2)
+            target_link_libraries(viceroy_modern PRIVATE SDL2::SDL2)
+        else()
+            target_link_libraries(viceroy_modern PRIVATE ${SDL2_LIBRARIES})
+        endif()
+        message(STATUS "viceroy_modern: SDL2 video enabled")
+    else()
+        message(STATUS "viceroy_modern: SDL2 not found -- headless video only")
+    endif()
     # linker-script INPUTS (not -T: they augment, never replace, the default)
     target_link_options(viceroy_modern PRIVATE
         "${VICEROY_GEN}/linkfloor.ld"

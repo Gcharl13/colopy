@@ -188,7 +188,10 @@ def main():
             out = subprocess.run(["nm", "-D", path], capture_output=True, text=True).stdout
             for ln in out.splitlines():
                 p = ln.split()
-                if len(p) >= 3 and p[-2] in ("T", "W", "i"):
+                # EVERY defined kind: code (T/W/i) AND data (D/B/G/R/V/u) --
+                # stubbing libc DATA (stderr, stdout, environ...) as a weak
+                # FUNCTION makes fprintf(stderr,...) read code bytes as FILE*
+                if len(p) >= 3 and p[-2] in "TWiDBGRVu":
                     libc_syms.add(p[-1].split("@")[0])
     stub_syms = [s for k in ("overlay_thunk", "func_body", "named_gap")
                  for (s, _) in buckets[k]
