@@ -59,6 +59,7 @@ set(VICEROY_LOADIMAGE_PORTED
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00AB2E_00C0D0.c"  # colony order validation/eligibility + map cursor + glyph cells (15 ported, 2 stubs)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0024C6_0033E9.c"  # tooltip + stacked-bar + text drawing layer (29 ported)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_010B26_012A83.c"  # C-runtime buffered file I/O (fopen/fflush/lseek/write/ftell/setvbuf; 11 ported, printf-core/overlay stubbed)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00E454_00FAA9.c"  # VGA/video layer: 4 ported (file-record dispatch); 7 stubbed (RLE sprite blits = SDL, exit/delay = host)
 )
 list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 
