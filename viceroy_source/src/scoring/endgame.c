@@ -62,8 +62,8 @@ extern void far *c_fopen(const char *name, const char *mode);  /* 0xD1D:0x4DA  A
 extern int       c_fread(void *buf, int size, int count, void far *fp); /* 0xD1D:0x528 ANCHOR */
 extern int       c_fwrite(void *buf, int size, int count, void far *fp);/* 0xD1D:0x60C ANCHOR */
 extern int       c_fclose(void far *fp);                       /* 0xD1D:0x3F4  ANCHOR */
-extern void      strcpy_near(char *dst, const char *src);      /* 0xD1D:0x7E4  BYTE_VERIFIED */
-extern void      strcat_near(char *dst, const char *src);      /* 0xD1D:0x7A4  ANCHOR */
+extern char near *strcpy_near(char near *dst, const char near *src); /* 0xFDB4 (iolib.h) */
+extern char near *strcat_near(char near *dst, const char near *src); /* 0xFD74 (iolib.h) */
 extern void      strcat_itoa(char *dst, int n);                /* 0x181F:0x182 BYTE_VERIFIED */
 
 /* DGROUP globals. */
