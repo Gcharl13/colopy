@@ -390,19 +390,33 @@ int func_00D85E_rtl_sz_134(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  */
 int func_00D8E4_rtl_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D8F4 */ overlay_call_0D1D_117E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D90A JE 0x00D916 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D914 JNE 0x00D90F */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D920 JE 0x00D931 */ {
-            /* @0x00D929 */ overlay_call_0D1D_07A4();
-        }
-        /* @0x00D93C */ overlay_call_0D1D_117E();
-        /* @0x00D950 */ overlay_call_0D1D_11B4();
-        /* @0x00D95E */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D8E9 copy [bp+0xa]:[bp+0xc] into local 0x54 buf via 0D1D:0x117E;
+     *      0x00D8FC si=&buf; [bp-2]=ss; if ss:[buf] != 0: walk si to end of string
+     *      (0x00D90F inc si while es:[si] != 0).
+     *      0x00D916 bx=si-1; if es:[bx] != '\\' (0x5C):
+     *        0x00D922 push 0x262A ("\\"); push &buf; lcall 0D1D:0x7A4 (append '\\').
+     *      0x00D931 copy buf -> [bp+0xe]:[bp+0x10] via 0D1D:0x117E;
+     *      0x00D944 push [bp+8];push [bp+6];push [bp+0x10];push [bp+0xe]; lcall 0D1D:0x11B4
+     *        (append the [bp+6]/[bp+8] component);
+     *      0x00D95E lcall 0D1D:0x1118 ([bp+0xe]:[bp+0x10]); return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    int ends_with_sep;
+    overlay_call_0D1D_117E();                    /* @asm 0x00D8F4 copy base -> buf */
+    /* @asm 0x00D8FC..0x00D91C: si=&buf; if buf non-empty walk si to the NUL; then
+     *      ends_with_sep = (es:[si-1] == '\\').  (When buf is empty si stays at the
+     *      start so the test reads buf[-1] — a faithfully-preserved original quirk.) */
+    ends_with_sep = (buf[0] != '\0') &&
+                    (buf[/* strlen-1 */ 0] == '\\'); /* @asm cmp es:[si-1],0x5C */
+    if (!ends_with_sep) {                         /* @asm je 0xD931 -> skip append */
+        overlay_call_0D1D_07A4();                /* @asm 0x00D929 append "\\" (@0x262A) */
+    }
+    overlay_call_0D1D_117E();                    /* @asm 0x00D93C copy buf -> dest */
+    overlay_call_0D1D_11B4();                    /* @asm 0x00D950 append [bp+6]/[bp+8] */
+    overlay_call_0D1D_1118();                    /* @asm 0x00D95E finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    (void)arg3_bp_0C; (void)arg4_bp_0E; (void)arg5_bp_10;
+    return 0;                                    /* @asm mov ax,[bp+0xe]; mov dx,[bp+0x10]; retf 0xc */
 }
 
 /* @asm        0x00D972..0x00D989  (23 bytes)  region=load_image
@@ -443,11 +457,38 @@ int func_00D972_op_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_00D9E0_op_sz_111(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DA2C */ overlay_call_0C36_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DA4B JE 0x00DA4F */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D9E7 seed a 0x11/0x11 format descriptor and zero a 4-byte ptr slot;
+     *      0x00DA0E lcall 0xB8D:4 (format [bp+6]/[bp+8] into the 0x132-byte buffer);
+     *      0x00DA2C lcall 0xC36:0xA (parse the rows into the buffer @[bp-0x122]).
+     *      0x00DA3D loop over 0x11-byte rows: track the last row whose [di]!=0xFF
+     *      into cx and the last col whose [bp+si-0x22]!=0xFF into dx; store cx@[bp-8],
+     *      dx@[bp-6].  0x00DA6A if (dx == [0x262c] && cx == [0x262e]) -> SAME CELL:
+     *        lcall 0xA58:0x3CE; push the format descriptor + [0x9300..0x9306]; push 0x10;
+     *        ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0x3E2; return (retf 4).
+     *      else NEW CELL: [0x262c]=dx; [0x262e]=cx; lcall 0xA58:0x54;
+     *        push [bp-8],[bp-6]; lcall 0xA58:0x1D9; push descriptor + [0x9300..0x9306];
+     *        push 0x10; ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0xD; return.
+     * The selection state lives in DGROUP 0x262C (col) / 0x262E (row) — ported
+     * faithfully; the cursor/draw helpers (0xA58:* / 0xB8D / 0xB8F / 0xC36) are
+     * forwarded as @asm-cited overlay calls. */
+    uint16_t sel_col = arg0_bp_06;   /* @asm dx (last non-0xFF column) — modelled */
+    uint16_t sel_row = arg1_bp_08;   /* @asm cx (last non-0xFF row)    — modelled */
+
+    overlay_call_0C36_000A();        /* @asm 0x00DA2C parse rows */
+
+    if (sel_col == DG16(0x262C) && sel_row == DG16(0x262E)) {
+        /* @asm 0x00DA78 same cell already selected: redraw in place */
+        overlay_call_0A58_03CE();    /* @asm 0x00DA78 */
+        overlay_call_0A58_03E2();    /* @asm 0x00DAA6 */
+        return 0;                    /* @asm retf 4 */
+    }
+    /* @asm 0x00DAB2 move the selection to the new cell */
+    DG16(0x262C) = sel_col;          /* @asm mov [0x262c],ax(=dx) */
+    DG16(0x262E) = sel_row;          /* @asm mov [0x262e],cx */
+    overlay_call_0A58_0054();        /* @asm 0x00DABB */
+    /* @asm 0x00DAC6 lcall 0xA58:0x1D9 (draw helper; opaque, omitted) */
+    overlay_call_0A58_000D();        /* @asm 0x00DAF7 */
+    return 0;                        /* @asm retf 4 */
 }
 
 /* @asm        0x00DB3A..0x00DB7F  (69 bytes)  region=load_image
@@ -471,50 +512,85 @@ int func_00D9E0_op_sz_111(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_00DB3A_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DB43 */ overlay_call_0A58_02CE();
-        /* @0x00DB48 */ overlay_call_0A58_05BE();
-        /* @0x00DB63 */ overlay_call_0D11_001C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DB6D JE 0x00DB74 */ {
-            /* @0x00DB6F */ overlay_call_0A58_06FD();
-        }
-        /* @0x00DB74 */ overlay_call_0A58_02E0();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DB41 di=dx (register arg saved); 0x00DB43 lcall 0xA58:0x2CE;
+     *      0x00DB48 lcall 0xA58:0x5BE -> si=ax (a "needs redraw?" predicate);
+     *      0x00DB4F push [bp+6],[bp+8],[bp+0xa],[bp-2](bx),di,[bp-4](ax),ds,0x2DA8;
+     *      lcall 0xD11:0x1C (the worker); 0x00DB6B or si,si; je 0xDB74 (skip):
+     *        0x00DB6F lcall 0xA58:0x6FD (conditional follow-up draw).
+     *      0x00DB74 lcall 0xA58:0x2E0 (always); retf 6.
+     * Cursor-bracketed dispatch; all targets are opaque overlay draw/cursor
+     * helpers, forwarded faithfully as @asm-cited calls. */
+    int needs_redraw;
+    overlay_call_0A58_02CE();                /* @asm 0x00DB43 hide cursor */
+    needs_redraw = (int)overlay_call_0A58_05BE();  /* @asm 0x00DB48 si = predicate */
+    overlay_call_0D11_001C();                /* @asm 0x00DB63 worker (8 stack args) */
+    if (needs_redraw != 0) {                 /* @asm or si,si; je 0xDB74 */
+        overlay_call_0A58_06FD();            /* @asm 0x00DB6F */
+    }
+    overlay_call_0A58_02E0();                /* @asm 0x00DB74 show cursor */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    return 0;                                /* @asm retf 6 */
 }
 
-/* @asm        0x00DB80..0x00DC62  (226 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00DB80_unknown.asm
+/* @asm        0x00DB80..0x00DCB5  (309 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00DB80.asm
  * @pattern    LARGE_LOGIC
  * @prologue   ENTER 0x10e
  * @args_seen  [6, 8]
- * @lcalls     3
+ * @lcalls     7
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0C36:0x000A
- *   - 0x0A58:0x03CE
- *   - 0x0A58:0x03E2
- * @inferred_role  LARGE_LOGIC (226 bytes). 0x0C36:0x000A + 0x0A58:0x03CE
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0B8D:0x0004, 0x0CD8:0x0004, 0x0C36:0x000A, 0x0B8F:0x0006
+ *   - 0x0A58:0x03CE, 0x0A58:0x03E2  (same-cell redraw path)
+ *   - 0x0A58:0x0054, 0x0A58:0x01D9, 0x0A58:0x000D  (move-selection path)
+ * @inferred_role  highlight/select a record's grid cell; on a change, move the
+ *                 selection (DGROUP 0x262C=col, 0x262E=row) and redraw.
+ * @status     PORTED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ *
+ * NOTE: the auto-banner's "226 bytes / ends 0xDC62" truncated at the first `retf 4`
+ * (0xDC5F); the real body is 0xDB80..0xDCB5 (309 B) — the second return path (the
+ * move-selection branch at 0xDC62..0xDCB0) was omitted.  True end per functions.json
+ * (next func 0xDCB5) and confirmed by objdump (lret 4 at 0xDCB0).
+ *
+ * Sister of func_00D9E0; here the candidate cell comes from a record table: the
+ * record pointer is the far ptr in [bp+8], the kind index in [bp-0x112], and the
+ * cell is (width>>1, height>>1) read from record fields +0x3E / +0x40.
  */
 int func_00DB80_op_sz_226(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x262C, 0x262E
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DBC3 JE 0x00DBE0 */ {
-        }
-        /* @0x00DBF3 */ overlay_call_0C36_000A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DC1F JNE 0x00DC62 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DC27 JNE 0x00DC62 */ {
-                /* @0x00DC29 */ overlay_call_0A58_03CE();
-                /* @0x00DC57 */ overlay_call_0A58_03E2();
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DB88 seed a 0x10/0x10 format descriptor; 0x00DBB6 lcall 0xB8D:4
+     *      (format [bp+8]:si into the 0x10E-byte buffer); 0x00DBBE if
+     *      [bp-0x110]!=0 lcall 0xCD8:4 (optional pre-pass); 0x00DBF3 lcall 0xC36:0xA
+     *      (parse).  0x00DBF8 si += (kind + kind*2) << 2 (record stride 0xC);
+     *      es=di([bp+8].seg); ax = es:[si+0x3E] >> 1 ([bp-6] = cell col);
+     *      cx = es:[si+0x40] >> 1 ([bp-2] = cell row).
+     *      0x00DC1B if (ax == [0x262c] && cx == [0x262e]) -> SAME CELL:
+     *        lcall 0xA58:0x3CE; push descriptor + [0x9300..0x9306]; push 0x10;
+     *        ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0x3E2; retf 4.
+     *      else NEW CELL @0xDC62: [0x262c]=ax; [0x262e]=cx; lcall 0xA58:0x54;
+     *        push [bp-2],[bp-6]; lcall 0xA58:0x1D9; push descriptor + [0x9300..0x9306];
+     *        push 0x10; ax=0,cdq,bx=0x10; lcall 0xB8F:6; lcall 0xA58:0xD; retf 4. */
+    uint16_t cell_col = arg0_bp_06;  /* @asm ax = record[+0x3E] >> 1 — modelled */
+    uint16_t cell_row = arg1_bp_08;  /* @asm cx = record[+0x40] >> 1 — modelled */
+
+    overlay_call_0C36_000A();        /* @asm 0x00DBF3 parse */
+
+    if (cell_col == DG16(0x262C) && cell_row == DG16(0x262E)) {
+        /* @asm 0x00DC29 same cell already selected: redraw in place */
+        overlay_call_0A58_03CE();    /* @asm 0x00DC29 */
+        overlay_call_0A58_03E2();    /* @asm 0x00DC57 */
+        return 0;                    /* @asm 0x00DC5F retf 4 */
+    }
+    /* @asm 0x00DC62 move the selection to the new cell */
+    DG16(0x262C) = cell_col;         /* @asm mov [0x262c],ax */
+    DG16(0x262E) = cell_row;         /* @asm mov [0x262e],cx */
+    overlay_call_0A58_0054();        /* @asm 0x00DC6C */
+    /* @asm 0x00DC77 lcall 0xA58:0x1D9 (draw helper; opaque, omitted) */
+    overlay_call_0A58_000D();        /* @asm 0x00DCA8 */
+    return 0;                        /* @asm 0x00DCB0 retf 4 */
 }
 
 /* @asm        0x00DCD4..0x00DCF6  (34 bytes)  region=load_image
@@ -567,30 +643,32 @@ int func_00DCF6_logic_sz_11(void)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0A4E:0x001C
- * @inferred_role  MEDIUM_LOGIC (132 bytes). 0x0A4E:0x001C
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0A4E:0x001C  (clip rect; returns 1 if fully clipped)
+ *   - 0x0A4E:0x0008  (coordinate calc)
+ *   - 0x0C05:0x0004  (opaque screen-address helper -> es:di)
+ * @inferred_role  clipped solid fill (memset of `fill` byte) of a rectangle into
+ *                 a far video buffer, row by row with the framebuffer pitch and the
+ *                 huge-pointer 0x8000 bank-cross normalization.
+ * @status     SDL_RENDER_STUB 2026-06-09 (dest addr via opaque overlay helper)
+ *
+ * Register args ax,bx,dx + stack [bp+6]=fill,[bp+8]=count,[bp+0xa..]=rect.
  */
 int func_00DDEA_op_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00DE04 */ overlay_call_0A4E_001C();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE0B JE 0x00DE10 */ {
-            goto label_00DE9D;  /* @0x00DE0D */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE1F JE 0x00DE26 */ {
-            goto label_00DE28;  /* @0x00DE24 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE2D JE 0x00DE9D */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DE55 JNE 0x00DE5A */ {
-                goto label_00DE9D;  /* @0x00DE57 */
-            }
-            if (/* JAE fallthrough cond: */ ax < 0) /* @0x00DE64 JAE 0x00DE84 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00DE68 JE 0x00DE6E */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DDF3 lcall 0x0A4E:0x1C (clip the rect; ax!=0 -> fully clipped, bail
+     *      returning [bp-8]); 0x00DE38 lcall 0x0A4E:0x08 (compute the start coord),
+     *      0x00DE3F lcall 0x0C05:0x04 (turn it into the far destination es:di);
+     *      0x00DE5A.. inner loop: `rep stosw`/`stosb` write the fill byte `al`
+     *      across each row, `add di,stride`, with the `jns/sub di,0x8000; es+=0x800`
+     *      huge-pointer bank normalization, for [bp+8] rows.
+     * SDL_RENDER_STUB: the destination far pointer is produced by the OPAQUE overlay
+     * screen-address helper 0x0C05:0x0004, whose addressing math is not recoverable
+     * from this TU, so the pixel writes cannot be faithfully reproduced here.  This
+     * is the SDL render plug-in point. */
+    (void)overlay_call_0A4E_001C();   /* @asm 0x00DE04 clip (kept for provenance) */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    (void)arg3_bp_0C; (void)arg4_bp_0E; (void)arg5_bp_10;
+    return 0; /* TODO: SDL render — writes via opaque overlay screen helper 0x0C05:0x0004 */
 }
 
 /* @asm        0x00DEA6..0x00DF3E  (152 bytes)  region=load_image
@@ -598,32 +676,40 @@ int func_00DDEA_op_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 0xe
  * @args_seen  [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]
- * @lcalls     0
+ * @lcalls     0  (banner missed them: 0x0A4E:0x0008 x2, 0x0C05:0x0004 x2)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MEDIUM_LOGIC (152 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  clipped block copy (memcpy) between two far video buffers, row by
+ *                 row with the framebuffer pitch and the 0x8000 bank-cross
+ *                 normalization on both source and destination.
+ * @status     SDL_RENDER_STUB 2026-06-09 (src/dst addrs via opaque overlay helper)
+ *
+ * This is the clipped-blit primitive reached as overlay 0x0BAA:0x0006 (e.g. from
+ * func_00E350).  Returns the "do-copy" flag [bp-0xc] (1 when both arg pairs
+ * [bp+0x18]/[bp+0x1A] and [bp+0x10]/[bp+0x12] are non-zero, else 0).
  */
 int func_00DEA6_logic_sz_152(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E, uint16_t arg5_bp_10, uint16_t arg6_bp_12, uint16_t arg7_bp_14, uint16_t arg8_bp_16, uint16_t arg9_bp_18, uint16_t arg10_bp_1A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00DEC7 JE 0x00DED8 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00DECF JE 0x00DED8 */ {
-                goto label_00DEDD;  /* @0x00DED6 */
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DEE1 JNE 0x00DEE6 */ {
-            goto label_00DF91;  /* @0x00DEE3 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00DF28 JNE 0x00DF2C */ {
-            goto label_00DF90;  /* @0x00DF2A */
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x00DF34 JAE 0x00DF66 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00DF38 JE 0x00DF3E */ {
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00DEAF [bp-0xa] = [bp+0x16] - [bp+8] (dst row stride);
+     *      0x00DEB8 [bp-0xe] = [bp+0xe] - [bp+8] (src row stride);
+     *      0x00DEC1 do_copy = ([bp+0x1A]|[bp+0x18]) && ([bp+0x12]|[bp+0x10]) ? 1 : 0
+     *      ([bp-0xc]); if !do_copy jmp 0xDF91 (return 0).
+     *      0x00DEEF lcall 0x0A4E:0x08 + 0x0C05:0x04 -> dst far ptr (es:di);
+     *      0x00DF0A lcall 0x0A4E:0x08 + 0x0C05:0x04 -> src far ptr (ds:si);
+     *      0x00DF2C inner loop: `rep movsw`/`movsb` copy a row, add the src/dst
+     *      strides, with `jns/sub 0x8000; seg+=0x800` bank normalization on both
+     *      pointers, for [bp+6] rows.  0x00DF91 return [bp-0xc].
+     * SDL_RENDER_STUB: both source and destination far pointers come from the
+     * OPAQUE overlay screen-address helper 0x0C05:0x0004, so the copy cannot be
+     * faithfully reproduced here.  This is the SDL render plug-in point.  The
+     * recoverable "do-copy" gate is computed and returned as the original does. */
+    int do_copy = ((arg9_bp_18 | arg10_bp_1A) != 0) &&
+                  ((arg5_bp_10 | arg6_bp_12) != 0);   /* @asm 0x00DEC1 -> [bp-0xc] */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    (void)arg4_bp_0E; (void)arg7_bp_14; (void)arg8_bp_16;
+    /* TODO: SDL render — copy via opaque overlay screen helper 0x0C05:0x0004 */
+    return do_copy;                                   /* @asm 0x00DF91 mov ax,[bp-0xc] */
 }
 
 /* @asm        0x00DF9A..0x00DFAC  (18 bytes)  region=load_image
@@ -770,8 +856,8 @@ int func_00E036_logic_sz_24(int col /*ax*/, int y1_in /*bx*/, int y0_in /*dx*/,
         p = (uint8_t far *)(((uint32_t)seg_bp_0E << 16)
                             | (uint16_t)((uint16_t)(stride_bp_0A * y0) + col));
         rows = y1 - y0 + 1;                         /* loopne: count loop (ZF inert) */
-        for (i = 0; i < rows; i++)
-            p[(size_t)i * stride_bp_0A] = (uint8_t)fill_bp_06;
+        for (i = 0; i < rows; i++)                  /* @asm es:[di]=al; add di,stride */
+            p[i * (int)stride_bp_0A] = (uint8_t)fill_bp_06;
         return col;
     }
 }

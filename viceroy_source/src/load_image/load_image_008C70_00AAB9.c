@@ -19,6 +19,9 @@
 extern int overlay_call_012B_0002(void);  /* @ref seg 0x012B off 0x0002 (func_0091CC) */
 extern int overlay_call_05B3_0004(void);  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
 extern int overlay_call_0981_0000(void);  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
+extern int overlay_call_037F_02F8(void);  /* @ref seg 0x037F off 0x02F8 (func_00A6A2) */
+extern int overlay_call_037F_0598(void);  /* @ref seg 0x037F off 0x0598 (func_00A6A2) */
+extern int overlay_call_0427_0992(void);  /* @ref seg 0x0427 off 0x0992 (func_00A6A2) */
 
 /* @asm        0x008C70..0x008CFF  (144 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008C70_unknown.asm
@@ -1122,207 +1125,22 @@ int func_009AAA_logic_sz_241(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *   - 0x008524
  *   - 0x009AAA
  *   - 0x00863E
- * @inferred_role  MISSING_ASM (1120 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  per-(tile, worked-good) terrain-yield engine
+ * @status     FORWARDER 2026-06-09 (canonical body lives in colony/turn_update.c)
+ * @note   This is the same function as compute_terrain_yield(ring_a, ring_b, out,
+ *         flag) which is fully decompiled (byte-verified) in
+ *         src/colony/turn_update.c (0x9B9C..0x9FFB).  The auto-skeleton here was a
+ *         broken duplicate (and mislabelled MISSING_ASM); to avoid a second
+ *         definition of the same logic this is a thin forwarder to the canonical
+ *         implementation.  Arg map (cdecl): arg0=ring_a [bp+6], arg1=ring_b [bp+8],
+ *         arg2=out-ptr [bp+0xA], arg3=flag [bp+0xC].
  */
+extern int compute_terrain_yield(int ring_a, int ring_b, int *out, int flag);
+
 int func_009B9C_logic_sz_1120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x53A6, 0x8542
-     * Writes DGROUP: 0xA896
-     */
-        /* @0x009BB7 */ func_009974();
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x009BC7 JGE 0x009BCC */ {
-            goto label_009FF6;  /* @0x009BC9 */
-        }
-        /* @0x009BEB */ overlay_call_037F_010E();
-        /* @0x009BF9 */ overlay_call_03E4_000E();
-        /* @0x009C0A */ overlay_call_037F_04B0();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009C29 JNE 0x009C2E */ {
-            goto label_009CB4;  /* @0x009C2B */
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x009C31 JL 0x009C87 */ {
-            /* @0x009C3E */ func_0099EE();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x009C4A JL 0x009C52 */ {
-                goto label_009C87;  /* @0x009C50 */
-            }
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x009C55 JL 0x009C5C */ {
-                goto label_009C87;  /* @0x009C5A */
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009C5F JGE 0x009C66 */ {
-                goto label_009C87;  /* @0x009C64 */
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009C69 JGE 0x009C72 */ {
-                goto label_009C87;  /* @0x009C6F */
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009C75 JGE 0x009C7E */ {
-                goto label_009C87;  /* @0x009C7B */
-            }
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009C81 JGE 0x009C87 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009C8B JNE 0x009CB4 */ {
-            /* @0x009C93 */ overlay_call_037F_0142();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009C9D JE 0x009CA2 */ {
-            }
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009CA6 JE 0x009CB4 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x009CAF JE 0x009CB4 */ {
-                }
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x009CB9 JGE 0x009CBD */ {
-        }
-        /* @0x009CC7 */ func_008956();
-        /* @0x009CD3 */ func_009102();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009CDF JNE 0x009CE6 */ {
-            goto label_009CE8;  /* @0x009CE4 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009CEF JNE 0x009CF6 */ {
-            goto label_009CF8;  /* @0x009CF4 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009CFF JE 0x009D07 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009D05 JNE 0x009D0E */ {
-                goto label_009D13;  /* @0x009D0C */
-            }
-        }
-        /* @0x009D14 */ func_008524();
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x009D39 JAE 0x009D56 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009D47 JNE 0x009D56 */ {
-                goto label_009D5B;  /* @0x009D54 */
-            }
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x009D63 JAE 0x009D73 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009D71 JE 0x009D78 */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009D8C JE 0x009D92 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009D96 JE 0x009D9B */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009D9F JE 0x009DAD */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x009DA5 JLE 0x009DAD */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009DB1 JE 0x009DD5 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009DB7 JE 0x009DD5 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x009DBD JE 0x009DD2 */ {
-                    if (/* JLE fallthrough cond: */ ax > 0) /* @0x009DC7 JLE 0x009DD5 */ {
-                        goto label_009DD5;  /* @0x009DCF */
-                    }
-                }
-            }
-        }
-        /* @0x009DDE */ func_009AAA();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009DEB JNE 0x009DF8 */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x009DF1 JG 0x009DF8 */ {
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x009DFC JGE 0x009E04 */ {
-            goto label_009E13;  /* @0x009E01 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009E08 JE 0x009E0D */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E17 JNE 0x009E2F */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E1F JNE 0x009E25 */ {
-            }
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E28 JNE 0x009E2F */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E33 JNE 0x009E41 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E3B JNE 0x009E41 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E47 JNE 0x009EAB */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E4D JNE 0x009EAB */ {
-                /* @0x009E55 */ overlay_call_037F_0142();
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E5F JNE 0x009E66 */ {
-                }
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E6C JNE 0x009EAB */ {
-                    /* @0x009E74 */ overlay_call_037F_0142();
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E7E JNE 0x009EAB */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x009E84 JE 0x009EAB */ {
-                            /* @0x009E8C */ overlay_call_037F_0142();
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009E96 JNE 0x009E9E */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x009E9C JE 0x009EA6 */ {
-                                    goto label_009EAB;  /* @0x009EA3 */
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009EAF JNE 0x009EB4 */ {
-        }
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x009EB8 JG 0x009EBD */ {
-            goto label_009F4F;  /* @0x009EBA */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009EC1 JE 0x009EC6 */ {
-            goto label_009F4F;  /* @0x009EC3 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009ECF JE 0x009ED7 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009ED5 JE 0x009EDD */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x009EDB JNE 0x009EE2 */ {
-                }
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009EEB JNE 0x009EF3 */ {
-        }
-        /* @0x009EF9 */ overlay_call_037F_0142();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009F03 JE 0x009F11 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x009F09 JLE 0x009F11 */ {
-            }
-        }
-        /* @0x009F17 */ overlay_call_037F_0142();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009F21 JE 0x009F2F */ {
-            if (/* JG fallthrough cond: */ ax <= 0) /* @0x009F27 JG 0x009F2F */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009F33 JE 0x009F49 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009F3F JE 0x009F49 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x009F44 JNE 0x009F49 */ {
-                }
-            }
-        }
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x009F53 JL 0x009F65 */ {
-            /* @0x009F58 */ func_00863E();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x009F60 JNE 0x009F65 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009F69 JNE 0x009F86 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x009F81 JE 0x009F86 */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009F8A JE 0x009FB9 */ {
-            if (/* JLE fallthrough cond: */ ax > 0) /* @0x009F90 JLE 0x009FB9 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x009F96 JE 0x009FB6 */ {
-                    if (/* JE fallthrough cond: */ ax != 0) /* @0x009F9C JE 0x009FB6 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x009FA2 JE 0x009FB6 */ {
-                            if (/* JE fallthrough cond: */ ax != 0) /* @0x009FA8 JE 0x009FB6 */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x009FAE JE 0x009FB6 */ {
-                                    if (/* JL fallthrough cond: */ ax >= 0) /* @0x009FB4 JL 0x009FB9 */ {
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x009FBE JGE 0x009FC2 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009FC9 JE 0x009FD8 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x009FCF JL 0x009FD8 */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009FDC JE 0x009FF6 */ {
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009FE2 JGE 0x009FF6 */ {
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x009FEF JGE 0x009FF3 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return compute_terrain_yield((int16_t)arg0_bp_06, (int16_t)arg1_bp_08,
+                                 (int *)arg2_bp_0A, (int16_t)arg3_bp_0C);
 }
 
 /* @asm        0x009FFC..0x00A222  (550 bytes)  region=load_image
@@ -1343,79 +1161,19 @@ int func_009B9C_logic_sz_1120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t
  *   - 0x0086E4
  *   - 0x00863E  (2x)
  *   - 0x00864E
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role COLONY_TOUCHED — per-colonist building-output engine
+ * @status     FORWARDER 2026-06-09 (canonical body lives in colony/colonist_handler.c)
+ * @note   This is the same function as unit_individual_handler_9FFC(colonist_idx,
+ *         meta), fully decompiled (byte-verified) in src/colony/colonist_handler.c
+ *         (0x9FFC..0xA221).  The auto-skeleton here was a broken duplicate; to
+ *         avoid a second definition this is a thin forwarder.  Arg map (cdecl):
+ *         arg0=colonist_idx [bp+6], arg1=meta out-ptr [bp+8].
  */
+extern int unit_individual_handler_9FFC(int colonist_idx, int *meta);
+
 int func_009FFC_colony_sz_550(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x53A6, 0x8542
-     */
-        /* @0x00A004 */ func_0090C8();
-        /* @0x00A011 */ func_009102();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A01D JNE 0x00A024 */ {
-            goto label_00A026;  /* @0x00A022 */
-        }
-        /* @0x00A02A */ func_008524();
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x00A04C JAE 0x00A06A */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A05A JNE 0x00A06A */ {
-                goto label_00A06F;  /* @0x00A067 */
-            }
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x00A077 JAE 0x00A087 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00A085 JE 0x00A08C */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A0A0 JE 0x00A0A6 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A0AA JE 0x00A0AF */ {
-        }
-        /* @0x00A0C6 */ func_008D9C();
-        /* @0x00A0D1 */ func_0086E4();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A0DD JE 0x00A0F8 */ {
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x00A0E0 JL 0x00A0E5 */ {
-                if (/* JLE fallthrough cond: */ ax > 0) /* @0x00A0E3 JLE 0x00A0EC */ {
-                    goto label_00A0F1;  /* @0x00A0EA */
-                }
-            }
-            goto label_00A1E4;  /* @0x00A0F4 */
-        }
-        goto label_00A0F1;  /* @0x00A0FD */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A109 JE 0x00A110 */ {
-            goto label_00A113;  /* @0x00A10E */
-        }
-        /* @0x00A11F */ func_00863E();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A127 JNE 0x00A12C */ {
-            goto label_00A206;  /* @0x00A129 */
-        }
-        goto label_00A206;  /* @0x00A12F */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A136 JE 0x00A13E */ {
-            goto label_00A141;  /* @0x00A13B */
-        }
-        /* @0x00A152 */ func_00863E();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A15A JE 0x00A15F */ {
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00A175 JNE 0x00A17A */ {
-            goto label_00A206;  /* @0x00A177 */
-        }
-        goto label_00A206;  /* @0x00A182 */
-        /* @0x00A19B */ func_00864E();
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00A1A7 JLE 0x00A1B2 */ {
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00A1B6 JLE 0x00A1C0 */ {
-        }
-        goto label_00A127;  /* @0x00A1C4 */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00A1DA JE 0x00A206 */ {
-            goto label_00A206;  /* @0x00A1E1 */
-            if (/* JA fallthrough cond: */ ax <= 0) /* @0x00A1EA JA 0x00A206 */ {
-            }
-        }
-        if (/* JLE fallthrough cond: */ ax > 0) /* @0x00A207 JLE 0x00A211 */ {
-        }
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00A219 JGE 0x00A21D */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    return unit_individual_handler_9FFC((int16_t)arg0_bp_06, (int *)arg1_bp_08);
 }
 
 /* @asm        0x00A6A2..0x00A724  (130 bytes)  region=load_image

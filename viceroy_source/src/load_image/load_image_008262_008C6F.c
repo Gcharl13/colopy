@@ -1029,6 +1029,9 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     ny = (int16_t)((int16_t)(uint8_t)DG8(ctxp + 1) + (int16_t)arg1_bp_08 - 2);  /* @asm 0x89D7 */
     nx = (int16_t)((int16_t)(uint8_t)DG8(ctxp + 0) + (int16_t)arg0_bp_06 - 2);  /* @asm 0x89E2 */
+    /* nx/ny/region are the real args to the 0-arg overlay stubs below (shown in
+     * each call's comment to match overlay_externs.h prototypes). */
+    (void)nx; (void)ny; (void)region;
 
     if ((int16_t)overlay_call_037F_0314(/* nx, ny */) < 0) {        /* @asm 0x89F2 */
         if ((int16_t)overlay_call_037F_03E4(/* nx, ny */) < 0) {    /* @asm 0x8A04 */
@@ -1090,6 +1093,31 @@ after_color:
 store_ff:
     func_008918(arg0_bp_06, arg1_bp_08, 1);     /* @asm 0x8B8C blit_at_origin_if_pair_visible */
     return 0;                                   /* @asm 0x8B92 (no explicit value) */
+}
+
+/* @asm        0x008B96..0x008BAD  (24 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_008B96.asm
+ * @pattern    TINY_PREDICATE
+ * @prologue   PUSH-BP-MOV-BP-SP
+ * @args_seen  [6]
+ * @lcalls     0
+ * @near_calls 0
+ * @callers    0x008BD4 0x008C1E
+ * @touches_8542 False
+ * @inferred_role  predicate: 1 iff per-unit-type attribute at 0x30E is >= 0
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Not emitted as a skeleton (in this file's span; generator skipped it);
+ *         ported here because func_008BD4/func_008C1E call it. This is the boolean
+ *         companion of func_008BB2 (which returns the attribute byte itself).
+ */
+int func_008B96(uint16_t arg0_bp_06)
+{
+    /* @asm 0x8B99 imul bx,[bp+6],0x1c; bl=[bx+0x3146] (UnitRecord.type, +0x02);
+     *      bh=0; cmp byte[bx+0x30E],0; jl 0x8BAE (ret 0); else ret 1.
+     * Returns 1 when the signed per-unit-type attribute at DGROUP:0x30E (indexed
+     * by unit_table[arg0].type) is >= 0, else 0. */
+    uint8_t type = DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x02);
+    return ((int8_t)DG8(0x030E + type) >= 0) ? 1 : 0;
 }
 
 /* @asm        0x008BB2..0x008BC6  (20 bytes)  region=load_image
@@ -1195,26 +1223,40 @@ int func_008BD4_op_sz_73(uint16_t arg0_bp_06)
  *
  * Near CALL targets:
  *   - 0x008B96
- * @inferred_role  MISSING_ASM (81 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  inverse of func_008BD4: for chain node arg0, returns ctx[+0x1F]
+ *                 plus the count of func_008B96-qualifying nodes up to and incl. it
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   The banner @inferred_role read "MISSING_ASM"; this was wrong -- the full
+ *         81-byte disassembly exists (func_008C1E.asm, functions.json 0x8C1E..0x8C6F)
+ *         and is ported below.
  */
-int func_008C1E_logic_sz_81(uint16_t arg0_bp_06)
+/* Bare func_008C1E name: load_image_008C70 calls it as the bare symbol. */
+int func_008C1E(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542, 0x8D78
-     */
-        goto label_008C63;  /* @0x008C2E */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x008C34 JGE 0x008C6A */ {
-            /* @0x008C38 */ func_008B96();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x008C40 JE 0x008C5B */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x008C4B JNE 0x008C5B */ {
-                }
-            }
-            /* @0x008C5E */ overlay_call_0427_004A();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x008C68 JGE 0x008C30 */ {
+    /* @asm 0x8C22 result=0xFFFF [bp-6]; counter=0xFFFF [bp-4]; node=[0x8D78] (ax).
+     *      loop: store node [bp-2]; if (node<0) break. 0x8C30 if (result>=0) break.
+     *      if (func_008B96(node)!=0) { counter++; if (node==arg0) result =
+     *        (int8)ctx.population(+0x1F) + counter; }. 0x8C5E node = lcall
+     *      0x427:0x4A(node). Return result.
+     * Walks the unit chain from head DGROUP:0x8D78 counting func_008B96-qualifying
+     * nodes; when it reaches the requested node arg0, returns the current colony's
+     * population base (ctx[+0x1F]) plus that running count. This is the inverse map
+     * of func_008BD4 (which maps an index back to a node). */
+    int16_t result = -1;                        /* @asm [bp-6] */
+    int16_t counter = -1;                       /* @asm [bp-4] */
+    int16_t node = (int16_t)DG16(0x8D78);       /* @asm 0x8C2B chain head */
+    while (node >= 0) {                          /* @asm 0x8C66 or ax,ax; jge */
+        if (result >= 0)                        /* @asm 0x8C30 */
+            break;
+        if (func_008B96((uint16_t)node) != 0) { /* @asm 0x8C38 */
+            counter++;                          /* @asm 0x8C42 */
+            if (node == (int16_t)arg0_bp_06) {  /* @asm 0x8C48 */
+                unsigned ctxp = DG16(0x8542);   /* @asm 0x8C4D */
+                result = (int16_t)((int8_t)DG8(ctxp + 0x1F) + counter);  /* @asm 0x8C51 */
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        node = (int16_t)overlay_call_0427_004A(/* node in AX */);  /* @asm 0x8C5E next link */
+    }
+    return result;                              /* @asm 0x8C6A */
 }
 
