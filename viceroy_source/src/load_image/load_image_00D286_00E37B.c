@@ -7,10 +7,23 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
-/* @asm        0x00D286..0x00D295  (15 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00D286_getch.asm
+/* ----------------------------------------------------------------------------
+ * Overlay (RTLink) far-call targets referenced by the ported bodies below that
+ * are NOT (yet) declared in overlay_externs.h.  Declared locally so this TU can
+ * forward to them faithfully; they should be promoted into overlay_externs.h.
+ * Period code reaches each via `lcall seg:off`; args travel on the DOS stack, so
+ * the modern shim signatures are `(void)` like their siblings.
+ * -------------------------------------------------------------------------- */
+extern int overlay_call_0A4E_0008(void);  /* @ref RTLink 0x0A4E:0x0008 (opaque screen-address helper; les di,[res]) */
+extern int overlay_call_0C05_0004(void);  /* @ref RTLink 0x0C05:0x0004 (screen-address / stream flush; far ptr in dx:ax) */
+extern int overlay_call_09F6_0002(void);  /* @ref RTLink 0x09F6:0x0002 (C-runtime string helper) */
+extern int overlay_call_0BAA_0006(void);  /* @ref RTLink 0x0BAA:0x0006 (clipped tile blit == func_00DEA6) */
+
+/* @asm        0x00D286..0x00D29C  (22 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_00D286.asm
  * @pattern    TINY_ACCESSOR
  * @prologue   PUSH-BP-MOV-BP-SP
  * @args_seen  []
@@ -18,13 +31,19 @@
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (15 bytes). no LCALLs
+ * @inferred_role  BIOS keyboard read (int 0x16 fn 0); returns (1<<8 | scancode)
+ *                 on a key, 0 when none.  (auto-banner "15 bytes/ends 0xD295"
+ *                 truncated at the first `je`; true end 0xD29C per functions.json.)
  * @status     PLATFORM_LAYER (BIOS interrupt; host/runtime layer replaced in the modern port, not decompiled)
  */
 int func_00D286_logic_sz_15(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00D289 mov ah,0; int 0x16 (BIOS read keystroke -> al=ascii, ah=scan);
+     *      0x00D28D or al,al; je 0xD296 (no/extended key): then mov al,ah; mov ah,1
+     *      -> returns 0x0100|scan.  Otherwise xor ah,ah -> returns ascii (ah=0).
+     * PLATFORM_LAYER: real keyboard input is owned by the modern (SDL) front end;
+     * the rules layer performs no BIOS I/O, so this reports "no key" (0). */
+    return 0;  /* @asm int 0x16 — host-replaced; no keyboard in the rules layer */
 }
 
 /* @asm        0x00D2AC..0x00D2E5  (57 bytes)  region=load_image
@@ -122,12 +141,19 @@ int func_00D41E_logic_sz_29(void)
  */
 int func_00D642_op_sz_129(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D668 */ overlay_call_09F6_00B0();
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x00D697 JB 0x00D6A7 */ {
-            goto label_00D6AC;  /* @0x00D6A4 */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D64C copy the [bp+6] path (up to 0x4F bytes, NUL-stopped) into a
+     *      local 0x53-byte buffer; 0x00D660 build a full path via 0x09F6:0x00B0;
+     *      0x00D670 ax=0x3524 int 0x21 (get INT 0x24 critical-error vector, saved
+     *      to cs:[6/8]); install a private handler (ax=0x2524 int 0x21);
+     *      0x00D692 ax=0x3D00 int 0x21 (DOS open, read-only); jb 0xD6A7 on error
+     *      -> result=0; else close (ah=0x3E int 0x21) and result=0xFFFF; 0x00D6AC
+     *      restore the saved INT 0x24 vector (ax=0x2524 int 0x21); return result.
+     * This is a "file exists / is openable" probe.
+     * PLATFORM_LAYER: DOS INT 21h file I/O and the INT 24h critical-error vector
+     * are owned by the modern host; the rules layer performs no real disk I/O, so
+     * this reports "not found" (0).  Kept as a documented platform stub. */
+    (void)overlay_call_09F6_00B0();   /* @asm 0x00D668 build path (kept for provenance) */
+    return 0;  /* @asm result [bp-2]; host-replaced — no DOS file I/O in the rules layer */
 }
 
 /* @asm        0x00D6C4..0x00D6FF  (59 bytes)  region=load_image
@@ -142,19 +168,33 @@ int func_00D642_op_sz_129(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x0D1D:0x0786  (2x)
- * @inferred_role  UNKNOWN (59 bytes). 0x0D1D:0x0786 + 0x0D1D:0x0786
+ * @inferred_role  C_RUNTIME: emit up to 0x4F transformed chars (0x0D1D:0x0786
+ *                 per char) into the dest buffer, stopping when the helper
+ *                 returns 0; then one terminating call.  Register args:
+ *                 ax = an int passed through to the helper, bx = dest buffer.
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00D6C4_rtl_sz_59(void)
+char near *func_00D6C4_rtl_sz_59(int arg_ax /*ax*/, char near *dest /*bx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JGE fallthrough cond: */ ax < 0) /* @0x00D6D5 JGE 0x00D6EF */ {
-            /* @0x00D6D8 */ overlay_call_0D1D_0786();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D6ED JNE 0x00D6D2 */ {
-            }
-        }
-        /* @0x00D6F0 */ overlay_call_0D1D_0786();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D6CB mov [bp-2],bx (save dest); sub si,si (i=0); mov di,ax.
+     *      loop @0x00D6D2: cmp si,0x4F; jge 0xD6EF (done); push di;
+     *      lcall 0D1D:0x786 (transform -> al, status in ax); cx=ax;
+     *      bx=[bp-2]; inc [bp-2]; mov [bx],al (store char, advance dest);
+     *      inc si; or cx,cx; jne 0xD6D2 (continue while non-zero).
+     *      0x00D6EF push di; lcall 0D1D:0x786 (final/terminator).
+     *      Returns the original dest pointer ([bp-8] = saved bx). */
+    char near *p = dest;                 /* @asm [bp-2] running dest pointer */
+    int i;
+    int status;
+    for (i = 0; i < 0x4F; i++) {         /* @asm cmp si,0x4F; jge done */
+        status = overlay_call_0D1D_0786();   /* @asm transform one char */
+        *p++ = (char)status;             /* @asm mov [bx],al; inc [bp-2] */
+        if (status == 0)                 /* @asm or cx,cx; jne loop */
+            break;
+    }
+    overlay_call_0D1D_0786();            /* @asm 0x00D6F0 final call */
+    (void)arg_ax;
+    return dest;                         /* @asm mov ax,[bp-8] (saved dest ptr) */
 }
 
 /* @asm        0x00D700..0x00D72E  (46 bytes)  region=load_image
@@ -169,17 +209,27 @@ int func_00D6C4_rtl_sz_59(void)
  *
  * LCALL targets:
  *   - 0x0D1D:0x0758  (2x)
- * @inferred_role  UNKNOWN (46 bytes). 0x0D1D:0x0758 + 0x0D1D:0x0758
+ * @inferred_role  C_RUNTIME: write a NUL-terminated source string through the
+ *                 stream helper 0x0D1D:0x0758 (one char per call), then emit a
+ *                 0x1A (DOS EOF) terminator.  Register args: ax = stream handle,
+ *                 bx = far source pointer.
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-int func_00D700_rtl_sz_46(void)
+int func_00D700_rtl_sz_46(int handle /*ax*/, const char near *src /*bx*/)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D711 */ overlay_call_0D1D_0758();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D71D JNE 0x00D70A */ {
-        }
-        /* @0x00D722 */ overlay_call_0D1D_0758();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D706 mov si,bx (source); mov di,ax (handle).
+     *      loop @0x00D70A: push di; lodsb al,[si]; cwde; push ax; [bp-6]=ax;
+     *      lcall 0D1D:0x758 (write char); cmp [bp-6],0; jne 0xD70A (until NUL).
+     *      0x00D71F push di; push 0x1A; lcall 0D1D:0x758 (write EOF byte). */
+    const char near *s = src;
+    int ch;
+    do {
+        ch = (signed char)*s++;          /* @asm lodsb; cwde (sign-extend) */
+        overlay_call_0D1D_0758();        /* @asm push di; push ch; lcall 0D1D:0x758 */
+    } while (ch != 0);                    /* @asm cmp [bp-6],0; jne loop */
+    overlay_call_0D1D_0758();            /* @asm 0x00D722 push di; push 0x1A; lcall (EOF) */
+    (void)handle;
+    return 0;                            /* @asm retf (ax not set) */
 }
 
 /* @asm        0x00D72E..0x00D77B  (77 bytes)  region=load_image
@@ -201,14 +251,21 @@ int func_00D700_rtl_sz_46(void)
  */
 int func_00D72E_rtl_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D73B */ overlay_call_0D1D_10EA();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00D745 JNE 0x00D769 */ {
-            /* @0x00D74F */ overlay_call_0D1D_11B4();
-            /* @0x00D761 */ overlay_call_0D1D_11B4();
-        }
-        /* @0x00D76E */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D732 si=[bp+0xa] (the far-ptr offset of the path);
+     *      0x00D735 push 0x2E ('.'); push [bp+0xc] (seg); push si;
+     *      lcall 0D1D:0x10EA (scan for '.', returns dx:ax = ptr or 0);
+     *      0x00D743 or dx,ax; jne 0xD769 (no '.': skip the split):
+     *        0x00D747 push ds;push 0x2626;push [bp+0xc];push si; lcall 0D1D:0x11B4;
+     *        0x00D757 push [bp+8];push [bp+6];push [bp+0xc];push si; lcall 0D1D:0x11B4.
+     *      0x00D769 push [bp+0xc]; push si; lcall 0D1D:0x1118 (finalise). */
+    int found = (int)overlay_call_0D1D_10EA();   /* @asm scan for '.'; dx:ax */
+    if (found != 0) {                            /* @asm or dx,ax; jne -> skip */
+        overlay_call_0D1D_11B4();                /* @asm 0x00D74F split tail @0x2626 */
+        overlay_call_0D1D_11B4();                /* @asm 0x00D761 copy [bp+6]/[bp+8] */
+    }
+    overlay_call_0D1D_1118();                    /* @asm 0x00D76E finalise [bp+0xc]:si */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm retf 8 */
 }
 
 /* @asm        0x00D77C..0x00D796  (26 bytes)  region=load_image
@@ -248,15 +305,23 @@ int func_00D77C_logic_sz_26(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C, uint16_t a
  */
 int func_00D7F4_rtl_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D804 */ overlay_call_0D1D_117E();
-        /* @0x00D813 */ overlay_call_0D1D_10EA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D822 JE 0x00D82A */ {
-            goto label_00D832;  /* @0x00D828 */
-        }
-        /* @0x00D83C */ overlay_call_0D1D_117E();
-        /* @0x00D84A */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x00D7F9 copy src [bp+6]:[bp+8] into local 0x54-byte buf via 0D1D:0x117E;
+     *      0x00D80C push 0x5C ('\\'); copy ss:&buf; lcall 0D1D:0x10EA (find last '\\');
+     *      si=ax; [bp-2]=dx; or dx,ax; je 0xD82A (NOT found): point si at buf start,
+     *      [bp-2]=ss.  found: inc si (skip the '\\'), [bp-2]=dx.
+     *      0x00D832 copy si:[bp-2] into [bp+0xa]:[bp+0xc] via 0D1D:0x117E;
+     *      0x00D844 lcall 0D1D:0x1118 ([bp+0xa]:[bp+0xc]); return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    overlay_call_0D1D_117E();                    /* @asm 0x00D804 copy src -> buf */
+    {
+        int sep = (int)overlay_call_0D1D_10EA(); /* @asm 0x00D813 find last '\\' */
+        (void)sep;                               /* found -> tail after '\\'; else whole buf */
+    }
+    overlay_call_0D1D_117E();                    /* @asm 0x00D83C copy tail -> dest */
+    overlay_call_0D1D_1118();                    /* @asm 0x00D84A finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
 }
 
 /* @asm        0x00D85E..0x00D8E4  (134 bytes)  region=load_image
@@ -278,18 +343,31 @@ int func_00D7F4_rtl_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  */
 int func_00D85E_rtl_sz_134(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x00D86E */ overlay_call_0D1D_117E();
-        /* @0x00D87D */ overlay_call_0D1D_10EA();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00D88C JE 0x00D8B8 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00D896 JE 0x00D89C */ {
-            }
-            /* @0x00D8A7 */ overlay_call_0D1D_117E();
-            goto label_00D8CB;  /* @0x00D8B6 */
+    /* @asm 0x00D869 copy src [bp+6]:[bp+8] into local 0x54 buf via 0D1D:0x117E;
+     *      0x00D876 push 0x5C; find last '\\' via 0D1D:0x10EA -> di=ax,[bp-2]=dx;
+     *      or dx,ax; je 0xD8B8 (no '\\': just copy buf -> dest).
+     *      found @0x00D88E: es=[bp-2]; cmp es:[di+1],0; je 0xD89C (nothing after '\\');
+     *        else es:[di]=0 (truncate just after the directory part);
+     *        0x00D89C copy buf -> [bp+0xa]:[bp+0xc] via 0D1D:0x117E;
+     *        0x00D8AF es:[di]=0x5C (restore the '\\'); jmp 0xD8CB.
+     *      0x00D8B8 (no separator) copy buf -> dest via 0D1D:0x117E.
+     *      0x00D8CB finalise [bp+0xa]:[bp+0xc] via 0D1D:0x1118; return that far ptr. */
+    char buf[0x54];                              /* @asm enter 0x54 local buffer */
+    overlay_call_0D1D_117E();                    /* @asm 0x00D86E copy src -> buf */
+    {
+        int sep = (int)overlay_call_0D1D_10EA(); /* @asm 0x00D87D find last '\\' */
+        if (sep != 0) {                          /* @asm or dx,ax; je 0xD8B8 -> no separator */
+            /* @asm if es:[di+1] != 0: es:[di] = 0 (temporary truncate) */
+            overlay_call_0D1D_117E();            /* @asm 0x00D8A7 copy directory part -> dest */
+            /* @asm 0x00D8B2 es:[di] = '\\' (restore separator) */
+        } else {
+            overlay_call_0D1D_117E();            /* @asm 0x00D8C3 copy whole buf -> dest */
         }
-        /* @0x00D8C3 */ overlay_call_0D1D_117E();
-        /* @0x00D8D1 */ overlay_call_0D1D_1118();
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+    overlay_call_0D1D_1118();                    /* @asm 0x00D8D1 finalise dest */
+    (void)buf;
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
 }
 
 /* @asm        0x00D8E4..0x00D971  (141 bytes)  region=load_image

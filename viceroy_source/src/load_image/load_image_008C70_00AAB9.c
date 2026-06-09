@@ -10,71 +10,139 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
-/* @asm        0x008C70..0x008CB2  (66 bytes)  region=load_image
+/* ----------------------------------------------------------------------------
+ * File-local overlay LCALL targets that are NOT (yet) declared in
+ * overlay_externs.h.  Declared here so the ports below compile; addresses are
+ * the RTLink seg:off of the far CALL as seen in the disassembly.
+ * (TODO: promote these to include/overlay_externs.h.)
+ * -------------------------------------------------------------------------- */
+extern int overlay_call_012B_0002(void);  /* @ref seg 0x012B off 0x0002 (func_0091CC) */
+extern int overlay_call_05B3_0004(void);  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
+extern int overlay_call_0981_0000(void);  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
+
+/* @asm        0x008C70..0x008CFF  (144 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008C70_unknown.asm
  * @pattern    UNKNOWN
  * @prologue   ENTER 2
  * @args_seen  []
- * @lcalls     1
+ * @lcalls     3
  * @near_calls 1
  * @callers    0
  * @touches_8542 True
  *
  * LCALL targets:
- *   - 0x0427:0x005C
+ *   - 0x0427:0x005C  (unit-at-tile iterator init)
+ *   - 0x0427:0x004A  (unit-at-tile iterator next)
  *
  * Near CALL targets:
  *   - 0x008B96
- * @inferred_role  MISSING_ASM (66 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  tally units on the colony tile: count owned (0x8D72), total
+ *                 (0x8D74) and "no-class" (0x8D76); clamp owned to 50; clear 0x8D7A
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 66 bytes / @inferred_role MISSING_ASM, a FALSE cut at
+ *         0x8CB2.  The disassembly (func_008C70.asm) IS present: true function is
+ *         0x8C70..0x8CFF (144 bytes), ending leave/retf @0x8CFE; the loop body and
+ *         post-loop clamp truncated by the tracer are decompiled here.
  */
 int func_008C70_logic_sz_66(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542, 0x8D72
-     * Writes DGROUP: 0x8D72, 0x8D74, 0x8D76, 0x8D78
-     */
-        /* @0x008C8C */ overlay_call_0427_005C();
-        goto label_008CD3;  /* @0x008C94 */
-        /* @0x008C98 */ func_008B96();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x008CA0 JE 0x008CA6 */ {
+    /* @asm 0x8C74 zero counters [0x8D72]=[0x8D74]=[0x8D76]=0; bx=ctx; ax=(u8)ctx[0]
+     *      (map_x), dx=(u8)ctx[1] (map_y); lcall 0427:005C(map_x,map_y) -> first
+     *      unit index, stored at [0x8D78]; jmp test.
+     *      loop body 0x8C96: push idx; call 0x8B96(idx); or ax,ax; jne -> inc [0x8D72]
+     *      (owned tally); bx=idx*0x1C; bl=(u8)UnitRecord[idx][+2] (0x3146); bx=bl*14
+     *      (shl1;add;shl1;add;shl1); cmp byte[bx+0x5237],0; je -> inc [0x8D76]
+     *      (no-class tally); inc [0x8D74] (total); ax=idx; lcall 0427:004A(idx)->next.
+     *      test 0x8CD3: [bp-2]=idx; or ax,ax; jge 0x8C96 (continue while idx>=0).
+     *      0x8CDA ax=[0x8D72]; if ax>0x32 ax=0x32; [0x8D72]=ax (clamp owned to 50).
+     *      0x8CE8 if [0x8D76]!=0 && [0x8D7A]>=[0x8D76]: [0x8D7A]=0.
+     * Iterates the units standing on the current colony's map tile (ctx@0x8542,
+     * map_x/map_y at +0/+1) via the 0427:005C/004A iterator, building three running
+     * tallies at DGROUP 0x8D72 (owned, by func_008B96), 0x8D74 (total) and 0x8D76
+     * ("no-class": UnitRecord +2 maps to a zero byte in the 14-stride table at
+     * 0x5237). Clamps the owned tally to 50 and, when there were no-class units and
+     * 0x8D7A has reached/exceeded their count, resets 0x8D7A to 0. */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int idx;
+    int16_t owned;
+    DG16(0x8D72) = 0;
+    DG16(0x8D74) = 0;
+    DG16(0x8D76) = 0;
+    /* lcall 0427:005C(map_x, map_y) -> first unit index (args in AX/DX); ret in AX */
+    idx = overlay_call_0427_005C(/* ctx[0], ctx[1] */);
+    DG16(0x8D78) = (uint16_t)idx;
+    while (idx >= 0) {
+        if (func_008B96((uint16_t)idx) != 0)               /* unit owned by current power */
+            DG16(0x8D72)++;
+        {
+            uint8_t cls = (uint8_t)DG8(0x3146 + (unsigned)idx * 0x1C);  /* UnitRecord[idx] +2 */
+            if (DG8(0x5237 + (unsigned)cls * 14) == 0)
+                DG16(0x8D76)++;                            /* no-class tally */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        DG16(0x8D74)++;                                    /* total tally */
+        idx = overlay_call_0427_004A(/* idx */);           /* next unit on tile */
+    }
+    owned = (int16_t)DG16(0x8D72);
+    if (owned > 0x32) owned = 0x32;                        /* clamp owned to 50 */
+    DG16(0x8D72) = (uint16_t)owned;
+    if (DG16(0x8D76) != 0 && (int16_t)DG16(0x8D7A) >= (int16_t)DG16(0x8D76))
+        DG16(0x8D7A) = 0;
+    (void)ctx_local;
+    return 0;
 }
 
-/* @asm        0x008D26..0x008D6B  (69 bytes)  region=load_image
+/* @asm        0x008D26..0x008D9B  (118 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008D26_unknown.asm
  * @pattern    UNKNOWN
  * @prologue   ENTER 4
  * @args_seen  [6, 8]
- * @lcalls     2
+ * @lcalls     3
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x037F:0x000A
- *   - 0x037F:0x0358
- * @inferred_role  UNKNOWN (69 bytes). 0x037F:0x000A + 0x037F:0x0358
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x037F:0x000A  (tile in-bounds predicate)
+ *   - 0x037F:0x0358  (tile-has-colony predicate)
+ *   - 0x181F:0x03FE  (assert/error with message ptr 0x0350)
+ * @inferred_role  colony index at tile (arg0,arg1): scan colony_table @0x5D46 for
+ *                 the colony whose map_x/map_y match; -1 (+ assert) if none
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 69 bytes ending 0x8D6B: a FALSE cut.  Disassembly
+ *         (func_008D26.asm) IS present: true function is 0x8D26..0x8D9B (118 bytes),
+ *         the colony-table scan and the assert tail were truncated.
  */
 int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x539E
-     */
-        /* @0x008D35 */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x008D3F JE 0x008D97 */ {
-            /* @0x008D47 */ overlay_call_037F_0358();
-            if (/* JL fallthrough cond: */ ax >= 0) /* @0x008D51 JL 0x008D97 */ {
-                goto label_008D82;  /* @0x008D58 */
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x008D60 JGE 0x008D88 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x8D2A result[bp-4]=-1; push arg1,arg0; lcall 037F:000A(arg0,arg1);
+     *      or ax,ax; je 0x8D97 (tile out of bounds -> -1);
+     *      push arg1,arg0; lcall 037F:0358(arg0,arg1); or ax,ax; jl 0x8D97
+     *      (no colony on tile -> -1); i[bp-2]=0; jmp test.
+     *      loop 0x8D5A: ax=[0x539E] (colony count); cmp i,ax; jge 0x8D88;
+     *      al=(u8)arg0; bx=i*0xCA; cmp byte[bx+0x5D46],al; jne next; al=(u8)arg1;
+     *      cmp byte[bx+0x5D47],al; jne next; result=i (match). next: i++.
+     *      test 0x8D82: cmp result,0; jl 0x8D5A (keep scanning while result<0).
+     *      0x8D88 if result>=0 -> 0x8D97; else lea bx,[0x0350]; lcall 181F:03FE
+     *      (assert/error). 0x8D97 return result.
+     * Returns the index of the colony occupying map tile (arg0,arg1) by matching
+     * map_x (+0) / map_y (+1) across the colony_table at 0x5D46 (stride 0xCA, count
+     * 0x539E). Guards on the in-bounds (037F:000A) and tile-has-colony (037F:0358)
+     * overlay predicates and, if those pass yet no table row matches, fires the
+     * 181F:03FE assert (message ptr 0x0350) before returning -1. */
+    int16_t result = -1;
+    int i;
+    if (overlay_call_037F_000A(/* arg0, arg1 */) == 0)     /* tile in bounds? */
+        return -1;
+    if (overlay_call_037F_0358(/* arg0, arg1 */) < 0)      /* colony on tile? */
+        return -1;
+    for (i = 0; result < 0 && i < (int16_t)DG16(0x539E); i++) {
+        if (DG8(0x5D46 + (unsigned)i * 0xCA) == (uint8_t)arg0_bp_06 &&
+            DG8(0x5D47 + (unsigned)i * 0xCA) == (uint8_t)arg1_bp_08)
+            result = (int16_t)i;
+    }
+    if (result < 0)
+        overlay_call_181F_03FE(/* &msg @0x0350 */);        /* assert: colony expected */
+    return result;
 }
 
 /* @asm        0x008D9C..0x008DBB  (31 bytes)  region=load_image
@@ -363,44 +431,61 @@ int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @touches_8542 True
  *
  * Near CALL targets:
- *   - 0x0090C8
- *   - 0x009102
- *   - 0x008BD4
- * @inferred_role COLONY_TOUCHED  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0090C8  (current_unit_field_at_20 -> "job/class" byte)
+ *   - 0x009102  (current_unit_field_at_40 -> "profession" byte)
+ *   - 0x008BD4  (resolve out-of-colony unit index)
+ * @inferred_role COLONY_TOUCHED — display/sprite id for colony slot arg0
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 181 bytes ending 0x9281: a FALSE cut.  Disassembly
+ *         (func_0091CC.asm) IS present: true function is 0x91CC..0x9298 (205 bytes);
+ *         the whole field20>0x13 branch and its UnitRecord lookup were truncated.
+ *         LCALL 0x012B:0x0002 declared file-locally above.
  */
 int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542
-     */
-        /* @0x0091D4 */ func_0090C8();
-        /* @0x0091E1 */ func_009102();
-        if (/* JG fallthrough cond: */ ax <= 0) /* @0x0091EE JG 0x009206 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0091F3 JNE 0x0091FA */ {
-            }
-            goto label_009291;  /* @0x009202 */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009215 JNE 0x00921C */ {
-            goto label_00921E;  /* @0x00921A */
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009225 JNE 0x009232 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00922B JNE 0x009232 */ {
-            }
-        }
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x009236 JNE 0x009241 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x009245 JE 0x00924D */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x00924B JNE 0x009294 */ {
-                /* @0x00925C */ func_008BD4();
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x00926D JE 0x009276 */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x009274 JNE 0x009294 */ {
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x91D0 field20[bp-8]=func_0090C8(arg0); field40[bp-6]=func_009102(arg0);
+     *      cmp field20,0x13; jg 0x9206 (else branch when field20>0x13).
+     *   small-id path (field20<=0x13): if field40==0x1c -> field40=0x13;
+     *      result[bp-4]=lcall 012B:0002(field40); jmp 0x9291; return result.
+     *   big-id path 0x9206: result=field20+0x52; flag[bp-2]=(field40==field20);
+     *      if field40==0x15 && field20==0x17 -> flag=1; if !flag -> result=field20+0x36;
+     *      if field20==0x15 || field20==0x17:
+     *        u=func_008BD4(arg0 - (i8)ctx->pop);     (out-of-colony unit index)
+     *        cls=UnitRecord[u][+2] (0x3146); if cls==9 || cls==7:
+     *           result = (u8)table_5232[cls*14];
+     *      0x9294 return result.
+     * Computes the colony-panel display id for slot arg0.  Low classes (field20<=
+     * 0x13) map straight through overlay 012B:0002 (folding profession 0x1c->0x13);
+     * higher classes get a base of field20+0x52, bumped to field20+0x36 when the
+     * profession does NOT match the class (with the 0x15/0x17 special-case), and
+     * overridden to a 14-stride table_5232 entry when slot arg0 is an out-of-colony
+     * soldier/dragoon (UnitRecord +2 == 9 or 7).  ctx@0x8542, pop@+0x1F. */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int16_t field20 = (int16_t)func_0090C8(arg0_bp_06);    /* @0x91D4 */
+    int16_t field40 = (int16_t)func_009102(arg0_bp_06);    /* @0x91E1 */
+    int16_t result;
+    if (field20 <= 0x13) {
+        if (field40 == 0x1C)
+            field40 = 0x13;                                /* fold profession 0x1c -> 0x13 */
+        result = (int16_t)overlay_call_012B_0002(/* field40 */);
+        return result;
+    }
+    result = (int16_t)(field20 + 0x52);                    /* default big-id base */
+    {
+        int flag = (field40 == field20) ? 1 : 0;
+        if (field40 == 0x15 && field20 == 0x17)
+            flag = 1;
+        if (!flag)
+            result = (int16_t)(field20 + 0x36);            /* profession-mismatch base */
+    }
+    if (field20 == 0x15 || field20 == 0x17) {
+        int16_t u = (int16_t)func_008BD4(
+            (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
+        uint8_t cls = (uint8_t)DG8(0x3146 + (unsigned)(uint16_t)u * 0x1C);  /* UnitRecord +2 */
+        if (cls == 9 || cls == 7)
+            result = (uint8_t)DG8(0x5232 + (unsigned)cls * 14);
+    }
+    return result;
 }
 
 /* @asm        0x009726..0x00975A  (52 bytes)  region=load_image
@@ -416,18 +501,31 @@ int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
  * LCALL targets:
  *   - 0x09EF:0x002C
  *   - 0x09EF:0x001A
- * @inferred_role  MISSING_ASM (52 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  feed the colony tile id ((map_y<<8)+map_x)+*0x8D80 to overlay
+ *                 09EF:001A, after notifying 09EF:002C([0x917A])
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer @inferred_role MISSING_ASM, but func_009726.asm IS present.
+ *         True function is 0x9726..0x9759 (52 bytes); the 32-bit tile-id formed
+ *         between the two overlay calls is decompiled here.
  */
 int func_009726_logic_sz_52(void)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8542, 0x8D80
-     */
-        /* @0x00972E */ overlay_call_09EF_002C();
-        /* @0x009753 */ overlay_call_09EF_001A();
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x972A push [0x917A]; lcall 09EF:002C([0x917A]) (result discarded).
+     *      0x9736 bx=ctx; ax=(ctx[1]<<8) (ah=ctx[+1] map_y, al=0); cdq;
+     *      cx=(u8)ctx[0] (map_x); ax+=cx; dx+=adc 0 (sign-extended (map_y<<8)+map_x);
+     *      add ax,[0x8D80]; adc dx,[0x8D82] (+= 32-bit base at 0x8D80);
+     *      push dx; push ax; lcall 09EF:001A(tile_id32).
+     * Builds the packed tile coordinate ((ctx->map_y<<8) | ctx->map_x) as a signed
+     * 32-bit value, adds the 32-bit base at DGROUP 0x8D80, and hands the result to
+     * overlay 09EF:001A -- after first signalling overlay 09EF:002C with the word at
+     * 0x917A. ctx@0x8542 map_x/map_y at +0/+1. */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int32_t tile_id;
+    overlay_call_09EF_002C(/* DG16(0x917A) */);
+    tile_id = (int32_t)(((int32_t)ctx_local[1] << 8) + (int32_t)ctx_local[0]);
+    tile_id += (int32_t)DG32(0x8D80);
+    overlay_call_09EF_001A(/* tile_id */);
+    return 0;
 }
 
 /* @asm        0x00975A..0x009773  (25 bytes)  region=load_image
@@ -562,42 +660,59 @@ int func_0097D6_logic_sz_66(uint16_t arg0_bp_06)
     return (uint16_t)c;
 }
 
-/* @asm        0x009818..0x00985A  (66 bytes)  region=load_image
+/* @asm        0x009818..0x009874  (93 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_009818_unknown.asm
  * @pattern    UNKNOWN
  * @prologue   ENTER 6
  * @args_seen  [6]
  * @lcalls     1
- * @near_calls 2
+ * @near_calls 4
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0427:0x004A
+ *   - 0x0427:0x004A  (unit-at-tile iterator next)
  *
  * Near CALL targets:
- *   - 0x00975A
- *   - 0x008B96
- * @inferred_role  UNKNOWN (66 bytes). 0x0427:0x004A
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x00975A  (chain root on 0x8F85)
+ *   - 0x008B96  (unit owned by current power?)
+ *   - 0x009786  (per-good signed lookup @0x2CA)
+ *   - 0x009626  (helper, overlay-resident)
+ * @inferred_role  if arg0 is a chain root -> count owned units on the colony tile,
+ *                 negated; else map arg0 via 0x9786 -> func_009626
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 66 bytes ending 0x985A: a FALSE cut.  Disassembly
+ *         (func_009818.asm) IS present: true function is 0x9818..0x9874 (93 bytes);
+ *         the func_00975A!=0 branch (0x985A..0x9874) was truncated.
  */
 int func_009818_op_sz_66(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x8D78
-     */
-        /* @0x009825 */ func_00975A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x00982D JNE 0x00985A */ {
-            goto label_00984B;  /* @0x009832 */
-            /* @0x009836 */ func_008B96();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00983E JE 0x009843 */ {
-            }
-            /* @0x009846 */ overlay_call_0427_004A();
-            if (/* JGE fallthrough cond: */ ax < 0) /* @0x009850 JGE 0x009834 */ {
-            }
+    /* @asm 0x981C count[bp-2]=0; root=func_00975A(arg0); or ax,ax; jne 0x985A.
+     *   root==0 path: it[bp-6]=[0x8D78]; jmp test; loop 0x9834: push it;
+     *     call 0x8B96(it); or ax,ax; jne -> inc count; it=lcall 0427:004A(it);
+     *     test 0x984B: it=ax; or ax,ax; jge 0x9834.  0x9852 neg count; return count.
+     *   root!=0 path 0x985A: s=func_009786(arg0); or ax,ax; jl 0x9870 (return count=0);
+     *     [bp-2]=func_009626(s); 0x9870 return [bp-2].
+     * When func_00975A(arg0) resolves arg0 to chain-root 0 (the "current colony"
+     * chain), counts how many units along the 0427:004A iterator (seeded from
+     * 0x8D78) are owned by the current power (func_008B96) and returns the NEGATED
+     * count.  Otherwise resolves arg0 through the per-good table at 0x2CA
+     * (func_009786) and, if non-negative, returns func_009626 of it (else 0). */
+    int16_t count = 0;
+    if (func_00975A(arg0_bp_06) == 0) {
+        int it = (int16_t)DG16(0x8D78);
+        while (it >= 0) {
+            if (func_008B96((uint16_t)it) != 0)
+                count++;
+            it = overlay_call_0427_004A(/* it */);         /* next unit on tile */
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+        return -count;
+    } else {
+        int16_t s = (int16_t)func_009786(arg0_bp_06);      /* per-good lookup @0x2CA */
+        if (s < 0)
+            return count;                                  /* count==0 */
+        return (int16_t)func_009626((uint16_t)s);
+    }
 }
 
 /* @asm        0x009876..0x0098B4  (62 bytes)  region=load_image
@@ -794,23 +909,28 @@ int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x037F:0x000A
- *   - 0x037F:0x010E
- * @inferred_role  UNKNOWN (63 bytes). 0x037F:0x000A + 0x037F:0x010E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x037F:0x000A  (tile in-bounds predicate)
+ *   - 0x037F:0x010E  (tile terrain/feature byte)
+ * @inferred_role  predicate: in-bounds AND (010E(arg0,arg1)&0x1F) in [arg2,arg3]
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 int func_0099AE_op_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x0099BD */ overlay_call_037F_000A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0099C7 JE 0x0099E8 */ {
-            /* @0x0099CF */ overlay_call_037F_010E();
-            if (/* JB fallthrough cond: */ ax >= 0) /* @0x0099DC JB 0x0099E8 */ {
-                if (/* JA fallthrough cond: */ ax <= 0) /* @0x0099E1 JA 0x0099E8 */ {
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x99B2 result[bp-2]=0; push arg1,arg0; lcall 037F:000A(arg0,arg1);
+     *      or ax,ax; je 0x99E8 (out of bounds -> 0);
+     *      push arg1,arg0; lcall 037F:010E(arg0,arg1); and al,0x1F;
+     *      cmp al,(u8)arg2; jb 0x99E8 (terrain < arg2 -> 0);
+     *      cmp al,(u8)arg3; ja 0x99E8 (terrain > arg3 -> 0); result=1; return result.
+     * Returns 1 iff tile (arg0,arg1) is in bounds (037F:000A) and its low-5-bit
+     * terrain/feature code (037F:010E & 0x1F) lies within the inclusive band
+     * [arg2, arg3] (unsigned byte compares); otherwise 0.  Overlay calls shown
+     * 0-arg to match overlay_externs.h; real args in comment. */
+    if (overlay_call_037F_000A(/* arg0, arg1 */) != 0) {
+        unsigned terrain = (unsigned)(overlay_call_037F_010E(/* arg0, arg1 */) & 0x1F);
+        if (terrain >= (uint8_t)arg2_bp_0A && terrain <= (uint8_t)arg3_bp_0C)
+            return 1;
+    }
+    return 0;
 }
 
 /* @asm        0x0099EE..0x009A31  (67 bytes)  region=load_image
