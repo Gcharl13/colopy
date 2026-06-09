@@ -61,6 +61,7 @@
  * 0x0613F0..0x06144F).  They live past this file's range; declared extern.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* ----------------------------------------------------------------------------
@@ -382,15 +383,15 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
 
     /* PowerRecord[attacker].gold (+0x21) += gold_delta (32-bit ADC).
      * @asm 0x05CA42..0x05CA54 ADD [bx-0x77D6],ax / ADC [bx-0x77D4],dx */
-    *(int32_t near*)(uint16_t)(attacker_power * 0x13C + 0x882A) += gold_delta;
+    DGS32(attacker_power * 0x13C + 0x882A) += gold_delta;
 
 carry_only:
     {
         /* total_loot(+0x25) and score_bonus(+0x29) += (base - gold_delta).
          * @asm 0x05CA55..0x05CA6E ADD [bx-0x77CE/.. -0x77D2],ax /ADC .. */
         int32_t carry = (int32_t)((int16_t)base_amount - (int16_t)gold_delta);
-        *(int32_t near*)(uint16_t)(attacker_power * 0x13C + 0x8832) += carry;
-        *(int32_t near*)(uint16_t)(attacker_power * 0x13C + 0x882E) += carry;
+        DGS32(attacker_power * 0x13C + 0x8832) += carry;
+        DGS32(attacker_power * 0x13C + 0x882E) += carry;
     }
 
     /* Destroy the settlement. @asm 0x05CA6F..0x05CA77 LCALL 0x181F:0x0808. */

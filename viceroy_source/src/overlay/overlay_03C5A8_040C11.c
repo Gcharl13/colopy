@@ -106,8 +106,8 @@
  *     like 0x1284) are cited as RUNTIME_ONLY (data-resident) — never invented.
  * ---------------------------------------------------------------------------- */
 #ifndef G8
-#  define G8(addr)   (*(uint8_t  near*)(uint16_t)(addr))   /* DS:addr byte  */
-#  define G16(addr)  (*(uint16_t near*)(uint16_t)(addr))   /* DS:addr word  */
+#  define G8(addr)   DG8(addr)    /* DS:addr byte  */
+#  define G16(addr)  DG16(addr)   /* DS:addr word  */
 #endif
 
 /* UnitRecord accessors (base 0x3144, stride 0x1C) — BYTE_VERIFIED layout. */

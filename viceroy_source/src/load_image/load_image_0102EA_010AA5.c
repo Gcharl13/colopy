@@ -62,9 +62,9 @@ int func_010316_logic_sz_30(uint16_t arg0_bp_06)
      * 0x01032A inc bx; 0x01032B mov al,[bx]; or al; jne loop. ret dx (=s). */
     uint16_t p = arg0_bp_06;
     uint8_t c;
-    while ((c = *(uint8_t near *)(uint16_t)p) != 0) {   /* @asm mov al,[bx]; or al; jne */
+    while ((c = DG8(p)) != 0) {   /* @asm mov al,[bx]; or al; jne */
         if ((uint8_t)(c - 0x41) < 0x1A)                 /* @asm sub al,0x41; cmp 0x1A; jae */
-            *(uint8_t near *)(uint16_t)p = (uint8_t)(c + 0x20); /* @asm add al,0x61; mov [bx],al */
+            DG8(p) = (uint8_t)(c + 0x20); /* @asm add al,0x61; mov [bx],al */
         p++;
     }
     return (int)(uint16_t)arg0_bp_06;                   /* @asm xchg dx,ax */
@@ -91,9 +91,9 @@ int func_010334_logic_sz_30(uint16_t arg0_bp_06)
      * 0x010348 inc bx; 0x010349 mov al,[bx]; or al; jne loop. ret dx (=s). */
     uint16_t p = arg0_bp_06;
     uint8_t c;
-    while ((c = *(uint8_t near *)(uint16_t)p) != 0) {   /* @asm mov al,[bx]; or al; jne */
+    while ((c = DG8(p)) != 0) {   /* @asm mov al,[bx]; or al; jne */
         if ((uint8_t)(c - 0x61) < 0x1A)                 /* @asm sub al,0x61; cmp 0x1A; jae */
-            *(uint8_t near *)(uint16_t)p = (uint8_t)(c - 0x20); /* @asm add al,0x41; mov [bx],al */
+            DG8(p) = (uint8_t)(c - 0x20); /* @asm add al,0x41; mov [bx],al */
         p++;
     }
     return (int)(uint16_t)arg0_bp_06;                   /* @asm xchg dx,ax */

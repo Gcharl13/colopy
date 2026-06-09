@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x00FAAA..0x00FABF  (21 bytes)  region=load_image
@@ -104,26 +105,26 @@ int func_00FAF8_logic_sz_135(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     /* @asm 0x00FB1D compute working buffer size into [bp-4]: if [si+6]&0xC or
      *      [di]&1 use [di+2] else default 0x200. */
-    if ((*(uint8_t near *)(uint16_t)(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
-        (*(uint8_t near *)(uint16_t)di & 1))              /* @asm test [di],1 */
-        bufsize = *(uint16_t near *)(uint16_t)(di + 2);   /* @asm mov ax,[di+2] */
+    if ((DG8(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
+        (DG8(di) & 1))              /* @asm test [di],1 */
+        bufsize = DG16(di + 2);   /* @asm mov ax,[di+2] */
     else
         bufsize = 0x200;                                  /* @asm mov ax,0x200 */
 
     for (;;) {
         /* @asm 0x00FB33 drain any bytes already in the FILE buffer via memcpy. */
-        if (!((*(uint8_t near *)(uint16_t)(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
-              (*(uint8_t near *)(uint16_t)di & 1)))             /* @asm test [di],1 */
+        if (!((DG8(si + 6) & 0x0C) ||   /* @asm test [si+6],0xC */
+              (DG8(di) & 1)))             /* @asm test [di],1 */
             goto refill;                                  /* @asm je 0xFB6D */
         {
-            uint16_t avail = *(uint16_t near *)(uint16_t)(si + 2);  /* @asm mov ax,[si+2] */
+            uint16_t avail = DG16(si + 2);  /* @asm mov ax,[si+2] */
             if (avail == 0) goto refill;                  /* @asm or ax,ax; je 0xFB6D */
             if (avail > cx) avail = cx;                   /* @asm cmp ax,cx; jbe; mov ax,cx */
-            func_010352(bx, *(uint16_t near *)(uint16_t)si, avail); /* @asm memcpy(dest=bx,src=[si],avail) */
+            func_010352(bx, DG16(si), avail); /* @asm memcpy(dest=bx,src=[si],avail) */
             cx -= avail;                                  /* @asm sub cx,ax */
-            *(uint16_t near *)(uint16_t)(si + 2) -= avail;/* @asm sub [si+2],ax */
+            DG16(si + 2) -= avail;/* @asm sub [si+2],ax */
             bx += avail;                                  /* @asm add bx,ax */
-            *(uint16_t near *)(uint16_t)si += avail;      /* @asm add [si],ax */
+            DG16(si) += avail;      /* @asm add [si],ax */
         }
         if (cx == 0) goto done;                           /* @asm 0xFB69 jcxz 0xFBC4 */
         continue;                                         /* @asm jmp 0xFB33 */
@@ -132,14 +133,14 @@ int func_00FAF8_logic_sz_135(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
         /* @asm 0x00FB6D if cx >= bufsize, read whole sectors directly. */
         if (cx >= bufsize) {                              /* @asm cmp cx,[bp-4]; jb 0xFB9F */
             uint16_t whole = (uint16_t)(cx - (cx % bufsize));  /* @asm div [bp-4]; sub cx,dx */
-            int rd = func_0114E4((uint8_t)*(uint8_t near *)(uint16_t)(si + 7), bx, whole);
+            int rd = func_0114E4((uint8_t)DG8(si + 7), bx, whole);
                                                           /* @asm call 0x114E4 read(fd,bx,whole) */
             if (rd == 0) {                                /* @asm or ax,ax; je 0xFBBA */
-                *(uint8_t near *)(uint16_t)(si + 6) |= 0x10;  /* @asm or [si+6],0x10 (EOF) */
+                DG8(si + 6) |= 0x10;  /* @asm or [si+6],0x10 (EOF) */
                 goto done;
             }
             if ((uint16_t)rd == 0xFFFF) {                 /* @asm cmp ax,0xFFFF; je 0xFBC0 */
-                *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;  /* @asm or [si+6],0x20 (err) */
+                DG8(si + 6) |= 0x20;  /* @asm or [si+6],0x20 (err) */
                 goto done;
             }
             cx -= (uint16_t)rd;                           /* @asm sub cx,ax */
@@ -150,10 +151,10 @@ int func_00FAF8_logic_sz_135(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
             /* @asm 0x00FB9F last partial sector: pull one byte via _filbuf. */
             int ch = func_010B26(si);                     /* @asm call 0x10B26 _filbuf(fp) */
             if ((uint16_t)ch == 0xFFFF) goto done;        /* @asm cmp ax,0xFFFF; je 0xFBC4 */
-            *(uint8_t near *)(uint16_t)bx = (uint8_t)ch;  /* @asm mov [bx],al */
+            DG8(bx) = (uint8_t)ch;  /* @asm mov [bx],al */
             bx++;                                          /* @asm inc bx */
             cx--;                                          /* @asm dec cx */
-            bufsize = *(uint16_t near *)(uint16_t)(di + 2); /* @asm mov ax,[di+2]; mov [bp-4],ax */
+            bufsize = DG16(di + 2); /* @asm mov ax,[di+2]; mov [bp-4],ax */
             if (cx == 0) goto done;                        /* @asm jmp 0xFB69 */
             continue;
         }
@@ -264,7 +265,7 @@ int func_00FD28_logic_sz_37(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     uint16_t near *fp = (uint16_t near *)(uint16_t)arg1_bp_08;
     if ((int16_t)(--fp[1]) >= 0) {                 /* @asm dec [bx+2]; jns */
         fp[0]++;                                    /* @asm inc [bx] */
-        *(uint8_t near *)(uint16_t)(fp[0] - 1) = (uint8_t)arg0_bp_06; /* @asm mov [bx-1],al */
+        DG8(fp[0] - 1) = (uint8_t)arg0_bp_06; /* @asm mov [bx-1],al */
         return (uint8_t)arg0_bp_06;                 /* @asm xor ah,ah */
     }
     return func_010BBC(arg0_bp_06, arg1_bp_08);     /* @asm call 0x10BBC */
@@ -295,7 +296,7 @@ int func_00FD56_logic_sz_30(uint16_t arg0_bp_06)
     uint16_t near *fp = (uint16_t near *)(uint16_t)arg0_bp_06;
     if ((int16_t)(--fp[1]) >= 0) {                 /* @asm dec [bx+2]; jns */
         fp[0]++;                                    /* @asm inc [bx] */
-        return *(uint8_t near *)(uint16_t)(fp[0] - 1); /* @asm mov al,[bx-1]; xor ah,ah */
+        return DG8(fp[0] - 1); /* @asm mov al,[bx-1]; xor ah,ah */
     }
     return func_010B26(arg0_bp_06);                 /* @asm call 0x10B26 */
 }
@@ -548,7 +549,7 @@ int func_00FEFC_logic_sz_20(uint16_t arg0_bp_06)
      * 0x00FF09 lea ax,[bx-0x20] (flag set) else 0x00FF0E mov ax,bx.
      * [bx+0x27ed] is a per-stream flag byte in the C-runtime FILE-flags
      * region (cf. 0x27BB file_flags); bit 1 selects the -0x20 base form. */
-    if (*(uint8_t near *)(uint16_t)(arg0_bp_06 + 0x27ed) & 2)  /* @asm test [bx+0x27ed],2 */
+    if (DG8(arg0_bp_06 + 0x27ed) & 2)  /* @asm test [bx+0x27ed],2 */
         return (int)(uint16_t)(arg0_bp_06 - 0x20);             /* @asm lea ax,[bx-0x20] */
     return (int)(uint16_t)arg0_bp_06;                          /* @asm mov ax,bx */
 }

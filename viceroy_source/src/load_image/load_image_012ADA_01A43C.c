@@ -7,6 +7,7 @@
  * content derived from control-flow but their semantics still need hand-port.
  * ============================================================================ */
 #include "viceroy.h"
+#include "dgroup.h"
 #include "overlay_externs.h"
 
 /* @asm        0x012ADA..0x012AF6  (28 bytes)  region=load_image
@@ -237,9 +238,9 @@ int func_012DAA_logic_sz_99(char near *str /*in bx*/)
     while (*p != 0) {                                          /* @asm 0x12DFF cmp [bx],0; jne 0x12DB8 */
         uint16_t si = (uint16_t)(int16_t)(int8_t)*p;           /* @asm al=[bx]; cwde; si=ax */
         p++;                                                   /* @asm inc [bp-6] */
-        if (*(uint8_t near *)(uint16_t)(si + 0x27ED) & 2)      /* @asm test [si+0x27ED],2 */
+        if (DG8(si + 0x27ED) & 2)      /* @asm test [si+0x27ED],2 */
             si -= 0x20;                                        /* @asm sub si,0x20 (to upper) */
-        if (*(uint8_t near *)(uint16_t)(si + 0x27ED) & 4) {    /* @asm test [si+0x27ED],4 (digit) */
+        if (DG8(si + 0x27ED) & 4) {    /* @asm test [si+0x27ED],4 (digit) */
             acc = (uint16_t)(acc << 4) + (uint16_t)(si - 0x30);/* @asm shl di,4; add di,si-0x30 */
         } else if (si >= 0x41 && si <= 0x46) {                 /* @asm cmp 0x41/0x46 ('A'..'F') */
             acc = (uint16_t)(acc << 4) + (uint16_t)(si - 0x37);/* @asm shl di,4; add di,si-0x37 */

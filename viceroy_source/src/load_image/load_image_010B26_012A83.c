@@ -36,7 +36,7 @@ int func_010B26_logic_sz_149(uint16_t arg0_bp_06)
 {
     uint16_t si = arg0_bp_06;                                   /* FILE* */
     uint16_t di;
-    uint8_t flags = *(uint8_t near *)(uint16_t)(si + 6);        /* @asm mov al,[si+6] */
+    uint8_t flags = DG8(si + 6);        /* @asm mov al,[si+6] */
     int rd;
 
     /* @asm 0x010B31 test al,0x83; je 0x10B8E (not open-for-read -> error). */
@@ -44,48 +44,48 @@ int func_010B26_logic_sz_149(uint16_t arg0_bp_06)
     /* @asm 0x010B35 test al,0x40; jne 0x10B8E (sticky error -> error). */
     if (flags & 0x40) goto err;
     /* @asm 0x010B39 test al,2; jne 0x10B7F (write-mode stream): set EOF, error. */
-    if (flags & 2) { *(uint8_t near *)(uint16_t)(si + 6) |= 0x20; goto err; }
+    if (flags & 2) { DG8(si + 6) |= 0x20; goto err; }
 
     flags |= 1;                                                 /* @asm or al,1 (reading) */
-    *(uint8_t near *)(uint16_t)(si + 6) = flags;                /* @asm mov [si+6],al */
+    DG8(si + 6) = flags;                /* @asm mov [si+6],al */
     di = (uint16_t)(0x29AE + (si - 0x290E));                    /* @asm di mapping */
 
     /* @asm 0x010B4C if neither flags&0xC nor [di]&1, allocate a buffer. */
-    if (!(flags & 0x0C) && !(*(uint8_t near *)(uint16_t)di & 1))
+    if (!(flags & 0x0C) && !(DG8(di) & 1))
         func_011CD2(si);                                       /* @asm call 0x11CD2 _getbuf(fp) */
 
     /* @asm 0x010B5A reset cursor to base, read a buffer-full. */
-    *(uint16_t near *)(uint16_t)si = *(uint16_t near *)(uint16_t)(si + 4); /* @asm [si]=[si+4] */
-    rd = func_0114E4((uint8_t)*(uint8_t near *)(uint16_t)(si + 7),         /* fd=[si+7] */
-                     *(uint16_t near *)(uint16_t)(si + 4),                 /* buf base */
-                     *(uint16_t near *)(uint16_t)(di + 2));                /* @asm read(fd,base,size) */
+    DG16(si) = DG16(si + 4); /* @asm [si]=[si+4] */
+    rd = func_0114E4((uint8_t)DG8(si + 7),         /* fd=[si+7] */
+                     DG16(si + 4),                 /* buf base */
+                     DG16(di + 2));                /* @asm read(fd,base,size) */
 
     if (rd == 0) {                                              /* @asm or ax,ax; je 0x10B85 */
-        *(uint8_t near *)(uint16_t)(si + 6) |= 0x10;           /* @asm or [si+6],0x10 (EOF) */
-        *(uint16_t near *)(uint16_t)(si + 2) = 0;              /* @asm mov [si+2],0 */
+        DG8(si + 6) |= 0x10;           /* @asm or [si+6],0x10 (EOF) */
+        DG16(si + 2) = 0;              /* @asm mov [si+2],0 */
         goto err;
     }
     if ((uint16_t)rd == 0xFFFF) {                              /* @asm cmp ax,0xFFFF */
-        *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;           /* @asm or [si+6],0x20 (error) */
-        *(uint16_t near *)(uint16_t)(si + 2) = 0;              /* @asm mov [si+2],0 */
+        DG8(si + 6) |= 0x20;           /* @asm or [si+6],0x20 (error) */
+        DG16(si + 2) = 0;              /* @asm mov [si+2],0 */
         goto err;
     }
 
     /* @asm 0x010B93 text-mode marker setup: if file_flags[fd]&0x82==0x82 and
      *      stream flags&0x82==0, mark parallel entry [di]|=0x20. */
     {
-        uint8_t fd = (uint8_t)*(uint8_t near *)(uint16_t)(si + 7);
-        if ((*(uint8_t near *)(uint16_t)(fd + 0x27BB) & 0x82) == 0x82 &&
-            (*(uint8_t near *)(uint16_t)(si + 6) & 0x82) == 0)
-            *(uint8_t near *)(uint16_t)di |= 0x20;             /* @asm or [di],0x20 */
+        uint8_t fd = (uint8_t)DG8(si + 7);
+        if ((DG8(fd + 0x27BB) & 0x82) == 0x82 &&
+            (DG8(si + 6) & 0x82) == 0)
+            DG8(di) |= 0x20;             /* @asm or [di],0x20 */
     }
 
     /* @asm 0x010BAA consume the first byte: bytes_left = rd-1; return *cursor++. */
-    *(uint16_t near *)(uint16_t)(si + 2) = (uint16_t)(rd - 1); /* @asm dec ax; mov [si+2],ax */
+    DG16(si + 2) = (uint16_t)(rd - 1); /* @asm dec ax; mov [si+2],ax */
     {
-        uint16_t bx = *(uint16_t near *)(uint16_t)si;          /* @asm mov bx,[si] */
-        uint8_t ch = *(uint8_t near *)(uint16_t)bx;            /* @asm mov al,[bx] */
-        *(uint16_t near *)(uint16_t)si = (uint16_t)(bx + 1);   /* @asm inc bx; mov [si],bx */
+        uint16_t bx = DG16(si);          /* @asm mov bx,[si] */
+        uint8_t ch = DG8(bx);            /* @asm mov al,[bx] */
+        DG16(si) = (uint16_t)(bx + 1);   /* @asm inc bx; mov [si],bx */
         return (int)ch;                                        /* @asm xor ah,ah */
     }
 
@@ -122,7 +122,7 @@ int func_010BBC_logic_sz_151(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     uint16_t si = arg1_bp_08;                                  /* FILE* */
     uint16_t di;
-    uint8_t al = *(uint8_t near *)(uint16_t)(si + 6);          /* @asm mov al,[si+6] */
+    uint8_t al = DG8(si + 6);          /* @asm mov al,[si+6] */
     uint16_t bx;                                               /* fd */
     uint16_t cx;
     int wrote;
@@ -131,49 +131,49 @@ int func_010BBC_logic_sz_151(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if ((al & 0x82) == 0) goto err;
     /* @asm 0x010BCB test al,0x40; jne 0x10C34 (sticky error -> error). */
     if (al & 0x40) goto err;
-    *(uint16_t near *)(uint16_t)(si + 2) = 0;                  /* @asm mov [si+2],0 */
+    DG16(si + 2) = 0;                  /* @asm mov [si+2],0 */
     /* @asm 0x010BD4 test al,1; je 0x10BE3 (if last op was a read, rewind). */
     if (al & 1) {
         if (!(al & 0x10)) goto err;                            /* @asm test al,0x10; je 0x10C34 */
-        *(uint16_t near *)(uint16_t)si = *(uint16_t near *)(uint16_t)(si + 4); /* @asm [si]=[si+4] */
+        DG16(si) = DG16(si + 4); /* @asm [si]=[si+4] */
         al &= 0xFE;                                            /* @asm and al,0xFE (clear read) */
     }
     al = (uint8_t)((al | 2) & 0xEF);                           /* @asm or al,2; and al,0xEF */
-    *(uint8_t near *)(uint16_t)(si + 6) = al;                  /* @asm mov [si+6],al */
+    DG8(si + 6) = al;                  /* @asm mov [si+6],al */
     di = (uint16_t)(0x29AE + (si - 0x290E));                   /* @asm di mapping */
-    bx = *(uint8_t near *)(uint16_t)(si + 7);                  /* @asm bl=[si+7] (fd) */
+    bx = DG8(si + 7);                  /* @asm bl=[si+7] (fd) */
 
     /* @asm 0x010BF9 select path: bit3 -> flush; bit2 -> single-byte write;
      *      no buffer & not a console stream -> allocate; else single-byte. */
     if (al & 8) goto flush;                                    /* @asm test al,8; jne 0x10C4A */
     if (al & 4) goto write1;                                   /* @asm test al,4; jne 0x10C1F */
-    if (*(uint8_t near *)(uint16_t)di & 1) goto flush;         /* @asm test [di],1; jne 0x10C4A */
+    if (DG8(di) & 1) goto flush;         /* @asm test [di],1; jne 0x10C4A */
     if ((si == 0x2916 || si == 0x291E || si == 0x292E) &&      /* @asm cmp si,console FILEs */
-        (*(uint8_t near *)(uint16_t)(bx + 0x27BB) & 0x40))     /* @asm test [bx+0x27BB],0x40 */
+        (DG8(bx + 0x27BB) & 0x40))     /* @asm test [bx+0x27BB],0x40 */
         goto write1;                                           /* unbuffered console */
     /* @asm 0x010C3D allocate a buffer, then re-check the unbuffered bit. */
     func_011CD2(si);                                           /* @asm call 0x11CD2 _getbuf(fp) */
-    if (!(*(uint8_t near *)(uint16_t)(si + 6) & 8))            /* @asm test [si+6],8; je 0x10C1F */
+    if (!(DG8(si + 6) & 8))            /* @asm test [si+6],8; je 0x10C1F */
         goto write1;
     /* fallthrough to flush */
 
 flush:
     /* @asm 0x010C4A flush the filled buffer, reserving one slot for byte c. */
-    cx = (uint16_t)(*(uint16_t near *)(uint16_t)si - *(uint16_t near *)(uint16_t)(si + 4));
+    cx = (uint16_t)(DG16(si) - DG16(si + 4));
                                                                /* @asm cx = cursor - base */
-    *(uint16_t near *)(uint16_t)si = (uint16_t)(*(uint16_t near *)(uint16_t)(si + 4) + 1);
+    DG16(si) = (uint16_t)(DG16(si + 4) + 1);
                                                                /* @asm inc dx; [si]=dx (base+1) */
-    *(uint16_t near *)(uint16_t)(si + 2) =
-        (uint16_t)(*(uint16_t near *)(uint16_t)(di + 2) - 1);  /* @asm [si+2]=bufsize-1 */
+    DG16(si + 2) =
+        (uint16_t)(DG16(di + 2) - 1);  /* @asm [si+2]=bufsize-1 */
     if (cx == 0) {                                             /* @asm jcxz 0x10C7E */
         /* @asm 0x010C7E empty buffer: if append-mode (file_flags bit5) seek end. */
-        if (*(uint8_t near *)(uint16_t)(bx + 0x27BB) & 0x20)   /* @asm test [bx+0x27BB],0x20 */
+        if (DG8(bx + 0x27BB) & 0x20)   /* @asm test [bx+0x27BB],0x20 */
             func_01146A(bx, 0, 0, 2);                          /* @asm call 0x1146A lseek(fd,0L,SEEK_END) */
         cx = 0;
         goto store_char;                                       /* @asm jmp 0x10C6B */
     }
-    wrote = func_0115CE(bx, *(uint16_t near *)(uint16_t)(si + 4), cx); /* @asm call 0x115CE write(fd,base,cx) */
-    *(uint8_t near *)(uint16_t)(*(uint16_t near *)(uint16_t)(si + 4)) = (uint8_t)arg0_bp_06;
+    wrote = func_0115CE(bx, DG16(si + 4), cx); /* @asm call 0x115CE write(fd,base,cx) */
+    DG8(DG16(si + 4)) = (uint8_t)arg0_bp_06;
                                                                /* @asm [base]=c (store new byte) */
     if ((uint16_t)wrote != cx) goto err;                       /* @asm cmp ax,cx; jne 0x10C34 */
     return (int)(uint8_t)arg0_bp_06;                           /* @asm xor ax,ax; al=[bp+6] */
@@ -187,12 +187,12 @@ write1:
 
 store_char:
     /* @asm 0x010C6B store c at buffer base, then validate the (no-op) write. */
-    *(uint8_t near *)(uint16_t)(*(uint16_t near *)(uint16_t)(si + 4)) = (uint8_t)arg0_bp_06;
+    DG8(DG16(si + 4)) = (uint8_t)arg0_bp_06;
     if ((uint16_t)0 != cx) goto err;          /* @asm cmp ax,cx (ax=0,cx=0 here) */
     return (int)(uint8_t)arg0_bp_06;                           /* @asm al=[bp+6] */
 
 err:
-    *(uint8_t near *)(uint16_t)(si + 6) |= 0x20;               /* @asm or [si+6],0x20 (error) */
+    DG8(si + 6) |= 0x20;               /* @asm or [si+6],0x20 (error) */
     return 0xFFFF;                                             /* @asm mov ax,0xFFFF */
 }
 
@@ -348,19 +348,19 @@ int func_010E27_logic_sz_63(uint16_t force_bp_04, uint16_t arg0_bp_06)
      * 0x010E56 zero [di], [di+2], [si], [si+4] (drop buffer association). */
     uint16_t si = arg0_bp_06;                                   /* FILE* */
     uint16_t di = (uint16_t)(0x29AE + (si - 0x290E));           /* flag entry */
-    if (!(*(uint8_t near *)(uint16_t)di & 0x10))                /* @asm test [di],0x10 */
+    if (!(DG8(di) & 0x10))                /* @asm test [di],0x10 */
         return 0;
     {
-        uint8_t fd = *(uint8_t near *)(uint16_t)(si + 7);       /* @asm mov bl,[si+7] */
-        if (!(*(uint8_t near *)(uint16_t)(fd + 0x27BB) & 0x40)) /* @asm test [bx+0x27BB],0x40 */
+        uint8_t fd = DG8(si + 7);       /* @asm mov bl,[si+7] */
+        if (!(DG8(fd + 0x27BB) & 0x40)) /* @asm test [bx+0x27BB],0x40 */
             return 0;
     }
     func_010E66(si);                                            /* @asm call 0x10E66 flush(fp) */
     if (force_bp_04 == 0) return 0;                             /* @asm cmp [bp+4],0; je */
-    *(uint8_t near *)(uint16_t)di = 0;                          /* @asm mov [di],al(0) */
-    *(uint16_t near *)(uint16_t)(di + 2) = 0;                   /* @asm mov [di+2],ax */
-    *(uint16_t near *)(uint16_t)si = 0;                         /* @asm mov [si],ax */
-    *(uint16_t near *)(uint16_t)(si + 4) = 0;                   /* @asm mov [si+4],ax */
+    DG8(di) = 0;                          /* @asm mov [di],al(0) */
+    DG16(di + 2) = 0;                   /* @asm mov [di+2],ax */
+    DG16(si) = 0;                         /* @asm mov [si],ax */
+    DG16(si + 4) = 0;                   /* @asm mov [si+4],ax */
     return 0;
 }
 
@@ -1071,7 +1071,7 @@ void func_012214_logic_sz_33(uint16_t arg0_bp_06)
     if (DG16(0x2778 + 6) >= blk)   /* @asm cmp [si+6],bx; jae */
         return;
     blk -= 2;                                     /* @asm dec bx; dec bx */
-    *(uint8_t near *)(uint16_t)blk |= 1;          /* @asm or byte [bx],1 */
+    DG8(blk) |= 1;          /* @asm or byte [bx],1 */
     if (DG16(0x2778 + 8) > blk)     /* @asm cmp [si+8],bx; jbe */
         DG16(0x2778 + 8) = blk;     /* @asm mov [si+8],bx */
 }

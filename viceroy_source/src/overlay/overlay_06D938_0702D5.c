@@ -1625,7 +1625,7 @@ int func_06F9E6_read_token_blank_underscore(void)
      * position in si, blank it, repeat until none remain.  @asm 0x06FA10..0x06FA28
      * (`mov [si],0x20` writes at the strchr result, so successive passes terminate). */
     while ((si = overlay_call_0D1D_0C56()) != 0)    /* @asm 0x06FA15 strchr([0x833C],'_') -> si */
-        *(uint8_t near*)(unsigned)si = 0x20;        /* @asm 0x06FA23 *si = ' ' */
+        DG8(si) = 0x20;                             /* @asm 0x06FA23 *si = ' ' */
     g_namelist_cur_A608 = (int16_t)0x833C;          /* @asm 0x06FA2D [0xA608]=0x833C */
     return (int)0x833C;                             /* @asm 0x06FA39 ax=0x833C; RETF */
 }

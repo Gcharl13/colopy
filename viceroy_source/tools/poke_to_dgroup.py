@@ -64,12 +64,28 @@ def parse_operand(s, i):
         grp, end = grab_balanced(s, i)
         if grp is None:
             return None, i, False
+        inner = grp[1:-1].strip()
+        # (uint16_t)(expr) or (uint16_t)var — size-cast DGROUP offset: strip the cast
+        SIZE_CAST = re.compile(r'^(u?int(?:16|32)_t|unsigned(?:\s+(?:short|int))?)$')
+        if SIZE_CAST.match(inner):
+            k = end
+            while k < n and s[k] in ' \t': k += 1
+            if k < n and s[k] == '(':           # (uint16_t)(expr) form
+                grp2, end2 = grab_balanced(s, k)
+                if grp2 is None: return None, i, False
+                inner2 = grp2[1:-1].strip()
+                if TYPE_KW.match(inner2): return None, i, False  # nested cast
+                return inner2, end2, True
+            # (uint16_t)var — bare identifier after cast
+            m2 = re.match(r'[A-Za-z_]\w*', s[k:])
+            if m2:
+                return m2.group(0), k + m2.end(), True
+            return None, i, False
         k = end
         while k < n and s[k] in ' \t':
             k += 1
         if k < n and s[k] == '(':
             return None, i, False           # (cast)(expr)
-        inner = grp[1:-1].strip()
         if TYPE_KW.match(inner):
             return None, i, False           # a type cast
         return inner, end, True
@@ -85,7 +101,7 @@ def convert(text):
         # is this match on a #define line?
         ls = text.rfind('\n', 0, m.start()) + 1
         le = text.find('\n', m.start())
-        on_define = text[ls:le if le >= 0 else n].lstrip().startswith('#define')
+        on_define = bool(re.match(r'\s*#\s*define\b', text[ls:le if le >= 0 else n]))
         out.append(text[idx:m.start()])
         macro = TYPE2MACRO[m.group(1)]
         operand, end, safe = parse_operand(text, m.end())
@@ -101,12 +117,17 @@ def main():
         print(__doc__); return
     path = sys.argv[1]; apply = '--apply' in sys.argv
     src = open(path).read()
-    new, n, skip = convert(src)
-    print(f"{path}: {n} converted, {skip} skipped (manual)")
-    if apply and n:
-        if '#include "dgroup.h"' not in new:
-            new = re.sub(r'(#include [^\n]+\n)', r'\1#include "dgroup.h"\n', new, count=1)
-        open(path, 'w').write(new)
+    total_n = 0
+    for _ in range(8):          # multi-pass: handles nested pokes
+        new, n, skip = convert(src)
+        total_n += n
+        if n == 0: break
+        src = new
+    print(f"{path}: {total_n} converted, {skip} skipped (manual)")
+    if apply and total_n:
+        if '#include "dgroup.h"' not in src:
+            src = re.sub(r'(#include [^\n]+\n)', r'\1#include "dgroup.h"\n', src, count=1)
+        open(path, 'w').write(src)
         print('  applied + ensured #include "dgroup.h"')
 
 if __name__ == '__main__':
