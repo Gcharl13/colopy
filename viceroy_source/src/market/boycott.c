@@ -20,7 +20,6 @@
  * pricing.c agree on the (struct PowerRecord*) type.  [V] DGROUP:0x84FC.
  * TODO: this `g_market` (DGROUP:0x84FC active PowerRecord ptr) probably belongs in
  *       include/globals.h alongside g_market_year. */
-extern struct PowerRecord *g_market;
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */

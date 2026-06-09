@@ -60,9 +60,9 @@
 
 /* Screen-state id returned to the reconstruction-layer screen dispatcher.
  * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2B (Europe view);
- * same value as SCREEN_ID_EUR below. Defined file-locally; the SCREEN_* ids
- * belong in a shared ui screen-id header for consolidation. */
-#define SCREEN_EUROPE  0x2B
+ * same value as SCREEN_ID_EUR below. CONSOLIDATED 2026-06-09 into the shared
+ * ui screen-id header. */
+#include "ui_screen.h"
 
 /* ----------------------------------------------------------------------------
  * Active power record (the player's nation).  BYTE_VERIFIED PowerRecord table

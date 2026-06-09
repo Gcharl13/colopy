@@ -156,9 +156,18 @@ extern void far *g_state_record_267A;     /* DGROUP:0x267A; @ref read_far_dword_
 extern uint8_t  g_table_8F86_stride12[];  /* DGROUP:0x8F86; @ref decompiled.md "func_0086C0" */
 
 /* ----------------------------------------------------------------------------
- * 14-byte-stride table (per-unit-type)
- * ---------------------------------------------------------------------------- */
-extern uint8_t  g_table_5237_stride14[];  /* DGROUP:0x5237; @ref init_and_scan_units_in_area */
+ * Per-unit-type flag tables at DGROUP:0x5236/0x5237, and the PowerRecord byte
+ * view at 0x8808. CONSOLIDATED 2026-06-09: these were file-local externs (each
+ * undefined at link) in overlay code. Now g_dgroup-resident aliases so the
+ * named byte-array form indexes the same bytes as DG_POWER_TABLE / the static
+ * window (byte-faithful, no separate storage). Code indexes them as g_X[expr].
+ * (The old unused `extern uint8_t g_table_5237_stride14[]` is folded in here —
+ * same 0x5237 base; callers index with their own stride, 6 in the overlay.) */
+#define g_table_5237_stride14    ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
+#define g_unit_type_flags_5236   ((uint8_t near *)(DG_BASE + (uint16_t)0x5236))
+#define g_unit_type_flags_5237   ((uint8_t near *)(DG_BASE + (uint16_t)0x5237))
+#define g_power_table_8808       ((uint8_t near *)(DG_BASE + (uint16_t)0x8808))
+#define native_class_weight_5AD8 ((uint8_t near *)(DG_BASE + (uint16_t)0x5AD8))  /* per-class weight table */
 
 /* ----------------------------------------------------------------------------
  * 5-stride sub-table (used by update_and_render_tile_at)

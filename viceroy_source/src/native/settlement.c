@@ -38,7 +38,6 @@ extern uint8_t  settlement_initial_population(int settlement_index); /* CALL nea
 extern void     map_mark_settlement_tile(int x, int y, int owner);
 extern uint8_t *unit_record(int index);                              /* &UnitRecord[i] (base 0x3144) */
 extern void     unit_detach_from_settlement(int unit_index);         /* LCALL 0x181F:0x808 */
-extern uint8_t  native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
 
 /* Per-turn settlement-tick tuning rates — NOT byte-resident as literals (native
  * behaviour tables load from NAMES.TXT @TRIBES at runtime; see banner below).
@@ -295,7 +294,6 @@ int native_settlement_value_for_display(int index)
         value = tribe_w + value + 1;
     return value;
 }
-extern uint8_t native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */
 
 /* ============================================================================
  *                  >>> RECONSTRUCTED below this line — NOT BYTE-VERIFIED <<<

@@ -42,9 +42,8 @@
  * No DOS-traced view id exists for the Hall of Fame (the screen-state return is
  * a project convention; see hall_of_fame_update() note below). Assigned the
  * unused id 0x2A, extending the verified view-id block (Europe 0x2B, Colony
- * 0x2C) downward. Defined file-locally; the SCREEN_* ids belong in a shared ui
- * screen-id header for consolidation. */
-#define SCREEN_HALL_OF_FAME  0x2A
+ * 0x2C) downward. CONSOLIDATED 2026-06-09 into the shared ui screen-id header. */
+#include "ui_screen.h"
 
 /* ----------------------------------------------------------------------------
  * Persistence file -- BYTE_VERIFIED (string + fopen mode + offsets).

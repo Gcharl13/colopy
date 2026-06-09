@@ -98,6 +98,14 @@ typedef struct PowerRecord PowerRecord;   /* allow the bare type name */
  * `power[8]` array to a pointer for the aliasing -- no sizeof/&array reliance.) */
 extern struct PowerRecord *power;
 
+/* DGROUP:0x84FC — the "active PowerRecord" pointer (g_active_power_rec), set to
+ * &power[active] (= 0x8808 + index*0x13C) by market_set_active. CONSOLIDATED
+ * 2026-06-09: was a file-local extern (undefined at link) in market/boycott.c
+ * and market/pricing.c. Like `ctx`, it's a real pointer mirroring the DGROUP
+ * slot (a 16-bit near ptr there can't hold a modern 64-bit address). Distinct
+ * from g_active_power INDEX at 0x9E12. Defined in runtime/dgroup.c. */
+extern struct PowerRecord *g_market;
+
 /* ----------------------------------------------------------------------------
  * Power index conventions
  * ---------------------------------------------------------------------------- */

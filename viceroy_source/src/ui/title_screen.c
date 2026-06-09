@@ -39,9 +39,9 @@
 /* Screen-state id returned to the reconstruction-layer screen dispatcher.
  * No DOS-traced view id exists for the title menu (the screen-state return is a
  * project convention). Assigned the unused id 0x29, extending the verified
- * view-id block (Europe 0x2B, Colony 0x2C) downward. Defined file-locally; the
- * SCREEN_* ids belong in a shared ui screen-id header for consolidation. */
-#define SCREEN_TITLE  0x29
+ * view-id block (Europe 0x2B, Colony 0x2C) downward. CONSOLIDATED 2026-06-09
+ * into the shared ui screen-id header. */
+#include "ui_screen.h"
 
 /* ----------------------------------------------------------------------------
  * Boot / main-menu assets (VERIFIED-by-catalog; load call sites not yet decoded).

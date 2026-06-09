@@ -79,8 +79,6 @@ extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRe
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
-extern uint8_t  g_unit_type_flags_5237[]; /* DGROUP:0x5237 base — per-type 6-byte rows (sibling of 0x5236) */
-extern uint8_t  g_power_table_8808[];  /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
 /* Two DGROUP scalar accessors (functions) read below; declared before first use
  * so call sites do not synthesise a conflicting implicit prototype. */
 extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
@@ -772,7 +770,6 @@ int func_04CA86_ai_move_is_provocative(uint16_t self_power, int16_t tribe, int16
  * stepper cs:0x7ADA and the 0x181F map leaves are role-named.  [DONE]
  * ============================================================================ */
 extern int16_t g_ai_best_target_9EA8; /* DGROUP:0x9EA8 — scratch "best candidate" word */
-extern uint8_t g_unit_type_flags_5236[]; /* DGROUP:0x5236 base — per-type 6-byte rows */
 
 int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                                        uint16_t self_power, uint16_t pursuit)
