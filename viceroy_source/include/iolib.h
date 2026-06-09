@@ -146,6 +146,10 @@ char  far *strcpy_far (char  far *dst, const char  far *src);   /* 0x1074E */
 char  far *strcat_far (char  far *dst, const char  far *src);   /* 0x10784 */
 int        strlen_far (const char  far *s);                      /* 0x1070C */
 char  far *strrchr_far(const char  far *s, int c);               /* 0x106BA */
+char  far *strchr_far (const char  far *s, int c);               /* 0x105E0 */
+char  far *strncpy_far(char  far *dst, const char  far *src, uint16_t n); /* 0x10690 */
+char  far *strupr_far (char  far *s);                            /* 0x106E8 */
+int        strcmp_far (const char  far *s1, const char  far *s2); /* 0x10724 */
 
 void near *memset_near(void near *dst, int c, int n);            /* 0x1037E */
 

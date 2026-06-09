@@ -43,6 +43,14 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
 # load_image/: raw first-pass decompiler scaffolding (see header note above)
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
 
+# ...but re-include load_image files that have been HAND-PORTED (broken auto
+# bodies materialised from re_work/disasm/*.asm, verified to compile). Add each
+# file here as it is ported; this list is the live "done" set for the backlog.
+set(VICEROY_LOADIMAGE_PORTED
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0102EA_010AA5.c"  # C-runtime far-string lib
+)
+list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
+
 # Rules library — all game logic, compiled in modern mode
 add_library(viceroy_rules STATIC ${VICEROY_SOURCES})
 
