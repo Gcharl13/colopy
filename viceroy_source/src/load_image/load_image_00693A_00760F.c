@@ -409,22 +409,43 @@ int func_006B46_op_sz_365(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return result;
 }
 
-/* @asm        0x006CCA..0x006CD7  (13 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_006CCA_unit_table_offset_calc.asm
- * @pattern    TINY_ACCESSOR
+/* @asm        0x006CCA..0x006D24  (90 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_006CCA.asm
+ * @pattern    PROLOGUE_HEAVY
  * @prologue   ENTER 4
  * @args_seen  [6]
- * @lcalls     0
+ * @lcalls     1 (0x0981:0x0000)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (13 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  unit map/sprite-tile index for unit arg0 (type icon + active-colonist bump)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 13 bytes: a FALSE cut at the first forward branch.
+ *         True span is 0x6CCA..0x6D24 (90 bytes, per functions.json).
  */
+/* PORTED 2026-06-09 from func_006CCA.asm — unit display-tile index lookup */
 int func_006CCA_logic_sz_13(uint16_t arg0_bp_06)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x006CCF si=[bp+6]; bx=si*0x1c; [bp-4]=&unit.type (bx+0x3146);
+     *      type=byte[bx](+0x02); idx=type*14; base=[bp-1]=byte[idx+0x5234].
+     *      push 5; al=unit.owner(+0x03=0x3147); ax&=0xf; push ax; lcall 0x981:0
+     *      (ax=overlay_call_0981_0000(owner&0xf, 5)); or ax,ax; je 0x6d1e;
+     *      (ax!=0): if (type>=0xd && type<=0x12) base += 3.
+     *      0x006D1E return (uint8)base.
+     * Returns the display/sprite-tile index for unit arg0: the per-type base icon
+     * from table 0x5234 (stride 14 @0x5234), bumped by +3 for a colonist/specialist
+     * unit (type in [0x0D,0x12]) when the owner/role predicate overlay 0x0981:0x0000
+     * (owner&0xF, 5) is true. UnitRecord type +0x02, owner +0x03 (stride 0x1C). */
+    unsigned ubase = 0x3144 + (unsigned)arg0_bp_06 * 0x1C;
+    uint8_t type = DG8(ubase + 0x02);
+    uint8_t base = DG8(0x5234 + (unsigned)type * 14);
+    uint8_t owner = DG8(ubase + 0x03) & 0x0F;
+    (void)owner;
+    if (overlay_call_0981_0000(/* owner, 5 */) != 0) {
+        if (type >= 0x0D && type <= 0x12)
+            base += 3;
+    }
+    return base;
 }
 
 /* @asm        0x006D24..0x006DE9  (197 bytes)  region=load_image
