@@ -55,6 +55,7 @@ set(VICEROY_LOADIMAGE_PORTED
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_007610_00824E.c"  # unit AI / combat-strength / movement-cost / per-power get-set (15 ported)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_004EE6_005DF0.c"  # main per-turn game loop + blit/string/cell-command (16 ported)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_005DF0_006939.c"  # tile influence/visibility paint + chain helpers + unit-tile-head (12 ported)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00693A_00760F.c"  # unit spawn/place/chain ops + 8-neighbour search + chain accumulator (21 ported)
 )
 list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 
