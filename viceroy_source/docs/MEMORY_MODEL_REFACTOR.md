@@ -160,8 +160,18 @@ pass; the remaining ~26 are being reconciled.
   offset during load_image porting), input (keyboard/mouse `int 16h/33h`), sound,
   file I/O (the MSC C-runtime layer `strcpy@0xFDB4`/`fread`/... → native libc),
   and the RTLink overlay loader → a flat linked binary.
-- `load_image/*` decompilation backlog (16 files → **1 done, 1 in progress**
-  2026-06-09):
+- **DOS-primitive host layer.** The 12 `int21h_AH_*` syscall wrappers (declared in
+  `dos.h`, called by `iolib/file.c` and the ported `load_image` stdio) are all
+  UNDEFINED — they must be implemented as native I/O (open/close/read/write/seek/
+  find/alloc) for the executable to link. NB reconcile the seek interface: `dos.h`
+  has `int21h_AX_4200/4201/4202` (split by whence) while the 010B26 `__lseek` port
+  uses a unified `int21h_AH_42(handle,offset,whence)` — pick one when implementing.
+- `load_image/*` decompilation backlog (16 files → **12 done, 4 in progress**
+  2026-06-09; the 12 ported faithfully from disassembly with near-zero stubs —
+  string libs, stdio, the main game loop, unit AI/combat, tile-influence paint,
+  unit spawn/chain ops, colony order logic, the tooltip/bar drawing layer, and
+  buffered file I/O; render/RTLink-loader/printf-core functions honest-stubbed as
+  SDL/host plug-in points):
   materialise the `goto label_XXXXXX` targets and replace `ax`/register
   pseudo-vars with real locals. **Not scriptable** — the jump TARGET offsets are
   not annotated instruction offsets (target `0x002890` falls between `@0x00289F`/
