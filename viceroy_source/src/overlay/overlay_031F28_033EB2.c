@@ -137,8 +137,8 @@ extern uint8_t g_unittype_attr_5230[/* type */][14];
  * =========================================================================== */
 void func_031F28(int a, int b, int c)
 {
-    overlay_call_181F_0092(/* a, b, c */);   /* @asm 0x031F34 */
-    overlay_call_181F_00B0(/* 1, 0, 0 */);   /* @asm 0x031F41 */
+    overlay_call_181F_0092(a, b, c);   /* @asm 0x031F34 */
+    overlay_call_181F_00B0(1, 0, 0);   /* @asm 0x031F41 */
     (void)a; (void)b; (void)c;
 }
 
@@ -200,7 +200,7 @@ void func_031F5C(int a, int b, int c)
  * the per-power name/flag word table also used by func_032122 below.
  * =========================================================================== */
 extern int16_t g_power_word_97C0[];   /* DGROUP word table, base abs 0x97C0 (ds-0x6840) */
-extern int  overlay_call_181F_0B5A(void);            /* 0x181F:0xB5A per-power label by power idx */
+extern int  overlay_call_181F_0B5A();            /* 0x181F:0xB5A per-power label by power idx */
 void func_031F80(int a, int b, int yesno, int c)
 {
     hud_begin(1);                                        /* @asm 0x031F83 */
@@ -266,7 +266,7 @@ int func_03200A(void)
  *   @asm 0x03210E LCALL 0x191F:0x8F8
  *   @asm 0x032113 [0x9E3E]=1 ; 0x032119 [0x9E3A]=0xA
  * =========================================================================== */
-extern int overlay_call_191F_08F8(void);   /* 0x191F:0x8F8 show small box at (x,y,dx) */
+extern int overlay_call_191F_08F8();   /* 0x191F:0x8F8 show small box at (x,y,dx) */
 void func_0320EE(int row, int col)
 {
     int y = (col >= 0x64 ? 0x17 : 0x27) + row;   /* @asm 0x0320FA..0x032109 */
@@ -295,7 +295,7 @@ void func_0320EE(int row, int col)
  * =========================================================================== */
 extern int16_t g_label_tab_2DBA[];    /* DGROUP word table, base abs 0x2DBA */
 extern int16_t g_power_word_838C[];   /* DGROUP word table, base abs 0x838C (ds-0x7C74) */
-extern int     overlay_call_181F_09A4(void); /* 0x181F:0x9A4 per-power token by power idx */
+extern int     overlay_call_181F_09A4(); /* 0x181F:0x9A4 per-power token by power idx */
 void func_032122(int unit_idx, int sel)
 {
     int type;
@@ -539,7 +539,7 @@ void func_03234A(int good, int qty)
  * LCALL 0x181F:0xD58( good, good, q )                   @asm 0x032449..0x032452
  * return value;                                         @asm 0x032457
  * =========================================================================== */
-extern int  overlay_call_181F_0AF6(void);  /* 0x181F:0xAF6 (power, long) market post */
+extern int  overlay_call_181F_0AF6();  /* 0x181F:0xAF6 (power, long) market post */
 extern void near_6D91(int good, int q);    /* resident CALL cs:0x6D91 */
 extern int  overlay_call_181F_0D58(void);  /* 0x181F:0xD58 (good, good, q) */
 int func_03240C(int good, int price, int qty)
@@ -572,11 +572,11 @@ int func_03240C(int good, int price, int qty)
  *  DISTINCT near-entry that initialises a panel geometry slot [0xFC8]; preserved
  *  as ov_panel_geom_init below.)
  * =========================================================================== */
-extern int  overlay_call_181F_0AEC(void);  /* 0x181F:0xAEC (good, price) -> avail/-1 */
+extern int  overlay_call_181F_0AEC();  /* 0x181F:0xAEC (good, price) -> avail/-1 */
 extern void near_6D28(int r, int q);       /* resident CALL cs:0x6D28 */
 int func_03245C(int good, int price, int qty)
 {
-    int r = overlay_call_181F_0AEC(/* good, price */);  /* @asm 0x032466 */
+    int r = overlay_call_181F_0AEC(good, price);  /* @asm 0x032466 */
     if (r < 0) return r;                                 /* @asm 0x032473 */
     if (G16(0x8DC4) > qty) {                             /* @asm 0x032475 */
         overlay_call_181F_0D58(/* good, r, qty-diff */); /* @asm 0x032487 */
@@ -686,10 +686,10 @@ void ov_panel_geom_init(void)
  * are GAME.TXT string-table handles (handle = file - 0x1D9A0); their literal
  * text is not inlined here (cite-by-handle).
  * =========================================================================== */
-extern int  overlay_call_181F_0B96(void);  /* 0x181F:0xB96 ask_quantity(&out,power,z) */
+extern int  overlay_call_181F_0B96();  /* 0x181F:0xB96 ask_quantity(&out,power,z) */
 extern int  overlay_call_181F_0438(void);  /* 0x181F:0x438 draw flag/icon(token, slot) */
 extern int  overlay_call_191F_0436(void);  /* 0x191F:0x436 price/accept check(ctx,key,qty) */
-extern int  overlay_call_181F_0A92(void);  /* 0x181F:0xA92 power funds query(power) */
+extern int  overlay_call_181F_0A92();  /* 0x181F:0xA92 power funds query(power) */
 extern int  overlay_call_181F_03FE(void);  /* 0x181F:0x3FE finalise line(key) */
 extern int  near_6E18(int qty, int power, int z);
 extern void near_6E68(void);
@@ -717,7 +717,7 @@ int func_0324F2(int z, int power, int commit)
     }
     if (commit == 0) { result = 0; return result; }  /* @asm 0x032562 -> epilogue 0x2E18 */
 
-    if (!overlay_call_181F_0B96(/* &qty, power, z */)) { /* @asm 0x03256B..0x03257F */
+    if (!overlay_call_181F_0B96(&qty, power, z)) { /* @asm 0x03256B..0x03257F */
         hud_begin(1);                                /* @asm 0x032581 */
         hud_helper_6D64(4);                          /* @asm 0x03258B */
         hud_print_74(g_power_word_97C0[power]);       /* @asm 0x032594 */
@@ -767,11 +767,11 @@ int func_0324F2(int z, int power, int commit)
  * with the heavy string-composition body.  Full per-branch citation is carried
  * inline; the two terminal branches return resultA / fall to the 0x32DA4 redraw.
  * =========================================================================== */
-extern int overlay_call_181F_0C2C(void);   /* 0x181F:0xC2C select counterparty(powerA,z) */
+extern int overlay_call_181F_0C2C();   /* 0x181F:0xC2C select counterparty(powerA,z) */
 int func_032914(int z, int powerA, int powerB)
 {
     int resultA = 1;                                 /* @asm 0x03291A */
-    int cp = overlay_call_181F_0C2C(/* powerA, z */); /* @asm 0x032924..0x03292A */
+    int cp = overlay_call_181F_0C2C(powerA, z); /* @asm 0x032924..0x03292A */
     if (cp < 0) {                                    /* @asm 0x032935 */
         if (G16(0x892) == 0) { resultA = 0; return resultA; } /* @asm 0x032939 epilogue */
         hud_begin(1);                                /* @asm 0x032943 */
@@ -856,22 +856,22 @@ int func_032DAC(int good, int power, int commit)
  *           if (dlg) dlg_free(dlg) (0x191F:0x1A8); near_6E31();                @asm 0x033135..0x033149
  * =========================================================================== */
 extern int  near_6E13(int v);              /* resident CALL cs:0x6E13 (arg -> unit index) */
-extern int  overlay_call_181F_0920(void);  /* 0x181F:0x920 report prep */
-extern int  overlay_call_181F_07EA(void);  /* 0x181F:0x7EA seed first rows */
+extern int  overlay_call_181F_0920();  /* 0x181F:0x920 report prep */
+extern int  overlay_call_181F_07EA();  /* 0x181F:0x7EA seed first rows */
 extern int  overlay_call_181F_02EE(void);  /* 0x181F:0x2EE seed rows */
 extern int  overlay_call_181F_02DA(void);  /* 0x181F:0x2DA row advance (a) */
 extern int  overlay_call_181F_02E4(void);  /* 0x181F:0x2E4 row advance (b) */
-extern int  overlay_call_181F_0948(void);  /* 0x181F:0x948 advisory */
+extern int  overlay_call_181F_0948();  /* 0x181F:0x948 advisory */
 extern void near_6E31(void);
 void func_032FE2(int arg)
 {
     int unit = near_6E13(arg);                       /* @asm 0x032FE6..0x032FED */
     int saved = unit_table[unit].orders;              /* @asm 0x032FF3..0x032FFA  (+0x08 = abs 0x314C) */
     unit_table[unit].orders = 0;                       /* @asm 0x032FFD suppress orders */
-    overlay_call_181F_0920(/* unit */);               /* @asm 0x033002 */
+    overlay_call_181F_0920(unit);               /* @asm 0x033002 */
     G16(0x1F5E) = 0;                                  /* @asm 0x03300B */
     if (dlg_open((void *)0x87C, (void *)0xFFC, 0) != 0) { /* @asm 0x033011..0x033026 */
-        overlay_call_181F_07EA(/* unit,0 */);         /* @asm 0x033030 */
+        overlay_call_181F_07EA(unit,0);         /* @asm 0x033030 */
         overlay_call_181F_02EE(/* unit */);           /* @asm 0x03303B */
         /* row-draw loop + footer @asm 0x033042..0x033120 (see block comment) */
     }
@@ -1002,7 +1002,7 @@ extern int  near_6DD7(int v);
 extern int  near_6D8C(int v);
 extern int  near_6D4B(int sel, int t, int one, int d);
 extern void near_6DF0(int v);
-extern int  overlay_call_191F_0942(void);  /* 0x191F:0x942 board/by-type */
+extern int  overlay_call_191F_0942();  /* 0x191F:0x942 board/by-type */
 extern void near_6E40(void);
 extern int  overlay_call_181F_03A2(void);  /* 0x181F:0x3A2 (selection ctx) */
 extern void near_6E5E(int unit, int key);
@@ -1032,7 +1032,7 @@ void func_03342C(void)
             near_6DF0(near_6E13(best));                  /* @asm 0x03353E..0x03354C */
         } else if (G16(0xFA2) != 0) {                    /* @asm 0x033552 */
             best = near_6E13(best);                      /* @asm 0x033559..0x033563 */
-            overlay_call_191F_0942(/* unit_table[best].type */); /* @asm 0x033566..0x033570 */
+            overlay_call_191F_0942(unit_table[best].type); /* @asm 0x033566..0x033570 */
             near_6E40();                                 /* @asm 0x033578 */
         }
     } else {                                             /* @asm 0x033580 inspect mode */
@@ -1077,7 +1077,7 @@ void func_03342C(void)
  *                                                          @asm 0x0336BA..0x03370F
  *  done: return; (label 0x3C22)                            @asm 0x033712
  * =========================================================================== */
-extern int  overlay_call_191F_0934(void);  /* 0x191F:0x934 path/select by hit */
+extern int  overlay_call_191F_0934();  /* 0x191F:0x934 path/select by hit */
 extern int  near_6D96(int a, int b, ...); /* resident CALL cs:0x6D96; cdecl, 4 args
                                            * (key,scaled,1,0x64) at func_033A52/0335FA */
 extern void near_6E0E(int a, int b);
@@ -1096,7 +1096,7 @@ void func_0335FA(void)
         near_6D4B(row, G16(0x9E24), 1, overlay_call_181F_03A2());      /* @asm 0x03367E..0x033691 */
     } else if (G16(0x7E4) != 0) {                        /* @asm 0x033698 */
         if (G16(0x7F4) == 0 || hit < 0) return;          /* @asm 0x03369F..0x0336A8 */
-        overlay_call_191F_0934(/* hit */);               /* @asm 0x0336AA */
+        overlay_call_191F_0934(hit);               /* @asm 0x0336AA */
         near_6E40();                                     /* @asm 0x0336B3 */
     } else {                                             /* @asm 0x0336BA inspect */
         if (G16(0x7EC) == 0 || hit < 0) return;          /* @asm 0x0336BA..0x0336C3 */
@@ -1175,8 +1175,8 @@ void func_033716(void)
  *   +0x18 link/next-in-stack(0x315E).  Per-type move-cost table [type*14+0x5238].
  * =========================================================================== */
 extern void near_6D5F(int v);
-extern int  overlay_call_181F_0880(void);  /* 0x181F:0x880 move unit(idx,dx,dy) */
-extern int  overlay_call_181F_07E0(void);  /* 0x181F:0x7E0 scan-direction seed */
+extern int  overlay_call_181F_0880();  /* 0x181F:0x880 move unit(idx,dx,dy) */
+extern int  overlay_call_181F_07E0();  /* 0x181F:0x7E0 scan-direction seed */
 extern void near_6E7C(int sel, int k);
 void func_033778(int cmd)
 {
@@ -1206,7 +1206,7 @@ void func_033778(int cmd)
         while (cur >= 0) {                               /* @asm 0x0337F6 (jl signed) */
             int next = unit_table[cur].chain_next;       /* @asm 0x0337FC..0x033804 [bp-0x22] */
             if (cur == G16(0x9E42)) {                    /* @asm 0x033807..0x03380D */
-                overlay_call_181F_0880(/* cur, -2, -2 */); /* @asm 0x03380F..0x03381B move */
+                overlay_call_181F_0880(cur, -2, -2); /* @asm 0x03380F..0x03381B move */
                 goto m9_advance;                         /* @asm 0x03381E -> 0x3388D */
             }
             if (unit_table[cur].type < 0xD ||            /* @asm 0x033820..0x033829 (jb) */
@@ -1214,7 +1214,7 @@ void func_033778(int cmd)
                 int c = g_unittype_attr_5230[unit_table[cur].type][8]; /* @asm 0x033840..0x03385D (0x5238) */
                 if (c > budget)                          /* @asm 0x033861 (ja) cost exceeds budget */
                     goto m9_advance;                     /* @asm 0x033861 -> 0x3388D */
-                overlay_call_181F_0880(/* cur, -2, -2 */); /* @asm 0x033863..0x033871 move */
+                overlay_call_181F_0880(cur, -2, -2); /* @asm 0x033863..0x033871 move */
                 budget -= g_unittype_attr_5230[unit_table[cur].type][8]; /* @asm 0x033874..0x03388A */
                 goto m9_advance;                         /* fall @asm 0x03388D */
             }
@@ -1298,7 +1298,7 @@ void func_033778(int cmd)
         if (G16(0x7E4) != 0) {                           /* @asm 0x0339DC board path */
             if (G16(0x7F4) == 0) return;                 /* @asm 0x0339E3 */
             if (sel < 0) return;                         /* @asm 0x0339EA (jl) */
-            overlay_call_191F_0942(/* unit_table[sel].type */); /* @asm 0x0339EE..0x0339FD */
+            overlay_call_191F_0942(unit_table[sel].type); /* @asm 0x0339EE..0x0339FD */
             near_6E40();                                 /* @asm 0x033A01 */
             return;                                      /* @asm 0x033A06 */
         }
@@ -1385,7 +1385,7 @@ void func_033A52(void)
         }
         if (G16(0x7E4) != 0) {                           /* @asm 0x033B3B board path */
             if (G16(0x7F4) == 0) return;                 /* @asm 0x033B42 */
-            overlay_call_191F_0934(/* cell */);          /* @asm 0x033B4C..0x033B54 */
+            overlay_call_191F_0934(cell);          /* @asm 0x033B4C..0x033B54 */
             near_6E40();                                 /* @asm 0x033B58 */
             return;                                      /* @asm 0x033B5C */
         }
@@ -1428,7 +1428,7 @@ void func_033A52(void)
  *  0x8EA2; word_tab_8D0A is the per-power label table at abs 0x8D0A.)
  * =========================================================================== */
 extern int  near_6E45(int v);
-extern int  overlay_call_181F_0B78(void);  /* 0x181F:0xB78 unit status query(u) */
+extern int  overlay_call_181F_0B78();  /* 0x181F:0xB78 unit status query(u) */
 extern int16_t g_power_word_8D0A[];        /* DGROUP word table, abs 0x8D0A (ds-0x72F6) */
 extern int16_t g_state_word_8EA2[];        /* DGROUP word table, abs 0x8EA2 (ds-0x715E), stride 8 */
 void func_033BE4(void)
@@ -1439,7 +1439,7 @@ void func_033BE4(void)
     hud_print_74(g_power_word_8D0A[G16(0x9E12)]);         /* @asm 0x033C01..0x033C0B */
     type = unit_table[u].type;                            /* @asm 0x033C13 */
     hud_print_74(g_unittype_attr_5230[type][0]);          /* @asm 0x033C2B */
-    if (overlay_call_181F_0B78(/* u */) >= 0 &&           /* @asm 0x033C39..0x033C46 */
+    if (overlay_call_181F_0B78(u) >= 0 &&           /* @asm 0x033C39..0x033C46 */
         unit_table[u].vet_type != 0x1C) {                 /* @asm 0x033C48 byte +0x17 = abs 0x315B */
         hud_print_6a(0, 0x1046);                          /* @asm 0x033C4F key 0x1046 */
         hud_print_74(g_state_word_8EA2[unit_table[u].vet_type * 4]); /* @asm 0x033C5B..0x033C69 (*8 bytes) */
@@ -1511,7 +1511,7 @@ void func_033BE4(void)
  * a market poke (near_6D91 buy / near_6D28 sell).
  * =========================================================================== */
 extern int  overlay_call_191F_0910(void);  /* 0x191F:0x910 row sub-context close */
-extern int  overlay_call_181F_089E(void);  /* 0x181F:0x89E disband/remove active unit */
+extern int  overlay_call_181F_089E();  /* 0x181F:0x89E disband/remove active unit */
 void func_033C96(void)
 {
     int active = near_6E45(G16(0x9E2C));                  /* @asm 0x033CA2..0x033CAD [bp-0x6C] */
@@ -1628,7 +1628,7 @@ void func_033C96(void)
         unit_table[active].orders = 1;                    /* @asm 0x03403E */
         break;
     case 3:                                               /* @asm 0x034046 */
-        overlay_call_181F_089E(/* active */);             /* @asm 0x034049 disband */
+        overlay_call_181F_089E(active);             /* @asm 0x034049 disband */
         G16(0x9E2C) = 0;                                  /* @asm 0x034051 */
         break;
     case 4:                                               /* @asm 0x03405A: type 5->4 else ->1, pay barF50 */

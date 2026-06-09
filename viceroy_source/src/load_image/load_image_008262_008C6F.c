@@ -28,7 +28,7 @@ int func_008B96(uint16_t arg0_bp_06);
 extern int func_008720(void);
 
 /* Overlay LCALL target used by func_008352 that is not in overlay_externs.h. */
-extern int overlay_call_037F_01CA(void);  /* @ref RTLink seg 0x037F off 0x01CA */
+extern int overlay_call_037F_01CA();  /* @ref RTLink seg 0x037F off 0x01CA */
 
 /* @asm        0x008262..0x0082A0  (62 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008262.asm
@@ -205,13 +205,13 @@ int func_008352_op_sz_92(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     for (i = 0; i < 8; i++) {                       /* @asm cmp [bp-0xa],8 */
         int16_t ny = (int16_t)((int8_t)DG8(0x00BE + i) + (int16_t)arg1_bp_08); /* @asm 0x8366 dy table */
         int16_t nx = (int16_t)((int8_t)DG8(0x00B4 + i) + (int16_t)arg0_bp_06); /* @asm 0x8375 dx table */
-        if (overlay_call_037F_000A(/* nx, ny */) == 0)   /* @asm 0x8381 tile valid? */
+        if (overlay_call_037F_000A(nx, ny) == 0)   /* @asm 0x8381 tile valid? */
             continue;
-        if (overlay_call_03E4_0074(/* nx, ny */) == 0)   /* @asm 0x8393 passable? */
+        if (overlay_call_03E4_0074(nx, ny) == 0)   /* @asm 0x8393 passable? */
             continue;
         found = 1;                                       /* @asm 0x839F */
         {
-            int16_t cost = (uint8_t)overlay_call_037F_01CA(/* nx, ny */); /* @asm 0x83AA, sub ah,ah */
+            int16_t cost = (uint8_t)overlay_call_037F_01CA(nx, ny); /* @asm 0x83AA, sub ah,ah */
             if (cost == 0)                               /* @asm 0x83B9 */
                 cost = 0x10;
             if (result < 0 || cost < result) {           /* @asm 0x83C0..0x83CC */
@@ -287,7 +287,7 @@ int func_0083F2_op_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
             int16_t dx = (int16_t)-((int16_t)(uint8_t)DG8(base + 0x00) - (int16_t)arg0_bp_06); /* @asm 0x8485 */
             int16_t dist;
             (void)dx; (void)dy;
-            dist = (int16_t)overlay_call_024C_0040(/* dx, dy */); /* @asm 0x8491 distance */
+            dist = (int16_t)overlay_call_024C_0040(dx, dy); /* @asm 0x8491 distance */
             if (dist > bestdist)                     /* @asm 0x8499 */
                 continue;
             best = (int16_t)i;                       /* @asm 0x849E */
@@ -395,7 +395,7 @@ int func_008508_logic_sz_9(uint16_t arg0_bp_06)
     uint16_t x = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x00);
     uint16_t y = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x01);
     (void)x; (void)y;
-    return overlay_call_037F_02A0(/* x, y */);
+    return overlay_call_037F_02A0(x, y);
 }
 
 /* @asm        0x008524..0x0085B1  (142 bytes)  region=load_image
@@ -1034,8 +1034,8 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
      * each call's comment to match overlay_externs.h prototypes). */
     (void)nx; (void)ny; (void)region;
 
-    if ((int16_t)overlay_call_037F_0314(/* nx, ny */) < 0) {        /* @asm 0x89F2 */
-        if ((int16_t)overlay_call_037F_03E4(/* nx, ny */) < 0) {    /* @asm 0x8A04 */
+    if ((int16_t)overlay_call_037F_0314(nx, ny) < 0) {        /* @asm 0x89F2 */
+        if ((int16_t)overlay_call_037F_03E4(nx, ny) < 0) {    /* @asm 0x8A04 */
             overlay_call_037F_0228(/* nx, ny, ctx.owner_power */);  /* @asm 0x8A20 */
         }
     }
@@ -1088,7 +1088,7 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
         if ((int16_t)DG16(0x8DB8) <= 1)         /* @asm 0x8B27 */
             emphasis = (int16_t)(emphasis + c);
         color = emphasis;                       /* @asm 0x8B37 [bp-0xa] */
-        if ((int16_t)(overlay_call_037F_04B0(/* nx, ny */) + 1) != 0)    /* @asm 0x8B40 */
+        if ((int16_t)(overlay_call_037F_04B0(nx, ny) + 1) != 0)    /* @asm 0x8B40 */
             color = (int16_t)(color * 2);
         overlay_call_181F_0D6C(/* attr-4, owner, color, 0 */);           /* @asm 0x8B69 sprite blit */
     }

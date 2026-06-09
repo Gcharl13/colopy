@@ -76,13 +76,13 @@ extern int func_05CA7E(int active_unit_idx, int a, int b, int c);
 
 /* page_12 RTLink Type-A thunk table (0x0613F0..0x06144F).  Each forwards FAR
  * into overlay seg 0x191F / 0x1A1F.  @asm page_12 0x0613F0..0x06144F. */
-extern int func_0613F0(void);  /* ljmp 0x191F:0x2CE */
-extern int func_0613F5(void);  /* ljmp 0x191F:0x2DC */
-extern int func_0613FA(void);  /* ljmp 0x191F:0x2F8 */
-extern int func_061404(void);  /* ljmp 0x191F:0xA3C */
-extern int func_061409(void);  /* ljmp 0x191F:0xA4A */
-extern int func_06140E(void);  /* ljmp 0x1A1F:0x21C */
-extern int func_061413(void);  /* ljmp 0x1A1F:0x22A */
+extern int func_0613F0();  /* ljmp 0x191F:0x2CE */
+extern int func_0613F5();  /* ljmp 0x191F:0x2DC */
+extern int func_0613FA();  /* ljmp 0x191F:0x2F8 */
+extern int func_061404();  /* ljmp 0x191F:0xA3C */
+extern int func_061409();  /* ljmp 0x191F:0xA4A */
+extern int func_06140E();  /* ljmp 0x1A1F:0x21C */
+extern int func_061413();  /* ljmp 0x1A1F:0x22A */
 extern int func_061418(void);  /* ljmp 0x1A1F:0x71C */
 extern int func_06141D(void);  /* ljmp 0x1A1F:0x72A */
 extern int func_061422(void);  /* ljmp 0x1A1F:0x738 */
@@ -96,7 +96,7 @@ extern int func_06144F(void);  /* ljmp 0x1A1F:0x7B6 */
 extern int func_0613FF(void);  /* ljmp 0x191F:0x38E (used by func_0610B0 commit) */
 /* String compare-vs-colony-name helper (load-image seg 0x0D1D); used only by
  * func_0610B0 to dedupe a proposed colony name.  @asm page_12 0x061205. */
-extern int overlay_call_0D1D_1154(void);  /* @ref 0x0D1D:0x1154 strcmp-far vs colony name */
+extern int overlay_call_0D1D_1154();  /* @ref 0x0D1D:0x1154 strcmp-far vs colony name */
 
 /* CS-relative near function called by func_05C69C @0x05C784 (call 0x3dc4 in
  * page-10 image == terrain/move-cost class lookup; full body out of range). */
@@ -108,9 +108,9 @@ extern int32_t aFldiv(int32_t a, int32_t b);   /* file 0x010496, ovly 0xD1D:0x0E
 
 /* LCALL targets used below that the auto-generated overlay_externs.h omits
  * (each cited at its use site from the reseg disasm; declared file-local). */
-extern int overlay_call_181F_0C40(void);  /* @asm lcall 0x181F:0x0C40 (page_10 0x05C83D) */
-extern int overlay_call_181F_0858(void);  /* @asm lcall 0x181F:0x0858 (page_12 0x0604A6) */
-extern int overlay_call_181F_0876(void);  /* @asm lcall 0x181F:0x0876 (page_12 0x0604B7) */
+extern int overlay_call_181F_0C40();  /* @asm lcall 0x181F:0x0C40 (page_10 0x05C83D) */
+extern int overlay_call_181F_0858();  /* @asm lcall 0x181F:0x0858 (page_12 0x0604A6) */
+extern int overlay_call_181F_0876();  /* @asm lcall 0x181F:0x0876 (page_12 0x0604B7) */
 extern int overlay_call_1A1F_01CA(void);  /* @asm lcall 0x1A1F:0x01CA (page_12 0x061035) */
 /* LCALL helpers used only by the func_05E9B0 tile-info-panel renderer
  * (text/string builders in load-image seg 0x181F); each cited at its use site
@@ -118,8 +118,8 @@ extern int overlay_call_1A1F_01CA(void);  /* @asm lcall 0x1A1F:0x01CA (page_12 0
 extern int overlay_call_181F_0146(void);  /* @asm lcall 0x181F:0x0146 (page_11 0x05EBD2 begin-string) */
 extern int overlay_call_181F_015A(void);  /* @asm lcall 0x181F:0x015A (page_11 0x05ED5D append-num) */
 extern int overlay_call_181F_09D2(void);  /* @asm lcall 0x181F:0x09D2 (page_11 0x05F40A turn/year?) */
-extern int overlay_call_181F_0BDC(void);  /* @asm lcall 0x181F:0x0BDC (page_11 0x05F3CD road/route lookup) */
-extern int overlay_call_181F_02B2(void);  /* @asm lcall 0x181F:0x02B2 (page_11 0x05F4AE draw glyph row) */
+extern int overlay_call_181F_0BDC();  /* @asm lcall 0x181F:0x0BDC (page_11 0x05F3CD road/route lookup) */
+extern int overlay_call_181F_02B2();  /* @asm lcall 0x181F:0x02B2 (page_11 0x05F4AE draw glyph row) */
 
 /* ----------------------------------------------------------------------------
  * DGROUP symbol map used below (raw addresses, each cited at its use site).
@@ -197,7 +197,7 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
         /* General case: query whether this terrain-id is "special" via the
          * 0x181F:0x0C9A predicate; if not (==0) continue, else return.
          * @asm 0x05C6DC..0x05C6F2 */
-        if (overlay_call_181F_0C9A(/* dest_terrain */) != 0)  /* arg = +0x17 */
+        if (overlay_call_181F_0C9A(dest_terrain) != 0)  /* arg = +0x17 */
             return 0;                               /* @0x05C6F2 JMP 0x05C873 */
     }
 
@@ -228,7 +228,7 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
      *   PUSH cost / PUSH 1   / LCALL 0x181F:0x4D4   (random_int(1,cost))
      *   CMP ax,[bp+0xA] / JLE keep / JMP return */
     if (overlay_call_181F_07B4(/* 0x0B, nib */) == 0) {
-        int roll = overlay_call_181F_04D4(/* 1, cost */);   /* random_int */
+        int roll = overlay_call_181F_04D4(1, cost);   /* random_int */
         if (roll > (int)cost_b)
             return 0;                               /* @0x05C776 JMP 0x05C873 */
     }
@@ -278,9 +278,9 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
         } else {
             /* format dest_terrain name (0x181F:0xC40) then new_terrain name,
              * then emit 0x1BDA. @asm 0x05C83A..0x05C870 */
-            overlay_call_181F_0C40(/* dest_terrain */);
+            overlay_call_181F_0C40(dest_terrain);
             overlay_call_181F_0438(/* name, 1 */);
-            overlay_call_181F_0C40(/* new_terrain */);
+            overlay_call_181F_0C40(new_terrain);
             overlay_call_181F_0438(/* name, 2 */);
             overlay_call_181F_0652(/* 1, 0x1BDA */);
         }
@@ -324,7 +324,7 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
     if (U8(0x5382) & 1) {
         overlay_call_181F_09AE(/* 0, base_amount, 0 */);
         overlay_call_181F_0652(/* 2, 0x1BE0 "CASHTREASURE" */);
-        overlay_call_181F_04B6(/* 2 */);
+        overlay_call_181F_04B6(2);
         gold_delta = base_amount;
         goto carry_only;                            /* @0x05C8B6 JMP 0x05CA55 */
     }
@@ -378,7 +378,7 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
     /* Tribe / "LOOTCASH" summary line (cosmetic). @asm 0x05CA02..0x05CA3F */
     overlay_call_181F_09A4(/* arg1 */);
     overlay_call_181F_0438(/* ax, 0 */);
-    overlay_call_181F_04B6(/* 2 */);
+    overlay_call_181F_04B6(2);
     overlay_call_181F_0652(/* 2, 0x1BFD "LOOTCASH" */);
 
     /* PowerRecord[attacker].gold (+0x21) += gold_delta (32-bit ADC).
@@ -395,7 +395,7 @@ carry_only:
     }
 
     /* Destroy the settlement. @asm 0x05CA6F..0x05CA77 LCALL 0x181F:0x0808. */
-    overlay_call_181F_0808(/* source_idx */);
+    overlay_call_181F_0808(source_idx);
     return 0;                                       /* @0x05CA7D RETF */
 }
 
@@ -523,9 +523,9 @@ int func_05E9B0_draw_tile_info_panel(uint16_t unit0,    /* bp+6  */
     /* @asm 0x05E9B5..0x05E9D4 — two guarded colony-helper lookups (bind the
      * active colony record for each non-negative colony slot before drawing). */
     if (colony0 >= 0)                               /* @0x05E9B9 JL skip */
-        overlay_call_181F_09E6(/* colony0 */);      /* @0x05E9BE get-colony-by-slot */
+        overlay_call_181F_09E6(colony0);      /* @0x05E9BE get-colony-by-slot */
     if (colony1 >= 0)                               /* @0x05E9CA JL skip */
-        overlay_call_181F_0A4C(/* colony1 */);      /* @0x05E9CF bind colony 1 */
+        overlay_call_181F_0A4C(colony1);      /* @0x05E9CF bind colony 1 */
 
     /* @asm 0x05E9D7..0x05E9E5 — zero the running width tallies / cursors. */
     /* (bp-4, bp-6 base x/y; bp-0x16/bp-0x14 per-attribute width accumulators;
@@ -590,15 +590,15 @@ int func_05E9B0_draw_tile_info_panel(uint16_t unit0,    /* bp+6  */
                      * ColonyRecord[ax].byte_0x5d62 bit6 is clear -> flag word
                      * [bp-0x12]=0 (controls which player-tint string slot
                      * [0x532e] vs [0x52cc] is used). @asm 0x05EFD4..0x05F032 */
-                    colony0 = (int16_t)overlay_call_181F_07BE(/* cell_y,cell_x */);
+                    colony0 = (int16_t)overlay_call_181F_07BE(cell_y,cell_x);
                     overlay_call_181F_016E(/* [0x2e8a] */);     /* @0x05F042 */
                 }
 
                 if (flag_b & 0x02) {  /* @0x05F0CE power-name line: str [0x2ec2] */
                     /* re-resolve colony for cell (0x07BE) then bind it (0x09E6);
                      * number = 0x64 - 0x181F:0x0C86. @asm 0x05F0D8..0x05F129 */
-                    colony0 = (int16_t)overlay_call_181F_07BE(/* cell_y,cell_x */);
-                    overlay_call_181F_09E6(/* colony0 */);      /* @0x05F0EA */
+                    colony0 = (int16_t)overlay_call_181F_07BE(cell_y,cell_x);
+                    overlay_call_181F_09E6(colony0);      /* @0x05F0EA */
                     overlay_call_181F_016E(/* [0x2ec2] */);     /* @0x05F0FE */
                     overlay_call_181F_0C86();                   /* @0x05F118 */
                 }
@@ -616,7 +616,7 @@ int func_05E9B0_draw_tile_info_panel(uint16_t unit0,    /* bp+6  */
                      * @asm 0x05F243..0x05F2D1 */
                     if (slot == 0) U8(0x8d02) &= 0x7f;          /* @0x05F249 */
                     {
-                        int desc = overlay_call_181F_078C(/* cell_y,cell_x */); /* @0x05F254 */
+                        int desc = overlay_call_181F_078C(cell_y,cell_x); /* @0x05F254 */
                         if (U8((uint16_t)(desc << 4) + 0x2f77) != 0)            /* @0x05F264 */
                             overlay_call_181F_033A(/* geom..., screen xy */);   /* @0x05F2CC */
                     }
@@ -628,8 +628,8 @@ int func_05E9B0_draw_tile_info_panel(uint16_t unit0,    /* bp+6  */
                      * string is [0x181F:0x0BDC()*0xC - 0x707e], else [0x2e5a];
                      * value = (0x181F:0x09D2()+1)*0x32.  @asm 0x05F38B..0x05F422 */
                     overlay_call_181F_02A8(/* palette, colony0, x,y */);       /* @0x05F3B0 */
-                    if (overlay_call_181F_09FC(/* 0 */) != 0)                  /* @0x05F3BB */
-                        overlay_call_181F_0BDC(/* 0 */);                       /* @0x05F3CD route idx */
+                    if (overlay_call_181F_09FC(0) != 0)                  /* @0x05F3BB */
+                        overlay_call_181F_0BDC(0);                       /* @0x05F3CD route idx */
                     overlay_call_181F_016E(/* route str or [0x2e5a] */);       /* @0x05F3F0 */
                     overlay_call_181F_09D2();                                  /* @0x05F40A */
                 }
@@ -809,7 +809,7 @@ int func_05FEF4_unit_adjacent_to_active_colony(uint16_t arg0_mode,
         /* Validate that the colony owner (0x8542 byte +0x1A) matches the
          * active power (0x5394); else bail to the success-test tail.
          * @asm 0x05FF05..0x05FF1C */
-        overlay_call_181F_09E6(/* arg0_mode */);    /* @0x05FF08 */
+        overlay_call_181F_09E6(arg0_mode);    /* @0x05FF08 */
         if (U8(U16(0x8542) + 0x1A) != U8(0x5394))   /* @0x05FF10..0x05FF1A */
             goto done;                              /* @0x05FF1C JMP 0x060020 */
     }
@@ -1120,9 +1120,9 @@ int func_06046E_remove_unit_from_tile_stack(uint16_t row)
         if ((UNIT_FIELD(i, 0x03) & 0x0F) != U8(0x5394)) continue;  /* @0x060486 owner */
         /* unit-type stat flag (0x5237 + type*6). @0x06049E */
         if (U8((UNIT_FIELD(i, 0x02)) * 6 + 0x5237) == 0) continue;
-        overlay_call_181F_0858(/* i */);            /* @0x0604A6 slot lookup */
+        overlay_call_181F_0858(i);            /* @0x0604A6 slot lookup */
         if (U16(0xA15C) != /* ax */ 0) continue;    /* @0x0604AE CMP [0xA15C],ax */
-        overlay_call_181F_0876(/* i */);            /* @0x0604B7 row lookup */
+        overlay_call_181F_0876(i);            /* @0x0604B7 row lookup */
         /* if row < arg0 skip; else clamp & remove. @0x0604BF..0x0604D2 */
     }
 
@@ -1171,11 +1171,11 @@ int func_060522_rebuild_active_power_unit_list(uint16_t ref_slot)
     for (i = 0; i < (int)U16(0x539C); i++) {        /* @0x06054E CMP [0x539C],ax */
         if ((UNIT_FIELD(i, 0x03) & 0x0F) != U8(0x5394)) continue;     /* owner */
         if (U8((UNIT_FIELD(i, 0x02)) * 6 + 0x5237) == 0) continue;    /* @0x060578 */
-        overlay_call_181F_0858(/* i */);            /* @0x060582 slot lookup -> ax */
+        overlay_call_181F_0858(i);            /* @0x060582 slot lookup -> ax */
         /* if slot == ref_slot: clear+reinsert, reset order. @0x06058D..0x0605B8 */
         if (/* ax */ 0 == (int)ref_slot) {
-            overlay_call_181F_0862(/* 0, i */);     /* @0x060594 */
-            overlay_call_181F_08B2(/* 0, i */);     /* @0x0605A4 */
+            overlay_call_181F_0862(0, i);     /* @0x060594 */
+            overlay_call_181F_08B2(0, i);     /* @0x0605A4 */
             if (UNIT_FIELD(i, 0x08) == 2)           /* @0x0605AC CMP [si+0x314C],2 */
                 UNIT_FIELD(i, 0x08) = 0;            /* @0x0605B3 */
         }
@@ -1370,7 +1370,7 @@ int func_060C34_advance_map_cursor_to_next_unit(void)
     if (row <= (int)U16(0xA15E)) {                  /* @0x060C42..0x060C46 */
         /* cursor past end: step back / wrap. @asm 0x060C48..0x060CD6 */
         U16(0xA15E) = (uint16_t)row;                /* @0x060C48 */
-        func_061409(/* row */);                     /* @0x060C4D CALL 0x1939 */
+        func_061409(row);                     /* @0x060C4D CALL 0x1939 */
         next = func_0613FA(/* [0xA160], tile[+0x22], 0, 1 */);  /* @0x060C64 CALL 0x192A */
         if (next >= 0 && next != 0x3E8) {           /* @0x060C6F..0x060C74 */
             tile[0x21]++;                           /* @0x060C7A INC es:[bx+0x21] */
@@ -1499,13 +1499,13 @@ int func_060D8C_stack_row_at_cursor(uint16_t mode)
     (void)y0;
 
     /* 1. n = func_061413(mode). @asm 0x060DC1..0x060DD0 (CALL 0x1943) */
-    n = func_061413(/* mode */);                    /* -> bp-2 ; si seeded with y0 */
+    n = func_061413(mode);                    /* -> bp-2 ; si seeded with y0 */
 
     /* 2. MEASURE loop: find the first row whose cumulative height passes mouseY.
      * @asm 0x060DD8..0x060E1F */
     for (r = 0; r < n; r++) {                        /* @0x060E19 cmp [bp-2],r / jg */
         if (hit < 0) {                               /* @0x060DDA cmp [bp-0xe],0 / jge skip */
-            int id = func_06140E(/* r + bias */);    /* @0x060DE5 CALL 0x193e -> entry id */
+            int id = func_06140E(r + bias);    /* @0x060DE5 CALL 0x193e -> entry id */
             /* height = ES:[0x83E][id*0x0C + 0x152] + 2.  id*0x0C via the
              * shl/add/shl chain @0x060DF6 (2*id +id =3*id, <<2 =12*id). @0x060DF4..0x060E07 */
             uint8_t far *tbl = (uint8_t far *)MK_FP(U16(0x840), U16(0x83E));
@@ -1579,7 +1579,7 @@ int func_060EC4_mouse_y_to_panel_region(void)
     /* column = MIN(3, (mouseX - 0x3D) / 0x14). @asm 0x060EC8..0x060EDC */
     int col = ((int)U16(0x7EA) - 0x3D) / 0x14;
     if (col > 3) col = 3;                            /* @0x060ED4 */
-    func_061409(/* col */);                          /* @0x060EDE CALL 0x1939 commit */
+    func_061409(col);                          /* @0x060EDE CALL 0x1939 commit */
 
     /* row bucket from mouseY. @asm 0x060EE4..0x060F05 */
     {
@@ -1684,8 +1684,8 @@ int func_060FBC_select_tile_or_active_unit(int16_t arg0_slot)
     }
 
     U8(0x1D69) = (uint8_t)arg0_slot;                /* @0x060FE4 save active slot */
-    func_0613F0(/* arg0_slot */);                   /* @0x060FEB CALL 0x1920 commit */
-    func_061409(/* 0 */);                           /* @0x060FF4 CALL 0x1939 */
+    func_0613F0(arg0_slot);                   /* @0x060FEB CALL 0x1920 commit */
+    func_061409(0);                           /* @0x060FF4 CALL 0x1939 */
 
     /* resolve tile sub-record word. @asm 0x060FFA..0x06101E */
     {
@@ -1814,7 +1814,7 @@ int func_0610B0_found_new_colony(void)
         overlay_call_191F_091C();                    /* txt_lookup() @0x061178 */
         pop = overlay_call_0D1D_08F6();              /* -> [bp-2] @0x06117E */
         overlay_call_181F_04CA(/* option 0x83A6 */);  /* pre-roll seed mix @0x061189 */
-        nadv = overlay_call_181F_04D4(/* 1, pop */);  /* random_int(1,pop) @0x061195 -> [bp-0x58] */
+        nadv = overlay_call_181F_04D4(1, pop);  /* random_int(1,pop) @0x061195 -> [bp-0x58] */
         for (j = 0; j < nadv; j++)                    /* @0x0611A5..0x0611BA */
             overlay_call_191F_091C();                /* advance name RNG @0x0611AC */
 
@@ -1848,7 +1848,7 @@ int func_0610B0_found_new_colony(void)
 
     /* ---- COMMIT the new colony. @0x061259 ---- */
     slot = (int)U16(0x53A0);                          /* @0x061259 [bp-4] */
-    func_0613F0(/* slot */);                          /* register slot @0x06125F (0x191F:0x2CE) */
+    func_0613F0(slot);                          /* register slot @0x06125F (0x191F:0x2CE) */
     /* store the name string into the colony tile sub-record (seg 0x9820 @[0x9E14]). */
     overlay_call_0D1D_117E(/* seg 0x9820, &[0x9E14], &namebuf */); /* @0x061267 */
     {
@@ -1856,13 +1856,13 @@ int func_0610B0_found_new_colony(void)
         tile[0x20] = (uint8_t)force_flag;            /* @0x06127B colony id / force byte */
         tile[0x21] = 2;                              /* @0x061286 tile stack-count = 2 */
     }
-    func_061409(/* 0 */);                             /* @0x06128B (0x191F:0xA4A) */
+    func_061409(0);                             /* @0x06128B (0x191F:0xA4A) */
     func_061422(/* cand */);                          /* @0x061294 (0x1A1F:0x738) */
 
     overlay_call_181F_09AE();                         /* score_accum(0,2,0) @0x06129E */
     cand = func_0613FA();                             /* re-probe @0x0612AC -> [bp-0x56] */
     if (cand < 0) return 0;                           /* @0x0612BE jl 0x612E3 */
-    func_061409(/* 1 */);                             /* @0x0612C2 */
+    func_061409(1);                             /* @0x0612C2 */
     func_061422(/* cand */);                          /* @0x0612CB */
     U16(0x53A0)++;                                    /* commit: colony count @0x0612D5 */
     func_0613FF(/* slot */);                          /* finalize @0x0612D9 (0x191F:0x38E) */

@@ -11,8 +11,8 @@
 #include "overlay_externs.h"
 
 /* File-local overlay thunks not yet in overlay_externs.h (sibling convention). */
-extern int overlay_call_057E_004A(void);  /* @ref RTLink 0x057E:0x004A — stack move-cost */
-extern int overlay_call_0981_0000(void);  /* @ref RTLink 0x0981:0x0000 — owner/role predicate */
+extern int overlay_call_057E_004A();  /* @ref RTLink 0x057E:0x004A — stack move-cost */
+extern int overlay_call_0981_0000();  /* @ref RTLink 0x0981:0x0000 — owner/role predicate */
 
 /* @asm        0x00693A..0x00697E  (68 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00693A.asm
@@ -441,7 +441,7 @@ int func_006CCA_logic_sz_13(uint16_t arg0_bp_06)
     uint8_t base = DG8(0x5234 + (unsigned)type * 14);
     uint8_t owner = DG8(ubase + 0x03) & 0x0F;
     (void)owner;
-    if (overlay_call_0981_0000(/* owner, 5 */) != 0) {
+    if (overlay_call_0981_0000(owner, 5) != 0) {
         if (type >= 0x0D && type <= 0x12)
             base += 3;
     }
@@ -559,7 +559,7 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     DG8(ubase + 0x00) = 0xFF;
     DG8(ubase + 0x01) = 0xFF;
     func_00693A((uint16_t)si, arg2_bp_0A, arg3_bp_0C);   /* unit_place_on_tile */
-    overlay_call_03F1_02F8(/* si */);                    /* per-unit init overlay */
+    overlay_call_03F1_02F8(si);                    /* per-unit init overlay */
     return si;
 
 soft_cap:                                       /* @asm 0x6e76 */
@@ -711,8 +711,8 @@ int func_006F5A_op_sz_105(uint16_t arg0_bp_06)
         (void)mx; (void)my;
         func_0069D2((uint16_t)si, mx, my);          /* re-seat at tile head */
         overlay_call_03F1_02F8(/* arg0 */);          /* per-unit on-select */
-        if (overlay_call_0984_02FC(/* mx,my,mx,my,0 */) == 0)
-            overlay_call_181F_09BA(/* mx-3,my-3,7,7,1 */);  /* recentre 7x7 window */
+        if (overlay_call_0984_02FC(mx,my,mx,my,0) == 0)
+            overlay_call_181F_09BA(mx-3,my-3,7,7,1);  /* recentre 7x7 window */
     }
     DG16(0x5392) = (uint16_t)si;                      /* g_progress_5392 = selected unit */
     return 0;
@@ -883,10 +883,10 @@ int func_00704C_op_sz_205(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
         int16_t ny = (int16_t)((int)DGS8(0xBE + k) + (int16_t)arg1_bp_08);
         int16_t rval, v;
         (void)nx; (void)ny;
-        rval = flag ? base : (int16_t)overlay_call_03E4_0074(/* nx, ny */);
-        v = (int16_t)overlay_call_037F_03E4(/* nx, ny */);
+        rval = flag ? base : (int16_t)overlay_call_03E4_0074(nx, ny);
+        v = (int16_t)overlay_call_037F_03E4(nx, ny);
         if (v < 0)
-            v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+            v = (int16_t)overlay_call_037F_0314(nx, ny);
         else
             base = rval;
         if (v >= 0 && v != (int16_t)arg2_bp_0A && rval == base)
@@ -936,7 +936,7 @@ int func_007120_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
         int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
         int16_t v;
         (void)nx; (void)ny;
-        v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+        v = (int16_t)overlay_call_037F_0314(nx, ny);
         if (v >= 0 && v != (int16_t)arg2_bp_0A)
             DGS16(0x8CFA) = v;
         if (DGS16(0x8CFA) >= 0)              /* @asm loop exits once a value is set */
@@ -990,13 +990,13 @@ int func_007178_op_sz_192(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
         int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
         int16_t v;
         (void)nx; (void)ny;
-        v = (int16_t)overlay_call_037F_0314(/* nx, ny */);
+        v = (int16_t)overlay_call_037F_0314(nx, ny);
         if (v >= 0 && v != (int16_t)arg2_bp_0A
-            && (int16_t)overlay_call_03E4_0074(/* nx, ny */) == base)
+            && (int16_t)overlay_call_03E4_0074(nx, ny) == base)
             DGS16(0x8CFA) = v;
-        v = (int16_t)overlay_call_037F_03E4(/* nx, ny */);
+        v = (int16_t)overlay_call_037F_03E4(nx, ny);
         if (v >= 0 && v != (int16_t)arg2_bp_0A
-            && (int16_t)overlay_call_03E4_0074(/* nx, ny */) == base)
+            && (int16_t)overlay_call_03E4_0074(nx, ny) == base)
             DGS16(0x8CFA) = v;
     }
     return (DGS16(0x8CFA) >= 0) ? 1 : 0;
@@ -1075,8 +1075,8 @@ int func_00726E_op_sz_116(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
             int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
             int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
             (void)nx; (void)ny;
-            result = ((int16_t)overlay_call_037F_0314(/* nx,ny */) == (int16_t)arg2_bp_0A) ? 1 : 0;
-            result |= ((int16_t)overlay_call_037F_0358(/* nx,ny */) == (int16_t)arg2_bp_0A) ? 1 : 0;
+            result = ((int16_t)overlay_call_037F_0314(nx,ny) == (int16_t)arg2_bp_0A) ? 1 : 0;
+            result |= ((int16_t)overlay_call_037F_0358(nx,ny) == (int16_t)arg2_bp_0A) ? 1 : 0;
             if (result != 0)
                 break;
         }
@@ -1323,8 +1323,8 @@ int func_0073A8_logic_sz_99(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
                 uint16_t mx = (uint8_t)DG8(ubase + 0x00);
                 uint16_t my = (uint8_t)DG8(ubase + 0x01);
                 (void)mx; (void)my;
-                if ((int16_t)overlay_call_03E4_0074(/* mx, my */) == m)
-                    acc += (int16_t)overlay_call_057E_004A(/* si, 1 */);
+                if ((int16_t)overlay_call_03E4_0074(mx, my) == m)
+                    acc += (int16_t)overlay_call_057E_004A(si, 1);
                 break;
             }
             case 12:                                 /* @asm 0x74fc */
@@ -1377,7 +1377,7 @@ int func_00757E_op_sz_33(uint16_t arg0_bp_06)
     uint16_t map_x = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x00);
     uint16_t map_y = (uint8_t)DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x01);
     (void)map_x; (void)map_y;
-    return overlay_call_037F_02A0(/* map_x, map_y */);
+    return overlay_call_037F_02A0(map_x, map_y);
 }
 
 /* @asm        0x0075A0..0x0075D3  (51 bytes)  region=load_image

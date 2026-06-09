@@ -17,11 +17,11 @@
  * (TODO: promote these to include/overlay_externs.h.)
  * -------------------------------------------------------------------------- */
 extern int overlay_call_012B_0002(void);  /* @ref seg 0x012B off 0x0002 (func_0091CC) */
-extern int overlay_call_05B3_0004(void);  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
-extern int overlay_call_0981_0000(void);  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
-extern int overlay_call_037F_02F8(void);  /* @ref seg 0x037F off 0x02F8 (func_00A6A2) */
-extern int overlay_call_037F_0598(void);  /* @ref seg 0x037F off 0x0598 (func_00A6A2) */
-extern int overlay_call_0427_0992(void);  /* @ref seg 0x0427 off 0x0992 (func_00A6A2) */
+extern int overlay_call_05B3_0004();  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
+extern int overlay_call_0981_0000();  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
+extern int overlay_call_037F_02F8();  /* @ref seg 0x037F off 0x02F8 (func_00A6A2) */
+extern int overlay_call_037F_0598();  /* @ref seg 0x037F off 0x0598 (func_00A6A2) */
+extern int overlay_call_0427_0992();  /* @ref seg 0x0427 off 0x0992 (func_00A6A2) */
 
 /* @asm        0x008C70..0x008CFF  (144 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008C70_unknown.asm
@@ -72,7 +72,7 @@ int func_008C70_logic_sz_66(void)
     DG16(0x8D74) = 0;
     DG16(0x8D76) = 0;
     /* lcall 0427:005C(map_x, map_y) -> first unit index (args in AX/DX); ret in AX */
-    idx = overlay_call_0427_005C(/* ctx[0], ctx[1] */);
+    idx = overlay_call_0427_005C(ctx[0], ctx[1]);
     DG16(0x8D78) = (uint16_t)idx;
     while (idx >= 0) {
         if (func_008B96((uint16_t)idx) != 0)               /* unit owned by current power */
@@ -527,7 +527,7 @@ int func_009726_logic_sz_52(void)
     overlay_call_09EF_002C(/* DG16(0x917A) */);
     tile_id = (int32_t)(((int32_t)ctx_local[1] << 8) + (int32_t)ctx_local[0]);
     tile_id += (int32_t)DG32(0x8D80);
-    overlay_call_09EF_001A(/* tile_id */);
+    overlay_call_09EF_001A(tile_id);
     return 0;
 }
 
@@ -1225,8 +1225,8 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
     /* @asm 0xA6F1..0xA723  if tile out of bounds, OR the (adx,ady,power) radius
      *      predicate fails -> mark 0x10 (unusable) and return early. */
-    if (overlay_call_037F_000A(/* px, py */) == 0 ||
-        overlay_call_037F_003C(/* adx, ady, func_008720() */) == 0) {
+    if (overlay_call_037F_000A(px, py) == 0 ||
+        overlay_call_037F_003C(adx, ady, func_008720()) == 0) {
         (void)func_008720();   /* @0xA704 CALL 0x8720 (current-power id) */
         flags |= 0x10;
         return flags;
@@ -1235,7 +1235,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     /* @asm 0xA724..0xA74C  if ctx->owner(+0x1A) < 4 and the tile's owner-mask
      *      (037F:02F8) lacks bit (0x10<<owner) -> mark 0x10 and return. */
     if ((uint8_t)ctx_local[0x1A] < 4) {
-        int mask = overlay_call_037F_02F8(/* px, py */) & 0xFF;
+        int mask = overlay_call_037F_02F8(px, py) & 0xFF;
         if ((mask & (0x10 << (uint8_t)ctx_local[0x1A])) == 0) {
             flags |= 0x10;
             return flags;
@@ -1243,18 +1243,18 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     }
 
     /* @asm 0xA74E..0xA763  owner_here = 037F:0314(px,py); if <0 skip to block I. */
-    owner_here = (int16_t)overlay_call_037F_0314(/* px, py */);
+    owner_here = (int16_t)overlay_call_037F_0314(px, py);
     if (owner_here >= 0 &&
         /* @asm 0xA766 owner_here != ctx->owner */
         owner_here != (uint8_t)ctx_local[0x1A] &&
         /* @asm 0xA776 03E4:0074(px,py) (water?) == 0 */
-        overlay_call_03E4_0074(/* px, py */) == 0 &&
+        overlay_call_03E4_0074(px, py) == 0 &&
         /* @asm 0xA78B owner_here < 4 */
         owner_here < 4) {
         /* @asm 0xA794..0xA817  scan units on tile (px,py): for a soldier-class
          *      (UnitRecord +8 == 5 or 6) that also passes the class/profession
          *      gate, mark 0x80 (enemy unit) and tag it via 0427:0992. */
-        int idx = overlay_call_0427_005C(/* px, py */);
+        int idx = overlay_call_0427_005C(px, py);
         while (idx >= 0) {
             uint8_t cls    = (uint8_t)DG8(0x3146 + (unsigned)idx * 0x1C);  /* +2 */
             int gate_ok = 0;
@@ -1277,7 +1277,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     }
 
     /* @asm 0xA819..0xA82F  if tile is "blocked" (037F:0598) -> mark 0x02. */
-    if (overlay_call_037F_0598(/* px, py */) != 0)
+    if (overlay_call_037F_0598(px, py) != 0)
         flags |= 0x02;
 
     /* @asm 0xA82F..0xA859  if (px,py) matches a wonder/landmark in table_54EC
@@ -1411,7 +1411,7 @@ int func_00A994_colony_sz_293(void)
     int col, row;
 
     /* @asm 0xA998..0xA9AD  frame = 037F:02A0(ctx_map_x, ctx_map_y) */
-    frame = overlay_call_037F_02A0(/* ctx[0], ctx[1] */);
+    frame = overlay_call_037F_02A0(ctx[0], ctx[1]);
     (void)frame;
     /* @asm 0xA9B1  lazily fill the 5x5 base grid (0x8DF0) */
     func_00A93E();
@@ -1425,10 +1425,10 @@ int func_00A994_colony_sz_293(void)
 
             /* @asm 0xA9EA..0xAA2C  if in bounds, resolvable (181F:0D84) and within
              *      the scaled range, take the good byte from *(0x8D4A)+2. */
-            if (overlay_call_037F_000A(/* px, py */) != 0) {
+            if (overlay_call_037F_000A(px, py) != 0) {
                 int resolved = overlay_call_181F_0D84(/* px, py, -1, frame */);
                 if (resolved >= 0) {
-                    int scaled = overlay_call_05DC_006A(/* DG16(0x8D52) */);
+                    int scaled = overlay_call_05DC_006A(DG16(0x8D52));
                     if ((int16_t)DG16(0x8DB8) <= scaled) {
                         uint16_t near *p = (uint16_t near *)DG16(0x8D4A);
                         result = (int16_t)(uint8_t)((uint8_t near *)p)[2];
@@ -1440,7 +1440,7 @@ int func_00A994_colony_sz_293(void)
             if ((int8_t)func_008956((uint16_t)row, (uint16_t)col) >= 0)
                 result = -1;
             /* @asm 0xAA43..0xAA59  if tile is water (03E4:0074) -> invalidate. */
-            if (overlay_call_03E4_0074(/* px, py */) != 0)
+            if (overlay_call_03E4_0074(px, py) != 0)
                 result = -1;
             /* @asm 0xAA5A..0xAA6F  if friendly unit occupies (func_0088D0) -> invalidate. */
             if (func_0088D0((uint16_t)row, (uint16_t)col) != 0)
@@ -1466,9 +1466,9 @@ int func_00A994_colony_sz_293(void)
              *      otherwise fall through to the next cell. */
             if (result >= 0 &&
                 DG8(0x8DF0 + idx) == 0 &&
-                overlay_call_037F_0314(/* px, py */) >= 0 &&
-                overlay_call_037F_03E4(/* px, py */) >= 0) {
-                overlay_call_037F_0228(/* px, py, result */);  /* commit work tile */
+                overlay_call_037F_0314(px, py) >= 0 &&
+                overlay_call_037F_03E4(px, py) >= 0) {
+                overlay_call_037F_0228(px, py, result);  /* commit work tile */
             }
         }
     }

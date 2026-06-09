@@ -2,8 +2,8 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 143**
-(plus 67 semantic alias names)
+**WIRED (linker alias to the real ported function): 157**
+(plus 69 semantic alias names)
 
 | stub | target | resolved via | arity |
 |---|---|---|--:|
@@ -25,6 +25,8 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `ff_finish` | `func_067700_compose_active_tile` | exe:overlay+name | 1 |
 | `ff_recognized_7B4` | `func_00BC10_ff_owned` | exe:resident+name | 2 |
 | `find_landing_slot` | `func_008D26_op_sz_69` | exe:resident+name | 2 |
+| `func_0613F0` | `func_05FE60_set_active_tile_ptr` | exe:overlay+name | 1 |
+| `func_061413` | `func_060382_tile_terrain_nibble` | exe:overlay+name | 1 |
 | `func_0627BE_distance` | `func_004900_logic_sz_15` | exe:resident+name | 2 |
 | `get_magic_string` | `func_00D6C4_rtl_sz_59` | exe:resident+name | 2 |
 | `hof_fclose` | `func_00F9C4_rtl_sz_186` | direct+name | 1 |
@@ -59,9 +61,18 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `ov_unit_select` | `func_0069EE_logic_sz_33` | exe:resident+name | 1 |
 | `overlay_call_0262_00DA` | `func_004AFA_op_sz_28` | direct | 0 |
 | `overlay_call_029F_00F6` | `func_004EE6_op_sz_297` | direct | 0 |
+| `overlay_call_037F_003C` | `func_005C2C_logic_sz_132` | direct | 3 |
+| `overlay_call_037F_01CA` | `func_005DBA_logic_sz_17` | direct | 2 |
+| `overlay_call_037F_02F8` | `func_005EE8_logic_sz_28` | direct | 2 |
+| `overlay_call_037F_04B0` | `func_0060A0_logic_sz_128` | direct | 2 |
+| `overlay_call_037F_0598` | `func_006188_op_sz_91` | direct | 2 |
 | `overlay_call_0427_06B4` | `func_006D24_op_sz_197` | direct | 4 |
 | `overlay_call_0427_0824` | `func_006E94_logic_sz_198` | direct | 1 |
 | `overlay_call_0427_155E` | `func_007BCE_logic_sz_25` | direct | 1 |
+| `overlay_call_057E_004A` | `func_007C2A_logic_sz_46` | direct | 2 |
+| `overlay_call_05DC_006A` | `func_00822A_logic_sz_36` | direct | 1 |
+| `overlay_call_0984_02FC` | `func_00BF3C_logic_sz_182` | direct | 5 |
+| `overlay_call_09EF_001A` | `func_00C30A_rtl_sz_17` | direct | 1 |
 | `overlay_call_0A58_05BE` | `func_00CF3E_logic_sz_134` | direct | 0 |
 | `overlay_call_0AE7_0002` | `func_00D272_logic_sz_13` | direct | 0 |
 | `overlay_call_0AE7_0016` | `func_00D286_logic_sz_15` | direct | 0 |
@@ -94,8 +105,11 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `overlay_call_181F_061E` | `king_war_turn` | exe:overlay | 0 |
 | `overlay_call_181F_0644` | `king_process_power_events` | exe:overlay | 0 |
 | `overlay_call_181F_0668` | `func_03E664_logic_sz_15` | exe:overlay | 0 |
+| `overlay_call_181F_089E` | `func_0069EE_logic_sz_33` | exe:resident | 1 |
 | `overlay_call_181F_09D2` | `func_007BE8_op_sz_66` | exe:resident | 0 |
 | `overlay_call_181F_0AE2` | `func_00BB6A_logic_sz_45` | exe:resident | 0 |
+| `overlay_call_181F_0BDC` | `func_0086E4_logic_sz_34` | exe:resident | 1 |
+| `overlay_call_181F_0C40` | `func_0084F2_logic_sz_21` | exe:resident | 1 |
 | `overlay_call_181F_0C72` | `func_00A994_colony_sz_293` | exe:resident | 0 |
 | `overlay_call_181F_0C86` | `func_008524_colony_sz_18` | exe:resident | 0 |
 | `overlay_call_181F_0D62` | `func_009726_logic_sz_52` | exe:resident | 0 |
@@ -346,7 +360,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `ovly_191F_0248` | `func_078CB2_shrink_block+0x79BAE`
 - `ovly_191F_0AC8` | `func_078CB2_shrink_block+0x9EF42`
 
-### arity mismatch (target wants 1) — 149
+### arity mismatch (target wants 1) — 142
 
 - `overlay_call_0009_00B4` | `func_002544_logic_sz_60` | `[0]`
 - `overlay_call_012B_015C` | `func_00380C_op_sz_93` | `[0]`
@@ -357,11 +371,9 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_03F1_02F8` | `func_006608_logic_sz_106` | `[0, 1]`
 - `overlay_call_05B3_01E0` | `func_008110_logic_sz_14` | `[0]`
 - `overlay_call_05B3_024E` | `func_00817E_logic_sz_14` | `[0]`
-- `overlay_call_05DC_006A` | `func_00822A_logic_sz_36` | `[0]`
 - `overlay_call_05EB_002C` | `func_0082DC_logic_sz_118` | `[0]`
 - `overlay_call_05EB_038E` | `func_00863E_wrapper_with_global_8DC6` | `[0]`
 - `overlay_call_0984_00AA` | `func_00BCEA_op_sz_61` | `[0]`
-- `overlay_call_09EF_001A` | `func_00C30A_rtl_sz_17` | `[0]`
 - `overlay_call_0A58_008C` | `func_00CA0C_logic_sz_74` | `[0]`
 - `overlay_call_0B22_0022` | `func_00D642_op_sz_129` | `[0]`
 - `overlay_call_0D1D_03F4` | `func_00F9C4_rtl_sz_186` | `[0]`
@@ -387,7 +399,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0498` | `func_0050F0_logic_sz_11` | `[0]`
 - `overlay_call_181F_04A2` | `func_0050FC_logic_sz_11` | `[0]`
 - `overlay_call_181F_04AC` | `func_005108_op_sz_51` | `[0]`
-- `overlay_call_181F_04B6` | `func_00513C_logic_sz_26` | `[0]`
+- `overlay_call_181F_04B6` | `func_00513C_logic_sz_26` | `[0, 1]`
 - `overlay_call_181F_0524` | `func_00543C_op_sz_131` | `[0]`
 - `overlay_call_181F_052E` | `func_06B722_treaty_or_message_dialog` | `[0]`
 - `overlay_call_181F_0582` | `market_set_active` | `[0]`
@@ -395,29 +407,28 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_05C4` | `func_00CA0C_logic_sz_74` | `[0]`
 - `overlay_call_181F_07A0` | `func_006608_logic_sz_106` | `[0]`
 - `overlay_call_181F_07F4` | `func_007A80_op_sz_143` | `[0]`
-- `overlay_call_181F_0808` | `func_006E94_logic_sz_198` | `[0]`
+- `overlay_call_181F_0808` | `func_006E94_logic_sz_198` | `[0, 1]`
 - `overlay_call_181F_081C` | `func_00757E_op_sz_33` | `[0]`
 - `overlay_call_181F_083A` | `func_0075A0_logic_sz_51` | `[0]`
 - `overlay_call_181F_084E` | `func_007356_logic_sz_56` | `[0]`
-- `overlay_call_181F_0858` | `func_0075D4_logic_sz_16` | `[0]`
-- `overlay_call_181F_0876` | `func_0075FE_logic_sz_17` | `[0]`
-- `overlay_call_181F_089E` | `func_0069EE_logic_sz_33` | `[0]`
+- `overlay_call_181F_0858` | `func_0075D4_logic_sz_16` | `[0, 1]`
+- `overlay_call_181F_0876` | `func_0075FE_logic_sz_17` | `[0, 1]`
 - `overlay_call_181F_08C6` | `func_006A10_logic_sz_108` | `[0]`
 - `overlay_call_181F_08DA` | `func_006FD8_logic_sz_42` | `[0]`
 - `overlay_call_181F_090C` | `func_006CCA_logic_sz_13` | `[0]`
 - `overlay_call_181F_0916` | `func_007966_logic_sz_41` | `[0]`
-- `overlay_call_181F_0920` | `func_00772E_op_sz_149` | `[0]`
+- `overlay_call_181F_0920` | `func_00772E_op_sz_149` | `[0, 1]`
 - `overlay_call_181F_0934` | `func_007BCE_logic_sz_25` | `[0]`
 - `overlay_call_181F_0966` | `func_0079A0_op_sz_119` | `[0]`
 - `overlay_call_181F_097A` | `func_007A20_logic_sz_96` | `[0]`
 - `overlay_call_181F_09A4` | `func_008110_logic_sz_14` | `[0]`
-- `overlay_call_181F_09E6` | `func_0082DC_logic_sz_118` | `[0]`
+- `overlay_call_181F_09E6` | `func_0082DC_logic_sz_118` | `[0, 1]`
 - `select_player_ctx` | `func_0082DC_logic_sz_118` | `[0, 1]`
-- `overlay_call_181F_09FC` | `func_00863E_wrapper_with_global_8DC6` | `[0]`
+- `overlay_call_181F_09FC` | `func_00863E_wrapper_with_global_8DC6` | `[0, 1]`
 - `overlay_call_181F_0A1A` | `func_0080C8_logic_sz_14` | `[0]`
 - `overlay_call_181F_0A24` | `func_008158_logic_sz_14` | `[0]`
 - `overlay_call_181F_0A42` | `func_0081C6_logic_sz_44` | `[0]`
-- `overlay_call_181F_0A4C` | `func_0081F2_logic_sz_34` | `[0]`
+- `overlay_call_181F_0A4C` | `func_0081F2_logic_sz_34` | `[0, 1]`
 - `overlay_call_181F_0A56` | `func_00822A_logic_sz_36` | `[0]`
 - `overlay_call_181F_0A60` | `func_008262_logic_sz_20` | `[0]`
 - `overlay_call_181F_0A74` | `func_0091CC_colony_sz_181` | `[0]`
@@ -431,14 +442,12 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0B32` | `func_00B23E_colony_sz_100` | `[0]`
 - `overlay_call_181F_0B5A` | `func_00887C_logic_sz_21` | `[0]`
 - `overlay_call_181F_0B64` | `func_00BB98_logic_sz_71` | `[0]`
-- `overlay_call_181F_0B78` | `func_008BB2_logic_sz_20` | `[0]`
+- `overlay_call_181F_0B78` | `func_008BB2_logic_sz_20` | `[0, 1]`
 - `overlay_call_181F_0B8C` | `func_00B900_colony_sz_618` | `[0]`
 - `overlay_call_181F_0BAA` | `func_009818_op_sz_66` | `[0]`
-- `overlay_call_181F_0BDC` | `func_0086E4_logic_sz_34` | `[0]`
-- `overlay_call_181F_0C40` | `func_0084F2_logic_sz_21` | `[0]`
 - `overlay_call_181F_0C4A` | `func_008C1E_logic_sz_81` | `[0]`
 - `overlay_call_181F_0C54` | `func_00B704_logic_sz_380` | `[0]`
-- `overlay_call_181F_0C9A` | `func_0082B2_logic_sz_38` | `[0]`
+- `overlay_call_181F_0C9A` | `func_0082B2_logic_sz_38` | `[0, 1]`
 - `overlay_call_181F_0D1C` | `check_total_exceeds_threshold` | `[0]`
 - `overlay_call_181F_0D4E` | `func_00B5FA_logic_sz_94` | `[0]`
 - `overlay_call_181F_0D90` | `func_00C30A_rtl_sz_17` | `[0]`
@@ -457,7 +466,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_191F_0254` | `func_02EE34_logic_sz_12` | `[0]`
 - `overlay_call_191F_02C0` | `func_06076A_pick_from_power_list_menu` | `[0]`
 - `overlay_call_191F_02CE` | `func_05FE60_set_active_tile_ptr` | `[0]`
-- `func_0613F0` | `func_05FE60_set_active_tile_ptr` | `[0]`
 - `overlay_call_191F_02EA` | `func_04198E_find_adjacent_cell` | `[0]`
 - `overlay_call_191F_03C6` | `func_03954C_logic_sz_52` | `[0]`
 - `overlay_call_191F_03D4` | `func_039218_pwr_sz_70` | `[0]`
@@ -471,23 +479,22 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `func_06B665` | `func_06A700_colony_site_report_dialog` | `[0]`
 - `overlay_call_191F_0902` | `func_06AA88_terrain_detail_dialog` | `[0]`
 - `func_06B66A` | `func_06AA88_terrain_detail_dialog` | `[0]`
-- `overlay_call_191F_0934` | `func_0694AE_cargo_select_dialog` | `[0]`
+- `overlay_call_191F_0934` | `func_0694AE_cargo_select_dialog` | `[0, 1]`
 - `func_06B66F` | `func_0694AE_cargo_select_dialog` | `[0]`
-- `overlay_call_191F_0942` | `func_0696C6_unit_detail_dialog` | `[0]`
+- `overlay_call_191F_0942` | `func_0696C6_unit_detail_dialog` | `[0, 1]`
 - `func_06B674` | `func_0696C6_unit_detail_dialog` | `[0]`
 - `overlay_call_191F_0A3C` | `func_06046E_remove_unit_from_tile_stack` | `[0]`
 - `func_061404` | `func_06046E_remove_unit_from_tile_stack` | `[0]`
 - `overlay_call_191F_0A4A` | `func_05FE7A_set_active_tile_subfield_ptr` | `[0]`
-- `func_061409` | `func_05FE7A_set_active_tile_subfield_ptr` | `[0]`
+- `func_061409` | `func_05FE7A_set_active_tile_subfield_ptr` | `[0, 1]`
 - `overlay_call_191F_0A74` | `func_042138_power_census` | `[0]`
 - `overlay_call_191F_0C06` | `func_03334E` | `[0]`
 - `overlay_call_191F_0CD8` | `boycott_is_active` | `[0]`
 - `overlay_call_191F_0EC2` | `func_041B76_step_goto` | `[0]`
 - `overlay_call_191F_0F8E` | `func_03ADA6_rtl_sz_1362` | `[0]`
 - `overlay_call_1A1F_021C` | `func_0603DA_map_cell_nibble_at_index` | `[0]`
-- `func_06140E` | `func_0603DA_map_cell_nibble_at_index` | `[0]`
+- `func_06140E` | `func_0603DA_map_cell_nibble_at_index` | `[0, 1]`
 - `overlay_call_1A1F_022A` | `func_060382_tile_terrain_nibble` | `[0]`
-- `func_061413` | `func_060382_tile_terrain_nibble` | `[0, 1]`
 - `overlay_call_1A1F_0262` | `func_041CBE_goto_trace` | `[0]`
 - `overlay_call_1A1F_0270` | `func_0427D6_mission_tally` | `[0]`
 - `overlay_call_1A1F_0930` | `func_0674A8_blink_selected_unit` | `[0]`
@@ -498,29 +505,24 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `ovly_191F_0AE0` | `func_034318_runtime_chain_289` | `[2]`
 - `ui_show_message2` | `func_034318_runtime_chain_289` | `[2]`
 
-### arity mismatch (target wants 2) — 127
+### arity mismatch (target wants 2) — 122
 
 - `overlay_call_004B_00E2` | `func_002992_rtl_sz_26` | `[0]`
-- `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0]`
+- `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0, 2]`
 - `overlay_call_037F_000A` | `func_005BFA_logic_sz_49` | `[0, 2]`
 - `overlay_call_037F_010E` | `func_005CFE_map_tile_read_layer_15C` | `[0]`
 - `overlay_call_037F_0142` | `func_005D32_map_tile_read_layer_160` | `[0]`
-- `overlay_call_037F_01CA` | `func_005DBA_logic_sz_17` | `[0]`
 - `overlay_call_037F_0200` | `func_005DF0_logic_sz_40` | `[0, 2]`
-- `overlay_call_037F_02A0` | `func_005E90_op_sz_64` | `[0]`
+- `overlay_call_037F_02A0` | `func_005E90_op_sz_64` | `[0, 2]`
 - `overlay_call_037F_02E0` | `func_005ED0_logic_sz_23` | `[0]`
-- `overlay_call_037F_02F8` | `func_005EE8_logic_sz_28` | `[0]`
 - `overlay_call_037F_0314` | `func_005F04_map_xy_bounds_or_neg1` | `[0, 2]`
 - `overlay_call_037F_0358` | `func_005F48_logic_sz_58` | `[0, 2]`
 - `overlay_call_037F_0392` | `func_005F82_logic_sz_31` | `[0]`
 - `overlay_call_037F_03E4` | `func_005FD4_map_xy_bounds_or_neg1_alt` | `[0, 2]`
-- `overlay_call_037F_04B0` | `func_0060A0_logic_sz_128` | `[0]`
-- `overlay_call_037F_0598` | `func_006188_op_sz_91` | `[0]`
 - `overlay_call_03E4_003A` | `func_00627A_op_sz_57` | `[0]`
 - `overlay_call_03E4_0074` | `func_0062B4_op_sz_39` | `[0, 2]`
-- `overlay_call_0427_005C` | `func_0066CC_op_sz_57` | `[0]`
+- `overlay_call_0427_005C` | `func_0066CC_op_sz_57` | `[0, 2]`
 - `overlay_call_0427_0992` | `func_007002_logic_sz_26` | `[0]`
-- `overlay_call_057E_004A` | `func_007C2A_logic_sz_46` | `[0, 2]`
 - `overlay_call_05B3_0004` | `func_007F34_logic_sz_27` | `[0]`
 - `overlay_call_05EB_0A76` | `func_008D26_op_sz_69` | `[0, 2]`
 - `overlay_call_0981_0000` | `func_00BC10_ff_owned` | `[0, 2]`
@@ -554,10 +556,10 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_016E` | `func_002992_rtl_sz_26` | `[0]`
 - `str_begin` | `func_002992_rtl_sz_26` | `[1, 2]`
 - `overlay_call_181F_01E6` | `func_002D28_logic_sz_75` | `[0]`
-- `overlay_call_181F_0302` | `func_005BFA_logic_sz_49` | `[0]`
+- `overlay_call_181F_0302` | `func_005BFA_logic_sz_49` | `[0, 2]`
 - `overlay_call_181F_030C` | `func_0082A0_logic_sz_18` | `[0]`
 - `overlay_call_181F_0370` | `func_004900_logic_sz_15` | `[0]`
-- `overlay_call_181F_04D4` | `func_00C322_rtl_sz_63` | `[0]`
+- `overlay_call_181F_04D4` | `func_00C322_rtl_sz_63` | `[0, 2]`
 - `overlay_call_181F_05FA` | `func_035B06_sec_sz_118` | `[0]`
 - `overlay_call_181F_0682` | `func_005F04_map_xy_bounds_or_neg1` | `[0]`
 - `overlay_call_181F_0696` | `func_005F48_logic_sz_58` | `[0]`
@@ -576,18 +578,18 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0740` | `func_005D1A_logic_sz_23` | `[0]`
 - `overlay_call_181F_074A` | `func_005EE8_logic_sz_28` | `[0]`
 - `overlay_call_181F_0754` | `func_005D32_map_tile_read_layer_160` | `[0]`
-- `overlay_call_181F_0768` | `func_0062B4_op_sz_39` | `[0]`
+- `overlay_call_181F_0768` | `func_0062B4_op_sz_39` | `[0, 2]`
 - `ovl_fortify_accum` | `func_0062B4_op_sz_39` | `[1, 2]`
-- `overlay_call_181F_078C` | `func_00627A_op_sz_57` | `[0]`
+- `overlay_call_181F_078C` | `func_00627A_op_sz_57` | `[0, 2]`
 - `overlay_call_181F_07AA` | `func_0063B6_logic_sz_14` | `[0]`
 - `overlay_call_181F_07B4` | `func_00BC10_ff_owned` | `[0]`
-- `overlay_call_181F_07BE` | `func_008D26_op_sz_69` | `[0]`
+- `overlay_call_181F_07BE` | `func_008D26_op_sz_69` | `[0, 2]`
 - `overlay_call_181F_07E0` | `func_0066CC_op_sz_57` | `[0]`
 - `unit_first_of_owner` | `func_0066CC_op_sz_57` | `[1]`
-- `overlay_call_181F_07EA` | `func_006B46_op_sz_365` | `[0]`
-- `overlay_call_181F_0862` | `func_0075E4_logic_sz_26` | `[0]`
+- `overlay_call_181F_07EA` | `func_006B46_op_sz_365` | `[0, 2]`
+- `overlay_call_181F_0862` | `func_0075E4_logic_sz_26` | `[0, 2]`
 - `overlay_call_181F_0894` | `func_00738E_logic_sz_26` | `[0]`
-- `overlay_call_181F_08B2` | `func_007610_logic_sz_31` | `[0]`
+- `overlay_call_181F_08B2` | `func_007610_logic_sz_31` | `[0, 2]`
 - `overlay_call_181F_08BC` | `func_0073A8_logic_sz_99` | `[0]`
 - `overlay_call_181F_092A` | `func_0067F0_logic_sz_44` | `[0]`
 - `overlay_call_181F_093E` | `func_007002_logic_sz_26` | `[0]`
@@ -597,10 +599,10 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0A6A` | `func_009AAA_logic_sz_241` | `[0]`
 - `overlay_call_181F_0A7E` | `func_036976_logic_sz_24` | `[0]`
 - `overlay_call_181F_0AC4` | `func_00B65A_unit_band_lookup` | `[0]`
-- `overlay_call_181F_0AEC` | `func_00B42C_logic_sz_139` | `[0]`
+- `overlay_call_181F_0AEC` | `func_00B42C_logic_sz_139` | `[0, 2]`
 - `overlay_call_181F_0B14` | `func_008686_logic_sz_34` | `[0]`
 - `overlay_call_181F_0B1E` | `func_008862_op_sz_25` | `[0]`
-- `overlay_call_181F_0C2C` | `func_00B550_logic_sz_88` | `[0]`
+- `overlay_call_181F_0C2C` | `func_00B550_logic_sz_88` | `[0, 2]`
 - `overlay_call_181F_0CAE` | `func_00913C_logic_sz_72` | `[0]`
 - `overlay_call_181F_0CC2` | `func_00B5A8_value_band` | `[0]`
 - `overlay_call_181F_0D12` | `func_008352_op_sz_92` | `[0]`
@@ -628,12 +630,11 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0E78` | `func_00E454_logic_sz_23` | `[0]`
 - `overlay_call_1A1F_0F26` | `func_012C8C_rtl_sz_60` | `[0]`
 
-### arity mismatch (target wants 3) — 61
+### arity mismatch (target wants 3) — 60
 
 - `overlay_call_0009_0244` | `func_0026D4_logic_sz_44` | `[0]`
 - `overlay_call_0009_02CC` | `func_00275C_logic_sz_39` | `[0]`
-- `overlay_call_037F_003C` | `func_005C2C_logic_sz_132` | `[0]`
-- `overlay_call_037F_0228` | `func_005E18_op_sz_120` | `[0]`
+- `overlay_call_037F_0228` | `func_005E18_op_sz_120` | `[0, 3]`
 - `overlay_call_09F6_0002` | `func_00C362_rtl_sz_173` | `[0]`
 - `overlay_call_0B70_003A` | `func_00DB3A_op_sz_69` | `[0]`
 - `overlay_call_0C2E_0022` | `func_00E702_logic_sz_21` | `[0]`
@@ -668,7 +669,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0704` | `func_005E18_op_sz_120` | `[0]`
 - `overlay_call_181F_0844` | `func_00693A_logic_sz_14` | `[0]`
 - `ovly_unit_spawned_181F_894` | `func_00693A_logic_sz_14` | `[2]`
-- `overlay_call_181F_0880` | `func_0069D2_logic_sz_12` | `[0]`
+- `overlay_call_181F_0880` | `func_0069D2_logic_sz_12` | `[0, 3]`
 - `overlay_call_181F_0948` | `func_006A7C_logic_sz_50` | `[0]`
 - `overlay_call_181F_0952` | `func_00723E_op_sz_48` | `[0]`
 - `overlay_call_181F_0970` | `func_00726E_op_sz_116` | `[0]`
@@ -676,7 +677,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0A06` | `func_007F96_op_sz_105` | `[0, 1]`
 - `overlay_call_181F_0A10` | `func_008000_op_sz_115` | `[0]`
 - `overlay_call_181F_0AF6` | `func_008846_logic_sz_27` | `[0]`
-- `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0]`
+- `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0, 3]`
 - `overlay_call_181F_0CEA` | `func_00B31A_logic_sz_77` | `[0]`
 - `overlay_call_181F_0D30` | `func_0098F6_logic_sz_85` | `[0]`
 - `overlay_call_181F_0D44` | `func_008982_logic_sz_532` | `[0]`
@@ -868,9 +869,8 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0EBA` | `0x2594a`
 - `overlay_call_1A1F_0EE4` | `0x25982`
 
-### arity mismatch (target wants 5) — 14
+### arity mismatch (target wants 5) — 13
 
-- `overlay_call_0984_02FC` | `func_00BF3C_logic_sz_182` | `[0, 5]`
 - `overlay_call_0A4E_001C` | `func_00C8FC_logic_sz_88` | `[0]`
 - `overlay_call_181F_013C` | `func_002B38_op_sz_58` | `[0]`
 - `draw_text_clip` | `func_002B38_op_sz_58` | `[0, 1]`
