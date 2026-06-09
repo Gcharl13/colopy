@@ -2,8 +2,8 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 165**
-(plus 76 semantic alias names)
+**WIRED (linker alias to the real ported function): 164**
+(plus 75 semantic alias names)
 
 | stub | target | resolved via | arity |
 |---|---|---|--:|
@@ -158,7 +158,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `ovly_unit_query_B78` | `func_008BB2_logic_sz_20` | exe:resident+name | 1 |
 | `power_set_a06` | `func_007F96_op_sz_105` | exe:resident+name | 3 |
 | `power_set_a10` | `func_008000_op_sz_115` | exe:resident+name | 3 |
-| `render_frame_setup` | `func_06787C_render_frame_setup` | exe:overlay+name | 0 |
 | `rpt_select_player` | `market_set_active` | exe:overlay+name | 1 |
 | `sprite_blit` | `func_00386A_op_sz_100` | exe:resident+name | 0 |
 | `str_cat_num_182` | `func_0029DE_rtl_sz_39` | exe:resident+name | 3 |
