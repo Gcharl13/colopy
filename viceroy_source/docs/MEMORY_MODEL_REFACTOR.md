@@ -110,16 +110,21 @@ pass; the remaining ~26 are being reconciled.
 
 - **Cross-file duplicate definitions** (found 2026-06-09 via an archive-wide
   `nm ... | uniq -d`; harmless for the static lib, but each is a
-  multiple-definition error once an executable links). Same function defined in
-  two objects — **7 so far**: `colony_screen_render` (overlay_024342 **and**
-  ui/colony_screen.c), `native_settlement_remove` (overlay_046D70 **and**
-  native/settlement.c), `func_06F7FE/06F821/06F83F` (adjacent overlay files
-  overlay_06C220 **and** overlay_06D938 — a segmentation boundary overlap), plus
-  `power_gold` and `war_flag_cell`. Resolution: the organised module is canonical;
-  the raw overlay-decomposition copy becomes a declaration (or that span is
-  dropped from the overlay file). Re-run `nm libviceroy_rules.a | awk '/ [TtDdBb] /
-  {print $3}' | sort | uniq -d` before the first executable link to get the live
-  list.
+  multiple-definition error once an executable links). 7 found; **3 fixed, 4
+  remain**:
+  - *FIXED:* `func_06F7FE/06F821/06F83F` — page-tail trampoline thunks physically
+    in the 06D938 segment; overlay_06C220 only called them but re-defined identical
+    copies (boundary overreach). Its copies are now `extern` declarations.
+  - *REMAINING (need per-symbol reconciliation, NOT a mechanical dedup):* these are
+    TWO DIVERGENT REAL implementations of the same function, with different param
+    names/bodies — `colony_screen_render` (overlay_024342 `int show_close_button`
+    vs ui/colony_screen.c `int repaint`), `native_settlement_remove` (overlay_046D70
+    vs native/settlement.c), `power_gold` (overlay_046D70 vs diplomacy/meeting.c),
+    `war_flag_cell` (diplomacy/relations.c vs diplomacy/meeting.c — two organised
+    modules). Each needs comparing both bodies against the `.asm` to pick the
+    authoritative one, make the other a declaration, and point callers at it — a
+    correctness decision, not just a link fix. Re-run `nm libviceroy_rules.a |
+    awk '/ [TtDdBb] /{print $3}' | sort | uniq -d` for the live list.
 
 - **DGROUP global decl consolidation + type reconciliation — DONE 2026-06-09.**
   The count globals at `0x539A/0x539C/0x539E` were declared file-locally in ~12
