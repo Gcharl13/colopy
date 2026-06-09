@@ -108,18 +108,21 @@ pass; the remaining ~26 are being reconciled.
 
 ### D. Linkable binary + front end (milestone 3) — TODO
 
-- **DGROUP global decl consolidation + type reconciliation.** The count/flag
-  globals at `0x539A`/`0x539C`/`0x539E` (and similar) are declared *file-locally*
-  in ~15 files with two latent problems that only bite at link time (a static lib
-  doesn't resolve them): (a) **type drift** — the same address is `int16_t` in
-  some files and `uint16_t` in others; (b) **dual naming** — e.g. `0x539C` is
-  `g_unit_count_539C` in overlay/king/native but `g_progress_539C` in `globals.h`.
-  Pick one canonical name+type per address, put it in `globals.h`, and delete the
-  file-local copies. Same for the agent-flagged `g_market` (=`0x84FC` active
-  `PowerRecord*`), `g_unit_type_flags_5236/5237`, `g_power_table_8808`
-  (~`DG_POWER_TABLE`), `native_class_weight_5AD8`, and the `SCREEN_*` ids (one ui
-  screen-id enum). Pre-existing pattern, widened during the compile-fix waves —
-  must be resolved before an executable will link cleanly.
+- **DGROUP global decl consolidation + type reconciliation — DONE 2026-06-09.**
+  The count globals at `0x539A/0x539C/0x539E` were declared file-locally in ~12
+  files (int16/uint16 drift, *undefined* at link, dual-named vs `g_progress_*`,
+  and `0x539A` had THREE names), AND separately defined as standalone vars in
+  `data/production.c` — a different byte from the `DGS16(0x539C)` reads elsewhere.
+  Unified as `g_dgroup`-resident macro aliases in `globals.h` (`#define
+  g_unit_count_539C DGS16(0x539C)`, etc.) so the named form, the `DGS16()` form
+  and `DS:0x539C` are one byte. Same treatment for the five agent-flagged undefined
+  globals: `g_market` (0x84FC active `PowerRecord*`) now follows the `ctx` pattern
+  (declared in `power.h`, defined in `dgroup.c`); `g_unit_type_flags_5236/5237`,
+  `g_power_table_8808`, `native_class_weight_5AD8` are `g_dgroup` byte-pointer
+  macros; the four `SCREEN_*` ids live in `include/ui_screen.h`. All resolve in
+  the archive now (no undefined-global blockers); library still builds clean.
+  Still standalone vars (lower priority, same latent var-vs-`DGS16` divergence):
+  the other `g_progress_53xx`, `g_difficulty_53A6`.
 
 - `dgroup_init()` must populate the **initialized static window** (DS 0x0000..0x2CC5)
   from the game data files — **never** from VICEROY.EXE bytes (copyright). The few
