@@ -31,6 +31,8 @@
  *       whose own TODO pointed here: "find via KINGTAX PUSH at 0x02f392").
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
+#include "dgroup.h"
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from the operands).
@@ -40,9 +42,7 @@
 extern int16_t g_subject_power_5394;   /* DGROUP:0x5394 — the power being processed this
                                          *   call (read at entry; 49 distinct readers incl.
                                          *   0x0079A0 setup, 0x02F052). Used as owner key. */
-extern int16_t g_unit_count_539C;       /* DGROUP:0x539C — number of UnitRecords (cross-
-                                         *   confirmed in intervention.c) */
-extern int16_t g_colony_count_539E;     /* DGROUP:0x539E — number of colonies */
+/* g_unit_count_539C, g_colony_count_539E — DGS16 macros in globals.h */
 extern int16_t g_found_flag_014C;       /* DGROUP:0x014C — "an event fired" result flag
                                          *   (set to 1 @0x02F201 when KINGTAX applies) */
 extern int16_t g_found_value_014E;      /* DGROUP:0x014E — companion value (init 0xFFFF) */

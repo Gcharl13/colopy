@@ -76,13 +76,11 @@ extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
 extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRecord */
-extern int16_t  g_colony_count_539E;   /* DGROUP:0x539E — live colony count (word) */
+/* g_colony_count_539E, g_unit_count_539C, g_native_count_539A — DGS16 macros in globals.h */
+/* g_unit_type_flags_5237, g_power_table_8808 — DG_BASE macros in globals.h */
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
-extern int16_t  g_unit_count_539C;     /* DGROUP:0x539C — live unit count (word) */
-extern uint8_t  g_unit_type_flags_5237[]; /* DGROUP:0x5237 — per-type flag table */
-extern uint8_t  g_power_table_8808[];  /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
 extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
 extern int16_t  ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter */
 
@@ -769,7 +767,7 @@ int func_04CA86_ai_move_is_provocative(uint16_t self_power, int16_t tribe, int16
  * stepper cs:0x7ADA and the 0x181F map leaves are role-named.  [DONE]
  * ============================================================================ */
 extern int16_t g_ai_best_target_9EA8; /* DGROUP:0x9EA8 — scratch "best candidate" word */
-extern uint8_t g_unit_type_flags_5236[]; /* DGROUP:0x5236 base — per-type 6-byte rows */
+/* g_unit_type_flags_5236 is a DG_BASE macro in globals.h */
 
 int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                                        uint16_t self_power, uint16_t pursuit)
@@ -943,7 +941,7 @@ extern uint8_t  g_ai_regionmax_9E98[]; /* DGROUP:0x9E98 (-0x6168) — per-region
 extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power tier triplet */
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
-extern int16_t  g_native_count_539A;   /* DGROUP:0x539A — native settlement count (word) */
+/* g_native_count_539A is a DGS16 macro in globals.h */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.
