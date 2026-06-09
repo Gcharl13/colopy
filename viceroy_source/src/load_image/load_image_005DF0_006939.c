@@ -166,10 +166,16 @@ void far *func_005ED0_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_005EE8_logic_sz_28(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
+#ifdef _VICEROY_MODERN
+    /* layer far-ptr [0x15C/0x160/0x168] -> host layer plumbing */
+    extern uint8_t viceroy_layer_byte(int layer, int x, int y);
+    return viceroy_layer_byte(2, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     /* @asm 0x005EEC mov ax,[0x853a]; imul [bp+8]; mov bx,ax; add bx,[0x168];
      * mov es,[0x16a]; add bx,[bp+6]; mov al,es:[bx] -> byte (layer 0x168)[width*y+x]. */
     return ((uint8_t far *)(*(void far * near *)0x0168))
         [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
+#endif
 }
 
 /* @asm        0x005F04..0x005F23  (31 bytes)  region=load_image

@@ -115,6 +115,16 @@ static uint8_t wp_rel(int layer, int16_t off)
     return g_layer[layer][o];
 }
 uint8_t wp_terrain_rel(int16_t off) { return wp_rel(0, off); }
+/* absolute layer reads (the [0x15C]/[0x160]/[0x168] far-ptr model of the
+ * load_image readers func_005CFE/005D32/005EE8; stride = map width per their
+ * `imul [0x853A]` bodies) */
+uint8_t viceroy_layer_byte(int layer, int x, int y)
+{
+    long o = (long)y * (int16_t)DG16(0x853A) + x;
+    if (layer < 0 || layer > 2 || !g_layer[layer] || o < 0 || o >= g_layer_len)
+        return 0;
+    return g_layer[layer][o];
+}
 uint8_t wp_feature_rel(int16_t off) { return wp_rel(1, off); }
 uint8_t wp_resfog_rel(int16_t off)  { return wp_rel(2, off); }
 
@@ -195,3 +205,40 @@ void emit_ground_sprite(int sprite_idx) { emit(sheet_at(G_SHEET_TERRAIN), terrai
 void emit_terrain_sprite(int sprite_idx){ emit(sheet_at(G_SHEET_TERRAIN), terrain_cell_transform(sprite_idx)); }
 
 #endif /* _VICEROY_MODERN */
+
+/* ---- colony-blit leaves (func_004314's resident calls; same cell model) ----
+ * 0xC56:4 cell blit from the [0x83E] sheet slot (ICONS); 0xC28:0xA text color;
+ * 0xC11:0xC text at x,y; 0xB9E:0xA small filled box. */
+#define G_SHEET_ICONS  0x083E   /* handle slot: ICONS.SS (set by the shell) */
+void viceroy_set_sheet_icons(int handle) { DG16(G_SHEET_ICONS) = (uint16_t)handle; }
+
+void vid_cell_blit(int cell, int x, int y, int metric, int x_end)
+{
+    (void)metric; (void)x_end;
+    const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
+    if (!s || cell < 0 || cell >= s->nframes) return;
+    /* dest semantics per func_004314: x arg = centre-ish column, y = row end;
+     * the resident blit anchors cell at (x - w/2, y - h + 1) */
+    const ss_frame_t *f = &s->frames[cell];
+    ss_blit(s, cell, x - f->w / 2, y - f->h + 1);
+}
+
+static uint8_t g_text_color = 0x0F;
+extern ff_font_t *viceroy_font(void);          /* main_modern provides */
+void vid_text_color(int c) { g_text_color = (uint8_t)c; }
+void vid_text_xy(const char *str, int x, int y)
+{
+    ff_font_t *f = viceroy_font();
+    if (!f) return;
+    f->colors[1] = f->colors[2] = f->colors[3] = g_text_color;
+    ff_draw(f, str, x, y, 1);
+}
+
+void vid_small_box(int x, int y, int px, int color)
+{
+    uint8_t *fb = vid_framebuffer();
+    for (int r = 0; r < px && y + r < VID_H; r++)
+        for (int c = 0; c < px && x + c < VID_W; c++)
+            if (x + c >= 0 && y + r >= 0)
+                fb[(y + r) * VID_W + x + c] = (uint8_t)color;
+}

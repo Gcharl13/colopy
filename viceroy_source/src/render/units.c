@@ -172,3 +172,90 @@ int unit_owner(int idx)
     /* return unit_table[idx].owner_flags & 0x0F; */
     return -1;
 }
+
+/* ============================================================================
+ * Map overlay passes: COLONIES + NATIVE SETTLEMENTS   [PORTED 2026-06-10]
+ * ----------------------------------------------------------------------------
+ * Bodies decoded from the raw EXE (docs/MAP_COMPOSER_SPEC.md):
+ *   0x191F:0x896 -> wrapper 0x672C8 -> ljmp 0x1A1F:0x922 -> BODY 0x67182
+ *   0x191F:0x888 -> wrapper 0x6716A -> ljmp 0x1A1F:0x94C -> BODY 0x67082
+ * Both walk their record table over the view rect, fog-test per tile
+ * (0x181F:0x74A = func_005EE8), transform to screen, and emit.
+ * ============================================================================ */
+#include <stdio.h>
+#include "dgroup.h"
+
+extern int  func_066E0C_clamp_rect_to_view(int *x0, int *y0, int *x1, int *y1);
+extern int  func_02EB46_logic_sz_13(uint16_t cid, uint16_t pw);     /* colony known */
+extern int  func_005EE8_logic_sz_28(uint16_t x, uint16_t y);        /* fog byte 0x74A */
+extern int  func_004314_colony_blit(uint16_t idx, int sx, int sy,
+                                    uint16_t name_flag, uint16_t pop_flag,
+                                    uint16_t metric);
+extern int  func_003E40_logic_sz_174(uint16_t a, uint16_t b, uint16_t c,
+                                     uint16_t d, uint16_t e);       /* settlement blit (stub) */
+
+/* BODY file 0x67182: colony pass (full transcription in MAP_COMPOSER_SPEC.md) */
+void func_067182_colony_pass(int x0, int y0, int w, int h)
+{
+    uint8_t fogmask = (uint8_t)(1 << ((int16_t)DG16(0x5396) + 4)); /* @0x67188 */
+    int x1 = x0 + w - 1, y1 = y0 + h - 1;                          /* @0x67196 */
+    func_066E0C_clamp_rect_to_view(&x0, &y0, &x1, &y1);            /* @0x671BA (0x906) */
+
+    int n = (int16_t)DG16(0x539E);                                 /* @0x671C7 */
+    for (int i = 0; i < n; i++) {                                  /* @0x671D1.. */
+        int rec = 0x5D46 + i * 0xCA;
+        int x = DG8(rec), y = DG8(rec + 1);                        /* @0x671D9/0x671DF */
+        if (x < x0 || x > x1 || y < y0 || y > y1) continue;        /* @0x671E6.. */
+        if (!func_02EB46_logic_sz_13((uint16_t)i, DG16(0x5396)))   /* @0x6720D (0x996) */
+            continue;
+        if (!(func_005EE8_logic_sz_28((uint16_t)x, (uint16_t)y) & fogmask)
+            && DG16(0x53A2) == 0)                                  /* @0x6721E/0x6722B */
+            continue;
+        int sx = (x - (int16_t)DG16(0x8328) + (int16_t)DG16(0x832A))
+                 * (int16_t)DG16(0x5AD4);                          /* @0x67232 */
+        int sy = (y - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C))
+                 * (int16_t)DG16(0x8326);                          /* @0x67243 */
+        int f = ((int16_t)DG16(0x0184) == 0 && DG16(0x0890) == 0); /* @0x67254/0x6726F */
+        func_004314_colony_blit((uint16_t)i, sx, sy,
+                                (uint16_t)f, (uint16_t)f,
+                                DG16(0x0186));                     /* @0x672AC (0x2A8) */
+    }                                                              /* @0x672B1 +0xCA */
+}
+
+/* BODY file 0x67082: native-settlement pass (same shape; stride 0x12 @0x54EC,
+ * count [0x539A]; emit 0x181F:0x2B2 = func_003E40 -- still a stub, so
+ * settlements stay invisible until its port lands) */
+void func_067082_settlement_pass(int x0, int y0, int w, int h)
+{
+    uint8_t fogmask = (uint8_t)(1 << ((int16_t)DG16(0x5396) + 4)); /* @0x67086 */
+    int x1 = x0 + w - 1, y1 = y0 + h - 1;                          /* @0x67094 */
+    func_066E0C_clamp_rect_to_view(&x0, &y0, &x1, &y1);            /* @0x670B8 */
+
+    int n = (int16_t)DG16(0x539A);                                 /* @0x670C5 */
+    for (int i = 0; i < n; i++) {                                  /* @0x670CF.. */
+        int rec = 0x54EC + i * 0x12;
+        int x = DG8(rec), y = DG8(rec + 1);                        /* @0x670D7.. */
+        if (x < x0 || x > x1 || y < y0 || y > y1) continue;        /* (per body @0x670E6+) */
+        if (!(func_005EE8_logic_sz_28((uint16_t)x, (uint16_t)y) & fogmask)
+            && DG16(0x53A2) == 0)                                  /* @0x6710A */
+            continue;
+        int sx = (x - (int16_t)DG16(0x8328) + (int16_t)DG16(0x832A))
+                 * (int16_t)DG16(0x5AD4);                          /* @0x6712A */
+        int sy = (y - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C))
+                 * (int16_t)DG16(0x8326);                          /* @0x6713A */
+        func_003E40_logic_sz_174((uint16_t)i, (uint16_t)sx, (uint16_t)sy,
+                                 DG16(0x0186), 0);                 /* @0x67151 (0x2B2) */
+    }                                                              /* @0x67156 +0x12 */
+}
+
+/* the original wrappers (0x6716A / 0x672C8) push the live view rect */
+void overlay_pass_colonies(void)     /* = 0x191F:0x896 chain */
+{
+    func_067182_colony_pass((int16_t)DG16(0x8328), (int16_t)DG16(0x832E),
+                            (int16_t)DG16(0x8544), (int16_t)DG16(0x8546));
+}
+void overlay_pass_settlements(void)  /* = 0x191F:0x888 chain */
+{
+    func_067082_settlement_pass((int16_t)DG16(0x8328), (int16_t)DG16(0x832E),
+                                (int16_t)DG16(0x8544), (int16_t)DG16(0x8546));
+}

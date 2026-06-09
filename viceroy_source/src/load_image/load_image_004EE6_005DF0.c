@@ -1335,11 +1335,17 @@ void far *func_005CE6_logic_sz_24(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_005CFE_map_tile_read_layer_15C(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
+#ifdef _VICEROY_MODERN
+    /* layer far-ptr [0x15C/0x160/0x168] -> host layer plumbing */
+    extern uint8_t viceroy_layer_byte(int layer, int x, int y);
+    return viceroy_layer_byte(0, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     /* @asm 0x005D02 mov ax,[0x853a]; 0x005D05 imul [bp+8]; 0x005D08 mov bx,ax;
      * 0x005D0A add bx,[0x15c]; 0x005D0E mov es,[0x15e]; 0x005D12 add bx,[bp+6];
      * 0x005D15 mov al,es:[bx] -> reads the byte g_map_layer_15c[width*y + x]. */
     return ((uint8_t far *)g_map_layer_15c)
         [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
+#endif
 }
 
 /* @asm        0x005D1A..0x005D31  (23 bytes)  region=load_image
@@ -1376,10 +1382,16 @@ void far *func_005D1A_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  */
 int func_005D32_map_tile_read_layer_160(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
+#ifdef _VICEROY_MODERN
+    /* layer far-ptr [0x15C/0x160/0x168] -> host layer plumbing */
+    extern uint8_t viceroy_layer_byte(int layer, int x, int y);
+    return viceroy_layer_byte(1, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     /* @asm 0x005D36 mov ax,[0x853a]; imul [bp+8]; mov bx,ax; add bx,[0x160];
      * mov es,[0x162]; add bx,[bp+6]; mov al,es:[bx] -> byte g_map_layer_160[width*y+x]. */
     return ((uint8_t far *)g_map_layer_160)
         [(int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06];
+#endif
 }
 
 /* @asm        0x005D4E..0x005D76  (40 bytes)  region=load_image

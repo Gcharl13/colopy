@@ -2,7 +2,7 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 164**
+**WIRED (linker alias to the real ported function): 163**
 (plus 75 semantic alias names)
 
 | stub | target | resolved via | arity |
@@ -89,7 +89,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `overlay_call_181F_01F0` | `func_00E68A_set_global_269E_byte_pair` | exe:resident | 0 |
 | `overlay_call_181F_01FA` | `func_00E51C_logic_sz_24` | exe:resident | 0 |
 | `overlay_call_181F_0254` | `func_00E76A_logic_sz_505` | exe:resident | 0 |
-| `overlay_call_181F_02A8` | `func_004314_logic_sz_14` | exe:resident | 0 |
 | `overlay_call_181F_02BC` | `func_00386A_op_sz_100` | exe:resident | 0 |
 | `overlay_call_181F_02DA` | `func_003710_logic_sz_20` | exe:resident | 0 |
 | `overlay_call_181F_02F8` | `func_00E964_logic_sz_717` | exe:resident | 0 |
@@ -311,8 +310,8 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_191F_081C` | `func_078CB2_shrink_block+0x5B4B4`
 - `overlay_call_191F_0828` | `func_078CB2_shrink_block+0x5B11A`
 - `overlay_call_191F_0840` | `func_078CB2_shrink_block+0x595BC`
-- `overlay_call_191F_0888` | `func_067082_draw_settlement_markers+0xE8`
-- `overlay_call_191F_0896` | `func_067182_draw_colony_markers+0x146`
+- `overlay_call_191F_0888` | `func_067082_settlement_pass+0xE8`
+- `overlay_call_191F_0896` | `func_067182_colony_pass+0x146`
 - `overlay_call_191F_08A4` | `func_068898_draw_minimap_or_cursor_box+0x86`
 - `overlay_call_191F_08C6` | `func_078CB2_shrink_block+0x9F770`
 - `overlay_call_191F_08D2` | `func_078CB2_shrink_block+0x9F760`
@@ -907,6 +906,18 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_191F_08BC` | `func_00DFCC_logic_sz_39` | `[0]`
 - `edge_light` | `func_00DFCC_logic_sz_39` | `[0, 1]`
 
+### arity mismatch (target wants 6) — 9
+
+- `overlay_call_004B_0318` | `func_002BC8_logic_sz_68` | `[0]`
+- `overlay_call_0B4E_0004` | `func_00D8E4_rtl_sz_141` | `[0]`
+- `overlay_call_0B9E_000A` | `func_00DDEA_op_sz_132` | `[0]`
+- `overlay_call_181F_00BA` | `func_00DDEA_op_sz_132` | `[0]`
+- `box_bevel` | `func_00DDEA_op_sz_132` | `[0, 1]`
+- `overlay_call_181F_0100` | `func_002BC8_logic_sz_68` | `[0]`
+- `draw_text_at` | `func_002BC8_logic_sz_68` | `[0, 1, 4]`
+- `overlay_call_181F_025E` | `func_003460_logic_sz_99` | `[0]`
+- `overlay_call_181F_02A8` | `func_004314_colony_blit` | `[0]`
+
 ### arity mismatch (target wants 9) — 8
 
 - `overlay_call_004B_0000` | `func_002D74_logic_sz_218` | `[0]`
@@ -917,17 +928,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0240` | `func_002D74_logic_sz_218` | `[0]`
 - `overlay_call_181F_04FC` | `func_0051D2_logic_sz_62` | `[0]`
 - `overlay_call_181F_0506` | `func_005234_logic_sz_62` | `[0]`
-
-### arity mismatch (target wants 6) — 8
-
-- `overlay_call_004B_0318` | `func_002BC8_logic_sz_68` | `[0]`
-- `overlay_call_0B4E_0004` | `func_00D8E4_rtl_sz_141` | `[0]`
-- `overlay_call_0B9E_000A` | `func_00DDEA_op_sz_132` | `[0]`
-- `overlay_call_181F_00BA` | `func_00DDEA_op_sz_132` | `[0]`
-- `box_bevel` | `func_00DDEA_op_sz_132` | `[0, 1]`
-- `overlay_call_181F_0100` | `func_002BC8_logic_sz_68` | `[0]`
-- `draw_text_at` | `func_002BC8_logic_sz_68` | `[0, 1, 4]`
-- `overlay_call_181F_025E` | `func_003460_logic_sz_99` | `[0]`
 
 ### arity mismatch (target wants 7) — 5
 

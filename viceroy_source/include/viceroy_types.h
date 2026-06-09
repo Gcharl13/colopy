@@ -37,7 +37,14 @@ typedef unsigned long  uintptr_t;
 #endif
 
 /* DGROUP-relative load. In real mode this is just a near pointer with the
- * implicit DS = DGROUP. We make it explicit for documentation. */
-#define DGROUP_PTR(addr)  ((void near*)(uint16_t)(addr))
+ * implicit DS = DGROUP. We make it explicit for documentation.
+ * Modern build: DS is the g_dgroup[] array, so the pointer maps into it
+ * (raw absolute derefs would read host memory). */
+#ifdef _VICEROY_MODERN
+extern unsigned char g_dgroup[];
+#  define DGROUP_PTR(addr)  ((void near*)(g_dgroup + (uint16_t)(addr)))
+#else
+#  define DGROUP_PTR(addr)  ((void near*)(uint16_t)(addr))
+#endif
 
 #endif /* VICEROY_TYPES_H */

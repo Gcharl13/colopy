@@ -38,6 +38,7 @@ extern int  title_screen_update(void);
 static const char *g_data = "game_data";
 static ff_font_t   g_font;
 static int         g_have_font;
+ff_font_t *viceroy_font(void) { return g_have_font ? &g_font : 0; }
 
 /* ---- @BEGINMENU (GAME.TXT) ------------------------------------------------ */
 #define MENU_MAX 8
@@ -332,7 +333,14 @@ static void draw_map(void)
      * [0x839E] -- chrome wiring next) */
     DG16(0x839E) = 0; DG16(0x83A0) = 0;
     DG16(0x83A2) = 239; DG16(0x83A4) = 191;
-    map_view_render(-1, 0);                  /* no fog layer; full visibility */
+    DG16(0x53A2) = 1;                        /* reveal-all (no fog yet) */
+    map_view_render(-1, 0);                  /* tiles (O514 walk) */
+    {   /* the composer's overlay passes (func_067644 order) */
+        extern void overlay_pass_settlements(void);
+        extern void overlay_pass_colonies(void);
+        overlay_pass_settlements();          /* 0x191F:0x888 */
+        overlay_pass_colonies();             /* 0x191F:0x896 */
+    }
     g_cam_x = (int16_t)DG16(0x8328);         /* read back the clamped origin */
     g_cam_y = (int16_t)DG16(0x832E);
 
@@ -375,6 +383,10 @@ static int enter_map(void)
         viceroy_set_sheet_terrain(viceroy_sheet_register(&g_terrain));
         if (g_have_phys)
             viceroy_set_sheet_phys(viceroy_sheet_register(&g_phys));
+        if (g_have_icons) {
+            extern void viceroy_set_sheet_icons(int);
+            viceroy_set_sheet_icons(viceroy_sheet_register(&g_icons));
+        }
     }
     if (load_map("AMER2.MP") != 0) {
         fprintf(stderr, "shell: cannot load AMER2.MP\n");
@@ -533,6 +545,21 @@ int main(int argc, char **argv)
             printf("  headless  : nations frame -> viceroy_nations.ppm\n");
         }
         DG16(0x5398) = 0;                          /* England, for the sidebar */
+        /* TEST SEED (headless verification only): one colony of power 0 at a
+         * land tile, named with the REAL default from NAMES.TXT @COLONYNAME
+         * (PowerRecord name field 0x5426), so the ported colony pass + blit
+         * (func_067182 -> func_004314) have something to draw. */
+        {
+            int rec = 0x5D46;                     /* ColonyRecord[0] */
+            DG8(rec)     = 30;                    /* x */
+            DG8(rec + 1) = 38;                    /* y (land region) */
+            DG8(rec + 0x1A) = 0;                  /* owner = power 0 */
+            DG8(rec + 0x1F) = 4;                  /* population */
+            for (int k = 0; k < 16; k++)          /* name from 0x5426 */
+                DG8(rec + 2 + k) = DG8(0x5426 + k);
+            DG16(0x539E) = 1;                     /* colony count */
+            DG16(0x5396) = 0;                     /* active power */
+        }
         
         
         if (enter_map() == 0) {

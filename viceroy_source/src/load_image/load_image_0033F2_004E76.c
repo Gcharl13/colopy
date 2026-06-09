@@ -416,9 +416,92 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  * tile and its decorations through a sequence of blit/sprite overlays (0x0C56,
  * 0x0C28, 0x0C11, 0x0D1D:0x08FA, 0x0B9E) and finally chains the unit renderer at
  * 0x003E40.  Too large and overlay-dependent to faithfully reconstruct here. */
-int func_004314_logic_sz_14(void)
+/* ============================================================================
+ * func_004314 — colony_sprite_blit  [PORTED 2026-06-10 from func_004314.asm]
+ * (the 0x181F:0x2A8 target; the "14-byte" stub size was the usual truncation
+ *  — real size 594.)  Draws one colony on the map view:
+ *    args: AX=colony idx, DX=sx, BX=sy, stack: name_flag@bp6, pop_flag@bp8,
+ *          metric@bpA ([0x186]), clip rect by value @bp+0xC..0x12.
+ *  - fort level = popcount of colony attrs 0..2 (0x5EB:0x35E = func_00860E)
+ *  - foreign + fog: sprite variant from contact byte [rec+pw+0x5E04], and
+ *    first-contact mark [rec+pw+0x5E00]=1
+ *  - emit colony icon: sheet [0x83E] cell (variant+1) @0x4432 (0xC56:4)
+ *  - emit owner flag: cell owner+0x77 (rebel: 0x83) @0x447E
+ *  - zoom 0 extras: population number (color 0xF / 0xA if [rec+0x1C]&4 /
+ *    0xB if &2) at (sx+7,sy+7); colony NAME [rec+2] at (sx+2,sy+0x10)
+ *  - zoomed out (metric<=0x19): tiny box, country color [owner+0x848] @0x455B
+ * ============================================================================ */
+extern int  func_00860E_logic_sz_15(uint16_t idx, uint16_t attr);
+extern void vid_cell_blit(int cell, int x, int y, int metric, int x_end);
+extern void vid_text_color(int c);
+extern void vid_text_xy(const char *s, int x, int y);
+extern void vid_small_box(int x, int y, int px, int color);
+
+int func_004314_colony_blit(uint16_t idx, int sx, int sy,
+                            uint16_t name_flag, uint16_t pop_flag,
+                            uint16_t metric)
 {
-    return 0;  /* TODO: port from func_004314.asm — 594-byte per-tile map renderer */
+    int rec = (int)idx * 0xCA;                       /* @0x431D */
+    int owner = DG8(rec + 0x5D60);                   /* @0x4324 (+0x1A) */
+    int pop   = DG8(rec + 0x5D65);                   /* @0x432D (+0x1F) */
+    int level = 0, variant;
+    char buf[40];
+
+    for (int a = 0; a < 3; a++)                      /* @0x4337..0x436E */
+        if (func_00860E_logic_sz_15(idx, (uint16_t)a)) level++;
+    variant = level;
+
+    if (owner != (int16_t)DG16(0x5396) && DG16(0x53A2) == 0) {  /* @0x4371 */
+        int pw = (int16_t)DG16(0x5396);
+        variant = (DG8(rec + pw + 0x5E04) - 1) & 3;  /* @0x4385/0x43B0 */
+        pop = DG8(rec + pw + 0x5E00);                /* @0x438D */
+        if (pop == 0) {                              /* @0x4396 first contact */
+            pop = 1;
+            DG8(rec + (int16_t)DG16(0x5396) + 0x5E00) = 1;  /* @0x43A6 */
+        }
+    }
+
+    int dxw;                                         /* tile px width used */
+    if ((int16_t)metric < 0x64) {                    /* @0x43B7 zoomed */
+        sx -= 2 >> (int16_t)DG16(0x0184);            /* @0x43BC */
+        dxw = (int16_t)DG16(0x5AD4);                 /* @0x43C8 */
+    } else dxw = 0x10;                               /* @0x43D2 */
+
+    int cy   = (dxw >> 1) + sx;                      /* @0x43D5..0x43DC (centre x) */
+    int cx2  = dxw + sy - 1;                         /* @0x43DF..0x43E3 (x end)   */
+    int lx, ly;                                      /* flag-blip coords */
+    if ((int16_t)metric == 0x64) { ly = sx + 6; lx = sy + 4; }   /* @0x43F6 */
+    else                         { ly = sx + 3; lx = sy + 2; }   /* @0x440C */
+
+    vid_cell_blit(variant + 1, cy, cx2, metric, cx2);    /* @0x4432 colony icon */
+
+    int flag = owner;                                /* @0x4437 */
+    if ((DG8(0x5382) & 1) && (int16_t)DG16(0x53D2) == owner)
+        flag = (int16_t)DG16(0x5398);                /* @0x443D..0x444F */
+    int cell = flag + 0x77;                          /* @0x4452 flag blip */
+    if ((DG8(0x5382) & 1) && (int16_t)DG16(0x5398) == owner)
+        cell = 0x83;                                 /* @0x4458 rebel flag */
+    vid_cell_blit(cell, ly, lx, metric, cx2);        /* @0x447E */
+
+    if ((int16_t)metric == 0x64) {                   /* @0x4483 zoom-0 extras */
+        int tc = 0xF;                                /* @0x448B */
+        if (DG8(rec + 0x5D62) & 4) {                 /* @0x4492 (+0x1C bit2) */
+            tc = 0xA;
+            if (DG8(rec + 0x5D62) & 2) tc = 0xB;     /* @0x449D */
+        }
+        vid_text_color(tc);                          /* @0x44B5 (0xC28:0xA) */
+        if (pop_flag) {                              /* @0x44BA */
+            snprintf(buf, sizeof buf, "%d", pop);    /* @0x44C9 itoa 0xD1D:0x8FA */
+            vid_text_xy(buf, sx + 7, sy + 7);        /* @0x44EF (0xC11:0xC) */
+        }
+        if (name_flag) {                             /* @0x44F4 */
+            vid_text_color(0xF);                     /* @0x4504 */
+            vid_text_xy((const char *)&DG8(rec + 0x5D48), sx + 2, sy + 0x10); /* @0x4529 */
+        }
+    }
+    if ((int16_t)metric <= 0x19)                     /* @0x452E strategic blip */
+        vid_small_box(sx, sy, (int16_t)DG16(0x5AD4), DG8(owner + 0x848)); /* @0x455B */
+    return 0;                                        /* @0x4563 RETF 0xE */
 }
 
 /* @asm        0x0043B1..0x0043D9  (40 bytes)  region=load_image

@@ -35,3 +35,10 @@ PROVIDE(is_xy_in_map_bounds = func_005BFA_logic_sz_49);            /* 0x181F:0x3
 PROVIDE(read_terrain_byte   = func_005CFE_map_tile_read_layer_15C);/* 0x181F:0x72C */
 PROVIDE(special_feature_at  = func_0060A0_logic_sz_128);           /* 0x181F:0x718 */
 PROVIDE(river_detail_at     = func_006188_op_sz_91);               /* 0x181F:0x75E */
+
+/* view-rect globals used by func_066E0C/066E52 (overlay_0612E6 ports) */
+PROVIDE(g_view_col0   = g_dgroup + 0x8328);
+PROVIDE(g_view_row0   = g_dgroup + 0x832E);
+PROVIDE(g_view_maxcol = g_dgroup + 0x8804);
+PROVIDE(g_view_maxrow = g_dgroup + 0x8806);
+PROVIDE(g_w53A2 = g_dgroup + 0x53A2);
