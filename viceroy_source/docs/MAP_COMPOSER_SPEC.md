@@ -66,3 +66,30 @@ RETF                                              @0x672C7
    func_067644_compose_tile_overlays as the frame entry (it already chains
    everything); implement its remaining thunk externs in glue.
 4. func_067700 for the strategic zoom + colony name labels.
+
+## Unit-draw chain (decoded 2026-06-10; port next)
+- own-units pass func_06753C (PORTED, needs poke-conversion of its raw derefs)
+  -> per-unit: blink gate 0x674A8 (PORTED as the preceding function) ->
+  forwarder 0x6762B -> 0x181F:0xE2A -> 0x67476 (highlight variant), and the
+  plain path 0x1A1F:0x95A -> 0x673CC (PER-UNIT REDRAW, decoded):
+    flags di = 0x80 | (mode!=1 ? 0x40:0) | (foreign ? 0x20:0)
+    sx=(x-origin+pixbase)*tilepx ; sy=(y-...)*tileh + 8
+    emit 0x181F:0x2BC(AX=unit_idx, DX=flags, BX=sx, stk: sy,[0x5AD4],[0x186])
+- 0x181F:0x2BC -> resident 0x0386A = THE UNIFIED UNIT RENDERER (880 B,
+  re_work/disasm/func_00386A.asm). Key decoded facts:
+    * type ladder: 0xD..0x12 native (tribe-class glyph from [class+0x54DE];
+      missionary-held: '0'+[rec+0xC]; mission cross 0x58 when type 0x10 &
+      ![0x53A2]); wagon/ship group {4,5,7,8,0xF,0x10,0x11,0x12,0x15,0x16}
+      pri=1/3; {0xA,0xB,0xC} pri=2; treasure 0xB&flag0x80 pri=4
+    * fortified: [rec+4]&0x80 (not type 0xB) -> badge = attack strength
+      [type*9+0x5235] minus damage [rec+0x16], halved if on land
+      (0x37F:0xA in-bounds test), digit '0'+n or '+' (>=10), color
+      [owner+0x848], white when mission-flagged
+    * sprite cell = ICONS dir [0x83E]: entry idx*12; +0x3E=w, +0x40=h read
+      for centering; zoom!=0x64 path scales via 0xC83:2
+    * the badge text renders via 0xC2A:6 (text measure) + ctx [0x89E]
+- func_003E40 (settlement blip, 1236 B stub) is the SIBLING renderer --
+  decode after 0x386A is ported (shares the tribe-class glyph tables).
+
+PORT ORDER: (1) func_00386A -> replaces the shell's manual ship blit via the
+pass chain; (2) poke-convert func_06753C + wire 0x673CC; (3) func_003E40.
