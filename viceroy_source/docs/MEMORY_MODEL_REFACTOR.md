@@ -132,14 +132,35 @@ pass; the remaining ~26 are being reconciled.
   offset during load_image porting), input (keyboard/mouse `int 16h/33h`), sound,
   file I/O (the MSC C-runtime layer `strcpy@0xFDB4`/`fread`/... → native libc),
   and the RTLink overlay loader → a flat linked binary.
-- `load_image/*` decompilation backlog: materialise the `goto label_XXXXXX`
-  targets (label name = absolute EXE file offset) and replace `ax`/register
-  pseudo-vars with real locals, then fold each function into its organised module
-  and drop the CMake exclusion. **Not scriptable** (verified 2026-06-09): the jump
-  TARGET offsets do not appear as annotated instruction offsets in the decompiled
-  output (e.g. target `0x002890` falls between annotated lines `@0x00289F` /
-  `@0x0028AB`), so labels can't be placed by offset-match — each function needs
-  real control-flow reconstruction. Do per-function, not bulk.
+- `load_image/*` decompilation backlog (16 files → **1 done, 1 in progress**
+  2026-06-09):
+  materialise the `goto label_XXXXXX` targets and replace `ax`/register
+  pseudo-vars with real locals. **Not scriptable** — the jump TARGET offsets are
+  not annotated instruction offsets (target `0x002890` falls between `@0x00289F`/
+  `@0x0028AB`), so each function is reconstructed by hand from its disassembly.
+
+  **Validated porting process** (used for `load_image_0102EA_010AA5.c` = the
+  far-string lib, and in progress for `00FAAA` = the near-string lib):
+  1. `gcc -c <file>` to list the broken functions (bare `ax` / undefined labels).
+  2. For each, read its `@asm` banner offset and the disassembly at
+     `re_work/disasm/func_XXXXXX.asm` (gitignored — **read-only**, never commit;
+     copyright). Decode and write faithful C; keep the `@asm` provenance.
+  3. Re-signature to the real form (the auto banners show only the bp-offset half;
+     `les/lds` ⇒ far, `mov reg,[bp+n]` ⇒ near). Rename to the canonical name when
+     the address matches an `iolib.h` decl (provides the promised definition).
+  4. Verify standalone compile + no duplicate definitions; re-include the file via
+     the `VICEROY_LOADIMAGE_PORTED` allow-list in `CMakeLists.txt`.
+
+  **Three categories** (drives priority; many files mix them):
+  - *C-runtime / string-lib* (high addrs ~0xFAAA–0x12000): tractable & verifiable
+    — being ported now (far + near string libs).
+  - *Platform / video* (`00E454` VGA/CGA DAC + BIOS int 10h, drawing primitives):
+    these are SDL milestone-3 swap-points like `render/`,`audio/` — porting the
+    port-I/O/BIOS faithfully compiles but can't run modern; defer, don't faithfully
+    port.
+  - *Game logic* (low addrs ~0x2000–0xC000, the overlays' callees): the long tail
+    — careful per-function RE, no bulk stubbing (a wrong `return 0` is a silent
+    bug, worse than an honest excluded skeleton).
 
 ## Order of attack
 ~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → ~~C (build wiring) — `libviceroy_rules.a`
