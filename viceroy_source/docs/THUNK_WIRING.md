@@ -2,8 +2,8 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 157**
-(plus 69 semantic alias names)
+**WIRED (linker alias to the real ported function): 165**
+(plus 76 semantic alias names)
 
 | stub | target | resolved via | arity |
 |---|---|---|--:|
@@ -127,6 +127,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `overlay_call_1A1F_0238` | `func_041E7E_next_ship` | exe:overlay | 0 |
 | `overlay_call_1A1F_0372` | `func_076642_load_game_record` | exe:overlay | 0 |
 | `overlay_call_1A1F_0380` | `func_00D2AC_logic_sz_57` | exe:resident | 0 |
+| `overlay_call_1A1F_0976` | `clear_object_layer` | exe:overlay | 0 |
 | `overlay_call_1A1F_0A86` | `func_076C70_read_record_field` | exe:overlay | 0 |
 | `overlay_call_1A1F_0B3A` | `func_00E46C_op_sz_48` | exe:resident | 0 |
 | `overlay_call_1A1F_0B58` | `func_07092E_draw_nation_screen` | exe:overlay | 0 |
@@ -149,8 +150,15 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `ovly_181F_0590` | `func_00BCEA_op_sz_61` | exe:resident | 1 |
 | `ovly_181F_05FA` | `func_035B06_sec_sz_118` | exe:overlay | 2 |
 | `ovly_set_subject_A42` | `func_0081C6_logic_sz_44` | exe:resident+name | 1 |
+| `ovly_text_appd8_0D8` | `func_002A98_rtl_sz_46` | exe:resident+name | 4 |
+| `ovly_text_drawcol_132` | `func_002AFE_op_sz_58` | exe:resident+name | 4 |
+| `ovly_tile_owner_6DC` | `func_005DF0_logic_sz_40` | exe:resident+name | 2 |
+| `ovly_unit_fortify_858` | `func_0075D4_logic_sz_16` | exe:resident+name | 1 |
+| `ovly_unit_maxmoves_90C` | `func_006CCA_logic_sz_13` | exe:resident+name | 1 |
+| `ovly_unit_query_B78` | `func_008BB2_logic_sz_20` | exe:resident+name | 1 |
 | `power_set_a06` | `func_007F96_op_sz_105` | exe:resident+name | 3 |
 | `power_set_a10` | `func_008000_op_sz_115` | exe:resident+name | 3 |
+| `render_frame_setup` | `func_06787C_render_frame_setup` | exe:overlay+name | 0 |
 | `rpt_select_player` | `market_set_active` | exe:overlay+name | 1 |
 | `sprite_blit` | `func_00386A_op_sz_100` | exe:resident+name | 0 |
 | `str_cat_num_182` | `func_0029DE_rtl_sz_39` | exe:resident+name | 3 |
@@ -505,7 +513,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `ovly_191F_0AE0` | `func_034318_runtime_chain_289` | `[2]`
 - `ui_show_message2` | `func_034318_runtime_chain_289` | `[2]`
 
-### arity mismatch (target wants 2) — 122
+### arity mismatch (target wants 2) — 123
 
 - `overlay_call_004B_00E2` | `func_002992_rtl_sz_26` | `[0]`
 - `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0, 2]`
@@ -587,6 +595,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_07E0` | `func_0066CC_op_sz_57` | `[0]`
 - `unit_first_of_owner` | `func_0066CC_op_sz_57` | `[1]`
 - `overlay_call_181F_07EA` | `func_006B46_op_sz_365` | `[0, 2]`
+- `ovly_tile_query_7EA` | `func_006B46_op_sz_365` | `[1]`
 - `overlay_call_181F_0862` | `func_0075E4_logic_sz_26` | `[0, 2]`
 - `overlay_call_181F_0894` | `func_00738E_logic_sz_26` | `[0]`
 - `overlay_call_181F_08B2` | `func_007610_logic_sz_31` | `[0, 2]`
@@ -630,7 +639,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0E78` | `func_00E454_logic_sz_23` | `[0]`
 - `overlay_call_1A1F_0F26` | `func_012C8C_rtl_sz_60` | `[0]`
 
-### arity mismatch (target wants 3) — 60
+### arity mismatch (target wants 3) — 61
 
 - `overlay_call_0009_0244` | `func_0026D4_logic_sz_44` | `[0]`
 - `overlay_call_0009_02CC` | `func_00275C_logic_sz_39` | `[0]`
@@ -667,6 +676,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_042E` | `func_008074_op_sz_83` | `[0]`
 - `overlay_call_181F_06E6` | `func_00603A_logic_sz_33` | `[0]`
 - `overlay_call_181F_0704` | `func_005E18_op_sz_120` | `[0]`
+- `layer_set_object` | `func_005E18_op_sz_120` | `[1, 3]`
 - `overlay_call_181F_0844` | `func_00693A_logic_sz_14` | `[0]`
 - `ovly_unit_spawned_181F_894` | `func_00693A_logic_sz_14` | `[2]`
 - `overlay_call_181F_0880` | `func_0069D2_logic_sz_12` | `[0, 3]`
@@ -693,7 +703,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0B90` | `func_0702C0_report_cell_xy_3col` | `[0]`
 - `overlay_call_1A1F_0BC8` | `func_070782_grid_cell_xy` | `[0]`
 
-### target is a known function but NOT in the build — 52
+### target is a known function but NOT in the build — 51
 
 - `overlay_call_0000_0062` | `file 0x002462`
 - `overlay_call_0009_01A2` | `file 0x002632`
@@ -744,7 +754,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0364` | `file 0x025900`
 - `overlay_call_1A1F_0618` | `file 0x057A3A`
 - `overlay_call_1A1F_0968` | `file 0x0685DC`
-- `overlay_call_1A1F_0976` | `file 0x06892E`
 - `overlay_call_1A1F_0E82` | `file 0x025900`
 - `overlay_call_1A1F_0E9E` | `file 0x025900`
 
