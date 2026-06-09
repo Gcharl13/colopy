@@ -52,6 +52,7 @@ set(VICEROY_LOADIMAGE_PORTED
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_0033F2_004E76.c"  # input/terrain helpers ported; 11 tile-blit/render fns stubbed (SDL plug-in points)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_012ADA_01A43C.c"  # accessor/prologue-heavy
     "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_00C0D0_00D27F.c"  # draw/status-line/palette-cycle/cursor/input (18 ported)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/load_image/load_image_007610_00824E.c"  # unit AI / combat-strength / movement-cost / per-power get-set (15 ported)
 )
 list(APPEND VICEROY_SOURCES ${VICEROY_LOADIMAGE_PORTED})
 

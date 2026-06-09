@@ -157,49 +157,141 @@ int func_00768C_logic_sz_161(uint16_t arg0_bp_06)
     return (int)(int16_t)func_0066CC((uint16_t)hx, (uint16_t)hy);
 }
 
-/* @asm        0x00772E..0x0077C3  (149 bytes)  region=load_image
+/* @asm        0x00772E..0x0078F3  (454 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00772E_unknown.asm
- * @pattern    DISPATCHER
+ * @pattern    MEDIUM_LOGIC
  * @prologue   ENTER 0xe
  * @args_seen  [6]
- * @lcalls     1
- * @near_calls 4
+ * @lcalls     2
+ * @near_calls 6
  * @callers    0
  * @touches_8542 False
  *
  * LCALL targets:
  *   - 0x037F:0x03E4
+ *   - 0x03E4:0x0074
  *
  * Near CALL targets:
- *   - 0x006B46
- *   - 0x0069D2
- *   - 0x0066CC
- *   - 0x00768C
- * @inferred_role  DISPATCHER (149 bytes). 0x037F:0x03E4
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x006B46  - 0x0069D2  - 0x0066CC  - 0x00768C  - 0x006672  - 0x0066BA
+ * @inferred_role  resolve & service a "fortify/garrison" request on unit arg0's tile
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
+ * @note   Auto-tracer reported 149 bytes / DISPATCHER: a FALSE cut at 0x77C3. True
+ *         function is 0x772E..0x78F3 (454 bytes); span/role corrected here.
  */
+/* PORTED 2026-06-09 from func_00772E.asm — guarded by the re-entrancy flag at
+ * DGROUP 0x0200: on the outermost entry it tries to (re)home a unit whose orders==2
+ * by relocating it to its tile head and recursing through func_00768C. It then walks
+ * every unit on arg0's tile chain, budgeting a per-head capacity (stat table 0x5236,
+ * field +1 minus unit.+0x0C) against each member's move-cost (field +2) and marks
+ * the ones it can cover with orders=1 via func_0069D2. */
 int func_00772E_op_sz_149(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0200
-     * Writes DGROUP: 0x0200
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x00774F JE 0x007754 */ {
-            goto label_0077DF;  /* @0x007751 */
-        }
-        /* @0x007758 */ func_006B46();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x007769 JNE 0x0077DF */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x00777C JE 0x0077DF */ {
-                /* @0x00778A */ overlay_call_037F_03E4();
-                if (/* JGE fallthrough cond: */ ax < 0) /* @0x007794 JGE 0x0077DF */ {
-                    /* @0x0077AE */ func_0069D2();
-                    /* @0x0077BA */ func_0066CC();
-                    /* @0x0077BF */ func_00768C();
+    int16_t si = (int16_t)arg0_bp_06;
+    int16_t saved = (int16_t)DG16(0x200);   /* @asm [bp-0xc] = [0x200] */
+    int16_t flag1 = 1;                       /* @asm [bp-0xa] */
+    int16_t var_rem = 0;                     /* @asm [bp-6] */
+    unsigned bx;
+
+    /* @asm 0x7739 [0x200] = 1 (re-entrancy latch). */
+    DG16(0x200) = 1;
+
+    /* @asm 0x774B if (saved == 0) { first (non-reentrant) entry } else goto 0x77DF. */
+    if (saved == 0) {
+        bx = 0x3144 + (unsigned)si * 0x1C;       /* [bp-0xe] */
+        /* @asm 0x7758 func_006B46(si, 0); */
+        func_006B46((uint16_t)si, 0);
+        flag1 = 1;
+        /* @asm 0x7764 if (unit.orders(+0x08)==2) attempt re-home; else flag1 stays 1. */
+        if (DG8(bx + 0x08) == 2) {
+            flag1 = 0;
+            /* @asm 0x7770 if ((owner_lownib - map_x) != 0x14) ... */
+            if ((uint8_t)((DG8(bx + 0x03) & 0x0F) - DG8(bx + 0x00)) != 0x14) {
+                /* @asm 0x778A r = overlay 0x037F:0x03E4(map_x, map_y);
+                 *      if (r < 0) { ... re-home & recurse ... } */
+                if (overlay_call_037F_03E4() < 0) {
+                    int16_t hx = (int16_t)DG8(bx + 0x00);   /* di  */
+                    int16_t hy = (int16_t)DG8(bx + 0x01);   /* [bp-2] */
+                    int16_t res;
+                    /* @asm 0x77A8 func_0069D2(si, -4, -4); */
+                    func_0069D2((uint16_t)si, (uint16_t)-4, (uint16_t)-4);
+                    /* @asm 0x77B4 t = func_0066CC(hx, hy); res = func_00768C(t); */
+                    res = (int16_t)func_00768C((uint16_t)func_0066CC((uint16_t)hx, (uint16_t)hy));
+                    /* @asm 0x77C8 func_0069D2(si, hx, hy); */
+                    func_0069D2((uint16_t)si, (uint16_t)hx, (uint16_t)hy);
+                    /* @asm 0x77D4 if (res >= 0) flag1 = 1; */
+                    if (res >= 0)
+                        flag1 = 1;
                 }
             }
         }
-    return 0;  /* @auto: TODO confirm return semantics */
+    }
+
+    /* @asm 0x77DF if (flag1) compute the head's spare capacity into var_rem. */
+    if (flag1 != 0) {
+        bx = 0x3144 + (unsigned)si * 0x1C;
+        uint8_t type = DG8(bx + 0x02);
+        /* @asm 0x77E5..0x780C var_rem = stat[type].+1(0x5237, stride 0xE)
+         *      - unit.+0x0C(0x3150). */
+        var_rem = (int16_t)((int)DG8((unsigned)type * 0x0E + 0x5237) - (int)DG8(bx + 0x0C));
+    }
+
+    /* @asm 0x780F di = func_006672(si); if (di == si) di = func_0066BA(si);
+     *      func_0069D2(si, -2, -2); si = di. */
+    {
+        int16_t di = (int16_t)func_006672((uint16_t)si);
+        if (di == si)
+            di = (int16_t)func_0066BA((uint16_t)si);
+        func_0069D2((uint16_t)si, (uint16_t)-2, (uint16_t)-2);
+        si = di;
+    }
+
+    /* @asm 0x7836 walk the tile chain from si via chain_next, servicing members. */
+    while (si >= 0) {
+        int16_t next = (int16_t)func_0066BA((uint16_t)si);  /* @asm [bp-4] */
+        int di = 0;
+        int this_flag;
+        bx = 0x3144 + (unsigned)si * 0x1C;                  /* [bp-0xe] */
+
+        /* @asm 0x7847 if (unit.orders(+0x08)==1) di=1; this_flag = (di==0). */
+        if (DG8(bx + 0x08) == 1)
+            di = 1;
+        this_flag = (di == 0) ? 1 : 0;                      /* [bp-2] */
+
+        /* @asm 0x785B if (di==0 && map_x<0) special off-map handling. */
+        if (di == 0 && (int8_t)DG8(bx + 0x00) < 0) {
+            this_flag = 0;                                  /* @asm [bp-2]=di(0) */
+            /* @asm 0x7869 al = owner_lownib - map_x; */
+            if ((uint8_t)((DG8(bx + 0x03) & 0x0F) - DG8(bx + 0x00)) != 0x14)
+                di = 1;                                     /* @asm 0x787E */
+            else if (DG8(bx + 0x08) == 1)                   /* @asm 0x7877 orders==1 */
+                di = 1;
+        }
+
+        /* @asm 0x7881 if (this_flag) { if (overlay 0x03E4:0x0074(map_x,map_y)!=0) di=1
+         *      else skip cost (di unchanged). } */
+        if (this_flag) {
+            if (overlay_call_03E4_0074() != 0)
+                di = 1;
+        }
+
+        /* @asm 0x78A2 this_cost = stat[type].+2(0x5238, stride 0xE). */
+        {
+            uint8_t type = DG8(bx + 0x02);
+            int this_cost = (uint8_t)DG8((unsigned)type * 0x0E + 0x5238);
+            /* @asm 0x78C0 if (this_cost <= var_rem && di != 0) consume & set orders=1. */
+            if (this_cost <= var_rem && di != 0) {
+                var_rem -= (int16_t)this_cost;              /* @asm 0x78C9 */
+                DG8(bx + 0x08) = 1;                         /* @asm 0x78CF orders=1 */
+                func_0069D2((uint16_t)si, (uint16_t)-2, (uint16_t)-2);
+            }
+        }
+
+        si = next;                                          /* @asm 0x78E0 */
+    }
+
+    /* @asm 0x78EA [0x200] = saved; ret. */
+    DG16(0x200) = (uint16_t)saved;
+    return 0;
 }
 
 /* @asm        0x0078F4..0x007936  (66 bytes)  region=load_image
@@ -646,8 +738,8 @@ void func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
  *
  * LCALL targets:
  *   - 0x05EB:0x038E  (3x)
- * @inferred_role  DISPATCHER (66 bytes). 0x05EB:0x038E + 0x05EB:0x038E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  counts non-zero results of overlay 0x05EB:0x038E over probes 0,1,2
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 /* PORTED 2026-06-09 from func_007BE8.asm — counts how many of probes 0,1,2 the
  * overlay 0x05EB:0x038E reports set; returns that count (0..3). */
@@ -887,8 +979,10 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         }
     }
 
-    /* @asm 0x7F26 ax = (acc + 4) * base; sar ax,2; ret. */
-    return (int)(int16_t)(((acc + 4) * base) >> 2);
+    /* @asm 0x7F26 imul [bp-0xa]: ax = low16((acc+4)*base); sar ax,2; ret.
+     * (imul keeps dx:ax but only ax is shifted/returned, so truncate to 16-bit
+     *  first, then arithmetic-shift, matching the signed sar.) */
+    return (int)(int16_t)((int16_t)((acc + 4) * base) >> 2);
 }
 
 /* @asm        0x007F34..0x007F4F  (27 bytes)  region=load_image
@@ -967,8 +1061,8 @@ int func_007F62_logic_sz_30(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
  * Near CALL targets:
  *   - 0x007F34  (2x)
  *   - 0x007F62  (2x)
- * @inferred_role  DISPATCHER (105 bytes). 0x181F:0x077E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  set-bits in a symmetric (arg0,arg1)/(arg1,arg0) record pair
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 /* PORTED 2026-06-09 from func_007F96.asm — SET-bits dispatcher: OR the mask arg2
  * into the byte at field arg1 for BOTH (arg0,arg1) and (arg1,arg0) records via the
@@ -1012,8 +1106,8 @@ int func_007F96_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  * Near CALL targets:
  *   - 0x007F34  (2x)
  *   - 0x007F62  (2x)
- * @inferred_role  DISPATCHER (115 bytes). 0x181F:0x077E
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  clear-bits in a symmetric (arg0,arg1)/(arg1,arg0) record pair
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 /* PORTED 2026-06-09 from func_008000.asm — CLEAR-bits dispatcher: the AND-NOT twin
  * of func_007F96. Clears the mask arg2 from the byte at field arg1 for BOTH
@@ -1054,8 +1148,9 @@ int func_008000_op_sz_115(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
  *
  * LCALL targets:
  *   - 0x004B:0x00E2  (2x)
- * @inferred_role  UNKNOWN (83 bytes). 0x004B:0x00E2 + 0x004B:0x00E2
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x004B:0x0000  (1x; missed by the auto-tracer)
+ * @inferred_role  string-emit helper (mode arg0; lowercases leading char when arg1==0)
+ * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
 /* PORTED 2026-06-09 from func_008074.asm — string emit helper. For mode arg0==3 it
  * runs two text-output overlay calls on string arg2 and, when arg1==0, lowercases
