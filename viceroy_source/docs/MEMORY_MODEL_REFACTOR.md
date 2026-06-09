@@ -57,9 +57,42 @@ Remaining intentional non-conversions (all correct as-is):
   remain as direct pointer arithmetic.
 - 10 `#define` macro bodies in 4 overlay files — correctly left untouched.
 
-### C. Build wiring + front end (milestone 3)
-- A CMake/Makefile target building the `src/` rules layer + `runtime/dgroup.c`
-  with `-D_VICEROY_MODERN` into a library.
+### C. Build wiring — IN PROGRESS 2026-06-09
+
+**CMake target (DONE).** `CMakeLists.txt` builds the `src/` rules layer +
+`runtime/dgroup.c` with `-D_VICEROY_MODERN` into a static library `viceroy_rules`.
+Excluded leaves (documented in the CMake header):
+- DOS platform: `boot/entry.c`, `runtime/cstart.c`, `overlay/rtlink.c`.
+- SDL swap-points (milestone 3): `audio/*`, `asset/*`, `render/*`.
+- `load_image/*` — the 16 first-pass raw decompiler skeletons (named by EXE
+  address range). They still carry un-materialised `goto label_XXXXXX` targets
+  and bare x86 register pseudo-vars (`ax`); the organised modules progressively
+  replace them. Re-enter the build per-function as they're hand-ported.
+
+**`colony_t` layout fixed (DONE).** The struct compiled to 0x1C4 (452) bytes with
+fields at the wrong offsets: `stockpile_9a[20]` (40 B) overran the documented
+scalars `liberty_aa@0xAA` / `progress_b6@0xB6` / SoL longs `@0xC2..0xC8`, a missing
+pad byte at `+0x1B` shifted `flags_at_1c`/`population`/everything after, and a
+vestigial `pad_ca_tail[0xE2]` bloated the tail. Now `#pragma pack(1)` + a **union**
+so the commodity-stockpile word array and the byte-aliased scalars both resolve to
+their exact DGROUP offsets — faithfully modelling the original flat record's
+double-duty bytes. `sizeof == 0xCA` (202, the hard-evidence persistent-record
+stride); `_Static_assert` replaces the invalid `#if sizeof(...)` check.
+
+**Compile-fix wave (DONE / in progress).** Building surfaced the cross-file
+decl/arity and stale-name drift predicted below. Fixed so far: stale field renames
+(`field_at_95`→`counter_at_95`; UnitRecord `field_at_14`/`pad_15`/`field_at_16`→
+`cargo_qty[4]`/`cargo_qty[5]`/`turn_counter`; `pad_96_99[1]`→`pad_97_99[0]`), a
+missing `block_45e` goto label, nested/corrupted comment terminators
+(`/* TODO */` and `@FOOD*/` closing block comments early; `<` typo'd for `/*`),
+`<stddef.h>`/`<stdbool.h>` includes, a local `int errno` (DOS E* values differ
+from glibc's), `typedef struct PowerRecord PowerRecord`, plus a batch of
+undeclared DGROUP globals / screen+message constants and conflicting local
+re-declarations across `overlay/`, `native/`, `market/`, `ui/`, `king/`,
+`random_events/`. ~81 of ~107 in-scope files compiled clean on the first full
+pass; the remaining ~26 are being reconciled.
+
+### D. Front end (milestone 3) — TODO
 - `dgroup_init()` must populate the **initialized static window** (DS 0x0000..0x2CC5)
   from the game data files — **never** from VICEROY.EXE bytes (copyright). The few
   embedded tables are documented byte-for-byte in `tools/audit.py` /
@@ -68,13 +101,14 @@ Remaining intentional non-conversions (all correct as-is):
   offset during load_image porting), input (keyboard/mouse `int 16h/33h`), sound,
   file I/O (the MSC C-runtime layer `strcpy@0xFDB4`/`fread`/... → native libc),
   and the RTLink overlay loader → a flat linked binary.
-- Cross-file decl/arity reconciliation surfaced during decompilation (e.g.
-  `func_06CFE8` is now `(mode,panel)` but a sibling still calls it `(void)`); a
-  real build pass flushes these out.
+- `load_image/*` decompilation backlog: materialise the `goto label_XXXXXX`
+  targets (label name = absolute EXE file offset; place via the per-line `@asm`
+  offset annotations) and replace `ax`/register pseudo-vars with real locals, then
+  fold each function into its organised module and drop the CMake exclusion.
 
 ## Order of attack
-~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → C (build wiring). After A+B the rules
-layer should build clean under `-D_VICEROY_MODERN`; C makes it runnable.
+~~A (ctx)~~ ✓ → ~~B (remaining pokes)~~ ✓ → **C (build wiring) — library compiling,
+last ~26 files being reconciled** → D (dgroup_init population + SDL front end).
 
 ---
 *Refactor tooling: `tools/poke_to_dgroup.py` (poke→accessor), `include/dgroup.h`
