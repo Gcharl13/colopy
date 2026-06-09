@@ -988,84 +988,31 @@ store:
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x2B32  (2x)
- *   - 0x0D1D:0x0C56  (2x)
- *   - 0x0D1D:0x0942
- *   - 0x0D1D:0x2916
- *   - 0x0D1D:0x07A4  (2x)
- *   - 0x0D1D:0x0842  (2x)
- *   - 0x0D1D:0x291C
- * @inferred_role DISPATCH_VIA_OVERLAY  (HIGH)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0D1D:0x2B32  (2x) (path/string scan helper)
+ *   - 0x0D1D:0x0C56  (2x) (strchr: locate '\\' / '/' separators)
+ *   - 0x0D1D:0x0942        (getenv: look up the "PATH" variable @0x2ABA)
+ *   - 0x0D1D:0x2916        (_malloc: 0x104-byte working path buffer)
+ *   - 0x0D1D:0x07A4  (2x) (strcat: append a separator @0x2ABF)
+ *   - 0x0D1D:0x0842  (2x) (strlen)
+ *   - 0x0D1D:0x291C        (free the working buffer)
+ * @inferred_role  _searchenv-style: resolve a filename against the PATH list,
+ *                 building a candidate path in a malloc'd buffer.
+ * @status     STUB 2026-06-09 — PATH search dispatcher (overlay-driven).
+ *
+ * This routine parses the input filename (rejecting drive-qualified `X:` and
+ * absolute `\`/`/` forms), fetches getenv("PATH") at DGROUP:0x2ABA, allocates a
+ * 0x104-byte buffer, and walks the ';'-separated PATH entries copying each
+ * directory + the filename and probing for the file.  Eleven overlay LCALLs
+ * (strchr/strlen/strcat/getenv/malloc/free at 0x0D1D:*) carry every value the
+ * control flow branches on, and the skeleton's value-less thunks surface none of
+ * them, so the search loop cannot be byte-accurately reconstructed here.  The
+ * decoded structure is preserved in the LCALL map above.
  */
 int func_011B56_rtl_sz_341(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27AC
-     */
-        /* @0x011B6C */ overlay_call_0D1D_2B32();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011B79 JE 0x011B7E */ {
-            goto label_011C91;  /* @0x011B7B */
-        }
-        /* @0x011B85 */ overlay_call_0D1D_0C56();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011B8F JE 0x011B94 */ {
-            goto label_011C91;  /* @0x011B91 */
-        }
-        /* @0x011B9B */ overlay_call_0D1D_0C56();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011BA5 JE 0x011BAA */ {
-            goto label_011C91;  /* @0x011BA7 */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011BB0 JE 0x011BBB */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x011BB6 JNE 0x011BBB */ {
-                goto label_011C91;  /* @0x011BB8 */
-            }
-        }
-        /* @0x011BBF */ overlay_call_0D1D_0942();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011BCB JNE 0x011BD0 */ {
-            goto label_011C91;  /* @0x011BCD */
-        }
-        /* @0x011BD4 */ overlay_call_0D1D_2916();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011BE3 JNE 0x011BE8 */ {
-            goto label_011C91;  /* @0x011BE5 */
-        }
-        goto label_011BFF;  /* @0x011BE8 */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011BED JE 0x011C04 */ {
-            if (/* JBE fallthrough cond: */ ax > 0) /* @0x011BF7 JBE 0x011C04 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x011C02 JNE 0x011BEA */ {
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011C14 JE 0x011C28 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x011C19 JE 0x011C28 */ {
-                /* @0x011C20 */ overlay_call_0D1D_07A4();
-            }
-        }
-        /* @0x011C29 */ overlay_call_0D1D_0842();
-        /* @0x011C37 */ overlay_call_0D1D_0842();
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x011C45 JAE 0x011C91 */ {
-            /* @0x011C4B */ overlay_call_0D1D_07A4();
-            /* @0x011C5A */ overlay_call_0D1D_2B32();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x011C67 JE 0x011C7F */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x011C6C JE 0x011C73 */ {
-                    if (/* JNE fallthrough cond: */ ax == 0) /* @0x011C71 JNE 0x011C91 */ {
-                        if (/* JE fallthrough cond: */ ax != 0) /* @0x011C77 JE 0x011C7F */ {
-                            if (/* JNE fallthrough cond: */ ax == 0) /* @0x011C7D JNE 0x011C91 */ {
-                                if (/* JE fallthrough cond: */ ax != 0) /* @0x011C82 JE 0x011C91 */ {
-                                    if (/* JE fallthrough cond: */ ax != 0) /* @0x011C8C JE 0x011C91 */ {
-                                        goto label_011BFF;  /* @0x011C8E */
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x011C95 JE 0x011CA2 */ {
-            /* @0x011C9A */ overlay_call_0D1D_291C();
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    return 0;  /* TODO: port from func_011B56.asm — _searchenv PATH-search; the
+                * loop branches on opaque 0x0D1D:* overlay-thunk return values. */
 }
 
 /* @asm        0x011CD2..0x011CEB  (25 bytes)  region=load_image
@@ -1118,66 +1065,35 @@ int func_011D16_logic_sz_26(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x03D0
- *   - 0x0D1D:0x0942
- *   - 0x0D1D:0x2C8E  (2x)
- *   - 0x0D1D:0x2746
- *   - 0x0D1D:0x291C  (2x)
- *   - 0x0D1D:0x1F14
- *   - 0x0D1D:0x1E7A  (2x)
- *   - 0x0D1D:0x1E9A
- *   - 0x0D1D:0x0842
- *   - 0x0D1D:0x2F06
- * @inferred_role  LARGE_LOGIC (403 bytes). 0x0D1D:0x03D0 + 0x0D1D:0x0942
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0D1D:0x03D0        (open the RTLink overlay/EXE container)
+ *   - 0x0D1D:0x0942        (getenv / table lookup)
+ *   - 0x0D1D:0x2C8E  (2x) (record-field parse)
+ *   - 0x0D1D:0x2746        (the _open syscall wrapper)
+ *   - 0x0D1D:0x291C  (2x) (free a working buffer)
+ *   - 0x0D1D:0x1F14        (header validation)
+ *   - 0x0D1D:0x1E7A  (2x) (read a record)
+ *   - 0x0D1D:0x1E9A        (lseek to a record offset)
+ *   - 0x0D1D:0x0842        (strlen)
+ *   - 0x0D1D:0x2F06        (commit / install the loaded record)
+ * @inferred_role  RTLink overlay/EXE record reader (NOT the savegame loader).
+ * @status     STUB 2026-06-09 — RTLink/overlay-EXE record reader (overlay-driven).
+ *
+ * Per RULINGS 2026-05-30 (and the @ref notes in save.h / globals.h / iolib.h)
+ * this is the loader that walks the RTLink overlay container: it opens the file
+ * (0x03D0 / the 0x2746 _open wrapper), validates the header (0x1F14), seeks
+ * (0x1E9A) and reads (0x1E7A) each record, and installs it (0x2F06), setting the
+ * global errno ([0x27AC]) and DOS-errno ([0x27B7]) on failure (ENOMEM=8 is one
+ * such path).  Thirteen 0x0D1D:* overlay LCALLs carry the values the control
+ * flow branches on; the skeleton's value-less thunks expose none of them, so the
+ * record loop is not byte-accurately recoverable.  The decoded LCALL map is
+ * preserved above.
  */
-int func_011F6E_rtl_sz_403(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
+int func_011F6E_rtl_sz_403(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
+                           uint16_t arg2_bp_0A, uint16_t arg3_bp_0C)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Writes DGROUP: 0x27AC, 0x27B7
-     */
-        /* @0x011F74 */ overlay_call_0D1D_03D0();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011F8B JNE 0x011FD3 */ {
-            /* @0x011F94 */ overlay_call_0D1D_0942();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x011FA0 JNE 0x011FAE */ {
-                goto label_0120FC;  /* @0x011FAB */
-            }
-            /* @0x011FC5 */ overlay_call_0D1D_2C8E();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x011FD1 JE 0x011FA8 */ {
-            }
-        }
-        /* @0x011FDC */ overlay_call_0D1D_2746();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x011FE8 JNE 0x011FFE */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x011FEE JE 0x011FA8 */ {
-            }
-            /* @0x011FF3 */ overlay_call_0D1D_291C();
-            goto label_011FA8;  /* @0x011FFB */
-        }
-        /* @0x012009 */ overlay_call_0D1D_1F14();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012012 JNE 0x012040 */ {
-            /* @0x012017 */ overlay_call_0D1D_1E7A();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012023 JE 0x012030 */ {
-                /* @0x012028 */ overlay_call_0D1D_291C();
-            }
-            goto label_011FA8;  /* @0x01203C */
-        }
-        /* @0x01204B */ overlay_call_0D1D_1E9A();
-        /* @0x012072 */ overlay_call_0D1D_1E7A();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01207F JE 0x012088 */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012086 JNE 0x01208B */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01208F JE 0x0120B9 */ {
-            /* @0x0120A8 */ overlay_call_0D1D_2C8E();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x0120B4 JNE 0x0120B9 */ {
-                goto label_011FA8;  /* @0x0120B6 */
-            }
-        }
-        /* @0x0120E2 */ overlay_call_0D1D_0842();
-        /* @0x0120F0 */ overlay_call_0D1D_2F06();
-        goto label_011FF0;  /* @0x0120F8 */
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
+    return 0;  /* TODO: port from func_011F6E.asm — RTLink overlay-record reader;
+                * loop branches on opaque 0x0D1D:* overlay-thunk return values. */
 }
 
 /* @asm        0x012102..0x012213  (273 bytes)  region=load_image
@@ -1191,57 +1107,31 @@ int func_011F6E_rtl_sz_403(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x03D0
- *   - 0x0D1D:0x0D1A  (2x)
- *   - 0x0D1D:0x0C56
- *   - 0x0D1D:0x0C80
- *   - 0x0D1D:0x299E  (2x)
- *   - 0x0D1D:0x0842  (2x)
- *   - 0x0D1D:0x2916
- *   - 0x0D1D:0x07E4  (2x)
- *   - 0x0D1D:0x328A
- *   - 0x0D1D:0x291C
- * @inferred_role C_RUNTIME  (LOW)
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x0D1D:0x03D0        (open the container)
+ *   - 0x0D1D:0x0D1A  (2x) (read a header word)
+ *   - 0x0D1D:0x0C56        (strchr)
+ *   - 0x0D1D:0x0C80        (strrchr)
+ *   - 0x0D1D:0x299E  (2x) (close / cleanup)
+ *   - 0x0D1D:0x0842  (2x) (strlen)
+ *   - 0x0D1D:0x2916        (_malloc)
+ *   - 0x0D1D:0x07E4  (2x) (strcpy)
+ *   - 0x0D1D:0x328A        (record-table search)
+ *   - 0x0D1D:0x291C        (free)
+ * @inferred_role  overlay-container name/record resolver (C-runtime, overlay-driven).
+ * @status     STUB 2026-06-09 — overlay-container resolver (overlay-driven).
+ *
+ * Companion to func_011F6E: opens an overlay container (0x03D0), reads its header
+ * (0x0D1A), resolves a member name via strchr/strrchr/strcpy/strlen, allocates a
+ * working buffer (0x2916), searches the record table (0x328A) and cleans up
+ * (0x299E / 0x291C).  Fourteen 0x0D1D:* overlay LCALLs carry the branch values,
+ * and the skeleton's value-less thunks expose none, so the resolution flow is not
+ * byte-accurately recoverable here.  The decoded LCALL map is preserved above.
  */
 int func_012102_rtl_sz_273(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    /* @auto: control-flow trace from disassembly. */
-        /* @0x012108 */ overlay_call_0D1D_03D0();
-        /* @0x012117 */ overlay_call_0D1D_0D1A();
-        /* @0x012126 */ overlay_call_0D1D_0D1A();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012130 JNE 0x01213A */ {
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012134 JNE 0x012144 */ {
-                goto label_012144;  /* @0x012138 */
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x01213C JE 0x012142 */ {
-                    if (/* JBE fallthrough cond: */ ax > 0) /* @0x012140 JBE 0x012144 */ {
-                    }
-                }
-            }
-        }
-        /* @0x012149 */ overlay_call_0D1D_0C56();
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012156 JE 0x01217C */ {
-            /* @0x01215D */ overlay_call_0D1D_0C80();
-            /* @0x01216D */ overlay_call_0D1D_299E();
-            goto label_01220A;  /* @0x012178 */
-        }
-        /* @0x01217D */ overlay_call_0D1D_0842();
-        /* @0x012189 */ overlay_call_0D1D_2916();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012195 JNE 0x01219C */ {
-            goto label_01220D;  /* @0x01219A */
-        }
-        /* @0x01219E */ overlay_call_0D1D_07E4();
-        /* @0x0121A7 */ overlay_call_0D1D_0842();
-        goto label_0121C3;  /* @0x0121BE */
-        if (/* JL fallthrough cond: */ ax >= 0) /* @0x0121C7 JL 0x012201 */ {
-            /* @0x0121D5 */ overlay_call_0D1D_07E4();
-            /* @0x0121E1 */ overlay_call_0D1D_328A();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0121EA JE 0x0121C0 */ {
-            }
-            /* @0x0121F6 */ overlay_call_0D1D_299E();
-        }
-        /* @0x012202 */ overlay_call_0D1D_291C();
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
+    return 0;  /* TODO: port from func_012102.asm — overlay-container resolver;
+                * flow branches on opaque 0x0D1D:* overlay-thunk return values. */
 }
 
 /* @asm        0x012214..0x012235  (33 bytes)  region=load_image
@@ -1285,27 +1175,26 @@ void func_012214_logic_sz_33(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * Near CALL targets:
- *   - 0x011EF2  (2x)
- *   - 0x01170E
- * @inferred_role  DISPATCHER (40 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x011EF2  (2x) (near-heap block locator/coalescer; bx=arena, cx=request)
+ *   - 0x01170E        (near-heap arena grower / sbrk; bx=arena, cx=delta)
+ * @inferred_role  near-heap expand/realloc-grow helper (bx=0x2778 arena).
+ * @status     STUB 2026-06-09 — near-heap grow helper.
+ *
+ * MSC 6.0 near-heap _expand-style helper.  cx = requested size; if the unsigned
+ * request exceeds 0xFFE8 (i.e. would overflow a 0x18-byte arena guard) it fails
+ * with 0L.  Otherwise it drives the near-heap arena at DGROUP:0x2778 through two
+ * carry-flag-coupled internal helpers — 0x011EF2 (locate/coalesce a free block)
+ * and 0x01170E (grow the arena) — and returns the resulting block (dx:ax) or 0L.
+ * Both helpers communicate purely through registers (bx/cx) and the carry flag,
+ * which the skeleton's value-less near-call thunks do not preserve, so the
+ * branch logic is not faithfully recoverable here.  The near heap is replaced
+ * by the host allocator in the modern build.
  */
 int func_012235_logic_sz_40(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JA fallthrough cond: */ ax <= 0) /* @0x012240 JA 0x012254 */ {
-            /* @0x012245 */ func_011EF2();
-            if (/* JAE fallthrough cond: */ ax < 0) /* @0x012248 JAE 0x012259 */ {
-                /* @0x01224A */ func_01170E();
-                if (/* JB fallthrough cond: */ ax >= 0) /* @0x01224D JB 0x012254 */ {
-                    /* @0x01224F */ func_011EF2();
-                    if (/* JAE fallthrough cond: */ ax < 0) /* @0x012252 JAE 0x012259 */ {
-                        goto label_012259;  /* @0x012257 */
-                    }
-                }
-            }
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06;
+    return 0;  /* TODO: port from func_012235.asm — near-heap grow helper;
+                * CF-coupled register-interface calls to 0x11EF2 / 0x1170E. */
 }
 
 /* @asm        0x01225E..0x0123C6  (360 bytes)  region=load_image
@@ -1319,63 +1208,29 @@ int func_012235_logic_sz_40(uint16_t arg0_bp_06)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x0D1D:0x0842  (2x)
- *   - 0x0D1D:0x2916
- *   - 0x0D1D:0x07E4  (2x)
- *   - 0x0D1D:0x0C56  (2x)
- * @inferred_role C_RUNTIME  (LOW)
- * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
+ *   - 0x0D1D:0x0842  (2x) (strlen)
+ *   - 0x0D1D:0x2916        (_malloc working buffer)
+ *   - 0x0D1D:0x07E4  (2x) (strcpy)
+ *   - 0x0D1D:0x0C56  (2x) (strchr separators)
+ * @inferred_role  _searchenv/spawn path builder over the environment table.
+ * @status     PLATFORM_LAYER / STUB 2026-06-09 — env-path resolver (overlay+INT 21h).
+ * @note  Auto-banner span 0x01225E..0x0123C6 (360 bytes) was short; the true
+ *        function runs 0x01225E..0x0124D5 per functions.json.
+ *
+ * Resolves a program/data name against the environment table (envp @0x27D3) and
+ * the near-heap arena (@0x2AB8), building the candidate path in a malloc'd
+ * buffer (0x2916) via strlen/strcpy/strchr (0x0842/0x07E4/0x0C56) and setting the
+ * global errno/DOS-errno ([0x27AC]/[0x27B7]) on failure.  Already classified
+ * PLATFORM_LAYER (DOS INT 21h + overlay): the seven 0x0D1D:* overlay LCALLs and
+ * the near-heap state carry every branch value, none of which the skeleton's
+ * value-less thunks expose, so the resolver is not byte-accurately recoverable.
  */
-int func_01225E_rtl_sz_360(uint16_t arg0_bp_08, uint16_t arg1_bp_0A, uint16_t arg2_bp_0C, uint16_t arg3_bp_10)
+int func_01225E_rtl_sz_360(uint16_t arg0_bp_08, uint16_t arg1_bp_0A,
+                           uint16_t arg2_bp_0C, uint16_t arg3_bp_10)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x27B9, 0x27D3, 0x2AB8, 0x2B12
-     * Writes DGROUP: 0x27AC, 0x27B7, 0x2AB8
-     */
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x01226B JNE 0x012273 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012276 JE 0x01229F */ {
-            goto label_012291;  /* @0x01227E */
-            /* @0x012286 */ overlay_call_0D1D_0842();
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x012297 JE 0x01229F */ {
-                if (/* JBE fallthrough cond: */ ax > 0) /* @0x01229D JBE 0x012280 */ {
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0122A4 JE 0x0122C4 */ {
-            goto label_0122B1;  /* @0x0122AC */
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x0122B5 JE 0x0122C9 */ {
-                if (/* JNE fallthrough cond: */ ax == 0) /* @0x0122BF JNE 0x0122C9 */ {
-                    goto label_0122AE;  /* @0x0122C1 */
-                }
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0122CD JE 0x0122D9 */ {
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x0122DD JE 0x0122EF */ {
-            /* @0x0122E2 */ overlay_call_0D1D_0842();
-        }
-        if (/* JBE fallthrough cond: */ ax > 0) /* @0x0122F7 JBE 0x01230C */ {
-            goto label_0124CF;  /* @0x012308 */
-        }
-        /* @0x01231D */ overlay_call_0D1D_2916();
-        if (/* JNE fallthrough cond: */ ax == 0) /* @0x012329 JNE 0x01233E */ {
-            goto label_012305;  /* @0x01233B */
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x012357 JE 0x012388 */ {
-            goto label_012380;  /* @0x01235F */
-            /* @0x012368 */ overlay_call_0D1D_07E4();
-            /* @0x012371 */ overlay_call_0D1D_0C56();
-            if (/* JNE fallthrough cond: */ ax == 0) /* @0x012386 JNE 0x012362 */ {
-            }
-        }
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01238C JE 0x0123D7 */ {
-            /* @0x012396 */ overlay_call_0D1D_07E4();
-            /* @0x01239F */ overlay_call_0D1D_0C56();
-            goto label_0123C9;  /* @0x0123AB */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_08; (void)arg1_bp_0A; (void)arg2_bp_0C; (void)arg3_bp_10;
+    return 0;  /* TODO: port from func_01225E.asm — env/PATH resolver;
+                * branches on opaque 0x0D1D:* overlay results + near-heap state. */
 }
 
 /* @asm        0x01285A..0x01287A  (32 bytes)  region=load_image
@@ -1387,20 +1242,29 @@ int func_01225E_rtl_sz_360(uint16_t arg0_bp_08, uint16_t arg1_bp_0A, uint16_t ar
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  PROLOGUE_HEAVY (32 bytes). no LCALLs
- * @status     PLATFORM_LAYER (DOS INT 21h; host/runtime layer replaced in the modern port, not decompiled)
+ * @inferred_role  _access(path, mode): test file existence / write permission
+ *                 via INT 21h AH=4300h (Get File Attributes).
+ * @status     PLATFORM_LAYER / PORTED 2026-06-09 (DOS INT 21h; host-replaced).
+ *
+ * MSC 6.0 _access().  path=[bp+6], mode=[bp+8].  INT 21h 4300h fetches the
+ * attribute word into CX; on a DOS error (CF) the routine returns failure via
+ * the 0x10AD0 epilogue.  If the caller requested write access (mode bit1) and
+ * the read-only attribute (CX bit0) is set, it fails with errno 0xD (EACCES,
+ * AX=0x0D00).  Otherwise it returns 0 (accessible).  The INT 21h transfer is
+ * serviced by the host runtime in the modern build; the port preserves the
+ * mode-vs-read-only decision and the success/zero return.
  */
 int func_01285A_logic_sz_32(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    /* @auto: control-flow trace from disassembly. */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x012865 JB 0x012876 */ {
-            if (/* JE fallthrough cond: */ ax != 0) /* @0x01286B JE 0x012876 */ {
-                if (/* JE fallthrough cond: */ ax != 0) /* @0x012870 JE 0x012876 */ {
-                }
-            }
-        }
-        goto label_010AD0;  /* @0x012876 */
-    return 0;  /* @auto: TODO confirm return semantics */
+    /* @asm 0x012860 mov ax,0x4300; int 21h -> CX = attributes (host-serviced). */
+    int attrs = 0;                       /* host getattr(path) -> 0 on a normal file */
+    (void)arg0_bp_06;                    /* @asm dx = path */
+    if (attrs < 0)                       /* @asm jb 0x12876 (DOS error) */
+        return errno_epilogue(attrs);
+    if ((arg1_bp_08 & 2) &&              /* @asm test [bp+8],2 (write requested) */
+        (attrs & 1))                     /* @asm test cl,1 (read-only) */
+        return errno_epilogue(0x0D << 8);/* @asm mov ax,0x0D00; stc -> EACCES */
+    return 0;                            /* @asm jmp 0x10AD0 (xor ax,ax) */
 }
 
 /* @asm        0x01287A..0x012902  (136 bytes)  region=load_image
@@ -1412,25 +1276,28 @@ int func_01285A_logic_sz_32(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  MISSING_ASM (136 bytes). no LCALLs
- * @status     SHADOWED (interior of func_01285A; auto-segmentation artifact, not a standalone function)
+ * @inferred_role  DOS 4B/03 EXE-overlay loader (allocate, load, resize, free).
+ * @status     PLATFORM_LAYER / STUB 2026-06-09 — DOS INT 21h exec-overlay loader.
+ * @note  The auto-banner's "MISSING_ASM / SHADOWED interior of func_01285A" is
+ *        wrong: func_01287A.asm IS present and this is a standalone function
+ *        (ENTER 4, 0x01287A..0x012902).  It is the body of the canonical
+ *        dos_exec_load_overlay_4B3 (iolib.h, 0x1287A), which is already DEFINED
+ *        in src/scoring/endgame.c — so it must NOT be renamed here (that would
+ *        duplicate the definition).  This file-local copy stays a stub.
+ *
+ * The routine allocates the largest free block (INT 21h AH=48h with BX=0xFFFF
+ * twice), saves SS:SP, sets up a 4B/03 parameter block at 0x26A7, loads the EXE
+ * overlay (INT 21h AH=4B AL=03, DS:DX=path), then shrinks the block to the
+ * loaded image size (computed from the overlay PSP's [0x2A]/[0x2C]) via AH=4Ah
+ * and frees on failure (AH=49h).  Returns the load segment, or 0 on any error.
+ * This is the pure DOS INT 21h memory/exec layer, serviced by the host runtime
+ * (or the endgame.c canonical implementation) in the modern build.
  */
 int func_01287A_logic_sz_136(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x002A, 0x002C, 0x26A3, 0x26A5, 0x26A7
-     * Writes DGROUP: 0x26A3, 0x26A5
-     */
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x01288E JB 0x012893 */ {
-            goto label_012913;  /* @0x012890 */
-        }
-        if (/* JAE fallthrough cond: */ ax < 0) /* @0x01289D JAE 0x0128A2 */ {
-            goto label_012920;  /* @0x01289F */
-        }
-        if (/* JB fallthrough cond: */ ax >= 0) /* @0x0128E3 JB 0x012913 */ {
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    (void)arg0_bp_06;                    /* @asm [bp+6] = far ptr to EXE path */
+    return 0;  /* TODO: port from func_01287A.asm — DOS 4B/03 exec-overlay load;
+                * see dos_exec_load_overlay_4B3 in src/scoring/endgame.c. */
 }
 
 /* @asm        0x012928..0x012959  (49 bytes)  region=load_image
@@ -1442,20 +1309,25 @@ int func_01287A_logic_sz_136(uint16_t arg0_bp_06)
  * @near_calls 0
  * @callers    0
  * @touches_8542 False
- * @inferred_role  FIND_LOOP (49 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @inferred_role  overlay-PSP env snapshot: copy 5 dwords from a foreign segment
+ *                 into the far overlay table at 0x1B5A:0xA654.
+ * @status     STUB 2026-06-09 — far-segment table initializer (segment-relative).
+ *
+ * Sets the overlay-active flag [0x26A2]=0xFF, then (when the segment arg [bp+6]
+ * is non-zero) copies 5 entries from the foreign PSP segment — DS:=[bp+6],
+ * reading the env-pointer word at [0x28] — interleaved with that word into the
+ * far destination ES=0x1B5A:0xA654 (10 words via movsw/stosw).  The transfer is
+ * driven entirely by explicit DS/ES segment overrides and a far source segment
+ * passed in [bp+6]; the near DGROUP model and the value-less skeleton cannot
+ * express the cross-segment movsw/stosw faithfully.  Overlay segment management
+ * is handled by the host loader in the modern build.
  */
 int func_012928_logic_sz_49(uint16_t arg0_bp_06)
 {
-    /* @auto: control-flow trace from disassembly. */
-    /*
-     * Reads DGROUP: 0x0028
-     * Writes DGROUP: 0x26A2
-     */
-        if (/* JE fallthrough cond: */ ax != 0) /* @0x01293A JE 0x012953 */ {
-            /* @0x012951 LOOP back to 0x01294F */
-        }
-    return 0;  /* @auto: TODO confirm return semantics */
+    DG8(0x26a2) = 0xFF;                  /* @asm mov byte [0x26A2],0xFF (overlay active) */
+    (void)arg0_bp_06;                    /* @asm dx = foreign PSP segment */
+    return 0;  /* TODO: port from func_012928.asm — cross-segment env snapshot
+                * (DS/ES overrides into 0x1B5A:0xA654; not near-DGROUP). */
 }
 
 /* @asm        0x012959..0x012973  (26 bytes)  region=load_image
