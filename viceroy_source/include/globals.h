@@ -15,6 +15,7 @@
 #define VICEROY_GLOBALS_H
 
 #include "viceroy_types.h"
+#include "dgroup.h"          /* DGS16 — for the DGROUP-resident count aliases below */
 struct colony_t;
 struct UnitRecord;
 
@@ -90,8 +91,22 @@ extern uint8_t  g_difficulty_53A6;        /* DGROUP:0x53A6; difficulty 0..4 (def
 extern uint16_t g_progress_5398;          /* DGROUP:0x5398 */
 extern uint16_t g_progress_5392;          /* DGROUP:0x5392 */
 extern uint16_t g_progress_5396;          /* DGROUP:0x5396 */
-extern uint16_t g_progress_539E;          /* DGROUP:0x539E = COLONY count (indexed x0xCA); RULINGS 2026-05-28 ai */
-extern uint16_t g_progress_539C;          /* DGROUP:0x539C = UNIT count (indexed x0x1C); RULINGS 2026-05-28 ai */
+/* Live entity counts at DGROUP:0x539A/0x539C/0x539E. CONSOLIDATED 2026-06-09:
+ * these were declared file-locally in ~12 files (as g_unit_count_539C etc., often
+ * with int16/uint16 drift and *undefined* at link), AND separately as standalone
+ * vars `g_progress_539C/E` in data/production.c — two different bytes in modern
+ * mode, and neither matched the overlay/load_image code that reads the same count
+ * via DGS16(0x539C). Unified here as DGROUP-resident aliases so the named form,
+ * the DGS16() form, and DS:0x539C are one byte (byte-faithful in both modes). */
+#define g_native_count_539A   DGS16(0x539A)  /* count at 0x539A. CONTESTED SEMANTIC:
+                                              * overlay calls it native/other-settlement
+                                              * count; native_unit_ai bounds a settlement
+                                              * home_link by it (@asm 0x047128); report
+                                              * code read it as "player colony count"
+                                              * (@asm 0x037667). Same byte; meaning TBD by
+                                              * RE. Name unified to the overlay/majority. */
+#define g_unit_count_539C     DGS16(0x539C)  /* UNIT count (table stride 0x1C) */
+#define g_colony_count_539E   DGS16(0x539E)  /* COLONY count (table stride 0xCA) */
 extern uint16_t g_progress_5382;          /* DGROUP:0x5382 */
 
 /* ----------------------------------------------------------------------------

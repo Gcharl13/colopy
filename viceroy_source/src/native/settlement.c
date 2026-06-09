@@ -17,14 +17,13 @@
  *               file 0x1F008; BURNED @seg 0x1C28 = file 0x1F5C8).
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "native.h"
 
 /* ----------------------------------------------------------------------------
  * Globals (BYTE_VERIFIED bases)
  * ---------------------------------------------------------------------------- */
 extern uint8_t  g_native_table_54EC[];   /* DGROUP:0x54EC — NativeSettlement[] base, stride 0x12 */
-extern int16_t  g_native_count_539A;     /* DGROUP:0x539A — live settlement count (word, max 0x54) */
-extern int16_t  g_unit_count_539C;       /* DGROUP:0x539C — live UNIT count (word, ×0x1C) */
 extern void *   g_cur_settlement_8D4A;   /* DGROUP:0x8D4A — far ptr to "settlement being built" record */
 extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settlement being removed" record */
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */

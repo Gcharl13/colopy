@@ -25,6 +25,7 @@
  *               command-dispatch -- the SETREPORT branch of func_0235D6)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "iolib.h"
 
 #define KEY_REPORT   0x11A2   /* "REPORT" @asm 0x037344 / @file 0x1F142 */
@@ -589,11 +590,9 @@ done:
  * globals.h; the rest are new locals.)
  * ============================================================================ */
 
-/* ---- count globals (RULINGS 2026-05-28): 0x539E colonies, 0x539C units ----- */
-extern uint16_t g_colony_count_539A;  /* DGROUP:0x539A  (player colony count;
-                                        * @asm 0x037667 F9 CMP [0x539A]) */
-extern uint16_t g_unit_count_539C;    /* DGROUP:0x539C  total unit count (=globals.h g_progress_539C) */
-extern uint16_t g_colony_count_539E;  /* DGROUP:0x539E  colony-table count   (=globals.h g_progress_539E) */
+/* ---- count globals: 0x539E colonies, 0x539C units, 0x539A native (globals.h) ----
+ * (the unused 0x539A "player colony count" extern was removed in the 2026-06-09
+ *  consolidation; its @asm 0x037667 cite is recorded in globals.h.) */
 
 /* ---- the report player-context pointer set by func_030550 ------------------ */
 extern uint8_t  far *g_powerrec_84FC; /* DGROUP:0x84FC -> PowerRecord[player]
@@ -686,12 +685,10 @@ extern void     naval_footer(int player);        /* call 0x34AF -> func_0393F4 (
 extern void     naval_footer_hdr(int player);    /* call 0x34AF -> func_0393F4 (header pass) */
 extern void     labor_drilldown(int player, int prof, int bins_k); /* call 0x34BE -> func_03807E */
 
-/* DGROUP:0x8542 -- the "current colony" pointer (the colony_t struct base;
- * project-verified, also in globals.h as `ctx`).  The Congress/Labor/Colony
- * reports iterate colonies by re-pointing it via select_player_ctx().  Declared
- * here as a byte pointer to keep this file's externs self-contained (no
- * globals.h edit); fields read: +0x00/+0x01 x/y, +0x1A owner, +0x1F population. */
-extern uint8_t  far *ctx;                         /* DGROUP:0x8542 colony_t base */
+/* DGROUP:0x8542 -- the "current colony" pointer (the colony_t struct base).
+ * Now sourced from globals.h (`struct colony_t far *ctx`); the Congress/Labor/
+ * Colony reports iterate colonies by re-pointing it via select_player_ctx() and
+ * read raw fields via `((uint8_t far *)ctx)[+off]` (+0x1A owner, +0x1F pop, ...). */
 
 /* PowerRecord field offsets (base 0x8808 stride 0x13C; project-verified +
  * confirmed by these renderers' reads of [0x84FC]+disp). */

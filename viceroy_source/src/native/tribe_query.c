@@ -38,10 +38,10 @@
  * raw tribe id is (power - 4).  [BYTE_VERIFIED]
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "native.h"
 
 extern uint8_t  g_native_table_54EC[];   /* DGROUP:0x54EC — NativeSettlement[] base, stride 0x12 */
-extern int16_t  g_native_count_539A;     /* DGROUP:0x539A — live settlement count (word) */
 
 /* Near call 0x5402 in page_0C is an RTLink trampoline:
  *   @asm 0x04BA02  ljmp 0x191F:0x0248

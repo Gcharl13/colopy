@@ -103,7 +103,6 @@
  * offsets below carry their own @asm cite; the *names* are inferred. */
 extern void *  g_colony_buf_8542;      /* DGROUP:0x8542 — *(working colony buffer) */
 
-extern int16_t g_unit_count_539C;      /* DGROUP:0x539C — number of UnitRecords */
 extern int16_t g_event_turn_538E;      /* DGROUP:0x538E — turn/event counter (>>7 = era;
                                         *   %10 / %7 gating; @asm 0x541DB/0x54905/0x54967) */
 extern int16_t g_year_538A;            /* DGROUP:0x538A — current year (cmp 0x604/0x640/0x6a4

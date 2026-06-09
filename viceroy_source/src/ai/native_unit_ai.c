@@ -79,6 +79,7 @@
  * @ref             reverse_engineered/viceroy_source/src/native/raid.c (shared 0x54F6)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 
 /* ----------------------------------------------------------------------------
  * Byte-verified globals (DGROUP-relative; DS = DGROUP at run time).
@@ -149,9 +150,9 @@ extern uint8_t g_colony_5D46[/* colony */][0xCA];
  * written into UnitRecord +0x3156 (mission_turn) @asm 0x0481E6. */
 extern int16_t g_turn_counter_538E;
 
-/* DGROUP:0x539A -- live unit count (upper bound guard @asm 0x04712A
- * cmp ax,[0x539a]). */
-extern int16_t g_unit_count_539A;
+/* DGROUP:0x539A bound guard (@asm 0x04712A cmp ax,[0x539a]). The address is
+ * g_native_count_539A (globals.h) — this file's old "unit count" label was a
+ * misnomer; 0x539C is the unit count. home_link is a settlement home index. */
 
 /* DGROUP:0x5398 -- current_nation_index ("whose turn is processing"); compared
  * <4 (a EU power's turn) @asm 0x0470B1 and used to build the (0x10<<idx) owner
@@ -431,7 +432,7 @@ int16_t native_unit_ai(int16_t self)
     home_link = (int16_t)(int8_t)0; /* placeholder; real value below */
     home_link = g_units_3144[self][0x06];                 /* @asm 0x04711E ([bx+0x314a]) cwde */
     /* @asm 0x047126 or ax,ax; jl 0xb30 ; cmp ax,[0x539a]; jl 0xb46 */
-    if (home_link < 0 || home_link >= g_unit_count_539A) {/* @asm 0x047128/0x04712A */
+    if (home_link < 0 || home_link >= g_native_count_539A) {/* @asm 0x047128/0x04712A */
         /* @asm 0x047130 push [bp+6]; lcall 0x181f:0x808 (unlink); [bp-0x48]=0xffff */
         ovly_unit_unlink_808(self);                       /* @asm 0x047133 */
         return -1;                                        /* @asm 0x04713B..0x047145 leave;retf (AX=0xffff) */

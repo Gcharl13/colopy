@@ -45,6 +45,7 @@
  * @ref  src/king/intervention.c (foreign_intervention — same helper conventions)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from operands).  LOCAL externs only.
@@ -60,8 +61,6 @@ extern uint8_t g_flags_5382;            /* DGROUP:0x5382 — global event flags:
 extern int16_t g_year_538A;             /* DGROUP:0x538A — current year (1492..) */
 extern int16_t g_turn_in_year_538C;     /* DGROUP:0x538C — within-year sub-turn (0 = year boundary) */
 extern int16_t g_event_bits_538E;       /* DGROUP:0x538E — per-turn event bits (&7 tested @0x?) */
-extern int16_t g_unit_count_539C;       /* DGROUP:0x539C — number of UnitRecords */
-extern int16_t g_colony_count_539E;     /* DGROUP:0x539E — number of colonies */
 extern int16_t g_score_result_53C2;     /* DGROUP:0x53C2 — defeat/score-result accumulator */
 extern int16_t g_retire_flag_53A2;      /* DGROUP:0x53A2 — "king retiring" flag (set @0x02FABE) */
 extern uint8_t g_difficulty_53A6;       /* DGROUP:0x53A6 — difficulty 0..4 */

@@ -21,6 +21,7 @@
  *                  0x03DA22: 80 0E 82 53 02       or byte [0x5382], 2
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from operands).
@@ -28,8 +29,6 @@
 extern uint8_t g_active_power_5398;   /* DGROUP:0x5398 — active/human power index (byte read here) */
 extern void *  g_colony_base_8542;    /* DGROUP:0x8542 — far ptr to the "current colony" struct
                                        *   (project memory: VICEROY *(0x8542) is the colony struct) */
-extern int16_t g_colony_count_539E;   /* DGROUP:0x539E — number of colonies */
-extern int16_t g_unit_count_539C;     /* DGROUP:0x539C — number of units (unused in the kept path) */
 extern int16_t g_intervene_target_53D4; /* DGROUP:0x53D4 — chosen intervention power/handle */
 extern uint8_t g_flags_5382;          /* DGROUP:0x5382 — global event flags; bit1 set = "intervention done" */
 

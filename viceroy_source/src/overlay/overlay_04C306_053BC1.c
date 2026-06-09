@@ -76,11 +76,9 @@ extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
 extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRecord */
-extern int16_t  g_colony_count_539E;   /* DGROUP:0x539E — live colony count (word) */
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
-extern int16_t  g_unit_count_539C;     /* DGROUP:0x539C — live unit count (word) */
 extern uint8_t  g_unit_type_flags_5237[]; /* DGROUP:0x5237 base — per-type 6-byte rows (sibling of 0x5236) */
 extern uint8_t  g_power_table_8808[];  /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
 /* Two DGROUP scalar accessors (functions) read below; declared before first use
@@ -948,7 +946,6 @@ extern uint8_t  g_ai_regionmax_9E98[]; /* DGROUP:0x9E98 (-0x6168) — per-region
 extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power tier triplet */
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
-extern int16_t  g_native_count_539A;   /* DGROUP:0x539A — native settlement count (word) */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.

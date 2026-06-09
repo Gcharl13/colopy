@@ -45,7 +45,6 @@
  * absolute DGROUP offsets seen in the disassembly). */
 extern uint8_t  g_native_value_table_5AD8[];  /* DGROUP:0x5AD8 — per-tribe table, stride 0x4E */
 extern uint8_t  g_native_table_54EC[];         /* DGROUP:0x54EC — NativeSettlement[], stride 0x12 */
-extern int16_t  g_native_count_539A;           /* DGROUP:0x539A — live settlement count (word) */
 extern uint16_t g_tribe_relation_5B04[];       /* DGROUP:0x5B04 — [8 tribes][? ] word grid, row stride 0x27 words */
 
 /* ============================================================================
@@ -310,7 +309,6 @@ int native_settlement_create(uint16_t owner_power, uint16_t x, uint16_t y)  /* f
  *                "msg_set_arg(slot,value)" and overlay_02083C_024337.c same.
  * 0x181F:0x0652 = display_message(type, str_offset) — emits "EXTINCT" banner.
  * ============================================================================ */
-extern int16_t  g_unit_count_539C;        /* DGROUP:0x539C — live UnitRecord count (word) */
 extern uint8_t  g_unit_table_3144[];      /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 /* 0x181F:0x068C = set_map_tile(a, b, x, y) / draw_marker(x, y, layer, val):
  * clears/sets a map overlay cell.  Cross-ref: overlay_02AAEC_02F0C7.c
@@ -956,8 +954,6 @@ final_drain:                                    /* @asm 0x0485BC */
 extern uint8_t  g_self_power_5394;          /* DGROUP:0x5394 — "self power" (native-id base) */
 extern uint16_t g_econ_flags_5382;          /* (re-decl) DGROUP:0x5382 econ-option flags */
 extern uint8_t  g_difficulty_53A6;          /* (re-decl) DGROUP:0x53A6 */
-extern int16_t  g_native_count_539A;        /* (re-decl) DGROUP:0x539A live settlement count */
-extern int16_t  g_unit_count_539C;          /* (re-decl) DGROUP:0x539C live unit count */
 extern uint8_t  g_unit_table_3144[];        /* (re-decl) DGROUP:0x3144 UnitRecord[] */
 extern uint8_t  g_native_table_54EC[];      /* (re-decl) DGROUP:0x54EC NativeSettlement[] */
 extern uint8_t *g_bound_record_8D4A;        /* (re-decl) *(0x8D4A) bound record */
@@ -1192,7 +1188,6 @@ extern int8_t g_tile_dy_00DE[];   /* DGROUP:0x00DE — surrounding-tile dy delta
  * func_048F34; identical compatible externs).  *(0x8542) is the bound
  * ColonyRecord (byte layout: x +0, y +1, owner +0x1A, tile-flags +0x70). */
 extern uint16_t *g_colony_8542;            /* *(0x8542) — current ColonyRecord */
-extern int16_t   g_colony_count_539E;      /* DGROUP:0x539E — known-colony count */
 /* overlay_call_181F_09E6 = select_player_ctx(colony_idx); 0x06DC =
  * ovly_tile_owner_6DC(x,y); 0x06D2 = unit_owner_at(x,y); 0x0704 = layer_set_object
  * (owner,y,x).  All declared in overlay_externs.h; called argless per convention.
@@ -1701,7 +1696,6 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
  * draw + RETF 0x0495DE..0x0495FF.  BYTE_VERIFIED 2026-06-08.
  * ============================================================================ */
 extern uint16_t *g_colony_8542;            /* *(0x8542) — current ColonyRecord (x +0, y +1) */
-extern int16_t   g_colony_count_539E;      /* DGROUP:0x539E — known-colony count */
 extern uint16_t  g_prod_yield_9E78[16];    /* DGROUP:0x9E78 — per-resource weighted yield out */
 extern uint16_t  g_prod_cap_9E58[16];      /* DGROUP:0x9E58 — per-resource capacity out */
 

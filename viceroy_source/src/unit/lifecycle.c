@@ -37,6 +37,7 @@
  * @ref             include/unit.h
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "globals.h"
 #include "unit.h"
 
 /* ---- DGROUP globals (near; DS = DGROUP at run time) ------------------------ */
@@ -47,7 +48,6 @@
 extern uint8_t  g_units_3144[];
 
 /* DGROUP:0x539C -- active UnitRecord count (RULINGS 2026-05-28). */
-extern uint16_t g_unit_count_539C;
 
 /* DGROUP:0x5392 -- "selected unit" index (fixed up after a destroy shift). */
 extern int16_t  g_selected_unit_5392;
