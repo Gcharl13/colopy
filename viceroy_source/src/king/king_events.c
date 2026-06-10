@@ -369,5 +369,5 @@ extern int  power_label(int power_idx);              /* 0x181F:0x9A4 -> handle *
  *    documented elsewhere (or not yet decoded).
  *  - The keyed-lookup helper 0x181F:0x3FE returns a small int compared to 1; its
  *    exact contract (menu choice vs config value) is inferred from call context.
- *  - MSG handle 0xEF5 ("WINNING"-block sub-key) text not yet decoded.
+ *  - MSG handle 0xEF5 = "KINGFRIGATE" (confirmed via strings.json lookup 2026-06-10).
  * ============================================================================ */

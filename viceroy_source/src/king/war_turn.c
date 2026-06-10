@@ -382,8 +382,33 @@ war_tail:
                 crt_keyed_to_buf(MSG_OTHERGRANTED, /*&buf*/0);/* @asm 0x02F949 lea bx,[0xf51]; 0x02F94D lcall 0x181F:0x3FE */
                 kr[0] |= 4;                                   /* @asm 0x02F956 or [bx],4 */
                 /* @asm 0x02F959 — reset inner loop var and continue scanning. */
+            } else {
+                /* @asm 0x02F8E5 jmp 0x2F774 — secondary path (needed < budget).
+                 * king[+0x1A] tracks the deployment threshold; OTHERMIGHT/OTHERLESS
+                 * announce changes with a ±5 hysteresis band.
+                 *   OTHERMIGHT (0xF5E): king[+0x1A] < needed and budget-20 <= needed
+                 *   OTHERLESS  (0xF69): king[+0x1A] - 5 > needed (catch a drop)
+                 * BYTE_VERIFIED 2026-06-10 against func_02F3A2.asm @0x02F774..0x02F884. */
+                if (budget - 20 <= needed &&                     /* @asm 0x02F774 ax=cx; sub 0x14; cmp */
+                    kr[0x1A] < (uint8_t)needed) {                /* @asm 0x02F785 cmp [bx+0x1a],needed */
+                    ui_flash_power(arm, 0, 0);                   /* @asm 0x02F796 lcall 0x191F:0xAC8 */
+                    msg_set_long(0, (int32_t)needed);            /* @asm 0x02F7A2 */
+                    msg_set_long(1, (int32_t)((uint8_t *)DGROUP_PTR(REF_ARM_TYPE_9408))[arm]); /* @asm 0x02F7BC */
+                    msg_set_long(2, (int32_t)budget);            /* @asm 0x02F7CC */
+                    msg_set_int(1, power_handle(arm));           /* @asm 0x02F7D7/0x02F7E2 */
+                    ui_show_message(2, MSG_OTHERMIGHT);          /* @asm 0x02F7EC push 0xF5E */
+                    kr[0x1A] = (uint8_t)needed;                 /* @asm 0x02F7F7 */
+                }
+                if (kr[0x1A] - 5 > (uint8_t)needed) {           /* @asm 0x02F801 ax=[bx+0x1a]-5 > needed */
+                    ui_flash_power(arm, 0, 0);                   /* @asm 0x02F819 lcall 0x191F:0xAC8 */
+                    msg_set_long(0, (int32_t)needed);            /* @asm 0x02F825 */
+                    msg_set_long(1, (int32_t)((uint8_t *)DGROUP_PTR(REF_ARM_TYPE_9408))[arm]); /* @asm 0x02F83F */
+                    msg_set_long(2, (int32_t)budget);            /* @asm 0x02F84F */
+                    msg_set_int(1, power_handle(arm));           /* @asm 0x02F85A/0x02F865 */
+                    ui_show_message(2, MSG_OTHERLESS);           /* @asm 0x02F86F push 0xF69 */
+                    kr[0x1A] = (uint8_t)needed;                 /* @asm 0x02F87A */
+                }
             }
-            /* (Secondary king[+0x1A] adjust path @0x2C74/0x2D01 — not yet decoded.) */
         }
     }
 
