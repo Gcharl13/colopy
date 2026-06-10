@@ -76,7 +76,7 @@ extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0
 extern uint8_t  g_unit_table_3144[];   /* DGROUP:0x3144 — UnitRecord[], stride 0x1C */
 extern uint8_t  g_colony_table_5D46[]; /* DGROUP:0x5D46 — ColonyRecord[], stride 0xCA */
 extern uint16_t *g_colony_8542;        /* *(0x8542) — currently-bound ColonyRecord */
-extern int16_t  g_colony_count_539E;   /* DGROUP:0x539E — live colony count (word) */
+/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
 extern uint8_t  g_difficulty_53A6;     /* DGROUP:0x53A6 — difficulty level */
 extern uint16_t g_self_power_5394;     /* DGROUP:0x5394 — power index being processed */
 extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active PowerRecord */
@@ -95,9 +95,9 @@ extern uint8_t  g_ai_queue_b_9EAA[];   /* DGROUP:0x9EAA — per-power, 0x10 x 4-
 extern uint8_t  g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 0x10 x 6-byte */
 extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
 extern int16_t  ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter */
-extern uint8_t  g_power_table_8808[];       /* DGROUP:0x8808 — PowerRecord[], stride 0x13C */
+/* g_power_table_8808: macro in globals.h -> ((uint8_t near *)(DG_BASE + 0x8808)) */
 extern uint8_t  g_unit_type_flags_5236[];   /* DGROUP:0x5236 — per-type 6-byte flag rows */
-extern int16_t  g_unit_count_539C;          /* DGROUP:0x539C — live unit count (word) */
+/* g_unit_count_539C: macro in globals.h -> DGS16(0x539C) */
 
 /* Near-CS trampolines (page-0x0D ljmp block @0x0534BC..0x05353E -> 0x1A1F:0xNNN).
  * RESOLVED (2026-06-08): cs:0x7A71 -> 0x534C1 -> 0x1A1F:0x470 -> file 0x4C35A
@@ -944,7 +944,7 @@ extern uint8_t  g_ai_regionmax_9E98[]; /* DGROUP:0x9E98 (-0x6168) — per-region
 extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power tier triplet */
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
-extern int16_t  g_native_count_539A;   /* DGROUP:0x539A — native settlement count (word) */
+/* g_native_count_539A: DGS16(0x539A) macro from globals.h */
 extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.

@@ -24,13 +24,20 @@ file(GLOB_RECURSE VICEROY_SOURCES CONFIGURE_DEPENDS
 
 # Exclude DOS platform files + unrealised SDL platform-layer stubs
 # (audio, asset, render: replaced by SDL/modern implementations in milestone 3)
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/main_modern\\.c$")
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/platform/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/boot/entry\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/runtime/cstart\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/.*\\.c$")
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/load_image/.*\\.c$")
+# render/ INCLUDED (poke-converted 2026-06-09) except blit.c: its leaf-emitter
+# wrappers are implemented by the platform layer (src/platform/render_glue.c)
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/blit\\.c$")
+# load_image/ — all 16 files ported & verified to compile clean under
+# -D_VICEROY_MODERN (stale "raw ax/label artifacts" exclusion removed
+# 2026-06-09; these resident functions are overlay-thunk targets the
+# tools/thunkwire.py wiring resolves into)
 
 # Rules library — all game logic, compiled in modern mode
 add_library(viceroy_rules STATIC ${VICEROY_SOURCES})
@@ -55,11 +62,31 @@ target_compile_options(viceroy_rules PRIVATE
 )
 
 # ============================================================================
-# Stub main (milestone 3 placeholder — SDL front end goes here)
+# viceroy_modern — the modern-host executable (milestone 3 first-light)
+# ----------------------------------------------------------------------------
+# Links the rules library against the GENERATED link floor:
+#   tools/generated/linkfloor.ld      byte-exact DGROUP-global aliases
+#   tools/generated/thunk_wiring.ld   overlay-thunk -> real-target aliases
+#   tools/linkfloor_extra.ld          committed aliases (non-hex-named globals)
+#   tools/generated/linkfloor_stubs.c weak no-op floor for everything else
+#   tools/generated/thunk_keepalive.c forces alias targets out of the archive
+# Regenerate after library changes:
+#   python3 tools/thunkwire.py && python3 tools/linkgap.py
 # ============================================================================
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main_modern.c")
+set(VICEROY_GEN "${CMAKE_CURRENT_SOURCE_DIR}/tools/generated")
+if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wiring.ld")
     add_executable(viceroy_modern
         src/main_modern.c
+        src/platform/pik.c
+        src/platform/video_sdl.c
+        src/platform/font.c
+        src/platform/ss.c
+        src/platform/render_glue.c
+        src/platform/unit_blit.c
+        src/platform/naval_glue.c
+        src/platform/dgroup_image.c
+        "${VICEROY_GEN}/linkfloor_stubs.c"
+        "${VICEROY_GEN}/thunk_keepalive.c"
     )
     target_link_libraries(viceroy_modern PRIVATE viceroy_rules)
     target_include_directories(viceroy_modern PRIVATE
@@ -68,4 +95,26 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main_modern.c")
     target_compile_definitions(viceroy_modern PRIVATE
         _VICEROY_MODERN
     )
+    # SDL2: window/input when available; headless (PPM dumps) otherwise
+    find_package(SDL2 QUIET)
+    if(SDL2_FOUND)
+        target_compile_definitions(viceroy_modern PRIVATE VICEROY_HAVE_SDL2)
+        target_include_directories(viceroy_modern PRIVATE ${SDL2_INCLUDE_DIRS})
+        if(TARGET SDL2::SDL2)
+            target_link_libraries(viceroy_modern PRIVATE SDL2::SDL2)
+        else()
+            target_link_libraries(viceroy_modern PRIVATE ${SDL2_LIBRARIES})
+        endif()
+        message(STATUS "viceroy_modern: SDL2 video enabled")
+    else()
+        message(STATUS "viceroy_modern: SDL2 not found -- headless video only")
+    endif()
+    # linker-script INPUTS (not -T: they augment, never replace, the default)
+    target_link_options(viceroy_modern PRIVATE
+        "${VICEROY_GEN}/linkfloor.ld"
+        "${VICEROY_GEN}/thunk_wiring.ld"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/linkfloor_extra.ld"
+    )
+else()
+    message(STATUS "viceroy_modern skipped: run tools/thunkwire.py + tools/linkgap.py first")
 endif()
