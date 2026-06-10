@@ -72,6 +72,17 @@ void viceroy_world_autumn(void)
 
         /* 4. crown sentiment -> REF growth (gates inside are byte-cited) */
         king_ref_buildup(p);
+
+        /* 5. royal-event cadence (human powers only; the gate is inside) */
+        {   extern void king_demand_cadence(int power_id);
+            king_demand_cadence(p);
+        }
+
+        /* 6. AI power asset planning (the war-matrix census; AI powers) */
+        if (DG8(0x543F + p * 0x34) != 0) {
+            extern int func_052F7E_ai_power_asset_census(uint16_t);
+            func_052F7E_ai_power_asset_census((uint16_t)p);
+        }
     }
 
     /* season bookkeeping: one Spring+Autumn pair = one year */
