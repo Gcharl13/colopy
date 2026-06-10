@@ -112,6 +112,26 @@ extern int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                                               uint16_t power, uint16_t mode);
 extern int func_04C306_ai_queue_a_lookup_max(uint16_t power, uint16_t b0,
                                              uint16_t b1, uint16_t b2);
+extern void func_04E2B6_unit_set_order_state(uint16_t unit_index, uint8_t prof,
+                                             uint8_t dest_x, uint8_t dest_y);
+                       /* prof/orders:=0x0B(goto)/dest stamper, file 0x4E2B6 */
+extern int func_061E96_vector_to_dir(int dx, int dy);  /* 0x1A1F:0x59C sign-vector */
+extern int func_008B96(uint16_t unit);                 /* 0x181F:0xB28 */
+extern void overlay_grid16_cull_by_range(uint16_t row, uint16_t match_key,
+                                         uint16_t ref_a, uint16_t ref_b,
+                                         uint16_t max_metric);  /* func_04C20C */
+extern int func_005EE8_logic_sz_28(uint16_t x, uint16_t y);   /* 0x181F:0x74A */
+extern int func_008352_op_sz_92(uint16_t x, uint16_t y);
+                       /* 0x181F:0xD12 cheapest passable neighbour ->
+                        * [0x8DBA]/[0x8DBC] out-params, returns found */
+extern int func_006018_logic_sz_33(uint16_t x, uint16_t y);   /* 0x181F:0x6D2 */
+extern int func_005DBA_logic_sz_17(uint16_t x, uint16_t y);   /* 0x181F:0x6B4 */
+extern int func_00BC10_ff_owned(uint16_t power, uint16_t ff); /* 0x181F:0x7B4 */
+extern void func_0081F2_logic_sz_34(uint16_t settlement);     /* 0x181F:0xA4C select */
+extern int unit_tile_head(int x, int y);               /* 0x181F:0x7E0 = 0x66CC */
+extern int func_04C404_ai_queue_b_find_or_insert(uint16_t power, uint16_t b0,
+                                                 uint16_t b1, uint16_t b2,
+                                                 uint16_t b3);
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -199,6 +219,7 @@ int16_t unit_move_step(int16_t unit_index)
     int16_t transport_DA;     /* [bp-0xDA] */
     int16_t deficit_B4;       /* [bp-0xB4] */
     int16_t stack_n_56;       /* [bp-0x56] */
+    int16_t l_40 = 0;         /* [bp-0x40] queue-A snapshot (@asm 0x4EB17) */
     int16_t fortify_CC = 0;   /* [bp-0xCC] set only @asm 0x51A11 (AI18, unported:
                                * defensive 0 keeps AI19's CC-branch cold) */
     int16_t guard_adj_E8 = 0; /* [bp-0xE8] set only @asm 0x514C0 (AI18, unported) */
@@ -463,12 +484,268 @@ int16_t unit_move_step(int16_t unit_index)
     escort_8C = 1;                                              /* @asm 0x04E961 */
     goto ai17_entry;                                            /* @asm 0x04E967 -> 0x50F1E */
 
-    /* ======================= AI2..AI18 (UNPORTED) ===========================
-     * Target seeking, attack scoring, transport runs, exploration and pathing
-     * (0x4E96A..0x51A28).  Until ported, "considered, no decision": fall to
-     * the exit tail exactly as the pre-port build did on every path.
-     * ======================================================================== */
+    /* ======================= AI2: IDLE REGION -> HEAD HOME ==================
+     * (0x4E96A..0x4E9F8)  No mission in this region: combat-capable land
+     * units march back to (or park in) the nearest own colony as 'V'. */
 ai2:                                                            /* 0x4E96A */
+    if (mission_28 == 0 &&                                      /* @asm 0x4E982 */
+        special == 0 &&                                         /* @asm 0x4E988 */
+        ship_band == 0 &&                                       /* @asm 0x4E98E */
+        (type == 2 ||                                           /* @asm 0x4E998 */
+         DG8(0x5236 + type*14) > 1) &&                          /* @asm 0x4E9B1 */
+        reg_own_col == region) {                                /* @asm 0x4E9BB */
+        if (col_own_dist != 0) {                                /* @asm 0x4E9C0 */
+            func_0082DC_logic_sz_118((uint16_t)col_own);        /* @asm 0x4E9C9 */
+            func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x56,
+                DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                          /* @asm 0x4E9E5 call 0x4E2B6: 'V', goto colony x/y */
+            return move_eval_tail_51C68(unit_index, owner);     /* @asm 0x4E9E8 */
+        }
+        U_OFF(unit_index, U_PROF) = 0x56;                       /* @asm 0x4E9F0 'V' */
+        goto ai19_park;                                         /* @asm 0x4E9F5 */
+    }
+
+    /* ======================= AI3: WAGON -> HAUL TO AI ORIGIN ================
+     * (0x4E9F8..0x4EA5C)  A wagon adjacent to a native settlement, low trade
+     * tier, no pending AI cargo word: step toward the per-power AI origin. */
+    if (type == 5 &&                                            /* @asm 0x4EA14 */
+        settle_dist == 1 &&                                     /* @asm 0x4EA1B */
+        !(DG8(DG16(0x8D4A) + 3) & 8) &&                         /* @asm 0x4EA26 */
+        tier_52 < 0x19 &&                                       /* @asm 0x4EA2C */
+        ai_word_3C == 0) {                                      /* @asm 0x4EA32 */
+        int dx = (int)DG8(DG16(0x8D4A) + 0) - map_x;            /* @asm 0x4EA38 */
+        int dy = (int)DG8(DG16(0x8D4A) + 1) - map_y;            /* @asm 0x4EA40 */
+        dir_choice = (int16_t)func_061E96_vector_to_dir(dx, dy);/* @asm 0x4EA4B */
+        U_OFF(unit_index, U_PROF) = 0x4C;                       /* @asm 0x4EA53 'L' */
+        goto ai19_have_dir;                                     /* @asm 0x4EA58 */
+    }
+
+    /* ======================= AI4: SLOW HAULER -> AI ORIGIN ==================
+     * (0x4EA5C..0x4EB02)  Slow non-wagon carrying state (func_008B96) with
+     * subtype 0x1C/0x19, adjacent to a settlement: same origin step as AI3. */
+    if (func_008B96((uint16_t)unit_index) != 0 &&               /* @asm 0x4EA77 */
+        DG8(0x5236 + type*14) <= 1 &&                           /* @asm 0x4EA9D */
+        type != 5 &&                                            /* @asm 0x4EAA4 */
+        type != 3 &&                                            /* @asm 0x4EAA9 */
+        (U_OFF(unit_index, 0x17) == 0x1C ||                     /* @asm 0x4EAB0 */
+         U_OFF(unit_index, 0x17) == 0x19) &&                    /* @asm 0x4EAB7 */
+        settle_dist == 1 &&                                     /* @asm 0x4EABE */
+        !(DG8(DG16(0x8D4A) + 3) & 2) &&                         /* @asm 0x4EAC9 */
+        tier_52 < 0x19 &&                                       /* @asm 0x4EACF */
+        ai_word_3C < 0x40) {                                    /* @asm 0x4EAD5 */
+        int dx = (int)DG8(DG16(0x8D4A) + 0) - map_x;            /* @asm 0x4EADB */
+        int dy = (int)DG8(DG16(0x8D4A) + 1) - map_y;            /* @asm 0x4EAE3 */
+        dir_choice = (int16_t)func_061E96_vector_to_dir(dx, dy);/* @asm 0x4EAEC */
+        U_OFF(unit_index, U_PROF) = 0x4C;                       /* @asm 0x4EAF8 'L' */
+        goto ai19_have_dir;                                     /* @asm 0x4EAFD */
+    }
+
+    /* @asm 0x4EB02..0x4EB34: queue-A snapshot (key 6) + cull when reassigning */
+    l_40 = (int16_t)func_04C306_ai_queue_a_lookup_max((uint16_t)owner,
+               (uint16_t)map_x, (uint16_t)map_y, 6);            /* @asm 0x4EB11 */
+    if (reassign != 0)                                          /* @asm 0x4EB1A */
+        overlay_grid16_cull_by_range((uint16_t)owner, 6,
+            (uint16_t)map_x, (uint16_t)map_y, 0);               /* @asm 0x4EB31 */
+
+    /* ======================= AI5: SETTLE-SITE SCAN ==========================
+     * (0x4EB4F..0x4F060)  Reassignable units scan a (2R+1)^2 window (R=3/2/1
+     * by the patience score) for the best colony site: per-cell terrain class
+     * x4, colony repulsion (-(cap-dist)^2, cap 9 own / 7|5 foreign), a
+     * settling-conflict check (another unit with orders 7 nearby kills the
+     * cell), native-settlement penalty ladder (x2/x4/x8 by distance, halved
+     * by power/FF modifiers), virgin-region and colonist bonuses.  Best cell:
+     * stand on it -> orders 7 (BUILD COLONY); else goto-site as prof '2'.
+     * Non-reassignable: enqueue the (stale-dir) neighbour into queue B. */
+    if (reassign != 0) {                                        /* @asm 0x4EB4F */
+        if (U_OFF(unit_index, 0x11) != 0) {                     /* @asm 0x4EB59 cooldown */
+            U_OFF(unit_index, 0x11) -= 1;                       /* @asm 0x4EB60 */
+            goto ai5_end;                                       /* @asm 0x4EB64 */
+        }
+        U_OFF(unit_index, 0x12) = 0xFF;                         /* @asm 0x4EB6C */
+        if (task_total_12 != 0 &&                               /* @asm 0x4EB71 */
+            U_OFF(unit_index, 0x10) < 0x7F)                     /* @asm 0x4EB77 */
+            U_OFF(unit_index, 0x10) += 1;                       /* @asm 0x4EB7E patience */
+        l_10 = (int16_t)(DG8(0x9E98 + region) * 8               /* @asm 0x4EB85 */
+                         + U_OFF(unit_index, 0x10));            /* @asm 0x4EB92 */
+    }
+    if (reassign == 0)                                          /* @asm 0x4EB9D */
+        goto ai5_end;
+    {
+        int16_t best_E0   = -999;                               /* @asm 0x4EBAB 0xFC19 */
+        int16_t bestcls_A = 0;                                  /* @asm 0x4EBB1 */
+        int16_t shift_DC  = 3;                                  /* @asm 0x4EBB6 */
+        int16_t radius_C8 = 3;                                  /* @asm 0x4EBF6 */
+        int16_t sx_16, sy_1A;
+        int16_t cls_4A = 0, score_26 = 0, best_x_4C = 0, best_y_5C = 0;
+        int16_t w0 = (int16_t)DG16(0x945E + region*2);          /* @asm 0x4EBC1 [bx-0x6BA2] */
+        if (w0 <= 8)        shift_DC = 0;                       /* @asm 0x4EBC1 */
+        else if (w0 <= 0x18) shift_DC = 1;                      /* @asm 0x4EBD5 */
+        else if (w0 <= 0x30) shift_DC = 2;                      /* @asm 0x4EBE9 */
+        if (l_10 >= 0x20) radius_C8 = 2;                        /* @asm 0x4EBFC */
+        if (l_10 >= 0x40) radius_C8 = 1;                        /* @asm 0x4EC08 */
+
+        for (sy_1A = map_y - radius_C8; map_y + radius_C8 >= sy_1A; sy_1A++) {
+                                                                /* @asm 0x4EC14/0x4EFE5 */
+            for (sx_16 = map_x - radius_C8; map_x + radius_C8 >= sx_16; sx_16++) {
+                                                                /* @asm 0x4EFF2/0x4EC4C */
+                /* ---- cheap filters @asm 0x4EC5C..0x4ED0C ---- */
+                if (func_005BFA_logic_sz_49((uint16_t)sx_16, (uint16_t)sy_1A) == 0)
+                    continue;                                   /* @asm 0x4EC62 */
+                {
+                    int16_t o = (int16_t)func_006018_logic_sz_33((uint16_t)sx_16,
+                                                                 (uint16_t)sy_1A);
+                    if (o >= 0 && o != owner) continue;         /* @asm 0x4EC7F/0x4EC83 */
+                }
+                if ((int16_t)func_005E90_op_sz_64((uint16_t)sx_16,
+                        (uint16_t)sy_1A) != region) continue;   /* @asm 0x4EC97 */
+                cls_4A = (int16_t)(func_005EE8_logic_sz_28((uint16_t)sx_16,
+                                       (uint16_t)sy_1A) & 0x0F);/* @asm 0x4ECAA */
+                score_26 = (int16_t)(cls_4A << 2);              /* @asm 0x4ECB0 */
+                if (sx_16 == 0 && sy_1A == 0)                   /* @asm 0x4ECB6 (sic:
+                                       * literal origin check in the original) */
+                    score_26 += 0x10;                           /* @asm 0x4ECC2 */
+                if (func_00627A_op_sz_57((uint16_t)sx_16,
+                        (uint16_t)sy_1A) == 0x1B) continue;     /* @asm 0x4ECD6 */
+                {   /* settle qualifier: cheapest passable neighbour + its
+                     * layer-164 byte must be 1 (@asm 0x4ECE4..0x4ED12) */
+                    int16_t q = (int16_t)func_008352_op_sz_92((uint16_t)sx_16,
+                                                              (uint16_t)sy_1A);
+                    if (q != 0 &&
+                        (uint8_t)(func_005DBA_logic_sz_17(DG16(0x8DBA),
+                                      DG16(0x8DBC)) - 1) != 0)  /* @asm 0x4ED03 dec al */
+                        q = 0;                                  /* @asm 0x4ED07 */
+                    if (q == 0)                                 /* @asm 0x4ED0C je */
+                        continue;       /* (dead stores @0x4ED15..0x4ED28 incl. an
+                                         * UNINITIALIZED [bp-0x4E]==8 test -- both
+                                         * arms fall to next-x; nothing to port) */
+                }
+
+                /* ---- full scoring @asm 0x4EC22.. (entered only for
+                 * qualifying cells via the jmp at 0x4ED12) ---- */
+                func_0083F2_op_sz_71((uint16_t)sx_16, (uint16_t)sy_1A,
+                                     (uint16_t)-1, (uint16_t)region); /* @asm 0x4EC2D */
+                if ((int16_t)DG16(0x8DC6) >= 0) {               /* @asm 0x4EC35 */
+                    int16_t cdist = (int16_t)DG16(0x8DB8);
+                    if (cdist <= 1)                             /* @asm 0x4EC3F */
+                        continue;       /* adjacent to a colony: reject cell */
+                    if (DG8(DG16(0x8542) + 0x1A) == (uint8_t)owner) { /* @asm 0x4ED34 */
+                        if (cdist == 2) continue;               /* @asm 0x4ED7A/0x4ED7F */
+                        if (cdist < 9)                          /* @asm 0x4ED90 */
+                            score_26 += (int16_t)((9 - cdist) * (cdist - 9));
+                                                                /* @asm 0x4ED95..0x4EDA1 */
+                    } else {
+                        int16_t cap_A0 = 7;                     /* @asm 0x4ED44 */
+                        if (cdist == 2) score_26 -= 0x14;       /* @asm 0x4ED39/0x4ED40 */
+                        if (DG8(0x94E6 + owner*16 + region) < 1)/* @asm 0x4ED54 */
+                            cap_A0 = 5;                         /* @asm 0x4ED5B */
+                        if (cdist < cap_A0)                     /* @asm 0x4ED67 */
+                            score_26 += (int16_t)((cap_A0 - cdist) * (cdist - cap_A0));
+                                                                /* @asm 0x4ED6D..0x4EDA1 */
+                    }
+                }
+                func_0082DC_logic_sz_118((uint16_t)col_any);    /* @asm 0x4EDA8 restore */
+
+                /* settling-conflict: any OTHER unit with orders 7 on the cell
+                 * or its 8 neighbours kills the cell (@asm 0x4EDB0..0x4EE23) */
+                {
+                    int16_t ok_8 = 1, k;
+                    for (k = 0; ok_8 != 0 && k < 9; k++) {      /* @asm 0x4EDC7/0x4EDCD */
+                        int16_t cy = (int16_t)((int8_t)DG8(0x00BE + k) + sy_1A);
+                        int16_t cx = (int16_t)((int8_t)DG8(0x00B4 + k) + sx_16);
+                        int cur = unit_tile_head(cx, cy);       /* @asm 0x4EDEE 0x7E0 */
+                        for (; cur >= 0; cur = unit_chain_next(cur)) { /* @asm 0x4EE0F */
+                            if (U_OFF(cur, U_ORDERS) == 7 &&    /* @asm 0x4EDFD */
+                                cur != unit_index)              /* @asm 0x4EE04 */
+                                ok_8 = 0;                       /* @asm 0x4EE0A */
+                        }
+                    }
+                    if (ok_8 == 0) continue;                    /* @asm 0x4EE1D */
+                }
+
+                /* native-settlement penalty (@asm 0x4EE26..0x4EF61) */
+                func_046056_nearest_settlement((uint16_t)sx_16, (uint16_t)sy_1A, -1);
+                                                                /* @asm 0x4EE30 */
+                if ((int16_t)DG16(0x8D4C) >= 0) {               /* @asm 0x4EE38 */
+                    int16_t reg2_5E = (int16_t)func_005E90_op_sz_64(
+                        DG8(DG16(0x8D4A) + 0), DG8(DG16(0x8D4A) + 1)); /* @asm 0x4EE4F */
+                    int16_t ndist = (int16_t)DG16(0x8DB8);      /* @asm 0x4EE5A */
+                    if (DG8(0x94E6 + owner*16 + reg2_5E) == 0)  /* @asm 0x4EE6A */
+                        ndist += 1;                             /* @asm 0x4EE71 */
+                    if (ndist < 6) {                            /* @asm 0x4EE75 */
+                        int16_t tier2 = (int16_t)func_008262_logic_sz_20(
+                            (uint16_t)func_0082A0_logic_sz_18(DG16(0x8D52),
+                                                              (uint16_t)owner));
+                                                                /* @asm 0x4EE86/0x4EE8F */
+                        int16_t base_6A = (int16_t)((DG8(DG16(0x8D4E) + 2)
+                                          + tier2 + 3) << 1);   /* @asm 0x4EE9B..0x4EEA7 */
+                        int16_t pen_D2;
+                        if (reg2_5E != region)                  /* @asm 0x4EEAD */
+                            base_6A >>= 1;                      /* @asm 0x4EEB2 sar */
+                        pen_D2 = (int16_t)(base_6A >> 1);       /* @asm 0x4EEB8 */
+                        if (ndist <= 4) pen_D2 += base_6A;      /* @asm 0x4EEBE */
+                        if (ndist <= 3) pen_D2 += (int16_t)(base_6A << 1); /* @asm 0x4EECB */
+                        if (ndist <= 2) pen_D2 += (int16_t)(base_6A << 2); /* @asm 0x4EEDA */
+                        if (ndist <= 1) pen_D2 += (int16_t)(base_6A << 3); /* @asm 0x4EEEA */
+                        if (DG8(DG16(0x8D4A) + 3) & 4)          /* @asm 0x4EEFE */
+                            pen_D2 <<= 1;                       /* @asm 0x4EF04 */
+                        if (owner == 1) pen_D2 >>= 1;           /* @asm 0x4EF08 sar */
+                        if (func_00BC10_ff_owned((uint16_t)owner, 0x10) != 0)
+                            pen_D2 >>= 1;                       /* @asm 0x4EF19/0x4EF25 */
+                        if (owner == 2) pen_D2 >>= 2;           /* @asm 0x4EF29 sar 2 */
+                        if (l_10 > 0x28) pen_D2 >>= 1;          /* @asm 0x4EF35 */
+                        pen_D2 -= (int16_t)DG8(0x9572 + owner*16 + reg2_5E);
+                                                                /* @asm 0x4EF49 */
+                        if (pen_D2 < 0) pen_D2 = 0;             /* @asm 0x4EF57 clamp */
+                        score_26 -= pen_D2;                     /* @asm 0x4EF61 */
+                    }
+                }
+                func_0081F2_logic_sz_34((uint16_t)settle_idx);  /* @asm 0x4EF68 restore */
+
+                /* bonuses + best tracking (@asm 0x4EF70..0x4EFDE) */
+                if (reassign != 0 && cls_4A >= 4) {             /* @asm 0x4EF70/0x4EF76 */
+                    if (DG8(0x94E6 + owner*16 + region) == 0)   /* @asm 0x4EF86 */
+                        score_26 += (int16_t)(score_26 >> 1);   /* @asm 0x4EF8D x1.5 */
+                    if (type == 0)                              /* @asm 0x4EF99 */
+                        score_26 <<= 1;                         /* @asm 0x4EFA0 */
+                    score_26 += (int16_t)(l_10 >> shift_DC);    /* @asm 0x4EFA3 sar cl */
+                    if (l_40 != 0)                              /* @asm 0x4EFAF */
+                        score_26 += 0x10;                       /* @asm 0x4EFB5 */
+                }
+                if (score_26 >= best_E0) {                      /* @asm 0x4EFBD jge */
+                    best_E0   = score_26;                       /* @asm 0x4EFC5 */
+                    bestcls_A = cls_4A;                         /* @asm 0x4EFCC */
+                    best_x_4C = sx_16;                          /* @asm 0x4EFD2 */
+                    best_y_5C = sy_1A;                          /* @asm 0x4EFD8 */
+                }
+            }
+        }
+
+        if (bestcls_A > 0) {                                    /* @asm 0x4F000 */
+            if (reassign != 0) {                                /* @asm 0x4F006 */
+                if (best_x_4C == map_x && best_y_5C == map_y) { /* @asm 0x4F010/0x4F019 */
+                    U_OFF(unit_index, U_ORDERS) = 7;            /* @asm 0x4F022 BUILD */
+                    return move_eval_tail_51C68(unit_index, owner); /* @asm 0x4F027 */
+                }
+                func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x32,
+                    (uint8_t)best_x_4C, (uint8_t)best_y_5C);
+                          /* @asm 0x4F02A..0x4F036 jmp into the 0x4E9E5 call:
+                           * '2', goto best site */
+                return move_eval_tail_51C68(unit_index, owner);
+            }
+            /* !reassign: enqueue neighbour-of-(stale)-dir into queue B
+             * (@asm 0x4F03A; dir_choice is 8 here -- the index reads the
+             * DGROUP bytes after the dx table, faithfully reproduced) */
+            func_04C404_ai_queue_b_find_or_insert((uint16_t)owner,
+                (uint16_t)((int8_t)DG8(0x00B4 + dir_choice) + map_x),
+                (uint16_t)((int8_t)DG8(0x00BE + dir_choice) + map_y),
+                6, 2);                                          /* @asm 0x4F05A */
+        }
+    }
+ai5_end:                                                        /* 0x4F060 */
+    /* ======================= AI6..AI18 (UNPORTED) ===========================
+     * Attack scoring, transport runs, exploration and pathing
+     * (0x4F078..0x51A28).  Until ported, "considered, no decision": fall to
+     * the exit tail exactly as the pre-port build did on every path. */
     return move_eval_tail_51C68(unit_index, owner);
 
 ai17_entry:                                                     /* 0x50F1E (UNPORTED) */
