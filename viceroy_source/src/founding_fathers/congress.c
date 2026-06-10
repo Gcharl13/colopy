@@ -72,14 +72,16 @@ extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 c
  *
  * A 6-WORD TABLE at DGROUP:0x96E8 (loaded from NAMES.TXT @FOUNDING section, cnt=6,
  * by func_0749E0 @asm 0x075109: word[i-0x6918] = overlay_call_1A1F_0B16()).
+ * Each word is a STRING HANDLE (text-table ID passed to str_fmt_int/str_cat).
  * Entries 0..4 are indexed by FF category in the congress row builder:
- *   @asm 03C1AE  push [si-0x6918]  where si = cat*2 (NOT ffsel*6 as previously noted).
- * Entry 5 at DGROUP:0x96F2 is used by func_03BA26 as a standalone text token.
- * Semantic: per-category value displayed in each congress dialog row (likely the
- * current bells-required threshold for that category's available FF). BYTE_VERIFIED
- * 2026-06-10 against overlay_0745F0_077A6A.c @asm 0x075109 and func_03BFD2.asm. */
+ *   @asm 03C1AE  push [si-0x6918]  where si = cat*2 (NOT ffsel*6 as earlier noted).
+ * Entry 5 at DGROUP:0x96F2 = g_str_96F2 ("unit-name string handle", overlay_038A50)
+ *   used by func_03BA26 (ff_format_name_row) as a standalone row text prefix.
+ * Semantic: per-category text strings shown in the congress dialog row builder.
+ * BYTE_VERIFIED 2026-06-10 against overlay_0745F0_077A6A.c @asm 0x075109,
+ * func_03BFD2.asm, and overlay_038A50_03C5A8.c (g_str_96F2 named there). */
 #define FF_MEM_BASE   0x9652   /* word[0]=handle, byte[2]=cat, byte[3..5]=era weights */
-#define FF_MEM2_BASE  0x96E8   /* 6-word FOUNDING table: [cat*2] = per-cat display value */
+#define FF_MEM2_BASE  0x96E8   /* 6-word FOUNDING string-handle table: [cat*2] = per-cat text */
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers. Call sites/args BYTE_VERIFIED; bodies in thunk page where
