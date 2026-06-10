@@ -57,3 +57,15 @@ PROVIDE(g_active_power     = g_dgroup + 0x5394);
 PROVIDE(g_in_europe_flag   = g_dgroup + 0x5382);
 PROVIDE(g_unit_stat        = g_dgroup + 0x5230);
 PROVIDE(g_units            = g_dgroup + 0x3144);
+/* world-turn integration pass (2026-06-10): tables the per-turn engines walk */
+PROVIDE(g_table_8F86_stride12 = g_dgroup + 0x8F86);
+PROVIDE(price_seed = g_dgroup + 0x53EA);
+PROVIDE(display_price = g_dgroup + 0x7B44);
+PROVIDE(cargo_col0 = g_dgroup + 0x97C0);
+PROVIDE(nation_name = g_dgroup + 0x7C74);
+PROVIDE(power_is_ai = g_dgroup + 0x543F);
+PROVIDE(g_market_year = g_dgroup + 0x538A);
+PROVIDE(g_market_phase = g_dgroup + 0x538E);
+PROVIDE(difficulty = g_dgroup + 0x53A6);
+PROVIDE(g_active_power_index = g_dgroup + 0x9E12);
+PROVIDE(g_cargo_param = g_dgroup + 0x96FC);

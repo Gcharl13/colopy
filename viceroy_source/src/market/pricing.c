@@ -18,6 +18,10 @@
 #include "viceroy_types.h"
 #include "power.h"
 #include "market.h"
+#ifdef _VICEROY_MODERN
+#include "dgroup.h"
+#define DG16_AT(off) DG16(off)
+#endif
 
 #define NUM_GOODS 16   /* @CARGO tradable count; loop bound CMP ...,0x10        */
 
@@ -65,7 +69,7 @@ typedef struct PowerRecord PowerRecord;  /* match the (PowerRecord*) cast conven
  *         base 0x8904 = PowerRecord+0xFC, inner stride j*0x13C + good*4)        [V] */
 #define PR_PRICE_LEVEL(p,g)  (*((unsigned char *)(p) + 0x4C + (g)))
 #define PR_VOL_ACCUM(p,g)    (*(short *)((char *)(p) + 0x5C + (g)*2))
-#define PR_GOLD(p)           (*(long  *)((char *)(p) + 0x2A))
+#define PR_GOLD(p)           (*(int32_t *)((char *)(p) + 0x2A))   /* 32-bit dword (NOT host long) */
 
 /* Per-good economic parameters — LOADED FROM NAMES.TXT @CARGO at game start by
  * cargo_table_load() below into DGROUP 0x96FC.  9 bytes/good, stride 9, base
@@ -100,8 +104,17 @@ extern long good_label_value(int good);                /* @asm near call 0x6D23 
  * ============================================================================ */
 void market_set_active(int power)
 {
+#ifdef _VICEROY_MODERN
+    /* modern: the DGROUP word [0x9E12] + a host pointer into g_dgroup
+     * (byte-equivalent to the DOS near-ptr store at [0x84FC]). */
+    extern uint8_t g_dgroup[];
+    DG16_AT(0x9E12) = (uint16_t)power;
+    DG16_AT(0x84FC) = (uint16_t)(0x8808 + power * 0x13C);
+    g_market = (PowerRecord *)(g_dgroup + 0x8808 + power * 0x13C);
+#else
     g_active_power_index = power;                 /* @asm 0x030556 -> 0x9E12 */
     g_market = (PowerRecord *)(0x8808 + power * 0x13C); /* @asm 0x030559-0x030560 */
+#endif
 }
 
 /* ============================================================================
@@ -146,7 +159,12 @@ void market_price_drift(int arg_mode, int good_filter)
 
         for (p = 0; p < 4; ++p) {                      /* @asm p=0 @0x0305C9; loop @0x0305F9 */
             /* PowerRecord[p].euro_supply[i]  (dword @ +0xFC)  @asm 0x0305CE-0x0305DC */
+#ifdef _VICEROY_MODERN
+            extern uint8_t g_dgroup[];
+            long h = *(int32_t *)(g_dgroup + 0x8808 + p * 0x13C + 0xFC + i * 4);
+#else
             long h = *(long *)((char *)(0x8808 + p * 0x13C) + 0xFC + i * 4);
+#endif
             if (h < 0) h = 0;                          /* @asm 0x0305E0-0x0305E8 (or dx,dx; clamp 0) */
             supply[i] += h;                            /* @asm 0x0305F0-0x0305F3 (add/adc) */
         }

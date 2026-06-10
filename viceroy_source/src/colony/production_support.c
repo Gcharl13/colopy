@@ -75,7 +75,7 @@ extern uint16_t g_8DC6;                   /* DGROUP:0x8DC6 */
  * @asm 0x8674/0x86AF/0x86DA/0x870D: MOV al, byte ptr [bx - 0x707a] with
  *      bx = (idx*3)<<2 = idx*12, and (0x10000-0x707a)=0x8F86.
  * Declared in globals.h as g_table_8F86_stride12[]. */
-#define g_chain_next(idx)  (g_table_8F86_stride12[(idx) * 12])
+#define g_chain_next(idx)  ((int8_t)g_table_8F86_stride12[(idx) * 12])  /* SIGNED per @asm 0x8679 CWDE */
 
 /* signed-byte table at DGROUP:0x2F4 — per-good "chain-start building id".
  * @asm 0x8DAE: MOV al, byte ptr [bx + 0x2f4]   (bytes 8A 87 F4 02) */

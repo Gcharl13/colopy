@@ -196,7 +196,8 @@ extern void colonist_remove(int slot);                 /* LCALL 0x181F:0xA9C →
 extern int  colonist_new(int arg);                     /* LCALL 0x181F:0xD1C → 0x27C6A  @asm 0x2DDFE (returns count) */
 extern int  ring_tile_profmatch(int a, int b);         /* LCALL 0x181F:0xA7E → 0x27CAC  @asm 0x2DDDD (find_pair-style) */
 extern int  ring_best_for_food(int a, int b);          /* LCALL 0x181F:0xCB8 → ovl      @asm 0x2E10E (returns yield+) */
-extern int  option_bit_test(int op, int arg);          /* LCALL 0x181F:0x4D4 → 0x27DB2  @asm 0x2D731-style (returns nonzero) */
+extern int  option_bit_test(int op, int arg);
+extern int dewitt_liberty_handler(int slot);   /* 0x181F:0xCFE (de Witt liberty) */          /* LCALL 0x181F:0x4D4 → 0x27DB2  @asm 0x2D731-style (returns nonzero) */
 extern int  option_bit_test1(int op);                  /* LCALL 0x181F:0x4CA → 0x27DAC  @asm 0x2E192 */
 extern void colony_audio_or_blink(int arg);            /* LCALL 0x181F:0x4B6 → 0x22374  @asm 0x2E1F4 */
 extern void colony_audio_or_blink2(int arg);           /* LCALL 0x181F:0x4AC → 0x22340  @asm 0x2E24F/0x2E271 */
@@ -294,10 +295,23 @@ void colony_sol_tory_turn(int colony_id)
      * For each commodity slot the colony OVER-PRODUCED past 100 (0x64), the
      * excess (stock - 50) is taxed+scored and the colony's liberty term reduced.
      * ====================================================================== */
-    for (i = 0; i < 0x10; i++) {                            /* @asm 0x2D6D1 init; 0x2D8E8 CMP 0x10/JL */
+    /* STRUCTURE CORRECTED 2026-06-10 (byte-anchored against func_02D658.asm):
+     * phases 1 and 2 are ONE INTERLEAVED LOOP in the original, not two
+     * sequential for-loops.  Entry jumps straight to the i<16 compare
+     * (@0x2D6D5 JMP 0x2D8E8), whose taken edge enters the PRESSURE body
+     * (@0x2D8F2 = old "phase 2"); the SETTLE body (@0x2D6D8 = old "phase 1")
+     * is reached from the pressure body's owner/flags branches; both
+     * converge at the shared tail (@0x2D877) that advances i.  The previous
+     * two-loop split also made phase-2's `goto skip_commodity` re-enter a
+     * foreign loop (C UB, infinite on the un-owned-FF path). */
+    {
         int over;                                           /* [bp-8] */
+        i = 0;                                              /* @0x2D6D1 */
+        goto loop_cmp;                                      /* @0x2D6D5 JMP 0x2D8E8 */
 
+    phase1_settle:                                          /* @0x2D6D8 */
         over = colony_query(i, 0 /*CS-near 0x2EF55→helper*/);/* @asm 0x2D6DD CALL cs:0x2455 (over-100 amount) */
+    phase1_after_call:                                      /* @0x2D6E0 (the de-Witt path re-enters here with over = handler result) */
         if (over == 0) goto skip_commodity;                 /* @asm 0x2D6E6 OR/JE → 0x2D877 */
 
         if ((int)ctx->stockpile_9a[i] < 0x64) goto skip_commodity; /* @asm 0x2D6F7 CMP [bx+si+0x9A],0x64/JL */
@@ -352,16 +366,13 @@ void colony_sol_tory_turn(int colony_id)
         if (g_global_amount[i] != 0) {                      /* @asm 0x2D8BA CMP [bx-0x7238],0/JE (bx=i*2 → 0x8DC8) */
             /* @asm 0x2D8D3..0x2D8E0 OR [bx+0x90], (1<<i) */
         }
-    }
+        i++;                                                /* @0x2D8E4 */
 
-    /* ========================================================================
-     * PHASE 2 — per-commodity (0..15) liberty PRESSURE redistribution.
-     * @asm 0x2D8F2..0x2D9D3  Each commodity slot's stock is nudged by a
-     * liberty/era/difficulty term and clamped >= 0; an FF op-0x12 (de Witt)
-     * gate (@asm 0x2D980 LCALL 0x181F:0x9FC) skips colonies whose owner is a
-     * fully-controlled non-active power.
-     * ====================================================================== */
-    for (i = 0; i < 0x10; i++) {                            /* @asm 0x2D8D5/0x2D8E8 -> body 0x2D8F2 */
+    loop_cmp:
+        if (i >= 0x10) goto phase3;                         /* @0x2D8E8 JL 0x2D8F2 / @0x2D8EF JMP 0x2D9D6 */
+
+        /* ---- PRESSURE body (@0x2D8F2; the old "phase 2") ---- */
+        {
         int snap = (int)ctx->stockpile_9a[i];               /* @asm 0x2D8FC → [bp+si-0xAC] pre-turn snapshot */
         int term = colony_query(i, 0);                      /* @asm 0x2D90A LCALL 0x181F:0xB50 → [bp-0x84] */
         (void)snap;
@@ -377,12 +388,22 @@ void colony_sol_tory_turn(int colony_id)
             ctx->stockpile_9a[i] = 0;                       /* @asm 0x2D97A SUB ax,ax */
 
         if (!option_bit_test(0x12, 0 /* via 0x181F:0x9FC */)) /* @asm 0x2D980 PUSH 0x12; LCALL 0x181F:0x9FC */
-            goto skip_commodity; /* (re-uses Phase-1 exit at 0x2D877 in original) */ /* @asm 0x2D98E JMP 0x2D877 */
+            goto skip_commodity;                            /* @asm 0x2D98E JMP 0x2D877 (the shared tail) */
 
-        /* siege/blockade & active-power re-check (@asm 0x2D991..0x2D9C7) decide
-         * whether to recompute (jump back to 0x2D6D8) or fall through to the
-         * de-Witt liberty handler (@asm 0x2D9CA LCALL 0x181F:0xCFE). */
+        /* branch ladder @0x2D991..0x2D9D3 (byte-anchored 2026-06-10): */
+        if ((((uint8_t *)ctx)[0x1B] & 3  /* SoL/Tory latch byte +0x1B */) &&                       /* @0x2D995 TEST [bx+0x1B],3 */
+            owner < 4 &&                                    /* @0x2D99B CMP,4/JGE */
+            g_power_records[owner][0] == 0)                 /* @0x2D9A7 human */
+            goto skip_commodity;                            /* @0x2D9AE JMP 0x2D877: SoL/Tory-marked human colony skips the settle */
+        if (owner >= 4)                                     /* @0x2D9B1 CMP,4/JL */
+            goto phase1_settle;                             /* @0x2D9B8 JMP 0x2D6D8 */
+        if (g_power_records[owner][0] != 0)                 /* @0x2D9C0 AI? */
+            goto phase1_settle;                             /* @0x2D9C7 JMP 0x2D6D8 */
+        over = dewitt_liberty_handler(i);                   /* @0x2D9CA PUSH i; LCALL 0x181F:0xCFE */
+        goto phase1_after_call;                             /* @0x2D9D3 JMP 0x2D6E0 (ax = handler result becomes `over`) */
+        }
     }
+phase3: ;
 
     /* ========================================================================
      * PHASE 3 — Sons-of-Liberty / Tory percentage update + status messages.

@@ -291,7 +291,12 @@ static void end_turn(void)
     mainloop_pick_next_unit();
     if ((int16_t)DG16(0x5392) < 0) {             /* rotation exhausted */
         unit_turn_advance(1);                    /* autumn step (season=1) */
-        mainloop_finish_rotation();              /* refresh moves + year++ */
+        {   /* the WORLD STEP: census + colonies + market drift + REF
+             * (runtime/game_turn.c -- each engine byte-verified) */
+            extern void viceroy_world_autumn(void);
+            viceroy_world_autumn();
+        }
+        mainloop_finish_rotation();              /* refresh unit moves */
     }
 }
 
@@ -591,8 +596,11 @@ static int shell_loop(void)
 
 int main(int argc, char **argv)
 {
-    (void)argc; (void)argv;
     printf("viceroy_modern\n");
+    int smoke_turns = 0;
+    for (int ai = 1; ai < argc; ai++)
+        if (!strncmp(argv[ai], "--smoke", 7))
+            smoke_turns = argv[ai][7] == '=' ? atoi(argv[ai] + 8) : 4;
 
     dgroup_init();
     const char *env = getenv("VICEROY_DATA");
@@ -634,6 +642,11 @@ int main(int argc, char **argv)
         printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
         extern void viceroy_init_text_ctx(int);
         viceroy_init_text_ctx(g_font.maxh);   /* ctx byte0+1 = line height */
+    }
+
+    if (smoke_turns > 0) {
+        extern int viceroy_world_smoke(int);
+        return viceroy_world_smoke(smoke_turns);
     }
 
     /* exercise the real byte-traced title logic once regardless of video */
