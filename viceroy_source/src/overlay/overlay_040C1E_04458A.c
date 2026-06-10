@@ -1572,7 +1572,7 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
         clamp_add_byte(&DG8(player - 0x6BF0 /*0x9410*/), DG8(G_COLONY_PTR + 0x1F));  /* @0x042561 */
         clamp_add_byte(&DG8(player - 0x6BF4 /*0x940c*/), DG8(G_COLONY_PTR + 0x1F));  /* @0x042573 */
         if (home >= 0)
-            clamp_add_byte(&DG8(home + player * 16 - 0x6B1A /*0x9526*/),
+            clamp_add_byte(&DG8(home + player * 16 - 0x6B1A /*0x94E6, NOT 0x9526*/),
                            DG8(G_COLONY_PTR + 0x1F));           /* @0x042595 */
         DG8(G_COLONY_PTR + 0x1B) &= 0xFC;           /* @0x04268C clear SoL/Tory  */
     }

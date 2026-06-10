@@ -1289,19 +1289,23 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      *   [bp-0x20] = hostile_count  (foreign regions that beat own strength)
      *   [bp-0x36] = at_war_count   (regions of powers at war with us)
      *
-     * Sweep A (@asm 0x04DD18..0x04DDA7, own_region 0..3):
-     *   for each foreign power p (0..3, p != power):
-     *     own_str  = byte[region<<4 + p - 0x6ADA]   (own strength in that region)
-     *     own_cnt  = byte[region<<4 + p - 0x6B1A]   (own unit count)
-     *     [bp-0x154] += own_str; [bp-0x1E0] += own_cnt
-     *     if p == power: skip
-     *     if own_cnt==0 AND byte[region<<4+p-0x6B5A]==0: skip
+     * Sweep A (@asm 0x04DD18..0x04DDA7, p = 0..3 powers; INDEX ORDER FIXED
+     * 2026-06-10: asm @0x04DD2A is bx = p<<4 + region — POWER-major
+     * [p*16+region], matching the census writer in overlay_040C1E_04458A.c;
+     * the earlier "region<<4 + p" reading had the operands swapped):
+     *   for each power p (0..3):
+     *     p_str  = byte[p<<4 + region - 0x6ADA]   (p's settled units there, 0x9526)
+     *     p_cnt  = byte[p<<4 + region - 0x6B1A]   (p's population sum, 0x94E6)
+     *     [bp-0x154] += p_str; [bp-0x1E0] += p_cnt   (totals incl. self)
+     *     if p == power: skip                         (@0x04DD47)
+     *     if p_cnt==0 AND byte[p<<4+region-0x6B5A]==0: skip  (no presence)
      *     call 0x181F:0xA38 (war_state p, power):
      *       if (al & 0x60) == 0x20 → skip (non-hostile)
      *       call 0x181F:0xA38 (war_state power, p):
      *         if (al & 0x48) == 0x40 → skip (not at war)
-     *     compare foreign str byte[region<<4+p-0x6E74] vs own:
-     *       if foreign_str > own_str OR own_cnt > 0: at_war_count++
+     *     compare own byte[power<<4+region-0x6E74] vs p's (0x918C census):
+     *       if p's >= own AND own pop[power<<4+region-0x6B1A] > 0:
+     *           at_war_count++  (@asm jmp 0x04DD18)
      *       else: hostile_count++ (@asm 0x04DDA1)
      *
      * Sweep B (@asm 0x04DDB0..0x04DE47, alliance region 4..0xB):

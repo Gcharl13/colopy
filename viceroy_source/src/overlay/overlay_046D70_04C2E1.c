@@ -2388,7 +2388,11 @@ int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
  * this extent: "WAREHOUSEFULL" @0x4ACCC, "MERCS" @0x4AB18, "INDIANSURPRISE"
  * @0x4AE58 (the latter on the surprise/ambush sub-branch).
  *
- * Args: arg0=[bp+6] unit index; arg1=[bp+8] commodity; arg2=[bp+0xA] qty/value.
+ * Args: arg0=[bp+6] unit index; arg1=[bp+8] EUROPEAN POWER index (CORRECTED
+ *   2026-06-10 — was mislabeled "commodity": arg1 is cmp'd <4 and gated on the
+ *   per-power human flag [arg1*0x34+0x543F] @0x04ACAA, indexes the per-power
+ *   AIPersonality word [arg1*2+0x540E] @0x04AD8B, and is the power arg of
+ *   0x181F:0x30C(tribe,power) @0x04AC28); arg2=[bp+0xA] qty/value.
  * Locals: ux=[bp-0x18]; uy=[bp-0x1E]; region=[bp-6]; base=[bp-0x2A];
  *   demand=[bp-0x1A]; supply=[bp-0x20]; diff1=[bp-0x24]; won=[bp-0x28];
  *   target=[bp-0x26]; buf=[bp-0x16] (16-byte stockpile scratch); qtyOut=[bp-2];
@@ -2397,9 +2401,10 @@ int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
  * @asm 0x04AC05  ux = unit[+0x3144] ; uy = unit[+0x3145]                 ; unit map x,y
  * @asm 0x04AC1B  region = 0x181F:0x0722(ux, uy)                          ; village/region id
  * @asm 0x04AC28  base = 0x181F:0x030C(arg1, cur_pow)                     ; per-power base value
- * @asm 0x04AC3A  demand = [region + arg1*16 - 0x6A4E] + ([arg1*2 - 0x6BE4] >> 1)  ; demand tables
- * @asm 0x04AC59  if arg1 == 2: demand += demand>>1                       ; sugar ×1.5
- * @asm 0x04AC67  if event_active(0x0A, arg1): demand += demand>>1        ; 0x181F:0x07B4
+ * @asm 0x04AC3A  demand = census_cargo_95B2[arg1*16 + region]            ; power's coastal cargo
+ *                         + (census_finance_941C[arg1] >> 1)             ;   + half its finance word
+ * @asm 0x04AC59  if arg1 == 2: demand += demand>>1                       ; POWER 2 ×1.5 (not "sugar")
+ * @asm 0x04AC67  if 0x181F:0x07B4(arg1, 0x0A): demand += demand>>1       ; power-attribute bit 10
  * @asm 0x04AC80  supply = (([region + cur_pow*16 - 0x6E34] + ([cur_pow-0x6E7C]>>1)) << 1)
  * @asm 0x04ACA0           + (base >> 1)                                  ; supply tables
  * @asm 0x04ACAA  diff1 = (arg1<4 && [arg1*0x34+0x543F]==0) ? difficulty+1 : 1   ; human bias
@@ -2443,17 +2448,21 @@ extern int  ovly_5443_trade_finalize(void); /* near cs:0x5443 (file 0x04BA43) ->
                                              * Recomputes the production array DS:0x9E78 so the
                                              * 0x191F:0xED0 snapshot copies fresh data.
                                              * Binary verified: file 0x04BA43 = EA 34 04 1F 1A. */
-/* DGROUP tables read DS-relative (base = 0x10000 - disp):
- *   0x95B2 ([bx+si-0x6A4E]) per-(region,commodity) byte, region + commodity*16;
- *   0x941C ([bx-0x6BE4])   per-commodity word;
- *   0x91CC ([bx+si-0x6E34]) per-(region,power) byte, region + power*16;
- *   0x9184 ([bx-0x6E7C])   per-power byte;
- *   0x97C0 ([si-0x6840])   per-commodity word (post-trade);
+/* DGROUP tables read DS-relative (base = 0x10000 - disp).  IDENTITIES CORRECTED
+ * 2026-06-10 against the census writer (overlay_040C1E_04458A.c) and the raw
+ * operands in func_04AC00.asm (power-major [entity*16 + region] indexing):
+ *   0x95B2 ([bx+si-0x6A4E]) AI census: power's coastal-cargo byte [power*16+region]
+ *                           (written @0x0423C1; same matrix as meeting.c attitude);
+ *   0x941C ([bx-0x6BE4])   AI census: per-POWER finance word (written @0x042245);
+ *   0x91CC ([bx+si-0x6E34]) per-(TRIBE,region) byte [tribe*16+region]
+ *                           (si = [0x8D52]<<4 @0x04AC80 — tribe-major);
+ *   0x9184 ([bx-0x6E7C])   per-TRIBE byte (bx = [0x8D52] @0x04AC90);
+ *   0x97C0 ([si-0x6840])   per-commodity word (@CARGO col-0 handles, see pricing.c);
  *   0x9E96 word (production scale). */
-extern uint8_t  g_trade_demand_95B2[];      /* DGROUP:0x95B2 (= 0x10000-0x6A4E) [region + commodity*16] */
-extern uint16_t g_trade_demand_w_941C[];    /* DGROUP:0x941C (= 0x10000-0x6BE4) [commodity] */
-extern uint8_t  g_trade_supply_91CC[];      /* DGROUP:0x91CC (= 0x10000-0x6E34) [region + power*16] */
-extern uint8_t  g_trade_supply_b_9184[];    /* DGROUP:0x9184 (= 0x10000-0x6E7C) [power] */
+extern uint8_t  g_trade_demand_95B2[];      /* DGROUP:0x95B2 (= 0x10000-0x6A4E) census coastal cargo [power*16+region] */
+extern uint16_t g_trade_demand_w_941C[];    /* DGROUP:0x941C (= 0x10000-0x6BE4) census finance word [power] */
+extern uint8_t  g_trade_supply_91CC[];      /* DGROUP:0x91CC (= 0x10000-0x6E34) [tribe*16 + region] */
+extern uint8_t  g_trade_supply_b_9184[];    /* DGROUP:0x9184 (= 0x10000-0x6E7C) [tribe] */
 extern uint16_t g_trade_after_97C0[];       /* DGROUP:0x97C0 (= 0x10000-0x6840) [commodity] */
 extern uint16_t g_prod_scale_9E96;          /* DGROUP:0x9E96 — production scale word */
 

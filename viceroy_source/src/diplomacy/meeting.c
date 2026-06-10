@@ -46,10 +46,12 @@
  *     [PR-0x77C6]/[PR-0x77C5] -> unit +0x314D/+0x314E).
  *
  * WHAT IS NOT YET PROVEN (tagged inline, never guessed):
- *   - The exact semantics of the big attitude-accumulator loop (local
- *     [bp-0x66]); the constituent table reads (0x6A4E, 0x6B1A, 0x6BD4, 0x6BE4,
- *     0x5236, 0x5DE0, 0x942C/0x941C) and difficulty scaler [0x53A6] are cited
- *     literally but their *meaning* is not all decoded.  The numeric thresholds
+ *   - RESOLVED 2026-06-10: the attitude-accumulator loop #1 tables are the AI
+ *     census matrices byte[4][16] (-0x6A4E=coastal cargo, -0x6B1A=population,
+ *     -0x6ADA=settled units, -0x6B5A=unit count; writer in
+ *     overlay_040C1E_04458A.c) — see the section-3 block in diplomacy_meeting.
+ *     Still open: loop #2 colony-trade weights and the scalar tables
+ *     (0x6BD4, 0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).  The numeric thresholds
  *     (e.g. score>100 -> PROVOKE) are byte-cited constants, not invented.
  *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6: RUNTIME_ONLY
  *     (C-runtime __aFldiv 32-bit long divide; body in segment 0x0D1D, not in load image).
@@ -332,14 +334,36 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      * (Greeting STRING composition happens later at the 0x258C block.) */
 
     /* ---- 3. ATTITUDE-SCORE ACCUMULATOR (the AI relationship estimate) -------
-     * @asm 0x1DEA..0x1F01: a 15-iteration loop (cmp [bp-0xca],0xf) over some
-     *      per-power item table.  Each iteration reads bytes at -0x6A4E,
-     *      -0x6B1A, -0x6ADA (indexed by power<<4 + i) and folds a difference
-     *      into score ([bp-0x66]) and a secondary accumulator [bp-0xcc],
-     *      shifting by (1 or 2) depending on whether [0x53A6] (difficulty) == 1.
-     * not yet decoded: the precise economic meaning of these tables (holdings vs. demand).
-     *      Transcribed faithfully but NOT interpreted. */
-    /* [attitude loop #1 — see @asm 0x1DEA..0x1F14; folds into `score`] */
+     * DECODED 2026-06-10 (BYTE_VERIFIED against func_057F4E.asm file
+     * 0x05809A..0x0581C4).  The "per-power item tables" are the per-turn AI
+     * CENSUS MATRICES — byte[4 powers][16 regions], player-major stride 16,
+     * rebuilt each turn by the census pass in overlay_040C1E_04458A.c and
+     * saved as six 0x40 blocks (save_serializer.c @0x94A6/0x94E6/0x95B2/...):
+     *   0x94A6 (-0x6B5A)  unit count     (+1 per land unit homed in region @0x04228D)
+     *   0x94E6 (-0x6B1A)  population sum (+= colony[+0x1F] per colony  @0x042595)
+     *   0x9526 (-0x6ADA)  settled units  (+1 per unit in a settlement  @0x0422D5)
+     *   0x95B2 (-0x6A4E)  coastal cargo  (+= cargo value of coastal non-REF
+     *                                     units @0x0423C1 — "exposed wealth")
+     *
+     * Loop: for region i = 0..14 ([bp-0xca], cmp 0xF @file 0x0581AC):
+     *  presence threshold t = (colony_count(other)[other-0x6D68] > 1) ? 1 : 0
+     *                                              @file 0x0581B6/0x0581C0
+     *  1. VULNERABLE-CARGO term (secondary acc [bp-0xcc], @0x0580A3..0x0580DC):
+     *     if pop[other][i] > t  AND  units[other][i] < cargo[self][i]:
+     *       [bp-0xcc] += (cargo[self][i] / (units[other][i]+1))
+     *                       << (difficulty==0 ? 2 : 1)      @0x0580CD..0x0580DA
+     *     (self's coastal wealth poorly covered by other's units there.)
+     *  2. CONTACT FLAGS (@0x0580E4..0x058126):
+     *     if cargo[self][i] && cargo[other][i]            -> want_action = 1
+     *     if cargo[other][i] && settled[self][i] > 4      -> want_action = 1
+     *  3. SCORE FOLD (@0x058128..0x0581A5), score [bp-0x66] +=
+     *     pop[self][i]>0 && pop[other][i]>1 :  cargo[other][i]-cargo[self][i]
+     *     pop[self][i]>0 && pop[other][i]<=1:  cargo[other][i]
+     *     pop[self][i]==0:  (cargo[other][i]-cargo[self][i])
+     *                          >> (pop[other][i]>=1 ? 1 : 2)
+     * Net: score ~= per-region (other's exposed coastal wealth - self's),
+     * weighted by population presence — the AI's envy/oppportunity estimate. */
+    /* [attitude loop #1 — @asm 0x1DEA..0x1F14 = file 0x05809A..0x0581C4; above] */
 
     /* @asm 0x1F2A..0x1FF6: a second loop bounded by [0x539E] over the colony
      *      record at [0x8542]; matches owner self/other, accumulates trade /
@@ -545,8 +569,11 @@ present_screen:
  *
  * call sites + args verified; numeric meaning not yet decoded — never
  * guessed:
- *   - The attitude-score accumulator's per-table economics (tables at -0x6A4E,
- *     -0x6B1A, -0x6ADA, -0x6BD4, -0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).
+ *   - Attitude tables RESOLVED 2026-06-10: -0x6A4E/-0x6B1A/-0x6ADA/-0x6B5A are
+ *     the AI census matrices byte[4][16] (coastal cargo / population / settled
+ *     units / unit count; writer overlay_040C1E_04458A.c, saved as 0x40 blocks).
+ *     Still open: the scalar per-power tables -0x6BD4, -0x6BE4 (finance words),
+ *     0x5236 (prod table column), 0x5DE0 (market — see tax_apply.c), 0x942C/0x941C.
  *   - diplo_scale_181F_035C: RESOLVED 2026-06-08 — pure clamp(v, lo, hi).
  *   - gold_scale_0D1D_0EC6 (0x0D1D:0xEC6): RUNTIME_ONLY — C-runtime __aFldiv 32-bit
  *     long divide (body in segment 0x0D1D); cross-ref production_support.c / sol_tory.c.

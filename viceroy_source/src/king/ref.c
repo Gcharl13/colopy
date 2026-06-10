@@ -46,7 +46,9 @@ extern void *   g_king_record_84FC;    /* DGROUP:0x84FC — far ptr to king Powe
  *
  * (Just before this, file 0x075671 zeroes the 4-word REF array and the
  *  adjacent 0x53E2 array; file 0x075645 fills a 16-word table @0x53EA with
- *  random_int(0x258,0x3E8) = random(600,1000) — purpose not yet decoded.)
+ *  random_int(0x258,0x3E8) = random(600,1000).  RESOLVED: 0x53EA is the
+ *  market price_seed[16] — per-good base European supply seed, read by the
+ *  market drift @0x0305B3 and decayed @0x030639; see src/market/pricing.c.)
  *
  * Initial REF by difficulty (Discoverer..Viceroy, d = 0..4):
  *   d=0:  Reg=15  Cav=5   Art=2   MoW=2
