@@ -1512,6 +1512,23 @@ ovl6+0x342 = 0x3BC42 = **func_03BC42 (ff_acquire_dispatch)** — the congress
 "ff_log_notify" thunk is the FF acquisition dispatch itself; 0x191F:0x182 →
 0x6F0F4 (dlg_open, ENTER 0x168); 0x191F:0xED0 → resident 0x0F38A.
 
+**DIALOG/MENU PIPELINE bound to bodies (2026-06-10):**
+`ui_dialog_show` (0x1A1F:0x688) = func_06F61C = menu.c opt_set_field_c
+([0x1F60]=partner power, then menu_lookup_run func_06F51A) → dlg_open
+0x191F:0x182 = func_06F0F4 (text_template_run) → modal run 0x191F:0x16A =
+func_06E3D0 (panel_run_modal, returns 1-based choice) → free 0x191F:0x1A8
+(ovl 31 ≈0x7832E, AMBIG).  Add-option 0x191F:0x176 = func_06C850.  Return
+convention 0/1/2 CONFIRMED for all dialog decodes (tax_apply, meeting, …).
+Diplomacy overlay-15 trampoline targets all resolved on prologues:
+0x1A1F:0x618=func_057A3A (option builder, DECODED: "GREAT"+modifier →
+names_open_section(0x87C) → msg %arg), 0x642=func_057AA2 ("MEEKNESS" variant),
+0x60A=func_057CE0 (relation tag), 0x65E=func_057DC0 (native meeting),
+0x67A=func_057AFC (relation predicate).  0x191F:0xFB8 = ovl-24 module entry
+0x78644 (NAMES parser close; frameless 53 57 56 entry).
+func_06C254 (0x191F:0xAC8) decoded: format pair via resident 0x181F:0x42E
+(file 0x08074) into a stack buf, then msg_set_ptr(slot, ss:buf) via the
+0x6F7EA trampoline (= 0x181F:0x416 = func_06C220).
+
 **SEGMAP BASE CORRECTIONS (2026-06-10):** `overlay_segmap.json` bases are
 usually right but NOT always — two corrected by independent two-anchor fits:
   - overlay 21: true base **0x67080** (segmap said 0x66850 "STRONG").  Anchors:

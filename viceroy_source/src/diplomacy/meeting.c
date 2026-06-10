@@ -226,27 +226,61 @@ extern void    ui_set_long_arg(int hi, int lo, int idx);       /* 0x181F:0x09AE 
  * near pointer to a composed buffer OR a bare message-key handle (both forms
  * appear in the disasm: `push &buf` vs `push 0x1930`).  Returns the player's
  * choice code (1 = accept/yes, 2 = the alternate "accept" used by the topic
- * exchanges; 0 = dismiss).  Modelled as int to match the raw 16-bit push. */
+ * exchanges; 0 = dismiss).  Modelled as int to match the raw 16-bit push.
+ * BODY RESOLVED 2026-06-10 (func_06F61C, 24 bytes, BYTE_VERIFIED): it is
+ * src/ui/menu.c opt_set_field_c — stores the partner power into the dialog-
+ * context global [0x1F60], then tail-calls menu_lookup_run (func_06F51A) with
+ * ax=key, dx=0, bx=0x87C (the option-descriptor table).  menu_lookup_run is
+ * the OPEN→RUN→FREE driver:
+ *   handle = dlg_open(0x87C, key)        ; 0x191F:0x182 = func_06F0F4
+ *   if (!handle) return 0;               ; ← the 0 = dismiss/fail case
+ *   choice = panel_run_modal(handle)     ; 0x191F:0x16A = func_06E3D0
+ *   dlg_free(handle)                     ; 0x191F:0x1A8 (ovl 31, AMBIG base)
+ *   return choice                        ; 1-based option index
+ * This CONFIRMS the 1/2 return-convention used by every dialog decode (e.g.
+ * tax_apply.c boycott `dlg_result == 2`), closing follow-up trace #2 below. */
 extern int     ui_dialog_show(int power_other, int key_or_strptr);
 
 /* cs:0x3FXX are a near-call FAR-JUMP TRAMPOLINE table at file 0x05A1D6
  * (a block of `ljmp 0x1A1F:NNN` / `ljmp 0x181F:NNN`).  CS base of page 0x0F is
  * 0x562B0 (file 0x057DC0 == cs-off 0x1B10).  Resolved (targets re-derived
- * 2026-06-10 via the RTLink thunk rule — see VERIFICATION_LEDGER.md):
+ * 2026-06-10 via the RTLink thunk rule — see VERIFICATION_LEDGER.md; ALL land
+ * on clean prologues inside overlay 15, this function's own overlay):
  *   cs:0x3F26 -> ljmp 0x181F:0x550 -> func_056B08 = score_and_rank_four_powers
  *                (overlay_054505_05C69B.c, already ported BYTE_VERIFIED!);
  *                the meeting setup ranks the four powers before scoring.
- *   cs:0x3F30 -> ljmp 0x1A1F:0x60A   (per-side relation tag on treaty SET)
- *   cs:0x3F35 -> ljmp 0x1A1F:0x618 -> func_057A3A (build a dialog OPTION line)
+ *   cs:0x3F30 -> ljmp 0x1A1F:0x60A -> func_057CE0 (ENTER 0xE; per-side relation
+ *                tag on treaty SET)
+ *   cs:0x3F35 -> ljmp 0x1A1F:0x618 -> func_057A3A (option-line builder, DECODED
+ *                2026-06-10 — see diplo_opt below)
  *   cs:0x3F3F -> ljmp 0x1A1F:0x634 -> func_056A10 (colony adjacency probe, §3b)
- *   cs:0x3F44 -> ljmp 0x1A1F:0x642   (build dialog option, bool variant)
- *   cs:0x3F4E -> ljmp 0x1A1F:0x65E   (native-meeting sub-path, early-out branch)
- *   cs:0x3F58 -> ljmp 0x1A1F:0x67A   (relation predicate, used by treaty.c)
+ *   cs:0x3F44 -> ljmp 0x1A1F:0x642 -> func_057AA2 (ENTER 0x56; "MEEKNESS"-prefix
+ *                variant of the option builder — see diplo_opt_if below)
+ *   cs:0x3F4E -> ljmp 0x1A1F:0x65E -> func_057DC0 (native-meeting sub-path)
+ *   cs:0x3F58 -> ljmp 0x1A1F:0x67A -> func_057AFC (ENTER 0xC; relation
+ *                predicate, used by treaty.c)
  * VERIFIED: trampoline bytes at 0x05A1D6 are EA <off> <seg> far-jumps. */
-extern void diplo_opt(int key, char *buf);            /* cs:0x3F35 -> 0x1A1F:0x618 */
-extern void diplo_opt_if(int cond, int idx);          /* cs:0x3F44 -> 0x1A1F:0x642 */
-extern void diplo_relation_tag(int a, int b);         /* cs:0x3F30 -> 0x1A1F:0x60A */
-extern void diplo_native_meeting(int self, int other);/* cs:0x3F4E -> 0x1A1F:0x65E */
+
+/* diplo_opt — func_057A3A DECODED 2026-06-10 (BYTE_VERIFIED, 103 bytes):
+ *   strcpy(buf, ds:0x187E)            ; 0x0D1D:0x7E4 — prefix = "GREAT"
+ *                                       (string handle 0x187E -> file 0x1F21E)
+ *   strcat(buf, arg[bp+8])            ; 0x0D1D:0x7A4 — append modifier key text
+ *   ptr = buf;
+ *   if (names_open_section(0x87C, buf) == 0)       ; 0x191F:0x928
+ *       for (i = 0; i <= arg[bp+0xA]; i++)
+ *           ptr = names_next_record();             ; 0x191F:0x91C — walk to the
+ *                                                  ;   arg-selected numbered entry
+ *   str_msg_set_ptr(arg[bp+6], ds:ptr);            ; 0x181F:0x416
+ *   names_close(); return;                         ; 0x191F:0xFB8 (= ovl-24 module
+ *                                                  ;   entry 0x78644, parser close)
+ * i.e. compose key "GREAT<modifier>", look it up in the 0x87C section table,
+ * optionally select the Nth record, and bind the text to message %arg slot.
+ * This closes follow-up trace #1.  func_057AA2 (diplo_opt_if) is the sibling
+ * with prefix handle 0x1884 = "MEEKNESS" (file 0x1F224). */
+extern void diplo_opt(int key, char *buf);            /* cs:0x3F35 -> 0x1A1F:0x618 -> func_057A3A */
+extern void diplo_opt_if(int cond, int idx);          /* cs:0x3F44 -> 0x1A1F:0x642 -> func_057AA2 */
+extern void diplo_relation_tag(int a, int b);         /* cs:0x3F30 -> 0x1A1F:0x60A -> func_057CE0 */
+extern void diplo_native_meeting(int self, int other);/* cs:0x3F4E -> 0x1A1F:0x65E -> func_057DC0 */
 
 /* String concat/format helpers in the 0x0D1D overlay (load-image text lib). */
 extern void str_set(int key, char *buf);              /* 0x0D1D:0x07E4 (set buf = key text) */
@@ -640,12 +674,13 @@ present_screen:
  *   - Exact field roles of UnitRecord +0x314D/+0x314E written on transfer.
  *
  * Three tractable follow-up traces (each one cited entry point):
- *   1. Decode 0x1A1F:0x0618 = func_057A3A (file 0x57A3A, ENTER 0x54; target
- *      CORRECTED 2026-06-10 — see thunk note in the function header above) =
- *      the dialog OPTION builder, to learn how "key + modifier" composes a
- *      numbered choice.
- *   2. Decode 0x1A1F:0x0688 = func_06F61C (file 0x6F61C; target CORRECTED
- *      2026-06-10) = the dialog show, to confirm the return-code convention
- *      (1=accept / 2=alt as used above).
+ *   1. (DONE 2026-06-10) 0x1A1F:0x0618 = func_057A3A — option builder decoded:
+ *      strcpy(buf,"GREAT") + strcat(modifier) -> names_open_section(0x87C, buf),
+ *      walk N records, bind text to msg %arg.  See the diplo_opt block above.
+ *   2. (DONE 2026-06-10) 0x1A1F:0x0688 = func_06F61C — dialog show decoded:
+ *      [0x1F60]=power then menu_lookup_run (open/run/free); returns 0 on fail
+ *      else the 1-based chosen option from panel_run_modal (func_06E3D0).
+ *      Return convention 1=accept / 2=alt CONFIRMED.  See ui_dialog_show above
+ *      and src/ui/menu.c.
  *   3. (DONE 2026-06-08) 0x181F:0x035C = pure clamp(v, lo, hi) at file 0x0048CC.
  * ============================================================================ */

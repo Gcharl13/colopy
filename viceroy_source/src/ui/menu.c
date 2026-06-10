@@ -318,7 +318,22 @@ int colony_service_menu(int colony_sel, int item_id)
  *   CS-near 0x3D03 (file 0x06F803) = LJMP 0x191F:0x182  -> record/lookup helper
  *       raw 0x06F803: ea 82 01 1f 19
  * (call displacements verified: func_06F51A @0x06F524 e8 dc 02 -> 0x3D03;
- *  @0x06F536 e8 c0 02 -> 0x3CF9; func_06F594 @0x06F59D e8 4f 02 -> 0x3CEF.) */
+ *  @0x06F536 e8 c0 02 -> 0x3CF9; func_06F594 @0x06F59D e8 4f 02 -> 0x3CEF.)
+ *
+ * LEAF BODIES RESOLVED 2026-06-10 (RTLink thunk rule, VERIFICATION_LEDGER.md):
+ *   0x191F:0x182 -> func_06F0F4 (ovl 23 +0x32A4, ENTER 0x168) — ported in
+ *                   overlay_06D938_0702D5.c as text_template_run; "materialise
+ *                   the menu/dialog record for a key" = run its text template.
+ *   0x191F:0x16A -> func_06E3D0 (ovl 23 +0x2580, ENTER 0x38) — ported there as
+ *                   panel_run_modal; the modal run returns the 1-based picked
+ *                   option (so menu_lookup_run's return: 0 fail / N choice).
+ *   0x191F:0x176 -> func_06C850 (ovl 23 +0xA00, ENTER 0x20) — the dialog
+ *                   ADD-OPTION used by tax_apply.c / meeting.c decodes.
+ *   0x191F:0x1A8 -> ovl 31 +0x1AA ≈ 0x7832E (AMBIG base) — dispose; body open.
+ * CROSS-BINDING: the diplomacy "ui_dialog_show" (meeting.c) is the public
+ * thunk 0x1A1F:0x688 -> func_06F61C = opt_set_field_c: it stores the partner
+ * power in [0x1F60] (field C) then enters menu_lookup_run — confirming the
+ * dialog return convention used across king/*.c and diplomacy/*.c. */
 extern void far *opt_lookup_rec(void);           /* CS 0x3D03 -> 0x191F:0x182  */
 extern int       opt_win_query(void far *rec);   /* CS 0x3CF9 -> 0x191F:0x16A  */
 extern void      opt_win_dispose(void far *win); /* 0x191F:0x1A8               */
