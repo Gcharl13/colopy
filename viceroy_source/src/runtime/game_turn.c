@@ -51,17 +51,28 @@ static int colony_owner(int ci)        /* ColonyRecord base 0x5D46 stride 0xCA *
     return DG8(0x5D46 + ci * 0xCA + 0x1A);
 }
 
-/* NATIVE UNIT TURNS: the per-unit native AI (native_unit_ai, full port) runs
- * for every tribe-owned unit with movement left.  European AI units await the
- * unported chooser (the 0x4E2D6 dispatcher region) -- honest gap, no shim. */
-static void viceroy_native_unit_turns(void)
+/* AI UNIT TURNS: the per-unit native AI (native_unit_ai, full port) runs for
+ * every tribe-owned unit with movement left.  European AI units (owner < 4
+ * with the AI flag DG8(0x543F+p*0x34) set) run unit_move_step (func_04E2D6):
+ * its head dispatch + exit tail are BYTE_VERIFIED, so standing orders are
+ * maintained faithfully (auto-sentry, at-war wake-scan, goto arrival); the
+ * scoring body that CHOOSES new moves is the remaining gap -- honest, no shim.
+ * SHELL-SEQUENCED: func_04E2D6 has no static lcall site in the EXE (its thunk
+ * 0x1A1F:0x4F4 is reached only via runtime dispatch), so the per-unit loop
+ * order here mirrors the native loop until that dispatcher is located. */
+static void viceroy_ai_unit_turns(void)
 {
     extern int16_t native_unit_ai(int16_t self);
+    extern int16_t unit_move_step(int16_t unit_index);
     int n = (int16_t)DG16(0x539C);
     for (int u = 0; u < n; u++) {
         int owner = DG8(0x3144 + u * 0x1C + 3) & 0x0F;
-        if (owner >= 4 && (int8_t)DG8(0x3144 + u * 0x1C + 6) > 0)
+        if ((int8_t)DG8(0x3144 + u * 0x1C + 6) <= 0)
+            continue;                          /* no movement left */
+        if (owner >= 4)
             native_unit_ai((int16_t)u);
+        else if (DG8(0x543F + owner * 0x34) != 0)
+            unit_move_step((int16_t)u);        /* European AI power */
     }
 }
 
@@ -69,7 +80,7 @@ void viceroy_world_autumn(void)
 {
     int n_col = (int16_t)G_NCOL;
 
-    viceroy_native_unit_turns();
+    viceroy_ai_unit_turns();
 
     for (int p = 0; p < 4; p++) {
         /* 1. census rebuild (func_042138, ported BYTE_VERIFIED) */
@@ -154,8 +165,70 @@ int viceroy_world_smoke(int turns)
     {   extern void tilehead_set(int,int,int);
         tilehead_set(12, 10, 0); }
 
+    /* ---- European-AI fixture: three power-1 units exercising the 0x4E2D6
+     * EXIT TAIL (unit/move.c move_eval_tail_51C68) through the autumn loop:
+     *   unit 1 (20,20) orders 0  -> auto-sentry, then WAKE each turn on the
+     *          at-war occupant painted at (21,20)
+     *   unit 2 (25,25) orders 0  -> auto-sentry, no neighbours -> stays 5
+     *   unit 3 (5,5)   ship band (type 0x0E), orders 0x0B with dest==pos
+     *          -> goto-arrival promotes prof 0x31 -> 0x42 ('B')           */
+    {
+        extern void tilehead_set(int,int,int);
+        extern uint8_t *viceroy_layer_addr(int layer, int x, int y);
+        #define UREC(i,k) DG8(0x3144 + (i)*0x1C + (k))
+        DG8(0x543F + 1*0x34) = 1;            /* power 1 is an AI power */
+        DG16(0x539C) = 4;
+        for (int u = 1; u <= 3; u++) {
+            DG16(0x3144 + u*0x1C + 0x18) = 0xFFFF;
+            DG16(0x3144 + u*0x1C + 0x1A) = 0xFFFF;
+            UREC(u, 3) = 1;  UREC(u, 6) = 1;  /* owner 1, one move */
+        }
+        UREC(1,0) = 20; UREC(1,1) = 20; UREC(1,2) = 0;
+        UREC(1,7) = 0;  UREC(1,8) = 0;                    tilehead_set(20,20,1);
+        UREC(2,0) = 25; UREC(2,1) = 25; UREC(2,2) = 0;
+        UREC(2,7) = 0;  UREC(2,8) = 0;                    tilehead_set(25,25,2);
+        UREC(3,0) = 5;  UREC(3,1) = 5;  UREC(3,2) = 0x0E; /* ship band */
+        UREC(3,7) = 0x31; UREC(3,8) = 0x0B;               /* goto, arrived */
+        UREC(3,9) = 5;  UREC(3,0x0A) = 5;                 /* dest == pos */
+        tilehead_set(5,5,3);
+        /* the at-war occupant at (21,20): the wake probe (0x181F:0x696 ->
+         * func_005F48) reads ONLY the map layers, so paint the occupancy
+         * directly -- layer-160 bit1 (host layer 1 = f[]) + layer-164 high
+         * nibble = power 2 (host layer 3, the writable region buffer) */
+        f[20*32 + 21] |= 2;
+        *viceroy_layer_addr(3, 21, 20) |= (uint8_t)(2 << 4);
+        /* power 1 at war with power 2: relations byte (func_007F34 model:
+         * PowerRecord[1]+0x34[2]) bit 0x40 */
+        DG8(0x8808 + 1*0x13C + 0x34 + 2) |= 0x40;
+    }
+
     for (int t = 0; t < turns; t++)
         viceroy_world_autumn();
+
+    /* ---- EXIT-TAIL ASSERTIONS (the byte-decoded 0x51C68 rules) ---- */
+    {
+        /* unit 1: auto-sentried (prof '0') then woken by the adjacent
+         * at-war unit -> orders back to 0 after every pass */
+        if (UREC(1,8) != 0 || UREC(1,7) != 0x30) {
+            printf("SMOKE FAIL: wake-scan (orders %02X prof %02X)\n",
+                   UREC(1,8), UREC(1,7));
+            return 1;
+        }
+        /* unit 2: auto-sentried, nothing adjacent -> parked on orders 5 */
+        if (UREC(2,8) != 5 || UREC(2,7) != 0x30) {
+            printf("SMOKE FAIL: auto-sentry (orders %02X prof %02X)\n",
+                   UREC(2,8), UREC(2,7));
+            return 1;
+        }
+        /* unit 3: goto-arrival ship promotion 0x31 -> 0x42, orders keep 0x0B */
+        if (UREC(3,7) != 0x42 || UREC(3,8) != 0x0B) {
+            printf("SMOKE FAIL: goto-arrival (prof %02X orders %02X)\n",
+                   UREC(3,7), UREC(3,8));
+            return 1;
+        }
+        puts("euro-AI tail: auto-sentry + at-war wake + goto-arrival hold");
+        #undef UREC
+    }
 
     /* invariants: counters advanced; price levels stayed in byte range and
      * non-negative; no REF unit without sentiment having crossed 1800 */

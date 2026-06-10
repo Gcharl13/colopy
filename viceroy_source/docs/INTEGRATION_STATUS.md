@@ -57,8 +57,13 @@ against DOSBox captures of the same state.
 
 ## Honest gaps (the remaining fidelity queue)
 
-1. EUROPEAN AI UNIT CHOOSER — func_04E2D6 (4867 disasm lines) unported;
-   AI European units hold standing orders only. THE major remaining port.
+1. EUROPEAN AI UNIT CHOOSER — func_04E2D6: head dispatch + EXIT TAIL
+   (0x51C68: auto-sentry / at-war wake-scan / goto-arrival) BYTE_VERIFIED,
+   wired per-unit for AI powers (viceroy_ai_unit_turns) and smoke-asserted.
+   The ~13.5KB SCORING BODY (0x4E50C..0x51C68) that chooses NEW moves is
+   the remaining bulk. NB: the func_04E2D6 thunk (0x1A1F:0x4F4) has no
+   static lcall site in the EXE — the per-unit loop is shell-sequenced
+   until the runtime dispatcher is located.
 2. LCR trigger — lcr_resolve (ported) needs its movement-trigger call site
    traced (the feature-layer rumour bit test in the arrival path).
 3. Colony mid-band painters (field workers / colonist rows) — sub-renderer

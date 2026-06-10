@@ -2,12 +2,11 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 171**
-(plus 76 semantic alias names)
+**WIRED (linker alias to the real ported function): 168**
+(plus 73 semantic alias names)
 
 | stub | target | resolved via | arity |
 |---|---|---|--:|
-| `blk_read` | `func_00D41E_logic_sz_29` | exe:resident+name | 0 |
 | `box_fill` | `func_00E76A_logic_sz_505` | exe:resident+name | 0 |
 | `box_show_191F_08F8_b` | `func_00DB80_op_sz_226` | exe:resident+name | 2 |
 | `cc_done_AAC` | `func_076594_terrain_layer_load3` | exe:overlay+name | 0 |
@@ -29,7 +28,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `func_061413` | `func_060382_tile_terrain_nibble` | exe:overlay+name | 1 |
 | `func_0627BE_distance` | `func_004900_logic_sz_15` | exe:resident+name | 2 |
 | `game_timer_ticks` | `func_00E4C6_read_far_dword_via_267A` | json+name | 0 |
-| `get_magic_string` | `func_00D6C4_rtl_sz_59` | exe:resident+name | 2 |
 | `hof_fclose` | `func_00F9C4_rtl_sz_186` | direct+name | 1 |
 | `hof_fopen` | `func_00FAAA_rtl_sz_21` | direct+name | 2 |
 | `hof_fread` | `func_00FAF8_logic_sz_135` | direct+name | 4 |
@@ -48,7 +46,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `map_tile_set_occupant_037F_0A` | `func_005BFA_logic_sz_49` | direct+name | 2 |
 | `market_price` | `func_008110_logic_sz_14` | exe:resident+name | 1 |
 | `mn_colony_attr` | `func_00B704_logic_sz_380` | exe:resident+name | 1 |
-| `msc_strcmp` | `strcmp_near` | direct+name | 2 |
 | `names_read_int_byte` | `func_0787DC_calloc_far` | json+name | 0 |
 | `ov_colony_at_xy` | `func_005EE8_logic_sz_28` | exe:resident+name | 2 |
 | `ov_feature_flags_10E` | `func_005CFE_map_tile_read_layer_15C` | direct+name | 2 |
@@ -345,7 +342,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_191F_081C` | `func_078CB2_shrink_block+0x5B4B4`
 - `overlay_call_191F_0828` | `func_078CB2_shrink_block+0x5B11A`
 - `overlay_call_191F_0840` | `func_078CB2_shrink_block+0x595BC`
-- `overlay_call_191F_0888` | `func_067082_draw_settlement_markers+0xE8`
+- `overlay_call_191F_0888` | `func_067082_settlement_pass+0xE8`
 - `overlay_call_191F_0896` | `func_067182_colony_pass+0x146`
 - `overlay_call_191F_08A4` | `func_068898_draw_minimap_or_cursor_box+0x86`
 - `overlay_call_191F_08C6` | `func_078CB2_shrink_block+0x9F770`
