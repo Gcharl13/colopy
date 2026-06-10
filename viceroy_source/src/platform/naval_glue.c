@@ -97,9 +97,21 @@ int ovl_yesno_dialog(const char *key, int flag)
     printf("dialog [%s]: %s\n", key, m.prompt);
     for (int i = 0; i < m.nopt; i++)
         printf("   %d) %s%s\n", i+1, m.opt[i], (i+1 == m.def) ? "  (default)" : "");
-    /* SDL: a real prompt loop; headless: the section's @default */
+    /* SDL: wait for 1..N / ENTER(default) / ESC(default); headless: default */
     extern int vid_poll_key(void);
-    /* (interactive selection wired with the SDL shell loop; headless path:) */
+    extern void vid_delay_ms(int);
+    extern int viceroy_interactive(void);
+    if (viceroy_interactive()) {
+        for (;;) {
+            int k = vid_poll_key();
+            if (k == 0) { vid_delay_ms(16); continue; }
+            if (k == 13 || k == 27) break;                 /* default */
+            if (k >= '1' && k < '1' + m.nopt) {
+                printf("dialog [%s]: -> %d\n", key, k - '0');
+                return k - '0';
+            }
+        }
+    }
     printf("dialog [%s]: -> %d\n", key, m.def);
     return m.def;
 }
@@ -154,3 +166,35 @@ int  power_scan_done(int power) { return DG8(0x543E + power*0x34) & 0x80; }
 void power_scan_mark(int power) { DG8(0x543E + power*0x34) |= 0x80; }
 
 #endif /* _VICEROY_MODERN */
+
+/* ---- main-loop pickers (near 0x24BD7/0x24BA5: thunk records resolve past
+ * EOF with the current segmap -- shell semantics, cite-marked pending the
+ * segid re-fingerprint) ----------------------------------------------------- */
+void mainloop_pick_next_unit(void)
+{
+    int n = (int16_t)DG16(0x539C);
+    int cur = (int16_t)DG16(0x5392);
+    for (int k = 1; k <= n; k++) {
+        int i = (cur + k) % n;
+        if ((int8_t)UB(i, 6) > 0 && UB(i, 8) == 0 &&
+            (UB(i, 3) & 0x0F) == (DG16(0x5396) & 0x0F)) {
+            DG16(0x5392) = (uint16_t)i;
+            return;
+        }
+    }
+    DG16(0x5392) = 0xFFFF;                        /* none left this rotation */
+}
+
+void mainloop_finish_rotation(void)
+{
+    /* new rotation: refresh movement from the @UNIT column (the original's
+     * per-unit reset lives in the not-yet-located rotation engine) */
+    int n = (int16_t)DG16(0x539C);
+    for (int i = 0; i < n; i++)
+        UB(i, 6) = DG8(0x5234 + UB(i, 2) * 9);
+    DG16(0x538A)++;                                /* year tick (display) */
+    DG16(0x5392) = 0;                              /* restart at unit 0 */
+    printf("rotation: new turn, movement refreshed\n");
+}
+
+void ovl_deselect_fx(int x, int y) { (void)x; (void)y; /* 0x181F:0x9BA overlay fx */ }

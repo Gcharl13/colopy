@@ -37,6 +37,8 @@ extern int  title_screen_update(void);
 
 static const char *g_data = "game_data";
 const char *viceroy_data_dir(void) { return g_data; }
+static int g_interactive;
+int viceroy_interactive(void) { return g_interactive; }
 static ff_font_t   g_font;
 static int         g_have_font;
 ff_font_t *viceroy_font(void) { return g_have_font ? &g_font : 0; }
@@ -275,15 +277,15 @@ static void try_move_ship(int dx, int dy)
     naval_move_arrive(dx, dy);
 }
 
+extern int unit_turn_advance(int notify);      /* func_021D32, PORTED */
+
 static void end_turn(void)
 {
-    /* RECONSTRUCTED turn tick: refill movement (@UNIT move*3 column at
-     * [type*9+0x5234]) -- the real season processors are the next wiring */
-    int n = (int16_t)DG16(0x539C);
-    for (int i = 0; i < n; i++)
-        UREC(i, 6) = DG8(0x5234 + UREC(i, 2) * 9);
-    DG16(0x538A)++;                              /* year tick (display) */
-    printf("turn: movement refreshed\n");
+    /* the REAL advance step (func_021D32): deselect, order ladder, season
+     * latch, reveal/cursor, next-unit or finish-rotation */
+    unit_turn_advance(1);
+    if ((int16_t)DG16(0x5392) < 0)               /* rotation exhausted */
+        unit_turn_advance(1);                    /* run the finish path */
 }
 
 #define TILE 16
@@ -521,6 +523,11 @@ static int shell_loop(void)
             if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */
             if (k == 1073741903) { try_move_ship( 1, 0); follow_unit(); draw_map(); } /* right */
             if (k == ' ')        { end_turn(); draw_map(); }
+            if (k == 1073741882) {               /* F1: the REAL terrain report */
+                extern int func_069D8C_terrain_report_dialog(uint16_t);
+                func_069D8C_terrain_report_dialog(0);
+                draw_map();
+            }
             break;
         }
     }
@@ -611,6 +618,11 @@ int main(int argc, char **argv)
                 printf("  move-test : after N(land) -> (%d,%d) status=%d\n",
                        UREC(0,0), UREC(0,1), DG16(0x9E4E));
                 end_turn();
+                {   /* F1 smoke: the real terrain report must run clean */
+                    extern int func_069D8C_terrain_report_dialog(uint16_t);
+                    int rr = func_069D8C_terrain_report_dialog(0);
+                    printf("  F1 report : ran (ret=%d)\n", rr);
+                }
                 UREC(0,0) = 26; UREC(0,1) = 36;      /* re-park for the frame */
                 { extern void tilehead_reset(int,int); extern void tilehead_set(int,int,int);
                   tilehead_reset(g_map_w, g_map_h); tilehead_set(26,36,0); }
@@ -622,6 +634,7 @@ int main(int argc, char **argv)
                    "(%dx%d tiles)\n", g_map_w, g_map_h);
         }
     } else {
+        g_interactive = 1;
         shell_loop();
     }
 
