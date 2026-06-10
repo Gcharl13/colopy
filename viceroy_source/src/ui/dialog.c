@@ -79,8 +79,16 @@ extern uint8_t g_byte[];
  *   }
  *
  * Which arg lands in which dialog_rect[] field depends on the setter's stack
- * layout in overlay segment 0x0C36 (not yet decoded; 0x0C36 not yet resolved
- * to a file offset; docs/DIALOG_GEOMETRY.md "The setter overlay function").
+ * layout: RESOLVED 2026-06-10 — segment 0x0C36 is the RESIDENT GRAPHICS
+ * LIBRARY at file 0xE760 (rule: seg*16+0x2400).  BUT 0x0C36:0x000A is NOT a
+ * rect setter: func_00E76A (505B, full disasm) is the CLIPPED RLE SPRITE
+ * BLITTER — control bytes 0xFF=end-of-row, 0xFE=run(count,pixel),
+ * 0xFD=transparent skip; sprite records stride 12 ([idx*12+0x36]: data far
+ * ptr +0, w +8, h +0xA); sign bit of the sprite index = HORIZONTAL MIRROR
+ * (direction word [bp-0x10] = ±1); VRAM bank wrap at 0x7000 (+0x700 seg).
+ * The actual rect-setter call site needs re-tracing (the 0x0C36:0x000A
+ * attribution was wrong); the blitter itself is the render-fidelity anchor
+ * for platform/pik.c / unit_blit.c.
  *
  * char_width_cols/char_height_rows come from the GAME.TXT "@width=NN" directive
  * + body line count; their runtime values are NOT known statically. So the
