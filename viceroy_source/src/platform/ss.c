@@ -21,6 +21,16 @@
  *
  * Format recovered via the ScummVM MADS engine's reader; fresh C
  * implementation.  Transparent pixels are stored as SS_TRANSPARENT.
+ *
+ * CROSS-VALIDATED 2026-06-10 against VICEROY.EXE's OWN blitter
+ * (func_00E76A, file 0xE76A, full disasm): identical control-byte
+ * semantics -- 0xFF end-of-line, 0xFD run-mode line ({count,pixel},
+ * count 0xFF ends), mixed-mode 0xFE={count,pixel} run and 0xFD =
+ * transparent (pixel skipped, never written).  The EXE blitter adds
+ * clipping, sign-bit HORIZONTAL MIRRORING (negative sprite index =
+ * mirrored; step -1), and VRAM banking -- responsibilities of the
+ * modern blit layer (unit_blit.c/video_sdl.c), which must honour the
+ * mirror convention for west-facing units.
  * ============================================================================ */
 #include <stdint.h>
 #include <stdlib.h>
