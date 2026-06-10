@@ -525,6 +525,8 @@ long market_sell(int good, int qty)
         PR_GOLD(g_market) += net;                        /* via 0x181F:0xABA gold credit */
         /* crown pool & stats: king[+0x22] += tax (REF feed!); [+0x26] += net
          * @asm 0x032A92/0x032A9C (func_032914).                              */
+        *(int32_t *)((char *)g_market + 0x22) += (int32_t)tax;
+        *(int32_t *)((char *)g_market + 0x26) += (int32_t)net;
         PR_VOL_ACCUM(g_market, good) += (short)qty;
         return net;
     }

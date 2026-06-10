@@ -163,6 +163,33 @@ int viceroy_world_smoke(int turns)
         int lvl = (int8_t)DG8(0x8808 + 0x4C + g);
         if (lvl < 0) { printf("SMOKE FAIL: price level[%d] = %d\n", g, lvl); return 1; }
     }
+    /* ---- ECONOMY ASSERTION: the decoded trade formulas on live state ----
+     * bid = level-1; gross = bid*100; tax = gross*rate/100; net to gold;
+     * tax into the crown pool king[+0x22] (the REF feed). */
+    {
+        extern void market_set_active(int power);
+        extern long market_sell(int good, int qty);
+        extern int  market_bid_price(int good);
+        extern uint8_t g_dgroup[];
+        market_set_active(0);
+        DG8(0x8808 + 1) = 10;                      /* tax rate 10% */
+        DG8(0x8808 + 0x4C + 0) = 6;                /* level 6 -> bid 5 */
+        int32_t *gold  = (int32_t *)(g_dgroup + 0x8808 + 0x2A);
+        int32_t *crown = (int32_t *)(g_dgroup + 0x8808 + 0x22);
+        int32_t g0 = *gold, c0 = *crown;
+        int bid = market_bid_price(0);
+        long net = market_sell(0, 100);
+        long gross = (long)bid * 100, tax = gross * 10 / 100;
+        if (bid != 5 || net != gross - tax || *gold - g0 != net ||
+            *crown - c0 != tax) {
+            printf("SMOKE FAIL: economy (bid=%d net=%ld gold+%d)\n",
+                   bid, net, *gold - g0);
+            return 1;
+        }
+        printf("economy: sold 100 @ bid %d -> gross %ld, tax %ld, net %ld "
+               "(crown +%d)\n", bid, gross, tax, net, *crown - c0);
+    }
+
     if (turns >= 50) {   /* sentiment 42/turn (d=4) crosses 1800 -> REF unit */
         int ref_total = DG16(0x53DA)+DG16(0x53DC)+DG16(0x53DE)+DG16(0x53E0);
         if (ref_total == 0) { puts("SMOKE FAIL: REF never grew"); return 1; }
