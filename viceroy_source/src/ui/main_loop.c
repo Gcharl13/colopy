@@ -220,8 +220,21 @@ extern void    europe_select(int a, int player);                   /* 0x181F:0x5
 extern void    europe_open(void);                                  /* func_030DBC (europe_screen.c) */
 extern int     report_open(int which);                             /* func_037340 (report_screen.c) */
 
-/* (game_command_dispatch is documented above; its full IF/ELSE ladder is the
- *  func_0235D6 body. The screen-open arms are decoded; the rest is not yet decoded.) */
+/* game_command_dispatch (func_0235D6): the full handler TABLE is now
+ * RESOLVED 2026-06-10 via the cs:0x24Bxx trampoline block (each
+ * `push cs; call 0x24Bxx` -> ljmp thunk -> overlay-1 handler body; thunk
+ * targets re-derived with tools/resolve_thunks.py):
+ *   id 1 -> 0x24BB4 -> 191F:0090 -> func_022FD6      id 2 -> 0x2311A
+ *   id 3 -> 0x232AE                                  id 4 -> func_023344
+ *   id 0x1A -> 0x191F:0x32E (direct)
+ *   other arms (@0x236A3..0x237BD, by ladder order):
+ *     0x21D32 0x217E2 0x22F08 0x21E72 0x22E16 0x22A3A 0x21FF2 0x21FE6
+ *     0x227E8 0x22832 0x21EBA 0x21EC4 0x21EDE 0x2287E 0x22542 0x2211E
+ *     0x22334 0x2251E 0x22CDC 0x22D46
+ *   -- ALL command bodies live in overlay 1 (base 0x20EE0, the unit-order
+ *   overlay; per-function disasm exists for each).  The >0x1A tail
+ *   (@0x23DC8) handles raw key codes (0x300, 0x5C '\\', 0x31 '1', ...).
+ *   Per-command semantic naming = follow-up against those bodies. */
 
 /* ============================================================================
  * THE SEASON CYCLE  (Spring <-> Autumn), DGROUP:0x5390
