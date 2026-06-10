@@ -93,3 +93,26 @@ RETF                                              @0x672C7
 
 PORT ORDER: (1) func_00386A -> replaces the shell's manual ship blit via the
 pass chain; (2) poke-convert func_06753C + wire 0x673CC; (3) func_003E40.
+
+## Part-2 gate: func_03FA9C naval_classify_dest (decode begun 2026-06-10)
+The player-move pipeline is: arrow key -> direction -> naval_classify_dest
+(sets [0x9E4E] status + commits legal moves) -> naval_move_arrive (PORTED,
+byte-cited) dispatching on the status. Skeleton decoded from
+re_work/disasm/func_03FA9C.asm (args: AX=unit, DX=dest_x, BX=dest_y):
+- bounds: y<1 || y>=[0x853C]-1 -> ret([bp-0xa]=0 path @0x3FDD8);
+  x edge (x<1 || x>=[0x853A]-1): ships 0xD..0x12 -> STATUS 4 (SAILHOME),
+  others -> 0x3FDD8                                  @0x3FAAC..0x3FAEF
+- gather: owner-at(dest) via 0x181F:0x6BE -> [bp-0x14]; 0x6D2(x,y) ->
+  [bp-0xE]; 0x916(unit); terrain(dest)=0x72C&0x1F -> [bp-0x18];
+  terrain(src) -> [bp-8]                              @0x3FB04..0x3FB5E
+- dest WATER (0x19/0x1A) & unit NOT ship: occupant=0x7E0(x,y); if none ->
+  0x3FDC7(fail); owner-xor gate (board own ship only); cargo-role check via
+  near 0x3FFF8(occupant, [type*9+0x5238], 0)          @0x3FB6D..0x3FBD7
+- dest LAND & unit ship: owner-at checks (foreign land rules @0x3FBFE..)
+- ship->water: lake test 0x181F:0x6B4(x,y); !=1 -> STATUS 8 (SHIPLAKE)
+                                                      @0x3FC43..0x3FC5E
+- remaining ladder 0x3FC62..0x3FDC7: occupancy/combat (STATUS 6/7), landfall
+  classification (STATUS 2/3), NODOCKS (1), LANDFIRST (9), and the COMMIT
+  path (writes the new x/y + movement deduction) -- transcribe on port.
+Helpers to resolve/port: 0x6BE owner-at, 0x6D2, 0x916, 0x7E0 occupant-at,
+0x6B4 lake-test, near 0x3FFF8 cargo-capacity.
