@@ -22,14 +22,17 @@
  *      067C54/067C8E/067A24.
  *   render setup (this file): func_06787C @0x6787C establishes zoom + viewport.
  *
- * STILL not yet decoded (cited reason): the *pixel format* of the leaf framebuffer poke.
- * Every leaf primitive ends in an LCALL into a load-image overlay
- * (0x181F:0x254/0x25E/0x268/0x272/0x286/0x2F8 -> overlay segs 0x0C36/0x0101/
- * 0x0C56; 0x1A1F:0x984/0x98E -> seg 0x0CAA/0x0C89). Those targets are resident
- * in load-image overlays, not in VICEROY.EXE's decodable code image, so the
- * actual byte blit is decoded only to its calling convention (which globals /
- * which sprite index / which clip rect). The SELECTION logic — which sprite
- * index at which screen pixel — is now fully byte-verified below.
+ * RESOLVED 2026-06-10 (the "pixel format" wall is GONE): the blit family
+ * targets ARE in the load image and are now decoded -- 0x181F:0x254 =
+ * func_00E76A, the CLIPPED RLE SPRITE BLITTER (8bpp DIRECT PALETTE-INDEX
+ * writes, control bytes 0xFF end-row / 0xFE run / 0xFD transparent-skip,
+ * sign-bit horizontal mirror, VRAM bank wrap 0x7000/+0x700); 0x181F:0xE2 =
+ * func_00DB3A blit_band; 0x25E/0x268 = func_003460/func_0034C4 (ENTER 0xC
+ * siblings, save-under/restore family).  Pixel format: one byte = one
+ * Mode-13h palette index, no remapping (sprite pixels are direct indices;
+ * cross-validated against platform/ss.c).  See docs/RESIDENT_LIB.md.
+ * The SELECTION logic -- which sprite index at which screen pixel -- was
+ * already fully byte-verified below.
  *
  * The PHYS0 sprite-sheet far-pointer pairs are identified (no longer "left unresolved
  * descriptor"): [0x174]/[0x176] and [0x16C]/[0x16E] are the loaded sheet bases;

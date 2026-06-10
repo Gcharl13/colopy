@@ -28,12 +28,15 @@
  * through func_067EEC / func_067E28, which DO push AX (the sprite index) into
  * their resident blit. Both facts are byte-verified below.
  *
- * STILL not yet decoded (cited): the pixel format of the resident blit. Every path ends in
- * an LCALL whose target is in a load-image overlay (0x181F:0x254/0x25E/0x268/
- * 0x272/0x286/0x2F8 -> overlay segs 0x0C36/0x0101/0x0C56; 0x1A1F:0x984/0x98E ->
- * 0x0CAA/0x0C89 per lcall_resolution_VICEROY.json). Those bytes are not in the
- * decodable VICEROY.EXE code image, so we model index + placement + clip (all
- * verified) and leave the framebuffer write abstract.
+ * RESOLVED 2026-06-10 (the "pixel format" wall is GONE): the blit family
+ * targets ARE in the load image and are now decoded -- 0x181F:0x254 =
+ * func_00E76A, the CLIPPED RLE SPRITE BLITTER (8bpp DIRECT PALETTE-INDEX
+ * writes, control bytes 0xFF end-row / 0xFE run / 0xFD transparent-skip,
+ * sign-bit horizontal mirror, VRAM bank wrap 0x7000/+0x700); 0x181F:0xE2 =
+ * func_00DB3A blit_band; 0x25E/0x268 = func_003460/func_0034C4 (ENTER 0xC
+ * siblings, save-under/restore family).  Pixel format: one byte = one
+ * Mode-13h palette index, no remapping (sprite pixels are direct indices;
+ * cross-validated against platform/ss.c).  See docs/RESIDENT_LIB.md.
  * ============================================================================ */
 
 /* ============================================================================

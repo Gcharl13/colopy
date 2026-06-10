@@ -228,7 +228,9 @@
  *                                                         @asm 0x060BD6 -> 0x181F:0xCE
  *       (operands cited verbatim; under the 0xCE arg order ax=x,dx=y,bx=w,push h.
  *        NB: x+w here exceeds 320, so bx may be a 2nd X-coord rather than a width
- *        for this primitive — exact w-vs-x2 role is not yet decoded, the raw values are solid.)
+ *        for this primitive — RESOLVED: 0x181F:0xE2 = func_00DB3A blit_band
+ *        (full disasm; colony_screen.c calls it blit_band(x,y,w,h)) — its
+ *        frame answers the role question; raw values solid.)
  *   full-screen frame box: x=0 w=0x140(320) h=0xC8(200)   @asm 0x060C1E -> 0x181F:0xE2
  *   tile-row label = ([0x9E14]/0x4A)+1                    @asm 0x06087D
  *
