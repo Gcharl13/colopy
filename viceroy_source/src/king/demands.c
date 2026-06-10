@@ -159,8 +159,14 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not ye
  * design, not for lack of trying; a full port would be UI plumbing over
  * body-in-thunk-page overlay thunks, not game logic.
  * ============================================================================ */
-int ai_decide_king_demand(struct PowerRecord *p, int proposed_tax)   /* RECONSTRUCTED */
+int ai_decide_king_demand(struct PowerRecord *p, int proposed_tax)   /* see note */
 {
-    /* Prior heuristic: AI accepts if the new tax wouldn't exceed 50%. not yet decoded. */
+    /* RESOLVED 2026-06-10: NO AI decision exists in the original.  King
+     * demands are HUMAN-ONLY: tax_apply (func_034318 @0x034377..0x03438B)
+     * returns before the boycott/demand machinery for power >= 4 or
+     * AI-controlled powers ([0x543F + power*0x34] != 0), and the raise
+     * dialog itself runs only on the human player's king turn.  For AI
+     * powers the rate is simply never raised by demand.  This function is
+     * therefore a MODERN-PORT shim only; original behavior = "not called". */
     return (p->tax_rate + proposed_tax) <= 50;
 }
