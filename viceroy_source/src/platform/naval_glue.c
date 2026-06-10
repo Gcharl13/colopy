@@ -86,10 +86,18 @@ static int load_msg(const char *key, msg_t *m)
     return m->prompt[0] ? 0 : -1;
 }
 
+static int g_dialog_force = 0;
+void viceroy_dialog_force(int n) { g_dialog_force = n; }   /* test hook */
+
 int ovl_yesno_dialog(const char *key, int flag)
 {
     (void)flag;
     msg_t m;
+    if (g_dialog_force) {
+        int n = g_dialog_force; g_dialog_force = 0;
+        printf("dialog [%s]: (forced) -> %d\n", key, n);
+        return n;
+    }
     if (load_msg(key, &m) != 0) {
         printf("dialog [%s]: (section missing) -> 1\n", key);
         return 1;

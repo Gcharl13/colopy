@@ -1669,7 +1669,9 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     UREC_B(power - 0x6D68)++;                        /* @0x02EBB3 per-power count [power-0x6D68]*/
     slot = g_colony_count_539E++;                   /* @0x02EBB7 [0x539E]++ */
-    overlay_call_181F_09E6();                       /* @0x02EBC2 get_colony_by_slot(slot) */
+    {   extern int func_0082DC_logic_sz_118(uint16_t);
+        func_0082DC_logic_sz_118((uint16_t)slot);   /* @0x02EBC2 get_colony_by_slot(slot) */
+    }
     overlay_call_181F_0740();                       /* @0x02EBD0 map tile -> es:[bx]|=2 */
 
     CB(0x1A) = (uint8_t)power;                       /* @0x02EBE7 owner */
@@ -1682,16 +1684,17 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     CW(0xC8) = 0; CW(0xC4) = 0; CW(0xC2) = 0;        /* @0x02EC2C/0x02EC34/0x02EC38 */
     CW(0x92) = 0; CW(0x98) = 0;                      /* @0x02EC3E/0x02EC42 */
 
-    overlay_call_0D1D_0DAE();                       /* @0x02EC4C memset(ctx+0x8A,0,2) */
-    for (i = 0; i < 10; i++)                         /* @0x02EC54..0x02ECC4 */
-        overlay_call_181F_0D26();                   /* seed_building(1, start_bldg[i]) */
-
-    overlay_call_0D1D_0DAE();                       /* @0x02ECCC memset(ctx+0x84,0,6) */
+    memset((void *)&CB(0x8A), 0, 2);                /* @0x02EC4C memset(ctx+0x8A,0,2) */
+    {   extern void set_or_clear_bit_at_8a(int bit_idx, int set_flag);
+        for (i = 0; i < 10; i++)                     /* @0x02EC54..0x02ECC4 */
+            set_or_clear_bit_at_8a(start_bldg[i], 1);/* 0xD26 -> func_0085D6 */
+    }
+    memset((void *)&CB(0x84), 0, 6);                /* @0x02ECCC memset(ctx+0x84,0,6) */
     overlay_call_181F_0BBE();                       /* @0x02ECDF backdrop(1,0x23) */
     overlay_call_181F_0BBE();                       /* @0x02ECED backdrop(1,9) */
     overlay_call_181F_0C22();                       /* @0x02ECF7 */
-    overlay_call_0D1D_0DAE();                       /* @0x02ED00 memset(ctx+0x9A,0,0x20) work map*/
-    overlay_call_0D1D_0DAE();                       /* @0x02ED0F memset(ctx+0x70,0xFF,0x14) */
+    memset((void *)&CB(0x9A), 0, 0x20);             /* @0x02ED00 work map */
+    memset((void *)&CB(0x70), 0xFF, 0x14);          /* @0x02ED0F commodity tiles -1 */
 
     if (hint >= 0) {                                /* @0x02ED22 */
         int b = overlay_call_181F_0C4A();           /* @0x02ED2B sub_view(hint) */

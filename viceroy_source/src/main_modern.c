@@ -523,6 +523,22 @@ static int shell_loop(void)
             if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */
             if (k == 1073741903) { try_move_ship( 1, 0); follow_unit(); draw_map(); } /* right */
             if (k == ' ')        { end_turn(); draw_map(); }
+            if (k == 'b') {                      /* B: FOUND COLONY (real creator) */
+                extern int func_02EB78_text_sz_55(uint16_t,uint16_t,uint16_t,uint16_t);
+                int u = (int16_t)DG16(0x5392);
+                if (u >= 0 && UREC(u,2) < 0xD) {     /* a land unit */
+                    int s = func_02EB78_text_sz_55(DG16(0x5396),
+                                                   UREC(u,0), UREC(u,1), 0xFFFF);
+                    if (s >= 0) {
+                        for (int kk = 0; kk < 16; kk++)   /* default name */
+                            DG8(0x5D46 + s*0xCA + 2 + kk) =
+                                DG8(0x5426 + DG16(0x5396)*0x34 + kk);
+                        printf("colony founded: slot %d at %d,%d\n",
+                               s, UREC(u,0), UREC(u,1));
+                    }
+                    draw_map();
+                }
+            }
             if (k == 1073741882) {               /* F1: the REAL terrain report */
                 extern int func_069D8C_terrain_report_dialog(uint16_t);
                 func_069D8C_terrain_report_dialog(0);
@@ -618,6 +634,33 @@ int main(int argc, char **argv)
                 printf("  move-test : after N(land) -> (%d,%d) status=%d\n",
                        UREC(0,0), UREC(0,1), DG16(0x9E4E));
                 end_turn();
+                {   /* LANDFALL + FOUND COLONY: colonist aboard, sail E onto
+                     * the shore, accept the landfall prompt, build */
+                    extern void viceroy_dialog_force(int);
+                    extern void tilehead_set(int,int,int);
+                    extern int func_02EB78_text_sz_55(uint16_t,uint16_t,uint16_t,uint16_t);
+                    /* seed colonist (type 0, unit 1) chained behind the ship */
+                    UREC(1,0)=UREC(0,0); UREC(1,1)=UREC(0,1);
+                    UREC(1,2)=0; UREC(1,3)=0; UREC(1,6)=DG8(0x5234);
+                    DG16(0x3144+0x1C+0x18)=0; DG16(0x3144+0x1C+0x1A)=0xFFFF;
+                    DG16(0x3144+0x1A)=1;        /* ship.next = colonist */
+                    DG16(0x539C)=2;
+                    viceroy_dialog_force(2);    /* answer 'Make Landfall' */
+                    try_move_ship(1, 0);        /* E onto the shore */
+                    printf("  landfall  : colonist at (%d,%d) orders=%d\n",
+                           UREC(1,0), UREC(1,1), UREC(1,8));
+                    DG16(0x5392)=1;             /* select the colonist */
+                    {   int s = func_02EB78_text_sz_55(DG16(0x5396),
+                                UREC(1,0), UREC(1,1), 0xFFFF);
+                        if (s >= 0)
+                            for (int kk = 0; kk < 16; kk++)
+                                DG8(0x5D46 + s*0xCA + 2 + kk) =
+                                    DG8(0x5426 + DG16(0x5396)*0x34 + kk);
+                        printf("  founded   : slot %d colonies=%d\n",
+                               s, DG16(0x539E));
+                    }
+                    DG16(0x5392)=0;
+                }
                 {   /* F1 smoke: the real terrain report must run clean */
                     extern int func_069D8C_terrain_report_dialog(uint16_t);
                     int rr = func_069D8C_terrain_report_dialog(0);
