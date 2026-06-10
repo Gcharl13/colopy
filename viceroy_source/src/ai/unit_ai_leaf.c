@@ -69,7 +69,9 @@
  * @region          overlay
  * @verified_by     Hand-decompiled from VICEROY.EXE 2026-05-30 (page_10.asm reseg
  *                  + per-func dump + string-rule xrefs). PROLOGUE/early blocks
- *                  byte-verified; deep scoring tail not yet decoded (body in overlay thunk page).
+ *                  byte-verified; the combat-modifier ladder (0x5CB46..0x5D021)
+ *                  DECODED 2026-06-10 (see the flag-map block below + 
+ *                  combat/combat_modifiers.c defend_strength).
  * @ref             reverse_engineered/code/VICEROY/disasm_overlay_reseg/page_10.asm
  * @ref             reverse_engineered/code/VICEROY/disasm/func_05CA7E_unknown.asm
  * @ref             reverse_engineered/code/VICEROY/disasm/func_04E2D6_unknown.asm
@@ -111,10 +113,35 @@ extern uint16_t g_colony_ptr_8542;     /* far ptr to ColonyRecord (see colony.h)
 extern uint8_t g_unittype_attr_5230[/* type */][14];
 #define UT_AT(type, abs_addr)  (g_unittype_attr_5230[(type)][(abs_addr) - 0x5230])
 
-/* DGROUP:0x8D00..0x8D03 / 0xA156/0xA158 -- AI scratch result words/flags zeroed
- * at @asm 0x05CB3A..0x05CB43 and OR'd with bits along the way (0x8D01|=1 @asm
- * 0x05CB9B; 0xA156|=8 @asm 0x05CBA7; 0x8D03|=2 @asm 0x05CC92; |=4 @asm 0x05CCCB).
- * They accumulate the chosen action / its modifiers. Exact bit map not yet decoded. */
+/* DGROUP:0x8D00..0x8D04 / 0xA156/0xA158 -- the COMBAT MODIFIER-FLAG block
+ * (one bit = one line in the pre-combat odds dialog), zeroed @0x05CB3A..43.
+ * FULL MAP DECODED 2026-06-10 (set sites byte-cited; defender-side bits are
+ * set by func_007D3E -- see combat/combat_modifiers.c defend_strength):
+ *  ATTACKER side (this function):
+ *   [0x8D01]|=0x01 @0x5CB9B  half-strength reason code 2 (after the "HALF"
+ *   [0xA156]|=0x08 @0x5CBA7  half-strength reason code 1   confirm popup,
+ *                            key 0x1C06="HALF", mode 1; decline aborts)
+ *   [0x8D03]|=0x02 @0x5CC92  armed colonist takes up muskets (defender colony
+ *                            militia spawn via 0x191F:0xA20, base [0x5235])
+ *   [0x8D03]|=0x04 @0x5CCCB  ...boosted: power-attribute bit 0xC AND colony
+ *                            [+0xB8] >= 50 -> spawn strength 75 (0x4B)
+ *   [0x8D01]|=0x08 @0x5CEE7  defender NOT sentried/fortified ([+0x314C] not
+ *                            5/6) -> that strength term >>= 2 (quartered)
+ *   [0x8D03]|=0x08 @0x5CF0C  ARTILLERY IN THE OPEN: attacker type 0x0B and
+ *                            defender unfortified -> attacker strength >>= 2
+ *   [0xA158]|=0x01 @0x5CF26  artillery vs natives (other side power>=4):
+ *                            attacker strength <<= 1 (x2 bombardment)
+ *   [0x8D01]|=0x10 @0x5CF4D  SPANISH (power 2) vs natives: strength += 50%
+ *                            (the canonical Spanish trait, byte-verified)
+ *   [0x8D01]|=0x80 @0x5CF7D  War of Independence: intervention ally
+ *                            ([0x53D2]) or [0x5382]&2 -> strength += 50%
+ *   [0xA156]|=0x02/0x04 @0x5CFCB  SONS OF LIBERTY: colony SoL% via
+ *                            0x181F:0xC86; rebels use pct (code 2, ally side
+ *                            uses 100-pct), strength += str*pct/100; open-
+ *                            terrain ally case: += str*difficulty/20
+ *  DEFENDER side (func_007D3E): [0x8D02] 0x08/0x10/0x20/0x40/0x80 settlement/
+ *  tribe/capital/fort/terrain, [0x8D03]|=0x20 fortified +50%, [0x8D00]|=0x80
+ *  AMBUSH with terrain value in [0x8D04]. */
 extern uint16_t g_ai_scratch_8D00;
 extern uint8_t  g_ai_scratch_8D01;
 extern uint16_t g_ai_scratch_8D02;
