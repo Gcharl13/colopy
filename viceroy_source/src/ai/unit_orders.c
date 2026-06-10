@@ -455,8 +455,9 @@ block_4ec:
                 extern void ovly_commit_A4C(int16_t q);
                 ovly_commit_A4C(q);                           /* @asm 0x03F023 */
                 count <<= 1;                                  /* @asm 0x03F02B */
-                /* @asm 0x03F02E inc [ [0x8d4a] + owner*2 + 0xb ] (attack tally) */
-                /* (pointer struct not yet decoded; the increment + bit-4 triple are byte-clear) */
+                /* @asm 0x03F02E inc [ [0x8d4a] + owner*2 + 0xb ] -- the
+                 * per-settlement per-power RAID TALLY (NS record +0xB row;
+                 * [0x8D4A] = current settlement ptr).  RESOLVED 2026-06-10. */
                 /* @asm 0x03F045 test [bx+3],4; if set count *= 3 */
             }
             /* @asm 0x03F054 push 0; push count; ...; lcall 0x181F:0xD6C (commit) */
@@ -847,12 +848,15 @@ finalize8:
  *  - Target-record base for the +0xb4/+0xbe coordinate pair (func_040E22 @asm
  *    0x040E83/0x040EA6, returned by 0x1A1F:0x210) RESOLVED: a DIRECTION
  *    index 0..7 into the 0xB4/0xBE delta tables -- modeled as 0 inputs.
- *  - The per-(owner,occupant) relation byte array at DGROUP base (si - 0x77c4 /
- *    -0x77b8) used for war/treaty/sneak bookkeeping: stride 0x13C, indexed
- *    [occ*0x13c + owner] -- byte-clear addressing, table CONTENTS not yet decoded.
- *  - The AI attack-tally struct at [0x8D4A] (+0xb + owner*2, bit-4 triple) and
- *    market commit chain (0x181F:0x30C/0xD6C/0xA06/0xA4C): addressing byte-clear,
- *    pointed-to structs not yet decoded.
+ *  - The per-(owner,occupant) relation byte array: RESOLVED -- -0x77C4 =
+ *    PowerRecord[row]+0x34+col (the rel_query matrix, relations.c: bits
+ *    0x02 war / 0x10 met / 0x20 peace-pending / 0x40 treaty / 0x80 piracy
+ *    grievance); -0x77B8 = PowerRecord+0x40 row = the alliance-lock bytes
+ *    (attack aborts when set; see the war-declaration block).
+ *  - The AI attack tally: [0x8D4A] = current NATIVE-SETTLEMENT record ptr;
+ *    +0xB + owner*2 = the per-settlement per-power raid-tally word.  The
+ *    "market commit chain" 0x30C/0xD6C = the native ALARM read/adjust pair
+ *    (resident 0x082A0 / func_045DF2 -- the raid raises tribe alarm).
  *  - PER-UNIT SCORING WEIGHTS live in the leaf func_05CA7E (see unit_ai_leaf.c)
  *    and the move evaluator func_04E2D6 -- RUNTIME_ONLY, overlay/data-resident, NOT
  *    invented here.
