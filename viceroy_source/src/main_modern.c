@@ -241,7 +241,8 @@ static void spawn_start_ship(void)
     while (x > 1 && !is_water(t_at(x, y))) x--;
     UREC(0, 0) = (uint8_t)x;
     UREC(0, 1) = (uint8_t)y;
-    UREC(0, 2) = 0x0D;                 /* first ship type (combat gate 0x0D..0x12) */
+    UREC(0, 2) = 0x0D;                 /* Caravel (@UNIT index 13) */
+    DG16(0x3144 + 0*0x1C + 0x18) = 0xFFFF;  /* chain head: on-map gate [+0x18]<0 */
     DG16(0x539C) = 1;                  /* unit count */
 }
 
@@ -340,15 +341,14 @@ static void draw_map(void)
         extern void overlay_pass_colonies(void);
         overlay_pass_settlements();          /* 0x191F:0x888 */
         overlay_pass_colonies();             /* 0x191F:0x896 */
+        {   extern void overlay_pass_units(void);
+            overlay_pass_units();            /* 0x181F:0x344 chain */
+        }
     }
     g_cam_x = (int16_t)DG16(0x8328);         /* read back the clamped origin */
     g_cam_y = (int16_t)DG16(0x832E);
 
-    if (g_have_icons && DG16(0x539C) > 0) {  /* unit sprite over the terrain */
-        int tx = unit_x() - g_cam_x, ty = unit_y() - g_cam_y;
-        if (tx >= 0 && ty >= 0 && tx < VIEW_TX && ty < VIEW_TY)
-            ss_blit(&g_icons, ICON_SHIP, tx * TILE, ty * TILE);
-    }
+    /* (manual ship blit removed: units draw via the ported chain) */
     /* the REAL right-hand UI: minimap panel + tile/unit info panel */
     {
         extern int func_066CD6_minimap_panel(int highlight, int src);
@@ -572,6 +572,7 @@ int main(int argc, char **argv)
         
         
         if (enter_map() == 0) {
+            UREC(0,0) = 26; UREC(0,1) = 36;   /* park the test ship in view */
             g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
             draw_map();
             vid_screenshot_ppm("viceroy_map.ppm");

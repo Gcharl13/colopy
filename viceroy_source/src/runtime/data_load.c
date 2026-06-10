@@ -166,6 +166,50 @@ static void derive_cargo_max(void)
     }
 }
 
+/* @UNIT: 24 entries, stride 9 at [0x5230] -- name handle +0, icon +2,
+ * movement*3 +4, col3->+6 / col4->+5 (the 0x5235/0x5236 SWAP), cols 5..10
+ * -> +7..+0xC, bit-string -> +0xD.  Decoded @0x74ED5..0x74F64. */
+static uint8_t parse_bits(const char *s)
+{
+    uint8_t v = 0;
+    for (int i = 0; s[i] == '0' || s[i] == '1'; i++) v = (uint8_t)((v << 1) | (s[i] == '1'));
+    return v;
+}
+static int load_units(FILE *f)
+{
+    char line[256]; int n = 0, in = 0;
+    rewind(f);
+    while (fgets(line, sizeof line, f) && n < 0x18) {
+        char *p = line + strspn(line, " \t");
+        if (*p == ';' || *p == '\r' || *p == '\n' || !*p) continue;
+        if (*p == '@') { if (in) break; in = !strncmp(p, "@UNIT", 5) && p[5] < 'A'; continue; }
+        if (!in) continue;
+        int base = 0x5230 + n * 9;
+        size_t len = strcspn(p, ",");
+        { char sv=p[len]; p[len]=0;
+          char *e=p+strlen(p); while(e>p&&e[-1]==' ')*--e=0;
+          DG16(base) = intern(p); p[len]=sv; }                 /* @0x74EEE +0 name  */
+        char *q = p + len; long col[12]; int nc = 0; char *bits = 0;
+        while (*q == ',' && nc < 12) {
+            q++;
+            while (*q == ' ') q++;
+            if (q[0]=='0'||q[0]=='1') { char *r=q; int b=1;
+                while(*r=='0'||*r=='1') r++;
+                if (r-q >= 6) { bits=q; col[nc++]=0; q=r; continue; } }
+            col[nc++] = strtol(q, &q, 10);
+        }
+        DG8(base + 2)  = (uint8_t)col[0];                      /* @0x74EF9 icon   */
+        DG8(base + 4)  = (uint8_t)(col[1] * 3);                /* @0x74F08 move*3 */
+        DG8(base + 6)  = (uint8_t)col[2];                      /* @0x74F11 (swap) */
+        DG8(base + 5)  = (uint8_t)col[3];                      /* @0x74F1A (swap) */
+        for (int k = 0; k < 6 && 4 + k < nc; k++)
+            DG8(base + 7 + k) = (uint8_t)col[4 + k];           /* @0x74F23..0x74F50 */
+        if (bits) DG8(base + 0xD) = parse_bits(bits);          /* @0x74F59 */
+        n++;
+    }
+    return n;
+}
+
 /* @LEVELS: 5 rows x 3 comma-separated strings -> [0x9632 + i*6 + 0/2/4]
  * (interned handles).  Decoded @0x7507A..0x750AE. */
 static int load_levels(FILE *f)
@@ -257,6 +301,7 @@ int viceroy_load_names(const char *dir)
     total += load_rec_strings(f, "LEADERNAME", 4,  0x540E);         /* @asm 0x074C22 */
     /* func_0749E0 CONTINUATION (the '601 byte' size was a truncation; the
      * real body runs to 0x75351 and loads the rest of NAMES + LABELS + PEDIA): */
+    total += load_units(f);                                          /* @0x74ED5 */
     total += load_cargo(f);                                          /* @0x74F04 */
     derive_cargo_max();                                              /* @0x74F79 */
     total += load_levels(f);                                         /* @0x7507A */
