@@ -377,8 +377,9 @@ carry_only_path:
  *
  * For a HUMAN player attacking an Aztec village:
  *   - attacker_power_idx is in 0..3 (the four European powers)
- *   - bit 10 of PowerRecord attribute bitfield is normally CLEAR for fresh
- *     games (set only by specific scenario / Founding Father effects; exact gate not yet decoded)
+ *   - bit 10 = ff_owned(power, FF 10 = HERNAN CORTES) — RESOLVED 2026-06-10:
+ *     the attribute query IS congress.c's ff_owned, and Cortes's documented
+ *     effect is precisely "razed villages yield more treasure"
  *   - so M0 = MAX( (player+10)*5, treasure_pool*2 )
  *
  *   For player slot 0 (P1):  (0+10)*5 = 50  → multiplier in [50, 90]

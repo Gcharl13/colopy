@@ -223,8 +223,11 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
  *   recipient.gold    += gold       (the player's PowerRecord +0x29)
  *
  *   player_factor = g_diplo_contact_942C[power] + g_trade_accum_941C[power]
- *                 = diplomatic_contact_count (0..255) + cumulative_trade_gold
- *     (power index not yet decoded: attacker or opponent; resolved tables from 0x042138 init)
+ *     TABLE IDENTITIES RESOLVED 2026-06-10: 0x942C = the AI-census per-power
+ *     COASTAL-CARGO TOTAL and 0x941C = the census FINANCE word (writer
+ *     overlay_040C1E_04458A.c) — i.e. the smite payout scales with the
+ *     power's visible wealth.  (Which side's index — attacker vs opponent —
+ *     still needs the register trace at the call site.)
  *
  * RESOLVED 2026-06-08:
  *   - ovly_181F_035C: PURE CLAMP (file 0x0048CC, runtime 0x024C:0x000C)
