@@ -463,8 +463,49 @@ static void follow_unit(void)
     if (uy - g_cam_y > 9  && g_cam_y < g_map_h - VIEW_TY)  g_cam_y++;
 }
 
+/* ---- Europe dock (playable economy over the decoded engines) --------------
+ * Draws the 16-good market strip from the LIVE price levels through the
+ * byte-verified leaves (bid = level-1, ask = level+burden), and routes
+ * B/S+digit keys into market_buy/market_sell (tax + crown writes inside).
+ * Layout is SHELL-RECONSTRUCTED (the original's europe composer is partially
+ * ported); every NUMBER shown comes from the real engines. */
+static int g_eur_sel;
+
+static void draw_europe(void)
+{
+    extern int market_bid_price(int good);
+    extern int market_ask_price(int good);
+    extern uint8_t g_dgroup[];
+    uint8_t *fb = vid_framebuffer();
+    memset(fb, 0, VID_W * VID_H);
+    if (load_bg("EUROPE.PIK") == 0) draw_bg();
+    if (g_have_font) {
+        uint8_t dark = 0, light = 15;
+        pal_pick_text_colors(&dark, &light);
+        int32_t gold = *(int32_t *)(g_dgroup + 0x8808 +
+                                    (int16_t)DG16(0x9E12) * 0x13C + 0x2A);
+        char hdr[96];
+        snprintf(hdr, sizeof hdr, "EUROPE  -  Gold %d  Tax %u%%",
+                 gold, DG8(0x8808 + (int16_t)DG16(0x9E12) * 0x13C + 1));
+        draw_text_center(hdr, 4, light);
+        for (int g = 0; g < 16; g++) {
+            char row[96];
+            const char *nm = viceroy_str(DG16(0x97C0 + g * 2)); /* @CARGO col0 */
+            snprintf(row, sizeof row, "%c%2d %-12.12s %3d/%3d",
+                     g == g_eur_sel ? '>' : ' ', g + 1,
+                     (nm && nm[0]) ? nm : "good", 
+                     market_bid_price(g), market_ask_price(g));
+            g_font.colors[1] = g_font.colors[2] = g_font.colors[3] =
+                (g == g_eur_sel) ? light : dark;
+            ff_draw(&g_font, row, 12, 18 + g * (g_font.maxh + 1), 1);
+        }
+        draw_text_center("S sell 100   B buy 100   Up/Down   ESC", 188, light);
+    }
+    vid_present();
+}
+
 /* ---- the shell ------------------------------------------------------------ */
-enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP, SH_COLONY };
+enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP, SH_COLONY, SH_EUROPE };
 
 #define KEY_UP     1073741906
 #define KEY_DOWN   1073741905
@@ -536,7 +577,34 @@ static int shell_loop(void)
                 draw_map(); screen = SH_MAP;
             }
             break;
+        case SH_EUROPE: {
+            extern long market_sell(int good, int qty);
+            extern long market_buy(int good, int qty);
+            extern void market_set_active(int power);
+            if (k == 27) { draw_map(); screen = SH_MAP; break; }
+            if (k == KEY_UP)   { g_eur_sel = (g_eur_sel + 15) & 15; draw_europe(); }
+            if (k == KEY_DOWN) { g_eur_sel = (g_eur_sel + 1) & 15;  draw_europe(); }
+            if (k == 's' || k == 'S') {
+                market_set_active((int16_t)DG16(0x5398));
+                long n = market_sell(g_eur_sel, 100);
+                printf("europe: sold 100 of good %d for %ld (net of tax)\n",
+                       g_eur_sel, n);
+                draw_europe();
+            }
+            if (k == 'b' || k == 'B') {
+                market_set_active((int16_t)DG16(0x5398));
+                long n = market_buy(g_eur_sel, 100);
+                printf("europe: bought 100 of good %d for %ld\n", g_eur_sel, n);
+                draw_europe();
+            }
+            break;
+        }
         case SH_MAP:
+            if (k == 'e' || k == 'E') {
+                extern void market_set_active(int power);
+                market_set_active((int16_t)DG16(0x5398));
+                draw_europe(); screen = SH_EUROPE; break;
+            }
             if (k == 27) {
                 if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
                 screen = SH_TITLE; break;
