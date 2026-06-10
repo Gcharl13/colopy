@@ -591,6 +591,18 @@ int main(int argc, char **argv)
     const char *env = getenv("VICEROY_DATA");
     if (env) g_data = env;
 
+    /* the DGROUP initialized window, from the USER'S OWN VICEROY.EXE at
+     * runtime (file 0x1D9A0 .. +0x2CC5; nothing embedded in this binary) */
+    {
+        extern int dgroup_load_image(const char *);
+        if (dgroup_load_image(g_data) == 0)
+            printf("  DGROUP    : init window loaded from VICEROY.EXE "
+                   "(anchor @0xB4 ok)\n");
+        else
+            printf("  DGROUP    : VICEROY.EXE not found -- embedded tables "
+                   "stay zero\n");
+    }
+
     int n = viceroy_load_names(g_data);
     if (n >= 0)
         printf("  NAMES.TXT : %d entries (%s | %s | %s | %s)\n", n,
