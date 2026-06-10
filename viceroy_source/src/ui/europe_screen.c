@@ -125,7 +125,12 @@ extern struct PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  *     (Exact pixel x/y of the banner are set inside the 0x181F:0xB0 text
  *      engine from the current cursor; the banner occupies the y=0..45 strip
  *      per docs/RENDERER_GEOMETRY.md.  String IDs cited above; pixel origin
- *      not yet decoded -- lives in the resident text engine, not this page.)
+ *      RESOLVED 2026-06-10: the resident text engine is now located -
+ *      func_00E51C (0x0C11:0xC, proportional-font renderer; glyph widths
+ *      from font[+2], x advances per glyph) and func_00DDEA (0x0B9E:0xA
+ *      glyph driver); both compute VRAM origins via 0x0A4E:0x0008(x,y).
+ *      See docs/RESIDENT_LIB.md - exact pixel placement is in those two
+ *      bodies (full disasm available).)
  *
  * ----------------------------------------------------------------------------
  * (3) DOCK + SHIPS + IN-PORT LIST  func_0314DC @file 0x0314DC

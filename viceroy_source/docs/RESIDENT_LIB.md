@@ -66,7 +66,7 @@ where marked; others pending (each has per-function disasm where noted).
 | 09F6:00B0 | 1 | 0x0C410 | y | (pending) |
 | 0A29:01D1 | 1 | 0x0C861 | - | (pending) |
 | 0A29:021B | 1 | 0x0C8AB | y | (pending) |
-| 0A4E:001C | 1 | 0x0C8FC | y | (pending) |
+| 0A4E:001C | 1 | 0x0C8FC | y | font/measure helper (sibling of 0A4E:0008 xy->VRAM addr used by both text drivers) |
 | 0A58:000D | 3 | 0x0C98D | - | (pending) |
 | 0A58:0054 | 4 | 0x0C9D4 | - | (pending) |
 | 0A58:008C | 1 | 0x0CA0C | y | (pending) |
@@ -90,7 +90,7 @@ where marked; others pending (each has per-function disasm where noted).
 | 0BBC:000C | 2 | 0x0DFCC | y | (pending) |
 | 0C0C:0012 | 1 | 0x0E4D2 | - | (pending) |
 | 0C0C:0022 | 10 | 0x0E4E2 | - | get_draw_target() -> far ptr [0x8338:0x833A] BYTE_VERIFIED |
-| 0C11:000C | 12 | 0x0E51C | y | draw formatted text at x,y (sprintf 0xD1D:0x117E; font state [0x269E]) |
+| 0C11:000C | 12 | 0x0E51C | y | PROPORTIONAL-FONT TEXT RENDERER: sprintf (0xD1D:0x117E) into stack buf, then per-glyph draw - glyph width from font[+2+char] table, x advances per glyph, clipped against bounds rect ([bx]=w,[bx+2]=h); VRAM target via 0A4E:0008(x,y); register args (font ptr, x, y, bounds) BYTE-READ 2026-06-10 |
 | 0C28:000A | 12 | 0x0E68A | y | set_text_style(b0,b1,b2,b3)->[0x269E..0x26A1] BYTE_VERIFIED |
 | 0C2E:0022 | 1 | 0x0E702 | y | (pending) |
 | 0C36:000A | 10 | 0x0E76A | y | CLIPPED RLE SPRITE BLITTER (0xFF row/0xFE run/0xFD transp; mirror; 12B records) BYTE_VERIFIED |
