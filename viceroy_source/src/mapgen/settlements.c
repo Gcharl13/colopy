@@ -100,7 +100,13 @@ int native_add(int x, int y, int tribe)
 }
 
 /* ---------------------------------------------------------------------------
- * place_native_settlements — New-Game seeding driver.  ALGORITHM = not yet decoded.
+ * place_native_settlements — New-Game seeding driver.  ALGORITHM = not yet
+ * located in the dumps; WHAT IS BYTE-CONFIRMED (2026-06-10): the NS table
+ * lives at 0x54EC stride 0x12 x [0x539A] entries and is READ AS A BLOCK by
+ * the savegame loader func_0734F8 @0x073616 (fread 0xD1D:0x60C), alongside
+ * the PowerRecords (0x8808, 4 x 0x13C) and the TRIBE TABLE (base 0x5AD6,
+ * 0x270 bytes = 8 tribes x 0x4E -- pinning the 0x5AD8 tech byte = tribe+2).
+ * On premade maps (AMERICA.MP / *.MP picker) positions come from map data.
  *
  * The placement driver that repeatedly calls native_add (tile pick, tribe-by-
  * region assignment, camp/village/city/capital and population rolls, spacing
