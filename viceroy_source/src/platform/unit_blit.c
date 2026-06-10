@@ -7,7 +7,15 @@
  *
  * Cell selection (file 0x3710..0x37BD):
  *   cell = byte[type*9 + 0x5232]           (the NAMES.TXT @UNIT icon column)
- *   type 0 (colonist): profession-based redirect via 0x36B2 (NOT yet ported;
+ *   type 0 (colonist): profession redirect DECODED 2026-06-10 (near
+ *   func @file 0x36B2, hand-read):
+ *     ax = profession; if (prof - 0x13) > 9 -> frame = prof + 0x52 (default)
+ *     else jump table (cs-rel words @0x36C4: 30 36 3C 42 28 48 4E 54 5A 30)
+ *     -> stubs returning fixed frames {0x65, 0x3B, 0x3C, 0x3D, 0x3E, 0x6B,
+ *        0x6C, 0x43} or the +0x52 default (cases 4 and 9 share it).
+ *     Exact per-profession pairing: case order 0x13..0x1C maps through the
+ *     table in order; verify the two default cases visually at port time.
+ *   (was: NOT yet ported;
  *     falls back to the base cell, cite-marked)
  *   priority overrides for pioneer/missionary tool/cross cells @0x3751..
  *     (cells 0x4A/0x4B; ported below for the cited cases)
