@@ -1960,7 +1960,22 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
  *             no LCALLs) | ported?=NO.
  *             *** AUTO-BODY WRONG: this is NOT a 15-byte accessor. The dumper
  *             mis-stopped after the first global read. It is a 479-byte function
- *             (ENTER 0x56). Body below is bogus -- real logic not yet decoded. ***
+ *             (ENTER 0x56). DECODED 2026-06-10 from func_03E664.asm:
+ *             the PRE-REVOLUTION MERCENARY OFFER turn step --
+ *               if revolution declared: return
+ *               if random(0,0x14) != 0: return        ; 1-in-21 per turn
+ *               seller = random(0,3); [0x53D6] = seller
+ *               non-self seller must hold the TREATY bit 0x40 with us
+ *               zero [0x9E46..0x9E4C]; n = random(1,3) regulars
+ *               coin-flips add +1 regular or 1 artillery/cavalry
+ *               unit_price = ((difficulty+4)*2 + roll) * 100
+ *                 (@0x03E713..0x03E720; the POST-revolution sibling
+ *                 func_03E442 uses (difficulty+3)*2 -- pre-war mercs cost
+ *                 one difficulty step more)
+ *               total = (regulars + 2*(cavalry+artillery)) * unit_price
+ *               affordable -> offer dialog; accept -> gold debit, spawn;
+ *               message key 0x134C = "MERCENARIES" (string dumped).
+ *               Full constants in func_03E664.asm (155 lines). ***
  * @status     PORTED (ported; reseg 479B -- auto "tiny accessor" is bogus)
  */
 /* ============================================================================
