@@ -407,14 +407,17 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      * @asm 0x2C3E gated on notify_kind!=0 (0x2C3E) AND score!=0x3E7 sentinel
      *      (0x2C48) AND [bp-0xb2] (best-good index) >= 0 (0x2C52).  Builds
      *      LEADER2(0x191E)+WANTSTUFF(0x1926), shows dialog @0x2CE5.
-     * @asm 0x2CF5 on dlg==2: moves the desired commodity between the two
-     *      powers' EU market arrays at DGROUP:0x5DE0 (indexed power*0x65+good).
-     *      (Verified arithmetic; the 0x5DE0 array's exact meaning is not yet decoded.) */
+     * @asm 0x2CF5 on dlg==2: DECODED (func_057F4E.asm @0x058FA5..0x058FC8 BYTE_VERIFIED):
+     *   MARKET_PRICE_5DE0[power_other*0x65 + best_good] -= amount   (@asm 0x058FB4)
+     *   MARKET_PRICE_5DE0[power_self *0x65 + best_good] += amount   (@asm 0x058FC2)
+     * Transfers `amount` worth of commodity `best_good` from power_other's EU
+     * market supply to power_self's.  0x5DE0 = EU market word array (stride 0x65
+     * per power, 16 goods × 2 bytes; confirmed in tax_apply.c MARKET_PRICE_5DE0). */
     if (notify_kind != 0 && score != 0x3E7 /* && best_good >= 0 */) { /* @asm 0x2C3E/0x2C48/0x2C52 */
         /* build LEADER2(0x191E)+WANTSTUFF(0x1926); show dialog @0x2CE5 */
         dlg = ui_dialog_show(power_other, (int)buf);     /* @asm 0x2CE5 lcall 0x1a1f,0x688 */
         if (dlg == 2) {                                  /* @asm 0x2CF0 cmp ax,2 */
-            /* @asm 0x2CF5..0x2D12: market-array transfer at 0x5DE0 (units not yet decoded) */
+            /* @asm 0x2CF5: transfer amount of best_good from power_other to power_self in 0x5DE0 */
             want_action = 0;                             /* @asm 0x2D16 */
         }
     }
