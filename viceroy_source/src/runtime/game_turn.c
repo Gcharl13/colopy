@@ -29,6 +29,7 @@
 #ifdef _VICEROY_MODERN
 
 #include <stdio.h>
+#include <string.h>
 #include "viceroy_types.h"
 #include "dgroup.h"
 
@@ -188,6 +189,37 @@ int viceroy_world_smoke(int turns)
         }
         printf("economy: sold 100 @ bid %d -> gross %ld, tax %ld, net %ld "
                "(crown +%d)\n", bid, gross, tax, net, *crown - c0);
+    }
+
+    /* ---- SAVE/LOAD ROUND-TRIP against the ORIGINAL format ---- */
+    {
+        extern int save_game_state(const char *path);
+        extern int load_savegame(const char *path);
+        extern uint8_t g_dgroup[];
+        static uint8_t snap[0x200];
+        memcpy(snap, g_dgroup + 0x8808, 0x200);        /* PowerRecord 0 window */
+        uint16_t y0 = G_YEAR;
+        if (save_game_state("/tmp/viceroy_smoke.sav") != 0) {
+            puts("SMOKE FAIL: save_game_state");
+            return 1;
+        }
+        memset(g_dgroup + 0x8808, 0xAA, 0x200);        /* trash it */
+        G_YEAR = 1;
+        if (load_savegame("/tmp/viceroy_smoke.sav") != 0) {
+            puts("SMOKE FAIL: load_savegame");
+            return 1;
+        }
+        if (memcmp(snap, g_dgroup + 0x8808, 0x200) != 0 || G_YEAR != y0) {
+            int bad = -1;
+            for (int k = 0; k < 0x200; k++)
+                if (snap[k] != g_dgroup[0x8808 + k]) { bad = k; break; }
+            printf("SMOKE FAIL: round-trip mismatch (first byte +0x%X: %02X->%02X; year %u vs %u)\n",
+                   bad, bad>=0?snap[bad]:0, bad>=0?g_dgroup[0x8808+bad]:0, y0, G_YEAR);
+            return 1;
+        }
+        printf("save/load: %u-byte PowerRecord window + year survive the "
+               "original-format round-trip\n", 0x200);
+        remove("/tmp/viceroy_smoke.sav");
     }
 
     if (turns >= 50) {   /* sentiment 42/turn (d=4) crosses 1800 -> REF unit */

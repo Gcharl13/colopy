@@ -69,3 +69,14 @@ PROVIDE(g_market_phase = g_dgroup + 0x538E);
 PROVIDE(difficulty = g_dgroup + 0x53A6);
 PROVIDE(g_active_power_index = g_dgroup + 0x9E12);
 PROVIDE(g_cargo_param = g_dgroup + 0x96FC);
+PROVIDE(g_map_w = g_dgroup + 0x853A);
+PROVIDE(g_map_h = g_dgroup + 0x853C);
+/* save/load record tables + counts (byte-cited in save_serializer.c) */
+PROVIDE(g_colony_table = g_dgroup + 0x5D46);
+PROVIDE(g_unit_table   = g_dgroup + 0x3144);
+PROVIDE(g_power_table  = g_dgroup + 0x8808);
+PROVIDE(g_native_table = g_dgroup + 0x54EC);
+PROVIDE(g_colony_count = g_dgroup + 0x539E);
+PROVIDE(g_unit_count   = g_dgroup + 0x539C);
+PROVIDE(g_native_count = g_dgroup + 0x539A);
+PROVIDE(g_save_version = g_dgroup + 0x081A);

@@ -88,3 +88,55 @@ int int21h_AH_4E(const char *path, int attr) { (void)path; (void)attr; return -1
 int int21h_AH_4F(void)                  { return -1; }
 
 #endif /* _VICEROY_MODERN */
+
+/* ============================================================================
+ * MSC stdio bridge for the SAVE/LOAD drivers (integration 2026-06-10).
+ * The byte-cited DOS leaves (0xD1D:0x4DA fopen / 0x528 fread / 0x60C fwrite /
+ * 0x3F4 fclose / 0xE4A remove; the 0x1A1F:0xDE4/0xDEE magic pair and
+ * 0xC9C/0xCB4 block IO) become host stdio.  ARG ORDER per the citations:
+ * msc_fopen(mode, path).  Strong definitions override the weak floor.
+ * ============================================================================ */
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+/* The byte-cited serializers pass DGROUP OFFSETS as buffer "pointers"
+ * (e.g. fwrite(0x5380,1,142,f) writes the colony-name block).  Rebase any
+ * sub-64K pointer through g_dgroup so their structure stays untouched. */
+extern unsigned char g_dgroup[];
+/* the one FAR block the serializer touches: seg 0x1B22:0000, 0x378 bytes
+ * (a resident table; identity pending port -- zeros keep the format length) */
+static unsigned char g_far_1B220[0x378];
+static void *dg_rebase(const void *p)
+{
+    uintptr_t a = (uintptr_t)p;
+    if (a >= 0x1B220 && a < 0x1B220 + sizeof g_far_1B220)
+        return g_far_1B220 + (a - 0x1B220);
+    return a < 0x10000 ? (void *)(g_dgroup + a) : (void *)p;
+}
+
+void *msc_fopen(const char *mode, const char *path) { return fopen(path, mode); }
+int   msc_fclose(void *f)                  { return f ? fclose((FILE *)f) : -1; }
+int   msc_fread (void *p, int sz, int n, void *f)
+                                           { return (int)fread (dg_rebase(p), (size_t)sz, (size_t)n, (FILE *)f); }
+int   msc_fwrite(const void *p, int sz, int n, void *f)
+                                           { return (int)fwrite(dg_rebase(p), (size_t)sz, (size_t)n, (FILE *)f); }
+int   msc_remove(const char *path)         { return remove(path); }
+int   msc_strcmp(const char *a, const char *b) { return strcmp(a, b); }
+
+void  put_magic_string(void *f, const char *s)      /* writes "COLONIZE" + NUL */
+{
+    fwrite(s, 1, strlen(s) + 1, (FILE *)f);
+}
+int   get_magic_string(void *f, char *buf)          /* reads through the NUL */
+{
+    int i = 0, c;
+    while (i < 15 && (c = fgetc((FILE *)f)) != EOF) {
+        buf[i++] = (char)c;
+        if (c == 0) return i;
+    }
+    buf[i] = 0;
+    return i;
+}
+int   blk_write(void *f, const void *p, uint32_t n) { return (int)fwrite(dg_rebase(p), 1, n, (FILE *)f); }
+int   blk_read (void *f, void *p, uint32_t n)       { return (int)fread (dg_rebase(p), 1, n, (FILE *)f); }

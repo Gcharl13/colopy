@@ -157,20 +157,28 @@ int load_savegame(const char *path)
     /* @asm 0x073C4B : map size (long); @0x073C66 compare with current [0x180:0x182].
      *   If current map size is 0 (fresh), ALLOCATE the map buffers instead of a
      *   mismatch (alloc path @0x073CA8, sets alloc_flag). Otherwise mismatch->LOADSIZE. */
-    LOAD_BLOCK(f, &saved_mapsize, 4, 1);
-    if (g_map_layer_bytes == 0) {
-        /* @0x073C84 : allocate map buffers sized to saved_mapsize (0x1A1F:0xC72).
-         *   Allocation failure -> result=1; success sets alloc_flag. [ANCHOR body] */
-        alloc_flag = 1;       /* @0x073CA8 */
-        g_map_layer_bytes = saved_mapsize;
-    } else if (saved_mapsize != g_map_layer_bytes) {
-        result = 4;           /* @0x073C7C : LOADSIZE */
-        goto load_done;
+    /* CORRECTED 2026-06-10 against func_073BB0.asm: the 4 bytes are the
+     * (w,h) WORD PAIR (the save writes 0x853A..0x853D verbatim), compared
+     * against the CURRENT pair held at [0x180:0x182]; both 0x853A pushes go
+     * to the CONVERT-STORE helper 0xD1D:0xD82 (no second file read). */
+    LOAD_BLOCK(f, &saved_mapsize, 4, 1);             /* the saved (w,h) pair */
+    {
+        extern uint8_t g_dgroup[];
+        uint32_t cur_pair = (uint32_t)(*(uint16_t *)(g_dgroup + 0x853A))
+                          | ((uint32_t)(*(uint16_t *)(g_dgroup + 0x853C)) << 16);
+        if (g_map_layer_bytes == 0) {
+            /* @0x073C84 : allocate map buffers from the saved pair (0x1A1F:0xC72). */
+            alloc_flag = 1;   /* @0x073CA8 */
+            g_map_layer_bytes = (uint32_t)(saved_mapsize & 0xFFFF)
+                              * (uint32_t)(saved_mapsize >> 16);
+        } else if (saved_mapsize != cur_pair) {
+            result = 4;       /* @0x073C7C : LOADSIZE */
+            goto load_done;
+        }
+        /* @0x073CAD : store the pair into [0x853A]/[0x853C] (0xD1D:0xD82). */
+        *(uint16_t *)(g_dgroup + 0x853A) = (uint16_t)(saved_mapsize & 0xFFFF);
+        *(uint16_t *)(g_dgroup + 0x853C) = (uint16_t)(saved_mapsize >> 16);
     }
-
-    /* @asm 0x073CAD : map width/height (4) re-read into [0x853A] (the convert
-     *   helper 0xD1D:0xD82 normalizes the long), then the fixed blocks. */
-    LOAD_BLOCK(f, &g_map_w, 4, 1);                   /* width+height */
     LOAD_BLOCK(f, (uint8_t *)0x5380, 0x8E, 1);       /* global block */
     LOAD_BLOCK(f, (uint8_t *)0x540E, 0xD0, 1);       /* per-power names */
     LOAD_BLOCK(f, (uint8_t *)0x948E, 0x18, 1);

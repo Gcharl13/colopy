@@ -139,6 +139,7 @@ void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
      * wp_* plumbing implements. */
     DG16(G_LAYERS_RESIDENT) = 0;
     { extern void tilehead_reset(int,int); tilehead_reset(w, h); }
+    { extern void viceroy_save_bind_layers(void); viceroy_save_bind_layers(); }
 }
 
 /* commit the 3 working pointers for the CURRENT tile.
@@ -467,3 +468,18 @@ int sheet_frame_w_icons(int id)
 }
 void draw_text(int x, int y, const char *buf) { vid_text_xy(buf, x, y); }
 void enter_screen_view(int bx_screen_id) { (void)bx_screen_id; }
+
+/* ---- save/load map-layer bridge (integration 2026-06-10) -------------------
+ * The serializers' externs (DOS layer ptrs at [0x15C..0x168], byte count at
+ * [0x180]) become the attached host layers. Layer 3 = the computed region
+ * nibbles (g_l164). */
+void     *g_map_layer[4];
+uint32_t  g_map_layer_bytes;
+void viceroy_save_bind_layers(void)
+{
+    g_map_layer[0] = (void *)g_layer[0];
+    g_map_layer[1] = (void *)g_layer[1];
+    g_map_layer[2] = (void *)g_layer[2];
+    g_map_layer[3] = (void *)g_layer[3];
+    g_map_layer_bytes = (uint32_t)g_layer_len;
+}
