@@ -69,24 +69,61 @@ extern uint16_t g_word_8D52;
 #define U_DESTX  0x09   /* [bx+0x314D] goto destination x */
 #define U_DESTY  0x0A   /* [bx+0x314E] goto destination y */
 
-/* ---- cross-segment capability / query helpers (0x181F:*) -------------------
- * Arg/return shapes from the call sites only; the bitmask tests are byte-clear
- * (test/and 0xA, 0x40).  0x181F:0x302 RESOLVED 2026-06-10: it is
- * map_in_bounds(x,y) = (1 <= x < [0x853A]-1 && 1 <= y < [0x853C]-1),
- * resident func_005BFA, full body byte-verified (docs/RESIDENT_LIB.md). */
-extern int func_005BFA_logic_sz_49(uint16_t x, uint16_t y);
-                       /* @asm 0x04E347 lcall 0x181F:0x302 = map_in_bounds
-                        * (resident func_005BFA, BYTE_VERIFIED port in
-                        * src/load_image/load_image_004EE6_005DF0.c) */
-extern int16_t ovly_query_181F_952(int16_t owner, int16_t y, int16_t x);/* @asm 0x04E387 */
-extern int16_t ovly_query_181F_614(int16_t x, int16_t y, int16_t a, int16_t b);/* @asm 0x04E39E */
-extern int16_t ovly_query_181F_722(int16_t x, int16_t y);            /* @asm 0x04E3BD */
-extern int16_t ovly_query_181F_d84(int16_t x, int16_t y, int16_t a, int16_t b);/* @asm 0x04E419 */
-extern int16_t ovly_market_181F_30C(int16_t owner, int16_t ctx);     /* @asm 0x04E44D */
-extern int16_t ovly_market_181F_a60(int16_t v);                      /* @asm 0x04E456 */
-extern int16_t ovly_query_181F_78C(int16_t x, int16_t y);            /* @asm 0x04E4B7 */
-extern int16_t ovly_query_181F_72C(int16_t x, int16_t y);            /* @asm 0x04E4E4 */
-extern int16_t ovly_query_181F_754(int16_t x, int16_t y);            /* @asm 0x04E4FB */
+/* ---- cross-segment leaves, ALL resolved through the thunk rule and bound to
+ * their existing BYTE_VERIFIED ports (identities in docs/RESIDENT_LIB.md and
+ * the per-file headers cited):
+ *   0x181F:0x302 -> 0x05BFA map_in_bounds          0x181F:0x952 -> 0x0723E
+ *   0x181F:0x614 -> 0x083F2 nearest-colony         0x181F:0x722 -> 0x05E90
+ *   0x181F:0xD84 -> 0x46056 nearest-settlement     0x181F:0x30C -> 0x082A0
+ *   0x181F:0xA60 -> 0x08262 tier classifier        0x181F:0x78C -> 0x0627A
+ *   0x181F:0x72C -> 0x05CFE layer-15C read         0x181F:0x754 -> 0x05D32
+ *   0x181F:0x718 -> 0x060A0 structure phase        0x181F:0x9E6 -> 0x082DC
+ *   0x181F:0x37A -> 0x0493C octile distance        0x181F:0x984 -> 0x0704C
+ *   0x181F:0x90C -> 0x06CCA display tile           0x181F:0x8BC -> 0x073A8
+ *   0x181F:0x2EE -> 0x06672 chain head (AX-arg)    0x181F:0x2E4 -> 0x066BA next
+ *   0x181F:0x98E -> 0x06696 chain tail (AX-arg; trivial walker, static below)
+ * NOTE [0x8DB8]: the nearest-colony/settlement finders WRITE the winning
+ * distance there (G_NEAREST_DIST) and SELECT the winner (0x8542/ctx); the
+ * head snapshots it after each call -- that is the [bp-0x72]/[bp-0x2C]/
+ * [bp-0x9E]/[bp-0x3A] pattern below. */
+extern int func_005BFA_logic_sz_49(uint16_t x, uint16_t y);          /* in-bounds */
+extern int func_00723E_op_sz_48(uint16_t x, uint16_t y, uint16_t owner);
+extern int func_0083F2_op_sz_71(uint16_t x, uint16_t y, uint16_t owner_f,
+                                uint16_t region_f);  /* -> colony idx; [0x8DB8]=dist */
+extern int func_005E90_op_sz_64(uint16_t x, uint16_t y);   /* continent id / -1 */
+extern int func_046056_nearest_settlement(uint16_t x, uint16_t y, int16_t dir);
+extern int func_0082A0_logic_sz_18(uint16_t a, uint16_t b);
+extern int func_008262_logic_sz_20(uint16_t v);            /* tier 0..3 (25/50/75) */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);   /* terrain class */
+extern int func_005CFE_map_tile_read_layer_15C(uint16_t x, uint16_t y);
+extern int func_005D32_map_tile_read_layer_160(uint16_t x, uint16_t y);
+extern int func_0060A0_logic_sz_128(uint16_t x, uint16_t y);
+extern int func_0082DC_logic_sz_118(uint16_t colony);      /* select -> [0x8542]/ctx */
+extern int func_00493C_logic_sz_14(uint16_t x, uint16_t y, uint16_t x2, uint16_t y2);
+extern int func_00704C_op_sz_205(uint16_t x, uint16_t y, uint16_t owner);
+extern int func_006CCA_logic_sz_13(uint16_t unit);
+extern int func_0073A8_logic_sz_99(uint16_t unit, uint16_t category);
+extern int unit_chain_resolve(int idx);                    /* func_006672 */
+extern int unit_chain_next(int idx);                       /* func_0066BA */
+/* page-0x0D AI helpers (already ported in overlay_04C306_053BC1.c) */
+extern int func_04C7F0_ai_unit_task_total(uint16_t power, uint16_t unit);
+extern int func_04C682_ai_power_strength_delta(uint16_t arg0, int16_t arg1);
+extern int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
+                                              uint16_t power, uint16_t mode);
+extern int func_04C306_ai_queue_a_lookup_max(uint16_t power, uint16_t b0,
+                                             uint16_t b1, uint16_t b2);
+
+/* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
+ * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
+ * description at load_image_00693A_00760F.c:135). */
+static int unit_chain_tail_6696(int idx)
+{
+    int nxt;
+    if (idx < 0) return idx;
+    while ((nxt = unit_chain_next(idx)) >= 0)
+        idx = nxt;
+    return idx;
+}
 
 /* ---- the EXIT TAIL's three far calls, resolved through the thunk rule ------
  * (table file 0x1A5F0; all three are Type-B RESIDENT records, loader 0x0D91):
@@ -111,11 +148,23 @@ static int16_t move_eval_tail_51C68(int16_t unit_index, int16_t owner);
 /* ============================================================================
  * unit_move_step -- func_04E2D6 (page 0x0D), file 0x04E2D6..0x51D55 (14975 b)
  * ----------------------------------------------------------------------------
- * Head + order-byte dispatch + validity gate + initial state collection, then
- * the (real) exit tail at 0x51C68.  The scoring body between them leans on
- * leaves that ARE decoded -- the func_05CA7E modifier ladder (ai/unit_ai_leaf.c)
- * and combat/combat_modifiers.c defend_strength -- but its own candidate loops
- * are still to be ported.
+ * The European-AI per-unit decision ladder.  The original's own (release-dead)
+ * trace logs name its sections "AI1".."AI19" (string table @DGROUP 0x1742+);
+ * every section funnels into the COMMIT engine at 0x51A28..0x51C68 ("AI19"),
+ * whose output is a direction choice [bp-0x74] (0..7, or 8 = stay) written to
+ * UnitRecord+0x0B, an orders write (0x0C single-step move with dest, or 5/6
+ * park), and a role profession byte ('9' idle, 'G' colony guard, 'B', 'e',
+ * 'F', ...).  PORTED so far: HEAD (dispatch + state collection), the PRE
+ * section (the reassignment flag ladder, 0x4E50C..0x4E877), AI1 (colony
+ * garrison duty, 0x4E87F..0x4E96A), AI19 (the commit engine) and the EXIT
+ * TAIL.  AI2..AI18 (target seeking / transport / pathing) are the remaining
+ * gap: ai2_stub below falls to the tail = "considered, no decision", exactly
+ * the pre-port behaviour for those paths.
+ *
+ * The 31 `lcall 0x181F:0x77E` trace calls are gated on local [bp-0xAC], which
+ * is cleared at entry (0x4E2EB) and NEVER written again anywhere in the 14975
+ * bytes -- release-dead code, omitted (the gate locations are kept as @asm
+ * cites at each section boundary).
  * ============================================================================ */
 int16_t unit_move_step(int16_t unit_index)
 {
@@ -123,10 +172,39 @@ int16_t unit_move_step(int16_t unit_index)
     int16_t map_x;        /* [bp-0x86] */
     int16_t map_y;        /* [bp-0x92] */
     int16_t type;         /* [bp-0x62] */
-    int16_t occ;          /* [bp-0xA8] / scratch */
+    int16_t occ;          /* [bp-0xA8] */
+    int16_t dir_choice = 8;   /* [bp-0x74] @asm 0x04E335 (8 = stay) */
+    int16_t escort_8C = 0;    /* [bp-0x8C] cleared @asm 0x04E2E4 */
+    int16_t l_10 = 0;         /* [bp-0x10] cleared @asm 0x04E2E8 (deep sections) */
+    int16_t special;          /* [bp-4]   prof 0x74/0x69 flag */
+    int16_t probe_18;         /* [bp-0x18] */
+    int16_t col_any, col_any_dist;     /* [bp-0xE2], [bp-0x72] */
+    int16_t reg_active;       /* [bp-0x70] */
+    int16_t col_own, col_own_dist;     /* [bp-0x60], [bp-0x2C] */
+    int16_t reg_own_col;      /* [bp-0x2A] */
+    int16_t settle_idx, settle_dist;   /* [bp-0xAA], [bp-0x9E] */
+    int16_t reg_origin;       /* [bp-0x9C] */
+    int16_t tier_52;          /* [bp-0x52] */
+    int16_t ai_word_3C;       /* [bp-0x3C] */
+    int16_t col_reg, col_reg_dist;     /* [bp-0x50], [bp-0x3A] */
+    int16_t ship_band;        /* [bp-0x32] */
+    int16_t colony_like;      /* [bp-0x8E] */
+    int16_t abil_82, abil_58; /* [bp-0x82], [bp-0x58] */
+    int16_t region;           /* [bp-0x36] */
+    int16_t mission_28;       /* [bp-0x28] */
+    int16_t struct_84;        /* [bp-0x84] */
+    int16_t task_total_12;    /* [bp-0x12] */
+    int16_t reassign;         /* [bp-0x68] */
+    int16_t transport_CA;     /* [bp-0xCA] */
+    int16_t transport_DA;     /* [bp-0xDA] */
+    int16_t deficit_B4;       /* [bp-0xB4] */
+    int16_t stack_n_56;       /* [bp-0x56] */
+    int16_t fortify_CC = 0;   /* [bp-0xCC] set only @asm 0x51A11 (AI18, unported:
+                               * defensive 0 keeps AI19's CC-branch cold) */
+    int16_t guard_adj_E8 = 0; /* [bp-0xE8] set only @asm 0x514C0 (AI18, unported) */
 
-    /* @asm 0x04E2DC mov [bp-0xB6],1   -- a default "result/continue" flag = 1
-     * @asm 0x04E2E2 sub ax,ax; clear [bp-0x8C], [bp-0x10], [bp-0xAC]  -- accums */
+    /* @asm 0x04E2DC mov [bp-0xB6],1   -- result word (the tail returns 0)
+     * @asm 0x04E2E2 sub ax,ax; clear [bp-0x8C], [bp-0x10], [bp-0xAC] */
 
     /* @asm 0x04E2EF imul bx,[bp+6],0x1C
      * @asm 0x04E2F3 mov al,[bx+0x3147]; and ax,0xF; mov [bp-0xE4],ax */
@@ -168,59 +246,325 @@ int16_t unit_move_step(int16_t unit_index)
         return move_eval_tail_51C68(unit_index, owner); /* @asm 0x04E358 jmp 0x51c68 */
     }
 
-    /* ---- special profession flag: 0x74 or 0x69 -> a "special" unit kind ----
-     * @asm 0x04E360 cmp [bx+0x314B],0x74; je set1
-     * @asm 0x04E367 cmp [bx+0x314B],0x69; jne set0
-     *      [bp-4] = (prof==0x74 || prof==0x69) ? 1 : 0 */
+    /* ---- special profession flag: 0x74 't' or 0x69 'i' ---------------------
+     * @asm 0x04E360/0x04E367/0x04E36E/0x04E376 */
     {
         uint8_t prof = U_OFF(unit_index, U_PROF);
-        int special = (prof == 0x74 || prof == 0x69) ? 1 : 0;  /* @asm 0x04E36E/0x04E376 */
-        (void)special; /* feeds the scoring tail */
+        special = (prof == 0x74 || prof == 0x69) ? 1 : 0;
+        (void)special;            /* read by the unported deep sections */
     }
 
-    /* ---- initial state collection: a battery of map/capability probes that
-     * seed the scoring scratchpad. These are byte-clear call edges with bodies
-     * in thunk pages; reproduced for fidelity of side effects. -------------- */
-    (void)ovly_query_181F_952(owner, map_y, map_x);            /* @asm 0x04E387 -> [bp-0x18] */
-    (void)ovly_query_181F_614(map_x, map_y, -1, -1);           /* @asm 0x04E39E -> [bp-0xE2] */
-    /* active record (0x8542) origin probes: near ptr -> .x/.y bytes */
-    (void)ovly_query_181F_722(DG8(DG16(0x8542) + 0),
-                              DG8(DG16(0x8542) + 1));           /* @asm 0x04E3BD -> [bp-0x70] */
-    (void)ovly_query_181F_614(map_x, map_y, -1, -1);           /* @asm 0x04E3D6 -> [bp-0x60] */
-    (void)ovly_query_181F_d84(map_x, map_y, -1, -1);           /* @asm 0x04E419 -> [bp-0xAA] */
-    /* AI bookkeeping (0x8D4A) origin probe: near ptr -> .x/.y bytes */
-    (void)ovly_query_181F_722(DG8(DG16(0x8D4A) + 0),
-                              DG8(DG16(0x8D4A) + 1));            /* @asm 0x04E439 -> [bp-0x9C] */
-    /* market context */
-    {
-        int16_t mv = ovly_market_181F_30C(owner, (int16_t)g_word_8D52); /* @asm 0x04E44D */
-        (void)ovly_market_181F_a60(mv);                         /* @asm 0x04E456 -> [bp-0x52] */
+    /* ---- initial state collection (all leaves are BYTE_VERIFIED ports) ---- */
+    probe_18 = (int16_t)func_00723E_op_sz_48((uint16_t)map_x, (uint16_t)map_y,
+                                             (uint16_t)owner);  /* @asm 0x04E387 */
+    (void)probe_18;
+    col_any = (int16_t)func_0083F2_op_sz_71((uint16_t)map_x, (uint16_t)map_y,
+                                            (uint16_t)-1, (uint16_t)-1); /* @asm 0x04E39E */
+    col_any_dist = (int16_t)DG16(0x8DB8);                       /* @asm 0x04E3AA */
+    /* the finder SELECTED the winner -> [0x8542] points at it */
+    reg_active = (int16_t)func_005E90_op_sz_64(DG8(DG16(0x8542) + 0),
+                                               DG8(DG16(0x8542) + 1)); /* @asm 0x04E3BD */
+    (void)reg_active;
+    col_own = (int16_t)func_0083F2_op_sz_71((uint16_t)map_x, (uint16_t)map_y,
+                                            (uint16_t)owner, (uint16_t)-1); /* @asm 0x04E3D6 */
+    col_own_dist = (int16_t)DG16(0x8DB8);                       /* @asm 0x04E3E1 */
+    if (col_own >= 0)                                           /* @asm 0x04E3E7 */
+        reg_own_col = (int16_t)func_005E90_op_sz_64(DG8(DG16(0x8542) + 0),
+                                                    DG8(DG16(0x8542) + 1)); /* @asm 0x04E3FA */
+    else
+        reg_own_col = -2;                                       /* @asm 0x04E408 */
+    settle_idx = (int16_t)func_046056_nearest_settlement((uint16_t)map_x,
+                                                         (uint16_t)map_y, -1);
+                                  /* @asm 0x04E419 (4th pushed word unused) */
+    settle_dist = (int16_t)DG16(0x8DB8);                        /* @asm 0x04E425 */
+    (void)settle_idx; (void)settle_dist;
+    reg_origin = (int16_t)func_005E90_op_sz_64(DG8(DG16(0x8D4A) + 0),
+                                               DG8(DG16(0x8D4A) + 1)); /* @asm 0x04E439 */
+    (void)reg_origin;
+    tier_52 = (int16_t)func_008262_logic_sz_20(
+        (uint16_t)func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)owner));
+                                  /* @asm 0x04E44D/0x04E456 */
+    (void)tier_52;
+    ai_word_3C = (int16_t)(DG16(DG16(0x8D4A) + 0x0A + owner*2)); /* @asm 0x04E46B */
+    (void)ai_word_3C;
+    col_reg = (int16_t)func_0083F2_op_sz_71((uint16_t)map_x, (uint16_t)map_y,
+                                            (uint16_t)owner, (uint16_t)-2); /* @asm 0x04E47F */
+    col_reg_dist = (int16_t)DG16(0x8DB8);                       /* @asm 0x04E48A */
+    (void)col_reg; (void)col_reg_dist;
+
+    /* @asm 0x04E494 ship band 0x0D..0x12 -> [bp-0x32] */
+    ship_band = (type >= 0x0D && type <= 0x12) ? 1 : 0;
+    occ = (int16_t)func_00627A_op_sz_57((uint16_t)map_x, (uint16_t)map_y); /* @asm 0x04E4B7 */
+    colony_like = (occ == 0x19 || occ == 0x1A) ? 1 : 0;         /* @asm 0x04E4CD/0x04E4D6 */
+    (void)colony_like;
+    abil_82 = (int16_t)(func_005CFE_map_tile_read_layer_15C((uint16_t)map_x,
+                                          (uint16_t)map_y) & 0x40); /* @asm 0x04E4EC */
+    (void)abil_82;
+    abil_58 = (int16_t)(func_005D32_map_tile_read_layer_160((uint16_t)map_x,
+                                          (uint16_t)map_y) & 0x0A); /* @asm 0x04E503 */
+    (void)abil_58;
+
+    /* ======================= PRE: the REASSIGNMENT ladder ===================
+     * (0x4E50C..0x4E877) computes [bp-0x68]: "this unit should pick new work".
+     * ======================================================================== */
+    region = (int16_t)func_005E90_op_sz_64((uint16_t)map_x, (uint16_t)map_y);
+                                                                /* @asm 0x04E511 */
+    if (region >= 0)                                            /* @asm 0x04E51E */
+        mission_28 = DG8(0x9870 + owner*16 + region);           /* @asm 0x04E529
+                                  * [bx+si-0x6790]: per-power-per-region byte */
+    else
+        mission_28 = 5;                                         /* @asm 0x04E534 */
+    struct_84 = (int16_t)func_0060A0_logic_sz_128((uint16_t)map_x,
+                                                  (uint16_t)map_y); /* @asm 0x04E541 */
+    (void)struct_84;
+    task_total_12 = (int16_t)func_04C7F0_ai_unit_task_total((uint16_t)owner,
+                                                            (uint16_t)unit_index);
+                                  /* @asm 0x04E555 push cs; call 0x53539 stub
+                                   * -> 0x1A1F:0x590 -> 0x4C7F0 */
+
+    /* @asm 0x04E562..0x04E578: types 2 and 0 default to reassignable */
+    reassign = (type == 2 || type == 0) ? 1 : 0;
+    if (U_OFF(unit_index, 0x17) == 0x1B)                        /* @asm 0x04E581 [bx+0x315B] */
+        reassign = 0;
+
+    if (type == 1 || type == 4) {                               /* @asm 0x04E591/0x04E598 */
+        if (U_OFF(unit_index, U_ORDERS) == 0)                   /* @asm 0x04E5A6 */
+            reassign = 1;
+        if (U_OFF(unit_index, U_ORDERS) == 0x0B) {              /* @asm 0x04E5B6 */
+            int d = func_00493C_logic_sz_14((uint16_t)map_x, (uint16_t)map_y,
+                        U_OFF(unit_index, U_DESTX),
+                        U_OFF(unit_index, U_DESTY));            /* @asm 0x04E5D1 octile */
+            if (d > 0x0C)                                       /* @asm 0x04E5D9 */
+                reassign = 1;
+        }
+        if (func_04C682_ai_power_strength_delta((uint16_t)owner, region) > 2)
+            reassign = 1;        /* @asm 0x04E5EB push cs; call 0x534E9 -> 0x4C682;
+                                  * args (owner, region); cmp ax,2; jle */
+        if ((int16_t)func_04CAF6_ai_find_nearest_target((uint16_t)map_x,
+                       (uint16_t)map_y, (uint16_t)owner, 0) >= 0) /* @asm 0x04E60A */
+            reassign = 0;                                       /* @asm 0x04E614 */
+        if (U_OFF(unit_index, 0x17) == 0x15)                    /* @asm 0x04E61D */
+            reassign = 0;
+        /* @asm 0x04E629..0x04E641: per-power-per-region tables
+         * [bx-0x6B1A]=0x94E6 (flag) and [bx-0x6A8E]=0x9572 (count), bx=owner*16+region */
+        if (DG8(0x94E6 + owner*16 + region) == 0 &&
+            DG8(0x9572 + owner*16 + region) < 8)
+            reassign = 1;
+        if (type == 4 && (DG8(0x95F2 + region) & 4))            /* @asm 0x04E64A/0x04E654 */
+            reassign = 0;
     }
 
-    /* ---- occupant kind at this tile (0x19/0x1A flags) --------------------- */
-    /* @asm 0x04E4B7 occ = 0x181F:0x78C(x,y); [bp-0x8E] = (occ==0x19||occ==0x1A) */
-    occ = ovly_query_181F_78C(map_x, map_y);
-    {
-        int colony_like = (occ == 0x19 || occ == 0x1A) ? 1 : 0; /* @asm 0x04E4CD/0x04E4D6 */
-        (void)colony_like;
+    if (type == 5) {                                            /* @asm 0x04E664 */
+        if (U_OFF(unit_index, U_PROF) == 0x32)                  /* @asm 0x04E66B '2' */
+            reassign = 1;
+        if (mission_28 == 0)                                    /* @asm 0x04E677 */
+            reassign = 0;
+        if (DG8(0x94E6 + owner*16 + region) == 0 &&             /* @asm 0x04E68C */
+            (int16_t)DG16(0x538E) % 15 == 0)                    /* @asm 0x04E693 turn%15 */
+            reassign = 1;
+        if (col_own_dist > 0x0C && col_any_dist > 2)            /* @asm 0x04E6A5/0x04E6AB */
+            reassign = 1;
+        /* @asm 0x04E6C5 push cs; call 0x534C6 -> 0x4CAF6 (x,y,owner,0) */
+        if ((int16_t)func_04CAF6_ai_find_nearest_target((uint16_t)map_x,
+                       (uint16_t)map_y, (uint16_t)owner, 0) >= 0 ||
+            (int16_t)DG16(0x538A) > 0x672)                      /* @asm 0x04E6CF year>1650 */
+            reassign = 0;                                       /* @asm 0x04E6D7 */
     }
-    /* @asm 0x04E494 type band 0x0D..0x12 -> [bp-0x32] (native/scout band flag) */
-    {
-        int band = (type >= 0x0D && type <= 0x12) ? 1 : 0;     /* @asm 0x04E494..0x04E4A2 */
-        (void)band;
-    }
-    /* @asm 0x04E4E4 ability 0x72C & 0x40 -> [bp-0x82]; 0x04E4FB ability 0x754 & 0xA */
-    (void)(ovly_query_181F_72C(map_x, map_y) & 0x40);          /* @asm 0x04E4EC */
-    (void)(ovly_query_181F_754(map_x, map_y) & 0x0A);          /* @asm 0x04E503 */
 
-    /* ---- THE SCORING BODY (file 0x4E50C..0x51C68) -------------------------- *
-     * Everything from here scores each of the (up to 8) move candidates using
-     * overlay/data-resident weight tables and writes the chosen action back to
-     * the UnitRecord (orders 0x0B/0x0C + dest, attack commits, etc.).  That
-     * ~13.5KB body is the remaining unported gap of this function; until it
-     * lands, AI units do not CHOOSE new moves here -- they fall through to the
-     * (real) exit tail, which maintains standing orders byte-faithfully. */
-    return move_eval_tail_51C68(unit_index, owner);            /* falls into 0x51c68 */
+    /* ---- home-colony auto-assignment (fast land units) ---------------------
+     * @asm 0x04E6DC..0x04E71B: @UNIT row stride 14 base 0x5234; +2 = movement */
+    if (ship_band == 0 &&
+        DG8(0x5236 + type*14) > 1 &&                            /* @asm 0x04E6FA */
+        (int8_t)U_OFF(unit_index, 0x06) < 0 &&                  /* @asm 0x04E703 [bx+0x314A] */
+        col_own_dist <= 8 &&                                    /* @asm 0x04E70A */
+        reg_own_col == region)                                  /* @asm 0x04E713 */
+        U_OFF(unit_index, 0x06) = (uint8_t)col_own;             /* @asm 0x04E71B */
+
+    /* @asm 0x04E71F..0x04E739: reassign &&= (task_total != 0) */
+    reassign = (reassign != 0 && task_total_12 != 0) ? 1 : 0;
+
+    if (type == 0 && col_own_dist == 0) {                       /* @asm 0x04E73D/0x04E744 */
+        func_0082DC_logic_sz_118((uint16_t)col_own);            /* @asm 0x04E74D select */
+        if (DG8(DG16(0x8542) + 0x1B) & 0x10)                    /* @asm 0x04E759 */
+            reassign = 0;
+    }
+
+    if (reassign != 0 && region >= 0) {                         /* @asm 0x04E764/0x04E76A */
+        /* @asm 0x04E774 cmp type,1; sbb ax,ax; add ax,3 -> cap = type==0 ? 2 : 3 */
+        int cap = (type == 0) ? 2 : 3;
+        uint8_t cnt;
+        DG8(0xA13C + region) += 1;                              /* @asm 0x04E781 [bx-0x5EC4] */
+        cnt = DG8(0xA13C + region);                             /* @asm 0x04E785 */
+        if (cap < (int)cnt)                                     /* @asm 0x04E78B jge keeps */
+            reassign = 0;
+    }
+    if (DG8(0x5382) & 1)                                        /* @asm 0x04E794 revolution */
+        reassign = 0;
+    (void)reassign;     /* consumed by AI2.. (the unported sections) */
+
+    /* ---- transport availability flags (feed AI9..AI12) -------------------- */
+    transport_CA = 1;                                           /* @asm 0x04E7A0 */
+    if (type == 0x12)                                           /* @asm 0x04E7AA */
+        transport_CA = 0;
+    if (type == 0x11) {                                         /* @asm 0x04E7BB */
+        /* @asm 0x04E7C6..0x04E7EB: [si-0x6BEC]=0x9414+owner;
+         * [bx+di-0x6DB4]=0x924C+owner*0x13+type; [bx-0x6DA4]=0x925C+owner*0x13 */
+        deficit_B4 = (int16_t)((int)DG8(0x9414 + owner)
+                     - 3*(int)DG8(0x924C + owner*0x13 + type)
+                     - (int)DG8(0x925C + owner*0x13));
+        if (deficit_B4 >= 4)                                    /* @asm 0x04E7EF */
+            transport_CA = 0;
+        if (func_00704C_op_sz_205((uint16_t)map_x, (uint16_t)map_y,
+                                  (uint16_t)owner) != 0)        /* @asm 0x04E803 */
+            transport_CA = 0;
+    }
+    if (type == 0x10)                                           /* @asm 0x04E819 */
+        transport_CA = (DG8(0xA89B) > 1 || (int16_t)DG16(0x9E52) > 6) ? 1 : 0;
+                                                                /* @asm 0x04E820/0x04E827 */
+    transport_DA = transport_CA;                                /* @asm 0x04E83C */
+    if (type == 0x12 &&                                         /* @asm 0x04E848 */
+        ((unit_index & 1) ||                                    /* @asm 0x04E84F test [bp+6],1 */
+         DG8(0x925E + owner*0x13) == 1))                        /* @asm 0x04E85A [bx-0x6DA2] */
+        transport_DA = 1;
+    (void)transport_DA; (void)deficit_B4;
+    /* @asm 0x04E867 trace gate [bp-0xAC]: dead (never set) -- log "AI1" omitted */
+
+    /* ======================= AI1: COLONY GARRISON DUTY ======================
+     * (0x4E87F..0x4E96A)  Fast land combat units standing in their own colony
+     * while it still needs guards ([colony+0x8E] > 0, or prof 'A'): count the
+     * qualifying stack; one stays as guard ('G', need--), extras get escort
+     * duty (escort_8C=1 -> the AI17 pathing entry @0x50F1E).
+     * ======================================================================== */
+    if (ship_band != 0) goto ai2;                               /* @asm 0x04E883 */
+    if (DG8(0x5236 + type*14) <= 1) goto ai2;                   /* @asm 0x04E8A2 movement */
+    if (type == 4) goto ai2;                                    /* @asm 0x04E8AC */
+    if (type == 8) goto ai2;                                    /* @asm 0x04E8B4 */
+    if (col_own_dist != 0) goto ai2;                            /* @asm 0x04E8BC */
+    func_0082DC_logic_sz_118((uint16_t)col_own);                /* @asm 0x04E8CA select */
+    if ((int8_t)DG8(DG16(0x8542) + 0x8E) <= 0 &&                /* @asm 0x04E8D6 guard need */
+        U_OFF(unit_index, U_PROF) != 0x41)                      /* @asm 0x04E8DD 'A' */
+        goto ai2;
+    stack_n_56 = 0;                                             /* @asm 0x04E8E7 */
+    {   /* @asm 0x04E8EC..0x04E948: the cursor reuses [bp+6]; restored after */
+        int cur = unit_chain_resolve(unit_index);               /* @asm 0x04E8F3 0x2EE */
+        for (; cur >= 0; cur = unit_chain_next(cur)) {          /* @asm 0x04E93D/0x04E938 */
+            uint8_t t2 = U_OFF(cur, U_TYPE);                    /* @asm 0x04E8FD */
+            if (DG8(0x5236 + t2*14) <= 1) continue;             /* @asm 0x04E911 */
+            if (t2 >= 0x0D && t2 <= 0x12) continue;             /* @asm 0x04E918/0x04E91C */
+            if (U_OFF(cur, U_TYPE) == 4) continue;              /* @asm 0x04E924 (cursor) */
+            if (U_OFF(cur, U_TYPE) == 8) continue;              /* @asm 0x04E92B */
+            stack_n_56++;                                       /* @asm 0x04E932 */
+        }
+    }
+    if (U_OFF(unit_index, U_PROF) == 0x41)                      /* @asm 0x04E94E 'A' */
+        goto ai19_park;                                         /* @asm 0x04E955 -> 0x51A89 */
+    if (stack_n_56 <= 1)                                        /* @asm 0x04E958 */
+        goto ai19_guard_commit;                                 /* @asm 0x04E95E -> 0x51A78 */
+    escort_8C = 1;                                              /* @asm 0x04E961 */
+    goto ai17_entry;                                            /* @asm 0x04E967 -> 0x50F1E */
+
+    /* ======================= AI2..AI18 (UNPORTED) ===========================
+     * Target seeking, attack scoring, transport runs, exploration and pathing
+     * (0x4E96A..0x51A28).  Until ported, "considered, no decision": fall to
+     * the exit tail exactly as the pre-port build did on every path.
+     * ======================================================================== */
+ai2:                                                            /* 0x4E96A */
+    return move_eval_tail_51C68(unit_index, owner);
+
+ai17_entry:                                                     /* 0x50F1E (UNPORTED) */
+    /* The escort/pathing engine (AI17..AI18) walks toward [bp-0x60]'s colony
+     * surroundings and falls into AI19 with a chosen direction.  Until it is
+     * ported, the escort candidate stands down (tail), which leaves the unit
+     * parked in the colony -- the same net state as the pre-port build. */
+    (void)escort_8C;
+    return move_eval_tail_51C68(unit_index, owner);
+
+    /* ======================= AI19: the COMMIT engine ========================
+     * (0x51A28..0x51C68)  Role checks, then the direction commit.
+     * ======================================================================== */
+#if 0   /* ai19 proper (0x51A28..0x51A66 + role ladder): becomes reachable when
+         * AI2..AI18 land.  fortify_CC / guard_adj_E8 are its inputs. */
+ai19:
+    if (fortify_CC != 0) {                                      /* @asm 0x51A30 */
+        if ((int)(uint8_t)func_006CCA_logic_sz_13((uint16_t)unit_index)
+            - (int)U_OFF(unit_index, 0x05) < 3)                 /* @asm 0x51A3A/0x51A48 */
+            dir_choice = 8;                                     /* @asm 0x51A55 */
+        U_OFF(unit_index, U_PROF) = 0x39;                       /* @asm 0x51A5E '9' */
+        goto ai19_have_dir;                                     /* @asm 0x51A63 */
+    }
+    if (escort_8C != 0) {                                       /* @asm 0x51A66 */
+        func_0082DC_logic_sz_118((uint16_t)col_own);            /* @asm 0x51A70 */
+        goto ai19_guard_commit;
+    }
+    /* role checks 0x51ACC..0x51C23 (queue A lookups, lone-unit adjacency) */
+    if ((DG8(0x523D + type*14) & 1) && col_own_dist != 0) {     /* @asm 0x51AE4/0x51AEB */
+        int q = func_04C306_ai_queue_a_lookup_max((uint16_t)owner, (uint16_t)map_x,
+                                                  (uint16_t)map_y, 0); /* @asm 0x51B02 */
+        if (q != 0 && q <= 4) {                                 /* @asm 0x51B0B/0x51B0F */
+            if (func_0073A8_logic_sz_99((uint16_t)unit_index, 2) < 2) { /* @asm 0x51B19 */
+                U_OFF(unit_index, U_PROF) = 0x42;               /* @asm 0x51B26 'B' */
+                goto ai19_park;                                 /* @asm 0x51B2B */
+            }
+        }
+    }
+    if (DG8(0x523D + type*14) & 4) {                            /* @asm 0x51B46 */
+        if (func_04C306_ai_queue_a_lookup_max((uint16_t)owner, (uint16_t)map_x,
+                                              (uint16_t)map_y, 2) != 0) { /* @asm 0x51B5E */
+            if (func_0073A8_logic_sz_99((uint16_t)unit_index, 2) < 2) {   /* @asm 0x51B6D */
+                U_OFF(unit_index, U_PROF) = 0x65;               /* @asm 0x51B7A 'e' */
+                goto ai19_park;                                 /* @asm 0x51B7F */
+            }
+        }
+    }
+    /* lone fast unit with hostile neighbour -> 'F' (@asm 0x51B82..0x51C21) */
+    if (DG8(0x5236 + type*14) > 1 &&                            /* @asm 0x51B9A */
+        !(type >= 0x0D && type <= 0x12) &&                      /* @asm 0x51BA4/0x51BA8 */
+        guard_adj_E8 != 0) {                                    /* @asm 0x51BAF */
+        if (unit_chain_tail_6696(unit_index) ==                 /* @asm 0x51BBC 0x98E */
+            unit_chain_resolve(unit_index)) {                   /* @asm 0x51BC6 0x2EE */
+            int16_t d2;
+            for (d2 = 0; d2 < 8; d2++) {                        /* @asm 0x51BD2/0x51BDD */
+                int16_t ny2 = (int16_t)((int8_t)DG8(0x00BE + d2) + map_y);
+                int16_t nx2 = (int16_t)((int8_t)DG8(0x00B4 + d2) + map_x);
+                int16_t oth = (int16_t)func_005F48_logic_sz_58((uint16_t)nx2,
+                                                               (uint16_t)ny2);
+                if (oth < 0) continue;                          /* @asm 0x51C10 */
+                if (oth == owner) continue;                     /* @asm 0x51C12 */
+                U_OFF(unit_index, U_PROF) = 0x46;               /* @asm 0x51C1C 'F' */
+                goto ai19_park;                                 /* @asm 0x51C21 */
+            }
+        }
+    }
+    U_OFF(unit_index, U_PROF) = 0x39;                           /* @asm 0x51A5A '9' */
+    goto ai19_have_dir;
+#endif
+
+ai19_guard_commit:                                              /* 0x51A78 */
+    DG8(DG16(0x8542) + 0x8E) -= 1;                              /* @asm 0x51A7C need-- */
+    U_OFF(unit_index, U_PROF) = 0x47;                           /* @asm 0x51A84 'G' */
+ai19_park:                                                      /* 0x51A89 */
+    dir_choice = 8;
+ai19_have_dir:                                                  /* 0x51A8E */
+    U_OFF(unit_index, 0x0B) = (uint8_t)dir_choice;              /* @asm 0x51A95 [bx+0x314F] */
+    if (dir_choice != 8)                                        /* @asm 0x51A99 */
+        goto ai19_apply;
+    /* stay: park as sentry (or fortify if record flag +0x04 bit2) */
+    if (U_OFF(unit_index, U_ORDERS) != 5 &&                     /* @asm 0x51AA2 */
+        U_OFF(unit_index, U_ORDERS) != 6)                       /* @asm 0x51AA9 */
+        U_OFF(unit_index, U_ORDERS) = 5;                        /* @asm 0x51AB0 */
+    if (U_OFF(unit_index, 0x04) & 2)                            /* @asm 0x51AB9 [bx+0x3148] */
+        U_OFF(unit_index, U_ORDERS) = 6;                        /* @asm 0x51AC3 */
+    return move_eval_tail_51C68(unit_index, owner);             /* @asm 0x51AC0/0x51AC8 */
+
+ai19_apply:                                                     /* 0x51C24 */
+    map_y += (int8_t)DG8(0x00BE + dir_choice);                  /* @asm 0x51C27 cwde */
+    map_x += (int8_t)DG8(0x00B4 + dir_choice);                  /* @asm 0x51C35 cwde */
+    if (func_005BFA_logic_sz_49((uint16_t)map_x, (uint16_t)map_y) == 0)
+        return move_eval_tail_51C68(unit_index, owner);         /* @asm 0x51C4D */
+    U_OFF(unit_index, U_ORDERS) = 0x0C;                         /* @asm 0x51C53 step order */
+    U_OFF(unit_index, U_DESTX)  = (uint8_t)map_x;               /* @asm 0x51C5C */
+    U_OFF(unit_index, U_DESTY)  = (uint8_t)map_y;               /* @asm 0x51C64 */
+    return move_eval_tail_51C68(unit_index, owner);             /* falls into 0x51C68 */
 }
 
 /* ============================================================================
