@@ -138,6 +138,10 @@ extern int  func_191F_9A4_colonist_enter(uint16_t unit_idx, uint16_t colony_idx)
                                               /* 0x191F:0x9A4 -- colonist joins colony,
                                                * called when unit is already on the colony tile;
                                                * returns non-zero on success; body in page07 */
+/* AI7 helpers */
+extern void rpt_select_player(int player);    /* 0x181F:0x582 -> func_030550 set player ctx */
+extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-discharge;
+                                               * args pushed on stack by caller (unit, flag) */
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -830,10 +834,99 @@ ai6_no_colony:                                                  /* 0x4F204 */
         }
     }
 ai7_check:                                                      /* 0x4F23C */
-    /* ======================= AI7..AI18 (UNPORTED) ===========================
-     * Ship cargo delivery, attack scoring, transport runs, exploration and
-     * pathing (0x4F254..0x51A28).  Until ported, "considered, no decision":
-     * fall to the exit tail exactly as the pre-port build did. */
+    /* ======================= AI7: SHIP CARGO DELIVERY =======================
+     * (0x4F254..0x4F748)  Units that can carry cargo AND are at their own
+     * colony: discharge any loaded cargo into the colony's budget tracking
+     * array, then (if still has slots + transport_DA set) evaluate best
+     * delivery destination.
+     *
+     * BYTE_VERIFIED 2026-06-10: gates (0x4F254..0x4F297), chain-fortify-clear
+     * (0x4F297..0x4F2CB), colony context + cargo discharge
+     * (0x4F2CB..0x4F30F), capacity / schooner clamp / guard-colony check
+     * (0x4F30F..0x4F3BF).  Deep delivery-scoring body (0x4F3C0..0x4F748)
+     * stubbed -- uses RUNTIME_ONLY colony-budget tables. */
+    {
+        /* Gate 1: unit type has cargo capacity (type*14 table at 0x5237) */
+        uint8_t  ai7_type = U_OFF(unit_index, U_TYPE);
+        uint16_t ai7_t14  = (uint16_t)((uint16_t)ai7_type * 14u);
+        if (DG8(0x5237 + ai7_t14) == 0) goto ai8;              /* @asm 0x4F26C no cargo */
+        /* Gate 2: at own colony (col_own_dist == 0) */
+        if (col_own_dist != 0) goto ai8;                        /* @asm 0x4F276 */
+        /* Gate 3: ship band OR unit's home colony matches col_own */
+        if (!((uint8_t)ai7_type >= 0x0D && (uint8_t)ai7_type <= 0x12)) { /* @asm 0x4F27F */
+            if (U_OFF(unit_index, 0x06) != (uint8_t)col_own) goto ai8; /* @asm 0x4F28E */
+        }
+        /* Chain walk: clear fortify (orders==1) on every unit in the tile
+         * stack.  [bp+6] is used as the cursor; restore from [bp-0xA4]. */
+        {
+            int ai7_save = unit_index;
+            int ai7_cur  = unit_chain_resolve(unit_index);      /* @asm 0x4F29E */
+            for (;;) {                                          /* @asm 0x4F2BD loop */
+                if (ai7_cur < 0) break;
+                if (U_OFF(ai7_cur, U_ORDERS) == 1)             /* @asm 0x4F2A9 */
+                    U_OFF(ai7_cur, U_ORDERS) = 0;              /* @asm 0x4F2B0 */
+                ai7_cur = unit_chain_next(ai7_save);           /* @asm 0x4F2B8 */
+            }
+        }
+        /* Colony context: select col_own, bind player */
+        func_0082DC_logic_sz_118((uint16_t)col_own);            /* @asm 0x4F2CE */
+        rpt_select_player(owner);                               /* @asm 0x4F2DA */
+        /* Cargo discharge: for each loaded slot, credit colony budget array
+         * colony+0x9A[good*2] += [0x8DC4]; @asm 0x4F2E4: push 0; push unit;
+         * lcall 0x181F:0xAEC -> good-index.  overlay_call_181F_0AEC() is
+         * declared void-arg (DOS stack convention): args must already be on
+         * the stack.  In the modern build this whole section runs only when
+         * cargo_count > 0 (real game data), so the stub returns 0 safely. */
+        {
+            int ai7_iters = 0;                                  /* @asm 0x4F306 loop */
+            while (U_OFF(unit_index, 0x0C) != 0 && ai7_iters < 6) {
+                int16_t cmdty = (int16_t)overlay_call_181F_0AEC(); /* @asm 0x4F2E9 */
+                uint16_t price = DG16(0x8DC4);                 /* @asm 0x4F2F5 */
+                uint16_t si    = (uint16_t)((uint16_t)cmdty * 2u);
+                *(uint16_t near *)(DG_BASE + DG16(0x8542) + 0x9Au + si) += price; /* @asm 0x4F302 */
+                ai7_iters++;
+            }
+        }
+        /* Capacity: slots_left = max_slots(type) - loaded */
+        {
+            int16_t maxslots = (int16_t)DG8(0x5237 + ai7_t14); /* @asm 0x4F351 */
+            int16_t slots_D0 = maxslots - (int16_t)U_OFF(unit_index, 0x0C); /* @asm 0x4F357 */
+            if ((uint8_t)ai7_type == 0x0C && slots_D0 > 1) slots_D0 = 1;  /* @asm 0x4F35D schooner */
+            if (ship_band)                                      /* @asm 0x4F311 */
+                U_OFF(unit_index, 0x06) = 0xFF;                 /* @asm 0x4F31B home:=0xFF */
+            if (ship_band)                                      /* @asm 0x4F320 */
+                DG8(DG16(0x8542) + 0x8F) = 0;                  /* @asm 0x4F32A guard_need:=0 */
+            /* Guard-colony check: ship_band, colony has bit-2 flag, type < 0xF */
+            if (ship_band &&                                    /* @asm 0x4F374 */
+                (DG8(DG16(0x8542) + 0x1B) & 2) &&              /* @asm 0x4F378 */
+                (uint8_t)ai7_type < 0x0F) {                    /* @asm 0x4F382 */
+                int16_t cnt_thresh;
+                U_OFF(unit_index, 0x16)++;                     /* @asm 0x4F389 inc counter */
+                cnt_thresh = (int16_t)(10 - maxslots);         /* @asm 0x4F3AD 10-max */
+                /* neg dx: becomes maxslots-10 < current_count → guard */
+                if ((int16_t)(maxslots - 10) < (int16_t)U_OFF(unit_index, 0x16)) { /* @asm 0x4F3B4 */
+                    U_OFF(unit_index, U_PROF) = 0x43;           /* @asm 0x4F3B8 'C' */
+                    goto ai19_park;                             /* @asm 0x4F3BD jmp 0x51A89 */
+                }
+                (void)cnt_thresh;
+            }
+            /* Scoring gates for delivery evaluation */
+            if (!ship_band)          goto ai7_end;              /* @asm 0x4F3C0 */
+            if (!transport_DA)       goto ai7_end;              /* @asm 0x4F3C9 */
+            if (U_OFF(unit_index, 0x04) & 0x20) goto ai7_end;  /* @asm 0x4F3D7 */
+            /* Deep delivery scoring (0x4F3E1..0x4F4F8 + 0x4F4FC..0x4F73D):
+             * chain walk + per-colony delivery budget loops; uses
+             * RUNTIME_ONLY colony +0x9A budget tables and 0x8DC4 price word.
+             * Structural stub: no decision → fall to tail. */
+            (void)slots_D0;
+ai7_end:;
+        }
+    }
+ai8:                                                            /* 0x4F748 */
+    /* ======================= AI8..AI18 (UNPORTED) ===========================
+     * Attack scoring, transport runs, exploration and pathing
+     * (0x4F760..0x51A28).  Until ported, "considered, no decision": fall to
+     * the exit tail exactly as the pre-port build did. */
     return move_eval_tail_51C68(unit_index, owner);
 
 ai17_entry:                                                     /* 0x50F1E (UNPORTED) */
