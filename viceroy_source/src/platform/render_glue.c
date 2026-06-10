@@ -74,7 +74,8 @@
 static int g_emit_log;
 
 /* ---- layer plumbing -------------------------------------------------------- */
-static const uint8_t *g_layer[3];          /* terrain, feature, resfog */
+static const uint8_t *g_layer[4];          /* terrain, feature, resfog, region */
+static uint8_t g_region_layer[64*80];       /* layer [0x164]: computed at load */
 static long           g_wp[3];             /* committed per-tile offsets */
 static long           g_layer_len;
 
@@ -83,6 +84,54 @@ void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
 {
     g_layer[0] = terrain; g_layer[1] = feature; g_layer[2] = resfog;
     g_layer_len = (long)w * h;
+    /* layer [0x164] (region/lake ids; the original computes it at map load --
+     * loader not yet decoded): RECONSTRUCTED as water-region nibbles via
+     * edge-connected flood fill: open ocean = 1, enclosed lakes = 2.., land=0.
+     * The byte-cited CONSUMER (func_005DBA lake test: nibble==1 = sailable)
+     * matches this model. */
+    {
+        memset(g_region_layer, 0, sizeof g_region_layer);
+        static long st[4176]; int sp = 0;
+        #define ISW(o) ((terrain[o] & 0x1F) == 0x19 || (terrain[o] & 0x1F) == 0x1A)
+        for (int x = 0; x < w; x++) {
+            long o1 = x, o2 = (long)(h-1)*w + x;
+            if (ISW(o1) && !g_region_layer[o1]) { g_region_layer[o1]=1; st[sp++]=o1; }
+            if (ISW(o2) && !g_region_layer[o2]) { g_region_layer[o2]=1; st[sp++]=o2; }
+        }
+        for (int y = 0; y < h; y++) {
+            long o1 = (long)y*w, o2 = (long)y*w + w-1;
+            if (ISW(o1) && !g_region_layer[o1]) { g_region_layer[o1]=1; st[sp++]=o1; }
+            if (ISW(o2) && !g_region_layer[o2]) { g_region_layer[o2]=1; st[sp++]=o2; }
+        }
+        while (sp) {
+            long o = st[--sp];
+            long nb[4] = { o-1, o+1, o-w, o+w };
+            for (int k = 0; k < 4; k++) {
+                long q = nb[k];
+                if (q < 0 || q >= (long)w*h) continue;
+                if ((k<2) && q/w != o/w) continue;
+                if (ISW(q) && !g_region_layer[q]) { g_region_layer[q]=1; st[sp++]=q; }
+            }
+        }
+        int next = 2;
+        for (long o = 0; o < (long)w*h; o++)
+            if (ISW(o) && !g_region_layer[o]) {
+                g_region_layer[o] = (uint8_t)next; st[sp++] = o;
+                while (sp) {
+                    long p = st[--sp];
+                    long nb[4] = { p-1, p+1, p-w, p+w };
+                    for (int k = 0; k < 4; k++) {
+                        long q = nb[k];
+                        if (q < 0 || q >= (long)w*h) continue;
+                        if ((k<2) && q/w != p/w) continue;
+                        if (ISW(q) && !g_region_layer[q]) { g_region_layer[q]=(uint8_t)next; st[sp++]=q; }
+                    }
+                }
+                if (next < 15) next++;
+            }
+        #undef ISW
+        g_layer[3] = g_region_layer;
+    }
     DG16(G_MAP_W) = (uint16_t)w;
     DG16(G_MAP_H) = (uint16_t)h;
     /* SLOW path ([0x15A]=0): the ported render_frame_setup then sets
@@ -121,7 +170,7 @@ uint8_t wp_terrain_rel(int16_t off) { return wp_rel(0, off); }
 uint8_t viceroy_layer_byte(int layer, int x, int y)
 {
     long o = (long)y * (int16_t)DG16(0x853A) + x;
-    if (layer < 0 || layer > 2 || !g_layer[layer] || o < 0 || o >= g_layer_len)
+    if (layer < 0 || layer > 3 || !g_layer[layer] || o < 0 || o >= g_layer_len)
         return 0;
     return g_layer[layer][o];
 }

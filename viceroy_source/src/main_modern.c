@@ -249,18 +249,30 @@ static void spawn_start_ship(void)
 static int unit_x(void) { return UREC(0, 0); }
 static int unit_y(void) { return UREC(0, 1); }
 
+/* the REAL move gate: func_03FA9C classifier; legal moves commit via the
+ * byte-verified chain primitives (the 0x1A1F:0x142 commit thunk sits in an
+ * AMBIG segment -- composite cite: unlink @units.c, set xy @0x6958 insert,
+ * reveal 0x181F:0xDB8 = func_00BD28) */
+extern int naval_classify_dest(int unit, int dest_x, int dest_y);
+extern int func_00BD28_op_sz_34(uint16_t x, uint16_t y);
+
 static void try_move_ship(int dx, int dy)
 {
+    int u = 0;
     int nx = unit_x() + dx, ny = unit_y() + dy;
-    if (nx < 0 || ny < 0 || nx >= g_map_w || ny >= g_map_h) return;
-    int t = t_at(nx, ny);
-    if (is_water(t)) {
-        UREC(0, 0) = (uint8_t)nx;
-        UREC(0, 1) = (uint8_t)ny;
-    } else {
-        /* LANDFALL -- the real handler is the naval.c dispatch; shell notes it */
-        printf("shell: LANDFALL at %d,%d (%s)\n", nx, ny,
-               (const char *)&DG8(DG16(0x2F74 + t*0x10)));
+    DG16(0x5392) = 0;                            /* active unit */
+    int r = naval_classify_dest(u, nx, ny);
+    int status = (int16_t)DG16(0x9E4E);
+    if (r == 1) {                                /* plain legal move */
+        UREC(u, 0) = (uint8_t)nx;
+        UREC(u, 1) = (uint8_t)ny;
+        func_00BD28_op_sz_34((uint16_t)nx, (uint16_t)ny);  /* reveal */
+    } else if (status) {
+        static const char *names[10] = {0,"NODOCKS","LANDFALL","LANDFALL2",
+            "SAILHOME","EUROPENOTLEAVE/SAILHOME","SHIPCOMBAT","SHIPCOMBAT",
+            "SHIPLAKE","LANDFIRST"};
+        printf("move: status %d (%s) -- dialog dispatch pending part-2 UI\n",
+               status, names[status] ? names[status] : "?");
     }
 }
 
