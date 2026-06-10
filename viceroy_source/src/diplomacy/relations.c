@@ -153,10 +153,16 @@ void rel_declare_war(int attacker, int defender)
  * numbers (+1 trade, -25 colony loss, +20 Pocahontas, clamp [-100,100]) were
  * fabricated and remain intentionally absent.
  * ============================================================================ */
-#if 0  /* not yet decoded — numeric attitude model not yet reverse-engineered */
-int  rel_score_get(int a, int b);                 /* not yet decoded: is there a signed score at all? */
-void rel_score_apply_event(int a, int b, int e);  /* not yet decoded: event->delta table unknown */
-void rel_event_pocahontas(int recruiting_power);  /* not yet decoded: magnitude unknown (FF id 16 effect
+#if 0  /* RESOLVED 2026-06-10 — there is NO stored numeric attitude model */
+int  rel_score_get(int a, int b);                 /* RESOLVED: no signed score exists; European
+                                                   * attitude is computed LIVE per meeting
+                                                   * (census scan, meeting.c §3/3b) */
+void rel_score_apply_event(int a, int b, int e);  /* RESOLVED: no event->delta table; events set
+                                                   * the symmetric relation BITS only (above) */
+void rel_event_pocahontas(int recruiting_power);  /* RESOLVED: FF 16 = ff_owned bit halves native
+                                                   * alarm INCREASES (func_045DF2 @0x045E30) and the
+                                                   * acquisition zeroes existing alarm (effects.c id16);
+                                                   * (original comment: FF id 16 effect
                                                    *      clears native alarm, NOT European
                                                    *      relation score — see effects.c) */
 #endif

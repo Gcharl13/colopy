@@ -87,7 +87,9 @@ extern int16_t ovly_move_score_tail_6218(int16_t unit_index);
  * ----------------------------------------------------------------------------
  * Head + order-byte dispatch + validity gate + initial state collection. The
  * scoring tail is reached at file 0x6218 (the `jmp 0x6218` exit target shared
- * by the early-out branches) and is not yet decoded.
+ * by the early-out branches); the deep tail is the func_05CA7E modifier
+ * ladder, DECODED 2026-06-10 -- see ai/unit_ai_leaf.c flag map and
+ * combat/combat_modifiers.c defend_strength.
  * ============================================================================ */
 int16_t unit_move_step(int16_t unit_index)
 {
