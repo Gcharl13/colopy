@@ -161,10 +161,11 @@ int unit_chain_resolve(int idx)
  * second call keeps result=-1 when the resolver returns >= 0; the negative
  * branch falls through to `mov di,[bp-4]` (= -1) too -- so in the decoded
  * static form this routine returns the tile's occupancy/head id via the
- * 0x037F:* helpers and uses -1 as the not-found sentinel. The two map-helper
- * targets (0x037F:0x0A "tile occupancy id", 0x037F:0x314 "resolve head") live
- * in another segment -- their exact semantics are not yet decoded; the addressing and the
- * sentinel handling here are byte-verified.
+ * 0x037F:* helpers and uses -1 as the not-found sentinel.  RESOLVED
+ * 2026-06-10 via the resident rule: 0x037F:0x0A = func_005BFA =
+ * map_in_bounds(x,y) (1<=x<[0x853A]-1 etc, full body); 0x037F:0x314 =
+ * func_005F04 (full disasm available) = the tile->chain-head resolver this
+ * file models; addressing and sentinel handling here are byte-verified.
  *
  * Used by the placement routine (func_00693A) to find the current head before
  * inserting a newly-placed unit at the chain head.

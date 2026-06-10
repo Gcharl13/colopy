@@ -57,10 +57,13 @@ extern int16_t  g_selected_unit_5392;
  * (Base/stride byte-clear; full semantics owned by the power subsystem.) */
 extern uint8_t  g_power_unit_count_7304[];
 
-/* DGROUP:(0x54EF + k*0x12) -- a stride-0x12 flag table OR'd with 1 on destroy,
- * indexed by the destroyed unit's +0x314A byte. @asm 0x06ED7/0x06EDA.
- * Table contents/role not yet decoded; the index math and the |=1 are byte-verified. */
-extern uint8_t  g_table_54EF[];
+/* DGROUP:(0x54EF + k*0x12) -- RESOLVED 2026-06-10: the NATIVE-SETTLEMENT
+ * record FLAGS byte (NS+3; record base 0x54EC stride 0x12), indexed by the
+ * destroyed unit's HOME-SETTLEMENT link (+0x314A, the native_unit_ai.c
+ * settlement link).  Destroying a native unit sets bit 0 on its home
+ * settlement = "brave lost / respawn pending".  (Same byte's bit 2 = tribal
+ * CAPITAL, read by defend_strength func_007D3E.) */
+extern uint8_t  g_table_54EF[];   /* NativeSettlement.flags (NS+3) */
 
 /* ---- helpers (byte offsets within a record image) -------------------------- */
 #define U_OFF(idx, k)  g_units_3144[(idx) * UNIT_RECORD_STRIDE + (k)]
