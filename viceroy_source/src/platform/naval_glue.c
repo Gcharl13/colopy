@@ -216,7 +216,7 @@ void mainloop_finish_rotation(void)
     int n = (int16_t)DG16(0x539C);
     for (int i = 0; i < n; i++)
         UB(i, 6) = DG8(0x5234 + UB(i, 2) * 9);
-    DG16(0x538A)++;                                /* year tick (display) */
+    /* (year/turn advance moved to viceroy_world_autumn -- single owner) */
     DG16(0x5392) = 0;                              /* restart at unit 0 */
     printf("rotation: new turn, movement refreshed\n");
 }

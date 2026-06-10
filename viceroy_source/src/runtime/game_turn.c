@@ -50,9 +50,25 @@ static int colony_owner(int ci)        /* ColonyRecord base 0x5D46 stride 0xCA *
     return DG8(0x5D46 + ci * 0xCA + 0x1A);
 }
 
+/* NATIVE UNIT TURNS: the per-unit native AI (native_unit_ai, full port) runs
+ * for every tribe-owned unit with movement left.  European AI units await the
+ * unported chooser (the 0x4E2D6 dispatcher region) -- honest gap, no shim. */
+static void viceroy_native_unit_turns(void)
+{
+    extern int16_t native_unit_ai(int16_t self);
+    int n = (int16_t)DG16(0x539C);
+    for (int u = 0; u < n; u++) {
+        int owner = DG8(0x3144 + u * 0x1C + 3) & 0x0F;
+        if (owner >= 4 && (int8_t)DG8(0x3144 + u * 0x1C + 6) > 0)
+            native_unit_ai((int16_t)u);
+    }
+}
+
 void viceroy_world_autumn(void)
 {
     int n_col = (int16_t)G_NCOL;
+
+    viceroy_native_unit_turns();
 
     for (int p = 0; p < 4; p++) {
         /* 1. census rebuild (func_042138, ported BYTE_VERIFIED) */
@@ -125,6 +141,17 @@ int viceroy_world_smoke(int turns)
     for (int g = 0; g < 16; g++) DG8(0x8808 + 0x4C + g) = (uint8_t)(2 + (g & 3));
     DG8(0x53A6) = 4;                 /* Viceroy difficulty: fastest REF feed */
     G_YEAR = 1492; G_TURN = 0;
+
+    /* a native brave (tribe 4) two tiles from the colony, with moves */
+    DG16(0x539C) = 1;
+    DG8(0x3144 + 0) = 12; DG8(0x3144 + 1) = 10;   /* x,y */
+    DG8(0x3144 + 2) = 0;                          /* type: brave-ish */
+    DG8(0x3144 + 3) = 4;                          /* owner nibble = tribe 4 */
+    DG8(0x3144 + 6) = 1;                          /* one move */
+    DG16(0x3144 + 0x18) = 0xFFFF;                 /* on-map gate */
+    DG16(0x3144 + 0x1A) = 0xFFFF;                 /* chain terminator */
+    {   extern void tilehead_set(int,int,int);
+        tilehead_set(12, 10, 0); }
 
     for (int t = 0; t < turns; t++)
         viceroy_world_autumn();
