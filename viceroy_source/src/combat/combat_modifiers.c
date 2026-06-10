@@ -140,8 +140,11 @@ extern struct UnitRecord g_units[];     /* DGROUP:0x3144 stride 0x1C */
 /* Per-power military-strength arrays (DGROUP negative offsets, stride 0x13=19
  * per power). LOCAL externs — these are the colony/power-defense state; the
  * resolver reads them ONLY in the post-roll comparison block @0x5B85B..0x5BA2D.
- * Cited by use-site; per-array semantics [not yet decoded beyond combat]. */
-extern unsigned char g_pow_strength_by_type[/* power*0x13 + type */];  /* DS:-0x6DB4 @0x5B889 [V] */
+ * IDENTITY RESOLVED 2026-06-10: DS:-0x6DB4 = 0x924C = the AI-CENSUS units-by-
+ * type matrix byte[power*0x13 + unit_type] (writer overlay_040C1E_04458A.c
+ * @0x04242D clamp_add per unit; zeroed @0x04217A) — the post-roll block
+ * consults the power's overall force composition. */
+extern unsigned char g_census_units_by_type[/* power*0x13 + type */];  /* DS:0x924C (-0x6DB4) @0x5B889 [V] */
 extern unsigned char g_pow_strength_cap[/* power */];                  /* DS:-0x6D68 @0x5B899 [V] */
 extern unsigned char g_pow_def_term[/* power*0x13 (+...) */];          /* DS:-0x6DA4/-0x6DA3 @0x5B9D5/0x5B99E [V] */
 extern unsigned char g_pow_misc_6bec[/* power */];                     /* DS:-0x6BEC @0x5B9A9 [V] */

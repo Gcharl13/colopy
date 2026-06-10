@@ -268,7 +268,9 @@ int combat_land_apply(int unit_a, int unit_b, int fort_present, int show_ui)
     }
 
     /* fort_present != 0 -> @0x5B74B (colony defense path; ship-vs-ship sub-call
-     * lcall via trampoline @0x5E70F = 0x1A1F:0x6B0, behind RTLink).        [not yet decoded] */
+     * lcall via trampoline @0x5E70F = 0x1A1F:0x6B0 -> RESOLVED 2026-06-10:
+     * func_05B0DC (ovl 16 + 0x16C, ENTER 0x72, full disasm available) --
+     * the naval/fort sub-resolver, same overlay as the land resolver). */
     return 1;
 }
 
