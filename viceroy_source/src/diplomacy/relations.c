@@ -117,21 +117,41 @@ void rel_declare_war(int attacker, int defender)
 }
 
 /* ============================================================================
- * EVERYTHING BELOW IS not yet decoded (NOT byte-verified)
+ * REL_* HELPER BODIES — BYTE_VERIFIED 2026-06-10 (resident, full decode)
  * ----------------------------------------------------------------------------
- * The original maintains a richer per-power attitude model (the AI uses it to
- * decide demands, war, and alliances), but the scoring fields, the per-event
- * deltas, and the AI transition rules have NOT been located in VICEROY.EXE.
- * The prior reconstruction's numbers (+1 trade, -25 colony loss, +20
- * Pocahontas, clamp [-100,100], 50+/-aggression thresholds) were fabricated
- * and are intentionally NOT reproduced here.
+ * The three relation helpers were located via the RTLink thunk rule and hand-
+ * decompiled from func_007F34.asm / func_007F96.asm / func_008000.asm:
  *
- * Anchors for future work:
- *   - rel_query accessor body: 0x181F:0x0A38 -> file 0x07F34 (resident; thunk-fix 2026-06-10) (decompile to learn
- *     where the 0x02/0x20/0x40 bits live and how they relate to PowerRecord+0x40).
- *   - rel_apply_event 0x181F:0x0A06 (file 0x07F96) and rel_clear_event
- *     0x181F:0x0A10 (file 0x5FCFC): the set/clear-with-mask helpers.
- *   - cs:0x3f30 / cs:0x3f58 near-calls in page 0x0F (relation mutate/predicate).
+ * rel_query(a, b)  — 0x181F:0xA38 -> file 0x07F34 (45B):
+ *     a >= 4 (tribe):   return byte[0x59D8 + a*0x4E + b]   ; tribe relation rows
+ *     a <  4 (power):   return byte[0x883C + a*0x13C + b]  ; PowerRecord[a]+0x34+b
+ *   (so the war-flag matrix IS PowerRecord+0x34 for powers, and tribes have a
+ *    parallel stride-0x4E table at DGROUP:0x59D8 — one accessor, two stores.)
+ *   A raw SETTER sibling lives at file 0x07F62 (same dual-store layout, writes
+ *   the byte from its 3rd arg); both rel_apply/rel_clear go through it.
+ *
+ * rel_apply_event(a, b, mask) — 0x181F:0xA06 -> file 0x07F96 (105B):
+ *     v_ab = rel_query(a,b) | mask;  rel_set(a,b, v_ab)
+ *     v_ba = rel_query(b,a) | mask;  rel_set(b,a, v_ba)     ; SYMMETRIC SET
+ *     if ((v_ab & mask) != (v_ba & mask))
+ *         assert_log(0x202, v_ab, v_ba, mask)               ; 0x181F:0x77E
+ *     return v_ab
+ *
+ * rel_clear_event(a, b, mask) — 0x181F:0xA10 -> file 0x08000 (115B):
+ *     same shape with `& ~mask` on BOTH directions; assert code 0x212.
+ *
+ * Take-aways: every event bit (0x02 war / 0x10 met-recently / 0x20 peace-
+ * pending / 0x40 treaty / 0x80 contact) is maintained SYMMETRICALLY in both
+ * (a,b) and (b,a) cells, with a runtime consistency assert (0x181F:0x77E is
+ * the debug logger; codes 0x202/0x212 identify the call site).
+ *
+ * The "richer numeric attitude model" this block previously looked for does
+ * not exist as a stored score: the European attitude is computed LIVE in
+ * diplomacy_meeting (census-matrix scan — see meeting.c sections 3/3b), and
+ * the native side is the 0x5B1C alarm matrix + 0x54F6 settlement tension
+ * words (see overlay_04458A_04694B.c func_045DF2).  The prior reconstruction's
+ * numbers (+1 trade, -25 colony loss, +20 Pocahontas, clamp [-100,100]) were
+ * fabricated and remain intentionally absent.
  * ============================================================================ */
 #if 0  /* not yet decoded — numeric attitude model not yet reverse-engineered */
 int  rel_score_get(int a, int b);                 /* not yet decoded: is there a signed score at all? */
