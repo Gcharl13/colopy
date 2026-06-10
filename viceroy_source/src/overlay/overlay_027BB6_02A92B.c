@@ -76,6 +76,7 @@ extern uint16_t  g_flag_7EC;          /* 0x07EC suppress-auto-pick flag         
 extern uint16_t  g_flag_7EE;          /* 0x07EE mouse-present / hover enabled     */
 extern uint16_t  g_flag_7F4;          /* 0x07F4 sub-region flag */
 extern uint16_t  g_flag_7F6;          /* 0x07F6 sub-region (drill into) flag      */
+extern int16_t   g_flag_7F4;          /* 0x07F4 commit-flag (also in overlay_04C306) */
 extern uint16_t  g_flag_890;          /* 0x0890 dialog-active / redraw owner      */
 extern uint16_t  g_flag_8D56;         /* 0x8D56 has-cursor-tile flag              */
 extern uint16_t  g_flag_8D58;         /* 0x8D58 hover-armed flag                  */

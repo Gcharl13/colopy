@@ -10,12 +10,12 @@
  *
  * STATUS: [V] byte-verified ; [not yet decoded] not byte-verified (do not trust the number).
  * ============================================================================ */
-#include "viceroy.h"
+#include "viceroy_types.h"
 #include "power.h"
 #include "colony.h"
 #include "ff.h"
 
-extern struct PowerRecord *g_market;  /* DGROUP:0x84FC active PowerRecord ptr */
+extern struct PowerRecord *g_market;  /* DGROUP:0x84FC — near ptr to active PowerRecord */
 
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */

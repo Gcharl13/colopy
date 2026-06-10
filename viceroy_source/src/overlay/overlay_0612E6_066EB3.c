@@ -2107,6 +2107,7 @@ int func_066968_minimap_compose(int sx, int sy, int width, int height,
     unsigned char far *p_res  = layer_ptr_resfog (sx, sy);  /* @asm 0x0669AF 0x736 */
     unsigned char far *p_aux  = layer_ptr_aux    (sx, sy);  /* @asm 0x0669BF 0x6a0 */
     /* dest framebuffer row ptr (mini-map is anchored at pixel +0xFC,+9). */
+    extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px);
     unsigned char far *dst;
     int row_stride_back = (int)g_map_width;                  /* [bp-0x20] @asm 0x0669EE */
     int r, c;

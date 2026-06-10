@@ -40,6 +40,7 @@
  *  not yet decoded:
  *    ov_power_flag op 0x15 founding-father identity (Crosses +50% bonus)
  * ============================================================================ */
+#include <stddef.h>
 #include "viceroy.h"
 #include <stddef.h>
 

@@ -50,6 +50,8 @@
 
 #define SCREEN_HALL_OF_FAME 7   /* RECONSTRUCTED — screen-id constant, not yet decoded */
 
+#define SCREEN_HALL_OF_FAME  3  /* project-level stub ID */
+
 /* ----------------------------------------------------------------------------
  * Persistence file -- BYTE_VERIFIED (string + fopen mode + offsets).
  *

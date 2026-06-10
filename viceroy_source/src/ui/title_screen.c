@@ -130,6 +130,7 @@
  * shadowed it with 1 was removed 2026-06-09.) */
 
 /* ---- @BEGINMENU key + backdrop handles (file = handle + 0x1D9A0; cited) ---- */
+#define SCREEN_TITLE     0        /* stub screen-ID for title loop */
 #define MENU_BEGIN_KEY   0x2345   /* "@BEGINMENU" menu key  @asm 0x075C60 */
 #define BG_BOOT          0x233C   /* boot/menu backdrop     @asm 0x075AE4 */
 #define BG_NEWGAME       0x2374   /* new-game backdrop      @asm 0x075DA3 */

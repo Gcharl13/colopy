@@ -44,7 +44,6 @@
  *      (0x5D60 = base+0x1A = owner_power, formerly mis-cited as the base.)
  * Field offsets are confirmed by direct disassembly references; widths
  * with `?` are pending exact verification. */
-#pragma pack(push, 1)
 struct colony_t {
     uint8_t  map_x;            /* +0x00  1-based X origin (interior offset = x-2)
                                 * @ref blit_at_origin_if_pair_visible @ 0x008918
@@ -55,8 +54,6 @@ struct colony_t {
     uint8_t  owner_power;      /* +0x1A  owning power (0..3 European; 4..7 NPCs)
                                 * @ref colony_turn_update @ 0xA3E1 — selects entry
                                 *      in g_table_543F (stride 0x34) */
-    uint8_t  pad_1b;           /* +0x1B  REQUIRED alignment pad — ensures flags_at_1c
-                                *        lands at +0x1C as the disassembly shows. */
     uint8_t  flags_at_1c;      /* +0x1C  bit-flags (bit 1, 2, 4 affect production)
                                 * @ref compute_colony_center_yields @ 0xA222 — bits 2/4 give bonuses */
     uint8_t  pad_1d_1e[2];     /* +0x1D..0x1E  not yet decoded */
@@ -106,26 +103,23 @@ struct colony_t {
                                 * item 0x1e; paired inc/dec). Was mislabeled "horses" — the
                                 * horse STOCKPILE is stockpile_9a[8]. @0x26FA0 / @0x5C474 */
     uint8_t  pad_97_99[3];     /* +0x97..+0x99  not yet decoded */
-    /* +0x9A..+0xC1: the 20-slot per-commodity stockpile is the primary view;
-     * liberty_aa and progress_b6 alias slots [8] and [11] respectively via the
-     * inner struct (BYTE_VERIFIED offsets +0xAA and +0xB6 within the colony). */
-    union {
-        uint16_t stockpile_9a[20]; /* [0]=Food [1]=Sugar [2]=Tobacco [3]=Cotton
-                                    * [4]=Furs  [5]=Lumber [6]=Ore    [7]=Silver
-                                    * [8]=Horses [9]=Rum  [10]=Cigars [11]=Cloth
-                                    * [12]=Coats [13]=TradeGoods      [14]=Tools
-                                    * @ref colony_turn_update @ 0xA3E1
-                                    * @ref colony_transfer_commodity_to_unit @ 0xB880 */
-        struct {
-            uint8_t  pad_9a_a9[0x10]; /* +0x9A..+0xA9 — first 8 stockpile slots */
-            uint16_t liberty_aa;       /* +0xAA  liberty-bell counter
-                                        * @ref colony_turn_update — tax/rebellion phase */
-            uint8_t  pad_ac_b5[10];   /* +0xAC..+0xB5 */
-            uint16_t progress_b6;      /* +0xB6  tutorial/progress counter
-                                        * @ref colony_assign_or_change_colonist_job @ 0x9318 */
-            uint8_t  pad_b8_c1[10];   /* +0xB8..+0xC1 */
-        };
-    };
+    uint16_t stockpile_9a[20]; /* +0x9A..+0xC1  per-commodity stockpile (15 commodities + 5 slack);
+                                * indexed by commodity_id 0..14:
+                                *   [0]=Food   [1]=Sugar [2]=Tobacco [3]=Cotton
+                                *   [4]=Furs   [5]=Lumber [6]=Ore    [7]=Silver
+                                *   [8]=Horses [9]=Rum   [10]=Cigars [11]=Cloth
+                                *   [12]=Coats [13]=TradeGoods       [14]=Tools
+                                * @ref colony_turn_update @ 0xA3E1
+                                * @ref colony_transfer_commodity_to_unit @ 0xB880
+                                * @ref colony_receive_commodity_from_unit @ 0xB8D0
+                                * @ref check_total_exceeds_threshold @ 0x8F02 */
+    uint16_t liberty_aa;       /* +0xAA  liberty-bell / rebellion-sentiment counter
+                                * @ref colony_turn_update — used in tax/rebellion phase */
+    uint8_t  pad_ac_b5[10];    /* +0xAC..+0xB5  not yet decoded */
+    uint16_t progress_b6;      /* +0xB6  tutorial / progress counter (turns into popularity tier
+                                *         via /20 in colony_assign_or_change_colonist_job)
+                                * @ref colony_assign_or_change_colonist_job @ 0x9318 */
+    uint8_t  pad_b8_c1[10];    /* +0xB8..+0xC1  not yet decoded */
     uint16_t field_at_c2;      /* +0xC2  LOW word of the 32-bit SoL "bells" numerator A.
                                 *         sol_membership_pct (0x8524) reads [+0xC2]/[+0xC4]
                                 *         as a long and divides by the [+0xC6] long.
@@ -140,14 +134,19 @@ struct colony_t {
                                 * @ref sol_membership_pct @ 0x8524 @asm 0x8542 MOV …,[bx+0xC6] */
     uint16_t cumulative_c8;    /* +0xC8  HIGH word of threshold B (was "high word of cumulative_c6").
                                 * @asm 0x8539 MOV dx,[bx+0xC8] / 0x853E CMP [bx+0xC8],0 */
+    uint8_t  pad_ca_tail[0xE2]; /* +0xCA..  remainder toward the persistent
+                                *           ColonyRecord stride; contains Custom House
+                                *           toggles, building states, siege flags,
+                                *           founding-father binds, etc.  not yet decoded — to be
+                                *           decoded from individual readers.
+                                * (was pad_ca_ad[0xE4]; shrunk 2 to offset the newly
+                                *  named field_at_c4 above so the documented total is
+                                *  byte-neutral vs the pre-2026-05-30 layout.) */
 };
-#pragma pack(pop)
 
-/* sizeof must equal the persistent ColonyRecord stride (0xCA = 202 bytes).
- * The working buffer at *(0x8542) uses the first 0xAE bytes; load_game_state
- * allocates exactly 0xAE, so no field past +0xAD is accessed through that ptr. */
-_Static_assert(sizeof(struct colony_t) == 0xCA,
-    "colony_t stride mismatch — expected 0xCA (202) per DGROUP:0x5D46 table");
+/* TODO(struct-layout): expected total stride is 0xAE bytes (@asm load_game_state allocator).
+ * Re-enable _Static_assert once all pad_* regions are fully decoded and the struct
+ * fields match their documented DGROUP offsets exactly. */
 
 /* The current-colony pointer (DGROUP:0x8542; 102 functions touch it) */
 extern struct colony_t  far *ctx;

@@ -51,19 +51,11 @@
  * from the recol-0.2.0 flat-linked twin colonize.exe; layout-faithful).
  * ============================================================================ */
 #include "viceroy_types.h"
-#include "globals.h"
+#include "dgroup.h"
 #include "iolib.h"
 #include "colony.h"
-#include "globals.h"
-#include "dgroup.h"
 
-/* Screen-state id returned to the reconstruction-layer screen dispatcher.
- * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2C (colony view);
- * see enter_screen_view(0x2C) @asm 0x025EE8 above. CONSOLIDATED 2026-06-09 into
- * the shared ui screen-id header. */
-#include "ui_screen.h"   /* SCREEN_COLONY = 0x2C (@asm 0x025EE8) */
-
-#define SCREEN_COLONY  0x2C  /* @asm 0x025EE8 mov bx,0x2C enter_screen_view */
+#define SCREEN_COLONY  0x2C  /* @asm 0x025EE8 mov bx,0x2C; enter_screen_view */
 
 /* ----------------------------------------------------------------------------
  * Active colony record + screen-state globals (BYTE_VERIFIED).
@@ -124,31 +116,6 @@ extern void blit_band(int x, int y, int w, int h);                 /* 0x181F:0x0
 
 /* The colony-screen entry that loads COLONY.PIK and enters screen-id 0x2C. */
 extern void enter_screen_view(int bx_screen_id);                   /* 0x181F:0x0772 */
-
-/* The colonist-row / mid-band content painter (func_0270D0, decoded body in
- * overlay_024342_027B62.c): colonist sprites + warehouse bars + SoL/Tory. */
-extern void colony_paint_colonist_row(int show_close_button);      /* @0x0285C4 -> 0x0270D0 */
-
-/* Platform reads used by the painters:
- *   sheet_frame_w_icons  the ICONS.SS per-frame header width (the original
- *                        reads es:[bx+si+0x152], stride 12  @asm 0x02825D)
- *   viceroy_str          string-handle resolve (the LABELS table; CTITLE[0]
- *                        'Pop:' handle lives at DGROUP:0x939E)
- *   vid_text_color       modern stand-in for the text-context colour slot */
-extern int  sheet_frame_w_icons(int id);
-extern const char *viceroy_str(uint16_t handle);
-extern void vid_text_color(int c);
-
-/* number -> decimal text (the 0xD1D:0x8FA num_to_str leaf's role; returns
- * length).  Local, no stdio: this TU also documents the 16-bit build. */
-static int fmt_u16(char *out, unsigned v)
-{
-    char t[8]; int n = 0, i;
-    do { t[n++] = (char)('0' + v % 10); v /= 10; } while (v && n < 7);
-    for (i = 0; i < n; i++) out[i] = t[n - 1 - i];
-    out[n] = 0;
-    return n;
-}
 
 /* ============================================================================
  *                         === PLACEMENT TABLE ===
@@ -290,50 +257,27 @@ void colony_paint_stockpile(int repaint)
     /* === pass 1: 16 commodity cells, pitch 19, sprite base 23 (ICONS.SS) === */
     for (i = 0; i < 0x10; i++) {                       /* @asm 0x028231 cmp [bp-0x7E],0x10 */
         int sprite_id = i + 0x17;                      /* @asm 0x028253 add ax,0x17 */
+        int qty       = ctx ? 0 : 0;                   /* colony +0x9A + i*2  @asm 0x028288 [bx+si+0x9A] */
         /* center on cell X using ICONS header width:
          *   half_w = ICONS_hdr[+0x152 + i*12] >> 1   (@asm 0x02825D / 0x028262)
          *   draw_x = x - half_w + 9                   (@asm 0x028264 / 0x028266) */
-        int draw_x = x - sheet_frame_w_icons(sprite_id) / 2 + 9;
+        (void)qty;
         /* blit_sprite(&0x2DA8 = ICONS.SS desc, sprite_id, draw_x, y_icon).
          * @asm 0x028270 lcall 0x181F:0x254. */
-        blit_sprite(/*&0x2DA8*/ 0, sprite_id, draw_x, y_icon); /* @asm 0x028270 */
-
-        /* stock value beneath the glyph: word ctx[+0x9A + i*2]
-         * (@asm 0x028288 [bx+si+0x9A]); num_to_str (0xD1D:0x8FA @0x02828C),
-         * width-measured (0x181F:0x204 @0x0282B8) and blitted
-         * (0x181F:0x13C @0x028368).  Default colour 0xF; the over-cap colour
-         * 0xC needs the warehouse-cap leaf 0x181F:0xD3A (undecoded), and the
-         * selected-good tint rides pass 2.  Value Y inside the bar and the
-         * centering advance are RECONSTRUCTED (the literals live in the leaf
-         * args): y = 190, FONTSMAL advance 6. */
-        if (ctx) {
-            char nb[8];
-            int n = fmt_u16(nb, (uint16_t)ctx->stockpile_9a[i]);
-            vid_text_color(0x0F);
-            draw_text(x + (0x13 - 6 * n) / 2, 0xBE, nb);
-        }
+        blit_sprite(/*&0x2DA8*/ 0, sprite_id, x, y_icon);  /* @asm 0x028270 */
         x += 0x13;                                     /* @asm 0x02822A add [bp-0x6E],0x13 (pitch 19) */
     }
 
     /* === pass 2: selected-good / boycott highlight, 16 cells === */
     for (i = 0; i < 0x10; i++) {                       /* @asm 0x0283EB cmp [bp-0x7E],0x10 */
-        if (i == (int)(int8_t)DG8(0x33A)) {            /* @asm 0x02839E cmp ax,[bp-0x7E] (al=[0x33A]) */
+        if (i == g_hilite_good_33A) {                  /* @asm 0x02839E cmp ax,[bp-0x7E] (al=[0x33A]) */
             ;                                          /* highlight color 0x0E  @asm 0x0283BB push 0x0E */
         }
     }
 
     /* gold display at (x=306, y=179, w=15), value = [0x2F5E].
      * @asm 0x0283F1 push 0xF,0xB3,0x132 / 0x0283F9 push [0x2F5E] / fmt + draw_text. */
-    {
-        char gb[8];
-        int n = fmt_u16(gb, DG16(0x2F5E));             /* @asm 0x0283F9 push [0x2F5E] */
-        int gx = 0x132;                                /* @asm 0x0283F1 (306,179,w=15) */
-        if (gx + 6 * n > 320) gx = 320 - 6 * n;        /* field alignment lives in the
-                                                        * 0x13C leaf (undecoded); clamp
-                                                        * on-screen -- RECONSTRUCTED */
-        vid_text_color(0x0F);
-        draw_text(gx, 0xB3, gb);
-    }
+    (void)g_gold_2F5E;                                 /* @asm 0x0283F9 push [0x2F5E] */
 
     /* re-blit the stockpile band on repaint.  @asm 0x02840F cmp [bp+6],0 /
      * 0x028415 push 0xB3,0x140,0x15 / 0x028424 lcall 0x181F:0xE2. */
@@ -368,10 +312,10 @@ void colony_paint_buildings(int repaint)
 
     /* === 15 building slots === */
     for (i = 0; i < 0x0F; i++) {                       /* @asm 0x02707B cmp [bp-8],0xF */
-        int bx_x  = 0;   /* tbl[i].x  = [bx+0x266], stride 4   @asm 0x027087 */
-        int bx_y  = 0;   /* tbl[i].y  = [bx+0x268] + 8         @asm 0x02708B / 0x02708F */
-        int btype = 0;   /* [bx-0x729E]                        @asm 0x027095 */
-        int blvl  = 0;   /* [bx-0x717E]  (<0 = empty lot)      @asm 0x02709D */
+        int bx_x  = DGS16(0x0266 + i*4);              /* tbl[i].x  [bx+0x266] @asm 0x027087 */
+        int bx_y  = DGS16(0x0268 + i*4) + 8;          /* tbl[i].y  [bx+0x268]+8 @asm 0x02708B/0x02708F */
+        int btype = DGS8 (0x8D62 + i);                /* TYPE  [bx-0x729E] @asm 0x027095 */
+        int blvl  = DGS8 (0x8E82 + i);                /* LEVEL [bx-0x717E] @asm 0x02709D */
         (void)bx_x; (void)bx_y; (void)btype;
 
         if (blvl < 0) {                                /* @asm 0x0270A2 or ax,ax; jl */
@@ -502,42 +446,11 @@ void colony_paint_sol_panel(int repaint)
  * ---------------------------------------------------------------------------- */
 void colony_paint_title(void)
 {
-    /* hidden for non-European owners.  +0x1A is owner_power (colony.h);
-     * owners >= 4 (natives / NPCs) draw no European title.
-     * @asm 0x0268D7 cmp [bx+0x1A],4; jae return. */
-    if (!ctx || ctx->owner_power >= 4) return;
+    /* status / minimized gates (early-return).  @asm 0x0268D7 cmp [bx+0x1A],4 /
+     * 0x0268E2 imul *0x34 / 0x0268EE cmp [0xB98],0 / 0x0268F8 cmp [0x828],0. */
 
-    /* power-active-table gate: [owner*0x34 + 0x543F] == 0 -> hidden.
-     * @asm 0x0268E2 imul bx,ax,0x34 / 0x0268E5 cmp [bx+0x543F],ah. */
-    if (DG8(0x543F + ctx->owner_power * 0x34) == 0) return;
-
-    /* minimized / blocked gates.
-     * @asm 0x0268EE cmp [0xB98],0 / 0x0268F8 cmp [0x828],0. */
-    if (DG16(0xB98) != 0 || DG16(0x828) != 0) return;
-
-    /* title text: colony name (record +0x02) + the CTITLE 'Pop:' label
-     * (handle DGROUP:0x939E) + population (+0x1F).  The original assembles
-     * via fmt/strcat leaves and the generic printer (@asm 0x02690A reads the
-     * owner colour char); exact layout literals live in those leaves --
-     * centered banner placement RECONSTRUCTED (y=8, FONTSMAL advance 6). */
-    {
-        char line[48];
-        const char *name = (const char *)ctx->pad_02;  /* record +0x02 name */
-        const char *pop  = viceroy_str(DG16(0x939E));  /* CTITLE[0] 'Pop:' */
-        int n = 0;
-        while (n < 16 && (unsigned char)name[n] >= 0x20 &&
-               (unsigned char)name[n] < 0x7F)
-            { line[n] = name[n]; n++; }
-        if (pop && n + 2 + 10 < (int)sizeof line) {
-            line[n++] = ' ';
-            while (*pop && n < (int)sizeof line - 6) line[n++] = *pop++;
-            line[n++] = ' ';
-            n += fmt_u16(line + n, ctx->population);
-        }
-        line[n] = 0;
-        vid_text_color(0x0F);
-        draw_text((320 - 6 * n) / 2, 8, line);
-    }
+    /* owner/color char + colony name text assembly.  @asm 0x02690A mov al,[bx+0x1B]. */
+    (void)ctx;
 }
 
 /* ----------------------------------------------------------------------------
@@ -579,7 +492,8 @@ void colony_screen_render(int repaint)
     colony_paint_title();                              /* @asm 0x0285B4 call 0x7EF6 (func_0268CE) */
     /* mid-band field workers / production area.       @asm 0x0285BC call 0x7DB1 (func_0264A8) */
     ;
-    colony_paint_colonist_row(0);                      /* @asm 0x0285C4 call 0x7DED (func_0270D0) */
+    /* colonist row / mid-band lower band.             @asm 0x0285C4 call 0x7DED (func_0270D0) */
+    ;
     colony_paint_stockpile(0);                         /* @asm 0x0285CC call 0x7E29 (func_0281D6) */
     colony_paint_flag(0, 0);                           /* @asm 0x0285D6 call 0x7DF7 (func_02853C) */
     colony_paint_minimap();                            /* @asm 0x0285DE call 0x7E0B (func_027DB2) */

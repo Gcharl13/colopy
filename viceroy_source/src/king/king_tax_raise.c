@@ -15,6 +15,7 @@
  *   "KINGLOWER" at 2b5a:0x10A8 (file 0x1EA48; string-seg base file 0x1D9A0 + 0x10A8)
  *   "KINGRAISE" at 2b5a:0x10B2 (file 0x1EA52)
  * ============================================================================ */
+#include <stddef.h>
 #include "viceroy_types.h"
 #include <stddef.h>
 

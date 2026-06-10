@@ -55,19 +55,8 @@
  * NATIVE resolution 320x200, VGA mode 13h.  All coordinates are native px.
  * ============================================================================ */
 #include "viceroy_types.h"
-#include "globals.h"
 #include "iolib.h"
 #include "power.h"
-#include "globals.h"
-#include "dgroup.h"
-
-/* Screen-state id returned to the reconstruction-layer screen dispatcher.
- * Anchored to the BYTE_VERIFIED enter_screen_view() id 0x2B (Europe view);
- * same value as SCREEN_ID_EUR below. CONSOLIDATED 2026-06-09 into the shared
- * ui screen-id header. */
-#include "ui_screen.h"
-
-#define SCREEN_EUROPE 3   /* RECONSTRUCTED — screen-id constant, not yet decoded */
 
 /* ----------------------------------------------------------------------------
  * Active power record (the player's nation).  BYTE_VERIFIED PowerRecord table
@@ -77,7 +66,7 @@
  *   +0x2A  u32  gold (treasury)
  * (docs/DATA_MODEL.md / project memory PowerRecord layout.)
  * ---------------------------------------------------------------------------- */
-extern struct PowerRecord *g_active_power;    /* via far ptr DGROUP:0x84FC */
+extern struct PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
 
 /* ============================================================================
  * ==                       EUROPE SCREEN PLACEMENT TABLE                    ==
@@ -290,8 +279,8 @@ void europe_screen_render(void)
  * exactly the two screen-entry stubs (Europe 0x2B, Colony 0x2C).
  * ============================================================================ */
 #define KEY_EUROPE     0x0FBA   /* "EUROPE"   @asm 0x030DCE / @file 0x1E95A */
-#define SCREEN_ID_EUR  0x2B     /* Europe view id @asm 0x030DEB (0x2C = Colony) */
-#define SCREEN_EUROPE  SCREEN_ID_EUR
+#define SCREEN_ID_EUR   0x2B     /* Europe view id @asm 0x030DEB (0x2C = Colony) */
+#define SCREEN_EUROPE   SCREEN_ID_EUR
 
 extern int16_t g_dialog_rect[4];   /* DGROUP:0x839E (x), 0x83A0 (y), 0x83A2, 0x83A4 */
 extern int  load_PIK(int z0, int x0, int y0, int x1, int y1,

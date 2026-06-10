@@ -675,8 +675,8 @@ void colony_sol_tory_turn(int colony_id)
             int diff_p1 = (int)(uint8_t)g_difficulty_53A6 + 1; /* @asm 0x2EA62 al=[0x53A6]; INC */
             if (option_bit_test1(diff_p1)) {                /* @asm 0x2EA6B LCALL 0x181F:0x4D4 */
                 ctx->pad_97_99[0]++; /* +0x97 */            /* @asm 0x2EA7B INC byte[bx+0x97] */
-                if ((uint8_t)ctx->pad_97_99[0] /* +0x97 */ >= 0x32) {   /* @asm 0x2EA7F CMP 0x32/JB */
-                    ctx->pad_97_99[0] /* +0x97 */ -= 0x32;              /* @asm 0x2EA8A SUB 0x32 */
+                if ((uint8_t)ctx->pad_97_99[0] >= 0x32) {   /* @asm 0x2EA7F CMP 0x32/JB */
+                    ctx->pad_97_99[0] -= 0x32;              /* @asm 0x2EA8A SUB 0x32 */
                     colony_event_82((int)g_8DC6); /* @asm 0x2EA91 CALL cs:0x2450 (→graduation) */
                 }
             }

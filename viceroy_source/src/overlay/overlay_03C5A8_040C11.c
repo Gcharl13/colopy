@@ -204,7 +204,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
         /* @0x03C5CB..0x03C5E3  if (unit_is_active(mapX,mapY) != 0) continue;
          *   pushes (Y,X); 0x181F:0x0302 = on-screen / active-tile test. */
         (void)rec;
-        if (overlay_call_181F_0302(UNIT_MAPX(i),UNIT_MAPY(i)) != 0)
+        if (overlay_call_181F_0302() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ != 0)
             continue;                                /* @0x03C5E3 jne */
 
         /* @0x03C5E5..0x03C5F1  land-unit type gate: 0x0D <= type <= 0x12 */
@@ -490,7 +490,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
         /* @0x03C9D3..0x03C9E9  if (tile_has_target(mapX,mapY) == 0)
          *      -> announce str 0x12A2 then refresh (the 0x03C942 block). */
-        if (overlay_call_181F_0768(UNIT_MAPX(i),UNIT_MAPY(i)) == 0) {
+        if (overlay_call_181F_0768() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ == 0) {
             /* @0x03C942..0x03C957  msg_show(1, 0x12A2); unit_slot_refresh(i) */
             overlay_call_181F_0652(); /* msg_show(1, 0x12A2 "SEIZURELAND") */
             overlay_call_181F_0808(); /* (i) */
@@ -591,14 +591,14 @@ int func_03CA2A_colony_with_input(void)
     }
 
     /* @0x03CA88..0x03CA99  if (colony_has_structure(2)) value *= 2; */
-    if (overlay_call_181F_09FC(2) != 0) {
+    if (overlay_call_181F_09FC() /* (2) */ != 0) {
         value <<= 1;                  /* @0x03CA96 shl [bp-4],1 */
         goto clamp;                   /* @0x03CA99 jmp 0x03CAB8 */
     }
 
     /* @0x03CA9C..0x03CAB5  else if (colony_has_structure(1))
      *      value = (value*3) >> 1;   (×1.5 for the lesser fortification) */
-    if (overlay_call_181F_09FC(1) != 0) {
+    if (overlay_call_181F_09FC() /* (1) */ != 0) {
         value = (int16_t)((value * 3) >> 1);
     }
 
@@ -710,7 +710,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
 
         /* @0x03CC12..0x03CC1B + @0x03CAF4 loop: subtract garrison defense.
          *   iter_units_at(colony.X, colony.Y); for each unit u:
-         *     suscept -= g_unit_stat[type(u)*14 + 0x5236]; (ATK byte) */
+         *     suscept -= g_unit_stat[type(u)*14 + 0x5236]; [ATK byte] */
         overlay_call_181F_07E0(); /* iter_units_at(colony.X,colony.Y) */
         u = (int16_t)overlay_call_181F_07E0(); /* first (returns slot) */
         while (u >= 0) {                              /* @0x03CB1E jge 0x1774 */

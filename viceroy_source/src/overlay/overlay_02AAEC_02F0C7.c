@@ -50,7 +50,7 @@
 #include "overlay_externs.h"
 
 /* ---- the active-colony far pointer (`ctx`) and field helpers --------------- */
-/* ctx: struct colony_t far *ctx declared in globals.h (via viceroy.h) */
+/* ctx declared as struct colony_t far* in colony.h (included via viceroy.h) */
 #define CB(off)  (*(uint8_t  far *)((char far *)ctx + (off)))  /* ctx byte field  */
 #define CW(off)  (*(uint16_t far *)((char far *)ctx + (off)))  /* ctx word field  */
 /* Absolute DGROUP byte access by computed offset (DGROUP_PTR per viceroy_types.h).
@@ -65,7 +65,7 @@ extern int16_t  g_cursor_x_07E8;     /* 0x07E8 cursor cell X (pixels)           
 extern int16_t  g_cursor_y_07EA;     /* 0x07EA cursor cell Y (pixels)            */
 extern int16_t  g_screen_mode_8D54;  /* 0x8D54 active screen id (7=colony grid)  */
 extern int16_t  g_sel_unit_033E;     /* 0x033E selected unit slot                */
-/* g_colony_count_539E: DGS16(0x539E) macro from globals.h */
+extern int16_t  g_colony_count_539E; /* 0x539E live colony count (max 0x30)      */
 extern int16_t  g_redraw_0346;       /* 0x0346 "colony view dirty" flag          */
 extern int16_t  g_submode_032E;      /* 0x032E selection-changed / submode flag  */
 extern int16_t  g_count_033C;        /* 0x033C visible-cell count                */
@@ -288,7 +288,7 @@ extern int overlay_call_191F_0588(void);  /* mode 8  (02C9C4)                   
 extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                      */
 extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
-extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE* /BUILT* /DEPLETION) */
+extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE / BUILT / DEPLETION) */
 
 /* ============================================================================
  * func_02AAEC  — colony garrison/ship unit-orders POPUP  ("COLONYUNIT"/"SHIPOPTIONS")
@@ -1669,9 +1669,7 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     UREC_B(power - 0x6D68)++;                        /* @0x02EBB3 per-power count [power-0x6D68]*/
     slot = g_colony_count_539E++;                   /* @0x02EBB7 [0x539E]++ */
-    {   extern int func_0082DC_logic_sz_118(uint16_t);
-        func_0082DC_logic_sz_118((uint16_t)slot);   /* @0x02EBC2 get_colony_by_slot(slot) */
-    }
+    overlay_call_181F_09E6();                       /* @0x02EBC2 get_colony_by_slot(slot) */
     overlay_call_181F_0740();                       /* @0x02EBD0 map tile -> es:[bx]|=2 */
 
     CB(0x1A) = (uint8_t)power;                       /* @0x02EBE7 owner */
@@ -1684,17 +1682,16 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     CW(0xC8) = 0; CW(0xC4) = 0; CW(0xC2) = 0;        /* @0x02EC2C/0x02EC34/0x02EC38 */
     CW(0x92) = 0; CW(0x98) = 0;                      /* @0x02EC3E/0x02EC42 */
 
-    memset((void *)&CB(0x8A), 0, 2);                /* @0x02EC4C memset(ctx+0x8A,0,2) */
-    {   extern void set_or_clear_bit_at_8a(int bit_idx, int set_flag);
-        for (i = 0; i < 10; i++)                     /* @0x02EC54..0x02ECC4 */
-            set_or_clear_bit_at_8a(start_bldg[i], 1);/* 0xD26 -> func_0085D6 */
-    }
-    memset((void *)&CB(0x84), 0, 6);                /* @0x02ECCC memset(ctx+0x84,0,6) */
+    overlay_call_0D1D_0DAE();                       /* @0x02EC4C memset(ctx+0x8A,0,2) */
+    for (i = 0; i < 10; i++)                         /* @0x02EC54..0x02ECC4 */
+        overlay_call_181F_0D26();                   /* seed_building(1, start_bldg[i]) */
+
+    overlay_call_0D1D_0DAE();                       /* @0x02ECCC memset(ctx+0x84,0,6) */
     overlay_call_181F_0BBE();                       /* @0x02ECDF backdrop(1,0x23) */
     overlay_call_181F_0BBE();                       /* @0x02ECED backdrop(1,9) */
     overlay_call_181F_0C22();                       /* @0x02ECF7 */
-    memset((void *)&CB(0x9A), 0, 0x20);             /* @0x02ED00 work map */
-    memset((void *)&CB(0x70), 0xFF, 0x14);          /* @0x02ED0F commodity tiles -1 */
+    overlay_call_0D1D_0DAE();                       /* @0x02ED00 memset(ctx+0x9A,0,0x20) work map*/
+    overlay_call_0D1D_0DAE();                       /* @0x02ED0F memset(ctx+0x70,0xFF,0x14) */
 
     if (hint >= 0) {                                /* @0x02ED22 */
         int b = overlay_call_181F_0C4A();           /* @0x02ED2B sub_view(hint) */

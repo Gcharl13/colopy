@@ -65,7 +65,6 @@ extern uint8_t  g_tribe_6BF0[];           /* DGROUP:0x6BF0 — per-tribe strengt
                                              @0x05C29D: mov al, [bx-0x6BF0] */
 extern int32_t  __aFlmul(int32_t a, int32_t b);   /* file 0x010530 — LCALL 0xD1D:0xF60 */
 extern int32_t  __aFldiv(int32_t a, int32_t b);   /* file 0x010496 — LCALL 0xD1D:0xEC6 */
-extern void     raid_show_message(int string_key, int sfx_id, int32_t value); /* defined below */
 
 /* ============================================================================
  * native_raid_loot_gold — BYTE_VERIFIED transfer (magnitude FULLY RESOLVED)
@@ -169,7 +168,7 @@ int32_t native_raid_loot_gold(int victim_power, int amount)
     }
     return amount;
 }
-/* (raid_show_message declared above, before native_raid_loot_gold) */
+extern void raid_show_message(int string_key, int sfx_id, int32_t value);
 
 /* ============================================================================
  * native_raid_clear_counter — BYTE_VERIFIED
@@ -285,8 +284,8 @@ extern struct UnitRecord *spawn_unit(int owner, int unit_type, int x, int y);
 
 void spawn_raiding_brave(struct NativeSettlement *s, int target_power)   /* RECONSTRUCTED */
 {
-    int unit_type = 0x0D;   /* RECONSTRUCTED — native combat type base (0x0D..0x12) */
-    struct UnitRecord *u = spawn_unit(NATIVE_POWER_BASE, unit_type, s->x, s->y);
+    int unit_type = 0x0D;  /* RECONSTRUCTED — native brave; combat types 0x0D..0x12 */
+    struct UnitRecord *u = spawn_unit(NATIVE_POWER_BASE + s->owner, unit_type, s->x, s->y);
     if (!u) return;
     (void)target_power;
 }

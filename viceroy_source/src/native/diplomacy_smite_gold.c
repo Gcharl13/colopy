@@ -35,6 +35,7 @@
  * would gain by attacking, displays the SMITEINDIANS / SMITEEUROPE dialog
  * with the value, and on YES executes the gold transfer.
  * ============================================================================ */
+#include <stdbool.h>
 #include "viceroy_types.h"
 #include <stdbool.h>
 

@@ -10,6 +10,8 @@
  * Only 7 of 289 asset filenames appear by name in the load image, because
  * the loaders construct names dynamically with sprintf.
  * ============================================================================ */
+#include <stdbool.h>
+#include <errno.h>
 #include "viceroy.h"
 #include "dos.h"
 #include <stdbool.h>
