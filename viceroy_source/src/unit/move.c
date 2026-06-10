@@ -132,6 +132,12 @@ extern int unit_tile_head(int x, int y);               /* 0x181F:0x7E0 = 0x66CC 
 extern int func_04C404_ai_queue_b_find_or_insert(uint16_t power, uint16_t b0,
                                                  uint16_t b1, uint16_t b2,
                                                  uint16_t b3);
+/* AI6 helpers */
+extern int  bld_pop_helper(void);             /* 0x181F:0xC7C -> res 0x8734 building/pop cap */
+extern int  func_191F_9A4_colonist_enter(uint16_t unit_idx, uint16_t colony_idx);
+                                              /* 0x191F:0x9A4 -- colonist joins colony,
+                                               * called when unit is already on the colony tile;
+                                               * returns non-zero on success; body in page07 */
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -556,6 +562,7 @@ ai2:                                                            /* 0x4E96A */
      * by power/FF modifiers), virgin-region and colonist bonuses.  Best cell:
      * stand on it -> orders 7 (BUILD COLONY); else goto-site as prof '2'.
      * Non-reassignable: enqueue the (stale-dir) neighbour into queue B. */
+ai5_retry:                                                      /* 0x4EB37 (trace gate dead -> 0x4EB4F) */
     if (reassign != 0) {                                        /* @asm 0x4EB4F */
         if (U_OFF(unit_index, 0x11) != 0) {                     /* @asm 0x4EB59 cooldown */
             U_OFF(unit_index, 0x11) -= 1;                       /* @asm 0x4EB60 */
@@ -742,10 +749,91 @@ ai2:                                                            /* 0x4E96A */
         }
     }
 ai5_end:                                                        /* 0x4F060 */
-    /* ======================= AI6..AI18 (UNPORTED) ===========================
-     * Attack scoring, transport runs, exploration and pathing
-     * (0x4F078..0x51A28).  Until ported, "considered, no decision": fall to
-     * the exit tail exactly as the pre-port build did on every path. */
+    /* ======================= AI6: COLONIST DEPLOY ============================
+     * (0x4F078..0x4F23C)  Type-0 (pioneer/colonist) units that are NOT being
+     * reassigned (reassign==0) scan own colonies in this region for the most
+     * under-staffed one and navigate to it (or enter it if already there).
+     * Score = min(bld_pop_helper,16) - col.workers × (octile_dist/2); ties
+     * broken by the index order; smaller score = more urgent × nearer.
+     * If no colony found: if at an own colony transform to type 2 (farmer) and
+     * exit; otherwise set reassign=1 and retry AI5 (settle-site scan). */
+    /* @asm 0x4F078 type==0 gate; @asm 0x4F086 reassign==0 gate */
+    if (type != 0)      goto ai7_check;                         /* @asm 0x4F07C */
+    if (reassign != 0)  goto ai7_check;                         /* @asm 0x4F086 */
+    {
+        int16_t best_col_22  = -1;                              /* @asm 0x4F08F */
+        int16_t best_E0_score = 0x270F;                         /* @asm 0x4F094 9999 */
+        int16_t col_i;
+        for (col_i = 0; col_i < (int16_t)DG16(0x539E); col_i++) {
+            int16_t cap_A2, half_dist, surplus, enroute;
+            func_0082DC_logic_sz_118((uint16_t)col_i);          /* @asm 0x4F0A8 select */
+            if (DG8(DG16(0x8542) + 0x1A) != (uint8_t)owner)    /* @asm 0x4F0BB owner */
+                continue;
+            if ((int16_t)func_005E90_op_sz_64(DG8(DG16(0x8542) + 0),
+                                              DG8(DG16(0x8542) + 1)) != region)
+                continue;                                       /* @asm 0x4F0C4 region */
+            {   /* warehouse-flag OR unit-subtype gate @asm 0x4F0DD */
+                int ok = (DG8(DG16(0x8542) + 0x1B) & 0x10) != 0;
+                if (!ok)
+                    ok = (U_OFF(unit_index, 0x17) == 0x1B);     /* @asm 0x4F0E7 */
+                if (!ok) continue;
+            }
+            cap_A2 = (int16_t)bld_pop_helper();                 /* @asm 0x4F0F1 */
+            if (cap_A2 > 0x10) cap_A2 = 0x10;                  /* @asm 0x4F0FA clamp 16 */
+            half_dist = (int16_t)func_00493C_logic_sz_14(       /* @asm 0x4F11B */
+                (uint16_t)map_x, (uint16_t)map_y,
+                DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1)) >> 1;
+            surplus = cap_A2 - (int16_t)(int8_t)DG8(DG16(0x8542)+0x1F); /* @asm 0x4F130 */
+            if (surplus > 0)                                    /* @asm 0x4F139 */
+                half_dist = (int16_t)(surplus * half_dist);     /* @asm 0x4F13D */
+            if ((int16_t)(int8_t)DG8(DG16(0x8542)+0x1F) >= cap_A2)     /* @asm 0x4F147 */
+                half_dist <<= 1;                                /* @asm 0x4F14C double if full */
+            {   /* count colonists already enroute to this colony @asm 0x4F14F */
+                int tile_u = unit_tile_head(DG8(DG16(0x8542) + 0),
+                                            DG8(DG16(0x8542) + 1)); /* @asm 0x4F15A */
+                enroute = (int16_t)func_0073A8_logic_sz_99((uint16_t)tile_u, 2); /* @asm 0x4F160 */
+            }
+            enroute += (int16_t)(int8_t)DG8(DG16(0x8542) + 0x1F); /* @asm 0x4F172 */
+            if (enroute >= cap_A2 + 2) continue;                /* @asm 0x4F17C */
+            if (half_dist < best_E0_score) {                    /* @asm 0x4F185 jl */
+                best_E0_score = half_dist;
+                best_col_22   = col_i;                          /* @asm 0x4F18E */
+            }
+        }
+        if (best_col_22 < 0) goto ai6_no_colony;               /* @asm 0x4F1A9 jl */
+        func_0082DC_logic_sz_118((uint16_t)best_col_22);        /* @asm 0x4F1AB */
+        if (U_OFF(unit_index, U_MAPX) == DG8(DG16(0x8542) + 0) && /* @asm 0x4F1C0 */
+            U_OFF(unit_index, U_MAPY) == DG8(DG16(0x8542) + 1)) { /* @asm 0x4F1C9 */
+            /* already on the colony tile: assign colonist, return 1 */
+            func_007BCE_logic_sz_25((uint16_t)unit_index);      /* @asm 0x4F1D2 */
+            func_191F_9A4_colonist_enter((uint16_t)unit_index,
+                                         (uint16_t)best_col_22);/* @asm 0x4F1E0 */
+            return 1;                                           /* @asm 0x4F1E8 */
+        }
+        /* not yet there: set goto-colony as prof '3' */
+        func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x33,
+            DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));     /* @asm 0x4F1F5 */
+        return move_eval_tail_51C68(unit_index, owner);         /* @asm 0x4F200 */
+ai6_no_colony:                                                  /* 0x4F204 */
+        if (col_own_dist != 0) {                                /* @asm 0x4F204 cmp [bp-0x2C] */
+            if (!(DG8(0x5382) & 1)) {                           /* @asm 0x4F22C revolution */
+                reassign = 1;                                   /* @asm 0x4F233 */
+                goto ai5_retry;                                 /* @asm 0x4F238 jmp 0x4EB37 */
+            }
+        } else {
+            /* at own colony with no deploy target: transform to type-2 farmer */
+            U_OFF(unit_index, U_PROF)  = 0x3D;                  /* @asm 0x4F20E '=' */
+            U_OFF(unit_index, U_TYPE)  = 2;                     /* @asm 0x4F213 */
+            U_OFF(unit_index, 0x15)    = 0x14;                  /* @asm 0x4F218 qty[5]:=20 */
+            func_007BCE_logic_sz_25((uint16_t)unit_index);      /* @asm 0x4F220 */
+            return move_eval_tail_51C68(unit_index, owner);     /* @asm 0x4F228 jmp 0x51c68 */
+        }
+    }
+ai7_check:                                                      /* 0x4F23C */
+    /* ======================= AI7..AI18 (UNPORTED) ===========================
+     * Ship cargo delivery, attack scoring, transport runs, exploration and
+     * pathing (0x4F254..0x51A28).  Until ported, "considered, no decision":
+     * fall to the exit tail exactly as the pre-port build did. */
     return move_eval_tail_51C68(unit_index, owner);
 
 ai17_entry:                                                     /* 0x50F1E (UNPORTED) */
@@ -921,20 +1009,25 @@ static int16_t move_eval_tail_51C68(int16_t unit_index, int16_t owner)
 }
 
 /* ============================================================================
- * NOTES / TODO_VERIFY
+ * NOTES / STATUS
  * ----------------------------------------------------------------------------
- *  - Order-byte dispatch (0/5/6/>=0xA proceed; 1-4,7-9 skip), the validity
- *    gate (0x181F:0x302 -> profession:=0x40 on fail), and the EXIT TAIL
- *    (0x51C68..0x51D55: auto-sentry / wake-scan / goto-arrival) are
- *    BYTE_VERIFIED.
- *  - The 0x181F:* probe helpers in the head have bodies in thunk pages; their
- *    arg/return shapes are taken from the call sites only -- nothing invented.
- *    The `(void)` casts mark results that feed the (not yet ported) scoring
- *    scratchpad.
- *  - The per-candidate SCORING BODY (file 0x4E50C..0x51C68, ~13.5KB) and its
- *    weight tables remain to be ported; the head currently falls through to
- *    the tail, so AI units maintain standing orders but do not choose new
- *    moves from this function yet.
- *  - [bp-0x74]=8 (candidate budget) and the +0x314B "special profession"
- *    branch are reproduced; their downstream use sits in the scoring body.
+ *  HEAD (order dispatch + validity gate + state collection): BYTE_VERIFIED
+ *  EXIT TAIL (auto-sentry + wake-scan + goto-arrival): BYTE_VERIFIED
+ *
+ *  PRE section (0x4E509..0x4E887): BYTE_VERIFIED
+ *  AI1 garrison (0x4E888..0x4E968): BYTE_VERIFIED (gate + chain walk + exit)
+ *  AI2 idle-region return (0x4E96A..0x4E9F8): BYTE_VERIFIED
+ *  AI3 wagon→origin haul (0x4E9F8..0x4EA5C): BYTE_VERIFIED
+ *  AI4 slow-hauler→origin (0x4EA5C..0x4EB02): BYTE_VERIFIED
+ *  AI5 settle-site scan (0x4EB4F..0x4F060): BYTE_VERIFIED (full scan+scoring)
+ *  AI6 colonist deploy (0x4F078..0x4F23C): BYTE_VERIFIED 2026-06-10
+ *    func_191F_9A4_colonist_enter: external body unresolved (0x191F:0x9A4)
+ *    bld_pop_helper: external body in production_support.c (0x181F:0xC7C)
+ *  AI7..AI18 (0x4F254..0x51A28): NOT YET DECODED (structural stubs).
+ *  AI19 commit engine (0x51A28..0x51C68): BYTE_VERIFIED (guarded by #if 0
+ *    until AI7..AI18 land and set fortify_CC / guard_adj_E8 / escort_8C).
+ *
+ *  The SCORING WEIGHTS (per-candidate delta tables, colony budget tables,
+ *  relation matrices) are loaded from NAMES.TXT / game data at runtime --
+ *  RUNTIME_ONLY, never fabricated here.
  * ============================================================================ */
