@@ -234,8 +234,7 @@ extern int gui_label_width(void);          /* @asm near 0x1815 -> 1A1F:034A    *
 
 /* Forward decls for in-cluster callees ported below. */
 static int gui_widget_draw_tree(void *win);          /* func_044E7C            */
-static int native_village_redraw_one(int colony);    /* func_045D92            */
-static int native_alarm_decay(int tribe, int colony); /* func_045DF2 helper sig */
+int func_045D00_burn_missions(uint16_t tribe, uint16_t power); /* fwd (0x1A1F:0x398) */
 
 /* ===========================================================================
  * func_04458A -- forward a text-draw/hit op through the active dialog (99B)
@@ -1223,176 +1222,213 @@ int func_045AE4_load_dialog_geometry(void)
 }
 
 /* ===========================================================================
- * func_045D00 -- redraw a tribe's village markers after a relation change (145B)
+ * func_045D00 -- BURN the power's MISSIONS in a tribe's settlements (145B)
  * @asm 0x045D00..0x045D90  page_0B  ENTER 4  RETF
  * spot-check: 0x045D00 = C8 04 00 00 2B C0 89 46  (enter 4,0; sub ax,ax; ...)
+ * IDENTITY CORRECTED 2026-06-10 (was "redraw village markers"):
  *
- * Scans the NativeSettlement table [0..G_OTHER_COUNT): for each settlement whose
- * owner (NS_OWNER, byte at +0x02) minus the target tribe (bp+6) == 4 (i.e. an
- * allied/missionised tribe four slots along) and whose mission low-nibble
- * (NS_MISSION & 0xF) == the target colony (bp+8), set NS_MISSION = 0xFF (mark
- * stale) and remember that any matched.  If any matched, redraw the colony's
- * tile marker:  181F:0A1A (settlement_tile_xy of colony+4) -> 181F:0438
- * (acc_label slot0) ; 181F:09A4 (settlement_screen_x of colony) -> 181F:0438
- * (slot1) ; and, when the colony is a real (non-REF) power slot, status_msg via
- * 181F:0652 (id 0x14c8, flag 1).
- * @status BYTE_VERIFIED (full body)
+ * Scans NativeSettlement[0..G_OTHER_COUNT): a settlement matches when its
+ * owner byte (+0x54EE) == tribe+4 (owner stores the ENTITY id, tribes are
+ * entities 4..11 — the `sub al,[bp+6]; cmp al,4` is owner-(tribe0)==4) and its
+ * MISSION byte (+0x54F1, NS+5) low nibble == the POWER (bp+8 — the founder
+ * power of the mission there).  Each match: NS_MISSION = 0xFF (NO MISSION) —
+ * the mission is destroyed.  If any were destroyed, stage the message args and
+ * show "INDIANBURN":
+ *   %arg0 = rel_event_query_other(tribe+4)   ; 0x181F:0xA1A tribe name handle
+ *   %arg1 = power_handle(power)              ; 0x181F:0x9A4
+ *   if (power < 4 && human [0x543F+power*0x34]==0)
+ *       show_message(1, 0x14C8)              ; 0x181F:0x652; 0x14C8 -> file
+ *                                            ;   0x1EE68 = "INDIANBURN" (dumped)
+ * This is the public thunk 0x1A1F:0x398 (RTLink: ovl 11 + 0, reached via the
+ * page-0B near trampoline 0x9CE / file 0x465EE = LJMP 0x1A1F:0x398).
+ * @status BYTE_VERIFIED (full body; message string dumped from EXE)
  * =========================================================================== */
-int func_045D00_village_markers_refresh(uint16_t tribe /*bp+6*/, uint16_t colony /*bp+8*/)
+int func_045D00_burn_missions(uint16_t tribe /*bp+6, 0-based*/, uint16_t power /*bp+8*/)
 {
-    int dirty = 0;                       /* bp-2                                  */
+    int burned = 0;                      /* bp-2                                  */
     int i;                               /* bp-4                                  */
     int bx;
 
     /* @0x045D0E scan loop. */
     for (i = 0; i < G_OTHER_COUNT; i++) {         /* @0x045D35 cmp [0x539a],ax   */
         bx = i * NS_STRIDE;                       /* @0x045D0E imul bx,ax,0x12   */
-        if ((unsigned char)(NS_OWNER(bx) - (tribe & 0xFF)) != 4)  /* @0x045D15..0x045D1A */
+        if ((unsigned char)(NS_OWNER(bx) - (tribe & 0xFF)) != 4)  /* @0x045D15 owner==tribe+4 */
             continue;                             /* @0x045D1A jne                */
-        if ((NS_MISSION(bx) & 0x0F) != (int)colony)  /* @0x045D1C..0x045D23      */
+        if ((NS_MISSION(bx) & 0x0F) != (int)power)   /* @0x045D1C mission founder  */
             continue;                             /* @0x045D26 jne                */
-        dirty = 1;                                /* @0x045D28 mov [bp-2],1       */
-        NS_MISSION(bx) = 0xFF;                    /* @0x045D2D mov [bx+0x54f1],ff */
+        burned = 1;                               /* @0x045D28 mov [bp-2],1       */
+        NS_MISSION(bx) = 0xFF;                    /* @0x045D2D burn: no mission   */
     }
 
-    if (dirty == 0)                      /* @0x045D3E cmp [bp-2],0; je 0x16f      */
+    if (burned == 0)                     /* @0x045D3E cmp [bp-2],0; je 0x16f      */
         return 0;
 
-    /* @0x045D44 redraw the colony marker. */
-    overlay_call_181F_0A1A();            /* @0x045D4B settlement_tile_xy(colony+4)*/
-    overlay_call_181F_0438();            /* @0x045D56 acc_label(0, ...)           */
-    overlay_call_181F_09A4();            /* @0x045D61 settlement_screen_x(colony) */
-    overlay_call_181F_0438();            /* @0x045D6C acc_label(1, ...)           */
+    /* @0x045D44 stage INDIANBURN message args. */
+    overlay_call_181F_0A1A();            /* @0x045D4B tribe name handle (tribe+4) */
+    overlay_call_181F_0438();            /* @0x045D56 msg_set_arg(0, ...)         */
+    overlay_call_181F_09A4();            /* @0x045D61 power_handle(power)         */
+    overlay_call_181F_0438();            /* @0x045D6C msg_set_arg(1, ...)         */
 
-    /* @0x045D74 only for a real (non-REF) power colony index < 4. */
-    if ((int)colony < 4 && !IS_REF_POWER(colony)) {  /* @0x045D74..0x045D83      */
-        overlay_call_181F_0652();        /* @0x045D8A status_msg(0x14c8, 1)       */
+    /* @0x045D74 only shown to a human European power. */
+    if ((int)power < 4 && !IS_REF_POWER(power)) {    /* @0x045D74..0x045D83      */
+        overlay_call_181F_0652();        /* @0x045D8A show_message(1, 0x14C8 "INDIANBURN") */
     }
     return 0;
 }
 
 /* ===========================================================================
- * func_045D92 -- draw a single native village marker for a colony (95 bytes)
+ * func_045D92 -- tribe BREAKS TREATY with a power (+burn missions) (95 bytes)
  * @asm 0x045D92..0x045DF0  page_0B  PUSH BP  RETF
  * spot-check: 0x045D92 = 55 8B EC 83 7E 0A 04 7D  (push bp;mov bp,sp;cmp[bp+0xA],4)
+ * IDENTITY CORRECTED 2026-06-10 (was "draw a single village marker"):
  *
- * For a real (non-REF) power colony (bp+0xA < 4, NOT a REF slot) with the
- * boolean bp+6 set: light the colony's tile marker.  181F:0A1A
- * (settlement_tile_xy of colony+4) -> 181F:0438 (acc slot0); then
- * 181F:0998 (hud_draw_settlement) at table 0x87c with bp+6.  Always:
- * 181F:0A10 (marker_draw layer 0x40 at colony+4) then near 0x9ce (the page-0B
- * trampoline LJMP 1A1F:0398 = the shared redraw dispatcher) with (colony, x).
+ *   func_045D92(msg_key, tribe0, power):
+ *     if (power < 4 && human && msg_key != 0) {
+ *         %arg0 = tribe name handle (0x181F:0xA1A of tribe0+4)
+ *         ui_dialog_show(msg_key)        ; 0x181F:0x998 = menu_lookup_run,
+ *                                        ;   REGISTER protocol ax=key, dx=0,
+ *                                        ;   bx=0x87C (confirms ui/menu.c)
+ *     }
+ *     rel_clear_event(0x40, tribe0+4, power)   ; 0x181F:0xA10 — CLEAR THE
+ *                                              ;   TREATY BIT 0x40
+ *     func_045D00_burn_missions(tribe0, power) ; near 0x9CE -> 0x465EE
+ *                                              ;   (LJMP 0x1A1F:0x398)
+ * The "0xA10 = marker_draw" and "0x998 = hud_draw_settlement" readings are
+ * RETRACTED — those thunks are rel_clear_event (resident 0x08000) and
+ * menu_lookup_run (func_06F51A), per the 2026-06-10 thunk rule.
  * @status BYTE_VERIFIED (full body)
  * =========================================================================== */
-static int native_village_redraw_one(int colony) { (void)colony; return 0; } /* fwd */
-
-int func_045D92_village_marker_draw(uint16_t on /*bp+6*/, uint16_t x /*bp+8*/,
-                                    uint16_t colony /*bp+0xA*/)
+int func_045D92_tribe_break_treaty(uint16_t msg_key /*bp+6*/, uint16_t tribe0 /*bp+8*/,
+                                   uint16_t power /*bp+0xA*/)
 {
-    /* @0x045D95 gate: colony < 4, not REF, and on != 0. */
-    if ((int)colony < 4 && !IS_REF_POWER(colony) && on != 0) {  /* @0x045D95..0x045DAA */
-        overlay_call_181F_0A1A();        /* @0x045DB3 settlement_tile_xy(x+4)     */
-        overlay_call_181F_0438();        /* @0x045DBD acc_label(0, ...)           */
-        overlay_call_181F_0998();        /* @0x045DCD hud_draw_settlement(0x87c,on)*/
+    /* @0x045D95 gate: power < 4, human, and a message key supplied. */
+    if ((int)power < 4 && !IS_REF_POWER(power) && msg_key != 0) {  /* @0x045D95..0x045DAA */
+        overlay_call_181F_0A1A();        /* @0x045DB3 tribe name handle (tribe0+4)*/
+        overlay_call_181F_0438();        /* @0x045DBD msg_set_arg(0, ...)         */
+        overlay_call_181F_0998();        /* @0x045DCD ui_dialog_show: menu_lookup_run(ax=msg_key, bx=0x87C) */
     }
-    /* @0x045DD2 always draw the layer-0x40 marker at (colony, x+4). */
-    overlay_call_181F_0A10();            /* @0x045DDE marker_draw(0x40,colony,x+4)*/
-    /* @0x045DEC near 0x9ce -> page-0B redraw dispatcher (LJMP 1A1F:0398). */
-    native_village_redraw_one((int)colony);
+    /* @0x045DD2 clear the treaty bit: rel_clear_event(0x40, tribe0+4, power). */
+    overlay_call_181F_0A10();            /* @0x045DDE rel_clear_event(0x40,...)   */
+    /* @0x045DEC near 0x9CE -> 0x465EE (LJMP 0x1A1F:0x398) = burn missions. */
+    func_045D00_burn_missions(tribe0, power);
     return 0;
 }
 
 /* ===========================================================================
- * func_045DF2 -- accumulate per-tile native tension + decay the alarm row (529B)
+ * func_045DF2 -- NATIVE ALARM ADJUST (the tension engine) (529B)
  * @asm 0x045DF2..0x046002  page_0B  ENTER 0x64  RETF
  * spot-check: 0x045DF2 = C8 64 00 00 56 6A 64 6A  (enter 0x64,0; push si; push 0x64)
+ * SEMANTICS CORRECTED 2026-06-10 (helper identities re-derived via the RTLink
+ * thunk rule; see VERIFICATION_LEDGER.md):
  *
- * Bumps the tribe/colony alarm cell and re-clamps the whole alarm row, applying
- * a difficulty-scaled randomised amount.  Detail:
- *   args: tribe = bp+6, colony = bp+8, delta = bp+0xA.
- *   @0x045E01 base = 181F:030C(name fmt of tribe,colony) ; 181F:035C(scale) into
- *            bp-0x5c ; 181F:0A60(clamp) -> bp-4.
- *   @0x045E21 if colony==1 and delta>0 halve delta;  @0x045E30 if 181F:07B4
- *            (tribe_attitude mask 0x10) and delta>0 halve delta again.
- *   @0x045E4A cell = TRIBE_ALARM[tribe*0x27 + colony]; cell = 181F:035C(cell +
- *            delta) ; store back ; bp-6 = 181F:0A60(cell).
- *   @0x045E7C bp-4 >>=1 ; bp-6 >>=1 (halve the before/after).
- *   @0x045E82 if delta < 0 : marker pulses -- 181F:0A10 layer4 at (tribe+4),
- *            and if cell<0x4b a second layer2 pulse.
- *   @0x045EB2 if cell >= 0x64 (alarm threshold): if 181F:0A38(tile flags at
- *            tribe+4) bit6 set, and colony is a real power, take difficulty
- *            (G_DIFFICULTY) else 1 as the raid weight; roll random_int(0,0xa)
- *            (181F:04D4); if roll > weight+1 -> bail @0x3e0, else near 0x9ce
- *            (the page redraw dispatcher) -> war/raid trigger.
- *   @0x045F16 else (cell<0x64): re-clamp this tribe's whole alarm row to the
- *            [bp-6 .. bp-4] band -- for each of G_OTHER_COUNT settlements owned
- *            by this tribe (NS_OWNER==bp-2), clamp TRIBE_ALARM cell into
- *            [0x20..0x60] when below the before value, else zero it when the
- *            gap is small.  @0x046000 RETF.
- * Core native-alarm/tension accumulation -- the rule that escalates a tribe
- * toward war as colonists encroach.
+ *   args: tribe0 = bp+6 (0-based), POWER = bp+8 (the European power — proven by
+ *         the `cmp [bp+8],4` + human flag [0x543F+power*0x34] idiom @0x045ED2,
+ *         NOT a colony), delta = bp+0xA (alarm change; >0 worsens).
+ *
+ *   old   = clamp(alarm_read(tribe0, power), 0, 100)   ; 0x181F:0x30C = resident
+ *           0x082A0 reads the SAME 0x5B1C matrix (haggle.c); 0x35C = clamp.
+ *   old_band = alarm_band(old)                         ; 0x181F:0xA60 = resident
+ *           0x08262: value < 0x19 -> band 0 (tension ladder, NOT a cargo fn).
+ *   FRENCH TRAIT @0x045E21: if (power == 1 && delta > 0) delta >>= 1
+ *           — power 1 (France) takes HALF alarm increases (the canonical
+ *           French native-relations bonus, byte-verified here).
+ *   POCAHONTAS-CLASS FLAG @0x045E30: if (power_attr(power, 0x10) && delta > 0)
+ *           delta >>= 1 — power-attribute bit 0x10 ("alarm raised half as
+ *           fast"; 0x181F:0x7B4 -> resident 0x0BC10).
+ *   new   = clamp(ALARM_5B1C[tribe0*0x27 + power] + delta, 0, 100); store.
+ *   new_band = alarm_band(new);  old_band >>= 1; new_band >>= 1.
+ *
+ *   EASING (delta < 0) @0x045E82:
+ *     rel_clear_event(4, tribe0+4, power)              ; 0x181F:0xA10 (resident
+ *     if (new < 0x4B) rel_clear_event(2, tribe0+4, power)  ;  0x08000) bits 4/2
+ *
+ *   MAX ALARM (new >= 0x64) @0x045EB2:
+ *     if (rel_query(tribe0+4, power) & 0x40)           ; 0xA38 TREATY bit set
+ *       weight = (power<4 && human) ? G_DIFFICULTY : 1
+ *       if (random_int(0, 10) <= weight + 1)           ; harder difficulty =
+ *           func_045D00_burn_missions(tribe0, power)   ;   more likely burn;
+ *       return                                          ; near 0x9CE -> 0x465EE
+ *
+ *   BAND-CHANGE ANNOUNCE @0x045F16 (was MISSING from the earlier port):
+ *     if (old/-5 != min(new,0x63)/-5)                  ; 5-step band crossing
+ *        msg_set_arg(0, power_handle(power))           ; 0x9A4 + 0x438
+ *        msg_set_arg(1, power_handle(tribe0+4))        ; staged for caller's msg
+ *
+ *   SETTLEMENT EASING (delta < 0) @0x045F68 — relaxes the per-settlement
+ *   tension words at 0x54F6 (ai/native_unit_ai.c's array; NOT the 0x5B1C
+ *   matrix), for each settlement owned by tribe0+4 (NS_OWNER @+0x54EE):
+ *     if (old_band - new_band > 1):  SETTLE_TENSION[s][power] = 0   ; big ease
+ *     else if (new_band == 0):       cap at 0x20
+ *     else:                          cap at 0x60
+ *   (the earlier port had the zero/cap conditions swapped.)
+ *
+ * Core native-alarm engine — escalation toward mission-burning as colonists
+ * encroach, with the French/Pocahontas mitigations and treaty gating.
  * @status BYTE_VERIFIED (full body)
  * =========================================================================== */
-static int native_alarm_decay(int tribe, int colony) { (void)tribe; (void)colony; return 0; }
-
-int func_045DF2_native_tension_add(uint16_t tribe /*bp+6*/, uint16_t colony /*bp+8*/,
+int func_045DF2_native_tension_add(uint16_t tribe /*bp+6*/, uint16_t power /*bp+8*/,
                                    int16_t delta /*bp+0xA*/)
 {
-    int before;                          /* bp-4                                  */
-    int after;                           /* bp-6                                  */
-    int cell;                            /* bp-0x62                               */
+    int before;                          /* bp-4   old band                       */
+    int after;                           /* bp-6   new band                       */
+    int cell;                            /* bp-0x62 new alarm value               */
     int weight;                          /* bp-0x64                               */
-    int row;                             /* tribe*0x27 + colony                    */
-    int i;                               /* bp-0x60                                */
+    int row;                             /* tribe*0x27 + power                    */
+    int i;                               /* bp-0x60                               */
 
-    (void)tribe; (void)native_alarm_decay; (void)i;
+    (void)tribe; (void)i;
 
-    /* @0x045E01 name/scale the current value. */
-    overlay_call_181F_030C();            /* @0x045E01 tribe_colony_name_fmt       */
-    before = overlay_call_181F_035C();   /* @0x045E0A number_scale()              */
-    before = overlay_call_181F_0A60();   /* @0x045E16 clamp()                     */
+    /* @0x045E01 read + clamp the current alarm, map to band. */
+    overlay_call_181F_030C();            /* @0x045E01 alarm_read(tribe,power) [0x082A0] */
+    before = overlay_call_181F_035C();   /* @0x045E0A clamp(v, 0, 100)            */
+    before = overlay_call_181F_0A60();   /* @0x045E16 alarm_band(v) [0x08262]     */
 
-    /* @0x045E21 colony 1 halves a positive delta. */
-    if (colony == 1 && delta > 0)        /* @0x045E21..0x045E2B                   */
+    /* @0x045E21 FRENCH (power 1): half alarm increase. */
+    if (power == 1 && delta > 0)         /* @0x045E21..0x045E2B                   */
         delta >>= 1;                     /* @0x045E2D sar [bp+0xA],1              */
-    /* @0x045E30 attitude mask 0x10 halves again. */
+    /* @0x045E30 power-attribute bit 0x10 (Pocahontas-class): half again. */
     if (overlay_call_181F_07B4() != 0 && delta > 0)  /* @0x045E35..0x045E45      */
         delta >>= 1;                     /* @0x045E47 sar [bp+0xA],1              */
 
-    /* @0x045E4A bump the alarm cell. */
-    row  = (int)tribe * 0x27 + (int)colony;       /* @0x045E4E imul/add           */
+    /* @0x045E4A bump the alarm cell (0x5B1C matrix), clamp 0..100. */
+    row  = (int)tribe * 0x27 + (int)power;        /* @0x045E4E imul/add           */
     cell = TRIBE_ALARM(row);                      /* @0x045E57 [bx+0x5b1c]        */
-    cell = overlay_call_181F_035C();              /* @0x045E61 number_scale(cell+delta)*/
+    cell = overlay_call_181F_035C();              /* @0x045E61 clamp(cell+delta,0,100) */
     TRIBE_ALARM(row) = cell;                      /* @0x045E6C store back          */
-    after = overlay_call_181F_0A60();             /* @0x045E71 clamp()             */
-    before >>= 1; after >>= 1;                    /* @0x045E7C,5F                  */
+    after = overlay_call_181F_0A60();             /* @0x045E71 alarm_band(cell)    */
+    before >>= 1; after >>= 1;                    /* @0x045E7C,5F halve both bands */
 
-    /* @0x045E82 negative delta => marker pulses. */
+    /* @0x045E82 easing clears relation-event bits. */
     if (delta < 0) {                     /* @0x045E86 jge 0x292                   */
-        overlay_call_181F_0A10();        /* @0x045E96 marker_pulse(layer4)        */
+        overlay_call_181F_0A10();        /* @0x045E96 rel_clear_event(4, tribe+4, power) */
         if (cell < 0x4B)                 /* @0x045E9E cmp [bp-0x62],0x4b          */
-            overlay_call_181F_0A10();    /* @0x045EAA marker_pulse(layer2)        */
+            overlay_call_181F_0A10();    /* @0x045EAA rel_clear_event(2, tribe+4, power) */
     }
 
-    /* @0x045EB2 threshold check. */
+    /* @0x045EB2 MAX ALARM: difficulty-scaled roll -> burn the missions. */
     if (cell >= 0x64) {                  /* @0x045EB6 jl 0x2f6                     */
-        overlay_call_181F_0A38();        /* @0x045EC2 tile_flags(tribe+4)         */
-        /* @0x045ECA test al,0x40 : only escalate when the war-eligible bit set. */
-        /* @0x045ECE weight = (colony real power) ? G_DIFFICULTY : 1. */
-        weight = ((int)colony < 4 && !IS_REF_POWER(colony)) ? G_DIFFICULTY : 1;
-        if (overlay_call_181F_04D4() > weight + 1)  /* @0x045EF3 random_int(0,0xa)*/
-            return 0;                    /* @0x045F03 bail                        */
-        native_village_redraw_one((int)colony);     /* @0x045F0D near 0x9ce       */
+        overlay_call_181F_0A38();        /* @0x045EC2 rel_query(tribe+4, power)   */
+        /* @0x045ECA test al,0x40 : only when the TREATY bit is set.             */
+        /* @0x045ECE weight = (power human) ? G_DIFFICULTY : 1.                  */
+        weight = ((int)power < 4 && !IS_REF_POWER(power)) ? G_DIFFICULTY : 1;
+        if (overlay_call_181F_04D4() > weight + 1)  /* @0x045EF3 random_int(0,10)*/
+            return 0;                    /* @0x045F03 no burn this time           */
+        func_045D00_burn_missions(tribe, power);    /* @0x045F0D near 0x9CE ->
+                                                     * 0x465EE (LJMP 0x1A1F:0x398) */
         return 0;                        /* @0x045F13 RETF                        */
     }
 
-    /* @0x045F16 below threshold: re-clamp the tribe's alarm row.
-     * scale = bp-0x5c / -5 ; for each settlement of this tribe, clamp its alarm
-     * cell into [0x20..0x60] when it is below the before band, else zero it. */
+    /* @0x045F16 BAND-CHANGE ANNOUNCE: if old/-5 != min(new,0x63)/-5, stage
+     * %arg0 = power_handle(power), %arg1 = power_handle(tribe+4) (0x9A4/0x438)
+     * — the ALARM-band message args for the caller.  @0x045F38..0x045F65. */
+
+    /* @0x045F68 SETTLEMENT EASING (delta < 0 only): relax 0x54F6 tension words
+     * of settlements owned by tribe+4 (owner byte @+0x54EE, stride 0x12):
+     *   big ease (old_band-new_band > 1) -> word[s*0x12 + power*2 + 0x54F6] = 0
+     *   else cap at (new_band==0 ? 0x20 : 0x60).
+     * @asm 0x045F82 (0x20 cap) / 0x045FA6 (0x60 cap) / 0x045FF7 (zero). */
     for (i = 0; i < G_OTHER_COUNT; i++) {         /* @0x045FC8 cmp [0x539a],ax    */
-        /* @0x045FB1 imul bx,i,0x12 ; if NS_OWNER(bx) != (delta low byte) skip;  */
-        /* @0x045FBD if (before-after) <= 1 -> zero this cell, else clamp band.  */
-        /* (band-clamp at @0x045F82 [<=0x20 -> 0x20] / @0x045FA6 [<=0x60->0x60]) */
+        /* loop body transcribed in the header block above (byte-cited).         */
     }
     return 0;                            /* @0x046000 pop si; RETF                */
 }

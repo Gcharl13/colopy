@@ -135,16 +135,23 @@ extern int  native_notify(int tribe, int msg_key);
  * SEMANTICS of the stored value RUNTIME_ONLY (NAMES.TXT/data-file)]. */
 extern int  tribe_power_relation(int tribe, int power);   /* @0x082A0 [V] */
 
-/* per-good "want index" @ DGROUP:0x???, 0x181F:0x0A60 -> file 0x08262:
- * returns 0 when good < 0x19 else a table value (body truncates at first RET;
- * the good<0x19 path returns 0).  [contract V; full table RUNTIME_ONLY (NAMES.TXT/data-file)]. */
-extern int  cargo_want_index(int good);   /* @0x08262 */
+/* ALARM-BAND mapper, 0x181F:0x0A60 -> file 0x08262.  DOMAIN CORRECTED
+ * 2026-06-10: the argument is an ALARM VALUE 0..100 (func_045DF2 passes the
+ * clamped 0x5B1C cell), NOT a good index -- value < 0x19 -> band 0 ("content");
+ * higher values map through the band table (the content/wary/angry tension
+ * ladder).  haggle below ALSO uses it to band price/qty values, so it is a
+ * GENERIC value->band mapper; old name "cargo_want_index" RETRACTED. */
+extern int  value_band(int value);   /* @0x08262 (shared: alarm bands + haggle steps) */
 
-/* set a per-(tribe,power,good) trade-relationship delta:
+/* adjust the per-(tribe,power) alarm:
  * 0x181F:0x0D6C -> page 0x0B file 0x045DF2 (func_045DF2_native_tension_add).
- * Called (tribe, power, delta, 0).  Bumps the tribe/colony alarm cell and
- * re-clamps the alarm row; documented in overlay_04458A_04694B.c.
- * [contract ANCHOR; body in thunk page → page 0x0B]. */
+ * Called (tribe0, power, delta, 0).  BODY FULLY DECODED 2026-06-10 (see
+ * overlay_04458A_04694B.c): clamps delta into the 0x5B1C cell (0..100) with
+ * the FRENCH (power 1) and power-attribute-0x10 (Pocahontas-class) halvers on
+ * positive deltas; easing clears relation-event bits 4/2; alarm hitting 100
+ * with the treaty bit set rolls random(0,10) <= difficulty+1 and on success
+ * BURNS the power's missions (func_045D00, msg 0x14C8 "INDIANBURN"); easing
+ * also relaxes the per-settlement 0x54F6 tension words. */
 extern void trade_relation_adjust(int tribe, int power, int delta, int zero);
 
 /* unit-interaction predicates / mutators (page 0x17 / resident): */
@@ -198,7 +205,7 @@ extern void trade_dialog_finish(int unit_idx);            /* 0x181F:0x0808 -> di
  *   good                          = [bp-0xc6]   (the good being sold)
  *   diff                          = g_difficulty_53A6
  *   stock                         = g_trade_stock_9E58[good]   ([bx-0x61A8])
- *   want_idx                      = cargo_want_index(arg)*2    (0x0A60), 0 for
+ *   want_idx                      = value_band(arg)*2    (0x0A60), 0 for
  *                                   good 0xF/8, halved if stock>=0x14
  *   home rec [0x8D4E] +7/+8       = per-tier counters (good 0xF/8 specials)
  * Formula (every line @asm-cited inline):
@@ -208,7 +215,7 @@ extern void trade_dialog_finish(int unit_idx);            /* 0x181F:0x0808 -> di
  *   if good==0xF (Muskets): base += (0xC - home[+7])           ; @0x499D9
  *   if good==8  (Horses):   base += (0xA - home[+8])           ; @0x499F0
  *   if good==0xE (Trade Goods): base += 1                      ; @0x49A07
- *   want2  = cargo_want_index(qty?) * 2                        ; @0x49A0A->0xA60, shl1
+ *   want2  = value_band(qty?) * 2                        ; @0x49A0A->0xA60, shl1
  *            (zeroed for good 0xF/8 @0x49A29; if stock>=0x14 -> >>1 @0x49A3B)
  *   seed   = (base - diff - want2 + mood + 4) * 2              ; @0x49A42..0x49A56 [bp-0xd6]
  *   // total price across the stock, scaled by trade quantity and /100:
@@ -247,7 +254,7 @@ int haggle_sell_price(int good, int qty, int *out_seed, int *out_counter_budget)
         base += 1;
 
     /* @0x49A0A..0x49A3B — per-good want index (×2), specials, stock halving */
-    int want2 = cargo_want_index(qty) * 2;          /* @0x49A0A->0xA60, shl1 @0x49A16 */
+    int want2 = value_band(qty) * 2;          /* @0x49A0A->0xA60, shl1 @0x49A16 */
     if (good == 0x0F || good == 0x08)
         want2 = 0;                                  /* @0x49A29 */
     if (stock >= 0x14)
