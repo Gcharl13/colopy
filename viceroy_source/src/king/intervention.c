@@ -147,8 +147,11 @@ void foreign_intervention(void)
 
 /* ============================================================================
  * NOTES / STILL left unresolved
- *  - WHICH European power intervenes ([0x53D4]) and the SIZE/composition of the
- *    intervention force are set up by the CALLER (not located) — not yet decoded.
+ *  - RESOLVED 2026-06-10: the intervention/loyalist force SIZE & COMPOSITION
+ *    generator is func_03DE46 (see src/king/ref.c section 4): the four words
+ *    0x53E2..0x53E8 computed from the rebel's census (pop/10, cargo/16,
+ *    finance/32 terms, halved, MoW-capped).  [0x53D4] is the census row it
+ *    reads (the power being stepped / the rebel at war time).
  *  - colony fields +0x1A (owner) and +0x1F (ranked attribute) are BYTE_VERIFIED
  *    addresses; +0x1F's exact meaning (colony size? rebel sentiment?) is inferred
  *    as "size/rank" and marked left unresolved.

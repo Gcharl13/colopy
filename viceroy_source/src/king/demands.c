@@ -132,7 +132,8 @@ void king_demand_cadence(int power_id)   /* ANCHOR_VERIFIED loop; trigger not ye
  * with PowerRecord +0x2A), and that the Tea-Party choice routes through this
  * dialog.  The numeric BOYCOTT consequence of a Tea Party is handled by
  * func_034318 (see src/king/tax_apply.c — boycott bitmask king[+0x20] + market
- * price table 0x5DE0, tail not yet decoded).  The 0x53A7 "anger" question is now RESOLVED
+ * price table 0x5DE0; the boycott tail is now FULLY DECODED there, and the
+ * boycott LIFT/back-tax rule is in market/pricing.c func_03334E).  The 0x53A7 "anger" question is now RESOLVED
  * (it is the year/100 split, not anger — see this file's header).
  * ============================================================================ */
 /* (Decompilation captured as the asm citation above; no standalone C body —

@@ -488,9 +488,10 @@ finish:
  *  - String identities (all 15 handles) BYTE_VERIFIED via file = handle+0x1D9A0.
  *  - The inner REF land-deployment MATRIX (king[+0x19]/[+0x1A], the per-(power,
  *    arm) accessors 0x181F:0xA06/0xA10, and the secondary "adjust toward target"
- *    path at 0x2C74..0x2D01) is structurally traced but the exact spawn coords /
- *    per-arm unit counts are NOT fully decompiled here -> not yet decoded (cross-ref
- *    src/king/ref.c king_ref_buildup + the func_03CDA2/0x03D4C0 landing path).
+ *    path at 0x2C74..0x2D01) is decoded; the landing path (func_03CDA2) is
+ *    traced in src/king/ref.c: per-arm decrement @0x03D4C0, unit spawn via
+ *    0x181F:0x9BA at the target colony coords, FINAL WAVE zeroes all four
+ *    REF words @0x03D4FE.  Per-arm counts come from the budget matrix here.
  *  - Helper PROTOTYPES (ui_*, msg_*, crt_keyed_to_buf) are LITERAL-faithful to
  *    push args; their precise semantics are inferred from call context.
  *  - [0x53C2] is zeroed twice (entry-of-finish and the no-colonies branch); its

@@ -63,8 +63,10 @@ extern uint16_t g_word_8D52;
 
 /* ---- cross-segment capability / query helpers (0x181F:*) -------------------
  * Arg/return shapes from the call sites only; the bitmask tests are byte-clear
- * (test/and 0xA, 0x40) but the precise ability semantics are not yet decoded. NONE invented. */
-extern int16_t ovly_unit_valid_here_181F_302(int16_t x, int16_t y);  /* @asm 0x04E347 */
+ * (test/and 0xA, 0x40).  0x181F:0x302 RESOLVED 2026-06-10: it is
+ * map_in_bounds(x,y) = (1 <= x < [0x853A]-1 && 1 <= y < [0x853C]-1),
+ * resident func_005BFA, full body byte-verified (docs/RESIDENT_LIB.md). */
+extern int16_t ovly_unit_valid_here_181F_302(int16_t x, int16_t y);  /* @asm 0x04E347 = map_in_bounds */
 extern int16_t ovly_query_181F_952(int16_t owner, int16_t y, int16_t x);/* @asm 0x04E387 */
 extern int16_t ovly_query_181F_614(int16_t x, int16_t y, int16_t a, int16_t b);/* @asm 0x04E39E */
 extern int16_t ovly_query_181F_722(int16_t x, int16_t y);            /* @asm 0x04E3BD */
