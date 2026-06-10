@@ -133,17 +133,28 @@ void ovl_popup_simple(const char *key, void *p, int z)
 void ovl_msg_simple(const char *key) { ovl_popup_simple(key, 0, 0); }
 
 /* ---- the MOVE COMMIT ------------------------------------------------------ */
+extern int unit_move_cost_thirds(int unit, int dest_x, int dest_y);
+                       /* the cost head of func_03ECF0 (the executor the
+                        * 0x1A1F:0x142 commit record resolves to); see
+                        * src/unit/move_cost.c for the byte cites */
 void ovl_landfall_unit(int unit_idx, int dy, int dx)
 {
+    /* price the step from the unit's CURRENT tile (the executor reads src
+     * x/y from the record @0x3ED0F/0x3ED18) before relocating */
+    int cost3 = unit_move_cost_thirds(unit_idx, dx, dy);
+
     /* relocate the unit (and implicitly its carried stack stays chained to
      * it through the cargo model) to (dx,dy) via the BYTE-VERIFIED pair */
     unit_chain_unlink((int16_t)unit_idx);
     unit_place_on_tile((int16_t)unit_idx, (int16_t)dx, (int16_t)dy);
-    /* movement deduction -- RECONSTRUCTED (thirds model; @UNIT move*3 at
-     * [type*9+0x5234]; sea/plain step = 3) pending the order-engine decode */
+
+    /* deduct the REAL cost (terrain Movement*3 / road / river / owned-clamp).
+     * The shell tracks remaining thirds in UnitRecord +6; the executor's own
+     * used-accumulator model (+5 vs allowance @0x3EE84..0x3EE9D) converges
+     * when the full func_03ECF0 is ported. */
     {
         int mv = (int8_t)UB(unit_idx, 6);
-        mv -= 3;
+        mv -= cost3;
         if (mv < 0) mv = 0;
         UB(unit_idx, 6) = (uint8_t)mv;
     }

@@ -716,6 +716,21 @@ int main(int argc, char **argv)
                     }
                     DG16(0x5392)=0;
                 }
+                {   /* movement-cost engine: NAMES.TXT Movement column must
+                     * differentiate terrain (Ocean 1x3 / land per-class) */
+                    extern int unit_move_cost_thirds(int, int, int);
+                    int cw = unit_move_cost_thirds(1, UREC(1,0)-1, UREC(1,1));
+                    int ce = unit_move_cost_thirds(1, UREC(1,0)+1, UREC(1,1));
+                    int cn = unit_move_cost_thirds(1, UREC(1,0), UREC(1,1)-1);
+                    printf("  move-cost : W=%d E=%d N=%d thirds (from @TERRAIN)\n",
+                           cw, ce, cn);
+                    /* the Movement column itself (rows: Tundra=0, Marsh=6,
+                     * Ocean=25, Mountains=27): expect 1,2,1,3 per NAMES.TXT */
+                    printf("  @TERRAIN  : move Tundra=%d Marsh=%d Ocean=%d "
+                           "Mountains=%d\n",
+                           DG8(0x2F76 + 0*16), DG8(0x2F76 + 6*16),
+                           DG8(0x2F76 + 25*16), DG8(0x2F76 + 27*16));
+                }
                 {   /* F1 smoke: the real terrain report must run clean */
                     extern int func_069D8C_terrain_report_dialog(uint16_t);
                     int rr = func_069D8C_terrain_report_dialog(0);
