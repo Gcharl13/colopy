@@ -1470,21 +1470,28 @@ All three RTLink overlay leads resolved via 0x1A1F thunk table.
 
 | Lead (cs: offset) | Thunk offset | Resolved target | Status |
 |-------------------|-------------|-----------------|--------|
-| cs:0x7AD0 | 0x1A1F:0x554 | func_02B4D2_colony_sz_517 | BYTE_VERIFIED |
-| cs:0x7ADF | 0x1A1F:0x578 | func_025C32_colony_reassign_after_sort | BYTE_VERIFIED |
-| cs:0x7AB2 | 0x1A1F:0x50C | war-matrix row setup helper @file 0x26360 | BYTE_VERIFIED |
+| cs:0x7AD0 | 0x1A1F:0x554 | ~~func_02B4D2~~ → func_051EF4 (ovl 13 + 0x5D04 = 0x51EF4, ENTER 0x44) | CORRECTED 2026-06-10 |
+| cs:0x7ADF | 0x1A1F:0x578 | ~~func_025C32~~ → func_04C532 (ovl 13 + 0x0342 = 0x4C532) | CORRECTED 2026-06-10 |
+| cs:0x7AB2 | 0x1A1F:0x50C | ~~@0x26360~~ → func_04CC50 (ovl 13 + 0x0A60 = 0x4CC50, region plan-code aggregation) | CORRECTED 2026-06-10 |
 
 ### func_065D26 — unresolved-inner CLOSED
 
 | Lead | Thunk file offset | Resolved target | Status |
 |------|------------------|-----------------|--------|
-| 0x1A1F:0x88A | 0x1CE7A | func_025A1E_colony_build_advisor (mid-function entry; returns build-advisor reason codes) | BYTE_VERIFIED |
+| 0x1A1F:0x88A | 0x1CE7A | ~~func_025A1E mid-function~~ **RETRACTED 2026-06-10**: thunk bytes = overlay 0x18(24) + 0x0198 → ≈file 0x787DC (segmap-24 base, AMBIG). The old target assumed base 0x25900 for every 0x1A1F thunk. Behavioral contract stands: names_read_int_byte (NAMES.TXT parser; see market/pricing.c). | CORRECTED |
 
 ### func_0772FA — unresolved-inner CLOSED
 
 | Lead | Thunk file offset | Resolved target | Status |
 |------|------------------|-----------------|--------|
-| 0x1A1F:0xEE4 | 0x1D4D4 | func_025900_colony_survey_adjacent_tiles (mid-loop cursor gate) | BYTE_VERIFIED |
+| 0x1A1F:0xEE4 | 0x1D4D4 | ~~func_025900 mid-loop~~ **RETRACTED 2026-06-10**: thunk bytes = overlay 0x1C(28) + 0x0082 → ≈file 0x76ED2 (segmap-28 base, AMBIG). Old target used the same wrong fixed base 0x25900. Cursor-gate role is call-site inference; body untraced. | CORRECTED |
+
+**Thunk-decode rule (established 2026-06-10, four byte-verified pairs):** RTLink
+thunk records live at file `0x1C5F0 + thunk_offset` for segment 0x1A1F, with
+layout `9A AB0D 0D11 | EA <off32> | <ovl16> | <pad>`; `<ovl16>` maps IDENTITY
+onto `overlay_segmap.json` keys.  Verified: 0x0434→ovl12+0x2154=0x48F34,
+0x0634→ovl15+0=0x56A10, 0x0618→ovl15+0x102A=0x57A3A, 0x0688→ovl23+0x37CC=0x6F61C.
+Any older row computed with a fixed 0x25900 base is suspect.
 
 ---
 

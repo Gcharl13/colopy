@@ -50,9 +50,13 @@
  *     census matrices byte[4][16] (-0x6A4E=coastal cargo, -0x6B1A=population,
  *     -0x6ADA=settled units, -0x6B5A=unit count; writer in
  *     overlay_040C1E_04458A.c) — see the section-3 block in diplomacy_meeting.
- *     Still open: loop #2 colony-trade weights and the scalar tables
- *     (0x6BD4, 0x6BE4, 0x5236, 0x5DE0, 0x942C/0x941C).  The numeric thresholds
- *     (e.g. score>100 -> PROVOKE) are byte-cited constants, not invented.
+ *   - RESOLVED 2026-06-10: loop #2 = per-colony adjacency pressure via
+ *     func_056A10 (see section 3b); -0x6BD4 (0x942C) = census coastal-cargo
+ *     per-power total; -0x6BE4 (0x941C) = census per-power finance word.
+ *     Still open: 0x5236 (prod-table column) and 0x5DE0 (market, see
+ *     tax_apply.c) term meanings in the later score-shaping.  The numeric
+ *     thresholds (e.g. score>100 -> PROVOKE) are byte-cited constants, not
+ *     invented.
  *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6: RUNTIME_ONLY
  *     (C-runtime __aFldiv 32-bit long divide; body in segment 0x0D1D, not in load image).
  *
@@ -66,8 +70,18 @@
  * @ref ../docs/EUROPEAN_DIPLOMACY.md   (NOTE: that doc is RECONSTRUCTED; the
  *      byte-verified facts live here and in VERIFICATION_LEDGER.md)
  * @asm VICEROY.EXE func_057F4E @0x057F4E (page 0x0F, ENTER 0xD6,0, RETF @0x59B3C)
- * @asm dialog display:  lcall 0x1A1F:0x0688  -> overlay file 0x290CC
- * @asm option builder:  call cs:0x3F35 -> ljmp 0x1A1F:0x0618 (file 0x2692A)
+ * @asm dialog display:  lcall 0x1A1F:0x0688  -> file 0x6F61C (func_06F61C)
+ * @asm option builder:  call cs:0x3F35 -> ljmp 0x1A1F:0x0618 -> file 0x57A3A
+ *      (func_057A3A, ENTER 0x54 — same overlay 15 as this function)
+ * THUNK-TARGET CORRECTION 2026-06-10: the old targets "0x2692A"/"0x290CC" were
+ * computed with a fixed base 0x25900 for every 0x1A1F thunk; neither address is
+ * a function start (raw bytes are mid-instruction).  The RTLink thunk records at
+ * file 0x1C5F0+off are `9A AB0D 0D11 | EA <off32> | <ovl16> | <xx>`, and <ovl>
+ * maps IDENTITY onto overlay_segmap.json keys.  Verified on four pairs:
+ *   0x0434 -> ovl 12 +0x2154 = 0x48F34 (func_048F34, independently verified)
+ *   0x0634 -> ovl 15 +0x0000 = 0x56A10 (func_056A10, matches call-site signature)
+ *   0x0618 -> ovl 15 +0x102A = 0x57A3A (func_057A3A, ENTER 0x54)
+ *   0x0688 -> ovl 23 +0x37CC = 0x6F61C (func_06F61C, PUSH BP prologue)
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "power.h"
@@ -365,21 +379,56 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      * weighted by population presence — the AI's envy/oppportunity estimate. */
     /* [attitude loop #1 — @asm 0x1DEA..0x1F14 = file 0x05809A..0x0581C4; above] */
 
-    /* @asm 0x1F2A..0x1FF6: a second loop bounded by [0x539E] over the colony
-     *      record at [0x8542]; matches owner self/other, accumulates trade /
-     *      holdings into score with a *2 weight on the matched side.
-     * semantics not yet decoded; literal transcription only. */
-    /* [attitude loop #2 — see @asm 0x1F2A..0x1FF6] */
+    /* ---- 3b. ATTITUDE LOOP #2 — per-colony adjacency pressure ---------------
+     * DECODED 2026-06-10 (BYTE_VERIFIED, func_057F4E.asm file 0x0581DA..0x0582A6).
+     * For each colony c = 0..[0x539E]-1 owned by self OR other (owner byte
+     * colony[+0x1A] checked @0x0581E6/0x0581F2):
+     *
+     *   pressure = colony_strongest_adjacent_defender(&besieger, &garrison,
+     *                                                 &adj_total, power_other);
+     *     -- the near call @0x05820F `push cs; call 0x5A1EF` goes through the
+     *        far-jump trampoline @file 0x05A1EF (ljmp 0x1A1F:0x0634) -> RTLink
+     *        thunk @0x1CC24 (overlay 15 + 0) -> func_056A10 (ported in
+     *        overlay_054505_05C69B.c).  It scans the colony tile + 8 neighbours:
+     *        garrison  = scaled value (0x8BC code 0xA) of the unit ON the tile,
+     *        and over adjacent units OWNED BY power_other only:
+     *        pressure += 0x8BC(0xB,u)>>3, adj_total += 0x8BC(0xA,u),
+     *        besieger = power_other if it has any adjacent unit else -1.
+     *
+     *   if (besieger == power_other):                          @asm 0x05821C
+     *       score += 2*pressure;                               @asm 0x058226
+     *       if (garrison == 0 || adj_total > 1) {              @asm 0x05822B
+     *           if (vulncargo_acc) vulncargo_acc--;            @asm 0x05823F
+     *           want_action = 1; }                             @asm 0x058243
+     *       region = region_index(colony.x, colony.y);         @asm 0x058256 0x181F:0x722
+     *       if (census_pop_94E6[other*16+region] == 0)          @asm 0x05826A
+     *           pressure <<= 1;          (besieging w/o local base counts double)
+     *       other_pressure_sum += pressure;  other_has_siege = 1; @asm 0x058279/0x05827D
+     *
+     *   if (besieger == power_self):                           @asm 0x058285
+     *       self_pressure_sum += pressure;  score -= 2*adj_total;
+     *       NOTE: STRUCTURALLY DEAD AS COMPILED — func_056A10's owner gate
+     *       (@0x056AA2 jne to loop tail) means besieger ∈ {-1, power_other}
+     *       only; this arm is transcribed faithfully but cannot fire.
+     *
+     * Local map: [bp-0xb6]=pressure  [bp-0x90]=besieger  [bp-4]=garrison
+     *   [bp-0xc2]=adj_total  [bp-0xb0]=other_pressure_sum  [bp-6]=self_pressure_sum
+     *   [bp-0x60]=other_has_siege  [bp-0xcc]=vulncargo_acc (from loop #1). */
 
     /* @asm 0x1FFB late-game aggression gate: if [0xA153]==self AND turn>=0x50
      *      AND self.byte[-0x6D68]>3 AND other.byte[-0x6D68]>1 -> is_war_topic=1. */
     /* @asm 0x2024 warbit_set = war_flag_cell(self,other) & 2 (the "at war" bit). */
     warbit_set = *war_flag_cell(power_self, power_other) & WAR_FLAG_AT_WAR;
 
-    /* @asm 0x2037..0x2078: if NOT a war topic and warbit set and the
-     *      attitude*3 comparison holds, want_action=1, zero secondary acc,
-     *      and rescale score via diplo_scale_181F_035C(score, base, 0x26AC)
-     *      where base = 0xC8*difficulty + 0x64.  not yet decoded: scaler semantics. */
+    /* @asm 0x2037..0x2078 (file 0x0582E7..0x058328) — DECODED 2026-06-10:
+     *      if (!is_war_topic && warbit_set &&
+     *          3 * census_cargo_total_942C[other] > census_cargo_total_942C[self])
+     *      { want_action=1; vulncargo_acc=0;
+     *        score = clamp(score, 0xC8*difficulty + 0x64, 0x26AC); }
+     *      0x942C (-0x6BD4) = per-power census coastal-cargo TOTAL (the scalar
+     *      row-sum twin of the 0x95B2 matrix, written @0x0423A8 in the census).
+     *      The "×3" @file 0x0582F8-0x0582FC is shl al,1; add al,cl.
+     *      diplo_scale_181F_035C = clamp (resolved 2026-06-08). */
     /* @asm 0x2099 bit-19 power attribute (lcall 0x181F:0x7B4) halves a term. */
     /* @asm 0x20F8..0x2171 difficulty/turn scaling of score (×(diff+8), /100,
      *      then halves/quarters by turn thresholds 0x32/0x64 and aggression). */
@@ -571,9 +620,11 @@ present_screen:
  * guessed:
  *   - Attitude tables RESOLVED 2026-06-10: -0x6A4E/-0x6B1A/-0x6ADA/-0x6B5A are
  *     the AI census matrices byte[4][16] (coastal cargo / population / settled
- *     units / unit count; writer overlay_040C1E_04458A.c, saved as 0x40 blocks).
- *     Still open: the scalar per-power tables -0x6BD4, -0x6BE4 (finance words),
- *     0x5236 (prod table column), 0x5DE0 (market — see tax_apply.c), 0x942C/0x941C.
+ *     units / unit count; writer overlay_040C1E_04458A.c, saved as 0x40 blocks);
+ *     -0x6BD4 (0x942C) = census coastal-cargo per-power TOTAL; -0x6BE4 (0x941C)
+ *     = census per-power finance word.  Loop #2 = colony adjacency pressure via
+ *     func_056A10 (section 3b).  Still open: 0x5236 (prod table column) and
+ *     0x5DE0 (market — see tax_apply.c) in the later score-shaping steps.
  *   - diplo_scale_181F_035C: RESOLVED 2026-06-08 — pure clamp(v, lo, hi).
  *   - gold_scale_0D1D_0EC6 (0x0D1D:0xEC6): RUNTIME_ONLY — C-runtime __aFldiv 32-bit
  *     long divide (body in segment 0x0D1D); cross-ref production_support.c / sol_tory.c.
@@ -582,9 +633,12 @@ present_screen:
  *   - Exact field roles of UnitRecord +0x314D/+0x314E written on transfer.
  *
  * Three tractable follow-up traces (each one cited entry point):
- *   1. Decode 0x1A1F:0x0618 (file 0x2692A) = the dialog OPTION builder, to learn
- *      how a "key + modifier" composes a numbered choice.
- *   2. Decode 0x1A1F:0x0688 (file 0x290CC) = the dialog show, to confirm the
- *      return-code convention (1=accept / 2=alt as used above).
+ *   1. Decode 0x1A1F:0x0618 = func_057A3A (file 0x57A3A, ENTER 0x54; target
+ *      CORRECTED 2026-06-10 — see thunk note in the function header above) =
+ *      the dialog OPTION builder, to learn how "key + modifier" composes a
+ *      numbered choice.
+ *   2. Decode 0x1A1F:0x0688 = func_06F61C (file 0x6F61C; target CORRECTED
+ *      2026-06-10) = the dialog show, to confirm the return-code convention
+ *      (1=accept / 2=alt as used above).
  *   3. (DONE 2026-06-08) 0x181F:0x035C = pure clamp(v, lo, hi) at file 0x0048CC.
  * ============================================================================ */

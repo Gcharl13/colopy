@@ -110,15 +110,17 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
   0x181F:0x2EE→file 0x6672=func_006672 (unit_chain_resolve), 0x181F:0x37A→
   file 0x493C=func_00493C (octile/diagonal distance max+min/2). All resident
   thunks confirmed via EA target bytes. audit.py: 196/196 PASS.
-- **func_052F7E (war-matrix) not-yet-decoded-inner CLOSED (Group A):** cs:0x7AD0→0x1A1F:0x554→
-  func_02B4D2_colony_sz_517; cs:0x7ADF→0x1A1F:0x578→
-  func_025C32_colony_reassign_after_sort; cs:0x7AB2→0x1A1F:0x50C→war-matrix row
-  setup helper @file 0x26360.
-- **func_065D26 not-yet-decoded-inner CLOSED (Group A):** 0x1A1F:0x88A→RTLink thunk 0x1CE7A→
-  func_025A1E_colony_build_advisor (mid-function entry, returns build-advisor reason
-  codes).
-- **func_0772FA not-yet-decoded-inner CLOSED (Group A):** 0x1A1F:0xEE4→RTLink thunk 0x1D4D4→
-  func_025900_colony_survey_adjacent_tiles (mid-loop cursor gate).
+- **func_052F7E (war-matrix) not-yet-decoded-inner CLOSED (Group A; targets CORRECTED
+  2026-06-10):** cs:0x7AD0→0x1A1F:0x554→func_051EF4; cs:0x7ADF→0x1A1F:0x578→
+  func_04C532; cs:0x7AB2→0x1A1F:0x50C→func_04CC50 (region plan-code aggregation).
+  The 06-08 resolutions used a fixed 0x25900 base; the thunk overlay field is
+  0x0D (13) = base 0x4C1F0.  See VERIFICATION_LEDGER.md "Thunk-decode rule".
+- **func_065D26 not-yet-decoded-inner (Group A; target RETRACTED 2026-06-10):**
+  0x1A1F:0x88A→thunk 0x1CE7A = ovl 24 + 0x198 ≈ file 0x787DC (AMBIG base), NOT
+  func_025A1E.  Behavioral contract names_read_int_byte (market/pricing.c) stands.
+- **func_0772FA not-yet-decoded-inner (Group A; target RETRACTED 2026-06-10):**
+  0x1A1F:0xEE4→thunk 0x1D4D4 = ovl 28 + 0x82 ≈ file 0x76ED2 (AMBIG base), NOT
+  inside func_025900.  Cursor-gate role is call-site inference; body untraced.
 - **raw_power_score (func_039EE2) corrections:** score_ff_pts @asm cite corrected
   0x03A2E8→0x03A2BE; vet_mult formula recomputed — gate=100>>count, factor=8>>count
   (@asm 0x03A8B4), total×(8+factor)/8.

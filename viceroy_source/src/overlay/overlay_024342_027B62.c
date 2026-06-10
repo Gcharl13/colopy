@@ -321,73 +321,91 @@ int begin_season_loop(void)
  * ============================================================================ */
 
 /* ============================================================================
- * colony_survey_adjacent_tiles  (func_025900)
+ * colony_siege_balance  (func_025900)   [RE-DECODED 2026-06-10 — BYTE_VERIFIED]
  *   @asm        0x025900..0x025A1C  (285 bytes, ENTER 0x16)   page_02.asm
- *   @status     RECONSTRUCTED (extent + reads BYTE_VERIFIED; role inferred)
- *   @role       survey the 8 tiles adjacent to the colony centre: for each
- *               worked surrounding square, find the highest-yield worker and
- *               report (best_dir, best_amount, total_amount) via out-params.
+ *   @role       military balance probe around the active colony: friendly
+ *               defender strength (garrison + adjacent same-owner units) vs
+ *               adjacent AT-WAR foreign units.  Returns the clamped hostile
+ *               excess and reports the strongest hostile unit's owner power.
  *
- * Signature  (cdecl; words at bp+6/+8/+0xA are int* out-params or NULL):
- *   int colony_survey_adjacent_tiles(int *out_best_dir, int *out_best_amt,
- *                                     int *out_total_amt);
+ * The earlier "survey worked tiles / worker yield" reading was WRONG on three
+ * byte-level points, all re-verified against the dump:
+ *   1. [bx+0x3147] & 0xF is the unit OWNER nibble (same idiom as the census
+ *      pass U_TYPENAT & 0x0F), not a "worker profession"; the `cmp ax,4; jge`
+ *      skip at @0x02599B keeps only EUROPEAN-owned units.
+ *   2. LCALL 0x181F:0xA38 @0x02594F is war_state(colony_owner, unit_owner)
+ *      (the relations query used at the same displacement in func_057F4E and
+ *      func_04CC50), not a "worker query".  `test al,0x40; je` @0x025957 lets
+ *      a foreign unit count ONLY when the treaty/peace bit 0x40 is CLEAR.
+ *   3. The owner-compare branch was inverted: @0x0259B9 `cmp ax,[bp-0x12];
+ *      jne 0x25946` jumps to the WAR CHECK when owners differ; the fall-through
+ *      (owners EQUAL) adds the unit to the FRIENDLY sum.
  *
- * ctx = current colony (DGROUP:0x8542).  Reads ctx->map_x/map_y (+0/+1), looks
- * up the centre tile via 0x181F:0x7E0(x,y) and its base yield via
- * 0x181F:0x8BC(0xA, tile).  Then loops dir=0..7 over the 8-neighbour delta
- * tables at DGROUP 0xB4 (dx) and 0xBE (dy); for each neighbour computes its
- * tile index (0x181F:0x7E0), reads the worker profession nibble
- * UnitRecord[idx].byte[+3] & 0xF (0x3147 = 0x3144+3, stride 0x1C), and if it is
- * < 4 (a real commodity profession) and differs from ctx->owner_power (+0x1A)
- * accumulates that worker's yield (0x181F:0x8BC).  Tracks the best single tile
- * and the running total; stores results through the non-NULL out-params and
- * returns the clamped (>=0) net amount.
- * (Leaf overlay targets 0x181F:0x7E0=tile-at-xy, 0x8BC=yield, 0xA38=worker-query
- *  are byte-cited LCALLs; implementations in thunk layer.)
+ * Signature (cdecl; out-params may be NULL; NOTE: this is NOT the helper called
+ * by diplomacy_meeting loop #2 — that one is func_056A10, resolved 2026-06-10
+ * via the RTLink thunk table; see overlay_054505_05C69B.c):
+ *   int colony_siege_balance(int *out_hostile_owner, int *out_friendly_sum,
+ *                            int *out_hostile_sum);
+ *   return = max(0, hostile_sum - friendly_sum)
+ *
+ * ctx = current colony (DGROUP:0x8542):
+ *   friendly  [bp-4]    = 0x8BC(0xA, unit at colony tile) or 0   @0x025912..0x025933
+ *   for dir 0..7 (delta tables dx@0x00B4 / dy@0x00BE):           @0x025940..
+ *     u = 0x181F:0x7E0(x+dx, y+dy); if u < 0 continue            @0x025982/0x02598A
+ *     owner = UnitRecord[u].byte[+3] & 0xF; if owner >= 4 continue @0x02598E/0x02599B
+ *     val = 0x8BC(0xA, u)                                        @0x0259A5
+ *     if owner == colony.owner(+0x1A): friendly += val           @0x0259B0/0x0259BE
+ *     else if !(war_state(colony.owner, owner) & 0x40):          @0x025946/0x025957
+ *       hostile [bp-0x14] += val                                 @0x0259C8
+ *       if val > best [bp-0x16]: best = val;
+ *           best_owner [bp-0xC] = owner                          @0x0259CE..0x0259D9
  * ============================================================================ */
-int colony_survey_adjacent_tiles(int near *out_best_dir,
-                                  int near *out_best_amt,
-                                  int near *out_total_amt)
+int colony_siege_balance(int near *out_hostile_owner,
+                         int near *out_friendly_sum,
+                         int near *out_hostile_sum)
 {
     struct colony_t far *c = ctx;                 /* @asm 0x025905 mov bx,[0x8542] */
-    int centre_yield;                             /* [bp-4] */
-    int best_dir = -1;                            /* [bp-0xC] = 0xFFFF */
-    int best_amt = 0, best_seen = 0, total = 0;   /* [bp-0x14],[bp-0x16],[bp-6] */
-    int dir, prof, net;
+    int friendly;                                 /* [bp-4]    */
+    int best_owner = -1;                          /* [bp-0xC] = 0xFFFF */
+    int hostile = 0, best_seen = 0;               /* [bp-0x14],[bp-0x16] */
+    int dir, owner, val, excess;
 
-    /* centre tile + its base yield  @asm 0x025909..0x025931 */
-    if (overlay_call_181F_07E0() >= 0)            /* @asm 0x025912 LCALL 0x181F:0x7E0(map_x,map_y); or/jl */
-        centre_yield = overlay_call_181F_08BC();  /* @asm 0x025921 LCALL 0x181F:0x8BC(0xA,tile) */
+    /* colony-tile garrison seeds the friendly sum  @asm 0x025909..0x025933 */
+    if (overlay_call_181F_07E0() >= 0)            /* @asm 0x025912 LCALL 0x181F:0x7E0(map_x,map_y) */
+        friendly = overlay_call_181F_08BC();      /* @asm 0x025921 LCALL 0x181F:0x8BC(0xA,unit) */
     else
-        centre_yield = 0;                         /* @asm 0x02592E mov [bp-4],0 */
-    (void)centre_yield;
+        friendly = 0;                             /* @asm 0x02592E mov [bp-4],0 */
 
-    for (dir = 0; dir < 8; dir++) {               /* @asm 0x025940..0x0259E? loop [bp-6] < 8 */
-        int ntile, nx, ny;
+    for (dir = 0; dir < 8; dir++) {               /* @asm 0x02595E cmp [bp-6],8 */
+        int u, nx, ny;
         ny = (int8_t)(DG8(0x00BE + dir)) + c->map_y; /* @asm 0x025967..0x025977 */
         nx = (int8_t)(DG8(0x00B4 + dir)) + c->map_x; /* @asm 0x025979..0x025980 */
         (void)nx; (void)ny;
-        ntile = overlay_call_181F_07E0();         /* @asm 0x025982 LCALL 0x181F:0x7E0(nx,ny) */
-        if (ntile < 0) continue;                  /* @asm 0x02598A or ax,ax / jl -> next dir */
+        u = overlay_call_181F_07E0();             /* @asm 0x025982 unit at (nx,ny) */
+        if (u < 0) continue;                      /* @asm 0x02598A or ax,ax / jl */
 
-        /* worker profession nibble: UnitRecord[ntile].byte[+3] & 0xF */
-        prof = *(uint8_t far*)(MK_FP(0, 0x3147) + ntile * 0x1C) & 0xF; /* @asm 0x02598E imul 0x1C;[bx+0x3147];and 0xF */
-        if (prof >= 4) continue;                  /* @asm 0x02599B cmp ax,4 / jge -> next dir */
+        owner = *(uint8_t far*)(MK_FP(0, 0x3147) + u * 0x1C) & 0xF; /* @asm 0x02598E..0x025995 */
+        if (owner >= 4) continue;                 /* @asm 0x02599B Europeans only */
 
-        net = overlay_call_181F_08BC();           /* @asm 0x0259A5 LCALL 0x181F:0x8BC(0xA,ntile) -> yield */
-        if (c->owner_power != prof)               /* @asm 0x0259B0..0x0259BC cmp ctx[+0x1A],prof / jne */
-            best_amt += net;                      /* @asm 0x0259BE..0x0259C1 add [bp-4]/best accumulation */
-        total += net;                             /* @asm 0x0259C8..0x0259D1 running total at [bp-0x14] */
-        if (net > best_seen) { best_seen = net; best_dir = prof; } /* @asm 0x0259D6..0x0259E? track best */
+        val = overlay_call_181F_08BC();           /* @asm 0x0259A5 0x8BC(0xA,u) */
+        if (owner == c->owner_power) {            /* @asm 0x0259B0..0x0259BC (fall-through on equal) */
+            friendly += val;                      /* @asm 0x0259BE..0x0259C1 add [bp-4] */
+        } else if (!(overlay_call_181F_0A38() & 0x40)) { /* war_state(c->owner, owner) @asm 0x02594F/0x025957 */
+            hostile += val;                       /* @asm 0x0259C8 add [bp-0x14] */
+            if (val > best_seen) {                /* @asm 0x0259CE..0x0259D1 */
+                best_seen = val;
+                best_owner = owner;               /* @asm 0x0259D6..0x0259D9 */
+            }
+        }
     }
 
-    net = total - best_amt;                       /* @asm 0x0259E0 mov ax,[bp-0x14]; sub [bp-4] */
-    if (net < 0) net = 0;                         /* @asm 0x0259E6 jns / sub ax,ax */
+    excess = hostile - friendly;                  /* @asm 0x0259E0 mov ax,[bp-0x14]; sub [bp-4] */
+    if (excess < 0) excess = 0;                   /* @asm 0x0259E6 jns / sub ax,ax */
 
-    if (out_best_dir)  *out_best_dir  = best_dir; /* @asm 0x0259ED cmp [bp+6],0 / store [bp-0xC] */
-    if (out_best_amt)  *out_best_amt  = best_amt; /* @asm 0x0259FB cmp [bp+8],0 / store [bp-4] */
-    if (out_total_amt) *out_total_amt = total;    /* @asm 0x025A09 cmp [bp+0xA],0 / store [bp-0x14] */
-    return net;                                   /* @asm 0x025A17 mov ax,[bp-0xE] */
+    if (out_hostile_owner) *out_hostile_owner = best_owner; /* @asm 0x0259ED store [bp-0xC] */
+    if (out_friendly_sum)  *out_friendly_sum  = friendly;   /* @asm 0x0259FB store [bp-4] */
+    if (out_hostile_sum)   *out_hostile_sum   = hostile;    /* @asm 0x025A09 store [bp-0x14] */
+    return excess;                                /* @asm 0x025A17 mov ax,[bp-0xE] */
 }
 
 /* ============================================================================

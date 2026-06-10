@@ -130,10 +130,12 @@ extern int overlay_call_181F_05CE(void);  /* 0x181F:0x05CE -- helper */
 extern int overlay_call_181F_0EAE(void);  /* 0x181F:0x0EAE -- config write/flag */
 extern int overlay_call_0D1D_0ABE(void);  /* 0x0D1D:0x0ABE -- C buffered read */
 extern int overlay_call_1A1F_0EBA(void);  /* 0x1A1F:0x0EBA -- emit packed record (returns coord) */
-extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- cursor-gate predicate
-                                              RTLink: thunk@0x1D4D4 -> overlay 0:0x82 -> file 0x25982
-                                              = inside func_025900 (colony_survey_adjacent_tiles)
-                                              tests if tile/unit at cursor position is valid [BYTE_VERIFIED] */
+extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- cursor-gate predicate.
+                                              TARGET CORRECTED 2026-06-10: thunk@0x1D4D4 bytes
+                                              say overlay 0x1C(28) + 0x82 -> ≈file 0x76ED2
+                                              (segmap key 28, AMBIG base).  The old claim
+                                              "overlay 0:0x82 -> 0x25982 inside func_025900"
+                                              mis-decoded the overlay field; body untraced. */
 
 extern int overlay_call_181F_000E(void);  /* 0x181F:0x000E -- module init */
 extern int overlay_call_181F_0182(void);  /* 0x181F:0x0182 -- strcat / format-append */
@@ -2661,15 +2663,16 @@ void func_0772DA_register_stream_callbacks(uint16_t a0, uint16_t a1,
  *     else walk the cursor [bp-6] entries calling 0x1A1F:0xEE4 until a nonzero,
  *     raising err 0xFFE4 on overflow.
  *
- *   0x1A1F:0xEE4 TRAMPOLINE RESOLVED (BYTE_VERIFIED 2026-06-08):
- *     file:0x1D4D4 -> RTLink thunk: lcall 0x110D:0xDAB; ljmp 0:0x82
- *     -> overlay page 0, off 0x82 -> file 0x25982
- *     = INSIDE func_025900 (colony_survey_adjacent_tiles, overlay_024342_027B62.c)
- *       at @asm 0x025982 (offset +0x82 within function, mid-loop-body)
- *       code: lcall 0x181F:0x7E0 (tile-at-xy query for neighbour dir loop)
- *       Acts as cursor-gate predicate: tests if tile/unit at cursor position is valid
- *       Returns nonzero when cursor entry yields an acceptable tile/unit match
- *       is_detected_function=False (RTLink mid-function entry point)
+ *   0x1A1F:0xEE4 TARGET — CORRECTED 2026-06-10 (prior "INSIDE func_025900 @
+ *   0x25982" reading was WRONG; it mis-decoded the thunk's overlay field as 0
+ *   and used base 0x25900):
+ *     RTLink thunk @file 0x1D4D4: raw 9A AB0D 0D11 | EA 82 00 00 00 | 1C 00 |
+ *     8A 00 -> overlay field 0x1C (28), offset 0x0082.  The overlay field maps
+ *     IDENTITY onto overlay_segmap.json keys (verified on four pairs — see
+ *     src/diplomacy/meeting.c header note): key 28 base = 0x76E50 (AMBIG
+ *     confidence) -> target ≈ file 0x76ED2.  Role (cursor-gate predicate:
+ *     "returns nonzero when the cursor entry is acceptable") is inferred from
+ *     this call-site only; the target body is not yet traced.
  *   finalize (0x83f): if callback [0x245A] absent free the bound block via
  *     0x191F:0x1A8 (when nonzero) else near 0x872 ; return cursor [bx]:[bx+2].
  *

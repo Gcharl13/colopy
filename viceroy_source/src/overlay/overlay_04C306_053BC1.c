@@ -1777,35 +1777,31 @@ extern uint8_t  g_ai_count_A0D4;          /* DGROUP:0xA0D4 */
 extern uint8_t  g_ai_count_A0DA;          /* DGROUP:0xA0DA */
 extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
 /* g_unit_count_539C forward-declared above */
-/* cs:0x1A1F page-0x12 trampolines used by this routine (verified ljmp targets).
- * BYTE_VERIFIED 2026-06-08 via RTLink flattener (all three war-matrix helpers):
+/* cs:0x1A1F page-0x12 trampolines used by this routine.
+ * TARGETS CORRECTED 2026-06-10: the 2026-06-08 resolutions decoded the thunk
+ * overlay field as "page 0" and applied base 0x25900; the raw thunk bytes carry
+ * overlay field 0x0D (13) = segmap base 0x4C1F0 (identity mapping verified on
+ * four pairs — see VERIFICATION_LEDGER.md "Thunk-decode rule").  All three
+ * land on REAL function starts in overlay 13 (this very file's range):
  *
- *   cs:0x7AD0 -> file:0x053520 -> ljmp 0x1A1F:0x554
- *                RTLink thunk@0x1CB44: lcall 0x110D:0xDAB; ljmp 0:0x5D04
- *                -> overlay page 0, off 0x5D04 -> file 0x2B604
- *                = INSIDE func_02B4D2_colony_sz_517 (overlay_02AAEC_02F0C7.c)
- *                  at @asm 0x02B604 (offset +0x132 within that function)
- *                  code: push 0x63; push [0x93AA]; lcall 0x181F:0x22 (tile-assign row add)
- *                  is_detected_function=False (RTLink mid-function entry point)
+ *   cs:0x7AD0 -> ljmp 0x1A1F:0x554 ; thunk@0x1CB44 = ovl 13 + 0x5D04
+ *                -> file 0x51EF4 = func_051EF4 (ENTER 0x44)
+ *                (old claim "0x2B604 inside func_02B4D2" RETRACTED)
  *
- *   cs:0x7ADF -> file:0x05352F -> ljmp 0x1A1F:0x578
- *                RTLink thunk@0x1CB68: lcall 0x110D:0xDAB; ljmp 0:0x342
- *                -> overlay page 0, off 0x342 -> file 0x25C42
- *                = INSIDE func_025C32_colony_reassign_after_sort (overlay_024342_027B62.c)
- *                  at @asm 0x25C42 (offset +0x10 within that function, after prologue)
- *                  code: jmp 0x25D30 or fall through to loop init
- *                  is_detected_function=False (RTLink near-start thunk entry)
+ *   cs:0x7ADF -> ljmp 0x1A1F:0x578 ; thunk@0x1CB68 = ovl 13 + 0x0342
+ *                -> file 0x4C532 = func_04C532
+ *                (old claim "0x25C42 inside func_025C32" RETRACTED)
  *
- *   cs:0x7AB2 -> file:0x053502 -> ljmp 0x1A1F:0x50C
- *                RTLink thunk@0x1CAFC: lcall 0x110D:0xDAB; ljmp 0:0xA60
- *                -> overlay page 0, off 0xA60 -> file 0x26360
- *                = INSIDE func_02B368-area push-block (war-matrix row setup helper)
- *                  is_detected_function=False (RTLink mid-function entry point)
+ *   cs:0x7AB2 -> ljmp 0x1A1F:0x50C ; thunk@0x1CAFC = ovl 13 + 0x0A60
+ *                -> file 0x4CC50 = func_04CC50 — the region-aggregation /
+ *                plan-code writer documented in THIS file (PHASE 5 block above);
+ *                a war-matrix routine calling its own overlay's planner is
+ *                coherent, unlike the old cross-overlay mid-function claim.
  */
 extern int  ovly_tramp_7A7B(uint16_t unit);                /* call cs:0x7A7B -> 0x1A1F:0x488 (record unit) */
-extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C -> file 0x26360 [BYTE_VERIFIED] */
-extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 -> file 0x2B604 [BYTE_VERIFIED] */
-extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> file 0x25C42 [BYTE_VERIFIED] */
+extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C -> func_04CC50 [CORRECTED 2026-06-10] */
+extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 -> func_051EF4 [CORRECTED 2026-06-10] */
+extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> func_04C532 [CORRECTED 2026-06-10] */
 /* file-local 0x181F / 0xD1D leaves not pre-declared in overlay_externs.h.
  * BYTE_VERIFIED 2026-06-08: bodies traced via RTLink thunk resolution (see block above). */
 extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer:
@@ -1993,11 +1989,11 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * boycott escalation gated on [0x828], [0x7F4], [0x82B], [0x53C2]. */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531B5 memset(.,2) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531BD reset-begin */
-    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 -> 0x1A1F:0x554 -> file 0x2B604 [BYTE_VERIFIED] */
+    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 -> 0x1A1F:0x554 -> func_051EF4 [CORRECTED 2026-06-10] */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531D1 memset(.,3) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531D9 */
-    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF -> 0x1A1F:0x578 -> file 0x25C42 [BYTE_VERIFIED] */
-    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 -> 0x1A1F:0x50C -> file 0x26360 [BYTE_VERIFIED] */
+    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF -> 0x1A1F:0x578 -> func_04C532 [CORRECTED 2026-06-10] */
+    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 -> 0x1A1F:0x50C -> func_04CC50 (region plan-code aggregation, this file) [CORRECTED 2026-06-10] */
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531F7 memset(.,4) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531FF */
     (void)overlay_call_181F_047A();                     /* @asm 0x053204 */

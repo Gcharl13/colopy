@@ -165,16 +165,28 @@ extern int func_05A938(int unit_index);                            /* trampoline
  * @asm 0x056A82    if (ax < 0) continue
  * @asm 0x056A84    bx = ax*0x1C ; cl = UnitRecord[+0x03] & 0xF      ; owner power
  * @asm 0x056A94    val = LCALL 0x181F:0x08BC(0xA, ax)              ; scaled value
- * @asm 0x056AA2    if (arg2(bp+0xC) == owner) {                    ; same owner?
- * @asm 0x056AAC      v2 = LCALL 0x181F:0x08BC(0xB, idx) >> 3       ; secondary
- * @asm 0x056AB7      acc_b += v2 }
+ * @asm 0x056AA2    if (arg2(bp+0xC) != owner) continue   ; GATE FIX 2026-06-10:
+ *                    ; the jne @0x056AA5 targets the LOOP TAIL (0x056ACE), so
+ *                    ; EVERYTHING below — acc_b, acc_total, best-tracking — only
+ *                    ; runs for units owned by the QUERY power (bp+0xC).  The
+ *                    ; earlier brace closing after acc_b was wrong.
+ * @asm 0x056AAC    acc_b += LCALL 0x181F:0x08BC(0xB, idx) >> 3     ; secondary
  * @asm 0x056ABA    acc_total += val
  * @asm 0x056AC0    if (val > running_max) { running_max=val; best_owner=owner }
  * @asm 0x056AD1  } while (++slot < 8)
- * @asm 0x056AD7  if (out_owner)  *out_owner  = best_owner
- * @asm 0x056AE5  if (out_flag)   *out_flag   = best_flag
+ * @asm 0x056AD7  if (out_owner)  *out_owner  = best_owner   ; ∈ {-1, query power}
+ * @asm 0x056AE5  if (out_flag)   *out_flag   = best_flag    ; = CENTRE-TILE garrison value
  * @asm 0x056AF3  if (out_total)  *out_total  = acc_total
  * @asm 0x056B01  return acc_b
+ *
+ * Consequence of the gate: best_owner can ONLY be the query power (if it has
+ * any adjacent unit) or -1 — never a third party.
+ *
+ * KNOWN CALLER (found 2026-06-10): diplomacy_meeting loop #2 (func_057F4E
+ * @file 0x05820F) calls this via the near trampoline cs:0x5A1EF -> ljmp
+ * 0x1A1F:0x0634 -> RTLink thunk @0x1CC24 (overlay 15 + 0x0000 = file 0x56A10),
+ * with query power = power_other and out-ptrs (&besieger, &garrison, &adj_total);
+ * see src/diplomacy/meeting.c section 3b.
  *
  * 0x181F:0x07E0 = "unit/defence index at (x,y)"; 0x181F:0x08BC = scale/weight
  * helper(kind, value).  Exact arithmetic of 0x08BC is in the resident overlay
@@ -204,13 +216,13 @@ int colony_strongest_adjacent_defender(int *out_owner, int *out_flag,
             continue;                                  /* @asm 0x056A82 */
         owner = *(uint8_t *)(idx * UNIT_STRIDE + UNIT_OWNER) & 0x0F; /* @asm 0x056A87 */
         val = overlay_call_181F_08BC();                /* scale(0xA, idx) @asm 0x056A94 */
-        if (/* arg2 */ 0 == owner) {                   /* @asm 0x056AA2 (caller-supplied owner) */
-            acc_b += overlay_call_181F_08BC() >> 3;    /* scale(0xB, idx)>>3 @asm 0x056AAC/0804 */
-        }
-        acc_total += val;                              /* @asm 0x056ABA */
-        if (val > running_max) {                       /* @asm 0x056AC0 */
+        if (/* arg2 */ 0 != owner)                     /* @asm 0x056AA2; jne 0x56ACE = LOOP TAIL */
+            continue;   /* gate fixed 2026-06-10: tallies below are query-power-only */
+        acc_b += overlay_call_181F_08BC() >> 3;        /* scale(0xB, idx)>>3 @asm 0x056AAC */
+        acc_total += val;                              /* @asm 0x056ABA (inside gate) */
+        if (val > running_max) {                       /* @asm 0x056AC0 (inside gate) */
             running_max = val;
-            best_owner = owner;                        /* @asm 0x056AC8 */
+            best_owner = owner;                        /* @asm 0x056AC8 = query power */
         }
         (void)base_idx;
     }
