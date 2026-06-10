@@ -1,5 +1,9 @@
 # generated graph + caches (regenerable)
 graphify-out/
+
+# CMake build directories
+build/
+viceroy_source/build_modern/
 .dos_db.json
 .win_index.json
 # python
