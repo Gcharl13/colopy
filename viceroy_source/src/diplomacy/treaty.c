@@ -246,18 +246,20 @@ void treaty_set_state(int a, int b)
 }
 
 /* ============================================================================
- * EVERYTHING BELOW IS not yet decoded (NOT byte-verified)
+ * PROPOSAL / AI-EVAL PATH — RESOLVED 2026-06-10 (lives in diplomacy/meeting.c)
  * ----------------------------------------------------------------------------
- * The original game presents treaty proposals through a UI/AI-evaluation path
- * that has NOT yet been located or decompiled.  The proposal-scoring logic,
- * gold/goods transfer, and AI accept/reject heuristics are unknown.  No
- * numbers below are trustworthy; they exist only as a placeholder shape and
- * are explicitly marked not yet decoded so they are never mistaken for verified facts.
- * Anchor for future work: the in-game diplomacy dialog driver that calls
- * func_057DC0 (caller not yet decoded; reachable via the page-0x0F Type-A thunk for 0x57DC0).
+ * The old placeholder trio is SUPERSEDED; every piece is byte-verified in
+ * func_057F4E (see src/diplomacy/meeting.c):
+ *   treaty_propose / accept-reject UI+AI  = the PEACE/OLDPEACE topic arms of
+ *     diplomacy_meeting (dialog return 1/2 convention via menu_lookup_run);
+ *   ai_evaluate_treaty                    = the census-based attitude score
+ *     (meeting.c sections 3/3b: per-region cargo/population fold + colony
+ *     adjacency pressure + the 3x coastal-cargo gate, clamp(score,
+ *     200*difficulty+100, 0x26AC));
+ *   treaty_transfer_payment               = the byte-verified gold transfer
+ *     on a paid treaty (PowerRecord+0x2A both sides) + the per-unit
+ *     ownership transfer loop (meeting.c "WHAT IS BYTE_VERIFIED" list).
+ * func_057DC0's caller is also RESOLVED: the cs:0x3F4E trampoline
+ * (ljmp 0x1A1F:0x65E) inside func_057F4E itself — the native-meeting
+ * early-out branch.
  * ============================================================================ */
-#if 0  /* not yet decoded — proposal/AI-eval path not yet reverse-engineered */
-int  treaty_propose(/* not yet decoded */);          /* not yet decoded: who calls treaty_set_state, and the accept/reject UI/AI */
-int  ai_evaluate_treaty(/* not yet decoded */);      /* not yet decoded: AI scoring weights unknown */
-void treaty_transfer_payment(/* not yet decoded */); /* not yet decoded: gold/goods exchange on a signed treaty */
-#endif
