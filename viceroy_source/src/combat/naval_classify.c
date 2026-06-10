@@ -39,8 +39,16 @@ extern int unit_chain_next(int u);               /* 0x2E4 family */
 
 static int cargo_can_board(int occupant, int role, int z)
 {
-    /* near 0x3FFF8 -> 0x1A1F:0x1A0 (AMBIG seg) -- hold-capacity gate.
-     * TODO(decode): until then boarding is permitted. */
+    /* near 0x3FFF8 -> trampoline JMP FAR 0x1A1F:0x1A0 -- hold-capacity gate.
+     * SIGNATURE RESOLVED 2026-06-10 from the cross-caller @0x5B127
+     * (func_05B0DC):  count = gate(unit, 1, 1);  proceed while
+     * count < UnitRecord[unit + 0xC]  (cmp ax,[bx+0x3150] @0x5B12F).
+     * So the gate COUNTS the load aboard and +0xC holds the hold capacity.
+     * The body's file location: the 0x1A1F record (file 0x1C5F0+0x1A0)
+     * carries trailer sub-segment 0xC5 -- a different RTLink segment than
+     * the move executor's (trailer 0x0000); the sub-segment directory
+     * decode is pending, so the COUNT body is not yet transcribed and
+     * boarding stays permitted. */
     (void)occupant; (void)role; (void)z;
     return 1;
 }

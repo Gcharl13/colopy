@@ -4,11 +4,21 @@
  * The per-unit ADVANCE step of the main loop (file 0x021D32..0x021E71, 320 B,
  * full transcription against re_work/disasm/func_021D32.asm).  Runs when the
  * active unit's orders are settled: deselect fx, order-state ladder, season
- * latch back to Spring, reveal + cursor box, then the next-unit / finish
- * pickers (near 0x24BD7 / 0x24BA5 -- their thunk records resolve past EOF in
- * the current segmap, so they are platform externs with shell semantics,
- * cite-marked pending the segid re-fingerprint), and the tutorial-hint hook
- * (func_020F50, ported).
+ * latch back to Spring, reveal + cursor box, then the season processors and
+ * the tutorial-hint hook (func_020F50, ported).
+ *
+ * RESOLVED 2026-06-10 (the "pickers"): the near calls @0x21E39/@0x21E45
+ * target the page-tail trampolines @0x24BD7/@0x24BA5 = JMP FAR 0x191F:0xE4 /
+ * 0x191F:0x6C; their records at file 0x1B5F0+NNN decode to page 1 offsets
+ * 0xB34 / 0x902 = file 0x021A14 / 0x0217E2:
+ *   @0x21E39 -> func_021A14 = spring_turn_process (PORTED, main_loop.c):
+ *               Spring refresh+draw of the active unit.
+ *   @0x21E45 -> 0x0217E2 = the begin-Autumn trigger ([0x5390]=1; the
+ *               main_loop.c season ladder's documented setter).  Ported here
+ *               as the one-line season store, cite-marked PARTIAL (the
+ *               surrounding 0x217E2 body is not yet transcribed).
+ * Unit ROTATION (advancing [0x5392]) belongs to the resident dispatcher tail
+ * of func_0246E2 -- substituted by the SHELL (main_modern.c) until ported.
  *
  * Leaves (all resident, ported):
  *   0x7A0 deselect-notify  func_006608   0x7F4 needs-orders  func_007A80
@@ -32,8 +42,10 @@ extern int  func_00BD28_op_sz_34(uint16_t x, uint16_t y);    /* 0xDB8 */
 extern int  func_00BF3C_logic_sz_182(uint16_t a, uint16_t b, uint16_t c,
                                      uint16_t d, uint16_t e);/* 0x352 */
 extern int  func_020F50_tutorial_hints(void);
-extern void mainloop_pick_next_unit(void);     /* near 0x24BD7 (platform) */
-extern void mainloop_finish_rotation(void);    /* near 0x24BA5 (platform) */
+extern int  func_021A14_sec_sz_602(void);      /* near 0x24BD7 -> func_021A14
+                                                * spring_turn_process; spec in
+                                                * main_loop.c, body pending --
+                                                * the TU stub stands in */
 extern void ovl_deselect_fx(int x, int y);     /* 0x181F:0x9BA (overlay) */
 
 int unit_turn_advance(int notify)
@@ -79,10 +91,15 @@ int unit_turn_advance(int notify)
                                                                  /* @0x21E30 cursor box */
             }
         }
-        mainloop_pick_next_unit();                 /* @0x21E39 near 0x24BD7 */
+        func_021A14_sec_sz_602();                  /* @0x21E39 near 0x24BD7 ->
+                                                    * func_021A14 (Spring refresh;
+                                                    * = spring_turn_process) */
     } else {
         DG16(0x53C6) = 1;                          /* @0x21E3E */
-        mainloop_finish_rotation();                /* @0x21E45 near 0x24BA5 */
+        DG16(0x5390) = 1;                          /* @0x21E45 near 0x24BA5 ->
+                                                    * 0x0217E2 begin-Autumn trigger
+                                                    * ([0x5390]=1); PARTIAL -- the
+                                                    * full 0x217E2 body pending */
         if (DG16(0x97B0) != 0 && (DG8(0x5383) & 8) == 0)         /* @0x21E48 */
             DG16(0x53C4) = 0;                      /* @0x21E56 */
     }

@@ -282,10 +282,17 @@ extern int unit_turn_advance(int notify);      /* func_021D32, PORTED */
 static void end_turn(void)
 {
     /* the REAL advance step (func_021D32): deselect, order ladder, season
-     * latch, reveal/cursor, next-unit or finish-rotation */
+     * latch, reveal/cursor, season processors.  Unit ROTATION belongs to the
+     * resident dispatcher tail of func_0246E2 -- the SHELL substitutes it
+     * here (mainloop_* helpers) until that tail is ported. */
+    extern void mainloop_pick_next_unit(void);
+    extern void mainloop_finish_rotation(void);
     unit_turn_advance(1);
-    if ((int16_t)DG16(0x5392) < 0)               /* rotation exhausted */
-        unit_turn_advance(1);                    /* run the finish path */
+    mainloop_pick_next_unit();
+    if ((int16_t)DG16(0x5392) < 0) {             /* rotation exhausted */
+        unit_turn_advance(1);                    /* autumn step (season=1) */
+        mainloop_finish_rotation();              /* refresh moves + year++ */
+    }
 }
 
 #define TILE 16

@@ -186,9 +186,14 @@ void power_scan_mark(int power) { DG8(0x543E + power*0x34) |= 0x80; }
 
 #endif /* _VICEROY_MODERN */
 
-/* ---- main-loop pickers (near 0x24BD7/0x24BA5: thunk records resolve past
- * EOF with the current segmap -- shell semantics, cite-marked pending the
- * segid re-fingerprint) ----------------------------------------------------- */
+/* ---- SHELL unit-rotation substitute ---------------------------------------
+ * RESOLVED 2026-06-10: the turn-step near calls @0x21E39/@0x21E45 are NOT
+ * rotation pickers -- they resolve (trampolines @0x24BD7/@0x24BA5 -> 0x191F
+ * records 0xE4/0x6C -> page 1 + 0xB34/0x902) to func_021A14
+ * spring_turn_process and the 0x0217E2 begin-Autumn trigger; turn_step.c now
+ * calls those.  Advancing [0x5392] belongs to the resident dispatcher tail
+ * of func_0246E2 (not yet ported); these two helpers are the SHELL's
+ * substitute for that tail, called from main_modern.c's end_turn only. */
 void mainloop_pick_next_unit(void)
 {
     int n = (int16_t)DG16(0x539C);
