@@ -567,6 +567,17 @@ static int shell_loop(void)
             }
             break;
         case SH_COLONY:
+            if (k >= '1' && k <= '9') {          /* colony services (func_02883E) */
+                extern int colony_service_menu(int colony_sel, int item_id);
+                int r = colony_service_menu((int16_t)DG16(0x8DC6), k - '0');
+                printf("colony: service %d -> %d\n", k - '0', r);
+                {   extern void colony_screen_render(int);
+                    memset(vid_framebuffer(), 0, VID_W * VID_H);
+                    if (load_bg("COLONY.PIK") == 0) draw_bg();
+                    colony_screen_render(1);
+                    vid_present();
+                }
+            }
             if (k == 27) {                        /* ESC: back to the map */
                 if (g_terrain.has_pal) {
                     uint8_t pal[768];
