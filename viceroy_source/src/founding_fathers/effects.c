@@ -318,17 +318,27 @@ void ff_acquire_dispatch(int power, int ff_id)
 }
 
 /* ============================================================================
- * NOT YET BYTE-VERIFIED in this pass:
- *   - The boycott field is a 16-bit mask at +0x20 (verified it is CLEARED whole;
- *     the per-commodity bit assignment is documented elsewhere, not re-derived).
- *   - The per-FF WORD table at DGROUP:-0x69AE (ff_id*6) and the per-FF owner
- *     byte table at DGROUP:0x53A9 are referenced but their contents are not yet decoded.
+ * DECODE STATUS (updated 2026-06-10):
+ *
+ * RESOLVED:
+ *   - DGROUP:0x53A9 = FF first-owner byte table, 25 entries (one per FF id 0..24),
+ *     initialized to 0xFF (unowned) by game init (func_0757C4: memset 0x53A9,0xFF,25).
+ *     Set on first grant in func_03BC42 @asm 03BC89/03BC93.  See congress.c.
+ *   - DGROUP:0x9652 (= -0x69AE segment-relative) = FF_MEM_BASE, stride 6:
+ *       +0x00  congress notification handle (word)
+ *       +0x02  category 0..4 (byte)
+ *       +0x03..+0x05  era-band AI weights (3 bytes)
+ *     Layout fully decoded in congress.c (FF_MEM_BASE / FF_MEM2_BASE).
+ *   - Ownership query: ff_owned(ff_id, power) at 0x181F:0x07B4 returns nonzero
+ *     if power owns FF ff_id.  Declared in congress.c line 85; used by all
+ *     PASSIVE-FF subsystem ticks (IDs 0,2,3,4,5,7,8,10,11,12,13,15,17,19,21,23).
+ *   - The FF *bitmap* (PowerRecord+0x07) is NOT written by this handler; the
+ *     congress-grant path (func_03BC42) owns that.  This handler only bumps
+ *     COUNT (+0x14) and the pending slot (+0x12).
+ *
+ * STILL PENDING:
+ *   - The boycott field is a 16-bit mask at +0x20 (CLEARED whole here; per-commodity
+ *     bit assignments are documented elsewhere, not re-derived in this pass).
  *   - Helper bodies behind every 0x181F:NNNN call (file offsets cited above):
- *     bodies in thunk page.
- *   - The FF *bitmap* (PowerRecord+0x07 per the brief) is NOT written here; the
- *     "owned" bit must be set by the caller / congress-grant path (not yet decoded site).
- *     This handler only bumps the COUNT (+0x14) and the pending slot (+0x12).
- *   - IDs not handled by this switch (0,2,3,4,5,7,8,10,11,12,13,15,17,19,21,23)
- *     are PASSIVE: their effect is checked at the relevant subsystem tick, not
- *     applied here. The query site for "does power own FF N" is not yet decoded.
+ *     bodies live in the thunk page and are not yet decoded.
  * ============================================================================ */
