@@ -641,9 +641,12 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      *     0x08 (@0x3839 or [..],8) and a gold loot transfer (@0x3822 add gold).
      *     The NATIVE smite-loot formula is in src/native/diplomacy_smite_gold.c
      *     (file 0x05997C..0x059AD9) and is not repeated here.
-     * The menu's per-option scoring (e.g. @0x313C: ((diff+2)*[bp-0xb0])*0x19,
-     *      doubled if warbit_set, halved by bit-19 attribute) is byte-cited but
-     *      its overall meaning (a "demand magnitude") is not yet decoded. */
+     * The menu's per-option scoring @0x313C is now RESOLVED 2026-06-10:
+     *   demand = (difficulty+2) * other_pressure_sum * 25 (0x19),
+     *   doubled when at war, halved by ff_owned(FF 19 = FRANKLIN);
+     * [bp-0xb0] = the loop-#2 SIEGE-PRESSURE SUM (other's units crowding
+     * colonies, section 3b) -- the tribute/GIVECASH demand scales with how
+     * hard the other power is pressing militarily. */
 
 present_screen:
     /* @asm 0x382A..0x383E final present + leave/retf @0x59B3C. */
