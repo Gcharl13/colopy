@@ -357,8 +357,13 @@ void ff_acquire_dispatch(int power, int ff_id)
  *     COUNT (+0x14) and the pending slot (+0x12).
  *
  * STILL PENDING:
- *   - The boycott field is a 16-bit mask at +0x20 (CLEARED whole here; per-commodity
- *     bit assignments are documented elsewhere, not re-derived in this pass).
- *   - Helper bodies behind every 0x181F:NNNN call (file offsets cited above):
- *     bodies live in the thunk page and are not yet decoded.
+ *   - The boycott field is a 16-bit mask at +0x20 (CLEARED whole here).
+ *     RESOLVED 2026-06-10 (cross-ref): the per-commodity bit SET operation is
+ *     byte-verified in king/tax_apply.c — king[+0x20] |= (1 << good) @asm
+ *     0x034717; Fugger's whole-mask CLEAR here is the inverse.
+ *   - Helper BODIES behind the 0x181F:NNNN calls: TARGETS now resolved
+ *     2026-06-10 via the RTLink thunk rule (corrected offsets cited above;
+ *     several have disasm available: func_006D24, func_0063B6, func_009102,
+ *     func_0092E0, func_0081C6, func_045DF2, func_06AE08).  Body DECODES are
+ *     still open — each is a separate trace.
  * ============================================================================ */
