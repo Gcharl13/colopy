@@ -479,7 +479,8 @@ void diplomacy_meeting(int power_self, int power_other, int ctx, void *rec, int 
      *      row-sum twin of the 0x95B2 matrix, written @0x0423A8 in the census).
      *      The "×3" @file 0x0582F8-0x0582FC is shl al,1; add al,cl.
      *      diplo_scale_181F_035C = clamp (resolved 2026-06-08). */
-    /* @asm 0x2099 bit-19 power attribute (lcall 0x181F:0x7B4) halves a term. */
+    /* @asm 0x2099 ff_owned(power, FF 19 = BENJAMIN FRANKLIN) (lcall
+     * 0x181F:0x7B4) halves a term — the Franklin diplomacy effect. */
     /* @asm 0x20F8..0x2171 difficulty/turn scaling of score (×(diff+8), /100,
      *      then halves/quarters by turn thresholds 0x32/0x64 and aggression). */
     /* @asm 0x2154 diplo_scale_181F_035C(score, 0, 0x190) then ×0x32. */

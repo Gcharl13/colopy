@@ -2404,7 +2404,7 @@ int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
  * @asm 0x04AC3A  demand = census_cargo_95B2[arg1*16 + region]            ; power's coastal cargo
  *                         + (census_finance_941C[arg1] >> 1)             ;   + half its finance word
  * @asm 0x04AC59  if arg1 == 2: demand += demand>>1                       ; POWER 2 ×1.5 (not "sugar")
- * @asm 0x04AC67  if 0x181F:0x07B4(arg1, 0x0A): demand += demand>>1       ; power-attribute bit 10
+ * @asm 0x04AC67  if ff_owned(arg1, FF 10 = HERNAN CORTES): demand += demand>>1  ; Cortes village bonus
  * @asm 0x04AC80  supply = (([region + cur_pow*16 - 0x6E34] + ([cur_pow-0x6E7C]>>1)) << 1)
  * @asm 0x04ACA0           + (base >> 1)                                  ; supply tables
  * @asm 0x04ACAA  diff1 = (arg1<4 && [arg1*0x34+0x543F]==0) ? difficulty+1 : 1   ; human bias

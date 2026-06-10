@@ -1332,7 +1332,7 @@ int func_045D92_tribe_break_treaty(uint16_t msg_key /*bp+6*/, uint16_t tribe0 /*
  *   FRENCH TRAIT @0x045E21: if (power == 1 && delta > 0) delta >>= 1
  *           — power 1 (France) takes HALF alarm increases (the canonical
  *           French native-relations bonus, byte-verified here).
- *   POCAHONTAS-CLASS FLAG @0x045E30: if (power_attr(power, 0x10) && delta > 0)
+ *   POCAHONTAS @0x045E30: if (ff_owned(power, FF 16 = POCAHONTAS) && delta > 0)
  *           delta >>= 1 — power-attribute bit 0x10 ("alarm raised half as
  *           fast"; 0x181F:0x7B4 -> resident 0x0BC10).
  *   new   = clamp(ALARM_5B1C[tribe0*0x27 + power] + delta, 0, 100); store.

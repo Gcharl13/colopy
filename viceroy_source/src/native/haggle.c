@@ -147,7 +147,7 @@ extern int  value_band(int value);   /* @0x08262 (shared: alarm bands + haggle s
  * 0x181F:0x0D6C -> page 0x0B file 0x045DF2 (func_045DF2_native_tension_add).
  * Called (tribe0, power, delta, 0).  BODY FULLY DECODED 2026-06-10 (see
  * overlay_04458A_04694B.c): clamps delta into the 0x5B1C cell (0..100) with
- * the FRENCH (power 1) and power-attribute-0x10 (Pocahontas-class) halvers on
+ * the FRENCH (power 1) and FF-16 POCAHONTAS (ff_owned bit) halvers on
  * positive deltas; easing clears relation-event bits 4/2; alarm hitting 100
  * with the treaty bit set rolls random(0,10) <= difficulty+1 and on success
  * BURNS the power's missions (func_045D00, msg 0x14C8 "INDIANBURN"); easing

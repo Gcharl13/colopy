@@ -123,7 +123,7 @@ extern uint8_t g_unittype_attr_5230[/* type */][14];
  *                            key 0x1C06="HALF", mode 1; decline aborts)
  *   [0x8D03]|=0x02 @0x5CC92  armed colonist takes up muskets (defender colony
  *                            militia spawn via 0x191F:0xA20, base [0x5235])
- *   [0x8D03]|=0x04 @0x5CCCB  ...boosted: power-attribute bit 0xC AND colony
+ *   [0x8D03]|=0x04 @0x5CCCB  ...boosted: ff_owned(power, FF 12 = PAUL REVERE) AND colony
  *                            [+0xB8] >= 50 -> spawn strength 75 (0x4B)
  *   [0x8D01]|=0x08 @0x5CEE7  defender NOT sentried/fortified ([+0x314C] not
  *                            5/6) -> that strength term >>= 2 (quartered)

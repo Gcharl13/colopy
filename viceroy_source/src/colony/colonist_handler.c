@@ -38,7 +38,9 @@
  *    meta_out 0x12 = Rebel Flags commodity (NAMES.TXT @CARGO row 0x12 = "Flags";
  *    cross-ref market/pricing.c: "Hammers,Crosses,Liberty Bells,Flags" = rows 0xF..0x12).
  *  not yet decoded:
- *    ov_power_flag op 0x15 founding-father identity (Crosses +50% bonus)
+ *    RESOLVED 2026-06-10: ov_power_flag(power, 0x15) = ff_owned(power,
+ *    FF 21 = WILLIAM PENN) -- crosses +50%.  The "op" IS the FF id: the
+ *    0x181F:0x7B4 / 0x981:0 query is congress.c's ff_owned(ff_id, power).
  * ============================================================================ */
 #include <stddef.h>
 #include "viceroy.h"
