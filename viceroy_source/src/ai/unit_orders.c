@@ -474,13 +474,33 @@ block_614:
     /* The 0x628 / 0x690 / 0x70d / 0x75f / 0x786 / 0x7d4 / 0x83d sub-blocks build
      * and present the full confrontation dialog set (HAVETREATY 0x13BA, SNEAK
      * 0x13C5 via 0x181F:0x998, CANCELPEACE 0x13CB, DECLAREWAR 0x13D7) for the
-     * various (actor controller flag, occupant relation) combinations, then OR
-     * relation bits into the -0x77c4 table and clear bit 0 (0xfe mask). They are
-     * a long sequence of `cmp [bp-0x38],4 / imul ...,0x34 / cmp [bx+0x543f],0 /
-     * 0x181F:0xA38 test al,0x40` gates feeding 0x181F:0x652 dialog calls. The
-     * message handles are byte-verified (above); the precise human-vs-AI routing
-     * for each combination is reproduced structurally and the per-relation table
-     * semantics at -0x77c4 are not yet decoded. (@asm 0x03F088..0x03F2BA.) */
+     * DECODED 2026-06-10 (@asm 0x03F074..0x03F2BA) — the ATTACK-CONSEQUENCE /
+     * WAR-DECLARATION sequence.  -0x77C4 = the relation matrix
+     * PowerRecord[row]+0x34+col (rel_query body, relations.c).  Keys dumped:
+     * 0x13BA="HAVETREATY" 0x13C5="SNEAK" 0x13CB="CANCELPEACE"
+     * 0x13D7="DECLAREWAR".
+     *
+     * 1. TREASURE EXEMPTION @0x3F074: target unit type 0x10 -> no diplomatic
+     *    consequences at all (fair game).
+     * 2. PRIVATEER PIRACY @0x3F088 (attacker unit type 0x10):
+     *      rel[victim][pirate] |= 0x80          ; the PIRACY grievance bit the
+     *                                           ;   meeting PIRACY topic reads!
+     *      if random(0,100) >= difficulty+1: ANONYMOUS - no further effect.
+     *      caught: if finance_941C[pirate] >= finance_941C[victim]
+     *                  rel[victim][pirate] |= 8     ; resentment only
+     *              else rel[victim][pirate] |= 2    ; weaker pirate -> WAR
+     * 3. TREATY-BREAK CONFIRM @0x3F0F9: human attacker with treaty bit 0x40 ->
+     *    popup HAVETREATY (mode 1); answer != 2 ABORTS the attack (0x3F8C1).
+     * 4. ALLIANCE LOCK @0x3F143: if treaty AND PowerRecord[attacker] byte
+     *    [-0x77B8 + defender] (= +0x40 row) nonzero -> attack ABORTS.
+     * 5. SNEAK NOTIFY @0x3F16D: human DEFENDER with treaty -> sound 4 +
+     *    menu_lookup_run(key "SNEAK") announcement.
+     * 6. WAR DECLARATION @0x3F1BF (treaty in either direction):
+     *      human attacker: %arg0/%arg1 = names, sound 4, CANCELPEACE (mode 1)
+     *      AI: power handles, DECLAREWAR (mode 2)
+     *      human attacker w/ defender-side treaty: rel[def][atk] |= 2 (at war)
+     *      rel_clear_event(0x40, attacker, defender)   ; treaty off BOTH ways
+     * 7. @0x3F2B5 rel[attacker][defender] &= 0xFE     ; clear bit 0 (peace). */
 
 bookkeep:
     /* ---- block 0x85a: post-action UnitRecord book-keeping (@asm 0x03F2BA..) ---
