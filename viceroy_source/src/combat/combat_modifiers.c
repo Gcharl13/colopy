@@ -189,3 +189,67 @@ int combat_ship_odds(int attacker_idx, int defender_type)
     roll  = random_int(1, total);             /* @0x5B849 */
     return (roll <= atk);                     /* @0x5B851/0x5B854 attacker(ship) wins iff roll<=ATK */
 }
+
+/* ============================================================================
+ * defend_strength — func_007D3E (0x181F:0x9DC, resident, 502B)
+ *                       >>> BYTE_VERIFIED 2026-06-10 — full body <<<
+ * ----------------------------------------------------------------------------
+ * THE DEFENDER STRENGTH FORMULA with every situational modifier, plus the
+ * MODIFIER-FLAG block at DGROUP:0x8D00..0x8D04 the pre-combat odds dialog
+ * renders (one bit = one modifier line).  All quarter-step multipliers:
+ *
+ *     strength = base * (4 + bonus) / 4        @asm 0x007F26..0x007F2F
+ *     base     = strength_query(def_unit, 0)   ; near 0x7C2A (= 0x181F:0x9C8)
+ *
+ * bonus accumulation (mutually exclusive location branches):
+ *  IN NATIVE SETTLEMENT (0x37F:0x392 probe >= 0):       @asm 0x007D8D..0x007DDE
+ *     bonus = 2 (+50%)
+ *     if tribe_tech[0x5AD8 + (tribe-4)*0x4E] >= 2:  bonus = 4 (+100%),
+ *                                                   [0x8D02] |= 0x10
+ *     if settlement[+0x54EF] & 4 (CAPITAL):         bonus <<= 1 (double),
+ *                                                   [0x8D02] |= 0x20
+ *     always:                                       [0x8D02] |= 0x08
+ *  IN COLONY (0x37F:0x358 probe >= 0):                  @asm 0x007DF4..0x007E1D
+ *     bonus += (fort_level + 1) * 2                 ; stockade +4/4, fort +6/4,
+ *                                                   ;   fortress +8/4 (raw level
+ *                                                   ;   via 0x5EB:0x2C + near 0x7BE8)
+ *     [0x8D02] |= 0x40
+ *  OPEN TERRAIN:                                        @asm 0x007E20..0x007EFE
+ *     terrain = tile type (0x3E4:0x3A);  defcol = byte[0x2F77 + terrain*16]
+ *               (terrain-table attribute col +3 = the NAMES.TXT terrain
+ *                DEFENSE column; table base 0x2F74 stride 16)
+ *     eligible for the bonus when: defender is native, OR attacker is native,
+ *       OR (post-revolution + attacker AI), OR attacker is a human European
+ *       and BOTH units stand outside colonies:
+ *         bonus += defcol;  [0x8D02] |= 0x80
+ *     else EUROPEAN AMBUSH RULE:                        @asm 0x007E74..0x007EF9
+ *         if defender's order state [+0x314C] != 6 (not FORTIFIED):
+ *             [0x8D04] = defcol     ; the terrain bonus is handed to the
+ *                                   ;   ATTACKER as an ambush value
+ *             [0x8D00] |= 0x80      ; "AMBUSH!" flag
+ *  FORTIFIED-ORDER bonus (any branch):                  @asm 0x007EFE..0x007F21
+ *     if def order [+0x314C] == 6 and def is not a ship (type 0x0D..0x12)
+ *        and bonus < 5:   bonus += 2 (+50%);  [0x8D03] |= 0x20
+ *
+ * MODIFIER-FLAG MAP (the odds-dialog lines; attacker-side bits are set by the
+ * caller func_05CA7E — see ai/unit_ai_leaf.c):
+ *   [0x8D00] bit7 0x80  AMBUSH (attacker receives [0x8D04] terrain value)
+ *   [0x8D02] bit3 0x08  in native settlement (+50%)
+ *   [0x8D02] bit4 0x10  aggressive-tribe settlement (+100% replaces +50%)
+ *   [0x8D02] bit5 0x20  settlement is the tribal CAPITAL (x2)
+ *   [0x8D02] bit6 0x40  colony fortification ((level+1)*2 quarters)
+ *   [0x8D02] bit7 0x80  terrain defense bonus (column 0x2F77)
+ *   [0x8D03] bit5 0x20  unit FORTIFIED order (+50%, capped: only if bonus<5)
+ *   [0x8D04]            ambush terrain value handed to the attacker
+ * Attacker-side (func_05CA7E sites): [0x8D01] bits 0/3/4/7, [0xA156] bit3,
+ * [0xA158] bit0, [0x8D03] bits 1/2 — see unit_ai_leaf.c for the set sites.
+ *
+ * NEW IDENTITIES pinned by this body:
+ *   unit[+0x314C] = ORDER STATE byte; 6 = FORTIFIED (cross-ref: the Europe
+ *     purchase dialog sets 0/1 = at-sea/on-dock for new units)
+ *   0x2F77 = terrain DEFENSE column (terrain table 0x2F74 stride 16: +2 move
+ *     cost, +3 defense)
+ *   0x5AD8 stride 0x4E = per-tribe row (tech/aggression byte at +0)
+ *   settlement[+0x54EF] bit2 = CAPITAL flag
+ * ============================================================================ */
+int defend_strength_007D3E(int def_unit, int atk_unit);  /* documented above */
