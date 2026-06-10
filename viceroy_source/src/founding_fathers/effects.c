@@ -122,7 +122,11 @@ extern void ff_finish(int flag);                    /* 0x181F:0x0E1C -> ovl 21+0
                                                      * 0x67080 anchored by func_0673CC/func_067476) so target = 0x66910 or
                                                      * 0x67140 — neither a prologue; likely alternate entry. @asm 03BFC6 push 1 */
 extern void ff_pre_a(int power);                    /* 0x181F:0x056A -> file 0x0C136 (resident 0984:04F6, frameless push-leaf) @asm 03BD2E */
-extern void ff_pre_b(int ff_id);                    /* 0x1A1F:0x0062 -> func_06AE08 (ovl 22+0x1F28, ENTER 0x58) @asm 03BD26 */
+extern void ff_pre_b(int ff_id);                    /* 0x1A1F:0x0062 -> func_06AE08 (ovl 22+0x1F28, ENTER 0x58) @asm 03BD26.
+                                                     * BODY DECODED 2026-06-10: the FF announcement BANNER painter -
+                                                     * draws the [0x2E92] headline then the FF's name from
+                                                     * FF_MEM_BASE word[0x9652 + ff_id*6] (congress.c table),
+                                                     * full-width (0x140) commits via 0x181F:0x100. */
 
 /* cs-relative near calls in page 0x06 (helpers, bodies not yet decoded): */
 extern void cs_1095(int one, int ff_id, int power);  /* @asm 03BC67 call 0x1095 */

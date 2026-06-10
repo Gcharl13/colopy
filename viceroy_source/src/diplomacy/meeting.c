@@ -54,10 +54,15 @@
  *   - RESOLVED 2026-06-10: loop #2 = per-colony adjacency pressure via
  *     func_056A10 (see section 3b); -0x6BD4 (0x942C) = census coastal-cargo
  *     per-power total; -0x6BE4 (0x941C) = census per-power finance word.
- *     Still open: 0x5236 (prod-table column) and 0x5DE0 (market, see
- *     tax_apply.c) term meanings in the later score-shaping.  The numeric
- *     thresholds (e.g. score>100 -> PROVOKE) are byte-cited constants, not
- *     invented.
+ *     RESOLVED 2026-06-10: 0x5DE0 in the WANTSTUFF picker (@file 0x0585A2..
+ *     0x0585E5) = EU stock shortage: best tribute good maximizes
+ *     min(target - MARKET_5DE0[power*0x65+good], colony.stock[+0x9A+good*2])
+ *     * display_price_7B44[other*0x10+good], and must beat score/2.
+ *     0x5236 (@file 0x058DC8) = column +6 of the UNIT-TYPE table at 0x5230
+ *     stride 0xE (cmp >1 = combat-capable gate in the unit scan) - note the
+ *     table stride is 0xE with column bases 0x5230/0x5235/0x5236/0x5237,
+ *     not "stride 6" as some earlier aliases said.  The numeric thresholds
+ *     (e.g. score>100 -> PROVOKE) are byte-cited constants, not invented.
  *   - 0x181F:0x035C: CONFIRMED CLAMP (2026-06-08). 0x0D1D:0x0EC6: RUNTIME_ONLY
  *     (C-runtime __aFldiv 32-bit long divide; body in segment 0x0D1D, not in load image).
  *
