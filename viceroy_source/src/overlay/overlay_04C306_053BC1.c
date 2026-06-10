@@ -44,6 +44,12 @@
 #include "overlay_externs.h"
 #include "unit.h"
 
+/* Forward declarations needed before first use */
+extern int16_t ai_path_budget_8DB8(void);   /* *(int16_t*)0x8DB8 */
+extern int16_t ai_turn_counter_538E(void);  /* *(int16_t*)0x538E */
+/* g_power_table_8808: macro in globals.h -> ((uint8_t near *)(DG_BASE + 0x8808)) */
+/* g_unit_count_539C:  macro in globals.h -> DGS16(0x539C) */
+
 /* UnitRecord field offset of the type byte (+0x02, abs DGROUP 0x3146).
  * @ref include/unit.h UNIT_TABLE_BASE 0x3144; type at +0x02. */
 #ifndef UNIT_TYPE_OFF
@@ -1002,7 +1008,7 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
     while (u >= 0) {                                    /* @asm 0x04CCFC/0x04CD00 */
         uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
         if (uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12 && /* @asm 0x04CD0F/0x04CD19 */
-            g_unit_type_flags_5237[uu[UNIT_TYPE_OFF] * 6] == uu[0x0C /*+0x3150*/]) { /* @asm 0x04CD39 */
+            g_unit_type_flags_5236[uu[UNIT_TYPE_OFF] * 6] == uu[0x0C /*+0x3150*/]) { /* @asm 0x04CD39 */
             /* @asm 0x04CD4A..0x04CDB7 — follow the same-class chain (0x2EE/0x2E4),
              * marking the best companion; result folds into the flag stamping. */
             (void)overlay_call_181F_02EE();             /* @asm 0x04CD51 */

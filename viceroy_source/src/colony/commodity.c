@@ -92,8 +92,8 @@ void colony_transfer_commodity_to_unit(int unit_idx, int commodity_idx, int max_
     unit_load_commodity_into_slots(unit_idx, commodity_idx, avail);
 
     /* @asm 0xB8BE..0xB8CA  reset cargo-pickup flag unless frozen at 2 */
-    if (unit(unit_idx).cargo_qty[5] != 2) {
-        unit(unit_idx).cargo_qty[5] = 0;
+    if (unit(unit_idx).cargo_qty[5]  /* +0x15 */ != 2) {
+        unit(unit_idx).cargo_qty[5]  /* +0x15 */ = 0;
     }
 }
 

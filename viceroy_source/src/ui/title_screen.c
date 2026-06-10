@@ -133,6 +133,7 @@
 #define MENU_BEGIN_KEY   0x2345   /* "@BEGINMENU" menu key  @asm 0x075C60 */
 #define BG_BOOT          0x233C   /* boot/menu backdrop     @asm 0x075AE4 */
 #define BG_NEWGAME       0x2374   /* new-game backdrop      @asm 0x075DA3 */
+#define SCREEN_TITLE     1        /* project-level stub ID (no EXE equivalent) */
 
 /* ---- resident composer thunks (signatures proven from call sites) ---------- */
 extern void  ttl_region_reset(void);                                  /* 0x181F:0x53C */

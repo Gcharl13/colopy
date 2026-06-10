@@ -5,6 +5,7 @@
 #define VICEROY_H
 
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "globals.h"
 #include "colony.h"
 #include "unit.h"

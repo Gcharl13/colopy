@@ -8,10 +8,12 @@
 #define VICEROY_TYPES_H
 
 #ifdef _VICEROY_MODERN
-/* modern host: take the fixed-width types from the system -- the manual
- * typedefs below collide with glibc (int32_t there is int, not long) */
+/* Modern build: use the platform stdint.h to get size-correct fixed-width types.
+ * The DOS manual typedefs below use "unsigned long" = 8 bytes on 64-bit Linux,
+ * so they cannot be used here. */
 #  include <stdint.h>
 #else
+/* DOS build: no <stdint.h>; define manually (Microsoft C 6 / Borland C++ 3). */
 typedef unsigned char  uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned long  uint32_t;

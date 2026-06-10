@@ -15,6 +15,8 @@
 #include "colony.h"
 #include "ff.h"
 
+extern struct PowerRecord *g_market;  /* DGROUP:0x84FC active PowerRecord ptr */
+
 /* boycott bitmask: PowerRecord +0x20 (word).  @asm set 0x34717, clear-one
  * 0x33423, clear-all 0x3BD45, test 0x030B47.                              [V] */
 #define PR_BOYCOTT_MASK(p)  (*(unsigned short *)((char *)(p) + 0x20))

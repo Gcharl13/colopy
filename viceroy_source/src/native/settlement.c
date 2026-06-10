@@ -30,8 +30,8 @@ extern void *   g_cur_settlement_8D4E;   /* DGROUP:0x8D4E — far ptr to "settle
 extern void *   g_tribe_ptr_8D52;        /* DGROUP:0x8D52 — far ptr into per-tribe record (settlement-count byte @ -0x69D6) */
 
 /* Forward declarations — must precede first use */
-extern uint8_t settlement_initial_population(int settlement_index);
-extern void    map_mark_settlement_tile(int x, int y, int owner);
+extern uint8_t  settlement_initial_population(int settlement_index);
+extern void     map_mark_settlement_tile(int x, int y, int owner);
 extern uint8_t *unit_record(int index);
 extern void     unit_detach_from_settlement(int unit_index);
 extern uint8_t  native_class_weight_5AD8[];   /* DGROUP:0x5AD8 — per-class weight table */

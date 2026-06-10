@@ -66,7 +66,7 @@ int colony_assign_or_change_colonist_job(int slot, int new_action)
         if (production_id == 0xE) {
             /* Tools branch: re-fetch via UnitRecord field */
             int unit_idx = helper_8BD4(ctx->population - slot);
-            yield = unit(unit_idx).cargo_qty[4] - 50;
+            yield = unit(unit_idx).cargo_qty[4] - 50;  /* +0x14 = cargo_qty[4] */
         } else if (production_id > 0xE) {
             yield = 50 - 8;       /* @asm 0x93B0: MOV [bp-6], 0x32 (+/-8) */
         } else if (production_id == 0) {
@@ -114,9 +114,9 @@ int colony_assign_or_change_colonist_job(int slot, int new_action)
             int unit_idx = helper_8BD4(ctx->population - slot);
             int translated = unit_translate_action_8BC6(new_action);
             unit(unit_idx).type        = (uint8_t)translated;
-            unit(unit_idx).cargo_qty[5]      = 0;             /* clear field_at_314C → 0 */
+            unit(unit_idx).cargo_qty[5] = 0;            /* +0x15; clear slot */
             if (new_action == 0x14) {
-                unit(unit_idx).cargo_qty[4] = feature_byte;
+                unit(unit_idx).cargo_qty[4] = feature_byte;  /* +0x14 */
             }
             overlay_call_0427_155E(unit_idx);
             returned_slot = slot;
@@ -134,9 +134,9 @@ int colony_assign_or_change_colonist_job(int slot, int new_action)
             } else {
                 overlay_call_0427_155E(unit_idx);
                 int existing = current_unit_field_at_40(slot);
-                unit(unit_idx).turn_counter = (uint8_t)existing;
+                unit(unit_idx).turn_counter = (uint8_t)existing;  /* +0x16 */
                 if (new_action == 0x14) {
-                    unit(unit_idx).cargo_qty[4] = feature_byte;
+                    unit(unit_idx).cargo_qty[4] = feature_byte;  /* +0x14 */
                 }
                 func_8FB4(slot);
                 returned_slot = ctx->population;
@@ -165,7 +165,7 @@ int colony_assign_or_change_colonist_job(int slot, int new_action)
             /* RECURSIVE self-call to assign the new slot's job */
             colony_assign_or_change_colonist_job(new_slot, new_action);
 
-            int initial_field = unit(new_unit_idx).turn_counter;
+            int initial_field = unit(new_unit_idx).turn_counter;  /* +0x16 */
             set_field_at_40_or_unit_byte(new_slot, initial_field);
             overlay_call_0427_0824(new_unit_idx);
 

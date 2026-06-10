@@ -291,6 +291,7 @@ void europe_screen_render(void)
  * ============================================================================ */
 #define KEY_EUROPE     0x0FBA   /* "EUROPE"   @asm 0x030DCE / @file 0x1E95A */
 #define SCREEN_ID_EUR  0x2B     /* Europe view id @asm 0x030DEB (0x2C = Colony) */
+#define SCREEN_EUROPE  SCREEN_ID_EUR
 
 extern int16_t g_dialog_rect[4];   /* DGROUP:0x839E (x), 0x83A0 (y), 0x83A2, 0x83A4 */
 extern int  load_PIK(int z0, int x0, int y0, int x1, int y1,

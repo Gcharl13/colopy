@@ -134,9 +134,9 @@ extern void  ui_show_message2(int a, int handle);            /* 0x191F:0x0AE0 */
 
 /* Resolved message handles (file = handle + 0x1D9A0 — BYTE_VERIFIED). */
 #define MSG_REFIT          0xEEF   /* -> "REFIT"   @ file 0x1E88F (@asm 0x02F1D7) */
-#define MSG_KINGTAX        0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result) */
-#define MSG_WINNING_KEY    0xEF5   /* -> lea bx,[0xef5] @0x02F314 */
-#define MSG_GRANT_FOLLOWUP 0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
+#define MSG_KINGTAX        0xF01   /* -> "KINGTAX" @ file 0x1E8A1 (KINGTAX result; @asm 0x02F392 in sibling) */
+#define MSG_WINNING_KEY    0xEF5   /* lea bx,[0xef5] @0x02F314 -> between REFIT/KINGTAX; not yet decoded */
+#define MSG_GRANT_FOLLOWUP 0xF01   /* "KINGTAX" @ file 0x1E8A1 (@asm 0x02F392 push 0xf01) */
 
 /* ============================================================================
  * king_process_power_events — func_02F052 — BYTE_VERIFIED (control flow + writes)

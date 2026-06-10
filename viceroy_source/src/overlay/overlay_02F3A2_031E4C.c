@@ -142,6 +142,7 @@ extern void edge_light(/*...*/);               /* @asm 0x191F:0x08BC 3-D light e
 extern void edge_shadow(/*...*/);              /* @asm 0x191F:0x08B2 3-D shadow edge (bottom/right)  */
 extern long ldiv32_helper(/*...*/);            /* @asm 0x0D1D:... runtime long divide/format         */
 /* strcat_far: char far *strcat_far(char far *dst, const char far *src) declared in iolib.h */
+/* strfmt_far is a separate formatting helper */
 extern void strfmt_far(/*...*/);               /* @asm 0x0D1D:0x07A4 / 0x11B4 / 0x08FA formatting     */
 
 /* --- local near-call helpers (RTLink thunks: each is JMP FAR 0x191F:nnn) ---

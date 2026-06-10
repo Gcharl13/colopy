@@ -63,6 +63,8 @@
  * the shared ui screen-id header. */
 #include "ui_screen.h"   /* SCREEN_COLONY = 0x2C (@asm 0x025EE8) */
 
+#define SCREEN_COLONY  0x2C  /* @asm 0x025EE8 mov bx,0x2C enter_screen_view */
+
 /* ----------------------------------------------------------------------------
  * Active colony record + screen-state globals (BYTE_VERIFIED).
  *   DGROUP:0x8542  -> active ColonyRecord (near ptr).  Read by the composer

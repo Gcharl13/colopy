@@ -119,7 +119,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
     g_word_1F64 = 0;                                 /* @asm 0x07536B */
 
     /* --- look up the base KINGLSS message + set the dialog region --- */
-    strcpy_near(keybuf, KEY_KINGLSS);                /* @asm 0x07536E 0xD1D:0x7E4 */
+    strcpy_near(keybuf, (char *)(uintptr_t)KEY_KINGLSS);  /* @asm 0x07536E 0xD1D:0x7E4 */
     ov_lookup_msg(msg_idx, keybuf);                  /* @asm 0x075385 0x181F:0x182 */
     if (ov_region_setup(body, 0,
                         g_dialog_rect[0], g_dialog_rect[1],
@@ -137,7 +137,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
         case 3:  key = KEY_DUTCH;  break;            /* @asm 0x0753DC */
         default: key = 0; break;                     /* @asm 0x0753C8 JMP past strcpy */
         }
-        if (key) strcpy_near(keybuf, key);           /* @asm 0x0753E3 0xD1D:0x7E4 */
+        if (key) strcpy_near(keybuf, (char *)(uintptr_t)key); /* @asm 0x0753E3 0xD1D:0x7E4 */
     }
 
     /* --- PASS 1: draw the KING portrait --- */
@@ -152,12 +152,12 @@ int king_audience(int msg_idx, int subcase, int run_arg)
 
     /* --- choose the audience title key, drive any intro anim --- */
     if (msg_idx == 1 && subcase == 1) {              /* @asm 0x075430/0x075436 */
-        strcpy_near(keybuf, KEY_KING1);              /* @asm 0x075443 0xD1D:0x7E4 */
+        strcpy_near(keybuf, (char *)(uintptr_t)KEY_KING1);  /* @asm 0x075443 0xD1D:0x7E4 */
         ov_play_audience_anim(0x3E);                 /* @asm 0x07544D 0x181F:0x48E (anim id 0x3E) */
     } else if (msg_idx != 1) {                       /* @asm 0x075430 JNE 0x3FCE */
-        strcpy_near(keybuf, KEY_KINGWIN);            /* @asm 0x075465 0xD1D:0x7E4 (0x2323) */
+        strcpy_near(keybuf, (char *)(uintptr_t)KEY_KINGWIN);  /* @asm 0x075465 0xD1D:0x7E4 (0x2323) */
     } else {                                         /* msg_idx==1 && subcase!=1 */
-        strcpy_near(keybuf, KEY_KINGLOSE);           /* @asm 0x075465 (0x231A) */
+        strcpy_near(keybuf, (char *)(uintptr_t)KEY_KINGLOSE); /* @asm 0x075465 (0x231A) */
     }
 
     /* --- PASS 2: draw the player's (diplomat/leader) portrait --- */

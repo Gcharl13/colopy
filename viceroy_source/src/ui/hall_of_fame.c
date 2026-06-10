@@ -84,6 +84,7 @@
 #define HALLFAME_MAX         6        /* records   @asm 0x03AEC6 */
 #define HALLFAME_SHOWN       5        /* rows drawn @asm 0x03B0F8 */
 #define HALLFAME_SCORE_OFF   0x26     /* score word in record @asm 0x03AED0 */
+#define SCREEN_HALL_OF_FAME  3        /* project-level stub ID (no EXE equivalent) */
 
 /* ---- HoF asset/label string handles (file = handle + 0x1D9A0; cited) ------- */
 #define HOF_WOODPANL_A   0x11C6   /* "WOODPANL"  @0x1EB66  @asm 0x039E70 (F8 panel) */

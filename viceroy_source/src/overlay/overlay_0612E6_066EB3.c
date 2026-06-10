@@ -69,6 +69,11 @@
 #include "viceroy.h"
 #include "overlay_externs.h"
 
+/* Forward declarations used before their late externs in this file */
+extern unsigned char far *func_066968_framebuf_addr(int x_px, int y_px);
+extern int func_066968_unit_at(int col, int row);
+extern int func_066968_rect_fill(int x, int y, int w, int h, int color, int z);
+
 /* ----------------------------------------------------------------------------
  * Local externs (kept file-local per task scope; the resident-engine helpers
  * and DGROUP globals live in other translation units).
