@@ -156,34 +156,51 @@ void king_ref_buildup(int active_power)
 }
 
 /* ============================================================================
- *                  >>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<
+ *        REF STRENGTH / WAR-END / SECOND ARMY — BYTE_VERIFIED 2026-06-10
  * ----------------------------------------------------------------------------
- * REF effective strength (FF penalties, SoL bonuses) and the deployment /
- * landing-site picker below are carried over from the prior reconstruction and
- * are NOT byte-traced.  The REF landing/intervention path crosses the
- * revolution overlay (page 0x06 func_03CDA2 sums the four REF words and
- * decrements them on landing @0x03D4C0, but the spawn coords and the
- * Tory-uprising / foreign-intervention numbers are not yet decoded).
+ * The old "ref_effective_strength" reconstruction (weighted 2/3/4/6 sum with
+ * FF/SoL modifiers) was FICTION and is DELETED: no weighted REF strength
+ * exists anywhere in VICEROY.EXE.  The byte-verified reality:
  *
- * UPDATE 2026-05-30 (BYTE_VERIFIED landing decrement): the per-arm REF
- * decrement-on-landing is confirmed in func_03CDA2 (file 0x03CDA2..~0x03D510,
- * ENTER 0x82, RETF; page_06.asm):
- *     @asm 0x03D4BB  mov bx,[bp-0x62]       ; bx = arm index 0..3
- *     @asm 0x03D4BE  shl bx,1               ; *2 (word stride)
- *     @asm 0x03D4C0  dec word [bx+0x53DA]   ; REF_SLOT(arm)-- as one unit lands
- *   (spot-checked: 0x03D4C0: FF 8F DA 53.)  So when an arm deploys ashore the
- *   matching 0x53DA-array word is decremented by 1 (Reg/Cav/MoW/Art by slot).
- *   The companion per-turn LANDING-ELIGIBILITY logic (which arm, how many, and
- *   the target colony) is the func_02F3A2 war-tail matrix — see
- *   src/king/war_turn.c (king[+0x19]/[+0x1A], budget = (8-difficulty)*10) — but
- *   the exact spawn COORDS remain not yet decoded.
+ * 1. DISPLAY (Continental Congress report, func_037A10 @0x037D8A..0x037E5B):
+ *    raw counts only.  total = sum REF[0..3] (0x53DA row) + sum SECOND-ARMY
+ *    [0..3] (0x53E2 row); each arm rendered as <icon> x count via
+ *    0x181F:0x222 (sprites [0x5286]/[0x52A2]/[0x52CC]/[0x532E]).
+ *
+ * 2. WAR-END TEST (func_03E442 @0x03E471..0x03E4B1, the intervention-power
+ *    turn): the war is LOST by the crown when
+ *        regulars(0x53DA) + (cavalry(0x53DC) > 0) + (artillery(0x53E0) > 0)
+ *    == 0 - i.e. land arms exhausted; MAN-O-WARS DO NOT SUSTAIN THE WAR.
+ *    Non-zero -> near 0x3EA3D(rebel) war continues; zero -> near 0x3EA47
+ *    (rebel) victory path.
+ *
+ * 3. MERCENARY OFFER (same func_03E442 @0x03E4E8..0x03E65C): each aid turn,
+ *    if random(0,2)==0:
+ *        n_regulars = random(2, 2 + (4-difficulty)/2)
+ *        coin-flip: offer also includes 1 cavalry OR 1 artillery
+ *        unit_price = ((difficulty+3)*2 + random(0,6)) * 100
+ *        total = (n + 2*(has_cav + has_art)) * unit_price
+ *    affordable -> show "MERCENARIES" (key 0x1340 -> file 0x1ECE0, dumped);
+ *    accept (==2) -> gold -= total, near 0x3EA42(1) spawns them.
+ *
+ * 4. SECOND 4-WORD ARMY at 0x53E2/0x53E4/0x53E6/0x53E8 (the array zeroed
+ *    beside the REF at init): the TORY / loyalist-intervention force,
+ *    GENERATED at war time by func_03DE46 @0x03DF2C..0x03DFF9 from the
+ *    REBEL'S OWN CENSUS (power index [0x53D4]):
+ *        Reg(0x53E2) = pop[0x9410]/10 - difficulty + 8
+ *        Cav(0x53E4) = (cargo_total[0x942C]+1)/16 + (4-difficulty)/2 + 1
+ *        MoW(0x53E6) = (4-difficulty)/2 + colonyrow_sum[0x925C/D] + 3
+ *        Art(0x53E8) = (4-difficulty)/2 + (finance[0x941C]+1)/32 + 3
+ *    then ALL FOUR are round-up halved ((x+1)/2) and capped:
+ *        Art <= 2*MoW;  Cav <= 2*MoW;  Reg <= 6*MoW - Art - Cav
+ *    (census tables are the per-power AI census - see diplomacy/meeting.c.)
+ *    Losses: func_03D510 decrements 0x53E2-row words as those units land/die
+ *    (@0x03D8AF dec word [bx+0x53E2]).
+ *
+ * 5. LANDING (func_03CDA2): per-arm decrement @0x03D4C0 (dec [bx+0x53DA]);
+ *    spawned via 0x181F:0x9BA with the colony coords; on the FINAL WAVE
+ *    ([bp-6] set) all four 0x53DA words are zeroed (@0x03D4FE loop) - the
+ *    crown commits everything.  Landing eligibility/budget is the
+ *    war_turn.c matrix (king[+0x19]/[+0x1A], budget=(8-difficulty)*10).
  * ============================================================================ */
-int ref_effective_strength(struct PowerRecord *target)   /* RECONSTRUCTED */
-{
-    int base = (g_ref_regulars_53DA  * 2) +
-               (g_ref_cavalry_53DC   * 3) +
-               (g_ref_artillery_53E0 * 4) +
-               (g_ref_manowar_53DE   * 6);
-    (void)target;
-    return base;   /* FF / SoL modifiers are not yet decoded */
-}
+/* (ref_effective_strength deleted - no such concept in the original binary.) */
