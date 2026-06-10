@@ -42,3 +42,9 @@ PROVIDE(g_view_row0   = g_dgroup + 0x832E);
 PROVIDE(g_view_maxcol = g_dgroup + 0x8804);
 PROVIDE(g_view_maxrow = g_dgroup + 0x8806);
 PROVIDE(g_w53A2 = g_dgroup + 0x53A2);
+
+/* canonical chain primitives: the load_image callers use the func_0XXXXX
+ * names; the bodies live under their semantic names in src/unit/ */
+PROVIDE(func_006672 = unit_chain_resolve);
+PROVIDE(func_0066BA = unit_chain_next);
+PROVIDE(func_0068AA = unit_chain_unlink);

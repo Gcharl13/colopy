@@ -181,10 +181,18 @@ int unit_tile_head(int x, int y)
     if (occ == 0)                            /* @asm 0x66EC je */
         return result;                       /* tile empty */
 
-    /* @asm 0x66F0 second helper resolves the chain head for the tile. The
-     * decoded control flow returns the -1 sentinel in [bp-4] on both the
-     * >=0 (jge) and the fall-through paths; the resolved value reaches the
-     * caller through the map-side state these helpers update. */
+    /* @asm 0x66F0 second helper resolves the chain head for the tile via the
+     * DOS map-side occupant state (layer [0x164] encoding not yet decoded).
+     * MODERN: the head is defined by the chain invariant itself -- the unit
+     * at (x,y) whose chain_prev < 0 -- so resolve it by direct scan over the
+     * live table until the occupant-layer decode lands. */
+#ifdef _VICEROY_MODERN
+    {
+        extern int tilehead_get(int x, int y);
+        return tilehead_get(x, y);
+    }
+#else
     (void)map_tile_chain_head_037F_314((int16_t)x, (int16_t)y); /* @asm 0x66F0 */
     return result;
+#endif
 }

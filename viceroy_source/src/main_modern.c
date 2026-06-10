@@ -243,6 +243,9 @@ static void spawn_start_ship(void)
     UREC(0, 1) = (uint8_t)y;
     UREC(0, 2) = 0x0D;                 /* Caravel (@UNIT index 13) */
     DG16(0x3144 + 0*0x1C + 0x18) = 0xFFFF;  /* chain head: on-map gate [+0x18]<0 */
+    DG16(0x3144 + 0*0x1C + 0x1A) = 0xFFFF;  /* chain_next terminator (0 is a valid idx!) */
+    { extern void tilehead_set(int,int,int);
+      tilehead_set(UREC(0,0), UREC(0,1), 0); } /* register in the tile-head map */
     DG16(0x539C) = 1;                  /* unit count */
 }
 
@@ -585,6 +588,21 @@ int main(int argc, char **argv)
         
         if (enter_map() == 0) {
             UREC(0,0) = 26; UREC(0,1) = 36;   /* park the test ship in view */
+            { extern void tilehead_reset(int,int); extern void tilehead_set(int,int,int);
+              tilehead_reset(g_map_w, g_map_h); tilehead_set(26, 36, 0); }
+            /* classifier self-test (headless): W=water, E=land+empty hold,
+             * far-E edge = SAILHOME */
+            {
+                struct { int dx,dy; const char *what; } T[3] =
+                    {{-1,0,"W water"},{1,0,"E land"},{31,0,"map edge"}};
+                for (int i = 0; i < 3; i++) {
+                    DG16(0x9E4E) = 0;
+                    int r = naval_classify_dest(0, 26+T[i].dx, 36+T[i].dy);
+                    printf("  classify  : %-8s -> ret=%d status=%d\n",
+                           T[i].what, r, DG16(0x9E4E));
+                }
+                UREC(0,0) = 26; UREC(0,1) = 36;   /* leave-notify side effects: re-park */
+            }
             g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
             draw_map();
             vid_screenshot_ppm("viceroy_map.ppm");

@@ -231,6 +231,10 @@ void unit_place_on_tile(int16_t unit_idx, int16_t x, int16_t y)
     uint8_t owner;
 
     old_head = (int16_t)unit_tile_head(x, y); /* @asm 0x06949 call 0x66CC */
+#ifdef _VICEROY_MODERN
+    { extern void tilehead_set(int,int,int);
+      tilehead_set(x, y, unit_idx); }          /* this unit becomes the head */
+#endif
 
     U_OFF(unit_idx, U_MAPX) = (uint8_t)x;     /* @asm 0x06958 */
     U_OFF(unit_idx, U_MAPY) = (uint8_t)y;     /* @asm 0x0695E */
@@ -311,6 +315,12 @@ void unit_chain_unlink(int16_t unit_idx)
 {
     int linked = 0;                            /* @asm bx=0 */
     int16_t prev, next;
+#ifdef _VICEROY_MODERN
+    { extern int tilehead_get(int,int); extern void tilehead_set(int,int,int);
+      int ux = U_OFF(unit_idx, U_MAPX), uy = U_OFF(unit_idx, U_MAPY);
+      if (tilehead_get(ux, uy) == unit_idx)
+          tilehead_set(ux, uy, (int16_t)u_word(unit_idx, U_NEXT)); }
+#endif
 
     prev = u_word(unit_idx, U_PREV);
     if (prev >= 0) {                           /* @asm 0x068BE jl */

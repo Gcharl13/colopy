@@ -138,6 +138,7 @@ void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
      * stride = full map width (@0x679E8) -- exactly what the host-side
      * wp_* plumbing implements. */
     DG16(G_LAYERS_RESIDENT) = 0;
+    { extern void tilehead_reset(int,int); tilehead_reset(w, h); }
 }
 
 /* commit the 3 working pointers for the CURRENT tile.
@@ -400,4 +401,26 @@ void viceroy_init_text_ctx(int line_height_minus1)
     void *p = g_text_ctx;
     memcpy(&DG8(0x089E), &p, sizeof p);
     memcpy(&DG8(0x268A), &p, sizeof p);
+}
+
+/* ---- per-tile occupancy head map ------------------------------------------
+ * The DOS tile->chain-head state lives behind the 0x037F helpers (layer
+ * [0x164] encoding not yet decoded).  MODERN: an explicit host map, updated
+ * by unit_place_on_tile / unit_chain_unlink, read by unit_tile_head. */
+static int16_t g_tile_head[64*80];
+void tilehead_reset(int w, int h)
+{
+    for (long i = 0; i < (long)w*h && i < 64*80; i++) g_tile_head[i] = -1;
+}
+int  tilehead_get(int x, int y)
+{
+    int w = (int16_t)DG16(G_MAP_W);
+    long o = (long)y*w + x;
+    return (o >= 0 && o < 64*80) ? g_tile_head[o] : -1;
+}
+void tilehead_set(int x, int y, int head)
+{
+    int w = (int16_t)DG16(G_MAP_W);
+    long o = (long)y*w + x;
+    if (o >= 0 && o < 64*80) g_tile_head[o] = (int16_t)head;
 }
