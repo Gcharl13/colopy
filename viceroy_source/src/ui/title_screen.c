@@ -63,9 +63,12 @@
  *                   -- difficulty select
  *   CUSTOMIZ.PIK -- world-customization options screen
  *
- * NOTE: PIK filenames are not in the resident VICEROY.EXE string table
- * (strings.json: 0 ".PIK" hits) -> the names are catalogued, the load call
- * site is not yet decoded. There is NO "TITLE.PIK" anywhere in the catalog.
+ * RESOLVED 2026-06-10: PIK loading is BY NAME KEY -- 0x181F:0x44E =
+ * pic_load_draw(name_handle): the LABELS string IS the base name (handle
+ * 0x233C -> "OPENMENU" -> OPENMENU.PIK; hall-of-fame 0x11D7 -> "WOODPAN2");
+ * the ".PIK" extension is appended inside the loader (ovl 27 + 0xE =
+ * file 0x764DE), which is why strings.json has 0 ".PIK" hits.  There is
+ * still NO "TITLE.PIK"; the title backdrop is OPENMENU.PIK.
  *
  * The OPENING CINEMATIC is played by a separate program, OPENING.EXE
  * (ASSET_ROLES.md: "Title-screen / cinematic player"), driven by OPENING.TXT
@@ -75,8 +78,11 @@
 
 /* ----------------------------------------------------------------------------
  * Menu / new-game text strings (LABELS_TXT_CATALOG.md). These confirm the
- * setup-screen vocabulary; the exact main-menu item list and its layout are
- * still not yet decoded (overlay-resident).
+ * setup-screen vocabulary.  RESOLVED 2026-06-10: the main-menu ITEM LIST is
+ * the GAME.TXT @BEGINMENU section (key DS:0x2345 "BEGINMENU" fed to
+ * 0x181F:0x3FE opt_register) -- data-driven, RUNTIME_ONLY by design; the
+ * LAYOUT is the shared menu engine (func_06F0F4 text_template_run +
+ * func_06E3D0 panel_run_modal, both ported in overlay_06D938_0702D5.c).
  *
  *   Difficulty: "Choose","Difficulty Level","Level",
  *               "Easiest","Easy","Moderate","Tough","Toughest"
