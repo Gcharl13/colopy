@@ -50,14 +50,14 @@ extern uint8_t g_flags_5382;          /* DGROUP:0x5382 — global event flags; b
 #define COL_RECORD_TABLE_5D48  0x5D48
 
 /* lcall / overlay helpers (call sites + args verified; internals body in thunk page).
- *   0x181F:0x09E6 -> file 0x2701C (type B) — select/activate colony by index.
- *   0x181F:0x04AC -> file 0x22340 (type B) — set UI/animation channel mode.
+ *   0x181F:0x09E6 -> file 0x082DC (resident; thunk-fix 2026-06-10) — select/activate colony by index.
+ *   0x181F:0x04AC -> file 0x05108 (resident) — set UI/animation channel mode.
  *   0x191F:0x0AC8 -> file 0x25D04 (type A) — flash/redraw a power's UI.
  *   0x181F:0x0422 -> file (type A)         — blit/draw helper (coords).
  *   0x181F:0x0416 -> file (type A)         — blit/draw helper (ptr).
- *   0x181F:0x09A4 -> file 0x5FE0C (type B) — power index -> handle.
- *   0x181F:0x0438 -> file 0x25CEC (type A) — per-power state setter (handle, flag).
- *   0x181F:0x0652 -> file 0x290A2 (type A) — show localized message by handle. */
+ *   0x181F:0x09A4 -> file 0x08110 (resident) — power index -> handle.
+ *   0x181F:0x0438 -> func_06C23C (ovl 23) — per-power state setter (handle, flag).
+ *   0x181F:0x0652 -> func_06F5F2 (ovl 23) — show localized message by handle. */
 extern void    colony_select(int colony_idx);              /* 0x181F:0x09E6 */
 extern void    ui_set_channel(int mode);                   /* 0x181F:0x04AC */
 extern void    ui_flash_power(int power, int a, int b);    /* 0x191F:0x0AC8 */

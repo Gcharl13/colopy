@@ -217,15 +217,19 @@ extern int      page1A_dir_match(void);        /* page-0x1A near 0x4eea (save-na
 extern int      page1A_read_hdr(void);         /* page-0x1A near 0x4ee5 (read save header) */
 extern int      page1A_file_pick(void);        /* page-0x1A near 0x4f30 (file picker) */
 extern int      page1A_msgbox(void);           /* page-0x1A near 0x4ee0 (simple message box) */
-extern int      page1A_names_subloader(int idx); /* page-0x1A near 0x4eef = ljmp 0x1A1F:0xD20
-                                                  * BYTE_VERIFIED 2026-06-08: thunk @0x7637F→
-                                                  * ljmp 0x1A1F:0xD20→body @file 0x72CC2 (695B).
-                                                  * Args: (int max_entries[bp+8], int idx[bp+6]).
-                                                  * Returns DX:AX = far ptr to section struct.
-                                                  * Writes DS:0xA60C+entry_idx loading-flag byte;
-                                                  * interns terrain names via lcall 0x191F:0x176.
-                                                  * idx=0..7 = @UNFORESTED, idx=0x18..0x1C = @OTHER.
-                                                  * Section table: DS:0x087C "GAME\0\0NAMES\0..." */
+extern int      page1A_names_subloader(int idx); /* page-0x1A near 0x4eef = ljmp 0x1A1F:0xD20.
+                                                  * TARGET CORRECTED 2026-06-10: thunk record =
+                                                  * ovl 26 + 0x1380; ovl-26 TRUE base = 0x73270
+                                                  * (two-anchor fit, see VERIFICATION_LEDGER.md)
+                                                  * -> body @file 0x745F0 = func_0745F0 IN THIS
+                                                  * FILE — the terrain-row reader (name-handle
+                                                  * word + 4 attr bytes + 9 yield bytes into the
+                                                  * 0x2F74 stride-16 table; writes the 0x2F76
+                                                  * terrain-cost byte).  idx=0..7 @UNFORESTED,
+                                                  * 8..0x17 @FORESTED, 0x18..0x1C @OTHER.
+                                                  * The 2026-06-08 "body @0x72CC2 (695B)" trace
+                                                  * described func_072CC2 (ovl 25 range) — a
+                                                  * DIFFERENT routine mis-bound to this thunk. */
 extern int      page1A_newgame_postinit(void); /* page-0x1A near 0x4ef9 = ljmp 0x1A1F:0xD3C
                                                   * @asm 0x076389 (new-game module post-init) */
 extern int      page1A_newgame_mapinit(void);  /* page-0x1A near 0x4f2b = ljmp 0x1A1F:0xDC8
@@ -280,13 +284,22 @@ void func_0764D0_gamewindow_view_init(void)
 }
 
 /* ============================================================================
- * func_0745F0 — power_record_field_init  [DONE — BYTE_VERIFIED]
+ * func_0745F0 — terrain_row_names_subloader  [DONE — BYTE_VERIFIED]
+ *   (formerly misnamed "power_record_field_init"; IDENTITY CORRECTED 2026-06-10:
+ *    this IS the page1A_names_subloader body — the public thunk 0x1A1F:0xD20
+ *    resolves here under the corrected ovl-26 base 0x73270, and func_0749E0
+ *    calls it once per @UNFORESTED/@FORESTED/@OTHER terrain row.)
  * ----------------------------------------------------------------------------
- * Initializes one per-index record (di = arg0_bp_06) in a stride-16 table:
- *   word [di*16 + 0x2F74] = (0x191F:0x91C , 0x1A1F:0xB22) value getter
- *   byte [di*16 + 0x2F76..0x2F79] = four 0x1A1F:0x88A random bytes
- *   byte [di*16 + 0x2F7B + i]     = nine 0x1A1F:0x88A random bytes (i=0..8)
- * (stride 16, base DGROUP 0x2F74; a per-power scratch/flags record.)
+ * Reads ONE NAMES.TXT terrain record (di = row index 0..0x1C) into the
+ * stride-16 terrain table at DGROUP 0x2F74:
+ *   word [di*16 + 0x2F74] = name handle  (names_next_record 0x191F:0x91C, then
+ *                                         names_read_int_word 0x1A1F:0xB22)
+ *   byte [di*16 + 0x2F76..0x2F79] = 4 attribute columns via names_read_int_byte
+ *                                   (0x1A1F:0x88A — NOT "random"); +0x2F76 is
+ *                                   the terrain MOVEMENT-COST byte
+ *   byte [di*16 + 0x2F7B + i]     = 9 per-cargo yield columns (i = 0..8)
+ * (29 rows: 0..7 @UNFORESTED, 8..0x17 @FORESTED, 0x18..0x1C @OTHER; the derived
+ *  per-cargo max table at 0x2F7A is computed from these — see pricing.c note.)
  *
  * @asm 0x0745F5  mov di,[bp+6]
  * @asm 0x0745F8  lcall 0x191F:0x91C ; @asm 0x0745FD lcall 0x1A1F:0xB22
@@ -534,7 +547,7 @@ void func_0746BC_init_founding_fathers_table(void)
 
 /* ============================================================================
  * func_0749E0 — load_names_data_tables  [DONE — section dispatch BYTE_VERIFIED;
- *               sub-loader fully traced: func_07637F@0x7637F→ljmp 0x1A1F:0xD20→body @0x72CC2]
+ *               sub-loader: func_07637F@0x7637F→ljmp 0x1A1F:0xD20→func_0745F0 (terrain-row reader; target corrected 2026-06-10)]
  * ----------------------------------------------------------------------------
  * THE NAMES.TXT DATA-TABLE LOADER (project mem: NAMES.TXT is the canonical
  * source for all VICEROY game-data tables; this routine reads 38 named
@@ -604,21 +617,22 @@ void func_0746BC_init_founding_fathers_table(void)
  *                                    @DS:0x22EC ("PEDIA") via 0x191F:0x91C +
  *                                    0x0D1D:0x8F6(@0x833c) -> [0x846]
  *
- * Per-entry name sub-loaders (UNFORESTED/FORESTED/OTHER) call func_07637F@0x7637F
- * (near call) → ljmp 0x1A1F:0xD20 → body @file 0x72CC2 (695 bytes, ENTER 0x276).
- * BYTE_VERIFIED 2026-06-08: args (max_entries=[bp+8], idx=[bp+6]); reads NAMES.TXT
- * section via get_section(DS:0x087C, idx) @0x191F:0x182; per-entry loading-flag
- * written at DS:0xA60C+entry_idx; terrain names interned via lcall 0x191F:0x176;
- * far-ptr strncpy dest via DS:0x9800 table.  Note: DS:0x2F76 terrain-cost table
- * is NOT written here (linker-initialized; populated by a different function).
+ * Per-entry sub-loaders (UNFORESTED/FORESTED/OTHER) call func_07637F@0x7637F
+ * (near call) → ljmp 0x1A1F:0xD20 → func_0745F0 @file 0x745F0 (TARGET CORRECTED
+ * 2026-06-10 via the RTLink thunk rule; ovl-26 true base 0x73270).  func_0745F0
+ * reads ONE NAMES.TXT terrain row into the 0x2F74 stride-16 table — name-handle
+ * word (+0x2F74), 4 attribute bytes (+0x2F76..+0x2F79, +0x2F76 IS the terrain
+ * movement-cost byte), and 9 per-cargo yield bytes (+0x2F7B..) — so DS:0x2F76
+ * IS written here (the old "NOT written here / linker-initialized" note was an
+ * artifact of tracing the wrong body, func_072CC2 of ovl 25, mis-bound to 0xD20).
  *
  * @asm 0x0749EB  lcall 0x181F:0x000E         (NAMES init, name @DS:0x1A2C "EUROPE")
  * @asm 0x0749F9  lcall 0x191F:0x928          (find @SECTION @DS:0x21AC "SEASONS")
  * @asm 0x074A06  loop: lcall 0x191F:0x91C ; 0x1A1F:0xB22 -> word[bx-0x6800]
  * @asm 0x074A7C  rep movsw cx=8              (copy 16-byte FORESTED config row)
  * @asm 0x07534D  pop si; pop di; leave; @asm 0x075350 retf
- * @status DONE — section dispatch byte-verified; sub-loader chain fully traced:
- *   func_07637F@0x7637F → ljmp 0x1A1F:0xD20 → body @0x72CC2 BYTE_VERIFIED 2026-06-08
+ * @status DONE — section dispatch byte-verified; sub-loader chain:
+ *   func_07637F@0x7637F → ljmp 0x1A1F:0xD20 → func_0745F0 (corrected 2026-06-10)
  */
 int func_0749E0_load_names_data_tables(void)
 {
@@ -640,13 +654,13 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- UNFORESTED @DS:0x21B4 : 8 entries via sub-loader ---- @asm 0x074A22 */
     overlay_call_191F_0928();                                  /* @asm 0x074A27 find UNFORESTED */
     for (i = 0; i < 8; i++)                                    /* @asm 0x074A41 cmp,8 */
-        page1A_names_subloader(i);                             /* @asm 0x074A38 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
+        page1A_names_subloader(i);                             /* @asm 0x074A38 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 -> func_0745F0 (terrain row) */
 
     /* ---- FORESTED @DS:0x21BF : 8 entries; sub-loader(idx+8) then copy a
      * 16-byte config row [bx+0x3074] <- [bx+0x2ff4] ---- @asm 0x074A47 */
     overlay_call_191F_0928();                                  /* @asm 0x074A4C find FORESTED */
     for (i = 0; i < 8; i++) {                                  /* @asm 0x074A81 cmp,8 */
-        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
+        page1A_names_subloader(i + 8);                         /* @asm 0x074A61 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 -> func_0745F0 (terrain row) */
         {   /* @asm 0x074A7C rep movsw cx=8 : 16-byte row copy */
             uint16_t near *dst = (uint16_t near *)((i << 4) + 0x3074); /* @asm 0x074A6D */
             uint16_t near *src = (uint16_t near *)((i << 4) + 0x2FF4); /* @asm 0x074A71 */
@@ -658,7 +672,7 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- OTHER @DS:0x21C8 : 5 entries via sub-loader(idx+0x18) ---- @asm 0x074A87 */
     overlay_call_191F_0928();                                  /* @asm 0x074A8C find OTHER */
     for (i = 0; i < 5; i++)                                    /* @asm 0x074AAA cmp,5 */
-        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 body @0x72CC2 */
+        page1A_names_subloader(i + 0x18);                      /* @asm 0x074AA1 -> func_07637F @0x7637F -> ljmp 0x1A1F:0xD20 -> func_0745F0 (terrain row) */
 
     /* ---- OTHER_NAMES @DS:0x21CE : 5 ints -> word[i+0x2db0] ---- @asm 0x074AB0 */
     overlay_call_191F_0928();                                  /* @asm 0x074AB5 find OTHER_NAMES */
@@ -2785,11 +2799,11 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
     /* alt-bind / cursor walk via 0x1A1F:0xEE4 BYTE_VERIFIED:
      * count==1 && submode==0 → single bind (0x077548); else walk loop (0x077583) */
     if (count_ax == 1 && submode_bx == 0) {    /* @asm 0x077536/07753C */
-        overlay_call_1A1F_0EE4();  /* @asm 0x077548 alt bind [0x1A1F:0xEE4 -> file 0x25982 BYTE_VERIFIED] */
+        overlay_call_1A1F_0EE4();  /* @asm 0x077548 alt bind [0x1A1F:0xEE4 -> ovl 28+0x82 ~ file 0x76ED2 (AMBIG base); old 0x25982 target RETRACTED 2026-06-10] */
     } else {
         /* walk cursor [bp-6] entries until 0x1A1F:0xEE4 returns nonzero;
          * on overflow raise err 0xFFE4 (@asm 0x07756C..0x0775AA) */
-        overlay_call_1A1F_0EE4();  /* @asm 0x077583 cursor-gate pred [0x1A1F:0xEE4 -> file 0x25982 BYTE_VERIFIED] */
+        overlay_call_1A1F_0EE4();  /* @asm 0x077583 cursor-gate pred [0x1A1F:0xEE4 -> ovl 28+0x82 ~ file 0x76ED2 (AMBIG base); old 0x25982 target RETRACTED 2026-06-10] */
     }
 
     /* finalize (0x83f): release the bound block when no registered cb */

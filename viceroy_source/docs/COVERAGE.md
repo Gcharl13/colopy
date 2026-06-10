@@ -128,9 +128,11 @@ Per `RECONSTRUCTION_PLAN.md` scope rules, the remainder splits into:
 - **Group B DS:0x2F76 terrain-cost table CLOSED:** Table confirmed BSS (not in EXE).
   DGROUP initialized data ends at DS:0x2CC5; 0x2F76 is 0x2B1 bytes past that, in
   BSS. Written at runtime by page1A_names_subloader from NAMES.TXT @UNFORESTED/
-  @FORESTED/@OTHER (dispatched via 0x1A1F:0xD20 from func_0749E0). Lookup pattern
-  BYTE_VERIFIED: tile_entity_type*16 + DS:0x2F76 → cost byte; cost_addend = al*3
-  via shl/add @asm 0x622FA/0x62563.
+  @FORESTED/@OTHER (dispatched via 0x1A1F:0xD20 from func_0749E0).  RESOLVED
+  2026-06-10: 0x1A1F:0xD20 = **func_0745F0** (ovl 26 true base 0x73270 + 0x1380;
+  see VERIFICATION_LEDGER.md) — its @asm 0x074612 `mov [si+0x2f76],al` is the
+  cost-byte write.  Lookup pattern BYTE_VERIFIED: tile_entity_type*16 + DS:0x2F76
+  → cost byte; cost_addend = al*3 via shl/add @asm 0x622FA/0x62563.
 - **TerrainUIRec (Group C) CLOSED:** stride-0x24 estimate was wrong; correct stride
   confirmed as 0x0C (12 bytes/element). TerrainUIRec struct (12 bytes, 6 named
   fields) added to overlay_068A14_06C1CC.c. func_06A700 + func_06AA88 not-yet-decoded-inner

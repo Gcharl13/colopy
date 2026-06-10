@@ -13,7 +13,8 @@
  *
  * PURPOSE — confirmed by STRING XREF (file_offset = handle + 0x1D9A0):
  *   The function PUSHes 49 distinct message-key handles and feeds each to the
- *   diplomacy dialog (lcall 0x1A1F:0x0688, overlay file 0x290CC).  Resolved
+ *   diplomacy dialog (lcall 0x1A1F:0x0688 -> func_06F61C; target corrected
+ *   2026-06-10, see thunk note below).  Resolved
  *   tree (all byte-verified pushes; see DIPLO_KEY table below): HELLO/AHOY/
  *   FIRST/HELLOUSA greetings, MEEK/MANLY/KINGS/DEEDS leader styles, then
  *   topic exchanges PIRACY, SIEGES, TRIBUTE, WANTSTUFF, PROVOKE, WARMANLY,
@@ -199,26 +200,29 @@
 
 /* ----------------------------------------------------------------------------
  * Overlay thunks (RTLink). Call sites + args VERIFIED; internal behaviour as
- * noted. Resolved overlay file offsets cited (lcall_resolution_VICEROY.json).
+ * noted. File offsets re-derived 2026-06-10 from raw RTLink thunk records
+ * (lcall_resolution_VICEROY.json was unreliable; see VERIFICATION_LEDGER.md).
  * ---------------------------------------------------------------------------- */
-extern uint8_t rel_query(int self, int other);                 /* 0x181F:0x0A38 -> file 0x5FC30 (bits 0x02/0x20/0x40/0x80) */
-extern void    rel_apply_event(int mask, int a, int b);        /* 0x181F:0x0A06 -> file 0x5FCD2 (SET masked treaty bit) */
-extern void    rel_clear_event(int mask, int a, int handle);   /* 0x181F:0x0A10 -> file 0x5FCFC (CLEAR masked bit) */
-extern int     rel_event_query_other(int self);                /* 0x181F:0x0A1A -> file 0x5FDC4 (returns a handle for power) */
-extern int     power_handle(int power_idx);                    /* 0x181F:0x09A4 -> file 0x5FE0C */
-extern void    power_set_slot(int handle, int slot);           /* 0x181F:0x0438 -> file 0x25CEC (UI/role slot setter) */
-extern void    ui_set_text_arg(int ds_seg, void *str, int idx);/* 0x181F:0x0416 -> file 0x25CD0 (format %arg substitution) */
-extern int     random_int(int lo, int hi);                     /* 0x181F:0x04D4 -> file 0x27DB2 (random_int, GROUND TRUTH) */
+extern uint8_t rel_query(int self, int other);                 /* 0x181F:0x0A38 -> file 0x07F34 (resident; thunk-fix 2026-06-10) (bits 0x02/0x20/0x40/0x80) */
+extern void    rel_apply_event(int mask, int a, int b);        /* 0x181F:0x0A06 -> file 0x07F96 (resident) (SET masked treaty bit) */
+extern void    rel_clear_event(int mask, int a, int handle);   /* 0x181F:0x0A10 -> file 0x08000 (resident) (CLEAR masked bit) */
+extern int     rel_event_query_other(int self);                /* 0x181F:0x0A1A -> file 0x080C8 (resident) (returns a handle for power) */
+extern int     power_handle(int power_idx);                    /* 0x181F:0x09A4 -> file 0x08110 (resident) */
+extern void    power_set_slot(int handle, int slot);           /* 0x181F:0x0438 -> func_06C23C (ovl 23) (UI/role slot setter) */
+extern void    ui_set_text_arg(int ds_seg, void *str, int idx);/* 0x181F:0x0416 -> func_06C220 (ovl 23) (format %arg substitution) */
+extern int     random_int(int lo, int hi);                     /* 0x181F:0x04D4 -> file 0x0C322 (resident; random_int, GROUND TRUTH) */
 /* BYTE_VERIFIED 2026-06-08: pure clamp. Implementation file 0x0048CC (runtime 0x024C:0x000C)
  * via overlay stub 0x181F:0x035C. clamp(value, lo, hi) = max(lo, min(value, hi)).
  * Note: file 0x28792 is a DIFFERENT function (calls 0x181F:0x0092 then 0x181F:0x00B0). */
 extern int16_t diplo_scale_181F_035C(int16_t v, int16_t lo, int16_t hi); /* clamp — VERIFIED */
-extern int     diplo_182_pair(int a, int b);                   /* 0x181F:0x0D6C -> file 0x259F2. Cross-ref: overlay_046D70 / native/haggle.c
+extern int     diplo_182_pair(int a, int b);                   /* 0x181F:0x0D6C -> func_045DF2 (ovl 11 + 0xF2 = file 0x45DF2;
+                                                                * target CORRECTED 2026-06-10 — old "0x259F2" used the bogus fixed
+                                                                * 0x25900 base).  Cross-ref: overlay_046D70 / native/haggle.c
                                                                 * identify this as "adjust native/power attitude(tribe,power,delta,0)";
-                                                                * here called with (b-4, a, 100, 0) — attitude delta +100 for power pair.
-                                                                * Body: library-implementation-only (page 0x0B overlay). */
+                                                                * here called with (b-4, a, 100, 0) — attitude delta +100 for power pair. */
 extern void    ui_set_long_arg(int hi, int lo, int idx);       /* 0x181F:0x09AE (long %arg) */
-/* 0x1A1F:0x0688 -> file 0x290CC.  Second arg is a 16-bit word that is EITHER a
+/* 0x1A1F:0x0688 -> func_06F61C (ovl 23 + 0x37CC; corrected 2026-06-10).
+ * Second arg is a 16-bit word that is EITHER a
  * near pointer to a composed buffer OR a bare message-key handle (both forms
  * appear in the disasm: `push &buf` vs `push 0x1930`).  Returns the player's
  * choice code (1 = accept/yes, 2 = the alternate "accept" used by the topic
@@ -227,11 +231,14 @@ extern int     ui_dialog_show(int power_other, int key_or_strptr);
 
 /* cs:0x3FXX are a near-call FAR-JUMP TRAMPOLINE table at file 0x05A1D6
  * (a block of `ljmp 0x1A1F:NNN` / `ljmp 0x181F:NNN`).  CS base of page 0x0F is
- * 0x562B0 (file 0x057DC0 == cs-off 0x1B10).  Resolved:
- *   cs:0x3F26 -> ljmp 0x181F:0x550   (early setup; file 0x259F8)
+ * 0x562B0 (file 0x057DC0 == cs-off 0x1B10).  Resolved (targets re-derived
+ * 2026-06-10 via the RTLink thunk rule — see VERIFICATION_LEDGER.md):
+ *   cs:0x3F26 -> ljmp 0x181F:0x550 -> func_056B08 = score_and_rank_four_powers
+ *                (overlay_054505_05C69B.c, already ported BYTE_VERIFIED!);
+ *                the meeting setup ranks the four powers before scoring.
  *   cs:0x3F30 -> ljmp 0x1A1F:0x60A   (per-side relation tag on treaty SET)
- *   cs:0x3F35 -> ljmp 0x1A1F:0x618   (file 0x2692A: build a dialog OPTION line)
- *   cs:0x3F3F -> ljmp 0x1A1F:0x634
+ *   cs:0x3F35 -> ljmp 0x1A1F:0x618 -> func_057A3A (build a dialog OPTION line)
+ *   cs:0x3F3F -> ljmp 0x1A1F:0x634 -> func_056A10 (colony adjacency probe, §3b)
  *   cs:0x3F44 -> ljmp 0x1A1F:0x642   (build dialog option, bool variant)
  *   cs:0x3F4E -> ljmp 0x1A1F:0x65E   (native-meeting sub-path, early-out branch)
  *   cs:0x3F58 -> ljmp 0x1A1F:0x67A   (relation predicate, used by treaty.c)

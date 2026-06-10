@@ -75,10 +75,10 @@ extern void    sol_recompute_lowpath(int power);    /* cs:0x36CC  body in thunk 
 extern uint8_t sol_recompute_pct(int power);        /* cs:0x36D1  -> rebel% in AL  */
 
 /* lcall helpers (call sites + args verified; bodies in thunk page).
- *   0x181F:0x04AC -> file 0x22340 (type B) — set a UI/animation channel mode.
- *   0x181F:0x09AE -> file 0x25D2C (type A) — push a numeric value for a message.
+ *   0x181F:0x04AC -> file 0x05108 (resident; thunk-fix 2026-06-10) — set a UI/animation channel mode.
+ *   0x181F:0x09AE -> func_06C27C (ovl 23) — push a numeric value for a message.
  *   0x191F:0x0AC8 -> file 0x25D04 (type A) — flash/redraw a power's colony UI.
- *   0x181F:0x0652 -> file 0x290A2 (type A) — show localized message by handle. */
+ *   0x181F:0x0652 -> func_06F5F2 (ovl 23) — show localized message by handle. */
 extern void    ui_set_channel(int mode);                       /* 0x181F:0x04AC */
 extern void    ui_push_value(int32_t v);                       /* 0x181F:0x09AE */
 extern void    ui_flash_power(int power, int a, int b);        /* 0x191F:0x0AC8 */

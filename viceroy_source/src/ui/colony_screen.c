@@ -101,8 +101,8 @@ extern int16_t g_gold_2F5E;               /* DGROUP:0x2F5E */
  *   blit_box_id(x,y,w,h,id)       0x181F:0x0100 -> file 0x002BC8  (filled panel)
  *   blit_sprite(.,id,x,y,.)       0x181F:0x0254 -> file 0x00E76A  (sprite from .SS:
  *                                  AX=sprite_id, DX=x, BX=&sheet_desc, y/ctx pushed)
- *   draw_text(x,y,buf,..)         0x181F:0x013C -> file 0x002B6C  (string draw)
- *   fmt_word(buf,val,..)          0x181F:0x0022 -> file 0x002422  (number -> text)
+ *   draw_text(x,y,buf,..)         0x181F:0x013C -> file 0x002B38 (thunk-fix 2026-06-10)  (string draw)
+ *   fmt_word(buf,val,..)          0x181F:0x0022 -> file 0x002462  (number -> text)
  *   blit_band(x,y,w,h)            0x181F:0x00E2 -> file 0x00DB3A  (clipped re-blit)
  * Sub-renderer trampolines (push cs; call 0x7Dxx/0x7Exx -> JMP 0x191F:NNN, all
  * trailer page-id 0x02) are named with their resolved page-02 function in the

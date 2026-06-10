@@ -127,9 +127,9 @@ void rel_declare_war(int attacker, int defender)
  * and are intentionally NOT reproduced here.
  *
  * Anchors for future work:
- *   - rel_query accessor body: 0x181F:0x0A38 -> file 0x5FC30 (decompile to learn
+ *   - rel_query accessor body: 0x181F:0x0A38 -> file 0x07F34 (resident; thunk-fix 2026-06-10) (decompile to learn
  *     where the 0x02/0x20/0x40 bits live and how they relate to PowerRecord+0x40).
- *   - rel_apply_event 0x181F:0x0A06 (file 0x5FCD2) and rel_clear_event
+ *   - rel_apply_event 0x181F:0x0A06 (file 0x07F96) and rel_clear_event
  *     0x181F:0x0A10 (file 0x5FCFC): the set/clear-with-mask helpers.
  *   - cs:0x3f30 / cs:0x3f58 near-calls in page 0x0F (relation mutate/predicate).
  * ============================================================================ */

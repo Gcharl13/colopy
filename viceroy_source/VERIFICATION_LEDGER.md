@@ -1486,12 +1486,55 @@ All three RTLink overlay leads resolved via 0x1A1F thunk table.
 |------|------------------|-----------------|--------|
 | 0x1A1F:0xEE4 | 0x1D4D4 | ~~func_025900 mid-loop~~ **RETRACTED 2026-06-10**: thunk bytes = overlay 0x1C(28) + 0x0082 → ≈file 0x76ED2 (segmap-28 base, AMBIG). Old target used the same wrong fixed base 0x25900. Cursor-gate role is call-site inference; body untraced. | CORRECTED |
 
-**Thunk-decode rule (established 2026-06-10, four byte-verified pairs):** RTLink
-thunk records live at file `0x1C5F0 + thunk_offset` for segment 0x1A1F, with
-layout `9A AB0D 0D11 | EA <off32> | <ovl16> | <pad>`; `<ovl16>` maps IDENTITY
-onto `overlay_segmap.json` keys.  Verified: 0x0434→ovl12+0x2154=0x48F34,
-0x0634→ovl15+0=0x56A10, 0x0618→ovl15+0x102A=0x57A3A, 0x0688→ovl23+0x37CC=0x6F61C.
-Any older row computed with a fixed 0x25900 base is suspect.
+**Thunk-decode rule (established 2026-06-10, seven byte-verified pairs):**
+RTLink thunk tables live at file `0x1A5F0 + off` for segment 0x181F and
+`0x1C5F0 + off` for segment 0x1A1F (= seg*16 + 0x2400 + off).  Two record kinds:
+
+- RESIDENT: `9A 91 0D 0D 11 | EA <off16> <seg16>` → target file =
+  `seg*16 + 0x2400 + off`.  Verified: 0x181F:0x4D4 → 09EF:0032 = 0x0C322
+  (random_int, previously byte-verified); 0x181F:0x35C → 024C:000C = 0x048CC
+  (clamp, previously byte-verified); 0x181F:0x9A4 → 05B3:01E0 = 0x08110
+  (matches pricing.c's independently-traced difficulty clamp).
+- OVERLAY: `9A AB 0D 0D 11 | EA <off32> | <ovl16> | <pad>` → target file =
+  `overlay_segmap.json[ovl].base + off32` (the field maps IDENTITY onto the
+  segmap keys).  Verified: 0x1A1F:0x434 → ovl12+0x2154 = 0x48F34 (func_048F34,
+  independently verified); 0x1A1F:0x634 → ovl15+0 = 0x56A10 (func_056A10,
+  matches its meeting.c call-site signature); 0x1A1F:0x618 → ovl15+0x102A =
+  0x57A3A (ENTER 0x54 function); 0x1A1F:0x688 → ovl23+0x37CC = 0x6F61C
+  (PUSH BP function); plus cluster self-consistency (NAMES.TXT readers
+  0x88A/0xB16/0xB22 all land in one ovl-24 run; unit helpers 0xC54/0xCAE/0xBBE
+  all land in resident seg 05EB).
+
+The 0x191F segment has its own thunk table at file `0x1B5F0 + off` (same two
+record formats).  Verified: 0x191F:0xAC8 → ovl23+0x404 = 0x6C254 (confirms
+lcr.c's independently byte-verified survivors_join target); 0x191F:0xFEC →
+ovl6+0x342 = 0x3BC42 = **func_03BC42 (ff_acquire_dispatch)** — the congress
+"ff_log_notify" thunk is the FF acquisition dispatch itself; 0x191F:0x182 →
+0x6F0F4 (dlg_open, ENTER 0x168); 0x191F:0xED0 → resident 0x0F38A.
+
+**SEGMAP BASE CORRECTIONS (2026-06-10):** `overlay_segmap.json` bases are
+usually right but NOT always — two corrected by independent two-anchor fits:
+  - overlay 21: true base **0x67080** (segmap said 0x66850 "STRONG").  Anchors:
+    0x181F:0xE2A → +0x3F6 = 0x67476 (func_067476) and 0x1A1F:0x95A → +0x34C =
+    0x673CC (func_0673CC) — both real functions, both previously decoded in
+    docs/MAP_COMPOSER_SPEC.md.
+  - overlay 26: true base **0x73270** (segmap said 0x26512 AMBIG).  Anchors:
+    0x1A1F:0xD04 → +0x840 = 0x73AB0 (func_073AB0, save-header reader) and
+    0x1A1F:0xD20 → +0x1380 = **0x745F0 (func_0745F0)** — which RESOLVES the
+    long-open "NAMES.TXT subloader dispatched via 0x1A1F:0xD20" lead.
+  - overlay 24 (AMBIG base 0x78644): supported by ONE prologue anchor
+    (0x1A1F:0x88A → +0x198 = func_0787DC); the other NAMES-parser thunks
+    (0xB16/0xB22/0x928/0x91C) land mid-blob — treated as alternate entries of
+    the hand-written parser; keep the ≈ hedge.
+
+**WARNING:** any target citing `lcall_resolution_VICEROY.json`, any "fixed base
+0x25900" computation, and any pre-2026-06-10 `0x181F:`/`0x1A1F:`/`0x191F:`-to-
+file claim is suspect until re-derived with this rule — ~45 wrong offsets were
+corrected across effects.c, congress.c, meeting.c, relations.c, intervention.c,
+sons_of_liberty.c, colony_screen.c, overlay_031F28, COVERAGE.md and this ledger.
+(ai/unit_ai_leaf.c and random_events/lcr.c already used correct targets — their
+method was sound.)  docs/MAP_COMPOSER_SPEC.md's 0x673CC/0x67476 claims were
+CORRECT (they exposed the segmap-21 error).
 
 ---
 

@@ -430,14 +430,14 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
          * DS:0x2F76 TABLE — BSS (runtime-populated; NOT static EXE data):
          *   DS:0x2F76 is at DGROUP offset 0x2F76, which is beyond the initialized
          *   data window (DGROUP init ends at DS:0x2CC5; see dgroup_map.py).  The
-         *   stride-16 table is written at runtime from two sources:
-         *     (a) func_0745F0 (@asm 0x074612 MOV [si+0x2f76],al) fills the
-         *         power-record rows (row = power_index, byte +0..+3 = random AI
-         *         constants from 0x1A1F:0x088A).
-         *     (b) page1A_names_subloader (ljmp 0x1A1F:0xD20, called by
-         *         func_0749E0_load_names_data_tables for NAMES.TXT @UNFORESTED /
-         *         @FORESTED / @OTHER sections) fills the terrain-type rows
-         *         (row = terrain-type index, byte +0 = movement-cost byte).
+         *   stride-16 table is written at runtime by ONE function (CORRECTED
+         *   2026-06-10 — the "two sources" previously listed were the same
+         *   routine): func_0745F0 = page1A_names_subloader (the 0x1A1F:0xD20
+         *   thunk resolves to func_0745F0 under the corrected ovl-26 base
+         *   0x73270).  Called by func_0749E0_load_names_data_tables once per
+         *   NAMES.TXT @UNFORESTED/@FORESTED/@OTHER terrain row; 0x1A1F:0x88A
+         *   is names_read_int_byte (NOT random); row = terrain-type index;
+         *   byte +0x2F76 = movement-cost; +0x2F7B.. = 9 per-cargo yields.
          *   The lookup pattern here: bx = tile_entity_type * 16;
          *   al = [bx+0x2F76]; cost_addend = al * 3 (@asm 0x0622FA/0x062563).
          * BYTE_VERIFIED 2026-06-08 — full neighbour relaxation arithmetic:
@@ -1885,10 +1885,10 @@ int func_065D26_postgen_large(void)
         /* @asm 0x065DFC..0x065E19 : zero 0xc more flag bytes + 0x10 word slots. */
         overlay_call_181F_0A42();                        /* @asm 0x065E28 per-tribe setup */
         overlay_call_191F_091C();                        /* @asm 0x065E30 */
-        (void)overlay_call_1A1F_088A();  /* @asm 0x065E35 prop 0 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
-        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3A prop 1 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
-        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3F prop 2 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
-        (void)overlay_call_1A1F_088A();  /* @asm 0x065E44 prop 3 -> struct+2 [0x1A1F:0x88A -> file 0x25A98 BYTE_VERIFIED] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E35 prop 0 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3A prop 1 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E3F prop 2 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */
+        (void)overlay_call_1A1F_088A();  /* @asm 0x065E44 prop 3 -> struct+2 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */
         /* struct flags +1,+2 := 1; +4..+8 := 0; +0xa,+0xc := 0  @asm 0x065E50.. */
     }
     display_flush();                                     /* @asm 0x065E7C 0x3ac */

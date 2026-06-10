@@ -133,7 +133,7 @@ extern uint8_t g_unittype_attr_5230[/* type */][14];
  * resets sp and invokes 0x181F:0x0B0 with (1,0,0) to tear it down.
  *   @asm 0x031F2B push [bp+0xA]/[bp+8]/[bp+6]; 0x031F34 LCALL 0x181F:0x092
  *   @asm 0x031F3B push 0;push 0;push 1;        0x031F41 LCALL 0x181F:0x0B0
- * (thunk resolve: 0x181F:0x092 -> file 0x022A0E; 0x181F:0x0B0 -> file 0x022A96.)
+ * (thunk resolve, corrected 2026-06-10: 0x181F:0x092 -> file 0x026D4; 0x181F:0x0B0 -> file 0x0275C — both resident.)
  * =========================================================================== */
 void func_031F28(int a, int b, int c)
 {

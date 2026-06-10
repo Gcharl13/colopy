@@ -86,21 +86,22 @@ extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 c
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers. Call sites/args BYTE_VERIFIED; bodies in thunk page where
  * the resolved target is behind the blocked 0x191F/0x1A1F/0x181F overlay.
- * Resolved final file offsets from lcall_resolution_VICEROY.json.
+ * File offsets re-derived 2026-06-10 from raw RTLink thunk records (the
+ * earlier lcall_resolution_VICEROY.json values were all wrong; see ledger).
  * ---------------------------------------------------------------------------- */
-extern void ff_announce(int power);            /* 0x181F:0x0582 file 0x025900  @asm 03BFE2 / 03C328 */
+extern void ff_announce(int power);            /* 0x181F:0x0582 -> func_030550 (ovl 4+0) = market_set_active/set-active-power (see effects.c) @asm 03BFE2 / 03C328 */
 extern int  ff_owned(int ff_id, int power);    /* 0x181F:0x07B4 -> nonzero if power owns ff_id (type-B, body in thunk page) @asm 03C008 */
-extern int  random_int(int lo, int hi);        /* 0x181F:0x04D4 file 0x027DB2 (MEMORY.md byte-verified) @asm 03C0DB */
-extern void ff_msg_open(int arg);              /* 0x181F:0x04AC file 0x022340  @asm 03C123 push 3 (presentation primer) */
+extern int  random_int(int lo, int hi);        /* 0x181F:0x04D4 -> file 0x0C322 (resident; value semantics byte-verified) @asm 03C0DB */
+extern void ff_msg_open(int arg);              /* 0x181F:0x04AC -> file 0x05108 (resident)  @asm 03C123 push 3 (presentation primer) */
 extern int  ff_present_primer(int power);      /* call 0x108b -> ljmp 0x1A1F:0x001C  @asm 03C0FF; result -> [bp-0x56] */
-extern void ff_animate_pre(void);              /* 0x181F:0x056A file 0x03240C  @asm 03C256 (same overlay
+extern void ff_animate_pre(void);              /* 0x181F:0x056A -> file 0x0C136 (resident push-leaf)  @asm 03C256 (same overlay
                                                 * routine as effects.c ff_pre_a, but called argument-less
                                                 * here: stack restored via `mov sp,bp` before the lcall) */
-extern void ff_pre_b(int ff_id);               /* 0x1A1F:0x0062 file 0x027828  @asm 03C24E (mirrors effects.c ff_pre_b) */
-extern void str_fmt_int(int v, char *buf);     /* 0x181F:0x016E file 0x06048A  @asm 03C18E append-int */
-extern void str_append(char *buf);             /* 0x181F:0x0178 file 0x0603A8  @asm 03C19A append-substr/spacer */
-extern void str_term_a(char *buf);             /* 0x181F:0x011E file 0x06041A  @asm 03C1A6 */
-extern void str_term_b(char *buf);             /* 0x181F:0x0128 file 0x06042A  @asm 03C1DE */
+extern void ff_pre_b(int ff_id);               /* 0x1A1F:0x0062 -> func_06AE08 (ovl 22)  @asm 03C24E (mirrors effects.c ff_pre_b) */
+extern void str_fmt_int(int v, char *buf);     /* 0x181F:0x016E -> func_002992 (resident)  @asm 03C18E append-int */
+extern void str_append(char *buf);             /* 0x181F:0x0178 -> func_0028B0 (resident)  @asm 03C19A append-substr/spacer */
+extern void str_term_a(char *buf);             /* 0x181F:0x011E -> func_002922 (resident)  @asm 03C1A6 */
+extern void str_term_b(char *buf);             /* 0x181F:0x0128 -> func_002932 (resident)  @asm 03C1DE */
 
 /* 0x191F selection-screen feed (dialog overlay; bodies in thunk page): */
 extern void *dlg_open(void *ctx_key, void *title_key, int z); /* 0x191F:0x0182 file 0x028BA4 @asm 03C135 ("WHICHFREEDOM") */
@@ -110,14 +111,20 @@ extern void  dlg_free(void *dlg);                             /* 0x191F:0x01A8 f
 
 /* Type-A near thunks resolved in page 0x06 (file 0x03C322 region) → overlay
  * 0x1A1F (the FF-text overlay). Call sites verified; bodies in thunk page. */
-extern int  ff_bells_required(int power);      /* call 0x1072 -> ljmp 0x191F:0x0F66 file 0x026282  @asm 03C37F/03C3B1 */
+extern int  ff_bells_required(int power);      /* call 0x1072 -> ljmp 0x191F:0x0F66 -> func_03C282 (ovl 6, the FF
+                                                * overlay page 0x06; thunk-fix 2026-06-10) @asm 03C37F/03C3B1 */
 extern void ff_become_available(int power);    /* call 0x1081 -> ljmp 0x1A1F:0x0000             @asm 03C34D */
 extern int  ff_category_band(int power);       /* call 0x109a -> ljmp 0x1A1F:0x0046             @asm 03BFEB (returns era/band index) */
 extern int  ff_cat_candidate(int cat, int pw); /* call 0x109f -> ljmp 0x1A1F:0x0054 (count selectable in cat) @asm 03C07F/03C165 */
-extern void ff_log_notify(int idx, int ff, int pw); /* call 0x107c -> ljmp 0x191F:0x0FEC file 0x0C5DC @asm 03C3E3 */
-extern void ff_notify_sound(long n, int z);    /* 0x181F:0x09AE file 0x025D2C @asm 03C389 */
-extern void ui_key_print(int z, int key);      /* 0x181F:0x0652 file 0x0290A2 @asm 03C395/03C3A1 (push "AMBUSHHINT"/"CONSIDER") */
-extern void cong_anim(int a, int b, int c);    /* 0x191F:0x0AC8 file 0x025D04 @asm 03C374 */
+extern void ff_log_notify(int idx, int ff, int pw); /* call 0x107c -> ljmp 0x191F:0x0FEC -> func_03BC42 (ovl 6+0x342)
+                                                * = ff_acquire_dispatch ITSELF (effects.c)!  The congress election
+                                                * completion invokes the FF acquisition + immediate-effect dispatch
+                                                * through this public thunk.  (thunk-fix 2026-06-10; was "0x0C5DC") */
+extern void ff_notify_sound(long n, int z);    /* 0x181F:0x09AE -> func_06C27C (ovl 23; thunk-fix 2026-06-10) @asm 03C389 */
+extern void ui_key_print(int z, int key);      /* 0x181F:0x0652 -> func_06F5F2 (ovl 23) @asm 03C395/03C3A1 (push "AMBUSHHINT"/"CONSIDER") */
+extern void cong_anim(int a, int b, int c);    /* 0x191F:0x0AC8 -> func_06C254 (ovl 23, between the msg-arg setters
+                                                * 0x6C23C/0x6C27C; same target lcr.c verified as survivors_join /
+                                                * war_turn.c as ui_flash_power — a flash/notify UI primitive) @asm 03C374 */
 extern void cong_screen_a(void);               /* 0x191F:0x0348 file 0x026E28 @asm 03C3CD */
 
 /* ============================================================================

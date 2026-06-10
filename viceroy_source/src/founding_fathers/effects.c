@@ -82,27 +82,47 @@ extern uint8_t g_unit_table[];   /* base 0x3144 ; +0x00 map_x, +0x01 map_y, +0x0
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers used by the dispatch. Call sites/args VERIFIED;
- * bodies in thunk page. (lcall_resolution_VICEROY.json target file offsets cited.)
+ * bodies in thunk page.
+ * FILE OFFSETS CORRECTED 2026-06-10: every target below was re-derived from the
+ * raw RTLink thunk records (0x181F table @file 0x1A5F0+off, 0x1A1F table
+ * @0x1C5F0+off; resident `ljmp seg:off` -> file = seg*16+0x2400+off; overlay
+ * records -> overlay_segmap[ovl].base+off32 — rule verified on random_int
+ * 0x4D4->0xC322, clamp 0x35C->0x48CC, power_handle 0x9A4->0x8110 which pricing.c
+ * had independently traced).  ALL 17 offsets previously cited here from
+ * lcall_resolution_VICEROY.json were WRONG — treat that JSON as unreliable.
+ * Helper-pair spacings (settle_at/settle_at2 +0x2C, unit_type_of/unit_set_type
+ * +0x3A) survive the re-basing, confirming record reads were right, bases wrong.
  * ---------------------------------------------------------------------------- */
-extern void ff_announce(int power);                 /* 0x181F:0x0582 file 0x25900 @asm 03BC50 */
-extern void power_set_flag(int handle, int flag);   /* 0x181F:0x0438 file 0x25CEC */
-extern int  power_handle(int power);                /* 0x181F:0x09A4 file 0x5FE0C */
-extern void ui_sound_or_msg(int arg);               /* 0x181F:0x04AC file 0x22340 @asm 03BCFD push 3 */
-extern void ff_portrait_dialog(void *a, void *b, int c); /* 0x181F:0x0998 file 0x28FCA @asm 03BD11 */
-extern int  unit_at(int idx);                       /* 0x181F:0x09E6 file 0x2701C (-> AL=unit slot) */
+extern void ff_announce(int power);                 /* 0x181F:0x0582 -> func_030550 (ovl 4+0) = market_set_active in
+                                                     * market/pricing.c — i.e. SET ACTIVE POWER ([0x9E12], [0x84FC]
+                                                     * = 0x8808+power*0x13C); the FF announce path activates the
+                                                     * power record before composing text. @asm 03BC50 */
+extern void power_set_flag(int handle, int flag);   /* 0x181F:0x0438 -> file 0x6C23C (ovl 23+0x3EC) = msg_set_arg body */
+extern int  power_handle(int power);                /* 0x181F:0x09A4 -> file 0x08110 (resident 05B3:01E0) — matches the
+                                                     * 14-byte difficulty clamp pricing.c traced at 0x008110 */
+extern void ui_sound_or_msg(int arg);               /* 0x181F:0x04AC -> file 0x05108 (resident 029F:0318) @asm 03BCFD push 3 */
+extern void ff_portrait_dialog(void *a, void *b, int c); /* 0x181F:0x0998 -> func_06F51A (ovl 23+0x36CA; sibling of the
+                                                     * dialog-show func_06F61C in the same UI overlay) @asm 03BD11 */
+extern int  unit_at(int idx);                       /* 0x181F:0x09E6 -> file 0x082DC (resident 05EB:002C) — the
+                                                     * "select record i" helper census/meeting call colony_select */
 /* @asm 03BD97: push arg; push arg; push power; push type(0x11) ; lcall 0x95c ; add sp,8
  * Far cdecl: last push (type) is arg0. Signature mirrors push order. */
-extern int  unit_create(int type, int power, int arg_hi, int arg_lo); /* 0x181F:0x095C file 0x313C8 */
-extern int  settle_at(int idx);                     /* 0x181F:0x0A42 file 0x219E8 (Pocahontas loop)  */
-extern int  settle_at2(int idx);                    /* 0x181F:0x0A4C file 0x21A14 (Brebeuf/id22 loop) */
-extern void native_alarm_clear(int a, int neg, int power, int idx); /* 0x181F:0x0D6C file 0x259F2 */
-extern void coronado_reveal(int idx, int power);    /* 0x181F:0x07AA file 0x22334 (id6 reveal; @asm push power; push idx -> idx=arg0) */
-extern int  unit_type_of(int idx);                  /* 0x181F:0x0C54 file 0x27E42 (id24 -> AL type) */
-extern void unit_set_type(int type, int idx);       /* 0x181F:0x0CAE file 0x27E7C (id24 set 0x1c)  */
-extern void colony_effect_id9(int zero, int one);   /* 0x181F:0x0BBE file 0x28020 (La Salle; @asm push 1; push 0 -> arg0=0) */
-extern void ff_finish(int flag);                    /* 0x181F:0x0E1C file 0x259C0 @asm 03BFC6 push 1 */
-extern void ff_pre_a(int power);                    /* 0x181F:0x056A file 0x3240C @asm 03BD2E */
-extern void ff_pre_b(int ff_id);                    /* 0x1A1F:0x0062 file 0x27828 @asm 03BD26 */
+extern int  unit_create(int type, int power, int arg_hi, int arg_lo); /* 0x181F:0x095C -> func_006D24 (resident 0427:06B4) */
+extern int  settle_at(int idx);                     /* 0x181F:0x0A42 -> func_0081C6 (resident 05DC:0006; Pocahontas loop) */
+extern int  settle_at2(int idx);                    /* 0x181F:0x0A4C -> file 0x081F2 (resident 05DC:0032; Brebeuf/id22 loop) */
+extern void native_alarm_clear(int a, int neg, int power, int idx); /* 0x181F:0x0D6C -> func_045DF2 (ovl 11+0xF2)
+                                                     * = diplo_182_pair "adjust native/power attitude" (meeting.c) */
+extern void coronado_reveal(int idx, int power);    /* 0x181F:0x07AA -> func_0063B6 (resident 03F1:00A6; id6 reveal;
+                                                     * @asm push power; push idx -> idx=arg0) */
+extern int  unit_type_of(int idx);                  /* 0x181F:0x0C54 -> func_009102 (resident 05EB:0E52; id24 -> AL type) */
+extern void unit_set_type(int type, int idx);       /* 0x181F:0x0CAE -> file 0x0913C (resident 05EB:0E8C; id24 set 0x1c) */
+extern void colony_effect_id9(int zero, int one);   /* 0x181F:0x0BBE -> func_0092E0 (resident 05EB:1030; La Salle;
+                                                     * @asm push 1; push 0 -> arg0=0) */
+extern void ff_finish(int flag);                    /* 0x181F:0x0E1C -> ovl 21+0xC0; ovl-21 base DISPUTED (segmap 0x66850 vs
+                                                     * 0x67080 anchored by func_0673CC/func_067476) so target = 0x66910 or
+                                                     * 0x67140 — neither a prologue; likely alternate entry. @asm 03BFC6 push 1 */
+extern void ff_pre_a(int power);                    /* 0x181F:0x056A -> file 0x0C136 (resident 0984:04F6, frameless push-leaf) @asm 03BD2E */
+extern void ff_pre_b(int ff_id);                    /* 0x1A1F:0x0062 -> func_06AE08 (ovl 22+0x1F28, ENTER 0x58) @asm 03BD26 */
 
 /* cs-relative near calls in page 0x06 (helpers, bodies not yet decoded): */
 extern void cs_1095(int one, int ff_id, int power);  /* @asm 03BC67 call 0x1095 */
