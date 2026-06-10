@@ -437,3 +437,26 @@ void tilehead_set(int x, int y, int head)
     long o = (long)y*w + x;
     if (o >= 0 && o < 64*80) g_tile_head[o] = (int16_t)head;
 }
+
+/* ---- colony-screen painter leaves (src/ui/colony_screen.c externs) -------- */
+void fill_rect(int x, int y, int w, int h)
+{
+    (void)x; (void)y; (void)w; (void)h;
+    /* the original's fill leaf (0x7ED3 -> 0x191F:0x7EC) is undecoded, so the
+     * flat fill is a no-op: the shell clears to black and draws the COLONY.PIK
+     * band as the scene before the composer runs (see main_modern.c) */
+}
+void blit_band(int x, int y, int w, int h) { (void)x;(void)y;(void)w;(void)h; }
+void blit_box_id(int x, int y, int w, int h, int id)
+{
+    (void)id;
+    vid_box_outline(x, y, w, h, 0x0F);
+}
+void blit_sprite(int desc, int id, int x, int y)
+{
+    (void)desc;
+    const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
+    if (s && id >= 0 && id < s->nframes) ss_blit(s, id, x, y);
+}
+void draw_text(int x, int y, const char *buf) { vid_text_xy(buf, x, y); }
+void enter_screen_view(int bx_screen_id) { (void)bx_screen_id; }

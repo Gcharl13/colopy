@@ -452,7 +452,7 @@ static void follow_unit(void)
 }
 
 /* ---- the shell ------------------------------------------------------------ */
-enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP };
+enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP, SH_COLONY };
 
 #define KEY_UP     1073741906
 #define KEY_DOWN   1073741905
@@ -513,6 +513,17 @@ static int shell_loop(void)
                 if (enter_map() == 0) screen = SH_MAP;
             }
             break;
+        case SH_COLONY:
+            if (k == 27) {                        /* ESC: back to the map */
+                if (g_terrain.has_pal) {
+                    uint8_t pal[768];
+                    for (int i2 = 0; i2 < 768; i2++)
+                        pal[i2] = (uint8_t)((g_terrain.pal6[i2] << 2) | (g_terrain.pal6[i2] >> 4));
+                    vid_set_palette(pal);
+                }
+                draw_map(); screen = SH_MAP;
+            }
+            break;
         case SH_MAP:
             if (k == 27) {
                 if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
@@ -523,6 +534,34 @@ static int shell_loop(void)
             if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */
             if (k == 1073741903) { try_move_ship( 1, 0); follow_unit(); draw_map(); } /* right */
             if (k == ' ')        { end_turn(); draw_map(); }
+            if (k == 13) {                        /* ENTER: open colony here */
+                extern int func_0082DC_logic_sz_118(uint16_t);
+                extern void colony_screen_render(int);
+                int u = (int16_t)DG16(0x5392);
+                int cx = u >= 0 ? UREC(u,0) : unit_x();
+                int cy = u >= 0 ? UREC(u,1) : unit_y();
+                int n = (int16_t)DG16(0x539E);
+                for (int ci = 0; ci < n; ci++) {
+                    if (DG8(0x5D46+ci*0xCA) == cx && DG8(0x5D46+ci*0xCA+1) == cy) {
+                        func_0082DC_logic_sz_118((uint16_t)ci); /* select: ctx */
+                        /* composer fill @0x0285A2 covers 0,0,320,200; its fill
+                         * leaf (0x191F:0x7EC) is undecoded, so clear to black
+                         * (no stale frame) and let the PIK band be the scene */
+                        memset(vid_framebuffer(), 0, VID_W * VID_H);
+                        if (load_bg("COLONY.PIK") == 0) draw_bg();
+                        colony_screen_render(1);
+                        if (g_have_font) {
+                            extern void vid_text_color(int);
+                            extern void vid_text_xy(const char*, int, int);
+                            vid_text_color(0x0F);
+                            vid_text_xy((const char*)&DG8(0x5D46+ci*0xCA+2), 120, 8);
+                        }
+                        vid_present();
+                        screen = SH_COLONY;
+                        break;
+                    }
+                }
+            }
             if (k == 'b') {                      /* B: FOUND COLONY (real creator) */
                 extern int func_02EB78_text_sz_55(uint16_t,uint16_t,uint16_t,uint16_t);
                 int u = (int16_t)DG16(0x5392);
@@ -599,6 +638,7 @@ int main(int argc, char **argv)
             vid_screenshot_ppm("viceroy_nations.ppm");
             printf("  headless  : nations frame -> viceroy_nations.ppm\n");
         }
+        /* (colony-screen frame added after the map frame below) */
         DG16(0x5398) = 0;                          /* England, for the sidebar */
         /* TEST SEED (headless verification only): one colony of power 0 at a
          * land tile, named with the REAL default from NAMES.TXT @COLONYNAME
@@ -673,6 +713,23 @@ int main(int argc, char **argv)
             g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
             draw_map();
             vid_screenshot_ppm("viceroy_map.ppm");
+            {   /* colony screen frame */
+                extern int func_0082DC_logic_sz_118(uint16_t);
+                extern void colony_screen_render(int);
+                func_0082DC_logic_sz_118(0);
+                memset(vid_framebuffer(), 0, VID_W * VID_H);  /* see ENTER path */
+                if (load_bg("COLONY.PIK") == 0) draw_bg();
+                colony_screen_render(1);
+                if (g_have_font) {
+                    extern void vid_text_color(int);
+                    extern void vid_text_xy(const char*, int, int);
+                    vid_text_color(0x0F);
+                    vid_text_xy((const char*)&DG8(0x5D46+2), 120, 8);
+                }
+                vid_present();
+                vid_screenshot_ppm("viceroy_colony.ppm");
+                printf("  headless  : colony frame -> viceroy_colony.ppm\n");
+            }
             printf("  headless  : map frame -> viceroy_map.ppm "
                    "(%dx%d tiles)\n", g_map_w, g_map_h);
         }

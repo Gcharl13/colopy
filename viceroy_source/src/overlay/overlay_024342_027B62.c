@@ -1345,15 +1345,21 @@ void colony_draw_roster_strip(int show_button)
 }
 
 /* ============================================================================
- * colony_screen_render  (func_0270D0)
+ * colony_paint_colonist_row  (func_0270D0)
  *   @asm        0x0270D0..0x0275CD  (1278 bytes, ENTER 0x7E)   page_02.asm
  *   @status     RECONSTRUCTED (extent + reads + difficulty/AIPersonality reads
  *               BYTE_VERIFIED; draw + SoL/Tory layout roles inferred)
- *   @role       the colony screen layout + render entry: place every colonist
- *               sprite (with overlap-avoidance), draw the warehouse bar-chart
- *               and the SoL/Tory percentage display.
+ *   @role       the colonist-row / mid-band content painter: place every
+ *               colonist sprite (with overlap-avoidance), draw the warehouse
+ *               bar-chart and the SoL/Tory percentage display.
+ *   @renamed    2026-06-10 (was "colony_screen_render", a mis-attribution):
+ *               this is the sub-renderer the COMPOSER func_028592 dispatches
+ *               at @asm 0x0285C4 (push 0; call 0x7DED -> file 0x0270D0).  The
+ *               composer itself is colony_screen_render in src/ui/
+ *               colony_screen.c (and func_028592_colony_screen_draw in
+ *               overlay_027BB6_02A92B.c).
  *
- * Signature:  void colony_screen_render(int show_close_button);
+ * Signature:  void colony_paint_colonist_row(int show_close_button);
  * Backdrop via func_02CAC3 @ (0x82,0x78,0x30).  Counts colonists
  * (ctx->population + [0x8D72]) and pre-sums their sprite widths via
  * 0x181F:0xC0E/0x181F:0xA74 + the unit far-array [0x83E]:[0x840][idx*0xC+0x3E].
@@ -1368,7 +1374,7 @@ void colony_draw_roster_strip(int show_button)
  * [owner*0x34 + 0x543F]; both formatted via 0xD1D:0x8FA + 0x181F:0x10A/0x178/
  * 0x11E/0x182/0x128/0x13C and drawn.  Optional close button (0x181F:0xE2).
  * ============================================================================ */
-void colony_screen_render(int show_close_button)
+void colony_paint_colonist_row(int show_close_button)
 {
     struct colony_t far *c = ctx;
     int count, i, sol, tory;

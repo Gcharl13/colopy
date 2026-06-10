@@ -31,9 +31,21 @@ typedef unsigned long  uintptr_t;
 #endif
 
 /* MK_FP — make a far pointer from segment + offset (16:16 real-mode).
- * The Microsoft C runtime provides this as a macro in <dos.h>. */
+ * The Microsoft C runtime provides this as a macro in <dos.h>.
+ * Modern build: ported bodies use MK_FP(0, dgroup_off) for DS-relative
+ * far derefs; segment 0 therefore maps into g_dgroup[] (a raw absolute
+ * address would fault on the host).  A non-zero segment keeps the 16:16
+ * linear value: those sites are heap far pointers in not-yet-modernized
+ * code and must not silently alias DGROUP. */
 #ifndef MK_FP
-#  define MK_FP(seg, off)  ((void far*)(((uint32_t)(seg) << 16) | (uint16_t)(off)))
+#  ifdef _VICEROY_MODERN
+extern unsigned char g_dgroup[];
+#    define MK_FP(seg, off)  ((seg) == 0                                       \
+        ? (void far*)(g_dgroup + (uint16_t)(off))                              \
+        : (void far*)(uintptr_t)(((uint32_t)(seg) << 16) | (uint16_t)(off)))
+#  else
+#    define MK_FP(seg, off)  ((void far*)(((uint32_t)(seg) << 16) | (uint16_t)(off)))
+#  endif
 #endif
 
 /* DGROUP-relative load. In real mode this is just a near pointer with the
