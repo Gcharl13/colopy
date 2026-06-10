@@ -600,6 +600,22 @@ static int shell_loop(void)
             break;
         }
         case SH_MAP:
+            if (k == 1073741886) {               /* F5: save (original format) */
+                extern int save_game_state(const char *);
+                char sp[512];
+                snprintf(sp, sizeof sp, "%s/COLONY00.SAV", g_data);
+                printf(save_game_state(sp) == 0 ? "saved: %s\n"
+                                                : "save FAILED: %s\n", sp);
+            }
+            if (k == 1073741888) {               /* F7: load */
+                extern int load_savegame(const char *);
+                char sp[512];
+                snprintf(sp, sizeof sp, "%s/COLONY00.SAV", g_data);
+                if (load_savegame(sp) == 0) {
+                    printf("loaded: %s\n", sp);
+                    draw_map();
+                } else printf("load FAILED: %s\n", sp);
+            }
             if (k == 'e' || k == 'E') {
                 extern void market_set_active(int power);
                 market_set_active((int16_t)DG16(0x5398));
