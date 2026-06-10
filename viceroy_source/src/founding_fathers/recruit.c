@@ -170,7 +170,7 @@ int ff_is_available(int ff_id, int (*owned_test)(int ff_id))
  * (loaded from NAMES.TXT @FATHERS at startup by func_0749E0).
  * ---------------------------------------------------------------------------- */
 #define FF_MEM_BASE   0x9652   /* word[0]=handle, byte[2]=cat, byte[3..5]=era weights */
-#define FF_MEM2_BASE  0x96E8   /* parallel per-FF word table (selection-screen feed) */
+#define FF_MEM2_BASE  0x96E8   /* 6-word FOUNDING table: [cat*2] = per-cat display value (see congress.c) */
 
 extern struct PowerRecord *g_active_power; /* DGROUP:0x84FC */
 extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if power owns ff_id (body in thunk page) */

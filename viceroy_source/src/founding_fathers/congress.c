@@ -70,11 +70,16 @@ extern int16_t g_1f68;        /* DGROUP:0x1F68 "animate-pick" mode @asm 03C240 c
  *   +0x05 byte  AI weight, era band 2 (year >= 1700)                   (si=4)
  * (-0x69ae == DGROUP 0x9652, since (0x10000-0x69ae)&0xffff == 0x9652.)
  *
- * A PARALLEL 25-entry word table at DGROUP:0x96E8 (== 0x9652+150), stride 6,
- * holds a per-FF word pushed to the screen feed @asm 03C1AE [si-0x6918]
- * (si=ff_id*6). Exact field not yet decoded (likely the FF name string id / portrait id). */
+ * A 6-WORD TABLE at DGROUP:0x96E8 (loaded from NAMES.TXT @FOUNDING section, cnt=6,
+ * by func_0749E0 @asm 0x075109: word[i-0x6918] = overlay_call_1A1F_0B16()).
+ * Entries 0..4 are indexed by FF category in the congress row builder:
+ *   @asm 03C1AE  push [si-0x6918]  where si = cat*2 (NOT ffsel*6 as previously noted).
+ * Entry 5 at DGROUP:0x96F2 is used by func_03BA26 as a standalone text token.
+ * Semantic: per-category value displayed in each congress dialog row (likely the
+ * current bells-required threshold for that category's available FF). BYTE_VERIFIED
+ * 2026-06-10 against overlay_0745F0_077A6A.c @asm 0x075109 and func_03BFD2.asm. */
 #define FF_MEM_BASE   0x9652   /* word[0]=handle, byte[2]=cat, byte[3..5]=era weights */
-#define FF_MEM2_BASE  0x96E8   /* parallel word table (selection-screen feed) */
+#define FF_MEM2_BASE  0x96E8   /* 6-word FOUNDING table: [cat*2] = per-cat display value */
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers. Call sites/args BYTE_VERIFIED; bodies in thunk page where
@@ -274,7 +279,7 @@ void ff_congress_screen(int power)
                     str_fmt_int(*(int16_t *)(FF_MEM_BASE + (unsigned)ffsel * 6), rowbuf); /* @asm 03C186 push [bx-0x69ae]; 03C18E lcall 0x181f,0x16e */
                     str_append(rowbuf);                  /* @asm 03C19A lcall 0x181f,0x178 */
                     str_term_a(rowbuf);                  /* @asm 03C1A6 lcall 0x181f,0x11e */
-                    str_fmt_int(*(int16_t *)(FF_MEM2_BASE + (unsigned)ffsel * 6), rowbuf); /* @asm 03C1AE push [si-0x6918]; 03C1B6 lcall 0x181f,0x16e */
+                    str_fmt_int(*(int16_t *)(FF_MEM2_BASE + (unsigned)cat * 2), rowbuf); /* @asm 03C1AE push [si-0x6918] (si=cat*2, NOT ffsel*6); 03C1B6 lcall 0x181f,0x16e */
                     str_append(rowbuf);                  /* @asm 03C1C2 lcall 0x181f,0x178 */
                     str_fmt_int(g_2e88, rowbuf);         /* @asm 03C1CA push [0x2e88]; 03C1D2 lcall 0x181f,0x16e (global suffix word) */
                     str_term_b(rowbuf);                  /* @asm 03C1DE lcall 0x181f,0x128 */
@@ -327,8 +332,8 @@ resolve_pending:
  *     ff_log_notify (0x191F:0x0FEC file 0x0C5DC), and the 0x191F dialog
  *     primitives (dlg_open/add_row/run/free): call sites + args verified;
  *     bodies in thunk page.
- *   - FF_MEM2_BASE (0x96E8) word and the global suffix word [0x2E88] pushed
- *     into row text: present + indexed; exact field meaning not yet decoded.
+ *   - FF_MEM2_BASE (0x96E8) is now decoded: 6-word FOUNDING table (cat*2 index).
+ *     The global suffix word [0x2E88] pushed into each row is RUNTIME_ONLY.
  *   - g_53d4 (0x53D4), g_1f66 (0x1F66 dialog-active), g_1f68 (0x1F68
  *     "animate-pick" mode): roles inferred from call context; RUNTIME_ONLY values.
  * ============================================================================ */
