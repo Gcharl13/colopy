@@ -1440,12 +1440,19 @@ void func_005D4E_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
  */
 void far *func_005D84_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
+#ifdef _VICEROY_MODERN
+    /* address-of tile in layer [0x164]: modern returns the HOST address
+     * inside the platform region layer so reads AND writes land there */
+    extern uint8_t *viceroy_layer_addr(int layer, int x, int y);
+    return (void far *)viceroy_layer_addr(3, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     /* @asm 0x005D88 mov ax,[0x853a]; imul [bp+8]; add ax,[0x164]; mov dx,[0x166];
      * add ax,[bp+6] -> returns dx:ax = &(map layer 0x164)[width*y + x].
      * Layer 0x164 far ptr lives at DGROUP 0x0164(off)/0x0166(seg); not yet a
      * named global (cf. g_map_layer_15c/160). */
     return (uint8_t far *)(*(void far * near *)0x0164)
          + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
+#endif
 }
 
 /* @asm        0x005D9C..0x005DB9  (29 bytes)  region=load_image

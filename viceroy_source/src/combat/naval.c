@@ -49,19 +49,19 @@
 /* --- DGROUP globals (LOCAL externs — not promoted to globals.h) ----------- */
 /* [0x5392] active/selected unit index; *0x1C => UnitRecord. Written @0x6FBB.
  *          Read here @0x3FE08/@0x3FDE7 (imul ...,0x1c).                  [V]  */
-extern int      g_active_unit;          /* DS:0x5392 */
+extern int16_t  g_active_unit;          /* DS:0x5392 (word) */
 /* [0x9e4e] ship-destination STATUS code (1..9), produced by sibling
  *          func_03FA9C (sole writer @0x3FAA9/@0x3FAE4 etc.), consumed here
  *          @0x3FE16 (`MOV AX,[0x9e4e]`) as the dispatch selector.        [V]  */
-extern int      g_ship_dest_status;     /* DS:0x9e4e */
+extern int16_t  g_ship_dest_status;     /* DS:0x9e4e (word) */
 /* [0x9e50] secondary dest datum pushed to the LANDFALL handler @0x3FE56. [V]  */
-extern int      g_ship_dest_aux;        /* DS:0x9e50 */
+extern int16_t  g_ship_dest_aux;        /* DS:0x9e50 (word) */
 /* [0x5382] bit0 = "currently in Europe / cannot leave" flag, tested @0x3FEA6. */
 extern unsigned char g_in_europe_flag;  /* DS:0x5382 */
 /* [0x5394] active power index; *0x34 indexes a per-power tile-scan table at
  *          0x543e (+offset), where bit 0x80 = "scan done" — used by the
  *          landfall flood-scan loop @0x3FF81..0x3FFEF.                   [V]  */
-extern int      g_active_power;         /* DS:0x5394 */
+extern int16_t  g_active_power;         /* DS:0x5394 (word) */
 
 /* Per-unit-type table at DGROUP:0x5238 (stride 14): the high "movement/role"
  * byte compared to 0x63 (=99) @0x3FE95 to decide whether the just-revealed

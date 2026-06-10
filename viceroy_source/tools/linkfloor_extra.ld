@@ -48,3 +48,12 @@ PROVIDE(g_w53A2 = g_dgroup + 0x53A2);
 PROVIDE(func_006672 = unit_chain_resolve);
 PROVIDE(func_0066BA = unit_chain_next);
 PROVIDE(func_0068AA = unit_chain_unlink);
+
+/* naval.c DS-word globals + tables (byte-exact homes) */
+PROVIDE(g_active_unit      = g_dgroup + 0x5392);
+PROVIDE(g_ship_dest_status = g_dgroup + 0x9E4E);
+PROVIDE(g_ship_dest_aux    = g_dgroup + 0x9E50);
+PROVIDE(g_active_power     = g_dgroup + 0x5394);
+PROVIDE(g_in_europe_flag   = g_dgroup + 0x5382);
+PROVIDE(g_unit_stat        = g_dgroup + 0x5230);
+PROVIDE(g_units            = g_dgroup + 0x3144);

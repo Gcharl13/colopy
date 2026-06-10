@@ -64,6 +64,7 @@ int func_005DF0_logic_sz_40(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  *                 arg2<4 and the tile already holds a valid power, repaint/announce it.
  * @status     BYTE_VERIFIED 2026-06-09 (full body decompiled from VICEROY.EXE)
  */
+extern void far *func_005D84_logic_sz_23(uint16_t x, uint16_t y);
 /* PORTED 2026-06-09 from func_005E18.asm — writes the power-ownership nibble of a map
  * tile. If arg2 (new power index) is < 4 and func_005F82 reports the tile currently
  * holds a valid power (>=0), it first repaints the tile (overlay 0x181F:0x077E with

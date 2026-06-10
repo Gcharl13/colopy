@@ -175,6 +175,19 @@ uint8_t viceroy_layer_byte(int layer, int x, int y)
         return 0;
     return g_layer[layer][o];
 }
+
+/* writable host address of a layer tile (the DOS far-address helpers, e.g.
+ * func_005D84 for layer [0x164], return this in modern mode). Layer 3 is the
+ * platform-owned region buffer; the .MP layers stay read-only. */
+static uint8_t g_layer_scratch;
+uint8_t *viceroy_layer_addr(int layer, int x, int y)
+{
+    long o = (long)y * (int16_t)DG16(0x853A) + x;
+    if (layer == 3 && o >= 0 && o < (long)sizeof g_region_layer)
+        return &g_region_layer[o];
+    g_layer_scratch = 0;
+    return &g_layer_scratch;
+}
 uint8_t wp_feature_rel(int16_t off) { return wp_rel(1, off); }
 uint8_t wp_resfog_rel(int16_t off)  { return wp_rel(2, off); }
 

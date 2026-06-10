@@ -36,6 +36,7 @@ extern void title_screen_render(void);
 extern int  title_screen_update(void);
 
 static const char *g_data = "game_data";
+const char *viceroy_data_dir(void) { return g_data; }
 static ff_font_t   g_font;
 static int         g_have_font;
 ff_font_t *viceroy_font(void) { return g_have_font ? &g_font : 0; }
@@ -257,26 +258,32 @@ static int unit_y(void) { return UREC(0, 1); }
  * AMBIG segment -- composite cite: unlink @units.c, set xy @0x6958 insert,
  * reveal 0x181F:0xDB8 = func_00BD28) */
 extern int naval_classify_dest(int unit, int dest_x, int dest_y);
-extern int func_00BD28_op_sz_34(uint16_t x, uint16_t y);
+extern int naval_move_arrive(int dx, int dy);
+extern void viceroy_set_move_dest(int x, int y);
 
 static void try_move_ship(int dx, int dy)
 {
-    int u = 0;
-    int nx = unit_x() + dx, ny = unit_y() + dy;
-    DG16(0x5392) = 0;                            /* active unit */
-    int r = naval_classify_dest(u, nx, ny);
-    int status = (int16_t)DG16(0x9E4E);
-    if (r == 1) {                                /* plain legal move */
-        UREC(u, 0) = (uint8_t)nx;
-        UREC(u, 1) = (uint8_t)ny;
-        func_00BD28_op_sz_34((uint16_t)nx, (uint16_t)ny);  /* reveal */
-    } else if (status) {
-        static const char *names[10] = {0,"NODOCKS","LANDFALL","LANDFALL2",
-            "SAILHOME","EUROPENOTLEAVE/SAILHOME","SHIPCOMBAT","SHIPCOMBAT",
-            "SHIPLAKE","LANDFIRST"};
-        printf("move: status %d (%s) -- dialog dispatch pending part-2 UI\n",
-               status, names[status] ? names[status] : "?");
+    /* the REAL pipeline: naval_move_arrive computes dest, classifies
+     * (func_03FA9C) and dispatches every status case -- including the
+     * COMMIT for legal moves (its 'abort_move' label = the move path). */
+    if ((int8_t)UREC(0, 6) <= 0) {               /* moves exhausted (thirds) */
+        printf("move: out of moves (SPACE = end turn)\n");
+        return;
     }
+    DG16(0x5392) = 0;                            /* active unit */
+    viceroy_set_move_dest(unit_x() + dx, unit_y() + dy);
+    naval_move_arrive(dx, dy);
+}
+
+static void end_turn(void)
+{
+    /* RECONSTRUCTED turn tick: refill movement (@UNIT move*3 column at
+     * [type*9+0x5234]) -- the real season processors are the next wiring */
+    int n = (int16_t)DG16(0x539C);
+    for (int i = 0; i < n; i++)
+        UREC(i, 6) = DG8(0x5234 + UREC(i, 2) * 9);
+    DG16(0x538A)++;                              /* year tick (display) */
+    printf("turn: movement refreshed\n");
 }
 
 #define TILE 16
@@ -513,6 +520,7 @@ static int shell_loop(void)
             if (k == KEY_DOWN)   { try_move_ship( 0, 1); follow_unit(); draw_map(); }
             if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */
             if (k == 1073741903) { try_move_ship( 1, 0); follow_unit(); draw_map(); } /* right */
+            if (k == ' ')        { end_turn(); draw_map(); }
             break;
         }
     }
@@ -593,15 +601,19 @@ int main(int argc, char **argv)
             /* classifier self-test (headless): W=water, E=land+empty hold,
              * far-E edge = SAILHOME */
             {
-                struct { int dx,dy; const char *what; } T[3] =
-                    {{-1,0,"W water"},{1,0,"E land"},{31,0,"map edge"}};
-                for (int i = 0; i < 3; i++) {
-                    DG16(0x9E4E) = 0;
-                    int r = naval_classify_dest(0, 26+T[i].dx, 36+T[i].dy);
-                    printf("  classify  : %-8s -> ret=%d status=%d\n",
-                           T[i].what, r, DG16(0x9E4E));
-                }
-                UREC(0,0) = 26; UREC(0,1) = 36;   /* leave-notify side effects: re-park */
+                UREC(0,6) = DG8(0x5234 + 0x0D*9);   /* caravel moves (thirds) */
+                printf("  move-test : start (%d,%d) moves=%d\n",
+                       UREC(0,0), UREC(0,1), (int8_t)UREC(0,6));
+                try_move_ship(-1, 0);                /* W into open water */
+                printf("  move-test : after W -> (%d,%d) moves=%d\n",
+                       UREC(0,0), UREC(0,1), (int8_t)UREC(0,6));
+                try_move_ship(0, -1);                /* N onto land (empty hold) */
+                printf("  move-test : after N(land) -> (%d,%d) status=%d\n",
+                       UREC(0,0), UREC(0,1), DG16(0x9E4E));
+                end_turn();
+                UREC(0,0) = 26; UREC(0,1) = 36;      /* re-park for the frame */
+                { extern void tilehead_reset(int,int); extern void tilehead_set(int,int,int);
+                  tilehead_reset(g_map_w, g_map_h); tilehead_set(26,36,0); }
             }
             g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
             draw_map();
