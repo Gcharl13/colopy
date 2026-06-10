@@ -458,5 +458,12 @@ void blit_sprite(int desc, int id, int x, int y)
     const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
     if (s && id >= 0 && id < s->nframes) ss_blit(s, id, x, y);
 }
+/* ICONS.SS header width read for the painters' centering math
+ * (@asm 0x02825D es:[bx+si+0x152] -- per-frame width, stride 12) */
+int sheet_frame_w_icons(int id)
+{
+    const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
+    return (s && id >= 0 && id < s->nframes) ? (int)s->frames[id].w : 0;
+}
 void draw_text(int x, int y, const char *buf) { vid_text_xy(buf, x, y); }
 void enter_screen_view(int bx_screen_id) { (void)bx_screen_id; }

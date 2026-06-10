@@ -549,13 +549,7 @@ static int shell_loop(void)
                          * (no stale frame) and let the PIK band be the scene */
                         memset(vid_framebuffer(), 0, VID_W * VID_H);
                         if (load_bg("COLONY.PIK") == 0) draw_bg();
-                        colony_screen_render(1);
-                        if (g_have_font) {
-                            extern void vid_text_color(int);
-                            extern void vid_text_xy(const char*, int, int);
-                            vid_text_color(0x0F);
-                            vid_text_xy((const char*)&DG8(0x5D46+ci*0xCA+2), 120, 8);
-                        }
+                        colony_screen_render(1);   /* title painter draws name */
                         vid_present();
                         screen = SH_COLONY;
                         break;
@@ -654,6 +648,15 @@ int main(int argc, char **argv)
                 DG8(rec + 2 + k) = DG8(0x5426 + k);
             DG16(0x539E) = 1;                     /* colony count */
             DG16(0x5396) = 0;                     /* active power */
+            DG8(0x543F)  = 1;                     /* power 0 ACTIVE (the title
+                                                   * gate [owner*0x34+0x543F]) */
+            DG16(0x2F5E) = 1000;                  /* treasury (gold display) */
+            {   /* a little stock so the bar's value path is visible:
+                 * Food=25, Lumber=60, Ore=12 (ctx words +0x9A+i*2) */
+                DG16(rec + 0x9A + 0*2) = 25;
+                DG16(rec + 0x9A + 5*2) = 60;
+                DG16(rec + 0x9A + 6*2) = 12;
+            }
         }
         
         
@@ -719,13 +722,7 @@ int main(int argc, char **argv)
                 func_0082DC_logic_sz_118(0);
                 memset(vid_framebuffer(), 0, VID_W * VID_H);  /* see ENTER path */
                 if (load_bg("COLONY.PIK") == 0) draw_bg();
-                colony_screen_render(1);
-                if (g_have_font) {
-                    extern void vid_text_color(int);
-                    extern void vid_text_xy(const char*, int, int);
-                    vid_text_color(0x0F);
-                    vid_text_xy((const char*)&DG8(0x5D46+2), 120, 8);
-                }
+                colony_screen_render(1);   /* title painter draws the name */
                 vid_present();
                 vid_screenshot_ppm("viceroy_colony.ppm");
                 printf("  headless  : colony frame -> viceroy_colony.ppm\n");
