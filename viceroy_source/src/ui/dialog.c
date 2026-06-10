@@ -78,17 +78,18 @@ extern uint8_t g_byte[];
  *                            ;    args into [bx+0..+6] = [0x839E..0x83A4]
  *   }
  *
- * Which arg lands in which dialog_rect[] field depends on the setter's stack
- * layout: RESOLVED 2026-06-10 — segment 0x0C36 is the RESIDENT GRAPHICS
- * LIBRARY at file 0xE760 (rule: seg*16+0x2400).  BUT 0x0C36:0x000A is NOT a
- * rect setter: func_00E76A (505B, full disasm) is the CLIPPED RLE SPRITE
- * BLITTER — control bytes 0xFF=end-of-row, 0xFE=run(count,pixel),
- * 0xFD=transparent skip; sprite records stride 12 ([idx*12+0x36]: data far
- * ptr +0, w +8, h +0xA); sign bit of the sprite index = HORIZONTAL MIRROR
- * (direction word [bp-0x10] = ±1); VRAM bank wrap at 0x7000 (+0x700 seg).
- * The actual rect-setter call site needs re-tracing (the 0x0C36:0x000A
- * attribution was wrong); the blitter itself is the render-fidelity anchor
- * for platform/pik.c / unit_blit.c.
+ * FULLY RESOLVED 2026-06-10: there IS no rect-store.  0x181F:0x254 resolves
+ * (thunk @0x1A844, Type-B resident, payload 0x0C36:0x000A = file 0xE76A) to
+ * func_00E76A = the CLIPPED RLE LAYER/SPRITE BLITTER, and [0x839E] is its
+ * TARGET DESCRIPTOR (the panel block: [bx]/[bx+2] = the clip bounds the
+ * blitter reads at entry; sprite records at [bx+idx*12+0x36]).  So
+ * compute_dialog_rect_from_cursor() = "RLE-decode the dialog backdrop layer
+ * at the cursor-derived geometry, clipped to the 0x839E panel block".  The
+ * geometry formula above is the byte-verified part; the four args are the
+ * blitter's (register ax/bx/dx + 3 stack words, retf 6) parameters.
+ * Blitter semantics: 0xFF=end-of-row, 0xFE=run(count,pixel), 0xFD=transparent
+ * skip; sign bit of sprite index = HORIZONTAL MIRROR; VRAM bank wrap at
+ * 0x7000 (+0x700 seg).  Render-fidelity anchor for platform/pik.c.
  *
  * char_width_cols/char_height_rows come from the GAME.TXT "@width=NN" directive
  * + body line count; their runtime values are NOT known statically. So the
