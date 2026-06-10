@@ -106,16 +106,18 @@ extern uint8_t g_mode_flag_5383;
 /* DGROUP:0x5387 -- secondary mode/interrupt flag; bit 0x80 @asm 0x03F6C5. */
 extern uint8_t g_mode_flag_5387;
 
-/* DGROUP:0x53D2 -- per-turn index compared to the resolved confrontation index
- * `cmp [bp-0x38],[0x53d2]` (@asm 0x03EF53) and `cmp [0x5394],[0x53d2]`
- * (@asm 0x040F39). Role: "index currently being stepped". not yet decoded. */
-extern int16_t g_step_index_53D2;
+/* DGROUP:0x53D2 -- RESOLVED 2026-06-10: the INTERVENTION-ALLY power index
+ * (byte-verified across king/ref.c func_03E442, meeting.c entity-name rename
+ * [0x53D2]->[0x2E68], and unit_ai_leaf's intervention +50% gate).  The
+ * compares here skip diplomatic consequences for the ally power. */
+extern int16_t g_intervention_ally_53D2;
 
 /* DGROUP:0x53A2 -- word seeded into a local at @asm 0x03F3AA (a default flag).
- * DGROUP:0x53A6 -- byte read as a small count/bonus (@asm 0x03F005 +5;
- *                  0x03F0B2 inc; 0x03F351 used as a roll input). not yet decoded. */
+ * DGROUP:0x53A6 -- RESOLVED: this is g_difficulty_53A6 (0..4), used here as
+ *   the piracy catch-chance bound (random(0,100) < difficulty+1 @0x03F0B2)
+ *   and a roll input @0x03F351 -- see the war-declaration block below. */
 extern int16_t g_word_53A2;
-extern uint8_t g_byte_53A6;
+extern uint8_t g_byte_53A6;   /* == g_difficulty_53A6 */
 
 /* DGROUP:0x1DD6 -- scratch "current order target" word; set to 0xFFFF as a
  * sentinel at the head/tail of the order step (@asm 0x040E32 / 0x040FCD). */
@@ -124,10 +126,12 @@ extern uint16_t g_word_1DD6;
  * matched-unit path (@asm 0x040F50). */
 extern int16_t g_selected_unit_5392;
 
-/* DGROUP:0x2F76 -- per-power constants table, stride 16 (`shl bx,4`); byte +0
- * read and tripled at entry (@asm 0x03ED32..0x03ED41 -> [bp-0x3e] = c*3). The
- * tripled value caps an order priority at 3 (@asm 0x03EDCC). not yet decoded. */
-extern uint8_t g_power_const_2F76[/* power */][16];
+/* DGROUP:0x2F76 -- RESOLVED 2026-06-10: NOT per-power -- this is the TERRAIN
+ * table (base 0x2F74, stride 16; row = terrain type) attribute column +2 =
+ * the MOVEMENT-COST byte (writer func_0745F0 = page1A_names_subloader; the
+ * column map is +2 move cost, +3 defense @0x2F77).  The entry code reads the
+ * unit's TILE TERRAIN cost and triples it as the order-priority cap. */
+extern uint8_t g_terrain_movecost_2F76[/* terrain */][16];
 
 /* DGROUP:0x5236 / 0x5230 -- per-unit-type tables, stride 14 (the `*14` build at
  * @asm 0x03EED4..0x03EEE2 and 0x03F64D..0x03F659). 0x5236[type*14] is a flag
@@ -137,12 +141,15 @@ extern uint8_t g_power_const_2F76[/* power */][16];
 extern uint8_t g_unittype_tbl_5236[/* type */][14];
 extern uint8_t g_unittype_tbl_5230[/* type */][14];
 
-/* DGROUP:0x8D4A / 0x8D52 -- overlay-resident pointers/handles consumed by the
- * AI-controlled "increment attack-counter" path (@asm 0x03F03D mov bx,[0x8d4a];
- * inc [bx+si+0xb]) and the trade-route helpers (push [0x8d52] @asm 0x03EF98).
- * not yet decoded. */
-extern uint16_t g_ptr_8D4A;
-extern uint16_t g_word_8D52;
+/* DGROUP:0x8D4A / 0x8D52 -- RESOLVED 2026-06-10:
+ *   [0x8D4A] = near ptr to the CURRENT NATIVE SETTLEMENT record (the same
+ *     pointer effects.c documents); +0xB + owner*2... the increment
+ *     `inc [bx+si+0xb]` is the per-settlement per-power ATTACK TALLY word
+ *     (raids remembered against each power).
+ *   [0x8D52] = the CURRENT NATIVE TRIBE index (used as the alarm/census row
+ *     everywhere: native_village_trade, sweep B of func_04CC50, etc). */
+extern uint16_t g_settlement_ptr_8D4A;
+extern uint16_t g_tribe_index_8D52;
 
 /* ----------------------------------------------------------------------------
  * Cross-page leaves and overlay helpers (reached via RTLink far-thunks).
@@ -258,7 +265,7 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
     occ2 = ovly_relation_query_826(0, tile_x, tile_y); /* 0x181F:0x78C; args (y,x) */
     /* @asm 0x03ED32 shl bx,4; mov al,[bx+0x2f76]; (al*3) -> [bp-0x3e] = priority */
     {
-        uint8_t c = g_power_const_2F76[occ2 & 0xFFFF][0x00]; /* @asm 0x03ED35 */
+        uint8_t c = g_terrain_movecost_2F76[occ2 & 0xFFFF][0x00]; /* @asm 0x03ED35 */
         priority = (int16_t)c * 3;                            /* @asm 0x03ED3D..0x03ED41 */
     }
 
@@ -396,7 +403,7 @@ block_4ec:
      * When game-mode bit0 set AND occupant index == g_step_index AND occ_unit<4:
      *   if occ_unit's controller flag is 0 (AI) -> goto done; else fall to 0x514. */
     if (g_game_mode_flags_5382 & 1) {                         /* @asm 0x03EF4C */
-        if (actor_owner == g_step_index_53D2) {               /* @asm 0x03EF53 cmp [bp-0x38],[0x53d2] */
+        if (actor_owner == g_intervention_ally_53D2) {               /* @asm 0x03EF53 cmp [bp-0x38],[0x53d2] */
             if (occ_owner < 4) {                              /* @asm 0x03EF5B */
                 if (occ_owner >= 0 &&                         /* @asm 0x03EF61 */
                     g_ai_personality_543F[occ_owner][0x00] == 0) /* @asm 0x03EF6A */
@@ -421,7 +428,7 @@ block_4ec:
         /* @asm 0x03EF8C imul bx,unit,0x1c; mov al,[bx+0x3147]&0xf; push;
          *      push [0x8d52]; lcall 0x181F:0x30C -> market price/qty (mkt) */
         mkt = ovly_target_query_826(g_units_3144[unit_index][0x03] & 0x0F,
-                                    g_word_8D52, 0);          /* @asm 0x03EF9C */
+                                    g_tribe_index_8D52, 0);          /* @asm 0x03EF9C */
         if (mkt < 0x4B && actor_owner < 4 &&                  /* @asm 0x03EFA4/0x03EFA9 */
             g_ai_personality_543F[actor_owner][0x00] == 0) {  /* @asm 0x03EFB3 */
             /* @asm 0x03EFBA relation probe; test al,4; if clear, raise prompt */
@@ -776,7 +783,7 @@ int16_t ai_unit_order_step(int16_t unit_index)
          * @asm 0x040F39 mov ax,[0x53d2]; cmp [0x5394],ax; jne 0x40f74
          * @asm 0x040F42 cmp [bx+0x3146],0x12; jne 0x40f74 -- type==0x12 gate */
         if (g_game_mode_flags_5382 & 1) {
-            if (g_human_player_index_5394 != g_step_index_53D2) goto finalize; /* @asm 0x040F40 */
+            if (g_human_player_index_5394 != g_intervention_ally_53D2) goto finalize; /* @asm 0x040F40 */
             if (g_units_3144[unit_index][0x02] != 0x12) goto finalize;          /* @asm 0x040F4B */
         }
 
