@@ -730,10 +730,12 @@ int16_t ai_unit_order_step(int16_t unit_index)
         /* ---- AI sub-path (@asm 0x040E81..0x040EA2) ----
          * si=ax(target); push [si+0xbe]; push [si+0xb4]; si=bx(unit);
          * lcall 0x191F:0x44E; if AX!=0 clear unit order byte [+0x08]=0.
-         * The target record base is the value returned by 0x1A1F:0x210 used as a
-         * byte index; +0xb4/+0xbe are a coordinate pair in that record. */
-        int16_t gx = 0; /* [target+0xb4] -- target-record base not yet decoded */
-        int16_t gy = 0; /* [target+0xbe] */
+         * RESOLVED 2026-06-10: 0x1A1F:0x210 returns a DIRECTION index 0..7,
+         * and [dir+0xB4]/[dir+0xBE] are the canonical 8-neighbour dx/dy
+         * delta tables at DGROUP 0x00B4/0x00BE (same tables as func_056A10,
+         * func_025900, and the load_image kernels). */
+        int16_t gx = 0; /* dx[dir]  (DGROUP 0xB4 + dir) */
+        int16_t gy = 0; /* dy[dir]  (DGROUP 0xBE + dir) */
         if (ovly_path_step_191F_44E(gy, gx) != 0) {           /* @asm 0x040E91 */
             g_units_3144[unit_index][0x08] = 0;               /* @asm 0x040E9D */
         }
@@ -742,10 +744,10 @@ int16_t ai_unit_order_step(int16_t unit_index)
          * bx=ax(target); push (target.[+0xbe] + unit.map_y[+0x01]) as y;
          *                push (target.[+0xb4] + unit.map_x[+0x00]) as x;
          * push unit; lcall 0x1A1F:0x142 -> ai_eval_unit (func_03ECF0).
-         * (target-record base for +0xb4/+0xbe is not yet decoded; the +unit-coord math is
-         *  byte-clear at @asm 0x040EAF/0x040EBD.) */
-        int16_t y = 0 /* target.[+0xbe] */ + g_units_3144[unit_index][0x01];
-        int16_t x = 0 /* target.[+0xb4] */ + g_units_3144[unit_index][0x00];
+         * RESOLVED: dir-step -- y = dy[dir] + unit.y, x = dx[dir] + unit.x
+         * (delta tables DGROUP 0xB4/0xBE; @asm 0x040EAF/0x040EBD). */
+        int16_t y = 0 /* dy[dir] */ + g_units_3144[unit_index][0x01];
+        int16_t x = 0 /* dx[dir] */ + g_units_3144[unit_index][0x00];
         ovly_eval_unit_thunk_1A1F_142(unit_index, x, y);      /* @asm 0x040EC7 -> 0x03ECF0 */
     }
 
@@ -843,7 +845,8 @@ finalize8:
  *    via the string rule (0x13A0=CANNOTATTACK, 0x13AD=WHACKINDIANS,
  *    0x13BA=HAVETREATY, 0x13C5=SNEAK, 0x13CB=CANCELPEACE, 0x13D7=DECLAREWAR).
  *  - Target-record base for the +0xb4/+0xbe coordinate pair (func_040E22 @asm
- *    0x040E83/0x040EA6, returned by 0x1A1F:0x210) is not yet decoded -- modeled as 0 inputs.
+ *    0x040E83/0x040EA6, returned by 0x1A1F:0x210) RESOLVED: a DIRECTION
+ *    index 0..7 into the 0xB4/0xBE delta tables -- modeled as 0 inputs.
  *  - The per-(owner,occupant) relation byte array at DGROUP base (si - 0x77c4 /
  *    -0x77b8) used for war/treaty/sneak bookkeeping: stride 0x13C, indexed
  *    [occ*0x13c + owner] -- byte-clear addressing, table CONTENTS not yet decoded.
