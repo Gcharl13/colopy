@@ -22,6 +22,10 @@ byte-verified engines, asserting:
   - SAVE/LOAD: original COLONIZE format round-trip; PowerRecord window +
     year byte-identical after save -> trash -> load
 
+Soak: --smoke=500 passes (year 1992; REF 228 units split 131/44/21/32
+reg/cav/mow/art -- the byte-verified arm-deficit ratios holding across
+500 iterations; no faults, no leaks observed).
+
 ## With the user's own game files (`game_data/` or $VICEROY_DATA)
 
 Drop the original install's files next to the binary (NOTHING is committed;
