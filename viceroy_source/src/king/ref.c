@@ -106,6 +106,16 @@ void king_ref_init(void)
  * This is why a single Boston Tea Party at low rebel sentiment does NOT grow
  * the REF: one event adds only d*8+10 points (≥ era multiplier), far short of
  * the 1800-point threshold for a unit.
+ *
+ * +0x22 IDENTITY ENRICHED 2026-06-10: the same dword is the king's CROWN-
+ * REVENUE pool, fed by THREE byte-verified writers:
+ *   1. this per-turn sentiment increment (d*8+10, era-doubled)   @0x03E1B5
+ *   2. TAX COLLECTED on every Europe sale: king[+0x22] += gross*tax%/100
+ *      (market sell executor func_032914 @0x032A92 — see market/pricing.c)
+ *   3. BOYCOTT back-taxes: += ask*500 on a boycott lift (func_03334E
+ *      @0x033413) and the boycott-accept path
+ * REF units are "bought" from this pool at 1800/unit — i.e. the more tax the
+ * crown actually collects, the faster the Royal Expeditionary Force grows.
  * ============================================================================ */
 extern int      revolution_flag_5382(void);    /* DGROUP:0x5382 bit 0 = at war */
 extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */

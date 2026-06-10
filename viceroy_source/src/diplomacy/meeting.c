@@ -206,7 +206,11 @@
 extern uint8_t rel_query(int self, int other);                 /* 0x181F:0x0A38 -> file 0x07F34 (resident; thunk-fix 2026-06-10) (bits 0x02/0x20/0x40/0x80) */
 extern void    rel_apply_event(int mask, int a, int b);        /* 0x181F:0x0A06 -> file 0x07F96 (resident) (SET masked treaty bit) */
 extern void    rel_clear_event(int mask, int a, int handle);   /* 0x181F:0x0A10 -> file 0x08000 (resident) (CLEAR masked bit) */
-extern int     rel_event_query_other(int self);                /* 0x181F:0x0A1A -> file 0x080C8 (resident) (returns a handle for power) */
+extern int     rel_event_query_other(int self);                /* 0x181F:0x0A1A -> file 0x080C8 BYTE_VERIFIED 2026-06-10: ENTITY
+                                                                * NAME HANDLE: tribes return word[0x8CFA+a*6]; powers return
+                                                                * word[0x8D0A+a*2] EXCEPT after revolution ([0x5382]&1): the
+                                                                * rebel power [0x5398] returns [0x2E66] and the ally [0x53D2]
+                                                                * returns [0x2E68] (the post-independence renames). */
 extern int     power_handle(int power_idx);                    /* 0x181F:0x09A4 -> file 0x08110 (resident) */
 extern void    power_set_slot(int handle, int slot);           /* 0x181F:0x0438 -> func_06C23C (ovl 23) (UI/role slot setter) */
 extern void    ui_set_text_arg(int ds_seg, void *str, int idx);/* 0x181F:0x0416 -> func_06C220 (ovl 23) (format %arg substitution) */

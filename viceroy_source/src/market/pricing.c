@@ -399,26 +399,99 @@ void cargo_table_load(void)
 }
 
 /* ============================================================================
- * Trade primitives.  Treasury update is byte-verified (32-bit SUB/SBB on gold
- * @+0x2A: raw bytes 29 47 2a 19 57 2c @ file 0x352CA). Tax via PowerRecord +0x01.
+ * Trade primitives — COIN FORMULAS DECODED 2026-06-10 (BYTE_VERIFIED).
+ * ----------------------------------------------------------------------------
+ * The "0x033F65 jump-table wall" is gone: the price leaves and both executors
+ * were located via the RTLink thunk rule and hand-decompiled from the
+ * per-function dumps.  (The old note blaming 0x008110 described power_handle.)
  *
- * The price-level -> coin VALUE curve (the bid/ask the player actually pays /
- * receives, and the ask = bid + (@CARGO burden + 1) spread) is computed inside
- * the trade dialog, in a region the re-segmenter could not linearly disassemble
- * (the jump-table at 0x033F65 truncates page_04 into a data blob; the per-func
- * pass also misses the body around 0x352CA). The leaf at the price-coin thunk
- * 0x181F:0x09A4 -> file 0x008110 is only a 14-byte difficulty clamp, not the
- * full curve. So the exact coin formula remains *** [not yet decoded] — do NOT fabricate it.
+ * PRICE LEAVES (overlay 4, exposed through the 0x36890/0x36813 trampolines):
+ *   ASK (player BUYS at)  — func_030566 (0x191F:0xC3E, 42B):
+ *       max(0, price_level[good] + CARGO(good,4))     ; +0x4C level byte plus
+ *                                                     ; the @CARGO BURDEN column
+ *                                                     ; (byte[0x9700+good*9])
+ *   BID (player SELLS at) — func_030590 (0x191F:0x9EA, ~26B):
+ *       max(0, price_level[good] - 1)                 ; == the 0x7B44 display row
+ *   So ask == bid + burden + 1 exactly as the spread note predicted.
+ *   Level step helpers: func_032262 level++ / func_032278 level-- (floor 0).
+ *
+ * SELL EXECUTOR — func_032914 (file 0x032914..0x032DAB, ENTER 0x64):
+ *   qty = 100 (a full hold); interactive partial sales prompt via the number
+ *   dialog 0x191F:0x436 (key 0xFE6) clamped to [..,100].
+ *   gross = sell_value(unit, good, qty)                 ; func_03245C below
+ *   tax   = gross * king.tax%[+0x01] / 100              ; 32-bit lmul 0xD1D:0xF60
+ *                                                       ;   + ldiv 0xD1D:0xEC6
+ *   net   = gross - tax
+ *   gold_credit(active_power, (long)net)                ; 0x181F:0xABA
+ *   king[+0x22] (dword) += tax     ; *** the CROWN-REVENUE accumulator: the
+ *                                  ; SAME dword king_ref_buildup consumes at
+ *                                  ; 1800/unit (king/ref.c) — REF growth is
+ *                                  ; funded by taxes actually collected! ***
+ *   king[+0x26] (dword) += net     ; lifetime trade-earnings stat
+ *   then the post-sale hook (tramp 0x36818 -> func_03234A) returns the goods
+ *   to the EU pool (mirror of the buy-side mutation below).
+ *
+ * SELL VALUE — func_03245C (0x191F:0xDC6, 90B):
+ *   slot = cargo_find(unit, good)                       ; 0x181F:0xAEC; also
+ *                                                       ;   sets [0x8DC4] = qty
+ *   if ([0x8DC4] > cap) { consume excess via 0x181F:0xD58; [0x8DC4] = cap; }
+ *   return bid_price(slot_good) * [0x8DC4]              ; (level-1) x qty
+ *
+ * BUY-SIDE MARKET MUTATION — func_0322D0 (goods leave Europe):
+ *   for p in 0..3:  word[0x8864 + p*0x9E + good*2] -= helper(p) +
+ *                       (qty << CARGO(good,8))          ; VOLATILITY shift!
+ *   king[+0xBC + good*4] (dword) -= qty                 ; per-good value base
+ *   king[+0xFC + good*4] (dword) -= qty                 ; euro_supply (drift's
+ *                                                       ;   Phase-0 source)
+ *   cost = ask_price(good) * qty                        ; tramp 0x36890
+ *
+ * BOYCOTT LIFT — func_03334E (the CLEAR rule tax_apply.c lacked):
+ *   AI / power>=4:  king[+0x20] = 0  (whole mask cleared, free)  @0x03336E
+ *   human: back_tax = ask_price(good) * 500              ; imul 0x1F4 @0x0333AF
+ *     confirm dialog key 0x1033; insufficient-gold key 0x103A
+ *     gold -= back_tax;  king[+0x22] += back_tax         ; feeds the crown pool
+ *     king[+0x20] &= ~(1 << good)                        ; @0x033423 CLEAR bit
+ *
+ * EUROPE DOCK SIBLINGS (same overlay, decoded for completeness):
+ *   func_0350A0  PURCHASE dialog: 6-row table type@0x978D/price@0x9790
+ *     (stride 6); type 0x0B = ARTILLERY gets price += king[+0x1E]*100 and
+ *     king[+0x1E]++ on purchase (the classic +100 escalator); ships
+ *     (types 0x0D..0x12) spawn with unit[+0x314C]=0, land units =1; gold
+ *     SUB/SBB @file 0x0352CA (the long-cited treasury anchor lives HERE).
+ *   func_034DD4  RECRUIT price:  base = (king[+6] + difficulty + 7) * 20;
+ *     price = base - (base - max(base/5,100)) * king[+0x2E] / (king[+0x30]+1),
+ *     floor 10; stored in dword [0x9CB0].  king[+6] = recruits-so-far
+ *     escalator; +0x2E/+0x30 = crosses accumulated / needed (price falls as
+ *     crosses build).  Free-recruit modes (args) zero it.
+ *   func_03471E  TRAIN dialog: specialist table 0x8EA4 stride 8 (+0 name
+ *     handle, +4 price>0 = trainable), sorted (0x191F:0xED0), 20 rows/page,
+ *     options grayed (0x191F:0x1B6) when gold < price.
  * ============================================================================ */
-extern long market_good_value(int good, int qty);   /* [not yet decoded] trade-dialog-resident */
+
+/* ASK/BID price leaves — byte-exact reimplementations of func_030566/030590. */
+int market_ask_price(int good)   /* func_030566: buy price */
+{
+    int v = (int)(signed char)CARGO(good, 4)            /* @asm 0x030575 [good*9-0x6900] */
+          + (int)(signed char)PR_PRICE_LEVEL(g_market, good); /* @asm 0x030583 [bx+si+0x4c] */
+    return v < 0 ? 0 : v;                               /* @asm 0x030589 jns/sub ax,ax */
+}
+
+int market_bid_price(int good)   /* func_030590: sell price */
+{
+    int v = (int)(signed char)PR_PRICE_LEVEL(g_market, good) - 1; /* @asm 0x03059C/0x0305A0 dec */
+    return v < 0 ? 0 : v;                               /* @asm 0x0305A1 jns/sub ax,ax */
+}
 
 long market_buy(int good, int qty)
 {
     if (boycott_is_active(good) || qty <= 0) return 0;
     {
-        long value = market_good_value(good, qty);      /* [not yet decoded] */
-        PR_GOLD(g_market) -= value;                      /* @asm 0x352CA SUB/SBB (29 47 2a 19 57 2c) [V] */
-        PR_VOL_ACCUM(g_market, good) -= (short)qty;      /* buy lowers traffic accumulator */
+        long value = (long)market_ask_price(good) * qty; /* ask x qty (func_0322D0 path) */
+        PR_GOLD(g_market) -= value;                      /* gold debit */
+        /* per-good EU pools shrink: king[+0xBC]/[+0xFC] dwords -= qty
+         * @asm 0x03231C/0x032324 (func_0322D0); the 0x8864 per-power rows
+         * also drop by qty << CARGO(good,8).                                */
+        PR_VOL_ACCUM(g_market, good) -= (short)qty;
         return value;
     }
 }
@@ -427,9 +500,14 @@ long market_sell(int good, int qty)
 {
     if (boycott_is_active(good) || qty <= 0) return 0;
     {
-        long value = market_good_value(good, qty);      /* [not yet decoded] (net of tax @+0x01) */
-        PR_GOLD(g_market) += value;
-        PR_VOL_ACCUM(g_market, good) += (short)qty;      /* sell raises traffic accumulator */
-        return value;
+        long gross = (long)market_bid_price(good) * qty; /* func_03245C: (level-1) x qty */
+        long tax   = gross * (long)(unsigned char)((unsigned char *)g_market)[0x01] / 100;
+                                                         /* @asm 0x032A4A..0x032A70 lmul/ldiv */
+        long net   = gross - tax;                        /* @asm 0x032A73 neg-sub */
+        PR_GOLD(g_market) += net;                        /* via 0x181F:0xABA gold credit */
+        /* crown pool & stats: king[+0x22] += tax (REF feed!); [+0x26] += net
+         * @asm 0x032A92/0x032A9C (func_032914).                              */
+        PR_VOL_ACCUM(g_market, good) += (short)qty;
+        return net;
     }
 }
