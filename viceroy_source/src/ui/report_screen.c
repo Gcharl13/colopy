@@ -835,9 +835,10 @@ void report_congress(int player)
         if (*(int16_t far *)(g_powerrec_84FC + PR_TREASURY) >= 0) { /* @asm 0x037A7E +0x12 */
             str_begin(buf);                              /* @asm 0x037A8B 0x011E */
             n = *(int16_t far *)(g_powerrec_84FC + PR_TREASURY); /* @asm 0x037A97 */
-            /* str_cat(buf, <name-by-idx string>): @asm 0x037AA2 indexes a string
-             * table by (idx*6 + small constant) shl-based; the exact table base
-             * is [not yet decoded]. Body ANCHOR (per-row text). */
+            /* str_cat(buf, <name-by-idx string>): @asm 0x037AA2 = push
+             * word[0x9652 + idx*6] -- FF_MEM_BASE (congress.c): the FOUNDING
+             * FATHER name handle, idx = king[+0x12] (the pending/last-acquired
+             * FF slot, effects.c).  RESOLVED 2026-06-10. */
             str_end(buf);                                /* @asm 0x037AB6 0x0128 */
         }
     } else if (!(g_flags_5382 & 2)) {            /* @asm 0x037AC0 TEST [0x5382],2 / JNE */
@@ -1202,8 +1203,12 @@ void report_naval(int player)
  *
  * The per-row strings (slots [0x2E74]/[0x2E78]/[0x2E7A]/[0x2E7C]/[0x2E7E]/
  * [0x2E80]) are LABELS.TXT "FOREIGN AFFAIRS REPORT" headers; the per-power
- * stat arrays [bx-0x6D68]/[bx-0x6BB2]/[bx-0x6BF0]/[bx-0x6BE4] hold the
- * diplomatic-standing values [not yet decoded: which is which].
+ * stat arrays RESOLVED 2026-06-10 via the AI-census writer
+ * (overlay_040C1E_04458A.c):
+ *   [bx-0x6D68] = 0x9298 colony count        (census @0x042548)
+ *   [bx-0x6BB2] = 0x944E avg colony wealth   (finance sum / colonies @0x042716)
+ *   [bx-0x6BF0] = 0x9410 population points   (settled units + colony pop)
+ *   [bx-0x6BE4] = 0x941C finance/cargo word  (census @0x042245)
  *
  * args: player = [bp+6]
  * ============================================================================ */
