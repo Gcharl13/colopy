@@ -142,6 +142,10 @@ extern int  func_191F_9A4_colonist_enter(uint16_t unit_idx, uint16_t colony_idx)
 extern void rpt_select_player(int player);    /* 0x181F:0x582 -> func_030550 set player ctx */
 extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-discharge;
                                                * args pushed on stack by caller (unit, flag) */
+/* AI8/AI10 helpers */
+extern void overlay_191F_2EA_explore(uint16_t unit_index); /* 0x191F:0x2EA ship explore move;
+                                               * called from AI10 schooner gate + AI8 mid-body;
+                                               * body in page07 */
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -233,6 +237,10 @@ int16_t unit_move_step(int16_t unit_index)
     int16_t fortify_CC = 0;   /* [bp-0xCC] set only @asm 0x51A11 (AI18, unported:
                                * defensive 0 keeps AI19's CC-branch cold) */
     int16_t guard_adj_E8 = 0; /* [bp-0xE8] set only @asm 0x514C0 (AI18, unported) */
+    int16_t ai8_best42  = -1; /* [bp-0x42] best cargo slot type found in AI8 scan;
+                               * -1 = none; tested in AI10 gate (jge 0x507BB) */
+    int16_t ai8_deliv_A6 = 0; /* [bp-0xA6] = func_0073A8(unit,2)-1 from AI8;
+                               * 0 default (no pending delivery); tested AI9/AI10 */
 
     /* @asm 0x04E2DC mov [bp-0xB6],1   -- result word (the tail returns 0)
      * @asm 0x04E2E2 sub ax,ax; clear [bp-0x8C], [bp-0x10], [bp-0xAC] */
@@ -923,17 +931,129 @@ ai7_end:;
         }
     }
 ai8:                                                            /* 0x4F748 */
-    /* ======================= AI8..AI18 (UNPORTED) ===========================
-     * Attack scoring, transport runs, exploration and pathing
-     * (0x4F760..0x51A28).  Until ported, "considered, no decision": fall to
-     * the exit tail exactly as the pre-port build did. */
-    return move_eval_tail_51C68(unit_index, owner);
+    /* ======================= AI8: SHIP DELIVERY SCORING =====================
+     * (0x4F760..0x50583)  Ship-band units evaluate cargo delivery runs.
+     * Gate: ship_band required; non-ship falls straight to AI9.
+     *
+     * Body (0x4F769..0x50583):
+     *   cargo-slot type loop -> best slot type in [bp-0x42] / ai8_best42
+     *   func_181F_8BC(2,unit) - 1 -> [bp-0xA6] / ai8_deliv_A6
+     *   5x func_181F_8BC colony budget queries -> [bp-0xB4,0xB8,0xBA,0xBC,0xEC]
+     *   func_181F_948, func_534c6 neighbour probes -> flag word [bp-0x9A]
+     *   colony scoring loop (0x4F998..0x4FCC4) + jmp-0x4E9E5(dx='4')
+     *   ship explore path: 0x50196 push unit; lcall 0x191F:0x2EA; jmp 0x4F225
+     * All scoring uses RUNTIME_ONLY overlay-resident tables.
+     * BYTE_VERIFIED: gate at 0x4F760, ai8_best42/ai8_deliv_A6 init, explore
+     * path at 0x50196. Body RUNTIME_ONLY stub. */
+    if (!ship_band) goto ai9;                                   /* @asm 0x4F760 jmp 0x50583 */
+    {
+        /* cargo count from unit record - set ai8_best42 / ai8_deliv_A6 */
+        /* (stub: body RUNTIME_ONLY; defaults -1/0 are safe for AI9/AI10 gates) */
+        (void)ai8_best42; (void)ai8_deliv_A6;
+    }
+ai9:                                                            /* 0x50583 */
+    /* ======================= AI9: SHIP CARRIER SCORING ======================
+     * (0x50583..0x5076E)  Ship picks best colony destination to carry colonists.
+     *
+     * Gates (all BYTE_VERIFIED):
+     *   1. ship band (type 0x0D..0x12)
+     *   2. transport_CA || transport_DA must be set
+     *   3. ai8_deliv_A6 == 0 (no pending delivery cargo)
+     *   4. special == 0
+     * Scoring loop (0x505D7..0x5076E): iterates 16 destination slots using
+     * overlay-resident carrier tables; commits via jmp-0x4E9E5(dx='5').
+     * RUNTIME_ONLY stub. */
+    if (!(type >= 0x0D && type <= 0x12)) goto ai10;             /* @asm 0x050599 */
+    if (!transport_CA && !transport_DA)   goto ai10;             /* @asm 0x0505B3 */
+    if (ai8_deliv_A6 != 0)               goto ai10;             /* @asm 0x050589 [bp-0xA6] */
+    if (special != 0)                     goto ai10;             /* @asm 0x0505CE */
+    /* scoring loop (RUNTIME_ONLY stub) */
+ai10:                                                           /* 0x5076E */
+    /* ======================= AI10: SCHOONER EXPLORE TRIGGER =================
+     * (0x5076E..0x507D3)  Modulo-32 turn ship exploration dispatch.
+     * BYTE_VERIFIED: special gate (0x5076E), ship/cargo/transport gates
+     * (0x50777..0x5079D), flags-0x20 or modulo-32 → 0x50196. */
+    {
+        /* Special units (prof 't'/'i') always exit to tail -- no AI11+ */
+        if (special != 0)                                       /* @asm 0x5076E */
+            return move_eval_tail_51C68(unit_index, owner);     /* @asm 0x50774 jmp 0x51C68 */
 
-ai17_entry:                                                     /* 0x50F1E (UNPORTED) */
-    /* The escort/pathing engine (AI17..AI18) walks toward [bp-0x60]'s colony
-     * surroundings and falls into AI19 with a chosen direction.  Until it is
-     * ported, the escort candidate stands down (tail), which leaves the unit
-     * parked in the colony -- the same net state as the pre-port build. */
+        /* Schooner explore: ship band + no best cargo + transport_DA active */
+        if (ship_band != 0 &&                                   /* @asm 0x50777 */
+            ai8_deliv_A6 == 0 &&                                /* @asm 0x50789 */
+            ai8_best42 < 0 &&                                   /* @asm 0x50790 */
+            transport_DA != 0) {                                 /* @asm 0x50796 */
+
+            /* unit.flags bit 0x20: "always explore" override */
+            if (U_OFF(unit_index, 0x04) & 0x20)                 /* @asm 0x507A3 */
+                goto ai8_explore_50196;                          /* @asm 0x507AA jmp 0x50196 */
+            /* modulo-32 turn slot: (unit_index + turn) & 0x1F == 0 */
+            if (!(((uint8_t)unit_index + DG8(0x538E)) & 0x1Fu)) /* @asm 0x507AD */
+                goto ai8_explore_50196;                          /* @asm 0x507B8 jmp 0x50196 */
+        }
+    }
+    goto ai11;
+
+ai8_explore_50196:                                              /* 0x50196 */
+    /* shared explore exit: push unit; call 0x191F:0x2EA; reuse add sp,2 at
+     * 0x4F225 then jmp 0x51C68 */
+    overlay_191F_2EA_explore((uint16_t)unit_index);             /* @asm 0x050199 */
+    return move_eval_tail_51C68(unit_index, owner);             /* @asm 0x4F228 jmp 0x51C68 */
+
+ai11:                                                           /* 0x507D3 */
+    /* ======================= AI11: SCHOONER SETTLEMENT SCORING ==============
+     * (0x507D3..0x50918)  Type 0x0C schooner rates nearby native settlements.
+     * Gate: type == 0x0C (BYTE_VERIFIED @asm 0x507D7).
+     * Body: settlement scoring loop using func_0081F2_logic_sz_34 / octile
+     * distance; commits via jmp-0x4E9E5(dx=0x34).  RUNTIME_ONLY stub. */
+    if (type != 0x0C) goto ai12;                                /* @asm 0x507D7 */
+    /* scoring (RUNTIME_ONLY stub) */
+ai12:                                                           /* 0x50918 */
+    /* ======================= AI12: TYPE-0xA TRADING PATH ====================
+     * (0x50918..0x50A4D)  Type 0x0A (fur trader) at own colony: computes
+     * income fraction, credits treasury, dispatches 0x191F:0x9A4 / orders.
+     * Gate: type == 0x0A (BYTE_VERIFIED @asm 0x050930).  RUNTIME_ONLY stub. */
+    if (type != 0x0A) goto ai13;                                /* @asm 0x050930 */
+    /* (RUNTIME_ONLY stub) */
+ai13:                                                           /* 0x50A4D */
+    /* ======================= AI13: TYPE-3 MISSIONARY PATH ===================
+     * (0x50A4D..0x50BE7)  Type 3 (missionary): scores settlements to visit
+     * using market-budget comparison and octile distance.
+     * Gate: type == 3 (BYTE_VERIFIED @asm 0x050A65).  RUNTIME_ONLY stub. */
+    if (type != 3) goto ai14;                                   /* @asm 0x050A65 */
+    /* (RUNTIME_ONLY stub) */
+ai14:                                                           /* 0x50BE7 */
+    /* ======================= AI14: SOLDIER/SETTLER DISPATCH =================
+     * (0x50BE7..0x50C42)  Type 5 (soldier) or type 2 (farmer/settler): mission
+     * + region check, dispatches with prof 0x4A/'J' or 0x4E/'N'.
+     * Gate: type == 5 || type == 2 (BYTE_VERIFIED @asm 0x050BFF).
+     * RUNTIME_ONLY stub. */
+    if (type != 5 && type != 2) goto ai15;                      /* @asm 0x050BFF */
+    /* (RUNTIME_ONLY stub) */
+ai15:                                                           /* 0x50C42 */
+    /* ======================= AI15: REASSIGN ACTIVE PATH =====================
+     * (0x50C42..0x50E20)  reassign != 0: handles in-flight goto orders (0x0B),
+     * computes pathing target, prof 0x57/'W'.
+     * Gate: reassign != 0 (BYTE_VERIFIED @asm 0x050C5A).  RUNTIME_ONLY stub. */
+    if (reassign == 0) goto ai16;                               /* @asm 0x050C5A */
+    /* (RUNTIME_ONLY stub) */
+ai16:                                                           /* 0x50E20 */
+    /* ======================= AI16: TYPE-2 COLONY NAVIGATION =================
+     * (0x50E20..0x50F1E)  Type 2 land unit with reassign==0: evaluates
+     * nearby settlement + pathing toward own colony.
+     * Gate: type == 2 && reassign == 0 (BYTE_VERIFIED @asm 0x050E38/0x050E46).
+     * RUNTIME_ONLY stub. */
+    if (type != 2 || reassign != 0) goto ai17_entry;            /* @asm 0x050E38 */
+    /* (RUNTIME_ONLY stub) */
+
+ai17_entry:                                                     /* 0x50F1E */
+    /* ======================= AI17-AI18: ESCORT / PATHING ENGINE =============
+     * (0x50F1E..0x51A28)  Reached from AI1 (escort_8C=1) and from AI16.
+     * Walks toward col_own's surroundings using func_00704C_op_sz_205, then
+     * selects a direction and falls into AI19 (sets dir_choice / fortify_CC /
+     * guard_adj_E8).  Until AI17-AI18 are ported, the escort candidate stands
+     * down (tail), preserving the pre-port "considered, no decision" behaviour.
+     * RUNTIME_ONLY stub. */
     (void)escort_8C;
     return move_eval_tail_51C68(unit_index, owner);
 
