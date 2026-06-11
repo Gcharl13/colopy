@@ -166,6 +166,8 @@ extern int16_t ovly_dialog_652(int16_t flag, int16_t msg_id);
 extern int func_0460F8_muster_braves(uint16_t idx);
 /* AI15 helper */
 extern int16_t random_int_4D4(int16_t lo, int16_t hi);     /* 0x181F:0x4D4 */
+/* AI16 helper: 0x181F:0xA56 -> file 0x0822A tribe claim-tier {1,2,3} */
+extern int func_00822A_logic_sz_36(uint16_t tribe);
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -1322,13 +1324,36 @@ ai15b:                                                          /* 0x50D62 */
                           /* @asm 0x050E07..0x050E1B: dx='W', jmp 0x4E9E5 */
     return move_eval_tail_51C68(unit_index, owner);
 ai16:                                                           /* 0x50E20 */
-    /* ======================= AI16: TYPE-2 COLONY NAVIGATION =================
-     * (0x50E20..0x50F1E)  Type 2 land unit with reassign==0: evaluates
-     * nearby settlement + pathing toward own colony.
-     * Gate: type == 2 && reassign == 0 (BYTE_VERIFIED @asm 0x050E38/0x050E46).
-     * RUNTIME_ONLY stub. */
+    /* ======================= AI16: SETTLER WORKS THE LAND ===================
+     * (0x50E20..0x50EC8)  Type 2 (settler) not reassigned: decide whether to
+     * start improving the current tile (orders := 9, prof := 'R', exit tail).
+     * Vetoes (ok := 0):
+     *   - a native settlement claims the tile: claim-tier(tribe) >= the
+     *     distance to the nearest settlement AND trade tier_52 < 3
+     *   - a FOREIGN colony lies within distance < 3
+     * BYTE_VERIFIED @asm 0x050E3C..0x050EC3. */
     if (type != 2 || reassign != 0) goto ai16_exit;             /* @asm 0x050E3C/0x050E46 */
-    /* RUNTIME_ONLY stub body (0x50E46..0x50EC8) */
+    {
+        int16_t ok_8 = 1;                                       /* @asm 0x050E4C [bp-8] */
+        if (settle_idx >= 0) {                                  /* @asm 0x050E51 */
+            func_0081F2_logic_sz_34((uint16_t)settle_idx);      /* @asm 0x050E5C select */
+            if ((int16_t)func_00822A_logic_sz_36(DG16(0x8D52))
+                    >= settle_dist &&                           /* @asm 0x050E68/0x050E73 */
+                tier_52 < 3)                                    /* @asm 0x050E79 */
+                ok_8 = 0;                                       /* @asm 0x050E7F */
+        }
+        if (col_any >= 0) {                                     /* @asm 0x050E84 */
+            func_0082DC_logic_sz_118((uint16_t)col_any);        /* @asm 0x050E8F select */
+            if (DG8(DG16(0x8542) + 0x1A) != (uint8_t)owner &&   /* @asm 0x050E9F */
+                col_any_dist < 3)                               /* @asm 0x050EA4 */
+                ok_8 = 0;                                       /* @asm 0x050EAA */
+        }
+        if (ok_8 != 0) {                                        /* @asm 0x050EAF */
+            U_OFF(unit_index, U_ORDERS) = 9;                    /* @asm 0x050EB9 */
+            U_OFF(unit_index, U_PROF)   = 0x52;                 /* @asm 0x050EBE 'R' */
+            return move_eval_tail_51C68(unit_index, owner);     /* @asm 0x050EC3 */
+        }
+    }
 
 ai16_exit:                                                      /* 0x50EC8 */
     /* ======================= AI16→AI17 ORDERS FILTER ========================
