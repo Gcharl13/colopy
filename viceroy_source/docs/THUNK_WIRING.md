@@ -747,7 +747,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0AF6` | `func_008846_logic_sz_27` | `[0]`
 - `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0, 3]`
 - `overlay_call_181F_0CA4` | `func_00B304_cargo_slot_set_amount` | `[0]`
-- `overlay_call_181F_0CEA` | `func_00B31A_cargo_slot_set_good` | `[0]`
+- `overlay_call_181F_0CEA` | `func_00B31A_logic_sz_77` | `[0]`
 - `overlay_call_181F_0D30` | `func_0098F6_logic_sz_85` | `[0]`
 - `overlay_call_181F_0D44` | `func_008982_logic_sz_532` | `[0]`
 - `overlay_call_181F_0D58` | `func_00B368_cargo_load` | `[0]`
