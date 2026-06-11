@@ -177,6 +177,9 @@ PROVIDE(ovly_tramp_7ADF        = func_04C532_ai_queue_a_rebuild); /* 1A1F:0578 (
 PROVIDE(ovly_tramp_7AB2        = func_04CC50_ai_strategic_plan_build); /* 1A1F:050C (per-unit loop +
                                   PHASE 6/7 slot capture byte-restored 2026-06-11; colony plan
                                   phase 0x4D048..0x4D6ED still DEGRADED-PENDING, no emits) */
+/* G1 tranche 5 (2026-06-11): option_bit_test call site fixed at the source (sol_tory.c:
+ * now calls func_00863E_wrapper_with_global_8DC6(0x12) directly, as PROVIDE cannot
+ * override a generated __attribute__((weak)) stub in this link configuration). */
 
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
@@ -211,3 +214,7 @@ EXTERN(gold_income_tick_for_power)
 EXTERN(func_00BCAA_op_sz_64)
 EXTERN(func_00BCEA_op_sz_61)
 EXTERN(func_00CD0B_logic_sz_67)
+EXTERN(func_005E90_op_sz_64)
+EXTERN(func_0082DC_logic_sz_118)
+EXTERN(func_006018_logic_sz_33)
+EXTERN(func_00863E_wrapper_with_global_8DC6)

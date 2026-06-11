@@ -289,6 +289,9 @@ extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                   
 extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
 extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE / BUILT / DEPLETION) */
+/* direct calls replacing void-arity stub calls */
+extern int  func_0082DC_logic_sz_118(uint16_t slot);                        /* 0x181F:0x09E6 */
+extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x06BE */
 
 /* ============================================================================
  * func_02AAEC  — colony garrison/ship unit-orders POPUP  ("COLONYUNIT"/"SHIPOPTIONS")
@@ -1183,7 +1186,7 @@ int func_02C5D4_colony_sz_592(uint16_t arg0_bp_06)
     overlay_call_191F_095E();                       /* @0x02C5D9 enter screen */
     overlay_call_181F_0056();                       /* @0x02C5E0 palette(0) */
     overlay_call_181F_00A6();                       /* @0x02C5F1 clear(7,0x140,0,0) */
-    overlay_call_181F_09E6();                       /* @0x02C5FC get_colony_by_slot(arg0) */
+    func_0082DC_logic_sz_118((uint16_t)arg0_bp_06);  /* @0x02C5FC colony_select(arg0) */
     g_w8D7C = 0;                                     /* @0x02C604 */
     overlay_call_181F_0C72();                       /* @0x02C60A draw base */
     g_w0890 = 1;                                     /* @0x02C60F */
@@ -1554,7 +1557,7 @@ ret: /* @0x02D652 */
  */
 int func_02EABC_op_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    overlay_call_181F_09E6();                       /* @0x02EAC3 get_colony_by_slot(arg0) */
+    func_0082DC_logic_sz_118((uint16_t)arg0_bp_06);  /* @0x02EAC3 colony_select(arg0) */
     overlay_call_181F_0C72();                       /* @0x02EACB */
     overlay_call_181F_0C22();                       /* @0x02EAD0 */
     overlay_call_181F_0C4A();                       /* @0x02EADA sub_view(0,arg1) */
@@ -1573,7 +1576,7 @@ int func_02EABC_op_sz_46(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 int func_02EAEA_op_sz_49(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     int r;                  /* [bp-4] @asm 0x02EB16 */
-    overlay_call_181F_09E6();                       /* @0x02EAF1 */
+    func_0082DC_logic_sz_118((uint16_t)arg0_bp_06);  /* @0x02EAF1 colony_select(arg0) */
     overlay_call_181F_0C72();                       /* @0x02EAF9 */
     overlay_call_181F_0C22();                       /* @0x02EAFE */
     r = overlay_call_181F_0C4A();                   /* @0x02EB08 sub_view(0,arg1) */
@@ -1669,7 +1672,7 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     UREC_B(power - 0x6D68)++;                        /* @0x02EBB3 per-power count [power-0x6D68]*/
     slot = g_colony_count_539E++;                   /* @0x02EBB7 [0x539E]++ */
-    overlay_call_181F_09E6();                       /* @0x02EBC2 get_colony_by_slot(slot) */
+    func_0082DC_logic_sz_118((uint16_t)slot);         /* @0x02EBC2 colony_select(slot) */
     overlay_call_181F_0740();                       /* @0x02EBD0 map tile -> es:[bx]|=2 */
 
     CB(0x1A) = (uint8_t)power;                       /* @0x02EBE7 owner */
@@ -1795,7 +1798,7 @@ int func_02EF64_predicate_unit(uint16_t arg0_bp_06)
     if (overlay_call_181F_0302() == 0) return 0;    /* @0x02EF86 = func_02EB46(x,y) */
     if (UREC_B(slot * 0x1C + 0x02) != 0) return 0;  /* @0x02EF99 +0x3146 free colonist*/
     if (UREC_B(slot * 0x1C + 0x17) != 0x1B) return 0; /* @0x02EFA3 +0x315B working */
-    if (overlay_call_181F_06BE() < 0) return 0;     /* @0x02EFB5 bounds */
+    if (func_005FD4_map_xy_bounds_or_neg1_alt(UREC_B(slot * 0x1C), UREC_B(slot * 0x1C + 1)) < 0) return 0;  /* @0x02EFB5 bounds */
     if (overlay_call_181F_08BC() >= 2) return 0;    /* @0x02EFC9 */
     if (++UREC_B(slot * 0x1C + 0x16) <= 8) return 0;/* @0x02EFD6/0x02EFDA +0x315A counter*/
 

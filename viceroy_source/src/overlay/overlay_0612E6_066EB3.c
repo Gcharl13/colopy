@@ -231,6 +231,9 @@ int func_0612E6_trade_route_delete(void)
  * (func_0612E6_select_route_dialog, func_0612E6_highlight_route,
  *  func_0612E6_route_shift_down declared above, before func_0612E6_trade_route_delete) */
 extern int  overlay_call_181F_0858(void);  /* 0x181F:0x858 route-of-unit (not in shared header) */
+/* direct calls replacing void-arity stub calls */
+extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
+extern void func_0081F2_logic_sz_34(uint16_t idx);         /* 0x181F:0x0A4C */
 
 /* ============================================================================
  * func_061454  @ 0x061454..0x061C9C  (2121 bytes)  page 0x12
@@ -1260,7 +1263,7 @@ int func_063C58_place_feature_driver(void)
                 int terr, flow;
                 if (!tile_in_bounds(row, col)) continue; /* @asm 0x063E01 0x302 */
                 terr = tile_base2(row, col);             /* @asm 0x063E11 0x78c */
-                flow = overlay_call_181F_0722();         /* @asm 0x063E1F 0x722 flow id */
+                flow = func_005E90_op_sz_64((uint16_t)col, (uint16_t)row);  /* @asm 0x063E1F 0x722 flow id */
                 if (flow < 0) continue;                  /* @asm 0x063E2A */
                 /* terrain-class histogram: feature band <0x18, class (terr&7) in
                  * 2..5 -> ++count at DS[label*2 - 0x6ba2]  (@asm 0x063E2E..0x063E47). */
@@ -1953,7 +1956,7 @@ int func_065D26_postgen_large(void)
         DGB(ent * 0x4e + 0x5ad6) = (unsigned char)col;   /* @asm 0x066060 */
         DGB(ent * 0x4e + 0x5ad7) = (unsigned char)row;   /* @asm 0x066068 */
         (void)overlay_call_1A1F_0440();                  /* @asm 0x06607C place-on-map */
-        (void)overlay_call_181F_0A4C();                  /* @asm 0x066089 */
+        func_0081F2_logic_sz_34((uint16_t)ent);           /* @asm 0x066089 bind placed entity */
         DGB(ent - 0x69d6) += 1;                          /* @asm 0x06609D ++candidate count */
         { int gx = (int)col / 5, gy = (int)row / 5;      /* @asm 0x0660A8/0x0660B2 idiv 5 */
           DGB(gx * 0x12 + gy - 0x6056) = 1; }            /* @asm 0x0660B7 grid mark */
@@ -2041,7 +2044,7 @@ int func_065D26_postgen_large(void)
          * ([0x8d4e]+2) into the nation's [0x8d4e]+0xc accumulator. */
         int cov = 0;
         (void)cov;
-        overlay_call_181F_0A4C();                        /* @asm 0x06665D per-settlement cleanup */
+        func_0081F2_logic_sz_34((uint16_t)si);            /* @asm 0x06665D per-settlement cleanup */
     }
     return 0;                                            /* @asm 0x066676 retf */
 }

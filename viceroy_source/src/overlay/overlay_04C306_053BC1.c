@@ -553,7 +553,8 @@ int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit, uint16_t de
 int func_04C7F0_ai_unit_task_total(uint16_t power, uint16_t unit)
 {
     uint8_t *u = &g_unit_table_3144[unit * UNIT_RECORD_STRIDE];
-    int tile = overlay_call_181F_0722();                /* @asm 0x04C806 unit_at/map(x,y) */
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y);
+    int tile = func_005E90_op_sz_64((uint16_t)u[0], (uint16_t)u[1]);  /* @asm 0x04C806 0x722(x,y) */
     int s2 = ovly_tramp_7AC6((uint16_t)tile, unit, power);  /* @asm 0x04C819 call cs:0x7AC6 */
     int s3 = ovly_tramp_7A99((uint16_t)s2, power);          /* @asm 0x04C828 call cs:0x7A99 */
     int s1 = ovly_tramp_7A80(power);                        /* @asm 0x04C834 call cs:0x7A80 */
@@ -654,29 +655,40 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
     int best     = -1;       /* @asm 0x04C8A3 [bp-0x18]=0xFFFF */
     int best_dir = 8;        /* @asm 0x04C8A8 [bp-0xe]=8 (default "stay") */
 
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y);             /* 0x181F:0x722 */
+    extern int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x6BE */
+    extern int func_006018_logic_sz_33(uint16_t x, uint16_t y);          /* 0x181F:0x6D2 */
+
     /* @asm 0x04CA44 — outer loop over the 9 step entries. */
     for (int dir = 0; dir < 9; dir++) {                 /* @asm 0x04CA44 cmp 9 */
         uint8_t *step = &g_unit_table_3144[dir * UNIT_RECORD_STRIDE]; /* step tables at +0xBE/+0xB4 */
-        int dx = (int8_t)step[0xBE] + base_y;           /* @asm 0x04CA4A..0x04CA52 */
-        int dy = (int8_t)step[0xB4] + base_x;           /* @asm 0x04CA5E..0x04CA63 */
+        int dx = (int8_t)step[0xBE] + base_y;           /* @asm 0x04CA4A..0x04CA52 [bp-6] */
+        int dy = (int8_t)step[0xB4] + base_x;           /* @asm 0x04CA5E..0x04CA63 [bp-4] */
 
-        /* @asm 0x04CA6A — skip directions whose start tile is invalid. */
-        (void)overlay_call_181F_06D2();                 /* 0x6D2(dx,dy) */
-        /* (valid -> evaluate this direction; the asm re-enters the tile loop) */
+        /* @asm 0x04CA6A — check start tile; save result as dir_valid [bp-0x10].
+         * if dir_valid < 0: skip 06BE occupancy block, jump to 0x302 off-map check.
+         * if dir_valid >= 0: enter per-tile evaluator at 0x4C8B6 (includes 06BE). */
+        int dir_valid = func_006018_logic_sz_33((uint16_t)dx, (uint16_t)dy); /* @asm 0x04CA6A */
 
         int score = 0;                                  /* @asm 0x04C959 [bp-8] terr base */
         int stay  = 0;                                  /* @asm 0x04C8B... [bp-2] blocked marker */
 
-        /* @asm 0x04C8BC..0x04C903 — occupancy / enemy-stay handling for the
-         * step tile (belongs-to-arg0 + occupant type 0xB toggles flag). */
-        if (overlay_call_181F_06BE() >= 0 /* && belongs to power */) {  /* @asm 0x04C8C6 */
-            int occ = overlay_call_181F_07E0();         /* @asm 0x04C8D8 occupant */
-            if (overlay_call_181F_08BC() == 1) {        /* @asm 0x04C8E1/0x04C8E9 dec==0 */
-                uint8_t ot = g_unit_table_3144[occ * UNIT_RECORD_STRIDE + UNIT_TYPE_OFF];
-                /* @asm 0x04C8F0/0x04C8FE — occupant of state-0xB that mismatches
-                 * the caller's flag sets [bp-2]=1 (a "stay/blocked" marker that
-                 * gates the per-tile score accumulation at 0x04C938 below). */
-                stay = ((ot == 0xB ? 1 : 0) != (int)flag) ? 1 : stay;
+        /* @asm 0x04C8BC..0x04C903 — occupancy / enemy-stay handling for the step tile.
+         * Entered only when dir_valid >= 0 (@asm 0x04CA79 jmp 0x4C8B6).
+         * 06BE returns the tile's occupant-class (>= 0) or -1 (tile has no such occupant).
+         * if 06BE >= 0 (occupied): skip stay logic (jge 0x4C908).
+         * if 06BE < 0 AND dir_valid==power: run stay logic.
+         * @asm 0x04C8C6 jge 0x4C908 (inverted: >= 0 → skip, < 0 → check power) */
+        if (dir_valid >= 0) {
+            int tile_val = func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)dx, (uint16_t)dy); /* @asm 0x04C8BC */
+            if (tile_val < 0 && dir_valid == (int)power) {  /* @asm 0x04C8C6 jge skip; 0x04C8CB cmp */
+                int occ = overlay_call_181F_07E0();         /* @asm 0x04C8D8 occupant */
+                if (overlay_call_181F_08BC() == 1) {        /* @asm 0x04C8E1/0x04C8E9 dec==0 */
+                    uint8_t ot = g_unit_table_3144[occ * UNIT_RECORD_STRIDE + UNIT_TYPE_OFF];
+                    /* @asm 0x04C8F0/0x04C8FE — occupant of state-0xB that mismatches
+                     * the caller's flag sets [bp-2]=1 */
+                    stay = ((ot == 0xB ? 1 : 0) != (int)flag) ? 1 : stay;
+                }
             }
         }
 
@@ -689,7 +701,9 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
             int terr = overlay_call_181F_078C();        /* terrain id */
             score = g_terrcost_2F77[terr * 0x10];       /* @asm 0x04C953 */
 
-            /* @asm 0x04C961..0x04CA21 — sum neighbour contributions (k=0..7). */
+            /* @asm 0x04C961..0x04CA21 — sum neighbour contributions (k=0..7).
+             * Inner loop uses (nx,ny) = sub-neighbour of step tile; args not yet
+             * restored (inner void stubs pending Phase-4 wiring). */
             for (int k = 0; k < 8; k++) {               /* @asm 0x04CA27 cmp 8 */
                 if (overlay_call_181F_0302() == 0) continue; /* @asm 0x04C97C off-map */
                 if (overlay_call_181F_0768() != 0) continue; /* @asm 0x04C991 claimed */
@@ -702,7 +716,8 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
                     continue;                            /* @asm 0x04C9E8 skip contribution */
                 }
                 if (flag != 0) {                        /* @asm 0x04C9EA */
-                    int h = overlay_call_181F_0722();   /* @asm 0x04C9F6 handle/tile */
+                    /* @asm 0x04C9F0 push [bp-6]=dx; push [bp-4]=dy → 0x722(dx,dy) */
+                    int h = func_005E90_op_sz_64((uint16_t)dx, (uint16_t)dy); /* @asm 0x04C9F6 */
                     int s = (ovly_tramp_7A99((uint16_t)h, power) << 4)
                             + (overlay_call_181F_074A() & 0xF); /* @asm 0x04CA03..0x04CA1C */
                     score += s;                         /* @asm 0x04CA21 */
@@ -718,7 +733,7 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
         /* `stay` (=[bp-2]) gates whether the per-tile contribution loop is
          * entered at 0x04C938 (`cmp [bp-2],ax; jne`); folded into the score
          * accumulation above.  match_type ([bp+0xE]) feeds the 0x04C8FE compare. */
-        (void)stay; (void)match_type; (void)dx; (void)dy;
+        (void)stay; (void)match_type;
     }
 
     return best_dir;                                    /* @asm 0x04CA80 RETF */
@@ -992,7 +1007,10 @@ extern uint8_t  g_ai_pwr_tier_925A[];  /* DGROUP:0x925A (-0x6DA6) — per-power 
 extern uint16_t g_ai_bitmask_173C;     /* DGROUP:0x173C — reachable-region bitmask A */
 extern uint16_t g_ai_bitmask_173E;     /* DGROUP:0x173E — reachable-region bitmask B */
 /* g_native_count_539A: DGS16(0x539A) macro from globals.h */
-extern uint8_t *g_native_rec_8D4A;     /* DGROUP:0x8D4A — current native record ptr */
+/* DGROUP:0x8D4A holds a NEAR WORD pointer (16-bit offset within DGROUP) to the
+ * current native settlement record — set by func_0081F2 (0x181F:0xA4C).
+ * Use DG16(0x8D4A) to fetch the near ptr; DG8(ptr)/DG8(ptr+1) for x/y. */
+#define g_native_rec_8D4A_ptr()  DG16(0x8D4A)
 extern int16_t  g_native_tribe_8D52;   /* DGROUP:0x8D52 — current native tribe idx */
 /* cs:0x7A71/0x7A76/0x7ABC/0x7AD5 trampolines used by the planner.
  * BYTE_VERIFIED resolution (2026-06-08): all four are ljmp stubs in the
@@ -1283,9 +1301,15 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      *   push power; push cs; call cs:0x7A71; add sp,0xA
      *   = queue_a_find_or_insert(power, b0=native_x, b1=native_y, b2=1, b3=2)
      *   BYTE_VERIFIED (@asm 0x04DCED/0x04DCEF/0x04DCF1/0x04DCF4/0x04DCF7/0x04DCFB) */
+    {
+    extern void func_0081F2_logic_sz_34(uint16_t idx);  /* 0x181F:0xA4C — bind native[idx] */
+    extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
     for (int s = 0; s < g_native_count_539A; s++) {     /* @asm 0x04DB4F cmp [0x539A] */
-        (void)overlay_call_181F_0A4C();                 /* @asm 0x04DB5D bind native s */
-        (void)overlay_call_181F_0722();                 /* @asm 0x04DB72 map handle */
+        func_0081F2_logic_sz_34((uint16_t)s);           /* @asm 0x04DB5D 0xA4C(s): sets [0x8D4A] */
+        {   /* @asm 0x04DB72 0x722(native_x, native_y): [0x8D4A] = near ptr to native record */
+            uint16_t nat_ptr = DG16(0x8D4A);
+            (void)func_005E90_op_sz_64(DG8(nat_ptr), DG8(nat_ptr + 1));
+        }
         int thr = overlay_call_181F_030C();             /* @asm 0x04DB84 threat(tribe, arg0) */
         if (thr >= 0x4B) {                              /* @asm 0x04DBC3 cmp 0x4B */
             /* @asm 0x04DBD1  war gate (0x181F:0xA38) — skips emit if at war */
@@ -1325,16 +1349,19 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
             /* @asm 0x04DCED  push 2; push 1; push [bp-0x2A](best_y); push [bp-0x22](best_x) */
             /* @asm 0x04DCF7  push arg0(power); push cs; call cs:0x7A71              BYTE_VERIFIED */
             {
-                /* native coords from [0x8D4A]: byte[0]=native_x, byte[1]=native_y
-                 * [bp-0x22] = best_x (ring-walk winner), [bp-0x2A] = best_y */
-                uint8_t native_x = g_native_rec_8D4A ? g_native_rec_8D4A[0] : 0; /* @asm 0x04DB72 */
-                uint8_t native_y = g_native_rec_8D4A ? g_native_rec_8D4A[1] : 0; /* @asm 0x04DB72 */
+                /* native coords from [0x8D4A]: near ptr → byte[0]=native_x, byte[1]=native_y.
+                 * [bp-0x22] = best_x (ring-walk winner), [bp-0x2A] = best_y.
+                 * Ring-walk DEGRADED — use native record x/y directly as placeholders. */
+                uint16_t _np = g_native_rec_8D4A_ptr();
+                uint8_t native_x = DG8(_np);     /* [0x8D4A][0] */
+                uint8_t native_y = DG8(_np + 1); /* [0x8D4A][1] */
                 /* @asm 0x04DCFB  push cs; call cs:0x7A71 (= func_04C35A)  BYTE_VERIFIED */
                 (void)func_04C35A_ai_queue_a_find_or_insert(power, native_x, native_y, 1, 2); /* @asm 0x04DCFB cs:0x7A71 */
             }
         }
         (void)g_native_tribe_8D52;
     }
+    } /* close extern-decl block */
 
     /* ---- PHASE 5 — region aggregation.  @asm 0x04DD10..0x04DF96.
      * For region 0..0x10: sum the per-owner density rows (0x9526 strength /
@@ -2030,7 +2057,8 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
         if ((uu[0x03 /*+0x3147*/] & 0x0F) != (uint8_t)power) /* @asm 0x053100 owner nibble */
             continue;                                   /* @asm 0x05310B jne */
         if (uu[UNIT_TYPE_OFF] == 0xC && (int8_t)uu[0x06 /*+0x314A*/] >= 0) { /* @asm 0x05310D/0x053114 */
-            (void)overlay_call_181F_09E6();             /* @asm 0x053121 bind colony(unit.+0x314A) */
+            extern int func_0082DC_logic_sz_118(uint16_t slot); /* 0x181F:0x9E6 bind colony[slot] */
+            func_0082DC_logic_sz_118((uint16_t)uu[0x06]);  /* @asm 0x053121 bind colony(unit.+0x314A) */
             if (((uint8_t *)g_colony_8542)[0x1A] == (uint8_t)power) /* @asm 0x053130 colony owner */
                 ((uint8_t *)g_colony_8542)[0x1C] |= 0x20; /* @asm 0x053135 set bit5 */
         }
@@ -2333,7 +2361,9 @@ int func_053820_ai_dispatch_unit_to_colony(void)
     int cx0 = ((uint8_t *)col)[0];                      /* @asm 0x05382E col.x */
     int cy0 = ((uint8_t *)col)[1];                      /* @asm 0x053835 col.y */
 
-    int base = overlay_call_181F_0722();                /* @asm 0x05383F map handle@(y,x) */
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
+    extern int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x6BE */
+    int base = func_005E90_op_sz_64((uint16_t)cx0, (uint16_t)cy0); /* @asm 0x05383F 0x722(x,y) */
     int owner = ((uint8_t *)g_colony_8542)[0x1A];       /* @asm 0x05384E col owner +0x1A */
 
     /* @asm 0x05385E — bail when the owner has too few units in this region. */
@@ -2359,7 +2389,7 @@ int func_053820_ai_dispatch_unit_to_colony(void)
         if (adx >= 7 || ady >= 7) continue;             /* @asm 0x053887/0x05389D cmp 7 jl */
 
         /* @asm 0x0538E6 — same map region as the source colony? */
-        if (overlay_call_181F_0722() != base) continue; /* handle@(ty,tx) == base */
+        if (func_005E90_op_sz_64((uint16_t)tx, (uint16_t)ty) != base) continue; /* @asm 0x0538EA 0x722(tx,ty) */
 
         /* @asm 0x0538FC — difficulty/range-gated random trigger. */
         if (overlay_call_181F_04D4() != 0) continue;    /* random_int(0,range)==0 */
@@ -2371,12 +2401,20 @@ int func_053820_ai_dispatch_unit_to_colony(void)
         int path = overlay_call_1A1F_05F0();            /* plot_path(cx0, cy0, 0x63) */
         int found = 0;                                  /* @asm 0x053923 [bp-6]=1 set below */
         if (path >= 0 && path < 8) {                    /* @asm 0x053936/0x05393B */
-            /* @asm 0x05393D..0x05398C — step toward target along the path; the
-             * reach (0x6BE), claim (0x754), step (0x6D2/0x6E6), and terrain
-             * (0x78C) checks confirm a legal next tile.  found=1 on success. */
+            /* @asm 0x05393D — advance one step toward target: cx0/cy0 += step[path] deltas.
+             * @asm 0x05393F  al=[bx+0xBE] (y-delta); add [bp-0x1c](cy0), ax
+             * @asm 0x053947  al=[bx+0xB4] (x-delta); add [bp-0x16](cx0), ax */
+            uint8_t *pstep = &g_unit_table_3144[path * UNIT_RECORD_STRIDE];
+            int sx = cx0 + (int8_t)pstep[0xB4];        /* @asm 0x05394C [bp-0x16]+= */
+            int sy = cy0 + (int8_t)pstep[0xBE];        /* @asm 0x053944 [bp-0x1c]+= */
             found = 1;
-            (void)overlay_call_181F_06BE();             /* @asm 0x053965 */
-            (void)overlay_call_181F_0754();             /* @asm 0x053977 */
+            /* @asm 0x053955..0x05395D — if stepped to dest already: skip */
+            /* @asm 0x05395F push [bp-0x1c]=sy; push [bp-0x16]=sx; lcall 0x6BE */
+            int tile_val = func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)sx, (uint16_t)sy); /* @asm 0x053965 */
+            if (tile_val < 0) {                         /* @asm 0x05396F jge→keep found=1 */
+                int cl = overlay_call_181F_0754();      /* @asm 0x053977 0x754(sx,sy) */
+                if (!(cl & 0xA)) found = 0;             /* @asm 0x05397F test 0xA; 0x053983 found=0 */
+            }
         }
 
         if (found) {                                    /* @asm 0x053998 */

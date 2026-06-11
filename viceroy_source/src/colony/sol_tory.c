@@ -196,7 +196,9 @@ extern void colonist_remove(int slot);                 /* LCALL 0x181F:0xA9C →
 extern int  colonist_new(int arg);                     /* LCALL 0x181F:0xD1C → 0x27C6A  @asm 0x2DDFE (returns count) */
 extern int  ring_tile_profmatch(int a, int b);         /* LCALL 0x181F:0xA7E → 0x27CAC  @asm 0x2DDDD (find_pair-style) */
 extern int  ring_best_for_food(int a, int b);          /* LCALL 0x181F:0xCB8 → ovl      @asm 0x2E10E (returns yield+) */
-extern int  option_bit_test(int op, int arg);
+/* 0x181F:0x9FC = func_00863E_wrapper_with_global_8DC6 (arity 1).
+ * @asm 0x2D980 PUSH 0x12; LCALL 0x181F:0x9FC — only 1 arg is pushed. */
+extern int func_00863E_wrapper_with_global_8DC6(uint16_t arg0);
 extern int dewitt_liberty_handler(int slot);   /* 0x181F:0xCFE (de Witt liberty) */          /* LCALL 0x181F:0x4D4 → 0x27DB2  @asm 0x2D731-style (returns nonzero) */
 extern int  option_bit_test1(int op);                  /* LCALL 0x181F:0x4CA → 0x27DAC  @asm 0x2E192 */
 extern void colony_audio_or_blink(int arg);            /* LCALL 0x181F:0x4B6 → 0x22374  @asm 0x2E1F4 */
@@ -387,7 +389,7 @@ void colony_sol_tory_turn(int colony_id)
         if ((int)ctx->stockpile_9a[i] < 0)                  /* @asm 0x2D976 OR/JGE */
             ctx->stockpile_9a[i] = 0;                       /* @asm 0x2D97A SUB ax,ax */
 
-        if (!option_bit_test(0x12, 0 /* via 0x181F:0x9FC */)) /* @asm 0x2D980 PUSH 0x12; LCALL 0x181F:0x9FC */
+        if (!func_00863E_wrapper_with_global_8DC6(0x12)) /* @asm 0x2D980 PUSH 0x12; LCALL 0x181F:0x9FC */
             goto skip_commodity;                            /* @asm 0x2D98E JMP 0x2D877 (the shared tail) */
 
         /* branch ladder @0x2D991..0x2D9D3 (byte-anchored 2026-06-10): */

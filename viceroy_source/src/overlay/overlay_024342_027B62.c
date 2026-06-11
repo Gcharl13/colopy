@@ -889,6 +889,8 @@ extern int  func_02CA55(void);   /* ip 0x7E65 */
 extern int  func_02C9B5(void);   /* ip 0x7DC5 */
 extern int  func_02C9BF(void);   /* ip 0x7DCF */
 extern int  overlay_near_07EFB(void); /* ip 0x7EFB build-precondition probe */
+/* direct call replacing void-arity stub call */
+extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
 
 /* ============================================================================
  * colony_draw_workgrid  (func_0264A8)
@@ -1046,7 +1048,7 @@ void colony_draw_header(int year_or_flag)
     }
     overlay_call_181F_016E();                        /* @asm 0x02698C append " of " [0x2E38] */
     overlay_call_181F_0178();                        /* @asm 0x026998 reset/term */
-    overlay_call_181F_0722();                        /* @asm 0x0269AD (map_x,map_y) location code */
+    (void)func_005E90_op_sz_64((uint16_t)c->map_x, (uint16_t)c->map_y);  /* @asm 0x0269AD location code */
     overlay_call_181F_0182();                        /* @asm 0x0269BE append location */
     overlay_call_181F_01BE();                        /* @asm 0x0269CA (separator) */
     /* fortification string [owner*0x10 + ctx[+0x1A] base + 0x9870]  @asm 0x0269D2..0x0269F2 */

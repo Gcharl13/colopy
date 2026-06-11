@@ -169,6 +169,12 @@ extern int overlay_call_181F_0DE0(void);  extern int overlay_call_181F_0DF4(void
 extern int overlay_call_181F_0DFE(void);  extern int overlay_call_181F_0E12(void);
 extern int overlay_call_181F_0E1C(void);
 
+/* direct calls replacing void-arity stub calls */
+extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x06BE */
+extern int  func_0082DC_logic_sz_118(uint16_t slot);                        /* 0x181F:0x09E6 */
+extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y);                  /* 0x181F:0x0722 */
+extern void func_0081F2_logic_sz_34(uint16_t idx);                          /* 0x181F:0x0A4C */
+
 extern int overlay_call_191F_0120(void);  extern int overlay_call_191F_0208(void);
 extern int overlay_call_191F_02CE(void);  extern int overlay_call_191F_02EA(void);
 extern int overlay_call_191F_044E(void);  extern int overlay_call_191F_04BA(void);
@@ -453,7 +459,7 @@ int func_041080_arrive_or_block(uint16_t unit /*bp+6*/, uint16_t flag /*bp+8*/)
     /* @0x0410E5 destination occupancy test at the unit's (x,y). */
     if (overlay_call_181F_0302() != 0) {            /* @0x0410F7 tile_in_bounds */
         /* @0x041103 unit-owner-at(x,y) >= 0 -> set bit, else 0. */
-        stop_mask |= (overlay_call_181F_06BE() >= 0) ? 1 : 0;  /* @0x04110F..0x041122 */
+        stop_mask |= (func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)U_DESTX(ubx), (uint16_t)U_DESTY(ubx)) >= 0) ? 1 : 0;  /* @0x04110F..0x041122 */
     } else {
         /* @0x04112A near call 0x173c with colony sentinel 0x3E7. */
         stop_mask |= overlay_call_1A1F_0202();      /* @0x041131 */
@@ -464,7 +470,7 @@ int func_041080_arrive_or_block(uint16_t unit /*bp+6*/, uint16_t flag /*bp+8*/)
         if (home_chk == 0x3E7) {       /* @0x041140 */
             overlay_call_191F_02EA();  /* @0x04114A name_sealane(unit)       */
         } else {
-            overlay_call_181F_09E6();  /* @0x041157 colony_select(home_chk)  */
+            func_0082DC_logic_sz_118((uint16_t)home_chk);  /* @0x041157 colony_select(home_chk)  */
             /* @0x04115F copy colony (x,y) into the unit's dest fields. */
             U_DESTX(ubx) = DG8(G_COLONY_PTR + 0);   /* @0x041169 */
             U_DESTY(ubx) = DG8(G_COLONY_PTR + 1);   /* @0x041170 */
@@ -489,7 +495,7 @@ blocked:
         overlay_call_181F_0934();      /* @0x0411B8 unit_finish_activity     */
         goto sea_scan;                 /* @0x0411BD jmp 0x10d8               */
     }
-    overlay_call_181F_09E6();          /* @0x0411C3 colony_select(home_chk)  */
+    func_0082DC_logic_sz_118((uint16_t)home_chk);  /* @0x0411C3 colony_select(home_chk)  */
 sea_scan:
     /* @0x0411CB enumerate the candidate route cells (slot 0 form). */
     slot_n = overlay_call_1A1F_022A(); /* @0x0411CD route_slot_count(0)      */
@@ -1507,7 +1513,7 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
         if (home >= 0)
             clamp_add_byte(&DG8(home + player * 16 - 0x6A8E /*0x9572*/), kind);  /* @0x04235C */
         /* @0x04234F if on a friendly coast and not a special FF flag, map it. */
-        if (overlay_call_181F_06BE() >= 0) {        /* @0x04235F land-adjacent  */
+        if (func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)U_X(ubx), (uint16_t)U_Y(ubx)) >= 0) {  /* @0x04235F land-adjacent  */
             if (!(player < 4 && IS_REF_POWER(player)) &&        /* @0x04236B..0x04237A */
                 U_FLAG4B(ubx) != 0x41 && U_FLAG4B(ubx) != 0x47) {  /* @0x042380..0x04238C */
                 clamp_add_byte(&DG8(player - 0x6BD4 /*0x942c*/), kind);  /* @0x0423A8 */
@@ -1562,9 +1568,9 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
 
     /* ---- pass C: per-colony region/bell tally ------------------------ */
     for (i = 0; i < G_COLONY_COUNT; i++) {          /* @0x0425FB..0x042602 */
-        overlay_call_181F_09E6();      /* @0x042618 colony_select(i)           */
+        func_0082DC_logic_sz_118((uint16_t)i);  /* @0x042618 colony_select(i)   */
         region = DG8(G_COLONY_PTR + 0x1A);          /* @0x042624 colony.region   */
-        home = overlay_call_181F_0722();            /* @0x042633 region_index(x,y)*/
+        home = func_005E90_op_sz_64(DG8(G_COLONY_PTR), DG8(G_COLONY_PTR + 1));  /* @0x042633 region_index(x,y) */
         if (region != player)          /* @0x04263E */
             continue;                  /* (asm: jne 0x24fa flag path)          */
         DG8(player - 0x6D68)++;        /* @0x042548 colony-count for avg       */
@@ -1579,8 +1585,8 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
 
     /* ---- other-settlement (native) finance pass (@0x0425AF) ---------- */
     for (i = 0; i < G_OTHER_COUNT; i++) {           /* @0x0426CC..0x0426D6 */
-        overlay_call_181F_0A4C();      /* @0x0426A1 settlement_make_current(i) */
-        home = overlay_call_181F_0722();            /* @0x0426C6 region of settlement */
+        func_0081F2_logic_sz_34((uint16_t)i);  /* @0x0426A1 settlement_make_current(i) */
+        { uint16_t nat_ptr = DG16(0x8D4A); home = func_005E90_op_sz_64(DG8(nat_ptr), DG8(nat_ptr + 1)); }  /* @0x0426C6 region of settlement */
         if (home >= 0)
             DG8(home - 0x6A0E) |= 1;   /* @0x0426D7 mark region has native      */
     }
@@ -1641,7 +1647,7 @@ int func_042726_cargo_histogram(uint16_t power /*bp+6*/)
 
     /* @0x042785 pass over this power's colonies and their colonists. */
     for (i = 0; i < G_COLONY_COUNT; i++) {          /* @0x0427AF..0x0427B6 */
-        overlay_call_181F_09E6();      /* @0x0427B9 colony_select(i)            */
+        func_0082DC_logic_sz_118((uint16_t)i);  /* @0x0427B9 colony_select(i)   */
         if (DG8(G_COLONY_PTR + 0x1A) != (uint8_t)power)  /* @0x0427C1 colony power */
             continue;
         for (slot = 0; slot < DG8(G_COLONY_PTR + 0x1F); slot++) {  /* @0x042788..0x042796 */
@@ -1688,13 +1694,13 @@ int func_0427D6_mission_tally(uint16_t arg /*bp+6*/)
 
     /* @0x04281B pass over native settlements. */
     for (i = 0; i < G_OTHER_COUNT; i++) {           /* @0x04285B..0x042862 */
-        overlay_call_181F_0A4C();      /* @0x04281F settlement_make_current(i) */
+        func_0081F2_logic_sz_34((uint16_t)i);  /* @0x04281F settlement_make_current(i) */
         /* @0x042827 settlement.owner(+2) == target ? */
         if (DG8(DG16(0x8D4A) + 2) != (uint8_t)target)  /* @0x04282E far ptr 0x8D4A */
             continue;
         DG8((int)arg - 0x69D6)++;      /* @0x042836 mission count++            */
         DG8((int)arg - 0x69DE) += DG8(DG16(0x8D4A) + 4);  /* @0x04283D += size */
-        region = overlay_call_181F_0722();          /* @0x04284A region_of(x,y)  */
+        { uint16_t nat_ptr = DG16(0x8D4A); region = func_005E90_op_sz_64(DG8(nat_ptr), DG8(nat_ptr + 1)); }  /* @0x04284A region_of(x,y) */
         DG8(region - 0x6B82)++;        /* @0x042854 region map++                */
     }
 

@@ -100,6 +100,9 @@ extern int overlay_call_1A1F_06A2(void);  /* @ref RTLink seg 0x1A1F off 0x06A2 (
 extern int func_05E723(int start_idx, int a, int b, int c, int d); /* page-10 combat-leaf trampoline (0x3DD3 -> ljmp 0x1A1F) */
 extern int func_05A93D(int unit_index);                            /* trampoline ljmp 0x1A1F:0x6A2 */
 extern int func_05A938(int unit_index);                            /* trampoline ljmp 0x1A1F:0x694 */
+/* direct calls replacing void-arity stub calls */
+extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x06BE */
+extern int  func_0082DC_logic_sz_118(uint16_t slot);                        /* 0x181F:0x09E6 */
 
 
 /* ============================================================================
@@ -769,7 +772,7 @@ void ai_evaluate_unit_targets(int unit, int goal_x, int goal_y)  /* func_059B90 
         int ty = goal_y + g_compass_dx8_00B4[dir];     /* @asm 0x05A054 [bx+0xB4] -> [bp-0x3E] */
         int occu, cand_owner, score;
 
-        (void)overlay_call_181F_06BE();                /* reachable(tx,ty) @asm 0x05A060 [bp-0x40] */
+        (void)func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)tx, (uint16_t)ty);  /* reachable(tx,ty) @asm 0x05A060 */
         occu = overlay_call_181F_07E0();               /* first unit on tile @asm 0x05A071 [bp-0x42] */
         (void)tx; (void)ty;
 
@@ -1195,7 +1198,7 @@ int unit_needs_orders_or_act(int unit, int owner)  /* func_05A862 */
     int saved_count = g_unit_count_539C;               /* @asm 0x05A86B bp-2 */
     int type;
 
-    overlay_call_181F_09E6();                          /* bind owner list @asm 0x05A874 */
+    func_0082DC_logic_sz_118((uint16_t)owner);           /* bind owner list @asm 0x05A874 */
     type = *(uint8_t *)(unit * UNIT_STRIDE + UNIT_TYPE);
 
     if (type == 5) {                                   /* @asm 0x05A880 */

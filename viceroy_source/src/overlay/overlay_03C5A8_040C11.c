@@ -280,6 +280,8 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
  * ========================================================================== */
 int func_03C638_logic_sz_73(void)
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
+    extern void func_0081F2_logic_sz_34(uint16_t idx);       /* 0x181F:0xA4C */
     uint8_t  rank[4];                 /* [bp-0x14] sorted power ids */
     int16_t  score[4];                /* [bp-0x1c] weighted scores (sort keys) */
     int16_t  k;                       /* [bp-0x10] generic loop index */
@@ -379,7 +381,7 @@ int func_03C638_logic_sz_73(void)
      *   } } */
     for (k = (int16_t)G16(0x539E) - 1; k >= 0; --k) {
         uint16_t c;
-        overlay_call_181F_09E6(); /* get_colony_by_slot(k) -> *(0x8542) */
+        func_0082DC_logic_sz_118((uint16_t)k); /* get_colony_by_slot(k) -> *(0x8542) */
         c = G16(0x8542);
         if (G8(c + 0x1A) == (uint8_t)loser) {
             G8(c + 0x1A) = (uint8_t)winner;     /* @0x03C8A0 */
@@ -396,7 +398,7 @@ int func_03C638_logic_sz_73(void)
      *     (same ptr used in native_unit_ai.c / unit_ai_leaf.c). */
     for (k = 0; (int16_t)G16(0x539A) > k; ++k) {
         uint16_t rec;
-        overlay_call_181F_0A4C(); /* settlement_iter(k) */
+        func_0081F2_logic_sz_34((uint16_t)k); /* settlement_iter(k) */
         rec = G16(0x8D4A);
         if ((G8(rec + 5) & 0x0F) == (uint8_t)loser)
             G8(rec + 5) = (uint8_t)((G8(rec + 5) & 0xF0) | (uint8_t)winner);
@@ -674,6 +676,8 @@ clamp:
  * ========================================================================== */
 int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index */
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
+    extern int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x6BE */
     int16_t  best_slot;               /* [bp-4]  selected colony slot, -1=none */
     int16_t  best_value;              /* [bp-0x14] max susceptibility seen */
     int16_t  suscept;                 /* [bp-0x16] current colony susceptibility */
@@ -696,7 +700,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
 
     /* ---- PHASE A: choose the most susceptible eligible colony ------------- */
     for (cslot = 0; cslot < (int16_t)G16(0x539E); ++cslot) {   /* @0x03CC1.. */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(cslot) */
+        func_0082DC_logic_sz_118((uint16_t)cslot); /* get_colony_by_slot(cslot) */
         colony = G16(0x8542);
 
         /* @0x03CBD4..0x03CBE4  skip non-owned / already-flagged colonies */
@@ -726,7 +730,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
             absx = (uint16_t)((int8_t)G8(colony + 0xB4 + slot) + (int8_t)G8(colony + 0));
             if (overlay_call_181F_0768() /* tile_has_target(absx,absy) */ != 0)
                 continue;                             /* @0x03CB77 jne */
-            if ((int16_t)overlay_call_181F_06BE() /* tile_bounds(absy,absx) */ >= 0)
+            if ((int16_t)func_005FD4_map_xy_bounds_or_neg1_alt(absx, absy) /* tile_bounds(absy,absx) */ >= 0)
                 continue;                             /* @0x03CB89 jge */
             overlay_call_181F_07E0(); /* iter_units_at(absx,absy) */
             u = (int16_t)overlay_call_181F_07E0();
@@ -751,7 +755,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
     if (best_slot < 0)                                /* @0x03CC24 */
         return 0;                                     /* jmp 0x1a1f */
 
-    overlay_call_181F_09E6(); /* get_colony_by_slot(best_slot) */
+    func_0082DC_logic_sz_118((uint16_t)best_slot); /* get_colony_by_slot(best_slot) */
     colony = G16(0x8542);
     G8(colony + 0x1C) |= 1;                           /* @0x03CC3C flag colony */
     suscept     = best_value;                         /* severity drives passes */
@@ -763,7 +767,7 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
             absy = (uint16_t)((int8_t)G8(colony + 0xBE + slot) + (int8_t)G8(colony + 1));
             absx = (uint16_t)((int8_t)G8(colony + 0xB4 + slot) + (int8_t)G8(colony + 0));
             if (overlay_call_181F_0768() /* tile_has_target */ != 0)  continue; /* @0x03CC8B */
-            if ((int16_t)overlay_call_181F_06BE() /* tile_bounds */ < 0) continue; /* @0x03CCA0 */
+            if ((int16_t)func_005FD4_map_xy_bounds_or_neg1_alt(absx, absy) /* tile_bounds */ < 0) continue; /* @0x03CCA0 */
 
             /* @0x03CCA5..0x03CCC1  candidate unit owned by current player? */
             u = (int16_t)overlay_call_181F_0682(); /* unit_at_tile(absx,absy) */
@@ -906,6 +910,8 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)   /* [bp+6] = target power index 
  * ========================================================================== */
 int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
     int16_t  full_clear;              /* [bp-6]  zero-all-REF sentinel */
     int16_t  total;                   /* [bp-2]  total REF units */
     int16_t  n_elig;                  /* [bp-0x28] number of eligible colonies */
@@ -939,7 +945,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
 
     /* ---- PHASE 1: collect eligible colonies ---------------------------- */
     for (; cslot < (int16_t)G16(0x539E); ++cslot) {  /* @0x03CE01 loop test */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(cslot) */
+        func_0082DC_logic_sz_118((uint16_t)cslot); /* get_colony_by_slot(cslot) */
         colony = G16(0x8542);
         if (G8(colony + 0x1A) != (uint8_t)arg0_bp_06) continue;  /* @0x03CE1D */
         if (!(G8(colony + 0x1C) & 0x40))             continue;   /* @0x03CE22 coastal */
@@ -972,7 +978,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
 
     /* ---- PHASE 2: per-colony landing capacity -------------------------- */
     for (i = 0; i < n_elig; ++i) {                   /* @0x03CEAE..0x03CF51 */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(eslot[i]) */
+        func_0082DC_logic_sz_118((uint16_t)eslot[i]); /* get_colony_by_slot(eslot[i]) */
         colony = G16(0x8542);
         /* scan 8 work tiles, requiring tile_has_target==0 and a current-player
          * unit present whose remaining capacity[i] > 0 and whose type's
@@ -990,7 +996,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
             u = (int16_t)overlay_call_181F_02E4(); /* iter_next_unit */
         }
         /* @0x03CF53..0x03CF6C  capacity[i] = func_03EA38(colony, ...) */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(eslot[i]) again */
+        func_0082DC_logic_sz_118((uint16_t)eslot[i]); /* get_colony_by_slot(eslot[i]) again */
         capacity[i] = (int16_t)func_03EA38(); /* 0x1A1F:0xEE defender_capacity */
     }
 
@@ -1013,7 +1019,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
 
         /* @0x03D062..0x03D082  region = colony_region(colony.X,colony.Y) */
         colony = G16(0x8542);
-        overlay_call_181F_0722(); /* region = region_at(colony.X,colony.Y) */
+        func_005E90_op_sz_64((uint8_t)G8(colony + 0), (uint8_t)G8(colony + 1)); /* region = region_at(colony.X,colony.Y) */
         region = 0; (void)region;
 
         budget = 1;                                  /* set from PHASE 3 search */
@@ -1165,6 +1171,8 @@ cleanup:
  * ========================================================================== */
 int func_03D510_colony_sz_1080(uint16_t arg0_bp_06)
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
     uint16_t tgt_power;               /* [bp-0x56] = [0x5398] target power */
     int16_t  n_col;                   /* [bp-0x22] eligible colony count */
     int16_t  total_pop;               /* [bp-0x16] sum of populations */
@@ -1185,7 +1193,7 @@ int func_03D510_colony_sz_1080(uint16_t arg0_bp_06)
 
     /* ---- PHASE 1: collect coastal colonies of tgt_power -------------------*/
     for (cslot = 0; cslot < (int16_t)G16(0x539E); ++cslot) {   /* @0x03D567 */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(cslot) */
+        func_0082DC_logic_sz_118((uint16_t)cslot); /* get_colony_by_slot(cslot) */
         colony = G16(0x8542);
         if (G8(colony + 0x1A) != (uint8_t)tgt_power) continue;  /* @0x03D538 */
         if (!(G8(colony + 0x1C) & 0x40))             continue;  /* @0x03D53D coastal */
@@ -1213,9 +1221,9 @@ p1_test:
         goto done;                                   /* jmp 0x25c5 */
 
     /* ---- PHASE 3: choose best beach tile next to the chosen colony --------*/
-    overlay_call_181F_09E6(); /* get_colony_by_slot(cslot) @0x03D5CF */
+    func_0082DC_logic_sz_118((uint16_t)cslot); /* get_colony_by_slot(cslot) @0x03D5CF */
     colony = G16(0x8542);
-    overlay_call_181F_0722(); /* region = region_at(colony.X,colony.Y) @0x03D5E4 */
+    func_005E90_op_sz_64((uint8_t)G8(colony + 0), (uint8_t)G8(colony + 1)); /* region = region_at(colony.X,colony.Y) @0x03D5E4 */
     region = 0; (void)region;
     best_score = 0; bestx = 0; besty = 0;            /* @0x03D5EF [bp-0x52]=0 */
     for (i = 0; i < 8; ++i) {                         /* @0x03D721 ring of 8 */
@@ -1344,10 +1352,11 @@ done:
  */
 int func_03D948_colony_sz_49(void)
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
     /* @CLASSIFY SUPERSEDED: real body = foreign_intervention() in
      * src/king/intervention.c (func_03D948, 225B, BYTE_VERIFIED).
      * This auto "wrapper" stub is dead -- do not use. */
-    return overlay_call_181F_09E6();  /* @0x03D950 (first call only) */
+    return func_0082DC_logic_sz_118(0);  /* @0x03D950 (first call only) -- slot 0 inferred: superseded stub, no slot in scope */
 }
 
 /* @asm        0x03DA2A..0x03DB05  (219 bytes)  region=overlay
@@ -1741,6 +1750,7 @@ int func_03E162_op_sz_145(uint16_t arg0_bp_06)
  * ========================================================================== */
 int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
 {
+    extern int func_0082DC_logic_sz_118(uint16_t slot);      /* 0x181F:0x9E6 */
     int16_t  c;                       /* [bp-0xc] colony scan index */
     int16_t  to_convert;              /* [bp-2]  remaining conversions */
     int16_t  converted;               /* [bp-8]  conversions done this colony */
@@ -1751,7 +1761,7 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
     overlay_call_181F_04AC(); /* msg_ctx(3) @0x03E2F1 */
 
     for (c = 0; c < (int16_t)G16(0x539E); ++c) {     /* @0x03E3CA loop */
-        overlay_call_181F_09E6(); /* get_colony_by_slot(c) */
+        func_0082DC_logic_sz_118((uint16_t)c); /* get_colony_by_slot(c) */
         colony = G16(0x8542);
         if (G8(colony + 0x1A) != (uint8_t)arg0_bp_06) continue;  /* @0x03E3E4 */
         sol = (int16_t)overlay_call_181F_0C86(); /* SoL% @0x03E3E9 */
@@ -2380,6 +2390,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
  * ========================================================================== */
 int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
 {
+    extern int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x6BE */
     int16_t  result;                  /* [bp-0xa] 0=proceed, 1=abort */
     uint16_t rec;
     int16_t  unit_x, unit_y;          /* [bp-0x16],[bp-0x1a] mover's coords */
@@ -2409,7 +2420,7 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
     rec    = (uint16_t)unit * UNIT_STRIDE;
     unit_x = (uint8_t)G8(rec + 0x3144);              /* @0x03FAF4 */
     unit_y = (uint8_t)G8(rec + 0x3145);              /* @0x03FAFD */
-    dest_owner   = (int16_t)overlay_call_181F_06BE(); /* tile_owner(dest_y,dest_x) */
+    dest_owner   = (int16_t)func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)dest_x, (uint16_t)dest_y); /* tile_owner(dest_y,dest_x) */
     dest_feature = (int16_t)overlay_call_181F_06D2(); /* tile_feature(dest_x,dest_y) */
     overlay_call_181F_0916(); /* (unit) prep */
     tflags     = (int16_t)overlay_call_181F_072C(); /* tile_flags(dest_x,dest_y) */
@@ -2961,6 +2972,7 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
  * ========================================================================== */
 int func_040656_unit_chain_171(uint16_t arg0_bp_06)
 {
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
     int16_t  ux, uy;                  /* [bp-0x18],[bp-0x1a] unit coords */
     int16_t  terr;                    /* [bp-0xe]  destination terrain class */
@@ -2974,7 +2986,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     /* @0x04065B..0x0406C0  gather tile + unit facts */
     ux = (uint8_t)G8(rec + 0x3144);                  /* @0x04065F */
     uy = (uint8_t)G8(rec + 0x3145);                  /* @0x040668 */
-    overlay_call_181F_0722(); /* region_at(ux,uy) -> [bp-0xA] */
+    func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-0xA] */
     overlay_call_181F_070E(); /* reachability(uy,ux) -> [bp-0x24] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-6] */
     terr  = (int16_t)overlay_call_181F_078C(); /* terrain_class(uy,ux) */
@@ -3197,6 +3209,7 @@ done:
  * ========================================================================== */
 int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
 {
+    extern int func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x722 */
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
     int16_t  ux, uy;                  /* [bp-0xc],[bp-0xe] */
     int16_t  terr;                    /* [bp-8] */
@@ -3208,7 +3221,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     /* @0x0409DB..0x040A36  gather facts + blocked gate */
     ux = (uint8_t)G8(rec + 0x3144);                  /* @0x0409DF */
     uy = (uint8_t)G8(rec + 0x3145);                  /* @0x0409E8 */
-    overlay_call_181F_0722(); /* region_at(ux,uy) -> [bp-6] */
+    func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-6] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-0x12] */
     terr  = (int16_t)overlay_call_181F_078C(); /* terrain_class(uy,ux) */
     owner = (int16_t)(G8(rec + 0x3147) & 0x0F);      /* @0x040A25 */

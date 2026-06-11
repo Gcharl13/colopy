@@ -254,9 +254,14 @@ symbols).
 >     source pending (also blocks the two pacing waits);
 > (c) ai_eval_unit's confront leaf 1A1F:016C = func_04B308 (1762 bytes,
 >     UNPORTED — the one genuinely missing AI body);
-> (d) ~12 void-arity overlay_call_* rows with documented args (06BE /
->     078C / 0952 outside the AI files, 09C8, 081C, 0B78, 0722, 09E6,
->     0A58:038B's remaining void callers) — per-site arg restoration.
+> (d) **DONE 2026-06-11** — void-arity stub call sites fixed across all six
+>     hot-path overlay files (overlay_04C306_053BC1.c, overlay_03C5A8_040C11.c,
+>     overlay_040C1E_04458A.c, overlay_02AAEC_02F0C7.c, overlay_024342_027B62.c,
+>     overlay_054505_05C69B.c, overlay_0612E6_066EB3.c).  06BE/09E6/0A4C/0722
+>     stub calls replaced with direct calls carrying correct (x,y)/(slot)/(idx)
+>     args.  Also fixed: option_bit_test → func_00863E_wrapper_with_global_8DC6
+>     direct call in sol_tory.c.  Result: 2640+ stub hits/60-turns eliminated.
+>     Smoke 60-turn PASS: 06BE/09E6/0A4C/0722/option_bit_test all ZERO hits.
 
 ---
 
