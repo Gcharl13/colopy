@@ -265,7 +265,9 @@ extern int16_t ovly_postcombat_05C69C(int16_t atk_str, int16_t def_str, int16_t 
  * ------------------------------------------------------------------------- */
 extern int16_t random_int_4D4(int16_t lo, int16_t hi);       /* 0x181F:0x4D4 = random_int(lo,hi) */
 extern int16_t ovly_finalize_unit_90C(int16_t unit);         /* @asm 0x05CAC6 */
-extern int16_t ovly_tile_to_unit_7E0(int16_t a, int16_t x, int16_t y);/* @asm 0x05CB24 */
+extern int16_t ovly_tile_to_unit_7E0(int16_t x, int16_t y); /* @asm 0x05CB24 — REGISTER
+ * convention (AX=x, DX=y -> func_0066CC); the old 3-arg shape misread the
+ * early push at 0x05CB1A, which belongs to the FOLLOWING near call 0x5E70A. */
 extern int16_t ovly_eval_target_5E70A(int16_t unit_on_tile); /* @asm 0x05CB2E CALL near 0x5e70a */
 extern int16_t ovly_target_query_6BE(int16_t x, int16_t y);  /* @asm 0x05CBC3 */
 extern int16_t ovly_target_query_7BE(int16_t x, int16_t y);  /* @asm 0x05CBD5 */
@@ -369,7 +371,7 @@ int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
      *      lcall 0x181F:0x7E0 -> unit index on the target tile -> [bp-0x7e]
      * @asm 0x05CB2C push ax; push cs; call 0x5e70a (near, in-page evaluator)
      *      -> eval := combat/feasibility score for that occupant -> [bp-0xc6] */
-    tile_unit = ovly_tile_to_unit_7E0(owner, tile_x, tile_y);
+    tile_unit = ovly_tile_to_unit_7E0(tile_x, tile_y);   /* AX=[bp+8], DX=[bp+0xA] */
     eval = ovly_eval_target_5E70A(tile_unit);
 
     /* @asm 0x05CB38 zero the scratch result words/flags (8D00/A156/8D02/A158). */

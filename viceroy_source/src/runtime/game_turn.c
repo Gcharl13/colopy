@@ -298,10 +298,15 @@ int viceroy_world_smoke(int turns)
      *   u3 (ship 0x0E, state 0x0B goto (8,5), pos (5,5)): gate (0 < 4);
      *     051D56 state-B -> ai_unit_order_step (@asm 0x051DF6 0x191F:0x4BA
      *     = func_040E22): automove -> func_061F02 plotter (dir 0 on the
-     *     zero-cost tables), absolute executor ai_eval_unit(3,5,4) ends the
-     *     turn via the moves-left short-circuit @asm 0x03EEC1 (leaf returns
-     *     are Phase-4 stub-tier: 0x90C finalize/occupant probes); NOT
-     *     arrived -> state KEPT (@asm 0x040EE8 jmp 0x40fcd done path).
+     *     zero-cost tables), absolute executor ai_eval_unit(3,5,4) finds
+     *     nothing actionable on the empty tile and consumes NO movement
+     *     (the 0x90C allowance leaf is wired real since G1 tranche 2, so
+     *     the @asm 0x03EEC1 moves-left short-circuit no longer fires);
+     *     the PHASE-6 while-gate re-runs the unit until the STUCK-TRACKER
+     *     trips (same unit > 20 rounds -> force end-turn, @asm 0x0532AB/
+     *     0x0532B5 -> 0x181F:0x934) — the original's anti-hang mechanism,
+     *     now exercised by the smoke.  NOT arrived -> state KEPT
+     *     (@asm 0x040EE8 jmp 0x40fcd done path).
      *     END: orders 0x0B (in flight), prof 0x31, pos unchanged.
      * March fidelity (actual eastward steps) needs the Phase-4 wiring audit
      * of the eval/plotter leaves; this baseline pins the DISPATCHER. */

@@ -83,6 +83,9 @@ static void unit_word_set(int idx, int off, int16_t val)
  * ============================================================================ */
 int unit_chain_next(int idx)
 {
+    idx = (int16_t)(uint16_t)idx;            /* 16-bit AX semantics: 0xFFFF == -1
+                                              * (several callers pass the sentinel
+                                              * through a uint16_t cast) */
     if (idx < 0)                             /* @asm 0x66BF jl */
         return idx;
     return unit_word(idx, UNIT_CHAIN_NEXT_OFF);   /* @asm 0x66C4 mov bx,[si+0x315E] */
@@ -115,7 +118,7 @@ int unit_chain_next(int idx)
  * ============================================================================ */
 int unit_chain_resolve(int idx)
 {
-    int bx = idx;
+    int bx = (int16_t)(uint16_t)idx;         /* 16-bit AX semantics: 0xFFFF == -1 */
     int ax;
 
     if (bx < 0)                              /* @asm 0x6677 jl */

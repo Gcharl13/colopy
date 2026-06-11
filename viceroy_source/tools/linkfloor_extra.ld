@@ -120,6 +120,32 @@ PROVIDE(ovly_step_unit_2E4     = unit_chain_next);   /* 181F:02E4 — stub-0 mad
                                   the tile-stack walks spin (the 1.2 hang class) */
 PROVIDE(ovly_clear_orders_934  = func_007BCE_logic_sz_25); /* 181F:0934 end-turn
                                   (native_unit_ai.c / unit_ai_leaf.c externs) */
+/* G1 tranche 2 (2026-06-11): ai_eval_unit + native_unit_ai + unit_ai_leaf
+ * probe leaves.  All targets are existing ports; arity checked against the
+ * extern declarations (and the EXE call sites where conventions differed —
+ * 7E0 is the register-pair AX/DX call, leaf extern corrected). */
+PROVIDE(ovly_unit_ability_754  = func_005D32_map_tile_read_layer_160);   /* 181F:0754
+                                  (unit_orders.c spelling of ovly_ability_754) */
+PROVIDE(ovly_unit_ability_72C  = func_005CFE_map_tile_read_layer_15C);   /* 181F:072C */
+PROVIDE(ovly_occupant_at_6BE   = func_005FD4_map_xy_bounds_or_neg1_alt); /* 181F:06BE */
+PROVIDE(ovly_query_6BE         = func_005FD4_map_xy_bounds_or_neg1_alt);
+PROVIDE(ovly_target_query_6BE  = func_005FD4_map_xy_bounds_or_neg1_alt);
+PROVIDE(ovly_tile_to_unit_7E0  = func_0066CC_op_sz_57);                  /* 181F:07E0 (AX,DX) */
+PROVIDE(ovly_attackable_6F0    = func_005F82_logic_sz_31);               /* 181F:06F0 */
+PROVIDE(ovly_relation_query_826 = func_00730A_op_sz_75);                 /* 181F:0826 */
+PROVIDE(ovly_finalize_unit_90C = func_006CCA_logic_sz_13);               /* 181F:090C =
+                                  movement ALLOWANCE (the "finalize" name was a
+                                  misread; moves_left = allowance - used) */
+PROVIDE(ovly_commit_A4C        = func_0081F2_logic_sz_34);               /* 181F:0A4C */
+PROVIDE(ovly_dist_370          = func_004900_logic_sz_15);               /* 181F:0370 */
+PROVIDE(ovly_query_37A         = func_00493C_logic_sz_14);               /* 181F:037A */
+PROVIDE(ovly_colony_at_7BE     = func_008D26_op_sz_69);                  /* 181F:07BE */
+PROVIDE(ovly_target_query_7BE  = func_008D26_op_sz_69);
+PROVIDE(ovly_query_6DC         = func_005DF0_logic_sz_40);               /* 181F:06DC */
+PROVIDE(ovly_query_682         = func_005F04_map_xy_bounds_or_neg1);     /* 181F:0682 */
+PROVIDE(ovly_query_718         = func_0060A0_logic_sz_128);              /* 181F:0718 */
+PROVIDE(ovly_market_value_30C  = func_0082A0_logic_sz_18);               /* 181F:030C */
+PROVIDE(ovly_terrain_78C       = func_00627A_op_sz_57);                  /* 181F:078C */
 
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
@@ -135,3 +161,16 @@ EXTERN(func_0083F2_op_sz_71)
 EXTERN(func_006E94_logic_sz_198)
 EXTERN(func_00BC10_ff_owned)
 EXTERN(unit_chain_next)
+EXTERN(func_005FD4_map_xy_bounds_or_neg1_alt)
+EXTERN(func_0066CC_op_sz_57)
+EXTERN(func_005F82_logic_sz_31)
+EXTERN(func_00730A_op_sz_75)
+EXTERN(func_0081F2_logic_sz_34)
+EXTERN(func_004900_logic_sz_15)
+EXTERN(func_00493C_logic_sz_14)
+EXTERN(func_008D26_op_sz_69)
+EXTERN(func_005DF0_logic_sz_40)
+EXTERN(func_005F04_map_xy_bounds_or_neg1)
+EXTERN(func_0060A0_logic_sz_128)
+EXTERN(func_0082A0_logic_sz_18)
+EXTERN(func_00627A_op_sz_57)
