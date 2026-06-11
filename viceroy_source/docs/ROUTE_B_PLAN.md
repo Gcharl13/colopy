@@ -462,6 +462,13 @@ certification sweep. All must be green on one commit:
 
 1. VICEROY.EXE, game data, and DOSBox captures are NEVER committed
    (gitignored); the modern build embeds no original bytes.
+   > A third-party flat-linked rebuild (`colonize.exe`, user-supplied
+   > 2026-06-11, kept locally as `re_work/colonize_thirdparty.exe` —
+   > gitignored) exists as a CROSS-REFERENCE ONLY: it is forward-engineered
+   > (adds logging/CLI flags) and is NOT a source of truth.  Permitted use:
+   > disambiguating an uncertain RTLink thunk resolution by locating the
+   > byte-similar MSC function body and reading its DIRECT call targets.
+   > Every cite still goes to VICEROY.EXE.
 2. Every ported value cites a file offset; nothing is invented. Where the
    original is buggy (dead stores, uninitialized reads), the port reproduces
    the observable behavior and documents the quirk.
