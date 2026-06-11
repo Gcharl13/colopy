@@ -146,6 +146,20 @@ extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-
 extern void overlay_191F_2EA_explore(uint16_t unit_index); /* 0x191F:0x2EA ship explore move;
                                                * called from AI10 schooner gate + AI8 mid-body;
                                                * body in page07 */
+/* AI11/AI12 helpers -- all resolved through the thunk rule:
+ *   0x181F:0x808 -> file 0x06E94  unit_destroy (BYTE_VERIFIED port)
+ *   0x181F:0x8A8 -> file 0x07B64  nearest own unit excl. self (BYTE_VERIFIED)
+ *   0x181F:0x9A4 -> file 0x08110  power-name word (existing extern convention)
+ *   0x181F:0x438 / 0x9AE / 0x652  UI message-arg + dialog helpers (same extern
+ *   names as ai/unit_orders.c and ai/unit_ai_leaf.c use for these thunks) */
+extern int     func_006E94_logic_sz_198(uint16_t unit);    /* unit_destroy */
+extern int     func_007B64_op_sz_105(uint16_t power, uint16_t excl_unit,
+                                     uint16_t x, uint16_t y);
+                       /* -> nearest unit owned by power (not excl); [0x8CF8]=dist */
+extern int16_t ovly_name_word_9A4(int16_t power);
+extern void    ovly_msg_arg_438(int16_t val, int16_t slot);
+extern void    ovly_msg_arg_9AE(int16_t lo, int16_t hi, int16_t z);
+extern int16_t ovly_dialog_652(int16_t flag, int16_t msg_id);
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -1001,20 +1015,135 @@ ai8_explore_50196:                                              /* 0x50196 */
     return move_eval_tail_51C68(unit_index, owner);             /* @asm 0x4F228 jmp 0x51C68 */
 
 ai11:                                                           /* 0x507D3 */
-    /* ======================= AI11: SCHOONER SETTLEMENT SCORING ==============
-     * (0x507D3..0x50918)  Type 0x0C schooner rates nearby native settlements.
-     * Gate: type == 0x0C (BYTE_VERIFIED @asm 0x507D7).
-     * Body: settlement scoring loop using func_0081F2_logic_sz_34 / octile
-     * distance; commits via jmp-0x4E9E5(dx=0x34).  RUNTIME_ONLY stub. */
+    /* ======================= AI11: TYPE-0xC TRADER ROUTE ====================
+     * (0x507D3..0x50918)  Type 0x0C (the colony-supply hauler: AI7's load
+     * path sets its +0x14 "loaded" byte @asm 0x4F730).
+     * LOADED: pick the nearest native settlement in this region (the
+     * settlement's +3 bit-4 "visited" flag halves its distance, min 1) and
+     * goto it as prof '4' (sell trip).  No candidate -> the unit is DESTROYED
+     * (jmp 0x509A9).
+     * EMPTY:  park at the home colony as 'U' when standing in it; else goto
+     * the home colony as '5'; no home -> adopt col_own when it is in this
+     * region, otherwise DESTROYED.
+     * All control flow BYTE_VERIFIED @asm 0x507D7..0x50918. */
     if (type != 0x0C) goto ai12;                                /* @asm 0x507D7 */
-    /* scoring (RUNTIME_ONLY stub) */
+    if (U_OFF(unit_index, 0x14) != 0) {                         /* @asm 0x507E1 loaded */
+        int16_t best_22 = -1;                                   /* @asm 0x507EB [bp-0x22] */
+        int16_t best_E0 = 0x270F;                               /* @asm 0x507F0 [bp-0xE0] */
+        int16_t si_4E;                                          /* [bp-0x4E] */
+        for (si_4E = 0; si_4E < (int16_t)DG16(0x539A); si_4E++) {
+                                                                /* @asm 0x507F6/0x5087B */
+            int16_t d;
+            func_0081F2_logic_sz_34((uint16_t)si_4E);           /* @asm 0x50801 select */
+            if ((int16_t)func_005E90_op_sz_64(DG8(DG16(0x8D4A) + 0),
+                    DG8(DG16(0x8D4A) + 1)) != region)           /* @asm 0x50816/0x5081E */
+                continue;
+            d = (int16_t)func_00493C_logic_sz_14((uint16_t)map_x, (uint16_t)map_y,
+                    DG8(DG16(0x8D4A) + 0), DG8(DG16(0x8D4A) + 1)); /* @asm 0x50838 */
+            if (DG8(DG16(0x8D4A) + 3) & 4) {                    /* @asm 0x50847 visited */
+                d = (int16_t)(d >> 1);                          /* @asm 0x50858 sar */
+                if (d < 1) d = 1;                               /* @asm 0x5085A/0x5085F */
+            }
+            if (best_E0 > d) {                                  /* @asm 0x50868 jle skips */
+                best_22 = si_4E;                                /* @asm 0x5086E */
+                best_E0 = d;                                    /* @asm 0x50874 */
+            }
+        }
+        if (best_22 < 0)                                        /* @asm 0x50886 */
+            goto ai12_remove_509A9;                             /* @asm 0x5088C */
+        func_0081F2_logic_sz_34((uint16_t)best_22);             /* @asm 0x50892 select */
+        func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x34,
+            DG8(DG16(0x8D4A) + 0), DG8(DG16(0x8D4A) + 1));
+                          /* @asm 0x5089A..0x508AE: dx='4', jmp 0x4E9E5 */
+        return move_eval_tail_51C68(unit_index, owner);
+    }
+    /* empty hauler (@asm 0x508B2) */
+    if (col_own_dist == 0) {                                    /* @asm 0x508B2 */
+        if ((int8_t)U_OFF(unit_index, 0x06) < 0)                /* @asm 0x508BC */
+            U_OFF(unit_index, 0x06) = (uint8_t)col_own;         /* @asm 0x508C6 */
+        if (U_OFF(unit_index, 0x06) == (uint8_t)col_own) {      /* @asm 0x508D1 */
+            U_OFF(unit_index, U_PROF) = 0x55;                   /* @asm 0x508D7 'U' */
+            goto ai19_park;                                     /* @asm 0x508DC -> 0x51A89 */
+        }
+    }
+    if ((int8_t)U_OFF(unit_index, 0x06) >= 0) {                 /* @asm 0x508E4 */
+        func_0082DC_logic_sz_118(
+            (uint16_t)(int8_t)U_OFF(unit_index, 0x06));         /* @asm 0x508F1 select */
+        goto ai11_goto_colony_35;                               /* @asm 0x508F9 -> 0x50757 */
+    }
+    if (reg_own_col != region)                                  /* @asm 0x508FF */
+        goto ai12_remove_509A9;                                 /* @asm 0x50904 */
+ai11_sethome_50912:                                             /* 0x50907 */
+    U_OFF(unit_index, 0x06) = (uint8_t)col_own;                 /* @asm 0x5090E */
+    func_0082DC_logic_sz_118((uint16_t)col_own);                /* @asm 0x50912 (push)
+                                                                 * -> 0x508F1 select */
+ai11_goto_colony_35:                                            /* 0x50757 */
+    func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x35,
+        DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                          /* @asm 0x50757..0x5076B: dx='5', jmp 0x4E9E5 */
+    return move_eval_tail_51C68(unit_index, owner);
+
 ai12:                                                           /* 0x50918 */
-    /* ======================= AI12: TYPE-0xA TRADING PATH ====================
-     * (0x50918..0x50A4D)  Type 0x0A (fur trader) at own colony: computes
-     * income fraction, credits treasury, dispatches 0x191F:0x9A4 / orders.
-     * Gate: type == 0x0A (BYTE_VERIFIED @asm 0x050930).  RUNTIME_ONLY stub. */
-    if (type != 0x0A) goto ai13;                                /* @asm 0x050930 */
-    /* (RUNTIME_ONLY stub) */
+    /* ======================= AI12: TREASURE-TRAIN DELIVERY ==================
+     * (0x50918..0x50A4D)  Type 0x0A (treasure train).
+     * AT OWN COLONY: value = 100 x U_OFF(+0x17); credit the power treasury
+     * dword ([0x84FC]+0x2A/+0x2C); unless in revolution ([0x5382]&1) raise the
+     * "treasure delivered" dialog (power name + homeport name + value, template
+     * DGROUP:0x1786); then DESTROY the train and return 1 (jmp 0x51D4D skips
+     * the tail's result-zeroing, so the entry value [bp-0xB6]=1 is returned).
+     * ELSEWHERE: same region as an own colony -> adopt it as home and goto as
+     * '5' (shared AI11 path); else walk toward the nearest own unit (a carrier
+     * candidate, func_007B64) in this region as '!'; if the nearest-target
+     * probe equals current_nation_index ([0x5398]) the train is DESTROYED.
+     * All control flow BYTE_VERIFIED @asm 0x050934..0x050A4D. */
+    if (type != 0x0A) goto ai13;                                /* @asm 0x050934 */
+    if (col_own_dist == 0) {                                    /* @asm 0x05093E */
+        uint16_t value = (uint16_t)(0x64u *
+                             (uint16_t)U_OFF(unit_index, 0x17)); /* @asm 0x050944 mul */
+        uint32_t t = (uint32_t)DG16(DG16(0x84FC) + 0x2A)
+                   | ((uint32_t)DG16(DG16(0x84FC) + 0x2C) << 16);
+        t += value;                                             /* @asm 0x050954 add/adc */
+        DG16(DG16(0x84FC) + 0x2A) = (uint16_t)t;
+        DG16(DG16(0x84FC) + 0x2C) = (uint16_t)(t >> 16);
+        if (!(DG8(0x5382) & 1)) {                               /* @asm 0x05095A revolution */
+            ovly_msg_arg_438(ovly_name_word_9A4((int16_t)owner), 0);
+                                                                /* @asm 0x050965/0x050970 */
+            ovly_msg_arg_438((int16_t)DG16(0x838C + owner*2), 1);
+                                                                /* @asm 0x05097E/0x050984
+                                                                 * HOMEPORT name word */
+            ovly_msg_arg_9AE((int16_t)value, 0, 0);             /* @asm 0x050994 */
+            ovly_dialog_652(2, 0x1786);                         /* @asm 0x0509A1 */
+        }
+        goto ai12_remove_509A9;
+    }
+    if (reg_own_col == region)                                  /* @asm 0x0509BB */
+        goto ai11_sethome_50912;                                /* @asm 0x0509C0 -> 0x50912 */
+    {
+        int16_t carrier = (int16_t)func_007B64_op_sz_105((uint16_t)owner,
+                              (uint16_t)unit_index, (uint16_t)map_x,
+                              (uint16_t)map_y);                 /* @asm 0x0509D7 */
+        if (carrier >= 0) {                                     /* @asm 0x0509E4 */
+            uint8_t hx = U_OFF(carrier, U_MAPX);                /* @asm 0x0509F0 */
+            uint8_t hy = U_OFF(carrier, U_MAPY);                /* @asm 0x0509E9 */
+            if ((int16_t)func_005E90_op_sz_64(hx, hy) == region) {
+                                                                /* @asm 0x0509F7/0x0509FF */
+                func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x21,
+                                                 hx, hy);
+                          /* @asm 0x050A1B..0x050A24: dx='!', jmp 0x4E9E5 */
+                return move_eval_tail_51C68(unit_index, owner);
+            }
+        }
+        if ((int16_t)func_04CAF6_ai_find_nearest_target((uint16_t)map_x,
+                (uint16_t)map_y, (uint16_t)owner, 0)
+                == (int16_t)DG16(0x5398))                       /* @asm 0x050A3E/0x050A44 */
+            goto ai12_remove_509A9;                             /* @asm 0x050A4A */
+    }
+    goto ai13;                                                  /* @asm 0x050A48 fall */
+
+ai12_remove_509A9:                                              /* 0x509A9 */
+    func_006E94_logic_sz_198((uint16_t)unit_index);             /* @asm 0x0509AC destroy */
+    return 1;                  /* @asm 0x0509B4 jmp 0x51D4D: returns [bp-0xB6]=1 */
+
 ai13:                                                           /* 0x50A4D */
     /* ======================= AI13: TYPE-3 MISSIONARY PATH ===================
      * (0x50A4D..0x50BE7)  Type 3 (missionary): scores settlements to visit
