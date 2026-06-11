@@ -121,11 +121,15 @@ function; the section map covers 100% of its 14,975 bytes:
       consumes the winner pro-rata (demand scaled remaining/count, slot
       freed at zero) and commits via the shared 0x50757 goto-'5'.
       Ported sheet-first.
-- [ ] **1.4 `func_05CA7E` combat/attack evaluator** (page 10, 7,348 bytes,
-      ENTER 0xDE) — called by AI18 as `(unit, x, y, 0, 0)` and by the human
-      combat path. Pre-enumerate its own leaf calls on session 1 (bounded by
-      E1; the function's lcall list is finite and extracted mechanically),
-      then port. (3–4 sessions)
+- [x] **1.4 `func_05CA7E` combat/attack evaluator** DONE 2026-06-11 (page 10,
+      7,348 bytes). All control flow BYTE_VERIFIED; evaluate path (mode==0)
+      returns `(atk_str<<3)/(def_str+1)` @asm 0x05D032; execute path (mode!=0)
+      rolls random(1, ATK+DEF) and applies via `ovly_combat_apply_wrapper_05BE30`.
+      SoL/difficulty/terrain/era modifier chain (0x05CF52..0x05D14D) ported.
+      RUNTIME_ONLY data: per-type @UNIT columns, terrain/fort bonus tables,
+      per-power bias tables, colony loot long-math (data-resident, not in EXE
+      image).  `func_05CA7E_attack_value` alias + `thunk_keepalive_extra.c`
+      keepalive wired; 500-turn smoke PASS, REF=228.
 - [x] **1.5 Explore + colonist-enter leaves** (both closed 2026-06-11):
   - [x] 1.5b `0x191F:0x9A4` colonist-enter = page03+0x1B1A = file 0x2EAEA,
         EXISTING port func_02EAEA_op_sz_49 -- wired into AI6 with the
@@ -145,11 +149,17 @@ function; the section map covers 100% of its 14,975 bytes:
         (existing BYTE_VERIFIED port) -- wired as the AI8/AI10 explore
         leaf.  Closes the resolution layer for EVERY sub-segment thunk
         (~373 records), not just this one.
-- [ ] **1.6 The runtime dispatcher.** The `func_04E2D6` thunk (0x1A1F:0x4F4)
-      has no static lcall site — find the runtime dispatch (function-pointer
-      table or computed call) so the per-unit loop runs the original's
-      sequencing instead of the shell's. Search space: DGROUP xref scan for
-      0x04F4 little-endian + the AI driver's call sites (finite). (1 session)
+- [ ] **1.6 The runtime dispatcher.** PARTIALLY DECODED 2026-06-11:
+      - Overlay RTLink load base = 0x04C1F0 (RTLink header is 0x116 bytes before
+        code at 0x04C306; confirmed by load-offset 0x20E6 matching stub EA E6 20
+        in 0x1A1F:0x04F4).
+      - `func_051D56` thunk at 0x1A1F:0x0488 (jump-table entry [3], load-offset
+        0x5B66); its single call site is at file 0x05336F (load 0x717F) inside
+        `func_052F7E` (ENTER at file 0x052F7E = `func_052F7E_ai_power_asset_census`).
+      - Wrong annotation fixed: `ovly_tramp_7AA8` → `unit_move_step` with correct
+        `@asm 0x051DC1 E8 34 17 call cs:0x71F2 -> JMP FAR 1A1F:04F4`.
+      - NEXT: decode per-unit loop body inside `func_052F7E`, collapse
+        `viceroy_ai_unit_turns` shell, re-verify smoke.
 - [ ] **1.7 Terrain-weight tables** DS:0x2F76/0x2F77/0x2F79 (stride 16) and
       the wander tables DS:0xC8/0xDE — confirm loader provenance (NAMES.TXT
       section vs DGROUP init image) so the AI18 weights are fed by real data

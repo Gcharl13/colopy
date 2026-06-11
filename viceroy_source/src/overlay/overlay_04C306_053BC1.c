@@ -1543,7 +1543,7 @@ int func_051D56_unit_special_order_dispatch(uint16_t unit)
             if (gate != 0) {                            /* @asm 0x051DA5 */
                 if (u[0x07] == 0x45)                    /* @asm 0x051DAB +0x314B */
                     g_ai_pwr_pool_9456[u[0x03] & 0x0F]--;/* @asm 0x051DB9 [owner&0xF-0x6BAA] */
-                if (ovly_tramp_7AA8(unit) != 0)         /* @asm 0x051DC1 call cs:0x7AA8 */
+                if (unit_move_step((int16_t)unit) != 0) /* @asm 0x051DC1 E8 34 17 call cs:0x71F2 -> JMP FAR 1A1F:04F4 = func_04E2D6 */
                     return 0;                           /* @asm 0x051DC8 -> done path */
             }
         }
