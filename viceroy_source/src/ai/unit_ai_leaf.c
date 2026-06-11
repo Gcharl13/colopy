@@ -278,11 +278,13 @@ extern int16_t ovly_path_check_302(int16_t x, int16_t y);    /* @asm 0x05CC18 */
 extern int16_t ovly_target_query_9F0(int16_t x, int16_t y);  /* @asm 0x05CC36 */
 extern void    ovly_commit_A4C(int16_t v);                   /* @asm 0x05CD00 */
 extern int16_t ovly_query_9E6(int16_t v);                    /* @asm 0x05CC5C */
+extern int16_t ovly_query_C86(void);                         /* @asm 0x05CF98 SoL% for active colony */
 extern int16_t ovly_query_C54(int16_t v);                    /* @asm 0x05CC7D */
 extern int16_t ovly_query_2C6(int16_t v);                    /* @asm 0x05CC9B */
 extern int16_t ovly_feasible_7B4(int16_t a, int16_t b);      /* @asm 0x05CCAA / 0x05CDCB */
 extern int16_t ovly_spawn_unit_A20(int16_t cls, int16_t x, int16_t y,
                                    int16_t a, int16_t b);     /* @asm 0x05CCE2 / 0x05CD60 */
+extern int  func_005F48_logic_sz_58(uint16_t x, uint16_t y); /* 0x181F:0x696 -> file 0x005F48 */
 
 /* ============================================================================
  * ai_unit_leaf -- func_05CA7E (page 0x10), file 0x05CA7E..(spills past page end)
@@ -319,7 +321,8 @@ int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
     int16_t band_flag;     /* [bp-0x84] (1 when type in 0x0D..0x12) */
     int16_t tile_unit;     /* [bp-0x7e] unit index on the target tile */
     int16_t eval;          /* [bp-0xc6] result of the inner evaluator 0x5e70a */
-    int16_t sub_mode = 0;  /* [bp-0x8e] reason/sub-mode set on each reject path */
+    int16_t sub_mode = 0;        /* [bp-0x8e] reason/sub-mode: 1/2/3 on reject paths */
+    int16_t eval_reject_flag = 0;/* [bp-0x6e] set to 1 when the initial eval<0 (eval rejected) */
 
     /* -- combat-decision locals (the deep block, all @asm-cited below) -------- */
     int16_t atk_str = 0;   /* [bp-0x90] ATTACKER strength (built by modifier chain) */
@@ -420,7 +423,8 @@ int16_t ai_unit_leaf(int16_t unit_index, int16_t tile_x, int16_t tile_y,
      *   (debug/score annotate); then 0x181F:0x302 path check; if AX!=0
      *   jmp 0x5e66e (a far cleanup); else RETF (early return -- the leaf gives up
      *   placing here). */
-    sub_mode = 1;                                            /* [bp-0x6e]=1 */
+    eval_reject_flag = 1;   /* @asm 0x05CBEB mov [bp-0x6e],1 (eval<0 flag) */
+    sub_mode = 1;           /* [bp-0x8e]: will be set to 1 on next line if occ_owner<0 */
     if (r_d6 < 0) {
         ovly_debug_str_77E(1, tile_y, tile_x, "Bad defense");/* @asm 0x05CC0A */
         if (ovly_path_check_302(tile_x, tile_y) != 0)        /* @asm 0x05CC18 */
@@ -627,7 +631,37 @@ candidate_loop:
      *   -> its NUMERIC contribution is RUNTIME_ONLY (data-resident); the CONTROL FLOW + the /0x14
      *   and /0x64 divisors are byte-cited.  (Structural; not invented.) */
     if ((g_game_flags_5382 & 1) && owner < 4) {              /* @asm 0x05CF52/0x05CF5C */
-        /* SoL scaling block @asm 0x05CF66..0x05D01E -- see note above. [RUNTIME_ONLY (data-resident) weights] */
+        if (r_d6 >= 0) {                                     /* @asm 0x05CF66 colony path */
+            /* @asm 0x05CF6D: self_power==owner OR war-of-independence ally flag (bit1) */
+            if (owner == g_self_power_53D2 || (g_game_flags_5382 & 2)) {
+                g_ai_scratch_8D01 |= 0x80;                   /* @asm 0x05CF7D */
+                atk_str += (int16_t)(atk_str >> 1);          /* @asm 0x05CF82 +50% */
+            }
+            {   /* @asm 0x05CF8C: fetch SoL% for this colony */
+                int16_t sol_pct, sol_flag;
+                ovly_query_9E6(r_d6);                        /* @asm 0x05CF90 set active colony */
+                sol_pct = ovly_query_C86();                  /* @asm 0x05CF98 -> [bp-0xa2] */
+                if (owner == g_self_power_53D2) {            /* @asm 0x05CFA1 */
+                    sol_flag = 2;                            /* @asm 0x05CFAA [bp-0xc]=2 */
+                    sol_pct  = (int16_t)(100 - sol_pct);     /* @asm 0x05CFAF rebel uses tory% */
+                } else {
+                    sol_flag = 4;                            /* @asm 0x05CFBC [bp-0xc]=4 */
+                }
+                if (sol_pct != 0) {                          /* @asm 0x05CFC1 */
+                    g_ai_scratch_A156 |= (uint16_t)sol_flag; /* @asm 0x05CFCB */
+                    atk_str += (int16_t)(((int32_t)sol_pct * atk_str) / 100); /* @asm 0x05CFCF/0x05D003 /0x64 */
+                }
+            }
+        } else {                                             /* @asm 0x05CFDC open-terrain path */
+            /* @asm 0x05CFDC: human player only; terrain NOT 0x19/0x1A */
+            if (owner == g_self_power_53D2) {
+                if (!res_terrain_is_1819_768(tile_x, tile_y)) /* @asm 0x05CFE5/0x05CFF3 */
+                    atk_str += (int16_t)(((int32_t)g_difficulty_53A6 * atk_str) / 20); /* @asm 0x05CFFA/0x05D000 /0x14 */
+            }
+        }
+        /* @asm 0x05D00A: if owner==self_power call func_005F48 (result discarded) */
+        if (owner == g_self_power_53D2)
+            func_005F48_logic_sz_58((uint16_t)tile_x, (uint16_t)tile_y); /* @asm 0x05D013 */
     }
 
     /* ==== terrain/era SoL adjustments (only when mode==0, i.e. EVALUATE) ===== */
@@ -637,17 +671,66 @@ candidate_loop:
      *       return (atk_str << 3) / (def_str + 1);
      *   This is the score the AI uses to RANK targets when it is not committing. */
     if (mode == 0) {                                         /* @asm 0x05D021 */
-        if (sub_mode != 0) ovly_postcombat_05C69C(0,0,0);    /* @asm 0x05D02D lcall 0x191f:0xa06 */
+        if (eval_reject_flag != 0) ovly_postcombat_05C69C(0,0,0); /* @asm 0x05D027/0x05D02D [bp-0x6e] */
         return (int16_t)(((int32_t)atk_str << 3) / (def_str + 1)); /* @asm 0x05D032 EVALUATE score */
     }
 
-    /* @asm 0x05D046.. (mode!=0, ACT FOR REAL) -- more terrain/era scales keyed on
-     *   g_difficulty_53A6, the human self-power, g_turn_538E vs 0x50, and the
-     *   res_terrain_is_1819_768 terrain check; each is a SoL/era atk_str or def_str
-     *   halving/doubling.  All byte-cited @asm 0x05D046..0x05D14D; the per-power
-     *   bias tables (0x5D65 stride 0xCA, the [bp-0x76]-displaced 0x6BF4/0x6D68)
-     *   are data-resident -> RUNTIME_ONLY (data-resident).  These ADJUST atk_str/def_str but do not
-     *   change the roll FORM below. */
+    /* ==== terrain/era atk_str/def_str adjustments (mode!=0, ACT FOR REAL) ======
+     * @asm 0x05D046..0x05D14D -- byte-cited; per-power bias table VALUES are
+     * RUNTIME_ONLY (data-resident, not in EXE image). */
+
+    if (g_difficulty_53A6 <= 1) {                            /* @asm 0x05D046 jbe 0x5D050 */
+        /* WoI + banded-unit skip: when WoI active AND colony target AND attacker is
+         * the ship/band class (0x0D..0x12), the first two scale blocks are skipped.
+         * @asm 0x05D050..0x05D06A */
+        if (!((g_game_flags_5382 & 1) && r_d6 >= 0
+              && unit_type >= 0x0D && unit_type <= 0x12)) {
+            /* First scale: defender is AI + early-era (turn<0x50) + colony target.
+             * @asm 0x05D06C..0x05D0A9 */
+            if (def_owner < 4 && g_ai_personality_543F[def_owner][0x00] == 0
+                && g_turn_538E < 0x50 && r_d6 >= 0) {       /* @asm 0x05D06C..0x05D084 */
+                if (g_difficulty_53A6 != 0)
+                    atk_str >>= 1;                           /* @asm 0x05D092 diff=1: halve */
+                else
+                    atk_str -= (int16_t)(atk_str >> 2);      /* @asm 0x05D09C diff=0: *3/4 */
+                /* @asm 0x05D0A3: eval_reject_flag AND diff==0 -> zero */
+                if (eval_reject_flag != 0 && g_difficulty_53A6 == 0)
+                    atk_str = 0;                             /* @asm 0x05D0B0 */
+            }
+        }
+        /* Second halving: def is AI, personality==0, AND (attacker is EU OR early-era).
+         * @asm 0x05D0B6..0x05D0D7 */
+        if (def_owner < 4 && g_ai_personality_543F[def_owner][0x00] == 0) {
+            if (owner < 4 || g_turn_538E < 0x50)            /* @asm 0x05D0C7..0x05D0D3 */
+                atk_str >>= 1;                               /* @asm 0x05D0D5 */
+        }
+    }
+
+    /* @asm 0x05D0D9: natives-favor -- difficulty==0, AI EU attacker, personality==0 */
+    if (g_difficulty_53A6 == 0 && owner < 4
+        && g_ai_personality_543F[owner][0x00] == 0)
+        atk_str <<= 1;                                       /* @asm 0x05D0F3 */
+
+    /* @asm 0x05D0F7..0x05D150: per-power bias (r_d6>=0 gate) -- RUNTIME_ONLY tables.
+     * Two table reads are DGROUP-offset indexed by def_owner:
+     *   [def_owner - 0x6D68] (owner>=4 path): forces atk_str=0 when table==1.
+     *   g_col_data_5D65[r_d6*0xCA] vs g_pwr_bias_6BF4[def_owner]>>1 (def AI path):
+     *     if threshold <= colony score: def_str += (4 - difficulty) * 4.
+     * Control flow byte-cited; table VALUES data-resident -> NOT invented. */
+    if (r_d6 >= 0) {                                         /* @asm 0x05D0F7 */
+        if (owner >= 4) {                                    /* @asm 0x05D0FE */
+            /* @asm 0x05D105: DGROUP[def_owner - 0x6D68] == 1 -> atk_str = 0;
+             * table access documented; RUNTIME_ONLY value (data-resident). */
+        }
+        if (def_owner < 4                                    /* @asm 0x05D115 */
+            && g_ai_personality_543F[def_owner][0x00] == 0) {
+            /* @asm 0x05D126: bias = g_col_data_5D65[r_d6 * 0xCA];
+             * @asm 0x05D134: threshold = DGROUP[def_owner - 0x6BF4] >> 1;
+             * @asm 0x05D13C: if threshold <= bias:
+             *   def_str += (4 - difficulty) * 4;   @asm 0x05D14D
+             * RUNTIME_ONLY table values (data-resident). */
+        }
+    }
 
     /* ======================================================================== *
      *   >>> THE ROLL: random over (DEF + ATK); WIN iff roll <= ATK <<<          *
