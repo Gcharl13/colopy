@@ -644,7 +644,8 @@ int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
             for (; n > 0; n--) {
                 int w;
                 for (w = 0; w < 0x0E; w++)               /* rep movsw, 0xE words = 0x1C */
-                    ((uint16_t near *)dst)[w] = ((uint16_t near *)(dst + 0x1C))[w];
+                    ((uint16_t near *)(DG_BASE + dst))[w] =
+                        ((uint16_t near *)(DG_BASE + dst + 0x1C))[w];
                 dst += 0x1C;
             }
         }

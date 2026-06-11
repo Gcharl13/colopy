@@ -69,8 +69,9 @@ static void viceroy_native_unit_turns(void)
     int n = (int16_t)DG16(0x539C);
     for (int u = 0; u < n; u++) {
         int owner = DG8(0x3144 + u * 0x1C + 3) & 0x0F;
-        if ((int8_t)DG8(0x3144 + u * 0x1C + 6) <= 0)
-            continue;                          /* no movement left */
+        /* (the old "+0x06 <= 0 -> no movement" gate here was a misread:
+         * +0x06/0x314A is the HOME-SETTLEMENT LINK.  native_unit_ai's own
+         * validity/cleanup checks gate the call; no shell pre-gate.) */
         if (owner >= 4)
             native_unit_ai((int16_t)u);
     }
@@ -193,16 +194,24 @@ int viceroy_world_smoke(int turns)
     DG8(0x53A6) = 4;                 /* Viceroy difficulty: fastest REF feed */
     G_YEAR = 1492; G_TURN = 0;
 
-    /* a native brave (tribe 4) two tiles from the colony, with moves */
+    /* a native brave (tribe 4) two tiles from the colony, homed to a real
+     * settlement.  +0x06 (0x314A) is the HOME-SETTLEMENT LINK (the byte-true
+     * meaning — the pre-1.6 shell misread it as "moves left"): native_unit_ai
+     * destroys any tribe unit whose link is invalid (@asm 0x047128 ->
+     * 0x181F:0x808 off-map cleanup), so the fixture supplies settlement 0. */
     DG16(0x539C) = 1;
     DG8(0x3144 + 0) = 12; DG8(0x3144 + 1) = 10;   /* x,y */
     DG8(0x3144 + 2) = 0;                          /* type: brave-ish */
     DG8(0x3144 + 3) = 4;                          /* owner nibble = tribe 4 */
-    DG8(0x3144 + 6) = 1;                          /* one move */
+    DG8(0x3144 + 6) = 0;                          /* home settlement link = 0 */
     DG16(0x3144 + 0x18) = 0xFFFF;                 /* on-map gate */
     DG16(0x3144 + 0x1A) = 0xFFFF;                 /* chain terminator */
     {   extern void tilehead_set(int,int,int);
         tilehead_set(12, 10, 0); }
+    /* NativeSettlement[0] @0x54EC (stride 0x12): x,y at +0/+1 (cites in
+     * native_unit_ai.c @asm 0x047153/0x04715F home-distance reads). */
+    DG16(0x539A) = 1;                             /* native settlement count */
+    DG8(0x54EC + 0) = 14; DG8(0x54EC + 1) = 10;   /* settlement at (14,10) */
 
     /* ---- European-AI fixture: three power-1 units exercising the 0x4E2D6
      * EXIT TAIL (unit/move.c move_eval_tail_51C68) through the autumn loop:
@@ -241,8 +250,37 @@ int viceroy_world_smoke(int turns)
         DG8(0x8808 + 1*0x13C + 0x34 + 2) |= 0x40;
     }
 
-    for (int t = 0; t < turns; t++)
-        viceroy_world_autumn();
+    /* ---- GATE-G1 SOAK INSTRUMENTATION (harness-side only) ----
+     * Per euro-AI unit-turn, diff (pos, state, moves-used) across the world
+     * step and tally the outcome class.  The engines are untouched; this is
+     * the "AI move distribution sanity report" required by Gate G1. */
+    {
+        unsigned long d_moved = 0, d_restate = 0, d_exhaust = 0, d_idle = 0;
+        for (int t = 0; t < turns; t++) {
+            uint8_t pre[4][4];
+            int n = (int16_t)DG16(0x539C);
+            if (n > 4) n = 4;
+            for (int u = 0; u < n; u++) {
+                pre[u][0] = DG8(0x3144 + u*0x1C + 0);   /* x  */
+                pre[u][1] = DG8(0x3144 + u*0x1C + 1);   /* y  */
+                pre[u][2] = DG8(0x3144 + u*0x1C + 8);   /* state */
+                pre[u][3] = DG8(0x3144 + u*0x1C + 5);   /* moves-used */
+            }
+            viceroy_world_autumn();
+            for (int u = 0; u < n; u++) {
+                if ((DG8(0x3144 + u*0x1C + 3) & 0x0F) != 1)
+                    continue;                            /* euro-AI power only */
+                if (pre[u][0] != DG8(0x3144 + u*0x1C + 0) ||
+                    pre[u][1] != DG8(0x3144 + u*0x1C + 1))      d_moved++;
+                else if (pre[u][2] != DG8(0x3144 + u*0x1C + 8)) d_restate++;
+                else if (pre[u][3] != DG8(0x3144 + u*0x1C + 5)) d_exhaust++;
+                else                                            d_idle++;
+            }
+        }
+        printf("AI distribution (%d turns x 3 euro units): moved %lu, "
+               "re-stated %lu, exhausted-in-place %lu, idle %lu\n",
+               turns, d_moved, d_restate, d_exhaust, d_idle);
+    }
 
     /* ---- EURO-AI END-STATE BASELINE (re-baselined 2026-06-11, REAL
      * DISPATCHER LIVE — ROUTE_B 1.6).  Units now run through the original
@@ -362,6 +400,13 @@ int viceroy_world_smoke(int turns)
         if (ref_total == 0) { puts("SMOKE FAIL: REF never grew"); return 1; }
         printf("REF grew to %d units (reg %u cav %u mow %u art %u)\n", ref_total,
                DG16(0x53DA), DG16(0x53DC), DG16(0x53DE), DG16(0x53E0));
+    }
+    /* Gate-G1 stub-hit table: which unported leaves the soak actually
+     * reached (tools/stub_hits.c; counter bumped by every generated weak
+     * stub).  The gate demands ZERO hits for AI-ENGINE symbols; remaining
+     * rows are the ranked Phase-4 wiring worklist. */
+    {   extern int viceroy_stub_report(void);
+        viceroy_stub_report();
     }
     printf("SMOKE PASS: %d world turns, year %u\n", turns, G_YEAR);
     return 0;

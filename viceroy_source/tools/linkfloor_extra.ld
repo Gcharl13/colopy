@@ -103,9 +103,35 @@ PROVIDE(g_traderoute_count = g_dgroup + 0x53A0);
 PROVIDE(g_color_byhi = g_dgroup + 0x848);
 PROVIDE(g_color_byterrain = g_dgroup + 0x5A8A);
 
+/* AI unit-turn path leaves (Gate G1, 2026-06-11): native_unit_ai.c +
+ * func_006CCA declare these role-named externs with FULL argument lists
+ * matching the targets' arities (positional contract == the original
+ * stack pushes), so the PROVIDE alias is exact.  Resolutions: whois on
+ * the cited thunks (181F:0754/072C/0952/06B4/0614/0808; 0981:0000 is a
+ * direct resident far call). */
+PROVIDE(ovly_ability_754       = func_005D32_map_tile_read_layer_160);
+PROVIDE(ovly_ability_72C       = func_005CFE_map_tile_read_layer_15C);
+PROVIDE(ovly_query_952         = func_00723E_op_sz_48);
+PROVIDE(ovly_terrain_6B4       = func_005DBA_logic_sz_17);
+PROVIDE(ovly_occupant_614      = func_0083F2_op_sz_71);
+PROVIDE(ovly_unit_unlink_808   = func_006E94_logic_sz_198);
+PROVIDE(overlay_call_0981_0000 = func_00BC10_ff_owned);
+PROVIDE(ovly_step_unit_2E4     = unit_chain_next);   /* 181F:02E4 — stub-0 made
+                                  the tile-stack walks spin (the 1.2 hang class) */
+PROVIDE(ovly_clear_orders_934  = func_007BCE_logic_sz_25); /* 181F:0934 end-turn
+                                  (native_unit_ai.c / unit_ai_leaf.c externs) */
+
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
  * is after linkfloor_stubs.c.o on the link line, so EXTERN() is needed
  * to mark each entry as undefined before the archive sweep). */
 EXTERN(ai_unit_leaf)
 EXTERN(func_008734_logic_sz_30)
+EXTERN(func_005D32_map_tile_read_layer_160)
+EXTERN(func_005CFE_map_tile_read_layer_15C)
+EXTERN(func_00723E_op_sz_48)
+EXTERN(func_005DBA_logic_sz_17)
+EXTERN(func_0083F2_op_sz_71)
+EXTERN(func_006E94_logic_sz_198)
+EXTERN(func_00BC10_ff_owned)
+EXTERN(unit_chain_next)

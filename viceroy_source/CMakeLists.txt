@@ -89,6 +89,7 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         "${VICEROY_GEN}/linkfloor_stubs.c"
         "${VICEROY_GEN}/thunk_keepalive.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/thunk_keepalive_extra.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/stub_hits.c"
     )
     target_link_libraries(viceroy_modern PRIVATE viceroy_rules)
     target_include_directories(viceroy_modern PRIVATE

@@ -212,6 +212,28 @@ function; the section map covers 100% of its 14,975 bytes:
 **Gate G1:** 500-turn soak with full AI; AI move distribution sanity report;
 no stub hits in the AI path (`linkfloor_stubs.c` hit counter = 0 for AI
 symbols).
+> **G1 STATUS 2026-06-11 — instrumented, first tranche wired, OPEN.**
+> The counter is BUILT: every generated weak stub bumps a per-symbol
+> counter (tools/stub_hits.c, linkgap.py emission); the smoke prints the
+> AI-distribution report + the ranked hit table.  Soak measured state:
+> 500 turns PASS, REF=228; the DISPATCHER CHAIN symbols (052F7E, 051D56,
+> 040E22, unit_move_step, 007A20/007BCE/006CCA gates, automove, plotter)
+> have ZERO hits.  First leaf tranche wired (linkfloor_extra.ld):
+> native-AI probes 754/72C/952/6B4/614/808, ff_owned 0981:0000,
+> war-matrix 0A38 (direct call), chain-next 2E4 (fixed a live infinite
+> walk — the 1.2 hang class), end-turn 934 aliases.  Catches along the
+> way: func_006E94 destroy-unit raw-pointer crash; the fixture's brave
+> mis-set +0x06 ("moves" misread — it is the HOME-SETTLEMENT LINK; the
+> real cleanup destroyed it correctly), fixture now homes it to a real
+> settlement record.  REMAINING AI-path tranche (counted on the soak,
+> resolutions = same whois/PROVIDE/call-site method): 052F7E epoch
+> helpers (181F:04CA/0582/0590/047A, 0D1D:0D82/0DAE), the planner
+> trampolines 7AD0/7ADF/7AB2 (ports exist: func_051EF4/04C532/04CC50),
+> ai_eval_unit probes (ovly_unit_ability_754/72C, occupant_at_6BE,
+> attackable_6F0, relation_query_826, finalize_unit_90C, confront
+> 1A1F:16C), native-AI queries (6DC/37A/6BE/682/718/7E0/78C, dist_370,
+> commit_A4C).  Non-AI rows (msg_*, colony_*, ldiv32/long-math, market)
+> are the ranked Phase-4 worklist, not G1 blockers.
 
 ---
 

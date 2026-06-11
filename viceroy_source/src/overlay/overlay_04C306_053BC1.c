@@ -1987,11 +1987,16 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * @asm 0x0531A3 dec [bx+si-0x77B8] -> decrement countdown (unconditional)
      * @asm 0x0531AA cmp [bp-0x10],4; jl 0x53157 */
     for (int k = 0; k < 4; k++) {                      /* @asm 0x053152 mov [bp-0x10],0 */
-        int slot_flags = overlay_call_181F_0A38();      /* @asm 0x053157 lcall 0x181F:0xA38(power,k)
-                                                         *   -> 0x05B3:0x0004 war_matrix_read:
+        extern int func_007F34_logic_sz_27(uint16_t power, uint16_t slot);
+        int slot_flags = func_007F34_logic_sz_27(power, (uint16_t)k);
+                                                        /* @asm 0x053157 lcall 0x181F:0xA38(power,k)
+                                                         *   -> 0x05B3:0x0004 = func_007F34 (file
+                                                         *   0x07F34) war_matrix_read:
                                                          *   power<4: byte[0x883C+power*0x13C+k]
                                                          *   power>=4: byte[0x59D8+power*0x4E+k]
-                                                         *   BYTE_VERIFIED 2026-06-08. */
+                                                         *   BYTE_VERIFIED; direct call 2026-06-11
+                                                         *   (the void-arity overlay_call_ stub
+                                                         *   returned 0 = war slots never pending). */
         if (slot_flags & 0x08) {                        /* @asm 0x053165 test al,8 (pending?) */
             int idx = (int)power * 0x13C + k;           /* @asm 0x053169 imul/add */
             if (g_war_matrix_cdown_8848[idx] == 0) {    /* @asm 0x053171 cmp [bx-0x77B8],0 */

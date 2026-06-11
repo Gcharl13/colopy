@@ -344,7 +344,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_191F_0828` | `func_078CB2_shrink_block+0x5B11A`
 - `overlay_call_191F_0840` | `func_078CB2_shrink_block+0x595BC`
 - `overlay_call_191F_0888` | `func_067082_settlement_pass+0xE8`
-- `overlay_call_191F_0896` | `func_067182_colony_pass+0x146`
+- `overlay_call_191F_0896` | `func_067182_draw_colony_markers+0x146`
 - `overlay_call_191F_08A4` | `func_068898_draw_minimap_or_cursor_box+0x86`
 - `overlay_call_191F_08C6` | `func_078CB2_shrink_block+0x9F770`
 - `overlay_call_191F_08D2` | `func_078CB2_shrink_block+0x9F760`
@@ -747,7 +747,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0AF6` | `func_008846_logic_sz_27` | `[0]`
 - `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0, 3]`
 - `overlay_call_181F_0CA4` | `func_00B304_cargo_slot_set_amount` | `[0]`
-- `overlay_call_181F_0CEA` | `func_00B31A_cargo_slot_set_good` | `[0]`
+- `overlay_call_181F_0CEA` | `func_00B31A_logic_sz_77` | `[0]`
 - `overlay_call_181F_0D30` | `func_0098F6_logic_sz_85` | `[0]`
 - `overlay_call_181F_0D44` | `func_008982_logic_sz_532` | `[0]`
 - `overlay_call_181F_0D58` | `func_00B368_cargo_load` | `[0]`

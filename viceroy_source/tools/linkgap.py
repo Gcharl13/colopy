@@ -201,10 +201,18 @@ def main():
                 " * Weak no-op definitions so the executable LINKS today.  Each is\n"
                 " * __attribute__((weak)): the first STRONG definition (a real port,\n"
                 " * or render/*.c pulled back into the build) silently overrides it.\n"
-                " * Re-run linkgap.py after porting and these shrink automatically.\n */\n"
-                "#include \"viceroy_types.h\"\n\n")
+                " * Re-run linkgap.py after porting and these shrink automatically.\n"
+                " *\n"
+                " * STUB-HIT COUNTER (Gate G1): every stub bumps a per-symbol counter\n"
+                " * via viceroy_stub_hit(); viceroy_stub_report() dumps the table\n"
+                " * (tools/stub_hits.c, committed).  A hit means a code path reached\n"
+                " * an unported leaf at runtime -- the gates require 0 hits for\n"
+                " * engine symbols on the soak paths.\n */\n"
+                "#include \"viceroy_types.h\"\n\n"
+                "extern void viceroy_stub_hit(const char *sym);\n\n")
         for s in stub_syms:
-            f.write(f"__attribute__((weak)) long {s}(void) {{ return 0; }}\n")
+            f.write(f"__attribute__((weak)) long {s}(void) "
+                    f"{{ viceroy_stub_hit(\"{s}\"); return 0; }}\n")
 
     # 3. the shrinking worklist ---------------------------------------------
     total = len(undef)
