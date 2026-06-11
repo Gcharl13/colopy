@@ -164,6 +164,8 @@ extern int16_t ovly_dialog_652(int16_t flag, int16_t msg_id);
  * thunk, loader 0x0DAB).  The original passes an optional out-param ([bp+8])
  * that AI13 feeds into a dead store only -- the 1-arg port form is exact. */
 extern int func_0460F8_muster_braves(uint16_t idx);
+/* AI15 helper */
+extern int16_t random_int_4D4(int16_t lo, int16_t hi);     /* 0x181F:0x4D4 */
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -1222,22 +1224,103 @@ ai13:                                                           /* 0x50A4D */
         type = 0;             /* local mirror: AI14/AI16 gates re-read the record */
     }
 ai14:                                                           /* 0x50BE7 */
-    /* ======================= AI14: SOLDIER/SETTLER DISPATCH =================
+    /* ======================= AI14: SOLDIER/SETTLER HEAD HOME ================
      * (0x50BE7..0x50C42)  Type 5 (soldier) or type 2 (farmer/settler) with no
-     * active mission: dispatches with prof 0x4A/'J' or 0x4E/'N'.
-     * Gates (BYTE_VERIFIED @asm 0x050BFF/0x050C0F/0x050C11):
-     *   (type == 5 || type == 2)  &&  mission_28 == 0
-     * RUNTIME_ONLY stub. */
+     * active mission in this region, when the region holds an own colony:
+     * goto the nearest own colony as prof 'N'.
+     * BYTE_VERIFIED @asm 0x050C03..0x050C3E. */
     if (type != 5 && type != 2) goto ai15;                      /* @asm 0x050C03/0x050C0F */
     if (mission_28 != 0)        goto ai15;                      /* @asm 0x050C11 */
-    /* (RUNTIME_ONLY stub) */
+    if (reg_own_col != region)  goto ai15;                      /* @asm 0x050C1A */
+    func_0082DC_logic_sz_118((uint16_t)col_own);                /* @asm 0x050C22 select */
+    func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x4E,
+        DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                          /* @asm 0x050C2A..0x050C3E: dx='N', jmp 0x4E9E5 */
+    return move_eval_tail_51C68(unit_index, owner);
 ai15:                                                           /* 0x50C42 */
-    /* ======================= AI15: REASSIGN ACTIVE PATH =====================
-     * (0x50C42..0x50E20)  reassign != 0: handles in-flight goto orders (0x0B),
-     * computes pathing target, prof 0x57/'W'.
-     * Gate: reassign != 0 (BYTE_VERIFIED @asm 0x050C5A).  RUNTIME_ONLY stub. */
-    if (reassign == 0) goto ai16;                               /* @asm 0x050C5A */
-    /* (RUNTIME_ONLY stub) */
+    /* ======================= AI15a: REASSIGN WANDER =========================
+     * (0x50C5A..0x50D62)  reassign != 0: in-flight goto (orders 0x0B) exits
+     * via the tail.  Otherwise pick/keep a wander heading: record byte +0x12
+     * (set 0xFF by AI5) indexes the 20-entry signed delta tables DG8(0xC8+k) /
+     * DG8(0xDE+k); negative -> reroll random(1,0x14)-1.  Target = map +/-
+     * delta*4 (prof '8' with a live +0x11 cooldown keeps the stamped dest).
+     * The target must be in bounds, not on a visited quad (DG8(0x9FAA +
+     * (tx/4)*0x12 + ty/4) & 6 clear), in this region, and unowned (probe
+     * 0x181F:0x6D2 < 0).  Commit: +0x11 := max(dx*4, dy*4), patience +0x10
+     * -= 8 when > 8, goto (tx,ty) as '8'.  Any failure falls to AI15b.
+     * BYTE_VERIFIED @asm 0x050C5A..0x050D5E. */
+    if (reassign == 0) goto ai15b;                              /* @asm 0x050C5E */
+    if (U_OFF(unit_index, U_ORDERS) == 0x0B)                    /* @asm 0x050C67 */
+        return move_eval_tail_51C68(unit_index, owner);         /* @asm 0x050C6E */
+    if ((int8_t)U_OFF(unit_index, 0x12) < 0)                    /* @asm 0x050C75 */
+        U_OFF(unit_index, 0x12) =
+            (uint8_t)(random_int_4D4(1, 0x14) - 1);             /* @asm 0x050C82/0x050C8A */
+    {
+        int16_t k_4E = (int16_t)U_OFF(unit_index, 0x12);        /* @asm 0x050C94 */
+        int16_t tx_16, ty_1A;
+        if (U_OFF(unit_index, U_PROF) == 0x38 &&                /* @asm 0x050C9D '8' */
+            U_OFF(unit_index, 0x11) != 0) {                     /* @asm 0x050CA4 */
+            tx_16 = (int16_t)U_OFF(unit_index, U_DESTX);        /* @asm 0x050CAA */
+            ty_1A = (int16_t)U_OFF(unit_index, U_DESTY);        /* @asm 0x050CB1 */
+        } else {
+            tx_16 = (int16_t)(((int8_t)DG8(0xC8 + k_4E) << 2) + map_x);
+                                                                /* @asm 0x050CBA..0x050CC6 */
+            ty_1A = (int16_t)(((int8_t)DG8(0xDE + k_4E) << 2) + map_y);
+                                                                /* @asm 0x050CC9..0x050CD1 */
+        }
+        if (func_005BFA_logic_sz_49((uint16_t)tx_16,
+                                    (uint16_t)ty_1A) == 0)      /* @asm 0x050CDC */
+            goto ai15b;                                         /* @asm 0x050CE6 */
+        if (DG8(0x9FAA + (tx_16 >> 2) * 0x12 + (ty_1A >> 2)) & 6)
+                                                                /* @asm 0x050CE8..0x050CF7 */
+            goto ai15b;                                         /* @asm 0x050CFC */
+        if ((int16_t)func_005E90_op_sz_64((uint16_t)tx_16,
+                (uint16_t)ty_1A) != region)                     /* @asm 0x050D04/0x050D0C */
+            goto ai15b;
+        if ((int16_t)func_006018_logic_sz_33((uint16_t)tx_16,
+                (uint16_t)ty_1A) >= 0)                          /* @asm 0x050D17/0x050D1F */
+            goto ai15b;
+        {
+            int16_t cy = (int16_t)((int8_t)DG8(0xDE + k_4E) << 2);
+                                                                /* @asm 0x050D26..0x050D2E */
+            int16_t cx = (int16_t)((int8_t)DG8(0xC8 + k_4E) << 2);
+                                                                /* @asm 0x050D30..0x050D35 */
+            if (cx < cy) cx = cy;                               /* @asm 0x050D38 signed max */
+            U_OFF(unit_index, 0x11) = (uint8_t)cx;              /* @asm 0x050D42 cooldown */
+        }
+        if (U_OFF(unit_index, 0x10) > 8)                        /* @asm 0x050D46 patience */
+            U_OFF(unit_index, 0x10) -= 8;                       /* @asm 0x050D4D */
+        func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x38,
+            (uint8_t)tx_16, (uint8_t)ty_1A);
+                          /* @asm 0x050D52..0x050D5E: dx='8', jmp 0x4E9E5 */
+        return move_eval_tail_51C68(unit_index, owner);
+    }
+
+ai15b:                                                          /* 0x50D62 */
+    /* ======================= AI15b: GARRISON-CALL RESPONSE ==================
+     * (0x50D62..0x50E20)  Fast land unit (movement > 1, not ship band) with a
+     * home colony (+0x06 >= 0) whose colony record raises flag +0x1B bit 2
+     * ("guard requested"): scouts (type 4) ignore the call when the request
+     * counter +0x1E is 0; the colony must be in this region.  Respond: clear
+     * the flag bit, decrement the counter (when nonzero), goto colony as 'W'.
+     * BYTE_VERIFIED @asm 0x050D7E..0x050E1B. */
+    if (type >= 0x0D && type <= 0x12) goto ai16;                /* @asm 0x050D7E/0x050D85 */
+    if (DG8(0x5236 + (uint16_t)type * 14) <= 1) goto ai16;      /* @asm 0x050DAB movement */
+    if ((int8_t)U_OFF(unit_index, 0x06) < 0) goto ai16;         /* @asm 0x050DB4 */
+    func_0082DC_logic_sz_118(
+        (uint16_t)(int8_t)U_OFF(unit_index, 0x06));             /* @asm 0x050DC3 select */
+    if (!(DG8(DG16(0x8542) + 0x1B) & 4)) goto ai16;             /* @asm 0x050DCF */
+    if (DG8(DG16(0x8542) + 0x1E) == 0 &&                        /* @asm 0x050DD5 */
+        U_OFF(unit_index, U_TYPE) == 4) goto ai16;              /* @asm 0x050DDB scout */
+    if ((int16_t)func_005E90_op_sz_64(DG8(DG16(0x8542) + 0),
+            DG8(DG16(0x8542) + 1)) != region) goto ai16;        /* @asm 0x050DE9/0x050DF1 */
+    DG8(DG16(0x8542) + 0x1B) &= 0xFB;                           /* @asm 0x050DFA clear bit2 */
+    if (DG8(DG16(0x8542) + 0x1E) != 0)                          /* @asm 0x050DFE */
+        DG8(DG16(0x8542) + 0x1E) -= 1;                          /* @asm 0x050E04 */
+    func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x57,
+        DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                          /* @asm 0x050E07..0x050E1B: dx='W', jmp 0x4E9E5 */
+    return move_eval_tail_51C68(unit_index, owner);
 ai16:                                                           /* 0x50E20 */
     /* ======================= AI16: TYPE-2 COLONY NAVIGATION =================
      * (0x50E20..0x50F1E)  Type 2 land unit with reassign==0: evaluates
