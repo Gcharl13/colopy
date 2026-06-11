@@ -108,6 +108,14 @@ int vid_screenshot_ppm(const char *path)
 
 int vid_poll_key(void)
 {
+    /* determinism rig (ROUTE_B_PLAN 0.1): a loaded script feeds input
+     * ahead of (and headless, instead of) SDL -- byte-replayable runs */
+    {
+        extern int script_input_active(void);
+        extern int script_input_poll(int headless);
+        if (script_input_active())
+            return script_input_poll(headless);
+    }
 #ifdef VICEROY_HAVE_SDL2
     if (!headless) {
         SDL_Event ev;

@@ -53,11 +53,14 @@ are the difference between "I believe it matches" and "it matches".
 > dashboard + inventory counters). Sheets for the Phase-1 bodies
 > (AI7/AI8/AI9, func_05CA7E) are pre-generated under `re_work/sheets/`.
 
-- [ ] **0.1 Determinism rig.** Scripted-input driver for the modern build
-      (keystroke playback file → input queue). The original's RNG is the MSC
-      6.0 LCG (`rand` @0x0103D4, ported) — seed it explicitly. Gate output:
-      a save file. The same script must be replayable against DOSBox via its
-      keystroke mapper (one-time setup, documented).
+- [x] **0.1 Determinism rig.** DELIVERED: `src/platform/script_input.c`
+      (script grammar: key/wait/shot/seed/quit) feeding `vid_poll_key()`,
+      `--script=`/`--seed=` + env activation, headless shell-loop drive.
+      Self-tested: two scripted runs → `pixdiff IDENTICAL`. Caught + fixed
+      a real shell bug (menu `%0` SIGFPE without GAME.TXT). DOSBox-X replay
+      protocol documented in `docs/DETERMINISM_RIG.md` (AUTOTYPE mapping,
+      fixed cycles, seed-forcing recipe); the live DOSBox half runs on the
+      user's machine with their game files.
 - [x] **0.2 Save-diff gate.** `tools/savediff.py`: byte-compare two COLONIZE
       saves with a justification-required allowlist and a layout map for
       named diffs. DELIVERED + fixture-tested; the allowlist catalog itself
@@ -66,10 +69,13 @@ are the difference between "I believe it matches" and "it matches".
       (modern F12) vs PNG (DOSBox screenshots; stdlib-only decoder),
       visual-diff output. DELIVERED + fixture-tested; the per-screen
       checkpoint list is enumerated in Phase 7.1.
-- [ ] **0.4 Re-baseline the soak.** `--smoke=60` and `--smoke=500` re-run now
-      that AI19 commits real moves; record the new state trace as the
-      regression baseline (replaces the stub-era 2026-06-10 baseline in
-      `docs/INTEGRATION_STATUS.md`).
+- [x] **0.4 Re-baseline the soak.** DONE 2026-06-11: smoke 60 + 500 green
+      on the AI19-live engine. The euro-AI fixture assertions now pin the
+      exact deterministic end-state (units 1+2: AI15a wander goto, stable
+      via the in-flight early-out @asm 0x050C6E; unit 3 ship: AI19 park,
+      prof '9' orders 5). REF end-state identical to the stub-era figures
+      (228 = 131/44/21/32) — evaluator/REF independence confirmed.
+      Recorded in `docs/INTEGRATION_STATUS.md`.
 
 **Dependency (user):** original COLONIZE install files + a working DOSBox with
 the same files, for capture. Nothing is committed (gitignored, per the

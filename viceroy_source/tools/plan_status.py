@@ -89,4 +89,7 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except BrokenPipeError:      # piped through head etc.
+        sys.exit(0)

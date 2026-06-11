@@ -79,6 +79,7 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         src/main_modern.c
         src/platform/pik.c
         src/platform/video_sdl.c
+        src/platform/script_input.c
         src/platform/font.c
         src/platform/ss.c
         src/platform/render_glue.c

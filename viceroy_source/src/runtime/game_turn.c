@@ -205,28 +205,41 @@ int viceroy_world_smoke(int turns)
     for (int t = 0; t < turns; t++)
         viceroy_world_autumn();
 
-    /* ---- EXIT-TAIL ASSERTIONS (the byte-decoded 0x51C68 rules) ---- */
+    /* ---- EURO-AI END-STATE BASELINE (re-baselined 2026-06-11, AI19 LIVE) --
+     * The 0x4E2D6 body now COMMITS moves, so the stub-era expectations
+     * (units parked by the exit tail alone) are obsolete.  The zero-table
+     * smoke world is deterministic (MSC 6.0 LCG, fixed seed), so the full
+     * end-state is pinned EXACTLY below; a mismatch is a real behavior
+     * change in the evaluator and must be re-derived, never patched blind.
+     * Expected paths on zeroed @UNIT tables (movement 0 for all types):
+     *   units 1+2 (type 0): PRE ladder -> AI15a wander dispatch (prof '8',
+     *     orders 0x0B goto); in-flight gotos early-out on later turns
+     *     (@asm 0x050C6E), so the state is stable.
+     *   unit 3 (ship 0x0E, arrived goto): AI9/AI10 gates fall through,
+     *     AI18 scores no dirs for ships off colony tiles, AI19 parks:
+     *     prof '9' @asm 0x51A5A, orders 5 via the stay path @asm 0x51AB0. */
     {
-        /* unit 1: auto-sentried (prof '0') then woken by the adjacent
-         * at-war unit -> orders back to 0 after every pass */
-        if (UREC(1,8) != 0 || UREC(1,7) != 0x30) {
-            printf("SMOKE FAIL: wake-scan (orders %02X prof %02X)\n",
+        printf("euro-AI end-state: u1 o=%02X p=%02X d=(%d,%d)  "
+               "u2 o=%02X p=%02X d=(%d,%d)  u3 o=%02X p=%02X\n",
+               UREC(1,8), UREC(1,7), UREC(1,9), UREC(1,0x0A),
+               UREC(2,8), UREC(2,7), UREC(2,9), UREC(2,0x0A),
+               UREC(3,8), UREC(3,7));
+        if (!(UREC(1,8) == 0x0B && UREC(1,7) == 0x38)) {
+            printf("SMOKE FAIL: u1 wander baseline (orders %02X prof %02X)\n",
                    UREC(1,8), UREC(1,7));
             return 1;
         }
-        /* unit 2: auto-sentried, nothing adjacent -> parked on orders 5 */
-        if (UREC(2,8) != 5 || UREC(2,7) != 0x30) {
-            printf("SMOKE FAIL: auto-sentry (orders %02X prof %02X)\n",
+        if (!(UREC(2,8) == 0x0B && UREC(2,7) == 0x38)) {
+            printf("SMOKE FAIL: u2 wander baseline (orders %02X prof %02X)\n",
                    UREC(2,8), UREC(2,7));
             return 1;
         }
-        /* unit 3: goto-arrival ship promotion 0x31 -> 0x42, orders keep 0x0B */
-        if (UREC(3,7) != 0x42 || UREC(3,8) != 0x0B) {
-            printf("SMOKE FAIL: goto-arrival (prof %02X orders %02X)\n",
-                   UREC(3,7), UREC(3,8));
+        if (!(UREC(3,8) == 5 && UREC(3,7) == 0x39)) {
+            printf("SMOKE FAIL: u3 ship-park baseline (orders %02X prof %02X)\n",
+                   UREC(3,8), UREC(3,7));
             return 1;
         }
-        puts("euro-AI tail: auto-sentry + at-war wake + goto-arrival hold");
+        puts("euro-AI baseline: AI15a wander goto x2 + AI19 ship park hold");
         #undef UREC
     }
 

@@ -26,6 +26,18 @@ Soak: --smoke=500 passes (year 1992; REF 228 units split 131/44/21/32
 reg/cav/mow/art -- the byte-verified arm-deficit ratios holding across
 500 iterations; no faults, no leaks observed).
 
+RE-BASELINED 2026-06-11 (AI19 LIVE -- ROUTE_B_PLAN 0.4): the euro-AI
+fixture units now run the real 0x4E2D6 decision ladder, and the smoke
+pins their exact deterministic end-state instead of the stub-era
+tail-only expectations:
+  units 1+2 (type 0): AI15a wander dispatch -> prof '8', orders 0x0B;
+    zero @UNIT tables make the wander deltas 0, so dest == pos and the
+    in-flight early-out (@asm 0x050C6E) holds the state stable.
+  unit 3 (ship 0x0E): AI9/AI10 fall through, AI18 scores no dirs for
+    ships off colony tiles, AI19 parks it: prof '9', orders 5.
+REF end-state is IDENTICAL to the stub-era baseline (228 = 131/44/21/32),
+confirming evaluator/REF independence.
+
 ## With the user's own game files (`game_data/` or $VICEROY_DATA)
 
 Drop the original install's files next to the binary (NOTHING is committed;

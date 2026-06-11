@@ -545,8 +545,10 @@ static int shell_loop(void)
         switch (screen) {
         case SH_TITLE:
             if (k == 27) return 0;
-            if (k == KEY_UP)   { sel = (sel + g_menu_count - 1) % g_menu_count; draw_title_menu(sel); }
-            if (k == KEY_DOWN) { sel = (sel + 1) % g_menu_count;                draw_title_menu(sel); }
+            if (k == KEY_UP && g_menu_count > 0)   /* no GAME.TXT -> count 0: avoid %0 */
+                { sel = (sel + g_menu_count - 1) % g_menu_count; draw_title_menu(sel); }
+            if (k == KEY_DOWN && g_menu_count > 0)
+                { sel = (sel + 1) % g_menu_count;                draw_title_menu(sel); }
             if (k == KEY_RETURN) menu_select(sel, &screen);
             if (k >= '1' && k < '1' + g_menu_count) menu_select(k - '1', &screen);
             break;
@@ -693,9 +695,27 @@ int main(int argc, char **argv)
 {
     printf("viceroy_modern\n");
     int smoke_turns = 0;
-    for (int ai = 1; ai < argc; ai++)
+    const char *script_path = getenv("VICEROY_SCRIPT");
+    const char *seed_str = getenv("VICEROY_SEED");
+    for (int ai = 1; ai < argc; ai++) {
         if (!strncmp(argv[ai], "--smoke", 7))
             smoke_turns = argv[ai][7] == '=' ? atoi(argv[ai] + 8) : 4;
+        if (!strncmp(argv[ai], "--script=", 9))
+            script_path = argv[ai] + 9;
+        if (!strncmp(argv[ai], "--seed=", 7))
+            seed_str = argv[ai] + 7;
+    }
+    /* determinism rig (ROUTE_B_PLAN 0.1): explicit LCG seed + input script */
+    if (seed_str) {
+        extern unsigned int g_rand_seed_28EE;
+        g_rand_seed_28EE = (unsigned int)strtoul(seed_str, NULL, 0);
+        printf("  SEED      : 0x%08X\n", g_rand_seed_28EE);
+    }
+    if (script_path) {
+        extern int script_input_load(const char *);
+        if (script_input_load(script_path) != 0)
+            return 2;
+    }
 
     dgroup_init();
     const char *env = getenv("VICEROY_DATA");
@@ -748,6 +768,18 @@ int main(int argc, char **argv)
     title_screen_render();
 
     int headless = vid_init("Viceroy (Colonization reconstruction)");
+    {   /* determinism rig (ROUTE_B_PLAN 0.1): a loaded script drives the
+         * real shell loop even headless; script exhaustion delivers QUIT */
+        extern int script_input_active(void);
+        if (headless && script_input_active()) {
+            g_interactive = 1;
+            shell_loop();
+            if (g_have_font) ff_free(&g_font);
+            if (g_have_bg) pik_free(&g_bg);
+            vid_shutdown();
+            return 0;
+        }
+    }
     if (headless) {
         if (load_bg("OPENMENU.PIK") == 0) {
             draw_title_menu(0);

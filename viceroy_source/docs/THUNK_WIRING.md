@@ -2,8 +2,8 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 168**
-(plus 73 semantic alias names)
+**WIRED (linker alias to the real ported function): 170**
+(plus 74 semantic alias names)
 
 | stub | target | resolved via | arity |
 |---|---|---|--:|
@@ -16,6 +16,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `cd_list_first_ok` | `func_0082B2_logic_sz_38` | exe:resident+name | 1 |
 | `colony_event_82` | `func_02EE34_logic_sz_12` | exe:overlay+name | 1 |
 | `colony_field_C86` | `func_008524_colony_sz_18` | exe:resident+name | 0 |
+| `colony_helper_C5E_count` | `func_008D00_colony_stock_cap` | exe:resident+name | 0 |
 | `colony_load_pik_bg` | `func_00A994_colony_sz_293` | exe:resident+name | 0 |
 | `coronado_reveal` | `func_0063B6_logic_sz_14` | exe:resident+name | 2 |
 | `crt_memset` | `func_01037E_logic_sz_45` | direct+name | 3 |
@@ -111,6 +112,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `overlay_call_181F_0C40` | `func_0084F2_logic_sz_21` | exe:resident | 1 |
 | `overlay_call_181F_0C72` | `func_00A994_colony_sz_293` | exe:resident | 0 |
 | `overlay_call_181F_0C86` | `func_008524_colony_sz_18` | exe:resident | 0 |
+| `overlay_call_181F_0D3A` | `func_008D00_colony_stock_cap` | exe:resident | 0 |
 | `overlay_call_181F_0D62` | `func_009726_logic_sz_52` | exe:resident | 0 |
 | `overlay_call_181F_0DCC` | `func_00BD4A_op_sz_404` | exe:resident | 0 |
 | `overlay_call_181F_0E90` | `func_00C498_op_sz_11` | exe:resident | 0 |
@@ -564,7 +566,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `ovly_191F_0AE0` | `func_034318_runtime_chain_289` | `[2]`
 - `ui_show_message2` | `func_034318_runtime_chain_289` | `[2]`
 
-### arity mismatch (target wants 2) — 125
+### arity mismatch (target wants 2) — 128
 
 - `overlay_call_004B_00E2` | `func_002992_rtl_sz_26` | `[0]`
 - `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0, 2]`
@@ -662,7 +664,10 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0AEC` | `func_00B42C_logic_sz_139` | `[0, 2]`
 - `overlay_call_181F_0B14` | `func_008686_logic_sz_34` | `[0]`
 - `overlay_call_181F_0B1E` | `func_008862_op_sz_25` | `[0]`
+- `overlay_call_181F_0BE6` | `func_00B2A2_cargo_slot_good` | `[0]`
+- `glyph_value` | `func_00B2A2_cargo_slot_good` | `[0, 1]`
 - `overlay_call_181F_0C2C` | `func_00B550_logic_sz_88` | `[0, 2]`
+- `overlay_call_181F_0C68` | `func_00B2F0_cargo_slot_amount` | `[0]`
 - `overlay_call_181F_0CAE` | `func_00913C_logic_sz_72` | `[0]`
 - `overlay_call_181F_0CC2` | `func_00B5A8_value_band` | `[0]`
 - `overlay_call_181F_0D12` | `func_008352_op_sz_92` | `[0]`
@@ -692,7 +697,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0EAC` | `func_07706C_stream_dispatch_state` | `[0]`
 - `overlay_call_1A1F_0F26` | `func_012C8C_rtl_sz_60` | `[0]`
 
-### arity mismatch (target wants 3) — 61
+### arity mismatch (target wants 3) — 63
 
 - `overlay_call_0009_0244` | `func_0026D4_logic_sz_44` | `[0]`
 - `overlay_call_0009_02CC` | `func_00275C_logic_sz_39` | `[0]`
@@ -741,9 +746,11 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0A10` | `func_008000_op_sz_115` | `[0]`
 - `overlay_call_181F_0AF6` | `func_008846_logic_sz_27` | `[0]`
 - `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0, 3]`
-- `overlay_call_181F_0CEA` | `func_00B31A_logic_sz_77` | `[0]`
+- `overlay_call_181F_0CA4` | `func_00B304_cargo_slot_set_amount` | `[0]`
+- `overlay_call_181F_0CEA` | `func_00B31A_cargo_slot_set_good` | `[0]`
 - `overlay_call_181F_0D30` | `func_0098F6_logic_sz_85` | `[0]`
 - `overlay_call_181F_0D44` | `func_008982_logic_sz_532` | `[0]`
+- `overlay_call_181F_0D58` | `func_00B368_cargo_load` | `[0]`
 - `overlay_call_181F_0DC2` | `func_00C07A_logic_sz_32` | `[0]`
 - `overlay_call_181F_0E08` | `func_00BEDE_op_sz_93` | `[0]`
 - `overlay_call_181F_0E9A` | `func_00C362_rtl_sz_173` | `[0]`
@@ -755,58 +762,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_095A` | `func_0673CC_draw_one_unit` | `[0]`
 - `overlay_call_1A1F_0B90` | `func_0702C0_report_cell_xy_3col` | `[0]`
 - `overlay_call_1A1F_0BC8` | `func_070782_grid_cell_xy` | `[0]`
-
-### target is a known function but NOT in the build — 49
-
-- `overlay_call_0000_0062` | `file 0x002462`
-- `overlay_call_0009_01A2` | `file 0x002632`
-- `overlay_call_0D1D_030D` | `file 0x00F8DD`
-- `overlay_call_0D1D_07E4` | `file 0x00FDB4`
-- `overlay_call_0D1D_0842` | `file 0x00FE12`
-- `overlay_call_0D1D_0C56` | `file 0x010226`
-- `overlay_call_0D1D_0C80` | `file 0x010250`
-- `overlay_call_0D1D_0E4A` | `file 0x01041A`
-- `overlay_call_0D1D_0E63` | `file 0x010433`
-- `overlay_call_0D1D_113C` | `file 0x01070C`
-- `overlay_call_0D1D_117E` | `file 0x01074E`
-- `overlay_call_0D1D_1E7A` | `file 0x01144A`
-- `overlay_call_181F_000E` | `file 0x002400`
-- `overlay_call_181F_0018` | `file 0x00242C`
-- `overlay_call_181F_0022` | `file 0x002462`
-- `overlay_call_181F_006A` | `file 0x00260E`
-- `overlay_call_181F_0074` | `file 0x002632`
-- `overlay_call_181F_007E` | `file 0x002648`
-- `overlay_call_181F_010A` | `file 0x002912`
-- `overlay_call_181F_011E` | `file 0x002922`
-- `overlay_call_181F_0128` | `file 0x002932`
-- `overlay_call_181F_0146` | `file 0x002962`
-- `overlay_call_181F_015A` | `file 0x002972`
-- `overlay_call_181F_0164` | `file 0x002982`
-- `overlay_call_181F_0196` | `file 0x0028C0`
-- `overlay_call_181F_01B4` | `file 0x0028E2`
-- `overlay_call_181F_01BE` | `file 0x0028F2`
-- `overlay_call_181F_01DC` | `file 0x002902`
-- `overlay_call_181F_0550` | `file 0x056B08`
-- `overlay_call_181F_0AD8` | `file 0x00B880`
-- `overlay_call_181F_0B0A` | `file 0x00929A`
-- `overlay_call_181F_0B82` | `file 0x009626`
-- `overlay_call_181F_0BBE` | `file 0x0092E0`
-- `overlay_call_181F_0BE6` | `file 0x00B2A2`
-- `overlay_call_181F_0C0E` | `file 0x0090C8`
-- `overlay_call_181F_0C36` | `file 0x009318`
-- `overlay_call_181F_0C68` | `file 0x00B2F0`
-- `overlay_call_181F_0CA4` | `file 0x00B304`
-- `overlay_call_181F_0CE0` | `file 0x008956`
-- `overlay_call_181F_0CF4` | `file 0x0096DA`
-- `overlay_call_181F_0CFE` | `file 0x0085B2`
-- `overlay_call_181F_0D26` | `file 0x0085D6`
-- `overlay_call_181F_0D3A` | `file 0x008D00`
-- `overlay_call_181F_0D58` | `file 0x00B368`
-- `overlay_call_191F_04BA` | `file 0x040E22`
-- `overlay_call_191F_0AEE` | `file 0x041832`
-- `overlay_call_1A1F_0618` | `file 0x057A3A`
-- `overlay_call_1A1F_0968` | `file 0x0685DC`
-- `overlay_call_1A1F_0CF6` | `file 0x0734F8`
 
 ### arity mismatch (target wants 4) — 49
 
@@ -859,6 +814,53 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_1A1F_0CAA` | `func_00D77C_logic_sz_26` | `[0]`
 - `overlay_call_1A1F_0E82` | `func_076E50_stream_open` | `[0]`
 - `overlay_call_1A1F_0E9E` | `func_076E50_stream_open` | `[0]`
+
+### target is a known function but NOT in the build — 44
+
+- `overlay_call_0000_0062` | `file 0x002462`
+- `overlay_call_0009_01A2` | `file 0x002632`
+- `overlay_call_0D1D_030D` | `file 0x00F8DD`
+- `overlay_call_0D1D_07E4` | `file 0x00FDB4`
+- `overlay_call_0D1D_0842` | `file 0x00FE12`
+- `overlay_call_0D1D_0C56` | `file 0x010226`
+- `overlay_call_0D1D_0C80` | `file 0x010250`
+- `overlay_call_0D1D_0E4A` | `file 0x01041A`
+- `overlay_call_0D1D_0E63` | `file 0x010433`
+- `overlay_call_0D1D_113C` | `file 0x01070C`
+- `overlay_call_0D1D_117E` | `file 0x01074E`
+- `overlay_call_0D1D_1E7A` | `file 0x01144A`
+- `overlay_call_181F_000E` | `file 0x002400`
+- `overlay_call_181F_0018` | `file 0x00242C`
+- `overlay_call_181F_0022` | `file 0x002462`
+- `overlay_call_181F_006A` | `file 0x00260E`
+- `overlay_call_181F_0074` | `file 0x002632`
+- `overlay_call_181F_007E` | `file 0x002648`
+- `overlay_call_181F_010A` | `file 0x002912`
+- `overlay_call_181F_011E` | `file 0x002922`
+- `overlay_call_181F_0128` | `file 0x002932`
+- `overlay_call_181F_0146` | `file 0x002962`
+- `overlay_call_181F_015A` | `file 0x002972`
+- `overlay_call_181F_0164` | `file 0x002982`
+- `overlay_call_181F_0196` | `file 0x0028C0`
+- `overlay_call_181F_01B4` | `file 0x0028E2`
+- `overlay_call_181F_01BE` | `file 0x0028F2`
+- `overlay_call_181F_01DC` | `file 0x002902`
+- `overlay_call_181F_0550` | `file 0x056B08`
+- `overlay_call_181F_0AD8` | `file 0x00B880`
+- `overlay_call_181F_0B0A` | `file 0x00929A`
+- `overlay_call_181F_0B82` | `file 0x009626`
+- `overlay_call_181F_0BBE` | `file 0x0092E0`
+- `overlay_call_181F_0C0E` | `file 0x0090C8`
+- `overlay_call_181F_0C36` | `file 0x009318`
+- `overlay_call_181F_0CE0` | `file 0x008956`
+- `overlay_call_181F_0CF4` | `file 0x0096DA`
+- `overlay_call_181F_0CFE` | `file 0x0085B2`
+- `overlay_call_181F_0D26` | `file 0x0085D6`
+- `overlay_call_191F_04BA` | `file 0x040E22`
+- `overlay_call_191F_0AEE` | `file 0x041832`
+- `overlay_call_1A1F_0618` | `file 0x057A3A`
+- `overlay_call_1A1F_0968` | `file 0x0685DC`
+- `overlay_call_1A1F_0CF6` | `file 0x0734F8`
 
 ### arity mismatch (target wants 5) — 13
 
