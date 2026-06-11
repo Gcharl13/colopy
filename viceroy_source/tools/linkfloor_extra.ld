@@ -151,6 +151,12 @@ PROVIDE(ovly_relation_970      = func_00726E_op_sz_116);                 /* 181F
 PROVIDE(ovly_step_916          = func_007966_logic_sz_41);               /* 181F:0916 (unit) */
 PROVIDE(func_00726E            = func_00726E_op_sz_116);                 /* bare-name implicit-decl
                                   calls inside func_00730A bound to the weak stub */
+/* MSC long-math intrinsics (real impls in src/runtime/longmath.c; the
+ * public names are aliased so linkgap suppresses their weak stubs and the
+ * alias reference forces the archive extraction): */
+PROVIDE(ov_long_mul_F60        = msc_aFlmul);   /* 0x0D1D:0x0F60 __aFlmul */
+PROVIDE(ov_long_div_EC6        = msc_aFldiv);   /* 0x0D1D:0x0EC6 __aFldiv */
+PROVIDE(ldiv32                 = msc_aFldiv);
 /* G1 tranche 4 (2026-06-11): func_052F7E PHASE-5 planner trampolines.
  * Page-0x12 cs:0x7Axx stubs resolved 2026-06-10 (banner in the overlay file).
  * 7AD0 (gold/income tick) is LIVE (its host-pointer bug in scoring/compute.c
