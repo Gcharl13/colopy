@@ -146,6 +146,11 @@ PROVIDE(ovly_query_682         = func_005F04_map_xy_bounds_or_neg1);     /* 181F
 PROVIDE(ovly_query_718         = func_0060A0_logic_sz_128);              /* 181F:0718 */
 PROVIDE(ovly_market_value_30C  = func_0082A0_logic_sz_18);               /* 181F:030C */
 PROVIDE(ovly_terrain_78C       = func_00627A_op_sz_57);                  /* 181F:078C */
+/* G1 tranche 3 (2026-06-11): the rows the tranche-2 depths exposed. */
+PROVIDE(ovly_relation_970      = func_00726E_op_sz_116);                 /* 181F:0970 (view,x,y) */
+PROVIDE(ovly_step_916          = func_007966_logic_sz_41);               /* 181F:0916 (unit) */
+PROVIDE(func_00726E            = func_00726E_op_sz_116);                 /* bare-name implicit-decl
+                                  calls inside func_00730A bound to the weak stub */
 
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
@@ -174,3 +179,5 @@ EXTERN(func_005F04_map_xy_bounds_or_neg1)
 EXTERN(func_0060A0_logic_sz_128)
 EXTERN(func_0082A0_logic_sz_18)
 EXTERN(func_00627A_op_sz_57)
+EXTERN(func_00726E_op_sz_116)
+EXTERN(func_007966_logic_sz_41)

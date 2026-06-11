@@ -963,7 +963,13 @@ int func_062D84_unit_automove(int unit_idx)
              * reject moving into the dest's own tile twice. */
         }
         (void)at_war;
-        step_cost = overlay_call_181F_0952();            /* @asm 0x0630C3 per-unit move cost */
+        /* @asm 0x0630BA push [bp-0x2E](owner); push [bp-0x3E](cur_y);
+         * push [bp-0x36](cur_x); lcall 0x181F:0x952 = func_00723E(x,y,owner).
+         * (Direct call 2026-06-11 — the void-arity extern stub returned 0.) */
+        {   extern int func_00723E_op_sz_48(uint16_t x, uint16_t y, uint16_t owner);
+            step_cost = func_00723E_op_sz_48((uint16_t)cur_x, (uint16_t)cur_y,
+                                             (uint16_t)owner);
+        }
         (void)step_cost;
         /* accumulated cost = base + 4*dist + |dRow| + |dCol|  @asm 0x063252 */
         if (best_cost > 0) {                             /* relaxation guard */
