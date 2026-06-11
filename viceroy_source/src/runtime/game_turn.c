@@ -282,47 +282,42 @@ int viceroy_world_smoke(int turns)
                turns, d_moved, d_restate, d_exhaust, d_idle);
     }
 
-    /* ---- EURO-AI END-STATE BASELINE (re-baselined 2026-06-11, REAL
-     * DISPATCHER LIVE — ROUTE_B 1.6).  Units now run through the original
-     * chain: func_052F7E PHASE 6 (movement-gated quiescence loop) ->
-     * func_051D56 -> { unit_move_step | state handlers | end-turn }.
-     * The old wander/park expectations were artifacts of the SHELL calling
-     * unit_move_step directly on idle units; the real engine only routes
-     * IN-FLIGHT units (moves-used != 0, state 0x0B) into the evaluator.
-     * Derived per-turn flow on this fixture (deterministic, all cited):
-     *   u1/u2 (type 0, state 0): gate func_007A20 (0 < allowance 2) opens;
-     *     func_051D56 guard fails (u5==0), state-0 switch default ->
-     *     func_007BCE end-turn (@asm 0x051E00 -> 0x181F:0x934): u5=2,
-     *     gate shuts.  No state/prof writes, every turn identical.
-     *     END: orders 0, prof 0.
-     *   u3 (ship 0x0E, state 0x0B goto (8,5), pos (5,5)): gate (0 < 4);
-     *     051D56 state-B -> ai_unit_order_step (@asm 0x051DF6 0x191F:0x4BA
-     *     = func_040E22): automove -> func_061F02 plotter (dir 0 on the
-     *     zero-cost tables), absolute executor ai_eval_unit(3,5,4) finds
-     *     nothing actionable on the empty tile and consumes NO movement
-     *     (the 0x90C allowance leaf is wired real since G1 tranche 2, so
-     *     the @asm 0x03EEC1 moves-left short-circuit no longer fires);
-     *     the PHASE-6 while-gate re-runs the unit until the STUCK-TRACKER
-     *     trips (same unit > 20 rounds -> force end-turn, @asm 0x0532AB/
-     *     0x0532B5 -> 0x181F:0x934) — the original's anti-hang mechanism,
-     *     now exercised by the smoke.  NOT arrived -> state KEPT
-     *     (@asm 0x040EE8 jmp 0x40fcd done path).
-     *     END: orders 0x0B (in flight), prof 0x31, pos unchanged.
-     * March fidelity (actual eastward steps) needs the Phase-4 wiring audit
-     * of the eval/plotter leaves; this baseline pins the DISPATCHER. */
+    /* ---- EURO-AI END-STATE BASELINE (re-derived 2026-06-11, PLANNERS LIVE:
+     * 7ADF queue rebuild + 7AB2 strategic plan with the byte-restored per-unit
+     * loop, PHASE-6/7 slot capture, and the byte-true target probe
+     * func_04CAF6/func_04CA86 — the old 3-arg "provocative" port had the
+     * EU-power arm INVERTED: code < 4 RETURNS the code @asm 0x04CA8F ->
+     * 0x04CAEA, it is not -1).  Derived per-turn flow, all cited:
+     *   u1 (type 0, (20,20)): the plan loop resets any stale state
+     *     (@0x4CF40 >= 0xA && prof != '1' -> 0), then the 8-neighbour probe
+     *     finds the power-2 claim painted at (21,20): func_005FD4 returns
+     *     owner 2, func_04CA86(1,2,1,-1) -> 2 (EU code = always target) ->
+     *     state 0xA (@0x4CF73).  A REAL target acquisition.  The dispatcher
+     *     then end-turns state-0xA units (051D56 switch sel 3 -> 0x934).
+     *     END: orders 0x0A, prof 0.
+     *   u2 (type 0, (25,25)): no foreign neighbours -> chosen -1, state
+     *     stays 0; PHASE-6 prologue stamps prof '?' (@0x4E202 state < 0xA);
+     *     QUEUE_A is empty on this fixture (no emits) so the slot loop
+     *     assigns nothing.  END: orders 0, prof 0x3F.
+     *   u3 (ship 0x0E, goto (8,5), prof '1'): exempt from the state reset
+     *     (@0x4CF47 prof == 0x31) and from PHASE-6 (state 0x0B not in
+     *     {0,5,6} @0x4E20C); the dispatcher marches it through
+     *     ai_unit_order_step + the stuck-tracker as before.
+     *     END: orders 0x0B, prof 0x31.
+     * March fidelity (positions) still pends the eval/plotter leaf audit. */
     {
         printf("euro-AI end-state: u1 o=%02X p=%02X d=(%d,%d)  "
                "u2 o=%02X p=%02X d=(%d,%d)  u3 o=%02X p=%02X\n",
                UREC(1,8), UREC(1,7), UREC(1,9), UREC(1,0x0A),
                UREC(2,8), UREC(2,7), UREC(2,9), UREC(2,0x0A),
                UREC(3,8), UREC(3,7));
-        if (!(UREC(1,8) == 0 && UREC(1,7) == 0)) {
-            printf("SMOKE FAIL: u1 dispatch baseline (orders %02X prof %02X)\n",
+        if (!(UREC(1,8) == 0x0A && UREC(1,7) == 0)) {
+            printf("SMOKE FAIL: u1 target-acquire baseline (orders %02X prof %02X)\n",
                    UREC(1,8), UREC(1,7));
             return 1;
         }
-        if (!(UREC(2,8) == 0 && UREC(2,7) == 0)) {
-            printf("SMOKE FAIL: u2 dispatch baseline (orders %02X prof %02X)\n",
+        if (!(UREC(2,8) == 0 && UREC(2,7) == 0x3F)) {
+            printf("SMOKE FAIL: u2 idle baseline (orders %02X prof %02X)\n",
                    UREC(2,8), UREC(2,7));
             return 1;
         }
@@ -331,7 +326,7 @@ int viceroy_world_smoke(int turns)
                    UREC(3,8), UREC(3,7));
             return 1;
         }
-        puts("euro-AI baseline: real dispatcher (052F7E P6) idle x2 + in-flight hold");
+        puts("euro-AI baseline: planner live — u1 real target 0xA, u2 idle '?', u3 in-flight hold");
         #undef UREC
     }
 

@@ -155,6 +155,26 @@ int func_04C306_ai_queue_a_lookup_max(uint16_t power, uint16_t b0, uint16_t b1, 
 }
 
 /* ============================================================================
+ * func_04C1F0 — ai_queue_a_slot_clear  [DONE — BYTE_VERIFIED 2026-06-11]
+ * ----------------------------------------------------------------------------
+ * The overlay's first function (file 0x4C1F0 = the page-0x0D load base; the
+ * auto census missed it).  Marks QUEUE_A slot (power, slot) empty:
+ *   bx = (power*0x40 + slot)*4
+ *   byte [bx-0x674E] (= 0x98B2 = QUEUE_A+2) = 0xFF   ; b2 sentinel "free"
+ *   byte [bx-0x674D] (= 0x98B3 = QUEUE_A+3) = 0      ; b3 priority 0
+ * Reached as JT entry [5] (file 0x534D5 -> JMP FAR 1A1F:04A0); the QUEUE_A
+ * clear loop in func_04C532 calls it per slot (@asm 0x04C542 push i; push
+ * power -> cdecl (power, slot)).
+ * ============================================================================ */
+int func_04C1F0_ai_queue_a_slot_clear(uint16_t power, uint16_t slot)
+{
+    uint8_t *r = &g_ai_queue_a_98B0[((unsigned)power * 0x40 + slot) * 4]; /* @asm 0x04C1F3..0x04C1FC */
+    r[2] = 0xFF;                                        /* @asm 0x04C1FF */
+    r[3] = 0x00;                                        /* @asm 0x04C204 */
+    return 0;                                           /* @asm 0x04C20A RETF */
+}
+
+/* ============================================================================
  * func_04C35A — ai_queue_a_find_or_insert  [DONE — control flow BYTE_VERIFIED]
  * ----------------------------------------------------------------------------
  * Two passes over power arg0's 64-slot QUEUE_A:
@@ -293,15 +313,23 @@ int func_04C50C_ai_table_c_clear(void)
  * ============================================================================ */
 int func_04C532_ai_queue_a_rebuild(uint16_t power)
 {
-    /* @asm 0x04C53B..0x04C54F — clear QUEUE_A for this power. */
+    /* @asm 0x04C53B..0x04C54F — clear QUEUE_A for this power.
+     * @asm 0x04C542 push i; push power; PUSH CS; CALL +0x6F90 -> load 0x72E5
+     * = JT[5] (file 0x534D5) -> JMP FAR 1A1F:04A0 = func_04C1F0 (above).
+     * (The old ovly_tramp_7A85(i, power) extern had the args REVERSED vs the
+     * cdecl order — power is arg0; fixed with the direct call 2026-06-11.) */
     for (int i = 0; i < 0x40; i++)                      /* @asm 0x04C54B cmp 0x40 */
-        ovly_tramp_7A85((uint16_t)i, power);            /* @asm 0x04C542 */
+        func_04C1F0_ai_queue_a_slot_clear(power, (uint16_t)i);  /* @asm 0x04C542 */
 
-    /* @asm 0x04C556..0x04C592 — re-emit each live QUEUE_B entry. */
+    /* @asm 0x04C556..0x04C592 — re-emit each live QUEUE_B entry.
+     * @asm 0x04C56D..0x04C585 push r3; push r2; push r1; push r0; push power;
+     * PUSH CS; CALL +0x6F39 -> load 0x72D1 = JT[1] -> 1A1F:0470 = func_04C35A.
+     * (The old ovly_tramp_7A71(r3,r2,r1,r0,power) call was positionally
+     * reversed — r3 landed in the power slot; fixed 2026-06-11.) */
     for (int i = 0; i < 0x10; i++) {                    /* @asm 0x04C58E cmp 0x10 */
         uint8_t *r = &g_ai_queue_b_9EAA[(power * 0x10 + i) * 4];  /* @asm 0x04C559 */
         if ((int8_t)r[2] < 0) continue;                 /* @asm 0x04C562 [bx-0x6154] */
-        ovly_tramp_7A71((int8_t)r[3], (int8_t)r[2], (int8_t)r[1], (int8_t)r[0], power);
+        func_04C35A_ai_queue_a_find_or_insert(power, r[0], r[1], r[2], r[3]);
                                                         /* @asm 0x04C56D..0x04C585 */
     }
     return 0;                                           /* @asm 0x04C594 RETF */
@@ -697,83 +725,76 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
 }
 
 /* ============================================================================
- * func_04CA86 — ai_move_is_provocative  [DONE — control flow BYTE_VERIFIED]
+ * func_04CA86 — ai_target_code_check  [BYTE-RESTORED 2026-06-11]
  * ----------------------------------------------------------------------------
- * Returns the move type arg1 if a contemplated move toward power arg1 (>=4, i.e.
- * a native tribe) and target unit arg2 would be hostile/provocative, else -1.
- * Two triggers (either sets the "provoke" flag):
- *   (a) per-power threat table [arg1-4] >= 0x4B (75)               ; @asm 0x04CAAA/0x04CAB2
- *   (b) native alarm grid [unit[arg2].home(+0x314A)*9 + arg0]*2 @0x54F6 >= 0x80
- *                                                                  ; @asm 0x04CAC2..0x04CADD
- *
- * @asm 0x04CA8F  if arg1 < 4 -> return -1               ; (European powers excluded)
- * @asm 0x04CA95  if arg2 == 0 -> return -1
- * @asm 0x04CAA0  thr = lcall 0x181F:0x30C(arg1-4, arg0) ; per-tribe threat(power, self)
- * @asm 0x04CAB2  if thr >= 0x4B -> provoke
- * @asm 0x04CAC2  if arg2 >= 0: home = unit[arg2*0x1C + 0x314A];
- *                idx = (home*9 + arg0)*2; if [idx+0x54F6] >= 0x80 -> provoke
- * @asm 0x04CAE4  return provoke ? arg1 : -1
- *
- * The native-alarm grid base 0x54F6 (stride: 9 powers/tribe, word entries) and
- * the 0x4B(75) alarm/threat threshold match raid.c / native_unit_ai.c
- * (VERIFICATION_LEDGER alarm 0x54F6/0x80).  arg0 = self power, arg1 = tribe,
- * arg2 = unit index.  [BYTE_VERIFIED]
+ * FOUR stack args (the pre-rewrite port dropped one and scrambled the rest):
+ *   [bp+6]=self_power  [bp+8]=code (owner/tribe at the candidate tile)
+ *   [bp+0xA]=pursuit   [bp+0xC]=unit (occupant index or -1)
+ * Returns `code` when the candidate is a VALID TARGET, else -1:
+ *   - code < 4 (a European power): ALWAYS a target (@asm 0x04CA8F jl ->
+ *     0x04CAEA result=code — the old port returned -1 here, inverting the
+ *     entire EU-target path);
+ *   - pursuit == 0: -1 (@asm 0x04CA95);
+ *   - tribe (code >= 4): target iff threat(code-4, self) >= 0x4B
+ *     (0x181F:0x30C) OR the native alarm word at
+ *     [0x54F6 + (unit.home(+0x314A)*9 + self)*2] >= 0x80 (unit >= 0 only).
  * ============================================================================ */
 extern uint8_t g_native_alarm_54F6[];  /* DGROUP:0x54F6 — alarm grid, word, 9 powers/tribe */
 
-int func_04CA86_ai_move_is_provocative(uint16_t self_power, int16_t tribe, int16_t unit)
+int func_04CA86_ai_target_code_check(uint16_t self_power, int16_t code,
+                                     int16_t pursuit, int16_t unit)
 {
-    int provoke = 0;                                    /* @asm 0x04CA9B [bp-2]=0 */
-    int result  = -1;                                   /* @asm 0x04CA8A [bp-6]=0xFFFF */
-
-    if (tribe < 4) return result;                       /* @asm 0x04CA8F */
-    if (unit == 0) return result;                       /* @asm 0x04CA95 (==0) */
-
-    /* @asm 0x04CAA0 — per-tribe threat reading against self power. */
-    int thr = overlay_call_181F_030C();                 /* threat(tribe-4, self) */
-    if (thr >= 0x4B) provoke = 1;                       /* @asm 0x04CAB2/0x04CAB7 */
-
-    /* @asm 0x04CAC2..0x04CADD — native alarm toward self at the unit's home. */
-    if (unit >= 0) {                                    /* @asm 0x04CAC0 */
-        uint8_t home = g_unit_table_3144[unit * UNIT_RECORD_STRIDE + 0x06]; /* +0x06 abs 0x314A */
+    extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col); /* 0x181F:0x30C */
+    int provoke = 0;
+    if (code < 4)                                       /* @asm 0x04CA8F jl 0x04CAEA */
+        return code;                                    /* EU power: always a target */
+    if (pursuit == 0)                                   /* @asm 0x04CA95 je 0x04CAF0 */
+        return -1;
+    /* @asm 0x04CAA0 push self; push code-4; lcall 0x181F:0x30C = func_0082A0
+     * (the 0x5B1C 39-column threat matrix read; row=code-4, col=self). */
+    if (func_0082A0_logic_sz_18((uint16_t)(code - 4), self_power) >= 0x4B)
+        provoke = 1;                                    /* @asm 0x04CAB2/0x04CAB7 */
+    if (unit >= 0) {                                    /* @asm 0x04CABC jl skip */
+        uint8_t home = g_unit_table_3144[unit * UNIT_RECORD_STRIDE + 0x06]; /* @asm 0x04CAC6 +0x314A */
         int idx = (home * 9 + self_power) * 2;          /* @asm 0x04CACD..0x04CAD5 */
-        if (*(int16_t *)&g_native_alarm_54F6[idx] >= 0x80) /* @asm 0x04CAD7 cmp 0x80 */
+        if (*(int16_t *)&g_native_alarm_54F6[idx] >= 0x80) /* @asm 0x04CAD7 */
             provoke = 1;                                /* @asm 0x04CADF */
     }
-
-    if (provoke) result = tribe;                        /* @asm 0x04CAE4..0x04CAED */
-    return result;                                      /* @asm 0x04CAF0 RETF */
+    return provoke ? code : -1;                         /* @asm 0x04CAE4..0x04CAF0 */
 }
 
 /* ============================================================================
- * func_04CAF6 — ai_find_nearest_target  [DONE — control flow BYTE_VERIFIED]
+ * func_04CAF6 — ai_find_nearest_target  [BYTE-RESTORED 2026-06-11]
  * ----------------------------------------------------------------------------
- * For power arg2 (?), starting at base (arg0=x [bp+6], arg1=y [bp+8]) and a
- * pursuit param arg3 [bp+0xC], performs an expanding-ring search for a target
- * military unit (type 0xD..0x12 = the soldier/dragoon/artillery class range) or
- * an enemy claim, returning the chosen target/direction and recording the best
- * candidate into the DGROUP scratch word 0x9EA8.
+ * 8-NEIGHBOUR scan (the "ring" var is the compass-direction index, not an
+ * expanding radius): for each same-terrain-class neighbour of (base_x,base_y),
+ * classify its owner code and run the target check (JT[22] @load 0x733A ->
+ * 1A1F:056C = func_04CA86, FOUR args).  EU-power tiles (code < 4) probe the
+ * tile chain for a military occupant; native codes probe with the actual
+ * occupant for the alarm path.  First hit wins (loop exits on chosen >= 0);
+ * a sub-4 result from the claim probe is latched once into [0x9EA8].
+ * Returns the target code or -1.
  *
- * @asm 0x04CB00  self = lcall 0x181F:0x768(x,y)         ; owner/colony at origin
- * @asm 0x04CB11  [0x9EA8] = -1                          ; reset best
- * Outer ring loop ([bp-6] = ring 0..7):  @asm 0x04CBDC cmp [bp-0x10] / cmp 8
- *   @asm 0x04CB2E  candidate = call cs:0x7ADA(arg1,target,arg3,-1) ; ring stepper
- *   @asm 0x04CB4C  occ = lcall 0x181F:0x7E0(x,y)        ; occupant at ring tile
- *   @asm 0x04CB54  if 0xD <= occ.type(+0x3146) <= 0x12 AND typeflag[type*6+0x5236]!=0
- *                    -> mark "found military" ([bp-8]=1)   (@asm 0x04CB5C..0x04CB7E)
- *   @asm 0x04CB83  occ = lcall 0x181F:0x2E4(occ)        ; next unit on tile
- *   @asm 0x04CB9D  claim = lcall 0x181F:0x6BE(y,x)      ; reachable tile owner
- *   @asm 0x04CBB2  if claim != arg2 -> dir = cs:0x7ADA(arg1,claim,arg3,-1);
- *                    if dir < 4 and [0x9EA8] < 0: [0x9EA8] = dir  (record best)
- *   @asm 0x04CBE8  expand to next ring (recompute dx/dy from step tables +0xBE/+0xB4)
- * @asm 0x04CC4A  return [bp-0x10] (chosen target/direction, -1 if none)
- *
- * This is the AI target-acquisition pass that feeds func_04C89E's mover: it
- * finds the nearest hostile military unit / claimable tile within 8 rings and
- * publishes the candidate in 0x9EA8.  The military unit-type window 0xD..0x12,
- * the per-type flag table base 0x5236 (stride 6 — same family as 0x523D used by
- * func_04C846), and the scratch global 0x9EA8 are BYTE_VERIFIED; the ring
- * stepper cs:0x7ADA and the 0x181F map leaves are role-named.  [DONE]
+ *   func_04CAF6(base_x [bp+6], base_y [bp+8], self [bp+0xA], pursuit [bp+0xC])
+ *   home_terr = 0x768(base_x, base_y)            ; func_0062B4   @0x04CB00
+ *   chosen = -1; [0x9EA8] = -1; dir = 0          ;               @0x04CB0B..0x04CB14
+ *   while (chosen < 0 && dir < 8):               ;               @0x04CBDC..0x04CBE6
+ *     cand_y = dy8[dir]+base_y; cand_x = dx8[dir]+base_x  ; @0x04CBE8..0x04CC02
+ *     if (0x768(cand) != home_terr) -> next dir  ; class gate    @0x04CC03..0x04CC0E
+ *     v = 0x682(cand)                            ; func_005F04   @0x04CC16
+ *     if (v < 0 || v == self) -> CLAIM           ;               @0x04CC21..0x04CC2D
+ *     if (v < 4)  occ = -1                       ; EU tile       @0x04CC30 -> 0x04CB1C
+ *     else        occ = 0x7E0(AX=cand_x,DX=cand_y) ; native: occupant @0x04CC38
+ *     PROBE: chosen = JT22(self, v, pursuit, occ) ;              @0x04CB21..0x04CB34
+ *     if (chosen >= 0 && home_terr != 0):        ; military scan @0x04CB37..0x04CB98
+ *       walk tile chain from 0x7E0(cand): military type 0xD..0x12 with
+ *       @UNIT[type*6+0x5236] != 0 -> found; none found -> chosen = -1
+ *     CLAIM: cl = 0x6BE(cand)                    ; func_005FD4   @0x04CB9D..0x04CBAB
+ *     if (cl >= 0 && cl != self):
+ *       chosen = JT22(self, cl, pursuit, -1)     ;               @0x04CBB7..0x04CBC7
+ *       if (chosen < 4 && [0x9EA8] < 0) [0x9EA8] = chosen        @0x04CBCA..0x04CBD6
+ *     dir++                                      ;               @0x04CBD9
+ *   return chosen                                ;               @0x04CC4A
  * ============================================================================ */
 extern int16_t g_ai_best_target_9EA8; /* DGROUP:0x9EA8 — scratch "best candidate" word */
 /* g_unit_type_flags_5236 forward-declared above */
@@ -781,45 +802,63 @@ extern int16_t g_ai_best_target_9EA8; /* DGROUP:0x9EA8 — scratch "best candida
 int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                                        uint16_t self_power, uint16_t pursuit)
 {
-    int self  = overlay_call_181F_0768();               /* @asm 0x04CB00 owner@(x,y) */
-    int chosen = -1;                                    /* @asm 0x04CB0E [bp-0x10]=0xFFFF */
+    extern int func_0062B4_op_sz_39(uint16_t x, uint16_t y);     /* 0x181F:0x768 */
+    extern int func_005F04_map_xy_bounds_or_neg1(uint16_t x, uint16_t y); /* 0x181F:0x682 */
+    extern int func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x6BE */
+    extern int func_0066CC_op_sz_57(uint16_t x_ax, uint16_t y_dx);  /* 0x181F:0x7E0 (AX,DX) */
+    extern int unit_chain_next(int idx);                          /* 0x181F:0x2E4 */
+    extern int8_t g_compass_dx8_00B4[];
+    extern int8_t g_compass_dy8_00BE[];
+
+    int home_terr = func_0062B4_op_sz_39(base_x, base_y); /* @asm 0x04CB00 [bp-0xA] */
+    int chosen = -1;                                    /* @asm 0x04CB0B..0x04CB0E */
     g_ai_best_target_9EA8 = -1;                         /* @asm 0x04CB11 */
-    (void)self;
 
-    /* @asm 0x04CBDC — expanding-ring loop while no target and ring < 8. */
-    for (int ring = 0; chosen < 0 && ring < 8; ring++) {/* @asm 0x04CBE2 cmp 8 */
-        int found_mil = 0;                              /* @asm 0x04CB41 [bp-8]=0 */
-
-        /* @asm 0x04CB2E — ring candidate via the stepper trampoline. */
-        chosen = ovly_tramp_7ADA(base_y, (uint16_t)-1, pursuit, (uint16_t)-1); /* @asm 0x04CB2E */
-        if (chosen < 0) {                               /* @asm 0x04CB37/0x04CB3F */
-            int occ = overlay_call_181F_07E0();         /* @asm 0x04CB4C occupant */
-            /* @asm 0x04CB54..0x04CB7E — military-class detection on the tile chain. */
-            while (occ >= 0) {
-                uint8_t t = g_unit_table_3144[occ * UNIT_RECORD_STRIDE + UNIT_TYPE_OFF];
+    for (int dir = 0; chosen < 0 && dir < 8; dir++) {   /* @asm 0x04CB14/0x04CBDC..0x04CBE6/0x04CBD9 */
+        int16_t cand_y = (int16_t)(g_compass_dy8_00BE[dir] + (int16_t)base_y); /* @asm 0x04CBEB [bp-4] */
+        int16_t cand_x = (int16_t)(g_compass_dx8_00B4[dir] + (int16_t)base_x); /* @asm 0x04CBF7 [bp-2] */
+        int v, occ;
+        if (func_0062B4_op_sz_39((uint16_t)cand_x, (uint16_t)cand_y) != home_terr)
+            goto next_dir;                              /* @asm 0x04CC0B/0x04CC0E class gate */
+        v = func_005F04_map_xy_bounds_or_neg1((uint16_t)cand_x, (uint16_t)cand_y);
+                                                        /* @asm 0x04CC16 -> [bp-0xC] */
+        if (v < 0 || v == (int)self_power)              /* @asm 0x04CC21/0x04CC28 */
+            goto claim;                                 /* -> 0x04CB9D */
+        if (v < 4)                                      /* @asm 0x04CC30 EU tile */
+            occ = -1;                                   /* @asm 0x04CB1C [bp-0xE] */
+        else
+            occ = func_0066CC_op_sz_57((uint16_t)cand_x, (uint16_t)cand_y);
+                                                        /* @asm 0x04CC38 AX/DX regs */
+        /* PROBE @asm 0x04CB21..0x04CB34: 4-arg target check via JT[22]. */
+        chosen = func_04CA86_ai_target_code_check(self_power, (int16_t)v,
+                                                  (int16_t)pursuit, (int16_t)occ);
+        if (chosen >= 0 && home_terr != 0) {            /* @asm 0x04CB37/0x04CB3B */
+            int found_mil = 0;                          /* @asm 0x04CB41 [bp-8] */
+            int w = func_0066CC_op_sz_57((uint16_t)cand_x, (uint16_t)cand_y); /* @asm 0x04CB4C */
+            while (w >= 0) {                            /* @asm 0x04CB8E/0x04CB90 */
+                uint8_t t = g_unit_table_3144[w * UNIT_RECORD_STRIDE + UNIT_TYPE_OFF];
                 if (t >= 0xD && t <= 0x12 &&            /* @asm 0x04CB57/0x04CB5E */
                     g_unit_type_flags_5236[t * 6] != 0) /* @asm 0x04CB77 [bx+0x5236] */
                     found_mil = 1;                      /* @asm 0x04CB7E */
-                occ = unit_chain_next(occ);             /* @asm 0x04CB83 AX-arg chain-next
-                                                         * (same placeholder-hang class as
-                                                         * 0x04C88A; real port) */
+                w = unit_chain_next(w);                 /* @asm 0x04CB86 0x2E4 AX-arg */
             }
             if (!found_mil)                             /* @asm 0x04CB92 */
-                chosen = -1;                            /* @asm 0x04CB98 stays unset */
+                chosen = -1;                            /* @asm 0x04CB98 */
         }
-
-        /* @asm 0x04CB9D..0x04CBD6 — reachable enemy claim records best dir in 0x9EA8. */
-        int claim = overlay_call_181F_06BE();           /* @asm 0x04CBA3 owner of reach tile */
-        if (claim >= 0 && claim != (int)self_power) {   /* @asm 0x04CBB0/0x04CBB2 */
-            int dir = ovly_tramp_7ADA(base_y, (uint16_t)claim, pursuit, (uint16_t)-1); /* @asm 0x04CBC1 */
-            if (dir < 4 && g_ai_best_target_9EA8 < 0)   /* @asm 0x04CBCA/0x04CBCF */
-                g_ai_best_target_9EA8 = (int16_t)dir;   /* @asm 0x04CBD6 */
+claim:  /* @asm 0x04CB9D..0x04CBD6 */
+        {
+            int cl = func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)cand_x,
+                                                           (uint16_t)cand_y); /* @asm 0x04CBA3 */
+            if (cl >= 0 && cl != (int)self_power) {     /* @asm 0x04CBAE/0x04CBB2 */
+                chosen = func_04CA86_ai_target_code_check(self_power, (int16_t)cl,
+                                                          (int16_t)pursuit, -1);
+                                                        /* @asm 0x04CBB7..0x04CBC7 */
+                if (chosen < 4 && g_ai_best_target_9EA8 < 0)  /* @asm 0x04CBCA/0x04CBCF */
+                    g_ai_best_target_9EA8 = (int16_t)chosen;  /* @asm 0x04CBD6 */
+            }
         }
-
-        (void)base_x;
-        /* @asm 0x04CBE8..0x04CC46 — step out to the next ring (recompute coords). */
+next_dir:;
     }
-
     return chosen;                                      /* @asm 0x04CC4A RETF */
 }
 
@@ -990,179 +1029,184 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
     uint8_t frame_buf[0x100];                            /* frame[-0x14C] local buffer */
     for (int z = 0; z < 0x100; z++) frame_buf[z] = 0;    /* @asm 0x04CC98 memset(frame,0,0x100) */
     (void)frame_buf;
-    int n = overlay_call_181F_035C();                   /* @asm 0x04CCB1 count(pwr[-0x7304]>>3,3,0x63) */
+    /* @asm 0x04CCA0 push 0x63; push 3; push (byte[power-0x7304] >> 3);
+     * lcall 0x181F:0x35C = func_0048CC -> [bp-0x3A] (the PHASE-6 divisor cap;
+     * 0x8CFC = the per-power unit counter).  Direct call 2026-06-11. */
+    int n;
+    {   extern int func_0048CC_logic_sz_13(uint16_t a, uint16_t b, uint16_t c);
+        n = func_0048CC_logic_sz_13((uint16_t)(DG8(0x8CFC + power) >> 3), 3, 0x63);
+    }
     uint16_t work[0x40];                                /* frame[i*2-0x1D8] — 64-slot work array */
     for (int i = 0; i < 0x40; i++)                      /* @asm 0x04CCD0 cmp 0x40 */
         work[i] = (uint16_t)n;                           /* @asm 0x04CCC9 frame[i*2-0x1D8]=n */
 
-    /* ---- PHASE 1 — unit coverage-flag pass.  @asm 0x04CCD6..0x04CE71.
-     * Iterates the bound-unit chain (0x181F:0x8BC / 0x2EE / 0x2E4); for each unit
-     * in the military window whose typeflag[type*6+0x5237]==unit[+0x3150], ORs the
-     * coverage bits into unit[+0x3148] (0xC for the "needs escort" class, 0x4 when
-     * the chain found a companion, 0x20 via the per-power tier triplet at 0x925A).
-     * The chain-walk + flag stamping are byte-cited.
-     * @asm 0x1AEAC  0x181F:0x8BC → file 0x73A8 = func_0073A8_logic_sz_99 (unit chain score)
-     * BYTE_VERIFIED: takes (category:u16 bp+8, unit_idx:u16 bp+6); calls unit_chain_resolve
-     *   (func_006672) to get chain head, then walks next-links via func_0066BA; dispatches
-     *   on category (0..0xE) through a 15-entry jump table at cs:0xD78; reads type-flag
-     *   tables DGROUP:0x5236/0x5237/0x5239 (stride 6) and UnitRecord.type (byte at +0x3146);
-     *   accumulates into di; returns di (aggregate weighted score for the chain).
-     *   Called here as 0x181F:0x8BC(category=?, unit=[bp-0x152]): returns first/next bound unit
-     *   index (the iterator convention used throughout the phase).
-     * @asm 0x1A8DE  0x181F:0x2EE → file 0x6672 = func_006672 (unit_chain_resolve)
-     * BYTE_VERIFIED: takes unit index in AX; walks chain_prev (UnitRecord +0x18, word
-     *   DGROUP:[idx*0x1C + 0x315C]) upward while >= 0; returns the chain HEAD index
-     *   (the root of the doubly-linked tile-occupancy chain), or the input if already head
-     *   or negative.  Fully documented in src/unit/chain.c.  Called here as iter initialiser
-     *   (0x181F:0x2EE(arg0)) before the 0x181F:0x2E4 next-step loop. */
-    int u = overlay_call_181F_08BC();                   /* @asm 0x04CCED first bound unit (0x152) */
-    while (u >= 0) {                                    /* @asm 0x04CCFC/0x04CD00 */
-        uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
-        if (uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12 && /* @asm 0x04CD0F/0x04CD19 */
-            g_unit_type_flags_5236[uu[UNIT_TYPE_OFF] * 6 + 1] == uu[0x0C /*+0x3150*/]) { /* @asm 0x04CD39 [bx+0x5237] = 5236+1 */
-            /* @asm 0x04CD4A..0x04CDB7 — follow the same-class chain (0x2EE/0x2E4),
-             * marking the best companion; result folds into the flag stamping. */
-            (void)overlay_call_181F_02EE();             /* @asm 0x04CD51 */
-            (void)overlay_call_181F_02E4();             /* @asm 0x04CD7D chain step */
-            uu[0x04 /*+0x3148*/] |= 0xC;                /* @asm 0x04CDCC or [bx+0x3148],0xc */
-            uu[0x04] |= 0x4;                            /* @asm 0x04CDDC or [bx+0x3148],4 */
-        }
-        /* @asm 0x04CDE1..0x04CE49 — per-power tier triplet (0x925A/0x925B/0x9259)
-         * sets +0x3148 bit 0x20 on the first uncovered military unit. */
-        if (uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12 &&
-            !(uu[0x04] & 0xC)) {                        /* @asm 0x04CDFA test 0xc */
-            int t0 = (int8_t)g_ai_pwr_tier_925A[power * 0x13]; /* @asm 0x04CE05 [bx-0x6DA6] */
-            int t1 = (int8_t)g_ai_pwr_tier_925A[power * 0x13 + 1]; /* @asm 0x04CE0D [bx-0x6DA5] */
-            if (t0 + t1 >= 2 || t0 != 0) {              /* @asm 0x04CE15/0x04CE1A */
-                uu[0x04] |= 0x20;                       /* @asm 0x04CE44 or [bx+0x3148],0x20 */
+    /* ---- THE PER-UNIT PLAN LOOP — byte-restored 2026-06-11 (G1 item (a)).
+     * @asm 0x04CCD6..0x04D036.  The pre-rewrite port modeled this span as two
+     * separate phases ("PHASE 1 coverage pass" iterating a phantom bound-unit
+     * chain + a "PHASE 2 head"); the byte truth is ONE loop over unit indices
+     * 0..[0x539C) with an OWN-unit section, a FOREIGN-unit section, and an
+     * exit tail.  0x181F:0x8BC is func_0073A8(unit, class) — a per-chain
+     * weighted COUNT (2 stack args, @0x4CCE7/0x4CED0/0x4CEE3 push 3/4/6),
+     * not an iterator; 0x2EE/0x2E4 are the AX-arg chain resolve/next.
+     *
+     * Loop frame: [bp-0x152]=u, [bp-0xA]=tier_done, [bp-0x1C]=marked,
+     * [bp-0x1A]=q3, [bp-2]=match, [bp-0x40]=start, [bp-0x34]/[bp-0x38]=x/y. */
+    {
+        extern int func_0073A8_logic_sz_99(uint16_t unit, uint16_t klass);
+        extern int unit_chain_resolve(int idx);   /* 0x181F:0x2EE (AX-arg) */
+        extern int unit_chain_next(int idx);      /* 0x181F:0x2E4 (AX-arg) */
+        extern int func_008B96(uint16_t unit);    /* 0x181F:0xB28 */
+        extern int func_005BFA_logic_sz_49(uint16_t x, uint16_t y);  /* 0x181F:0x302 */
+        extern int func_0062B4_op_sz_39(uint16_t x, uint16_t y);     /* 0x181F:0x768 */
+        extern int func_007F34_logic_sz_27(uint16_t power, uint16_t slot); /* 0x181F:0xA38 */
+        int tier_done = 0;                              /* @0x4CCD8 [bp-0xA]=0 */
+        for (int u = 0; u < g_unit_count_539C; u++) {   /* @0x4CCDB/0x4CE71/0x4CE6D */
+            uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
+            if ((uu[0x03] & 0x0F) != (uint8_t)power) {  /* @0x4CE82..0x4CE8B owner */
+                /* ---- FOREIGN unit @0x4CFAA..0x4D032: war-target emit. ---- */
+                if (uu[UNIT_TYPE_OFF] < 0xD || uu[UNIT_TYPE_OFF] > 0x12)
+                    continue;                           /* @0x4CFAF/0x4CFB9 */
+                if (uu[UNIT_TYPE_OFF] == 0x11 && !(DG8(0x5382) & 1))
+                    continue;                           /* @0x4CFC3..0x4CFD1 */
+                if (((0x10 << power) & uu[0x03]) == 0)  /* @0x4CFE6..0x4CFEF seen-bit */
+                    continue;
+                {
+                    int rel = func_007F34_logic_sz_27(power, uu[0x03] & 0x0F);
+                                                        /* @0x4CFFB 0x181F:0xA38 */
+                    if ((rel & 0x60) != 0x20 &&         /* @0x4D003/0x4D005 */
+                        uu[UNIT_TYPE_OFF] != 0x10)      /* @0x4D009 */
+                        continue;
+                }
+                (void)func_04C35A_ai_queue_a_find_or_insert(
+                    power, uu[0x00], uu[0x01], 0, 3);   /* @0x4D013..0x4D02C JT[1] */
+                continue;                               /* @0x4D032 jmp 0x4CE6D */
             }
-        }
-        if (overlay_call_181F_0302() == 0)              /* @asm 0x04CE54 passability gate */
-            uu[0x08 /*+0x314C*/] = 1;                   /* @asm 0x04CE68 state=1 */
-        u = overlay_call_181F_08BC();                   /* @asm 0x04CED4/0x04CEE7 next bound unit */
+
+            /* ---- OWN unit @0x4CE90.. ---- */
+            {
+                uint16_t ux = uu[0x00];                 /* @0x4CE90 [bp-0x34] */
+                uint16_t uy = uu[0x01];                 /* @0x4CE99 [bp-0x38] */
+                int marked, q3, match;
+                if (uu[0x07] == 0x41)                   /* @0x4CEA0 order 'A' */
+                    uu[0x07] = 0x47;                    /* @0x4CEA7 -> 'G' */
+                uu[0x04] &= 0xD1;                       /* @0x4CEB1 clamp coverage */
+                if (uu[0x08] == 5 || uu[0x08] == 6)     /* @0x4CEB6/0x4CEBD */
+                    uu[0x04] |= 0x02;                   /* @0x4CEC9 */
+                /* escort marker: chain carries >1 class-4 or any class-6. */
+                if (func_0073A8_logic_sz_99((uint16_t)u, 4) > 1     /* @0x4CECE..0x4CEDF */
+                    || func_0073A8_logic_sz_99((uint16_t)u, 6) != 0)/* @0x4CEE1..0x4CEF1 */
+                    marked = 1;                         /* @0x4CEF6 [bp-0x1C]=1 */
+                else
+                    marked = 0;                         /* @0x4CCE2 [bp-0x1C]=0 */
+                q3 = func_0073A8_logic_sz_99((uint16_t)u, 3);  /* @0x4CCE7 [bp-0x1A] */
+                if (marked != 0 || q3 != 0) {           /* @0x4CCF8..0x4CD02 */
+                    match = 1;                          /* @0x4CD05 [bp-2]=1 */
+                    if (uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12) { /* @0x4CD0F/0x4CD19 */
+                        if (DG8(0x5234 + uu[UNIT_TYPE_OFF] * 14 + 3) != uu[0x0C])
+                            match = 0;                  /* @0x4CD39/0x4CD3F (col +3 = 0x5237) */
+                        if (match) {
+                            /* @0x4CD4A..0x4CDB7 — stack scan: walk the unit's
+                             * tile chain from its head; a MILITARY member
+                             * whose @UNIT cap-column mismatches its own
+                             * +0x0C AND lies BEFORE the start unit clears
+                             * match.  The asm advances [bp-0x152] itself and
+                             * restores it at @0x4CDB4; a cursor is the
+                             * equivalent observable form. */
+                            int start = u;              /* @0x4CD4A [bp-0x40] */
+                            int cur = unit_chain_resolve(u);    /* @0x4CD51 0x2EE */
+                            for (;;) {
+                                if (match == 0 || cur < 0)      /* @0x4CD86/0x4CD8C */
+                                    break;                      /* -> @0x4CDB4 restore */
+                                {
+                                    uint8_t *wu = &g_unit_table_3144[cur * UNIT_RECORD_STRIDE];
+                                    if (wu[UNIT_TYPE_OFF] >= 0xD &&     /* @0x4CD93 */
+                                        wu[UNIT_TYPE_OFF] <= 0x12 &&    /* @0x4CD9A */
+                                        DG8(0x5234 + wu[UNIT_TYPE_OFF] * 14 + 3) != wu[0x0C]) {
+                                                                /* @0x4CD5A..0x4CD77 */
+                                        if (cur < start)        /* @0x4CDA4..0x4CDAB */
+                                            match = 0;          /* @0x4CDAD */
+                                    }
+                                }
+                                cur = unit_chain_next(cur);     /* @0x4CD79/0x4CD7D 0x2E4 */
+                            }                                   /* u stays = start */
+                        }
+                    }
+                    if (match) {                        /* @0x4CDBB..0x4CDBF */
+                        if (marked)                     /* @0x4CDC1..0x4CDC5 */
+                            uu[0x04] |= 0x0C;           /* @0x4CDCC */
+                        if (q3)                         /* @0x4CDD1..0x4CDD5 */
+                            uu[0x04] |= 0x04;           /* @0x4CDDC */
+                    }
+                }
+                /* tier promotion @0x4CDE1..0x4CE49: first uncovered military
+                 * unit of the right class gets flag 0x20 (once per call). */
+                if (tier_done == 0 &&                   /* @0x4CDE1 */
+                    uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12 && /* @0x4CDEC/0x4CDF3 */
+                    !(uu[0x04] & 0x0C)) {               /* @0x4CDFA */
+                    int t0 = (int8_t)DG8(0x925A + power * 0x13);     /* @0x4CE05 */
+                    int t1 = (int8_t)DG8(0x925B + power * 0x13);     /* @0x4CE0D */
+                    if (t0 + t1 >= 2 && t0 != 0) {      /* @0x4CE15/0x4CE1A */
+                        if (uu[UNIT_TYPE_OFF] == 0x0E) {/* @0x4CE3D */
+                            uu[0x04] |= 0x20;           /* @0x4CE44 */
+                            tier_done = 1;              /* @0x4CE49 */
+                        }
+                    } else {
+                        if (uu[UNIT_TYPE_OFF] == 0x0D &&/* @0x4CE23 */
+                            DG8(0x9259 + power * 0x13) > 1) {  /* @0x4CE2E */
+                            uu[0x04] |= 0x20;           /* @0x4CE44 */
+                            tier_done = 1;              /* @0x4CE49 */
+                        }
+                    }
+                }
+                /* bounds gate @0x4CE4E..0x4CE68 */
+                if (func_005BFA_logic_sz_49(ux, uy) == 0) {  /* @0x4CE54 0x302 */
+                    uu[0x08] = 1;                       /* @0x4CE68 state=1 */
+                    continue;                           /* @0x4CE6D */
+                }
+                /* grid stamp @0x4CEFE..0x4CF22:
+                 * grid[(x>>2)*0x12 + (y>>2)] |= (008B96(u) >= 1 ? 5 : 1) */
+                {
+                    int v = (func_008B96((uint16_t)u) >= 1) ? 5 : 1; /* @0x4CF02..0x4CF11 */
+                    g_ai_mapgrid_9FAA[((int16_t)ux >> 2) * 0x12 +
+                                      ((int16_t)uy >> 2)] |= (uint8_t)v; /* @0x4CF13..0x4CF22 */
+                }
+                /* state machine @0x4CF26..0x4CF53: transient states 1/2/3 and
+                 * (>= 0xA unless order '1') reset to 0. */
+                if (uu[0x08] == 3 || uu[0x08] == 2 || uu[0x08] == 1) /* @0x4CF2B..0x4CF3E */
+                    uu[0x08] = 0;                       /* @0x4CF53 */
+                else if (uu[0x08] >= 0x0A && uu[0x07] != 0x31)  /* @0x4CF40/0x4CF47 */
+                    uu[0x08] = 0;                       /* @0x4CF53 */
+                /* nearest-target probe @0x4CF58..0x4CF73: JT[2] = 1A1F:047C
+                 * = func_04CAF6 (this file); a hit arms state 0xA. */
+                if (func_04CAF6_ai_find_nearest_target(ux, uy, power, 1) >= 0) /* @0x4CF63/0x4CF6C */
+                    uu[0x08] = 0x0A;                    /* @0x4CF73 */
+                /* claim check @0x4CF78..0x4CFA6: on a claimed tile (0x768
+                 * nonzero) NON-military units fall back to state 1. */
+                if (func_0062B4_op_sz_39(ux, uy) != 0) {/* @0x4CF7E/0x4CF86 */
+                    if (uu[UNIT_TYPE_OFF] < 0xD || uu[UNIT_TYPE_OFF] > 0x12) /* @0x4CF92/0x4CF9C */
+                        uu[0x08] = 1;                   /* @0x4CE63 via 0x4CF99/0x4CFA6 */
+                }
+            }
+        }                                               /* @0x4CE6D inc; @0x4CE74 cmp */
     }
 
-    /* ---- PHASE 2 — main per-unit strategic planner.  @asm 0x04CE71..0x04D6ED.
-     * For each unit of arg0 (owner nibble +0x3147 & 0xF == arg0): clamp the
-     * coverage flags (+0x3148 &= 0xD1), promote a queued order (+0x314B 0x41->0x47),
-     * map the unit tile (0x181F:0x722) into the 0x9FAA work grid at cell
-     * (x>>2,y>>2)*0x12 (-0x6056), then drive the unit's move state (+0x314C) toward
-     * 0xA via the reachability/path leaves, scoring reachable neighbours into the
-     * bp-0xC accumulator and recording covered regions in the 0x173C/0x173E
-     * bitmasks.  A stockpile-demand sub-loop over *(0x8542)+0x9A[16] feeds the
-     * TABLE_C emit.  Difficulty(0x53A6)*turn(0x538E) scales the gates.  The loop
-     * structure + grid/bitmask/state writes are byte-cited; the bp-0x18 score
-     * accumulator arithmetic is now BYTE_VERIFIED (2026-06-08).  Full formula:
-     *
-     *   Init @0x4D744: score32=0, demand_count=0, has_civilian=0, is_productive=0
-     *   [bp-0x46] = overlay_call_181F_0D3A()  (colony slot count / capacity)
-     *
-     *   Inner unit-chain loop @0x4D78E..0x4D82A (next via 0x181F:0x02E4):
-     *     If unit[+0x3146]==2 AND NOT colony[+0x1B]&0x80:
-     *       score += 0x320  (800)                            @asm 0x04D7AB/0x04D7B0
-     *       demand_count++; is_productive = 1                @asm 0x04D7A2/0x04D7A5
-     *     If workplan_9870[tile][power]==0 (no work at tile)
-     *       AND unit type NOT in 0xD..0x12 (non-military)
-     *       AND typeflag[type*6+0x5236] > 1 (active class)
-     *       AND order NOT 0x47 or 0x41:
-     *       score += 0x5DC  (1500)                           @asm 0x04D80D/0x04D812
-     *       demand_count++; has_civilian=1; is_productive=1  @asm 0x04D806/0x04D809/0x04D816
-     *
-     *   Demand-slot loop @0x4D82D..0x4D8FB (slot 0..0xF via colony[+0x9A][slot*2]):
-     *     demand_level = colony[+0x9A][slot*2]              @asm 0x04D885
-     *     If slot==8: demand_level = max(0, demand_level + (0x19 - [bp-0x46]))
-     *                                                        @asm 0x04D83D..0x04D84F
-     *     demand_level = min(demand_level, [bp-0x46])        @asm 0x04D852..0x04D857
-     *     scaled = (demand_level + 0x19) / 0x64  -> [bp-0x30] @asm 0x04D85A..0x04D863
-     *     Slots 5 and 0xD: unconditionally skip              @asm 0x04D898..0x04D8A4
-     *     Slots 0xE or 0xF: if NOT colony[+0x90]&(1<<slot): skip
-     *                        else demand_level -= 0x64        @asm 0x04D8A6..0x04D8C3
-     *     If demand_level >= 0x4B: is_productive = 1          @asm 0x04D8CD
-     *     If demand_level < 0: skip                           @asm 0x04D8D3..0x04D8D7
-     *     weight = owner_weight_table[-0x7B44][power*16+slot] @asm 0x04D8E3
-     *     score += weight * demand_level  (32-bit)            @asm 0x04D8E9..0x04D8EF
-     *     demand_count += scaled                              @asm 0x04D8F5
-     *
-     *   Final adjustment (if is_productive != 0) @0x4D8FC..0x4D938:
-     *     score += (int8_t)colony[+0x8F] * 8  (trade-goods bonus) @asm 0x04D91B..0x04D922
-     *     score = clamp(score, min=-, max=0x7FFF)                  @asm 0x04D92B..0x04D938
-     *   -> score pushed as w1 to func_04C4AE_ai_table_c_insert     @asm 0x04D941
-     *
-     * TRAMPOLINE TARGETS and 0x181F leaf helpers are BYTE_VERIFIED (see banner
-     * and Phase 1 comment above for 0x181F:0x8BC / 0x2EE resolutions). */
-    for (int ui = 0; ui < g_unit_count_539C; ui++) {    /* @asm 0x04CE71 cmp [0x539C] */
-        uint8_t *uu = &g_unit_table_3144[ui * UNIT_RECORD_STRIDE];
-        if ((uu[0x03 /*+0x3147*/] & 0x0F) != (uint8_t)power) /* @asm 0x04CE82 owner nibble */
-            continue;                                   /* @asm 0x04CE8B jne -> next-unit tail */
-        /* @asm 0x04CE90  unit_x=[bp-0x34] = byte[bx+0x3144]; unit_y=[bp-0x38] = byte[bx+0x3145] */
-        uint16_t unit_x = uu[0x00 /*+0x3144*/];         /* @asm 0x04CE90 */
-        uint16_t unit_y = uu[0x01 /*+0x3145*/];         /* @asm 0x04CE99 */
-        if (uu[0x07 /*+0x314B*/] == 0x41)               /* @asm 0x04CEA0 */
-            uu[0x07] = 0x47;                            /* @asm 0x04CEA7 promote queued order */
-        uu[0x04 /*+0x3148*/] &= 0xD1;                   /* @asm 0x04CEB1 clamp coverage flags */
-        if (uu[0x08 /*+0x314C*/] == 5 || uu[0x08] == 6) /* @asm 0x04CEB6/0x04CEBD */
-            uu[0x04] |= 0x2;                            /* @asm 0x04CEC9 */
-        (void)overlay_call_181F_08BC();                 /* @asm 0x04CED4 (order/availability gate) */
-        /* @asm 0x04CF02  path availability gate (0x181F:0x0B28) */
-        (void)overlay_call_181F_0B28();                 /* @asm 0x04CF02 path/availability */
-        /* @asm 0x04CF0A  grid cell (x>>2,y>>2)*0x12 ORed with availability flag [bx+si-0x6056] */
-        /* @asm 0x04CF4E..0x04CF64  state != {1,2,3,0xA+order=0x31}: */
-        /*   push 1(pursuit), push power, push unit_y, push unit_x; push cs; call cs:0x7A76
-         *   = find_nearest_target(base_x=unit_x, base_y=unit_y, power, pursuit=1)
-         *   if ax >= 0: unit[+0x314C] = 0xA  (unit acquired a target)   BYTE_VERIFIED */
-        /* @asm 0x04CF64  push cs; call cs:0x7A76 (= func_04CAF6_ai_find_nearest_target)
-         *   BYTE_VERIFIED: -> file 0x534C6 -> ljmp 0x1A1F:0x47C -> thunk@0x1CA6C
-         *   segid=13 off=0x906 -> file 0x4CAF6 */
-        (void)func_04CAF6_ai_find_nearest_target(unit_x, unit_y, power, 1); /* @asm 0x04CF64 cs:0x7A76 */
-        (void)overlay_call_181F_0768();                 /* @asm 0x04CF7E claim check */
-        (void)overlay_call_181F_07E0();                 /* @asm 0x04D07F occupant */
-        (void)overlay_call_181F_074A();                 /* @asm 0x04D141 tile bits */
-        (void)overlay_call_181F_0A38();                 /* @asm 0x04D17E war state */
-        /* @asm 0x04D013..0x04D02C  (type==0x10 OR war_state&0x60==0x20 branch):
-         *   push 3(b3), push 0(b2), push unit_y(b1), push unit_x(b0), push power;
-         *   push cs; call cs:0x7A71 (= func_04C35A_ai_queue_a_find_or_insert)
-         *   BYTE_VERIFIED: -> file 0x534C1 -> ljmp 0x1A1F:0x470 -> thunk@0x1CA60
-         *   segid=13 off=0x16A -> file 0x4C35A */
-        (void)func_04C35A_ai_queue_a_find_or_insert(power, unit_x, unit_y, 0, 3); /* @asm 0x04D02C cs:0x7A71 */
-        /* @asm 0x04D048..0x04D0D0  colony sub-loop (artillery / placement branch):
-         *   [bp-0x150] = 0 (init each colony iteration @asm 0x04D04A); never written
-         *   again in the body -> b3 = 3+2*(0>=1) = 3 always (BYTE_VERIFIED @asm 0x04D0B3).
-         *   b0 = colony[bx+0] = colony_x ([0x8542]+0); b1 = colony[bx+1] = colony_y
-         *   BYTE_VERIFIED @asm 0x04D0C3/0x04D0C9: bx=[0x8542] (reloaded @0x04D093).
-         *   push 3(b3), push 4(b2), push colony_y(b1), push colony_x(b0), push power;
-         *   push cs; call 0x534C1 (= func_04C35A_ai_queue_a_find_or_insert)
-         *   BYTE_VERIFIED: -> file 0x534C1 -> ljmp 0x1A1F:0x470 -> thunk@0x1CA60
-         *   segid=13 off=0x16A -> file 0x4C35A */
-        (void)func_04C35A_ai_queue_a_find_or_insert(power, /*colony_x*/0, /*colony_y*/0, 4, 3); /* @asm 0x04D0D0 cs:0x7A71 BYTE_VERIFIED */
-        /* @asm 0x04D036..0x04D037  (loop-end fallthrough before colony loop):
-         *   push cs; call cs:0x7AD5 (= func_04C50C_ai_table_c_clear)
-         *   BYTE_VERIFIED: -> file 0x53525 -> ljmp 0x1A1F:0x560 -> thunk@0x1CB50
-         *   segid=13 off=0x31C -> file 0x4C50C */
-        (void)func_04C50C_ai_table_c_clear();           /* @asm 0x04D037 cs:0x7AD5 */
-        (void)overlay_call_181F_06B4();                 /* @asm 0x04D27B reach check */
-        (void)overlay_call_181F_06BE();                 /* neighbour owner */
-        (void)overlay_call_181F_0682();                 /* @asm 0x04D582 path cost */
-        int tile = overlay_call_181F_0722();            /* @asm 0x04D115 map handle for unit tile */
-        (void)tile;
-        /* @asm 0x04D90C..0x04D946  stockpile-demand loop over *(0x8542)+0x9A[16]:
-         *   [bp-0x42]=has_civilian_flag (set to 1 @0x04D806 if non-military type in colony);
-         *   [bp-0x3E]=demand_count (incremented @0x04D7A2/0x04D816/0x04D8F5);
-         *   [bp-0x18]:[bp-0x16]=score accumulator (32-bit), clamped to 0x7FFF @0x04D938;
-         *   [bp-0x3C]=colony_idx (DGROUP iter, init=0 @0x04D042).
-         *   BYTE_VERIFIED push order @0x04D90C..0x04D945:
-         *     push [bp-0x42](b5=has_civilian_flag), push [bp-0x3E](b4=demand_count),
-         *     push ax (w1=score_clamped @0x04D941), push [bp-0x3C](w0=colony_idx @0x04D942);
-         *     push cs; call 0x5350C (= func_04C4AE_ai_table_c_insert); add sp,8.
-         *   -> file 0x5350C -> ljmp 0x1A1F:0x524 -> thunk@0x1CB14
-         *   segid=13 off=0x2BE -> file 0x4C4AE  BYTE_VERIFIED */
-        /* NOTE: colony_idx/score/demand_count/has_civilian_flag are loop-local intermediates;
-         * exact C names are omitted to avoid fabricating the full inner loop body. */
-        (void)func_04C4AE_ai_table_c_insert(
-            /*w0=colony_idx*/0, /*w1=score_clamped*/0,
-            /*b4=demand_count*/0, /*b5=has_civilian_flag*/0);  /* @asm 0x04D946 cs:0x7ABC BYTE_VERIFIED */
-        (void)g_ai_mapgrid_9FAA; (void)g_ai_bitmask_173C; (void)g_ai_bitmask_173E;
-        (void)unit_x; (void)unit_y;
-    }
+    /* ---- loop exit tail @0x4D036..0x4D045 ---- */
+    (void)func_04C50C_ai_table_c_clear();               /* @0x4D037 JT[21] -> 1A1F:0560 */
+    g_ai_bitmask_173C = 0;                              /* @0x4D03C [0x173C]=0 */
+    g_ai_bitmask_173E = 0;                              /* @0x4D03F [0x173E]=0 */
+
+    /* ---- COLONY PLAN PHASE @0x4D048..0x4D6ED — DEGRADED-PENDING. ----
+     * The per-colony planner (work-grid scoring, stockpile-demand loop,
+     * TABLE_C emits via func_04C4AE, the colony build emit func_04C35A
+     * (power, colony_x, colony_y, 4, 3) @0x4D0B3..0x4D0D0) is NOT yet
+     * byte-restored: the pre-rewrite port executed its emit calls with
+     * PLACEHOLDER ZERO arguments from inside the unit loop, which would
+     * write garbage queue entries now that the planner is live — those
+     * calls are REMOVED until this phase is ported from the disasm.  The
+     * BYTE_VERIFIED formula documentation (score accumulator, demand
+     * scaling, clamps) is preserved in the banner above.  [0x539E]-loop,
+     * frame [bp-0x3C] colony index, entered at @0x4D0E3. */
+
 
     /* ---- PHASE 3 — colony build planner.  @asm 0x04D6F0..0x04DB1A.
      * (Reached on the owner-mismatch tail at 0x04D6F0 and after PHASE 2.)  Uses the
@@ -1369,98 +1413,113 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      *   in AX.  Used here as the slot-score contributor in the priority formula
      *   work[slot]*score/(b3+1).  Documented as "distance" helper in overlay_0612E6_066EB3.c
      *   (call sites @0x062BD7). */
-    int best_slot = -1;                                 /* @asm 0x04E244 [bp-0x4C] */
-    for (int upi = 0; upi < g_unit_count_539C; upi++) { /* @asm 0x04E1D3 cmp [0x539C] */
+    /* PHASE 6/7 BYTE-RESTORED 2026-06-11: the slot-capture (@0x4DFA0..0x4DFD9)
+     * was previously a comment — best_slot stayed -1 and the PHASE-7 order
+     * assignment never fired.  All gates and the priority formula below are
+     * byte-read; leaves: 0x722=func_005E90(x,y) region, 0x37A=func_00493C
+     * octile distance, 0x696=func_005F48 path probe, divisor cap [bp-0x3A]
+     * from func_0048CC at the function head. */
+    {
+        extern int func_005E90_op_sz_64(uint16_t x, uint16_t y);    /* 0x181F:0x722 */
+        extern int func_00493C_logic_sz_14(uint16_t x1, uint16_t y1,
+                                           uint16_t x2, uint16_t y2); /* 0x181F:0x37A */
+        extern int func_005F48_logic_sz_58(uint16_t x, uint16_t y); /* 0x181F:0x696 */
+        int cap_div = (n != 0) ? n : 1;   /* [bp-0x3A]; the original idiv with a
+                                           * 0 divisor raised INT 0 — the modern
+                                           * guard only protects degraded data */
+    for (int upi = 0; upi < g_unit_count_539C; upi++) { /* @asm 0x04DF96/0x04E1CF/0x04E1D3 */
         uint8_t *uu = &g_unit_table_3144[upi * UNIT_RECORD_STRIDE];
+        uint16_t ux, uy;
+        int own_region, best, best_slot;
         if ((uu[0x03] & 0x0F) != (uint8_t)power)        /* @asm 0x04E1E4 owner nibble */
             continue;                                   /* @asm 0x04E1ED jne */
-        if (uu[0x07 /*+0x314B*/] == 0x41)               /* @asm 0x04E1EF */
+        if (uu[0x07 /*+0x314B*/] == 0x41)               /* @asm 0x04E1EF order 'A' */
             continue;                                   /* @asm 0x04E1F4 skip queued */
-        int best = 0x270F;                              /* @asm 0x04E23E [bp-0x158]=0x270F sentinel */
-        best_slot = -1;                                 /* @asm 0x04E244 [bp-0x4C]=0xFFFF */
-        for (int slot = 0; slot < 0x40; slot++) {       /* @asm 0x04DFDF cmp 0x40 */
-            uint8_t *r = &g_ai_queue_a_98B0[(power * 0x40 + slot) * 4]; /* @asm 0x04DFEE */
-            if (r[2 /*b2 = -0x674E*/] == 0xFF) continue;/* @asm 0x04DFF4 empty slot */
-            /* @asm 0x04DFFB..0x04E025 — require typeflag[type*6+0x523D] & (1<<b2). */
-            if (!(g_unit_type_flags_523D[uu[UNIT_TYPE_OFF] * 6] & (1 << r[2]))) /* @asm 0x04E01D/0x04E023 */
-                continue;
-            /* @asm 0x04E027..0x04E14F — slot region match, score, priority test
-             * BYTE_VERIFIED
-             *
-             * Region match (@asm 0x04E029..0x04E03D):
-             *   push b1(y), b0(x); call 0x181F:0x722 (map_region)
-             *   if region != own_region [bp-0x12]:
-             *     if unit_type < 0xD or > 0x12 → skip slot (non-naval types must match)
-             *
-             * Capability gates (@asm 0x04E05C..0x04E091):
-             *   if b2==1 AND !(unit_flags[0x3148] & 4) → skip (b2=1 needs flag bit 2)
-             *   if b2==7 AND !(unit_flags[0x3148] & 8) → skip (b2=7 needs flag bit 3)
-             *
-             * Score (@asm 0x04E0A0..0x04E0D4):
-             *   push b1(y), b0(x), unit_y[bp-0x38], unit_x[bp-0x34]
-             *   call 0x181F:0x37A → AX = score (octile distance)
-             *   cx = score
-             *   bx = b3 + 1                              (divisor)
-             *   priority = work[slot] * score / (b3+1)   (@asm 0x04E0CF imul cx / 0x04E0D2 idiv bx)
-             *   [bp-0x10] = priority
-             *
-             * Unit-state gate (@asm 0x04E0D7..0x04E0EA):
-             *   if unit_state[0x314C] == 5 or 6: fall through to path check
-             *   else: jump to best-update test @asm 0x04DFA0
-             *
-             * Path check (@asm 0x04E103..0x04E115):
-             *   if unit_type in 0xD..0x12 → skip path (naval, already region-matched)
-             *   push unit_y, unit_x; call 0x181F:0x696 (path_cost)
-             *   if AX >= 0 → skip slot (no reachable path)
-             *
-             * b3 gate (@asm 0x04E124):
-             *   if b3 <= 2 → skip slot  (@asm 0x04E129 cmp b3,2; jg continue)
-             *
-             * Priority replacement test (@asm 0x04DFA0..0x04DFCF):
-             *   carry_term = (b3 * 3) >> 1   (arithmetic: cx=b3; ax=b3<<1; ax+=cx; sar ax,1)
-             *   quotient   = priority / cap_divisor[bp-0x3A]
-             *                  (cap_divisor = 0x181F:0x35C result, init @asm 0x04CCB9)
-             *   if carry_term >= quotient → skip (new slot not strictly better)
-             *   if priority >= best [bp-0x158] → skip
-             *
-             * Capture best slot (@asm 0x04DFCF):
-             *   [bp-0x158] = priority   (new best score)
-             *   [bp-0x4C]  = slot       (new best slot index)
-             *
-             * Additional guard (@asm 0x04E13E..0x04E14F):
-             *   if cap_divisor >= work[slot] → skip (slot already full) */
-            (void)overlay_call_181F_0722();             /* @asm 0x04E035 slot map region */
-            (void)overlay_call_181F_037A();             /* @asm 0x04E0B4 slot score */
-            (void)overlay_call_181F_0696();             /* @asm 0x04E109 slot path */
-            /* best/best_slot updated by priority test @asm 0x04DFCF.  BYTE_VERIFIED */
-            (void)best;
+        if (uu[0x08 /*+0x314C*/] < 0x0A)                /* @asm 0x04E1FB */
+            uu[0x07] = 0x3F;                            /* @asm 0x04E202 prof '?' */
+        if (uu[0x08] != 0 && uu[0x08] != 5 && uu[0x08] != 6)  /* @asm 0x04E20C..0x04E21F */
+            continue;                                   /* only idle/in-colony units */
+        if (uu[0x07] == 0x74 || uu[0x07] == 0x69)       /* @asm 0x04E226/0x04E22D 't'/'i' */
+            uu[0x07] = 0x3F;                            /* @asm 0x04E239 reset to '?' */
+        best = 0x270F;                                  /* @asm 0x04E23E [bp-0x158] */
+        best_slot = -1;                                 /* @asm 0x04E244 [bp-0x4C] */
+        ux = uu[0x00];                                  /* @asm 0x04E24E [bp-0x34] */
+        uy = uu[0x01];                                  /* @asm 0x04E257 [bp-0x38] */
+        own_region = func_005E90_op_sz_64(ux, uy);      /* @asm 0x04E264 0x181F:0x722 */
+        /* settlement-density gate for types 1/4 @asm 0x04E26F..0x04E2A7:
+         * v = byte[0x94A6 + power*16 + region]; v<2 -> skip unit;
+         * v==2 and byte[0x94E6 + power*16 + region]==0 -> skip unit. */
+        if (uu[UNIT_TYPE_OFF] == 1 || uu[UNIT_TYPE_OFF] == 4) {  /* @asm 0x04E26F/0x04E276 */
+            int v = DG8(0x94A6 + power * 16 + own_region);       /* @asm 0x04E285 [-0x6B5A] */
+            if (v < 2)                                  /* @asm 0x04E293 */
+                continue;                               /* @asm 0x04E298 */
+            if (v < 3 &&                                /* @asm 0x04E28E jge skips */
+                DG8(0x94E6 + power * 16 + own_region) == 0)  /* @asm 0x04E2A1 [-0x6B1A] */
+                continue;                               /* @asm 0x04E2A7 */
         }
+        for (int slot = 0; slot < 0x40; slot++) {       /* @asm 0x04E2AA init/0x04DFDC/0x04DFDF */
+            uint8_t *r = &g_ai_queue_a_98B0[(power * 0x40 + slot) * 4]; /* @asm 0x04DFE8 */
+            int score, priority;
+            if (r[2 /*b2 = -0x674E*/] == 0xFF) continue;/* @asm 0x04DFF4 empty slot */
+            /* typeflag gate @asm 0x04DFFB..0x04E025: row 0x523D bit (1<<b2). */
+            if (!(g_unit_type_flags_523D[uu[UNIT_TYPE_OFF] * 6] & (1 << r[2])))
+                continue;                               /* @asm 0x04E023/0x04E025 */
+            /* region match @asm 0x04E029..0x04E04E: non-military types must
+             * be in the slot's region. */
+            if (func_005E90_op_sz_64(r[0], r[1]) != own_region) { /* @asm 0x04E035/0x04E03D */
+                if (uu[UNIT_TYPE_OFF] < 0xD || uu[UNIT_TYPE_OFF] > 0x12)
+                    continue;                           /* @asm 0x04E047/0x04E04E */
+            }
+            /* capability gates @asm 0x04E05C..0x04E091 */
+            if (r[2] == 1 && !(uu[0x04] & 0x04))        /* @asm 0x04E05C/0x04E068 */
+                continue;                               /* @asm 0x04E06F */
+            if (r[2] == 7 && !(uu[0x04] & 0x08))        /* @asm 0x04E07E/0x04E08A */
+                continue;                               /* @asm 0x04E091 */
+            /* score + priority @asm 0x04E0A0..0x04E0D4:
+             * priority = work[slot] * octile(ux,uy, b0,b1) / (b3+1) */
+            score = func_00493C_logic_sz_14(ux, uy, r[0], r[1]); /* @asm 0x04E0B4 */
+            priority = (int)((int32_t)work[slot] * score / (r[3] + 1)); /* @asm 0x04E0CF/0x04E0D2 */
+            /* in-colony (state 5/6) extra gates @asm 0x04E0D7..0x04E14F:
+             * land units need NO existing path (0x696 < 0), a slot priority
+             * class b3 > 2, and either b3*cap_div < priority or the slot's
+             * work counter still equal to cap_div. */
+            if (uu[0x08] == 5 || uu[0x08] == 6) {       /* @asm 0x04E0DC/0x04E0E3 */
+                if (!(uu[UNIT_TYPE_OFF] >= 0xD && uu[UNIT_TYPE_OFF] <= 0x12)) { /* @asm 0x04E0F2/0x04E0F9 */
+                    if (func_005F48_logic_sz_58(ux, uy) >= 0)   /* @asm 0x04E109/0x04E111 */
+                        continue;                       /* @asm 0x04E115 */
+                    if ((int8_t)r[3] <= 2)              /* @asm 0x04E124/0x04E129 */
+                        continue;                       /* @asm 0x04E12B */
+                    if ((int8_t)r[3] * cap_div >= priority) {   /* @asm 0x04E133/0x04E136 */
+                        /* not strictly cheaper: fall to the priority test */
+                    } else if (work[slot] != (uint16_t)cap_div) /* @asm 0x04E146/0x04E14A */
+                        continue;                       /* @asm 0x04E14F */
+                }
+            }
+            /* priority/capture test @asm 0x04DFA0..0x04DFD9:
+             * capture iff priority < best AND (b3*3)>>1 >= priority/cap_div.
+             * (The pre-rewrite banner had the second test INVERTED.) */
+            if (priority < best &&                      /* @asm 0x04DFA4/0x04DFA7 */
+                (((int8_t)r[3] * 3) >> 1) >= priority / cap_div) { /* @asm 0x04DFC0 sar ax,1; 0x04DFCB cmp */
+                best = priority;                        /* @asm 0x04DFD2 */
+                best_slot = slot;                       /* @asm 0x04DFD9 */
+            }
+        }                                               /* @asm 0x04DFDC/0x04DFDF */
 
-        /* ---- PHASE 7 — order assignment.  @asm 0x04E152..0x04E2B4.
-         * Runs when the slot loop captured a winner (best_slot >= 0); the capture
-         * is performed by the BYTE_VERIFIED priority test above (@asm 0x04DFCF). */
-        if (best_slot >= 0) {                           /* @asm 0x04E152 [bp-0x4C] >= 0 */
+        /* ---- PHASE 7 — order assignment.  @asm 0x04E152..0x04E1CB. ---- */
+        if (best_slot >= 0) {                           /* @asm 0x04E152 jl next-unit */
             uint8_t *r = &g_ai_queue_a_98B0[(power * 0x40 + best_slot) * 4];
-            uint8_t order = 0x31;                       /* @asm 0x04E15D default order */
-            if (r[2] == 1)      order = 0x74;           /* @asm 0x04E16E/0x04E175 b2==1 */
-            else if (r[2] == 7) order = 0x69;           /* @asm 0x04E188/0x04E194 b2==7 */
-            uu[0x07 /*+0x314B*/] = order;               /* @asm 0x04E199 */
+            uu[0x07 /*+0x314B*/] = 0x31;                /* @asm 0x04E15D default '1' */
+            if (r[2] == 1)      uu[0x07] = 0x74;        /* @asm 0x04E16E/0x04E175 't' */
+            else if (r[2] == 7) uu[0x07] = 0x69;        /* @asm 0x04E188/0x04E194 'i' */
             uu[0x08 /*+0x314C*/] = 0x0B;                /* @asm 0x04E19E state=11 */
-            uu[0x09 /*+0x314D*/] = r[0 /*b0 = -0x6750*/]; /* @asm 0x04E1B3 dest x */
-            uu[0x0A /*+0x314E*/] = r[1 /*b1 = -0x674F*/]; /* @asm 0x04E1BB dest y */
+            uu[0x09 /*+0x314D*/] = r[0];                /* @asm 0x04E1B3 dest x */
+            uu[0x0A /*+0x314E*/] = r[1];                /* @asm 0x04E1BB dest y */
             if (r[2] != 4)                              /* @asm 0x04E1BF b2!=4 */
                 work[best_slot]++;                      /* @asm 0x04E1CB inc frame[-0x1D8] */
         }
     }
-
-    /* ---- PHASE 7 tail — demote uncommitted orders.  @asm 0x04E1D3..0x04E2B4.
-     * The sweep above already stamps committed units; the trailing pass (sentinel
-     * 0x270F, [bp-0x4C]=0xFFFF) walks the units once more and rewrites a lingering
-     * 0x74/0x69 (or 0x41) order to 0x3F when the unit did not actually commit.
-     * Folded into the same loop above.  The cs:0x7AD5 = table_c_clear() call runs
-     * WITHIN the per-unit PHASE 2 loop (at @asm 0x04D037, once per iteration on
-     * the tail path after the first cs:0x7A71 emit), not here at the end. */
-    return 0;                                           /* @asm 0x04E2B4 RETF */
+    }
+    return 0;                                           /* @asm 0x04E2B2..0x04E2B4 pop si; leave; RETF */
 }
 
 /* ============================================================================

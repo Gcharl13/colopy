@@ -102,6 +102,10 @@ PROVIDE(g_minimap_col0 = g_dgroup + 0x9CCC);
 PROVIDE(g_traderoute_count = g_dgroup + 0x53A0);
 PROVIDE(g_color_byhi = g_dgroup + 0x848);
 PROVIDE(g_color_byterrain = g_dgroup + 0x5A8A);
+/* func_04CC50 planner state (byte-cited in overlay_04C306_053BC1.c): */
+PROVIDE(g_ai_mapgrid_9FAA  = g_dgroup + 0x9FAA);  /* work grid, (x>>2)*0x12+(y>>2) */
+PROVIDE(g_ai_bitmask_173C  = g_dgroup + 0x173C);  /* region coverage bitmask */
+PROVIDE(g_ai_bitmask_173E  = g_dgroup + 0x173E);
 
 /* AI unit-turn path leaves (Gate G1, 2026-06-11): native_unit_ai.c +
  * func_006CCA declare these role-named externs with FULL argument lists
@@ -167,6 +171,12 @@ PROVIDE(ldiv32                 = msc_aFldiv);
  * 0x2EE/0x2E4 chain steps need their AX unit args restored.  The planner
  * bodies go live when that loop is byte-restored (named in G1 status). */
 PROVIDE(ovly_tramp_7AD0        = gold_income_tick_for_power);     /* 1A1F:0554 -> func_051EF4 */
+PROVIDE(ovly_tramp_7ADF        = func_04C532_ai_queue_a_rebuild); /* 1A1F:0578 (loop byte-restored
+                                  2026-06-11: slot-clear -> func_04C1F0(power,i), emit arg order
+                                  corrected to (power, r0..r3)) */
+PROVIDE(ovly_tramp_7AB2        = func_04CC50_ai_strategic_plan_build); /* 1A1F:050C (per-unit loop +
+                                  PHASE 6/7 slot capture byte-restored 2026-06-11; colony plan
+                                  phase 0x4D048..0x4D6ED still DEGRADED-PENDING, no emits) */
 
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
