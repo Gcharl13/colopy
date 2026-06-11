@@ -150,6 +150,10 @@ extern int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot);
                        /* 0x181F:0xBE6 -> 0x0B2A2 cargo kind at slot (unit/cargo.c) */
 extern int16_t func_00B2F0_cargo_slot_amount(int16_t unit, int16_t slot);
                        /* 0x181F:0xC68 -> 0x0B2F0 cargo qty byte at slot (unit/cargo.c) */
+extern int16_t func_00B368_cargo_load(int16_t unit, int16_t good, int16_t qty);
+                       /* 0x181F:0xD58 -> 0x0B368 load qty into slots (unit/cargo.c) */
+extern int16_t func_008D00_colony_stock_cap(void);
+                       /* 0x181F:0xD3A -> 0x08D00 colony stock cap (unit/cargo.c) */
 /* AI11/AI12 helpers -- all resolved through the thunk rule:
  *   0x181F:0x808 -> file 0x06E94  unit_destroy (BYTE_VERIFIED port)
  *   0x181F:0x8A8 -> file 0x07B64  nearest own unit excl. self (BYTE_VERIFIED)
@@ -969,16 +973,148 @@ ai7_check:                                                      /* 0x4F23C */
                 }
                 (void)cnt_thresh;
             }
-            /* Scoring gates for delivery evaluation */
-            if (!ship_band)          goto ai7_end;              /* @asm 0x4F3C0 */
-            if (!transport_DA)       goto ai7_end;              /* @asm 0x4F3C9 */
-            if (U_OFF(unit_index, 0x04) & 0x20) goto ai7_end;  /* @asm 0x4F3D7 */
-            /* Deep delivery scoring (0x4F3E1..0x4F4F8 + 0x4F4FC..0x4F73D):
-             * chain walk + per-colony delivery budget loops; uses
-             * RUNTIME_ONLY colony +0x9A budget tables and 0x8DC4 price word.
-             * Structural stub: no decision → fall to tail. */
-            (void)slots_D0;
-ai7_end:;
+            /* ---- AI7a: BOARDING SCAN (0x4F3C0..0x4F4F8) --------------------
+             * Ships with transport duty mark land units in the colony stack
+             * to wait for pickup (orders := 1), consuming hold capacity by
+             * the unit's @UNIT space byte (0x5238).  Gates: ship band +
+             * transport_DA + flags bit 0x20 clear; each gate falls to the
+             * PICKUP loop at 0x4F73E (NOT to AI8).
+             * BYTE_VERIFIED from the decode sheet 0x4F3C0..0x4F4F8. */
+            if (ship_band != 0 &&                               /* @asm 0x4F3C0 */
+                transport_DA != 0 &&                            /* @asm 0x4F3C9 */
+                !(U_OFF(unit_index, 0x04) & 0x20)) {            /* @asm 0x4F3D7 */
+                int cur = unit_chain_resolve(unit_index);       /* @asm 0x4F3E8 0x2EE */
+                for (; cur >= 0; cur = unit_chain_next(cur)) {  /* @asm 0x4F4D6/0x4F4DE */
+                    int16_t pickup_DE;
+                    uint8_t ct;
+                    if ((int16_t)DG16(0x1734 + owner * 2) >= 0x19)
+                        break;                                  /* @asm 0x4F3F6 budget cap */
+                    ct = U_OFF(cur, U_TYPE);
+                    if (ct >= 0x0D && ct <= 0x12)               /* @asm 0x4F403/0x4F40A */
+                        continue;                               /* ships don't board */
+                    if (DG8(0x5238 + (uint16_t)ct * 14) > (uint8_t)slots_D0)
+                        continue;                               /* @asm 0x4F42E space */
+                    pickup_DE = 0;                              /* @asm 0x4F437 */
+                    if (DG8(0x5236 + (uint16_t)ct * 14) > 1 &&  /* @asm 0x4F467 fast */
+                        U_OFF(cur, U_PROF) != 0x47 &&           /* @asm 0x4F470 'G' */
+                        U_OFF(cur, U_PROF) != 0x41 &&           /* @asm 0x4F477 'A' */
+                        mission_28 == 0)                        /* @asm 0x4F47E */
+                        pickup_DE = 1;                          /* @asm 0x4F484 */
+                    if (ct == 2) {                              /* @asm 0x4F48E settler */
+                        if (task_total_12 == 0 && mission_28 != 0)
+                            continue;                           /* @asm 0x4F499/0x4F49F */
+                        pickup_DE = 1;                          /* @asm 0x4F4A1 */
+                    }
+                    if (pickup_DE != 0) {                       /* @asm 0x4F4A7 */
+                        U_OFF(cur, U_ORDERS) = 1;               /* @asm 0x4F4B2 hold */
+                        slots_D0 -= (int16_t)DG8(0x5238 + (uint16_t)ct * 14);
+                                                                /* @asm 0x4F4C9/0x4F4CF */
+                    }
+                }
+                DG16(0x1734 + owner * 2) = 0;                   /* @asm 0x4F4F2 clear */
+            }
+
+            /* ---- AI7b: GOODS PICKUP LOOP (0x4F73E gate; body 0x4F4FC..0x4F73D)
+             * While hold slots remain (and transport_CA): score the colony's
+             * 16 stock words (+0x9A): amount below the stock cap counts as-is
+             * (good 8 adds 0x19-cap then max(amt-2,0)); above-cap doubles
+             * (except good 0); good 5 skipped; goods 0x0E/0x0F need ship +
+             * colony flag word +0x90 bit set, then -100; ships skip 0x0D and
+             * 0; zero amounts skip.  Ship score = weight(0x84BC[owner*16+g])
+             * x amt; land score = weight decayed by random(0,3) rolls, then
+             * amt x (cap[8|4] - score) + 5x(1-score), rejected when >= cap or
+             * amt < 50.  Winner: take min(stock, 100) (the original computes
+             * good-0/8/0xE adjustments first, then UNCONDITIONALLY re-clamps
+             * -- dead stores, omitted), deduct stock, cargo_load(unit, good,
+             * qty), slot--, ship home := col_own, land loaded flag +0x14 := 1.
+             * BYTE_VERIFIED from the decode sheet 0x4F4FC..0x4F748. */
+            while (slots_D0 != 0) {                             /* @asm 0x4F73E/0x4F745 */
+                int16_t best_22 = -1, best_E0 = -1;             /* @asm 0x4F506 */
+                int16_t cap_A2, i_B4, amt_34, score_26;
+                if (transport_CA == 0)                          /* @asm 0x4F4FC */
+                    break;                                      /* @asm 0x4F503 -> ai8 */
+                cap_A2 = func_008D00_colony_stock_cap();        /* @asm 0x4F510 0xD3A */
+                for (i_B4 = 0; i_B4 < 0x10; i_B4++) {           /* @asm 0x4F519/0x4F54A */
+                    amt_34 = (int16_t)DG16(DG16(0x8542) + 0x9A + i_B4 * 2);
+                                                                /* @asm 0x4F55E */
+                    if (amt_34 < cap_A2 || i_B4 == 0) {         /* @asm 0x4F565/0x4F56B */
+                        if (i_B4 == 8) {                        /* @asm 0x4F522 horses */
+                            amt_34 = (int16_t)(amt_34 + 0x19 - cap_A2 - 2);
+                                                                /* @asm 0x4F529/0x4F536 */
+                            if (amt_34 < 0) amt_34 = 0;         /* @asm 0x4F538 */
+                        }
+                    } else {
+                        amt_34 = (int16_t)(amt_34 << 1);        /* @asm 0x4F572 over-cap x2 */
+                    }
+                    if (i_B4 == 5)                              /* @asm 0x4F53F skip good 5 */
+                        continue;
+                    if (i_B4 == 0x0E || i_B4 == 0x0F) {         /* @asm 0x4F576/0x4F57D */
+                        if (ship_band == 0)                     /* @asm 0x4F584 */
+                            continue;
+                        if (!(DG16(DG16(0x8542) + 0x90) &
+                              (uint16_t)(1u << i_B4)))          /* @asm 0x4F58A/0x4F593 */
+                            continue;
+                        amt_34 -= 0x64;                         /* @asm 0x4F599 */
+                    }
+                    if (ship_band != 0 && i_B4 == 0x0D)         /* @asm 0x4F59D/0x4F5A3 */
+                        continue;
+                    if (ship_band != 0 && i_B4 == 0)            /* @asm 0x4F5AA/0x4F5B0 */
+                        continue;
+                    if (amt_34 == 0)                            /* @asm 0x4F5B7 */
+                        continue;
+                    if (ship_band != 0) {                       /* @asm 0x4F5BD */
+                        score_26 = (int16_t)((int16_t)DG8(0x84BC + owner * 16 + i_B4)
+                                             * amt_34);         /* @asm 0x4F5C3/0x4F5D4 */
+                    } else {
+                        int16_t cap2;
+                        score_26 = (int16_t)DG8(0x84BC + owner * 16 + i_B4);
+                                                                /* @asm 0x4F5DC */
+                        while (score_26 >= 2) {                 /* @asm 0x4F605 */
+                            if (random_int_4D4(0, 3) != 0)      /* @asm 0x4F5F6/0x4F5FE */
+                                break;
+                            score_26--;                         /* @asm 0x4F602 */
+                        }
+                        cap2 = (i_B4 == 0x0D) ? 8 : 4;          /* @asm 0x4F60B..0x4F618 */
+                        if (cap2 > score_26) {                  /* @asm 0x4F61F jle reject */
+                            int16_t old = score_26;             /* @asm 0x4F624 */
+                            score_26 = (int16_t)(amt_34 * (cap2 - score_26));
+                                                                /* @asm 0x4F62A/0x4F632 */
+                            score_26 = (int16_t)(score_26 + 5 * (1 - old));
+                                                                /* @asm 0x4F638..0x4F644 */
+                        } else {
+                            score_26 = -1;                      /* @asm 0x4F64A */
+                        }
+                        if (amt_34 < 0x32)                      /* @asm 0x4F64F */
+                            score_26 = -1;                      /* @asm 0x4F655 amt < 50 */
+                    }
+                    if (score_26 > best_E0) {                   /* @asm 0x4F65E jg */
+                        best_E0 = score_26;                     /* @asm 0x4F669 */
+                        best_22 = i_B4;                         /* @asm 0x4F66D */
+                    }
+                }
+                if (best_22 < 0) {                              /* @asm 0x4F678 */
+                    slots_D0 = 0;                               /* @asm 0x4F738 */
+                    break;                                      /* -> 0x4F73E -> ai8 */
+                }
+                /* @asm 0x4F69B/0x4F6B1/0x4F6C5: good-0 keep-10 / good-8
+                 * stable-fill / good-0xE,F surplus computations -- DEAD
+                 * STORES, unconditionally overwritten by the re-clamp at
+                 * 0x4F6E8; omitted (original quirk preserved by omission). */
+                amt_34 = (int16_t)DG16(DG16(0x8542) + 0x9A + best_22 * 2);
+                                                                /* @asm 0x4F6E8 */
+                if (amt_34 > 0x64) amt_34 = 0x64;               /* @asm 0x4F6F1/0x4F6F6 */
+                *(uint16_t near *)(DG_BASE + DG16(0x8542) + 0x9Au
+                                   + (uint16_t)best_22 * 2u) -= (uint16_t)amt_34;
+                                                                /* @asm 0x4F6FC deduct */
+                func_00B368_cargo_load((int16_t)unit_index, best_22, amt_34);
+                                                                /* @asm 0x4F709 0xD58 */
+                slots_D0--;                                     /* @asm 0x4F711 */
+                if (ship_band != 0)                             /* @asm 0x4F715 */
+                    U_OFF(unit_index, 0x06) = (uint8_t)col_own; /* @asm 0x4F722 home */
+                if (ship_band == 0)                             /* @asm 0x4F726 */
+                    U_OFF(unit_index, 0x14) = 1;                /* @asm 0x4F730 loaded
+                                                                 * (AI11 trader gate) */
+            }
         }
     }
 ai8:                                                            /* 0x4F748 */

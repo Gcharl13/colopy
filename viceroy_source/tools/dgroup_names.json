@@ -64,6 +64,7 @@
   "0x59A0": "tribe_rec8_base",
   "0x59D8": "relations_tbl_stride4E",
   "0x838C": "homeport_name_words[4]",
+  "0x84BC": "ai_good_weight_stride16",
   "0x84FC": "current_power_rec_ptr",
   "0x8542": "selected_colony_ptr",
   "0x8808": "power_record_base_stride13C",

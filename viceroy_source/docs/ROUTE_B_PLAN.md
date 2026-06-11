@@ -90,8 +90,17 @@ AI1–AI19 control flow, eleven full section bodies, AI19 commit engine live.
 The complete remaining interior list — there are no other gaps in this
 function; the section map covers 100% of its 14,975 bytes:
 
-- [ ] **1.1 AI7 body interiors** (0x4F2E4..0x4F73E): colony +0x9A budget-table
-      accumulation walk + capacity scoring. (1 session)
+- [x] **1.1 AI7 body interiors** DONE 2026-06-11: AI7a boarding scan
+      (0x4F3C0..0x4F4F8 -- land units in the colony stack held with
+      orders 1, hold capacity consumed by @UNIT space byte 0x5238,
+      per-power budget word 0x1734) + AI7b goods-pickup loop (0x4F4FC..
+      0x4F748 -- 16-good scoring on weight table 0x84BC, ship vs land
+      formulas, winner loaded via func_00B368_cargo_load, ship home
+      rebind / land +0x14 loaded flag).  Also fixed the prior port's
+      gate targets (the three AI7a gates fall to the pickup loop at
+      0x4F73E, not to AI8).  Dead-store quirk at 0x4F69B..0x4F6E5
+      documented.  Ported FROM THE DECODE SHEET -- first full section
+      done sheet-first.
 - [ ] **1.2 AI8 delivery-scoring body** (0x4F883..0x50583, ~3.3 KB): the
       flag-word build ([bp-0x9A]), colony scoring loop (0x4F998..0x4FCC4),
       `0x181F:0x920` + `0x181F:0x948` leaf identification, the dx='4' commit
