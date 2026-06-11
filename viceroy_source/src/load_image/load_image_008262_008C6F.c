@@ -639,6 +639,9 @@ int func_008734_logic_sz_30(void)
     }
 }
 
+/* 0x181F:0xC7C -> resident 0x8734; alias used by move.c AI8 engine */
+int bld_pop_helper(void) { return func_008734_logic_sz_30(); }
+
 /* @asm        0x008770..0x0087F4  (132 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008770_unknown.asm
  * @pattern    MEDIUM_LOGIC

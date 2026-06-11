@@ -80,3 +80,10 @@ PROVIDE(g_colony_count = g_dgroup + 0x539E);
 PROVIDE(g_unit_count   = g_dgroup + 0x539C);
 PROVIDE(g_native_count = g_dgroup + 0x539A);
 PROVIDE(g_save_version = g_dgroup + 0x081A);
+
+/* keepalive: force archive member extraction for ported functions whose
+ * strong definition would otherwise lose to the weak stubs (the archive
+ * is after linkfloor_stubs.c.o on the link line, so EXTERN() is needed
+ * to mark each entry as undefined before the archive sweep). */
+EXTERN(ai_unit_leaf)
+EXTERN(func_008734_logic_sz_30)

@@ -179,10 +179,10 @@ extern uint8_t g_difficulty_53A6;
 /* DGROUP:0x53D2 -- "self power" marker = the human player's power index.
  * BYTE_VERIFIED via SoL display (COMPLETE_FINDINGS.md:169).  Compared to the
  * attacker/defender owner @asm 0x05CF6D/0x05CFA1/0x05D00A to branch human-vs-AI. */
-extern int16_t g_self_power_53D2;
+extern int16_t g_self_marker_53D2;
 /* DGROUP:0x5382 -- game flags; bit0 = endgame / War-of-Independence active
  * (DATA_MODEL.md:276).  bit1 tested @asm 0x05CF76.  Gates a SoL-bonus block. */
-extern uint8_t g_game_flags_5382;
+extern uint8_t g_flags_5382;
 /* DGROUP:0x5383 -- game flags; bit1 (0x02) tested @asm 0x05D221 (gates the
  * combat-prediction debug call 0x1a1f:0x704). [not yet decoded semantics of bit1.] */
 extern uint8_t g_game_flags_5383;
@@ -229,7 +229,7 @@ extern int16_t res_get_unit_strength_def_7D3E(int16_t def_unit, int16_t atk_unit
 
 /* Terrain query used for a human-defender SoL bonus: returns 1 if the tile
  * terrain (masked &0x1f) is 0x19 or 0x1a, else 0.  0x181F:0x768 -> FILE 0x062B4. */
-extern int16_t res_terrain_is_1819_768(int16_t x, int16_t y);
+extern int16_t func_0062B4_op_sz_39(int16_t x, int16_t y);
 
 /* random_int(lo,hi): the SHARED RNG draw.  0x181F:0x04D4 -> type-B static ->
  * seg 0x09EF:0x0032 = FILE 0x0C322 (MSC 6.0 LCG; BYTE_VERIFIED, MEMORY.md). */
@@ -278,7 +278,7 @@ extern int16_t ovly_path_check_302(int16_t x, int16_t y);    /* @asm 0x05CC18 */
 extern int16_t ovly_target_query_9F0(int16_t x, int16_t y);  /* @asm 0x05CC36 */
 extern void    ovly_commit_A4C(int16_t v);                   /* @asm 0x05CD00 */
 extern int16_t ovly_query_9E6(int16_t v);                    /* @asm 0x05CC5C */
-extern int16_t ovly_query_C86(void);                         /* @asm 0x05CF98 SoL% for active colony */
+extern int16_t colony_field_C86(void);                         /* @asm 0x05CF98 SoL% for active colony */
 extern int16_t ovly_query_C54(int16_t v);                    /* @asm 0x05CC7D */
 extern int16_t ovly_query_2C6(int16_t v);                    /* @asm 0x05CC9B */
 extern int16_t ovly_feasible_7B4(int16_t a, int16_t b);      /* @asm 0x05CCAA / 0x05CDCB */
@@ -620,28 +620,28 @@ candidate_loop:
         g_ai_scratch_8D01 |= 0x10;                           /* @asm 0x05CF4D */
     }
 
-    /* ==== SoL / human-player block, gated by g_game_flags_5382 bit0 ========= */
+    /* ==== SoL / human-player block, gated by g_flags_5382 bit0 ========= */
     /* @asm 0x05CF52 test [0x5382],1; jz skip(0x26d1).  @asm 0x05CF5C if owner>=4
      *   skip.  Then a chain keyed on whether the ATTACKER or DEFENDER is the human
-     *   self-power g_self_power_53D2 (@asm 0x05CF6D/0x05CFA1/0x05D00A): it applies
+     *   self-power g_self_marker_53D2 (@asm 0x05CF6D/0x05CFA1/0x05D00A): it applies
      *   a Sons-of-Liberty / rebel-sentiment scale to atk_str using a per-colony
      *   value fetched via 0x181F:0xC86 (@asm 0x05CF98) and the difficulty byte
      *   (atk_str = atk_str*[0x53a6]/0x14 @asm 0x05CFFC for the human path).  The
      *   exact SoL value source ([bp-0xa2] from 0x181F:0xC86) is overlay-resident
      *   -> its NUMERIC contribution is RUNTIME_ONLY (data-resident); the CONTROL FLOW + the /0x14
      *   and /0x64 divisors are byte-cited.  (Structural; not invented.) */
-    if ((g_game_flags_5382 & 1) && owner < 4) {              /* @asm 0x05CF52/0x05CF5C */
+    if ((g_flags_5382 & 1) && owner < 4) {              /* @asm 0x05CF52/0x05CF5C */
         if (r_d6 >= 0) {                                     /* @asm 0x05CF66 colony path */
             /* @asm 0x05CF6D: self_power==owner OR war-of-independence ally flag (bit1) */
-            if (owner == g_self_power_53D2 || (g_game_flags_5382 & 2)) {
+            if (owner == g_self_marker_53D2 || (g_flags_5382 & 2)) {
                 g_ai_scratch_8D01 |= 0x80;                   /* @asm 0x05CF7D */
                 atk_str += (int16_t)(atk_str >> 1);          /* @asm 0x05CF82 +50% */
             }
             {   /* @asm 0x05CF8C: fetch SoL% for this colony */
                 int16_t sol_pct, sol_flag;
                 ovly_query_9E6(r_d6);                        /* @asm 0x05CF90 set active colony */
-                sol_pct = ovly_query_C86();                  /* @asm 0x05CF98 -> [bp-0xa2] */
-                if (owner == g_self_power_53D2) {            /* @asm 0x05CFA1 */
+                sol_pct = colony_field_C86();                  /* @asm 0x05CF98 -> [bp-0xa2] */
+                if (owner == g_self_marker_53D2) {            /* @asm 0x05CFA1 */
                     sol_flag = 2;                            /* @asm 0x05CFAA [bp-0xc]=2 */
                     sol_pct  = (int16_t)(100 - sol_pct);     /* @asm 0x05CFAF rebel uses tory% */
                 } else {
@@ -654,13 +654,13 @@ candidate_loop:
             }
         } else {                                             /* @asm 0x05CFDC open-terrain path */
             /* @asm 0x05CFDC: human player only; terrain NOT 0x19/0x1A */
-            if (owner == g_self_power_53D2) {
-                if (!res_terrain_is_1819_768(tile_x, tile_y)) /* @asm 0x05CFE5/0x05CFF3 */
+            if (owner == g_self_marker_53D2) {
+                if (!func_0062B4_op_sz_39(tile_x, tile_y)) /* @asm 0x05CFE5/0x05CFF3 */
                     atk_str += (int16_t)(((int32_t)g_difficulty_53A6 * atk_str) / 20); /* @asm 0x05CFFA/0x05D000 /0x14 */
             }
         }
         /* @asm 0x05D00A: if owner==self_power call func_005F48 (result discarded) */
-        if (owner == g_self_power_53D2)
+        if (owner == g_self_marker_53D2)
             func_005F48_logic_sz_58((uint16_t)tile_x, (uint16_t)tile_y); /* @asm 0x05D013 */
     }
 
@@ -683,7 +683,7 @@ candidate_loop:
         /* WoI + banded-unit skip: when WoI active AND colony target AND attacker is
          * the ship/band class (0x0D..0x12), the first two scale blocks are skipped.
          * @asm 0x05D050..0x05D06A */
-        if (!((g_game_flags_5382 & 1) && r_d6 >= 0
+        if (!((g_flags_5382 & 1) && r_d6 >= 0
               && unit_type >= 0x0D && unit_type <= 0x12)) {
             /* First scale: defender is AI + early-era (turn<0x50) + colony target.
              * @asm 0x05D06C..0x05D0A9 */
@@ -850,6 +850,14 @@ extern int16_t ovly_ai_unit_leaf_05CA7E(int16_t unit, int16_t x, int16_t y,
                                         int16_t flag, int16_t one);
 
 /* int16_t ai_move_eval(int16_t unit_index);  -- body in overlay page (page 0x0D; see note above). */
+
+/* Alias name used by move.c AI8 engine (lcall 0x191F:0xA14 -> func_05CA7E). */
+int16_t func_05CA7E_attack_value(uint16_t unit, uint16_t x, uint16_t y,
+                                 uint16_t f1, uint16_t f2)
+{
+    return ai_unit_leaf((int16_t)unit, (int16_t)x, (int16_t)y,
+                        (int16_t)f1, (int16_t)f2);
+}
 
 /* ============================================================================
  * NOTES / TODO_VERIFY
