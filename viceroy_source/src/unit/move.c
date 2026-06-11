@@ -160,6 +160,10 @@ extern int16_t ovly_name_word_9A4(int16_t power);
 extern void    ovly_msg_arg_438(int16_t val, int16_t slot);
 extern void    ovly_msg_arg_9AE(int16_t lo, int16_t hi, int16_t z);
 extern int16_t ovly_dialog_652(int16_t flag, int16_t msg_id);
+/* AI13 helper: 0x181F:0x316 -> page 0x0B + 0x3F8 = file 0x460F8 (Type-A overlay
+ * thunk, loader 0x0DAB).  The original passes an optional out-param ([bp+8])
+ * that AI13 feeds into a dead store only -- the 1-arg port form is exact. */
+extern int func_0460F8_muster_braves(uint16_t idx);
 
 /* func_006696 (0x181F:0x98E): walk chain_next (+0x1A) to the TAIL of the tile
  * stack; AX-register arg/return, mirror of unit_chain_resolve (see the walk
@@ -1146,11 +1150,77 @@ ai12_remove_509A9:                                              /* 0x509A9 */
 
 ai13:                                                           /* 0x50A4D */
     /* ======================= AI13: TYPE-3 MISSIONARY PATH ===================
-     * (0x50A4D..0x50BE7)  Type 3 (missionary): scores settlements to visit
-     * using market-budget comparison and octile distance.
-     * Gate: type == 3 (BYTE_VERIFIED @asm 0x050A65).  RUNTIME_ONLY stub. */
-    if (type != 3) goto ai14;                                   /* @asm 0x050A65 */
-    /* (RUNTIME_ONLY stub) */
+     * (0x50A4D..0x50BE7)  Type 3 (missionary): scores same-region native
+     * settlements by alliance(tribe, owner) x 8 / (octile+1), x1.5 when the
+     * settlement's +3 bit-4 visited flag is set; goto the winner as 'J'.
+     * Settlements that already hold OUR mission (+5 low nibble == owner) are
+     * only revisited when the treasury is >= 2500 AND alliance(tribe,
+     * current_nation) < 0x4B AND relations(tribe, nation) bit 0x20 is set AND
+     * DG8(0x917C+owner) < DG8(0x917C+nation).
+     * NO WINNER: the missionary is DEMOTED to type 0 (record +0x02 := 0) and
+     * falls through into AI14 (the original re-reads the record in each gate;
+     * the local mirror is updated to match).
+     * All control flow BYTE_VERIFIED @asm 0x050A65..0x050BE7. */
+    if (type != 3) goto ai14;                                   /* @asm 0x050A69 */
+    {
+        int16_t best_22 = -1;                                   /* @asm 0x050A73 */
+        int16_t best_E0 = (int16_t)0xFC19;                      /* @asm 0x050A78 -999 */
+        int16_t si_4E;                                          /* [bp-0x4E] */
+        for (si_4E = 0; si_4E < (int16_t)DG16(0x539A); si_4E++) {
+                                                                /* @asm 0x050A7E/0x050A9E */
+            int16_t visited_D6, score_CE, d;
+            func_0081F2_logic_sz_34((uint16_t)si_4E);           /* @asm 0x050AAC select */
+            if ((int16_t)func_005E90_op_sz_64(DG8(DG16(0x8D4A) + 0),
+                    DG8(DG16(0x8D4A) + 1)) != region)           /* @asm 0x050AC1/0x050AC9 */
+                continue;
+            if ((int16_t)(DG8(DG16(0x8D4A) + 5) & 0x0F) == owner) {
+                                                                /* @asm 0x050AD2/0x050AD8
+                                                                 * own mission present */
+                int32_t treasury = (int32_t)((uint32_t)DG16(DG16(0x84FC) + 0x2A)
+                              | ((uint32_t)DG16(DG16(0x84FC) + 0x2C) << 16));
+                if (treasury < 0x9C4)                           /* @asm 0x050AE2..0x050AEF
+                                                                 * signed-32 cmp vs 2500 */
+                    continue;
+                if ((int16_t)func_0082A0_logic_sz_18(DG16(0x8D52),
+                        DG16(0x5398)) >= 0x4B)                  /* @asm 0x050A8E/0x050A96 */
+                    continue;
+                if (!(func_007F34_logic_sz_27(DG16(0x8D52),
+                        DG16(0x5398)) & 0x20))                  /* @asm 0x050AFC/0x050B04 */
+                    continue;
+                if (DG8(0x917C + owner) >=
+                    DG8(0x917C + (int16_t)DG16(0x5398)))        /* @asm 0x050B0C/0x050B14 */
+                    continue;
+            }
+            /* candidate scoring (0x050B1A) */
+            visited_D6 = (int16_t)(DG8(DG16(0x8D4A) + 3) & 4);  /* @asm 0x050B1E */
+            /* @asm 0x050B28..0x050B46: muster_braves(si, &out); if result >= 0
+             * the original adds out<<5 into [bp-0xCE] -- a DEAD STORE, since
+             * 0x050B5A unconditionally overwrites [bp-0xCE] with the alliance
+             * probe below.  The call is kept (pure reads), the bonus omitted. */
+            (void)func_0460F8_muster_braves((uint16_t)si_4E);   /* @asm 0x050B30 */
+            score_CE = (int16_t)func_0082A0_logic_sz_18(DG16(0x8D52),
+                           (uint16_t)owner);                    /* @asm 0x050B52/0x050B5A */
+            score_CE = (int16_t)(score_CE << 3);                /* @asm 0x050B5E */
+            d = (int16_t)func_00493C_logic_sz_14((uint16_t)map_x, (uint16_t)map_y,
+                    DG8(DG16(0x8D4A) + 0), DG8(DG16(0x8D4A) + 1)); /* @asm 0x050B78 */
+            score_CE = (int16_t)(score_CE / (int16_t)(d + 1));  /* @asm 0x050B82/0x050B88 */
+            if (visited_D6 != 0)                                /* @asm 0x050B8E */
+                score_CE = (int16_t)(score_CE + (score_CE >> 1)); /* @asm 0x050B95 x1.5 */
+            if (best_E0 < score_CE) {                           /* @asm 0x050B9F jl */
+                best_E0 = score_CE;                             /* @asm 0x050BA8 */
+                best_22 = si_4E;                                /* @asm 0x050BAF */
+            }
+        }
+        if (best_22 >= 0) {                                     /* @asm 0x050BBA */
+            func_0081F2_logic_sz_34((uint16_t)best_22);         /* @asm 0x050BBF select */
+            func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x4A,
+                DG8(DG16(0x8D4A) + 0), DG8(DG16(0x8D4A) + 1));
+                          /* @asm 0x050BC7..0x050BDB: dx='J', jmp 0x4E9E5 */
+            return move_eval_tail_51C68(unit_index, owner);
+        }
+        U_OFF(unit_index, U_TYPE) = 0;                          /* @asm 0x050BE2 demote */
+        type = 0;             /* local mirror: AI14/AI16 gates re-read the record */
+    }
 ai14:                                                           /* 0x50BE7 */
     /* ======================= AI14: SOLDIER/SETTLER DISPATCH =================
      * (0x50BE7..0x50C42)  Type 5 (soldier) or type 2 (farmer/settler) with no
