@@ -105,9 +105,13 @@ function; the section map covers 100% of its 14,975 bytes:
       flag-word build ([bp-0x9A]), colony scoring loop (0x4F998..0x4FCC4),
       `0x181F:0x920` + `0x181F:0x948` leaf identification, the dx='4' commit
       and the 0x50140 deliv==0 continuation. (2–3 sessions)
-- [ ] **1.3 AI9 carrier body** (0x505D7..0x5076E, ~0.4 KB): 16-slot
-      destination loop over colony +0x9A words, goto-colony '5' commit at
-      0x50757 (commit already ported). (1 session)
+- [x] **1.3 AI9 carrier body** DONE 2026-06-11: the 16-slot loop reads the
+      per-power TRANSPORT-REQUEST QUEUE (stride-6 @ DGROUP:0xA0DC: colony /
+      demand / count / priority-flag), scores demand/(octile/4+1) with
+      home-colony exclusion + danger-flag gating + CA==0 flag-only rule,
+      consumes the winner pro-rata (demand scaled remaining/count, slot
+      freed at zero) and commits via the shared 0x50757 goto-'5'.
+      Ported sheet-first.
 - [ ] **1.4 `func_05CA7E` combat/attack evaluator** (page 10, 7,348 bytes,
       ENTER 0xDE) — called by AI18 as `(unit, x, y, 0, 0)` and by the human
       combat path. Pre-enumerate its own leaf calls on session 1 (bounded by

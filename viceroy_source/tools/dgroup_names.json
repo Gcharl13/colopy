@@ -98,6 +98,10 @@
   "0xA0B8": "ai_census_A0B8",
   "0xA0BC": "ai_census_snapshot_A0BC",
   "0xA0CC": "ai_class_supply_A0CC",
+  "0xA0DC": "transport_req.colony_stride6",
+  "0xA0DE": "transport_req.demand_stride6",
+  "0xA0E0": "transport_req.count_stride6",
+  "0xA0E1": "transport_req.flag_stride6",
   "0xA13C": "region_reassign_count",
   "0xA89B": "byte_A89B"
 }

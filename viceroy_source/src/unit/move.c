@@ -1168,22 +1168,71 @@ ai8:                                                            /* 0x4F748 */
         (void)ai8_flags_9A;
     }
 ai9:                                                            /* 0x50583 */
-    /* ======================= AI9: SHIP CARRIER SCORING ======================
-     * (0x50583..0x5076E)  Ship picks best colony destination to carry colonists.
-     *
-     * Gates (all BYTE_VERIFIED):
-     *   1. ship band (type 0x0D..0x12)
-     *   2. transport_CA || transport_DA must be set
-     *   3. ai8_deliv_A6 == 0 (no pending delivery cargo)
-     *   4. special == 0
-     * Scoring loop (0x505D7..0x5076E): iterates 16 destination slots using
-     * overlay-resident carrier tables; commits via jmp-0x4E9E5(dx='5').
-     * RUNTIME_ONLY stub. */
+    /* ======================= AI9: TRANSPORT-REQUEST PICKUP ==================
+     * (0x50583..0x5076E)  Ship answers the per-power TRANSPORT-REQUEST QUEUE
+     * (16 stride-6 entries at DGROUP:0xA0DC, built by the AI census pass:
+     * +0 colony idx word / +2 demand word / +4 count byte / +5 priority
+     * flag byte).  Score = demand / (octile/4 + 1); the unit's home colony
+     * is excluded; colonies with the danger flag (+0x1B bit 1) only accept
+     * type >= 0x10; when transport_CA == 0 only flagged (+5) entries can
+     * win.  Winner: the entry is consumed pro-rata (remaining = count -
+     * free_slots, demand scaled by remaining/count, slot freed at zero)
+     * and the ship gotoes the colony as '5' (the shared 0x50757 commit).
+     * Gates + loop BYTE_VERIFIED @asm 0x05059F..0x05076B (decode sheet). */
     if (!(type >= 0x0D && type <= 0x12)) goto ai10;             /* @asm 0x05059F/0x0505A9 */
     if (!transport_CA && !transport_DA)   goto ai10;             /* @asm 0x0505B3/0x0505BA */
     if (ai8_deliv_A6 != 0)               goto ai10;             /* @asm 0x0505C4 [bp-0xA6] */
     if (special != 0)                     goto ai10;             /* @asm 0x0505CE */
-    /* scoring loop (RUNTIME_ONLY stub) */
+    {
+        int16_t best_22 = -1, best_E0 = -1;                     /* @asm 0x0505D7 */
+        int16_t d_4E, score_26;
+        for (d_4E = 0; d_4E < 0x10; d_4E++) {                   /* @asm 0x0505E1/0x0506AF */
+            int16_t dist;
+            if ((int16_t)DG16(0xA0DC + d_4E * 6) < 0)           /* @asm 0x0505F1 empty */
+                continue;
+            if ((int8_t)DG8(0xA0E0 + d_4E * 6) <= 0)            /* @asm 0x050603 count */
+                continue;
+            func_0082DC_logic_sz_118(DG16(0xA0DC + d_4E * 6));  /* @asm 0x05061B select */
+            score_26 = (int16_t)DG16(0xA0DE + d_4E * 6);        /* @asm 0x050623 demand */
+            if ((int16_t)(int8_t)U_OFF(unit_index, 0x06) ==
+                (int16_t)DG16(0x8DC6))                          /* @asm 0x050633 home */
+                continue;                                       /* @asm 0x050637 */
+            if ((DG8(DG16(0x8542) + 0x1B) & 2) &&               /* @asm 0x05063D danger */
+                U_OFF(unit_index, U_TYPE) < 0x10)               /* @asm 0x050647 */
+                continue;                                       /* @asm 0x05064C */
+            dist = (int16_t)func_00493C_logic_sz_14(
+                U_OFF(unit_index, U_MAPX), U_OFF(unit_index, U_MAPY),
+                DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));  /* @asm 0x050669 */
+            score_26 = (int16_t)(score_26 / ((dist >> 2) + 1)); /* @asm 0x050673/0x05067B */
+            if (score_26 < best_E0)                             /* @asm 0x050680 jl */
+                continue;
+            if (transport_CA == 0 &&                            /* @asm 0x050686 */
+                DG8(0xA0E1 + d_4E * 6) == 0)                    /* @asm 0x050698 flag */
+                continue;                                       /* @asm 0x05069D */
+            best_E0 = score_26;                                 /* @asm 0x0506A2 */
+            best_22 = d_4E;                                     /* @asm 0x0506A9 */
+        }
+        if (best_22 < 0)                                        /* @asm 0x0506B8 */
+            goto ai10;                                          /* @asm 0x0506BE */
+        {   /* consume the winning entry pro-rata (0x0506C1..0x050735) */
+            int16_t cnt = (int16_t)(int8_t)DG8(0xA0E0 + best_22 * 6);
+                                                                /* @asm 0x0506CC */
+            int16_t remaining = (int16_t)(cnt
+                - (int16_t)DG8(0x5237 + (uint16_t)type * 14)    /* hold capacity */
+                + (int16_t)U_OFF(unit_index, 0x0C));            /* already loaded
+                                                                 * @asm 0x0506F1..0x0506FB */
+            if (remaining < 0) remaining = 0;                   /* @asm 0x0506FD */
+            DG16(0xA0DE + best_22 * 6) = (uint16_t)(
+                (int16_t)((int16_t)DG16(0xA0DE + best_22 * 6) * remaining) / cnt);
+                                                                /* @asm 0x050709/0x05070E */
+            DG8(0xA0E0 + best_22 * 6) = (uint8_t)remaining;     /* @asm 0x050718 */
+            func_0082DC_logic_sz_118(DG16(0xA0DC + best_22 * 6)); /* @asm 0x050720 */
+            if (remaining == 0)                                 /* @asm 0x050728 */
+                DG16(0xA0DC + best_22 * 6) = 0xFFFF;            /* @asm 0x05072F free */
+        }
+        goto ai11_goto_colony_35;          /* @asm 0x050757..0x05076B: dx='5',
+                                            * the shared goto-colony commit */
+    }
 ai10:                                                           /* 0x5076E */
     /* ======================= AI10: SCHOONER EXPLORE TRIGGER =================
      * (0x5076E..0x507D3)  Modulo-32 turn ship exploration dispatch.
