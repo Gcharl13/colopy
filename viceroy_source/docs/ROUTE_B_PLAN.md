@@ -149,17 +149,45 @@ function; the section map covers 100% of its 14,975 bytes:
         (existing BYTE_VERIFIED port) -- wired as the AI8/AI10 explore
         leaf.  Closes the resolution layer for EVERY sub-segment thunk
         (~373 records), not just this one.
-- [ ] **1.6 The runtime dispatcher.** PARTIALLY DECODED 2026-06-11:
-      - Overlay RTLink load base = 0x04C1F0 (RTLink header is 0x116 bytes before
-        code at 0x04C306; confirmed by load-offset 0x20E6 matching stub EA E6 20
-        in 0x1A1F:0x04F4).
-      - `func_051D56` thunk at 0x1A1F:0x0488 (jump-table entry [3], load-offset
-        0x5B66); its single call site is at file 0x05336F (load 0x717F) inside
-        `func_052F7E` (ENTER at file 0x052F7E = `func_052F7E_ai_power_asset_census`).
-      - Wrong annotation fixed: `ovly_tramp_7AA8` → `unit_move_step` with correct
-        `@asm 0x051DC1 E8 34 17 call cs:0x71F2 -> JMP FAR 1A1F:04F4`.
-      - NEXT: decode per-unit loop body inside `func_052F7E`, collapse
-        `viceroy_ai_unit_turns` shell, re-verify smoke.
+- [x] **1.6 The runtime dispatcher.** CLOSED 2026-06-11 — the full chain is
+      decoded, byte-true ported, and LIVE (500-turn smoke PASS, REF=228):
+      ```
+      func_005760 (main turn loop, resident, PORTED)
+        ├─ turn head @0x005872: unit[+0x05] (moves-used) = 0 for all units
+        └─ per AI slot ([0x543F+p*0x34]==1, @0x0059EF): lcall 0x181F:0x638(power)
+           = func_052F7E — PHASE 6 = the dispatch epoch (REWRITTEN byte-true):
+             restart loop { 0x470; 0x466(0); tea-party; 2 passes (pass 0 =
+             special types 0xA/0xB/0xC only); descending scan, first gated
+             unit only; WHILE func_007A20 (0x181F:0x97A: moves-used below the
+             @UNIT col-0 allowance via func_006CCA, +3 military by 0x0981
+             predicate) marches the unit through func_051D56; stuck >20 ->
+             0x934; pacing 0x181F:0x45C } while did
+        func_051D56 (guard byte-verified): u5!=0 && state==0xB &&
+          @UNIT[type*14+9]&1 && 0x181F:0x984 -> unit_move_step (func_04E2D6,
+          @0x051DC1 cs:0x71F2 -> JT[12] -> 1A1F:04F4); then switch on state-7
+          via cs:0x5C2A table (BYTE-READ @file 0x51E1A — the old port's case
+          mapping was wrong): 7->func_040C1E, 8->func_040656, 9->func_0409D6,
+          A/default->0x934 END-TURN (func_007BCE: u5 = allowance), B/C->
+          0x191F:0x4BA = func_040E22 = ai_unit_order_step (march step).
+      ```
+      Bugs caught live by first execution of the chain: (a) implicit-decl
+      calls to `func_006CCA` bound to the generated WEAK stub (allowance
+      always 0 — gate never opened); (b) func_00D1CA was a false
+      TINY_ACCESSOR skeleton with a host-crashing raw `*(near*)0x7FC`
+      (real body: BIOS-tick pacing wait, ported); (c) 277 raw absolute
+      dereferences (`*(volatile T*)0xNNNN`) across 4 overlay files crashed
+      on host — converted to g_dgroup[] accesses; (d) 13 detached weak-var
+      globals (g_unit_bytes, g_dir_dx/dy, g_observe_flag, ...) aliased to
+      their byte-cited DGROUP homes in linkfloor_extra.ld; (e)
+      ai_unit_order_step's not-arrived/count-changed paths jumped to
+      `finalize` (end-turn + state clear) instead of the @0x40FCD done path
+      — every in-flight goto died after one step; (f) compass deltas were
+      `0` placeholders; (g) automove's step/plot executors (1A1F:059C/05F0)
+      called weak stubs instead of the same-file ports func_061E96/061F02.
+      The game_turn.c shell loop is COLLAPSED (native-only); euro-AI runs
+      through func_052F7E.  Smoke baseline re-derived + re-pinned (the old
+      wander/park pins were shell-sequencing artifacts).  March FIDELITY
+      (actual path steps) depends on eval/plotter leaf wiring — Phase 4.
 - [ ] **1.7 Terrain-weight tables** DS:0x2F76/0x2F77/0x2F79 (stride 16) and
       the wander tables DS:0xC8/0xDE — confirm loader provenance (NAMES.TXT
       section vs DGROUP init image) so the AI18 weights are fed by real data

@@ -10,6 +10,12 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* movement-allowance lookup (near call 0x6CCA from func_007A20/007A80/007BCE).
+ * Declared explicitly: the bare name `func_006CCA` is a generated WEAK no-op
+ * stub (linkfloor_stubs.c) and the previous implicit-declaration calls bound
+ * to it, silently returning allowance 0 (caught 2026-06-11, ROUTE_B 1.6). */
+extern int func_006CCA_logic_sz_13(uint16_t unit);
+
 /* @asm        0x007610..0x00762F  (31 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_007610_unknown.asm
  * @pattern    TINY_ACCESSOR
@@ -459,7 +465,7 @@ int func_0079A0_op_sz_119(uint16_t arg0_ax /* unit index, in AX */)
         && DG8(base + 0x02) != 0x0B)                 /* bit 0x80 => type 0x0B */
         return 0;
     if (DG8(base + 0x05)
-        >= (uint8_t)func_006CCA(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
+        >= (uint8_t)func_006CCA_logic_sz_13(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
         return 0;
     return 1;
 }
@@ -516,7 +522,7 @@ int func_007A20_logic_sz_96(uint16_t arg0_ax /* unit index, in AX */)
         && DG8(base + 0x02) != 0x0B)      /* bit 0x80 => type 0x0B */
         return 0;
     if (DG8(base + 0x05)
-        >= (uint8_t)func_006CCA(arg0_ax))               /* func_006CCA cap (unsigned) */
+        >= (uint8_t)func_006CCA_logic_sz_13(arg0_ax))               /* func_006CCA cap (unsigned) */
         return 0;
     return 1;
 }
@@ -583,7 +589,7 @@ int func_007A80_op_sz_143(uint16_t arg0_ax /* unit index, in AX */)
         && DG8(base + 0x02) != 0x0B)                 /* bit 0x80 => type 0x0B */
         return 0;
     if (DG8(base + 0x05)
-        >= (uint8_t)func_006CCA(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
+        >= (uint8_t)func_006CCA_logic_sz_13(arg0_ax))            /* +0x05 >= per-unit cap (unsigned) */
         return 0;
     return 1;
 }
@@ -722,7 +728,7 @@ void func_007BCE_logic_sz_25(uint16_t arg0_bp_06)
      *      byte in al); 0x007BDD imul bx,si,0x1c; 0x007BE0 mov [bx+0x3149],al.
      * Stores the low byte of func_006CCA(arg0) into UnitRecord[arg0] field +0x05
      * (0x3149) (DGROUP_MEMORY_MAP §3.1, UnitRecord stride 0x1C). */
-    uint8_t v = (uint8_t)func_006CCA(arg0_bp_06);
+    uint8_t v = (uint8_t)func_006CCA_logic_sz_13(arg0_bp_06);
     DG8(0x3144 + (unsigned)arg0_bp_06 * 0x1C + 0x05) = v;
 }
 

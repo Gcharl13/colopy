@@ -55,6 +55,11 @@
 #include "viceroy.h"
 #include "overlay_externs.h"
 
+/* DGROUP byte image (modern build): DS:[off] == g_dgroup[off].  Added
+ * 2026-06-11 while converting raw absolute-address dereferences (host
+ * crash) to DGROUP-relative accesses. */
+extern unsigned char g_dgroup[];
+
 /* ----------------------------------------------------------------------------
  * Overlay thunks NOT declared in overlay_externs.h that this region calls.
  * (Canonical no-arg prototype, matching the file convention of calling thunks
@@ -97,15 +102,15 @@ int func_066EC8_draw_grid_box_pair(uint16_t arg0_col, uint16_t arg1_row2,
     int gx, gy, gw, gh, px;
 
     /* @asm 0x066ECC  ax = [0x832c] - [0x832e] + row2 ; *= tile_ph[0x8326] -> cx */
-    gy = ((int)(*(volatile uint16_t *)0x832C) - (int)(*(volatile uint16_t *)0x832E)
-          + (int)arg1_row2) * (int)(*(volatile uint16_t *)0x8326);
+    gy = ((int)(*(volatile uint16_t *)&g_dgroup[0x832C]) - (int)(*(volatile uint16_t *)&g_dgroup[0x832E])
+          + (int)arg1_row2) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
     /* @asm 0x066EDC  ax = h * tile_pw[0x5ad4] -> dx */
-    gh = (int)arg2_h * (int)(*(volatile uint16_t *)0x5AD4);
+    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
     /* @asm 0x066EE5  ax = w * tile_ph[0x8326] */
-    gw = (int)arg3_w * (int)(*(volatile uint16_t *)0x8326);
+    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
     /* @asm 0x066F16  ax = [0x832a] - [0x8328] + col ; *= tile_pw[0x5ad4] -> bx */
-    px = ((int)(*(volatile uint16_t *)0x832A) - (int)(*(volatile uint16_t *)0x8328)
-          + (int)arg0_col) * (int)(*(volatile uint16_t *)0x5AD4);
+    px = ((int)(*(volatile uint16_t *)&g_dgroup[0x832A]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8328])
+          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
 
     /* @asm 0x066EEE..0x066F2A  box #1: clip[0x839e..0x83a4], marker[0x2da8..0x2dae],
      *      (gy+8, gh, gw) at px -> 0x181F:0x33a (box draw). */
@@ -138,11 +143,11 @@ int func_066F68_draw_route_path(void)
     uint16_t lfsr = 1;          /* @asm 0x066F6C [bp-0xc]=1 */
     int visited = 0;            /* @asm 0x066F71 [bp-0x10]=0 */
     int32_t acc = 0;            /* @asm 0x066F76 [bp-4]:[bp-6]=0 */
-    int area = (int)(*(volatile uint16_t *)0x8546)
-             * (int)(*(volatile uint16_t *)0x8544);   /* @asm 0x066F7E */
+    int area = (int)(*(volatile uint16_t *)&g_dgroup[0x8546])
+             * (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);   /* @asm 0x066F7E */
 
-    *(volatile uint16_t *)0x833A = 0;   /* @asm 0x066F8A */
-    *(volatile uint16_t *)0x8338 = 0;   /* @asm 0x066F8D */
+    *(volatile uint16_t *)&g_dgroup[0x833A] = 0;   /* @asm 0x066F8A */
+    *(volatile uint16_t *)&g_dgroup[0x8338] = 0;   /* @asm 0x066F8D */
 
     /* @asm 0x066F90 loop head */
     do {
@@ -155,11 +160,11 @@ int func_066F68_draw_route_path(void)
         if ((unsigned)idx >= (unsigned)area) break;  /* @asm 0x066FA4 cmp/jae 0x999 */
 
         /* @asm 0x066FA9 col = idx / map_width ; row = idx % map_width */
-        col = idx / (int)(*(volatile uint16_t *)0x8544);
-        row = idx % (int)(*(volatile uint16_t *)0x8544);
+        col = idx / (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);
+        row = idx % (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);
         /* @asm 0x066FBA px = (row + [0x832a]) * tile_pw ; py = (col + [0x832c]) * tile_ph + 8 */
-        px = (row + (int)(*(volatile uint16_t *)0x832A)) * (int)(*(volatile uint16_t *)0x5AD4);
-        py = (col + (int)(*(volatile uint16_t *)0x832C)) * (int)(*(volatile uint16_t *)0x8326) + 8;
+        px = (row + (int)(*(volatile uint16_t *)&g_dgroup[0x832A])) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+        py = (col + (int)(*(volatile uint16_t *)&g_dgroup[0x832C])) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
         /* @asm 0x066FD5 push py, tile_pw, tile_ph ; (px) -> 0x181F:0xe2 (draw point) */
         overlay_call_181F_00E2();
         (void)px; (void)py;
@@ -200,15 +205,15 @@ int func_06703C_draw_grid_box(uint16_t arg0_col, uint16_t arg1_row,
 {
     int py, gh, gw, px;
     /* @asm 0x067040 py = ([0x832c]-[0x832e]+row)*tile_ph + 8 */
-    py = ((int)(*(volatile uint16_t *)0x832C) - (int)(*(volatile uint16_t *)0x832E)
-          + (int)arg1_row) * (int)(*(volatile uint16_t *)0x8326) + 8;
+    py = ((int)(*(volatile uint16_t *)&g_dgroup[0x832C]) - (int)(*(volatile uint16_t *)&g_dgroup[0x832E])
+          + (int)arg1_row) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
     /* @asm 0x067053 gh = h * tile_pw[0x5ad4] */
-    gh = (int)arg2_h * (int)(*(volatile uint16_t *)0x5AD4);
+    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
     /* @asm 0x06705C gw = w * tile_ph[0x8326] */
-    gw = (int)arg3_w * (int)(*(volatile uint16_t *)0x8326);
+    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
     /* @asm 0x067068 px = ([0x832a]-[0x8328]+col)*tile_pw[0x5ad4] */
-    px = ((int)(*(volatile uint16_t *)0x832A) - (int)(*(volatile uint16_t *)0x8328)
-          + (int)arg0_col) * (int)(*(volatile uint16_t *)0x5AD4);
+    px = ((int)(*(volatile uint16_t *)&g_dgroup[0x832A]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8328])
+          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
     /* @asm 0x06707A push py,gh,gw ; (px) -> 0x181F:0xe2 (box draw) */
     overlay_call_181F_00E2();
     (void)py; (void)gh; (void)gw; (void)px;
@@ -240,7 +245,7 @@ int func_067082_draw_settlement_markers(uint16_t arg0_x0, uint16_t arg1_y0,
     uint8_t *rec;
 
     /* @asm 0x067086 cl = [0x5396]+4 ; al = 1<<cl  (own-power fog bit) */
-    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)0x5396) + 4));
+    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)&g_dgroup[0x5396]) + 4));
     /* @asm 0x067094 x1 = x0 + w - 1 ; y1 = y0 + h - 1 */
     x1 = (int)arg0_x0 + (int)arg2_w - 1;       /* @asm 0x067094 [bp-0xc] */
     y1 = (int)arg1_y0 + (int)arg3_h - 1;       /* @asm 0x06709E [bp-0xe] */
@@ -248,7 +253,7 @@ int func_067082_draw_settlement_markers(uint16_t arg0_x0, uint16_t arg1_y0,
     overlay_call_1A1F_0906();
 
     /* @asm 0x0670C0 i = 0 */
-    count = (int)(*(volatile uint16_t *)0x539A);   /* @asm 0x0670C5 */
+    count = (int)(*(volatile uint16_t *)&g_dgroup[0x539A]);   /* @asm 0x0670C5 */
     if (count <= 0)                                 /* @asm 0x0670CA jg/else jmp 0xae8 */
         return 0;
 
@@ -294,14 +299,14 @@ int func_067182_draw_colony_markers(uint16_t arg0_x0, uint16_t arg1_y0,
     uint8_t *rec;
 
     /* @asm 0x067188 power fog bit = 1 << ([0x5396]+4) */
-    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)0x5396) + 4));
+    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)&g_dgroup[0x5396]) + 4));
     /* @asm 0x067196 x1=x0+w-1 ; y1=y0+h-1 ; @asm 0x0671AA clamp via 0x1A1F:0x906 */
     x1 = (int)arg0_x0 + (int)arg2_w - 1;
     y1 = (int)arg1_y0 + (int)arg3_h - 1;
     overlay_call_1A1F_0906();
     (void)power_mask;
 
-    count = (int)(*(volatile uint16_t *)0x539E);   /* @asm 0x0671C7 */
+    count = (int)(*(volatile uint16_t *)&g_dgroup[0x539E]);   /* @asm 0x0671C7 */
     if (count <= 0)                                 /* @asm 0x0671CC */
         return 0;
 
@@ -427,13 +432,13 @@ int func_0673CC_draw_one_unit(uint16_t arg0_unit, uint16_t arg1_sel, uint16_t ar
     /* @asm 0x06740E attr = (sel==1 ? 0 : 0x40) + 0x80 */
     attr = 0x80 + (arg1_sel == 1 ? 0 : 0x40);
     /* @asm 0x06741B px = ([+0x3144] - [0x8328] + [0x832a]) * tile_pw[0x5ad4] */
-    px = ((int)rec[0] - (int)(*(volatile uint16_t *)0x8328)
-          + (int)(*(volatile uint16_t *)0x832A)) * (int)(*(volatile uint16_t *)0x5AD4);
+    px = ((int)rec[0] - (int)(*(volatile uint16_t *)&g_dgroup[0x8328])
+          + (int)(*(volatile uint16_t *)&g_dgroup[0x832A])) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
     /* @asm 0x067433 py = ([+0x3145] - [0x832e] + [0x832c]) * tile_ph[0x8326] + 8 */
-    py = ((int)rec[1] - (int)(*(volatile uint16_t *)0x832E)
-          + (int)(*(volatile uint16_t *)0x832C)) * (int)(*(volatile uint16_t *)0x8326) + 8;
+    py = ((int)rec[1] - (int)(*(volatile uint16_t *)&g_dgroup[0x832E])
+          + (int)(*(volatile uint16_t *)&g_dgroup[0x832C])) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
     /* @asm 0x06744B if ((owner-nibble [+0x3147] & 0xF) != [0x5396]) attr |= 0x20 (enemy dim) */
-    if (((int)(rec[3] & 0x0F)) != (int)(*(volatile uint8_t *)0x5396))
+    if (((int)(rec[3] & 0x0F)) != (int)(*(volatile uint8_t *)&g_dgroup[0x5396]))
         attr |= 0x20;
     /* @asm 0x06745A push py, tile_pw[0x5ad4], zoom[0x186] ;
      *      si=unit, dx=attr, bx=px -> 0x181F:0x2bc (draw unit sprite). */
@@ -456,7 +461,7 @@ int func_0673CC_draw_one_unit(uint16_t arg0_unit, uint16_t arg1_sel, uint16_t ar
 int func_067476_set_unit_active_state(uint16_t arg0_on)
 {
     /* @asm 0x067479 if ([0x1ea2] != 0): push 0,1,[0x5392] -> cs:0xFBF (0x1A1F:0x95A) */
-    if (*(volatile uint16_t *)0x1EA2 != 0) {
+    if (*(volatile uint16_t *)&g_dgroup[0x1EA2] != 0) {
         overlay_call_1A1F_095A();
     }
     /* @asm 0x06748E if (arg0_on): push 1,1 ; else push 0,0 ; then [0x5392] ->
@@ -488,13 +493,13 @@ int func_0674A8_blink_selected_unit(uint16_t arg0_unit)
     int owner;
 
     /* @asm 0x0674AD guard flags: [0x5390], [0x826], [0x828] all zero else plain redraw */
-    if (*(volatile uint16_t *)0x5390 != 0 ||
-        *(volatile uint16_t *)0x826  != 0 ||
-        *(volatile uint8_t  *)0x828  != 0)
+    if (*(volatile uint16_t *)&g_dgroup[0x5390] != 0 ||
+        *(volatile uint16_t *)&g_dgroup[0x826]  != 0 ||
+        *(volatile uint8_t *)&g_dgroup[0x828]  != 0)
         goto plain;
 
     /* @asm 0x0674C2 sel = &UnitRecord[[0x5392]] ; owner = sel[+0x3147]&0xF */
-    sel   = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)0x5392) * 0x1C);
+    sel   = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)&g_dgroup[0x5392]) * 0x1C);
     owner = (int)(sel[3] & 0x0F);
     if (owner >= 4) goto plain;                         /* @asm 0x0674D0 cmp 4 / jae */
     /* @asm 0x0674DC if (AIPersonality[owner*0x34 + 0x31] != 0) plain  (0x540E+owner*0x34+0x31=+0x543f) */
@@ -504,7 +509,7 @@ int func_0674A8_blink_selected_unit(uint16_t arg0_unit)
     overlay_call_181F_0966();
     if (1 /* ax!=0 @asm 0x0674EF */) {
         uint8_t *cand = (uint8_t *)(0x3144 + (int)arg0_unit * 0x1C);  /* @asm 0x0674F4 */
-        sel = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)0x5392) * 0x1C);
+        sel = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)&g_dgroup[0x5392]) * 0x1C);
         /* @asm 0x067506/0x067516 candidate col & row equal selected col & row? */
         if (cand[0] == sel[0] && cand[1] == sel[1]) {
             /* @asm 0x06751C push 1 -> cs:0xFAB (0x181F:0xE2A) — redraw highlighted */
@@ -546,10 +551,10 @@ int func_06753C_draw_own_units_pass(uint16_t arg0_x0, uint16_t arg1_y0,
     y1 = y0 + (int)arg3_h - 1;
     overlay_call_1A1F_0906();
     /* @asm 0x067574 power_mask = 1 << ([0x5396]+4) */
-    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)0x5396) + 4));
+    power_mask = (uint8_t)(1 << ((*(volatile uint8_t *)&g_dgroup[0x5396]) + 4));
     (void)power_mask;
 
-    count = (int)(*(volatile uint16_t *)0x539C);   /* @asm 0x067587 */
+    count = (int)(*(volatile uint16_t *)&g_dgroup[0x539C]);   /* @asm 0x067587 */
     if (count <= 0)                                 /* @asm 0x06758C jle 0xf8a */
         return 0;
 
@@ -563,7 +568,7 @@ int func_06753C_draw_own_units_pass(uint16_t arg0_x0, uint16_t arg1_y0,
         /* @asm 0x0675A2 window test (x0<=ux<=x1 && y0<=uy<=y1) */
         if (ux < x0 || ux > x1 || uy < y0 || uy > y1) continue;
         /* @asm 0x0675B6 if owner-nibble [+3]&0xF == [0x5396] (own unit): */
-        if ((rec[3] & 0x0F) == (*(volatile uint8_t *)0x5396)) {
+        if ((rec[3] & 0x0F) == (*(volatile uint8_t *)&g_dgroup[0x5396])) {
             /* @asm 0x0675C1 push row,col -> 0x181F:0x74a ; al &= power_mask */
             overlay_call_181F_074A();
         }
@@ -653,7 +658,7 @@ int func_067700_compose_active_tile(uint16_t arg0_active)
     overlay_call_1A1F_093E();   /* @asm 0x06774F draw tile graphic */
 
     /* @asm 0x067754 if ([0x184] == 3) draw the centred name label */
-    if (*(volatile uint16_t *)0x184 == 3) {
+    if (*(volatile uint16_t *)&g_dgroup[0x184] == 3) {
         /* @asm 0x06775F push (0x5396*0x34 + 0x5426), &namebuf -> 0x0D1D:0x7e4 (format) */
         overlay_call_0D1D_07E4();
         /* @asm 0x067774 pixel X = ([0x832c]*tile_ph + es:[0x89e][0]) >> 1 + 8 ;
@@ -689,7 +694,7 @@ int func_067700_compose_active_tile(uint16_t arg0_active)
  * ---------------------------------------------------------------------------- */
 int func_0677CA_redraw_selected_unit_tile(uint16_t arg0_mode)
 {
-    uint8_t *rec = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)0x5392) * 0x1C); /* @asm 0x0677CE */
+    uint8_t *rec = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)&g_dgroup[0x5392]) * 0x1C); /* @asm 0x0677CE */
     int col = (int)rec[0];   /* @asm 0x0677D3 [bp-2] */
     int row = (int)rec[1];   /* @asm 0x0677DC [bp-4] */
     (void)col; (void)row;
@@ -710,10 +715,10 @@ int func_0677CA_redraw_selected_unit_tile(uint16_t arg0_mode)
  * per-power slot (0x948E + [0x5394]*6).  @asm 0x067836..0x067857 RETF. */
 void push_sheet_context(void)
 {
-    uint16_t *slot = (uint16_t *)(0x948E + (int)(*(volatile uint16_t *)0x5394) * 6);
-    slot[0] = *(volatile uint16_t *)0x17C;   /* @asm 0x067846 */
-    slot[1] = *(volatile uint16_t *)0x17E;   /* @asm 0x06784B */
-    slot[2] = *(volatile uint16_t *)0x184;   /* @asm 0x067851 */
+    uint16_t *slot = (uint16_t *)(0x948E + (int)(*(volatile uint16_t *)&g_dgroup[0x5394]) * 6);
+    slot[0] = *(volatile uint16_t *)&g_dgroup[0x17C];   /* @asm 0x067846 */
+    slot[1] = *(volatile uint16_t *)&g_dgroup[0x17E];   /* @asm 0x06784B */
+    slot[2] = *(volatile uint16_t *)&g_dgroup[0x184];   /* @asm 0x067851 */
 }
 
 /* Tail helper @0x067858 pop_sheet_context — restore from the same slot.
@@ -721,10 +726,10 @@ void push_sheet_context(void)
  *  base 0x948E reached via a different addressing form.) */
 void pop_sheet_context(void)
 {
-    uint16_t *slot = (uint16_t *)(0x948E + (int)(*(volatile uint16_t *)0x5394) * 6);
-    *(volatile uint16_t *)0x17C = slot[0];   /* @asm 0x067864 */
-    *(volatile uint16_t *)0x17E = slot[1];   /* @asm 0x06786F */
-    *(volatile uint16_t *)0x184 = slot[2];   /* @asm 0x067875 */
+    uint16_t *slot = (uint16_t *)(0x948E + (int)(*(volatile uint16_t *)&g_dgroup[0x5394]) * 6);
+    *(volatile uint16_t *)&g_dgroup[0x17C] = slot[0];   /* @asm 0x067864 */
+    *(volatile uint16_t *)&g_dgroup[0x17E] = slot[1];   /* @asm 0x06786F */
+    *(volatile uint16_t *)&g_dgroup[0x184] = slot[2];   /* @asm 0x067875 */
 }
 
 /* ============================================================================
@@ -757,115 +762,115 @@ void pop_sheet_context(void)
  * ---------------------------------------------------------------------------- */
 int func_06787C_render_frame_setup(void)
 {
-    int zoom = (int)(*(volatile uint8_t *)0x184);
+    int zoom = (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
     int span_w, span_h, origin_col, origin_row, ax;
 
     /* @asm 0x067880 span = 0xF<<zoom (w), 0xC<<zoom (h) */
-    span_w = 0x0F << zoom;  *(volatile uint16_t *)0x8544 = (uint16_t)span_w;
-    span_h = 0x0C << zoom;  *(volatile uint16_t *)0x8546 = (uint16_t)span_h;
+    span_w = 0x0F << zoom;  *(volatile uint16_t *)&g_dgroup[0x8544] = (uint16_t)span_w;
+    span_h = 0x0C << zoom;  *(volatile uint16_t *)&g_dgroup[0x8546] = (uint16_t)span_h;
 
     /* @asm 0x067894 minimap: 5x5 span, zoom forced to 0 */
-    if (*(volatile uint16_t *)0x18A != 0) {
-        span_w = 5; *(volatile uint16_t *)0x8544 = 5;   /* @asm 0x06789B */
-        span_h = 5; *(volatile uint16_t *)0x8546 = 5;
-        *(volatile uint16_t *)0x184 = 0;                 /* @asm 0x0678A4 */
+    if (*(volatile uint16_t *)&g_dgroup[0x18A] != 0) {
+        span_w = 5; *(volatile uint16_t *)&g_dgroup[0x8544] = 5;   /* @asm 0x06789B */
+        span_h = 5; *(volatile uint16_t *)&g_dgroup[0x8546] = 5;
+        *(volatile uint16_t *)&g_dgroup[0x184] = 0;                 /* @asm 0x0678A4 */
         zoom = 0;
     }
 
     /* @asm 0x0678AA tile pixel size = 0x10 >> zoom (square) */
     {
-        int px = 0x10 >> (int)(*(volatile uint8_t *)0x184);
-        *(volatile uint16_t *)0x5AD4 = (uint16_t)px;
-        *(volatile uint16_t *)0x8326 = (uint16_t)px;
+        int px = 0x10 >> (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
+        *(volatile uint16_t *)&g_dgroup[0x5AD4] = (uint16_t)px;
+        *(volatile uint16_t *)&g_dgroup[0x8326] = (uint16_t)px;
     }
 
     /* @asm 0x0678B9 origin_col = -(span_w/2 - centre_x[0x17C]) */
-    origin_col = -(( (int)(*(volatile uint16_t *)0x8544) >> 1)
-                    - (int)(*(volatile uint16_t *)0x17C));
-    *(volatile uint16_t *)0x8328 = (uint16_t)origin_col;
+    origin_col = -(( (int)(*(volatile uint16_t *)&g_dgroup[0x8544]) >> 1)
+                    - (int)(*(volatile uint16_t *)&g_dgroup[0x17C]));
+    *(volatile uint16_t *)&g_dgroup[0x8328] = (uint16_t)origin_col;
     /* @asm 0x0678C7 origin_row = -(span_h/2 - centre_y[0x17E]) */
-    origin_row = -(( (int)(*(volatile uint16_t *)0x8546) >> 1)
-                    - (int)(*(volatile uint16_t *)0x17E));
-    *(volatile uint16_t *)0x832E = (uint16_t)origin_row;
+    origin_row = -(( (int)(*(volatile uint16_t *)&g_dgroup[0x8546]) >> 1)
+                    - (int)(*(volatile uint16_t *)&g_dgroup[0x17E]));
+    *(volatile uint16_t *)&g_dgroup[0x832E] = (uint16_t)origin_row;
 
     /* @asm 0x0678D7 non-minimap: clamp origins into [1 .. mapdim-span-1] */
-    if (*(volatile uint16_t *)0x18A == 0) {
+    if (*(volatile uint16_t *)&g_dgroup[0x18A] == 0) {
         int dx, dy;
         if (origin_col < 1) origin_col = 1;             /* @asm 0x0678DE */
-        dx = (int)(*(volatile uint16_t *)0x853A) - (int)(*(volatile uint16_t *)0x8544) - 1; /* @asm 0x0678E6 */
+        dx = (int)(*(volatile uint16_t *)&g_dgroup[0x853A]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8544]) - 1; /* @asm 0x0678E6 */
         if (origin_col > dx) origin_col = dx;           /* @asm 0x0678EF */
-        *(volatile uint16_t *)0x8328 = (uint16_t)origin_col;
+        *(volatile uint16_t *)&g_dgroup[0x8328] = (uint16_t)origin_col;
         if (origin_row < 1) origin_row = 1;             /* @asm 0x0678F8 */
-        dy = (int)(*(volatile uint16_t *)0x853C) - (int)(*(volatile uint16_t *)0x8546) - 1; /* @asm 0x067900 */
+        dy = (int)(*(volatile uint16_t *)&g_dgroup[0x853C]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8546]) - 1; /* @asm 0x067900 */
         if (origin_row > dy) origin_row = dy;           /* @asm 0x067908 */
-        *(volatile uint16_t *)0x832E = (uint16_t)origin_row;
+        *(volatile uint16_t *)&g_dgroup[0x832E] = (uint16_t)origin_row;
     }
 
     /* @asm 0x067912 pixel-grid base = 0; centre if map narrower/shorter than span */
-    *(volatile uint16_t *)0x832A = 0;
-    *(volatile uint16_t *)0x832C = 0;
+    *(volatile uint16_t *)&g_dgroup[0x832A] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x832C] = 0;
     /* @asm 0x06791A if (map_w-2 < span_w) { origin_col=1; base_col=(span_w-map_w+2)/2; span_w=map_w-2 } */
-    ax = (int)(*(volatile uint16_t *)0x853A) - 2;
-    if (ax < (int)(*(volatile uint16_t *)0x8544)) {
-        *(volatile uint16_t *)0x8328 = 1;
-        *(volatile uint16_t *)0x832A =
-            (uint16_t)(((int)(*(volatile uint16_t *)0x8544)
-                        - (int)(*(volatile uint16_t *)0x853A) + 2) >> 1);
-        *(volatile uint16_t *)0x8544 = (uint16_t)ax;
+    ax = (int)(*(volatile uint16_t *)&g_dgroup[0x853A]) - 2;
+    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[0x8544])) {
+        *(volatile uint16_t *)&g_dgroup[0x8328] = 1;
+        *(volatile uint16_t *)&g_dgroup[0x832A] =
+            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[0x8544])
+                        - (int)(*(volatile uint16_t *)&g_dgroup[0x853A]) + 2) >> 1);
+        *(volatile uint16_t *)&g_dgroup[0x8544] = (uint16_t)ax;
     }
     /* @asm 0x06793E same for rows (map_h-2 < span_h) */
-    ax = (int)(*(volatile uint16_t *)0x853C) - 2;
-    if (ax < (int)(*(volatile uint16_t *)0x8546)) {
-        *(volatile uint16_t *)0x832E = 1;
-        *(volatile uint16_t *)0x832C =
-            (uint16_t)(((int)(*(volatile uint16_t *)0x8546)
-                        - (int)(*(volatile uint16_t *)0x853C) + 2) >> 1);
-        *(volatile uint16_t *)0x8546 = (uint16_t)ax;
+    ax = (int)(*(volatile uint16_t *)&g_dgroup[0x853C]) - 2;
+    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[0x8546])) {
+        *(volatile uint16_t *)&g_dgroup[0x832E] = 1;
+        *(volatile uint16_t *)&g_dgroup[0x832C] =
+            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[0x8546])
+                        - (int)(*(volatile uint16_t *)&g_dgroup[0x853C]) + 2) >> 1);
+        *(volatile uint16_t *)&g_dgroup[0x8546] = (uint16_t)ax;
     }
 
     /* @asm 0x067962 origin-1 cache */
-    *(volatile uint16_t *)0x854C = (uint16_t)((int)(*(volatile uint16_t *)0x8328) - 1);
-    *(volatile uint16_t *)0x854E = (uint16_t)((int)(*(volatile uint16_t *)0x832E) - 1);
+    *(volatile uint16_t *)&g_dgroup[0x854C] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x8328]) - 1);
+    *(volatile uint16_t *)&g_dgroup[0x854E] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x832E]) - 1);
 
     /* @asm 0x067970 render stride/height [0x8548]/[0x854A] */
-    if (*(volatile uint16_t *)0x15A != 0) {             /* fast layers resident */
-        if (*(volatile uint16_t *)0x18A == 0) {         /* @asm 0x067977 not minimap */
-            int z = (int)(*(volatile uint8_t *)0x184);
-            *(volatile uint16_t *)0x8548 = (uint16_t)((0x0F << z) + 2);  /* @asm 0x067989 */
-            *(volatile uint16_t *)0x854A = (uint16_t)((0x0C << z) + 2);  /* @asm 0x06798C */
+    if (*(volatile uint16_t *)&g_dgroup[0x15A] != 0) {             /* fast layers resident */
+        if (*(volatile uint16_t *)&g_dgroup[0x18A] == 0) {         /* @asm 0x067977 not minimap */
+            int z = (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
+            *(volatile uint16_t *)&g_dgroup[0x8548] = (uint16_t)((0x0F << z) + 2);  /* @asm 0x067989 */
+            *(volatile uint16_t *)&g_dgroup[0x854A] = (uint16_t)((0x0C << z) + 2);  /* @asm 0x06798C */
         } else {
             /* @asm 0x067996 minimap clamp path: stride=mapdim-origin1+1 per axis */
-            int sc = (int)(*(volatile uint16_t *)0x854C);
-            int sr = (int)(*(volatile uint16_t *)0x854E);
-            int wc = (int)(*(volatile uint16_t *)0x853A) - 1;
-            int wr = (int)(*(volatile uint16_t *)0x853C) - 1;
-            int ec = (sc < 0) ? 0 : sc; *(volatile uint16_t *)0x854C = (uint16_t)ec;
-            int er = (sr < 0) ? 0 : sr; *(volatile uint16_t *)0x854E = (uint16_t)er;
+            int sc = (int)(*(volatile uint16_t *)&g_dgroup[0x854C]);
+            int sr = (int)(*(volatile uint16_t *)&g_dgroup[0x854E]);
+            int wc = (int)(*(volatile uint16_t *)&g_dgroup[0x853A]) - 1;
+            int wr = (int)(*(volatile uint16_t *)&g_dgroup[0x853C]) - 1;
+            int ec = (sc < 0) ? 0 : sc; *(volatile uint16_t *)&g_dgroup[0x854C] = (uint16_t)ec;
+            int er = (sr < 0) ? 0 : sr; *(volatile uint16_t *)&g_dgroup[0x854E] = (uint16_t)er;
             if (wc > sc + 6) wc = sc + 6;               /* (clamp window @0x0679A8) */
             if (wr > sr + 6) wr = sr + 6;
-            *(volatile uint16_t *)0x8548 = (uint16_t)(wc - ec + 1);
-            *(volatile uint16_t *)0x854A = (uint16_t)(wr - er + 1);
+            *(volatile uint16_t *)&g_dgroup[0x8548] = (uint16_t)(wc - ec + 1);
+            *(volatile uint16_t *)&g_dgroup[0x854A] = (uint16_t)(wr - er + 1);
         }
     } else {
         /* @asm 0x0679E8 no fast layers: stride/height = full map dims */
-        *(volatile uint16_t *)0x8548 = *(volatile uint16_t *)0x853A;
-        *(volatile uint16_t *)0x854A = *(volatile uint16_t *)0x853C;
+        *(volatile uint16_t *)&g_dgroup[0x8548] = *(volatile uint16_t *)&g_dgroup[0x853A];
+        *(volatile uint16_t *)&g_dgroup[0x854A] = *(volatile uint16_t *)&g_dgroup[0x853C];
     }
 
     /* @asm 0x0679F4 zoom-derived HUD metrics */
     {
-        int z = (int)(*(volatile uint8_t *)0x184);
-        *(volatile uint16_t *)0x186 = (uint16_t)(0x64 >> z);            /* @asm 0x0679FD */
-        *(volatile uint16_t *)0x188 = (uint16_t)((5 << z) + 5);         /* @asm 0x067A00 */
+        int z = (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
+        *(volatile uint16_t *)&g_dgroup[0x186] = (uint16_t)(0x64 >> z);            /* @asm 0x0679FD */
+        *(volatile uint16_t *)&g_dgroup[0x188] = (uint16_t)((5 << z) + 5);         /* @asm 0x067A00 */
     }
 
     /* @asm 0x067A0B max visible tile = span + origin - 1 */
-    *(volatile uint16_t *)0x8804 =
-        (uint16_t)((int)(*(volatile uint16_t *)0x8544)
-                   + (int)(*(volatile uint16_t *)0x8328) - 1);          /* @asm 0x067A0B */
-    *(volatile uint16_t *)0x8806 =
-        (uint16_t)((int)(*(volatile uint16_t *)0x8546)
-                   + (int)(*(volatile uint16_t *)0x832E) - 1);          /* @asm 0x067A16 */
+    *(volatile uint16_t *)&g_dgroup[0x8804] =
+        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x8544])
+                   + (int)(*(volatile uint16_t *)&g_dgroup[0x8328]) - 1);          /* @asm 0x067A0B */
+    *(volatile uint16_t *)&g_dgroup[0x8806] =
+        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x8546])
+                   + (int)(*(volatile uint16_t *)&g_dgroup[0x832E]) - 1);          /* @asm 0x067A16 */
     return 0;  /* @asm 0x067A21 RETF */
 }
 
@@ -940,10 +945,10 @@ int func_068898_draw_minimap_or_cursor_box(void)
     func_06787C_render_frame_setup();   /* via cs-thunk 0x6896A -> 0x191F:0x18E */
 
     /* @asm 0x0688A0 if ([0x832a]==0 && [0x832c]==0) simple path */
-    if (*(volatile uint16_t *)0x832A == 0 && *(volatile uint16_t *)0x832C == 0) {
+    if (*(volatile uint16_t *)&g_dgroup[0x832A] == 0 && *(volatile uint16_t *)&g_dgroup[0x832C] == 0) {
         /* @asm 0x0688EE push clip[0x839e..0x83a4] ; al=0 -> 0x181F:0x484 */
         overlay_call_181F_0484();
-    } else if (*(volatile uint16_t *)0x82C == 0) {
+    } else if (*(volatile uint16_t *)&g_dgroup[0x82C] == 0) {
         /* @asm 0x0688AE no descriptor -> simple path as well */
         overlay_call_181F_0484();
     } else {

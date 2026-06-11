@@ -91,6 +91,11 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* DGROUP byte image (modern build): DS:[off] == g_dgroup[off].  Added
+ * 2026-06-11 while converting raw absolute-address dereferences (host
+ * crash) to DGROUP-relative accesses. */
+extern unsigned char g_dgroup[];
+
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (cite-or-not-yet-decoded).  Addresses are the
  * absolute DGROUP offsets seen in the disassembly; names describe the byte-
@@ -266,21 +271,21 @@ extern uint16_t g_terrain_bmp_seg_844;  /* DGROUP:0x844 -- segment of terrain bi
 void func_068EE0_list_widget_free(void)
 {
     /* attrB far ptr [0x1EAE(off):0x1EB0(seg)] */
-    if ((*(volatile uint16_t *)0x1EB0 | *(volatile uint16_t *)0x1EAE) != 0)  /* @asm 0x068EE0 */
+    if ((*(volatile uint16_t *)&g_dgroup[0x1EB0] | *(volatile uint16_t *)&g_dgroup[0x1EAE]) != 0)  /* @asm 0x068EE0 */
         overlay_call_191F_01A8();   /* free_far(seg=[0x1EB0], off=[0x1EAE])  @asm 0x068EF1 */
     /* attrA far ptr [0x1EAA(off):0x1EAC(seg)] */
-    if ((*(volatile uint16_t *)0x1EAC | *(volatile uint16_t *)0x1EAA) != 0)  /* @asm 0x068EF6 */
+    if ((*(volatile uint16_t *)&g_dgroup[0x1EAC] | *(volatile uint16_t *)&g_dgroup[0x1EAA]) != 0)  /* @asm 0x068EF6 */
         overlay_call_191F_01A8();   /* free_far(seg=[0x1EAC], off=[0x1EAA])  @asm 0x068F07 */
     /* vals far ptr [0x1EA6(off):0x1EA8(seg)] */
-    if ((*(volatile uint16_t *)0x1EA8 | *(volatile uint16_t *)0x1EA6) != 0)  /* @asm 0x068F0C */
+    if ((*(volatile uint16_t *)&g_dgroup[0x1EA8] | *(volatile uint16_t *)&g_dgroup[0x1EA6]) != 0)  /* @asm 0x068F0C */
         overlay_call_191F_01A8();   /* free_far(seg=[0x1EA8], off=[0x1EA6])  @asm 0x068F1D */
     /* @asm 0x068F22  null all three far-pointer slots */
-    *(volatile uint16_t *)0x1EA6 = 0;
-    *(volatile uint16_t *)0x1EA8 = 0;
-    *(volatile uint16_t *)0x1EAA = 0;
-    *(volatile uint16_t *)0x1EAC = 0;
-    *(volatile uint16_t *)0x1EAE = 0;
-    *(volatile uint16_t *)0x1EB0 = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EA6] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EA8] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EAA] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EAC] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EAE] = 0;
+    *(volatile uint16_t *)&g_dgroup[0x1EB0] = 0;
 }
 
 /* ============================================================================

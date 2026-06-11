@@ -43,6 +43,11 @@
 #include "viceroy.h"
 #include "overlay_externs.h"
 
+/* DGROUP byte image (modern build): DS:[off] == g_dgroup[off].  Added
+ * 2026-06-11 while converting raw absolute-address dereferences (host
+ * crash) to DGROUP-relative accesses. */
+extern unsigned char g_dgroup[];
+
 /* ----------------------------------------------------------------------------
  * Local overlay-thunk / near-target declarations.
  * The 0x181F:* / 0x0D1D:* / 0x191F:* helpers used by the IN-SCOPE routines below
@@ -180,7 +185,7 @@ void func_077B10_fatal_error_report(uint16_t arg_si, uint16_t arg_di,
             overlay_call_1A1F_0F26();         /* @asm 0x077BC4  emit "0x2478" line */
         }
 
-        if (*(volatile uint8_t *)0x264F != 0) {   /* @asm 0x077BC9  memory-error flag */
+        if (*(volatile uint8_t *)&g_dgroup[0x264F] != 0) {   /* @asm 0x077BC9  memory-error flag */
             /* "Tried to allocate " <[bp-0x54]> " bytes when only " <count> " bytes were free." */
             overlay_call_0D1D_0916();         /* @asm 0x077BE0  fmt [0x2654:0x2652] */
             overlay_call_0D1D_0916();         /* @asm 0x077BF5  fmt [0x2658:0x2656] */

@@ -2,7 +2,7 @@
 
 Thunk-pattern stubs referenced by the lib: **777**
 
-**WIRED (linker alias to the real ported function): 170**
+**WIRED (linker alias to the real ported function): 169**
 (plus 74 semantic alias names)
 
 | stub | target | resolved via | arity |
@@ -96,7 +96,6 @@ Thunk-pattern stubs referenced by the lib: **777**
 | `overlay_call_181F_03C0` | `func_004A80_logic_sz_26` | exe:resident | 0 |
 | `overlay_call_181F_03E0` | `func_00D286_logic_sz_15` | exe:resident | 0 |
 | `overlay_call_181F_0444` | `func_00DCF6_logic_sz_11` | exe:resident | 0 |
-| `overlay_call_181F_045C` | `func_00D1CA_logic_sz_26` | exe:resident | 0 |
 | `overlay_call_181F_0466` | `func_00D106_op_sz_158` | exe:resident | 0 |
 | `overlay_call_181F_0470` | `func_004EE6_op_sz_297` | exe:resident | 0 |
 | `overlay_call_181F_0546` | `func_005760_op_sz_127` | exe:resident | 0 |
@@ -566,7 +565,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `ovly_191F_0AE0` | `func_034318_runtime_chain_289` | `[2]`
 - `ui_show_message2` | `func_034318_runtime_chain_289` | `[2]`
 
-### arity mismatch (target wants 2) — 128
+### arity mismatch (target wants 2) — 129
 
 - `overlay_call_004B_00E2` | `func_002992_rtl_sz_26` | `[0]`
 - `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0, 2]`
@@ -620,6 +619,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0302` | `func_005BFA_logic_sz_49` | `[0]`
 - `overlay_call_181F_030C` | `func_0082A0_logic_sz_18` | `[0]`
 - `overlay_call_181F_0370` | `func_004900_logic_sz_15` | `[0]`
+- `overlay_call_181F_045C` | `func_00D1CA_logic_sz_26_pacing_wait` | `[0]`
 - `overlay_call_181F_04D4` | `func_00C322_rtl_sz_63` | `[0, 2]`
 - `overlay_call_181F_05FA` | `func_035B06_sec_sz_118` | `[0]`
 - `overlay_call_181F_0682` | `func_005F04_map_xy_bounds_or_neg1` | `[0]`
@@ -747,7 +747,7 @@ Thunk-pattern stubs referenced by the lib: **777**
 - `overlay_call_181F_0AF6` | `func_008846_logic_sz_27` | `[0]`
 - `overlay_call_181F_0B96` | `func_00B4B8_logic_sz_11` | `[0, 3]`
 - `overlay_call_181F_0CA4` | `func_00B304_cargo_slot_set_amount` | `[0]`
-- `overlay_call_181F_0CEA` | `func_00B31A_logic_sz_77` | `[0]`
+- `overlay_call_181F_0CEA` | `func_00B31A_cargo_slot_set_good` | `[0]`
 - `overlay_call_181F_0D30` | `func_0098F6_logic_sz_85` | `[0]`
 - `overlay_call_181F_0D44` | `func_008982_logic_sz_532` | `[0]`
 - `overlay_call_181F_0D58` | `func_00B368_cargo_load` | `[0]`

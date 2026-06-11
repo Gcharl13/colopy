@@ -51,19 +51,21 @@ static int colony_owner(int ci)        /* ColonyRecord base 0x5D46 stride 0xCA *
     return DG8(0x5D46 + ci * 0xCA + 0x1A);
 }
 
-/* AI UNIT TURNS: the per-unit native AI (native_unit_ai, full port) runs for
- * every tribe-owned unit with movement left.  European AI units (owner < 4
- * with the AI flag DG8(0x543F+p*0x34) set) run unit_move_step (func_04E2D6):
- * its head dispatch + exit tail are BYTE_VERIFIED, so standing orders are
- * maintained faithfully (auto-sentry, at-war wake-scan, goto arrival); the
- * scoring body that CHOOSES new moves is the remaining gap -- honest, no shim.
- * SHELL-SEQUENCED: func_04E2D6 has no static lcall site in the EXE (its thunk
- * 0x1A1F:0x4F4 is reached only via runtime dispatch), so the per-unit loop
- * order here mirrors the native loop until that dispatcher is located. */
-static void viceroy_ai_unit_turns(void)
+/* NATIVE AI UNIT TURNS: the per-unit native AI (native_unit_ai, full port)
+ * runs for every tribe-owned unit (owner >= 4) with movement left.
+ *
+ * European AI unit dispatch is NOT here.  The real chain (decoded 2026-06-11,
+ * ROUTE_B 1.6) is: func_005760 (main turn loop, PORTED) calls 0x181F:0x638 =
+ * func_052F7E per AI slot ([0x543F+p*0x34]==1, @asm 0x0059EF/0x005A33); its
+ * PHASE 6 marches each unit while the movement gate func_007A20 holds, through
+ * func_051D56 -> unit_move_step / ai_unit_order_step.
+ *
+ * SHELL-SEQUENCED: native unit AI outer loop not yet located in the EXE.
+ * The forward-scan, movement-gate loop below matches the byte-verified
+ * entry order until the real native dispatcher is decoded. */
+static void viceroy_native_unit_turns(void)
 {
     extern int16_t native_unit_ai(int16_t self);
-    extern int16_t unit_move_step(int16_t unit_index);
     int n = (int16_t)DG16(0x539C);
     for (int u = 0; u < n; u++) {
         int owner = DG8(0x3144 + u * 0x1C + 3) & 0x0F;
@@ -71,16 +73,26 @@ static void viceroy_ai_unit_turns(void)
             continue;                          /* no movement left */
         if (owner >= 4)
             native_unit_ai((int16_t)u);
-        else if (DG8(0x543F + owner * 0x34) != 0)
-            unit_move_step((int16_t)u);        /* European AI power */
     }
+}
+
+/* TURN-HEAD MOVEMENT RESET: the original main turn loop zeroes every unit's
+ * moves-used counter (+0x05, abs 0x3149) at the top of each interactive turn
+ * (func_005760 @asm 0x005872: for u in 0..[0x539C): [u*0x1C+0x3149]=0).  This
+ * is what re-opens the func_007A20 movement gate each turn. */
+static void viceroy_turn_movement_reset(void)
+{
+    int n = (int16_t)DG16(0x539C);
+    for (int u = 0; u < n; u++)
+        DG8(0x3144 + u * 0x1C + 0x05) = 0;     /* @asm 0x005872 */
 }
 
 void viceroy_world_autumn(void)
 {
     int n_col = (int16_t)G_NCOL;
 
-    viceroy_ai_unit_turns();
+    viceroy_turn_movement_reset();             /* @asm 0x005872 (func_005760 turn head) */
+    viceroy_native_unit_turns();
 
     for (int p = 0; p < 4; p++) {
         /* 1. census rebuild (func_042138, ported BYTE_VERIFIED) */
@@ -106,8 +118,10 @@ void viceroy_world_autumn(void)
             king_demand_cadence(p);
         }
 
-        /* 6. AI power asset planning (the war-matrix census; AI powers) */
-        if (DG8(0x543F + p * 0x34) != 0) {
+        /* 6. AI power turn: census + planners + PHASE-6 per-unit dispatch
+         * (func_005760 calls 0x181F:0x638 = func_052F7E when the slot state
+         * byte is exactly 1 — @asm 0x0059EF cmp [0x543F+p*0x34],1 / 0x005A33). */
+        if (DG8(0x543F + p * 0x34) == 1) {
             extern int func_052F7E_ai_power_asset_census(uint16_t);
             func_052F7E_ai_power_asset_census((uint16_t)p);
         }
@@ -142,6 +156,31 @@ int viceroy_world_smoke(int turns)
      * the chain walkers read as index 0 forever): terminate the stride-12
      * building prereq chain rows (0x8F86, byte0 = chain_next; <0 ends) */
     for (int b = 0; b < 64; b++) DG8(0x8F86 + b*12) = 0xFF;
+
+    /* @UNIT-table stand-ins (table 0x5234, stride 14; RUNTIME data from
+     * NAMES.TXT/UNIT rows).  Column +0 = movement allowance: read by
+     * func_006CCA and compared against moves-used (+0x05) by the dispatch
+     * gate func_007A20 (0x181F:0x97A) — zero allowance keeps the PHASE-6
+     * gate shut and no euro-AI unit would ever dispatch.  Column +9 bit0
+     * (0x523D) gates the unit_move_step call inside func_051D56
+     * (@asm 0x051D7D test [bx+0x523D],1). */
+    DG8(0x5234 + 0x00*14 + 0) = 2;   /* type 0 (land):  2 moves */
+    DG8(0x5234 + 0x0E*14 + 0) = 4;   /* type 0x0E ship: 4 moves */
+    DG8(0x5234 + 0x00*14 + 9) |= 1;  /* unit_move_step eligible */
+    DG8(0x5234 + 0x0E*14 + 9) |= 1;
+
+    /* Compass delta tables DS:0xB4/0xBE (DGROUP-image data, zero without
+     * VICEROY.EXE): the standard 8-neighbour steps N,NE,E,SE,S,SW,W,NW —
+     * read by the march handler (func_040E22 @asm 0x040E83/0x040EA6) and
+     * automove (func_062D84). */
+    {
+        static const int8_t dx8[8] = { 0, 1, 1, 1, 0,-1,-1,-1 };
+        static const int8_t dy8[8] = {-1,-1, 0, 1, 1, 1, 0,-1 };
+        for (int d = 0; d < 8; d++) {
+            DG8(0xB4 + d) = (uint8_t)dx8[d];
+            DG8(0xBE + d) = (uint8_t)dy8[d];
+        }
+    }
 
     /* one colony for power 0 at (10,10), population 3 */
     DG16(0x539E) = 1;
@@ -188,8 +227,8 @@ int viceroy_world_smoke(int turns)
         UREC(2,0) = 25; UREC(2,1) = 25; UREC(2,2) = 0;
         UREC(2,7) = 0;  UREC(2,8) = 0;                    tilehead_set(25,25,2);
         UREC(3,0) = 5;  UREC(3,1) = 5;  UREC(3,2) = 0x0E; /* ship band */
-        UREC(3,7) = 0x31; UREC(3,8) = 0x0B;               /* goto, arrived */
-        UREC(3,9) = 5;  UREC(3,0x0A) = 5;                 /* dest == pos */
+        UREC(3,7) = 0x31; UREC(3,8) = 0x0B;               /* goto, in flight */
+        UREC(3,9) = 8;  UREC(3,0x0A) = 5;                 /* dest (8,5): 3 east */
         tilehead_set(5,5,3);
         /* the at-war occupant at (21,20): the wake probe (0x181F:0x696 ->
          * func_005F48) reads ONLY the map layers, so paint the occupancy
@@ -205,41 +244,51 @@ int viceroy_world_smoke(int turns)
     for (int t = 0; t < turns; t++)
         viceroy_world_autumn();
 
-    /* ---- EURO-AI END-STATE BASELINE (re-baselined 2026-06-11, AI19 LIVE) --
-     * The 0x4E2D6 body now COMMITS moves, so the stub-era expectations
-     * (units parked by the exit tail alone) are obsolete.  The zero-table
-     * smoke world is deterministic (MSC 6.0 LCG, fixed seed), so the full
-     * end-state is pinned EXACTLY below; a mismatch is a real behavior
-     * change in the evaluator and must be re-derived, never patched blind.
-     * Expected paths on zeroed @UNIT tables (movement 0 for all types):
-     *   units 1+2 (type 0): PRE ladder -> AI15a wander dispatch (prof '8',
-     *     orders 0x0B goto); in-flight gotos early-out on later turns
-     *     (@asm 0x050C6E), so the state is stable.
-     *   unit 3 (ship 0x0E, arrived goto): AI9/AI10 gates fall through,
-     *     AI18 scores no dirs for ships off colony tiles, AI19 parks:
-     *     prof '9' @asm 0x51A5A, orders 5 via the stay path @asm 0x51AB0. */
+    /* ---- EURO-AI END-STATE BASELINE (re-baselined 2026-06-11, REAL
+     * DISPATCHER LIVE — ROUTE_B 1.6).  Units now run through the original
+     * chain: func_052F7E PHASE 6 (movement-gated quiescence loop) ->
+     * func_051D56 -> { unit_move_step | state handlers | end-turn }.
+     * The old wander/park expectations were artifacts of the SHELL calling
+     * unit_move_step directly on idle units; the real engine only routes
+     * IN-FLIGHT units (moves-used != 0, state 0x0B) into the evaluator.
+     * Derived per-turn flow on this fixture (deterministic, all cited):
+     *   u1/u2 (type 0, state 0): gate func_007A20 (0 < allowance 2) opens;
+     *     func_051D56 guard fails (u5==0), state-0 switch default ->
+     *     func_007BCE end-turn (@asm 0x051E00 -> 0x181F:0x934): u5=2,
+     *     gate shuts.  No state/prof writes, every turn identical.
+     *     END: orders 0, prof 0.
+     *   u3 (ship 0x0E, state 0x0B goto (8,5), pos (5,5)): gate (0 < 4);
+     *     051D56 state-B -> ai_unit_order_step (@asm 0x051DF6 0x191F:0x4BA
+     *     = func_040E22): automove -> func_061F02 plotter (dir 0 on the
+     *     zero-cost tables), absolute executor ai_eval_unit(3,5,4) ends the
+     *     turn via the moves-left short-circuit @asm 0x03EEC1 (leaf returns
+     *     are Phase-4 stub-tier: 0x90C finalize/occupant probes); NOT
+     *     arrived -> state KEPT (@asm 0x040EE8 jmp 0x40fcd done path).
+     *     END: orders 0x0B (in flight), prof 0x31, pos unchanged.
+     * March fidelity (actual eastward steps) needs the Phase-4 wiring audit
+     * of the eval/plotter leaves; this baseline pins the DISPATCHER. */
     {
         printf("euro-AI end-state: u1 o=%02X p=%02X d=(%d,%d)  "
                "u2 o=%02X p=%02X d=(%d,%d)  u3 o=%02X p=%02X\n",
                UREC(1,8), UREC(1,7), UREC(1,9), UREC(1,0x0A),
                UREC(2,8), UREC(2,7), UREC(2,9), UREC(2,0x0A),
                UREC(3,8), UREC(3,7));
-        if (!(UREC(1,8) == 0x0B && UREC(1,7) == 0x38)) {
-            printf("SMOKE FAIL: u1 wander baseline (orders %02X prof %02X)\n",
+        if (!(UREC(1,8) == 0 && UREC(1,7) == 0)) {
+            printf("SMOKE FAIL: u1 dispatch baseline (orders %02X prof %02X)\n",
                    UREC(1,8), UREC(1,7));
             return 1;
         }
-        if (!(UREC(2,8) == 0x0B && UREC(2,7) == 0x38)) {
-            printf("SMOKE FAIL: u2 wander baseline (orders %02X prof %02X)\n",
+        if (!(UREC(2,8) == 0 && UREC(2,7) == 0)) {
+            printf("SMOKE FAIL: u2 dispatch baseline (orders %02X prof %02X)\n",
                    UREC(2,8), UREC(2,7));
             return 1;
         }
-        if (!(UREC(3,8) == 5 && UREC(3,7) == 0x39)) {
-            printf("SMOKE FAIL: u3 ship-park baseline (orders %02X prof %02X)\n",
+        if (!(UREC(3,8) == 0x0B && UREC(3,7) == 0x31)) {
+            printf("SMOKE FAIL: u3 in-flight baseline (orders %02X prof %02X)\n",
                    UREC(3,8), UREC(3,7));
             return 1;
         }
-        puts("euro-AI baseline: AI15a wander goto x2 + AI19 ship park hold");
+        puts("euro-AI baseline: real dispatcher (052F7E P6) idle x2 + in-flight hold");
         #undef UREC
     }
 

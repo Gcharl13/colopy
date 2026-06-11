@@ -1186,21 +1186,35 @@ int func_00D106_op_sz_158(void)
 }
 
 /* @asm        0x00D1CA..0x00D1E4  (26 bytes)  region=load_image
- * @asm_file   ../code/VICEROY/disasm/func_00D1CA_unknown.asm
- * @pattern    TINY_ACCESSOR
+ * @asm_file   re_work/disasm/func_00D1CA.asm
+ * @pattern    PACING_WAIT
  * @prologue   PUSH-BP-MOV-BP-SP
- * @args_seen  []
- * @lcalls     0
+ * @args_seen  []  (REGISTER convention: AX unused-by-body, DX = wait flag)
+ * @lcalls     1 (0x0C0C:0x0006 = BIOS tick read -> AX:DX)
  * @near_calls 0
- * @callers    0
- * @touches_8542 False
- * @inferred_role  TINY_ACCESSOR (26 bytes). no LCALLs
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ * @callers    func_052F7E PHASE-6 epoch tail (@asm 0x05349D: AX=0, DX=did)
+ * @inferred_role  AI-epoch pacing: when DX!=0, spin on the BIOS tick until it
+ *                 differs from the timestamp recorded at [0x7FC:0x7FE] (i.e.
+ *                 wait at most one 55ms tick); DX==0 returns immediately.
+ * @status     BYTE_VERIFIED 2026-06-11 (full 26-byte body decoded; replaced a
+ *             false TINY_ACCESSOR skeleton whose raw `*(near*)0x7FC` host
+ *             dereference crashed the first real caller)
  */
-int func_00D1CA_logic_sz_26(void)
+int func_00D1CA_logic_sz_26_pacing_wait(int16_t ax_unused, int16_t dx_wait)
 {
-    /* @auto: tiny accessor reads DGROUP:0x07FC. */
-    return *((uint16_t near*)0x07FC);
+    /* @asm 0x00D1CD or dx,dx; je 0xd1e2 -- no-wait fast path */
+    (void)ax_unused;
+    if (dx_wait != 0) {
+        /* @asm 0x00D1D1 lcall 0x0C0C:0x0006 (tick -> AX:DX);
+         * @asm 0x00D1D6 cmp ax,[0x7FC]; jne exit
+         * @asm 0x00D1DC cmp dx,[0x7FE]; je 0xd1d1 (spin while equal)
+         * On DOS the BIOS tick advances 18.2/s, so this self-terminates
+         * within one tick.  The modern build has no advancing tick source
+         * yet (platform layer milestone); spinning on the wired stub
+         * (func_00E4C6 far-dword read) would never terminate, so the
+         * pacing wait is a cited no-op until the platform tick lands. */
+    }
+    return 0;                             /* @asm 0x00D1E2 leave; retf */
 }
 
 /* @asm        0x00D1E4..0x00D235  (81 bytes)  region=load_image

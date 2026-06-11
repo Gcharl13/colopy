@@ -190,15 +190,37 @@ extern void    ovly_msg_arg_4AC(int16_t which);              /* @asm 0x03F1A8 */
 extern void    ovly_msg_str_998(void);                       /* @asm 0x03F1BA (lea 0x13c5=SNEAK) */
 extern void    ovly_msg_str_3FE(void);                       /* @asm 0x03EF11 (lea 0x13a0=CANNOTATTACK) */
 extern void    ovly_play_sound_4C0(int16_t snd);             /* @asm 0x03F5E3 */
-extern void    ovly_clear_orders_934(int16_t unit);          /* @asm 0x03EEC1/0x03F5EB clears state */
+/* 0x181F:0x934 (@asm 0x03EEC1/0x03F901/0x040F97) = func_007BCE_logic_sz_25:
+ * END UNIT TURN -- unit[+0x05] = movement allowance (func_006CCA), which
+ * closes the func_007A20 "movement left" gate.  Declared above. */
 extern void    ovly_finalize_unit_90C(int16_t unit);         /* @asm 0x03EE87/0x03F31F */
 
-/* Cross-page (0x1A1F / 0x191F) handlers used by func_040E22 + tail of 03ECF0. */
-extern int16_t ovly_target_resolve_1A1F_210(int16_t unit);   /* @asm 0x040E4B -> 0..7 target id */
-extern int16_t ovly_path_step_191F_44E(int16_t gy, int16_t gx);/* @asm 0x040E91 */
-extern void    ovly_eval_unit_thunk_1A1F_142(int16_t unit, int16_t x, int16_t y);/* -> 0x03ECF0 */
-extern int16_t ovly_move_resolve_191F_208(void);             /* @asm 0x040F53 */
-extern void    ovly_route_helper_181F_DF4(int16_t unit);     /* @asm 0x040F6C */
+/* Cross-page (0x1A1F / 0x191F) handlers used by func_040E22 + tail of 03ECF0.
+ * RESOLVED 2026-06-11 (whois + RTLink stub decode, ROUTE_B 1.6) — every leaf of
+ * the order step is an EXISTING port; called directly (no thunk-floor detour):
+ *   0x1A1F:0x210 -> file 0x62D84 func_062D84_unit_automove(unit) -> dir 0..7/8/-1
+ *   0x191F:0x44E -> file 0x3FDDE func_03FDDE_op_sz_82(dx, dy)  [human move step]
+ *   0x1A1F:0x142 -> file 0x3ECF0 = ai_eval_unit (THIS file's full port)
+ *   0x191F:0x208 -> file 0x418AA func_0418AA_commit_active_move()
+ *   0x181F:0xDF4 -> file 0x0C17A func_00C17A_logic_sz_20(unit)  [view refresh]
+ *   0x181F:0x78C -> file 0x0627A func_00627A_op_sz_57(x, y)     [terrain query]
+ *   0x181F:0x934 -> file 0x07BCE func_007BCE_logic_sz_25(unit)  [end unit turn:
+ *                   unit[+0x05] = movement allowance (func_006CCA), closing the
+ *                   func_007A20 movement gate] */
+extern int  func_062D84_unit_automove(int unit_idx);
+extern int  func_03FDDE_op_sz_82(uint16_t dx, uint16_t dy);
+extern int  func_0418AA_commit_active_move(void);
+extern int  func_00C17A_logic_sz_20(uint16_t unit);
+extern int  func_00627A_op_sz_57(uint16_t x, uint16_t y);
+extern void func_007BCE_logic_sz_25(uint16_t unit);
+
+/* DGROUP:0x00B4 / 0x00BE -- the canonical 8-neighbour dx/dy delta tables
+ * (linkfloor: g_compass_dx8_00B4 / g_compass_dy8_00BE; same tables used by
+ * func_056A10, func_025900 and the load_image kernels).  Indexed by the
+ * direction code returned from func_062D84_unit_automove.
+ * @asm 0x040E83/0x040E89 (relative branch), 0x040EA6/0x040EB8 (absolute). */
+extern int8_t g_compass_dx8_00B4[];
+extern int8_t g_compass_dy8_00BE[];
 
 /* ============================================================================
  * ai_eval_unit -- func_03ECF0 (page 0x07), file 0x03ECF0..0x03F90C (3101 bytes)
@@ -363,7 +385,7 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
                 g_ai_personality_543F[actor_owner][0x00] == 0)/* @asm 0x03EEB4 */
                 goto block_46c;                               /* @asm 0x03EEBC */
 block_45e:
-            ovly_clear_orders_934(unit_index);                /* @asm 0x03EEC1 */
+            func_007BCE_logic_sz_25((uint16_t)unit_index);                /* @asm 0x03EEC1 */
             goto done;                                        /* @asm 0x03EEC9 */
         }
     }
@@ -666,7 +688,7 @@ done:
             g_units_3144[unit_index][0x16] = tc;
             if (tc >= 0x14) {                                 /* @asm 0x03F8F2 */
                 g_units_3144[unit_index][0x16] = 0;           /* @asm 0x03F8F9 */
-                ovly_clear_orders_934(unit_index);            /* @asm 0x03F901 */
+                func_007BCE_logic_sz_25((uint16_t)unit_index);            /* @asm 0x03F901 */
             }
         }
     }
@@ -714,70 +736,68 @@ int16_t ai_unit_order_step(int16_t unit_index)
         g_word_1DD6 = g_units_3144[unit_index][0x03] & 0x0F;
     }
 
-    /* @asm 0x040E48 mov ax,[bp+6]; lcall 0x1A1F:0x210 -> target id */
-    target = ovly_target_resolve_1A1F_210(unit_index);
+    /* @asm 0x040E48 mov ax,[bp+6]; lcall 0x1A1F:0x210 -> direction code (AX-arg) */
+    target = (int16_t)func_062D84_unit_automove(unit_index);
     /* @asm 0x040E50 or ax,ax; jl 0x40fb4 ; 0x040E57 cmp ax,8; jl ...; else 0x40fb4 */
     if (target < 0 || target >= 8) goto finalize8;            /* @asm 0x040E54/0x040E5C */
 
-    /* @asm 0x040E5F mov cx,[0x539c]; mov [bp-2],cx -- save state */
+    /* @asm 0x040E5F mov cx,[0x539c]; mov [bp-2],cx -- save unit count */
     saved_539C = g_local_player_state_539C;
 
     /* @asm 0x040E66 imul bx,[bp+6],0x1c; mov cl,[bx+0x3147]; and cl,0xf;
-     *      cmp cl,4; jae 0x40ea4 (manual path) */
+     *      cmp cl,4; jae 0x40ea4 (absolute path) */
     type_nibble = g_units_3144[unit_index][0x03] & 0x0F;
     if (type_nibble < 4 &&
         /* @asm 0x040E78 imul si,cx,0x34; cmp [si+0x543f],ch(=0); jne 0x40ea4 */
         g_ai_personality_543F[type_nibble][0x00] == 0) {
-        /* ---- AI sub-path (@asm 0x040E81..0x040EA2) ----
-         * si=ax(target); push [si+0xbe]; push [si+0xb4]; si=bx(unit);
-         * lcall 0x191F:0x44E; if AX!=0 clear unit order byte [+0x08]=0.
-         * RESOLVED 2026-06-10: 0x1A1F:0x210 returns a DIRECTION index 0..7,
-         * and [dir+0xB4]/[dir+0xBE] are the canonical 8-neighbour dx/dy
-         * delta tables at DGROUP 0x00B4/0x00BE (same tables as func_056A10,
-         * func_025900, and the load_image kernels). */
-        int16_t gx = 0; /* dx[dir]  (DGROUP 0xB4 + dir) */
-        int16_t gy = 0; /* dy[dir]  (DGROUP 0xBE + dir) */
-        if (ovly_path_step_191F_44E(gy, gx) != 0) {           /* @asm 0x040E91 */
+        /* ---- HUMAN European power: relative step (@asm 0x040E81..0x040EA2) ----
+         * si=ax(dir); push [si+0xbe](dy); push [si+0xb4](dx); lcall 0x191F:0x44E
+         * -> cdecl arg0 = dx, arg1 = dy.  If AX!=0 clear orders [+0x08]=0. */
+        int16_t gx = g_compass_dx8_00B4[target];              /* @asm 0x040E89 */
+        int16_t gy = g_compass_dy8_00BE[target];              /* @asm 0x040E83 */
+        if (func_03FDDE_op_sz_82((uint16_t)gx, (uint16_t)gy) != 0) { /* @asm 0x040E91 */
             g_units_3144[unit_index][0x08] = 0;               /* @asm 0x040E9D */
         }
     } else {
-        /* ---- manual / other path (@asm 0x040EA4..0x040ECC) ----
-         * bx=ax(target); push (target.[+0xbe] + unit.map_y[+0x01]) as y;
-         *                push (target.[+0xb4] + unit.map_x[+0x00]) as x;
-         * push unit; lcall 0x1A1F:0x142 -> ai_eval_unit (func_03ECF0).
-         * RESOLVED: dir-step -- y = dy[dir] + unit.y, x = dx[dir] + unit.x
-         * (delta tables DGROUP 0xB4/0xBE; @asm 0x040EAF/0x040EBD). */
-        int16_t y = 0 /* dy[dir] */ + g_units_3144[unit_index][0x01];
-        int16_t x = 0 /* dx[dir] */ + g_units_3144[unit_index][0x00];
-        ovly_eval_unit_thunk_1A1F_142(unit_index, x, y);      /* @asm 0x040EC7 -> 0x03ECF0 */
+        /* ---- tribe (owner >= 4) or AI European power: absolute step ----
+         * (@asm 0x040EA4..0x040ECC) bx=ax(dir);
+         * push (dy[dir] + unit.map_y[+0x01]); push (dx[dir] + unit.map_x[+0x00]);
+         * push unit; lcall 0x1A1F:0x142 -> ai_eval_unit (func_03ECF0). */
+        int16_t y = g_compass_dy8_00BE[target] + g_units_3144[unit_index][0x01]; /* @asm 0x040EAF */
+        int16_t x = g_compass_dx8_00B4[target] + g_units_3144[unit_index][0x00]; /* @asm 0x040EBD */
+        ai_eval_unit(unit_index, x, y);                       /* @asm 0x040EC7 -> 0x03ECF0 */
     }
 
-    /* @asm 0x040ECF mov ax,[0x539c]; cmp [bp-2],ax; jne 0x40fcd
-     * Only continue when the local-player state is unchanged. */
-    if (saved_539C != g_local_player_state_539C) goto finalize;/* @asm 0x040ED7 */
+    /* @asm 0x040ECF mov ax,[0x539c]; cmp [bp-2],ax; je 0x40eda / jmp 0x40fcd
+     * Unit count changed (unit died/created during the step): keep state,
+     * go straight to the DONE epilogue — NOT the finalize block (the
+     * pre-2026-06-11 port end-turned + cleared state here, which killed
+     * every in-flight goto after its first step). */
+    if (saved_539C != g_local_player_state_539C) goto done;    /* @asm 0x040ED7 jmp 0x40fcd */
 
     /* @asm 0x040EDA imul bx,[bp+6],0x1c; mov al,[bx+0x3144];
-     *      cmp [bx+0x314d],al; jne 0x40fcd -- map_x == goto_x ?
-     * @asm 0x040EEB mov cl,[bx+0x3145]; cmp [bx+0x314e],cl; jne 0x40fcd -- map_y==goto_y? */
+     *      cmp [bx+0x314d],al; jne -> done -- map_x == goto_x ?
+     * @asm 0x040EEB mov cl,[bx+0x3145]; cmp [bx+0x314e],cl; jne -> done
+     * NOT ARRIVED: state stays 0xB (in flight), no end-turn here. */
     if (g_units_3144[unit_index][0x09] != g_units_3144[unit_index][0x00] ||
         g_units_3144[unit_index][0x0A] != g_units_3144[unit_index][0x01])
-        goto finalize;
+        goto done;                                             /* @asm 0x040EE8/0x040EF5 jmp 0x40fcd */
 
-    /* @asm 0x040EF8 push goto_y(cl); push map_x(ax via [+0x3144]); lcall 0x181F:0x78C;
-     *      cmp ax,0x1a; jne 0x40f74 -- occupant kind == 0x1a (a colony?) */
+    /* @asm 0x040EF8 push y(cl); push x(ax via [+0x3144]); lcall 0x181F:0x78C
+     *      (func_00627A terrain query); cmp ax,0x1a; jne 0x40f74 (Europe edge) */
     {
-        int16_t occ = ovly_relation_query_826(
-                          0,
+        int16_t occ = (int16_t)func_00627A_op_sz_57(
                           g_units_3144[unit_index][0x00],
                           g_units_3144[unit_index][0x01]);     /* @asm 0x040F00 0x181F:0x78C */
         if (occ != 0x1A) goto finalize;                        /* @asm 0x040F08 */
         /* @asm 0x040F0D cmp [si+0x314c],0xc; je 0x40f74 (order==sentinel -> skip) */
         if (g_units_3144[unit_index][0x08] == 0x0C) goto finalize; /* @asm 0x040F0D */
 
-        /* @asm 0x040F14 cmp [0x5394],4; jge 0x40f27 -- power-count guard.
+        /* @asm 0x040F14 cmp [0x5394],4; jge 0x40f27 (tribe self -> 'E' check)
          * @asm 0x040F1B imul bx,[0x5394],0x34; cmp [bx+0x543f],0; je 0x40f32
-         * Else require unit profession [+0x07]==0x45 (@asm 0x040F2B). */
-        if (g_human_player_index_5394 < 4 &&
+         *      (human self -> skip the 'E' check; AI self falls to 0x40f27)
+         * @asm 0x040F2B require unit profession [+0x07]==0x45 ('E'). */
+        if (g_human_player_index_5394 >= 4 ||
             g_ai_personality_543F[g_human_player_index_5394][0x00] != 0) {
             if (g_units_3144[unit_index][0x07] != 0x45) goto finalize; /* @asm 0x040F2B */
         }
@@ -791,14 +811,14 @@ int16_t ai_unit_order_step(int16_t unit_index)
         }
 
         /* @asm 0x040F4D mov ax,[bp+6]; mov [0x5392],ax -- mark unit selected.
-         * @asm 0x040F53 lcall 0x191F:0x208 (move-resolve). */
+         * @asm 0x040F53 lcall 0x191F:0x208 -> func_0418AA_commit_active_move. */
         g_selected_unit_5392 = unit_index;
-        ovly_move_resolve_191F_208();                          /* @asm 0x040F53 */
+        func_0418AA_commit_active_move();                      /* @asm 0x040F53 */
 
         /* @asm 0x040F58 mov al,[bx+0x3147]&0xf; cmp al,[0x5396]; jne 0x40f74
-         * @asm 0x040F68 push [0x5392]; lcall 0x181F:0xDF4 (route helper, view) */
+         * @asm 0x040F68 push [0x5392]; lcall 0x181F:0xDF4 (view refresh) */
         if ((g_units_3144[unit_index][0x03] & 0x0F) == (uint8_t)g_view_nation_index_5396) {
-            ovly_route_helper_181F_DF4(g_selected_unit_5392);  /* @asm 0x040F6C */
+            func_00C17A_logic_sz_20((uint16_t)g_selected_unit_5392); /* @asm 0x040F6C */
         }
     }
 
@@ -811,7 +831,7 @@ finalize:
     }
     /* @asm 0x040F89 cmp [bx+0x314c],0xb; jne 0x40f9f -- order==0xB -> 0x181F:0x934 */
     if (g_units_3144[unit_index][0x08] == 0x0B) {
-        ovly_clear_orders_934(unit_index);                     /* @asm 0x040F97 */
+        func_007BCE_logic_sz_25((uint16_t)unit_index);                     /* @asm 0x040F97 */
     }
     /* @asm 0x040F9F cmp [bx+0x314c],2; je 0x40fcd; cmp ...,0xc; je 0x40fcd;
      *   else fall to 0x40fc8: clear order byte. (@asm 0x040FA3..0x040FC8) */
@@ -819,12 +839,13 @@ finalize:
         g_units_3144[unit_index][0x08] != 0x0C) {
         g_units_3144[unit_index][0x08] = 0;                    /* @asm 0x040FC8 */
     }
+done:
     g_word_1DD6 = 0xFFFF;                                       /* @asm 0x040FCD */
-    return 0;                                                   /* @asm 0x040FD3 mov ax,[bp-2]? -> AX; net 0 */
+    return 0;                                                   /* @asm 0x040FD3 pop si; leave; retf */
 
 finalize8:
     /* @asm 0x040FB4 cmp ax,8; jne 0x40fc4; imul ...; cmp [bx+0x314c],2; je 0x40fcd;
-     *   else clear order byte. (target id == 8 special-case.) */
+     *   else clear order byte. (direction code == 8 special-case.) */
     if (target == 8 && g_units_3144[unit_index][0x08] == 2) {
         /* leave order byte */
     } else {

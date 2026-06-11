@@ -81,6 +81,28 @@ PROVIDE(g_unit_count   = g_dgroup + 0x539C);
 PROVIDE(g_native_count = g_dgroup + 0x539A);
 PROVIDE(g_save_version = g_dgroup + 0x081A);
 
+/* automove / map-kernel globals (overlay_0612E6_066EB3.c externs) — these
+ * resolved to DETACHED weak stub variables (reads/writes never touched the
+ * real DGROUP; indexing the zero-size g_unit_bytes crashed), caught live
+ * 2026-06-11 when the AI dispatch chain (ROUTE_B 1.6) first exercised
+ * func_062D84_unit_automove.  Offsets are the file's own byte-cited homes.
+ * The map-layer FAR POINTERS (g_layer0_terrain 0x85A8 etc.) are deliberately
+ * NOT aliased: 64-bit host pointers cannot live in 4-byte DGROUP slots; they
+ * remain host-side variables owned by the platform map-attach layer. */
+PROVIDE(g_unit_bytes = g_dgroup + 0x3144);
+PROVIDE(g_dir_dx = g_dgroup + 0xB4);
+PROVIDE(g_dir_dy = g_dgroup + 0xBE);
+PROVIDE(g_observe_flag = g_dgroup + 0x53A2);
+PROVIDE(g_active_player = g_dgroup + 0x5396);
+PROVIDE(g_active_nation = g_dgroup + 0x5394);
+PROVIDE(g_view_col0_b = g_dgroup + 0x832C);
+PROVIDE(g_view_stride = g_dgroup + 0x8326);
+PROVIDE(g_minimap_row0 = g_dgroup + 0x9CCA);
+PROVIDE(g_minimap_col0 = g_dgroup + 0x9CCC);
+PROVIDE(g_traderoute_count = g_dgroup + 0x53A0);
+PROVIDE(g_color_byhi = g_dgroup + 0x848);
+PROVIDE(g_color_byterrain = g_dgroup + 0x5A8A);
+
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
  * is after linkfloor_stubs.c.o on the link line, so EXTERN() is needed

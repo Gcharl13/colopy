@@ -361,62 +361,62 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
 
     /* @asm 0x061F0A..0x061F2A : own-view / interactive gate. */
     gate = 0;
-    if (*(volatile uint16_t *)0x1df2 == 0 &&            /* @asm 0x061F0A */
-        (*(volatile uint8_t *)0x894 & 0x10) &&          /* @asm 0x061F14 */
+    if (*(volatile uint16_t *)&g_dgroup[0x1df2] == 0 &&            /* @asm 0x061F0A */
+        (*(volatile uint8_t *)&g_dgroup[0x894] & 0x10) &&          /* @asm 0x061F14 */
         g_observe_flag == 0 &&                           /* @asm 0x061F1B [0x53a2] */
-        *(volatile uint16_t *)0x1dd6 == g_active_player) /* @asm 0x061F21 [0x1dd6]==[0x5396] */
+        *(volatile uint16_t *)&g_dgroup[0x1dd6] == g_active_player) /* @asm 0x061F21 [0x1dd6]==[0x5396] */
         gate = 1;                                        /* @asm 0x061F2A */
 
     /* @asm 0x061F2F..0x061F3E : grid origin = (cursorCol-8, cursorRow-8). */
-    col0 = (int)*(volatile uint16_t *)0xa14e - 8;        /* @asm 0x061F2F */
-    row0 = (int)*(volatile uint16_t *)0xa14c - 8;        /* @asm 0x061F38 */
+    col0 = (int)*(volatile uint16_t *)&g_dgroup[0xa14e] - 8;        /* @asm 0x061F2F */
+    row0 = (int)*(volatile uint16_t *)&g_dgroup[0xa14c] - 8;        /* @asm 0x061F38 */
 
     /* @asm 0x061F41..0x061F5B : dir_class = (0xd <= moveType <= 0x12). */
-    dir_class = ((int)*(volatile uint16_t *)0x1dd2 >= 0xd &&
-                 (int)*(volatile uint16_t *)0x1dd2 <= 0x12) ? 1 : 0;
+    dir_class = ((int)*(volatile uint16_t *)&g_dgroup[0x1dd2] >= 0xd &&
+                 (int)*(volatile uint16_t *)&g_dgroup[0x1dd2] <= 0x12) ? 1 : 0;
 
     /* @asm 0x061F5F..0x061F7A : land_only = (typeCostTable[type] <= 3). The
      * index is type*7*2 into DS 0x5234; result is 1 when that byte is in 0..3. */
     {
-        int t = (int)*(volatile uint16_t *)0x1dd2;       /* @asm 0x061F5B */
+        int t = (int)*(volatile uint16_t *)&g_dgroup[0x1dd2];       /* @asm 0x061F5B */
         land_only = (DGB(t * 14 + 0x5234) > 3) ? 0 : 1;  /* @asm 0x061F6B cmp [bx+0x5234],3 */
     }
 
-    *(volatile uint16_t *)0xa370 = 0;                    /* @asm 0x061F7D clear result */
+    *(volatile uint16_t *)&g_dgroup[0xa370] = 0;                    /* @asm 0x061F7D clear result */
 
     /* @asm 0x061F83..0x061FAB : if cursor == previous-target [0x2d1a]/[0x2d1c]
      * AND that grid cell is already stamped, skip straight to the relax loop. */
-    if ((int)*(volatile uint16_t *)0x2d1a == (int)*(volatile uint16_t *)0xa14e &&
-        (int)*(volatile uint16_t *)0x2d1c == (int)*(volatile uint16_t *)0xa14c) {
+    if ((int)*(volatile uint16_t *)&g_dgroup[0x2d1a] == (int)*(volatile uint16_t *)&g_dgroup[0xa14e] &&
+        (int)*(volatile uint16_t *)&g_dgroup[0x2d1c] == (int)*(volatile uint16_t *)&g_dgroup[0xa14c]) {
         int si = (tgt_col - col0) * 16 - row0;           /* @asm 0x061F95 [bp-0x8a] */
-        if (DGB(si + (int)*(volatile uint16_t *)0xa14c - 0x5d90) != 0)    /* @asm 0x061FA4 */
+        if (DGB(si + (int)*(volatile uint16_t *)&g_dgroup[0xa14c] - 0x5d90) != 0)    /* @asm 0x061FA4 */
             goto settle;                                                  /* @asm 0x061FAB jmp 0x3ba */
     }
 
     /* @asm 0x061FAE..0x061FF7 : seed the flood. Latch cursor as target, clear the
      * 16x16 scratch grid window (0xd1d:0xdae), push the start cell, stamp grid=1. */
-    *(volatile uint16_t *)0x2d1a = *(volatile uint16_t *)0xa14e;  /* @asm 0x061FAE */
-    *(volatile uint16_t *)0x2d1c = *(volatile uint16_t *)0xa14c;  /* @asm 0x061FB4 */
+    *(volatile uint16_t *)&g_dgroup[0x2d1a] = *(volatile uint16_t *)&g_dgroup[0xa14e];  /* @asm 0x061FAE */
+    *(volatile uint16_t *)&g_dgroup[0x2d1c] = *(volatile uint16_t *)&g_dgroup[0xa14c];  /* @asm 0x061FB4 */
     overlay_call_0D1D_0DAE();                            /* @asm 0x061FC2 clear grid window */
-    *(volatile uint16_t *)0x2d18 = 0;                    /* @asm 0x061FCA queue head */
-    *(volatile uint8_t  *)0xa372 = (unsigned char)*(volatile uint16_t *)0xa14e; /* @asm 0x061FD0 */
-    *(volatile uint8_t  *)0xa472 = (unsigned char)*(volatile uint16_t *)0xa14c; /* @asm 0x061FD6 */
-    *(volatile uint16_t *)0x2d16 = 1;                    /* @asm 0x061FDC queue tail */
+    *(volatile uint16_t *)&g_dgroup[0x2d18] = 0;                    /* @asm 0x061FCA queue head */
+    *(volatile uint8_t *)&g_dgroup[0xa372] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14e]; /* @asm 0x061FD0 */
+    *(volatile uint8_t *)&g_dgroup[0xa472] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14c]; /* @asm 0x061FD6 */
+    *(volatile uint16_t *)&g_dgroup[0x2d16] = 1;                    /* @asm 0x061FDC queue tail */
     {   /* stamp start cell grid[start]=1  @asm 0x061FE2..0x061FF7 */
-        int si = ((int)*(volatile uint16_t *)0xa14e - col0) * 16 - row0;
-        DGB((int)*(volatile uint16_t *)0xa14c + si - 0x5d90) = 1;
+        int si = ((int)*(volatile uint16_t *)&g_dgroup[0xa14e] - col0) * 16 - row0;
+        DGB((int)*(volatile uint16_t *)&g_dgroup[0xa14c] + si - 0x5d90) = 1;
     }
 
     /* ----- frontier expansion (@asm 0x061FF8..0x062936) -----
      * Pop queue[head], relax its 8 neighbours; an improved neighbour gets the new
      * accumulated cost and is pushed to queue[tail]. best_dir/best_cost track the
      * cheapest direction that actually reaches the target. */
-    *(volatile uint16_t *)0xa370 = (uint16_t)cost_cap;   /* @asm 0x061FF8 [bp-0x86] best-of-pass */
+    *(volatile uint16_t *)&g_dgroup[0xa370] = (uint16_t)cost_cap;   /* @asm 0x061FF8 [bp-0x86] best-of-pass */
     for (;;) {                                           /* @asm 0x06205F outer */
-        int head = (int)*(volatile uint16_t *)0x2d18;    /* @asm 0x061FFF */
+        int head = (int)*(volatile uint16_t *)&g_dgroup[0x2d18];    /* @asm 0x061FFF */
         qx = (signed char)DGB(head - 0x5c8e);            /* @asm 0x062003 queue col */
         qy = (signed char)DGB(head - 0x5b8e);            /* @asm 0x06200C queue row */
-        (*(volatile uint16_t *)0x2d18)++;                /* @asm 0x062013 head++ */
+        (*(volatile uint16_t *)&g_dgroup[0x2d18])++;                /* @asm 0x062013 head++ */
 
         best_cost = 0x63;                                /* @asm 0x06206B reset per pop */
         best_dir  = -1;                                  /* @asm 0x062072 [bp-0x16]=-1 */
@@ -469,25 +469,25 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
         }
 
         /* loop while the queue is non-empty (head != tail) @asm 0x06204C/0x062055 */
-        if ((int)*(volatile uint16_t *)0x2d18 ==
-            (int)*(volatile uint16_t *)0x2d16) break;    /* @asm 0x06204F */
-        if ((int)*(volatile uint16_t *)0x2d18 >= 0xe1) break; /* @asm 0x062055 cap 0xe0 */
+        if ((int)*(volatile uint16_t *)&g_dgroup[0x2d18] ==
+            (int)*(volatile uint16_t *)&g_dgroup[0x2d16]) break;    /* @asm 0x06204F */
+        if ((int)*(volatile uint16_t *)&g_dgroup[0x2d18] >= 0xe1) break; /* @asm 0x062055 cap 0xe0 */
     }
 
 settle:
     /* @asm 0x0625D6..0x062602 : if no direction improved (best_dir<0) restore the
      * cursor to the saved target; if the interactive gate is clear, return. */
     if (best_dir < 0) {                                  /* @asm 0x0625D6 [bp-0x16] */
-        *(volatile uint16_t *)0xa14e = *(volatile uint16_t *)0x2d1a; /* @asm 0x0625DC */
-        *(volatile uint16_t *)0xa14c = *(volatile uint16_t *)0x2d1c; /* @asm 0x0625E2 */
+        *(volatile uint16_t *)&g_dgroup[0xa14e] = *(volatile uint16_t *)&g_dgroup[0x2d1a]; /* @asm 0x0625DC */
+        *(volatile uint16_t *)&g_dgroup[0xa14c] = *(volatile uint16_t *)&g_dgroup[0x2d1c]; /* @asm 0x0625E2 */
     }
     if (gate == 0)                                       /* @asm 0x0625E8 */
         goto done;                                       /* @asm 0x0625EE jmp 0xa6f */
 
     /* @asm 0x0625F1..0x06260E : publish target into [0x17c]/[0x17e], refresh
      * (0x181F:0xe1c), then paint each stamped grid cell as a coloured marker. */
-    *(volatile uint16_t *)0x17c = tgt_col;               /* @asm 0x0625F1 [bp-0x8a] */
-    *(volatile uint16_t *)0x17e = tgt_row;               /* @asm 0x0625F8 [bp-0x88] */
+    *(volatile uint16_t *)&g_dgroup[0x17c] = tgt_col;               /* @asm 0x0625F1 [bp-0x8a] */
+    *(volatile uint16_t *)&g_dgroup[0x17e] = tgt_row;               /* @asm 0x0625F8 [bp-0x88] */
     overlay_call_181F_0E1C();                            /* @asm 0x062601 refresh */
     for (qy = 0; qy < 0x10; qy++) {                      /* @asm 0x06264D rows */
         for (qx = 0; qx < 0x10; qx++) {                  /* @asm 0x062613 cols */
@@ -502,18 +502,18 @@ settle:
     for (;;) {
         key = overlay_call_0D1D_092C();                  /* @asm 0x0626C2 fetch key */
         if (key == 0x5a) {                               /* @asm 0x0626F6 ENTER -> +1 clamp 3 */
-            int v = (int)*(volatile uint16_t *)0x184 + 1;/* @asm 0x0626DE */
-            *(volatile uint16_t *)0x184 = (v > 3) ? 3 : v;
+            int v = (int)*(volatile uint16_t *)&g_dgroup[0x184] + 1;/* @asm 0x0626DE */
+            *(volatile uint16_t *)&g_dgroup[0x184] = (v > 3) ? 3 : v;
             continue;                                    /* @asm 0x0626DB loop */
         }
         if (key == (0x1b + 0x3d)) {                      /* @asm 0x0626FD/0x062701 minus key -> -1 clamp 0 */
-            int v = (int)*(volatile uint16_t *)0x184 - 1;/* @asm 0x0626D0 */
-            *(volatile uint16_t *)0x184 = (v < 0) ? 0 : v;
+            int v = (int)*(volatile uint16_t *)&g_dgroup[0x184] - 1;/* @asm 0x0626D0 */
+            *(volatile uint16_t *)&g_dgroup[0x184] = (v < 0) ? 0 : v;
             continue;                                    /* @asm 0x0626DB */
         }
         if (key == 0x1b) {                               /* @asm 0x0626FF ESC -> cancel */
-            *(volatile uint16_t *)0x1df2 = 0;            /* @asm 0x0626EC */
-            *(volatile uint16_t *)0x1df4 = 0;            /* @asm 0x0626F1 */
+            *(volatile uint16_t *)&g_dgroup[0x1df2] = 0;            /* @asm 0x0626EC */
+            *(volatile uint16_t *)&g_dgroup[0x1df4] = 0;            /* @asm 0x0626F1 */
             break;                                        /* @asm 0x0626F4 jmp 0xa65 */
         }
         overlay_call_181F_0E1C();                        /* @asm 0x062707 refresh, keep waiting */
@@ -554,19 +554,19 @@ int func_062716_move_step_gate(int unit_seg, int mode, int target_row,
 
     /* @asm 0x062773 : direction/cost flag from mode. cmp [bp+8],1 ; sbb;
      * and 0xf4 ; add 0xd  ->  mode==1 ? 0x9 : 0xd. */
-    *(volatile uint16_t *)0x1dd2 = (mode == 1) ? 0x9 : 0xd;   /* @asm 0x06277E */
+    *(volatile uint16_t *)&g_dgroup[0x1dd2] = (mode == 1) ? 0x9 : 0xd;   /* @asm 0x06277E */
 
-    *(volatile uint16_t *)0xa14e = target_col_bx;  /* @asm 0x062783 cursor col */
-    *(volatile uint16_t *)0xa14c = target_row;     /* @asm 0x062789 cursor row */
+    *(volatile uint16_t *)&g_dgroup[0xa14e] = target_col_bx;  /* @asm 0x062783 cursor col */
+    *(volatile uint16_t *)&g_dgroup[0xa14c] = target_row;     /* @asm 0x062789 cursor row */
 
-    saved = *(volatile uint16_t *)0x1dd6;          /* @asm 0x06278C save */
-    *(volatile uint16_t *)0x1dd6 = 0xffff;         /* @asm 0x062792 mark in-flight */
+    saved = *(volatile uint16_t *)&g_dgroup[0x1dd6];          /* @asm 0x06278C save */
+    *(volatile uint16_t *)&g_dgroup[0x1dd6] = 0xffff;         /* @asm 0x062792 mark in-flight */
 
     result = func_062716_exec_step();              /* @asm 0x06279F near 0x172c */
-    *(volatile uint16_t *)0x1dd6 = saved;          /* @asm 0x0627A5 restore */
+    *(volatile uint16_t *)&g_dgroup[0x1dd6] = saved;          /* @asm 0x0627A5 restore */
 
     if (result < 0)                                /* @asm 0x0627AB jl */
-        result = *(volatile uint16_t *)0xa370;     /* @asm 0x0627B1 [0xa370] */
+        result = *(volatile uint16_t *)&g_dgroup[0xa370];     /* @asm 0x0627B1 [0xa370] */
     return result;                                 /* @asm 0x0627B7 retf 6 */
 }
 extern int func_062716_exec_step(void);            /* near 0x172c step executor */
@@ -635,8 +635,8 @@ int func_0627BE_find_nearest_feature(int px, int py, int layer_sel, int seg)
 
 publish:
     if (best_dir >= 0) {                                     /* @asm 0x06292C */
-        *(volatile uint16_t *)0xa14e = col + (signed char)g_dir_dx[best_dir]; /* @asm 0x06293A */
-        *(volatile uint16_t *)0xa14c = row + (signed char)g_dir_dy[best_dir]; /* @asm 0x062945 */
+        *(volatile uint16_t *)&g_dgroup[0xa14e] = col + (signed char)g_dir_dx[best_dir]; /* @asm 0x06293A */
+        *(volatile uint16_t *)&g_dgroup[0xa14c] = row + (signed char)g_dir_dy[best_dir]; /* @asm 0x062945 */
     }
     return (best_dir >= 0) ? 1 : 0;                          /* @asm 0x06294B ret */
 }
@@ -688,18 +688,18 @@ int func_06295E_ai_move_resolver(int target_col, int target_row)
 
     /* @asm 0x06296B..0x06298B : own-view / interactive gate (0x894 bit 0x20). */
     gate = 0;
-    if (*(volatile uint16_t *)0x1df4 == 0 &&             /* @asm 0x06296B */
-        (*(volatile uint8_t *)0x894 & 0x20) &&           /* @asm 0x062975 */
+    if (*(volatile uint16_t *)&g_dgroup[0x1df4] == 0 &&             /* @asm 0x06296B */
+        (*(volatile uint8_t *)&g_dgroup[0x894] & 0x20) &&           /* @asm 0x062975 */
         g_observe_flag == 0 &&                            /* @asm 0x06297C [0x53a2] */
-        *(volatile uint16_t *)0x1dd6 == g_active_player) /* @asm 0x062982 */
+        *(volatile uint16_t *)&g_dgroup[0x1dd6] == g_active_player) /* @asm 0x062982 */
         gate = 1;                                        /* @asm 0x06298B */
 
-    *(volatile uint16_t *)0xa14e = target_col;           /* @asm 0x062992 cursor col */
-    *(volatile uint16_t *)0xa14c = target_row;           /* @asm 0x062998 cursor row */
+    *(volatile uint16_t *)&g_dgroup[0xa14e] = target_col;           /* @asm 0x062992 cursor col */
+    *(volatile uint16_t *)&g_dgroup[0xa14c] = target_row;           /* @asm 0x062998 cursor row */
 
     /* @asm 0x06299B..0x0629B5 : dir_class = (0xd <= moveType <= 0x12). */
-    dir_class = ((int)*(volatile uint16_t *)0x1dd2 >= 0xd &&
-                 (int)*(volatile uint16_t *)0x1dd2 <= 0x12) ? 1 : 0;
+    dir_class = ((int)*(volatile uint16_t *)&g_dgroup[0x1dd2] >= 0xd &&
+                 (int)*(volatile uint16_t *)&g_dgroup[0x1dd2] <= 0x12) ? 1 : 0;
 
     /* @asm 0x0629B5..0x0629C2 : initial reachability probe (near 0xb1e ->
      * func_0627BE_find_nearest_feature). If the target is unreachable at all,
@@ -708,20 +708,20 @@ int func_06295E_ai_move_resolver(int target_col, int target_row)
         goto restore;                                       /* @asm 0x0629C2 jmp 0xdae */
 
     /* @asm 0x0629C5..0x0629FF : latch (a572/a574), seed grid, clear window. */
-    *(volatile uint16_t *)0xa572 = *(volatile uint16_t *)0xa14e; /* @asm 0x0629C5 */
-    seedx = *(volatile uint16_t *)0xa14e;                        /* @asm 0x0629CB [bp-0x80] */
-    *(volatile uint16_t *)0xa574 = *(volatile uint16_t *)0xa14c; /* @asm 0x0629CE */
-    seedy = *(volatile uint16_t *)0xa14c;                        /* @asm 0x0629D4 [bp-0x7e] */
+    *(volatile uint16_t *)&g_dgroup[0xa572] = *(volatile uint16_t *)&g_dgroup[0xa14e]; /* @asm 0x0629C5 */
+    seedx = *(volatile uint16_t *)&g_dgroup[0xa14e];                        /* @asm 0x0629CB [bp-0x80] */
+    *(volatile uint16_t *)&g_dgroup[0xa574] = *(volatile uint16_t *)&g_dgroup[0xa14c]; /* @asm 0x0629CE */
+    seedy = *(volatile uint16_t *)&g_dgroup[0xa14c];                        /* @asm 0x0629D4 [bp-0x7e] */
     (void)func_0627BE_find_nearest_feature(target_col/*[bp-0x7c] saved BX*/,
                          target_row, dir_class, 0);              /* @asm 0x0629E0 call 0xb1e */
     overlay_call_0D1D_0DAE();                            /* @asm 0x0629EB clear grid window */
-    *(volatile uint16_t *)0x2d18 = 0;                    /* @asm 0x0629F3 queue head */
-    *(volatile uint8_t  *)0xa372 = (unsigned char)*(volatile uint16_t *)0xa14e; /* @asm 0x0629F9 */
-    *(volatile uint8_t  *)0xa472 = (unsigned char)*(volatile uint16_t *)0xa14c; /* @asm 0x0629FF */
-    *(volatile uint16_t *)0x2d16 = 1;                    /* @asm 0x062A05 queue tail */
+    *(volatile uint16_t *)&g_dgroup[0x2d18] = 0;                    /* @asm 0x0629F3 queue head */
+    *(volatile uint8_t *)&g_dgroup[0xa372] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14e]; /* @asm 0x0629F9 */
+    *(volatile uint8_t *)&g_dgroup[0xa472] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14c]; /* @asm 0x0629FF */
+    *(volatile uint16_t *)&g_dgroup[0x2d16] = 1;                    /* @asm 0x062A05 queue tail */
     {   /* stamp start cell grid[col*0x12+row]=1  @asm 0x062A0B..0x062A18 */
-        int idx = (int)*(volatile uint16_t *)0xa14e * 0x12 +
-                  (int)*(volatile uint16_t *)0xa14c;
+        int idx = (int)*(volatile uint16_t *)&g_dgroup[0xa14e] * 0x12 +
+                  (int)*(volatile uint16_t *)&g_dgroup[0xa14c];
         DGB(idx - 0x5e9e) = 1;
     }
 
@@ -729,10 +729,10 @@ int func_06295E_ai_move_resolver(int target_col, int target_row)
      * Pop queue[head]; for each of 8 neighbours whose reachable-mask bit is set,
      * stamp the propagated step count into the 18-stride grid and push it. */
     for (;;) {
-        int head = (int)*(volatile uint16_t *)0x2d18;    /* @asm 0x062A19 */
+        int head = (int)*(volatile uint16_t *)&g_dgroup[0x2d18];    /* @asm 0x062A19 */
         qx = (signed char)DGB(head - 0x5c8e);            /* @asm 0x062A1D queue col */
         qy = (signed char)DGB(head - 0x5b8e);            /* @asm 0x062A26 queue row */
-        (*(volatile uint16_t *)0x2d18)++;                /* @asm 0x062A2D head++ (inc bl) */
+        (*(volatile uint16_t *)&g_dgroup[0x2d18])++;                /* @asm 0x062A2D head++ (inc bl) */
         if (seedx == qx && seedy == qy) {                /* @asm 0x062A35/0x062A40 reached seed */
             reached = 1;                                 /* @asm 0x062A45 */
             goto pick;                                   /* @asm 0x062A4A jmp 0xe5f */
@@ -746,8 +746,8 @@ int func_06295E_ai_move_resolver(int target_col, int target_row)
             int nrow = qy + (signed char)g_dir_dy[dir];  /* @asm 0x062A9F [bx+0xbe] */
             (void)ncol; (void)nrow;                      /* mask/stamp/push (inline) */
         }
-        if ((int)*(volatile uint16_t *)0x2d18 ==
-            (int)*(volatile uint16_t *)0x2d16) break;    /* @asm 0x062AF6 queue empty */
+        if ((int)*(volatile uint16_t *)&g_dgroup[0x2d18] ==
+            (int)*(volatile uint16_t *)&g_dgroup[0x2d16]) break;    /* @asm 0x062AF6 queue empty */
     }
 
 pick:
@@ -780,13 +780,13 @@ pick:
         int out_b = 0, out_a = 0;                        /* commit out-pair */
         (void)func_061E10_scan_match((ncol << 2) + 1, &out_b, &out_a,
                                      (nrow << 2) + 1, dir_class); /* @asm 0x062F82 near 0x170 */
-        *(volatile uint16_t *)0xa14e = (ncol << 2) + 1;  /* @asm 0x062F8B */
-        *(volatile uint16_t *)0xa14c = (nrow << 2) + 1;  /* @asm 0x062F9F */
+        *(volatile uint16_t *)&g_dgroup[0xa14e] = (ncol << 2) + 1;  /* @asm 0x062F8B */
+        *(volatile uint16_t *)&g_dgroup[0xa14c] = (nrow << 2) + 1;  /* @asm 0x062F9F */
         goto after_restore;                              /* @asm 0x062F94 jmp 0xf9f */
     }
 restore:
-    *(volatile uint16_t *)0xa14e = target_col;                   /* @asm 0x062A4E/0x062C36 [bp-0x7c] */
-    *(volatile uint16_t *)0xa14c = target_row;                   /* @asm 0x062C3F */
+    *(volatile uint16_t *)&g_dgroup[0xa14e] = target_col;                   /* @asm 0x062A4E/0x062C36 [bp-0x7c] */
+    *(volatile uint16_t *)&g_dgroup[0xa14c] = target_row;                   /* @asm 0x062C3F */
 after_restore:
 
     if (gate == 0)                                       /* @asm 0x062FA2 [bp-0x6c] */
@@ -794,8 +794,8 @@ after_restore:
 
     /* @asm 0x062FAB..0x063010 : preview render — publish target, refresh, paint
      * every non-zero grid cell (0x191F:0x12c). */
-    *(volatile uint16_t *)0x17c = seedx;                 /* @asm 0x062FAB */
-    *(volatile uint16_t *)0x17e = seedy;                 /* @asm 0x062FB1 */
+    *(volatile uint16_t *)&g_dgroup[0x17c] = seedx;                 /* @asm 0x062FAB */
+    *(volatile uint16_t *)&g_dgroup[0x17e] = seedy;                 /* @asm 0x062FB1 */
     overlay_call_181F_0E1C();                            /* @asm 0x062C59 refresh */
     for (qy = 0; qy < 0x12; qy++) {                      /* @asm 0x062CA3 rows */
         for (qx = 0; qx < 0xf; qx++) {                   /* @asm 0x062C6B cols */
@@ -809,18 +809,18 @@ after_restore:
     for (;;) {
         key = overlay_call_0D1D_092C();                  /* @asm 0x062D1F fetch key */
         if (key == 0x5a) {                               /* @asm 0x062D56 ENTER -> +1 clamp 3 */
-            int v = (int)*(volatile uint16_t *)0x184 + 1;
-            *(volatile uint16_t *)0x184 = (v > 3) ? 3 : v;
+            int v = (int)*(volatile uint16_t *)&g_dgroup[0x184] + 1;
+            *(volatile uint16_t *)&g_dgroup[0x184] = (v > 3) ? 3 : v;
             continue;
         }
         if (key == (0x1b + 0x3d)) {                      /* @asm 0x062D5D/0x062D61 minus -> -1 clamp 0 */
-            int v = (int)*(volatile uint16_t *)0x184 - 1;
-            *(volatile uint16_t *)0x184 = (v < 0) ? 0 : v;
+            int v = (int)*(volatile uint16_t *)&g_dgroup[0x184] - 1;
+            *(volatile uint16_t *)&g_dgroup[0x184] = (v < 0) ? 0 : v;
             continue;
         }
         if (key == 0x1b) {                               /* @asm 0x062D5F ESC -> cancel */
-            *(volatile uint16_t *)0x1df2 = 0;            /* @asm 0x062D4D */
-            *(volatile uint16_t *)0x1df4 = 0;            /* @asm 0x062D50 */
+            *(volatile uint16_t *)&g_dgroup[0x1df2] = 0;            /* @asm 0x062D4D */
+            *(volatile uint16_t *)&g_dgroup[0x1df4] = 0;            /* @asm 0x062D50 */
             break;
         }
         overlay_call_181F_0E1C();                        /* @asm 0x062D67 refresh */
@@ -829,7 +829,7 @@ after_restore:
 
 done:
     if (gate != 0)                                       /* @asm 0x062D6F */
-        *(volatile uint16_t *)0x1df2 = 1;                /* @asm 0x062D75 */
+        *(volatile uint16_t *)&g_dgroup[0x1df2] = 1;                /* @asm 0x062D75 */
     return reached;                                      /* @asm 0x062D7B ax=[bp-4]; retf 6 */
 }
 
@@ -881,7 +881,7 @@ int func_062D84_unit_automove(int unit_idx)
 
     /* @asm 0x062D94..0x062DB1 : interactive = own active unit while watching. */
     interactive = 0;
-    if ((*(volatile uint8_t *)0x894 & 0x40) &&           /* @asm 0x062D94 */
+    if ((*(volatile uint8_t *)&g_dgroup[0x894] & 0x40) &&           /* @asm 0x062D94 */
         g_observe_flag == 0 &&                            /* @asm 0x062D9B [0x53a2] */
         (U_OWNER(unit_idx) & 0xf) == (int)g_active_player) /* @asm 0x062DA2..0x062DAB */
         interactive = 1;                                 /* @asm 0x062DB1 */
@@ -892,7 +892,7 @@ int func_062D84_unit_automove(int unit_idx)
     cur_x = U_X(unit_idx);                               /* @asm 0x062DCA [bx+0x3144] */
     cur_y = U_Y(unit_idx);                               /* @asm 0x062DD1 [bx+0x3145] */
     type  = U_TYPE(unit_idx);                            /* @asm 0x062DD8 [bx+0x3146] */
-    *(volatile uint16_t *)0x1dd2 = type;                 /* @asm 0x062DDE publish type */
+    *(volatile uint16_t *)&g_dgroup[0x1dd2] = type;                 /* @asm 0x062DDE publish type */
 
     /* @asm 0x062DE1..0x062DF2 : dir_class = (0xd <= type <= 0x12). */
     dir_class = (type >= 0xd && type <= 0x12) ? 1 : 0;
@@ -915,7 +915,9 @@ int func_062D84_unit_automove(int unit_idx)
     if (adcol <= 1) {                                    /* @asm 0x062E55 cmp 1 jg */
         adrow = (drow < 0) ? -drow : drow;               /* @asm 0x062E5A */
         if (adrow <= 1) {                                /* @asm 0x062E67 */
-            result = overlay_call_1A1F_059C();           /* @asm 0x062E72 near 0x1727 -> 0x1A1F:0x59c step */
+            /* @asm 0x062E6C mov ax,[bp-0x32](dcol); mov dx,cx(drow);
+             * @asm 0x062E72 near 0x1727 -> 0x1A1F:0x59c = func_061E96 (same file) */
+            result = func_061E96_vector_to_dir(dcol, drow);
             goto finish;                                 /* @asm 0x062E78 */
         }
     }
@@ -930,9 +932,11 @@ int func_062D84_unit_automove(int unit_idx)
             if (adrow < 7) within = 1;                   /* @asm 0x062EAF */
         }
         if (within) {                                    /* @asm 0x062EB2 */
-            *(volatile uint16_t *)0xa14e = dst_x;        /* @asm 0x062EB4 */
-            *(volatile uint16_t *)0xa14c = dst_y;        /* @asm 0x062EBA */
-            result = overlay_call_1A1F_05F0();           /* @asm 0x062ECB near 0x172c -> 0x1A1F:0x5f0 move(0x3e7) */
+            *(volatile uint16_t *)&g_dgroup[0xa14e] = dst_x;        /* @asm 0x062EB4 */
+            *(volatile uint16_t *)&g_dgroup[0xa14c] = dst_y;        /* @asm 0x062EBA */
+            /* @asm 0x062ECB near 0x172c -> 0x1A1F:0x5f0 = func_061F02 (same
+             * file; reads the [0xA14E]/[0xA14C] target set above; BX=0x3E7). */
+            result = func_061F02_ai_unit_order(dst_x, dst_y, 0x3E7);
             if (result >= 0) {                           /* @asm 0x062ED1 */
                 if (interactive == 0) goto finish;       /* @asm 0x062EDB */
                 overlay_call_181F_077E();                /* @asm 0x062EE8->0x1701 animate */
@@ -992,8 +996,8 @@ int func_062D84_unit_automove(int unit_idx)
 finish:
     /* @asm 0x0633A9..0x0633C1 : clear the in-flight flags, store the taken
      * direction byte into the unit's +0x314f, return it in AX. */
-    *(volatile uint16_t *)0x1df2 = 0;                    /* @asm 0x0633AB */
-    *(volatile uint16_t *)0x1df4 = 0;                    /* @asm 0x0633AE */
+    *(volatile uint16_t *)&g_dgroup[0x1df2] = 0;                    /* @asm 0x0633AB */
+    *(volatile uint16_t *)&g_dgroup[0x1df4] = 0;                    /* @asm 0x0633AE */
     g_unit_bytes[unit_idx * 0x1C + 0x0F] = (unsigned char)result; /* @asm 0x0633B8 [bx+0x314f] */
     return result;                                       /* @asm 0x0633BC ax=[bp-0x1a]; retf */
 }
@@ -1041,8 +1045,8 @@ int func_063880_continent_relabel(void)
 
     /* @asm 0x0638AA..0x0638B2 : equiv_base = seed [0x23c6]; label_base = same far
      * ptr + 0x8000 bytes (ah+=0x80); clear the region layer first (0x181F:0x484). */
-    equiv_base = (void far *)((unsigned long)*(volatile uint16_t *)0x23c8 << 16
-                              | *(volatile uint16_t *)0x23c6);          /* @asm 0x0638AA */
+    equiv_base = (void far *)((unsigned long)*(volatile uint16_t *)&g_dgroup[0x23c8] << 16
+                              | *(volatile uint16_t *)&g_dgroup[0x23c6]);          /* @asm 0x0638AA */
     label_base = (unsigned char far *)equiv_base + 0x8000;              /* @asm 0x063897 ah+=0x80 */
     region_fill(g_layer2_region, 0);                                    /* @asm 0x0638B2 */
     (void)label_base; (void)equiv_base;
@@ -1072,8 +1076,8 @@ int func_063880_continent_relabel(void)
 
         /* @asm 0x063A72..0x063BCC : resolve labels for this phase row band, write
          * one canonical byte per tile to out_base and set the phase bit. */
-        out_base = (void far *)((unsigned long)*(volatile uint16_t *)0x166 << 16
-                                | *(volatile uint16_t *)0x164);        /* @asm 0x063A7E */
+        out_base = (void far *)((unsigned long)*(volatile uint16_t *)&g_dgroup[0x166] << 16
+                                | *(volatile uint16_t *)&g_dgroup[0x164]);        /* @asm 0x063A7E */
         (void)out_base;
         for (row = 0; row < (int)g_map_height; row++) {                /* @asm 0x063B4F */
             for (col = 0; col < (int)g_map_width; col++) {             /* @asm 0x063B17 */
@@ -1192,7 +1196,7 @@ int func_063C58_place_feature_driver(void)
     int metric;               /* [bp-4]  reach metric of centre */
     int k;
 
-    *(volatile uint16_t *)0x1dd4 = 1;                    /* @asm 0x063C5E set dirty flag */
+    *(volatile uint16_t *)&g_dgroup[0x1dd4] = 1;                    /* @asm 0x063C5E set dirty flag */
 
     /* @asm 0x063C69..0x063DC8 : per-selection colony-radius reach sweep. */
     for (sel = 0; sel < 2; sel++) {                      /* @asm 0x063DC1 cmp [bp-0x22],2 */
@@ -1233,7 +1237,7 @@ int func_063C58_place_feature_driver(void)
     next_sel: ;
     }
 
-    *(volatile uint16_t *)0x1dd4 = 0;                    /* @asm 0x063DCD clear dirty flag */
+    *(volatile uint16_t *)&g_dgroup[0x1dd4] = 0;                    /* @asm 0x063DCD clear dirty flag */
 
     /* @asm 0x063DD5..0x063DE9 : zero the two 0x10-word scratch tables. */
     {
@@ -1351,8 +1355,8 @@ int func_063F3C_assign_tile_values(void)
             /* @asm 0x0640A7 owner gate (0x181F:0xd12 + 0x6b4): if the tile is
              * already claimed by player 1, halve the value. */
             if (overlay_call_181F_0D12() != 0 &&            /* @asm 0x0640AB */
-                tile_owner(*(volatile uint16_t *)0x8dba,
-                           *(volatile uint16_t *)0x8dbc) == 1) /* @asm 0x0640C2 */
+                tile_owner(*(volatile uint16_t *)&g_dgroup[0x8dba],
+                           *(volatile uint16_t *)&g_dgroup[0x8dbc]) == 1) /* @asm 0x0640C2 */
                 ; /* keep */
             else
                 accum >>= 1;                                 /* @asm 0x0640D9 sar 1 */
@@ -1423,10 +1427,10 @@ int func_0641EC_walk_stamp_range(int col, int row)
 
     /* @asm 0x064255 loop counter [bp-2]; box-clip then stamp+step. */
     for (; steps > 0; steps--) {                /* @asm 0x064255 dec; or ax,ax */
-        if ((signed char)*(volatile uint8_t *)0x2d20 >= col) break; /* @asm 0x064204 maxX */
-        if ((signed char)*(volatile uint8_t *)0x2d1e <= col) break; /* @asm 0x06420D minX */
-        if ((signed char)*(volatile uint8_t *)0x2d21 >= row) break; /* @asm 0x064216 maxY */
-        if ((signed char)*(volatile uint8_t *)0x2d1f <= row) break; /* @asm 0x06421F minY */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d20] >= col) break; /* @asm 0x064204 maxX */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1e] <= col) break; /* @asm 0x06420D minX */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d21] >= row) break; /* @asm 0x064216 maxY */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1f] <= row) break; /* @asm 0x06421F minY */
         func_064154_mark_cell_plus_neighbours(col, row);            /* @asm 0x06422E call 0xd74 */
         {
             int r = random_int(1, 4);            /* @asm 0x064238 */
@@ -1454,10 +1458,10 @@ int func_064266_walk_stamp_blob(int col, int row)
     int steps = random_int(1, 0x30) + 2;        /* @asm 0x06426A push 0x30,1; +2 */
 
     for (; steps > 0; steps--) {                 /* @asm 0x064357 loop */
-        if ((signed char)*(volatile uint8_t *)0x2d20 < col) break; /* @asm 0x06427E maxX */
-        if ((signed char)*(volatile uint8_t *)0x2d1e > col) break; /* @asm 0x06428A minX */
-        if ((signed char)*(volatile uint8_t *)0x2d21 < row) break; /* @asm 0x064296 maxY */
-        if ((signed char)*(volatile uint8_t *)0x2d1f > row) break; /* @asm 0x0642A2 minY */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d20] < col) break; /* @asm 0x06427E maxX */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1e] > col) break; /* @asm 0x06428A minX */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d21] < row) break; /* @asm 0x064296 maxY */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1f] > row) break; /* @asm 0x0642A2 minY */
 
         if (random_int(1, 4) == 1)                                  /* @asm 0x0642BE */
             func_064154_mark_cell_plus_neighbours(col + 1, row + 1);/* @asm 0x0642D3 SE */
@@ -1492,10 +1496,10 @@ int func_06436C_walk_write_thin(int col, int row)
     int steps = random_int(1, 0x10) + 2;        /* @asm 0x064370 push 0x10,1; +2 */
 
     for (; steps > 0; steps--) {                 /* @asm 0x0643E7 loop */
-        if ((signed char)*(volatile uint8_t *)0x2d20 >= col) break; /* @asm 0x064384 */
-        if ((signed char)*(volatile uint8_t *)0x2d1e <= col) break; /* @asm 0x06438D */
-        if ((signed char)*(volatile uint8_t *)0x2d21 >= row) break; /* @asm 0x064396 */
-        if ((signed char)*(volatile uint8_t *)0x2d1f <= row) break; /* @asm 0x06439F */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d20] >= col) break; /* @asm 0x064384 */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1e] <= col) break; /* @asm 0x06438D */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d21] >= row) break; /* @asm 0x064396 */
+        if ((signed char)*(volatile uint8_t *)&g_dgroup[0x2d1f] <= row) break; /* @asm 0x06439F */
 
         layer_tile_write(g_layer3_mask, col, row, 1);               /* @asm 0x0643C1 0x872 */
         {
@@ -1552,7 +1556,7 @@ int func_0643F8_scatter_features(int mode)
         overlay_call_1A1F_0814(seed_col, seed_row);              /* @asm 0x064482 stamp #1 */
         if (n >= 7) overlay_call_1A1F_0814(seed_col, seed_row);  /* @asm 0x064495 stamp #2 */
         if (n >= 8) overlay_call_1A1F_0814(seed_col, seed_row);  /* @asm 0x0644A8 stamp #3 */
-    } else if ((int)*(volatile uint16_t *)0x1e80 >= 2) {         /* @asm 0x0644AE */
+    } else if ((int)*(volatile uint16_t *)&g_dgroup[0x1e80] >= 2) {         /* @asm 0x0644AE */
         overlay_call_1A1F_0806(seed_col, seed_row);              /* @asm 0x0644BC stamp A */
     } else {
         overlay_call_1A1F_085A(seed_col, seed_row);              /* @asm 0x0644C9 stamp C */
@@ -1560,15 +1564,15 @@ int func_0643F8_scatter_features(int mode)
 
     /* @asm 0x0644CF..0x06452B : tally — every non-zero layer-2 cell bumps the
      * paired layer-1 counter byte and the global feature count [0x2d22]. */
-    p_layer2 = (unsigned char far *)((unsigned long)*(volatile uint16_t *)0x16a << 16
-                                     | *(volatile uint16_t *)0x168); /* @asm 0x0644CF [0x168] */
-    p_layer1 = (unsigned char far *)((unsigned long)*(volatile uint16_t *)0x162 << 16
-                                     | *(volatile uint16_t *)0x160); /* @asm 0x0644DC [0x160] */
+    p_layer2 = (unsigned char far *)((unsigned long)*(volatile uint16_t *)&g_dgroup[0x16a] << 16
+                                     | *(volatile uint16_t *)&g_dgroup[0x168]); /* @asm 0x0644CF [0x168] */
+    p_layer1 = (unsigned char far *)((unsigned long)*(volatile uint16_t *)&g_dgroup[0x162] << 16
+                                     | *(volatile uint16_t *)&g_dgroup[0x160]); /* @asm 0x0644DC [0x160] */
     for (row = 0; row < (int)g_map_height; row++) {              /* @asm 0x06451B */
         for (col = 0; col < (int)g_map_width; col++) {          /* @asm 0x0644F3 */
             if (*p_layer2++ != 0) {                             /* @asm 0x064502 */
                 (*p_layer1)++;                                  /* @asm 0x06450B inc es:[bx] */
-                (*(volatile uint16_t *)0x2d22)++;               /* @asm 0x06450E inc [0x2d22] */
+                (*(volatile uint16_t *)&g_dgroup[0x2d22])++;               /* @asm 0x06450E inc [0x2d22] */
             }
             p_layer1++;                                         /* @asm 0x064512 */
         }
@@ -1722,9 +1726,9 @@ int func_0645F6_genpass_orchestrator(void)
 
             /* @asm 0x064879..0x06496C : extended meander w/ budget, then resource
              * drop along the 20-step resource deltas. */
-            budget = (random_int(1, (int)*(volatile uint16_t *)0x1e84 + 6)) ; /* @asm 0x06487C..0x06488C */
+            budget = (random_int(1, (int)*(volatile uint16_t *)&g_dgroup[0x1e84] + 6)) ; /* @asm 0x06487C..0x06488C */
             if (budget > 6) {                             /* @asm 0x06488F */
-                budget = (random_int(1, ((int)*(volatile uint16_t *)0x1e84 << 1) + 3)); /* @asm 0x064897..0x0648A7 */
+                budget = (random_int(1, ((int)*(volatile uint16_t *)&g_dgroup[0x1e84] << 1) + 3)); /* @asm 0x064897..0x0648A7 */
                 /* walk `budget` steps marking terrain bit 0x80 along the run
                  * (@asm 0x0648CD..0x06495C) following 4-dir neighbours. */
                 while (budget-- > 0) {                    /* @asm 0x06495C dec [bp-0x16] */
@@ -1760,8 +1764,8 @@ int func_0645F6_genpass_orchestrator(void)
     tally:
         ;
     } while (loops < 0x200 &&                              /* @asm 0x0649F3 cmp [bp-0x10],0x200 */
-             ((int)*(volatile uint16_t *)0x1e84 +
-              (int)*(volatile uint16_t *)0x1e7e + 2) * 8 > total); /* @asm 0x0649FA..0x064A09 */
+             ((int)*(volatile uint16_t *)&g_dgroup[0x1e84] +
+              (int)*(volatile uint16_t *)&g_dgroup[0x1e7e] + 2) * 8 > total); /* @asm 0x0649FA..0x064A09 */
     return 0;                                             /* @asm 0x064A0F retf */
 }
 
@@ -1879,7 +1883,7 @@ int func_065D26_postgen_large(void)
         for (si = 0; si < 4; si++) {                     /* @asm 0x065DD9 cmp [bp-0xca],4 */
             int bias = 0;                                /* [bp-0xda] */
             if (DGB(si * 0x34 + 0x543f) == 0)            /* @asm 0x065DC2 at-war? */
-                bias = (int)*(volatile uint8_t *)0x53a6 << 1; /* @asm 0x065DCE difficulty*2 */
+                bias = (int)*(volatile uint8_t *)&g_dgroup[0x53a6] << 1; /* @asm 0x065DCE difficulty*2 */
             (void)(random_int(0, 0xe) + bias);           /* @asm 0x065D8E..0x065D98 slot value */
         }
         /* @asm 0x065DFC..0x065E19 : zero 0xc more flag bytes + 0x10 word slots. */
@@ -1895,10 +1899,10 @@ int func_065D26_postgen_large(void)
 
     /* ----- PHASE B : start-position spread (or scenario load) ----- */
     scenario = 0;                                        /* [bp-0xc4] */
-    if (*(volatile uint16_t *)0x5388 != 0) {             /* @asm 0x065E87 scenario active? */
+    if (*(volatile uint16_t *)&g_dgroup[0x5388] != 0) {             /* @asm 0x065E87 scenario active? */
         scenario = 1;                                    /* @asm 0x065E8E */
         overlay_call_0D1D_07E4();                        /* @asm 0x065E9C read scenario name */
-        if (*(volatile uint16_t *)0x2174 != 0) {         /* @asm 0x065EA4 */
+        if (*(volatile uint16_t *)&g_dgroup[0x2174] != 0) {         /* @asm 0x065EA4 */
             overlay_call_0D1D_07E4();                    /* @asm 0x065ED3 */
             overlay_call_0D1D_07A4();                    /* @asm 0x065EE3 */
         }
@@ -1933,7 +1937,7 @@ int func_065D26_postgen_large(void)
              * reject if dist==0 (exact same tile as a settlement); reject if the
              * pressure-derived minimum (tries/4 - 90, negated) > dist; when dist<8
              * additionally reject unless (8-dist)*0x3e8 <= tries; etc. */
-            if (*(volatile uint16_t *)0x8db8 == 0) continue; /* @asm 0x065FD1 */
+            if (*(volatile uint16_t *)&g_dgroup[0x8db8] == 0) continue; /* @asm 0x065FD1 */
             ok = 1;                                      /* @asm 0x066038 */
         } while (!ok && tries < 0x2ee0);                 /* @asm 0x06603D iter cap 0x2ee0 */
         if (!ok) continue;                               /* @asm 0x066052 */
@@ -1951,8 +1955,8 @@ int func_065D26_postgen_large(void)
     }
 
     /* ----- PHASE C : native village placement ----- */
-    for (si = 0; si < (int)*(volatile uint16_t *)0x539a && placed_total < max_settle; si++) { /* @asm 0x0664A5/0x0664B8 */
-        if ((int)*(volatile uint16_t *)0x539a >= 0x54) break; /* @asm 0x06628E cap 84 */
+    for (si = 0; si < (int)*(volatile uint16_t *)&g_dgroup[0x539a] && placed_total < max_settle; si++) { /* @asm 0x0664A5/0x0664B8 */
+        if ((int)*(volatile uint16_t *)&g_dgroup[0x539a] >= 0x54) break; /* @asm 0x06628E cap 84 */
         /* @asm 0x066298..0x0662CC : pick a candidate slot with a non-zero count;
          * decode its packed x/y (div 5) and jitter by a random compass delta. */
         do { ent = random_int(0, 7); } while (DGB(ent - 0x69d6) == 0); /* @asm 0x066278..0x06628F */
@@ -2000,7 +2004,7 @@ int func_065D26_postgen_large(void)
     }
 
     /* ----- PHASE D : spawn a defender unit at each settlement ----- */
-    for (si = 0; si < (int)*(volatile uint16_t *)0x539a; si++) { /* @asm 0x0665CB cmp [0x539a] */
+    for (si = 0; si < (int)*(volatile uint16_t *)&g_dgroup[0x539a]; si++) { /* @asm 0x0665CB cmp [0x539a] */
         int sx = DGB(si * 0x12 + 0x54ec);                /* @asm 0x0664EB NativeSettlement +0 x */
         int sy = DGB(si * 0x12 + 0x54ed);                /* @asm 0x06650A +1 y */
         int owner_here = tile_owner(sx, sy);             /* @asm 0x0664F1 0x6b4 */
@@ -2025,7 +2029,7 @@ int func_065D26_postgen_large(void)
     }
 
     /* ----- PHASE E : per-settlement mountain-coverage tally ----- */
-    for (si = 0; si < (int)*(volatile uint16_t *)0x539a; si++) { /* @asm 0x066652/0x066656 */
+    for (si = 0; si < (int)*(volatile uint16_t *)&g_dgroup[0x539a]; si++) { /* @asm 0x066652/0x066656 */
         /* @asm 0x0665E0..0x06664B : sweep the [0x8d4a]-described area; for every
          * tile whose terrain==0x1b (mountains, 0x78c) add the area-width byte
          * ([0x8d4e]+2) into the nation's [0x8d4e]+0xc accumulator. */
@@ -2173,7 +2177,7 @@ next_row:
         {
             int back = row_stride_back - width;               /* @asm 0x066B5F */
             p_terr += back; p_feat += back; p_res += back; p_aux += back;
-            dst    += (*(volatile uint16_t *)0x2daa) - width; /* @asm 0x066B7C dest stride */
+            dst    += (*(volatile uint16_t *)&g_dgroup[0x2daa]) - width; /* @asm 0x066B7C dest stride */
         }
     }
     return 0;                                                 /* @asm 0x066B92 retf */

@@ -1493,42 +1493,51 @@ void func_04E2B6_unit_set_order_state(uint16_t unit_index, uint8_t p_dl,
 /* SUPERSEDED: ported to src/unit/move.c (unit_move_step, func_04E2D6). */
 
 /* ============================================================================
- * func_051D56 — unit_special_order_dispatch  [DONE — control flow BYTE_VERIFIED]
+ * func_051D56 — unit_special_order_dispatch  [DONE — BYTE_VERIFIED 2026-06-11]
  * ----------------------------------------------------------------------------
- * Drives unit arg0 through its special-order handler.  Guards on unit fields,
- * runs a gate (0x181F:0x984), optionally decrements a per-power pool, then
- * dispatches on (unit.subtype/state - 7) via a CS jump table to type-specific
- * 0x191F handlers; the default arm calls 0x181F:0x934.
+ * THE per-unit dispatch of the AI turn (ROUTE_B 1.6): called per gated unit
+ * from func_052F7E PHASE 6.  In-flight units that already consumed movement
+ * run the unit_move_step evaluator (func_04E2D6); then/otherwise the unit's
+ * STATE selects a handler via the CS jump table at cs:0x5C2A (file 0x51E1A).
  *
  * @asm 0x051D59  bx = arg0*0x1C
- * @asm 0x051D5D  if unit[+0x3149]==0        -> tail (0x051DCA: read state +0x314C)
- * @asm 0x051D64  if unit[+0x314C]!=0xB      -> tail
- * @asm 0x051D6B  type = unit[+0x3146]; if !(typeflag[type*6+0x523D] & 1) -> 0x051DCA
+ * @asm 0x051D5D  if unit[+0x3149]==0 (moves-used) -> switch (0x051DCA)
+ * @asm 0x051D64  if unit[+0x314C]!=0xB (state)    -> switch
+ * @asm 0x051D6B  type = unit[+0x3146]; if !(@UNIT[type*14+9] & 1) -> switch
+ *                (0x523D = @UNIT table 0x5234 column +9, NOT a stride-6 table)
  * @asm 0x051D84..0x051D9C  gate = lcall 0x181F:0x984(unit.x,unit.y,owner&0xF)
- * @asm 0x051DA5  if gate==0 -> 0x051DCA
+ *                = func_00704C_op_sz_205
+ * @asm 0x051DA5  if gate==0 -> switch
  * @asm 0x051DAB  if unit[+0x314B]==0x45: dec per-power pool [owner&0xF - 0x6BAA]
- * @asm 0x051DBD  if call cs:0x7AA8(arg0) != 0 -> done (0x051E26)
- * @asm 0x051DCA  sel = unit[+0x314C]
- * @asm 0x051E0A  sel -= 7 ; if (unsigned)sel > 5 -> default (0x051E00: 0x181F:0x934)
- * @asm 0x051E15  jmp cs:[sel*2 + 0x5C2A]   ; jump table:
- *                  0 -> 0x051DD6  lcall 0x191F:0x1C2(arg0)
- *                  1 -> 0x051DE2  lcall 0x191F:0x216(arg0)
- *                  2 -> 0x051DEC  lcall 0x191F:0x1FA(arg0)
- *                  3 -> 0x051DF6  lcall 0x191F:0x4BA(arg0)
- *                  4,5 (and >5) -> 0x051E00  lcall 0x181F:0x934(arg0)
- * @asm 0x051E26  return (1 on the cs:0x7AA8 early-done path, else 0)
+ * @asm 0x051DC1  E8 34 17 call cs:0x71F2 (JT[12] -> JMP FAR 1A1F:04F4)
+ *                = unit_move_step (func_04E2D6); if != 0 -> done (0x051E26)
+ * @asm 0x051DCA  sel = unit[+0x314C] - 7 (@0x051E0A); ja 0x051E00 (default)
+ * @asm 0x051E15  jmp cs:[sel*2 + 0x5C2A]; table @file 0x51E1A (BYTE-READ):
+ *                  [0]=0x5BFC (state 7) -> 0x051DEC lcall 0x191F:0x1FA(arg0)
+ *                                          = func_040C1E_colony_enter
+ *                  [1]=0x5BE6 (state 8) -> 0x051DD6 lcall 0x191F:0x1C2(arg0)
+ *                                          = func_040656_unit_chain_171
+ *                  [2]=0x5BF2 (state 9) -> 0x051DE2 lcall 0x191F:0x216(arg0)
+ *                                          = func_0409D6_colony_sz_571
+ *                  [3]=0x5C10 (state A) -> 0x051E00 lcall 0x181F:0x934(arg0)
+ *                                          = func_007BCE end-turn
+ *                  [4]=[5]=0x5C06 (states B,C) -> 0x051DF6 lcall 0x191F:0x4BA(arg0)
+ *                                          = func_040E22 = ai_unit_order_step
+ *                  (unsigned)sel > 5    -> 0x051E00 end-turn (default)
+ *                Each case returns the handler's AX (mov sp,bp; leave; retf).
+ * @asm 0x051E26  done path (unit_move_step returned nonzero): return 0
  *
- * The state value 0xB (+0x314C), subtype gate 0x45 (+0x314B), and the per-type
- * flag table 0x523D are the same constants used by func_04C846 / func_04E2B6.
- * arg0 = unit index.  The jump-table targets are byte-read from the cs:[bx+0x5C2A]
- * Handler roles CONFIRMED (auto_manage.c, overlay_040C1E, overlay_02083C):
- *   0x191F:0x1C2 = finalize_place(unit)   (auto_manage.c:292, state=8)
- *   0x191F:0x216 = place_variant(unit)    (auto_manage.c:293, state=9)
- *   0x191F:0x1FA = begin_building(unit)   (overlay_02083C state=7 begin-build)
- *   0x191F:0x4BA = arrive_finish(unit)    (overlay_040C1E @0x041194 arrive+clear)
- * [BYTE_VERIFIED control flow + dispatch]
+ * (The pre-2026-06-11 banner mis-mapped the table cases 0..3 to 1C2/216/1FA/4BA
+ * in entry order and collapsed states B/C into the default — byte-read of the
+ * table at 0x51E1A corrected the mapping; whois resolved every target.)
  * ============================================================================ */
 extern uint8_t g_ai_pwr_pool_9456[];   /* DGROUP:0x9456 (=0x10000-0x6BAA), per-power pool */
+/* Jump-table handler ports (resolution: tools/whois.py, ROUTE_B 1.6): */
+extern int     func_040C1E_colony_enter(uint16_t unit);          /* 0x191F:0x1FA */
+extern int     func_040656_unit_chain_171(uint16_t unit);        /* 0x191F:0x1C2 */
+extern int     func_0409D6_colony_sz_571(uint16_t unit);         /* 0x191F:0x216 */
+extern void    func_007BCE_logic_sz_25(uint16_t unit);           /* 0x181F:0x934 end-turn */
+extern int16_t ai_unit_order_step(int16_t unit);                 /* 0x191F:0x4BA = func_040E22 */
 
 int func_051D56_unit_special_order_dispatch(uint16_t unit)
 {
@@ -1549,20 +1558,24 @@ int func_051D56_unit_special_order_dispatch(uint16_t unit)
         }
     }
 
-    /* @asm 0x051DCA..0x051E15 — dispatch on (state - 7) via CS jump table. */
+    /* @asm 0x051DCA..0x051E15 — dispatch on (state - 7) via CS jump table at
+     * cs:0x5C2A (file 0x51E1A; entries byte-read 2026-06-11).  Each case
+     * returns the handler's AX directly (asm: mov sp,bp; leave; retf). */
     int sel = (int)u[0x08] - 7;                         /* @asm 0x051DCE/0x051E0A +0x314C */
-    if ((unsigned)sel > 5) {                            /* @asm 0x051E0D ja */
-        overlay_call_181F_0934();                       /* @asm 0x051E00 default handler */
-    } else {
-        switch (sel) {                                  /* @asm 0x051E15 jmp cs:[sel*2+0x5C2A] */
-            case 0: overlay_call_191F_01C2(); break;    /* @asm 0x051DD6 */
-            case 1: overlay_call_191F_0216(); break;    /* @asm 0x051DE2 */
-            case 2: overlay_call_191F_01FA(); break;    /* @asm 0x051DEC */
-            case 3: overlay_call_191F_04BA(); break;    /* @asm 0x051DF6 */
-            default: overlay_call_181F_0934(); break;   /* @asm 0x051E00 (sel 4,5) */
-        }
+    switch (sel) {                                      /* @asm 0x051E15 jmp cs:[sel*2+0x5C2A] */
+        case 0:                                         /* state 7 -> tbl[0]=0x5BFC */
+            return func_040C1E_colony_enter(unit);      /* @asm 0x051DEC lcall 0x191F:0x1FA */
+        case 1:                                         /* state 8 -> tbl[1]=0x5BE6 */
+            return func_040656_unit_chain_171(unit);    /* @asm 0x051DD6 lcall 0x191F:0x1C2 */
+        case 2:                                         /* state 9 -> tbl[2]=0x5BF2 */
+            return func_0409D6_colony_sz_571(unit);     /* @asm 0x051DE2 lcall 0x191F:0x216 */
+        case 4: case 5:                                 /* states B,C -> tbl[4]=[5]=0x5C06 */
+            return ai_unit_order_step((int16_t)unit);   /* @asm 0x051DF6 lcall 0x191F:0x4BA */
+        case 3:                                         /* state A -> tbl[3]=0x5C10 */
+        default:                                        /* @asm 0x051E0D ja 0x051E00 */
+            func_007BCE_logic_sz_25(unit);              /* @asm 0x051E00 lcall 0x181F:0x934 */
+            return done;                                /* @asm 0x051E26 RETF */
     }
-    return done;                                        /* @asm 0x051E26 RETF */
 }
 
 /* ============================================================================
@@ -1806,7 +1819,12 @@ extern uint8_t  g_ai_count_A0DB;          /* DGROUP:0xA0DB */
  *                a war-matrix routine calling its own overlay's planner is
  *                coherent, unlike the old cross-overlay mid-function claim.
  */
-extern int  ovly_tramp_7A7B(uint16_t unit);                /* call cs:0x7A7B -> 0x1A1F:0x488 (record unit) */
+/* (2026-06-11) The old "ovly_tramp_7A7B record-unit" extern is RETIRED: the
+ * PHASE-6 call at @0x053370 is PUSH CS; CALL 0x72DB = jump-table entry [3]
+ * (file 0x0534CB) = JMP FAR 1A1F:0488 = func_051D56_unit_special_order_dispatch
+ * (defined above in this file) — called directly now. */
+extern int  func_007A20_logic_sz_96(uint16_t unit); /* 0x181F:0x97A movement gate (file 0x07A20) */
+extern int  func_00D1CA_logic_sz_26_pacing_wait(int16_t ax, int16_t dx); /* 0x181F:0x45C (file 0x0D1CA) */
 extern int  ovly_tramp_7AB2(uint16_t power);               /* call cs:0x7AB2 -> 0x1A1F:0x50C -> func_04CC50 [CORRECTED 2026-06-10] */
 extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 0x1A1F:0x554 -> func_051EF4 [CORRECTED 2026-06-10] */
 extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> func_04C532 [CORRECTED 2026-06-10] */
@@ -2005,74 +2023,147 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0531F7 memset(.,4) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531FF */
     (void)overlay_call_181F_047A();                     /* @asm 0x053204 */
-    (void)overlay_call_181F_0470();                     /* @asm 0x053209 */
-    (void)overlay_call_181F_0466();                     /* @asm 0x053210 reset-end(0) */
-    /* @asm 0x053215..0x05326C — BYTE_VERIFIED: tea-party / boycott escalation.
-     * Gate: g_flag_828 (DGROUP:0x828) must be non-zero (Boston Harbour active).
-     * do_party condition: g_flag_7F4 (DGROUP:0x7F4) != 0 OR 0x181F:0xF6() != 0.
-     * When do_party: default event code 0x1B (Tea Party) at @asm 0x05322C, then
-     * immediately overwritten by 0x181F:0x3E0() actual-event lookup @asm 0x053239
-     * (the 0x1B assign is dead — a compiler artifact; the mov ax,0x181F;or ax,0xF6;je
-     * at 0x53231..0x53237 is a dead branch that always falls through to the lcall).
-     * 0xD1D:0x92C(code) displays the dialog and returns the player key response
-     * @asm 0x053244.  Response 0x4A ('J', yes) sets g_flag_82B=1 (joined/accepted
-     * @asm 0x053254); any other response calls 0x181F:0x5B6(5) (escalation penalty
-     * level 5) and clears g_flag_53C2 (DGROUP:0x53C2) @asm 0x05325E/0x053266.
-     * DGROUP reads: [0x828] @asm 0x053215; [0x7F4] @asm 0x05321C;
-     *               [0x82B]=1 write @asm 0x053254; [0x53C2]=0 write @asm 0x053266. */
-    if (g_flag_828 != 0) {                              /* @asm 0x053215 cmp [0x828],0 */
-        int do_party = (g_flag_7F4 != 0);               /* @asm 0x05321C cmp [0x7F4],0 */
-        if (!do_party)
-            do_party = (overlay_call_181F_00F6() != 0); /* @asm 0x053223 lcall 0x181F:0xF6 */
-        if (do_party) {                                 /* @asm 0x05322A */
-            /* @asm 0x05322C mov [bp-0x1C],0x1B  (dead assign; overwritten by 0x3E0 below) */
-            /* @asm 0x053231..0x053237  dead branch: mov ax,0x181F; or ax,0xF6; je [skipped] */
-            int code = overlay_call_181F_03E0();        /* @asm 0x053239 lcall 0x181F:0x3E0 */
-            code = overlay_call_0D1D_092C();            /* @asm 0x053244 lcall 0xD1D:0x92C(code) */
-            if (code == 0x4A)                           /* @asm 0x05324F cmp ax,0x4A ('J'=yes) */
-                g_flag_82B = 1;                         /* @asm 0x053254 mov [0x82B],1 */
-            else {
-                (void)overlay_call_181F_05B6();         /* @asm 0x05325E lcall 0x181F:0x5B6(5) */
-                g_flag_53C2 = 0;                        /* @asm 0x053266 mov [0x53C2],0 */
-            }
-        }
-    }
 
-    /* ---- PHASE 6 — per-unit AI re-dispatch (two passes). @asm 0x05326C..0x0534B5.
-     * Outer pass [bp-0xC] = 0 then 1.  For each unit (index [bp-0x1A] swept down
-     * from unit_count(0x539C)-1) of this power: record it via cs:0x7A7B; when the
-     * active-power / view gates allow ([0x826], [0x5396]==arg0 || [0x53A2], the
-     * per-unit move predicate 0x181F:0x97A, the passability 0x181F:0x302, the
-     * targeting 0x181F:0x55E / 0x77E), emit a queue/move entry via cs:0x7A71 —
-     * the SAME emit trampoline func_04C532_ai_queue_a_rebuild uses.  This is the
-     * planner's "convert census into queued unit orders" output stage.  The exact
-     * branch-by-branch emit conditions are a long chain; the control structure
-     * (two passes, descending unit sweep, cs:0x7A71 emit) is byte-cited, the
-     * BYTE_VERIFIED 2026-06-08 — emit-path call args:
-     *   gate: [0x5396]==power||[0x53A2]!=0  @asm 0x0532D3
-     *   passability(unit[0]=col,unit[1]=row)→if ok: [0x8540]=col,[0x853E]=row  @0x0532FF
-     *   target_select(1,0)  @0x05331F
-     *   if [bp-0x16]!=0: score(0x17BA,pass,u,unit[+0x17]) @0x053348
-     *                     score(0x17CE,unit[2],unit[0],unit[1]) @0x053364
-     *   queue insert: cs:0x534CB(u)→func_04C35A(u)  @0x053370.  CLOSED. */
-    for (int pass = 0; pass < 2; pass++) {              /* @asm 0x053483 cmp [bp-0xC],2 */
-        for (int u = g_unit_count_539C - 1; u >= 0; u--) { /* @asm 0x053456 dec / 0x05345A jl */
-            uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
-            if ((uu[0x03] & 0x0F) != (uint8_t)power)    /* @asm 0x0532EE-ish owner gate */
-                continue;
-            (void)ovly_tramp_7A7B((uint16_t)u);         /* @asm 0x053370 call cs:0x7A7B record */
-            if (overlay_call_181F_097A() != 0)          /* @asm 0x053387 per_unit_type0B_gate(AX=u):
-                                                         *   skip if unit is valid/owned/type-0xB
-                                                         *   with order_step < type_threshold.
-                                                         *   BYTE_VERIFIED 2026-06-08. */
-                continue;                               /* @asm 0x05338E */
-            /* passability(col,row)→[0x8540/0x853E]; target_select(1,0); score×2; insert(u). */
-            (void)overlay_call_181F_0302();             /* @asm 0x0532FF passability(unit[0],unit[1]) */
-            (void)overlay_call_181F_055E();             /* @asm 0x05331F target_select(1,0) */
-            (void)overlay_call_181F_077E();             /* @asm 0x053348 score(0x17BA,pass,u,unit[+0x17]) */
-            (void)overlay_call_181F_077E();             /* @asm 0x053364 score(0x17CE,unit[2],unit[0],unit[1]) */
-            (void)ovly_tramp_7A71(0, 0, 0, 0, power);   /* @asm 0x053370 cs:0x534CB(u)→func_04C35A */
-        }
+    /* ---- PHASE 6 — the per-unit AI DISPATCH EPOCH.  @asm 0x053209..0x0534B5.
+     * REWRITTEN BYTE-TRUE 2026-06-11 (ROUTE_B 1.6; the pre-rewrite "emit loop"
+     * misread the cs-relative call targets: the call at @0x053370 is jump-table
+     * entry [3] (load 0x72DB -> JMP FAR 1A1F:0488 = func_051D56), NOT cs:0x7A7B,
+     * and the gate 0x181F:0x97A SELECTS units to dispatch, it does not skip them).
+     *
+     * Structure (all branch targets byte-read from file 0x05326C..0x0534BA):
+     *   epoch:  0x181F:0x470; 0x181F:0x466(0); tea-party gate;  @0x053209..
+     *           two PASSES ([bp-0xC]=0,1)                       @0x05326C/0x053483
+     *   pass:   did=0; for u = unit_count-1 .. 0 DESCENDING     @0x053489..0x053495
+     *           (exit the scan as soon as did!=0 @0x053450)
+     *           pass 0 runs only "special" types 0xA/0xB/0xC    @0x05345C..0x053473
+     *           (run flag [bp-0xA] = pass!=0 || special         @0x053274..0x053293)
+     *   unit:   WHILE func_007A20(u) (0x181F:0x97A: owned + moves-used[+0x05]
+     *           below the @UNIT allowance = "still has movement"):
+     *             stuck-track [0x2D12]/[0x2D14] (>20 -> force end-turn) @0x05329F
+     *             view publish (skipped unwatched)               @0x0532CC..0x05332A
+     *             func_051D56(u)  -> unit_move_step / state handlers  @0x053370
+     *             special-finished queue insert (func_04C35A)    @0x053376..0x0533CF
+     *             view delay (skipped unwatched)                 @0x0533D2..0x053422
+     *             did=1; if([0x828]) [0x5390]=1                  @0x05342C..0x053438
+     *   tail:   0x181F:0x45C(AX=0,DX=did); restart epoch while did  @0x053498..0x0534A8
+     *
+     * [bp-6] (unit-count snapshot for the insert/delay "count changed" tests) is
+     * ONLY written inside the view-publish block (@0x053327).  When the AI runs
+     * UNWATCHED the original compares an UNINITIALIZED stack word (ENTER frame
+     * garbage) — a real MSC artifact.  The port initializes snap=-1 ("never
+     * equal"), making the unwatched behavior the deterministic variant of the
+     * garbage compare: insert skipped.  Watched mode is byte-faithful. */
+    {
+        int did;                                        /* [bp-8] */
+        int snap = -1;                                  /* [bp-6] — see quirk note */
+        do {
+            (void)overlay_call_181F_0470();             /* @asm 0x053209 (epoch restart target 0x7019) */
+            (void)overlay_call_181F_0466();             /* @asm 0x053210 reset-end(AX=0) */
+            /* @asm 0x053215..0x05326C — BYTE_VERIFIED: tea-party / boycott
+             * escalation (re-runs each epoch).  Gate: g_flag_828 != 0 (Boston
+             * Harbour active).  do_party: g_flag_7F4 != 0 OR 0x181F:0xF6() != 0.
+             * @asm 0x05322C mov [bp-0x1C],0x1B is a dead assign (overwritten by
+             * the 0x181F:0x3E0 event lookup @0x053239; the mov ax,0x181F / or
+             * ax,0xF6 / je at 0x53231..0x53237 is a dead branch).  0xD1D:0x92C
+             * shows the dialog; response 'J' (0x4A) -> g_flag_82B=1, else
+             * 0x181F:0x5B6(5) escalation + g_flag_53C2=0. */
+            if (g_flag_828 != 0) {                      /* @asm 0x053215 cmp [0x828],0 */
+                int do_party = (g_flag_7F4 != 0);       /* @asm 0x05321C cmp [0x7F4],0 */
+                if (!do_party)
+                    do_party = (overlay_call_181F_00F6() != 0); /* @asm 0x053223 */
+                if (do_party) {                         /* @asm 0x05322A */
+                    int code = overlay_call_181F_03E0();/* @asm 0x053239 lcall 0x181F:0x3E0 */
+                    code = overlay_call_0D1D_092C();    /* @asm 0x053244 lcall 0xD1D:0x92C(code) */
+                    if (code == 0x4A)                   /* @asm 0x05324F cmp ax,0x4A ('J') */
+                        g_flag_82B = 1;                 /* @asm 0x053254 mov [0x82B],1 */
+                    else {
+                        (void)overlay_call_181F_05B6(); /* @asm 0x05325E lcall 0x181F:0x5B6(5) */
+                        g_flag_53C2 = 0;                /* @asm 0x053266 mov [0x53C2],0 */
+                    }
+                }
+            }
+
+            did = 0;
+            for (int pass = 0; pass < 2; pass++) {      /* @asm 0x05326C [bp-0xC]=0 / 0x053483 cmp 2 */
+                did = 0;                                /* @asm 0x053489 [bp-8]=0 */
+                for (int u = g_unit_count_539C - 1;     /* @asm 0x05328E..0x0532A2 count-1 */
+                     u >= 0 && !did;                    /* @asm 0x05345A jl / 0x053450 did-exit */
+                     u--) {                             /* @asm 0x05344D dec [bp-0x1A] */
+                    uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
+                    /* pass-0 filter: only "special" types 0xC/0xA/0xB march first. */
+                    int special = (uu[UNIT_TYPE_OFF] == 0x0C ||  /* @asm 0x053460 */
+                                   uu[UNIT_TYPE_OFF] == 0x0A ||  /* @asm 0x053467 */
+                                   uu[UNIT_TYPE_OFF] == 0x0B);   /* @asm 0x05346E */
+                    int run = (pass != 0) || special;   /* @asm 0x053274..0x053293 [bp-0xA] */
+
+                    /* WHILE the unit still has movement (0x181F:0x97A ->
+                     * func_007A20: owned by [0x5394], moves-used[+0x05] below
+                     * the @UNIT allowance (func_006CCA), +0x04 bit7 => type 0xB). */
+                    while (func_007A20_logic_sz_96((uint16_t)u) != 0) { /* @asm 0x053441/0x053448 */
+                        if (!run)                       /* @asm 0x053296 cmp [bp-0xA],0 */
+                            break;                      /* @asm 0x05329C -> 0x05345D next unit */
+                        /* stuck-tracking: same unit > 20 rounds -> force end-turn. */
+                        if ((int16_t)g_sel_2D12 == u) { /* @asm 0x05329F/0x0532A2 */
+                            DGS16(0x2D14)++;            /* @asm 0x0532A7 inc [0x2D14] */
+                            if (DGS16(0x2D14) > 20)     /* @asm 0x0532AB cmp 0x14; jle */
+                                func_007BCE_logic_sz_25((uint16_t)u); /* @asm 0x0532B5 0x181F:0x934 */
+                        } else {
+                            g_sel_2D12 = (int16_t)u;    /* @asm 0x0532C3 [0x2D12]=u */
+                            DGS16(0x2D14) = 0;          /* @asm 0x0532C6 [0x2D14]=0 */
+                        }
+                        /* view publish — only when watched: [0x826]!=0x26 AND
+                         * ([0x5396]==power OR [0x53A2]!=0).  Headless AI skips. */
+                        if (DG8(0x0826) != 0x26 &&      /* @asm 0x0532CC cmp byte,0x26 */
+                            ((int16_t)DG16(0x5396) == (int16_t)power || /* @asm 0x0532D3 */
+                             DG8(0x53A2) != 0)) {       /* @asm 0x0532DB cmp byte,0 */
+                            DG16(0x5390) = 0;           /* @asm 0x0532E2 */
+                            DG16(0x5392) = (uint16_t)u; /* @asm 0x0532EB */
+                            (void)overlay_call_181F_0302(); /* @asm 0x0532FF passable(x,y) */
+                            /* if passable: publish view focus @asm 0x053311/0x053318 */
+                            DG16(0x8540) = uu[0x00];
+                            DG16(0x853E) = uu[0x01];
+                            (void)overlay_call_181F_055E(); /* @asm 0x05331F select(1,0) */
+                            snap = g_unit_count_539C;   /* @asm 0x053327 [bp-6]=count */
+                        }
+                        /* @asm 0x05332D [bp-0x16] debug-trace gate — [bp-0x16]=0
+                         * since PHASE 0 (@0x052F8B), so the two 0x181F:0x77E
+                         * score-trace calls (@0x053348/0x053364, fmt 0x17BA/0x17CE)
+                         * never run; cited, not modeled. */
+
+                        (void)func_051D56_unit_special_order_dispatch((uint16_t)u);
+                                                        /* @asm 0x053370 PUSH CS; CALL 0x72DB
+                                                         * -> JT[3] -> 1A1F:0488 = func_051D56 */
+
+                        /* special-type finished-move queue insert. */
+                        if (g_unit_count_539C == snap &&             /* @asm 0x053379 */
+                            special &&                               /* @asm 0x05337E [bp-2] */
+                            func_007A20_logic_sz_96((uint16_t)u) == 0) { /* @asm 0x053387 exhausted */
+                            int code;
+                            switch (uu[UNIT_TYPE_OFF]) {             /* @asm 0x053394 type-0xA chain */
+                                case 0x0A: code = 2; break;          /* @asm 0x053424 [bp-4]=2 */
+                                case 0x0B: code = 3; break;          /* @asm 0x0533AE [bp-4]=3 */
+                                default:   code = 1; break;          /* @asm 0x0533A5 [bp-4]=1 */
+                            }
+                            (void)func_04C35A_ai_queue_a_find_or_insert(
+                                power, uu[0x00], uu[0x01], 2, (uint16_t)code);
+                                                        /* @asm 0x0533CC PUSH CS; CALL 0x72D1
+                                                         * -> JT[1] -> 1A1F:0470 = func_04C35A
+                                                         * args (power,x,y,2,code) @0x0533B3.. */
+                        }
+                        /* view move-delay (watched only): ~30 BIOS ticks via
+                         * 0x0C0C:0x0006 reads; skipped while the unit still has
+                         * movement and the count is unchanged.  Headless skips.
+                         * @asm 0x0533D2..0x053422 (busy-wait not modeled). */
+                        did = 1;                        /* @asm 0x05342C [bp-8]=1 */
+                        if (DG8(0x0828) != 0)           /* @asm 0x053431 cmp byte [0x828],0 */
+                            DG16(0x5390) = 1;           /* @asm 0x053438 [0x5390]=1 */
+                    }                                   /* @asm 0x05344A jmp 0x0532A6 (re-gate) */
+                }
+            }
+            (void)func_00D1CA_logic_sz_26_pacing_wait(0, (int16_t)did);
+                                                        /* @asm 0x053498 sub ax,ax; mov dx,[bp-8];
+                                                         * @asm 0x05349D lcall 0x181F:0x45C */
+        } while (did);                                  /* @asm 0x0534A2/0x0534A8 jmp 0x053209 */
     }
 
     (void)overlay_call_181F_0DAE();                     /* @asm 0x0534B0 memset(.,5) cleanup */
