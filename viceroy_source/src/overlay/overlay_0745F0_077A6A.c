@@ -276,11 +276,11 @@ extern int      page1C_stream_op_default(void);/* page-0x1C near 0xafc (default 
  */
 void func_0764D0_gamewindow_view_init(void)
 {
-    *((uint16_t near *)0x23CE) = 0;                         /* @asm 0x0764D0 */
-    *((uint16_t near *)0xA616) = *((uint16_t near *)0x23C6);/* @asm 0x0764D6/0764DD */
-    *((uint16_t near *)0xA618) = *((uint16_t near *)0x23C8);/* @asm 0x0764D9/0764E0 */
-    *((uint16_t near *)0x23CA) = 0x3880;                    /* @asm 0x0764E4 */
-    *((uint16_t near *)0x23CC) = 0x0001;                    /* @asm 0x0764EA */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CE))) = 0;                         /* @asm 0x0764D0 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA616))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C6)));/* @asm 0x0764D6/0764DD */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA618))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C8)));/* @asm 0x0764D9/0764E0 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CA))) = 0x3880;                    /* @asm 0x0764E4 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CC))) = 0x0001;                    /* @asm 0x0764EA */
 }
 
 /* ============================================================================
@@ -308,23 +308,23 @@ void func_0764D0_gamewindow_view_init(void)
  * @asm 0x074633  loop: lcall 0x1A1F:0x88A -> byte [bx+si+0x2f7b]; @asm 0x074645 cmp si,9 jl
  * @status DONE
  */
-void func_0745F0_power_record_field_init(uint16_t arg0_bp_06)
+void func_0745F0_terrain_row_load(uint16_t arg0_bp_06)
 {
     int di = arg0_bp_06;
     int base = di << 4;                       /* @asm 0x074604 shl bx,4 */
     int si;
 
     overlay_call_191F_091C();                 /* @asm 0x0745F8 */
-    *((uint16_t near *)(base + 0x2F74)) =
+    (*(uint16_t near *)(DG_BASE + (uint16_t)((base + 0x2F74)))) =
         (uint16_t)overlay_call_1A1F_0B22();   /* @asm 0x0745FD/074607 */
 
-    *((uint8_t near *)(base + 0x2F76)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07460D/074612 */
-    *((uint8_t near *)(base + 0x2F77)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074616/07461B */
-    *((uint8_t near *)(base + 0x2F78)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07461F/074624 */
-    *((uint8_t near *)(base + 0x2F79)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074628/07462D */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((base + 0x2F76)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07460D/074612 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((base + 0x2F77)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074616/07461B */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((base + 0x2F78)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07461F/074624 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((base + 0x2F79)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074628/07462D */
 
     for (si = 0; si < 9; si++) {              /* @asm 0x074642 cmp si,9 / 0x074645 jl 0x074633 */
-        *((uint8_t near *)(base + si + 0x2F7B)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((base + si + 0x2F7B)))) =
             (uint8_t)overlay_call_1A1F_088A();/* @asm 0x074633/07463D */
     }
 }
@@ -357,12 +357,12 @@ void func_07464C_colony_or_unit_record_setter6(uint16_t idx_ax, uint16_t val0_dx
     int si = (int)idx_ax * 12;                /* @asm 0x07465A shl/add/shl -> idx*12 */
     uint16_t cx = arg0_bp_06;                 /* @asm 0x074651 */
 
-    *((uint8_t near *)(si - 0x707B)) = (uint8_t)val0_dx;       /* @asm 0x074661 */
-    *((uint8_t near *)(si - 0x707C)) = (uint8_t)arg2_bp_m2;    /* @asm 0x074665/074668 */
-    *((uint8_t near *)(si - 0x707A)) = (uint8_t)arg1_bp_08;    /* @asm 0x07466C/07466F */
-    *((uint8_t near *)(si - 0x7078)) = (uint8_t)cx;            /* @asm 0x074675 */
-    *((uint8_t near *)(cx - 0x729E)) =
-        *((uint8_t near *)(si - 0x7079));     /* @asm 0x07467B/07467F back-ref */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x707B)))) = (uint8_t)val0_dx;       /* @asm 0x074661 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x707C)))) = (uint8_t)arg2_bp_m2;    /* @asm 0x074665/074668 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x707A)))) = (uint8_t)arg1_bp_08;    /* @asm 0x07466C/07466F */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7078)))) = (uint8_t)cx;            /* @asm 0x074675 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((cx - 0x729E)))) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7079))));     /* @asm 0x07467B/07467F back-ref */
 }
 
 /* ============================================================================
@@ -395,11 +395,11 @@ void func_074688_power_record_setter6(uint16_t al_lo, uint16_t dl_lo,
 {
     int si = (int)arg0_bp_06 * 6;             /* @asm 0x074692 shl/add/shl -> idx*6 */
 
-    *((uint8_t  near *)(si - 0x6874)) = (uint8_t)al_lo;        /* @asm 0x07469A */
-    *((uint8_t  near *)(si - 0x6873)) = (uint8_t)dl_lo;        /* @asm 0x07469E (cl=dl) */
-    *((uint8_t  near *)(si - 0x6872)) = (uint8_t)arg2_bp_0A;   /* @asm 0x0746A2/0746A5 */
-    *((uint16_t near *)(si - 0x6870)) = arg3_bp_m2;            /* @asm 0x0746A9/0746AC */
-    *((uint8_t  near *)(si - 0x6871)) = (uint8_t)arg1_bp_08;   /* @asm 0x0746B0/0746B3 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x6874)))) = (uint8_t)al_lo;        /* @asm 0x07469A */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x6873)))) = (uint8_t)dl_lo;        /* @asm 0x07469E (cl=dl) */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x6872)))) = (uint8_t)arg2_bp_0A;   /* @asm 0x0746A2/0746A5 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x6870)))) = arg3_bp_m2;            /* @asm 0x0746A9/0746AC */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x6871)))) = (uint8_t)arg1_bp_08;   /* @asm 0x0746B0/0746B3 */
 }
 
 /* ----------------------------------------------------------------------------
@@ -688,7 +688,7 @@ int func_0749E0_load_names_data_tables(void)
         overlay_call_191F_091C();                              /* @asm 0x074AF0 */
         *((uint16_t near *)((i << 1) - 0x6CF4)) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074AF5/074AFF */
-        *((uint8_t  near *)(i - 0x684E)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i - 0x684E)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074B03/074B0B */
     }
 
@@ -698,7 +698,7 @@ int func_0749E0_load_names_data_tables(void)
         overlay_call_191F_091C();                              /* @asm 0x074B2A */
         *((uint16_t near *)((i << 1) - 0x72BE)) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074B2F/074B39 */
-        *((uint8_t  near *)(i + 0x848)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i + 0x848)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074B3D/074B45 */
     }
 
@@ -734,11 +734,11 @@ int func_0749E0_load_names_data_tables(void)
         overlay_call_191F_091C();                              /* @asm 0x074C12 */
         overlay_call_191F_0FC4();                              /* @asm 0x074C17 (name helper) */
         overlay_call_0D1D_117E();                              /* @asm 0x074C27 strcpy(@i*0x34+0x540e) */
-        *((uint8_t near *)(i * 3 - 0x6A9A)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i * 3 - 0x6A9A)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074C2F/074C3D */
-        *((uint8_t near *)(i * 3 - 0x6A99)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i * 3 - 0x6A99)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074C43/074C48 */
-        *((uint8_t near *)(i * 3 - 0x6A98)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i * 3 - 0x6A98)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074C4C/074C51 */
     }
 
@@ -771,17 +771,17 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 0x2A; i++) {                               /* @asm 0x074D48 cmp,0x2a */
         int si = i * 0xC;                                      /* @asm 0x074D09 i*3<<2 */
         overlay_call_191F_091C();                              /* @asm 0x074CFC */
-        *((uint16_t near *)(si - 0x707E)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x707E)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074D01/074D12 */
-        *((uint16_t near *)(si - 0x7074)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x7074)))) =
             (uint16_t)overlay_call_1A1F_088A();                /* @asm 0x074D18/074D1D */
-        *((uint8_t  near *)(si - 0x7077)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7077)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D21/074D26 */
-        *((uint8_t  near *)(si - 0x7079)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7079)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D2A/074D2F */
-        *((uint8_t  near *)(si - 0x7076)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7076)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D33/074D38 */
-        *((uint8_t  near *)(si - 0x7075)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x7075)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D3C/074D41 */
     }
 
@@ -792,9 +792,9 @@ int func_0749E0_load_names_data_tables(void)
     overlay_call_191F_0FC4();                                  /* @asm 0x074D60 helper */
     for (p = 0; p < 4; p++) {                                  /* @asm 0x074D86 cmp,4 */
         int bx = p * 0x13C;                                    /* @asm 0x074D6F imul 0x13c */
-        *((uint8_t near *)(bx - 0x77C6)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx - 0x77C6)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D6A/074D74 home x */
-        *((uint8_t near *)(bx - 0x77C5)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx - 0x77C5)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074D7A/074D7F home y */
     }
 
@@ -804,13 +804,13 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 0x1C; i++) {                               /* @asm 0x074DD4 cmp,0x1c */
         int si = i << 3;                                       /* @asm 0x074DAB shl 3 */
         overlay_call_191F_091C();                              /* @asm 0x074DEC */
-        *((uint16_t near *)(si - 0x715E)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x715E)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074DF1/074DAE */
-        *((uint16_t near *)(si - 0x715C)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x715C)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074DB4/074DB9 */
-        *((uint16_t near *)(si - 0x715A)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x715A)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074DBD/074DC4 (sub ah,ah) */
-        *((uint16_t near *)(si - 0x7158)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x7158)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074DC8/074DCD */
     }
 
@@ -826,7 +826,7 @@ int func_0749E0_load_names_data_tables(void)
             int si = i * 9;                                    /* @asm 0x074E0F shl3;add */
             int b;
             for (b = 0; b < 9; b++)                            /* @asm 0x074E05..0x074E59 (9x 88A) */
-                *((uint8_t near *)(si + b - 0x6904)) =
+                (*(uint8_t near *)(DG_BASE + (uint16_t)((si + b - 0x6904)))) =
                     (uint8_t)overlay_call_1A1F_088A();
         }
     }
@@ -850,23 +850,23 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 0x17; i++) {                               /* @asm 0x074F60 cmp,0x17 */
         int si = i * 0xE;                                      /* @asm 0x074E2 i*3<<1 */
         overlay_call_191F_091C();                              /* @asm 0x074ED5 */
-        *((uint16_t near *)(si + 0x5230)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si + 0x5230)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x074EDA/074EEE col-1 (ICONS idx) */
-        *((uint8_t near *)(si + 0x5232)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5232)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x074EF4/074EF9 */
         {   /* @asm 0x074F02 al = b*3 (shl1+add) */
             uint8_t b = (uint8_t)overlay_call_1A1F_088A();     /* @asm 0x074EFD */
-            *((uint8_t near *)(si + 0x5234)) = (uint8_t)(b * 3); /* @asm 0x074F08 */
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5234)))) = (uint8_t)(b * 3); /* @asm 0x074F08 */
         }
-        *((uint8_t near *)(si + 0x5236)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F0C/074F11 */
-        *((uint8_t near *)(si + 0x5235)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F15/074F1A */
-        *((uint8_t near *)(si + 0x5237)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F1E/074F23 */
-        *((uint8_t near *)(si + 0x5238)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F27/074F2C */
-        *((uint8_t near *)(si + 0x5239)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F30/074F35 */
-        *((uint8_t near *)(si + 0x523A)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F39/074F3E */
-        *((uint8_t near *)(si + 0x523B)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F42/074F47 */
-        *((uint8_t near *)(si + 0x523C)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F4B/074F50 */
-        *((uint8_t near *)(si + 0x523D)) = (uint8_t)overlay_call_1A1F_0B2E(); /* @asm 0x074F54/074F59 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5236)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F0C/074F11 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5235)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F15/074F1A */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5237)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F1E/074F23 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5238)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F27/074F2C */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5239)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F30/074F35 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x523A)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F39/074F3E */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x523B)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F42/074F47 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x523C)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x074F4B/074F50 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x523D)))) = (uint8_t)overlay_call_1A1F_0B2E(); /* @asm 0x074F54/074F59 */
     }
 
     /* ---- ORDERS @DS:0x225D (tag 0x882) : 0xD entries; for each, skip spaces in
@@ -876,7 +876,7 @@ int func_0749E0_load_names_data_tables(void)
         overlay_call_191F_091C();                              /* @asm 0x074FA3 token */
         overlay_call_191F_0FC4();                              /* @asm 0x074FB6 (token ptr helper) */
         /* skip ' ' chars to first non-space; @asm 0x074F7E..0x074F8E */
-        *((uint8_t near *)(i + 0x54DE)) = 0;                   /* @asm 0x074F90/074F96 store byte */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i + 0x54DE)))) = 0;                   /* @asm 0x074F90/074F96 store byte */
     }
 
     /* ---- ACTIONS @DS:0x2264 : 0xA values -> word[i-0x6cd6] ---- @asm 0x074FC4 */
@@ -908,11 +908,11 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 5; i++) {                                  /* @asm 0x0750AA cmp,5 */
         int si = i * 6;                                        /* @asm 0x075089 i*3<<1 */
         overlay_call_191F_091C();                              /* @asm 0x07507A */
-        *((uint16_t near *)(si - 0x69CE)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x69CE)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x07507F/07508F */
-        *((uint16_t near *)(si - 0x69CC)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x69CC)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x075095/07509A */
-        *((uint16_t near *)(si - 0x69CA)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x69CA)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x07509E/0750A3 */
     }
 
@@ -923,14 +923,14 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 8; i++) {                                  /* @asm 0x075103 cmp,8 */
         int si = i * 6;                                        /* @asm 0x0750D1 */
         overlay_call_191F_091C();                              /* @asm 0x0750C2 */
-        *((uint16_t near *)(si - 0x72EE)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x72EE)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x0750C7/0750D7 */
-        *((uint16_t near *)(si - 0x72EC)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x72EC)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x0750DD/0750E2 */
-        *((uint16_t near *)(si - 0x72EA)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x72EA)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x0750E6/0750EB */
         overlay_call_1A1F_088A();                              /* @asm 0x0750EF discard */
-        *((uint8_t near *)(i + 0x84C)) =
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((i + 0x84C)))) =
             (uint8_t)overlay_call_1A1F_088A();                 /* @asm 0x0750F4/0750FC (col-5 PAL color) */
     }
 
@@ -946,27 +946,27 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 0x19; i++) {                               /* @asm 0x075186 cmp,0x19 */
         int si = i * 6;                                        /* @asm 0x075153 */
         overlay_call_191F_091C();                              /* @asm 0x075144 */
-        *((uint16_t near *)(si - 0x69AE)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si - 0x69AE)))) =
             (uint16_t)overlay_call_1A1F_0B22();                /* @asm 0x075149/075159 */
-        *((uint8_t near *)(si - 0x69AC)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07515F/075164 */
-        *((uint8_t near *)(si - 0x69AB)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x075168/07516D */
-        *((uint8_t near *)(si - 0x69AA)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x075171/075176 */
-        *((uint8_t near *)(si - 0x69A9)) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07517A/07517F */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x69AC)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07515F/075164 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x69AB)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x075168/07516D */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x69AA)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x075171/075176 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x69A9)))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x07517A/07517F */
     }
 
     /* ---- COLORS @DS:0x22A7 : OPTIONAL (if section present) 9 bytes ---- @asm 0x07518C
      * -> byte[0x830..0x835], byte[0x837..0x839] (0x836 skipped) */
     if (overlay_call_191F_0928() == 0) {                       /* @asm 0x075191 find COLORS; je skip */
         overlay_call_191F_091C();                              /* @asm 0x07519D */
-        *((uint8_t near *)0x0830) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751A2/0751A7 */
-        *((uint8_t near *)0x0831) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751AA/0751AF */
-        *((uint8_t near *)0x0832) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751B2/0751B7 */
-        *((uint8_t near *)0x0833) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751BA/0751BF */
-        *((uint8_t near *)0x0834) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751C2/0751C7 */
-        *((uint8_t near *)0x0835) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751CA/0751CF */
-        *((uint8_t near *)0x0837) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751D2/0751D7 */
-        *((uint8_t near *)0x0838) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751DA/0751DF */
-        *((uint8_t near *)0x0839) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751E2/0751E7 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0830))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751A2/0751A7 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0831))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751AA/0751AF */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0832))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751B2/0751B7 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0833))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751BA/0751BF */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0834))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751C2/0751C7 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0835))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751CA/0751CF */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0837))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751D2/0751D7 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0838))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751DA/0751DF */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0839))) = (uint8_t)overlay_call_1A1F_088A(); /* @asm 0x0751E2/0751E7 */
     }
 
     /* ---- INFO @DS:0x22AE (tag 0x888) : 4 values -> word[i-0x690c] ---- @asm 0x0751EA */
@@ -1017,7 +1017,7 @@ int func_0749E0_load_names_data_tables(void)
     overlay_call_191F_0928();                                  /* @asm 0x075311 find MISCELLANEOUS */
     overlay_call_191F_091C();                                  /* @asm 0x075319 token (the count) */
     count = overlay_call_0D1D_08F6();                          /* @asm 0x075321 atoi(@0x833c) */
-    *((uint16_t near *)0x0846) = (uint16_t)count;              /* @asm 0x075329 [0x846]=count */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0846))) = (uint16_t)count;              /* @asm 0x075329 [0x846]=count */
     for (i = 0; i < count; i++)                                /* @asm 0x075345 cmp [bp-8],[0x846] */
         *((uint16_t near *)((i << 1) - 0x6CA4)) =
             (uint16_t)overlay_call_1A1F_0B16();                /* @asm 0x075334/07533E */
@@ -1063,9 +1063,9 @@ int func_075352_show_power_relations_dialog(uint16_t arg0_bp_06, uint16_t arg1_b
     uint16_t saved_text_state;                /* [bp-8] */
     uint32_t prompt_result;                   /* [bp-0xc:bp-0xa] */
 
-    saved_text_state = *((uint16_t near *)0x0372);  /* @asm 0x075360 */
-    *((uint16_t near *)0x0372) = 0;                 /* @asm 0x075368 */
-    *((uint16_t near *)0x1F64) = 0;                 /* @asm 0x07536B */
+    saved_text_state = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0372)));  /* @asm 0x075360 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0372))) = 0;                 /* @asm 0x075368 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F64))) = 0;                 /* @asm 0x07536B */
 
     overlay_call_0D1D_07E4();                 /* @asm 0x075375 strcpy(buf, DS:0x22F2) */
     overlay_call_181F_0182();                 /* @asm 0x075385 append(arg0) */
@@ -1075,7 +1075,7 @@ int func_075352_show_power_relations_dialog(uint16_t arg0_bp_06, uint16_t arg1_b
     }
 
     /* per-human-marker clause @DS:0x22FA/0x2301/0x2308/0x230E (@asm 0x0753B8) */
-    switch (*((uint16_t near *)0x5398)) {     /* @asm 0x0753B8 */
+    switch ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x5398)))) {     /* @asm 0x0753B8 */
         case 0: break;                        /* @asm 0x0753BD je 0x3f3a -> @0x22FA */
         case 1: break;                        /* @asm 0x0753C0 -> @0x2301 */
         case 2: break;                        /* @asm 0x0753C3 -> @0x2308 */
@@ -1113,17 +1113,17 @@ int func_075352_show_power_relations_dialog(uint16_t arg0_bp_06, uint16_t arg1_b
 
     /* save & set text cursor/color state [0x1F4A/0x1F50/0x1F52/0x1F56] */
     {
-        uint16_t s_1f4a = *((uint16_t near *)0x1F4A);  /* @asm 0x075518 */
-        uint16_t s_1f50 = *((uint16_t near *)0x1F50);  /* @asm 0x07551C */
-        uint16_t s_1f52 = *((uint16_t near *)0x1F52);  /* @asm 0x075520 */
-        *((uint16_t near *)0x1F4A) = 0x00F2;           /* @asm 0x075526 */
-        *((uint16_t near *)0x1F50) = 0x002F;           /* @asm 0x07552C */
-        *((uint16_t near *)0x1F52) = 0;                /* @asm 0x075532 */
-        *((uint8_t  near *)0x1F56) |= 0x18;            /* @asm 0x075538 */
+        uint16_t s_1f4a = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F4A)));  /* @asm 0x075518 */
+        uint16_t s_1f50 = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F50)));  /* @asm 0x07551C */
+        uint16_t s_1f52 = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F52)));  /* @asm 0x075520 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F4A))) = 0x00F2;           /* @asm 0x075526 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F50))) = 0x002F;           /* @asm 0x07552C */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F52))) = 0;                /* @asm 0x075532 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x1F56))) |= 0x18;            /* @asm 0x075538 */
         overlay_call_181F_03FE();                      /* @asm 0x075540 draw text run (bx=arg2) */
-        *((uint16_t near *)0x1F4A) = s_1f4a;           /* @asm 0x075545 */
-        *((uint16_t near *)0x1F50) = s_1f50;           /* @asm 0x075549 */
-        *((uint16_t near *)0x1F52) = s_1f52;           /* @asm 0x07554D */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F4A))) = s_1f4a;           /* @asm 0x075545 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F50))) = s_1f50;           /* @asm 0x075549 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F52))) = s_1f52;           /* @asm 0x07554D */
         overlay_call_181F_03B6();                      /* @asm 0x075553 push state */
         overlay_call_181F_03F4();                      /* @asm 0x07555E blit (A000:FC00) */
     }
@@ -1132,10 +1132,10 @@ cleanup:
     if (prompt_result != 0) {                 /* @asm 0x075563 */
         overlay_call_191F_01A8();             /* @asm 0x075571 free far block */
     }
-    *((uint16_t near *)0x1F9E) = *((uint16_t near *)0x268A); /* @asm 0x075576/07557D */
-    *((uint16_t near *)0x1FA0) = *((uint16_t near *)0x268C); /* @asm 0x075579/075580 */
-    *((uint16_t near *)0x1F64) = 1;           /* @asm 0x075584 */
-    *((uint16_t near *)0x0372) = saved_text_state; /* @asm 0x07558A restore */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F9E))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x268A))); /* @asm 0x075576/07557D */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1FA0))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x268C))); /* @asm 0x075579/075580 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F64))) = 1;           /* @asm 0x075584 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0372))) = saved_text_state; /* @asm 0x07558A restore */
     return 0;  /* @asm 0x075592 retf (void) */
 }
 
@@ -1154,7 +1154,7 @@ cleanup:
 int func_075594_show_simple_message_dialog(void)
 {
     overlay_call_0D1D_07E4();                 /* @asm 0x075598 strcpy(buf, DS:0x2334) */
-    if (*((uint16_t near *)0x5398) == 3) {    /* @asm 0x0755A7 cmp [0x5398],3 */
+    if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x5398))) == 3) {    /* @asm 0x0755A7 cmp [0x5398],3 */
         overlay_call_181F_0182();             /* @asm 0x0755B5 append clause 2 */
     }
     return page1A_msgbox();                   /* @asm 0x0755C6 call cs:0x4ee0 (message box) */
@@ -1225,35 +1225,35 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     int si;
 
     overlay_call_0D1D_07E4();                       /* @asm 0x0755D7 strcpy(@0x8554,"AMER2.MP") */
-    *((uint16_t near *)0x5388) = arg0_bp_06;        /* @asm 0x0755E2 */
-    *((uint16_t near *)0x5382) = 0xC600;            /* @asm 0x0755E5 */
-    *((uint16_t near *)0x5386) = 0x000E;            /* @asm 0x0755EB */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5388))) = arg0_bp_06;        /* @asm 0x0755E2 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5382))) = 0xC600;            /* @asm 0x0755E5 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5386))) = 0x000E;            /* @asm 0x0755EB */
     /* [bp-2]=1 @asm 0x0755F4 (result default) */
-    *((uint16_t near *)0x00A2) = 1;                 /* @asm 0x0755F7 */
-    *((uint16_t near *)0x00A0) = 1;                 /* @asm 0x0755FA */
-    *((uint16_t near *)0x00A4) = 1;                 /* @asm 0x0755FD */
-    *((uint16_t near *)0x53A4) = 0xFFFF;            /* @asm 0x075603 */
-    *((uint16_t near *)0x53D2) = 0xFFFF;            /* @asm 0x075606 */
-    *((uint16_t near *)0x53D4) = 0xFFFF;            /* @asm 0x075609 */
-    *((uint16_t near *)0x53D6) = 0xFFFF;            /* @asm 0x07560C */
-    *((uint16_t near *)0x5394) = 0;                 /* @asm 0x075611 */
-    *((uint16_t near *)0x5396) = 0;                 /* @asm 0x075614 */
-    *((uint16_t near *)0x53A0) = 0;                 /* @asm 0x075617 */
-    *((uint16_t near *)0x53A2) = 0;                 /* @asm 0x07561A */
-    *((uint16_t near *)0x5380) = 0;                 /* @asm 0x07561D */
-    *((uint16_t near *)0x53D0) = 0;                 /* @asm 0x075620 */
-    *((uint16_t near *)0x53D8) = 0;                 /* @asm 0x075623 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x00A2))) = 1;                 /* @asm 0x0755F7 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x00A0))) = 1;                 /* @asm 0x0755FA */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x00A4))) = 1;                 /* @asm 0x0755FD */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53A4))) = 0xFFFF;            /* @asm 0x075603 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D2))) = 0xFFFF;            /* @asm 0x075606 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D4))) = 0xFFFF;            /* @asm 0x075609 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D6))) = 0xFFFF;            /* @asm 0x07560C */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5394))) = 0;                 /* @asm 0x075611 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5396))) = 0;                 /* @asm 0x075614 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53A0))) = 0;                 /* @asm 0x075617 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53A2))) = 0;                 /* @asm 0x07561A */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5380))) = 0;                 /* @asm 0x07561D */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D0))) = 0;                 /* @asm 0x075620 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D8))) = 0;                 /* @asm 0x075623 */
 
     for (i = 0; i < 4; i++)                         /* @asm 0x07563A cmp,4 */
-        *((uint16_t near *)(0x53C8 + i * 2)) = 0xFFFF; /* @asm 0x075631 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53C8 + i * 2)))) = 0xFFFF; /* @asm 0x075631 */
 
     for (i = 0; i < 0x10; i++)                      /* @asm 0x07565F cmp,0x10 */
-        *((uint16_t near *)(0x53EA + i * 2)) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53EA + i * 2)))) =
             (uint16_t)overlay_call_181F_04D4();     /* @asm 0x07564B random(0x258,0x3E8) */
 
     for (i = 0; i < 4; i++) {                       /* @asm 0x07567C cmp,4 */
-        *((uint16_t near *)(0x53DA + i * 2)) = 0;   /* @asm 0x075671 */
-        *((uint16_t near *)(0x53E2 + i * 2)) = 0;   /* @asm 0x075675 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53DA + i * 2)))) = 0;   /* @asm 0x075671 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53E2 + i * 2)))) = 0;   /* @asm 0x075675 */
     }
     overlay_call_0D1D_0DAE();                       /* @asm 0x075688 memset(@0x540A,0,4) */
 
@@ -1264,13 +1264,13 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     /* difficulty-scaled REF / king-anger thresholds (@asm 0x07569B..0x0756D0) */
     {
         int d = g_difficulty_53A6;                  /* @asm 0x07569B mov al,[0x53A6] */
-        *((uint16_t near *)0x53DA) = (uint16_t)(d * 8 + 0xF);   /* @asm 0x0756A5 shl3;add 0xF */
-        *((uint16_t near *)0x53DC) = (uint16_t)((d + 1) * 5);   /* @asm 0x0756B5 (d+1)*5 */
-        *((uint16_t near *)0x53E0) = (uint16_t)(d * 6 + 2);     /* @asm 0x0756C5 d*6+2 */
-        *((uint16_t near *)0x53DE) = (uint16_t)(d * 3 + 2);     /* @asm 0x0756D0 d*3+2 (BYTE_VERIFIED) */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53DA))) = (uint16_t)(d * 8 + 0xF);   /* @asm 0x0756A5 shl3;add 0xF */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53DC))) = (uint16_t)((d + 1) * 5);   /* @asm 0x0756B5 (d+1)*5 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53E0))) = (uint16_t)(d * 6 + 2);     /* @asm 0x0756C5 d*6+2 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53DE))) = (uint16_t)(d * 3 + 2);     /* @asm 0x0756D0 d*3+2 (BYTE_VERIFIED) */
     }
 
-    if (*((uint8_t near *)0x0828) == 0)             /* @asm 0x0756D4 cmp [0x828],0 */
+    if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) == 0)             /* @asm 0x0756D4 cmp [0x828],0 */
         page1A_newgame_mapinit();                   /* @asm 0x0756DC near 0x4f2b default-map init */
 
     overlay_call_181F_04F2();                       /* @asm 0x0756DF init draw */
@@ -1279,11 +1279,11 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
 
     result = 2;                                     /* @asm 0x0756F1 [bp-2]=2 */
     if (arg0_bp_06 == 0) {                          /* @asm 0x0756F6 cmp [bp+6],0 */
-        *((uint16_t near *)0x018C) = 1;             /* @asm 0x0756FC */
-        *((uint16_t near *)0x853A) = 0x3A;          /* @asm 0x075702 map width  = 0x3A */
-        *((uint16_t near *)0x853C) = 0x48;          /* @asm 0x075708 map height = 0x48 */
-        *((uint16_t near *)0x85A4) = 0x1050;        /* @asm 0x07570E */
-        *((uint16_t near *)0x85A6) = 0;             /* @asm 0x075714 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x018C))) = 1;             /* @asm 0x0756FC */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x853A))) = 0x3A;          /* @asm 0x075702 map width  = 0x3A */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x853C))) = 0x48;          /* @asm 0x075708 map height = 0x48 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x85A4))) = 0x1050;        /* @asm 0x07570E */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x85A6))) = 0;             /* @asm 0x075714 */
     }
 
     if (overlay_call_1A1F_0C80() != 0)              /* @asm 0x07571C validate; nonzero -> bail */
@@ -1292,8 +1292,8 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
 
     if (arg0_bp_06 != 0) {                          /* @asm 0x07572D cmp [bp+6],0 */
         if (overlay_call_1A1F_0C8E() != 0) {        /* @asm 0x075733 */
-            *((uint16_t near *)0x0822) =
-                *((uint16_t near *)0x0158);         /* @asm 0x07573C/07573F [0x822]=[0x158] */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) =
+                (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0158)));         /* @asm 0x07573C/07573F [0x822]=[0x158] */
             goto tail;                              /* @asm 0x075742 jmp 0x451f */
         }
     } else {
@@ -1312,27 +1312,27 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     overlay_call_181F_03AC();                       /* @asm 0x0757BF present */
 
     overlay_call_0D1D_0DAE();                       /* @asm 0x0757CB memset(@0x53A9,-1,0x19) */
-    *((uint8_t  near *)0x53A7) = 0;                 /* @asm 0x0757D3 king anger = 0 */
-    *((uint8_t  near *)0x53A8) = (uint8_t)overlay_call_181F_04D4(); /* @asm 0x0757DC random(1,8) */
-    *((uint16_t near *)0x538A) = 0x05D4;            /* @asm 0x0757E7 */
-    *((uint16_t near *)0x538E) = 0;                 /* @asm 0x0757EF turn = 0 */
-    *((uint16_t near *)0x538C) = 0;                 /* @asm 0x0757F2 */
-    *((uint16_t near *)0x5394) = *((uint16_t near *)0x5398); /* @asm 0x0757F5 */
-    *((uint16_t near *)0x5396) = *((uint16_t near *)0x5398); /* @asm 0x0757FB */
-    if (*((int16_t near *)0x53A4) >= 0)             /* @asm 0x0757FE cmp [0x53a4],0 jl */
-        *((uint16_t near *)0x5396) = *((uint16_t near *)0x53A4); /* @asm 0x075805/075808 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)(0x53A7))) = 0;                 /* @asm 0x0757D3 king anger = 0 */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)(0x53A8))) = (uint8_t)overlay_call_181F_04D4(); /* @asm 0x0757DC random(1,8) */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538A))) = 0x05D4;            /* @asm 0x0757E7 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538E))) = 0;                 /* @asm 0x0757EF turn = 0 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538C))) = 0;                 /* @asm 0x0757F2 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5394))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5398))); /* @asm 0x0757F5 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5396))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5398))); /* @asm 0x0757FB */
+    if ((*(int16_t near *)(DG_BASE + (uint16_t)(0x53A4))) >= 0)             /* @asm 0x0757FE cmp [0x53a4],0 jl */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x5396))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53A4))); /* @asm 0x075805/075808 */
     overlay_call_181F_04CA();                       /* @asm 0x07580F set palette([0x83A6]) */
 
     /* ---- per-power starting-unit seeding loop ---- @asm 0x075817..0x075968 */
     p = 0;                                          /* @asm 0x075817 [bp-6]=0 */
     while (p < 4) {                                 /* @asm 0x075939 cmp [bp-6],4 jge 0x44da */
         /* skip powers whose AIPersonality [+0x543F] flag == 2 */
-        if (*((uint8_t near *)(p * 0x34 + 0x543F)) == 2) { /* @asm 0x07593F/075943 */
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + 0x543F)))) == 2) { /* @asm 0x07593F/075943 */
             p++;                                    /* @asm 0x075936 */
             continue;                               /* @asm 0x075948 je 0x44a6 */
         }
         /* process only the first power whose flag == 0; set toggle */
-        if (*((uint8_t near *)(p * 0x34 + 0x543F)) != 0) { /* @asm 0x075953/075957 */
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + 0x543F)))) != 0) { /* @asm 0x075953/075957 */
             p++;                                    /* @asm 0x07595E jmp 0x4390 (re-loop body w/o toggle) */
         } else {
             toggle = 1;                             /* @asm 0x075961 [bp-8]=1 */
@@ -1341,47 +1341,47 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
         /* (loop body @asm 0x075820) clear 0xC bytes byte[p*0x13c+i-0x77c4] */
         si = p * 0x13C;                             /* @asm 0x07582A imul 0x13c */
         for (i = 0; i < 0xC; i++)                   /* @asm 0x07583A cmp,0xc */
-            *((uint8_t near *)(si + i - 0x77C4)) = 0; /* @asm 0x075832 */
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((si + i - 0x77C4)))) = 0; /* @asm 0x075832 */
 
         /* unit kind 0xD (settler) */
         u = overlay_call_181F_095C();               /* @asm 0x07584D create unit (0xD) */
         bx = u * 0x1C;                              /* @asm 0x075858 imul 0x1c */
-        *((uint8_t near *)(bx + 0x314C)) = 0;       /* @asm 0x07585B state=0 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314C)))) = 0;       /* @asm 0x07585B state=0 */
         si = p * 0x13C;                             /* @asm 0x075860 */
-        *((uint8_t near *)(bx + 0x314D)) = *((uint8_t near *)(si - 0x77C6)); /* @asm 0x075865/075869 home x */
-        *((uint8_t near *)(bx + 0x314E)) = *((uint8_t near *)(si - 0x77C5)); /* @asm 0x07586D/075871 home y */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6)))); /* @asm 0x075865/075869 home x */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5)))); /* @asm 0x07586D/075871 home y */
         if (p == 3)                                 /* @asm 0x075875 cmp [bp-6],3 */
-            *((uint8_t near *)(bx + 0x3146)) = 0xE; /* @asm 0x07587B type=0xE */
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x3146)))) = 0xE; /* @asm 0x07587B type=0xE */
 
         /* unit kind 2 (soldier/dragoon) */
         u = overlay_call_181F_095C();               /* @asm 0x07588D create unit (2) */
         bx = u * 0x1C;                              /* @asm 0x075898 */
-        *((uint8_t near *)(bx + 0x314C)) = 1;       /* @asm 0x07589B state=1 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314C)))) = 1;       /* @asm 0x07589B state=1 */
         si = p * 0x13C;                             /* @asm 0x0758A0 */
-        *((uint8_t near *)(bx + 0x314D)) = *((uint8_t near *)(si - 0x77C6)); /* @asm 0x0758A5/0758A9 */
-        *((uint8_t near *)(bx + 0x314E)) = *((uint8_t near *)(si - 0x77C5)); /* @asm 0x0758AD/0758B1 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6)))); /* @asm 0x0758A5/0758A9 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5)))); /* @asm 0x0758AD/0758B1 */
         if (p == 1)                                 /* @asm 0x0758B5 cmp [bp-6],1 */
-            *((uint8_t near *)(bx + 0x315B)) = 0x14;/* @asm 0x0758BB subtype=0x14 */
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x315B)))) = 0x14;/* @asm 0x0758BB subtype=0x14 */
 
         /* unit kind 1 (scout) */
         u = overlay_call_181F_095C();               /* @asm 0x0758CD create unit (1) */
         bx = u * 0x1C;                              /* @asm 0x0758D8 */
-        *((uint8_t near *)(bx + 0x314C)) = 1;       /* @asm 0x0758DB state=1 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314C)))) = 1;       /* @asm 0x0758DB state=1 */
         si = p * 0x13C;                             /* @asm 0x0758E0 */
-        *((uint8_t near *)(bx + 0x314D)) = *((uint8_t near *)(si - 0x77C6)); /* @asm 0x0758E5/0758E9 */
-        *((uint8_t near *)(bx + 0x314E)) = *((uint8_t near *)(si - 0x77C5)); /* @asm 0x0758ED/0758F1 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6)))); /* @asm 0x0758E5/0758E9 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5)))); /* @asm 0x0758ED/0758F1 */
         if ((toggle != 0 && g_difficulty_53A6 <= 1) || p == 2) { /* @asm 0x0758F5..0x075906 */
             bx = u * 0x1C;                          /* @asm 0x075908 */
-            *((uint8_t near *)(bx + 0x315B)) = 0x15;/* @asm 0x07590C subtype=0x15 */
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + 0x315B)))) = 0x15;/* @asm 0x07590C subtype=0x15 */
         }
 
         /* spawn cursor + AIPersonality reset */
         bx = p * 0x13C;                             /* @asm 0x075911 */
-        *((uint16_t near *)0x017C) = *((uint8_t near *)(bx - 0x77C6)); /* @asm 0x075916/07591C */
-        *((uint16_t near *)0x8540) = *((uint16_t near *)0x017C);       /* @asm 0x07591F */
-        *((uint16_t near *)0x017E) = *((uint8_t near *)(bx - 0x77C5)); /* @asm 0x075922/075926 */
-        *((uint16_t near *)0x853E) = *((uint16_t near *)0x017E);       /* @asm 0x075929 */
-        *((uint16_t near *)(p * 0x34 + 0x5440)) = 0;/* @asm 0x07592C/075930 AIPersonality reset */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017C))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((bx - 0x77C6)))); /* @asm 0x075916/07591C */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x8540))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017C)));       /* @asm 0x07591F */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017E))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((bx - 0x77C5)))); /* @asm 0x075922/075926 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x853E))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017E)));       /* @asm 0x075929 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((p * 0x34 + 0x5440)))) = 0;/* @asm 0x07592C/075930 AIPersonality reset */
         p++;                                        /* @asm 0x075936 */
     }
 
@@ -1391,16 +1391,16 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     overlay_call_191F_0AAC();                       /* @asm 0x075978 post-setup */
     overlay_call_1A1F_0A5C();                       /* @asm 0x07597D */
     overlay_call_181F_03F4();                       /* @asm 0x075988 blit A000:FC00 */
-    if (*((uint8_t near *)0x0828) == 0 &&           /* @asm 0x07598D cmp [0x828],0 */
-        *((uint16_t near *)0x83AC) != 0) {          /* @asm 0x075994 cmp [0x83ac],0 */
+    if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) == 0 &&           /* @asm 0x07598D cmp [0x828],0 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) {          /* @asm 0x075994 cmp [0x83ac],0 */
         overlay_call_181F_04E8();                   /* @asm 0x07599B */
     }
     overlay_call_181F_048E();                       /* @asm 0x0759A2 draw 0x25 */
     result = 0;                                     /* @asm 0x0759AA [bp-2]=0 */
 
 tail:
-    if (*((uint8_t near *)0x0828) == 0 &&           /* @asm 0x0759AF cmp [0x828],0 */
-        *((uint16_t near *)0x83AC) != 0) {          /* @asm 0x0759B6 cmp [0x83ac],0 */
+    if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) == 0 &&           /* @asm 0x0759AF cmp [0x828],0 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) {          /* @asm 0x0759B6 cmp [0x83ac],0 */
         overlay_call_181F_04E8();                   /* @asm 0x0759BD */
     }
     return result;                                  /* @asm 0x0759C2 mov ax,[bp-2]; retf */
@@ -1481,30 +1481,30 @@ int func_0759E8_save_load_game_screen(void)
     overlay_call_181F_053C();                 /* @asm 0x075A0F save full screen (0,0,320,200) */
 
     /* ---- quick path A: autoload slot [0x104] ---- @asm 0x075A14 */
-    if (*((uint16_t near *)0x0104) != 0) {
+    if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x0104))) != 0) {
         overlay_call_181F_0498();             /* @asm 0x075A1D arg 3 */
         overlay_call_1A1F_0CDA();             /* @asm 0x075A2C build path (len 0xA) */
         if (page1A_dir_match() == 0) {        /* @asm 0x075A3A near 0x4eea */
-            if (*((uint16_t near *)0x83AC) != 0) /* @asm 0x075A44 cmp [0x83ac],0 */
+            if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) /* @asm 0x075A44 cmp [0x83ac],0 */
                 overlay_call_181F_04E8();     /* @asm 0x075A4A */
         }
-        *((uint8_t near *)0x0829) = 1;        /* @asm 0x075A97 */
+        (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0829))) = 1;        /* @asm 0x075A97 */
         goto finish;                          /* @asm 0x075A9C jmp 0x4af7 */
     }
 
     /* ---- quick path B: scenario [0x828] ---- @asm 0x075A52 */
-    if (*((uint8_t near *)0x0828) != 0) {
+    if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) != 0) {
         overlay_call_1A1F_0CDA();             /* @asm 0x075A60 build path (len 5) */
         if (page1A_read_hdr() == 0 &&         /* @asm 0x075A75 near 0x4ee5 */
-            *((int16_t near *)0xFF7C) /*[bp-0x84]*/ < 0x6A4) { /* @asm 0x075A7F year < 1700 */
+            (*(int16_t near *)(DG_BASE + (uint16_t)(0xFF7C))) /*[bp-0x84]*/ < 0x6A4) { /* @asm 0x075A7F year < 1700 */
             if (page1A_dir_match() == 0) {    /* @asm 0x075A8D near 0x4eea */
-                *((uint8_t near *)0x0829) = 1;/* @asm 0x075A97 */
+                (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0829))) = 1;/* @asm 0x075A97 */
                 goto finish;                  /* @asm 0x075A9C jmp 0x4af7 */
             }
         }
         if (page1A_file_pick() != 0) {        /* @asm 0x075AA3 near 0x4f30 picker */
             for (p = 0; p < 4; p++)           /* @asm 0x075AC2 cmp,4 */
-                *((uint8_t near *)(p * 0x34 + 0x543F)) = 1; /* @asm 0x075AB9 mark power active */
+                (*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + 0x543F)))) = 1; /* @asm 0x075AB9 mark power active */
         } else {
             goto finish_alt;                  /* @asm 0x075AAD jmp 0x4afd (no prep) */
         }
@@ -1518,7 +1518,7 @@ int func_0759E8_save_load_game_screen(void)
         overlay_call_0D1D_0FB2();             /* @asm 0x075B1D copy 0x300 panel A000:FC00 */
         which_list = 1;                       /* @asm 0x075B25 [bp-0xf2]=1 */
     } else {                                  /* @asm 0x075B2E (label 0x469e) */
-        if (*((uint8_t near *)0x082A) != 0) { /* @asm 0x075B2E cmp [0x82a],0 */
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x082A))) != 0) { /* @asm 0x075B2E cmp [0x82a],0 */
             overlay_call_181F_0444();         /* @asm 0x075B5E box (0xB0 tall) */
         } else {
             overlay_call_181F_03F4();         /* @asm 0x075B6C blit panel */
@@ -1536,8 +1536,8 @@ int func_0759E8_save_load_game_screen(void)
     do {
         overlay_call_181F_04DE();             /* @asm 0x075C2A arg 0x33 */
         overlay_call_181F_0F3C();             /* @asm 0x075C32 */
-        if (*((uint8_t near *)0x0828) == 0 && /* @asm 0x075C37 */
-            *((uint16_t near *)0x83AC) != 0) {/* @asm 0x075C3E */
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) == 0 && /* @asm 0x075C37 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) {/* @asm 0x075C3E */
             overlay_call_181F_04E8();         /* @asm 0x075C45 */
         }
         if (which_list == 0)                  /* @asm 0x075C4A cmp [bp-0xf2],0 jne */
@@ -1573,7 +1573,7 @@ int func_0759E8_save_load_game_screen(void)
                         action = page1A_sl_addmap();         /* @asm 0x075D14 near 0x4f26 (@0x2357/0x235c/0x2366) */
                     } while (action < 0);     /* @asm 0x075D20 jl 0x4867 */
                     if (overlay_call_0D1D_0816() != 0) {     /* @asm 0x075D2A cmp(@0x2166 "AMER2.MP") */
-                        *((uint16_t near *)0x2174) = 1;      /* @asm 0x075D36 */
+                        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x2174))) = 1;      /* @asm 0x075D36 */
                         overlay_call_0D1D_07E4();            /* @asm 0x075D44 strcpy(@0x2166, name) */
                     }
                 }
@@ -1599,8 +1599,8 @@ int func_0759E8_save_load_game_screen(void)
             }
             action = overlay_call_191F_0320();/* @asm 0x075E5F commit predicate */
             if (action == 0) {                /* @asm 0x075E68 */
-                *((uint8_t near *)0x0829) = 1;/* @asm 0x075E6C */
-                if (*((uint8_t near *)0x5382) & 1) /* @asm 0x075E71 test [0x5382],1 */
+                (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0829))) = 1;/* @asm 0x075E6C */
+                if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x5382))) & 1) /* @asm 0x075E71 test [0x5382],1 */
                     overlay_call_181F_04AC(); /* @asm 0x075E7A arg 3 */
                 else
                     overlay_call_181F_04AC(); /* @asm 0x075E84 arg 1 */
@@ -1719,53 +1719,53 @@ int func_075FB6_map_scenario_setup(void)
 
     overlay_call_1A1F_0E40();                 /* @asm 0x075FBF map setup */
     overlay_call_181F_0EB8();                 /* @asm 0x075FC4 config read */
-    *((uint16_t near *)0x83A6) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FC9 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83A6))) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FC9 */
     overlay_call_181F_0E68();                 /* @asm 0x075FD1 advance */
-    *((uint16_t near *)0x917A) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FD6 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x917A))) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FD6 */
     overlay_call_181F_0E68();                 /* @asm 0x075FDE advance */
-    *((uint16_t near *)0x83A8) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FE3 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83A8))) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FE3 */
     overlay_call_181F_0E68();                 /* @asm 0x075FEB advance */
     overlay_call_181F_0E72();                 /* @asm 0x075FF0 -> [0x8D80:0x8D82] */
     overlay_call_1A1F_0E36();                 /* @asm 0x075FFF (with [bp-8]) */
 
-    if (*((uint8_t near *)0x082A) == 0) {     /* @asm 0x076004 cmp [0x82a],0 */
+    if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x082A))) == 0) {     /* @asm 0x076004 cmp [0x82a],0 */
         overlay_call_181F_0ED6();             /* @asm 0x07601C ((step==3)?0:1, step) */
     } else {                                  /* @asm 0x076026 */
-        *((uint16_t near *)0x83AA) = (uint16_t)step; /* @asm 0x076029 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AA))) = (uint16_t)step; /* @asm 0x076029 */
     }
     overlay_call_181F_05C4();                 /* @asm 0x076031 (step, 1) */
 
     /* step 0x13: region scan @DS:0x237D */
     if (overlay_call_1A1F_0E28() != 0) {      /* @asm 0x076043 */
-        *((uint16_t near *)0x0822) = 0x13;    /* @asm 0x07604C */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x13;    /* @asm 0x07604C */
         goto tail;                            /* @asm 0x076052 jmp 0x4ea5 */
     }
     /* step 0x14: region @0x8330 (0x20x0x20) must have nonzero coords */
     overlay_call_1A1F_0E02();                 /* @asm 0x07605F scan @0x8330 */
-    while ((*((uint16_t near *)0x8336) | *((uint16_t near *)0x8334)) == 0) { /* @asm 0x076064/07606B */
-        *((uint16_t near *)0x0822) = 0x14;    /* @asm 0x07606D */
+    while (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x8336))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x8334)))) == 0) { /* @asm 0x076064/07606B */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x14;    /* @asm 0x07606D */
         goto tail;                            /* @asm 0x076073 jmp 0x4ea5 */
     }
     /* region @0x2DA8 (0x140x0xC8) + @0x839E scans (retry to 0x4bdd on zero) */
     overlay_call_1A1F_0E02();                 /* @asm 0x076080 scan @0x2DA8 */
-    if ((*((uint16_t near *)0x2DAE) | *((uint16_t near *)0x2DAC)) != 0) { /* @asm 0x076085/07608C */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x2DAE))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x2DAC)))) != 0) { /* @asm 0x076085/07608C */
         overlay_call_1A1F_0E02();             /* @asm 0x076098 scan @0x839E */
-        if ((*((uint16_t near *)0x83A4) | *((uint16_t near *)0x83A2)) != 0) { /* @asm 0x07609D */
+        if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x83A4))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83A2)))) != 0) { /* @asm 0x07609D */
             overlay_call_1A1F_0E1E();         /* @asm 0x0760A6 */
         }
     }
     overlay_call_181F_0484();                 /* @asm 0x0760BD restore region */
 
     /* step 0x15: prompt @DS:0x2389 -> [0x268A:0x268C] */
-    *((uint32_t near *)0x268A) = (uint32_t)overlay_call_1A1F_0A86(); /* @asm 0x0760C6/0760CB */
-    if ((*((uint16_t near *)0x268C) | *((uint16_t near *)0x268A)) == 0) { /* @asm 0x0760D2 */
-        *((uint16_t near *)0x0822) = 0x15;    /* @asm 0x0760DA */
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x268A))) = (uint32_t)overlay_call_1A1F_0A86(); /* @asm 0x0760C6/0760CB */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x268C))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x268A)))) == 0) { /* @asm 0x0760D2 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x15;    /* @asm 0x0760DA */
         goto tail;                            /* @asm 0x0760E0 jmp 0x4ea5 */
     }
     /* step 0x16: prompt @DS:0x2392 -> [0x89E:0x8A0] */
-    *((uint32_t near *)0x089E) = (uint32_t)overlay_call_1A1F_0A86(); /* @asm 0x0760E8/0760ED */
-    if ((*((uint16_t near *)0x08A0) | *((uint16_t near *)0x089E)) == 0) { /* @asm 0x0760F4 */
-        *((uint16_t near *)0x0822) = 0x16;    /* @asm 0x0760FC */
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x089E))) = (uint32_t)overlay_call_1A1F_0A86(); /* @asm 0x0760E8/0760ED */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x08A0))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x089E)))) == 0) { /* @asm 0x0760F4 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x16;    /* @asm 0x0760FC */
         goto tail;                            /* @asm 0x076102 jmp 0x4ea5 */
     }
 
@@ -1773,51 +1773,51 @@ int func_075FB6_map_scenario_setup(void)
     page1A_map_pre();                          /* @asm 0x07610B near 0x4f08 */
 
     /* spread the @COLORS bytes [0x830..0x835] into the map color slots */
-    *((uint16_t near *)0x14A8) = *((uint8_t near *)0x0835); /* @asm 0x07610E/076113 */
-    *((uint16_t near *)0x14A4) = *((uint8_t near *)0x0835); /* @asm 0x076116 */
-    *((uint16_t near *)0x14B4) = *((uint8_t near *)0x0830); /* @asm 0x076119/07611C */
-    *((uint16_t near *)0x14AE) = *((uint8_t near *)0x0830); /* @asm 0x07611F */
-    *((uint16_t near *)0x14B6) = *((uint8_t near *)0x0832); /* @asm 0x076122/076125 */
-    *((uint16_t near *)0x14B0) = *((uint8_t near *)0x0832); /* @asm 0x076128 */
-    *((uint16_t near *)0x14B8) = *((uint8_t near *)0x0831); /* @asm 0x07612B/07612E */
-    *((uint16_t near *)0x14B2) = *((uint8_t near *)0x0831); /* @asm 0x076131 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14A8))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0835))); /* @asm 0x07610E/076113 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14A4))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0835))); /* @asm 0x076116 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B4))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0830))); /* @asm 0x076119/07611C */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14AE))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0830))); /* @asm 0x07611F */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B6))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0832))); /* @asm 0x076122/076125 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B0))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0832))); /* @asm 0x076128 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B8))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0831))); /* @asm 0x07612B/07612E */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B2))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0831))); /* @asm 0x076131 */
 
     overlay_call_1A1F_07C4();                 /* @asm 0x07613F region restore(0x1000,[0x268A]) */
     if (overlay_call_1A1F_0CBE() != 0)        /* @asm 0x076147 */
         goto tail;                            /* @asm 0x076150 jmp 0x4ea5 */
 
     /* step 0x17: layer @DS:0x239B convert(0x4000) -> [0x83A:0x83C] */
-    *((uint32_t near *)0x083A) = (uint32_t)overlay_call_1A1F_0372(); /* @asm 0x07615A/07615F */
-    if ((*((uint16_t near *)0x083C) | *((uint16_t near *)0x083A)) == 0) { /* @asm 0x076166 */
-        *((uint16_t near *)0x0822) = 0x17;    /* @asm 0x07616E */
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x083A))) = (uint32_t)overlay_call_1A1F_0372(); /* @asm 0x07615A/07615F */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x083C))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x083A)))) == 0) { /* @asm 0x076166 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x17;    /* @asm 0x07616E */
         goto tail;                            /* @asm 0x076174 jmp 0x4ea5 */
     }
     /* step 0x18: post-load validate */
     if (overlay_call_1A1F_0E10() != 0) {      /* @asm 0x076178 */
-        *((uint16_t near *)0x0822) = 0x18;    /* @asm 0x076181 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x18;    /* @asm 0x076181 */
         goto tail;                            /* @asm 0x076187 jmp 0x4ea5 */
     }
     /* step 0x19: new-game post-setup */
     if (overlay_call_191F_0AAC() != 0) {      /* @asm 0x07618A */
-        *((uint16_t near *)0x0822) = 0x19;    /* @asm 0x076193 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x19;    /* @asm 0x076193 */
         goto tail;                            /* @asm 0x076199 jmp 0x4ea5 */
     }
     /* step 0x1A: region @0x93F0 (0x20x0x18) coords nonzero */
     overlay_call_1A1F_0E02();                 /* @asm 0x0761A6 scan @0x93F0 */
-    if ((*((uint16_t near *)0x93F6) | *((uint16_t near *)0x93F4)) == 0) { /* @asm 0x0761AB */
-        *((uint16_t near *)0x0822) = 0x1A;    /* @asm 0x0761B4 */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x93F6))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x93F4)))) == 0) { /* @asm 0x0761AB */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x1A;    /* @asm 0x0761B4 */
         goto tail;                            /* @asm 0x0761BA jmp 0x4ea5 */
     }
     /* step 0x1B: region @0x93F8 (0x20x0x18) coords nonzero */
     overlay_call_1A1F_0E02();                 /* @asm 0x0761C8 scan @0x93F8 */
-    if ((*((uint16_t near *)0x93F6) | *((uint16_t near *)0x93F4)) == 0) { /* @asm 0x0761CD */
-        *((uint16_t near *)0x0822) = 0x1B;    /* @asm 0x0761D6 */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x93F6))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x93F4)))) == 0) { /* @asm 0x0761CD */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x1B;    /* @asm 0x0761D6 */
         goto tail;                            /* @asm 0x0761DC jmp 0x4ea5 */
     }
     /* step 0x1C: layer @DS:0x23A2 convert -> [bp-0xc:0xa]; decode -> @0x93F0 */
     layer = (uint32_t)overlay_call_1A1F_0372();   /* @asm 0x0761E7/0761EC */
     if (layer == 0) {                         /* @asm 0x0761F2 */
-        *((uint16_t near *)0x0822) = 0x1C;    /* @asm 0x0761F6 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x1C;    /* @asm 0x0761F6 */
         goto tail;                            /* @asm 0x0761FC jmp 0x4ea5 */
     }
     overlay_call_181F_0254();                 /* @asm 0x07620F decode(layer,1,0,@0x93F0) */
@@ -1826,7 +1826,7 @@ int func_075FB6_map_scenario_setup(void)
     /* step 0x1D: layer @DS:0x23AB convert -> [bp-6:4]; decode -> @0x93F8 */
     layer = (uint32_t)overlay_call_1A1F_0372();   /* @asm 0x076226/07622B */
     if (layer == 0) {                         /* @asm 0x076231 */
-        *((uint16_t near *)0x0822) = 0x1D;    /* @asm 0x076235 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x1D;    /* @asm 0x076235 */
         goto tail;                            /* @asm 0x07623B jmp 0x4ea5 */
     }
     overlay_call_181F_0254();                 /* @asm 0x07624D decode(layer,1,0,@0x93F8) */
@@ -1835,27 +1835,27 @@ int func_075FB6_map_scenario_setup(void)
     /* step 0x1E: layer @DS:0x23B1 convert -> [bp-6:4]; decode -> @0x9400 */
     layer = (uint32_t)overlay_call_1A1F_0372();   /* @asm 0x076264/076269 */
     if (layer == 0) {                         /* @asm 0x07626F */
-        *((uint16_t near *)0x0822) = 0x1E;    /* @asm 0x076273 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0822))) = 0x1E;    /* @asm 0x076273 */
         goto tail;                            /* @asm 0x076279 jmp 0x4ea5 */
     }
-    *((uint16_t near *)0x9402) = 0x20;        /* @asm 0x07627C */
-    *((uint16_t near *)0x9400) = 0x18;        /* @asm 0x076282 */
-    *((uint16_t near *)0x9404) = *((uint16_t near *)0x8334); /* @asm 0x076288/07628F */
-    *((uint16_t near *)0x9406) = *((uint16_t near *)0x8336); /* @asm 0x07628B/076292 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x9402))) = 0x20;        /* @asm 0x07627C */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x9400))) = 0x18;        /* @asm 0x076282 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x9404))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x8334))); /* @asm 0x076288/07628F */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x9406))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x8336))); /* @asm 0x07628B/076292 */
     overlay_call_181F_0254();                 /* @asm 0x0762A7 decode(layer,1,0,@0x9400) */
     overlay_call_191F_01A8();                 /* @asm 0x0762B2 free(layer) */
 
     /* bind layer pointers */
-    *((uint16_t near *)0x1F6C) = 0x93F0;      /* @asm 0x0762B7/0762BA */
-    *((uint16_t near *)0x14BA) = 0x93F0;      /* @asm 0x0762BD */
-    *((uint16_t near *)0x082C) = 0x93F0;      /* @asm 0x0762C0 */
-    *((uint16_t near *)0x082E) = 0x93F8;      /* @asm 0x0762C3 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F6C))) = 0x93F0;      /* @asm 0x0762B7/0762BA */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14BA))) = 0x93F0;      /* @asm 0x0762BD */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x082C))) = 0x93F0;      /* @asm 0x0762C0 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x082E))) = 0x93F8;      /* @asm 0x0762C3 */
     overlay_call_1A1F_08DC();                 /* @asm 0x0762C9 bind map layers */
 
     overlay_call_1A1F_0E6A();                 /* @asm 0x0762F1 draw map name line @DS:0x23BA */
     if (page1A_map_finalize() == 0) {         /* @asm 0x0762F7 near 0x4f21 */
         overlay_call_181F_03F4();             /* @asm 0x076304 blit A000:FC00 */
-        *((uint16_t near *)0x53C2) = 1;       /* @asm 0x076309 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53C2))) = 1;       /* @asm 0x076309 */
         overlay_call_1A1F_0E5C();             /* @asm 0x07630F view-state init */
         overlay_call_181F_0EAE();             /* @asm 0x076323 config flag ([0x5383] bit 8) */
         overlay_call_181F_0398();             /* @asm 0x07632B present */
@@ -1895,8 +1895,8 @@ int func_0764F2_view_origin_alloc(void)
 
     lo = (uint16_t)overlay_call_181F_029A();  /* @asm 0x076501 alloc(0x3880) -> ax(lo) */
     hi = 0; /* dx returned by alloc; @asm 0x076509 [0x23C8]=dx (far seg) */
-    *((uint16_t near *)0x23C6) = lo;          /* @asm 0x076506 */
-    *((uint16_t near *)0x23C8) = hi;          /* @asm 0x076509 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C6))) = lo;          /* @asm 0x076506 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C8))) = hi;          /* @asm 0x076509 */
     if ((hi | lo) == 0) {                     /* @asm 0x07650F/076513 alloc failed */
         page1B_err_abort();                   /* @asm 0x076516 call cs:0x26D (error/abort) */
         ok = 0;                               /* @asm 0x076519 */
@@ -1929,10 +1929,10 @@ int32_t func_076524_view_scroll_step(void)
     uint16_t coord_lo, coord_hi;
     uint16_t step_lo, step_hi;
 
-    *((uint16_t near *)0x23F6) = *((uint16_t near *)0xA616); /* @asm 0x076528/076530 */
-    *((uint16_t near *)0x23F8) = *((uint16_t near *)0xA618); /* @asm 0x07652C/076534 */
-    *((uint16_t near *)0xA61E) = *((uint16_t near *)0x23CA); /* @asm 0x076538/076540 */
-    *((uint16_t near *)0xA620) = *((uint16_t near *)0x23CC); /* @asm 0x07653C/076544 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F6))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA616))); /* @asm 0x076528/076530 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F8))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA618))); /* @asm 0x07652C/076534 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61E))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CA))); /* @asm 0x076538/076540 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA620))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CC))); /* @asm 0x07653C/076544 */
 
     {
         int32_t r = overlay_call_1A1F_0372();  /* @asm 0x076548 lcall 0x1A1F:0x372 -> ax:dx */
@@ -1940,21 +1940,21 @@ int32_t func_076524_view_scroll_step(void)
         coord_hi = (uint16_t)((uint32_t)r >> 16);
     }
     if ((coord_hi | coord_lo) != 0) {          /* @asm 0x076553 or dx,ax / 076555 je bail */
-        step_lo = *((uint16_t near *)0x23CA);  /* @asm 0x076557 */
-        step_hi = *((uint16_t near *)0x23CC);
+        step_lo = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CA)));  /* @asm 0x076557 */
+        step_hi = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CC)));
         /* if step (dword) <= remaining [0xA61A:0xA61C]: consume one step */
-        if (!((step_hi > *((uint16_t near *)0xA61C)) ||
-              (step_hi == *((uint16_t near *)0xA61C) &&
-               step_lo >  *((uint16_t near *)0xA61A)))) { /* @asm 0x07655E/076566 */
-            *((uint16_t near *)0x23CE) += 1;   /* @asm 0x07656C inc visited */
-            *((uint16_t near *)0xA616) += *((uint16_t near *)0xA61A); /* @asm 0x076573 */
-            *((uint32_t near *)0x23CA) -=
-                ((uint32_t)*((uint16_t near *)0xA61C) << 16) |
-                 *((uint16_t near *)0xA61A);   /* @asm 0x07657B sub/sbb */
+        if (!((step_hi > (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61C)))) ||
+              (step_hi == (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61C))) &&
+               step_lo >  (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61A)))))) { /* @asm 0x07655E/076566 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CE))) += 1;   /* @asm 0x07656C inc visited */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA616))) += (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61A))); /* @asm 0x076573 */
+            (*(uint32_t near *)(DG_BASE + (uint16_t)(0x23CA))) -=
+                ((uint32_t)(*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61C))) << 16) |
+                 (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA61A)));   /* @asm 0x07657B sub/sbb */
         }
     }
-    *((uint16_t near *)0x23F6) = 0;            /* @asm 0x076583/076588 */
-    *((uint16_t near *)0x23F8) = 0;            /* @asm 0x076585 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F6))) = 0;            /* @asm 0x076583/076588 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F8))) = 0;            /* @asm 0x076585 */
     return (int32_t)(((uint32_t)coord_hi << 16) | coord_lo); /* @asm 0x07658B ax:dx */
 }
 
@@ -1986,21 +1986,21 @@ int func_076594_terrain_layer_load3(void)
 
     page1B_err_abort();                       /* @asm 0x07659E call cs:0x26D (init) */
 
-    *((uint32_t near *)0x0174) = page1B_load_block(); /* @asm 0x0765A5 load(@0x23D0,0x4000) */
-    if (*((uint32_t near *)0x0174) == 0)
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x0174))) = page1B_load_block(); /* @asm 0x0765A5 load(@0x23D0,0x4000) */
+    if ((*(uint32_t near *)(DG_BASE + (uint16_t)(0x0174))) == 0)
         return 0;                             /* @asm 0x0765B9 je 0x263 -> [bp-2]=0 */
-    if (*((uint32_t near *)0x0178) == 0)      /* @asm 0x0765BE */
-        *((uint32_t near *)0x0178) = *((uint32_t near *)0x0174); /* @asm 0x0765C4 mirror */
+    if ((*(uint32_t near *)(DG_BASE + (uint16_t)(0x0178))) == 0)      /* @asm 0x0765BE */
+        (*(uint32_t near *)(DG_BASE + (uint16_t)(0x0178))) = (*(uint32_t near *)(DG_BASE + (uint16_t)(0x0174))); /* @asm 0x0765C4 mirror */
 
-    *((uint32_t near *)0x083E) = page1B_load_block(); /* @asm 0x0765D5 load(@0x23D6,0x4000) */
-    if (*((uint32_t near *)0x083E) == 0)
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x083E))) = page1B_load_block(); /* @asm 0x0765D5 load(@0x23D6,0x4000) */
+    if ((*(uint32_t near *)(DG_BASE + (uint16_t)(0x083E))) == 0)
         return 0;                             /* @asm 0x0765E6 je 0x263 */
 
-    *((uint32_t near *)0x0842) = page1B_load_block(); /* @asm 0x0765F0 load(@0x23DC,0x4000) */
-    if (*((uint32_t near *)0x0842) == 0)
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x0842))) = page1B_load_block(); /* @asm 0x0765F0 load(@0x23DC,0x4000) */
+    if ((*(uint32_t near *)(DG_BASE + (uint16_t)(0x0842))) == 0)
         return 0;                             /* @asm 0x076600 je 0x263 */
 
-    if (*((uint16_t near *)0x23CE) < 3) {     /* @asm 0x076602 cmp [0x23CE],3 */
+    if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x23CE))) < 3) {     /* @asm 0x076602 cmp [0x23CE],3 */
         overlay_call_181F_0772();             /* @asm 0x076622 error 0xFFAE (4 coords) */
     }
     return ok;                                /* @asm 0x076627 retf [bp-2] */
@@ -2061,7 +2061,7 @@ int func_076594_terrain_layer_load3(void)
  */
 int func_076642_load_game_record(void)
 {
-    *((uint16_t near *)0x2650) = 0x000D;      /* @asm 0x076668 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x2650))) = 0x000D;      /* @asm 0x076668 */
     overlay_call_0D1D_07E4();                 /* @asm 0x076677 strcpy(@bp-0x52, arg0) */
     if (overlay_call_0D1D_0C56() == 0) {      /* @asm 0x076685 strchr('.') */
         overlay_call_0D1D_07A4();             /* @asm 0x076698 append default ext @0x23E6 ".SS" */
@@ -2072,10 +2072,10 @@ int func_076642_load_game_record(void)
     overlay_call_0D1D_085E();                 /* @asm 0x0766EC strncpy(@bp-0x1FC, name, 6) */
 
     if (overlay_call_1A1F_0E9E() != 0) {      /* @asm 0x076706 open record(@0x23ED "rb") */
-        *((uint16_t near *)0x23F0) = 0xFFFF;  /* @asm 0x07670F open fail */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F0))) = 0xFFFF;  /* @asm 0x07670F open fail */
         goto done;                            /* @asm 0x076715 jmp 0x6a9 */
     }
-    *((uint16_t near *)0x23F0) = 0xFFFE;      /* @asm 0x076718 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F0))) = 0xFFFE;      /* @asm 0x076718 */
 
     /* read 0x98-byte header field into @bp-0x114 */
     if (overlay_call_1A1F_0E82() == 0)        /* @asm 0x076738 read header (0x98) */
@@ -2100,11 +2100,11 @@ int func_076642_load_game_record(void)
 
     /* read body field (size [bp-2]) into the record */
     if (overlay_call_1A1F_0E82() == 0) {      /* @asm 0x076849 read body */
-        *((uint16_t near *)0x23F0) = 0xFFFE;  /* @asm 0x076852 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23F0))) = 0xFFFE;  /* @asm 0x076852 */
         goto done;                            /* @asm 0x076858 jmp 0x6a9 */
     }
 
-    if (*((uint16_t near *)0xFEF8) /*[bp-0x108]*/ == 0) { /* @asm 0x07685C cmp [bp-0x108],0 */
+    if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0xFEF8))) /*[bp-0x108]*/ == 0) { /* @asm 0x07685C cmp [bp-0x108],0 */
         overlay_call_181F_0772();             /* @asm 0x076874 error 0xFFF9 (code 0xD) */
         goto done;                            /* @asm 0x076879 jmp 0x6a9 */
     }
@@ -2137,12 +2137,12 @@ int func_076642_load_game_record(void)
     /* per-element copy+accumulate loop @asm 0x07699E..0x076A37 (byte-verified above) */
 
     /* capture result far ptr */
-    *((uint16_t near *)0xFDF8) /*[bp-0x208]*/ = 0; /* set from [bp-0x60] @asm 0x076A6B */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xFDF8))) /*[bp-0x208]*/ = 0; /* set from [bp-0x60] @asm 0x076A6B */
 
 done:
     /* free temp blocks: record handle [bp-0x1E6] (0x1A1F:0xEAC), and the temp
      * far blocks [bp-0x11C], [bp-0x64], [bp-0x60] (0x191F:0x1A8) when nonzero */
-    if (*((uint16_t near *)0xFE1A) /*[bp-0x1E6]*/ != 0) /* @asm 0x076A79 */
+    if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0xFE1A))) /*[bp-0x1E6]*/ != 0) /* @asm 0x076A79 */
         overlay_call_1A1F_0EAC();             /* @asm 0x076A86 close record */
     overlay_call_191F_01A8();                 /* @asm 0x076A9D free [bp-0x11C] (if nonzero) */
     overlay_call_191F_01A8();                 /* @asm 0x076AB0 free [bp-0x64]  (if nonzero) */
@@ -2271,7 +2271,7 @@ int32_t func_076C70_read_record_field(void)
     uint32_t value = 0;                       /* [bp-0x10:bp-0xe], [bp-0xa] */
     uint16_t bound_lo = 0, bound_hi = 0;      /* si:[bp-0xa] bound far ptr */
 
-    *((uint16_t near *)0x2650) = 0x000F;      /* @asm 0x076C85 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x2650))) = 0x000F;      /* @asm 0x076C85 */
     overlay_call_0D1D_07E4();                 /* @asm 0x076C94 strcpy(buf,arg) */
     if (overlay_call_0D1D_0C56() == 0) {      /* @asm 0x076CA2 strchr('.') */
         overlay_call_0D1D_07A4();             /* @asm 0x076CB5 append default ext @0x2682 */
@@ -2400,7 +2400,7 @@ write_path:                                   /* @asm 0x076FC8 (0x258) */
     *((uint16_t far *)(obj + 0x16)) = 0;      /* @asm 0x077019 */
 
 common:                                       /* @asm 0x07701D (0x2ad) */
-    *((uint32_t near *)0x242E) += 1;          /* @asm 0x07701D open-object counter */
+    (*(uint32_t near *)(DG_BASE + (uint16_t)(0x242E))) += 1;          /* @asm 0x07701D open-object counter */
     *((uint16_t far *)(obj + 0)) = 1;         /* @asm 0x07702A obj[0]=1 */
     fail = 0;                                 /* @asm 0x07702F [bp-6]=0 success */
 
@@ -2550,7 +2550,7 @@ int func_077100_stream_emit_record(uint32_t key_dxax, uint16_t base_bp_0A,
 
     {   /* per-record stride entry */
         uint8_t far *ent = obj + (uint16_t)di * 0x14; /* @asm 0x077182 di*0x14 */
-        *((uint16_t near *)0x26CA) = ent[0x2A];/* @asm 0x07718D/077193 record selector */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CA))) = ent[0x2A];/* @asm 0x07718D/077193 record selector */
         /* size [bp-8:6] = entry[0x30:0x32] @asm 0x077196 */
         selector = (ent[0x2A] == 1) ? 2 : 1;   /* @asm 0x0771A4..0x0771AC sbb;and;inc */
         if (selector != 1) {                   /* @asm 0x0771B0 dec; je */
@@ -2633,10 +2633,10 @@ void func_0772C4_invoke_stream_callback(void)
 void func_0772DA_register_stream_callbacks(uint16_t a0, uint16_t a1,
                                            uint16_t a2, uint16_t a3)
 {
-    *((uint16_t near *)0x245A) = a0;          /* @asm 0x0772E3 */
-    *((uint16_t near *)0x245C) = a1;          /* @asm 0x0772E6 */
-    *((uint16_t near *)0x245E) = a2;          /* @asm 0x0772F0 */
-    *((uint16_t near *)0x2460) = a3;          /* @asm 0x0772F3 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245A))) = a0;          /* @asm 0x0772E3 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245C))) = a1;          /* @asm 0x0772E6 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245E))) = a2;          /* @asm 0x0772F0 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0x2460))) = a3;          /* @asm 0x0772F3 */
 }
 
 /* ============================================================================
@@ -2706,75 +2706,75 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
                                     uint16_t len_bp_10)
 {
     if (mode_dx == 0) {                        /* @asm 0x077308 or dx,dx */
-        *((uint16_t near *)0xA644) = 0x0F10;   /* @asm 0x07730C read cb off */
-        *((uint16_t near *)0xA646) = 0x1A1F;   /* @asm 0x077312 read cb seg */
-        *((uint16_t near *)0xA648) = buf_bp_0A;/* @asm 0x07731E */
-        *((uint16_t near *)0xA64A) = buf_bp_0C;/* @asm 0x077321 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA644))) = 0x0F10;   /* @asm 0x07730C read cb off */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA646))) = 0x1A1F;   /* @asm 0x077312 read cb seg */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA648))) = buf_bp_0A;/* @asm 0x07731E */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA64A))) = buf_bp_0C;/* @asm 0x077321 */
     } else {                                   /* @asm 0x077328 */
-        *((uint16_t near *)0xA644) = 0x0F06;   /* @asm 0x077328 write cb off */
-        *((uint16_t near *)0xA646) = 0x1A1F;   /* @asm 0x07732E write cb seg */
-        *((uint16_t near *)0xA642) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA644))) = 0x0F06;   /* @asm 0x077328 write cb off */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA646))) = 0x1A1F;   /* @asm 0x07732E write cb seg */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA642))) =
             (uint16_t)page1C_stream_buf();     /* @asm 0x07733B near 0x877(buf) */
     }
 
     if (submode_bx != 2) {                     /* @asm 0x077344 cmp [bp-8],2 je 0x618 */
         if (submode_bx == 0) {                 /* @asm 0x07734A cmp [bp-8],0 */
-            *((uint16_t near *)0xA63A) = 0x0EFC;/* @asm 0x077350 seek-read cb off */
-            *((uint16_t near *)0xA63C) = 0x1A1F;/* @asm 0x077356 */
-            *((uint16_t near *)0xA63E) = a0_bp_06; /* @asm 0x07735C */
-            *((uint16_t near *)0xA640) = a1_bp_08; /* @asm 0x07735F */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA63A))) = 0x0EFC;/* @asm 0x077350 seek-read cb off */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA63C))) = 0x1A1F;/* @asm 0x077356 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA63E))) = a0_bp_06; /* @asm 0x07735C */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA640))) = a1_bp_08; /* @asm 0x07735F */
         } else {                               /* @asm 0x07736C */
-            *((uint16_t near *)0xA63A) = 0x0EF2;/* @asm 0x07736C seek-write cb off */
-            *((uint16_t near *)0xA63C) = 0x1A1F;/* @asm 0x077372 */
-            *((uint16_t near *)0xA638) =
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA63A))) = 0x0EF2;/* @asm 0x07736C seek-write cb off */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA63C))) = 0x1A1F;/* @asm 0x077372 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA638))) =
                 (uint16_t)page1C_stream_buf(); /* @asm 0x07737F near 0x877([bp+6:8]) */
         }
     }
 
-    *((uint16_t near *)0xA62A) = 0;            /* @asm 0x07738A */
-    *((uint16_t near *)0xA628) = 0;            /* @asm 0x07738D */
-    *((uint16_t near *)0xA636) = 0;            /* @asm 0x077390 */
-    *((uint16_t near *)0xA634) = 0;            /* @asm 0x077393 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62A))) = 0;            /* @asm 0x07738A */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA628))) = 0;            /* @asm 0x07738D */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA636))) = 0;            /* @asm 0x077390 */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA634))) = 0;            /* @asm 0x077393 */
 
     if (count_ax == 1) {                       /* @asm 0x077396 [bp-0xc]==1 */
-        *((uint16_t near *)0xA626) = 0x1000;   /* @asm 0x0773A3 per-call size */
-        *((uint16_t near *)0xA630) = len_bp_0E;/* @asm 0x0773A9/0773AF total length */
-        *((uint16_t near *)0xA632) = len_bp_10;/* @asm 0x0773AC */
-        *((uint16_t near *)0xA62C) = len_bp_0E;/* @asm 0x0773B6 mirror */
-        *((uint16_t near *)0xA62E) = len_bp_10;/* @asm 0x0773B9 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 0x1000;   /* @asm 0x0773A3 per-call size */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630))) = len_bp_0E;/* @asm 0x0773A9/0773AF total length */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA632))) = len_bp_10;/* @asm 0x0773AC */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62C))) = len_bp_0E;/* @asm 0x0773B6 mirror */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62E))) = len_bp_10;/* @asm 0x0773B9 */
         /* cursor [bp-6]=0xA630, [bp-2]=0xA628 @asm 0x0773BD */
     } else if (count_ax == 0) {                /* @asm 0x07739D dec; jne 0x633 -> je path 0x65a */
-        if (*((uint16_t near *)0x26CA) == 1) { /* @asm 0x0773CA */
-            *((uint16_t near *)0xA626) = 0x71BE;/* @asm 0x0773D1 */
-            if ((*((uint16_t near *)0x26D6) | *((uint16_t near *)0x26D4)) == 0) /* @asm 0x0773D7 */
+        if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CA))) == 1) { /* @asm 0x0773CA */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 0x71BE;/* @asm 0x0773D1 */
+            if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26D6))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26D4)))) == 0) /* @asm 0x0773D7 */
                 overlay_call_181F_0772();      /* @asm 0x077404 err 0xFFE3 */
         } else {                               /* @asm 0x0773E0 */
-            *((uint16_t near *)0xA626) = 0x89B8;/* @asm 0x0773E0 */
-            if ((*((uint16_t near *)0x26CE) | *((uint16_t near *)0x26CC)) == 0) /* @asm 0x0773E6 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 0x89B8;/* @asm 0x0773E0 */
+            if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CE))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CC)))) == 0) /* @asm 0x0773E6 */
                 overlay_call_181F_0772();      /* @asm 0x077404 err 0xFFE3 */
         }
-        *((uint16_t near *)0xA630) = len_bp_0E;/* @asm 0x07740F */
-        *((uint16_t near *)0xA632) = len_bp_10;/* @asm 0x077412 */
-        *((uint16_t near *)0xA62C) = 0xFFFF;   /* @asm 0x077416 */
-        *((uint16_t near *)0xA62E) = 0xFFFF;   /* @asm 0x07741C */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630))) = len_bp_0E;/* @asm 0x07740F */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA632))) = len_bp_10;/* @asm 0x077412 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62C))) = 0xFFFF;   /* @asm 0x077416 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62E))) = 0xFFFF;   /* @asm 0x07741C */
         /* cursor [bp-6]=0xA630, [bp-2]=0xA634 @asm 0x077422 */
     } else {                                   /* @asm 0x0773A0 jmp 0x6c0 (count>=2) */
-        *((uint16_t near *)0xA630) = 0xFFFF;   /* @asm 0x077430 */
-        *((uint16_t near *)0xA632) = 0xFFFF;   /* @asm 0x077436 */
-        *((uint16_t near *)0xA62C) = len_bp_0E;/* @asm 0x07743C */
-        *((uint16_t near *)0xA62E) = len_bp_10;/* @asm 0x07743F */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630))) = 0xFFFF;   /* @asm 0x077430 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA632))) = 0xFFFF;   /* @asm 0x077436 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62C))) = len_bp_0E;/* @asm 0x07743C */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA62E))) = len_bp_10;/* @asm 0x07743F */
         /* cursor [bp-6]=0xA62C @asm 0x077449; then sub-stream size select: */
-        if (*((uint16_t near *)0x26CA) == 1 && submode_bx == 0 /*[bp-8]*/ &&
-            /*[bp-0xa]==0 &&*/ (*((uint16_t near *)0x26E2) | *((uint16_t near *)0x26E0)) != 0) { /* @asm 0x07744E.. */
-            *((uint16_t near *)0xA626) = 4;    /* @asm 0x077470 */
+        if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CA))) == 1 && submode_bx == 0 /*[bp-8]*/ &&
+            /*[bp-0xa]==0 &&*/ ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26E2))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26E0)))) != 0) { /* @asm 0x07744E.. */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 4;    /* @asm 0x077470 */
             /* [bp-2]=&[bp+0xe]; [bp-4]=2 @asm 0x07746A/077476 */
         } else if (submode_bx == 1 || submode_bx == 2) { /* @asm 0x07748E/0x077484 */
-            *((uint16_t near *)0xA626) = 0x382C;/* @asm 0x0774A9 */
-            if ((*((uint16_t near *)0x26DA) | *((uint16_t near *)0x26D8)) == 0) /* @asm 0x0774B4 */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 0x382C;/* @asm 0x0774A9 */
+            if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26DA))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26D8)))) == 0) /* @asm 0x0774B4 */
                 ;                              /* gate -> common */
         } else {                               /* @asm 0x07748A */
-            *((uint16_t near *)0xA626) = 0x0820;/* @asm 0x077490 */
-            if ((*((uint16_t near *)0x26DE) | *((uint16_t near *)0x26DC)) == 0) /* @asm 0x07749B */
+            (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626))) = 0x0820;/* @asm 0x077490 */
+            if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26DE))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x26DC)))) == 0) /* @asm 0x07749B */
                 ;                              /* gate -> common */
         }
         /* (label 0x74e default sub-stream) size 0x311E gated on [0x26D0:0x26D2]
@@ -2782,18 +2782,18 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
     }
 
     /* common (0x77c): bind the per-call buffer [0xA622:0xA624] */
-    *((uint16_t near *)0xA624) = 0;            /* @asm 0x0774EC */
-    *((uint16_t near *)0xA622) = 0;            /* @asm 0x0774F1 */
-    if ((*((uint16_t near *)0x245C) | *((uint16_t near *)0x245A)) == 0) { /* @asm 0x0774F4 no registered cb */
-        *((uint32_t near *)0xA622) =
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA624))) = 0;            /* @asm 0x0774EC */
+    (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA622))) = 0;            /* @asm 0x0774F1 */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x245C))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245A)))) == 0) { /* @asm 0x0774F4 no registered cb */
+        (*(uint32_t near *)(DG_BASE + (uint16_t)(0xA622))) =
             (uint32_t)overlay_call_1A1F_0E90();/* @asm 0x077506 bind(@0x2462, [0xA626]) */
-        if (*((uint32_t near *)0xA622) == 0) { /* @asm 0x077512 */
+        if ((*(uint32_t near *)(DG_BASE + (uint16_t)(0xA622))) == 0) { /* @asm 0x077512 */
             /* clear cursor & return @asm 0x07751A */
             return 0;                          /* @asm 0x077524 jmp 0x83f -> ret */
         }
     } else {                                   /* @asm 0x077528 */
-        *((uint16_t near *)0xA622) = *((uint16_t near *)0x245A); /* @asm 0x07752F */
-        *((uint16_t near *)0xA624) = *((uint16_t near *)0x245C); /* @asm 0x077532 */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA622))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245A))); /* @asm 0x07752F */
+        (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA624))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245C))); /* @asm 0x077532 */
     }
 
     /* alt-bind / cursor walk via 0x1A1F:0xEE4 BYTE_VERIFIED:
@@ -2807,8 +2807,8 @@ int func_0772FA_stream_vtable_setup(uint16_t a0_bp_06, uint16_t a1_bp_08,
     }
 
     /* finalize (0x83f): release the bound block when no registered cb */
-    if ((*((uint16_t near *)0x245C) | *((uint16_t near *)0x245A)) == 0) { /* @asm 0x0775AF */
-        if ((*((uint16_t near *)0xA624) | *((uint16_t near *)0xA622)) != 0) /* @asm 0x0775B8 */
+    if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0x245C))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0x245A)))) == 0) { /* @asm 0x0775AF */
+        if (((*(uint16_t near *)(DG_BASE + (uint16_t)(0xA624))) | (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA622)))) != 0) /* @asm 0x0775B8 */
             overlay_call_191F_01A8();          /* @asm 0x0775C9 free bound block */
     } else {
         page1C_stream_notify();                /* @asm 0x0775D1 near 0x872 */
@@ -2919,19 +2919,19 @@ int func_0776F4_stream_pump(void)
 {
     int si = 0;                                /* @asm 0x0776FA sub si,si (success) */
 
-    while (!((*((int16_t near *)0xA632) == 0) &&
-             (*((uint16_t near *)0xA630) == 0))) { /* @asm 0x0776FC..0x077708 */
+    while (!(((*(int16_t near *)(DG_BASE + (uint16_t)(0xA632))) == 0) &&
+             ((*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630))) == 0))) { /* @asm 0x0776FC..0x077708 */
         uint16_t size;                          /* [bp-2] */
         uint16_t di;
         stream_io_cb_t read_cb;
         stream_io_cb_t seek_cb;
 
         /* clamp per-call size [0xA626] to remaining [0xA630:0xA632] */
-        size = *((uint16_t near *)0xA626);      /* @asm 0x07770E */
-        if ((*((int16_t near *)0xA632) < 0) ||
-            (*((int16_t near *)0xA632) == 0 &&
-             size > *((uint16_t near *)0xA630))) { /* @asm 0x077713..0x07771F */
-            size = *((uint16_t near *)0xA630);  /* @asm 0x077725 (clamp) */
+        size = (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA626)));      /* @asm 0x07770E */
+        if (((*(int16_t near *)(DG_BASE + (uint16_t)(0xA632))) < 0) ||
+            ((*(int16_t near *)(DG_BASE + (uint16_t)(0xA632))) == 0 &&
+             size > (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630))))) { /* @asm 0x077713..0x07771F */
+            size = (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630)));  /* @asm 0x077725 (clamp) */
         }
 
         read_cb = *((stream_io_cb_t near *)0xA644); /* @asm 0x077738 lcall [0xA644] */
@@ -2985,12 +2985,12 @@ int func_077772_stream_op_dispatch(uint16_t op_ax, uint16_t subop_dx)
     if (op_ax == 0) {                          /* @asm 0x07777A or ax,ax je 0xa18 */
         scratch = 0x1000;                      /* @asm 0x077788 [bp-2]=0x1000 */
         (void)scratch;
-        handler = (*((uint16_t near *)0x26CA) == 1)        /* @asm 0x07778D */
+        handler = ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CA))) == 1)        /* @asm 0x07778D */
                 ? *((stream_cb_t near *)0x26D4)            /* @asm 0x0777B5 lcall [0x26D4] */
                 : *((stream_cb_t near *)0x26CC);           /* @asm 0x0777DD lcall [0x26CC] */
         handler();
     } else if (op_ax == 1) {                   /* @asm 0x07777E dec ax je 0xa74 */
-        if (*((uint16_t near *)0x26CA) == 1) { /* @asm 0x0777E4 */
+        if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x26CA))) == 1) { /* @asm 0x0777E4 */
             if (subop_dx == 1)                 /* @asm 0x0777ED dec; je 0xaa2 */
                 handler = *((stream_cb_t near *)0x26DC);   /* @asm 0x07782A lcall [0x26DC] */
             else if (subop_dx == 2)            /* @asm 0x0777F0 dec; je 0xac0 */

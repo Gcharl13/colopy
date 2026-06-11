@@ -716,7 +716,7 @@ int func_010812_logic_sz_34(void)
 int func_0109F0_logic_sz_15(void)
 {
     /* @auto: tiny accessor reads DGROUP:0x002C. */
-    return *((uint16_t near*)0x002C);
+    return (*(uint16_t near *)(DG_BASE + (uint16_t)(0x002C)));
 }
 
 /* @asm        0x010A6E..0x010A80  (18 bytes)  region=load_image

@@ -188,10 +188,26 @@ function; the section map covers 100% of its 14,975 bytes:
       through func_052F7E.  Smoke baseline re-derived + re-pinned (the old
       wander/park pins were shell-sequencing artifacts).  March FIDELITY
       (actual path steps) depends on eval/plotter leaf wiring — Phase 4.
-- [ ] **1.7 Terrain-weight tables** DS:0x2F76/0x2F77/0x2F79 (stride 16) and
-      the wander tables DS:0xC8/0xDE — confirm loader provenance (NAMES.TXT
-      section vs DGROUP init image) so the AI18 weights are fed by real data
-      in the modern build. (part of 1.2's session)
+- [x] **1.7 Terrain-weight tables** CLOSED 2026-06-11 — provenance CONFIRMED
+      for both table families:
+      - **DS:0x2F74 stride-16 terrain rows** (0x2F76 movement / 0x2F77 defense
+        / 0x2F79 value / 0x2F7B yields — the AI18 weights): **NAMES.TXT**.
+        Chain: func_0749E0 section loader -> func_07637F (5-byte trampoline
+        JMP FAR 1A1F:0xD20) -> func_0745F0_terrain_row_load (renamed from the
+        mis-attributed "power_record_field_init"; docs/NAMES_LOADER.md §3).
+        The DGROUP init image holds unrelated pointer pairs at 0x2F74
+        (overwritten at load), so the weights ONLY come from the user's
+        NAMES.TXT.  Modern build: `src/runtime/data_load.c load_terrain()`
+        mirrors the loader byte-for-byte (incl. the FORESTED rows-16..23
+        REP-MOVSW dual-write @asm 0x074A6D) — already wired, stale
+        "blocked on func_07637F" note removed.
+      - **DS:0xC8/0xDE wander tables**: **DGROUP INIT IMAGE** (verified
+        non-zero in the image at file 0x1D9A0+0xC8: 11 expanding-ring
+        (dx,dy) probe pairs).  Covered by dgroup_image.c (within the 0x2CC5
+        init window); aliased g_pair_key1/g_pair_key2 in linkfloor_extra.ld.
+      - Hygiene sweep riding along: 375 raw `*(T near *)<int>` host-crash
+        dereferences (371 in overlay_0745F0_077A6A.c — the very loader
+        overlay) anchored to DG_BASE.  500-turn smoke PASS.
 
 **Gate G1:** 500-turn soak with full AI; AI move distribution sanity report;
 no stub hits in the AI path (`linkfloor_stubs.c` hit counter = 0 for AI

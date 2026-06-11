@@ -519,7 +519,7 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
 int func_0043B1_logic_sz_40(void)
 {
     /* @auto: tiny accessor reads DGROUP:0x0184. */
-    return *((uint16_t near*)0x0184);
+    return (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0184)));
 }
 
 /* @asm        0x004566..0x0046AC  (326 bytes)  region=load_image

@@ -306,7 +306,7 @@ int viceroy_load_names(const char *dir)
     derive_cargo_max();                                              /* @0x74F79 */
     total += load_levels(f);                                         /* @0x7507A */
     total += load_colors(f);                                         /* @0x751A2 */
-    /* UNFORESTED/FORESTED/OTHER terrain rows: blocked on func_07637F decode */
+
 
     fclose(f);
     return total;

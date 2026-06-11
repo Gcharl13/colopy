@@ -1051,7 +1051,7 @@ int func_011CD2_rtl_sz_25(void)
 int func_011D16_logic_sz_26(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C)
 {
     /* @auto: tiny accessor reads DGROUP:0x27B4. */
-    return *((uint16_t near*)0x27B4);
+    return (*(uint16_t near *)(DG_BASE + (uint16_t)(0x27B4)));
 }
 
 /* @asm        0x011F6E..0x012101  (403 bytes)  region=load_image
@@ -1427,6 +1427,6 @@ int func_012A36_logic_sz_14(void)
 int func_012A66_logic_sz_29(uint16_t arg0_bp_06)
 {
     /* @auto: tiny accessor reads DGROUP:0xA630. */
-    return *((uint16_t near*)0xA630);
+    return (*(uint16_t near *)(DG_BASE + (uint16_t)(0xA630)));
 }
 
