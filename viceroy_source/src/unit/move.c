@@ -39,6 +39,8 @@
  * @ref             code/VICEROY/disasm/func_04E2D6_unknown.asm
  * @ref             include/unit.h
  * ============================================================================ */
+#include <string.h>
+
 #include "viceroy_types.h"
 #include "unit.h"
 #include "dgroup.h"
@@ -134,18 +136,20 @@ extern int func_04C404_ai_queue_b_find_or_insert(uint16_t power, uint16_t b0,
                                                  uint16_t b3);
 /* AI6 helpers */
 extern int  bld_pop_helper(void);             /* 0x181F:0xC7C -> res 0x8734 building/pop cap */
-extern int  func_191F_9A4_colonist_enter(uint16_t unit_idx, uint16_t colony_idx);
-                                              /* 0x191F:0x9A4 -- colonist joins colony,
-                                               * called when unit is already on the colony tile;
-                                               * returns non-zero on success; body in page07 */
+extern int  func_02EAEA_op_sz_49(uint16_t colony, uint16_t unit);
+                                              /* 0x191F:0x9A4 -> page03+0x1B1A = file
+                                               * 0x2EAEA (colonist joins colony; existing
+                                               * port -- ROUTE_B 1.5b).  cdecl order from
+                                               * the call site: (colony, unit). */
 /* AI7 helpers */
 extern void rpt_select_player(int player);    /* 0x181F:0x582 -> func_030550 set player ctx */
 extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-discharge;
                                                * args pushed on stack by caller (unit, flag) */
 /* AI8/AI10 helpers */
-extern void overlay_191F_2EA_explore(uint16_t unit_index); /* 0x191F:0x2EA ship explore move;
-                                               * called from AI10 schooner gate + AI8 mid-body;
-                                               * body in page07 */
+extern void overlay_191F_2EA_explore(uint16_t unit_index);
+                       /* 0x191F:0x2EA ship explore move: RTLink SUB-SEGMENT
+                        * record (trailer 0x138) -- target pending the
+                        * sub-segment directory decode (ROUTE_B 1.5a) */
 extern int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot);
                        /* 0x181F:0xBE6 -> 0x0B2A2 cargo kind at slot (unit/cargo.c) */
 extern int16_t func_00B2F0_cargo_slot_amount(int16_t unit, int16_t slot);
@@ -154,6 +158,24 @@ extern int16_t func_00B368_cargo_load(int16_t unit, int16_t good, int16_t qty);
                        /* 0x181F:0xD58 -> 0x0B368 load qty into slots (unit/cargo.c) */
 extern int16_t func_008D00_colony_stock_cap(void);
                        /* 0x181F:0xD3A -> 0x08D00 colony stock cap (unit/cargo.c) */
+/* AI8 body leaves -- all thunk/trampoline-resolved to existing ports:
+ *   tramp 0x534BC -> 0x4C846   tramp 0x53516 -> 0x4C71C
+ *   tramp 0x534D0 -> 0x4C5C0   tramp 0x534DA -> 0x4C89E
+ *   0x1A1F:0x150  -> 0x3F90E (board/step executor)
+ *   0x181F:0x948  -> 0x06A7C   0x181F:0xAEC -> 0x0B42C (slot discharge)
+ *   0x191F:0xA2E  -> 0x3234A (market credit)
+ *   (0x191F:0x2EA explore is a SUB-SEGMENT record -- unresolved, see above) */
+extern int func_04C846_ai_find_unit_of_type(int16_t start_unit);
+extern int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit,
+                                             uint16_t dest);
+extern int func_04C5C0_ai_power_budget(uint16_t power);
+extern int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x,
+                                             uint16_t base_y, uint16_t flag,
+                                             uint16_t match_type);
+extern int func_03F90E_logic_sz_50(uint16_t unit, uint16_t dir);
+extern int func_006A7C_logic_sz_50(uint16_t unit, uint16_t x, uint16_t y);
+extern int func_00B42C_logic_sz_139(uint16_t unit, uint16_t mode);
+extern void func_03234A(int good, int qty);
 /* AI11/AI12 helpers -- all resolved through the thunk rule:
  *   0x181F:0x808 -> file 0x06E94  unit_destroy (BYTE_VERIFIED port)
  *   0x181F:0x8A8 -> file 0x07B64  nearest own unit excl. self (BYTE_VERIFIED)
@@ -873,8 +895,9 @@ ai5_end:                                                        /* 0x4F060 */
             U_OFF(unit_index, U_MAPY) == DG8(DG16(0x8542) + 1)) { /* @asm 0x4F1C9 */
             /* already on the colony tile: assign colonist, return 1 */
             func_007BCE_logic_sz_25((uint16_t)unit_index);      /* @asm 0x4F1D2 */
-            func_191F_9A4_colonist_enter((uint16_t)unit_index,
-                                         (uint16_t)best_col_22);/* @asm 0x4F1E0 */
+            func_02EAEA_op_sz_49((uint16_t)best_col_22,
+                                 (uint16_t)unit_index);        /* @asm 0x4F1E0
+                                               * 0x191F:0x9A4 -> func_02EAEA */
             return 1;                                           /* @asm 0x4F1E8 */
         }
         /* not yet there: set goto-colony as prof '3' */
@@ -1135,37 +1158,531 @@ ai8:                                                            /* 0x4F748 */
     if (!ship_band) goto ai9;                                   /* @asm 0x4F760 jmp 0x50583 */
     {
         /* ---- setup (BYTE_VERIFIED @asm 0x4F769..0x4F880) ---- */
-        int16_t cargo_cnt = (int16_t)U_OFF(unit_index, 0x0C);   /* @asm 0x4F76D */
+        int16_t ai8_cargo_B4 = (int16_t)U_OFF(unit_index, 0x0C); /* @asm 0x4F76D */
+        uint8_t qty_tally_C6[16];                               /* [bp-0xC6] */
+        int16_t qty6_44, qty5_14;
         int16_t i;
-        /* @asm 0x4F777..0x4F785: memset(&[bp-0xC6], 0, 0x10) -- the per-good
-         * qty tally feeds only the stubbed scoring body; kept implicit */
-        for (i = 0; i < cargo_cnt; i++) {                       /* @asm 0x4F78D/0x4F7D7 */
+        memset(qty_tally_C6, 0, 16);             /* @asm 0x4F780 0xD1D:0xDAE memset */
+        for (i = 0; i < ai8_cargo_B4; i++) {                    /* @asm 0x4F78D/0x4F7D7 */
             int16_t ctype = func_00B2A2_cargo_slot_good(unit_index, i);
                                                                 /* @asm 0x4F79A 0xBE6 */
             if (ctype >= 0x0D || ctype == 8) {                  /* @asm 0x4F7A5/0x4F7AA */
                 if (ctype > ai8_best42)
                     ai8_best42 = ctype;                         /* @asm 0x4F7B5 */
-                (void)func_00B2F0_cargo_slot_amount(unit_index, i);
-                                                                /* @asm 0x4F7C4 0xC68
-                                                                 * qty tally (stub) */
+                qty_tally_C6[ctype & 0x0F] = (uint8_t)(qty_tally_C6[ctype & 0x0F]
+                    + func_00B2F0_cargo_slot_amount(unit_index, i));
+                                                                /* @asm 0x4F7C4..0x4F7CF
+                                                                 * (index = slot good;
+                                                                 * goods 0..15) */
             }
         }
-        /* @asm 0x4F7FC 0x181F:0x920(unit): result discarded; belongs to the
-         * stubbed body -- skipped */
+        /* @asm 0x4F7FC 0x181F:0x920(unit): result discarded; pure -- skipped */
         ai8_deliv_A6 = (int16_t)(func_0073A8_logic_sz_99(
                            (uint16_t)unit_index, 2) - 1);       /* @asm 0x4F809/0x4F811 */
         ai8_qty3_48 = (int16_t)func_0073A8_logic_sz_99(
                           (uint16_t)unit_index, 3);             /* @asm 0x4F81B */
         ai8_qty4_46 = (int16_t)func_0073A8_logic_sz_99(
                           (uint16_t)unit_index, 4);             /* @asm 0x4F82B */
-        (void)func_0073A8_logic_sz_99((uint16_t)unit_index, 6); /* @asm 0x4F83B [bp-0x44] */
-        (void)func_0073A8_logic_sz_99((uint16_t)unit_index, 5); /* @asm 0x4F84B [bp-0x14] */
+        qty6_44 = (int16_t)func_0073A8_logic_sz_99(
+                          (uint16_t)unit_index, 6);             /* @asm 0x4F83B [bp-0x44] */
+        qty5_14 = (int16_t)func_0073A8_logic_sz_99(
+                          (uint16_t)unit_index, 5);             /* @asm 0x4F84B [bp-0x14] */
         if (DG8(0x5382) & 1)                                    /* @asm 0x4F86C revolution */
             ai8_qty4_46 = (int16_t)(ai8_qty4_46 +
                 func_0073A8_logic_sz_99((uint16_t)unit_index, 0x0C)); /* @asm 0x4F878 */
-        /* delivery scoring body 0x4F883..0x50583 (incl. 0x181F:0x948 probe and
-         * the colony loop): RUNTIME_ONLY stub */
-        (void)ai8_flags_9A;
+
+        /* ======== AI8 BODY: the ship ENROUTE-DECISION ENGINE ================
+         * (0x4F883..0x50583)  Ported from the decode sheet + AI8_DECODE_NOTES.
+         * Phases: prologue probes -> per-direction flag-word build -> boarding
+         * executor -> sail-destination scoring ('4' commit) -> deliv==0
+         * continuation (privateer/idle explore, harbor unload scoring with
+         * 'P' commit, at-sea emergency unload, capacity explore).
+         * BYTE_VERIFIED control flow + constants throughout. */
+        {
+            int16_t ai8_80    = (int16_t)(ai8_deliv_A6 - qty5_14
+                                          - ai8_qty4_46 - ai8_qty3_48);
+                                                                /* @asm 0x4F856..0x4F862 */
+            int16_t ai8_B2    = ai8_qty3_48;                    /* @asm 0x4F868 snapshot */
+            int16_t ai8_7E    = 0;
+            int16_t target_64, hunt2_EA, find_66;
+
+            func_006A7C_logic_sz_50((uint16_t)unit_index, (uint16_t)map_x,
+                                    (uint16_t)map_y);           /* @asm 0x4F88E 0x948 */
+            target_64 = (int16_t)func_04C306_ai_queue_a_lookup_max(
+                (uint16_t)owner, (uint16_t)map_x, (uint16_t)map_y, 7);
+                                                                /* @asm 0x4F8BD */
+            hunt2_EA = (int16_t)func_04C306_ai_queue_a_lookup_max(
+                (uint16_t)owner, (uint16_t)map_x, (uint16_t)map_y, 1);
+                                                                /* @asm 0x4F8D5 ([bp-0xEA]
+                                                                 * reused; AI17 rewrites
+                                                                 * hunt_EA before reading) */
+            find_66 = (int16_t)func_04C846_ai_find_unit_of_type(
+                                    (int16_t)unit_index);       /* @asm 0x4F8E3 */
+            if (find_66 >= 0) {                                 /* @asm 0x4F8EE */
+                int16_t pr = (int16_t)(func_04C71C_ai_unit_task_priority(
+                                  (uint16_t)owner, (uint16_t)find_66, (uint16_t)-1)
+                              + func_04C5C0_ai_power_budget((uint16_t)owner));
+                                                                /* @asm 0x4F8F8/0x4F905 */
+                if (pr > 0) {                                   /* @asm 0x4F912 */
+                    ai8_7E = ai8_80;                            /* @asm 0x4F917 */
+                    ai8_qty3_48 = (int16_t)(ai8_qty3_48 + ai8_80); /* @asm 0x4F91A */
+                    ai8_80 = 0;                                 /* @asm 0x4F91D */
+                } else if (hunt2_EA == 0) {                     /* @asm 0x4F924 */
+                    ai8_80 = (int16_t)(ai8_80 + ai8_qty3_48);   /* @asm 0x4F92E */
+                    ai8_qty3_48 = 0;                            /* @asm 0x4F931 */
+                }
+            }
+
+            if (ai8_deliv_A6 != 0) {                            /* @asm 0x4F952 deliv!=0 */
+                int16_t d8;
+                ai8_flags_9A = 0;                               /* @asm 0x4F95C */
+                if (ai8_qty3_48 != 0 || ai8_qty4_46 != 0 || qty5_14 != 0) {
+                                                                /* @asm 0x4F962..0x4F972 */
+                    /* ---- direction loop: flag-word build (0x4F98F..0x4FCC4).
+                     * Each QUALIFYING neighbour resets and rebuilds flags_9A
+                     * (the last qualifying direction wins) ---- */
+                    for (d8 = 0; d8 < 8; d8++) {                /* @asm 0x4F98F/0x4FC20 */
+                        int16_t tx = (int16_t)((int8_t)DG8(0x00B4 + d8) + map_x);
+                        int16_t ty = (int16_t)((int8_t)DG8(0x00BE + d8) + map_y);
+                                                                /* @asm 0x4FC2C..0x4FC45 */
+                        int16_t oth, r;
+                        if (func_005BFA_logic_sz_49((uint16_t)tx,
+                                                    (uint16_t)ty) == 0)
+                            continue;                           /* @asm 0x4FC46/0x4FC50 */
+                        if (func_0062B4_op_sz_39((uint16_t)tx,
+                                                 (uint16_t)ty) != 0)
+                            continue;                           /* @asm 0x4FC58/0x4FC62 */
+                        oth = (int16_t)func_006018_logic_sz_33((uint16_t)tx,
+                                                               (uint16_t)ty);
+                        if (oth >= 0 && oth != owner)           /* @asm 0x4FC75/0x4FC79 */
+                            continue;
+                        ai8_flags_9A = 0;                       /* @asm 0x4FC7F reset */
+                        r = (int16_t)func_005E90_op_sz_64((uint16_t)tx,
+                                                          (uint16_t)ty);
+                                                                /* @asm 0x4FC8B */
+                        if (DG8(0x9870 + owner*16 + r) == 0)    /* @asm 0x4FC9F mission */
+                            continue;                           /* @asm 0x4FCA6 */
+                        if (ty < 2 ||                           /* @asm 0x4FCA9 */
+                            (int16_t)(DG16(0x853C) - 3) < ty)   /* @asm 0x4FCB2 */
+                            continue;
+                        /* ---- FLAG BUILD for region r (L_4F998) ---- */
+                        if (U_OFF(unit_index, U_ORDERS) == 0x0B &&
+                            (int16_t)func_005E90_op_sz_64(
+                                U_OFF(unit_index, U_DESTX),
+                                U_OFF(unit_index, U_DESTY)) == r)
+                            ai8_flags_9A = (int16_t)0xFFFF;     /* @asm 0x4F99C..0x4F9BC */
+                        if (qty5_14 != 0 &&                     /* @asm 0x4F9C2 */
+                            DG8(0x9870 + owner*16 + r) != 0) {  /* @asm 0x4F9D2 */
+                            if (DG8(0x94E6 + owner*16 + r) < 1) { /* @asm 0x4F9D9 */
+                                if ((int16_t)DG16(0x85C8 + r*2) > 0x0A)
+                                    ai8_flags_9A |= 0x20;       /* @asm 0x4F9E5/0x4FA09 */
+                            } else if ((int16_t)DG8(0x94A6 + owner*16 + r) <
+                                       (int16_t)((int16_t)DG16(0x85C8 + r*2) >> 3))
+                                ai8_flags_9A |= 0x20;           /* @asm 0x4F9F6..0x4FA09 */
+                        }
+                        if (ai8_qty3_48 != 0) {                 /* @asm 0x4FA0E */
+                            int16_t keep_96 = 1;                /* @asm 0x4FA44 */
+                            if (func_04C682_ai_power_strength_delta(
+                                    (uint16_t)owner, r) > 0)    /* @asm 0x4FA1F/0x4FA25 */
+                                ai8_flags_9A |= 0x40;           /* @asm 0x4FA29 */
+                            if (DG8(0x94A6 + owner*16 + r) == 0) /* @asm 0x4FA38 */
+                                ai8_flags_9A |= 0x40;           /* @asm 0x4FA3F */
+                            if (col_own >= 0 && reg_own_col == r) { /* @asm 0x4FA4A/0x4FA52 */
+                                if ((int16_t)(8 - (int16_t)DG8(0x94E6 + owner*16 + r))
+                                        > col_own_dist)         /* @asm 0x4FA5E..0x4FA69 */
+                                    ai8_flags_9A &= ~0x40;      /* @asm 0x4FA6E */
+                                if (col_own_dist >= 0x0C)       /* @asm 0x4FA73 */
+                                    keep_96 = 0;                /* @asm 0x4FA79 */
+                            }
+                            if (keep_96 != 0) {                 /* @asm 0x4FA7F */
+                                int16_t t = (int16_t)(DGS16(0x538E) >> 4);
+                                                                /* @asm 0x4FA86 */
+                                if (DG16(0x9650) != 0 &&        /* @asm 0x4FA8F */
+                                    (int16_t)((int16_t)DG8(0x94E6 + owner*16 + r) * 4
+                                        + (int16_t)DG8(0x94A6 + owner*16 + r)) > t &&
+                                                                /* @asm 0x4FAA0..0x4FAB1 */
+                                    (int16_t)DG16(0x1734 + owner*2) < 0x14)
+                                                                /* @asm 0x4FABB */
+                                    ai8_flags_9A &= ~0x40;      /* @asm 0x4FAC2 */
+                            }
+                            if (ai8_7E != 0 &&                  /* @asm 0x4FAC7 */
+                                DG8(0xA13C + r) > 1)            /* @asm 0x4FAD0 */
+                                ai8_flags_9A &= ~0x40;          /* @asm 0x4FAD7 */
+                            if (target_64 != 0)                 /* @asm 0x4FADC */
+                                ai8_flags_9A |= 0x40;           /* @asm 0x4FAE2 */
+                            if (hunt2_EA != 0)                  /* @asm 0x4FAE7 */
+                                ai8_flags_9A |= 0x40;           /* @asm 0x4FAEE */
+                            if (DG16(0x173E) & (uint16_t)(1u << r))
+                                ai8_flags_9A |= 0x40;           /* @asm 0x4FAF3/0x4FB01 */
+                        }
+                        if (ai8_qty4_46 != 0 && (DG8(0x5382) & 1)) { /* @asm 0x4FB06/0x4FB0C */
+                            if (DG8(0x94E6 + (int16_t)DG16(0x5398)*16 + r) != 0)
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FB1D/0x4FB24 */
+                        }
+                        if (ai8_qty4_46 != 0 && !(DG8(0x5382) & 1)) {
+                                                                /* @asm 0x4FB29/0x4FB32 */
+                            if (DG8(0x9870 + owner*16 + r) == 4) /* @asm 0x4FB46 */
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FB4D */
+                            if (qty6_44 == 0) {                 /* @asm 0x4FB52 */
+                                int16_t t = (int16_t)(DGS16(0x538E) >> 4);
+                                                                /* @asm 0x4FB58 */
+                                if (DG16(0x9650) != 0 &&        /* @asm 0x4FB61 */
+                                    (int16_t)((int16_t)DG8(0x94E6 + owner*16 + r) * 4
+                                        + (int16_t)DG8(0x94A6 + owner*16 + r)) > t &&
+                                                                /* @asm 0x4FB72..0x4FB83 */
+                                    (int16_t)DG16(0x1734 + owner*2) < 0x14)
+                                                                /* @asm 0x4FB8D */
+                                    ai8_flags_9A &= ~0x10;      /* @asm 0x4FB94 */
+                            }
+                            if (DG8(0x94E6 + owner*16 + r) == 0 && /* @asm 0x4FBA3 */
+                                (DG8(0x95F2 + r) & 4) &&        /* @asm 0x4FBAA */
+                                col_any_dist < 7)               /* @asm 0x4FBB1 */
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FBB7 */
+                            if (DG8(0x95F2 + r) & 8)            /* @asm 0x4FBBC */
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FBC3 */
+                        }
+                        if (ai8_qty4_46 != 0) {                 /* @asm 0x4FBC8 */
+                            if (func_04C306_ai_queue_a_lookup_max((uint16_t)owner,
+                                    (uint16_t)map_x, (uint16_t)map_y, 7) != 0)
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FBDD/0x4FBE7 */
+                            if (func_04C306_ai_queue_a_lookup_max((uint16_t)owner,
+                                    (uint16_t)map_x, (uint16_t)map_y, 1) != 0)
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FBFB/0x4FC05 */
+                            if (DG16(0x173C) & (uint16_t)(1u << r))
+                                ai8_flags_9A |= 0x10;           /* @asm 0x4FC0A/0x4FC18 */
+                        }
+                    }
+                }
+                if (DG16(0x1740) != 0)                          /* @asm 0x4FCE0 override */
+                    ai8_flags_9A = 0;                           /* @asm 0x4FCE7 */
+                if (ai8_flags_9A != 0) {                        /* @asm 0x4FCED */
+                    /* ---- BOARDING EXECUTOR (0x4FCF7..0x4FE37) ---- */
+                    int16_t progress_76 = 0, repeat_24, dirc;
+                    if (hunt2_EA != 0 || target_64 != 0)        /* @asm 0x4FCF7/0x4FCFE */
+                        special = 0;                            /* @asm 0x4FD04 [bp-4] */
+                    do {                                        /* L_4FD15 */
+                        int cur;
+                        repeat_24 = 0;                          /* @asm 0x4FD2D */
+                        dirc = -1;                              /* @asm 0x4FD32 */
+                        cur = unit_chain_resolve(unit_index);   /* @asm 0x4FD3B */
+                        for (; cur >= 0 && dirc != 8 && repeat_24 == 0;
+                             cur = unit_chain_next(cur)) {      /* @asm 0x4FDD5..0x4FDE6 */
+                            uint8_t ct = U_OFF(cur, U_TYPE);
+                            if (ct >= 0x0D && ct <= 0x12)       /* @asm 0x4FDEB/0x4FDF2 */
+                                continue;
+                            dirc = (int16_t)func_04C89E_ai_best_adjacent_move(
+                                (uint16_t)owner, (uint16_t)map_x, (uint16_t)map_y,
+                                (uint16_t)(ai8_flags_9A & 0x40),
+                                (uint16_t)(ct == 0x0B ? 1 : 0)); /* @asm 0x4FD46..0x4FD62 */
+                            if ((DG8(0x523D + (uint16_t)ct * 14) & (uint8_t)ai8_flags_9A)
+                                && dirc != 8) {                 /* @asm 0x4FD7D/0x4FD83 */
+                                progress_76 = 1;                /* @asm 0x4FD89 */
+                                U_OFF(cur, 0x05) = 0;           /* @asm 0x4FD92 moves */
+                                func_03F90E_logic_sz_50((uint16_t)cur,
+                                                        (uint16_t)dirc);
+                                                                /* @asm 0x4FD9D board */
+                                func_007BCE_logic_sz_25((uint16_t)cur);
+                                                                /* @asm 0x4FDA8 */
+                                if (U_OFF(cur, U_MAPX) != (uint8_t)map_x ||
+                                    U_OFF(cur, U_MAPY) != (uint8_t)map_y)
+                                    repeat_24 = 1;              /* @asm 0x4FDB8..0x4FDC8 */
+                            }
+                        }
+                    } while (repeat_24 != 0);                   /* @asm 0x4FE18/0x4FE1E */
+                    if (progress_76 != 0)                       /* @asm 0x4FE28 */
+                        func_007BCE_logic_sz_25((uint16_t)unit_index);
+                                                                /* @asm 0x4FE2F */
+                }
+                /* ---- SAIL-DESTINATION DECISION (0x4FE4F..0x50140) ---- */
+                if (special == 0) {                             /* @asm 0x4FE4F */
+                    int run_scoring = 0;
+                    if (ai8_80 != 0) {                          /* @asm 0x4FE58 */
+                        run_scoring = 1;
+                    } else if (!(ai8_qty3_48 == ai8_deliv_A6 && /* @asm 0x4FE62 */
+                                 (int16_t)DG16(0x1734 + owner*2) < 0x19)
+                                                                /* @asm 0x4FE6D */
+                               && ai8_flags_9A == 0) {          /* @asm 0x4FE77 */
+                        run_scoring = 1;
+                    }
+                    if (run_scoring) {
+                        /* destination scoring over all colonies (0x4FE81..0x50124) */
+                        int16_t bx_4C = (int16_t)U_OFF(unit_index, U_MAPX);
+                        int16_t by_5C = (int16_t)U_OFF(unit_index, U_MAPY);
+                                                                /* @asm 0x4FE85..0x4FE92 */
+                        int16_t bestv = (int16_t)0xD8F1;        /* @asm 0x4FE95 -9999 */
+                        int16_t ci, score_26;
+                        for (ci = 0; ci < (int16_t)DG16(0x539E); ci++) {
+                                                                /* @asm 0x4FE9B/0x50013 */
+                            int16_t r, cap2, mult_B0 = 1;       /* @asm 0x5008C */
+                            int16_t tx, ty, d;
+                            func_0082DC_logic_sz_118((uint16_t)ci); /* @asm 0x50023 */
+                            if (DG8(DG16(0x8542) + 0x1A) != (uint8_t)owner)
+                                continue;                       /* @asm 0x50033 */
+                            if (DG8(DG16(0x8542) + 0) == U_OFF(unit_index, U_MAPX) &&
+                                DG8(DG16(0x8542) + 1) == U_OFF(unit_index, U_MAPY))
+                                continue;                       /* @asm 0x5003E..0x5004B */
+                            r = (int16_t)func_005E90_op_sz_64(
+                                DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                                                                /* @asm 0x50056 */
+                            if (ai8_B2 != 0 &&                  /* @asm 0x50061 */
+                                DG8(0x9870 + owner*16 + r) == 0)
+                                continue;                       /* @asm 0x50071 */
+                            cap2 = (int16_t)func_008734_logic_sz_30(); /* @asm 0x50078 */
+                            if (cap2 > 0x0C) cap2 = 0x10;       /* @asm 0x50081/0x50086 */
+                            if (ai8_qty4_46 == 0) {             /* @asm 0x50092 */
+                                /* colonist-delivery scoring (L_4FED6) */
+                                int16_t pop = (int16_t)DG8(DG16(0x8542) + 0x1F);
+                                if (pop > 0x10) pop = 0x10;     /* @asm 0x4FEEB/0x4FEEF */
+                                score_26 = (int16_t)(random_int_4D4(0, 8)
+                                    + (((0x11 - pop) * (0x11 - pop) + 2) << 2));
+                                                                /* @asm 0x4FED8..0x4FF02 */
+                                score_26 = (int16_t)(score_26 +
+                                    ((cap2 - (int16_t)DG8(DG16(0x8542) + 0x1F)) << 1));
+                                                                /* @asm 0x4FF09..0x4FF15 */
+                                if (DG8(0x94E6 + (int16_t)DG16(0x5398)*16 + r) != 0)
+                                    score_26 += 0x14;           /* @asm 0x4FF22/0x4FF29 */
+                                score_26 = (int16_t)(score_26 +
+                                    ((DG8(DG16(0x8542) + 0x1B) & 0x10) ? 0x19 : -0x19));
+                                                                /* @asm 0x4FF31..0x4FF3F
+                                                                 * sbb/and trick: +-25 */
+                            } else {                            /* military (L_5009B) */
+                                score_26 = 0;                   /* @asm 0x5009B */
+                                if (DG8(0x9870 + owner*16 + r) == 0)
+                                    continue;                   /* @asm 0x500AA/0x500B1 */
+                                {
+                                    int16_t r2 = (int16_t)func_005E90_op_sz_64(
+                                        DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                                                                /* @asm 0x500C1 */
+                                    score_26 = (int16_t)(score_26 +
+                                        (((int16_t)(DG8(0x95F2 + r2) & 7)) << 3));
+                                                                /* @asm 0x500CB..0x500DC */
+                                }
+                                if (DG8(0xA89C) != 0 && ai8_qty4_46 > 1)
+                                                                /* @asm 0x500DF/0x500E6 */
+                                    score_26 = (int16_t)(score_26 -
+                                        (((int16_t)DG8(0xA89C) * ai8_qty4_46) << 3));
+                                                                /* @asm 0x500EC..0x500F7 */
+                                if (DG8(0x94E6 + (int16_t)DG16(0x5398)*16 + r) != 0)
+                                    score_26 += 0x32;           /* @asm 0x50104/0x5010B */
+                                if (DG8(DG16(0x8542) + 0x1B) & 0x40) {
+                                    score_26 += 0x3C;           /* @asm 0x50113/0x5011C */
+                                } else if (DG16(0x9650) > 1 &&  /* @asm 0x4FEA4 */
+                                           (int16_t)DG16(0x1734 + owner*2) < 0x14) {
+                                                                /* @asm 0x4FEB1 */
+                                    score_26 -= 0x2D;           /* @asm 0x4FEB8 */
+                                } else if (DG8(DG16(0x8542) + 0x1B) & 8) {
+                                    score_26 += 0x2D;           /* @asm 0x4FEC4/0x4FECA */
+                                } else {
+                                    score_26 -= 0x0F;           /* @asm 0x4FED0 */
+                                }
+                            }
+                            /* common tail (L_4FF42) */
+                            score_26 = (int16_t)(score_26 +
+                                (int16_t)(int8_t)DG8(DG16(0x8542) + 0x8F));
+                                                                /* @asm 0x4FF46/0x4FF4B */
+                            if (DG8(DG16(0x8542) + 0x1B) & 2) { /* @asm 0x4FF4E danger */
+                                if (U_OFF(unit_index, U_TYPE) != 0x11)
+                                    score_26 -= 0x32;           /* @asm 0x4FF58/0x4FF5F */
+                            } else if (DG8(DG16(0x8542) + 0x1B) & 1) {
+                                                                /* @asm 0x4FF66 */
+                                if (U_OFF(unit_index, U_TYPE) < 0x11)
+                                    score_26 = (int16_t)(score_26 +
+                                        (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                          - 0x0A) << 1));       /* @asm 0x4FF70..0x4FF94 */
+                            }
+                            if (!(DG8(0x5D62 + (uint16_t)DG16(0x8DC6) * 0xCA) & 0x40))
+                                                                /* @asm 0x4FF97/0x4FF9D */
+                                func_0083F2_op_sz_71(DG8(DG16(0x8542) + 0),
+                                    DG8(DG16(0x8542) + 1), (uint16_t)owner,
+                                    (uint16_t)-2);              /* @asm 0x4FFB7 re-find */
+                            if ((int16_t)DG16(0x8DC6) < 0)      /* @asm 0x4FFBF */
+                                continue;
+                            ty = (int16_t)DG8(DG16(0x8542) + 1); /* @asm 0x4FFCA */
+                            tx = (int16_t)DG8(DG16(0x8542) + 0); /* @asm 0x4FFD3 */
+                            d = (int16_t)func_00493C_logic_sz_14((uint16_t)map_x,
+                                    (uint16_t)map_y, (uint16_t)tx, (uint16_t)ty);
+                                                                /* @asm 0x4FFE1 */
+                            score_26 = (int16_t)(score_26 -
+                                (((d * mult_B0) >> 1) + 1));    /* @asm 0x4FFE9..0x4FFF0 */
+                            if (score_26 >= bestv) {            /* @asm 0x4FFF7 jl skips */
+                                bestv = score_26;               /* @asm 0x4FFFF */
+                                bx_4C = tx;                     /* @asm 0x50006 */
+                                by_5C = ty;                     /* @asm 0x5000C */
+                            }
+                        }
+                        /* threshold: qty4 present -> any score; else > -999 */
+                        if ((int16_t)(ai8_qty4_46 >= 1 ? 0 : (int16_t)0xFC19) < bestv) {
+                                                                /* @asm 0x50124..0x50131 */
+                            func_04E2B6_unit_set_order_state((uint16_t)unit_index,
+                                0x34, (uint8_t)bx_4C, (uint8_t)by_5C);
+                                                                /* @asm 0x50133..0x5013C
+                                                                 * dx='4' via 0x4F033 */
+                            return move_eval_tail_51C68(unit_index, owner);
+                        }
+                    }
+                }
+            }
+
+            /* ---- deliv==0 CONTINUATION (L_50140..0x50583) ---- */
+            /* privateer auto-explore (0x50158..0x50194) */
+            if ((DG8(0x5382) & 1) &&                            /* @asm 0x50158 */
+                U_OFF(unit_index, U_TYPE) == 0x12 &&            /* @asm 0x50163 */
+                special == 0 &&                                 /* @asm 0x5016A */
+                ai8_deliv_A6 == 0 &&                            /* @asm 0x50170 */
+                DG16(0x53DE) == 0 &&                            /* @asm 0x50177 */
+                DG8(0x9456 + owner) == 0 &&                     /* @asm 0x50182 */
+                (int16_t)(DG16(0x53DA) + DG16(0x53DC) + DG16(0x53E0)) != 0)
+                                                                /* @asm 0x50189..0x50194 */
+                goto ai8_explore_50196;
+            /* idle-explore gate (0x501BA..0x501E0) */
+            if (ai8_deliv_A6 == 0 &&                            /* @asm 0x501BA */
+                ai8_best42 < 0 &&                               /* @asm 0x501C1 */
+                transport_DA != 0 &&                            /* @asm 0x501C7 */
+                special == 0 &&                                 /* @asm 0x501CE */
+                DG8(0x945A + owner) > DG8(0x9456 + owner))      /* @asm 0x501D4..0x501E0 */
+                goto ai8_explore_50196;
+            /* unload evaluation (0x501FA..0x50538) */
+            if (ai8_cargo_B4 != 0 && special == 0) {            /* @asm 0x501FA/0x50204 */
+                if (ai8_best42 >= 0) {                          /* @asm 0x5020D */
+                    int16_t best_22 = -1, bestv = -1;           /* @asm 0x50216 */
+                    int16_t ci;
+                    for (ci = 0; ci < (int16_t)DG16(0x539E); ci++) {
+                                                                /* @asm 0x50220/0x50414 */
+                        int16_t r, cap_20, ok_8, score_26, g, d;
+                        func_0082DC_logic_sz_118((uint16_t)ci); /* @asm 0x50422 */
+                        if (DG8(DG16(0x8542) + 0x1A) != (uint8_t)owner)
+                            continue;                           /* @asm 0x50432 */
+                        if (ci == col_own && col_own_dist == 0) /* @asm 0x5043A/0x5043F */
+                            continue;
+                        if (!(DG8(0x5D62 + (uint16_t)ci * 0xCA) & 0x40))
+                            continue;                           /* @asm 0x50445/0x5044F
+                                                                 * harbor flag */
+                        if ((int16_t)(int8_t)U_OFF(unit_index, 0x06) == ci)
+                            continue;                           /* @asm 0x50455/0x5045D */
+                        if (ai8_best42 == 8) {                  /* @asm 0x5045F horses */
+                            int16_t c2 = func_008D00_colony_stock_cap();
+                                                                /* @asm 0x50465 */
+                            if ((int16_t)((int16_t)qty_tally_C6[8] +
+                                    (int16_t)DG16(DG16(0x8542) + 0xAA)) > c2)
+                                continue;                       /* @asm 0x5046C..0x5047B */
+                        }
+                        r = (int16_t)func_005E90_op_sz_64(
+                            DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                                                                /* @asm 0x5048A */
+                        cap_20 = func_008D00_colony_stock_cap(); /* @asm 0x50495 */
+                        ok_8 = 1;                               /* @asm 0x5049D */
+                        score_26 = 0;                           /* @asm 0x504A4 */
+                        for (g = 0; g < 0x10; g++) {            /* @asm 0x504A7/0x50291 */
+                            int16_t a, stock;
+                            if (qty_tally_C6[g] == 0)           /* @asm 0x5029C */
+                                continue;
+                            stock = (int16_t)DG16(DG16(0x8542) + 0x9A + g*2);
+                            if (DG16(DG16(0x8542) + 0x90) & (uint16_t)(1u << g)) {
+                                                                /* @asm 0x502B0 boycott */
+                                if (stock >= 0x64) {            /* @asm 0x502BB */
+                                    ok_8 = 0;                   /* @asm 0x502C5 */
+                                    continue;                   /* (loop exits via cond) */
+                                }
+                            }
+                            /* score block A (L_50228) */
+                            a = (int16_t)qty_tally_C6[g];       /* @asm 0x5022C */
+                            if ((int16_t)(a + stock) >= cap_20) /* @asm 0x50235/0x50239 */
+                                score_26 = (int16_t)(score_26 +
+                                    (((cap_20 - stock - a) *
+                                      (int16_t)DG8(0x84BC + owner*16 + g)) << 2));
+                                                                /* @asm 0x5023E..0x5025D */
+                            if (DG8(DG16(0x8542) + 0x8D) == (uint8_t)g)
+                                                                /* @asm 0x50268 wanted */
+                                score_26 = (int16_t)(score_26 +
+                                    (((int16_t)(int8_t)DG8(DG16(0x8542) + 0x8F) + 8)
+                                     << 2));                    /* @asm 0x5026E..0x50279 */
+                            score_26 = (int16_t)(score_26 +
+                                (cap_20 - stock - 1));          /* @asm 0x5027C..0x5028A */
+                        }
+                        if (ok_8 == 0)                          /* @asm 0x502CA */
+                            continue;                           /* @asm 0x502D0 */
+                        if (ai8_best42 == 0x0F) {               /* @asm 0x502D3 muskets */
+                            int16_t k;
+                            if (DG8(0x94E6 + (int16_t)DG16(0x5398)*16 + r) != 0)
+                                score_26 += 0x10;               /* @asm 0x502E6/0x502ED */
+                            for (k = 0; k < 0x14; k++) {        /* @asm 0x502F1/0x50301 */
+                                int16_t cy = (int16_t)((int8_t)DG8(0x00DE + k)
+                                    + DG8(DG16(0x8542) + 1));   /* @asm 0x5030A..0x5031A */
+                                int16_t cx = (int16_t)((int8_t)DG8(0x00C8 + k)
+                                    + DG8(DG16(0x8542) + 0));   /* @asm 0x5031E..0x50327 */
+                                int16_t oth;
+                                if (func_005BFA_logic_sz_49((uint16_t)cx,
+                                        (uint16_t)cy) == 0)     /* @asm 0x5032B/0x50333 */
+                                    continue;
+                                oth = (int16_t)func_006018_logic_sz_33(
+                                    (uint16_t)cx, (uint16_t)cy); /* @asm 0x5033D */
+                                if (oth < 4) {                  /* @asm 0x50348 */
+                                    score_26 += 0x18;           /* @asm 0x502FA */
+                                } else {
+                                    score_26 = (int16_t)(score_26 +
+                                        ((int16_t)func_008262_logic_sz_20(
+                                            (uint16_t)func_0082A0_logic_sz_18(
+                                                (uint16_t)(oth - 4),
+                                                (uint16_t)owner)) << 4));
+                                                                /* @asm 0x50351..0x50369 */
+                                }
+                            }
+                        }
+                        if (DG8(DG16(0x8542) + 0x1B) & 2) {     /* @asm 0x50372 danger */
+                            if (U_OFF(unit_index, U_TYPE) < 0x10)
+                                score_26 = (int16_t)(score_26 +
+                                    (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                      - 0x0A) << 3));           /* @asm 0x5037C..0x503A1 */
+                        } else if (DG8(DG16(0x8542) + 0x1B) & 1) {
+                                                                /* @asm 0x503A4 */
+                            if (U_OFF(unit_index, U_TYPE) < 0x10)
+                                score_26 = (int16_t)(score_26 +
+                                    (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                      - 0x0A) << 1));           /* @asm 0x503AE..0x503D0 */
+                        }
+                        d = (int16_t)func_00493C_logic_sz_14((uint16_t)map_x,
+                                (uint16_t)map_y, DG8(DG16(0x8542) + 0),
+                                DG8(DG16(0x8542) + 1));         /* @asm 0x503EA */
+                        score_26 = (int16_t)(score_26 / ((d >> 2) + 1));
+                                                                /* @asm 0x503F2..0x503FC */
+                        if (score_26 >= bestv) {                /* @asm 0x50401 jl skips */
+                            bestv = score_26;                   /* @asm 0x50407 */
+                            best_22 = ci;                       /* @asm 0x5040E */
+                        }
+                    }
+                    if (best_22 >= 0) {                         /* @asm 0x504B0 */
+                        func_0082DC_logic_sz_118((uint16_t)best_22); /* @asm 0x504B9 */
+                        func_04E2B6_unit_set_order_state((uint16_t)unit_index, 0x50,
+                            DG8(DG16(0x8542) + 0), DG8(DG16(0x8542) + 1));
+                                                                /* @asm 0x504C1..0x504D5
+                                                                 * dx='P', jmp 0x4E9E5 */
+                        return move_eval_tail_51C68(unit_index, owner);
+                    }
+                    /* no harbor found: AT-SEA EMERGENCY UNLOAD (L_5052D) */
+                    while (U_OFF(unit_index, 0x0C) != 0) {      /* @asm 0x50531 */
+                        int16_t good = (int16_t)func_00B42C_logic_sz_139(
+                            (uint16_t)unit_index, 0);           /* @asm 0x504DD discharge */
+                        uint16_t price = DG16(0x8DC4);          /* @asm 0x504E9 */
+                        int32_t v;
+                        func_03234A(good, (int)price);          /* @asm 0x504EE market */
+                        v = (int32_t)(int16_t)DG8(0x84BC + owner*16 + good)
+                            * (int32_t)(int16_t)price;          /* @asm 0x50501/0x50507 */
+                        DGS32(DG16(0x84FC) + 0x2A) += v;        /* @asm 0x50510 gold */
+                        DGS32(DG16(0x84FC) + 0x7C + good*4) += v; /* @asm 0x5051B */
+                        DGS32(DG16(0x84FC) + 0xBC + good*4) +=
+                            (int32_t)(int16_t)price;            /* @asm 0x50521..0x50529 */
+                    }
+                    U_OFF(unit_index, 0x0C) = 0;                /* @asm 0x5053C */
+                } else {
+                    /* best42 < 0: capacity explore check (L_50541) */
+                    uint8_t cc = U_OFF(unit_index, 0x0C);       /* @asm 0x50545 */
+                    if (DG8(0x5237 + (uint16_t)type * 14) == cc) /* @asm 0x5055B full */
+                        goto ai8_explore_50196;                 /* @asm 0x50561 */
+                    if (cc > 1)                                 /* @asm 0x50564 */
+                        goto ai8_explore_50196;                 /* @asm 0x50568 */
+                }
+            }
+        }
     }
 ai9:                                                            /* 0x50583 */
     /* ======================= AI9: TRANSPORT-REQUEST PICKUP ==================
@@ -1261,7 +1778,12 @@ ai10:                                                           /* 0x5076E */
 
 ai8_explore_50196:                                              /* 0x50196 */
     /* shared explore exit: push unit; call 0x191F:0x2EA; reuse add sp,2 at
-     * 0x4F225 then jmp 0x51C68 */
+     * 0x4F225 then jmp 0x51C68.  0x191F:0x2EA is an RTLink SUB-SEGMENT record
+     * (trailer 0x138; directory decode pending, see ovlresolve.py) -- NOT
+     * page08+0x15E: that mis-resolution briefly wired the unit timer-decay
+     * func_040608 here and zeroed ship types in the soak (caught by the
+     * baseline pin at turn 383).  Weak-stub no-op until the sub-segment
+     * directory is decoded (ROUTE_B 1.5a). */
     overlay_191F_2EA_explore((uint16_t)unit_index);             /* @asm 0x050199 */
     return move_eval_tail_51C68(unit_index, owner);             /* @asm 0x4F228 jmp 0x51C68 */
 
@@ -2207,7 +2729,7 @@ static int16_t move_eval_tail_51C68(int16_t unit_index, int16_t owner)
  *  AI4 slow-hauler→origin (0x4EA5C..0x4EB02): BYTE_VERIFIED
  *  AI5 settle-site scan (0x4EB4F..0x4F060): BYTE_VERIFIED (full scan+scoring)
  *  AI6 colonist deploy (0x4F078..0x4F23C): BYTE_VERIFIED 2026-06-10
- *    func_191F_9A4_colonist_enter: external body unresolved (0x191F:0x9A4)
+ *    0x191F:0x9A4 colonist-enter RESOLVED -> func_02EAEA_op_sz_49 (1.5b)
  *    bld_pop_helper: external body in production_support.c (0x181F:0xC7C)
  *  AI7..AI16 gates + AI11/AI12/AI13/AI14/AI15/AI16 bodies: BYTE_VERIFIED.
  *  AI8 setup (cargo scan + task counters) BYTE_VERIFIED; the AI8 delivery

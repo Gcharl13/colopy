@@ -58,6 +58,7 @@
  * the file's convention of calling thunks through their canonical names).  Each
  * resolves via tools/rtlink/rtlink_decode.py; role is inferred from call context.
  * -------------------------------------------------------------------------- */
+extern int unit_chain_next(int idx);      /* 0x181F:0x02E4 AX-arg chain-next (unit/chain.c) */
 extern int overlay_call_181F_0984(void);  /* 0x181F:0x0984 — unit special-order gate */
 extern int overlay_call_181F_06E6(void);  /* 0x181F:0x06E6 — map step/adjacency */
 extern int overlay_call_191F_01C2(void);  /* 0x191F:0x01C2 — unit handler (page 0x11) */
@@ -565,7 +566,12 @@ int func_04C846_ai_find_unit_of_type(int16_t start_unit)
                 g_unit_table_3144[best * UNIT_RECORD_STRIDE + UNIT_TYPE_OFF] >= type)
                 best = cur;
         }
-        cur = overlay_call_181F_02E4();                 /* @asm 0x04C88A next-unit(cur) */
+        cur = unit_chain_next(cur);                     /* @asm 0x04C88A 0x181F:0x2E4 is
+                                                         * the AX-arg chain-next; the old
+                                                         * void-arg placeholder returned
+                                                         * the stub constant 0 -> infinite
+                                                         * walk (hang found by ROUTE_B 1.2
+                                                         * smoke; fixed to the real port) */
     }
     return best;                                        /* @asm 0x04C898 RETF */
 }
@@ -794,7 +800,9 @@ int func_04CAF6_ai_find_nearest_target(uint16_t base_x, uint16_t base_y,
                 if (t >= 0xD && t <= 0x12 &&            /* @asm 0x04CB57/0x04CB5E */
                     g_unit_type_flags_5236[t * 6] != 0) /* @asm 0x04CB77 [bx+0x5236] */
                     found_mil = 1;                      /* @asm 0x04CB7E */
-                occ = overlay_call_181F_02E4();         /* @asm 0x04CB83 next on tile */
+                occ = unit_chain_next(occ);             /* @asm 0x04CB83 AX-arg chain-next
+                                                         * (same placeholder-hang class as
+                                                         * 0x04C88A; real port) */
             }
             if (!found_mil)                             /* @asm 0x04CB92 */
                 chosen = -1;                            /* @asm 0x04CB98 stays unset */

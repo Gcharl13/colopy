@@ -173,6 +173,13 @@ def resolve_thunk(seg, off, exe_bytes=None):
     if loader == LOADER_RESIDENT or s != 0:
         return "resident", HDR + s * 16 + o, f"{s:04X}:{o:04X}"
     page = struct.unpack_from("<H", rec, 10)[0]
+    # RTLink Type-A "extra" trailer: a non-zero word after the page selects a
+    # SUB-SEGMENT (directory decode pending in ovlresolve.py).  Resolving such
+    # records as page+off is WRONG -- it once wired a unit timer-decay function
+    # as the AI ship-explore leaf (ROUTE_B 1.2 soak catch).
+    trailer = struct.unpack_from("<H", rec, 12)[0] if len(rec) >= 14 else 0
+    if trailer != 0:
+        return "subseg", None, f"page{page:02d}+0x{o:04X} SUBSEG 0x{trailer:X}"
     base = _segmap().get(page)
     if base is None:
         return "overlay", None, f"page {page} (no segmap base)"

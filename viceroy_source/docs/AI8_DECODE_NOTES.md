@@ -1,4 +1,9 @@
-# AI8 delivery body (0x4F883..0x50583) — decode notes (ROUTE_B 1.2, in progress)
+# AI8 delivery body (0x4F883..0x50583) — decode notes (ROUTE_B 1.2, **PORTED 2026-06-11**)
+
+> The port landed in unit/move.c; these notes remain as the decode record.
+> Post-port catches: func_04C846/func_04CAF6 placeholder-hang fix
+> (unit_chain_next), and the 0x191F:0x2EA SUB-SEGMENT mis-resolution
+> (portlib trailer fix) caught by the soak baseline pin at turn 383.
 
 Working notes from the decode sheet `re_work/sheets/func_04E2D6_0x4F883_0x50583.txt`
 (regenerable: `tools/decode_sheet.py 0x4F883 0x50583 --locals tools/locals/func_04E2D6.json`).

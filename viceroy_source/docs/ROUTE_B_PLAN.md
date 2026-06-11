@@ -101,10 +101,19 @@ function; the section map covers 100% of its 14,975 bytes:
       0x4F73E, not to AI8).  Dead-store quirk at 0x4F69B..0x4F6E5
       documented.  Ported FROM THE DECODE SHEET -- first full section
       done sheet-first.
-- [ ] **1.2 AI8 delivery-scoring body** (0x4F883..0x50583, ~3.3 KB): the
-      flag-word build ([bp-0x9A]), colony scoring loop (0x4F998..0x4FCC4),
-      `0x181F:0x920` + `0x181F:0x948` leaf identification, the dx='4' commit
-      and the 0x50140 deliv==0 continuation. (2–3 sessions)
+- [x] **1.2 AI8 delivery-scoring body** DONE 2026-06-11: the full enroute
+      engine ported sheet-first (prologue probes, per-direction region
+      flag-word build with the 0x20/0x40/0x10 cargo-class semantics, the
+      boarding executor via func_04C89E + func_03F90E, sail-destination
+      scoring with the '4' commit, the deliv==0 continuation: privateer +
+      idle explore gates, harbor unload scoring with the 'P' commit, at-sea
+      emergency unload crediting the treasury, capacity explore check).
+      Process catches: (a) a latent placeholder-hang in func_04C846 /
+      func_04CAF6 (void-arg chain-next stub returning 0 -> infinite walk)
+      fixed with the real unit_chain_next port -- the Phase-4 arity class
+      proven dangerous, not cosmetic; (b) a thunk MIS-RESOLUTION (sub-segment
+      trailer ignored) caught by the 500-turn baseline pin at turn 383 and
+      fixed in portlib.resolve_thunk.
 - [x] **1.3 AI9 carrier body** DONE 2026-06-11: the 16-slot loop reads the
       per-power TRANSPORT-REQUEST QUEUE (stride-6 @ DGROUP:0xA0DC: colony /
       demand / count / priority-flag), scores demand/(octile/4+1) with
@@ -117,9 +126,18 @@ function; the section map covers 100% of its 14,975 bytes:
       combat path. Pre-enumerate its own leaf calls on session 1 (bounded by
       E1; the function's lcall list is finite and extracted mechanically),
       then port. (3–4 sessions)
-- [ ] **1.5 Page-07 leaves**: `0x191F:0x2EA` ship-explore move and
-      `0x191F:0x9A4` colonist-enters-colony. Both have known page bases;
-      bodies in page_07.asm. (1 session)
+- [ ] **1.5 Explore + colonist-enter leaves** (revised after resolution):
+  - [x] 1.5b `0x191F:0x9A4` colonist-enter = page03+0x1B1A = file 0x2EAEA,
+        EXISTING port func_02EAEA_op_sz_49 -- wired into AI6 with the
+        call-site cdecl order (colony, unit).  Its interior is
+        placeholder-tier (five overlay_call_* stubs) -- tracked by the
+        Phase-4 floor, identity closed.
+  - [ ] 1.5a `0x191F:0x2EA` ship-explore is an RTLink SUB-SEGMENT record
+        (trailer 0x138) -- the page+off reading is WRONG for these (proven
+        by the soak catching the func_040608 mis-wire at turn 383).  CLOSES
+        by decoding the RTLink sub-segment directory (ovlresolve.py's
+        documented open item); until then the explore leaf stays a weak
+        no-op.  (½–1 session, benefits every other SUBSEG-class thunk too)
 - [ ] **1.6 The runtime dispatcher.** The `func_04E2D6` thunk (0x1A1F:0x4F4)
       has no static lcall site — find the runtime dispatch (function-pointer
       table or computed call) so the per-unit loop runs the original's
