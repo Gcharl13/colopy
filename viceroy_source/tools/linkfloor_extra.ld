@@ -151,6 +151,16 @@ PROVIDE(ovly_relation_970      = func_00726E_op_sz_116);                 /* 181F
 PROVIDE(ovly_step_916          = func_007966_logic_sz_41);               /* 181F:0916 (unit) */
 PROVIDE(func_00726E            = func_00726E_op_sz_116);                 /* bare-name implicit-decl
                                   calls inside func_00730A bound to the weak stub */
+/* G1 tranche 4 (2026-06-11): func_052F7E PHASE-5 planner trampolines.
+ * Page-0x12 cs:0x7Axx stubs resolved 2026-06-10 (banner in the overlay file).
+ * 7AD0 (gold/income tick) is LIVE (its host-pointer bug in scoring/compute.c
+ * fixed on first execution).  7ADF/7AB2 are NOT yet wired: first live run of
+ * func_04CC50 exposed that its PHASE-1 "bound-unit iterator" is a degraded
+ * reconstruction — 0x181F:0x8BC is func_0073A8(unit, class) (a 2-STACK-ARG
+ * chain query, byte-read @0x4CCE7 push 3/4/6), not a next-unit call, and the
+ * 0x2EE/0x2E4 chain steps need their AX unit args restored.  The planner
+ * bodies go live when that loop is byte-restored (named in G1 status). */
+PROVIDE(ovly_tramp_7AD0        = gold_income_tick_for_power);     /* 1A1F:0554 -> func_051EF4 */
 
 /* keepalive: force archive member extraction for ported functions whose
  * strong definition would otherwise lose to the weak stubs (the archive
@@ -181,3 +191,7 @@ EXTERN(func_0082A0_logic_sz_18)
 EXTERN(func_00627A_op_sz_57)
 EXTERN(func_00726E_op_sz_116)
 EXTERN(func_007966_logic_sz_41)
+EXTERN(gold_income_tick_for_power)
+EXTERN(func_00BCAA_op_sz_64)
+EXTERN(func_00BCEA_op_sz_61)
+EXTERN(func_00CD0B_logic_sz_67)

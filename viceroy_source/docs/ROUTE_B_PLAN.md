@@ -234,6 +234,29 @@ symbols).
 > 1A1F:16C), native-AI queries (6DC/37A/6BE/682/718/7E0/78C, dist_370,
 > commit_A4C).  Non-AI rows (msg_*, colony_*, ldiv32/long-math, market)
 > are the ranked Phase-4 worklist, not G1 blockers.
+>
+> **Tranches 2–4 done 2026-06-11** (soak green, 47 distinct stub rows):
+> all probes/queries/distance/commit/relation/step leaves wired; epoch
+> helpers resolved + called direct (0x582=market_set_active, 0x590=
+> func_00BCEA, 0xDAE=func_00BCAA(n,sel) block clears — including one the
+> old port had DROPPED, 0x47A=func_00D0E0 input-window reset NEW-PORTED
+> with the 0A58:038B = func_00CD0B(out_x,out_y) pointer protocol, the
+> 0x0D1D memset/memcpy = direct DG ops); planner tramp 7AD0 ->
+> gold_income_tick_for_power LIVE (its *(0x84FC) read was modeled as a
+> host pointer — crashed on first execution, fixed to the DGROUP
+> near-word indirection).  STILL OPEN for G1:
+> (a) 7ADF/7AB2 planner bodies — first live run of func_04CC50 showed
+>     its PHASE-1 "iterator" is a degraded reconstruction (0x181F:0x8BC
+>     = func_0073A8(unit,class), 2 STACK args @0x4CCE7 push 3/4/6 — not
+>     a next-unit call; 0x2EE/0x2E4 chain steps need their AX unit args)
+>     — byte-restore that loop, then wire both trampolines;
+> (b) 181F:04CA timer re-seed + 0x0C0C:0x0006 tick reads — platform tick
+>     source pending (also blocks the two pacing waits);
+> (c) ai_eval_unit's confront leaf 1A1F:016C = func_04B308 (1762 bytes,
+>     UNPORTED — the one genuinely missing AI body);
+> (d) ~12 void-arity overlay_call_* rows with documented args (06BE /
+>     078C / 0952 outside the AI files, 09C8, 081C, 0B78, 0722, 09E6,
+>     0A58:038B's remaining void callers) — per-site arg restoration.
 
 ---
 

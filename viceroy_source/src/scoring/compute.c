@@ -60,9 +60,14 @@ extern uint8_t  g_difficulty;    /* 0x53A6  difficulty / current-player byte    
 extern uint16_t g_colony_count;  /* 0x539E  active-colony loop bound            */
 extern uint8_t  g_demo_flag;     /* 0x5382  bit0 = demo/endgame gate            */
 
-/* g_active_power: far ptr to the active power's PowerRecord. [BYTE_VERIFIED].
- * @asm 0x051F7C: mov bx,[0x84FC]. +0x2A is GOLD (see CORRECTION 1).            */
-extern uint8_t far *g_active_power;   /* DGROUP:0x84FC */
+/* Active PowerRecord binding: the original reads the NEAR POINTER WORD at
+ * DGROUP:0x84FC (mov bx,[0x84FC] @asm 0x051F7C) — a DGROUP offset, not a host
+ * pointer.  (The former `extern uint8_t far *g_active_power` here collided
+ * with naval.c's same-named index-word alias and read 8 bytes of DGROUP as a
+ * host pointer — live crash 2026-06-11 when the planner trampoline went live.)
+ * Modern model: indirection through the DGROUP byte image. */
+extern uint8_t g_dgroup[];
+#define ACTIVE_POWER_REC()  ((uint16_t)(g_dgroup[0x84FC] | (g_dgroup[0x84FD] << 8)))
 
 /* Per-power scalar byte table read by func_051EF4 at [power_idx - 0x6D68].
  * Access pattern BYTE_VERIFIED @0x051F2E `mov cl,[bx-0x6D68]`; the table's
@@ -130,10 +135,19 @@ void gold_income_tick_for_power(int power_idx)
     else if (diff == 4) acc <<= 1;              /* x2  */
     acc <<= 2;                                   /* x4  */
 
-    /* @asm 051F7C..051F83 : 32-bit add into PowerRecord+0x2A (= GOLD) via *(0x84FC) */
+    /* @asm 051F7C..051F83 : 32-bit add into PowerRecord+0x2A (= GOLD) via the
+     * near-pointer word [0x84FC]: mov bx,[0x84FC]; add [bx+0x2A],ax; adc [bx+0x2C],dx */
     {
-        long *gold = (long *)(g_active_power + 0x2A);
-        *gold += acc;
+        uint16_t rec = ACTIVE_POWER_REC();
+        int32_t gold = (int32_t)(g_dgroup[rec + 0x2A]
+                     | (g_dgroup[rec + 0x2B] << 8)
+                     | ((uint32_t)g_dgroup[rec + 0x2C] << 16)
+                     | ((uint32_t)g_dgroup[rec + 0x2D] << 24));
+        gold += (int32_t)acc;
+        g_dgroup[rec + 0x2A] = (uint8_t)(gold       & 0xFF);
+        g_dgroup[rec + 0x2B] = (uint8_t)((gold >> 8) & 0xFF);
+        g_dgroup[rec + 0x2C] = (uint8_t)((gold >> 16) & 0xFF);
+        g_dgroup[rec + 0x2D] = (uint8_t)((gold >> 24) & 0xFF);
     }
     (void)power_idx; (void)g_colony_count; (void)g_demo_flag;
 }

@@ -978,11 +978,18 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
      * @asm 0x04CC50..0x04CCD4.  (The per-power count seed pwr.byte[-0x7304] is
      * read INSIDE the 0x181F:0x35C call args — DGROUP 0x8CFC[power] — so it is
      * folded into that thunk here rather than dereferenced separately.) */
-    (void)overlay_call_181F_0582();                     /* @asm 0x04CC58 bind power arg0 */
-    (void)overlay_call_0D1D_0DAE();                     /* @asm 0x04CC68 memset(0x9FAA,0,0x10E) */
-    (void)overlay_call_0D1D_0DAE();                     /* @asm 0x04CC77 memset(0xA13C,0,0x10) */
-    (void)overlay_call_0D1D_0DAE();                     /* @asm 0x04CC86 memset(0x9E98,0,0x10) */
-    (void)overlay_call_0D1D_0DAE();                     /* @asm 0x04CC98 memset(frame[-0x14C],0,0x100) */
+    {   /* @asm 0x04CC58 lcall 0x181F:0x582(arg0) -> func_030550 = market_set_active */
+        extern void market_set_active(int p);
+        market_set_active((int)power);
+    }
+    /* 0x0D1D:0xDAE = C-runtime memset; the three DGROUP clears are direct DG
+     * writes (2026-06-11; the void stubs no-op'd the planner's scratch init): */
+    for (int z = 0; z < 0x10E; z++) DG8(0x9FAA + z) = 0; /* @asm 0x04CC68 memset(0x9FAA,0,0x10E) */
+    for (int z = 0; z < 0x10;  z++) DG8(0xA13C + z) = 0; /* @asm 0x04CC77 memset(0xA13C,0,0x10) */
+    for (int z = 0; z < 0x10;  z++) DG8(0x9E98 + z) = 0; /* @asm 0x04CC86 memset(0x9E98,0,0x10) */
+    uint8_t frame_buf[0x100];                            /* frame[-0x14C] local buffer */
+    for (int z = 0; z < 0x100; z++) frame_buf[z] = 0;    /* @asm 0x04CC98 memset(frame,0,0x100) */
+    (void)frame_buf;
     int n = overlay_call_181F_035C();                   /* @asm 0x04CCB1 count(pwr[-0x7304]>>3,3,0x63) */
     uint16_t work[0x40];                                /* frame[i*2-0x1D8] — 64-slot work array */
     for (int i = 0; i < 0x40; i++)                      /* @asm 0x04CCD0 cmp 0x40 */
@@ -1860,6 +1867,16 @@ extern int16_t g_flag_53C2;            /* DGROUP:0x53C2 */
  *   tick; slot not re-activated until it reaches 0.  @asm 0x053171/0x0531A3. */
 extern uint8_t g_war_matrix_883C[];       /* DGROUP:0x883C — war-matrix flags [power*0x13C+k] */
 extern uint8_t g_war_matrix_cdown_8848[]; /* DGROUP:0x8848 — war-matrix countdown [power*0x13C+k] */
+/* Epoch helpers, resolved + called direct 2026-06-11 (G1 tranche 4):
+ *   0x181F:0x582 -> func_030550 = market_set_active ([0x9E12]/[0x84FC] bind)
+ *   0x181F:0x590 -> func_00BCEA (file 0x0BCEA)
+ *   0x181F:0xDAE -> func_00BCAA (file 0x0BCAA) phase-block clear (n, sel)
+ *   0x181F:0x47A -> func_00D0E0 (file 0x0D0E0) input-window reset
+ *   0x0D1D:0xDAE / 0x0D1D:0xD82 are C-runtime memset/memcpy -> direct DG ops */
+extern void market_set_active(int power);
+extern int  func_00BCEA_op_sz_61(uint16_t arg0);
+extern int  func_00BCAA_op_sz_64(uint16_t n, uint16_t sel);
+extern int  func_00D0E0_input_window_reset(void);
 
 int func_052F7E_ai_power_asset_census(uint16_t power)
 {
@@ -1871,10 +1888,14 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
                                                          *   [0x28EE/0x28F0]; [0x83A6] arg ignored.
                                                          *   BYTE_VERIFIED 2026-06-08. */
     g_self_power_5394 = power;                          /* @asm 0x052FA0 [0x5394]=arg0 */
-    (void)overlay_call_181F_0582();                     /* @asm 0x052FA4 bind power arg0 */
-    (void)overlay_call_181F_0590();                     /* @asm 0x052FB6 bind(0x848[arg0]) */
+    market_set_active((int)power);                      /* @asm 0x052FA4 lcall 0x181F:0x582(arg0)
+                                                         * -> func_030550: [0x9E12]=power,
+                                                         * [0x84FC]=0x8808+power*0x13C. */
+    (void)func_00BCEA_op_sz_61(g_pwr_substate_0848[power]); /* @asm 0x052FB6 0x181F:0x590(0x848[p]) */
     int memsel = (int)g_pwr_substate_0848[power] - 8;   /* @asm 0x052FC1..0x052FCA [bp-0x1E] */
-    (void)overlay_call_0D1D_0DAE();                     /* @asm 0x052FD4 memset(0xA0CC,0,0x10) */
+    /* @asm 0x052FD4 push 0x10; push 0; push 0xA0CC; lcall 0x0D1D:0x0DAE =
+     * C-runtime memset(0xA0CC, 0, 0x10) — direct DG write 2026-06-11. */
+    for (int z = 0; z < 0x10; z++) g_ai_supply_A0CC[z] = 0;
     /* @asm 0x052FDC mov bx,[bp+6]; 0x052FDF mov byte[bx-0x5F48],0 — bx is the
      * power INDEX (not the PowerRecord ptr), so this is the per-power byte gate
      * 0xA0B8[power] (byte-indexed; the word-indexed view is g_ai_pwr_gate_A0B8). */
@@ -1888,7 +1909,10 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
     }
 
     /* ---- PHASE 2 — colony census. @asm 0x053005..0x0530A2 */
-    (void)overlay_call_181F_0DAE();                     /* @asm 0x05300A memset(0x9FAA-block) */
+    /* @asm 0x053005 push [bp-0x1E](memsel); push 0; lcall 0x181F:0xDAE
+     * = func_00BCAA_op_sz_64(0, memsel): phase-block clear (the "memset
+     * (0x9FAA-block)" effect).  Direct call 2026-06-11. */
+    (void)func_00BCAA_op_sz_64(0, (uint16_t)memsel);
     for (int c = 0; c < g_colony_count_539E; c++) {     /* @asm 0x053090 cmp [0x539E] */
         if (g_colony_owners_5D60[c * 0xCA] != (uint8_t)power) /* @asm 0x053022 [bx+0x5D60] */
             continue;                                   /* @asm 0x053026 jne */
@@ -1918,7 +1942,12 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * file 0x1B1D6 dispatching to overlay page 0x5EB:0x2FF2 (body out of scope);
      * call-site args: push[bp-0x1a]=u, push[bp-0x10]=k; return AX=class index (0..15);
      * caller's dec [AX-0x5F34] = dec g_ai_supply_A0CC[AX] BYTE_VERIFIED @0x530CA.CLOSED. */
-    (void)overlay_call_0D1D_0D82();                     /* @asm 0x0530AD memcpy(0xA0BC,0xA0CC,0x10) */
+    /* @asm 0x053098 push [bp-0x1E]; push 1; lcall 0x181F:0xDAE — phase-1
+     * block clear, MISSING from the pre-2026-06-11 port (byte-restored). */
+    (void)func_00BCAA_op_sz_64(1, (uint16_t)memsel);
+    /* @asm 0x0530A5 push 0x10; push 0xA0CC; push 0xA0BC; lcall 0x0D1D:0x0D82
+     * = C-runtime memcpy(0xA0BC, 0xA0CC, 0x10) — direct DG copy 2026-06-11. */
+    for (int z = 0; z < 0x10; z++) DG8(0xA0BC + z) = g_ai_supply_A0CC[z];
     for (int u = 0; u < g_unit_count_539C; u++) {       /* @asm 0x0530F4 cmp [0x539C] */
         uint8_t *uu = &g_unit_table_3144[u * UNIT_RECORD_STRIDE];
         for (int k = 0; k < uu[0x0C /*+0x3150*/]; k++) { /* @asm 0x0530D3..0x0530E0 cmp unit[+0x3150] */
@@ -2018,16 +2047,20 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
      * the page-0x12 helpers (cs:0x7AD0 / cs:0x7ADF / cs:0x7AB2) bracketed by the
      * 0x181F:0x470/0x47A/0x466 begin/step/end resets, then walks the tea-party /
      * boycott escalation gated on [0x828], [0x7F4], [0x82B], [0x53C2]. */
-    (void)overlay_call_181F_0DAE();                     /* @asm 0x0531B5 memset(.,2) */
+    (void)func_00BCAA_op_sz_64(2, (uint16_t)memsel);    /* @asm 0x0531B5 phase-block clear (.,2) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531BD reset-begin */
-    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 -> 0x1A1F:0x554 -> func_051EF4 [CORRECTED 2026-06-10] */
-    (void)overlay_call_181F_0DAE();                     /* @asm 0x0531D1 memset(.,3) */
+    (void)ovly_tramp_7AD0(power);                       /* @asm 0x0531C6 call cs:0x7AD0 -> 0x1A1F:0x554
+                                                         * -> func_051EF4 = gold_income_tick_for_power
+                                                         * (scoring/compute.c; wired via linkfloor_extra) */
+    (void)func_00BCAA_op_sz_64(3, (uint16_t)memsel);    /* @asm 0x0531D1 phase-block clear (.,3) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531D9 */
-    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF -> 0x1A1F:0x578 -> func_04C532 [CORRECTED 2026-06-10] */
-    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 -> 0x1A1F:0x50C -> func_04CC50 (region plan-code aggregation, this file) [CORRECTED 2026-06-10] */
-    (void)overlay_call_181F_0DAE();                     /* @asm 0x0531F7 memset(.,4) */
+    (void)ovly_tramp_7ADF(power);                       /* @asm 0x0531E2 call cs:0x7ADF -> 0x1A1F:0x578
+                                                         * -> func_04C532_ai_queue_a_rebuild (this file) */
+    (void)ovly_tramp_7AB2(power);                       /* @asm 0x0531EC call cs:0x7AB2 -> 0x1A1F:0x50C
+                                                         * -> func_04CC50_ai_strategic_plan_build (this file) */
+    (void)func_00BCAA_op_sz_64(4, (uint16_t)memsel);    /* @asm 0x0531F7 phase-block clear (.,4) */
     (void)overlay_call_181F_0470();                     /* @asm 0x0531FF */
-    (void)overlay_call_181F_047A();                     /* @asm 0x053204 */
+    (void)func_00D0E0_input_window_reset();             /* @asm 0x053204 0x181F:0x47A (file 0x0D0E0) */
 
     /* ---- PHASE 6 — the per-unit AI DISPATCH EPOCH.  @asm 0x053209..0x0534B5.
      * REWRITTEN BYTE-TRUE 2026-06-11 (ROUTE_B 1.6; the pre-rewrite "emit loop"
@@ -2171,7 +2204,7 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
         } while (did);                                  /* @asm 0x0534A2/0x0534A8 jmp 0x053209 */
     }
 
-    (void)overlay_call_181F_0DAE();                     /* @asm 0x0534B0 memset(.,5) cleanup */
+    (void)func_00BCAA_op_sz_64(5, (uint16_t)memsel);    /* @asm 0x0534B0 phase-block clear (.,5) */
     (void)memsel;
     return 0;                                           /* @asm 0x0534BA RETF */
 }

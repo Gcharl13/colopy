@@ -1105,6 +1105,36 @@ int func_00D0B6_logic_sz_35(int x0 /*ax*/, int x1 /*bx*/, int y0 /*dx*/, uint16_
     return 1;                             /* @asm mov ax,1; retf 2 */
 }
 
+/* @asm        0x00D0E0..0x00D105  (38 bytes)  region=load_image
+ * @asm_file   (byte-decoded 2026-06-11; the auto census missed this span —
+ *              "NOT inside any known function span")
+ * @pattern    TINY_RESET
+ * @prologue   none (straight-line, RETF)
+ * @inferred_role  move/input-window RESET: invalidate the remembered cell
+ *                 ([0x7F8]/[0x7FA] = -1), refresh the button word via
+ *                 func_00CD0B(&[0x7E8], &[0x7EA]), clear the press/edge
+ *                 latches.  This is 0x181F:0x47A — the epoch reset
+ *                 func_052F7E PHASE 5/6 brackets with (@asm 0x053204).
+ * @status     BYTE_VERIFIED 2026-06-11 (full 38-byte body decoded)
+ *   @asm 0x00D0E0  mov ax,0xFFFF; mov [0x7F8],ax; mov [0x7FA],ax
+ *   @asm 0x00D0E9  push 0x7EA; push 0x7E8; lcall 0x0A58:0x038B
+ *                  (= func_00CD0B_logic_sz_67(&[0x7E8], &[0x7EA]))
+ *   @asm 0x00D0F7  mov [0x7E6],ax; mov [0x7EE],ax
+ *   @asm 0x00D0FD  sub ax,ax; mov [0x7F2],ax; mov [0x7EC],ax; retf
+ */
+int func_00D0E0_input_window_reset(void)
+{
+    DG16(0x7F8) = 0xFFFF;                 /* @asm 0x00D0E3 */
+    DG16(0x7FA) = 0xFFFF;                 /* @asm 0x00D0E6 */
+    DG16(0x7E6) = (uint16_t)func_00CD0B_logic_sz_67(
+        (uint16_t near *)(DG_BASE + 0x7E8),
+        (uint16_t near *)(DG_BASE + 0x7EA));  /* @asm 0x00D0E9..0x00D0F7 */
+    DG16(0x7EE) = DG16(0x7E6);            /* @asm 0x00D0FA */
+    DG16(0x7F2) = 0;                      /* @asm 0x00D0FF */
+    DG16(0x7EC) = 0;                      /* @asm 0x00D102 */
+    return 0;
+}
+
 /* @asm        0x00D106..0x00D1A4  (158 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00D106_unknown.asm
  * @pattern    MEDIUM_LOGIC
@@ -1137,8 +1167,12 @@ int func_00D106_op_sz_158(void)
 
     DG16(0x7F8) = DG16(0x7E8);            /* @asm save prev col */
     DG16(0x7FA) = DG16(0x7EA);            /* @asm save prev row */
-    /* @asm 0x00D115 push &0x7EA;push &0x7E8; lcall 0A58:0x38B -> buttons in ax */
-    DG16(0x7E6) = (uint16_t)overlay_call_0A58_038B();
+    /* @asm 0x00D115 push &0x7EA;push &0x7E8; lcall 0A58:0x38B -> buttons in ax
+     * = func_00CD0B_logic_sz_67 (direct since 2026-06-11; the void-arity stub
+     * left [0x7E8]/[0x7EA] stale and returned 0). */
+    DG16(0x7E6) = (uint16_t)func_00CD0B_logic_sz_67(
+        (uint16_t near *)(DG_BASE + 0x7E8),
+        (uint16_t near *)(DG_BASE + 0x7EA));
     /* @asm 0x00D125 lcall 0C0C:0x0006 -> cursor clock ax:dx */
     overlay_call_0C0C_0006();
     DG16(0x7FC) = DG16(0x92FC);          /* @asm mov [0x7FC],ax (modelled clock src) */
