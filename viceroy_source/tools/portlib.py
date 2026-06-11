@@ -37,8 +37,17 @@ DGROUP_NAMES = os.path.join(HERE, "dgroup_names.json")
 HDR = 0x2400
 LOADER_RESIDENT = 0x0D91
 LOADER_OVERLAY = 0x0DAB
-# two-anchor corrected overlay bases (see resolve_thunks.py header)
-BASE_OVERRIDES = {21: 0x67080, 26: 0x73270}
+SUBSEG_BASES = os.path.join(HERE, "subseg_bases.json")
+# NOTE (2026-06-11, sub-segment directory DECODED): Type-A records are
+# VARIABLE LENGTH.  A 14-byte record carries an extra word ("sub-segment
+# paragraph"), and the target is
+#       group_base[page] + (extra << 4) + off
+# with plain 12-byte records having extra = 0.  The old two-anchor
+# BASE_OVERRIDES for pages 21/26 were exactly absorbing a missing
+# (extra << 4) term (0x830 = 0x83<<4, 0x11E0 = 0x11E<<4) and are removed.
+# Group bases for the extra-bearing pages were solved from the 373-record
+# constraint system (260 exact function-start hits, 0 near misses) and
+# live in subseg_bases.json; plain-record pages use the raw segmap.
 
 
 # ---------------------------------------------------------------- functions
@@ -143,6 +152,7 @@ class PortIndex:
 
 # ---------------------------------------------------------------- thunks
 _segmap_cache = None
+_subseg_cache = None
 
 
 def _segmap():
@@ -150,8 +160,26 @@ def _segmap():
     if _segmap_cache is None:
         raw = json.load(open(SEGMAP_JSON))
         _segmap_cache = {int(k): v["base"] for k, v in raw.items()}
-        _segmap_cache.update(BASE_OVERRIDES)
     return _segmap_cache
+
+
+def _subseg_bases():
+    global _subseg_cache
+    if _subseg_cache is None:
+        _subseg_cache = (
+            {int(k): v for k, v in json.load(open(SUBSEG_BASES)).items()}
+            if os.path.exists(SUBSEG_BASES)
+            else {}
+        )
+    return _subseg_cache
+
+
+def _is_rec_start(exe_bytes, p):
+    if p + 5 <= len(exe_bytes) and exe_bytes[p] == 0x9A:
+        ldr = struct.unpack_from("<H", exe_bytes, p + 1)[0]
+        return (ldr in (LOADER_RESIDENT, LOADER_OVERLAY)
+                and exe_bytes[p + 3] == 0x0D and exe_bytes[p + 4] == 0x11)
+    return False
 
 
 def resolve_thunk(seg, off, exe_bytes=None):
@@ -173,17 +201,20 @@ def resolve_thunk(seg, off, exe_bytes=None):
     if loader == LOADER_RESIDENT or s != 0:
         return "resident", HDR + s * 16 + o, f"{s:04X}:{o:04X}"
     page = struct.unpack_from("<H", rec, 10)[0]
-    # RTLink Type-A "extra" trailer: a non-zero word after the page selects a
-    # SUB-SEGMENT (directory decode pending in ovlresolve.py).  Resolving such
-    # records as page+off is WRONG -- it once wired a unit timer-decay function
-    # as the AI ship-explore leaf (ROUTE_B 1.2 soak catch).
-    trailer = struct.unpack_from("<H", rec, 12)[0] if len(rec) >= 14 else 0
-    if trailer != 0:
-        return "subseg", None, f"page{page:02d}+0x{o:04X} SUBSEG 0x{trailer:X}"
-    base = _segmap().get(page)
+    # variable-length Type-A: 12-byte record (extra=0) when the next record
+    # starts at +12; 14-byte record carries a sub-segment paragraph word.
+    extra = 0
+    if not _is_rec_start(exe_bytes, pos + 12):
+        if _is_rec_start(exe_bytes, pos + 14):
+            extra = struct.unpack_from("<H", exe_bytes, pos + 12)[0]
+        else:
+            return "subseg", None, f"page{page:02d}+0x{o:04X} (record size ambiguous)"
+    base = _subseg_bases().get(page, _segmap().get(page))
     if base is None:
-        return "overlay", None, f"page {page} (no segmap base)"
-    return "overlay", base + o, f"page{page:02d}+0x{o:04X}"
+        return "overlay", None, f"page {page} (no base)"
+    detail = (f"page{page:02d}+0x{o:04X}" if extra == 0
+              else f"page{page:02d}+(0x{extra:X}<<4)+0x{o:04X}")
+    return "overlay", base + (extra << 4) + o, detail
 
 
 # ---------------------------------------------------------------- dgroup

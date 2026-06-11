@@ -146,10 +146,12 @@ extern void rpt_select_player(int player);    /* 0x181F:0x582 -> func_030550 set
 extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-discharge;
                                                * args pushed on stack by caller (unit, flag) */
 /* AI8/AI10 helpers */
-extern void overlay_191F_2EA_explore(uint16_t unit_index);
-                       /* 0x191F:0x2EA ship explore move: RTLink SUB-SEGMENT
-                        * record (trailer 0x138) -- target pending the
-                        * sub-segment directory decode (ROUTE_B 1.5a) */
+extern int func_04198E_find_adjacent_cell(uint16_t unit);
+                       /* 0x191F:0x2EA ship explore move RESOLVED via the
+                        * decoded sub-segment model: page08 + (0x138<<4) +
+                        * 0x15E = file 0x4198E (existing BYTE_VERIFIED port:
+                        * spiral free-cell search stamping dest + orders).
+                        * ROUTE_B 1.5a CLOSED. */
 extern int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot);
                        /* 0x181F:0xBE6 -> 0x0B2A2 cargo kind at slot (unit/cargo.c) */
 extern int16_t func_00B2F0_cargo_slot_amount(int16_t unit, int16_t slot);
@@ -164,7 +166,7 @@ extern int16_t func_008D00_colony_stock_cap(void);
  *   0x1A1F:0x150  -> 0x3F90E (board/step executor)
  *   0x181F:0x948  -> 0x06A7C   0x181F:0xAEC -> 0x0B42C (slot discharge)
  *   0x191F:0xA2E  -> 0x3234A (market credit)
- *   (0x191F:0x2EA explore is a SUB-SEGMENT record -- unresolved, see above) */
+ *   0x191F:0x2EA -> 0x4198E explore (sub-segment model; see above) */
 extern int func_04C846_ai_find_unit_of_type(int16_t start_unit);
 extern int func_04C71C_ai_unit_task_priority(uint16_t power, uint16_t unit,
                                              uint16_t dest);
@@ -1778,13 +1780,12 @@ ai10:                                                           /* 0x5076E */
 
 ai8_explore_50196:                                              /* 0x50196 */
     /* shared explore exit: push unit; call 0x191F:0x2EA; reuse add sp,2 at
-     * 0x4F225 then jmp 0x51C68.  0x191F:0x2EA is an RTLink SUB-SEGMENT record
-     * (trailer 0x138; directory decode pending, see ovlresolve.py) -- NOT
-     * page08+0x15E: that mis-resolution briefly wired the unit timer-decay
-     * func_040608 here and zeroed ship types in the soak (caught by the
-     * baseline pin at turn 383).  Weak-stub no-op until the sub-segment
-     * directory is decoded (ROUTE_B 1.5a). */
-    overlay_191F_2EA_explore((uint16_t)unit_index);             /* @asm 0x050199 */
+     * 0x4F225 then jmp 0x51C68.  Target resolved via the decoded RTLink
+     * sub-segment model: group_base[page08] + (extra 0x138 << 4) + 0x15E =
+     * file 0x4198E = func_04198E_find_adjacent_cell (BYTE_VERIFIED port).
+     * (An earlier page+off misread wired the unit timer-decay func_040608
+     * here; the 500-turn baseline pin caught it at turn 383.) */
+    func_04198E_find_adjacent_cell((uint16_t)unit_index);       /* @asm 0x050199 */
     return move_eval_tail_51C68(unit_index, owner);             /* @asm 0x4F228 jmp 0x51C68 */
 
 ai11:                                                           /* 0x507D3 */

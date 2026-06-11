@@ -198,3 +198,31 @@ this resolution automatically.
 - Format spec: [../formats/RTLINK.md](../formats/RTLINK.md) (planned)
 - C source: [../src/overlay/rtlink.c](../src/overlay/rtlink.c)
 - Manifest: [../src/overlay/MANIFEST.md](../src/overlay/MANIFEST.md)
+
+## Sub-segment records — DECODED 2026-06-11 (BYTE_VERIFIED, constraint-solved)
+
+Type-A overlay records are **variable length**:
+
+    9A <loader 0x0DAB> 0D 11  EA <off16> 00 00  <page16>            (12 bytes)
+    9A <loader 0x0DAB> 0D 11  EA <off16> 00 00  <page16> <extra16>  (14 bytes)
+
+and the target is
+
+    file_target = group_base[page] + (extra << 4) + off      (extra = 0 for 12-byte)
+
+`extra` is a paragraph offset of a SUB-SEGMENT within the page group.  The
+record length is determined by whether the next record starts at +12.
+
+Validation: 373 extra-bearing records across 17 pages; solving each page's
+group base from the constraint system yields 260 exact function-start hits
+with ZERO near-misses (the remainder land on known boundary-detector gaps).
+The previous two-anchor "base overrides" for pages 21/26 (+0x830, +0x11E0)
+were exactly absorbing a missing `extra << 4` term (0x83<<4, 0x11E<<4) and
+are retired.  Group bases: `tools/subseg_bases.json`; resolver:
+`tools/portlib.py::resolve_thunk` (whois/decode_sheet/arity_truth all
+consume it).
+
+First payoff: `0x191F:0x2EA` (the AI ship-explore leaf) = page08 +
+(0x138<<4) + 0x15E = file 0x4198E = `func_04198E_find_adjacent_cell`
+(already ported); a prior page+off misread had wired the unit timer-decay
+function there, caught by the 500-turn determinism baseline at turn 383.

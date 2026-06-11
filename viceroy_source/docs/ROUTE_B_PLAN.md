@@ -132,12 +132,19 @@ function; the section map covers 100% of its 14,975 bytes:
         call-site cdecl order (colony, unit).  Its interior is
         placeholder-tier (five overlay_call_* stubs) -- tracked by the
         Phase-4 floor, identity closed.
-  - [ ] 1.5a `0x191F:0x2EA` ship-explore is an RTLink SUB-SEGMENT record
-        (trailer 0x138) -- the page+off reading is WRONG for these (proven
-        by the soak catching the func_040608 mis-wire at turn 383).  CLOSES
-        by decoding the RTLink sub-segment directory (ovlresolve.py's
-        documented open item); until then the explore leaf stays a weak
-        no-op.  (½–1 session, benefits every other SUBSEG-class thunk too)
+  - [x] 1.5a DONE 2026-06-11 -- **RTLink sub-segment model DECODED**:
+        Type-A records are variable length; 14-byte records carry a
+        sub-segment paragraph word, and  target = group_base[page] +
+        (extra << 4) + off  (12-byte records have extra = 0).  Solved the
+        17 extra-bearing pages' group bases from the 373-record constraint
+        system (260 exact function-start hits, 0 near misses; the old
+        page-21/26 "anchor overrides" were exactly absorbing a missing
+        extra<<4 term).  `tools/subseg_bases.json` + portlib unified;
+        whois/sheets/arity regenerated.  0x191F:0x2EA = page08 +
+        (0x138<<4) + 0x15E = file 0x4198E = func_04198E_find_adjacent_cell
+        (existing BYTE_VERIFIED port) -- wired as the AI8/AI10 explore
+        leaf.  Closes the resolution layer for EVERY sub-segment thunk
+        (~373 records), not just this one.
 - [ ] **1.6 The runtime dispatcher.** The `func_04E2D6` thunk (0x1A1F:0x4F4)
       has no static lcall site — find the runtime dispatch (function-pointer
       table or computed call) so the per-unit loop runs the original's
