@@ -126,7 +126,7 @@ function; the section map covers 100% of its 14,975 bytes:
       combat path. Pre-enumerate its own leaf calls on session 1 (bounded by
       E1; the function's lcall list is finite and extracted mechanically),
       then port. (3–4 sessions)
-- [ ] **1.5 Explore + colonist-enter leaves** (revised after resolution):
+- [x] **1.5 Explore + colonist-enter leaves** (both closed 2026-06-11):
   - [x] 1.5b `0x191F:0x9A4` colonist-enter = page03+0x1B1A = file 0x2EAEA,
         EXISTING port func_02EAEA_op_sz_49 -- wired into AI6 with the
         call-site cdecl order (colony, unit).  Its interior is
