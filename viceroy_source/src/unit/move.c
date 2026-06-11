@@ -1024,11 +1024,13 @@ ai13:                                                           /* 0x50A4D */
     /* (RUNTIME_ONLY stub) */
 ai14:                                                           /* 0x50BE7 */
     /* ======================= AI14: SOLDIER/SETTLER DISPATCH =================
-     * (0x50BE7..0x50C42)  Type 5 (soldier) or type 2 (farmer/settler): mission
-     * + region check, dispatches with prof 0x4A/'J' or 0x4E/'N'.
-     * Gate: type == 5 || type == 2 (BYTE_VERIFIED @asm 0x050BFF).
+     * (0x50BE7..0x50C42)  Type 5 (soldier) or type 2 (farmer/settler) with no
+     * active mission: dispatches with prof 0x4A/'J' or 0x4E/'N'.
+     * Gates (BYTE_VERIFIED @asm 0x050BFF/0x050C0F/0x050C11):
+     *   (type == 5 || type == 2)  &&  mission_28 == 0
      * RUNTIME_ONLY stub. */
-    if (type != 5 && type != 2) goto ai15;                      /* @asm 0x050BFF */
+    if (type != 5 && type != 2) goto ai15;                      /* @asm 0x050C03/0x050C0F */
+    if (mission_28 != 0)        goto ai15;                      /* @asm 0x050C11 */
     /* (RUNTIME_ONLY stub) */
 ai15:                                                           /* 0x50C42 */
     /* ======================= AI15: REASSIGN ACTIVE PATH =====================
@@ -1043,8 +1045,29 @@ ai16:                                                           /* 0x50E20 */
      * nearby settlement + pathing toward own colony.
      * Gate: type == 2 && reassign == 0 (BYTE_VERIFIED @asm 0x050E38/0x050E46).
      * RUNTIME_ONLY stub. */
-    if (type != 2 || reassign != 0) goto ai17_entry;            /* @asm 0x050E38 */
-    /* (RUNTIME_ONLY stub) */
+    if (type != 2 || reassign != 0) goto ai16_exit;             /* @asm 0x050E3C/0x050E46 */
+    /* RUNTIME_ONLY stub body (0x50E46..0x50EC8) */
+
+ai16_exit:                                                      /* 0x50EC8 */
+    /* ======================= AI16→AI17 ORDERS FILTER ========================
+     * (0x50EC8..0x50F1E)  Entered from both paths of AI16 and AI11..AI15 falls.
+     * Only units with free orders ({0,0xA,5,6}) or a just-arrived goto-0x0B
+     * (dest == current tile) enter the pathing engine; units already holding
+     * an active order call func_00704C and enter only if it returns non-zero;
+     * otherwise exit to tail ("considered, no decision").
+     * BYTE_VERIFIED @asm 0x050ECC..0x050F1B. */
+    {
+        uint8_t ords = U_OFF(unit_index, U_ORDERS);
+        if (ords == 0 || ords == 0x0A ||
+            ords == 5 || ords == 6)                    goto ai17_entry; /* @asm 0x50ED1 */
+        if (ords == 0x0B                            &&                  /* @asm 0x50EE8 */
+            U_OFF(unit_index, U_DESTX) == U_OFF(unit_index, U_MAPX) && /* @asm 0x50EEF */
+            U_OFF(unit_index, U_DESTY) == U_OFF(unit_index, U_MAPY))   /* @asm 0x50EF9 */
+            goto ai17_entry;                                            /* @asm 0x50F01 */
+        if (func_00704C_op_sz_205((uint16_t)map_x, (uint16_t)map_y,
+                                  (uint16_t)owner) != 0)   goto ai17_entry; /* @asm 0x50F19 */
+        return move_eval_tail_51C68(unit_index, owner);   /* @asm 0x50F1B jmp 0x51C68 */
+    }
 
 ai17_entry:                                                     /* 0x50F1E */
     /* ======================= AI17-AI18: ESCORT / PATHING ENGINE =============
