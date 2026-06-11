@@ -49,3 +49,22 @@ use the file-relative convention throughout.
    / `ANCHOR_VERIFIED` / `not yet decoded` — never guess.
 4. Add an assertion to `audit.py`; keep it green.
 5. Log it in `../VERIFICATION_LEDGER.md`.
+
+## Route-B automation layer (2026-06-11)
+
+The porting loop's manual steps, automated. All read the gitignored
+`re_work/` artifacts; committed outputs contain addresses/names only.
+
+| tool | replaces this manual loop |
+|---|---|
+| `whois.py SEG:OFF\|0xFOFF\|func_X` | resolve thunk record → containing function → grep src/ for the port → read its signature |
+| `decode_sheet.py LO HI [--locals tools/locals/F.json]` | hand-decoding a body: resolves every lcall to its ported name, names DGROUP globals (`dgroup_names.json`), reconstructs push-sequence call args, labels jump targets, tallies `[bp±X]` locals. Output → `re_work/sheets/` |
+| `arity_truth.py` | per-thunk arity digs: measures `add sp, N` caller cleanup at every call site → `docs/ARITY_TRUTH.md` (the Phase-4.3 arbiter) |
+| `cite_check.py [--all\|files]` | stale `@asm` cite hunting: flags any cite inside a code span that is not an instruction start |
+| `savediff.py A B [--allow J] [--layout J]` | Phase-0.2 gate: byte-compare saves, allowlist requires justification, layout map names the diffs |
+| `pixdiff.py A.ppm B.png` | Phase-0.3 gate: byte-exact frame compare (PPM + stdlib PNG decoder), visual diff output |
+| `plan_status.py` | progress narrative: prints ROUTE_B_PLAN checkboxes + the live inventory counters |
+
+Locals registries under `tools/locals/` carry the established `[bp±X]` →
+name maps per function (seeded: `func_04E2D6.json`) so sheets come out
+pre-named.

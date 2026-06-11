@@ -834,7 +834,7 @@ ai5_end:                                                        /* 0x4F060 */
                 continue;
             if ((int16_t)func_005E90_op_sz_64(DG8(DG16(0x8542) + 0),
                                               DG8(DG16(0x8542) + 1)) != region)
-                continue;                                       /* @asm 0x4F0C4 region */
+                continue;                                       /* @asm 0x4F0D1 region */
             {   /* warehouse-flag OR unit-subtype gate @asm 0x4F0DD */
                 int ok = (DG8(DG16(0x8542) + 0x1B) & 0x10) != 0;
                 if (!ok)
@@ -1043,9 +1043,9 @@ ai9:                                                            /* 0x50583 */
      * Scoring loop (0x505D7..0x5076E): iterates 16 destination slots using
      * overlay-resident carrier tables; commits via jmp-0x4E9E5(dx='5').
      * RUNTIME_ONLY stub. */
-    if (!(type >= 0x0D && type <= 0x12)) goto ai10;             /* @asm 0x050599 */
-    if (!transport_CA && !transport_DA)   goto ai10;             /* @asm 0x0505B3 */
-    if (ai8_deliv_A6 != 0)               goto ai10;             /* @asm 0x050589 [bp-0xA6] */
+    if (!(type >= 0x0D && type <= 0x12)) goto ai10;             /* @asm 0x05059F/0x0505A9 */
+    if (!transport_CA && !transport_DA)   goto ai10;             /* @asm 0x0505B3/0x0505BA */
+    if (ai8_deliv_A6 != 0)               goto ai10;             /* @asm 0x0505C4 [bp-0xA6] */
     if (special != 0)                     goto ai10;             /* @asm 0x0505CE */
     /* scoring loop (RUNTIME_ONLY stub) */
 ai10:                                                           /* 0x5076E */

@@ -42,20 +42,30 @@ pass. Ranges are honest, not padded.
 Nothing else lands until the thing that catches divergence exists. These rigs
 are the difference between "I believe it matches" and "it matches".
 
+> **Tooling layer (delivered 2026-06-11, before plan start):** the porting
+> loop itself is now automated — `tools/whois.py` (one-shot thunk→port
+> identity), `tools/decode_sheet.py` (annotated disasm sheets: resolved
+> thunks, named DGROUP globals, push-arg reconstruction, jump labels,
+> locals tables via `tools/locals/*.json`), `tools/arity_truth.py`
+> (call-site arity arbiter: 704 thunks measured, `docs/ARITY_TRUTH.md`),
+> `tools/cite_check.py` (@asm-cite validator; tree baseline: 220 provably
+> stale cites to burn down), `tools/plan_status.py` (this plan's checkbox
+> dashboard + inventory counters). Sheets for the Phase-1 bodies
+> (AI7/AI8/AI9, func_05CA7E) are pre-generated under `re_work/sheets/`.
+
 - [ ] **0.1 Determinism rig.** Scripted-input driver for the modern build
       (keystroke playback file → input queue). The original's RNG is the MSC
       6.0 LCG (`rand` @0x0103D4, ported) — seed it explicitly. Gate output:
       a save file. The same script must be replayable against DOSBox via its
       keystroke mapper (one-time setup, documented).
-- [ ] **0.2 Save-diff gate.** `tools/savediff.py`: byte-compare two COLONIZE
-      saves, with a cataloged allowlist of legitimately-divergent bytes
-      (timestamp fields only — the catalog itself is part of the deliverable;
-      target allowlist size: < 8 bytes).
-- [ ] **0.3 Pixel rig.** Checkpoint screenshot protocol: F12 PPM in the
-      modern build vs DOSBox 0.74 screenshot at the same defined states;
-      `tools/pixdiff.py` asserts byte-equal 320×200 frames after palette
-      mapping. Checkpoint list = one frame per screen id in E3 × defined
-      states (enumerated in Phase 7.1).
+- [x] **0.2 Save-diff gate.** `tools/savediff.py`: byte-compare two COLONIZE
+      saves with a justification-required allowlist and a layout map for
+      named diffs. DELIVERED + fixture-tested; the allowlist catalog itself
+      is produced by the first real DOSBox↔modern exchange (Phase 2.3/6.1).
+- [x] **0.3 Pixel rig.** `tools/pixdiff.py`: byte-exact frame compare, PPM
+      (modern F12) vs PNG (DOSBox screenshots; stdlib-only decoder),
+      visual-diff output. DELIVERED + fixture-tested; the per-screen
+      checkpoint list is enumerated in Phase 7.1.
 - [ ] **0.4 Re-baseline the soak.** `--smoke=60` and `--smoke=500` re-run now
       that AI19 commits real moves; record the new state trace as the
       regression baseline (replaces the stub-era 2026-06-10 baseline in
@@ -184,9 +194,12 @@ PORTED / WIRED / UNREACHABLE(proof).
       assembly-checked but repetitive)
 - [ ] **4.3 Arity-mismatch reconciliation — 429 rows** (143@1 + 125@2 + 61@3
       + 49@4 + 13@5 + 11@8 + 9@6 + 8@9 + 5@7 + 2@11 + 2@14 + 1@10): each is
-      a signature disagreement between the stub and the ported target;
-      resolve from the call-site push sequence (the disasm is the arbiter).
-      (2–3 sessions, scripted triage + hand-checks)
+      a signature disagreement between the stub and the ported target.
+      The arbiter is now MACHINE-GENERATED: `docs/ARITY_TRUTH.md`
+      (`tools/arity_truth.py`) holds the call-site-measured arity for all
+      704 called thunks; 608 have one consistent arity (mechanical fix),
+      96 are MIXED (mostly tail-call sites; dominant arity annotated).
+      (1–2 sessions, down from 2–3)
 - [ ] **4.4 The 49 "known function, NOT in build"**: add the source files to
       the CMake modern target (they exist; they're excluded). Fix what
       breaks. (1 session)
