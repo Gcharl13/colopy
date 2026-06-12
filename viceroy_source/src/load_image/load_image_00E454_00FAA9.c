@@ -1015,17 +1015,28 @@ int func_00F9C4_rtl_sz_186(uint16_t arg0_bp_06)
         rename_target = *(uint16_t near *)(r + 0xA4);
         /* @asm 0x00F9FC push si; call 0x10CA0 (flush/sync the record) */
         func_010CA0();
-        /* @asm 0x00FA03 al=[si+7]; push ax; lcall 0D1D:0x1E7A; or ax,ax; jl 0xFA6F */
-        if ((int16_t)overlay_call_0D1D_1E7A() < 0) {
+        /* @asm 0x00FA03 al=[si+7]; push ax; lcall 0D1D:0x1E7A = _close(handle) */
+        extern int _close(int fd);
+        extern int _unlink(const char *path);
+        extern void msc_strcpy(char *dest, const char *src);
+        extern void msc_itoa(int value, char *dest, int radix);
+        if ((int16_t)_close((int)r[7]) < 0) {
             result = -1;                           /* @asm 0x00FA6F di = 0xFFFF */
-        } else if (rename_target != 0) {           /* @asm 0x00FA15 cmp [bp-4],0; je 0xFA72 */
-            /* @asm 0x00FA1B/0x00FA23 splitpath the record's name into the scratch
-             *      buffers [bp-0xE]/[bp-0xC]; the leading '\\' picks the basename half */
-            overlay_call_0D1D_07E4();              /* @asm lcall 0D1D:0x7E4 */
-            overlay_call_0D1D_07A4();              /* @asm lcall 0D1D:0x7A4 (else branch) */
-            /* @asm 0x00FA4D rename/commit then close the target handle */
-            overlay_call_0D1D_08FA();              /* @asm lcall 0D1D:0x8FA */
-            overlay_call_0D1D_0E4A();              /* @asm lcall 0D1D:0xE4A; or ax,ax; je 0xFA72 */
+        } else if (rename_target != 0) {           /* @asm 0x00FA15 cmp [bp-4],0; je 0xFA72
+                * [si+0xA4] is the TMPFILE NUMBER, not a rename target: this is
+                * the MSC fclose tempfile cleanup -- build "\<n>" and unlink it. */
+            char buf[14];                          /* @asm [bp-0xE] scratch */
+            char *p;
+            msc_strcpy(buf, (const char *)&DG8(0x27E8)); /* @asm 0x00FA23 0x7E4;
+                                                     DS:0x27E8 = "\\" literal */
+            p = buf + 2;                           /* @asm 0x00FA2B lea [bp-0xC] */
+            if (buf[0] == '\\')                    /* @asm 0x00FA31 (always true) */
+                p--;                               /* @asm 0x00FA4A */
+            /* (@0x00FA37 else strcat(buf, DS:0x27EA) -- dead branch, literal
+             *  is the same backslash) */
+            msc_itoa((int)rename_target, p, 10);   /* @asm 0x00FA57 0x8FA (radix 0xA) */
+            if (_unlink(buf) != 0)                 /* @asm 0x00FA63 0xE4A; je 0xFA72 */
+                result = -1;                       /* @asm 0x00FA6F */
         }
     }
 

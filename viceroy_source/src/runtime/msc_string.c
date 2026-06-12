@@ -129,3 +129,24 @@ void overlay_call_0D1D_030D(void)
     extern void exit(int);
     exit(3);
 }
+
+/* 0x0D1D:0x08FA -- MSC itoa(value, dest, radix).  Standard RTL semantics:
+ * value is signed ONLY for radix 10 (minus sign emitted), digits lowercase.
+ * (Used by the fclose tmpfile-cleanup path @0xFA4D and the SoL%% lines.) */
+void msc_itoa(int value, char *dest, int radix)
+{
+    char tmp[18];
+    int n = 0, neg = 0;
+    unsigned v;
+    if (radix == 10 && value < 0) { neg = 1; v = (unsigned)(-value); }
+    else v = (unsigned)(uint16_t)value;
+    if (radix < 2) radix = 10;
+    do {
+        unsigned d = v % (unsigned)radix;
+        tmp[n++] = (char)(d < 10 ? '0' + d : 'a' + d - 10);
+        v /= (unsigned)radix;
+    } while (v && n < 17);
+    if (neg) *dest++ = '-';
+    while (n) *dest++ = tmp[--n];
+    *dest = 0;
+}
