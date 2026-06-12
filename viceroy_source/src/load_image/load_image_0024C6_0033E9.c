@@ -1370,3 +1370,61 @@ int func_003104_logic_sz_143(uint16_t arg0_bp_06, int16_t reg_ax, int16_t reg_dx
 
     return 0;   /* @asm 0x33E4 leave; retf 2 */
 }
+
+/* ============================================================================
+ * The SEPARATOR-APPEND wrapper family -- file 0x2648..0x2991  [BYTE_VERIFIED
+ * 2026-06-12, full bodies disassembled from VICEROY.EXE]
+ * ----------------------------------------------------------------------------
+ * Each tiny body strcats ONE literal from the DGROUP separator table
+ * (DS:0x50.." ", 0x52..", ", 0x55..": ", 0x58..".  ", 0x5C.."%", 0x5E.."(",
+ * 0x60..")", 0x62.."{", 0x64.."}", 0x66.."+", 0x68.."-", 0x6A.."x") onto the
+ * caller's buffer via 0x0D1D:0x7A4 (msc_strcat), or formats a number into a
+ * stack scratch then appends it to the TOOLTIP buffer via func_00260E.
+ * Thunk window names: 0x181F:0x18C(0x28B0)/0x196(0x28C0)/0x1B4(0x28E2)/
+ * 0x1BE(0x28F2)/0x1DC(0x2902)/0x10A(0x2912)/0x11E(0x2922)/0x128(0x2932)/
+ * 0x132(0x2942)/0x13C?(0x2952)/0x146(0x2962)/0x15A(0x2972)/0x164(0x2982);
+ * the thunk call sites stay hit-counting stubs until each passes its dest. */
+extern void msc_strcat(char *dest, const char *src);
+extern void msc_itoa(int value, char *dest, int radix);
+extern void msc_ltoa(long value, char *dest, int radix);
+
+/* file 0x2648: append decimal int to the tooltip buffer */
+void func_002648_tooltip_append_int(uint16_t value)
+{
+    char buf[20];                                /* @asm [bp-0x14] */
+    msc_itoa((int)(int16_t)value, buf, 10);      /* @asm 0x002655 0x8FA radix 0xA */
+    func_00260E_tooltip_append(buf);             /* @asm 0x002663 near 0x260E */
+}
+
+/* file 0x2668: append decimal LONG (lo,hi words) to the tooltip buffer */
+void func_002668_tooltip_append_long(uint16_t lo, uint16_t hi)
+{
+    char buf[20];                                /* @asm [bp-0x14] */
+    long v = (long)(((uint32_t)hi << 16) | lo);
+    msc_ltoa(v, buf, 10);                        /* @asm 0x002678 0x916 radix 0xA */
+    func_00260E_tooltip_append(buf);             /* @asm 0x002686 near 0x260E */
+}
+
+/* file 0x28B0: strcat(dest, " ")  (DS:0x50) */
+void func_0028B0_append_space(char *dest) { msc_strcat(dest, (const char *)&DG8(0x50)); }
+
+/* file 0x28C0: append COUNT spaces (loops the 0x28B0 body) */
+void func_0028C0_append_spaces(char *dest, int16_t count)
+{
+    int16_t n;                                   /* @asm dx=[bp+8]; jle skip */
+    for (n = 0; n < count; n++)
+        func_0028B0_append_space(dest);          /* @asm 0x0028D4 call 0x28B0 */
+}
+
+/* files 0x28E2..0x2982: the one-literal strcat wrappers */
+void func_0028E2_append_comma(char *dest)  { msc_strcat(dest, (const char *)&DG8(0x52)); } /* ", " */
+void func_0028F2_append_colon(char *dest)  { msc_strcat(dest, (const char *)&DG8(0x55)); } /* ": " */
+void func_002902_append_period(char *dest) { msc_strcat(dest, (const char *)&DG8(0x58)); } /* ".  " */
+void func_002912_append_pct(char *dest)    { msc_strcat(dest, (const char *)&DG8(0x5C)); } /* "%" */
+void func_002922_append_lparen(char *dest) { msc_strcat(dest, (const char *)&DG8(0x5E)); } /* "(" */
+void func_002932_append_rparen(char *dest) { msc_strcat(dest, (const char *)&DG8(0x60)); } /* ")" */
+void func_002942_append_lbrace(char *dest) { msc_strcat(dest, (const char *)&DG8(0x62)); } /* "{" */
+void func_002952_append_rbrace(char *dest) { msc_strcat(dest, (const char *)&DG8(0x64)); } /* "}" */
+void func_002962_append_plus(char *dest)   { msc_strcat(dest, (const char *)&DG8(0x66)); } /* "+" */
+void func_002972_append_minus(char *dest)  { msc_strcat(dest, (const char *)&DG8(0x68)); } /* "-" */
+void func_002982_append_x(char *dest)      { msc_strcat(dest, (const char *)&DG8(0x6A)); } /* "x" */

@@ -150,3 +150,33 @@ void msc_itoa(int value, char *dest, int radix)
     while (n) *dest++ = tmp[--n];
     *dest = 0;
 }
+
+/* 0x0D1D:0x07A4 -- near strcat(dest_off, src_off): the workhorse behind the
+ * separator-append wrapper family at file 0x28B0..0x2991.  Host-pointer
+ * form (callers pass stack buffers or &DG8(off)). */
+void msc_strcat(char *dest, const char *src)
+{
+    if (!dest || !src) return;
+    while (*dest) dest++;
+    while ((*dest++ = *src++) != 0) { }
+}
+
+/* 0x0D1D:0x0916 -- MSC ltoa(lo, hi, dest, radix): 32-bit variant of itoa
+ * (value passed as two words in the original; signed only for radix 10). */
+void msc_ltoa(long value, char *dest, int radix)
+{
+    char tmp[34];
+    int n = 0, neg = 0;
+    unsigned long v;
+    if (radix == 10 && value < 0) { neg = 1; v = (unsigned long)(-value); }
+    else v = (unsigned long)(uint32_t)value;
+    if (radix < 2) radix = 10;
+    do {
+        unsigned d = (unsigned)(v % (unsigned)radix);
+        tmp[n++] = (char)(d < 10 ? '0' + d : 'a' + d - 10);
+        v /= (unsigned)radix;
+    } while (v && n < 33);
+    if (neg) *dest++ = '-';
+    while (n) *dest++ = tmp[--n];
+    *dest = 0;
+}
