@@ -601,6 +601,41 @@ int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
     return result;
 }
 
+/* @asm        0x009626..0x00965B  (53 bytes)  region=load_image
+ * @asm_file   re_work/disasm/func_009626.asm
+ * @pattern    UNKNOWN
+ * @prologue   ENTER 4
+ * @args_seen  [6]
+ * @lcalls     0
+ * @near_calls 1  (0x0090C8)
+ * @callers    func_009818 (this file), sol_tory.c (colony_misc_b82 thunk)
+ * @touches_8542 True
+ *
+ * @inferred_role  count colonists in current colony whose job (func_0090C8(i)) == arg0
+ * @status     BYTE_VERIFIED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ */
+/* PORTED 2026-06-12 from func_009626.asm — count colony slots with job == arg0 */
+int func_009626(uint16_t arg0_bp_06)
+{
+    /* @asm 0x00962A count[bp-2]=0; i[bp-4]=0; jmp test.
+     *   loop 0x009634: push i; call 0x90C8 (func_0090C8(i)); cmp ax,[bp+6];
+     *     jne skip; inc count.  skip: inc i.
+     *   test 0x009649: bx=[0x8542] (ctx); al=(int8)ctx[+0x1F] (pop); cbw;
+     *     cmp ax,i; jg loop.
+     *   return count.
+     * Walks every colonist slot 0..pop-1 in the current colony (ctx@0x8542,
+     * pop@+0x1F) and returns the count where func_0090C8(i) == arg0. */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    int count = 0;
+    int i = 0;
+    while ((int16_t)(int8_t)ctx_local[0x1F] > i) {
+        if ((uint16_t)func_0090C8((uint16_t)i) == arg0_bp_06)
+            count++;
+        i++;
+    }
+    return count;
+}
+
 /* @asm        0x009726..0x00975A  (52 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_009726_unknown.asm
  * @pattern    UNKNOWN

@@ -422,3 +422,19 @@ EXTERN(menu_lookup_run)
  * func_00864E_count/last walkers in load_image_008262_008C6F.c. */
 PROVIDE(func_00863E = func_00863E_wrapper_with_global_8DC6);
 EXTERN(func_00863E_wrapper_with_global_8DC6)
+
+/* Phase 4.3j (2026-06-12): colony screen stub wiring.
+ *
+ * colony_screen_init_owner(owner) -> market_set_active(power):
+ *   0x181F:0x582 -> file 0x30550 = func_030550, already ported in
+ *   src/market/pricing.c as market_set_active(int power).  Same body:
+ *   DG16(0x9E12)=power; DG16(0x84FC)=0x8808+power*0x13C.  BYTE_VERIFIED.
+ *
+ * colony_misc_b82(arg) -> func_009626(arg):
+ *   0x181F:0xB82 -> file 0x9626 = func_009626 (53 bytes).  Counts colonists
+ *   in the current colony (ctx@0x8542) whose job (func_0090C8(i)) == arg.
+ *   Ported 2026-06-12 in src/load_image/load_image_008C70_00AAB9.c.  BYTE_VERIFIED. */
+PROVIDE(colony_screen_init_owner = market_set_active);
+EXTERN(market_set_active)
+PROVIDE(colony_misc_b82 = func_009626);
+EXTERN(func_009626)
