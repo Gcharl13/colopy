@@ -24,6 +24,8 @@
  * @ref ../formats/COL.md (instrument/song defs)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "audio.h"   /* shared AudioConfig / device ids / event ids (Phase 4.4) */
+#include <stddef.h>
 
 extern struct AudioConfig g_audio_cfg;
 extern uint8_t *g_sample_bank;          /* loaded from COLDIG.BIN */

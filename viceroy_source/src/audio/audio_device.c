@@ -24,27 +24,9 @@
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "iolib.h"
+#include "audio.h"   /* shared AudioConfig / device ids (Phase 4.4) */
 
-enum AudioDevice {
-    AUDIO_NONE        = 0,
-    AUDIO_PC_SPEAKER  = 1,
-    AUDIO_ADLIB       = 2,    /* OPL2 */
-    AUDIO_SOUNDBLASTER= 3,    /* SB Pro / SB16 */
-    AUDIO_ROLAND_MT32 = 4,
-    AUDIO_GENERAL_MIDI= 5
-};
-
-struct AudioConfig {
-    int  device_type;          /* AUDIO_* */
-    int  io_port;              /* base I/O port */
-    int  irq;                  /* hardware IRQ */
-    int  dma;                  /* DMA channel (SB only) */
-    int  sample_rate;          /* Hz */
-    int  music_volume;         /* 0..255 */
-    int  sfx_volume;           /* 0..255 */
-};
-
-static struct AudioConfig g_audio_cfg = {
+struct AudioConfig g_audio_cfg = {     /* shared with sound_dispatch.c */
     .device_type = AUDIO_NONE
 };
 
@@ -140,19 +122,19 @@ int probe_mt32(void) { return -1; /* MT-32 needs MPU-401 probe at 0x330 */ }
 
 int audio_load_config(const char *filename, struct AudioConfig *out)
 {
-    int fd = file_open(filename, FILE_READ);
+    int fd = _open(filename, O_RDONLY | O_BINARY, 0);
     if (fd < 0) return -1;
-    file_read(fd, out, sizeof(*out));
-    file_close(fd);
+    _read(fd, out, sizeof(*out));
+    _close(fd);
     return 0;
 }
 
 void audio_save_config(void)
 {
-    int fd = file_open("CONFIG.COL", FILE_WRITE);
+    int fd = _open("CONFIG.COL", O_WRONLY | O_CREAT | O_BINARY, S_IWRITE);
     if (fd < 0) return;
-    file_write(fd, &g_audio_cfg, sizeof(g_audio_cfg));
-    file_close(fd);
+    _write(fd, &g_audio_cfg, sizeof(g_audio_cfg));
+    _close(fd);
 }
 
 void audio_shutdown(void)

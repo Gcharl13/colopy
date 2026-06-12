@@ -30,6 +30,8 @@
 #include "viceroy_types.h"
 #include "iolib.h"
 #include "format.h"
+#include "ui_screen.h"   /* SCREEN_TITLE/SCREEN_EUROPE/SCREEN_COLONY ids (Phase 4.4) */
+#include <stddef.h>
 
 /* ----------------------------------------------------------------------------
  * Asset registry — populated at boot. Each entry: filename, loader fn, slot.

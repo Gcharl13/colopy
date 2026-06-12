@@ -29,8 +29,9 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/platform/.*\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/boot/entry\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/runtime/cstart\\.c$")
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/overlay/rtlink\\.c$")
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/.*\\.c$")
-list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/asset/.*\\.c$")
+# Phase 4.4 (2026-06-12): audio/ + asset/ now compile into the rules lib
+# (RECONSTRUCTED-tier bodies; byte-verification is Phase 5).  Their DOS
+# hardware leaves (outp/inp/file I/O) resolve to the platform layer / iolib.
 # render/ INCLUDED (poke-converted 2026-06-09) except blit.c: its leaf-emitter
 # wrappers are implemented by the platform layer (src/platform/render_glue.c)
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/blit\\.c$")
