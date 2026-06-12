@@ -360,11 +360,11 @@ PROVIDE(overlay_call_037F_02A0 = func_005E90_op_sz_64);
 PROVIDE(overlay_call_05B3_0004 = func_007F34_logic_sz_27);
 PROVIDE(overlay_call_05B3_01E0 = func_008110_logic_sz_14);
 PROVIDE(func_006B46            = func_006B46_op_sz_365);
-/* func_0069D2 -> func_0069D2_logic_sz_12 DEFERRED: wiring moves ship u3 from (8,5) to
- * (-2,-2) via func_00772E_op_sz_149's garrison-loading path, breaking the smoke baseline.
- * Root cause: func_00772E is called for navigating ships (type 0x0E, orders 0x0B), which
- * triggers the unconditional chain-head relocation.  Needs calling-context audit before
- * wiring.  Regression: u3 ends orders=0x01 prof=0x3F instead of 0x0B/0x31. */
+/* func_0069D2 -> func_0069D2_logic_sz_12 DEFERRED: garrison regression.
+ * Wiring changes u3 from orders=0x0B/prof=0x31 to orders=0x01/prof=0x3F.
+ * Root cause: func_00772E assigns garrison duty to u3 (colonist on ship);
+ * the side effects (chain relocation + orders change) need full garrison
+ * audit before this can be safely enabled. */
 PROVIDE(func_00A6A2            = func_00A6A2_colony_sz_130);
 PROVIDE(func_00860E            = func_00860E_logic_sz_15);
 PROVIDE(func_00BEDE            = func_00BEDE_op_sz_93);

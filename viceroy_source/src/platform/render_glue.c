@@ -837,3 +837,21 @@ void viceroy_save_bind_layers(void)
     g_map_layer[3] = (void *)g_layer[3];
     g_map_layer_bytes = (uint32_t)g_layer_len;
 }
+
+/* ---- resident-segment display leaves (headless no-ops) ---------------------
+ * These are calls into the EXE's resident code with register-arg conventions
+ * (not RTLink thunks).  In headless/modern mode they are pure display ops
+ * that touch no game state; strong no-ops here override the weak stubs. */
+
+/* 0x0B9E:0x000A — draw glyph / column cell fill (register args: ax=x, dx=y,
+ * bx=w; used by colony_screen composers in load_image_00AB2E_00C0D0 / 0024C6) */
+int overlay_call_0B9E_000A(void) { return 0; }
+
+/* 0x0B70:0x003A — cell refresh / invalidate (register arg: dx=tile_index;
+ * used alongside 0B9E:000A to redraw a colony-screen cell after painting) */
+int overlay_call_0B70_003A(void) { return 0; }
+
+/* 0x181F:0xC22 → file 0x0BC06 — colony screen compositor.
+ * Triggers the full colony-screen repaint (calls two internal render chains).
+ * Headless: no-op (screen is not visible). */
+void colony_screen_compose(void) { }
