@@ -178,7 +178,23 @@ extern unsigned char g_unit_bytes[];   /* byte view, [unit*0x1C + field] */
 /* Forward declarations — call sites precede bodies in this file */
 extern int  func_0612E6_select_route_dialog(void);  /* near 0x1925 -> list-select */
 extern void func_0612E6_highlight_route(int sel);   /* near 0x1920 -> highlight  */
-extern void func_0612E6_route_shift_down(int dst);  /* far rep movsw, seg 0x1b22 */
+
+/* TRADE-ROUTE record table (Phase 2.3): far segment 0x1B22, 12 records x
+ * 0x4A bytes, count at DGROUP:0x53A0.  Host home: g_far_1B220 (runtime/
+ * dos_io.c) — the same buffer the save serializer round-trips as the
+ * seg-0x1B22 block.  Record +0 holds the route NAME (far strcmp via
+ * 0xD1D:0x1154 in the select dialog @asm 0x061205). */
+extern unsigned char g_far_1B220[0x378];
+
+/* @asm 0x0613BC..0x0613DA (and the twin loop body @0x0605C7): dst*0x4A;
+ * dx=0x1B22; es=ds=dx; rep movsw cx=0x25 — copy route[dst+1] into
+ * route[dst] (74 bytes).  The caller loops dst=sel..count-2 and then
+ * decrements [0x53A0]. */
+void func_0612E6_route_shift_down(int dst)
+{
+    memcpy(g_far_1B220 + dst * 0x4A,
+           g_far_1B220 + (dst + 1) * 0x4A, 0x4A);
+}
 int func_0612E6_trade_route_delete(void)
 {
     int sel;          /* [bp-2]  selected route id (-1 = cancel) */

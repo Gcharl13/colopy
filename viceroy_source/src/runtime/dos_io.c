@@ -104,9 +104,14 @@ int int21h_AH_4F(void)                  { return -1; }
  * (e.g. fwrite(0x5380,1,142,f) writes the colony-name block).  Rebase any
  * sub-64K pointer through g_dgroup so their structure stays untouched. */
 extern unsigned char g_dgroup[];
-/* the one FAR block the serializer touches: seg 0x1B22:0000, 0x378 bytes
- * (a resident table; identity pending port -- zeros keep the format length) */
-static unsigned char g_far_1B220[0x378];
+/* The one FAR block the serializer touches: seg 0x1B22:0000, 0x378 bytes.
+ * IDENTITY (Phase 2.3, 2026-06-12): the TRADE-ROUTE table — 12 records x
+ * 0x4A (74) bytes, live count at DGROUP:0x53A0.  Writers: the route editor
+ * (name match via far strcmp 0xD1D:0x1154 against 0x1B22:idx*0x4A @asm
+ * 0x061205) and the delete compaction loop (rep movsw cx=0x25 @asm
+ * 0x0613D8 = func_0612E6_route_shift_down).  Shared (non-static) so the
+ * route code operates on the same bytes the save serializer round-trips. */
+unsigned char g_far_1B220[0x378];
 static void *dg_rebase(const void *p)
 {
     uintptr_t a = (uintptr_t)p;

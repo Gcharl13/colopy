@@ -326,10 +326,18 @@ screen walkthroughs.
       > blits (0x254 ids 0x6D/0x64), borders (0xCE), the 0x506 map-tile
       > backdrop primitive, warehouse bars (0x222/0x22C) and the SoL gauge
       > text run — then the Phase-7 capture compare.
-- [ ] **2.3 seg-0x1B22 save block** (0x378 bytes, runtime BSS): find the
-      runtime writer, identify the struct, port. Until then saves carry it
-      via host buffer — Phase 7's save-exchange gate requires the real
-      identity. (1 session)
+- [x] **2.3 seg-0x1B22 save block** IDENTIFIED + writers wired 2026-06-12:
+      it is the TRADE-ROUTE table — 12 records x 0x4A (74) bytes
+      (12*0x4A == 0x378 exactly), live count at DGROUP:0x53A0, route NAME
+      at record +0 (far strcmp 0xD1D:0x1154 against 0x1B22:idx*0x4A in the
+      route-select dialog @asm 0x061205).  Runtime writers found by
+      scanning the EXE for seg-0x1B22 references: the delete-compaction
+      rep-movsw loop (cx=0x25 @asm 0x0613D8 + twin @0x0605C7) =
+      func_0612E6_route_shift_down — now IMPLEMENTED on the shared host
+      buffer g_far_1B220 (un-static'd in runtime/dos_io.c so the route
+      code and the save serializer operate on the same bytes).  REMAINING:
+      the route CREATE/EDIT dialog writers (record field layout beyond the
+      name) — verified end-to-end by the Phase-7 save-exchange gate.
 - [x] **2.4 Mercenary offers** DONE 2026-06-12: both bodies were already
       ported; the missing piece was the WIRING.  Peacetime offer
       func_03E664: its only EXE caller is the main turn loop func_005760
