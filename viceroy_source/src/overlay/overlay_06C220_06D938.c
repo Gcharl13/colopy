@@ -102,8 +102,8 @@
  * -------------------------------------------------------------------------- */
 /* (overlay_call_181F_0416 and overlay_call_191F_0176 are already in
  *  overlay_externs.h; the two 0x1A1F:* targets are not, so declare them here.) */
-extern int overlay_call_1A1F_0A9E(void); /* 0x1A1F:0x0A9E — widget alloc/link (page 0x12) */
-extern int overlay_call_1A1F_0AE6(void); /* 0x1A1F:0x0AE6 — panel string-buf helper (page 0x12) */
+extern int overlay_call_1A1F_0A9E(); /* 0x1A1F:0x0A9E — widget alloc/link (page 0x12) */
+extern int overlay_call_1A1F_0AE6(); /* 0x1A1F:0x0AE6 — panel string-buf helper (page 0x12) */
 
 /* func_06F7EA — TRAMPOLINE -> ljmp 0x181F:0x0416 (page-tail thunk @file 0x06F7EA) */
 int func_06F7EA(void) { return overlay_call_181F_0416(); }

@@ -17,18 +17,18 @@
  * Period code reaches each via `lcall seg:off`; args travel on the DOS stack, so
  * the modern shim signatures are `(void)` like their siblings.
  * -------------------------------------------------------------------------- */
-extern int overlay_call_0009_02AE(void);  /* @ref RTLink seg 0x0009 off 0x02AE */
-extern int overlay_call_0009_02CC(void);  /* @ref RTLink seg 0x0009 off 0x02CC */
-extern int overlay_call_0009_00B4(void);  /* @ref RTLink seg 0x0009 off 0x00B4 */
-extern int overlay_call_0009_01A2(void);  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
-extern int overlay_call_0BCA_0002(void);  /* @ref RTLink seg 0x0BCA off 0x0002 (rect fill) */
-extern int overlay_call_181F_0E52(void);  /* @ref RTLink seg 0x181F off 0x0E52 */
-extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 (read cursor/mouse pos) */
-extern int overlay_call_0B4E_0004(void);  /* @ref RTLink seg 0x0B4E off 0x0004 (formatted print) */
-extern int overlay_call_0C2E_0022(void);  /* @ref RTLink seg 0x0C2E off 0x0022 */
-extern int overlay_call_0D11_0000(void);  /* @ref RTLink seg 0x0D11 off 0x0000 (DOS handle setup) */
-extern int overlay_call_0D1C_0000(void);  /* @ref RTLink seg 0x0D1C off 0x0000 (blit address calc) */
-extern int overlay_call_0D1D_0BA2(void);  /* @ref RTLink seg 0x0D1D off 0x0BA2 */
+extern int overlay_call_0009_02AE();  /* @ref RTLink seg 0x0009 off 0x02AE */
+extern int overlay_call_0009_02CC();  /* @ref RTLink seg 0x0009 off 0x02CC */
+extern int overlay_call_0009_00B4();  /* @ref RTLink seg 0x0009 off 0x00B4 */
+extern int overlay_call_0009_01A2();  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
+extern int overlay_call_0BCA_0002();  /* @ref RTLink seg 0x0BCA off 0x0002 (rect fill) */
+extern int overlay_call_181F_0E52();  /* @ref RTLink seg 0x181F off 0x0E52 */
+extern int overlay_call_0C0C_0006();  /* @ref RTLink seg 0x0C0C off 0x0006 (read cursor/mouse pos) */
+extern int overlay_call_0B4E_0004();  /* @ref RTLink seg 0x0B4E off 0x0004 (formatted print) */
+extern int overlay_call_0C2E_0022();  /* @ref RTLink seg 0x0C2E off 0x0022 */
+extern int overlay_call_0D11_0000();  /* @ref RTLink seg 0x0D11 off 0x0000 (DOS handle setup) */
+extern int overlay_call_0D1C_0000();  /* @ref RTLink seg 0x0D1C off 0x0000 (blit address calc) */
+extern int overlay_call_0D1D_0BA2();  /* @ref RTLink seg 0x0D1D off 0x0BA2 */
 
 /* @asm        0x00C0D0..0x00C109  (57 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00C0D0_unknown.asm

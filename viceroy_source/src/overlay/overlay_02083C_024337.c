@@ -84,16 +84,16 @@ extern int16_t  g_kbd_scan_981E;      /* DGROUP:0x981E (last key scancode) */
  * Same 0x181F/0x191F overlay-runtime thunk family as the header; each appears
  * verbatim in page_01.asm at the offset noted. Kept local per task scope. */
 extern int overlay_call_181F_03CA(); /* @0x02430C  point_in_rect(x,y,w,h) */
-extern int overlay_call_181F_0858(void); /* @0x022D87  trade_route_of(unit) */
-extern int overlay_call_181F_0DA4(void); /* @0x0241B7  scroll_map(dir) */
-extern int overlay_call_191F_01C2(void); /* @0x02232C  issue_order (build-road) */
-extern int overlay_call_191F_01EC(void); /* @0x0227C6  open_existing_colony */
-extern int overlay_call_191F_01FA(void); /* @0x0227A6  issue_order (build-colony) */
-extern int overlay_call_191F_0216(void); /* @0x022516  issue_order (road-native) */
-extern int overlay_call_191F_0224(void); /* @0x0225BE  draw_panel_footer */
-extern int overlay_call_191F_02B2(void); /* @0x022E0F  issue_order (trade-route) */
-extern int overlay_call_191F_02C0(void); /* @0x022DE9  assign_unit_to_route */
-extern int overlay_call_191F_02DC(void); /* @0x022D93  trade_picker(key,unit,kind) */
+extern int overlay_call_181F_0858(); /* @0x022D87  trade_route_of(unit) */
+extern int overlay_call_181F_0DA4(); /* @0x0241B7  scroll_map(dir) */
+extern int overlay_call_191F_01C2(); /* @0x02232C  issue_order (build-road) */
+extern int overlay_call_191F_01EC(); /* @0x0227C6  open_existing_colony */
+extern int overlay_call_191F_01FA(); /* @0x0227A6  issue_order (build-colony) */
+extern int overlay_call_191F_0216(); /* @0x022516  issue_order (road-native) */
+extern int overlay_call_191F_0224(); /* @0x0225BE  draw_panel_footer */
+extern int overlay_call_191F_02B2(); /* @0x022E0F  issue_order (trade-route) */
+extern int overlay_call_191F_02C0(); /* @0x022DE9  assign_unit_to_route */
+extern int overlay_call_191F_02DC(); /* @0x022D93  trade_picker(key,unit,kind) */
 extern int overlay_call_191F_02EA(); /* @0x022D11  cancel_europe(unit) */
 
 /* direct calls replacing void-arity stub calls */

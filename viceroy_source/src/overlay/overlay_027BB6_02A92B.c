@@ -121,40 +121,40 @@ extern uint8_t   g_unit_type_3146[];  /* 0x3146 = UnitRecord+0x02 (type), stride
  *   call 0x7EB0 -> 191F:0x798   call 0x7EBA -> 191F:0x7B0   call 0x7EC9 -> 191F:0x7D4
  *   call 0x7ECE -> 191F:0x7E0   call 0x7ED3 -> 191F:0x7EC   call 0x7EDD -> 191F:0x804
  *   call 0x7EE7 -> 191F:0x81C   call 0x7EEC -> 191F:0x828   call 0x7EF6 -> 191F:0x840  */
-extern int overlay_call_191F_04D4(void);  extern int overlay_call_191F_04E0(void);
-extern int overlay_call_191F_04EC(void);  extern int overlay_call_191F_051C(void);
-extern int overlay_call_191F_0534(void);  extern int overlay_call_191F_0540(void);
-extern int overlay_call_191F_054C(void);  extern int overlay_call_191F_0558(void);
-extern int overlay_call_191F_05B8(void);  extern int overlay_call_191F_05C4(void);
-extern int overlay_call_191F_05DC(void);  extern int overlay_call_191F_0600(void);
-extern int overlay_call_191F_060C(void);  extern int overlay_call_191F_0630(void);
-extern int overlay_call_191F_0648(void);  extern int overlay_call_191F_0654(void);
-extern int overlay_call_191F_0684(void);  extern int overlay_call_191F_06CC(void);
-extern int overlay_call_191F_06D8(void);  extern int overlay_call_191F_06F0(void);
-extern int overlay_call_191F_0708(void);  extern int overlay_call_191F_0738(void);
-extern int overlay_call_191F_0750(void);  extern int overlay_call_191F_075C(void);
-extern int overlay_call_191F_0768(void);  extern int overlay_call_191F_0774(void);
-extern int overlay_call_191F_078C(void);  extern int overlay_call_191F_0798(void);
-extern int overlay_call_191F_07B0(void);  extern int overlay_call_191F_07D4(void);
-extern int overlay_call_191F_07E0(void);  extern int overlay_call_191F_07EC(void);
-extern int overlay_call_191F_0804(void);  extern int overlay_call_191F_081C(void);
-extern int overlay_call_191F_0840(void);
+extern int overlay_call_191F_04D4();  extern int overlay_call_191F_04E0();
+extern int overlay_call_191F_04EC();  extern int overlay_call_191F_051C();
+extern int overlay_call_191F_0534();  extern int overlay_call_191F_0540();
+extern int overlay_call_191F_054C();  extern int overlay_call_191F_0558();
+extern int overlay_call_191F_05B8();  extern int overlay_call_191F_05C4();
+extern int overlay_call_191F_05DC();  extern int overlay_call_191F_0600();
+extern int overlay_call_191F_060C();  extern int overlay_call_191F_0630();
+extern int overlay_call_191F_0648();  extern int overlay_call_191F_0654();
+extern int overlay_call_191F_0684();  extern int overlay_call_191F_06CC();
+extern int overlay_call_191F_06D8();  extern int overlay_call_191F_06F0();
+extern int overlay_call_191F_0708();  extern int overlay_call_191F_0738();
+extern int overlay_call_191F_0750();  extern int overlay_call_191F_075C();
+extern int overlay_call_191F_0768();  extern int overlay_call_191F_0774();
+extern int overlay_call_191F_078C();  extern int overlay_call_191F_0798();
+extern int overlay_call_191F_07B0();  extern int overlay_call_191F_07D4();
+extern int overlay_call_191F_07E0();  extern int overlay_call_191F_07EC();
+extern int overlay_call_191F_0804();  extern int overlay_call_191F_081C();
+extern int overlay_call_191F_0840();
 
 /* more local trampolines used as near calls (file=0x24BF0+IP):
  *   call 0x7DBB -> 191F:0x54C (declared above)  call 0x7EBF -> 191F:0x7BC
  *   call 0x7EEC -> 191F:0x828 (func_07EEC, list/grid measure) */
-extern int overlay_call_191F_07BC(void);  extern int overlay_call_191F_0828(void);
+extern int overlay_call_191F_07BC();  extern int overlay_call_191F_0828();
 
 /* 191F windowed-control thunks called directly by file-02 code */
-extern int overlay_call_191F_0902(void);  extern int overlay_call_191F_08DE();
-extern int overlay_call_191F_08F8(void);  extern int overlay_call_191F_0428(void);
-extern int overlay_call_191F_0436(void);  extern int overlay_call_191F_0468(void);
+extern int overlay_call_191F_0902();  extern int overlay_call_191F_08DE();
+extern int overlay_call_191F_08F8();  extern int overlay_call_191F_0428();
+extern int overlay_call_191F_0436();  extern int overlay_call_191F_0468();
 
 /* 0x181F GUI primitives used here but not in overlay_externs.h, and the
  * mouse-position far call window 0x0C0C:0x0006 (lcall 0xC0C,6 -> cur pos). */
 extern int overlay_call_181F_03CA();  /* point_in_rect(x0,y0,x1,y1)->bool */
-extern int overlay_call_181F_0AD8(void);  /* apply_transfer(qty,cargo,unit)   */
-extern int overlay_call_0C0C_0006(void);  /* mouse_pos() -> AX=x, DX=y        */
+extern int overlay_call_181F_0AD8();  /* apply_transfer(qty,cargo,unit)   */
+extern int overlay_call_0C0C_0006();  /* mouse_pos() -> AX=x, DX=y        */
 
 /* ============================================================================
  * func_027BB6  -- colony-screen "buildings panel" tiler + level label.

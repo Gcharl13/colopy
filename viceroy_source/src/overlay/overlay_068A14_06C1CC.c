@@ -155,24 +155,24 @@ extern int func_06BAEC(void);  /* cs:0x316C -> 0x1A1F:0xA5C  (page-0x16 tail tra
  * 0x56A/0xB00, 0x191F:0x1A8, the 0x0D1D C-runtime set, ...) are reused as-is. */
 extern int overlay_call_181F_0EA4();  /* 0x181F:0x0EA4 -- gfx state toggle (on/off) */
 extern int overlay_call_181F_03CA();  /* 0x181F:0x03CA -- list-slot hit predicate    */
-extern int overlay_call_181F_00C4(void);  /* 0x181F:0x00C4 -- generic overlay draw (cb)  */
-extern int overlay_call_0D1D_103E(void);  /* 0x0D1D:0x103E -- strcmp (C runtime)         */
-extern int overlay_call_0C0C_0006(void);  /* 0x0C0C:0x0006 -- C-runtime numeric helper   */
-extern int overlay_call_1A1F_0372(void);  /* 0x1A1F:0x0372 -- overlay region plotter     */
+extern int overlay_call_181F_00C4();  /* 0x181F:0x00C4 -- generic overlay draw (cb)  */
+extern int overlay_call_0D1D_103E();  /* 0x0D1D:0x103E -- strcmp (C runtime)         */
+extern int overlay_call_0C0C_0006();  /* 0x0C0C:0x0006 -- C-runtime numeric helper   */
+extern int overlay_call_1A1F_0372();  /* 0x1A1F:0x0372 -- overlay region plotter     */
 
 /* Additional overlay thunks reached by the six dialog renderers ported in this
  * pass; NOT yet in overlay_externs.h (declared here, same convention as above;
  * role inferred from call context / sibling-function usage in this file). */
-extern int overlay_call_181F_0146(void);  /* 0x181F:0x0146 -- string-build: append literal-cell  */
-extern int overlay_call_181F_015A(void);  /* 0x181F:0x015A -- string-build: append (variant)      */
-extern int overlay_call_181F_0164(void);  /* 0x181F:0x0164 -- string-build: append separator      */
-extern int overlay_call_181F_0196(void);  /* 0x181F:0x0196 -- string-build: set column/indent     */
-extern int overlay_call_181F_02BC(void);  /* 0x181F:0x02BC -- draw stat-bar cell (val,x,y,color)  */
-extern int overlay_call_181F_025E(void);  /* 0x181F:0x025E -- draw multi-line text block          */
-extern int overlay_call_181F_0A6A(void);  /* 0x181F:0x0A6A -- terrain yield-class probe (col,id)  */
+extern int overlay_call_181F_0146();  /* 0x181F:0x0146 -- string-build: append literal-cell  */
+extern int overlay_call_181F_015A();  /* 0x181F:0x015A -- string-build: append (variant)      */
+extern int overlay_call_181F_0164();  /* 0x181F:0x0164 -- string-build: append separator      */
+extern int overlay_call_181F_0196();  /* 0x181F:0x0196 -- string-build: set column/indent     */
+extern int overlay_call_181F_02BC();  /* 0x181F:0x02BC -- draw stat-bar cell (val,x,y,color)  */
+extern int overlay_call_181F_025E();  /* 0x181F:0x025E -- draw multi-line text block          */
+extern int overlay_call_181F_0A6A();  /* 0x181F:0x0A6A -- terrain yield-class probe (col,id)  */
 extern int overlay_call_181F_0ACE();  /* 0x181F:0x0ACE -- terrain-detail secondary probe(id)  */
 extern int overlay_call_181F_0B00();  /* 0x181F:0x0B00 -- terrain-detail probe (id) -> count  */
-extern int overlay_call_181F_0B78(void);  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
+extern int overlay_call_181F_0B78();  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
 extern int overlay_call_181F_0808();  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
 extern int overlay_call_1A1F_01CA();  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
 

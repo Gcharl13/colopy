@@ -980,7 +980,7 @@ extern int  ovly_5411_unit_recover(uint16_t idx);        /* near cs:0x5411 -> LJ
                                                           * Called per-unit in the FREEDOM-milestone loop
                                                           * (0x0488A4).  Binary verified:
                                                           * file 0x04BA11 = EA BC 03 1F 1A. */
-extern int  overlay_call_181F_04CA(void);   /* 0x181F:0x04CA — seed_rng_from_timer([0x83A6]):
+extern int  overlay_call_181F_04CA();   /* 0x181F:0x04CA — seed_rng_from_timer([0x83A6]):
                                              * seeds the RNG / primes the log context from
                                              * the timer value at [0x83A6].
                                              * Cross-ref: overlay_04C306_053BC1.c
@@ -991,7 +991,7 @@ extern int  overlay_call_181F_097A();   /* 0x181F:0x097A — per_unit_type0B_gat
                                              * Sons-of-Liberty / freedom counter.
                                              * Cross-ref: overlay_04C306_053BC1.c
                                              * "0x181F:0x97A -> 0x0427:0x13B0 per_unit_type0B_gate". */
-extern int  overlay_call_1A1F_0270(void);   /* 0x1A1F:0x0270 — per-power AI/boycott hook;
+extern int  overlay_call_1A1F_0270();   /* 0x1A1F:0x0270 — per-power AI/boycott hook;
                                              * called before commit 0x0470 at boycott-lift;
                                              * exact page_0A/0B body not cross-ref'd here. */
 extern int  overlay_call_1A1F_0398();   /* 0x1A1F:0x0398 — page_0B shared redraw/update
@@ -2276,7 +2276,7 @@ int native_attack_reward_roll(uint16_t a_bp_06, uint16_t b_bp_08,
  * ============================================================================ */
 extern uint8_t  g_power_active_543F[];  /* DGROUP:0x543F — per-power activity table, stride 0x34 */
 extern uint32_t g_coord_base_8D80;      /* DGROUP:0x8D80 — 32-bit map coord base added to packed y:x */
-extern int      overlay_call_181F_0D90(void);  /* 0x181F:0x0D90 — commit/select tile by packed coord32 */
+extern int      overlay_call_181F_0D90();  /* 0x181F:0x0D90 — commit/select tile by packed coord32 */
 extern int      ovly_4BA43_finalize(void);  /* near file:0x4BA43 = cs:0x5443 (SAME trampoline as
                                             * ovly_5443_trade_finalize) -> LJMP 0x1A1F:0x0434
                                             * -> colony_surrounding_tile_scan (func_048F34).

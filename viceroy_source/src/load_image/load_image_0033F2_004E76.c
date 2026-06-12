@@ -17,13 +17,13 @@
  * (Period code reaches these via `lcall seg:off`; arg passing is via the DOS
  *  stack, so the modern shim signatures are `(void)` like their siblings.)
  * -------------------------------------------------------------------------- */
-extern int overlay_call_0AE7_0002(void);  /* @ref RTLink seg 0x0AE7 off 0x0002 (keyboard poll) */
-extern int overlay_call_0427_0002(void);  /* @ref RTLink seg 0x0427 off 0x0002 */
-extern int overlay_call_0CD8_0004(void);  /* @ref RTLink seg 0x0CD8 off 0x0004 */
-extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 (cursor/mouse pos) */
-extern int overlay_call_181F_03D4(void);  /* @ref RTLink seg 0x181F off 0x03D4 */
-extern int overlay_call_0D1D_030D(void);  /* @ref RTLink seg 0x0D1D off 0x030D */
-extern int overlay_call_0A58_038B(void);  /* @ref RTLink seg 0x0A58 off 0x038B */
+extern int overlay_call_0AE7_0002();  /* @ref RTLink seg 0x0AE7 off 0x0002 (keyboard poll) */
+extern int overlay_call_0427_0002();  /* @ref RTLink seg 0x0427 off 0x0002 */
+extern int overlay_call_0CD8_0004();  /* @ref RTLink seg 0x0CD8 off 0x0004 */
+extern int overlay_call_0C0C_0006();  /* @ref RTLink seg 0x0C0C off 0x0006 (cursor/mouse pos) */
+extern int overlay_call_181F_03D4();  /* @ref RTLink seg 0x181F off 0x03D4 */
+extern int overlay_call_0D1D_030D();  /* @ref RTLink seg 0x0D1D off 0x030D */
+extern int overlay_call_0A58_038B();  /* @ref RTLink seg 0x0A58 off 0x038B */
 
 /* @asm        0x0033F2..0x00341D  (43 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_0033F2_unknown.asm

@@ -33,11 +33,11 @@
 #include "dgroup.h"
 
 /* 181F:0E5E -- literal `return 0` in the EXE. */
-int overlay_call_181F_0E5E(void) { return 0; }
+int overlay_call_181F_0E5E() { return 0; }
 
 /* 181F:0E68 -- BIOS key read+translate; modern input is the script/SDL
  * queue (vid_poll_key); headless returns "no key". */
-int overlay_call_181F_0E68(void)
+int overlay_call_181F_0E68()
 {
     extern int vid_poll_key(void);
     return vid_poll_key();
@@ -45,7 +45,7 @@ int overlay_call_181F_0E68(void)
 
 /* 181F:0EB8 -- input-state reset.  Mirror the byte-visible DGROUP writes so
  * dependent reads stay byte-faithful; the ISR side is platform-owned. */
-int overlay_call_181F_0EB8(void)
+int overlay_call_181F_0EB8()
 {
     DG16(0x92F6) = 0; DG16(0x92F4) = 0;          /* @0xC7EB/@0xC7F1 */
     DG8(0x376) = 1; DG8(0x377) = 1; DG8(0x378) = 1; /* @0xC7F7.. */
@@ -56,43 +56,43 @@ int overlay_call_181F_0EB8(void)
 
 /* mouse cursor show/hide/shape family -- host cursor is platform-owned; the
  * visibility counter byte [0xA899] is kept so EXE-side reads stay coherent. */
-int overlay_call_181F_04E8(void)   /* hide (and 0A58:000D alias) */
+int overlay_call_181F_04E8()   /* hide (and 0A58:000D alias) */
 {
     if (DG16(0x92F8) != 0)
         DG8(0xA899) = (uint8_t)(DG8(0xA899) + 1);  /* @0xC9A5 inc visibility */
     return 0;
 }
-int overlay_call_0A58_000D(void) { return overlay_call_181F_04E8(); }
-int overlay_call_181F_04F2(void)   /* show (and 0A58:0054 alias) */
+int overlay_call_0A58_000D() { return overlay_call_181F_04E8(); }
+int overlay_call_181F_04F2()   /* show (and 0A58:0054 alias) */
 {
     if (DG16(0x92F8) != 0)
         DG8(0xA899) = (uint8_t)(DG8(0xA899) - 1);  /* @0xC9E5 dec visibility */
     return 0;
 }
-int overlay_call_0A58_0054(void) { return overlay_call_181F_04F2(); }
-int overlay_call_0A58_02CE(void)   /* shape reset @0xCC55/[0x58B],[0x58A] */
+int overlay_call_0A58_0054() { return overlay_call_181F_04F2(); }
+int overlay_call_0A58_02CE()   /* shape reset @0xCC55/[0x58B],[0x58A] */
 {
     if (DG16(0x92F8) != 0) { DG8(0x58B) = 0; DG8(0x58A) = 0xFF; }
     return 0;
 }
-int overlay_call_0A58_02E0(void) { return 0; }  /* cursor blank/save region */
-int overlay_call_0A58_03CE(void)   /* conditional re-show */
+int overlay_call_0A58_02E0() { return 0; }  /* cursor blank/save region */
+int overlay_call_0A58_03CE()   /* conditional re-show */
 {
     if (DG16(0x92F8) != 0 && DG8(0xA899) == 0)
         overlay_call_0A58_02CE();                  /* @0xCD5C lcall 0A58:02CE */
     return 0;
 }
-int overlay_call_0A58_03E2(void) { return 0; }  /* sprite save/restore (VGA) */
-int overlay_call_0A58_06FD(void) { return 0; }  /* blit vector dispatch (VGA) */
+int overlay_call_0A58_03E2() { return 0; }  /* sprite save/restore (VGA) */
+int overlay_call_0A58_06FD() { return 0; }  /* blit vector dispatch (VGA) */
 
 /* 0A58:0207 -- the timer ISR body; platform/timer.c owns time. */
-int overlay_call_0A58_0207(void) { return 0; }
+int overlay_call_0A58_0207() { return 0; }
 
 /* 181F:0EE0 -- MSC stack probe; host stack never underruns: deficit 0. */
-int overlay_call_181F_0EE0(void) { return 0; }
+int overlay_call_181F_0EE0() { return 0; }
 
 /* 191F:04A2 -- keyboard drain; the modern queue is drained by the shell. */
-int overlay_call_191F_04A2(void) { return 0; }
+int overlay_call_191F_04A2() { return 0; }
 
 /* Batch C additions (2026-06-12): more resident platform leaves.
  *   0xC861  181F:05CE / 0A29:01D1  INT-vector restore epilogue: when armed
@@ -102,11 +102,11 @@ int overlay_call_191F_04A2(void) { return 0; }
  *           0xCB87 ISR body.  Modern: platform/timer.c owns time.
  *   0xC31C  09EF:002C  forwarder `push cs; call 0xC2F8; retf` = the BIOS
  *           key read+translate (181F:0E68's body).  -> vid_poll_key(). */
-int overlay_call_181F_05CE(void) { return 0; }
-int overlay_call_0A29_01D1(void) { return 0; }
-int overlay_call_09EF_002C(void)
+int overlay_call_181F_05CE() { return 0; }
+int overlay_call_0A29_01D1() { return 0; }
+int overlay_call_09EF_002C()
 {
-    extern int overlay_call_181F_0E68(void);
+    extern int overlay_call_181F_0E68();
     return overlay_call_181F_0E68();
 }
 

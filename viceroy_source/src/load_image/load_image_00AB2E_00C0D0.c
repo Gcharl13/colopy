@@ -19,21 +19,21 @@
  * the modern shim signatures are `(void)` like their siblings.  These should be
  * promoted into overlay_externs.h.
  * -------------------------------------------------------------------------- */
-extern int overlay_call_0000_0062(void);  /* @ref RTLink seg 0x0000 off 0x0062 */
-extern int overlay_call_037F_004A(void);  /* @ref RTLink seg 0x037F off 0x004A */
+extern int overlay_call_0000_0062();  /* @ref RTLink seg 0x0000 off 0x0062 */
+extern int overlay_call_037F_004A();  /* @ref RTLink seg 0x037F off 0x004A */
 /* overlay_call_037F_02A0(uint16_t x, uint16_t y) declared in overlay_externs.h */
-extern int overlay_call_03E4_003A(void);  /* @ref RTLink seg 0x03E4 off 0x003A */
-extern int overlay_call_05DC_00E0(void);  /* @ref RTLink seg 0x05DC off 0x00E0 */
-extern int overlay_call_0981_0000(void);  /* @ref RTLink seg 0x0981 off 0x0000 */
+extern int overlay_call_03E4_003A();  /* @ref RTLink seg 0x03E4 off 0x003A */
+extern int overlay_call_05DC_00E0();  /* @ref RTLink seg 0x05DC off 0x00E0 */
+extern int overlay_call_0981_0000();  /* @ref RTLink seg 0x0981 off 0x0000 */
 /* overlay_call_03E4_0074 declared in overlay_externs.h with (uint16_t x, uint16_t y) */
-extern int overlay_call_0BAA_0006(void);  /* @ref RTLink seg 0x0BAA off 0x0006 (sprite blit) */
-extern int overlay_call_0C36_000A(void);  /* @ref RTLink seg 0x0C36 off 0x000A */
-extern int overlay_call_181F_0E2A(void);  /* @ref RTLink seg 0x181F off 0x0E2A */
+extern int overlay_call_0BAA_0006();  /* @ref RTLink seg 0x0BAA off 0x0006 (sprite blit) */
+extern int overlay_call_0C36_000A();  /* @ref RTLink seg 0x0C36 off 0x000A */
+extern int overlay_call_181F_0E2A();  /* @ref RTLink seg 0x181F off 0x0E2A */
 extern int overlay_call_181F_0344();  /* @ref RTLink seg 0x181F off 0x0344 */
-extern int overlay_call_0009_0244(void);  /* @ref RTLink seg 0x0009 off 0x0244 */
-extern int overlay_call_0009_02CC(void);  /* @ref RTLink seg 0x0009 off 0x02CC */
-extern int overlay_call_0009_01A2(void);  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
-extern int overlay_call_0009_00B4(void);  /* @ref RTLink seg 0x0009 off 0x00B4 */
+extern int overlay_call_0009_0244();  /* @ref RTLink seg 0x0009 off 0x0244 */
+extern int overlay_call_0009_02CC();  /* @ref RTLink seg 0x0009 off 0x02CC */
+extern int overlay_call_0009_01A2();  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
+extern int overlay_call_0009_00B4();  /* @ref RTLink seg 0x0009 off 0x00B4 */
 
 /* Forward declarations for in-file functions referenced before their definition
  * (the original DOS object was a single translation unit). */

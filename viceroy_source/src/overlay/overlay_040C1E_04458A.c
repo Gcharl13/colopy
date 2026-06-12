@@ -123,50 +123,50 @@
  * ------------------------------------------------------------------------- */
 extern int overlay_call_0D1D_07E4();  /* str_format(buf, fmt[, ...])      */
 extern int overlay_call_0D1D_0DAE();  /* memset-like fill                 */
-extern int overlay_call_0D1D_0F60(void);  /* long mul helper                  */
-extern int overlay_call_0D1D_0EC6(void);  /* long div helper                  */
+extern int overlay_call_0D1D_0F60();  /* long mul helper                  */
+extern int overlay_call_0D1D_0EC6();  /* long div helper                  */
 
-extern int overlay_call_181F_0056();  extern int overlay_call_181F_006A(void);
-extern int overlay_call_181F_0074(void);  extern int overlay_call_181F_007E();
-extern int overlay_call_181F_00BA(void);  extern int overlay_call_181F_00C4(void);
-extern int overlay_call_181F_00CE(void);  extern int overlay_call_181F_00E2(void);
-extern int overlay_call_181F_011E(void);  extern int overlay_call_181F_0128(void);
-extern int overlay_call_181F_0132(void);  extern int overlay_call_181F_013C(void);
-extern int overlay_call_181F_016E(void);  extern int overlay_call_181F_0182(void);
-extern int overlay_call_181F_01B4(void);  extern int overlay_call_181F_01E6(void);
-extern int overlay_call_181F_0022();  extern int overlay_call_181F_0254(void);
+extern int overlay_call_181F_0056();  extern int overlay_call_181F_006A();
+extern int overlay_call_181F_0074();  extern int overlay_call_181F_007E();
+extern int overlay_call_181F_00BA();  extern int overlay_call_181F_00C4();
+extern int overlay_call_181F_00CE();  extern int overlay_call_181F_00E2();
+extern int overlay_call_181F_011E();  extern int overlay_call_181F_0128();
+extern int overlay_call_181F_0132();  extern int overlay_call_181F_013C();
+extern int overlay_call_181F_016E();  extern int overlay_call_181F_0182();
+extern int overlay_call_181F_01B4();  extern int overlay_call_181F_01E6();
+extern int overlay_call_181F_0022();  extern int overlay_call_181F_0254();
 extern int overlay_call_181F_02E4();  extern int overlay_call_181F_02EE();
-extern int overlay_call_181F_0302();  extern int overlay_call_181F_0352(void);
-extern int overlay_call_181F_0416(void);  extern int overlay_call_181F_0438();
-extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E();
+extern int overlay_call_181F_0302();  extern int overlay_call_181F_0352();
+extern int overlay_call_181F_0416();  extern int overlay_call_181F_0438();
+extern int overlay_call_181F_044E();  extern int overlay_call_181F_048E();
 extern int overlay_call_181F_04C0();  extern int overlay_call_181F_04D4();
-extern int overlay_call_181F_0524();  extern int overlay_call_181F_0582(void);
+extern int overlay_call_181F_0524();  extern int overlay_call_181F_0582();
 extern int overlay_call_181F_0608();  extern int overlay_call_181F_0652();
-extern int overlay_call_181F_0682();  extern int overlay_call_181F_0696(void);
-extern int overlay_call_181F_06BE(void);  extern int overlay_call_181F_070E(void);
-extern int overlay_call_181F_0718();  extern int overlay_call_181F_0722(void);
-extern int overlay_call_181F_074A(void);  extern int overlay_call_181F_078C(void);
-extern int overlay_call_181F_07A0();  extern int overlay_call_181F_07B4(void);
-extern int overlay_call_181F_07BE(void);  extern int overlay_call_181F_07E0(void);
-extern int overlay_call_181F_07EA(void);  extern int overlay_call_181F_0808();
-extern int overlay_call_181F_081C(void);  extern int overlay_call_181F_083A(void);
-extern int overlay_call_181F_084E();  extern int overlay_call_181F_0858(void);
-extern int overlay_call_181F_0876();  extern int overlay_call_181F_0880(void);
-extern int overlay_call_181F_08B2(void);  extern int overlay_call_181F_08C6(void);
+extern int overlay_call_181F_0682();  extern int overlay_call_181F_0696();
+extern int overlay_call_181F_06BE();  extern int overlay_call_181F_070E();
+extern int overlay_call_181F_0718();  extern int overlay_call_181F_0722();
+extern int overlay_call_181F_074A();  extern int overlay_call_181F_078C();
+extern int overlay_call_181F_07A0();  extern int overlay_call_181F_07B4();
+extern int overlay_call_181F_07BE();  extern int overlay_call_181F_07E0();
+extern int overlay_call_181F_07EA();  extern int overlay_call_181F_0808();
+extern int overlay_call_181F_081C();  extern int overlay_call_181F_083A();
+extern int overlay_call_181F_084E();  extern int overlay_call_181F_0858();
+extern int overlay_call_181F_0876();  extern int overlay_call_181F_0880();
+extern int overlay_call_181F_08B2();  extern int overlay_call_181F_08C6();
 extern int overlay_call_181F_08DA();  extern int overlay_call_181F_0916();
 extern int overlay_call_181F_0920();  extern int overlay_call_181F_0934();
-extern int overlay_call_181F_0948(void);  extern int overlay_call_181F_09A4();
-extern int overlay_call_181F_09AE();  extern int overlay_call_181F_09BA(void);
-extern int overlay_call_181F_09C8(void);  extern int overlay_call_181F_09E6(void);
-extern int overlay_call_181F_0A4C();  extern int overlay_call_181F_0A92(void);
-extern int overlay_call_181F_0AEC();  extern int overlay_call_181F_0B78(void);
+extern int overlay_call_181F_0948();  extern int overlay_call_181F_09A4();
+extern int overlay_call_181F_09AE();  extern int overlay_call_181F_09BA();
+extern int overlay_call_181F_09C8();  extern int overlay_call_181F_09E6();
+extern int overlay_call_181F_0A4C();  extern int overlay_call_181F_0A92();
+extern int overlay_call_181F_0AEC();  extern int overlay_call_181F_0B78();
 extern int overlay_call_181F_0BBE();  extern int overlay_call_181F_0BE6();
-extern int overlay_call_181F_0C2C(void);  extern int overlay_call_181F_0C54();
-extern int overlay_call_181F_0C68(void);  extern int overlay_call_181F_0C9A(void);
-extern int overlay_call_181F_0D58(void);  extern int overlay_call_181F_0D78();
+extern int overlay_call_181F_0C2C();  extern int overlay_call_181F_0C54();
+extern int overlay_call_181F_0C68();  extern int overlay_call_181F_0C9A();
+extern int overlay_call_181F_0D58();  extern int overlay_call_181F_0D78();
 extern int overlay_call_181F_0DC2();  extern int overlay_call_181F_0DD6();
-extern int overlay_call_181F_0DE0();  extern int overlay_call_181F_0DF4(void);
-extern int overlay_call_181F_0DFE(void);  extern int overlay_call_181F_0E12(void);
+extern int overlay_call_181F_0DE0();  extern int overlay_call_181F_0DF4();
+extern int overlay_call_181F_0DFE();  extern int overlay_call_181F_0E12();
 /* overlay_call_181F_0E1C(uint16_t active) now declared in overlay_externs.h */
 
 /* direct calls replacing void-arity stub calls */
@@ -179,23 +179,23 @@ extern int  func_007C2A_logic_sz_46(uint16_t unit, uint16_t sel);          /* 0x
 extern int  func_00757E_op_sz_33(uint16_t unit);                            /* 0x181F:0x081C */
 extern int  func_008BB2_logic_sz_20(uint16_t unit);                         /* 0x181F:0x0B78 */
 
-extern int overlay_call_191F_0120(void);  extern int overlay_call_191F_0208(void);
-extern int overlay_call_191F_02CE(void);  extern int overlay_call_191F_02EA();
-extern int overlay_call_191F_044E(void);  extern int overlay_call_191F_04BA(void);
-extern int overlay_call_191F_0594(void);  extern int overlay_call_191F_07F8(void);
-extern int overlay_call_191F_09B2(void);  extern int overlay_call_191F_0A4A(void);
-extern int overlay_call_191F_0AEE(void);  extern int overlay_call_191F_0B42(void);
-extern int overlay_call_191F_0C06(void);  extern int overlay_call_191F_0CD8(void);
-extern int overlay_call_191F_0D02(void);  extern int overlay_call_191F_0EC2(void);
-extern int overlay_call_191F_0ED0(void);
+extern int overlay_call_191F_0120();  extern int overlay_call_191F_0208();
+extern int overlay_call_191F_02CE();  extern int overlay_call_191F_02EA();
+extern int overlay_call_191F_044E();  extern int overlay_call_191F_04BA();
+extern int overlay_call_191F_0594();  extern int overlay_call_191F_07F8();
+extern int overlay_call_191F_09B2();  extern int overlay_call_191F_0A4A();
+extern int overlay_call_191F_0AEE();  extern int overlay_call_191F_0B42();
+extern int overlay_call_191F_0C06();  extern int overlay_call_191F_0CD8();
+extern int overlay_call_191F_0D02();  extern int overlay_call_191F_0EC2();
+extern int overlay_call_191F_0ED0();
 
-extern int overlay_call_1A1F_0142(void);  extern int overlay_call_1A1F_01D8(void);
-extern int overlay_call_1A1F_01E6(void);  extern int overlay_call_1A1F_01F4(void);
-extern int overlay_call_1A1F_0202(void);  extern int overlay_call_1A1F_0210(void);
-extern int overlay_call_1A1F_021C(void);  extern int overlay_call_1A1F_022A();
-extern int overlay_call_1A1F_0238(void);  extern int overlay_call_1A1F_0246(void);
-extern int overlay_call_1A1F_0254(void);  extern int overlay_call_1A1F_0262(void);
-extern int overlay_call_1A1F_027E(void);
+extern int overlay_call_1A1F_0142();  extern int overlay_call_1A1F_01D8();
+extern int overlay_call_1A1F_01E6();  extern int overlay_call_1A1F_01F4();
+extern int overlay_call_1A1F_0202();  extern int overlay_call_1A1F_0210();
+extern int overlay_call_1A1F_021C();  extern int overlay_call_1A1F_022A();
+extern int overlay_call_1A1F_0238();  extern int overlay_call_1A1F_0246();
+extern int overlay_call_1A1F_0254();  extern int overlay_call_1A1F_0262();
+extern int overlay_call_1A1F_027E();
 
 /* Forward decls for in-cluster callees (real functions ported below or in
  * sibling files). */

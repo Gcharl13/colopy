@@ -115,9 +115,9 @@ extern int overlay_call_1A1F_01CA();  /* @asm lcall 0x1A1F:0x01CA (page_12 0x061
 /* LCALL helpers used only by the func_05E9B0 tile-info-panel renderer
  * (text/string builders in load-image seg 0x181F); each cited at its use site
  * in page_11.  Declared file-local because overlay_externs.h omits them. */
-extern int overlay_call_181F_0146(void);  /* @asm lcall 0x181F:0x0146 (page_11 0x05EBD2 begin-string) */
-extern int overlay_call_181F_015A(void);  /* @asm lcall 0x181F:0x015A (page_11 0x05ED5D append-num) */
-extern int overlay_call_181F_09D2(void);  /* @asm lcall 0x181F:0x09D2 (page_11 0x05F40A turn/year?) */
+extern int overlay_call_181F_0146();  /* @asm lcall 0x181F:0x0146 (page_11 0x05EBD2 begin-string) */
+extern int overlay_call_181F_015A();  /* @asm lcall 0x181F:0x015A (page_11 0x05ED5D append-num) */
+extern int overlay_call_181F_09D2();  /* @asm lcall 0x181F:0x09D2 (page_11 0x05F40A turn/year?) */
 extern int overlay_call_181F_0BDC();  /* @asm lcall 0x181F:0x0BDC (page_11 0x05F3CD road/route lookup) */
 extern int overlay_call_181F_02B2();  /* @asm lcall 0x181F:0x02B2 (page_11 0x05F4AE draw glyph row) */
 

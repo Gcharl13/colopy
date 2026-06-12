@@ -541,7 +541,7 @@ void func_03234A(int good, int qty)
  * =========================================================================== */
 extern int  overlay_call_181F_0AF6();  /* 0x181F:0xAF6 (power, long) market post */
 extern void near_6D91(int good, int q);    /* resident CALL cs:0x6D91 */
-extern int  overlay_call_181F_0D58(void);  /* 0x181F:0xD58 (good, good, q) */
+extern int  overlay_call_181F_0D58();  /* 0x181F:0xD58 (good, good, q) */
 int func_03240C(int good, int price, int qty)
 {
     int scale = near_6DA0(price);                /* @asm 0x032413 */
@@ -688,9 +688,9 @@ void ov_panel_geom_init(void)
  * =========================================================================== */
 extern int  overlay_call_181F_0B96();  /* 0x181F:0xB96 ask_quantity(&out,power,z) */
 extern int  overlay_call_181F_0438();  /* 0x181F:0x438 draw flag/icon(token, slot) */
-extern int  overlay_call_191F_0436(void);  /* 0x191F:0x436 price/accept check(ctx,key,qty) */
+extern int  overlay_call_191F_0436();  /* 0x191F:0x436 price/accept check(ctx,key,qty) */
 extern int  overlay_call_181F_0A92();  /* 0x181F:0xA92 power funds query(power) */
-extern int  overlay_call_181F_03FE(void);  /* 0x181F:0x3FE finalise line(key) */
+extern int  overlay_call_181F_03FE();  /* 0x181F:0x3FE finalise line(key) */
 extern int  near_6E18(int qty, int power, int z);
 extern void near_6E68(void);
 extern void near_6E72(void);
@@ -813,7 +813,7 @@ int func_032914(int z, int powerA, int powerB)
  * (0xFF1/0xFF3 = GAME.TXT handles.)
  * =========================================================================== */
 extern int overlay_call_181F_0BE6();   /* 0x181F:0xBE6 stage/avail(&out,a,b) */
-extern int overlay_call_181F_0C68(void);   /* 0x181F:0xC68 current holding(a,b) */
+extern int overlay_call_181F_0C68();   /* 0x181F:0xC68 current holding(a,b) */
 int func_032DAC(int good, int power, int commit)
 {
     int ok = 1;                                          /* @asm 0x032DB0 */
@@ -859,7 +859,7 @@ extern int  near_6E13(int v);              /* resident CALL cs:0x6E13 (arg -> un
 extern int  overlay_call_181F_0920();  /* 0x181F:0x920 report prep */
 extern int  overlay_call_181F_07EA();  /* 0x181F:0x7EA seed first rows */
 extern int  overlay_call_181F_02EE();  /* 0x181F:0x2EE seed rows */
-extern int  overlay_call_181F_02DA(void);  /* 0x181F:0x2DA row advance (a) */
+extern int  overlay_call_181F_02DA();  /* 0x181F:0x2DA row advance (a) */
 extern int  overlay_call_181F_02E4();  /* 0x181F:0x2E4 row advance (b) */
 extern int  overlay_call_181F_0948();  /* 0x181F:0x948 advisory */
 extern void near_6E31(void);
@@ -1004,7 +1004,7 @@ extern int  near_6D4B(int sel, int t, int one, int d);
 extern void near_6DF0(int v);
 extern int  overlay_call_191F_0942();  /* 0x191F:0x942 board/by-type */
 extern void near_6E40(void);
-extern int  overlay_call_181F_03A2(void);  /* 0x181F:0x3A2 (selection ctx) */
+extern int  overlay_call_181F_03A2();  /* 0x181F:0x3A2 (selection ctx) */
 extern void near_6E5E(int unit, int key);
 void func_03342C(void)
 {
@@ -1510,7 +1510,7 @@ void func_033BE4(void)
  * profession/role morph (type field +0x3146) paired with a gold debit/credit and
  * a market poke (near_6D91 buy / near_6D28 sell).
  * =========================================================================== */
-extern int  overlay_call_191F_0910(void);  /* 0x191F:0x910 row sub-context close */
+extern int  overlay_call_191F_0910();  /* 0x191F:0x910 row sub-context close */
 extern int  overlay_call_181F_089E();  /* 0x181F:0x89E disband/remove active unit */
 void func_033C96(void)
 {

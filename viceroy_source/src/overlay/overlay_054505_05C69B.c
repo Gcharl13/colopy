@@ -92,11 +92,11 @@ extern uint16_t g_dialog_active_A154;        /* DGROUP:0xA154 — trade-dialog a
  * Locally-declared role-unknown overlay thunks not present in overlay_externs.h.
  * (Scope rule forbids editing the shared header; declared here, called by name.)
  * -------------------------------------------------------------------------- */
-extern int overlay_call_181F_09DC(void);  /* @ref RTLink seg 0x181F off 0x09DC */
-extern int overlay_call_1A1F_0618(void);  /* @ref RTLink seg 0x1A1F off 0x0618 */
-extern int overlay_call_1A1F_0688(void);  /* @ref RTLink seg 0x1A1F off 0x0688 */
-extern int overlay_call_1A1F_0694(void);  /* @ref RTLink seg 0x1A1F off 0x0694 (trampoline) */
-extern int overlay_call_1A1F_06A2(void);  /* @ref RTLink seg 0x1A1F off 0x06A2 (trampoline) */
+extern int overlay_call_181F_09DC();  /* @ref RTLink seg 0x181F off 0x09DC */
+extern int overlay_call_1A1F_0618();  /* @ref RTLink seg 0x1A1F off 0x0618 */
+extern int overlay_call_1A1F_0688();  /* @ref RTLink seg 0x1A1F off 0x0688 */
+extern int overlay_call_1A1F_0694();  /* @ref RTLink seg 0x1A1F off 0x0694 (trampoline) */
+extern int overlay_call_1A1F_06A2();  /* @ref RTLink seg 0x1A1F off 0x06A2 (trampoline) */
 
 /* Near-called helpers that live OUTSIDE this file's range (kept as externs). */
 extern int func_05E723(int start_idx, int a, int b, int c, int d); /* page-10 combat-leaf trampoline (0x3DD3 -> ljmp 0x1A1F) */
@@ -883,8 +883,8 @@ extern uint16_t g_word_0B98;               /* DGROUP:0x0B98 — assault-in-progr
 extern uint8_t  g_byte_0337;               /* DGROUP:0x0337 — colony-finalize flag */
 /* overlay_call_181F_0AB0 (chain/strength count) is declared in overlay_externs.h. */
 /* Step-executor trampolines in the tertiary overlay (not in overlay_externs.h). */
-extern int      overlay_call_1A1F_059C(void); /* 0x1A1F:0x059C — step-vector toward target */
-extern int      overlay_call_1A1F_05FC(void); /* 0x1A1F:0x05FC — execute the queued move */
+extern int      overlay_call_1A1F_059C(); /* 0x1A1F:0x059C — step-vector toward target */
+extern int      overlay_call_1A1F_05FC(); /* 0x1A1F:0x05FC — execute the queued move */
 
 int ai_resolve_colony_assault(int unit)  /* func_05A20E */
 {

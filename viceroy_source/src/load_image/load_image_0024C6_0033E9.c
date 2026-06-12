@@ -23,14 +23,14 @@
 /* File-local overlay-call externs (RTLink targets not present in
  * overlay_externs.h).  Same convention as the sibling load_image_*.c files:
  * each is a far overlay entry resolved by the RTLink thunk layer at run time. */
-extern int  overlay_call_0000_0062(void);  /* @ref RTLink seg 0x0000 off 0x0062 -- string by id  */
-extern int  overlay_call_0AE7_0002(void);  /* @ref RTLink seg 0x0AE7 off 0x0002 -- point hit-test */
-extern int  overlay_call_0BCA_0002(void);  /* @ref RTLink seg 0x0BCA off 0x0002 -- fill rect    */
-extern int  overlay_call_0BF5_0000(void);  /* @ref RTLink seg 0x0BF5 off 0x0000 -- draw frame    */
-extern int  overlay_call_0ACB_0006(void);  /* @ref RTLink seg 0x0ACB off 0x0006 -- cell predicate*/
-extern int  overlay_call_004B_0318(void);  /* @ref RTLink seg 0x004B off 0x0318 -- string blit   */
-extern int  overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 -- cursor x/y     */
-extern int  overlay_call_0C2A_0006(void);  /* @ref RTLink seg 0x0C2A off 0x0006 -- measure glyph  */
+extern int  overlay_call_0000_0062();  /* @ref RTLink seg 0x0000 off 0x0062 -- string by id  */
+extern int  overlay_call_0AE7_0002();  /* @ref RTLink seg 0x0AE7 off 0x0002 -- point hit-test */
+extern int  overlay_call_0BCA_0002();  /* @ref RTLink seg 0x0BCA off 0x0002 -- fill rect    */
+extern int  overlay_call_0BF5_0000();  /* @ref RTLink seg 0x0BF5 off 0x0000 -- draw frame    */
+extern int  overlay_call_0ACB_0006();  /* @ref RTLink seg 0x0ACB off 0x0006 -- cell predicate*/
+extern int  overlay_call_004B_0318();  /* @ref RTLink seg 0x004B off 0x0318 -- string blit   */
+extern int  overlay_call_0C0C_0006();  /* @ref RTLink seg 0x0C0C off 0x0006 -- cursor x/y     */
+extern int  overlay_call_0C2A_0006();  /* @ref RTLink seg 0x0C2A off 0x0006 -- measure glyph  */
 
 /* Near siblings called from this file but living below 0x24C6 / in the
  * 0x2892..0x2992 gap (not yet emitted as separate .c).  Far functions reached

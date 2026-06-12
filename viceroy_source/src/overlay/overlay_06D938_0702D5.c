@@ -99,39 +99,39 @@
  * -------------------------------------------------------------------------- */
 
 /* 0x1A1F:* page-0x12 targets not present in overlay_externs.h: declare locally. */
-extern int overlay_call_1A1F_0372(void);  /* 0x1A1F:0x0372 — record-read (page 0x12) */
-extern int overlay_call_1A1F_0710(void);  /* 0x1A1F:0x0710 — panel pre-blit (page 0x12) */
-extern int overlay_call_1A1F_0AB6(void);  /* 0x1A1F:0x0AB6 — panel save/restore (page 0x12) */
-extern int overlay_call_1A1F_0ADA(void);  /* 0x1A1F:0x0ADA — panel unit-scan (page 0x12) */
-extern int overlay_call_1A1F_0B0A(void);  /* 0x1A1F:0x0B0A — panel post-blit (page 0x12) */
-extern int overlay_call_1A1F_0B82(void);  /* 0x1A1F:0x0B82 — report cell helper (page 0x12) */
-extern int overlay_call_1A1F_0B9E(void);  /* 0x1A1F:0x0B9E — report cell helper (page 0x12) */
-extern int overlay_call_1A1F_0BBA(void);  /* 0x1A1F:0x0BBA — report cell helper (page 0x12) */
-extern int overlay_call_191F_091C(void);  /* 0x191F:0x091C — dialog primitive (page 0x11) */
-extern int overlay_call_191F_0FC4(void);  /* 0x191F:0x0FC4 — dialog primitive (page 0x11) */
+extern int overlay_call_1A1F_0372();  /* 0x1A1F:0x0372 — record-read (page 0x12) */
+extern int overlay_call_1A1F_0710();  /* 0x1A1F:0x0710 — panel pre-blit (page 0x12) */
+extern int overlay_call_1A1F_0AB6();  /* 0x1A1F:0x0AB6 — panel save/restore (page 0x12) */
+extern int overlay_call_1A1F_0ADA();  /* 0x1A1F:0x0ADA — panel unit-scan (page 0x12) */
+extern int overlay_call_1A1F_0B0A();  /* 0x1A1F:0x0B0A — panel post-blit (page 0x12) */
+extern int overlay_call_1A1F_0B82();  /* 0x1A1F:0x0B82 — report cell helper (page 0x12) */
+extern int overlay_call_1A1F_0B9E();  /* 0x1A1F:0x0B9E — report cell helper (page 0x12) */
+extern int overlay_call_1A1F_0BBA();  /* 0x1A1F:0x0BBA — report cell helper (page 0x12) */
+extern int overlay_call_191F_091C();  /* 0x191F:0x091C — dialog primitive (page 0x11) */
+extern int overlay_call_191F_0FC4();  /* 0x191F:0x0FC4 — dialog primitive (page 0x11) */
 
 /* Additional thunk wrappers used by the render/text bodies ported this round but
  * NOT present in include/overlay_externs.h — declared file-local (cite-or-not yet decoded).
  * Targets are RTLink JMP-FAR leaves; we forward, never fabricate a body. */
-extern int overlay_call_191F_08D2(void);  /* 0x191F:0x08D2 — panel append label-widget (page 0x11) */
-extern int overlay_call_191F_0910(void);  /* 0x191F:0x0910 — token->local copy (page 0x11) */
-extern int overlay_call_1A1F_0364(void);  /* 0x1A1F:0x0364 — panel rect helper (page 0x12) */
-extern int overlay_call_1A1F_038A(void);  /* 0x1A1F:0x038A — panel cursor-rect helper (page 0x12) */
-extern int overlay_call_1A1F_0A9E(void);  /* 0x1A1F:0x0A9E — panel sub-helper (page 0x12) */
-extern int overlay_call_1A1F_0AAA(void);  /* 0x1A1F:0x0AAA — panel sub-helper (page 0x12) */
-extern int overlay_call_1A1F_0AC2(void);  /* 0x1A1F:0x0AC2 — panel sub-helper (page 0x12) */
-extern int overlay_call_1A1F_0ACE(void);  /* 0x1A1F:0x0ACE — panel fmt-with-arg helper (page 0x12) */
-extern int overlay_call_1A1F_0AE6(void);  /* 0x1A1F:0x0AE6 — panel sub-helper (page 0x12) */
-extern int overlay_call_1A1F_0AF2(void);  /* 0x1A1F:0x0AF2 — panel invalidate helper (page 0x12) */
-extern int overlay_call_1A1F_0B3A(void);  /* 0x1A1F:0x0B3A — namelist str helper (page 0x12) */
-extern int overlay_call_1A1F_0B44(void);  /* 0x1A1F:0x0B44 — namelist trim/normalize (page 0x12) */
-extern int overlay_call_1A1F_0B4E(void);  /* 0x1A1F:0x0B4E — namelist normalize (page 0x12) */
+extern int overlay_call_191F_08D2();  /* 0x191F:0x08D2 — panel append label-widget (page 0x11) */
+extern int overlay_call_191F_0910();  /* 0x191F:0x0910 — token->local copy (page 0x11) */
+extern int overlay_call_1A1F_0364();  /* 0x1A1F:0x0364 — panel rect helper (page 0x12) */
+extern int overlay_call_1A1F_038A();  /* 0x1A1F:0x038A — panel cursor-rect helper (page 0x12) */
+extern int overlay_call_1A1F_0A9E();  /* 0x1A1F:0x0A9E — panel sub-helper (page 0x12) */
+extern int overlay_call_1A1F_0AAA();  /* 0x1A1F:0x0AAA — panel sub-helper (page 0x12) */
+extern int overlay_call_1A1F_0AC2();  /* 0x1A1F:0x0AC2 — panel sub-helper (page 0x12) */
+extern int overlay_call_1A1F_0ACE();  /* 0x1A1F:0x0ACE — panel fmt-with-arg helper (page 0x12) */
+extern int overlay_call_1A1F_0AE6();  /* 0x1A1F:0x0AE6 — panel sub-helper (page 0x12) */
+extern int overlay_call_1A1F_0AF2();  /* 0x1A1F:0x0AF2 — panel invalidate helper (page 0x12) */
+extern int overlay_call_1A1F_0B3A();  /* 0x1A1F:0x0B3A — namelist str helper (page 0x12) */
+extern int overlay_call_1A1F_0B44();  /* 0x1A1F:0x0B44 — namelist trim/normalize (page 0x12) */
+extern int overlay_call_1A1F_0B4E();  /* 0x1A1F:0x0B4E — namelist normalize (page 0x12) */
 extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA — strtok-ish (split on sep) */
-extern int overlay_call_0D1D_0CC2(void);  /* 0x0D1D:0x0CC2 — memcmp (key match) */
-extern int overlay_call_181F_0018(void);  /* 0x181F:0x0018 — text emit leaf (page 75) */
+extern int overlay_call_0D1D_0CC2();  /* 0x0D1D:0x0CC2 — memcmp (key match) */
+extern int overlay_call_181F_0018();  /* 0x181F:0x0018 — text emit leaf (page 75) */
 extern int overlay_call_181F_03CA();  /* 0x181F:0x03CA — point-in-rect hit-test */
-extern int overlay_call_0C0C_0006(void);  /* 0x0C0C:0x0006 — cursor/mouse position read */
-extern int overlay_call_191F_0AAC(void);  /* 0x191F:0x0AAC — dispose owned panel (page 0x11) */
+extern int overlay_call_0C0C_0006();  /* 0x0C0C:0x0006 — cursor/mouse position read */
+extern int overlay_call_191F_0AAC();  /* 0x191F:0x0AAC — dispose owned panel (page 0x11) */
 
 /* Panel-builder helpers ported in the sibling files (call by name). */
 extern int func_06CFE8(void);              /* sibling: panel word-wrap measure */

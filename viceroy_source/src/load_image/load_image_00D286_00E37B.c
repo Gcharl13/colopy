@@ -17,11 +17,11 @@
  * Period code reaches each via `lcall seg:off`; args travel on the DOS stack, so
  * the modern shim signatures are `(void)` like their siblings.
  * -------------------------------------------------------------------------- */
-extern int overlay_call_0A4E_0008(void);  /* @ref RTLink 0x0A4E:0x0008 (opaque screen-address helper; les di,[res]) */
-extern int overlay_call_09F6_0002(void);  /* @ref RTLink 0x09F6:0x0002 (C-runtime string helper) */
-extern int overlay_call_0BAA_0006(void);  /* @ref RTLink 0x0BAA:0x0006 (clipped tile blit == func_00DEA6) */
-extern int overlay_call_0BBC_000C(void);  /* @ref RTLink 0x0BBC:0x000C (clipped horizontal run == func_00DFCC) */
-extern int overlay_call_0BC3_0006(void);  /* @ref RTLink 0x0BC3:0x0006 (clipped vertical run   == func_00E036) */
+extern int overlay_call_0A4E_0008();  /* @ref RTLink 0x0A4E:0x0008 (opaque screen-address helper; les di,[res]) */
+extern int overlay_call_09F6_0002();  /* @ref RTLink 0x09F6:0x0002 (C-runtime string helper) */
+extern int overlay_call_0BAA_0006();  /* @ref RTLink 0x0BAA:0x0006 (clipped tile blit == func_00DEA6) */
+extern int overlay_call_0BBC_000C();  /* @ref RTLink 0x0BBC:0x000C (clipped horizontal run == func_00DFCC) */
+extern int overlay_call_0BC3_0006();  /* @ref RTLink 0x0BC3:0x0006 (clipped vertical run   == func_00E036) */
 
 /* @asm        0x00D286..0x00D29C  (22 bytes)  region=load_image
  * @asm_file   re_work/disasm/func_00D286.asm

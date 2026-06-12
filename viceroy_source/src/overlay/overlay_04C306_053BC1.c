@@ -63,15 +63,15 @@ extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col);  /* 0x181F:0x030
  * resolves via tools/rtlink/rtlink_decode.py; role is inferred from call context.
  * -------------------------------------------------------------------------- */
 extern int unit_chain_next(int idx);      /* 0x181F:0x02E4 AX-arg chain-next (unit/chain.c) */
-extern int overlay_call_181F_0984(void);  /* 0x181F:0x0984 — unit special-order gate */
-extern int overlay_call_181F_06E6(void);  /* 0x181F:0x06E6 — map step/adjacency */
-extern int overlay_call_191F_01C2(void);  /* 0x191F:0x01C2 — unit handler (page 0x11) */
-extern int overlay_call_191F_0216(void);  /* 0x191F:0x0216 — unit activate/handler */
-extern int overlay_call_191F_01FA(void);  /* 0x191F:0x01FA — unit handler */
-extern int overlay_call_191F_04BA(void);  /* 0x191F:0x04BA — unit handler */
-extern int overlay_call_191F_0A20(void);  /* 0x191F:0x0A20 — create unit (page 0x11) */
-extern int overlay_call_191F_0A06(void);  /* 0x191F:0x0A06 — post-create activate */
-extern int overlay_call_1A1F_05F0(void);  /* 0x1A1F:0x05F0 — plot path (page 0x12) */
+extern int overlay_call_181F_0984();  /* 0x181F:0x0984 — unit special-order gate */
+extern int overlay_call_181F_06E6();  /* 0x181F:0x06E6 — map step/adjacency */
+extern int overlay_call_191F_01C2();  /* 0x191F:0x01C2 — unit handler (page 0x11) */
+extern int overlay_call_191F_0216();  /* 0x191F:0x0216 — unit activate/handler */
+extern int overlay_call_191F_01FA();  /* 0x191F:0x01FA — unit handler */
+extern int overlay_call_191F_04BA();  /* 0x191F:0x04BA — unit handler */
+extern int overlay_call_191F_0A20();  /* 0x191F:0x0A20 — create unit (page 0x11) */
+extern int overlay_call_191F_0A06();  /* 0x191F:0x0A06 — post-create activate */
+extern int overlay_call_1A1F_05F0();  /* 0x1A1F:0x05F0 — plot path (page 0x12) */
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (cite-or-not yet decoded; addresses are the
@@ -2174,7 +2174,7 @@ extern int  ovly_tramp_7AD0(uint16_t power);               /* call cs:0x7AD0 -> 
 extern int  ovly_tramp_7ADF(uint16_t power);               /* call cs:0x7ADF -> 0x1A1F:0x578 -> func_04C532 [CORRECTED 2026-06-10] */
 /* file-local 0x181F / 0xD1D leaves not pre-declared in overlay_externs.h.
  * BYTE_VERIFIED 2026-06-08: bodies traced via RTLink thunk resolution (see block above). */
-extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer:
+extern int  overlay_call_181F_04CA();  /* 0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer:
                                             *   reads BIOS tick 0x40:0x6C-6E, masks &0x7FFF,
                                             *   seeds LCG [0x28EE/0x28F0] via 0xD1D:0xDF2.
                                             *   arg [0x83A6] is pushed by caller but ignored. */
@@ -2182,7 +2182,7 @@ extern int  overlay_call_181F_097A();  /* 0x181F:0x97A -> 0x0427:0x13B0 per_unit
                                             *   input in AX (unit_index, register convention).
                                             *   returns 1 if unit is valid/owned/type-0xB with
                                             *   order_step[+0x3149] < type_threshold; else 0. */
-extern int  overlay_call_0D1D_092C(void);  /* 0xD1D:0x92C — string/text helper */
+extern int  overlay_call_0D1D_092C();  /* 0xD1D:0x92C — string/text helper */
 
 /* DGROUP:0x848 — per-power byte (indexed by the power INDEX, not PowerRecord);
  * read as pwr_sub_state[power].  @asm 0x052FAF/0x052FC1 mov al,[bx+0x848] (bx=arg0). */

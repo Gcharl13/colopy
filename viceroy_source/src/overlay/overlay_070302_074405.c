@@ -104,21 +104,21 @@ extern uint8_t  g_diff_color_848[];       /* DGROUP:0x848  -- per-nation banner 
  *   block @0x07147C..0x071481 (page 0x19): 0x1A1F:0xC64 / 0xC72
  *   block @0x073266..0x07326B (page 0x1A): 0x1A1F:0xCDA / 0xCE8
  * -------------------------------------------------------------------------- */
-extern int overlay_call_1A1F_0B58(void);       /* 0x1A1F:0x0B58 */
-extern int overlay_call_1A1F_0B90(void);       /* 0x1A1F:0x0B90 -- difficulty-row label format */
-extern int overlay_call_1A1F_0BAC(void);       /* 0x1A1F:0x0BAC -- difficulty-row draw (per i) */
-extern int overlay_call_1A1F_0BBA(void);       /* 0x1A1F:0x0BBA */
-extern int overlay_call_1A1F_0BC8(void);       /* 0x1A1F:0x0BC8 -- nation-row label format */
-extern int overlay_call_1A1F_0BD6(void);       /* 0x1A1F:0x0BD6 -- nation-row draw (per i) */
-extern int overlay_call_1A1F_0BF2(void);       /* 0x1A1F:0x0BF2 -- format helper */
-extern int overlay_call_1A1F_0C00(void);       /* 0x1A1F:0x0C00 */
-extern int overlay_call_1A1F_0C0E(void);       /* 0x1A1F:0x0C0E */
-extern int overlay_call_1A1F_0C1C(void);       /* 0x1A1F:0x0C1C */
-extern int overlay_call_1A1F_0C2A(void);       /* 0x1A1F:0x0C2A */
+extern int overlay_call_1A1F_0B58();       /* 0x1A1F:0x0B58 */
+extern int overlay_call_1A1F_0B90();       /* 0x1A1F:0x0B90 -- difficulty-row label format */
+extern int overlay_call_1A1F_0BAC();       /* 0x1A1F:0x0BAC -- difficulty-row draw (per i) */
+extern int overlay_call_1A1F_0BBA();       /* 0x1A1F:0x0BBA */
+extern int overlay_call_1A1F_0BC8();       /* 0x1A1F:0x0BC8 -- nation-row label format */
+extern int overlay_call_1A1F_0BD6();       /* 0x1A1F:0x0BD6 -- nation-row draw (per i) */
+extern int overlay_call_1A1F_0BF2();       /* 0x1A1F:0x0BF2 -- format helper */
+extern int overlay_call_1A1F_0C00();       /* 0x1A1F:0x0C00 */
+extern int overlay_call_1A1F_0C0E();       /* 0x1A1F:0x0C0E */
+extern int overlay_call_1A1F_0C1C();       /* 0x1A1F:0x0C1C */
+extern int overlay_call_1A1F_0C2A();       /* 0x1A1F:0x0C2A */
 extern int overlay_call_1A1F_0C64_alloc(void); /* 0x1A1F:0x0C64 -- map-buffer allocator entry */
-extern int overlay_call_1A1F_0C72(void);       /* 0x1A1F:0x0C72 */
-extern int overlay_call_1A1F_0CDA(void);       /* 0x1A1F:0x0CDA -- save-name helper */
-extern int overlay_call_1A1F_0CE8(void);       /* 0x1A1F:0x0CE8 -- load-name helper */
+extern int overlay_call_1A1F_0C72();       /* 0x1A1F:0x0C72 */
+extern int overlay_call_1A1F_0CDA();       /* 0x1A1F:0x0CDA -- save-name helper */
+extern int overlay_call_1A1F_0CE8();       /* 0x1A1F:0x0CE8 -- load-name helper */
 
 /* page-0x19 trampoline @0x070C3C block -> tramp stubs (near-call names kept) */
 int func_070C3C(void) { return overlay_call_1A1F_0B58(); }       /* @asm 0x070C3C ljmp 0x1A1F:0x0B58 */
@@ -671,7 +671,7 @@ int func_070C6C_count_char_in_string(char **pp, char ch)
  * (The fine mapping letter->arm is the cs:0x156 table above; each switch flag
  *  byte is named in the externs below; precise effect is command-line switch.)
  * ============================================================================ */
-extern int overlay_call_1A1F_0C5A(void);  /* 0x1A1F:0x0C5A -- save-path apply helper */
+extern int overlay_call_1A1F_0C5A();  /* 0x1A1F:0x0C5A -- save-path apply helper */
 extern uint8_t  g_opt_mode_2608;          /* DGROUP:0x2608 */
 extern uint8_t  g_opt_cheat_828, g_opt_dev_826;   /* DGROUP:0x828 / 0x826 */
 extern uint16_t g_opt_201E, g_opt_2606, g_opt_81E, g_opt_36C, g_opt_104; /* misc switch flags */
@@ -748,7 +748,7 @@ int func_070CB4_parse_option_char(char **arg)
  * @asm 0x070EAF  lcall 0x1A1F:0xC50 (arg [0x260C]) ; @asm 0x070EB4 [0x2608] = al
  * ============================================================================ */
 extern uint16_t g_cfg_260A, g_cfg_260C, g_cfg_260E, g_cfg_2610, g_cfg_2612, g_cfg_2614, g_cfg_2616;
-extern int overlay_call_1A1F_0C50(void);  /* 0x1A1F:0x0C50 -- post-config apply */
+extern int overlay_call_1A1F_0C50();  /* 0x1A1F:0x0C50 -- post-config apply */
 
 int func_070DE8_load_config_col(void)
 {
@@ -791,8 +791,8 @@ close:
  * @asm 0x070F64  strcpy(0x8554, "viceroy")  @asm 0x070F6C lcall 0x1A1F:0xC38
  * @asm 0x070F76  if ([0x822]) printf("Exit value: %d", [0x822]) (0x0D1D:0x712)
  * ============================================================================ */
-extern int overlay_call_1A1F_0C46(void);  /* 0x1A1F:0x0C46 -- secondary init */
-extern int overlay_call_1A1F_0C38(void);  /* 0x1A1F:0x0C38 -- post-parse init */
+extern int overlay_call_1A1F_0C46();  /* 0x1A1F:0x0C46 -- secondary init */
+extern int overlay_call_1A1F_0C38();  /* 0x1A1F:0x0C38 -- post-parse init */
 extern uint16_t g_init_26E6, g_init_81C;  /* DGROUP:0x26E6 / 0x81C */
 
 int func_070EBA_parse_argv_env(uint16_t argc, uint16_t argv_ptr)
@@ -848,7 +848,7 @@ int func_070EBA_parse_argv_env(uint16_t argc, uint16_t argv_ptr)
  * @asm 0x07109D  malloc -> layer3 (0x168/0x16A)
  * @asm 0x0710B1  call 0x071460 (func_070FA0 descriptor fan-out) ; ret 0
  * ============================================================================ */
-extern int overlay_call_181F_029A(void);  /* 0x181F:0x029A -- far malloc */
+extern int overlay_call_181F_029A();  /* 0x181F:0x029A -- far malloc */
 int func_070FA0_map_descriptor_fanout(void);
 
 int func_070FF8_alloc_map_buffers(uint16_t want_second)
@@ -961,8 +961,8 @@ int func_0710C2_validate_map_size(void)
  *               (-> [0x158] = 4/5/6 on failure)
  * @asm 0x071230  call 0x070FA0 fan-out ; @asm 0x07123C fclose
  * ============================================================================ */
-extern int overlay_call_1A1F_0CAA(void);  /* 0x1A1F:0x0CAA -- build "name.mp" */
-extern int overlay_call_1A1F_0CB4(void);  /* 0x1A1F:0x0CB4 -- block read */
+extern int overlay_call_1A1F_0CAA();  /* 0x1A1F:0x0CAA -- build "name.mp" */
+extern int overlay_call_1A1F_0CB4();  /* 0x1A1F:0x0CB4 -- block read */
 
 int func_071106_load_mp_map(void)
 {
@@ -1011,7 +1011,7 @@ done:
  * @asm 0x0712DD/0x071304/0x07132C  lcall 0x1A1F:0xC9C block-write layers
  * @asm 0x071346  fclose (0x0D1D:0x3F4)
  * ============================================================================ */
-extern int overlay_call_1A1F_0C9C(void);  /* 0x1A1F:0x0C9C -- block write */
+extern int overlay_call_1A1F_0C9C();  /* 0x1A1F:0x0C9C -- block write */
 
 int func_071246_save_mp_map(void)
 {
@@ -1159,9 +1159,9 @@ int func_0713D4_load_default_map(void)
  * @asm 0x072BFE..0x072C2B  for (i=0;i<0xC;i++) lcall 0x181F:0x254 add item (di+=0x100)
  * @asm 0x072C33  lcall 0x191F:0x1A8 finalise -> far handle in dx:ax  RETF
  * ============================================================================ */
-extern int overlay_call_181F_027C(void);  /* 0x181F:0x027C -- list alloc */
-extern int overlay_call_1A1F_0372(void);  /* 0x1A1F:0x0372 -- list create */
-extern int overlay_call_181F_0254(void);  /* 0x181F:0x0254 -- list add item */
+extern int overlay_call_181F_027C();  /* 0x181F:0x027C -- list alloc */
+extern int overlay_call_1A1F_0372();  /* 0x1A1F:0x0372 -- list create */
+extern int overlay_call_181F_0254();  /* 0x181F:0x0254 -- list add item */
 
 int func_072B9A_build_slot_list(uint16_t arg6)
 {
@@ -1207,7 +1207,7 @@ int func_072B9A_build_slot_list(uint16_t arg6)
  * @asm 0x072CA8  push arg6 ; lea [bp-0x50] ; call 0x073266 (build name)
  * @asm 0x072CBA  lcall 0x1A1F:0xCF6 (save driver, arg = name buffer)  RETF
  * ============================================================================ */
-extern int overlay_call_1A1F_0CF6(void);  /* 0x1A1F:0x0CF6 -- SAVE driver (func_0734F8) */
+extern int overlay_call_1A1F_0CF6();  /* 0x1A1F:0x0CF6 -- SAVE driver (func_0734F8) */
 
 int func_072CA4_save_to_slot(uint16_t arg6)
 {
@@ -1250,9 +1250,9 @@ int func_072CA4_save_to_slot(uint16_t arg6)
  * @asm 0x072F67  lcall 0x1A1F:0x7C4 (restore) ; RETF
  * ============================================================================ */
 extern int overlay_call_1A1F_07C4();  /* 0x1A1F:0x07C4 -- save/restore screen-under-dialog */
-extern int overlay_call_191F_0182(void);  /* 0x191F:0x0182 -- resolve list object */
-extern int overlay_call_181F_0178(void);  /* 0x181F:0x0178 -- append literal */
-extern int overlay_call_181F_0204(void);  /* 0x181F:0x0204 -- measure text width */
+extern int overlay_call_191F_0182();  /* 0x191F:0x0182 -- resolve list object */
+extern int overlay_call_181F_0178();  /* 0x181F:0x0178 -- append literal */
+extern int overlay_call_181F_0204();  /* 0x181F:0x0204 -- measure text width */
 extern int overlay_call_0D1D_0842();  /* 0x0D1D:0x0842 -- strlen */
 extern uint16_t g_dlg_suffix_2DE0;        /* DGROUP:0x2DE0 -- slot-row suffix handle */
 
@@ -1316,9 +1316,9 @@ int func_072CC2_layout_slot_dialog_rows(uint16_t list_arg, uint16_t arg8)
  * the body below still calls the 0-arg stubs — RE-PORT with the real args
  * + finfo struct when Phase 6.1 exercises the picker against real saves.
  * ============================================================================ */
-extern int overlay_call_0D1D_0E63(void);  /* 0x0D1D:0x0E63 = _dos_findfirst (args pending re-port) */
-extern int overlay_call_0D1D_0E58(void);  /* 0x0D1D:0x0E58 = _dos_findnext  (args pending re-port) */
-extern int overlay_call_191F_0176(void);  /* 0x191F:0x0176 -- list add row */
+extern int overlay_call_0D1D_0E63();  /* 0x0D1D:0x0E63 = _dos_findfirst (args pending re-port) */
+extern int overlay_call_0D1D_0E58();  /* 0x0D1D:0x0E58 = _dos_findnext  (args pending re-port) */
+extern int overlay_call_191F_0176();  /* 0x191F:0x0176 -- list add row */
 
 int func_073270_parse_text_records(uint16_t arg6, uint16_t arg8, uint16_t src, uint16_t argC)
 {
@@ -1422,8 +1422,8 @@ void func_073474_load_panel_palette_from_colors(void)
  * @asm 0x073B0D  fread(version,2,1) (0x0D1D:0x528)
  * @asm 0x073B1C  if (version > [0x81A]) ...                ; version gate
  * ============================================================================ */
-extern int overlay_call_1A1F_0DEE(void);  /* 0x1A1F:0x0DEE -- read save header block */
-extern int overlay_call_0D1D_0816(void);  /* 0x0D1D:0x0816 -- strcmp */
+extern int overlay_call_1A1F_0DEE();  /* 0x1A1F:0x0DEE -- read save header block */
+extern int overlay_call_0D1D_0816();  /* 0x0D1D:0x0816 -- strcmp */
 
 int func_073AB0_read_save_header(uint16_t arg6)
 {
@@ -1487,12 +1487,12 @@ int func_073AB0_read_save_header(uint16_t arg6)
  * @asm 0x07452D  if (players==4) build MULTI roster ("MULTI"=0x21A6)
  * @asm 0x074590  active-power scan [0x1F54] -> [0x5398], [0x5381]|=0x80 if >1
  * ============================================================================ */
-extern int overlay_call_1A1F_0B66(void);  /* 0x1A1F:0x0B66 -- pre-init A */
-extern int overlay_call_1A1F_0B74(void);  /* 0x1A1F:0x0B74 -- pre-init B */
+extern int overlay_call_1A1F_0B66();  /* 0x1A1F:0x0B66 -- pre-init A */
+extern int overlay_call_1A1F_0B74();  /* 0x1A1F:0x0B74 -- pre-init B */
 extern int overlay_call_191F_087A();  /* 0x191F:0x087A -- intro panel ("WOODPANL") */
-extern int overlay_call_181F_040A(void);  /* 0x181F:0x040A -- popup save */
-extern int overlay_call_181F_0A24(void);  /* 0x181F:0x0A24 -- roster slot colour (not in overlay_externs.h) */
-extern int overlay_call_1A1F_0AFE(void);  /* 0x1A1F:0x0AFE -- roster row draw (not in overlay_externs.h) */
+extern int overlay_call_181F_040A();  /* 0x181F:0x040A -- popup save */
+extern int overlay_call_181F_0A24();  /* 0x181F:0x0A24 -- roster slot colour (not in overlay_externs.h) */
+extern int overlay_call_1A1F_0AFE();  /* 0x1A1F:0x0AFE -- roster row draw (not in overlay_externs.h) */
 extern uint8_t  g_quickstart_828;         /* DGROUP:0x828 -- quick-start / cheat flag */
 extern uint16_t g_active_mask_1F54;       /* DGROUP:0x1F54 -- active-power bitmask */
 

@@ -124,7 +124,7 @@ int msc_stricmp_near(uint16_t a_off, uint16_t b_off)
  *   stub RETURNED, silently continuing a fatal path; terminating is the
  *   byte-faithful behavior, so this strong no-arg form hard-codes the
  *   universally-pushed exit code 3. */
-void overlay_call_0D1D_030D(void)
+void overlay_call_0D1D_030D()
 {
     extern void exit(int);
     exit(3);

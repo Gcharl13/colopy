@@ -58,8 +58,8 @@ extern unsigned char g_dgroup[];
  * tools/rtlink/rtlink_decode.py (page 0x12, file 0x60D7A / 0x60D86) and their
  * role is inferred from call context (the panic-report text sink).
  * -------------------------------------------------------------------------- */
-extern int overlay_call_1A1F_0F1A(void);   /* 0x1A1F:0x0F1A — page-0x12 report dump-to-file (open) */
-extern int overlay_call_1A1F_0F26(void);   /* 0x1A1F:0x0F26 — page-0x12 report-line sink (emit) */
+extern int overlay_call_1A1F_0F1A();   /* 0x1A1F:0x0F1A — page-0x12 report dump-to-file (open) */
+extern int overlay_call_1A1F_0F26();   /* 0x1A1F:0x0F26 — page-0x12 report-line sink (emit) */
 
 /* DGROUP diagnostics globals (absolute offsets from the disassembly; file base
  * 0x1D9A0).  These are the error-reporter's scratch + last-state cells; their

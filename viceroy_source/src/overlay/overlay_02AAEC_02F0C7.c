@@ -122,172 +122,172 @@ extern uint16_t g_unit_disp_5230[];  /* 0x5230 per-unit-type GUI attr (stride 12
 
 /* ---- 0x181F GUI/text/state thunks used here (args documented at call site) -- */
 extern int overlay_call_181F_0022();  /* fmt_id(id,handle) -> DX:AX string    */
-extern int overlay_call_181F_00D8(void);  /* str_append_far(buf,ss,...)            */
-extern int overlay_call_181F_00E2(void);  /* draw_click_feedback(x0,w,y,...)       */
-extern int overlay_call_181F_00EC(void);  /* event helper                          */
-extern int overlay_call_181F_00F6(void);  /* poll_event() -> nonzero on event      */
-extern int overlay_call_181F_009C(void);  /* poll_event2()                         */
+extern int overlay_call_181F_00D8();  /* str_append_far(buf,ss,...)            */
+extern int overlay_call_181F_00E2();  /* draw_click_feedback(x0,w,y,...)       */
+extern int overlay_call_181F_00EC();  /* event helper                          */
+extern int overlay_call_181F_00F6();  /* poll_event() -> nonzero on event      */
+extern int overlay_call_181F_009C();  /* poll_event2()                         */
 extern int overlay_call_181F_00A6();  /* screen_clear(7,0x140,0,0)             */
 extern int overlay_call_181F_0056();  /* push_page / palette select(arg)       */
-extern int overlay_call_181F_011E(void);  /* str_clear(buf)                        */
-extern int overlay_call_181F_0128(void);  /* str_finalise(buf)                     */
-extern int overlay_call_181F_016E(void);  /* str_append(handle,buf)                */
-extern int overlay_call_181F_0178(void);  /* str_space(buf)                        */
-extern int overlay_call_181F_0182(void);  /* str_append_n(value,buf)               */
+extern int overlay_call_181F_011E();  /* str_clear(buf)                        */
+extern int overlay_call_181F_0128();  /* str_finalise(buf)                     */
+extern int overlay_call_181F_016E();  /* str_append(handle,buf)                */
+extern int overlay_call_181F_0178();  /* str_space(buf)                        */
+extern int overlay_call_181F_0182();  /* str_append_n(value,buf)               */
 extern int overlay_call_181F_02E4();  /* iter_next_unit() -> slot or <0        */
 extern int overlay_call_181F_0302();  /* colony_visible_to(x,y) == func_02EB46 */
-extern int overlay_call_181F_0352(void);  /* highlight_tile(x,y,x,y,0)             */
+extern int overlay_call_181F_0352();  /* highlight_tile(x,y,x,y,0)             */
 extern int overlay_call_181F_035C();  /* cursor->cell: (cursor-base)/stride    */
-extern int overlay_call_181F_03A2(void);  /* get_active_power()                    */
-extern int overlay_call_181F_03C0(void);  /* quick_exit_draw()                     */
+extern int overlay_call_181F_03A2();  /* get_active_power()                    */
+extern int overlay_call_181F_03C0();  /* quick_exit_draw()                     */
 extern int overlay_call_181F_03CA();  /* point_in_rect(x0,w,y,h) -> bool       */
-extern int overlay_call_181F_03EA(void);  /* draw helper(8)                        */
-extern int overlay_call_181F_03E0(void);  /* event payload                         */
-extern int overlay_call_181F_03FE(void);  /* draw_msg(handle) -- dynamic-BX sites  */
+extern int overlay_call_181F_03EA();  /* draw helper(8)                        */
+extern int overlay_call_181F_03E0();  /* event payload                         */
+extern int overlay_call_181F_03FE();  /* draw_msg(handle) -- dynamic-BX sites  */
 extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/menu_runner.c */
-extern int overlay_call_181F_0416(void);  /* draw_text(ds:ptr,attr)                */
+extern int overlay_call_181F_0416();  /* draw_text(ds:ptr,attr)                */
 extern int overlay_call_181F_0438();  /* string/event dispatch(handle,slot,buf)*/
-extern int overlay_call_181F_045C(void);  /* drain_input(0,redraw)                 */
-extern int overlay_call_181F_0466(void);  /* poll_begin(0)                         */
-extern int overlay_call_181F_0470(void);  /* poll_arm()                            */
-extern int overlay_call_181F_047A(void);  /* timer_arm()                           */
+extern int overlay_call_181F_045C();  /* drain_input(0,redraw)                 */
+extern int overlay_call_181F_0466();  /* poll_begin(0)                         */
+extern int overlay_call_181F_0470();  /* poll_arm()                            */
+extern int overlay_call_181F_047A();  /* timer_arm()                           */
 extern int overlay_call_181F_04B6();  /* draw_label(kind)                      */
 extern int overlay_call_181F_04C0();  /* beep(id)                              */
-extern int overlay_call_181F_056A(void);  /* leave_screen()                        */
+extern int overlay_call_181F_056A();  /* leave_screen()                        */
 extern int overlay_call_181F_05B6();  /* finish(5)                             */
 extern int overlay_call_181F_0652();  /* draw_boxed_text(id5,strID)            */
-extern int overlay_call_181F_068C(void);  /* set_map_tile(a,b,x,y)                 */
+extern int overlay_call_181F_068C();  /* set_map_tile(a,b,x,y)                 */
 extern int overlay_call_181F_06B4();  /* site_query(x,y) -> kind               */
-extern int overlay_call_181F_06BE(void);  /* tile_bounds(y,x) -> <0 if oob         */
+extern int overlay_call_181F_06BE();  /* tile_bounds(y,x) -> <0 if oob         */
 extern int overlay_call_181F_0718();  /* feature_at(x,y) -> kind               */
-extern int overlay_call_181F_0740(void);  /* map_tile_ptr(x,y) -> ES:BX            */
-extern int overlay_call_181F_074A(void);  /* resource_mask(x,y) -> bitset          */
-extern int overlay_call_181F_0768(void);  /* tile_has_target(x,y) -> bool          */
-extern int overlay_call_181F_078C(void);  /* unit_at_cell(x,y) -> slot             */
-extern int overlay_call_181F_07AA(void);  /* play_found_music(map_idx,slot)        */
-extern int overlay_call_181F_07B4(void);  /* music_query(6,slot) -> bool           */
-extern int overlay_call_181F_07E0(void);  /* iter_units_at(x,y) begin              */
+extern int overlay_call_181F_0740();  /* map_tile_ptr(x,y) -> ES:BX            */
+extern int overlay_call_181F_074A();  /* resource_mask(x,y) -> bitset          */
+extern int overlay_call_181F_0768();  /* tile_has_target(x,y) -> bool          */
+extern int overlay_call_181F_078C();  /* unit_at_cell(x,y) -> slot             */
+extern int overlay_call_181F_07AA();  /* play_found_music(map_idx,slot)        */
+extern int overlay_call_181F_07B4();  /* music_query(6,slot) -> bool           */
+extern int overlay_call_181F_07E0();  /* iter_units_at(x,y) begin              */
 extern int overlay_call_181F_0808();  /* finish_work_order(slot)               */
 extern int overlay_call_181F_08BC();  /* unit_query(2,slot) -> count           */
-extern int overlay_call_181F_089E(void);  /* clear_unit_orders(slot)               */
+extern int overlay_call_181F_089E();  /* clear_unit_orders(slot)               */
 extern int overlay_call_181F_092A();  /* unit_at_xy(x,y) -> slot               */
 extern int overlay_call_181F_0934();  /* select_cell(idx)                      */
-extern int overlay_call_181F_0942(void);  /* play_unit_sound(type) [191F window]   */
-extern int overlay_call_181F_095C(void);  /* place_worker(coords,owner,building)->n */
-extern int overlay_call_181F_0966(void);  /* gate -> bool                          */
-extern int overlay_call_181F_0970(void);  /* draw_combat_overlay(power,y,x)        */
+extern int overlay_call_181F_0942();  /* play_unit_sound(type) [191F window]   */
+extern int overlay_call_181F_095C();  /* place_worker(coords,owner,building)->n */
+extern int overlay_call_181F_0966();  /* gate -> bool                          */
+extern int overlay_call_181F_0970();  /* draw_combat_overlay(power,y,x)        */
 extern int overlay_call_181F_09AE();  /* colony_helper(0,ax,0)                 */
-extern int overlay_call_181F_09BA(void);  /* spawn_unit(1,1,1,y,x)                 */
-extern int overlay_call_181F_09E6(void);  /* get_colony_by_slot(slot) -> *(0x8542) */
+extern int overlay_call_181F_09BA();  /* spawn_unit(1,1,1,y,x)                 */
+extern int overlay_call_181F_09E6();  /* get_colony_by_slot(slot) -> *(0x8542) */
 extern int overlay_call_181F_09FC();  /* colony_has_structure(arg) -> bool     */
-extern int overlay_call_181F_0A38(void);  /* diplomacy(a,b) -> bitset              */
-extern int overlay_call_181F_0AC4(void);  /* unit_attr(slot,&out)                  */
-extern int overlay_call_181F_0AE2(void);  /* map_mouse_to_tile() -> idx            */
+extern int overlay_call_181F_0A38();  /* diplomacy(a,b) -> bitset              */
+extern int overlay_call_181F_0AC4();  /* unit_attr(slot,&out)                  */
+extern int overlay_call_181F_0AE2();  /* map_mouse_to_tile() -> idx            */
 extern int overlay_call_181F_0B14();  /* contact_query(0,colony) -> byte       */
 extern int overlay_call_181F_0B28();  /* unit_activity_flag(slot) -> bool      */
 extern int overlay_call_181F_0B32();  /* get_unit_by_index(idx) -> slot        */
-extern int overlay_call_181F_0B64(void);  /* tile_query(idx) -> id or 0xFFFF       */
+extern int overlay_call_181F_0B64();  /* tile_query(idx) -> id or 0xFFFF       */
 extern int overlay_call_181F_0BE6();  /* order_arg(cell,unit) / (a,b,unit)     */
 extern int overlay_call_181F_0C0E();  /* terrain_class(cell) -> kind           */
-extern int overlay_call_181F_0C22(void);  /* draw helper                           */
-extern int overlay_call_181F_0C36(void);  /* finish_view(a,b)                      */
+extern int overlay_call_181F_0C22();  /* draw helper                           */
+extern int overlay_call_181F_0C36();  /* finish_view(a,b)                      */
 extern int overlay_call_181F_0C4A();  /* sub_view(a,b) -> handle               */
 extern int overlay_call_181F_0C54();  /* building_at(handle) -> id             */
-extern int overlay_call_181F_0C68(void);  /* building_count(cell,unit) -> n        */
-extern int overlay_call_181F_0C72(void);  /* draw_colony_base()                    */
+extern int overlay_call_181F_0C68();  /* building_count(cell,unit) -> n        */
+extern int overlay_call_181F_0C72();  /* draw_colony_base()                    */
 extern int overlay_call_181F_0CC2();  /* unit_class(&out,slot) -> kind         */
 extern int overlay_call_181F_0CE0();  /* ring_cell(dx,dy) -> idx or <0         */
-extern int overlay_call_181F_0D26(void);  /* seed_building(1,code)                 */
-extern int overlay_call_181F_0D12(void);  /* special_site(x,y) -> bool             */
-extern int overlay_call_181F_0D30(void);  /* edit_name(y,x,0) RENAMECOLONY         */
+extern int overlay_call_181F_0D26();  /* seed_building(1,code)                 */
+extern int overlay_call_181F_0D12();  /* special_site(x,y) -> bool             */
+extern int overlay_call_181F_0D30();  /* edit_name(y,x,0) RENAMECOLONY         */
 extern int overlay_call_181F_0D4E();  /* unit_def(slot) -> DX:AX               */
-extern int overlay_call_181F_0D9A(void);  /* apply_terrain_change(y,x)             */
+extern int overlay_call_181F_0D9A();  /* apply_terrain_change(y,x)             */
 extern int overlay_call_181F_0BBE();  /* draw_per_power_backdrop(a,b)          */
 extern int overlay_call_181F_0CAE();  /* draw helper(a,b)                      */
 
 /* ---- 0x191F windowed-control thunks --------------------------------------- */
-extern int overlay_call_191F_0120(void);  /* edit_field(0x17,dst,title,key)       */
-extern int overlay_call_191F_0176(void);  /* list_add_item(id,buf,y,x)            */
-extern int overlay_call_191F_016A(void);  /* run_list_dialog() -> picked          */
-extern int overlay_call_191F_0182(void);  /* open_list_dialog(title,key) -> DX:AX */
-extern int overlay_call_191F_01A8(void);  /* close_list_dialog(handle)            */
-extern int overlay_call_191F_01DE(void);
-extern int overlay_call_191F_01D0(void);
-extern int overlay_call_191F_0230(void);  /* list_begin(slot,w,w,handle)          */
+extern int overlay_call_191F_0120();  /* edit_field(0x17,dst,title,key)       */
+extern int overlay_call_191F_0176();  /* list_add_item(id,buf,y,x)            */
+extern int overlay_call_191F_016A();  /* run_list_dialog() -> picked          */
+extern int overlay_call_191F_0182();  /* open_list_dialog(title,key) -> DX:AX */
+extern int overlay_call_191F_01A8();  /* close_list_dialog(handle)            */
+extern int overlay_call_191F_01DE();
+extern int overlay_call_191F_01D0();
+extern int overlay_call_191F_0230();  /* list_begin(slot,w,w,handle)          */
 extern int overlay_call_191F_023C();  /* open_tooltip_dialog(id,x,y) -> DX:AX */
 extern int overlay_call_191F_0254();  /* redraw_map(map_idx)                  */
-extern int overlay_call_191F_02CE(void);  /* unit_ref_reload(i)                   */
-extern int overlay_call_191F_033C(void);  /* list_highlight(1,id,...)             */
-extern int overlay_call_191F_03B8(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_03C6(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_03D4(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_03E2(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_03F0(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_03FE(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_040C(void);  /* per-key cmd op (owner)               */
-extern int overlay_call_191F_0428(void);  /* unit_render(slot)                    */
-extern int overlay_call_191F_054C(void);  /* finish view (wrapper A)              */
-extern int overlay_call_191F_05E8(void);  /* request_redraw()                     */
-extern int overlay_call_191F_08C6(void);  /* list_add_first(id,...)               */
+extern int overlay_call_191F_02CE();  /* unit_ref_reload(i)                   */
+extern int overlay_call_191F_033C();  /* list_highlight(1,id,...)             */
+extern int overlay_call_191F_03B8();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_03C6();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_03D4();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_03E2();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_03F0();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_03FE();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_040C();  /* per-key cmd op (owner)               */
+extern int overlay_call_191F_0428();  /* unit_render(slot)                    */
+extern int overlay_call_191F_054C();  /* finish view (wrapper A)              */
+extern int overlay_call_191F_05E8();  /* request_redraw()                     */
+extern int overlay_call_191F_08C6();  /* list_add_first(id,...)               */
 extern int overlay_call_191F_08DE();  /* show_building_info(id)               */
-extern int overlay_call_191F_08EC(void);  /* list_set(id,...)                     */
-extern int overlay_call_191F_0902(void);  /* list_action(arg)                     */
-extern int overlay_call_191F_0910(void);  /* list_cursor_step()                   */
-extern int overlay_call_191F_091C(void);  /* list_cursor_measure(buf)             */
+extern int overlay_call_191F_08EC();  /* list_set(id,...)                     */
+extern int overlay_call_191F_0902();  /* list_action(arg)                     */
+extern int overlay_call_191F_0910();  /* list_cursor_step()                   */
+extern int overlay_call_191F_091C();  /* list_cursor_measure(buf)             */
 extern int overlay_call_191F_0928();  /* dispatch_overlay_op(key,title)       */
 extern int overlay_call_191F_0934();  /* select_color_cell(arg)               */
-extern int overlay_call_191F_0942(void);  /* play_unit_sound(type)                */
-extern int overlay_call_191F_095E(void);  /* enter_colony_screen()                */
-extern int overlay_call_191F_096C(void);  /* leave_colony_screen2()               */
-extern int overlay_call_191F_0A06(void);  /* land_combat_apply()                  */
-extern int overlay_call_191F_0A14(void);  /* land_combat_decide(...) = func_0270D0+0x33E*/
-extern int overlay_call_191F_0A20(void);  /* combat_query(...)                    */
-extern int overlay_call_191F_0A2E(void);
-extern int overlay_call_191F_0A3C(void);  /* unit_ref_clear(i)                    */
-extern int overlay_call_191F_0A4A(void);  /* unit_ref_value(i)                    */
+extern int overlay_call_191F_0942();  /* play_unit_sound(type)                */
+extern int overlay_call_191F_095E();  /* enter_colony_screen()                */
+extern int overlay_call_191F_096C();  /* leave_colony_screen2()               */
+extern int overlay_call_191F_0A06();  /* land_combat_apply()                  */
+extern int overlay_call_191F_0A14();  /* land_combat_decide(...) = func_0270D0+0x33E*/
+extern int overlay_call_191F_0A20();  /* combat_query(...)                    */
+extern int overlay_call_191F_0A2E();
+extern int overlay_call_191F_0A3C();  /* unit_ref_clear(i)                    */
+extern int overlay_call_191F_0A4A();  /* unit_ref_value(i)                    */
 
 /* ---- C runtime + far helpers ----------------------------------------------- */
-extern int  overlay_call_0D1D_07A4(void);  /* dispatch_overlay_op(opcode,arg)      */
-extern int  overlay_call_0D1D_117E(void);  /* sprintf(buf,...)                     */
-extern int  overlay_call_0D1D_0D64(void);  /* strlen(buf)                          */
+extern int  overlay_call_0D1D_07A4();  /* dispatch_overlay_op(opcode,arg)      */
+extern int  overlay_call_0D1D_117E();  /* sprintf(buf,...)                     */
+extern int  overlay_call_0D1D_0D64();  /* strlen(buf)                          */
 extern int  overlay_call_0D1D_0842();  /* edit_buffer_dirty(buf) -> bool       */
 extern int  overlay_call_0D1D_07E4();  /* strcpy(dst,src)                      */
 extern int  overlay_call_0D1D_0DAE();  /* memset(dst,val,n)                    */
-extern long overlay_call_0C0C_0006(void);  /* ms_clock() -> DX:AX                  */
+extern long overlay_call_0C0C_0006();  /* ms_clock() -> DX:AX                  */
 
 /* ---- page-local near trampolines (named by the 0x191F target they JMPF to) -- */
 /* (declared as voids; their bodies live in the 0x191F windowed-control library) */
-extern int overlay_call_191F_0594(void);  /* near 0x7DD9 -> commit unit drag       */
-extern int overlay_call_191F_0684(void);  /* near 0x7E3D -> refresh                 */
-extern int overlay_call_191F_06CC(void);  /* near 0x7E5B -> sample button (02CA4B)  */
-extern int overlay_call_191F_06F0(void);  /* near 0x7E51 -> begin move (02CA41)     */
-extern int overlay_call_191F_0654(void);  /* near 0x7E29 -> button1 action          */
-extern int overlay_call_191F_04E0(void);  /* near 0x7D8E -> button0 action          */
-extern int overlay_call_191F_0534(void);  /* near 0x7DB1 -> button2 action          */
-extern int overlay_call_191F_0744(void);  /* near 0x7E8D -> button refresh (02CA7D) */
-extern int overlay_call_191F_0738(void);  /* near 0x7E88 -> close (02CA78)          */
-extern int overlay_call_191F_0690(void);  /* near 0x7E42 -> highlight (02CA32)      */
-extern int overlay_call_191F_069C(void);  /* near 0x7E47 -> region hit (02CA37)     */
-extern int overlay_call_191F_05D0(void);  /* near 0x7DF2 -> event handler           */
-extern int overlay_call_191F_05F4(void);  /* near 0x7E01 -> teardown helper         */
-extern int overlay_call_191F_0840(void);  /* near 0x7EF6 -> palette flip            */
-extern int overlay_call_191F_0774(void);  /* near 0x7EA1 -> draw helper (02CA32?)   */
-extern int overlay_call_191F_0510(void);  /* near 0x7DA2 -> draw helper (02C992)    */
-extern int overlay_call_191F_0648(void);  /* near 0x7E24 -> draw helper (02CA14)    */
-extern int overlay_call_191F_0708(void);  /* near 0x7E74 -> click feedback (02CA64) */
-extern int overlay_call_191F_0720(void);  /* near 0x7E83 -> NEXT colony (02CA73)    */
-extern int overlay_call_191F_0678(void);  /* near 0x7E38 -> PREV colony (02CA28)    */
-extern int overlay_call_191F_078C(void);  /* near 0x78C (02CA9B) -> finalise (func_07EAB) */
+extern int overlay_call_191F_0594();  /* near 0x7DD9 -> commit unit drag       */
+extern int overlay_call_191F_0684();  /* near 0x7E3D -> refresh                 */
+extern int overlay_call_191F_06CC();  /* near 0x7E5B -> sample button (02CA4B)  */
+extern int overlay_call_191F_06F0();  /* near 0x7E51 -> begin move (02CA41)     */
+extern int overlay_call_191F_0654();  /* near 0x7E29 -> button1 action          */
+extern int overlay_call_191F_04E0();  /* near 0x7D8E -> button0 action          */
+extern int overlay_call_191F_0534();  /* near 0x7DB1 -> button2 action          */
+extern int overlay_call_191F_0744();  /* near 0x7E8D -> button refresh (02CA7D) */
+extern int overlay_call_191F_0738();  /* near 0x7E88 -> close (02CA78)          */
+extern int overlay_call_191F_0690();  /* near 0x7E42 -> highlight (02CA32)      */
+extern int overlay_call_191F_069C();  /* near 0x7E47 -> region hit (02CA37)     */
+extern int overlay_call_191F_05D0();  /* near 0x7DF2 -> event handler           */
+extern int overlay_call_191F_05F4();  /* near 0x7E01 -> teardown helper         */
+extern int overlay_call_191F_0840();  /* near 0x7EF6 -> palette flip            */
+extern int overlay_call_191F_0774();  /* near 0x7EA1 -> draw helper (02CA32?)   */
+extern int overlay_call_191F_0510();  /* near 0x7DA2 -> draw helper (02C992)    */
+extern int overlay_call_191F_0648();  /* near 0x7E24 -> draw helper (02CA14)    */
+extern int overlay_call_191F_0708();  /* near 0x7E74 -> click feedback (02CA64) */
+extern int overlay_call_191F_0720();  /* near 0x7E83 -> NEXT colony (02CA73)    */
+extern int overlay_call_191F_0678();  /* near 0x7E38 -> PREV colony (02CA28)    */
+extern int overlay_call_191F_078C();  /* near 0x78C (02CA9B) -> finalise (func_07EAB) */
 /* func_02BB8A release-dispatch action set (jump table cs:0x635A; mode 0..0xA):  */
-extern int overlay_call_191F_063C(void);  /* mode 0  (02CA0F)                      */
-extern int overlay_call_191F_07A4(void);  /* mode 1  (02CAA5)                      */
-extern int overlay_call_191F_0810(void);  /* mode 2  (02CAD2)                      */
-extern int overlay_call_191F_0624(void);  /* mode 3  (02CA05)                      */
-extern int overlay_call_191F_04F8(void);  /* mode 4  (02C988)                      */
-extern int overlay_call_191F_0570(void);  /* mode 5  (02C9BA)                      */
-extern int overlay_call_191F_0588(void);  /* mode 8  (02C9C4)                      */
-extern int overlay_call_191F_06FC(void);  /* mode 9  (02CA5F)                      */
-extern int overlay_call_191F_06A8(void);  /* mode 0xA(02CA3C)                      */
+extern int overlay_call_191F_063C();  /* mode 0  (02CA0F)                      */
+extern int overlay_call_191F_07A4();  /* mode 1  (02CAA5)                      */
+extern int overlay_call_191F_0810();  /* mode 2  (02CAD2)                      */
+extern int overlay_call_191F_0624();  /* mode 3  (02CA05)                      */
+extern int overlay_call_191F_04F8();  /* mode 4  (02C988)                      */
+extern int overlay_call_191F_0570();  /* mode 5  (02C9BA)                      */
+extern int overlay_call_191F_0588();  /* mode 8  (02C9C4)                      */
+extern int overlay_call_191F_06FC();  /* mode 9  (02CA5F)                      */
+extern int overlay_call_191F_06A8();  /* mode 0xA(02CA3C)                      */
 /* load-image message box (file 0x0245F): pops a string, returns toggle byte. */
 extern int loadimg_msgbox(void);          /* near 0x245F (NOMORE / BUILT / DEPLETION) */
 /* direct calls replacing void-arity stub calls */

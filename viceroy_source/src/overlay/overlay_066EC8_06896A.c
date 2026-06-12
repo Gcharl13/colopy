@@ -65,13 +65,13 @@ extern unsigned char g_dgroup[];
  * (Canonical no-arg prototype, matching the file convention of calling thunks
  *  through their canonical names; role inferred from call context; bodies in thunk pages (0x181F/0x191F/0x1A1F).)
  * -------------------------------------------------------------------------- */
-extern int overlay_call_181F_02B2(void);  /* 0x181F:0x2B2 — draw settlement marker sprite */
-extern int overlay_call_191F_0996(void);  /* 0x191F:0x996 — colony-visible predicate (pg 0x11) */
+extern int overlay_call_181F_02B2();  /* 0x181F:0x2B2 — draw settlement marker sprite */
+extern int overlay_call_191F_0996();  /* 0x191F:0x996 — colony-visible predicate (pg 0x11) */
 /* (0x181F:0x2A8 colony marker, 0x181F:0x2BC unit sprite already in overlay_externs.h) */
-extern int overlay_call_1A1F_0922(void);  /* 0x1A1F:0x922 — unit redraw helper (pg 0x12) */
-extern int overlay_call_1A1F_0930(void);  /* 0x1A1F:0x930 — unit redraw helper (pg 0x12) */
-extern int overlay_call_1A1F_094C(void);  /* 0x1A1F:0x94C — selected-unit helper (pg 0x12) */
-extern int overlay_call_1A1F_095A(void);  /* 0x1A1F:0x95A — selected-unit helper (pg 0x12) */
+extern int overlay_call_1A1F_0922();  /* 0x1A1F:0x922 — unit redraw helper (pg 0x12) */
+extern int overlay_call_1A1F_0930();  /* 0x1A1F:0x930 — unit redraw helper (pg 0x12) */
+extern int overlay_call_1A1F_094C();  /* 0x1A1F:0x94C — selected-unit helper (pg 0x12) */
+extern int overlay_call_1A1F_095A();  /* 0x1A1F:0x95A — selected-unit helper (pg 0x12) */
 
 /* ----------------------------------------------------------------------------
  * Page-local helpers reached only through the cs:near trampoline block at

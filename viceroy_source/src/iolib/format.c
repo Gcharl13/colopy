@@ -26,7 +26,7 @@
 /* External overlay calls used by the pipeline */
 extern void  overlay_call_181F_0048(int mode_flag, void *buf_arg, void *source,
                                      int unused, void *stream_descriptor);
-extern void  overlay_call_181F_002C(void);                          /* sprintf-like format */
+extern void  overlay_call_181F_002C();                          /* sprintf-like format */
 extern void  overlay_call_0D1D_113C(int value);                     /* long-format helper */
 extern void  overlay_call_0D1D_117E(int high, int low);             /* second long helper */
 extern void  overlay_call_0D1D_08FA(int value, char *buf, int radix);

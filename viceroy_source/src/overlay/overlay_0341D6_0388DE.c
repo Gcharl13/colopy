@@ -910,7 +910,7 @@ int func_0363A2_logic_sz_33(uint16_t arg0_bp_06)
 
 /* file-local refs unique to this function (per the per-file ownership rule) */
 extern uint16_t g_screen_desc_83A6;          /* DGROUP:0x83A6  pushed before 0x181F:0x4CA calls but IGNORED by callee */
-extern int      overlay_call_181F_04CA(void);/* RTLink 0x181F:0x04CA -> 0x09EF:0x002C seed_rng_from_timer:
+extern int      overlay_call_181F_04CA();/* RTLink 0x181F:0x04CA -> 0x09EF:0x002C seed_rng_from_timer:
                                               *   reads BIOS tick 0x40:0x6C-6E, masks &0x7FFF,
                                               *   writes LCG seed [0x28EE/0x28F0] via 0xD1D:0xDF2.
                                               *   BYTE_VERIFIED 2026-06-08. */

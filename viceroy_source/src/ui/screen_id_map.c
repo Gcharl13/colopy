@@ -92,7 +92,7 @@
  * In C we simulate the cleanup by taking a dummy int arg (the four pushed words
  * in the original are two int32 pairs; declaring void matches the stub callers
  * since they push before the C call and the args are simply ignored here). */
-void overlay_call_181F_0772(void)
+void overlay_call_181F_0772()
 {
     /* @asm 0x077D70 cmp [0x2476], dx; jl 0x077DF0  -- threshold gate.
      * In the modern build the diagnostic infrastructure (DOS log, VICEROY.LOG

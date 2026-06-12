@@ -192,29 +192,29 @@
  * The role comment is documentation; the call itself is faithful.
  * ------------------------------------------------------------------------- */
 extern int overlay_call_0D1D_0C56();  extern int overlay_call_0D1D_1010();
-extern int overlay_call_0D1D_10EA();  extern int overlay_call_0D1D_113C(void);
-extern int overlay_call_0D1D_117E(void);
-extern int overlay_call_181F_002C(void);  extern int overlay_call_181F_00BA(void);
-extern int overlay_call_181F_00C4(void);  extern int overlay_call_181F_00CE(void);
-extern int overlay_call_181F_00E2(void);  extern int overlay_call_181F_00F6(void);
-extern int overlay_call_181F_01F0(void);  extern int overlay_call_181F_01FA(void);
-extern int overlay_call_181F_0204(void);  extern int overlay_call_181F_0254(void);
-extern int overlay_call_181F_029A(void);  extern int overlay_call_181F_030C(void);
-extern int overlay_call_181F_035C();  extern int overlay_call_181F_0370(void);
-extern int overlay_call_181F_037A(void);  extern int overlay_call_181F_03E0(void);
-extern int overlay_call_181F_0438();  extern int overlay_call_181F_045C(void);
-extern int overlay_call_181F_0466(void);  extern int overlay_call_181F_0470(void);
-extern int overlay_call_181F_047A(void);  extern int overlay_call_181F_0652();
+extern int overlay_call_0D1D_10EA();  extern int overlay_call_0D1D_113C();
+extern int overlay_call_0D1D_117E();
+extern int overlay_call_181F_002C();  extern int overlay_call_181F_00BA();
+extern int overlay_call_181F_00C4();  extern int overlay_call_181F_00CE();
+extern int overlay_call_181F_00E2();  extern int overlay_call_181F_00F6();
+extern int overlay_call_181F_01F0();  extern int overlay_call_181F_01FA();
+extern int overlay_call_181F_0204();  extern int overlay_call_181F_0254();
+extern int overlay_call_181F_029A();  extern int overlay_call_181F_030C();
+extern int overlay_call_181F_035C();  extern int overlay_call_181F_0370();
+extern int overlay_call_181F_037A();  extern int overlay_call_181F_03E0();
+extern int overlay_call_181F_0438();  extern int overlay_call_181F_045C();
+extern int overlay_call_181F_0466();  extern int overlay_call_181F_0470();
+extern int overlay_call_181F_047A();  extern int overlay_call_181F_0652();
 extern int overlay_call_181F_06F0();  extern int overlay_call_181F_0718();
-extern int overlay_call_181F_0722(void);  extern int overlay_call_181F_07B4(void);
-extern int overlay_call_181F_0998(void);  extern int overlay_call_181F_09A4();
-extern int overlay_call_181F_0A10(void);  extern int overlay_call_181F_0A1A(void);
-extern int overlay_call_181F_0A38(void);  extern int overlay_call_181F_0A4C();
+extern int overlay_call_181F_0722();  extern int overlay_call_181F_07B4();
+extern int overlay_call_181F_0998();  extern int overlay_call_181F_09A4();
+extern int overlay_call_181F_0A10();  extern int overlay_call_181F_0A1A();
+extern int overlay_call_181F_0A38();  extern int overlay_call_181F_0A4C();
 extern int overlay_call_181F_0A60();  extern int overlay_call_181F_04D4();
-extern int overlay_call_191F_01A8(void);
-extern int overlay_call_1A1F_0356();  extern int overlay_call_1A1F_0364(void);
-extern int overlay_call_1A1F_0372(void);  extern int overlay_call_1A1F_0380(void);
-extern int overlay_call_1A1F_038A(void);
+extern int overlay_call_191F_01A8();
+extern int overlay_call_1A1F_0356();  extern int overlay_call_1A1F_0364();
+extern int overlay_call_1A1F_0372();  extern int overlay_call_1A1F_0380();
+extern int overlay_call_1A1F_038A();
 
 /* In-page near callees (page 0x0A code/trampolines).  These resolve, per the
  * page-0A IP map, to: 0x140=func_044540 (clamp byte at far ptr to <=5),
@@ -852,7 +852,7 @@ int func_044FA4_window_measure(void far *win /*bp+6*/,
     return 0;
 }
 /* 181F:0772 used only here in this file. */
-extern int overlay_call_181F_0772(void);
+extern int overlay_call_181F_0772();
 
 /* ===========================================================================
  * func_0450BA -- frame + paint a window box and its rows (537 bytes)  [DRAW]

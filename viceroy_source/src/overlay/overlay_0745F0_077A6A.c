@@ -73,137 +73,137 @@ typedef uint16_t (far *stream_io_cb_t)(uint16_t near *size /*, buf */);
  * tools/rtlink/rtlink_decode.py (these are fixed seg:off overlay entries, not
  * page-relative near targets).  Role inferred from call context only.
  * -------------------------------------------------------------------------- */
-extern int overlay_call_191F_091C(void);  /* 0x191F:0x091C -- parse-token / next-field */
+extern int overlay_call_191F_091C();  /* 0x191F:0x091C -- parse-token / next-field */
 extern int overlay_call_191F_0928();  /* 0x191F:0x0928 -- find NAMES.TXT section by name */
-extern int overlay_call_191F_0FC4(void);  /* 0x191F:0x0FC4 -- data-table helper */
-extern int overlay_call_191F_0FDE(void);  /* 0x191F:0x0FDE -- text/record helper */
-extern int overlay_call_191F_0FD0(void);  /* 0x191F:0x0FD0 -- record lookup (returns far ptr) */
-extern int overlay_call_191F_01A8(void);  /* 0x191F:0x01A8 -- free far block */
+extern int overlay_call_191F_0FC4();  /* 0x191F:0x0FC4 -- data-table helper */
+extern int overlay_call_191F_0FDE();  /* 0x191F:0x0FDE -- text/record helper */
+extern int overlay_call_191F_0FD0();  /* 0x191F:0x0FD0 -- record lookup (returns far ptr) */
+extern int overlay_call_191F_01A8();  /* 0x191F:0x01A8 -- free far block */
 extern int overlay_call_191F_087A();  /* 0x191F:0x087A -- predicate */
-extern int overlay_call_191F_0320(void);  /* 0x191F:0x0320 -- predicate */
+extern int overlay_call_191F_0320();  /* 0x191F:0x0320 -- predicate */
 extern int overlay_call_191F_0F8E();  /* 0x191F:0x0F8E -- helper */
-extern int overlay_call_191F_0AAC(void);  /* 0x191F:0x0AAC -- new-game post-setup */
-extern int overlay_call_191F_0B6C(void);  /* 0x191F:0x0B6C -- new-game post-setup */
+extern int overlay_call_191F_0AAC();  /* 0x191F:0x0AAC -- new-game post-setup */
+extern int overlay_call_191F_0B6C();  /* 0x191F:0x0B6C -- new-game post-setup */
 
-extern int overlay_call_1A1F_0B22(void);  /* 0x1A1F:0x0B22 -- value/random getter (paired w/ 0x91C) */
-extern int overlay_call_1A1F_088A(void);  /* 0x1A1F:0x088A -- random byte getter */
-extern int overlay_call_1A1F_0B16(void);  /* 0x1A1F:0x0B16 -- value getter */
-extern int overlay_call_1A1F_0A86(void);  /* 0x1A1F:0x0A86 -- modal yes/no or wait-key */
-extern int overlay_call_1A1F_0A78(void);  /* 0x1A1F:0x0A78 -- region save (0x300 buf) */
+extern int overlay_call_1A1F_0B22();  /* 0x1A1F:0x0B22 -- value/random getter (paired w/ 0x91C) */
+extern int overlay_call_1A1F_088A();  /* 0x1A1F:0x088A -- random byte getter */
+extern int overlay_call_1A1F_0B16();  /* 0x1A1F:0x0B16 -- value getter */
+extern int overlay_call_1A1F_0A86();  /* 0x1A1F:0x0A86 -- modal yes/no or wait-key */
+extern int overlay_call_1A1F_0A78();  /* 0x1A1F:0x0A78 -- region save (0x300 buf) */
 extern int overlay_call_1A1F_0A6A();  /* 0x1A1F:0x0A6A -- region restore/fade */
-extern int overlay_call_1A1F_0A5C(void);  /* 0x1A1F:0x0A5C -- screen helper */
-extern int overlay_call_1A1F_0A94(void);  /* 0x1A1F:0x0A94 -- string copy/append */
-extern int overlay_call_1A1F_0CDA(void);  /* 0x1A1F:0x0CDA -- build save path component */
-extern int overlay_call_1A1F_0C80(void);  /* 0x1A1F:0x0C80 -- predicate */
-extern int overlay_call_1A1F_0C8E(void);  /* 0x1A1F:0x0C8E -- predicate */
-extern int overlay_call_1A1F_083E(void);  /* 0x1A1F:0x083E -- helper */
-extern int overlay_call_1A1F_0976(void);  /* 0x1A1F:0x0976 -- new-game post-setup */
-extern int overlay_call_1A1F_07EA(void);  /* 0x1A1F:0x07EA -- new-game post-setup */
-extern int overlay_call_1A1F_07F8(void);  /* 0x1A1F:0x07F8 -- new-game post-setup */
-extern int overlay_call_1A1F_087C(void);  /* 0x1A1F:0x087C -- new-game post-setup */
-extern int overlay_call_1A1F_0E40(void);  /* 0x1A1F:0x0E40 -- map setup */
-extern int overlay_call_1A1F_0E36(void);  /* 0x1A1F:0x0E36 -- map setup */
-extern int overlay_call_1A1F_0E28(void);  /* 0x1A1F:0x0E28 -- map-tile scan */
-extern int overlay_call_1A1F_0E02(void);  /* 0x1A1F:0x0E02 -- map-tile scan */
-extern int overlay_call_1A1F_0E1E(void);  /* 0x1A1F:0x0E1E -- map helper */
-extern int overlay_call_1A1F_0DF8(void);  /* 0x1A1F:0x0DF8 -- formatted output line */
-extern int overlay_call_1A1F_0BE4(void);  /* 0x1A1F:0x0BE4 -- helper */
-extern int overlay_call_1A1F_0E9E(void);  /* 0x1A1F:0x0E9E -- struct field read (typed) */
-extern int overlay_call_1A1F_0E82(void);  /* 0x1A1F:0x0E82 -- struct field read (typed) */
-extern int overlay_call_1A1F_0E90(void);  /* 0x1A1F:0x0E90 -- struct alloc/bind */
-extern int overlay_call_1A1F_0EAC(void);  /* 0x1A1F:0x0EAC -- struct free */
-extern int overlay_call_1A1F_0E78(void);  /* 0x1A1F:0x0E78 -- struct accumulate */
-extern int overlay_call_1A1F_0CB4(void);  /* 0x1A1F:0x0CB4 -- stream helper */
-extern int overlay_call_1A1F_0C9C(void);  /* 0x1A1F:0x0C9C -- stream open (size arg) */
-extern int overlay_call_1A1F_0F26(void);  /* 0x1A1F:0x0F26 -- add filename to list */
-extern int overlay_call_1A1F_0E10(void);  /* 0x1A1F:0x0E10 -- map post-load validate */
-extern int overlay_call_1A1F_0E4E(void);  /* 0x1A1F:0x0E4E -- map teardown / finalize */
-extern int overlay_call_1A1F_0E5C(void);  /* 0x1A1F:0x0E5C -- view-state init */
-extern int overlay_call_1A1F_0E6A(void);  /* 0x1A1F:0x0E6A -- formatted name line */
+extern int overlay_call_1A1F_0A5C();  /* 0x1A1F:0x0A5C -- screen helper */
+extern int overlay_call_1A1F_0A94();  /* 0x1A1F:0x0A94 -- string copy/append */
+extern int overlay_call_1A1F_0CDA();  /* 0x1A1F:0x0CDA -- build save path component */
+extern int overlay_call_1A1F_0C80();  /* 0x1A1F:0x0C80 -- predicate */
+extern int overlay_call_1A1F_0C8E();  /* 0x1A1F:0x0C8E -- predicate */
+extern int overlay_call_1A1F_083E();  /* 0x1A1F:0x083E -- helper */
+extern int overlay_call_1A1F_0976();  /* 0x1A1F:0x0976 -- new-game post-setup */
+extern int overlay_call_1A1F_07EA();  /* 0x1A1F:0x07EA -- new-game post-setup */
+extern int overlay_call_1A1F_07F8();  /* 0x1A1F:0x07F8 -- new-game post-setup */
+extern int overlay_call_1A1F_087C();  /* 0x1A1F:0x087C -- new-game post-setup */
+extern int overlay_call_1A1F_0E40();  /* 0x1A1F:0x0E40 -- map setup */
+extern int overlay_call_1A1F_0E36();  /* 0x1A1F:0x0E36 -- map setup */
+extern int overlay_call_1A1F_0E28();  /* 0x1A1F:0x0E28 -- map-tile scan */
+extern int overlay_call_1A1F_0E02();  /* 0x1A1F:0x0E02 -- map-tile scan */
+extern int overlay_call_1A1F_0E1E();  /* 0x1A1F:0x0E1E -- map helper */
+extern int overlay_call_1A1F_0DF8();  /* 0x1A1F:0x0DF8 -- formatted output line */
+extern int overlay_call_1A1F_0BE4();  /* 0x1A1F:0x0BE4 -- helper */
+extern int overlay_call_1A1F_0E9E();  /* 0x1A1F:0x0E9E -- struct field read (typed) */
+extern int overlay_call_1A1F_0E82();  /* 0x1A1F:0x0E82 -- struct field read (typed) */
+extern int overlay_call_1A1F_0E90();  /* 0x1A1F:0x0E90 -- struct alloc/bind */
+extern int overlay_call_1A1F_0EAC();  /* 0x1A1F:0x0EAC -- struct free */
+extern int overlay_call_1A1F_0E78();  /* 0x1A1F:0x0E78 -- struct accumulate */
+extern int overlay_call_1A1F_0CB4();  /* 0x1A1F:0x0CB4 -- stream helper */
+extern int overlay_call_1A1F_0C9C();  /* 0x1A1F:0x0C9C -- stream open (size arg) */
+extern int overlay_call_1A1F_0F26();  /* 0x1A1F:0x0F26 -- add filename to list */
+extern int overlay_call_1A1F_0E10();  /* 0x1A1F:0x0E10 -- map post-load validate */
+extern int overlay_call_1A1F_0E4E();  /* 0x1A1F:0x0E4E -- map teardown / finalize */
+extern int overlay_call_1A1F_0E5C();  /* 0x1A1F:0x0E5C -- view-state init */
+extern int overlay_call_1A1F_0E6A();  /* 0x1A1F:0x0E6A -- formatted name line */
 extern int overlay_call_1A1F_07C4();  /* 0x1A1F:0x07C4 -- region restore (0x1000) */
-extern int overlay_call_1A1F_0CBE(void);  /* 0x1A1F:0x0CBE -- predicate */
-extern int overlay_call_1A1F_08DC(void);  /* 0x1A1F:0x08DC -- bind map layer ptrs */
-extern int overlay_call_181F_0254(void);  /* 0x181F:0x0254 -- decode layer into block */
-extern int overlay_call_181F_0398(void);  /* 0x181F:0x0398 -- present */
-extern int overlay_call_181F_0546(void);  /* 0x181F:0x0546 -- screen restore */
-extern int overlay_call_181F_05CE(void);  /* 0x181F:0x05CE -- helper */
-extern int overlay_call_181F_0EAE(void);  /* 0x181F:0x0EAE -- config write/flag */
-extern int overlay_call_0D1D_0ABE(void);  /* 0x0D1D:0x0ABE -- C buffered read */
-extern int overlay_call_1A1F_0EBA(void);  /* 0x1A1F:0x0EBA -- emit packed record (returns coord) */
-extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- cursor-gate predicate.
+extern int overlay_call_1A1F_0CBE();  /* 0x1A1F:0x0CBE -- predicate */
+extern int overlay_call_1A1F_08DC();  /* 0x1A1F:0x08DC -- bind map layer ptrs */
+extern int overlay_call_181F_0254();  /* 0x181F:0x0254 -- decode layer into block */
+extern int overlay_call_181F_0398();  /* 0x181F:0x0398 -- present */
+extern int overlay_call_181F_0546();  /* 0x181F:0x0546 -- screen restore */
+extern int overlay_call_181F_05CE();  /* 0x181F:0x05CE -- helper */
+extern int overlay_call_181F_0EAE();  /* 0x181F:0x0EAE -- config write/flag */
+extern int overlay_call_0D1D_0ABE();  /* 0x0D1D:0x0ABE -- C buffered read */
+extern int overlay_call_1A1F_0EBA();  /* 0x1A1F:0x0EBA -- emit packed record (returns coord) */
+extern int overlay_call_1A1F_0EE4();  /* 0x1A1F:0x0EE4 -- cursor-gate predicate.
                                               TARGET CORRECTED 2026-06-10: thunk@0x1D4D4 bytes
                                               say overlay 0x1C(28) + 0x82 -> ≈file 0x76ED2
                                               (segmap key 28, AMBIG base).  The old claim
                                               "overlay 0:0x82 -> 0x25982 inside func_025900"
                                               mis-decoded the overlay field; body untraced. */
 
-extern int overlay_call_181F_000E(void);  /* 0x181F:0x000E -- module init */
-extern int overlay_call_181F_0182(void);  /* 0x181F:0x0182 -- strcat / format-append */
-extern int overlay_call_181F_044E(void);  /* 0x181F:0x044E -- measure / fit decision */
+extern int overlay_call_181F_000E();  /* 0x181F:0x000E -- module init */
+extern int overlay_call_181F_0182();  /* 0x181F:0x0182 -- strcat / format-append */
+extern int overlay_call_181F_044E();  /* 0x181F:0x044E -- measure / fit decision */
 extern int overlay_call_181F_048E();  /* 0x181F:0x048E -- draw glyph/box */
-extern int overlay_call_181F_02F8(void);  /* 0x181F:0x02F8 -- draw value bar */
-extern int overlay_call_181F_03B6(void);  /* 0x181F:0x03B6 -- push draw state */
-extern int overlay_call_181F_03F4(void);  /* 0x181F:0x03F4 -- blit region */
-extern int overlay_call_181F_0444(void);  /* 0x181F:0x0444 -- draw box */
-extern int overlay_call_181F_00E2(void);  /* 0x181F:0x00E2 -- draw frame */
-extern int overlay_call_181F_03FE(void);  /* 0x181F:0x03FE -- @-menu/boxed-text runner
+extern int overlay_call_181F_02F8();  /* 0x181F:0x02F8 -- draw value bar */
+extern int overlay_call_181F_03B6();  /* 0x181F:0x03B6 -- push draw state */
+extern int overlay_call_181F_03F4();  /* 0x181F:0x03F4 -- blit region */
+extern int overlay_call_181F_0444();  /* 0x181F:0x0444 -- draw box */
+extern int overlay_call_181F_00E2();  /* 0x181F:0x00E2 -- draw frame */
+extern int overlay_call_181F_03FE();  /* 0x181F:0x03FE -- @-menu/boxed-text runner
                                            * (dynamic-BX sites only; static-key sites
                                            * below call the PORTED menu_run_boxed) */
 extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/menu_runner.c */
-extern int overlay_call_181F_03AC(void);  /* 0x181F:0x03AC -- present/flush */
-extern int overlay_call_181F_00BA(void);  /* 0x181F:0x00BA -- draw line/rect */
-extern int overlay_call_181F_04CA(void);  /* 0x181F:0x04CA -- set palette/color */
+extern int overlay_call_181F_03AC();  /* 0x181F:0x03AC -- present/flush */
+extern int overlay_call_181F_00BA();  /* 0x181F:0x00BA -- draw line/rect */
+extern int overlay_call_181F_04CA();  /* 0x181F:0x04CA -- set palette/color */
 extern int overlay_call_181F_04C0();  /* 0x181F:0x04C0 -- set mode/value */
-extern int overlay_call_181F_04F2(void);  /* 0x181F:0x04F2 -- init draw */
-extern int overlay_call_181F_04E8(void);  /* 0x181F:0x04E8 -- helper */
+extern int overlay_call_181F_04F2();  /* 0x181F:0x04F2 -- init draw */
+extern int overlay_call_181F_04E8();  /* 0x181F:0x04E8 -- helper */
 extern int overlay_call_181F_04D4();  /* 0x181F:0x04D4 -- random_int(lo,hi) BYTE_VERIFIED */
-extern int overlay_call_181F_029A(void);  /* 0x181F:0x029A -- alloc far block (size arg) */
-extern int overlay_call_181F_0290(void);  /* 0x181F:0x0290 -- realloc/grow far block */
-extern int overlay_call_181F_0772(void);  /* 0x181F:0x0772 -- error/abort dialog */
-extern int overlay_call_181F_095C(void);  /* 0x181F:0x095C -- create unit (returns index) */
-extern int overlay_call_181F_0E86(void);  /* 0x181F:0x0E86 -- file findfirst / open (returns handle) */
-extern int overlay_call_181F_053C(void);  /* 0x181F:0x053C -- screen save (0,0,320,200) */
+extern int overlay_call_181F_029A();  /* 0x181F:0x029A -- alloc far block (size arg) */
+extern int overlay_call_181F_0290();  /* 0x181F:0x0290 -- realloc/grow far block */
+extern int overlay_call_181F_0772();  /* 0x181F:0x0772 -- error/abort dialog */
+extern int overlay_call_181F_095C();  /* 0x181F:0x095C -- create unit (returns index) */
+extern int overlay_call_181F_0E86();  /* 0x181F:0x0E86 -- file findfirst / open (returns handle) */
+extern int overlay_call_181F_053C();  /* 0x181F:0x053C -- screen save (0,0,320,200) */
 extern int overlay_call_181F_0498();  /* 0x181F:0x0498 -- helper */
-extern int overlay_call_181F_0484(void);  /* 0x181F:0x0484 -- restore region */
-extern int overlay_call_181F_0F3C(void);  /* 0x181F:0x0F3C -- helper */
-extern int overlay_call_181F_04DE(void);  /* 0x181F:0x04DE -- helper */
-extern int overlay_call_181F_040A(void);  /* 0x181F:0x040A -- helper */
+extern int overlay_call_181F_0484();  /* 0x181F:0x0484 -- restore region */
+extern int overlay_call_181F_0F3C();  /* 0x181F:0x0F3C -- helper */
+extern int overlay_call_181F_04DE();  /* 0x181F:0x04DE -- helper */
+extern int overlay_call_181F_040A();  /* 0x181F:0x040A -- helper */
 extern int overlay_call_181F_04AC();  /* 0x181F:0x04AC -- helper */
 extern int overlay_call_181F_04A2();  /* 0x181F:0x04A2 -- helper */
-extern int overlay_call_181F_0EB8(void);  /* 0x181F:0x0EB8 -- config read */
-extern int overlay_call_181F_0E5E(void);  /* 0x181F:0x0E5E -- config field getter */
-extern int overlay_call_181F_0E68(void);  /* 0x181F:0x0E68 -- config field advance */
-extern int overlay_call_181F_0E72(void);  /* 0x181F:0x0E72 -- config field getter (dword) */
-extern int overlay_call_181F_0ED6(void);  /* 0x181F:0x0ED6 -- helper */
+extern int overlay_call_181F_0EB8();  /* 0x181F:0x0EB8 -- config read */
+extern int overlay_call_181F_0E5E();  /* 0x181F:0x0E5E -- config field getter */
+extern int overlay_call_181F_0E68();  /* 0x181F:0x0E68 -- config field advance */
+extern int overlay_call_181F_0E72();  /* 0x181F:0x0E72 -- config field getter (dword) */
+extern int overlay_call_181F_0ED6();  /* 0x181F:0x0ED6 -- helper */
 extern int overlay_call_181F_05C4();  /* 0x181F:0x05C4 -- helper */
 /* overlay_call_1A1F_0372: returns int per overlay_externs.h (ax:dx 32-bit; int on modern) */
 
 extern int overlay_call_0D1D_07E4();  /* 0x0D1D:0x07E4 -- C strcpy */
 extern int overlay_call_0D1D_0C56();  /* 0x0D1D:0x0C56 -- C strchr */
-extern int overlay_call_0D1D_07A4(void);  /* 0x0D1D:0x07A4 -- C strcpy variant */
-extern int overlay_call_0D1D_0D64(void);  /* 0x0D1D:0x0D64 -- C helper */
-extern int overlay_call_0D1D_085E(void);  /* 0x0D1D:0x085E -- C strncpy */
-extern int overlay_call_0D1D_0894(void);  /* 0x0D1D:0x0894 -- C strncpy variant */
-extern int overlay_call_0D1D_09A2(void);  /* 0x0D1D:0x09A2 -- C helper (ptr out) */
-extern int overlay_call_0D1D_0A3E(void);  /* 0x0D1D:0x0A3E -- C helper */
+extern int overlay_call_0D1D_07A4();  /* 0x0D1D:0x07A4 -- C strcpy variant */
+extern int overlay_call_0D1D_0D64();  /* 0x0D1D:0x0D64 -- C helper */
+extern int overlay_call_0D1D_085E();  /* 0x0D1D:0x085E -- C strncpy */
+extern int overlay_call_0D1D_0894();  /* 0x0D1D:0x0894 -- C strncpy variant */
+extern int overlay_call_0D1D_09A2();  /* 0x0D1D:0x09A2 -- C helper (ptr out) */
+extern int overlay_call_0D1D_0A3E();  /* 0x0D1D:0x0A3E -- C helper */
 extern int overlay_call_0D1D_0DAE();  /* 0x0D1D:0x0DAE -- C memset(base,val,n) */
-extern int overlay_call_0D1D_0FB2(void);  /* 0x0D1D:0x0FB2 -- C helper */
-extern int overlay_call_0D1D_0816(void);  /* 0x0D1D:0x0816 -- C helper */
-extern int overlay_call_0D1D_10C0(void);  /* 0x0D1D:0x10C0 -- C sprintf */
-extern int overlay_call_0D1D_0D46(void);  /* 0x0D1D:0x0D46 -- C strchr/strpbrk */
-extern int overlay_call_0D1D_1084(void);  /* 0x0D1D:0x1084 -- C helper */
-extern int overlay_call_0D1D_0AD8(void);  /* 0x0D1D:0x0AD8 -- C free/close */
-extern int overlay_call_0D1D_03F4(void);  /* 0x0D1D:0x03F4 -- C fclose/free */
-extern int overlay_call_0D1D_0F60(void);  /* 0x0D1D:0x0F60 -- C 64-bit cmp/sub */
-extern int overlay_call_0D1D_0EC6(void);  /* 0x0D1D:0x0EC6 -- C lseek/position set */
-extern int overlay_call_0D1D_0B1C(void);  /* 0x0D1D:0x0B1C -- C buffered fill */
-extern int overlay_call_0D1D_0E9D(void);  /* 0x0D1D:0x0E9D -- C chunked copy */
+extern int overlay_call_0D1D_0FB2();  /* 0x0D1D:0x0FB2 -- C helper */
+extern int overlay_call_0D1D_0816();  /* 0x0D1D:0x0816 -- C helper */
+extern int overlay_call_0D1D_10C0();  /* 0x0D1D:0x10C0 -- C sprintf */
+extern int overlay_call_0D1D_0D46();  /* 0x0D1D:0x0D46 -- C strchr/strpbrk */
+extern int overlay_call_0D1D_1084();  /* 0x0D1D:0x1084 -- C helper */
+extern int overlay_call_0D1D_0AD8();  /* 0x0D1D:0x0AD8 -- C free/close */
+extern int overlay_call_0D1D_03F4();  /* 0x0D1D:0x03F4 -- C fclose/free */
+extern int overlay_call_0D1D_0F60();  /* 0x0D1D:0x0F60 -- C 64-bit cmp/sub */
+extern int overlay_call_0D1D_0EC6();  /* 0x0D1D:0x0EC6 -- C lseek/position set */
+extern int overlay_call_0D1D_0B1C();  /* 0x0D1D:0x0B1C -- C buffered fill */
+extern int overlay_call_0D1D_0E9D();  /* 0x0D1D:0x0E9D -- C chunked copy */
 extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA -- C findnext (read dirent) */
 extern int overlay_call_0D1D_0842();  /* 0x0D1D:0x0842 -- C strlen */
-extern int overlay_call_0D1D_08BC(void);  /* 0x0D1D:0x08BC -- C strncmp */
-extern int overlay_call_0D1D_117E(void);  /* 0x0D1D:0x117E -- C strcpy(dst, src) used by NAMES name fills */
+extern int overlay_call_0D1D_08BC();  /* 0x0D1D:0x08BC -- C strncmp */
+extern int overlay_call_0D1D_117E();  /* 0x0D1D:0x117E -- C strcpy(dst, src) used by NAMES name fills */
 extern int overlay_call_0D1D_08F6();  /* 0x0D1D:0x08F6 -- C atoi/count (MISCELLANEOUS count @0x833c) */
-extern int overlay_call_1A1F_0B2E(void);  /* 0x1A1F:0x0B2E -- NAMES parse helper (UNIT last field) */
+extern int overlay_call_1A1F_0B2E();  /* 0x1A1F:0x0B2E -- NAMES parse helper (UNIT last field) */
 
 /* Local DGROUP globals referenced below (absolute DGROUP offsets from disasm). */
 extern uint8_t  g_difficulty_53A6;      /* DGROUP:0x53A6 -- difficulty level */

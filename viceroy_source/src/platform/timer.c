@@ -42,7 +42,7 @@ uint32_t viceroy_bios_ticks(void)
  * Strong definition overrides the generated weak stub. */
 extern void msc_srand(unsigned v);   /* runtime/rng.c, @asm 0x0103C2 */
 
-long overlay_call_181F_04CA(void)
+long overlay_call_181F_04CA()
 {
     msc_srand((unsigned)(viceroy_bios_ticks() & 0x7FFF));
     return 0;

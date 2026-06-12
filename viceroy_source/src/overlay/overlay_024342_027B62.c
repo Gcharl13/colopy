@@ -61,16 +61,16 @@ extern int snprintf(char *s, unsigned long n, const char *fmt, ...);
  * the pipeline emitted no externs for them because they are never a direct
  * LCALL.  All final paged targets are resolved at runtime by the RTLink VP-dir
  * loader (RUNTIME_ONLY; not in EXE static image). */
-extern int overlay_call_181F_0222(void);  /* 0x181F:0x0222  draw-bar   (role inferred) */
-extern int overlay_call_181F_022C(void);  /* 0x181F:0x022C  draw-label (role inferred) */
-extern int overlay_call_181F_0F9C(void);  /* via trampoline @0x024B50 */
-extern int overlay_call_181F_0FCC(void);  /* via trampoline @0x024B64 */
-extern int overlay_call_191F_0018(void);  /* via trampoline @0x024B82 */
-extern int overlay_call_191F_0030(void);  /* via trampoline @0x024B8C */
-extern int overlay_call_191F_0048(void);  /* via trampoline @0x024B96 */
-extern int overlay_call_191F_0060(void);  /* via trampoline @0x024BA0 */
-extern int overlay_call_191F_006C(void);  /* via trampoline @0x024BA5 */
-extern int overlay_call_191F_00F0(void);  /* via trampoline @0x024BDC */
+extern int overlay_call_181F_0222();  /* 0x181F:0x0222  draw-bar   (role inferred) */
+extern int overlay_call_181F_022C();  /* 0x181F:0x022C  draw-label (role inferred) */
+extern int overlay_call_181F_0F9C();  /* via trampoline @0x024B50 */
+extern int overlay_call_181F_0FCC();  /* via trampoline @0x024B64 */
+extern int overlay_call_191F_0018();  /* via trampoline @0x024B82 */
+extern int overlay_call_191F_0030();  /* via trampoline @0x024B8C */
+extern int overlay_call_191F_0048();  /* via trampoline @0x024B96 */
+extern int overlay_call_191F_0060();  /* via trampoline @0x024BA0 */
+extern int overlay_call_191F_006C();  /* via trampoline @0x024BA5 */
+extern int overlay_call_191F_00F0();  /* via trampoline @0x024BDC */
 
 /* direct calls replacing void-arity stub calls */
 extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C terrain/tile query */

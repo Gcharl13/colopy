@@ -103,12 +103,12 @@ extern void  display_flush(void);                         /* 0x181F:0x3ac */
 
 /* Thunks used by the map-gen / AI bodies below that are NOT in the shared
  * overlay_externs.h (file-local per task scope; calling-convention only). */
-extern int  overlay_call_181F_04CA(void); /* 0x181F:0x4ca pre-roll seed mix */
-extern int  overlay_call_1A1F_027E(void); /* 0x1A1F:0x27e reachability/place probe */
-extern int  overlay_call_1A1F_059C(void); /* 0x1A1F:0x59c single-tile step executor */
-extern int  overlay_call_1A1F_05F0(void); /* 0x1A1F:0x5f0 straight-move executor */
-extern int  overlay_call_1A1F_0440(void); /* 0x1A1F:0x440 commit actor onto map tile */
-extern int  overlay_call_0D1D_092C(void); /* 0x0D1D:0x92c modal key/menu fetch */
+extern int  overlay_call_181F_04CA(); /* 0x181F:0x4ca pre-roll seed mix */
+extern int  overlay_call_1A1F_027E(); /* 0x1A1F:0x27e reachability/place probe */
+extern int  overlay_call_1A1F_059C(); /* 0x1A1F:0x59c single-tile step executor */
+extern int  overlay_call_1A1F_05F0(); /* 0x1A1F:0x5f0 straight-move executor */
+extern int  overlay_call_1A1F_0440(); /* 0x1A1F:0x440 commit actor onto map tile */
+extern int  overlay_call_0D1D_092C(); /* 0x0D1D:0x92c modal key/menu fetch */
 /* func_0643F8 feature-stamp thunk table @file 0x65D08 (ljmp 0x1A1F:NNN). */
 extern void overlay_call_1A1F_0806(int col, int row); /* 0x1A1F:0x806 stamp variant A */
 extern void overlay_call_1A1F_0814(int col, int row); /* 0x1A1F:0x814 stamp variant B */
@@ -251,7 +251,7 @@ int func_0612E6_trade_route_delete(void)
  * shims so the delete logic reads clearly).
  * (func_0612E6_select_route_dialog, func_0612E6_highlight_route,
  *  func_0612E6_route_shift_down declared above, before func_0612E6_trade_route_delete) */
-extern int  overlay_call_181F_0858(void);  /* 0x181F:0x858 route-of-unit (not in shared header) */
+extern int  overlay_call_181F_0858();  /* 0x181F:0x858 route-of-unit (not in shared header) */
 /* direct calls replacing void-arity stub calls */
 extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
 extern void func_0081F2_logic_sz_34(uint16_t idx);         /* 0x181F:0x0A4C */
