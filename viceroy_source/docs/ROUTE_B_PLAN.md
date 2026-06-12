@@ -300,9 +300,16 @@ The four remaining engine-side gaps from `docs/INTEGRATION_STATUS.md`. This
 list is already exhaustive for the rules layer; it was built from the soak +
 screen walkthroughs.
 
-- [ ] **2.1 LCR movement trigger**: trace the rumour-bit test in the unit
-      arrival path (feature-layer bit → `lcr_resolve`, already ported) and
-      wire it. (½ session)
+- [x] **2.1 LCR movement trigger** DONE 2026-06-12: the rumour mark is
+      PROCEDURAL, not a stored feature bit — 0x181F:0x75E = func_006188
+      (PORTED) returns 1 iff the tile is unowned non-special terrain whose
+      sub-cell phase matches the supercell flow hash keyed on DGROUP:0x190.
+      The ONLY lcr_resolve caller in the EXE is ai_eval_unit @asm 0x03F7F9
+      (1A1F:0x178), gated rumour && actor_owner < 4; wired in
+      src/ai/unit_orders.c incl. the @0x3F801 roster-change jump to the
+      0x3F8C1 tail (skips choice-commit + ran_flag when the roll destroys
+      the unit).  500-soak green (0x190==0 in the fixture — rumour phase
+      is seeded at map-gen, so no rolls fire on the soak path).
 - [ ] **2.2 Colony mid-band painters**: `func_0264A8` + `func_0270D0` (field
       workers / colonist rows). The rest of the colony screen is ported;
       these two complete it pixel-wise. (1–1.5 sessions)

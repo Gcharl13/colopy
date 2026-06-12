@@ -665,6 +665,28 @@ bookkeep:
     /* (occupant resolution + relation queries + cross-page human handlers:
      *  @asm 0x03F6D2..0x03F8AB -- structural; helper bodies in thunk pages.) */
 
+    /* ---- LCR MOVEMENT TRIGGER (Phase 2.1) @asm 0x03F6D2 + 0x03F7E4..0x03F80A.
+     * The rumour mark is PROCEDURAL, not a stored feature bit: 0x181F:0x75E =
+     * func_006188 returns 1 iff (tile_x,tile_y) is unowned non-special terrain
+     * whose sub-cell phase matches the supercell flow hash keyed on the
+     * per-game word DGROUP:0x190 (BYTE_VERIFIED port).  Gate: rumour mark set
+     * AND the actor is a EUROPEAN power -> roll the Lost-City-Rumour engine
+     * (1A1F:0x178 = func_061454 = lcr_resolve, its ONLY caller in the EXE).
+     * If the roll changed the unit roster (unit destroyed / spawned), the
+     * original jumps straight to the 0x3F8C1 tail, skipping the choice
+     * commit and ran_flag set. */
+    {
+        extern int func_006188_op_sz_91(uint16_t x, uint16_t y); /* 0x181F:0x75E */
+        extern int lcr_resolve(int unit_idx, int tile_x, int tile_y); /* 1A1F:0x178 */
+        int rumor = func_006188_op_sz_91((uint16_t)tile_x, (uint16_t)tile_y);
+                                                              /* @asm 0x03F6D8 -> [bp-0x2a] */
+        if (rumor != 0 && actor_owner < 4) {                  /* @asm 0x03F7E4/0x03F7EA */
+            lcr_resolve(unit_index, tile_x, tile_y);          /* @asm 0x03F7F9 */
+            if (g_local_player_state_539C != saved_539C)      /* @asm 0x03F801..0x03F80A */
+                goto state_tail;                              /* jmp 0x3F8C1 */
+        }
+    }
+
 done:
     /* @asm 0x03F8AB cmp [bp-0xa],0; jle 0xe5c -- if a choice (>0) was made,
      * commit it via 0x181F:0x608. */
@@ -675,6 +697,7 @@ done:
     /* @asm 0x03F8BC mov [bp-0x22],1 -- ran_flag = 1 (an action path completed) */
     ran_flag = 1;
 
+state_tail:
     /* @asm 0x03F8C1 cmp [0x539c],[bp-0x10]; jne 0xea9 (skip if state changed)
      * @asm 0x03F8CA cmp [bp-0x22],0; jne 0xea9
      * When state is unchanged AND ran_flag==0: clear the unit's order byte
