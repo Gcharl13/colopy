@@ -709,3 +709,11 @@ PROVIDE(overlay_call_191F_0810 = func_029DD4_colony_click_router);
 EXTERN(func_029DD4_colony_click_router)
 PROVIDE(overlay_call_1A1F_0806 = func_064266_walk_stamp_blob);
 EXTERN(func_064266_walk_stamp_blob)
+
+/* Phase 4.3 pass 6 wiring (2026-06-12). str_append = the file-0x28B0
+ * append-space wrapper (overlay_02F3A2's spelling; sites pass the buffer). */
+PROVIDE(overlay_call_029F_0318 = func_005108_op_sz_51);
+PROVIDE(overlay_call_181F_048E = func_0050BC_op_sz_51);
+EXTERN(func_0050BC_op_sz_51)
+PROVIDE(str_append = func_0028B0_append_space);
+EXTERN(func_0028B0_append_space)
