@@ -298,6 +298,17 @@ void vid_text_xy(const char *str, int x, int y)
     ff_draw(f, str, x, y, 1);
 }
 
+/* string-measure leaf 0xC2A:6 (= thunk 0x181F:0x204 -> resident func_00E6A6):
+ * sums the glyph widths with inter-char spacing AX, and every byte-cited
+ * caller passes ax=0.  MODERN: measured with spacew=1 to hug what vid_text_xy
+ * actually renders (ff_draw advances cw+1) -- same convention as
+ * bar_count_badge below. */
+int vid_text_width(const char *s)
+{
+    ff_font_t *f = viceroy_font();
+    return f ? ff_text_width(f, s, 1) : 0;
+}
+
 void vid_small_box(int x, int y, int px, int color)
 {
     uint8_t *fb = vid_framebuffer();
@@ -416,6 +427,9 @@ void viceroy_init_text_ctx(int line_height_minus1)
     memcpy(&DG8(0x089E), &p, sizeof p);
     memcpy(&DG8(0x268A), &p, sizeof p);
 }
+/* byte0 of the [0x89E] text ctx (the DOS `les bx,[0x89E]; mov al,es:[bx]`
+ * idiom, e.g. func_00386A label_h = ctx[0]+3 @0x3AB3..0x3ABF) */
+int vid_text_ctx_byte0(void) { return g_text_ctx[0]; }
 
 /* ---- per-tile occupancy head map ------------------------------------------
  * The DOS tile->chain-head state lives behind the 0x037F helpers (layer

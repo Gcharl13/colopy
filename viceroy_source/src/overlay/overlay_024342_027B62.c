@@ -28,7 +28,12 @@
  * coord-xform, 0xBA fill-box, 0x1F0 set-color, 0x1FA / 0x13C draw-text,
  * 0xCE / 0x254 blit-sprite, 0x222 draw-bar, 0x22C draw-label) are INFERRED
  * from their argument shapes + repeated co-occurrence, not byte-proven, and
- * are flagged "(role inferred)".
+ * are flagged "(role inferred)".  EXCEPTIONS byte-decoded 2026-06-12 (raw
+ * EXE; see colony_paint_colonist_row): 0x10A/0x178/0x11E/0x128 are thin
+ * `strcat_near(buf, DS-literal)` wrappers over 0xD1D:0x7A4 appending "%",
+ * " ", "(", ")" (DGROUP literals 0x5C/0x50/0x5E/0x60 -- so 0x178 is NOT a
+ * reset-buf); 0x182 -> func_0029DE appends a decimal number; 0x13C ->
+ * func_002B38 = set colour + draw string; 0x204 -> func_00E6A6 measure.
  *
  * Status legend per function:  BYTE_VERIFIED (extent + control flow + all
  * cited reads byte-exact), RECONSTRUCTED (extent byte-exact, semantics from
@@ -42,6 +47,12 @@
 #include "viceroy.h"
 #include "dgroup.h"
 #include "overlay_externs.h"
+
+/* snprintf -- the modern form of the 0xD1D:0x8FA itoa + 0xD1D:0x7A4 strcat
+ * chains (see colony_paint_colonist_row).  Declared by hand because iolib.h
+ * (via viceroy.h) carries the DOS FILE model and cannot coexist with
+ * <stdio.h>; same situation as load_image_0033F2_004E76.c's snprintf use. */
+extern int snprintf(char *s, unsigned long n, const char *fmt, ...);
 
 /* Thunks used below that are absent from the auto-generated overlay_externs.h
  * (declare locally; do not edit the shared header).  The low-offset 0x181F/
@@ -940,6 +951,28 @@ extern void bar_queue_reset(void);                                    /* 0x181F:
 extern void bar_queue_push(int id, int value, int tail);              /* 0x181F:0x0222 */
 extern void bar_row_flush(int x, int y, int x_limit, int spacing);    /* 0x181F:0x022C */
 
+/* colonist-figure chain ported 2026-06-12:
+ *   0x181F:0x2BC -> resident 012B:01BA = func_00386A (tools/whois.py; true
+ *       extent 0x386A..0x3E3D -- the old disasm span cut at 0x3BD9 mid-body).
+ *       The colony sites pass stack metric 0x64 -> the figure+label-box path,
+ *       ported byte-faithfully as unit_figure_blit_64 (src/platform/
+ *       unit_blit.c).  DOS regs ax=unit dx=flags bx=x; stack y, box_w, 0x64.
+ *   0x181F:0x7E0 -> resident 0427:005C = func_0066CC (unit at tile; regs
+ *       ax=x dx=y), ported as func_0066CC_op_sz_57.
+ *   0x181F:0x2E4 -> resident 0427:004A = unit_chain_next (src/unit/chain.c,
+ *       BYTE_VERIFIED; declared in unit.h via viceroy.h). */
+extern void unit_figure_blit_64(int unit, int flags, int x, int box_w, int y); /* 0x181F:0x02BC */
+extern int  func_0066CC_op_sz_57(uint16_t x_ax, uint16_t y_dx);                /* 0x181F:0x07E0 */
+
+/* SoL/Tory text leaves (item decoded 2026-06-12; see colony_paint_colonist_row):
+ * 0x181F:0x13C -> func_002B38 = set colour (0xC28:0xA) + draw string
+ * (0xC11:0xC); modern = vid_text_color + vid_text_xy (render_glue.c).
+ * 0x181F:0x204 -> func_00E6A6 string measure (spacing ax=0); modern =
+ * vid_text_width. */
+extern void vid_text_color(int c);                       /* 0xC28:0xA */
+extern void vid_text_xy(const char *s, int x, int y);    /* 0xC11:0xC */
+extern int  vid_text_width(const char *s);               /* 0x181F:0x204 */
+
 /* ============================================================================
  * colony_draw_workgrid  (func_0264A8)
  *   @asm        0x0264A8..0x0268CD  (1062 bytes, ENTER 0x20)   page_02.asm
@@ -950,8 +983,11 @@ extern void bar_row_flush(int x, int y, int x_limit, int spacing);    /* 0x181F:
  *               real func_0090C8/func_0091CC_colony_sz_181 ports 2026-06-12;
  *               the 0x236/0x24A/0x506 sites BYTE_VERIFIED and wired to the
  *               new draw_icon_run/blit_sprite_shadowed/texture_fill_rect
- *               primitives 2026-06-12; only the 0x2BC colonist-figure site
- *               still has no modern primitive and stays a stub)
+ *               primitives 2026-06-12; the 0x2BC colonist-figure site WIRED
+ *               2026-06-12 to the new unit_figure_blit_64 port (func_00386A
+ *               metric-0x64 path, unit_blit.c) together with its 0x7E0
+ *               unit-at-tile / 0x2E4 chain-next feeders -- no stubs remain
+ *               in this function)
  *   @role       render the colony work-grid: the 5x5 block of surrounding map
  *               squares with their terrain, the colonist working each, and the
  *               yield icon+amount; plus the selected-tile highlight.
@@ -1038,24 +1074,27 @@ void colony_draw_workgrid(int show_close_button)
                 blit_sprite(0, 0x6D, cell_x + 8, cell_y + 4);   /* @asm 0x0265BF */
 
             if (flags & 0x80) {                     /* @asm 0x0265C4 test [bp-4],0x80 (colonist present) */
-                int wy = c->map_y + r - 2;          /* @asm 0x0265CE ctx[+1]+r; dec;dec [bp-0xA] */
-                int wx = c->map_x + col - 2;        /* @asm 0x0265DD ctx[+0]+col; dec;dec [bp-6] */
+                int wy = c->map_y + r - 2;          /* @asm 0x0265CE ctx[+1]+r; dec;dec [bp-0xA]; dx=wy */
+                int wx = c->map_x + col - 2;        /* @asm 0x0265DD ctx[+0]+col; dec;dec [bp-6]; ax=wx */
                 int u;
-                (void)wx; (void)wy;
-                u = (int)overlay_call_181F_07E0();  /* @asm 0x0265E9 regs ax=wx dx=wy -> unit at tile */
+                u = (int16_t)func_0066CC_op_sz_57(  /* @asm 0x0265E9 lcall 0x181F:0x7E0 (regs ax=wx */
+                        (uint16_t)wx, (uint16_t)wy);/*      dx=wy) -> unit at tile (WIRED 2026-06-12) */
                 while (u >= 0) {                    /* @asm 0x026615..0x02661A [bp-0x1E]; or ax,ax / jge */
                     int utype = DG8(0x3146 + u*0x1C);  /* @asm 0x0265F0/0x0265F4 UnitRecord[+2] type */
                     if (DG8(0x5236 + utype*14) > 1)    /* @asm 0x0265FA..0x02660B bx=type*14; cmp [bx+0x5236],1 / ja stop */
                         break;
-                    u = (int)overlay_call_181F_02E4(); /* @asm 0x026610 (ax=u) -> next unit on tile */
-                    if (u == 0) break; /* MODERN GUARD: the 0x2E4 stub returns 0
-                                        * (a faithful loop would spin); drop when wired */
+                    u = unit_chain_next(u);         /* @asm 0x026610 lcall 0x181F:0x2E4 (ax=u) -> next
+                                                     * unit on tile (WIRED 2026-06-12, real chain) */
                 }
                 if (u >= 0)                         /* @asm 0x02661C cmp [bp-0x1E],0 / jl skip */
-                    /* colonist sprite 0x181F:0x2BC -- NO modern primitive.
-                     * Decoded: pushes cell_y+4, 0x10, 0x64; regs bx=cell_x+4,
-                     * ax=u, dx=0xE0.  @asm 0x026622..0x026636 */
-                    overlay_call_181F_02BC();       /* @asm 0x026639 */
+                    /* colonist figure 0x181F:0x2BC -> unit_figure_blit_64
+                     * (WIRED 2026-06-12; = func_00386A metric-0x64 path).
+                     * BYTE_VERIFIED: pushes cell_y+4, 0x10, 0x64 (= y, box_w,
+                     * metric); regs ax=u, dx=0xE0 (flags 0x80 stacked-probe |
+                     * 0x40 ship-pref | 0x20 dead), bx=cell_x+4.
+                     * @asm 0x026622..0x026636 */
+                    unit_figure_blit_64(u, 0xE0, cell_x + 4,
+                                        0x10, cell_y + 4);  /* @asm 0x026639 */
             }
 
             if (flags & 8) {                        /* @asm 0x02663E test [bp-4],8 (special resource) */
@@ -1550,9 +1589,13 @@ void colony_draw_roster_strip(int show_button)
  *               colonist 0x254 blit wired to blit_sprite; the
  *               0x218/0x222/0x22C warehouse bars BYTE_VERIFIED and wired to
  *               the bar_queue_reset/bar_queue_push/bar_row_flush primitives
- *               2026-06-12 (render_glue.c); only the 0x13C text lines stay
- *               stubs with decoded args -- their buffer is still produced by
- *               unported string ops)
+ *               2026-06-12 (render_glue.c); the two 0x13C SoL/Tory text
+ *               lines WIRED 2026-06-12 -- the string-op chain byte-decoded
+ *               (0xD1D:0x8FA itoa + strcat_near wrappers appending "%", " ",
+ *               "(", <count>, ")") makes each line "<pct>% (<count>)", drawn
+ *               via vid_text_color/vid_text_xy at the byte-verified
+ *               (x, 0x85, colour-tier) placements -- no stubs remain in this
+ *               function)
  *   @role       the colonist-row / mid-band LOWER painter: place every colonist
  *               sprite (with overlap-avoidance), draw the warehouse bar-chart
  *               and the SoL/Tory percentage display.
@@ -1572,10 +1615,11 @@ void colony_draw_roster_strip(int show_button)
  * [0x8DC8] vs cap [0x8E0A]/[0xA895] (bar id 0x4017), surplus [0x8E32]
  * (0x8017), bells [0x8DEA] (0x39), crosses [0x8DEC] (0x3F) via 0x181F:0x222
  * (draw-bar) + the 0x181F:0x22C label row.  Finally the SoL/Tory gauge (row
- * y=0x84): SoL% = 0x181F:0xC86, Tory% = 100-SoL%, tory_count =
- * (population*Tory% + 0x32)/0x64; text colour tier from difficulty [0x53A6]
- * and AIPersonality [owner*0x34 + 0x543F]; both lines formatted via
- * 0xD1D:0x8FA + 0x181F:0x10A/0x178/0x11E/0x182/0x128 and drawn via
+ * y=0x84): SoL% = 0x181F:0xC86 (= sol_membership_pct), Tory% = 100-SoL%,
+ * tory_count = (population*Tory% + 0x32)/0x64; text colour tier from
+ * difficulty [0x53A6] and AIPersonality [owner*0x34 + 0x543F]; both lines
+ * are "<pct>% (<count>)" -- 0xD1D:0x8FA itoa + the 0x181F:0x10A/0x178/0x11E/
+ * 0x182/0x128 strcat wrappers ("%", " ", "(", count, ")") -- drawn via
  * 0x181F:0x13C, the faces via 0x181F:0x254 (0x7C at x=2; 0x7D right-aligned
  * at 0x75).  Optional close re-blit 0x181F:0xE2 = blit_band(0,0x82,0x78,0x30).
  * ============================================================================ */
@@ -1730,48 +1774,58 @@ void colony_paint_colonist_row(int show_close_button)
         text_col = 4;                    /* @asm 0x027449 */
     if (thresh * 2 <= tory_count)        /* @asm 0x02744E..0x027456 shl ax,1; cmp ax,[bp-0x5E] / jg keep */
         text_col = 0xC;                  /* @asm 0x027458 */
-    (void)rebel_count; (void)text_col;
 
+    /* ---- the two gauge text lines (WIRED 2026-06-12).  The DOS string-op
+     * chain was byte-decoded (tools/whois.py + raw EXE):
+     *   0xD1D:0x8FA              = MSC itoa(value, buf, 10)
+     *   0x181F:0x10A -> file 0x2912 = strcat_near(buf, DS:0x5C) ; DS:0x5C = "%"
+     *   0x181F:0x178 -> file 0x28B0 = strcat_near(buf, DS:0x50) ; DS:0x50 = " "
+     *   0x181F:0x11E -> file 0x2922 = strcat_near(buf, DS:0x5E) ; DS:0x5E = "("
+     *   0x181F:0x182 -> func_0029DE = itoa(count) + far strcat 0xD1D:0x11B4
+     *   0x181F:0x128 -> file 0x2932 = strcat_near(buf, DS:0x60) ; DS:0x60 = ")"
+     * (each 0x181F op is a thin `push <DS literal>; push buf; lcall
+     * 0xD1D:0x7A4` wrapper; the literals sit in the DGROUP init image at
+     * file 0x1D9A0+off).  So buf [bp-0x52] = "<pct>% (<count>)".
+     *   0x181F:0x13C -> func_002B38 = set colour (0xC28:0xA) + draw string
+     * (0xC11:0xC) = vid_text_color + vid_text_xy. ---- */
     if (sol != 0) {                                 /* @asm 0x02745D cmp [bp-0x70],0 / je -> jmp 0x274F7 */
+        char buf[0x20];                             /* [bp-0x52] (modern: int-wide) */
+        int tx;
         /* SoL face sprite: pushes [0x840],[0x83E] (hdr), 0x84 (row y);
          * regs ax=0x7C, bx=&[0x2DA8], dx=2.  @asm 0x027466..0x027478 */
         blit_sprite(0, 0x7C, 2, 0x84);              /* @asm 0x02747B */
         /* text x [bp-0x5C] = hdr frame width(0x7C)+2  @asm 0x027480..0x02748B
          * (es:[bx+0x60E] = [0x7C*0xC+0x3E]) */
-        overlay_call_0D1D_08FA();                   /* @asm 0x027497 itoa(sol, buf[bp-0x52], 10) */
-        overlay_call_181F_010A();                   /* @asm 0x0274A3 (&buf) */
-        overlay_call_181F_0178();                   /* @asm 0x0274AF (&buf) reset/term */
-        overlay_call_181F_011E();                   /* @asm 0x0274BB (&buf) */
-        overlay_call_181F_0182();                   /* @asm 0x0274CB (rebel_count, ss:&buf) append count */
-        overlay_call_181F_0128();                   /* @asm 0x0274D7 (&buf) */
-        /* "% Rebel" line 0x181F:0x13C (= draw_text(x,y,buf)) -- LEFT AS STUB:
-         * buf [bp-0x52] is produced by the unported string ops above (wiring
-         * draw_text would print an uninitialized buffer).  Decoded: pushes
-         * text_col, 0x85 (row y+1), sheet_frame_w_icons(0x7C)+2 (x), ss:&buf.
-         * @asm 0x0274DF..0x0274EE */
-        overlay_call_181F_013C();                   /* @asm 0x0274EF */
+        tx = sheet_frame_w_icons(0x7C) + 2;
+        /* "<sol>% (<rebel_count>)": itoa @0x027497; "%" @0x0274A3; " "
+         * @0x0274AF; "(" @0x0274BB; rebel_count @0x0274CB; ")" @0x0274D7 */
+        snprintf(buf, sizeof buf, "%d%% (%d)", sol, rebel_count);
+        /* Rebel line 0x181F:0x13C: pushes text_col, 0x85 (row y [bp-0x60]+1),
+         * tx, ss:&buf.  @asm 0x0274DF..0x0274EE */
+        vid_text_color(text_col);
+        vid_text_xy(buf, tx, 0x85);                 /* @asm 0x0274EF */
     }
     if (tory != 0) {                                /* @asm 0x0274F7 cmp [bp-0x7A],0 / je -> jmp 0x275AB */
-        overlay_call_0D1D_08FA();                   /* @asm 0x027509 itoa(tory, buf[bp-0x52], 10) */
-        overlay_call_181F_010A();                   /* @asm 0x027515 (&buf) */
-        overlay_call_181F_0178();                   /* @asm 0x027521 (&buf) reset/term */
-        overlay_call_181F_011E();                   /* @asm 0x02752D (&buf) */
-        overlay_call_181F_0182();                   /* @asm 0x02753D (tory_count, ss:&buf) append count */
-        overlay_call_181F_0128();                   /* @asm 0x027549 (&buf) */
+        char buf[0x20];                             /* [bp-0x52] (modern: int-wide) */
+        int face_x, tx;
+        /* "<tory>% (<tory_count>)": itoa @0x027509; "%" @0x027515; " "
+         * @0x027521; "(" @0x02752D; tory_count @0x02753D; ")" @0x027549 */
+        snprintf(buf, sizeof buf, "%d%% (%d)", tory, tory_count);
         /* face x [bp-0x5C] = 0x75 - hdr frame width(0x7D)
          * @asm 0x027551..0x02755D (es:[bx+0x61A] = [0x7D*0xC+0x3E]) */
-        /* text measure 0x181F:0x204: pushes text_col, 0x85 (row y+1),
-         * [0x8A0],[0x89E] (text-ctx far ptr), ss:&buf; regs si=face x, ax=0;
-         * returns ax = string width.  @asm 0x027560..0x027577 */
-        overlay_call_181F_0204();                   /* @asm 0x027579 */
-        /* "% Tory" line right-aligned at x = face x - measured width
-         * ([bp-0x74]): pushes x, ss:&buf on top of the text_col/0x85 words
-         * left by the 0x204 sequence -- LEFT AS STUB (same unported-string
-         * reason as the Rebel line).  @asm 0x027583..0x027588 */
-        overlay_call_181F_013C();                   /* @asm 0x027589 */
+        face_x = 0x75 - sheet_frame_w_icons(0x7D);
+        /* right-align: measure 0x181F:0x204 (regs si=face x, ax=0 spacing;
+         * pushes text_col, 0x85, [0x8A0],[0x89E], ss:&buf) -> width;
+         * text x [bp-0x74] = face x - width.  @asm 0x027560..0x027580 */
+        tx = face_x - vid_text_width(buf);
+        /* Tory line 0x181F:0x13C: pushes tx, ss:&buf on top of the
+         * text_col/0x85 words left by the 0x204 sequence.
+         * @asm 0x027583..0x027588 */
+        vid_text_color(text_col);
+        vid_text_xy(buf, tx, 0x85);                 /* @asm 0x027589 */
         /* Tory face sprite: pushes [0x840],[0x83E] (hdr), 0x84 (row y);
          * regs ax=0x7D, bx=&[0x2DA8], dx=face x.  @asm 0x027591..0x0275A3 */
-        blit_sprite(0, 0x7D, 0x75 - sheet_frame_w_icons(0x7D), 0x84);  /* @asm 0x0275A6 */
+        blit_sprite(0, 0x7D, face_x, 0x84);         /* @asm 0x0275A6 */
     }
 
     DGS16(0x0070) = 0;         /* @asm 0x0275AB [0x70]=0 */
@@ -1908,7 +1962,13 @@ void colony_draw_buildings_panel(void)
             DGS16(0x8D54) == 4)                 /* @asm 0x027853 cmp [0x8D54],4 */
             overlay_call_181F_00CE();                /* @asm 0x0278AA highlight (id 0xA/0xF) */
         /* per-column placement: col0 x=0x9E; col1 0x98; col2 0x90  @asm 0x0278D7..0x027908 */
-        overlay_call_181F_02BC();                    /* @asm 0x02794A draw building icon (id 0x64) */
+        /* colonist figure 0x181F:0x2BC = unit_figure_blit_64 (func_00386A
+         * metric-0x64 path, ported 2026-06-12).  BYTE_VERIFIED args here:
+         * pushes [bp-0x64] (pen y), 0x10, 0x64; regs ax=[bp-0x72] (unit),
+         * dx=0 (no stack/ship flags), bx=[bp-0x6E] (pen x)
+         * @asm 0x02793D..0x027947 -- LEFT AS STUB: the pen x/y locals of the
+         * column layout above are not reconstructed in this body yet. */
+        overlay_call_181F_02BC();                    /* @asm 0x02794A */
         (void)c; (void)colnum;
     }
 }

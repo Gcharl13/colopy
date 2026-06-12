@@ -310,22 +310,30 @@ screen walkthroughs.
       0x3F8C1 tail (skips choice-commit + ran_flag when the roll destroys
       the unit).  500-soak green (0x190==0 in the fixture — rumour phase
       is seeded at map-gen, so no rolls fire on the soak path).
-- [ ] **2.2 Colony mid-band painters**: `func_0264A8` + `func_0270D0` (field
-      workers / colonist rows). The rest of the colony screen is ported;
-      these two complete it pixel-wise. (1–1.5 sessions)
-      > PARTIAL 2026-06-12 — identity + wiring closed: func_0270D0's shell
-      > had been named "colony_screen_render", COLLIDING with the
-      > func_028592 composer of the same name (the linker bound all
-      > composer callers to the shell — the composer was dead code).
-      > Renamed to colony_paint_colonist_row; BOTH painters now wired into
-      > the composer at their @0x0285BC/@0x0285C4 slots.  Their top fills
-      > byte-restored via the real fill_rect (cs:0x2CAC3 = ljmp 0x191F:0x7EC
-      > = fill leaf 0x2633E; workgrid (224,32,72,72), colonist row
-      > (0,130,120,48) — the old "panel frame/backdrop" labels were
-      > misattributions).  REMAINING for pixel parity: per-cell sprite
-      > blits (0x254 ids 0x6D/0x64), borders (0xCE), the 0x506 map-tile
-      > backdrop primitive, warehouse bars (0x222/0x22C) and the SoL gauge
-      > text run — then the Phase-7 capture compare.
+- [x] **2.2 Colony mid-band painters** DONE 2026-06-12: `func_0264A8` +
+      `func_0270D0` (field workers / colonist rows) fully de-stubbed across
+      the day.  Identity + wiring first: func_0270D0's shell had been named
+      "colony_screen_render", COLLIDING with the func_028592 composer (the
+      composer was dead code) — renamed colony_paint_colonist_row; both
+      painters wired into the composer at their @0x0285BC/@0x0285C4 slots,
+      top fills byte-restored (fill leaf 0x2633E; workgrid (224,32,72,72),
+      colonist row (0,130,120,48)).  Then the draw interiors: 0x254 sprite +
+      0xCE box sites byte-restored; 0xC0E/0xA74 colonist-sprite resolver
+      chain ported end-to-end; 0x506 backdrop / 0x236 icon-run / 0x24A
+      shadowed-sprite / 0x218-0x222-0x22C warehouse-bar primitives ported
+      and wired (render_glue.c).  Final two stub classes closed: the
+      0x181F:0x2BC colonist FIGURE blit resolved (whois -> 012B:01BA =
+      func_00386A, true extent 0x386A..0x3E3D) and its metric-0x64
+      figure+label-box path ported byte-faithfully as unit_figure_blit_64
+      (platform/unit_blit.c, with the 0x3710 cell mapper made byte-exact:
+      stride *14 + the 0x36B2 profession jump table) and wired at
+      @0x026639 with the 0x7E0/0x2E4 unit-at-tile feeders; and the two
+      0x181F:0x13C SoL/Tory lines decoded (0xD1D:0x8FA itoa + 0xD1D:0x7A4
+      strcat wrappers over DGROUP literals "%", " ", "(", ")") =
+      "<pct>% (<count>)", implemented via snprintf + vid_text_color/
+      vid_text_xy/vid_text_width at the byte-verified (x, 0x85,
+      difficulty-tier colour) placements.  Build + 60-turn smoke green.
+      The final pixel comparison rides Phase 7 with user captures.
 - [x] **2.3 seg-0x1B22 save block** IDENTIFIED + writers wired 2026-06-12:
       it is the TRADE-ROUTE table — 12 records x 0x4A (74) bytes
       (12*0x4A == 0x378 exactly), live count at DGROUP:0x53A0, route NAME
