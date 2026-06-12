@@ -656,3 +656,11 @@ EXTERN(func_0075FE_logic_sz_17)
 PROVIDE(overlay_call_181F_0B00 = func_008D9C_lookup_table_2F4_signed);
 EXTERN(func_008D9C_lookup_table_2F4_signed)
 PROVIDE(overlay_call_181F_0B82 = func_009626);
+
+/* Phase 4.3 pass 5 wiring (2026-06-12). */
+PROVIDE(overlay_call_02FD_006C = func_00543C_op_sz_131);
+EXTERN(func_00543C_op_sz_131)
+PROVIDE(overlay_call_05B3_024E = func_00817E_logic_sz_14);
+EXTERN(func_00817E_logic_sz_14)
+PROVIDE(overlay_call_191F_0934 = func_0694AE_cargo_select_dialog);
+EXTERN(func_0694AE_cargo_select_dialog)
