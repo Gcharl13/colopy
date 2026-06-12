@@ -4,16 +4,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 774 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 781 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1183 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1122 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 507 | implement, map to ported rtl, or record UNREACHABLE(proof) |
-| ARITY-PENDING | 359 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| NAMED-GAP | 447 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
@@ -63,7 +63,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 ## WEAK-STUBBED detail
 
-### ARITY-PENDING — 359
+### ARITY-PENDING — 358
 
 - `aFlmul_0F60` -> `func_010530_logic_sz_25` @4
 - `box_bevel` -> `func_00DDEA_op_sz_132` @6
@@ -416,7 +416,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_0F26` -> `func_012C8C_rtl_sz_60` @2
 - `ovly_tile_query_7EA` -> `func_006B46_op_sz_365` @2
 - `ovly_unit_spawned_181F_894` -> `func_00693A_logic_sz_14` @3
-- `region_fill` -> `func_00DCD4_op_sz_34` @4
 - `str_begin` -> `func_002992_rtl_sz_26` @2
 - `str_cat2` -> `func_0028F2_append_colon` @1
 - `str_width` -> `func_002AC6_logic_sz_27` @2
@@ -718,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 507
+### NAMED-GAP — 447
 
 - `DG8`
 - `__aFldiv`
@@ -812,82 +811,24 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `free_far`
 - `func_8FB4`
 - `func_AB78`
-- `g_active_colony`
-- `g_active_colony_ptr`
-- `g_active_player_idx`
 - `g_ai_personality`
 - `g_byte`
-- `g_current_nation`
-- `g_dialog_rect`
 - `g_difficulty`
-- `g_file_flags`
-- `g_layer0_terrain`
-- `g_layer1_elev`
-- `g_layer2_region`
-- `g_layer3_mask`
-- `g_layer_elev`
-- `g_layer_terrain`
-- `g_lcr_attempts`
-- `g_lcr_good_results`
 - `g_local_kingwar_count`
 - `g_local_kingwar_gold`
 - `g_map_buffer`
-- `g_menubar_off`
-- `g_menubar_seg`
 - `g_metric_tbl_minus`
-- `g_native_settlements`
 - `g_palette`
 - `g_pik_buffer`
 - `g_power_ctrl`
 - `g_power_name_tbl`
-- `g_power_records`
 - `g_powerflag_8808_minus`
-- `g_region_2DA8c`
-- `g_rpt_str`
 - `g_sample_bank`
 - `g_sample_lengths`
 - `g_sample_offsets`
-- `g_season`
-- `g_snd_A0`
-- `g_snd_A2`
-- `g_snd_A4`
 - `g_sprite_sheet`
 - `g_text_resource`
 - `g_turn`
-- `g_turn_counter`
-- `g_unit_records`
-- `g_w0070`
-- `g_w0334`
-- `g_w0340`
-- `g_w0342`
-- `g_w0344`
-- `g_w0348`
-- `g_w034A`
-- `g_w034E`
-- `g_w0890`
-- `g_w0B98`
-- `g_w0D04`
-- `g_w1F5E`
-- `g_w1F66`
-- `g_w1F68`
-- `g_w5372`
-- `g_w539C`
-- `g_w53A0`
-- `g_w53C2`
-- `g_w8D58`
-- `g_w8D5A`
-- `g_w8D5C`
-- `g_w8D5E`
-- `g_w8D60`
-- `g_w8D72`
-- `g_w8D76`
-- `g_w8D78`
-- `g_w8D7A`
-- `g_w8D7C`
-- `g_w8DE4`
-- `g_w8DE6`
-- `g_w8F8E`
-- `g_w8F9A`
 - `g_word`
 - `g_word_table`
 - `g_year`
@@ -935,8 +876,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `inp`
 - `king_register_ref_unit`
 - `layer_fill`
-- `layer_tile_read`
-- `layer_tile_write`
 - `ldiv_D1D_EC6`
 - `list_unit_at`
 - `lmul_D1D_F60`
