@@ -421,11 +421,27 @@ Europe, Colony, Reports, Title, Hall of Fame = [V] done.
       accrues 0 bells; cs_1086 (ff_id<0 path) + ff_pre_a/ff_finish left
       weak; CC-NN.SS/CCBKGD.PIK need user game data at runtime. (1–2 sessions)
 - [ ] **3.3 Naval adviser screen.** (½–1 session)
-- [ ] **3.4 Screen ids 0x28 / 0x29 / 0x2A / 0x2D** (entries at 0x450AE,
-      0x6D5AA, 0x7661F, 0x05E63): identify each (report/adviser cluster,
-      customize-world, save/load slots are the candidates) and port what
-      isn't already covered by 3.1/Reports. This row CLOSES the E3 id map —
-      after it, every screen id is accounted for. (1–2 sessions)
+- [x] **3.4 Screen ids 0x28 / 0x29 / 0x2A / 0x2D** CLOSED 2026-06-12.
+      BYTE ANALYSIS proves 0x181F:0x772 resolves to func_077D5E_fatal_error_report_xy
+      (the DIAGNOSTIC/FATAL ERROR REPORTER, page 29 +0x3CE = file 0x77D5E,
+      NOT a screen-view dispatcher).  All four "ids" are DIAGNOSTIC ERROR CODES
+      embedded in ALREADY-PORTED functions:
+        0x28 @0x450AE  inside func_044FA4_window_measure  [BYTE_VERIFIED in
+               overlay_04458A_04694B.c: off-screen geometry assert, error code 0xFFB0]
+        0x29 @0x6D5AA  inside func_06D316_panel_finalize_geometry  [BYTE_VERIFIED
+               in overlay_06C220_06D938.c: panel origin < 0 assert, error code 0xFFAF]
+        0x2A @0x7661F  inside func_076594_terrain_layer_load3  [DONE in
+               overlay_0745F0_077A6A.c: layer count < 3 assert, error code 0xFFAE]
+        0x2D @0x05E63  inside func_005E18_op_sz_120  [BYTE_VERIFIED in
+               load_image_005DF0_006939.c: tile-ownership-write status post, code 0xFFAC]
+      WIRED: overlay_call_181F_0772 now has a STRONG no-op definition in
+      src/ui/screen_id_map.c (compiled as a direct viceroy_modern object, not
+      archive member, so it beats the weak stub); zero stub hits on smoke.
+      VERBOSITY THRESHOLD (@0x077D70 cmp [0x2476],dx; jl skip) suppresses ALL
+      four calls at runtime in the original too (threshold initialised to 0 in
+      DGROUP image; none of the callers set it higher) — no-op is byte-faithful.
+      CLOSES the E3 id map: all 6 ids (0x28/0x29/0x2A/0x2B/0x2C/0x2D) accounted
+      for; SCREEN_LAYOUTS.md updated with byte-verified identities.
 - [ ] **3.5 Dialog/event sweep**: every dialog raised by the event dispatch
       (`docs/EVENT_DISPATCH.md` table — finite list of message/choice boxes:
       king demands, native demands/gifts, tea party, FF offer, revolution

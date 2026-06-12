@@ -25,6 +25,22 @@ its `*.PIK` backdrop then calls `enter_screen_view(id)` = `mov bx,<id>; lcall
 | 0x2A | — | 0x7661F | — | — |
 | 0x2D | — | 0x05E63 | — | page 0x01 |
 
+**E3 CLOSURE (Phase 3.4, 2026-06-12) — BYTE CORRECTION.** The `0x181F:0x772`
+thunk resolves to `func_077D5E_fatal_error_report_xy` (file 0x77D5E, page 29
++0x3CE), **NOT** a screen-view dispatcher.  All six ids are DIAGNOSTIC ERROR
+CODES embedded in call sites within already-ported functions; `0x2B`/`0x2C` are
+the screen-entry functions (the PIK+blit+reporter sequence IS the "enter screen"
+idiom for those two), while `0x28`/`0x29`/`0x2A`/`0x2D` are pure diagnostic
+assertions in internal geometry/loading/tile code.  The strong no-op
+`overlay_call_181F_0772` in `src/ui/screen_id_map.c` closes all four.
+
+| id | actual enclosing function | role of the call | cite |
+|----|--------------------------|-----------------|------|
+| 0x28 | `func_044FA4_window_measure` (overlay_04458A) | off-screen geometry assert, error 0xFFB0 | [@0x450AE V] |
+| 0x29 | `func_06D316_panel_finalize_geometry` (overlay_06C220) | panel origin < 0 assert, error 0xFFAF | [@0x6D5AA V] |
+| 0x2A | `func_076594_terrain_layer_load3` (overlay_0745F0) | layer-count < 3 assert, error 0xFFAE | [@0x7661F V] |
+| 0x2D | `func_005E18_op_sz_120` (load_image_005DF0) | tile-ownership-write status, error 0xFFAC | [@0x05E63 V] |
+
 ---
 
 ## 1. Map / gameplay HUD  →  `src/render/hud.c`  **[V]**

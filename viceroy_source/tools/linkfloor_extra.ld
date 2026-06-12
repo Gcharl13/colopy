@@ -218,3 +218,8 @@ EXTERN(func_005E90_op_sz_64)
 EXTERN(func_0082DC_logic_sz_118)
 EXTERN(func_006018_logic_sz_33)
 EXTERN(func_00863E_wrapper_with_global_8DC6)
+/* Phase 3.4 (2026-06-12): E3 screen-id map closure.  Strong no-op override for
+ * the 0x181F:0x772 diagnostic reporter call; defined in src/ui/screen_id_map.c.
+ * EXTERN forces archive-member extraction so the strong T def beats the weak W
+ * def in linkfloor_stubs.c (the archive is linked after the direct objects). */
+EXTERN(overlay_call_181F_0772)
