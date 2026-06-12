@@ -670,3 +670,42 @@ EXTERN(func_0694AE_cargo_select_dialog)
 PROVIDE(overlay_call_181F_056A = func_00C136_screen_refresh);
 PROVIDE(overlay_call_0984_04F6 = func_00C136_screen_refresh);
 EXTERN(func_00C136_screen_refresh)
+
+/* Phase 4.6 Batch B (2026-06-12): the "uncharted entry" rows re-derived via
+ * the authoritative thunk records (the owner+offset arithmetic in
+ * THUNK_WIRING's mid-entry table was wrong for these) -- 17 thunks whose
+ * targets are EXISTING PORTS with matching call-site arity (triage-checked).
+ * Mostly the COLONY-SCREEN input/panel handler family (page03). */
+PROVIDE(overlay_call_181F_03D4 = func_077ADE_error_screen_teardown);
+EXTERN(func_077ADE_error_screen_teardown)
+PROVIDE(overlay_call_191F_0048 = func_0242AE_mouse_region);
+EXTERN(func_0242AE_mouse_region)
+PROVIDE(overlay_call_191F_0182 = func_06F0F4_text_template_run);
+PROVIDE(overlay_call_191F_0436 = func_06F698_fmt_pair_into_9CC8);
+EXTERN(func_06F698_fmt_pair_into_9CC8)
+PROVIDE(overlay_call_191F_0570 = func_02B9DC_op_sz_72);
+EXTERN(func_02B9DC_op_sz_72)
+PROVIDE(overlay_call_191F_0588 = func_02AFCE_logic_sz_41);
+EXTERN(func_02AFCE_logic_sz_41)
+PROVIDE(overlay_call_191F_0624 = func_02A31C_header_selector);
+EXTERN(func_02A31C_header_selector)
+PROVIDE(overlay_call_191F_063C = func_029C10_colony_input_tick);
+EXTERN(func_029C10_colony_input_tick)
+PROVIDE(overlay_call_191F_0678 = func_02B744_colony_sz_24);
+EXTERN(func_02B744_colony_sz_24)
+PROVIDE(overlay_call_191F_06CC = func_0299A0_colony_hit_region);
+EXTERN(func_0299A0_colony_hit_region)
+PROVIDE(overlay_call_191F_0744 = func_02BB8A_logic_sz_106);
+EXTERN(func_02BB8A_logic_sz_106)
+PROVIDE(overlay_call_191F_0768 = func_029D24_commodity_legend);
+EXTERN(func_029D24_commodity_legend)
+PROVIDE(overlay_call_191F_0798 = func_027BB6_colony_buildings_panel);
+EXTERN(func_027BB6_colony_buildings_panel)
+PROVIDE(overlay_call_191F_07A4 = func_02A0BC_assign_work_tile);
+EXTERN(func_02A0BC_assign_work_tile)
+PROVIDE(overlay_call_191F_07E0 = func_029AC0_colonist_slot_hit);
+EXTERN(func_029AC0_colonist_slot_hit)
+PROVIDE(overlay_call_191F_0810 = func_029DD4_colony_click_router);
+EXTERN(func_029DD4_colony_click_router)
+PROVIDE(overlay_call_1A1F_0806 = func_064266_walk_stamp_blob);
+EXTERN(func_064266_walk_stamp_blob)
