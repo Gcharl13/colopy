@@ -551,3 +551,19 @@ EXTERN(func_008720)
 PROVIDE(sol_pct = func_008524_colony_sz_18);
 EXTERN(func_008524_colony_sz_18)
 PROVIDE(colony_helper_C5E_count = func_008D00_colony_stock_cap);
+
+/* Phase 4.1 tranche 2 (2026-06-12): machine-triaged SAFE arity rows — every
+ * C call site already passes the measured arity (tools/arity_truth.py),
+ * targets are existing T-symbol ports (verified via nm).  Triage script:
+ * /tmp/arity_triage.py over tools/generated/thunk_arity_blocked.json. */
+PROVIDE(aFldiv                = func_010496_logic_sz_154);  /* 2-arg long div */
+EXTERN(func_010496_logic_sz_154)
+PROVIDE(bars_draw             = func_003104_logic_sz_143);  /* 4-arg bar draw */
+EXTERN(func_003104_logic_sz_143)
+PROVIDE(layer_set_object      = func_005E18_op_sz_120);     /* (x,y,val) layer-164 write */
+PROVIDE(ovl_fortify_accum     = func_0062B4_op_sz_39);      /* (x,y) is-sea probe */
+PROVIDE(point_in_rect         = func_004B16_logic_sz_46);   /* (x,y,w,h) hit test */
+EXTERN(func_004B16_logic_sz_46)
+PROVIDE(select_player_ctx     = func_0082DC_logic_sz_118);  /* (id) set current colony */
+PROVIDE(unit_select_for_order = func_006D24_op_sz_197);     /* 4-arg unit pick */
+EXTERN(func_006D24_op_sz_197)

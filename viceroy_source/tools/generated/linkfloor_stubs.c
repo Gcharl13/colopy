@@ -860,7 +860,6 @@ __attribute__((weak)) long func_06D88C(void) { viceroy_stub_hit("func_06D88C"); 
 __attribute__((weak)) long func_077990(void) { viceroy_stub_hit("func_077990"); return 0; }
 __attribute__((weak)) long __aFldiv(void) { viceroy_stub_hit("__aFldiv"); return 0; }
 __attribute__((weak)) long __aFlmul(void) { viceroy_stub_hit("__aFlmul"); return 0; }
-__attribute__((weak)) long aFldiv(void) { viceroy_stub_hit("aFldiv"); return 0; }
 __attribute__((weak)) long aFldiv_0F92(void) { viceroy_stub_hit("aFldiv_0F92"); return 0; }
 __attribute__((weak)) long aFlmul(void) { viceroy_stub_hit("aFlmul"); return 0; }
 __attribute__((weak)) long aFlmul_0F60(void) { viceroy_stub_hit("aFlmul_0F60"); return 0; }
@@ -877,7 +876,6 @@ __attribute__((weak)) long bar_queue_push(void) { viceroy_stub_hit("bar_queue_pu
 __attribute__((weak)) long bar_queue_reset(void) { viceroy_stub_hit("bar_queue_reset"); return 0; }
 __attribute__((weak)) long bar_row_flush(void) { viceroy_stub_hit("bar_row_flush"); return 0; }
 __attribute__((weak)) long bars_begin(void) { viceroy_stub_hit("bars_begin"); return 0; }
-__attribute__((weak)) long bars_draw(void) { viceroy_stub_hit("bars_draw"); return 0; }
 __attribute__((weak)) long bells_for_player(void) { viceroy_stub_hit("bells_for_player"); return 0; }
 __attribute__((weak)) long bios_kbd_shift_flags(void) { viceroy_stub_hit("bios_kbd_shift_flags"); return 0; }
 __attribute__((weak)) long blit_band(void) { viceroy_stub_hit("blit_band"); return 0; }
@@ -1104,7 +1102,6 @@ __attribute__((weak)) long king_register_ref_unit(void) { viceroy_stub_hit("king
 __attribute__((weak)) long king_schedule_royal_events(void) { viceroy_stub_hit("king_schedule_royal_events"); return 0; }
 __attribute__((weak)) long layer_fill(void) { viceroy_stub_hit("layer_fill"); return 0; }
 __attribute__((weak)) long layer_ptr_resfog(void) { viceroy_stub_hit("layer_ptr_resfog"); return 0; }
-__attribute__((weak)) long layer_set_object(void) { viceroy_stub_hit("layer_set_object"); return 0; }
 __attribute__((weak)) long layer_tile_read(void) { viceroy_stub_hit("layer_tile_read"); return 0; }
 __attribute__((weak)) long layer_tile_write(void) { viceroy_stub_hit("layer_tile_write"); return 0; }
 __attribute__((weak)) long ldiv_D1D_EC6(void) { viceroy_stub_hit("ldiv_D1D_EC6"); return 0; }
@@ -1225,7 +1222,6 @@ __attribute__((weak)) long ov_unit_stat_format(void) { viceroy_stub_hit("ov_unit
 __attribute__((weak)) long overlay_near_07EFB(void) { viceroy_stub_hit("overlay_near_07EFB"); return 0; }
 __attribute__((weak)) long overlay_set_dialog_rect(void) { viceroy_stub_hit("overlay_set_dialog_rect"); return 0; }
 __attribute__((weak)) long ovl_deselect_fx(void) { viceroy_stub_hit("ovl_deselect_fx"); return 0; }
-__attribute__((weak)) long ovl_fortify_accum(void) { viceroy_stub_hit("ovl_fortify_accum"); return 0; }
 __attribute__((weak)) long ovl_landfall_begin(void) { viceroy_stub_hit("ovl_landfall_begin"); return 0; }
 __attribute__((weak)) long ovl_landfall_next(void) { viceroy_stub_hit("ovl_landfall_next"); return 0; }
 __attribute__((weak)) long ovl_landfall_unit(void) { viceroy_stub_hit("ovl_landfall_unit"); return 0; }
@@ -1270,7 +1266,6 @@ __attribute__((weak)) long picker_run(void) { viceroy_stub_hit("picker_run"); re
 __attribute__((weak)) long pik_free(void) { viceroy_stub_hit("pik_free"); return 0; }
 __attribute__((weak)) long pik_load(void) { viceroy_stub_hit("pik_load"); return 0; }
 __attribute__((weak)) long place_colonist(void) { viceroy_stub_hit("place_colonist"); return 0; }
-__attribute__((weak)) long point_in_rect(void) { viceroy_stub_hit("point_in_rect"); return 0; }
 __attribute__((weak)) long post_growth_hook(void) { viceroy_stub_hit("post_growth_hook"); return 0; }
 __attribute__((weak)) long power_attribute_bit(void) { viceroy_stub_hit("power_attribute_bit"); return 0; }
 __attribute__((weak)) long power_event_11(void) { viceroy_stub_hit("power_event_11"); return 0; }
@@ -1312,7 +1307,6 @@ __attribute__((weak)) long sb_dma_halt(void) { viceroy_stub_hit("sb_dma_halt"); 
 __attribute__((weak)) long sb_play_pcm(void) { viceroy_stub_hit("sb_play_pcm"); return 0; }
 __attribute__((weak)) long score_accum_long(void) { viceroy_stub_hit("score_accum_long"); return 0; }
 __attribute__((weak)) long score_add_money(void) { viceroy_stub_hit("score_add_money"); return 0; }
-__attribute__((weak)) long select_player_ctx(void) { viceroy_stub_hit("select_player_ctx"); return 0; }
 __attribute__((weak)) long set_field_at_40_or_unit_byte(void) { viceroy_stub_hit("set_field_at_40_or_unit_byte"); return 0; }
 __attribute__((weak)) long settle_at(void) { viceroy_stub_hit("settle_at"); return 0; }
 __attribute__((weak)) long settle_at2(void) { viceroy_stub_hit("settle_at2"); return 0; }
@@ -1402,7 +1396,6 @@ __attribute__((weak)) long unit_figure_blit_64(void) { viceroy_stub_hit("unit_fi
 __attribute__((weak)) long unit_first_of_owner(void) { viceroy_stub_hit("unit_first_of_owner"); return 0; }
 __attribute__((weak)) long unit_next(void) { viceroy_stub_hit("unit_next"); return 0; }
 __attribute__((weak)) long unit_record(void) { viceroy_stub_hit("unit_record"); return 0; }
-__attribute__((weak)) long unit_select_for_order(void) { viceroy_stub_hit("unit_select_for_order"); return 0; }
 __attribute__((weak)) long unit_set_type(void) { viceroy_stub_hit("unit_set_type"); return 0; }
 __attribute__((weak)) long unit_type_of(void) { viceroy_stub_hit("unit_type_of"); return 0; }
 __attribute__((weak)) long value_band(void) { viceroy_stub_hit("value_band"); return 0; }

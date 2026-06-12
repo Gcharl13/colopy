@@ -10,6 +10,10 @@
 #include "dgroup.h"
 #include "overlay_externs.h"
 
+/* forward decl: the near-heap malloc (defined later in this file; callers
+ * above the definition pass the documented byte sizes) */
+int func_012235_logic_sz_40(uint16_t size);
+
 /* ---------------------------------------------------------------------------
  * File-local declarations for the DOS INT 21h host primitives and the sibling
  * near-call helpers referenced by the ports below.  These are NOT redefined
@@ -374,7 +378,8 @@ int func_010DB4_rtl_sz_115(uint16_t fp_bp_04)
     {
         uint16_t buf = DG16(bx);         /* @asm mov ax,[bx] */
         if (buf == 0) {                  /* @asm or ax,ax; je 0x10E0D (allocate) */
-            buf = (uint16_t)overlay_call_0D1D_2916(); /* @asm push 0x200; lcall 0xD1D:0x2916 */
+            buf = (uint16_t)func_012235_logic_sz_40(0x200); /* @asm push 0x200;
+                                       lcall 0xD1D:0x2916 = near malloc */
             if (buf == 0) return 0;      /* @asm or ax,ax; je 0x10E21 */
             DG16(bx) = buf;              /* @asm mov [bx],ax */
         }
@@ -953,7 +958,8 @@ int func_0119D6_rtl_sz_157(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         size = 1;                                     /* @asm mov [bp+0xc],1 */
     } else if (buf == 0) {                            /* @asm cmp [bp+8],0; jne 0x11A6E */
         /* @asm 0x011A46 no caller buffer: allocate one. */
-        buf = (uint16_t)overlay_call_0D1D_2916();     /* @asm push size; lcall 0x2916 (malloc) */
+        buf = (uint16_t)func_012235_logic_sz_40(size); /* @asm push size;
+                                       lcall 0xD1D:0x2916 = near malloc */
         if (buf == 0) {                               /* @asm or ax,ax; jne 0x11A60 */
             ret = (int16_t)0xFFFF;                     /* @asm [bp-2]=0xFFFF */
             goto store;                                /* @asm jmp 0x11A8C */
@@ -1192,9 +1198,27 @@ void func_012214_logic_sz_33(uint16_t arg0_bp_06)
  */
 int func_012235_logic_sz_40(uint16_t arg0_bp_06)
 {
-    (void)arg0_bp_06;
-    return 0;  /* TODO: port from func_012235.asm — near-heap grow helper;
-                * CF-coupled register-interface calls to 0x11EF2 / 0x1170E. */
+    /* MODERN MODEL (2026-06-12): the MSC near heap is a header-tagged arena
+     * the original drives through two CF/register-coupled helpers (0x11EF2
+     * locate/coalesce, 0x1170E grow) that the skeleton could not recover.
+     * The modern build substitutes a BUMP ALLOCATOR over the unused top of
+     * the data segment (above the highest byte-mapped static ~0xA5xx; the
+     * DOS heap likewise lived between the statics and the stack).  Block
+     * format kept compatible with func_012214's free (header word at
+     * ptr-2, bit0 = free): allocations carry the 2-byte header so frees
+     * stay in-model.  Returns the payload's DGROUP offset, or 0 when the
+     * arena is exhausted (the callers' documented failure path). */
+    uint16_t size = arg0_bp_06;
+    enum { NEARHEAP_BASE = 0xB000u, NEARHEAP_END = 0xFFF0u };
+    uint16_t brk = DG16(0x2778 + 8);              /* arena break in the DOS slot */
+    uint16_t sz  = (uint16_t)((size + 1u) & ~1u);
+    if (brk < NEARHEAP_BASE || brk > NEARHEAP_END)
+        brk = NEARHEAP_BASE;                      /* first call: init the break */
+    if (sz == 0 || (uint32_t)brk + 2u + sz > NEARHEAP_END)
+        return 0;                                 /* arena exhausted -> 0L */
+    DG16(brk) = (uint16_t)(sz & ~1u);             /* header: size, bit0 clear (in use) */
+    DG16(0x2778 + 8) = (uint16_t)(brk + 2u + sz);
+    return (int)(uint16_t)(brk + 2u);             /* payload offset */
 }
 
 /* @asm        0x01225E..0x0123C6  (360 bytes)  region=load_image
