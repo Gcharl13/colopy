@@ -113,3 +113,19 @@ int msc_stricmp_near(uint16_t a_off, uint16_t b_off)
         return (c1 < c0) ? -1 : 1;       /* sign(fold(arg1)-fold(arg0)) */
     }
 }
+
+/* 0x0D1D:0x030D  file 0xF8DD (131 B)  the MSC exit() family.
+ *   Multi-entry body (exit/atexit-running/_exit variants selected by CX),
+ *   walks the onexit chains ([0x2D38], [0x2B32..0x2B36]), fires the IOB
+ *   hook ([0x2B16]==0xD6D6 -> call [0x2B1C]), flushes streams via
+ *   [0x2B26/0x2B28], then INT 21h AH=4Ch with the code at [bp+6].
+ *   EVERY call site in the EXE pushes 3 (@0x077D4E, @0x004DB9, @0x004DE9,
+ *   @0x004EE6-region) -- the fatal-error paths.  The weak hit-counting
+ *   stub RETURNED, silently continuing a fatal path; terminating is the
+ *   byte-faithful behavior, so this strong no-arg form hard-codes the
+ *   universally-pushed exit code 3. */
+void overlay_call_0D1D_030D(void)
+{
+    extern void exit(int);
+    exit(3);
+}

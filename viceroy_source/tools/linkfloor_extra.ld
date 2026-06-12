@@ -579,3 +579,10 @@ PROVIDE(panel_helper_1E1D = military_list_panel);
 EXTERN(military_list_panel)
 PROVIDE(panel_helper_1E6D = naval_list_panel);
 EXTERN(naval_list_panel)
+
+/* Phase 4.6 (2026-06-12): MSC exit() family.  0x0D1D:0x30D = file 0xF8DD;
+ * every EXE call site pushes exit code 3 (fatal paths).  Strong def in
+ * runtime/msc_string.c terminates like the original (the weak stub
+ * RETURNED, silently continuing fatal paths).  EXTERN forces the archive
+ * member out so the strong T beats the weak stub. */
+EXTERN(overlay_call_0D1D_030D)
