@@ -21,7 +21,7 @@
  * -------------------------------------------------------------------------- */
 extern int overlay_call_0000_0062(void);  /* @ref RTLink seg 0x0000 off 0x0062 */
 extern int overlay_call_037F_004A(void);  /* @ref RTLink seg 0x037F off 0x004A */
-extern int overlay_call_037F_02A0(void);  /* @ref RTLink seg 0x037F off 0x02A0 */
+/* overlay_call_037F_02A0(uint16_t x, uint16_t y) declared in overlay_externs.h */
 extern int overlay_call_03E4_003A(void);  /* @ref RTLink seg 0x03E4 off 0x003A */
 extern int overlay_call_05DC_00E0(void);  /* @ref RTLink seg 0x05DC off 0x00E0 */
 extern int overlay_call_0981_0000(void);  /* @ref RTLink seg 0x0981 off 0x0000 */

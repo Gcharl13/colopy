@@ -25,7 +25,7 @@ extern int overlay_call_037F_0142();  /* @ref RTLink seg 0x037F off 0x0142 */
 extern int overlay_call_037F_015E();  /* @ref RTLink seg 0x037F off 0x015E */
 extern int overlay_call_037F_0200();  /* @ref RTLink seg 0x037F off 0x0200 */
 extern int overlay_call_037F_0228();  /* @ref RTLink seg 0x037F off 0x0228 */
-extern int overlay_call_037F_02A0();  /* @ref RTLink seg 0x037F off 0x02A0 */
+extern int overlay_call_037F_02A0(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x02A0 */
 extern int overlay_call_037F_02E0();  /* @ref RTLink seg 0x037F off 0x02E0 */
 extern int overlay_call_037F_0314(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x0314 */
 extern int overlay_call_037F_0358(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x0358 */
@@ -41,6 +41,8 @@ extern int overlay_call_0427_005C();  /* @ref RTLink seg 0x0427 off 0x005C */
 extern int overlay_call_0427_06B4(void);  /* @ref RTLink seg 0x0427 off 0x06B4 */
 extern int overlay_call_0427_0824(void);  /* @ref RTLink seg 0x0427 off 0x0824 */
 extern int overlay_call_0427_155E(void);  /* @ref RTLink seg 0x0427 off 0x155E */
+extern int overlay_call_05B3_0004(uint16_t power, uint16_t slot);  /* @ref RTLink seg 0x05B3 off 0x0004 */
+extern int overlay_call_05B3_01E0(uint16_t r);  /* @ref RTLink seg 0x05B3 off 0x01E0 */
 extern int overlay_call_05B3_0144(void);  /* @ref RTLink seg 0x05B3 off 0x0144 */
 extern int overlay_call_05DC_006A();  /* @ref RTLink seg 0x05DC off 0x006A */
 extern int overlay_call_05EB_002C();  /* @ref RTLink seg 0x05EB off 0x002C */
@@ -249,7 +251,7 @@ extern int overlay_call_181F_040A(void);  /* @ref RTLink seg 0x181F off 0x040A *
 extern int overlay_call_181F_0416(void);  /* @ref RTLink seg 0x181F off 0x0416 */
 extern int overlay_call_181F_0422(void);  /* @ref RTLink seg 0x181F off 0x0422 */
 extern int overlay_call_181F_042E();  /* @ref RTLink seg 0x181F off 0x042E */
-extern int overlay_call_181F_0438(void);  /* @ref RTLink seg 0x181F off 0x0438 */
+extern int overlay_call_181F_0438(void);  /* @ref RTLink seg 0x181F off 0x0438 -> func_06C23C_dialog_make_from_int (headless stub, args deferred) */
 extern int overlay_call_181F_0444(void);  /* @ref RTLink seg 0x181F off 0x0444 */
 extern int overlay_call_181F_044E();  /* @ref RTLink seg 0x181F off 0x044E */
 extern int overlay_call_181F_045C(void);  /* @ref RTLink seg 0x181F off 0x045C */

@@ -16,8 +16,8 @@
  * the RTLink seg:off of the far CALL as seen in the disassembly.
  * (TODO: promote these to include/overlay_externs.h.)
  * -------------------------------------------------------------------------- */
-extern int overlay_call_05B3_0004();  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
-extern int overlay_call_0981_0000();  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
+/* overlay_call_05B3_0004 and overlay_call_05B3_01E0 now declared in overlay_externs.h */
+extern int overlay_call_0981_0000(uint16_t power, uint16_t flag);  /* @ref seg 0x0981 off 0x0000 */
 extern int overlay_call_037F_02F8();  /* @ref seg 0x037F off 0x02F8 (func_00A6A2) */
 extern int overlay_call_037F_0598();  /* @ref seg 0x037F off 0x0598 (func_00A6A2) */
 extern int overlay_call_0427_0992();  /* @ref seg 0x0427 off 0x0992 (func_00A6A2) */
@@ -1521,7 +1521,7 @@ int func_00A994_colony_sz_293(void)
     int col, row;
 
     /* @asm 0xA998..0xA9AD  frame = 037F:02A0(ctx_map_x, ctx_map_y) */
-    frame = overlay_call_037F_02A0(ctx[0], ctx[1]);
+    frame = overlay_call_037F_02A0((uint16_t)ctx_local[0], (uint16_t)ctx_local[1]);
     (void)frame;
     /* @asm 0xA9B1  lazily fill the 5x5 base grid (0x8DF0) */
     func_00A93E();
@@ -1558,12 +1558,12 @@ int func_00A994_colony_sz_293(void)
             /* @asm 0xAA70..0xAA93  if still valid but relation bits (05B3:0004)
              *      lack 0x20 -> invalidate. */
             if (result >= 0) {
-                int rel = overlay_call_05B3_0004(/* ctx->owner, result */);
+                int rel = overlay_call_05B3_0004((uint16_t)ctx_local[0x1A], (uint16_t)result);
                 if ((rel & 0x20) == 0)
                     result = -1;
             }
             /* @asm 0xAA94..0xAAB0  if power-flag (0981:0000(owner,2)) set -> invalidate. */
-            if (overlay_call_0981_0000(/* ctx->owner, 2 */) != 0)
+            if (overlay_call_0981_0000((uint16_t)ctx_local[0x1A], 2) != 0)
                 result = -1;
 
             /* @asm 0xAAB1..0xAAC8  store result into both grids at index row*5+col. */

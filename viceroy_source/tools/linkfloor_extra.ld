@@ -342,3 +342,36 @@ EXTERN(func_00704C_op_sz_205)
 EXTERN(func_0049FC_logic_sz_20)
 EXTERN(func_0081C6_logic_sz_44)
 EXTERN(func_008D00_colony_stock_cap)
+
+/* Phase 4.3d (2026-06-12): next batch of safe PROVIDE aliases.
+ * Arity cross-checked against all call sites; zero-arg callers fixed above.
+ *
+ * Resident-segment overlay stubs (non-thunk, direct file targets):
+ *   overlay_call_037F_02A0(x,y)   file 0x5E90 -> func_005E90_op_sz_64  map-region query
+ *   overlay_call_05B3_0004(pw,sl) file 0x7F34 -> func_007F34_logic_sz_27 relations byte
+ *   overlay_call_05B3_01E0(r)     file 0x8110 -> func_008110_logic_sz_14 name-word lookup
+ *
+ * Bare-name -> decorated-name (near calls to func_XXXXXX in load_image; bodies
+ * defined under the full func_XXXXXX_<class>_sz_NNN name):
+ *   func_006B46(u,phase)  -> func_006B46_op_sz_365  chain eviction to (-3,-3)
+ *   func_0069D2(u,x,y)    -> func_0069D2_logic_sz_12 unlink+replace unit at (x,y)
+ *   func_00A6A2(r,c)      -> func_00A6A2_colony_sz_130 colony tile updater
+ *   func_00860E(col,bit)  -> func_00860E_logic_sz_15  colony bit-test
+ *   func_00BEDE(a,b,c)    -> func_00BEDE_op_sz_93    map-cursor move+redraw */
+PROVIDE(overlay_call_037F_02A0 = func_005E90_op_sz_64);
+PROVIDE(overlay_call_05B3_0004 = func_007F34_logic_sz_27);
+PROVIDE(overlay_call_05B3_01E0 = func_008110_logic_sz_14);
+PROVIDE(func_006B46            = func_006B46_op_sz_365);
+/* func_0069D2 -> func_0069D2_logic_sz_12 DEFERRED: wiring moves ship u3 from (8,5) to
+ * (-2,-2) via func_00772E_op_sz_149's garrison-loading path, breaking the smoke baseline.
+ * Root cause: func_00772E is called for navigating ships (type 0x0E, orders 0x0B), which
+ * triggers the unconditional chain-head relocation.  Needs calling-context audit before
+ * wiring.  Regression: u3 ends orders=0x01 prof=0x3F instead of 0x0B/0x31. */
+PROVIDE(func_00A6A2            = func_00A6A2_colony_sz_130);
+PROVIDE(func_00860E            = func_00860E_logic_sz_15);
+PROVIDE(func_00BEDE            = func_00BEDE_op_sz_93);
+EXTERN(func_005E90_op_sz_64)
+EXTERN(func_006B46_op_sz_365)
+EXTERN(func_00A6A2_colony_sz_130)
+EXTERN(func_00860E_logic_sz_15)
+EXTERN(func_00BEDE_op_sz_93)

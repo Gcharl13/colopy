@@ -839,7 +839,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
     if (owner >= 4)
         return;
     /* @asm 0x006491 base_zone = 0x037F:0x02A0(x,y). */
-    base_zone = (int16_t)overlay_call_037F_02A0();
+    base_zone = (int16_t)overlay_call_037F_02A0((uint16_t)cx0, (uint16_t)cy0);
     /* @asm 0x00649C if (radius < 0) return  (-radius <= radius fails only for rad<0). */
     if (rad < 0)
         return;
@@ -872,7 +872,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
                 /* @asm 0x006538 if (r == 0) require zone(cur)==base_zone, else paint. */
                 if (r == 0) {
                     /* @asm 0x00653C if (0x037F:0x02A0(cur_x,cur_y) != base_zone) skip. */
-                    if ((int16_t)overlay_call_037F_02A0() != base_zone)
+                    if ((int16_t)overlay_call_037F_02A0((uint16_t)cur_x, (uint16_t)cur_y) != base_zone)
                         continue;
                 }
                 /* else r != 0: fall through to paint. */
@@ -1087,10 +1087,12 @@ int func_0066CC_op_sz_57(uint16_t x_ax /* in AX */, uint16_t y_dx /* in DX */)
     /* @asm 0x006761 push 1; push (long)y; lcall 0x181F:0x09AE. */
     overlay_call_181F_09AE();
     /* @asm 0x00676D r = 0x037F:0x0314(x,y); r = 0x05B3:0x01E0(r);
-     * @asm 0x006781 push 0; push r; lcall 0x181F:0x0438. */
-    overlay_call_037F_0314((uint16_t)x, (uint16_t)y);
-    overlay_call_05B3_01E0();
-    overlay_call_181F_0438();
+     * @asm 0x006781 push 0; push r; lcall 0x181F:0x0438 (headless stub). */
+    {
+        int16_t r0314 = (int16_t)overlay_call_037F_0314((uint16_t)x, (uint16_t)y);
+        (void)overlay_call_05B3_01E0((uint16_t)r0314);
+        overlay_call_181F_0438();
+    }
     /* @asm 0x006793 bx=&DG[0x087C]; ax=&DG[0x01EA]; dx=0; lcall 0x181F:0x0998. */
     overlay_call_181F_0998();
 

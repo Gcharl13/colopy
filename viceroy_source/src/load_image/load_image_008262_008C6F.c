@@ -266,7 +266,7 @@ int func_0083F2_op_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
 
     if ((int16_t)arg3_bp_0C == -2) {                 /* @asm 0x8405 cmp [bp+0xc],-2 */
         flag = 1;                                    /* @asm 0x840B */
-        arg3_bp_0C = (uint16_t)overlay_call_037F_02A0(/* arg0, arg1 */); /* @asm 0x8416 */
+        arg3_bp_0C = (uint16_t)overlay_call_037F_02A0(arg0_bp_06, arg1_bp_08); /* @asm 0x8416 */
     }
 
     for (i = 0; i < (int16_t)DG16(0x539E); i++) {    /* @asm 0x84AA g_colony_count */
@@ -275,7 +275,7 @@ int func_0083F2_op_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
             && DG8(base + 0x1A) != (uint8_t)arg2_bp_0A)
             continue;
         if ((int16_t)arg3_bp_0C >= 0) {              /* @asm 0x843E region filter */
-            if ((int16_t)overlay_call_037F_02A0(/* rec.x, rec.y */) != (int16_t)arg3_bp_0C)
+            if ((int16_t)overlay_call_037F_02A0((uint16_t)DG8(base + 0x00), (uint16_t)DG8(base + 0x01)) != (int16_t)arg3_bp_0C)
                 continue;
         }
         if (flag != 0) {                             /* @asm 0x8462 flag filter */
@@ -1021,7 +1021,7 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     pairidx = (int16_t)func_008892(arg0_bp_06, arg1_bp_08);   /* @asm 0x898F */
     ctxp = DG16(0x8542);
-    region = (int16_t)overlay_call_037F_02A0(/* ctx.map_x, ctx.map_y */);  /* @asm 0x89A5 */
+    region = (int16_t)overlay_call_037F_02A0((uint16_t)DG8(ctxp + 0), (uint16_t)DG8(ctxp + 1));  /* @asm 0x89A5 */
 
     if (pairidx < 0)                            /* @asm 0x89B0 */
         return 0;
