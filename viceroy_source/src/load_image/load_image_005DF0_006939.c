@@ -611,7 +611,7 @@ int func_00627A_op_sz_57(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) /* @asm args x,y */ == 0)
         return 0x19;
     return func_00624E_logic_sz_8(
-        (uint8_t)overlay_call_037F_010E() /* @asm args x,y */);
+        (uint8_t)overlay_call_037F_010E(arg0_bp_06, arg1_bp_08));
 }
 
 /* @asm        0x0062B4..0x0062DB  (39 bytes)  region=load_image
@@ -634,7 +634,7 @@ int func_0062B4_op_sz_39(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     /* @asm 0x0062BE lcall 0x37f:0x10e (x=[bp+6], y=[bp+8]); 0x0062C6 sub ah,ah;
      *      and al,0x1f -> id = terrain(x,y) & 0x1F.
      * @asm 0x0062CC cmp si,0x19; je -> 1; 0x0062D1 cmp si,0x1a; je -> 1; else 0. */
-    int id = (int)(uint8_t)overlay_call_037F_010E() /* @asm args x,y */ & 0x1F;
+    int id = (int)(uint8_t)overlay_call_037F_010E(arg0_bp_06, arg1_bp_08) & 0x1F;
     return (id == 0x19 || id == 0x1A) ? 1 : 0;
 }
 
@@ -659,7 +659,7 @@ int func_0062E2_op_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      *      -> id = terrain(x,y) & 0x1F.
      * @asm branch lattice (0x0062FA..0x00630C): returns 1 iff 8<=id<0x10 OR
      *      0x10<=id<0x18, i.e. 8<=id<0x18; otherwise 0.  Signed compares. */
-    int id = (int)(uint8_t)overlay_call_037F_010E() /* @asm args x,y */ & 0x1F;
+    int id = (int)(uint8_t)overlay_call_037F_010E(arg0_bp_06, arg1_bp_08) & 0x1F;
     return (id >= 8 && id < 0x18) ? 1 : 0;
 }
 
@@ -1055,7 +1055,7 @@ int func_0066CC_op_sz_57(uint16_t x_ax /* in AX */, uint16_t y_dx /* in DX */)
     occ = (int16_t)overlay_call_037F_000A((uint16_t)x, (uint16_t)y);
     if (occ != 0) {
         /* @asm 0x0066F0 if (0x037F:0x0314(x,y) >= 0) return -1 (map already has head). */
-        if ((int16_t)overlay_call_037F_0314() >= 0)
+        if ((int16_t)overlay_call_037F_0314((uint16_t)x, (uint16_t)y) >= 0)
             return result;
     }
 
@@ -1088,7 +1088,7 @@ int func_0066CC_op_sz_57(uint16_t x_ax /* in AX */, uint16_t y_dx /* in DX */)
     overlay_call_181F_09AE();
     /* @asm 0x00676D r = 0x037F:0x0314(x,y); r = 0x05B3:0x01E0(r);
      * @asm 0x006781 push 0; push r; lcall 0x181F:0x0438. */
-    overlay_call_037F_0314();
+    overlay_call_037F_0314((uint16_t)x, (uint16_t)y);
     overlay_call_05B3_01E0();
     overlay_call_181F_0438();
     /* @asm 0x006793 bx=&DG[0x087C]; ax=&DG[0x01EA]; dx=0; lcall 0x181F:0x0998. */

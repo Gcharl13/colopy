@@ -268,3 +268,19 @@ PROVIDE(overlay_call_03E4_0074 = func_0062B4_op_sz_39);
 EXTERN(func_005BFA_logic_sz_49)
 EXTERN(func_005FD4_map_xy_bounds_or_neg1_alt)
 EXTERN(func_0062B4_op_sz_39)
+
+/* Phase 4.3 continued (2026-06-12): remaining resident-segment stubs with (x,y) arities.
+ *   overlay_call_037F_010E file 0x5CFE -> func_005CFE_map_tile_read_layer_15C(x,y)
+ *     (reads map layer 0x15C at (x,y); called as terrain tile-code source)
+ *   overlay_call_037F_0314 file 0x5F04 -> func_005F04_map_xy_bounds_or_neg1(x,y)
+ *     (returns chain-head unit at (x,y) or -1; PROVIDE(ovly_query_682) already alias)
+ *   overlay_call_037F_0358 file 0x5F48 -> func_005F48_logic_sz_58(x,y)
+ *     (water/sea probe: returns >= 0 iff tile is navigable water)
+ *   func_007178 bare name -> func_007178_op_sz_192(x,y,arg2)
+ *     (region-gated neighbour scan; called by func_00723E via near-call) */
+PROVIDE(overlay_call_037F_010E = func_005CFE_map_tile_read_layer_15C);
+PROVIDE(overlay_call_037F_0314 = func_005F04_map_xy_bounds_or_neg1);
+PROVIDE(overlay_call_037F_0358 = func_005F48_logic_sz_58);
+PROVIDE(func_007178            = func_007178_op_sz_192);
+EXTERN(func_005F48_logic_sz_58)
+EXTERN(func_007178_op_sz_192)

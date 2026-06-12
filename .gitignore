@@ -26,3 +26,5 @@ game_data/
 col.zip
 *.ppm
 *.png
+core
+core.*

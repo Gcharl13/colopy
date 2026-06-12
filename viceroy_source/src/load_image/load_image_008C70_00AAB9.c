@@ -146,7 +146,7 @@ int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int i;
     if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) == 0)     /* tile in bounds? */
         return -1;
-    if (overlay_call_037F_0358(/* arg0, arg1 */) < 0)      /* colony on tile? */
+    if (overlay_call_037F_0358(arg0_bp_06, arg1_bp_08) < 0)      /* colony on tile? */
         return -1;
     for (i = 0; result < 0 && i < (int16_t)DG16(0x539E); i++) {
         if (DG8(0x5D46 + (unsigned)i * 0xCA) == (uint8_t)arg0_bp_06 &&
@@ -1039,7 +1039,7 @@ int func_0099AE_op_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      * [arg2, arg3] (unsigned byte compares); otherwise 0.  Overlay calls shown
      * 0-arg to match overlay_externs.h; real args in comment. */
     if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) {
-        unsigned terrain = (unsigned)(overlay_call_037F_010E(/* arg0, arg1 */) & 0x1F);
+        unsigned terrain = (unsigned)(overlay_call_037F_010E(arg0_bp_06, arg1_bp_08) & 0x1F);
         if (terrain >= (uint8_t)arg2_bp_0A && terrain <= (uint8_t)arg3_bp_0C)
             return 1;
     }

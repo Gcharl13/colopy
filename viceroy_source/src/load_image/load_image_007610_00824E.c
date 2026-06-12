@@ -882,7 +882,6 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int tgt_owner = DG8(ub1 + 0x03) & 0x0F;
     int base = func_007C2A(arg0_bp_06, 0);
     int acc = 0;
-    (void)ux; (void)uy;
     DG16(0x8D04) = 0;
 
     /* @asm 0x7D7B push uy; push ux; call 0x037F:0x0392; if (ax >= 0) settlement-tile */
@@ -907,7 +906,7 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         DG8(0x8D02) |= 0x08;
     }
     /* @asm 0x7DE8 else push uy; push ux; call 0x037F:0x0358; if (ax >= 0) water-tile */
-    else if (overlay_call_037F_0358() >= 0) {
+    else if (overlay_call_037F_0358((uint16_t)ux, (uint16_t)uy) >= 0) {
         /* @asm 0x7DFA region=overlay 0x05EB:0x0A76(ux,uy); [0x1B06]=region;
          *      overlay 0x05EB:0x002C(region); acc += (func_007BE8()+1)<<1;
          *      [0x8D02]|=0x40. */
@@ -953,8 +952,8 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
                  *      unit[arg1].map_y); if (r2 < 0) goto 0x7EE4 (flag stays 1) }
                  *      0x7EB8 flag=0; acc += [terr<<4 + 0x2F77]; [0x8D02]|=0x80. */
                 int adj = 1;
-                if (overlay_call_037F_0358() < 0) {     /* @asm push uy; push ux */
-                    if (overlay_call_037F_0358() < 0)   /* @asm push arg1.map_y/x */
+                if (overlay_call_037F_0358((uint16_t)ux, (uint16_t)uy) < 0) {
+                    if (overlay_call_037F_0358((uint16_t)DG8(ub1 + 0x00), (uint16_t)DG8(ub1 + 0x01)) < 0)
                         adj = 0;                        /* both off the move grid */
                 }
                 if (adj) {
