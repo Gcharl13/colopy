@@ -893,3 +893,20 @@ PROVIDE(near_6E77 = func_0335FA);
 EXTERN(func_0335FA)
 PROVIDE(near_6E7C = func_0321FC);
 EXTERN(func_0321FC)
+
+/* Phase 4.7 cs_*-named DGROUP data (2026-06-12): offsets encoded in
+ * the names (colony-screen cursor/selection state words). */
+PROVIDE(cs_color_33A = g_dgroup + 0x33a);
+PROVIDE(cs_count_33C = g_dgroup + 0x33c);
+PROVIDE(cs_cur_tx_330 = g_dgroup + 0x330);
+PROVIDE(cs_cur_ty_332 = g_dgroup + 0x332);
+PROVIDE(cs_flag_32E = g_dgroup + 0x32e);
+PROVIDE(cs_flag_334 = g_dgroup + 0x334);
+PROVIDE(cs_flag_344 = g_dgroup + 0x344);
+PROVIDE(cs_flag_346 = g_dgroup + 0x346);
+PROVIDE(cs_hot_unit_8D7E = g_dgroup + 0x8d7e);
+PROVIDE(cs_mode_8D54 = g_dgroup + 0x8d54);
+PROVIDE(cs_player_337 = g_dgroup + 0x337);
+PROVIDE(cs_player_338 = g_dgroup + 0x338);
+PROVIDE(cs_player_339 = g_dgroup + 0x339);
+PROVIDE(cs_sel_unit_8D7C = g_dgroup + 0x8d7c);
