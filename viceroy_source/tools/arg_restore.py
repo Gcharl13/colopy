@@ -327,3 +327,106 @@ def apply_plan():
 
 if '--apply' in sys.argv:
     apply_plan()
+
+def order_match():
+    """For canonical-named stubs (unambiguous seg:off) whose sites lack a
+    usable cite: within each C function's @asm span, find every
+    `lcall seg,off` for that stub in the EXE and pair them to the C call
+    sites IN ORDER.  Only when counts match exactly is the pairing sound."""
+    blocked = json.load(open(os.path.join(ROOT, 'tools/generated/thunk_arity_blocked.json')))
+    stubs = {s for s in blocked if re.match(r'overlay_call_[0-9A-F]{4}_[0-9A-F]{4}$', s)}
+    span_rx = re.compile(r'@asm\s+(?:func_\w+\s+@\s+)?(?:file\s+)?0x([0-9A-Fa-f]{5,6})\.\.0x([0-9A-Fa-f]{5,6})')
+    plan, flagged = [], []
+    for f in sorted(glob.glob(os.path.join(ROOT, 'src/**/*.c'), recursive=True)):
+        raw = open(f, errors='replace').read()
+        if not any(s in raw for s in stubs):
+            continue
+        lines = raw.splitlines()
+        # function definition lines
+        defs = []
+        for n, ln in enumerate(lines):
+            m = FUNCDEF_RX.match(ln)
+            if m and not ln.lstrip().startswith(('extern', 'typedef')):
+                defs.append((n, m.group(1)))
+        defs.append((len(lines), '_EOF_'))
+        for di in range(len(defs) - 1):
+            d0, fname = defs[di]
+            d1 = defs[di + 1][0]
+            # span: search the 40 lines above the def for a range cite
+            span = None
+            for j in range(max(0, d0 - 40), d0 + 1):
+                sm = span_rx.search(lines[j])
+                if sm:
+                    span = (int(sm.group(1), 16), int(sm.group(2), 16))
+            if not span:
+                continue
+            lo, hi = span
+            if hi <= lo or hi - lo > 0x8000:
+                continue
+            body = DATA[lo:hi]
+            for stub in stubs:
+                # C sites of this stub inside [d0,d1)
+                csites = []
+                for n in range(d0, d1):
+                    if re.search(r'\b' + stub + r'\s*\(', lines[n]) and 'extern' not in lines[n]:
+                        csites.append(n)
+                if not csites:
+                    continue
+                seg = int(stub[13:17], 16); off = int(stub[18:22], 16)
+                pat = bytes([0x9A, off & 0xFF, off >> 8, seg & 0xFF, seg >> 8])
+                exe_sites = []
+                k = body.find(pat)
+                while k != -1:
+                    exe_sites.append(lo + k)
+                    k = body.find(pat, k + 1)
+                if len(exe_sites) != len(csites):
+                    continue
+                # span-anchored alignment: disassemble once from the span
+                # start (a true boundary) and accept only addresses that
+                # fall on instruction starts in that stream.
+                boundaries = set()
+                for ins in MD.disasm(DATA[lo:hi + 0x10], lo):
+                    boundaries.add(ins.address)
+                for n, addr in zip(csites, exe_sites):
+                    if addr not in boundaries:
+                        continue
+                    r = decode_site(addr)
+                    if not r or r[2] is None:
+                        continue
+                    s2, o2, args, nargs, tag = r
+                    want = blocked[stub]['arity']
+                    if tag == 'REGCONV':
+                        if nargs < want:
+                            continue
+                        args = args[:want]; nargs = want
+                    elif nargs == 0 and want > 0:
+                        continue
+                    fn2, params, locs = enclosing_func(lines, n)
+                    cargs, bad = [], None
+                    for a in args:
+                        if a['kind'] in ('imm', 'dg16', 'dg8'):
+                            cargs.append(a['c'])
+                        elif a['kind'] == 'param' and a['bp'] in params:
+                            cargs.append(params[a['bp']])
+                        elif a['kind'] == 'local' and a.get('raw'):
+                            dm = re.search(r'bp - (0x[0-9a-f]+|\d+)', a['raw'])
+                            dd = int(dm.group(1), 0) if dm else None
+                            if dd in locs:
+                                cargs.append(locs[dd])
+                            else:
+                                bad = a; break
+                        else:
+                            bad = a; break
+                    if bad:
+                        continue
+                    plan.append({'file': f, 'line': n + 1, 'stub': stub,
+                                 'addr': hex(addr), 'thunk': stub,
+                                 'nargs': nargs, 'args': cargs})
+    print(f"ORDER-MATCHED tier-1: {len(plan)}")
+    json.dump({'plan': plan, 'flagged': []}, open('/tmp/arg_restore_plan.json', 'w'), indent=1)
+    with open('/tmp/arg_restore_plan.txt', 'w') as out:
+        for r in plan:
+            out.write(f"OM  {r['file']}:{r['line']} {r['stub']}({', '.join(r['args'])})\n")
+
+if '--order-match' in sys.argv:
+    order_match()
