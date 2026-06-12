@@ -47,3 +47,24 @@ TERMINAL_STATES.md §RESOLVED-LIBC.
   4.6 residue): each needs a caller-graph proof line before a verdict.
 - `probe_soundblaster`/`probe_adlib` hardware port probes: will become
   MODERN-REPLACED when Phase 5 lands the host audio device model.
+
+## MODERN-REPLACED — DOS ISR / mouse cursor / keyboard internals (Batch A)
+
+Byte-classified 2026-06-12 (capstone over VICEROY.EXE); strong terminal
+implementations in `src/platform/dos_isr_glue.c`, each with its cite:
+
+| thunk(s) | file off | identity | modern equivalent |
+|---|---|---|---|
+| 181F:0E5E | 0xC2F4 | literal `return 0` | same |
+| 181F:0E68 | 0xC2F8 | BIOS key read (0xC0C:0x12) + 0x7F mask | `vid_poll_key()` |
+| 181F:0EB8 | 0xC7EB | input-state reset (mouse/kbd words) | DGROUP writes mirrored; ISR side platform-owned |
+| 181F:04E8 / 0A58:000D | 0xC98D | mouse cursor HIDE (++[0xA899], restore-under @0xCDD6) | visibility byte kept; host cursor |
+| 181F:04F2 / 0A58:0054 | 0xC9D4 | mouse cursor SHOW (--[0xA899], save-under @0xCDAD) | visibility byte kept; host cursor |
+| 0A58:0207 | 0xCB87 | INT8/timer ISR body (DS:=0x1B5A, latch [0x6D2], SS:SP save) | `platform/timer.c` synthetic tick |
+| 0A58:02CE | 0xCC4E | cursor shape reset ([0x58B]=0,[0x58A]=0xFF) | bytes mirrored |
+| 0A58:02E0 | 0xCC60 | cursor blank + region save | host cursor |
+| 0A58:03CE | 0xCD4E | conditional cursor re-show | mirrored via 02CE |
+| 0A58:03E2 | 0xCD62 | cursor sprite save/restore (VGA segs) | host cursor |
+| 0A58:06FD | 0xD07D | cursor blit dispatch (`jmp [0x7E0]`, VGA segs) | host cursor |
+| 181F:0EE0 | 0xD236 | MSC stack probe (zero-fill SP..[0x27E6]) | host stack: deficit 0 |
+| 191F:04A2 | 0xD29C | keyboard drain loop (poll 0xD272 / consume 0xD286) | shell drains the queue |

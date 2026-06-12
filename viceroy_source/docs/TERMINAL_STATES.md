@@ -4,19 +4,19 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 552 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 589 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1406 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1365 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 606 | implement, map to ported rtl, or record UNREACHABLE(proof) |
-| ARITY-PENDING | 397 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| NAMED-GAP | 601 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| ARITY-PENDING | 372 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 227 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 134 | port the original func_0XXXXX body |
-| THUNK-UNRESOLVED | 42 | no resolved target yet; whois + port/wire |
+| THUNK-UNRESOLVED | 31 | no resolved target yet; whois + port/wire |
 
 ## RESOLVED-LIBC (host C runtime satisfies these by design)
 
@@ -63,7 +63,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 ## WEAK-STUBBED detail
 
-### ARITY-PENDING — 397
+### ARITY-PENDING — 372
 
 - `aFlmul_0F60` -> `func_010530_logic_sz_25` @4
 - `box_bevel` -> `func_00DDEA_op_sz_132` @6
@@ -87,7 +87,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_0009_01A2` -> `func_002632_tooltip_append_indexed` @1
 - `overlay_call_0009_0244` -> `func_0026D4_logic_sz_44` @3
 - `overlay_call_0009_02CC` -> `func_00275C_logic_sz_39` @3
-- `overlay_call_004B_0000` -> `func_002D74_logic_sz_218` @9
+- `overlay_call_004B_0000` -> `func_0028B0_append_space` @1
 - `overlay_call_004B_00E2` -> `func_002992_rtl_sz_26` @2
 - `overlay_call_004B_01E8` -> `func_002A98_rtl_sz_46` @4
 - `overlay_call_004B_0318` -> `func_002BC8_logic_sz_68` @6
@@ -96,7 +96,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_029F_0318` -> `func_005108_op_sz_51` @1
 - `overlay_call_029F_034C` -> `func_00513C_logic_sz_26` @1
 - `overlay_call_02E9_0006` -> `func_005296_logic_sz_22` @4
-- `overlay_call_02FD_006C` -> `func_00543C_op_sz_131` @1
 - `overlay_call_037F_015E` -> `func_005D4E_logic_sz_40` @4
 - `overlay_call_037F_0228` -> `func_005E18_op_sz_120` @3
 - `overlay_call_037F_0392` -> `func_005F82_logic_sz_31` @2
@@ -104,7 +103,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_03F1_02F8` -> `func_006608_logic_sz_106` @1
 - `overlay_call_0427_005C` -> `func_0066CC_op_sz_57` @2
 - `overlay_call_0427_0992` -> `func_007002_logic_sz_26` @2
-- `overlay_call_05B3_024E` -> `func_00817E_logic_sz_14` @1
 - `overlay_call_05EB_002C` -> `func_0082DC_logic_sz_118` @1
 - `overlay_call_05EB_0142` -> `func_0083F2_op_sz_71` @4
 - `overlay_call_05EB_038E` -> `func_00863E_wrapper_with_global_8DC6` @1
@@ -148,7 +146,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_0D1D_08BC` -> `func_00FE8C_logic_sz_27` @2
 - `overlay_call_0D1D_08FA` -> `func_00FECA_logic_sz_28` @3
 - `overlay_call_0D1D_092C` -> `func_00FEFC_logic_sz_20` @1
-- `overlay_call_0D1D_0942` -> `func_00FF12_rtl_sz_87` @1
 - `overlay_call_0D1D_09A2` -> `func_00FF72_rtl_sz_39` @2
 - `overlay_call_0D1D_09CA` -> `func_00FF9A_logic_sz_34` @3
 - `overlay_call_0D1D_0A3E` -> `func_01000E_rtl_sz_127` @4
@@ -189,8 +186,8 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0056` -> `func_002544_logic_sz_60` @1
 - `overlay_call_181F_006A` -> `func_00260E_tooltip_append` @1
 - `overlay_call_181F_0074` -> `func_002632_tooltip_append_indexed` @1
+- `overlay_call_181F_007E` -> `func_002648_tooltip_append_int` @1
 - `overlay_call_181F_0092` -> `func_0026D4_logic_sz_44` @3
-- `overlay_call_181F_00A6` -> `func_00273E_logic_sz_10` @4
 - `overlay_call_181F_00B0` -> `func_00275C_logic_sz_39` @3
 - `overlay_call_181F_00BA` -> `func_00DDEA_op_sz_132` @6
 - `overlay_call_181F_00C4` -> `func_00E350_logic_sz_43` @14
@@ -198,15 +195,25 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_00D8` -> `func_002A98_rtl_sz_46` @4
 - `overlay_call_181F_00E2` -> `func_00DB3A_op_sz_69` @3
 - `overlay_call_181F_0100` -> `func_002BC8_logic_sz_68` @6
+- `overlay_call_181F_010A` -> `func_002912_append_pct` @1
 - `overlay_call_181F_0114` -> `func_002AC6_logic_sz_27` @2
+- `overlay_call_181F_011E` -> `func_002922_append_lparen` @1
+- `overlay_call_181F_0128` -> `func_002932_append_rparen` @1
 - `overlay_call_181F_0132` -> `func_002AFE_op_sz_58` @4
 - `overlay_call_181F_013C` -> `func_002B38_op_sz_58` @5
+- `overlay_call_181F_0146` -> `func_002962_append_plus` @1
 - `overlay_call_181F_0150` -> `func_002B72_op_sz_85` @5
+- `overlay_call_181F_015A` -> `func_002972_append_minus` @1
+- `overlay_call_181F_0164` -> `func_002982_append_x` @1
 - `overlay_call_181F_016E` -> `func_002992_rtl_sz_26` @2
-- `overlay_call_181F_0178` -> `func_002D74_logic_sz_218` @9
+- `overlay_call_181F_0178` -> `func_0028B0_append_space` @1
 - `overlay_call_181F_0182` -> `func_0029DE_rtl_sz_39` @3
+- `overlay_call_181F_0196` -> `func_0028C0_append_spaces` @2
 - `overlay_call_181F_01A0` -> `func_002A06_rtl_sz_104` @3
+- `overlay_call_181F_01B4` -> `func_0028E2_append_comma` @1
+- `overlay_call_181F_01BE` -> `func_0028F2_append_colon` @1
 - `overlay_call_181F_01C8` -> `func_002CE0_logic_sz_71` @7
+- `overlay_call_181F_01DC` -> `func_002902_append_period` @1
 - `overlay_call_181F_01E6` -> `func_002D28_logic_sz_75` @2
 - `overlay_call_181F_0204` -> `func_00E6A6_logic_sz_72` @4
 - `overlay_call_181F_020E` -> `func_00304A_logic_sz_142` @8
@@ -228,25 +235,19 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_035C` -> `func_0048CC_logic_sz_13` @3
 - `overlay_call_181F_037A` -> `func_00493C_logic_sz_14` @4
 - `overlay_call_181F_03CA` -> `func_004B16_logic_sz_46` @4
-- `overlay_call_181F_03EA` -> `func_005160_op_sz_45` @1
 - `overlay_call_181F_03F4` -> `func_00D1E4_logic_sz_52` @1
 - `overlay_call_181F_042E` -> `func_008074_op_sz_83` @3
 - `overlay_call_181F_044E` -> `func_076B9E_write_record_fields_7` @7
 - `overlay_call_181F_045C` -> `func_00D1CA_logic_sz_26_pacing_wait` @2
 - `overlay_call_181F_048E` -> `func_0050BC_op_sz_51` @1
-- `overlay_call_181F_0498` -> `func_0050F0_logic_sz_11` @1
-- `overlay_call_181F_04A2` -> `func_0050FC_logic_sz_11` @1
 - `overlay_call_181F_04AC` -> `func_005108_op_sz_51` @1
-- `overlay_call_181F_04B6` -> `func_00513C_logic_sz_26` @1
 - `overlay_call_181F_04D4` -> `func_00C322_rtl_sz_63` @2
-- `overlay_call_181F_04FC` -> `func_0051D2_logic_sz_62` @9
 - `overlay_call_181F_0510` -> `func_00531C_logic_sz_89` @10
 - `overlay_call_181F_0524` -> `func_00543C_op_sz_131` @1
 - `overlay_call_181F_052E` -> `func_06B722_treaty_or_message_dialog` @1
 - `overlay_call_181F_0590` -> `func_00BCEA_op_sz_61` @1
 - `overlay_call_181F_05A8` -> `func_073270_parse_text_records` @4
 - `overlay_call_181F_05C4` -> `func_00CA0C_logic_sz_74` @1
-- `overlay_call_181F_05FA` -> `func_035B06_sec_sz_118` @2
 - `overlay_call_181F_0614` -> `func_0083F2_op_sz_71` @4
 - `overlay_call_181F_0682` -> `func_005F04_map_xy_bounds_or_neg1` @2
 - `overlay_call_181F_068C` -> `func_005D4E_logic_sz_40` @4
@@ -256,7 +257,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_06D2` -> `func_006018_logic_sz_33` @2
 - `overlay_call_181F_06DC` -> `func_005DF0_logic_sz_40` @2
 - `overlay_call_181F_06E6` -> `func_00603A_logic_sz_33` @3
-- `overlay_call_181F_06F0` -> `func_005F82_logic_sz_31` @2
 - `overlay_call_181F_0704` -> `func_005E18_op_sz_120` @3
 - `overlay_call_181F_070E` -> `func_005CE6_logic_sz_24` @2
 - `overlay_call_181F_0718` -> `func_0060A0_logic_sz_128` @2
@@ -268,20 +268,14 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0754` -> `func_005D32_map_tile_read_layer_160` @2
 - `overlay_call_181F_0768` -> `func_0062B4_op_sz_39` @2
 - `overlay_call_181F_078C` -> `func_00627A_op_sz_57` @2
-- `overlay_call_181F_07A0` -> `func_006608_logic_sz_106` @1
 - `overlay_call_181F_07AA` -> `func_0063B6_logic_sz_14` @2
 - `overlay_call_181F_07B4` -> `func_00BC10_ff_owned` @2
 - `overlay_call_181F_07BE` -> `func_008D26_op_sz_69` @2
 - `overlay_call_181F_07E0` -> `func_0066CC_op_sz_57` @2
 - `overlay_call_181F_07EA` -> `func_006B46_op_sz_365` @2
-- `overlay_call_181F_07F4` -> `func_007A80_op_sz_143` @1
 - `overlay_call_181F_0808` -> `func_006E94_logic_sz_198` @1
 - `overlay_call_181F_083A` -> `func_0075A0_logic_sz_51` @1
-- `overlay_call_181F_0844` -> `func_00693A_logic_sz_14` @3
-- `overlay_call_181F_084E` -> `func_007356_logic_sz_56` @1
 - `overlay_call_181F_0858` -> `func_0075D4_logic_sz_16` @1
-- `overlay_call_181F_0862` -> `func_0075E4_logic_sz_26` @2
-- `overlay_call_181F_0876` -> `func_0075FE_logic_sz_17` @1
 - `overlay_call_181F_0880` -> `func_0069D2_logic_sz_12` @3
 - `overlay_call_181F_0894` -> `func_00738E_logic_sz_26` @2
 - `overlay_call_181F_08B2` -> `func_007610_logic_sz_31` @2
@@ -298,7 +292,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_095C` -> `func_006D24_op_sz_197` @4
 - `overlay_call_181F_0966` -> `func_0079A0_op_sz_119` @1
 - `overlay_call_181F_0970` -> `func_00726E_op_sz_116` @3
-- `overlay_call_181F_097A` -> `func_007A20_logic_sz_96` @1
 - `overlay_call_181F_0984` -> `func_00704C_op_sz_205` @3
 - `overlay_call_181F_09A4` -> `func_008110_logic_sz_14` @1
 - `overlay_call_181F_09BA` -> `func_067644_compose_tile_overlays` @5
@@ -312,32 +305,25 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0A38` -> `func_007F34_logic_sz_27` @2
 - `overlay_call_181F_0A42` -> `func_0081C6_logic_sz_44` @1
 - `overlay_call_181F_0A4C` -> `func_0081F2_logic_sz_34` @1
-- `overlay_call_181F_0A56` -> `func_00822A_logic_sz_36` @1
 - `overlay_call_181F_0A60` -> `func_008262_logic_sz_20` @1
 - `overlay_call_181F_0A6A` -> `func_009AAA_logic_sz_241` @2
 - `overlay_call_181F_0A74` -> `func_0091CC_colony_sz_181` @1
 - `overlay_call_181F_0A7E` -> `func_036976_logic_sz_24` @2
 - `overlay_call_181F_0A88` -> `func_00975A_logic_sz_25` @1
 - `overlay_call_181F_0A92` -> `func_0087F4_logic_sz_18` @1
-- `overlay_call_181F_0AA6` -> `func_00994C_logic_sz_40` @1
 - `overlay_call_181F_0AB0` -> `func_00864E_logic_sz_31` @1
 - `overlay_call_181F_0AC4` -> `func_00B65A_unit_band_lookup` @2
 - `overlay_call_181F_0ACE` -> `func_009786_logic_sz_12` @1
 - `overlay_call_181F_0AEC` -> `func_00B42C_logic_sz_139` @2
 - `overlay_call_181F_0AF6` -> `func_008846_logic_sz_27` @3
-- `overlay_call_181F_0B00` -> `func_008D9C_lookup_table_2F4_signed` @1
-- `overlay_call_181F_0B14` -> `func_008686_logic_sz_34` @2
 - `overlay_call_181F_0B1E` -> `func_008862_op_sz_25` @2
 - `overlay_call_181F_0B28` -> `func_008B96` @1
 - `overlay_call_181F_0B32` -> `func_00B23E_colony_sz_100` @1
 - `overlay_call_181F_0B3C` -> `func_009B9C_logic_sz_1120` @4
-- `overlay_call_181F_0B5A` -> `func_00887C_logic_sz_21` @1
 - `overlay_call_181F_0B64` -> `func_00BB98_logic_sz_71` @1
-- `overlay_call_181F_0B82` -> `func_009626` @1
 - `overlay_call_181F_0B8C` -> `func_00B900_colony_sz_618` @1
 - `overlay_call_181F_0B96` -> `func_00B4B8_logic_sz_11` @3
 - `overlay_call_181F_0BAA` -> `func_009818_op_sz_66` @1
-- `overlay_call_181F_0BBE` -> `ff_acquire_dispatch` @2
 - `overlay_call_181F_0BE6` -> `func_00B2A2_cargo_slot_good` @2
 - `overlay_call_181F_0C0E` -> `func_0090C8` @1
 - `overlay_call_181F_0C2C` -> `func_00B550_logic_sz_88` @2
@@ -346,21 +332,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0C68` -> `func_00B2F0_cargo_slot_amount` @2
 - `overlay_call_181F_0C9A` -> `func_0082B2_logic_sz_38` @1
 - `overlay_call_181F_0CA4` -> `func_00B304_cargo_slot_set_amount` @3
-- `overlay_call_181F_0CAE` -> `func_00913C_logic_sz_72` @2
 - `overlay_call_181F_0CC2` -> `func_00B5A8_value_band` @2
-- `overlay_call_181F_0CEA` -> `func_00B31A_logic_sz_77` @3
+- `overlay_call_181F_0CEA` -> `func_00B31A_cargo_slot_set_good` @3
 - `overlay_call_181F_0D12` -> `func_008352_op_sz_92` @2
 - `overlay_call_181F_0D1C` -> `check_total_exceeds_threshold` @1
 - `overlay_call_181F_0D30` -> `func_0098F6_logic_sz_85` @3
-- `overlay_call_181F_0D44` -> `func_008982_logic_sz_532` @3
 - `overlay_call_181F_0D4E` -> `func_00B5FA_logic_sz_94` @1
 - `overlay_call_181F_0D58` -> `func_00B368_cargo_load` @3
 - `overlay_call_181F_0D90` -> `func_00C30A_rtl_sz_17` @1
 - `overlay_call_181F_0D9A` -> `func_00BFF2_logic_sz_23` @2
-- `overlay_call_181F_0DC2` -> `func_00C07A_logic_sz_32` @3
-- `overlay_call_181F_0DD6` -> `func_00C09A_logic_sz_19` @1
 - `overlay_call_181F_0DE0` -> `func_00C0AE_logic_sz_34` @2
-- `overlay_call_181F_0DEA` -> `func_00C0D0_logic_sz_57` @1
 - `overlay_call_181F_0DFE` -> `func_00C1F8_logic_sz_20` @1
 - `overlay_call_181F_0E08` -> `func_00BEDE_op_sz_93` @3
 - `overlay_call_181F_0E12` -> `func_00C276_logic_sz_20` @1
@@ -368,7 +349,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0E38` -> `func_066BB0_minimap_update` @4
 - `overlay_call_181F_0E86` -> `func_00C45A_rtl_sz_44` @2
 - `overlay_call_181F_0E9A` -> `func_00C362_rtl_sz_173` @3
-- `overlay_call_181F_0EA4` -> `func_00C646_rtl_sz_74` @1
 - `overlay_call_181F_0EAE` -> `func_00C4A4_logic_sz_55` @1
 - `overlay_call_181F_0ED6` -> `func_00F510_logic_sz_28` @2
 - `overlay_call_191F_01C2` -> `func_040656_unit_chain_171` @1
@@ -377,7 +357,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_01EC` -> `func_02EABC_op_sz_46` @2
 - `overlay_call_191F_01FA` -> `func_040C1E_colony_enter` @1
 - `overlay_call_191F_0216` -> `func_0409D6_colony_sz_571` @1
-- `overlay_call_191F_0254` -> `func_02EE34_logic_sz_12` @1
 - `overlay_call_191F_02B2` -> `func_041080_arrive_or_block` @2
 - `overlay_call_191F_02C0` -> `func_06076A_pick_from_power_list_menu` @1
 - `overlay_call_191F_02CE` -> `func_05FE60_set_active_tile_ptr` @1
@@ -399,24 +378,21 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_08DE` -> `func_06A700_colony_site_report_dialog` @1
 - `overlay_call_191F_08F8` -> `func_00DB80_op_sz_226` @2
 - `overlay_call_191F_0902` -> `func_06AA88_terrain_detail_dialog` @1
-- `overlay_call_191F_0934` -> `func_0694AE_cargo_select_dialog` @1
 - `overlay_call_191F_0942` -> `func_0696C6_unit_detail_dialog` @1
 - `overlay_call_191F_0996` -> `func_02EB46_logic_sz_13` @2
 - `overlay_call_191F_09B2` -> `func_02EB78_text_sz_55` @4
 - `overlay_call_191F_0A4A` -> `func_05FE7A_set_active_tile_subfield_ptr` @1
-- `overlay_call_191F_0A74` -> `func_042138_power_census` @1
+- `overlay_call_191F_0AE0` -> `func_034318_runtime_chain_289` @1
 - `overlay_call_191F_0B42` -> `func_0324F2` @3
 - `overlay_call_191F_0C06` -> `func_03334E` @1
 - `overlay_call_191F_0CD8` -> `boycott_is_active` @1
 - `overlay_call_191F_0D02` -> `func_032914` @3
 - `overlay_call_191F_0EC2` -> `func_041B76_step_goto` @1
 - `overlay_call_191F_0ED0` -> `func_00F38A_logic_sz_46` @5
-- `overlay_call_191F_0F8E` -> `func_03ADA6_rtl_sz_1362` @1
 - `overlay_call_1A1F_0150` -> `func_03F90E_logic_sz_50` @2
 - `overlay_call_1A1F_01F4` -> `func_0404B0_runtime_secondary_201` @2
 - `overlay_call_1A1F_0202` -> `func_041034_unit_on_colony` @2
 - `overlay_call_1A1F_021C` -> `func_0603DA_map_cell_nibble_at_index` @1
-- `overlay_call_1A1F_022A` -> `func_060382_tile_terrain_nibble` @1
 - `overlay_call_1A1F_0246` -> `func_041C00_sentry_scan` @2
 - `overlay_call_1A1F_0254` -> `func_041C64_friendly_unit_at` @3
 - `overlay_call_1A1F_0262` -> `func_041CBE_goto_trace` @1
@@ -450,17 +426,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_0E9E` -> `func_076E50_stream_open` @4
 - `overlay_call_1A1F_0EAC` -> `func_07706C_stream_dispatch_state` @2
 - `overlay_call_1A1F_0F26` -> `func_012C8C_rtl_sz_60` @2
-- `ovly_191F_0AE0` -> `func_034318_runtime_chain_289` @1
 - `ovly_tile_query_7EA` -> `func_006B46_op_sz_365` @2
 - `ovly_unit_spawned_181F_894` -> `func_00693A_logic_sz_14` @3
 - `region_fill` -> `func_00DCD4_op_sz_34` @4
-- `str_append` -> `func_002D74_logic_sz_218` @9
+- `str_append` -> `func_0028B0_append_space` @1
 - `str_begin` -> `func_002992_rtl_sz_26` @2
+- `str_cat2` -> `func_0028F2_append_colon` @1
 - `str_width` -> `func_002AC6_logic_sz_27` @2
 - `text_measure` -> `func_00E6A6_logic_sz_72` @4
 - `ttl_blit_border` -> `func_00E146_logic_sz_97` @7
 - `ttl_compose_to_video` -> `func_010582_logic_sz_28` @3
-- `ui_show_message2` -> `func_034318_runtime_chain_289` @1
 - `unit_first_of_owner` -> `func_0066CC_op_sz_57` @2
 
 ### BODY-MISSING — 134
@@ -830,8 +805,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 606
+### NAMED-GAP — 601
 
+- `DG8`
 - `__aFldiv`
 - `__aFlmul`
 - `aFldiv_0F92`
@@ -1057,7 +1033,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `hud_helper_6D64`
 - `hud_icon`
 - `hud_minimap_render`
-- `hud_print_7e`
 - `hud_print_88`
 - `hud_text`
 - `icon_at`
@@ -1349,12 +1324,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ss_load`
 - `str_append_num`
 - `str_cat`
-- `str_cat2`
 - `str_cat_num`
-- `str_clear`
-- `str_end`
-- `str_finish`
-- `str_pad`
 - `strcat_far`
 - `strfmt`
 - `strfmt_far`
@@ -1439,7 +1409,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `wp_resfog_rel`
 - `wp_terrain_rel`
 
-### THUNK-UNRESOLVED — 42
+### THUNK-UNRESOLVED — 31
 
 - `overlay_call_0427_0002`
 - `overlay_call_0A4E_0008`
@@ -1456,18 +1426,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_0D1D_291C`
 - `overlay_call_181F_000E`
 - `overlay_call_181F_0018`
-- `overlay_call_181F_007E`
 - `overlay_call_181F_0088`
-- `overlay_call_181F_010A`
-- `overlay_call_181F_011E`
-- `overlay_call_181F_0128`
-- `overlay_call_181F_0146`
-- `overlay_call_181F_015A`
-- `overlay_call_181F_0164`
-- `overlay_call_181F_0196`
-- `overlay_call_181F_01B4`
-- `overlay_call_181F_01BE`
-- `overlay_call_181F_01DC`
 - `overlay_call_181F_0550`
 - `overlay_call_181F_0582`
 - `overlay_call_181F_0B0A`

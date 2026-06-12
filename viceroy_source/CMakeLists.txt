@@ -96,6 +96,7 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         src/platform/naval_glue.c
         src/platform/dgroup_image.c
         src/platform/timer.c
+        src/platform/dos_isr_glue.c
         "${VICEROY_GEN}/linkfloor_stubs.c"
         "${VICEROY_GEN}/thunk_keepalive.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/thunk_keepalive_extra.c"
