@@ -1301,26 +1301,23 @@ int func_072CC2_layout_slot_dialog_rows(uint16_t list_arg, uint16_t arg8)
  * ============================================================================ */
 
 /* ============================================================================
- * func_073270 — parse_text_records   [DONE — control flow BYTE_VERIFIED]
+ * func_073270 — FILE-PATTERN SCANNER (the load/save slot picker list builder)
  * ----------------------------------------------------------------------------
- * Parses a delimited TEXT block (the file handle / buffer in arg2=[bp+0xA]) into
- * a table of fixed-stride records held in the 0xC4-byte stack frame at [bp-0xC4].
- * Uses the MSC token scanner pair 0x0D1D:0xE63 (find next field, into [bp-0x42])
- * and 0x0D1D:0xE58 (advance token).  For each parsed line it computes the record
- * slot stride 0x0A (`idx*0xA + 9`) and copies the token (strcpy 0x0D1D:0x7E4)
- * into the slot, bounded by a running count.  At the tail it walks the parsed
- * records through 0x191F:0x176/0x16A/0x182/0x1A8 (the list-population helpers),
- * so the parsed text becomes a selectable list.
- *
- * @asm 0x073292  lcall 0x0D1D:0xE63 scan first field (->[bp-0x42]) ; 0 -> exit
- * @asm 0x0732A9  lcall 0x0D1D:0xE58 advance ; loop
- * @asm 0x0732BC  slot = (si+9)/0xA ; per-record stride 0xA
- * @asm 0x0732ED  lcall 0x0D1D:0xE63 next field ; @asm 0x073326 strcpy(slot, token)
- * @asm 0x073364  lcall 0x191F:0x182 (list)  @asm 0x07338C/0x0733E5 0x191F:0x176 (rows)
- * @asm 0x0733F6  lcall 0x191F:0x16A         @asm 0x07341C/0x073467 0x191F:0x1A8 finalise
+ * IDENTITY CORRECTED 2026-06-12 (byte read @0x073289..0x0732B3): the "MSC
+ * token scanner" reading was wrong — the calls are the DOS DIRECTORY pair:
+ *   0x0D1D:0xE63 = file 0x10433 = _dos_findfirst(path, attr, finfo)
+ *     @0x073289 push &[bp-0x42](finfo); push 0(attr); push [bp+0xA](pattern)
+ *   0x0D1D:0xE58 = file 0x10428 = _dos_findnext(finfo) (entry ahead of
+ *     findfirst's shared body; 1 arg @0x0732A8)
+ * So arg2=[bp+0xA] is a FILENAME PATTERN (e.g. the GAME*.SAV mask) and the
+ * loop enumerates MATCHING FILES into stride-0xA name slots; the
+ * 0x191F:0x176/0x16A/0x182/0x1A8 tail turns them into the selectable list
+ * (the load-game picker).  Both DOS functions are ported (iolib/file.c);
+ * the body below still calls the 0-arg stubs — RE-PORT with the real args
+ * + finfo struct when Phase 6.1 exercises the picker against real saves.
  * ============================================================================ */
-extern int overlay_call_0D1D_0E63(void);  /* 0x0D1D:0x0E63 -- scan field */
-extern int overlay_call_0D1D_0E58(void);  /* 0x0D1D:0x0E58 -- advance token */
+extern int overlay_call_0D1D_0E63(void);  /* 0x0D1D:0x0E63 = _dos_findfirst (args pending re-port) */
+extern int overlay_call_0D1D_0E58(void);  /* 0x0D1D:0x0E58 = _dos_findnext  (args pending re-port) */
 extern int overlay_call_191F_0176(void);  /* 0x191F:0x0176 -- list add row */
 
 int func_073270_parse_text_records(uint16_t arg6, uint16_t arg8, uint16_t src, uint16_t argC)

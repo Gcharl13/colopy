@@ -1118,7 +1118,12 @@ int func_00E2B0_rtl_sz_159(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
         overlay_call_0D1D_03F4();    /* @asm 0x00E327 close handle */
         if (flag == 0) {             /* @asm cmp [bp-0x2c],0; jne 0xE349 */
             DG8(0x263E + slot) = 0;  /* @asm 0x00E338 release the slot */
-            overlay_call_0D1D_0E4A();/* @asm 0x00E341 cleanup */
+            overlay_call_0D1D_0E4A();/* @asm 0x00E341 = _unlink(&[bp-0x2A])
+                * -- deletes the TEMP RESOURCE FILE whose path the 0x7E4 +
+                * 0x09F6:0x0002 chain above built into the local buffer.
+                * Stays a hit-counting stub until that string chain is
+                * byte-restored (the buffer doesn't exist in this port yet);
+                * _unlink itself is ported (iolib/file.c). */
         }
     }
     (void)arg3_bp_0C;

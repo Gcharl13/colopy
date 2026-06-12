@@ -4,22 +4,23 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 537 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
-| RESOLVED-LIBC | 38 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1411 | hit-counting no-op floor (the remaining worklist) |
+| RESOLVED-REAL | 550 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
+| WEAK-STUBBED | 1406 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 609 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 606 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 397 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 227 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 134 | port the original func_0XXXXX body |
-| THUNK-UNRESOLVED | 44 | no resolved target yet; whois + port/wire |
+| THUNK-UNRESOLVED | 42 | no resolved target yet; whois + port/wire |
 
 ## RESOLVED-LIBC (host C runtime satisfies these by design)
 
+- `__errno_location`
 - `__fprintf_chk`
 - `__memcpy_chk`
 - `__open_2`
@@ -31,6 +32,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `__strncpy_chk`
 - `atoi`
 - `close`
+- `exit`
 - `fclose`
 - `fgetc`
 - `fgets`
@@ -828,7 +830,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 609
+### NAMED-GAP — 606
 
 - `__aFldiv`
 - `__aFlmul`
@@ -1275,8 +1277,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `page1C_stream_buf`
 - `page1C_stream_notify`
 - `page1C_stream_op_default`
-- `panel_helper_1E1D`
-- `panel_helper_1E6D`
 - `pcspk_init`
 - `pcspk_play_melody`
 - `pcspk_play_sample`
@@ -1408,7 +1408,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `unit_class_check2`
 - `unit_detach_from_settlement`
 - `unit_figure_blit_64`
-- `unit_next`
 - `unit_record`
 - `unit_set_type`
 - `unit_type_of`
@@ -1440,12 +1439,11 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `wp_resfog_rel`
 - `wp_terrain_rel`
 
-### THUNK-UNRESOLVED — 44
+### THUNK-UNRESOLVED — 42
 
 - `overlay_call_0427_0002`
 - `overlay_call_0A4E_0008`
 - `overlay_call_0D1C_0000`
-- `overlay_call_0D1D_030D`
 - `overlay_call_0D1D_07E4`
 - `overlay_call_0D1D_0842`
 - `overlay_call_0D1D_0C56`
@@ -1454,7 +1452,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_0D1D_0E63`
 - `overlay_call_0D1D_113C`
 - `overlay_call_0D1D_117E`
-- `overlay_call_0D1D_1E7A`
 - `overlay_call_0D1D_2916`
 - `overlay_call_0D1D_291C`
 - `overlay_call_181F_000E`
