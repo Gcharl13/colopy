@@ -586,3 +586,31 @@ EXTERN(naval_list_panel)
  * RETURNED, silently continuing fatal paths).  EXTERN forces the archive
  * member out so the strong T beats the weak stub. */
 EXTERN(overlay_call_0D1D_030D)
+
+/* Phase 4.3 mass pass 1 wiring (2026-06-12): canonical thunks whose call
+ * sites now ALL pass the EXE-extracted arguments (tools/arg_restore.py +
+ * the safety triage).  Targets verified as T symbols via nm. */
+PROVIDE(overlay_call_0D1D_0942 = func_00FF12_rtl_sz_87);
+EXTERN(func_00FF12_rtl_sz_87)
+PROVIDE(overlay_call_181F_00A6 = func_00273E_logic_sz_10);
+EXTERN(func_00273E_logic_sz_10)
+PROVIDE(overlay_call_181F_04A2 = func_0050FC_logic_sz_11);
+EXTERN(func_0050FC_logic_sz_11)
+PROVIDE(overlay_call_181F_04B6 = func_00513C_logic_sz_26);
+EXTERN(func_00513C_logic_sz_26)
+PROVIDE(overlay_call_181F_04FC = func_0051D2_logic_sz_62);
+EXTERN(func_0051D2_logic_sz_62)
+PROVIDE(overlay_call_181F_0AA6 = func_00994C_logic_sz_40);
+EXTERN(func_00994C_logic_sz_40)
+PROVIDE(overlay_call_181F_0CAE = func_00913C_logic_sz_72);
+EXTERN(func_00913C_logic_sz_72)
+PROVIDE(overlay_call_181F_0DC2 = func_00C07A_logic_sz_32);
+EXTERN(func_00C07A_logic_sz_32)
+PROVIDE(overlay_call_181F_0DD6 = func_00C09A_logic_sz_19);
+EXTERN(func_00C09A_logic_sz_19)
+PROVIDE(overlay_call_181F_0DEA = func_00C0D0_logic_sz_57);
+EXTERN(func_00C0D0_logic_sz_57)
+PROVIDE(overlay_call_181F_0EA4 = func_00C646_rtl_sz_74);
+EXTERN(func_00C646_rtl_sz_74)
+PROVIDE(overlay_call_191F_0F8E = func_03ADA6_rtl_sz_1362);
+EXTERN(func_03ADA6_rtl_sz_1362)
