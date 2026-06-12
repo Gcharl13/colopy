@@ -677,7 +677,7 @@ int func_008770_colony_sz_132(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     unsigned ctxp;
     int i;
 
-    if (overlay_call_037F_000A(/* arg0, arg1 */) == 0)   /* @asm 0x877A tile valid? */
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) == 0)   /* @asm 0x877A tile valid? */
         return 0;
 
     limit = (uint8_t)DG8((uint16_t)func_008720() + 0x329);  /* @asm 0x878D worked-tile count */

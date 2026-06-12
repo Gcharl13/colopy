@@ -257,13 +257,14 @@ EXTERN(func_00E76A_logic_sz_505)
  *   overlay_call_03E4_0074 file 0x62B4 -> func_0062B4_op_sz_39 is_sea_tile
  *     (terrain&0x1F in {0x19, 0x1A}; called 0x181F:0x768 in naval_screen.c)
  */
-/* Phase 4.1 note: overlay_call_037F_000A/03E4 and overlay_call_03E4_0074 are
- * terrain/bounds checks (func_005BFA / func_005FD4 / func_0062B4).  Wiring
- * them via PROVIDE caused segfaults because many callers use void() declarations
- * that don't push args, so the real 2-arg functions read garbage stack values.
- * These need the callers to be fixed to pass correct args (Phase 4.3) before
- * the PROVIDE aliases can be enabled safely.  Kept as weak stubs for now.
- * Forces archive extraction of the target bodies for cross-referencing. */
+/* Phase 4.3 (2026-06-12): caller arity fixed — all callers of these three stubs
+ * now pass (uint16_t x, uint16_t y) explicitly; PROVIDE aliases are now safe.
+ *   overlay_call_037F_000A -> func_005BFA_logic_sz_49 is_xy_in_map_bounds(x,y)
+ *   overlay_call_037F_03E4 -> func_005FD4_map_xy_bounds_or_neg1_alt(x,y)
+ *   overlay_call_03E4_0074 -> func_0062B4_op_sz_39 is_sea_tile(x,y) */
+PROVIDE(overlay_call_037F_000A = func_005BFA_logic_sz_49);
+PROVIDE(overlay_call_037F_03E4 = func_005FD4_map_xy_bounds_or_neg1_alt);
+PROVIDE(overlay_call_03E4_0074 = func_0062B4_op_sz_39);
 EXTERN(func_005BFA_logic_sz_49)
 EXTERN(func_005FD4_map_xy_bounds_or_neg1_alt)
 EXTERN(func_0062B4_op_sz_39)

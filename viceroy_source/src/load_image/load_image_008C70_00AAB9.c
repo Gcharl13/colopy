@@ -144,7 +144,7 @@ int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      * 181F:03FE assert (message ptr 0x0350) before returning -1. */
     int16_t result = -1;
     int i;
-    if (overlay_call_037F_000A(/* arg0, arg1 */) == 0)     /* tile in bounds? */
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) == 0)     /* tile in bounds? */
         return -1;
     if (overlay_call_037F_0358(/* arg0, arg1 */) < 0)      /* colony on tile? */
         return -1;
@@ -1038,7 +1038,7 @@ int func_0099AE_op_sz_63(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      * terrain/feature code (037F:010E & 0x1F) lies within the inclusive band
      * [arg2, arg3] (unsigned byte compares); otherwise 0.  Overlay calls shown
      * 0-arg to match overlay_externs.h; real args in comment. */
-    if (overlay_call_037F_000A(/* arg0, arg1 */) != 0) {
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) {
         unsigned terrain = (unsigned)(overlay_call_037F_010E(/* arg0, arg1 */) & 0x1F);
         if (terrain >= (uint8_t)arg2_bp_0A && terrain <= (uint8_t)arg3_bp_0C)
             return 1;
@@ -1110,7 +1110,7 @@ int func_009A32_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      * Returns 1 iff overlay 0x037F:0x000A(arg0,arg1) is non-zero AND the low byte
      * of overlay 0x037F:0x0142(arg0,arg1) shares a set bit with arg2's low byte.
      * Overlay calls shown 0-arg to match overlay_externs.h; real args in comment. */
-    if (overlay_call_037F_000A(/* arg0, arg1 */) != 0) {
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) {
         int mask = overlay_call_037F_0142(/* arg0, arg1 */);
         if ((arg2_bp_0A & mask & 0xFF) != 0)
             return 1;
@@ -1540,8 +1540,8 @@ int func_00A994_colony_sz_293(void)
                 if (resolved >= 0) {
                     int scaled = overlay_call_05DC_006A(DG16(0x8D52));
                     if ((int16_t)DG16(0x8DB8) <= scaled) {
-                        uint16_t near *p = (uint16_t near *)DG16(0x8D4A);
-                        result = (int16_t)(uint8_t)((uint8_t near *)p)[2];
+                        uint8_t near *p = (uint8_t near *)DG_PTR(DG16(0x8D4A));
+                        result = (int16_t)p[2];
                     }
                 }
             }

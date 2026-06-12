@@ -877,15 +877,14 @@ int func_00704C_op_sz_205(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
      * empty; a non-empty 0x03E4 probe also advances `base` to `rval`). A value
      * counts only when >=0, != arg2 and rval==base; the first such is stored in
      * 0x8CFA and the scan stops. Returns 1 iff found. Overlay externs are 0-arg. */
-    int16_t base = (int16_t)overlay_call_03E4_0074(/* x, y */);
-    int flag = ((int16_t)overlay_call_037F_03E4(/* x, y */) >= 0) ? 1 : 0;
+    int16_t base = (int16_t)overlay_call_03E4_0074(arg0_bp_06, arg1_bp_08);
+    int flag = ((int16_t)overlay_call_037F_03E4(arg0_bp_06, arg1_bp_08) >= 0) ? 1 : 0;
     int k;
     DGS16(0x8CFA) = -1;
     for (k = 0; k < 8; k++) {
         int16_t nx = (int16_t)((int)DGS8(0xB4 + k) + (int16_t)arg0_bp_06);
         int16_t ny = (int16_t)((int)DGS8(0xBE + k) + (int16_t)arg1_bp_08);
         int16_t rval, v;
-        (void)nx; (void)ny;
         rval = flag ? base : (int16_t)overlay_call_03E4_0074(nx, ny);
         v = (int16_t)overlay_call_037F_03E4(nx, ny);
         if (v < 0)
@@ -985,14 +984,13 @@ int func_007178_op_sz_192(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
      * >=0, differs from arg2, AND the neighbour is in the SAME region (its
      * 0x03E4:0x0074 == base). The first qualifying value is stored in 0x8CFA and
      * the scan stops; returns 1 iff one was found. Overlay externs are 0-arg. */
-    int16_t base = (int16_t)overlay_call_03E4_0074(/* x, y */);
+    int16_t base = (int16_t)overlay_call_03E4_0074(arg0_bp_06, arg1_bp_08);
     int i;
     DGS16(0x8CFA) = -1;
     for (i = 0; i < 8 && DGS16(0x8CFA) < 0; i++) {
         int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
         int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
         int16_t v;
-        (void)nx; (void)ny;
         v = (int16_t)overlay_call_037F_0314(nx, ny);
         if (v >= 0 && v != (int16_t)arg2_bp_0A
             && (int16_t)overlay_call_03E4_0074(nx, ny) == base)
@@ -1035,7 +1033,7 @@ int func_00723E_op_sz_48(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      * func_007178 to look for a qualifying neighbour value; otherwise returns 0.
      * Overlay extern is 0-arg (real args arg0,arg1 in @asm). */
     int16_t result = 0;
-    if ((int16_t)overlay_call_037F_03E4(/* arg0, arg1 */) < 0)
+    if ((int16_t)overlay_call_037F_03E4(arg0_bp_06, arg1_bp_08) < 0)
         result = (int16_t)func_007178(arg0_bp_06, arg1_bp_08, arg2_bp_0A);
     return result;
 }
@@ -1072,12 +1070,11 @@ int func_00726E_op_sz_116(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
      * map layer 0x037F:0x0314 or 0x037F:0x0358 equals arg2, else 0. Overlay
      * externs are 0-arg (real args nx,ny in @asm). */
     int16_t result = 0;
-    if (overlay_call_037F_000A(/* x, y */) != 0) {
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) {
         int i;
         for (i = 0; i < 8; i++) {
             int16_t nx = (int16_t)((int)DGS8(0xB4 + i) + (int16_t)arg0_bp_06);
             int16_t ny = (int16_t)((int)DGS8(0xBE + i) + (int16_t)arg1_bp_08);
-            (void)nx; (void)ny;
             result = ((int16_t)overlay_call_037F_0314(nx,ny) == (int16_t)arg2_bp_0A) ? 1 : 0;
             result |= ((int16_t)overlay_call_037F_0358(nx,ny) == (int16_t)arg2_bp_0A) ? 1 : 0;
             if (result != 0)

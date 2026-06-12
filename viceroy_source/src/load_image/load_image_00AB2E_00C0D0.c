@@ -25,7 +25,7 @@ extern int overlay_call_037F_02A0(void);  /* @ref RTLink seg 0x037F off 0x02A0 *
 extern int overlay_call_03E4_003A(void);  /* @ref RTLink seg 0x03E4 off 0x003A */
 extern int overlay_call_05DC_00E0(void);  /* @ref RTLink seg 0x05DC off 0x00E0 */
 extern int overlay_call_0981_0000(void);  /* @ref RTLink seg 0x0981 off 0x0000 */
-extern int overlay_call_03E4_0074(void);  /* @ref RTLink seg 0x03E4 off 0x0074 */
+/* overlay_call_03E4_0074 declared in overlay_externs.h with (uint16_t x, uint16_t y) */
 extern int overlay_call_0BAA_0006(void);  /* @ref RTLink seg 0x0BAA off 0x0006 (sprite blit) */
 extern int overlay_call_0C36_000A(void);  /* @ref RTLink seg 0x0C36 off 0x000A */
 extern int overlay_call_181F_0E2A(void);  /* @ref RTLink seg 0x181F off 0x0E2A */
@@ -759,9 +759,8 @@ int func_00B900_colony_sz_618(uint16_t arg0_bp_06)
         while (found == 0 && cnt > k) {             /* @asm test 0xBA11/0xB9BC */
             int x = (int8_t)DG8(0xDE + k) + (int8_t)*(uint8_t far *)((char far *)ctx + 1); /* @asm 0xB9C8 [bx+0xDE]+ctx[1] */
             int y = (int8_t)DG8(0xC8 + k) + (int8_t)*(uint8_t far *)((char far *)ctx + 0); /* @asm 0xB9DC [bx+0xC8]+ctx[0] */
-            (void)x; (void)y;
-            if (overlay_call_037F_000A() != 0 &&    /* @asm 0xB9EB lcall 037F:0xA(x,y) */
-                overlay_call_03E4_0074() != 0)      /* @asm 0xB9FD lcall 03E4:0x74(y,x) */
+            if (overlay_call_037F_000A((uint16_t)y, (uint16_t)x) != 0 &&    /* @asm 0xB9EB lcall 037F:0xA(col=y,row=x) */
+                overlay_call_03E4_0074((uint16_t)y, (uint16_t)x) != 0)     /* @asm 0xB9FD lcall 03E4:0x74(col=y,row=x) */
                 found = 1;                          /* @asm 0xBA09 [bp-2]=1 */
             k++;                                    /* @asm 0xBA0E inc [bp-4] */
         }
@@ -1079,10 +1078,8 @@ int func_00BD28_op_sz_34(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      *      returns non-zero do we commit the pair to the DGROUP word globals
      *      0x8540 (= arg0) and 0x853E (= arg1).  These sit immediately after the
      *      map width/height words 0x853A/0x853C (DGROUP_MEMORY_MAP §map scalars)
-     *      and are the pair read back by func_00C00A.
-     * NOTE: overlay_call_037F_000A is declared (void); the 2 pushed args follow
-     *      the project's auto-extern convention (args travel on the stack). */
-    if (overlay_call_037F_000A() != 0) {        /* @asm 0x00BD31 / 0x00BD38 / 0x00BD3A */
+     *      and are the pair read back by func_00C00A. */
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) { /* @asm 0x00BD31 / 0x00BD38 / 0x00BD3A */
         DG16(0x8540) = arg0_bp_06;  /* @asm 0x00BD3C mov ax,[bp+6]; 0x00BD3F mov [0x8540],ax */
         DG16(0x853E) = arg1_bp_08;  /* @asm 0x00BD42 mov ax,[bp+8]; 0x00BD45 mov [0x853E],ax */
         return arg1_bp_08;                      /* ax = [bp+8] at leave/retf */
@@ -1129,7 +1126,7 @@ int func_00BD4A_op_sz_404(void)
         overlay_call_181F_0E46();
 
     /* @asm 0xBD8A lcall 037F:0xA([0x8540],[0x853E]) — visible/valid probe */
-    if (overlay_call_037F_000A() != 0) {
+    if (overlay_call_037F_000A((uint16_t)DG16(0x8540), (uint16_t)DG16(0x853E)) != 0) {
         /* @asm 0xBD9E lcall 181F:0xE38([0x8540],[0x853E],1,1,1,
          *      ([0x53A2]!=0 ? -1 : [0x5396]), [0x929C]) */
         (void)((DG16(0x53A2) != 0) ? 0xFFFF : DG16(0x5396)); /* @asm 0xBDA2..0xBDB1 selected arg */
@@ -1208,7 +1205,7 @@ int func_00BD4A_op_sz_404(void)
 int func_00BEDE_op_sz_93(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
     /* @asm 0xBEE1 lcall 037F:0xA(arg0,arg1) — only proceed if the tile is valid */
-    if (overlay_call_037F_000A() != 0) {                /* @asm 0xBEEE or ax,ax / je 0xBF39 */
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) { /* @asm 0xBEEE or ax,ax / je 0xBF39 */
         if (DG16(0x5390) == 1) {                        /* @asm 0xBEF2 cmp [0x5390],1 / jne 0xBF26 */
             if (arg2_bp_0A != 0 && DG16(0x929C) != 0)   /* @asm 0xBEF9/0xBEFF guards */
                 func_00BD4A_op_sz_404();                /* @asm 0xBF07 call 0xBD4A (erase old blink) */
@@ -1357,7 +1354,7 @@ int func_00C00A_op_sz_112(uint16_t arg0_bp_06)
     int16_t cy1 = (int16_t)(DG16(0x853E) + (int8_t)DG8(arg0_bp_06 + 0xBE)); /* @asm 0xC031 [bp-0xA] */
 
     /* @asm 0xC03D lcall 037F:0xA(cx1, cy1) — destination tile valid? */
-    if (overlay_call_037F_000A() == 0)                   /* @asm 0xC045 or ax,ax / jne 0xC04C */
+    if (overlay_call_037F_000A((uint16_t)cx1, (uint16_t)cy1) == 0) /* @asm 0xC045 or ax,ax / jne 0xC04C */
         ok = 0;                                          /* @asm 0xC049 [bp-2]=0 */
 
     if (ok != 0) {                                       /* @asm 0xC04C cmp [bp-2],0 / je 0xC078 */

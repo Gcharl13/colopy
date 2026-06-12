@@ -127,7 +127,7 @@ int func_005E90_op_sz_64(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      *      -> result = that nibble.  Returns result. */
     if (func_005BFA_logic_sz_49(arg0_bp_06, arg1_bp_08) == 0)
         return -1;
-    if (overlay_call_03E4_0074() /* @asm args x=[bp+6], y=[bp+8] */ != 0)
+    if (overlay_call_03E4_0074(arg0_bp_06, arg1_bp_08) /* @asm args x=[bp+6], y=[bp+8] */ != 0)
         return -1;
     return (uint8_t)func_005DBA_logic_sz_17(arg0_bp_06, arg1_bp_08);
 }
@@ -608,7 +608,7 @@ int func_00627A_op_sz_57(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
      *      je 0x62ad -> if probe false, return 0x19.
      * @asm 0x006299 lcall 0x37f:0x10e (x,y) (tile/unit flag byte); sub ah,ah;
      * @asm 0x0062A5 push it; call 0x624e -> si = func_00624E(flag).  Returns si. */
-    if (overlay_call_037F_000A() /* @asm args x,y */ == 0)
+    if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) /* @asm args x,y */ == 0)
         return 0x19;
     return func_00624E_logic_sz_8(
         (uint8_t)overlay_call_037F_010E() /* @asm args x,y */);
@@ -724,7 +724,7 @@ void func_0063B6_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         /* @asm 0x0063EC col0 reloaded each row; col = col0-5 .. col0+5. */
         for (cx = (int16_t)(col0 - 5); cx <= (int16_t)(col0 + 5); cx++) {
             /* @asm 0x0063FE if (overlay 0x037F:0x000A(cx,ry) == 0) skip this tile. */
-            if (overlay_call_037F_000A() == 0)
+            if (overlay_call_037F_000A((uint16_t)cx, (uint16_t)ry) == 0)
                 continue;
 
             /* @asm 0x00640E es:bx = overlay 0x037F:0x02E0(cx,ry);
@@ -833,7 +833,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
     int16_t dy;
 
     /* @asm 0x006477 if (0x037F:0x000A(x,y) == 0) return  (center not occupied). */
-    if (overlay_call_037F_000A() == 0)
+    if (overlay_call_037F_000A((uint16_t)cx0, (uint16_t)cy0) == 0)
         return;
     /* @asm 0x006486 if (owner >= 4) return. */
     if (owner >= 4)
@@ -852,10 +852,9 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
             int16_t cur_x = (int16_t)(cx0 + dx);   /* @asm [bp-2] */
             int16_t cur_y = (int16_t)(cy0 + dy);   /* @asm di */
             int edge;                              /* @asm [bp-0xa] */
-            (void)cur_y;
 
             /* @asm 0x0064DC if (0x037F:0x000A(cur_x,cur_y) == 0) skip this tile. */
-            if (overlay_call_037F_000A() == 0)
+            if (overlay_call_037F_000A((uint16_t)cur_x, (uint16_t)cur_y) == 0)
                 continue;
 
             /* @asm 0x0064EB edge = (abs(dy) > 1 || abs(dx) > 1) ? 1 : 0. */
@@ -867,7 +866,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
 
             if (edge != 0) {
                 /* @asm 0x006527 r = 0x03E4:0x074(cur_x,cur_y); if (r != match_a) skip. */
-                int16_t r = (int16_t)overlay_call_03E4_0074();
+                int16_t r = (int16_t)overlay_call_03E4_0074((uint16_t)cur_x, (uint16_t)cur_y);
                 if (r != (int16_t)match_a)
                     continue;
                 /* @asm 0x006538 if (r == 0) require zone(cur)==base_zone, else paint. */
@@ -884,7 +883,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
                     && owner < 4
                     && DG8(0x543F + (unsigned)owner * 0x34) == 0) {
                     /* @asm 0x006568 if (0x03E4:0x074(cur_x,cur_y) != 0) ... */
-                    if (overlay_call_03E4_0074() != 0) {
+                    if (overlay_call_03E4_0074((uint16_t)cur_x, (uint16_t)cur_y) != 0) {
                         /* @asm 0x00657C if (0x037F:0x0142(cur_x,cur_y) & 0x20) fire. */
                         if ((overlay_call_037F_0142() & 0x20) != 0) {
                             DG16(0x01E8) = 1;            /* @asm 0x006588 */
@@ -1053,7 +1052,7 @@ int func_0066CC_op_sz_57(uint16_t x_ax /* in AX */, uint16_t y_dx /* in DX */)
     int16_t head;
 
     /* @asm 0x0066DF occ = 0x037F:0x000A(x,y). */
-    occ = (int16_t)overlay_call_037F_000A();
+    occ = (int16_t)overlay_call_037F_000A((uint16_t)x, (uint16_t)y);
     if (occ != 0) {
         /* @asm 0x0066F0 if (0x037F:0x0314(x,y) >= 0) return -1 (map already has head). */
         if ((int16_t)overlay_call_037F_0314() >= 0)

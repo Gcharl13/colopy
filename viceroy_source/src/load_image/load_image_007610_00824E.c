@@ -214,7 +214,7 @@ int func_00772E_op_sz_149(uint16_t arg0_bp_06)
             if ((uint8_t)((DG8(bx + 0x03) & 0x0F) - DG8(bx + 0x00)) != 0x14) {
                 /* @asm 0x778A r = overlay 0x037F:0x03E4(map_x, map_y);
                  *      if (r < 0) { ... re-home & recurse ... } */
-                if (overlay_call_037F_03E4() < 0) {
+                if (overlay_call_037F_03E4((uint16_t)DG8(bx + 0x00), (uint16_t)DG8(bx + 0x01)) < 0) {
                     int16_t hx = (int16_t)DG8(bx + 0x00);   /* di  */
                     int16_t hy = (int16_t)DG8(bx + 0x01);   /* [bp-2] */
                     int16_t res;
@@ -276,7 +276,7 @@ int func_00772E_op_sz_149(uint16_t arg0_bp_06)
         /* @asm 0x7881 if (this_flag) { if (overlay 0x03E4:0x0074(map_x,map_y)!=0) di=1
          *      else skip cost (di unchanged). } */
         if (this_flag) {
-            if (overlay_call_03E4_0074() != 0)
+            if (overlay_call_03E4_0074((uint16_t)DG8(bx + 0x00), (uint16_t)DG8(bx + 0x01)) != 0)
                 di = 1;
         }
 
@@ -453,7 +453,7 @@ int func_0079A0_op_sz_119(uint16_t arg0_ax /* unit index, in AX */)
         return 0;
     base = 0x3144 + (unsigned)si * 0x1C;
     /* @asm push map_y; push map_x; call 0x037F:0x000A — on-map test (args documented) */
-    if (overlay_call_037F_000A() == 0)
+    if (overlay_call_037F_000A((uint16_t)DG8(base + 0x00), (uint16_t)DG8(base + 0x01)) == 0)
         return 0;
     if ((DG8(base + 0x03) & 0x0F) != DG8(0x5394))   /* owner != current player */
         return 0;
@@ -573,7 +573,7 @@ int func_007A80_op_sz_143(uint16_t arg0_ax /* unit index, in AX */)
         return 0;
     base = 0x3144 + (unsigned)si * 0x1C;
     /* @asm push map_y; push map_x; call 0x037F:0x000A — on-map test (args documented) */
-    if (overlay_call_037F_000A() == 0) {
+    if (overlay_call_037F_000A((uint16_t)DG8(base + 0x00), (uint16_t)DG8(base + 0x01)) == 0) {
         if (DG8(base + 0x08) != 2)                   /* off-map: must be orders==2 */
             return 0;
         if ((uint8_t)((DG8(base + 0x03) & 0x0F) - DG8(base + 0x00)) != 0x14)
