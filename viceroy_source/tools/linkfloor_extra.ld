@@ -614,3 +614,29 @@ PROVIDE(overlay_call_181F_0EA4 = func_00C646_rtl_sz_74);
 EXTERN(func_00C646_rtl_sz_74)
 PROVIDE(overlay_call_191F_0F8E = func_03ADA6_rtl_sz_1362);
 EXTERN(func_03ADA6_rtl_sz_1362)
+
+/* Phase 4.3 mass pass 2 wiring (2026-06-12): next tranche of canonical
+ * thunks whose sites all pass EXE-true args (triage-verified, nm-checked). */
+PROVIDE(overlay_call_181F_03EA = func_005160_op_sz_45);
+EXTERN(func_005160_op_sz_45)
+PROVIDE(overlay_call_181F_0498 = func_0050F0_logic_sz_11);
+EXTERN(func_0050F0_logic_sz_11)
+PROVIDE(overlay_call_181F_05FA = func_035B06_sec_sz_118);
+EXTERN(func_035B06_sec_sz_118)
+PROVIDE(overlay_call_181F_07F4 = func_007A80_op_sz_143);
+EXTERN(func_007A80_op_sz_143)
+PROVIDE(overlay_call_181F_0844 = func_00693A_logic_sz_14);
+PROVIDE(overlay_call_181F_0862 = func_0075E4_logic_sz_26);
+EXTERN(func_0075E4_logic_sz_26)
+PROVIDE(overlay_call_181F_097A = func_007A20_logic_sz_96);
+EXTERN(func_007A20_logic_sz_96)
+PROVIDE(overlay_call_181F_0A56 = func_00822A_logic_sz_36);
+EXTERN(func_00822A_logic_sz_36)
+PROVIDE(overlay_call_181F_0B5A = func_00887C_logic_sz_21);
+EXTERN(func_00887C_logic_sz_21)
+PROVIDE(overlay_call_191F_0254 = func_02EE34_logic_sz_12);
+EXTERN(func_02EE34_logic_sz_12)
+PROVIDE(overlay_call_191F_0A74 = func_042138_power_census);
+EXTERN(func_042138_power_census)
+PROVIDE(overlay_call_1A1F_022A = func_060382_tile_terrain_nibble);
+EXTERN(func_060382_tile_terrain_nibble)
