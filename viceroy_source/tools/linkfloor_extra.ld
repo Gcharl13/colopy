@@ -722,3 +722,19 @@ EXTERN(func_0028B0_append_space)
  * implemented bodies (all C sites 0-arg, targets void/no-arg). */
 PROVIDE(overlay_call_181F_0C22 = colony_screen_compose);
 PROVIDE(overlay_call_181F_059A = func_066BB0_prep);
+
+/* Phase 4.3 pass 7 wiring (2026-06-12): weak canonicals whose sites now all
+ * pass EXE-true args (post near-match-extended).  0736/06A0 are the layer
+ * far-addr helpers; their two C sites DISCARD the result (locals the port
+ * never consumed), so the int-truncation of the host pointer is inert. */
+PROVIDE(overlay_call_181F_0638 = func_052F7E_ai_power_asset_census);
+EXTERN(func_052F7E_ai_power_asset_census)
+PROVIDE(overlay_call_181F_06A0 = func_005D84_logic_sz_23);
+EXTERN(func_005D84_logic_sz_23)
+PROVIDE(overlay_call_181F_0736 = func_005ED0_logic_sz_23);
+PROVIDE(overlay_call_191F_0AD4 = func_06F5DA_opt_set_field_a_const8);
+EXTERN(func_06F5DA_opt_set_field_a_const8)
+PROVIDE(overlay_call_1A1F_0814 = func_06436C_walk_write_thin);
+EXTERN(func_06436C_walk_write_thin)
+PROVIDE(overlay_call_1A1F_085A = func_0641EC_walk_stamp_range);
+EXTERN(func_0641EC_walk_stamp_range)
