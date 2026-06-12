@@ -1094,7 +1094,6 @@ __attribute__((weak)) long hud_helper_6D64(void) { viceroy_stub_hit("hud_helper_
 __attribute__((weak)) long hud_icon(void) { viceroy_stub_hit("hud_icon"); return 0; }
 __attribute__((weak)) long hud_minimap_render(void) { viceroy_stub_hit("hud_minimap_render"); return 0; }
 __attribute__((weak)) long hud_print_6a(void) { viceroy_stub_hit("hud_print_6a"); return 0; }
-__attribute__((weak)) long hud_print_74(void) { viceroy_stub_hit("hud_print_74"); return 0; }
 __attribute__((weak)) long hud_print_7e(void) { viceroy_stub_hit("hud_print_7e"); return 0; }
 __attribute__((weak)) long hud_print_88(void) { viceroy_stub_hit("hud_print_88"); return 0; }
 __attribute__((weak)) long hud_text(void) { viceroy_stub_hit("hud_text"); return 0; }
