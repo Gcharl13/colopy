@@ -1166,7 +1166,8 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  * Phase C — for each known colony (count 0x539E), claim the unowned adjacent
  * tiles around it.  For colony c: bind it (0x181F:0x09E6), read its origin
  * (x=+0, y=+1) and its own owner byte (+0x1A), then walk its surrounding-tile
- * list whose length is colony_helper_C5E()[+0x329].  For surrounding slot k:
+ * list whose length is DG8(0x329 + era_band) (era band = func_008720(),
+ * the 0x181F:0xC5E resident).  For surrounding slot k:
  *   tx = origin_x + (int8_t)tile_dx_table[k]   (DGROUP byte table @0xC8)
  *   ty = origin_y + (int8_t)tile_dy_table[k]   (DGROUP byte table @0xDE)
  *   if (colony.tileflags[k] (+0x70) < 0) skip      ; @asm 0x489A7 jl  -> next k
@@ -1182,7 +1183,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
  * @asm 0x0489F3  for idx in 0..[0x539E]-1
  * @asm 0x0489FB   select_player_ctx(idx)            ; 0x181F:0x09E6 bind colony idx
  * @asm 0x048A06   reload *(0x8542); owner=[+0x1A]; x=[+0]; y=[+1]
- * @asm 0x048A1D   bound = colony_helper_C5E()[+0x329]
+ * @asm 0x048A1D   bound = DG8(0x329 + func_008720())
  * @asm 0x048A2D   inner k = 0 ; jmp inner test @0x4897F
  * @asm 0x04897F   for k in 0..bound-1  (the claim body above)
  *
@@ -1208,7 +1209,10 @@ extern uint16_t *g_colony_8542;            /* *(0x8542) — current ColonyRecord
  * (owner,y,x).  All declared in overlay_externs.h; called argless per convention.
  * 0x0C5E returns a near record pointer (its +0x329 byte = surrounding-tile count);
  * the pointer-typed name matches src/colony/auto_manage.c. */
-extern uint8_t *colony_helper_C5E(void);   /* 0x181F:0x0C5E — render/colony info record ptr */
+extern int func_008720(void);   /* 0x181F:0x0C5E -> resident 05EB:0470 = file 0x8720:
+                                  * func_00864E(0x0A) clamped to 2, +2 -> era band 1..4.
+                                  * (The old "record ptr" extern mis-modeled the int
+                                  * return as a pointer; fixed Phase 4.5 2026-06-12.) */
 
 int native_relations_turn_reset(void)  /* func_04891A */
 {
@@ -1237,7 +1241,11 @@ int native_relations_turn_reset(void)  /* func_04891A */
         owner    = colony[0x1A];                     /* @asm 0x048A0A colony.owner (+0x1A, zero-extended) */
         origin_x = colony[0x00];                     /* @asm 0x048A12 colony.x (+0x00) */
         origin_y = colony[0x01];                     /* @asm 0x048A17 colony.y (+0x01) */
-        bound    = colony_helper_C5E()[0x329];       /* @asm 0x048A1D lcall 0x181F:0xC5E; 0x048A24 [bx+0x329] */
+        bound    = DG8(0x329 + (unsigned)(uint16_t)func_008720());
+                       /* @asm 0x048A1D lcall 0x181F:0xC5E -> AX = era band 1..4;
+                        * @asm 0x048A22 mov bx,ax; 0x048A24 mov al,[bx+0x329]
+                        * -- a DGROUP table read at DS:0x32A..0x32D, NOT a
+                        * record-pointer deref. */
 
         for (int k = 0; k < bound; k++) {           /* @asm 0x04897F cmp k,bound; jge next-colony */
             int tx = origin_x + g_tile_dx_00C8[k];  /* @asm 0x04898A al=[bx+0xC8]; cwde; +origin_x -> [bp-2] */

@@ -88,6 +88,7 @@
  * @ref  reverse_engineered/tools/rtlink/RTLINK_V2.md  (thunk resolution)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"   /* DG8 for the era-band table read (Phase 4.5) */
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals (addresses BYTE_VERIFIED from the operands).  Kept LOCAL to
@@ -267,7 +268,9 @@ extern void  assign_job(int occ, int slot);                  /* 0x181F:0xC36 */
 extern void  slot_commit(void);                              /* 0x181F:0xCCC */
 extern void  slot_advance(void);                             /* 0x181F:0xC04 */
 extern int   colony_helper_C22(void);                        /* 0x181F:0xC22 */
-extern void *colony_helper_C5E(void);                        /* 0x181F:0xC5E -> 2nd colony ptr */
+extern int   func_008720(void);    /* 0x181F:0xC5E = file 0x8720 era band 1..4
+                                    * (the old "2nd colony ptr" extern mis-modeled
+                                    * the int return; fixed Phase 4.5 2026-06-12) */
 extern int   assign_commodity(int occ_or_flag, int slot);    /* 0x181F:0xB6E -> rc */
 extern int   query_b(int arg);                               /* 0x181F:0xB82 */
 extern int   query_c(int arg);                               /* 0x181F:0xBF0 */
@@ -359,8 +362,7 @@ void colony_auto_manage(int colony_index)
      * slots are named; the rest are scratch.  Slot names follow [bp-disp]. */
     int  is_capital;        /* [bp-2]   1 if colony at (0x2e,0x14) — the capital tile */
     int  ncol_owned;        /* [bp-0x34] @0x53BDC <- 0x181F:0xD3A (count?) */
-    void *colony2;          /* [bp-0x6e] @0x53BE6 <- 0x181F:0xC5E (a 2nd colony/struct ptr) */
-    int  ring_n;            /* [bp-0xa0] @0x53BEF <- colony2[+0x329] (ring/tile count) */
+    int  ring_n;            /* [bp-0xa0] @0x53BEF <- DG8(0x329 + era band) */
     int  owner;             /* read repeatedly from [0x8542]+0x1A */
     int  i;                 /* loop var (the colonist/tile/slot index reused throughout) */
     uint8_t *col;           /* = (uint8_t*)g_colony_buf_8542, re-loaded after each LCALL */
@@ -386,8 +388,10 @@ void colony_auto_manage(int colony_index)
      * 2nd colony ptr (colony2) come from 0x181F:0xC5E. */
     colony_helper_C22();                       /* @asm 0x53BCD/0x53BD2 (0xc72 then 0xc22) */
     ncol_owned = colony_helper_C5E_count();    /* @asm 0x53BD7 lcall 0x181F:0xD3A -> [bp-0x34] */
-    colony2    = colony_helper_C5E();          /* @asm 0x53BDF lcall 0x181F:0xC5E -> [bp-0x6e] */
-    ring_n     = ((uint8_t *)colony2)[0x329];  /* @asm 0x53BE9 mov al,[bx+0x329] -> [bp-0xa0] */
+    /* @asm 0x53BDF lcall 0x181F:0xC5E -> AX = era band 1..4; @asm 0x53BE9
+     * mov bx,ax; mov al,[bx+0x329] -- DGROUP table read at DS:0x32A..0x32D
+     * (same pattern as the build-advisor site @0x48A1D). */
+    ring_n     = DG8(0x329 + (unsigned)(uint16_t)func_008720());
 
     /* @asm 0x53BF3..0x53C11 — bump three colony counters toward their caps
      * (status/age maintenance). */
@@ -685,7 +689,7 @@ void colony_auto_manage(int colony_index)
 
     /* Frame slots that the SUMMARISED inner blocks read (kept as documented
      * locals; void-cast so the partial port is warning-clean). */
-    (void)is_capital; (void)ncol_owned; (void)colony2; (void)ring_n; (void)owner;
+    (void)is_capital; (void)ncol_owned; (void)ring_n; (void)owner;
 }
 
 /* ============================================================================

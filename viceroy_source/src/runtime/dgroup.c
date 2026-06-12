@@ -30,6 +30,23 @@ struct PowerRecord      *g_market = NULL;   /* DGROUP:0x84FC active-market Power
  * dialog-slot functions as a headless guard: if NULL, return immediately. */
 void                    *g_buf_ptr_2D42_2D44 = NULL;
 
+/* Phase 4.5 (2026-06-12) mixed data/function reconciliation:
+ *
+ * colony_8542 -- ui/menu.c + ui/dialog.c model "the current colony" as a
+ * GETTER; the byte truth is the near pointer AT DGROUP:0x8542 (the ctx slot
+ * above).  The getter resolves the stored DS offset to a host pointer. */
+uint8_t *colony_8542(void)
+{
+    return (uint8_t *)(DG_BASE + DG16(0x8542));
+}
+
+/* g_iob_dispatch_2B18 -- the MSC stdio IOB-dispatch hook: DOS keeps a code
+ * pointer at DGROUP:0x2B18 guarded by the 0xD6D6 magic at 0x2B16 (read in
+ * iolib/file.c _read).  A 64-bit host code pointer cannot live in the 4-byte
+ * DGROUP slot, so the modern build keeps it as a DETACHED host variable
+ * (NULL = hook not installed; the call site NULL-guards). */
+void (*g_iob_dispatch_2B18)(void) = NULL;
+
 #ifdef _VICEROY_MODERN
 uint8_t g_dgroup[DGROUP_SIZE];   /* zero-initialized; static window filled below */
 #endif

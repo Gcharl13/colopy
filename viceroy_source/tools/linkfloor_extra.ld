@@ -512,3 +512,42 @@ EXTERN(func_002544_logic_sz_60)
 EXTERN(func_002892_logic_sz_30)
 EXTERN(func_00260E_tooltip_append)
 EXTERN(func_002632_tooltip_append_indexed)
+
+/* Phase 4.5 (2026-06-12): the 11 mixed data/function symbols reconciled.
+ * Each was "named like DGROUP data but called like a function"; resolution
+ * per symbol (byte-verified identities):
+ *   colony_8542            -> STRONG getter in runtime/dgroup.c (near ptr
+ *                             [0x8542] resolved to a host pointer)
+ *   colony_field_C86       -> 0x181F:0xC86 = file 0x8524 SoL%% getter
+ *   colony_finalize_8DC6   -> 0x181F:0x608 = file 0x2C5D4 choice commit
+ *                             (ovly_commit_choice_608 = same target)
+ *   colony_helper_C22      -> 0x181F:0xC22 = colony screen compositor
+ *                             (strong headless no-op in render_glue.c)
+ *   colony_helper_C5E      -> RESOLVED AWAY: 0x181F:0xC5E = file 0x8720 era
+ *                             band int, the [bx+0x329] was a DGROUP table
+ *                             read; call site fixed, extern deleted
+ *   colony_misc_b82        -> wired Phase 4.3j (func_009626)
+ *   g_iob_dispatch_2B18    -> DETACHED host fn-ptr in runtime/dgroup.c
+ *                             (64-bit code ptr cannot live in the DGROUP
+ *                             slot); call site NULL-guarded
+ *   panel_helper_1E1D      -> cs:0x6E1D ljmp 0x191F:0xD9C = func_0317CC
+ *                             Europe-panel painter, UNPORTED (4.6 row)
+ *   panel_helper_1E6D      -> cs:0x6E6D ljmp 0x191F:0xE7C = func_0318D2
+ *                             Europe-panel painter, UNPORTED (4.6 row)
+ *   sol_helper_3695        -> cs:0x3695 ljmp 0x1A1F:0x7E = func_03E162
+ *   unit_translate_action_8BC6 -> file 0x8BC6 = DG8(arg+0x2F5) table read */
+PROVIDE(colony_field_C86 = func_008524_colony_sz_18);
+PROVIDE(colony_finalize_8DC6 = func_02C5D4_colony_sz_592);
+PROVIDE(ovly_commit_choice_608 = func_02C5D4_colony_sz_592);
+EXTERN(func_02C5D4_colony_sz_592)
+PROVIDE(colony_helper_C22 = colony_screen_compose);
+PROVIDE(sol_helper_3695 = func_03E162_op_sz_145);
+EXTERN(func_03E162_op_sz_145)
+PROVIDE(unit_translate_action_8BC6 = func_008BC6_logic_sz_13);
+EXTERN(func_008BC6_logic_sz_13)
+EXTERN(func_008720)
+/* riders on the same identities: sol_pct + colony_helper_C5E_count are the
+ * sol_tory/auto_manage spellings of 0x181F:0xC86 / 0x181F:0xD3A */
+PROVIDE(sol_pct = func_008524_colony_sz_18);
+EXTERN(func_008524_colony_sz_18)
+PROVIDE(colony_helper_C5E_count = func_008D00_colony_stock_cap);

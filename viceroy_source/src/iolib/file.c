@@ -122,8 +122,9 @@ int _read(int fd, void* buf, int count)
     if (count == 0) return 0;
     if (g_file_flags[fd] & 2) return 0;       /* AppendMode: empty read */
 
-    /* @asm 0x11507..0x1150F  IOB-dispatch hook */
-    if (g_iob_dispatch_2B16 == 0xD6D6) {
+    /* @asm 0x11507..0x1150F  IOB-dispatch hook.  Modern: the code pointer is
+     * a detached host variable (runtime/dgroup.c); NULL = not installed. */
+    if (g_iob_dispatch_2B16 == 0xD6D6 && g_iob_dispatch_2B18 != 0) {
         g_iob_dispatch_2B18();
     }
 
