@@ -900,34 +900,51 @@ extern int  overlay_near_07EFB(void); /* ip 0x7EFB build-precondition probe */
 /* direct call replacing void-arity stub call */
 extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
 
+/* real draw primitives (modern glue, src/platform/render_glue.c).  The DOS
+ * 0x181F:0x254 sprite blit takes the sheet header far ptr [0x840]:[0x83E] on
+ * the stack plus bx=&[0x2DA8] (the 4-word sheet descriptor); the modern glue
+ * keys the sheet internally, so `desc` is passed as 0.  0x181F:0xE2 is the
+ * band re-blit (regs ax=x dx=y; pushes y,w,h). */
+extern void blit_sprite(int desc, int id, int x, int y);   /* 0x181F:0x0254 */
+extern void blit_band(int x, int y, int w, int h);         /* 0x181F:0x00E2 */
+extern int  sheet_frame_w_icons(int id);   /* sheet hdr frame width [id*0xC+0x3E] */
+
 /* ============================================================================
  * colony_draw_workgrid  (func_0264A8)
  *   @asm        0x0264A8..0x0268CD  (1062 bytes, ENTER 0x20)   page_02.asm
- *   @status     RECONSTRUCTED (extent + reads BYTE_VERIFIED; draw roles inferred)
+ *   @status     RECONSTRUCTED (extent + reads + cell layout + the 0x254/0xE2
+ *               draw-call args BYTE_VERIFIED and wired to blit_sprite/
+ *               blit_band; the 0xCE/0x236/0x2BC/0x24A/0x506 sites have no
+ *               modern primitive and stay stubs with decoded args)
  *   @role       render the colony work-grid: the 5x5 block of surrounding map
  *               squares with their terrain, the colonist working each, and the
  *               yield icon+amount; plus the selected-tile highlight.
  *
  * Signature:  void colony_draw_workgrid(int show_close_button);
- * Draws the map backdrop (0x181F:0x506 at 0x78x0x78 @ (8,0xC8)), the panel
- * frame (func_02CAC3 @ (0xE0,0x20)), and two divider lines (0x181F:0xCE).
- * Double loop over rows r=0..4 ([bp-0x14]) x cols col=0..4 ([bp-0x12]); per
- * cell it reads the layout table 0x8DF0 (stride 5: [r*5+col-0x7210]) -> flags:
- *   bit 0x40  -> draw the cell border (0x181F:0xCE)              @asm 0x02655C
- *   not-0x40 + table 0x8D9E[r*5+col]>=0 -> draw cell tile via 0x181F:0x254 (id 0x6D)  @asm 0x02658D
- *   bit 0x80  -> the cell holds a colonist: world tile from ctx->map_x/map_y +
- *                (col-2,r-2), 0x181F:0x7E0, then scan units whose UnitRecord
- *                type byte[+2] (0x3146, stride 0x1C) maps via the terrain/unit
- *                stat table [type*30 + 0x5236] <= 1, advance via 0x181F:0x2E4,
- *                and draw the colonist (0x181F:0x2BC, id 0x64).  @asm 0x0265C4..0x02663D
- *   bit 8     -> special-resource marker (0x181F:0x236 sprite 0x17 with the
- *                [0xA891]/[0xA893]/[0xA894] palette offsets).   @asm 0x02663E..0x02668F
- * After flags it resolves the worked good (0x181F:0xB3C), draws its bonus
- * sprite (0x181F:0x236), the goods icon (0x181F:0xCE0 -> good id; 0x181F:0x254),
- * and (if produced) the worker pip (0x181F:0xA74/0x24A).  Highlights the
- * selected colonist [0x8D7C]/[0x8D7E] and the cursor cell [0x330]/[0x332] with
- * a coloured border (0x181F:0xCE).  Closes with optional button (0x181F:0xE2).
- * Loop layout: each cell screen pos = (col*0x18+0xC8 [bp-8], r*0x18+8 [bp-0xC]).
+ * Draws the map backdrop (0x181F:0x506, 0x78x0x78 @ (0xC8,8)), the panel fill
+ * (func_02CAC3 @ (0xE0,0x20)), and two frame boxes (0x181F:0xCE).  Double loop
+ * rows r=0..4 ([bp-0x14]) x cols col=0..4 ([bp-0x12]); the edge ring is
+ * skipped (@asm 0x0267A8..0x0267BE) so only the inner 3x3 work squares get the
+ * cell body.  Cell screen pos: cell_x = col*0x18+0xC8 [bp-8] (X, 0xC8..0x128),
+ * cell_y = r*0x18+8 [bp-0xC] (Y, 8..0x68).  Per cell the layout table 0x8DF0
+ * (stride 5, [col*5 + r]) gives flags:
+ *   bit 0x40  -> cell border (0x181F:0xCE, colour 0xC)            @asm 0x026584
+ *   flags==0 + table 0x8D9E[col*5+r]>=0 -> cell tile sprite 0x6D  @asm 0x0265BF
+ *   bit 0x80  -> a colonist works the cell: world tile = ctx->map_x/map_y +
+ *                (col-2,r-2), 0x181F:0x7E0, scan units (0x181F:0x2E4) until
+ *                the UnitRecord type byte[+2] (0x3146, stride 0x1C) gives stat
+ *                [type*14 + 0x5236] > 1, then draw it (0x181F:0x2BC).
+ *                @asm 0x0265C4..0x02663D
+ *   bit 8     -> special-resource markers (0x181F:0x236, base id 0x17 with
+ *                the [0xA891]/[0xA893]/[0xA894] tints).   @asm 0x02663E..0x02668F
+ * Then the worked good: amount = 0x181F:0xB3C(col,r,&good_idx,1); cell good =
+ * 0x181F:0xCE0(col,r); sprite = good_idx+0x17 (0x3A when 0x181F:0xC0E == 8);
+ * amount>0 -> amount sprite (0x181F:0x236), else good_idx>=0 -> centered goods
+ * icon + icon 0x41 (both 0x181F:0x254); good_idx>=0 also draws the worker pip
+ * (0x181F:0xA74 + 0x24A).  When [0xB98]==0, highlights the selected good
+ * [0x8D7C] (0xCE colour 0xA) and the cursor cell [0x330]/[0x332] (0xCE colour
+ * 0xF, gated on [0x334]/[0x7EE]/[0x32E]/[0x8D54]/[0x8D7E]).  Optional close
+ * re-blit 0x181F:0xE2 = blit_band(0xC8,8,0x78,0x78).
  * ============================================================================ */
 void colony_draw_workgrid(int show_close_button)
 {
@@ -937,79 +954,163 @@ void colony_draw_workgrid(int show_close_button)
     DGS16(0x0070)
         = DG8(0x0336);       /* @asm 0x0264AD [0x70]=[0x336] */
 
-    overlay_call_181F_0506();                       /* @asm 0x0264E1 map backdrop (0x78x0x78 @8,0xC8) */
+    /* map-tile backdrop 0x181F:0x506 -- NO modern primitive.  Decoded args
+     * @asm 0x0264BE..0x0264E6: pushes (in order) [0x835] zero-extended, 0x78,
+     * 0x78, 8, 0xC8, then the sheet-desc words [0x2DAE],[0x2DAC],[0x2DAA],
+     * [0x2DA8]; caller add sp,0x12 => backdrop(desc, x=0xC8, y=8, w=0x78,
+     * h=0x78, mode=[0x835]). */
+    overlay_call_181F_0506();                       /* @asm 0x0264E1 */
     /* @asm 0x0264E9 push 0x48,0x48,0x20,0xE0; call 0x2CAC3 = ljmp 0x191F:0x7EC
      * (fill leaf 0x2633E): the upper-right work-grid band fill. */
     {   extern void fill_rect(int x, int y, int w, int h);
         fill_rect(0xE0, 0x20, 0x48, 0x48);          /* (224,32,72,72) */
     }
-    overlay_call_181F_00CE();                       /* @asm 0x026517 divider line @ (0x140,7,0x80) */
-    overlay_call_181F_00CE();                       /* @asm 0x026539 divider line @ (0x128,0x1F,0x68) */
+    /* 0x181F:0xCE box draw (REGISTER args) -- not mapped to a primitive.
+     * @asm 0x0264F9..0x026536: ax=0xC7 dx=7 bx=0x140; pushes (in order)
+     * [0x2DAE],[0x2DAC],[0x2DAA],[0x2DA8], 0x80, 0
+     * (work-grid outer frame (0xC7,7)-(0x140,0x80), colour-id 0). */
+    overlay_call_181F_00CE();                       /* @asm 0x026517 */
+    /* @asm 0x02651C..0x026536: ax=0xDF dx=0x1F bx=0x128; pushes desc4, 0x68, 0
+     * (inner frame (0xDF,0x1F)-(0x128,0x68) around the 0xE0/0x20 band fill). */
+    overlay_call_181F_00CE();                       /* @asm 0x026539 */
 
-    for (r = 0; r < 5; r++) {                       /* @asm 0x02653E..0x0268A1 outer rows [bp-0x14] */
-        for (col = 0; col < 5; col++) {             /* @asm 0x026546..0x026896 inner cols [bp-0x12] */
-            int cell_x, cell_y;
-            if (r==0 && col==0) continue;           /* (corner skips per loop guards @0x0267A8..) */
-            if (r==4 || col==4) { /* edge handling per @asm 0x0267B4.. */ }
+    for (r = 0; r < 5; r++) {                       /* @asm 0x02653E/0x02689D outer rows [bp-0x14] */
+        for (col = 0; col < 5; col++) {             /* @asm 0x0268A3/0x02678B inner cols [bp-0x12] */
+            int cell_x, cell_y, count, good_idx, good_spr, cellgood;
 
-            cell_y = col * 0x18 + 0xC8;             /* @asm 0x026794 [bp-8] */
-            cell_x = r   * 0x18 + 8;                /* @asm 0x02679E [bp-0xC] */
-            (void)cell_x; (void)cell_y;
+            cell_x = col * 0x18 + 0xC8;             /* @asm 0x026794 [bp-8]  screen X (0xC8..0x128) */
+            cell_y = r   * 0x18 + 8;                /* @asm 0x02679E [bp-0xC] screen Y (8..0x68) */
+            if (col == 0 || r == 0 ||               /* @asm 0x0267A8/0x0267AE \ edge ring skipped: */
+                col == 4 || r == 4)                 /* @asm 0x0267B4/0x0267BA / only the inner 3x3 */
+                continue;                           /*   cells reach the body @0x026546 */
 
-            flags = *(uint8_t far*)(MK_FP(0,0x8DF0) + (r*5) + col); /* @asm 0x026553 [bx+si-0x7210] */
+            flags = DG8(0x8DF0 + col*5 + r);        /* @asm 0x026546..0x026559 [bx+si-0x7210], si=col*5, bx=r */
 
             if (flags & 0x40)                       /* @asm 0x02655C test al,0x40 */
-                overlay_call_181F_00CE();           /* @asm 0x026584 draw cell border (id 0xC) */
-            else if (*(int8_t far*)(MK_FP(0,0x8D9E)+(r*5)+col) >= 0) /* @asm 0x02659C [bx+si-0x7262]>=0 */
-                overlay_call_181F_0254();           /* @asm 0x0265BF draw cell tile (id 0x6D) */
+                /* cell border 0x181F:0xCE: ax=cell_x dx=cell_y bx=cell_x+0x17;
+                 * pushes desc4, cell_y+0x17, 0xC.  @asm 0x026560..0x026581 */
+                overlay_call_181F_00CE();           /* @asm 0x026584 */
+            if (flags == 0 &&                       /* @asm 0x026589 cmp word [bp-4],0 / jne skip */
+                DGS8(0x8D9E + col*5 + r) >= 0)      /* @asm 0x02659C cmp [bx+si-0x7262],0 / jl */
+                /* cell tile sprite: pushes [0x840],[0x83E] (sheet hdr far ptr),
+                 * cell_y+4; regs ax=0x6D, dx=cell_x+8, bx=&[0x2DA8].
+                 * @asm 0x0265A3..0x0265BB */
+                blit_sprite(0, 0x6D, cell_x + 8, cell_y + 4);   /* @asm 0x0265BF */
 
-            if (flags & 0x80) {                     /* @asm 0x0265C4 test al,0x80 (colonist present) */
+            if (flags & 0x80) {                     /* @asm 0x0265C4 test [bp-4],0x80 (colonist present) */
                 int wy = c->map_y + r - 2;          /* @asm 0x0265CE ctx[+1]+r; dec;dec [bp-0xA] */
                 int wx = c->map_x + col - 2;        /* @asm 0x0265DD ctx[+0]+col; dec;dec [bp-6] */
+                int u;
                 (void)wx; (void)wy;
-                overlay_call_181F_07E0();           /* @asm 0x0265E9 tile-at(wx,wy) */
-                /* scan colonists whose UnitRecord type stat <= 1  @asm 0x0265F0..0x02661A */
-                /* (UnitRecord[u].byte[+2] @ 0x3146 stride 0x1C -> [type*30 + 0x5236]) */
-                while (overlay_call_181F_02E4() >= 0) { /* @asm 0x026610 advance to next unit */
-                    /* if its stat byte > 1 stop  @asm 0x026606 cmp [bx+0x5236],1 / ja */
-                    break;
+                u = (int)overlay_call_181F_07E0();  /* @asm 0x0265E9 regs ax=wx dx=wy -> unit at tile */
+                while (u >= 0) {                    /* @asm 0x026615..0x02661A [bp-0x1E]; or ax,ax / jge */
+                    int utype = DG8(0x3146 + u*0x1C);  /* @asm 0x0265F0/0x0265F4 UnitRecord[+2] type */
+                    if (DG8(0x5236 + utype*14) > 1)    /* @asm 0x0265FA..0x02660B bx=type*14; cmp [bx+0x5236],1 / ja stop */
+                        break;
+                    u = (int)overlay_call_181F_02E4(); /* @asm 0x026610 (ax=u) -> next unit on tile */
+                    if (u == 0) break; /* MODERN GUARD: the 0x2E4 stub returns 0
+                                        * (a faithful loop would spin); drop when wired */
                 }
-                overlay_call_181F_02BC();           /* @asm 0x026639 draw colonist (id 0x64) */
+                if (u >= 0)                         /* @asm 0x02661C cmp [bp-0x1E],0 / jl skip */
+                    /* colonist sprite 0x181F:0x2BC -- NO modern primitive.
+                     * Decoded: pushes cell_y+4, 0x10, 0x64; regs bx=cell_x+4,
+                     * ax=u, dx=0xE0.  @asm 0x026622..0x026636 */
+                    overlay_call_181F_02BC();       /* @asm 0x026639 */
             }
 
-            if (flags & 8) {                        /* @asm 0x02663E test al,8 (special resource) */
-                overlay_call_181F_0236();           /* @asm 0x02665D bonus sprite 0x17 ([0xA891] pal) */
+            if (flags & 8) {                        /* @asm 0x02663E test [bp-4],8 (special resource) */
+                /* bonus marker 0x181F:0x236 -- NO modern primitive.  Decoded:
+                 * pushes cell_x, cell_y, 0x18, 0x10, 0, 0; regs ax=0x17,
+                 * bx=dx=[0xA891] zero-extended.  @asm 0x026644..0x02665A */
+                overlay_call_181F_0236();           /* @asm 0x02665D */
                 if (DGS8(0xA893) >= 0) /* @asm 0x026662 cmp [0xA893],0 / jl */
-                    overlay_call_181F_0236();       /* @asm 0x02668A second bonus sprite */
+                    /* second marker: pushes cell_x, cell_y+0xD, 0x18, 0x10,
+                     * 0, 0; regs ax=(int8)[0xA893]+0x17, dx=bx=(int8)[0xA894].
+                     * @asm 0x026669..0x026687 */
+                    overlay_call_181F_0236();       /* @asm 0x02668A */
             }
 
-            /* worked-good resolve + draw  @asm 0x02668F..0x02675B */
-            overlay_call_181F_0B3C();               /* @asm 0x02669B (1,&[bp-0x10],r,col) -> which good */
-            overlay_call_181F_0CE0();               /* @asm 0x0266B5 (r,col) -> good id */
-            overlay_call_181F_0C0E();               /* @asm 0x0266D2 (good id) -> sprite base */
-            overlay_call_181F_0236();               /* @asm 0x026700 draw good bonus sprite */
-            overlay_call_181F_0254();               /* @asm 0x02673E draw goods icon (id from above) */
+            /* ---- worked-good resolve + draw  @asm 0x02668F..0x02675B ---- */
+            good_idx = 0;     /* [bp-0x10] OUT-param of the 0xB3C call below
+                               * (the void-arity stub cannot write it yet) */
+            count = (int)overlay_call_181F_0B3C();  /* @asm 0x02669B (col,r,&good_idx,1) -> amount [bp-0xE] */
+            good_spr = good_idx + 0x17;             /* @asm 0x0266A6/0x0266A9 [bp-2] */
+            cellgood = (int8_t)overlay_call_181F_0CE0(); /* @asm 0x0266B5 (col,r) -> cell good; cbw @0x0266BD [bp-0x20] */
+            (void)cellgood;
+            if ((int)overlay_call_181F_0C0E() == 8) /* @asm 0x0266C2 (cellgood) -> [bp-0x18]; cmp ax,8 @0x0266CD */
+                good_spr = 0x3A;                    /* @asm 0x0266D2 mov [bp-2],0x3A */
 
-            if (/*[bp-0x10] worked-tile idx*/ 1 >= 0) { /* @asm 0x02675D cmp [bp-0x10],0 / jl */
-                overlay_call_181F_0A74();           /* @asm 0x026768 (3,idx) -> worker pip */
-                overlay_call_181F_024A();           /* @asm 0x02677C draw pip */
+            if (count > 0) {                        /* @asm 0x0266D7 cmp [bp-0xE],0 / jle */
+                /* amount sprite 0x181F:0x236 -- NO modern primitive.  Decoded:
+                 * pushes cell_x, cell_y, 0x18, (count>2 ? 0x10 : 0x18) @0x0266E5,
+                 * 0, 0; regs ax=good_spr, dx=bx=count.  @asm 0x0266DD..0x0266FE */
+                overlay_call_181F_0236();           /* @asm 0x026700 */
+            } else if (good_idx >= 0) {             /* @asm 0x026708 cmp [bp-0x10],0 / jl */
+                /* goods icon centered in the 0x10 slot: w = sheet hdr word
+                 * [good_idx*0xC+0x152] (= frame width of sprite good_idx+0x17,
+                 * read for good_idx even when good_spr was overridden to 0x3A);
+                 * pushes es,bx (=[0x840]:[0x83E] hdr), cell_y+1; regs
+                 * ax=good_spr, dx=cell_x+((0x10-w)>>1, sar), bx=&[0x2DA8].
+                 * @asm 0x02670E..0x02673A */
+                {   int w = sheet_frame_w_icons(good_idx + 0x17); /* @asm 0x02671E es:[bx+si+0x152] */
+                    blit_sprite(0, good_spr,
+                                cell_x + ((0x10 - w) >> 1),   /* @asm 0x02672D..0x026734 */
+                                cell_y + 1);                  /* @asm 0x026728..0x02672C */
+                }                                   /* @asm 0x02673E lcall 0x181F:0x254 */
+                /* second icon at the raw cell origin: pushes [0x840],[0x83E],
+                 * cell_y; regs ax=0x41, bx=&[0x2DA8], dx=cell_x.
+                 * @asm 0x026743..0x026755 */
+                blit_sprite(0, 0x41, cell_x, cell_y);         /* @asm 0x026758 */
             }
 
-            if (DGS16(0x0B98) == 0) { /* @asm 0x026781 cmp [0xB98],0 / je 0x1BD6 */
-                /* selected-colonist highlight  @asm 0x0267C6..0x026815 */
-                if (DGS16(0x8D7C) == /*idx*/0) /* @asm 0x0267E8 cmp [0x8D7C],ax */
-                    overlay_call_181F_00CE();       /* @asm 0x026810 highlight border (id 0xA) */
-                /* cursor-cell highlight when [0x330]/[0x332] match (col,r) */
-                if (DGS16(0x0330) == col && /* @asm 0x026857 cmp [0x330] */
-                    DGS16(0x0332) == r)      /* @asm 0x026862 cmp [0x332] */
-                    overlay_call_181F_00CE();       /* @asm 0x026891 cursor border (id 0xF) */
+            if (good_idx >= 0) {                    /* @asm 0x02675D cmp [bp-0x10],0 / jl */
+                overlay_call_181F_0A74();           /* @asm 0x026768 (cellgood,3) -> pip handle in ax */
+                /* worker pip 0x181F:0x24A -- NO modern primitive.  Decoded:
+                 * regs ax=0xA74 result, dx=cell_x+0xC, bx=cell_y+6; no pushes.
+                 * @asm 0x026770..0x026779 */
+                overlay_call_181F_024A();           /* @asm 0x02677C */
+            }
+
+            if (DGS16(0x0B98) == 0) { /* @asm 0x026781 cmp [0xB98],0 / je 0x267C6 */
+                /* selected-good highlight  @asm 0x0267C6..0x026812 */
+                cellgood = (int8_t)overlay_call_181F_0CE0(); /* @asm 0x0267CC (col,r); cbw [bp-0x20] */
+                if (DGS16(0x8D7C) == cellgood &&    /* @asm 0x0267D8 cmp [0x8D7C],ax */
+                    (DGS16(0x07EE) == 0 ||          /* @asm 0x0267DE cmp [0x7EE],0 / je draw */
+                     DGS16(0x8D54) != 0))           /* @asm 0x0267E5 cmp [0x8D54],0 / je skip */
+                    /* highlight box 0x181F:0xCE: ax=cell_x dx=cell_y
+                     * bx=cell_x+0x17; pushes desc4, cell_y+0x17, 0xA.
+                     * @asm 0x0267EC..0x02680D */
+                    overlay_call_181F_00CE();       /* @asm 0x026810 */
+                /* cursor-cell gate  @asm 0x026815..0x026854: straight to the
+                 * coordinate test when ([0x334]!=0 || [0x7EE]!=0) && [0x32E]==0;
+                 * otherwise require [0x7EE]!=0 && [0x8D54]==0 &&
+                 * (uint8)0xCE0([0x330],[0x332]) == [0x8D7E]. */
+                if (!((DGS16(0x0334) != 0 ||        /* @asm 0x026815 cmp [0x334],0 / jne */
+                       DGS16(0x07EE) != 0) &&       /* @asm 0x02681C cmp [0x7EE],0 / je */
+                      DGS16(0x032E) == 0)) {        /* @asm 0x026823 cmp [0x32E],0 / je 0x26857 */
+                    if (DGS16(0x07EE) == 0)         /* @asm 0x02682A cmp [0x7EE],0 / jne */
+                        continue;
+                    if (DGS16(0x8D54) != 0)         /* @asm 0x026834 cmp [0x8D54],0 / je */
+                        continue;
+                    if ((uint8_t)overlay_call_181F_0CE0() /* @asm 0x026846 ([0x330],[0x332]) */
+                        != DG8(0x8D7E))             /* @asm 0x02684E cmp al,[0x8D7E] / je */
+                        continue;
+                }
+                if (DGS16(0x0330) == col &&         /* @asm 0x026857/0x02685A cmp [bp-0x12],[0x330] */
+                    DGS16(0x0332) == r)             /* @asm 0x026862/0x026865 cmp [bp-0x14],[0x332] */
+                    /* cursor box 0x181F:0xCE: ax=cell_x dx=cell_y
+                     * bx=cell_x+0x17; pushes desc4, cell_y+0x17, 0xF.
+                     * @asm 0x02686D..0x02688E */
+                    overlay_call_181F_00CE();       /* @asm 0x026891 */
             }
         }
     }
 
     DGS16(0x0070) = 0;         /* @asm 0x0268AC [0x70]=0 */
     if (show_close_button)                          /* @asm 0x0268B2 cmp [bp+6],0 / je */
-        overlay_call_181F_00E2();                   /* @asm 0x0268C6 close button @ (0xC8,8,0x78) */
+        /* re-blit the work-grid band 0x181F:0xE2 = blit_band: regs ax=bx=0xC8,
+         * dx=8; pushes 8, 0x78, 0x78 (y, w, h).  @asm 0x0268B8..0x0268C4 */
+        blit_band(0xC8, 8, 0x78, 0x78);             /* @asm 0x0268C6 (200,8,120x120) */
 }
 
 /* ============================================================================
@@ -1380,7 +1481,11 @@ void colony_draw_roster_strip(int show_button)
  * colony_paint_colonist_row  (func_0270D0)
  *   @asm        0x0270D0..0x0275CD  (1278 bytes, ENTER 0x7E)   page_02.asm
  *   @status     RECONSTRUCTED (extent + reads + difficulty/AIPersonality reads
- *               BYTE_VERIFIED; draw + SoL/Tory layout roles inferred)
+ *               + the 0x254/0xE2 draw-call args BYTE_VERIFIED; the SoL/Tory
+ *               face blits and the close re-blit are wired to blit_sprite/
+ *               blit_band; the colonist-sprite 0x254 (unported spread-state
+ *               args), the 0xCE boxes, the 0x222/0x22C bars and the 0x13C
+ *               text lines stay stubs with decoded args)
  *   @role       the colonist-row / mid-band LOWER painter: place every colonist
  *               sprite (with overlap-avoidance), draw the warehouse bar-chart
  *               and the SoL/Tory percentage display.
@@ -1390,24 +1495,28 @@ void colony_draw_roster_strip(int show_button)
  *   composer's @0x0285C4 sub-painter, not the screen entry.)
  *
  * Signature:  void colony_paint_colonist_row(int show_close_button);
- * Backdrop via func_02CAC3 @ (0x82,0x78,0x30).  Counts colonists
+ * Backdrop fill (0,0x82) 0x78x0x30 via func_02CAC3.  Counts colonists
  * (ctx->population + [0x8D72]) and pre-sums their sprite widths via
- * 0x181F:0xC0E/0x181F:0xA74 + the unit far-array [0x83E]:[0x840][idx*0xC+0x3E].
- * Sets layout mode [0xA890]=2 and spreads the colonist sprites across the row
- * so they do not overlap (the collision loop at @0x027186..0x0272C0), drawing
- * each via 0x181F:0xCE and 0x181F:0x254 and highlighting the selected
- * [0x8D7E]/[0x8D7C].  Then the WAREHOUSE bars from x=0xA3 down: per-commodity
- * stock [0x8DC8] vs capacity [0x8E0A]/[0xA895], surplus [0x8E32], bells
- * [0x8DEA], crosses [0x8DEC] via 0x181F:0x222 (draw-bar) + 0x181F:0x22C
- * (labels).  Finally the SoL/Tory gauge: SoL% = 0x181F:0xC86; Tory% = 100-SoL;
- * colour tiers picked from difficulty [0x53A6] and AIPersonality
- * [owner*0x34 + 0x543F]; both formatted via 0xD1D:0x8FA + 0x181F:0x10A/0x178/
- * 0x11E/0x182/0x128/0x13C and drawn.  Optional close button (0x181F:0xE2).
+ * 0x181F:0xC0E/0x181F:0xA74 + the sheet hdr [0x83E]:[0x840] word [id*0xC+0x3E].
+ * Sets layout mode [0xA890]=2, squeezes it while the row would overflow 0x60
+ * px, then spreads the colonist sprites from pen x=2 on row y=0x8E (each via
+ * 0x181F:0x254), drawing the under/selected boxes (0x181F:0xCE) for the
+ * [0x8D7C]/[0x8D7E] matches.  Then the WAREHOUSE bars (row y=0xA3): stock
+ * [0x8DC8] vs cap [0x8E0A]/[0xA895] (bar id 0x4017), surplus [0x8E32]
+ * (0x8017), bells [0x8DEA] (0x39), crosses [0x8DEC] (0x3F) via 0x181F:0x222
+ * (draw-bar) + the 0x181F:0x22C label row.  Finally the SoL/Tory gauge (row
+ * y=0x84): SoL% = 0x181F:0xC86, Tory% = 100-SoL%, tory_count =
+ * (population*Tory% + 0x32)/0x64; text colour tier from difficulty [0x53A6]
+ * and AIPersonality [owner*0x34 + 0x543F]; both lines formatted via
+ * 0xD1D:0x8FA + 0x181F:0x10A/0x178/0x11E/0x182/0x128 and drawn via
+ * 0x181F:0x13C, the faces via 0x181F:0x254 (0x7C at x=2; 0x7D right-aligned
+ * at 0x75).  Optional close re-blit 0x181F:0xE2 = blit_band(0,0x82,0x78,0x30).
  * ============================================================================ */
 void colony_paint_colonist_row(int show_close_button)
 {
     struct colony_t far *c = ctx;
     int count, i, sol, tory;
+    int tory_count, rebel_count, thresh, text_col;
 
     /* @asm 0x0270D6 push 0x30,0x78,0x82,0; call 0x2CAC3 = ljmp 0x191F:0x7EC
      * (fill leaf): the colonist-row band fill at (0,130) 120x48. */
@@ -1416,76 +1525,160 @@ void colony_paint_colonist_row(int show_close_button)
     }
 
     count = c->population + DGS16(0x8D72); /* @asm 0x0270E6 ctx[+0x1F]+[0x8D72] */
-    for (i = 0; i < count; i++) {                   /* @asm 0x027107..0x027141 pre-sum widths */
-        overlay_call_181F_0C0E();                   /* @asm 0x02710B (i) colonist->building */
-        overlay_call_181F_0A74();                   /* @asm 0x027119 (i) -> sprite; sum [idx*0xC+0x3E] */
+    /* pen seeds: x [bp-0x5C]=1, row y [bp-0x60]=0x8F  @asm 0x0270F5/0x0270FA */
+    for (i = 0; i < count; i++) {                   /* @asm 0x02713B/0x02713E pre-sum widths [bp-0x6E] */
+        overlay_call_181F_0C0E();                   /* @asm 0x02710B (i) colonist->building [bp-0x72] */
+        overlay_call_181F_0A74();                   /* @asm 0x027119 (i) -> sprite id [bp-0x66]; width
+                                                     * sum [bp-0x7E] += hdr[id*0xC+0x3E] @0x027131 */
     }
 
     DG8(0xA890) = 2;         /* @asm 0x027143 [0xA890]=2 layout mode */
-    /* colonist spread/draw loop with overlap-avoidance  @asm 0x027148..0x0272ED */
-    for (i = 0; i < count; i++) {                   /* @asm 0x0272B0..0x0272B9 i, [bp-0x6E] */
-        overlay_call_181F_0C0E();                   /* @asm 0x0272BC (i) */
-        overlay_call_181F_0A74();                   /* @asm 0x0272CA (i) -> sprite [bp-0x66] */
-        if (DGS16(0x8D7E) == i &&  /* @asm 0x0271F4 cmp [0x8D7E] (selected) */
-            DGS16(0x07EE) != 0)
-            overlay_call_181F_00CE();               /* @asm 0x02724B selected highlight (id 0xF) */
-        overlay_call_181F_0254();                   /* @asm 0x0272E7 blit colonist sprite */
+    /* squeeze  @asm 0x027148..0x027173: gap [bp-0x5A] = ([0x8D72]!=0 ? 4 : 0);
+     * while ((int8)[0xA890]*(count-1) + gap + width-sum >= 0x60) --[0xA890].
+     * Then pen x [bp-0x5C]=2 (inc) and row y [bp-0x60]=0x8E (dec)
+     * @asm 0x027175/0x027178; borrow accumulator [bp-0x54]=0 @0x02717D. */
+    for (i = 0; i < count; i++) {                   /* @asm 0x0272B3/0x0272B6 i [bp-0x6E] */
+        overlay_call_181F_0C0E();                   /* @asm 0x0272BC (i) -> [bp-0x72] */
+        overlay_call_181F_0A74();                   /* @asm 0x0272CA (i) -> sprite id [bp-0x66] */
+        /* colonist sprite 0x181F:0x254 -- LEFT AS STUB: ax (the sprite id) is
+         * the 0xA74 stub return and dx (pen x [bp-0x5C]) is unported spread
+         * state; y is the constant 0x8E.  Decoded: pushes [0x840],[0x83E]
+         * (sheet hdr far ptr), 0x8E (row y); regs ax=sprite id, bx=&[0x2DA8],
+         * dx=pen x.  @asm 0x0272D5..0x0272E4 */
+        overlay_call_181F_0254();                   /* @asm 0x0272E7 */
+
+        if (DGS16(0x0B98) == 0) {  /* @asm 0x0272EC cmp [0xB98],0 / jne skips both boxes */
+            if (DGS16(0x8D7C) == i) {               /* @asm 0x0272F9 cmp [0x8D7C],ax / jne */
+                int boxcol = (DGS16(0x032E) == 1 && /* @asm 0x027302 cmp [0x32E],1 / je */
+                              DGS16(0x07EE) == 0)   /* @asm 0x02730C cmp [0x7EE],0 / je */
+                             ? 0xF                  /* @asm 0x027316 mov [bp-0x64],0xF */
+                             : 0xA;                 /* @asm 0x027186 mov [bp-0x64],0xA */
+                (void)boxcol;
+                if (!(DGS16(0x032E) == 1 &&         /* @asm 0x02718B cmp [0x32E],1 / jne */
+                      DGS16(0x0334) == 0 &&         /* @asm 0x027192 cmp [0x334],0 / jne */
+                      DGS16(0x07F6) == 0) &&        /* @asm 0x027199 cmp [0x7F6],0 / je skip */
+                    (DGS16(0x07EE) == 0 ||          /* @asm 0x0271A0 cmp [0x7EE],0 / je draw */
+                     DGS16(0x8D54) != 0))           /* @asm 0x0271A7 cmp [0x8D54],0 / je skip */
+                    /* under-sprite box 0x181F:0xCE -- NO modern primitive.
+                     * Decoded: regs ax=pen x-1, dx=0x8F (row y+1),
+                     * bx=pen x + hdr w(id) ([id*0xC+0x3E]); pushes [0x2DAE],
+                     * [0x2DAC],[0x2DAA],[0x2DA8], row y + hdr h(id)
+                     * ([id*0xC+0x40]), boxcol.  @asm 0x0271AE..0x0271EB */
+                    overlay_call_181F_00CE();       /* @asm 0x0271EC */
+            }
+            if (DGS16(0x8D7E) == i &&               /* @asm 0x0271F4 cmp [0x8D7E],ax / jne */
+                DGS16(0x07EE) != 0 &&               /* @asm 0x0271FA cmp [0x7EE],0 / je */
+                DGS16(0x032E) == 1 &&               /* @asm 0x027201 cmp [0x32E],1 / jne */
+                DGS16(0x8D54) == 0)                 /* @asm 0x027208 cmp [0x8D54],0 / jne */
+                /* selected box: same shape, colour 0xF pushed @0x02723B.
+                 * @asm 0x02720F..0x02724A */
+                overlay_call_181F_00CE();           /* @asm 0x02724B */
+        }
+        /* pen advance  @asm 0x027250..0x0272B0: adv [bp-0x6A] = (int8)[0xA890]
+         * + hdr w(id); if (adv < 1) { borrow += 1-adv; adv = 1 }
+         * while (adv > 1 && borrow > 0) { --adv; --borrow }
+         * pen x += adv; +4 more once after own colonist population-1
+         * @0x0272A6..0x0272AC. */
         (void)c;
     }
 
-    /* WAREHOUSE bars  @asm 0x02731E..0x0273DB */
+    /* ---- WAREHOUSE bars: 0x181F:0x222 (draw-bar) -- NO modern primitive;
+     * REGISTER args (ax=bar id/colour, dx=value, bx=value-tail) decoded per
+     * site.  @asm 0x02731E..0x0273DB ---- */
     DGS16(0x0070)
         = DG8(0x0336);       /* @asm 0x02731E [0x70]=[0x336] */
-    overlay_call_181F_0218();                       /* @asm 0x02732B newline/advance */
-    /* stock [0x8DC8] vs cap [0x8E0A]/[0xA895] (yellow 0x4017)  @asm 0x027330..0x0273A1 */
-    overlay_call_181F_0222();                       /* @asm 0x02736E draw-bar stock */
-    overlay_call_181F_0222();                       /* @asm 0x027388 draw-bar overflow */
-    if (DGS16(0x8E32) != 0)    /* @asm 0x02738D cmp [0x8E32],0 / je */
-        overlay_call_181F_0222();                   /* @asm 0x02739D draw-bar surplus (0x8017) */
+    /* bar row y [bp-0x60] = 0xA3  @asm 0x027326 */
+    overlay_call_181F_0218();                       /* @asm 0x02732B begin bar row (no stack/reg args) */
+    if (DGS16(0x8E32) == 0) {  /* @asm 0x027330 cmp [0x8E32],0 / jne */
+        /* ax=0x4017, dx=[0x8E0A], bx=[0x8E0A]-min((uint8)[0xA895],[0x8E0A])
+         * @asm 0x027337..0x02735B */
+        overlay_call_181F_0222();                   /* @asm 0x02735E */
+        /* ax=0x4017, dx=[0x8DC8]-[0x8E0A] ([bp-0x56]),
+         * bx=dx-max(0,(uint8)[0xA895]-min(...))  @asm 0x027363..0x027373
+         * (reaches the shared lcall via jmp @0x027376) */
+        overlay_call_181F_0222();                   /* @asm 0x02739D */
+    } else {
+        /* ax=0x4017, dx=[0x8DC8], bx=[0x8DC8]-(uint8)[0xA895]
+         * @asm 0x027378..0x027385 */
+        overlay_call_181F_0222();                   /* @asm 0x027388 */
+        if (DGS16(0x8E32) != 0)    /* @asm 0x02738D cmp [0x8E32],0 / je (re-test) */
+            /* ax=0x8017, dx=[0x8E32], bx=0  @asm 0x027394..0x02739B */
+            overlay_call_181F_0222();               /* @asm 0x02739D */
+    }
     if (DGS16(0x8DEA) != 0)    /* @asm 0x0273A2 cmp [0x8DEA],0 / je (bells) */
-        overlay_call_181F_0222();                   /* @asm 0x0273B2 draw-bar bells (id 0x39) */
+        /* ax=0x39, dx=[0x8DEA], bx=0  @asm 0x0273A9..0x0273B0 */
+        overlay_call_181F_0222();                   /* @asm 0x0273B2 */
     if (DGS16(0x8DEC) != 0)    /* @asm 0x0273B7 cmp [0x8DEC],0 / je (crosses) */
-        overlay_call_181F_0222();                   /* @asm 0x0273C7 draw-bar crosses (id 0x3F) */
-    overlay_call_181F_022C();                       /* @asm 0x0273D7 draw-label (4,...,0x76) */
+        /* ax=0x3F, dx=[0x8DEC], bx=0  @asm 0x0273BE..0x0273C5 */
+        overlay_call_181F_0222();                   /* @asm 0x0273C7 */
+    /* bar labels 0x181F:0x22C -- NO modern primitive.  Decoded: push 4;
+     * regs ax=2, dx=0xA3 (bar row y), bx=0x76.  @asm 0x0273CC..0x0273D4 */
+    overlay_call_181F_022C();                       /* @asm 0x0273D7 */
 
-    /* SoL / Tory gauge  @asm 0x0273DC..0x0275AB */
+    /* ---- SoL / Tory gauge  @asm 0x0273DC..0x0275AB ---- */
     sol  = overlay_call_181F_0C86();                /* @asm 0x0273DC SoL% [bp-0x70] */
     tory = 100 - sol;                               /* @asm 0x0273E4 sub 0x64; neg [bp-0x7A] */
-    /* SoL count = ctx->population*sol/100 [bp-0x5E]  @asm 0x0273EC..0x027409 */
-    /* colour tier from difficulty [0x53A6]: base = (0x53A6-0xA)*-1, or 0x32 for
-     * non-active powers (AIPersonality [owner*0x34+0x543F]==0)  @asm 0x027416..0x027449 */
-    {
-        int thresh = -((int)DG8(0x53A6) - 0xA); /* @asm 0x027416 [0x53A6] difficulty */
-        if (!(c->owner_power < 4 &&
-              *(uint8_t far*)(MK_FP(0,0x543F) + c->owner_power*0x34) != 0)) /* @asm 0x027423/0x027431 */
-            thresh = 0x32;                          /* @asm 0x027437 non-active -> 0x32 */
-        (void)thresh;
+    tory_count  = (c->population * tory + 0x32) / 0x64; /* @asm 0x0273EC..0x027409 [bp-0x5E] */
+    rebel_count = c->population - tory_count;       /* @asm 0x02740C/0x02740E [bp-0x78] */
+    /* gauge row y [bp-0x60] = 0x84  @asm 0x027411 */
+    thresh = -((int)DG8(0x53A6) - 0xA);  /* @asm 0x027416..0x027420 difficulty [0x53A6] -> [bp-0x62] */
+    if (!(c->owner_power < 4 &&          /* @asm 0x027423 cmp ctx[+0x1A],4 / jae */
+          *(uint8_t far*)(MK_FP(0,0x543F) + c->owner_power*0x34) != 0)) /* @asm 0x027429..0x027435 */
+        thresh = 0x32;                   /* @asm 0x027437 non-active power -> 0x32 */
+    text_col = 0xF;                      /* @asm 0x02743C [bp-0x7C]=0xF */
+    if (thresh <= tory_count)            /* @asm 0x027441/0x027444 cmp [bp-0x62],ax / jg keep */
+        text_col = 4;                    /* @asm 0x027449 */
+    if (thresh * 2 <= tory_count)        /* @asm 0x02744E..0x027456 shl ax,1; cmp ax,[bp-0x5E] / jg keep */
+        text_col = 0xC;                  /* @asm 0x027458 */
+    (void)rebel_count; (void)text_col;
+
+    if (sol != 0) {                                 /* @asm 0x02745D cmp [bp-0x70],0 / je -> jmp 0x274F7 */
+        /* SoL face sprite: pushes [0x840],[0x83E] (hdr), 0x84 (row y);
+         * regs ax=0x7C, bx=&[0x2DA8], dx=2.  @asm 0x027466..0x027478 */
+        blit_sprite(0, 0x7C, 2, 0x84);              /* @asm 0x02747B */
+        /* text x [bp-0x5C] = hdr frame width(0x7C)+2  @asm 0x027480..0x02748B
+         * (es:[bx+0x60E] = [0x7C*0xC+0x3E]) */
+        overlay_call_0D1D_08FA();                   /* @asm 0x027497 itoa(sol, buf[bp-0x52], 10) */
+        overlay_call_181F_010A();                   /* @asm 0x0274A3 (&buf) */
+        overlay_call_181F_0178();                   /* @asm 0x0274AF (&buf) reset/term */
+        overlay_call_181F_011E();                   /* @asm 0x0274BB (&buf) */
+        overlay_call_181F_0182();                   /* @asm 0x0274CB (rebel_count, ss:&buf) append count */
+        overlay_call_181F_0128();                   /* @asm 0x0274D7 (&buf) */
+        /* "% Rebel" line 0x181F:0x13C (= draw_text(x,y,buf)) -- LEFT AS STUB:
+         * buf [bp-0x52] is produced by the unported string ops above (wiring
+         * draw_text would print an uninitialized buffer).  Decoded: pushes
+         * text_col, 0x85 (row y+1), sheet_frame_w_icons(0x7C)+2 (x), ss:&buf.
+         * @asm 0x0274DF..0x0274EE */
+        overlay_call_181F_013C();                   /* @asm 0x0274EF */
     }
-    if (sol > 0) {                                  /* @asm 0x02745D cmp [bp-0x70],0 / je */
-        overlay_call_181F_0254();                   /* @asm 0x02747B SoL face sprite (id 0x7C) */
-        overlay_call_0D1D_08FA();                   /* @asm 0x027497 itoa(SoL%) */
-        overlay_call_181F_010A();                   /* @asm 0x0274A3 */
-        overlay_call_181F_0178();                   /* @asm 0x0274BF reset/term */
-        overlay_call_181F_011E();                   /* @asm 0x0274CB */
-        overlay_call_181F_0182();                   /* @asm 0x0274DB append count */
-        overlay_call_181F_0128();                   /* @asm 0x0274E7 */
-        overlay_call_181F_013C();                   /* @asm 0x0274FF draw "% Rebel" */
-    }
-    if (tory > 0) {                                 /* @asm 0x027507 cmp [bp-0x7A],0 / je */
-        overlay_call_0D1D_08FA();                   /* @asm 0x027509 itoa(Tory%) */
-        overlay_call_181F_010A();                   /* @asm 0x027515 */
-        overlay_call_181F_0178();                   /* @asm 0x027521 */
-        overlay_call_181F_011E();                   /* @asm 0x02752D */
-        overlay_call_181F_0182();                   /* @asm 0x02753D append SoL count */
-        overlay_call_181F_0128();                   /* @asm 0x027549 */
-        overlay_call_181F_0204();                   /* @asm 0x027579 measure */
-        overlay_call_181F_013C();                   /* @asm 0x027589 draw "% Tory" */
-        overlay_call_181F_0254();                   /* @asm 0x0275A6 Tory face sprite (id 0x7D) */
+    if (tory != 0) {                                /* @asm 0x0274F7 cmp [bp-0x7A],0 / je -> jmp 0x275AB */
+        overlay_call_0D1D_08FA();                   /* @asm 0x027509 itoa(tory, buf[bp-0x52], 10) */
+        overlay_call_181F_010A();                   /* @asm 0x027515 (&buf) */
+        overlay_call_181F_0178();                   /* @asm 0x027521 (&buf) reset/term */
+        overlay_call_181F_011E();                   /* @asm 0x02752D (&buf) */
+        overlay_call_181F_0182();                   /* @asm 0x02753D (tory_count, ss:&buf) append count */
+        overlay_call_181F_0128();                   /* @asm 0x027549 (&buf) */
+        /* face x [bp-0x5C] = 0x75 - hdr frame width(0x7D)
+         * @asm 0x027551..0x02755D (es:[bx+0x61A] = [0x7D*0xC+0x3E]) */
+        /* text measure 0x181F:0x204: pushes text_col, 0x85 (row y+1),
+         * [0x8A0],[0x89E] (text-ctx far ptr), ss:&buf; regs si=face x, ax=0;
+         * returns ax = string width.  @asm 0x027560..0x027577 */
+        overlay_call_181F_0204();                   /* @asm 0x027579 */
+        /* "% Tory" line right-aligned at x = face x - measured width
+         * ([bp-0x74]): pushes x, ss:&buf on top of the text_col/0x85 words
+         * left by the 0x204 sequence -- LEFT AS STUB (same unported-string
+         * reason as the Rebel line).  @asm 0x027583..0x027588 */
+        overlay_call_181F_013C();                   /* @asm 0x027589 */
+        /* Tory face sprite: pushes [0x840],[0x83E] (hdr), 0x84 (row y);
+         * regs ax=0x7D, bx=&[0x2DA8], dx=face x.  @asm 0x027591..0x0275A3 */
+        blit_sprite(0, 0x7D, 0x75 - sheet_frame_w_icons(0x7D), 0x84);  /* @asm 0x0275A6 */
     }
 
     DGS16(0x0070) = 0;         /* @asm 0x0275AB [0x70]=0 */
     if (show_close_button)                          /* @asm 0x0275B1 cmp [bp+6],0 / je */
-        overlay_call_181F_00E2();                   /* @asm 0x0275C5 close button @ (0x82,0x78,0x30) */
+        /* re-blit the colonist-row band 0x181F:0xE2 = blit_band: regs ax=bx=0,
+         * dx=0x82; pushes 0x82, 0x78, 0x30 (y, w, h).  @asm 0x0275B7..0x0275C3 */
+        blit_band(0, 0x82, 0x78, 0x30);             /* @asm 0x0275C5 (0,130,120,48) */
 }
 
 /* ============================================================================
