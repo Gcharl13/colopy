@@ -90,7 +90,7 @@ extern int overlay_call_1A1F_088A(void);  /* 0x1A1F:0x088A -- random byte getter
 extern int overlay_call_1A1F_0B16(void);  /* 0x1A1F:0x0B16 -- value getter */
 extern int overlay_call_1A1F_0A86(void);  /* 0x1A1F:0x0A86 -- modal yes/no or wait-key */
 extern int overlay_call_1A1F_0A78(void);  /* 0x1A1F:0x0A78 -- region save (0x300 buf) */
-extern int overlay_call_1A1F_0A6A(void);  /* 0x1A1F:0x0A6A -- region restore/fade */
+extern int overlay_call_1A1F_0A6A();  /* 0x1A1F:0x0A6A -- region restore/fade */
 extern int overlay_call_1A1F_0A5C(void);  /* 0x1A1F:0x0A5C -- screen helper */
 extern int overlay_call_1A1F_0A94(void);  /* 0x1A1F:0x0A94 -- string copy/append */
 extern int overlay_call_1A1F_0CDA(void);  /* 0x1A1F:0x0CDA -- build save path component */
@@ -120,7 +120,7 @@ extern int overlay_call_1A1F_0E10(void);  /* 0x1A1F:0x0E10 -- map post-load vali
 extern int overlay_call_1A1F_0E4E(void);  /* 0x1A1F:0x0E4E -- map teardown / finalize */
 extern int overlay_call_1A1F_0E5C(void);  /* 0x1A1F:0x0E5C -- view-state init */
 extern int overlay_call_1A1F_0E6A(void);  /* 0x1A1F:0x0E6A -- formatted name line */
-extern int overlay_call_1A1F_07C4(void);  /* 0x1A1F:0x07C4 -- region restore (0x1000) */
+extern int overlay_call_1A1F_07C4();  /* 0x1A1F:0x07C4 -- region restore (0x1000) */
 extern int overlay_call_1A1F_0CBE(void);  /* 0x1A1F:0x0CBE -- predicate */
 extern int overlay_call_1A1F_08DC(void);  /* 0x1A1F:0x08DC -- bind map layer ptrs */
 extern int overlay_call_181F_0254(void);  /* 0x181F:0x0254 -- decode layer into block */
@@ -178,8 +178,8 @@ extern int overlay_call_181F_0ED6(void);  /* 0x181F:0x0ED6 -- helper */
 extern int overlay_call_181F_05C4();  /* 0x181F:0x05C4 -- helper */
 /* overlay_call_1A1F_0372: returns int per overlay_externs.h (ax:dx 32-bit; int on modern) */
 
-extern int overlay_call_0D1D_07E4(void);  /* 0x0D1D:0x07E4 -- C strcpy */
-extern int overlay_call_0D1D_0C56(void);  /* 0x0D1D:0x0C56 -- C strchr */
+extern int overlay_call_0D1D_07E4();  /* 0x0D1D:0x07E4 -- C strcpy */
+extern int overlay_call_0D1D_0C56();  /* 0x0D1D:0x0C56 -- C strchr */
 extern int overlay_call_0D1D_07A4(void);  /* 0x0D1D:0x07A4 -- C strcpy variant */
 extern int overlay_call_0D1D_0D64(void);  /* 0x0D1D:0x0D64 -- C helper */
 extern int overlay_call_0D1D_085E(void);  /* 0x0D1D:0x085E -- C strncpy */
@@ -202,7 +202,7 @@ extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA -- C findnext (read diren
 extern int overlay_call_0D1D_0842();  /* 0x0D1D:0x0842 -- C strlen */
 extern int overlay_call_0D1D_08BC(void);  /* 0x0D1D:0x08BC -- C strncmp */
 extern int overlay_call_0D1D_117E(void);  /* 0x0D1D:0x117E -- C strcpy(dst, src) used by NAMES name fills */
-extern int overlay_call_0D1D_08F6(void);  /* 0x0D1D:0x08F6 -- C atoi/count (MISCELLANEOUS count @0x833c) */
+extern int overlay_call_0D1D_08F6();  /* 0x0D1D:0x08F6 -- C atoi/count (MISCELLANEOUS count @0x833c) */
 extern int overlay_call_1A1F_0B2E(void);  /* 0x1A1F:0x0B2E -- NAMES parse helper (UNIT last field) */
 
 /* Local DGROUP globals referenced below (absolute DGROUP offsets from disasm). */

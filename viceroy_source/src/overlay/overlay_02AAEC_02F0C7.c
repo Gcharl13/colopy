@@ -251,7 +251,7 @@ extern int  overlay_call_0D1D_07A4(void);  /* dispatch_overlay_op(opcode,arg)   
 extern int  overlay_call_0D1D_117E(void);  /* sprintf(buf,...)                     */
 extern int  overlay_call_0D1D_0D64(void);  /* strlen(buf)                          */
 extern int  overlay_call_0D1D_0842();  /* edit_buffer_dirty(buf) -> bool       */
-extern int  overlay_call_0D1D_07E4(void);  /* strcpy(dst,src)                      */
+extern int  overlay_call_0D1D_07E4();  /* strcpy(dst,src)                      */
 extern int  overlay_call_0D1D_0DAE();  /* memset(dst,val,n)                    */
 extern long overlay_call_0C0C_0006(void);  /* ms_clock() -> DX:AX                  */
 

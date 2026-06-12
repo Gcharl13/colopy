@@ -92,12 +92,12 @@ extern int overlay_call_0D1D_0712(void);  /* @ref RTLink seg 0x0D1D off 0x0712 *
 extern int overlay_call_0D1D_0758();  /* @ref RTLink seg 0x0D1D off 0x0758 */
 extern int overlay_call_0D1D_0786();  /* @ref RTLink seg 0x0D1D off 0x0786 */
 extern int overlay_call_0D1D_07A4();  /* @ref RTLink seg 0x0D1D off 0x07A4 */
-extern int overlay_call_0D1D_07E4(void);  /* @ref RTLink seg 0x0D1D off 0x07E4 */
+extern int overlay_call_0D1D_07E4();  /* @ref RTLink seg 0x0D1D off 0x07E4 */
 extern int overlay_call_0D1D_0816();  /* @ref RTLink seg 0x0D1D off 0x0816 */
 extern int overlay_call_0D1D_0842();  /* @ref RTLink seg 0x0D1D off 0x0842 */
 extern int overlay_call_0D1D_085E();  /* @ref RTLink seg 0x0D1D off 0x085E */
 extern int overlay_call_0D1D_08BC();  /* @ref RTLink seg 0x0D1D off 0x08BC */
-extern int overlay_call_0D1D_08F6(void);  /* @ref RTLink seg 0x0D1D off 0x08F6 */
+extern int overlay_call_0D1D_08F6();  /* @ref RTLink seg 0x0D1D off 0x08F6 */
 extern int overlay_call_0D1D_08FA();  /* @ref RTLink seg 0x0D1D off 0x08FA */
 extern int overlay_call_0D1D_0916(void);  /* @ref RTLink seg 0x0D1D off 0x0916 */
 extern int overlay_call_0D1D_0942();  /* @ref RTLink seg 0x0D1D off 0x0942 */
@@ -105,7 +105,7 @@ extern int overlay_call_0D1D_09A2();  /* @ref RTLink seg 0x0D1D off 0x09A2 */
 extern int overlay_call_0D1D_0A3E();  /* @ref RTLink seg 0x0D1D off 0x0A3E */
 extern int overlay_call_0D1D_0AD8();  /* @ref RTLink seg 0x0D1D off 0x0AD8 */
 extern int overlay_call_0D1D_0B48();  /* @ref RTLink seg 0x0D1D off 0x0B48 */
-extern int overlay_call_0D1D_0C56(void);  /* @ref RTLink seg 0x0D1D off 0x0C56 */
+extern int overlay_call_0D1D_0C56();  /* @ref RTLink seg 0x0D1D off 0x0C56 */
 extern int overlay_call_0D1D_0C80(void);  /* @ref RTLink seg 0x0D1D off 0x0C80 */
 extern int overlay_call_0D1D_0D1A(void);  /* @ref RTLink seg 0x0D1D off 0x0D1A */
 extern int overlay_call_0D1D_0D46();  /* @ref RTLink seg 0x0D1D off 0x0D46 */
@@ -284,7 +284,7 @@ extern int overlay_call_181F_05C4();  /* @ref RTLink seg 0x181F off 0x05C4 */
 extern int overlay_call_181F_05CE(void);  /* @ref RTLink seg 0x181F off 0x05CE */
 extern int overlay_call_181F_05D8(void);  /* @ref RTLink seg 0x181F off 0x05D8 */
 extern int overlay_call_181F_05E2(void);  /* @ref RTLink seg 0x181F off 0x05E2 */
-extern int overlay_call_181F_0608(void);  /* @ref RTLink seg 0x181F off 0x0608 */
+extern int overlay_call_181F_0608();  /* @ref RTLink seg 0x181F off 0x0608 */
 extern int overlay_call_181F_0614();  /* @ref RTLink seg 0x181F off 0x0614 */
 extern int overlay_call_181F_0652();  /* @ref RTLink seg 0x181F off 0x0652 */
 extern int overlay_call_181F_065E(void);  /* @ref RTLink seg 0x181F off 0x065E */
@@ -497,7 +497,7 @@ extern int overlay_call_191F_0A2E(void);  /* @ref RTLink seg 0x191F off 0x0A2E *
 extern int overlay_call_191F_0A74();  /* @ref RTLink seg 0x191F off 0x0A74 */
 extern int overlay_call_191F_0AAC(void);  /* @ref RTLink seg 0x191F off 0x0AAC */
 extern int overlay_call_191F_0CBC(int a, int b);  /* @ref RTLink seg 0x191F off 0x0CBC → file 0x8F6C (colony price-band screen update) */
-extern int overlay_call_191F_0AC8(void);  /* @ref RTLink seg 0x191F off 0x0AC8 */
+extern int overlay_call_191F_0AC8();  /* @ref RTLink seg 0x191F off 0x0AC8 */
 extern int overlay_call_191F_0AD4();  /* @ref RTLink seg 0x191F off 0x0AD4 */
 extern int overlay_call_191F_0ED0();  /* @ref RTLink seg 0x191F off 0x0ED0 */
 extern int overlay_call_191F_0F8E();  /* @ref RTLink seg 0x191F off 0x0F8E */
@@ -510,12 +510,12 @@ extern int overlay_call_1A1F_0150(void);  /* @ref RTLink seg 0x1A1F off 0x0150 *
 extern int overlay_call_1A1F_01A0(void);  /* @ref RTLink seg 0x1A1F off 0x01A0 */
 extern int overlay_call_1A1F_0210(void);  /* @ref RTLink seg 0x1A1F off 0x0210 */
 extern int overlay_call_1A1F_02D2(void);  /* @ref RTLink seg 0x1A1F off 0x02D2 */
-extern int overlay_call_1A1F_0356(void);  /* @ref RTLink seg 0x1A1F off 0x0356 */
+extern int overlay_call_1A1F_0356();  /* @ref RTLink seg 0x1A1F off 0x0356 */
 extern int overlay_call_1A1F_0372(void);  /* @ref RTLink seg 0x1A1F off 0x0372 */
 extern int overlay_call_1A1F_0380(void);  /* @ref RTLink seg 0x1A1F off 0x0380 */
 extern int overlay_call_1A1F_05A8(void);  /* @ref RTLink seg 0x1A1F off 0x05A8 */
 extern int overlay_call_1A1F_0710(void);  /* @ref RTLink seg 0x1A1F off 0x0710 */
-extern int overlay_call_1A1F_07C4(void);  /* @ref RTLink seg 0x1A1F off 0x07C4 */
+extern int overlay_call_1A1F_07C4();  /* @ref RTLink seg 0x1A1F off 0x07C4 */
 extern int overlay_call_1A1F_07DC(void);  /* @ref RTLink seg 0x1A1F off 0x07DC */
 extern int overlay_call_1A1F_0868(void);  /* @ref RTLink seg 0x1A1F off 0x0868 */
 extern int overlay_call_1A1F_0872(void);  /* @ref RTLink seg 0x1A1F off 0x0872 */
@@ -528,7 +528,7 @@ extern int overlay_call_1A1F_0914();  /* @ref RTLink seg 0x1A1F off 0x0914 */
 extern int overlay_call_1A1F_093E(void);  /* @ref RTLink seg 0x1A1F off 0x093E */
 extern int overlay_call_1A1F_0968(void);  /* @ref RTLink seg 0x1A1F off 0x0968 */
 extern int overlay_call_1A1F_098E(void);  /* @ref RTLink seg 0x1A1F off 0x098E */
-extern int overlay_call_1A1F_0A6A(void);  /* @ref RTLink seg 0x1A1F off 0x0A6A */
+extern int overlay_call_1A1F_0A6A();  /* @ref RTLink seg 0x1A1F off 0x0A6A */
 extern int overlay_call_1A1F_0A78(void);  /* @ref RTLink seg 0x1A1F off 0x0A78 */
 extern int overlay_call_1A1F_0A86(void);  /* @ref RTLink seg 0x1A1F off 0x0A86 */
 extern int overlay_call_1A1F_0A94();  /* @ref RTLink seg 0x1A1F off 0x0A94 */

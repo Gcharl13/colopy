@@ -174,7 +174,7 @@ extern int overlay_call_181F_0ACE();  /* 0x181F:0x0ACE -- terrain-detail seconda
 extern int overlay_call_181F_0B00();  /* 0x181F:0x0B00 -- terrain-detail probe (id) -> count  */
 extern int overlay_call_181F_0B78(void);  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
 extern int overlay_call_181F_0808();  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
-extern int overlay_call_1A1F_01CA(void);  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
+extern int overlay_call_1A1F_01CA();  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
 
 /* ----------------------------------------------------------------------------
  * Stride-0x0C DGROUP terrain/good UI-list table  (BYTE_VERIFIED 2026-06-08)

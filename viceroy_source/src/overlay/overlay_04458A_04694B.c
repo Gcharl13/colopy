@@ -191,7 +191,7 @@
  *      17E8->181F:0E52  17ED->191F:0472
  * The role comment is documentation; the call itself is faithful.
  * ------------------------------------------------------------------------- */
-extern int overlay_call_0D1D_0C56(void);  extern int overlay_call_0D1D_1010();
+extern int overlay_call_0D1D_0C56();  extern int overlay_call_0D1D_1010();
 extern int overlay_call_0D1D_10EA();  extern int overlay_call_0D1D_113C(void);
 extern int overlay_call_0D1D_117E(void);
 extern int overlay_call_181F_002C(void);  extern int overlay_call_181F_00BA(void);
@@ -212,7 +212,7 @@ extern int overlay_call_181F_0A10(void);  extern int overlay_call_181F_0A1A(void
 extern int overlay_call_181F_0A38(void);  extern int overlay_call_181F_0A4C();
 extern int overlay_call_181F_0A60();  extern int overlay_call_181F_04D4();
 extern int overlay_call_191F_01A8(void);
-extern int overlay_call_1A1F_0356(void);  extern int overlay_call_1A1F_0364(void);
+extern int overlay_call_1A1F_0356();  extern int overlay_call_1A1F_0364(void);
 extern int overlay_call_1A1F_0372(void);  extern int overlay_call_1A1F_0380(void);
 extern int overlay_call_1A1F_038A(void);
 

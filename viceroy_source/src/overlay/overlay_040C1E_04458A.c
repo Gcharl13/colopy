@@ -121,7 +121,7 @@
  *   191F:0ED0 memcpy-like word copy / sort helper
  * The role comment is documentation; the call itself is faithful.
  * ------------------------------------------------------------------------- */
-extern int overlay_call_0D1D_07E4(void);  /* str_format(buf, fmt[, ...])      */
+extern int overlay_call_0D1D_07E4();  /* str_format(buf, fmt[, ...])      */
 extern int overlay_call_0D1D_0DAE();  /* memset-like fill                 */
 extern int overlay_call_0D1D_0F60(void);  /* long mul helper                  */
 extern int overlay_call_0D1D_0EC6(void);  /* long div helper                  */
@@ -141,7 +141,7 @@ extern int overlay_call_181F_0416(void);  extern int overlay_call_181F_0438();
 extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E();
 extern int overlay_call_181F_04C0();  extern int overlay_call_181F_04D4();
 extern int overlay_call_181F_0524();  extern int overlay_call_181F_0582(void);
-extern int overlay_call_181F_0608(void);  extern int overlay_call_181F_0652();
+extern int overlay_call_181F_0608();  extern int overlay_call_181F_0652();
 extern int overlay_call_181F_0682();  extern int overlay_call_181F_0696(void);
 extern int overlay_call_181F_06BE(void);  extern int overlay_call_181F_070E(void);
 extern int overlay_call_181F_0718();  extern int overlay_call_181F_0722(void);

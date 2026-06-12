@@ -111,7 +111,7 @@ extern int32_t aFldiv(int32_t a, int32_t b);   /* file 0x010496, ovly 0xD1D:0x0E
 extern int overlay_call_181F_0C40();  /* @asm lcall 0x181F:0x0C40 (page_10 0x05C83D) */
 extern int overlay_call_181F_0858();  /* @asm lcall 0x181F:0x0858 (page_12 0x0604A6) */
 extern int overlay_call_181F_0876();  /* @asm lcall 0x181F:0x0876 (page_12 0x0604B7) */
-extern int overlay_call_1A1F_01CA(void);  /* @asm lcall 0x1A1F:0x01CA (page_12 0x061035) */
+extern int overlay_call_1A1F_01CA();  /* @asm lcall 0x1A1F:0x01CA (page_12 0x061035) */
 /* LCALL helpers used only by the func_05E9B0 tile-info-panel renderer
  * (text/string builders in load-image seg 0x181F); each cited at its use site
  * in page_11.  Declared file-local because overlay_externs.h omits them. */

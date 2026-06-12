@@ -79,7 +79,7 @@ extern int  func_0789FA_free_dos_block(void);                       /* 191F:01A8
 extern int  menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 extern long overlay_call_191F_019C();  /* func_06F5B0 text panel (0x1705, [0x8D52]) @0x4B410 */
 extern long overlay_call_181F_0022();  /* func_002462 string-list fetch [0x2D42]+n */
-extern long overlay_call_0D1D_07E4(void);  /* format text id into buf */
+extern long overlay_call_0D1D_07E4();  /* format text id into buf */
 extern long overlay_call_0D1D_07A4(void);  /* append text id to buf */
 extern long overlay_call_0D1D_117E(void);  /* far string copy */
 extern long overlay_call_0D1D_0B48(void);  /* string-splice fmt */

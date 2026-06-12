@@ -994,7 +994,7 @@ extern int  overlay_call_181F_097A();   /* 0x181F:0x097A — per_unit_type0B_gat
 extern int  overlay_call_1A1F_0270(void);   /* 0x1A1F:0x0270 — per-power AI/boycott hook;
                                              * called before commit 0x0470 at boycott-lift;
                                              * exact page_0A/0B body not cross-ref'd here. */
-extern int  overlay_call_1A1F_0398(void);   /* 0x1A1F:0x0398 — page_0B shared redraw/update
+extern int  overlay_call_1A1F_0398();   /* 0x1A1F:0x0398 — page_0B shared redraw/update
                                              * dispatcher (cross-ref: overlay_04458A_04694B.c
                                              * "LJMP 1A1F:0398 = shared redraw dispatcher");
                                              * args here are anger-scalar [0x5398], power [0x8D52]. */

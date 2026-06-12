@@ -1249,7 +1249,7 @@ int func_072CA4_save_to_slot(uint16_t arg6)
  * @asm 0x072E0A  append suffix [0x2DE0] (0x181F:0x16E)
  * @asm 0x072F67  lcall 0x1A1F:0x7C4 (restore) ; RETF
  * ============================================================================ */
-extern int overlay_call_1A1F_07C4(void);  /* 0x1A1F:0x07C4 -- save/restore screen-under-dialog */
+extern int overlay_call_1A1F_07C4();  /* 0x1A1F:0x07C4 -- save/restore screen-under-dialog */
 extern int overlay_call_191F_0182(void);  /* 0x191F:0x0182 -- resolve list object */
 extern int overlay_call_181F_0178(void);  /* 0x181F:0x0178 -- append literal */
 extern int overlay_call_181F_0204(void);  /* 0x181F:0x0204 -- measure text width */
