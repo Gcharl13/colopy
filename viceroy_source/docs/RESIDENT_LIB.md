@@ -10,6 +10,7 @@ where marked; others pending (each has per-function disasm where noted).
 | 004B:012E | 2 | 0x029DE | y | str helper (004B:012E) |
 | 004B:01E8 | 2 | 0x02A98 | y | str helper (004B:01E8) |
 | 004B:0318 | 1 | 0x02BC8 | y | text commit row (ui layout tables) |
+| 012B:0002 | 1 | 0x036B2 | - | type id -> ICONS sprite (arg in AX) BYTE_VERIFIED = func_0036B2_type_sprite_id |
 | 012B:015C | 1 | 0x0380C | y | (pending) |
 | 024C:002A | 3 | 0x048EA | y | clamp family (024C:002A) |
 | 024C:0040 | 2 | 0x04900 | y | clamp family (024C:0040) |

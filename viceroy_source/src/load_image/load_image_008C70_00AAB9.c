@@ -16,12 +16,21 @@
  * the RTLink seg:off of the far CALL as seen in the disassembly.
  * (TODO: promote these to include/overlay_externs.h.)
  * -------------------------------------------------------------------------- */
-extern int overlay_call_012B_0002(void);  /* @ref seg 0x012B off 0x0002 (func_0091CC) */
 extern int overlay_call_05B3_0004();  /* @ref seg 0x05B3 off 0x0004 (func_00A994) */
 extern int overlay_call_0981_0000();  /* @ref seg 0x0981 off 0x0000 (func_00A994) */
 extern int overlay_call_037F_02F8();  /* @ref seg 0x037F off 0x02F8 (func_00A6A2) */
 extern int overlay_call_037F_0598();  /* @ref seg 0x037F off 0x0598 (func_00A6A2) */
 extern int overlay_call_0427_0992();  /* @ref seg 0x0427 off 0x0992 (func_00A6A2) */
+
+/* Cross-file strong ports used by the 0x90C8/0x9102/0x91CC colonist-resolver
+ * chain (a bare func_XXXX name in this file otherwise binds to the linkfloor
+ * weak stub, which returns 0). */
+extern int func_008BD4_op_sz_73(uint16_t arg0);      /* file 0x8BD4: nth owned unit on the colony tile
+                                                      * (load_image_008262_008C6F.c) */
+extern int func_008BB2_logic_sz_20(uint16_t arg0);   /* file 0x8BB2: per-unit-type attribute, table 0x30E
+                                                      * (load_image_008262_008C6F.c) */
+extern int func_0036B2_type_sprite_id(uint16_t r_ax);/* file 0x36B2 = resident 0x012B:0x0002 (arg in AX):
+                                                      * type id -> ICONS sprite (load_image_0033F2_004E76.c) */
 
 /* @asm        0x008C70..0x008CFF  (144 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008C70_unknown.asm
@@ -377,6 +386,98 @@ int func_00903E_logic_sz_138(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return i;
 }
 
+/* @asm        0x0090C8..0x009101  (58 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_0090C8.asm
+ * @pattern    UNKNOWN
+ * @prologue   ENTER 2
+ * @args_seen  [6]
+ * @lcalls     0
+ * @near_calls 2
+ * @callers    3+ (near 0x91D4 func_0091CC, 0x9994 func_009974; thunk 0x181F:0x0C0E)
+ * @touches_8542 True
+ *
+ * Near CALL targets:
+ *   - 0x008BD4  (resolve out-of-colony unit index)
+ *   - 0x008BB2  (per-unit-type attribute, table 0x30E)
+ * @inferred_role  job/class byte for colony slot arg0 (+0x20 array; slots past
+ *                 the population map through func_008BD4 to the tile units)
+ * @status     BYTE_VERIFIED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ * @note   Strong port under the BARE name so it overrides the linkfloor weak
+ *         stub: the bare-name call sites (func_0091CC @0x91D4, func_009974
+ *         @0x9994, and the rewired 0x181F:0x0C0E painter sites in
+ *         overlay_024342_027B62.c) all bind here.  The in-colony half was
+ *         previously ported as current_unit_field_at_20 (src/colony/
+ *         accessors.c); this is the FULL function including the out-of-colony
+ *         tail that accessors.c approximates with a sentinel return.
+ */
+int func_0090C8(uint16_t arg0_bp_06)
+{
+    /* @asm 0x90CD bx=[0x8542] (ctx); al=(int8)ctx->pop(+0x1F); cbw;
+     *      cmp ax,[bp+6]; jle 0x90E6 (slot >= population: external unit).
+     *      in-colony 0x90DA: si=[bp+6]; al=byte[bx+si+0x20]; sub ah,ah
+     *      (ZERO-extend) -> return ctx->job[slot].
+     *      external 0x90E6: al=(int8)ctx->pop; cbw; sub ax,[bp+6]; neg ax
+     *      (= slot - pop); push ax; call 0x8BD4 (u = func_008BD4(slot-pop));
+     *      0x90F7 push ax; call 0x8BB2 -> return func_008BB2(u).
+     * Job/class byte for colony slot arg0.  Colonists (slot < population,
+     * ctx@0x8542 pop@+0x1F) read the per-colonist job array at +0x20; slots at/
+     * past the population denote the units standing on the colony's map tile,
+     * resolved via func_008BD4(slot - pop) and classed through func_008BB2
+     * (the signed per-unit-type attribute byte at table 0x30E). */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    if ((int16_t)(int8_t)ctx_local[0x1F] > (int16_t)arg0_bp_06)
+        return ctx_local[arg0_bp_06 + 0x20];             /* @asm 0x90DD..0x90E0 */
+    {
+        int16_t u = (int16_t)func_008BD4_op_sz_73(       /* @asm 0x90F1 call 0x8BD4 */
+            (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
+        return func_008BB2_logic_sz_20((uint16_t)u);     /* @asm 0x90F9 call 0x8BB2 */
+    }
+}
+
+/* @asm        0x009102..0x00913B  (58 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_009102.asm
+ * @pattern    UNKNOWN
+ * @prologue   ENTER 2
+ * @args_seen  [6]
+ * @lcalls     0
+ * @near_calls 1
+ * @callers    3+ (near 0x91E1 func_0091CC, 0x99A1 func_009974; thunk 0x181F:0x0C54)
+ * @touches_8542 True
+ *
+ * Near CALL targets:
+ *   - 0x008BD4  (resolve out-of-colony unit index)
+ * @inferred_role  unit-type/profession byte for colony slot arg0 (+0x40 array;
+ *                 out-of-colony slots read UnitRecord vet_type +0x17 @0x315B)
+ * @status     BYTE_VERIFIED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ * @note   Strong port under the BARE name (overrides the linkfloor weak stub);
+ *         sister of func_0090C8, and the getter counterpart of func_00913C
+ *         below (which writes the same two locations).  In-colony half
+ *         previously ported as current_unit_field_at_40 (src/colony/
+ *         accessors.c) without the out-of-colony tail.
+ */
+int func_009102(uint16_t arg0_bp_06)
+{
+    /* @asm 0x9107 bx=[0x8542]; al=(int8)ctx->pop(+0x1F); cbw; cmp ax,[bp+6];
+     *      jle 0x9120 (slot >= population: external unit).
+     *      in-colony 0x9114: si=[bp+6]; al=byte[bx+si+0x40]; sub ah,ah
+     *      (ZERO-extend) -> return ctx->unit_type[slot].
+     *      external 0x9120: ax=(int8)ctx->pop; sub ax,[bp+6]; neg ax
+     *      (= slot - pop); push ax; call 0x8BD4 (u); 0x9131 imul bx,ax,0x1C;
+     *      al=byte[bx+0x315B]; cbw (SIGN-extend) -> UnitRecord[u].vet_type.
+     * Unit-type/profession byte for colony slot arg0: colonists read the
+     * per-colonist unit_type array at +0x40; slots past the population resolve
+     * the tile unit via func_008BD4(slot - pop) and return its UnitRecord
+     * vet_type (+0x17 == 0x315B, stride 0x1C, DGROUP_MEMORY_MAP §3.1). */
+    unsigned char near *ctx_local = (unsigned char near *)ctx;
+    if ((int16_t)(int8_t)ctx_local[0x1F] > (int16_t)arg0_bp_06)
+        return ctx_local[arg0_bp_06 + 0x40];             /* @asm 0x9117..0x911A */
+    {
+        int16_t u = (int16_t)func_008BD4_op_sz_73(       /* @asm 0x912B call 0x8BD4 */
+            (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
+        return (int8_t)DG8(0x315B + (unsigned)(uint16_t)u * 0x1C); /* @asm 0x9131..0x9138 */
+    }
+}
+
 /* @asm        0x00913C..0x009165  (41 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00913C_unknown.asm
  * @pattern    WRAPPER_NEARCALL
@@ -417,7 +518,8 @@ int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if ((int16_t)(int8_t)ctx_local[0x1F] > (int16_t)arg0_bp_06) {
         ctx_local[arg0_bp_06 + 0x40] = (uint8_t)arg1_bp_08; /* in-colony unit_type[slot] */
     } else {
-        int16_t u = (int16_t)func_008BD4((uint16_t)(arg0_bp_06 - (int8_t)ctx_local[0x1F]));
+        int16_t u = (int16_t)func_008BD4_op_sz_73(      /* real port (was weak-stub bare name) */
+            (uint16_t)(arg0_bp_06 - (int8_t)ctx_local[0x1F]));
         DG8(0x3144 + (unsigned)u * 0x1C + 0x17) = (uint8_t)arg1_bp_08;
     }
     return 0;
@@ -442,7 +544,11 @@ int func_00913C_logic_sz_72(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @note   Auto-tracer reported 181 bytes ending 0x9281: a FALSE cut.  Disassembly
  *         (func_0091CC.asm) IS present: true function is 0x91CC..0x9298 (205 bytes);
  *         the whole field20>0x13 branch and its UnitRecord lookup were truncated.
- *         LCALL 0x012B:0x0002 declared file-locally above.
+ *         LCALL 0x012B:0x0002 (arg in AX, not on the stack) is the resident
+ *         type->sprite table-map leaf at file 0x36B2, ported 2026-06-12 as
+ *         func_0036B2_type_sprite_id (load_image_0033F2_004E76.c) and called
+ *         directly below; the whole resolver chain (func_0090C8/func_009102/
+ *         func_008BD4/func_008BB2/0x36B2) is now real.
  */
 int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
 {
@@ -464,13 +570,14 @@ int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
      * overridden to a 14-stride table_5232 entry when slot arg0 is an out-of-colony
      * soldier/dragoon (UnitRecord +2 == 9 or 7).  ctx@0x8542, pop@+0x1F. */
     unsigned char near *ctx_local = (unsigned char near *)ctx;
-    int16_t field20 = (int16_t)func_0090C8(arg0_bp_06);    /* @0x91D4 */
-    int16_t field40 = (int16_t)func_009102(arg0_bp_06);    /* @0x91E1 */
+    int16_t field20 = (int16_t)func_0090C8(arg0_bp_06);    /* @0x91D4 (real port above) */
+    int16_t field40 = (int16_t)func_009102(arg0_bp_06);    /* @0x91E1 (real port above) */
     int16_t result;
     if (field20 <= 0x13) {
         if (field40 == 0x1C)
             field40 = 0x13;                                /* fold profession 0x1c -> 0x13 */
-        result = (int16_t)overlay_call_012B_0002(/* field40 */);
+        result = (int16_t)func_0036B2_type_sprite_id(      /* @0x91FD lcall 0x012B:0x0002, arg in AX */
+            (uint16_t)field40);
         return result;
     }
     result = (int16_t)(field20 + 0x52);                    /* default big-id base */
@@ -482,7 +589,7 @@ int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
             result = (int16_t)(field20 + 0x36);            /* profession-mismatch base */
     }
     if (field20 == 0x15 || field20 == 0x17) {
-        int16_t u = (int16_t)func_008BD4(
+        int16_t u = (int16_t)func_008BD4_op_sz_73(      /* real port (was weak-stub bare name) */
             (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
         uint8_t cls = (uint8_t)DG8(0x3146 + (unsigned)(uint16_t)u * 0x1C);  /* UnitRecord +2 */
         if (cls == 9 || cls == 7)

@@ -226,6 +226,54 @@ int func_0035EC_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t a
     return 0;  /* TODO: port from func_0035EC.asm — dest ptr via opaque overlay 0x0A4E:0x0008 */
 }
 
+/* @asm        0x0036B2..0x00370F  (94 bytes)  region=load_image
+ * @asm_file   (none -- the auto-scan never carved the 0x36B0..0x3710 gap;
+ *              disassembled directly from VICEROY.EXE 2026-06-12)
+ * @pattern    JUMP_TABLE
+ * @prologue   NONE (frameless register-arg leaf; arg in AX, result in AX)
+ * @args_seen  [] (register: AX)
+ * @lcalls     0
+ * @near_calls 0
+ * @callers    2 (near 0x00372E in func_003710; far func_0091CC @0x0091FD via
+ *              resident entry 0x012B:0x0002 -- RESIDENT_LIB rule
+ *              file = seg*16 + 0x2400 + off = 0x12B0 + 0x2400 + 2 = 0x36B2)
+ * @touches_8542 False
+ * @inferred_role  colonist profession / unit-type id -> ICONS-sheet sprite id
+ * @status     BYTE_VERIFIED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ * @note   This IS the resident table-map leaf behind overlay_call_012B_0002
+ *         (linkfloor weak stub): callers must pass the id in AX, so the stub
+ *         can never carry it -- call this port directly instead (func_0091CC's
+ *         small-id path is wired to it in load_image_008C70_00AAB9.c).
+ */
+int func_0036B2_type_sprite_id(uint16_t r_ax)
+{
+    /* @asm 0x0036B2 mov cx,ax (save id); 0x0036B4 sub ax,0x13; cmp ax,9;
+     *      ja 0x36D8 (default); shl ax,1; xchg bx,ax; jmp cs:[bx+0x14]
+     *      (10-entry word table at CS:0x0014 = file 0x36C4, inputs 0x13..0x1C:
+     *      30 36 3C 42 28 48 4E 54 5A 30 -> 0x36E0/0x36E6/0x36EC/0x36F2/
+     *      0x36D8/0x36F8/0x36FE/0x3704/0x370A/0x36E0).
+     *      default 0x0036D8: mov dx,cx; add dx,0x52; shared tail 0x00370D
+     *      mov ax,dx; retf.   cases: 0x36E0 dx=0x65; 0x36E6 dx=0x3B;
+     *      0x36EC dx=0x3C; 0x36F2 dx=0x3D; 0x36F8 dx=0x3E; 0x36FE dx=0x6B;
+     *      0x3704 dx=0x6C; 0x370A dx=0x43.
+     * Maps a colonist profession / unit-type id (AX) to its ICONS-sheet sprite
+     * id: ordinary ids map linearly to the colonist figures at +0x52; the
+     * special types 0x13..0x1C get fixed icons, with 0x1C sharing 0x13's icon
+     * (0x65) and 0x17 routed through the linear rule (0x17+0x52 = 0x69). */
+    switch ((int16_t)r_ax) {
+    case 0x13:  return 0x65;                    /* @asm 0x0036E0 */
+    case 0x14:  return 0x3B;                    /* @asm 0x0036E6 */
+    case 0x15:  return 0x3C;                    /* @asm 0x0036EC */
+    case 0x16:  return 0x3D;                    /* @asm 0x0036F2 */
+    case 0x18:  return 0x3E;                    /* @asm 0x0036F8 */
+    case 0x19:  return 0x6B;                    /* @asm 0x0036FE */
+    case 0x1A:  return 0x6C;                    /* @asm 0x003704 */
+    case 0x1B:  return 0x43;                    /* @asm 0x00370A */
+    case 0x1C:  return 0x65;                    /* @asm jump table entry 9 -> 0x36E0 */
+    default:    return (int16_t)(r_ax + 0x52);  /* @asm 0x0036D8 (incl. 0x17 -> 0x69) */
+    }
+}
+
 /* @asm        0x003710..0x003724  (20 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_003710_unknown.asm
  * @pattern    TINY_ACCESSOR
@@ -244,9 +292,10 @@ int func_0035EC_logic_sz_53(uint16_t arg0_bp_0A, uint16_t arg1_bp_10, uint16_t a
  * reads the 0x1C-stride tile record at DGROUP:0x3146[ax*0x1C], indexes the sprite
  * table at 0x5232 by 14*type and a sub-type at 0x315B, calls the near helper
  * 0x0036B2 when type==0, then applies a dense ladder of (type,subtype)->id fixups
- * before returning the resolved sprite id.  The fixup ladder and the 0x0036B2
- * helper's semantics are not confidently recoverable from this TU, so this stays
- * an honest stub rather than a guessed mapping. */
+ * before returning the resolved sprite id.  The fixup ladder is not confidently
+ * recoverable from this TU (the 0x0036B2 helper IS -- ported above as
+ * func_0036B2_type_sprite_id 2026-06-12), so this stays an honest stub rather
+ * than a guessed mapping. */
 int func_003710_logic_sz_20(void)
 {
     return 0;  /* TODO: port from func_003710.asm — multi-table sprite-id ladder + near 0x0036B2 */

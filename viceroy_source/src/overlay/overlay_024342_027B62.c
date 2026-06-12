@@ -900,6 +900,11 @@ extern int  overlay_near_07EFB(void); /* ip 0x7EFB build-precondition probe */
 /* direct call replacing void-arity stub call */
 extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
 
+/* colonist-resolver chain, real ports (load_image_008C70_00AAB9.c): the
+ * 0x181F:0x0C0E / 0x181F:0x0A74 thunks resolve to resident 0x90C8 / 0x91CC. */
+extern int  func_0090C8(uint16_t slot);               /* 0x181F:0x0C0E: job/class byte for colony slot */
+extern int  func_0091CC_colony_sz_181(uint16_t slot); /* 0x181F:0x0A74: ICONS sprite id for colony slot */
+
 /* real draw primitives (modern glue, src/platform/render_glue.c).  The DOS
  * 0x181F:0x254 sprite blit takes the sheet header far ptr [0x840]:[0x83E] on
  * the stack plus bx=&[0x2DA8] (the 4-word sheet descriptor); the modern glue
@@ -920,7 +925,9 @@ extern int  sheet_frame_h_icons(int id);   /* sheet hdr frame height [id*0xC+0x4
  *   @status     RECONSTRUCTED (extent + reads + cell layout + the 0x254/0xE2
  *               draw-call args BYTE_VERIFIED and wired to blit_sprite/
  *               blit_band; the 0xCE boxes BYTE_VERIFIED 2026-06-12 and wired
- *               to draw_box; the 0x236/0x2BC/0x24A/0x506 sites have no
+ *               to draw_box; the 0xC0E/0xA74 colonist resolvers wired to the
+ *               real func_0090C8/func_0091CC_colony_sz_181 ports 2026-06-12;
+ *               the 0x236/0x2BC/0x24A/0x506 sites have no
  *               modern primitive and stay stubs with decoded args)
  *   @role       render the colony work-grid: the 5x5 block of surrounding map
  *               squares with their terrain, the colonist working each, and the
@@ -1043,8 +1050,8 @@ void colony_draw_workgrid(int show_close_button)
             count = (int)overlay_call_181F_0B3C();  /* @asm 0x02669B (col,r,&good_idx,1) -> amount [bp-0xE] */
             good_spr = good_idx + 0x17;             /* @asm 0x0266A6/0x0266A9 [bp-2] */
             cellgood = (int8_t)overlay_call_181F_0CE0(); /* @asm 0x0266B5 (col,r) -> cell good; cbw @0x0266BD [bp-0x20] */
-            (void)cellgood;
-            if ((int)overlay_call_181F_0C0E() == 8) /* @asm 0x0266C2 (cellgood) -> [bp-0x18]; cmp ax,8 @0x0266CD */
+            if (func_0090C8((uint16_t)cellgood) == 8) /* @asm 0x0266C1 push ax (cellgood); lcall 0x181F:0xC0E
+                                                       * -> [bp-0x18]; cmp ax,8 @0x0266CD (WIRED 2026-06-12) */
                 good_spr = 0x3A;                    /* @asm 0x0266D2 mov [bp-2],0x3A */
 
             if (count > 0) {                        /* @asm 0x0266D7 cmp [bp-0xE],0 / jle */
@@ -1071,10 +1078,14 @@ void colony_draw_workgrid(int show_close_button)
             }
 
             if (good_idx >= 0) {                    /* @asm 0x02675D cmp [bp-0x10],0 / jl */
-                overlay_call_181F_0A74();           /* @asm 0x026768 (cellgood,3) -> pip handle in ax */
+                (void)func_0091CC_colony_sz_181((uint16_t)cellgood);
+                                                    /* @asm 0x026765 push [bp-0x20] (cellgood);
+                                                     * lcall 0x181F:0xA74 -> pip sprite in ax
+                                                     * (WIRED 2026-06-12; the `push 3` @0x026763
+                                                     * is the LATER 0x24A call's stack arg) */
                 /* worker pip 0x181F:0x24A -- NO modern primitive.  Decoded:
-                 * regs ax=0xA74 result, dx=cell_x+0xC, bx=cell_y+6; no pushes.
-                 * @asm 0x026770..0x026779 */
+                 * stack arg 3 (pushed @0x026763); regs ax=0xA74 result,
+                 * dx=cell_x+0xC, bx=cell_y+6.  @asm 0x026770..0x026779 */
                 overlay_call_181F_024A();           /* @asm 0x02677C */
             }
 
@@ -1493,10 +1504,12 @@ void colony_draw_roster_strip(int show_button)
  *               + the 0x254/0xE2 draw-call args BYTE_VERIFIED; the SoL/Tory
  *               face blits and the close re-blit are wired to blit_sprite/
  *               blit_band; the 0xCE boxes + the pen-advance spread state
- *               BYTE_VERIFIED 2026-06-12 and wired to draw_box (sprite ids
- *               still come from the 0xA74 stub); the colonist-sprite 0x254
- *               (stub sprite-id arg), the 0x222/0x22C bars and the 0x13C
- *               text lines stay stubs with decoded args)
+ *               BYTE_VERIFIED 2026-06-12 and wired to draw_box; the colonist
+ *               sprite ids are REAL as of 2026-06-12 -- 0x181F:0xC0E/0xA74
+ *               wired to the func_0090C8/func_0091CC_colony_sz_181 ports,
+ *               the width pre-sum + [0xA890] squeeze ported, and the
+ *               colonist 0x254 blit wired to blit_sprite; the 0x222/0x22C
+ *               bars and the 0x13C text lines stay stubs with decoded args)
  *   @role       the colonist-row / mid-band LOWER painter: place every colonist
  *               sprite (with overlap-avoidance), draw the warehouse bar-chart
  *               and the SoL/Tory percentage display.
@@ -1529,6 +1542,7 @@ void colony_paint_colonist_row(int show_close_button)
     int count, i, sol, tory;
     int tory_count, rebel_count, thresh, text_col;
     int pen_x, spr, adv, borrow;   /* [bp-0x5C], [bp-0x66], [bp-0x6A], [bp-0x54] */
+    int width_sum, gap;            /* [bp-0x7E], [bp-0x5A] */
 
     /* @asm 0x0270D6 push 0x30,0x78,0x82,0; call 0x2CAC3 = ljmp 0x191F:0x7EC
      * (fill leaf): the colonist-row band fill at (0,130) 120x48. */
@@ -1538,29 +1552,31 @@ void colony_paint_colonist_row(int show_close_button)
 
     count = c->population + DGS16(0x8D72); /* @asm 0x0270E6 ctx[+0x1F]+[0x8D72] */
     /* pen seeds: x [bp-0x5C]=1, row y [bp-0x60]=0x8F  @asm 0x0270F5/0x0270FA */
+    width_sum = 0;                                  /* @asm 0x027101 [bp-0x7E]=0 */
     for (i = 0; i < count; i++) {                   /* @asm 0x02713B/0x02713E pre-sum widths [bp-0x6E] */
-        overlay_call_181F_0C0E();                   /* @asm 0x02710B (i) colonist->building [bp-0x72] */
-        overlay_call_181F_0A74();                   /* @asm 0x027119 (i) -> sprite id [bp-0x66]; width
-                                                     * sum [bp-0x7E] += hdr[id*0xC+0x3E] @0x027131 */
+        (void)func_0090C8((uint16_t)i);             /* @asm 0x02710B (i) colonist->job [bp-0x72] (write-only) */
+        spr = (int)func_0091CC_colony_sz_181((uint16_t)i); /* @asm 0x027119 (i) -> sprite id [bp-0x66] */
+        width_sum += sheet_frame_w_icons(spr);      /* @asm 0x027131 [bp-0x7E] += hdr[id*0xC+0x3E] */
     }
 
     DG8(0xA890) = 2;         /* @asm 0x027143 [0xA890]=2 layout mode */
     /* squeeze  @asm 0x027148..0x027173: gap [bp-0x5A] = ([0x8D72]!=0 ? 4 : 0);
      * while ((int8)[0xA890]*(count-1) + gap + width-sum >= 0x60) --[0xA890]
-     * (UNPORTED: the width sum needs the 0xA74 sprite ids, so [0xA890] stays 2).
+     * (real as of 2026-06-12: the pre-sum above feeds it actual sprite widths).
      * Then pen x [bp-0x5C]=2 (inc) and row y [bp-0x60]=0x8E (dec)
      * @asm 0x027175/0x027178; borrow accumulator [bp-0x54]=0 @0x02717D. */
+    gap = (DGS16(0x8D72) != 0) ? 4 : 0;             /* @asm 0x027148/0x02714D/0x027154 */
+    while ((int8_t)DG8(0xA890) * (count - 1) + gap + width_sum >= 0x60)
+        DG8(0xA890)--;                              /* @asm 0x02715C dec byte [0xA890] */
     pen_x = 2;                                      /* @asm 0x0270F5 seed 1; inc @0x027175 */
     borrow = 0;                                     /* @asm 0x02717D [bp-0x54]=0 */
     for (i = 0; i < count; i++) {                   /* @asm 0x0272B3/0x0272B6 i [bp-0x6E] */
-        overlay_call_181F_0C0E();                   /* @asm 0x0272BC (i) -> [bp-0x72] */
-        spr = (int)overlay_call_181F_0A74();        /* @asm 0x0272CA (i) -> sprite id [bp-0x66]
-                                                     * (stub today: 0 -> ICONS frame 0 w/h) */
-        /* colonist sprite 0x181F:0x254 -- LEFT AS STUB: ax (the sprite id) is
-         * the 0xA74 stub return; y is the constant 0x8E.  Decoded: pushes
-         * [0x840],[0x83E] (sheet hdr far ptr), 0x8E (row y); regs ax=sprite id,
-         * bx=&[0x2DA8], dx=pen x.  @asm 0x0272D5..0x0272E4 */
-        overlay_call_181F_0254();                   /* @asm 0x0272E7 */
+        (void)func_0090C8((uint16_t)i);             /* @asm 0x0272BC (i) -> [bp-0x72] (write-only) */
+        spr = (int)func_0091CC_colony_sz_181((uint16_t)i); /* @asm 0x0272CA (i) -> sprite id [bp-0x66] */
+        /* colonist sprite blit (WIRED 2026-06-12, real sprite id): pushes
+         * [0x840],[0x83E] (sheet hdr far ptr), row y [bp-0x60] = 0x8E; regs
+         * ax=sprite id, bx=&[0x2DA8], dx=pen x.  @asm 0x0272D5..0x0272E4 */
+        blit_sprite(0, spr, pen_x, 0x8E);           /* @asm 0x0272E7 lcall 0x181F:0x254 */
 
         if (DGS16(0x0B98) == 0) {  /* @asm 0x0272EC cmp [0xB98],0 / jne skips both boxes */
             if (DGS16(0x8D7C) == i) {               /* @asm 0x0272F9 cmp [0x8D7C],ax / jne */
