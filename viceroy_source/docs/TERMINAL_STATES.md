@@ -6,13 +6,13 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 |---|--:|---|
 | RESOLVED-REAL | 781 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1122 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1105 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 447 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 430 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 447
+### NAMED-GAP — 430
 
 - `DG8`
 - `__aFldiv`
@@ -811,26 +811,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `free_far`
 - `func_8FB4`
 - `func_AB78`
-- `g_ai_personality`
-- `g_byte`
 - `g_difficulty`
-- `g_local_kingwar_count`
-- `g_local_kingwar_gold`
-- `g_map_buffer`
-- `g_metric_tbl_minus`
-- `g_palette`
-- `g_pik_buffer`
 - `g_power_ctrl`
-- `g_power_name_tbl`
-- `g_powerflag_8808_minus`
-- `g_sample_bank`
-- `g_sample_lengths`
-- `g_sample_offsets`
-- `g_sprite_sheet`
-- `g_text_resource`
 - `g_turn`
-- `g_word`
-- `g_word_table`
 - `g_year`
 - `game_random_int`
 - `game_random_range`
