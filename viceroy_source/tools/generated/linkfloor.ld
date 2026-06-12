@@ -334,7 +334,6 @@ PROVIDE(g_current_power_8D52 = g_dgroup + 0x8D52);
 PROVIDE(g_native_cargo_8D52 = g_dgroup + 0x8D52);
 PROVIDE(g_trade_tribe_8D52 = g_dgroup + 0x8D52);
 PROVIDE(g_tribe_id_8D52 = g_dgroup + 0x8D52);
-PROVIDE(g_tribe_index_8D52 = g_dgroup + 0x8D52);
 PROVIDE(g_tribe_ptr_8D52 = g_dgroup + 0x8D52);
 PROVIDE(g_screen_mode_8D54 = g_dgroup + 0x8D54);
 PROVIDE(g_flag_8D56 = g_dgroup + 0x8D56);

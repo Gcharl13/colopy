@@ -940,3 +940,10 @@ PROVIDE(ui_show_message_3 = func_075352_show_power_relations_dialog);
 EXTERN(func_075352_show_power_relations_dialog)
 PROVIDE(ui_show_message_h = func_06F5DA_opt_set_field_a_const8);
 PROVIDE(ui_sound_or_msg = func_005108_op_sz_51);
+
+/* Phase 4.7 ov_ tranche (2026-06-12). */
+PROVIDE(ov_colony_owned_visible = func_0082DC_logic_sz_118);
+PROVIDE(ovly_spawn_unit_A20 = func_04002C_op_sz_82);
+EXTERN(func_04002C_op_sz_82)
+PROVIDE(ovly_target_query_696 = func_046004_settlement_at_tile);
+EXTERN(func_046004_settlement_at_tile)

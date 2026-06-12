@@ -619,10 +619,7 @@ __attribute__((weak)) long ovly_query_74A(void) { viceroy_stub_hit("ovly_query_7
 __attribute__((weak)) long ovly_query_9E6(void) { viceroy_stub_hit("ovly_query_9E6"); return 0; }
 __attribute__((weak)) long ovly_query_C54(void) { viceroy_stub_hit("ovly_query_C54"); return 0; }
 __attribute__((weak)) long ovly_relation_A38(void) { viceroy_stub_hit("ovly_relation_A38"); return 0; }
-__attribute__((weak)) long ovly_spawn_unit_A20(void) { viceroy_stub_hit("ovly_spawn_unit_A20"); return 0; }
 __attribute__((weak)) long ovly_strike_191F_12C(void) { viceroy_stub_hit("ovly_strike_191F_12C"); return 0; }
-__attribute__((weak)) long ovly_target_query_696(void) { viceroy_stub_hit("ovly_target_query_696"); return 0; }
-__attribute__((weak)) long ovly_target_query_826(void) { viceroy_stub_hit("ovly_target_query_826"); return 0; }
 __attribute__((weak)) long ovly_target_query_9F0(void) { viceroy_stub_hit("ovly_target_query_9F0"); return 0; }
 __attribute__((weak)) long ovly_text_appcomma_1B4(void) { viceroy_stub_hit("ovly_text_appcomma_1B4"); return 0; }
 __attribute__((weak)) long ovly_text_applabel_16E(void) { viceroy_stub_hit("ovly_text_applabel_16E"); return 0; }
@@ -996,7 +993,6 @@ __attribute__((weak)) long option_bit_test1(void) { viceroy_stub_hit("option_bit
 __attribute__((weak)) long outp(void) { viceroy_stub_hit("outp"); return 0; }
 __attribute__((weak)) long ov_clear_rect(void) { viceroy_stub_hit("ov_clear_rect"); return 0; }
 __attribute__((weak)) long ov_clip_blit(void) { viceroy_stub_hit("ov_clip_blit"); return 0; }
-__attribute__((weak)) long ov_colony_owned_visible(void) { viceroy_stub_hit("ov_colony_owned_visible"); return 0; }
 __attribute__((weak)) long ov_draw_extra_a(void) { viceroy_stub_hit("ov_draw_extra_a"); return 0; }
 __attribute__((weak)) long ov_draw_extra_b(void) { viceroy_stub_hit("ov_draw_extra_b"); return 0; }
 __attribute__((weak)) long ov_draw_portrait(void) { viceroy_stub_hit("ov_draw_portrait"); return 0; }

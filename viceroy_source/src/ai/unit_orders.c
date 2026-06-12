@@ -461,8 +461,11 @@ block_4ec:
         ovly_msg_arg_438(occ_owner - 4, 0);                   /* @asm 0x03EF7D..0x03EF89 0x181F:0xA42 */
         /* @asm 0x03EF8C imul bx,unit,0x1c; mov al,[bx+0x3147]&0xf; push;
          *      push [0x8d52]; lcall 0x181F:0x30C -> market price/qty (mkt) */
-        mkt = ovly_target_query_826(g_units_3144[unit_index][0x03] & 0x0F,
-                                    g_tribe_index_8D52, 0);          /* @asm 0x03EF9C */
+        /* @asm 0x03EF97 push owner_nib; push [0x8D52]; lcall 0x181F:0x30C
+         * = func_0082A0 market value (2 args; the old 3-arg call invented a
+         * trailing 0 and used a misleading extern name) */
+        mkt = ovly_market_value_30C((int16_t)DG16(0x8D52),
+                                    (int16_t)(g_units_3144[unit_index][0x03] & 0x0F));
         if (mkt < 0x4B && actor_owner < 4 &&                  /* @asm 0x03EFA4/0x03EFA9 */
             g_ai_personality_543F[actor_owner][0x00] == 0) {  /* @asm 0x03EFB3 */
             /* @asm 0x03EFBA relation probe; test al,4; if clear, raise prompt */
