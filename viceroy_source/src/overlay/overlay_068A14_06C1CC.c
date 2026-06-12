@@ -153,8 +153,8 @@ extern int func_06BAEC(void);  /* cs:0x316C -> 0x1A1F:0xA5C  (page-0x16 tail tra
  * resolve via tools/rtlink/rtlink_decode.py; role inferred from call context).
  * The ones already in overlay_externs.h (0x181F:0xBA/0x150/0x204/0x3EA/0x3F4/
  * 0x56A/0xB00, 0x191F:0x1A8, the 0x0D1D C-runtime set, ...) are reused as-is. */
-extern int overlay_call_181F_0EA4(void);  /* 0x181F:0x0EA4 -- gfx state toggle (on/off) */
-extern int overlay_call_181F_03CA(void);  /* 0x181F:0x03CA -- list-slot hit predicate    */
+extern int overlay_call_181F_0EA4();  /* 0x181F:0x0EA4 -- gfx state toggle (on/off) */
+extern int overlay_call_181F_03CA();  /* 0x181F:0x03CA -- list-slot hit predicate    */
 extern int overlay_call_181F_00C4(void);  /* 0x181F:0x00C4 -- generic overlay draw (cb)  */
 extern int overlay_call_0D1D_103E(void);  /* 0x0D1D:0x103E -- strcmp (C runtime)         */
 extern int overlay_call_0C0C_0006(void);  /* 0x0C0C:0x0006 -- C-runtime numeric helper   */
@@ -173,7 +173,7 @@ extern int overlay_call_181F_0A6A(void);  /* 0x181F:0x0A6A -- terrain yield-clas
 extern int overlay_call_181F_0ACE(void);  /* 0x181F:0x0ACE -- terrain-detail secondary probe(id)  */
 extern int overlay_call_181F_0B00(void);  /* 0x181F:0x0B00 -- terrain-detail probe (id) -> count  */
 extern int overlay_call_181F_0B78(void);  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
-extern int overlay_call_181F_0808(void);  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
+extern int overlay_call_181F_0808();  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
 extern int overlay_call_1A1F_01CA(void);  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
 
 /* ----------------------------------------------------------------------------
@@ -588,7 +588,7 @@ int func_06929C_tile_info_panel_draw(uint16_t arg0)
  * ============================================================================ */
 int func_069304_tile_info_popup_variant(void)
 {
-    if (overlay_call_191F_087A() != 0) {                /* @asm 0x069319 keyed predicate(0x1EC4, rect) */
+    if (overlay_call_191F_087A(0x1ec4, (int16_t)DG16(0x2da8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0) != 0) {                /* @asm 0x069319 keyed predicate(0x1EC4, rect) */
         overlay_call_181F_0484();                       /* @asm 0x069337 fill tile cell (colour 8) */
     }
     overlay_call_181F_0444();                           /* @asm 0x069365 draw boxed frame */
@@ -676,7 +676,7 @@ int func_06936C_terrain_yield_row_draw(uint16_t terr_arg0, int16_t slot_arg1, ui
 int func_0694AE_cargo_select_dialog(uint16_t arg0)
 {
     func_06B692();                                      /* @asm 0x0694B4 dialog_open */
-    overlay_call_181F_0022();                           /* @asm 0x0694C8 blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                           /* @asm 0x0694C8 blit panel */
     overlay_call_181F_0100();                           /* @asm 0x0694D2 place panel */
     overlay_call_181F_011E();                           /* @asm 0x0694F1 title begin */
     overlay_call_181F_016E();                           /* @asm 0x069506 title token */
@@ -776,7 +776,7 @@ int func_0696C6_unit_detail_dialog(uint16_t arg0)
     }
 
     func_06B692();                                       /* @asm 0x0696FE dialog_open (cs:0x2D12) */
-    overlay_call_181F_0022();                            /* @asm 0x069712 blit backing panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                            /* @asm 0x069712 blit backing panel */
     overlay_call_181F_0100();                            /* @asm 0x06971C place panel */
 
     /* title: unit-name token [type*6 + 0x5230] (@UNIT stride-6 record base). */
@@ -907,7 +907,7 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
     int16_t terr = (int16_t)arg0;                        /* [bp+6] terrain id */
 
     func_06B692();                                       /* @asm 0x069D93 dialog_open (cs:0x2D12) */
-    overlay_call_181F_0022();                            /* @asm 0x069DA7 blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                            /* @asm 0x069DA7 blit panel */
     overlay_call_181F_0100();                            /* @asm 0x069DB1 place panel */
 
     /* title token from terrain stride-0x10 table @[arg0*0x10 + 0x2F74]. */
@@ -1071,7 +1071,7 @@ int func_069D8C_terrain_report_dialog(uint16_t arg0)
 int func_06A700_colony_site_report_dialog(uint16_t arg0)
 {
     func_06B692();                                       /* @asm 0x06A706 dialog_open (cs:0x2D12) */
-    overlay_call_181F_0022();                            /* @asm 0x06A71E blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                            /* @asm 0x06A71E blit panel */
     overlay_call_181F_0100();                            /* @asm 0x06A728 place panel */
 
     /* title token from terrain-detail stride-8 table @[arg0*8 - 0x715E]. */
@@ -1194,7 +1194,7 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
 int func_06AA88_terrain_detail_dialog(uint16_t arg0)
 {
     func_06B692();                                       /* @asm 0x06AA8E dialog_open (cs:0x2D12) */
-    overlay_call_181F_0022();                            /* @asm 0x06AAA2 blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                            /* @asm 0x06AAA2 blit panel */
     overlay_call_181F_0100();                            /* @asm 0x06AAAC place panel */
 
     /* title token from stride-0xC table @[arg0*0xC - 0x707E]. */
@@ -1290,7 +1290,7 @@ int func_06AA88_terrain_detail_dialog(uint16_t arg0)
 int func_06AE08_single_label_value_dialog(uint16_t arg0)
 {
     func_06B692();                                      /* @asm 0x06AE0E dialog_open */
-    overlay_call_181F_0022();                           /* @asm 0x06AE22 blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                           /* @asm 0x06AE22 blit panel */
     overlay_call_181F_0100();                           /* @asm 0x06AE2C place panel */
     overlay_call_181F_011E();                           /* @asm 0x06AE4B str begin */
     overlay_call_181F_016E();                           /* @asm 0x06AE68 append label[arg0*6-0x69AE] */
@@ -1329,7 +1329,7 @@ int func_06AE08_single_label_value_dialog(uint16_t arg0)
 int func_06AF1C_single_label_value_dialog_b(uint16_t arg0)
 {
     func_06B692();                                      /* @asm 0x06AF22 dialog_open */
-    overlay_call_181F_0022();                           /* @asm 0x06AF36 blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                           /* @asm 0x06AF36 blit panel */
     overlay_call_181F_0100();                           /* @asm 0x06AF40 place panel */
     overlay_call_181F_011E();                           /* @asm 0x06AF5F str begin */
     overlay_call_181F_016E();                           /* @asm 0x06AF76 append label[arg0*2-0x6CA4] */
@@ -1396,11 +1396,11 @@ int func_06B02A_list_panel_render(int16_t sel_arg0, uint16_t present_arg1)
     }
     if ((int)g_list_count_A5AA > 0x48) {                /* @asm 0x06B184 cmp 0x48 jle */
         if (sel_arg0 == -2) {                           /* @asm 0x06B18B cmp -2 */
-            overlay_call_181F_0022();                   /* @asm 0x06B1A7 up-arrow blit */
+            overlay_call_181F_0022((int16_t)DG16(0x2e94));                   /* @asm 0x06B1A7 up-arrow blit */
             overlay_call_181F_013C();                   /* @asm 0x06B1B1 */
         }
         if (sel_arg0 == -3) {                           /* @asm 0x06B1B9 cmp -3 */
-            overlay_call_181F_0022();                   /* @asm 0x06B1D6 down-arrow blit */
+            overlay_call_181F_0022((int16_t)DG16(0x2e96));                   /* @asm 0x06B1D6 down-arrow blit */
             overlay_call_181F_0150();                   /* @asm 0x06B1E0 */
         }
     }
@@ -1553,7 +1553,7 @@ int func_06B398_dialog_dispatch(uint16_t arg0)
     g_list_base_A5AC = 0;                                /* @asm 0x06B3E6 *(0xA5AC)=0 */
     func_06B697();                                       /* @asm 0x06B3EA cs:0x2D17 */
     func_06B692();                                       /* @asm 0x06B3EE cs:0x2D12 dialog_open */
-    overlay_call_181F_0022();                            /* @asm 0x06B3FE blit panel */
+    overlay_call_181F_0022((int16_t)DG16(0x2e92));                            /* @asm 0x06B3FE blit panel */
     overlay_call_181F_0100();                            /* @asm 0x06B408 place panel */
     int running = 1;                                     /* @asm 0x06B410 [bp-8]=1 */
     func_06B69C();                                       /* @asm 0x06B41A cs:0x2D1C(1,0) initial draw */
@@ -1767,7 +1767,7 @@ int func_06B722_treaty_or_message_dialog(int16_t arg0)
         overlay_call_181F_00BA();                        /* @asm 0x06BA48 boxed highlighted panel */
         overlay_call_181F_00E2();                        /* @asm 0x06BA5A present frame */
         func_06B6EE_draw_centered_label(0, 0);           /* @asm 0x06BA67 second centered label(recE) */
-        overlay_call_181F_03EA();                        /* @asm 0x06BA6F finalize list(8) */
+        overlay_call_181F_03EA(8);                        /* @asm 0x06BA6F finalize list(8) */
         if (!variantFlag) {                              /* @asm 0x06BA77 cmp [bp-0x3C8],0 jne */
             overlay_call_191F_04A2();                    /* @asm 0x06BA7E */
             overlay_call_181F_03C0();                    /* @asm 0x06BA83 wait-for-input */
@@ -1939,7 +1939,7 @@ int func_06BF66_popup_overlay_swap(void)
     overlay_call_181F_002C();                           /* @asm 0x06BF9F alloc 0x14 -> field[+0x68] */
     overlay_call_0D1D_117E();                           /* @asm 0x06BFFE sprintf -> [bp-0x80] */
     DG16(0x0372) = 0;                        /* @asm 0x06C00D save/clear blit mode */
-    overlay_call_181F_0EA4();                           /* @asm 0x06C015 gfx state on(1) */
+    overlay_call_181F_0EA4(1);                           /* @asm 0x06C015 gfx state on(1) */
     overlay_call_0D1D_0FB2();                            /* @asm 0x06C02A save screen region */
     DG16(0x23F2) = 0xFC00;                   /* @asm 0x06C032 clip window */
     DG16(0x23F4) = 0xA000;                   /* @asm 0x06C038 */
@@ -1948,7 +1948,7 @@ int func_06BF66_popup_overlay_swap(void)
     overlay_call_0D1D_0FB2();                            /* @asm 0x06C08A restore screen region */
     DG16(0x23F4) = 0;                        /* @asm 0x06C094 clear clip */
     DG16(0x23F2) = 0;                        /* @asm 0x06C097 */
-    overlay_call_181F_0EA4();                           /* @asm 0x06C12A gfx state off(0) */
+    overlay_call_181F_0EA4(0);                           /* @asm 0x06C12A gfx state off(0) */
     overlay_call_181F_03F4();                           /* @asm 0x06C172 restore blit window */
     DG16(0x23F4) = 0;                        /* @asm 0x06C179 */
     DG16(0x23F2) = 0;                        /* @asm 0x06C17C */

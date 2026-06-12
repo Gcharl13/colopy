@@ -152,7 +152,7 @@ extern int overlay_call_191F_0436(void);  extern int overlay_call_191F_0468(void
 
 /* 0x181F GUI primitives used here but not in overlay_externs.h, and the
  * mouse-position far call window 0x0C0C:0x0006 (lcall 0xC0C,6 -> cur pos). */
-extern int overlay_call_181F_03CA(void);  /* point_in_rect(x0,y0,x1,y1)->bool */
+extern int overlay_call_181F_03CA();  /* point_in_rect(x0,y0,x1,y1)->bool */
 extern int overlay_call_181F_0AD8(void);  /* apply_transfer(qty,cargo,unit)   */
 extern int overlay_call_0C0C_0006(void);  /* mouse_pos() -> AX=x, DX=y        */
 
@@ -296,7 +296,7 @@ int func_027DB2_colony_units_panel(uint16_t do_blit)
 
     if (cs_count_33C == 0) {                          /* @0x027DCC JNE 0x027E36          */
         /* --- empty-colony case: six static label rows. --- */
-        overlay_call_181F_0022();                     /* @0x027DDB num_to_str([0x2DD0])  */
+        overlay_call_181F_0022((int16_t)DG16(0x2dd0));                     /* @0x027DDB overlay_call_181F_0022((int16_t)DG16(0x2dd0))  */
         overlay_call_181F_0100();                     /* @0x027DE5 draw_text             */
         for (i = 0; i < 6; ++i) {                     /* @0x027DF7 JL 0x027E00 / loop    */
             overlay_call_191F_0708();                 /* @0x027E14 resolve row text -> buf (func_07DE8) */
@@ -309,7 +309,7 @@ int func_027DB2_colony_units_panel(uint16_t do_blit)
     buf[0] = 0;
     overlay_call_181F_016E();                         /* @0x027E42 str_append([0x2DE8])  */
     overlay_call_181F_01BE();                         /* @0x027E4E str_x_of              */
-    unit_idx = overlay_call_181F_0B32();              /* @0x027E5A unit_at([0x33E])      */
+    unit_idx = overlay_call_181F_0B32((int16_t)DG16(0x33e));              /* @0x027E5A unit_at([0x33E])      */
     type = g_unit_type_3146[unit_idx * 0x1C];         /* @0x027E68 UnitRecord type byte  */
     /* push display attr word g_unit_disp_5230[type*12 + 0] @0x027E7A */
     overlay_call_181F_0022();                         /* @0x027E7E num_to_str(attr)      */
@@ -455,7 +455,7 @@ int func_0281D6_colony_commodity_bar(uint16_t do_blit)
         overlay_call_181F_0204();                      /* @0x0282B8 str_width             */
         /* @0x0282EE..0x028349: colour pick (0xF default; 0xC when over cap via
          * 0x181F:0xD3A and selected; 0xA highlight when [0x33A]==i etc.). */
-        overlay_call_181F_09FC();                      /* @0x0282FA flag-test (era?)      */
+        overlay_call_181F_09FC(0x12);                      /* @0x0282FA flag-test (era?)      */
         overlay_call_181F_0CFE();                      /* @0x028309 per-commodity flag    */
         overlay_call_181F_0D3A();                      /* @0x028320 warehouse cap         */
         overlay_call_181F_013C();                      /* @0x028368 blit value str @ x    */
@@ -475,7 +475,7 @@ int func_0281D6_colony_commodity_bar(uint16_t do_blit)
     }
 
     /* @0x0283F1: status line from [0x2F5E]; then optional frame invert. */
-    overlay_call_181F_0022();                          /* @0x0283FD num_to_str([0x2F5E]) */
+    overlay_call_181F_0022((int16_t)DG16(0x2f5e));                          /* @0x0283FD overlay_call_181F_0022((int16_t)DG16(0x2f5e)) */
     overlay_call_181F_013C();                          /* @0x028407 blit status @ (0x132,0xB3) */
     if (do_blit != 0) {                                /* @0x02840F JE 0x028439   */
         overlay_call_181F_00E2();                      /* @0x028424 invert bar     */
@@ -789,15 +789,15 @@ int func_0299A0_colony_hit_region(void)
 {
     int region = 0x14;                              /* [bp-2] default = none      */
 
-    if (overlay_call_181F_03CA()) return 1;         /* @0x0299B2 (0xC8,8,0x78,0x78)  */
-    if (overlay_call_181F_03CA()) return 9;         /* @0x0299D2 (0x131,0xB3,0xF,0x15) */
-    if (overlay_call_181F_03CA()) return 0;         /* @0x0299F1 (0x82,0,0x78,0x30)    */
-    if (overlay_call_181F_03CA()) return 2;         /* @0x029A11 (0,8,0xC7,0x78)       */
-    if (overlay_call_181F_03CA()) return 3;         /* @0x029A32 (0x12F,0x84,0x11,0x2D)*/
-    if (overlay_call_181F_03CA()) { region = 5; goto done; } /* @0x029A52 (0,0xB3,0x131,0x15) */
-    if (overlay_call_181F_03CA()) { region = 4; goto done; } /* @0x029A70 (0xD3,0x82,0x5B,0x30) */
-    if (overlay_call_181F_03CA()) { region = 8; goto done; } /* @0x029A8D (0x79,0x82,0x54,0x30) */
-    if (overlay_call_181F_03CA()) { region = 0xA; }          /* @0x029AA9 (0,0,0x140,7) */
+    if (overlay_call_181F_03CA(0xc8, 8, 0x78, 0x78)) return 1;         /* @0x0299B2 (0xC8,8,0x78,0x78)  */
+    if (overlay_call_181F_03CA(0x131, 0xb3, 0xf, 0x15)) return 9;         /* @0x0299D2 (0x131,0xB3,0xF,0x15) */
+    if (overlay_call_181F_03CA(0, 0x82, 0x78, 0x30)) return 0;         /* @0x0299F1 (0x82,0,0x78,0x30)    */
+    if (overlay_call_181F_03CA(0, 8, 0xc7, 0x78)) return 2;         /* @0x029A11 (0,8,0xC7,0x78)       */
+    if (overlay_call_181F_03CA(0x12f, 0x84, 0x11, 0x2d)) return 3;         /* @0x029A32 (0x12F,0x84,0x11,0x2D)*/
+    if (overlay_call_181F_03CA(0, 0xb3, 0x131, 0x15)) { region = 5; goto done; } /* @0x029A52 (0,0xB3,0x131,0x15) */
+    if (overlay_call_181F_03CA(0xd3, 0x82, 0x5b, 0x30)) { region = 4; goto done; } /* @0x029A70 (0xD3,0x82,0x5B,0x30) */
+    if (overlay_call_181F_03CA(0x79, 0x82, 0x54, 0x30)) { region = 8; goto done; } /* @0x029A8D (0x79,0x82,0x54,0x30) */
+    if (overlay_call_181F_03CA(0, 0, 0x140, 7)) { region = 0xA; }          /* @0x029AA9 (0,0,0x140,7) */
 done:
     return region;
 }
@@ -1115,7 +1115,7 @@ int func_029DD4_colony_click_router(void)
         if (g_in_combat_7F4 == 0) return 0;            /* @0x029F68 */
         if (subidx < 0) return 0;                      /* @0x029F72 */
         if (subidx == 0x15) {                          /* @0x029F7B special id 0x15 */
-            int f = overlay_call_181F_0C0E();          /* @0x029F88 colony_field(sel_unit) */
+            int f = overlay_call_181F_0C0E((int16_t)DG16(0x8d7c));          /* @0x029F88 colony_field(sel_unit) */
             if (f < 0x13) {                            /* @0x029F90 */
                 overlay_call_191F_0750();              /* @0x029F9B (func_07E92) */
             }
@@ -1145,7 +1145,7 @@ int func_029DD4_colony_click_router(void)
             overlay_call_191F_0750();                  /* @0x02A032 (func_07E92) */
         }
         if (g_flag_7E4 != 0) {
-            int attr = overlay_call_181F_0C54();       /* @0x02A043 colony_attr */
+            int attr = overlay_call_181F_0C54((int16_t)DG16(0x8d7c));       /* @0x02A043 colony_attr */
             if (attr == 0x1C) attr = 0x13;             /* @0x02A04E */
             (void)attr;
             overlay_call_191F_08DE();                  /* @0x02A05B set_tooltip */
@@ -1219,7 +1219,7 @@ int func_02A0BC_assign_work_tile(void)
         cs_cur_tx_330 = gx; cs_cur_ty_332 = gy;          /* @0x02A151/0x02A154 */
         overlay_call_191F_051C();                         /* @0x02A15B set_tile(gx,gy) (func_07DA7) */
 
-        field = overlay_call_181F_0C0E();                /* @0x02A165 colony_field(sel_unit) */
+        field = overlay_call_181F_0C0E((int16_t)DG16(0x8d7c));                /* @0x02A165 colony_field(sel_unit) */
         if (field == 9 || field == 8 || field == 0) {    /* @0x02A16D..0x02A179 field colonist */
             /* map coords = colony.x + cursorX - 2 , colony.y + cursorY - 2 */
             int mx = *(uint8_t far *)((char far *)ctx + 0) + cs_cur_tx_330 - 2; /* @0x02A192 */
@@ -1231,7 +1231,7 @@ int func_02A0BC_assign_work_tile(void)
         }
         /* @0x02A1B6 assign: place_unit(sel, field?...) */
         if (overlay_call_191F_054C() == 1) {             /* @0x02A1B6 (func_07DBB) */
-            overlay_call_181F_0AA6();                     /* @0x02A1CB assign_work(sel_unit) */
+            overlay_call_181F_0AA6((int16_t)DG16(0x8d7c));                     /* @0x02A1CB assign_work(sel_unit) */
             overlay_call_181F_0D44();                     /* @0x02A1DF place_unit_at(sel,x,y) */
         }
         overlay_call_191F_0738();                         /* @0x02A1E8 repaint */
@@ -1317,7 +1317,7 @@ int func_02A31C_header_selector(void)
     rows = 3;                                       /* @0x02A346 */
     overlay_call_191F_0828();                       /* @0x02A34E measure_grid(3,0x44,...) */
 
-    if (overlay_call_181F_03CA() == 0)               /* @0x02A35E point_in_rect(2D,11,84,12F) */
+    if (overlay_call_181F_03CA(0x12f, 0x84, 0x11, 0x2d) == 0)               /* @0x02A35E overlay_call_181F_03CA(0x12f, 0x84, 0x11, 0x2d) */
         goto post;                                   /* outside the selector entirely */
     picked = 0;                                      /* @0x02A36A */
     for (col = 0; col <= rows; ++col) {              /* @0x02A3AC/0x02A374 */
@@ -1401,7 +1401,7 @@ int func_02A462_commodity_sell_dialog(uint16_t unit, uint16_t cargo,
 
     if (stock < 1) {                                  /* @0x02A475 JGE 0x02A4D6 */
         /* --- empty: draw the "no stock" panel and enter info mode 0x14. --- */
-        overlay_call_181F_0056();                     /* @0x02A47E begin(1) */
+        overlay_call_181F_0056(1);                     /* @0x02A47E begin(1) */
         overlay_call_191F_07D4();                     /* @0x02A489 set_attr(6) (func_07EC9) */
         overlay_call_181F_0074();                     /* @0x02A493 select cargo name[cargo] */
         overlay_call_191F_07D4();                     /* @0x02A49E set_attr(7) */
@@ -1441,7 +1441,7 @@ int func_02A462_commodity_sell_dialog(uint16_t unit, uint16_t cargo,
             if (qty <= 0) goto out1;                   /* @0x02A617 */
         }
         overlay_call_181F_0AD8();                      /* @0x02A625 apply_transfer(qty,cargo,unit) */
-        overlay_call_181F_0056();                      /* @0x02A632 begin(1) */
+        overlay_call_181F_0056(1);                      /* @0x02A632 begin(1) */
         overlay_call_181F_007E();                      /* @0x02A63E draw qty [0x8DC4] */
         overlay_call_181F_0074();                      /* @0x02A64B select cargo name */
         overlay_call_191F_07D4();                      /* @0x02A65A set_attr(2) */
@@ -1556,7 +1556,7 @@ int func_02A6A6_commodity_load_dialog(uint16_t unit, uint16_t cargo,
     overlay_call_181F_0D58();                          /* @0x02A881 post_load(amt,cargo,unit) */
     g_8DC4 = delta;                                    /* @0x02A88C */
 
-    overlay_call_181F_0056();                          /* @0x02A891 begin(1) */
+    overlay_call_181F_0056(1);                          /* @0x02A891 begin(1) */
     overlay_call_181F_007E();                          /* @0x02A89D draw qty [0x8DC4] */
     overlay_call_181F_0074();                          /* @0x02A8A9 select cargo name */
     overlay_call_191F_07D4();                          /* @0x02A8B4 set_attr(2) */

@@ -475,12 +475,12 @@ int colony_build_advisor(int colony_idx, int item)
         return 0xD;                                /* @asm 0x025AF4 mov [bp-8],0xD */
 
     if (item == 0x12) {                            /* @asm 0x025B00 cmp item,0x12 */
-        int lvl = overlay_call_181F_0B82();        /* @asm 0x025B0B 0xB82(0x12) */
-        if (overlay_call_181F_09FC()) {            /* @asm 0x025B18 0x9FC(0xE) */
+        int lvl = overlay_call_181F_0B82(0x12);        /* @asm 0x025B0B 0xB82(0x12) */
+        if (overlay_call_181F_09FC(0xe)) {            /* @asm 0x025B18 0x9FC(0xE) */
             if (lvl >= 3) return 7;                /* @asm 0x025B24/0x025B2A -> 7 */
-        } else if (overlay_call_181F_09FC()) {     /* @asm 0x025B34 0x9FC(0xD) */
+        } else if (overlay_call_181F_09FC(0xd)) {     /* @asm 0x025B34 0x9FC(0xD) */
             if (lvl >= 2) return 8;                /* @asm 0x025B40 -> 8 */
-        } else if (overlay_call_181F_09FC()) {     /* @asm 0x025B50 0x9FC(0xC) */
+        } else if (overlay_call_181F_09FC(0xc)) {     /* @asm 0x025B50 0x9FC(0xC) */
             if (lvl >= 1) return 9;                /* @asm 0x025B5C -> 9 */
         }
     }
@@ -1279,7 +1279,7 @@ inactive:
 finish:
     /* population / era / year line  @asm 0x026A61..0x026AAB */
     (void)year_or_flag;
-    overlay_call_181F_0022();                        /* @asm 0x026A65 ( [0x93A0] ) -> measured */
+    overlay_call_181F_0022((int16_t)DG16(0x93a0));                        /* @asm 0x026A65 ( [0x93A0] ) -> measured */
     overlay_call_0D1D_11B4();                        /* @asm 0x026A74 format full banner */
     overlay_call_181F_0178();                        /* @asm 0x026A80 reset/term */
     overlay_call_181F_0B1E();                        /* @asm 0x026A96 (ctx[+0x1A]) fort/banner colour */
@@ -1557,7 +1557,7 @@ void colony_draw_roster_strip(int show_button)
     int i;
 
     overlay_call_181F_00CE();                        /* @asm 0x02703F strip bg @ (0xC7,7,0x80) */
-    overlay_call_181F_04FC();                        /* @asm 0x02705F frame @ (0x78,0xC7,8) */
+    overlay_call_181F_04FC((int16_t)DG16(0x2da8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0, 8, 0xc7, 0x78, 7);                        /* @asm 0x02705F frame @ (0x78,0xC7,8) */
 
     for (i = 0; i < 0xF; i++) {                      /* @asm 0x027067..0x02707F loop [bp-8] < 0xF */
         int sx = *(int16_t far*)(MK_FP(0,0x0266) + i*4); /* @asm 0x027087 [bx+0x266] */
@@ -1942,7 +1942,7 @@ void colony_draw_buildings_panel(void)
         overlay_call_181F_0100();                    /* @asm 0x0277C4 draw header text */
     } else {
         /* default header from string [0x939A]  @asm 0x0277AC..0x0277C9 */
-        overlay_call_181F_0022();                    /* @asm 0x0277BA ([0x939A]) */
+        overlay_call_181F_0022((int16_t)DG16(0x939a));                    /* @asm 0x0277BA ([0x939A]) */
         overlay_call_181F_0100();                    /* @asm 0x0277C4 draw header text */
     }
 

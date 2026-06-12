@@ -319,7 +319,7 @@ int func_00D7F4_rtl_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
         (void)sep;                               /* found -> tail after '\\'; else whole buf */
     }
     overlay_call_0D1D_117E();                    /* @asm 0x00D83C copy tail -> dest */
-    overlay_call_0D1D_1118();                    /* @asm 0x00D84A finalise dest */
+    overlay_call_0D1D_1118(arg2_bp_0A, arg3_bp_0C);                    /* @asm 0x00D84A finalise dest */
     (void)buf;
     (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
     return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
@@ -365,7 +365,7 @@ int func_00D85E_rtl_sz_134(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
             overlay_call_0D1D_117E();            /* @asm 0x00D8C3 copy whole buf -> dest */
         }
     }
-    overlay_call_0D1D_1118();                    /* @asm 0x00D8D1 finalise dest */
+    overlay_call_0D1D_1118(arg2_bp_0A, arg3_bp_0C);                    /* @asm 0x00D8D1 finalise dest */
     (void)buf;
     (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C;
     return 0;                                    /* @asm mov ax,[bp+0xa]; mov dx,[bp+0xc]; retf 8 */
@@ -412,8 +412,8 @@ int func_00D8E4_rtl_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
         overlay_call_0D1D_07A4();                /* @asm 0x00D929 append "\\" (@0x262A) */
     }
     overlay_call_0D1D_117E();                    /* @asm 0x00D93C copy buf -> dest */
-    overlay_call_0D1D_11B4();                    /* @asm 0x00D950 append [bp+6]/[bp+8] */
-    overlay_call_0D1D_1118();                    /* @asm 0x00D95E finalise dest */
+    overlay_call_0D1D_11B4(arg4_bp_0E, arg5_bp_10, arg0_bp_06, arg1_bp_08);                    /* @asm 0x00D950 append [bp+6]/[bp+8] */
+    overlay_call_0D1D_1118(arg4_bp_0E, arg5_bp_10);                    /* @asm 0x00D95E finalise dest */
     (void)buf;
     (void)arg0_bp_06; (void)arg1_bp_08; (void)arg2_bp_0A;
     (void)arg3_bp_0C; (void)arg4_bp_0E; (void)arg5_bp_10;

@@ -220,9 +220,9 @@ int func_070302_draw_difficulty_row(uint16_t idx)
  * ============================================================================ */
 int func_070494_draw_difficulty_screen(void)
 {
-    overlay_call_181F_0022();                           /* @asm 0x0704DE bg strip 0 */
+    overlay_call_181F_0022((int16_t)DG16(0x2efe));                           /* @asm 0x0704DE bg strip 0 */
     overlay_call_181F_01C8();                           /* @asm 0x0704E8 composite 0 */
-    overlay_call_181F_0022();                           /* @asm 0x070501 bg strip 1 */
+    overlay_call_181F_0022((int16_t)DG16(0x2f00));                           /* @asm 0x070501 bg strip 1 */
     overlay_call_181F_01C8();                           /* @asm 0x07050B composite 1 */
     overlay_call_181F_011E();                           /* @asm 0x07051B begin text buffer */
     overlay_call_181F_016E();                           /* @asm 0x07052B append heading [0x2EFC] */
@@ -239,7 +239,7 @@ int func_070494_draw_difficulty_screen(void)
 /* point_in_rect (0x181F:0x03CA) — used by the modal row-hit scans below; not in
  * overlay_externs.h, declared file-local per the project's cite-or-extern rule.
  * (docs/thunk_signatures.json: 0x181F:0x03CA = point_in_rect(x0,y0,x1,y1).) */
-extern int overlay_call_181F_03CA(void);  /* 0x181F:0x03CA -- point_in_rect */
+extern int overlay_call_181F_03CA();  /* 0x181F:0x03CA -- point_in_rect */
 
 /* ============================================================================
  * func_070580 — difficulty_pick_dispatch   [DONE — BYTE_VERIFIED, tail reconstructed]
@@ -461,7 +461,7 @@ int func_0707B6_draw_nation_row(uint16_t idx)
  * ============================================================================ */
 int func_07092E_draw_nation_screen(void)
 {
-    overlay_call_181F_0022();                           /* @asm 0x070977 bg strip 0 */
+    overlay_call_181F_0022((int16_t)DG16(0x2f0e));                           /* @asm 0x070977 bg strip 0 */
     overlay_call_181F_01C8();                           /* @asm 0x070981 composite 0 */
     overlay_call_181F_0022();                           /* @asm 0x07099A bg strip 1 */
     overlay_call_181F_01C8();                           /* @asm 0x0709A4 composite 1 */
@@ -802,7 +802,7 @@ int func_070EBA_parse_argv_env(uint16_t argc, uint16_t argv_ptr)
     overlay_call_1A1F_0C46();                           /* @asm 0x070ED0 secondary init */
     g_init_81C = 0;                                     /* @asm 0x070EDA */
 
-    overlay_call_0D1D_0942();                           /* @asm 0x070EE0 getenv("COLONIZE_MULTI") */
+    overlay_call_0D1D_0942(0x2064);                           /* @asm 0x070EE0 getenv("COLONIZE_MULTI") */
     if (overlay_call_0D1D_0C80() == 0) {                /* @asm 0x070EEF strcmp(env,"MULTI") */
         g_opt_201E = 1;                                 /* @asm 0x070EFB matched -> set flag */
     }
@@ -1489,7 +1489,7 @@ int func_073AB0_read_save_header(uint16_t arg6)
  * ============================================================================ */
 extern int overlay_call_1A1F_0B66(void);  /* 0x1A1F:0x0B66 -- pre-init A */
 extern int overlay_call_1A1F_0B74(void);  /* 0x1A1F:0x0B74 -- pre-init B */
-extern int overlay_call_191F_087A(void);  /* 0x191F:0x087A -- intro panel ("WOODPANL") */
+extern int overlay_call_191F_087A();  /* 0x191F:0x087A -- intro panel ("WOODPANL") */
 extern int overlay_call_181F_040A(void);  /* 0x181F:0x040A -- popup save */
 extern int overlay_call_181F_0A24(void);  /* 0x181F:0x0A24 -- roster slot colour (not in overlay_externs.h) */
 extern int overlay_call_1A1F_0AFE(void);  /* 0x1A1F:0x0AFE -- roster row draw (not in overlay_externs.h) */
@@ -1513,14 +1513,14 @@ int func_07431E_new_game_init(void)
     /* 3. random starting power 0..3 */
     if (g_quickstart_828 == 0) {                        /* @asm 0x07434D */
         if (overlay_call_1A1F_0B74() != 0) return 1;    /* @asm 0x074354 fail -> exit */
-        g_sel_nation_5398 = (uint16_t)overlay_call_181F_04D4();  /* @asm 0x074364 random_int(0,3) */
+        g_sel_nation_5398 = (uint16_t)overlay_call_181F_04D4(0, 3);  /* @asm 0x074364 random_int(0,3) */
     }
     if ((int16_t)g_sel_nation_5398 > 3)                 /* @asm 0x074375 clamp */
         g_sel_nation_5398 = 0;                          /* @asm 0x07437A */
 
     /* 4. draw intro panel + leader name (only when quick-start clear). */
     if (g_quickstart_828 == 0) {                        /* @asm 0x074380 */
-        int has_panel = (overlay_call_191F_087A() == 1);/* @asm 0x07439F intro ("WOODPANL"/"LEADERNAME") */
+        int has_panel = (overlay_call_191F_087A(0x2189, (int16_t)DG16(0x839e), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1);/* @asm 0x07439F intro ("WOODPANL"/"LEADERNAME") */
         if (has_panel) {
             overlay_call_181F_040A();                   /* @asm 0x0743B5 popup save */
             overlay_call_181F_0444();                   /* @asm 0x0743E3 full-screen box 0x140x0xC8 */

@@ -171,7 +171,7 @@ extern int overlay_call_110D_5DD0(void);  /* @ref RTLink seg 0x110D off 0x5DD0 *
 extern int overlay_call_175D_06DB(void);  /* @ref RTLink seg 0x175D off 0x06DB */
 extern int overlay_call_175D_0700(void);  /* @ref RTLink seg 0x175D off 0x0700 */
 extern int overlay_call_181F_000E(void);  /* @ref RTLink seg 0x181F off 0x000E */
-extern int overlay_call_181F_0022(void);  /* @ref RTLink seg 0x181F off 0x0022 */
+extern int overlay_call_181F_0022();  /* @ref RTLink seg 0x181F off 0x0022 */
 extern int overlay_call_181F_002C(void);  /* @ref RTLink seg 0x181F off 0x002C */
 extern int overlay_call_181F_0048(void);  /* @ref RTLink seg 0x181F off 0x0048 */
 extern int overlay_call_181F_0056();  /* @ref RTLink seg 0x181F off 0x0056 */
@@ -378,14 +378,14 @@ extern int overlay_call_181F_0B32();  /* @ref RTLink seg 0x181F off 0x0B32 */
 extern int overlay_call_181F_0B50(void);  /* @ref RTLink seg 0x181F off 0x0B50 */
 extern int overlay_call_181F_0B64();  /* @ref RTLink seg 0x181F off 0x0B64 */
 extern int overlay_call_181F_0B78();  /* @ref RTLink seg 0x181F off 0x0B78 */
-extern int overlay_call_181F_0B82(void);  /* @ref RTLink seg 0x181F off 0x0B82 */
+extern int overlay_call_181F_0B82();  /* @ref RTLink seg 0x181F off 0x0B82 */
 extern int overlay_call_181F_0B8C();  /* @ref RTLink seg 0x181F off 0x0B8C */
 extern int overlay_call_181F_0B96();  /* @ref RTLink seg 0x181F off 0x0B96 */
 extern int overlay_call_181F_0BAA();  /* @ref RTLink seg 0x181F off 0x0BAA */
-extern int overlay_call_181F_0BBE(void);  /* @ref RTLink seg 0x181F off 0x0BBE */
+extern int overlay_call_181F_0BBE();  /* @ref RTLink seg 0x181F off 0x0BBE */
 extern int overlay_call_181F_0BE6(void);  /* @ref RTLink seg 0x181F off 0x0BE6 */
 extern int overlay_call_181F_0C04(void);  /* @ref RTLink seg 0x181F off 0x0C04 */
-extern int overlay_call_181F_0C0E(void);  /* @ref RTLink seg 0x181F off 0x0C0E */
+extern int overlay_call_181F_0C0E();  /* @ref RTLink seg 0x181F off 0x0C0E */
 extern int overlay_call_181F_0C18(void);  /* @ref RTLink seg 0x181F off 0x0C18 */
 extern int overlay_call_181F_0C22(void);  /* @ref RTLink seg 0x181F off 0x0C22 */
 extern int overlay_call_181F_0C2C();  /* @ref RTLink seg 0x181F off 0x0C2C */

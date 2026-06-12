@@ -210,7 +210,7 @@ extern int overlay_call_181F_0722(void);  extern int overlay_call_181F_07B4(void
 extern int overlay_call_181F_0998(void);  extern int overlay_call_181F_09A4(void);
 extern int overlay_call_181F_0A10(void);  extern int overlay_call_181F_0A1A(void);
 extern int overlay_call_181F_0A38(void);  extern int overlay_call_181F_0A4C(void);
-extern int overlay_call_181F_0A60(void);  extern int overlay_call_181F_04D4(void);
+extern int overlay_call_181F_0A60(void);  extern int overlay_call_181F_04D4();
 extern int overlay_call_191F_01A8(void);
 extern int overlay_call_1A1F_0356(void);  extern int overlay_call_1A1F_0364(void);
 extern int overlay_call_1A1F_0372(void);  extern int overlay_call_1A1F_0380(void);
@@ -1413,7 +1413,7 @@ int func_045DF2_native_tension_add(uint16_t tribe /*bp+6*/, uint16_t power /*bp+
         /* @0x045ECA test al,0x40 : only when the TREATY bit is set.             */
         /* @0x045ECE weight = (power human) ? G_DIFFICULTY : 1.                  */
         weight = ((int)power < 4 && !IS_REF_POWER(power)) ? G_DIFFICULTY : 1;
-        if (overlay_call_181F_04D4() > weight + 1)  /* @0x045EF3 random_int(0,10)*/
+        if (overlay_call_181F_04D4(0, 0xa) > weight + 1)  /* @0x045EF3 random_int(0,10)*/
             return 0;                    /* @0x045F03 no burn this time           */
         func_045D00_burn_missions(tribe, power);    /* @0x045F0D near 0x9CE ->
                                                      * 0x465EE (LJMP 0x1A1F:0x398) */

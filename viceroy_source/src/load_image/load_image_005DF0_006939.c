@@ -507,7 +507,7 @@ int func_006188_op_sz_91(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         return result;
 
     /* @asm 0x00619E id = overlay 0x03E4:0x003A(x,y); if id in {0x19,0x1A,0x18} -> 0. */
-    id = overlay_call_03E4_003A();
+    id = overlay_call_03E4_003A(arg0_bp_06, arg1_bp_08);
     if (id == 0x19 || id == 0x1A || id == 0x18)
         return result;
 
@@ -940,7 +940,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
                         /* @asm 0x00657C if (0x037F:0x0142(cur_x,cur_y) & 0x20) fire. */
                         if ((overlay_call_037F_0142((uint16_t)cur_x, (uint16_t)cur_y) & 0x20) != 0) {
                             DG16(0x01E8) = 1;            /* @asm 0x006588 */
-                            overlay_call_02FD_006C();    /* @asm 0x006590 push 6 */
+                            overlay_call_02FD_006C(6);    /* @asm 0x006590 push 6 */
                         }
                     }
                 }

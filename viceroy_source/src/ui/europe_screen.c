@@ -271,7 +271,7 @@ void europe_screen_render(void)
  *   @asm 0x030DCE  PUSH 0x0FBA   -> GAME.TXT key "EUROPE"  (@file 0x1E95A)
  *
  * Behaviour, byte-faithful:
- *   load_PIK(0, rect[0x839E..0x83A4], 0x0FBA)             (@asm 0x030DD1 0x191F:0x87A)
+ *   overlay_call_191F_087A(0xfba, (int16_t)DG16(0x839e), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0)             (@asm 0x030DD1 0x191F:0x87A)
  *   if (handle != 0)                                      (@asm 0x030DDB OR ax,ax / JE)
  *       enter_screen_view(0,0,0,0, ax=0xFFAD, dx=2, bx=0x2B)  (@asm 0x030DEE 0x181F:0x772)
  *

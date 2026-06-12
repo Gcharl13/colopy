@@ -78,7 +78,7 @@ extern int  func_0789FA_free_dos_block(void);                       /* 191F:01A8
 /* human-panel-only leaves still on the Phase-4 stub floor (hit-counted) */
 extern int  menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 extern long overlay_call_191F_019C(void);  /* func_06F5B0 text panel (0x1705, [0x8D52]) @0x4B410 */
-extern long overlay_call_181F_0022(void);  /* func_002462 string-list fetch [0x2D42]+n */
+extern long overlay_call_181F_0022();  /* func_002462 string-list fetch [0x2D42]+n */
 extern long overlay_call_0D1D_07E4(void);  /* format text id into buf */
 extern long overlay_call_0D1D_07A4(void);  /* append text id to buf */
 extern long overlay_call_0D1D_117E(void);  /* far string copy */
@@ -254,20 +254,20 @@ human_panel:
     /* @0x4B64B ship/wagon: attack (alarm<0x4B, id 1) or demand (id 2). */
     if (type == 0x0C || (type >= 0x0D && type <= 0x12)) {
         uint16_t id = (alarm < 0x4B) ? 1 : 2;          /* @0x4B664..0x4B676 [0x932A]/[0x932C] */
-        (void)overlay_call_181F_0022();                /* @0x4B67A string fetch */
+        (void)overlay_call_181F_0022((int16_t)DG16(0x932c));                /* @0x4B67A string fetch */
         func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                         0, 0, id);     /* @0x4B68A 191F:0176    */
     }
     /* @0x4B692 scout: speak-with-chief button (id 6, [0x9334]). */
     if (type == 5) {
-        (void)overlay_call_181F_0022();                /* @0x4B6A3              */
+        (void)overlay_call_181F_0022((int16_t)DG16(0x9334));                /* @0x4B6A3              */
         func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                         0, 0, 6);      /* @0x4B6B3              */
     }
     /* @0x4B6BB land unit with @UNIT movement>1: explore button (id 9). */
     if (!(type >= 0x0D && type <= 0x12) &&
         DG8(0x5236 + type * 6) > 1) {                  /* @0x4B6E3              */
-        (void)overlay_call_181F_0022();                /* @0x4B6F0 [0x933A]     */
+        (void)overlay_call_181F_0022((int16_t)DG16(0x933a));                /* @0x4B6F0 [0x933A]     */
         func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                         0, 0, 9);      /* @0x4B700              */
         btn9 = 1;                                      /* @0x4B708 [bp-0x5E]    */
@@ -276,13 +276,13 @@ human_panel:
     if (func_007F34_logic_sz_27((uint16_t)owner, (uint16_t)tribe) & 0x40) {
         if (type == 3) {                               /* @0x4B726 missionary   */
             if ((int8_t)DG8(np + 5) < 0) {             /* @0x4B734 no mission   */
-                (void)overlay_call_181F_0022();        /* @0x4B740 [0x932E] id 3*/
+                (void)overlay_call_181F_0022((int16_t)DG16(0x932e));        /* @0x4B740 [0x932E] id 3*/
                 func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                                 0, 0, 3); /* @0x4B7AF shared    */
             } else if ((DG8(np + 5) & 0x0F) != (uint8_t)owner) { /* @0x4B74C    */
                 /* @0x4B757 "denounce <power> heresy": splice the mission
                  * owner's name into the [0x9330] template (id 4). */
-                (void)overlay_call_181F_0022();        /* @0x4B75B [0x9330]     */
+                (void)overlay_call_181F_0022((int16_t)DG16(0x9330));        /* @0x4B75B [0x9330]     */
                 (void)overlay_call_0D1D_117E();        /* @0x4B76A buf copy     */
                 (void)func_0080C8_logic_sz_14(DG8(np + 5) & 0x0F); /* @0x4B77D name id */
                 (void)overlay_call_181F_0022();        /* @0x4B786 name str     */
@@ -290,7 +290,7 @@ human_panel:
                 func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                                 0, 0, 4); /* @0x4B7AF           */
             }                                          /* ours -> no 3/4 button */
-            (void)overlay_call_181F_0022();            /* @0x4B84D [0x9336] id 7*/
+            (void)overlay_call_181F_0022((int16_t)DG16(0x9338));            /* @0x4B84D [0x9336] id 7*/
             func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                             0, 0, 7);  /* @0x4B85D incite       */
         } else {
@@ -299,14 +299,14 @@ human_panel:
                 DG8(0x5236 + type * 6) < 2 &&          /* @0x4B7E7              */
                 type != 5 &&                           /* @0x4B7EE              */
                 func_008BB2_logic_sz_20(unit) != 0x1B) { /* @0x4B7F5            */
-                (void)overlay_call_181F_0022();        /* @0x4B808 [0x9332] id 5*/
+                (void)overlay_call_181F_0022((int16_t)DG16(0x9332));        /* @0x4B808 [0x9332] id 5*/
                 func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                                 0, 0, 5); /* @0x4B818           */
             }
             /* @0x4B820 any moving land unit: enter-village button (id 8). */
             if (DG8(0x5236 + type * 6) != 0 &&
                 !(type >= 0x0D && type <= 0x12)) {     /* @0x4B83F..0x4B845     */
-                (void)overlay_call_181F_0022();        /* @0x4B84D [0x9338]     */
+                (void)overlay_call_181F_0022((int16_t)DG16(0x9338));        /* @0x4B84D [0x9338]     */
                 func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                                 0, 0, 8); /* @0x4B85D           */
             }
@@ -316,7 +316,7 @@ human_panel:
     if (btn9 == 0 &&
         DG8(0x5236 + type * 6) != 0 &&
         !(type >= 0x0D && type <= 0x12)) {             /* @0x4B883..0x4B890     */
-        (void)overlay_call_181F_0022();                /* @0x4B898 [0x933A] id 9*/
+        (void)overlay_call_181F_0022((int16_t)DG16(0x933a));                /* @0x4B898 [0x933A] id 9*/
         func_06C850_panel_append_button((uint16_t)panel_lo, (uint16_t)panel_hi,
                                         0, 0, 9);      /* @0x4B8A8              */
     }

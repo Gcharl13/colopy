@@ -79,9 +79,9 @@ extern int overlay_call_191F_0FC4(void);  /* 0x191F:0x0FC4 -- data-table helper 
 extern int overlay_call_191F_0FDE(void);  /* 0x191F:0x0FDE -- text/record helper */
 extern int overlay_call_191F_0FD0(void);  /* 0x191F:0x0FD0 -- record lookup (returns far ptr) */
 extern int overlay_call_191F_01A8(void);  /* 0x191F:0x01A8 -- free far block */
-extern int overlay_call_191F_087A(void);  /* 0x191F:0x087A -- predicate */
+extern int overlay_call_191F_087A();  /* 0x191F:0x087A -- predicate */
 extern int overlay_call_191F_0320(void);  /* 0x191F:0x0320 -- predicate */
-extern int overlay_call_191F_0F8E(void);  /* 0x191F:0x0F8E -- helper */
+extern int overlay_call_191F_0F8E();  /* 0x191F:0x0F8E -- helper */
 extern int overlay_call_191F_0AAC(void);  /* 0x191F:0x0AAC -- new-game post-setup */
 extern int overlay_call_191F_0B6C(void);  /* 0x191F:0x0B6C -- new-game post-setup */
 
@@ -140,7 +140,7 @@ extern int overlay_call_1A1F_0EE4(void);  /* 0x1A1F:0x0EE4 -- cursor-gate predic
 extern int overlay_call_181F_000E(void);  /* 0x181F:0x000E -- module init */
 extern int overlay_call_181F_0182(void);  /* 0x181F:0x0182 -- strcat / format-append */
 extern int overlay_call_181F_044E(void);  /* 0x181F:0x044E -- measure / fit decision */
-extern int overlay_call_181F_048E(void);  /* 0x181F:0x048E -- draw glyph/box */
+extern int overlay_call_181F_048E();  /* 0x181F:0x048E -- draw glyph/box */
 extern int overlay_call_181F_02F8(void);  /* 0x181F:0x02F8 -- draw value bar */
 extern int overlay_call_181F_03B6(void);  /* 0x181F:0x03B6 -- push draw state */
 extern int overlay_call_181F_03F4(void);  /* 0x181F:0x03F4 -- blit region */
@@ -156,26 +156,26 @@ extern int overlay_call_181F_04CA(void);  /* 0x181F:0x04CA -- set palette/color 
 extern int overlay_call_181F_04C0(void);  /* 0x181F:0x04C0 -- set mode/value */
 extern int overlay_call_181F_04F2(void);  /* 0x181F:0x04F2 -- init draw */
 extern int overlay_call_181F_04E8(void);  /* 0x181F:0x04E8 -- helper */
-extern int overlay_call_181F_04D4(void);  /* 0x181F:0x04D4 -- random_int(lo,hi) BYTE_VERIFIED */
+extern int overlay_call_181F_04D4();  /* 0x181F:0x04D4 -- random_int(lo,hi) BYTE_VERIFIED */
 extern int overlay_call_181F_029A(void);  /* 0x181F:0x029A -- alloc far block (size arg) */
 extern int overlay_call_181F_0290(void);  /* 0x181F:0x0290 -- realloc/grow far block */
 extern int overlay_call_181F_0772(void);  /* 0x181F:0x0772 -- error/abort dialog */
 extern int overlay_call_181F_095C(void);  /* 0x181F:0x095C -- create unit (returns index) */
 extern int overlay_call_181F_0E86(void);  /* 0x181F:0x0E86 -- file findfirst / open (returns handle) */
 extern int overlay_call_181F_053C(void);  /* 0x181F:0x053C -- screen save (0,0,320,200) */
-extern int overlay_call_181F_0498(void);  /* 0x181F:0x0498 -- helper */
+extern int overlay_call_181F_0498();  /* 0x181F:0x0498 -- helper */
 extern int overlay_call_181F_0484(void);  /* 0x181F:0x0484 -- restore region */
 extern int overlay_call_181F_0F3C(void);  /* 0x181F:0x0F3C -- helper */
 extern int overlay_call_181F_04DE(void);  /* 0x181F:0x04DE -- helper */
 extern int overlay_call_181F_040A(void);  /* 0x181F:0x040A -- helper */
-extern int overlay_call_181F_04AC(void);  /* 0x181F:0x04AC -- helper */
-extern int overlay_call_181F_04A2(void);  /* 0x181F:0x04A2 -- helper */
+extern int overlay_call_181F_04AC();  /* 0x181F:0x04AC -- helper */
+extern int overlay_call_181F_04A2();  /* 0x181F:0x04A2 -- helper */
 extern int overlay_call_181F_0EB8(void);  /* 0x181F:0x0EB8 -- config read */
 extern int overlay_call_181F_0E5E(void);  /* 0x181F:0x0E5E -- config field getter */
 extern int overlay_call_181F_0E68(void);  /* 0x181F:0x0E68 -- config field advance */
 extern int overlay_call_181F_0E72(void);  /* 0x181F:0x0E72 -- config field getter (dword) */
 extern int overlay_call_181F_0ED6(void);  /* 0x181F:0x0ED6 -- helper */
-extern int overlay_call_181F_05C4(void);  /* 0x181F:0x05C4 -- helper */
+extern int overlay_call_181F_05C4();  /* 0x181F:0x05C4 -- helper */
 /* overlay_call_1A1F_0372: returns int per overlay_externs.h (ax:dx 32-bit; int on modern) */
 
 extern int overlay_call_0D1D_07E4(void);  /* 0x0D1D:0x07E4 -- C strcpy */
@@ -186,7 +186,7 @@ extern int overlay_call_0D1D_085E(void);  /* 0x0D1D:0x085E -- C strncpy */
 extern int overlay_call_0D1D_0894(void);  /* 0x0D1D:0x0894 -- C strncpy variant */
 extern int overlay_call_0D1D_09A2(void);  /* 0x0D1D:0x09A2 -- C helper (ptr out) */
 extern int overlay_call_0D1D_0A3E(void);  /* 0x0D1D:0x0A3E -- C helper */
-extern int overlay_call_0D1D_0DAE(void);  /* 0x0D1D:0x0DAE -- C memset(base,val,n) */
+extern int overlay_call_0D1D_0DAE();  /* 0x0D1D:0x0DAE -- C memset(base,val,n) */
 extern int overlay_call_0D1D_0FB2(void);  /* 0x0D1D:0x0FB2 -- C helper */
 extern int overlay_call_0D1D_0816(void);  /* 0x0D1D:0x0816 -- C helper */
 extern int overlay_call_0D1D_10C0(void);  /* 0x0D1D:0x10C0 -- C sprintf */
@@ -198,7 +198,7 @@ extern int overlay_call_0D1D_0F60(void);  /* 0x0D1D:0x0F60 -- C 64-bit cmp/sub *
 extern int overlay_call_0D1D_0EC6(void);  /* 0x0D1D:0x0EC6 -- C lseek/position set */
 extern int overlay_call_0D1D_0B1C(void);  /* 0x0D1D:0x0B1C -- C buffered fill */
 extern int overlay_call_0D1D_0E9D(void);  /* 0x0D1D:0x0E9D -- C chunked copy */
-extern int overlay_call_0D1D_09CA(void);  /* 0x0D1D:0x09CA -- C findnext (read dirent) */
+extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA -- C findnext (read dirent) */
 extern int overlay_call_0D1D_0842(void);  /* 0x0D1D:0x0842 -- C strlen */
 extern int overlay_call_0D1D_08BC(void);  /* 0x0D1D:0x08BC -- C strncmp */
 extern int overlay_call_0D1D_117E(void);  /* 0x0D1D:0x117E -- C strcpy(dst, src) used by NAMES name fills */
@@ -1096,7 +1096,7 @@ int func_075352_show_power_relations_dialog(uint16_t arg0_bp_06, uint16_t arg1_b
     if (arg0_bp_06 == 1) {                    /* @asm 0x075430 cmp [bp+6],1 */
         if (arg1_bp_08 == 1) {                /* @asm 0x075436 cmp [bp+8],1 -> @0x2314 */
             overlay_call_0D1D_07E4();         /* @asm 0x075443 strcpy(@0x2314) */
-            overlay_call_181F_048E();         /* @asm 0x07544D draw glyph 0x3e */
+            overlay_call_181F_048E(0x3e);         /* @asm 0x07544D draw glyph 0x3e */
         } else {                              /* @asm 0x075458 -> @0x231A */
             overlay_call_0D1D_07E4();         /* @asm 0x075465 strcpy(@0x231A) */
         }
@@ -1257,7 +1257,7 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
 
     for (i = 0; i < 0x10; i++)                      /* @asm 0x07565F cmp,0x10 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53EA + i * 2)))) =
-            (uint16_t)overlay_call_181F_04D4();     /* @asm 0x07564B random(0x258,0x3E8) */
+            (uint16_t)overlay_call_181F_04D4(0x258, 0x3e8);     /* @asm 0x07564B random(0x258,0x3E8) */
 
     for (i = 0; i < 4; i++) {                       /* @asm 0x07567C cmp,4 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53DA + i * 2)))) = 0;   /* @asm 0x075671 */
@@ -1319,9 +1319,9 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     overlay_call_1A1F_07F8();                       /* @asm 0x0757BA post-setup */
     overlay_call_181F_03AC();                       /* @asm 0x0757BF present */
 
-    overlay_call_0D1D_0DAE();                       /* @asm 0x0757CB memset(@0x53A9,-1,0x19) */
+    overlay_call_0D1D_0DAE(0x53a9, -1, 0x19);                       /* @asm 0x0757CB memset(@0x53A9,-1,0x19) */
     (*(uint8_t near *)(DG_BASE + (uint16_t)(0x53A7))) = 0;                 /* @asm 0x0757D3 king anger = 0 */
-    (*(uint8_t near *)(DG_BASE + (uint16_t)(0x53A8))) = (uint8_t)overlay_call_181F_04D4(); /* @asm 0x0757DC random(1,8) */
+    (*(uint8_t near *)(DG_BASE + (uint16_t)(0x53A8))) = (uint8_t)overlay_call_181F_04D4(1, 8); /* @asm 0x0757DC random(1,8) */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538A))) = 0x05D4;            /* @asm 0x0757E7 */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538E))) = 0;                 /* @asm 0x0757EF turn = 0 */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x538C))) = 0;                 /* @asm 0x0757F2 */
@@ -1403,7 +1403,7 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) {          /* @asm 0x075994 cmp [0x83ac],0 */
         overlay_call_181F_04E8();                   /* @asm 0x07599B */
     }
-    overlay_call_181F_048E();                       /* @asm 0x0759A2 draw 0x25 */
+    overlay_call_181F_048E(0x25);                       /* @asm 0x0759A2 draw 0x25 */
     result = 0;                                     /* @asm 0x0759AA [bp-2]=0 */
 
 tail:
@@ -1490,7 +1490,7 @@ int func_0759E8_save_load_game_screen(void)
 
     /* ---- quick path A: autoload slot [0x104] ---- @asm 0x075A14 */
     if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x0104))) != 0) {
-        overlay_call_181F_0498();             /* @asm 0x075A1D arg 3 */
+        overlay_call_181F_0498(3);             /* @asm 0x075A1D arg 3 */
         overlay_call_1A1F_0CDA();             /* @asm 0x075A2C build path (len 0xA) */
         if (page1A_dir_match() == 0) {        /* @asm 0x075A3A near 0x4eea */
             if ((*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) /* @asm 0x075A44 cmp [0x83ac],0 */
@@ -1563,7 +1563,7 @@ int func_0759E8_save_load_game_screen(void)
             /* (label 0x47f6) seed 5 random[0..2] -> word[0x1e7e + i*2] */
             for (i = 0; i < 5; i++) {         /* @asm 0x075CA8 cmp,5 */
                 *((uint16_t near *)((i << 1) + 0x1E7E)) =
-                    (uint16_t)overlay_call_181F_04D4();      /* @asm 0x075C92 random(0,3) */
+                    (uint16_t)overlay_call_181F_04D4(0, 3);      /* @asm 0x075C92 random(0,3) */
                 if (menu == 3)                /* @asm 0x075CAF cmp [bp-0xe0],3 (defensive) */
                     *((uint16_t near *)((i << 1) + 0x1E7E)) = 1; /* @asm 0x075CBC */
             }
@@ -1603,7 +1603,7 @@ int func_0759E8_save_load_game_screen(void)
 
         } else if (menu == 3) {               /* @asm 0x075C7D dec; jne -> 0x495a */
             page1A_sl_prep();                 /* @asm 0x075DEA near 0x4f17 */
-            done = (overlay_call_191F_087A() == 1) ? 1 : 0; /* @asm 0x075E03 @DS:0x236B "WOODPANL"; sbb/neg */
+            done = (overlay_call_191F_087A(0x236b, (int16_t)DG16(0x839e), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1) ? 1 : 0; /* @asm 0x075E03 @DS:0x236B "WOODPANL"; sbb/neg */
             if (done != 0) {                  /* @asm 0x075E16 */
                 overlay_call_181F_040A();     /* @asm 0x075E1A */
                 overlay_call_181F_0444();     /* @asm 0x075E48 box */
@@ -1615,8 +1615,8 @@ int func_0759E8_save_load_game_screen(void)
                 if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x5382))) & 1) /* @asm 0x075E71 test [0x5382],1 */
                     overlay_call_181F_04AC(); /* @asm 0x075E7A arg 3 */
                 else
-                    overlay_call_181F_04AC(); /* @asm 0x075E84 arg 1 */
-                overlay_call_181F_04A2();     /* @asm 0x075E8E arg 2 */
+                    overlay_call_181F_04AC(1); /* @asm 0x075E84 arg 1 */
+                overlay_call_181F_04A2(2);     /* @asm 0x075E8E arg 2 */
             }
             if (action == 1)                  /* @asm 0x075E96 */
                 done = 1;                     /* @asm 0x075E9D */
@@ -1627,7 +1627,7 @@ int func_0759E8_save_load_game_screen(void)
         } else if (menu == 4) {               /* @asm 0x075C7D second dec -> 0x4a20 */
             done = 1;                         /* @asm 0x075EB0 [bp-0xe4]=1 */
             page1A_sl_prep();                 /* @asm 0x075EB7 near 0x4f17 */
-            overlay_call_191F_0F8E();         /* @asm 0x075EBC arg 0 */
+            overlay_call_191F_0F8E(0);         /* @asm 0x075EBC arg 0 */
             goto label_48f1;                  /* @asm 0x075EC4 jmp 0x48f1 */
         } else {
             goto finish_alt;                  /* @asm 0x075C83 jmp 0x4afd */
@@ -1878,7 +1878,7 @@ tail:                                         /* @asm 0x076335 (0x4ea5) */
     overlay_call_1A1F_0E4E();                 /* @asm 0x076335 map teardown */
     overlay_call_181F_04F2();                 /* @asm 0x07633A init draw */
     /* [bp-2]=[0x83AA] @asm 0x07633F; 0x181F:0x5C4(0,3) @asm 0x076349 */
-    overlay_call_181F_05C4();                 /* @asm 0x076349 (0,3) */
+    overlay_call_181F_05C4(0, 3);                 /* @asm 0x076349 (0,3) */
     overlay_call_181F_0ED6();                 /* @asm 0x07635F ((bp-2==3)?0:1, 3) */
     overlay_call_181F_05CE();                 /* @asm 0x076369 */
     return 0;                                 /* @asm 0x07636E leave; 0x07636F retf */

@@ -83,7 +83,7 @@ extern int16_t  g_kbd_scan_981E;      /* DGROUP:0x981E (last key scancode) */
 /* ---- file-local thunk decls (not yet in overlay_externs.h; cited @asm site).
  * Same 0x181F/0x191F overlay-runtime thunk family as the header; each appears
  * verbatim in page_01.asm at the offset noted. Kept local per task scope. */
-extern int overlay_call_181F_03CA(void); /* @0x02430C  point_in_rect(x,y,w,h) */
+extern int overlay_call_181F_03CA(); /* @0x02430C  point_in_rect(x,y,w,h) */
 extern int overlay_call_181F_0858(void); /* @0x022D87  trade_route_of(unit) */
 extern int overlay_call_181F_0DA4(void); /* @0x0241B7  scroll_map(dir) */
 extern int overlay_call_191F_01C2(void); /* @0x02232C  issue_order (build-road) */
@@ -435,7 +435,7 @@ int func_021EDE_overboard_menu(void)
     if (U_CARGO(u) == 0) return 0;                     /* @0x021EEB no cargo -> no menu */
     /* [0x1F5E]=0; n = menu_open("OVERBOARD"); if(!n) return; @0x021EFB LCALL 0x191F:0x182 */
     if (overlay_call_191F_0182() == 0) return 0;       /* @0x021F03/0x021F0E */
-    overlay_call_181F_0022();                          /* @0x021F1B header */
+    overlay_call_181F_0022((int16_t)DG16(0x2dfa));                          /* @0x021F1B header */
     overlay_call_191F_0176();                          /* @0x021F2B header row */
     for (;;) {                                          /* @0x021FAA cargo-slot loop */
         overlay_call_181F_0BE6();                      /* @0x021F40 cargo_in_slot(u,i) */
@@ -748,7 +748,7 @@ int func_022832_open_colony_b(void)
 int func_02287E_disband_unit(void)
 {
     int target;
-    overlay_call_181F_06DC();                          /* @0x02288A power_at_tile(cursor) */
+    overlay_call_181F_06DC((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));                          /* @0x02288A power_at_tile(cursor) */
     /* own/visible gate @0x022896..0x0228A5 ([0x5383]&0x20 || ==[0x5396]) */
     target = overlay_call_181F_07E0();                 /* @0x0228AF unit_at_xy(cursor) */
     if (g_season == 0) target = g_active_unit;          /* @0x0228B7 spring -> active unit */
@@ -1115,7 +1115,7 @@ int func_023F1C_movement_keys(void)
     /* Big scancode switch @0x023F32..0x024131. Representative arms (all cited): */
     if (key == 0x111) {                                /* @0x023F74 SoL overlay toggle */
         overlay_call_191F_045C();                      /* @0x023F88 draw_sol_layer(6,cursor) */
-        overlay_call_181F_0DEA();                      /* @0x023F92 sol text */
+        overlay_call_181F_0DEA(1);                      /* @0x023F92 sol text */
         /* [0x5383]^=0x20; @0x023F9A */
         return handled;                                /* @0x023F9F -> tail */
     }
@@ -1158,7 +1158,7 @@ int func_0241CE_enter_on_colony(void)
 {
     int c;
     if (g_kbd_scan_981E != 0xD) return 0;              /* @0x0241D7 not Enter */
-    c = overlay_call_181F_07BE();                      /* @0x0241E7 colony_at_xy(cursor) */
+    c = overlay_call_181F_07BE((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));                      /* @0x0241E7 colony_at_xy(cursor) */
     if (c < 0) return 1;                               /* @0x0241F2 */
     /* if (Colony[c].owner==[0x5396] || [0x53A2]) open_report(c); @0x0241F6..0x024208 */
     overlay_call_181F_0608();                          /* @0x02420D open_colony_report(c) */
@@ -1185,7 +1185,7 @@ int func_024224_enter_space_cmd(void)
 {
     int key = g_kbd_scan_981E;                         /* @0x02422D */
     if (key == 0xD) {                                  /* @0x024233 Enter -> colony report */
-        int c = overlay_call_181F_07BE();              /* @0x024266 colony_at_xy(cursor) */
+        int c = overlay_call_181F_07BE((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));              /* @0x024266 colony_at_xy(cursor) */
         if (c < 0) return 1;                           /* @0x024271 */
         overlay_call_181F_0608();                      /* @0x02428C open_colony_report(c) */
         return 1;                                       /* @0x024294 */
@@ -1220,7 +1220,7 @@ int func_0242AE_mouse_region(void)
     int r = 0;                                         /* @0x0242B2 [bp-2]=0 */
     /* main-map view test @0x0242B7..0x0242DA -> r=1 */
     /* minimap box test   @0x0242DF..0x0242FD -> r=2 */
-    if (overlay_call_181F_03CA()) {                    /* @0x02430C point_in_rect(0xF1,0x32,0x4F,0x96) */
+    if (overlay_call_181F_03CA(0xf1, 0x32, 0x4f, 0x96)) {                    /* @0x02430C overlay_call_181F_03CA(0xf1, 0x32, 0x4f, 0x96) */
         r = 3;                                          /* @0x024318 side panel */
     }
     return r;                                           /* @0x02431D [bp-2] */

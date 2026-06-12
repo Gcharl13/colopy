@@ -229,7 +229,7 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
         base = 1;                                    /* @0x034C54 [bp-8]=1 */
     }
 
-    r = (int)overlay_call_181F_04D4();               /* @0x034C5D random_int(1,0xF) */
+    r = (int)overlay_call_181F_04D4(1, 0xf);               /* @0x034C5D random_int(1,0xF) */
     base += 1;                                       /* @0x034C65 INC [bp-8] */
 
     /* if ((base+2)/2 < r) -> no event: the success block @0x034C73..0x034C8B
@@ -239,7 +239,7 @@ int func_034C24_difficulty_event_roll(uint16_t arg0_bp_06)
         return 0;                                    /* @0x034C94 (al = r.lo; ~"no event") */
     }
 
-    attr = (int)overlay_call_181F_07B4();            /* @0x034C79 power_attribute_bit(player,0x14) */
+    attr = (int)overlay_call_181F_07B4((int16_t)DG16(0x9e12), 0x14);            /* @0x034C79 power_attribute_bit(player,0x14) */
     /* 0x1C if attr==1 else 0x1D (SBB ax,ax; AND al,0xFE; ADD 0x1C) */
     return (attr == 1) ? 0x1C : 0x1D;                /* @0x034C81..0x034C8E */
 }
@@ -818,7 +818,7 @@ int func_036138_king_event_selector(void)
         /* KINGWAR(0x1166) + COUNTRIES(0x116E); king declares war.     @0x0362EE..0x036330
          * r_target = random_int(1,8), retry if == g_53A8 (avoid repeat target).
          * g_53A8 = r_target. PowerRecord[+0x10] = 2. */
-        overlay_call_181F_04D4();                    /* @0x03630D random_int(1,8) */
+        overlay_call_181F_04D4(1, 8);                    /* @0x03630D random_int(1,8) */
     } else if (v < 0x44C) {                          /* @0x036332 CMP ...,0x44C / JGE */
         /* KINGNAVACT(0x1178); naval activities.  r2=random_int(3,4). @0x036332..0x036346
          * PowerRecord[+0x10] = r2. */
@@ -826,7 +826,7 @@ int func_036138_king_event_selector(void)
     } else {
         /* KINGSTAMPACT(0x1183); stamp act.       r2=random_int(5,8). @0x03634E..0x03637D
          * format_player_name(0x5426+player*0x34, 2). PowerRecord[+0x10] = r2. */
-        overlay_call_181F_04D4();                    /* @0x036352 random_int(5,8) */
+        overlay_call_181F_04D4(5, 8);                    /* @0x036352 random_int(5,8) */
     }
 
     /* common tail (all branches) @0x036380:
@@ -968,8 +968,8 @@ int func_036574_newgame_player_setup(void)
         *(uint16_t *)(pr + 0x4A) = 0;                   /* @0x0365CF [bx+0x4A]=0                */
         pr[0x49] = 0;                                   /* @0x0365D6 [bx+0x49]=0                */
         pr[0x48] = 0;                                   /* @0x0365D9 [bx+0x48]=0                */
-        pr[0x44] = (uint8_t)overlay_call_181F_04D4();   /* @0x0365E0 random_int(1,0x20); [bx+0x44] @0x0365EC */
-        pr[0x45] = (uint8_t)overlay_call_181F_04D4();   /* @0x0365F3 random_int(0,0x1F); [bx+0x45] @0x0365FF */
+        pr[0x44] = (uint8_t)overlay_call_181F_04D4(1, 0x20);   /* @0x0365E0 random_int(1,0x20); [bx+0x44] @0x0365EC */
+        pr[0x45] = (uint8_t)overlay_call_181F_04D4(0, 0x1f);   /* @0x0365F3 random_int(0,0x1F); [bx+0x45] @0x0365FF */
         pr[0x18] = 0;                                   /* @0x036606 [bx+0x18]=0                */
         *(uint16_t *)(pr + 0x46) = 0;                   /* @0x03660E [bx+0x46]=0                */
         overlay_call_0D1D_0DAE();                       /* @0x036616 LCALL 0x0D1D:0xDAE memset(&pr[0x1B],2,0) */

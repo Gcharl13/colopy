@@ -1263,13 +1263,13 @@ p1_test:
     overlay_call_181F_0E08(); /* landing sound/seek @0x03D771 */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &colony[+2] name, 0) @0x03D782 */
     if (arg0_bp_06 == 0) {                            /* @0x03D78A real announcement */
-        overlay_call_181F_0498(); /* msg_ctx(3) @0x03D792 */
-        overlay_call_181F_09A4(); /* fmt power name([0x53D4]) @0x03D79E */
+        overlay_call_181F_0498(3); /* msg_ctx(3) @0x03D792 */
+        overlay_call_181F_09A4((int16_t)DG16(0x53d4)); /* fmt power name([0x53D4]) @0x03D79E */
         overlay_call_181F_0438(); /* msg_set_arg(1, name) @0x03D7A9 */
         overlay_call_181F_04C0(); /* msg_flag(0x3F) @0x03D7B4 */
         /* show str 0x12C4 */
     } else {
-        overlay_call_181F_09A4(); /* fmt power name([0x53D6]) @0x03D7C6 */
+        overlay_call_181F_09A4((int16_t)DG16(0x53d6)); /* fmt power name([0x53D6]) @0x03D7C6 */
         overlay_call_181F_0438(); /* msg_set_arg(1, name) @0x03D7D1 */
         /* show str 0x12CE */
     }
@@ -1609,7 +1609,7 @@ int func_03DE46_op_sz_138(void)
     if ((int16_t)G16(0x53D2) < 0)
         func_03EA0B(); /* 0x191F:0x364 */
 
-    overlay_call_181F_04AC(); /* msg_ctx(3) @0x03DE8A */
+    overlay_call_181F_04AC(3); /* msg_ctx(3) @0x03DE8A */
     func_03EA1F(); /* @0x03DE93 */
 
     /* @0x03DE96..0x03DEE2  rank powers by weighted score, then sort4 */
@@ -1650,7 +1650,7 @@ int func_03DE46_op_sz_138(void)
 
     /* @0x03E031..0x03E0B6  set revolution flag + transfer tiles to ally */
     G8(0x5382) |= 1;                                  /* @0x03E031 war declared */
-    overlay_call_181F_0736(); /* map_layer_ptr(0,0) @0x03E03A */
+    overlay_call_181F_0736(0, 0); /* map_layer_ptr(0,0) @0x03E03A */
     maskA = (uint16_t)(0x10 << (uint8_t)G8(0x5398));  /* @0x03E04A ally mask */
     maskB = (uint16_t)(0x10 << (uint8_t)G8(0x53D2));  /* @0x03E057 cur mask */
     (void)maskA; (void)maskB;
@@ -1762,7 +1762,7 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)   /* [bp+6] = power */
     uint16_t colony;
     int16_t  sol;                     /* [bp-6]  colony SoL% */
 
-    overlay_call_181F_04AC(); /* msg_ctx(3) @0x03E2F1 */
+    overlay_call_181F_04AC(3); /* msg_ctx(3) @0x03E2F1 */
 
     for (c = 0; c < (int16_t)G16(0x539E); ++c) {     /* @0x03E3CA loop */
         func_0082DC_logic_sz_118((uint16_t)c); /* get_colony_by_slot(c) */
@@ -3023,7 +3023,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
         land_move = (terr >= 8 && terr < 0x10) ? 0 : 1; /* @0x0406DB sets 0 */
 
     /* @0x04070E..0x04075F  spend movement point */
-    overlay_call_181F_0934(); /* unit_op(arg0) @0x040711 */
+    overlay_call_181F_0934(arg0_bp_06); /* unit_op(arg0) @0x040711 */
     G8(rec + 0x315A)++;                               /* @0x04071D moves-used++ */
     move_cost = (int16_t)((uint8_t)G8((uint16_t)(terr << 4) + 0x2F78) + 2); /* @0x040727 */
     scout = (G8(rec + 0x315B) == 0x14) ? 1 : 0;      /* @0x040742 */
@@ -3249,7 +3249,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
         goto clear314c;
 
     /* @0x040A3B..0x040A7F  spend movement point */
-    overlay_call_181F_0934(); /* unit_op(arg0) @0x040A3E */
+    overlay_call_181F_0934(arg0_bp_06); /* unit_op(arg0) @0x040A3E */
     G8(rec + 0x315A)++;                               /* @0x040A46 */
     move_cost = (int16_t)(uint8_t)G8((uint16_t)(terr << 4) + 0x2F78);  /* @0x040A50 */
     if (G8(rec + 0x315B) == 0x14)                     /* @0x040A59 scout */

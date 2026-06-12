@@ -923,7 +923,7 @@ int ai_resolve_colony_assault(int unit)  /* func_05A20E */
         odds += (int)g_difficulty_53A6 - 2;             /* @asm 0x05A30F */
 
     overlay_call_181F_04CA();                           /* pre-roll seed @asm 0x05A31D */
-    win = (overlay_call_181F_04D4() <= odds) ? 1 : 0;   /* random_int(1,0x24) <= odds @asm 0x05A329 */
+    win = (overlay_call_181F_04D4(1, 0x24) <= odds) ? 1 : 0;   /* random_int(1,0x24) <= odds @asm 0x05A329 */
 
     if (win) {                                          /* @asm 0x05A340 jne win-path */
         /* attacker takes the colony. @asm 0x05A345 */
@@ -1058,7 +1058,7 @@ int trade_with_power_dialog(int unit)  /* func_05A40E */
             overlay_call_181F_016E();                  /* append cargo name @asm 0x05A52C */
             overlay_call_191F_0176();                  /* add menu item @asm 0x05A544 */
         }
-        overlay_call_181F_0022();                      /* @asm 0x05A564 menu chrome */
+        overlay_call_181F_0022((int16_t)DG16(0x2dfa));                      /* @asm 0x05A564 menu chrome */
         overlay_call_191F_0176();                      /* @asm 0x05A574 */
         choice = overlay_call_191F_016A();             /* run menu -> selection @asm 0x05A582 */
         overlay_call_191F_01A8();                      /* close menu @asm 0x05A590 */
@@ -1422,7 +1422,7 @@ int trade_pick_cargo_dialog(int unit, int carrier)  /* func_05B0DC */
         /* ---- EU human power: interactive PICKACARGO menu. @asm 0x05B14E ---- */
         overlay_call_191F_0182();                      /* open "PICKACARGO"(0x1B08) menu @asm 0x05B158 */
         /* if open failed -> end (selected stays 0). @asm 0x05B163 or dx,ax; je 0x5B2BB */
-        overlay_call_181F_0022();                      /* header value num(0x2DFA) @asm 0x05B170 */
+        overlay_call_181F_0022((int16_t)DG16(0x2dfa));                      /* header value num(0x2DFA) @asm 0x05B170 */
         overlay_call_191F_0176();                      /* header line @asm 0x05B180 */
         for (slot = 0; slot < cargo_count; slot++) {   /* @asm 0x05B188..0x05B206 */
             ctype = overlay_call_181F_0BE6();          /* cargo type @asm 0x05B196 -> [bp-0x6C] */

@@ -122,11 +122,11 @@
  * The role comment is documentation; the call itself is faithful.
  * ------------------------------------------------------------------------- */
 extern int overlay_call_0D1D_07E4(void);  /* str_format(buf, fmt[, ...])      */
-extern int overlay_call_0D1D_0DAE(void);  /* memset-like fill                 */
+extern int overlay_call_0D1D_0DAE();  /* memset-like fill                 */
 extern int overlay_call_0D1D_0F60(void);  /* long mul helper                  */
 extern int overlay_call_0D1D_0EC6(void);  /* long div helper                  */
 
-extern int overlay_call_181F_0056(void);  extern int overlay_call_181F_006A(void);
+extern int overlay_call_181F_0056();  extern int overlay_call_181F_006A(void);
 extern int overlay_call_181F_0074(void);  extern int overlay_call_181F_007E(void);
 extern int overlay_call_181F_00BA(void);  extern int overlay_call_181F_00C4(void);
 extern int overlay_call_181F_00CE(void);  extern int overlay_call_181F_00E2(void);
@@ -134,13 +134,13 @@ extern int overlay_call_181F_011E(void);  extern int overlay_call_181F_0128(void
 extern int overlay_call_181F_0132(void);  extern int overlay_call_181F_013C(void);
 extern int overlay_call_181F_016E(void);  extern int overlay_call_181F_0182(void);
 extern int overlay_call_181F_01B4(void);  extern int overlay_call_181F_01E6(void);
-extern int overlay_call_181F_0022(void);  extern int overlay_call_181F_0254(void);
+extern int overlay_call_181F_0022();  extern int overlay_call_181F_0254(void);
 extern int overlay_call_181F_02E4(void);  extern int overlay_call_181F_02EE(void);
 extern int overlay_call_181F_0302(void);  extern int overlay_call_181F_0352(void);
 extern int overlay_call_181F_0416(void);  extern int overlay_call_181F_0438(void);
-extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E(void);
-extern int overlay_call_181F_04C0(void);  extern int overlay_call_181F_04D4(void);
-extern int overlay_call_181F_0524(void);  extern int overlay_call_181F_0582(void);
+extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E();
+extern int overlay_call_181F_04C0(void);  extern int overlay_call_181F_04D4();
+extern int overlay_call_181F_0524();  extern int overlay_call_181F_0582(void);
 extern int overlay_call_181F_0608(void);  extern int overlay_call_181F_0652(void);
 extern int overlay_call_181F_0682(void);  extern int overlay_call_181F_0696(void);
 extern int overlay_call_181F_06BE(void);  extern int overlay_call_181F_070E(void);
@@ -148,24 +148,24 @@ extern int overlay_call_181F_0718(void);  extern int overlay_call_181F_0722(void
 extern int overlay_call_181F_074A(void);  extern int overlay_call_181F_078C(void);
 extern int overlay_call_181F_07A0(void);  extern int overlay_call_181F_07B4(void);
 extern int overlay_call_181F_07BE(void);  extern int overlay_call_181F_07E0(void);
-extern int overlay_call_181F_07EA(void);  extern int overlay_call_181F_0808(void);
+extern int overlay_call_181F_07EA(void);  extern int overlay_call_181F_0808();
 extern int overlay_call_181F_081C(void);  extern int overlay_call_181F_083A(void);
-extern int overlay_call_181F_084E(void);  extern int overlay_call_181F_0858(void);
+extern int overlay_call_181F_084E();  extern int overlay_call_181F_0858(void);
 extern int overlay_call_181F_0876(void);  extern int overlay_call_181F_0880(void);
 extern int overlay_call_181F_08B2(void);  extern int overlay_call_181F_08C6(void);
-extern int overlay_call_181F_08DA(void);  extern int overlay_call_181F_0916(void);
+extern int overlay_call_181F_08DA();  extern int overlay_call_181F_0916();
 extern int overlay_call_181F_0920(void);  extern int overlay_call_181F_0934(void);
 extern int overlay_call_181F_0948(void);  extern int overlay_call_181F_09A4(void);
 extern int overlay_call_181F_09AE(void);  extern int overlay_call_181F_09BA(void);
 extern int overlay_call_181F_09C8(void);  extern int overlay_call_181F_09E6(void);
 extern int overlay_call_181F_0A4C(void);  extern int overlay_call_181F_0A92(void);
 extern int overlay_call_181F_0AEC(void);  extern int overlay_call_181F_0B78(void);
-extern int overlay_call_181F_0BBE(void);  extern int overlay_call_181F_0BE6(void);
-extern int overlay_call_181F_0C2C(void);  extern int overlay_call_181F_0C54(void);
+extern int overlay_call_181F_0BBE();  extern int overlay_call_181F_0BE6(void);
+extern int overlay_call_181F_0C2C(void);  extern int overlay_call_181F_0C54();
 extern int overlay_call_181F_0C68(void);  extern int overlay_call_181F_0C9A(void);
 extern int overlay_call_181F_0D58(void);  extern int overlay_call_181F_0D78(void);
-extern int overlay_call_181F_0DC2(void);  extern int overlay_call_181F_0DD6(void);
-extern int overlay_call_181F_0DE0(void);  extern int overlay_call_181F_0DF4(void);
+extern int overlay_call_181F_0DC2();  extern int overlay_call_181F_0DD6();
+extern int overlay_call_181F_0DE0();  extern int overlay_call_181F_0DF4(void);
 extern int overlay_call_181F_0DFE(void);  extern int overlay_call_181F_0E12(void);
 /* overlay_call_181F_0E1C(uint16_t active) now declared in overlay_externs.h */
 
@@ -192,7 +192,7 @@ extern int overlay_call_191F_0ED0(void);
 extern int overlay_call_1A1F_0142(void);  extern int overlay_call_1A1F_01D8(void);
 extern int overlay_call_1A1F_01E6(void);  extern int overlay_call_1A1F_01F4(void);
 extern int overlay_call_1A1F_0202(void);  extern int overlay_call_1A1F_0210(void);
-extern int overlay_call_1A1F_021C(void);  extern int overlay_call_1A1F_022A(void);
+extern int overlay_call_1A1F_021C(void);  extern int overlay_call_1A1F_022A();
 extern int overlay_call_1A1F_0238(void);  extern int overlay_call_1A1F_0246(void);
 extern int overlay_call_1A1F_0254(void);  extern int overlay_call_1A1F_0262(void);
 extern int overlay_call_1A1F_027E(void);
@@ -284,11 +284,11 @@ skip_report:
     }
 
     /* @0x040D54 redraw the colony HUD panels (element ids in push order). */
-    overlay_call_181F_0BBE();          /* @0x040D58 panel_redraw(0x20,1)    */
-    overlay_call_181F_0BBE();          /* @0x040D64 panel_redraw(0x18,1)    */
-    overlay_call_181F_0BBE();          /* @0x040D70 panel_redraw(0x15,1)    */
-    overlay_call_181F_0BBE();          /* @0x040D7C panel_redraw(0x1B,1)    */
-    overlay_call_181F_0BBE();          /* @0x040D88 panel_redraw(0x27,1)    */
+    overlay_call_181F_0BBE(0x20, 1);          /* @0x040D58 panel_redraw(0x20,1)    */
+    overlay_call_181F_0BBE(0x18, 1);          /* @0x040D64 panel_redraw(0x18,1)    */
+    overlay_call_181F_0BBE(0x15, 1);          /* @0x040D70 panel_redraw(0x15,1)    */
+    overlay_call_181F_0BBE(0x1b, 1);          /* @0x040D7C panel_redraw(0x1B,1)    */
+    overlay_call_181F_0BBE(0x27, 1);          /* @0x040D88 panel_redraw(0x27,1)    */
 
     /* @0x040D90 for the human's colony, format the bell/turn caption. */
     if (G_CUR_POWER < 4 && !IS_REF_POWER(G_CUR_POWER)) {  /* @0x040D90..0x040DA1 */
@@ -312,7 +312,7 @@ skip_banner:
      * colony-screen request, and clear the two "pending move" flags. */
     if (G_CUR_POWER < 4 && !IS_REF_POWER(G_CUR_POWER)) {  /* @0x040DE3..0x040DF4 */
         overlay_call_181F_04C0();      /* @0x040DF9 sound_event(0x54)        */
-        overlay_call_181F_0524();      /* @0x040E00 ui_push_request(2)       */
+        overlay_call_181F_0524(2);      /* @0x040E00 ui_push_request(2)       */
         DG8 (0x0337) = 0;              /* @0x040E08                          */
         DG16(0x034E) = 0;             /* @0x040E0D                          */
         overlay_call_181F_0608();      /* @0x040E16 open_colony_screen(next) */
@@ -502,7 +502,7 @@ blocked:
     func_0082DC_logic_sz_118((uint16_t)home_chk);  /* @0x0411C3 colony_select(home_chk)  */
 sea_scan:
     /* @0x0411CB enumerate the candidate route cells (slot 0 form). */
-    slot_n = overlay_call_1A1F_022A(); /* @0x0411CD route_slot_count(0)      */
+    slot_n = overlay_call_1A1F_022A(0); /* @0x0411CD route_slot_count(0)      */
     for (i = 0; i < slot_n; i++) {     /* @0x0411DD..0x04120F */
         cell = overlay_call_1A1F_021C();            /* @0x041204 route_slot(i)   */
         if (overlay_call_191F_0CD8() != 0)          /* @0x041210 slot_taken(cell) */
@@ -620,7 +620,7 @@ int func_041410_colony_load(uint16_t unit /*bp+6*/, uint16_t quick /*bp+8*/)
     /* @0x04141F n = (cargo-rows for this colony) - 0  ; if < 1 abort early. */
     n = U_MOVES(ubx);                  /* @0x041423 reuse slot count cell    */
     if (n < 1) {                       /* @0x04142C */
-        overlay_call_181F_0DE0();      /* @0x041435 msg_status(0x16,3)        */
+        overlay_call_181F_0DE0(0x16, 3);      /* @0x041435 msg_status(0x16,3)        */
         return rc;                     /* @0x04143D */
     }
 
@@ -680,13 +680,13 @@ auto_load:
     row_terr = overlay_call_181F_0AEC();            /* @0x0415DA do_transfer(best,unit) */
     DGS16(G_COLONY_PTR + row_terr * 2 + 0x9A) += DGS16(0x8DC4);  /* @0x0415E5 add moved amt */
     overlay_call_181F_0056();          /* @0x0415F5 anim_begin(1)             */
-    overlay_call_181F_0DD6();          /* @0x041601 anim_glyph(0x18)          */
+    overlay_call_181F_0DD6(0x18);          /* @0x041601 anim_glyph(0x18)          */
     overlay_call_181F_007E();          /* @0x04160D anim_num(moved)           */
     amt = row_terr;                    /* keep slot for the second number     */
     overlay_call_181F_0074();          /* @0x041619 anim_num(stock[row])      */
-    overlay_call_181F_0DD6();          /* @0x041623 anim_glyph(0x1a)          */
+    overlay_call_181F_0DD6(0x1a);          /* @0x041623 anim_glyph(0x1a)          */
     overlay_call_181F_006A();          /* @0x041632 anim_sprite(colony+2)     */
-    overlay_call_181F_0DC2();          /* @0x041640 anim_run(1,0x78,0)        */
+    overlay_call_181F_0DC2(1, 0x78, 0);          /* @0x041640 anim_run(1,0x78,0)        */
     (void)amt;
     rc = 0;                            /* @0x041648 success */
 abort:
@@ -734,7 +734,7 @@ int func_041654_colony_unload(uint16_t unit /*bp+6*/, uint16_t mode /*bp+8*/)
         cap = DG8(0x5237 + t6) - U_MOVES(ubx);      /* @0x041683..0x04168B */
     }
     if (cap < 1) {                     /* @0x04168E */
-        overlay_call_181F_0DE0();      /* @0x041697 msg_status(0x15,3)         */
+        overlay_call_181F_0DE0(0x15, 3);      /* @0x041697 msg_status(0x15,3)         */
         return rc;                     /* @0x04169F */
     }
 
@@ -781,14 +781,14 @@ int func_041654_colony_unload(uint16_t unit /*bp+6*/, uint16_t mode /*bp+8*/)
         DGS16(G_COLONY_PTR + row * 2 + 0x9A) -= q;       /* @0x041793 */
     }
     overlay_call_181F_0D58();          /* @0x0417A0 transfer_to_colony(row,moved,unit) */
-    overlay_call_181F_0056();          /* @0x0417AA anim_begin(1)              */
-    overlay_call_181F_0DD6();          /* @0x0417B4 anim_glyph(0x17)           */
+    overlay_call_181F_0056(1);          /* @0x0417AA anim_begin(1)              */
+    overlay_call_181F_0DD6(0x17);          /* @0x0417B4 anim_glyph(0x17)           */
     overlay_call_181F_007E();          /* @0x0417BF anim_num(moved)            */
     overlay_call_181F_0074();          /* @0x0417CB anim_num(stock[row])       */
-    overlay_call_181F_0DD6();          /* @0x0417D5 anim_glyph(0x19)           */
+    overlay_call_181F_0DD6(0x19);          /* @0x0417D5 anim_glyph(0x19)           */
     /* @0x0417DD cargo name word: cargoNameTable[type*6 + 0]@0x5230. */
     overlay_call_181F_0074();          /* @0x0417F7 anim_word(cargoName)       */
-    overlay_call_181F_0DC2();          /* @0x041805 anim_run(1,0x78,0)         */
+    overlay_call_181F_0DC2(1, 0x78, 0);          /* @0x041805 anim_run(1,0x78,0)         */
     rc = 0;                            /* @0x04180D */
     (void)mode;
     return rc;                         /* @0x041812 */
@@ -797,13 +797,13 @@ int func_041654_colony_unload(uint16_t unit /*bp+6*/, uint16_t mode /*bp+8*/)
      * Reached only via the near-jump trampolines at 0x041818; kept here as a
      * faithful continuation of func_041654's region. */
     {
-        int roll = overlay_call_181F_04D4();        /* @0x041846 random_int(1,0x64) */
+        int roll = overlay_call_181F_04D4(1, 0x64);        /* @0x041846 random_int(1,0x64) */
         vet = U_TYPENAT(ubx) & 0x0F;                /* @0x041851 */
         if (roll >= 0x5A && DG8(vet - 0x6BE8) >= 3) /* @0x04185F..0x04186C per-power counter */
             ok = (overlay_call_181F_07B4() != 0);   /* @0x041871 promote_check(vet,5) */
         rc = ok ? 1 : 2;                            /* @0x04187D..0x041884 */
         if (mode > 2) {                             /* @0x041889 */
-            overlay_call_181F_04D4();               /* @0x041893 random_int(0,1) */
+            overlay_call_181F_04D4(0, 1);               /* @0x041893 random_int(0,1) */
             overlay_call_181F_07B4();               /* @0x04189D demote_check(vet,5) */
         }
         return rc;                                  /* @0x0418A5 */
@@ -844,7 +844,7 @@ int func_0418AA_commit_active_move(void)
     DG8(prec - 0x77C6) = ax_x;         /* @0x0418D0 */
     DG8(prec - 0x77C5) = uy;           /* @0x0418D4 */
 
-    overlay_call_181F_0916();          /* @0x0418DC pre_move(active)          */
+    overlay_call_181F_0916((int16_t)DG16(0x5392));          /* @0x0418DC pre_move(active)          */
     dest = overlay_call_191F_0AEE();   /* @0x0418EF move_resolve(active,x,y) (near 0x201c) */
     overlay_call_181F_02EE();          /* @0x0418FB unit_iter_begin(active)   */
 
@@ -866,9 +866,9 @@ int func_0418AA_commit_active_move(void)
     }
 
     /* @0x04194E wake + recenter + repaint. */
-    overlay_call_181F_08DA();          /* @0x041952 waypoint_wake(active)     */
+    overlay_call_181F_08DA((int16_t)DG16(0x5392));          /* @0x041952 waypoint_wake(active)     */
     overlay_call_181F_0948();          /* @0x041966 viewport_center(cur-0xC,..)*/
-    overlay_call_181F_084E();          /* @0x041972 hud_refresh(active)        */
+    overlay_call_181F_084E((int16_t)DG16(0x5392));          /* @0x041972 hud_refresh(active)        */
     overlay_call_181F_09BA();          /* @0x041986 cell_repaint(x,y,1,1,1)    */
     return dest;
 }
@@ -1349,7 +1349,7 @@ after_supply:
     /* @0x0420CE if we have a candidate for an active non-Ref power, request it. */
     if (cand >= 0 && G_CUR_POWER < 4 && !IS_REF_POWER(G_CUR_POWER)) {  /* @0x0420D2..0x0420E5 */
         if (has_supply != 0)           /* @0x0420E7 */
-            overlay_call_181F_0524();  /* @0x0420EF ui_push_request(9)         */
+            overlay_call_181F_0524(9);  /* @0x0420EF ui_push_request(9)         */
         DG16(0x014C) = 1;              /* @0x0420F7 select-pending flag        */
         DG16(0x014E) = cand;           /* @0x042100 selected unit              */
     }
@@ -1819,7 +1819,7 @@ int func_042DA6_draw_score_row(uint16_t with_glyph /*bp+6*/)
      * => 0 when [0x929c]==0, else 0xF (the "is-it-autumn? dim the digits"). */
     colour = (DG16(0x929C) == 0) ? 0 : 0x0F;        /* @0x042DAA..0x042DB2 */
     (void)colour;
-    overlay_call_181F_0022();          /* @0x042DC1 num_format([0x9e56])       */
+    overlay_call_181F_0022((int16_t)DG16(0x2dbe));          /* @0x042DC1 num_format([0x9e56])       */
     overlay_call_181F_013C();          /* @0x042DCB num_blit(dx:ax,0x2dbe,0xf2,colour) */
     if (with_glyph != 0) {             /* @0x042DD3 */
         overlay_call_181F_00E2();      /* @0x042DF2 glyph_blit(0xf1,[0x9e56],0x4f,width) */

@@ -1029,7 +1029,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
 
         /* @asm 0x04865B..0x048677 — large recoveries roll to become a lift candidate. */
         if (recover >= 0x19) {
-            int roll = overlay_call_181F_04D4();     /* @asm 0x048665 random_int(1,400) */
+            int roll = overlay_call_181F_04D4(1, 0x190);     /* @asm 0x048665 random_int(1,400) */
             if (recover >= roll)
                 lift = 1;                            /* @asm 0x048672 */
         }
@@ -1602,8 +1602,8 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     /* @asm 0x048E19..0x048E5C — zeal noise (developed) & expert/blessed doublings. */
     if (f04) {                                        /* @asm 0x048E19 */
-        rivalFaith += overlay_call_181F_04D4();       /* @asm 0x048E23 random_int(1,0x14) */
-        myFaith    += overlay_call_181F_04D4();       /* @asm 0x048E32 */
+        rivalFaith += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E23 random_int(1,0x14) */
+        myFaith    += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E32 */
         aLose <<= 1; aWin <<= 1;                       /* @asm 0x048E40 */
     }
     if (expertMiss) { myFaith <<= 1; aLose <<= 1; }   /* @asm 0x048E4C expert bonus */
@@ -2291,12 +2291,12 @@ int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
 
     /* @asm 0x04A449..0x04A488 — when free, maybe play the appropriate cue. */
     if (is_free) {
-        if (overlay_call_181F_04D4() == 0) {        /* @asm 0x04A453 random_int(0,3) */
+        if (overlay_call_181F_04D4(0, 3) == 0) {        /* @asm 0x04A453 random_int(0,3) */
             overlay_call_181F_0498();               /* @asm 0x04A45F cue(5) */
             if (g_current_power_8D52 == 0)          /* @asm 0x04A469 */
-                overlay_call_181F_0498();           /* @asm 0x04A472 cue(7) */
+                overlay_call_181F_0498(7);           /* @asm 0x04A472 cue(7) */
             if (g_current_power_8D52 == 1)          /* @asm 0x04A47A */
-                overlay_call_181F_0498();           /* @asm 0x04A483 cue(6) */
+                overlay_call_181F_0498(6);           /* @asm 0x04A483 cue(6) */
         }
     }
 
@@ -3161,7 +3161,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
                            /* @asm 0x04B466..0x04B480 bound level < owner level */
                            /* @asm 0x04B484 PowerRecord[owner].gold >= 0x5DC (1500) */
                            1 /* gold check elided */ &&
-                           overlay_call_181F_04D4() == 0) { /* @asm 0x04B490 random(0,4) */
+                           overlay_call_181F_04D4(0, 4) == 0) { /* @asm 0x04B490 random(0,4) */
                     ret = 7;                      /* @asm 0x04B4A6 King intervenes */
                 } else {
                     /* @asm 0x04B4AE — outcome by colony ownership flag [0x8D4A][+5]. */

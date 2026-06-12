@@ -346,7 +346,7 @@ void func_078184_viceroy_log_write(uint16_t a_bp06, uint16_t b_bp08,
     } else {
         /* fopen("VICEROY.LOG","at")  @asm 0x07819C */
     }
-    fh = overlay_call_0D1D_04DA();          /* @asm 0x0781A2  fopen -> handle */
+    fh = overlay_call_0D1D_04DA(0x25d3, 0x25d0);          /* @asm 0x0781A2  fopen -> handle */
 
     if (fh != 0) {                          /* @asm 0x0781AD/AF */
         g_dbg_logopen_25F0 = 1;             /* @asm 0x0781B1  mark opened-once */

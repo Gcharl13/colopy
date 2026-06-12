@@ -1692,7 +1692,7 @@ int func_0645F6_genpass_orchestrator(void)
 
     do {
         /* @asm 0x064602..0x06461B : window op with seed + layer ptrs. */
-        overlay_call_0D1D_0FB2();                        /* @asm 0x064616 */
+        overlay_call_0D1D_0FB2((int16_t)DG16(0x168), (int16_t)DG16(0x16a), (int16_t)DG16(0x15c), (int16_t)DG16(0x15e), (int16_t)DG16(0x180));                        /* @asm 0x064616 */
         loops++;                                         /* @asm 0x06461E */
         placed = 0;                                      /* @asm 0x064621 */
 
@@ -1757,7 +1757,7 @@ int func_0645F6_genpass_orchestrator(void)
                 continue;                                /* @asm 0x06483C jmp 0x12d0 re-meander */
         }
         if (following == 0 && (tbits & 0x40) == 0)       /* @asm 0x06483F */
-            { overlay_call_0D1D_0FB2(); goto tally; }     /* @asm 0x064865 window op + finish */
+            { overlay_call_0D1D_0FB2((int16_t)DG16(0x15c), (int16_t)DG16(0x15e), (int16_t)DG16(0x168), (int16_t)DG16(0x16a), (int16_t)DG16(0x180)); goto tally; }     /* @asm 0x064865 window op + finish */
         if (placed >= 3) {                                /* @asm 0x06484B cmp [bp-0x24],3 */
             total++;                                      /* @asm 0x064870 */
 
@@ -1908,7 +1908,7 @@ int func_065D26_postgen_large(void)
     overlay_call_181F_04CA();                            /* @asm 0x065D2F */
     overlay_call_191F_0928();                            /* @asm 0x065D3D string setup */
     max_settle = 0x10e;                                  /* @asm 0x065D45 [bp-0xc6] */
-    overlay_call_0D1D_0DAE();                            /* @asm 0x065D53 window */
+    overlay_call_0D1D_0DAE(0x9faa, 0, 0x10e);                            /* @asm 0x065D53 window */
     placed_total = 0;                                    /* @asm 0x065D5D */
 
     /* ----- PHASE A : per-entity nation-struct + candidate-slot init ----- */

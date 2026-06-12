@@ -126,10 +126,10 @@ extern int overlay_call_1A1F_0AF2(void);  /* 0x1A1F:0x0AF2 — panel invalidate 
 extern int overlay_call_1A1F_0B3A(void);  /* 0x1A1F:0x0B3A — namelist str helper (page 0x12) */
 extern int overlay_call_1A1F_0B44(void);  /* 0x1A1F:0x0B44 — namelist trim/normalize (page 0x12) */
 extern int overlay_call_1A1F_0B4E(void);  /* 0x1A1F:0x0B4E — namelist normalize (page 0x12) */
-extern int overlay_call_0D1D_09CA(void);  /* 0x0D1D:0x09CA — strtok-ish (split on sep) */
+extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA — strtok-ish (split on sep) */
 extern int overlay_call_0D1D_0CC2(void);  /* 0x0D1D:0x0CC2 — memcmp (key match) */
 extern int overlay_call_181F_0018(void);  /* 0x181F:0x0018 — text emit leaf (page 75) */
-extern int overlay_call_181F_03CA(void);  /* 0x181F:0x03CA — point-in-rect hit-test */
+extern int overlay_call_181F_03CA();  /* 0x181F:0x03CA — point-in-rect hit-test */
 extern int overlay_call_0C0C_0006(void);  /* 0x0C0C:0x0006 — cursor/mouse position read */
 extern int overlay_call_191F_0AAC(void);  /* 0x191F:0x0AAC — dispose owned panel (page 0x11) */
 
@@ -1414,7 +1414,7 @@ int func_06F6DA_panel_words_load8(void)
 int func_06F8E0_free_cached_handle_2014(void)
 {
     if (g_handle_2014 != 0) {        /* @asm 0x06F8E0 cmp [0x2014],0 / JE */
-        overlay_call_0D1D_03F4();    /* @asm 0x06F8EB free([0x2014]) -> 0x0D1D:0x3F4 */
+        overlay_call_0D1D_03F4((int16_t)DG16(0x2014));    /* @asm 0x06F8EB free([0x2014]) -> 0x0D1D:0x3F4 */
         g_handle_2014 = 0;           /* @asm 0x06F8F3 mov [0x2014],0 */
     }
     return 0;                        /* @asm 0x06F8F9 RETF */
@@ -1579,7 +1579,7 @@ int func_06F8FA_load_namelist_section(uint16_t name_ptr, uint16_t mode)
 
     if (mode != 0) {                                   /* @asm 0x06F971 cmp [bp+8],0 / JE 0x186 */
         for (;;) {                                      /* @asm 0x06F977 loop head 0x129 */
-            if (overlay_call_0D1D_09CA() != 0)          /* @asm 0x06F982 strtok([0x2014],0x50,[0x833C]) */
+            if (overlay_call_0D1D_09CA(0x833c, 0x50, (int16_t)DG16(0x2014)) != 0)          /* @asm 0x06F982 strtok([0x2014],0x50,[0x833C]) */
                 break;                                  /* @asm 0x06F98C JNE 0x149 (got a line) */
             if (found == 0)                             /* @asm 0x06F98E or di,di / JE 0x118 */
                 return ret;                             /* @asm 0x06F990 (eof, no match) */
@@ -1618,7 +1618,7 @@ int func_06F8FA_load_namelist_section(uint16_t name_ptr, uint16_t mode)
 int func_06F9E6_read_token_blank_underscore(void)
 {
     int si = 0;                                     /* @asm 0x06F9E7 sub si,si */
-    if (overlay_call_0D1D_09CA() == 0) {            /* @asm 0x06F9F2 strtok([0x2014],0x50,[0x833C]) */
+    if (overlay_call_0D1D_09CA(0x833c, 0x50, (int16_t)DG16(0x2014)) == 0) {            /* @asm 0x06F9F2 strtok([0x2014],0x50,[0x833C]) */
         func_06FB28();                              /* @asm 0x06FA35 EOF -> flush_token (0x191F:0xFB8) */
         return 0;                                   /* @asm 0x06FA39/0x06FA3C ax=si(0); RETF */
     }
