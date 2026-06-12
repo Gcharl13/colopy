@@ -567,3 +567,15 @@ EXTERN(func_004B16_logic_sz_46)
 PROVIDE(select_player_ctx     = func_0082DC_logic_sz_118);  /* (id) set current colony */
 PROVIDE(unit_select_for_order = func_006D24_op_sz_197);     /* 4-arg unit pick */
 EXTERN(func_006D24_op_sz_197)
+
+/* Phase 4.6 (2026-06-12): the two Europe-panel painters were ALREADY ported
+ * under semantic names (military_list_panel / naval_list_panel in
+ * overlay_02F3A2_031E4C.c); the panel_helper trampoline identities from the
+ * 4.5 audit wire here.  cs:0x6E1D -> ljmp 0x191F:0xD9C -> file 0x317CC;
+ * cs:0x6E6D -> ljmp 0x191F:0xE7C -> file 0x318D2.  Their unit-walk loops
+ * are byte-fixed to the real 0x7E0/0x2E4 chain helpers (the weak-zero
+ * unit_first_of_owner/unit_next pair would have looped forever). */
+PROVIDE(panel_helper_1E1D = military_list_panel);
+EXTERN(military_list_panel)
+PROVIDE(panel_helper_1E6D = naval_list_panel);
+EXTERN(naval_list_panel)

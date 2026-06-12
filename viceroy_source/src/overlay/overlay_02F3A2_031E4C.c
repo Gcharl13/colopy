@@ -154,6 +154,8 @@ extern void  report_row_cells(int row,int*a,int*b,int*c,int*d); /* @asm near 0x6
 extern void  cargo_row_decode(/*...*/);                        /* @asm near 0x6DAF/0x6D9B (file 0x3689F/0x3688B)   */
 extern int   list_unit_at(int slot);                           /* @asm near 0x6E13 (file 0x36903)                  */
 extern void  draw_table_row(/*...*/);                          /* @asm near 0x6E3B (file 0x3692B)                  */
+extern int   func_0066CC_op_sz_57(uint16_t x, uint16_t y);     /* 0x181F:0x7E0 tile head (AX,DX) */
+extern int   unit_chain_next(int idx);                         /* 0x181F:0x2E4 */
 extern void  draw_list_row2(/*...*/);                          /* @asm near 0x6E04 (file 0x368F4)                  */
 extern void  panel_helper_1E1D(int arg);                       /* @asm near 0x6E1D (file 0x3690D)                  */
 extern void  panel_helper_1E6D(int arg);                       /* @asm near 0x6E6D (file 0x3695D)                  */
@@ -290,7 +292,7 @@ int unit_census_active(int *out_needs_orders)
     int owner = (int)G16(0x9E12) - 0x14;                 /* @asm 0x030B5A      */
     int cur;
     *out_needs_orders = 0;                               /* @asm 0x030B58      */
-    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_next(cur)) {
+    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_chain_next(cur)) {
         int type = UNIT(cur)[0x02];                      /* @asm 0x030B70 [+0x3146] */
         if (G8(0x5237 + type * 7) != 0) {                /* @asm 0x030B84 CAP(type) */
             if (UNIT(cur)[0x04] & 0x80) {                /* @asm 0x030B8D needs-orders */
@@ -324,7 +326,7 @@ int unit_nth_active(int n)
     int cur;
     /* count starts at 0xFFFF (-1) and is pre-incremented -> first match yields 0,
      * matching the asm's wrapped 0-based index compared against n (bp+6). */
-    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_next(cur)) {
+    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_chain_next(cur)) {
         int type = UNIT(cur)[0x02];                      /* @asm 0x030BD6 */
         if (G8(0x5237 + type * 7) != 0) {                /* @asm 0x030BE8 CAP(type) */
             count++;                                     /* @asm 0x030BF2 INC bp-4 */
@@ -350,7 +352,7 @@ int ship_nth_active(int n)
     int owner  = (int)G16(0x9E12) - 0x14;                /* @asm 0x030C21 */
     int cur;
     /* count pre-incremented from -1 (asm 0xFFFF) -> 0-based; compared to n (bp+6). */
-    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_next(cur)) {
+    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_chain_next(cur)) {
         int type = UNIT(cur)[0x02];                      /* @asm 0x030C34 */
         if (type >= 0x0D && type <= 0x12) {              /* @asm 0x030C34/0x030C3B ship range */
             count++;                                     /* @asm 0x030C45 INC bp-6 */
@@ -441,7 +443,7 @@ void ship_cursor_recount(void)
     int owner = (int)G16(0x9E12) - 0x14;                 /* @asm 0x030D20 */
     int cur;
     G16(0x9E2A) = 0;                                     /* @asm 0x030D1A */
-    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_next(cur)) {
+    for (cur = unit_first_of_owner(owner); cur >= 0; cur = unit_chain_next(cur)) {
         int type = UNIT(cur)[0x02];                      /* @asm 0x030D33 */
         if (type < 0x0D || type > 0x12)                  /* @asm 0x030D33/0x030D3A */
             G16(0x9E2A)++;                               /* @asm 0x030D41 */
@@ -892,13 +894,17 @@ void military_list_panel(int input_enabled)
     draw_text_at(/* x = 0x45 + line_h */);               /* @asm 0x031839 0x181F:0x100 */
 
     /* loop A: owner class (power - 0x1C) */
-    for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x1C); /* @asm 0x031853 */
-         cur >= 0; cur = unit_next(cur)) {
+    for (cur = func_0066CC_op_sz_57((uint16_t)((int)G16(0x9E12) - 0x1C),
+                                    (uint16_t)((int)G16(0x9E12) - 0x1C));
+                       /* 0x181F:0x7E0 tile head, AX=DX=power-0x1C @asm 0x031853 */
+         cur >= 0; cur = unit_chain_next(cur)) {
         draw_table_row(/* -1,&row,1,0xD,col,cur */);     /* @asm 0x03186B near 0x6E3B */
     }
     /* loop B: owner class (power - 0x18) */
-    for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x18); /* @asm 0x031888 */
-         cur >= 0; cur = unit_next(cur)) {
+    for (cur = func_0066CC_op_sz_57((uint16_t)((int)G16(0x9E12) - 0x18),
+                                    (uint16_t)((int)G16(0x9E12) - 0x18));
+                       /* 0x181F:0x7E0 tile head, AX=DX=power-0x18 @asm 0x031888 */
+         cur >= 0; cur = unit_chain_next(cur)) {
         draw_table_row(/* -1,&row,1,0xD,col,cur */);     /* @asm 0x0318A1 near 0x6E3B */
     }
 
@@ -929,12 +935,16 @@ void naval_list_panel(int input_enabled)
     strcat_far(NULL, NULL /* title TODO */);             /* @asm 0x0318F8 0x0D1D:0x117E */
     draw_text_at(/* (0x45,0x78,0x46,0x01) */);           /* @asm 0x03190D 0x181F:0x100 */
 
-    for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x10); /* @asm 0x031927 */
-         cur >= 0; cur = unit_next(cur)) {
+    for (cur = func_0066CC_op_sz_57((uint16_t)((int)G16(0x9E12) - 0x10),
+                                    (uint16_t)((int)G16(0x9E12) - 0x10));
+                       /* 0x181F:0x7E0 tile head, AX=DX=power-0x10 @asm 0x031927 */
+         cur >= 0; cur = unit_chain_next(cur)) {
         draw_table_row(/* -1,&row,1,0xD,col=2,cur */);   /* @asm 0x03193F near 0x6E3B */
     }
-    for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x0C); /* @asm 0x03195C */
-         cur >= 0; cur = unit_next(cur)) {
+    for (cur = func_0066CC_op_sz_57((uint16_t)((int)G16(0x9E12) - 0x0C),
+                                    (uint16_t)((int)G16(0x9E12) - 0x0C));
+                       /* 0x181F:0x7E0 tile head, AX=DX=power-0x0C @asm 0x03195C */
+         cur >= 0; cur = unit_chain_next(cur)) {
         draw_table_row(/* -1,&row,1,0xD,col=2,cur */);   /* @asm 0x031975 near 0x6E3B */
     }
 
@@ -1056,7 +1066,7 @@ void cargo_list_panel(int input_enabled)
     draw_window_frame(0x3B, 0x60, 0x78, 0xE0);           /* @asm 0x031AFE near 0x6DDC */
 
     for (cur = unit_first_of_owner((int)G16(0x9E12) - 0x14); /* @asm 0x031B18 */
-         cur >= 0; cur = unit_next(cur)) {
+         cur >= 0; cur = unit_chain_next(cur)) {
         int type = UNIT(cur)[0x02];                      /* @asm 0x031B28 */
         if (type >= 0x0D && type <= 0x12) {              /* @asm 0x031B2B/0x031B32 ship */
             int colour = -1;                             /* @asm bp-8 = 0xFFFF */
