@@ -646,3 +646,13 @@ PROVIDE(overlay_call_181F_0B14 = func_008686_logic_sz_34);
 EXTERN(func_008686_logic_sz_34)
 PROVIDE(overlay_call_181F_0D44 = func_008982_logic_sz_532);
 EXTERN(func_008982_logic_sz_532)
+
+/* Phase 4.3 mass pass 4 wiring (2026-06-12). */
+PROVIDE(overlay_call_181F_06F0 = func_005F82_logic_sz_31);
+PROVIDE(overlay_call_181F_07A0 = func_006608_logic_sz_106);
+PROVIDE(overlay_call_181F_084E = func_007356_logic_sz_56);
+PROVIDE(overlay_call_181F_0876 = func_0075FE_logic_sz_17);
+EXTERN(func_0075FE_logic_sz_17)
+PROVIDE(overlay_call_181F_0B00 = func_008D9C_lookup_table_2F4_signed);
+EXTERN(func_008D9C_lookup_table_2F4_signed)
+PROVIDE(overlay_call_181F_0B82 = func_009626);
