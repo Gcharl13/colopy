@@ -4,15 +4,15 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 788 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 798 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1092 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1068 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 417 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 393 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 417
+### NAMED-GAP — 393
 
 - `DG8`
 - `__aFldiv`
@@ -764,20 +764,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `cs_1086`
 - `cs_3f30`
 - `cs_3f58`
-- `cs_color_33A`
-- `cs_count_33C`
-- `cs_cur_tx_330`
-- `cs_cur_ty_332`
-- `cs_flag_32E`
-- `cs_flag_334`
-- `cs_flag_344`
-- `cs_flag_346`
-- `cs_hot_unit_8D7E`
-- `cs_mode_8D54`
-- `cs_player_337`
-- `cs_player_338`
-- `cs_player_339`
-- `cs_sel_unit_8D7C`
 - `delay_micros`
 - `dewitt_liberty_handler`
 - `dialog_begin`
@@ -907,31 +893,21 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `native_tribe_announce_extinction`
 - `near_15C4`
 - `near_6D23`
-- `near_6D28`
 - `near_6D3C`
 - `near_6D4B`
-- `near_6D5F`
-- `near_6D8C`
-- `near_6D91`
 - `near_6D96`
 - `near_6DA0`
 - `near_6DAF`
-- `near_6DC8`
 - `near_6DD7`
 - `near_6DDC`
-- `near_6DE6`
 - `near_6DF0`
 - `near_6DFA`
-- `near_6E0E`
 - `near_6E13`
-- `near_6E27`
 - `near_6E31`
 - `near_6E40`
 - `near_6E45`
 - `near_6E54`
 - `near_6E5E`
-- `near_6E77`
-- `near_6E7C`
 - `notify_treasure_spawn`
 - `opt_win_dispose`
 - `opt_win_query`
