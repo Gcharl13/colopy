@@ -128,9 +128,15 @@ void sons_of_liberty_update(int power_id)
         /* @asm 0x03E872 — during the revolution: if this isn't a rebel view,
          * bail entirely (no recompute for non-participants). */
         if (!is_rebel_view) return;                        /* @asm 0x03E876 jne / 0x03E878 -> 0x3601 */
-        /* @asm 0x03E87B — rebel view during revolution: low-path recompute then
-         * RETURN (the milestone announcer below is for the pre-revolution game). */
-        sol_recompute_lowpath(power_id);                   /* @asm 0x03E87F call 0x36CC */
+        /* @asm 0x03E87B — rebel view during the revolution: run the WARTIME
+         * KING'S-MERCENARY OFFER + war-end dispatch, then RETURN (the
+         * milestone announcer below is for the pre-revolution game).
+         * cs:0x36CC = ljmp 0x1A1F:0x126 @0x3EA4C -> file 0x3E442 =
+         * func_03E442 (Phase 2.4; the old "rebel% recompute, below 50"
+         * label was a misattribution). */
+        {   extern int func_03E442_op_sz_146(uint16_t power);
+            func_03E442_op_sz_146((uint16_t)power_id);     /* @asm 0x03E87F call 0x36CC */
+        }
         return;                                            /* @asm 0x03E886 retf */
     }
 

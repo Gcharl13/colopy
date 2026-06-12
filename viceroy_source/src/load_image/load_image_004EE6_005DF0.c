@@ -1019,7 +1019,12 @@ turn_loop:
             /* @asm 0x0058D0 if (interactive && [0x5383]&4) play the tick sound. */
             if (DG8(0x0829) == 0 && (DG8(0x5383) & 4) != 0)
                 func_005642_tick_sound();     /* @asm call 0x5642 */
-            overlay_call_181F_0668();         /* @asm lcall 0x181F:0x0668 */
+            /* @asm lcall 0x181F:0x0668 = func_03E664 (Phase 2.4): the PEACETIME
+             * mercenary-purchase offer turn step (1/21 roll, foreign seller,
+             * treasury gate) — direct call to the ported body. */
+            {   extern int func_03E664_logic_sz_15(void);
+                func_03E664_logic_sz_15();
+            }
             overlay_call_181F_062C();         /* @asm lcall 0x181F:0x062C */
             did_any++;                         /* @asm inc [bp-0x10] */
         }

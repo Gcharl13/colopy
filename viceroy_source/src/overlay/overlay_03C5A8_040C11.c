@@ -1882,26 +1882,38 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
     int16_t  i;                       /* [bp-0x56] */
     int32_t  price;                   /* [bp-0x54] gold demanded */
 
+    /* near-helper identities (trampoline block @0x3EA15..0x3EA51, all PORTED):
+     *   func_03EA15 -> 1A1F:0x07E = func_03E162_op_sz_145
+     *   func_03EA2E -> 1A1F:0x0C4 = func_03E2EA_colony_input_text
+     *   func_03EA3D -> 1A1F:0x0FC = func_03CDA2_colony_sz_273  (war continues)
+     *   func_03EA42 -> 1A1F:0x10A = func_03D510_colony_sz_1080 (accept/spawn)
+     *   func_03EA47 -> 1A1F:0x118 = func_03CAC6_rng_sz_58      (war won)     */
+    extern int func_03E162_op_sz_145(uint16_t power);
+    extern int func_03E2EA_colony_input_text(uint16_t power);
+    extern int func_03CDA2_colony_sz_273(uint16_t power);
+    extern int func_03D510_colony_sz_1080(uint16_t arg);
+    extern int func_03CAC6_rng_sz_58(uint16_t power);
+
     overlay_call_181F_0582(); /* power_select(arg0) @0x03E44B */
 
     if ((int16_t)G16(0x53D2) == (int16_t)arg0_bp_06) {   /* @0x03E456 */
         /* @0x03E45C..0x03E471 */
         if (G8((uint16_t)(G16(0x5398) * 0x13C) - 0x77F8) & 8)
-            func_03EA15(); /* (arg0) */
+            func_03E162_op_sz_145(arg0_bp_06);       /* @0x03E468 call 0x3695 (arg0) */
         /* @0x03E471..0x03E4B4  REF land tally + war-state dispatch */
         ref_land = ((int16_t)G16(0x53E0) > 0 ? 1 : 0)            /* Art */
                  + ((int16_t)G16(0x53DC) > 0 ? 1 : 0)            /* Cav */
                  + (int16_t)G16(0x53DA);                         /* Reg */
         if (ref_land != 0)
-            func_03EA3D(); /* ([0x5398]) war continues */
+            func_03CDA2_colony_sz_273(G16(0x5398));  /* @0x03E49E war continues */
         else
-            func_03EA47(); /* ([0x5398]) war won */
+            func_03CAC6_rng_sz_58(G16(0x5398));      /* @0x03E4AC war won */
         return 0;                                    /* @0x03E4A8/@0x03E4B4 */
     }
 
     /* @0x03E4B8..0x03E4D3  non-current power: one-shot bit-3 init */
     if (!(G8(G16(0x84FC)) & 8)) {                     /* @0x03E4BC */
-        func_03EA2E(); /* (arg0) */
+        func_03E2EA_colony_input_text(arg0_bp_06);    /* @0x03E4C2 (arg0) */
         G8(G16(0x84FC)) |= 8;                         /* @0x03E4CD */
         return 0;
     }
@@ -1953,7 +1965,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E630 */
         if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x1340) */ == 2) {
             DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E651 debit */
-            func_03EA42(); /* (1) accept side-effects @0x03E659 */
+            func_03D510_colony_sz_1080(1);        /* @0x03E659 accept/spawn (1) */
         }
     }
     return 0;
@@ -2080,7 +2092,9 @@ int func_03E664_logic_sz_15(void)
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E80F */
         if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x134C) */ == 2) {
             DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E830 debit */
-            func_03EA42(); /* (1) @0x03E839 */
+            {   extern int func_03D510_colony_sz_1080(uint16_t arg);
+                func_03D510_colony_sz_1080(1);    /* @0x03E839 accept/spawn (1) */
+            }
         }
     }
     return 0;

@@ -317,9 +317,19 @@ screen walkthroughs.
       runtime writer, identify the struct, port. Until then saves carry it
       via host buffer — Phase 7's save-exchange gate requires the real
       identity. (1 session)
-- [ ] **2.4 Mercenary offers**: `func_03E664` / `func_03E442` — decoded as
-      comments already; write the C bodies, wire into the aid-turn path.
-      (½–1 session)
+- [x] **2.4 Mercenary offers** DONE 2026-06-12: both bodies were already
+      ported; the missing piece was the WIRING.  Peacetime offer
+      func_03E664: its only EXE caller is the main turn loop func_005760
+      @asm 0x058E2 (lcall 0x181F:0x668) — direct call wired in the
+      per-power slot step.  Wartime offer func_03E442: reached via near
+      call cs:0x36CC -> ljmp 0x1A1F:0x126 @0x3EA4C from
+      sons_of_liberty_update's revolution path (the old "rebel%% recompute
+      low path" label was a misattribution) — wired in king/
+      sons_of_liberty.c.  The five interior near-helpers resolved to their
+      ported bodies and called direct with args: 0x3EA15->func_03E162,
+      0x3EA2E->func_03E2EA, 0x3EA3D->func_03CDA2 (war continues),
+      0x3EA42->func_03D510 (accept/spawn), 0x3EA47->func_03CAC6 (war won).
+      500-soak green, determinism identical.
 
 **Gate G2:** colony screen pixel-parity frame green; save exchange of a
 mid-game state DOSBox→modern→DOSBox loads clean in all three hops.
