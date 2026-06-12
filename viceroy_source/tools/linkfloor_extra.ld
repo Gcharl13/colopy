@@ -234,8 +234,10 @@ EXTERN(overlay_call_181F_0772)
  *     (the text-slot emitter; called both directly and from func_06F7EA which
  *      func_06C23C calls as its tail @asm 0x6C24F)
  */
-PROVIDE(overlay_call_181F_0022 = func_00E76A_logic_sz_505);
-PROVIDE(overlay_call_181F_0416 = func_06C220_dialog_slot_set_block);
+/* 0022 (RLE blitter) and 0416 (dialog text slot) are interactive-only;
+ * their targets crash in headless mode without sprite/dialog initialisation.
+ * They remain as weak stubs intentionally until a headless guard is wired.
+ * PROVIDE not used here: linkgap.py generates the stubs for these two. */
 EXTERN(func_06C23C_dialog_make_from_int)
 EXTERN(func_06C27C_dialog_slot_set_pair)
 EXTERN(func_06C220_dialog_slot_set_block)
@@ -245,3 +247,23 @@ EXTERN(func_007F96_op_sz_105)
 EXTERN(func_008000_op_sz_115)
 EXTERN(market_bid_price)
 EXTERN(func_00E76A_logic_sz_505)
+
+/* Phase 4.1 (2026-06-12): resident-segment stubs — these are NOT RTLink thunks
+ * so thunkwire.py cannot auto-wire them; identified by byte analysis:
+ *   overlay_call_037F_000A file 0x5BFA -> func_005BFA_logic_sz_49 is_xy_in_map_bounds
+ *     (ENTER 2,0 / cmp [bp+6],1 / ... / cmp [0x853C]-1,[bp+8] bounds gate)
+ *   overlay_call_037F_03E4 file 0x5FD4 -> func_005FD4_map_xy_bounds_or_neg1_alt
+ *     (ENTER 2,0 / call 0x5BFA; if 0 ret -1; else call 0x5D32 ...)
+ *   overlay_call_03E4_0074 file 0x62B4 -> func_0062B4_op_sz_39 is_sea_tile
+ *     (terrain&0x1F in {0x19, 0x1A}; called 0x181F:0x768 in naval_screen.c)
+ */
+/* Phase 4.1 note: overlay_call_037F_000A/03E4 and overlay_call_03E4_0074 are
+ * terrain/bounds checks (func_005BFA / func_005FD4 / func_0062B4).  Wiring
+ * them via PROVIDE caused segfaults because many callers use void() declarations
+ * that don't push args, so the real 2-arg functions read garbage stack values.
+ * These need the callers to be fixed to pass correct args (Phase 4.3) before
+ * the PROVIDE aliases can be enabled safely.  Kept as weak stubs for now.
+ * Forces archive extraction of the target bodies for cross-referencing. */
+EXTERN(func_005BFA_logic_sz_49)
+EXTERN(func_005FD4_map_xy_bounds_or_neg1_alt)
+EXTERN(func_0062B4_op_sz_39)

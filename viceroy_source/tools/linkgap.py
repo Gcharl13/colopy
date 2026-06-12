@@ -175,7 +175,12 @@ def main():
     # former definitions) also get no stub -- PROVIDE can't override a weak def
     extra_ld = os.path.join(HERE, "linkfloor_extra.ld")
     if os.path.exists(extra_ld):
-        for sym in re.findall(r"PROVIDE\((\w+)\s*=", open(extra_ld).read()):
+        raw = open(extra_ld).read()
+        # Strip C block comments before scanning for PROVIDE (otherwise
+        # commented-out PROVIDE lines are incorrectly added to the wired set,
+        # leaving symbols undefined after the comments are written).
+        stripped = re.sub(r"/\*.*?\*/", "", raw, flags=re.DOTALL)
+        for sym in re.findall(r"PROVIDE\((\w+)\s*=", stripped):
             wired[sym] = "linkfloor_extra.ld"
     # NEVER stub a symbol libc/libm provides: a weak stub compiled into the
     # executable beats the shared library (the linker stops searching once a

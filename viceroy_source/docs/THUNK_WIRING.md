@@ -334,8 +334,8 @@ Thunk-pattern stubs referenced by the lib: **766**
 - `overlay_call_191F_081C` | `func_078CB2_shrink_block+0x5B4B4`
 - `overlay_call_191F_0828` | `func_078CB2_shrink_block+0x5B11A`
 - `overlay_call_191F_0840` | `func_078CB2_shrink_block+0x595BC`
-- `overlay_call_191F_0888` | `func_067082_settlement_pass+0xE8`
-- `overlay_call_191F_0896` | `func_067182_colony_pass+0x146`
+- `overlay_call_191F_0888` | `func_067082_draw_settlement_markers+0xE8`
+- `overlay_call_191F_0896` | `func_067182_draw_colony_markers+0x146`
 - `overlay_call_191F_08A4` | `func_068898_draw_minimap_or_cursor_box+0x86`
 - `overlay_call_191F_08C6` | `func_078CB2_shrink_block+0x9F770`
 - `overlay_call_191F_08D2` | `func_078CB2_shrink_block+0x9F760`
