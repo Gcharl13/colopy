@@ -4,17 +4,17 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 614 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 622 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1343 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1335 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
 | NAMED-GAP | 601 | implement, map to ported rtl, or record UNREACHABLE(proof) |
-| ARITY-PENDING | 369 | target ported; fix each C call site to pass the measured args, then PROVIDE |
-| ENTRY-SPLIT-PENDING | 208 | thunk lands mid-body of a ported function; split a callable sub-entry |
+| ARITY-PENDING | 367 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| ENTRY-SPLIT-PENDING | 202 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 134 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 31 | no resolved target yet; whois + port/wire |
 
@@ -63,7 +63,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 ## WEAK-STUBBED detail
 
-### ARITY-PENDING — 369
+### ARITY-PENDING — 367
 
 - `aFlmul_0F60` -> `func_010530_logic_sz_25` @4
 - `box_bevel` -> `func_00DDEA_op_sz_132` @6
@@ -250,7 +250,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0682` -> `func_005F04_map_xy_bounds_or_neg1` @2
 - `overlay_call_181F_068C` -> `func_005D4E_logic_sz_40` @4
 - `overlay_call_181F_0696` -> `func_005F48_logic_sz_58` @2
-- `overlay_call_181F_06A0` -> `func_005D84_logic_sz_23` @2
 - `overlay_call_181F_06B4` -> `func_005DBA_logic_sz_17` @2
 - `overlay_call_181F_06D2` -> `func_006018_logic_sz_33` @2
 - `overlay_call_181F_06DC` -> `func_005DF0_logic_sz_40` @2
@@ -260,7 +259,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0718` -> `func_0060A0_logic_sz_128` @2
 - `overlay_call_181F_0722` -> `func_005E90_op_sz_64` @2
 - `overlay_call_181F_072C` -> `func_005CFE_map_tile_read_layer_15C` @2
-- `overlay_call_181F_0736` -> `func_005ED0_logic_sz_23` @2
 - `overlay_call_181F_0740` -> `func_005D1A_logic_sz_23` @2
 - `overlay_call_181F_074A` -> `func_005EE8_logic_sz_28` @2
 - `overlay_call_181F_0754` -> `func_005D32_map_tile_read_layer_160` @2
@@ -572,7 +570,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_06D88C`
 - `func_077990`
 
-### ENTRY-SPLIT-PENDING — 208
+### ENTRY-SPLIT-PENDING — 202
 
 - `overlay_call_02D8_000E`
 - `overlay_call_09EF_002C`
@@ -616,20 +614,17 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_04F2`
 - `overlay_call_181F_053C`
 - `overlay_call_181F_055E`
-- `overlay_call_181F_059A`
 - `overlay_call_181F_05B6`
 - `overlay_call_181F_05CE`
 - `overlay_call_181F_05D8`
 - `overlay_call_181F_05E2`
 - `overlay_call_181F_0608`
 - `overlay_call_181F_062C`
-- `overlay_call_181F_0638`
 - `overlay_call_181F_0652`
 - `overlay_call_181F_0676`
 - `overlay_call_181F_0772`
 - `overlay_call_181F_077E`
 - `overlay_call_181F_09F0`
-- `overlay_call_181F_0C22`
 - `overlay_call_181F_0D6C`
 - `overlay_call_181F_0D78`
 - `overlay_call_181F_0E46`
@@ -723,7 +718,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_0A14`
 - `overlay_call_191F_0A20`
 - `overlay_call_191F_0AC8`
-- `overlay_call_191F_0AD4`
 - `overlay_call_191F_0FB8`
 - `overlay_call_1A1F_01A0`
 - `overlay_call_1A1F_01CA`
@@ -739,9 +733,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_07C4`
 - `overlay_call_1A1F_07EA`
 - `overlay_call_1A1F_07F8`
-- `overlay_call_1A1F_0814`
 - `overlay_call_1A1F_083E`
-- `overlay_call_1A1F_085A`
 - `overlay_call_1A1F_087C`
 - `overlay_call_1A1F_08DC`
 - `overlay_call_1A1F_08EA`
