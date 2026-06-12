@@ -967,3 +967,58 @@ EXTERN(func_02EF64_predicate_unit)
 PROVIDE(unit_class_check2 = func_005BFA_logic_sz_49);
 PROVIDE(unit_set_type = func_00913C_logic_sz_72);
 PROVIDE(unit_type_of = func_009102);
+
+/* Phase 4.7 final named tranche (2026-06-12): decl-cited identities,
+ * whois-resolved, every site arity-checked against the port. */
+PROVIDE(ai_turn_end_tail_03EA06 = func_03DE46_op_sz_138);
+EXTERN(func_03DE46_op_sz_138)
+PROVIDE(bells_for_player = func_03C282_ff_bell_cost_curve);
+EXTERN(func_03C282_ff_bell_cost_curve)
+PROVIDE(colonist_profession = func_009102);
+EXTERN(func_009102)
+PROVIDE(father_table_set_value_07638E = func_074688_power_record_setter6);
+EXTERN(func_074688_power_record_setter6)
+PROVIDE(game_random_int = func_00C322_rtl_sz_63);
+EXTERN(func_00C322_rtl_sz_63)
+PROVIDE(helper_BB4 = func_00B704_logic_sz_380);
+EXTERN(func_00B704_logic_sz_380)
+PROVIDE(helper_BD2 = func_00A93E_logic_sz_86);
+EXTERN(func_00A93E_logic_sz_86)
+PROVIDE(menubar_create = func_044836_window_new);
+EXTERN(func_044836_window_new)
+PROVIDE(menubar_finalize = func_078640_heap_alloc_dispatch);
+EXTERN(func_078640_heap_alloc_dispatch)
+PROVIDE(overlay_call_1A1F_0C64_alloc = func_0710C2_validate_map_size);
+EXTERN(func_0710C2_validate_map_size)
+PROVIDE(page1A_map_colors = func_0749E0_load_names_data_tables);
+EXTERN(func_0749E0_load_names_data_tables)
+PROVIDE(page1A_map_finalize = func_0759E8_save_load_game_screen);
+EXTERN(func_0759E8_save_load_game_screen)
+PROVIDE(page1A_names_subloader = func_0745F0_terrain_row_load);
+EXTERN(func_0745F0_terrain_row_load)
+PROVIDE(page1A_newgame_mapinit = func_075594_show_simple_message_dialog);
+EXTERN(func_075594_show_simple_message_dialog)
+PROVIDE(page1A_newgame_postinit = func_07431E_new_game_init);
+EXTERN(func_07431E_new_game_init)
+PROVIDE(page1C_stream_notify = func_0772C4_invoke_stream_callback);
+EXTERN(func_0772C4_invoke_stream_callback)
+PROVIDE(place_colonist = func_04002C_op_sz_82);
+EXTERN(func_04002C_op_sz_82)
+PROVIDE(post_growth_hook = func_03234A);
+EXTERN(func_03234A)
+PROVIDE(queue_immigrant = func_034DD4_power_rating);
+EXTERN(func_034DD4_power_rating)
+PROVIDE(slot_commit = func_008C70_logic_sz_66);
+EXTERN(func_008C70_logic_sz_66)
+PROVIDE(slot_get_a = func_009102);
+EXTERN(func_009102)
+PROVIDE(sprite_blit2 = func_00E964_logic_sz_717);
+EXTERN(func_00E964_logic_sz_717)
+PROVIDE(str_cat = func_002992_rtl_sz_26);
+EXTERN(func_002992_rtl_sz_26)
+PROVIDE(str_cat_num = func_0029DE_rtl_sz_39);
+EXTERN(func_0029DE_rtl_sz_39)
+PROVIDE(survivors_join = func_06C254_dialog_make_from_str);
+EXTERN(func_06C254_dialog_make_from_str)
+PROVIDE(text_draw = func_002B38_op_sz_58);
+EXTERN(func_002B38_op_sz_58)
