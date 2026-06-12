@@ -801,7 +801,7 @@ int func_036138_king_event_selector(void)
      *             + popsum[0x9410+player]            ([SI+0x9410])
      *             + turn/30;
      * Then: text_draw nation name [0x8394+diff*2] + format_player_name.    */
-    v = (int)overlay_call_181F_04D4();               /* @0x0361CD random_int(1,1000) seed */
+    v = (int)overlay_call_181F_04D4(1, 0x3e8);               /* @0x0361CD random_int(1,1000) seed */
     (void)weight;
 
     /* --- threshold dispatch (BYTE_VERIFIED thresholds 2026-06-08) --- */
@@ -809,7 +809,7 @@ int func_036138_king_event_selector(void)
         /* KINGVICTORY(0x113F) + COUNTRIES(0x114B); victory parade.    @0x036254..0x0362B1
          * r2 = min(random_int(2,5), tax_byte)  (victory level capped by tax).
          * if r2 == 0 -> skip. PowerRecord[+0x10] = r2. */
-        overlay_call_181F_04D4();                    /* @0x036259 random_int(2,5) */
+        overlay_call_181F_04D4(2, 5);                    /* @0x036259 random_int(2,5) */
     } else if (v < 0x28A) {                          /* @0x0362B4 CMP ...,0x28A / JGE */
         /* KINGWIFE(0x1155)/ORDINAL(0x115E); royal succession news.    @0x0362B4..0x0362EC
          * Fires only if g_53A7 < 30. g_53A7 = max(1, g_53A7+1) (succession ordinal).

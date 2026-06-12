@@ -430,3 +430,77 @@ def order_match():
 
 if '--order-match' in sys.argv:
     order_match()
+
+def near_match():
+    """For unrestored canonical-stub sites: take ANY @asm cite within +-3
+    lines and search the EXE for this thunk's lcall pattern within +-0x80
+    of it; bind when EXACTLY ONE hit exists."""
+    blocked = json.load(open(os.path.join(ROOT, 'tools/generated/thunk_arity_blocked.json')))
+    stubs = {s for s in blocked if re.match(r'overlay_call_[0-9A-F]{4}_[0-9A-F]{4}$', s)}
+    plan = []
+    for f in sorted(glob.glob(os.path.join(ROOT, 'src/**/*.c'), recursive=True)):
+        raw = open(f, errors='replace').read()
+        if not any(s in raw for s in stubs):
+            continue
+        lines = raw.splitlines()
+        for n, ln in enumerate(lines):
+            for cm in re.finditer(r'\b(overlay_call_[0-9A-F]{4}_[0-9A-F]{4})\s*\(([^)]*)\)', ln):
+                stub = cm.group(1)
+                if stub not in stubs or 'extern' in ln:
+                    continue
+                inner = re.sub(r'/\*.*?\*/', '', cm.group(2)).strip()
+                if inner != '':
+                    continue  # already restored
+                cite = None
+                for dn in (0, -1, 1, -2, 2, -3, 3):
+                    j = n + dn
+                    if 0 <= j < len(lines):
+                        cmm = CITE_RX.search(lines[j])
+                        if cmm:
+                            cite = int(cmm.group(1), 16); break
+                if cite is None:
+                    continue
+                seg = int(stub[13:17], 16); off = int(stub[18:22], 16)
+                pat = bytes([0x9A, off & 0xFF, off >> 8, seg & 0xFF, seg >> 8])
+                lo = max(0, cite - 0x80); hi = min(len(DATA), cite + 0x80)
+                hits = []
+                k = DATA.find(pat, lo, hi)
+                while k != -1:
+                    hits.append(k)
+                    k = DATA.find(pat, k + 1, hi)
+                if len(hits) != 1:
+                    continue
+                r = decode_site(hits[0])
+                if not r or r[2] is None:
+                    continue
+                s2, o2, args, nargs, tag = r
+                want = blocked[stub]['arity']
+                if tag == 'REGCONV':
+                    if nargs < want: continue
+                    args = args[:want]; nargs = want
+                elif nargs == 0 and want > 0:
+                    continue
+                fn2, params, locs = enclosing_func(lines, n)
+                cargs, bad = [], None
+                for a in args:
+                    if a['kind'] in ('imm', 'dg16', 'dg8'):
+                        cargs.append(a['c'])
+                    elif a['kind'] == 'param' and a['bp'] in params:
+                        cargs.append(params[a['bp']])
+                    elif a['kind'] == 'local' and a.get('raw'):
+                        dm = re.search(r'bp - (0x[0-9a-f]+|\d+)', a['raw'])
+                        dd = int(dm.group(1), 0) if dm else None
+                        if dd in locs: cargs.append(locs[dd])
+                        else: bad = a; break
+                    else:
+                        bad = a; break
+                if bad:
+                    continue
+                plan.append({'file': f, 'line': n + 1, 'stub': stub,
+                             'addr': hex(hits[0]), 'thunk': stub,
+                             'nargs': nargs, 'args': cargs})
+    print(f"NEAR-MATCHED: {len(plan)}")
+    json.dump({'plan': plan, 'flagged': []}, open('/tmp/arg_restore_plan.json', 'w'), indent=1)
+
+if '--near-match' in sys.argv:
+    near_match()

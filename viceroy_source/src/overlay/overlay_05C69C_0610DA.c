@@ -345,7 +345,7 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
          * @asm 0x05C909..0x05C944 — cosmetic dialog assembly. */
         overlay_call_181F_07B4(/* power_attribute_bit(attacker,10) gate */);
         overlay_call_0D1D_07A4(/* strcat verb */);
-        overlay_call_181F_048E(/* 0x3E '>' */);
+        overlay_call_181F_048E(0x3e);
 
         /* Confirmation Y/N dialog: 0x181F:0x03FE returns 1 if accepted.
          * @asm 0x05C947 lea bx,[bp-0x50] -- DYNAMIC key: BX = the stack buffer

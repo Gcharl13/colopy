@@ -1442,7 +1442,7 @@ int func_02A462_commodity_sell_dialog(uint16_t unit, uint16_t cargo,
         }
         overlay_call_181F_0AD8();                      /* @0x02A625 apply_transfer(qty,cargo,unit) */
         overlay_call_181F_0056(1);                      /* @0x02A632 begin(1) */
-        overlay_call_181F_007E();                      /* @0x02A63E draw qty [0x8DC4] */
+        overlay_call_181F_007E((int16_t)DG16(0x8dc4));                      /* @0x02A63E draw qty [0x8DC4] */
         overlay_call_181F_0074();                      /* @0x02A64B select cargo name */
         overlay_call_191F_07D4();                      /* @0x02A65A set_attr(2) */
         overlay_call_181F_0074();                      /* @0x02A67A select glyph (disp table) */
@@ -1557,7 +1557,7 @@ int func_02A6A6_commodity_load_dialog(uint16_t unit, uint16_t cargo,
     g_8DC4 = delta;                                    /* @0x02A88C */
 
     overlay_call_181F_0056(1);                          /* @0x02A891 begin(1) */
-    overlay_call_181F_007E();                          /* @0x02A89D draw qty [0x8DC4] */
+    overlay_call_181F_007E((int16_t)DG16(0x8dc4));                          /* @0x02A89D draw qty [0x8DC4] */
     overlay_call_181F_0074();                          /* @0x02A8A9 select cargo name */
     overlay_call_191F_07D4();                          /* @0x02A8B4 set_attr(2) */
     overlay_call_181F_0416();                          /* @0x02A8C1 fmt_at(&ctx->[2]) */
@@ -1667,7 +1667,7 @@ int func_02A8EC_cargo_amount_prompt(uint16_t unit, uint16_t unit2,
         g_unit_type_3146[unit2 * 0x1C + 6] = 0;       /* @0x02AA7A clear order byte */
 
     overlay_call_181F_0056(1);                         /* @0x02AA7F begin(1) */
-    overlay_call_181F_007E();                         /* @0x02AA89 draw qty [0x8DC4] */
+    overlay_call_181F_007E((int16_t)DG16(0x8dc4));                         /* @0x02AA89 draw qty [0x8DC4] */
     overlay_call_181F_0074();                         /* @0x02AA9E select cargo name[idx] ([bx-0x6840]) */
     overlay_call_191F_07D4();                         /* @0x02AAA9->191F:0x7D4 set_attr(2) */
     /* unit2 glyph: disp[ UnitRecord[unit2].type * 12 + 0x5230 ] @0x02AAAF */

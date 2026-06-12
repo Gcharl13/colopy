@@ -915,7 +915,7 @@ int ai_resolve_colony_assault(int unit)  /* func_05A20E */
     }
 
     /* ---- mode 0/2: graduated combat roll with difficulty modifiers. @asm 0x05A2DC ---- */
-    odds = (overlay_call_181F_0AB0() + 6) * 2;         /* @asm 0x05A2E6 [bp-4] */
+    odds = (overlay_call_181F_0AB0(0) + 6) * 2;         /* @asm 0x05A2E6 [bp-4] */
     if (*(uint8_t *)(unit * UNIT_STRIDE + 0x315B) == 0x16) /* veteran subtype @asm 0x05A2F2 */
         odds >>= 1;                                     /* @asm 0x05A2F9 */
     if ((int16_t)g_active_power_idx_5394 < 4 &&         /* @asm 0x05A2FC */

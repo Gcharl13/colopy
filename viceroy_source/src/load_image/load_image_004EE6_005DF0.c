@@ -672,7 +672,7 @@ int func_00543C_op_sz_131(uint16_t arg0_bp_06)
     case 0:                                          /* @asm 0x00546C */
         /* @asm if ([0xA0]!=0 && [0xA2]==0) { push 2; lcall 0x029F:0x0318; }. */
         if (DG16(0x00A0) != 0 && DG16(0x00A2) == 0)
-            overlay_call_029F_0318();
+            overlay_call_029F_0318(2);
         break;
     case 8:                                          /* @asm 0x00547A (unconditional) */
         overlay_call_029F_0318(2);                     /* @asm push 2; lcall 0x029F:0x0318 */

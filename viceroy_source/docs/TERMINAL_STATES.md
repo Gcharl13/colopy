@@ -4,9 +4,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 589 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 611 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1365 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1346 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
@@ -14,7 +14,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 |---|--:|---|
 | NAMED-GAP | 601 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 372 | target ported; fix each C call site to pass the measured args, then PROVIDE |
-| ENTRY-SPLIT-PENDING | 227 | thunk lands mid-body of a ported function; split a callable sub-entry |
+| ENTRY-SPLIT-PENDING | 208 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 134 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 31 | no resolved target yet; whois + port/wire |
 
@@ -575,10 +575,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_06D88C`
 - `func_077990`
 
-### ENTRY-SPLIT-PENDING — 227
+### ENTRY-SPLIT-PENDING — 208
 
 - `overlay_call_02D8_000E`
-- `overlay_call_0984_04F6`
 - `overlay_call_09EF_002C`
 - `overlay_call_0A29_01D1`
 - `overlay_call_0A58_000D`
@@ -610,7 +609,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0398`
 - `overlay_call_181F_03A2`
 - `overlay_call_181F_03B6`
-- `overlay_call_181F_03D4`
 - `overlay_call_181F_03FE`
 - `overlay_call_181F_040A`
 - `overlay_call_181F_0422`
@@ -621,7 +619,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_04F2`
 - `overlay_call_181F_053C`
 - `overlay_call_181F_055E`
-- `overlay_call_181F_056A`
 - `overlay_call_181F_059A`
 - `overlay_call_181F_05B6`
 - `overlay_call_181F_05CE`
@@ -650,7 +647,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0FCC`
 - `overlay_call_191F_0018`
 - `overlay_call_191F_0030`
-- `overlay_call_191F_0048`
 - `overlay_call_191F_0060`
 - `overlay_call_191F_006C`
 - `overlay_call_191F_00F0`
@@ -658,7 +654,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_012C`
 - `overlay_call_191F_016A`
 - `overlay_call_191F_0176`
-- `overlay_call_191F_0182`
 - `overlay_call_191F_019C`
 - `overlay_call_191F_01A8`
 - `overlay_call_191F_01B6`
@@ -671,7 +666,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_0296`
 - `overlay_call_191F_0306`
 - `overlay_call_191F_033C`
-- `overlay_call_191F_0436`
 - `overlay_call_191F_045C`
 - `overlay_call_191F_04A2`
 - `overlay_call_191F_04D4`
@@ -684,8 +678,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_0540`
 - `overlay_call_191F_054C`
 - `overlay_call_191F_0558`
-- `overlay_call_191F_0570`
-- `overlay_call_191F_0588`
 - `overlay_call_191F_0594`
 - `overlay_call_191F_05C4`
 - `overlay_call_191F_05D0`
@@ -694,38 +686,28 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_05F4`
 - `overlay_call_191F_0600`
 - `overlay_call_191F_060C`
-- `overlay_call_191F_0624`
 - `overlay_call_191F_0630`
-- `overlay_call_191F_063C`
 - `overlay_call_191F_0648`
 - `overlay_call_191F_0654`
-- `overlay_call_191F_0678`
 - `overlay_call_191F_0684`
 - `overlay_call_191F_0690`
 - `overlay_call_191F_069C`
 - `overlay_call_191F_06A8`
-- `overlay_call_191F_06CC`
 - `overlay_call_191F_06D8`
 - `overlay_call_191F_06F0`
 - `overlay_call_191F_06FC`
 - `overlay_call_191F_0708`
 - `overlay_call_191F_0720`
 - `overlay_call_191F_0738`
-- `overlay_call_191F_0744`
 - `overlay_call_191F_0750`
-- `overlay_call_191F_0768`
 - `overlay_call_191F_0774`
 - `overlay_call_191F_078C`
-- `overlay_call_191F_0798`
-- `overlay_call_191F_07A4`
 - `overlay_call_191F_07B0`
 - `overlay_call_191F_07BC`
 - `overlay_call_191F_07D4`
-- `overlay_call_191F_07E0`
 - `overlay_call_191F_07EC`
 - `overlay_call_191F_07F8`
 - `overlay_call_191F_0804`
-- `overlay_call_191F_0810`
 - `overlay_call_191F_081C`
 - `overlay_call_191F_0828`
 - `overlay_call_191F_0840`
@@ -760,7 +742,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_07C4`
 - `overlay_call_1A1F_07EA`
 - `overlay_call_1A1F_07F8`
-- `overlay_call_1A1F_0806`
 - `overlay_call_1A1F_0814`
 - `overlay_call_1A1F_083E`
 - `overlay_call_1A1F_085A`

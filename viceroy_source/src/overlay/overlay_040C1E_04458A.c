@@ -127,7 +127,7 @@ extern int overlay_call_0D1D_0F60(void);  /* long mul helper                  */
 extern int overlay_call_0D1D_0EC6(void);  /* long div helper                  */
 
 extern int overlay_call_181F_0056();  extern int overlay_call_181F_006A(void);
-extern int overlay_call_181F_0074(void);  extern int overlay_call_181F_007E(void);
+extern int overlay_call_181F_0074(void);  extern int overlay_call_181F_007E();
 extern int overlay_call_181F_00BA(void);  extern int overlay_call_181F_00C4(void);
 extern int overlay_call_181F_00CE(void);  extern int overlay_call_181F_00E2(void);
 extern int overlay_call_181F_011E(void);  extern int overlay_call_181F_0128(void);
@@ -681,7 +681,7 @@ auto_load:
     DGS16(G_COLONY_PTR + row_terr * 2 + 0x9A) += DGS16(0x8DC4);  /* @0x0415E5 add moved amt */
     overlay_call_181F_0056(1);          /* @0x0415F5 anim_begin(1)             */
     overlay_call_181F_0DD6(0x18);          /* @0x041601 anim_glyph(0x18)          */
-    overlay_call_181F_007E();          /* @0x04160D anim_num(moved)           */
+    overlay_call_181F_007E((int16_t)DG16(0x8dc4));          /* @0x04160D anim_num(moved)           */
     amt = row_terr;                    /* keep slot for the second number     */
     overlay_call_181F_0074();          /* @0x041619 anim_num(stock[row])      */
     overlay_call_181F_0DD6(0x1a);          /* @0x041623 anim_glyph(0x1a)          */

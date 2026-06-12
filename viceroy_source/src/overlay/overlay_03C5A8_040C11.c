@@ -333,7 +333,7 @@ int func_03C638_logic_sz_73(void)
     /* @0x03C710..0x03C772  announce takeover (msg context 3; format loser name
      *   from PowerRecord name @ loser*0x34+0x5426; set args 2,3 from a per-power
      *   accessor 0xA1A; show str 0x128C "SUCCESSION"). */
-    overlay_call_181F_04AC(); /* msg_ctx(3) */
+    overlay_call_181F_04AC(3); /* msg_ctx(3) */
     overlay_call_191F_0AC8(); /* fmt_power_name(loser,1,0) */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &name[loser*0x34+0x5426], 1) */
     overlay_call_181F_0A1A(); /* r = power_accessor(winner) */
@@ -345,8 +345,8 @@ int func_03C638_logic_sz_73(void)
     /* @0x03C775..0x03C7AC  fetch the two map-layer base far-pointers and the
      *   per-power bitmasks. layerA = get_map_layer_ptr(0,0) [0x736];
      *   layerB = get_map_layer_ptr(0,0) [0x6A0]. */
-    overlay_call_181F_0736(); /* layerA = ptr ; [bp-0x22:-0x20] */
-    overlay_call_181F_06A0(); /* layerB = ptr ; [bp-4:-2] */
+    overlay_call_181F_0736(0, 0); /* layerA = ptr ; [bp-0x22:-0x20] */
+    overlay_call_181F_06A0(0, 0); /* layerB = ptr ; [bp-4:-2] */
     /* maskA = 0x10<<loser  [bp-6] ; maskB = 0x10<<winner  [bp-0x24] */
 
     /* @0x03C7AF..0x03C80C  map sweep y=0..g_map_height(0x853C), x=0..g_map_width(0x853A):
@@ -516,7 +516,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     announce_target:
         /* @0x03C9CF block target: msg_show then refresh next iteration. */
         overlay_call_181F_0652(); /* msg_show(1, 0x12A2) */
-        overlay_call_181F_0808(); /* (i) */
+        overlay_call_181F_0808(i); /* (i) */
     }
 
     /* @0x03CA06..0x03CA09  pop si/di / leave / retf */
@@ -3085,7 +3085,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     if (overlay_call_181F_0754() /* flags(uy,ux) */ & 0x10) goto done;  /* @0x04091F */
     if ((int16_t)overlay_call_181F_0A56((int16_t)DG16(0x8d52)) /* bounds(uy,ux) */ < 0) goto done; /* @0x040936 */
     if ((int16_t)G16(0x8DB8) > (int16_t)overlay_call_181F_07B4(owner, 2)) goto done;  /* @0x040947 */
-    if (overlay_call_181F_07B4() /* ownership(2,owner) */ != 0) goto done;    /* @0x04095D */
+    if (overlay_call_181F_07B4(owner, 2) /* ownership(2,owner) */ != 0) goto done;    /* @0x04095D */
     if (func_04172D() /* near 0x172D(uy,ux,owner,newpos) */ != 0) goto done;  /* @0x040974 */
 
     /* @0x040978..0x0409C5  sight radius + reveal */
@@ -3289,7 +3289,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     if ((int16_t)overlay_call_181F_0A56((int16_t)DG16(0x8d52)) /* terr_lim([0x8D52]) */ < (int16_t)G16(0x8DB8))
         goto done;                                    /* @0x040B90 */
     if (func_04172D() /* near 0x172D(uy,ux,owner,newpos) */ != 0) goto done;  /* @0x040BAB */
-    if (overlay_call_181F_07B4() /* ownership(2,owner) */ != 0) goto done;    /* @0x040BBC */
+    if (overlay_call_181F_07B4(owner, 2) /* ownership(2,owner) */ != 0) goto done;    /* @0x040BBC */
 
     /* @0x040BC0..0x040C0B  sight radius + reveal */
     {
