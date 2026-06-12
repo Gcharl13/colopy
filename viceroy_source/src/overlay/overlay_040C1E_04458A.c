@@ -1337,7 +1337,7 @@ int func_041EEA_next_active_unit(void)
             DG16(pbx - 0x77D2) += amt; DG16(pbx - 0x77D0) += 0;  /* @0x042076 */
             DG16(pbx - 0x77D6) += consumed;                      /* @0x042084 */
         }
-        overlay_call_181F_048E();      /* @0x04209E panel_row(0x24)            */
+        overlay_call_181F_048E(0x24);      /* @0x04209E panel_row(0x24)            */
         overlay_call_181F_0652();      /* @0x0420AB caption(0x148e,2)          */
         overlay_call_181F_0808();      /* @0x0420B6 row_commit(it)             */
         /* @0x0420AE clamp the two running indices to the iterator. */

@@ -871,7 +871,7 @@ int func_01008E_rtl_sz_26(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 int func_0100A8_rtl_sz_33(uint16_t arg0_bp_06)
 {
     /* @auto: wrapper forwards to LCALL 0x0D1D:0x1896. */
-    return overlay_call_0D1D_1896();
+    return overlay_call_0D1D_1896(arg0_bp_06);
 }
 
 /* @asm        0x0100EC..0x010118  (44 bytes)  region=load_image

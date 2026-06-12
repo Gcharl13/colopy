@@ -776,7 +776,7 @@ int func_02287E_disband_unit(void)
 
 reveal:
     /* reveal-mode cursor pick @0x022350..0x022A38 (cited-RUNTIME_ONLY leaves) */
-    overlay_call_181F_07BE();                          /* @0x02235F colony_at_xy(cursor) */
+    overlay_call_181F_07BE((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));                          /* @0x02235F colony_at_xy(cursor) */
     overlay_call_181F_0E1C(1);                          /* @0x02239A/0x0239A redraw(1) */
 done:
     return 0;

@@ -25,7 +25,7 @@ extern int overlay_call_175D_06B3(void);  /* @ref RTLink seg 0x175D off 0x06B3 *
 extern int overlay_call_0D1D_0E2C(void);  /* @ref RTLink seg 0x0D1D off 0x0E2C */
 extern int overlay_call_181F_0574(void);  /* @ref RTLink seg 0x181F off 0x0574 */
 extern int overlay_call_181F_052E(void);  /* @ref RTLink seg 0x181F off 0x052E */
-extern int overlay_call_05B3_024E(void);  /* @ref RTLink seg 0x05B3 off 0x024E */
+extern int overlay_call_05B3_024E();  /* @ref RTLink seg 0x05B3 off 0x024E */
 extern int overlay_call_05EB_0142(void);  /* @ref RTLink seg 0x05EB off 0x0142 */
 extern int overlay_call_181F_0644(void);  /* @ref RTLink seg 0x181F off 0x0644 */
 extern int overlay_call_181F_0638(void);  /* @ref RTLink seg 0x181F off 0x0638 */
@@ -36,7 +36,7 @@ extern int overlay_call_181F_062C(void);  /* @ref RTLink seg 0x181F off 0x062C *
 extern int overlay_call_181F_061E(void);  /* @ref RTLink seg 0x181F off 0x061E */
 extern int overlay_call_181F_05FA();  /* @ref RTLink seg 0x181F off 0x05FA */
 extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 */
-extern int overlay_call_02FD_006C(void);  /* @ref RTLink seg 0x02FD off 0x006C */
+extern int overlay_call_02FD_006C();  /* @ref RTLink seg 0x02FD off 0x006C */
 extern int overlay_call_181F_0668(void);  /* @ref RTLink seg 0x181F off 0x0668 */
 extern int overlay_call_181F_05EC(void);  /* @ref RTLink seg 0x181F off 0x05EC */
 extern int overlay_call_181F_05A8(void);  /* @ref RTLink seg 0x181F off 0x05A8 */
@@ -946,7 +946,7 @@ int func_005760_op_sz_127(void)
 
     /* @asm 0x005764 prologue clears [bp-2]; rebuild the on-screen power grid. */
     overlay_call_181F_05A8();
-    overlay_call_0984_00AA();                 /* @asm push 4; lcall 0x0984:0x00AA */
+    overlay_call_0984_00AA(4);                 /* @asm push 4; lcall 0x0984:0x00AA */
     overlay_call_181F_059A();
     overlay_call_0984_00AA();                 /* @asm push 5; lcall 0x0984:0x00AA */
     overlay_call_0984_04F6();
@@ -970,7 +970,7 @@ int func_005760_op_sz_127(void)
     /* @asm 0x0057DE if ([0x104] != 0): run the new-game / scenario setup prompt. */
     if (DG16(0x0104) != 0) {                  /* @asm cmp [0x104],0; je 0x5836 */
         overlay_call_0262_00DA();             /* @asm lcall 0x0262:0x00DA */
-        overlay_call_029F_0318();             /* @asm push 3; lcall 0x029F:0x0318 */
+        overlay_call_029F_0318(3);             /* @asm push 3; lcall 0x029F:0x0318 */
         overlay_call_181F_0574();             /* @asm lcall 0x181F:0x0574 */
         overlay_call_0984_04F6();
         DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
@@ -1059,7 +1059,7 @@ turn_loop:
         (void)DG16(0x2DAC); (void)DG16(0x2DAE);
         overlay_call_0B8D_0004();             /* @asm lcall 0x0B8D:0x0004 */
         overlay_call_0B70_003A();             /* @asm lcall 0x0B70:0x003A */
-        overlay_call_05B3_024E();             /* @asm push i_outer; lcall 0x05B3:0x024E */
+        overlay_call_05B3_024E(i_outer);             /* @asm push i_outer; lcall 0x05B3:0x024E */
         overlay_call_181F_0438();             /* @asm push ax; push 0; lcall 0x181F:0x0438 */
         overlay_call_181F_0652();             /* @asm push 2; push 0x137; lcall 0x181F:0x0652 */
         DG16(0x5396) = (uint16_t)i_outer;      /* @asm [0x5396]=i_outer */
@@ -1155,7 +1155,7 @@ after_players:
                 /* @asm 0x005B2C grow the rolling info window up to row 0x19. */
                 while ((int16_t)DG16(0x0150) < 0x19) {  /* @asm cmp [0x150],0x19; jge 0x5BAE */
                     DG16(0x0150)++;                /* @asm inc [0x150] */
-                    if (overlay_call_02FD_006C() == 0)  /* @asm push [0x150]; lcall; je 0x5BAE */
+                    if (overlay_call_02FD_006C((int16_t)DG16(0x150)) == 0)  /* @asm push [0x150]; lcall; je 0x5BAE */
                         break;
                 }
             } else if (((int16_t)DG16(0x538E) % 3) == 1) {  /* @asm dec dx; jne 0x5BA0 */

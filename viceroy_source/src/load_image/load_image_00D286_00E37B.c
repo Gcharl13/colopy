@@ -83,7 +83,7 @@ int func_00D2AC_logic_sz_57(void)
 int func_00D3BE_rtl_sz_45(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     /* @auto: wrapper forwards to LCALL 0x0D1D:0x10EA. */
-    return overlay_call_0D1D_10EA();
+    return overlay_call_0D1D_10EA(arg0_bp_06, arg1_bp_08, 0xa);
 }
 
 /* @asm        0x00D3EC..0x00D41D  (49 bytes)  region=load_image
@@ -259,7 +259,7 @@ int func_00D72E_rtl_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
      *        0x00D747 push ds;push 0x2626;push [bp+0xc];push si; lcall 0D1D:0x11B4;
      *        0x00D757 push [bp+8];push [bp+6];push [bp+0xc];push si; lcall 0D1D:0x11B4.
      *      0x00D769 push [bp+0xc]; push si; lcall 0D1D:0x1118 (finalise). */
-    int found = (int)overlay_call_0D1D_10EA();   /* @asm scan for '.'; dx:ax */
+    int found = (int)overlay_call_0D1D_10EA(arg2_bp_0A, arg3_bp_0C, 0x2e);   /* @asm scan for '.'; dx:ax */
     if (found != 0) {                            /* @asm or dx,ax; jne -> skip */
         overlay_call_0D1D_11B4();                /* @asm 0x00D74F split tail @0x2626 */
         overlay_call_0D1D_11B4();                /* @asm 0x00D761 copy [bp+6]/[bp+8] */

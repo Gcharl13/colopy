@@ -761,8 +761,8 @@ int func_007BE8_op_sz_66(void)
      * effect; the per-index probe is documented here per the file convention.) */
     int count = 0;
     if (overlay_call_05EB_038E() != 0) count = 1;   /* @asm push 0 */
-    if (overlay_call_05EB_038E() != 0) count++;     /* @asm push 1 */
-    if (overlay_call_05EB_038E() != 0) count++;     /* @asm push 2 */
+    if (overlay_call_05EB_038E(1) != 0) count++;     /* @asm push 1 */
+    if (overlay_call_05EB_038E(2) != 0) count++;     /* @asm push 2 */
     return count;
 }
 
@@ -1174,7 +1174,7 @@ int func_008074_op_sz_83(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      *      0x80B0 bx=arg0*2; call 0x4B:0xE2([bp+0xA], [bx-0x72BE](0x8D42)). */
     if (arg0_bp_06 == 3) {
         /* @asm push [0x2E02]; push arg2; call 0x004B:0x00E2 (text out) */
-        overlay_call_004B_00E2();
+        overlay_call_004B_00E2(arg2_bp_0A, (int16_t)DG16(0x2e02));
         /* @asm push arg2; call 0x004B:0x0000 (text out) — offset 0 of seg 0x004B */
         overlay_call_004B_0000();
         if (arg1_bp_08 == 0) {

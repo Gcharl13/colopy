@@ -927,7 +927,7 @@ int func_02B9DC_op_sz_72(void)
         }
         if (g_popup_07E4 != 0) {                    /* @0x02BABC */
             if (g_int_mode_07F4 == 0) return 0;     /* @0x02BAC3 */
-            overlay_call_191F_0934();               /* @0x02BACD highlight cell */
+            overlay_call_191F_0934(cell);               /* @0x02BACD highlight cell */
             overlay_call_191F_0684();               /* @0x02BAD6 near 0x7E3D */
             return 0;
         }

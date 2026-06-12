@@ -29,7 +29,7 @@ extern int overlay_call_0981_0000(void);  /* @ref RTLink seg 0x0981 off 0x0000 *
 extern int overlay_call_0BAA_0006(void);  /* @ref RTLink seg 0x0BAA off 0x0006 (sprite blit) */
 extern int overlay_call_0C36_000A(void);  /* @ref RTLink seg 0x0C36 off 0x000A */
 extern int overlay_call_181F_0E2A(void);  /* @ref RTLink seg 0x181F off 0x0E2A */
-extern int overlay_call_181F_0344(void);  /* @ref RTLink seg 0x181F off 0x0344 */
+extern int overlay_call_181F_0344();  /* @ref RTLink seg 0x181F off 0x0344 */
 extern int overlay_call_0009_0244(void);  /* @ref RTLink seg 0x0009 off 0x0244 */
 extern int overlay_call_0009_02CC(void);  /* @ref RTLink seg 0x0009 off 0x02CC */
 extern int overlay_call_0009_01A2(void);  /* @ref RTLink seg 0x0009 off 0x01A2 (draw string cell) */
@@ -1166,7 +1166,7 @@ int func_00BD4A_op_sz_404(void)
         (void)((DG16(0x929C) == 1) ? 0 : 1);                                 /* @asm 0xBE6A..0xBE73 */
         overlay_call_181F_0E2A();
     } else {
-        overlay_call_181F_0344();                                            /* @asm 0xBE8A */
+        overlay_call_181F_0344((int16_t)DG16(0x8540), (int16_t)DG16(0x853e), 1, 1);                                            /* @asm 0xBE8A */
     }
 
     /* @asm 0xBE92 if [0x5390]!=0 && [0x929C]!=0: lcall 0C36:0xA(...) (status text) */

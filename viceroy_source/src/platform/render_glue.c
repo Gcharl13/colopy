@@ -931,7 +931,7 @@ int overlay_call_1A1F_0914(void) { return 0; }
 int overlay_call_181F_032C(void) { return 0; }
 
 /* 0x181F:0x0344 — colony/settlement layer pass */
-int overlay_call_181F_0344(void) { return 0; }
+int overlay_call_181F_0344() { return 0; }
 
 /* 0x181F:0x0E38 — units-on-tile pass */
 int overlay_call_181F_0E38(void) { return 0; }
