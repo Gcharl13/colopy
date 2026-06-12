@@ -103,6 +103,17 @@ void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
     if (resfog && g_layer_len <= (long)sizeof g_resfog_work)
         memcpy(g_resfog_work, resfog, (size_t)g_layer_len);
     g_layer[2] = g_resfog_work;
+    /* bind the map-generator's layer handles (writable working copies; the
+     * terrain handle stays read-binding until the new-game generator owns a
+     * writable terrain buffer) */
+    {
+        extern uint8_t *g_layer0_terrain, *g_layer1_elev,
+                       *g_layer2_region, *g_layer3_mask;
+        g_layer0_terrain = (uint8_t *)terrain;
+        g_layer1_elev    = g_feature_work;
+        g_layer2_region  = g_resfog_work;
+        g_layer3_mask    = g_region_layer;
+    }
     /* layer [0x164] (region/lake ids; the original computes it at map load --
      * loader not yet decoded): RECONSTRUCTED as water-region nibbles via
      * edge-connected flood fill: open ocean = 1, enclosed lakes = 2.., land=0.
@@ -938,3 +949,38 @@ int overlay_call_181F_0E38() { return 0; }
 
 /* 0x1A1F:0x08F8 — cursor overlay pass (mode != 0 only) */
 int overlay_call_1A1F_08F8() { return 0; }
+
+/* ---- map-generation layer access (Phase 4.7, 2026-06-12) -------------------
+ * The world-generator family (func_064xxx walk-stamp/region ops in
+ * overlay_0612E6) addresses layers through FOUR far-pointer globals and three
+ * helpers (cited 0x1A1F:0x868/0x872 reads/writes; the 0x181F:0x484 "fill"
+ * cite needs re-verification when the new-game flow activates -- the 0x484
+ * thunk's resident body is the display no-op wrapper).  Modern model: host
+ * pointers bound at map-attach; the helpers use the established
+ * width-stride arithmetic.  Mapgen itself only runs on new-game with real
+ * data (off the soak path). */
+uint8_t *g_layer0_terrain;
+uint8_t *g_layer1_elev;
+uint8_t *g_layer2_region;
+uint8_t *g_layer3_mask;
+
+int layer_tile_read(void *layer, int x, int y)
+{
+    const uint8_t *p = (const uint8_t *)layer;
+    long o = (long)y * (int16_t)DG16(0x853A) + x;
+    if (!p || o < 0 || o >= g_layer_len) return 0;
+    return p[o];
+}
+void layer_tile_write(void *layer, int x, int y, int val)
+{
+    uint8_t *p = (uint8_t *)layer;
+    long o = (long)y * (int16_t)DG16(0x853A) + x;
+    if (!p || o < 0 || o >= g_layer_len) return;
+    p[o] = (uint8_t)val;
+}
+void region_fill(void *layer, int value)
+{
+    uint8_t *p = (uint8_t *)layer;
+    if (!p || g_layer_len <= 0) return;
+    memset(p, value & 0xFF, (size_t)g_layer_len);
+}
