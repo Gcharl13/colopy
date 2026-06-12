@@ -4,15 +4,15 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 798 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 803 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1068 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1053 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 393 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 378 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 393
+### NAMED-GAP — 378
 
 - `DG8`
 - `__aFldiv`
@@ -740,8 +740,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `box_frame`
 - `box_outline`
 - `cargo_row_decode`
-- `cd_colony_attr`
-- `cd_colony_field`
 - `cd_list_count`
 - `cd_snapshot`
 - `cd_teardown`
@@ -826,13 +824,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `hof_screen_load`
 - `hof_screen_present`
 - `hof_select_player`
-- `hof_str_cat`
-- `hof_str_cat_num`
 - `hof_str_cpy`
-- `hof_text_row`
 - `hof_title_band`
 - `hof_to_video`
-- `hof_wait_input`
 - `hud_blit`
 - `hud_helper_6D50`
 - `hud_helper_6D64`
@@ -861,7 +855,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `map_mark_settlement_tile`
 - `mcb_at`
 - `menu_add`
-- `menu_add_cheat_x`
 - `menu_add_item`
 - `menu_add_item_lit`
 - `menu_close`
@@ -1031,12 +1024,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `rpt_commit`
 - `rpt_draw_frame`
 - `rpt_footer`
-- `rpt_grid_commit`
 - `rpt_grid_str_begin`
-- `rpt_grid_str_cat`
 - `rpt_grid_str_end`
 - `rpt_select_player`
-- `rpt_title_draw`
 - `rtlink_read_records`
 - `sb_dma_halt`
 - `sb_play_pcm`
@@ -1088,19 +1078,14 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ui_blit_coords`
 - `ui_blit_ptr`
 - `ui_dialog_show`
-- `ui_flash_power`
 - `ui_flush`
 - `ui_fmt_two`
 - `ui_notify_key`
 - `ui_push_value`
 - `ui_refresh_colony`
 - `ui_select_on_map`
-- `ui_set_channel`
 - `ui_show_message`
 - `ui_show_message_0`
-- `ui_show_message_3`
-- `ui_show_message_h`
-- `ui_sound_or_msg`
 - `unit_alloc_new_slot`
 - `unit_at`
 - `unit_cargo_kind`
