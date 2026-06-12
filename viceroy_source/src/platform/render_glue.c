@@ -855,3 +855,42 @@ int overlay_call_0B70_003A(void) { return 0; }
  * Triggers the full colony-screen repaint (calls two internal render chains).
  * Headless: no-op (screen is not visible). */
 void colony_screen_compose(void) { }
+
+/* 0x181F:0x00CE → resident 0BCA:0002 → file 0x0E0A2 — HUD tile-info box fill.
+ * Blits the active-tile info panel header (marker words 0x2DA8..0x2DAE, pixel
+ * anchor 0x8550/0x8552).  Pure display, no game state. */
+int overlay_call_181F_00CE(void) { return 0; }
+
+/* 0x191F:0x0888 → page21+(0x83<<4)+0x00EA → file 0x6716A — draw handler A.
+ * First of a three-handler chain called by compose_tile_overlays and
+ * compose_active_tile; draws settlement/feature layer.  Pure display. */
+int overlay_call_191F_0888(void) { return 0; }
+
+/* 0x191F:0x0896 → page21+(0x83<<4)+0x0248 → file 0x672C8 — draw handler B.
+ * Second draw handler in the compose chain.  Pure display. */
+int overlay_call_191F_0896(void) { return 0; }
+
+/* 0x191F:0x0296 → page21+(0x5B<<4)+0x0132 → file 0x66F32 — draw handler C.
+ * Third draw handler; called by compose_active_tile after 0888/0896.
+ * Pure display. */
+int overlay_call_191F_0296(void) { return 0; }
+
+/* 0x1A1F:0x093E → page21+(0x83<<4)+0x058E → file 0x6760E — draw tile graphic.
+ * Blits the terrain tile graphic into the active-tile HUD panel.
+ * Pure display. */
+int overlay_call_1A1F_093E(void) { return 0; }
+
+/* 0x1A1F:0x08EA → page21+(0x5B<<4)+0x0224 → file 0x67024 — cursor overlay.
+ * Extra cursor/selection highlight on the active tile; called only when the
+ * tile is player-selected (arg0_active != 0).  Pure display. */
+int overlay_call_1A1F_08EA(void) { return 0; }
+
+/* 0x1A1F:0x0968 → page21+(0x102<<4)+0x0D6C → file 0x685DC — base terrain draw.
+ * Called by compose_tile_overlays (base terrain pass) and
+ * draw_minimap_or_cursor_box (terminal draw step).  Pure display. */
+int overlay_call_1A1F_0968(void) { return 0; }
+
+/* 0x181F:0x059A → page21+0x00D8 → file 0x66928 — palette latch / minimap prep.
+ * Called by func_066BB0_minimap_update and func_066CD6_draw_contents to latch
+ * the palette before minimap rendering.  Pure display. */
+void func_066BB0_prep(void) { }

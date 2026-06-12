@@ -459,3 +459,12 @@ PROVIDE(overlay_call_181F_0438 = func_06C23C_dialog_make_from_int);
  * Headless guard added at func entry: returns 0 if g_buf_ptr_2D42_2D44==NULL. */
 PROVIDE(opt_lookup_rec = func_06F0F4_text_template_run);
 EXTERN(func_06F0F4_text_template_run)
+
+/* Phase 4.3n (2026-06-12): wire overlay_call_181F_0484 via existing port.
+ * 0x181F:0x0484 -> resident 0B8D:0004 -> file 0x0DCD4 = func_00DCD4_op_sz_34.
+ * Body: pushes 4 args [bp+6..0xC] then calls overlay_call_0B9E_000A() (now a
+ * strong no-op in render_glue.c); all args are ignored by the callee.
+ * Arity mismatch is safe: stub callers pass 0 args (cdecl, no-arg prototype),
+ * callee reads from stack-above-ret which is garbage but never dereferenced. */
+PROVIDE(overlay_call_181F_0484 = func_00DCD4_op_sz_34);
+EXTERN(func_00DCD4_op_sz_34)
