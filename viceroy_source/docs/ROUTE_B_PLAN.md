@@ -313,6 +313,19 @@ screen walkthroughs.
 - [ ] **2.2 Colony mid-band painters**: `func_0264A8` + `func_0270D0` (field
       workers / colonist rows). The rest of the colony screen is ported;
       these two complete it pixel-wise. (1–1.5 sessions)
+      > PARTIAL 2026-06-12 — identity + wiring closed: func_0270D0's shell
+      > had been named "colony_screen_render", COLLIDING with the
+      > func_028592 composer of the same name (the linker bound all
+      > composer callers to the shell — the composer was dead code).
+      > Renamed to colony_paint_colonist_row; BOTH painters now wired into
+      > the composer at their @0x0285BC/@0x0285C4 slots.  Their top fills
+      > byte-restored via the real fill_rect (cs:0x2CAC3 = ljmp 0x191F:0x7EC
+      > = fill leaf 0x2633E; workgrid (224,32,72,72), colonist row
+      > (0,130,120,48) — the old "panel frame/backdrop" labels were
+      > misattributions).  REMAINING for pixel parity: per-cell sprite
+      > blits (0x254 ids 0x6D/0x64), borders (0xCE), the 0x506 map-tile
+      > backdrop primitive, warehouse bars (0x222/0x22C) and the SoL gauge
+      > text run — then the Phase-7 capture compare.
 - [ ] **2.3 seg-0x1B22 save block** (0x378 bytes, runtime BSS): find the
       runtime writer, identify the struct, port. Until then saves carry it
       via host buffer — Phase 7's save-exchange gate requires the real

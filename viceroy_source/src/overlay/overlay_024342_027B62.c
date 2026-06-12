@@ -938,7 +938,11 @@ void colony_draw_workgrid(int show_close_button)
         = DG8(0x0336);       /* @asm 0x0264AD [0x70]=[0x336] */
 
     overlay_call_181F_0506();                       /* @asm 0x0264E1 map backdrop (0x78x0x78 @8,0xC8) */
-    func_02CAC3();                                  /* @asm 0x0264F3 panel frame @ (0xE0,0x20) */
+    /* @asm 0x0264E9 push 0x48,0x48,0x20,0xE0; call 0x2CAC3 = ljmp 0x191F:0x7EC
+     * (fill leaf 0x2633E): the upper-right work-grid band fill. */
+    {   extern void fill_rect(int x, int y, int w, int h);
+        fill_rect(0xE0, 0x20, 0x48, 0x48);          /* (224,32,72,72) */
+    }
     overlay_call_181F_00CE();                       /* @asm 0x026517 divider line @ (0x140,7,0x80) */
     overlay_call_181F_00CE();                       /* @asm 0x026539 divider line @ (0x128,0x1F,0x68) */
 
@@ -1373,15 +1377,19 @@ void colony_draw_roster_strip(int show_button)
 }
 
 /* ============================================================================
- * colony_screen_render  (func_0270D0)
+ * colony_paint_colonist_row  (func_0270D0)
  *   @asm        0x0270D0..0x0275CD  (1278 bytes, ENTER 0x7E)   page_02.asm
  *   @status     RECONSTRUCTED (extent + reads + difficulty/AIPersonality reads
  *               BYTE_VERIFIED; draw + SoL/Tory layout roles inferred)
- *   @role       the colony screen layout + render entry: place every colonist
+ *   @role       the colonist-row / mid-band LOWER painter: place every colonist
  *               sprite (with overlap-avoidance), draw the warehouse bar-chart
  *               and the SoL/Tory percentage display.
+ *   RENAMED 2026-06-12 (was "colony_screen_render", which COLLIDED with the
+ *   func_028592 composer of the same name in ui/colony_screen.c — the linker
+ *   was binding the composer's callers to THIS shell.  func_0270D0 is the
+ *   composer's @0x0285C4 sub-painter, not the screen entry.)
  *
- * Signature:  void colony_screen_render(int show_close_button);
+ * Signature:  void colony_paint_colonist_row(int show_close_button);
  * Backdrop via func_02CAC3 @ (0x82,0x78,0x30).  Counts colonists
  * (ctx->population + [0x8D72]) and pre-sums their sprite widths via
  * 0x181F:0xC0E/0x181F:0xA74 + the unit far-array [0x83E]:[0x840][idx*0xC+0x3E].
@@ -1396,12 +1404,16 @@ void colony_draw_roster_strip(int show_button)
  * [owner*0x34 + 0x543F]; both formatted via 0xD1D:0x8FA + 0x181F:0x10A/0x178/
  * 0x11E/0x182/0x128/0x13C and drawn.  Optional close button (0x181F:0xE2).
  * ============================================================================ */
-void colony_screen_render(int show_close_button)
+void colony_paint_colonist_row(int show_close_button)
 {
     struct colony_t far *c = ctx;
     int count, i, sol, tory;
 
-    func_02CAC3();                                  /* @asm 0x0270E0 backdrop @ (0x82,0x78,0x30) */
+    /* @asm 0x0270D6 push 0x30,0x78,0x82,0; call 0x2CAC3 = ljmp 0x191F:0x7EC
+     * (fill leaf): the colonist-row band fill at (0,130) 120x48. */
+    {   extern void fill_rect(int x, int y, int w, int h);
+        fill_rect(0, 0x82, 0x78, 0x30);
+    }
 
     count = c->population + DGS16(0x8D72); /* @asm 0x0270E6 ctx[+0x1F]+[0x8D72] */
     for (i = 0; i < count; i++) {                   /* @asm 0x027107..0x027141 pre-sum widths */

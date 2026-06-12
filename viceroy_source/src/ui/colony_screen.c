@@ -490,10 +490,15 @@ void colony_screen_render(int repaint)
 
     /* === ordered sub-renderers (fixed order; each push 0 = "static paint") === */
     colony_paint_title();                              /* @asm 0x0285B4 call 0x7EF6 (func_0268CE) */
-    /* mid-band field workers / production area.       @asm 0x0285BC call 0x7DB1 (func_0264A8) */
-    ;
-    /* colonist row / mid-band lower band.             @asm 0x0285C4 call 0x7DED (func_0270D0) */
-    ;
+    /* mid-band field workers / production area (Phase 2.2). */
+    {   extern void colony_draw_workgrid(int show_close_button);
+        colony_draw_workgrid(0);                       /* @asm 0x0285BC call 0x7DB1 (func_0264A8) */
+    }
+    /* colonist row / mid-band lower band (Phase 2.2; was the colliding
+     * "colony_screen_render" shell — renamed to its true sub-painter role). */
+    {   extern void colony_paint_colonist_row(int show_close_button);
+        colony_paint_colonist_row(0);                  /* @asm 0x0285C4 call 0x7DED (func_0270D0) */
+    }
     colony_paint_stockpile(0);                         /* @asm 0x0285CC call 0x7E29 (func_0281D6) */
     colony_paint_flag(0, 0);                           /* @asm 0x0285D6 call 0x7DF7 (func_02853C) */
     colony_paint_minimap();                            /* @asm 0x0285DE call 0x7E0B (func_027DB2) */
