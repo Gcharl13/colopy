@@ -466,6 +466,43 @@ int sheet_frame_w_icons(int id)
     const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
     return (s && id >= 0 && id < s->nframes) ? (int)s->frames[id].w : 0;
 }
+/* height sibling (@asm 0x0271D2 es:[bx+0x40], bx = id*0xC + [0x83E]) */
+int sheet_frame_h_icons(int id)
+{
+    const ss_sheet_t *s = sheet_at(G_SHEET_ICONS);
+    return (s && id >= 0 && id < s->nframes) ? (int)s->frames[id].h : 0;
+}
+
+/* 0x181F:0xCE -> resident func_00E0A2 (file 0xE0A2..0xE145): 1-px rectangle
+ * OUTLINE.  Register corners ax=x1 dx=y1 bx=x2 plus pushed y2; each pair is
+ * normalized (X swap @0xE0A8..0xE0B3, Y swap @0xE0B6..0xE0C6), then the four
+ * edges are stroked through the clipped run leaves, endpoints INCLUSIVE
+ * (run = hi-lo+1): rows via func_00DFCC (top @0xE0C9, bottom @0xE0E7) and
+ * columns via func_00E036 (left @0xE105, right @0xE123).  The 4 pushed
+ * descriptor words [0x2DAE],[0x2DAC],[0x2DAA],[0x2DA8] = seg, base,
+ * width/stride, height = the 320x200 screen; per-edge clip: an edge whose
+ * fixed row/col lies outside [0,dim) is dropped whole (@0xDFD4/@0xE03E),
+ * the run ends clamp into [0,dim-1] (@0xDFDF../@0xE04A..).  Colour = low
+ * byte of the last pushed word ([bp+6], mov al @0xE0D5). */
+void draw_box(int x1, int y1, int x2, int y2, int color)
+{
+    uint8_t *fb = vid_framebuffer();
+    int xl = (x1 < x2) ? x1 : x2, xh = (x1 < x2) ? x2 : x1;  /* @asm 0xE0A8 */
+    int yl = (y1 < y2) ? y1 : y2, yh = (y1 < y2) ? y2 : y1;  /* @asm 0xE0B6 */
+    int lo, hi, p;
+    lo = (xl < 0) ? 0 : xl;                       /* h-run clamps (func_00DFCC) */
+    hi = (xh > VID_W - 1) ? VID_W - 1 : xh;
+    for (p = lo; p <= hi; p++) {
+        if (yl >= 0 && yl < VID_H) fb[yl * VID_W + p] = (uint8_t)color; /* top */
+        if (yh >= 0 && yh < VID_H) fb[yh * VID_W + p] = (uint8_t)color; /* bottom */
+    }
+    lo = (yl < 0) ? 0 : yl;                       /* v-run clamps (func_00E036) */
+    hi = (yh > VID_H - 1) ? VID_H - 1 : yh;
+    for (p = lo; p <= hi; p++) {
+        if (xl >= 0 && xl < VID_W) fb[p * VID_W + xl] = (uint8_t)color; /* left */
+        if (xh >= 0 && xh < VID_W) fb[p * VID_W + xh] = (uint8_t)color; /* right */
+    }
+}
 void draw_text(int x, int y, const char *buf) { vid_text_xy(buf, x, y); }
 void enter_screen_view(int bx_screen_id) { (void)bx_screen_id; }
 
