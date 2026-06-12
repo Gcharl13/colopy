@@ -4,16 +4,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 816 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 828 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1037 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1011 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 362 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| NAMED-GAP | 336 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 362
+### NAMED-GAP — 336
 
 - `DG8`
 - `__aFldiv`
@@ -730,11 +730,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `adlib_shutdown`
 - `adlib_stop_song`
 - `ai_set_plot_target`
-- `ai_turn_end_tail_03EA06`
 - `assign_job`
 - `audio_load_sample_bank`
 - `bars_begin`
-- `bells_for_player`
 - `bios_kbd_shift_flags`
 - `box_clear`
 - `box_frame`
@@ -746,7 +744,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `cd_win_create`
 - `checkbox_get`
 - `checkbox_set`
-- `colonist_profession`
 - `colony_footer`
 - `colony_growth_event`
 - `colony_hdr_panel`
@@ -783,7 +780,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `europe_draw_stockpile`
 - `europe_draw_title`
 - `father_table_set_076384`
-- `father_table_set_value_07638E`
 - `ff_animate_pre`
 - `ff_pre_a`
 - `first_unit_or_type`
@@ -796,7 +792,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `g_power_ctrl`
 - `g_turn`
 - `g_year`
-- `game_random_int`
 - `game_random_range`
 - `gm_init`
 - `gm_play_song`
@@ -813,8 +808,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `gui_region_save`
 - `gui_text_emit`
 - `helper_8BD4`
-- `helper_BB4`
-- `helper_BD2`
 - `hof_box_rule`
 - `hof_commit`
 - `hof_score_sprite`
@@ -864,8 +857,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `menu_run_options`
 - `menu_selected_index`
 - `menu_set_title`
-- `menubar_create`
-- `menubar_finalize`
 - `mn_service_query`
 - `msg_key_lookup`
 - `mt32_init`
@@ -922,7 +913,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ov_show_message`
 - `ov_snapshot`
 - `ov_sound_apply`
-- `overlay_call_1A1F_0C64_alloc`
 - `overlay_near_07EFB`
 - `overlay_set_dialog_rect`
 - `ovly_4BA34_substate`
@@ -966,13 +956,8 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_unit_init_181F_844`
 - `page1A_dir_match`
 - `page1A_file_pick`
-- `page1A_map_colors`
-- `page1A_map_finalize`
 - `page1A_map_pre`
 - `page1A_msgbox`
-- `page1A_names_subloader`
-- `page1A_newgame_mapinit`
-- `page1A_newgame_postinit`
 - `page1A_read_hdr`
 - `page1A_sl_addmap`
 - `page1A_sl_commit`
@@ -981,7 +966,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `page1B_err_abort`
 - `page1B_load_block`
 - `page1C_stream_buf`
-- `page1C_stream_notify`
 - `page1C_stream_op_default`
 - `pcspk_init`
 - `pcspk_play_melody`
@@ -992,12 +976,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `phase_dispatch_screen_helper`
 - `pick_grant_unit_type`
 - `picker_run`
-- `place_colonist`
-- `post_growth_hook`
 - `power_attribute_bit`
 - `power_record`
 - `power_set_flag`
-- `queue_immigrant`
 - `raid_show_message`
 - `report_colony_event`
 - `report_row_cells`
@@ -1027,22 +1008,15 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `settlement_initial_population`
 - `show_message`
 - `slot_advance`
-- `slot_commit`
-- `slot_get_a`
 - `sol_mark_rebel_power`
 - `sol_recompute_pct`
 - `song_lookup`
 - `spawn_unit`
-- `sprite_blit2`
 - `str_append_num`
-- `str_cat`
-- `str_cat_num`
 - `strcat_far`
 - `strfmt`
 - `strfmt_far`
-- `survivors_join`
 - `terrain_type_at`
-- `text_draw`
 - `tile_is_land`
 - `tile_read`
 - `tile_write`
