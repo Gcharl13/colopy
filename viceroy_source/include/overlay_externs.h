@@ -36,7 +36,7 @@ extern int overlay_call_03E4_000E(void);  /* @ref RTLink seg 0x03E4 off 0x000E *
 extern int overlay_call_03E4_003A();  /* @ref RTLink seg 0x03E4 off 0x003A */
 extern int overlay_call_03E4_0074(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x03E4 off 0x0074 */
 extern int overlay_call_03F1_02F8();  /* @ref RTLink seg 0x03F1 off 0x02F8 */
-extern int overlay_call_0427_004A(void);  /* @ref RTLink seg 0x0427 off 0x004A */
+extern int overlay_call_0427_004A(uint16_t idx);  /* @ref RTLink seg 0x0427 off 0x004A -> unit_chain_next(idx) */
 extern int overlay_call_0427_005C();  /* @ref RTLink seg 0x0427 off 0x005C */
 extern int overlay_call_0427_06B4(void);  /* @ref RTLink seg 0x0427 off 0x06B4 */
 extern int overlay_call_0427_0824(void);  /* @ref RTLink seg 0x0427 off 0x0824 */
@@ -412,7 +412,7 @@ extern int overlay_call_181F_0D58(void);  /* @ref RTLink seg 0x181F off 0x0D58 *
 extern int overlay_call_181F_0D62(void);  /* @ref RTLink seg 0x181F off 0x0D62 */
 extern int overlay_call_181F_0D6C(void);  /* @ref RTLink seg 0x181F off 0x0D6C */
 extern int overlay_call_181F_0D78(void);  /* @ref RTLink seg 0x181F off 0x0D78 */
-extern int overlay_call_181F_0D84(void);  /* @ref RTLink seg 0x181F off 0x0D84 */
+extern int overlay_call_181F_0D84(uint16_t x, uint16_t y, int16_t dir, int16_t region_filter);  /* -> func_046056_nearest_settlement */
 extern int overlay_call_181F_0D9A();  /* @ref RTLink seg 0x181F off 0x0D9A */
 extern int overlay_call_181F_0DB8(void);  /* @ref RTLink seg 0x181F off 0x0DB8 */
 extern int overlay_call_181F_0DCC(void);  /* @ref RTLink seg 0x181F off 0x0DCC */

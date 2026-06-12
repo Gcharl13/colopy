@@ -47,6 +47,7 @@ PROVIDE(g_w53A2 = g_dgroup + 0x53A2);
  * names; the bodies live under their semantic names in src/unit/ */
 PROVIDE(func_006672 = unit_chain_resolve);
 PROVIDE(func_0066BA = unit_chain_next);
+PROVIDE(overlay_call_0427_004A = unit_chain_next);  /* LCALL 0x427:0x004A -> file 0x66BA = unit_chain_next */
 PROVIDE(func_0068AA = unit_chain_unlink);
 
 /* naval.c DS-word globals + tables (byte-exact homes) */
@@ -399,3 +400,9 @@ PROVIDE(overlay_call_181F_0E1C = func_067700_compose_active_tile);
 PROVIDE(rebel_sentiment_pct_ovl = func_008524_colony_sz_18);
 EXTERN(func_008524_colony_sz_18)
 EXTERN(func_067700_compose_active_tile)
+
+/* Phase 4.3h (2026-06-12): wire overlay_call_181F_0D84 -> func_046056_nearest_settlement.
+ * Target is the 4-arg nearest-settlement finder: x(bp+6), y(bp+8), dir(bp+A), region(bp+C).
+ * All 6 C call sites updated to pass explicit args; BYTE_VERIFIED target via EXE analysis. */
+PROVIDE(overlay_call_181F_0D84 = func_046056_nearest_settlement);
+EXTERN(func_046056_nearest_settlement)

@@ -1483,37 +1483,42 @@ int func_046004_settlement_at_tile(uint16_t x /*bp+6*/, uint16_t y /*bp+8*/)
  * @status BYTE_VERIFIED (full body)
  * =========================================================================== */
 int func_046056_nearest_settlement(uint16_t x /*bp+6*/, uint16_t y /*bp+8*/,
-                                   int16_t dir /*bp+0xA*/)
+                                   int16_t dir /*bp+0xA*/, int16_t region_filter /*bp+0xC*/)
 {
+    extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y);     /* 0x181F:0x722 region_at */
+    extern int  func_004900_logic_sz_15(uint16_t dx, uint16_t dy); /* 0x181F:0x370 octile_dist */
+    extern void func_0081F2_logic_sz_34(uint16_t idx);             /* 0x181F:0x0A4C select */
+
     int best_idx  = -1;                  /* bp-0xa = 0xffff                        */
     int best_dist = 0x270F;              /* bp-2  = 9999                           */
     int i;                               /* bp-6                                   */
     int bx;
     int dist;
 
-    (void)x; (void)y;
-
     for (i = 0; i < G_OTHER_COUNT; i++) {         /* @0x0460D6 cmp [0x539a],ax    */
-        bx = i * NS_STRIDE;                       /* (per-candidate row)           */
-        /* @0x04606C if dir>=0, require NS_OWNER(bx)==tribe AND the candidate's
-         * screen-x (181F:0722 of NS_X,NS_Y) == target column (bp+0xC). */
-        if (dir >= 0) {                  /* @0x04606C cmp [bp+0xA],0; jl 0x45e    */
+        bx = i * NS_STRIDE;
+        if (dir >= 0) {                  /* @0x04606C cmp [bp+0xA],0; jl 0x4607e  */
             if (NS_OWNER(bx) != (unsigned char)dir)  /* @0x046078 cmp[bx+0x54ee],al*/
-                continue;                /* @0x04607C jne                          */
-            overlay_call_181F_0722();    /* @0x046094 settlement_xy_select(x,y)    */
-            /* @0x04609C if screen-x != bp+0xC skip. */
+                continue;
         }
-        /* @0x0460A1 distance of (NS_X-x, NS_Y-y). */
-        dist = overlay_call_181F_0370(); /* @0x0460BD tile_distance(dx,dy)         */
-        if (dist <= best_dist) {         /* @0x0460C5 cmp ax,[bp-2]; jg 0x4b3     */
-            best_idx  = i;               /* @0x0460CA mov [bp-0xa],cx             */
-            best_dist = dist;            /* @0x0460D0 mov [bp-2],ax               */
+        if (region_filter >= 0) {        /* @0x04607e cmp [bp+0xC],0; jl 0x460a1  */
+            int ns_region = func_005E90_op_sz_64(NS_X(bx), NS_Y(bx)); /* @0x046094 */
+            if (ns_region != region_filter)          /* @0x04609c cmp ax,[bp+0xc]   */
+                continue;
+        }
+        /* @0x0460A1 octile distance of (x-NS_X, y-NS_Y) */
+        dist = func_004900_logic_sz_15(                              /* @0x0460BD   */
+            (uint16_t)((uint16_t)x - (uint16_t)NS_X(bx)),
+            (uint16_t)((uint16_t)y - (uint16_t)NS_Y(bx)));
+        if (dist <= best_dist) {         /* @0x0460C5 cmp ax,[bp-2]; jg 0x460d3   */
+            best_idx  = i;               /* @0x0460CA                             */
+            best_dist = dist;            /* @0x0460D0                             */
         }
     }
 
     G_NEAREST_DIST = best_dist;          /* @0x0460DF mov [0x8db8],ax             */
-    if (best_idx >= 0)                   /* @0x0460E5 cmp [bp-0xa],0; jl 0x4d3    */
-        overlay_call_181F_0A4C();        /* @0x0460EE settlement_select(best_idx) */
+    if (best_idx >= 0)                   /* @0x0460E5                             */
+        func_0081F2_logic_sz_34((uint16_t)best_idx); /* @0x0460EE               */
     return best_idx;                     /* @0x0460F3 ax = [bp-0xa]; RETF         */
 }
 

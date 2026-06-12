@@ -338,7 +338,7 @@ int func_0037BE_op_sz_78(uint16_t r_dx, uint16_t r_ax, uint16_t r_bx)
             uint8_t type = DG8(0x3146 + bx);      /* @asm al=[bx+0x3146] */
             if (type >= 0x0D && type <= 0x12)     /* @asm cmp 0xd; jb / cmp 0x12; ja */
                 found = idx;                      /* @asm mov di,si */
-            idx = (int16_t)overlay_call_0427_004A(); /* @asm lcall 0x427,0x4a; si=ax */
+            idx = (int16_t)overlay_call_0427_004A((uint16_t)idx); /* @asm lcall 0x427,0x4a; si=ax */
             if (found < 0)                        /* @asm or di,di; jl loop */
                 continue;
             break;

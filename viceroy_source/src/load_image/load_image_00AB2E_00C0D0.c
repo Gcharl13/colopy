@@ -180,7 +180,7 @@ int func_00B1EC_colony_sz_82(void)
         uint8_t type = DG8(0x3146 + idx * 0x1C);
         if (DG8(0x5237 + type * 14) != 0)           /* @asm 0xB220 cmp [bx+0x5237],0 / je */
             count++;                                /* @asm 0xB227 inc [bp-2] */
-        idx = overlay_call_0427_004A();             /* @asm 0xB22D lcall 0427:0x4A(idx) -> next */
+        idx = overlay_call_0427_004A((uint16_t)idx); /* @asm 0xB22D lcall 0427:0x4A(idx) -> next */
     }
     return count;                                   /* @asm 0xB239 leave; retf */
 }
@@ -219,7 +219,7 @@ int func_00B23E_colony_sz_100(uint16_t arg0_bp_06)
             if (ordinal == (int)arg0_bp_06)         /* @asm 0xB283 cmp [bp-4],ax / jne 0xB28E */
                 found = idx;                        /* @asm 0xB288 [bp-2]=idx */
         }
-        idx = overlay_call_0427_004A();             /* @asm 0xB291 lcall 0427:0x4A(idx) -> next */
+        idx = overlay_call_0427_004A((uint16_t)idx); /* @asm 0xB291 lcall 0427:0x4A(idx) -> next */
     }
     return found;                                   /* @asm 0xB29D leave; retf */
 }

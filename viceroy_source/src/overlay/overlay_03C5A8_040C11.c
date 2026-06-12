@@ -2998,13 +2998,14 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     int16_t  land_move;               /* [bp-0xc] */
     int16_t  move_cost;               /* [bp-0x28] */
     int16_t  scout;                   /* [bp-0x14] */
+    int16_t  region;                  /* [bp-0xa]  region at (ux,uy) for nearest_settlement */
     uint16_t colony;
     int16_t  newpos;                  /* [bp-2] */
 
     /* @0x04065B..0x0406C0  gather tile + unit facts */
     ux = (uint8_t)G8(rec + 0x3144);                  /* @0x04065F */
     uy = (uint8_t)G8(rec + 0x3145);                  /* @0x040668 */
-    func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-0xA] */
+    region = (int16_t)func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at -> [bp-0xA] */
     overlay_call_181F_070E(); /* reachability(uy,ux) -> [bp-0x24] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-6] */
     terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy); /* terrain_class(uy,ux) */
@@ -3079,7 +3080,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     /* @0x0408EB..0x0409C8  execute the land move + reveal map */
     if (land_move == 0)                               /* @0x0408EB only for combat */
         goto done;
-    newpos = (int16_t)overlay_call_181F_0D84(); /* step_unit(uy,ux,-1,region) */
+    newpos = (int16_t)overlay_call_181F_0D84((uint16_t)ux, (uint16_t)uy, -1, (uint16_t)region); /* @0x040908 nearest_settlement(ux,uy,-1,region) */
     if (newpos < 0) goto done;                        /* @0x04090C */
     if (overlay_call_181F_0754() /* flags(uy,ux) */ & 0x10) goto done;  /* @0x04091F */
     if ((int16_t)overlay_call_181F_0696() /* bounds(uy,ux) */ < 0) goto done; /* @0x040936 */
@@ -3233,13 +3234,14 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     int16_t  terr;                    /* [bp-8] */
     int16_t  owner;                   /* [bp-0x18] */
     int16_t  move_cost;               /* [bp-0x1a] */
+    int16_t  region;                  /* [bp-6] */
     uint16_t colony;
     int16_t  newpos;                  /* [bp-2] */
 
     /* @0x0409DB..0x040A36  gather facts + blocked gate */
     ux = (uint8_t)G8(rec + 0x3144);                  /* @0x0409DF */
     uy = (uint8_t)G8(rec + 0x3145);                  /* @0x0409E8 */
-    func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-6] */
+    region = (int16_t)func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-6] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-0x12] */
     terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy); /* terrain_class(uy,ux) */
     owner = (int16_t)(G8(rec + 0x3147) & 0x0F);      /* @0x040A25 */
@@ -3280,7 +3282,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     }
 
     /* @0x040B37..0x040C0E  execute the move + reveal */
-    newpos = (int16_t)overlay_call_181F_0D84(); /* step_unit(region,-1,uy,ux) */
+    newpos = (int16_t)overlay_call_181F_0D84((uint16_t)ux, (uint16_t)uy, -1, (uint16_t)region); /* step_unit(region,-1,uy,ux) */
     if (newpos < 0) goto done;                        /* @0x040B4F */
     if (overlay_call_181F_0754() /* flags(uy,ux) */ & 0x10) goto done;  /* @0x040B62 */
     if ((int16_t)overlay_call_181F_0696() /* bounds(uy,ux) */ < 0) goto done; /* @0x040B77 */

@@ -1968,7 +1968,7 @@ int func_065D26_postgen_large(void)
              * (stride 0x12, +0=col +1=row +2=owner), computes octile dist via 0x181F:0x370
              * = max(|dx|,|dy|)+min(|dx|,|dy|)/2; writes min dist to [0x8DB8]; returns
              * nearest settlement index (-1 if none).  [0x8DB8]=0 means on same tile. */
-            (void)overlay_call_181F_0D84();              /* @asm 0x065FBE (col,row,-1,-1) */
+            (void)overlay_call_181F_0D84((uint16_t)col, (uint16_t)row, -1, -1); /* @asm 0x065FBE (col,row,-1,-1) */
             /* @asm 0x065FCA..0x06603D : distance gate vs [0x8db8] (nearest-settlement
              * octile dist), scaled by the placement-pressure ramp:
              * reject if dist==0 (exact same tile as a settlement); reject if the
@@ -2028,8 +2028,7 @@ int func_065D26_postgen_large(void)
             }
           if (found != 0) {                              /* @asm 0x06642E */
               int pick = random_int(0, found - 1);       /* @asm 0x06645D */
-              (void)pick;
-              (void)overlay_call_181F_0D84();            /* @asm 0x066483 dist to nearest */
+              (void)overlay_call_181F_0D84((uint16_t)DG8((uint16_t)(pick - 0x5c8e)), (uint16_t)DG8((uint16_t)(pick - 0x5b8e)), -1, -1); /* @asm 0x066483 dist to nearest */
               (void)overlay_call_1A1F_0440();            /* @asm 0x066495 commit village */
           }
           { int gx = (int)row / 5, gy = (int)col / 5;    /* @asm 0x0664A5/0x0664AC idiv 5 */

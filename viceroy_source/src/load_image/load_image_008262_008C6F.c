@@ -1033,10 +1033,6 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     ny = (int16_t)((int16_t)(uint8_t)DG8(ctxp + 1) + (int16_t)arg1_bp_08 - 2);  /* @asm 0x89D7 */
     nx = (int16_t)((int16_t)(uint8_t)DG8(ctxp + 0) + (int16_t)arg0_bp_06 - 2);  /* @asm 0x89E2 */
-    /* nx/ny/region are the real args to the 0-arg overlay stubs below (shown in
-     * each call's comment to match overlay_externs.h prototypes). */
-    (void)nx; (void)ny; (void)region;
-
     if ((int16_t)overlay_call_037F_0314(nx, ny) < 0) {        /* @asm 0x89F2 */
         if ((int16_t)overlay_call_037F_03E4(nx, ny) < 0) {    /* @asm 0x8A04 */
             overlay_call_037F_0228(/* nx, ny, ctx.owner_power */);  /* @asm 0x8A20 */
@@ -1048,7 +1044,7 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     if (attr < 0)                               /* @asm 0x8A3F */
         goto store_ff;
 
-    overlay_call_181F_0D84(/* nx, ny, -1, region */);   /* @asm 0x8A4F draw object */
+    overlay_call_181F_0D84((uint16_t)nx, (uint16_t)ny, -1, (uint16_t)region);   /* @asm 0x8A4F draw object */
 
     /* @asm 0x8A5C  combat/upkeep, unless the owner is a human-controlled power. */
     if (!(DG8(ctxp + 0x1A) < 4
@@ -1211,7 +1207,7 @@ int func_008BD4_op_sz_73(uint16_t arg0_bp_06)
             if (counter == (int16_t)arg0_bp_06) /* @asm 0x8BFE */
                 result = node;                  /* @asm 0x8C03 */
         }
-        node = (int16_t)overlay_call_0427_004A(/* node in AX */);  /* @asm 0x8C0C next link */
+        node = (int16_t)overlay_call_0427_004A((uint16_t)node);  /* @asm 0x8C0C next link */
     }
     return result;                              /* @asm 0x8C18 */
 }
@@ -1262,7 +1258,7 @@ int func_008C1E_logic_sz_81(uint16_t arg0_bp_06)
                 result = (int16_t)((int8_t)DG8(ctxp + 0x1F) + counter);  /* @asm 0x8C51 */
             }
         }
-        node = (int16_t)overlay_call_0427_004A(/* node in AX */);  /* @asm 0x8C5E next link */
+        node = (int16_t)overlay_call_0427_004A((uint16_t)node);  /* @asm 0x8C5E next link */
     }
     return result;                              /* @asm 0x8C6A */
 }

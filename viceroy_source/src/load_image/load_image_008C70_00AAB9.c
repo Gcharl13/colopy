@@ -93,7 +93,7 @@ int func_008C70_logic_sz_66(void)
                 DG16(0x8D76)++;                            /* no-class tally */
         }
         DG16(0x8D74)++;                                    /* total tally */
-        idx = overlay_call_0427_004A(/* idx */);           /* next unit on tile */
+        idx = overlay_call_0427_004A((uint16_t)idx);       /* next unit on tile */
     }
     owned = (int16_t)DG16(0x8D72);
     if (owned > 0x32) owned = 0x32;                        /* clamp owned to 50 */
@@ -817,7 +817,7 @@ int func_009818_op_sz_66(uint16_t arg0_bp_06)
         while (it >= 0) {
             if (func_008B96((uint16_t)it) != 0)
                 count++;
-            it = overlay_call_0427_004A(/* it */);         /* next unit on tile */
+            it = overlay_call_0427_004A((uint16_t)it);     /* next unit on tile */
         }
         return -count;
     } else {
@@ -1382,7 +1382,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
                     overlay_call_0427_0992(/* idx, ctx->owner */);
                 }
             }
-            idx = overlay_call_0427_004A(/* idx */);        /* next unit on tile */
+            idx = overlay_call_0427_004A((uint16_t)idx);    /* next unit on tile */
         }
     }
 
@@ -1522,7 +1522,6 @@ int func_00A994_colony_sz_293(void)
 
     /* @asm 0xA998..0xA9AD  frame = 037F:02A0(ctx_map_x, ctx_map_y) */
     frame = overlay_call_037F_02A0((uint16_t)ctx_local[0], (uint16_t)ctx_local[1]);
-    (void)frame;
     /* @asm 0xA9B1  lazily fill the 5x5 base grid (0x8DF0) */
     func_00A93E();
 
@@ -1536,7 +1535,7 @@ int func_00A994_colony_sz_293(void)
             /* @asm 0xA9EA..0xAA2C  if in bounds, resolvable (181F:0D84) and within
              *      the scaled range, take the good byte from *(0x8D4A)+2. */
             if (overlay_call_037F_000A(px, py) != 0) {
-                int resolved = overlay_call_181F_0D84(/* px, py, -1, frame */);
+                int resolved = overlay_call_181F_0D84((uint16_t)px, (uint16_t)py, -1, (uint16_t)frame);
                 if (resolved >= 0) {
                     int scaled = overlay_call_05DC_006A(DG16(0x8D52));
                     if ((int16_t)DG16(0x8DB8) <= scaled) {
