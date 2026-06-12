@@ -169,3 +169,8 @@ void snd_event(int event_id)
         snd_play_sample(EVENT_TO_SAMPLE[event_id]);
     }
 }
+
+/* Phase 4.7 (2026-06-12): host storage for the sample-bank surface. */
+uint8_t *g_sample_bank;
+int     *g_sample_offsets;
+int     *g_sample_lengths;

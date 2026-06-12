@@ -843,3 +843,9 @@ PROVIDE(g_w8DE4 = g_dgroup + 0x8de4);  /* name-encoded */
 PROVIDE(g_w8DE6 = g_dgroup + 0x8de6);  /* name-encoded */
 PROVIDE(g_w8F8E = g_dgroup + 0x8f8e);  /* name-encoded */
 PROVIDE(g_w8F9A = g_dgroup + 0x8f9a);  /* name-encoded */
+
+/* Phase 4.7 globals residue (2026-06-12): */
+PROVIDE(g_ai_personality = g_dgroup + 0x540E);  /* stride 0x34; +0x31 == [0x543F] cite */
+PROVIDE(g_power_name_tbl = g_dgroup + 0x838C);  /* [bx-0x7C74] with bx=power*2 -> base 0x838C */
+PROVIDE(g_metric_tbl_minus = g_dgroup + 0x941C);     /* base -0x6BE4 */
+PROVIDE(g_powerflag_8808_minus = g_dgroup + 0x8808); /* idx*0x13C - 0x77F8 -> PowerRecord */

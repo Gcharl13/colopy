@@ -1253,3 +1253,9 @@ int func_038890_colony_load_only(uint16_t arg0_bp_06)
      * Part of the report-screen family. @asm 0x038890..0x038A0F. No body. */
     return 0;
 }
+
+/* Phase 4.7 (2026-06-12): the king-war tally pair were stack locals the
+ * porter lifted to globals for cross-helper communication; real host
+ * storage closes their weak-stub rows. */
+int16_t g_local_kingwar_count;
+int32_t g_local_kingwar_gold;

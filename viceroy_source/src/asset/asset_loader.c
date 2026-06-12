@@ -183,3 +183,11 @@ int asset_load_map(const char *map_name)
     extern void *g_map_buffer;
     return load_map(map_name, g_map_buffer);
 }
+
+/* Phase 4.7 (2026-06-12): host storage for the asset registry surface
+ * (RECONSTRUCTED tier; the loaders fill these when user data is present). */
+uint8_t  g_palette[768];
+void    *g_sprite_sheet[64];
+void    *g_text_resource[18];
+void    *g_map_buffer;
+void    *g_pik_buffer;
