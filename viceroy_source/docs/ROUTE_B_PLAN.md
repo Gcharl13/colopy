@@ -522,13 +522,53 @@ PORTED / WIRED / UNREACHABLE(proof).
       704 called thunks; 608 have one consistent arity (mechanical fix),
       96 are MIXED (mostly tail-call sites; dominant arity annotated).
       (1–2 sessions, down from 2–3)
+      > **STATUS 2026-06-12 — soak-path COMPLETE, stub counter ZERO.**
+      > Sub-phases 4.3a..4.3q landed; the closing tranche (4.3p/4.3q)
+      > byte-restored the AI MOVE PIPELINE: the original's stage/commit
+      > protocol (0x916 func_007966 DETACH into (-2,-2) staging →
+      > evaluate → 0x948 func_006A7C UNSTAGE at the destination), the
+      > insufficient-moves random gate, the water/land-boundary
+      > exhaustion, the colony-entry block, the discovery sweep
+      > (func_00631A reveal_tile full port: layer-0x168 discovery bits,
+      > unowned-tile claim, chain seen-flags), and the move-commit
+      > relation bookkeeping.  Port-bug classes fixed on the way: cdecl
+      > push-order reversals (set_head/notify/2D0/7D6/826), discarded
+      > return values (0x90C allowance), pointer-truncating thunk
+      > externs (02E0), false-cut skeletons (func_00631A).  Layers
+      > 0x160/0x168 are platform working copies (the original mutates
+      > both).  func_0069D2 wired (the "garrison regression" was a
+      > missing-link cascade, not a bug).  500-turn soak: **stub-hits 0
+      > distinct / 0 calls**, REF=228 pinned, byte-identical determinism
+      > (md5 223c064bda4a5b193adfbf76bd6ae677).  Remaining 4.3 rows are
+      > all NON-soak-path (title/dialog/Europe screens) — they fold into
+      > the 4.2 entry-splits + 4.6 port grind.
 - [ ] **4.4 The 49 "known function, NOT in build"**: add the source files to
       the CMake modern target (they exist; they're excluded). Fix what
       breaks. (1 session)
-- [ ] **4.5 The 14 mixed data/function symbols** (`colony_8542`,
-      `ai_turn_counter_538E`, ...): reconcile the two models per symbol to
-      the disasm truth. The 8 unresolvable/odd rows: trace each to a
-      terminal state. (1 session)
+      > **STATUS 2026-06-12 — audio/ + asset/ now COMPILE into the rules
+      > lib** (include/audio.h shared types; config I/O on the
+      > byte-verified iolib API).  The snd_*/asset_* APIs have real
+      > RECONSTRUCTED-tier bodies; their device/loader leaves are
+      > enumerated weak stubs = the honest Phase-5 worklist.  thunkwire's
+      > remaining "known but NOT in build" list (42 rows) decodes to:
+      > ~13 MSC RTL bodies (0x0D1D family: format/strcat/unlink/
+      > findfirst/_close at files 0xF8DD..0x1144A — port under iolib),
+      > ~14 tooltip/UI primitives (0x2400..0x2982 family — same class as
+      > the ported func_00260E/func_002632), and ~15 already-ported
+      > targets needing only PROVIDE aliases + arity checks.
+- [x] **4.5 The 14 mixed data/function symbols** DONE 2026-06-12 — all 11
+      surviving rows reconciled to byte truth (3 had closed earlier):
+      colony_8542 = strong host-pointer getter (dgroup.c); colony_field_C86
+      + sol_pct = func_008524; colony_finalize_8DC6 + ovly_commit_choice_608
+      = func_02C5D4; colony_helper_C22 = colony screen compositor;
+      colony_helper_C5E RESOLVED AWAY (0xC5E = func_008720 era band int —
+      the [bx+0x329] at BOTH call sites is a DGROUP table read at
+      DS:0x32A..0x32D; the pointer-returning extern would have crashed);
+      colony_helper_C5E_count = func_008D00; g_iob_dispatch_2B18 = detached
+      host fn-ptr (NULL-guarded call site); panel_helper_1E1D/1E6D =
+      cs-trampolines to func_0317CC/func_0318D2 (Europe-panel painters,
+      documented 4.6 port rows); sol_helper_3695 = func_03E162;
+      unit_translate_action_8BC6 = func_008BC6.
 - [ ] **4.6 The 184 missing `func_0XXXXX` bodies** (E2): substantially
       overlaps Phases 1–3 (the AI/screen/audio ports close most). The
       residue after those phases is platform leaves (DOS file I/O quirks,
