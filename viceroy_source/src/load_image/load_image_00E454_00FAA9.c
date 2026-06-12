@@ -73,8 +73,13 @@ int func_00E46C_op_sz_48(void)
  */
 int func_00E4C6_read_far_dword_via_267A(void)
 {
-    /* @auto: tiny accessor; field not auto-identified. */
-    return 0;  /* TODO */
+    /* @asm 0x00E4C6 les bx,[0x267A]; ax=es:[bx]; dx=es:[bx+2] — reads the far
+     * dword through the redirectable pointer at DGROUP:0x267A.  The init image
+     * sets that pointer to 0040:006C (bytes 6C 00 40 00 @file 0x1D9A0+0x267A),
+     * i.e. the BIOS 18.2 Hz tick count: this entry (0x0C0C:0x0006) IS the tick
+     * read.  Modern model: platform/timer.c synthetic tick (deterministic). */
+    extern uint32_t viceroy_bios_ticks(void);
+    return (int)viceroy_bios_ticks();
 }
 
 /* @asm        0x00E508..0x00E51C  (20 bytes)  region=load_image

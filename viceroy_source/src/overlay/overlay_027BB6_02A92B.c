@@ -37,6 +37,9 @@
 #include "viceroy.h"
 #include "overlay_externs.h"
 
+/* direct calls replacing void-arity stub calls */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C terrain/tile query */
+
 /* ----------------------------------------------------------------------------
  * Local externs (kept LOCAL to this file per the reconstruction brief -- not
  * promoted into globals.h).  These resolve the page-02 GUI thunk windows and
@@ -1277,7 +1280,7 @@ hover_path:
         int mx = *(uint8_t far *)((char far *)ctx + 0) + gx - 2;  /* @0x02A2FD */
         int my = *(uint8_t far *)((char far *)ctx + 1) + gy - 2;  /* @0x02A2EF */
         (void)mx; (void)my;
-        overlay_call_181F_078C();                          /* @0x02A303 tile_info(mx,my) */
+        func_00627A_op_sz_57((uint16_t)mx, (uint16_t)my);  /* @0x02A303 tile_info(mx,my) */
         overlay_call_191F_0428();                          /* @0x02A30C show_info */
         overlay_call_191F_0684();                          /* @0x02A315 finalise (func_07E3D) */
     }

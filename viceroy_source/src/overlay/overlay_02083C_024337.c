@@ -94,6 +94,10 @@ extern int overlay_call_191F_02C0(void); /* @0x022DE9  assign_unit_to_route */
 extern int overlay_call_191F_02DC(void); /* @0x022D93  trade_picker(key,unit,kind) */
 extern int overlay_call_191F_02EA(void); /* @0x022D11  cancel_europe(unit) */
 
+/* direct calls replacing void-arity stub calls */
+extern int func_008BB2_logic_sz_20(uint16_t unit);        /* 0x181F:0x0B78 in-settlement probe */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C terrain/tile query */
+
 /* UnitRecord field accessors (field = addr - 0x3144). */
 #define U_X(i)       g_unit_records[(i)*0x1C + 0x00]   /* 0x3144 */
 #define U_Y(i)       g_unit_records[(i)*0x1C + 0x01]   /* 0x3145 */
@@ -332,7 +336,7 @@ int func_02165E_standings_screen(void)
  * ============================================================================ */
 int func_0219E8_spring_unit_helper(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
 {
-    int r = overlay_call_181F_0B78();                /* @0x0219EE per_unit_spring_update(idx) */
+    int r = func_008BB2_logic_sz_20(arg0_bp_06);     /* @0x0219EE per_unit_spring_update(idx) */
     if (r >= 0) { *(int16_t *)arg1_bp_08 = 1; }      /* @0x0219F7..0x0219FC */
     if (U_TYPE(arg0_bp_06) == 2) { *(int16_t *)arg2_bp_0A = 1; } /* @0x021A04..0x021A0E */
     (void)arg0_bp_06;
@@ -533,7 +537,7 @@ int func_02211E_build_road(void)
 {
     int u = g_active_unit;                             /* @0x02212A */
     overlay_call_181F_0722();                          /* @0x022147 terrain_flags_at_xy */
-    overlay_call_181F_078C();                          /* @0x022158 terrain_id_at_xy */
+    func_00627A_op_sz_57(U_X(u), U_Y(u));              /* @0x022158 terrain_id_at_xy */
     if (overlay_call_181F_0754() /* &0x40 */) {        /* @0x022169..0x022171 */
         overlay_call_181F_0652();                      /* @0x02217A display_text_key("NOPLOW") */
         return 0;                                       /* @0x022182 */
@@ -640,7 +644,7 @@ int func_022542_build_colony(void)
         overlay_call_181F_0652();                      /* display_text_key("TOONEAR") */
         return 0;
     }
-    if (overlay_call_181F_078C() == 0x1b) {            /* @0x022620 terrain==mountain */
+    if (func_00627A_op_sz_57(U_X(u), U_Y(u)) == 0x1b) { /* @0x022620 terrain==mountain */
         overlay_call_181F_0652();                      /* @0x022632 display_text_key("TOOMOUNTAIN") */
         return 0;
     }

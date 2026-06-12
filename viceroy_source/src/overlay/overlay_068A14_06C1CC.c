@@ -96,6 +96,10 @@
  * crash) to DGROUP-relative accesses. */
 extern unsigned char g_dgroup[];
 
+/* direct calls replacing void-arity stub calls */
+extern int func_008BB2_logic_sz_20(uint16_t unit);              /* 0x181F:0x0B78 in-settlement probe */
+extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col); /* 0x181F:0x030C relation/alarm table */
+
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (cite-or-not-yet-decoded).  Addresses are the
  * absolute DGROUP offsets seen in the disassembly; names describe the byte-
@@ -798,7 +802,7 @@ int func_0696C6_unit_detail_dialog(uint16_t arg0)
     } else {                                             /* @asm 0x06987C typed unit */
         uint8_t t = g_unit_table_3144[(unsigned)slot * 0x1C + 0x02];
         if (t == 1 || t == 2 || t == 3 || t == 4 || t == 5) {  /* @asm 0x069880..0x0698A1 */
-            overlay_call_181F_0B78();                    /* @asm 0x0698A6 subtype/equip probe -> [bp-0x5E] */
+            func_008BB2_logic_sz_20((uint16_t)slot);     /* @asm 0x0698A6 subtype/equip probe -> [bp-0x5E] */
             overlay_call_181F_02BC();                    /* @asm 0x0698CB cell (subtype=0x13) */
             overlay_call_181F_02BC();                    /* @asm 0x0698F5 cell (subtype = probe, 0x17->0x15) */
         } else {
@@ -1857,7 +1861,7 @@ int func_06BE92_ui_label_player_or_score(uint16_t wdg_lo, uint16_t wdg_hi)
         overlay_call_0C0C_0006();                       /* @asm 0x06BEB5 C-runtime helper (+0xF0) */
         /* @asm 0x06BEC0 *(0xA5B0:0xA5B2) = result + 0xF0 (adc dx,0). */
     } else {
-        overlay_call_181F_030C();                       /* @asm 0x06BED2 resolve player(power,id) */
+        func_0082A0_logic_sz_18(DG16(0x1F5C), DG16(0x5398)); /* @asm 0x06BED2 resolve player(power,id) */
         overlay_call_181F_0A60();                       /* @asm 0x06BEDB -> name index */
         overlay_call_0D1D_07E4();                       /* @asm 0x06BEED copy literal @0x1F77 */
         /* @asm 0x06BEF5: patch label[+id] and label[+name] in scratch. */

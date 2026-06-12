@@ -145,6 +145,10 @@ extern int func_03EA42(void);   /* ljmp 0x1A1F:0x10A */
 extern int func_03EA47(void);   /* ljmp 0x1A1F:0x118 */
 extern int func_03EA4C(void);   /* ljmp 0x1A1F:0x126 */
 
+/* direct calls replacing void-arity stub calls */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);    /* 0x181F:0x078C terrain/tile query */
+extern int func_007C2A_logic_sz_46(uint16_t unit, uint16_t sel); /* 0x181F:0x09C8 unit combat value */
+
 /* Near-call peers within page_07/08 that are not RTLink thunks (real code in a
  * sibling overlay function). Declared file-local; bodies live elsewhere. */
 extern int func_03F940(void);   /* @0x03F940 ljmp 0x1A1F:0x142 -> func_03F946 */
@@ -583,7 +587,7 @@ int func_03CA2A_colony_with_input(void)
         /* @0x03CA54..0x03CA64  garrison gate: only land units 0x0D..0x12 add */
         if (UNIT_TYPE(slot) >= 0x0D && UNIT_TYPE(slot) <= 0x12) {
             /* @0x03CA66..0x03CA76  value += unit_combat_value(1, slot) >> 4 */
-            value += (int16_t)overlay_call_181F_09C8() >> 4; /* (1, slot) */
+            value += (int16_t)func_007C2A_logic_sz_46((uint16_t)slot, 1) >> 4; /* (1, slot) */
         }
     next_unit:
         /* @0x03CA79..0x03CA86  slot = iter_next_unit(slot); while (slot >= 0) */
@@ -2989,7 +2993,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-0xA] */
     overlay_call_181F_070E(); /* reachability(uy,ux) -> [bp-0x24] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-6] */
-    terr  = (int16_t)overlay_call_181F_078C(); /* terrain_class(uy,ux) */
+    terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy); /* terrain_class(uy,ux) */
     owner = (int16_t)(G8(rec + 0x3147) & 0x0F);      /* @0x0406B9 */
 
     /* @0x0406C3..0x040709  terrain/abort gates -> land_move */
@@ -3223,7 +3227,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     uy = (uint8_t)G8(rec + 0x3145);                  /* @0x0409E8 */
     func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy); /* region_at(ux,uy) -> [bp-6] */
     overlay_call_181F_0740(); /* move_delta(uy,ux) -> [bp-0x12] */
-    terr  = (int16_t)overlay_call_181F_078C(); /* terrain_class(uy,ux) */
+    terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy); /* terrain_class(uy,ux) */
     owner = (int16_t)(G8(rec + 0x3147) & 0x0F);      /* @0x040A25 */
     if (G8(G16(0x84FC) /*tile via [bp-0x12]*/) & 0x0A)   /* @0x040A32 blocked */
         goto clear314c;

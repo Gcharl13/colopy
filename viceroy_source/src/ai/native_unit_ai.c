@@ -302,7 +302,10 @@ extern void    ovly_msg_str_416(uint16_t seg, int16_t off, int16_t slot); /* @0x
 extern int16_t ovly_name_word_9A4(int16_t power);             /* @0x048171 */
 extern void    ovly_dialog_652(int16_t flag, int16_t msg_id); /* @0x048189 INDIANSURPRISE */
 extern void    ovly_clear_orders_934(int16_t unit);           /* @0x04809B/0x0482CF */
-extern int16_t ovly_path_resolve_1A1F_210(int16_t unit);      /* @0x048248 -> target rec idx */
+/* 0x1A1F:0x210 -> page19+0xF74 = file 0x62D84 = func_062D84_unit_automove
+ * (PORTED, overlay_0612E6_066EB3.c) -- returns the chosen direction 0..7
+ * or -1; the caller applies the DS:0xB4/0xBE compass deltas. */
+extern int     func_062D84_unit_automove(int unit_idx);       /* @0x048248 */
 extern void    ovly_confront_1A1F_192(int16_t unit, int16_t x, int16_t y); /* @0x0481CB */
 extern int16_t ovly_query_384(int16_t a, int16_t dir);        /* @0x047A8D */
 extern void    ovly_effect_3E0(void);                         /* @0x047F94 */
@@ -1191,10 +1194,12 @@ int16_t native_unit_ai(int16_t self)
                 g_units_3144[self][0x09] = g_colony_5D46[ci][0x00]; /* @asm 0x048239 (0x314d <- 0x5d46) */
                 g_units_3144[self][0x0A] = g_colony_5D46[ci][0x01]; /* @asm 0x048241 (0x314e <- 0x5d47) */
                 {
-                    int16_t rec = ovly_path_resolve_1A1F_210(self); /* @asm 0x048248 ([bp-0x96]) */
+                    extern const signed char g_dir_dx[8];  /* DS 0xB4 */
+                    extern const signed char g_dir_dy[8];  /* DS 0xBE */
+                    int16_t rec = (int16_t)func_062D84_unit_automove(self); /* @asm 0x048248 ([bp-0x96]) */
                     if (rec >= 0) {                        /* @asm 0x048253 */
-                        int16_t gx = 0 /*[rec+0xb4]*/ + self_x; /* @asm 0x048257..0x04825C */
-                        int16_t gy = 0 /*[rec+0xbe]*/ + self_y; /* @asm 0x048264..0x048269 */
+                        int16_t gx = g_dir_dx[rec] + self_x; /* @asm 0x048257..0x04825C [rec+0xb4] */
+                        int16_t gy = g_dir_dy[rec] + self_y; /* @asm 0x048264..0x048269 [rec+0xbe] */
                         int16_t o1 = ovly_query_6BE(gx, gy);/* @asm 0x048271 ([bp-0x5c]) */
                         if (!(o1 >= 0 && o1 != self_pwr)) { /* @asm 0x04827E/0x048280 */
                             int16_t o2 = ovly_query_682(gx, gy); /* @asm 0x04828C ([bp-0x74]) */

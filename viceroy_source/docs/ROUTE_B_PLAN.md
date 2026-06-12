@@ -244,24 +244,53 @@ symbols).
 > 0x0D1D memset/memcpy = direct DG ops); planner tramp 7AD0 ->
 > gold_income_tick_for_power LIVE (its *(0x84FC) read was modeled as a
 > host pointer — crashed on first execution, fixed to the DGROUP
-> near-word indirection).  STILL OPEN for G1:
-> (a) 7ADF/7AB2 planner bodies — first live run of func_04CC50 showed
->     its PHASE-1 "iterator" is a degraded reconstruction (0x181F:0x8BC
->     = func_0073A8(unit,class), 2 STACK args @0x4CCE7 push 3/4/6 — not
->     a next-unit call; 0x2EE/0x2E4 chain steps need their AX unit args)
->     — byte-restore that loop, then wire both trampolines;
-> (b) 181F:04CA timer re-seed + 0x0C0C:0x0006 tick reads — platform tick
->     source pending (also blocks the two pacing waits);
-> (c) ai_eval_unit's confront leaf 1A1F:016C = func_04B308 (1762 bytes,
->     UNPORTED — the one genuinely missing AI body);
-> (d) **DONE 2026-06-11** — void-arity stub call sites fixed across all six
->     hot-path overlay files (overlay_04C306_053BC1.c, overlay_03C5A8_040C11.c,
->     overlay_040C1E_04458A.c, overlay_02AAEC_02F0C7.c, overlay_024342_027B62.c,
->     overlay_054505_05C69B.c, overlay_0612E6_066EB3.c).  06BE/09E6/0A4C/0722
->     stub calls replaced with direct calls carrying correct (x,y)/(slot)/(idx)
->     args.  Also fixed: option_bit_test → func_00863E_wrapper_with_global_8DC6
->     direct call in sol_tory.c.  Result: 2640+ stub hits/60-turns eliminated.
->     Smoke 60-turn PASS: 06BE/09E6/0A4C/0722/option_bit_test all ZERO hits.
+> near-word indirection).
+>
+> **G1 CLOSED 2026-06-12.**  500-turn soak PASS, REF=228 pinned, two
+> consecutive runs byte-identical, ZERO stub hits for every G1-listed AI
+> symbol (32 remaining rows are all the parked non-AI Phase-4 worklist:
+> msg_*/037F long-math/colony_screen_*/king events).  Closing tranche:
+> (a) **DONE** — func_04CC50 PHASE-1 unit loop byte-restored (2026-06-11)
+>     AND the colony-plan phase 0x4D048..0x4D6ED byte-restored (2026-06-12:
+>     foreign-colony war/raid planner — garrison-raid emit with the
+>     6-turn/50 era curve, 5x5 landing-cell ring scan, 7x7 assault-cell
+>     scan, superiority/foothold flags into [0x173C]/[0x173E], the three
+>     QUEUE_A emits via cs:0x534C1 = func_04C35A with byte-true args);
+>     planner tramps 7AD0/7ADF/7AB2 wired; 7AA3 resolved (ljmp block at
+>     caller-base 0x4BA50: cs:0x7AA3 -> 0x1A1F:0x4E8 = func_04C262 =
+>     QUEUE_A insert-shift, called direct as
+>     overlay_grid64_shift_down(power, slot)).  Latent accessor stubs
+>     ai_turn_counter_538E/ai_path_budget_8DB8 -> direct DGS16 reads.
+> (b) **DONE 2026-06-12** — platform tick source live: 0x0C0C:0x0006 =
+>     func_00E4C6 reads the BIOS tick dword via the redirectable ptr at
+>     DGROUP:0x267A (init image = 0040:006C, byte-verified); modern model
+>     src/platform/timer.c synthetic deterministic tick (+1/read).
+>     0x181F:0x04CA = srand(ticks & 0x7FFF) implemented (msc_srand in
+>     rng.c = byte-true func_0103C2); func_00C30A srand wrapper wired;
+>     func_00D106 clock latch stores the real tick dword to [0x7FC/0x7FE];
+>     func_00D1CA pacing wait spins on the live tick (terminates).
+> (c) **DONE 2026-06-12** — func_04B308 confront dispatcher PORTED
+>     (src/native/confront.c): settlement resolve, tribe/alarm/contact
+>     reads, music cues, ship gates, AI forced-action switch (jump table 1
+>     byte-extracted: types 1/4/11->9, 3->mission ladder w/ incite gate,
+>     5->6, 12->1, default->trade gate), human option panel (buttons
+>     1..0xA), action dispatch (jump table 2) to the 8 ported handlers
+>     (haggle/attack-reward/mission/heresy/advisor/chief/incite/trade),
+>     epilogue (0xE1C redraw, roster-change -> 2, end-turn 0x934).
+>     ovly_confront_1A1F_16C strong override; func_04A7CA speak-with-chief
+>     full entry left as a weak hit-counting default (gold block ported in
+>     native_village_raze.c; full body = Phase-4 row).
+> (d) **DONE 2026-06-11/12** — void-arity stub calls fixed across ALL
+>     overlay files in two tranches (tranche 1: 06BE/09E6/0A4C/0722 +
+>     option_bit_test, ~2640 hits/60T; tranche 2: 078C/09C8/081C/0B78/030C,
+>     48 of 51 sites, ~120k hits/500T — each byte-verified against the EXE
+>     push order; 09C8's real arg order is (unit, sel)).  Pathing leaf
+>     1A1F:210 -> func_062D84_unit_automove direct + compass-delta fix in
+>     native_unit_ai.c; plotter grid clears 0xD1D:0xDAE = RTL memset ->
+>     direct DG window zeroing (3 sites, byte args 0xA270/0x100,
+>     0xA162/0x10E, arr/0x10E); build-advisor hist[] cleared in-scope.
+>     3 sites left (documented): 2 unreachable/blocked-on-0xD30 in
+>     overlay_02AAEC, 1 scope-blocked in overlay_04C306 @0x0539D4.
 
 ---
 

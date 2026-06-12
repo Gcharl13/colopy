@@ -174,6 +174,10 @@ extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x
 extern int  func_0082DC_logic_sz_118(uint16_t slot);                        /* 0x181F:0x09E6 */
 extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y);                  /* 0x181F:0x0722 */
 extern void func_0081F2_logic_sz_34(uint16_t idx);                          /* 0x181F:0x0A4C */
+extern int  func_00627A_op_sz_57(uint16_t x, uint16_t y);                  /* 0x181F:0x078C */
+extern int  func_007C2A_logic_sz_46(uint16_t unit, uint16_t sel);          /* 0x181F:0x09C8 */
+extern int  func_00757E_op_sz_33(uint16_t unit);                            /* 0x181F:0x081C */
+extern int  func_008BB2_logic_sz_20(uint16_t unit);                         /* 0x181F:0x0B78 */
 
 extern int overlay_call_191F_0120(void);  extern int overlay_call_191F_0208(void);
 extern int overlay_call_191F_02CE(void);  extern int overlay_call_191F_02EA(void);
@@ -226,7 +230,7 @@ int func_040C1E_colony_enter(uint16_t unit /*bp+6*/)
     /* @0x040C48 viewport pack (dx:ax) of this unit's cell. */
     overlay_call_181F_070E();          /* unit_screen_xy(uy, ux)          */
     /* @0x040C5C terrain id under the unit (kept in bp-0x54). */
-    overlay_call_181F_078C();          /* tile_terrain_at(ux, uy)         */
+    func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy); /* tile_terrain_at(ux, uy) */
 
     /* @0x040C6C..0x040C76 clear the unit's order(+0x314c) and delay(+0x315a). */
     U_DELAY(bx) = 0;
@@ -342,7 +346,7 @@ int func_040FD6_move_cost_class(uint16_t x /*bp+6*/, uint16_t y /*bp+8*/)
     int terr;
 
     (void)x; (void)y;
-    terr = overlay_call_181F_078C();   /* @0x040FE5 tile_terrain_at(x,y)    */
+    terr = func_00627A_op_sz_57(x, y); /* @0x040FE5 tile_terrain_at(x,y)    */
     if (terr == 0x19 || terr == 0x1A) {/* @0x040FED/0x040FF2 */
         cls++;                         /* @0x040FF7 */
         if (terr != 0x1A)              /* @0x040FFA */
@@ -907,7 +911,7 @@ edgeA_step:
 edgeA_test:                            /* (re-entry from the row setup 0x18d6)*/
     if (found) goto edgeA_incY;        /* @0x0419C6 jne 0x1924                 */
     if ((r + cy0) < sx) goto edgeA_incY;            /* @0x0419CC..0x0419D5 jl */
-    if (overlay_call_181F_078C() == 0x1A) {         /* @0x0419DD terrain(sx,sy)==open */
+    if (func_00627A_op_sz_57((uint16_t)sy, (uint16_t)sx) == 0x1A) { /* @0x0419DD terrain(sx,sy)==open */
         ax = overlay_call_181F_0682();              /* @0x0419F0 owner(sx,sy)  */
         if (ax >= 0 && ax == tn) {                  /* @0x0419F8..0x0419FF    */
             found = 1; hit_y = sy; hit_x = sx;      /* @0x041A01..0x041A0F    */
@@ -929,7 +933,7 @@ edgeC_setup:
     goto edgeC_join;                   /* @0x041A46 jmp 0x19a1                 */
 edgeC_step:                            /* (label 0x1958)                       */
     if ((r + cy0) < sx) goto edgeD_setup;           /* @0x041A48..0x041A51 jl 0x19a7 */
-    if (overlay_call_181F_078C() == 0x1A) {         /* @0x041A59 */
+    if (func_00627A_op_sz_57((uint16_t)sy, (uint16_t)sx) == 0x1A) { /* @0x041A59 */
         ax = overlay_call_181F_0682();              /* @0x041A6C */
         if (ax >= 0 && ax == tn) {                  /* @0x041A74..0x041A7B    */
             found = 1; hit_y = sy; hit_x = sx;      /* @0x041A7D..0x041A8B    */
@@ -946,7 +950,7 @@ edgeD_setup:
     goto edgeD_join;                   /* @0x041AA9 jmp 0x1a05                 */
 edgeD_step:                            /* (label 0x19bc)                       */
     if ((r + cy0) < sx) goto ring_grow;             /* @0x041AAC..0x041AB5 jl 0x1a0b */
-    if (overlay_call_181F_078C() == 0x1A) {         /* @0x041ABD */
+    if (func_00627A_op_sz_57((uint16_t)sy, (uint16_t)sx) == 0x1A) { /* @0x041ABD */
         ax = overlay_call_181F_0682();              /* @0x041AD0 */
         if (ax >= 0 && ax == tn) {                  /* @0x041AD8..0x041ADF    */
             found = 1; hit_y = sy; hit_x = sx;      /* @0x041AE1..0x041AEF    */
@@ -1067,7 +1071,7 @@ int func_041C64_friendly_unit_at(uint16_t unit /*bp+6*/, uint16_t x /*bp+8*/, ui
     int r = 0;                         /* bp-4 */
     (void)x; (void)y;
     if (overlay_call_181F_0302() != 0) {            /* @0x041C73 tile_in_bounds(x,y) */
-        if (overlay_call_181F_078C() == 0x1A) {     /* @0x041C85 terrain == open      */
+        if (func_00627A_op_sz_57(x, y) == 0x1A) {   /* @0x041C85 terrain == open      */
             int owner = overlay_call_181F_0682();   /* @0x041C98 unit owner at (x,y)  */
             if (owner >= 0 &&
                 (U_TYPENAT(unit * UNIT_STRIDE) & 0x0F) == owner)  /* @0x041CA4..0x041CB1 */
@@ -1448,7 +1452,7 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
 
         /* @0x0423E1 loop head: region + home for this unit. */
         region = U_TYPENAT(ubx) & 0x0F;             /* @0x0423E4 */
-        home   = overlay_call_181F_081C();          /* @0x0423F1 unit_home_colony(u) */
+        home   = func_00757E_op_sz_33((uint16_t)u); /* @0x0423F1 unit_home_colony(u) */
         if (region == (int)player) {                /* @0x04240C cmp region,player */
             /* @0x042414 region<0x13 -> bump colony-by-region map[player][type]. */
             if (U_TYPENAT(ubx) /*type*/ < 0x13)     /* @0x042414 */
@@ -1495,7 +1499,7 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
             DG8(player - 0x6BF8)++;    /* @0x04229F */
 
         /* @0x0422A3 settlement membership probe -> mark the region maps. */
-        if (overlay_call_181F_0B78() >= 0) {        /* @0x0422A6 settlement_select(u) */
+        if (func_008BB2_logic_sz_20((uint16_t)u) >= 0) { /* @0x0422A6 settlement_select(u) */
             clamp_add_byte(&DG8(player - 0x6BF0 /*0x9410 base*/), 1);  /* @0x0422BC near 0x2036 */
             if (home >= 0)
                 clamp_add_byte(&DG8(home + player * 16 - 0x6ADA /*0x9526*/), 1);  /* @0x0422D5 */
@@ -1504,11 +1508,11 @@ int func_042138_power_census(uint16_t player /*bp+6*/)
         if (U_TYPENAT(ubx) >= 0x0D && U_TYPENAT(ubx) <= 0x12)  /* @0x0422DC..0x0422E8 */
             goto next_unit;
         /* @0x0422ED colony-of-unit -> add its cargo to the finance maps. */
-        kind = overlay_call_181F_09C8();            /* @0x0422F2 colony_field_unit(0,u) */
+        kind = func_007C2A_logic_sz_46((uint16_t)u, 0); /* @0x0422F2 colony_field_unit(0,u) */
         clamp_add_byte(&DG8(player - 0x6E80 /*0x9180*/), kind);    /* @0x042314 */
         if (home >= 0)
             clamp_add_byte(&DG8(home + player * 16 - 0x6E74 /*0x918c*/), kind);  /* @0x04232D */
-        kind = overlay_call_181F_09C8();            /* @0x042335 colony_field_unit(1,u) */
+        kind = func_007C2A_logic_sz_46((uint16_t)u, 1); /* @0x042335 colony_field_unit(1,u) */
         DG16(player * 2 - 0x6BE4) += kind;          /* @0x042245 finance accum   */
         if (home >= 0)
             clamp_add_byte(&DG8(home + player * 16 - 0x6A8E /*0x9572*/), kind);  /* @0x04235C */
@@ -1640,7 +1644,7 @@ int func_042726_cargo_histogram(uint16_t power /*bp+6*/)
         int ubx = u * UNIT_STRIDE;
         if ((U_TYPENAT(ubx) & 0x0F) != power)       /* @0x04274B */
             continue;
-        if (overlay_call_181F_0B78() < 0)           /* @0x042759 settlement_select(u) */
+        if (func_008BB2_logic_sz_20((uint16_t)u) < 0) /* @0x042759 settlement_select(u) */
             continue;
         DG8(U_CARGO0(ubx) - 0x6BD0)++; /* @0x042765 bucket[cargo0]++            */
     }
@@ -1709,9 +1713,9 @@ int func_0427D6_mission_tally(uint16_t arg /*bp+6*/)
         int ubx = i * UNIT_STRIDE;
         if ((U_TYPENAT(ubx) & 0x0F) != (uint8_t)target)  /* @0x04287F */
             continue;
-        val = overlay_call_181F_09C8(); /* @0x04287E colony_field_unit(1,i)     */
+        val = func_007C2A_logic_sz_46((uint16_t)i, 1); /* @0x04287E colony_field_unit(1,i) */
         clamp_add_byte(&DG8((int)arg - 0x6E7C /*0x9184*/), val);  /* @0x042890 */
-        region = overlay_call_181F_081C();          /* @0x042896 unit_home_colony(i) */
+        region = func_00757E_op_sz_33((uint16_t)i); /* @0x042896 unit_home_colony(i) */
         if (region < 0) continue;       /* @0x04289E */
         clamp_add_byte(&DG8(region + (int)arg * 16 - 0x6E34 /*0x91cc*/), val);  /* @0x0428B3 */
     }
@@ -1919,7 +1923,7 @@ int func_042F20_tile_tooltip(uint16_t buf /*bp+6*/, uint16_t x /*bp+8*/, uint16_
         return 0;                      /* @0x042F54 */
     }
     /* @0x042F5E in bounds. */
-    if (overlay_call_181F_078C() == 0x1A && flag == 0)  /* @0x042F64..0x042F74 */
+    if (func_00627A_op_sz_57(x, y) == 0x1A && flag == 0) /* @0x042F64..0x042F74 */
         return 0;                      /* open sea, no detail wanted           */
 
     owner = overlay_call_181F_07BE();  /* @0x042F7C tile_owner/colony(x,y)     */

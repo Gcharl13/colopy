@@ -41,6 +41,11 @@
  * Signatures here are local and documentary; the canonical no-arg prototypes
  * live in overlay_externs.h.  We call through the canonical names. */
 
+/* direct calls replacing void-arity stub calls */
+extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col);  /* 0x181F:0x030C relation/alarm table @0x5B1C */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);         /* 0x181F:0x078C terrain/tile query */
+extern int func_008BB2_logic_sz_20(uint16_t unit);               /* 0x181F:0x0B78 in-settlement probe */
+
 /* DGROUP globals referenced in this region (cite-or-not yet decoded; addresses are the
  * absolute DGROUP offsets seen in the disassembly). */
 extern uint8_t  g_native_value_table_5AD8[];  /* DGROUP:0x5AD8 — per-tribe table, stride 0x4E */
@@ -753,7 +758,7 @@ pre_test:                                       /* @asm 0x048428 */
     if ((overlay_call_181F_0A38() & 0x20) == 0) /* @asm 0x048435 attr([0x8D50], j); test al,0x20 */
         goto pre_next;                          /* @asm 0x04843F je 0x048425 */
     /* @asm 0x048441..0x04846C — set up the inner Bernoulli loop for this slot. */
-    (void)overlay_call_181F_030C();             /* @asm 0x048448 scale16 = scale(j,[0x8D52]) */
+    (void)func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)idx_s); /* @asm 0x048448 scale16 = scale(j,[0x8D52]) */
     bern_lim = (int16_t)overlay_call_181F_0A60();/* @asm 0x048454 [bp-0x18]=0xa60(scale16) */
     bern_lim = (int16_t)(bern_lim * bern_lim);  /* @asm 0x04845F imul; [bp-0x18]=ax*ax */
     drift  = 0;                                 /* @asm 0x048464 [bp-6]=0 */
@@ -820,7 +825,7 @@ main_section:                                   /* @asm 0x04846E */
         if (si == idx_e)                        /* @asm 0x048539 cmp si,[bp-0xE] */
             scaled >>= 1;                       /* @asm 0x04853E sar [bp-0xA],1 */
         /* @asm 0x048541..0x048556 — scaled += scale(idx_s,[0x8D52]) / 5 (signed). */
-        scaled = (int16_t)(scaled + (int16_t)(overlay_call_181F_030C() / 5)); /* @asm 0x048548..0x048556 */
+        scaled = (int16_t)(scaled + (int16_t)(func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)idx_s) / 5)); /* @asm 0x048548..0x048556 */
         /* @asm 0x048559..0x048565 — add scaled into the pool word (no clamp). */
         {
             int16_t *pool;
@@ -1018,7 +1023,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
      * power's market currently has the "boycott active" bit (+3 bit5). */
     if ((g_econ_flags_5382 & 0x01) && !(g_market_array_8D4E[0x03] & 0x20)) {
         /* @asm 0x048649 — recovery magnitude from the tax table. */
-        int recover = overlay_call_181F_030C();      /* table([0x5398], power) */
+        int recover = func_0082A0_logic_sz_18(power_index, DG16(0x5398)); /* table([0x5398], power) */
         int lift = 0;                                /* @asm 0x04867A [bp-0xA]=0 */
 
         /* @asm 0x04865B..0x048677 — large recoveries roll to become a lift candidate. */
@@ -1377,7 +1382,7 @@ int native_mission_established(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     if (arg1_bp_08 == 1)               count >>= 1;   /* @asm 0x048AD0 channel-1 halving */
 
     /* @asm 0x048AD9..0x048AF1 — reaction class 0..2 from the tribe-power relation word. */
-    overlay_call_181F_030C();                         /* tribe_power_relation(cur_pow, arg1) @ 0x5B1C */
+    (void)func_0082A0_logic_sz_18(DG16(0x8D52), arg1_bp_08); /* tribe_power_relation(cur_pow, arg1) @ 0x5B1C */
     int klass = overlay_call_181F_0A60();             /* @asm 0x048AE9 classify -> [bp-0x36] */
 
     /* @asm 0x048AF6..0x048B13 — class selects the subtrahend for the attitude delta. */
@@ -1571,11 +1576,11 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     /* @asm 0x048DC9..0x048DF7 — tribe-power relation contributes to each side. */
     {
-        int t = overlay_call_181F_030C();             /* @asm 0x048DD2 tribe_power_relation(rivalCh, cur_pow) */
+        int t = func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)rivalCh); /* @asm 0x048DD2 tribe_power_relation(rivalCh, cur_pow) */
         myFaith += t << (f04 ? 1 : 0);                /* @asm 0x048DDC shl by f04 */
     }
     {
-        int t = overlay_call_181F_030C();             /* @asm 0x048DE8 tribe_power_relation(arg1c, cur_pow) */
+        int t = func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)arg1c); /* @asm 0x048DE8 tribe_power_relation(arg1c, cur_pow) */
         rivalFaith += t >> (1 - f04);                 /* @asm 0x048DF5 sar by (1-f04) */
     }
 
@@ -1807,7 +1812,7 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
                 continue;
 
             /* @asm 0x049185 — terrain_type = get_terrain_type(row_c, col_c) */
-            int tt = overlay_call_181F_078C();   /* LCALL 0x181F:0x078C(row_c,col_c) */
+            int tt = func_00627A_op_sz_57((uint16_t)col_c, (uint16_t)row_c); /* LCALL 0x181F:0x078C(row_c,col_c) */
             /* [bp-0x7e] = tt */
 
             /* @asm 0x049190 — special exact-match checks first */
@@ -2189,7 +2194,7 @@ extern void native_attack_apply_4BA48(int a, int b, int c, int d); /* near call 
 int native_attack_reward_roll(uint16_t a_bp_06, uint16_t b_bp_08,
                               uint16_t col_bp_0A, uint16_t reward_bp_0C)  /* func_04A37C */
 {
-    int threshold = overlay_call_181F_030C();   /* @asm 0x04A387 table(0x8D52, col) -> [bp-6] */
+    int threshold = func_0082A0_logic_sz_18(DG16(0x8D52), col_bp_0A); /* @asm 0x04A387 table(0x8D52, col) -> [bp-6] */
     int roll      = overlay_call_181F_04D4();    /* @asm 0x04A39B random_int(0,500) -> [bp-2] */
     int result    = 0;                            /* @asm 0x04A397 [bp-4]=0 */
 
@@ -2476,7 +2481,7 @@ int native_village_trade(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     int region = overlay_call_181F_0722();            /* f(unit.x +0x3144, unit.y +0x3145) */
 
     /* @asm 0x04AC28 — per-power base value of the commodity. */
-    int base = overlay_call_181F_030C();              /* table(arg1, cur_pow) -> [bp-0x2A] */
+    int base = func_0082A0_logic_sz_18(DG16(0x8D52), arg1_bp_08); /* table(arg1, cur_pow) -> [bp-0x2A] */
 
     /* @asm 0x04AC3A..0x04AC64 — DEMAND from the per-village/per-commodity tables
      * (×1.5 for commodity 2). */
@@ -2705,7 +2710,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 {
     /* @asm 0x04AF63..0x04AFBE — base bribe: (tribe_power_relation(arg1,cur) + 0x4B) plus
      * the power-scaled standing terms and the current relation spread (market[+7]/[+8]). */
-    long cost = (long)(overlay_call_181F_030C() + 0x4B);          /* @asm 0x04AF72 tribe_power_relation(arg1,cur) */
+    long cost = (long)(func_0082A0_logic_sz_18(DG16(0x8D52), arg1_bp_08) + 0x4B); /* @asm 0x04AF72 tribe_power_relation(arg1,cur) */
     cost += ((long)g_power_scalar_962A[g_current_power_8D52] << 3)             /* @asm 0x04AF84 [cur-0x69D6]<<3 */
           + ((long)((g_trade_supply_b_9184[g_current_power_8D52] >> 2) & 0xFE))/* @asm 0x04AF8A [cur-0x6E7C]/4 even */
           - ((long)g_power_scalar_962A[g_current_power_8D52] << 1);            /* @asm 0x04AF94 -[cur-0x69D6]<<1 */
@@ -2751,7 +2756,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         target = g_power_anger_5398;                              /* @asm 0x04B22A [0x5398] */
         if (!(overlay_call_181F_0A38() & 0x20))                   /* @asm 0x04B234 no contact w/ target */
             goto done;
-        if (overlay_call_181F_030C() >= 0x4B)                     /* @asm 0x04B24A already at war(target,cur) */
+        if (func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)target) >= 0x4B) /* @asm 0x04B24A already at war(target,cur) */
             goto done;
         if (power_gold(arg1_bp_08) < cost)                        /* @asm 0x04B260 can't afford */
             goto done;
@@ -2800,7 +2805,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         }
         /* @asm 0x04B1F6..0x04B227 — already-at-war gate "...worthless {target}."
          * (ALREADYSMITE 0x16DC). */
-        if (overlay_call_181F_030C() >= 0x4B) {                   /* @asm 0x04B1FD relation(target,cur) >= war thresh */
+        if (func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)target) >= 0x4B) { /* @asm 0x04B1FD relation(target,cur) >= war thresh */
             overlay_call_181F_0A1A();  overlay_call_181F_0438();
             overlay_call_191F_019C();                             /* @asm 0x04B224 emit 0x16DC "ALREADYSMITE" */
             goto done;
@@ -3088,7 +3093,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
     uint8_t *bound = g_bound_record_8D4A;
     int region = (int)bound[0x02];               /* @asm 0x04B351 [bp-0x02] */
     int rgn4 = region - 4;                       /* @asm 0x04B359 [bp-0x60] */
-    int tbl = overlay_call_181F_030C();          /* @asm 0x04B361 table(owner,rgn4)->[bp-0xBA] */
+    int tbl = func_0082A0_logic_sz_18((uint16_t)rgn4, (uint16_t)owner); /* @asm 0x04B361 table(owner,rgn4)->[bp-0xBA] */
     int owner_word = *(int16_t *)&bound[owner * 2 + 0x0A];  /* @asm 0x04B376 [bp-0x64] */
 
     /* @asm 0x04B37C..0x04B3B3 — for live human power with no sfx muted, queue prompt. */
@@ -3127,7 +3132,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
         int code = unit_type - 1;                /* @asm 0x04B544 */
         if ((unsigned)code > 0x0B) {
             /* @asm 0x04B50A default arm (unit_types 2, 6..11). */
-            if (overlay_call_181F_0B78() < 0)    /* range/legality check */
+            if (func_008BB2_logic_sz_20(unit_index_bp_06) < 0) /* range/legality check */
                 goto done;                       /* @asm 0x04B519 */
             if ((u[0x17] == 0x1C || u[0x17] == 0x19) && tbl >= 0x4B)  /* +0x315B */
                 ret = 5;                         /* @asm 0x04B53B */
@@ -3136,7 +3141,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
         } else {
             switch (code) {                      /* @asm 0x04B54D jmp cs:[code*2+0x4772] */
             case 2:  /* unit_type 3 — @asm 0x04B43E "tax/anger" arm */
-                if (overlay_call_181F_030C() >= 0x4B) {    /* table([0x5398],[0x8D52]) */
+                if (func_0082A0_logic_sz_18(DG16(0x8D52), DG16(0x5398)) >= 0x4B) { /* table([0x5398],[0x8D52]) */
                     ret = 9;                      /* @asm 0x04B44E anger score maxed */
                 } else if ((overlay_call_181F_0A38() & 0x20) &&   /* @asm 0x04B45A at war */
                            /* @asm 0x04B466..0x04B480 bound level < owner level */
@@ -3168,7 +3173,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
                 ret = 1;
                 break;
             default: /* unit_types 2,6..10 -> default arm (same as code>0x0B above) */
-                if (overlay_call_181F_0B78() < 0)
+                if (func_008BB2_logic_sz_20(unit_index_bp_06) < 0)
                     goto done;
                 if ((u[0x17] == 0x1C || u[0x17] == 0x19) && tbl >= 0x4B)
                     ret = 5;

@@ -61,6 +61,10 @@ extern int overlay_call_191F_0060(void);  /* via trampoline @0x024BA0 */
 extern int overlay_call_191F_006C(void);  /* via trampoline @0x024BA5 */
 extern int overlay_call_191F_00F0(void);  /* via trampoline @0x024BDC */
 
+/* direct calls replacing void-arity stub calls */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C terrain/tile query */
+extern int func_008BB2_logic_sz_20(uint16_t unit);        /* 0x181F:0x0B78 in-settlement probe */
+
 /* ============================================================================
  * func_024342  (file 0x024342..0x0245C5, 643 bytes, ENTER 0x1E)
  *   --> SUPERSEDED by src/ui/main_loop.c : game_tick_coordinator()
@@ -480,8 +484,12 @@ int colony_build_advisor(int colony_idx, int item)
     }
 
     /* histogram pass: count how many colonists produce each item, then if the
-     * target's count >= 3 and item index > 9 -> 0x16    @asm 0x025BD0.. */
-    overlay_call_0D1D_0DAE();                      /* @asm 0x025BD8 (0x32,0,&hist) clear */
+     * target's count >= 3 and item index > 9 -> 0x16    @asm 0x025BD0..
+     * @asm 0x025BD8 lcall 0x0D1D:0xDAE = RTL memset(&hist, 0, 0x32): clears the
+     * 25 histogram words.  Direct zeroing here (all 0x20 entries — the original
+     * leaves [25..31] as stack garbage; reading them as 0 is strictly safer). */
+    for (i = 0; i < 0x20; i++)
+        hist[i] = 0;
     for (i = 0; i < c->population; i++) {           /* @asm 0x025BE0..0x025C13 i < ctx[+0x1F] */
         int slot = overlay_call_181F_0C0E();        /* @asm 0x025BF3 (i) -> produced item idx */
         hist[slot & 0x1F]++;                        /* @asm 0x025BFD..0x025C02 inc [bp+si-0x40] */
@@ -757,7 +765,7 @@ void colony_draw_worktile_info(int tile_dir)
 
     wy = c->map_y + row - 2;                        /* @asm 0x02617A ctx[+1]+row; dec;dec [bp-0x5C] */
     wx = c->map_x + col - 2;                        /* @asm 0x02618C ctx[+0]+col; dec;dec [bp-0x5A] */
-    terr = overlay_call_181F_078C();                /* @asm 0x026199 LCALL 0x181F:0x78C(wx,wy) terrain id */
+    terr = func_00627A_op_sz_57((uint16_t)wx, (uint16_t)wy); /* @asm 0x026199 LCALL 0x181F:0x78C(wx,wy) terrain id */
     buf[0] = 0;                                     /* @asm 0x026187 byte[bp-0x50]=0 */
     (void)wx; (void)wy;
 
@@ -1116,7 +1124,7 @@ void colony_anim_worked_tiles(int x, int y, int phase)
             overlay_call_181F_00CE();               /* @asm 0x026B48 draw sprite from [idx*0xC+0x3E/0x40] */
         (void)n; (void)x; (void)y; (void)c;
 
-        overlay_call_181F_0B78();                   /* @asm 0x026B7D (idx) per-unit update */
+        func_008BB2_logic_sz_20((uint16_t)idx);     /* @asm 0x026B7D (idx) per-unit update */
         overlay_call_181F_0C4A();                   /* @asm 0x026B8B (idx) */
         overlay_call_181F_0A74();                   /* @asm 0x026B97 (idx) -> sprite */
         overlay_call_181F_024A();                   /* @asm 0x026BAA (7,x,y) draw pip */

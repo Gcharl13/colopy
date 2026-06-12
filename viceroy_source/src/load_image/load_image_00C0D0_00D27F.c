@@ -194,12 +194,11 @@ int func_00C276_logic_sz_20(uint16_t arg0_bp_06)
 int func_00C30A_rtl_sz_17(uint16_t arg0_bp_06)
 {
     /* @asm 0x00C30D mov ax,[bp+6]; 0x00C310 and ah,0x7f; 0x00C313 push ax;
-     *      0x00C314 lcall 0x0D1D:0x0DF2 -> forwards the argument with bit 15
-     *      cleared (ah &= 0x7F) to the C-runtime/overlay library routine and
-     *      returns its result (leave/retf at 0x00C319, no post-processing).
-     * library-implementation-only / body in the 0x0D1D thunk page. */
-    (void)(arg0_bp_06 & 0x7FFF);   /* the masked value is what the lcall receives */
-    return overlay_call_0D1D_0DF2();
+     *      0x00C314 lcall 0x0D1D:0x0DF2 = MSC srand (func_0103C2) with bit 15
+     *      cleared (leave/retf at 0x00C319, no post-processing). */
+    extern void msc_srand(unsigned v);          /* runtime/rng.c */
+    msc_srand(arg0_bp_06 & 0x7FFF);
+    return 0;
 }
 
 /* @asm        0x00C322..0x00C361  (63 bytes)  region=load_image
@@ -1173,10 +1172,11 @@ int func_00D106_op_sz_158(void)
     DG16(0x7E6) = (uint16_t)func_00CD0B_logic_sz_67(
         (uint16_t near *)(DG_BASE + 0x7E8),
         (uint16_t near *)(DG_BASE + 0x7EA));
-    /* @asm 0x00D125 lcall 0C0C:0x0006 -> cursor clock ax:dx */
-    overlay_call_0C0C_0006();
-    DG16(0x7FC) = DG16(0x92FC);          /* @asm mov [0x7FC],ax (modelled clock src) */
-    DG16(0x7FE) = DG16(0x92FE);          /* @asm mov [0x7FE],dx */
+    /* @asm 0x00D125 lcall 0C0C:0x0006 (BIOS ticks -> AX:DX) */
+    {   uint32_t t = (uint32_t)overlay_call_0C0C_0006();
+        DG16(0x7FC) = (uint16_t)t;        /* @asm mov [0x7FC],ax */
+        DG16(0x7FE) = (uint16_t)(t >> 16);/* @asm mov [0x7FE],dx */
+    }
 
     b = DG16(0x7E6);                      /* @asm mov bx,[0x7E6] */
 
@@ -1242,11 +1242,13 @@ int func_00D1CA_logic_sz_26_pacing_wait(int16_t ax_unused, int16_t dx_wait)
         /* @asm 0x00D1D1 lcall 0x0C0C:0x0006 (tick -> AX:DX);
          * @asm 0x00D1D6 cmp ax,[0x7FC]; jne exit
          * @asm 0x00D1DC cmp dx,[0x7FE]; je 0xd1d1 (spin while equal)
-         * On DOS the BIOS tick advances 18.2/s, so this self-terminates
-         * within one tick.  The modern build has no advancing tick source
-         * yet (platform layer milestone); spinning on the wired stub
-         * (func_00E4C6 far-dword read) would never terminate, so the
-         * pacing wait is a cited no-op until the platform tick lands. */
+         * Spin until the tick differs from the func_00D106 snapshot at
+         * [0x7FC:0x7FE].  The synthetic tick (platform/timer.c) advances
+         * per read, so this terminates on the first iteration headless and
+         * models the <=55ms wall wait under a real-time tick source. */
+        uint32_t snap = (uint32_t)DG16(0x7FC) | ((uint32_t)DG16(0x7FE) << 16);
+        while ((uint32_t)overlay_call_0C0C_0006() == snap)
+            ;
     }
     return 0;                             /* @asm 0x00D1E2 leave; retf */
 }

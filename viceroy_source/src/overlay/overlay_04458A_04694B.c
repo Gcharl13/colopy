@@ -221,6 +221,8 @@ extern int overlay_call_1A1F_038A(void);
  * 0x18A=func_04458A (active-dialog text forwarder), and the page-end
  * far-jump trampolines listed above. */
 extern int func_044540(void);              /* @asm near 0x140  clamp helper    */
+/* direct calls replacing void-arity stub calls */
+extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col); /* 0x181F:0x030C alarm/relation table */
 extern int gui_region_save(void);          /* @asm near 0x17E8 -> 181F:0E52    */
 extern int gui_widget_free(void);          /* @asm near 0x17ED -> 191F:0472    */
 extern int gui_text_measure_box(void);     /* @asm near 0x17F2 -> 1A1F:02DE    */
@@ -1379,7 +1381,7 @@ int func_045DF2_native_tension_add(uint16_t tribe /*bp+6*/, uint16_t power /*bp+
     (void)tribe; (void)i;
 
     /* @0x045E01 read + clamp the current alarm, map to band. */
-    overlay_call_181F_030C();            /* @0x045E01 alarm_read(tribe,power) [0x082A0] */
+    func_0082A0_logic_sz_18(tribe, power); /* @0x045E01 alarm_read(tribe,power) [0x082A0] */
     before = overlay_call_181F_035C();   /* @0x045E0A clamp(v, 0, 100)            */
     before = overlay_call_181F_0A60();   /* @0x045E16 alarm_band(v) [0x08262]     */
 
@@ -1646,7 +1648,7 @@ int func_0464C2_raid_strength(uint16_t party /*bp+6*/, uint16_t colony /*bp+8*/,
 
     /* @0x046590 market/relation factor for real powers. */
     if ((int)colony < 4 && !IS_REF_POWER(colony)) {   /* @0x046590..0x04659F      */
-        overlay_call_181F_030C();        /* @0x0465A9 relation_fmt(0x5394,ns_b[2])*/
+        func_0082A0_logic_sz_18(DG16(0x8D52), DG16(0x5394)); /* @0x0465A9 relation_fmt(0x5394,ns_b[2])*/
         value *= overlay_call_181F_0A60() + 1;        /* @0x0465B2 *(clamp()+1)   */
     }
 

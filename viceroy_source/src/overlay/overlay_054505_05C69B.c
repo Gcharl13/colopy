@@ -103,6 +103,8 @@ extern int func_05A938(int unit_index);                            /* trampoline
 /* direct calls replacing void-arity stub calls */
 extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x06BE */
 extern int  func_0082DC_logic_sz_118(uint16_t slot);                        /* 0x181F:0x09E6 */
+extern int  func_0082A0_logic_sz_18(uint16_t row, uint16_t col);            /* 0x181F:0x030C */
+extern int  func_007C2A_logic_sz_46(uint16_t unit, uint16_t sel);           /* 0x181F:0x09C8 */
 
 
 /* ============================================================================
@@ -332,7 +334,7 @@ int native_relations_line_draw(int power, int tribe_handle)  /* func_056B92 */
     overlay_call_181F_0438();                          /* set field1   @asm 0x056BE2 */
     overlay_call_191F_019C();                          /* "INDIANPEACE" line @asm 0x056BF6 */
 
-    if (overlay_call_181F_030C() >= 0x19)              /* table(tribe,power-4) @asm 0x056C08/0960 */
+    if (func_0082A0_logic_sz_18((uint16_t)(power - 4), (uint16_t)tribe_handle) >= 0x19) /* table(tribe,power-4) @asm 0x056C08/0960 */
         return r;
     overlay_call_181F_09A4();                          /* @asm 0x056C18 */
     overlay_call_181F_0438();                          /* @asm 0x056C23 */
@@ -1311,7 +1313,7 @@ int best_unit_to_move_at_tile(int seed_unit, int owner)  /* func_05AF70 */
         if (on_target == 0) {                          /* @asm 0x05B001 */
             if (*(uint8_t *)(cur * 6 + 0x5236) != 0)   /* per-type non-mover gate @asm 0x05B020 */
                 continue;
-            overlay_call_181F_09C8();                  /* s @asm 0x05B03C */
+            func_007C2A_logic_sz_46((uint16_t)cur, 0); /* s @asm 0x05B03C */
             overlay_call_181F_09DC();                  /* t @asm 0x05B04C */
             pri = 0xFF;                                /* (t - s) + 0xFF @asm 0x05B05D */
             if (type == 0x0B) {                        /* wagon-train @asm 0x05B064 */

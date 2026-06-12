@@ -234,6 +234,7 @@ extern int  overlay_call_181F_0858(void);  /* 0x181F:0x858 route-of-unit (not in
 /* direct calls replacing void-arity stub calls */
 extern int  func_005E90_op_sz_64(uint16_t x, uint16_t y); /* 0x181F:0x0722 */
 extern void func_0081F2_logic_sz_34(uint16_t idx);         /* 0x181F:0x0A4C */
+extern int  func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C */
 
 /* ============================================================================
  * func_061454  @ 0x061454..0x061C9C  (2121 bytes)  page 0x12
@@ -400,7 +401,9 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
      * 16x16 scratch grid window (0xd1d:0xdae), push the start cell, stamp grid=1. */
     *(volatile uint16_t *)&g_dgroup[0x2d1a] = *(volatile uint16_t *)&g_dgroup[0xa14e];  /* @asm 0x061FAE */
     *(volatile uint16_t *)&g_dgroup[0x2d1c] = *(volatile uint16_t *)&g_dgroup[0xa14c];  /* @asm 0x061FB4 */
-    overlay_call_0D1D_0DAE();                            /* @asm 0x061FC2 clear grid window */
+    /* @asm 0x61FBA push 0x100; push 0; push 0xA270; lcall 0xD1D:0xDAE
+     * = RTL memset(DG:0xA270, 0, 0x100) — clear the 16x16 grid window. */
+    for (int _i = 0; _i < 0x100; _i++) g_dgroup[0xA270 + _i] = 0;
     *(volatile uint16_t *)&g_dgroup[0x2d18] = 0;                    /* @asm 0x061FCA queue head */
     *(volatile uint8_t *)&g_dgroup[0xa372] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14e]; /* @asm 0x061FD0 */
     *(volatile uint8_t *)&g_dgroup[0xa472] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14c]; /* @asm 0x061FD6 */
@@ -717,7 +720,9 @@ int func_06295E_ai_move_resolver(int target_col, int target_row)
     seedy = *(volatile uint16_t *)&g_dgroup[0xa14c];                        /* @asm 0x0629D4 [bp-0x7e] */
     (void)func_0627BE_find_nearest_feature(target_col/*[bp-0x7c] saved BX*/,
                          target_row, dir_class, 0);              /* @asm 0x0629E0 call 0xb1e */
-    overlay_call_0D1D_0DAE();                            /* @asm 0x0629EB clear grid window */
+    /* @asm 0x629E3 push 0x10E; push 0; push 0xA162; lcall 0xD1D:0xDAE
+     * = RTL memset(DG:0xA162, 0, 0x10E) — clear the grid window + queue. */
+    for (int _i = 0; _i < 0x10E; _i++) g_dgroup[0xA162 + _i] = 0;
     *(volatile uint16_t *)&g_dgroup[0x2d18] = 0;                    /* @asm 0x0629F3 queue head */
     *(volatile uint8_t *)&g_dgroup[0xa372] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14e]; /* @asm 0x0629F9 */
     *(volatile uint8_t *)&g_dgroup[0xa472] = (unsigned char)*(volatile uint16_t *)&g_dgroup[0xa14c]; /* @asm 0x0629FF */
@@ -961,7 +966,7 @@ int func_062D84_unit_automove(int unit_idx)
         int nrow = cur_y + (signed char)g_dir_dy[dir];   /* @asm 0x063122 */
         int step_cost;
         if (!tile_in_bounds(nrow, ncol)) continue;       /* @asm 0x0631A8 0x302 */
-        if (overlay_call_181F_078C() == owner) {         /* terrain/owner consistency */
+        if (func_00627A_op_sz_57((uint16_t)ncol, (uint16_t)nrow) == owner) { /* terrain/owner consistency */
             /* @asm 0x06317C..0x0631DE : land/water class must match the unit;
              * reject moving into the dest's own tile twice. */
         }
@@ -1211,7 +1216,9 @@ int func_063C58_place_feature_driver(void)
     for (sel = 0; sel < 2; sel++) {                      /* @asm 0x063DC1 cmp [bp-0x22],2 */
         if (sel != 0) { arr_base = 0x86F6; dir_bit_base = 1; } /* @asm 0x063C6F work */
         else          { arr_base = 0x85E8; dir_bit_base = 0; } /* @asm 0x063C78 claim */
-        overlay_call_0D1D_0DAE();                        /* @asm 0x063C83 clear target array */
+        /* @asm 0x63C7D push 0x10E; push 0; push si(arr_base); lcall 0xD1D:0xDAE
+         * = RTL memset(DG:arr_base, 0, 0x10E) — clear the target array. */
+        for (k = 0; k < 0x10E; k++) g_dgroup[arr_base + k] = 0;
 
         for (cy = 1; cy < 0x3d; cy += 4) {               /* @asm 0x063DB8 outer (col anchor) */
             for (cx = 1; cx < 0x49; cx += 4) {           /* @asm 0x063D9B inner (row anchor) */

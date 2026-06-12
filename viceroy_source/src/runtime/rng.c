@@ -51,6 +51,24 @@ int rand(void)
 }
 
 /* ============================================================================
+ * MSC 6.0 srand() — BYTE_VERIFIED.
+ *
+ * @asm_function   func_0103C2
+ * @asm_offset     file 0x0103C2..0x0103D3  (17 bytes)
+ * @region         load_image
+ * @bytes
+ *   8B 46 06          MOV AX, [BP+6]            ; seed argument
+ *   A3 EE 28          MOV [DGROUP:0x28EE], AX   ; seed.low  = arg
+ *   C7 06 F0 28 00 00 MOV [DGROUP:0x28F0], 0    ; seed.high = 0
+ * Reached via 0x0D1D:0x0DF2 (the RTL entry); callers mask `AND AH,0x7F`
+ * before the call (func_00C30A wrapper, the 0x181F:0x04CA tick re-seed).
+ * ============================================================================ */
+void msc_srand(unsigned v)
+{
+    g_rand_seed_28EE = (uint16_t)v;
+}
+
+/* ============================================================================
  * random_int(lo, hi) — BYTE_VERIFIED.
  *
  * @asm_function   func_00C322

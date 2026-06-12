@@ -44,6 +44,10 @@
 #include "overlay_externs.h"
 #include "unit.h"
 
+/* direct calls replacing void-arity stub calls */
+extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);         /* 0x181F:0x078C terrain/tile query */
+extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col);  /* 0x181F:0x030C relation/alarm table */
+
 /* UnitRecord field offset of the type byte (+0x02, abs DGROUP 0x3146).
  * @ref include/unit.h UNIT_TABLE_BASE 0x3144; type at +0x02. */
 #ifndef UNIT_TYPE_OFF
@@ -94,8 +98,9 @@ extern uint8_t far *g_active_power;    /* DGROUP:0x84FC — far ptr to active Po
 extern uint8_t  g_ai_queue_a_98B0[];   /* DGROUP:0x98B0 (=0x10000-0x6750) per-power, 0x40 x 4-byte */
 extern uint8_t  g_ai_queue_b_9EAA[];   /* DGROUP:0x9EAA — per-power, 0x10 x 4-byte */
 extern uint8_t  g_ai_table_c_A0DC[];   /* DGROUP:0xA0DC — 0x10 x 6-byte */
-extern int16_t  ai_path_budget_8DB8(void);  /* *(int16_t*)0x8DB8 — global path budget */
-extern int16_t  ai_turn_counter_538E(void); /* *(int16_t*)0x538E — turn counter */
+#define ai_path_budget_8DB8()   DGS16(0x8DB8)  /* [0x8DB8] global path budget        */
+#define ai_turn_counter_538E()  DGS16(0x538E)  /* [0x538E] turn counter (direct reads;
+                                                * the weak-stub accessors returned 0) */
 /* g_power_table_8808: macro in globals.h -> ((uint8_t near *)(DG_BASE + 0x8808)) */
 extern uint8_t  g_unit_type_flags_5236[];   /* DGROUP:0x5236 — per-type 6-byte flag rows */
 /* g_unit_count_539C: macro in globals.h -> DGS16(0x539C) */
@@ -110,7 +115,10 @@ extern int  ovly_tramp_7A85(uint16_t a, uint16_t b);          /* call cs:0x7A85 
  * BYTE_VERIFIED (2026-06-08).  The extern below is kept for callers outside
  * func_04CC50 that still use the raw trampoline name (e.g. func_04C532). */
 extern int  ovly_tramp_7A71(uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e); /* -> func_04C35A BYTE_VERIFIED */
-extern int  ovly_tramp_7AA3(uint16_t slot, uint16_t power);   /* call cs:0x7AA3 -> QUEUE_A side-effect */
+/* call cs:0x7AA3 -> ljmp 0x1A1F:0x4E8 @file 0x534F3 -> func_04C262 = QUEUE_A
+ * insert-shift (records slot..0x3E move down one to open the slot).  Ported
+ * as overlay_grid64_shift_down(power, slot) in overlay_046D70_04C2E1.c. */
+extern void overlay_grid64_shift_down(uint16_t power, uint16_t slot);
 extern int  ovly_tramp_7AB7(uint16_t slot, uint16_t power);   /* call cs:0x7AB7 -> QUEUE_B side-effect */
 extern int  ovly_tramp_7ACB(uint16_t slot);                   /* call cs:0x7ACB -> TABLE_C side-effect */
 extern int  ovly_tramp_7A99(uint16_t a, uint16_t b);          /* call cs:0x7A99 -> sub-score */
@@ -207,7 +215,7 @@ int func_04C35A_ai_queue_a_find_or_insert(uint16_t power, uint16_t b0, uint16_t 
         uint8_t *r = &g_ai_queue_a_98B0[(power * 0x40 + i) * 4];  /* @asm 0x04C3B3 */
         /* @asm 0x04C3C2 — skip while b3 >= arg4 and b2 != 0xFF (occupied higher). */
         if (!((int8_t)r[3] < (int8_t)b3) && r[2] != 0xFF) continue;
-        ovly_tramp_7AA3((uint16_t)i, power);            /* @asm 0x04C3CF call cs:0x7AA3 */
+        overlay_grid64_shift_down(power, (uint16_t)i);  /* @asm 0x04C3CF push i,power; call cs:0x7AA3 */
         r[0] = (uint8_t)b0;                             /* @asm 0x04C3E8 */
         r[1] = (uint8_t)b1;                             /* @asm 0x04C3EC */
         r[2] = (uint8_t)b2;                             /* @asm 0x04C3F3 */
@@ -698,7 +706,7 @@ int func_04C89E_ai_best_adjacent_move(uint16_t power, uint16_t base_x, uint16_t 
         else if (overlay_call_181F_0768() != 0) { /* dir done */ }
         else {
             /* @asm 0x04C946 — terrain base cost for the step tile. */
-            int terr = overlay_call_181F_078C();        /* terrain id */
+            int terr = func_00627A_op_sz_57((uint16_t)dy, (uint16_t)dx); /* terrain id */
             score = g_terrcost_2F77[terr * 0x10];       /* @asm 0x04C953 */
 
             /* @asm 0x04C961..0x04CA21 — sum neighbour contributions (k=0..7).
@@ -1213,17 +1221,260 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
     g_ai_bitmask_173C = 0;                              /* @0x4D03C [0x173C]=0 */
     g_ai_bitmask_173E = 0;                              /* @0x4D03F [0x173E]=0 */
 
-    /* ---- COLONY PLAN PHASE @0x4D048..0x4D6ED — DEGRADED-PENDING. ----
-     * The per-colony planner (work-grid scoring, stockpile-demand loop,
-     * TABLE_C emits via func_04C4AE, the colony build emit func_04C35A
-     * (power, colony_x, colony_y, 4, 3) @0x4D0B3..0x4D0D0) is NOT yet
-     * byte-restored: the pre-rewrite port executed its emit calls with
-     * PLACEHOLDER ZERO arguments from inside the unit loop, which would
-     * write garbage queue entries now that the planner is live — those
-     * calls are REMOVED until this phase is ported from the disasm.  The
-     * BYTE_VERIFIED formula documentation (score accumulator, demand
-     * scaling, clamps) is preserved in the banner above.  [0x539E]-loop,
-     * frame [bp-0x3C] colony index, entered at @0x4D0E3. */
+    /* ---- COLONY PLAN PHASE @0x4D048..0x4D6ED — byte-restored 2026-06-12. ----
+     * Per-colony war/raid target planner over FOREIGN colonies (own colonies
+     * branch to PHASE 3 @0x4D105 jmp 0x4D6F0).  Loop frame: [bp-0x3C] colony,
+     * [bp-0x12] region, [bp-0x152] occupant, [bp-0x150] hostility flag,
+     * [bp-0x158] best score, [bp-0x22]/[bp-0x2A] best x/y, [bp-0x2C]
+     * strength-superiority flag, [bp-0x1DA] foothold flag, [bp-0xC] score. */
+    {
+        extern int func_005EE8_logic_sz_28(uint16_t x, uint16_t y);   /* 0x181F:0x74A seen mask  */
+        extern int func_005DBA_logic_sz_17(uint16_t x, uint16_t y);   /* 0x181F:0x6B4 terrain==1 */
+        extern int func_0082DC_logic_sz_118(uint16_t slot);           /* 0x181F:0x9E6 col select */
+        extern int func_005E90_op_sz_64(uint16_t x, uint16_t y);      /* 0x181F:0x722 region     */
+        extern int func_00863E_wrapper_with_global_8DC6(uint16_t a);  /* 0x181F:0x9FC option bit */
+        extern int func_005F04_map_xy_bounds_or_neg1(uint16_t x, uint16_t y); /* 0x181F:0x682   */
+        extern int func_005BFA_logic_sz_49(uint16_t x, uint16_t y);   /* 0x181F:0x302 in-bounds  */
+        extern int func_0062B4_op_sz_39(uint16_t x, uint16_t y);      /* 0x181F:0x768 claimed    */
+        extern int func_0066CC_op_sz_57(uint16_t x_ax, uint16_t y_dx);/* 0x181F:0x7E0 unit at    */
+        extern int func_0073A8_logic_sz_99(uint16_t unit, uint16_t klass); /* 0x181F:0x8BC      */
+        extern int func_007F34_logic_sz_27(uint16_t a, uint16_t b);   /* 0x181F:0xA38 war flags  */
+        int16_t turn = ai_turn_counter_538E();
+
+        for (int c = 0; c < g_colony_count_539E; c++) {     /* @0x4D042 init0; @0x4D0E0 inc; @0x4D0E3 cmp */
+            func_0082DC_logic_sz_118((uint16_t)c);          /* @0x4D0F1 colony_select(c)      */
+            uint16_t cp = DG16(0x8542);                     /* @0x4D0FC selected colony ptr   */
+            if (DG8(cp + 0x1A) == (uint8_t)power)           /* @0x4D100 own colony            */
+                continue;                                   /* @0x4D105 jmp 0x4D6F0 (PHASE 3 tail) */
+            int region = func_005E90_op_sz_64(DG8(cp), DG8(cp + 1)); /* @0x4D115 [bp-0x12]    */
+
+            /* @0x4D120 early-era human-owner skip: diff*turn <= 0xB4, power<4,
+             * colony cell not seen by us, owner human -> next colony. */
+            if ((int)g_difficulty_53A6 * turn <= 0xB4 &&    /* @0x4D125/0x4D129 */
+                (int16_t)power < 4) {                       /* @0x4D12E */
+                int seen = func_005EE8_logic_sz_28(DG8(cp), DG8(cp + 1)); /* @0x4D141 0x74A  */
+                if (!((0x10 << power) & (seen & 0xFF))) {   /* @0x4D149..0x4D156 */
+                    if (DG8(cp + 0x1A) < 4 &&               /* @0x4D15C */
+                        DG8(0x543F + DG8(cp + 0x1A) * 0x34) == 0) /* @0x4D165 human owner    */
+                        goto strength_check;                /* @0x4D16E jmp 0x4D3A6 */
+                }
+            }
+
+            /* @0x4D171..0x4D192 hostility flag: war-flags(power, colonyOwner)
+             * masked 0x48 == 0x40 -> hostile=1 else 0. */
+            {
+                int hostile = ((func_007F34_logic_sz_27(power, DG8(cp + 0x1A)) & 0x48) == 0x40);
+                                                            /* @0x4D17E/0x4D186/0x4D188 */
+                int raid_open = hostile;                    /* [bp-0x150] @0x4D04A */
+
+                /* @0x4D04E..0x4D0D3 garrison-raid emit: region rows non-empty,
+                 * (c+turn)&3 != 0, defender count + pop below the era curve. */
+                if ((DG8(0x94E6 + power * 16 + region) +    /* @0x4D057 worked map B */
+                     DG8(0x94A6 + power * 16 + region)) != 0 && /* @0x4D05D worked map A */
+                    ((uint8_t)(c + turn) & 3) != 0) {       /* @0x4D067..0x4D06E */
+                    int occ = func_0066CC_op_sz_57(DG8(cp), DG8(cp + 1)); /* @0x4D07F 0x7E0 (AX,DX) */
+                    int defs = func_0073A8_logic_sz_99((uint16_t)occ, 2) + /* @0x4D08B 0x8BC(occ,2) */
+                               (int8_t)DG8(cp + 0x1F);      /* @0x4D099 colony pop */
+                    /* @0x4D0A5..0x4D0B1 idiv 0xFFCE; jge SKIPS: emit only when
+                     * defenders exceed the era curve (6 - turn/50). */
+                    if (turn / -0x32 + 6 < defs) {
+                        (void)func_04C35A_ai_queue_a_find_or_insert(
+                            power, DG8(cp), DG8(cp + 1), 4,
+                            (uint16_t)(raid_open >= 1 ? 3 : 5)); /* @0x4D0B3..0x4D0D0 cs:0x534C1 */
+                    }
+                }
+                if (raid_open == 0)                         /* @0x4D0D6 */
+                    goto landing_scan;                      /* @0x4D0DD jmp 0x4D196 */
+            }
+            continue;                                       /* hostile==1 falls to next colony @0x4D0E0 */
+
+        landing_scan:
+            /* @0x4D196 occupant + supply-ship gate: colony flag byte +0x1C bit
+             * 0x40 set AND ((occ+turn)%4 != 0 OR chain has class-0xD) -> scan. */
+            {
+                int occ = func_0066CC_op_sz_57(DG8(cp), DG8(cp + 1)); /* @0x4D1A3 [bp-0x152] */
+                if (!(DG8(cp + 0x1C) & 0x40))               /* @0x4D1B0 */
+                    goto strength_check;                    /* @0x4D1B6 jmp 0x4D3A6 */
+                if ((occ + turn) % 4 == 0 &&                /* @0x4D1B9..0x4D1C5 */
+                    func_0073A8_logic_sz_99((uint16_t)occ, 0xD) == 0) /* @0x4D1CD */
+                    goto strength_check;                    /* @0x4D1D9 */
+            }
+            /* @0x4D1DC 5x5 landing-cell scan around the colony: for dy,dx in
+             * [-2..2] (|dx|!=2 or |dy|!=2 corner trim per the 0x4D1F8..0x4D217
+             * abs tests; (0,0) skipped), cell in-bounds + claimed + terrain==1:
+             * count the 8 sub-neighbours that are claimed land of our region
+             * with row/col within 1 of the colony — best count wins. */
+            {
+                int best = 0;                               /* [bp-0x158] @0x4D1DC */
+                int bx_ = 0, by_ = 0;                       /* [bp-0x22]/[bp-0x2A] */
+                (void)func_00863E_wrapper_with_global_8DC6(1); /* @0x4D1E4 0x9FC(1) [bp-0x44] */
+                for (int dy = -2; dy <= 2; dy++) {          /* @0x4D1EF [bp-8] init 0xFFFE; @0x4D365 */
+                    for (int dx = -2; dx <= 2; dx++) {      /* @0x4D36B [bp-4]; @0x4D21C cmp 2 */
+                        int adx = dx < 0 ? -dx : dx;        /* @0x4D1F8/0x4D237 */
+                        int ady = dy < 0 ? -dy : dy;        /* @0x4D20E/0x4D209 */
+                        if (dx == 0 && dy == 0) continue;   /* @0x4D225..0x4D22F */
+                        if (adx != 2 && ady != 2) continue; /* @0x4D1FE/0x4D214 (ring only) */
+                        int cx = DG8(cp) + dx;              /* @0x4D250 [bp-0x34] */
+                        int cy = DG8(cp + 1) + dy;          /* @0x4D245 [bp-0x38] */
+                        if (func_005BFA_logic_sz_49((uint16_t)cx, (uint16_t)cy) == 0) /* @0x4D257 0x302 */
+                            continue;                       /* @0x4D261 */
+                        if (func_0062B4_op_sz_39((uint16_t)cx, (uint16_t)cy) == 0)    /* @0x4D269 0x768 */
+                            continue;                       /* @0x4D273 */
+                        if (func_005DBA_logic_sz_17((uint16_t)cx, (uint16_t)cy) != 1) /* @0x4D27B 0x6B4 */
+                            continue;                       /* @0x4D285 */
+                        int cnt = 0;                        /* [bp-0xC] @0x4D287 */
+                        for (int d8 = 0; d8 < 8; d8++) {    /* @0x4D2A6 [bp-0x24] */
+                            int sx = (int8_t)DG8(0xB4 + d8) + cx; /* @0x4D2BE [bp-0x32] */
+                            int sy = (int8_t)DG8(0xBE + d8) + cy; /* @0x4D2B2 [bp-0x4A] */
+                            if (func_005BFA_logic_sz_49((uint16_t)sx, (uint16_t)sy) == 0) /* @0x4D2CA */
+                                continue;
+                            if (func_0062B4_op_sz_39((uint16_t)sx, (uint16_t)sy) == 0)    /* @0x4D2DC */
+                                continue;
+                            if (func_005DBA_logic_sz_17((uint16_t)sx, (uint16_t)sy) != 1) /* @0x4D2EE */
+                                continue;
+                            /* @0x4D2FA..0x4D334 |sub - colony| within 1 on both axes */
+                            {
+                                int rx = sx - (int)DG8(cp);     /* @0x4D302 neg -> abs */
+                                int ry = sy - (int)DG8(cp + 1); /* @0x4D317 */
+                                if (rx < 0) rx = -rx;           /* @0x4D292 */
+                                if (ry < 0) ry = -ry;           /* @0x4D324 */
+                                if (rx > 1 || ry > 1) continue; /* @0x4D29E/0x4D331 */
+                            }
+                            cnt++;                          /* @0x4D339 */
+                        }
+                        if (cnt > best) {                   /* @0x4D340..0x4D347 */
+                            best = cnt;                     /* @0x4D34C */
+                            bx_ = cx;                       /* @0x4D353 [bp-0x22] */
+                            by_ = cy;                       /* @0x4D359 [bp-0x2A] */
+                        }
+                    }
+                }
+                if (best > 0) {                             /* @0x4D374 */
+                    /* landing emit: b3 = min((pop+4)>>3, 2) + 2.  @0x4D37B..0x4D3A3 */
+                    int b3 = ((int8_t)DG8(cp + 0x1F) + 4) >> 3; /* @0x4D37F..0x4D386 */
+                    if (b3 > 2) b3 = 2;                     /* @0x4D389/0x4D38E */
+                    (void)func_04C35A_ai_queue_a_find_or_insert(
+                        power, (uint16_t)bx_, (uint16_t)by_, 0,
+                        (uint16_t)(b3 + 2));                /* @0x4D391..0x4D3A0 cs:0x534C1 */
+                }
+            }
+
+        strength_check:
+            /* @0x4D3A6 early-era human-owner skip #2 (threshold 0xC8). */
+            if ((int)g_difficulty_53A6 * turn <= 0xC8 &&    /* @0x4D3AB/0x4D3AF */
+                (int16_t)power < 4) {                       /* @0x4D3B4 */
+                int seen = func_005EE8_logic_sz_28(DG8(cp), DG8(cp + 1)); /* @0x4D3C7 */
+                if (!((0x10 << power) & (seen & 0xFF)))     /* @0x4D3CF..0x4D3D9 */
+                    continue;                               /* @0x4D3DD jmp 0x4D0E0 */
+            }
+            /* @0x4D3E0..0x4D44C superiority / foothold flags for this region. */
+            {
+                int sup = 0, foothold = 0;                  /* [bp-0x2C]/[bp-0x1DA] */
+                uint8_t mine   = DG8(0x94E6 + power * 16 + region);          /* @0x4D3F2 */
+                uint8_t theirs = DG8(0x94E6 + DG8(cp + 0x1A) * 16 + region); /* @0x4D404 */
+                if (theirs > mine &&                        /* @0x4D404 jbe */
+                    DG8(0x9526 + DG8(cp + 0x1A) * 16 + region) >= 8) /* @0x4D40A -0x6ADA */
+                    sup = 1;                                /* @0x4D411 */
+                if (mine == 0 &&                            /* @0x4D41F */
+                    DG8(0x9526 + DG8(cp + 0x1A) * 16 + region) < 8)  /* @0x4D434 */
+                    foothold = 1;                           /* @0x4D43B */
+                if (sup == 0 && foothold == 0)              /* @0x4D441/0x4D447 */
+                    continue;                               /* @0x4D44E */
+
+                /* @0x4D451..0x4D56E 7x7 assault-cell scan (dx,dy in -3..3):
+                 * claimed cell with >0 open same-region neighbours; score =
+                 * 2*(adj + |dx| + |dy|) — HIGHEST kept, ties to later
+                 * (@0x4D544 jge updates; init -0x63). */
+                int best = -0x63;                           /* @0x4D451 0xFF9D */
+                int bx_ = DG8(cp);                          /* @0x4D45B [bp-0x22] */
+                int by_ = DG8(cp + 1);                      /* @0x4D462 [bp-0x2A] */
+                for (int dx = -3; dx <= 3; dx++) {          /* @0x4D468/0x4D563 [bp-4] */
+                    for (int dy = -3; dy <= 3; dy++) {      /* @0x4D569/0x4D4C9 [bp-8] */
+                        int cx = DG8(cp) + dx;              /* @0x4D4E6 [bp-0x34] */
+                        int cy = DG8(cp + 1) + dy;          /* @0x4D4DB [bp-0x38] */
+                        if (func_0062B4_op_sz_39((uint16_t)cx, (uint16_t)cy) == 0) /* @0x4D4ED */
+                            continue;                       /* @0x4D4F7 */
+                        if (func_005DBA_logic_sz_17((uint16_t)cx, (uint16_t)cy) != 1) /* @0x4D4FF */
+                            continue;                       /* @0x4D509 */
+                        int adj = 0;                        /* [bp-2] @0x4D470 */
+                        for (int d8 = 0; d8 < 8; d8++) {    /* @0x4D4BA [bp-0x2E] */
+                            int sx = (int8_t)DG8(0xB4 + d8) + cx; /* @0x4D489 */
+                            int sy = (int8_t)DG8(0xBE + d8) + cy; /* @0x4D47D */
+                            if (func_0062B4_op_sz_39((uint16_t)sx, (uint16_t)sy) != 0) /* @0x4D495 */
+                                continue;                   /* claimed -> not open   */
+                            if (func_005E90_op_sz_64((uint16_t)sx, (uint16_t)sy) != region) /* @0x4D4A7 */
+                                continue;
+                            adj++;                          /* @0x4D4B4 */
+                        }
+                        if (adj == 0) continue;             /* @0x4D4C0 */
+                        int score = ((dx < 0 ? -dx : dx) +  /* @0x4D510..0x4D522 */
+                                     (dy < 0 ? -dy : dy) +  /* @0x4D526..0x4D538 */
+                                     adj) << 1;             /* @0x4D53B/0x4D53F */
+                        if (score < best)                   /* @0x4D544 jge keep */
+                            continue;                       /* @0x4D54A */
+                        best = score;                       /* @0x4D54D */
+                        bx_ = cx;                           /* @0x4D551 */
+                        by_ = cy;                           /* @0x4D557 */
+                    }
+                }
+                if (best <= 0)                              /* @0x4D572 */
+                    continue;                               /* @0x4D579 */
+                if (func_005F04_map_xy_bounds_or_neg1((uint16_t)bx_, (uint16_t)by_) >= 0) /* @0x4D582 0x682 */
+                    continue;                               /* @0x4D58E occupied   */
+
+                /* @0x4D591..0x4D5AE region bitmask: sup -> [0x173C], else [0x173E]. */
+                if (sup)
+                    g_ai_bitmask_173C |= (uint16_t)(1 << region); /* @0x4D59F */
+                else
+                    g_ai_bitmask_173E |= (uint16_t)(1 << region); /* @0x4D5AE */
+
+                /* @0x4D5B2..0x4D666 score build-up. */
+                int score = sup ? 3 : 2;                    /* @0x4D5B2/0x4D5BD */
+                if (DG8(cp + 0x1A) < 4 &&                   /* @0x4D5C6 */
+                    DG8(0x543F + DG8(cp + 0x1A) * 0x34) == 0) { /* @0x4D5D4 human owner */
+                    score++;                                /* @0x4D5DA */
+                    /* density sum over the owner's four region rows vs ours. */
+                    int sum = DG8(0x9516 + region) + DG8(0x9506 + region) +  /* @0x4D5E5/0x4D5E9 -0x6AEA/-0x6AFA */
+                              DG8(0x94F6 + region) + DG8(0x94E6 + region);   /* @0x4D5F1/0x4D5F7 -0x6B0A/-0x6B1A */
+                    if (sum == DG8(0x94E6 + DG8(cp + 0x1A) * 16 + region)) { /* @0x4D5FD/0x4D601 */
+                        if (DGS16(0x85C8 + region * 2) >= 0x10)  /* @0x4D607 region value */
+                            score++;                        /* @0x4D60E */
+                        if (DGS16(0x85C8 + region * 2) >= 0x40)  /* @0x4D616 */
+                            score++;                        /* @0x4D61D */
+                    }
+                }
+                /* @0x4D620..0x4D648 four-power density sum vs region value. */
+                {
+                    int sum = DG8(0x9516 + region) + DG8(0x9506 + region) +
+                              DG8(0x94F6 + region) + DG8(0x94E6 + region);   /* @0x4D623..0x4D63B */
+                    if ((sum << 4) > DGS16(0x85C8 + region * 2)) /* @0x4D63D..0x4D646 */
+                        score--;                            /* @0x4D648 */
+                }
+                if ((func_007F34_logic_sz_27(power, DG8(cp + 0x1A)) & 0x60) == 0x20) /* @0x4D658..0x4D662 */
+                    score++;                                /* @0x4D666 */
+                if (turn < 0x96)                            /* @0x4D669 */
+                    score <<= 1;                            /* @0x4D671 */
+
+                /* @0x4D674..0x4D6B3 defender re-count can clear both flags. */
+                {
+                    int occ = func_0066CC_op_sz_57(DG8(cp), DG8(cp + 1));    /* @0x4D681 */
+                    int defs = func_0073A8_logic_sz_99((uint16_t)occ, 2) +   /* @0x4D68D */
+                               (int8_t)DG8(cp + 0x1F);      /* @0x4D69B */
+                    if (turn / -0x32 + 6 >= defs) {         /* @0x4D6A7..0x4D6B3 */
+                        sup = 0;                            /* @0x4D6B5..0x4D6BA */
+                        foothold = 0;
+                    }
+                }
+                if (sup == 0 && foothold == 0)              /* @0x4D6BE/0x4D6C4 */
+                    continue;                               /* @0x4D6CB */
+                /* @0x4D6CE..0x4D6EA assault emit: b2 = sup>=1 ? 7 : 1. */
+                (void)func_04C35A_ai_queue_a_find_or_insert(
+                    power, (uint16_t)bx_, (uint16_t)by_,
+                    (uint16_t)(sup >= 1 ? 7 : 1),
+                    (uint16_t)score);                       /* @0x4D6D1..0x4D6E7 cs:0x534C1 */
+            }
+        }                                                   /* @0x4D6ED jmp 0x4D0E0 */
+    }
 
 
     /* ---- PHASE 3 — colony build planner.  @asm 0x04D6F0..0x04DB1A.
@@ -1310,7 +1561,7 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
             uint16_t nat_ptr = DG16(0x8D4A);
             (void)func_005E90_op_sz_64(DG8(nat_ptr), DG8(nat_ptr + 1));
         }
-        int thr = overlay_call_181F_030C();             /* @asm 0x04DB84 threat(tribe, arg0) */
+        int thr = func_0082A0_logic_sz_18(DG16(0x8D52), power); /* @asm 0x04DB84 threat(tribe, arg0) */
         if (thr >= 0x4B) {                              /* @asm 0x04DBC3 cmp 0x4B */
             /* @asm 0x04DBD1  war gate (0x181F:0xA38) — skips emit if at war */
             (void)overlay_call_181F_0A38();             /* @asm 0x04DBD1 war gate */
