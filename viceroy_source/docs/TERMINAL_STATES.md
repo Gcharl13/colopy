@@ -4,15 +4,15 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 781 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 788 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1105 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1092 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 430 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 417 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 430
+### NAMED-GAP — 417
 
 - `DG8`
 - `__aFldiv`
@@ -940,7 +940,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ov_clear_rect`
 - `ov_clip_blit`
 - `ov_colony_owned_visible`
-- `ov_colony_select`
 - `ov_draw_extra_a`
 - `ov_draw_extra_b`
 - `ov_draw_portrait`
@@ -951,7 +950,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ov_rec_first`
 - `ov_rec_next`
 - `ov_region_setup`
-- `ov_report_dispatch`
 - `ov_report_show`
 - `ov_set_mode`
 - `ov_set_mode_buf`
@@ -959,10 +957,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ov_show_message`
 - `ov_snapshot`
 - `ov_sound_apply`
-- `ov_strbuf_init`
-- `ov_strbuf_init2`
-- `ov_unit_cargo_query`
-- `ov_unit_stat_format`
 - `overlay_call_1A1F_0C64_alloc`
 - `overlay_near_07EFB`
 - `overlay_set_dialog_rect`
@@ -983,7 +977,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_eval_target_5E70A`
 - `ovly_feasible_7B4`
 - `ovly_mark_D9A`
-- `ovly_name_word_A2E`
 - `ovly_notify_93E`
 - `ovly_path_check_302`
 - `ovly_play_sound_4C0`
@@ -998,13 +991,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_target_query_696`
 - `ovly_target_query_826`
 - `ovly_target_query_9F0`
-- `ovly_terrain_id_6B4`
-- `ovly_tile_ability_72C`
-- `ovly_tile_ability_754`
-- `ovly_tile_kind_78C`
-- `ovly_tile_occupied_768`
 - `ovly_tile_query_2EE`
-- `ovly_tile_query_7E0`
 - `ovly_tramp_2D4E`
 - `ovly_tramp_7A80`
 - `ovly_tramp_7A99`
