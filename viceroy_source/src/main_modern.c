@@ -8,13 +8,13 @@
  * layer (platform.h).
  *
  * Honesty note (reconstruction layer vs byte-verified rules): the original's
- * data-driven menu runner (0x181F:0x3FE) is not yet ported.  This shell IS
- * data-driven the same way -- @BEGINMENU's @width/@y/@smallfont directives and
- * option strings come from GAME.TXT at runtime, the row layout/colors are the
- * RECONSTRUCTED part -- and selections route through the real
- * title_screen_update() dispatch + real DGROUP state.  Every byte of
- * pixel/palette/font/string content comes from the user's own game files
- * (copyright constraint).
+ * data-driven menu runner (0x181F:0x3FE) IS ported (src/ui/menu_runner.c,
+ * ROUTE_B_PLAN 3.1) and the title flow runs through it -- @BEGINMENU's
+ * directives/option rows, the option highlight, the key loop and the
+ * 1-based/-1 return contract are the original's (byte cites in menu_runner.c).
+ * The local draw_title_menu/load_beginmenu below remain only for the headless
+ * screenshot path.  Every byte of pixel/palette/font/string content comes
+ * from the user's own game files (copyright constraint).
  *
  * Keys: Up/Down+Enter or 1..5 | ESC back/quit | F12 screenshot
  * Env : VICEROY_DATA = game data dir (default ./game_data)
@@ -70,6 +70,7 @@ static int load_beginmenu(void)
             else if (!strncmp(p, "@y=", 3))     g_menu_y = atoi(p + 3);
             else if (!strcmp(p, "@options"))    opts = 1;
             else if (!strcmp(p, "@smallfont")) {/* font selector */}
+            else if (!strncmp(p, "@default=", 9)) {/* runner consumes (menu_runner.c) */}
             else break;                          /* next section */
             continue;
         }
@@ -528,10 +529,29 @@ static void menu_select(int sel, int *screen)
 static int shell_loop(void)
 {
     int screen = SH_TITLE, sel = 0, shots = 0;
-    if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
 
     for (;;) {
-        int k = vid_poll_key();
+        int k;
+
+        if (screen == SH_TITLE) {
+            /* THE ORIGINAL's title menu: func_0759E8 draws the OPENMENU plate
+             * then runs the @BEGINMENU panel through the 0x181F:0x3FE engine
+             * (@asm 0x075C60 lea bx,[0x2345]; 0x075C64 lcall 0x181F:0x3FE) and
+             * dispatches the 1-based result with `dec ax; jge` (@asm 0x075C6D
+             * -- <1 aborts).  The runner is PORTED (src/ui/menu_runner.c); the
+             * shell now routes the title flow through it instead of its own
+             * Up/Down/Enter reconstruction.  @BEGINMENU's @y/@width/option
+             * rows come from GAME.TXT exactly as the original read them. */
+            extern int menu_run_key(const char *key, int preselect);
+            int r;
+            if (load_bg("OPENMENU.PIK") == 0) { draw_bg(); vid_present(); }
+            r = menu_run_key("BEGINMENU", 0);  /* key text = DS:0x2345 */
+            if (r < 1) return 0;               /* ESC/-1, quit, or no GAME.TXT */
+            menu_select(r - 1, &screen);
+            continue;
+        }
+
+        k = vid_poll_key();
         if (k == VID_QUIT_REQUESTED) return 0;
         if (k == 0) { vid_delay_ms(16); continue; }
 
@@ -543,17 +563,8 @@ static int shell_loop(void)
         }
 
         switch (screen) {
-        case SH_TITLE:
-            if (k == 27) return 0;
-            if (k == KEY_UP && g_menu_count > 0)   /* no GAME.TXT -> count 0: avoid %0 */
-                { sel = (sel + g_menu_count - 1) % g_menu_count; draw_title_menu(sel); }
-            if (k == KEY_DOWN && g_menu_count > 0)
-                { sel = (sel + 1) % g_menu_count;                draw_title_menu(sel); }
-            if (k == KEY_RETURN) menu_select(sel, &screen);
-            if (k >= '1' && k < '1' + g_menu_count) menu_select(k - '1', &screen);
-            break;
         case SH_NATIONS:
-            if (k == 27) { if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel); screen = SH_TITLE; break; }
+            if (k == 27) { screen = SH_TITLE; break; }   /* loop top re-runs the engine */
             if (k >= '1' && k <= '4') {
                 DG16(0x5398) = (uint16_t)(k - '1');      /* player nation */
                 printf("shell: nation = %s\n", &DG8(DG16(0x8D42 + (k-'1')*2)));
@@ -634,10 +645,7 @@ static int shell_loop(void)
                 market_set_active((int16_t)DG16(0x5398));
                 draw_europe(); screen = SH_EUROPE; break;
             }
-            if (k == 27) {
-                if (load_bg("OPENMENU.PIK") == 0) draw_title_menu(sel);
-                screen = SH_TITLE; break;
-            }
+            if (k == 27) { screen = SH_TITLE; break; }   /* loop top re-runs the engine */
             if (k == KEY_UP)     { try_move_ship( 0,-1); follow_unit(); draw_map(); }
             if (k == KEY_DOWN)   { try_move_ship( 0, 1); follow_unit(); draw_map(); }
             if (k == 1073741904) { try_move_ship(-1, 0); follow_unit(); draw_map(); } /* left  */

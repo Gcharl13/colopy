@@ -283,12 +283,16 @@ int colony_service_menu(int colony_sel, int item_id)
  *   0x181F:0x3FE     0x06F594      func_06F57E+22 opt_register(bx=key)
  *   0x181F:0x652     0x06F5F2      func_06F5F2    opt_set_mode(key, mode)
  *
- * ALL of them operate on ONE shared menu descriptor and a shared option-flags
+ * ALL of them operate on ONE shared key protocol and a shared option-flags
  * word in DGROUP (BYTE_VERIFIED addresses at the cited @asm):
  *
- *   DGROUP:0x087C   the menu/option DESCRIPTOR base.  Every builder does
- *                   `LEA bx,[0x87C]` before calling the common append routine
+ *   DGROUP:0x087C   CORRECTED 2026-06-12: the bytes at DS:0x87C (@file
+ *                   0x1E21C) are the string "GAME" -- the GAME.TXT BASE NAME,
+ *                   not a descriptor.  Every builder does `LEA bx,[0x87C]`
+ *                   (=file-base arg) with AX=key before the common emit
  *                   (CS-near 0x3CEF on page 0x17).   @asm 0x06F596/0x06F5F9/...
+ *                   The engine opens <BX>.TXT and runs section @<AX-string>
+ *                   (see src/ui/menu_runner.c, the PORTED runner).
  *   DGROUP:0x1F54   the option-FLAG bitmask (one bit per option = enabled/
  *                   checked).  set/clear/test by func_06F554/func_06F57E.
  *   DGROUP:0x1F5C   per-option field A  (opt_field_a builder func_06F5B0)
@@ -297,13 +301,15 @@ int colony_service_menu(int colony_sel, int item_id)
  *                   func_06F5F2 (the 0x652 builder).   @asm 0x06F5F8 a3 5e 1f
  *   DGROUP:0x1F60   per-option field C  (builder func_06F61C)
  *
- * So "registering a menu option" = stage its key/fields in 0x1F54/0x1F5C/
- * 0x1F5E/0x1F60 then append to the descriptor at 0x87C; "running the menu" =
- * func_06F51A walks the descriptor, dispatches the picked option, and disposes
- * the control window via 0x191F:0x1A8.  This is the hit-test + return-code
- * machinery the brief asked to decode.
+ * So "registering a menu option" = stage the fields in 0x1F54/0x1F5C/0x1F5E/
+ * 0x1F60 then run the GAME.TXT section named by the key (AX) from the file
+ * named at 0x87C ("GAME"); "running the menu" = func_06F51A builds the panel
+ * from the @-section (0x191F:0x182), runs the modal (0x191F:0x16A) and
+ * disposes it (0x191F:0x1A8).  The FUNCTIONAL port of this whole chain is
+ * src/ui/menu_runner.c (menu_run_key/menu_run_boxed); opt_run_menu below now
+ * binds to its strong override there.
  * ============================================================================ */
-#define MENU_DESC_087C   0x087C   /* @asm LEA bx,[0x87C] in every builder */
+#define MENU_DESC_087C   0x087C   /* @asm LEA bx,[0x87C] = "GAME" file base */
 #define OPT_FLAGS_1F54   0x1F54   /* @asm 0x06F567/0x06F578/0x06F58D bitmask */
 #define OPT_FIELD_1F5C   0x1F5C   /* @asm 0x06F5B6 builder field A */
 #define OPT_MODE_1F5E    0x1F5E   /* @asm 0x06F5F8 builder field B = screen-mode */

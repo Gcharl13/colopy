@@ -31,6 +31,7 @@ extern int func_008BB2_logic_sz_20(uint16_t arg0);   /* file 0x8BB2: per-unit-ty
                                                       * (load_image_008262_008C6F.c) */
 extern int func_0036B2_type_sprite_id(uint16_t r_ax);/* file 0x36B2 = resident 0x012B:0x0002 (arg in AX):
                                                       * type id -> ICONS sprite (load_image_0033F2_004E76.c) */
+extern int menu_run_boxed(uint16_t key_off);         /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 
 /* @asm        0x008C70..0x008CFF  (144 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008C70_unknown.asm
@@ -153,7 +154,9 @@ int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
             result = (int16_t)i;
     }
     if (result < 0)
-        overlay_call_181F_03FE(/* &msg @0x0350 */);        /* assert: colony expected */
+        (void)menu_run_boxed(0x0350);     /* @asm 0x008D8E lea bx,[0x350] "COLONYFLAG";
+                                           * 0x008D92 lcall 0x181F:0x3FE (PORTED runner;
+                                           * assert: colony expected) */
     return result;
 }
 

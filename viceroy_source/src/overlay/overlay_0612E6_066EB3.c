@@ -178,6 +178,8 @@ extern unsigned char g_unit_bytes[];   /* byte view, [unit*0x1C + field] */
 /* Forward declarations — call sites precede bodies in this file */
 extern int  func_0612E6_select_route_dialog(void);  /* near 0x1925 -> list-select */
 extern void func_0612E6_highlight_route(int sel);   /* near 0x1920 -> highlight  */
+extern int  menu_run_boxed(uint16_t key_off);       /* PORTED 0x181F:0x3FE runner
+                                                     * (src/ui/menu_runner.c)    */
 
 /* TRADE-ROUTE record table (Phase 2.3): far segment 0x1B22, 12 records x
  * 0x4A bytes, count at DGROUP:0x53A0.  Host home: g_far_1B220 (runtime/
@@ -208,7 +210,10 @@ int func_0612E6_trade_route_delete(void)
 
     func_0612E6_highlight_route(sel);         /* @asm 0x061306 near 0x1920 */
     overlay_call_181F_0416();                 /* @asm 0x061316 stage delete */
-    if (overlay_call_181F_03FE() != 1)        /* @asm 0x061322 confirm? dec/je */
+    if (menu_run_boxed(0x1DA2) != 1)          /* @asm 0x06131E lea bx,[0x1DA2]
+                                               * "SUREDELETE"; 0x061322 lcall
+                                               * 0x181F:0x3FE (PORTED runner);
+                                               * dec/je = confirm==1 */
         return 0;                             /* @asm 0x06132A not confirmed */
 
     /* Pass 1 (@asm 0x06132D..0x0613B2): walk the unit table; for every unit

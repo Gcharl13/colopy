@@ -62,6 +62,8 @@
 #include "overlay_externs.h"
 
 /* ---- file-local externs (kept local per task scope; addresses byte-cited) -- */
+extern int      menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner
+                                                    * (src/ui/menu_runner.c) */
 extern uint8_t  g_unit_records[];     /* DGROUP:0x3144 stride 0x1C */
 extern uint16_t g_season;             /* DGROUP:0x5390 */
 extern int16_t  g_active_unit;        /* DGROUP:0x5392 */
@@ -760,7 +762,10 @@ int func_02287E_disband_unit(void)
         }
     }
     overlay_call_181F_0438();                          /* @0x02293A set_message_subject */
-    if (overlay_call_181F_03FE() != 1) goto done;      /* @0x022946 "SUREDISBAND" != YES */
+    if (menu_run_boxed(0x0A01) != 1) goto done;        /* @0x022942 lea bx,[0xA01]
+                                                        * "SUREDISBAND"; @0x022946 lcall
+                                                        * 0x181F:0x3FE (PORTED runner);
+                                                        * != 1 = not confirmed */
     overlay_call_181F_0808();                          /* @0x022954 destroy_unit(target) */
     overlay_call_181F_0E1C();                          /* @0x02295E redraw(1) */
     /* index fixups + power advance @0x022966..0x022996 */
@@ -859,7 +864,9 @@ int func_022CDC_goto_destination(void)
     int r = overlay_call_191F_02F8();                  /* @0x022CEE pick_destination(u,-1,1,0) */
     if (r == 0x3E7) {                                  /* @0x022CF6 in-Europe sentinel */
         if (g_opt_5382 & 1) {                          /* @0x022CFB endgame */
-            overlay_call_181F_03FE();                  /* @0x022D06 display_message_box("EUROPENOTLEAVE") */
+            (void)menu_run_boxed(0x0A1E);              /* @0x022D02 lea bx,[0xA1E]
+                                                        * "EUROPENOTLEAVE"; @0x022D06 lcall
+                                                        * 0x181F:0x3FE (PORTED runner) */
         } else {
             overlay_call_191F_02EA();                  /* @0x022D11 cancel_europe(u) */
         }
@@ -1005,8 +1012,13 @@ int func_023344_screen_dispatch(void)
     overlay_call_191F_033C();                          /* @0x023448 submenu_open(1,idx,key) */
     overlay_call_191F_016A();                          /* @0x023456 m = menu_run(key) */
     overlay_call_191F_01A8();                          /* @0x023464 menu_close(key) */
-    /* second computed-goto on (m-1) @0x02352C..0x023555; PICK* prompts via: */
-    overlay_call_181F_03FE();                          /* @0x0234E4 display_message_box(PICK*) */
+    /* second computed-goto on (m-1) @0x02352C..0x023555; PICK* prompts via the
+     * PORTED runner -- the trio of static-key sites in this body:
+     *   @0x0234E0 lea bx,[0xA92] "PICKINDEPENDENCE"; @0x0234E4 lcall 0x181F:0x3FE
+     *   @0x0234F8 lea bx,[0xAA3] "PICKMILITARY";     @0x0234FC lcall 0x181F:0x3FE
+     *   @0x02350E lea bx,[0xAB0] "PICKINDIAN";       @0x023512 lcall 0x181F:0x3FE
+     * (this collapsed body runs the first arm; the goto ladder is summarized) */
+    (void)menu_run_boxed(0x0A92);
     /* if ([bp-8]) { [0x96]=[bp-8]; set_screen_mode(); } @0x023556..0x023567 */
     overlay_call_181F_04C0();                          /* @0x023564 set_screen_mode() */
     return 0;                                           /* @0x023569 done */

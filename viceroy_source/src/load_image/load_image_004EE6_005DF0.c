@@ -44,6 +44,7 @@ extern int overlay_call_181F_059A(void);  /* @ref RTLink seg 0x181F off 0x059A *
 
 /* Near siblings called from this file but defined elsewhere in the rules image. */
 extern int func_004DF8_logic_sz_126(uint16_t arg0_bp_06);  /* input-code remap @0x004DF8 */
+extern int menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 
 /* @asm        0x004EE6..0x0050BB  (470 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_004EE6_unknown.asm
@@ -974,7 +975,8 @@ int func_005760_op_sz_127(void)
         overlay_call_0984_04F6();
         DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
         DG16(0x53A2) = 1;                     /* @asm [0x53A2]=1 */
-        rc = overlay_call_181F_03FE();        /* @asm lea bx,[0x130]; lcall 0x181F:0x03FE */
+        rc = menu_run_boxed(0x0130);          /* @asm 0x00580A lea bx,[0x130] "SCORED";
+                                               * 0x00580E lcall 0x181F:0x03FE (PORTED runner) */
         if (rc == 2)                          /* @asm cmp ax,2; jne 0x5821 */
             DG16(0x53C2) = 1;                 /* @asm [0x53C2]=1 */
         DG8(0x5382) |= 0x10;                  /* @asm or [0x5382],0x10 */
@@ -1125,7 +1127,8 @@ after_players:
         if ((int16_t)DG16(0x538A) >= 0x640) {    /* @asm cmp [0x538A],0x640; jl 0x5ACC */
             if ((int16_t)DG16(0x538A) == 0x640 && /* @asm jne 0x5ABB */
                 DG16(0x538C) == 0) {              /* @asm cmp [0x538C],0; jne 0x5ABB */
-                overlay_call_181F_03FE();         /* @asm lea bx,[0x141]; lcall 0x181F:0x03FE */
+                (void)menu_run_boxed(0x0141);     /* @asm 0x005AB2 lea bx,[0x141] "TIMECHANGE";
+                                                   * 0x005AB6 lcall 0x181F:0x03FE (PORTED runner) */
             }
             DG16(0x538C)++;                       /* @asm inc [0x538C] */
             if ((int16_t)DG16(0x538C) > 1)        /* @asm cmp [0x538C],1; jle 0x5AD0 */

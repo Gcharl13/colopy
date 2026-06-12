@@ -76,7 +76,7 @@ extern int  func_06E3D0_panel_run_modal(uint16_t panel_off, uint16_t panel_seg);
 extern int  func_0789FA_free_dos_block(void);                       /* 191F:01A8 */
 
 /* human-panel-only leaves still on the Phase-4 stub floor (hit-counted) */
-extern long overlay_call_181F_03FE(void);  /* boxed text, lea bx,[0x16F7] reg protocol @0x4B3DA */
+extern int  menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 extern long overlay_call_191F_019C(void);  /* func_06F5B0 text panel (0x1705, [0x8D52]) @0x4B410 */
 extern long overlay_call_181F_0022(void);  /* func_002462 string-list fetch [0x2D42]+n */
 extern long overlay_call_0D1D_07E4(void);  /* format text id into buf */
@@ -145,8 +145,9 @@ int func_04B308_confront_native(uint16_t unit /*bp+6*/, uint16_t x /*bp+8*/,
     type = DG8(0x3146 + ubx);
     if (type >= 0x0D && type <= 0x12) {
         if (!(func_007F34_logic_sz_27((uint16_t)owner, (uint16_t)tribe) & 0x20)) { /* @0x4B3CE */
-            /* @0x4B3DA boxed text id 0x16F7 ("they will not see us"), reg bx. */
-            (void)overlay_call_181F_03FE();
+            /* @0x4B3DA lea bx,[0x16F7] "DONTKNOWSHIPS"; @0x4B3DE lcall
+             * 0x181F:0x3FE (PORTED runner). */
+            (void)menu_run_boxed(0x16F7);
             goto fin;                                  /* @0x4B3E3 jmp 0x4B9D2  */
         }
         if (alarm >= 0x4B || contact >= 0x40) {        /* @0x4B3E6/0x4B3ED      */

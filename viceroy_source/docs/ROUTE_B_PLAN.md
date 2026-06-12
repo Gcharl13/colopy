@@ -371,10 +371,26 @@ Bounded by E3: the `enter_screen_view(id)` map + the GAME.TXT menu tree +
 the report dispatcher (`func_06FF94` + 0x0235D6). Current state: Map/HUD,
 Europe, Colony, Reports, Title, Hall of Fame = [V] done.
 
-- [ ] **3.1 `@BEGINMENU` menu runner** (0x181F:0x3FE): the data-driven menu
-      engine. The dispatch (func_0759E8) is decoded; port the runner +
-      pixel layout so the title flow is the original's, not the shell's.
-      Retires the `main_modern.c` shell screens. (1–2 sessions)
+- [x] **3.1 `@BEGINMENU` menu runner** (0x181F:0x3FE): PORTED 2026-06-12 —
+      `src/ui/menu_runner.c`. Full chain decoded from the EXE: shim 0x6F594
+      (AX=key, BX=0x87C **"GAME" file base** — the old "descriptor" reading
+      was wrong, DX=preselect) → 0x181F:0x998 (0x6F51A) → template engine
+      func_06F0F4 (directive table @DS:0x1FC7: OPTIONS/PROMPT/TEXT/SMALLFONT/
+      Y/X/WIDTH/LENGTH/CHECKBOX/DEFAULT; option value = 1-based @OPTIONS
+      counter @0x06F48D/0x06F4D9) → modal func_06E3D0 (ESC 0x1B→0xFFFF
+      @0x06E9EA, ENTER commit = widget[+4] @0x06EB9F, UP/DOWN 0x148/0x150
+      follow +0x14/+0x10 links @0x06EAEC/0x06EA88, hotkey walk @0x06EBC0,
+      teardown latches [0x1F5C/5E/60]=-1 + [0x1F54] rebuild @0x06EE68..).
+      Geometry per func_06C520/func_06D316 (border 3, inset 2, minW 80,
+      +10 margin, center/clamp formulas). The title flow (main_modern.c
+      shell SH_TITLE) now runs the engine; 16 static-key `lcall 0x181F:0x3FE`
+      sites converted to `menu_run_boxed(id)` (45 total enumerated: 39
+      static, 6 dynamic-BX left documented at their sites). RESIDUE (small,
+      listed in menu_runner.c banner): WOODFRAM frame art + palette mapping
+      of style words 7/8 are RECONSTRUCTED placeholders; FONTINTR vs
+      FONTSMAL; disabled-row bit0 skip unwired; dynamic-BX sites (king
+      audience @0x075540, raze-confirm @0x05C94A, ...) await their buffer
+      assembly ports — they keep the hit-counted stub.
 - [ ] **3.2 Continental Congress / Founding Father screen** (selection
       dialog + FF portrait plates). (1–2 sessions)
 - [ ] **3.3 Naval adviser screen.** (½–1 session)

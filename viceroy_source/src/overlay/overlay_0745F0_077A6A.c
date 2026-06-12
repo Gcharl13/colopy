@@ -146,7 +146,10 @@ extern int overlay_call_181F_03B6(void);  /* 0x181F:0x03B6 -- push draw state */
 extern int overlay_call_181F_03F4(void);  /* 0x181F:0x03F4 -- blit region */
 extern int overlay_call_181F_0444(void);  /* 0x181F:0x0444 -- draw box */
 extern int overlay_call_181F_00E2(void);  /* 0x181F:0x00E2 -- draw frame */
-extern int overlay_call_181F_03FE(void);  /* 0x181F:0x03FE -- draw text run */
+extern int overlay_call_181F_03FE(void);  /* 0x181F:0x03FE -- @-menu/boxed-text runner
+                                           * (dynamic-BX sites only; static-key sites
+                                           * below call the PORTED menu_run_boxed) */
+extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/menu_runner.c */
 extern int overlay_call_181F_03AC(void);  /* 0x181F:0x03AC -- present/flush */
 extern int overlay_call_181F_00BA(void);  /* 0x181F:0x00BA -- draw line/rect */
 extern int overlay_call_181F_04CA(void);  /* 0x181F:0x04CA -- set palette/color */
@@ -1120,7 +1123,12 @@ int func_075352_show_power_relations_dialog(uint16_t arg0_bp_06, uint16_t arg1_b
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F50))) = 0x002F;           /* @asm 0x07552C */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F52))) = 0;                /* @asm 0x075532 */
         (*(uint8_t near *)(DG_BASE + (uint16_t)(0x1F56))) |= 0x18;            /* @asm 0x075538 */
-        overlay_call_181F_03FE();                      /* @asm 0x075540 draw text run (bx=arg2) */
+        overlay_call_181F_03FE();                      /* @asm 0x07553C mov bx,[bp+0xa];
+                                                        * 0x075540 lcall 0x181F:0x3FE --
+                                                        * DYNAMIC key (caller's arg2 = a
+                                                        * king-audience @-section name);
+                                                        * wire via menu_run_key() when the
+                                                        * king flow passes the C string */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F4A))) = s_1f4a;           /* @asm 0x075545 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F50))) = s_1f50;           /* @asm 0x075549 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x1F52))) = s_1f52;           /* @asm 0x07554D */
@@ -1545,7 +1553,9 @@ int func_0759E8_save_load_game_screen(void)
         overlay_call_181F_0F3C();             /* @asm 0x075C55 */
         done = 0;                             /* @asm 0x075C5A [bp-0xe4]=0 */
 
-        menu = overlay_call_181F_03FE();      /* @asm 0x075C64 menu @DS:0x2345 "BEGINMENU" */
+        menu = menu_run_boxed(0x2345);        /* @asm 0x075C60 lea bx,[0x2345] "BEGINMENU";
+                                               * 0x075C64 lcall 0x181F:0x3FE (PORTED
+                                               * runner, src/ui/menu_runner.c) */
         if (menu < 0)                         /* @asm 0x075C6D dec; jge */
             goto finish_alt;                  /* @asm 0x075C70 jmp 0x4afd */
 
@@ -1565,7 +1575,9 @@ int func_0759E8_save_load_game_screen(void)
 
             if (menu == 2) {                  /* @asm 0x075CDE cmp [bp-0xe0],2 */
                 /* (label 0x4855) pick a map name from "*.MP" list */
-                action = overlay_call_181F_03FE();       /* @asm 0x075CE9 @DS:0x234F "AMERICA" */
+                action = menu_run_boxed(0x234F);         /* @asm 0x075CE5 lea bx,[0x234F]
+                                                          * "AMERICA"; 0x075CE9 lcall
+                                                          * 0x181F:0x3FE (PORTED runner) */
                 if (action < 1)               /* @asm 0x075CF2 */
                     done = 1;                 /* @asm 0x075CF7 */
                 else if (action > 1) {        /* @asm 0x075D00 */

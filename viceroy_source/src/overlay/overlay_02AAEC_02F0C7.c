@@ -143,7 +143,8 @@ extern int overlay_call_181F_03C0(void);  /* quick_exit_draw()                  
 extern int overlay_call_181F_03CA(void);  /* point_in_rect(x0,w,y,h) -> bool       */
 extern int overlay_call_181F_03EA(void);  /* draw helper(8)                        */
 extern int overlay_call_181F_03E0(void);  /* event payload                         */
-extern int overlay_call_181F_03FE(void);  /* draw_msg(handle)                      */
+extern int overlay_call_181F_03FE(void);  /* draw_msg(handle) -- dynamic-BX sites  */
+extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/menu_runner.c */
 extern int overlay_call_181F_0416(void);  /* draw_text(ds:ptr,attr)                */
 extern int overlay_call_181F_0438(void);  /* string/event dispatch(handle,slot,buf)*/
 extern int overlay_call_181F_045C(void);  /* drain_input(0,redraw)                 */
@@ -1665,7 +1666,9 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     if (g_colony_count_539E >= 0x30) {              /* @0x02EB82 capacity guard */
         if (power >= 4 || g_power_ctrl[power * 0x34] != 0) { /* @0x02EB89/0x02EB92 */
-            overlay_call_181F_03FE();               /* @0x02EBA4 "TOOMANYCOLONIES"(0xED1)*/
+            (void)menu_run_boxed(0x0ED1);           /* @0x02EBA0 lea bx,[0xED1]
+                                                     * "TOOMANYCOLONIES"; @0x02EBA4 lcall
+                                                     * 0x181F:0x3FE (PORTED runner) */
             return slot;                            /* @0x02EBA9 -1 */
         }
     }

@@ -42,6 +42,7 @@
  * live in overlay_externs.h.  We call through the canonical names. */
 
 /* direct calls replacing void-arity stub calls */
+extern int menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 extern int func_0082A0_logic_sz_18(uint16_t row, uint16_t col);  /* 0x181F:0x030C relation/alarm table @0x5B1C */
 extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);         /* 0x181F:0x078C terrain/tile query */
 extern int func_008BB2_logic_sz_20(uint16_t unit);               /* 0x181F:0x0B78 in-settlement probe */
@@ -1041,7 +1042,10 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
             /* @asm 0x0486B5..0x0486E1 — format the recovered commodity for the log/UI. */
             overlay_call_181F_09A4();  overlay_call_181F_0438();   /* slot 0 */
             overlay_call_181F_0A1A();  overlay_call_181F_0438();   /* slot 1 */
-            overlay_call_181F_03FE();                              /* @asm 0x0486E7 */
+            (void)menu_run_boxed(0x14F6);                          /* @asm 0x0486E3 lea bx,
+                                                                    * [0x14F6] "INDIANGRUDGE";
+                                                                    * 0x0486E7 lcall 0x181F:
+                                                                    * 0x3FE (PORTED runner) */
 
             /* @asm 0x0486EC / 0x048700 — recover the boycotted price (+400) and ease tax (-100). */
             overlay_call_181F_0D6C();                /* price tick +400 @ ([0x5398],power) */
@@ -3109,7 +3113,9 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
         /* @asm 0x04B3CE — relation flags for (owner, region). */
         int fl = overlay_call_181F_0A38();       /* -> al */
         if (!(fl & 0x20)) {                      /* @asm 0x04B3D6 not at war */
-            overlay_call_181F_03FE();            /* @asm 0x04B3DE show msg @str 0x16F7 */
+            (void)menu_run_boxed(0x16F7);        /* @asm 0x04B3DA lea bx,[0x16F7]
+                                                  * "DONTKNOWSHIPS"; 0x04B3DE lcall
+                                                  * 0x181F:0x3FE (PORTED runner) */
             goto done;                           /* @asm 0x04B3E3 */
         }
         /* @asm 0x04B3E6 — King threshold: tbl>=0x4B OR owner_word>=0x40 -> intervene. */

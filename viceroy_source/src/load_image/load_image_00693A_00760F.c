@@ -13,6 +13,7 @@
 /* File-local overlay thunks not yet in overlay_externs.h (sibling convention). */
 extern int overlay_call_057E_004A();  /* @ref RTLink 0x057E:0x004A — stack move-cost */
 extern int overlay_call_0981_0000();  /* @ref RTLink 0x0981:0x0000 — owner/role predicate */
+extern int menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
 
 /* @asm        0x00693A..0x00697E  (68 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_00693A.asm
@@ -564,7 +565,8 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
 
 soft_cap:                                       /* @asm 0x6e76 */
     if (di < 4 && DG8(0x543F + (unsigned)di * 0x34) == 0)
-        overlay_call_181F_03FE(/* &message@0x1F3 */);
+        (void)menu_run_boxed(0x01F3);     /* @asm 0x006E85 lea bx,[0x1F3] "TOOMANYUNITS";
+                                           * 0x006E89 lcall 0x181F:0x3FE (PORTED runner) */
     return si;                                   /* @asm 0x6e8e (-1) */
 }
 

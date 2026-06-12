@@ -348,7 +348,11 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
         overlay_call_181F_048E(/* 0x3E '>' */);
 
         /* Confirmation Y/N dialog: 0x181F:0x03FE returns 1 if accepted.
-         * @asm 0x05C947..0x05C955 — DEC ax / JE proceed / else RETF. */
+         * @asm 0x05C947 lea bx,[bp-0x50] -- DYNAMIC key: BX = the stack buffer
+         * holding the runtime-built "KINGGALLEON.."-verb key assembled above;
+         * 0x05C94A lcall 0x181F:0x3FE; @asm 0x05C94F..0x05C955 DEC ax / JE.
+         * Wire via menu_run_key(buf, 0) (src/ui/menu_runner.c) once this
+         * site's buffer assembly is ported to a C string. */
         if (overlay_call_181F_03FE(/* &buf */) != 1)
             return 0;                               /* declined: no loot */
 

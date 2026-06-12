@@ -55,6 +55,8 @@
 #include "viceroy.h"
 #include "overlay_externs.h"
 
+extern int menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
+
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced in this region (cite-or-not yet decoded; absolute DGROUP offsets
  * as seen in the disassembly).  Declared locally per the porting-scope rule
@@ -1028,7 +1030,9 @@ int trade_with_power_dialog(int unit)  /* func_05A40E */
     if (*(uint8_t *)(owner * 0x34 + POWER_DEAD_543F))  return 1;   /* @asm 0x05A43D */
 
     if ((overlay_call_181F_0A38() & 0x40) == 0) {      /* not at treaty @asm 0x05A448 */
-        overlay_call_181F_03FE();                      /* draw "TRADEATWAR" @asm 0x05A458 */
+        (void)menu_run_boxed(0x1AA0);                  /* @asm 0x05A454 lea bx,[0x1AA0]
+                                                        * "TRADEATWAR"; 0x05A458 lcall
+                                                        * 0x181F:0x3FE (PORTED runner) */
         return 1;                                      /* @asm 0x05A45D */
     }
     if (overlay_call_181F_07B4() != 0) {               /* mercantilism @asm 0x05A469 */
@@ -1224,7 +1228,9 @@ int unit_needs_orders_or_act(int unit, int owner)  /* func_05A862 */
                 else if (uo >= 4)                                       blocked = 1;
             }
             if (blocked) {
-                overlay_call_181F_03FE();              /* draw "NOWARSDURINGREV" @asm 0x05A916 */
+                (void)menu_run_boxed(0x1AF3);          /* @asm 0x05A912 lea bx,[0x1AF3]
+                                                        * "NOWARSDURINGREV"; 0x05A916 lcall
+                                                        * 0x181F:0x3FE (PORTED runner) */
                 ret = 1;                               /* @asm 0x05A91B */
             }
         }
