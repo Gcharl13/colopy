@@ -235,10 +235,7 @@ EXTERN(overlay_call_181F_0772)
  *     (the text-slot emitter; called both directly and from func_06F7EA which
  *      func_06C23C calls as its tail @asm 0x6C24F)
  */
-/* 0022 (RLE blitter) and 0416 (dialog text slot) are interactive-only;
- * their targets crash in headless mode without sprite/dialog initialisation.
- * They remain as weak stubs intentionally until a headless guard is wired.
- * PROVIDE not used here: linkgap.py generates the stubs for these two. */
+/* 0022/0416/09AE/0438 — wired in Phase 4.3k below (headless guard added). */
 EXTERN(func_06C23C_dialog_make_from_int)
 EXTERN(func_06C27C_dialog_slot_set_pair)
 EXTERN(func_06C220_dialog_slot_set_block)
@@ -438,3 +435,21 @@ PROVIDE(colony_screen_init_owner = market_set_active);
 EXTERN(market_set_active)
 PROVIDE(colony_misc_b82 = func_009626);
 EXTERN(func_009626)
+
+/* Phase 4.3k (2026-06-12): wire dialog chain stubs with headless guards.
+ * All four targets now check `if (!g_buf_ptr_2D42_2D44) return 0/NULL` at entry,
+ * so they are safe to call in headless (smoke-test) mode where the NAMES.TXT
+ * string table is never loaded.  Thunk resolutions (byte-verified via whois.py):
+ *   overlay_call_181F_0022 0x181F:0x0022 -> file 0x2462 = find_char_in_buffer
+ *     (NUL-string-table walker; ported in src/iolib/format.c)
+ *   overlay_call_181F_0416 0x181F:0x0416 -> file 0x6C220 = func_06C220_dialog_slot_set_block
+ *     (per-dialog scratch-block writer; ported in overlay_06C220_06D938.c)
+ *   overlay_call_181F_09AE 0x181F:0x09AE -> file 0x6C27C = func_06C27C_dialog_slot_set_pair
+ *     (word-pair slot table writer; ported in overlay_06C220_06D938.c)
+ *   overlay_call_181F_0438 0x181F:0x0438 -> file 0x6C23C = func_06C23C_dialog_make_from_int
+ *     (build-dialog-from-int; ported in overlay_06C220_06D938.c) */
+PROVIDE(overlay_call_181F_0022 = find_char_in_buffer);
+EXTERN(find_char_in_buffer)
+PROVIDE(overlay_call_181F_0416 = func_06C220_dialog_slot_set_block);
+PROVIDE(overlay_call_181F_09AE = func_06C27C_dialog_slot_set_pair);
+PROVIDE(overlay_call_181F_0438 = func_06C23C_dialog_make_from_int);

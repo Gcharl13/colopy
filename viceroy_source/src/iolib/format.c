@@ -21,6 +21,7 @@
  * ============================================================================ */
 #include "viceroy.h"
 #include "format.h"
+#include <stddef.h>
 
 /* External overlay calls used by the pipeline */
 extern void  overlay_call_181F_0048(int mode_flag, void *buf_arg, void *source,
@@ -85,21 +86,29 @@ int format_int_to_stream(int value)
 }
 
 /* ============================================================================
- * find_char_in_buffer
- * @asm 0x002462..0x002493  (45 bytes)
+ * find_char_in_buffer  (func_002462 port)
+ * @asm 0x002462..0x002493  (49 bytes)
  *
- * REPNE SCASB scan — searches the buffer at [g_buf_ptr_2D42..2D44] for a
- * NUL byte (or until count reaches 0).  Returns the matching far pointer.
+ * Walks the NUL-separated string table at g_buf_ptr_2D42_2D44, skipping
+ * 'count' complete NUL-terminated strings (REPNE SCASB in a DX-countdown
+ * loop), and returns a pointer to the start of the (count+1)th string.
+ * NULL guard: if g_buf_ptr_2D42_2D44 is NULL (headless / no NAMES.TXT
+ * loaded yet), returns NULL without touching memory.
+ * @asm 0x2475 les di,[bp-4]   ; ES:DI = far ptr from DGROUP[0x2D42:0x2D44]
+ * @asm 0x2481 repne scasb     ; scan for NUL, DI ends past the NUL byte
+ * @asm 0x2488 dec dx; jne     ; repeat for each string to skip
  * ============================================================================ */
 void far *find_char_in_buffer(uint16_t count)
 {
-    /* @asm 0x2462..0x2493  reads g_buf_ptr_2D42_2D44 then REPNE SCASB */
-    char far *p = (char far *)g_buf_ptr_2D42_2D44;
-    while (count-- > 0) {
-        if (*p == 0) return (void far *)p;
-        p++;
-    }
-    return (void far *)p;
+    char *p = (char *)g_buf_ptr_2D42_2D44;  /* @asm 0x2475 les di,[bp-4] */
+    if (!p) return NULL;                     /* headless guard */
+    if (count == 0) return (void *)p;        /* @asm 0x247B or dx,dx; je 0x248B */
+    do {
+        /* @asm 0x2481 repne scasb — scan for NUL (al=0), stopping after finding it */
+        while (*p) p++;  /* scan to NUL */
+        p++;             /* step past the NUL (DI incremented by scasb on match) */
+    } while (--count > 0);  /* @asm 0x2488 dec dx; jne 0x2481 */
+    return (void *)p;    /* @asm 0x248B mov dx,es; mov ax,di; retf */
 }
 
 /* ============================================================================

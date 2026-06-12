@@ -176,6 +176,7 @@ static int func_06C388(uint16_t flags, uint16_t str_lo, uint16_t str_hi,
  * ============================================================================ */
 int func_06C220_dialog_slot_set_block(uint16_t slot, uint16_t v0, uint16_t v1)
 {
+    if (!g_buf_ptr_2D42_2D44) return 0;  /* headless guard: string table not loaded */
     /* push [bp+0xA]; push [bp+8]; push ds; push (0x9CD2 + slot*0x40); copy */
     (void)v0; (void)v1;
     overlay_call_0D1D_117E();   /* @0x06C234 far copy into 0x9CD2 + slot*0x40 */
@@ -200,6 +201,7 @@ int func_06C220_dialog_slot_set_block(uint16_t slot, uint16_t v0, uint16_t v1)
  * ============================================================================ */
 int func_06C23C_dialog_make_from_int(uint16_t arg0, uint16_t arg1)
 {
+    if (!g_buf_ptr_2D42_2D44) return 0;  /* headless guard: string table not loaded */
     (void)arg0; (void)arg1;
     overlay_call_181F_0022();   /* @0x06C242 create_dialog(arg1) */
     return func_06F7EA();       /* @0x06C24F push dx:ax,[bp+6] -> 181F:0416 */
@@ -243,6 +245,7 @@ int func_06C254_dialog_make_from_str(uint16_t arg0, uint16_t arg1, uint16_t arg2
  * ============================================================================ */
 int func_06C27C_dialog_slot_set_pair(uint16_t slot, uint16_t v0, uint16_t v1)
 {
+    if (!g_buf_ptr_2D42_2D44) return 0;  /* headless guard: string table not loaded */
     uint16_t bx = slot << 2;                    /* @0x06C288 */
     *(uint16_t *)(g_dialog_slot_9CB0 + bx + 0) = v0; /* @0x06C28B (0x9CB0 + slot*4) */
     *(uint16_t *)(g_dialog_slot_9CB0 + bx + 2) = v1; /* @0x06C28F */
@@ -300,6 +303,7 @@ int func_06C2D6_dialog_lookup_accelerator(uint16_t panel_lo)
     char buf[0x50];
     char *p;
     (void)panel_lo;
+    buf[0] = 0;                           /* headless: stub doesn't fill buf; NUL → early exit */
     overlay_call_0D1D_117E();             /* @0x06C2E5 far-copy src -> buf */
     p = buf;                              /* @0x06C2ED [bp-0x52] = &buf */
     for (;;) {
