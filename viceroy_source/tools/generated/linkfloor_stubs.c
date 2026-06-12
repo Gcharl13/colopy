@@ -42,7 +42,6 @@ __attribute__((weak)) long overlay_call_05EB_0142(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_05EB_038E(void) { viceroy_stub_hit("overlay_call_05EB_038E"); return 0; }
 __attribute__((weak)) long overlay_call_05EB_0A76(void) { viceroy_stub_hit("overlay_call_05EB_0A76"); return 0; }
 __attribute__((weak)) long overlay_call_0984_00AA(void) { viceroy_stub_hit("overlay_call_0984_00AA"); return 0; }
-__attribute__((weak)) long overlay_call_0984_04F6(void) { viceroy_stub_hit("overlay_call_0984_04F6"); return 0; }
 __attribute__((weak)) long overlay_call_09EF_002C(void) { viceroy_stub_hit("overlay_call_09EF_002C"); return 0; }
 __attribute__((weak)) long overlay_call_09EF_0032(void) { viceroy_stub_hit("overlay_call_09EF_0032"); return 0; }
 __attribute__((weak)) long overlay_call_09F6_0002(void) { viceroy_stub_hit("overlay_call_09F6_0002"); return 0; }
@@ -238,7 +237,6 @@ __attribute__((weak)) long overlay_call_181F_052E(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_181F_053C(void) { viceroy_stub_hit("overlay_call_181F_053C"); return 0; }
 __attribute__((weak)) long overlay_call_181F_0550(void) { viceroy_stub_hit("overlay_call_181F_0550"); return 0; }
 __attribute__((weak)) long overlay_call_181F_055E(void) { viceroy_stub_hit("overlay_call_181F_055E"); return 0; }
-__attribute__((weak)) long overlay_call_181F_056A(void) { viceroy_stub_hit("overlay_call_181F_056A"); return 0; }
 __attribute__((weak)) long overlay_call_181F_0582(void) { viceroy_stub_hit("overlay_call_181F_0582"); return 0; }
 __attribute__((weak)) long overlay_call_181F_0590(void) { viceroy_stub_hit("overlay_call_181F_0590"); return 0; }
 __attribute__((weak)) long overlay_call_181F_059A(void) { viceroy_stub_hit("overlay_call_181F_059A"); return 0; }

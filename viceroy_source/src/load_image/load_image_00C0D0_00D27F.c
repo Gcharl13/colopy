@@ -1326,3 +1326,28 @@ int func_00D272_logic_sz_13(void)
     return 0;   /* platform-replaced BIOS kbhit; front end supplies real key state */
 }
 
+
+/* @asm        0x00C136..0x00C178  (66 bytes)  region=load_image
+ * BYTE_VERIFIED 2026-06-12 (uncharted interstitial; not in functions.json).
+ * Thunk entries: 0x181F:0x056A and 0x0984:0x04F6 both land here.
+ * FULL-SCREEN REFRESH sequence:
+ *   seg9:0x2AE(0,0,0x140,7)   clear the status row     (= func_00273E)
+ *   func_00C0D0(0)            status-row repaint
+ *   0x181F:0xE1C(0)           compose_active_tile(0)
+ *   0x181F:0x55E(0,0)         map-screen composer func_043074 (UNPORTED,
+ *                             5,462 B page09 body -- stays a counted stub)
+ *   0xB70:0x3A(0,0,0, 0xC8,0x140,0)  cell refresh (platform no-op)
+ */
+int func_00C136_screen_refresh(void)
+{
+    extern int func_00273E_logic_sz_10(uint16_t a, uint16_t b, uint16_t c, uint16_t d);
+    extern int func_067700_compose_active_tile(uint16_t active);
+    extern int overlay_call_181F_055E();
+    extern int overlay_call_0B70_003A();
+    func_00273E_logic_sz_10(0, 0, 0x140, 7);     /* @asm 0x00C13F seg9:0x2AE */
+    func_00C0D0_logic_sz_57(0);                  /* @asm 0x00C14A near 0xC0D0 */
+    func_067700_compose_active_tile(0);          /* @asm 0x00C152 0x181F:0xE1C */
+    overlay_call_181F_055E(0, 0);                /* @asm 0x00C15E map composer */
+    overlay_call_0B70_003A();                    /* @asm 0x00C173 cell refresh */
+    return 0;
+}

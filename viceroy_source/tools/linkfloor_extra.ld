@@ -664,3 +664,9 @@ PROVIDE(overlay_call_05B3_024E = func_00817E_logic_sz_14);
 EXTERN(func_00817E_logic_sz_14)
 PROVIDE(overlay_call_191F_0934 = func_0694AE_cargo_select_dialog);
 EXTERN(func_0694AE_cargo_select_dialog)
+
+/* Phase 4.6 Batch A portables (2026-06-12): the full-screen refresh body at
+ * file 0xC136 (uncharted interstitial), reached by TWO thunk windows. */
+PROVIDE(overlay_call_181F_056A = func_00C136_screen_refresh);
+PROVIDE(overlay_call_0984_04F6 = func_00C136_screen_refresh);
+EXTERN(func_00C136_screen_refresh)
