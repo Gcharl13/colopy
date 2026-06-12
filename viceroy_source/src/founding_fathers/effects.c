@@ -28,6 +28,7 @@
  * @asm VICEROY.EXE func_03BC42 @0x03BC42  (page 0x06, ENTER 0x60,0, RETF)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "power.h"
 
 /* ----------------------------------------------------------------------------
@@ -63,22 +64,20 @@ enum FoundingFatherId {
  * @asm DGROUP:0x84FC = pointer to ACTIVE player's PowerRecord (g_active_power);
  *      confirmed elsewhere by gold dword at [bx+0x2a]/[bx+0x2c].
  * ---------------------------------------------------------------------------- */
-extern struct PowerRecord *g_active_power;   /* DGROUP:0x84FC @asm 03BD33 mov bx,[0x84fc] */
-
-/* ----------------------------------------------------------------------------
- * VERIFIED other DGROUP globals used as loop bounds / tables (exact names not yet decoded).
- * ---------------------------------------------------------------------------- */
-extern void   *g_colony_cur;     /* DGROUP:0x8542 colony struct ptr (id-9 / Bolivar checks) */
-extern int16_t g_num_powers;     /* DGROUP:0x539E loop bound (Coronado id6 / Hudson id9 / id14) */
-extern int16_t g_num_settle;     /* DGROUP:0x539A native-settlement count (id16/id22)  */
-extern int16_t g_num_units_dim;  /* DGROUP:0x539C unit-table loop bound (id24)          */
-extern int16_t g_bolivar_meter;  /* DGROUP:0x53D0 meter += 0x14, capped 0x64 (Bolivar)  */
-extern uint8_t g_ai_personality[]; /* DGROUP:0x543F stride 0x34, +0x00 controller (skip if !=0) */
-
-/* VERIFIED unit table base (DGROUP:0x3144, stride 0x1C). @ref docs/RULINGS.md 2026-05-28 RESOLVED. */
-extern uint8_t g_unit_table[];   /* base 0x3144 ; +0x00 map_x, +0x01 map_y, +0x02 type,
-                                  *  +0x03 owner&0xf, +0x08 orders, +0x09/+0x0A goto x/y,
-                                  *  +0x16 turn_counter, +0x17 vet/subtype */
+/* (2026-06-12) All DGROUP state is now reached through the DG accessors
+ * (dgroup.h) — the former named externs (g_active_power, g_colony_cur,
+ * g_num_powers, ...) bound to WRONG or read-only link-floor homes in the
+ * modern build (g_active_power -> the naval WORD at 0x5394, the counts ->
+ * weak FUNCTION stubs) and would have faulted on first execution.  Homes:
+ *   [0x84FC] active PowerRecord near offset   @asm 03BD33 mov bx,[0x84fc]
+ *   [0x8542] selected ColonyRecord offset (id-9 / id-24 walks)
+ *   [0x539E] colony count   [0x539A] settlement count   [0x539C] unit count
+ *   [0x53D0] Bolivar/rebel-sentiment meter
+ *   [0x543F] AIPersonality controller column, stride 0x34 (0 = human)
+ *   [0x3144] unit table, stride 0x1C: +0x02 type, +0x03 owner&0xf, +0x08
+ *            orders, +0x09/+0x0A goto x/y, +0x16 turn_counter, +0x17 subtype
+ *   [0x8D4A]/[0x8D4E] selected-settlement record offsets (settle_at/settle_at2)
+ */
 
 /* ----------------------------------------------------------------------------
  * Overlay/load-image helpers used by the dispatch. Call sites/args VERIFIED;
@@ -134,8 +133,9 @@ extern void cs_1086(void *out, int power);           /* @asm 03BCA2 call 0x1086 
 extern void cs_1077(int ff_id, int power);           /* @asm 03BD1D call 0x1077 */
 
 /* Native-settlement table (DGROUP:0x8D4A) and map/unit tables used by effects. */
-extern uint8_t *g_settle_table;  /* DGROUP:0x8D4A ; +0x05 mission flag (0x10|owner)  @ref MEMORY.md */
-extern int16_t *g_settle_ptr_4e; /* DGROUP:0x8D4E ; [bx+si+0x46] alarm word (Pocahontas) */
+/* Native-settlement selection slots: [0x8D4A] (+0x05 mission flag = 0x10|owner,
+ * @ref MEMORY.md) and [0x8D4E] (+0x46 alarm word, Pocahontas) hold the record
+ * offsets stored by settle_at/settle_at2 — read via DG16() at the use sites. */
 
 /* ----------------------------------------------------------------------------
  * ff_acquire_dispatch -- func_03BC42
@@ -145,75 +145,86 @@ extern int16_t *g_settle_ptr_4e; /* DGROUP:0x8D4E ; [bx+si+0x46] alarm word (Poc
  * ---------------------------------------------------------------------------- */
 void ff_acquire_dispatch(int power, int ff_id)
 {
-    struct PowerRecord *p;
+    unsigned p;                        /* active PowerRecord near offset ([0x84FC]) */
     int16_t save_8dc6;                 /* @asm 03BC47 mov ax,[0x8dc6]; -> [bp-0x58] */
     int i;
 
-    save_8dc6 = *(int16_t *)0x8DC6;    /* @asm 03BC47 stashed, reused at id14/id20 tail */
+    save_8dc6 = DGS16(0x8DC6);         /* @asm 03BC47 stashed, reused at id14/id20 tail */
     ff_announce(power);                /* @asm 03BC50 lcall 0x181f,0x582 */
 
     /* @asm 03BC58: if (ff_id >= 0) { ... announcement + flagging ... } */
     if (ff_id >= 0) {
-        /* @asm 03BC5E: cs_1095(1, ff_id, power) — log/notify the recruit */
+        /* @asm 03BC5E: push 1; push ff_id; push power; call cs:0x1095
+         * -> ljmp 0x1A1F:0x38 = func_03B900 ff_set_owned_bit(power, ff_id, 1)
+         * (page-06 thunk row disassembled 2026-06-12; recruit.c has the body) */
         cs_1095(1, ff_id, power);                          /* @asm 03BC67 call 0x1095 */
 
         /* @asm 03BC6D..03BC85: power_set_flag(*(WORD*)(ff_id*6 - 0x69ae), 1)
-         * ff_id*6 indexes a per-FF WORD table at DGROUP base (-0x69ae). Not yet decoded table. */
+         * = the FF's NAME/notify string handle (FF_MEM_BASE 0x9652, congress.c). */
         {
-            int16_t handle = *(int16_t *)(0 + (unsigned)ff_id * 6 - 0x69AE); /* @asm 03BC78 */
+            int16_t handle = (int16_t)DG16(0x9652 + (unsigned)ff_id * 6); /* @asm 03BC78 [bx-0x69ae] */
             power_set_flag(handle, 1);                     /* @asm 03BC7E lcall 0x181f,0x438 */
         }
 
         /* @asm 03BC86: if (*(int8_t*)(ff_id + 0x53a9) < 0) *(...) = (uint8_t)power;
          * a per-FF "first owner" byte table at DGROUP:0x53A9, set once. */
-        if (*(int8_t *)((unsigned)ff_id + 0x53A9) < 0)     /* @asm 03BC89 */
-            *(uint8_t *)((unsigned)ff_id + 0x53A9) = (uint8_t)power;  /* @asm 03BC93 */
+        if (DGS8(0x53A9 + (unsigned)ff_id) < 0)            /* @asm 03BC89 */
+            DG8(0x53A9 + (unsigned)ff_id) = (uint8_t)power;/* @asm 03BC93 */
     } else {
-        /* @asm 03BC9A: out-of-band path (ff_id<0): cs_1086 then power_set_flag(&buf,1). Not yet decoded. */
+        /* @asm 03BC9A: out-of-band path (ff_id<0): cs_1086 then power_set_flag(&buf,1).
+         * cs:0x1086 -> ljmp 0x1A1F:0x0E = func_03BA26 ff_format_name_row.
+         * Unreached from the wired flow (callers gate pending>=0); left weak. */
         uint8_t buf[0x50];                                 /* @asm lea ax,[bp-0x50] */
         cs_1086(buf, power);                               /* @asm 03BCA2 call 0x1086 */
         power_set_flag((int)(long)buf, 1);                 /* @asm 03BCAF lcall 0x181f,0x416 */
     }
 
-    /* @asm 03BCB7: if (power < 4 && g_ai_personality[power*0x34 + 0] == 0) {
+    /* @asm 03BCB7: if (power < 4 && controller(0x543F+power*0x34) == 0) {
      *   ...play the full recruit presentation (only for the active/human power)... }
      * @ref AIPersonality DGROUP:0x543F stride 0x34, +0x00 controller (0 => human). */
     if (power < 4 &&
-        g_ai_personality[(unsigned)power * 0x34 + 0x00] == 0) {       /* @asm 03BCC1 */
+        DG8(0x543F + (unsigned)power * 0x34) == 0) {                  /* @asm 03BCC1 */
         /* @asm 03BCCE: power_set_flag(*(WORD*)(power*6 - 0x69ae), 0) */
-        int16_t handle = *(int16_t *)((unsigned)power * 6 - 0x69AE);  /* @asm 03BCD9 */
+        int16_t handle = (int16_t)DG16(0x9652 + (unsigned)power * 6); /* @asm 03BCD9 */
         power_set_flag(handle, 0);                                    /* @asm 03BCDF lcall 0x181f,0x438 */
         power_set_flag(power_handle(power), 1);                       /* @asm 03BCF5 lcall 0x181f,0x438 */
         ui_sound_or_msg(3);                                           /* @asm 03BCFD lcall 0x181f,0x4ac */
-        /* @asm 03BD07: ff_portrait_dialog(&cs:0x87c, &cs:0x125a, 0) — the FF portrait popup */
+        /* @asm 03BD07: lea bx,[0x87c]; lea ax,[0x125a]; sub dx,dx; lcall 0x181F:0x998
+         * = the 3.1 MENU SHIM (menu_runner.c chain): boxed GAME.TXT key
+         * "FREEDOM" (dg 0x125A) — the FF acquire popup.  [WIRED: strong
+         * ff_portrait_dialog in ui/congress_screen.c -> menu_run_boxed] */
         ff_portrait_dialog((void *)0x087C, (void *)0x125A, 0);        /* @asm 03BD11 lcall 0x181f,0x998 */
+        /* @asm 03BD16: push ff_id; push power; call cs:0x1077
+         * -> ljmp 0x191F:0xF74 = func_03BB4A cc_screen_background(power, ff_id)
+         * = THE CONGRESS SCREEN (CCBKGD + CC-NN.SS portrait plates + the
+         * new-father reveal).  [WIRED: ui/congress_screen.c] */
         cs_1077(ff_id, power);                                        /* @asm 03BD1D call 0x1077 */
         ff_pre_b(ff_id);                                              /* @asm 03BD26 lcall 0x1a1f,0x62 */
         ff_pre_a(power);                                              /* @asm 03BD2E lcall 0x181f,0x56a */
     }
 
     /* ====================== common acquisition core ====================== */
-    /* @asm 03BD33: p = g_active_power (DGROUP:0x84FC) */
-    p = g_active_power;
-    *(uint8_t *)((uint8_t *)p + 0x14) += 1;       /* @asm 03BD37 inc byte [bx+0x14] ff_count++  <-- 0x3BD37 */
-    *(uint16_t *)((uint8_t *)p + 0x12) = 0xFFFF;  /* @asm 03BD3A mov word [bx+0x12],0xffff */
+    /* @asm 03BD33: p = [0x84FC] (active PowerRecord near offset) */
+    p = DG16(0x84FC);
+    DG8(p + 0x14) += 1;                           /* @asm 03BD37 inc byte [bx+0x14] ff_count++  <-- 0x3BD37 */
+    DG16(p + 0x12) = 0xFFFF;                      /* @asm 03BD3A mov word [bx+0x12],0xffff */
 
     /* ============================== EFFECT SWITCH ============================== */
     /* Each `if (ff_id == N)` block mirrors a CMP/JNE chain in the original. */
 
     /* --- id 1: JAKOB FUGGER -- clear the boycott mask. @asm 03BD3F/03BD45 --- */
     if (ff_id == FF_JAKOB_FUGGER) {                          /* @asm cmp [bp+8],1 */
-        *(uint16_t *)((uint8_t *)p + 0x20) = 0;              /* @asm 03BD45 mov word [bx+0x20],0 */
+        DG16(p + 0x20) = 0;                                  /* @asm 03BD45 mov word [bx+0x20],0 */
     }
 
     /* --- id 9: SIEUR DE LA SALLE -- per-colony effect for colonies owned by
      *     `power` with population >= 3 (free Stockade). @asm 03BD4A..03BD89 --- */
     if (ff_id == FF_LA_SALLE) {                              /* @asm cmp [bp+8],9 (jne 0xa0b) */
-        for (i = 0; i < g_num_powers; i++) {                /* @asm 03BD85 cmp [0x539e] ([bp-0x5a]) */
-            unit_at(i);                                      /* @asm 03BD58 push i; lcall 0x181f,0x9e6 */
-            /* @asm 03BD61: c = g_colony_cur (DGROUP:0x8542) */
-            uint8_t *c = (uint8_t *)g_colony_cur;
-            if (c[0x1A] == (uint8_t)power && (int8_t)c[0x1F] >= 3) /* @asm 03BD68 cmp [bx+0x1a],al ; 03BD6D cmp [bx+0x1f],3 */
+        for (i = 0; i < DGS16(0x539E); i++) {                /* @asm 03BD85 cmp [0x539e] colony count ([bp-0x5a]) */
+            unit_at(i);                                      /* @asm 03BD58 push i; lcall 0x181f,0x9e6 (colony select) */
+            /* @asm 03BD61: c = [0x8542] (selected ColonyRecord near offset) */
+            unsigned c = DG16(0x8542);
+            if (DG8(c + 0x1A) == (uint8_t)power && DGS8(c + 0x1F) >= 3) /* @asm 03BD68 cmp [bx+0x1a],al ; 03BD6D cmp [bx+0x1f],3 */
                 colony_effect_id9(0, 1);                     /* @asm 03BD73 push 1; push 0; lcall 0x181f,0xbbe */
         }
     }
@@ -226,33 +237,34 @@ void ff_acquire_dispatch(int power, int ff_id)
          * (type 0x11 forced in the ==0xe branch; the else-0xf path is unreachable here). */
         int slot = unit_create(0x11, power, arg, arg);       /* @asm 03BDAC lcall 0x181f,0x95c */
         if (slot >= 0) {                                     /* @asm 03BDB7 or ax,ax; jl */
-            uint8_t *u = &g_unit_table[(unsigned)slot * 0x1C];   /* @asm 03BDBB imul bx,ax,0x1c */
+            unsigned u = 0x3144 + (unsigned)slot * 0x1C;     /* @asm 03BDBB imul bx,ax,0x1c (unit table 0x3144) */
             /* Source bytes are PowerRecord[power]+0x32/+0x33 (home x/y), indexed
              * by the `power` ARG (si=[bp+6]*0x13C), NOT the active-player ptr. */
-            uint8_t *src = (uint8_t *)0x8808 + (unsigned)power * 0x13C + 0x32; /* @asm si-0x77c6 */
-            u[0x08] = 0;                                      /* @asm 03BDBE mov [bx+0x314c],0 (orders; 0x3144+0x08) */
-            u[0x09] = src[0];                                 /* @asm 03BDC8 [si-0x77c6] -> [bx+0x314d] (goto_x; +0x09) */
-            u[0x0A] = src[1];                                 /* @asm 03BDD0 [si-0x77c5] -> [bx+0x314e] (goto_y; +0x0A) */
-            u[0x16] = 0;                                      /* @asm 03BDD8 mov [bx+0x315a],0 (turn_counter; 0x3144+0x16) */
+            unsigned src = 0x8808 + (unsigned)power * 0x13C + 0x32; /* @asm si-0x77c6 */
+            DG8(u + 0x08) = 0;                                /* @asm 03BDBE mov [bx+0x314c],0 (orders; 0x3144+0x08) */
+            DG8(u + 0x09) = DG8(src + 0);                     /* @asm 03BDC8 [si-0x77c6] -> [bx+0x314d] (goto_x; +0x09) */
+            DG8(u + 0x0A) = DG8(src + 1);                     /* @asm 03BDD0 [si-0x77c5] -> [bx+0x314e] (goto_y; +0x0A) */
+            DG8(u + 0x16) = 0;                                /* @asm 03BDD8 mov [bx+0x315a],0 (turn_counter; 0x3144+0x16) */
         }
     }
 
     /* --- id 16 (0x10): POCAHONTAS -- reset native alarm/tension toward `power`
-     *     across all settlements (two loops). @asm 03BDDD..03BE4B --- */
+     *     across all settlements (two loops). @asm 03BDDD..03BE4B ---
+     * [0x8D4E]/[0x8D4A] hold the SELECTED settlement record offsets (written by
+     * settle_at/settle_at2; modern convention = DGROUP near offsets, see
+     * load_image_007610_00824E.c "mov [0x8d4a],bx"). Re-read per iteration. */
     if (ff_id == FF_POCAHONTAS) {                            /* @asm cmp [bp+8],0x10 */
-        uint8_t *t4e = (uint8_t *)g_settle_ptr_4e;           /* DGROUP:0x8D4E base */
-        uint8_t *t4a = (uint8_t *)g_settle_table;            /* DGROUP:0x8D4A base */
         for (i = 0; i < 8; i++) {                            /* @asm 03BE1C cmp [bp-0x5a],8 */
             settle_at(i);                                    /* @asm 03BDEB lcall 0x181f,0xa42 */
-            /* @asm 03BDF3: si=power*2; alarm = -*(int16_t*)(t4e + si + 0x46) */
-            int16_t alarm = -(*(int16_t *)(t4e + (unsigned)power * 2 + 0x46)); /* @asm 03BDFC neg */
+            /* @asm 03BDF3: si=power*2; alarm = -*(int16_t*)([0x8D4E] + si + 0x46) */
+            int16_t alarm = (int16_t)-DGS16(DG16(0x8D4E) + (unsigned)power * 2 + 0x46); /* @asm 03BDFC neg */
             if (alarm < 0)                                   /* @asm 03BE04 or ax,ax; jge */
                 native_alarm_clear(0, alarm, power, i);      /* @asm 03BE11 lcall 0x181f,0xd6c */
         }
-        for (i = 0; i < g_num_settle; i++) {                 /* @asm 03BE47 cmp [0x539a] */
+        for (i = 0; i < DGS16(0x539A); i++) {                /* @asm 03BE47 cmp [0x539a] settlement count */
             settle_at2(i);                                   /* @asm 03BE2B lcall 0x181f,0xa4c */
-            /* @asm 03BE33: si=power*2; *(int16_t*)(t4a + si + 0x0a) = 0 */
-            *(int16_t *)(t4a + (unsigned)power * 2 + 0x0A) = 0; /* @asm 03BE3C */
+            /* @asm 03BE33: si=power*2; *(int16_t*)([0x8D4A] + si + 0x0a) = 0 */
+            DGS16(DG16(0x8D4A) + (unsigned)power * 2 + 0x0A) = 0; /* @asm 03BE3C */
         }
     }
 
@@ -261,10 +273,10 @@ void ff_acquire_dispatch(int power, int ff_id)
      *     @asm 03BE4D..03BE74 --- */
     if (ff_id == FF_SIMON_BOLIVAR) {                         /* @asm cmp [bp+8],0x12 */
         if (power < 4 &&
-            g_ai_personality[(unsigned)power * 0x34 + 0x00] == 0) {  /* @asm 03BE5D */
-            int v = g_bolivar_meter + 0x14;                  /* @asm 03BE64 add [0x53d0],0x14 */
+            DG8(0x543F + (unsigned)power * 0x34) == 0) {     /* @asm 03BE5D */
+            int v = DGS16(0x53D0) + 0x14;                    /* @asm 03BE64 add [0x53d0],0x14 */
             if (v > 0x64) v = 0x64;                          /* @asm 03BE6C cmp 0x64; clamp */
-            g_bolivar_meter = (int16_t)v;                    /* @asm 03BE74 mov [0x53d0],ax */
+            DGS16(0x53D0) = (int16_t)v;                      /* @asm 03BE74 mov [0x53d0],ax */
         }
     }
 
@@ -272,11 +284,11 @@ void ff_acquire_dispatch(int power, int ff_id)
      *     native settlement whose owner == power. @asm 03BE77..03BEB0 ---
      * @ref NativeSettlement +0x05 mission flag = 0x10|owner (MEMORY.md). */
     if (ff_id == FF_DE_BREBEUF) {                            /* @asm cmp [bp+8],0x16 */
-        for (i = 0; i < g_num_settle; i++) {                 /* @asm 03BEAC cmp [0x539a] */
+        for (i = 0; i < DGS16(0x539A); i++) {                /* @asm 03BEAC cmp [0x539a] */
             settle_at2(i);                                   /* @asm 03BE85 lcall 0x181f,0xa4c */
-            uint8_t *s = g_settle_table;                     /* DGROUP:0x8D4A */
-            if ((int8_t)s[5] >= 0 && (s[5] & 0x0F) == (uint8_t)power) /* @asm 03BE91/03BE9D */
-                s[5] |= 0x10;                                /* @asm 03BEA2 or byte [bx+5],0x10 */
+            unsigned s = DG16(0x8D4A);                       /* selected settlement offset */
+            if (DGS8(s + 5) >= 0 && (DG8(s + 5) & 0x0F) == (uint8_t)power) /* @asm 03BE91/03BE9D */
+                DG8(s + 5) |= 0x10;                          /* @asm 03BEA2 or byte [bx+5],0x10 */
         }
     }
 
@@ -289,24 +301,24 @@ void ff_acquire_dispatch(int power, int ff_id)
          * owner byte (UnitRecord+0x03)&0xf == power, if that unit's type
          * (UnitRecord+0x02) == 0 and its subtype (+0x17) == 0x1B (Indian Convert),
          * promote subtype to 0x1C (Free Colonist). */
-        for (i = 0; i < g_num_units_dim; i++) {              /* @asm 03BEED cmp [0x539c] */
-            uint8_t *u = &g_unit_table[(unsigned)i * 0x1C];  /* @asm 03BEC2 imul bx,ax,0x1c */
-            if ((u[0x03] & 0x0F) != (uint8_t)power)          /* @asm 03BEC5 [bx+0x3147]&0xf cmp [bp+6] (owner +0x03) */
+        for (i = 0; i < DGS16(0x539C); i++) {                /* @asm 03BEED cmp [0x539c] */
+            unsigned u = 0x3144 + (unsigned)i * 0x1C;        /* @asm 03BEC2 imul bx,ax,0x1c */
+            if ((DG8(u + 0x03) & 0x0F) != (uint8_t)power)    /* @asm 03BEC5 [bx+0x3147]&0xf cmp [bp+6] (owner +0x03) */
                 continue;                                    /* @asm 03BECE jne next */
-            if (u[0x02] == 0 && u[0x17] == 0x1B)             /* @asm 03BED4 [bx+0x3146]==0 (type) ; 03BEDB [bx+0x315b]==0x1b (subtype) */
-                u[0x17] = 0x1C;                              /* @asm 03BEE2 mov [bx+0x315b],0x1c */
+            if (DG8(u + 0x02) == 0 && DG8(u + 0x17) == 0x1B) /* @asm 03BED4 [bx+0x3146]==0 (type) ; 03BEDB [bx+0x315b]==0x1b (subtype) */
+                DG8(u + 0x17) = 0x1C;                        /* @asm 03BEE2 mov [bx+0x315b],0x1c */
         }
         /* --- pass 2: per-power colony walk (@asm 0xb73..0xbac) ---
          * Outer over k in [0,[0x539e]); unit_at(k) selects a colony into the
-         * DGROUP:0x8542 struct; if that colony's owner byte (struct+0x1a)==power,
+         * DGROUP:0x8542 slot; if that colony's owner byte (struct+0x1a)==power,
          * walk its members m in [0,struct+0x1f): if unit_type_of(m)==0x1B, set
          * it to 0x1C via unit_set_type(0x1C,m). */
-        for (int k = 0; k < g_num_powers; k++) {             /* @asm 03BF2F cmp [0x539e] */
+        for (int k = 0; k < DGS16(0x539E); k++) {            /* @asm 03BF2F cmp [0x539e] */
             unit_at(k);                                      /* @asm 03BF39 lcall 0x181f,0x9e6 */
-            uint8_t *c = (uint8_t *)g_colony_cur;            /* DGROUP:0x8542 */
-            if (c[0x1A] != (uint8_t)power)                   /* @asm 03BF48 cmp [bx+0x1a],al */
+            unsigned c = DG16(0x8542);                       /* DGROUP:0x8542 selected colony offset */
+            if (DG8(c + 0x1A) != (uint8_t)power)             /* @asm 03BF48 cmp [bx+0x1a],al */
                 continue;                                    /* @asm 03BF4B jne */
-            for (int m = 0; m < (int8_t)c[0x1F]; m++) {      /* @asm 03BF01 [bx+0x1f] > [bp-0x5e] */
+            for (int m = 0; m < DGS8(c + 0x1F); m++) {       /* @asm 03BF01 [bx+0x1f] > [bp-0x5e] */
                 if (unit_type_of(m) == 0x1B)                 /* @asm 03BF15 lcall 0xc54; cmp 0x1b */
                     unit_set_type(0x1C, m);                  /* @asm 03BF22 push 0x1c; push m; lcall 0xcae */
             }
@@ -316,7 +328,7 @@ void ff_acquire_dispatch(int power, int ff_id)
     /* --- id 6: FRANCISCO CORONADO -- reveal all colonies of all powers.
      *     @asm 03BF54..03BF83 --- */
     if (ff_id == FF_CORONADO) {                              /* @asm cmp [bp+8],6 */
-        for (i = 0; i < g_num_powers; i++) {                 /* @asm 03BF7C cmp [0x539e] ([bp-0x60]) */
+        for (i = 0; i < DGS16(0x539E); i++) {                /* @asm 03BF7C cmp [0x539e] ([bp-0x60]) */
             unit_at(i);                                      /* @asm 03BF63 lcall 0x181f,0x9e6 */
             /* @asm push [bp+6](power); push [bp-0x60](i) -> coronado_reveal(i, power) */
             coronado_reveal(i, power);                       /* @asm 03BF71 lcall 0x181f,0x7aa */
@@ -328,10 +340,10 @@ void ff_acquire_dispatch(int power, int ff_id)
      *     Colonist), for the 3 immigration slots at PowerRecord+0x02..+0x04.
      *     @asm 03BF85..03BFB7 --- */
     if (ff_id == FF_WILLIAM_BREWSTER) {                      /* @asm cmp [bp+8],0x14 */
-        uint8_t *pool = (uint8_t *)0x8808 + (unsigned)power * 0x13C + 0x02; /* @asm si-0x77f6 */
+        unsigned pool = 0x8808 + (unsigned)power * 0x13C + 0x02; /* @asm si-0x77f6 */
         for (i = 0; i < 3; i++) {                            /* @asm 03BFB3 cmp [bp-0x5a],3 */
-            if (pool[i] == 0x19 || pool[i] == 0x1A)          /* @asm 03BF98/03BF9F */
-                pool[i] = 0x1C;                              /* @asm 03BFAB mov byte [...],0x1c */
+            if (DG8(pool + i) == 0x19 || DG8(pool + i) == 0x1A) /* @asm 03BF98/03BF9F */
+                DG8(pool + i) = 0x1C;                        /* @asm 03BFAB mov byte [...],0x1c */
         }
     }
 

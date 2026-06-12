@@ -528,3 +528,128 @@ void opt_run_menu(int key, int field)
     (void)field;                            /* builders pass DX=0 @asm 0x06F5C0 etc. */
     (void)menu_run_boxed((uint16_t)key);
 }
+
+/* ============================================================================
+ * dlg_open / dlg_add_row / dlg_run / dlg_free -- the SPLIT-PHASE protocol of
+ * the same engine (strong overrides of the weak link-floor stubs).
+ * ----------------------------------------------------------------------------
+ * The original exposes the template engine's phases separately:
+ *   dlg_open    0x191F:0x182 -> func_06F0F4 text_template_run  (build panel
+ *               from the GAME.TXT @section; ENTRY AX=key, BX=base, DX=presel)
+ *   dlg_add_row 0x191F:0x176 -> func_06C850 panel_append_button
+ *               (args: panel_lo, panel_hi, text far ptr, VALUE — e.g. the
+ *                congress election appends value = category+1
+ *                @asm 0x3C1E9 inc ax / 0x3C1F6 lcall)
+ *   dlg_run     0x191F:0x16A -> func_06E3D0 panel_run_modal -> panel[+0]
+ *               (= the committed widget's VALUE @asm 0x6EB9F; ESC = 0xFFFF
+ *                @asm 0x6E9EA)
+ *   dlg_free    0x191F:0x1A8 -> func_0789FA free_dos_block
+ * Callers: founding_fathers/congress.c (WHICHFREEDOM @asm 0x3C135),
+ * overlay_031F28_033EB2.c Europe arms (keys 0xFFC/0x104A), king/tax_apply.c,
+ * diplomacy/meeting.c — all the same (0x87C "GAME", key, preselect) protocol.
+ *
+ * The handle exposes a raw panel-header area first: congress.c pokes the
+ * header word +0x22 (the row-x offset field of the panel struct, read by the
+ * draw chain @asm 0x6DA54 "row x = base_x - panel[+0x22] - 1").  The modern
+ * runner keeps its computed text_x (RESIDUE: the +0x22 indent override is
+ * recorded but not consumed).
+ * ============================================================================ */
+typedef struct {
+    uint8_t    hdr[0x60];       /* raw panel-header area (caller pokes +0x22) */
+    mr_panel_t m;
+    int        values[MR_MAX_OPT];  /* per-row VALUE (widget[+4]) */
+    int        in_use;
+} mr_dlg_t;
+
+static mr_dlg_t g_dlg;          /* one modal dialog at a time (the original's
+                                 * modal loop is equally single-threaded) */
+
+void *dlg_open(void *ctx_key, void *title_key, int z)
+{
+    const char *key = (const char *)&DG8((uint16_t)(uintptr_t)title_key);
+    (void)ctx_key;                          /* BX = DS:0x87C "GAME" base */
+
+    if (g_dlg.in_use)                       /* re-entry guard (modern safety) */
+        return 0;
+    if (!key[0])                            /* DGROUP image absent -> no key */
+        return 0;
+    if (mr_load_section(key, z, &g_dlg.m) != 0)
+        return 0;                           /* section missing -> rec NULL @asm 0x6F51E */
+    memset(g_dlg.hdr, 0, sizeof g_dlg.hdr);
+    memset(g_dlg.values, 0, sizeof g_dlg.values);
+    g_dlg.in_use = 1;
+    /* template-supplied @OPTIONS rows keep the engine's 1-based counter
+     * values (@asm 0x6F4D9) */
+    for (int i = 0; i < g_dlg.m.nopt; i++)
+        g_dlg.values[i] = i + 1;
+    return &g_dlg;
+}
+
+void dlg_add_row(void *dlg, char *text, int value)
+{
+    mr_dlg_t *d = (mr_dlg_t *)dlg;
+    if (!d || !d->in_use || d->m.nopt >= MR_MAX_OPT)
+        return;
+    strncpy(d->m.opt[d->m.nopt], text, MR_LINE_LEN - 1);
+    d->m.opt[d->m.nopt][MR_LINE_LEN - 1] = 0;
+    d->values[d->m.nopt] = value;           /* widget[+4] = pushed VALUE @asm 0x6C850 */
+    d->m.nopt++;
+}
+
+int dlg_run(void *dlg)
+{
+    mr_dlg_t *d = (mr_dlg_t *)dlg;
+    mr_geom_t g;
+    uint8_t checks[MR_MAX_OPT];
+    int sel, i;
+
+    if (!d || !d->in_use)
+        return 0;
+    memset(checks, 0, sizeof checks);
+    sel = (d->m.cur_row >= 1 && d->m.cur_row <= d->m.nopt) ? d->m.cur_row : 1;
+
+    if (!viceroy_interactive()) {           /* headless: log + default commit */
+        printf("dlg [%s]: %s\n",
+               d->m.nopt ? "options" : "text",
+               d->m.nprompt ? d->m.prompt[0] : "");
+        for (i = 0; i < d->m.nopt; i++)
+            printf("   %d) %s%s\n", d->values[i], d->m.opt[i],
+                   (i + 1 == sel) ? "  *" : "");
+        mr_teardown(&d->m, checks);
+        return d->m.nopt ? d->values[sel - 1] : 1;
+    }
+
+    mr_finalize_geometry(&d->m, &g);
+    mr_save_bg(&g);
+    mr_draw(&d->m, &g, d->m.nopt ? sel : 0, checks);
+
+    for (;;) {
+        int k = vid_poll_key();
+        if (k == VID_QUIT_REQUESTED) {
+            /* modern substitute: window closed mid-modal — commit the
+             * cursor row so mandatory-pick loops (congress) terminate */
+            sel = d->m.nopt ? sel : 0;
+            break;
+        }
+        if (k == 0) { vid_delay_ms(16); continue; }
+        if (k == MR_KEY_ESC) { sel = -1; break; }          /* panel[+0]=0xFFFF @asm 0x6E9EA */
+        if (k == MR_KEY_ENTER || k == MR_KEY_SPACE) break; /* commit @asm 0x6EB9F/0x6E9CD */
+        if (d->m.nopt == 0) { sel = 0; break; }            /* boxed text: any key */
+        if (k == MR_KEY_DOWN) { sel = (sel % d->m.nopt) + 1; mr_draw(&d->m, &g, sel, checks); continue; }
+        if (k == MR_KEY_UP)   { sel = (sel > 1) ? sel - 1 : d->m.nopt; mr_draw(&d->m, &g, sel, checks); continue; }
+        if (k >= '1' && k < '1' + d->m.nopt) { sel = k - '0'; mr_draw(&d->m, &g, sel, checks); continue; }
+    }
+
+    mr_restore_bg(&g);
+    vid_present();
+    mr_teardown(&d->m, checks);
+    if (sel < 0)
+        return -1;                          /* ESC -> 0xFFFF (int16 -1) */
+    return d->m.nopt ? d->values[sel - 1] : 1;
+}
+
+void dlg_free(void *dlg)
+{
+    mr_dlg_t *d = (mr_dlg_t *)dlg;
+    if (d) d->in_use = 0;                   /* 0x191F:0x1A8 free_dos_block */
+}

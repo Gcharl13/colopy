@@ -352,51 +352,32 @@ int func_03BA26_ff_format_name_row(uint16_t arg0_value_bp_06, char far *arg1_buf
  * @asm code/VICEROY/disasm/func_03BAA6_unknown.asm    (RETF @0x03BB48)
  * spot-check: file 0x03BAA6 = C8 58 00 00 (ENTER 0x58,0)  [BYTE_VERIFIED]
  *
- * ROLE (in scope: UI list/LAYOUT): builds the selectable Founding-Father list
- * for the "choose a Founding Father" picker (the WHICHFREEDOM menu). arg:
- * power = [bp+6]. Iterates all FF ids i = 0..0x18 (25 == FF_COUNT):
- *   cat = g_ff_category_123A[i];                  @asm 03BAB8 MOV al,[bx+0x123A]
- *   if (ff_recognized_7B4(cat, power)) {          @asm 03BAC5 LCALL 0x181F:0x7B4
- *       strcpy(rowbuf, "<name>" h=0x1234);        @asm 03BAD8 LCALL 0xD1D:0x7E4
- *       if (cat < 0xA) strcat(rowbuf, h=0x1238);  @asm 03BAED LCALL 0xD1D:0x7A4
- *       str_cat_num(rowbuf, ss, cat);             @asm 03BAFD LCALL 0x181F:0x182
- *       list_add_FDE();                           @asm 03BB05 LCALL 0x191F:0xFDE
- *       e = list_next_FD0(rowbuf, 0);             @asm 03BB0F LCALL 0x191F:0xFD0
+ * ROLE — CORRECTED 2026-06-12 (ROUTE_B 3.2): this is the Congress-hall
+ * **PORTRAIT-PLATE painter** (NOT the WHICHFREEDOM picker — that is
+ * func_03BFD2's dlg chain).  arg: power = [bp+6].  For each plate slot
+ * i = 0..0x18, id = byte[0x123A+i] (the 25-byte plate-ORDER table, a
+ * permutation of 0..24):
+ *   id = plate_order[i];                          @asm 03BAB8 MOV al,[bx+0x123A]
+ *   if (ff_owned(power, id)) {                    @asm 03BAC1 push id; 03BAC2 push power; 0x181F:0x7B4
+ *       strcpy(namebuf, "CC-" h=0x1234);          @asm 03BAD8 LCALL 0xD1D:0x7E4
+ *       if (id < 0xA) strcat(namebuf, "0" 0x1238);@asm 03BAED LCALL 0xD1D:0x7A4
+ *       strcat_num(namebuf, id);                  @asm 03BAFD LCALL 0x181F:0x182
+ *       arena_reset();                            @asm 03BB05 LCALL 0x191F:0xFDE
+ *       e = load_by_name(namebuf, 0);             @asm 03BB0F LCALL 0x191F:0xFD0
+ *            (-> func_076642: appends ".SS" when no '.' @0x76698 -> CC-NN.SS)
  *       if (e != 0)                               @asm 03BB1C OR dx,ax / JE
- *           list_draw_2F8(.., es:[e+0x46], es:[e+0x48], 0x64, 1, &[0x2DA8]); 03BB36 0x181F:0x2F8
+ *           draw_2F8(.., es:[e+0x46], es:[e+0x48], 0x64, 1, &[0x2DA8]); 03BB36 0x181F:0x2F8
+ *            (the plate position is EMBEDDED in the CC-NN.SS element row)
  *   }
- * i.e. each available FF whose category is "recognized" for this power gets a
- * formatted, hit-testable row drawn into the picker's content rect [0x2DA8].
- * Pure UI list composition + layout.
+ * MODERN PORT: src/ui/congress_screen.c congress_portraits_draw().
  * ---------------------------------------------------------------------------- */
 int func_03BAA6_ff_picker_list_build(uint16_t arg0_power_bp_06)
 {
-    char rowbuf[0x4C];      /* [bp-0x54] scratch row text */
-    int  i;                 /* [bp-0x58] FF id */
-
-    for (i = 0; i < 0x19; i++) {                   /* @asm 03BB3E INC / 03BB3E CMP 0x19 */
-        int cat = (int)g_ff_category_123A[i];      /* @asm 03BAB8 MOV al,[bx+0x123A] */
-
-        /* @asm 03BAC1 PUSH cat / 03BAC2 PUSH [bp+6] / 03BAC5 LCALL 0x181F:0x7B4 */
-        if (ff_recognized_7B4(cat, (int)arg0_power_bp_06) == 0)  /* @asm 03BACD OR ax,ax / JE 03BB3B */
-            continue;
-
-        strcpy_near_7E4(rowbuf, 0x1234);           /* @asm 03BAD8 LCALL 0xD1D:0x7E4 ("<name>") */
-        if (cat < 0xA)                             /* @asm 03BAE0 CMP [bp-0x56],0xA / JGE */
-            strcat_near_7A4(rowbuf, 0x1238);       /* @asm 03BAED LCALL 0xD1D:0x7A4 */
-        str_cat_num_182(rowbuf, 0, cat);           /* @asm 03BAFD LCALL 0x181F:0x182 */
-
-        list_add_FDE();                            /* @asm 03BB05 LCALL 0x191F:0xFDE */
-        {
-            int32_t e = list_next_FD0(rowbuf, 0);  /* @asm 03BB0F LCALL 0x191F:0xFD0 -> dx:ax */
-            if (e != 0) {                          /* @asm 03BB1A OR dx,ax / 03BB1C JE 03BB3B */
-                /* @asm 03BB22 LES bx,[e] / es:[bx+0x46], es:[bx+0x48] -> hit-rect;
-                 *      03BB36 LCALL 0x181F:0x2F8 list_draw(..,0x64,1,&[0x2DA8]). */
-                list_draw_2F8(0, 0, 0x64, 1, 0, g_region_2DA8);
-            }
-        }
-    }
-    (void)rowbuf;
+    /* SUPERSEDED 2026-06-12 (ROUTE_B 3.2) -> src/ui/congress_screen.c
+     * congress_portraits_draw(power) — the modern plate painter carries the
+     * byte-cited loop (banner above; the "picker list" reading was wrong). */
+    extern void congress_portraits_draw(int power);
+    congress_portraits_draw((int)arg0_power_bp_06);
     return 0;  /* @asm 03BB47 LEAVE / 03BB48 RETF (void) */
 }
 
@@ -407,72 +388,40 @@ int func_03BAA6_ff_picker_list_build(uint16_t arg0_power_bp_06)
  * Tagged "CCBKGD" via string xref (@asm 03BB6A PUSH 0x1253 = "CCBKGD").
  *
  * ROLE (in scope: full-screen render LAYOUT / composition): paints the
- * Continental Congress screen. args: power = [bp+6], slot = [bp+8].
+ * Continental Congress screen. args: power = [bp+6], slot = [bp+8]
+ * (slot = the just-elected FF id, or -1 = plain hall view).
  *   [0x0372] = 0;                                 @asm 03BB56
  *   if (!cc_bg_load_44E("CCBKGD", rect 0x839E..0x83A4, 0))  @asm 03BB6D 0x181F:0x44E
  *       goto epilogue (load failed);              @asm 03BB75 OR ax,ax / JNE 03BC29
  *   cc_clip_3B6(); cc_blit_3F4(&buf, ...);        @asm 03BB7C / 03BB87
  *   cc_fill_444(rect 0x2DA8.., 0xC8, 0, 0x140);   @asm 03BBB5 0x181F:0x444
- *   if (slot >= 0) func_03C415(power, 0);         @asm 03BBC9 CALL 0x3C415
- *   func_03C410(power);                           @asm 03BBD3 CALL 0x3C410
+ *   (CORRECTED 2026-06-12 — the near thunks resolve as cs:0x1095 ->
+ *    func_03B900 ff_set_owned_bit(power,slot,on) [3 args: @asm 03BBC0
+ *    push 0; push slot; push power] and cs:0x1090 -> func_03BAA6
+ *    ff_portraits_draw(power); the reveal hides then shows the new FF:)
+ *   if (slot >= 0) ff_set_owned_bit(power,slot,0);@asm 03BBC9 CALL 0x3C415
+ *   ff_portraits_draw(power);                     @asm 03BBD3 CALL 0x3C410
  *   cc_present_E2(0,0x140,0xC8,0,0);              @asm 03BBE6 0x181F:0xE2
- *   if (slot >= 0) { func_03C415(power,1); func_03C410(power); cc_pal_3EA(8); } 03BBFA/03BC04/03BC0C
+ *   if (slot >= 0) { ff_set_owned_bit(power,slot,1); ff_portraits_draw(power);
+ *                    cc_pal_3EA(8); }             @asm 03BBFA/03BC04/03BC0C
  *   cc_restore_3C0(); cc_clip_3B6();              @asm 03BC14 / 03BC19
  *   cc_blit_3F4(NULL, 0xA000, 0xFC00);            @asm 03BC24 0x181F:0x3F4 (-> VGA A000)
  * epilogue:
  *   [0x0372] = -((cheat[0x5383] hi & 1));         @asm 03BC29..03BC37
  *   cc_done_AAC();                                @asm 03BC3A 0x191F:0xAAC
- * "What is drawn where": the CCBKGD bitmap fills the popup rect, then per-power
- * FF portraits/labels (03C415/03C410) are composited, presented, and the frame
- * is copied to the VGA segment (0xA000).
+ * "What is drawn where": the CCBKGD bitmap fills the popup rect, then the
+ * owned FFs' portrait plates are composited (each at the position embedded in
+ * its CC-NN.SS), presented, and the frame is copied to VGA (0xA000).
+ * MODERN PORT: src/ui/congress_screen.c congress_screen_render().
  * ---------------------------------------------------------------------------- */
 int func_03BB4A_cc_screen_background(uint16_t arg0_power_bp_06, int16_t arg1_slot_bp_08)
 {
-    char framebuf[0x300];   /* [bp-0x300] off-screen compose buffer */
-
-    g_word_0372 = 0;        /* @asm 03BB56 MOV [0x372],ax(=0) */
-
-    /* @asm 03BB5A..03BB6A push rect [0x83A4/0x83A2/0x83A0/0x839E] + "CCBKGD"(0x1253)
-     *      03BB6D LCALL 0x181F:0x44E -> load CCBKGD into popup rect. */
-    if (cc_bg_load_44E(0x1253,
-                       g_cc_rect_839E[0], g_cc_rect_839E[1],
-                       g_cc_rect_839E[2], g_cc_rect_839E[3], 0) != 0) {
-        /* @asm 03BB77 OR ax,ax / 03BB79 JMP 03BC29 -- load failed, skip draw. */
-        goto epilogue;
-    }
-
-    cc_clip_3B6();                                  /* @asm 03BB7C LCALL 0x181F:0x3B6 */
-    cc_blit_3F4(framebuf, 0, 0);                    /* @asm 03BB87 LCALL 0x181F:0x3F4 */
-
-    /* @asm 03BB8C..03BBB5 fill content rect [0x2DA8..0x2DAE], h=0xC8, w=0x140. */
-    cc_fill_444(g_region_2DA8[0], g_region_2DA8[1],
-                g_region_2DA8[2], g_region_2DA8[3], 0xC8, 0, 0x140);
-
-    if (arg1_slot_bp_08 >= 0) {                      /* @asm 03BBBA CMP [bp+8],0 / JL */
-        func_03C415((int)arg0_power_bp_06, 0);       /* @asm 03BBC9 CALL 0x3C415 (portrait, page 0) */
-    }
-    func_03C410((int)arg0_power_bp_06);              /* @asm 03BBD3 CALL 0x3C410 (label) */
-
-    cc_present_E2(0, 0x140, 0xC8, 0, 0);             /* @asm 03BBE6 LCALL 0x181F:0xE2 (present) */
-
-    if (arg1_slot_bp_08 >= 0) {                      /* @asm 03BBEB CMP [bp+8],0 / JL 03BC14 */
-        func_03C415((int)arg0_power_bp_06, 1);       /* @asm 03BBFA CALL 0x3C415 (page 1) */
-        func_03C410((int)arg0_power_bp_06);          /* @asm 03BC04 CALL 0x3C410 */
-        cc_pal_3EA(8);                               /* @asm 03BC0C LCALL 0x181F:0x3EA */
-    }
-
-    cc_restore_3C0();                                /* @asm 03BC14 LCALL 0x181F:0x3C0 */
-    cc_clip_3B6();                                   /* @asm 03BC19 LCALL 0x181F:0x3B6 */
-    /* @asm 03BC1E PUSH 0xA000 / 03BC21 PUSH 0xFC00 / 03BC24 LCALL 0x181F:0x3F4
-     *      -> copy composed frame to VGA segment 0xA000. */
-    cc_blit_3F4((char far *)0, (int)0xA000, (int)0xFC00);
-
-epilogue:
-    /* @asm 03BC29 MOV ah,[0x5383] / AND ax,0x100 / CMP 1 / SBB / NEG -> bool
-     *      03BC37 MOV [0x372],ax. */
-    g_word_0372 = (int16_t)((g_cheat_5383 & 0x01) ? 1 : 0);
-    cc_done_AAC();                                   /* @asm 03BC3A LCALL 0x191F:0xAAC */
-    (void)framebuf;
+    /* SUPERSEDED 2026-06-12 (ROUTE_B 3.2) -> src/ui/congress_screen.c
+     * congress_screen_render(power, new_ff) — the modern composer carries
+     * the full byte-cited sequence (banner above); forwarding here keeps a
+     * single implementation. */
+    extern void congress_screen_render(int power, int new_ff);
+    congress_screen_render((int)arg0_power_bp_06, (int)arg1_slot_bp_08);
     return 0;  /* @asm 03BC3F LEAVE / 03BC40 RETF (void) */
 }
 

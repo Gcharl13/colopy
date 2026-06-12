@@ -274,6 +274,40 @@ static int load_rec_strings(FILE *f, const char *tag, int count, uint16_t base)
     return n;
 }
 
+/* @FOUNDING: 6 category-name lines -> word handles [0x96E8 + i*2].
+ * Decoded @0x75109..0x75130: open section (push 0x2296 "FOUNDING";
+ * 0x191F:0x928), then 6x: AX = 0x1A1F:0xB16 (read+intern line) ->
+ * mov [bx-0x6918],ax  (0x10000-0x6918 = 0x96E8).  (ROUTE_B 3.2) */
+static int load_founding(FILE *f)
+{
+    entry_t e[6];
+    int n = read_section(f, "FOUNDING", e, 6);
+    for (int i = 0; i < n; i++)
+        DG16(0x96E8 + i*2) = intern(e[i].name);   /* @asm 0x75125 [bx-0x6918]=ax */
+    return n;
+}
+
+/* @FATHERS: 25 rows "Name, type, w1500, w1600, w1700" -> the stride-6
+ * FF_MEM table at 0x9652 (congress.c / recruit.c FF_TABLE).
+ * Decoded @0x75132..0x7518A: open (push 0x229F "FATHERS"; 0x191F:0x928);
+ * 25x: 0x191F:0x91C read line; AX = 0x1A1F:0xB22 (name handle) ->
+ * [bx-0x69AE] (bx=i*6; 0x10000-0x69AE = 0x9652); then 4x 0x1A1F:0x88A
+ * (next numeric field) -> bytes +2 (category), +3/+4/+5 (era weights). */
+static int load_fathers(FILE *f)
+{
+    entry_t e[25];
+    int n = read_section(f, "FATHERS", e, 25);
+    for (int i = 0; i < n; i++) {
+        unsigned row = 0x9652 + (unsigned)i * 6;
+        DG16(row + 0) = intern(e[i].name);                    /* @asm 0x75159 [bx-0x69ae] */
+        DG8(row + 2)  = (uint8_t)(e[i].nums > 0 ? e[i].num[0] : 0); /* @asm 0x75164 [si-0x69ac] cat */
+        DG8(row + 3)  = (uint8_t)(e[i].nums > 1 ? e[i].num[1] : 0); /* @asm 0x7516d [si-0x69ab] w1500 */
+        DG8(row + 4)  = (uint8_t)(e[i].nums > 2 ? e[i].num[2] : 0); /* @asm 0x75176 [si-0x69aa] w1600 */
+        DG8(row + 5)  = (uint8_t)(e[i].nums > 3 ? e[i].num[3] : 0); /* @asm 0x7517f [si-0x69a9] w1700 */
+    }
+    return n;
+}
+
 int viceroy_load_names(const char *dir)
 {
     char path[512];
@@ -305,6 +339,8 @@ int viceroy_load_names(const char *dir)
     total += load_cargo(f);                                          /* @0x74F04 */
     derive_cargo_max();                                              /* @0x74F79 */
     total += load_levels(f);                                         /* @0x7507A */
+    total += load_founding(f);                                       /* @0x75109 (6 -> 0x96E8) */
+    total += load_fathers(f);                                        /* @0x75132 (25 -> 0x9652) */
     total += load_colors(f);                                         /* @0x751A2 */
 
 

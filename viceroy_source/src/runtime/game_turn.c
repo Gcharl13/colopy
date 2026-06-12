@@ -189,6 +189,13 @@ int viceroy_world_smoke(int turns)
     DG8(0x5D46 + 0x1A) = 0;   DG8(0x5D46 + 0x1F) = 3;
     /* king PowerRecord ptr for power 0 (the active-power convention) */
     DG16(0x84FC) = 0x8808;
+    /* Founding-Father init (game-init parity for the wired bells tick):
+     * pending-FF slot (+0x12) starts "none" = 0xFFFF (the acquire path
+     * writes the same sentinel @asm 0x3BD3A), and the per-FF first-owner
+     * table is 0xFF-filled (func_0757C4: memset 0x53A9,0xFF,25). */
+    for (int p = 0; p < 4; p++)
+        DG16(0x8808 + p*0x13C + 0x12) = 0xFFFF;
+    for (int q = 0; q < 25; q++) DG8(0x53A9 + q) = 0xFF;   /* @asm func_0757C4 */
     /* a plausible price level so the drift has state to chew on */
     for (int g = 0; g < 16; g++) DG8(0x8808 + 0x4C + g) = (uint8_t)(2 + (g & 3));
     DG8(0x53A6) = 4;                 /* Viceroy difficulty: fastest REF feed */

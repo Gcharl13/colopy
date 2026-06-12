@@ -184,7 +184,14 @@ extern void colony_screen_init_owner(int owner);    /* LCALL 0x181F:0x582 → 0x
 extern void colony_load_pik_bg(void);                /* LCALL 0x181F:0xC72 → 0x296D4  @asm 0x2D688 */
 extern void colony_screen_compose(void);             /* LCALL 0x181F:0xC22 → 0x2A946  @asm 0x2D68D */
 extern int  colony_query(int field, int idx);        /* LCALL 0x181F:0xB50 → 0x27AFC  @asm 0x2D696/0x2D90A (returns word) */
-extern int  colony_query2(int idx, int arg);         /* LCALL 0x191F:0x9F8 → 0x26322  @asm 0x2D6A7 */
+extern void ff_bells_tick(int power, int bells);     /* LCALL 0x191F:0x9F8 → page06+0xA22 = func_03C322
+                                                      * ff_bells_tick (founding_fathers/congress.c) — the
+                                                      * liberty-bell accumulator + Continental-Congress
+                                                      * trigger.  Push order @asm 0x2D6A2 push bells;
+                                                      * 0x2D6A3 push owner → callee (power, bells).
+                                                      * (WIRED 2026-06-12, ROUTE_B 3.2; the old
+                                                      * "colony_query2 → 0x26322" reading was a stale
+                                                      * thunk mis-resolution.)  @asm 0x2D6A7 */
 extern int  colony_query_further(void);              /* LCALL 0x181F:0xD3A → 0x27A40  @asm 0x2D6AF/0x2E6AF (returns word) */
 extern int  rebel_sentiment_pct_ovl(void);           /* LCALL 0x181F:0xC86 → 0x27264  @asm 0x2D9D6/0x2DADC (SoL %, 0..100) */
 extern int  colonist_unit_at(int slot);              /* LCALL 0x181F:0xC0E → 0x27E08  @asm 0x2DE09/0x2E03E (unit id at slot) */
@@ -279,7 +286,9 @@ void colony_sol_tory_turn(int colony_id)
     colony_load_pik_bg();                                   /* @asm 0x2D688 LCALL 0x181F:0xC72 */
     colony_screen_compose();                                /* @asm 0x2D68D LCALL 0x181F:0xC22 */
     net_new_bells  = colony_query(0x12, 0);                 /* @asm 0x2D696 PUSH 0; PUSH 0x12; LCALL 0x181F:0xB50 → [bp-0xB8] */
-    colony_query2(net_new_bells, owner);                    /* @asm 0x2D6A7 LCALL 0x191F:0x9F8 */
+    ff_bells_tick(owner, net_new_bells);                    /* @asm 0x2D6A7 LCALL 0x191F:0x9F8 → func_03C322
+                                                             * (bell pool += bells; Congress election /
+                                                             * acquisition trigger — congress.c) */
     baseline_stock = colony_query_further();                /* @asm 0x2D6AF LCALL 0x181F:0xD3A → [bp-0x68] */
     prev_field_b   = (int)ctx->stockpile_9a[0];             /* @asm 0x2D6BB MOV ax,[bx+0x9A] → [bp-0x6A] */
     (void)prev_field_b; /* consumed by the (elided) schooling-candidate phase below */

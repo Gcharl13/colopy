@@ -11,10 +11,15 @@ extern char msc_aFlmul;             /* src/runtime/longmath.c -- the
 extern-referenced IMPL names (the public ldiv32/ov_long_* names are
 PROVIDE-aliased to them; the alias alone cannot pull the archive member) */
 extern char msc_aFldiv;
+extern char congress_screen_render; /* src/ui/congress_screen.c -- carries the
+strong FF-chain overrides (ff_owned/ff_become_available/dlg bridges/...);
+congress.c's extern references are otherwise satisfied by the weak stubs and
+the member would never be extracted (ROUTE_B 3.2, 2026-06-12) */
 
 void *viceroy_port_keepalive[] = {
     (void *)&ai_unit_leaf,
     (void *)&func_008734_logic_sz_30,
     (void *)&msc_aFlmul,
     (void *)&msc_aFldiv,
+    (void *)&congress_screen_render,
 };

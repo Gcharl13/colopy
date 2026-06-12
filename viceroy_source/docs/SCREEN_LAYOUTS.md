@@ -185,7 +185,29 @@ Generic report-grid engine. Dispatcher **func_0235D6** routes the report command
 
 ---
 
-## 7. Supporting layout/geometry primitives (shared)  **[V]**
+## 7. Continental Congress / Founding Fathers  →  `src/ui/congress_screen.c`  **[V]**
+
+Not behind an `enter_screen_view` id — raised by the FF chain (full map in the
+`src/founding_fathers/congress.c` banner). Two entries into the composer
+**func_03BB4A `cc_screen_background(power, slot)`** (0x191F:0xF74):
+- acquisition: `ff_acquire_dispatch` @0x3BD1D `call cs:0x1077` (slot = new FF id);
+- F3 Congress report tail @0x38073 (slot = −1, plain hall view; gates
+  `[0x346]==0 && [0x9E38]==0` [V @0x38060/0x38067]).
+
+| order | element | source / position | cite |
+|---|---|---|---|
+| 1 | "CCBKGD" backdrop (dg 0x1253; loader appends ".PIK" dg 0x2402) into the dialog/clip rect [0x839E..0x83A4] | full-frame (present is 0,0x140,0xC8) | [V @0x3BB6A push 0x1253 / @0x3BB6D 0x181F:0x44E] |
+| 2 | content fill, rect [0x2DA8..0x2DAE] h=0xC8 w=0x140 | runtime rect | [V @0x3BBB5 0x181F:0x444] |
+| 3 | portrait plates: for plate i=0..24, id = byte[0x123A+i] (**plate-order table**, a permutation of 0..24, dg 0x123A); if `ff_owned(power,id)`: load "CC-" ["0"] itoa(id) (dg 0x1234/0x1238; default ext ".SS" dg 0x23E6 in func_076642) and draw at the **coords embedded in the .SS** (es:[ent+0x46]=x / +0x48=y) | data-driven — no static x/y in code | [V @0x3BAB8 / @0x3BAD1 / @0x3BAE6 / @0x3BB36 0x181F:0x2F8; ext @0x76698] |
+| 4 | new-father reveal (slot>=0): owned-bit CLEAR → draw → present → bit SET → draw → palette step 8 | two-pass | [V @0x3BBC0..0x3BC0C; bit = func_03B900] |
+
+The **selection dialog** ("WHICHFREEDOM", func_03BFD2) and the acquire popup
+("FREEDOM" via 0x181F:0x998) ride the 3.1 menu engine — rows are **[layout]**
+(template @section + appended candidate rows, value = category+1 [V @0x3C1E9]).
+
+---
+
+## 8. Supporting layout/geometry primitives (shared)  **[V]**
 
 These are not screens but the byte-verified geometry the screens build on:
 
@@ -209,6 +231,6 @@ These are not screens but the byte-verified geometry the screens build on:
 | Reports | ui/report_screen.c | func_06FF94 + dispatcher 0x0235D6 | **[V] done** |
 | Title / menu | ui/title_screen.c | func_0759E8 | **[V] done** |
 | Hall of Fame | ui/hall_of_fame.c | func_03A9C0 / func_03ADA6 | **[V] done** |
-| Continental Congress / FF | (not yet decoded) | — | not yet coded |
+| Continental Congress / FF | ui/congress_screen.c | func_03BB4A (+ portraits func_03BAA6; dlg func_03BFD2) | **[V] done** (2026-06-12, §7) |
 | Naval adviser | (not yet decoded) | — | not yet coded |
 | Opening cutscene | — | — | OUT-OF-SCOPE (separate OPENING.EXE media player) |

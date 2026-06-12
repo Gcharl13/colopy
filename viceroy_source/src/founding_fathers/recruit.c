@@ -28,6 +28,7 @@
  * @asm effect dispatch on recruit: func_03BC42 @0x03BC42 (see effects.c)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "power.h"
 #include "ff.h"
 
@@ -88,8 +89,9 @@ const struct FoundingFatherRecord FF_TABLE[25] = {
     /* 24 */ { "Bartolome de las Casas",  FFCAT_RELIGIOUS,    0,  5, 10 },
 };
 
-/* g_year (DGROUP:0x538A) — current year, read directly by func_03B95A below. */
-extern int16_t g_year;   /* @asm 03B963 cmp [0x538a],0x640 */
+/* DGROUP:0x538A — current year, read directly by func_03B95A below (DGS16;
+ * the former `extern g_year` bound to a weak link-floor FUNCTION stub in the
+ * modern build). @asm 03B963 cmp [0x538a],0x640 */
 
 /* ----------------------------------------------------------------------------
  * ff_era_band -- func_03B95A @0x03B95A  (page 0x06, ENTER 2,0, RETF)
@@ -106,10 +108,10 @@ extern int16_t g_year;   /* @asm 03B963 cmp [0x538a],0x640 */
  * ---------------------------------------------------------------------------- */
 int ff_era_band(void)
 {
-    int band = 0;                       /* @asm 03B95E mov [bp-2],0 */
-    if (g_year >= 0x640) band = 1;      /* @asm 03B963 cmp [0x538a],0x640 ; jl ; 03B96B mov [bp-2],1 */
-    if (g_year >= 0x6a4) band += 1;     /* @asm 03B970 cmp [0x538a],0x6a4 ; jl ; 03B978 inc [bp-2] */
-    return band;                        /* @asm 03B97B */
+    int band = 0;                            /* @asm 03B95E mov [bp-2],0 */
+    if (DGS16(0x538A) >= 0x640) band = 1;    /* @asm 03B963 cmp [0x538a],0x640 ; jl ; 03B96B mov [bp-2],1 */
+    if (DGS16(0x538A) >= 0x6a4) band += 1;   /* @asm 03B970 cmp [0x538a],0x6a4 ; jl ; 03B978 inc [bp-2] */
+    return band;                             /* @asm 03B97B */
 }
 
 /* @ref @FATHERS cols 2/3/4 selected by the same band logic as func_03B95A.
@@ -172,8 +174,8 @@ int ff_is_available(int ff_id, int (*owned_test)(int ff_id))
 #define FF_MEM_BASE   0x9652   /* word[0]=handle, byte[2]=cat, byte[3..5]=era weights */
 #define FF_MEM2_BASE  0x96E8   /* 6-word FOUNDING string-handle table: [cat*2] = per-cat text (see congress.c) */
 
-extern struct PowerRecord *g_active_power; /* DGROUP:0x84FC */
-extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if power owns ff_id (body in thunk page) */
+extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> func_00BC10 (resident, REAL arg order
+                                                * (power,ff) — bridged in ui/congress_screen.c) */
 
 /* ----------------------------------------------------------------------------
  * ff_set_owned_bit -- func_03B900 @0x03B900  (page 0x06, ENTER 6,0, RETF)
@@ -191,14 +193,14 @@ extern int     ff_owned(int ff_id, int power); /* 0x181F:0x07B4 -> nonzero if po
  * ---------------------------------------------------------------------------- */
 void ff_set_owned_bit(int power, int ff_id, int set)
 {
-    uint8_t  bit  = (uint8_t)(1 << (ff_id & 7));               /* @asm 03B904/03B90D */
-    uint8_t *byte = (uint8_t *)(0x880F
-                  + (unsigned)power * POWER_RECORD_STRIDE
-                  + ((unsigned)ff_id >> 3));                   /* @asm 03B915 sar cx,3 ; 03B918 imul 0x13c ; 03B91F add 0x880f */
+    uint8_t  bit = (uint8_t)(1 << (ff_id & 7));                /* @asm 03B904/03B90D */
+    unsigned off = 0x880F
+                 + (unsigned)power * POWER_RECORD_STRIDE
+                 + ((unsigned)ff_id >> 3);                     /* @asm 03B915 sar cx,3 ; 03B918 imul 0x13c ; 03B91F add 0x880f */
     if (set)                                                   /* @asm 03B923 cmp [bp+0xa],0 ; je clear */
-        *byte |= bit;                                          /* @asm 03B92B or  [bx],al */
+        DG8(off) |= bit;                                       /* @asm 03B92B or  [bx],al */
     else
-        *byte &= (uint8_t)~bit;                                /* @asm 03B933 not al ; 03B937 and [bx],al */
+        DG8(off) &= (uint8_t)~bit;                             /* @asm 03B933 not al ; 03B937 and [bx],al */
 }
 
 /* ----------------------------------------------------------------------------
@@ -239,10 +241,10 @@ int ff_count_offerable_in_cat(int power, int cat)
     for (ff = 0; ff < 25; ff++) {                              /* @asm 03B9D4 cmp [bp-2],0x19 */
         if (ff_owned(ff, power))                               /* @asm 03B996 lcall 0x7b4 ; 03B9A0 jne skip */
             continue;
-        if (*(uint8_t *)(FF_MEM_BASE + ff * 6 + 0x02) != (uint8_t)cat) /* @asm 03B9B0 cmp [bx-0x69ac],al */
+        if (DG8(FF_MEM_BASE + (unsigned)ff * 6 + 0x02) != (uint8_t)cat) /* @asm 03B9B0 cmp [bx-0x69ac],al */
             continue;
         band = ff_category_band(power);                        /* @asm 03B9B7 call 0x109a (per matching FF, as in asm) */
-        if (*(uint8_t *)(FF_MEM_BASE + ff * 6 + 0x03 + band) != 0)     /* @asm 03B9C7 cmp [bx+si-0x69ab],0 */
+        if (DG8(FF_MEM_BASE + (unsigned)ff * 6 + 0x03 + (unsigned)band) != 0) /* @asm 03B9C7 cmp [bx+si-0x69ab],0 */
             n++;                                               /* @asm 03B9CE inc [bp-4] */
     }
     return n;                                                  /* @asm 03B9DA */
@@ -266,7 +268,7 @@ int ff_count_owned_in_cat(int power, int cat)
     for (ff = 0; ff < 25; ff++) {                              /* @asm 03BA1A cmp [bp-2],0x19 */
         if (!ff_owned(ff, power))                              /* @asm 03B9F4 lcall 0x7b4 ; 03B9FE je skip */
             continue;
-        if (*(uint8_t *)(FF_MEM_BASE + ff * 6 + 0x02) == (uint8_t)cat) /* @asm 03BA0E cmp [bx-0x69ac],al */
+        if (DG8(FF_MEM_BASE + (unsigned)ff * 6 + 0x02) == (uint8_t)cat) /* @asm 03BA0E cmp [bx-0x69ac],al */
             n++;                                               /* @asm 03BA14 inc [bp-4] */
     }
     return n;                                                  /* @asm 03BA20 */
@@ -296,8 +298,8 @@ int ff_best_offer_category(int power)
     int best_id = -1;                                          /* @asm 03BA5E [bp-2]=0xffff */
     int best_score = -1;                                       /* @asm 03BA64 [bp-8]=0xffff */
     int i;
-    uint8_t *pr = (uint8_t *)(0x8808 + (unsigned)power * POWER_RECORD_STRIDE); /* @asm 03BA67 imul 0x13c */
-    if (pr[0x14] >= 0x19)                                      /* @asm 03BA6C cmp [bx-0x77e4],0x19 ; jb (FF count == all 25) */
+    unsigned pr = 0x8808 + (unsigned)power * POWER_RECORD_STRIDE; /* @asm 03BA67 imul 0x13c */
+    if (DG8(pr + 0x14) >= 0x19)                                /* @asm 03BA6C cmp [bx-0x77e4],0x19 ; jb (FF count == all 25) */
         return FF_CAT_INDEPENDENCE;                            /* @asm 03BA73 mov ax,5 (sentinel: no FF left) */
     for (i = 0; i < 5; i++) {                                  /* @asm 03BA9B cmp [bp-6],5 */
         int s = ff_cat_candidate(i, power);                    /* @asm 03BA84 call 0x109f */

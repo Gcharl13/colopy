@@ -1664,3 +1664,25 @@ Prior `overlay_03C5A8_040C11.c` comments and code used stride 6 for g_unit_stat 
 | `type*14+0x5236`=ATK, `+0x5237`=cargo, `+0x5238`=size | Matches @UNIT loader @0x074F11/0x074F1E/0x074F27 | BYTE_VERIFIED |
 
 Code bugs fixed: `t * 6` → `t * 14` at two sites (lines 2221, 2234) in `overlay_03C5A8_040C11.c`.
+
+### 2026-06-12 — Continental Congress / FF screen chain (ROUTE_B 3.2)
+
+| Claim | Evidence | Status |
+|-------|----------|--------|
+| ff_bells_tick caller = func_02D658 (colony sol/tory turn), args (power,bells) | @asm 0x2D696 `push 0; push 0x12; lcall 0x181F:0xB50` (bells of good 0x12) → 0x2D6A2 `push ax; push [bp-0x12A]; lcall 0x191F:0x9F8`; thunk 0x191F:0x9F8 → page06+0xA22 = 0x3C322 | BYTE_VERIFIED |
+| sol_tory.c "colony_query2 → 0x26322" was a stale mis-resolution | same thunk record; whois → func_03C322 | CORRECTED |
+| 0x1A1F:0x0000 (= cs:0x1081) = func_03BFD2 itself — "ff_become_available" IS the election body | page-06 thunk row @0x3C401 `ljmp 0x1A1F:0` + whois | CORRECTED (congress.c banner) |
+| 0x191F:0x348 ("cong_screen_a") = func_03D948 @FRIEND foreign-intervention handler, NOT a congress screen | whois; EVENT_DISPATCH @FRIEND row; post-independence bells | CORRECTED |
+| dlg_open/add_row/run/free = the 3.1 menu engine (func_06F0F4 / func_06C850 / func_06E3D0 / func_0789FA) | whois on 0x191F:0x182/0x176/0x16A/0x1A8 | BYTE_VERIFIED (old file-offset notes stale) |
+| Congress composer = func_03BB4A: "CCBKGD" (dg 0x1253), reveal via ff_set_owned_bit(power,slot,0/1) around two portrait passes + 0x181F:0x3EA(8) | @0x3BB6A/0x3BBC0 `push 0;push slot;push power;call cs:0x1095`/0x3BBF1/0x3BC0C | BYTE_VERIFIED |
+| cs:0x1095 = func_03B900 ff_set_owned_bit(power,ff,on); cs:0x1077 = func_03BB4A(power,slot); cs:0x107C = func_03BC42(power,ff) | thunk row @0x3C3F1..0x3C423 disassembled; push orders at 0x3BC5E/0x3BD16/0x3C3DC | BYTE_VERIFIED |
+| Portrait plates: order table dg 0x123A (25-byte permutation), names "CC-"+pad0+id, default ext ".SS" (dg 0x23E6), drawn at coords embedded in the record (es:[ent+0x46/0x48]) | func_03BAA6 @0x3BAB8/0x3BAD1/0x3BAE6/0x3BB25..0x3BB36; func_076642 @0x76685/0x76698 | BYTE_VERIFIED |
+| ff_owned (0x181F:0x7B4 → func_00BC10) real arg order (power, ff) | body @0xBC14 `cmp [bp+8],0` (ff guard) / @0xBC20 `cmp [bp+6],4` (power guard); callers push (ff, power) | BYTE_VERIFIED (congress.c/recruit.c decls bridged) |
+| func_03BFD2 AI path: pending_ff = chosen[ff_best_offer_category(power)]; ESC re-opens (mandatory pick) | @0x3C101/0x3C107 jmp 0x3C25E (AX=primer result); @0x3C231/0x3C236 jmp 0x3C12B | BYTE_VERIFIED (port fixed — both were missing) |
+| ui_key_print(key,flag): key=[bp+6]→AX (menu key), flag=[bp+8]→[0x1F5E] | func_06F5F2 @0x6F5F5..0x6F605 | BYTE_VERIFIED (arg order fixed) |
+| NAMES loader rows: @FOUNDING 6 → word[0x96E8+i*2]; @FATHERS 25 → [0x9652+i*6] name handle + bytes +2 cat, +3..+5 weights | @0x75109..0x7518A (push 0x2296/0x229F; 0x1A1F:0xB16/0xB22/0x88A) | BYTE_VERIFIED (added to runtime/data_load.c) |
+
+Live verification: gdb fixture run (NAMES/GAME.TXT + runtime DGROUP image) —
+election prints 5 candidate rows (one weighted pick per category, real names +
+@FOUNDING labels, values cat+1), pending staged, ff_acquire_dispatch sets the
+owned bit (0x880F bit0), ff_count=1, pending reset to 0xFFFF. Smoke 60 green.

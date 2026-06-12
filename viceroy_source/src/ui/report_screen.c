@@ -25,6 +25,7 @@
  *               command-dispatch -- the SETREPORT branch of func_0235D6)
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "iolib.h"
 
 #define KEY_REPORT   0x11A2   /* "REPORT" @asm 0x037344 / @file 0x1F142 */
@@ -880,7 +881,20 @@ void report_congress(int player)
     /* bars_add(color, value) per segment -- see @asm citations above. */
     bars_draw(/*n*/4, row, col, 0x12C);          /* @asm 0x037E64/0x037F46 0x181F:0x022C */
 
-    rpt_footer(-1, -2);                          /* (tail footer; same skeleton) */
+    rpt_footer(-1, -2);                          /* @asm 0x038040 push -2; call 0x39e30 (footer) */
+    /* @asm 0x038049..0x03805B present (0x181F:0xE2 0,0x140,0xC8) + wait
+     * (0x181F:0x3C0), then THE CONGRESS-HALL TAIL (WIRED 2026-06-12, 3.2):
+     *   @asm 0x038060 cmp [0x346],0  / 0x038067 cmp [0x9E38],0  (both gates
+     *        zero -> show the hall; runtime flags, roles RUNTIME_ONLY)
+     *   @asm 0x03806E push -1 ; 0x038070 push player
+     *   @asm 0x038073 lcall 0x191F:0xF74 -> func_03BB4A cc_screen_background
+     *        (power=player, slot=-1: hall view, no reveal)
+     * Modern composer: src/ui/congress_screen.c congress_screen_render. */
+    {
+        extern void congress_screen_render(int power, int new_ff);
+        if (DG16(0x0346) == 0 && DG16(0x9E38) == 0)  /* @asm 0x038060/0x038067 */
+            congress_screen_render(player, -1);      /* @asm 0x038073 */
+    }
     (void)buf;
 }
 

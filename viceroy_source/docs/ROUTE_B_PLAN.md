@@ -391,8 +391,35 @@ Europe, Colony, Reports, Title, Hall of Fame = [V] done.
       FONTSMAL; disabled-row bit0 skip unwired; dynamic-BX sites (king
       audience @0x075540, raze-confirm @0x05C94A, ...) await their buffer
       assembly ports — they keep the hit-counted stub.
-- [ ] **3.2 Continental Congress / Founding Father screen** (selection
-      dialog + FF portrait plates). (1–2 sessions)
+- [x] **3.2 Continental Congress / Founding Father screen** (selection
+      dialog + FF portrait plates): DONE 2026-06-12. Chain identified by
+      string-xref + thunk disassembly (banner in founding_fathers/congress.c):
+      turn hook func_02D658 @0x2D6A7 `lcall 0x191F:0x9F8` → func_03C322
+      ff_bells_tick → cs:0x1081 (=0x1A1F:0) → func_03BFD2 ff_congress_screen
+      ("WHICHFREEDOM" dlg = the 3.1 engine: 0x191F:0x182→func_06F0F4 open,
+      0x176→func_06C850 add-row value=cat+1, 0x16A→func_06E3D0 modal,
+      0x1A8→func_0789FA free) → cs:0x107C → func_03BC42 ff_acquire_dispatch
+      ("FREEDOM" boxed key via 0x181F:0x998 + cs:0x1077 → **func_03BB4A
+      cc_screen_background** = the SCREEN: "CCBKGD" dg 0x1253 backdrop,
+      reveal = owned-bit clear/draw/present/set/draw/pal-0x3EA(8), portraits
+      func_03BAA6 = plate-order table dg 0x123A (perm of 0..24), per owned FF
+      load "CC-NN[.SS]" via 0x191F:0xFDE/0xFD0→func_076642, drawn at the
+      coords EMBEDDED in each .SS (es:[ent+0x46/0x48]) via 0x181F:0x2F8).
+      2nd composer entry: F3 report tail @0x38073 (slot=-1). PORTED:
+      src/ui/congress_screen.c (composer+portraits, data-driven layout) +
+      menu_runner.c dlg_* strong family; congress.c/effects.c/recruit.c
+      converted to DG accessors + byte-truth fixes (AI pending store
+      @0x3C25E, mandatory-pick reopen @0x3C236, ui_key_print arg order);
+      NAMES loader rows @FOUNDING/@FATHERS (@0x75109/@0x75132) added.
+      WIRED: sol_tory.c bells tick, report_congress tail, 14 strong
+      overrides (ff_*/dlg_*/cs_1077/cs_1095/cong_*). Verified live: gdb
+      fixture run shows the 5-candidate election (real names/categories),
+      pending staged, acquire sets bitmap+count+pending-reset; smoke green.
+      RESIDUE: pal-fade leaf 0x181F:0x3EA + present/blit leaves represented
+      by vid_present; dlg +0x22 row-x indent recorded not consumed; bells
+      FEED (colony_query 0x181F:0xB50→0x27AFC) still a stub so smoke
+      accrues 0 bells; cs_1086 (ff_id<0 path) + ff_pre_a/ff_finish left
+      weak; CC-NN.SS/CCBKGD.PIK need user game data at runtime. (1–2 sessions)
 - [ ] **3.3 Naval adviser screen.** (½–1 session)
 - [ ] **3.4 Screen ids 0x28 / 0x29 / 0x2A / 0x2D** (entries at 0x450AE,
       0x6D5AA, 0x7661F, 0x05E63): identify each (report/adviser cluster,
