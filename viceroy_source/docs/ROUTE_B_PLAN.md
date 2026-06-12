@@ -420,7 +420,11 @@ Europe, Colony, Reports, Title, Hall of Fame = [V] done.
       FEED (colony_query 0x181F:0xB50→0x27AFC) still a stub so smoke
       accrues 0 bells; cs_1086 (ff_id<0 path) + ff_pre_a/ff_finish left
       weak; CC-NN.SS/CCBKGD.PIK need user game data at runtime. (1–2 sessions)
-- [ ] **3.3 Naval adviser screen.** (½–1 session)
+- [x] **3.3 Naval adviser screen.** DONE 2026-06-12: full byte-cited port of
+      func_03954C (naval_screen_render), func_0393F4 (naval_chrome),
+      func_0373CA (naval_footer_button), func_042F20 (naval_loc_text) in
+      src/ui/naval_screen.c.  Platform addition: vid_set_palette_range() for
+      the REPORT7.PIK DAC window upload.  Smoke 500 pass; det confirmed.
 - [x] **3.4 Screen ids 0x28 / 0x29 / 0x2A / 0x2D** CLOSED 2026-06-12.
       BYTE ANALYSIS proves 0x181F:0x772 resolves to func_077D5E_fatal_error_report_xy
       (the DIAGNOSTIC/FATAL ERROR REPORTER, page 29 +0x3CE = file 0x77D5E,
