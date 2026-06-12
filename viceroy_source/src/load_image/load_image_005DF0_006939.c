@@ -149,8 +149,15 @@ void far *func_005ED0_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     /* @asm 0x005ED4 mov ax,[0x853a]; imul [bp+8]; add ax,[0x168]; mov dx,[0x16a];
      * add ax,[bp+6] -> returns dx:ax = &(map layer 0x168)[width*y + x].
      * Layer 0x168 far ptr at DGROUP 0x0168(off)/0x016A(seg). */
+#ifdef _VICEROY_MODERN
+    /* layer far-ptr [0x168] -> host layer plumbing (DOS layer 0x168 == host
+     * layer 2, same mapping as the reader func_005EE8) */
+    extern uint8_t *viceroy_layer_addr(int layer, int x, int y);
+    return viceroy_layer_addr(2, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     return (uint8_t far *)(*(void far * near *)0x0168)
          + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
+#endif
 }
 
 /* @asm        0x005EE8..0x005F04  (28 bytes)  region=load_image
@@ -674,14 +681,58 @@ int func_0062E2_op_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @touches_8542 False
  *
  * LCALL targets:
- *   - 0x037F:0x02E0
- * @inferred_role  WRAPPER_LCALL (25 bytes). 0x037F:0x02E0
- * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
+ *   - 0x037F:0x02E0 (func_005ED0 layer-168 addr), 0x037F:0x0200 (func_005DF0
+ *     owner nibble), 0x037F:0x0598 (func_006188 rumour), 0x037F:0x0228
+ *     (func_005E18 ownership write), 0x0427:0x5C (func_0066CC tile head),
+ *     0x0427:0x9AC (func_00701C chain seen-flag), 0x05EB:0xA76 (func_008D26
+ *     colony at tile), 0x181F:0x7C8 (func_02EB1C colony-seen handler)
+ * @inferred_role  TILE DISCOVERY/REVEAL for a power: set the per-power
+ *     discovery bit in layer 0x168, claim unowned non-rumour tiles, flag the
+ *     tile stack as seen, run the colony-seen handler.
+ * @status     BYTE_VERIFIED 2026-06-12 (full body decompiled from VICEROY.EXE;
+ *     the old 25-byte SKELETON was a false cut at the first lcall -- true span
+ *     is 0x631A..0x63B5, register args AX=x DX=y BX=power + 1 stack arg)
  */
-int func_00631A_op_sz_25(void)
+int func_00631A_reveal_tile(uint16_t x_ax, uint16_t y_dx, uint16_t power_bx,
+                            uint16_t edge_stk)
 {
-    /* @auto: wrapper forwards to LCALL 0x037F:0x02E0. */
-    return overlay_call_037F_02E0();
+    extern int func_005DF0_logic_sz_40(uint16_t x, uint16_t y);   /* 037F:0200 */
+    extern int func_006188_op_sz_91(uint16_t x, uint16_t y);      /* 037F:0598 */
+    extern void func_005E18_op_sz_120(uint16_t x, uint16_t y, uint16_t p); /* 037F:0228 */
+    extern int func_0066CC_op_sz_57(uint16_t x, uint16_t y);      /* 0427:005C */
+    extern int func_00701C_logic_sz_48(uint16_t u, uint16_t p);   /* 0427:09AC */
+    extern int func_008D26_op_sz_69(uint16_t x, uint16_t y);      /* 05EB:0A76 */
+    extern int func_02EB1C_logic_sz_10(uint16_t c, uint16_t p);   /* 181F:07C8 */
+    int16_t u, c;
+
+    /* @asm 0x006327 ptr = 0x037F:0x02E0(x,y); 0x00633D es:[bx] |= 1<<(power+4)
+     * -- set the power's DISCOVERY bit in map layer 0x168. */
+    {
+        uint8_t far *disp = (uint8_t far *)
+            func_005ED0_logic_sz_23(x_ax, y_dx);   /* direct: the thunk extern
+                       returns int and would truncate the 64-bit host pointer */
+        *disp = (uint8_t)(*disp | (uint8_t)(1u << ((power_bx & 0xFF) + 4)));
+    }
+    /* @asm 0x006342 if (0x037F:0x0200(x,y) < 0  [unowned] &&
+     *               0x037F:0x0598(x,y) == 0 [no rumour mark]):
+     *               0x037F:0x0228(x, y, power)  [claim the tile]. */
+    if ((int8_t)func_005DF0_logic_sz_40(x_ax, y_dx) < 0) {        /* @asm 0x00634A or al,al */
+        if (func_006188_op_sz_91(x_ax, y_dx) == 0)                /* @asm 0x006358 */
+            func_005E18_op_sz_120(x_ax, y_dx, power_bx);          /* @asm 0x006361 */
+    }
+    /* @asm 0x00636D u = 0x0427:0x5C(ax=x, dx=y) tile-head; when NOT
+     * (edge_stk && u is an EU-owned unit): 0x0427:0x9AC(u, power) -- flag the
+     * tile stack "seen by power" (0x10<<power into +0x03 along the chain). */
+    u = (int16_t)func_0066CC_op_sz_57(x_ax, y_dx);                /* @asm 0x00636D */
+    if (!(edge_stk != 0 && u >= 0 &&
+          (DG8(0x3144 + (unsigned)u * 0x1C + 0x03) & 0x0F) < 4))  /* @asm 0x006375..0x006386 */
+        func_00701C_logic_sz_48((uint16_t)u, power_bx);           /* @asm 0x00638E */
+    /* @asm 0x006398 c = 0x05EB:0xA76(x,y) colony at tile; if c >= 0:
+     * 0x181F:0x7C8(c, power) colony-seen handler. */
+    c = (int16_t)func_008D26_op_sz_69(x_ax, y_dx);                /* @asm 0x006398 */
+    if (c >= 0)                                                   /* @asm 0x0063A2 */
+        func_02EB1C_logic_sz_10((uint16_t)c, power_bx);           /* @asm 0x0063A8 */
+    return 0;
 }
 
 /* @asm        0x0063B6..0x0063C4  (14 bytes)  region=load_image
@@ -727,10 +778,12 @@ void func_0063B6_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
             if (overlay_call_037F_000A((uint16_t)cx, (uint16_t)ry) == 0)
                 continue;
 
-            /* @asm 0x00640E es:bx = overlay 0x037F:0x02E0(cx,ry);
+            /* @asm 0x00640E es:bx = overlay 0x037F:0x02E0(cx,ry) = func_005ED0
+             * layer-0x168 tile address;
              * @asm 0x00641A es:[bx] |= (1 << (layer + 4))  (set the display bit). */
             {
-                uint8_t far *disp = (uint8_t far *)overlay_call_037F_02E0();
+                uint8_t far *disp = (uint8_t far *)
+                    func_005ED0_logic_sz_23((uint16_t)cx, (uint16_t)ry);
                 *disp = (uint8_t)(*disp | (uint8_t)(1u << (layer + 4)));
             }
 
@@ -893,11 +946,11 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
                 }
             }
 
-            /* @asm 0x006598 func_00631A(edge, cur_x, cur_y, owner) — set display bit.
-             * (func_00631A is the register-param overlay-0x037F:0x02E0 bit setter;
-             * its skeleton port exposes no params, so the operands are documented.) */
-            (void)edge;
-            func_00631A_op_sz_25();
+            /* @asm 0x006598 func_00631A(ax=cur_x, dx=cur_y, bx=owner, stk edge)
+             * — reveal the tile for the power (discovery bit, claim, seen
+             * flags, colony-seen handler; full port above). */
+            func_00631A_reveal_tile((uint16_t)cur_x, (uint16_t)cur_y,
+                                    (uint16_t)owner, (uint16_t)edge);
         }
     }
 }

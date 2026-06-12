@@ -102,11 +102,17 @@ extern void    ovly_unit_init_181F_844(int16_t idx, int16_t dx_arg, int16_t bx_a
 /* Map-side tile occupancy helpers (0x037F:*), shared with chain.c. */
 extern int     unit_tile_head(int x, int y);                 /* func_0066CC */
 extern int16_t map_tile_set_occupant_037F_0A(int16_t x, int16_t y);   /* 0x037F:0x000A */
-/* 0x037F:0x015E takes 4 words: two mode immediates then (y, x). Place passes
- * (1,1,y,x); unlink passes (0,1,y,x). add sp,8 confirms 4 args at both sites. */
-extern void    map_tile_set_head_037F_15E(int16_t a, int16_t b, int16_t y, int16_t x);
+/* 0x037F:0x015E = file 0x5D4E = func_005D4E_logic_sz_40(x, y, mask, set):
+ * set/clear mask bits on tile (x,y) in map layer 160.  cdecl pushes are
+ * right-to-left, so the @asm "push 1;1;y;x" sequences mean the ARG order is
+ * (x, y, mask=1, set).  Place sets the occupant bit (set=1); unlink clears
+ * it (set=0).  add sp,8 confirms 4 args at both sites.  (The old decl here
+ * had the push order copied verbatim — args reversed; fixed 2026-06-12.) */
+extern void    map_tile_set_head_037F_15E(int16_t x, int16_t y, int16_t mask, int16_t set);
 extern int16_t map_tile_reveal_037F_598(int16_t x, int16_t y);        /* 0x037F:0x0598 */
-extern void    map_tile_notify_037F_228(int16_t owner, int16_t y, int16_t x);/* 0x037F:0x0228 */
+/* 0x037F:0x0228 = file 0x5E18 = func_005E18_op_sz_120(x, y, owner): tile-
+ * ownership write.  @asm "push owner;y;x" -> cdecl args (x, y, owner). */
+extern void    map_tile_notify_037F_228(int16_t x, int16_t y, int16_t owner);
 
 /* ============================================================================
  * unit_create -- allocate a fresh UnitRecord at the end of the table.
@@ -253,7 +259,8 @@ void unit_place_on_tile(int16_t unit_idx, int16_t x, int16_t y)
     if (map_tile_set_occupant_037F_0A(x, y) == 0) /* @asm 0x06981 */
         return;                                /* @asm 0x0698D je 0x69CD */
 
-    map_tile_set_head_037F_15E(1, 1, y, x);    /* @asm 0x06995 push 1;1;di(y);si(x) */
+    map_tile_set_head_037F_15E(x, y, 1, 1);    /* @asm 0x06995 push 1;1;di(y);si(x)
+                                                  -> cdecl (x, y, mask=1, set=1) */
 
     owner = U_OFF(unit_idx, U_OWNER) & 0x0F;   /* @asm 0x069A0 */
     if (owner >= 4) {                          /* @asm 0x069A6 cmp 4; jb skip */
@@ -261,7 +268,8 @@ void unit_place_on_tile(int16_t unit_idx, int16_t x, int16_t y)
             return;                            /* @asm 0x069B6 jne 0x69CD */
     }
     owner = U_OFF(unit_idx, U_OWNER) & 0x0F;   /* @asm 0x069BB */
-    map_tile_notify_037F_228(owner, y, x);     /* @asm 0x069C5 */
+    map_tile_notify_037F_228(x, y, owner);     /* @asm 0x069C5 push owner;y;x
+                                                  -> cdecl (x, y, owner) */
 }
 
 /* ============================================================================
@@ -342,9 +350,10 @@ void unit_chain_unlink(int16_t unit_idx)
         /* lone occupant: clear the tile's occupancy slot */
         if (map_tile_set_occupant_037F_0A(U_OFF(unit_idx, U_MAPX),
                                           U_OFF(unit_idx, U_MAPY)) != 0) { /* @asm 0x06901 */
-            map_tile_set_head_037F_15E(0, 1,
+            map_tile_set_head_037F_15E(U_OFF(unit_idx, U_MAPX),
                                        U_OFF(unit_idx, U_MAPY),
-                                       U_OFF(unit_idx, U_MAPX));           /* @asm 0x06920 push 0;1;y;x */
+                                       1, 0);                              /* @asm 0x06920 push 0;1;y;x
+                                                  -> cdecl (x, y, mask=1, set=0) */
         }
     }
 

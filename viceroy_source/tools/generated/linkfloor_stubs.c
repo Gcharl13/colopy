@@ -31,9 +31,7 @@ __attribute__((weak)) long overlay_call_02D8_000E(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_02E9_0006(void) { viceroy_stub_hit("overlay_call_02E9_0006"); return 0; }
 __attribute__((weak)) long overlay_call_02FD_006C(void) { viceroy_stub_hit("overlay_call_02FD_006C"); return 0; }
 __attribute__((weak)) long overlay_call_037F_015E(void) { viceroy_stub_hit("overlay_call_037F_015E"); return 0; }
-__attribute__((weak)) long overlay_call_037F_0200(void) { viceroy_stub_hit("overlay_call_037F_0200"); return 0; }
 __attribute__((weak)) long overlay_call_037F_0228(void) { viceroy_stub_hit("overlay_call_037F_0228"); return 0; }
-__attribute__((weak)) long overlay_call_037F_02E0(void) { viceroy_stub_hit("overlay_call_037F_02E0"); return 0; }
 __attribute__((weak)) long overlay_call_037F_0392(void) { viceroy_stub_hit("overlay_call_037F_0392"); return 0; }
 __attribute__((weak)) long overlay_call_03E4_003A(void) { viceroy_stub_hit("overlay_call_03E4_003A"); return 0; }
 __attribute__((weak)) long overlay_call_03F1_02F8(void) { viceroy_stub_hit("overlay_call_03F1_02F8"); return 0; }
@@ -556,6 +554,7 @@ __attribute__((weak)) long overlay_call_191F_0ED0(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_191F_0F8E(void) { viceroy_stub_hit("overlay_call_191F_0F8E"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0FB8(void) { viceroy_stub_hit("overlay_call_191F_0FB8"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0150(void) { viceroy_stub_hit("overlay_call_1A1F_0150"); return 0; }
+__attribute__((weak)) long overlay_call_1A1F_0192(void) { viceroy_stub_hit("overlay_call_1A1F_0192"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_01A0(void) { viceroy_stub_hit("overlay_call_1A1F_01A0"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_01CA(void) { viceroy_stub_hit("overlay_call_1A1F_01CA"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_01F4(void) { viceroy_stub_hit("overlay_call_1A1F_01F4"); return 0; }
@@ -666,6 +665,7 @@ __attribute__((weak)) long ovly_ai_unit_leaf_05CA7E(void) { viceroy_stub_hit("ov
 __attribute__((weak)) long ovly_attitude_A38(void) { viceroy_stub_hit("ovly_attitude_A38"); return 0; }
 __attribute__((weak)) long ovly_combat_apply_wrapper_05BE30(void) { viceroy_stub_hit("ovly_combat_apply_wrapper_05BE30"); return 0; }
 __attribute__((weak)) long ovly_commit_A06(void) { viceroy_stub_hit("ovly_commit_A06"); return 0; }
+__attribute__((weak)) long ovly_commit_choice_608(void) { viceroy_stub_hit("ovly_commit_choice_608"); return 0; }
 __attribute__((weak)) long ovly_confront_1A1F_15E(void) { viceroy_stub_hit("ovly_confront_1A1F_15E"); return 0; }
 __attribute__((weak)) long ovly_confront_1A1F_192(void) { viceroy_stub_hit("ovly_confront_1A1F_192"); return 0; }
 __attribute__((weak)) long ovly_debug_str_77E(void) { viceroy_stub_hit("ovly_debug_str_77E"); return 0; }
@@ -680,8 +680,8 @@ __attribute__((weak)) long ovly_msg_str_3FE(void) { viceroy_stub_hit("ovly_msg_s
 __attribute__((weak)) long ovly_msg_str_416(void) { viceroy_stub_hit("ovly_msg_str_416"); return 0; }
 __attribute__((weak)) long ovly_name_word_A2E(void) { viceroy_stub_hit("ovly_name_word_A2E"); return 0; }
 __attribute__((weak)) long ovly_notify_93E(void) { viceroy_stub_hit("ovly_notify_93E"); return 0; }
-__attribute__((weak)) long ovly_notify_view_7D6(void) { viceroy_stub_hit("ovly_notify_view_7D6"); return 0; }
 __attribute__((weak)) long ovly_path_check_302(void) { viceroy_stub_hit("ovly_path_check_302"); return 0; }
+__attribute__((weak)) long ovly_play_sound_4C0(void) { viceroy_stub_hit("ovly_play_sound_4C0"); return 0; }
 __attribute__((weak)) long ovly_postcombat_05C69C(void) { viceroy_stub_hit("ovly_postcombat_05C69C"); return 0; }
 __attribute__((weak)) long ovly_query_2C6(void) { viceroy_stub_hit("ovly_query_2C6"); return 0; }
 __attribute__((weak)) long ovly_query_74A(void) { viceroy_stub_hit("ovly_query_74A"); return 0; }
@@ -726,12 +726,8 @@ __attribute__((weak)) long func_0028B0(void) { viceroy_stub_hit("func_0028B0"); 
 __attribute__((weak)) long func_002942(void) { viceroy_stub_hit("func_002942"); return 0; }
 __attribute__((weak)) long func_002952(void) { viceroy_stub_hit("func_002952"); return 0; }
 __attribute__((weak)) long func_006696(void) { viceroy_stub_hit("func_006696"); return 0; }
-__attribute__((weak)) long func_00693A(void) { viceroy_stub_hit("func_00693A"); return 0; }
-__attribute__((weak)) long func_0069D2(void) { viceroy_stub_hit("func_0069D2"); return 0; }
 __attribute__((weak)) long func_006A7C(void) { viceroy_stub_hit("func_006A7C"); return 0; }
 __attribute__((weak)) long func_006E94(void) { viceroy_stub_hit("func_006E94"); return 0; }
-__attribute__((weak)) long func_006FC4(void) { viceroy_stub_hit("func_006FC4"); return 0; }
-__attribute__((weak)) long func_007002(void) { viceroy_stub_hit("func_007002"); return 0; }
 __attribute__((weak)) long func_00701C(void) { viceroy_stub_hit("func_00701C"); return 0; }
 __attribute__((weak)) long func_00768C(void) { viceroy_stub_hit("func_00768C"); return 0; }
 __attribute__((weak)) long func_007A80(void) { viceroy_stub_hit("func_007A80"); return 0; }
@@ -1103,8 +1099,6 @@ __attribute__((weak)) long lmul_D1D_F60(void) { viceroy_stub_hit("lmul_D1D_F60")
 __attribute__((weak)) long load_PIK(void) { viceroy_stub_hit("load_PIK"); return 0; }
 __attribute__((weak)) long loadimg_msgbox(void) { viceroy_stub_hit("loadimg_msgbox"); return 0; }
 __attribute__((weak)) long map_mark_settlement_tile(void) { viceroy_stub_hit("map_mark_settlement_tile"); return 0; }
-__attribute__((weak)) long map_tile_occupancy_id_037F_0A(void) { viceroy_stub_hit("map_tile_occupancy_id_037F_0A"); return 0; }
-__attribute__((weak)) long map_tile_set_head_037F_15E(void) { viceroy_stub_hit("map_tile_set_head_037F_15E"); return 0; }
 __attribute__((weak)) long mcb_at(void) { viceroy_stub_hit("mcb_at"); return 0; }
 __attribute__((weak)) long menu_add(void) { viceroy_stub_hit("menu_add"); return 0; }
 __attribute__((weak)) long menu_add_cheat_x(void) { viceroy_stub_hit("menu_add_cheat_x"); return 0; }

@@ -76,14 +76,33 @@ static int g_emit_log;
 /* ---- layer plumbing -------------------------------------------------------- */
 static const uint8_t *g_layer[4];          /* terrain, feature, resfog, region */
 static uint8_t g_region_layer[64*80];       /* layer [0x164]: computed at load */
+static uint8_t g_feature_work[64*80];       /* layer [0x160] WORKING copy: the
+                                             * original mutates this layer at
+                                             * runtime (unit occupant bit set/
+                                             * cleared by func_005D4E on place/
+                                             * unlink), so the modern build owns
+                                             * a writable copy of the attach
+                                             * data, like layer [0x164]. */
+static uint8_t g_resfog_work[64*80];        /* layer [0x168] WORKING copy: the
+                                             * per-power DISCOVERY bits are set
+                                             * at runtime (func_00631A reveal
+                                             * via the func_005ED0 address). */
 static long           g_wp[3];             /* committed per-tile offsets */
 static long           g_layer_len;
 
 void viceroy_map_attach(const uint8_t *terrain, const uint8_t *feature,
                         const uint8_t *resfog, int w, int h)
 {
-    g_layer[0] = terrain; g_layer[1] = feature; g_layer[2] = resfog;
+    g_layer[0] = terrain;
     g_layer_len = (long)w * h;
+    memset(g_feature_work, 0, sizeof g_feature_work);
+    if (feature && g_layer_len <= (long)sizeof g_feature_work)
+        memcpy(g_feature_work, feature, (size_t)g_layer_len);
+    g_layer[1] = g_feature_work;
+    memset(g_resfog_work, 0, sizeof g_resfog_work);
+    if (resfog && g_layer_len <= (long)sizeof g_resfog_work)
+        memcpy(g_resfog_work, resfog, (size_t)g_layer_len);
+    g_layer[2] = g_resfog_work;
     /* layer [0x164] (region/lake ids; the original computes it at map load --
      * loader not yet decoded): RECONSTRUCTED as water-region nibbles via
      * edge-connected flood fill: open ocean = 1, enclosed lakes = 2.., land=0.
@@ -178,14 +197,20 @@ uint8_t viceroy_layer_byte(int layer, int x, int y)
 }
 
 /* writable host address of a layer tile (the DOS far-address helpers, e.g.
- * func_005D84 for layer [0x164], return this in modern mode). Layer 3 is the
- * platform-owned region buffer; the .MP layers stay read-only. */
+ * func_005D1A for layer [0x160], func_005D84 for layer [0x164], return this in
+ * modern mode). Layers 1 and 3 are platform-owned working buffers (the original
+ * mutates both at runtime); layers 0/2 stay read-only — out-of-range or
+ * read-only requests get a scratch byte (write dropped, read 0). */
 static uint8_t g_layer_scratch;
 uint8_t *viceroy_layer_addr(int layer, int x, int y)
 {
     long o = (long)y * (int16_t)DG16(0x853A) + x;
     if (layer == 3 && o >= 0 && o < (long)sizeof g_region_layer)
         return &g_region_layer[o];
+    if (layer == 1 && o >= 0 && o < (long)sizeof g_feature_work && o < g_layer_len)
+        return &g_feature_work[o];
+    if (layer == 2 && o >= 0 && o < (long)sizeof g_resfog_work && o < g_layer_len)
+        return &g_resfog_work[o];
     g_layer_scratch = 0;
     return &g_layer_scratch;
 }
@@ -894,3 +919,22 @@ int overlay_call_1A1F_0968(void) { return 0; }
  * Called by func_066BB0_minimap_update and func_066CD6_draw_contents to latch
  * the palette before minimap rendering.  Pure display. */
 void func_066BB0_prep(void) { }
+
+/* compose_tile_overlays (func_067644) internal draw passes, live since the
+ * ai_eval_unit move-commit redraw (Phase 4.3q).  All are pixel emitters with
+ * no game-state side effects.  Pure display. */
+
+/* 0x1A1F:0x0914 — bind plot (writes the four cell words for the passes) */
+int overlay_call_1A1F_0914(void) { return 0; }
+
+/* 0x181F:0x032C — roads/rivers layer pass */
+int overlay_call_181F_032C(void) { return 0; }
+
+/* 0x181F:0x0344 — colony/settlement layer pass */
+int overlay_call_181F_0344(void) { return 0; }
+
+/* 0x181F:0x0E38 — units-on-tile pass */
+int overlay_call_181F_0E38(void) { return 0; }
+
+/* 0x1A1F:0x08F8 — cursor overlay pass (mode != 0 only) */
+int overlay_call_1A1F_08F8(void) { return 0; }

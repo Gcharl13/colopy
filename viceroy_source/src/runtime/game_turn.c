@@ -248,9 +248,10 @@ int viceroy_world_smoke(int turns)
         tilehead_set(5,5,3);
         /* the at-war occupant at (21,20): the wake probe (0x181F:0x696 ->
          * func_005F48) reads ONLY the map layers, so paint the occupancy
-         * directly -- layer-160 bit1 (host layer 1 = f[]) + layer-164 high
+         * directly -- layer-160 bit1 (host layer 1, now a platform working
+         * copy, so write through viceroy_layer_addr) + layer-164 high
          * nibble = power 2 (host layer 3, the writable region buffer) */
-        f[20*32 + 21] |= 2;
+        *viceroy_layer_addr(1, 21, 20) |= 2;
         *viceroy_layer_addr(3, 21, 20) |= (uint8_t)(2 << 4);
         /* power 1 at war with power 2: relations byte (func_007F34 model:
          * PowerRecord[1]+0x34[2]) bit 0x40 */

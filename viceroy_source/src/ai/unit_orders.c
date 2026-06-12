@@ -55,6 +55,7 @@
  * @ref             reverse_engineered/code/VICEROY/typeA_thunk_targets.json
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"   /* DG8/DG16/DG_PTR for the byte-cited DGROUP accesses */
 
 /* ----------------------------------------------------------------------------
  * Byte-verified globals (DGROUP-relative; DS = DGROUP at run time)
@@ -176,7 +177,9 @@ extern int16_t ovly_tile_to_unit_7E0(int16_t x, int16_t y);  /* @asm 0x03EDDD ->
 extern int16_t ovly_attackable_6F0(int16_t x, int16_t y);    /* @asm 0x03EE1D */
 extern int16_t ovly_relation_A38(int16_t a, int16_t b);      /* @asm 0x03EFC0.. test al,4/0x40 */
 extern int16_t ovly_name_word_9A4(int16_t idx);              /* @asm 0x03F237/0x03F24A power-name word */
-extern int16_t ovly_relation_query_826(int16_t owner, int16_t x, int16_t y); /* @asm 0x03F3CB */
+extern int16_t ovly_relation_query_826(int16_t x, int16_t y, int16_t owner); /* 0x826 =
+                            func_00730A(x, y, owner) per-owner adjacency mask;
+                            decl order fixed to the cdecl truth 2026-06-12 */
 extern int16_t ovly_target_query_7BE(int16_t x, int16_t y);  /* @asm 0x03EE59/0x03F5AE colony? */
 extern int16_t ovly_target_query_6DC(int16_t a, int16_t x, int16_t y);/* @asm 0x03F372 */
 extern int16_t ovly_target_query_696(int16_t x, int16_t y);  /* @asm 0x03F301 */
@@ -267,6 +270,7 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
     int16_t occ_colony;    /* [bp-4]    */
     int16_t ai_flag;       /* [bp-0x1a] */
     int16_t is_enemy2;     /* [bp-8]    */
+    int16_t moves_left;    /* [bp-0x24] = allowance(0x90C) - moves-used(+0x05) */
     int16_t cap;
     int16_t tmp;
 
@@ -283,8 +287,14 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
     actor_y = g_units_3144[unit_index][0x01];
 
     /* @asm 0x03ED1F push [bp+0xa]; push [bp+8]; lcall 0x181F:0x78C; add sp,4
-     *      mov bx,ax; mov [bp-0x2c],bx -- resolve occupant id at (x,y) -> occ2 */
-    occ2 = ovly_relation_query_826(0, tile_x, tile_y); /* 0x181F:0x78C; args (y,x) */
+     *      mov bx,ax; mov [bp-0x2c],bx -- terrain code at (x,y) -> occ2.
+     * 0x181F:0x78C = file 0x627A = func_00627A terrain query (x, y).  The old
+     * port called ovly_relation_query_826 (0x826, 3 args) here -- wrong thunk
+     * AND wrong arity; fixed 2026-06-12. */
+    {
+        extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);
+        occ2 = (int16_t)func_00627A_op_sz_57((uint16_t)tile_x, (uint16_t)tile_y);
+    }
     /* @asm 0x03ED32 shl bx,4; mov al,[bx+0x2f76]; (al*3) -> [bp-0x3e] = priority */
     {
         uint8_t c = g_terrain_movecost_2F76[occ2 & 0xFFFF][0x00]; /* @asm 0x03ED35 */
@@ -371,11 +381,13 @@ int16_t ai_eval_unit(int16_t unit_index, int16_t tile_x, int16_t tile_y)
 
     /* @asm 0x03EE84 push [bp+6]; lcall 0x181F:0x90C; add sp,2; sub ah,ah
      *      imul bx,[bp+6],0x1c; mov cl,[bx+0x3149]; ax -= cl
-     *      mov [bp-0x24],ax -- ax = finalize(unit) - UnitRecord.field_05 */
+     *      mov [bp-0x24],ax -- moves_left = allowance(0x90C) - moves-used(+0x05).
+     * 0x181F:0x90C = func_006CCA movement allowance; the old port DISCARDED the
+     * return value (moves_left = 0 - used, always <= 0); fixed 2026-06-12. */
     {
-        int16_t moves_left;
-        ovly_finalize_unit_90C(unit_index);                   /* @asm 0x03EE87, returns AX */
-        moves_left = 0 /* AX */ - g_units_3144[unit_index][0x05]; /* @asm 0x03EE9B */
+        extern int func_006CCA_logic_sz_13(uint16_t u);       /* 0x90C allowance */
+        moves_left = (int16_t)(uint8_t)func_006CCA_logic_sz_13((uint16_t)unit_index)
+                   - (int16_t)g_units_3144[unit_index][0x05]; /* @asm 0x03EE9B */
         /* @asm 0x03EEA0 cmp [bp-0x18],0; jne 0x449; else jmp 0x85a (book-keeping) */
         if (is_enemy == 0) goto bookkeep;                     /* @asm 0x03EEA6 */
         /* @asm 0x03EEA9 cmp ax,3; jge 0x46c -- if moves_left<3 take auto-skip
@@ -534,18 +546,67 @@ block_614:
 
 bookkeep:
     /* ---- block 0x85a: post-action UnitRecord book-keeping (@asm 0x03F2BA..) ---
-     * @asm 0x03F2BA imul bx,unit,0x1c; cmp [bx+0x3149],1; sbb/neg -> a 0/1 flag
-     *   into [bp-0x36]. If NOT enemy: add priority to [bx+0x3149]; compare two
-     *   tile->unit lookups (0x181F:0x768) and adjacency (0x181F:0x696); if the
-     *   actor advanced, store the new tile-unit into [bx+0x3149]. */
+     * Byte-restored 2026-06-12: the old port had flag36 == (used==1) (the
+     * sbb/neg idiom is used<1, i.e. ==0), DROPPED the water/land-boundary
+     * exhaustion (0x768/0x696/0x90C), and DROPPED the insufficient-moves
+     * random gate @0x3F32E..0x3F360 entirely. */
     {
-        int16_t flag36 = (g_units_3144[unit_index][0x05] == 1) ? 1 : 0; /* @asm 0x03F2BE..0x03F2C7 */
+        extern int func_0062B4_op_sz_39(uint16_t x, uint16_t y);     /* 0x768 is-sea */
+        extern int func_005F48_logic_sz_58(uint16_t x, uint16_t y);  /* 0x696 water probe */
+        extern int func_006CCA_logic_sz_13(uint16_t u);              /* 0x90C allowance */
+        extern void msc_srand(unsigned v);                           /* 0x4CA */
+        extern int16_t random_int_4D4(int16_t lo, int16_t hi);       /* 0x4D4 */
+        /* @asm 0x03F2BE cmp [bx+0x3149],1; sbb ax,ax; neg ax -> flag36 =
+         * (moves-used < 1), i.e. the unit has not consumed any movement yet. */
+        int16_t flag36 = (g_units_3144[unit_index][0x05] < 1) ? 1 : 0;
         if (is_enemy == 0) {
             /* @asm 0x03F2D0 al=[bp-0x3e](priority); add [bx+0x3149],al */
             g_units_3144[unit_index][0x05] =
                 (uint8_t)(g_units_3144[unit_index][0x05] + (uint8_t)priority);
+            /* @asm 0x03F2D7..0x03F32A water/land boundary crossing exhausts the
+             * unit: when sea(dest) != sea(src) and NEITHER side is 0x696-
+             * positive water, moves-used = full allowance. */
+            if (func_0062B4_op_sz_39((uint16_t)tile_x, (uint16_t)tile_y) !=
+                func_0062B4_op_sz_39((uint16_t)actor_x, (uint16_t)actor_y)) { /* @0x3F2F7 */
+                if (func_005F48_logic_sz_58((uint16_t)actor_x,
+                                            (uint16_t)actor_y) < 0 &&  /* @0x3F30B */
+                    func_005F48_logic_sz_58((uint16_t)tile_x,
+                                            (uint16_t)tile_y) < 0) {   /* @0x3F31D */
+                    g_units_3144[unit_index][0x05] =
+                        (uint8_t)func_006CCA_logic_sz_13((uint16_t)unit_index); /* @0x3F32A */
+                }
+            }
         }
-        (void)flag36;
+        /* @asm 0x03F32E..0x03F360 INSUFFICIENT-MOVES random gate: when the
+         * step costs more than the remaining moves and the unit has already
+         * moved this turn, the step only succeeds with probability
+         * moves_left/priority -- on failure, jump to the ran_flag=1 tail
+         * (no move, orders kept). */
+        if (moves_left < priority && flag36 == 0) {           /* @0x3F334/0x3F33A */
+            msc_srand((unsigned)DG16(0x83A6));                /* @0x3F340 0x4CA */
+            if (is_enemy == 0 &&                              /* @0x3F34C */
+                random_int_4D4(1, priority) > moves_left)     /* @0x3F353/0x3F35E */
+                goto ran_tail;                                /* @0x3F360 jmp 0x3F8BC */
+        }
+    }
+
+    /* ---- block 0x8c9: native-contact message arg (@asm 0x03F363..0x03F3A8) ---
+     * EU actor only: t = tribe-id-at(x,y); when t >= 4 and market value of
+     * (t-4) < 0x4B, latch the msg arg via 0x181F:0xA42.  (Dead type load at
+     * @0x3F3A0 reproduced as a comment-only quirk.) */
+    if (actor_owner < 4) {                                    /* @0x3F363 */
+        extern int func_005DF0_logic_sz_40(uint16_t x, uint16_t y);   /* 0x6DC */
+        extern int func_0082A0_logic_sz_18(uint16_t a, uint16_t b);   /* 0x30C */
+        extern int func_0081C6_logic_sz_44(uint16_t a);               /* 0xA42 */
+        int16_t t = (int16_t)func_005DF0_logic_sz_40((uint16_t)tile_x,
+                                                     (uint16_t)tile_y); /* @0x3F372 */
+        occ_owner = t;                                        /* @0x3F37B [bp-2] reuse */
+        tmp = (int16_t)func_0082A0_logic_sz_18((uint16_t)(t - 4),
+                                               (uint16_t)actor_owner); /* @0x3F384 0x30C */
+        if (t >= 4 && tmp < 0x4B) {                           /* @0x3F38C/0x3F392 */
+            func_0081C6_logic_sz_44((uint16_t)(t - 4));       /* @0x3F398 0xA42 */
+            /* @0x3F3A0 mov al,[bx+0x3146]; sub ah,ah -- dead load (quirk) */
+        }
     }
 
     /* ---- block 0x903..0x9b0: recompute is_enemy via 0x5396 (the SELECTED/VIEW
@@ -554,12 +615,19 @@ bookkeep:
         ai_flag = g_word_53A2;                                /* @asm 0x03F3AA seed */
         /* @asm 0x03F3B4 mov al,[bx+0x3147]&0xf; cmp al,[0x5396]; je 0x9b0 */
         if ((g_units_3144[unit_index][0x03] & 0x0F) != (uint8_t)g_view_nation_index_5396) {
-            /* @asm 0x03F3C2 query relation 0x181F:0x826; then 0x181F:0x7FE; then
-             * test the (0x10<<view) bit of [si+0x3147]; if clear, query
-             * 0x181F:0x970 and on 0 -> ai_flag stays seeded; else ai_flag=1. */
+            /* @asm 0x03F3C2 push owner_nib; push y; push x; lcall 0x181F:0x826
+             *   -> adjacency mask func_00730A(x, y, owner); then @0x3F3D6
+             *   push mask; push unit; lcall 0x181F:0x7FE = func_0072E2(unit,
+             *   mask) ORs the mask into +0x03 of the unit's chain.  (Old port
+             *   passed (0, x, y) -- cdecl order reversed -- and dropped the
+             *   0x7FE apply; fixed 2026-06-12.)  Then test the (0x10<<view)
+             *   bit; if clear, query 0x181F:0x970 and on 0 -> ai_flag stays
+             *   seeded; else ai_flag=1. */
+            extern int func_0072E2_logic_sz_40(uint16_t u, uint16_t mask); /* 0x7FE */
             int16_t rel = ovly_relation_query_826(
-                              0, tile_x, tile_y);             /* @asm 0x03F3CB */
-            (void)rel;
+                              tile_x, tile_y,
+                              (int16_t)(g_units_3144[unit_index][0x03] & 0x0F)); /* @asm 0x03F3CB */
+            func_0072E2_logic_sz_40((uint16_t)unit_index, (uint16_t)rel); /* @asm 0x03F3DA */
             uint16_t owner_mask = (uint16_t)0x10 << (uint8_t)g_view_nation_index_5396; /* @asm 0x03F3EC */
             if (owner_mask & g_units_3144[unit_index][0x03]) {/* @asm 0x03F3F1 */
                 ai_flag = 1;                                  /* @asm 0x03F40B */
@@ -616,74 +684,251 @@ bookkeep:
      * enemy confrontation), notify the view nation (0x181F:0x7D6). Then always
      * step the unit (0x181F:0x916). */
     if (ai_flag != 0) {
-        extern void ovly_notify_view_7D6(int16_t view, int16_t unit);
-        ovly_notify_view_7D6(g_view_nation_index_5396, unit_index); /* @asm 0x03F4AB */
+        /* @asm 0x03F4A4 push [0x5396]; push [bp+6]; lcall 0x181F:0x7D6 ->
+         * func_00701C(unit, view).  (Old extern had (view, unit); cdecl order
+         * fixed 2026-06-12.) */
+        extern int func_00701C_logic_sz_48(uint16_t u, uint16_t v);
+        func_00701C_logic_sz_48((uint16_t)unit_index,
+                                (uint16_t)g_view_nation_index_5396); /* @asm 0x03F4AB */
     }
+    /* ---- THE MOVE STAGING (@asm 0x03F4B3) -----------------------------------
+     * 0x181F:0x916 = func_007966: DETACH the actor from its tile into the
+     * (-2,-2) staging area (carriers 0xD..0x12 via func_00772E, which also
+     * boards capacity-fitting stack members; others via func_0069D2).  The
+     * matching RE-PLACE is the 0x181F:0x948 = func_006A7C call in the commit
+     * block below -- the same stage/commit protocol naval_classify_dest uses. */
     {
         extern void ovly_step_916(int16_t unit);
         ovly_step_916(unit_index);                            /* @asm 0x03F4B6 0x181F:0x916 */
     }
 
-    /* ---- block 0xa5e..0xb2b: when is_enemy2 set, ANIMATE the unit moving onto
-     * the tile (0x181F:0x2D0 spawn/animate with a duration 0xC0 or 0xE0 keyed on
-     * whether the actor is the view nation), then walk the tile's unit chain via
-     * 0x181F:0x2E4 / 0x8E4 setting order byte [+0x08]=1 on each, and possibly
-     * clear it (=0) on the matched neighbour. (@asm 0x03F4BE..0x03F588.) */
+    /* ---- block 0xa5e: is_enemy2 ANIMATE (@asm 0x03F4BE..0x03F4F7) ----------- */
     if (is_enemy2 != 0) {
         int16_t dur = ((g_units_3144[unit_index][0x03] & 0x0F)
                        == (uint8_t)g_view_nation_index_5396) ? 0xC0 : 0xE0; /* @asm 0x03F4C4/0x03F4D7/0x03F4D9 */
-        ovly_unit_alloc_2D0(tile_y, tile_x, actor_y, actor_x,
-                            -1, dur, unit_index);             /* @asm 0x03F4F2 */
-        /* (chain walk + order-byte updates: structural; see @asm 0x03F4FA..0x03F588) */
+        /* @asm 0x03F4DE push y,x,actor_y,actor_x,-1,dur,unit -> cdecl
+         * f(unit, dur, -1, actor_x, actor_y, tile_x, tile_y); 0x181F:0x2D0 =
+         * func_004566 (animate; weak no-op headless).  Old call had the push
+         * order copied verbatim; fixed 2026-06-12. */
+        ovly_unit_alloc_2D0(unit_index, dur, -1, actor_x, actor_y,
+                            tile_x, tile_y);                  /* @asm 0x03F4F2 */
     }
 
-    /* ---- block 0xb2b..0xc72: when this unit hits a colony tile (type 0xc or a
-     * colony id from 0x181F:0x88A/0x7BE), play the entry sound (0x181F:0x4C0
-     * snd 0x52) for an AI-controlled adjacent EU, clear UnitRecord turn_counter
-     * [+0x16]=0 (@asm 0x03F5F7), walk units on the tile, and (for native units
-     * type 0x0D..0x12 owned by the view nation) emit the colony/native message
-     * via 0x181F:0x74 with the unit-type table [0x5230]/[0x2EBA]/[0x2DCA] and a
-     * colony record at (0x5D48 + colony*0xCA). (@asm 0x03F58B..0x03F69D.) */
-
-    /* ---- block 0xc72..0xe5c: the HUMAN confrontation entry. When the acting
-     * unit is in the type band 0x0D..0x12, game-mode bit 0x80 is set, the unit
-     * owner == current_nation (0x5398), and 0x5387 bit 0x80 is clear, store the
-     * colony id into `choice` (@asm 0x03F6CC). Then resolve the occupant
-     * (0x181F:0x75E -> [bp-0x2a]), query relations (0x181F:0x826/0x6DC), and run
-     * the long human-interaction tail (0x1A1F:0x178/0x192/0x186 cross-page
-     * handlers, colony record at 0x5D62 bit-0x40 test). (@asm 0x03F6A0..0x03F8AB.)
-     * These present the player's options; the byte logic is reproduced as the
-     * fast-path gate below and the rest is structurally cited. */
-    if (g_units_3144[unit_index][0x02] >= 0x0D &&
-        g_units_3144[unit_index][0x02] <= 0x12 &&             /* @asm 0x03F6A4/0x03F6AB */
-        (g_game_mode_flags_5382 & 0x80) &&                    /* @asm 0x03F6B2 */
-        (g_units_3144[unit_index][0x03] & 0x0F)
-            == (uint8_t)g_current_nation_index_5398 &&        /* @asm 0x03F6BF */
-        !(g_mode_flag_5387 & 0x80)) {                         /* @asm 0x03F6C5 */
-        choice = occ_colony;                                  /* @asm 0x03F6CC mov ax,[bp-4]; [bp-0xa]=ax */
-    }
-    /* (occupant resolution + relation queries + cross-page human handlers:
-     *  @asm 0x03F6D2..0x03F8AB -- structural; helper bodies in thunk pages.) */
-
-    /* ---- LCR MOVEMENT TRIGGER (Phase 2.1) @asm 0x03F6D2 + 0x03F7E4..0x03F80A.
-     * The rumour mark is PROCEDURAL, not a stored feature bit: 0x181F:0x75E =
-     * func_006188 returns 1 iff (tile_x,tile_y) is unowned non-special terrain
-     * whose sub-cell phase matches the supercell flow hash keyed on the
-     * per-game word DGROUP:0x190 (BYTE_VERIFIED port).  Gate: rumour mark set
-     * AND the actor is a EUROPEAN power -> roll the Lost-City-Rumour engine
-     * (1A1F:0x178 = func_061454 = lcr_resolve, its ONLY caller in the EXE).
-     * If the roll changed the unit roster (unit destroyed / spawned), the
-     * original jumps straight to the 0x3F8C1 tail, skipping the choice
-     * commit and ran_flag set. */
+    /* ---- staging-stack walk (@asm 0x03F4FA..0x03F51D) -----------------------
+     * 0x181F:0x8E4 (resident file 0x6CB4, register-arg): sort the unit's tile
+     * stack (func_006B46(u,0)) and return its chain head (func_006672).  Every
+     * member AFTER the head gets orders=1 (boarded/escort marker). */
     {
-        extern int func_006188_op_sz_91(uint16_t x, uint16_t y); /* 0x181F:0x75E */
-        extern int lcr_resolve(int unit_idx, int tile_x, int tile_y); /* 1A1F:0x178 */
-        int rumor = func_006188_op_sz_91((uint16_t)tile_x, (uint16_t)tile_y);
+        extern int func_006B46_op_sz_365(uint16_t a, uint16_t b);
+        extern int unit_chain_resolve(int idx);
+        extern int unit_chain_next(int idx);
+        extern int func_0066CC_op_sz_57(uint16_t x, uint16_t y);     /* 0x7E0 */
+        extern int func_0062B4_op_sz_39(uint16_t x, uint16_t y);     /* 0x768 */
+        extern int func_0078F4_logic_sz_66(uint16_t u);              /* 0x88A */
+        extern void func_007936_logic_sz_48(uint16_t a, uint16_t b); /* 0x8F8 */
+        extern int func_0079A0_op_sz_119(uint16_t u_ax);             /* 0x966 */
+        extern int func_006F5A_op_sz_105(uint16_t u);                /* 0x86C */
+        int16_t stage_head, m, dest_head;
+
+        func_006B46_op_sz_365((uint16_t)unit_index, 0);       /* @asm 0x03F4FD 0x8E4 */
+        stage_head = (int16_t)unit_chain_resolve(unit_index); /* -> [bp-0x1c] */
+        m = (int16_t)unit_chain_next(stage_head);             /* @asm 0x03F513 0x2E4 */
+        while (m >= 0) {                                      /* @asm 0x03F51B */
+            g_units_3144[m][0x08] = 1;                        /* @asm 0x03F50B orders=1 */
+            m = (int16_t)unit_chain_next(m);                  /* @asm 0x03F51C */
+        }
+
+        /* ---- destination-stack merge (@asm 0x03F51F..0x03F588) -------------- */
+        dest_head = (int16_t)func_0066CC_op_sz_57((uint16_t)tile_x,
+                                                  (uint16_t)tile_y); /* @asm 0x03F525 0x7E0 */
+        if (dest_head >= 0) {
+            func_006B46_op_sz_365((uint16_t)dest_head, 0);    /* @asm 0x03F52A 0x8E4 */
+            dest_head = (int16_t)unit_chain_resolve(dest_head); /* -> [bp-0x12] */
+        }
+        if (dest_head >= 0) {                                 /* @asm 0x03F534 */
+            if (func_0062B4_op_sz_39((uint16_t)tile_x,
+                                     (uint16_t)tile_y) != 0 &&  /* @asm 0x03F546 sea(dest) */
+                func_0078F4_logic_sz_66((uint16_t)stage_head) == 0) { /* @asm 0x03F555 0x88A */
+                if (g_units_3144[dest_head][0x08] == 1)       /* @asm 0x03F560 */
+                    g_units_3144[dest_head][0x08] = 0;        /* @asm 0x03F562 */
+                func_007936_logic_sz_48((uint16_t)stage_head, 1); /* @asm 0x03F56C 0x8F8 */
+                if (func_0079A0_op_sz_119((uint16_t)dest_head) != 0) /* @asm 0x03F577 0x966 */
+                    func_006F5A_op_sz_105((uint16_t)dest_head);      /* @asm 0x03F583 0x86C */
+            }
+        }
+
+        /* ---- block 0xb2b: colony-entry (@asm 0x03F58B..0x03F69D) -------------
+         * Reached when the actor is colony-flagged (0x88A != 0) or type 0xC;
+         * otherwise jump straight to the move-commit block. */
+        if (func_0078F4_logic_sz_66((uint16_t)unit_index) == 0 &&   /* @asm 0x03F598 */
+            g_units_3144[unit_index][0x02] != 0x0C)                 /* @asm 0x03F5A3 */
+            goto move_commit;                                       /* @asm 0x03F5A5 jmp 0x3F6D2 */
+        occ_colony = (int16_t)ovly_target_query_7BE(tile_x, tile_y);   /* @asm 0x03F5AE 0x7BE */
+        if (occ_colony < 0)                                         /* @asm 0x03F5BB */
+            goto move_commit;                                       /* @asm 0x03F5BD jmp 0x3F6D2 */
+        /* @asm 0x03F5C0 type 0xC owned by an AI EU power: entry sound 0x52. */
+        if (g_units_3144[unit_index][0x02] == 0x0C) {
+            int own = g_units_3144[unit_index][0x03] & 0x0F;        /* @asm 0x03F5CF */
+            if (own < 4 && g_ai_personality_543F[own][0x00] == 0)   /* @asm 0x03F5D1/0x03F5DA */
+                ovly_play_sound_4C0(0x52);                          /* @asm 0x03F5E3 AX=0x52 */
+        }
+        func_007BCE_logic_sz_25((uint16_t)unit_index);              /* @asm 0x03F5EB 0x934 end-turn */
+        g_units_3144[unit_index][0x16] = 0;                         /* @asm 0x03F5F7 turn_counter=0 */
+        /* @asm 0x03F5FC..0x03F626 walk the actor's chain clearing orders 1->0
+         * (the original reuses [bp+6] as the cursor and restores it @0x3F628). */
+        m = (int16_t)unit_chain_resolve(unit_index);                /* @asm 0x03F602 0x2EE */
+        while (m >= 0) {                                            /* @asm 0x03F624 */
+            if (g_units_3144[m][0x08] == 1)                         /* @asm 0x03F612 */
+                g_units_3144[m][0x08] = 0;                          /* @asm 0x03F614 */
+            m = (int16_t)unit_chain_next(m);                        /* @asm 0x03F61C 0x2E4 */
+        }
+        /* @asm 0x03F62E..0x03F69D view-nation arrival message: tooltip flush,
+         * unit-type name + ENTERS/ARRIVES word + colony name, then present. */
+        if ((g_units_3144[unit_index][0x03] & 0x0F)
+                == (uint8_t)g_view_nation_index_5396) {             /* @asm 0x03F63B */
+            extern int  func_002544_logic_sz_60(uint16_t a);                /* 0x56 */
+            extern void func_002632_tooltip_append_indexed(uint16_t w);     /* 0x74 */
+            extern void func_00260E_tooltip_append(const char *s);          /* 0x6A */
+            extern int  func_002892_logic_sz_30(uint16_t a, uint16_t b, uint16_t c); /* 0x60 */
+            uint8_t ty = g_units_3144[unit_index][0x02];            /* @asm 0x03F649 */
+            func_002544_logic_sz_60(1);                             /* @asm 0x03F641 */
+            func_002632_tooltip_append_indexed(
+                DG16(0x5230 + (unsigned)ty * 9));                   /* @asm 0x03F65F */
+            if (g_units_3144[unit_index][0x02] == 0x0C)             /* @asm 0x03F66C */
+                func_002632_tooltip_append_indexed(DG16(0x2EBA));   /* @asm 0x03F678 */
+            else
+                func_002632_tooltip_append_indexed(DG16(0x2DCA));   /* @asm 0x03F678 */
+            func_00260E_tooltip_append(
+                (const char *)DG_PTR(0x5D48 + (unsigned)occ_colony * 0xCA)); /* @asm 0x03F68A */
+            func_002892_logic_sz_30(1, 0x78, 0);                    /* @asm 0x03F698 */
+        }
+        /* ---- block 0xc72 (@asm 0x03F6A0..0x03F6D1): the HUMAN confrontation
+         * choice gate -- only the colony-entry path falls through to it. */
+        if (g_units_3144[unit_index][0x02] >= 0x0D &&
+            g_units_3144[unit_index][0x02] <= 0x12 &&               /* @asm 0x03F6A4/0x03F6AB */
+            (g_game_mode_flags_5382 & 0x80) &&                      /* @asm 0x03F6B2 */
+            (g_units_3144[unit_index][0x03] & 0x0F)
+                == (uint8_t)g_current_nation_index_5398 &&          /* @asm 0x03F6BF */
+            !(g_mode_flag_5387 & 0x80)) {                           /* @asm 0x03F6C5 */
+            choice = occ_colony;                                    /* @asm 0x03F6CC */
+        }
+    }
+
+move_commit:
+    /* ---- THE MOVE COMMIT (@asm 0x03F6D2..0x03F7C2) ---------------------------
+     * Byte-restored 2026-06-12 (the old port had this whole block as a
+     * "structural" comment, so the actor stayed parked at (-2,-2) forever):
+     * rumour probe (Phase 2.1), relation snapshot, the 0x948 UNSTAGE of the
+     * actor at the DESTINATION tile, relation/notify bookkeeping, sea-lane
+     * boundary flagging, the 0x7A0 post-step, the ai_flag tile redraw, the
+     * LCR roll, and the on-arrival handlers. */
+    {
+        extern int  func_006188_op_sz_91(uint16_t x, uint16_t y);     /* 0x75E */
+        extern int  lcr_resolve(int unit_idx, int tile_x, int tile_y);/* 1A1F:0x178 */
+        extern int  func_005DF0_logic_sz_40(uint16_t x, uint16_t y);  /* 0x6DC */
+        extern int  func_006FD8_logic_sz_42(uint16_t u);              /* 0x8DA */
+        extern int  func_006A7C_logic_sz_50(uint16_t u, uint16_t x, uint16_t y); /* 0x948 */
+        extern int  func_00701C_logic_sz_48(uint16_t u, uint16_t v);  /* 0x7D6 */
+        extern void func_007356_logic_sz_56(uint16_t u);              /* 0x84E */
+        extern int  func_0072E2_logic_sz_40(uint16_t u, uint16_t m);  /* 0x7FE */
+        extern int  func_0062B4_op_sz_39(uint16_t x, uint16_t y);     /* 0x768 */
+        extern int  func_005F48_logic_sz_58(uint16_t x, uint16_t y);  /* 0x696 */
+        extern int  func_0066CC_op_sz_57(uint16_t x, uint16_t y);     /* 0x7E0 */
+        extern int  func_006608_logic_sz_106(uint16_t u_ax);          /* 0x7A0 */
+        extern int  func_067644_compose_tile_overlays(uint16_t a, uint16_t b,
+                                                      uint16_t c, uint16_t d,
+                                                      uint16_t e);    /* 0x9BA */
+        extern int  func_00704C_op_sz_205(uint16_t x, uint16_t y, uint16_t p); /* 0x984 */
+        extern long overlay_call_1A1F_0192(void);  /* func_059B90 on-arrival handler,
+                                                      UNPORTED (Phase-4 row); weak stub */
+        extern int  func_00BC10_ff_owned(uint16_t power, uint16_t ff);/* 0x7B4 */
+        extern int  func_05C878_treasure_transport_event(uint16_t u, uint16_t p); /* 1A1F:0x186 */
+        int rumor;
+        int16_t rel, t6dc;
+
+        rumor = func_006188_op_sz_91((uint16_t)tile_x, (uint16_t)tile_y);
                                                               /* @asm 0x03F6D8 -> [bp-0x2a] */
+        rel = ovly_relation_query_826(tile_x, tile_y,
+                  (int16_t)(g_units_3144[unit_index][0x03] & 0x0F)); /* @asm 0x03F6F5 0x826 */
+        t6dc = (int16_t)func_005DF0_logic_sz_40((uint16_t)tile_x,
+                                                (uint16_t)tile_y);   /* @asm 0x03F706 0x6DC */
+        func_006FD8_logic_sz_42((uint16_t)unit_index);               /* @asm 0x03F715 0x8DA */
+        func_006A7C_logic_sz_50((uint16_t)unit_index,
+                                (uint16_t)tile_x, (uint16_t)tile_y); /* @asm 0x03F726 0x948
+                                                  *** UNSTAGE AT DEST = THE MOVE *** */
+        if (t6dc >= 0)                                               /* @asm 0x03F732 */
+            func_00701C_logic_sz_48((uint16_t)unit_index,
+                                    (uint16_t)t6dc);                 /* @asm 0x03F73A 0x7D6 */
+        func_007356_logic_sz_56((uint16_t)unit_index);               /* @asm 0x03F745 0x84E */
+        func_0072E2_logic_sz_40((uint16_t)unit_index, (uint16_t)rel);/* @asm 0x03F753 0x7FE */
+        /* @asm 0x03F75B..0x03F7BA sea-lane boundary: leaving open sea onto a
+         * non-sea, non-water tile flags the source-tile stack with the actor's
+         * owner-HI nibble. */
+        if (func_0062B4_op_sz_39((uint16_t)actor_x,
+                                 (uint16_t)actor_y) != 0 &&          /* @asm 0x03F769 src */
+            func_0062B4_op_sz_39((uint16_t)tile_x,
+                                 (uint16_t)tile_y) == 0 &&           /* @asm 0x03F77D dest */
+            func_005F48_logic_sz_58((uint16_t)tile_x,
+                                    (uint16_t)tile_y) < 0) {         /* @asm 0x03F78F 0x696 */
+            int16_t hi = (int16_t)(g_units_3144[unit_index][0x03] & 0xF0); /* @asm 0x03F799 */
+            int16_t o  = (int16_t)func_0066CC_op_sz_57((uint16_t)actor_x,
+                                                       (uint16_t)actor_y); /* @asm 0x03F7A5 0x7E0 */
+            if (o >= 0)                                              /* @asm 0x03F7AC */
+                func_0072E2_logic_sz_40((uint16_t)o, (uint16_t)hi);  /* @asm 0x03F7B2 0x7FE */
+        }
+        func_006608_logic_sz_106((uint16_t)unit_index);              /* @asm 0x03F7BD 0x7A0 */
+        /* @asm 0x03F7C2 ai_flag: redraw the 7x7 tile window around the dest
+         * (0x181F:0x9BA = compose_tile_overlays; display-only in headless). */
+        if (ai_flag != 0)
+            func_067644_compose_tile_overlays((uint16_t)(tile_x - 3),
+                                              (uint16_t)(tile_y - 3),
+                                              7, 7, 1);              /* @asm 0x03F7DC 0x9BA */
+        /* ---- LCR MOVEMENT TRIGGER (Phase 2.1) @asm 0x03F7E4..0x03F80A.
+         * The rumour mark is PROCEDURAL: func_006188 (probed above @0x3F6D8)
+         * returns 1 iff the tile's sub-cell phase matches the supercell flow
+         * hash keyed on DGROUP:0x190.  Gate: mark set AND EUROPEAN actor ->
+         * roll the Lost-City-Rumour engine (1A1F:0x178 = func_061454, its
+         * ONLY caller in the EXE). */
         if (rumor != 0 && actor_owner < 4) {                  /* @asm 0x03F7E4/0x03F7EA */
             lcr_resolve(unit_index, tile_x, tile_y);          /* @asm 0x03F7F9 */
-            if (g_local_player_state_539C != saved_539C)      /* @asm 0x03F801..0x03F80A */
-                goto state_tail;                              /* jmp 0x3F8C1 */
+        }
+        /* @asm 0x03F801 roster changed (unit destroyed/spawned during the LCR
+         * roll or earlier): skip the choice commit and ran_flag set. */
+        if (g_local_player_state_539C != saved_539C)
+            goto state_tail;                                  /* @asm 0x03F80A jmp 0x3F8C1 */
+        /* @asm 0x03F80D on-arrival handler gate: 0x984 = func_00704C(x, y,
+         * owner); nonzero -> the 1A1F:0x192 handler (func_059B90, UNPORTED --
+         * tracked Phase-4 row; weak stub no-op until then). */
+        if (func_00704C_op_sz_205((uint16_t)tile_x, (uint16_t)tile_y,
+                                  (uint16_t)actor_owner) != 0) {     /* @asm 0x03F816 */
+            overlay_call_1A1F_0192();                          /* @asm 0x03F82B
+                                       original args (unit, tile_x, tile_y) */
+        }
+        /* @asm 0x03F833..0x03F8AB type-0xA treasure pickup: AI EU owner on a
+         * 0x696-positive water-adjacent tile; per-power flag at 0x925B stride
+         * 0x13 + game-mode bit0 route through the Pocahontas (ff 0xA) gate;
+         * colony flag +0x1C bit 0x40 fires the treasure-transport event. */
+        if (g_units_3144[unit_index][0x02] == 0x0A &&         /* @asm 0x03F837 */
+            actor_owner < 4 &&                                /* @asm 0x03F842 */
+            g_ai_personality_543F[actor_owner][0x00] == 0 &&  /* @asm 0x03F848 */
+            func_005F48_logic_sz_58((uint16_t)tile_x,
+                                    (uint16_t)tile_y) >= 0) { /* @asm 0x03F85F 0x696 */
+            int go = 1;
+            if (DG8(0x925B + (unsigned)actor_owner * 0x13) != 0 &&  /* @asm 0x03F865 */
+                !(g_game_mode_flags_5382 & 1)) {                    /* @asm 0x03F86C */
+                if (func_00BC10_ff_owned((uint16_t)actor_owner, 0x0A) == 0) /* @asm 0x03F878 0x7B4 */
+                    go = 0;                                         /* @asm 0x03F882 je 0x3F8AB */
+            }
+            if (go) {
+                int16_t col = (int16_t)ovly_target_query_7BE(tile_x, tile_y); /* @asm 0x03F88A 0x7BE */
+                /* @asm 0x03F892 imul bx,ax,0xCA; test [bx+0x5D62],0x40 -- the
+                 * original indexes without a col<0 guard (reads below the
+                 * table); modern build guards for memory safety. */
+                if (col >= 0 &&
+                    (DG8(0x5D62 + (unsigned)col * 0xCA) & 0x40))    /* @asm 0x03F896 */
+                    func_05C878_treasure_transport_event(
+                        (uint16_t)unit_index, (uint16_t)actor_owner); /* @asm 0x03F8A3 1A1F:0x186 */
+            }
         }
     }
 
@@ -694,7 +939,9 @@ done:
         extern void ovly_commit_choice_608(int16_t choice);
         ovly_commit_choice_608(choice);                       /* @asm 0x03F8B4 */
     }
-    /* @asm 0x03F8BC mov [bp-0x22],1 -- ran_flag = 1 (an action path completed) */
+ran_tail:
+    /* @asm 0x03F8BC mov [bp-0x22],1 -- ran_flag = 1 (an action path completed;
+     * also the insufficient-moves gate's jump target @0x3F360). */
     ran_flag = 1;
 
 state_tail:

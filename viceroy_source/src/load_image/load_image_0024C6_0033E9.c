@@ -160,6 +160,57 @@ clear:
     return 0;
 }
 
+/* @asm        0x00260E..0x002631  (35 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_00260E.asm
+ * @pattern    WRAPPER
+ * @prologue   PUSH-BP-MOV-BP-SP
+ * @lcalls     0x0D1D:0x11B4 (x2, RTL far strcat)
+ * @inferred_role  tooltip_append: strcat(DS:0x2D54, src) + strcat(DS:0x2D54, DS:0x4D)
+ * @status     PORTED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ *
+ * Original signature is (src_off, src_seg) -- a far pointer split across two
+ * stack words.  The modern port takes a host pointer (the two callers are
+ * func_002632 below, passing the find_char_in_buffer result, and ai_eval_unit's
+ * colony message block passing DS:(0x5D48 + colony*0xCA)).  DS:0x4D is the
+ * separator literal in the DGROUP init image (loaded from VICEROY.EXE). */
+void func_00260E_tooltip_append(const char *src)
+{
+    /* @asm 0x002611 push [bp+8],[bp+6](src); push ds,0x2D54; lcall 0xD1D:0x11B4
+     *      (far strcat: dest = DS:0x2D54 tooltip text buffer). */
+    char *dst = (char *)&DG8(0x2D54);
+    unsigned len = 0;
+    while (dst[len]) len++;
+    if (src) {                          /* headless: NULL when string table absent */
+        while (*src && len < 0xFF) dst[len++] = *src++;
+    }
+    /* @asm 0x002622 push ds,0x4D; push ds,0x2D54; lcall 0xD1D:0x11B4
+     *      (append the DS:0x4D separator literal). */
+    {
+        const char *sep = (const char *)&DG8(0x004D);
+        while (*sep && len < 0xFF) dst[len++] = *sep++;
+    }
+    dst[len] = 0;
+}
+
+/* @asm        0x002632..0x002647  (21 bytes)  region=load_image
+ * @asm_file   ../code/VICEROY/disasm/func_002632.asm
+ * @pattern    WRAPPER_NEARCALL
+ * @prologue   PUSH-BP-MOV-BP-SP
+ * @lcalls     0x0000:0x0062 (same-seg far -> file 0x2462 = find_char_in_buffer)
+ * @near_calls 1 (0x00260E)
+ * @inferred_role  tooltip_append_indexed: append string #arg0 from the NAMES table
+ * @status     PORTED 2026-06-12 (full body decompiled from VICEROY.EXE)
+ */
+void func_002632_tooltip_append_indexed(uint16_t name_word)
+{
+    /* @asm 0x002635 push [bp+6]; lcall 0x0000:0x62 -> DX:AX = far ptr to the
+     *      name_word'th NUL-string in the loaded NAMES table (find_char_in_buffer,
+     *      ported in src/iolib/format.c; returns NULL headless);
+     * @asm 0x00263F push dx,ax; call 0x260E (append it + separator). */
+    extern void far *find_char_in_buffer(uint16_t count);
+    func_00260E_tooltip_append((const char *)find_char_in_buffer(name_word));
+}
+
 /* @asm        0x0026D4..0x002700  (44 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_0026D4_unknown.asm
  * @pattern    WRAPPER_NEARCALL

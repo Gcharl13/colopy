@@ -1147,14 +1147,16 @@ int func_00730A_op_sz_75(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      *      call 0x726e (ax=func_00726E(x,y,si)); add sp,6; or ax,ax; je 0x7349;
      *      di |= 0x10<<si; 0x7349 inc si; cmp si,4; jl 0x732e.  return di.
      * Builds a per-owner adjacency bitmask for tile (arg0=x,arg1=y). If arg2<4 it
-     * seeds the mask with bit (0x10 << owner-of-this-tile) from 0x037F:0x0200.
+     * seeds the mask with bit (0x10 << owner-of-this-tile) from 0x037F:0x0200
+     * (= func_005DF0, the layer-164 owner-nibble read; args wired 2026-06-12).
      * Then for each owner si in 0..3 it sets bit (0x10<<si) when func_00726E finds
-     * a bordering tile belonging to owner si. Returns the mask. The 0x037F:0x0200
-     * overlay extern is 0-arg (real args x,y in @asm). */
+     * a bordering tile belonging to owner si. Returns the mask. */
     int di = 0;
     if ((int16_t)arg2_bp_0A < 4) {
-        int cl = (int)(uint8_t)overlay_call_037F_0200(/* x, y */);
-        di = 0x10 << cl;
+        int cl = (int)(uint8_t)overlay_call_037F_0200(arg0_bp_06, arg1_bp_08);
+        /* unowned tiles return nibble 0xFF; SHL DI,CL on 286+ masks the count
+         * to 0x1F and the high bits fall off the 16-bit register -> 0. */
+        di = (int)(uint16_t)((uint32_t)0x10 << (cl & 0x1F));
     }
     {
         int si;

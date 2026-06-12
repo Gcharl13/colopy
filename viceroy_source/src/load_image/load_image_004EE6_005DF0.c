@@ -1372,8 +1372,15 @@ void far *func_005D1A_logic_sz_23(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     /* @asm 0x005D1E mov ax,[0x853a]; imul [bp+8]; add ax,[0x160]; mov dx,[0x162];
      * add ax,[bp+6] -> returns dx:ax = &g_map_layer_160[width*y + x]. */
+#ifdef _VICEROY_MODERN
+    /* layer far-ptr [0x160] -> host layer plumbing (same mapping as
+     * func_005D32: DOS layer 0x160 == host layer 1) */
+    extern uint8_t *viceroy_layer_addr(int layer, int x, int y);
+    return viceroy_layer_addr(1, (int16_t)arg0_bp_06, (int16_t)arg1_bp_08);
+#else
     return (uint8_t far *)g_map_layer_160
          + ((int)g_map_width * (int16_t)arg1_bp_08 + (int16_t)arg0_bp_06);
+#endif
 }
 
 /* @asm        0x005D32..0x005D4E  (28 bytes)  region=load_image

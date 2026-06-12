@@ -360,11 +360,21 @@ PROVIDE(overlay_call_037F_02A0 = func_005E90_op_sz_64);
 PROVIDE(overlay_call_05B3_0004 = func_007F34_logic_sz_27);
 PROVIDE(overlay_call_05B3_01E0 = func_008110_logic_sz_14);
 PROVIDE(func_006B46            = func_006B46_op_sz_365);
-/* func_0069D2 -> func_0069D2_logic_sz_12 DEFERRED: garrison regression.
- * Wiring changes u3 from orders=0x0B/prof=0x31 to orders=0x01/prof=0x3F.
- * Root cause: func_00772E assigns garrison duty to u3 (colonist on ship);
- * the side effects (chain relocation + orders change) need full garrison
- * audit before this can be safely enabled. */
+/* func_0069D2 -> func_0069D2_logic_sz_12: RESOLVED 2026-06-12.  The "garrison
+ * regression" was a missing-link cascade, not a port bug: func_0069D2's place
+ * half (bare-name func_00693A) bound to a weak no-op stub, so relocated units
+ * were unlinked to (-1,-1) and never placed; the planner then stamped the
+ * stranded unit orders=1/prof='?'.  Fixed by the two PROVIDEs below plus the
+ * lifecycle.c cdecl arg-order fixes (set_head/notify had push-order copied
+ * verbatim instead of reversed). */
+PROVIDE(func_0069D2 = func_0069D2_logic_sz_12);
+EXTERN(func_0069D2_logic_sz_12)
+PROVIDE(func_00693A = func_00693A_logic_sz_14);
+EXTERN(func_00693A_logic_sz_14)
+/* 0x037F:0x015E resident call = file 0x5D4E: layer-160 tile mask set/clear
+ * (x, y, mask, set).  Both lifecycle.c sites fixed to the cdecl arg order. */
+PROVIDE(map_tile_set_head_037F_15E = func_005D4E_logic_sz_40);
+EXTERN(func_005D4E_logic_sz_40)
 PROVIDE(func_00A6A2            = func_00A6A2_colony_sz_130);
 PROVIDE(func_00860E            = func_00860E_logic_sz_15);
 PROVIDE(func_00BEDE            = func_00BEDE_op_sz_93);
@@ -468,3 +478,37 @@ EXTERN(func_06F0F4_text_template_run)
  * callee reads from stack-above-ret which is garbage but never dereferenced. */
 PROVIDE(overlay_call_181F_0484 = func_00DCD4_op_sz_34);
 EXTERN(func_00DCD4_op_sz_34)
+
+/* Phase 4.3q (2026-06-12): symbols exposed by the LIVE MOVE PIPELINE (the
+ * ai_eval_unit stage/commit blocks byte-restored).  All targets are existing
+ * BYTE_VERIFIED ports:
+ *   map_tile_occupancy_id_037F_0A  (chain.c extern) 0x037F:0x000A = bounds gate
+ *   overlay_call_037F_0200  file 0x5DF0 = layer-164 owner-nibble read (x,y)
+ *   overlay_call_037F_02E0  file 0x5ED0 = layer-168 tile address (x,y)
+ *   func_007002 / func_006FC4  bare-name near calls (chain seen-flag setters)
+ *   ovly_notify_view_7D6  0x181F:0x7D6 file 0x701C = chain seen-flag walker
+ *     (extern order fixed to the cdecl truth (unit, view) in unit_orders.c) */
+PROVIDE(map_tile_occupancy_id_037F_0A = func_005BFA_logic_sz_49);
+PROVIDE(overlay_call_037F_0200 = func_005DF0_logic_sz_40);
+PROVIDE(overlay_call_037F_02E0 = func_005ED0_logic_sz_23);
+EXTERN(func_005ED0_logic_sz_23)
+PROVIDE(func_007002 = func_007002_logic_sz_26);
+EXTERN(func_007002_logic_sz_26)
+PROVIDE(func_006FC4 = func_006FC4_logic_sz_20);
+EXTERN(func_006FC4_logic_sz_20)
+PROVIDE(ovly_notify_view_7D6 = func_00701C_logic_sz_48);
+EXTERN(func_00701C_logic_sz_48)
+EXTERN(func_006FD8_logic_sz_42)
+EXTERN(func_007356_logic_sz_56)
+EXTERN(func_0079A0_op_sz_119)
+EXTERN(func_006F5A_op_sz_105)
+EXTERN(func_007936_logic_sz_48)
+EXTERN(func_0078F4_logic_sz_66)
+EXTERN(func_006608_logic_sz_106)
+EXTERN(func_006A7C_logic_sz_50)
+EXTERN(func_02EB1C_logic_sz_10)
+EXTERN(func_05C878_treasure_transport_event)
+EXTERN(func_002544_logic_sz_60)
+EXTERN(func_002892_logic_sz_30)
+EXTERN(func_00260E_tooltip_append)
+EXTERN(func_002632_tooltip_append_indexed)
