@@ -1111,7 +1111,7 @@ int func_009A32_op_sz_56(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
      * of overlay 0x037F:0x0142(arg0,arg1) shares a set bit with arg2's low byte.
      * Overlay calls shown 0-arg to match overlay_externs.h; real args in comment. */
     if (overlay_call_037F_000A(arg0_bp_06, arg1_bp_08) != 0) {
-        int mask = overlay_call_037F_0142(/* arg0, arg1 */);
+        int mask = overlay_call_037F_0142(arg0_bp_06, arg1_bp_08);
         if ((arg2_bp_0A & mask & 0xFF) != 0)
             return 1;
     }

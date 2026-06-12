@@ -274,7 +274,7 @@ int func_021602_redraw_viewport(void)
         break;                                        /* (single-pass C model of the nested loops) */
     }
     overlay_call_181F_03C0();                        /* @0x021650 present() */
-    return overlay_call_181F_0E1C();                 /* @0x021657 redraw(1) */
+    return overlay_call_181F_0E1C(1);                 /* @0x021657 redraw(1) */
 }
 
 /* ============================================================================
@@ -313,13 +313,13 @@ int func_02165E_standings_screen(void)
     /* Phase 1: per-player 0x40-col minimap-marker pass @0x021666..0x0216AB */
     overlay_call_191F_012C();                        /* @0x02169A draw marker */
     overlay_call_181F_03C0();                        /* @0x0216AB present() */
-    overlay_call_181F_0E1C();                        /* @0x0216B2 redraw(1) */
+    overlay_call_181F_0E1C(1);                        /* @0x0216B2 redraw(1) */
     /* Phase 2: 14-row formatted standings list @0x0216BA..0x021786 */
     overlay_call_181F_0182();                        /* @0x0216CB format_string(name) */
     overlay_call_181F_013C();                        /* @0x021773 draw text field */
     /* box + present @0x021787..0x0217A5 */
     overlay_call_181F_03C0();                        /* @0x021799 present() */
-    return overlay_call_181F_0E1C();                 /* @0x0217A0 redraw(1) */
+    return overlay_call_181F_0E1C(1);                 /* @0x0217A0 redraw(1) */
 }
 
 /* ============================================================================
@@ -400,7 +400,7 @@ int func_021E72_set_zoom(uint16_t arg0_bp_06)
     overlay_call_191F_018E();                          /* @0x021E8F set_zoom(level) */
     /* recenter_view(0,[0x853E],[0x8540],[0x853E],[0x8540]); @0x021EA6 */
     if (overlay_call_181F_0352() == 0) {               /* @0x021EAD or ax,ax / jne */
-        overlay_call_181F_0E1C();                      /* @0x021EB3 redraw(1) */
+        overlay_call_181F_0E1C(1);                      /* @0x021EB3 redraw(1) */
     }
     return 0;                                           /* @0x021EB8 leave; ret */
 }
@@ -661,7 +661,7 @@ existing:
     /* tile already has a colony: if its owner==[0x5394] open it (0x191F:0x1EC)
      * @0x0227B2..0x0227D0, then present()+redraw(1). */
     overlay_call_191F_01EC();                          /* @0x0227C6 open existing colony */
-    overlay_call_181F_0E1C();                          /* @0x0227D4 redraw(1) */
+    overlay_call_181F_0E1C(1);                          /* @0x0227D4 redraw(1) */
     return 0;
 }
 
@@ -767,7 +767,7 @@ int func_02287E_disband_unit(void)
                                                         * 0x181F:0x3FE (PORTED runner);
                                                         * != 1 = not confirmed */
     overlay_call_181F_0808();                          /* @0x022954 destroy_unit(target) */
-    overlay_call_181F_0E1C();                          /* @0x02295E redraw(1) */
+    overlay_call_181F_0E1C(1);                          /* @0x02295E redraw(1) */
     /* index fixups + power advance @0x022966..0x022996 */
     if (g_season == 0) {                               /* @0x022998 spring */
         overlay_call_181F_0E08();                      /* open_popup(1,U_X,U_Y) */
@@ -777,7 +777,7 @@ int func_02287E_disband_unit(void)
 reveal:
     /* reveal-mode cursor pick @0x022350..0x022A38 (cited-RUNTIME_ONLY leaves) */
     overlay_call_181F_07BE();                          /* @0x02235F colony_at_xy(cursor) */
-    overlay_call_181F_0E1C();                          /* @0x02239A/0x0239A redraw(1) */
+    overlay_call_181F_0E1C(1);                          /* @0x02239A/0x0239A redraw(1) */
 done:
     return 0;
 }
@@ -958,7 +958,7 @@ int func_022E16_reveal_sweep(void)
     /* [0x18E]=0; mode=present(); @0x022E50/0x022E56 */
     overlay_call_181F_03C0();
     /* mode==0x48 -> backward sweep 2..0 @0x022E6D..0x022EA5 (same three calls) */
-    return overlay_call_181F_0E1C();                   /* @0x022EA8 redraw(1) */
+    return overlay_call_181F_0E1C(1);                   /* @0x022EA8 redraw(1) */
 }
 
 /* ============================================================================
@@ -1193,7 +1193,7 @@ int func_024224_enter_space_cmd(void)
     if (key == 0x20) {                                 /* @0x024235 (0xd+0x13) Space */
         /* if ([0x53C6]) { [0x53C4]=0; return 1; } else advance + autumn check
          * @0x02423A..0x02425C (near 0x44E0). */
-        overlay_call_181F_0E1C();                      /* (refresh on the advance path) */
+        overlay_call_181F_0E1C(1);                      /* (refresh on the advance path) */
         return 1;
     }
     return 0;                                           /* @0x0242A4 unhandled */

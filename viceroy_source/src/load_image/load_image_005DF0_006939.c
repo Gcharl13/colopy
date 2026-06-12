@@ -885,7 +885,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
                     /* @asm 0x006568 if (0x03E4:0x074(cur_x,cur_y) != 0) ... */
                     if (overlay_call_03E4_0074((uint16_t)cur_x, (uint16_t)cur_y) != 0) {
                         /* @asm 0x00657C if (0x037F:0x0142(cur_x,cur_y) & 0x20) fire. */
-                        if ((overlay_call_037F_0142() & 0x20) != 0) {
+                        if ((overlay_call_037F_0142((uint16_t)cur_x, (uint16_t)cur_y) & 0x20) != 0) {
                             DG16(0x01E8) = 1;            /* @asm 0x006588 */
                             overlay_call_02FD_006C();    /* @asm 0x006590 push 6 */
                         }

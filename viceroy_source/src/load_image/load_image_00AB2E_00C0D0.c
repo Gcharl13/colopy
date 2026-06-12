@@ -1217,7 +1217,7 @@ int func_00BEDE_op_sz_93(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
         }
         DG16(0x017C) = arg0_bp_06;                      /* @asm 0xBF26 [0x17C]=arg0 */
         DG16(0x017E) = arg1_bp_08;                      /* @asm 0xBF2C [0x17E]=arg1 */
-        overlay_call_181F_0E1C();                       /* @asm 0xBF32 push 1; lcall 181F:0xE1C */
+        overlay_call_181F_0E1C(1);                      /* @asm 0xBF32 push 1; lcall 181F:0xE1C */
     }
     return 0;                                            /* @asm 0xBF39 leave; retf */
 }

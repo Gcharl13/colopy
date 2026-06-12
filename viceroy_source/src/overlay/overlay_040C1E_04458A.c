@@ -167,7 +167,7 @@ extern int overlay_call_181F_0D58(void);  extern int overlay_call_181F_0D78(void
 extern int overlay_call_181F_0DC2(void);  extern int overlay_call_181F_0DD6(void);
 extern int overlay_call_181F_0DE0(void);  extern int overlay_call_181F_0DF4(void);
 extern int overlay_call_181F_0DFE(void);  extern int overlay_call_181F_0E12(void);
-extern int overlay_call_181F_0E1C(void);
+/* overlay_call_181F_0E1C(uint16_t active) now declared in overlay_externs.h */
 
 /* direct calls replacing void-arity stub calls */
 extern int  func_005FD4_map_xy_bounds_or_neg1_alt(uint16_t x, uint16_t y); /* 0x181F:0x06BE */
@@ -305,7 +305,7 @@ skip_report:
     if ((G_FLAGS_5382 & hi_mask) == 0)
         goto skip_banner;
 banner:
-    overlay_call_181F_0E1C();          /* @0x040DDB colony_entry_banner(1)  */
+    overlay_call_181F_0E1C(1);          /* @0x040DDB colony_entry_banner(1)  */
 skip_banner:
 
     /* @0x040DE3 for the human's own colony: play the entry chord, push the

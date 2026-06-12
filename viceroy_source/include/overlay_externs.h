@@ -11,7 +11,7 @@ extern int overlay_call_004B_012E(void);  /* @ref RTLink seg 0x004B off 0x012E *
 extern int overlay_call_004B_01E8();  /* @ref RTLink seg 0x004B off 0x01E8 */
 extern int overlay_call_012B_015C();  /* @ref RTLink seg 0x012B off 0x015C */
 extern int overlay_call_024C_002A(void);  /* @ref RTLink seg 0x024C off 0x002A */
-extern int overlay_call_024C_0040();  /* @ref RTLink seg 0x024C off 0x0040 */
+extern int overlay_call_024C_0040(uint16_t dx, uint16_t dy);  /* @ref RTLink seg 0x024C off 0x0040 -> func_004900_logic_sz_15 (grid distance) */
 extern int overlay_call_0262_00DA(void);  /* @ref RTLink seg 0x0262 off 0x00DA */
 extern int overlay_call_029F_00F6(void);  /* @ref RTLink seg 0x029F off 0x00F6 */
 extern int overlay_call_029F_02CC();  /* @ref RTLink seg 0x029F off 0x02CC */
@@ -21,7 +21,7 @@ extern int overlay_call_02D8_000E(void);  /* @ref RTLink seg 0x02D8 off 0x000E *
 extern int overlay_call_037F_000A(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x000A */
 extern int overlay_call_037F_003C();  /* @ref RTLink seg 0x037F off 0x003C */
 extern int overlay_call_037F_010E(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x010E */
-extern int overlay_call_037F_0142();  /* @ref RTLink seg 0x037F off 0x0142 */
+extern int overlay_call_037F_0142(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x0142 -> func_005D32_map_tile_read_layer_160 */
 extern int overlay_call_037F_015E();  /* @ref RTLink seg 0x037F off 0x015E */
 extern int overlay_call_037F_0200();  /* @ref RTLink seg 0x037F off 0x0200 */
 extern int overlay_call_037F_0228();  /* @ref RTLink seg 0x037F off 0x0228 */
@@ -422,7 +422,7 @@ extern int overlay_call_181F_0DF4(void);  /* @ref RTLink seg 0x181F off 0x0DF4 *
 extern int overlay_call_181F_0DFE();  /* @ref RTLink seg 0x181F off 0x0DFE */
 extern int overlay_call_181F_0E08();  /* @ref RTLink seg 0x181F off 0x0E08 */
 extern int overlay_call_181F_0E12();  /* @ref RTLink seg 0x181F off 0x0E12 */
-extern int overlay_call_181F_0E1C();  /* @ref RTLink seg 0x181F off 0x0E1C */
+extern int overlay_call_181F_0E1C(uint16_t active);  /* @ref RTLink seg 0x181F off 0x0E1C -> func_067700_compose_active_tile */
 extern int overlay_call_181F_0E2A();  /* @ref RTLink seg 0x181F off 0x0E2A */
 extern int overlay_call_181F_0E38();  /* @ref RTLink seg 0x181F off 0x0E38 */
 extern int overlay_call_181F_0E46(void);  /* @ref RTLink seg 0x181F off 0x0E46 */

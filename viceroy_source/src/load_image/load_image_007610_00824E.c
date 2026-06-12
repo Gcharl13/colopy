@@ -696,7 +696,9 @@ int func_007B64_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
         /* @asm push arg3-map_y; push arg2-map_x; call 0x024C:0x0040 — grid distance
          * of (arg2,arg3) from this unit's tile (args documented per convention). */
         {
-            int dist = overlay_call_024C_0040();
+            int dist = overlay_call_024C_0040(
+                (uint16_t)((int16_t)arg2_bp_0A - (int16_t)(int8_t)DG8(di - 3)),
+                (uint16_t)((int16_t)arg3_bp_0C - (int16_t)(int8_t)DG8(di - 2)));
             if (dist > best_dist)                       /* keep the closest */
                 continue;
             best_idx = (int16_t)si;

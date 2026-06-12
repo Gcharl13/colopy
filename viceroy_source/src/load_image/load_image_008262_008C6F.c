@@ -912,7 +912,7 @@ int func_0088D0_colony_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         unsigned ctxp = DG16(0x8542);
         arg1_bp_08 = (uint16_t)(arg1_bp_08 + ((int16_t)(uint8_t)DG8(ctxp + 1) - 2)); /* @asm 0x88EE */
         arg0_bp_06 = (uint16_t)(arg0_bp_06 + ((int16_t)(uint8_t)DG8(ctxp + 0) - 2)); /* @asm 0x88FB */
-        result = overlay_call_037F_0142(/* arg0, arg1 */) & 0x10;   /* @asm 0x8907 */
+        result = overlay_call_037F_0142(arg0_bp_06, arg1_bp_08) & 0x10;   /* @asm 0x8907 */
     }
     return result;                              /* @asm 0x8912 */
 }

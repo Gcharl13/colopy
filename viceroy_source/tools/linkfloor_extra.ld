@@ -375,3 +375,27 @@ EXTERN(func_006B46_op_sz_365)
 EXTERN(func_00A6A2_colony_sz_130)
 EXTERN(func_00860E_logic_sz_15)
 EXTERN(func_00BEDE_op_sz_93)
+
+/* Phase 4.3e (2026-06-12): next stub batch — bare-name aliases and semantic stubs.
+ * Arity cross-checked; zero-arg callers fixed above.
+ *
+ * Bare-name -> decorated-name:
+ *   func_0066CC -> func_0066CC_op_sz_57   tile-chain head (210-byte complete port)
+ *
+ * Resident-segment overlay stubs (non-thunk):
+ *   overlay_call_037F_0142(x,y)  file 0x5D32 -> func_005D32_map_tile_read_layer_160
+ *   overlay_call_024C_0040(dx,dy) file 0x4900 -> func_004900_logic_sz_15 (grid dist)
+ *
+ * RTLink thunk stubs:
+ *   overlay_call_181F_0E1C(active) 0x181F:0xE1C -> func_067700_compose_active_tile
+ *     (all callers are in unbuilt overlay files so no call-site fixes needed)
+ *
+ * Named semantic stub:
+ *   rebel_sentiment_pct_ovl()  0x181F:0xC86 -> func_008524_colony_sz_18 (SoL %) */
+PROVIDE(func_0066CC            = func_0066CC_op_sz_57);
+PROVIDE(overlay_call_037F_0142 = func_005D32_map_tile_read_layer_160);
+PROVIDE(overlay_call_024C_0040 = func_004900_logic_sz_15);
+PROVIDE(overlay_call_181F_0E1C = func_067700_compose_active_tile);
+PROVIDE(rebel_sentiment_pct_ovl = func_008524_colony_sz_18);
+EXTERN(func_008524_colony_sz_18)
+EXTERN(func_067700_compose_active_tile)

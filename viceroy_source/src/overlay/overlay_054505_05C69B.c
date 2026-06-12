@@ -934,7 +934,7 @@ int ai_resolve_colony_assault(int unit)  /* func_05A20E */
         overlay_call_181F_0652();
         *(uint16_t *)(g_active_colony_ptr_8542 + 0xAA) += 0x64; /* colony strength @asm 0x05A3CA */
         overlay_call_181F_0808();                       /* destroy attacker @asm 0x05A3D2 */
-        overlay_call_181F_0E1C();                       /* finish @asm 0x05A3DC */
+        overlay_call_181F_0E1C(1);                       /* finish @asm 0x05A3DC */
     } else {
         /* attacker loses: raise the finalize flags. @asm 0x05A3EA */
         g_word_0B98 = 1;                                /* @asm 0x05A3EA */

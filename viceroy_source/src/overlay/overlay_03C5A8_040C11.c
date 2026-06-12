@@ -414,7 +414,7 @@ int func_03C638_logic_sz_73(void)
     overlay_call_191F_0A74(); /* power_recompute(winner) */
     G8((uint16_t)loser * 0x34 + 0x543F) = 2;            /* @0x03C91A defeated=2 */
     G16(0x53D2) = (uint16_t)loser;                      /* @0x03C922 active=loser */
-    overlay_call_181F_0E1C(); /* redraw(1) */
+    overlay_call_181F_0E1C(1); /* redraw(1) */
 
     /* @0x03C92F..0x03C931  pop si / leave / retf */
     return 0;
@@ -1661,7 +1661,7 @@ int func_03DE46_op_sz_138(void)
     G8((uint16_t)G16(0x53D2) * 0x34 + 0x543F) = 1;   /* @0x03E0B6 */
     overlay_call_181F_0A06(); /* power_set_flag(power, cur, 0x22) @0x03E0CA */
     overlay_call_181F_0A10(); /* power_set_flag(power, cur, 0x40) @0x03E0DC */
-    overlay_call_181F_0E1C(); /* redraw(1) @0x03E0E4 */
+    overlay_call_181F_0E1C(1); /* redraw(1) @0x03E0E4 */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &AIPersonality[power*0x34+0x540E], 0) */
     overlay_call_181F_0652(); /* msg_show(1, 0x130B) @0x03E104 */
 

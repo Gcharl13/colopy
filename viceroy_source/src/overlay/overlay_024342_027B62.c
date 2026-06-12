@@ -269,7 +269,7 @@ int begin_season_loop(void)
     uint32_t now, fence;                                   /* [bp-6]:[bp-4] */
 
     DGS16(0x53C4) = 1;                /* @asm 0x024A4C..0x024A4F mov [0x53C4],1 */
-    overlay_call_181F_0E1C();                              /* @asm 0x024A53 LCALL 0x181F:0xE1C(1) begin-turn */
+    overlay_call_181F_0E1C(1);                              /* @asm 0x024A53 LCALL 0x181F:0xE1C(1) begin-turn */
 
     DGS16(0x5392) = (int16_t)0xFFFF;  /* @asm 0x024A5B active unit = none */
     DGS16(0x97B0) = 0;                /* @asm 0x024A61..0x024A63 latch = 0 */

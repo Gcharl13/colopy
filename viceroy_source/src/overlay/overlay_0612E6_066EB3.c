@@ -515,7 +515,7 @@ settle:
      * (0x181F:0xe1c), then paint each stamped grid cell as a coloured marker. */
     *(volatile uint16_t *)&g_dgroup[0x17c] = tgt_col;               /* @asm 0x0625F1 [bp-0x8a] */
     *(volatile uint16_t *)&g_dgroup[0x17e] = tgt_row;               /* @asm 0x0625F8 [bp-0x88] */
-    overlay_call_181F_0E1C();                            /* @asm 0x062601 refresh */
+    overlay_call_181F_0E1C(1);                            /* @asm 0x062601 refresh */
     for (qy = 0; qy < 0x10; qy++) {                      /* @asm 0x06264D rows */
         for (qx = 0; qx < 0x10; qx++) {                  /* @asm 0x062613 cols */
             int si = qy * 16 + qx;                       /* @asm 0x062622 */
@@ -543,7 +543,7 @@ settle:
             *(volatile uint16_t *)&g_dgroup[0x1df4] = 0;            /* @asm 0x0626F1 */
             break;                                        /* @asm 0x0626F4 jmp 0xa65 */
         }
-        overlay_call_181F_0E1C();                        /* @asm 0x062707 refresh, keep waiting */
+        overlay_call_181F_0E1C(1);                        /* @asm 0x062707 refresh, keep waiting */
         break;
     }
 
@@ -825,7 +825,7 @@ after_restore:
      * every non-zero grid cell (0x191F:0x12c). */
     *(volatile uint16_t *)&g_dgroup[0x17c] = seedx;                 /* @asm 0x062FAB */
     *(volatile uint16_t *)&g_dgroup[0x17e] = seedy;                 /* @asm 0x062FB1 */
-    overlay_call_181F_0E1C();                            /* @asm 0x062C59 refresh */
+    overlay_call_181F_0E1C(1);                            /* @asm 0x062C59 refresh */
     for (qy = 0; qy < 0x12; qy++) {                      /* @asm 0x062CA3 rows */
         for (qx = 0; qx < 0xf; qx++) {                   /* @asm 0x062C6B cols */
             if (DGB(qx * 0x12 + qy - 0x5e9e) != 0)       /* @asm 0x062C78 */
@@ -852,7 +852,7 @@ after_restore:
             *(volatile uint16_t *)&g_dgroup[0x1df4] = 0;            /* @asm 0x062D50 */
             break;
         }
-        overlay_call_181F_0E1C();                        /* @asm 0x062D67 refresh */
+        overlay_call_181F_0E1C(1);                        /* @asm 0x062D67 refresh */
         break;
     }
 
