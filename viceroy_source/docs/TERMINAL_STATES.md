@@ -4,15 +4,15 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 803 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 816 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1053 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1037 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 378 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 362 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 378
+### NAMED-GAP — 362
 
 - `DG8`
 - `__aFldiv`
@@ -750,9 +750,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `colony_footer`
 - `colony_growth_event`
 - `colony_hdr_panel`
-- `colony_misc_56`
-- `colony_owner_val`
-- `colony_select`
 - `combat_apply_attacker_loss`
 - `combat_apply_defender_loss`
 - `combat_destroy_or_damage`
@@ -908,7 +905,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `outp`
 - `ov_clear_rect`
 - `ov_clip_blit`
-- `ov_colony_owned_visible`
 - `ov_draw_extra_a`
 - `ov_draw_extra_b`
 - `ov_draw_portrait`
@@ -955,10 +951,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_query_9E6`
 - `ovly_query_C54`
 - `ovly_relation_A38`
-- `ovly_spawn_unit_A20`
 - `ovly_strike_191F_12C`
-- `ovly_target_query_696`
-- `ovly_target_query_826`
 - `ovly_target_query_9F0`
 - `ovly_tile_query_2EE`
 - `ovly_tramp_2D4E`
@@ -1002,10 +995,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `place_colonist`
 - `post_growth_hook`
 - `power_attribute_bit`
-- `power_event_11`
-- `power_event_msg`
-- `power_handle`
-- `power_label`
 - `power_record`
 - `power_set_flag`
 - `queue_immigrant`
@@ -1087,14 +1076,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ui_show_message`
 - `ui_show_message_0`
 - `unit_alloc_new_slot`
-- `unit_at`
 - `unit_cargo_kind`
-- `unit_class_check`
-- `unit_class_check2`
 - `unit_detach_from_settlement`
 - `unit_record`
-- `unit_set_type`
-- `unit_type_of`
 - `value_band`
 - `weight_scale`
 
