@@ -4,16 +4,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 828 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 836 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1011 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1001 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
-| NAMED-GAP | 336 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| NAMED-GAP | 326 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 110 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
@@ -717,7 +717,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 336
+### NAMED-GAP — 326
 
 - `DG8`
 - `__aFldiv`
@@ -770,7 +770,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `draw_list_row2`
 - `draw_table_row`
 - `draw_window_frame`
-- `emit_message`
 - `errno_epilogue`
 - `eship_action_a`
 - `eship_action_b`
@@ -847,7 +846,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `menu_add`
 - `menu_add_item`
 - `menu_add_item_lit`
-- `menu_close`
 - `menu_do_action`
 - `menu_free`
 - `menu_item_count`
@@ -863,7 +861,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `mt32_play_song`
 - `mt32_shutdown`
 - `mt32_stop_song`
-- `names_next_record`
 - `names_open_section`
 - `names_read_int_word`
 - `native_alarm_clear`
@@ -884,7 +881,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `near_6DF0`
 - `near_6DFA`
 - `near_6E13`
-- `near_6E31`
 - `near_6E40`
 - `near_6E45`
 - `near_6E54`
@@ -976,7 +972,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `phase_dispatch_screen_helper`
 - `pick_grant_unit_type`
 - `picker_run`
-- `power_attribute_bit`
 - `power_record`
 - `power_set_flag`
 - `raid_show_message`
@@ -1016,7 +1011,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `strcat_far`
 - `strfmt`
 - `strfmt_far`
-- `terrain_type_at`
 - `tile_is_land`
 - `tile_read`
 - `tile_write`
@@ -1028,7 +1022,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `tramp_redraw_flush_1B13`
 - `tramp_unit_detail_1B0E`
 - `treasure_spawn_at`
-- `tribe_power_relation`
 - `tribe_turn_update`
 - `ttl_begin_game`
 - `ttl_box_rule`
@@ -1041,17 +1034,14 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ui_blit_coords`
 - `ui_blit_ptr`
 - `ui_dialog_show`
-- `ui_flush`
 - `ui_fmt_two`
 - `ui_notify_key`
 - `ui_push_value`
 - `ui_refresh_colony`
 - `ui_select_on_map`
 - `ui_show_message`
-- `ui_show_message_0`
 - `unit_alloc_new_slot`
 - `unit_cargo_kind`
-- `unit_detach_from_settlement`
 - `unit_record`
 - `value_band`
 - `weight_scale`
