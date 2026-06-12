@@ -738,3 +738,49 @@ PROVIDE(overlay_call_1A1F_0814 = func_06436C_walk_write_thin);
 EXTERN(func_06436C_walk_write_thin)
 PROVIDE(overlay_call_1A1F_085A = func_0641EC_walk_stamp_range);
 EXTERN(func_0641EC_walk_stamp_range)
+
+/* Phase 4.6 bare-name alias sweep (2026-06-12): BODY-MISSING rows that are
+ * bare hex spellings of EXISTING _sz_N ports -- guarded (canonical decoration
+ * of the SAME hex base, unique candidate) + arity-triaged (every C call site
+ * passes the port's exact param count).  23 rows. */
+PROVIDE(func_006E94 = func_006E94_logic_sz_198);
+PROVIDE(func_00768C = func_00768C_logic_sz_161);
+EXTERN(func_00768C_logic_sz_161)
+PROVIDE(func_007A80 = func_007A80_op_sz_143);
+PROVIDE(func_007BE8 = func_007BE8_op_sz_66);
+EXTERN(func_007BE8_op_sz_66)
+PROVIDE(func_007C2A = func_007C2A_logic_sz_46);
+EXTERN(func_007C2A_logic_sz_46)
+PROVIDE(func_007F34 = func_007F34_logic_sz_27);
+PROVIDE(func_007F62 = func_007F62_logic_sz_30);
+EXTERN(func_007F62_logic_sz_30)
+PROVIDE(func_0084C8 = func_0084C8_logic_sz_19);
+EXTERN(func_0084C8_logic_sz_19)
+PROVIDE(func_00864E = func_00864E_logic_sz_31);
+EXTERN(func_00864E_logic_sz_31)
+PROVIDE(func_0087F4 = func_0087F4_logic_sz_18);
+EXTERN(func_0087F4_logic_sz_18)
+PROVIDE(func_008D00 = func_008D00_colony_stock_cap);
+PROVIDE(func_00975A = func_00975A_logic_sz_25);
+EXTERN(func_00975A_logic_sz_25)
+PROVIDE(func_009786 = func_009786_logic_sz_12);
+EXTERN(func_009786_logic_sz_12)
+PROVIDE(func_0098F6 = func_0098F6_logic_sz_85);
+EXTERN(func_0098F6_logic_sz_85)
+PROVIDE(func_00B2A2 = func_00B2A2_cargo_slot_good);
+EXTERN(func_00B2A2_cargo_slot_good)
+PROVIDE(func_00B2F0 = func_00B2F0_cargo_slot_amount);
+EXTERN(func_00B2F0_cargo_slot_amount)
+PROVIDE(func_00B900 = func_00B900_colony_sz_618);
+EXTERN(func_00B900_colony_sz_618)
+PROVIDE(func_00BF3C = func_00BF3C_logic_sz_182);
+PROVIDE(func_010B26 = func_010B26_logic_sz_149);
+EXTERN(func_010B26_logic_sz_149)
+PROVIDE(func_010CA0 = func_010CA0_rtl_sz_44);
+EXTERN(func_010CA0_rtl_sz_44)
+PROVIDE(func_010E66 = func_010E66_rtl_sz_116);
+EXTERN(func_010E66_rtl_sz_116)
+PROVIDE(func_010EE2 = func_010EE2_rtl_sz_75);
+EXTERN(func_010EE2_rtl_sz_75)
+PROVIDE(func_01146A = func_01146A_logic_sz_122);
+EXTERN(func_01146A_logic_sz_122)
