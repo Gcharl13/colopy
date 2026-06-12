@@ -1232,7 +1232,7 @@ int func_02A0BC_assign_work_tile(void)
         /* @0x02A1B6 assign: place_unit(sel, field?...) */
         if (overlay_call_191F_054C() == 1) {             /* @0x02A1B6 (func_07DBB) */
             overlay_call_181F_0AA6((int16_t)DG16(0x8d7c));                     /* @0x02A1CB assign_work(sel_unit) */
-            overlay_call_181F_0D44();                     /* @0x02A1DF place_unit_at(sel,x,y) */
+            overlay_call_181F_0D44((int16_t)DG16(0x330), (int16_t)DG16(0x332), (int16_t)DG8(0x8d7c));                     /* @0x02A1DF place_unit_at(sel,x,y) */
         }
         overlay_call_191F_0738();                         /* @0x02A1E8 repaint */
         return 0;

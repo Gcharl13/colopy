@@ -659,7 +659,7 @@ int power_weekly_economy_tick(uint16_t power_index)  /* func_04830E */
                 uint8_t *mk = g_market_array_8D4E;  /* @asm 0x048373 */
                 if ((int8_t)mk[0x07] > 0) {         /* @asm 0x048377 pending count */
                     /* @asm 0x04837D — 1/(difficulty+1) chance to consume one. */
-                    if (overlay_call_181F_04D4() == 0)   /* random_int(0, difficulty) */
+                    if (overlay_call_181F_04D4(0, (int16_t)DG8(0x53a6)) == 0)   /* random_int(0, difficulty) */
                         mk[0x07]--;                 /* @asm 0x048395 */
                     line++;                         /* @asm 0x048398 */
                 }
@@ -1615,7 +1615,7 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     overlay_call_181F_0438(0, overlay_call_181F_09A4(arg1c));   /* @asm 0x048E5E push [bp-0x12];
                                               0x9A4 name; push name,0 -> 0x438 slot 0 */
     overlay_call_181F_0438(1, overlay_call_181F_09A4(rivalCh)); /* @asm 0x048E74 push [bp-0xE] */
-    overlay_call_181F_0438(2, overlay_call_181F_09A4((int16_t)DG16(0x8D50))); /* @asm 0x048E8A */
+    overlay_call_181F_0438(2, overlay_call_181F_09A4((int16_t)DG16(0x8d50))); /* @asm 0x048E8A */
 
     /* @asm 0x048EA1..0x048EFB — faith roll picks the outcome banner & attitude signs.
      * @asm 0x048EA1 ax=rivalFaith([bp-0x14]); 0x048EA4 ax+=myFaith([bp-0x18]); roll =

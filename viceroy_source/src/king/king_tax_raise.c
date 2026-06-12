@@ -128,7 +128,7 @@ do_kingraise: /* @asm 0x034B62 — guards-1+2 target */
          *   e8 a1 1c        call near [+0x1CA1]    ; -> file 0x3681D (LJMP 0x191F:0x0AE0) */
         uint16_t adjusted = ovly_181F_04D4(1, g_difficulty_53A6);  /* @asm 0x034B6A */
         adjusted *= 2;
-        ovly_191F_0AE0(adjusted, 0x10b2 /* "KINGRAISE" */);  /* internals of king_announce_tax_raise in thunk page */
+        overlay_call_181F_04D4(1, (int16_t)DG8(0x53a6));  /* internals of king_announce_tax_raise in thunk page */
         return;
     }
 }

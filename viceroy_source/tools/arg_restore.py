@@ -73,90 +73,92 @@ def decode_site(addr):
         if m:
             cleanup = int(m.group(1), 0)
     nargs = cleanup // 2
-    # walk back collecting pushes (allowing the AX-load idioms between)
+    # FORWARD-SIMULATE the push run: walk back to a barrier instruction,
+    # then replay forward tracking simple register loads (so `mov si,X ...
+    # push si` resolves in execution order).
+    def classify_src(src, allow_byte_ax=False):
+        if re.match(r'^-?(0x[0-9a-f]+|\d+)$', src):
+            return {'kind': 'imm', 'c': src}
+        if re.match(r'^word ptr \[0x[0-9a-f]+\]$', src):
+            a = re.search(r'0x[0-9a-f]+', src).group(0)
+            return {'kind': 'dg16', 'c': f'(int16_t)DG16({a})'}
+        if allow_byte_ax and re.match(r'^byte ptr \[0x[0-9a-f]+\]$', src):
+            a = re.search(r'0x[0-9a-f]+', src).group(0)
+            return {'kind': 'dg8', 'c': f'(int16_t)DG8({a})'}
+        if re.match(r'^word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', src):
+            d = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', src).group(1), 0)
+            return {'kind': 'param', 'bp': d}
+        if re.match(r'^word ptr \[bp - ', src):
+            return {'kind': 'local', 'c': None, 'raw': src}
+        return None
+
+    barrier = idx
+    j = idx - 1
+    budget = 24
+    while j >= 0 and budget:
+        mn, op = win[j].mnemonic, win[j].op_str
+        ok = (mn == 'push' or mn == 'nop' or mn in ('cwde', 'cbw')
+              or (mn in ('sub', 'xor') and op in ('ah, ah', 'dh, dh', 'bh, bh'))
+              or (mn == 'mov' and re.match(r'^(ax|al|bx|cx|dx|si|di), ', op)))
+        if not ok:
+            break
+        barrier = j
+        j -= 1
+        budget -= 1
     pushes = []
-    i = idx - 1
-    pending_ax = None   # expression currently in AX, if simply derivable
-    while i >= 0 and len(pushes) < nargs:
-        ins = win[i]
-        mn, op = ins.mnemonic, ins.op_str
-        if mn == 'push':
-            if re.match(r'^-?(0x[0-9a-f]+|\d+)$', op):
-                pushes.append({'kind': 'imm', 'c': op})
-            elif re.match(r'^word ptr \[0x[0-9a-f]+\]$', op):
-                a = re.search(r'0x[0-9a-f]+', op).group(0)
-                pushes.append({'kind': 'dg16', 'c': f'(int16_t)DG16({a})'})
-            elif re.match(r'^word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', op):
-                d = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', op).group(1), 0)
-                pushes.append({'kind': 'param', 'bp': d})
-            elif re.match(r'^word ptr \[bp - ', op):
-                pushes.append({'kind': 'local', 'c': None, 'raw': op})
-            elif op == 'ax' and pending_ax:
-                pushes.append(pending_ax); pending_ax = None
-            elif op in ('ax','bx','cx','dx','si','di','ds','ss','es','cs'):
-                pushes.append({'kind': 'reg', 'c': None, 'raw': op})
-            else:
-                pushes.append({'kind': 'other', 'c': None, 'raw': op})
-            i -= 1
+    regs = {}
+    for k in range(barrier, idx):
+        mn, op = win[k].mnemonic, win[k].op_str
+        if mn == 'mov':
+            m2 = re.match(r'^(ax|al|bx|cx|dx|si|di), (.+)$', op)
+            if m2:
+                r2, src = m2.groups()
+                if r2 == 'al':
+                    e = classify_src(src, allow_byte_ax=True)
+                    regs['ax'] = e if e else {'kind': 'other', 'c': None, 'raw': op}
+                else:
+                    e = classify_src(src)
+                    regs[r2] = e if e else {'kind': 'other', 'c': None, 'raw': op}
             continue
-        # simple AX loads feeding a later push ax
-        if mn == 'mov' and re.match(r'^al, byte ptr \[0x[0-9a-f]+\]$', op):
-            a = re.search(r'0x[0-9a-f]+', op).group(0)
-            pending_ax = {'kind': 'dg8', 'c': f'(int16_t)DG8({a})'}
-            i -= 1; continue
-        if mn == 'mov' and re.match(r'^ax, word ptr \[0x[0-9a-f]+\]$', op):
-            a = re.search(r'0x[0-9a-f]+', op).group(0)
-            pending_ax = {'kind': 'dg16', 'c': f'(int16_t)DG16({a})'}
-            i -= 1; continue
-        if mn == 'mov' and re.match(r'^ax, word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', op):
-            d = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', op).group(1), 0)
-            pending_ax = {'kind': 'param', 'bp': d}
-            i -= 1; continue
-        if mn == 'mov' and re.match(r'^ax, word ptr \[bp - (0x[0-9a-f]+|\d+)\]$', op):
-            pending_ax = {'kind': 'local', 'c': None, 'raw': op}
-            i -= 1; continue
-        if (mn, op) in (('sub','ah, ah'), ('xor','ah, ah')) or mn == 'cwde' or mn == 'cbw':
-            i -= 1; continue
-        if mn == 'nop':
-            i -= 1; continue
-        break
+        if mn == 'push':
+            e = classify_src(op.replace('word ptr ', 'word ptr ')) \
+                if not re.match(r'^(ax|bx|cx|dx|si|di|ds|ss|es|cs)$', op) else None
+            if e is None and re.match(r'^(ax|bx|cx|dx|si|di)$', op):
+                e = regs.get(op) or {'kind': 'reg', 'c': None, 'raw': op}
+            elif e is None and op in ('ds', 'ss', 'es', 'cs'):
+                e = {'kind': 'seg', 'c': None, 'raw': op}
+            elif e is None:
+                e = classify_src(op)
+                if e is None:
+                    e = {'kind': 'other', 'c': None, 'raw': op}
+            pushes.append(e)
+            continue
+        # cwde/cbw/sub ah,ah/nop: no effect on word-level model
+    # MERGED-TAIL GUARD: if any jump in/around the window lands INSIDE the
+    # push run, two control paths push different args into one call site --
+    # a linear read would hard-code one path.  Flag such sites.
+    run_lo = win[barrier].address
+    run_hi = win[idx].address
+    for ins3 in win:
+        if ins3.mnemonic.startswith('j'):
+            mt = re.match(r'^0x([0-9a-f]+)$', ins3.op_str)
+            if mt:
+                tgt = int(mt.group(1), 16)
+                if run_lo < tgt <= run_hi and not (run_lo <= ins3.address < run_hi):
+                    return (seg, off, None, nargs, 'merged-tail join')
+    pushes = pushes[-nargs:] if nargs else pushes
+    # cdecl: last nargs pushes before the call, left-to-right = arg order
+    # (pushes list is in EXECUTION order: first pushed = rightmost arg)
+    pushes = list(reversed(pushes))
     if nargs == 0:
-        # register convention: collect simple mov ax/dx/bx loads before the
-        # call (convention across this codebase: AX=arg0, DX=arg1, BX=arg2)
-        regs = {}
-        j = idx - 1
-        while j >= 0 and len(regs) < 3:
-            ins2 = win[j]
-            m2 = re.match(r'^(ax|dx|bx), (.+)$', ins2.op_str) if ins2.mnemonic == 'mov' else None
-            if not m2:
-                if ins2.mnemonic in ('cwde', 'cbw', 'nop') or \
-                   (ins2.mnemonic in ('sub','xor') and ins2.op_str in ('ah, ah','dh, dh','bh, bh')):
-                    j -= 1; continue
+        # register convention: AX=arg0, DX=arg1, BX=arg2 from the forward regs
+        order = []
+        for rname in ('ax', 'dx', 'bx'):
+            e = regs.get(rname)
+            if e is None or e.get('kind') in (None, 'other', 'reg', 'seg') or e.get('c') is None and e.get('kind') not in ('param','local'):
                 break
-            r2, src = m2.groups()
-            if r2 in regs:
-                break
-            e = None
-            if re.match(r'^-?(0x[0-9a-f]+|\d+)$', src):
-                e = {'kind': 'imm', 'c': src}
-            elif re.match(r'^word ptr \[0x[0-9a-f]+\]$', src):
-                a2 = re.search(r'0x[0-9a-f]+', src).group(0)
-                e = {'kind': 'dg16', 'c': f'(int16_t)DG16({a2})'}
-            elif re.match(r'^byte ptr \[0x[0-9a-f]+\]$', src) and r2 == 'ax':
-                a2 = re.search(r'0x[0-9a-f]+', src).group(0)
-                e = {'kind': 'dg8', 'c': f'(int16_t)DG8({a2})'}
-            elif re.match(r'^word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', src):
-                d2 = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', src).group(1), 0)
-                e = {'kind': 'param', 'bp': d2}
-            elif re.match(r'^word ptr \[bp - ', src):
-                e = {'kind': 'local', 'c': None, 'raw': src}
-            if e is None:
-                break
-            regs[r2] = e
-            j -= 1
-        order = [regs[r] for r in ('ax', 'dx', 'bx') if r in regs]
-        # only meaningful when the register run is contiguous from arg0
-        if order and all(('ax','dx','bx')[k] in regs for k in range(len(order))):
+            order.append(e)
+        if order:
             return (seg, off, order, len(order), 'REGCONV')
     if len(pushes) != nargs:
         return (seg, off, None, nargs, 'push-walk-short')
@@ -169,9 +171,15 @@ LOCAL_ANN_RX = re.compile(r'\b(?:int(?:16_t|32_t|8_t)?|uint(?:16|32|8)_t|char|lo
 
 def enclosing_func(lines, ln):
     """Find the enclosing C function definition above line ln (0-based);
-    return (name, {bp_plus_off: param}, {bp_minus_off: local})."""
+    return (name, {bp_plus_off: param}, {bp_minus_off: local}).
+    A column-0 '}' between the candidate def and the call line means the
+    def regex skipped over a function boundary (multiline definition) --
+    bail with empty maps so the site is flagged, not mis-mapped."""
     fdef = None
     for i in range(ln, -1, -1):
+        if lines[i].startswith('}'):
+            # previous function ended before we found a def -> multiline def
+            return None, {}, {}
         m = FUNCDEF_RX.match(lines[i])
         if m and not lines[i].lstrip().startswith(('extern', 'typedef')):
             fdef = i

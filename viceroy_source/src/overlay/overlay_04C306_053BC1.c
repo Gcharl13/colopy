@@ -2367,7 +2367,7 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
         if (slot_flags & 0x08) {                        /* @asm 0x053165 test al,8 (pending?) */
             int idx = (int)power * 0x13C + k;           /* @asm 0x053169 imul/add */
             if (g_war_matrix_cdown_8848[idx] == 0) {    /* @asm 0x053171 cmp [bx-0x77B8],0 */
-                if (overlay_call_181F_04D4() == 0)      /* @asm 0x053178 random_int(0,3)==0 */
+                if (overlay_call_181F_04D4(0, 3) == 0)      /* @asm 0x053178 random_int(0,3)==0 */
                     g_war_matrix_883C[idx] = (g_war_matrix_883C[idx] & 0xB7) | 0x01; /* @asm 0x05318A/0x05318F */
             }
         }

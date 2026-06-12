@@ -183,7 +183,7 @@ extern int overlay_call_181F_09FC();  /* colony_has_structure(arg) -> bool     *
 extern int overlay_call_181F_0A38(void);  /* diplomacy(a,b) -> bitset              */
 extern int overlay_call_181F_0AC4(void);  /* unit_attr(slot,&out)                  */
 extern int overlay_call_181F_0AE2(void);  /* map_mouse_to_tile() -> idx            */
-extern int overlay_call_181F_0B14(void);  /* contact_query(0,colony) -> byte       */
+extern int overlay_call_181F_0B14();  /* contact_query(0,colony) -> byte       */
 extern int overlay_call_181F_0B28();  /* unit_activity_flag(slot) -> bool      */
 extern int overlay_call_181F_0B32();  /* get_unit_by_index(idx) -> slot        */
 extern int overlay_call_181F_0B64(void);  /* tile_query(idx) -> id or 0xFFFF       */
@@ -235,7 +235,7 @@ extern int overlay_call_191F_0902(void);  /* list_action(arg)                   
 extern int overlay_call_191F_0910(void);  /* list_cursor_step()                   */
 extern int overlay_call_191F_091C(void);  /* list_cursor_measure(buf)             */
 extern int overlay_call_191F_0928(void);  /* dispatch_overlay_op(key,title)       */
-extern int overlay_call_191F_0934(void);  /* select_color_cell(arg)               */
+extern int overlay_call_191F_0934();  /* select_color_cell(arg)               */
 extern int overlay_call_191F_0942(void);  /* play_unit_sound(type)                */
 extern int overlay_call_191F_095E(void);  /* enter_colony_screen()                */
 extern int overlay_call_191F_096C(void);  /* leave_colony_screen2()               */
@@ -450,7 +450,7 @@ int func_02AEDA_op_sz_127(void)
 
     if (g_count_033C == 0) return 0;                /* @0x02AEE4 */
     cell      = overlay_call_181F_035C() / 0xC;     /* @0x02AEE9 (X-0x7F)/0xC */
-    unit_slot = overlay_call_181F_0B32();           /* @0x02AF05 get_unit_by_index([0x33E]) */
+    unit_slot = overlay_call_181F_0B32((int16_t)DG16(0x33e));           /* @0x02AF05 get_unit_by_index([0x33E]) */
     drag_id   = overlay_call_181F_0BE6();           /* @0x02AF16 order_arg(cell,unit) */
 
     if (g_screen_mode_8D54 == 7) {                  /* @0x02AF23 */
@@ -1102,7 +1102,7 @@ int func_02BC72_logic_sz_50(uint16_t arg0_bp_06)
                 overlay_call_191F_0942();           /* @0x02BDCE sound(type) */
             }
             break;
-        default: overlay_call_191F_0934(); break;   /* @0x02BDD6 [0x33A] */
+        default: overlay_call_191F_0934((int16_t)DG8(0x33a)); break;   /* @0x02BDD6 [0x33A] */
         }
     }
 
@@ -1604,7 +1604,7 @@ int func_02EB1C_logic_sz_10(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     uint8_t owner = COLREC_B(cid * 0xCA + 0x5D65);  /* @0x02EB20/0x02EB25 ColonyRecord+0x1F*/
     COLREC_B(cid * 0xCA + pw + 0x5E00) = owner;     /* @0x02EB2C contact[cid][pw] */
     COLREC_B(cid * 0xCA + pw + 0x5E04) =            /* @0x02EB3F */
-        (uint8_t)overlay_call_181F_0B14();          /* @0x02EB37 contact_query(0,cid) */
+        (uint8_t)overlay_call_181F_0B14(arg0_bp_06, 0);          /* @0x02EB37 contact_query(0,cid) */
     return 0;                                       /* @0x02EB43 */
 }
 

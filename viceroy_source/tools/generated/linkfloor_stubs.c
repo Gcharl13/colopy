@@ -629,7 +629,6 @@ __attribute__((weak)) long ovly_181F_0998(void) { viceroy_stub_hit("ovly_181F_09
 __attribute__((weak)) long ovly_181F_09AE(void) { viceroy_stub_hit("ovly_181F_09AE"); return 0; }
 __attribute__((weak)) long ovly_191F_0248(void) { viceroy_stub_hit("ovly_191F_0248"); return 0; }
 __attribute__((weak)) long ovly_191F_0AC8(void) { viceroy_stub_hit("ovly_191F_0AC8"); return 0; }
-__attribute__((weak)) long ovly_191F_0AE0(void) { viceroy_stub_hit("ovly_191F_0AE0"); return 0; }
 __attribute__((weak)) long ovly_4BA34_substate(void) { viceroy_stub_hit("ovly_4BA34_substate"); return 0; }
 __attribute__((weak)) long ovly_4BA43_finalize(void) { viceroy_stub_hit("ovly_4BA43_finalize"); return 0; }
 __attribute__((weak)) long ovly_5411_unit_recover(void) { viceroy_stub_hit("ovly_5411_unit_recover"); return 0; }
@@ -833,6 +832,7 @@ __attribute__((weak)) long func_06CFE8(void) { viceroy_stub_hit("func_06CFE8"); 
 __attribute__((weak)) long func_06D316(void) { viceroy_stub_hit("func_06D316"); return 0; }
 __attribute__((weak)) long func_06D88C(void) { viceroy_stub_hit("func_06D88C"); return 0; }
 __attribute__((weak)) long func_077990(void) { viceroy_stub_hit("func_077990"); return 0; }
+__attribute__((weak)) long DG8(void) { viceroy_stub_hit("DG8"); return 0; }
 __attribute__((weak)) long __aFldiv(void) { viceroy_stub_hit("__aFldiv"); return 0; }
 __attribute__((weak)) long __aFlmul(void) { viceroy_stub_hit("__aFlmul"); return 0; }
 __attribute__((weak)) long aFldiv_0F92(void) { viceroy_stub_hit("aFldiv_0F92"); return 0; }
