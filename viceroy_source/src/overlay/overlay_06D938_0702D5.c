@@ -1192,6 +1192,7 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
  * ============================================================================ */
 int func_06F0F4_text_template_run(void)
 {
+    if (!g_buf_ptr_2D42_2D44) return 0;  /* headless guard: string table not loaded */
     int state = 1;    /* [bp-4] — 1=labels, 2=values, 3=stop */
     int row   = 1;    /* [bp-0x162] — running widget row index */
 

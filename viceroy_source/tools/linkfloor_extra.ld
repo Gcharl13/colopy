@@ -453,3 +453,9 @@ EXTERN(find_char_in_buffer)
 PROVIDE(overlay_call_181F_0416 = func_06C220_dialog_slot_set_block);
 PROVIDE(overlay_call_181F_09AE = func_06C27C_dialog_slot_set_pair);
 PROVIDE(overlay_call_181F_0438 = func_06C23C_dialog_make_from_int);
+
+/* Phase 4.3l (2026-06-12): opt_lookup_rec (110 hits/5-turn) wired with headless guard.
+ * 0x191F:0x182 -> file 0x6F0F4 = func_06F0F4_text_template_run (already ported).
+ * Headless guard added at func entry: returns 0 if g_buf_ptr_2D42_2D44==NULL. */
+PROVIDE(opt_lookup_rec = func_06F0F4_text_template_run);
+EXTERN(func_06F0F4_text_template_run)

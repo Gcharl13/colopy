@@ -977,7 +977,6 @@ __attribute__((weak)) long g_active_colony(void) { viceroy_stub_hit("g_active_co
 __attribute__((weak)) long g_active_colony_ptr(void) { viceroy_stub_hit("g_active_colony_ptr"); return 0; }
 __attribute__((weak)) long g_active_player_idx(void) { viceroy_stub_hit("g_active_player_idx"); return 0; }
 __attribute__((weak)) long g_ai_personality(void) { viceroy_stub_hit("g_ai_personality"); return 0; }
-__attribute__((weak)) long g_buf_ptr_2D42_2D44(void) { viceroy_stub_hit("g_buf_ptr_2D42_2D44"); return 0; }
 __attribute__((weak)) long g_byte(void) { viceroy_stub_hit("g_byte"); return 0; }
 __attribute__((weak)) long g_current_nation(void) { viceroy_stub_hit("g_current_nation"); return 0; }
 __attribute__((weak)) long g_dialog_rect(void) { viceroy_stub_hit("g_dialog_rect"); return 0; }
@@ -1173,7 +1172,6 @@ __attribute__((weak)) long near_6E77(void) { viceroy_stub_hit("near_6E77"); retu
 __attribute__((weak)) long near_6E7C(void) { viceroy_stub_hit("near_6E7C"); return 0; }
 __attribute__((weak)) long notify_treasure_spawn(void) { viceroy_stub_hit("notify_treasure_spawn"); return 0; }
 __attribute__((weak)) long num_to_str(void) { viceroy_stub_hit("num_to_str"); return 0; }
-__attribute__((weak)) long opt_lookup_rec(void) { viceroy_stub_hit("opt_lookup_rec"); return 0; }
 __attribute__((weak)) long opt_win_dispose(void) { viceroy_stub_hit("opt_win_dispose"); return 0; }
 __attribute__((weak)) long opt_win_query(void) { viceroy_stub_hit("opt_win_query"); return 0; }
 __attribute__((weak)) long option_bit_test1(void) { viceroy_stub_hit("option_bit_test1"); return 0; }
