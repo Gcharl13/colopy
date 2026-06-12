@@ -784,3 +784,62 @@ PROVIDE(func_010EE2 = func_010EE2_rtl_sz_75);
 EXTERN(func_010EE2_rtl_sz_75)
 PROVIDE(func_01146A = func_01146A_logic_sz_122);
 EXTERN(func_01146A_logic_sz_122)
+
+/* Phase 4.7 detached-globals sweep (2026-06-12): weak-stub VARIABLES
+ * aliased to their byte-cited DGROUP homes (the silent-divergence class
+ * G1 caught live in automove).  g_wXXXX names encode their own offsets;
+ * the rest carry the offset in their extern decl comments. */
+PROVIDE(g_w0070 = g_dgroup + 0x70);  /* name-encoded */
+PROVIDE(g_snd_A0 = g_dgroup + 0xa0);  /* decl-cited */
+PROVIDE(g_snd_A2 = g_dgroup + 0xa2);  /* decl-cited */
+PROVIDE(g_snd_A4 = g_dgroup + 0xa4);  /* decl-cited */
+PROVIDE(g_layer_terrain = g_dgroup + 0x15c);  /* decl-cited */
+PROVIDE(g_layer_elev = g_dgroup + 0x160);  /* decl-cited */
+PROVIDE(g_w0334 = g_dgroup + 0x334);  /* name-encoded */
+PROVIDE(g_w0340 = g_dgroup + 0x340);  /* name-encoded */
+PROVIDE(g_w0342 = g_dgroup + 0x342);  /* name-encoded */
+PROVIDE(g_w0344 = g_dgroup + 0x344);  /* name-encoded */
+PROVIDE(g_w0348 = g_dgroup + 0x348);  /* name-encoded */
+PROVIDE(g_w034A = g_dgroup + 0x34a);  /* name-encoded */
+PROVIDE(g_w034E = g_dgroup + 0x34e);  /* name-encoded */
+PROVIDE(g_w0890 = g_dgroup + 0x890);  /* name-encoded */
+PROVIDE(g_menubar_off = g_dgroup + 0x896);  /* decl-cited */
+PROVIDE(g_menubar_seg = g_dgroup + 0x898);  /* decl-cited */
+PROVIDE(g_w0B98 = g_dgroup + 0xb98);  /* name-encoded */
+PROVIDE(g_w0D04 = g_dgroup + 0xd04);  /* name-encoded */
+PROVIDE(g_lcr_attempts = g_dgroup + 0x1dc6);  /* decl-cited */
+PROVIDE(g_lcr_good_results = g_dgroup + 0x1dc7);  /* decl-cited */
+PROVIDE(g_w1F5E = g_dgroup + 0x1f5e);  /* name-encoded */
+PROVIDE(g_w1F66 = g_dgroup + 0x1f66);  /* name-encoded */
+PROVIDE(g_w1F68 = g_dgroup + 0x1f68);  /* name-encoded */
+PROVIDE(g_file_flags = g_dgroup + 0x27bb);  /* decl-cited */
+PROVIDE(g_region_2DA8c = g_dgroup + 0x2da8);  /* decl-cited */
+PROVIDE(g_rpt_str = g_dgroup + 0x2dee);  /* decl-cited */
+PROVIDE(g_unit_records = g_dgroup + 0x3144);  /* decl-cited */
+PROVIDE(g_w5372 = g_dgroup + 0x5372);  /* name-encoded */
+PROVIDE(g_turn_counter = g_dgroup + 0x538e);  /* decl-cited */
+PROVIDE(g_season = g_dgroup + 0x5390);  /* decl-cited */
+PROVIDE(g_current_nation = g_dgroup + 0x5394);  /* decl-cited */
+PROVIDE(g_active_player_idx = g_dgroup + 0x5396);  /* decl-cited */
+PROVIDE(g_w539C = g_dgroup + 0x539c);  /* name-encoded */
+PROVIDE(g_w53A0 = g_dgroup + 0x53a0);  /* name-encoded */
+PROVIDE(g_w53C2 = g_dgroup + 0x53c2);  /* name-encoded */
+PROVIDE(g_native_settlements = g_dgroup + 0x54ec);  /* decl-cited */
+PROVIDE(g_dialog_rect = g_dgroup + 0x839e);  /* decl-cited */
+PROVIDE(g_active_colony = g_dgroup + 0x8542);  /* decl-cited */
+PROVIDE(g_active_colony_ptr = g_dgroup + 0x8542);  /* decl-cited */
+PROVIDE(g_power_records = g_dgroup + 0x8808);  /* decl-cited */
+PROVIDE(g_w8D58 = g_dgroup + 0x8d58);  /* name-encoded */
+PROVIDE(g_w8D5A = g_dgroup + 0x8d5a);  /* name-encoded */
+PROVIDE(g_w8D5C = g_dgroup + 0x8d5c);  /* name-encoded */
+PROVIDE(g_w8D5E = g_dgroup + 0x8d5e);  /* name-encoded */
+PROVIDE(g_w8D60 = g_dgroup + 0x8d60);  /* name-encoded */
+PROVIDE(g_w8D72 = g_dgroup + 0x8d72);  /* name-encoded */
+PROVIDE(g_w8D76 = g_dgroup + 0x8d76);  /* name-encoded */
+PROVIDE(g_w8D78 = g_dgroup + 0x8d78);  /* name-encoded */
+PROVIDE(g_w8D7A = g_dgroup + 0x8d7a);  /* name-encoded */
+PROVIDE(g_w8D7C = g_dgroup + 0x8d7c);  /* name-encoded */
+PROVIDE(g_w8DE4 = g_dgroup + 0x8de4);  /* name-encoded */
+PROVIDE(g_w8DE6 = g_dgroup + 0x8de6);  /* name-encoded */
+PROVIDE(g_w8F8E = g_dgroup + 0x8f8e);  /* name-encoded */
+PROVIDE(g_w8F9A = g_dgroup + 0x8f9a);  /* name-encoded */

@@ -511,3 +511,103 @@ def near_match():
 
 if '--near-match' in sys.argv:
     near_match()
+
+def bare_match():
+    """Bind bare func_0XXXXX call sites: at each site's @asm cite, find the
+    near `call rel16` whose computed target equals the name's hex offset;
+    decode the push run as usual."""
+    import subprocess as sp
+    targets = json.load(open('/tmp/alias_sweep.json'))['rej']
+    want_map = {s: (t, w) for s, t, w, _ in targets}
+    plan = []
+    for f in sorted(glob.glob(os.path.join(ROOT, 'src/**/*.c'), recursive=True)):
+        raw = open(f, errors='replace').read()
+        if not any(s in raw for s in want_map):
+            continue
+        lines = raw.splitlines()
+        for n, ln in enumerate(lines):
+            for cm in re.finditer(r'\b(func_0[0-9A-F]{5})\s*\(', ln):
+                s = cm.group(1)
+                if s not in want_map or 'extern' in ln or ln.lstrip().startswith(('int ','void ','uint','/*','*')):
+                    continue
+                cite = None
+                for dn in (0, -1, 1, -2, 2):
+                    j = n + dn
+                    if 0 <= j < len(lines):
+                        cmm = CITE_RX.search(lines[j])
+                        if cmm: cite = int(cmm.group(1), 16); break
+                if cite is None: continue
+                fo = int(s[5:], 16)
+                # scan +-0x40 around the cite for E8 rel16 to fo
+                found = None
+                for a in range(max(0, cite - 0x40), cite + 0x40):
+                    if DATA[a] == 0xE8:
+                        rel = int.from_bytes(DATA[a+1:a+3], 'little', signed=True)
+                        if (a + 3 + rel) & 0xFFFF == fo & 0xFFFF and abs((a+3+rel) - fo) < 0x10000:
+                            # same-segment near call: verify full file offset
+                            if a + 3 + rel == fo:
+                                found = a; break
+                if found is None: continue
+                r = decode_near(found)
+                if not r: continue
+                args, nargs = r
+                t, want = want_map[s]
+                if nargs != want: continue
+                fn2, params, locs = enclosing_func(lines, n)
+                cargs, bad = [], None
+                for a2 in args:
+                    if a2['kind'] in ('imm', 'dg16', 'dg8'):
+                        cargs.append(a2['c'])
+                    elif a2['kind'] == 'param' and a2['bp'] in params:
+                        cargs.append(params[a2['bp']])
+                    elif a2['kind'] == 'local' and a2.get('raw'):
+                        dm = re.search(r'bp - (0x[0-9a-f]+|\d+)', a2['raw'])
+                        dd = int(dm.group(1), 0) if dm else None
+                        if dd in locs: cargs.append(locs[dd])
+                        else: bad = a2; break
+                    else: bad = a2; break
+                if bad: continue
+                plan.append({'file': f, 'line': n + 1, 'stub': s, 'addr': hex(found),
+                             'thunk': t, 'nargs': nargs, 'args': cargs})
+    print(f"BARE-MATCHED: {len(plan)}")
+    json.dump({'plan': plan, 'flagged': []}, open('/tmp/arg_restore_plan.json', 'w'), indent=1)
+
+def decode_near(addr):
+    """Decode the push run before a NEAR call at addr (push cs prefix common).
+    Cleanup = add sp,N after; cs-push not an arg."""
+    win = disasm_window(addr, back=0x40, fwd=0x10)
+    idx = next((i for i, x in enumerate(win) if x.address == addr), None)
+    if idx is None: return None
+    cleanup = 0
+    if idx + 1 < len(win) and win[idx+1].mnemonic == 'add':
+        m = re.match(r'sp, (0x[0-9a-f]+|\d+)', win[idx+1].op_str)
+        if m: cleanup = int(m.group(1), 0)
+    nargs = cleanup // 2
+    if nargs == 0: return None
+    pushes = []
+    j = idx - 1
+    # skip the `push cs` immediately before
+    while j >= 0 and len(pushes) < nargs:
+        mn, op = win[j].mnemonic, win[j].op_str
+        if mn == 'push' and op == 'cs':
+            j -= 1; continue
+        if mn == 'push':
+            if re.match(r'^-?(0x[0-9a-f]+|\d+)$', op):
+                pushes.append({'kind': 'imm', 'c': op})
+            elif re.match(r'^word ptr \[0x[0-9a-f]+\]$', op):
+                a = re.search(r'0x[0-9a-f]+', op).group(0)
+                pushes.append({'kind': 'dg16', 'c': f'(int16_t)DG16({a})'})
+            elif re.match(r'^word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', op):
+                d = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', op).group(1), 0)
+                pushes.append({'kind': 'param', 'bp': d})
+            elif re.match(r'^word ptr \[bp - ', op):
+                pushes.append({'kind': 'local', 'c': None, 'raw': op})
+            else:
+                return None
+            j -= 1; continue
+        break
+    if len(pushes) != nargs: return None
+    return pushes, nargs
+
+if '--bare-match' in sys.argv:
+    bare_match()
