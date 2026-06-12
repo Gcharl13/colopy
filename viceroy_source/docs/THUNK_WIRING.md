@@ -2,7 +2,7 @@
 
 Thunk-pattern stubs referenced by the lib: **766**
 
-**WIRED (linker alias to the real ported function): 161**
+**WIRED (linker alias to the real ported function): 173**
 (plus 65 semantic alias names)
 
 | stub | target | resolved via | arity |
@@ -52,17 +52,28 @@ Thunk-pattern stubs referenced by the lib: **766**
 | `ov_resource_at_4B0` | `func_0060A0_logic_sz_128` | direct+name | 2 |
 | `ov_set_font` | `func_076C70_read_record_field` | exe:overlay+name | 0 |
 | `ov_unit_select` | `func_0069EE_logic_sz_33` | exe:resident+name | 1 |
+| `overlay_call_024C_0040` | `func_004900_logic_sz_15` | direct | 2 |
 | `overlay_call_0262_00DA` | `func_004AFA_op_sz_28` | direct | 0 |
 | `overlay_call_029F_00F6` | `func_004EE6_op_sz_297` | direct | 0 |
+| `overlay_call_037F_000A` | `func_005BFA_logic_sz_49` | direct | 2 |
 | `overlay_call_037F_003C` | `func_005C2C_logic_sz_132` | direct | 3 |
+| `overlay_call_037F_010E` | `func_005CFE_map_tile_read_layer_15C` | direct | 2 |
+| `overlay_call_037F_0142` | `func_005D32_map_tile_read_layer_160` | direct | 2 |
 | `overlay_call_037F_01CA` | `func_005DBA_logic_sz_17` | direct | 2 |
+| `overlay_call_037F_02A0` | `func_005E90_op_sz_64` | direct | 2 |
 | `overlay_call_037F_02F8` | `func_005EE8_logic_sz_28` | direct | 2 |
+| `overlay_call_037F_0314` | `func_005F04_map_xy_bounds_or_neg1` | direct | 2 |
+| `overlay_call_037F_0358` | `func_005F48_logic_sz_58` | direct | 2 |
+| `overlay_call_037F_03E4` | `func_005FD4_map_xy_bounds_or_neg1_alt` | direct | 2 |
 | `overlay_call_037F_04B0` | `func_0060A0_logic_sz_128` | direct | 2 |
 | `overlay_call_037F_0598` | `func_006188_op_sz_91` | direct | 2 |
+| `overlay_call_03E4_0074` | `func_0062B4_op_sz_39` | direct | 2 |
 | `overlay_call_0427_06B4` | `func_006D24_op_sz_197` | direct | 4 |
 | `overlay_call_0427_0824` | `func_006E94_logic_sz_198` | direct | 1 |
 | `overlay_call_0427_155E` | `func_007BCE_logic_sz_25` | direct | 1 |
 | `overlay_call_057E_004A` | `func_007C2A_logic_sz_46` | direct | 2 |
+| `overlay_call_05B3_0004` | `func_007F34_logic_sz_27` | direct | 2 |
+| `overlay_call_05B3_01E0` | `func_008110_logic_sz_14` | direct | 1 |
 | `overlay_call_05DC_006A` | `func_00822A_logic_sz_36` | direct | 1 |
 | `overlay_call_0984_02FC` | `func_00BF3C_logic_sz_182` | direct | 5 |
 | `overlay_call_09EF_001A` | `func_00C30A_rtl_sz_17` | direct | 1 |
@@ -109,6 +120,7 @@ Thunk-pattern stubs referenced by the lib: **766**
 | `overlay_call_181F_0D3A` | `func_008D00_colony_stock_cap` | exe:resident | 0 |
 | `overlay_call_181F_0D62` | `func_009726_logic_sz_52` | exe:resident | 0 |
 | `overlay_call_181F_0DCC` | `func_00BD4A_op_sz_404` | exe:resident | 0 |
+| `overlay_call_181F_0E1C` | `func_067700_compose_active_tile` | exe:overlay | 1 |
 | `overlay_call_181F_0E90` | `func_00C498_op_sz_11` | exe:resident | 0 |
 | `overlay_call_191F_018E` | `func_06787C_render_frame_setup` | exe:overlay | 0 |
 | `overlay_call_191F_0288` | `func_066F68_draw_route_path` | exe:overlay | 0 |
@@ -410,7 +422,7 @@ Thunk-pattern stubs referenced by the lib: **766**
 - `ovly_191F_0248` | `func_078CB2_shrink_block+0x79BAE`
 - `ovly_191F_0AC8` | `func_078CB2_shrink_block+0x9EF42`
 
-### arity mismatch (target wants 1) — 139
+### arity mismatch (target wants 1) — 137
 
 - `overlay_call_0009_00B4` | `func_002544_logic_sz_60` | `[0]`
 - `overlay_call_012B_015C` | `func_00380C_op_sz_93` | `[0]`
@@ -419,7 +431,6 @@ Thunk-pattern stubs referenced by the lib: **766**
 - `overlay_call_029F_034C` | `func_00513C_logic_sz_26` | `[0]`
 - `overlay_call_02FD_006C` | `func_00543C_op_sz_131` | `[0]`
 - `overlay_call_03F1_02F8` | `func_006608_logic_sz_106` | `[0, 1]`
-- `overlay_call_05B3_01E0` | `func_008110_logic_sz_14` | `[0]`
 - `overlay_call_05B3_024E` | `func_00817E_logic_sz_14` | `[0]`
 - `overlay_call_05EB_002C` | `func_0082DC_logic_sz_118` | `[0]`
 - `overlay_call_05EB_038E` | `func_00863E_wrapper_with_global_8DC6` | `[0]`
@@ -502,7 +513,6 @@ Thunk-pattern stubs referenced by the lib: **766**
 - `overlay_call_181F_0DEA` | `func_00C0D0_logic_sz_57` | `[0]`
 - `overlay_call_181F_0DFE` | `func_00C1F8_logic_sz_20` | `[0]`
 - `overlay_call_181F_0E12` | `func_00C276_logic_sz_20` | `[0]`
-- `overlay_call_181F_0E1C` | `func_067700_compose_active_tile` | `[0]`
 - `overlay_call_181F_0E2A` | `func_067476_set_unit_active_state` | `[0]`
 - `overlay_call_181F_0EA4` | `func_00C646_rtl_sz_74` | `[0]`
 - `overlay_call_181F_0EAE` | `func_00C4A4_logic_sz_55` | `[0]`
@@ -552,25 +562,15 @@ Thunk-pattern stubs referenced by the lib: **766**
 - `ovly_191F_0AE0` | `func_034318_runtime_chain_289` | `[2]`
 - `ui_show_message2` | `func_034318_runtime_chain_289` | `[2]`
 
-### arity mismatch (target wants 2) — 126
+### arity mismatch (target wants 2) — 116
 
 - `overlay_call_004B_00E2` | `func_002992_rtl_sz_26` | `[0]`
-- `overlay_call_024C_0040` | `func_004900_logic_sz_15` | `[0, 2]`
-- `overlay_call_037F_000A` | `func_005BFA_logic_sz_49` | `[0, 2]`
-- `overlay_call_037F_010E` | `func_005CFE_map_tile_read_layer_15C` | `[0]`
-- `overlay_call_037F_0142` | `func_005D32_map_tile_read_layer_160` | `[0]`
 - `overlay_call_037F_0200` | `func_005DF0_logic_sz_40` | `[0, 2]`
-- `overlay_call_037F_02A0` | `func_005E90_op_sz_64` | `[0, 2]`
 - `overlay_call_037F_02E0` | `func_005ED0_logic_sz_23` | `[0]`
-- `overlay_call_037F_0314` | `func_005F04_map_xy_bounds_or_neg1` | `[0, 2]`
-- `overlay_call_037F_0358` | `func_005F48_logic_sz_58` | `[0, 2]`
 - `overlay_call_037F_0392` | `func_005F82_logic_sz_31` | `[0]`
-- `overlay_call_037F_03E4` | `func_005FD4_map_xy_bounds_or_neg1_alt` | `[0, 2]`
 - `overlay_call_03E4_003A` | `func_00627A_op_sz_57` | `[0]`
-- `overlay_call_03E4_0074` | `func_0062B4_op_sz_39` | `[0, 2]`
 - `overlay_call_0427_005C` | `func_0066CC_op_sz_57` | `[0, 2]`
 - `overlay_call_0427_0992` | `func_007002_logic_sz_26` | `[0]`
-- `overlay_call_05B3_0004` | `func_007F34_logic_sz_27` | `[0]`
 - `overlay_call_05EB_0A76` | `func_008D26_op_sz_69` | `[0, 2]`
 - `overlay_call_0981_0000` | `func_00BC10_ff_owned` | `[0, 2]`
 - `overlay_call_09EF_0032` | `func_00C322_rtl_sz_63` | `[0]`

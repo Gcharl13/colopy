@@ -666,8 +666,11 @@ int func_067700_compose_active_tile(uint16_t arg0_active)
         overlay_call_181F_0100();
     }
 
-    /* @asm 0x0677A1 power = [0x53a2]?-1:[0x5396] ; push arg0 -> 0x1A1F:0x8a4 */
-    overlay_call_1A1F_08A4();
+    /* @asm 0x0677A1 power = [0x53a2]?-1:[0x5396] ; push (power, arg0_active) -> 0x1A1F:0x8a4 */
+    {
+        int _pw = DG16(0x53A2) ? -1 : (int16_t)DG16(0x5396);
+        func_066CD6_minimap_panel((uint16_t)(int16_t)_pw, arg0_active);
+    }
     /* @asm 0x0677BD if (arg0 != 0): 0x1A1F:0x8ea (extra cursor overlay) */
     if (arg0_active != 0) {
         overlay_call_1A1F_08EA();

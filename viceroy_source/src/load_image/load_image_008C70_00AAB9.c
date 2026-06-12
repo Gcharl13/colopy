@@ -991,7 +991,7 @@ void func_00994C_logic_sz_40(uint16_t arg0_bp_06)
  * @inferred_role  resolves func_008956(arg0,arg1); maps via func_0090C8/func_009102
  * @status     BYTE_VERIFIED 2026-06-08 (full body decompiled from VICEROY.EXE)
  */
-int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A)
+int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t *arg2_bp_0A)
 {
     /* @asm 0x009978 mov [bp-2],0xffff (result=-1); push [bp+8]; push [bp+6];
      *      call 0x8956 (func_008956(arg0,arg1)); cwde; mov [bp-4],ax (r, signed);
@@ -1007,7 +1007,7 @@ int func_009974_logic_sz_18(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
     if (r < 0)
         return -1;
     result = (int)func_0090C8(r);                       /* @0x009994 (first) */
-    *(uint16_t near *)arg2_bp_0A = (uint16_t)func_009102(r);  /* @0x0099a1 (second) */
+    *arg2_bp_0A = (uint16_t)func_009102(r);             /* @0x0099a1 (second) */
     return result;
 }
 

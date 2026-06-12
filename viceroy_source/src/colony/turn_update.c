@@ -73,7 +73,10 @@
  * Bodies are NOT in the load image (library-implementation-only; body in overlay thunk page);
  * their call sites and arg/return roles are byte-verified.
  * ---------------------------------------------------------------------------- */
-extern int   ov_base_terrain_at(int x, int y);          /* LCALL 0x3E4:0x0E  @asm 0x9BF9; LCALL 0x3E4:0x3A @asm 0xA23C */
+/* LCALL 0x3E4:0x0E -> func_00624E_logic_sz_8(feat_byte): extract terrain id from feature byte */
+extern int   func_00624E_logic_sz_8(uint16_t feat_byte);
+/* LCALL 0x3E4:0x3A -> func_00627A_op_sz_57(map_x, map_y): terrain id at map coordinates */
+extern int   func_00627A_op_sz_57(uint16_t map_x, uint16_t map_y);
 extern int   ov_feature_flags_142(int x, int y);        /* LCALL 0x37F:0x142 @asm 0x9C93 (river bit 0x40, special 0x0A, 0x04) */
 extern int   ov_feature_flags_10E(int x, int y);        /* LCALL 0x37F:0x10E @asm 0x9BEB → low byte = feature/bonus byte */
 extern int   ov_resource_at_4B0(int x, int y);          /* LCALL 0x37F:0x4B0 @asm 0x9C0A → special-resource id (0..?) */
@@ -82,7 +85,8 @@ extern int   ov_power_flag(int owner, int op_id);        /* LCALL 0x981:0x00  @a
 /* ----------------------------------------------------------------------------
  * Load-image helpers (all near-CALL within the load image; byte-verified).
  * ---------------------------------------------------------------------------- */
-extern int   resolve_tile_good_id(int slot, int dir);    /* 0x9974 → wraps lookup_byte_from_pair; colony[+0x70+idx] */
+/* 0x9974 -> func_009974_logic_sz_18(slot, dir, out_ptr): good_id; *out_ptr = secondary result (unused by caller) */
+extern int   func_009974_logic_sz_18(uint16_t slot, uint16_t dir, uint16_t *out_ptr);
 extern int   feature_yield_bonus(int resource_id, int commodity); /* 0x9AAA hard-coded (resource,commodity) bonus switch */
 extern int   count_adjacent_terrain(int x, int y, int lo, int hi);/* 0x99EE adjacency tally over 8 neighbours */
 /* The production-support cluster (sol_membership_pct 0x8524, lookup_signed_2F4
@@ -137,9 +141,10 @@ int compute_terrain_yield(int ring_a, int ring_b, int *out, int flag)
     int yield        = 0;   /* [bp-0x24] */
     int era_flag     = 0;   /* [bp-0x14] */
     int furs_penalty = 0;   /* [bp-0x28] */
+    uint16_t rtig_inner = 0; /* [bp-0x2A] output pointer passed to func_009974; written but not read */
 
     /* --- step 1: which good is worked on this tile? --- */
-    int good_id = resolve_tile_good_id(ring_a, ring_b); /* @asm 0x9BB7 CALL 0x9974 */
+    int good_id = (int)func_009974_logic_sz_18((uint16_t)ring_a, (uint16_t)ring_b, &rtig_inner); /* @asm 0x9BB7 CALL 0x9974 */
     *out = good_id;                                     /* @asm 0x9BC3 MOV [bx],ax */
     if (good_id < 0) return 0;                          /* @asm 0x9BC5/0x9BC9 JMP 0x9FF6 */
 
@@ -152,7 +157,7 @@ int compute_terrain_yield(int ring_a, int ring_b, int *out, int flag)
      * NOTE arg order at each LCALL is (col_x, col_y): col_y pushed first
      * (@asm 0x9BD?), col_x pushed second → cdecl param1=col_x. */
     int feat_byte = ov_feature_flags_10E(col_x, col_y) & 0xFF; /* @asm 0x9BEB LCALL 0x37F:0x10E; AL kept */
-    int terrain   = ov_base_terrain_at(col_x, col_y);          /* @asm 0x9BF9 LCALL 0x3E4:0x0E  */
+    int terrain   = func_00624E_logic_sz_8((uint16_t)feat_byte); /* @asm 0x9BF9 LCALL 0x3E4:0x0E: feat_byte → terrain id */
     int resource  = ov_resource_at_4B0(col_x, col_y);          /* @asm 0x9C0A LCALL 0x37F:0x4B0 */
 
     /* --- step 6: base yield from the terrain x good table ---
@@ -364,7 +369,7 @@ void colony_turn_update(void)
     g_table_A896 = 0;       /* @asm 0xA22C MOV [0xA896],AL */
 
     /* @asm 0xA22F..0xA241  LCALL 0x3E4:0x3A(map_x, map_y) → terrain id */
-    int terrain = ov_base_terrain_at(ctx->map_x, ctx->map_y); /* via LCALL 0x3E4:0x3A */
+    int terrain = func_00627A_op_sz_57((uint16_t)ctx->map_x, (uint16_t)ctx->map_y); /* LCALL 0x3E4:0x3A */
 
     /* @asm 0xA247..0xA294  classify terrain → food class 0..3 */
     if (terrain == 0x18) {                              /* @asm 0xA247 sealane/dead */
