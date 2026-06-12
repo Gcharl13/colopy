@@ -756,7 +756,7 @@ pre_test:                                       /* @asm 0x048428 */
     if (idx_s >= 4)                             /* @asm 0x048428 cmp [bp-0x12],4 */
         goto main_section;                      /* @asm 0x04842C jge 0x04846E */
     /* @asm 0x04842E..0x04843D — skip slots whose attribute bit 5 (0x20) is clear. */
-    if ((overlay_call_181F_0A38() & 0x20) == 0) /* @asm 0x048435 attr([0x8D50], j); test al,0x20 */
+    if ((overlay_call_181F_0A38(idx_s, (int16_t)DG16(0x8d50)) & 0x20) == 0) /* @asm 0x048435 attr([0x8D50], j); test al,0x20 */
         goto pre_next;                          /* @asm 0x04843F je 0x048425 */
     /* @asm 0x048441..0x04846C — set up the inner Bernoulli loop for this slot. */
     (void)func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)idx_s); /* @asm 0x048448 scale16 = scale(j,[0x8D52]) */
@@ -792,10 +792,10 @@ main_section:                                   /* @asm 0x04846E */
         /* @asm 0x0484B6..0x0484C8 — magnitude = ((st[5]&0x10)?4:1) << shift_flag. */
         drift = (int16_t)(((st_bound[0x05] & 0x10) ? 4 : 1) << shift_flag); /* @asm 0x0484B8..0x0484C6 */
         /* @asm 0x0484CB..0x0484DC — event 0x18 active on idx_e ? *2. */
-        if (overlay_call_181F_07B4() != 0)      /* @asm 0x0484D0 attr(0x18, idx_e) */
+        if (overlay_call_181F_07B4(idx_e, 0x18) != 0)      /* @asm 0x0484D0 attr(0x18, idx_e) */
             drift <<= 1;                        /* @asm 0x0484DC shl [bp-6],1 */
         /* @asm 0x0484DF..0x0484F0 — event 0x17 active on idx_e ? /2 (signed). */
-        if (overlay_call_181F_07B4() != 0)      /* @asm 0x0484E4 attr(0x17, idx_e) */
+        if (overlay_call_181F_07B4(idx_e, 0x17) != 0)      /* @asm 0x0484E4 attr(0x17, idx_e) */
             drift >>= 1;                        /* @asm 0x0484F0 sar [bp-6],1 */
         /* @asm 0x0484F3..0x0484FD — fold drift into the accumulator byte. */
         st_market = g_market_array_8D4E;        /* @asm 0x0484F6 */
@@ -986,7 +986,7 @@ extern int  overlay_call_181F_04CA(void);   /* 0x181F:0x04CA — seed_rng_from_t
                                              * Cross-ref: overlay_04C306_053BC1.c
                                              * "0x181F:0x4CA -> 0x09EF:0x002C seed_rng_from_timer";
                                              * overlay_0341D6_0388DE.c same. */
-extern int  overlay_call_181F_097A(void);   /* 0x181F:0x097A — per_unit_type0B_gate(unit_idx):
+extern int  overlay_call_181F_097A();   /* 0x181F:0x097A — per_unit_type0B_gate(unit_idx):
                                              * returns non-zero if unit is eligible for the
                                              * Sons-of-Liberty / freedom counter.
                                              * Cross-ref: overlay_04C306_053BC1.c
@@ -1038,10 +1038,10 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
             lift = 1;                                /* @asm 0x048689 */
 
         /* @asm 0x04868E..0x0486B2 — gated 1/((5-diff)*2) chance actually lifts it. */
-        if (lift != 0 && overlay_call_181F_04D4() == 0) {  /* @asm 0x0486AE */
+        if (lift != 0 && overlay_call_181F_09A4((int16_t)DG16(0x8d50)) == 0) {  /* @asm 0x0486AE */
             /* @asm 0x0486B5..0x0486E1 — format the recovered commodity for the log/UI. */
-            overlay_call_181F_09A4();  overlay_call_181F_0438();   /* slot 0 */
-            overlay_call_181F_0A1A();  overlay_call_181F_0438();   /* slot 1 */
+            overlay_call_181F_09A4((int16_t)DG16(0x8d50));  overlay_call_181F_0438();   /* slot 0 */
+            overlay_call_181F_09A4((int16_t)DG16(0x8d50));  overlay_call_181F_0438();   /* slot 1 */
             (void)menu_run_boxed(0x14F6);                          /* @asm 0x0486E3 lea bx,
                                                                     * [0x14F6] "INDIANGRUDGE";
                                                                     * 0x0486E7 lcall 0x181F:
@@ -1123,7 +1123,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
         if (verbose)
             overlay_call_0D1D_0712();                /* @asm 0x048898 log(0x1516, i, x, y) */
         ovly_5411_unit_recover((uint16_t)i);         /* @asm 0x0488A4 */
-        if (overlay_call_181F_097A() != 0) {         /* @asm 0x0488C6 eligible? */
+        if (overlay_call_181F_097A(i) != 0) {        /* @asm 0x0488C3 mov ax,[bp-6]=i; 0x0488C6 reg-arg */
             uint8_t *u = &g_unit_table_3144[i * UNIT_RECORD_STRIDE];
             if (++u[0x16] > 0x14) {                  /* @asm 0x0488D7 unit[+0x16] (abs 0x315A) */
                 overlay_call_181F_0934();            /* @asm 0x0488E3 trip */
@@ -1553,6 +1553,7 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
                           uint16_t arg2_bp_0A)  /* func_048CA4 (absorbs 0x048CF8) */
 {
     int arg1c   = (int)arg1_bp_08;                    /* @asm 0x048CA9 [bp-0x12] your channel */
+    int16_t contested = (int16_t)DG16(0x8D4C);        /* @asm 0x048CBC [bp-8] = saved settlement idx */
     int rivalCh = g_bound_record_8D4A[0x05] & 0x0F;   /* @asm 0x048CB3 [bp-0xE] rival mission channel */
     int myFaith = 0, rivalFaith = 0, aWin = 0, aLose = 0;   /* @asm 0x048CC2 */
     int expertMiss = 0, f10 = 0, f04 = 0;
@@ -1563,7 +1564,7 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
      * scale it by its mission state, and route it into myFaith (your channel arg1c),
      * rivalFaith (the rival channel rivalCh), or the cross terms (aWin/aLose). */
     for (int i = 0; i < g_native_count_539A; i++) {   /* @asm 0x048D4D */
-        overlay_call_181F_0A4C();                     /* @asm 0x048D55 bind settlement(i) */
+        overlay_call_181F_0A4C(i);                    /* @asm 0x048D52 push [bp-0x16]=i; 0x048D55 bind */
         if (g_bound_record_8D4A[0x02] != (uint8_t)arg2_bp_0A)  /* @asm 0x048D64 owner +2 */
             continue;
         int w = 0;
@@ -1581,7 +1582,7 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     }
 
     /* @asm 0x048D92..0x048DC6 — re-bind the contested settlement; mission flags drive scales. */
-    overlay_call_181F_0A4C();                         /* bind([0x8D4C]) */
+    overlay_call_181F_0A4C(contested);               /* @asm 0x048D92 push [bp-8] re-bind contested */
     expertMiss = (g_unit_table_3144[arg0_bp_06 * UNIT_RECORD_STRIDE + 0x17] == 3); /* +0x315B @0x048DA1 */
     f10 = (g_bound_record_8D4A[0x05] & 0x10) != 0;    /* @asm 0x048DBA "blessed" */
     f04 = (g_bound_record_8D4A[0x03] & 0x04) != 0;    /* @asm 0x048DC3 "developed" */
@@ -1597,13 +1598,13 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     }
 
     /* @asm 0x048DFA..0x048E16 — round both buckets via 0x0A60(+1). */
-    myFaith += overlay_call_181F_0A60() + 1;          /* @asm 0x048DFE (myFaith) */
-    aLose   += overlay_call_181F_0A60() + 1;          /* @asm 0x048E0D (rivalFaith) */
+    aWin  += overlay_call_181F_0A60(rivalFaith) + 1;  /* @asm 0x048DFA push [bp-0x14]; add [bp-0x10] */
+    aLose += overlay_call_181F_0A60(myFaith) + 1;     /* @asm 0x048E0A push [bp-0x18]; add [bp-0xC] */
 
     /* @asm 0x048E19..0x048E5C — zeal noise (developed) & expert/blessed doublings. */
     if (f04) {                                        /* @asm 0x048E19 */
-        rivalFaith += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E23 random_int(1,0x14) */
-        myFaith    += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E32 */
+        myFaith    += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E23 -> add [bp-0x18] */
+        rivalFaith += overlay_call_181F_04D4(1, 0x14);       /* @asm 0x048E32 -> add [bp-0x14] */
         aLose <<= 1; aWin <<= 1;                       /* @asm 0x048E40 */
     }
     if (expertMiss) { myFaith <<= 1; aLose <<= 1; }   /* @asm 0x048E4C expert bonus */
@@ -1611,16 +1612,18 @@ int native_mission_heresy(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     /* @asm 0x048E5E..0x048E9E — format the banner fields: STRING0 (your nationality, arg1c),
      * STRING1 (rival faith, rivalCh), STRING2 (the tribe, [0x8D50]). */
-    overlay_call_181F_09A4();  overlay_call_181F_0438();   /* slot 0 (STRING0) */
-    overlay_call_181F_09A4();  overlay_call_181F_0438();   /* slot 1 (STRING1) */
-    overlay_call_181F_09A4();  overlay_call_181F_0438();   /* slot 2 (STRING2) */
+    overlay_call_181F_0438(0, overlay_call_181F_09A4(arg1c));   /* @asm 0x048E5E push [bp-0x12];
+                                              0x9A4 name; push name,0 -> 0x438 slot 0 */
+    overlay_call_181F_0438(1, overlay_call_181F_09A4(rivalCh)); /* @asm 0x048E74 push [bp-0xE] */
+    overlay_call_181F_0438(2, overlay_call_181F_09A4((int16_t)DG16(0x8D50))); /* @asm 0x048E8A */
 
     /* @asm 0x048EA1..0x048EFB — faith roll picks the outcome banner & attitude signs.
-     * @asm 0x048EA1 ax=myFaith([bp-0x14]); 0x048EA4 ax+=rivalFaith([bp-0x18]); roll =
-     * random_int(1, total); @asm 0x048EB2 cmp roll, rivalFaith([bp-0x18]);
-     * @asm 0x048EB5 jg lose.  So the fall-through WIN (HERESY0) arm is roll <= rivalFaith
-     * (compare is byte-exact against [bp-0x18]); roll > rivalFaith => LOSE (HERESY1). */
-    if (overlay_call_181F_04D4() <= rivalFaith) {     /* @asm 0x048EAA roll; @asm 0x048EB2 cmp [bp-0x18] */
+     * @asm 0x048EA1 ax=rivalFaith([bp-0x14]); 0x048EA4 ax+=myFaith([bp-0x18]); roll =
+     * random_int(1, total); @asm 0x048EB2 cmp roll, myFaith([bp-0x18]);
+     * @asm 0x048EB5 jg lose.  WIN (HERESY0) when roll <= myFaith. */
+    if (overlay_call_181F_04D4(1, (int16_t)(rivalFaith + myFaith))
+            <= myFaith) {                             /* @asm 0x048EA1 total=[bp-0x14]+[bp-0x18];
+                                              0x048EAA roll(1,total); 0x048EB2 cmp vs [bp-0x18]=myFaith */
         /* @asm 0x048EB7 — you win: converts burn the rival mission, erect yours. */
         overlay_call_181F_04C0();                     /* @asm 0x048EBA colour white 0x8024 */
         overlay_call_181F_0652();                     /* @asm 0x048EC4 draw(4, 0x153B="HERESY0") */
@@ -2292,7 +2295,7 @@ int colony_commodity_advisor(uint16_t a_bp_06, uint16_t power_slot_bp_08,
     /* @asm 0x04A449..0x04A488 — when free, maybe play the appropriate cue. */
     if (is_free) {
         if (overlay_call_181F_04D4(0, 3) == 0) {        /* @asm 0x04A453 random_int(0,3) */
-            overlay_call_181F_0498();               /* @asm 0x04A45F cue(5) */
+            overlay_call_181F_0498(5);               /* @asm 0x04A45F cue(5) */
             if (g_current_power_8D52 == 0)          /* @asm 0x04A469 */
                 overlay_call_181F_0498(7);           /* @asm 0x04A472 cue(7) */
             if (g_current_power_8D52 == 1)          /* @asm 0x04A47A */
@@ -2832,7 +2835,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         overlay_call_181F_09A4();  overlay_call_181F_0438();      /* slot 0 (tribe arg2 -> STRING0) */
         overlay_call_181F_09A4();  overlay_call_181F_0438();      /* slot 1 (arg1 -> STRING1) */
         overlay_call_181F_0A1A();  overlay_call_181F_0438();      /* slot 2 (cost long / STRING2) */
-        overlay_call_181F_09A4();  overlay_call_181F_0438();      /* slot 3 (target -> STRING3) */
+        overlay_call_181F_0652(0x16e9, 1);  overlay_call_181F_0438();      /* slot 3 (target -> STRING3) */
         overlay_call_181F_0652();                                 /* @asm 0x04B2D6 draw 0x16E9 "INDIANWARFARE" */
 
         /* @asm 0x04B2DE — push the tribe's attitude toward the target by +100. */
@@ -3112,7 +3115,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
     if (owner < 4 && g_power_active_543F[owner * 0x34] == 0 /* @asm 0x04B386 */
                   /* @asm 0x04B38D [0xA2]==0 (sfx enabled) */) {
         /* @asm 0x04B394..0x04B3AE — prompt id by tribe: ==0->7, ==1->6, else 5 */
-        overlay_call_181F_04AC();                /* UI prompt sound(7/6/5) */
+        overlay_call_181F_04AC(5);                /* UI prompt sound(7/6/5) */
     }
 
     /* @asm 0x04B3B6 — unit type; ship classes 0x0D..0x12 get the MADATSHIPS check. */

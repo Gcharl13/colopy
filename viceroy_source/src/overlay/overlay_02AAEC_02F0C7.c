@@ -137,7 +137,7 @@ extern int overlay_call_181F_0182(void);  /* str_append_n(value,buf)            
 extern int overlay_call_181F_02E4(void);  /* iter_next_unit() -> slot or <0        */
 extern int overlay_call_181F_0302(void);  /* colony_visible_to(x,y) == func_02EB46 */
 extern int overlay_call_181F_0352(void);  /* highlight_tile(x,y,x,y,0)             */
-extern int overlay_call_181F_035C(void);  /* cursor->cell: (cursor-base)/stride    */
+extern int overlay_call_181F_035C();  /* cursor->cell: (cursor-base)/stride    */
 extern int overlay_call_181F_03A2(void);  /* get_active_power()                    */
 extern int overlay_call_181F_03C0(void);  /* quick_exit_draw()                     */
 extern int overlay_call_181F_03CA();  /* point_in_rect(x0,w,y,h) -> bool       */
@@ -146,16 +146,16 @@ extern int overlay_call_181F_03E0(void);  /* event payload                      
 extern int overlay_call_181F_03FE(void);  /* draw_msg(handle) -- dynamic-BX sites  */
 extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/menu_runner.c */
 extern int overlay_call_181F_0416(void);  /* draw_text(ds:ptr,attr)                */
-extern int overlay_call_181F_0438(void);  /* string/event dispatch(handle,slot,buf)*/
+extern int overlay_call_181F_0438();  /* string/event dispatch(handle,slot,buf)*/
 extern int overlay_call_181F_045C(void);  /* drain_input(0,redraw)                 */
 extern int overlay_call_181F_0466(void);  /* poll_begin(0)                         */
 extern int overlay_call_181F_0470(void);  /* poll_arm()                            */
 extern int overlay_call_181F_047A(void);  /* timer_arm()                           */
 extern int overlay_call_181F_04B6();  /* draw_label(kind)                      */
-extern int overlay_call_181F_04C0(void);  /* beep(id)                              */
+extern int overlay_call_181F_04C0();  /* beep(id)                              */
 extern int overlay_call_181F_056A(void);  /* leave_screen()                        */
 extern int overlay_call_181F_05B6(void);  /* finish(5)                             */
-extern int overlay_call_181F_0652(void);  /* draw_boxed_text(id5,strID)            */
+extern int overlay_call_181F_0652();  /* draw_boxed_text(id5,strID)            */
 extern int overlay_call_181F_068C(void);  /* set_map_tile(a,b,x,y)                 */
 extern int overlay_call_181F_06B4();  /* site_query(x,y) -> kind               */
 extern int overlay_call_181F_06BE(void);  /* tile_bounds(y,x) -> <0 if oob         */
@@ -170,13 +170,13 @@ extern int overlay_call_181F_07E0(void);  /* iter_units_at(x,y) begin           
 extern int overlay_call_181F_0808();  /* finish_work_order(slot)               */
 extern int overlay_call_181F_08BC();  /* unit_query(2,slot) -> count           */
 extern int overlay_call_181F_089E(void);  /* clear_unit_orders(slot)               */
-extern int overlay_call_181F_092A(void);  /* unit_at_xy(x,y) -> slot               */
+extern int overlay_call_181F_092A();  /* unit_at_xy(x,y) -> slot               */
 extern int overlay_call_181F_0934(void);  /* select_cell(idx)                      */
 extern int overlay_call_181F_0942(void);  /* play_unit_sound(type) [191F window]   */
 extern int overlay_call_181F_095C(void);  /* place_worker(coords,owner,building)->n */
 extern int overlay_call_181F_0966(void);  /* gate -> bool                          */
 extern int overlay_call_181F_0970(void);  /* draw_combat_overlay(power,y,x)        */
-extern int overlay_call_181F_09AE(void);  /* colony_helper(0,ax,0)                 */
+extern int overlay_call_181F_09AE();  /* colony_helper(0,ax,0)                 */
 extern int overlay_call_181F_09BA(void);  /* spawn_unit(1,1,1,y,x)                 */
 extern int overlay_call_181F_09E6(void);  /* get_colony_by_slot(slot) -> *(0x8542) */
 extern int overlay_call_181F_09FC();  /* colony_has_structure(arg) -> bool     */
@@ -184,10 +184,10 @@ extern int overlay_call_181F_0A38(void);  /* diplomacy(a,b) -> bitset           
 extern int overlay_call_181F_0AC4(void);  /* unit_attr(slot,&out)                  */
 extern int overlay_call_181F_0AE2(void);  /* map_mouse_to_tile() -> idx            */
 extern int overlay_call_181F_0B14(void);  /* contact_query(0,colony) -> byte       */
-extern int overlay_call_181F_0B28(void);  /* unit_activity_flag(slot) -> bool      */
+extern int overlay_call_181F_0B28();  /* unit_activity_flag(slot) -> bool      */
 extern int overlay_call_181F_0B32();  /* get_unit_by_index(idx) -> slot        */
 extern int overlay_call_181F_0B64(void);  /* tile_query(idx) -> id or 0xFFFF       */
-extern int overlay_call_181F_0BE6(void);  /* order_arg(cell,unit) / (a,b,unit)     */
+extern int overlay_call_181F_0BE6();  /* order_arg(cell,unit) / (a,b,unit)     */
 extern int overlay_call_181F_0C0E();  /* terrain_class(cell) -> kind           */
 extern int overlay_call_181F_0C22(void);  /* draw helper                           */
 extern int overlay_call_181F_0C36(void);  /* finish_view(a,b)                      */
@@ -215,7 +215,7 @@ extern int overlay_call_191F_01DE(void);
 extern int overlay_call_191F_01D0(void);
 extern int overlay_call_191F_0230(void);  /* list_begin(slot,w,w,handle)          */
 extern int overlay_call_191F_023C(void);  /* open_tooltip_dialog(id,x,y) -> DX:AX */
-extern int overlay_call_191F_0254(void);  /* redraw_map(map_idx)                  */
+extern int overlay_call_191F_0254();  /* redraw_map(map_idx)                  */
 extern int overlay_call_191F_02CE(void);  /* unit_ref_reload(i)                   */
 extern int overlay_call_191F_033C(void);  /* list_highlight(1,id,...)             */
 extern int overlay_call_191F_03B8(void);  /* per-key cmd op (owner)               */
@@ -229,7 +229,7 @@ extern int overlay_call_191F_0428(void);  /* unit_render(slot)                  
 extern int overlay_call_191F_054C(void);  /* finish view (wrapper A)              */
 extern int overlay_call_191F_05E8(void);  /* request_redraw()                     */
 extern int overlay_call_191F_08C6(void);  /* list_add_first(id,...)               */
-extern int overlay_call_191F_08DE(void);  /* show_building_info(id)               */
+extern int overlay_call_191F_08DE();  /* show_building_info(id)               */
 extern int overlay_call_191F_08EC(void);  /* list_set(id,...)                     */
 extern int overlay_call_191F_0902(void);  /* list_action(arg)                     */
 extern int overlay_call_191F_0910(void);  /* list_cursor_step()                   */
@@ -367,7 +367,7 @@ int func_02AAEC_op_sz_63(void)
     case 3: UREC_B(unit_slot * 0x1C + 0x08) = 5; break;  /* @0x02AD30 */
     case 4:                                          /* @0x02AD3C */
         if (UREC_B(unit_slot * 0x1C + 0x0C) != 0) {  /* 0x3150 */
-            overlay_call_181F_0BE6();               /* @0x02AD4E */
+            overlay_call_181F_0BE6(unit_slot, 0);               /* @0x02AD4E */
             overlay_call_191F_0594();               /* @0x02AD5E near 0x7DD9 */
         }
         break;
@@ -405,7 +405,7 @@ int func_02AD8E_op_sz_121(void)
     if (g_int_mode_07F4 == 0) return 0;             /* @0x02AE03 */
     if (g_drag_active_A88C == 0) {                  /* @0x02AE08 no drag */
         overlay_call_181F_0B32((int16_t)DG16(0x33e));                   /* @0x02AE13 from = get_unit_by_index([0x33E]) */
-        overlay_call_181F_0B32();                   /* @0x02AE21 to   = get_unit_by_index(cell) */
+        overlay_call_181F_0B32(cell);                   /* @0x02AE21 to   = get_unit_by_index(cell) */
         overlay_call_181F_03A2();                   /* @0x02AE2C get_active_power */
         overlay_call_191F_0594();                   /* @0x02AE3F near 0x7E7E (move) */
     } else {                                        /* @0x02AE44 drag active */
@@ -497,7 +497,7 @@ int func_02AFCE_logic_sz_41(void)
         g_submode_032E = 2;                         /* @0x02AFE0 */
         overlay_call_191F_0774();                   /* @0x02AFE7 near 0x7EAB */
     }
-    hit = (overlay_call_181F_03CA() != 0) ? 1 : 0;  /* @0x02AFEE point_in_rect */
+    hit = (overlay_call_181F_03CA(0x7f, 0xa5, 0x48, 0x16) != 0) ? 1 : 0;  /* @0x02AFEE point_in_rect */
     if (g_flag_07EC != 0 || g_screen_mode_8D54 != 7)/* @0x02B00A/0x02B011 */
         g_btn_hit_A88B = hit;                       /* @0x02B018 */
     if (g_btn_hit_A88B == 0) {                      /* @0x02B01E */
@@ -536,7 +536,7 @@ int func_02B046_op_sz_56(void)
 
     overlay_call_181F_0438();                       /* @0x02B098 dispatch(name_handle,0,namebuf) */
     namebuf[0] = 0;                                 /* @0x02B0A0 */
-    if (overlay_call_181F_0B28() &&                 /* @0x02B0A4 activity flag */
+    if (overlay_call_181F_0B28(unit_slot) &&                 /* @0x02B0A4 activity flag */
         UREC_B(unit_slot * 0x1C + 0x17) != 0x1C) {  /* +0x315B != 0x1C */
         overlay_call_181F_0178(); overlay_call_181F_011E(); /* @0x02B0C4/0x02B0D0 */
         overlay_call_181F_016E();                   /* @0x02B0E2 append profession glyph [bx-0x715C]*/
@@ -604,7 +604,7 @@ int func_02B2A0_dialog_close_199(void)
             if (g_popup_07E4 == 0) {                /* @0x02B32A */
                 overlay_call_191F_06F0();           /* @0x02B332 near 0x7E51 */
             } else if (g_w8D72 != 0) {              /* @0x02B338 */
-                overlay_call_181F_092A();           /* @0x02B346 unit_at_xy */
+                overlay_call_181F_092A((int16_t)DG16(0x8d78), (int16_t)DG16(0x8d7a));           /* @0x02B346 unit_at_xy */
                 overlay_call_191F_0942();           /* @0x02B355 sound(type) */
                 overlay_call_191F_0684();           /* @0x02B35E near 0x7E3D */
             }
@@ -636,7 +636,7 @@ int func_02B368_op_sz_45(uint16_t arg0_bp_0A)
     int kind, attr, defbonus, extra = 0;            /* [bp-0x56]/[bp-0x58]/[bp-4]/[bp-2] */
 
     if (unit_slot == -1) {                          /* @0x02B374 */
-        overlay_call_181F_0022();                   /* @0x02B37A fmt(item_id,[0x93A8]) */
+        overlay_call_181F_0022((int16_t)DG16(0x93a8));                   /* @0x02B37A fmt(item_id,[0x93A8]) */
         goto emit;                                  /* @0x02B388 */
     }
     kind = overlay_call_181F_0CC2(arg0_bp_0A, 0);                /* @0x02B391 unit_class */
@@ -904,12 +904,12 @@ int func_02B9DC_op_sz_72(void)
 
     if (g_screen_mode_8D54 == 7) {                  /* @0x02B9E1 */
         if (g_int_mode_07F4 != 0 && g_drag_active_A88C == 0) { /* @0x02B9E8/0x02B9F2 */
-            overlay_call_181F_0B32();               /* @0x02B9FC get_unit_by_index([0x33E]) */
+            overlay_call_181F_0B32((int16_t)DG16(0x33e));               /* @0x02B9FC get_unit_by_index([0x33E]) */
             overlay_call_191F_0594();               /* @0x02BA1B near 0x7DD9 commit */
             return 0;
         }
         if (g_drag_active_A88C != 0) return 0;      /* @0x02BA02 */
-        cell = overlay_call_181F_035C() / 0x13;     /* @0x02BA24 (X)/0x13 */
+        cell = overlay_call_181F_035C((int16_t)DG16(0x7e8), 0, 0x131) / 0x13;     /* @0x02BA24 (X)/0x13 */
         if (cell >= 0x10) return 0;                 /* @0x02BA3E */
         if (g_flag_07F6 == 0) {                     /* @0x02BA46 */
             g_b_0B9D = 1;                           /* @0x02BA4D */
@@ -1095,10 +1095,10 @@ int func_02BC72_logic_sz_50(uint16_t arg0_bp_06)
             overlay_call_191F_08DE();               /* @0x02BD90 show_building_info(b) */
             break;
         }
-        case 2: if (g_count_033C != 0) overlay_call_181F_0B32(); break; /* @0x02BD98 */
+        case 2: if (g_count_033C != 0) overlay_call_181F_0B32((int16_t)DG16(0x33e)); break; /* @0x02BD98 */
         case 3:                                     /* @0x02BDAE */
             if (g_w8D72 != 0) {
-                overlay_call_181F_092A();           /* @0x02BDBC unit_at_xy */
+                overlay_call_181F_092A((int16_t)DG16(0x8d78), (int16_t)DG16(0x8d7a));           /* @0x02BDBC unit_at_xy */
                 overlay_call_191F_0942();           /* @0x02BDCE sound(type) */
             }
             break;
@@ -1192,13 +1192,13 @@ int func_02C5D4_colony_sz_592(uint16_t arg0_bp_06)
     overlay_call_181F_0C72();                       /* @0x02C60A draw base */
     g_w0890 = 1;                                     /* @0x02C60F */
     overlay_call_191F_0774();                       /* @0x02C616 near 0x7EA1 */
-    if (g_w034A >= 0) overlay_call_181F_0BBE();      /* @0x02C620 prev backdrop */
+    if (g_w034A >= 0) overlay_call_181F_0BBE((int16_t)DG16(0x34a), 0);      /* @0x02C620 prev backdrop */
     overlay_call_191F_0510();                       /* @0x02C62F near 0x7DA2 */
     overlay_call_191F_0648();                       /* @0x02C635 near 0x7E24(1) */
     if (g_w034A >= 0) {                              /* @0x02C63B */
         overlay_call_181F_0BBE((int16_t)DG16(0x34a), 1); overlay_call_191F_0510(); /* @0x02C648 */
         overlay_call_191F_0648();                   /* @0x02C657 near 0x7E24(0) */
-        overlay_call_181F_04C0(); overlay_call_181F_03EA(); /* @0x02C660/0x02C667 */
+        overlay_call_181F_04C0(); overlay_call_181F_04C0(0x54); /* @0x02C660/0x02C667 */
     }
     if (g_w0B98 != 0) { overlay_call_181F_03C0(); goto cleanup; } /* @0x02C66F/0x02C676 */
 
@@ -1269,7 +1269,7 @@ loop_simple: /* @0x02C85C */
         }
         if (g_w0344 != 0 && g_flag_07EE == 0)       /* @0x02C8DD/0x02C8E4 */
             overlay_call_191F_05F4();               /* @0x02C8EC near 0x7E01 */
-        if (g_flag_07EC != 0) { overlay_call_181F_0056(); overlay_call_191F_0840(); } /*@0x02C8F4*/
+        if (g_flag_07EC != 0) { overlay_call_181F_0056(0); overlay_call_191F_0840(); } /*@0x02C8F4*/
         if (overlay_call_181F_009C() != 0) overlay_call_191F_0840(); /* @0x02C909 */
         func_02C546_logic_sz_141();                 /* @0x02C91B button releases */
         overlay_call_181F_045C();                   /* @0x02C924 drain */
@@ -1278,7 +1278,7 @@ loop_simple: /* @0x02C85C */
 cleanup: /* @0x02C933 */
     overlay_call_191F_05F4();                       /* @0x02C934 near 0x7E01 */
     overlay_call_181F_0056(0);                       /* @0x02C939 palette(0) */
-    if (g_w0348 != 0) overlay_call_191F_0254();     /* @0x02C941 redraw_map([0x8DC6]) */
+    if (g_w0348 != 0) overlay_call_191F_0254((int16_t)DG16(0x8dc6));     /* @0x02C941 redraw_map([0x8DC6]) */
     g_w034E = (int16_t)0xFFFF;                      /* @0x02C954 */
     g_w0070 = 0;                                    /* @0x02C95A */
     overlay_call_191F_096C();                       /* @0x02C960 */
@@ -1361,7 +1361,7 @@ int func_02D0E4_colony_sz_23(void)
 
     klass = overlay_call_181F_0CC2();               /* @0x02D0F7 unit_class(&building,ctx->[0x94])*/
     if (klass == 0) goto redraw;                    /* @0x02D102 */
-    if (klass == 1 && overlay_call_181F_09FC() != 0) goto redraw; /* @0x02D111 */
+    if (klass == 1 && overlay_call_181F_09FC(building) != 0) goto redraw; /* @0x02D111 */
 
     if (building == 0x10 && CB(0x95) >= 2) {        /* @0x02D123 warehouse cap */
         g_msg_toggle_A898 |= loadimg_msgbox();      /* @0x02D149 "NOMOREWAREHOUSE"(0xD52)*/
@@ -1376,7 +1376,7 @@ int func_02D0E4_colony_sz_23(void)
         CB(0x96)++;                                  /* @0x02D188 */
         if (building == 0x1F) goto place;           /* @0x02D18C */
     }
-    overlay_call_181F_0BBE();                       /* @0x02D19A backdrop add(1,building) */
+    overlay_call_181F_0BBE(building, 1);                       /* @0x02D19A backdrop add(1,building) */
     CB(0x1C) |= 0x80;                                /* @0x02D1A6 */
     if (klass != 2) goto place;                     /* @0x02D1AA */
 
@@ -1693,8 +1693,8 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         overlay_call_181F_0D26();                   /* seed_building(1, start_bldg[i]) */
 
     overlay_call_0D1D_0DAE();                       /* @0x02ECCC memset(ctx+0x84,0,6) */
-    overlay_call_181F_0BBE();                       /* @0x02ECDF backdrop(1,0x23) */
-    overlay_call_181F_0BBE();                       /* @0x02ECED backdrop(1,9) */
+    overlay_call_181F_0BBE(0x23, 1);                       /* @0x02ECDF backdrop(1,0x23) */
+    overlay_call_181F_0BBE(9, 1);                       /* @0x02ECED backdrop(1,9) */
     overlay_call_181F_0C22();                       /* @0x02ECF7 */
     overlay_call_0D1D_0DAE();                       /* @0x02ED00 memset(ctx+0x9A,0,0x20) work map*/
     overlay_call_0D1D_0DAE();                       /* @0x02ED0F memset(ctx+0x70,0xFF,0x14) */

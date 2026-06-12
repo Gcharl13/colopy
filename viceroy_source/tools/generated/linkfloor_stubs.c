@@ -531,6 +531,7 @@ __attribute__((weak)) long overlay_call_191F_0A4A(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_191F_0A74(void) { viceroy_stub_hit("overlay_call_191F_0A74"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0AC8(void) { viceroy_stub_hit("overlay_call_191F_0AC8"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0AD4(void) { viceroy_stub_hit("overlay_call_191F_0AD4"); return 0; }
+__attribute__((weak)) long overlay_call_191F_0AE0(void) { viceroy_stub_hit("overlay_call_191F_0AE0"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0AEE(void) { viceroy_stub_hit("overlay_call_191F_0AEE"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0B42(void) { viceroy_stub_hit("overlay_call_191F_0B42"); return 0; }
 __attribute__((weak)) long overlay_call_191F_0C06(void) { viceroy_stub_hit("overlay_call_191F_0C06"); return 0; }
@@ -1365,7 +1366,6 @@ __attribute__((weak)) long ui_refresh_colony(void) { viceroy_stub_hit("ui_refres
 __attribute__((weak)) long ui_select_on_map(void) { viceroy_stub_hit("ui_select_on_map"); return 0; }
 __attribute__((weak)) long ui_set_channel(void) { viceroy_stub_hit("ui_set_channel"); return 0; }
 __attribute__((weak)) long ui_show_message(void) { viceroy_stub_hit("ui_show_message"); return 0; }
-__attribute__((weak)) long ui_show_message2(void) { viceroy_stub_hit("ui_show_message2"); return 0; }
 __attribute__((weak)) long ui_show_message_0(void) { viceroy_stub_hit("ui_show_message_0"); return 0; }
 __attribute__((weak)) long ui_show_message_3(void) { viceroy_stub_hit("ui_show_message_3"); return 0; }
 __attribute__((weak)) long ui_show_message_h(void) { viceroy_stub_hit("ui_show_message_h"); return 0; }

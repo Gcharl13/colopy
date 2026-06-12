@@ -226,11 +226,11 @@ int func_0612E6_trade_route_delete(void)
          * 0x5237 (the "is this a trade-route-carrying unit type" marker). */
         if (DGB(t * 14 + 0x5237) == 0)                  /* @asm 0x06136E cmp [bx+0x5237],0 */
             continue;                                    /* @asm 0x061373 je next */
-        dst = overlay_call_181F_0858();                  /* @asm 0x061378 0x181F:0x858 route-of-unit */
+        dst = overlay_call_181F_0858(u);                  /* @asm 0x061378 0x181F:0x858 route-of-unit */
         if (dst != sel)                                  /* @asm 0x061383 cmp ax,[bp-2] */
             continue;
-        overlay_call_181F_0862();                        /* @asm 0x06138D detach (0,u) */
-        overlay_call_181F_08B2();                        /* @asm 0x06139A fixup  (0,u) */
+        overlay_call_181F_0862(u, 0);                        /* @asm 0x06138D detach (0,u) */
+        overlay_call_181F_08B2(u, 0);                        /* @asm 0x06139A fixup  (0,u) */
         if (U_FLAG8(u) == 2)                             /* @asm 0x0613A6 [bx+0x314c]==2 */
             U_FLAG8(u) = 0;                              /* @asm 0x0613AD clear */
     }
@@ -1924,7 +1924,7 @@ int func_065D26_postgen_large(void)
             (void)(random_int(0, 0xe) + bias);           /* @asm 0x065D8E..0x065D98 slot value */
         }
         /* @asm 0x065DFC..0x065E19 : zero 0xc more flag bytes + 0x10 word slots. */
-        overlay_call_181F_0A42();                        /* @asm 0x065E28 per-tribe setup */
+        overlay_call_181F_0A42(ent);                        /* @asm 0x065E28 per-tribe setup */
         overlay_call_191F_091C();                        /* @asm 0x065E30 */
         (void)overlay_call_1A1F_088A();  /* @asm 0x065E35 prop 0 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */
         (void)overlay_call_1A1F_088A();  /* @asm 0x065E3A prop 1 [0x1A1F:0x88A = names_read_int_byte -> ovl 24+0x198 ~ file 0x787DC (AMBIG base); old 0x25A98 target RETRACTED 2026-06-10] */

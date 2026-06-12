@@ -839,7 +839,7 @@ int func_05FEF4_unit_adjacent_to_active_colony(uint16_t arg0_mode,
     }
     /* third test 0x181F:0x06B4 against scratch coord 0x8DBA/0x8DBC.
      * @asm 0x05FF8E..0x05FFA0 */
-    probe = (uint8_t)overlay_call_181F_06B4(/* [0x8DBA], [0x8DBC] */);
+    probe = (uint8_t)overlay_call_181F_06B4((int16_t)DG16(0x8dba), (int16_t)DG16(0x8dbc));
 
 eval:
     if (arg0_mode != 0x3E7) {                        /* @0x05FFA3 */
@@ -847,7 +847,7 @@ eval:
          * then 0x181F:0x06B4; equal probe -> result=1. @0x05FFAA..0x05FFD4 */
         if (overlay_call_181F_0D12(/* colony_x, colony_y */) == 0)
             goto done;                               /* @0x05FFBF */
-        if ((uint8_t)overlay_call_181F_06B4(/* [0x8DBA],[0x8DBC] */) == (uint8_t)probe)
+        if ((uint8_t)overlay_call_181F_06B4((int16_t)DG16(0x8dba), (int16_t)DG16(0x8dbc)) == (uint8_t)probe)
             result = 1;                              /* @0x05FFD4 -> 0x06001B */
         goto done;
     }
@@ -1865,7 +1865,7 @@ int func_0610B0_found_new_colony(void)
         tile[0x20] = (uint8_t)force_flag;            /* @0x06127B colony id / force byte */
         tile[0x21] = 2;                              /* @0x061286 tile stack-count = 2 */
     }
-    func_061409(0);                             /* @0x06128B (0x191F:0xA4A) */
+    overlay_call_181F_09AE(0, 2, 0);                             /* @0x06128B (0x191F:0xA4A) */
     func_061422(/* cand */);                          /* @0x061294 (0x1A1F:0x738) */
 
     overlay_call_181F_09AE();                         /* score_accum(0,2,0) @0x06129E */

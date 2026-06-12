@@ -5,11 +5,11 @@ Externally-undefined symbols in `libviceroy_rules.a`: **2225**
 | category | count | how it closes |
 |---|--:|---|
 | dgroup_global | 444 | byte-exact `g_dgroup` alias (linkfloor.ld) — DONE on link |
-| overlay_thunk | 869 | wire to resolved target, else port the overlay leaf |
+| overlay_thunk | 870 | wire to resolved target, else port the overlay leaf |
 | func_body | 161 | port the original `func_0XXXXX` body |
-| named_gap | 751 | implement, or re-include excluded render/ audio/ source |
+| named_gap | 750 | implement, or re-include excluded render/ audio/ source |
 
-Of 869 overlay thunks, **397** already have a resolved target name in `thunk_signatures.json` (ready to wire).
+Of 870 overlay thunks, **398** already have a resolved target name in `thunk_signatures.json` (ready to wire).
 
 ## Generated artifacts
 - `tools/generated/linkfloor.ld` — byte-exact DGROUP-global aliases

@@ -226,7 +226,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
 
     refresh:
         /* @0x03C620..0x03C628  unit_slot_refresh(i)  (thunk 0x808) */
-        overlay_call_181F_0808(); /* (i) */
+        overlay_call_181F_0808(i); /* (i) */
     }
 
     /* @0x03C634..0x03C636  pop si / leave / retf */
@@ -410,8 +410,8 @@ int func_03C638_logic_sz_73(void)
 
     /* @0x03C900..0x03C92F  finalize: recompute both powers' derived state,
      *   mark loser defeated, make loser the active player, redraw. */
-    overlay_call_191F_0A74(); /* power_recompute(loser) */
-    overlay_call_191F_0A74(); /* power_recompute(winner) */
+    overlay_call_191F_0A74(loser); /* power_recompute(loser) */
+    overlay_call_181F_0E1C(1); /* power_recompute(winner) */
     G8((uint16_t)loser * 0x34 + 0x543F) = 2;            /* @0x03C91A defeated=2 */
     G16(0x53D2) = (uint16_t)loser;                      /* @0x03C922 active=loser */
     overlay_call_181F_0E1C(1); /* redraw(1) */
@@ -499,7 +499,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (overlay_call_181F_0768() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ == 0) {
             /* @0x03C942..0x03C957  msg_show(1, 0x12A2); unit_slot_refresh(i) */
             overlay_call_181F_0652(); /* msg_show(1, 0x12A2 "SEIZURELAND") */
-            overlay_call_181F_0808(); /* (i) */
+            overlay_call_181F_0652(0x12a2, 1); /* (i) */
             continue;                 /* @0x03C9EB jmp 0x03C942 (re-enters @ next dec) */
         }
 
@@ -597,14 +597,14 @@ int func_03CA2A_colony_with_input(void)
     }
 
     /* @0x03CA88..0x03CA99  if (colony_has_structure(2)) value *= 2; */
-    if (overlay_call_181F_09FC() /* (2) */ != 0) {
+    if (overlay_call_181F_09FC(2) /* (2) */ != 0) {
         value <<= 1;                  /* @0x03CA96 shl [bp-4],1 */
         goto clamp;                   /* @0x03CA99 jmp 0x03CAB8 */
     }
 
     /* @0x03CA9C..0x03CAB5  else if (colony_has_structure(1))
      *      value = (value*3) >> 1;   (×1.5 for the lesser fortification) */
-    if (overlay_call_181F_09FC() /* (1) */ != 0) {
+    if (overlay_call_181F_09FC(1) /* (1) */ != 0) {
         value = (int16_t)((value * 3) >> 1);
     }
 
@@ -1212,7 +1212,7 @@ p1_test:
         goto done;                                   /* jmp 0x25c5 */
 
     /* ---- PHASE 2: population-weighted pick --------------------------------*/
-    roll = (int16_t)overlay_call_181F_04D4(); /* random_int(1, total_pop) @0x03D57E */
+    roll = (int16_t)overlay_call_181F_04D4(1, total_pop); /* random_int(1, total_pop) @0x03D57E */
     cslot = -1;                                      /* @0x03D589 chosen = -1 */
     for (i = 0; i < n_col; ++i) {                    /* @0x03D596..0x03D5C1 */
         roll -= pop[i];                              /* @0x03D5A6 */
@@ -1323,7 +1323,7 @@ p1_test:
 
     /* ---- EPILOGUE --------------------------------------------------------*/
     if (arg0_bp_06 == 0 && lead_unit >= 0)           /* @0x03D92E/@0x03D934 */
-        overlay_call_181F_0808(); /* refresh lead unit @0x03D93D */
+        overlay_call_181F_0808(lead_unit); /* refresh lead unit @0x03D93D */
 
 done:
     /* @0x03D945..0x03D947  pop si / leave / retf */
@@ -1659,8 +1659,8 @@ int func_03DE46_op_sz_138(void)
 
     /* @0x03E0B6..0x03E10F  current player at war + announce */
     G8((uint16_t)G16(0x53D2) * 0x34 + 0x543F) = 1;   /* @0x03E0B6 */
-    overlay_call_181F_0A06(); /* power_set_flag(power, cur, 0x22) @0x03E0CA */
-    overlay_call_181F_0A10(); /* power_set_flag(power, cur, 0x40) @0x03E0DC */
+    overlay_call_181F_0A06(power, (int16_t)DG16(0x53d2), 0x22); /* power_set_flag(power, cur, 0x22) @0x03E0CA */
+    overlay_call_181F_0A10(power, (int16_t)DG16(0x53d2), 0x40); /* power_set_flag(power, cur, 0x40) @0x03E0DC */
     overlay_call_181F_0E1C(1); /* redraw(1) @0x03E0E4 */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &AIPersonality[power*0x34+0x540E], 0) */
     overlay_call_181F_0652(); /* msg_show(1, 0x130B) @0x03E104 */
@@ -1923,7 +1923,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
         return 0;
 
     /* @0x03E4E8..0x03E4F8  1/3 chance to make an offer at all */
-    if (overlay_call_181F_04D4() /* random_int(0,2) */ != 0)
+    if (overlay_call_181F_04D4(0, 2) /* random_int(0,2) */ != 0)
         return 0;
 
     /* @0x03E4FB..0x03E512  clear the 4-word scratch array @0x9E46 */
@@ -1939,7 +1939,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
 
     /* @0x03E54C..0x03E57E  price */
     {
-        int16_t r6  = (int16_t)overlay_call_181F_04D4(); /* random_int(0,6) */
+        int16_t r6  = (int16_t)overlay_call_181F_04D4(0, 6); /* random_int(0,6) */
         int16_t mul = (int16_t)(((uint8_t)G8(0x53A6) + 3) * 2 + r6);
         int16_t qty = (int16_t)((G16(0x9E4C) + G16(0x9E48)) * 2 + G16(0x9E46));
         price = (int32_t)((int16_t)(mul * 0x64)) * qty;
@@ -2053,8 +2053,8 @@ int func_03E664_logic_sz_15(void)
         G16((uint16_t)i * 2 - 0x61BA) = 0;            /* 0x9E46.. */
 
     /* @0x03E6C8..0x03E707  roll package */
-    G16(0x9E46) = (uint16_t)overlay_call_181F_04D4(); /* random_int(3,1) */
-    if (overlay_call_181F_04D4() /* random_int(1,0) */ == 0)
+    G16(0x9E46) = (uint16_t)overlay_call_181F_04D4(1, 3); /* random_int(3,1) */
+    if (overlay_call_181F_04D4(1, 3) /* random_int(1,0) */ == 0)
         G16(0x9E46)++;                                /* @0x03E6E7 */
     G16(0x9E4C) = 1;                                  /* @0x03E6EE */
     if (overlay_call_181F_04D4() /* random_int(0,1) */ == 0)
@@ -2062,7 +2062,7 @@ int func_03E664_logic_sz_15(void)
 
     /* @0x03E707..0x03E739  price */
     {
-        int16_t r6  = (int16_t)overlay_call_181F_04D4(); /* random_int(0,6) */
+        int16_t r6  = (int16_t)overlay_call_181F_04D4(0, 6); /* random_int(0,6) */
         int16_t mul = (int16_t)(((uint8_t)G8(0x53A6) + 4) * 2 + r6);
         int16_t qty = (int16_t)((G16(0x9E4C) + G16(0x9E48)) * 2 + G16(0x9E46));
         price = (int32_t)((int16_t)(mul * 0x64)) * qty;
@@ -2277,7 +2277,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
 
     result = 0; n = 0;                                /* @0x03F94B */
     if (arg1_bp_0A != 0)                              /* @0x03F953 */
-        overlay_call_181F_08C6(); /* (arg0) */
+        overlay_call_181F_08C6(arg0_bp_06); /* (arg0) */
 
     /* @0x03F963..0x03F9BC  gather headroom for each land unit */
     overlay_call_181F_02EE(); /* iter_begin(arg0) */
@@ -2663,7 +2663,7 @@ int func_04002C_op_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
     G8(rec + 0x314B) = 0x2D;                          /* @0x040061 */
     G8(rec + 0x3150) = 0;                             /* @0x040066 */
 
-    overlay_call_181F_0844(); /* set_unit_pos(slot, x, y) @0x040074 */
+    overlay_call_181F_0844(slot, arg1_bp_08, arg2_bp_0A); /* set_unit_pos(slot, x, y) @0x040074 */
 
     return slot;                                      /* @0x040079 AX = slot */
 }
@@ -2836,14 +2836,14 @@ int func_04057A_op_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
 
     /* @0x040596..0x0405C4  prev = baseline(a,powerIdx,x,y); cur = metric(powerIdx) */
     prev = (int32_t)overlay_call_181F_0D78(); /* (a, powerIdx, x, y) */
-    cur  = (int32_t)overlay_call_181F_0A92(); /* (powerIdx) */
+    cur  = (int32_t)overlay_call_181F_0D78(arg0_bp_06, arg1_bp_08, arg2_bp_0A, arg3_bp_0C); /* (powerIdx) */
 
     /* @0x0405C4..0x0405D3  if ((cur - prev) >= prev/2) -> act */
     if ((cur - prev) >= (prev >> 1)) {               /* @0x0405CD..0x0405E3 */
         /* @0x0405D5..0x0405F8  perform action + bump counter + draw marker */
         overlay_call_181F_0AF6(); /* action(powerIdx, prev_hi, prev_lo) */
         G8(G16(0x8D4E) + 5)++;                        /* @0x0405E6 counter++ */
-        overlay_call_181F_068C(); /* draw_marker(x, y, 0x10, 1) */
+        overlay_call_181F_068C(arg2_bp_0A, arg3_bp_0C, 0x10, 1); /* draw_marker(x, y, 0x10, 1) */
         ret = 1;                                      /* @0x0405FB */
     }
     return ret;
@@ -3040,9 +3040,9 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
             int16_t def = (int16_t)(uint8_t)G8((uint16_t)(terr << 4) + 0x2F80);
             int16_t dmg;
             colony = G16(0x8542);
-            if (overlay_call_181F_0754() /* flags(colony.Y,colony.X) */ & 0x0A)
+            if (overlay_call_181F_09FC(0x24) /* flags(colony.Y,colony.X) */ & 0x0A)
                 ++def;                                /* @0x0407CB */
-            if (overlay_call_181F_09FC() /* colony_has_structure(0x24) fort */ == 0)
+            if (overlay_call_181F_09FC(0x24) /* colony_has_structure(0x24) fort */ == 0)
                 def = 1;                              /* @0x0407DC */
             dmg = (int16_t)(overlay_call_181F_0D3A() - (int16_t)G16(colony + 0xA4));
             {
@@ -3083,8 +3083,8 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     newpos = (int16_t)overlay_call_181F_0D84((uint16_t)ux, (uint16_t)uy, -1, (uint16_t)region); /* @0x040908 nearest_settlement(ux,uy,-1,region) */
     if (newpos < 0) goto done;                        /* @0x04090C */
     if (overlay_call_181F_0754() /* flags(uy,ux) */ & 0x10) goto done;  /* @0x04091F */
-    if ((int16_t)overlay_call_181F_0696() /* bounds(uy,ux) */ < 0) goto done; /* @0x040936 */
-    if ((int16_t)G16(0x8DB8) > (int16_t)overlay_call_181F_0A56()) goto done;  /* @0x040947 */
+    if ((int16_t)overlay_call_181F_0A56((int16_t)DG16(0x8d52)) /* bounds(uy,ux) */ < 0) goto done; /* @0x040936 */
+    if ((int16_t)G16(0x8DB8) > (int16_t)overlay_call_181F_07B4(owner, 2)) goto done;  /* @0x040947 */
     if (overlay_call_181F_07B4() /* ownership(2,owner) */ != 0) goto done;    /* @0x04095D */
     if (func_04172D() /* near 0x172D(uy,ux,owner,newpos) */ != 0) goto done;  /* @0x040974 */
 
@@ -3285,8 +3285,8 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     newpos = (int16_t)overlay_call_181F_0D84((uint16_t)ux, (uint16_t)uy, -1, (uint16_t)region); /* step_unit(region,-1,uy,ux) */
     if (newpos < 0) goto done;                        /* @0x040B4F */
     if (overlay_call_181F_0754() /* flags(uy,ux) */ & 0x10) goto done;  /* @0x040B62 */
-    if ((int16_t)overlay_call_181F_0696() /* bounds(uy,ux) */ < 0) goto done; /* @0x040B77 */
-    if ((int16_t)overlay_call_181F_0A56() /* terr_lim([0x8D52]) */ < (int16_t)G16(0x8DB8))
+    if ((int16_t)overlay_call_181F_0A56((int16_t)DG16(0x8d52)) /* bounds(uy,ux) */ < 0) goto done; /* @0x040B77 */
+    if ((int16_t)overlay_call_181F_0A56((int16_t)DG16(0x8d52)) /* terr_lim([0x8D52]) */ < (int16_t)G16(0x8DB8))
         goto done;                                    /* @0x040B90 */
     if (func_04172D() /* near 0x172D(uy,ux,owner,newpos) */ != 0) goto done;  /* @0x040BAB */
     if (overlay_call_181F_07B4() /* ownership(2,owner) */ != 0) goto done;    /* @0x040BBC */

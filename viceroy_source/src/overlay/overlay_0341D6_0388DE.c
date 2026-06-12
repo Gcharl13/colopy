@@ -822,7 +822,7 @@ int func_036138_king_event_selector(void)
     } else if (v < 0x44C) {                          /* @0x036332 CMP ...,0x44C / JGE */
         /* KINGNAVACT(0x1178); naval activities.  r2=random_int(3,4). @0x036332..0x036346
          * PowerRecord[+0x10] = r2. */
-        overlay_call_181F_04D4();                    /* @0x036339 random_int(3,4) */
+        overlay_call_181F_04D4(3, 4);                    /* @0x036339 random_int(3,4) */
     } else {
         /* KINGSTAMPACT(0x1183); stamp act.       r2=random_int(5,8). @0x03634E..0x03637D
          * format_player_name(0x5426+player*0x34, 2). PowerRecord[+0x10] = r2. */

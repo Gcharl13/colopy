@@ -210,7 +210,7 @@ void func_031F80(int a, int b, int yesno, int c)
     hud_print_7e(c * b);                                 /* @asm 0x031FB9 */
     hud_print_74(G16(0x93A0));                           /* @asm 0x031FC8 */
     hud_print_6a(/*ds*/0, 0xFC3);                        /* @asm 0x031FD4 text key 0xFC3 */
-    overlay_call_181F_0B5A(/* g_active_power_index */);  /* @asm 0x031FE0 */
+    overlay_call_181F_0B5A((int16_t)DG16(0x9e12));  /* @asm 0x031FE0 */
     hud_print_88();                                      /* @asm 0x031FEC */
     hud_print_6a(/*ds*/0, 0xFC5);                        /* @asm 0x031FF1 text key 0xFC5 */
     hud_helper_6D50(0, 0, 1);                            /* @asm 0x031FFD finish(1,0,0) */
@@ -243,12 +243,12 @@ int func_03200A(void)
 {
     int r = 0xF;                                         /* @asm 0x032010 default */
     if (point_in_rect(0x131, 0xB3, 0xF, 0x15)) return 0xB; /* @asm 0x03201A..0x032027 */
-    if (point_in_rect(0x119, 0x59, 0x25, 0x20)) return 5;  /* @asm 0x03203A..0x032047 */
-    if (point_in_rect(0,     0xB3, 0x131, 0x15)) return 0; /* @asm 0x03205C..0x032068 */
-    if (point_in_rect(0x8F,  0x76, 0x51, 0x3C)) return 1;  /* @asm 0x03207A..0x032087 */
-    if (point_in_rect(0x48,  0x76, 0x46, 0x33)) return 2;  /* @asm 0x03209A..0x0320A6 */
-    if (point_in_rect(1,     0x76, 0x46, 0x33)) return 3;  /* @asm 0x0320B8..0x0320C4 */
-    if (point_in_rect(0xE0,  0x78, 0x60, 0x3B)) return 4;  /* @asm 0x0320D4..0x0320E1 */
+    if (overlay_call_181F_03CA(0x119, 0x59, 0x25, 0x20)) return 5;  /* @asm 0x03203A..0x032047 */
+    if (overlay_call_181F_03CA(0, 0xb3, 0x131, 0x15)) return 0; /* @asm 0x03205C..0x032068 */
+    if (overlay_call_181F_03CA(0x8f, 0x76, 0x51, 0x3c)) return 1;  /* @asm 0x03207A..0x032087 */
+    if (overlay_call_181F_03CA(0x48, 0x76, 0x46, 0x33)) return 2;  /* @asm 0x03209A..0x0320A6 */
+    if (overlay_call_181F_03CA(1, 0x76, 0x46, 0x33)) return 3;  /* @asm 0x0320B8..0x0320C4 */
+    if (overlay_call_181F_03CA(0xe0, 0x78, 0x60, 0x3b)) return 4;  /* @asm 0x0320D4..0x0320E1 */
     return r;                                            /* @asm 0x0320E8 */
 }
 
@@ -630,7 +630,7 @@ void ov_panel_geom_init(void)
  *  if (g_inwar?[0x892] && !g_busy?[0xFA2]):              @asm 0x0324FC..0x032508
  *      -- war banner path --
  *      begin(1); helper_6D64(5); hud_print_74(power_word_97C0[power]); hud_print_88();
- *      hud_print_6a(ds,0xFCA);                           @asm 0x03250A..0x03253C
+ *      overlay_call_181F_0056(1);                           @asm 0x03250A..0x03253C
  *      finish(3, ([0x7EE]==1? 0x78:0), ...);  [0x9E3A]=0xF;  return result;
  *                                                        @asm 0x03253F..0x032560
  *  if (commit==0) goto epilogue(result=1)                @asm 0x032562 -> 0x2E18
@@ -639,7 +639,7 @@ void ov_panel_geom_init(void)
  *                                                        @asm 0x03256B..0x03257F
  *  if (!ok):  -- "no deal" line --
  *      begin(1); helper_6D64(4); hud_print_74(power_word_97C0[power]);
- *      hud_print_88(); hud_print_6a(ds,0xFCC); finish(3,0x78,0);  return result;
+ *      hud_print_88(); overlay_call_181F_0056(1); finish(3,0x78,0);  return result;
  *                                                        @asm 0x032581..0x0325C8
  *  qty = min(qty,0x64)                                   @asm 0x0325CA clamp
  *  if (commit==0) goto post                              @asm 0x0325D8
@@ -656,7 +656,7 @@ void ov_panel_geom_init(void)
  *  -- affordability gate: PowerRec funds (via 0x181F:0xA92(power)) vs total --
  *      if (funds >= total) {                             @asm 0x03268B..0x0326AC
  *          begin(1); helper_6D64(8); hud_print_74(power_word); hud_print_88();
- *          hud_print_7e(total); hud_print_88(); hud_print_6a(ds,0xFD9);
+ *          hud_print_7e(total); hud_print_88(); overlay_call_181F_0A92((int16_t)DG16(0x9e12));
  *          helper_6D64(8); finish(3, [0x7EE]==1?0x78:0, ...); [0x9E3A]=0xF;
  *                                                        @asm 0x0326AF..0x032718
  *          if (commit) goto post                         @asm 0x03271E
@@ -687,7 +687,7 @@ void ov_panel_geom_init(void)
  * text is not inlined here (cite-by-handle).
  * =========================================================================== */
 extern int  overlay_call_181F_0B96();  /* 0x181F:0xB96 ask_quantity(&out,power,z) */
-extern int  overlay_call_181F_0438(void);  /* 0x181F:0x438 draw flag/icon(token, slot) */
+extern int  overlay_call_181F_0438();  /* 0x181F:0x438 draw flag/icon(token, slot) */
 extern int  overlay_call_191F_0436(void);  /* 0x191F:0x436 price/accept check(ctx,key,qty) */
 extern int  overlay_call_181F_0A92();  /* 0x181F:0xA92 power funds query(power) */
 extern int  overlay_call_181F_03FE(void);  /* 0x181F:0x3FE finalise line(key) */
@@ -812,7 +812,7 @@ int func_032914(int z, int powerA, int powerB)
  *  post: return ok;                                        @asm 0x032FDD
  * (0xFF1/0xFF3 = GAME.TXT handles.)
  * =========================================================================== */
-extern int overlay_call_181F_0BE6(void);   /* 0x181F:0xBE6 stage/avail(&out,a,b) */
+extern int overlay_call_181F_0BE6();   /* 0x181F:0xBE6 stage/avail(&out,a,b) */
 extern int overlay_call_181F_0C68(void);   /* 0x181F:0xC68 current holding(a,b) */
 int func_032DAC(int good, int power, int commit)
 {
@@ -916,7 +916,7 @@ void func_032FE2(int arg)
  * (0x1033/0x103A are GAME.TXT handles; PowerRecord +0x2A = gold per project mem;
  *  +0x20 a per-unit bitmask, +0x22 a cumulative spend long.)
  * =========================================================================== */
-extern int overlay_call_181F_0652(void);   /* 0x181F:0x652 yes/no confirm(key) -> choice */
+extern int overlay_call_181F_0652();   /* 0x181F:0x652 yes/no confirm(key) -> choice */
 /* Unnamed PowerRecord fields in the pad_16_29 region used by func_03334E:
  *   +0x20 word : per-unit "owes payment" bitmask   (1<<unit_idx)
  *   +0x22 long : cumulative amount spent           (sbb/adc pair)
@@ -1117,7 +1117,7 @@ void func_0335FA(void)
  * @asm        0x033716..0x033776  (97 bytes)  page_04 @0x3C26  @status BYTE_VERIFIED
  * @args       (none)  (auto-skeleton "18 B" truncated)
  *
- *  inside = point_in_rect(0x93,0xA5,0x48,0x0C)            @asm 0x03371A..0x03372E
+ *  inside = overlay_call_181F_03CA(0x93, 0xa5, 0x48, 0xc)            @asm 0x03371A..0x03372E
  *  if ([0x7EC]!=0 || [0x9E3A]==0xA): [0x9E28] = inside    @asm 0x03373A..0x03374D
  *  switch ([0x9E28]):                                     @asm 0x033750..0x033773
  *     0: near_6DC8()  (button up)                          @asm 0x033756
@@ -1127,7 +1127,7 @@ extern void near_6DC8(void);
 extern void near_6E77(void);
 void func_033716(void)
 {
-    int inside = point_in_rect(0x93, 0xA5, 0x48, 0x0C) ? 1 : 0; /* @asm 0x03371A..0x03372E */
+    int inside = overlay_call_181F_03CA(0x93, 0xa5, 0x48, 0xc) ? 1 : 0; /* @asm 0x03371A..0x03372E */
     if (G16(0x7EC) != 0 || G16(0x9E3A) == 0xA)            /* @asm 0x03373A..0x033746 */
         G16(0x9E28) = inside;                            /* @asm 0x033748..0x03374D */
     if (G16(0x9E28) == 0) {                              /* @asm 0x033750/0x033770 */

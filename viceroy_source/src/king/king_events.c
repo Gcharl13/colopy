@@ -335,7 +335,7 @@ void king_process_power_events(void)
      * INDEPENDENT-class follow-up (handle 0xF01 region, channel arg 0x0A). */
     if (P < 4 &&                                            /* @asm 0x02F37F cmp [bp-8],4; jge skip */
         ((uint8_t *)DGROUP_PTR(AI_CTRL_543F))[P * POWER_STRIDE_34] == 0) /* @asm 0x02F389 cmp [bx+0x543f],0; jne skip */
-        ui_show_message2(0x0A, MSG_GRANT_FOLLOWUP);         /* @asm 0x02F390 push 0xa; push 0xf01; 0x02F395 lcall 0x191F:0xAE0 */
+        overlay_call_191F_0AE0(0xf01, 0xa);         /* @asm 0x02F390 push 0xa; push 0xf01; 0x02F395 lcall 0x191F:0xAE0 */
 
     /* @asm 0x02F39D — pop si/di; leave; retf. */
 }

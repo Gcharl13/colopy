@@ -752,7 +752,7 @@ extern int overlay_call_1A1F_0C50(void);  /* 0x1A1F:0x0C50 -- post-config apply 
 
 int func_070DE8_load_config_col(void)
 {
-    int fh = overlay_call_0D1D_04DA();                  /* @asm 0x070DEC fopen "CONFIG.COL","rb" */
+    int fh = overlay_call_0D1D_04DA(0x2059, 0x2056);                  /* @asm 0x070DEC fopen "CONFIG.COL","rb" */
     if (fh == 0) goto close;                             /* @asm 0x070DFF open fail */
     if (overlay_call_0D1D_0528() == 0) goto close;       /* @asm 0x070E0C word0 -> 0x260A */
     if (overlay_call_0D1D_0528() == 0) goto close;       /* @asm 0x070E25 word1 -> 0x260C */
@@ -1051,7 +1051,7 @@ done:
  * @asm 0x071381/0x07139D/0x0713B3  lcall 0x0D1D:0x11FA memset layer0(len0x19)/1/2
  * @asm 0x0713C0  [0x158] = 0 ; [0x152] = 4
  * ============================================================================ */
-extern int overlay_call_0D1D_11FA(void);  /* 0x0D1D:0x11FA -- memset/fill */
+extern int overlay_call_0D1D_11FA();  /* 0x0D1D:0x11FA -- memset/fill */
 
 int func_071350_new_blank_map(uint16_t w, uint16_t h)
 {
@@ -1066,8 +1066,8 @@ int func_071350_new_blank_map(uint16_t w, uint16_t h)
     if (func_07147C() != 0) return ok;                  /* @asm 0x071373 alloc fail -> ret 1 */
 
     if (g_map_buf_alloc_15A == 0) {                     /* @asm 0x07137B alt-flag clear -> fill */
-        overlay_call_0D1D_11FA();                       /* @asm 0x071381 memset layer0 (len 0x19) */
-        overlay_call_0D1D_11FA();                       /* @asm 0x07139D memset layer1 */
+        overlay_call_0D1D_11FA((int16_t)DG16(0x15c), (int16_t)DG16(0x15e), 0x19, (int16_t)DG16(0x85a4));                       /* @asm 0x071381 memset layer0 (len 0x19) */
+        overlay_call_0D1D_11FA((int16_t)DG16(0x160), (int16_t)DG16(0x162), 0, (int16_t)DG16(0x85a4));                       /* @asm 0x07139D memset layer1 */
         overlay_call_0D1D_11FA();                       /* @asm 0x0713B3 memset layer2 */
     }
     g_result_158 = 0;                                   /* @asm 0x0713C0 */

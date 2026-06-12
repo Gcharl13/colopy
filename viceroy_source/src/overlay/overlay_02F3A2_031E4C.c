@@ -636,7 +636,7 @@ void report_table_16rows(int input_enabled)
     }
 
     /* footer separator line */
-    num_to_str((int)G16(0x2F5E));                         /* @asm 0x031264/0x031268 */
+    overlay_call_181F_0022((int16_t)DG16(0x2f5e));                         /* @asm 0x031264/0x031268 */
     draw_text_clip(/* footer (0xF,0xB3,0x132) */);        /* @asm 0x031272 0x181F:0x13C */
 
     if (input_enabled) {                                  /* @asm 0x03127A bp+4 */
@@ -919,7 +919,7 @@ void military_list_panel(int input_enabled)
  * Sibling of military_list_panel: the NAVAL list panel.
  * @asm:
  *   - frame (0x33,0x46,0x76,0x01) via draw_window_frame(near 0x6DDC)  @asm 0x0318D6
- *   - title: num_to_str(0x2DCC)+strcat_far(0x117E); draw_text_at(0x100) @asm 0x0318E5..0x031912
+ *   - title: overlay_call_181F_0022((int16_t)DG16(0x2dcc))+strcat_far(0x117E); overlay_call_181F_0022((int16_t)DG16(0x2dcc)) @asm 0x0318E5..0x031912
  *   - row col = 2 (bp-0x54)
  *   - loop A: owner = active_power - 0x10 ; draw_table_row(near 0x6E3B) @asm 0x03192E..0x031945
  *   - loop B: owner = active_power - 0x0C ; same                        @asm 0x031964..0x03197B
@@ -931,7 +931,7 @@ void naval_list_panel(int input_enabled)
 
     draw_window_frame(0x33, 0x46, 0x76, 0x01);           /* @asm 0x0318D6 near 0x6DDC */
 
-    num_to_str((int)G16(0x2DCC));                        /* @asm 0x0318E5 0x181F:0x22 */
+    overlay_call_181F_0022((int16_t)DG16(0x2dcc));                        /* @asm 0x0318E5 0x181F:0x22 */
     strcat_far(NULL, NULL /* title TODO */);             /* @asm 0x0318F8 0x0D1D:0x117E */
     draw_text_at(/* (0x45,0x78,0x46,0x01) */);           /* @asm 0x03190D 0x181F:0x100 */
 

@@ -279,7 +279,7 @@ int begin_season_loop(void)
     progress = 0;                                          /* @asm 0x024A73 mov [bp-2],0 */
     do {
         if (DGS16(0x5390) == 0) {     /* @asm 0x024A78 cmp [0x5390],0 (Spring) */
-            if (overlay_call_181F_07F4() == 0) {           /* @asm 0x024A82 LCALL 0x181F:0x7F4(unit) */
+            if (overlay_call_181F_07F4((int16_t)DG16(0x5392)) == 0) {           /* @asm 0x024A82 LCALL 0x181F:0x7F4(unit) */
                 now = game_timer_ticks();                  /* @asm 0x024A8B LCALL 0xC0C:6 -> DX:AX */
                 progress = overlay_call_181F_0F9C();        /* @asm 0x024A99 call 0x024B50(0) -> 0x181F:0xF9C */
                 if (progress == 0) {
@@ -459,7 +459,7 @@ int colony_build_advisor(int colony_idx, int item)
 
     r = overlay_call_181F_0B0A();                 /* @asm 0x025A53 (item,colony_idx) */
     if (r == 2) {                                 /* @asm 0x025A5E cmp ax,2 */
-        if (overlay_call_181F_09FC() &&           /* @asm 0x025A63 0x9FC(0) */
+        if (overlay_call_181F_09FC(0) &&           /* @asm 0x025A63 0x9FC(0) */
             c->population <= 3)                    /* @asm 0x025A75 cmp ctx[+0x1F],3 / jg */
             return 0x15;                           /* @asm 0x025A7B mov [bp-8],0x15 */
     }
@@ -471,7 +471,7 @@ int colony_build_advisor(int colony_idx, int item)
         return 3;                                  /* @asm 0x025AB8 mov [bp-8],3 */
     if (r == 3 && c->population >= 0x20)           /* @asm 0x025AC4 cmp [bp-6],3; 0x025ACE cmp ctx[+0x1F],0x20 */
         return 4;                                  /* @asm 0x025AD4 mov [bp-8],4 */
-    if (item == 8 && overlay_call_181F_09FC() == 0)/* @asm 0x025AE0 cmp item,8; 0x025AE6 0x9FC(6) */
+    if (item == 8 && overlay_call_181F_09FC(6) == 0)/* @asm 0x025AE0 cmp item,8; 0x025AE6 0x9FC(6) */
         return 0xD;                                /* @asm 0x025AF4 mov [bp-8],0xD */
 
     if (item == 0x12) {                            /* @asm 0x025B00 cmp item,0x12 */
@@ -490,8 +490,8 @@ int colony_build_advisor(int colony_idx, int item)
         int gi = (b == 0x1C) ? 0x19 : b;           /* @asm 0x025B6A cmp [bp-4],0x1C / -> 0x19 */
         int tier = *(int16_t far*)(MK_FP(0, 0x8EA6) + gi * 8); /* @asm 0x025B7B [bx*8-0x715A] */
         if (tier > 3) return 0x10;                 /* @asm 0x025B80 -> 0x10 */
-        if (tier == 3 && overlay_call_181F_09FC() == 0) return 0x12; /* @asm 0x025B95/0xB -> 0x12 */
-        if (tier == 2 && overlay_call_181F_09FC() == 0) return 0x11; /* @asm 0x025BB9/0xD -> 0x11 */
+        if (tier == 3 && overlay_call_181F_09FC(0xe) == 0) return 0x12; /* @asm 0x025B95/0xB -> 0x12 */
+        if (tier == 2 && overlay_call_181F_09FC(0xd) == 0) return 0x11; /* @asm 0x025BB9/0xD -> 0x11 */
     }
 
     /* histogram pass: count how many colonists produce each item, then if the
@@ -1472,10 +1472,10 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
         = DG8(0x0336);       /* @asm 0x026DDD [0x70]=[0x336] */
 
     icon = item + 1;                                /* @asm 0x026DE5 [bp-0x58] = item+1 */
-    if (item == 0 && overlay_call_181F_09FC() == 0) /* @asm 0x026DEC cmp item,0; 0x026DF2 0x9FC(0) */
+    if (item == 0 && overlay_call_181F_09FC(0) == 0) /* @asm 0x026DEC cmp item,0; 0x026DF2 0x9FC(0) */
         icon = 0x11;                                /* @asm 0x026E00 */
     if (item == 0xF || item == 0x11) {              /* @asm 0x026E05/0x026E0B */
-        if (overlay_call_181F_09FC() && overlay_call_181F_09FC()) /* @asm 0x026E11 0x9FC(0xF);0x026E1F 0x9FC(0x11) */
+        if (overlay_call_181F_09FC(0xf) && overlay_call_181F_09FC()) /* @asm 0x026E11 0x9FC(0xF);0x026E1F 0x9FC(0x11) */
             icon = 0x30;                            /* @asm 0x026E2D */
         else
             icon = 0x2F;                            /* @asm 0x026E34 */
@@ -1484,7 +1484,7 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
     overlay_call_181F_0254();                       /* @asm 0x026E4E draw icon ([0x842]:[0x844]) */
 
     qty = overlay_call_181F_0ACE();                 /* @asm 0x026E56 (item) quantity [bp-0x60] */
-    if (item == 0xF && overlay_call_181F_09FC())    /* @asm 0x026E61 cmp item,0xF; 0x026E67 0x9FC(0x11) */
+    if (item == 0xF && overlay_call_181F_09FC(0x11))    /* @asm 0x026E61 cmp item,0xF; 0x026E67 0x9FC(0x11) */
         item = 0x11;                                /* @asm 0x026E75 remap food->0x11 when horses present */
 
     if (qty < 0 && item != 0x13 && item != 0x14 && item != 0x11) /* @asm 0x026E7A..0x026E92 */
@@ -1504,7 +1504,7 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
     }
 
 count_phase:
-    if (item == 0x11 && overlay_call_181F_09FC())   /* @asm 0x026F65 cmp item,0x11; 0x026F6B 0x9FC(0xF) */
+    if (item == 0x11 && overlay_call_181F_09FC(0xf))   /* @asm 0x026F65 cmp item,0x11; 0x026F6B 0x9FC(0xF) */
         item = 0xF;                                 /* @asm 0x026F79 remap back */
     count = 0;                                       /* @asm 0x026F7E [bp-0x5C]=0 */
     if (item == 0xF)                                 /* @asm 0x026F83 cmp item,0xF */

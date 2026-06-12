@@ -153,7 +153,7 @@ extern int menu_run_boxed(uint16_t key_off); /* PORTED 0x181F:0x3FE -- src/ui/me
 extern int overlay_call_181F_03AC(void);  /* 0x181F:0x03AC -- present/flush */
 extern int overlay_call_181F_00BA(void);  /* 0x181F:0x00BA -- draw line/rect */
 extern int overlay_call_181F_04CA(void);  /* 0x181F:0x04CA -- set palette/color */
-extern int overlay_call_181F_04C0(void);  /* 0x181F:0x04C0 -- set mode/value */
+extern int overlay_call_181F_04C0();  /* 0x181F:0x04C0 -- set mode/value */
 extern int overlay_call_181F_04F2(void);  /* 0x181F:0x04F2 -- init draw */
 extern int overlay_call_181F_04E8(void);  /* 0x181F:0x04E8 -- helper */
 extern int overlay_call_181F_04D4();  /* 0x181F:0x04D4 -- random_int(lo,hi) BYTE_VERIFIED */
@@ -1745,7 +1745,7 @@ int func_075FB6_map_scenario_setup(void)
     } else {                                  /* @asm 0x076026 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AA))) = (uint16_t)step; /* @asm 0x076029 */
     }
-    overlay_call_181F_05C4();                 /* @asm 0x076031 (step, 1) */
+    overlay_call_181F_05C4(1, step);                 /* @asm 0x076031 (step, 1) */
 
     /* step 0x13: region scan @DS:0x237D */
     if (overlay_call_1A1F_0E28() != 0) {      /* @asm 0x076043 */

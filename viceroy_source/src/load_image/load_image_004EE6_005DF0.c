@@ -34,7 +34,7 @@ extern int overlay_call_181F_0550(void);  /* @ref RTLink seg 0x181F off 0x0550 *
 extern int overlay_call_0B8D_0004(void);  /* @ref RTLink seg 0x0B8D off 0x0004 */
 extern int overlay_call_181F_062C(void);  /* @ref RTLink seg 0x181F off 0x062C */
 extern int overlay_call_181F_061E(void);  /* @ref RTLink seg 0x181F off 0x061E */
-extern int overlay_call_181F_05FA(void);  /* @ref RTLink seg 0x181F off 0x05FA */
+extern int overlay_call_181F_05FA();  /* @ref RTLink seg 0x181F off 0x05FA */
 extern int overlay_call_0C0C_0006(void);  /* @ref RTLink seg 0x0C0C off 0x0006 */
 extern int overlay_call_02FD_006C(void);  /* @ref RTLink seg 0x02FD off 0x006C */
 extern int overlay_call_181F_0668(void);  /* @ref RTLink seg 0x181F off 0x0668 */
@@ -106,13 +106,13 @@ int func_004EE6_op_sz_297(void)
     if ((DG8(0x5382) & 1) == 0) {                  /* @asm jne 0x4f5e */
         msg_id = 1;  count = 0x0C;                  /* @asm [bp-2]=1; [bp-4]=0xC */
         /* @asm 0x004F41 push 8; push 0; lcall 0x09EF:0x0032 (random(0,8)). */
-        if (overlay_call_09EF_0032() == 0) {        /* @asm or ax,ax; jne 0x4f82 */
+        if (overlay_call_09EF_0032(0, 8) == 0) {        /* @asm or ax,ax; jne 0x4f82 */
             msg_id = 0x0D;  count = 0x0B;           /* @asm [bp-2]=0xD; [bp-4]=0xB */
         }
     } else {
         msg_id = 0x0D;  count = 0x06;              /* @asm 0x004F5E [bp-2]=0xD; [bp-4]=6 */
         /* @asm 0x004F68 push 4; push 0; lcall 0x09EF:0x0032 (random(0,4)). */
-        if (overlay_call_09EF_0032() == 0) {        /* @asm or ax,ax; jne 0x4f82 */
+        if (overlay_call_09EF_0032(0, 4) == 0) {        /* @asm or ax,ax; jne 0x4f82 */
             msg_id = 1;  count = 0x0C;              /* @asm [bp-2]=1; [bp-4]=0xC */
         }
     }
@@ -675,7 +675,7 @@ int func_00543C_op_sz_131(uint16_t arg0_bp_06)
             overlay_call_029F_0318();
         break;
     case 8:                                          /* @asm 0x00547A (unconditional) */
-        overlay_call_029F_0318();                     /* @asm push 2; lcall 0x029F:0x0318 */
+        overlay_call_029F_0318(2);                     /* @asm push 2; lcall 0x029F:0x0318 */
         break;
     case 1:                                          /* @asm 0x005486 */
         overlay_call_029F_034C();                     /* @asm push 2; lcall 0x029F:0x034C */
@@ -1167,7 +1167,7 @@ after_players:
             } else {
                 /* @asm 0x005BA0 otherwise nudge the standard info readout. */
                 (void)DG16(0x5398);
-                overlay_call_181F_05FA();          /* @asm push -1; push [0x5398]; lcall */
+                overlay_call_181F_05FA((int16_t)DG16(0x5398), -1);          /* @asm push -1; push [0x5398]; lcall */
             }
         }
 

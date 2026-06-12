@@ -750,7 +750,7 @@ int func_02287E_disband_unit(void)
     int target;
     overlay_call_181F_06DC((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));                          /* @0x02288A power_at_tile(cursor) */
     /* own/visible gate @0x022896..0x0228A5 ([0x5383]&0x20 || ==[0x5396]) */
-    target = overlay_call_181F_07E0();                 /* @0x0228AF unit_at_xy(cursor) */
+    target = overlay_call_181F_07E0((int16_t)DG16(0x8540), (int16_t)DG16(0x853e));                 /* @0x0228AF unit_at_xy(cursor) */
     if (g_season == 0) target = g_active_unit;          /* @0x0228B7 spring -> active unit */
     if (target < 0) goto reveal;                       /* @0x0228C4 */
 
@@ -814,7 +814,7 @@ int func_022A3A_unit_info_popup(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     int first, acted = 1;                              /* @0x022A3F [bp-0x58]=1 */
     (void)arg0_bp_06; (void)arg1_bp_08;
-    first = overlay_call_181F_07E0();                  /* @0x022A57 unit_at_xy(x,y) */
+    first = overlay_call_181F_07E0(arg0_bp_06, arg1_bp_08);                  /* @0x022A57 unit_at_xy(x,y) */
     if (first < 0) goto fin;                           /* @0x022A5F */
     /* owner gate @0x022A69 ((U_OWNERB(first)&0xf)!=[0x5394]) */
     overlay_call_181F_07EA();                          /* @0x022A7D mark_tile(first) */
@@ -1210,7 +1210,7 @@ int func_024224_enter_space_cmd(void)
  *   r = 0;
  *   if (0 <= x < [0x8550] && 8 <= y < [0x8552]+8)  r = 1;   ; @0x0242B7..0x0242DA  (main map view)
  *   if (0xFC <= x < 0x134 && 9 <= y < 0x30)        r = 2;   ; @0x0242DF..0x0242FD  (minimap box)
- *   if (point_in_rect(0xF1,0x32,0x4F,0x96))        r = 3;   ; @0x024302 LCALL 0x181F:0x3CA  (side panel)
+ *   if (overlay_call_181F_03CA(0xf1, 0x32, 0x4f, 0x96))        r = 3;   ; @0x024302 LCALL 0x181F:0x3CA  (side panel)
  *   return r;
  * (Rect args to 0x181F:0x3CA are pushed 0xF1,0x32,0x4F,0x96 = a fixed panel
  *  rectangle.  [0x8550]/[0x8552] = map-view pixel width/height.)

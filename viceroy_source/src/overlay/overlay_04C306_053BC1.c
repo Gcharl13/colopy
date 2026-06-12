@@ -2178,7 +2178,7 @@ extern int  overlay_call_181F_04CA(void);  /* 0x181F:0x4CA -> 0x09EF:0x002C seed
                                             *   reads BIOS tick 0x40:0x6C-6E, masks &0x7FFF,
                                             *   seeds LCG [0x28EE/0x28F0] via 0xD1D:0xDF2.
                                             *   arg [0x83A6] is pushed by caller but ignored. */
-extern int  overlay_call_181F_097A(void);  /* 0x181F:0x97A -> 0x0427:0x13B0 per_unit_type0B_gate:
+extern int  overlay_call_181F_097A();  /* 0x181F:0x97A -> 0x0427:0x13B0 per_unit_type0B_gate:
                                             *   input in AX (unit_index, register convention).
                                             *   returns 1 if unit is valid/owned/type-0xB with
                                             *   order_step[+0x3149] < type_threshold; else 0. */

@@ -46,21 +46,25 @@ def disasm_window(addr, back=0x40, fwd=0x10):
     return ins
 
 def decode_site(addr):
-    """Return (seg, off, [push-exprs], cleanup_bytes) for the call AT addr,
-    or None.  push-exprs are dicts {kind, value} in PUSH ORDER (so REVERSED
-    for cdecl arg order)."""
-    win = disasm_window(addr)
+    """Return (seg, off, [push-exprs], nargs, err) for the lcall AT or
+    FORWARD-NEAR addr (cites often mark the start of the push run)."""
+    win = disasm_window(addr, back=0x40, fwd=0x30)
     idx = next((i for i, x in enumerate(win) if x.address == addr), None)
     if idx is None:
         return None
-    call = win[idx]
-    if call.mnemonic == 'lcall':
-        m = re.match(r'0x([0-9a-f]+), 0x([0-9a-f]+)', call.op_str)
-        if not m:
-            return None
-        seg, off = int(m.group(1), 16), int(m.group(2), 16)
-    else:
+    # accept the lcall at the cite, else the FIRST lcall within +0x24 bytes
+    call = None
+    for j in range(idx, len(win)):
+        if win[j].address > addr + 0x24:
+            break
+        if win[j].mnemonic == 'lcall':
+            call = win[j]; idx = j; break
+    if call is None:
         return None
+    m = re.match(r'0x([0-9a-f]+), 0x([0-9a-f]+)', call.op_str)
+    if not m:
+        return None
+    seg, off = int(m.group(1), 16), int(m.group(2), 16)
     # cleanup
     cleanup = 0
     if idx + 1 < len(win):
@@ -104,29 +108,85 @@ def decode_site(addr):
             a = re.search(r'0x[0-9a-f]+', op).group(0)
             pending_ax = {'kind': 'dg16', 'c': f'(int16_t)DG16({a})'}
             i -= 1; continue
+        if mn == 'mov' and re.match(r'^ax, word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', op):
+            d = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', op).group(1), 0)
+            pending_ax = {'kind': 'param', 'bp': d}
+            i -= 1; continue
+        if mn == 'mov' and re.match(r'^ax, word ptr \[bp - (0x[0-9a-f]+|\d+)\]$', op):
+            pending_ax = {'kind': 'local', 'c': None, 'raw': op}
+            i -= 1; continue
         if (mn, op) in (('sub','ah, ah'), ('xor','ah, ah')) or mn == 'cwde' or mn == 'cbw':
             i -= 1; continue
         if mn == 'nop':
             i -= 1; continue
         break
+    if nargs == 0:
+        # register convention: collect simple mov ax/dx/bx loads before the
+        # call (convention across this codebase: AX=arg0, DX=arg1, BX=arg2)
+        regs = {}
+        j = idx - 1
+        while j >= 0 and len(regs) < 3:
+            ins2 = win[j]
+            m2 = re.match(r'^(ax|dx|bx), (.+)$', ins2.op_str) if ins2.mnemonic == 'mov' else None
+            if not m2:
+                if ins2.mnemonic in ('cwde', 'cbw', 'nop') or \
+                   (ins2.mnemonic in ('sub','xor') and ins2.op_str in ('ah, ah','dh, dh','bh, bh')):
+                    j -= 1; continue
+                break
+            r2, src = m2.groups()
+            if r2 in regs:
+                break
+            e = None
+            if re.match(r'^-?(0x[0-9a-f]+|\d+)$', src):
+                e = {'kind': 'imm', 'c': src}
+            elif re.match(r'^word ptr \[0x[0-9a-f]+\]$', src):
+                a2 = re.search(r'0x[0-9a-f]+', src).group(0)
+                e = {'kind': 'dg16', 'c': f'(int16_t)DG16({a2})'}
+            elif re.match(r'^byte ptr \[0x[0-9a-f]+\]$', src) and r2 == 'ax':
+                a2 = re.search(r'0x[0-9a-f]+', src).group(0)
+                e = {'kind': 'dg8', 'c': f'(int16_t)DG8({a2})'}
+            elif re.match(r'^word ptr \[bp \+ (0x[0-9a-f]+|\d+)\]$', src):
+                d2 = int(re.search(r'bp \+ (0x[0-9a-f]+|\d+)', src).group(1), 0)
+                e = {'kind': 'param', 'bp': d2}
+            elif re.match(r'^word ptr \[bp - ', src):
+                e = {'kind': 'local', 'c': None, 'raw': src}
+            if e is None:
+                break
+            regs[r2] = e
+            j -= 1
+        order = [regs[r] for r in ('ax', 'dx', 'bx') if r in regs]
+        # only meaningful when the register run is contiguous from arg0
+        if order and all(('ax','dx','bx')[k] in regs for k in range(len(order))):
+            return (seg, off, order, len(order), 'REGCONV')
     if len(pushes) != nargs:
         return (seg, off, None, nargs, 'push-walk-short')
     # walking BACK from the call, the first push met was pushed LAST = arg0,
     # so the collected list is ALREADY in cdecl order -- do not reverse.
     return (seg, off, pushes, nargs, None)
 
+LOCAL_ANN_RX = re.compile(r'\b(?:int(?:16_t|32_t|8_t)?|uint(?:16|32|8)_t|char|long|short)\s+'
+                          r'(\w+)\s*(?:=[^;]*)?;\s*/\*\s*(?:@asm\s*)?\[bp\s*-\s*(0x[0-9A-Fa-f]+|\d+)\]')
+
 def enclosing_func(lines, ln):
-    """Find the enclosing C function definition above line ln (0-based)."""
+    """Find the enclosing C function definition above line ln (0-based);
+    return (name, {bp_plus_off: param}, {bp_minus_off: local})."""
+    fdef = None
     for i in range(ln, -1, -1):
         m = FUNCDEF_RX.match(lines[i])
         if m and not lines[i].lstrip().startswith(('extern', 'typedef')):
+            fdef = i
             params = {}
             for p in m.group(2).split(','):
                 pm = re.search(r'(\w*bp_([0-9A-Fa-f]{2}))\s*(?:/\*.*?\*/)?\s*$', p.strip())
                 if pm:
                     params[int(pm.group(2), 16)] = pm.group(1)
-            return m.group(1), params
-    return None, {}
+            locals_ = {}
+            for j in range(i + 1, min(i + 40, ln + 1)):
+                lm = LOCAL_ANN_RX.search(lines[j])
+                if lm:
+                    locals_[int(lm.group(2), 0)] = lm.group(1)
+            return m.group(1), params, locals_
+    return None, {}, {}
 
 def main():
     apply_mode = '--apply' in sys.argv
@@ -145,7 +205,10 @@ def main():
             for cm in CALL_RX.finditer(ln):
                 name = cm.group(1)
                 if name not in stubs or 'extern' in ln: continue
-                cite = CITE_RX.search(ln) or (CITE_RX.search(lines[n-1]) if n else None)
+                cite = (CITE_RX.search(ln)
+                        or (CITE_RX.search(lines[n-1]) if n >= 1 else None)
+                        or (CITE_RX.search(lines[n-2]) if n >= 2 else None)
+                        or (CITE_RX.search(lines[n+1]) if n+1 < len(lines) else None))
                 if not cite:
                     nocite += 1
                     flagged.append({'file': f, 'line': n+1, 'stub': name, 'why': 'no @asm cite'})
@@ -157,20 +220,34 @@ def main():
                                     'why': r[4] if r else 'no lcall at cite',
                                     'addr': hex(addr)})
                     continue
-                seg, off, args, nargs, _ = r
+                seg, off, args, nargs, tag = r
                 want = blocked[name]['arity']
-                if nargs == 0 and want > 0:
+                if tag == 'REGCONV':
+                    if nargs < want:
+                        flagged.append({'file': f, 'line': n+1, 'stub': name,
+                                        'why': f'reg-conv: derived {nargs} of {want} reg args',
+                                        'addr': hex(addr)})
+                        continue
+                    args = args[:want]; nargs = want
+                elif nargs == 0 and want > 0:
                     flagged.append({'file': f, 'line': n+1, 'stub': name,
                                     'why': f'register-convention (cleanup 0, target wants {want})',
                                     'addr': hex(addr)})
                     continue
-                fn, params = enclosing_func(lines, n)
+                fn, params, locs = enclosing_func(lines, n)
                 cargs, bad = [], None
                 for a in args:
                     if a['kind'] in ('imm', 'dg16', 'dg8'):
                         cargs.append(a['c'])
                     elif a['kind'] == 'param' and a['bp'] in params:
                         cargs.append(params[a['bp']])
+                    elif a['kind'] == 'local' and a.get('raw'):
+                        dm = re.search(r'bp - (0x[0-9a-f]+|\d+)', a['raw'])
+                        d = int(dm.group(1), 0) if dm else None
+                        if d in locs:
+                            cargs.append(locs[d])
+                        else:
+                            bad = a; break
                     else:
                         bad = a; break
                 rec = {'file': f, 'line': n+1, 'stub': name, 'addr': hex(addr),

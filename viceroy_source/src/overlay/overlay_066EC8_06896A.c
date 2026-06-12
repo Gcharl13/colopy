@@ -506,7 +506,7 @@ int func_0674A8_blink_selected_unit(uint16_t arg0_unit)
     if (*(volatile uint8_t *)(0x543F + owner * 0x34) != 0) goto plain;
 
     /* @asm 0x0674E5 ax=[0x5392] -> 0x181F:0x966 (blink predicate); if 0 -> plain */
-    overlay_call_181F_0966();
+    overlay_call_181F_0966((int16_t)DG16(0x5392));
     if (1 /* ax!=0 @asm 0x0674EF */) {
         uint8_t *cand = (uint8_t *)(0x3144 + (int)arg0_unit * 0x1C);  /* @asm 0x0674F4 */
         sel = (uint8_t *)(0x3144 + (int)(*(volatile uint16_t *)&g_dgroup[0x5392]) * 0x1C);

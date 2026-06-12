@@ -1123,21 +1123,21 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
         if (overlay_call_0D1D_0CC2() == 0) {           /* @asm 0x06EF3B memcmp(MACRO_KEYTAB_1FA4,6) */
             overlay_call_0D1D_08F6();                  /* @asm 0x06EF4E atoi index */
             overlay_call_0D1D_07A4();                  /* @asm 0x06EF63 strcat &[MACRO_VAL_9CD2 + i<<6] */
-        } else if (overlay_call_0D1D_08BC() == 0) {    /* @asm 0x06EF80 strncmp(MACRO_KEYTAB_1FAB,6) */
+        } else if (overlay_call_0D1D_08BC(found, 0x1fab, 6) == 0) {    /* @asm 0x06EF80 strncmp(MACRO_KEYTAB_1FAB,6) */
             overlay_call_0D1D_08F6();                  /* @asm 0x06EF99 atoi index */
             overlay_call_0D1D_0916();                  /* @asm 0x06EFB1 fmt_append &[MACRO_VAL_9CB0 + i<<2] */
             overlay_call_0D1D_07A4();                  /* @asm 0x06EFC0 strcat formatted */
-        } else if (overlay_call_0D1D_08BC() == 0) {    /* @asm 0x06EFD8 strncmp(MACRO_KEYTAB_1FB2,3) */
+        } else if (overlay_call_0D1D_08BC(found, 0x1fb2, 3) == 0) {    /* @asm 0x06EFD8 strncmp(MACRO_KEYTAB_1FB2,3) */
             overlay_call_0D1D_08F6();                  /* @asm 0x06EFF1 atoi index */
             overlay_call_0D1D_0916();                  /* @asm 0x06F009 fmt_append value */
             /* pad to 4 chars with MACRO_PAD_1FB6  @asm 0x06F011..0x06F03D */
             overlay_call_0D1D_07A4();                  /* @asm 0x06F018 strcat pad */
             overlay_call_0D1D_0842();                  /* @asm 0x06F02D strlen (pad-loop test) */
             overlay_call_0D1D_07A4();                  /* @asm 0x06F046 strcat final */
-        } else if (overlay_call_0D1D_08BC() == 0) {    /* @asm 0x06F05E strncmp(MACRO_KEYTAB_1FB8,7) */
+        } else if (overlay_call_0D1D_08BC(found, 0x1fb8, 7) == 0) {    /* @asm 0x06F05E strncmp(MACRO_KEYTAB_1FB8,7) */
             overlay_call_181F_042E();                  /* @asm 0x06F078 fmt date/string ([DLG_NUM_5398]) */
             overlay_call_0D1D_11B4();                  /* @asm 0x06F089 copy into dst */
-        } else if (overlay_call_0D1D_08BC() == 0) {    /* @asm 0x06F099 strncmp(MACRO_KEYTAB_1FC0,4) */
+        } else if (overlay_call_0D1D_08BC(found, 0x1fc0, 4) == 0) {    /* @asm 0x06F099 strncmp(MACRO_KEYTAB_1FC0,4) */
             overlay_call_0D1D_08FA();                  /* @asm 0x06F0B2 sprintf ([DLG_NUM_538A]) */
             overlay_call_0D1D_11B4();                  /* @asm 0x06F0C3 copy into dst */
         } else {
