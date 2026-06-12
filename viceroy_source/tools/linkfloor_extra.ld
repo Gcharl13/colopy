@@ -849,3 +849,22 @@ PROVIDE(g_ai_personality = g_dgroup + 0x540E);  /* stride 0x34; +0x31 == [0x543F
 PROVIDE(g_power_name_tbl = g_dgroup + 0x838C);  /* [bx-0x7C74] with bx=power*2 -> base 0x838C */
 PROVIDE(g_metric_tbl_minus = g_dgroup + 0x941C);     /* base -0x6BE4 */
 PROVIDE(g_powerflag_8808_minus = g_dgroup + 0x8808); /* idx*0x13C - 0x77F8 -> PowerRecord */
+
+/* Phase 4.7 role-name sweep (2026-06-12): decl-cited thunk identities,
+ * whois-resolved to existing ports, every site arity-checked. */
+PROVIDE(ov_colony_select = func_0082DC_logic_sz_118);
+PROVIDE(ov_strbuf_init2 = func_06C220_dialog_slot_set_block);
+PROVIDE(ov_strbuf_init = func_06C220_dialog_slot_set_block);
+PROVIDE(ov_report_dispatch = func_076B9E_write_record_fields_7);
+EXTERN(func_076B9E_write_record_fields_7)
+PROVIDE(ov_unit_cargo_query = func_00B2A2_cargo_slot_good);
+PROVIDE(ov_unit_stat_format = func_06C23C_dialog_make_from_int);
+PROVIDE(ovly_name_word_A2E = func_0081A4_logic_sz_28);
+EXTERN(func_0081A4_logic_sz_28)
+PROVIDE(ovly_terrain_id_6B4 = func_005DBA_logic_sz_17);
+PROVIDE(ovly_tile_ability_72C = func_005CFE_map_tile_read_layer_15C);
+PROVIDE(ovly_tile_ability_754 = func_005D32_map_tile_read_layer_160);
+PROVIDE(ovly_tile_kind_78C = func_00627A_op_sz_57);
+EXTERN(func_00627A_op_sz_57)
+PROVIDE(ovly_tile_occupied_768 = func_0062B4_op_sz_39);
+PROVIDE(ovly_tile_query_7E0 = func_0066CC_op_sz_57);

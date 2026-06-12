@@ -610,7 +610,6 @@ __attribute__((weak)) long ovly_msg_arg_438(void) { viceroy_stub_hit("ovly_msg_a
 __attribute__((weak)) long ovly_msg_arg_9AE(void) { viceroy_stub_hit("ovly_msg_arg_9AE"); return 0; }
 __attribute__((weak)) long ovly_msg_str_3FE(void) { viceroy_stub_hit("ovly_msg_str_3FE"); return 0; }
 __attribute__((weak)) long ovly_msg_str_416(void) { viceroy_stub_hit("ovly_msg_str_416"); return 0; }
-__attribute__((weak)) long ovly_name_word_A2E(void) { viceroy_stub_hit("ovly_name_word_A2E"); return 0; }
 __attribute__((weak)) long ovly_notify_93E(void) { viceroy_stub_hit("ovly_notify_93E"); return 0; }
 __attribute__((weak)) long ovly_path_check_302(void) { viceroy_stub_hit("ovly_path_check_302"); return 0; }
 __attribute__((weak)) long ovly_play_sound_4C0(void) { viceroy_stub_hit("ovly_play_sound_4C0"); return 0; }
@@ -625,7 +624,6 @@ __attribute__((weak)) long ovly_strike_191F_12C(void) { viceroy_stub_hit("ovly_s
 __attribute__((weak)) long ovly_target_query_696(void) { viceroy_stub_hit("ovly_target_query_696"); return 0; }
 __attribute__((weak)) long ovly_target_query_826(void) { viceroy_stub_hit("ovly_target_query_826"); return 0; }
 __attribute__((weak)) long ovly_target_query_9F0(void) { viceroy_stub_hit("ovly_target_query_9F0"); return 0; }
-__attribute__((weak)) long ovly_terrain_id_6B4(void) { viceroy_stub_hit("ovly_terrain_id_6B4"); return 0; }
 __attribute__((weak)) long ovly_text_appcomma_1B4(void) { viceroy_stub_hit("ovly_text_appcomma_1B4"); return 0; }
 __attribute__((weak)) long ovly_text_applabel_16E(void) { viceroy_stub_hit("ovly_text_applabel_16E"); return 0; }
 __attribute__((weak)) long ovly_text_appnum_182(void) { viceroy_stub_hit("ovly_text_appnum_182"); return 0; }
@@ -634,13 +632,8 @@ __attribute__((weak)) long ovly_text_appother_128(void) { viceroy_stub_hit("ovly
 __attribute__((weak)) long ovly_text_appsep_178(void) { viceroy_stub_hit("ovly_text_appsep_178"); return 0; }
 __attribute__((weak)) long ovly_text_draw5_13C(void) { viceroy_stub_hit("ovly_text_draw5_13C"); return 0; }
 __attribute__((weak)) long ovly_text_newseg_11E(void) { viceroy_stub_hit("ovly_text_newseg_11E"); return 0; }
-__attribute__((weak)) long ovly_tile_ability_72C(void) { viceroy_stub_hit("ovly_tile_ability_72C"); return 0; }
-__attribute__((weak)) long ovly_tile_ability_754(void) { viceroy_stub_hit("ovly_tile_ability_754"); return 0; }
-__attribute__((weak)) long ovly_tile_kind_78C(void) { viceroy_stub_hit("ovly_tile_kind_78C"); return 0; }
-__attribute__((weak)) long ovly_tile_occupied_768(void) { viceroy_stub_hit("ovly_tile_occupied_768"); return 0; }
 __attribute__((weak)) long ovly_tile_owner_visbits_74A(void) { viceroy_stub_hit("ovly_tile_owner_visbits_74A"); return 0; }
 __attribute__((weak)) long ovly_tile_query_2EE(void) { viceroy_stub_hit("ovly_tile_query_2EE"); return 0; }
-__attribute__((weak)) long ovly_tile_query_7E0(void) { viceroy_stub_hit("ovly_tile_query_7E0"); return 0; }
 __attribute__((weak)) long ovly_tile_query_7EA(void) { viceroy_stub_hit("ovly_tile_query_7EA"); return 0; }
 __attribute__((weak)) long ovly_tramp_2D4E(void) { viceroy_stub_hit("ovly_tramp_2D4E"); return 0; }
 __attribute__((weak)) long ovly_tramp_7A80(void) { viceroy_stub_hit("ovly_tramp_7A80"); return 0; }
@@ -1035,7 +1028,6 @@ __attribute__((weak)) long outp(void) { viceroy_stub_hit("outp"); return 0; }
 __attribute__((weak)) long ov_clear_rect(void) { viceroy_stub_hit("ov_clear_rect"); return 0; }
 __attribute__((weak)) long ov_clip_blit(void) { viceroy_stub_hit("ov_clip_blit"); return 0; }
 __attribute__((weak)) long ov_colony_owned_visible(void) { viceroy_stub_hit("ov_colony_owned_visible"); return 0; }
-__attribute__((weak)) long ov_colony_select(void) { viceroy_stub_hit("ov_colony_select"); return 0; }
 __attribute__((weak)) long ov_draw_extra_a(void) { viceroy_stub_hit("ov_draw_extra_a"); return 0; }
 __attribute__((weak)) long ov_draw_extra_b(void) { viceroy_stub_hit("ov_draw_extra_b"); return 0; }
 __attribute__((weak)) long ov_draw_portrait(void) { viceroy_stub_hit("ov_draw_portrait"); return 0; }
@@ -1046,7 +1038,6 @@ __attribute__((weak)) long ov_prep_clip(void) { viceroy_stub_hit("ov_prep_clip")
 __attribute__((weak)) long ov_rec_first(void) { viceroy_stub_hit("ov_rec_first"); return 0; }
 __attribute__((weak)) long ov_rec_next(void) { viceroy_stub_hit("ov_rec_next"); return 0; }
 __attribute__((weak)) long ov_region_setup(void) { viceroy_stub_hit("ov_region_setup"); return 0; }
-__attribute__((weak)) long ov_report_dispatch(void) { viceroy_stub_hit("ov_report_dispatch"); return 0; }
 __attribute__((weak)) long ov_report_show(void) { viceroy_stub_hit("ov_report_show"); return 0; }
 __attribute__((weak)) long ov_set_mode(void) { viceroy_stub_hit("ov_set_mode"); return 0; }
 __attribute__((weak)) long ov_set_mode_buf(void) { viceroy_stub_hit("ov_set_mode_buf"); return 0; }
@@ -1054,10 +1045,6 @@ __attribute__((weak)) long ov_set_screen_mode(void) { viceroy_stub_hit("ov_set_s
 __attribute__((weak)) long ov_show_message(void) { viceroy_stub_hit("ov_show_message"); return 0; }
 __attribute__((weak)) long ov_snapshot(void) { viceroy_stub_hit("ov_snapshot"); return 0; }
 __attribute__((weak)) long ov_sound_apply(void) { viceroy_stub_hit("ov_sound_apply"); return 0; }
-__attribute__((weak)) long ov_strbuf_init(void) { viceroy_stub_hit("ov_strbuf_init"); return 0; }
-__attribute__((weak)) long ov_strbuf_init2(void) { viceroy_stub_hit("ov_strbuf_init2"); return 0; }
-__attribute__((weak)) long ov_unit_cargo_query(void) { viceroy_stub_hit("ov_unit_cargo_query"); return 0; }
-__attribute__((weak)) long ov_unit_stat_format(void) { viceroy_stub_hit("ov_unit_stat_format"); return 0; }
 __attribute__((weak)) long overlay_near_07EFB(void) { viceroy_stub_hit("overlay_near_07EFB"); return 0; }
 __attribute__((weak)) long overlay_set_dialog_rect(void) { viceroy_stub_hit("overlay_set_dialog_rect"); return 0; }
 __attribute__((weak)) long ovl_deselect_fx(void) { viceroy_stub_hit("ovl_deselect_fx"); return 0; }
