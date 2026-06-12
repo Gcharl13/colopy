@@ -22,10 +22,6 @@ int func_008892(uint16_t arg0_bp_06, uint16_t arg1_bp_08);
 int func_008918(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A);
 int func_008B96(uint16_t arg0_bp_06);
 
-/* func_008720 (file 0x8720) has NO disassembly (MISSING_ASM: absent from
- * re_work/disasm and re_work/functions.json). It is referenced here and by
- * sibling files; declared so the calls type-check. Its body is not ported. */
-extern int func_008720(void);
 
 /* Overlay LCALL target used by func_008352 that is not in overlay_externs.h. */
 extern int overlay_call_037F_01CA();  /* @ref RTLink seg 0x037F off 0x01CA */
@@ -607,6 +603,19 @@ int func_0086E4_logic_sz_34(uint16_t arg0_bp_06)
             DG8(0x8F86 + (unsigned)arg0_bp_06 * 12);
     }
     return result;
+}
+
+/* @asm        0x008720..0x008733  (20 bytes)  region=load_image
+ * @pattern    WRAPPER_NEARCALL
+ * @prologue   none (no frame; raw PUSH CS; CALL near pattern)
+ * BYTE_VERIFIED 2026-06-12: 6A 0A 0E E8 28 FF 83 C4 02 3D 02 00 7E 03 B8 02 00 40 40 CB
+ * Calls func_00864E_logic_sz_31(0x0A), clamps result at 2, returns result+2.
+ * (result>2 → cap to 2, then +2 → always 4; results -1/0/1/2 → 1/2/3/4) */
+int func_008720(void)
+{
+    int r = func_00864E_logic_sz_31(0x0A);
+    if (r > 2) r = 2;
+    return r + 2;
 }
 
 /* @asm        0x008734..0x008752  (30 bytes)  region=load_image

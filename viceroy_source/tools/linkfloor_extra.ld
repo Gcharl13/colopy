@@ -406,3 +406,19 @@ EXTERN(func_067700_compose_active_tile)
  * All 6 C call sites updated to pass explicit args; BYTE_VERIFIED target via EXE analysis. */
 PROVIDE(overlay_call_181F_0D84 = func_046056_nearest_settlement);
 EXTERN(func_046056_nearest_settlement)
+
+/* Phase 4.3i (2026-06-12): fix linker gaps exposed by new function ports.
+ *
+ * func_0627BE_distance: declared extern in overlay_0612E6_066EB3.c but never defined;
+ *   comment says 0x181F:0x370 = octile distance.  Alias to the existing port.
+ *
+ * overlay_call_181F_0998: 110 stub hits/5-turns -> menu_lookup_run (func_06F51A,
+ *   already ported in src/ui/menu.c).  All call sites correctly pass 0 args. */
+PROVIDE(func_0627BE_distance   = func_004900_logic_sz_15);
+PROVIDE(overlay_call_181F_0998 = menu_lookup_run);
+EXTERN(menu_lookup_run)
+/* func_00863E bare-name -> decorated wrapper (1-arg colony-bit test via global 0x8DC6).
+ * Called by func_00864E_logic_sz_31 (which func_008720 calls), and by the
+ * func_00864E_count/last walkers in load_image_008262_008C6F.c. */
+PROVIDE(func_00863E = func_00863E_wrapper_with_global_8DC6);
+EXTERN(func_00863E_wrapper_with_global_8DC6)
