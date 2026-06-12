@@ -910,3 +910,33 @@ PROVIDE(cs_player_337 = g_dgroup + 0x337);
 PROVIDE(cs_player_338 = g_dgroup + 0x338);
 PROVIDE(cs_player_339 = g_dgroup + 0x339);
 PROVIDE(cs_sel_unit_8D7C = g_dgroup + 0x8d7c);
+
+/* Phase 4.7 screen-layer sweep (2026-06-12): decl-cited HOF/report/colony-
+ * dialog/UI names, whois-resolved + arity-checked.  ui_show_message_0 and
+ * ui_flush HELD (cite/target semantic mismatch -- byte check pending). */
+PROVIDE(cd_colony_attr = func_009102);
+EXTERN(func_009102)
+PROVIDE(cd_colony_field = func_0090C8);
+EXTERN(func_0090C8)
+PROVIDE(hof_str_cat = func_002992_rtl_sz_26);
+EXTERN(func_002992_rtl_sz_26)
+PROVIDE(hof_str_cat_num = func_0029DE_rtl_sz_39);
+EXTERN(func_0029DE_rtl_sz_39)
+PROVIDE(hof_text_row = func_002C4A_op_sz_56);
+EXTERN(func_002C4A_op_sz_56)
+PROVIDE(hof_wait_input = func_004A80_logic_sz_26);
+EXTERN(func_004A80_logic_sz_26)
+PROVIDE(menu_add_cheat_x = func_044A5A_set_checked);
+EXTERN(func_044A5A_set_checked)
+PROVIDE(rpt_grid_commit = func_002BC8_logic_sz_68);
+EXTERN(func_002BC8_logic_sz_68)
+PROVIDE(rpt_grid_str_cat = func_002992_rtl_sz_26);
+PROVIDE(rpt_title_draw = func_002CE0_logic_sz_71);
+EXTERN(func_002CE0_logic_sz_71)
+PROVIDE(ui_flash_power = func_06C254_dialog_make_from_str);
+EXTERN(func_06C254_dialog_make_from_str)
+PROVIDE(ui_set_channel = func_005108_op_sz_51);
+PROVIDE(ui_show_message_3 = func_075352_show_power_relations_dialog);
+EXTERN(func_075352_show_power_relations_dialog)
+PROVIDE(ui_show_message_h = func_06F5DA_opt_set_field_a_const8);
+PROVIDE(ui_sound_or_msg = func_005108_op_sz_51);
