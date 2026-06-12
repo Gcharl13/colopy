@@ -38,6 +38,10 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/render/blit\\.c$")
 # its strong overlay_call_181F_0772 definition beats the weak stub in
 # linkfloor_stubs.c (archive members cannot override weak direct-object defs).
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/ui/screen_id_map\\.c$")
+# Phase 3.5: msg_dialog_wiring.c provides strong overrides for the dialog/event
+# thunk stubs (ovly_dialog_652/msg_show/msg_set_arg/msg_emit_num/rel_query/...).
+# Must be a direct object — same reason as screen_id_map.c.
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/ui/msg_dialog_wiring\\.c$")
 # load_image/ — all 16 files ported & verified to compile clean under
 # -D_VICEROY_MODERN (stale "raw ax/label artifacts" exclusion removed
 # 2026-06-09; these resident functions are overlay-thunk targets the
@@ -95,9 +99,10 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         "${VICEROY_GEN}/thunk_keepalive.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/thunk_keepalive_extra.c"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/stub_hits.c"
-        # Phase 3.4 strong overrides — must be direct objects (not archive members)
+        # Phase 3.4/3.5 strong overrides — must be direct objects (not archive members)
         # so they beat the weak stubs in linkfloor_stubs.c at link time.
         src/ui/screen_id_map.c
+        src/ui/msg_dialog_wiring.c
     )
     target_link_libraries(viceroy_modern PRIVATE viceroy_rules)
     target_include_directories(viceroy_modern PRIVATE

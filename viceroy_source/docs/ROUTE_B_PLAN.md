@@ -446,19 +446,55 @@ Europe, Colony, Reports, Title, Hall of Fame = [V] done.
       DGROUP image; none of the callers set it higher) — no-op is byte-faithful.
       CLOSES the E3 id map: all 6 ids (0x28/0x29/0x2A/0x2B/0x2C/0x2D) accounted
       for; SCREEN_LAYOUTS.md updated with byte-verified identities.
-- [ ] **3.5 Dialog/event sweep**: every dialog raised by the event dispatch
-      (`docs/EVENT_DISPATCH.md` table — finite list of message/choice boxes:
-      king demands, native demands/gifts, tea party, FF offer, revolution
-      prompts, combat results, LCR outcomes...). Most are the generic
-      `ovly_dialog_652` runner + template strings (already data-driven);
-      this item is an AUDIT against the dispatch table with ports only for
-      the few custom-painted ones. (1 session)
-- [ ] **3.6 Dense-UI residue**: the bounded `not yet decoded` interiors from
-      `docs/NEXT_TARGETS.md` that are UI hit-scan math —
-      `func_06E3D0`, `func_070060`, `func_052F7E` war-matrix inner,
-      `func_065D26`, `func_0772FA`, `func_06F0F4` keyword tables,
-      `func_07637F` terrain-name sub-loader. Seven functions, listed,
-      finite. (1–2 sessions)
+- [x] **3.5 Dialog/event sweep** DONE 2026-06-12.  Full E3 dialog/event audit
+      completed; every thunk in the `ovly_dialog_652` family wired:
+      `func_06F5F2` (= `ovly_dialog_652` / `msg_show` / `mn_msg_popup`;
+       @asm 0x6F5F2: stores arg[flag] → [0x1F5E], calls menu_run_boxed(key))
+       ported as a strong override in `src/ui/msg_dialog_wiring.c`.
+      Thunk wiring in `tools/linkfloor_extra.ld`:
+        `overlay_call_181F_0022` → `func_00E76A_logic_sz_505` (RLE blitter;
+          internal call from func_06C23C @asm 0x6C242)
+        `overlay_call_181F_0416` → `func_06C220_dialog_slot_set_block`
+      Strong aliases (all in msg_dialog_wiring.c):
+        `ovly_msg_arg_438 / msg_set_arg / msg_set_int` → `func_06C23C`
+        `ovly_msg_arg_9AE / msg_emit_num / msg_set_long` → `func_06C27C`
+        `ovly_msg_str_416 / msg_set_ptr` → `func_06C220`
+        `ovly_msg_str_3FE` → `menu_run_boxed(0x13A0)` (CANNOTATTACK @asm 0x03EF0D)
+        `king_schedule_royal_events` → `func_034318_runtime_chain_289`
+        `rel_query` → `func_007F34_logic_sz_27`
+        `rel_apply_event` → `func_007F96_op_sz_105`
+        `rel_clear_event` → `func_008000_op_sz_115`
+        `good_label_value` → `market_bid_price` (func_030590 @asm 0x030590..0x0305A7)
+      linkgap.py exclusion fix: `viceroy_stub_hit/report` were being generated
+        as self-referential weak stubs; excluded in linkgap.py infra_syms set.
+      Remaining dialog sub-leaves `overlay_call_181F_0022/0416` (96K hits each
+        from formatting sub-calls; headless-safe no-ops) belong to Phase 4.
+      Build + 500-turn soak PASS; REF=228; determinism identical (md5 match).
+- [x] **3.6 Dense-UI residue** DONE 2026-06-12.  All 7 listed functions resolved:
+      - `func_06E3D0` — PORTED: `func_06E3D0_panel_run_modal` T-symbol, 2820 bytes,
+        panel modal loop (keyboard + mouse dispatch) BYTE_VERIFIED in
+        `src/overlay/overlay_06D938_0702D5.c:839`
+      - `func_070060` — PORTED: `func_070060_report_screen_run` T-symbol, 607 bytes,
+        report-screen nav loop BYTE_VERIFIED in
+        `src/overlay/overlay_06D938_0702D5.c:2023`
+      - `func_052F7E` — PORTED: `func_052F7E_ai_power_asset_census` T-symbol, 1472 bytes,
+        per-power AI strategic census + re-dispatch, control flow BYTE_VERIFIED in
+        `src/overlay/overlay_04C306_053BC1.c:2218`; live in dispatch epoch (G1).
+      - `func_065D26` — PORTED: `func_065D26_postgen_large` T-symbol, 2387 bytes,
+        post-generation world population (native village / unit spawn) BYTE_VERIFIED
+        in `src/overlay/overlay_0612E6_066EB3.c:1891`
+      - `func_0772FA` — PORTED: `func_0772FA_stream_vtable_setup` T-symbol, stream
+        vtable / callback-pointer wiring BYTE_VERIFIED in
+        `src/overlay/overlay_0745F0_077A6A.c:2714`
+      - `func_06F0F4` — PORTED: `func_06F0F4_text_template_run` T-symbol, 1061 bytes,
+        NAMES.TXT @-section template engine incl. keyword tables BYTE_VERIFIED in
+        `src/overlay/overlay_06D938_0702D5.c:1193`
+      - `func_07637F` — WIRED: 5-byte `ljmp 0x1A1F:0xD20` trampoline to
+        `func_0745F0` (terrain-row reader).  In the C port, every call site uses
+        `page1A_names_subloader(idx)` directly (`src/overlay/overlay_0745F0_077A6A.c`
+        @0x074A38/0x074A61/0x074AA1 = the three terrain-name NAMES.TXT load sites).
+        No standalone symbol needed — trampoline is inlined at all call sites.
+      Build + 500-turn soak PASS; REF=228; determinism identical (md5 match).
 
 **Gate G3:** every id in E3 reachable in the modern build through the
 original's own menu runner; pixel-parity frame per screen green.

@@ -223,3 +223,25 @@ EXTERN(func_00863E_wrapper_with_global_8DC6)
  * EXTERN forces archive-member extraction so the strong T def beats the weak W
  * def in linkfloor_stubs.c (the archive is linked after the direct objects). */
 EXTERN(overlay_call_181F_0772)
+/* Phase 3.5 (2026-06-12): dialog/event sweep.  Wire overlay thunks that were
+ * previously unaliased weak stubs, and force extraction of their targets.
+ *
+ * Thunk wiring (byte-verified):
+ *   overlay_call_181F_0022 -> 0x181F:0x0022 (resident Type-B) -> func_00E76A
+ *     (the clipped RLE blitter; called by func_06C23C_dialog_make_from_int
+ *      to create the dialog backdrop @asm 0x6C242)
+ *   overlay_call_181F_0416 -> 0x181F:0x0416 -> func_06C220_dialog_slot_set_block
+ *     (the text-slot emitter; called both directly and from func_06F7EA which
+ *      func_06C23C calls as its tail @asm 0x6C24F)
+ */
+PROVIDE(overlay_call_181F_0022 = func_00E76A_logic_sz_505);
+PROVIDE(overlay_call_181F_0416 = func_06C220_dialog_slot_set_block);
+EXTERN(func_06C23C_dialog_make_from_int)
+EXTERN(func_06C27C_dialog_slot_set_pair)
+EXTERN(func_06C220_dialog_slot_set_block)
+EXTERN(func_034318_runtime_chain_289)
+EXTERN(func_007F34_logic_sz_27)
+EXTERN(func_007F96_op_sz_105)
+EXTERN(func_008000_op_sz_115)
+EXTERN(market_bid_price)
+EXTERN(func_00E76A_logic_sz_505)
