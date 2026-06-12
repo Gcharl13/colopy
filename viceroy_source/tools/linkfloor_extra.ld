@@ -947,3 +947,23 @@ PROVIDE(ovly_spawn_unit_A20 = func_04002C_op_sz_82);
 EXTERN(func_04002C_op_sz_82)
 PROVIDE(ovly_target_query_696 = func_046004_settlement_at_tile);
 EXTERN(func_046004_settlement_at_tile)
+
+/* Phase 4.7 domain-name tranche (2026-06-12).  Porter glosses vary; the
+ * decl-cited thunks are the authority (e.g. "unit_at" sites actually call
+ * the 0x9E6 colony-select). */
+PROVIDE(colony_misc_56 = func_002544_logic_sz_60);
+PROVIDE(colony_owner_val = func_04C5C0_ai_power_budget);
+EXTERN(func_04C5C0_ai_power_budget)
+PROVIDE(colony_select = func_0082DC_logic_sz_118);
+PROVIDE(power_event_11 = func_0287B2_select_control);
+EXTERN(func_0287B2_select_control)
+PROVIDE(power_event_msg = func_028792_ctrl_op_then_refresh);
+EXTERN(func_028792_ctrl_op_then_refresh)
+PROVIDE(power_handle = func_008110_logic_sz_14);
+PROVIDE(power_label = func_008110_logic_sz_14);
+PROVIDE(unit_at = func_0082DC_logic_sz_118);
+PROVIDE(unit_class_check = func_02EF64_predicate_unit);
+EXTERN(func_02EF64_predicate_unit)
+PROVIDE(unit_class_check2 = func_005BFA_logic_sz_49);
+PROVIDE(unit_set_type = func_00913C_logic_sz_72);
+PROVIDE(unit_type_of = func_009102);
