@@ -4,16 +4,16 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 611 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 614 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1346 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1343 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
 | NAMED-GAP | 601 | implement, map to ported rtl, or record UNREACHABLE(proof) |
-| ARITY-PENDING | 372 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| ARITY-PENDING | 369 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 208 | thunk lands mid-body of a ported function; split a callable sub-entry |
 | BODY-MISSING | 134 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 31 | no resolved target yet; whois + port/wire |
@@ -63,7 +63,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 ## WEAK-STUBBED detail
 
-### ARITY-PENDING — 372
+### ARITY-PENDING — 369
 
 - `aFlmul_0F60` -> `func_010530_logic_sz_25` @4
 - `box_bevel` -> `func_00DDEA_op_sz_132` @6
@@ -93,7 +93,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_004B_0318` -> `func_002BC8_logic_sz_68` @6
 - `overlay_call_012B_015C` -> `func_00380C_op_sz_93` @1
 - `overlay_call_029F_02CC` -> `func_0050BC_op_sz_51` @1
-- `overlay_call_029F_0318` -> `func_005108_op_sz_51` @1
 - `overlay_call_029F_034C` -> `func_00513C_logic_sz_26` @1
 - `overlay_call_02E9_0006` -> `func_005296_logic_sz_22` @4
 - `overlay_call_037F_015E` -> `func_005D4E_logic_sz_40` @4
@@ -239,7 +238,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_042E` -> `func_008074_op_sz_83` @3
 - `overlay_call_181F_044E` -> `func_076B9E_write_record_fields_7` @7
 - `overlay_call_181F_045C` -> `func_00D1CA_logic_sz_26_pacing_wait` @2
-- `overlay_call_181F_048E` -> `func_0050BC_op_sz_51` @1
 - `overlay_call_181F_04AC` -> `func_005108_op_sz_51` @1
 - `overlay_call_181F_04D4` -> `func_00C322_rtl_sz_63` @2
 - `overlay_call_181F_0510` -> `func_00531C_logic_sz_89` @10
@@ -429,7 +427,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_tile_query_7EA` -> `func_006B46_op_sz_365` @2
 - `ovly_unit_spawned_181F_894` -> `func_00693A_logic_sz_14` @3
 - `region_fill` -> `func_00DCD4_op_sz_34` @4
-- `str_append` -> `func_0028B0_append_space` @1
 - `str_begin` -> `func_002992_rtl_sz_26` @2
 - `str_cat2` -> `func_0028F2_append_colon` @1
 - `str_width` -> `func_002AC6_logic_sz_27` @2
