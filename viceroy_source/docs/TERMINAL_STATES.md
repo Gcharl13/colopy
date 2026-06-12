@@ -4,19 +4,19 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 622 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 751 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1335 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1206 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
 | sub-class | count | how it closes |
 |---|--:|---|
-| NAMED-GAP | 601 | implement, map to ported rtl, or record UNREACHABLE(proof) |
-| ARITY-PENDING | 367 | target ported; fix each C call site to pass the measured args, then PROVIDE |
-| ENTRY-SPLIT-PENDING | 202 | thunk lands mid-body of a ported function; split a callable sub-entry |
-| BODY-MISSING | 134 | port the original func_0XXXXX body |
-| THUNK-UNRESOLVED | 31 | no resolved target yet; whois + port/wire |
+| NAMED-GAP | 507 | implement, map to ported rtl, or record UNREACHABLE(proof) |
+| ARITY-PENDING | 359 | target ported; fix each C call site to pass the measured args, then PROVIDE |
+| ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
+| BODY-MISSING | 133 | port the original func_0XXXXX body |
+| THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
 
 ## RESOLVED-LIBC (host C runtime satisfies these by design)
 
@@ -63,7 +63,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 ## WEAK-STUBBED detail
 
-### ARITY-PENDING — 367
+### ARITY-PENDING — 359
 
 - `aFlmul_0F60` -> `func_010530_logic_sz_25` @4
 - `box_bevel` -> `func_00DDEA_op_sz_132` @6
@@ -116,9 +116,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_0ACB_0006` -> `func_00D0B6_logic_sz_35` @4
 - `overlay_call_0B22_0022` -> `func_00D642_op_sz_129` @1
 - `overlay_call_0B4E_0004` -> `func_00D8E4_rtl_sz_141` @6
-- `overlay_call_0B70_003A` -> `func_00DB3A_op_sz_69` @3
 - `overlay_call_0B8D_0004` -> `func_00DCD4_op_sz_34` @4
-- `overlay_call_0B9E_000A` -> `func_00DDEA_op_sz_132` @6
 - `overlay_call_0BAA_0006` -> `func_00DEA6_logic_sz_152` @11
 - `overlay_call_0BBC_000C` -> `func_00DFCC_logic_sz_39` @8
 - `overlay_call_0BC3_0006` -> `func_00E036_logic_sz_24` @8
@@ -190,7 +188,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_00B0` -> `func_00275C_logic_sz_39` @3
 - `overlay_call_181F_00BA` -> `func_00DDEA_op_sz_132` @6
 - `overlay_call_181F_00C4` -> `func_00E350_logic_sz_43` @14
-- `overlay_call_181F_00CE` -> `func_00E0A2_logic_sz_14` @8
 - `overlay_call_181F_00D8` -> `func_002A98_rtl_sz_46` @4
 - `overlay_call_181F_00E2` -> `func_00DB3A_op_sz_69` @3
 - `overlay_call_181F_0100` -> `func_002BC8_logic_sz_68` @6
@@ -227,9 +224,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_02B2` -> `func_003E40_logic_sz_174` @5
 - `overlay_call_181F_02D0` -> `func_004566_op_sz_326` @5
 - `overlay_call_181F_0302` -> `func_005BFA_logic_sz_49` @2
-- `overlay_call_181F_032C` -> `func_066EC8_draw_grid_box_pair` @4
 - `overlay_call_181F_033A` -> `func_00DEA6_logic_sz_152` @11
-- `overlay_call_181F_0344` -> `func_06753C_draw_own_units_pass` @4
 - `overlay_call_181F_0352` -> `func_00BF3C_logic_sz_182` @5
 - `overlay_call_181F_035C` -> `func_0048CC_logic_sz_13` @3
 - `overlay_call_181F_037A` -> `func_00493C_logic_sz_14` @4
@@ -342,7 +337,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_0E08` -> `func_00BEDE_op_sz_93` @3
 - `overlay_call_181F_0E12` -> `func_00C276_logic_sz_20` @1
 - `overlay_call_181F_0E2A` -> `func_067476_set_unit_active_state` @1
-- `overlay_call_181F_0E38` -> `func_066BB0_minimap_update` @4
 - `overlay_call_181F_0E86` -> `func_00C45A_rtl_sz_44` @2
 - `overlay_call_181F_0E9A` -> `func_00C362_rtl_sz_173` @3
 - `overlay_call_181F_0EAE` -> `func_00C4A4_logic_sz_55` @1
@@ -395,9 +389,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_0270` -> `func_0427D6_mission_tally` @1
 - `overlay_call_1A1F_0364` -> `func_078184_viceroy_log_write` @4
 - `overlay_call_1A1F_05FC` -> `diplomacy_meeting` @5
-- `overlay_call_1A1F_08F8` -> `func_06703C_draw_grid_box` @4
 - `overlay_call_1A1F_0906` -> `func_066E0C_clamp_rect_to_view` @4
-- `overlay_call_1A1F_0914` -> `func_066E52_clip_window_to_view` @4
 - `overlay_call_1A1F_0930` -> `func_0674A8_blink_selected_unit` @1
 - `overlay_call_1A1F_095A` -> `func_0673CC_draw_one_unit` @3
 - `overlay_call_1A1F_0A94` -> `func_00D72E_rtl_sz_77` @4
@@ -433,7 +425,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ttl_compose_to_video` -> `func_010582_logic_sz_28` @3
 - `unit_first_of_owner` -> `func_0066CC_op_sz_57` @2
 
-### BODY-MISSING — 134
+### BODY-MISSING — 133
 
 - `func_002494`
 - `func_0028B0`
@@ -547,7 +539,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_066968_framebuf_addr`
 - `func_066968_rect_fill`
 - `func_066968_unit_at`
-- `func_066BB0_prep`
 - `func_06B67E`
 - `func_06B683`
 - `func_06B68D`
@@ -570,19 +561,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_06D88C`
 - `func_077990`
 
-### ENTRY-SPLIT-PENDING — 202
+### ENTRY-SPLIT-PENDING — 177
 
 - `overlay_call_02D8_000E`
-- `overlay_call_09EF_002C`
-- `overlay_call_0A29_01D1`
-- `overlay_call_0A58_000D`
-- `overlay_call_0A58_0054`
-- `overlay_call_0A58_0207`
-- `overlay_call_0A58_02CE`
-- `overlay_call_0A58_02E0`
-- `overlay_call_0A58_03CE`
-- `overlay_call_0A58_03E2`
-- `overlay_call_0A58_06FD`
 - `overlay_call_0D1D_03D0`
 - `overlay_call_0D1D_08F6`
 - `overlay_call_0D1D_0E04`
@@ -608,32 +589,23 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_181F_040A`
 - `overlay_call_181F_0422`
 - `overlay_call_181F_04C0`
-- `overlay_call_181F_04CA`
 - `overlay_call_181F_04DE`
-- `overlay_call_181F_04E8`
-- `overlay_call_181F_04F2`
 - `overlay_call_181F_053C`
 - `overlay_call_181F_055E`
 - `overlay_call_181F_05B6`
-- `overlay_call_181F_05CE`
 - `overlay_call_181F_05D8`
 - `overlay_call_181F_05E2`
 - `overlay_call_181F_0608`
 - `overlay_call_181F_062C`
 - `overlay_call_181F_0652`
 - `overlay_call_181F_0676`
-- `overlay_call_181F_0772`
 - `overlay_call_181F_077E`
 - `overlay_call_181F_09F0`
 - `overlay_call_181F_0D6C`
 - `overlay_call_181F_0D78`
 - `overlay_call_181F_0E46`
 - `overlay_call_181F_0E52`
-- `overlay_call_181F_0E5E`
-- `overlay_call_181F_0E68`
 - `overlay_call_181F_0E72`
-- `overlay_call_181F_0EB8`
-- `overlay_call_181F_0EE0`
 - `overlay_call_181F_0F3C`
 - `overlay_call_181F_0F9C`
 - `overlay_call_181F_0FCC`
@@ -655,11 +627,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_0262`
 - `overlay_call_191F_026E`
 - `overlay_call_191F_027A`
-- `overlay_call_191F_0296`
 - `overlay_call_191F_0306`
 - `overlay_call_191F_033C`
 - `overlay_call_191F_045C`
-- `overlay_call_191F_04A2`
 - `overlay_call_191F_04D4`
 - `overlay_call_191F_04E0`
 - `overlay_call_191F_04EC`
@@ -703,8 +673,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_081C`
 - `overlay_call_191F_0828`
 - `overlay_call_191F_0840`
-- `overlay_call_191F_0888`
-- `overlay_call_191F_0896`
 - `overlay_call_191F_08A4`
 - `overlay_call_191F_08C6`
 - `overlay_call_191F_08D2`
@@ -736,8 +704,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_083E`
 - `overlay_call_1A1F_087C`
 - `overlay_call_1A1F_08DC`
-- `overlay_call_1A1F_08EA`
-- `overlay_call_1A1F_093E`
 - `overlay_call_1A1F_0A5C`
 - `overlay_call_1A1F_0A6A`
 - `overlay_call_1A1F_0A78`
@@ -775,7 +741,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_191F_0248`
 - `ovly_191F_0AC8`
 
-### NAMED-GAP — 601
+### NAMED-GAP — 507
 
 - `DG8`
 - `__aFldiv`
@@ -791,16 +757,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ai_turn_end_tail_03EA06`
 - `assign_job`
 - `audio_load_sample_bank`
-- `bar_queue_push`
-- `bar_queue_reset`
-- `bar_row_flush`
 - `bars_begin`
 - `bells_for_player`
 - `bios_kbd_shift_flags`
-- `blit_band`
-- `blit_box_id`
-- `blit_sprite`
-- `blit_sprite_shadowed`
 - `box_clear`
 - `box_frame`
 - `box_outline`
@@ -819,7 +778,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `colony_hdr_panel`
 - `colony_misc_56`
 - `colony_owner_val`
-- `colony_screen_compose`
 - `colony_select`
 - `combat_apply_attacker_loss`
 - `combat_apply_defender_loss`
@@ -855,16 +813,10 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `display_message`
 - `display_smite_dialog`
 - `dos_print_error_and_exit`
-- `draw_box`
-- `draw_icon_run`
 - `draw_list_row2`
 - `draw_table_row`
-- `draw_tile_marker`
 - `draw_window_frame`
-- `emit_ground_sprite`
 - `emit_message`
-- `emit_terrain_sprite`
-- `enter_screen_view`
 - `errno_epilogue`
 - `eship_action_a`
 - `eship_action_b`
@@ -877,7 +829,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `father_table_set_value_07638E`
 - `ff_animate_pre`
 - `ff_pre_a`
-- `fill_rect`
 - `first_unit_or_type`
 - `format_engine_a`
 - `format_engine_b`
@@ -904,8 +855,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `g_local_kingwar_count`
 - `g_local_kingwar_gold`
 - `g_map_buffer`
-- `g_map_layer`
-- `g_map_layer_bytes`
 - `g_menubar_off`
 - `g_menubar_seg`
 - `g_metric_tbl_minus`
@@ -972,7 +921,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `gm_shutdown`
 - `gm_stop_song`
 - `gold_scale_0D1D_0EC6`
-- `good_label_value`
 - `graph_bar`
 - `gui_box_draw`
 - `gui_box_geometry`
@@ -1009,7 +957,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `init_and_scan_units_in_area`
 - `inp`
 - `king_register_ref_unit`
-- `king_schedule_royal_events`
 - `layer_fill`
 - `layer_tile_read`
 - `layer_tile_write`
@@ -1044,16 +991,8 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `menu_set_title`
 - `menubar_create`
 - `menubar_finalize`
-- `minimap_draw_contents`
-- `mn_msg_popup`
 - `mn_service_query`
-- `msg_emit_num`
 - `msg_key_lookup`
-- `msg_set_arg`
-- `msg_set_int`
-- `msg_set_long`
-- `msg_set_ptr`
-- `msg_show`
 - `mt32_init`
 - `mt32_play_song`
 - `mt32_shutdown`
@@ -1128,18 +1067,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_1A1F_0C64_alloc`
 - `overlay_near_07EFB`
 - `overlay_set_dialog_rect`
-- `ovl_deselect_fx`
-- `ovl_landfall_begin`
-- `ovl_landfall_next`
-- `ovl_landfall_unit`
-- `ovl_msg_simple`
-- `ovl_popup_simple`
-- `ovl_post_landfall`
-- `ovl_reveal_tile`
-- `ovl_sailhome_191f`
-- `ovl_sailhome_fin`
-- `ovl_unload_at`
-- `ovl_yesno_dialog`
 - `ovly_4BA34_substate`
 - `ovly_4BA43_finalize`
 - `ovly_5411_unit_recover`
@@ -1153,15 +1080,10 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_confront_1A1F_15E`
 - `ovly_confront_1A1F_192`
 - `ovly_debug_str_77E`
-- `ovly_dialog_652`
 - `ovly_effect_3E0`
 - `ovly_eval_target_5E70A`
 - `ovly_feasible_7B4`
 - `ovly_mark_D9A`
-- `ovly_msg_arg_438`
-- `ovly_msg_arg_9AE`
-- `ovly_msg_str_3FE`
-- `ovly_msg_str_416`
 - `ovly_name_word_A2E`
 - `ovly_notify_93E`
 - `ovly_path_check_302`
@@ -1178,19 +1100,10 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ovly_target_query_826`
 - `ovly_target_query_9F0`
 - `ovly_terrain_id_6B4`
-- `ovly_text_appcomma_1B4`
-- `ovly_text_applabel_16E`
-- `ovly_text_appnum_182`
-- `ovly_text_appother_10A`
-- `ovly_text_appother_128`
-- `ovly_text_appsep_178`
-- `ovly_text_draw5_13C`
-- `ovly_text_newseg_11E`
 - `ovly_tile_ability_72C`
 - `ovly_tile_ability_754`
 - `ovly_tile_kind_78C`
 - `ovly_tile_occupied_768`
-- `ovly_tile_owner_visbits_74A`
 - `ovly_tile_query_2EE`
 - `ovly_tile_query_7E0`
 - `ovly_tramp_2D4E`
@@ -1231,8 +1144,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `phase_dispatch_screen_helper`
 - `pick_grant_unit_type`
 - `picker_run`
-- `pik_free`
-- `pik_load`
 - `place_colonist`
 - `post_growth_hook`
 - `power_attribute_bit`
@@ -1241,14 +1152,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `power_handle`
 - `power_label`
 - `power_record`
-- `power_scan_done`
-- `power_scan_mark`
 - `power_set_flag`
 - `queue_immigrant`
 - `raid_show_message`
-- `rel_apply_event`
-- `rel_clear_event`
-- `rel_query`
 - `report_colony_event`
 - `report_row_cells`
 - `report_row_has`
@@ -1278,8 +1184,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `settle_at`
 - `settle_at2`
 - `settlement_initial_population`
-- `sheet_frame_h_icons`
-- `sheet_frame_w_icons`
 - `show_message`
 - `slot_advance`
 - `slot_commit`
@@ -1289,9 +1193,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `song_lookup`
 - `spawn_unit`
 - `sprite_blit2`
-- `ss_blit`
-- `ss_free`
-- `ss_load`
 - `str_append_num`
 - `str_cat`
 - `str_cat_num`
@@ -1301,12 +1202,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `survivors_join`
 - `terrain_type_at`
 - `text_draw`
-- `texture_fill_rect`
 - `tile_is_land`
 - `tile_read`
 - `tile_write`
-- `tilehead_get`
-- `tilehead_set`
 - `tramp_detail_line_1B1D`
 - `tramp_entry_helper_1B09`
 - `tramp_goto_line_1AFF`
@@ -1347,39 +1245,13 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `unit_class_check`
 - `unit_class_check2`
 - `unit_detach_from_settlement`
-- `unit_figure_blit_64`
 - `unit_record`
 - `unit_set_type`
 - `unit_type_of`
 - `value_band`
-- `viceroy_bios_ticks`
-- `viceroy_data_dir`
-- `viceroy_font`
-- `viceroy_interactive`
-- `viceroy_layer_addr`
-- `viceroy_layer_byte`
-- `viceroy_map_attach`
-- `vid_box_fill`
-- `vid_box_outline`
-- `vid_cell_blit`
-- `vid_delay_ms`
-- `vid_framebuffer`
-- `vid_poll_key`
-- `vid_present`
-- `vid_set_palette`
-- `vid_set_palette_range`
-- `vid_small_box`
-- `vid_text_color`
-- `vid_text_ctx_byte0`
-- `vid_text_width`
-- `vid_text_xy`
 - `weight_scale`
-- `wp_commit`
-- `wp_feature_rel`
-- `wp_resfog_rel`
-- `wp_terrain_rel`
 
-### THUNK-UNRESOLVED — 31
+### THUNK-UNRESOLVED — 30
 
 - `overlay_call_0427_0002`
 - `overlay_call_0A4E_0008`
@@ -1410,6 +1282,5 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `overlay_call_191F_0AEE`
 - `overlay_call_1A1F_0192`
 - `overlay_call_1A1F_0618`
-- `overlay_call_1A1F_0968`
 - `overlay_call_1A1F_0CF6`
 

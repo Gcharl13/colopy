@@ -44,9 +44,15 @@ def main():
         if sec:
             entry_split = set(re.findall(r'- `(\w+)`', sec.group(0)))
 
-    resolved_real = sorted(s for s in undef if s in defined_bin and s not in stubs)
-    resolved_libc = sorted(s for s in undef if s in dyn_imports and s not in defined_bin)
-    stubbed       = sorted(s for s in undef if s in stubs)
+    # bind by FINAL binary truth: a symbol is only "stubbed" if its binary
+    # binding is the weak stub (W); strong overrides (T/D) are RESOLVED-REAL
+    # even when linkfloor_stubs.c also emits a weak fallback for them.
+    weak_bin = set(re.findall(r'^[0-9a-f]+ W (\w+)$', nm([a.bin]), re.M))
+    resolved_real = sorted(s for s in undef
+                           if (s in defined_bin and s not in weak_bin))
+    resolved_libc = sorted(s for s in undef
+                           if s in dyn_imports and s not in defined_bin)
+    stubbed       = sorted(s for s in undef if s in weak_bin)
 
     def subclass(s):
         if s in arity_blocked:
