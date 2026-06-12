@@ -15,6 +15,9 @@ extern char congress_screen_render; /* src/ui/congress_screen.c -- carries the
 strong FF-chain overrides (ff_owned/ff_become_available/dlg bridges/...);
 congress.c's extern references are otherwise satisfied by the weak stubs and
 the member would never be extracted (ROUTE_B 3.2, 2026-06-12) */
+extern char naval_screen_render;    /* src/ui/naval_screen.c -- naval adviser
+body; all callers reach it through func_03954C_logic_sz_52 which calls it
+directly; without this the archive member would never be pulled (3.3) */
 
 void *viceroy_port_keepalive[] = {
     (void *)&ai_unit_leaf,
@@ -22,4 +25,5 @@ void *viceroy_port_keepalive[] = {
     (void *)&msc_aFlmul,
     (void *)&msc_aFldiv,
     (void *)&congress_screen_render,
+    (void *)&naval_screen_render,
 };

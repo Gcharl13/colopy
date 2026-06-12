@@ -169,9 +169,10 @@ int func_039218_pwr_sz_70(uint16_t arg0_bp_06)
 int func_0393F4_per_power_dialog_344(uint16_t arg0_bp_06)
 { (void)arg0_bp_06; return 0; /* see src/ui/report_screen.c naval_footer(_hdr) */ }
 
-/* SUPERSEDED -> ui/report_screen.c : report_naval (VICEROY func_03954C, F7). */
+/* Wired to naval_screen_render (ui/naval_screen.c, Phase 3.3). */
+extern void naval_screen_render(int player);
 int func_03954C_logic_sz_52(uint16_t arg0_bp_06)
-{ (void)arg0_bp_06; return 0; /* see src/ui/report_screen.c report_naval */ }
+{ naval_screen_render((int)arg0_bp_06); return 0; }
 
 /* SUPERSEDED -> ui/report_screen.c : report_foreign (VICEROY func_039888, F8). */
 int func_039888_op_sz_28(void)

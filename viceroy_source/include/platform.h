@@ -20,6 +20,8 @@ int  vid_init(const char *title);          /* 0 = SDL window, 1 = headless  */
 void vid_shutdown(void);
 uint8_t *vid_framebuffer(void);            /* 64000-byte 8bpp buffer        */
 void vid_set_palette(const uint8_t *rgb768);  /* 256 x 8-bit RGB            */
+void vid_set_palette_range(const uint8_t *rgb768, int first, int count);
+                                           /* DAC window (0x0C2E:0x0022)    */
 void vid_present(void);                    /* framebuffer -> screen         */
 int  vid_screenshot_ppm(const char *path); /* current frame -> P6 PPM       */
 

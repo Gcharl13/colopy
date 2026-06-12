@@ -80,6 +80,19 @@ uint8_t *vid_framebuffer(void)               { return fb; }
 
 void vid_set_palette(const uint8_t *rgb768)  { memcpy(pal, rgb768, 768); }
 
+/* Partial DAC window upload -- the modern face of the resident palette leaf
+ * 0x0C2E:0x0022 (file 0x0E702): `out 0x3C8, al=first` then `outsb` 3*count
+ * bytes to 0x3C9 under vsync waits (regs AX=first, DX=count; both scaled *3
+ * @asm 0x0E70A/0x0E713; src = far buf + first*3 @asm 0x0E72A..0x0E72D;
+ * out 0x3C8 @0x0E736; outsb loop @0x0E753).  Entries outside
+ * [first, first+count) keep their current values. */
+void vid_set_palette_range(const uint8_t *rgb768, int first, int count)
+{
+    if (first < 0) first = 0;
+    if (first + count > 256) count = 256 - first;
+    if (count > 0) memcpy(pal + first * 3, rgb768 + first * 3, (size_t)count * 3);
+}
+
 void vid_present(void)
 {
 #ifdef VICEROY_HAVE_SDL2
