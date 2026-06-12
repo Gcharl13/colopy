@@ -191,8 +191,8 @@
  *      17E8->181F:0E52  17ED->191F:0472
  * The role comment is documentation; the call itself is faithful.
  * ------------------------------------------------------------------------- */
-extern int overlay_call_0D1D_0C56(void);  extern int overlay_call_0D1D_1010(void);
-extern int overlay_call_0D1D_10EA(void);  extern int overlay_call_0D1D_113C(void);
+extern int overlay_call_0D1D_0C56(void);  extern int overlay_call_0D1D_1010();
+extern int overlay_call_0D1D_10EA();  extern int overlay_call_0D1D_113C(void);
 extern int overlay_call_0D1D_117E(void);
 extern int overlay_call_181F_002C(void);  extern int overlay_call_181F_00BA(void);
 extern int overlay_call_181F_00C4(void);  extern int overlay_call_181F_00CE(void);
@@ -205,7 +205,7 @@ extern int overlay_call_181F_037A(void);  extern int overlay_call_181F_03E0(void
 extern int overlay_call_181F_0438();  extern int overlay_call_181F_045C(void);
 extern int overlay_call_181F_0466(void);  extern int overlay_call_181F_0470(void);
 extern int overlay_call_181F_047A(void);  extern int overlay_call_181F_0652();
-extern int overlay_call_181F_06F0(void);  extern int overlay_call_181F_0718(void);
+extern int overlay_call_181F_06F0();  extern int overlay_call_181F_0718();
 extern int overlay_call_181F_0722(void);  extern int overlay_call_181F_07B4(void);
 extern int overlay_call_181F_0998(void);  extern int overlay_call_181F_09A4();
 extern int overlay_call_181F_0A10(void);  extern int overlay_call_181F_0A1A(void);
@@ -399,8 +399,8 @@ int func_04477E_label_help_id(uint16_t s_off /*bp+6*/, uint16_t s_seg /*bp+8*/)
 
     (void)s_off; (void)s_seg; (void)first; (void)last; (void)tok;
 
-    first = (unsigned char far *)overlay_call_0D1D_10EA();  /* @0x044791 find 1st */
-    last  = (unsigned char far *)overlay_call_0D1D_1010();  /* @0x0447A6 find last*/
+    first = (unsigned char far *)overlay_call_0D1D_10EA(s_off, s_seg, 0x7e);  /* @0x044791 find 1st */
+    last  = (unsigned char far *)overlay_call_0D1D_1010(s_off, s_seg, 0x7e);  /* @0x0447A6 find last*/
 
     /* @0x0447B3 if first==last (same run) and next char is 'F' and the token's
      * class bit2 is set, decode the numeric "~Fnn" id. */
@@ -1453,7 +1453,7 @@ int func_046004_settlement_at_tile(uint16_t x /*bp+6*/, uint16_t y /*bp+8*/)
     int bx;
 
     /* @0x04600D in-bounds / tile index check. */
-    if (overlay_call_181F_06F0() < 0)    /* @0x046013 settlement_index_of(x,y)<0  */
+    if (overlay_call_181F_06F0(x, y) < 0)    /* @0x046013 settlement_index_of(x,y)<0  */
         return found;                    /* @0x04601D jl 0x430                     */
 
     for (i = 0; i < G_OTHER_COUNT; i++) {         /* @0x046029 cmp [0x539a],ax    */

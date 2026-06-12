@@ -143,7 +143,7 @@ extern int  func_02EAEA_op_sz_49(uint16_t colony, uint16_t unit);
                                                * the call site: (colony, unit). */
 /* AI7 helpers */
 extern void rpt_select_player(int player);    /* 0x181F:0x582 -> func_030550 set player ctx */
-extern int  overlay_call_181F_0AEC(void);     /* 0x181F:0xAEC do_transfer/cargo-discharge;
+extern int  overlay_call_181F_0AEC();     /* 0x181F:0xAEC do_transfer/cargo-discharge;
                                                * args pushed on stack by caller (unit, flag) */
 /* AI8/AI10 helpers */
 extern int func_04198E_find_adjacent_cell(uint16_t unit);
@@ -961,14 +961,14 @@ ai7_check:                                                      /* 0x4F23C */
         rpt_select_player(owner);                               /* @asm 0x4F2DA */
         /* Cargo discharge: for each loaded slot, credit colony budget array
          * colony+0x9A[good*2] += [0x8DC4]; @asm 0x4F2E4: push 0; push unit;
-         * lcall 0x181F:0xAEC -> good-index.  overlay_call_181F_0AEC() is
+         * lcall 0x181F:0xAEC -> good-index.  overlay_call_181F_0AEC(unit_index, 0) is
          * declared void-arg (DOS stack convention): args must already be on
          * the stack.  In the modern build this whole section runs only when
          * cargo_count > 0 (real game data), so the stub returns 0 safely. */
         {
             int ai7_iters = 0;                                  /* @asm 0x4F306 loop */
             while (U_OFF(unit_index, 0x0C) != 0 && ai7_iters < 6) {
-                int16_t cmdty = (int16_t)overlay_call_181F_0AEC(); /* @asm 0x4F2E9 */
+                int16_t cmdty = (int16_t)overlay_call_181F_0AEC(unit_index, 0); /* @asm 0x4F2E9 */
                 uint16_t price = DG16(0x8DC4);                 /* @asm 0x4F2F5 */
                 uint16_t si    = (uint16_t)((uint16_t)cmdty * 2u);
                 *(uint16_t near *)(DG_BASE + DG16(0x8542) + 0x9Au + si) += price; /* @asm 0x4F302 */

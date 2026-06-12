@@ -136,30 +136,30 @@ extern int overlay_call_181F_016E(void);  extern int overlay_call_181F_0182(void
 extern int overlay_call_181F_01B4(void);  extern int overlay_call_181F_01E6(void);
 extern int overlay_call_181F_0022();  extern int overlay_call_181F_0254(void);
 extern int overlay_call_181F_02E4(void);  extern int overlay_call_181F_02EE(void);
-extern int overlay_call_181F_0302(void);  extern int overlay_call_181F_0352(void);
+extern int overlay_call_181F_0302();  extern int overlay_call_181F_0352(void);
 extern int overlay_call_181F_0416(void);  extern int overlay_call_181F_0438();
 extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E();
 extern int overlay_call_181F_04C0();  extern int overlay_call_181F_04D4();
 extern int overlay_call_181F_0524();  extern int overlay_call_181F_0582(void);
 extern int overlay_call_181F_0608(void);  extern int overlay_call_181F_0652();
-extern int overlay_call_181F_0682(void);  extern int overlay_call_181F_0696(void);
+extern int overlay_call_181F_0682();  extern int overlay_call_181F_0696(void);
 extern int overlay_call_181F_06BE(void);  extern int overlay_call_181F_070E(void);
-extern int overlay_call_181F_0718(void);  extern int overlay_call_181F_0722(void);
+extern int overlay_call_181F_0718();  extern int overlay_call_181F_0722(void);
 extern int overlay_call_181F_074A(void);  extern int overlay_call_181F_078C(void);
-extern int overlay_call_181F_07A0(void);  extern int overlay_call_181F_07B4(void);
+extern int overlay_call_181F_07A0();  extern int overlay_call_181F_07B4(void);
 extern int overlay_call_181F_07BE(void);  extern int overlay_call_181F_07E0(void);
 extern int overlay_call_181F_07EA(void);  extern int overlay_call_181F_0808();
 extern int overlay_call_181F_081C(void);  extern int overlay_call_181F_083A(void);
 extern int overlay_call_181F_084E();  extern int overlay_call_181F_0858(void);
-extern int overlay_call_181F_0876(void);  extern int overlay_call_181F_0880(void);
+extern int overlay_call_181F_0876();  extern int overlay_call_181F_0880(void);
 extern int overlay_call_181F_08B2(void);  extern int overlay_call_181F_08C6(void);
 extern int overlay_call_181F_08DA();  extern int overlay_call_181F_0916();
-extern int overlay_call_181F_0920(void);  extern int overlay_call_181F_0934(void);
+extern int overlay_call_181F_0920();  extern int overlay_call_181F_0934();
 extern int overlay_call_181F_0948(void);  extern int overlay_call_181F_09A4();
 extern int overlay_call_181F_09AE();  extern int overlay_call_181F_09BA(void);
 extern int overlay_call_181F_09C8(void);  extern int overlay_call_181F_09E6(void);
 extern int overlay_call_181F_0A4C();  extern int overlay_call_181F_0A92(void);
-extern int overlay_call_181F_0AEC(void);  extern int overlay_call_181F_0B78(void);
+extern int overlay_call_181F_0AEC();  extern int overlay_call_181F_0B78(void);
 extern int overlay_call_181F_0BBE();  extern int overlay_call_181F_0BE6();
 extern int overlay_call_181F_0C2C(void);  extern int overlay_call_181F_0C54();
 extern int overlay_call_181F_0C68(void);  extern int overlay_call_181F_0C9A(void);
@@ -180,7 +180,7 @@ extern int  func_00757E_op_sz_33(uint16_t unit);                            /* 0
 extern int  func_008BB2_logic_sz_20(uint16_t unit);                         /* 0x181F:0x0B78 */
 
 extern int overlay_call_191F_0120(void);  extern int overlay_call_191F_0208(void);
-extern int overlay_call_191F_02CE(void);  extern int overlay_call_191F_02EA(void);
+extern int overlay_call_191F_02CE(void);  extern int overlay_call_191F_02EA();
 extern int overlay_call_191F_044E(void);  extern int overlay_call_191F_04BA(void);
 extern int overlay_call_191F_0594(void);  extern int overlay_call_191F_07F8(void);
 extern int overlay_call_191F_09B2(void);  extern int overlay_call_191F_0A4A(void);
@@ -266,7 +266,7 @@ after_highlight:
 skip_report:
 
     /* @0x040CF8 end the unit's current activity for this colony visit. */
-    overlay_call_181F_0934();          /* unit_finish_activity(unit)       */
+    overlay_call_181F_0934(unit);          /* unit_finish_activity(unit)       */
 
     /* @0x040D03 stamp this power's per-turn "last colony bell total" cell
      * (PowerRecord[cur].word@-0x77b2) from DGROUP 0x538e. */
@@ -355,7 +355,7 @@ int func_040FD6_move_cost_class(uint16_t x /*bp+6*/, uint16_t y /*bp+8*/)
         goto done;                     /* @0x040FF5 jne 0xf27 */
     }
     /* @0x041002 path-block test: if no route (ret == -1, +1 -> 0) skip. */
-    if (overlay_call_181F_0718() + 1 != 0)  /* @0x041008 inc ax; jne */
+    if (overlay_call_181F_0718(x, y) + 1 != 0)  /* @0x041008 inc ax; jne */
         cls += 3;                      /* @0x041013 */
 done:
     return cls;                        /* @0x041017 */
@@ -448,7 +448,7 @@ int func_041080_arrive_or_block(uint16_t unit /*bp+6*/, uint16_t flag /*bp+8*/)
     /* @0x041098 register this unit's arrival with the engine, then fetch the
      * cargo/profession descriptor word (9E18) into home_chk. */
     overlay_call_191F_02CE();          /* @0x0410A4 unit_arrive_notify(...)  */
-    home = overlay_call_181F_0876();   /* @0x0410AF unit_home_colony(unit)   */
+    home = overlay_call_181F_0876(unit);   /* @0x0410AF unit_home_colony(unit)   */
     overlay_call_191F_0A4A();          /* @0x0410BB colony_make_current(home)*/
     /* @0x0410C3 les bx,[0x9E18]; home_chk = es:[bx] (first word of the
      * current-colony descriptor pointed at by far ptr DGROUP:0x9E18). */
@@ -466,13 +466,13 @@ int func_041080_arrive_or_block(uint16_t unit /*bp+6*/, uint16_t flag /*bp+8*/)
         stop_mask |= (func_005FD4_map_xy_bounds_or_neg1_alt((uint16_t)U_DESTX(ubx), (uint16_t)U_DESTY(ubx)) >= 0) ? 1 : 0;  /* @0x04110F..0x041122 */
     } else {
         /* @0x04112A near call 0x173c with colony sentinel 0x3E7. */
-        stop_mask |= overlay_call_1A1F_0202();      /* @0x041131 */
+        stop_mask |= overlay_call_191F_02EA(unit);      /* @0x041131 */
     }
 
     /* @0x04113A if any stop reason, resolve the colony name for the prompt. */
     if (stop_mask != 0) {              /* @0x04113E */
         if (home_chk == 0x3E7) {       /* @0x041140 */
-            overlay_call_191F_02EA();  /* @0x04114A name_sealane(unit)       */
+            overlay_call_191F_02EA(unit);  /* @0x04114A name_sealane(unit)       */
         } else {
             func_0082DC_logic_sz_118((uint16_t)home_chk);  /* @0x041157 colony_select(home_chk)  */
             /* @0x04115F copy colony (x,y) into the unit's dest fields. */
@@ -581,7 +581,7 @@ sea_done:
     if (arr_cmp == 0) {                /* @0x0413E3 all equal -> halt prompt  */
         overlay_call_181F_0416();      /* @0x0413ED panel_open(table,0)       */
         overlay_call_181F_0652();      /* @0x0413FA prompt_text(0x1476,0)     */
-        overlay_call_181F_0934();      /* @0x041405 unit_finish_activity      */
+        overlay_call_181F_0934(unit);      /* @0x041405 unit_finish_activity      */
     }
 done:
     /* @0x04140D LEAVE / RETF */
@@ -1004,7 +1004,7 @@ int func_041B76_step_goto(uint16_t unit /*bp+6*/)
     int res;                           /* bp-4 */
     int it;                            /* bp-2 */
 
-    overlay_call_181F_0920();          /* @0x041B7D pre_step(unit)            */
+    overlay_call_181F_0920(unit);          /* @0x041B7D pre_step(unit)            */
     /* @0x041B85 move toward (destY,destX) via near 0x201c. */
     res = overlay_call_191F_0AEE();    /* @0x041B99 move_resolve(unit,destY,destX) */
     overlay_call_181F_02EE();          /* @0x041BA5 unit_iter_begin(unit)     */
@@ -1070,9 +1070,9 @@ int func_041C64_friendly_unit_at(uint16_t unit /*bp+6*/, uint16_t x /*bp+8*/, ui
 {
     int r = 0;                         /* bp-4 */
     (void)x; (void)y;
-    if (overlay_call_181F_0302() != 0) {            /* @0x041C73 tile_in_bounds(x,y) */
+    if (overlay_call_181F_0302(x, y) != 0) {            /* @0x041C73 tile_in_bounds(x,y) */
         if (func_00627A_op_sz_57(x, y) == 0x1A) {   /* @0x041C85 terrain == open      */
-            int owner = overlay_call_181F_0682();   /* @0x041C98 unit owner at (x,y)  */
+            int owner = overlay_call_181F_0682(x, y);   /* @0x041C98 unit owner at (x,y)  */
             if (owner >= 0 &&
                 (U_TYPENAT(unit * UNIT_STRIDE) & 0x0F) == owner)  /* @0x041CA4..0x041CB1 */
                 r = 1;                              /* @0x041CB3 */
@@ -1196,8 +1196,8 @@ present:
     }
     overlay_call_181F_08DA();          /* @0x041E02 waypoint_wake(unit)        */
     overlay_call_181F_0948();          /* @0x041E13 viewport_center(lastA,lastB)*/
-    overlay_call_181F_084E();          /* @0x041E1E hud_refresh(unit)          */
-    overlay_call_181F_07A0();          /* @0x041E29 path_recompute(unit)       */
+    overlay_call_181F_084E(unit);          /* @0x041E1E hud_refresh(unit)          */
+    overlay_call_181F_07A0(unit);          /* @0x041E29 path_recompute(unit)       */
 
     /* @0x041E2E if this unit is the human's, draw the goto destination cell. */
     t = U_TYPENAT(ubx) & 0x0F;         /* @0x041E32 */

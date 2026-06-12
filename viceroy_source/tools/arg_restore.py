@@ -184,10 +184,16 @@ def enclosing_func(lines, ln):
         if m and not lines[i].lstrip().startswith(('extern', 'typedef')):
             fdef = i
             params = {}
-            for p in m.group(2).split(','):
-                pm = re.search(r'(\w*bp_([0-9A-Fa-f]{2}))\s*(?:/\*.*?\*/)?\s*$', p.strip())
+            plist = [q.strip() for q in m.group(2).split(',')] if m.group(2).strip() not in ('', 'void') else []
+            for k, q in enumerate(plist):
+                pm = re.search(r'(\w*bp_([0-9A-Fa-f]{2}))\s*(?:/\*.*?\*/)?\s*$', q)
                 if pm:
                     params[int(pm.group(2), 16)] = pm.group(1)
+                else:
+                    # positional fallback: far-call frame -> arg k at bp+6+2k.
+                    nm2 = re.search(r'([A-Za-z_]\w*)\s*(?:/\*.*?\*/)?\s*$', q)
+                    if nm2 and nm2.group(1) not in ('void',):
+                        params.setdefault(6 + 2 * k, nm2.group(1))
             locals_ = {}
             for j in range(i + 1, min(i + 40, ln + 1)):
                 lm = LOCAL_ANN_RX.search(lines[j])

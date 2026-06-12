@@ -707,7 +707,7 @@ int func_0677CA_redraw_selected_unit_tile(uint16_t arg0_mode)
     /* @asm 0x067804 push 4 cell words -> 0x181F:0x32c (terrain/roads) */
     overlay_call_181F_032C();
     /* @asm 0x067818 push [bp+6] -> 0x181F:0xe2a (unit layer for this tile) */
-    overlay_call_181F_0E2A();
+    overlay_call_181F_0E2A(arg0_mode);
     (void)arg0_mode;
     /* @asm 0x067823 push 4 cell words -> 0x1A1F:0x8f8 (cursor overlay) */
     overlay_call_1A1F_08F8();

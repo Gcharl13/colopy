@@ -739,7 +739,7 @@ void unit_cargo_row(int unit_idx, int x, int y, int w, int *state)
         kind == 0 &&                                     /* @asm 0x0313DF */
         /* bp+0xC < 2 */ 1 &&                            /* @asm 0x0313E8 */
         UNIT(unit_idx)[0x0C] != 0) {                     /* @asm 0x0313EE [+0x3150] cargo_flag */
-        glyph_value(/* unit_idx */);                     /* @asm 0x031405 0x181F:0xBE6 */
+        overlay_call_181F_0BE6(unit_idx, 0);                     /* @asm 0x031405 0x181F:0xBE6 */
         box_fill(/* x+0x17, region 0x2DA8 */);           /* @asm 0x031417 0x181F:0x254 */
     }
 
@@ -1031,7 +1031,7 @@ void unit_icon_row(int unit_idx, int x, int *state, int draw_flag)
         if (type >= 0x0D && type <= 0x12 &&              /* @asm 0x031A77/0x031A7E ship */
             kind == 0 &&                                 /* @asm 0x031A85 */
             UNIT(unit_idx)[0x0C] != 0) {                 /* @asm 0x031A8B [+0x3150] cargo_flag */
-            glyph_value(/* unit_idx */);                 /* @asm 0x031AA2 0x181F:0xBE6 */
+            overlay_call_181F_0BE6(unit_idx, 0);                 /* @asm 0x031AA2 0x181F:0xBE6 */
             box_fill(/* x+0x17, region 0x2DA8 */);       /* @asm 0x031AB4 0x181F:0x254 */
         }
     }

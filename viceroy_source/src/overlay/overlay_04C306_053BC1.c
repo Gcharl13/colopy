@@ -1564,7 +1564,7 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
         int thr = func_0082A0_logic_sz_18(DG16(0x8D52), power); /* @asm 0x04DB84 threat(tribe, arg0) */
         if (thr >= 0x4B) {                              /* @asm 0x04DBC3 cmp 0x4B */
             /* @asm 0x04DBD1  war gate (0x181F:0xA38) — skips emit if at war */
-            (void)overlay_call_181F_0A38();             /* @asm 0x04DBD1 war gate */
+            (void)overlay_call_181F_0A38(power, (int16_t)DG16(0x8d50));             /* @asm 0x04DBD1 war gate */
             /* @asm 0x04DBE0..0x04DCEC  accumulate pressure (ring-walk)  BYTE_VERIFIED
              * Ring-walk: finds the 8-direction neighbour cell of the native
              * settlement that has the most passable own-region sub-neighbours

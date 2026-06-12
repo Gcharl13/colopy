@@ -871,7 +871,7 @@ int func_029AC0_colonist_slot_hit(void)
  * ---------------------------------------------------------------------------- */
 int func_029B84_select_unit_mode6(uint16_t unit)
 {
-    overlay_call_181F_0A74();          /* @0x029B92 workslot_unit(unit) (resolve) */
+    overlay_call_181F_0A74(unit);          /* @0x029B92 workslot_unit(unit) (resolve) */
     overlay_call_191F_08F8();          /* @0x029B9D set_cursor_to(unit, dx=1)     */
     cs_flag_344       = 1;             /* @0x029BA2 */
     cs_mode_8D54      = 6;             /* @0x029BA8 */

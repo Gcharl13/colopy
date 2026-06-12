@@ -135,7 +135,7 @@ extern int overlay_call_181F_016E(void);  /* str_append(handle,buf)             
 extern int overlay_call_181F_0178(void);  /* str_space(buf)                        */
 extern int overlay_call_181F_0182(void);  /* str_append_n(value,buf)               */
 extern int overlay_call_181F_02E4(void);  /* iter_next_unit() -> slot or <0        */
-extern int overlay_call_181F_0302(void);  /* colony_visible_to(x,y) == func_02EB46 */
+extern int overlay_call_181F_0302();  /* colony_visible_to(x,y) == func_02EB46 */
 extern int overlay_call_181F_0352(void);  /* highlight_tile(x,y,x,y,0)             */
 extern int overlay_call_181F_035C();  /* cursor->cell: (cursor-base)/stride    */
 extern int overlay_call_181F_03A2(void);  /* get_active_power()                    */
@@ -159,7 +159,7 @@ extern int overlay_call_181F_0652();  /* draw_boxed_text(id5,strID)            *
 extern int overlay_call_181F_068C(void);  /* set_map_tile(a,b,x,y)                 */
 extern int overlay_call_181F_06B4();  /* site_query(x,y) -> kind               */
 extern int overlay_call_181F_06BE(void);  /* tile_bounds(y,x) -> <0 if oob         */
-extern int overlay_call_181F_0718(void);  /* feature_at(x,y) -> kind               */
+extern int overlay_call_181F_0718();  /* feature_at(x,y) -> kind               */
 extern int overlay_call_181F_0740(void);  /* map_tile_ptr(x,y) -> ES:BX            */
 extern int overlay_call_181F_074A(void);  /* resource_mask(x,y) -> bitset          */
 extern int overlay_call_181F_0768(void);  /* tile_has_target(x,y) -> bool          */
@@ -171,7 +171,7 @@ extern int overlay_call_181F_0808();  /* finish_work_order(slot)               *
 extern int overlay_call_181F_08BC();  /* unit_query(2,slot) -> count           */
 extern int overlay_call_181F_089E(void);  /* clear_unit_orders(slot)               */
 extern int overlay_call_181F_092A();  /* unit_at_xy(x,y) -> slot               */
-extern int overlay_call_181F_0934(void);  /* select_cell(idx)                      */
+extern int overlay_call_181F_0934();  /* select_cell(idx)                      */
 extern int overlay_call_181F_0942(void);  /* play_unit_sound(type) [191F window]   */
 extern int overlay_call_181F_095C(void);  /* place_worker(coords,owner,building)->n */
 extern int overlay_call_181F_0966(void);  /* gate -> bool                          */

@@ -170,8 +170,8 @@ extern int overlay_call_181F_0196(void);  /* 0x181F:0x0196 -- string-build: set 
 extern int overlay_call_181F_02BC(void);  /* 0x181F:0x02BC -- draw stat-bar cell (val,x,y,color)  */
 extern int overlay_call_181F_025E(void);  /* 0x181F:0x025E -- draw multi-line text block          */
 extern int overlay_call_181F_0A6A(void);  /* 0x181F:0x0A6A -- terrain yield-class probe (col,id)  */
-extern int overlay_call_181F_0ACE(void);  /* 0x181F:0x0ACE -- terrain-detail secondary probe(id)  */
-extern int overlay_call_181F_0B00(void);  /* 0x181F:0x0B00 -- terrain-detail probe (id) -> count  */
+extern int overlay_call_181F_0ACE();  /* 0x181F:0x0ACE -- terrain-detail secondary probe(id)  */
+extern int overlay_call_181F_0B00();  /* 0x181F:0x0B00 -- terrain-detail probe (id) -> count  */
 extern int overlay_call_181F_0B78(void);  /* 0x181F:0x0B78 -- unit subtype/equip probe (slot)     */
 extern int overlay_call_181F_0808();  /* 0x181F:0x0808 -- post-dialog unit fixup (slot-1)     */
 extern int overlay_call_1A1F_01CA(void);  /* 0x1A1F:0x01CA -- allocate/locate scratch UnitRecord  */
@@ -513,8 +513,8 @@ int func_06921A_tile_overlay_label_draw(uint16_t entry, uint16_t bufseg_arg1)
     if (g_list_attrA_1EAA[entry] != 2) return 0;        /* @asm 0x069248 cmp 2 jne */
     if (g_list_attrB_1EAE[entry] < 8) return 0;         /* @asm 0x069252 jb */
     if (g_list_attrB_1EAE[entry] >= 0x10) return 0;     /* @asm 0x069258 jae */
-    overlay_call_181F_0178();                           /* @asm 0x069261 token begin */
-    overlay_call_181F_016E();                           /* @asm 0x069270 append *(0x2DB0) */
+    overlay_call_181F_0178(bufseg_arg1);                           /* @asm 0x069261 token begin */
+    overlay_call_181F_016E(bufseg_arg1, (int16_t)DG16(0x2db0));                           /* @asm 0x069270 append *(0x2DB0) */
     (void)bufseg_arg1;
     return 0;                                           /* @asm 0x06927A RETF */
 }
@@ -1083,7 +1083,7 @@ int func_06A700_colony_site_report_dialog(uint16_t arg0)
     overlay_call_181F_0100();                            /* @asm 0x06A79D place title */
 
     /* head probe; negative => no list entries. */
-    int head = overlay_call_181F_0B00();                 /* @asm 0x06A7BE 0x181F:0xB00(arg0) -> [bp-2] */
+    int head = overlay_call_181F_0B00(arg0);                 /* @asm 0x06A7BE 0x181F:0xB00(arg0) -> [bp-2] */
     int hasEntry = (head >= 0);                          /* @asm 0x06A7CB jge / 0x06A7E2 set [bp-0x5C]=1 */
 
     /* header glyph row (baseId = arg0+0x52, or 0x43 when arg0==0x1B). */
@@ -1226,7 +1226,7 @@ int func_06AA88_terrain_detail_dialog(uint16_t arg0)
     overlay_call_181F_013C();                            /* @asm 0x06ABFD caption draw (x=xLbl+6) */
 
     /* secondary yield row (probe 0x181F:0xACE; 0x12/0x15 -> none). */
-    int yId = overlay_call_181F_0ACE();                  /* @asm 0x06AC0F -> [bp-0x62] */
+    int yId = overlay_call_181F_0ACE(arg0);                  /* @asm 0x06AC0F -> [bp-0x62] */
     if (yId == 0x12 || yId == 0x15) yId = -1;            /* @asm 0x06AC1A/0x06AC1F remap */
     if (yId >= 0) {                                      /* @asm 0x06AC29 cmp 0 jge */
         overlay_call_181F_0254();                        /* @asm 0x06AC4A yield glyph (yId+0x52) */

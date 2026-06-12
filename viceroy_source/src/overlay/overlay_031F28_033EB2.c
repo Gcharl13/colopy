@@ -771,7 +771,7 @@ extern int overlay_call_181F_0C2C();   /* 0x181F:0xC2C select counterparty(power
 int func_032914(int z, int powerA, int powerB)
 {
     int resultA = 1;                                 /* @asm 0x03291A */
-    int cp = overlay_call_181F_0C2C(powerA, z); /* @asm 0x032924..0x03292A */
+    int cp = overlay_call_181F_0C2C(z, powerA); /* @asm 0x032924..0x03292A */
     if (cp < 0) {                                    /* @asm 0x032935 */
         if (G16(0x892) == 0) { resultA = 0; return resultA; } /* @asm 0x032939 epilogue */
         hud_begin(1);                                /* @asm 0x032943 */
@@ -817,9 +817,9 @@ extern int overlay_call_181F_0C68(void);   /* 0x181F:0xC68 current holding(a,b) 
 int func_032DAC(int good, int power, int commit)
 {
     int ok = 1;                                          /* @asm 0x032DB0 */
-    int avail = overlay_call_181F_0BE6(/* &qty, commit, good */); /* @asm 0x032DBF */
+    int avail = overlay_call_181F_0BE6(good, commit); /* @asm 0x032DBF */
     if (!overlay_call_181F_0B96(/* avail, power */)) {    /* @asm 0x032DCE..0x032DD8 */
-        avail = overlay_call_181F_0BE6(/* commit, power */); /* @asm 0x032DE0 */
+        avail = overlay_call_181F_0BE6(power, commit); /* @asm 0x032DE0 */
         hud_begin(1);                                    /* @asm 0x032DEB */
         hud_helper_6D64(4);                              /* @asm 0x032DF5 */
         hud_print_74(g_power_word_97C0[avail]);           /* @asm 0x032DFE */

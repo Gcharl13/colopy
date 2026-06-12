@@ -452,8 +452,8 @@ int colony_build_advisor(int colony_idx, int item)
     int hist[0x20];                               /* [bp-0x40] histogram buffer */
     int i;
 
-    a = overlay_call_181F_0C0E();                 /* @asm 0x025A2B (colony_idx) */
-    b = overlay_call_181F_0C54();                 /* @asm 0x025A39 (colony_idx) -> current item */
+    a = overlay_call_181F_0C0E(colony_idx);                 /* @asm 0x025A2B (colony_idx) */
+    b = overlay_call_181F_0C54(colony_idx);                 /* @asm 0x025A39 (colony_idx) -> current item */
     if (b == item) return 0;                      /* @asm 0x025A44 cmp [bp-0xE],[bp+8]; je -> 0 */
     (void)a;
 
@@ -677,7 +677,7 @@ void colony_draw_label_box(int good_id, int x, int y, int kind)
     h = *(int8_t far*)(MK_FP(0,0x0236) + kind);    /* @asm 0x025EFD [bx+0x236] sprite height */
     buf[0] = 0;                                     /* @asm 0x025F05 byte[bp-0x50]=0 */
 
-    if (good_id >= 0 && overlay_call_181F_09FC()) { /* @asm 0x025F09 cmp good_id,0; 0x025F12 0x9FC */
+    if (good_id >= 0 && overlay_call_181F_09FC(good_id)) { /* @asm 0x025F09 cmp good_id,0; 0x025F12 0x9FC */
         /* append good name string [good_id*12 + 0x8F82]  @asm 0x025F1E..0x025F37 */
         overlay_call_181F_016E();                   /* @asm 0x025F32 (str,&buf) append-fmt */
     }
@@ -1358,7 +1358,7 @@ void colony_draw_colonist_at(int slot, int x, int y, int kind)
     struct colony_t far *c = ctx;
     int step, i;
 
-    step = overlay_call_181F_0B82();                /* @asm 0x026BD3 (kind) */
+    step = overlay_call_181F_0B82(slot);                /* @asm 0x026BD3 (kind) */
     overlay_call_181F_0240();                       /* @asm 0x026C04 iterator init(slot+0x52,...,[kind+0x248]) */
     (void)step; (void)y; (void)kind;
 
@@ -1483,7 +1483,7 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
     (void)icon; (void)x; (void)y; (void)colony_idx;
     overlay_call_181F_0254();                       /* @asm 0x026E4E draw icon ([0x842]:[0x844]) */
 
-    qty = overlay_call_181F_0ACE();                 /* @asm 0x026E56 (item) quantity [bp-0x60] */
+    qty = overlay_call_181F_0ACE(item);                 /* @asm 0x026E56 (item) quantity [bp-0x60] */
     if (item == 0xF && overlay_call_181F_09FC(0x11))    /* @asm 0x026E61 cmp item,0xF; 0x026E67 0x9FC(0x11) */
         item = 0x11;                                /* @asm 0x026E75 remap food->0x11 when horses present */
 
@@ -1491,7 +1491,7 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
         goto count_phase;                           /* @asm 0x026E92 jmp 0x2375 */
 
     {
-        int tier = overlay_call_181F_0BAA();        /* @asm 0x026E98 (item) tier [bp-0x5A] */
+        int tier = overlay_call_181F_0BAA(item);        /* @asm 0x026E98 (item) tier [bp-0x5A] */
         func_02CA46();                              /* @asm 0x026EB3 (item,&a,&b,&c) metrics */
         if (item == 0x11) { /* extra=9 @asm 0x026EC2 */ }
         /* draw pile sprite at [colony+0x24E]/[+0x254]/[+0x25A]  @asm 0x026ECB..0x026EFC */
@@ -1989,7 +1989,7 @@ void draw_bevel_button(int str_id, int near *out_x, int near *out_y)
 {
     int width, first;
 
-    overlay_call_181F_0022();                        /* @asm 0x02795B (str_id) -> DX:AX string ptr */
+    overlay_call_181F_0022(str_id);                        /* @asm 0x02795B (str_id) -> DX:AX string ptr */
     width = overlay_call_181F_0114();                /* @asm 0x027965 measure width [bp-2] */
     first = *(uint8_t far*)(DG32(0x089E)); /* @asm 0x02796D les bx,[0x89E]; es:[bx] */
     if (out_x) *out_x = width + 6;                   /* @asm 0x02797A add cx,6; store [bp+8] */
@@ -2034,7 +2034,7 @@ void draw_3d_box_label(int str_id, int x, int y, int style)
     overlay_call_191F_08B2();                        /* @asm 0x027A7E right edge (lo) */
     if (/*[bp-6] != -1*/ 1)                          /* @asm 0x027A83 cmp [bp-6],0 / jl */
         overlay_call_181F_00BA();                    /* @asm 0x027AB0 fill interior */
-    overlay_call_181F_0022();                        /* @asm 0x027AC4 (str_id) string ptr */
+    overlay_call_181F_0022(str_id);                        /* @asm 0x027AC4 (str_id) string ptr */
     overlay_call_181F_013C();                        /* @asm 0x027ACE draw label text @ (tx,ty) */
 }
 

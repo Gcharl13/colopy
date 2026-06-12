@@ -1131,7 +1131,7 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
             overlay_call_0D1D_08F6();                  /* @asm 0x06EFF1 atoi index */
             overlay_call_0D1D_0916();                  /* @asm 0x06F009 fmt_append value */
             /* pad to 4 chars with MACRO_PAD_1FB6  @asm 0x06F011..0x06F03D */
-            overlay_call_0D1D_07A4();                  /* @asm 0x06F018 strcat pad */
+            overlay_call_0D1D_07A4(dst, 0x1fb6);                  /* @asm 0x06F018 strcat pad */
             overlay_call_0D1D_0842();                  /* @asm 0x06F02D strlen (pad-loop test) */
             overlay_call_0D1D_07A4();                  /* @asm 0x06F046 strcat final */
         } else if (overlay_call_0D1D_08BC(found, 0x1fb8, 7) == 0) {    /* @asm 0x06F05E strncmp(MACRO_KEYTAB_1FB8,7) */

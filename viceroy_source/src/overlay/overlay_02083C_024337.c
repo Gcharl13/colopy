@@ -94,7 +94,7 @@ extern int overlay_call_191F_0224(void); /* @0x0225BE  draw_panel_footer */
 extern int overlay_call_191F_02B2(void); /* @0x022E0F  issue_order (trade-route) */
 extern int overlay_call_191F_02C0(void); /* @0x022DE9  assign_unit_to_route */
 extern int overlay_call_191F_02DC(void); /* @0x022D93  trade_picker(key,unit,kind) */
-extern int overlay_call_191F_02EA(void); /* @0x022D11  cancel_europe(unit) */
+extern int overlay_call_191F_02EA(); /* @0x022D11  cancel_europe(unit) */
 
 /* direct calls replacing void-arity stub calls */
 extern int func_008BB2_logic_sz_20(uint16_t unit);        /* 0x181F:0x0B78 in-settlement probe */
