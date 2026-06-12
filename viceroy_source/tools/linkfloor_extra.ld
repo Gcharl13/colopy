@@ -868,3 +868,28 @@ PROVIDE(ovly_tile_kind_78C = func_00627A_op_sz_57);
 EXTERN(func_00627A_op_sz_57)
 PROVIDE(ovly_tile_occupied_768 = func_0062B4_op_sz_39);
 PROVIDE(ovly_tile_query_7E0 = func_0066CC_op_sz_57);
+
+/* Phase 4.7 Europe-trade trampolines (2026-06-12): the cs:0x6Dxx/0x6Exx
+ * ljmp table at file 0x36813 (cs-base 0x2FAF0) decoded entry-by-entry;
+ * 10 targets are existing ports with extern-decl arity == port arity.
+ * (Case note: the C externs are near_6Dxx UPPERCASE-hex.) */
+PROVIDE(near_6D28 = func_03234A);
+EXTERN(func_03234A)
+PROVIDE(near_6D5F = func_032FE2);
+EXTERN(func_032FE2)
+PROVIDE(near_6D8C = func_03334E);
+EXTERN(func_03334E)
+PROVIDE(near_6D91 = func_0322D0);
+EXTERN(func_0322D0)
+PROVIDE(near_6DC8 = func_03342C);
+EXTERN(func_03342C)
+PROVIDE(near_6DE6 = func_032914);
+EXTERN(func_032914)
+PROVIDE(near_6E0E = func_0320EE);
+EXTERN(func_0320EE)
+PROVIDE(near_6E27 = func_032122);
+EXTERN(func_032122)
+PROVIDE(near_6E77 = func_0335FA);
+EXTERN(func_0335FA)
+PROVIDE(near_6E7C = func_0321FC);
+EXTERN(func_0321FC)
