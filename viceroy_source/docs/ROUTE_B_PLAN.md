@@ -510,10 +510,22 @@ PORTED / WIRED / UNREACHABLE(proof).
 - [ ] **4.1 Wire the 406** thunks with resolved targets in
       `thunk_signatures.json` (run `tools/thunkwire.py`, fix the diffs).
       (1 session, scripted)
+      > **STATUS 2026-06-12 — 174 auto-wired by thunkwire + 7 machine-
+      > triaged SAFE arity rows wired (every C call site already passes
+      > the measured arity: aFldiv, bars_draw, layer_set_object,
+      > ovl_fortify_accum, point_in_rect, select_player_ctx,
+      > unit_select_for_order).  The remainder are blocked behind 4.2
+      > entry-splits / 4.3 arg restoration — see TERMINAL_STATES.md.
+      > CAUTION for the next tranche: several overlay externs MULTIPLEX
+      > one name across different thunks per site (e.g. draw_text_at =
+      > 0x181F:0xB0 at @0x0310AD but 0x181F:0x100 elsewhere in
+      > overlay_02F3A2) — those need per-site thunk-true rewiring, a
+      > blanket PROVIDE would mis-wire some sites.
 - [ ] **4.2 Entry-split the 237 mid-function-entry thunks**: each is a thunk
       landing mid-body of an already-ported function; mechanical split of the
       C body at the entry offset into a callable sub-entry. (3–4 sessions,
       assembly-checked but repetitive)
+      > 2026-06-12: census says 227 remain; none fire on the soak path.
 - [ ] **4.3 Arity-mismatch reconciliation — 429 rows** (143@1 + 125@2 + 61@3
       + 49@4 + 13@5 + 11@8 + 9@6 + 8@9 + 5@7 + 2@11 + 2@14 + 1@10): each is
       a signature disagreement between the stub and the ported target.
@@ -574,11 +586,31 @@ PORTED / WIRED / UNREACHABLE(proof).
       residue after those phases is platform leaves (DOS file I/O quirks,
       EMS paging, serial/IRQ, mouse driver internals) — each gets PORTED or
       UNREACHABLE(proof). Budget for the residue: (2–3 sessions)
+      > 2026-06-12: census says 134 remain.  Landed today: func_012235
+      > near-heap malloc (modern bump-allocator model over the data-segment
+      > top, free-compatible block headers; the two real call sites' sizes
+      > restored — the NAMES.TXT loader can allocate with user data);
+      > func_00631A reveal_tile + func_00260E/func_002632 tooltip
+      > appenders + msc_string.c RTL trio rode earlier tranches.  Known
+      > named rows: func_0317CC/func_0318D2 Europe painters, func_059B90
+      > on-arrival handler, the 0x2400..0x2982 tooltip-primitive family,
+      > ~10 MSC RTL bodies (0xF8DD format/itoa family, _unlink/_findfirst
+      > true extents).
 - [ ] **4.7 739 `named_gap` symbols**: most close automatically when the
       excluded render/audio sources enter the build (4.4) and the runtime
       C-library names (`atoi`, `close`, `__aFlmul`...) map to the ported
       rtl (`src/runtime/`, already byte-verified). Audit the remainder to
       terminal states. (1 session)
+      > **STATUS 2026-06-12 — census infrastructure DONE**:
+      > `tools/terminal_census.py` classifies every lib-undefined symbol →
+      > `docs/TERMINAL_STATES.md` (RESOLVED-REAL 537 / RESOLVED-LIBC 38 /
+      > WEAK-STUBBED 1411 = ARITY-PENDING 397 + ENTRY-SPLIT 227 +
+      > NAMED-GAP 609 + BODY-MISSING 134 + THUNK-UNRESOLVED 44).
+      > `docs/UNREACHABLE_LEDGER.md` seeded with the proof-line verdicts
+      > (MODERN-REPLACED platform units, RESOLVED-LIBC by design, the
+      > [0x2476]-gated diagnostic class, FONTSMAL orphan, MT-32-by-config).
+      > Remaining: per-family audit of the 609 named rows (most are the
+      > Phase-5 audio surface + Phase-7 display-primitive surface).
 
 **Gate G4:** `tools/linkgap.py` reports ZERO gameplay-reachable weak stubs;
 the stub hit-counter stays 0 across the Phase-7 playthrough suite;
