@@ -640,3 +640,9 @@ PROVIDE(overlay_call_191F_0A74 = func_042138_power_census);
 EXTERN(func_042138_power_census)
 PROVIDE(overlay_call_1A1F_022A = func_060382_tile_terrain_nibble);
 EXTERN(func_060382_tile_terrain_nibble)
+
+/* Phase 4.3 mass pass 3 wiring (2026-06-12). */
+PROVIDE(overlay_call_181F_0B14 = func_008686_logic_sz_34);
+EXTERN(func_008686_logic_sz_34)
+PROVIDE(overlay_call_181F_0D44 = func_008982_logic_sz_532);
+EXTERN(func_008982_logic_sz_532)
