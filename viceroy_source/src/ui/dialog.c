@@ -20,6 +20,7 @@
  * picker layout. None traced to a source; all removed.
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "iolib.h"
 
 /* DGROUP word/byte overlays (the project-wide DGROUP-relative views). Declared
@@ -100,15 +101,15 @@ extern uint8_t g_byte[];
  * ---------------------------------------------------------------------------- */
 void compute_dialog_rect_from_cursor(void)
 {
-    if (g_word[0x186] < 0x64)            /* CITED: 067DDA CMP [0x186],0x64 / JL */
+    if (DG16(0x186) < 0x64)            /* CITED: 067DDA CMP [0x186],0x64 / JL */
         return;                          /*        dialog_state gate            */
 
     /* All four arithmetic terms below are CITED line-for-line from
      * func_067DC8 (file 0x067DC8). The push order is right-to-left. */
-    int arg4 = g_word[0x176];                                   /* 067DE1 cursor_y */
-    int arg3 = g_word[0x174];                                   /* 067DE2 cursor_x */
-    int arg2 = g_word[0xA5A6] + g_byte[0x1EA5] - 0x0F;          /* 067DE3..ED      */
-    int arg1 = g_word[0xA5A4] + g_byte[0x1EA4] - 0x08;          /* 067DF1..FB      */
+    int arg4 = DG16(0x176);                                   /* 067DE1 cursor_y */
+    int arg3 = DG16(0x174);                                   /* 067DE2 cursor_x */
+    int arg2 = DG16(0xA5A6) + DG8(0x1EA5) - 0x0F;          /* 067DE3..ED      */
+    int arg1 = DG16(0xA5A4) + DG8(0x1EA4) - 0x08;          /* 067DF1..FB      */
 
     /* 067DFE LEA bx,[0x839E] ; 067E02 LCALL 0x181F:0x254 (setter writes [bx]).
      * The setter (overlay 0x0C36:0x000A) file offset not yet decoded. */
@@ -311,7 +312,7 @@ void colony_dialog_engine(int in_subview)
     (void)edit_mode; (void)reopen;   /* mutated below; silence unused warns */
 
     /* --- entry: choose wide vs narrow layout from colonist count vs cursor --- */
-    if (!((int)(signed char)col[0x1F] > g_word[CD_LIST_CURSOR]) /* @asm 0x028DA9 CMP/JG */
+    if (!((int)(signed char)col[0x1F] > DG16(CD_LIST_CURSOR)) /* @asm 0x028DA9 CMP/JG */
         && (col[0x1F] & 0xFF) >= 0x20) {                        /* @asm 0x028DAF CMP cl,0x20/JL */
         in_subview = 1;                                          /* @asm 0x028DB7 [bp+6]=1 */
         force_wide = 1;                                          /* @asm 0x028DBA */
@@ -320,12 +321,12 @@ void colony_dialog_engine(int in_subview)
     /* [bp-0xC8]=1; if list_first_ok(colony_attr(cursor))==0 clear it. */
     {
         int gate = 1;                                            /* @asm 0x028DBE */
-        if (cd_list_first_ok(cd_colony_attr(g_word[CD_LIST_CURSOR])) == 0) /* 0xC54 then 0xC9A */
+        if (cd_list_first_ok(cd_colony_attr(DG16(CD_LIST_CURSOR))) == 0) /* 0xC54 then 0xC9A */
             gate = 0;                                            /* @asm 0x028DDD */
         (void)gate;
     }
 
-    g_word[0x0334] = 0;                                          /* @asm 0x028DE1 */
+    DG16(0x0334) = 0;                                          /* @asm 0x028DE1 */
     cd_snapshot();                                               /* @asm 0x028DE7 push cs;call 0x2CA37 */
 
     /* visible-row geometry depends on the wide/narrow choice */
@@ -336,7 +337,7 @@ void colony_dialog_engine(int in_subview)
     }
 
     /* cur_item = colony_field_get(cursor); edit_mode = (cur_item==0x12). */
-    cur_item  = cd_colony_field(g_word[CD_LIST_CURSOR]);         /* @asm 0x028E0C 0xC0E */
+    cur_item  = cd_colony_field(DG16(CD_LIST_CURSOR));         /* @asm 0x028E0C 0xC0E */
     edit_mode = (cur_item == 0x12) ? 1 : 0;                      /* @asm 0x028E1B..0x028E28 */
 
     /* zero a 0x20-word scratch ([bp-0x94]) then build the per-row "+0x32" deltas
@@ -362,7 +363,7 @@ void colony_dialog_engine(int in_subview)
      * default text context [0x89E]/[0x8A0].  @asm 0x029235 PUSH 0x800 /
      * 0x029238 LCALL 0x191F:0x23C -> DX:AX in [bp-0x64]:[bp-0x62]. */
     {
-        void *win = cd_win_create(0x800, g_word[0x08A0], g_word[0x089E]);
+        void *win = cd_win_create(0x800, DG16(0x08A0), DG16(0x089E));
         if (win == 0)                                            /* @asm 0x029246 OR/JNE; else jmp teardown */
             goto teardown;                                       /* @asm 0x02924A jmp 0x4C99 */
 
@@ -397,7 +398,7 @@ void colony_dialog_engine(int in_subview)
 
 teardown:
     /* clear the list-active latch, then if a window is still open dispose it. */
-    g_word[CD_LISTACTIVE] = 0;                                   /* @asm 0x029889 [0x35C]=0 */
+    DG16(CD_LISTACTIVE) = 0;                                   /* @asm 0x029889 [0x35C]=0 */
     cd_teardown();                                               /* @asm 0x0298A2 area */
     /* @asm 0x02989F..0x0298A4: if ([bp-0x64]|[bp-0x62]) win_dispose(win);
      *                          POP si / LEAVE / RETF  (AX = that OR). */

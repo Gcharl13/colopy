@@ -36,6 +36,7 @@
  * SITES byte-exact and their internals library-implementation-only.  No fabrication.
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "iolib.h"
 
 /* DGROUP overlays — kept LOCAL to this .c (scope rule: no globals.h edits). */
@@ -386,14 +387,14 @@ void opt_flag_set(int n, int on)
 {
     int bit = 1 << (n - 1);                      /* @asm 0x06F558/0x06F565 */
     if (on)                                       /* @asm 0x06F55B OR dx,dx / JE */
-        g_word[OPT_FLAGS_1F54] |= bit;           /* @asm 0x06F567 */
+        DG16(OPT_FLAGS_1F54) |= bit;           /* @asm 0x06F567 */
     else
-        g_word[OPT_FLAGS_1F54] &= ~bit;          /* @asm 0x06F578 */
+        DG16(OPT_FLAGS_1F54) &= ~bit;          /* @asm 0x06F578 */
 }
 
 int opt_flag_test(int n)
 {
-    return (1 << (n - 1)) & g_word[OPT_FLAGS_1F54];   /* @asm 0x06F585..0x06F58D */
+    return (1 << (n - 1)) & DG16(OPT_FLAGS_1F54);   /* @asm 0x06F585..0x06F58D */
 }
 
 /* ----------------------------------------------------------------------------
@@ -425,18 +426,18 @@ void opt_register(int key)
  * ---------------------------------------------------------------------------- */
 void opt_set_field_a(int key, int field_a)
 {
-    g_word[OPT_FIELD_1F5C] = field_a;            /* @asm 0x06F5B6 MOV [0x1F5C],ax */
+    DG16(OPT_FIELD_1F5C) = field_a;            /* @asm 0x06F5B6 MOV [0x1F5C],ax */
     opt_run_menu(key, field_a);                  /* @asm 0x06F5C2 -> 0x3CEF -> 0x181F:0x998 */
 }
 
 void opt_set_mode(int key, int screen_mode)
 {
-    g_word[OPT_MODE_1F5E] = screen_mode;         /* @asm 0x06F5F8 MOV [0x1F5E],ax */
+    DG16(OPT_MODE_1F5E) = screen_mode;         /* @asm 0x06F5F8 MOV [0x1F5E],ax */
     opt_run_menu(key, screen_mode);              /* @asm 0x06F605 -> 0x3CEF -> 0x181F:0x998 */
 }
 
 void opt_set_field_c(int key, int field_c)
 {
-    g_word[OPT_FIELD_1F60] = field_c;            /* @asm 0x06F622 MOV [0x1F60],ax */
+    DG16(OPT_FIELD_1F60) = field_c;            /* @asm 0x06F622 MOV [0x1F60],ax */
     opt_run_menu(key, field_c);                  /* @asm 0x06F62F -> 0x3CEF -> 0x181F:0x998 */
 }

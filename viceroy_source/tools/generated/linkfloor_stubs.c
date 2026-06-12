@@ -881,7 +881,6 @@ __attribute__((weak)) long format_engine_b(void) { viceroy_stub_hit("format_engi
 __attribute__((weak)) long free_far(void) { viceroy_stub_hit("free_far"); return 0; }
 __attribute__((weak)) long func_8FB4(void) { viceroy_stub_hit("func_8FB4"); return 0; }
 __attribute__((weak)) long func_AB78(void) { viceroy_stub_hit("func_AB78"); return 0; }
-__attribute__((weak)) long g_byte(void) { viceroy_stub_hit("g_byte"); return 0; }
 __attribute__((weak)) long g_difficulty(void) { viceroy_stub_hit("g_difficulty"); return 0; }
 __attribute__((weak)) long g_layer0_terrain(void) { viceroy_stub_hit("g_layer0_terrain"); return 0; }
 __attribute__((weak)) long g_layer1_elev(void) { viceroy_stub_hit("g_layer1_elev"); return 0; }
@@ -891,8 +890,6 @@ __attribute__((weak)) long g_map_layer(void) { viceroy_stub_hit("g_map_layer"); 
 __attribute__((weak)) long g_map_layer_bytes(void) { viceroy_stub_hit("g_map_layer_bytes"); return 0; }
 __attribute__((weak)) long g_power_ctrl(void) { viceroy_stub_hit("g_power_ctrl"); return 0; }
 __attribute__((weak)) long g_turn(void) { viceroy_stub_hit("g_turn"); return 0; }
-__attribute__((weak)) long g_word(void) { viceroy_stub_hit("g_word"); return 0; }
-__attribute__((weak)) long g_word_table(void) { viceroy_stub_hit("g_word_table"); return 0; }
 __attribute__((weak)) long g_year(void) { viceroy_stub_hit("g_year"); return 0; }
 __attribute__((weak)) long game_random_int(void) { viceroy_stub_hit("game_random_int"); return 0; }
 __attribute__((weak)) long game_random_range(void) { viceroy_stub_hit("game_random_range"); return 0; }

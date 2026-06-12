@@ -99,7 +99,10 @@
  * ---------------------------------------------------------------------------- */
 
 /* DGROUP scalar accessors (near data segment). Bytes are the contract. */
-#define G16(off)   (*(unsigned short *)(off))
+#include "dgroup.h"
+/* G16: word at DGROUP byte offset (was a RAW ABSOLUTE deref -- the host-crash
+ * class; converted 2026-06-12 when the Europe panels went live). */
+#define G16(off)   DG16(off)
 #define G8(off)    (*(unsigned char  *)(off))
 #define UNIT(i)    ((unsigned char *)(0x3144 + (unsigned)(i) * 0x1C))
 
@@ -496,7 +499,8 @@ void report_unit_panel(int menu_id)
     (void)row_h;
 
     /* title line */
-    str_begin(buf, &g_word_table[menu_id]);              /* @asm 0x030E0A title=[bx-0x6840] */
+    str_begin(buf, (unsigned short *)DG_PTR((uint16_t)(menu_id * 2 - 0x6840)));
+                                  /* @asm 0x030E0A title word at [bx-0x6840], bx=menu_id*2 */
     str_append(buf);                                     /* @asm 0x030E16 */
     str_finish(buf);                                     /* @asm 0x030E22 */
 
@@ -818,7 +822,7 @@ void unit_stack_panel(int input_enabled)
         int type = UNIT(unit)[0x02];                     /* @asm 0x03158E [+0x3146] */
         /* title: special if escort/colonist type 0x0E */
         if (type != 0x0E) {                              /* @asm 0x031592 */
-            str_begin(0, &g_word_table[0] /* 0x2DE8 */); /* @asm 0x03157A */
+            str_begin(0, (unsigned short *)DG_PTR(0x2DE8)); /* @asm 0x03157A */
             str_append(0);                               /* @asm 0x03159F */
             /* name = g_unit_name_tbl[type*7 + 0x5230]   @asm 0x0315B9 */
         }
