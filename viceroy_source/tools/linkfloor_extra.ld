@@ -284,3 +284,61 @@ PROVIDE(overlay_call_037F_0358 = func_005F48_logic_sz_58);
 PROVIDE(func_007178            = func_007178_op_sz_192);
 EXTERN(func_005F48_logic_sz_58)
 EXTERN(func_007178_op_sz_192)
+
+/* Phase 4.3c (2026-06-12): batch wiring of bare-name and named-semantic stubs.
+ * All thunk targets verified via whois.py; arity cross-checked against declarations.
+ *
+ * Bare-name -> decorated-name (near calls within load_image to functions named
+ * func_XXXXXX but defined as func_XXXXXX_op/logic/colony_sz_NNN):
+ *   func_008956(a,b) -> lookup_byte_from_pair  (g_pair_key table scan, 2 args)
+ *   func_00772E(u)   -> func_00772E_op_sz_149  (unit colony-work dispatcher, 1 arg)
+ *   func_0088D0(r,c) -> func_0088D0_colony_sz_71  (colony-tile occupancy test, 2 args)
+ *   func_00A93E()    -> func_00A93E_logic_sz_86   (5x5 grid fill, 0 args)
+ *   func_0081C6(u)   -> func_0081C6_logic_sz_44   (Pocahontas/settle loop, 1 arg)
+ *
+ * Named semantics for sol_tory.c / turn_update.c colony-turn calls:
+ *   colony_query(field,idx)   0x181F:0xB50 -> func_008DBC_logic_sz_69
+ *   set_current_colony(id)    0x181F:0x9E6 -> func_0082DC_logic_sz_118
+ *   ring_best_for_food(a,b)   0x181F:0xCB8 -> func_0098B4_logic_sz_65
+ *   colony_query_further()    0x181F:0xD3A -> func_008D00_colony_stock_cap
+ *   feature_yield_bonus(r,g)  near 0x9AAA  -> func_009AAA_logic_sz_241
+ *
+ * Native AI ovly_ stubs (all from native_unit_ai.c; thunk targets byte-verified):
+ *   random_int_4D4(lo,hi)      0x181F:0x4D4 -> random_int   (rng.c, already live)
+ *   ovly_clamp_or_scale_A60(v) 0x181F:0xA60 -> func_008262_logic_sz_20
+ *   ovly_name_word_A1A(pwr)    0x181F:0xA1A -> func_0080C8_logic_sz_14
+ *   ovly_name_word_9A4(pwr)    0x181F:0x9A4 -> func_008110_logic_sz_14
+ *   ovly_animate_352(x1,y1,x2,y2,z) 0x181F:0x352 -> func_00BF3C_logic_sz_182
+ *   ovly_query_8BC(two,unit)   0x181F:0x8BC -> func_0073A8_logic_sz_99
+ *   ovly_query_984(pwr,x,y)    0x181F:0x984 -> func_00704C_op_sz_205
+ *   ovly_query_384(a,dir)      0x181F:0x384 -> func_0049FC_logic_sz_20 */
+PROVIDE(func_008956            = lookup_byte_from_pair);
+PROVIDE(func_00772E            = func_00772E_op_sz_149);
+PROVIDE(func_0088D0            = func_0088D0_colony_sz_71);
+PROVIDE(func_00A93E            = func_00A93E_logic_sz_86);
+PROVIDE(func_0081C6            = func_0081C6_logic_sz_44);
+PROVIDE(colony_query           = func_008DBC_logic_sz_69);
+PROVIDE(set_current_colony     = func_0082DC_logic_sz_118);
+PROVIDE(ring_best_for_food     = func_0098B4_logic_sz_65);
+PROVIDE(colony_query_further   = func_008D00_colony_stock_cap);
+PROVIDE(feature_yield_bonus    = func_009AAA_logic_sz_241);
+PROVIDE(random_int_4D4         = random_int);
+PROVIDE(ovly_clamp_or_scale_A60 = func_008262_logic_sz_20);
+PROVIDE(ovly_name_word_A1A     = func_0080C8_logic_sz_14);
+PROVIDE(ovly_name_word_9A4     = func_008110_logic_sz_14);
+PROVIDE(ovly_animate_352       = func_00BF3C_logic_sz_182);
+PROVIDE(ovly_query_8BC         = func_0073A8_logic_sz_99);
+PROVIDE(ovly_query_984         = func_00704C_op_sz_205);
+PROVIDE(ovly_query_384         = func_0049FC_logic_sz_20);
+EXTERN(func_008DBC_logic_sz_69)
+EXTERN(func_0098B4_logic_sz_65)
+EXTERN(func_009AAA_logic_sz_241)
+EXTERN(func_008262_logic_sz_20)
+EXTERN(func_0080C8_logic_sz_14)
+EXTERN(func_008110_logic_sz_14)
+EXTERN(func_00BF3C_logic_sz_182)
+EXTERN(func_0073A8_logic_sz_99)
+EXTERN(func_00704C_op_sz_205)
+EXTERN(func_0049FC_logic_sz_20)
+EXTERN(func_0081C6_logic_sz_44)
+EXTERN(func_008D00_colony_stock_cap)
