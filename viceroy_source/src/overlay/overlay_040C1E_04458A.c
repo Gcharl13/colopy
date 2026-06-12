@@ -135,7 +135,7 @@ extern int overlay_call_181F_0132(void);  extern int overlay_call_181F_013C(void
 extern int overlay_call_181F_016E(void);  extern int overlay_call_181F_0182(void);
 extern int overlay_call_181F_01B4(void);  extern int overlay_call_181F_01E6(void);
 extern int overlay_call_181F_0022();  extern int overlay_call_181F_0254(void);
-extern int overlay_call_181F_02E4(void);  extern int overlay_call_181F_02EE(void);
+extern int overlay_call_181F_02E4();  extern int overlay_call_181F_02EE();
 extern int overlay_call_181F_0302();  extern int overlay_call_181F_0352(void);
 extern int overlay_call_181F_0416(void);  extern int overlay_call_181F_0438();
 extern int overlay_call_181F_044E(void);  extern int overlay_call_181F_048E();
@@ -311,7 +311,7 @@ skip_banner:
     /* @0x040DE3 for the human's own colony: play the entry chord, push the
      * colony-screen request, and clear the two "pending move" flags. */
     if (G_CUR_POWER < 4 && !IS_REF_POWER(G_CUR_POWER)) {  /* @0x040DE3..0x040DF4 */
-        overlay_call_181F_04C0();      /* @0x040DF9 sound_event(0x54)        */
+        overlay_call_181F_04C0(0x54);      /* @0x040DF9 sound_event(0x54)        */
         overlay_call_181F_0524(2);      /* @0x040E00 ui_push_request(2)       */
         DG8 (0x0337) = 0;              /* @0x040E08                          */
         DG16(0x034E) = 0;             /* @0x040E0D                          */
@@ -580,7 +580,7 @@ sea_done:
     }
     if (arr_cmp == 0) {                /* @0x0413E3 all equal -> halt prompt  */
         overlay_call_181F_0416();      /* @0x0413ED panel_open(table,0)       */
-        overlay_call_181F_0652();      /* @0x0413FA prompt_text(0x1476,0)     */
+        overlay_call_181F_0652(0x1476, 0);      /* @0x0413FA prompt_text(0x1476,0)     */
         overlay_call_181F_0934(unit);      /* @0x041405 unit_finish_activity      */
     }
 done:
@@ -663,7 +663,7 @@ int func_041410_colony_load(uint16_t unit /*bp+6*/, uint16_t quick /*bp+8*/)
         overlay_call_181F_09AE();      /* @0x041560 acc_add(0, stock_long)     */
         overlay_call_181F_09AE();      /* @0x041570 acc_add(1, cap_long)       */
         overlay_call_181F_09AE();      /* @0x041580 acc_add(2, qty_long)       */
-        if (overlay_call_181F_0652() == 2)          /* @0x04158D prompt(0x1480,5)==cancel */
+        if (overlay_call_181F_0652(0x1480, 5) == 2)          /* @0x04158D prompt(0x1480,5)==cancel */
             goto auto_load;            /* @0x041598 je 0x14ad */
         goto abort;                    /* @0x04159A jmp 0x155d */
     }
@@ -846,7 +846,7 @@ int func_0418AA_commit_active_move(void)
 
     overlay_call_181F_0916((int16_t)DG16(0x5392));          /* @0x0418DC pre_move(active)          */
     dest = overlay_call_191F_0AEE();   /* @0x0418EF move_resolve(active,x,y) (near 0x201c) */
-    overlay_call_181F_02EE();          /* @0x0418FB unit_iter_begin(active)   */
+    overlay_call_181F_02EE((int16_t)DG16(0x5392));          /* @0x0418FB unit_iter_begin(active)   */
 
     /* @0x041900 iterate units; restore order 2 ("moving") unless already 2. */
     it = overlay_call_181F_02E4();     /* @0x041927 unit_iter_next            */
@@ -1007,7 +1007,7 @@ int func_041B76_step_goto(uint16_t unit /*bp+6*/)
     overlay_call_181F_0920(unit);          /* @0x041B7D pre_step(unit)            */
     /* @0x041B85 move toward (destY,destX) via near 0x201c. */
     res = overlay_call_191F_0AEE();    /* @0x041B99 move_resolve(unit,destY,destX) */
-    overlay_call_181F_02EE();          /* @0x041BA5 unit_iter_begin(unit)     */
+    overlay_call_181F_02EE(unit);          /* @0x041BA5 unit_iter_begin(unit)     */
 
     it = overlay_call_181F_02E4();     /* @0x041BD9 (loop tail) */
     while (it >= 0) {                  /* @0x041BDE..0x041BF3 */
@@ -1338,7 +1338,7 @@ int func_041EEA_next_active_unit(void)
             DG16(pbx - 0x77D6) += consumed;                      /* @0x042084 */
         }
         overlay_call_181F_048E(0x24);      /* @0x04209E panel_row(0x24)            */
-        overlay_call_181F_0652();      /* @0x0420AB caption(0x148e,2)          */
+        overlay_call_181F_0652(0x148e, 2);      /* @0x0420AB caption(0x148e,2)          */
         overlay_call_181F_0808();      /* @0x0420B6 row_commit(it)             */
         /* @0x0420AE clamp the two running indices to the iterator. */
         if (prev > it) prev--;         /* @0x0420B1 */

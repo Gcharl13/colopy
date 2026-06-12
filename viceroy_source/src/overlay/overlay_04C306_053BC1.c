@@ -2498,7 +2498,7 @@ int func_052F7E_ai_power_asset_census(uint16_t power)
                             /* if passable: publish view focus @asm 0x053311/0x053318 */
                             DG16(0x8540) = uu[0x00];
                             DG16(0x853E) = uu[0x01];
-                            (void)overlay_call_181F_055E(); /* @asm 0x05331F select(1,0) */
+                            (void)overlay_call_181F_055E(1, 0); /* @asm 0x05331F select(1,0) */
                             snap = g_unit_count_539C;   /* @asm 0x053327 [bp-6]=count */
                         }
                         /* @asm 0x05332D [bp-0x16] debug-trace gate — [bp-0x16]=0

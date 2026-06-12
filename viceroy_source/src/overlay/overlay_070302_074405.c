@@ -818,7 +818,7 @@ int func_070EBA_parse_argv_env(uint16_t argc, uint16_t argv_ptr)
     }
     (void)argv_ptr;
 
-    overlay_call_0D1D_07E4();                            /* @asm 0x070F64 strcpy(0x8554,"viceroy") */
+    overlay_call_0D1D_07E4(0x8554, 0x2076);                            /* @asm 0x070F64 strcpy(0x8554,"viceroy") */
     overlay_call_1A1F_0C38();                            /* @asm 0x070F6C post-parse init */
     if (g_err_822 != 0) {                                /* @asm 0x070F71 exit value set? */
         overlay_call_0D1D_0712();                        /* @asm 0x070F7F printf("Exit value: %d",..) */
@@ -1253,12 +1253,12 @@ extern int overlay_call_1A1F_07C4(void);  /* 0x1A1F:0x07C4 -- save/restore scree
 extern int overlay_call_191F_0182(void);  /* 0x191F:0x0182 -- resolve list object */
 extern int overlay_call_181F_0178(void);  /* 0x181F:0x0178 -- append literal */
 extern int overlay_call_181F_0204(void);  /* 0x181F:0x0204 -- measure text width */
-extern int overlay_call_0D1D_0842(void);  /* 0x0D1D:0x0842 -- strlen */
+extern int overlay_call_0D1D_0842();  /* 0x0D1D:0x0842 -- strlen */
 extern uint16_t g_dlg_suffix_2DE0;        /* DGROUP:0x2DE0 -- slot-row suffix handle */
 
 int func_072CC2_layout_slot_dialog_rows(uint16_t list_arg, uint16_t arg8)
 {
-    overlay_call_1A1F_07C4();                            /* @asm 0x072CE3 save screen-under */
+    overlay_call_1A1F_07C4((int16_t)DG16(0x89e), (int16_t)DG16(0x8a0), (int16_t)DG16(0x1fa2));                            /* @asm 0x072CE3 save screen-under */
     if (overlay_call_191F_0182() == 0)                   /* @asm 0x072CF8 resolve list */
         return 0;                                        /* @asm 0x072D09 NULL -> exit */
     /* es:[handle+0xA] |= 1  (mark shown)  @asm 0x072D10 */
@@ -1279,7 +1279,7 @@ int func_072CC2_layout_slot_dialog_rows(uint16_t list_arg, uint16_t arg8)
         overlay_call_181F_016E();                        /* @asm 0x072E13 append suffix [0x2DE0] */
         (void)g_dlg_suffix_2DE0;
     }
-    overlay_call_1A1F_07C4();                            /* @asm 0x072F67 restore screen-under */
+    overlay_call_1A1F_07C4((int16_t)DG16(0x268a), (int16_t)DG16(0x268c), (int16_t)DG16(0x1fa2));                            /* @asm 0x072F67 restore screen-under */
     (void)list_arg; (void)arg8;
     return 0;                                            /* @asm 0x072F7A RETF */
 }

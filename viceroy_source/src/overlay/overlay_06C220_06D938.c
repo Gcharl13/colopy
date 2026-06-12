@@ -448,7 +448,7 @@ int func_06C520_panel_construct(uint16_t arg0, uint16_t arg1, uint16_t arg2)
     if ((panel_lo | panel_hi) == 0)       /* @0x06C545 alloc failed? */
         goto done;                        /* @0x06C549 jmp 0xbbf */
 
-    overlay_call_1A1F_0356();             /* @0x06C56E window_alloc_init(panel,size,...) */
+    overlay_call_1A1F_0356(0x29);             /* @0x06C56E window_alloc_init(panel,size,...) */
 
     /* seed the panel header: clear +0x4C..+0x52; copy color words 0x1F56/58/5A
      * into +0xA/+0xC/+0xE then reset 0x1F58/0x1F5A=0xFFFF; +0x28=0x50; +0x22=4;

@@ -858,9 +858,9 @@ int func_032DAC(int good, int power, int commit)
 extern int  near_6E13(int v);              /* resident CALL cs:0x6E13 (arg -> unit index) */
 extern int  overlay_call_181F_0920();  /* 0x181F:0x920 report prep */
 extern int  overlay_call_181F_07EA();  /* 0x181F:0x7EA seed first rows */
-extern int  overlay_call_181F_02EE(void);  /* 0x181F:0x2EE seed rows */
+extern int  overlay_call_181F_02EE();  /* 0x181F:0x2EE seed rows */
 extern int  overlay_call_181F_02DA(void);  /* 0x181F:0x2DA row advance (a) */
-extern int  overlay_call_181F_02E4(void);  /* 0x181F:0x2E4 row advance (b) */
+extern int  overlay_call_181F_02E4();  /* 0x181F:0x2E4 row advance (b) */
 extern int  overlay_call_181F_0948();  /* 0x181F:0x948 advisory */
 extern void near_6E31(void);
 void func_032FE2(int arg)
@@ -1632,7 +1632,7 @@ void func_033C96(void)
         G16(0x9E2C) = 0;                                  /* @asm 0x034051 */
         break;
     case 4:                                               /* @asm 0x03405A: type 5->4 else ->1, pay barF50 */
-        overlay_call_181F_04C0(/* 0x58 */);               /* @asm 0x03405D (ax=0x58) */
+        overlay_call_181F_04C0(0x58);               /* @asm 0x03405D (ax=0x58) */
         if (unit_table[active].type == 5) unit_table[active].type = 4; /* @asm 0x034062..0x03406D */
         else unit_table[active].type = 1;                 /* @asm 0x034074..0x034078 */
         PREC()->gold -= (uint32_t)barF50;                 /* @asm 0x03407D..0x034088 (-=, +0x2A) */

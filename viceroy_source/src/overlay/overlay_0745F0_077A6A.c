@@ -74,7 +74,7 @@ typedef uint16_t (far *stream_io_cb_t)(uint16_t near *size /*, buf */);
  * page-relative near targets).  Role inferred from call context only.
  * -------------------------------------------------------------------------- */
 extern int overlay_call_191F_091C(void);  /* 0x191F:0x091C -- parse-token / next-field */
-extern int overlay_call_191F_0928(void);  /* 0x191F:0x0928 -- find NAMES.TXT section by name */
+extern int overlay_call_191F_0928();  /* 0x191F:0x0928 -- find NAMES.TXT section by name */
 extern int overlay_call_191F_0FC4(void);  /* 0x191F:0x0FC4 -- data-table helper */
 extern int overlay_call_191F_0FDE(void);  /* 0x191F:0x0FDE -- text/record helper */
 extern int overlay_call_191F_0FD0(void);  /* 0x191F:0x0FD0 -- record lookup (returns far ptr) */
@@ -199,7 +199,7 @@ extern int overlay_call_0D1D_0EC6(void);  /* 0x0D1D:0x0EC6 -- C lseek/position s
 extern int overlay_call_0D1D_0B1C(void);  /* 0x0D1D:0x0B1C -- C buffered fill */
 extern int overlay_call_0D1D_0E9D(void);  /* 0x0D1D:0x0E9D -- C chunked copy */
 extern int overlay_call_0D1D_09CA();  /* 0x0D1D:0x09CA -- C findnext (read dirent) */
-extern int overlay_call_0D1D_0842(void);  /* 0x0D1D:0x0842 -- C strlen */
+extern int overlay_call_0D1D_0842();  /* 0x0D1D:0x0842 -- C strlen */
 extern int overlay_call_0D1D_08BC(void);  /* 0x0D1D:0x08BC -- C strncmp */
 extern int overlay_call_0D1D_117E(void);  /* 0x0D1D:0x117E -- C strcpy(dst, src) used by NAMES name fills */
 extern int overlay_call_0D1D_08F6(void);  /* 0x0D1D:0x08F6 -- C atoi/count (MISCELLANEOUS count @0x833c) */
@@ -644,7 +644,7 @@ int func_0749E0_load_names_data_tables(void)
     int j;     /* [bp-4] -- CARGO inner derived-byte index */
     int count; /* [0x846] -- MISCELLANEOUS dynamic entry count */
 
-    overlay_call_181F_000E();                 /* @asm 0x0749EB NAMES init(@0x1A2C "EUROPE") */
+    overlay_call_181F_000E(0x1a2c, 0);                 /* @asm 0x0749EB NAMES init(@0x1A2C "EUROPE") */
 
     /* ---- SEASONS @DS:0x21AC : 2 ints -> word[i-0x6800] ---- @asm 0x0749F3 */
     overlay_call_191F_0928();                                  /* @asm 0x0749F9 find SEASONS */
@@ -820,7 +820,7 @@ int func_0749E0_load_names_data_tables(void)
     /* ---- CARGO @DS:0x2252 : 0x14 rows {int word[i-0x6840]; if i<0x10 then 9
      * bytes[i*9-0x6904..-0x68fc]}, then a derived max byte[i*0x10+0x2f7a] for
      * i=0..0x1C ---- @asm 0x074E6B  (project mem: @CARGO high/volatility table) */
-    overlay_call_191F_0928();                                  /* @asm 0x074E6B find CARGO */
+    overlay_call_191F_0928(0, 0x2258);                                  /* @asm 0x074E6B find CARGO */
     for (i = 0; i < 0x14; i++) {                               /* @asm 0x074E65 cmp,0x14 */
         overlay_call_191F_091C();                              /* @asm 0x074DEC */
         *((uint16_t near *)((i << 1) - 0x6840)) =
@@ -849,7 +849,7 @@ int func_0749E0_load_names_data_tables(void)
      * {int word[bx+0x5230], byte[si+0x5232], (2*byte+byte)[si+0x5234],
      *  bytes[si+0x5236/0x5235/0x5237..0x523c], last via 0x1A1F:0xB2E[si+0x523d]}.
      * project mem: ICONS sprite index = @UNIT col-1 (the word[bx+0x5230]). */
-    overlay_call_191F_0928();                                  /* @asm 0x074EC8 find UNIT */
+    overlay_call_191F_0928(0, 0x2258);                                  /* @asm 0x074EC8 find UNIT */
     for (i = 0; i < 0x17; i++) {                               /* @asm 0x074F60 cmp,0x17 */
         int si = i * 0xE;                                      /* @asm 0x074E2 i*3<<1 */
         overlay_call_191F_091C();                              /* @asm 0x074ED5 */
@@ -1019,7 +1019,7 @@ int func_0749E0_load_names_data_tables(void)
      * 0x0D1D:0x8F6(@0x833c) -> [0x846]; then [count] values -> word[i-0x6ca4]. */
     overlay_call_191F_0928();                                  /* @asm 0x075311 find MISCELLANEOUS */
     overlay_call_191F_091C();                                  /* @asm 0x075319 token (the count) */
-    count = overlay_call_0D1D_08F6();                          /* @asm 0x075321 atoi(@0x833c) */
+    count = overlay_call_0D1D_08F6(0x833c);                          /* @asm 0x075321 atoi(@0x833c) */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x0846))) = (uint16_t)count;              /* @asm 0x075329 [0x846]=count */
     for (i = 0; i < count; i++)                                /* @asm 0x075345 cmp [bp-8],[0x846] */
         *((uint16_t near *)((i << 1) - 0x6CA4)) =
@@ -1282,7 +1282,7 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
         page1A_newgame_mapinit();                   /* @asm 0x0756DC near 0x4f2b default-map init */
 
     overlay_call_181F_04F2();                       /* @asm 0x0756DF init draw */
-    overlay_call_181F_04C0();                       /* @asm 0x0756E7 set mode(0x39) */
+    overlay_call_181F_04C0(0x39);                       /* @asm 0x0756E7 set mode(0x39) */
     overlay_call_181F_03AC();                       /* @asm 0x0756EC present */
 
     result = 2;                                     /* @asm 0x0756F1 [bp-2]=2 */
@@ -1311,7 +1311,7 @@ int func_0755CC_new_game_init(uint16_t arg0_bp_06)
     overlay_call_181F_03AC();                       /* @asm 0x07578A present */
 
     overlay_call_181F_04CA();                       /* @asm 0x075793 set palette([0x83A6]) */
-    overlay_call_1A1F_083E();                       /* @asm 0x07579E (arg0) */
+    overlay_call_1A1F_083E(arg0_bp_06);                       /* @asm 0x07579E (arg0) */
     overlay_call_181F_03AC();                       /* @asm 0x0757A6 present */
     overlay_call_1A1F_0976();                       /* @asm 0x0757AB post-setup */
     overlay_call_191F_0B6C();                       /* @asm 0x0757B0 post-setup */
@@ -1542,7 +1542,7 @@ int func_0759E8_save_load_game_screen(void)
 
     /* ---- event loop ---- @asm 0x075C28 (label 0x4798) */
     do {
-        overlay_call_181F_04DE();             /* @asm 0x075C2A arg 0x33 */
+        overlay_call_181F_04DE(0x33);             /* @asm 0x075C2A arg 0x33 */
         overlay_call_181F_0F3C();             /* @asm 0x075C32 */
         if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x0828))) == 0 && /* @asm 0x075C37 */
             (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83AC))) != 0) {/* @asm 0x075C3E */
@@ -1738,7 +1738,7 @@ int func_075FB6_map_scenario_setup(void)
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x83A8))) = (uint16_t)overlay_call_181F_0E5E(); /* @asm 0x075FE3 */
     overlay_call_181F_0E68();                 /* @asm 0x075FEB advance */
     overlay_call_181F_0E72();                 /* @asm 0x075FF0 -> [0x8D80:0x8D82] */
-    overlay_call_1A1F_0E36();                 /* @asm 0x075FFF (with [bp-8]) */
+    overlay_call_1A1F_0E36(step);                 /* @asm 0x075FFF (with [bp-8]) */
 
     if ((*(uint8_t near *)(DG_BASE + (uint16_t)(0x082A))) == 0) {     /* @asm 0x076004 cmp [0x82a],0 */
         overlay_call_181F_0ED6();             /* @asm 0x07601C ((step==3)?0:1, step) */
@@ -1794,7 +1794,7 @@ int func_075FB6_map_scenario_setup(void)
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B8))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0831))); /* @asm 0x07612B/07612E */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x14B2))) = (*(uint8_t near *)(DG_BASE + (uint16_t)(0x0831))); /* @asm 0x076131 */
 
-    overlay_call_1A1F_07C4();                 /* @asm 0x07613F region restore(0x1000,[0x268A]) */
+    overlay_call_1A1F_07C4((int16_t)DG16(0x268a), (int16_t)DG16(0x268c), 0x1000);                 /* @asm 0x07613F region restore(0x1000,[0x268A]) */
     if (overlay_call_1A1F_0CBE() != 0)        /* @asm 0x076147 */
         goto tail;                            /* @asm 0x076150 jmp 0x4ea5 */
 
@@ -1864,7 +1864,7 @@ int func_075FB6_map_scenario_setup(void)
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x082E))) = 0x93F8;      /* @asm 0x0762C3 */
     overlay_call_1A1F_08DC();                 /* @asm 0x0762C9 bind map layers */
 
-    overlay_call_1A1F_0E6A();                 /* @asm 0x0762F1 draw map name line @DS:0x23BA */
+    overlay_call_1A1F_0E6A((int16_t)DG8(0x2608), (int16_t)DG16(0x260a));                 /* @asm 0x0762F1 draw map name line @DS:0x23BA */
     if (page1A_map_finalize() == 0) {         /* @asm 0x0762F7 near 0x4f21 */
         overlay_call_181F_03F4();             /* @asm 0x076304 blit A000:FC00 */
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53C2))) = 1;       /* @asm 0x076309 */
@@ -1905,7 +1905,7 @@ int func_0764F2_view_origin_alloc(void)
     int ok = 1;                               /* @asm 0x0764F6 [bp-2]=1 */
     uint16_t lo, hi;
 
-    lo = (uint16_t)overlay_call_181F_029A();  /* @asm 0x076501 alloc(0x3880) -> ax(lo) */
+    lo = (uint16_t)overlay_call_181F_029A(0x3880, 1);  /* @asm 0x076501 alloc(0x3880) -> ax(lo) */
     hi = 0; /* dx returned by alloc; @asm 0x076509 [0x23C8]=dx (far seg) */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C6))) = lo;          /* @asm 0x076506 */
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x23C8))) = hi;          /* @asm 0x076509 */

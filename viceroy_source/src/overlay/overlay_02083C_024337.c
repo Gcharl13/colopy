@@ -223,7 +223,7 @@ int func_020F50_tutorial_hints(void)
         && (g_opt_5386 & 0x10) == 0) {              /* @0x020FC3 (test 0x10) */
         /* set_message_subject(terrainstat[U_TYPE(u)]); @0x020FE0 LCALL 0x181F:0x438 */
         overlay_call_181F_0438();
-        overlay_call_181F_0652();                   /* @0x020FF3 display_text_key(3,MSG_TUTORIAL1) */
+        overlay_call_181F_0652(0x8b3, 0);                   /* @0x020FF3 display_text_key(3,MSG_TUTORIAL1) */
         g_opt_5386 |= 0x10;                          /* @0x020FFB */
         return 0;                                    /* @0x021002 ret */
     }
@@ -240,7 +240,7 @@ int func_020F50_tutorial_hints(void)
      * colony_index_at_xy (0x718) and the per-terrain stat table @0x5230.
      * The full per-arm control flow is byte-traced @0x021004..0x0215FE; the
      * table-resident leaf values are cited-RUNTIME_ONLY at their read sites. */
-    overlay_call_181F_0652();                       /* representative hint emit */
+    overlay_call_181F_0652(0x8e9, 3);                       /* representative hint emit */
     g_opt_5386 |= 0x40;                              /* @0x021350 TUTORIAL3 shown-bit (example) */
     return 0;                                        /* @0x0215FF leave; ret */
 }
@@ -496,12 +496,12 @@ int func_021FF2_treaty_check(void)
     if (found >= 0) {                                  /* @0x0220B0 */
         overlay_call_181F_0A1A();                      /* @0x0220B9 settlement_tribe(found) */
         overlay_call_181F_0438();                      /* @0x0220C4 set_message_subject */
-        if (overlay_call_181F_0652() == 2) {           /* @0x0220D1 HAVETREATY -> YES */
+        if (overlay_call_181F_0652(0x932, 1) == 2) {           /* @0x0220D1 HAVETREATY -> YES */
             overlay_call_181F_0A10();                  /* @0x0220F1 set_tile_owner */
         }
     }
 apply:
-    overlay_call_181F_04C0();                          /* @0x0220FC apply_screen_mode(0x58) */
+    overlay_call_181F_04C0(0x58);                          /* @0x0220FC apply_screen_mode(0x58) */
     U_STATE(u) = 5;                                    /* @0x022105 */
     overlay_call_181F_0934();                          /* @0x022112 activate_next(u) */
     (void)found;
@@ -541,7 +541,7 @@ int func_02211E_build_road(void)
     overlay_call_181F_0722();                          /* @0x022147 terrain_flags_at_xy */
     func_00627A_op_sz_57(U_X(u), U_Y(u));              /* @0x022158 terrain_id_at_xy */
     if (overlay_call_181F_0754() /* &0x40 */) {        /* @0x022169..0x022171 */
-        overlay_call_181F_0652();                      /* @0x02217A display_text_key("NOPLOW") */
+        overlay_call_181F_0652(0x93d, 3);                      /* @0x02217A display_text_key("NOPLOW") */
         return 0;                                       /* @0x022182 */
     }
     if (overlay_call_181F_0696() < 0) {                /* @0x02218A colony_index_at_xy */
@@ -583,7 +583,7 @@ int func_022334_build_road_native(void)
     int u = g_active_unit;                             /* @0x022340 */
     overlay_call_181F_0722();                          /* @0x02235D terrain_flags_at_xy */
     if (overlay_call_181F_0754() /* &0xa */) {         /* @0x02236E test 0xa */
-        overlay_call_181F_0652();                      /* @0x02237F display_text_key("NOROAD") */
+        overlay_call_181F_0652(0x95d, 3);                      /* @0x02237F display_text_key("NOROAD") */
         return 0;                                       /* @0x022387 */
     }
     if (overlay_call_181F_0696() < 0) {                /* @0x022390 colony_index_at_xy */
@@ -632,13 +632,13 @@ int func_022542_build_colony(void)
     int u = g_active_unit;                             /* @0x022547 */
     int cidx = overlay_call_181F_07BE();               /* @0x02255C colony_at_xy */
     if (g_opt_5382 & 1) {                              /* @0x02256D endgame lock */
-        overlay_call_181F_0652();                      /* @0x022579 display_text_key("NOCOLONIESEITHER") */
+        overlay_call_181F_0652(0x98a, 1);                      /* @0x022579 display_text_key("NOCOLONIESEITHER") */
         return 0;                                       /* @0x022581 */
     }
     if (cidx >= 0) goto existing;                      /* @0x0225A5 */
 
     if (overlay_call_181F_0768()) {                    /* @0x0225BD feature_at_xy (water) */
-        overlay_call_181F_0652();                      /* @0x0225CB display_text_key("SEACOLONY") */
+        overlay_call_181F_0652(0x98a, 1);                      /* @0x0225CB display_text_key("SEACOLONY") */
         return 0;
     }
     if (overlay_call_181F_0614() < 0) {                /* @0x0225D4 adjacency check */
@@ -757,7 +757,7 @@ int func_02287E_disband_unit(void)
     if (U_TYPE(target) >= 0xd && U_TYPE(target) <= 0x12) { /* @0x0228CB ship class */
         overlay_call_181F_0920();                      /* @0x0228DD ship_anim(target) */
         if (overlay_call_181F_08BC() > 1) {            /* @0x0228EA transported_count > 1 */
-            overlay_call_181F_0652();                  /* @0x022910 display_text_key("DISBANDSHIP") */
+            overlay_call_181F_0652(0x9f5, 0);                  /* @0x022910 display_text_key("DISBANDSHIP") */
             return 0;                                   /* @0x02291B */
         }
     }
@@ -820,7 +820,7 @@ int func_022A3A_unit_info_popup(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     overlay_call_181F_07EA();                          /* @0x022A7D mark_tile(first) */
     first = overlay_call_181F_02EE();                  /* @0x022A88 lead_unit(first) */
     /* en-route early-out @0x022A93..0x022AB5 (cited) */
-    overlay_call_191F_023C();                          /* @0x022AC9 dialog_buf(...,0x800) */
+    overlay_call_191F_023C(0x800, (int16_t)DG16(0x268a), (int16_t)DG16(0x268c));                          /* @0x022AC9 dialog_buf(...,0x800) */
     /* header writes @0x022ADE..0x022AF0 */
     for (;;) {                                          /* @0x02248F unit-list loop (<=10) */
         overlay_call_181F_0022();                      /* @0x0224A3 / 0x024DC fmt int -> str */

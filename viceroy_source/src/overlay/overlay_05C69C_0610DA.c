@@ -383,7 +383,7 @@ int func_05C878_treasure_transport_event(uint16_t source_idx,
     overlay_call_181F_09A4(/* arg1 */);
     overlay_call_181F_0438(/* ax, 0 */);
     overlay_call_181F_04B6(2);
-    overlay_call_181F_0652(/* 2, 0x1BFD "LOOTCASH" */);
+    overlay_call_181F_0652(0x1bfd, 2);
 
     /* PowerRecord[attacker].gold (+0x21) += gold_delta (32-bit ADC).
      * @asm 0x05CA42..0x05CA54 ADD [bx-0x77D6],ax / ADC [bx-0x77D4],dx */
@@ -1425,7 +1425,7 @@ int func_060CE0_draw_terrain_legend_menu(uint16_t title_id)
     void far *menu;         /* bp-6:bp-4 */
     int i;                  /* bp-8 */
 
-    overlay_call_1A1F_07C4(/* [0x89E],[0x8A0],0x800 */);   /* @0x060CEF push ctx */
+    overlay_call_1A1F_07C4((int16_t)DG16(0x89e), (int16_t)DG16(0x8a0), 0x800);   /* @0x060CEF push ctx */
     overlay_call_191F_0182(/* 0x87C, title_id */);         /* @0x060D03 open */
     menu = (void far *)MK_FP(0, 0);
     (void)menu;
@@ -1817,7 +1817,7 @@ int func_0610B0_found_new_colony(void)
     /* format the proposed colony name from ColonyRecord[cand]+2. @0x061140 */
     overlay_call_0D1D_117E(/* &namebuf, ColonyRecord[cand]+2 */);
 
-    if (overlay_call_191F_0928(/* 0x87C, 0x1D7E "NAMECOLONY" */) == 0) { /* @0x06115D je 0x6116C else 0x61240 */
+    if (overlay_call_191F_0928(0x87c, 0x1d7e) == 0) { /* @0x06115D je 0x6116C else 0x61240 */
         overlay_call_181F_0178(/* &namebuf */);      /* finalize buffer @0x06116C */
         /* initial population count drawn from the name table. @0x061178 */
         overlay_call_191F_091C();                    /* txt_lookup() @0x061178 */

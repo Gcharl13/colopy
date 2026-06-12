@@ -939,7 +939,7 @@ int ai_resolve_colony_assault(int unit)  /* func_05A20E */
         /* attacker loses: raise the finalize flags. @asm 0x05A3EA */
         g_word_0B98 = 1;                                /* @asm 0x05A3EA */
         g_byte_0337 = 1;                                /* @asm 0x05A3F0 */
-        overlay_call_181F_0608();                       /* finalize colony @asm 0x05A3F9 */
+        overlay_call_181F_0608((int16_t)DG16(0x8dc6));                       /* finalize colony @asm 0x05A3F9 */
         g_word_0B98 = 0;                                /* @asm 0x05A401 */
     }
     (void)defender;

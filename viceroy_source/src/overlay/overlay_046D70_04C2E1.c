@@ -440,7 +440,7 @@ void native_settlement_remove_046EC0_inline(uint16_t settlement_index)  /* func_
             /* @asm 0x046FA6 push ax ; push 0 ; lcall 0x181F:0x0438 ; add sp,4 */
             overlay_call_181F_0438();          /* msg_set_arg(handle, slot=0) */
             /* @asm 0x046FB1 push 3 ; push 0x14D4 ; lcall 0x181F:0x0652 ; add sp,4 */
-            overlay_call_181F_0652();          /* display_message(3, "EXTINCT") */
+            overlay_call_181F_0652(0x14d4, 3);          /* display_message(3, "EXTINCT") */
 
         } else {
 
@@ -1052,7 +1052,7 @@ int power_weekly_boycott_recover(uint16_t power_index)  /* func_0485F6 */
             overlay_call_181F_0D6C();                /* tax  tick -100 @ ([0x53D2],power) */
 
             /* @asm 0x048714 — page_0B redraw/update dispatcher(anger, power). */
-            overlay_call_1A1F_0398();
+            overlay_call_1A1F_0398((int16_t)DG16(0x8d52), (int16_t)DG16(0x5398));
 
             /* @asm 0x048724..0x048757 — recompute the market accumulators from the
              * PowerRecord field at [power-0x69D6], then re-arm the boycott bit. */
@@ -1451,7 +1451,7 @@ int native_mission_established(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
     /* @asm 0x048C30..0x048C54 — only show the message for a live human power (white 0x8024). */
     if (arg1_bp_08 < 4 && g_power_active_543F[arg1_bp_08 * 0x34] == 0) {  /* @asm 0x048C3A */
-        overlay_call_181F_04C0();                     /* @asm 0x048C44 set color 0x8024 */
+        overlay_call_181F_04C0(0x8024);                     /* @asm 0x048C44 set color 0x8024 */
         overlay_call_181F_0652();                     /* @asm 0x048C4F draw line(4, buf) */
     }
 
@@ -2198,7 +2198,7 @@ int colony_surrounding_tile_scan(void)  /* func_048F34 */
  * with its own message key (0x15C3 / 0x15CE / 0x15DA). @status BYTE_VERIFIED.
  * ============================================================================ */
 extern uint16_t g_current_power_8D52;   /* DGROUP:0x8D52 — current/active power index */
-extern int  overlay_call_191F_019C(void);                 /* 0x191F:0x019C — keyed message show */
+extern int  overlay_call_191F_019C();                 /* 0x191F:0x019C — keyed message show */
 extern void native_attack_apply_4BA48(int a, int b, int c, int d); /* near call cs:0x4BA48 */
 
 /* func_04A37C -- graduated native wagon-train-attack outcome roll.
@@ -2217,7 +2217,7 @@ int native_attack_reward_roll(uint16_t a_bp_06, uint16_t b_bp_08,
     overlay_call_181F_0438();                     /* @asm 0x04A3B4 format/scale(0, v) */
 
     if (roll <= threshold) {                      /* @asm 0x04A3BF cmp roll,threshold; jg 0x4A3E6 */
-        overlay_call_181F_0652();                 /* @asm 0x04A3C9 best-tier message key 0x15C3 */
+        overlay_call_181F_0652(0x15c3, 3);                 /* @asm 0x04A3C9 best-tier message key 0x15C3 */
         overlay_call_181F_0808();                 /* @asm 0x04A3D4 (a_bp_06) */
         result = 1;                               /* @asm 0x04A3DC [bp-4]=1 */
     } else if (roll <= 2 * threshold) {           /* @asm 0x04A3E6 shl threshold,1; cmp; jl 0x4A402 */
@@ -2538,7 +2538,7 @@ int native_village_trade(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
             g_power_active_543F[arg1_bp_08 * 0x34] != 0) {  /* @asm 0x04AD32 AI power */
             /* @asm 0x04AD40 — refuse-A: emit message 0x167D. */
             overlay_call_181F_09A4();  overlay_call_181F_0438();
-            overlay_call_191F_019C();                 /* @asm 0x04AD5D emit 0x167D */
+            overlay_call_191F_019C(0x167d, (int16_t)DG16(0x8d52));                 /* @asm 0x04AD5D emit 0x167D */
         } else if (won == 0 && base >= 0x32) {        /* @asm 0x04AD6E refuse-B gate */
             /* @asm 0x04AD8B — refuse-B: read AIPersonality (arg1*2 + 0x540E), emit 0x1689. */
             overlay_call_181F_0438();
@@ -2549,7 +2549,7 @@ int native_village_trade(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
             /* @asm 0x04ADF5 — emit 0x1692 ("MERCS" branch). */
             overlay_call_181F_0438();
             overlay_call_181F_0A1A();  overlay_call_181F_0438();
-            overlay_call_191F_019C();                 /* @asm 0x04AE28 emit 0x1692 */
+            overlay_call_191F_019C(0x1692, (int16_t)DG16(0x8d52));                 /* @asm 0x04AE28 emit 0x1692 */
         } else {
             accepted = 1;                             /* @asm 0x04AE38 ACCEPT */
         }
@@ -2590,7 +2590,7 @@ int native_village_trade(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
 
         /* @asm 0x04AF16..0x04AF33 — human power gets the spoken "INDIANSURPRISE"/result line. */
         if (arg1_bp_08 < 4 && g_power_active_543F[arg1_bp_08 * 0x34] == 0)
-            overlay_call_191F_019C();                 /* @asm 0x04AF2E emit 0x169D */
+            overlay_call_191F_019C(0x169d, (int16_t)DG16(0x8d52));                 /* @asm 0x04AF2E emit 0x169D */
 
         /* @asm 0x04AF36 — deposit the transferred goods into the colony stockpile. */
         *(int16_t *)&((uint8_t *)g_colony_8542)[stockIdx * 2 + 0x9A] += (int16_t)transfer;
@@ -2822,7 +2822,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
          * (ALREADYSMITE 0x16DC). */
         if (func_0082A0_logic_sz_18(DG16(0x8D52), (uint16_t)target) >= 0x4B) { /* @asm 0x04B1FD relation(target,cur) >= war thresh */
             overlay_call_181F_0A1A();  overlay_call_181F_0438();
-            overlay_call_191F_019C();                             /* @asm 0x04B224 emit 0x16DC "ALREADYSMITE" */
+            overlay_call_191F_019C(0x16c1, (int16_t)DG16(0x8d52));                             /* @asm 0x04B224 emit 0x16DC "ALREADYSMITE" */
             goto done;
         }
         do_pay = 1;
@@ -2836,7 +2836,7 @@ int scout_incite_tribe_to_war(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         overlay_call_181F_09A4();  overlay_call_181F_0438();      /* slot 1 (arg1 -> STRING1) */
         overlay_call_181F_0A1A();  overlay_call_181F_0438();      /* slot 2 (cost long / STRING2) */
         overlay_call_181F_0652(0x16e9, 1);  overlay_call_181F_0438();      /* slot 3 (target -> STRING3) */
-        overlay_call_181F_0652();                                 /* @asm 0x04B2D6 draw 0x16E9 "INDIANWARFARE" */
+        overlay_call_181F_0652(0x16e9, 1);                                 /* @asm 0x04B2D6 draw 0x16E9 "INDIANWARFARE" */
 
         /* @asm 0x04B2DE — push the tribe's attitude toward the target by +100. */
         overlay_call_181F_0D6C();                                 /* adjust_native_attitude(cur_pow, target, 0x64, 0) */
@@ -3134,7 +3134,7 @@ int king_mad_at_ships_dispatch(uint16_t unit_index_bp_06,
             /* @asm 0x04B3F3..0x04B418 — King intervenes: emit "MADATSHIPS <power>". */
             overlay_call_181F_09A4();            /* format power name from region */
             overlay_call_181F_0438();            /* set dialog context */
-            overlay_call_191F_019C();            /* push [0x8D52],0x1705("MADATSHIPS") */
+            overlay_call_191F_019C(0x1705, (int16_t)DG16(0x8d52));            /* push [0x8D52],0x1705("MADATSHIPS") */
             goto done;                           /* @asm 0x04B418 */
         }
     }

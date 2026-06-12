@@ -222,7 +222,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
         overlay_call_181F_0438(); /* msg_set_arg( G16(UNIT_TYPE(i)*14 + 0x5230), 0 ) */
 
         /* @0x03C613..0x03C61D  msg_show(0, 0x1284 "SEIZURE") */
-        overlay_call_181F_0652(); /* msg_show(0, 0x1284) */
+        overlay_call_181F_0652(0x1284, 0); /* msg_show(0, 0x1284) */
 
     refresh:
         /* @0x03C620..0x03C628  unit_slot_refresh(i)  (thunk 0x808) */
@@ -340,7 +340,7 @@ int func_03C638_logic_sz_73(void)
     overlay_call_181F_0438(); /* msg_set_arg(2, r) */
     overlay_call_181F_0A1A(); /* r = power_accessor(loser) */
     overlay_call_181F_0438(); /* msg_set_arg(3, r) */
-    overlay_call_181F_0652(); /* msg_show(2, 0x128C) */
+    overlay_call_181F_0652(0x128c, 2); /* msg_show(2, 0x128C) */
 
     /* @0x03C775..0x03C7AC  fetch the two map-layer base far-pointers and the
      *   per-power bitmasks. layerA = get_map_layer_ptr(0,0) [0x736];
@@ -498,7 +498,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
          *      -> announce str 0x12A2 then refresh (the 0x03C942 block). */
         if (overlay_call_181F_0768() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ == 0) {
             /* @0x03C942..0x03C957  msg_show(1, 0x12A2); unit_slot_refresh(i) */
-            overlay_call_181F_0652(); /* msg_show(1, 0x12A2 "SEIZURELAND") */
+            overlay_call_181F_0652(0x12a2, 1); /* msg_show(1, 0x12A2 "SEIZURELAND") */
             overlay_call_181F_0652(0x12a2, 1); /* (i) */
             continue;                 /* @0x03C9EB jmp 0x03C942 (re-enters @ next dec) */
         }
@@ -591,7 +591,7 @@ int func_03CA2A_colony_with_input(void)
         }
     next_unit:
         /* @0x03CA79..0x03CA86  slot = iter_next_unit(slot); while (slot >= 0) */
-        slot = (int16_t)overlay_call_181F_02E4(); /* (slot) */
+        slot = (int16_t)overlay_call_181F_02E4(slot); /* (slot) */
         if (slot < 0)
             break;                    /* @0x03CA86 jge loops back to 0x03CA54 */
     }
@@ -997,7 +997,7 @@ int func_03CDA2_colony_sz_273(uint16_t arg0_bp_06)
             overlay_call_181F_07E0(); /* iter_units_at(absx,absy) -> u */
             /* for each unit u: if capacity slot > 0 and g_unit_stat[type*14+0x5236]!=0
              *   capacity[i]-- ; (counts available defender room) @0x03CF1F.. */
-            u = (int16_t)overlay_call_181F_02E4(); /* iter_next_unit */
+            u = (int16_t)overlay_call_181F_02E4(u); /* iter_next_unit */
         }
         /* @0x03CF53..0x03CF6C  capacity[i] = func_03EA38(colony, ...) */
         func_0082DC_logic_sz_118((uint16_t)eslot[i]); /* get_colony_by_slot(eslot[i]) again */
@@ -1266,7 +1266,7 @@ p1_test:
         overlay_call_181F_0498(3); /* msg_ctx(3) @0x03D792 */
         overlay_call_181F_09A4((int16_t)DG16(0x53d4)); /* fmt power name([0x53D4]) @0x03D79E */
         overlay_call_181F_0438(); /* msg_set_arg(1, name) @0x03D7A9 */
-        overlay_call_181F_04C0(); /* msg_flag(0x3F) @0x03D7B4 */
+        overlay_call_181F_04C0(0x3f); /* msg_flag(0x3F) @0x03D7B4 */
         /* show str 0x12C4 */
     } else {
         overlay_call_181F_09A4((int16_t)DG16(0x53d6)); /* fmt power name([0x53D6]) @0x03D7C6 */
@@ -1663,7 +1663,7 @@ int func_03DE46_op_sz_138(void)
     overlay_call_181F_0A10(power, (int16_t)DG16(0x53d2), 0x40); /* power_set_flag(power, cur, 0x40) @0x03E0DC */
     overlay_call_181F_0E1C(1); /* redraw(1) @0x03E0E4 */
     overlay_call_181F_0416(); /* msg_set_ptr(DS, &AIPersonality[power*0x34+0x540E], 0) */
-    overlay_call_181F_0652(); /* msg_show(1, 0x130B) @0x03E104 */
+    overlay_call_181F_0652(0x130b, 1); /* msg_show(1, 0x130B) @0x03E104 */
 
     /* @0x03E10F..0x03E142  refresh units of the seceding power */
     for (k = (int16_t)G_UNIT_COUNT - 1; k >= 0; --k) {  /* @0x03E10F..0x03E140 */
@@ -1894,7 +1894,7 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
     extern int func_03D510_colony_sz_1080(uint16_t arg);
     extern int func_03CAC6_rng_sz_58(uint16_t power);
 
-    overlay_call_181F_0582(); /* power_select(arg0) @0x03E44B */
+    overlay_call_181F_0582(arg0_bp_06); /* power_select(arg0) @0x03E44B */
 
     if ((int16_t)G16(0x53D2) == (int16_t)arg0_bp_06) {   /* @0x03E456 */
         /* @0x03E45C..0x03E471 */
@@ -1960,10 +1960,10 @@ int func_03E442_op_sz_146(uint16_t arg0_bp_06)
 
     /* @0x03E5F5..0x03E663  affordability gate + accept/charge */
     if (price <= DGS32(G16(0x84FC) + 0x2A)) {  /* @0x03E5FD treasury */
-        overlay_call_191F_0AC8(); /* fmt_power_name([0x53D6],0,0) @0x03E615 */
+        overlay_call_191F_0AC8(0, 0, (int16_t)DG16(0x53d6)); /* fmt_power_name([0x53D6],0,0) @0x03E615 */
         overlay_call_181F_09AE(); /* fmt_int32(price) @0x03E621 */
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E630 */
-        if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x1340) */ == 2) {
+        if ((int16_t)overlay_call_181F_0652(0x1340, 1) /* msg_show(1,0x1340) */ == 2) {
             DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E651 debit */
             func_03D510_colony_sz_1080(1);        /* @0x03E659 accept/spawn (1) */
         }
@@ -2087,10 +2087,10 @@ int func_03E664_logic_sz_15(void)
 
     /* @0x03E7D4..0x03E842  affordability + accept/charge */
     if (price <= DGS32(G16(0x84FC) + 0x2A)) {  /* @0x03E7DC treasury */
-        overlay_call_191F_0AC8(); /* fmt_power_name([0x53D6],0,0) @0x03E7F4 */
+        overlay_call_191F_0AC8(0, 0, (int16_t)DG16(0x53d6)); /* fmt_power_name([0x53D6],0,0) @0x03E7F4 */
         overlay_call_181F_09AE(); /* fmt_int32(price) @0x03E800 */
         overlay_call_181F_0416(); /* msg_set_ptr(SS,&buf,1) @0x03E80F */
-        if ((int16_t)overlay_call_181F_0652() /* msg_show(1,0x134C) */ == 2) {
+        if ((int16_t)overlay_call_181F_0652(0x134c, 1) /* msg_show(1,0x134C) */ == 2) {
             DGS32(G16(0x84FC) + 0x2A) -= price;   /* @0x03E830 debit */
             {   extern int func_03D510_colony_sz_1080(uint16_t arg);
                 func_03D510_colony_sz_1080(1);    /* @0x03E839 accept/spawn (1) */
@@ -2835,7 +2835,7 @@ int func_04057A_op_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     }
 
     /* @0x040596..0x0405C4  prev = baseline(a,powerIdx,x,y); cur = metric(powerIdx) */
-    prev = (int32_t)overlay_call_181F_0D78(); /* (a, powerIdx, x, y) */
+    prev = (int32_t)overlay_call_181F_0D78(arg0_bp_06, arg1_bp_08, arg2_bp_0A, arg3_bp_0C); /* (a, powerIdx, x, y) */
     cur  = (int32_t)overlay_call_181F_0D78(arg0_bp_06, arg1_bp_08, arg2_bp_0A, arg3_bp_0C); /* (powerIdx) */
 
     /* @0x0405C4..0x0405D3  if ((cur - prev) >= prev/2) -> act */
@@ -3054,7 +3054,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
                 G8((uint16_t)owner*0x34 + 0x543F) == 0) {     /* human defender */
                 overlay_call_181F_09AE(); /* fmt_int32(dmg) @0x040820 */
                 overlay_call_181F_0416(); /* msg_set_ptr(&colony[+2] name) */
-                overlay_call_181F_0652(); /* msg_show(5, 0x1466) @0x04083E */
+                overlay_call_181F_0652(0x1466, 5); /* msg_show(5, 0x1466) @0x04083E */
             }
             G16(colony + 0xA4) += dmg;               /* @0x04084D */
         }

@@ -1906,7 +1906,7 @@ int func_065D26_postgen_large(void)
     /* @asm 0x065D2B..0x065D58 : pre-roll (0x181F:0x4ca with [0x83a6]), open the
      * placement window (0xd1d:0xdae), latch the settlement cap 0x10e. */
     overlay_call_181F_04CA();                            /* @asm 0x065D2F */
-    overlay_call_191F_0928();                            /* @asm 0x065D3D string setup */
+    overlay_call_191F_0928(0x1e8f, 0x1e88);                            /* @asm 0x065D3D string setup */
     max_settle = 0x10e;                                  /* @asm 0x065D45 [bp-0xc6] */
     overlay_call_0D1D_0DAE(0x9faa, 0, 0x10e);                            /* @asm 0x065D53 window */
     placed_total = 0;                                    /* @asm 0x065D5D */

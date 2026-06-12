@@ -449,7 +449,7 @@ void far *func_044836_window_new(uint16_t size /*bp+6*/, uint16_t title_off /*bp
         goto out;
 
     /* @0x04485C..0x044886 window_alloc_init(win, win+0x3C, size+0x4E, 0x28). */
-    overlay_call_1A1F_0356();            /* @0x044886 window_alloc_init          */
+    overlay_call_1A1F_0356(0x28);            /* @0x044886 window_alloc_init          */
 
     /* @0x04488B..0x0448B5 default header fields. */
     /* es:[bx+0x3a]=es:[bx+0x38]=es:[bx+2]=0; +6=0xC; +8=3; +0xC=4; +4=+0xA=1. */

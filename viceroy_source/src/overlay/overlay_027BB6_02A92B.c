@@ -1266,7 +1266,7 @@ hover_path:
     if (g_flag_7EE != 0 && g_flag_7E4 == 0 && g_flag_8D58 != 0) {  /* @0x02A272.. */
         overlay_call_0C0C_0006();                          /* @0x02A287 mouse_pos */
         /* if inside hot-rect, tile_at_grid + on-hover (func_07DB6) */
-        if ((int8_t)overlay_call_181F_0CE0() >= 0)         /* @0x02A2A0 */
+        if ((int8_t)overlay_call_181F_0CE0(gx, gy) >= 0)         /* @0x02A2A0 */
             overlay_call_191F_0540();                       /* @0x02A2BF (func_07DB6) */
     }
     if (g_in_combat_7F4 == 0) goto done;                  /* @0x02A2B5 */
@@ -1544,7 +1544,7 @@ int func_02A6A6_commodity_load_dialog(uint16_t unit, uint16_t cargo,
             overlay_call_181F_09AE();                 /* @0x02A817 fmt stock */
             overlay_call_181F_09AE();                 /* @0x02A827 fmt maxstock */
             overlay_call_181F_09AE();                 /* @0x02A837 fmt [0x8DC4] */
-            if (overlay_call_181F_0652() != 2)        /* @0x02A844 msg_popup(5,[0xCD6])!=accept */
+            if (overlay_call_181F_0652(0xcd6, 5) != 2)        /* @0x02A844 msg_popup(5,[0xCD6])!=accept */
                 goto out;                              /* @0x02A851 */
         }
     }

@@ -83,9 +83,9 @@ void func_005E18_op_sz_120(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t ar
          *      power currently owns the tile. */
         if ((int16_t)func_005F82_logic_sz_31(arg0_bp_06, arg1_bp_08) >= 0) {
             /* @asm 0x005E3F lcall 0x181F:0x077E (x, y, arg2, 0x1CC) — repaint tile. */
-            overlay_call_181F_077E();
+            overlay_call_181F_077E(0x1cc, arg2_bp_0A, arg0_bp_06, arg1_bp_08);
             /* @asm 0x005E49 lcall 0x181F:0x05B6 (push 5) — bump animation/sound. */
-            overlay_call_181F_05B6();
+            overlay_call_181F_05B6(5);
             /* @asm 0x005E66 lcall 0x181F:0x0772 (ax=0xFFAC, dx=1, bx=0x2D; pushes
              *      sign-extended y then x) — post the change message. */
             overlay_call_181F_0772();

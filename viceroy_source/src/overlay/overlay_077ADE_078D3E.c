@@ -181,7 +181,7 @@ void func_077B10_fatal_error_report(uint16_t arg_si, uint16_t arg_di,
         overlay_call_0D1D_07A4();             /* @asm 0x077B99  strcat(buf, <count> [bp+0xA]) */
         overlay_call_1A1F_0F26();             /* @asm 0x077BA9  emit line (push ss; mov ax,1) */
 
-        if (overlay_call_0D1D_0842() != 0) {  /* @asm 0x077BB1  if str-test(0x2478) -> echo to stderr */
+        if (overlay_call_0D1D_0842(0x2478) != 0) {  /* @asm 0x077BB1  if str-test(0x2478) -> echo to stderr */
             overlay_call_1A1F_0F26();         /* @asm 0x077BC4  emit "0x2478" line */
         }
 

@@ -764,7 +764,7 @@ int func_0694AE_cargo_select_dialog(uint16_t arg0)
 int func_0696C6_unit_detail_dialog(uint16_t arg0)
 {
     /* @asm 0x0696CB locate/alloc a scratch UnitRecord slot (power *(0x5398), -6,-6,0). */
-    int slot = overlay_call_1A1F_01CA();                /* @asm 0x0696D5 -> ax */
+    int slot = overlay_call_1A1F_01CA(0, -6, -6, (int16_t)DG16(0x5398));                /* @asm 0x0696D5 -> ax */
     if (slot < 0) return 0;                              /* @asm 0x0696E2 jge / 0x0696E4 jmp done */
 
     /* @asm 0x0696E7 bx = slot*0x1C; seed the scratch UnitRecord (base 0x3144). */
@@ -1725,7 +1725,7 @@ int func_06B722_treaty_or_message_dialog(int16_t arg0)
     if (recC == 0) goto cleanup;                         /* @asm 0x06B7F7 je 0x3112 */
     if (variantFlag) {                                   /* @asm 0x06B7FC cmp [bp-0x3C8],0 je */
         overlay_call_1A1F_0A78();                        /* @asm 0x06B809 init rectD (ss:[bp-0x3A4]) */
-        overlay_call_1A1F_0A6A();                        /* @asm 0x06B817 0x1A1F:0xA6A(1, ss:rectD) */
+        overlay_call_1A1F_0A6A(1);                        /* @asm 0x06B817 0x1A1F:0xA6A(1, ss:rectD) */
     }
     /* @asm 0x06B820 *(0x23F2)=&rectD(off) ; @asm 0x06B823 *(0x23F4)=ss : point the
      * VRAM clip at the stack-local rectD.  The far address is a stack pointer
@@ -1744,7 +1744,7 @@ int func_06B722_treaty_or_message_dialog(int16_t arg0)
         if (variantFlag && arg0 == 1) arg0 = 0;          /* @asm 0x06B88E cmp; 0x06B894 [bp+6]=0 */
 
         /* iterate to the arg0'th item, then build + measure its value string. */
-        overlay_call_191F_0928();                        /* @asm 0x06B89F iterate begin(0x1F29,0x1F31) */
+        overlay_call_191F_0928(0x1f31, 0x1f29);                        /* @asm 0x06B89F iterate begin(0x1F29,0x1F31) */
         for (int i = 0; i < (int)arg0; i++)              /* @asm 0x06B8AD..0x06B8C4 */
             overlay_call_191F_091C();                    /* @asm 0x06B8B0 item = next() -> [bp-0x3C0] */
         overlay_call_191F_0FB8();                        /* @asm 0x06B8C6 */

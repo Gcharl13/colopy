@@ -839,7 +839,7 @@ move_commit:
                                                       uint16_t c, uint16_t d,
                                                       uint16_t e);    /* 0x9BA */
         extern int  func_00704C_op_sz_205(uint16_t x, uint16_t y, uint16_t p); /* 0x984 */
-        extern long overlay_call_1A1F_0192(void);  /* func_059B90 on-arrival handler,
+        extern long overlay_call_1A1F_0192();  /* func_059B90 on-arrival handler,
                                                       UNPORTED (Phase-4 row); weak stub */
         extern int  func_00BC10_ff_owned(uint16_t power, uint16_t ff);/* 0x7B4 */
         extern int  func_05C878_treasure_transport_event(uint16_t u, uint16_t p); /* 1A1F:0x186 */
@@ -901,7 +901,7 @@ move_commit:
          * tracked Phase-4 row; weak stub no-op until then). */
         if (func_00704C_op_sz_205((uint16_t)tile_x, (uint16_t)tile_y,
                                   (uint16_t)actor_owner) != 0) {     /* @asm 0x03F816 */
-            overlay_call_1A1F_0192();                          /* @asm 0x03F82B
+            overlay_call_1A1F_0192(unit_index, tile_x, tile_y);                          /* @asm 0x03F82B
                                        original args (unit, tile_x, tile_y) */
         }
         /* @asm 0x03F833..0x03F8AB type-0xA treasure pickup: AI EU owner on a

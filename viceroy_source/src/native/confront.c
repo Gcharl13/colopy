@@ -77,7 +77,7 @@ extern int  func_0789FA_free_dos_block(void);                       /* 191F:01A8
 
 /* human-panel-only leaves still on the Phase-4 stub floor (hit-counted) */
 extern int  menu_run_boxed(uint16_t key_off);  /* PORTED 0x181F:0x3FE runner (src/ui/menu_runner.c) */
-extern long overlay_call_191F_019C(void);  /* func_06F5B0 text panel (0x1705, [0x8D52]) @0x4B410 */
+extern long overlay_call_191F_019C();  /* func_06F5B0 text panel (0x1705, [0x8D52]) @0x4B410 */
 extern long overlay_call_181F_0022();  /* func_002462 string-list fetch [0x2D42]+n */
 extern long overlay_call_0D1D_07E4(void);  /* format text id into buf */
 extern long overlay_call_0D1D_07A4(void);  /* append text id to buf */
@@ -154,7 +154,7 @@ int func_04B308_confront_native(uint16_t unit /*bp+6*/, uint16_t x /*bp+8*/,
             /* @0x4B3F3 "we are not welcome" panel: tribe name int + text 0x1705. */
             int name = func_008110_logic_sz_14((uint16_t)tribe);   /* 181F:09A4 */
             func_06C23C_dialog_make_from_int(0, (uint16_t)name);   /* @0x4B401  */
-            (void)overlay_call_191F_019C();            /* @0x4B410 (0x1705,[0x8D52]) */
+            (void)overlay_call_191F_019C(0x1705, (int16_t)DG16(0x8d52));            /* @0x4B410 (0x1705,[0x8D52]) */
             goto fin;                                  /* @0x4B418              */
         }
     }

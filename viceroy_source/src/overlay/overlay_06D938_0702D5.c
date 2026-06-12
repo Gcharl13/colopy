@@ -1111,7 +1111,7 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
 
     /* dst[0] = 0  @asm 0x06EEF0..0x06EEF3 */
     do {
-        found = overlay_call_0D1D_0C56();             /* @asm 0x06EEF6 find '%' (0x25) in src */
+        found = overlay_call_0D1D_0C56(src, 0x25);             /* @asm 0x06EEF6 find '%' (0x25) in src */
         /* if (found) *found = 0;  @asm 0x06EF0A split */
         /* if (*src) strcat(dst, src);  @asm 0x06EF17 */
         overlay_call_0D1D_07A4();                     /* @asm 0x06EF1B str_cat literal prefix */
@@ -1343,7 +1343,7 @@ int func_06F698_fmt_pair_into_9CC8(void)
     overlay_call_0D1D_08FA();
     ret = func_06F7F4();             /* @asm 0x06F6BE widget_fmt(5,...) -> 0x191F:0x120 */
     /* [0x9CC8] = strtoptr(0x9820)  @asm 0x06F6C4 push 0x9820; LCALL 0x0D1D:0x8F6 */
-    g_fmt_field_9CC8 = (int16_t)overlay_call_0D1D_08F6(); /* @asm 0x06F6CF mov [0x9cc8],ax */
+    g_fmt_field_9CC8 = (int16_t)overlay_call_0D1D_08F6(0x9820); /* @asm 0x06F6CF mov [0x9cc8],ax */
     return ret;                      /* @asm 0x06F6D2 mov ax,[bp-0x16]; RETF */
 }
 
@@ -1590,7 +1590,7 @@ int func_06F8FA_load_namelist_section(uint16_t name_ptr, uint16_t mode)
         overlay_call_1A1F_0B44();                       /* @asm 0x06F9A6 trim line */
         if (overlay_call_0D1D_0816() == 0) {            /* @asm 0x06F9B2 prefix_match(path,[0x833C]) */
             /* [0xA608] = [0x833C] + strlen(path)  @asm 0x06F9C5..0x06F9D3 */
-            overlay_call_0D1D_0842();                   /* @asm 0x06F9C8 strlen(path) */
+            overlay_call_0D1D_0842(0x833c);                   /* @asm 0x06F9C8 strlen(path) */
             g_namelist_cur_A608 = (int16_t)0x833C;      /* @asm 0x06F9D3 mov [0xa608],ax (cursor at match) */
         }
     }
@@ -1627,7 +1627,7 @@ int func_06F9E6_read_token_blank_underscore(void)
     /* Replace each '_' in [0x833C] with a space: strchr returns the next '_'
      * position in si, blank it, repeat until none remain.  @asm 0x06FA10..0x06FA28
      * (`mov [si],0x20` writes at the strchr result, so successive passes terminate). */
-    while ((si = overlay_call_0D1D_0C56()) != 0)    /* @asm 0x06FA15 strchr([0x833C],'_') -> si */
+    while ((si = overlay_call_0D1D_0C56(0x833c, 0x5f)) != 0)    /* @asm 0x06FA15 strchr([0x833C],'_') -> si */
         DG8(si) = 0x20;                             /* @asm 0x06FA23 *si = ' ' */
     g_namelist_cur_A608 = (int16_t)0x833C;          /* @asm 0x06FA2D [0xA608]=0x833C */
     return (int)0x833C;                             /* @asm 0x06FA39 ax=0x833C; RETF */
@@ -1660,7 +1660,7 @@ int func_06FA78_namelist_advance_b3a(void)
 int func_06FA84_seek_cursor_to_end(void)
 {
     g_namelist_cur_A608 =
-        (int16_t)(0x833C + overlay_call_0D1D_0842());  /* @asm 0x06FA87 strlen; 0x06FA8F add 0x833C */
+        (int16_t)(0x833C + overlay_call_0D1D_0842(0x833c));  /* @asm 0x06FA87 strlen; 0x06FA8F add 0x833C */
     return (int)g_namelist_cur_A608;                   /* @asm 0x06FA92 [0xA608]=ax; RETF */
 }
 

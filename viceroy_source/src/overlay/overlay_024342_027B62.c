@@ -294,7 +294,7 @@ int begin_season_loop(void)
         }
         if (DGS16(0x53C4) != 0) {     /* @asm 0x024AD0 cmp [0x53C4],0 / je 0x024AFA */
             if (progress == 0)                             /* @asm 0x024AD7 cmp [bp-2],0 / jne */
-                overlay_call_181F_055E();                  /* @asm 0x024AE1 LCALL 0x181F:0x55E(1,0) */
+                overlay_call_181F_055E(1, 0);                  /* @asm 0x024AE1 LCALL 0x181F:0x55E(1,0) */
             if (DGS16(0x5390) == 0)   /* @asm 0x024AE9 cmp [0x5390],0 (Spring) */
                 overlay_call_191F_0018();                  /* @asm 0x024AF1 call 0x024B82 -> 0x191F:0x18 */
             else

@@ -28,7 +28,7 @@ extern int overlay_call_181F_052E(void);  /* @ref RTLink seg 0x181F off 0x052E *
 extern int overlay_call_05B3_024E();  /* @ref RTLink seg 0x05B3 off 0x024E */
 extern int overlay_call_05EB_0142(void);  /* @ref RTLink seg 0x05EB off 0x0142 */
 extern int overlay_call_181F_0644(void);  /* @ref RTLink seg 0x181F off 0x0644 */
-extern int overlay_call_181F_0638(void);  /* @ref RTLink seg 0x181F off 0x0638 */
+extern int overlay_call_181F_0638();  /* @ref RTLink seg 0x181F off 0x0638 */
 extern int overlay_call_181F_0676(void);  /* @ref RTLink seg 0x181F off 0x0676 */
 extern int overlay_call_181F_0550(void);  /* @ref RTLink seg 0x181F off 0x0550 */
 extern int overlay_call_0B8D_0004(void);  /* @ref RTLink seg 0x0B8D off 0x0004 */
@@ -86,7 +86,7 @@ int func_004EE6_op_sz_297(void)
         return 0;                                  /* @asm jmp 0x50ba (leave;retf) */
 
     /* @asm 0x004EFB push 8; lcall 0x1059:0x000A; if (ax==0) return. */
-    if (overlay_call_1059_000A() == 0)             /* @asm or ax,ax; je->jmp 0x50ba */
+    if (overlay_call_1059_000A(8) == 0)             /* @asm or ax,ax; je->jmp 0x50ba */
         return 0;
     new_96 = (int16_t)DG16(0x009E);                /* ax (kept across the next block) */
 
@@ -963,7 +963,7 @@ int func_005760_op_sz_127(void)
                 DG8((uint16_t)((i_outer << 4) - 0x7B44) + i_inner) = (uint8_t)v;
             }
             /* @asm 0x0057CB push i_outer; lcall 0x181F:0x0582 (commit the column). */
-            overlay_call_181F_0582();
+            overlay_call_181F_0582(i_outer);
         }
     }
 
@@ -1090,14 +1090,14 @@ turn_loop:
         /* @asm 0x0059FD selection/redraw bookkeeping for the active unit. */
         if ((int16_t)DG16(0x5396) == i_outer ||  /* @asm cmp [0x5396],ax; je 0x5A0D */
             DG16(0x53A2) != 0) {                  /* @asm cmp [0x53A2],0; je 0x5A19 */
-            overlay_call_181F_055E();           /* @asm push 1; push 1; lcall 0x181F:0x055E */
+            overlay_call_181F_055E(1, 1);           /* @asm push 1; push 1; lcall 0x181F:0x055E */
         }
         /* @asm 0x005A19 in interactive mode, tick when the focus reaches [0x5398]. */
         if (DG8(0x0829) == 0 &&
             (int16_t)DG16(0x5398) == i_outer &&
             (DG8(0x5383) & 4) != 0)
             func_005642_tick_sound();           /* @asm call 0x5642 */
-        overlay_call_181F_0638();               /* @asm push i_outer; lcall 0x181F:0x0638 */
+        overlay_call_181F_0638(i_outer);               /* @asm push i_outer; lcall 0x181F:0x0638 */
         /* @asm 0x005A3F jmp 0x58EF (fall through to per-slot housekeeping). */
         DG8(0x0829) = 0;
         DG16(0x53C6) = 0;
@@ -1179,7 +1179,7 @@ after_players:
         if (overlay_call_0C0C_0006() != 0 ||      /* @asm or dx,dx; jg/jl/cmp 0x3840 */
             DG8(0x082B) != 0) {                    /* @asm cmp [0x82B],0; je 0x5BED */
             /* @asm 0x005BD9 fade out, end the game and chain the wrap-up screen. */
-            overlay_call_181F_05B6();             /* @asm push 5; lcall 0x181F:0x05B6 */
+            overlay_call_181F_05B6(5);             /* @asm push 5; lcall 0x181F:0x05B6 */
             DG16(0x53C2) = 0;                     /* @asm [0x53C2]=0 */
             func_00566E_rtl_sz_132();             /* @asm call 0x566E */
         }

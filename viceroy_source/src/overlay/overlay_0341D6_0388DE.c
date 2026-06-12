@@ -678,7 +678,7 @@ int func_036038_king_new_war(void)
     overlay_call_181F_0438();                        /* @0x036092 text_draw rebel name */
     overlay_call_181F_09AE();                        /* @0x03609A text_draw_number(gold) */
     overlay_call_181F_09AE();                        /* @0x0360AE text_draw_number(ref_count) */
-    overlay_call_191F_0AD4();                        /* @0x0360BE emit_message("KINGNEWWAR" 0x1134) */
+    overlay_call_191F_0AD4(0x1134);                        /* @0x0360BE emit_message("KINGNEWWAR" 0x1134) */
 
     /* --- credit the gold delta into the king/treasury 32-bit field --- */
     /* *(int32*)(g_power_cur_84FC + 0x2A) += gold;  @0x0360C9 ADD [bx+0x2A],lo /

@@ -434,9 +434,16 @@ if '--order-match' in sys.argv:
 def near_match():
     """For unrestored canonical-stub sites: take ANY @asm cite within +-3
     lines and search the EXE for this thunk's lcall pattern within +-0x80
-    of it; bind when EXACTLY ONE hit exists."""
+    of it; bind when EXACTLY ONE hit exists.  Iterates EVERY canonical
+    overlay_call_* stub that is still WEAK in the binary (not just the
+    arity-blocked set), with the target arity read from the wanted map
+    when known, else from the cleanup bytes."""
     blocked = json.load(open(os.path.join(ROOT, 'tools/generated/thunk_arity_blocked.json')))
-    stubs = {s for s in blocked if re.match(r'overlay_call_[0-9A-F]{4}_[0-9A-F]{4}$', s)}
+    import subprocess as sp
+    nm = sp.run(['nm', os.path.join(ROOT, 'build_modern/viceroy_modern')],
+                capture_output=True, text=True).stdout
+    weakset = set(re.findall(r' W (overlay_call_[0-9A-F]{4}_[0-9A-F]{4})', nm))
+    stubs = weakset | {s for s in blocked if re.match(r'overlay_call_[0-9A-F]{4}_[0-9A-F]{4}$', s)}
     plan = []
     for f in sorted(glob.glob(os.path.join(ROOT, 'src/**/*.c'), recursive=True)):
         raw = open(f, errors='replace').read()
@@ -474,7 +481,7 @@ def near_match():
                 if not r or r[2] is None:
                     continue
                 s2, o2, args, nargs, tag = r
-                want = blocked[stub]['arity']
+                want = blocked[stub]['arity'] if stub in blocked else nargs
                 if tag == 'REGCONV':
                     if nargs < want: continue
                     args = args[:want]; nargs = want

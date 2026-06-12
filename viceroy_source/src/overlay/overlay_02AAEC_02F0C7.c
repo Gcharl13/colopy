@@ -134,7 +134,7 @@ extern int overlay_call_181F_0128(void);  /* str_finalise(buf)                  
 extern int overlay_call_181F_016E(void);  /* str_append(handle,buf)                */
 extern int overlay_call_181F_0178(void);  /* str_space(buf)                        */
 extern int overlay_call_181F_0182(void);  /* str_append_n(value,buf)               */
-extern int overlay_call_181F_02E4(void);  /* iter_next_unit() -> slot or <0        */
+extern int overlay_call_181F_02E4();  /* iter_next_unit() -> slot or <0        */
 extern int overlay_call_181F_0302();  /* colony_visible_to(x,y) == func_02EB46 */
 extern int overlay_call_181F_0352(void);  /* highlight_tile(x,y,x,y,0)             */
 extern int overlay_call_181F_035C();  /* cursor->cell: (cursor-base)/stride    */
@@ -154,7 +154,7 @@ extern int overlay_call_181F_047A(void);  /* timer_arm()                        
 extern int overlay_call_181F_04B6();  /* draw_label(kind)                      */
 extern int overlay_call_181F_04C0();  /* beep(id)                              */
 extern int overlay_call_181F_056A(void);  /* leave_screen()                        */
-extern int overlay_call_181F_05B6(void);  /* finish(5)                             */
+extern int overlay_call_181F_05B6();  /* finish(5)                             */
 extern int overlay_call_181F_0652();  /* draw_boxed_text(id5,strID)            */
 extern int overlay_call_181F_068C(void);  /* set_map_tile(a,b,x,y)                 */
 extern int overlay_call_181F_06B4();  /* site_query(x,y) -> kind               */
@@ -196,7 +196,7 @@ extern int overlay_call_181F_0C54();  /* building_at(handle) -> id             *
 extern int overlay_call_181F_0C68(void);  /* building_count(cell,unit) -> n        */
 extern int overlay_call_181F_0C72(void);  /* draw_colony_base()                    */
 extern int overlay_call_181F_0CC2();  /* unit_class(&out,slot) -> kind         */
-extern int overlay_call_181F_0CE0(void);  /* ring_cell(dx,dy) -> idx or <0         */
+extern int overlay_call_181F_0CE0();  /* ring_cell(dx,dy) -> idx or <0         */
 extern int overlay_call_181F_0D26(void);  /* seed_building(1,code)                 */
 extern int overlay_call_181F_0D12(void);  /* special_site(x,y) -> bool             */
 extern int overlay_call_181F_0D30(void);  /* edit_name(y,x,0) RENAMECOLONY         */
@@ -214,7 +214,7 @@ extern int overlay_call_191F_01A8(void);  /* close_list_dialog(handle)          
 extern int overlay_call_191F_01DE(void);
 extern int overlay_call_191F_01D0(void);
 extern int overlay_call_191F_0230(void);  /* list_begin(slot,w,w,handle)          */
-extern int overlay_call_191F_023C(void);  /* open_tooltip_dialog(id,x,y) -> DX:AX */
+extern int overlay_call_191F_023C();  /* open_tooltip_dialog(id,x,y) -> DX:AX */
 extern int overlay_call_191F_0254();  /* redraw_map(map_idx)                  */
 extern int overlay_call_191F_02CE(void);  /* unit_ref_reload(i)                   */
 extern int overlay_call_191F_033C(void);  /* list_highlight(1,id,...)             */
@@ -234,7 +234,7 @@ extern int overlay_call_191F_08EC(void);  /* list_set(id,...)                   
 extern int overlay_call_191F_0902(void);  /* list_action(arg)                     */
 extern int overlay_call_191F_0910(void);  /* list_cursor_step()                   */
 extern int overlay_call_191F_091C(void);  /* list_cursor_measure(buf)             */
-extern int overlay_call_191F_0928(void);  /* dispatch_overlay_op(key,title)       */
+extern int overlay_call_191F_0928();  /* dispatch_overlay_op(key,title)       */
 extern int overlay_call_191F_0934();  /* select_color_cell(arg)               */
 extern int overlay_call_191F_0942(void);  /* play_unit_sound(type)                */
 extern int overlay_call_191F_095E(void);  /* enter_colony_screen()                */
@@ -250,7 +250,7 @@ extern int overlay_call_191F_0A4A(void);  /* unit_ref_value(i)                  
 extern int  overlay_call_0D1D_07A4(void);  /* dispatch_overlay_op(opcode,arg)      */
 extern int  overlay_call_0D1D_117E(void);  /* sprintf(buf,...)                     */
 extern int  overlay_call_0D1D_0D64(void);  /* strlen(buf)                          */
-extern int  overlay_call_0D1D_0842(void);  /* edit_buffer_dirty(buf) -> bool       */
+extern int  overlay_call_0D1D_0842();  /* edit_buffer_dirty(buf) -> bool       */
 extern int  overlay_call_0D1D_07E4(void);  /* strcpy(dst,src)                      */
 extern int  overlay_call_0D1D_0DAE();  /* memset(dst,val,n)                    */
 extern long overlay_call_0C0C_0006(void);  /* ms_clock() -> DX:AX                  */
@@ -336,7 +336,7 @@ int func_02AAEC_op_sz_63(void)
     dlg = overlay_call_191F_0182();                 /* @0x02ABB1 open_list_dialog(0x87C,"COLONYUNIT")*/
     if (dlg == 0) goto done;                        /* @0x02ABC4 */
     /* @0x02ABCC les bx,[dlg]; or es:[bx+0xA],3  (set list-control flags bits 0+1) */
-    if (overlay_call_191F_0928() != 0)              /* @0x02ABD7 dispatch_overlay_op("SHIPOPTIONS",0x87C)*/
+    if (overlay_call_191F_0928(0x87c, 0xcf8) != 0)              /* @0x02ABD7 dispatch_overlay_op("SHIPOPTIONS",0x87C)*/
         goto done;                                  /* @0x02ABE1 */
 
     overlay_call_191F_0230();                       /* @0x02ABFA list_begin(slot,[0x840],[0x83E],dlg)*/
@@ -546,7 +546,7 @@ int func_02B046_op_sz_56(void)
 
     dlg = overlay_call_191F_0182();                 /* @0x02B10D open "COLONYUNIT" */
     if (dlg == 0) goto done;                        /* @0x02B124 */
-    if (overlay_call_191F_0928() != 0)              /* @0x02B137 dispatch "UNITOPTIONS" */
+    if (overlay_call_191F_0928(0x87c, 0xd11) != 0)              /* @0x02B137 dispatch "UNITOPTIONS" */
         goto done;
 
     overlay_call_191F_0230();                       /* @0x02B146 list_begin */
@@ -565,7 +565,7 @@ int func_02B046_op_sz_56(void)
     case 1: UREC_B(unit_slot * 0x1C + 0x08) = 0; break;  /* @0x02B252 */
     case 2: UREC_B(unit_slot * 0x1C + 0x08) = 1; break;  /* (set 1) */
     case 3: UREC_B(unit_slot * 0x1C + 0x08) = 5;         /* @0x02B26A */
-            overlay_call_181F_04C0(); break;             /* @0x02B276 beep(0x58) */
+            overlay_call_181F_04C0(0x58); break;             /* @0x02B276 beep(0x58) */
     }
 
 done: /* @0x02B28A */
@@ -946,7 +946,7 @@ int func_02B9DC_op_sz_72(void)
     if (g_screen_mode_8D54 == 0x0A) {               /* @0x02BB2C RENAMECOLONY */
         if (g_int_mode_07F4 == 0) return 0;         /* @0x02BB33 */
         overlay_call_191F_0120();                   /* @0x02BB4A edit_field(0x17,ctx+2,0x87C,0xD30)*/
-        if (overlay_call_0D1D_0842() != 0) {        /* @0x02BB52 edit_buffer_dirty([0x9820])*/
+        if (overlay_call_0D1D_0842(0x9820) != 0) {        /* @0x02BB52 edit_buffer_dirty([0x9820])*/
             overlay_call_0D1D_07E4();               /* @0x02BB67 strcpy(ctx+2,[0x9820]) */
             overlay_call_191F_0774();               /* @0x02BB70 near 0x7EAB */
         }
@@ -1198,7 +1198,7 @@ int func_02C5D4_colony_sz_592(uint16_t arg0_bp_06)
     if (g_w034A >= 0) {                              /* @0x02C63B */
         overlay_call_181F_0BBE((int16_t)DG16(0x34a), 1); overlay_call_191F_0510(); /* @0x02C648 */
         overlay_call_191F_0648();                   /* @0x02C657 near 0x7E24(0) */
-        overlay_call_181F_04C0(); overlay_call_181F_04C0(0x54); /* @0x02C660/0x02C667 */
+        overlay_call_181F_04C0(0x54); overlay_call_181F_04C0(0x54); /* @0x02C660/0x02C667 */
     }
     if (g_w0B98 != 0) { overlay_call_181F_03C0(); goto cleanup; } /* @0x02C66F/0x02C676 */
 
@@ -1243,7 +1243,7 @@ int func_02C5D4_colony_sz_592(uint16_t arg0_bp_06)
         t1 = overlay_call_0C0C_0006();              /* @0x02C7F5 */
         overlay_call_181F_0470(); overlay_call_181F_0466(); /* @0x02C800/0x02C807 */
         if (g_int_mode_07F4 == 0 && overlay_call_181F_00F6() != 0) { /* @0x02C80C */
-            overlay_call_181F_00EC(); overlay_call_181F_05B6(); /* @0x02C80C/0x02C813 */
+            overlay_call_181F_00EC(); overlay_call_181F_05B6(5); /* @0x02C80C/0x02C813 */
             g_redraw_0346 = 0; g_w53C2 = 0;         /* @0x02C81B */
         }
         overlay_call_181F_045C();                   /* @0x02C829 drain */
@@ -1503,7 +1503,7 @@ int func_02D3C6_colony_op_3calls(void)
             overlay_call_181F_0352();               /* @0x02D59B highlight */
             overlay_call_181F_0438();               /* @0x02D5A8 */
             overlay_call_181F_0416();               /* @0x02D5B9 colony name */
-            overlay_call_181F_0652();               /* @0x02D5DC boxed "FORTFIRE"(0xD7F) */
+            overlay_call_181F_0652(0xd7f, 0);               /* @0x02D5DC boxed "FORTFIRE"(0xD7F) */
         }
         g_b_537D = (uint8_t)firepower;              /* @0x02D56F combat scratch */
         g_w5372  = bonus;                           /* @0x02D577 */
@@ -1812,7 +1812,7 @@ int func_02EF64_predicate_unit(uint16_t arg0_bp_06)
     ok = 0;                                         /* @0x02F013 */
     if (owner < 4 && g_power_ctrl[owner * 0x34] == 0) { /* @0x02F018/0x02F022 */
         overlay_call_181F_09BA();                   /* @0x02F035 spawn_unit(1,1,1,y,x) */
-        overlay_call_181F_0652();                   /* @0x02F042 boxed "DEADCONVERTS"(0xEE2)*/
+        overlay_call_181F_0652(0xee2, 4);                   /* @0x02F042 boxed "DEADCONVERTS"(0xEE2)*/
     }
     return ok;                                      /* @0x02F04A */
 }
