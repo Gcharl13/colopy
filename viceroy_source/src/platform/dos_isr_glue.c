@@ -95,3 +95,19 @@ int overlay_call_181F_0EE0(void) { return 0; }
 int overlay_call_191F_04A2(void) { return 0; }
 
 #endif /* _VICEROY_MODERN */
+
+/* Batch C additions (2026-06-12): more resident platform leaves.
+ *   0xC861  181F:05CE / 0A29:01D1  INT-vector restore epilogue: when armed
+ *           ([0x379]!=0) re-points INT8 via AH=0x25 INT 21h to the saved
+ *           cs-stored vector, re-arms the tick divisor words
+ *           ([0x267C]=0x40, [0x...]=0x6C) -- the timer teardown twin of the
+ *           0xCB87 ISR body.  Modern: platform/timer.c owns time.
+ *   0xC31C  09EF:002C  forwarder `push cs; call 0xC2F8; retf` = the BIOS
+ *           key read+translate (181F:0E68's body).  -> vid_poll_key(). */
+int overlay_call_181F_05CE(void) { return 0; }
+int overlay_call_0A29_01D1(void) { return 0; }
+int overlay_call_09EF_002C(void)
+{
+    extern int overlay_call_181F_0E68(void);
+    return overlay_call_181F_0E68();
+}

@@ -717,3 +717,8 @@ PROVIDE(overlay_call_181F_048E = func_0050BC_op_sz_51);
 EXTERN(func_0050BC_op_sz_51)
 PROVIDE(str_append = func_0028B0_append_space);
 EXTERN(func_0028B0_append_space)
+
+/* Phase 4.6 Batch C (2026-06-12): canonical thunk spellings of already-
+ * implemented bodies (all C sites 0-arg, targets void/no-arg). */
+PROVIDE(overlay_call_181F_0C22 = colony_screen_compose);
+PROVIDE(overlay_call_181F_059A = func_066BB0_prep);
