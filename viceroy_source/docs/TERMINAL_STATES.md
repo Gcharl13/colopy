@@ -4,9 +4,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 751 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 774 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1206 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 1183 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
@@ -15,7 +15,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 | NAMED-GAP | 507 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ARITY-PENDING | 359 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
-| BODY-MISSING | 133 | port the original func_0XXXXX body |
+| BODY-MISSING | 110 | port the original func_0XXXXX body |
 | THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
 
 ## RESOLVED-LIBC (host C runtime satisfies these by design)
@@ -425,7 +425,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ttl_compose_to_video` -> `func_010582_logic_sz_28` @3
 - `unit_first_of_owner` -> `func_0066CC_op_sz_57` @2
 
-### BODY-MISSING — 133
+### BODY-MISSING — 110
 
 - `func_002494`
 - `func_0028B0`
@@ -433,37 +433,19 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_002952`
 - `func_006696`
 - `func_006A7C`
-- `func_006E94`
 - `func_00701C`
-- `func_00768C`
-- `func_007A80`
-- `func_007BE8`
-- `func_007C2A`
-- `func_007F34`
-- `func_007F62`
-- `func_0084C8`
-- `func_00864E`
-- `func_0087F4`
 - `func_008806`
 - `func_008982`
-- `func_008D00`
 - `func_008D9C`
 - `func_008E46`
 - `func_008F2A`
 - `func_008F6C`
 - `func_00903E`
-- `func_00975A`
-- `func_009786`
-- `func_0098F6`
 - `func_0099AE`
 - `func_009A32`
-- `func_00B2A2`
-- `func_00B2F0`
 - `func_00B304`
 - `func_00B31A`
-- `func_00B900`
 - `func_00BD28`
-- `func_00BF3C`
 - `func_00C07A`
 - `func_00C09A`
 - `func_00C0D0`
@@ -475,14 +457,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_010496`
 - `func_010A6E`
 - `func_010A99`
-- `func_010B26`
 - `func_010BBC`
-- `func_010CA0`
 - `func_010DB4`
 - `func_010E27`
-- `func_010E66`
-- `func_010EE2`
-- `func_01146A`
 - `func_0114E4`
 - `func_0115CE`
 - `func_011CD2`
