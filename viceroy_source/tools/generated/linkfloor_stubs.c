@@ -826,7 +826,6 @@ __attribute__((weak)) long draw_window_frame(void) { viceroy_stub_hit("draw_wind
 __attribute__((weak)) long edge_light(void) { viceroy_stub_hit("edge_light"); return 0; }
 __attribute__((weak)) long edge_shadow(void) { viceroy_stub_hit("edge_shadow"); return 0; }
 __attribute__((weak)) long emit_ground_sprite(void) { viceroy_stub_hit("emit_ground_sprite"); return 0; }
-__attribute__((weak)) long emit_message(void) { viceroy_stub_hit("emit_message"); return 0; }
 __attribute__((weak)) long emit_terrain_sprite(void) { viceroy_stub_hit("emit_terrain_sprite"); return 0; }
 __attribute__((weak)) long enter_screen_view(void) { viceroy_stub_hit("enter_screen_view"); return 0; }
 __attribute__((weak)) long errno_epilogue(void) { viceroy_stub_hit("errno_epilogue"); return 0; }
@@ -921,7 +920,6 @@ __attribute__((weak)) long mcb_at(void) { viceroy_stub_hit("mcb_at"); return 0; 
 __attribute__((weak)) long menu_add(void) { viceroy_stub_hit("menu_add"); return 0; }
 __attribute__((weak)) long menu_add_item(void) { viceroy_stub_hit("menu_add_item"); return 0; }
 __attribute__((weak)) long menu_add_item_lit(void) { viceroy_stub_hit("menu_add_item_lit"); return 0; }
-__attribute__((weak)) long menu_close(void) { viceroy_stub_hit("menu_close"); return 0; }
 __attribute__((weak)) long menu_do_action(void) { viceroy_stub_hit("menu_do_action"); return 0; }
 __attribute__((weak)) long menu_free(void) { viceroy_stub_hit("menu_free"); return 0; }
 __attribute__((weak)) long menu_item_count(void) { viceroy_stub_hit("menu_item_count"); return 0; }
@@ -946,7 +944,6 @@ __attribute__((weak)) long mt32_init(void) { viceroy_stub_hit("mt32_init"); retu
 __attribute__((weak)) long mt32_play_song(void) { viceroy_stub_hit("mt32_play_song"); return 0; }
 __attribute__((weak)) long mt32_shutdown(void) { viceroy_stub_hit("mt32_shutdown"); return 0; }
 __attribute__((weak)) long mt32_stop_song(void) { viceroy_stub_hit("mt32_stop_song"); return 0; }
-__attribute__((weak)) long names_next_record(void) { viceroy_stub_hit("names_next_record"); return 0; }
 __attribute__((weak)) long names_open_section(void) { viceroy_stub_hit("names_open_section"); return 0; }
 __attribute__((weak)) long names_read_int_word(void) { viceroy_stub_hit("names_read_int_word"); return 0; }
 __attribute__((weak)) long native_alarm_clear(void) { viceroy_stub_hit("native_alarm_clear"); return 0; }
@@ -967,7 +964,6 @@ __attribute__((weak)) long near_6DDC(void) { viceroy_stub_hit("near_6DDC"); retu
 __attribute__((weak)) long near_6DF0(void) { viceroy_stub_hit("near_6DF0"); return 0; }
 __attribute__((weak)) long near_6DFA(void) { viceroy_stub_hit("near_6DFA"); return 0; }
 __attribute__((weak)) long near_6E13(void) { viceroy_stub_hit("near_6E13"); return 0; }
-__attribute__((weak)) long near_6E31(void) { viceroy_stub_hit("near_6E31"); return 0; }
 __attribute__((weak)) long near_6E40(void) { viceroy_stub_hit("near_6E40"); return 0; }
 __attribute__((weak)) long near_6E45(void) { viceroy_stub_hit("near_6E45"); return 0; }
 __attribute__((weak)) long near_6E54(void) { viceroy_stub_hit("near_6E54"); return 0; }
@@ -1035,7 +1031,6 @@ __attribute__((weak)) long pick_grant_unit_type(void) { viceroy_stub_hit("pick_g
 __attribute__((weak)) long picker_run(void) { viceroy_stub_hit("picker_run"); return 0; }
 __attribute__((weak)) long pik_free(void) { viceroy_stub_hit("pik_free"); return 0; }
 __attribute__((weak)) long pik_load(void) { viceroy_stub_hit("pik_load"); return 0; }
-__attribute__((weak)) long power_attribute_bit(void) { viceroy_stub_hit("power_attribute_bit"); return 0; }
 __attribute__((weak)) long power_record(void) { viceroy_stub_hit("power_record"); return 0; }
 __attribute__((weak)) long power_scan_done(void) { viceroy_stub_hit("power_scan_done"); return 0; }
 __attribute__((weak)) long power_scan_mark(void) { viceroy_stub_hit("power_scan_mark"); return 0; }
@@ -1089,7 +1084,6 @@ __attribute__((weak)) long str_width(void) { viceroy_stub_hit("str_width"); retu
 __attribute__((weak)) long strcat_far(void) { viceroy_stub_hit("strcat_far"); return 0; }
 __attribute__((weak)) long strfmt(void) { viceroy_stub_hit("strfmt"); return 0; }
 __attribute__((weak)) long strfmt_far(void) { viceroy_stub_hit("strfmt_far"); return 0; }
-__attribute__((weak)) long terrain_type_at(void) { viceroy_stub_hit("terrain_type_at"); return 0; }
 __attribute__((weak)) long text_measure(void) { viceroy_stub_hit("text_measure"); return 0; }
 __attribute__((weak)) long texture_fill_rect(void) { viceroy_stub_hit("texture_fill_rect"); return 0; }
 __attribute__((weak)) long tile_is_land(void) { viceroy_stub_hit("tile_is_land"); return 0; }
@@ -1105,7 +1099,6 @@ __attribute__((weak)) long tramp_panel_size_1AFA(void) { viceroy_stub_hit("tramp
 __attribute__((weak)) long tramp_redraw_flush_1B13(void) { viceroy_stub_hit("tramp_redraw_flush_1B13"); return 0; }
 __attribute__((weak)) long tramp_unit_detail_1B0E(void) { viceroy_stub_hit("tramp_unit_detail_1B0E"); return 0; }
 __attribute__((weak)) long treasure_spawn_at(void) { viceroy_stub_hit("treasure_spawn_at"); return 0; }
-__attribute__((weak)) long tribe_power_relation(void) { viceroy_stub_hit("tribe_power_relation"); return 0; }
 __attribute__((weak)) long tribe_turn_update(void) { viceroy_stub_hit("tribe_turn_update"); return 0; }
 __attribute__((weak)) long ttl_begin_game(void) { viceroy_stub_hit("ttl_begin_game"); return 0; }
 __attribute__((weak)) long ttl_blit_border(void) { viceroy_stub_hit("ttl_blit_border"); return 0; }
@@ -1120,17 +1113,14 @@ __attribute__((weak)) long txt_lookup(void) { viceroy_stub_hit("txt_lookup"); re
 __attribute__((weak)) long ui_blit_coords(void) { viceroy_stub_hit("ui_blit_coords"); return 0; }
 __attribute__((weak)) long ui_blit_ptr(void) { viceroy_stub_hit("ui_blit_ptr"); return 0; }
 __attribute__((weak)) long ui_dialog_show(void) { viceroy_stub_hit("ui_dialog_show"); return 0; }
-__attribute__((weak)) long ui_flush(void) { viceroy_stub_hit("ui_flush"); return 0; }
 __attribute__((weak)) long ui_fmt_two(void) { viceroy_stub_hit("ui_fmt_two"); return 0; }
 __attribute__((weak)) long ui_notify_key(void) { viceroy_stub_hit("ui_notify_key"); return 0; }
 __attribute__((weak)) long ui_push_value(void) { viceroy_stub_hit("ui_push_value"); return 0; }
 __attribute__((weak)) long ui_refresh_colony(void) { viceroy_stub_hit("ui_refresh_colony"); return 0; }
 __attribute__((weak)) long ui_select_on_map(void) { viceroy_stub_hit("ui_select_on_map"); return 0; }
 __attribute__((weak)) long ui_show_message(void) { viceroy_stub_hit("ui_show_message"); return 0; }
-__attribute__((weak)) long ui_show_message_0(void) { viceroy_stub_hit("ui_show_message_0"); return 0; }
 __attribute__((weak)) long unit_alloc_new_slot(void) { viceroy_stub_hit("unit_alloc_new_slot"); return 0; }
 __attribute__((weak)) long unit_cargo_kind(void) { viceroy_stub_hit("unit_cargo_kind"); return 0; }
-__attribute__((weak)) long unit_detach_from_settlement(void) { viceroy_stub_hit("unit_detach_from_settlement"); return 0; }
 __attribute__((weak)) long unit_figure_blit_64(void) { viceroy_stub_hit("unit_figure_blit_64"); return 0; }
 __attribute__((weak)) long unit_first_of_owner(void) { viceroy_stub_hit("unit_first_of_owner"); return 0; }
 __attribute__((weak)) long unit_record(void) { viceroy_stub_hit("unit_record"); return 0; }

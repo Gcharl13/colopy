@@ -1022,3 +1022,23 @@ PROVIDE(survivors_join = func_06C254_dialog_make_from_str);
 EXTERN(func_06C254_dialog_make_from_str)
 PROVIDE(text_draw = func_002B38_op_sz_58);
 EXTERN(func_002B38_op_sz_58)
+
+/* Phase 4.7 call-site-cited tranche (2026-06-12).  near_6DD7 EXCLUDED: its
+ * call-site cite contradicts the authoritative trampoline-table decode
+ * (cs:6DD7 -> 191F:CD8 -> 0x30B38 UNPORTED).  Bytes beat porter glosses for
+ * ui_flush/ui_show_message_0 (twice-independently cited). */
+PROVIDE(emit_message = func_06F5DA_opt_set_field_a_const8);
+PROVIDE(menu_close = func_0789FA_free_dos_block);
+EXTERN(func_0789FA_free_dos_block)
+PROVIDE(names_next_record = func_0786FE_heap_resize_dispatch);
+EXTERN(func_0786FE_heap_resize_dispatch)
+PROVIDE(near_6E31 = func_0789FA_free_dos_block);
+PROVIDE(power_attribute_bit = func_00BC10_ff_owned);
+PROVIDE(terrain_type_at = func_00627A_op_sz_57);
+PROVIDE(tribe_power_relation = func_0082A0_logic_sz_18);
+EXTERN(func_0082A0_logic_sz_18)
+PROVIDE(ui_flush = func_041EEA_next_active_unit);
+EXTERN(func_041EEA_next_active_unit)
+PROVIDE(ui_show_message_0 = func_076594_terrain_layer_load3);
+EXTERN(func_076594_terrain_layer_load3)
+PROVIDE(unit_detach_from_settlement = func_006E94_logic_sz_198);
