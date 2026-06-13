@@ -5,15 +5,44 @@ Row-by-row disposition of the link-active weak `func_` stubs (the set from
 **PORTED**, or **UNREACHABLE(proof)**. Resolutions come from `tools/whois.py`
 + the thunk-window decode; reachability from `tools/reachability.py`.
 
-## Progress
+## Progress (session 2026-06-13)
 
-| | count |
-|---|--:|
-| link-active weak `func_` stubs at Phase-4.7 | 64 |
-| **wired in Phase 4.8** (→ ported same-page leaves) | **36** |
-| remaining | **28** |
+Two axes — **dynamic** (what the real-data smoke actually hits) and **static**
+(what `active_stubs.sh` lists as un-overridden weak `func_` stubs):
 
-Smoke green throughout: 500 turns, year 1992, REF 131/44/21/32 = 228, 0 stub hits.
+| axis | start | end |
+|---|--:|--:|
+| dynamic: real-COLONIZE-data smoke reachable hits | 15 sym / 3519 calls | **0 / 0** |
+| static: link-active weak `func_` stubs | 64 | **13** |
+
+Moves: Phase 4.8 wired 36 trampolines (→ ported same-page leaves); the real-data
+harness then drove every gameplay-reachable hit to 0 (input/render/text/UI/EMS →
+MODERN-REPLACED in `headless_io_stubs.c`; `power_set_flag` → `msg_set_arg`); and
+13 role-classified unreached display/EMS/DOS-I/O stubs were MODERN-REPLACED.
+Smoke green throughout: 500 turns, year 1992, REF 131/44/21/32 = 228, 0 hits
+(real data AND no-data).
+
+### The 13 irreducible residue (genuine logic — need leaf ports + path exercise)
+
+All are unreached by the smoke (combat/move/screen paths it doesn't drive), and
+are NOT no-op-able (they affect game outcomes when reached). Each needs its leaf
+ported / entry split, then validation once its path runs:
+
+- **combat / AI**: `func_05E723` (consequence applier → unported `func_05B2C2`),
+  `func_05A938`/`func_05A93D` (→ unported `func_05A40E`/`func_05A20E`),
+  `func_05BE3E_terrain_class` (terrain classification, dispatch-reached).
+- **unit move pipeline**: `func_04172D` (move-validate), `func_041732`
+  (unit-place) — mid-function entry-splits in `func_040656/0409D6`.
+- **partial port**: `func_04A7CA_speak_with_chief` (507-B CHIEFKILL handler;
+  only the gold sub-computation is ported).
+- **chain/logic**: `func_006696` (walk chain_next to tail), `func_00CCEB`.
+- **trampolines to unported leaves**: `func_03EA33` (→ 0x3CA0A), `func_03F940`
+  (→ `func_03F946`), `func_06BAEC` (page-0x16 tail), `func_03F1598`
+  (synthetic placeholder name).
+
+These are the Phase-4 rows that cannot close without exercising combat / unit
+move-commit / the in-game screens — i.e. they need the validation infrastructure
+(map loop / full-verb harness) that is the next milestone, not a blind port.
 
 ## Wired in Phase 4.8 (terminal: WIRED)
 
