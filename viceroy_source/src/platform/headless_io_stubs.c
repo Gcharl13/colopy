@@ -40,4 +40,20 @@ long overlay_call_181F_011E(void) { return 0; }  /* label-prefix glyph (func_002
 long overlay_call_181F_01BE(void) { return 0; }  /* separator glyph (func_0028F2) */
 long overlay_call_181F_0128(void) { return 0; }  /* finalize glyph (func_002932) */
 
+/* UI / screen-management leaves with no headless meaning:
+ *   overlay_call_02D8_000E  screen refresh after state change (@asm 0x0050AF)
+ *   func_06B692             dialog open / save-background (cs:0x2D12, screen
+ *                           bitmap capture for restore -- not a game save)
+ *   overlay_call_181F_040A  open panel (@asm 0x0692CD)
+ *   overlay_call_0D1D_07A4  show a GAME.TXT message string (the headless menu
+ *                           path renders text separately)
+ *   overlay_call_181F_0422  free_block (DOS heap free; the modern DGROUP model
+ *                           persists -- no per-block free)
+ * All already no-op via the weak floor; strong defs make the disposition terminal. */
+long overlay_call_02D8_000E(void) { return 0; }  /* screen refresh */
+long func_06B692(void)            { return 0; }  /* dialog open / save-bg */
+long overlay_call_181F_040A(void) { return 0; }  /* open panel */
+long overlay_call_0D1D_07A4(void) { return 0; }  /* show GAME.TXT message */
+long overlay_call_181F_0422(void) { return 0; }  /* free_block (no-op heap free) */
+
 #endif /* _VICEROY_MODERN */
