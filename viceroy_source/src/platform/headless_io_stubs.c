@@ -56,4 +56,9 @@ long overlay_call_181F_040A(void) { return 0; }  /* open panel */
 long overlay_call_0D1D_07A4(void) { return 0; }  /* show GAME.TXT message */
 long overlay_call_181F_0422(void) { return 0; }  /* free_block (no-op heap free) */
 
+/* ff_pre_a (0x181F:0x056A -> func_0C136): draws the fullscreen "Founding Father
+ * joins" announcement (text blit + 320x200 rect via func_0B73A); the FF effect
+ * itself is applied separately. Pure display -> no-op in headless. */
+long ff_pre_a(void) { return 0; }
+
 #endif /* _VICEROY_MODERN */
