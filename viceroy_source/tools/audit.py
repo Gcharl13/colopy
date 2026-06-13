@@ -448,7 +448,11 @@ for ok, desc, addr, detail in results:
 
 report = {"total": len(results), "passed": npass,
           "claims": [{"ok": r[0], "desc": r[1], "addr": r[2], "detail": r[3]} for r in results]}
-with open(os.path.join(_REPO, "re_work", "audit_report.json"), "w") as f:
+# re_work/ is gitignored and absent on a fresh checkout/ZIP -- create it so the
+# report write never aborts the audit (the exit code below is the real verdict).
+_report_dir = os.path.join(_REPO, "re_work")
+os.makedirs(_report_dir, exist_ok=True)
+with open(os.path.join(_report_dir, "audit_report.json"), "w") as f:
     json.dump(report, f, indent=1)
 
 sys.exit(0 if npass == len(results) else 1)
