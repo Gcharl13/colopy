@@ -135,7 +135,14 @@ class EXE:
     @classmethod
     def _mdisasm(cls):
         if cls._md is None:
-            import capstone
+            try:
+                import capstone
+            except ImportError as e:
+                raise SystemExit(
+                    "ERROR: the byte audit needs the 'capstone' disassembler.\n"
+                    "  install it with:  sudo apt install -y python3-capstone\n"
+                    "             or:     pip3 install capstone --break-system-packages"
+                ) from e
             md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
             md.detail = True
             cls._md = md

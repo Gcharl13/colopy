@@ -18,7 +18,7 @@ live modern window) SDL2 + ImageMagick.
 **Linux (Debian/Ubuntu):**
 ```bash
 sudo apt update
-sudo apt install -y build-essential cmake python3 dosbox-x libsdl2-dev imagemagick
+sudo apt install -y build-essential cmake python3 python3-capstone dosbox-x libsdl2-dev imagemagick
 ```
 
 **macOS (Homebrew):**
@@ -48,7 +48,7 @@ with a GCC toolchain. Two ways:
 2. **Open the Ubuntu shell** and install the toolchain (same as Linux):
    ```bash
    sudo apt update
-   sudo apt install -y build-essential cmake python3 dosbox-x libsdl2-dev imagemagick
+   sudo apt install -y build-essential cmake python3 python3-capstone dosbox-x libsdl2-dev imagemagick
    ```
 3. **Where your files live — the path bridge:**
    - Windows `C:\Games\COLONIZE`  ⟷  WSL `/mnt/c/Games/COLONIZE`

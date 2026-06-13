@@ -57,10 +57,15 @@ def main():
     exe_bin = next((c for c in exe_cands if c and os.path.exists(c)), None)
     if exe_bin:
         r = run(["python3", "tools/audit.py"])
+        out = r.stdout + r.stderr
         npass = len(re.findall(r"\[PASS\]", r.stdout))
         nfail = len(re.findall(r"\[FAIL\]", r.stdout))
-        gate("7.5 audit.py byte claims", r.returncode == 0 and nfail == 0,
-             f"{npass} PASS / {nfail} FAIL")
+        if "capstone" in out and npass == 0:
+            gate("7.5 audit.py byte claims", False,
+                 "needs capstone: sudo apt install -y python3-capstone")
+        else:
+            gate("7.5 audit.py byte claims", r.returncode == 0 and nfail == 0,
+                 f"{npass} PASS / {nfail} FAIL")
     else:
         print("  [SKIP] 7.5 audit.py byte claims: VICEROY.EXE not found "
               "(set VICEROY_EXE or VICEROY_DATA; gitignored, user-supplied)")
