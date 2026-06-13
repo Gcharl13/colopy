@@ -65,8 +65,48 @@ reachability work, plus the Phase-7 DOSBox parity (needs user game data).
   `func_016127`, `func_03F1598`, `func_03F940`, `func_0400EA`, `func_04172D`,
   `func_041732`, `func_05A938/93D`, `func_05E723`, `func_06BAEC`.
 
+## Reachability analysis (`tools/reachability.py`)
+
+Builds the original call graph from the disasm (near calls + far `lcall`s
+resolved via `lcall_resolution_VICEROY.json`), roots it at every `func_`
+**call site** in modern `src/*.c`, and forward-reaches. Because a C
+reimplementation can drop calls the original made, original-edge reachability
+is an over-approximation — so "no path" is a *sound* one-sided result. Caveat:
+the graph carries only **direct** near/far edges, not indirect dispatch (jump
+tables / function pointers), so "no static-call path" is a candidate that still
+needs the indirect-dispatch check before a final UNREACHABLE verdict.
+
+Run on the 64 active `func_` stubs:
+
+| result | count | meaning |
+|---|--:|---|
+| has static-call path | 62 | genuinely reachable via direct calls → must wire/port |
+| no static-call path  | 2  | `func_04A7CA`, `func_05BE3E` — 0 direct callers → dispatch-reached |
+
+Key findings:
+
+- **The 62 are real work, not skippable.** The thunk clusters all have live
+  overlay callers (e.g. `func_061409 ← func_06083A/060C34/060EC4/060FBC`), so
+  the `func_03EAxx`/`func_0613xx`/`func_06B6xx` trampolines must be wired to
+  their leaves, and the `func_02C9xx` mid-entries split from their parents.
+- **The 2 "no direct caller" cases are dispatch-reached, and one is already
+  solved.** `func_04A7CA` is marked **`[SUPERSEDED]`** in
+  `overlay_046D70_04C2E1.c` (native village raze / CHIEFKILL, reimplemented in
+  C) and is reached only through `1A1F:0x41C` — so the live stub
+  `func_04A7CA_speak_with_chief` is a **thunk to wire onto the existing C
+  body**, not a function to port. This is the tool working as intended: a
+  meaningful name + 0 direct callers ⇒ dispatched, not dead.
+
+Usage:
+
+```sh
+tools/reachability.py audit /tmp/active_func.txt   # classify a stub list
+tools/reachability.py callers func_03EA10          # transitive caller chain (verdict evidence)
+```
+
 ## How to refresh
 
 ```sh
-tools/active_stubs.sh            # after any rebuild
+tools/active_stubs.sh            # after any rebuild: the link-active stub set
+tools/reachability.py audit ...  # classify reach/no-path for a stub list
 ```
