@@ -135,22 +135,78 @@ static void draw_text_center(const char *s, int y, uint8_t color)
     ff_draw(&g_font, s, (VID_W - w) / 2, y, 1);
 }
 
+/* second font for the @BEGINMENU panel: FONTSMAL is caps-only, but the original
+ * menu rows are mixed case -- load a lowercase-capable face for them. */
+static ff_font_t g_menu_font; static int g_have_menu_font;
+
+/* nearest palette index to a target RGB in the active backdrop palette */
+static uint8_t pal_nearest(int r, int g, int b)
+{
+    int best = 0, bd = 1 << 30;
+    for (int i = 0; i < 256; i++) {
+        int dr = r - g_bg.pal[i*3], dg = g - g_bg.pal[i*3+1], db = b - g_bg.pal[i*3+2];
+        int d = dr*dr + dg*dg + db*db;
+        if (d < bd) { bd = d; best = i; }
+    }
+    return (uint8_t)best;
+}
+
+/* expand g_menu_prompt ("{COLONIZATION} Version %STRING0 -- %STRING1") into the
+ * header line: drop the {..} colour-directive braces, substitute the version
+ * (%STRING0) and build date (%STRING1). RECONSTRUCTED values pending a byte-
+ * trace of the EXE string table; they match the 3.0 / 7-Feb-95 build. */
+static void title_header_text(char *out, size_t n)
+{
+    const char *src = g_menu_prompt[0] ? g_menu_prompt
+                    : "{COLONIZATION} Version %STRING0 -- %STRING1";
+    size_t o = 0;
+    for (size_t i = 0; src[i] && o + 1 < n; ) {
+        if (src[i] == '{' || src[i] == '}') { i++; continue; }
+        if (!strncmp(src + i, "%STRING0", 8)) { const char *v = "3.0";      while (*v && o+1<n) out[o++]=*v++; i+=8; continue; }
+        if (!strncmp(src + i, "%STRING1", 8)) { const char *v = "7-Feb-95"; while (*v && o+1<n) out[o++]=*v++; i+=8; continue; }
+        out[o++] = src[i++];
+    }
+    out[o] = 0;
+}
+
 static void draw_title_menu(int sel)
 {
+    extern void vid_box_fill(int, int, int, int, uint8_t);
+    extern void vid_box_outline(int, int, int, int, uint8_t);
     draw_bg();
-    if (!g_have_font) { vid_present(); return; }
+    ff_font_t *mf = g_have_menu_font ? &g_menu_font : (g_have_font ? &g_font : 0);
+    if (!mf) { vid_present(); return; }
 
-    uint8_t dark = 0, light = 15;
-    pal_pick_text_colors(&dark, &light);
+    /* @BEGINMENU panel: @width=160 centered, top at @y=91 */
+    int rh = mf->maxh + 2;
+    int pw = g_menu_width;                          /* 160 */
+    int px = (VID_W - pw) / 2;                      /* 80  */
+    int py = g_menu_y;                              /* 91  */
+    int ph = (1 + g_menu_count) * rh + 7;           /* header + options + pad */
 
-    int row_h = g_font.maxh + 2;
+    /* RECONSTRUCTED colours, matched to the reference frame (pending a byte-trace
+     * of the original panel-draw): dark maroon fill, gold frame, tan header,
+     * cream options, dark-red selection bar. */
+    uint8_t fill  = pal_nearest( 56, 24, 20);
+    uint8_t frame = pal_nearest(196,160, 84);
+    uint8_t c_hdr = pal_nearest(214,160, 72);
+    uint8_t c_opt = pal_nearest(236,216,172);
+    uint8_t c_bar = pal_nearest(104, 34, 26);
+
+    vid_box_fill(px, py, pw, ph, fill);
+    vid_box_outline(px, py, pw, ph, frame);
+
+    int tx = px + 6, ty = py + 4;
+    char hdr[128]; title_header_text(hdr, sizeof hdr);
+    mf->colors[1] = mf->colors[2] = mf->colors[3] = c_hdr;
+    ff_draw(mf, hdr, tx, ty, 1);
+    ty += rh + 1;
+
     for (int i = 0; i < g_menu_count; i++) {
-        const char *s = g_menu_opt[i];
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] =
-            (i == sel) ? light : dark;
-        int w = ff_text_width(&g_font, s, 1);
-        int x = (VID_W - w) / 2;                 /* centered in the plate */
-        ff_draw(&g_font, s, x, g_menu_y + i * row_h, 1);
+        if (i == sel) vid_box_fill(px + 2, ty - 1, pw - 4, rh, c_bar);
+        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_opt;
+        ff_draw(mf, g_menu_opt[i], tx, ty, 1);
+        ty += rh;
     }
     vid_present();
 }
@@ -782,6 +838,9 @@ int main(int argc, char **argv)
     char fpath[512];
     snprintf(fpath, sizeof fpath, "%s/FONTSMAL.FF", g_data);
     g_have_font = ff_load(fpath, &g_font) == 0;
+    /* mixed-case face for the @BEGINMENU rows (FONTSMAL is caps-only) */
+    snprintf(fpath, sizeof fpath, "%s/FONTINTR.FF", g_data);
+    g_have_menu_font = ff_load(fpath, &g_menu_font) == 0;
     if (g_have_font) {
         printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
         extern void viceroy_init_text_ctx(int);
