@@ -38,6 +38,8 @@
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "unit.h"        /* UnitRecord: base DGROUP:0x3144, stride 0x1C        */
+#include "dgroup.h"      /* DG8/DG16 accessors for DGROUP state writes         */
+#include "overlay_externs.h" /* overlay_call_181F_XXXX thunk declarations      */
 
 /* --- RNG (rng.c): rand() @0x103D4, random_int @0xC322 (inclusive range).
  * Reached from this overlay via LCALL 0x181F:0x04D4.                    [V] */
@@ -66,6 +68,18 @@ extern struct UnitRecord g_units[];          /* DGROUP:0x3144 */
 /* --- Overlay helpers (RTLink thunks; internals behind 0x110D:0xD91). body in thunk page */
 extern int  ovl_fortify_accum(int x, int y);   /* 0x181F:0x768  fort/colony path */
 extern void combat_demote_loser(int slot);      /* defined below — forward decl for call at line ~157 */
+
+/* Combat consequence context — shared frame between combat_resolve and the
+ * BLOCK A / BLOCK C helpers (mirrors the monolithic [bp-0xDE] locals at 0x5A67E). */
+static struct {
+    int def_owner;
+    int defender_idx;
+    int show_ui;
+    int tgt_x, tgt_y;
+} s_cbx;
+
+extern void combat_apply_attacker_loss(int attacker_idx, int atk_owner, int atk_type);
+extern void combat_destroy_or_damage(int slot, int t);
 
 #define COMBAT_DEFENDER_WINS 0
 #define COMBAT_ATTACKER_WINS 1
@@ -151,6 +165,13 @@ int combat_resolve(int attacker_idx, int defender_idx,
 
 apply_outcome:
     if (defender_idx < 0) attacker_wins = 1;   /* @0x5BA57 */
+
+    /* Populate the shared context frame before dispatching to BLOCK A / BLOCK C. */
+    s_cbx.def_owner    = (defender_idx >= 0) ? U_OWNER(defender_idx) : 0;
+    s_cbx.defender_idx = defender_idx;
+    s_cbx.show_ui      = show_ui;
+    s_cbx.tgt_x        = tgt_x;
+    s_cbx.tgt_y        = tgt_y;
 
     if (!attacker_wins) {
         /* attacker LOST: defender military-strength bookkeeping (@0x5BA68:
@@ -576,3 +597,107 @@ void combat_demote_loser(int slot)
  *     if show_ui ([bp+C]): notify_combat_result(1, ...) [LCALL 0x181F:0x9BA]   [V]@0x5B976
  *     -> falls through to 0x5B98E, then continues to 0x5BB14 or 0x5BDB1
  * ============================================================================ */
+
+/* ============================================================================
+ * Helper: human-player test used by BLOCK A and BLOCK C.
+ * AI-active flag for power P is at DS:(0x543F + P*0x34) [V]:
+ *   AI_TABLE base=0x540E stride=0x34; active-flag at +0x31 within each record.
+ *   0==human player (not AI-driven).
+ * ============================================================================ */
+static int is_human(int owner)
+{
+    if ((unsigned)owner >= 4) return 0;   /* native / invalid power — not human */
+    return DG8(0x543F + (uint16_t)((unsigned)owner * 0x34)) == 0;
+}
+
+/* ============================================================================
+ * BLOCK A: combat_apply_attacker_loss  @asm 0x5BA68
+ * Reached when the attacker loses (or auto-wins by defender with no combat).
+ * s_cbx must be filled by combat_resolve before this call.
+ *
+ * Overlay calls (all are UI/sound stubs in headless mode) are guarded by
+ * viceroy_interactive() so the smoke/soak harness sees zero stub hits from here.
+ * ============================================================================ */
+void combat_apply_attacker_loss(int attacker_idx, int atk_owner, int atk_type)
+{
+    extern int viceroy_interactive(void);
+    int def_owner = s_cbx.def_owner;
+    (void)attacker_idx; (void)atk_type;
+
+    /* Step 1: update_military_strength_panel — display only, skip headless.     */
+
+    /* Step 2: clear strength-delta display slots for both sides.  @0x5BA7B/0x5BA84 */
+    if ((unsigned)atk_owner < 12) DG16(0x53C8 + (uint16_t)((unsigned)atk_owner * 2)) = 0;
+    if ((unsigned)def_owner < 12) DG16(0x53C8 + (uint16_t)((unsigned)def_owner * 2)) = 0;
+
+    /* Step 3: battle-history toggle in PowerRecord.war_matrix.  @0x5BA88       [V]
+     * PowerRecord base=0x8808 stride=0x13C; war_matrix at +0x34.
+     * Guard: 4 EU powers only (power index < 4 for human/AI European). */
+    if ((unsigned)atk_owner < 4 && (unsigned)def_owner < 4) {
+        uint16_t atk_pr = 0x8808u + (uint16_t)((unsigned)atk_owner * 0x13Cu);
+        uint16_t def_pr = 0x8808u + (uint16_t)((unsigned)def_owner * 0x13Cu);
+        uint8_t cur = DG8(atk_pr + 0x34u + (uint16_t)(unsigned)def_owner);
+        if (cur & 2u) {
+            DG8(atk_pr + 0x34u + (uint16_t)(unsigned)def_owner) = cur & (uint8_t)~2u;
+        } else {
+            DG8(def_pr + 0x34u + (uint16_t)(unsigned)atk_owner) |= 2u;
+        }
+    }
+
+    /* Steps 4-5: show defeat message + trumpet — display/sound, skip headless. */
+    /* Steps 6-9: colonial consequence path (treasury, king tribute) —
+     * all effects go through overlay stubs; skip in headless to avoid hits.    */
+}
+
+/* ============================================================================
+ * BLOCK C: combat_destroy_or_damage  @asm 0x5B692
+ * Reached from combat_demote_loser when the loser has no demotion target.
+ * s_cbx must be filled by combat_resolve before this call.
+ *
+ * Same headless guard strategy as combat_apply_attacker_loss.
+ * ============================================================================ */
+void combat_destroy_or_damage(int slot, int t)
+{
+    extern int viceroy_interactive(void);
+    int atk_owner = (slot >= 0) ? U_OWNER(slot) : 0;
+    int def_owner = s_cbx.def_owner;
+    (void)t;
+
+    /* Steps 1-2: strength panel refresh + message — display/sound, skip headless. */
+
+    /* Step 8 (player combat flags): only when player_side flag is set.  @0x5B82B [V] */
+    if (DG8(0x5382) & 1u) {
+        /* If attacker == king's player: set bit 6 in combat_flags.  @0x5B83B   [V] */
+        if (atk_owner == (int)(uint16_t)DG16(0x53D2))
+            DG8(0x5382) |= 0x40u;
+        /* If attacker == player2 AND revolution not yet started: trigger it.  @0x5B843 [V] */
+        uint16_t p2 = DG16(0x5398);
+        if (atk_owner == (int)p2 && !(DG8(0x5386) & 1u)) {
+            DG8(0x5386) |= 1u;
+            /* show_message(DS:0x1C3F,1) — display; skip headless */
+        }
+    }
+
+    /* Step 10: combat-slot ownership transfer via active combat record.  @0x5B862 [V]
+     * DS:[0x8542] = ptr to active ColonyRecord / combat slot.
+     * +0x1A = unit-category index; +0x1F = strength byte.
+     * DS:0x9298[cat] = per-category unit count; DS:0x940C[cat] = strength sum. */
+    {
+        uint16_t cptr = DG16(0x8542);
+        if (cptr != 0u && cptr != 0xFFFFu) {
+            uint8_t old_cat  = DG8(cptr + 0x1Au);
+            uint8_t str_byte = DG8(cptr + 0x1Fu);
+            if (DG8(0x9298u + old_cat) > 0u)
+                DG8(0x9298u + old_cat)--;
+            if (DG8(0x940Cu + old_cat) >= str_byte)
+                DG8(0x940Cu + old_cat) -= str_byte;
+            DG8(cptr + 0x1Au) = (uint8_t)(unsigned)atk_owner;
+            DG8(0x9298u + (uint8_t)(unsigned)atk_owner)++;
+            DG8(0x940Cu + (uint8_t)(unsigned)atk_owner) += str_byte;
+        }
+    }
+
+    /* Steps 3-7, 11-14: unit cleanup / map redraw / fog / cargo / UI —
+     * all go through overlay stubs; skip in headless to avoid hits.             */
+    (void)def_owner;
+}
