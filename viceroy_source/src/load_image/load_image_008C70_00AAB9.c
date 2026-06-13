@@ -226,6 +226,88 @@ int func_008DBC_logic_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     return diff;
 }
 
+/* @asm 0x008E02..0x008E45  (68 bytes)  region=load_image
+ * Initialises 3 per-commodity market arrays: g_band_base, g_over_low, g_over_high.
+ * Called by func_008E46 to update market display bands.
+ * @status BYTE_VERIFIED */
+static int func_008E02(uint16_t idx, uint16_t computed_val, uint16_t cap, uint16_t stored_val)
+{
+    uint16_t i2 = (uint16_t)(idx * 2u);
+    DGS16((uint16_t)(i2 + 0x8E32u)) = 0;                           /* g_over_low[idx]  */
+    DGS16((uint16_t)(i2 + 0x8E5Au)) = 0;                           /* g_over_high[idx] */
+    DGS16((uint16_t)(i2 + 0x8E0Au)) = (int16_t)cap;                /* g_band_base[idx] */
+    if ((int16_t)cap > (int16_t)computed_val)
+        DGS16((uint16_t)(i2 + 0x8E32u)) = (int16_t)(cap - computed_val);
+    if ((int16_t)(stored_val + computed_val) < (int16_t)cap)
+        DGS16((uint16_t)(i2 + 0x8E5Au)) = (int16_t)(cap - stored_val - computed_val);
+    return 0;
+}
+
+/* @asm 0x008E46..0x008E82  (61 bytes)  region=load_image
+ * Market display setup: for commodity idx, looks up g_global_amount[idx] (0x8DC8),
+ * applies a correction for idx==14 if DG[0x8E66]!=0, then calls func_008E02 to
+ * fill the three market-band arrays.
+ * @status BYTE_VERIFIED */
+int func_008E46(uint16_t arg0, uint16_t arg1)
+{
+    uint16_t ax = DG16((uint16_t)((uint16_t)(arg0 * 2u) + 0x8DC8u));  /* g_global_amount[arg0] */
+    if (arg0 == 14 && DGS16(0x8E66) != 0)
+        ax = (uint16_t)(ax - (uint16_t)(int16_t)DGS16(0x8E66));
+    uint16_t colony = DG16(0x8542);
+    func_008E02(arg0, ax, arg1, DG16((uint16_t)(colony + (uint16_t)(arg0 * 2u) + 0x9au)));
+    return 0;
+}
+
+/* @asm 0x008F02..0x008F28  (39 bytes)  region=load_image
+ * Overflow check: tests whether colony.stored[idx] + g_global_amount[idx] > g_band_base[idx].
+ * Returns 1 (overflow) or 0.
+ * @status BYTE_VERIFIED */
+static int func_008F02(uint16_t idx)
+{
+    uint16_t si = (uint16_t)(idx * 2u);
+    uint16_t colony = DG16(0x8542);
+    uint16_t stored = DG16((uint16_t)(colony + si + 0x9au));
+    uint16_t global = DG16((uint16_t)(si + 0x8DC8u));
+    uint16_t base   = DG16((uint16_t)(si + 0x8E0Au));
+    return ((int16_t)(stored + global) > (int16_t)base) ? 1 : 0;
+}
+
+/* @asm 0x008F2A..0x008F6B  (65 bytes)  region=load_image
+ * Reads a 4-bit nibble from the packed expertise array at colony+0x60.
+ * Even slot → low nibble; odd slot → high nibble.  Returns 0 if slot >= limit.
+ * @status BYTE_VERIFIED */
+int func_008F2A(uint16_t slot)
+{
+    uint8_t *colony = &g_dgroup[DG16(0x8542)];
+    int16_t limit = (int8_t)colony[0x1f];
+    if (limit <= (int16_t)slot) return 0;
+    int val = colony[0x60 + (slot >> 1)];
+    if (slot & 1) val >>= 4;
+    return val & 0xf;
+}
+
+/* @asm 0x008F6C..0x008FB3  (72 bytes)  region=load_image
+ * Writes a 4-bit nibble into the packed expertise array at colony+0x60.
+ * Even slot → low nibble; odd slot → high nibble.  No-op if slot >= limit.
+ * @status BYTE_VERIFIED */
+int func_008F6C(uint16_t slot, uint16_t val)
+{
+    uint8_t *colony = &g_dgroup[DG16(0x8542)];
+    int16_t limit = (int8_t)colony[0x1f];
+    if (limit <= (int16_t)slot) return 0;
+    if ((int16_t)val > 0xf) val = 0xf;
+    uint8_t mask, value;
+    if (slot & 1) {
+        mask  = 0x0fu;
+        value = (uint8_t)((val & 0xfu) << 4);
+    } else {
+        mask  = 0xf0u;
+        value = (uint8_t)(val & 0xfu);
+    }
+    colony[0x60 + (slot >> 1)] = (uint8_t)((colony[0x60 + (slot >> 1)] & mask) | value);
+    return 0;
+}
+
 /* @asm        0x008E84..0x008EFC  (120 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_008E84_unknown.asm
  * @pattern    DISPATCHER

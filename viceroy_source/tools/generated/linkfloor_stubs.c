@@ -612,11 +612,7 @@ __attribute__((weak)) long ovly_tramp_7ACB(void) { viceroy_stub_hit("ovly_tramp_
 __attribute__((weak)) long ovly_unit_alloc_2D0(void) { viceroy_stub_hit("ovly_unit_alloc_2D0"); return 0; }
 __attribute__((weak)) long ovly_unit_init_181F_844(void) { viceroy_stub_hit("ovly_unit_init_181F_844"); return 0; }
 __attribute__((weak)) long ovly_unit_spawned_181F_894(void) { viceroy_stub_hit("ovly_unit_spawned_181F_894"); return 0; }
-__attribute__((weak)) long func_002494(void) { viceroy_stub_hit("func_002494"); return 0; }
 __attribute__((weak)) long func_006696(void) { viceroy_stub_hit("func_006696"); return 0; }
-__attribute__((weak)) long func_008E46(void) { viceroy_stub_hit("func_008E46"); return 0; }
-__attribute__((weak)) long func_008F2A(void) { viceroy_stub_hit("func_008F2A"); return 0; }
-__attribute__((weak)) long func_008F6C(void) { viceroy_stub_hit("func_008F6C"); return 0; }
 __attribute__((weak)) long func_00CCEB(void) { viceroy_stub_hit("func_00CCEB"); return 0; }
 __attribute__((weak)) long func_00CE98(void) { viceroy_stub_hit("func_00CE98"); return 0; }
 __attribute__((weak)) long func_00CEAD(void) { viceroy_stub_hit("func_00CEAD"); return 0; }
@@ -650,8 +646,6 @@ __attribute__((weak)) long func_05A938(void) { viceroy_stub_hit("func_05A938"); 
 __attribute__((weak)) long func_05A93D(void) { viceroy_stub_hit("func_05A93D"); return 0; }
 __attribute__((weak)) long func_05BE3E_terrain_class(void) { viceroy_stub_hit("func_05BE3E_terrain_class"); return 0; }
 __attribute__((weak)) long func_05E723(void) { viceroy_stub_hit("func_05E723"); return 0; }
-__attribute__((weak)) long func_0612E6_highlight_route(void) { viceroy_stub_hit("func_0612E6_highlight_route"); return 0; }
-__attribute__((weak)) long func_0612E6_select_route_dialog(void) { viceroy_stub_hit("func_0612E6_select_route_dialog"); return 0; }
 __attribute__((weak)) long func_0613F5(void) { viceroy_stub_hit("func_0613F5"); return 0; }
 __attribute__((weak)) long func_0613FA(void) { viceroy_stub_hit("func_0613FA"); return 0; }
 __attribute__((weak)) long func_0613FF(void) { viceroy_stub_hit("func_0613FF"); return 0; }
@@ -670,12 +664,6 @@ __attribute__((weak)) long func_061440(void) { viceroy_stub_hit("func_061440"); 
 __attribute__((weak)) long func_061445(void) { viceroy_stub_hit("func_061445"); return 0; }
 __attribute__((weak)) long func_06144A(void) { viceroy_stub_hit("func_06144A"); return 0; }
 __attribute__((weak)) long func_06144F(void) { viceroy_stub_hit("func_06144F"); return 0; }
-__attribute__((weak)) long func_062716_exec_step(void) { viceroy_stub_hit("func_062716_exec_step"); return 0; }
-__attribute__((weak)) long func_0627BE_place(void) { viceroy_stub_hit("func_0627BE_place"); return 0; }
-__attribute__((weak)) long func_0627BE_reach(void) { viceroy_stub_hit("func_0627BE_reach"); return 0; }
-__attribute__((weak)) long func_066968_framebuf_addr(void) { viceroy_stub_hit("func_066968_framebuf_addr"); return 0; }
-__attribute__((weak)) long func_066968_rect_fill(void) { viceroy_stub_hit("func_066968_rect_fill"); return 0; }
-__attribute__((weak)) long func_066968_unit_at(void) { viceroy_stub_hit("func_066968_unit_at"); return 0; }
 __attribute__((weak)) long func_066BB0_prep(void) { viceroy_stub_hit("func_066BB0_prep"); return 0; }
 __attribute__((weak)) long func_06B67E(void) { viceroy_stub_hit("func_06B67E"); return 0; }
 __attribute__((weak)) long func_06B683(void) { viceroy_stub_hit("func_06B683"); return 0; }
@@ -776,8 +764,6 @@ __attribute__((weak)) long first_unit_or_type(void) { viceroy_stub_hit("first_un
 __attribute__((weak)) long format_engine_a(void) { viceroy_stub_hit("format_engine_a"); return 0; }
 __attribute__((weak)) long format_engine_b(void) { viceroy_stub_hit("format_engine_b"); return 0; }
 __attribute__((weak)) long free_far(void) { viceroy_stub_hit("free_far"); return 0; }
-__attribute__((weak)) long func_8FB4(void) { viceroy_stub_hit("func_8FB4"); return 0; }
-__attribute__((weak)) long func_AB78(void) { viceroy_stub_hit("func_AB78"); return 0; }
 __attribute__((weak)) long g_difficulty(void) { viceroy_stub_hit("g_difficulty"); return 0; }
 __attribute__((weak)) long g_layer0_terrain(void) { viceroy_stub_hit("g_layer0_terrain"); return 0; }
 __attribute__((weak)) long g_layer1_elev(void) { viceroy_stub_hit("g_layer1_elev"); return 0; }

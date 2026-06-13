@@ -35,10 +35,25 @@ extern int  overlay_call_0C2A_0006();  /* @ref RTLink seg 0x0C2A off 0x0006 -- m
 /* Near siblings called from this file but living below 0x24C6 / in the
  * 0x2892..0x2992 gap (not yet emitted as separate .c).  Far functions reached
  * by the large-model `push cs; call near` idiom (each ends in retf). */
-extern void func_002494(uint16_t code, uint16_t *out_glyph, uint16_t *out_attr); /* @0x2494 glyph/attr lookup */
 extern void func_002942(uint16_t arg0);   /* @0x2942 -> overlay 0x0D1D:0x07A4 with id 0x62 */
 extern void func_002952(uint16_t arg0);   /* @0x2952 -> overlay 0x0D1D:0x07A4 with id 0x64 */
 extern void func_0028B0(uint16_t arg0);   /* @0x28B0 -> overlay 0x0D1D:0x07A4 with id 0x50 */
+
+/* @asm 0x002494..0x0024C5  (50 bytes)  region=load_image
+ * Switch on (code-1): selects a glyph id; always sets attr=0x22.
+ * @status BYTE_VERIFIED */
+void func_002494(uint16_t code, uint16_t *out_glyph, uint16_t *out_attr)
+{
+    uint16_t g;
+    switch (code - 1) {
+    case 0:
+    case 1:  g = 0x95; break;
+    case 2:  g = 0x0C; break;
+    default: g = 0x44; break;
+    }
+    *out_glyph = g;
+    *out_attr  = 0x22;
+}
 
 /* @asm        0x0024C6..0x0024C6+126  (126 bytes)  region=load_image
  * @asm_file   ../code/VICEROY/disasm/func_0024C6_unknown.asm

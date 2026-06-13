@@ -1172,3 +1172,20 @@ PROVIDE(overlay_call_181F_000E = func_002400_names_init);
 EXTERN(func_002400_names_init)
 PROVIDE(overlay_call_181F_0018 = func_00242C_names_intern);
 EXTERN(func_00242C_names_intern)
+
+/* Phase 4.7 (2026-06-13): missing overlay_call wires and short-name aliases.
+ *
+ * overlay_call_181F_0370: the Chebyshev/octile distance helper.
+ *   Declared in overlay_externs.h but stub was removed; wire to the existing port.
+ *
+ * func_8FB4 / func_AB78: colony/assignment.c uses bare 4-hex names; the actual
+ *   strong definitions use the full 6-hex decorated names.
+ *
+ * func_00863E_wrapper_with_global_8DC6: bare-name ref from load_image callers that
+ *   use the undecorated func_00863E alias. Already wired above but the full
+ *   decorated name is also needed directly. */
+PROVIDE(overlay_call_181F_0370 = func_004900_logic_sz_15);
+PROVIDE(func_8FB4 = func_008FB4_colony_sz_138);
+EXTERN(func_008FB4_colony_sz_138)
+PROVIDE(func_AB78 = func_00AB78_colony_sz_1496);
+EXTERN(func_00AB78_colony_sz_1496)

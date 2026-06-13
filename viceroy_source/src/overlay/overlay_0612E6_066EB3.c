@@ -2385,3 +2385,79 @@ int func_066E52_clip_window_to_view(int *col, int *row, int *w, int *h)
     if (*h < 0) *h = 0;                                         /* @asm 0x066EBC */
     return 0;                                                    /* @asm 0x066EC6 retf */
 }
+
+/* ============================================================================
+ * Overlay near-call entry-point wrappers and structural stubs.
+ * These symbols are used as near-call targets within the overlay pages and
+ * need strong definitions to override the weak link-floor stubs.
+ * ============================================================================ */
+
+extern int overlay_call_191F_02CE();  /* 0x191F:0x2CE list-highlight */
+extern int overlay_call_191F_02DC();  /* 0x191F:0x2DC list-select dialog */
+
+/* near 0x1920 -> ljmp 0x191F:0x2CE (trade route highlight) */
+void func_0612E6_highlight_route(int sel)
+{
+    overlay_call_191F_02CE(sel);
+}
+
+/* near 0x1925 -> ljmp 0x191F:0x2DC (trade route list-select dialog).
+ * Call site in func_0612E6_trade_route_delete pushed ("TRADEDELETE", 0, 0) then
+ * called this trampoline; modern port encapsulates those args here. */
+int func_0612E6_select_route_dialog(void)
+{
+    return overlay_call_191F_02DC(0x1d96, 0, 0);
+}
+
+/* near 0x172c -> ljmp 0x1A1F:0x5F0 (straight-move executor).
+ * Wraps the overlay step executor used by func_062716_move_step_gate. */
+int func_062716_exec_step(void)
+{
+    return overlay_call_1A1F_05F0();
+}
+
+/* near 0x170 / file 0x061E10 — reachability probe used by func_0627BE.
+ * The binary uses a register-based calling convention (ax=col, dx=row, bx=out_ptr).
+ * Modern structural stub: always reports reachable so pathfinding is not blocked. */
+int func_0627BE_reach(int col, int row)
+{
+    (void)col; (void)row;
+    return 1;
+}
+
+/* near 0x1722 / file 0x0633C2 — place/commit helper used by func_0627BE.
+ * Structural stub: returns 0 (success) so pathfinding is not blocked. */
+int func_0627BE_place(int seg, int n)
+{
+    (void)seg; (void)n;
+    return 0;
+}
+
+/* 0x181F:0x370 — Chebyshev/octile distance helper used by func_0627BE. */
+int func_0627BE_distance(int x, int y)
+{
+    return overlay_call_181F_0370(x, y);
+}
+
+/* ============================================================================
+ * func_066968 family — map-tile scan page.
+ * framebuf_addr, unit_at and rect_fill are called from the mini-map compositor.
+ * Structural stubs until the full VGA/framebuffer layer is ported.
+ * ============================================================================ */
+unsigned char far *func_066968_framebuf_addr(int x_px, int y_px)
+{
+    (void)x_px; (void)y_px;
+    return (unsigned char far *)0;
+}
+
+int func_066968_unit_at(int col, int row)
+{
+    (void)col; (void)row;
+    return -1;
+}
+
+int func_066968_rect_fill(int x, int y, int w, int h, int color, int z)
+{
+    (void)x; (void)y; (void)w; (void)h; (void)color; (void)z;
+    return 0;
+}

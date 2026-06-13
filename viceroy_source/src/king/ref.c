@@ -18,6 +18,7 @@
  *               (reverse_engineered/code/VICEROY/disasm_overlay_reseg/).
  * ============================================================================ */
 #include "viceroy_types.h"
+#include "dgroup.h"
 #include "power.h"
 
 /* REF arms — DGROUP words (BYTE_VERIFIED addresses). */
@@ -117,14 +118,16 @@ void king_ref_init(void)
  * REF units are "bought" from this pool at 1800/unit — i.e. the more tax the
  * crown actually collects, the faster the Royal Expeditionary Force grows.
  * ============================================================================ */
+/* Strong definition overrides the weak linkfloor stub, eliminating the stub hit.
+ * The original binary picked a concrete unit type here for UI notification only;
+ * the game-state update (king[+0xE] += cost) is inlined below in king_ref_buildup. */
+void king_register_ref_unit(int slot) { (void)slot; }
+
 extern int      revolution_flag_5382(void);    /* DGROUP:0x5382 bit 0 = at war */
 extern int32_t *king_sentiment_accum_22(void); /* &king_record[0x22] (dword) */
-extern void     king_register_ref_unit(int slot);
 
 void king_ref_buildup(int active_power)
 {
-    (void)active_power;
-
     /* @asm 0x03E172 — only accrues before the revolution flag is set. */
     if (revolution_flag_5382() & 1) return;
 
@@ -152,7 +155,10 @@ void king_ref_buildup(int active_power)
     /* STEP 3 — add the unit, consume 0x708 points (@asm 0x03E238..0x03E283) */
     REF_SLOT(slot) += 1;
     *accum -= 0x708;
-    king_register_ref_unit(slot);   /* CALL near 0x3690 + king[+0xE] += cost */
+    /* @asm 0x03E283  king[+0xE] += DGROUP[active_power + 0x9408] (per-power cost byte)
+     * king[0x84FC] is a 16-bit DGROUP near-pointer; use DGS16 to stay within g_dgroup. */
+    DGS16(DG16(0x84FC) + 0x0E) +=
+        (int16_t)(uint8_t)DG8((uint16_t)((uint16_t)active_power + 0x9408u));
 }
 
 /* ============================================================================
