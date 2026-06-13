@@ -61,4 +61,40 @@ long overlay_call_181F_0422(void) { return 0; }  /* free_block (no-op heap free)
  * itself is applied separately. Pure display -> no-op in headless. */
 long ff_pre_a(void) { return 0; }
 
+/* ----------------------------------------------------------------------------
+ * STATIC RESIDUE (role-classified, NOT smoke-reached): weak func_ stubs that
+ * the real-data smoke does not exercise (they sit on screen/dialog/EMS paths
+ * the synthetic-map smoke doesn't drive), but whose role is unambiguously
+ * platform/display from decompilation + @asm cites. MODERN-REPLACED no-ops
+ * (behavior-identical to the weak floor; classification grounded, not
+ * runtime-validated -- a wrong label only mis-files a no-op, never changes
+ * behavior). See docs/PHASE4_THUNK_LEDGER.md.
+ *
+ *  DOS Expanded-Memory (EMS) paging -- no EMS in the flat modern model:
+ *    func_015219  (decompiles to EMS map ops; "Illegal alteration of EMS mapping")
+ *    func_016127  (EMS page-frame remap loop)
+ *  Glyph / pixel row blit (text rendering):
+ *    func_00CE98  (masked row copy)      func_00CEAD  (row advance/store)
+ *  Colony / Europe screen draws (overlay_024342_027B62):
+ *    func_02C9B5 deficit arrow   func_02C9BF measure-label (layout dims)
+ *    func_02CA1E upper arrow     func_02CA23 assigned-colonist icon
+ *    func_02CA46 layout metrics  func_02CA55 surplus arrow
+ *    func_02CAC3 backdrop/fill   func_02CAE1 unassigned-colonist icon
+ *  Dialog teardown:
+ *    func_06B6B5  dialog_close
+ * -------------------------------------------------------------------------- */
+long func_015219(void) { return 0; }
+long func_016127(void) { return 0; }
+long func_00CE98(void) { return 0; }
+long func_00CEAD(void) { return 0; }
+long func_02C9B5(void) { return 0; }
+long func_02C9BF(void) { return 0; }
+long func_02CA1E(void) { return 0; }
+long func_02CA23(void) { return 0; }
+long func_02CA46(void) { return 0; }
+long func_02CA55(void) { return 0; }
+long func_02CAC3(void) { return 0; }
+long func_02CAE1(void) { return 0; }
+long func_06B6B5(void) { return 0; }
+
 #endif /* _VICEROY_MODERN */
