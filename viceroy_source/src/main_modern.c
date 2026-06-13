@@ -177,27 +177,37 @@ static void draw_title_menu(int sel)
     ff_font_t *mf = g_have_menu_font ? &g_menu_font : (g_have_font ? &g_font : 0);
     if (!mf) { vid_present(); return; }
 
-    /* @BEGINMENU panel: @width=160 centered, top at @y=91 */
-    int rh = mf->maxh + 2;
-    int pw = g_menu_width;                          /* 160 */
-    int px = (VID_W - pw) / 2;                      /* 80  */
-    int py = g_menu_y;                              /* 91  */
-    int ph = (1 + g_menu_count) * rh + 7;           /* header + options + pad */
+    char hdr[128]; title_header_text(hdr, sizeof hdr);
 
-    /* RECONSTRUCTED colours, matched to the reference frame (pending a byte-trace
-     * of the original panel-draw): dark maroon fill, gold frame, tan header,
-     * cream options, dark-red selection bar. */
-    uint8_t fill  = pal_nearest( 56, 24, 20);
-    uint8_t frame = pal_nearest(196,160, 84);
-    uint8_t c_hdr = pal_nearest(214,160, 72);
-    uint8_t c_opt = pal_nearest(236,216,172);
-    uint8_t c_bar = pal_nearest(104, 34, 26);
+    /* auto-size the panel to the widest row -- the ported engine's geometry is
+     * content_w = max(@width, longest_line + margin) (menu_runner.c
+     * mr_finalize_geometry @asm 0x06D392), so nothing overhangs the frame. */
+    int pad = 5;
+    int longest = ff_text_width(mf, hdr, 1);
+    for (int i = 0; i < g_menu_count; i++) {
+        int w = ff_text_width(mf, g_menu_opt[i], 1);
+        if (w > longest) longest = w;
+    }
+    int rh = mf->maxh + 2;
+    int pw = longest + 2 * pad;
+    if (pw < g_menu_width) pw = g_menu_width;
+    int px = (VID_W - pw) / 2;                      /* centered (@x unset) */
+    int py = g_menu_y;                              /* @y=91 */
+    int ph = (1 + g_menu_count) * rh + 6;
+
+    /* real game-palette UI colours: nearest index to the menu's maroon/gold/cream
+     * (these live high in the palette -- the title's wood frame uses them too --
+     * not the low gray style slots). Generic across every framed menu/dialog. */
+    uint8_t fill  = pal_nearest( 60, 28, 24);
+    uint8_t frame = pal_nearest(188,150, 78);
+    uint8_t c_hdr = pal_nearest(210,150, 60);
+    uint8_t c_opt = pal_nearest(234,214,172);
+    uint8_t c_bar = pal_nearest(110, 36, 28);
 
     vid_box_fill(px, py, pw, ph, fill);
     vid_box_outline(px, py, pw, ph, frame);
 
-    int tx = px + 6, ty = py + 4;
-    char hdr[128]; title_header_text(hdr, sizeof hdr);
+    int tx = px + pad, ty = py + 3;
     mf->colors[1] = mf->colors[2] = mf->colors[3] = c_hdr;
     ff_draw(mf, hdr, tx, ty, 1);
     ty += rh + 1;
@@ -839,7 +849,7 @@ int main(int argc, char **argv)
     snprintf(fpath, sizeof fpath, "%s/FONTSMAL.FF", g_data);
     g_have_font = ff_load(fpath, &g_font) == 0;
     /* mixed-case face for the @BEGINMENU rows (FONTSMAL is caps-only) */
-    snprintf(fpath, sizeof fpath, "%s/FONTINTR.FF", g_data);
+    snprintf(fpath, sizeof fpath, "%s/FONTTINY.FF", g_data);
     g_have_menu_font = ff_load(fpath, &g_menu_font) == 0;
     if (g_have_font) {
         printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
