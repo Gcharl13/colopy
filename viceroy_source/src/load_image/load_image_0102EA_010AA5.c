@@ -758,3 +758,19 @@ int func_010A99_logic_sz_12(uint16_t arg0_bp_06)
     return func_010A6E();
 }
 
+/* @asm 0x01041A..0x010AD8  (1726 bytes, multiple entry points)
+ * overlay_call_0D1D_0E4A -> 0x0D1D:0x0E4A -> file 0x01041A
+ * DOS INT 21h AH=41h: delete file named by arg0 (near ptr in DGROUP). */
+int func_01041A_dos_delete(uint16_t name_nearptr) {
+    /* Forwarded to dos_service_glue.c implementation */
+    extern int func_01041A_dos_delete_file(uint16_t);
+    return func_01041A_dos_delete_file(name_nearptr);
+}
+
+/* @asm 0x010433 (interior entry of func_01041A block)
+ * overlay_call_0D1D_0E63 -> 0x0D1D:0x0E63 -> file 0x010433
+ * DOS FindFirst/FindNext: returns non-zero (no matches) in modern host. */
+int func_010433_dos_find(void) {
+    return 1;
+}
+

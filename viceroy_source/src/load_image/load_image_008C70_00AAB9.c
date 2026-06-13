@@ -1619,3 +1619,47 @@ int func_00A994_colony_sz_293(void)
     return 0;
 }
 
+/* @asm 0x00929A..0x092C6  (44 bytes)
+ * overlay_call_181F_0B0A -> 0x05EB:0x0FEA -> file 0x0929A
+ * Compares arg0 to colony.byte[0x1F]; classifies arg1 vs 0x13 threshold.
+ * Returns 0, 1, or 2 depending on ordering. */
+int func_00929A_item_threshold_class(uint16_t item, uint16_t colony_idx) {
+    uint8_t limit = g_dgroup[DG16(0x8542) + 0x1f];
+    if ((int16_t)item < (int16_t)(int8_t)limit) {
+        return (colony_idx >= 0x13) ? 2 : 0;
+    } else {
+        if (colony_idx >= 0x13) return 1;
+        return 0;
+    }
+}
+
+/* @asm 0x0096DA..0x09725  (75 bytes)
+ * overlay_call_181F_0CF4 -> 0x05EB:0x142A -> file 0x096DA
+ * Finds Nth colony slot whose goods-type matches good.
+ * Returns the slot index or -1 if not found. */
+int func_0096DA_find_nth_slot_by_good(uint16_t good, uint16_t n) {
+    uint8_t *colony = &g_dgroup[DG16(0x8542)];
+    int16_t result  = -1;
+    int16_t counter = -1;
+    int16_t node    = 0;
+    uint8_t limit   = colony[0x1f];
+    while (result < 0) {
+        if ((int16_t)node > (int16_t)(int8_t)limit) break;
+        if ((uint8_t)colony[0x20 + node] == (uint8_t)good) {
+            counter++;
+            if (counter == (int16_t)n) result = node;
+        }
+        node++;
+    }
+    return result;
+}
+
+/* @asm 0x009318..0x009626  (782 bytes)
+ * overlay_call_181F_0C36 -> 0x05EB:0x1068 -> file 0x009318
+ * Colony-view renderer: draws colony panel with goods, population,
+ * and production rows.  Structural stub: full port pending. */
+int func_009318_colony_view(uint16_t arg0, uint16_t arg1) {
+    (void)arg0; (void)arg1;
+    return 0;
+}
+

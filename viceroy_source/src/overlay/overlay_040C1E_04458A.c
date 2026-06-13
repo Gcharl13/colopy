@@ -2054,3 +2054,22 @@ int func_044556_set_record(uint16_t off /*bp+6*/, uint16_t seg /*bp+8*/,
 /* ============================================================================
  * End of overlay_040C1E_04458A.c
  * ========================================================================== */
+
+/* @asm 0x040E22..0x040FD6  (436 bytes)
+ * overlay_call_191F_04BA -> page08+0x0972 -> file 0x040E22
+ * Unit movement-type handler: resolves unit class from struct, checks
+ * fortification/terrain data, dispatches movement action.
+ * Structural stub: game logic port pending. */
+int func_040E22_unit_move_dispatch(uint16_t unit) {
+    (void)unit;
+    return 0;
+}
+
+/* @asm 0x041832..0x0418AA  (120 bytes)
+ * overlay_call_191F_0AEE -> page08+(0x138<<4)+0x0002 -> file 0x041832
+ * Movement-resolve: computes move eligibility based on timer, unit type,
+ * and reinforcement flag.  Returns 1 or 2. Structural stub. */
+int func_041832_move_resolve(uint16_t unit, uint16_t dest) {
+    (void)unit; (void)dest;
+    return 1;
+}

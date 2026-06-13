@@ -1226,3 +1226,13 @@ void beveled_cell_grid(int redraw)
     if (redraw != 0)                                     /* @asm 0x031E31 JE 0x031E4A */
         box_clear(/* 0x119,0x59,0x20,0x25 */);           /* @asm 0x031E45 0x181F:0xE2 */
 }
+
+/* @asm 0x030550..0x030564  (21 bytes)
+ * overlay_call_181F_0582 -> 0x181F:0x0582 -> file 0x030550
+ * Selects an AI power by index: stores power in DGROUP:0x9E12 and stores
+ * a pointer to its data table row (stride 0x13C from base 0x8808) in 0x84FC. */
+int func_030550_power_select(uint16_t power) {
+    DGS16(0x9e12) = (int16_t)power;
+    DGS16(0x84fc) = (int16_t)(power * 0x13c + 0x8808);
+    return 0;
+}

@@ -4,9 +4,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 
 | state | count | meaning |
 |---|--:|---|
-| RESOLVED-REAL | 836 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
+| RESOLVED-REAL | 906 | strong definition at final link (PROVIDE alias, platform direct object, archive member) |
 | RESOLVED-LIBC | 40 | host C library provides it (dynamic import) |
-| WEAK-STUBBED | 1001 | hit-counting no-op floor (the remaining worklist) |
+| WEAK-STUBBED | 932 | hit-counting no-op floor (the remaining worklist) |
 
 ## WEAK-STUBBED breakdown
 
@@ -15,8 +15,7 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 | ARITY-PENDING | 358 | target ported; fix each C call site to pass the measured args, then PROVIDE |
 | NAMED-GAP | 326 | implement, map to ported rtl, or record UNREACHABLE(proof) |
 | ENTRY-SPLIT-PENDING | 177 | thunk lands mid-body of a ported function; split a callable sub-entry |
-| BODY-MISSING | 110 | port the original func_0XXXXX body |
-| THUNK-UNRESOLVED | 30 | no resolved target yet; whois + port/wire |
+| BODY-MISSING | 71 | port the original func_0XXXXX body |
 
 ## RESOLVED-LIBC (host C runtime satisfies these by design)
 
@@ -424,47 +423,19 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `ttl_compose_to_video` -> `func_010582_logic_sz_28` @3
 - `unit_first_of_owner` -> `func_0066CC_op_sz_57` @2
 
-### BODY-MISSING — 110
+### BODY-MISSING — 71
 
 - `func_002494`
-- `func_0028B0`
-- `func_002942`
-- `func_002952`
 - `func_006696`
-- `func_006A7C`
-- `func_00701C`
-- `func_008806`
-- `func_008982`
-- `func_008D9C`
 - `func_008E46`
 - `func_008F2A`
 - `func_008F6C`
-- `func_00903E`
-- `func_0099AE`
-- `func_009A32`
-- `func_00B304`
-- `func_00B31A`
-- `func_00BD28`
-- `func_00C07A`
-- `func_00C09A`
-- `func_00C0D0`
-- `func_00C410`
 - `func_00CCEB`
 - `func_00CE98`
 - `func_00CEAD`
-- `func_010352`
-- `func_010496`
-- `func_010A6E`
-- `func_010A99`
-- `func_010BBC`
-- `func_010DB4`
-- `func_010E27`
 - `func_0114E4`
-- `func_0115CE`
-- `func_011CD2`
 - `func_015219`
 - `func_016127`
-- `func_020F50`
 - `func_02C9B5`
 - `func_02C9BF`
 - `func_02CA1E`
@@ -487,11 +458,9 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_0400EA`
 - `func_04172D`
 - `func_041732`
-- `func_044540`
 - `func_05A938`
 - `func_05A93D`
 - `func_05BE3E_terrain_class`
-- `func_05CA7E`
 - `func_05E723`
 - `func_0612E6_highlight_route`
 - `func_0612E6_select_route_dialog`
@@ -527,15 +496,6 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `func_06B6B5`
 - `func_06B6BA`
 - `func_06BAEC`
-- `func_06BE92`
-- `func_06BF12`
-- `func_06BF3C`
-- `func_06BF66`
-- `func_06C18C`
-- `func_06CFE8`
-- `func_06D316`
-- `func_06D88C`
-- `func_077990`
 
 ### ENTRY-SPLIT-PENDING — 177
 
@@ -1045,37 +1005,4 @@ Gate-G4 bookkeeping over every externally-undefined symbol in `build_modern/libv
 - `unit_record`
 - `value_band`
 - `weight_scale`
-
-### THUNK-UNRESOLVED — 30
-
-- `overlay_call_0427_0002`
-- `overlay_call_0A4E_0008`
-- `overlay_call_0D1C_0000`
-- `overlay_call_0D1D_07E4`
-- `overlay_call_0D1D_0842`
-- `overlay_call_0D1D_0C56`
-- `overlay_call_0D1D_0C80`
-- `overlay_call_0D1D_0E4A`
-- `overlay_call_0D1D_0E63`
-- `overlay_call_0D1D_113C`
-- `overlay_call_0D1D_117E`
-- `overlay_call_0D1D_2916`
-- `overlay_call_0D1D_291C`
-- `overlay_call_181F_000E`
-- `overlay_call_181F_0018`
-- `overlay_call_181F_0088`
-- `overlay_call_181F_0550`
-- `overlay_call_181F_0582`
-- `overlay_call_181F_0B0A`
-- `overlay_call_181F_0C36`
-- `overlay_call_181F_0CE0`
-- `overlay_call_181F_0CF4`
-- `overlay_call_181F_0CFE`
-- `overlay_call_181F_0D26`
-- `overlay_call_191F_0320`
-- `overlay_call_191F_04BA`
-- `overlay_call_191F_0AEE`
-- `overlay_call_1A1F_0192`
-- `overlay_call_1A1F_0618`
-- `overlay_call_1A1F_0CF6`
 

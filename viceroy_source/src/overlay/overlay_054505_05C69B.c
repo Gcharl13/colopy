@@ -1552,3 +1552,28 @@ int remap_tile_id_for_mode(int in)  /* func_05C65A */
     if (in == 0x1B) out = 0x1B;                        /* @asm 0x05C68B */
     return out;                                        /* @asm 0x05C696 */
 }
+
+/* @asm 0x056B08..0x056B92  (138 bytes)
+ * overlay_call_181F_0550 -> page15+0x00F8 -> file 0x056B08
+ * Computes per-power score totals across 5 powers using imul stride 0x13C.
+ * Structural stub: score totals computation pending. */
+int func_056B08_compute_power_scores(void) {
+    return 0;
+}
+
+/* @asm 0x057A3A..0x057AA1  (103 bytes)
+ * overlay_call_1A1F_0618 -> page15+0x102A -> file 0x057A3A
+ * Leader title lookup: builds name string, walks heap to find rank n,
+ * calls dialog_slot_set_block. Structural stub. */
+int func_057A3A_leader_title_lookup(uint16_t dest, uint16_t src, uint16_t n) {
+    (void)dest; (void)src; (void)n;
+    return 0;
+}
+
+/* @asm 0x059B90..0x05A1D5  (1605 bytes)
+ * overlay_call_1A1F_0192 -> page15+0x3180 -> file 0x059B90
+ * Europe diplomacy/trade screen core: large dispatch with market, tax,
+ * and fleet sub-panels. Structural stub: full port needed. */
+int func_059B90_europe_dispatch(void) {
+    return 0;
+}

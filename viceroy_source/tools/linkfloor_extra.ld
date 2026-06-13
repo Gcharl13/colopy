@@ -1042,3 +1042,133 @@ EXTERN(func_041EEA_next_active_unit)
 PROVIDE(ui_show_message_0 = func_076594_terrain_layer_load3);
 EXTERN(func_076594_terrain_layer_load3)
 PROVIDE(unit_detach_from_settlement = func_006E94_logic_sz_198);
+
+/* Phase 4 catch-up: stubs whose bodies are ported but PROVIDE alias was missing */
+PROVIDE(func_006A7C = func_006A7C_logic_sz_50);
+EXTERN(func_006A7C_logic_sz_50)
+PROVIDE(func_00701C = func_00701C_logic_sz_48);
+PROVIDE(func_008806 = func_008806_logic_sz_63);
+EXTERN(func_008806_logic_sz_63)
+PROVIDE(func_008982 = func_008982_logic_sz_532);
+PROVIDE(func_008D9C = func_008D9C_lookup_table_2F4_signed);
+PROVIDE(func_00903E = func_00903E_logic_sz_138);
+EXTERN(func_00903E_logic_sz_138)
+PROVIDE(func_0099AE = func_0099AE_op_sz_63);
+EXTERN(func_0099AE_op_sz_63)
+PROVIDE(func_009A32 = func_009A32_op_sz_56);
+EXTERN(func_009A32_op_sz_56)
+PROVIDE(func_00B304 = func_00B304_cargo_slot_set_amount);
+EXTERN(func_00B304_cargo_slot_set_amount)
+PROVIDE(func_00B31A = func_00B31A_cargo_slot_set_good);
+EXTERN(func_00B31A_cargo_slot_set_good)
+PROVIDE(func_00BD28 = func_00BD28_op_sz_34);
+EXTERN(func_00BD28_op_sz_34)
+PROVIDE(func_00C07A = func_00C07A_logic_sz_32);
+PROVIDE(func_00C09A = func_00C09A_logic_sz_19);
+PROVIDE(func_00C0D0 = func_00C0D0_logic_sz_57);
+PROVIDE(func_00C410 = func_00C410_rtl_sz_73);
+EXTERN(func_00C410_rtl_sz_73)
+PROVIDE(func_010352 = func_010352_logic_sz_44);
+EXTERN(func_010352_logic_sz_44)
+PROVIDE(func_010496 = func_010496_logic_sz_154);
+PROVIDE(func_010A6E = func_010A6E_logic_sz_18);
+EXTERN(func_010A6E_logic_sz_18)
+PROVIDE(func_010A99 = func_010A99_logic_sz_12);
+EXTERN(func_010A99_logic_sz_12)
+PROVIDE(func_010BBC = func_010BBC_logic_sz_151);
+EXTERN(func_010BBC_logic_sz_151)
+PROVIDE(func_010DB4 = func_010DB4_rtl_sz_115);
+EXTERN(func_010DB4_rtl_sz_115)
+PROVIDE(func_010E27 = func_010E27_logic_sz_63);
+EXTERN(func_010E27_logic_sz_63)
+PROVIDE(func_0115CE = func_0115CE_rtl_sz_185);
+EXTERN(func_0115CE_rtl_sz_185)
+PROVIDE(func_011CD2 = func_011CD2_rtl_sz_25);
+EXTERN(func_011CD2_rtl_sz_25)
+PROVIDE(func_020F50 = func_020F50_tutorial_hints);
+EXTERN(func_020F50_tutorial_hints)
+PROVIDE(func_044540 = func_044540_clamp_order_byte);
+EXTERN(func_044540_clamp_order_byte)
+PROVIDE(func_05CA7E = func_05CA7E_attack_value);
+EXTERN(func_05CA7E_attack_value)
+PROVIDE(func_06BE92 = func_06BE92_ui_label_player_or_score);
+EXTERN(func_06BE92_ui_label_player_or_score)
+PROVIDE(func_06BF12 = func_06BF12_ui_label_tax);
+EXTERN(func_06BF12_ui_label_tax)
+PROVIDE(func_06BF3C = func_06BF3C_ui_label_misc);
+EXTERN(func_06BF3C_ui_label_misc)
+PROVIDE(func_06BF66 = func_06BF66_popup_overlay_swap);
+EXTERN(func_06BF66_popup_overlay_swap)
+PROVIDE(func_06C18C = func_06C18C_popup_draw_callback);
+EXTERN(func_06C18C_popup_draw_callback)
+PROVIDE(func_06CFE8 = func_06CFE8_panel_wordwrap_text);
+EXTERN(func_06CFE8_panel_wordwrap_text)
+PROVIDE(func_06D316 = func_06D316_panel_finalize_geometry);
+EXTERN(func_06D316_panel_finalize_geometry)
+PROVIDE(func_06D88C = func_06D88C_panel_blit_background);
+EXTERN(func_06D88C_panel_blit_background)
+PROVIDE(func_077990 = func_077990_scan_dir_first_name);
+EXTERN(func_077990_scan_dir_first_name)
+/* named-append family: bodies defined inline, just needed PROVIDE for func_ symbol */
+PROVIDE(func_0028B0 = func_0028B0_append_space);
+PROVIDE(func_002942 = func_002942_append_lbrace);
+PROVIDE(func_002952 = func_002952_append_rbrace);
+
+/* THUNK-UNRESOLVED batch: 0x0D1D segment MSC RTL direct calls map to existing ports */
+PROVIDE(overlay_call_0D1D_07E4 = msc_strcpy_near);
+PROVIDE(overlay_call_0D1D_0842 = msc_strlen_near);
+PROVIDE(overlay_call_0D1D_0C56 = msc_strchr_near);
+PROVIDE(overlay_call_0D1D_0C80 = msc_stricmp_near);
+PROVIDE(overlay_call_0D1D_113C = msc_strlen);
+PROVIDE(overlay_call_0D1D_117E = msc_far_strcpy);
+/* THUNK-UNRESOLVED: 0x0D1D:0x2916/291C thunks point to ported near-heap helpers */
+PROVIDE(overlay_call_0D1D_2916 = func_012235_logic_sz_40);
+EXTERN(func_012235_logic_sz_40)
+PROVIDE(overlay_call_0D1D_291C = func_012214_logic_sz_33);
+EXTERN(func_012214_logic_sz_33)
+/* THUNK-UNRESOLVED: newly ported colony-support helpers (0x05EB segment) */
+PROVIDE(overlay_call_181F_0CFE = func_0085B2_commodity_flag_read);
+EXTERN(func_0085B2_commodity_flag_read)
+PROVIDE(overlay_call_181F_0D26 = func_0085D6_commodity_flag_write);
+EXTERN(func_0085D6_commodity_flag_write)
+PROVIDE(overlay_call_181F_0CE0 = func_008956_cargo_slot_type);
+EXTERN(func_008956_cargo_slot_type)
+PROVIDE(overlay_call_181F_0B0A = func_00929A_item_threshold_class);
+EXTERN(func_00929A_item_threshold_class)
+PROVIDE(overlay_call_181F_0CF4 = func_0096DA_find_nth_slot_by_good);
+EXTERN(func_0096DA_find_nth_slot_by_good)
+/* THUNK-UNRESOLVED: remaining overlay structural stubs */
+PROVIDE(overlay_call_181F_0582 = func_030550_power_select);
+EXTERN(func_030550_power_select)
+PROVIDE(overlay_call_191F_04BA = func_040E22_unit_move_dispatch);
+EXTERN(func_040E22_unit_move_dispatch)
+PROVIDE(overlay_call_191F_0AEE = func_041832_move_resolve);
+EXTERN(func_041832_move_resolve)
+PROVIDE(overlay_call_191F_0320 = func_073158_commit_predicate);
+EXTERN(func_073158_commit_predicate)
+PROVIDE(overlay_call_181F_0550 = func_056B08_compute_power_scores);
+EXTERN(func_056B08_compute_power_scores)
+PROVIDE(overlay_call_1A1F_0618 = func_057A3A_leader_title_lookup);
+EXTERN(func_057A3A_leader_title_lookup)
+PROVIDE(overlay_call_1A1F_0192 = func_059B90_europe_dispatch);
+EXTERN(func_059B90_europe_dispatch)
+PROVIDE(overlay_call_1A1F_0CF6 = func_0734F8_scenario_dispatch);
+EXTERN(func_0734F8_scenario_dispatch)
+PROVIDE(overlay_call_181F_0C36 = func_009318_colony_view);
+EXTERN(func_009318_colony_view)
+/* THUNK-UNRESOLVED: DOS service and unspanned stubs */
+PROVIDE(overlay_call_0D1C_0000 = func_0F5C0_vga_addr_calc);
+EXTERN(func_0F5C0_vga_addr_calc)
+PROVIDE(overlay_call_0A4E_0008 = func_0C8E8_screen_addr_helper);
+EXTERN(func_0C8E8_screen_addr_helper)
+PROVIDE(overlay_call_0427_0002 = func_06672_colony_data_lookup);
+EXTERN(func_06672_colony_data_lookup)
+PROVIDE(overlay_call_181F_0088 = func_026B2_name_buf_composite);
+EXTERN(func_026B2_name_buf_composite)
+PROVIDE(overlay_call_0D1D_0E4A = func_010433_dos_find);
+EXTERN(func_010433_dos_find)
+PROVIDE(overlay_call_0D1D_0E63 = func_010433_dos_find);
+PROVIDE(overlay_call_181F_000E = func_002400_names_init);
+EXTERN(func_002400_names_init)
+PROVIDE(overlay_call_181F_0018 = func_00242C_names_intern);
+EXTERN(func_00242C_names_intern)

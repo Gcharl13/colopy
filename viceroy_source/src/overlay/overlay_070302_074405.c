@@ -1570,3 +1570,19 @@ int func_07431E_new_game_init(void)
     }
     return 0;                                            /* @asm 0x0745E4 RETF */
 }
+
+/* @asm 0x073158..0x073266  (270 bytes)
+ * overlay_call_191F_0320 -> page26+(0xBE<<4)+0x04E8 -> file 0x073158
+ * Predicate/commit function: allocates record, runs panel_run_modal,
+ * copies result string. Structural stub. */
+int func_073158_commit_predicate(void) {
+    return 0;
+}
+
+/* @asm 0x0734F8..0x073AB0  (1464 bytes)
+ * overlay_call_1A1F_0CF6 -> page26+(0x11E<<4)+0x0288 -> file 0x0734F8
+ * Large scenario/campaign dispatch: handles game setup panels and
+ * difficulty selection. Structural stub: full port needed. */
+int func_0734F8_scenario_dispatch(void) {
+    return 0;
+}

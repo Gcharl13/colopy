@@ -1272,3 +1272,34 @@ int func_008C1E_logic_sz_81(uint16_t arg0_bp_06)
     return result;                              /* @asm 0x8C6A */
 }
 
+/* @asm 0x0085B2..0x0085D5  (35 bytes)
+ * overlay_call_181F_0CFE -> 0x05EB:0x0302 -> file 0x085B2
+ * Reads a 1-bit commodity flag from the active colony's flag array. */
+int func_0085B2_commodity_flag_read(int16_t slot) {
+    uint8_t *colony = &g_dgroup[DG16(0x8542)];
+    int idx  = (uint16_t)slot >> 3;
+    int mask = 1 << (slot & 7);
+    return (int)(int8_t)(colony[0x8a + idx]) & mask;  /* sbb-extended */
+}
+
+/* @asm 0x0085D6..0x08602  (44 bytes)
+ * overlay_call_181F_0D26 -> 0x05EB:0x0326 -> file 0x085D6
+ * Sets or clears a 1-bit commodity flag in the active colony. */
+int func_0085D6_commodity_flag_write(int16_t slot, int16_t set) {
+    uint8_t *colony = &g_dgroup[DG16(0x8542)];
+    int idx  = (uint16_t)slot >> 3;
+    int mask = 1 << (slot & 7);
+    if (set) colony[0x8a + idx] |= (uint8_t)mask;
+    else     colony[0x8a + idx] &= (uint8_t)~mask;
+    return 0;
+}
+
+/* @asm 0x008956..0x08982  (44 bytes)
+ * overlay_call_181F_0CE0 -> 0x05EB:0x06A6 -> file 0x08956
+ * Looks up a cargo slot via func_008892; returns colony.byte[slot+0x70] or 0xFF. */
+int func_008956_cargo_slot_type(uint16_t item, uint16_t idx) {
+    int slot = func_008892(item, idx);
+    if (slot < 0) return (int)(int8_t)0xff;
+    return (int)(int8_t)(g_dgroup[DG16(0x8542) + slot + 0x70]);
+}
+
