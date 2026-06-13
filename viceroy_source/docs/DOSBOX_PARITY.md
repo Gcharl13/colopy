@@ -30,18 +30,25 @@ Fixed in `src/runtime/dos_io.c`: `get_magic_string` consumes the trailing `0x1A`
 (ungetc-tolerant); `put_magic_string` writes it. The modern build now loads a
 real 1653 Dutch save (**18 colonies, 92 units**) and re-saves near-identically.
 
-## Remaining save-fidelity gap (precisely diagnosed)
+## Save round-trip: BYTE-EXACT (10/10 real saves) — DONE
 
-The round-trip is *not yet* byte-perfect (27905 vs 27909, version word `0x81A`
-clobbered). Root cause: `load_savegame` never **allocates** the four map-layer
-buffers — the `@0x073C84` alloc is a comment, not code — so `g_map_layer[i]`
-(DGROUP `0x15C/0x160/0x164/0x168`) hold garbage and `blk_read(f, g_map_layer[i],
-W*H)` writes map data through them, **corrupting low DGROUP** (including the
-version word at `0x81A`). Fix = implement the platform map-buffer allocation on
-load (allocate `W*H` host buffers, set the layer handles, then `blk_read`), using
-the same host-buffer model as `viceroy_map_attach` / `render_glue.c`. Until then
-the loaded *state* (units/colonies/powers/market — the combat-relevant tables) is
-correct, but the map layers and a few low-DGROUP scalars are not.
+`viceroy_modern --roundtrip` of all 10 shipped `COLONY*.SAV` games (Dutch/English,
+1497–1727) now re-saves **bit-for-bit identical** (`savediff` exit 0). Two further
+fixes got there, on top of the Ctrl-Z magic:
+
+1. **Map-buffer allocation on load** (`render_glue.c viceroy_map_load_bind`): the
+   loader never allocated the four map-layer buffers, so `g_map_layer[]` was NULL
+   and `blk_read(g_map_layer[i], W*H)` landed at `g_dgroup+0`, corrupting low
+   DGROUP (the version word `@0x81A`). Now the host work buffers are bound first.
+2. **Restored the 4-byte view/palette aux block** (`@0x83A6`-derived, between
+   `@0x85C8` and `@0x8D80`) that both save and load had skipped — saves were 4
+   bytes short and real-save tails loaded 4-byte-misaligned. Bridged load→save via
+   `g_save_view_aux_83A6` for exact round-trips.
+
+This certifies the modern DGROUP state model + serialization as byte-faithful to
+the original for full real games — a chunk of Phase-7 parity achieved **without
+DOSBox** (the saves are the original's own output). It also makes the shared-save
+basis for combat parity solid: a save loaded into the modern build is byte-clean.
 
 ## Combat-economy parity recipe (the original target)
 
