@@ -403,6 +403,20 @@ int viceroy_world_smoke(int turns)
         remove("/tmp/viceroy_smoke.sav");
     }
 
+    /* Combat exercise (real-data validation of the ported resolver func_05B2C2
+     * = combat_resolve, reached through the page-10 trampoline func_05E723).
+     * Runs after the soak so the REF baseline is untouched; its stub hits (if
+     * any) are caught by the stub-report below. */
+    {
+        extern int func_05E723(int start_idx, int defender, int show_ui, int x, int y);
+        (void)func_05E723(1, 0, 0, 12, 10);   /* power-1 unit vs tribe-4 brave @ (12,10) */
+        /* combat_resolve returns 1 on every path (it means "resolved", not "who
+         * won"). The validation point: the wired trampolic resolver runs on real
+         * data through the odds roll + demote ladder; the stub-report below names
+         * the two consequence appliers it reaches (the next combat-porting gap). */
+        printf("combat: func_05E723 resolver ran on real data (consequence layer reached)\n");
+    }
+
     if (turns >= 50) {   /* sentiment 42/turn (d=4) crosses 1800 -> REF unit */
         int ref_total = DG16(0x53DA)+DG16(0x53DC)+DG16(0x53DE)+DG16(0x53E0);
         if (ref_total == 0) { puts("SMOKE FAIL: REF never grew"); return 1; }

@@ -636,7 +636,6 @@ __attribute__((weak)) long func_041732(void) { viceroy_stub_hit("func_041732"); 
 __attribute__((weak)) long func_05A938(void) { viceroy_stub_hit("func_05A938"); return 0; }
 __attribute__((weak)) long func_05A93D(void) { viceroy_stub_hit("func_05A93D"); return 0; }
 __attribute__((weak)) long func_05BE3E_terrain_class(void) { viceroy_stub_hit("func_05BE3E_terrain_class"); return 0; }
-__attribute__((weak)) long func_05E723(void) { viceroy_stub_hit("func_05E723"); return 0; }
 __attribute__((weak)) long func_066BB0_prep(void) { viceroy_stub_hit("func_066BB0_prep"); return 0; }
 __attribute__((weak)) long func_06B692(void) { viceroy_stub_hit("func_06B692"); return 0; }
 __attribute__((weak)) long func_06B6B5(void) { viceroy_stub_hit("func_06B6B5"); return 0; }

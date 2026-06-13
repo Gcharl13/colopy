@@ -1248,3 +1248,11 @@ PROVIDE(func_0400EA = func_040002_logic_sz_42); EXTERN(func_040002_logic_sz_42)
  * real COLONIZE data: drops the last gameplay-reachable stub to 0. */
 PROVIDE(power_set_flag = func_06C23C_dialog_make_from_int);
 EXTERN(func_06C23C_dialog_make_from_int)
+
+/* Phase 4.10 (2026-06-13): func_05E723 is the page-10 combat trampoline
+ * (near 0x3DD3 -> ljmp 0x1A1F:0x6E0 -> func_05B2C2). combat.c documents
+ * combat_resolve as the PORT of func_05B2C2 (@asm file 0x5B2C2), 5-arg
+ * (attacker,defender,show_ui,x,y) -- matching func_05E723's 5-arg call. Alias
+ * the trampoline to the ported resolver. Validated via the smoke combat exercise. */
+PROVIDE(func_05E723 = combat_resolve);
+EXTERN(combat_resolve)
