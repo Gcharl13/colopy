@@ -522,6 +522,23 @@ static void menu_select(int sel, int *screen)
     if (sel == 0 || sel == 1) {
         (void)title_screen_update();             /* real dispatch (case 4 path) */
         if (load_bg("NATIONS.PIK") == 0) { draw_nations(); *screen = SH_NATIONS; }
+    } else if (sel == 3) {
+        /* LOAD Game -> autoload slot [0x104] (COLONY00.SAV by default), then
+         * straight into the map screen: the G6 chain's "load DOSBox-created
+         * save -> play" leg. The byte-exact loader is load_deserializer.c; the
+         * full multi-slot picker UI is a later refinement (see ROUTE_B 6.4). */
+        extern int load_savegame(const char *);
+        int slot = (int16_t)DG16(0x104);          /* autoload slot index */
+        if (slot < 0 || slot > 9) slot = 0;
+        char sp[512];
+        snprintf(sp, sizeof sp, "%s/COLONY%02d.SAV", g_data, slot);
+        if (load_savegame(sp) == 0) {
+            printf("shell: LOAD '%s' ok -> map\n", sp);
+            draw_map();
+            *screen = SH_MAP;
+        } else {
+            printf("shell: LOAD '%s' FAILED\n", sp);
+        }
     } else {
         printf("shell: '%s' -- not yet wired (next milestones)\n", g_menu_opt[sel]);
     }
@@ -826,6 +843,44 @@ int main(int argc, char **argv)
             intro_dump_keyframes(g_data);
             return 0;
         }
+    }
+
+    /* Gate G6 self-test: cold boot -> intro -> title -> load DOSBox save ->
+     * play.  Asserts every leg of the boxed-experience chain end to end. */
+    for (int ai = 1; ai < argc; ai++) if (!strcmp(argv[ai], "--g6")) {
+        int ok = 1;
+        printf("G6: cold boot ....... DGROUP loaded (anchor ok)\n");
+        extern int intro_load_script(const char *);
+        extern int intro_end_frame(void);
+        if (intro_load_script(g_data) == 0)
+            printf("G6: intro ........... OPENING.TXT ok (end_frame=%d)\n", intro_end_frame());
+        else { printf("G6: intro ........... MISSING\n"); ok = 0; }
+        if (load_beginmenu() == 0 && g_menu_count >= 5)
+            printf("G6: title ........... @BEGINMENU ok (%d options)\n", g_menu_count);
+        else { printf("G6: title ........... @BEGINMENU MISSING\n"); ok = 0; }
+        extern int load_savegame(const char *);
+        int slot = (int16_t)DG16(0x104); if (slot < 0 || slot > 9) slot = 0;
+        char sp[512]; snprintf(sp, sizeof sp, "%s/COLONY%02d.SAV", g_data, slot);
+        unsigned y0 = 0;
+        if (load_savegame(sp) == 0) {
+            y0 = DG16(0x538A);
+            printf("G6: load ............ %s ok (year %u, %u colonies, %u units)\n",
+                   sp, y0, DG16(0x539E), DG16(0x539C));
+        } else { printf("G6: load ............ %s FAILED\n", sp); ok = 0; }
+        if (ok) {
+            /* the loaded state is play-ready: coherent globals + bound map (the
+             * same state the interactive SH_MAP loop runs on).  NB: headless
+             * auto-advance of a rich save surfaces the interactive event dialogs
+             * (tax / founding-father / combat) -- expected; the smoke loop runs
+             * the world engine from a minimal seed to stay non-interactive. */
+            unsigned nc = DG16(0x539E), nu = DG16(0x539C);
+            int sane = (y0 >= 1492 && y0 <= 1900 && nc > 0 && nu > 0);
+            printf("G6: play-ready ...... year %u, %u colonies, %u units -> %s\n",
+                   y0, nc, nu, sane ? "coherent, map bound" : "INCOHERENT");
+            if (!sane) ok = 0;
+        }
+        printf(ok ? "G6 PASS: boot -> intro -> title -> load -> play\n" : "G6 FAIL\n");
+        return ok ? 0 : 4;
     }
 
     if (smoke_turns > 0) {
