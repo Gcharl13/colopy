@@ -63,6 +63,60 @@
       "reach": "treaty/message dialog region commit (overlay_068A14 @asm 0x06B842)",
       "target": "ljmp 0x1A1F:0xA5C -> func_06B398_dialog_dispatch +0x32C (nested mid-entry)",
       "proof": "interactive dialog path, 0 soak hits"
+    },
+    "func_06B660": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch, attr 2 = F1 terrain report (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CE0 ljmp 0x191F:0x428 -> func_069D8C (F1 terrain report, in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B665": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CE5 ljmp 0x191F:0x8DE (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B66A": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CEA ljmp 0x191F:0x902 (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B66F": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CEF ljmp 0x191F:0x934 (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B674": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CF4 ljmp 0x191F:0x942 (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B679": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2CF9 ljmp 0x1A1F:0x062 (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06B688": {
+      "state": "CROSS-PAGE-THUNK",
+      "reach": "in-game info/report attribute dispatch (overlay_068A14 @asm 0x06B608 jump table)",
+      "target": "cs:0x2D08 ljmp 0x1A1F:0x9B4 (target in another overlay window)",
+      "proof": "interactive report draw, 0 soak hits; cross-page thunk, thunkwire-blocked without VICEROY.EXE"
+    },
+    "func_06C2D6": {
+      "state": "ARITY-BLOCKED",
+      "reach": "dialog text-run width measure, called cross-page from overlay_06D938 (@asm 0x06DBCA/0x06DDD8)",
+      "target": "real byte-verified body func_06C2D6_dialog_lookup_accelerator(uint16_t) in overlay_06C220_06D938.c; sibling-page caller declares (void) -> arity mismatch, alias withheld (would pass garbage panel_lo)",
+      "proof": "interactive dialog text layout, 0 soak hits; wire pending DOSBox arg-trace of the cross-page call"
+    },
+    "func_06C388_text_emit": {
+      "state": "ARITY-BLOCKED",
+      "reach": "dialog text-run emit, called cross-page from overlay_06D938 (@asm 0x06DB9D/0x06DD04/0x06DE3A/0x06E08F)",
+      "target": "real byte-verified body static func_06C388(uint16_t flags,str_lo,str_hi,...) in overlay_06C220_06D938.c; static + (void) caller decl -> not directly linkable, arity mismatch, alias withheld",
+      "proof": "interactive dialog text layout, 0 soak hits; wire pending DOSBox arg-trace of the cross-page call"
     }
   }
 }

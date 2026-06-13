@@ -138,7 +138,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
         case 3:  key = KEY_DUTCH;  break;            /* @asm 0x0753DC */
         default: key = 0; break;                     /* @asm 0x0753C8 JMP past strcpy */
         }
-        if (key) strcpy_near(keybuf, key);           /* @asm 0x0753E3 0xD1D:0x7E4 */
+        if (key) strcpy_near(keybuf, (char near *)DG_PTR(key)); /* @asm 0x0753E3 0xD1D:0x7E4 */
     }
 
     /* --- PASS 1: draw the KING portrait --- */

@@ -4,6 +4,15 @@ project(ViceroyModern C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# GCC 14 / Clang 16+ promote these migration-era diagnostics to hard errors by
+# DEFAULT (no -Werror needed). This byte-faithful port intentionally round-trips
+# DGROUP offsets through ints and calls not-yet-prototyped overlay thunks, so we
+# downgrade them back to warnings (NOT silence -- real instances still print, and
+# genuine bugs like a missing DG_PTR() are still fixed in source). Keeps the
+# clean build working identically on GCC 13 and GCC 14+. (GCC/Clang only; MSVC
+# cannot build this target -- the link uses PROVIDE() scripts + weak symbols.)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=int-conversion -Wno-error=implicit-int -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types")
+
 # ============================================================================
 # Modern rules-layer build (-D_VICEROY_MODERN)
 # ----------------------------------------------------------------------------
