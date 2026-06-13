@@ -157,3 +157,10 @@ int   get_magic_string(void *f, char *buf)          /* reads through NUL + Ctrl-
 }
 int   blk_write(void *f, const void *p, uint32_t n) { return (int)fwrite(dg_rebase(p), 1, n, (FILE *)f); }
 int   blk_read (void *f, void *p, uint32_t n)       { return (int)fread (dg_rebase(p), 1, n, (FILE *)f); }
+
+/* Save-tail 4-byte view/palette aux (derived from [0x83A6] via 0x181F:0x4CA;
+ * original writes it @0x073A21 from a stack temp, reads it back on load). It is
+ * transient (recomputed by the post-load palette setup), so bridging the value
+ * load->save through this scratch keeps round-trips byte-exact without needing
+ * the (undecoded) transform. */
+unsigned char g_save_view_aux_83A6[4];

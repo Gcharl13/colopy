@@ -874,6 +874,39 @@ void viceroy_save_bind_layers(void)
     g_map_layer_bytes = (uint32_t)g_layer_len;
 }
 
+/* Writable terrain buffer for the LOAD path (attach binds an external const
+ * terrain; a loaded game needs a writable layer-0 to read into). */
+static uint8_t g_terrain_work[64*80];
+
+/* Load-time map binding: the original allocated DOS far buffers for the four
+ * map layers (@0x1A1F:0xC72) before reading them; here the host work buffers
+ * serve that role. WITHOUT this, g_map_layer[] is NULL/zero and the loader's
+ * blk_read(f, g_map_layer[i], W*H) lands at g_dgroup+0 (dg_rebase of 0),
+ * corrupting low DGROUP (the version word @0x81A and more). Bind the four host
+ * layers and point viceroy_layer_addr's handles at them so the loaded map is
+ * both safely read and usable by gameplay. Clamped to the work-buffer size. */
+void viceroy_map_load_bind(uint32_t bytes)
+{
+    if (bytes > sizeof g_feature_work) bytes = (uint32_t)sizeof g_feature_work;
+    g_layer_len  = (long)bytes;
+    g_layer[0]   = g_terrain_work;
+    g_layer[1]   = g_feature_work;
+    g_layer[2]   = g_resfog_work;
+    g_layer[3]   = g_region_layer;
+    g_map_layer[0] = g_terrain_work;
+    g_map_layer[1] = g_feature_work;
+    g_map_layer[2] = g_resfog_work;
+    g_map_layer[3] = g_region_layer;
+    g_map_layer_bytes = bytes;
+    {   extern uint8_t *g_layer0_terrain, *g_layer1_elev,
+                       *g_layer2_region, *g_layer3_mask;
+        g_layer0_terrain = g_terrain_work;
+        g_layer1_elev    = g_feature_work;
+        g_layer2_region  = g_resfog_work;
+        g_layer3_mask    = g_region_layer;
+    }
+}
+
 /* ---- resident-segment display leaves (headless no-ops) ---------------------
  * These are calls into the EXE's resident code with register-arg conventions
  * (not RTLink thunks).  In headless/modern mode they are pure display ops

@@ -167,10 +167,19 @@ int load_savegame(const char *path)
         uint32_t cur_pair = (uint32_t)(*(uint16_t *)(g_dgroup + 0x853A))
                           | ((uint32_t)(*(uint16_t *)(g_dgroup + 0x853C)) << 16);
         if (g_map_layer_bytes == 0) {
-            /* @0x073C84 : allocate map buffers from the saved pair (0x1A1F:0xC72). */
+            /* @0x073C84 : allocate the four map-layer buffers (original:
+             * 0x1A1F:0xC72) before the per-layer block-reads below. */
             alloc_flag = 1;   /* @0x073CA8 */
+#ifdef _VICEROY_MODERN
+            /* Modern: bind the host work buffers so blk_read(g_map_layer[i],..)
+             * lands in real buffers, not g_dgroup+0 (which corrupts low DGROUP). */
+            { extern void viceroy_map_load_bind(uint32_t bytes);
+              viceroy_map_load_bind((uint32_t)(saved_mapsize & 0xFFFF)
+                                  * (uint32_t)(saved_mapsize >> 16)); }
+#else
             g_map_layer_bytes = (uint32_t)(saved_mapsize & 0xFFFF)
                               * (uint32_t)(saved_mapsize >> 16);
+#endif
         } else if (saved_mapsize != cur_pair) {
             result = 4;       /* @0x073C7C : LOADSIZE */
             goto load_done;
@@ -238,7 +247,12 @@ int load_savegame(const char *path)
     if (blk_read(f, (void far *)0x85E8, 0x10E) == 0) { result = 1; goto load_done; }
     if (blk_read(f, (void far *)0x945E, 0x20)  == 0) { result = 1; goto load_done; }
     if (blk_read(f, (void far *)0x85C8, 0x20)  == 0) { result = 1; goto load_done; }
-    /* @0x0741DA : 4 bytes into a stack temp [bp-0x62] (consumed by post-load) */
+    /* @0x073A21-peer : the 4-byte view/palette aux (derived from [0x83A6]); the
+     * original reads it into a stack temp for the post-load palette setup. Read
+     * it here so the tail blocks below stay file-aligned (omitting it shifted
+     * 0x8D80/0x0190/0x1B220 by 4 bytes). */
+    { extern unsigned char g_save_view_aux_83A6[4];
+      if (blk_read(f, g_save_view_aux_83A6, 4) == 0) { result = 1; goto load_done; } }
     if (blk_read(f, (void far *)0x8D80, 4)     == 0) { result = 1; goto load_done; }
     if (blk_read(f, (void far *)0x0190, 2)     == 0) { result = 1; goto load_done; }
     if (blk_read(f, (void far *)0x1B220 /*seg 0x1B22:0*/, 0x378) == 0) { result = 1; goto load_done; }

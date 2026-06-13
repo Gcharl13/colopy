@@ -318,8 +318,12 @@ int save_game_state(const char *path)
     if (blk_write(f, (void far *)0x85E8, 0x10E) == 0) goto save_fail;
     if (blk_write(f, (void far *)0x945E, 0x20)  == 0) goto save_fail;
     if (blk_write(f, (void far *)0x85C8, 0x20)  == 0) goto save_fail;
-    /* @0x073A21: a 4-byte value derived from [0x83A6] via LCALL 0x181F:0x4CA,
-     *   written from a stack temp [bp-6]; source transform [ANCHOR]. */
+    /* @0x073A21: the 4-byte view/palette aux (derived from [0x83A6] via LCALL
+     *   0x181F:0x4CA, written from a stack temp [bp-6]; transform [ANCHOR]).
+     *   Write the value bridged from load (g_save_view_aux_83A6) so a load->save
+     *   round-trip is byte-exact; a fresh save writes zeros (matches observed). */
+    { extern unsigned char g_save_view_aux_83A6[4];
+      if (blk_write(f, g_save_view_aux_83A6, 4) == 0) goto save_fail; }
     if (blk_write(f, (void far *)0x8D80, 4)     == 0) goto save_fail;
     if (blk_write(f, (void far *)0x0190, 2)     == 0) goto save_fail;
     if (blk_write(f, (void far *)0x1B220 /*seg 0x1B22:0*/, 0x378) == 0) goto save_fail;
