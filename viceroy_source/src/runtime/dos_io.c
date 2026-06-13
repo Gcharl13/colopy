@@ -129,16 +129,28 @@ int   msc_fwrite(const void *p, int sz, int n, void *f)
 int   msc_remove(const char *path)         { return remove(path); }
 int   msc_strcmp(const char *a, const char *b) { return strcmp(a, b); }
 
-void  put_magic_string(void *f, const char *s)      /* writes "COLONIZE" + NUL */
+void  put_magic_string(void *f, const char *s)      /* "COLONIZE" + NUL + Ctrl-Z */
 {
+    /* The original save header is "COLONIZE\0\x1A": the NUL-terminated magic
+     * followed by a DOS Ctrl-Z (0x1A) byte before the version word (BYTE_VERIFIED
+     * against real COLONY*.SAV headers). Writing it here makes modern saves
+     * byte-compatible with the original's format. */
     fwrite(s, 1, strlen(s) + 1, (FILE *)f);
+    fputc(0x1A, (FILE *)f);
 }
-int   get_magic_string(void *f, char *buf)          /* reads through the NUL */
+int   get_magic_string(void *f, char *buf)          /* reads through NUL + Ctrl-Z */
 {
     int i = 0, c;
     while (i < 15 && (c = fgetc((FILE *)f)) != EOF) {
         buf[i++] = (char)c;
-        if (c == 0) return i;
+        if (c == 0) {
+            /* consume the trailing DOS Ctrl-Z (0x1A) so the version word that
+             * follows is byte-aligned, matching the original loader. Tolerate
+             * its absence (ungetc) for any header that lacks it. */
+            int z = fgetc((FILE *)f);
+            if (z != 0x1A && z != EOF) ungetc(z, (FILE *)f);
+            return i;
+        }
     }
     buf[i] = 0;
     return i;

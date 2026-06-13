@@ -705,6 +705,7 @@ int main(int argc, char **argv)
     int smoke_turns = 0;
     const char *script_path = getenv("VICEROY_SCRIPT");
     const char *seed_str = getenv("VICEROY_SEED");
+    const char *roundtrip_path = NULL;
     for (int ai = 1; ai < argc; ai++) {
         if (!strncmp(argv[ai], "--smoke", 7))
             smoke_turns = argv[ai][7] == '=' ? atoi(argv[ai] + 8) : 4;
@@ -712,6 +713,8 @@ int main(int argc, char **argv)
             script_path = argv[ai] + 9;
         if (!strncmp(argv[ai], "--seed=", 7))
             seed_str = argv[ai] + 7;
+        if (!strncmp(argv[ai], "--roundtrip=", 12))
+            roundtrip_path = argv[ai] + 12;
     }
     /* determinism rig (ROUTE_B_PLAN 0.1): explicit LCG seed + input script */
     if (seed_str) {
@@ -765,6 +768,22 @@ int main(int argc, char **argv)
         printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
         extern void viceroy_init_text_ctx(int);
         viceroy_init_text_ctx(g_font.maxh);   /* ctx byte0+1 = line height */
+    }
+
+    /* DOSBox-parity: load a real COLONIZE save and re-save it, for savediff
+     * against the original (load-fidelity = modern state model matches the
+     * original's save format byte-for-byte). */
+    if (roundtrip_path) {
+        extern int load_savegame(const char *);
+        extern int save_game_state(const char *);
+        char out[700];
+        snprintf(out, sizeof out, "%s.rt", roundtrip_path);
+        { int rc = load_savegame(roundtrip_path);
+          if (rc != 0) { printf("roundtrip: load FAILED rc=%d\n", rc); return 3; } }
+        if (save_game_state(out) != 0) { printf("roundtrip: save FAILED %s\n", out); return 3; }
+        printf("roundtrip: %s -> %s (year %u, %u colonies, %u units)\n",
+               roundtrip_path, out, DG16(0x538A), DG16(0x539E), DG16(0x539C));
+        return 0;
     }
 
     if (smoke_turns > 0) {
