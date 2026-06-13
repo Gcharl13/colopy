@@ -186,6 +186,7 @@ PROVIDE(overlay_call_1A1F_0B58 = func_07092E_draw_nation_screen);   /* exe:overl
 PROVIDE(overlay_call_1A1F_0B66 = func_070580_difficulty_pick_dispatch);   /* exe:overlay, arity 0 */
 PROVIDE(overlay_call_1A1F_0B74 = func_070A1A_nation_pick_dispatch);   /* exe:overlay, arity 0 */
 PROVIDE(overlay_call_1A1F_0BBA = func_06FF94_report_screen_frame);   /* exe:overlay, arity 0 */
+PROVIDE(overlay_call_1A1F_0BE4 = func_070060_report_screen_run);   /* exe:overlay, arity 0 */
 PROVIDE(overlay_call_1A1F_0BF2 = func_070494_draw_difficulty_screen);   /* exe:overlay, arity 0 */
 PROVIDE(overlay_call_1A1F_0C2A = func_070DE8_load_config_col);   /* exe:overlay, arity 0 */
 PROVIDE(overlay_call_1A1F_0C38 = func_075FB6_map_scenario_setup);   /* json, arity 0 */

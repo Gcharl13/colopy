@@ -135,139 +135,6 @@ static void draw_text_center(const char *s, int y, uint8_t color)
     ff_draw(&g_font, s, (VID_W - w) / 2, y, 1);
 }
 
-/* second font for the @BEGINMENU panel: FONTSMAL is caps-only, but the original
- * menu rows are mixed case -- load a lowercase-capable face for them. */
-static ff_font_t g_menu_font; static int g_have_menu_font;
-
-/* nearest palette index to a target RGB in the active backdrop palette */
-static uint8_t pal_nearest(int r, int g, int b)
-{
-    int best = 0, bd = 1 << 30;
-    for (int i = 0; i < 256; i++) {
-        int dr = r - g_bg.pal[i*3], dg = g - g_bg.pal[i*3+1], db = b - g_bg.pal[i*3+2];
-        int d = dr*dr + dg*dg + db*db;
-        if (d < bd) { bd = d; best = i; }
-    }
-    return (uint8_t)best;
-}
-
-/* expand g_menu_prompt ("{COLONIZATION} Version %STRING0 -- %STRING1") into the
- * header line: drop the {..} colour-directive braces, substitute the version
- * (%STRING0) and build date (%STRING1). RECONSTRUCTED values pending a byte-
- * trace of the EXE string table; they match the 3.0 / 7-Feb-95 build. */
-static void title_header_text(char *out, size_t n)
-{
-    const char *src = g_menu_prompt[0] ? g_menu_prompt
-                    : "{COLONIZATION} Version %STRING0 -- %STRING1";
-    size_t o = 0;
-    for (size_t i = 0; src[i] && o + 1 < n; ) {
-        if (src[i] == '{' || src[i] == '}') { i++; continue; }
-        if (!strncmp(src + i, "%STRING0", 8)) { const char *v = "3.0";      while (*v && o+1<n) out[o++]=*v++; i+=8; continue; }
-        if (!strncmp(src + i, "%STRING1", 8)) { const char *v = "7-Feb-95"; while (*v && o+1<n) out[o++]=*v++; i+=8; continue; }
-        out[o++] = src[i++];
-    }
-    out[o] = 0;
-}
-
-static void draw_title_menu(int sel)
-{
-    extern void vid_box_fill(int, int, int, int, uint8_t);
-    extern void vid_box_outline(int, int, int, int, uint8_t);
-    draw_bg();
-    ff_font_t *mf = g_have_menu_font ? &g_menu_font : (g_have_font ? &g_font : 0);
-    if (!mf) { vid_present(); return; }
-
-    char hdr[128]; title_header_text(hdr, sizeof hdr);
-
-    /* auto-size the panel to the widest row -- the ported engine's geometry is
-     * content_w = max(@width, longest_line + margin) (menu_runner.c
-     * mr_finalize_geometry @asm 0x06D392), so nothing overhangs the frame. */
-    int pad = 5;
-    int longest = ff_text_width(mf, hdr, 1);
-    for (int i = 0; i < g_menu_count; i++) {
-        int w = ff_text_width(mf, g_menu_opt[i], 1);
-        if (w > longest) longest = w;
-    }
-    int rh = mf->maxh + 2;
-    int pw = longest + 2 * pad;
-    if (pw < g_menu_width) pw = g_menu_width;
-    int px = (VID_W - pw) / 2;                      /* centered (@x unset) */
-    int py = g_menu_y;                              /* @y=91 */
-    int ph = (1 + g_menu_count) * rh + 6;
-
-    /* text colours (nearest index in OPENMENU's palette): the @BEGINMENU scheme
-     * is {COLONIZATION} in yellow, the rest of the header + option rows in green.
-     * Border = a carved WOOD frame (dialog.c: "WOODFRAM/WOODTILE frame art";
-     * the exact overlay draw is undecoded -> reconstruct a 2px wood bevel). */
-    uint8_t wood_lt  = pal_nearest(156,104, 52);
-    uint8_t wood_dk  = pal_nearest( 66, 38, 20);
-    uint8_t c_yellow = pal_nearest(232,214, 44);
-    uint8_t c_green  = pal_nearest( 56,160, 44);
-    uint8_t c_bar    = pal_nearest(110, 36, 28);
-
-    /* panel fill = the REAL WOODTILE sheet, tiled and remapped to the live
-     * palette (its own palette would clash with OPENMENU's). Loaded once. */
-    { static ss_sheet_t wt; static int wst;
-      if (wst == 0) { char wp[512];
-          snprintf(wp, sizeof wp, "%s/WOODTILE.SS", g_data);
-          wst = (ss_load(wp, &wt) == 0 && wt.nframes > 0) ? 1 : -1; }
-      if (wst == 1) {
-          int tw = wt.frames[0].w, th = wt.frames[0].h;
-          for (int yy = py; yy < py + ph; yy += th)
-              for (int xx = px; xx < px + pw; xx += tw)
-                  ss_blit_remap_clip(&wt, 0, xx, yy, px, py, px + pw - 1, py + ph - 1);
-      } else {
-          vid_box_fill(px, py, pw, ph, pal_nearest(60, 28, 24));
-      }
-    }
-    /* carved wood-frame bevel: light wood on top+left, dark on bottom+right */
-    vid_box_fill(px, py, pw, 2, wood_lt);
-    vid_box_fill(px, py, 2, ph, wood_lt);
-    vid_box_fill(px, py + ph - 2, pw, 2, wood_dk);
-    vid_box_fill(px + pw - 2, py, 2, ph, wood_dk);
-
-    int tx = px + pad, ty = py + 3;
-
-    /* header: the {WORD} (COLONIZATION) in yellow, the remainder in green, with
-     * %STRING0/1 (version/date) substituted -- @BEGINMENU's {} colour directive */
-    {
-        const char *src = g_menu_prompt[0] ? g_menu_prompt
-                        : "{COLONIZATION} Version %STRING0 -- %STRING1";
-        char yel[64] = {0}, grn[96] = {0};
-        size_t yo = 0, go = 0; int brace = 0;
-        for (size_t i = 0; src[i]; ) {
-            if (src[i] == '{') { brace = 1; i++; continue; }
-            if (src[i] == '}') { brace = 0; i++; continue; }
-            const char *sub = 0;
-            if      (!strncmp(src + i, "%STRING0", 8)) { sub = "3.0";      i += 8; }
-            else if (!strncmp(src + i, "%STRING1", 8)) { sub = "7-Feb-95"; i += 8; }
-            if (sub) {
-                for (; *sub; sub++)
-                    if (brace) { if (yo < sizeof yel - 1) yel[yo++] = *sub; }
-                    else       { if (go < sizeof grn - 1) grn[go++] = *sub; }
-                continue;
-            }
-            if (brace) { if (yo < sizeof yel - 1) yel[yo++] = src[i]; }
-            else       { if (go < sizeof grn - 1) grn[go++] = src[i]; }
-            i++;
-        }
-        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_yellow;
-        ff_draw(mf, yel, tx, ty, 1);
-        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_green;
-        ff_draw(mf, grn, tx + ff_text_width(mf, yel, 1), ty, 1);
-    }
-    ty += rh + 1;
-
-    /* options: green, indented from the header */
-    for (int i = 0; i < g_menu_count; i++) {
-        if (i == sel) vid_box_fill(px + 2, ty - 1, pw - 4, rh, c_bar);
-        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_green;
-        ff_draw(mf, g_menu_opt[i], tx + 8, ty, 1);
-        ty += rh;
-    }
-    vid_present();
-}
-
 static void draw_nations(void)
 {
     draw_bg();
@@ -893,13 +760,15 @@ int main(int argc, char **argv)
                g_menu_count, g_menu_width, g_menu_y);
 
     char fpath[512];
-    snprintf(fpath, sizeof fpath, "%s/FONTSMAL.FF", g_data);
-    g_have_font = ff_load(fpath, &g_font) == 0;
-    /* mixed-case face for the @BEGINMENU rows (FONTSMAL is caps-only) */
+    /* The default text context [0x89E] -- the @smallfont the @BEGINMENU panel and
+     * the body/report/status text draw with -- is FONTTINY.FF (asset_loader.c
+     * BOOT_ASSETS, @0x0760E8 -> [0x89E]).  FONTSMAL.FF is an ORPHAN that
+     * VICEROY.EXE never loads, so the modern build uses FONTTINY as the resident
+     * face (the menu engine renders through viceroy_font()). */
     snprintf(fpath, sizeof fpath, "%s/FONTTINY.FF", g_data);
-    g_have_menu_font = ff_load(fpath, &g_menu_font) == 0;
+    g_have_font = ff_load(fpath, &g_font) == 0;
     if (g_have_font) {
-        printf("  FONTSMAL  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
+        printf("  FONTTINY  : %dx%d glyphs\n", g_font.maxw, g_font.maxh);
         extern void viceroy_init_text_ctx(int);
         viceroy_init_text_ctx(g_font.maxh);   /* ctx byte0+1 = line height */
     }
@@ -1033,7 +902,15 @@ int main(int argc, char **argv)
     }
     if (headless) {
         if (load_bg("OPENMENU.PIK") == 0) {
-            draw_title_menu(0);
+            /* the REAL title: OPENMENU.PIK plate (its own palette + carved wood
+             * frame are part of the bitmap) + the @BEGINMENU rows drawn by the
+             * ported engine -- {COLONIZATION} highlighted via the '{}' directive,
+             * text colour = the byte-cited style index (7/8) straight into the
+             * OPENMENU palette.  No box/bevel/woodtile is painted (that was the
+             * old stub's bug -- it double-drew over the plate's own frame). */
+            extern int menu_render_key(const char *key);
+            draw_bg();
+            menu_render_key("BEGINMENU");
             vid_screenshot_ppm("viceroy_title.ppm");
             printf("  headless  : title+menu frame -> viceroy_title.ppm\n");
         }

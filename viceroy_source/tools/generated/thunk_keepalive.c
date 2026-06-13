@@ -153,6 +153,7 @@ extern char func_06787C_render_frame_setup;
 extern char func_068898_draw_minimap_or_cursor_box;
 extern char func_0694AE_cargo_select_dialog;
 extern char func_06FF94_report_screen_frame;
+extern char func_070060_report_screen_run;
 extern char func_070494_draw_difficulty_screen;
 extern char func_070580_difficulty_pick_dispatch;
 extern char func_07092E_draw_nation_screen;
@@ -330,6 +331,7 @@ void *viceroy_thunk_keepalive[] = {
     (void *)&func_068898_draw_minimap_or_cursor_box,
     (void *)&func_0694AE_cargo_select_dialog,
     (void *)&func_06FF94_report_screen_frame,
+    (void *)&func_070060_report_screen_run,
     (void *)&func_070494_draw_difficulty_screen,
     (void *)&func_070580_difficulty_pick_dispatch,
     (void *)&func_07092E_draw_nation_screen,

@@ -342,6 +342,48 @@ static void mr_restore_bg(const mr_geom_t *g)
                (size_t)((g->x + g->w <= VID_W) ? g->w : VID_W - g->x));
 }
 
+/* ----------------------------------------------------------------------------
+ * mr_draw_styled -- render one GAME.TXT line through the inline colour-directive
+ * engine func_06C388 (file 0x6C388..0x6C48E, BYTE_VERIFIED from VICEROY.EXE):
+ *   '{' 0x7B -> highlight style ON   ([0x1F62]=1)        @asm 0x6C3C4/0x6C46C
+ *   '}' 0x7D -> highlight style OFF  ([0x1F62]=0)        @asm 0x6C3D2/0x6C478
+ *   '|' 0x7C -> end of line (stop emitting)              @asm 0x6C3CC/0x6C48A
+ * Per glyph the rasteriser func_00E51C writes colortable[pixel] straight into
+ * the framebuffer and colortable[1] = the active style byte (@asm 0x00E632 mov
+ * ah,[bp+si-6]; 0x00E63C mov es:[di],ah) -- so the text colour IS the style
+ * PALETTE INDEX used directly: normal = panel[+0x3C] (=7), highlight =
+ * panel[+0x40] (=8) (DGROUP init image 07 00 07 00 08 00 08 00 @file 0x1F8DC).
+ * '{'/'}' therefore toggle the colour between `norm` and `hi`; the braces and a
+ * trailing '|' are control bytes and are never drawn.  Returns the end x.
+ *
+ * NOTE: %STRINGn substitution (the prompt's version/date fields, expanded by the
+ * format leaf 0xD1D:0x117E inside func_00E51C) is NOT applied here -- the menu
+ * text is read verbatim from the user's GAME.TXT.  The only such value found in
+ * VICEROY.EXE is the build date "7-Feb-95"; the version field lives in GAME.TXT.
+ * -------------------------------------------------------------------------- */
+static int mr_draw_styled(const char *s, int x, int y, int norm, int hi)
+{
+    char run[MR_LINE_LEN];
+    int style = norm, n = 0;
+    for (;; s++) {
+        unsigned char c = (unsigned char)*s;
+        if (c == 0 || c == '{' || c == '}' || c == '|') {
+            if (n) {                               /* flush the same-style run */
+                run[n] = 0;
+                vid_text_color(style);
+                vid_text_xy(run, x, y);
+                x += vid_text_width(run);
+                n = 0;
+            }
+            if (c == 0 || c == '|') break;         /* NUL / '|' end the line */
+            style = (c == '{') ? hi : norm;        /* '{' -> hi, '}' -> norm */
+            continue;
+        }
+        if (n < MR_LINE_LEN - 1) run[n++] = (char)c;
+    }
+    return x;
+}
+
 /* ---- one draw pass (func_06D9CC row chain over modern primitives) --------- */
 static void mr_draw(const mr_panel_t *m, const mr_geom_t *g, int sel,
                     const uint8_t *checks)
@@ -349,33 +391,40 @@ static void mr_draw(const mr_panel_t *m, const mr_geom_t *g, int sel,
     int i, y = g->text_y0;
     char buf[MR_LINE_LEN + 4];
 
-    /* frame only for CENTERED panels (anchored panels -- @y set, e.g.
-     * @BEGINMENU y on the OPENMENU plate -- draw rows straight onto the
-     * caller's backdrop, matching the original frames).  The original frame
-     * is the WOODFRAM blit 0x181F:0x510 (site @0x0263D6); RECONSTRUCTED
-     * placeholder: fill 0 + outline 15. */
+    /* The TITLE/@BEGINMENU panel is ANCHORED (@y=91) and draws its rows straight
+     * onto the OPENMENU.PIK plate -- whose carved wood frame is already part of
+     * the backdrop bitmap, so the engine paints NO box/frame for it (the panel
+     * has flags&0x10 clear but @x/@y set -> the WOODFRAM blit 0x181F:0x510 site
+     * @0x0263D6 is the dialog-popup path, not the title).  CENTERED popups (no
+     * @x/@y) are the only ones that get a frame; the original blits WOODFRAM
+     * there, which the modern build leaves as a RECONSTRUCTED placeholder until
+     * the texture-fill leaves (func_00531C's 0x02E9:0x0006/0x0A4E:0x0008) are
+     * decoded -- see docs/UI_COMPLETION_LEDGER.md. */
     if (m->x == -1 && m->y == -1) {
         vid_box_fill(g->x, g->y, g->w, g->h, 0x00);
         vid_box_outline(g->x, g->y, g->w, g->h, 0x0F);
     }
 
-    for (i = 0; i < m->nprompt; i++, y += g->pitch) {
-        vid_text_color(MR_STYLE_NORM);      /* pair (7,7) panel[+0x3C] @asm 0x06C5B7 */
-        vid_text_xy(m->prompt[i], g->text_x, y);
-    }
+    for (i = 0; i < m->nprompt; i++, y += g->pitch)
+        /* label rows: '{..}' words switch to the highlight colour (the title's
+         * {COLONIZATION}); plain text stays normal.  @asm 0x06D9CC label draw */
+        mr_draw_styled(m->prompt[i], g->text_x, y, MR_STYLE_NORM, MR_STYLE_HI);
+
     if (m->nopt) y += MR_GAP;               /* option-block pad @asm 0x06D513 */
 
     for (i = 0; i < m->nopt; i++, y += g->pitch) {
         const char *s = m->opt[i];
+        int base = (i + 1 == sel) ? MR_STYLE_HI : MR_STYLE_NORM;  /* +0x40 / +0x3C */
         if (m->checkbox) {
             /* original mark = glyph 0x5D-(widget[+6]<=1) (0x5C/0x5D)
              * @asm 0x06DB5C..0x06DB70; modern ASCII substitute */
             snprintf(buf, sizeof buf, "[%c] %s", checks[i] ? 'x' : ' ', s);
             s = buf;
         }
-        /* selected row -> style pair (8,8) panel[+0x40] @asm 0x06DA85..0x06DAF0 */
-        vid_text_color((i + 1 == sel) ? MR_STYLE_HI : MR_STYLE_NORM);
-        vid_text_xy(s, g->text_x, y);
+        /* selected row resting colour = highlight (8) @asm 0x06DA85..0x06DAF0;
+         * any '{}' in the row toggles to the other member of the style pair. */
+        mr_draw_styled(s, g->text_x, y, base,
+                       base == MR_STYLE_HI ? MR_STYLE_NORM : MR_STYLE_HI);
     }
     vid_present();
 }
@@ -502,6 +551,31 @@ out:
     vid_present();
     mr_teardown(&m, checks);
     return ret;
+}
+
+/* ----------------------------------------------------------------------------
+ * menu_render_key -- HEADLESS one-shot draw of a @section panel (the screenshot
+ * path).  Builds the panel + geometry exactly like menu_run_key and paints a
+ * single frame through the SAME byte-cited engine (mr_load_section /
+ * mr_finalize_geometry / mr_draw) -- it is NOT a separate reconstruction.  No
+ * modal loop (headless has no input).  Returns the option count.
+ * -------------------------------------------------------------------------- */
+int menu_render_key(const char *key)
+{
+    mr_panel_t m;
+    mr_geom_t g;
+    uint8_t checks[MR_MAX_OPT];
+    int sel;
+
+    if (!key || !key[0])
+        return 0;
+    if (mr_load_section(key, 0, &m) != 0)
+        return 0;
+    memset(checks, 0, sizeof checks);
+    sel = (m.cur_row >= 1 && m.cur_row <= m.nopt) ? m.cur_row : 1;
+    mr_finalize_geometry(&m, &g);
+    mr_draw(&m, &g, m.nopt ? sel : 0, checks);
+    return m.nopt;
 }
 
 /* ----------------------------------------------------------------------------
