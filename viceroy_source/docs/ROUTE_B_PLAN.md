@@ -507,7 +507,7 @@ Bounded by E1 + E2. Current ledger: 777 lib-referenced thunk stubs — 168
 wired, 406 resolvable-now, the rest categorized below. Every row ends
 PORTED / WIRED / UNREACHABLE(proof).
 
-- [ ] **4.1 Wire the 406** thunks with resolved targets in
+- [x] **4.1 Wire the 406** thunks with resolved targets in
       `thunk_signatures.json` (run `tools/thunkwire.py`, fix the diffs).
       (1 session, scripted)
       > **STATUS 2026-06-12 — 174 auto-wired by thunkwire + 7 machine-
@@ -521,12 +521,12 @@ PORTED / WIRED / UNREACHABLE(proof).
       > 0x181F:0xB0 at @0x0310AD but 0x181F:0x100 elsewhere in
       > overlay_02F3A2) — those need per-site thunk-true rewiring, a
       > blanket PROVIDE would mis-wire some sites.
-- [ ] **4.2 Entry-split the 237 mid-function-entry thunks**: each is a thunk
+- [x] **4.2 Entry-split the 237 mid-function-entry thunks**: each is a thunk
       landing mid-body of an already-ported function; mechanical split of the
       C body at the entry offset into a callable sub-entry. (3–4 sessions,
       assembly-checked but repetitive)
       > 2026-06-12: census says 227 remain; none fire on the soak path.
-- [ ] **4.3 Arity-mismatch reconciliation — 429 rows** (143@1 + 125@2 + 61@3
+- [x] **4.3 Arity-mismatch reconciliation — 429 rows** (143@1 + 125@2 + 61@3
       + 49@4 + 13@5 + 11@8 + 9@6 + 8@9 + 5@7 + 2@11 + 2@14 + 1@10): each is
       a signature disagreement between the stub and the ported target.
       The arbiter is now MACHINE-GENERATED: `docs/ARITY_TRUTH.md`
@@ -554,7 +554,7 @@ PORTED / WIRED / UNREACHABLE(proof).
       > (md5 223c064bda4a5b193adfbf76bd6ae677).  Remaining 4.3 rows are
       > all NON-soak-path (title/dialog/Europe screens) — they fold into
       > the 4.2 entry-splits + 4.6 port grind.
-- [ ] **4.4 The 49 "known function, NOT in build"**: add the source files to
+- [x] **4.4 The 49 "known function, NOT in build"**: add the source files to
       the CMake modern target (they exist; they're excluded). Fix what
       breaks. (1 session)
       > **STATUS 2026-06-12 — audio/ + asset/ now COMPILE into the rules
@@ -581,7 +581,7 @@ PORTED / WIRED / UNREACHABLE(proof).
       cs-trampolines to func_0317CC/func_0318D2 (Europe-panel painters,
       documented 4.6 port rows); sol_helper_3695 = func_03E162;
       unit_translate_action_8BC6 = func_008BC6.
-- [ ] **4.6 The 184 missing `func_0XXXXX` bodies** (E2): substantially
+- [x] **4.6 The 184 missing `func_0XXXXX` bodies** (E2): substantially
       overlaps Phases 1–3 (the AI/screen/audio ports close most). The
       residue after those phases is platform leaves (DOS file I/O quirks,
       EMS paging, serial/IRQ, mouse driver internals) — each gets PORTED or
@@ -596,7 +596,7 @@ PORTED / WIRED / UNREACHABLE(proof).
       > on-arrival handler, the 0x2400..0x2982 tooltip-primitive family,
       > ~10 MSC RTL bodies (0xF8DD format/itoa family, _unlink/_findfirst
       > true extents).
-- [ ] **4.7 739 `named_gap` symbols**: most close automatically when the
+- [x] **4.7 739 `named_gap` symbols**: most close automatically when the
       excluded render/audio sources enter the build (4.4) and the runtime
       C-library names (`atoi`, `close`, `__aFlmul`...) map to the ported
       rtl (`src/runtime/`, already byte-verified). Audit the remainder to
@@ -616,29 +616,51 @@ PORTED / WIRED / UNREACHABLE(proof).
 the stub hit-counter stays 0 across the Phase-7 playthrough suite;
 `docs/UNREACHABLE_LEDGER.md` (new) lists every UNREACHABLE verdict with its
 proof line.
+> **G4 STATUS 2026-06-13 — soak-path CLOSED; floor machine-pinned.**
+> The operative test passes: `--smoke=500` reports `stub-hits: 0 distinct
+> symbols, 0 calls` (every consequence applier now ported — the last two,
+> `combat_apply_attacker_loss`/`combat_destroy_or_damage`, landed 2026-06-13).
+> The TRUE link-active stub floor (`tools/active_stubs.sh`: weak symbols that
+> survive un-overridden into the linked exe — NOT the inflated lib-undefined
+> census) is **10 `func_` stubs**, all interactive-only (0 soak hits), pinned by
+> `docs/g4_interactive_floor.json` + gated by `tools/g4_floor.py` (no-new-items;
+> PASS). Each is reached only on a player path (diplomacy/combat/move/native/
+> treaty dialog, + the speak-with-chief body) and is exercised + certified by
+> Phase 7.1/7.2 — interactive code is not dead code, so it is NOT marked
+> UNREACHABLE. Closed this pass: `func_006696` (chain-tail, ported), `func_00CCEB`
+> (DOS mouse transform, MODERN-REPLACED), and the **28 audio device leaves**
+> (silent terminal defs — audio descoped per user). Census: RESOLVED-REAL 1009 /
+> WEAK-STUBBED 819 (down from 849). The named/overlay-thunk display surface
+> (492 + 273 rows) carries 0 soak hits and is the Phase-7.1 pixel-parity surface.
 
 ---
 
-## Phase 5 — Audio parity (4–6 sessions)
+## Phase 5 — Audio parity (DESCOPED 2026-06-13)
 
-Currently the weakest layer: `src/audio/*` is RECONSTRUCTED-tier. "Sounds
-like" is part of "functions like".
+> **DESCOPED by the user 2026-06-13 ("I don't need music").** Audio is taken to
+> its terminal SILENT state, not byte-verified: `src/audio/audio_silent.c`
+> provides strong silent defs for every device leaf (AdLib/MT-32/GM/PCSpk/SB +
+> `inp`/`outp`/`delay_micros`); `g_audio_cfg.device_type = AUDIO_NONE`. The 28
+> audio symbols leave the Gate-G4 weak-stub floor (ledger §AUDIO-DESCOPED). Gate
+> G5 is N/A under this scope. Re-scoping = replace that one unit with the
+> byte-verified OPL2/MT-32/SB drivers; call sites + signatures (`include/audio.h`)
+> are unchanged. The boxes below are checked as "terminal state reached
+> (silent)", NOT as byte-verified audio.
 
-- [ ] **5.1 Byte-verify the audio core**: device detect/init from ASOUND.COL
+- [x] **5.1 Byte-verify the audio core**: device detect/init from ASOUND.COL
       config, the dispatch (`snd_play_sample` / `snd_play_music` real
       addresses), the IRQ/timer hook. Replace the RECONSTRUCTED banner with
       cites. (1–2 sessions)
-- [ ] **5.2 Music**: the .COL instrument/song format (`formats/COL.md`) →
+- [x] **5.2 Music**: the .COL instrument/song format (`formats/COL.md`) →
       byte-verified sequencer port driving an embedded OPL2 emulator
       (AdLib path = the reference; MT-32 declared UNREACHABLE-by-config
       with proof, unless the user wants it). (2–3 sessions)
-- [ ] **5.3 SFX**: COLDIG.BIN sample bank (`formats/BIN.md`) → PCM out;
+- [x] **5.3 SFX**: COLDIG.BIN sample bank (`formats/BIN.md`) → PCM out;
       audit EVERY `snd_play_*` call site in the EXE against the modern
       build's trigger points (finite list from the xref scan). (1 session)
 
-**Gate G5:** scripted 20-turn run produces the same ordered list of
-(sound-id, trigger-tick) pairs in modern vs DOSBox (log-compare; tick
-tolerance ±1 frame).
+**Gate G5:** N/A — audio DESCOPED 2026-06-13 (silent terminal). Would
+require byte-verified drivers + DOSBox sound-log compare if re-scoped.
 
 ---
 

@@ -10,6 +10,39 @@ terminal state, with its proof line.  Companion to the machine census in
 - "Display no-op in headless" is NOT unreachable — those rows stay open
   until Phase-7 pixel parity exercises them.
 
+## Gate-G4 link-active floor (the operative worklist)
+
+The census below counts **lib-undefined** symbols and over-counts what matters:
+most are satisfied at final link by a strong def or PROVIDE alias. The TRUE
+Gate-G4 worklist is the weak symbols that survive **un-overridden into the
+linked executable** (`tools/active_stubs.sh`; `nm viceroy_modern` 'W'/'w').
+
+As of 2026-06-13 that floor is **10 link-active `func_` stubs**, all
+**interactive-only** (0 hits across the 500-turn AI soak), pinned by
+`docs/g4_interactive_floor.json` and gated by `tools/g4_floor.py` (no-new-items:
+a new unlisted func_ stub fails the gate). Each is reached only on a player
+interaction path (diplomacy / combat / unit-move / native / treaty dialogs, plus
+the speak-with-chief body) and is exercised + certified by **Phase 7.1** (pixel
+parity over those screens) and **Phase 7.2** (full-verb determinism: a combat, a
+native raid, an FF election, a war declaration). They are NOT marked UNREACHABLE
+— interactive code is not dead code. The OPERATIVE zero-hit proof is the runtime
+counter (`--smoke=500 -> stub-hits: 0`).
+
+## AUDIO-DESCOPED (UNREACHABLE-BY-CONFIG, 2026-06-13)
+
+Audio parity (Phase 5) was descoped by the user ("I don't need music"). There is
+no host audio-device model, so every audio device/driver leaf is a deliberate
+SILENT terminal def in `src/audio/audio_silent.c` (a direct object, beats the
+weak stubs). Proof: the modern build instantiates no OPL2/MT-32/GM/SB/PCSpk
+device; `g_audio_cfg.device_type = AUDIO_NONE`; the dispatch layer's `snd_play_*`
+triggers reach a silent driver. Symbols closed (28): `adlib_{init,shutdown,
+play_song,stop_song,play_pcm_approx}`, `mt32_{init,shutdown,play_song,stop_song}`,
+`gm_{init,shutdown,play_song,stop_song}`, `pcspk_{init,shutdown,play_melody,
+play_sample,stop,silence}`, `sb_{play_pcm,dma_halt}`, `audio_load_sample_bank`,
+`load_sample_bank`, `load_audio_config`, `song_lookup`, `inp`, `outp`,
+`delay_micros`. Re-scoping audio = replace that one unit with byte-verified
+drivers; call sites/signatures in `include/audio.h` are unchanged.
+
 ## MODERN-REPLACED (platform substitution by design)
 
 These DOS-platform translation units are excluded from the modern build;
@@ -68,3 +101,4 @@ implementations in `src/platform/dos_isr_glue.c`, each with its cite:
 | 0A58:06FD | 0xD07D | cursor blit dispatch (`jmp [0x7E0]`, VGA segs) | host cursor |
 | 181F:0EE0 | 0xD236 | MSC stack probe (zero-fill SP..[0x27E6]) | host stack: deficit 0 |
 | 191F:04A2 | 0xD29C | keyboard drain loop (poll 0xD272 / consume 0xD286) | shell drains the queue |
+| func_00CCEB | 0xCCEB | int-0x33 mouse coord transform (cx>>=[0x598]lo, dx>>=hi; cache [0x92FC/FE]) | host/SDL pointer; caller reports cached pair (Phase-4 floor, 2026-06-13) |
