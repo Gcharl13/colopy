@@ -45,12 +45,25 @@ def main():
         sys.exit(f"build first: {EXE}")
     print("PHASE 7 CERTIFICATION (headless gates)\n" + "=" * 60)
 
-    # --- 7.5a audit.py -------------------------------------------------------
-    r = run(["python3", "tools/audit.py"])
-    npass = len(re.findall(r"\[PASS\]", r.stdout))
-    nfail = len(re.findall(r"\[FAIL\]", r.stdout))
-    gate("7.5 audit.py byte claims", r.returncode == 0 and nfail == 0,
-         f"{npass} PASS / {nfail} FAIL")
+    # --- 7.5a audit.py (needs VICEROY.EXE; gitignored, user-supplied) --------
+    # Resolve the EXE the same way tools/viceroy_exe.py does: $VICEROY_EXE, then
+    # $VICEROY_DATA/VICEROY.EXE, then the in-repo re_work/ dev copy. Absent on a
+    # fresh checkout/ZIP, so SKIP (not FAIL) when no EXE exists anywhere.
+    exe_cands = [os.environ.get("VICEROY_EXE")]
+    if os.environ.get("VICEROY_DATA"):
+        exe_cands += [os.path.join(os.environ["VICEROY_DATA"], n)
+                      for n in ("VICEROY.EXE", "viceroy.exe")]
+    exe_cands.append(os.path.join(ROOT, os.pardir, "re_work", "VICEROY.EXE"))
+    exe_bin = next((c for c in exe_cands if c and os.path.exists(c)), None)
+    if exe_bin:
+        r = run(["python3", "tools/audit.py"])
+        npass = len(re.findall(r"\[PASS\]", r.stdout))
+        nfail = len(re.findall(r"\[FAIL\]", r.stdout))
+        gate("7.5 audit.py byte claims", r.returncode == 0 and nfail == 0,
+             f"{npass} PASS / {nfail} FAIL")
+    else:
+        print("  [SKIP] 7.5 audit.py byte claims: VICEROY.EXE not found "
+              "(set VICEROY_EXE or VICEROY_DATA; gitignored, user-supplied)")
 
     # --- G4 stub floor -------------------------------------------------------
     r = run(["python3", "tools/g4_floor.py", EXE])

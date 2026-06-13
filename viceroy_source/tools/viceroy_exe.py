@@ -32,7 +32,30 @@ import sys
 # Resolve the binary relative to repo root regardless of cwd.
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.dirname(os.path.dirname(_HERE))          # .../colopy
-DEFAULT_EXE = os.path.join(_REPO, "re_work", "VICEROY.EXE")
+
+
+def resolve_exe():
+    """Locate VICEROY.EXE. The binary is gitignored (copyright) and absent from
+    a fresh checkout / source ZIP, so honor the user's own copy first:
+      1. $VICEROY_EXE                       (explicit path)
+      2. $VICEROY_DATA/VICEROY.EXE          (the COLONIZE data dir the build uses)
+      3. re_work/VICEROY.EXE                (the in-repo dev location)
+    Returns the first that exists, else the dev default (so the error names it)."""
+    cands = []
+    if os.environ.get("VICEROY_EXE"):
+        cands.append(os.environ["VICEROY_EXE"])
+    if os.environ.get("VICEROY_DATA"):
+        for nm in ("VICEROY.EXE", "viceroy.exe"):       # /mnt/c is case-insensitive; native FS is not
+            cands.append(os.path.join(os.environ["VICEROY_DATA"], nm))
+    dev = os.path.join(_REPO, "re_work", "VICEROY.EXE")
+    cands.append(dev)
+    for c in cands:
+        if c and os.path.exists(c):
+            return c
+    return dev
+
+
+DEFAULT_EXE = resolve_exe()
 
 EXPECTED_SIZE = 494910
 EXPECTED_SHA256 = "a17ed64c27671e5e95236e54a7ddc85803a96ba822fbed05e1dad34d3917e2e3"
