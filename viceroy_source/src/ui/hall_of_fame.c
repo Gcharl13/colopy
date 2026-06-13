@@ -187,7 +187,9 @@ extern void  hof_text_row(char *buf, int ss, int x, int y, int color, int hi); /
 extern void  hof_title_band(int seg, int x, int y, int w, int spr, char *buf); /* 0x181F:0x1C8 */
 extern void *hof_fopen(int mode_handle, int name_handle);   /* 0xD1D:0x4DA */
 extern int   hof_fread(void *buf, int sz, int n, void *fp); /* 0xD1D:0x528 */
+extern int   hof_fwrite(const void *buf, int sz, int n, void *fp); /* 0xD1D:0x60c */
 extern int   hof_fclose(void *fp);                          /* 0xD1D:0x3F4 */
+#include <string.h>                                          /* memcpy (record shift) */
 
 extern uint8_t  g_diff_53A6;        /* DGROUP:0x53A6 difficulty index (rating scale) */
 extern uint16_t g_score_player_5398;/* DGROUP:0x5398 active player score-record index */
@@ -293,9 +295,21 @@ void hall_of_fame_table(void *new_entry)
      * cx=0x15 = 42 bytes per record).  @asm 0x03AE45..0x03AEEB; record stride
      * 0x2A, max 6.  inserted = the rank it landed at. */
     if (new_entry) {                                 /* @asm 0x03AE4B cmp [bp+6],0 */
+        int16_t new_score = *(int16_t *)((char *)new_entry + 0x26); /* @asm 0x03AED0 mov ax,[bx+0x26] */
         for (i = 0; i < HALLFAME_MAX; i++) {         /* @asm 0x03AEC6 cmp ...,6 */
-            /* compare [bp+6]+0x26 vs table[i]+0xDA-style score; shift+place. */
-            (void)i;                                  /* @asm 0x03AED0 mov ax,[bx+0x26] */
+            int16_t slot_score = *(int16_t *)(table + i * HALLFAME_REC_STRIDE + 0x26);
+            if (slot_score < new_score) {            /* @asm 0x03AED8 cmp [bp+si-0xda],ax; new outranks slot */
+                int j;
+                /* shift records [i..MAX-2] down to [i+1..MAX-1] (drops the last,
+                 * @asm 0x03AE5A rep movsw cx=0x15 per record, j-- toward i). */
+                for (j = HALLFAME_MAX - 1; j > i; j--)
+                    memcpy(table + j * HALLFAME_REC_STRIDE,
+                           table + (j - 1) * HALLFAME_REC_STRIDE, HALLFAME_REC_STRIDE);
+                /* place new_entry at rank i (@asm 0x03AE7E..0x03AE8F). */
+                memcpy(table + i * HALLFAME_REC_STRIDE, new_entry, HALLFAME_REC_STRIDE);
+                inserted = i;                        /* @asm 0x03AE95 [bp-0x154]=i */
+                break;
+            }
         }
     }
 
@@ -318,11 +332,12 @@ void hall_of_fame_table(void *new_entry)
         y += /*glyphH*/ 8 + 2;                        /* @asm 0x03B05F / 0x03B0F0 add [bp-0x158] */
     }
 
-    /* write HALLFAME.DAT back ("wb"). */
+    /* write HALLFAME.DAT back ("wb"): the persisted image is 0xD2 bytes (the
+     * top 5 records; the 6th buffer slot is the insertion overflow, dropped). */
     fp = hof_fopen(HOF_MODE_WB, HOF_FILE_WB);        /* @asm 0x03B2BB 0xD1D:.. "wb",0x1227 */
     if (fp) {
-        /* fwrite the 6*42 table back, then fclose. */
-        (void)hof_fclose(fp);
+        (void)hof_fwrite(table, 1, 0xD2, fp);        /* @asm 0x03B2D9 0xD1D:0x60c fwrite 0xD2 */
+        (void)hof_fclose(fp);                        /* @asm 0x03B2EC 0xD1D:0x3F4 */
     }
     (void)inserted;
 }

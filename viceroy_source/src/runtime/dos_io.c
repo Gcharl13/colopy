@@ -158,6 +158,23 @@ int   get_magic_string(void *f, char *buf)          /* reads through NUL + Ctrl-
 int   blk_write(void *f, const void *p, uint32_t n) { return (int)fwrite(dg_rebase(p), 1, n, (FILE *)f); }
 int   blk_read (void *f, void *p, uint32_t n)       { return (int)fread (dg_rebase(p), 1, n, (FILE *)f); }
 
+/* Hall-of-Fame I/O (0xD1D:0x4DA/0x528/0x60c/0x3F4). The HOF caller passes
+ * DGROUP string-table HANDLES (DS-relative offsets into the load image:
+ * 0x11EF="rb", 0x1224="wb", 0x11F2/0x1227="HALLFAME.DAT"), not pointers, so
+ * hof_fopen must rebase them to host strings before fopen. The byte/stream
+ * primitives are the msc_* ones (buffer is a stack pointer -> dg_rebase passes
+ * it through). Without these the HOF stays a no-op (hof_fopen was weak-stubbed
+ * to 0, so the table was never read, inserted, or written). */
+extern unsigned char g_dgroup[];
+void *hof_fopen(int mode_h, int name_h)
+{
+    return fopen((const char *)(g_dgroup + (unsigned)(name_h & 0xFFFF)),
+                 (const char *)(g_dgroup + (unsigned)(mode_h & 0xFFFF)));
+}
+int  hof_fread (void *p, int sz, int n, void *f)       { return msc_fread(p, sz, n, f); }
+int  hof_fwrite(const void *p, int sz, int n, void *f) { return msc_fwrite(p, sz, n, f); }
+int  hof_fclose(void *f)                               { return msc_fclose(f); }
+
 /* Save-tail 4-byte view/palette aux (derived from [0x83A6] via 0x181F:0x4CA;
  * original writes it @0x073A21 from a stack temp, reads it back on load). It is
  * transient (recomputed by the post-load palette setup), so bridging the value

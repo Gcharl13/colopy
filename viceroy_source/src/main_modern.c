@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "viceroy_types.h"
 #include "dgroup.h"
@@ -784,6 +785,28 @@ int main(int argc, char **argv)
         printf("roundtrip: %s -> %s (year %u, %u colonies, %u units)\n",
                roundtrip_path, out, DG16(0x538A), DG16(0x539E), DG16(0x539C));
         return 0;
+    }
+
+    /* HOF persistence self-test (6.2): verify hof_fopen resolves the DGROUP
+     * string handles and the 0xD2-byte HALLFAME.DAT round-trips. */
+    {
+        for (int ai = 1; ai < argc; ai++) if (!strcmp(argv[ai], "--hoftest")) {
+            extern void *hof_fopen(int, int);
+            extern int hof_fwrite(const void *, int, int, void *);
+            extern int hof_fread(void *, int, int, void *);
+            extern int hof_fclose(void *);
+            unsigned char w[0xD2], r[0xD2]; int k;
+            for (k = 0; k < 0xD2; k++) w[k] = (unsigned char)(k * 7 + 1);
+            if (chdir("/tmp") != 0) {}
+            void *fp = hof_fopen(0x1224 /*wb*/, 0x1227 /*HALLFAME.DAT*/);
+            int wn = fp ? hof_fwrite(w, 1, 0xD2, fp) : -1; if (fp) hof_fclose(fp);
+            fp = hof_fopen(0x11EF /*rb*/, 0x11F2 /*HALLFAME.DAT*/);
+            int rn = fp ? hof_fread(r, 1, 0xD2, fp) : -1; if (fp) hof_fclose(fp);
+            printf("hoftest: wb_fopen=%s wrote=%d read=%d match=%s\n",
+                   wn >= 0 ? "ok" : "NULL", wn, rn,
+                   (wn == 0xD2 && rn == 0xD2 && memcmp(w, r, 0xD2) == 0) ? "YES" : "NO");
+            return 0;
+        }
     }
 
     if (smoke_turns > 0) {
