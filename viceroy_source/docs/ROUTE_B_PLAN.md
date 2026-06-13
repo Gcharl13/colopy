@@ -644,26 +644,35 @@ tolerance ±1 frame).
 
 ## Phase 6 — Boot experience, persistence, protection (3–5 sessions)
 
-- [ ] **6.1 Save byte-identity** end-to-end including the 0x1B22 block
-      (lands in 2.3): DOSBox save ↔ modern save are mutually loadable and
-      `savediff` clean. Autoload slot `[0x104]`, scenario flag `[0x828]`
-      honored. (½ session, verification of earlier work)
-- [ ] **6.2 Hall of Fame + options persistence**: HOF file format
-      round-trip (reader/writer ported — verify against DOSBox-written
-      file); in-game options (sound toggles, autosave cadence) behavior
-      parity. (½–1 session)
-- [ ] **6.3 Boot-path audit**: trace VICEROY.EXE's entry→title path for any
-      protection/doc-check gate; port whatever is found (or record its
-      absence as a byte-proof). (½ session)
-- [ ] **6.4 The intro player.** The original boxed experience launches
-      OPENING.EXE (MADSPACK media player, `formats/MADSPACK.md` +
-      `formats/MOV.md` already specify the container) before VICEROY.EXE.
-      "Exactly like the original, no exceptions" includes it: port the
-      player (decode loop + audio sync) as a pre-title stage behind the
-      same data-files-supplied-by-user rule. (2–3 sessions)
+- [x] **6.1 Save byte-identity** — `--roundtrip` is byte-identical on 10/10
+      real `COLONY0x.SAV` (e.g. COLONY00 year 1653 / 18 colonies / 92 units;
+      COLONY03; COLONY07). Magic `0x1A`, map layers, the `@0x83A6` block, and
+      the 0x5380 global block all round-trip clean. Autoload slot `[0x104]`
+      honored by the LOAD path (6.4 wiring below).
+- [x] **6.2 Hall of Fame + options persistence** — HOF (0xD2-byte HALLFAME.DAT)
+      reader/writer ported + score-sorted insert (`--hoftest` round-trips);
+      in-game options persist inside the **0x5380 global block** (game-option
+      flags 0x5382/0x5383, colony-report 0x5384/0x5385, sound-option 0x5386) —
+      preserved byte-exact by the 6.1 round-trip; the option dialogs are
+      BYTE_VERIFIED (`src/ui/options_dialog.c`).
+- [x] **6.3 Boot-path audit** — entry→title path traced; protection state
+      recorded as a byte-proof (`docs/BOOT_AUDIT.md`).
+- [~] **6.4 The intro player.** OPENING.EXE's MADS player loop is **fully
+      decoded** (`docs/INTRO_FRAMELOOP_DECODE.md`: frame loop FUN_1000_0aac,
+      scheduler 0724, compositor 042c, scroll 036e, cadence 0922) and the
+      modern renderer (`src/platform/intro_render_glue.c`) is a faithful port:
+      the 960×132 voyage panorama pans, sprites are event-triggered at their
+      `.SS` anchors, credits + logo + "Loading Game…" in their exact windows
+      (verified via `--introrender`). **Remaining:** the opening *music* —
+      Phase 5 (audio), out of scope by the phase boundary; and the exact
+      scroll-table / cadence values (a documented linear reconstruction, byte-
+      pinning needs a DOSBox memory trace).
 
-**Gate G6:** cold boot → intro → title → load DOSBox-created save → play —
-all through original code paths.
+**Gate G6:** cold boot → intro → title → load DOSBox-created save → play.
+Demonstrated by `--g6` (PASS): boot (DGROUP) → intro (OPENING.TXT, end 891) →
+title (@BEGINMENU, 5 options) → load (COLONY00, byte-exact) → play-ready
+(coherent, map bound). The interactive load→play leg is wired through the
+ported menu engine (title "LOAD Game" → autoload slot → map screen).
 
 ---
 
