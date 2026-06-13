@@ -16,32 +16,45 @@ hits real code.
 VICEROY_DATA=<COLONIZE-dir> ./build_modern/viceroy_modern --smoke=500 --stub-report
 ```
 
-Real-data gameplay-reachable stub baseline:
+Real-data gameplay-reachable stub drive-down (all steps validated: fix → re-run
+real-data smoke → SMOKE PASS, year 1992, REF 228, no regression):
 
-| stage | distinct symbols | calls |
+| stage | symbols | calls |
 |---|--:|--:|
-| initial (real data) | 15 | 3519 |
-| after MODERN-REPLACE of display/input (`headless_io_stubs.c`) | **12** | **16** |
+| initial (real data revealed the true set) | 15 | 3519 |
+| MODERN-REPLACE input-poll + 2 render leaves | 12 | 16 |
+| MODERN-REPLACE text-composition blit cluster (5) | 7 | 11 |
+| MODERN-REPLACE UI/screen cluster (5) | 2 | 4 |
+| MODERN-REPLACE `ff_pre_a` (FF-joins announcement draw) | 1 | 3 |
+| wire `power_set_flag` → `func_06C23C` (msg_set_arg) | **0** | **0** |
 
-The 3500-call dominator was `overlay_call_1059_000A` (modal input poll) plus two
-render leaves (clear-region, draw-header-text) — all correct headless no-ops,
-now strong MODERN-REPLACED defs. The remaining **12 symbols / 16 calls** are
-genuine low-frequency logic gaps (NOT display, so not no-op-able):
+**The real-COLONIZE-data smoke now hits ZERO gameplay-reachable weak stubs.**
+Two findings drove this:
 
-- **message formatters** (`overlay_call_181F_016E` strcat_str, `_0182` fmt_int,
-  `_011E` label-prefix, `_01BE` separator, `_0128` finalize) — build the event
-  text (`[INDIANSURPRISE]`, `[PRICEDOWN]`, …); call-site comments give the args,
-  so each needs its C call site completed with the right `(buf, value)` args.
-- **`power_set_flag`** (3) — the multiplexed `0x181F:0x0438` (diplomacy flag-set
-  vs `func_06C23C_dialog_make_from_int`); needs 3rd-party cross-ref to pin the
-  diplomacy-resident leaf.
-- **`overlay_call_0D1D_07A4`** — GAME.TXT key 0xBA7 loader; **`ff_pre_a`** — FF
-  effect; **`func_06B692`** — skipped Phase-4.8 cluster member (now proven
-  reachable); **`overlay_call_02D8_000E`**, **`_181F_0422`**, **`_181F_040A`**.
+1. Most hits were DOS **display/input** leaves whose correct headless behavior is
+   "do nothing / no input" — input poll (`overlay_call_1059_000A`, 3500 calls),
+   render (clear-region, draw-text), text-composition blit (the `func_002992`/
+   `func_0029DE`/glyph cluster), UI (dialog/save-bg, open-panel, show-message,
+   screen-refresh), and the FF announcement. These are now strong MODERN-REPLACED
+   no-ops in `src/platform/headless_io_stubs.c` (behavior-identical to the weak
+   floor they override; the menu/placeholder text path is separate).
+2. `power_set_flag` was a **misnomer**: it cites `0x181F:0x438`, the same thunk
+   `msg_dialog_wiring.c` binds to `func_06C23C_dialog_make_from_int` (the
+   message-int formatter). Aliased to that strong body (Phase 4.9).
 
-This is the real Gate-G4 clause-2 worklist (validatable: fix, re-run, watch the
-count drop). Clause 2's full closure still needs the unported in-game screens
-running + DOSBox for byte-parity.
+## Gate G4 status (honest)
+
+- **Clause 1 / Clause 2 — smoke playthrough**: the real-data AI + events + market
+  + king + FF + treaty smoke (500 turns) hits **0 weak stubs**. This is the
+  strongest validation achievable headless.
+- **Static residue**: `active_stubs.sh` still lists **27** weak `func_` stubs, but
+  the real-data smoke proves they are **unreached** on the exercised paths. They
+  sit on **screen / dialog / map-loop** paths the synthetic-map smoke does not
+  drive (the in-game map loop is unported). They will surface — and can be
+  dispositioned the same way (MODERN-REPLACE display / wire logic) — once those
+  screens run.
+- **Full closure** still needs: the unported in-game screens (to exercise the 27
+  latent stubs under a full-verb playthrough) and DOSBox for byte-parity (7.1/7.3).
 
 ## The measurement correction
 
