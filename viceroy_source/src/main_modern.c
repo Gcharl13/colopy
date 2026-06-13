@@ -195,12 +195,13 @@ static void draw_title_menu(int sel)
     int py = g_menu_y;                              /* @y=91 */
     int ph = (1 + g_menu_count) * rh + 6;
 
-    /* text/border colours: nearest palette index to the menu gold/cream (these
-     * live high in OPENMENU's palette -- the title's wood border uses them too) */
-    uint8_t frame = pal_nearest(188,150, 78);
-    uint8_t c_hdr = pal_nearest(210,150, 60);
-    uint8_t c_opt = pal_nearest(234,214,172);
-    uint8_t c_bar = pal_nearest(110, 36, 28);
+    /* text/border colours (nearest index in OPENMENU's palette): the @BEGINMENU
+     * scheme is {COLONIZATION} in yellow, the rest of the header + the option
+     * rows in green; thin gold border. */
+    uint8_t frame    = pal_nearest(188,150, 78);
+    uint8_t c_yellow = pal_nearest(232,214, 44);
+    uint8_t c_green  = pal_nearest( 56,160, 44);
+    uint8_t c_bar    = pal_nearest(110, 36, 28);
 
     /* panel fill = the REAL WOODTILE sheet, tiled and remapped to the live
      * palette (its own palette would clash with OPENMENU's). Loaded once. */
@@ -220,14 +221,42 @@ static void draw_title_menu(int sel)
     vid_box_outline(px, py, pw, ph, frame);
 
     int tx = px + pad, ty = py + 3;
-    mf->colors[1] = mf->colors[2] = mf->colors[3] = c_hdr;
-    ff_draw(mf, hdr, tx, ty, 1);
+
+    /* header: the {WORD} (COLONIZATION) in yellow, the remainder in green, with
+     * %STRING0/1 (version/date) substituted -- @BEGINMENU's {} colour directive */
+    {
+        const char *src = g_menu_prompt[0] ? g_menu_prompt
+                        : "{COLONIZATION} Version %STRING0 -- %STRING1";
+        char yel[64] = {0}, grn[96] = {0};
+        size_t yo = 0, go = 0; int brace = 0;
+        for (size_t i = 0; src[i]; ) {
+            if (src[i] == '{') { brace = 1; i++; continue; }
+            if (src[i] == '}') { brace = 0; i++; continue; }
+            const char *sub = 0;
+            if      (!strncmp(src + i, "%STRING0", 8)) { sub = "3.0";      i += 8; }
+            else if (!strncmp(src + i, "%STRING1", 8)) { sub = "7-Feb-95"; i += 8; }
+            if (sub) {
+                for (; *sub; sub++)
+                    if (brace) { if (yo < sizeof yel - 1) yel[yo++] = *sub; }
+                    else       { if (go < sizeof grn - 1) grn[go++] = *sub; }
+                continue;
+            }
+            if (brace) { if (yo < sizeof yel - 1) yel[yo++] = src[i]; }
+            else       { if (go < sizeof grn - 1) grn[go++] = src[i]; }
+            i++;
+        }
+        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_yellow;
+        ff_draw(mf, yel, tx, ty, 1);
+        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_green;
+        ff_draw(mf, grn, tx + ff_text_width(mf, yel, 1), ty, 1);
+    }
     ty += rh + 1;
 
+    /* options: green, indented from the header */
     for (int i = 0; i < g_menu_count; i++) {
         if (i == sel) vid_box_fill(px + 2, ty - 1, pw - 4, rh, c_bar);
-        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_opt;
-        ff_draw(mf, g_menu_opt[i], tx, ty, 1);
+        mf->colors[1] = mf->colors[2] = mf->colors[3] = c_green;
+        ff_draw(mf, g_menu_opt[i], tx + 8, ty, 1);
         ty += rh;
     }
     vid_present();
