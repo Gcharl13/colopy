@@ -28,4 +28,16 @@ long overlay_call_1059_000A(void) { return 0; }  /* input poll -> no input */
 long overlay_call_181F_00E2(void) { return 0; }  /* clear region / draw frame */
 long overlay_call_181F_0100(void) { return 0; }  /* draw header text */
 
+/* Text-composition blit leaves (load_image glyph/string region): each resolves
+ * to a screen-blit routine -- func_002992 (string-by-id blit), func_0029DE
+ * (number fmt + blit), and func_002922/0028F2/002932 (label-prefix / separator
+ * / finalize, all tail-calling the glyph drawer func_00D974). On-screen text
+ * composition has no headless meaning; the menu/placeholder path is separate
+ * (msg_set_arg). No-op in headless. */
+long overlay_call_181F_016E(void) { return 0; }  /* strcat_str blit (func_002992) */
+long overlay_call_181F_0182(void) { return 0; }  /* fmt_int blit (func_0029DE) */
+long overlay_call_181F_011E(void) { return 0; }  /* label-prefix glyph (func_002922) */
+long overlay_call_181F_01BE(void) { return 0; }  /* separator glyph (func_0028F2) */
+long overlay_call_181F_0128(void) { return 0; }  /* finalize glyph (func_002932) */
+
 #endif /* _VICEROY_MODERN */
