@@ -813,7 +813,6 @@ __attribute__((weak)) long hud_text(void) { viceroy_stub_hit("hud_text"); return
 __attribute__((weak)) long icon_at(void) { viceroy_stub_hit("icon_at"); return 0; }
 __attribute__((weak)) long init_and_scan_units_in_area(void) { viceroy_stub_hit("init_and_scan_units_in_area"); return 0; }
 __attribute__((weak)) long inp(void) { viceroy_stub_hit("inp"); return 0; }
-__attribute__((weak)) long king_register_ref_unit(void) { viceroy_stub_hit("king_register_ref_unit"); return 0; }
 __attribute__((weak)) long king_schedule_royal_events(void) { viceroy_stub_hit("king_schedule_royal_events"); return 0; }
 __attribute__((weak)) long layer_fill(void) { viceroy_stub_hit("layer_fill"); return 0; }
 __attribute__((weak)) long layer_ptr_resfog(void) { viceroy_stub_hit("layer_ptr_resfog"); return 0; }
