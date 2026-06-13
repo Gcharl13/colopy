@@ -915,7 +915,6 @@ __attribute__((weak)) long pik_load(void) { viceroy_stub_hit("pik_load"); return
 __attribute__((weak)) long power_record(void) { viceroy_stub_hit("power_record"); return 0; }
 __attribute__((weak)) long power_scan_done(void) { viceroy_stub_hit("power_scan_done"); return 0; }
 __attribute__((weak)) long power_scan_mark(void) { viceroy_stub_hit("power_scan_mark"); return 0; }
-__attribute__((weak)) long power_set_flag(void) { viceroy_stub_hit("power_set_flag"); return 0; }
 __attribute__((weak)) long raid_show_message(void) { viceroy_stub_hit("raid_show_message"); return 0; }
 __attribute__((weak)) long region_fill(void) { viceroy_stub_hit("region_fill"); return 0; }
 __attribute__((weak)) long rel_apply_event(void) { viceroy_stub_hit("rel_apply_event"); return 0; }

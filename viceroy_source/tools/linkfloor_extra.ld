@@ -1238,3 +1238,13 @@ PROVIDE(func_03EA38 = func_03CA2A_colony_with_input); EXTERN(func_03CA2A_colony_
 PROVIDE(func_03689A = func_03200A); EXTERN(func_03200A)
 PROVIDE(func_039E53 = func_037340_rtl_sz_100); EXTERN(func_037340_rtl_sz_100)
 PROVIDE(func_0400EA = func_040002_logic_sz_42); EXTERN(func_040002_logic_sz_42)
+
+/* Phase 4.9 (2026-06-13): power_set_flag is a MISNOMER for the message-arg
+ * setter. It cites lcall 0x181F:0x438 (treaty.c @057E2D, king_events @02F169,
+ * intervention @03DA10) -- the SAME thunk that msg_dialog_wiring.c binds to
+ * func_06C23C_dialog_make_from_int(slot,value) (= msg_set_arg / msg_set_int).
+ * The leaf decompiles to "format arg1 as int, call the dialog/message builder",
+ * not a power-flag write. Alias it to the same strong body. Validated against
+ * real COLONIZE data: drops the last gameplay-reachable stub to 0. */
+PROVIDE(power_set_flag = func_06C23C_dialog_make_from_int);
+EXTERN(func_06C23C_dialog_make_from_int)
