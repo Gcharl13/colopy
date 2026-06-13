@@ -809,6 +809,20 @@ int main(int argc, char **argv)
         }
     }
 
+    /* Intro-player self-test (6.4): parse OPENING.TXT + report the schedule. */
+    {
+        for (int ai = 1; ai < argc; ai++) if (!strcmp(argv[ai], "--introtest")) {
+            extern int intro_load_script(const char *);
+            extern int intro_credit_count(void), intro_anim_count(void), intro_end_frame(void);
+            extern const char *intro_loading_msg(void), *intro_anim_sheet(int);
+            if (intro_load_script(g_data) != 0) { printf("introtest: OPENING.TXT load FAILED\n"); return 3; }
+            printf("introtest: %d credit cards, %d animations, end_frame=%d, msg=\"%s\"\n",
+                   intro_credit_count(), intro_anim_count(), intro_end_frame(), intro_loading_msg());
+            for (int s = 0; s < 10; s++) printf("  series %d -> %s\n", s, intro_anim_sheet(s));
+            return 0;
+        }
+    }
+
     if (smoke_turns > 0) {
         extern int viceroy_world_smoke(int);
         return viceroy_world_smoke(smoke_turns);
@@ -818,6 +832,17 @@ int main(int argc, char **argv)
     title_screen_render();
 
     int headless = vid_init("Viceroy (Colonization reconstruction)");
+
+    /* 6.4: the boxed-experience opening sequence (the original boots OPENING.EXE
+     * before VICEROY.EXE). Data-driven from OPENING.TXT + OPENING.PIK + OPEN*.SS;
+     * with a display it plays, headless it validates the script and returns. */
+    {   extern int script_input_active(void);
+        if (!headless && !script_input_active()) {
+            extern int intro_play(const char *dir);
+            intro_play(g_data);
+        }
+    }
+
     {   /* determinism rig (ROUTE_B_PLAN 0.1): a loaded script drives the
          * real shell loop even headless; script exhaustion delivers QUIT */
         extern int script_input_active(void);
