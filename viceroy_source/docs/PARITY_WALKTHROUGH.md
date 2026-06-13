@@ -26,9 +26,70 @@ sudo apt install -y build-essential cmake python3 dosbox-x libsdl2-dev imagemagi
 brew install cmake python3 dosbox-x sdl2 imagemagick
 ```
 
-**Windows:** install DOSBox-X (dosbox-x.com), Python 3, and either WSL2 (then
-follow the Linux steps) or MSYS2/MinGW for the build. The DOSBox steps are
-identical; use the DOSBox-X GUI for screenshots (Ctrl+F5).
+**Windows:** see the dedicated section below — the build needs GCC + GNU `ld`
+(the link uses `PROVIDE()` linker scripts and weak-symbol overrides), so **MSVC /
+Visual Studio will NOT build it**. Use WSL2 (recommended) or MSYS2/MinGW.
+
+---
+
+## 0W. Windows specifics (read this if you're on Windows)
+
+**Why not Visual Studio:** the link wires `tools/generated/linkfloor.ld` +
+`thunk_wiring.ld` + `linkfloor_extra.ld` via `ld --just-symbols/PROVIDE`, and the
+stub floor is `__attribute__((weak))`. Those are GCC/binutils features. So build
+with a GCC toolchain. Two ways:
+
+### Option A — WSL2 (recommended; Windows 10 & 11)
+
+1. **Install WSL2 + Ubuntu** (PowerShell as admin, then reboot):
+   ```powershell
+   wsl --install -d Ubuntu
+   ```
+2. **Open the Ubuntu shell** and install the toolchain (same as Linux):
+   ```bash
+   sudo apt update
+   sudo apt install -y build-essential cmake python3 dosbox-x libsdl2-dev imagemagick
+   ```
+3. **Where your files live — the path bridge:**
+   - Windows `C:\Games\COLONIZE`  ⟷  WSL `/mnt/c/Games/COLONIZE`
+   - WSL files are visible from Windows at `\\wsl$\Ubuntu\home\<you>\...`
+   So keep COLONIZE on Windows and point the build at it:
+   ```bash
+   export VICEROY_DATA=/mnt/c/Games/COLONIZE
+   ```
+4. **Build + headless gates + save parity** run entirely in WSL — follow
+   sections 1–4 below verbatim. On **Windows 11**, WSLg gives WSL a GUI, so you
+   can even run `dosbox-x` *inside* WSL and it opens a window. On **Windows 10**,
+   run DOSBox-X **natively** instead (Option below) and only do the build/diffs
+   in WSL.
+
+### Option B — MSYS2 / MinGW (native, no WSL)
+
+```bash
+# in the MSYS2 MINGW64 shell:
+pacman -S --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake \
+                   mingw-w64-x86_64-python mingw-w64-x86_64-SDL2 \
+                   mingw-w64-x86_64-imagemagick make
+export VICEROY_DATA=/c/Games/COLONIZE
+```
+Then build with `cmake -G "MinGW Makefiles" .. && cmake --build . -j4`.
+
+### DOSBox-X on Windows (the capture half)
+
+- Install from **dosbox-x.com** (or `winget install dosbox-x` / `choco install
+  dosbox-x` / `scoop install dosbox-x`).
+- Put a `viceroy.conf` next to it (same keys as §5: `machine=vgaonly`,
+  `cycles=fixed 3000`, `captures=C:\dosparity\capture`, autoexec `mount c
+  C:\Games\COLONIZE` then `viceroy.exe`).
+- Launch: `dosbox-x.exe -conf viceroy.conf` (or drag the conf onto the exe).
+- **Screenshot = Ctrl+F5** → PNG in `C:\dosparity\capture\`.
+- Because COLONIZE is on the Windows drive, WSL sees the **same** PNGs/saves at
+  `/mnt/c/dosparity/capture` and `/mnt/c/Games/COLONIZE` — so run `pixdiff.py` /
+  `savediff.py` in WSL against the Windows-captured files directly.
+
+> **Net:** build + Python diff tools in WSL (or MSYS2); DOSBox capture native
+> Windows (or WSLg on Win11). Everything below works unchanged; just use
+> `/mnt/c/...` paths in WSL for anything that lives on the Windows side.
 
 ---
 
