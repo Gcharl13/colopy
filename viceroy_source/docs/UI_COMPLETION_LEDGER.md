@@ -76,7 +76,35 @@ no-ops** in `render_glue.c`, so the modern fill is a placeholder
 (`vid_box_fill 0` + `outline 15`). Decoding those two leaves is the next UI item;
 they also feed `texture_fill_rect` (colony work-grid backdrop, `func_005234`).
 
-### [coded, not yet asset-verified] Europe / Colony / Reports / Hall-of-Fame
+### [BLOCKED — the real UI completion gap] Nations / Difficulty / Europe composers
+The whole-screen composers ARE ported and control-flow byte-verified:
+`func_07092E_draw_nation_screen`, `func_070494_draw_difficulty_screen`,
+`func_0707B6_draw_nation_row`, `func_070302_draw_difficulty_row` (+ the modal
+dispatchers `func_070A1A` / `func_070580`) in `overlay_070302_074405.c`.
+
+They do NOT draw in the modern build because their text leaves are no-op stubs:
+`overlay_call_181F_0100` (= `func_002BC8` text-field draw) returns 0 in
+`platform/headless_io_stubs.c`. The chain
+`func_002BC8 -> func_002B38/func_002AFE -> 0x0C11:0xC blit / 0x0C28:0xA style /
+0x0C2A:6 measure` is ported but its leaves pass args via REGISTERS + DGROUP
+([0x89E] font ctx, [0x2DA8] screen desc, string-handle on the stack, x=ax,
+y=dx), which the C port left argless -> stubbed.
+
+**Root cause (one fix unblocks several screens):** bridge the 6 resident
+text-field functions to the platform text primitives using their own C args,
+exactly as `render_glue.c` already does for the colony/map path
+(`vid_text_xy`/`vid_text_color`/`vid_text_width`). The functions:
+`func_002AFE`, `func_002B38`, `func_002B72`, `func_002BC8`, `func_002C0C`,
+`func_002C4A` (file 0x2AFE..0x2C82). Their leaf calls (`0x0C11:0xC`,
+`0x0C28:0xA`, `0x0C2A:6`) map 1:1 onto `vid_text_xy` / `vid_text_color` /
+`vid_text_width` (string handle resolved via `viceroy_str`, colour from the
+DGROUP [0x830]/[0x833] bytes or the explicit arg4). Then wire
+`overlay_call_181F_0100 -> func_002BC8` and route the shell's
+`draw_nations`/`draw_difficulty` through the real composers. NOT done yet --
+it needs the user's NAMES/LABELS text + palette to pixel-verify, so it lands as
+a verified-by-byte increment, not an asset-checked one.
+
+### [coded, not yet asset-verified] Colony / Reports / Hall-of-Fame
 Per `UI_VERIFICATION.md` + `SCREEN_LAYOUTS.md`: geometry byte-verified, full
 composition assembled in primitives. No game-data assets are present in this
 environment, so pixel parity can't be run here; correctness is driven by
