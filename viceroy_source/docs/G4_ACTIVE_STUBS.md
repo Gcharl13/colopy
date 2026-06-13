@@ -3,6 +3,46 @@
 Generated/refreshed by `tools/active_stubs.sh` (reads the linked
 `build_modern/viceroy_modern`). This is the **accurate** G4 worklist.
 
+## Real-data validation harness (2026-06-13) — the decisive signal
+
+The user's COLONIZE data lives in `col.zip` on `main`; extracted to a gitignored
+runtime dir and pointed at via `VICEROY_DATA`. Running the smoke with real data
+is a working validation harness — it drives the real per-turn event / market /
+king logic, not the empty-data path. **This corrected a false signal:** the
+"0 stub hits" reported under no data was an artifact; with real data the smoke
+hits real code.
+
+```sh
+VICEROY_DATA=<COLONIZE-dir> ./build_modern/viceroy_modern --smoke=500 --stub-report
+```
+
+Real-data gameplay-reachable stub baseline:
+
+| stage | distinct symbols | calls |
+|---|--:|--:|
+| initial (real data) | 15 | 3519 |
+| after MODERN-REPLACE of display/input (`headless_io_stubs.c`) | **12** | **16** |
+
+The 3500-call dominator was `overlay_call_1059_000A` (modal input poll) plus two
+render leaves (clear-region, draw-header-text) — all correct headless no-ops,
+now strong MODERN-REPLACED defs. The remaining **12 symbols / 16 calls** are
+genuine low-frequency logic gaps (NOT display, so not no-op-able):
+
+- **message formatters** (`overlay_call_181F_016E` strcat_str, `_0182` fmt_int,
+  `_011E` label-prefix, `_01BE` separator, `_0128` finalize) — build the event
+  text (`[INDIANSURPRISE]`, `[PRICEDOWN]`, …); call-site comments give the args,
+  so each needs its C call site completed with the right `(buf, value)` args.
+- **`power_set_flag`** (3) — the multiplexed `0x181F:0x0438` (diplomacy flag-set
+  vs `func_06C23C_dialog_make_from_int`); needs 3rd-party cross-ref to pin the
+  diplomacy-resident leaf.
+- **`overlay_call_0D1D_07A4`** — GAME.TXT key 0xBA7 loader; **`ff_pre_a`** — FF
+  effect; **`func_06B692`** — skipped Phase-4.8 cluster member (now proven
+  reachable); **`overlay_call_02D8_000E`**, **`_181F_0422`**, **`_181F_040A`**.
+
+This is the real Gate-G4 clause-2 worklist (validatable: fix, re-run, watch the
+count drop). Clause 2's full closure still needs the unported in-game screens
+running + DOSBox for byte-parity.
+
 ## The measurement correction
 
 `tools/linkgap.py` counts symbols **undefined in `libviceroy_rules.a`** — its
