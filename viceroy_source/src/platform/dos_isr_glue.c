@@ -110,5 +110,26 @@ int overlay_call_09EF_002C()
     return overlay_call_181F_0E68();
 }
 
+/* ----------------------------------------------------------------------------
+ * func_00CCEB -- DOS int-0x33 mouse-coordinate transform (Phase 4 floor,
+ * BYTE_VERIFIED 2026-06-13 @asm 0x00CCEB..0x00CD0A).
+ *
+ *   0xCCEB push ax; mov ax,cx; mov cx,[0x598]   ; cx = packed shift pair
+ *   0xCCF2 shr ax,cl                              ; cell_x = mouse_x >> xshift
+ *   0xCCF4 xchg cl,ch; shr dx,cl                  ; cell_y = mouse_y >> yshift
+ *   0xCCF8 mov cx,ax
+ *   0xCCFA cmp [0x92F8],0; jne 0xCD09             ; if NOT frozen:
+ *   0xCD01   mov [0x92FC],cx; mov [0x92FE],dx     ;   cache cell (x,y)
+ *   0xCD09 pop ax; ret
+ *
+ * The transform's inputs are the int-0x33 driver's CX/DX register outputs
+ * (live mouse pixel position). The modern build has no int 0x33: SDL/host owns
+ * the pointer, and the sole caller (the mouse-read leaf in
+ * load_image_00C0D0_00D27F.c) already reports the cached coordinate pair via
+ * DGROUP 0x92FC/0x92FE and the platform read otherwise. So the register-side
+ * shift is a no-op here -- MODERN-REPLACED, like the cursor HIDE/SHOW leaves
+ * above. Strong def beats the weak stub; ledger §MODERN-REPLACED. */
+int func_00CCEB(void) { return 0; }
+
 #endif /* _VICEROY_MODERN */
 

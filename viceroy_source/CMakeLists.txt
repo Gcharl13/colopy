@@ -43,6 +43,10 @@ list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/ui/screen_id_map\\.c$")
 # thunk stubs (ovly_dialog_652/msg_show/msg_set_arg/msg_emit_num/rel_query/...).
 # Must be a direct object — same reason as screen_id_map.c.
 list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/ui/msg_dialog_wiring\\.c$")
+# Phase 4 (2026-06-13): audio descoped (user: no music). audio_silent.c provides
+# strong SILENT defs for every audio device leaf (adlib/mt32/gm/pcspk/sb +
+# inp/outp/delay) — must be a direct object so it beats the weak stubs.
+list(FILTER VICEROY_SOURCES EXCLUDE REGEX ".*/audio/audio_silent\\.c$")
 # load_image/ — all 16 files ported & verified to compile clean under
 # -D_VICEROY_MODERN (stale "raw ax/label artifacts" exclusion removed
 # 2026-06-09; these resident functions are overlay-thunk targets the
@@ -108,6 +112,8 @@ if(EXISTS "${VICEROY_GEN}/linkfloor_stubs.c" AND EXISTS "${VICEROY_GEN}/thunk_wi
         # so they beat the weak stubs in linkfloor_stubs.c at link time.
         src/ui/screen_id_map.c
         src/ui/msg_dialog_wiring.c
+        # Phase 4 (2026-06-13): audio descoped — silent device-leaf defs.
+        src/audio/audio_silent.c
     )
     target_link_libraries(viceroy_modern PRIVATE viceroy_rules)
     target_include_directories(viceroy_modern PRIVATE
