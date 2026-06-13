@@ -1189,3 +1189,52 @@ PROVIDE(func_8FB4 = func_008FB4_colony_sz_138);
 EXTERN(func_008FB4_colony_sz_138)
 PROVIDE(func_AB78 = func_00AB78_colony_sz_1496);
 EXTERN(func_00AB78_colony_sz_1496)
+/* ============================================================================
+ * Phase 4.8 (2026-06-13): RTLink thunk-trampoline cluster wiring.
+ * Each func_0XXXXX below is an `ljmp seg:off` trampoline; resolved to its
+ * same-page ported overlay leaf via tools/whois.py + the thunk-window decode.
+ * These serve screens not yet reachable in the modern shell (in-game map
+ * loop unported), so they are latent until Phase-7 validates them dynamically.
+ * See docs/PHASE4_THUNK_LEDGER.md for per-thunk arg-arity notes.
+ * ========================================================================== */
+/* --- 0613xx map-view tile/menu thunks --- */
+PROVIDE(func_0613F5 = func_0605F6_pick_from_colony_list_menu); EXTERN(func_0605F6_pick_from_colony_list_menu)
+PROVIDE(func_0613FA = func_060026_draw_tile_unit_stack_menu); EXTERN(func_060026_draw_tile_unit_stack_menu)
+PROVIDE(func_0613FF = func_060FBC_select_tile_or_active_unit); EXTERN(func_060FBC_select_tile_or_active_unit)
+PROVIDE(func_061404 = func_06046E_remove_unit_from_tile_stack); EXTERN(func_06046E_remove_unit_from_tile_stack)
+PROVIDE(func_061409 = func_05FE7A_set_active_tile_subfield_ptr); EXTERN(func_05FE7A_set_active_tile_subfield_ptr)
+PROVIDE(func_06140E = func_0603DA_map_cell_nibble_at_index); EXTERN(func_0603DA_map_cell_nibble_at_index)
+PROVIDE(func_061413 = func_060382_tile_terrain_nibble); EXTERN(func_060382_tile_terrain_nibble)
+PROVIDE(func_061418 = func_060CE0_draw_terrain_legend_menu); EXTERN(func_060CE0_draw_terrain_legend_menu)
+PROVIDE(func_06141D = func_06040A_map_cell_set_nibble_at_index); EXTERN(func_06040A_map_cell_set_nibble_at_index)
+PROVIDE(func_061422 = func_06044C_store_cell_index_and_refresh); EXTERN(func_06044C_store_cell_index_and_refresh)
+PROVIDE(func_061427 = func_060D8C_stack_row_at_cursor); EXTERN(func_060D8C_stack_row_at_cursor)
+PROVIDE(func_06142C = func_05FEA0_colony_record_for_tile_slot); EXTERN(func_05FEA0_colony_record_for_tile_slot)
+PROVIDE(func_061431 = func_05FEF4_unit_adjacent_to_active_colony); EXTERN(func_05FEF4_unit_adjacent_to_active_colony)
+PROVIDE(func_061436 = func_06083A_draw_map_view_chrome); EXTERN(func_06083A_draw_map_view_chrome)
+PROVIDE(func_06143B = func_060EC4_mouse_y_to_panel_region); EXTERN(func_060EC4_mouse_y_to_panel_region)
+PROVIDE(func_061440 = func_060350_tile_screen_x_for_cell); EXTERN(func_060350_tile_screen_x_for_cell)
+PROVIDE(func_061445 = func_060F32_mouse_x_minimap_or_scroll); EXTERN(func_060F32_mouse_x_minimap_or_scroll)
+PROVIDE(func_06144A = func_060C34_advance_map_cursor_to_next_unit); EXTERN(func_060C34_advance_map_cursor_to_next_unit)
+PROVIDE(func_06144F = func_0603A8_tile_set_terrain_nibble); EXTERN(func_0603A8_tile_set_terrain_nibble)
+/* --- 06B6xx list-widget/legend thunks --- */
+PROVIDE(func_06B67E = func_06927C_map_overlay_emit); EXTERN(func_06927C_map_overlay_emit)
+PROVIDE(func_06B683 = func_068FA0_list_widget_append); EXTERN(func_068FA0_list_widget_append)
+PROVIDE(func_06B68D = func_06929C_tile_info_panel_draw); EXTERN(func_06929C_tile_info_panel_draw)
+PROVIDE(func_06B697 = func_069058_list_widget_sort); EXTERN(func_069058_list_widget_sort)
+PROVIDE(func_06B69C = func_06B02A_list_panel_render); EXTERN(func_06B02A_list_panel_render)
+PROVIDE(func_06B6A1 = func_06936C_terrain_yield_row_draw); EXTERN(func_06936C_terrain_yield_row_draw)
+PROVIDE(func_06B6A6 = func_06B202_build_map_overlay_legend); EXTERN(func_06B202_build_map_overlay_legend)
+PROVIDE(func_06B6AB = func_069156_price_pos_from_index); EXTERN(func_069156_price_pos_from_index)
+PROVIDE(func_06B6BA = func_068F38_list_widget_alloc); EXTERN(func_068F38_list_widget_alloc)
+/* --- 03EAxx page-06 war/colony thunks --- */
+PROVIDE(func_03EA0B = func_03C638_logic_sz_73); EXTERN(func_03C638_logic_sz_73)
+PROVIDE(func_03EA10 = func_03C4A2_ff_offer_color_for_power); EXTERN(func_03C4A2_ff_offer_color_for_power)
+PROVIDE(func_03EA1A = func_03C528_eliminate_power); EXTERN(func_03C528_eliminate_power)
+PROVIDE(func_03EA1F = func_03DA2A_format_chain_219); EXTERN(func_03DA2A_format_chain_219)
+PROVIDE(func_03EA29 = func_03C5A8_op_sz_83); EXTERN(func_03C5A8_op_sz_83)
+PROVIDE(func_03EA38 = func_03CA2A_colony_with_input); EXTERN(func_03CA2A_colony_with_input)
+/* --- singles --- */
+PROVIDE(func_03689A = func_03200A); EXTERN(func_03200A)
+PROVIDE(func_039E53 = func_037340_rtl_sz_100); EXTERN(func_037340_rtl_sz_100)
+PROVIDE(func_0400EA = func_040002_logic_sz_42); EXTERN(func_040002_logic_sz_42)
