@@ -97,4 +97,12 @@ long func_02CAC3(void) { return 0; }
 long func_02CAE1(void) { return 0; }
 long func_06B6B5(void) { return 0; }
 
+/* func_0114E4 -- DOS INT 21h text-mode fread primitive (called via func_0115CE
+ * by the DOS-overlay file loaders load_image_00FAAA/010B26). The modern build
+ * does ALL file I/O through host stdio (runtime/data_load.c, platform/dgroup_
+ * image.c, platform/ss.c, platform/pik.c, the save layer); the real-data smoke
+ * exercises data-load AND a save/load round-trip and hits this zero times,
+ * proving the DOS fread path is bypassed. MODERN-REPLACED. */
+long func_0114E4(void) { return 0; }
+
 #endif /* _VICEROY_MODERN */
