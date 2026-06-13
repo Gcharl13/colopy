@@ -121,12 +121,47 @@ def read_any(path):
     return read_png(path) if path.lower().endswith(".png") else read_ppm(path)
 
 
+def _decimate(w, h, rgb, f):
+    """Nearest-neighbor downsample by integer factor f -- the exact inverse of an
+    f-times nearest-neighbor UPscale (e.g. DOSBox-X scaler=none pixel-doubling a
+    320x200 mode-13h frame to 640x400). Takes the top-left pixel of each fxf
+    block, so it is bit-exact when the source really was integer-upscaled."""
+    W, H = w // f, h // f
+    out = bytearray(W * H * 3)
+    for y in range(H):
+        srow, drow = (y * f) * w * 3, y * W * 3
+        for x in range(W):
+            si = srow + (x * f) * 3
+            out[drow + x * 3 : drow + x * 3 + 3] = rgb[si : si + 3]
+    return W, H, bytes(out)
+
+
+def _match_scale(wa, ha, a, wb, hb, b):
+    """If one frame is an exact integer multiple of the other (same factor on both
+    axes), decimate the larger so the compare stays pixel-faithful. Returns the
+    (possibly rescaled) pair plus a note describing what happened."""
+    if (wa, ha) == (wb, hb):
+        return wa, ha, a, wb, hb, b, None
+    if wb and hb and wa % wb == 0 and ha % hb == 0 and wa // wb == ha // hb > 1:
+        f = wa // wb
+        wa, ha, a = _decimate(wa, ha, a, f)
+        return wa, ha, a, wb, hb, b, f"downscaled A /{f} ({wa*f}x{ha*f}->{wa}x{ha})"
+    if wa and ha and wb % wa == 0 and hb % ha == 0 and wb // wa == hb // ha > 1:
+        f = wb // wa
+        wb, hb, b = _decimate(wb, hb, b, f)
+        return wa, ha, a, wb, hb, b, f"downscaled B /{f} ({wb*f}x{hb*f}->{wb}x{hb})"
+    return wa, ha, a, wb, hb, b, None
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
         return 2
     wa, ha, a = read_any(argv[0])
     wb, hb, b = read_any(argv[1])
+    wa, ha, a, wb, hb, b, note = _match_scale(wa, ha, a, wb, hb, b)
+    if note:
+        print(f"note: {note} (nearest-neighbor, bit-exact for integer upscales)")
     if (wa, ha) != (wb, hb):
         print(f"GEOMETRY DIFF: {wa}x{ha} vs {wb}x{hb}")
         return 1
