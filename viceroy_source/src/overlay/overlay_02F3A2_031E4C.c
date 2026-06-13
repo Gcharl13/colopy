@@ -854,7 +854,7 @@ void unit_stack_panel(int input_enabled)
             int a, b, c, d;
             int cargo, q;
             report_row_cells(slot, &a, &b, &c, &d);      /* @asm 0x031753 near 0x6D55 */
-            cargo = glyph_value(/* slot, unit */);       /* @asm 0x031780 0x181F:0xBE6 */
+            cargo = glyph_value(slot, unit);       /* @asm 0x031780 0x181F:0xBE6 */
             q     = order_assign(0 /* per-slot query key TODO */);  /* @asm 0x031791 0x181F:0xC68 = func_030C68 */
             (void)cargo; (void)q; (void)a; (void)b; (void)c; (void)d;
             box_fill(/* icon cell */);                   /* @asm 0x03171C/0x031731 0x181F:0x254 */

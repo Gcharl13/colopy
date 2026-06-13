@@ -208,7 +208,7 @@ int func_03C5A8_op_sz_83(uint16_t arg0_bp_06)
         /* @0x03C5CB..0x03C5E3  if (unit_is_active(mapX,mapY) != 0) continue;
          *   pushes (Y,X); 0x181F:0x0302 = on-screen / active-tile test. */
         (void)rec;
-        if (overlay_call_181F_0302() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ != 0)
+        if (overlay_call_181F_0302(UNIT_MAPX(i),UNIT_MAPY(i)) != 0)
             continue;                                /* @0x03C5E3 jne */
 
         /* @0x03C5E5..0x03C5F1  land-unit type gate: 0x0D <= type <= 0x12 */
@@ -496,7 +496,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
         /* @0x03C9D3..0x03C9E9  if (tile_has_target(mapX,mapY) == 0)
          *      -> announce str 0x12A2 then refresh (the 0x03C942 block). */
-        if (overlay_call_181F_0768() /* (UNIT_MAPX(i),UNIT_MAPY(i)) */ == 0) {
+        if (overlay_call_181F_0768(UNIT_MAPX(i),UNIT_MAPY(i)) == 0) {
             /* @0x03C942..0x03C957  msg_show(1, 0x12A2); unit_slot_refresh(i) */
             overlay_call_181F_0652(0x12a2, 1); /* msg_show(1, 0x12A2 "SEIZURELAND") */
             overlay_call_181F_0652(0x12a2, 1); /* (i) */

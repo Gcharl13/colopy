@@ -138,6 +138,54 @@ int unit_chain_resolve(int idx)
 }
 
 /* ============================================================================
+ * func_006696 -- walk a unit's tile chain to its TAIL (last index).
+ * @asm func_006696  file 0x006696..0x0066B8  (35 bytes)  BYTE_VERIFIED 2026-06-13
+ * ----------------------------------------------------------------------------
+ *   006696 push si
+ *   006697 mov  bx,ax            ; bx = start idx (AX, MSC register convention)
+ *   006699 or   bx,bx
+ *   00669B jl   0x66B5           ; start<0 -> return start
+ *   00669D imul si,bx,0x1C
+ *   0066A0 mov  ax,[si+0x315E]   ; ax = chain_next (+0x1A)
+ *   0066A4 or   ax,ax
+ *   0066A6 jl   0x66B5           ; first next<0 -> bx already the tail
+ *   0066A8 mov  bx,ax            ; bx = current = next
+ *   0066AA imul si,bx,0x1C
+ *   0066AD mov  ax,[si+0x315E]   ; ax = current.chain_next
+ *   0066B1 or   ax,ax
+ *   0066B3 jge  0x66A8           ; while next>=0, keep walking down
+ *   0066B5 mov  ax,bx            ; return last positive index (the tail)
+ *   0066B7 pop  si
+ *   0066B8 retf
+ *
+ * Mirror of unit_chain_resolve but following chain_next (+0x1A) DOWNWARD;
+ * returns the last positive index (the bottom of the tile stack), or the input
+ * unchanged if it was negative or already the tail. Sole caller: the placement
+ * routine in load_image_00693A (re-thread the chain after an unlink).
+ * Was a link-active weak stub (Phase-4 floor); now a strong byte-verified leaf.
+ * ============================================================================ */
+int func_006696(int idx)
+{
+    int bx = (int16_t)(uint16_t)idx;         /* 16-bit AX semantics: 0xFFFF == -1 */
+    int ax;
+
+    if (bx < 0)                              /* @asm 0x669B jl */
+        return bx;
+
+    ax = unit_word(bx, UNIT_CHAIN_NEXT_OFF); /* @asm 0x66A0 mov ax,[si+0x315E] */
+    if (ax < 0)                              /* @asm 0x66A6 jl */
+        return bx;                           /* already the tail */
+
+    for (;;) {
+        bx = ax;                             /* @asm 0x66A8 mov bx,ax */
+        ax = unit_word(bx, UNIT_CHAIN_NEXT_OFF); /* @asm 0x66AD */
+        if (ax < 0)                          /* @asm 0x66B3 jge loop */
+            break;
+    }
+    return bx;                               /* @asm 0x66B5 mov ax,bx */
+}
+
+/* ============================================================================
  * unit_tile_head -- the head unit index of the chain occupying tile (x,y).
  * @asm func_0066CC  file 0x0066CC..0x006704  (57 bytes)  BYTE_VERIFIED
  * ----------------------------------------------------------------------------

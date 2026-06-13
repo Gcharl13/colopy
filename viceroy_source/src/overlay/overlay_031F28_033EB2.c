@@ -549,7 +549,7 @@ int func_03240C(int good, int price, int qty)
     int value = scale * q;                       /* @asm 0x032428 */
     overlay_call_181F_0AF6(/* power, (long)value */); /* @asm 0x03242E..0x032434 */
     near_6D91(good, q);                           /* @asm 0x03243C */
-    overlay_call_181F_0D58(/* good, good, q */);  /* @asm 0x032449..0x032452 */
+    overlay_call_181F_0D58(good, good, q);  /* @asm 0x032449..0x032452 */
     (void)good;
     return value;                                /* @asm 0x032457 */
 }
@@ -1087,7 +1087,7 @@ void func_0335FA(void)
     if (G16(0xFA2) == 0) return;                         /* @asm 0x0335FF */
     col = weight_scale(0x47, 0, G16(0x7E8) - 0x93) / 0x0C; /* @asm 0x033609..0x033622 */
     row = near_6E13(G16(0x9E1C));                         /* @asm 0x033625..0x033632 */
-    hit = overlay_call_181F_0BE6(/* col, row */);         /* @asm 0x033635..0x03363C */
+    hit = overlay_call_181F_0BE6(col, row);         /* @asm 0x033635..0x03363C */
 
     if (G16(0x9E3A) == 0xA) {                            /* @asm 0x033642 */
         if (G16(0x7F4) == 0) return;                     /* @asm 0x033649 */
@@ -1103,7 +1103,7 @@ void func_0335FA(void)
         G16(0x9E22) = 0;                                 /* @asm 0x0336C5 */
         G16(0x9E24) = (uint8_t)hit;                      /* @asm 0x0336CB..0x0336D0 */
         G16(0x9E1E) = (uint8_t)col;                      /* @asm 0x0336D3..0x0336D6 */
-        overlay_call_181F_0C68(/* col, row */);          /* @asm 0x0336D9..0x0336DF */
+        overlay_call_181F_0C68(col, row);          /* @asm 0x0336D9..0x0336DF */
         G16(0x9E26) = near_6D23(hit);                    /* @asm 0x0336E7..0x0336F9 */
         near_6D96(hit, /*?*/0);                           /* @asm 0x0336FA..0x033701 */
         near_6E0E(G16(0x9E26), hit);                      /* @asm 0x033704..0x03370C */

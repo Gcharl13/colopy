@@ -1818,7 +1818,7 @@ int func_0610B0_found_new_colony(void)
     overlay_call_0D1D_117E(/* &namebuf, ColonyRecord[cand]+2 */);
 
     if (overlay_call_191F_0928(0x87c, 0x1d7e) == 0) { /* @0x06115D je 0x6116C else 0x61240 */
-        overlay_call_181F_0178(/* &namebuf */);      /* finalize buffer @0x06116C */
+        overlay_call_181F_0178(&namebuf);      /* finalize buffer @0x06116C */
         /* initial population count drawn from the name table. @0x061178 */
         overlay_call_191F_091C();                    /* txt_lookup() @0x061178 */
         pop = overlay_call_0D1D_08F6();              /* -> [bp-2] @0x06117E */

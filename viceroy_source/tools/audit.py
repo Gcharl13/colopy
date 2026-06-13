@@ -60,6 +60,8 @@ check_ins("rand() mov dx,0x3   (LCG mult hi)", 0x103D7, "mov", "dx,3")
 check_bytes("unit_create func_04007E enter 2,0", 0x04007E, "c8 02 00 00")
 check_ins("unit_place writes [bx+0x3144]", 0x06958, "mov", "[bx+0x3144]")
 check_ins("chain_next reads [si+0x315e]", 0x066C4, "mov", "[si+0x315e]")
+check_ins("chain_TAIL walk func_006696 reads [si+0x315e]", 0x066A0, "mov", "[si+0x315e]")
+check_ins("chain_TAIL walk func_006696 jge loop @0x66B3", 0x066B3, "jge", "0x66a8")
 check_bytes("unit_move_step func_04E2D6 enter 0xEE", 0x04E2D6, "c8 ee 00 00")
 
 # king tax
