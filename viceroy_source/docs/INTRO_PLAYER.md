@@ -28,18 +28,33 @@ the user's own files (copyright rule).
   FAB: 8-byte header + pixels + 768-byte palette). `AMERICA.MOV` (572 B) is a
   small bitmap (the Americas shape), not a video.
 
-## Remaining refinement (needs OPENING.EXE player-loop decode + Phase 5)
+## Visual renderer (DONE + verified)
+
+`src/platform/intro_render_glue.c` implements the render hooks and is verified
+by rendering real key frames to PPM (`--introrender`, headless):
+
+- `OPENING.PIK` decodes via `pik.c` (MADSPACK 2.0) — it is the "Sid Meier's
+  COLONIZATION" logo card; rendered correctly (frame 0/891).
+- The `OPENCRD*.SS` credit cards decode via `ss.c` and composite in their
+  `[start,end]` windows (verified: "COMPUTER GRAPHICS BY" at frame 200).
+- The `OPEN*.SS` animation series load and the `intro_play` sequencer drives
+  the frame loop; `--introrender` dumps frames {0,50,200,400,600,891}.
+
+Pipeline verified end to end: parse → schedule → decode (PIK + SS) → composite
+→ present (`vid_present` / headless `vid_screenshot_ppm`).
+
+## Remaining refinement (needs OPENING.EXE frame-loop decode + Phase 5)
 
 `OPENING.EXE` is disassembled (324 functions via Ghidra, `x86:LE:16` MZ loader),
-but 16-bit string-xref recovery is partial, so these are not yet byte-pinned:
+but 16-bit string-xref recovery is partial, so these are reconstructed, not yet
+byte-pinned:
 
-- **Visual renderer** (`intro_render_*` strong overrides in `src/platform/`):
-  decode each `OPEN*.SS` series and blit the per-frame sprite at its script
-  position. The exact per-frame sprite selection and (x,y) from `baseX` + the
-  animation curve live in OPENING.EXE's frame loop.
-- **Frame cadence**: the ticks-per-frame rate (the schedule is exact; the wall-
-  clock pacing is OPENING.EXE's).
-- **Audio sync**: the opening music — Phase 5 (audio), currently out of scope.
-
-The schedule (what plays when) is exact from `OPENING.TXT`; the above are the
-"how it's drawn/timed/heard" details that finish the byte-faithful playback.
+- **Voyage-scene composition**: the opening voyage (Wind/Sun/Monsters/Fish/ship-
+  bonk/guy) plays over a sky-sea scene *before* the logo/credits phase; the
+  current renderer uses the `OPENING.PIK` logo as the backdrop throughout
+  (correct for the credits phase). The exact two-phase composition + the
+  per-frame sprite selection and `(x,y)` from `baseX` live in OPENING.EXE's loop.
+- **Frame cadence**: the ticks-per-frame wall-clock pacing (the schedule frames
+  are exact; the pacing is OPENING.EXE's).
+- **Audio sync**: the opening music — Phase 5 (audio), out of scope by the
+  current phase boundary.

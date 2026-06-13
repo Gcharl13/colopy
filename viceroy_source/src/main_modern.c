@@ -821,6 +821,11 @@ int main(int argc, char **argv)
             for (int s = 0; s < 10; s++) printf("  series %d -> %s\n", s, intro_anim_sheet(s));
             return 0;
         }
+        for (int ai = 1; ai < argc; ai++) if (!strcmp(argv[ai], "--introrender")) {
+            extern void intro_dump_keyframes(const char *);
+            intro_dump_keyframes(g_data);
+            return 0;
+        }
     }
 
     if (smoke_turns > 0) {

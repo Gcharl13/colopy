@@ -159,6 +159,27 @@ int intro_play(const char *dir)
     return 0;
 }
 
+/* Verification: render a handful of key frames to PPM (headless), so the
+ * decoded backdrop + sprite composite can be inspected. */
+void intro_dump_keyframes(const char *dir)
+{
+    extern int  intro_render_open(const char *);
+    extern void intro_render_frame(int, const intro_credit_t *, int,
+                                   const intro_anim_t *, int);
+    extern void intro_render_close(void);
+    extern int  vid_screenshot_ppm(const char *);
+    if (intro_load_script(dir) != 0) { printf("intro: OPENING.TXT not found\n"); return; }
+    if (intro_render_open(dir) != 0) { printf("intro: render_open failed (OPENING.PIK?)\n"); return; }
+    int keys[6] = { 0, 50, 200, 400, 600, g_end_frame };
+    for (int k = 0; k < 6; k++) {
+        intro_render_frame(keys[k], g_credits, g_ncredits, g_anims, g_nanims);
+        char p[64]; snprintf(p, sizeof p, "/tmp/intro_%04d.ppm", keys[k]);
+        printf("intro: frame %3d -> %s (%s)\n", keys[k], p,
+               vid_screenshot_ppm(p) == 0 ? "ok" : "FAIL");
+    }
+    intro_render_close();
+}
+
 /* Weak headless defaults for the platform render hooks: open returns -1 (no
  * display), so intro_play validates+loads the script without drawing. A real
  * SDL renderer (src/platform/) provides strong overrides that decode OPENING.PIK
