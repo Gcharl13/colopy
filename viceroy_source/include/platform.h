@@ -19,6 +19,7 @@
 int  vid_init(const char *title);          /* 0 = SDL window, 1 = headless  */
 void vid_shutdown(void);
 uint8_t *vid_framebuffer(void);            /* 64000-byte 8bpp buffer        */
+const uint8_t *vid_get_palette(void);      /* live DAC, 256 x 8-bit RGB     */
 void vid_set_palette(const uint8_t *rgb768);  /* 256 x 8-bit RGB            */
 void vid_set_palette_range(const uint8_t *rgb768, int first, int count);
                                            /* DAC window (0x0C2E:0x0022)    */
@@ -80,6 +81,9 @@ typedef struct {
 int  ss_load(const char *path, ss_sheet_t *s);
 void ss_free(ss_sheet_t *s);
 void ss_blit(const ss_sheet_t *s, int frame, int x, int y);
+void ss_blit_remap(const ss_sheet_t *s, int frame, int x, int y);  /* remap to live palette */
+void ss_blit_remap_clip(const ss_sheet_t *s, int frame, int x, int y,
+                        int cx0, int cy0, int cx1, int cy1);
 void ss_blit_clip(const ss_sheet_t *s, int frame, int x, int y,
                   int cx0, int cy0, int cx1, int cy1);
 

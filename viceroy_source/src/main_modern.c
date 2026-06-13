@@ -195,16 +195,28 @@ static void draw_title_menu(int sel)
     int py = g_menu_y;                              /* @y=91 */
     int ph = (1 + g_menu_count) * rh + 6;
 
-    /* real game-palette UI colours: nearest index to the menu's maroon/gold/cream
-     * (these live high in the palette -- the title's wood frame uses them too --
-     * not the low gray style slots). Generic across every framed menu/dialog. */
-    uint8_t fill  = pal_nearest( 60, 28, 24);
+    /* text/border colours: nearest palette index to the menu gold/cream (these
+     * live high in OPENMENU's palette -- the title's wood border uses them too) */
     uint8_t frame = pal_nearest(188,150, 78);
     uint8_t c_hdr = pal_nearest(210,150, 60);
     uint8_t c_opt = pal_nearest(234,214,172);
     uint8_t c_bar = pal_nearest(110, 36, 28);
 
-    vid_box_fill(px, py, pw, ph, fill);
+    /* panel fill = the REAL WOODTILE sheet, tiled and remapped to the live
+     * palette (its own palette would clash with OPENMENU's). Loaded once. */
+    { static ss_sheet_t wt; static int wst;
+      if (wst == 0) { char wp[512];
+          snprintf(wp, sizeof wp, "%s/WOODTILE.SS", g_data);
+          wst = (ss_load(wp, &wt) == 0 && wt.nframes > 0) ? 1 : -1; }
+      if (wst == 1) {
+          int tw = wt.frames[0].w, th = wt.frames[0].h;
+          for (int yy = py; yy < py + ph; yy += th)
+              for (int xx = px; xx < px + pw; xx += tw)
+                  ss_blit_remap_clip(&wt, 0, xx, yy, px, py, px + pw - 1, py + ph - 1);
+      } else {
+          vid_box_fill(px, py, pw, ph, pal_nearest(60, 28, 24));
+      }
+    }
     vid_box_outline(px, py, pw, ph, frame);
 
     int tx = px + pad, ty = py + 3;

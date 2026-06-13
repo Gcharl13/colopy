@@ -78,6 +78,8 @@ void vid_shutdown(void)
 
 uint8_t *vid_framebuffer(void)               { return fb; }
 
+const uint8_t *vid_get_palette(void)         { return pal; }  /* live DAC, 256x3 8-bit */
+
 void vid_set_palette(const uint8_t *rgb768)  { memcpy(pal, rgb768, 768); }
 
 /* Partial DAC window upload -- the modern face of the resident palette leaf

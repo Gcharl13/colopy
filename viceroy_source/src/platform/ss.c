@@ -167,3 +167,69 @@ void ss_blit(const ss_sheet_t *s, int frame, int x, int y)
         }
     }
 }
+
+/* Build a sheet-index -> active-index remap LUT (nearest colour in the live DAC).
+ * The modern stand-in for the original's palette-reconciliation: a sheet's pal6
+ * indices mean nothing under another image's palette, so map sheet-colour -> RGB
+ * -> nearest active index. */
+static void ss_remap_lut(const ss_sheet_t *s, uint8_t lut[256])
+{
+    const uint8_t *dst = vid_get_palette();
+    for (int i = 0; i < 256; i++) {
+        int sr = (s->pal6[i*3]   << 2) | (s->pal6[i*3]   >> 4);
+        int sg = (s->pal6[i*3+1] << 2) | (s->pal6[i*3+1] >> 4);
+        int sb = (s->pal6[i*3+2] << 2) | (s->pal6[i*3+2] >> 4);
+        int best = 0, bd = 1 << 30;
+        for (int j = 0; j < 256; j++) {
+            int dr = sr - dst[j*3], dg = sg - dst[j*3+1], db = sb - dst[j*3+2];
+            int d = dr*dr + dg*dg + db*db;
+            if (d < bd) { bd = d; best = j; }
+        }
+        lut[i] = (uint8_t)best;
+    }
+}
+
+/* Blit a sheet authored for its OWN palette onto a framebuffer showing a
+ * DIFFERENT (active) palette, remapping each colour. A sheet with no own palette
+ * already speaks the active palette -> plain ss_blit. */
+void ss_blit_remap(const ss_sheet_t *s, int frame, int x, int y)
+{
+    if (frame < 0 || frame >= s->nframes) return;
+    if (!s->has_pal) { ss_blit(s, frame, x, y); return; }
+    const ss_frame_t *f = &s->frames[frame];
+    uint8_t lut[256]; ss_remap_lut(s, lut);
+    uint8_t *fb = vid_framebuffer();
+    for (int r = 0; r < f->h; r++) {
+        int py = y + r;
+        if (py < 0 || py >= VID_H) continue;
+        for (int c = 0; c < f->w; c++) {
+            int px = x + c;
+            uint8_t v = f->pixels[r * f->w + c];
+            if (v != SS_TRANSPARENT && px >= 0 && px < VID_W)
+                fb[py * VID_W + px] = lut[v];
+        }
+    }
+}
+
+/* Remap-blit clipped to an inclusive rect (for tiling a panel fill). */
+void ss_blit_remap_clip(const ss_sheet_t *s, int frame, int x, int y,
+                        int cx0, int cy0, int cx1, int cy1)
+{
+    if (frame < 0 || frame >= s->nframes) return;
+    if (!s->has_pal) { ss_blit_clip(s, frame, x, y, cx0, cy0, cx1, cy1); return; }
+    const ss_frame_t *f = &s->frames[frame];
+    uint8_t lut[256]; ss_remap_lut(s, lut);
+    uint8_t *fb = vid_framebuffer();
+    if (cx1 >= VID_W) cx1 = VID_W - 1;
+    if (cy1 >= VID_H) cy1 = VID_H - 1;
+    for (int r = 0; r < f->h; r++) {
+        int py = y + r;
+        if (py < cy0 || py > cy1) continue;
+        for (int c = 0; c < f->w; c++) {
+            int px = x + c;
+            uint8_t v = f->pixels[r * f->w + c];
+            if (v != SS_TRANSPARENT && px >= cx0 && px <= cx1)
+                fb[py * VID_W + px] = lut[v];
+        }
+    }
+}
