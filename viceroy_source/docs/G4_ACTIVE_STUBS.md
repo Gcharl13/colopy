@@ -19,15 +19,20 @@ The stubs that actually stay live are the weak symbols that survive
 **un-overridden into the executable** — `nm viceroy_modern` shows them as `W`.
 That set, not the `.a` undefined list, is the real G4 worklist.
 
-## Current census (2026-06-13)
+## Current census (2026-06-13, after Phase 4.8)
 
 | metric | count |
 |---|--:|
-| link-active weak symbols (all) | 919 |
-| link-active weak `func_` stubs  | 64 |
-| ├─ standalone body (has disasm) | 2 |
-| └─ thunk / multi-entry (no bare disasm) | 62 |
-| named (render/audio/named-gap) stubs | 855 |
+| link-active weak `func_` stubs (Phase 4.7) | 64 |
+| — wired in Phase 4.8 (→ ported leaves) | −36 |
+| **link-active weak `func_` stubs (now)** | **28** |
+| named (render/audio/named-gap) stubs | ~855 |
+
+The 36 wired and the 28 remaining (per-item dispositions) are tracked in
+**`docs/PHASE4_THUNK_LEDGER.md`**. The 28 residue are unported screen/AI
+leaves, mid-function entry-splits, one partial dialog port (`func_04A7CA`),
+and platform/dispatch candidates — none safely auto-wireable without the
+Phase-7 validation harness (which needs the user's game data + DOSBox).
 
 Smoke note: `--smoke=500 --stub-report` hits **0** of these on the AI-only
 path. G4 asks whether any are reachable on a *full-verb* path — that is the
