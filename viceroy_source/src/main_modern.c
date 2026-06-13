@@ -195,10 +195,12 @@ static void draw_title_menu(int sel)
     int py = g_menu_y;                              /* @y=91 */
     int ph = (1 + g_menu_count) * rh + 6;
 
-    /* text/border colours (nearest index in OPENMENU's palette): the @BEGINMENU
-     * scheme is {COLONIZATION} in yellow, the rest of the header + the option
-     * rows in green; thin gold border. */
-    uint8_t frame    = pal_nearest(188,150, 78);
+    /* text colours (nearest index in OPENMENU's palette): the @BEGINMENU scheme
+     * is {COLONIZATION} in yellow, the rest of the header + option rows in green.
+     * Border = a carved WOOD frame (dialog.c: "WOODFRAM/WOODTILE frame art";
+     * the exact overlay draw is undecoded -> reconstruct a 2px wood bevel). */
+    uint8_t wood_lt  = pal_nearest(156,104, 52);
+    uint8_t wood_dk  = pal_nearest( 66, 38, 20);
     uint8_t c_yellow = pal_nearest(232,214, 44);
     uint8_t c_green  = pal_nearest( 56,160, 44);
     uint8_t c_bar    = pal_nearest(110, 36, 28);
@@ -218,7 +220,11 @@ static void draw_title_menu(int sel)
           vid_box_fill(px, py, pw, ph, pal_nearest(60, 28, 24));
       }
     }
-    vid_box_outline(px, py, pw, ph, frame);
+    /* carved wood-frame bevel: light wood on top+left, dark on bottom+right */
+    vid_box_fill(px, py, pw, 2, wood_lt);
+    vid_box_fill(px, py, 2, ph, wood_lt);
+    vid_box_fill(px, py + ph - 2, pw, 2, wood_dk);
+    vid_box_fill(px + pw - 2, py, 2, ph, wood_dk);
 
     int tx = px + pad, ty = py + 3;
 
