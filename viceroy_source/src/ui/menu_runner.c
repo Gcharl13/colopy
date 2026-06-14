@@ -471,6 +471,11 @@ static void mr_wood_fill(int x, int y, int w, int h)
             ss_blit_remap_clip(&mr_wood, 0, tx, ty, x, y, x + w - 1, y + h - 1);
 }
 
+/* Public faces of the two panel primitives, for the map/colony chrome that
+ * shares the same wood backdrop + live-palette UI colours. */
+void ui_wood_fill(int x, int y, int w, int h) { mr_wood_fill(x, y, w, h); }
+int  ui_color_for(int r, int g, int b)        { return mr_color_for(r, g, b); }
+
 /* one draw pass (func_06D9CC row chain over modern primitives) */
 static void mr_draw(const mr_panel_t *m, const mr_geom_t *g, int sel,
                     const uint8_t *checks)

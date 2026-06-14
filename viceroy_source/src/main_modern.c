@@ -386,6 +386,26 @@ static void draw_map(void)
         DG16(0x853E) = (uint16_t)unit_y();
         tile_info_panel(1, 1);
     }
+
+    /* the top menu bar (build_menubar / func_072090 builds the data; the page-02
+     * paint primitives are unported, so draw it directly here).  Wood strip with
+     * green column labels from MENU.TXT: GAME VIEW ORDERS REPORTS TRADE | pedia.
+     * Label x-positions + green (#528A31) measured from the live game. */
+    {
+        extern void ui_wood_fill(int, int, int, int);
+        extern int  ui_color_for(int, int, int);
+        extern void vid_text_color(int);
+        extern void vid_text_xy(const char *, int, int);
+        int green = ui_color_for(0x52, 0x8A, 0x31);
+        ui_wood_fill(0, 0, VID_W, 9);
+        vid_text_color(green);
+        vid_text_xy("GAME",    11, 1);
+        vid_text_xy("VIEW",    48, 1);
+        vid_text_xy("ORDERS",  80, 1);
+        vid_text_xy("REPORTS", 120, 1);
+        vid_text_xy("TRADE",   158, 1);
+        vid_text_xy("COLONIZOPEDIA", 256, 1);
+    }
     vid_present();
 }
 
