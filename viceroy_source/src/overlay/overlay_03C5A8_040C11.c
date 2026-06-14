@@ -151,7 +151,6 @@ extern int func_007C2A_logic_sz_46(uint16_t unit, uint16_t sel); /* 0x181F:0x09C
 
 /* Near-call peers within page_07/08 that are not RTLink thunks (real code in a
  * sibling overlay function). Declared file-local; bodies live elsewhere. */
-extern int func_03F940(void);   /* @0x03F940 ljmp 0x1A1F:0x142 -> func_03F946 */
 extern int func_03F1598(void);  /* @0x03F___ near helper from func_03FA9C (cap check) */
 extern int func_03FFFD(void);   /* near helper from func_03FDDE (SUPERSEDED area) */
 extern int func_0400EA(void);   /* near thunk from func_04002C */
@@ -2220,115 +2219,136 @@ int func_03ECF0_op_sz_86(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
  */
 /* ============================================================================
  * func_03F90E -- PORTED (full body, reseg 49B @0x03F90E..0x03F93F).
- * Role: compute an absolute map tile from a structure's ring offset plus a
- * unit's own map coords, then forward to the redistribution helper
- * func_03F946 via the thunk 0x1A1F:0x142.
- *   absY = arg1.[+0xBE] + UnitRecord[arg0].mapY(+0x3145)
- *   absX = arg1.[+0xB4] + UnitRecord[arg0].mapX(+0x3144)
- *   return thunk_1A1F_142(absX, absY, arg0)
+ * Role: compute the destination tile of moving unit arg0 in direction arg1,
+ * then forward to the cargo-redistribution helper func_03F946 via the thunk
+ * 0x1A1F:0x142 (the near call 0x03F940).
+ *   absY = (int8_t)dir_dy[arg1](+0xBE) + (uint8_t)UnitRecord[arg0].mapY(+0x3145)
+ *   absX = (int8_t)dir_dx[arg1](+0xB4) + (uint8_t)UnitRecord[arg0].mapX(+0x3144)
+ *   return func_03F946(arg0, absX, absY)
  * @asm page_07.asm:1004  push bp / RETF @0x03F93F.
+ * Called live from move.c (AI step-onto-tile cargo board, @asm 0x04FD9D).
  * ========================================================================== */
+int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg2_bp_08,
+                         uint16_t arg1_bp_0A); /* defined below; fwd for func_03F90E */
 int func_03F90E_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
+    /* absY = (int8_t)dir_dy[dir](+0xBE) + (uint8_t)UnitRecord[unit].mapY(+0x3145).
+     * The direction delta is SIGN-extended (CBW @0x03F919); the unit coordinate
+     * is ZERO-extended (SUB ch,ch @0x03F922 then MOV cl @0x03F91E).               */
     int16_t  absy = (int16_t)((int8_t)G8(arg1_bp_08 + 0xBE)
-                            + (int8_t)G8(rec + 0x3145));   /* @0x03F915 */
+                            + (uint8_t)G8(rec + 0x3145));  /* @0x03F915..0x03F924 */
+    /* absX = (int8_t)dir_dx[dir](+0xB4) + (uint8_t)UnitRecord[unit].mapX(+0x3144) */
     int16_t  absx = (int16_t)((int8_t)G8(arg1_bp_08 + 0xB4)
-                            + (int8_t)G8(rec + 0x3144));   /* @0x03F927 */
-    (void)absx; (void)absy;
-    /* @0x03F933..0x03F937  call 0xEE0 = ljmp 0x1A1F:0x142 -> func_03F946 */
-    return func_03F940(); /* (absx, absy, arg0) */
+                            + (uint8_t)G8(rec + 0x3144));  /* @0x03F927..0x03F930 */
+    /* @0x03F926 push absY (callee bp+0xA), @0x03F932 push absX (bp+8),
+     * @0x03F933 push arg0 (bp+6), then call 0x03F940 == ljmp 0x1A1F:0x142.
+     * cdecl pushes right-to-left, so this is func_03F946(arg0, absX, absY).       */
+    return func_03F946_op_sz_59(arg0_bp_06, (uint16_t)absx, (uint16_t)absy);
 }
 
 /* ============================================================================
  * func_03F946 -- PORTED (full body, distinct fn @0x03F946..0x03FA9B, ~336B).
- * Reached via the far thunk 0x1A1F:0x142 from func_03F90E. Role: scan the land
- * units (type 0x0D..0x12) at a tile and REDISTRIBUTE a per-unit budget derived
- * from stat tables, returning the resulting value for arg2.
- * args: arg0 (bp+6) = tile/unit iterator seed; arg1 (bp+0xA) = a mode flag;
- *       arg2 (bp+8) = a query/threshold value.
+ * Reached via the far thunk 0x1A1F:0x142 from func_03F90E. Role: gather the
+ * cargo "headroom" of the LAND units sharing a tile, then let the carrier units
+ * on that tile draw down that headroom, and report a representative slot value.
+ * args: arg0 (bp+6) = tile/unit iterator seed; arg2 (bp+8) = a query/threshold
+ *       value (compared as an UNSIGNED BYTE); arg1 (bp+0xA) = a mode flag.
  *
  *  @0x03F94A..0x03F963  result=0; n=0; if (arg1!=0) helper 0x8C6(arg0).
- *  @0x03F963..0x03F9BC  iter_begin(arg0) (0x2EE); for each land unit u
- *      (type 0x0D..0x12): slot[n] = g_unit_stat[type*14 + 0x5237] - unit[+0x3150];
- *      n++.  (gathers each unit's "headroom" = cargo_capacity - used into a local array.)
- *  @0x03F9BE..0x03FA44  re-iterate; for each land unit whose
- *      g_unit_stat[type*14 + 0x5238] < 0x63 (size < 99, i.e. not a ship), run the inner redistribution: walk
- *      slot[] subtracting that unit's demand where it fits, repeating until a
- *      full pass makes no change ([bp-2] settles).
- *  @0x03FA44..0x03FA68  if (arg1!=0): return slot[n-1] if it is >= arg2's low
- *      byte, else 0.
- *  @0x03FA6A..0x03FA9B  else: return the max slot[] entry that is <= arg2.
+ *  @0x03F963..0x03F9BC  u=iter_begin(arg0) (0x2EE returns the first unit in AX);
+ *      for each LAND unit u (type 0x0D..0x12): slot[n] (a BYTE) = low byte of
+ *      g_unit_stat[type*14 + 0x5237](cargo) - unit[+0x3150](used); n++. Advance
+ *      with 0x2E4. (slot[] is the per-land-unit cargo headroom.)
+ *  @0x03F9BE..0x03FA42  re-iterate; for each unit OUTSIDE the land range
+ *      (type < 0x0D || type > 0x12) whose g_unit_stat[type*14 + 0x5238](size)
+ *      < 0x63, scan slot[] for the FIRST entry >= its size and subtract there
+ *      (one slot per unit). A unit that fits NOWHERE aborts the whole pass
+ *      straight to the result block (@0x03F9F2).
+ *  @0x03FA44..0x03FA68  if (arg1!=0): return slot[n-1] if (uint8_t)slot[n-1] >=
+ *      (uint8_t)arg2, else 0.
+ *  @0x03FA6A..0x03FA9B  else: return the FIRST slot[i] with (uint8_t)slot[i] >=
+ *      (uint8_t)arg2 (the loop runs only while the running result is still 0).
  *
  * @asm page_07.asm:1029  ENTER 0x4E,0 / RETF @0x03FA9B.
  * Stat tables g_unit_stat @0x5230 stride 14; fields: +7=0x5237 cargo, +8=0x5238 size.
- * BYTE_VERIFIED 2026-06-08: stride is 14 (3×SHL+2×ADD @0x03F990/@0x03FA20), not 6. Thunks 0x8C6/
- *   0x2EE/0x2E4 kept as externs.
+ * BYTE_VERIFIED 2026-06-14: redistribution range is the INVERSE of the gather
+ *   range (jbe @0x03FA13 skips land units); slot[] is a byte array (MOV [..],cl
+ *   @0x03F9A9 / SUB [..],al @0x03F9DB); both result compares are unsigned `>=`
+ *   (jb @0x03FA56 / @0x03FA80) against (uint8_t)[bp+8]. Stride 14 (3×SHL+2×ADD
+ *   @0x03F990/@0x03FA20). Thunks 0x8C6/0x2EE/0x2E4 kept as externs.
  * ========================================================================== */
-int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg1_bp_0A)
+int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg2_bp_08,
+                         uint16_t arg1_bp_0A)
 {
     int16_t  result;                  /* [bp-0x46] return value */
-    int16_t  n;                       /* [bp-0x4a] count of gathered units */
+    int16_t  n;                       /* [bp-0x4a] count of gathered land units */
     int16_t  u;                       /* [bp-0x4c] iterator unit slot */
-    int16_t  slot[40];               /* [bp-0x44] per-unit headroom array */
+    uint8_t  slot[128];               /* [bp-0x44] per-unit headroom BYTES */
     int16_t  i;                       /* [bp-4] inner index */
-    int16_t  changed;                 /* [bp-2] inner change flag */
-    int16_t  demand;                  /* [bp-0x48] current unit's demand */
+    int16_t  stable;                  /* [bp-2] inner "no subtraction this pass" flag */
+    int16_t  demand;                  /* [bp-0x48] current non-land unit's size */
 
-    result = 0; n = 0;                                /* @0x03F94B */
-    if (arg1_bp_0A != 0)                              /* @0x03F953 */
-        overlay_call_181F_08C6(arg0_bp_06); /* (arg0) */
+    result = 0; n = 0;                                /* @0x03F94B/@0x03F950 */
+    if (arg1_bp_0A != 0)                              /* @0x03F953 cmp [bp+0xA] */
+        overlay_call_181F_08C6(arg0_bp_06); /* (arg0) @0x03F958 */
 
-    /* @0x03F963..0x03F9BC  gather headroom for each land unit */
-    overlay_call_181F_02EE(); /* iter_begin(arg0) */
-    u = (int16_t)overlay_call_181F_02E4();
-    while (u >= 0) {                                  /* @0x03F9B7/@0x03F9BC */
-        uint8_t t = (uint8_t)UNIT_TYPE(u);
+    /* @0x03F963..0x03F9BC  gather headroom for each LAND unit (type 0x0D..0x12).
+     * 0x2EE(seed) returns the first unit (AX @0x03F966); 0x2E4 advances. The
+     * stored value is the LOW byte of (cargo_capacity - used).                    */
+    u = (int16_t)overlay_call_181F_02EE(arg0_bp_06);  /* @0x03F963 first unit */
+    while (u >= 0) {                                  /* @0x03F9BA/@0x03F9BC jge */
+        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + 0x3146); /* @0x03F971 type */
         if (t >= 0x0D && t <= 0x12) {                /* @0x03F971/@0x03F978 */
-            slot[n] = (int16_t)((uint8_t)G8((uint16_t)t * 14 + 0x5237)  /* cargo; BYTE_VERIFIED stride 14 @0x03F990 */
-                              - (uint8_t)G8((uint16_t)u*UNIT_STRIDE + 0x3150));
+            uint8_t used = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + 0x3150); /* @0x03F987 */
+            uint8_t cap  = (uint8_t)G8((uint16_t)t * 14 + 0x5237);  /* @0x03F99B cargo, stride 14 */
+            slot[n] = (uint8_t)(cap - used);         /* @0x03F9A9 store low byte */
             ++n;                                     /* @0x03F9AC */
         }
-        u = (int16_t)overlay_call_181F_02E4(); /* @0x03F9B2 */
+        u = (int16_t)overlay_call_181F_02E4(); /* @0x03F9AF/@0x03F9B2 next */
     }
 
-    /* @0x03F9BE..0x03FA44  redistribution passes */
-    overlay_call_181F_02EE(); /* iter_begin(arg0) @0x03F9BE */
-    u = (int16_t)overlay_call_181F_02E4();
-    while (u >= 0) {                                  /* @0x03F9FD/@0x03FA02 */
-        uint8_t t = (uint8_t)UNIT_TYPE(u);
-        if (t >= 0x0D && t <= 0x12) {                /* @0x03FA07/@0x03FA0E */
-            demand = (int16_t)(uint8_t)G8((uint16_t)t * 14 + 0x5238);  /* size; BYTE_VERIFIED stride 14 @0x03FA20 */
-            if (demand < 0x63) {                     /* @0x03FA33 */
-                changed = 1;                         /* @0x03FA38 */
-                do {                                 /* @0x03FA42 -> 0x03F986 */
-                    changed = 1;
-                    for (i = 0; i < n; ++i) {        /* @0x03F9C8.. */
-                        if (slot[i] >= demand) {     /* @0x03F9D6 */
-                            slot[i] -= demand;       /* @0x03F9DB */
-                            changed = 0;             /* @0x03F9DE */
-                        }
-                    }
-                } while (changed != 0);              /* @0x03F9EC */
-                /* a settled pass exits the unit loop early (@0x03F9F2) */
-                break;
+    /* @0x03F9BE..0x03FA42  redistribution: walk units OUTSIDE the land range
+     * (type < 0x0D || type > 0x12) whose size(0x5238) < 0x63; each draws its size
+     * from the FIRST slot with enough headroom. A unit that fits NOWHERE aborts
+     * the whole pass straight to the result block (@0x03F9F2 -> 0x03FA96).        */
+    u = (int16_t)overlay_call_181F_02EE(arg0_bp_06);  /* @0x03F9BE iter_begin(arg0) */
+    while (u >= 0) {                                  /* @0x03FA00/@0x03FA02 jl */
+        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + 0x3146); /* @0x03FA07 */
+        if (t >= 0x0D && t <= 0x12) {                /* @0x03FA07/@0x03FA0E land -> skip */
+            u = (int16_t)overlay_call_181F_02E4(); /* @0x03FA13 jbe -> next */
+            continue;
+        }
+        demand = (int16_t)(uint8_t)G8((uint16_t)t * 14 + 0x5238); /* @0x03FA2A size, stride 14 */
+        if (demand >= 0x63) {                        /* @0x03FA33 jge -> next unit */
+            u = (int16_t)overlay_call_181F_02E4();
+            continue;
+        }
+        stable = 1;                                  /* @0x03FA38 flag=1 */
+        for (i = 0; i < n; ++i) {                    /* @0x03F9C8 inner scan */
+            if (slot[i] >= (uint8_t)demand) {        /* @0x03F9D6 jb (unsigned byte) */
+                slot[i] -= (uint8_t)demand;          /* @0x03F9DB subtract */
+                stable = 0;                          /* @0x03F9DE found+subtracted */
+                break;                               /* cleared flag stops the scan @0x03F9EA */
             }
         }
-        u = (int16_t)overlay_call_181F_02E4(); /* @0x03F9F8 */
+        if (stable != 0)                             /* @0x03F9EC/@0x03F9F2 fits nowhere */
+            break;                                   /* abort pass -> result block */
+        u = (int16_t)overlay_call_181F_02E4(); /* @0x03F9F5/@0x03F9F8 next unit */
     }
 
-    /* @0x03FA44..0x03FA9B  produce the answer */
+    /* @0x03FA44..0x03FA9B  produce the answer (slot[] compared as unsigned bytes) */
     if (n == 0)                                      /* @0x03FA44 */
         return 0;
-    if (arg1_bp_0A != 0) {                            /* @0x03FA4A */
-        /* return slot[n-1] if >= arg2 low byte (else 0) — uses [bp+8] */
-        if (slot[n - 1] >= 0 /* (uint8_t)arg2 */)    /* @0x03FA56 */
+    if (arg1_bp_0A != 0) {                            /* @0x03FA4A cmp [bp+0xA] */
+        /* @0x03FA50..0x03FA68  slot[n-1] >= (uint8_t)arg2 ? slot[n-1] : 0 */
+        if (slot[n - 1] >= (uint8_t)arg2_bp_08)      /* @0x03FA56 jb */
             result = slot[n - 1];                    /* @0x03FA5B */
         return result;
     }
-    /* @0x03FA6A..0x03FA96  result = max slot[i] (<= arg2) */
-    for (i = 0; i < n; ++i) {                         /* @0x03FA72.. */
-        if (slot[i] >= 0 /* <= arg2 */)              /* @0x03FA80 */
+    /* @0x03FA6A..0x03FA96  first slot[i] >= (uint8_t)arg2 (runs while result==0) */
+    for (i = 0; i < n && result == 0; ++i) {         /* @0x03FA72/@0x03FA90 */
+        if (slot[i] >= (uint8_t)arg2_bp_08)          /* @0x03FA80 jb */
             result = slot[i];                        /* @0x03FA8A */
     }
     return result;
