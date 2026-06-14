@@ -951,6 +951,25 @@ int main(int argc, char **argv)
             UREC(0,0) = 26; UREC(0,1) = 36;   /* park the test ship in view */
             { extern void tilehead_reset(int,int); extern void tilehead_set(int,int,int);
               tilehead_reset(g_map_w, g_map_h); tilehead_set(26, 36, 0); }
+
+            /* take screenshots immediately — colony already seeded in DGROUP */
+            g_cam_x = 24; g_cam_y = 34;
+            draw_map();
+            vid_screenshot_ppm("viceroy_map.ppm");
+            printf("  headless  : map frame -> viceroy_map.ppm "
+                   "(%dx%d tiles)\n", g_map_w, g_map_h);
+            {   /* colony screen frame */
+                extern int func_0082DC_logic_sz_118(uint16_t);
+                extern void colony_screen_render(int);
+                func_0082DC_logic_sz_118(0);
+                memset(vid_framebuffer(), 0, VID_W * VID_H);  /* see ENTER path */
+                if (load_bg("COLONY.PIK") == 0) draw_bg();
+                colony_screen_render(1);   /* title painter draws the name */
+                vid_present();
+                vid_screenshot_ppm("viceroy_colony.ppm");
+                printf("  headless  : colony frame -> viceroy_colony.ppm\n");
+            }
+
             /* classifier self-test (headless): W=water, E=land+empty hold,
              * far-E edge = SAILHOME */
             {
@@ -1015,22 +1034,6 @@ int main(int argc, char **argv)
                 { extern void tilehead_reset(int,int); extern void tilehead_set(int,int,int);
                   tilehead_reset(g_map_w, g_map_h); tilehead_set(26,36,0); }
             }
-            g_cam_x = 24; g_cam_y = 34;   /* land-rich verification viewport */
-            draw_map();
-            vid_screenshot_ppm("viceroy_map.ppm");
-            {   /* colony screen frame */
-                extern int func_0082DC_logic_sz_118(uint16_t);
-                extern void colony_screen_render(int);
-                func_0082DC_logic_sz_118(0);
-                memset(vid_framebuffer(), 0, VID_W * VID_H);  /* see ENTER path */
-                if (load_bg("COLONY.PIK") == 0) draw_bg();
-                colony_screen_render(1);   /* title painter draws the name */
-                vid_present();
-                vid_screenshot_ppm("viceroy_colony.ppm");
-                printf("  headless  : colony frame -> viceroy_colony.ppm\n");
-            }
-            printf("  headless  : map frame -> viceroy_map.ppm "
-                   "(%dx%d tiles)\n", g_map_w, g_map_h);
         }
     } else {
         g_interactive = 1;
