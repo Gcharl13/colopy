@@ -14,7 +14,6 @@ extern char func_002932_append_rparen;
 extern char func_0029DE_rtl_sz_39;
 extern char func_002A98_rtl_sz_46;
 extern char func_002AFE_op_sz_58;
-extern char func_00386A_op_sz_100;
 extern char func_0048CC_logic_sz_13;
 extern char func_004900_logic_sz_15;
 extern char func_004A80_logic_sz_26;
@@ -99,7 +98,6 @@ extern char func_00BC10_ff_owned;
 extern char func_00BCEA_op_sz_61;
 extern char func_00BD4A_op_sz_404;
 extern char func_00BEDE_op_sz_93;
-extern char func_00BF3C_logic_sz_182;
 extern char func_00C07A_logic_sz_32;
 extern char func_00C09A_logic_sz_19;
 extern char func_00C0D0_logic_sz_57;
@@ -191,7 +189,6 @@ void *viceroy_thunk_keepalive[] = {
     (void *)&func_0029DE_rtl_sz_39,
     (void *)&func_002A98_rtl_sz_46,
     (void *)&func_002AFE_op_sz_58,
-    (void *)&func_00386A_op_sz_100,
     (void *)&func_0048CC_logic_sz_13,
     (void *)&func_004900_logic_sz_15,
     (void *)&func_004A80_logic_sz_26,
@@ -276,7 +273,6 @@ void *viceroy_thunk_keepalive[] = {
     (void *)&func_00BCEA_op_sz_61,
     (void *)&func_00BD4A_op_sz_404,
     (void *)&func_00BEDE_op_sz_93,
-    (void *)&func_00BF3C_logic_sz_182,
     (void *)&func_00C07A_logic_sz_32,
     (void *)&func_00C09A_logic_sz_19,
     (void *)&func_00C0D0_logic_sz_57,

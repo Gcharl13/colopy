@@ -1064,18 +1064,202 @@ int func_0043B1_logic_sz_40(void)
  * @inferred_role  LARGE_LOGIC (326 bytes). 0x0984:0x02FC + 0x181F:0x032C
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-/* NOTE 2026-06-09 from func_004566.asm — NOT 326 bytes (auto-banner cut; the real
- * body is 870 bytes, 0x004566..0x0048CB).  It is the map-region compositor: it
- * sets up clip/scale state (overlay 0x0984:0x02FC and the viewport globals at
- * 0x8326..0x833A, zoom shift 0x0184), then sweeps a rectangle of map cells —
- * stepping a screen cursor via the cursor overlay 0x0C0C:0x0022 — drawing each
- * cell's terrain (chaining the label renderer 0x00386A) and per-row blits
- * (overlays 0x0BAA, 0x0B70, 0x181F:0x032C).  This large, byte-exact compositor
- * with several opaque overlay helpers is not confidently recoverable here, so it
- * is kept as an honest stub. */
-int func_004566_op_sz_326(uint16_t arg0_bp_0A, uint16_t arg1_bp_0C, uint16_t arg2_bp_0E, uint16_t arg3_bp_10, uint16_t arg4_bp_12)
+/* PORTED 2026-06-14 from func_004566.asm (870 bytes, 0x004566..0x0048CB).  The
+ * map-region animation compositor.  DOS convention (retf, caller-cleaned): seven
+ * stack words — [bp+6]:[bp+8] = the source bitmap far pointer (lo:hi), and the
+ * five ints [bp+0xa]=record/unit index (or <0 = none), [bp+0xc]/[bp+0xe] = start
+ * (x0,y0) cell, [bp+0x10]/[bp+0x12] = end (x1,y1) cell.  It seeds the clip/scale
+ * via overlay 0x0984:0x02FC, snaps the unit's own (x,y) into the viewport globals
+ * (saving/restoring the cell rect through 0x181F:0x032C / 0x181F:0x0344), then —
+ * for a number of interpolation steps n = 16 >> zoom-shift[0x184] — walks a screen
+ * cursor with 0x0C0C:0x0022, repaints the moving cell's terrain by chaining the
+ * label renderer func_00386A, and blits the source bitmap via 0x0BAA:6 / 0x0B70:0x3A.
+ *
+ * The auto-banner's [10,12,14,16,18] missed the [6]/[8] source far pointer this
+ * routine also reads (@asm 0x0047A6 ax=[bp+6]; 0x0047A9 dx=[bp+8]); the C signature
+ * is widened to carry them as arg_src_lo/arg_src_hi.  The pixel work lives entirely
+ * behind the asset-gated blit/cursor overlays (0x0984/0x0C0C/0x0BAA/0x0B70/0x181F),
+ * which forward to `(void)` shims in this headless build; what IS preserved
+ * byte-faithfully is the full geometry, the viewport-global side effects
+ * (0x8326..0x833A snapshot/restore, 0x5AD4 cell-width latch), the step counting,
+ * the chained func_00386A label calls, and the complete branch structure.
+ * @asm 0x004566..0x0048CB */
+extern int overlay_call_0984_02FC();  /* @ref RTLink seg 0x0984 off 0x02FC (clip/scale seed)   */
+extern int overlay_call_0BAA_0006();  /* @ref RTLink seg 0x0BAA off 0x0006 (clipped sprite blit) */
+
+int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
+                          uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E,
+                          uint16_t arg5_bp_10, uint16_t arg6_bp_12)
 {
-    return 0;  /* TODO: port from func_004566.asm — 870-byte map-region compositor */
+    int unit = (int16_t)arg2_bp_0A;             /* [bp+0xa] record/unit index (<0 = none) */
+    int x0   = (int16_t)arg3_bp_0C;             /* [bp+0xc] */
+    int y0   = (int16_t)arg4_bp_0E;             /* [bp+0xe] */
+    int x1   = (int16_t)arg5_bp_10;             /* [bp+0x10] */
+    int y1   = (int16_t)arg6_bp_12;             /* [bp+0x12] */
+
+    int rec_lo = 0;                             /* [bp-0x1e] @asm 0x00456e mov [bp-0x1e],ax(=0) */
+    int rec_hi = 0;                             /* [bp-0x20] @asm 0x004571 mov [bp-0x20],ax(=0) */
+    int clip_x, clip_y;                         /* [bp-4]/[bp-2] clamped end cell */
+    int cell_w;                                 /* [bp-0x16] */
+    int cell_h;                                 /* [bp-0x18] */
+    int si, di;                                 /* x-span / y-span step magnitudes */
+    int scr_x;                                  /* [bp-0x12] screen x base */
+    int scr_y;                                  /* [bp-0x14] screen y base (×stride) */
+    int n_steps;                                /* [bp-0x10] = 16 >> zoom-shift */
+    int dst_x;                                  /* [bp-0x1c] per-row dest x */
+    int dst_y;                                  /* [bp-0x1a] per-row dest y */
+    int step;                                   /* [bp-0xe] interpolation counter */
+    int dx_step, dy_step;                       /* [bp-0x22]/[bp-0x24] per-step deltas */
+    int32_t cur;                                /* [bp-8] 0x0C0C cursor accumulator */
+    int32_t cur_prev;                           /* [bp-4]:[bp-2] reused as the dword cursor base */
+    int32_t thresh;                             /* [bp-0xc] step distance threshold */
+
+    /* @asm 0x004574 push 1; push [bp+0xe]; push [bp+0xc]; push [bp+0xe]; push [bp+0xc];
+     *      lcall 0x984,0x2fc; add sp,0xa — seed clip/scale from the start cell. */
+    (void)overlay_call_0984_02FC();
+
+    /* @asm 0x00458A ax=[bp+0x10]; if ax>[bp+0xc] ax=[bp+0xc]; [bp-4]=ax (clip_x = min(x1,x0)) */
+    clip_x = (x1 > x0) ? x0 : x1;
+    /* @asm 0x004598 ax=[bp+0x12]; if ax>[bp+0xe] ax=[bp+0xe]; [bp-2]=ax (clip_y = min(y1,y0)) */
+    clip_y = (y1 > y0) ? y0 : y1;
+
+    /* @asm 0x0045A6 ax=[0x5ad4]; [bp-0x16]=ax; si=1; if [bp+0x10]!=[bp+0xc]: shl[bp-0x16],1; si=2 */
+    cell_w = (int16_t)DG16(0x5AD4);
+    si = 1;
+    if (x1 != x0) { cell_w <<= 1; si = 2; }
+    /* @asm 0x0045BD ax=[0x8326]; [bp-0x18]=ax; di=1; if [bp+0x12]!=[bp+0xe]: shl[bp-0x18],1; di=2 */
+    cell_h = (int16_t)DG16(0x8326);
+    di = 1;
+    if (y1 != y0) { cell_h <<= 1; di = 2; }
+
+    /* @asm 0x0045D4 cl=[0x184]; ax=0x10 sar cl; [bp-0x10]=ax — interpolation step count */
+    n_steps = 0x10 >> (uint8_t)DG8(0x0184);
+
+    /* @asm 0x0045E0 push di; push si; push [bp-2]; push [bp-4]; lcall 0x181f,0x32c; add sp,8
+     *      0x0045F0 push di; push si; push [bp-2]; push [bp-4]; lcall 0x181f,0x344; add sp,8
+     *      — snapshot (0x32c) then dirty (0x344) the clip cell rect. */
+    (void)overlay_call_181F_032C();
+    (void)overlay_call_181F_0344();
+
+    /* @asm 0x004600 cmp [bp+0xa],0; jl 0x465f — record present: snap its own cell. */
+    if (unit >= 0) {
+        int bx = unit * 0x1C;                   /* @asm 0x004606 imul bx,[bp+0xa],0x1c */
+        rec_lo = DG8(bx + 0x3144);              /* @asm 0x00460a al=[bx+0x3144]; ah=0; [bp-0x1e]=ax */
+        rec_hi = DG8(bx + 0x3145);              /* @asm 0x004613 cl=[bx+0x3145]; ch=0; [bp-0x20]=cx */
+        /* @asm 0x00461C push 1; push 1; push cx; push ax; lcall 0x181f,0x32c; add sp,8 */
+        (void)overlay_call_181F_032C();
+        /* @asm 0x00462A..0x004659 compute the (sx,sy) framebuffer args and call 0x386a:
+         *   ax=[bp-0x20]-[0x832e]+[0x832c]; ax*=[0x8326]; ax+=8; push ax,[0x5ad4],[0x186];
+         *   ax=[bp-0x1e]-[0x8328]+[0x832a]; ax*=[0x5ad4]; bx=ax; ax=[bp+0xa]; dx=0; call 0x386a */
+        (void)((rec_hi - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
+        (void)((rec_lo - (int16_t)DG16(0x8328) + (int16_t)DG16(0x832A)) * (int16_t)DG16(0x5AD4));
+        func_00386A_op_sz_100(arg2_bp_0A, 0, 0 /*bx*/, DG16(0x0186), DG16(0x5AD4),
+                              (uint16_t)((rec_hi - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+    }
+
+    /* @asm 0x00465F ax=[bp-2]-[0x832e]+[0x832c]; ax*=[0x8326]; ax+=8; [bp-0x12]=ax — screen x base */
+    scr_x = (clip_y - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8;
+
+    /* @asm 0x004674..0x0046B5 push the clip rect ([0x2da8..0x2dae],[0x8330..0x8336]),0,
+     *      [bp-0x16],[bp-0x18]; dx = scr_x; ax=[0x832a]-[0x8328]+[bp-4]; cx=dx; ax*=[0x5ad4];
+     *      [bp-0x14]=ax; dx=cx; bx=0; lcall 0xbaa,6 — initial clipped blit / screen y base. */
+    scr_y = ((int16_t)DG16(0x832A) - (int16_t)DG16(0x8328) + clip_x) * (int16_t)DG16(0x5AD4);
+    (void)overlay_call_0BAA_0006();
+
+    /* @asm 0x0046BA di = sign(x1-x0) : (x1-x0)>0 -> 1; ==0 -> 0; <0 -> -1 */
+    if ((x1 - x0) > 0)       di = 1;
+    else if ((x1 - x0) < 0)  di = -1;
+    else                     di = 0;
+    /* @asm 0x0046D9 si = sign(y1-y0) */
+    if ((y1 - y0) > 0)       si = 1;
+    else if ((y1 - y0) < 0)  si = -1;
+    else                     si = 0;
+
+    /* @asm 0x0046F7 if di<0: ax=0 else ax=[0x5ad4]; ax+=[bp-0x14]; [bp-0x1a]=ax — dst_y base */
+    dst_y = ((di < 0) ? 0 : (int16_t)DG16(0x5AD4)) + scr_y;
+    /* @asm 0x004709 if si<0: ax=0 else ax=[0x8326]; ax+=[bp-0x12]; [bp-0x1c]=ax — dst_x base */
+    dst_x = ((si < 0) ? 0 : (int16_t)DG16(0x8326)) + scr_x;
+
+    /* @asm 0x00471B [0x833a]=0; [0x8338]=0 — reset the running cursor accumulators. */
+    DG16(0x833A) = 0;
+    DG16(0x8338) = 0;
+    /* @asm 0x004723 lcall 0xc0c,0x22 -> dword in dx:ax; [bp-8]=ax;[bp-6]=dx;[bp-4]=ax;[bp-2]=dx */
+    cur = (uint16_t)overlay_call_0C0C_0022();
+    cur_prev = cur;
+
+    /* @asm 0x004734 ah=[0x5383] (so ax = byte[0x5383]<<8 in the high byte); and ax,0x1000;
+     *      cmp ax,1; sbb ax,ax; and ax,2; add ax,8; cl=[0x184]; shl ax,cl; cdq;
+     *      [bp-0xc]=ax;[bp-0xa]=dx — per-step distance threshold.  The 0x1000 mask keeps
+     *      bit 4 of byte[0x5383]; sbb ax,ax yields -CF (0xFFFF iff the masked value was 0),
+     *      so add ax,8 = 0x0A when the bit is clear, else 8. */
+    {
+        int masked = ((int)DG8(0x5383) << 8) & 0x1000;
+        int t = (masked == 0) ? 0x0A : 8;
+        thresh = (int32_t)(t << (uint8_t)DG8(0x0184));
+    }
+
+    /* @asm 0x004753 [bp-0xe]=0 — step = 0. @asm 0x004758 if [bp-0x10] <= 0 skip the loop. */
+    step = 0;
+    if (n_steps > 0) {
+        dx_step = di;                           /* @asm 0x004761 [bp-0x22]=di */
+        dy_step = si;                           /* @asm 0x004764 [bp-0x24]=si */
+        do {
+            /* @asm 0x004767..0x0047B2 push the clip rect + scr_x; (ax=0,dx=0,bx=scr_y) lcall 0xbaa,6;
+             *   then push [bp-0x1c],[0x5ad4],[0x186]; ax=[bp+6]; dx=[bp+8]; bx=[bp-0x1a]; call 0x386a
+             *   — repaint the moving cell, blit the source bitmap through the label renderer. */
+            (void)overlay_call_0BAA_0006();     /* @asm 0x004796 lcall 0xbaa,6 */
+            func_00386A_op_sz_100(arg_src_lo, arg_src_hi, (uint16_t)dst_y,
+                                  DG16(0x0186), DG16(0x5AD4), (uint16_t)dst_x);  /* @asm 0x0047B0 */
+            /* @asm 0x0047B3 push [bp-0x12],[bp-0x16],[bp-0x18]; ax=[bp-0x14]; dx=[bp-0x12];
+             *      bx=ax; lcall 0xb70,0x3a — composite the cell. */
+            (void)overlay_call_0B70_003A();     /* @asm 0x0047C4 */
+            /* @asm 0x0047C9 [bp-0x1a]+=[bp-0x22]; [bp-0x1c]+=[bp-0x24] — advance the dest. */
+            dst_y += dx_step;
+            dst_x += dy_step;
+            /* @asm 0x0047D5 if [bp-0x10]-1 > [bp-0xe]: sample the cursor until it advances
+             *      past the per-step threshold (0xc0c,0x22 polled in the inner while). */
+            if ((n_steps - 1) > step) {
+                do {
+                    cur = (uint16_t)overlay_call_0C0C_0022();  /* @asm 0x0047DE lcall 0xc0c,0x22 */
+                    /* @asm 0x0047E9 (cur - cur_prev) compared (signed dword) against thresh */
+                } while ((cur - cur_prev) < thresh);           /* @asm 0x0047EF..0x0047F9 */
+            }
+            /* @asm 0x0047FB [bp-4]=[bp-8] dword (cur_prev = cur). */
+            cur_prev = cur;
+            /* @asm 0x004807 inc [bp-0xe]; cmp [bp-0xe],[bp-0x10]; jge done — loop n_steps times. */
+            step++;
+        } while (step < n_steps);
+    }
+
+    /* @asm 0x004815 cmp [bp+0xa],0; jl 0x48c8 — record present: restore + final figure draw. */
+    if (unit >= 0) {
+        /* @asm 0x00481E push 1; push 1; push [bp-0x20]; push [bp-0x1e]; lcall 0x181f,0x32c; add sp,8 */
+        (void)overlay_call_181F_032C();
+        /* @asm 0x004830 test [bp+8],0x10 — bit 4 of the source-hi word: redraw the unit's own cell. */
+        if (arg_src_hi & 0x10) {
+            /* @asm 0x004836..0x004868 same (sx,sy) math as the entry snap, then call 0x386a. */
+            (void)((rec_hi - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
+            (void)((rec_lo - (int16_t)DG16(0x8328) + (int16_t)DG16(0x832A)) * (int16_t)DG16(0x5AD4));
+            func_00386A_op_sz_100(arg2_bp_0A, 0, 0 /*bx*/, DG16(0x0186), DG16(0x5AD4),
+                                  (uint16_t)((rec_hi - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+        }
+        /* @asm 0x00486B push 1; push 1; push [bp+0xe]; push [bp+0xc]; lcall 0x181f,0x32c; add sp,8 */
+        (void)overlay_call_181F_032C();
+        /* @asm 0x00487D..0x0048AF compute the start-cell (sx,sy) and chain the figure draw 0x386a:
+         *   ax=[bp+0xe]-[0x832e]+[0x832c]; ax*=[0x8326]; ax+=8; push ax,[0x5ad4],[0x186];
+         *   ax=[0x832a]-[0x8328]+[bp+0xc]; ax*=[0x5ad4]; bx=ax; ax=[bp+6]; dx=[bp+8]; call 0x386a */
+        (void)((y0 - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
+        (void)(((int16_t)DG16(0x832A) - (int16_t)DG16(0x8328) + x0) * (int16_t)DG16(0x5AD4));
+        func_00386A_op_sz_100(arg_src_lo, arg_src_hi, 0 /*bx*/, DG16(0x0186), DG16(0x5AD4),
+                              (uint16_t)((y0 - (int16_t)DG16(0x832E) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+        /* @asm 0x0048B2 push [bp-0x12],[bp-0x16],[bp-0x18]; ax=[bp-0x14]; dx=[bp-0x12]; bx=ax;
+         *      lcall 0xb70,0x3a — final cell composite. */
+        (void)overlay_call_0B70_003A();
+    }
+
+    (void)cell_w; (void)cell_h; (void)dst_x; (void)dst_y; (void)scr_x; (void)scr_y;
+    (void)clip_x; (void)clip_y; (void)cur; (void)cur_prev; (void)thresh;
+    return 0;                                   /* @asm 0x0048CA leave; retf */
 }
 
 /* @asm        0x0048CC..0x0048D9  (13 bytes)  region=load_image
@@ -1424,18 +1608,143 @@ int func_004B48_logic_sz_25(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
  * @inferred_role TEXT_DRAW / C_RUNTIME / DISPATCH_VIA_OVERLAY  (HIGH)
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-/* NOTE 2026-06-09 from func_004B72.asm — the "info panel" composer for the cell
- * under the cursor (arg0 = panel mode 1..4).  It formats the panel title/strings
- * via the text overlays at 0x0D1D:0x07E4/0x07A4 and 0x004B:0x012E, then runs a
- * 4-way dispatch (overlays 0x181F:0x0438/0x0416/0x0422/0x040A, 0x05B3:0x0144) to
- * paint the body, toggles the redraw flags at DGROUP:0x1F56/0x1F64/0x1F6A around
- * a panel blit (0x181F:0x044E / 0x181F:0x03FE), and on mode 1 chains the near
- * helper at 0x004A32 and the audio cue 0x02D6:0x0000.  This 427-byte routine is
- * driven end-to-end by opaque overlay helpers, so it is kept as an honest stub
- * (its callers in this TU — e.g. func_004D1E — tolerate the no-op). */
+/* PORTED 2026-06-14 from func_004B72.asm (427 bytes, 0x004B72..0x004D1C).  The
+ * "info panel" composer for the cell under the cursor.  Single stack arg
+ * [bp+6] = panel mode (1..4).  It builds the panel title string in the local
+ * buffer ([bp-0x50]) via the text formatters 0x0D1D:0x07E4 (load string id) /
+ * 0x0D1D:0x07A4 (append) / 0x004B:0x012E (format the mode in), opens the panel
+ * with 0x181F:0x044E (early-out if it reports non-zero / already up), paints a
+ * backdrop with 0x0B8F:6, then runs a 4-way dispatch over the mode:
+ *   mode 2: tribe-name list  ([0x53A6]-indexed word at DGROUP:0x8394, 0x181F:0x438;
+ *           AI-personality record [0x5398]*0x34+0x540E pushed to the 0x416 tail);
+ *   mode 3: power-name list   ([0x5398]-indexed word at DGROUP:0x838C, 0x181F:0x438);
+ *   mode 4: settlement name   (0x05B3:0x144 -> 0x181F:0x416 -> 0x181F:0x422 over
+ *           [0x5398], with the DGROUP:0x833C string to the 0x416 tail).
+ * It then paints (0x181F:0x40A), sets the redraw flags (or [0x1F56],0x20; [0x1F6A]=1;
+ * [0x1F64]=0), formats string id 0x84 + the mode, draws it through 0x181F:0x3FE with
+ * [0x1F4A]/[0x1F50] temporarily set to (0xE,0x36), and — on mode 1 — chains the
+ * near helper at 0x004A32 (also reachable as resident overlay 0x181F:0x03B6, per
+ * docs/ARITY_TRUTH.md) before/after processing the 0x300 byte buffer ([bp-0x350])
+ * via 0x0ADE:4 and firing the audio cue 0x02D6:0x0000(8).  Finally [0x1F6A]=0;
+ * [0x1F64]=1.
+ *
+ * All blit/text/UI work forwards to its asset-gated `(void)` shims (the buffers
+ * the period code hands them on the DOS stack are local and untouched here); what
+ * IS faithful is the full branch structure, the DGROUP table indexing
+ * (0x8394/0x838C/0x540E/0x833C), and every DGROUP flag/state side effect
+ * (0x1F56/0x1F64/0x1F6A and the 0x1F4A/0x1F50 save-restore).
+ * @asm 0x004B72..0x004D1C */
+extern int overlay_call_0B8F_0006();  /* @ref RTLink seg 0x0B8F off 0x0006 (panel backdrop blit) */
+extern int overlay_call_0ADE_0004();  /* @ref RTLink seg 0x0ADE off 0x0004 (mode-1 buffer process) */
+extern int overlay_call_02D6_0000();  /* @ref RTLink seg 0x02D6 off 0x0000 (audio cue)             */
+
 int func_004B72_rtl_sz_427(uint16_t arg0_bp_06)
 {
-    return 0;  /* TODO: port from func_004B72.asm — 427-byte info-panel composer (opaque overlays) */
+    int mode = (int16_t)arg0_bp_06;             /* [bp+6] panel mode 1..4 */
+    uint8_t buf[0x50];                          /* [bp-0x50] title/format string buffer */
+    uint8_t big[0x300];                         /* [bp-0x350] mode-1 work buffer */
+    (void)buf; (void)big;
+
+    /* @asm 0x004B77 push 0x72; lea ax,[bp-0x50]; lcall 0xd1d,0x7e4; sp+=4 — load base title. */
+    (void)overlay_call_0D1D_07E4();
+    /* @asm 0x004B87 cmp [bp+6],0xa; jge 0x4b9c — mode < 0xa: append string id 0x79. */
+    if (mode < 0xA) {
+        /* @asm 0x004B8D push 0x79; lea ax,[bp-0x50]; lcall 0xd1d,0x7a4; sp+=4 */
+        (void)overlay_call_0D1D_07A4();
+    }
+    /* @asm 0x004B9C push [bp+6]; lea ax,[bp-0x50]; push ss; push ax; lcall 0x4b,0x12e; sp+=6
+     *      — format the mode value into the title buffer. */
+    (void)overlay_call_004B_012E();
+
+    /* @asm 0x004BAC cmp [bp+6],1; jne 0x4bb6 — mode==1: chain the near helper at 0x004A32. */
+    if (mode == 1) {
+        /* @asm 0x004BB2 push cs; call 0x4a32 — file 0x4A32 == resident overlay 0x181F:0x03B6
+         *      (docs/ARITY_TRUTH.md); forward to that shim in this headless build. */
+        (void)overlay_call_181F_03B6();
+    }
+
+    /* @asm 0x004BB6 lea ax,[bp-0x350]; push ss; push ax; push 0; push the clip rect
+     *      ([0x2dae..0x2da8]); lea ax,[bp-0x50]; push ax; lcall 0x181f,0x44e; sp+=0x10 —
+     *      open/measure the panel into [bp-0x350]; if it returns non-zero, bail to the tail. */
+    if (overlay_call_181F_044E() != 0) {
+        /* @asm 0x004BDC or ax,ax; jne -> jmp 0x4d0d (skip the body, run the close flags). */
+        goto close;
+    }
+
+    /* @asm 0x004BE1 push [0x2dae..0x2da8](clip); push [0x83a4..0x839e](rect); push 0xc8; cdq;
+     *      bx=0x140; lcall 0xb8f,6 — paint the panel backdrop. */
+    (void)overlay_call_0B8F_0006();
+
+    /* @asm 0x004C0D ax=[bp+6]; dec;dec; je 0x4c1c(2); dec; je 0x4c3e(3); dec; je 0x4c54(4); else 0x4c99 */
+    if (mode == 2) {
+        /* @asm 0x004C1C bl=[0x53a6]; bh=0; bx<<=1; push [bx-0x7c6c](=DGROUP:bx+0x8394); push 0;
+         *      lcall 0x181f,0x438; sp+=4 — tribe name list entry. */
+        int bx = DG8(0x53A6) << 1;
+        (void)DG16((uint16_t)(bx + 0x8394));    /* @asm [bx-0x7c6c] (16-bit wrap) */
+        (void)overlay_call_181F_0438();
+        /* @asm 0x004C32 imul ax,[0x5398],0x34; ax+=0x540e; push ds; push ax; jmp 0x4c8f —
+         *      AI-personality record pointer to the shared 0x416 tail. */
+        (void)((int16_t)DG16(0x5398) * 0x34 + 0x540E);
+        /* shared tail @0x4c8f */
+        (void)overlay_call_181F_0416();         /* @asm 0x004C91 push 1; lcall 0x181f,0x416 */
+    } else if (mode == 3) {
+        /* @asm 0x004C3E bx=[0x5398]; bx<<=1; push [bx-0x7c74](=DGROUP:bx+0x838c); push 0;
+         *      lcall 0x181f,0x438; sp+=4; jmp 0x4c99 — power name list entry. */
+        int bx = (int16_t)DG16(0x5398) << 1;
+        (void)DG16((uint16_t)(bx + 0x838C));    /* @asm [bx-0x7c74] (16-bit wrap) */
+        (void)overlay_call_181F_0438();
+    } else if (mode == 4) {
+        /* @asm 0x004C54 [bp-0x50]=0; lea ax,[bp-0x50]; push ax; push 0; push [0x5398];
+         *      lcall 0x5b3,0x144; sp+=6 — fetch the settlement/power name into buf. */
+        buf[0] = 0;
+        (void)overlay_call_05B3_0144();
+        /* @asm 0x004C6A lea ax,[bp-0x50]; push ss; push ax; push 0; lcall 0x181f,0x416; sp+=6 */
+        (void)overlay_call_181F_0416();
+        /* @asm 0x004C79 push [0x5398]; push 0x7b; push 0x87c; lcall 0x181f,0x422; sp+=6 */
+        (void)overlay_call_181F_0422();
+        /* @asm 0x004C8B push ds; push 0x833c; jmp 0x4c8f — DGROUP:0x833C string to the tail. */
+        (void)overlay_call_181F_0416();         /* @asm 0x004C91 push 1; lcall 0x181f,0x416 */
+    }
+    /* @asm 0x004C99 (also the mode-3 / default fall-through join) */
+
+    /* @asm 0x004C99 lcall 0x181f,0x40a — paint the assembled panel. */
+    (void)overlay_call_181F_040A();
+    /* @asm 0x004C9E or byte [0x1f56],0x20; [0x1f6a]=1; [0x1f64]=0 — arm the redraw flags. */
+    DG8(0x1F56) |= 0x20;
+    DG16(0x1F6A) = 1;
+    DG16(0x1F64) = 0;
+
+    /* @asm 0x004CAF push 0x84; lea ax,[bp-0x50]; lcall 0xd1d,0x7e4; sp+=4 — load string id 0x84. */
+    (void)overlay_call_0D1D_07E4();
+    /* @asm 0x004CBE push [bp+6]; lea ax,[bp-0x50]; push ss; push ax; lcall 0x4b,0x12e; sp+=6. */
+    (void)overlay_call_004B_012E();
+
+    /* @asm 0x004CCE si=[0x1f4a]; di=[0x1f50]; [0x1f4a]=0xe; [0x1f50]=0x36; lea bx,[bp-0x50];
+     *      lcall 0x181f,0x3fe; [0x1f4a]=si; [0x1f50]=di — draw the line at (0xe,0x36), then
+     *      restore the cursor position globals. */
+    {
+        uint16_t save_4a = DG16(0x1F4A);
+        uint16_t save_50 = DG16(0x1F50);
+        DG16(0x1F4A) = 0xE;
+        DG16(0x1F50) = 0x36;
+        (void)overlay_call_181F_03FE();
+        DG16(0x1F4A) = save_4a;
+        DG16(0x1F50) = save_50;
+    }
+
+    /* @asm 0x004CF2 cmp [bp+6],1; jne 0x4d03 — mode==1: process the 0x300 buffer + audio. */
+    if (mode == 1) {
+        /* @asm 0x004CF8 lea ax,[bp-0x350]; push ss; push ax; lcall 0xade,4 */
+        (void)overlay_call_0ADE_0004();
+    }
+    /* @asm 0x004D03 push 8; lcall 0x2d6,0; sp+=2 — audio cue. */
+    (void)overlay_call_02D6_0000();
+
+close:
+    /* @asm 0x004D0D [0x1f6a]=0; [0x1f64]=1; pop si; pop di; leave; retf. */
+    DG16(0x1F6A) = 0;
+    DG16(0x1F64) = 1;
+    return 0;                                   /* @asm 0x004D1B leave; retf */
 }
 
 /* @asm        0x004D1E..0x004DF7  (217 bytes)  region=load_image

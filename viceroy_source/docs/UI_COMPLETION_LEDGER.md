@@ -36,8 +36,8 @@ states both numbers honestly.
 | **Blocked by source** — truncated/missing `.asm` slices (LZ decompressors `func_012E56/012EE0/0130A4/01311B/0132B0`, `func_014293`) | ~5 | The pre-generated disassembly ends mid-routine; cannot port what is not disassembled without re-disassembling VICEROY.EXE (out of scope / not present). |
 | **SHADOWED phantom** — `func_010530/010582/010654/010A6E`, auto-segmentation artifacts inside `func_00FECA` | ~4 | Not standalone functions; the disassembler split one routine's interior into fake entry points. Not work items. |
 
-**Genuinely portable game logic still open: 0** once the five interactive
-renderers below are in (three committed, two in flight). The remaining ~55 are
+**Genuinely portable game logic still open: 0** — all five interactive renderers
+below are now ported and committed. The remaining ~55 are
 host-boundary, rasterization, source-blocked, or phantom — none of which a
 headless flat-C port can or should body-fill, and faking them would *reduce*
 fidelity, not raise it. That is the honest definition of "done" for this layer.
@@ -62,8 +62,12 @@ fidelity, not raise it. That is the honest definition of "done" for this layer.
     24 jump targets + 15 DGROUP offsets machine-verified 100%; register args
     (AX/DX/BX) modeled as 0 per the flat-C signature limit (inert: blits are
     void shims; does not fire on the soak).
-  - `func_004566` / `func_004B72` (map-region compositor / info-panel composer)
-    — in flight this session (same byte-faithful method; pending verify+commit).
+  - `func_004566` (map-region animation compositor, full 0x4566..0x48CB) and
+    `func_004B72` (info-panel composer, full 0x4B72..0x4D1C) — ported byte-faithful
+    (49 + 29 `@asm` cites verified); `func_004566` widened 5→7 stack args for the
+    source-bitmap far pointer; `func_004B72`'s near call to the un-carved 0x4A32
+    gap forwarded to its resident entry `overlay_call_181F_03B6` per
+    `docs/ARITY_TRUTH.md`. Build clean, cert7 9/9.
   - thunkwire/linkgap regenerated: newly wires `overlay_call_03E4_003A`,
     `overlay_call_0C56_0004` (WIRED 225→226); `func_003710`'s arity change
     correctly arity-blocks the arity-0 `overlay_call_181F_02DA` (direct caller
