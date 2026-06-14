@@ -96,14 +96,40 @@ TERRAIN.SS sprites via the O514/O513 chain). Missing/wrong:
    terrain) → carried-unit rows. Mine shows a placeholder column of `0`s where
    the unit panel belongs.
 
-### Colony — NEEDS REWRITE
+### Colony — NEEDS REWRITE (largest remaining task)
 Real screen (`refs/ref_colony_interior.png`): a sandy building plot filling the
 top ~65% with scattered structures (log cabins, thatched houses, a church with
-steeple, workshops — from `BUILDING.SS`) and colonists working; the 3×3 work-
-tiles grid top-right; header "Curacao, Autumn, 1653, Gold: …" in green. Bottom
-~35%: population/SoL panel + portraits (left), "No Ships In Port"/dock (mid),
-cargo + warehouse goods strip (right), red "Exit E" button (corner). The
-current render is unrelated and must be rebuilt against this reference.
+steeple, workshops) and colonists working; the 3×3 work-tiles grid top-right;
+header "Curacao, Autumn, 1653, Gold: …" in green. Bottom ~35%: population/SoL
+panel + portraits (left), "No Ships In Port"/dock (mid), cargo + warehouse goods
+strip (right), red "Exit E" button (corner).
+
+**Asset roles (confirmed via asset_inspect):**
+- `COLONY.PIK` = **320×72**, the BOTTOM-BAR background only (not full screen;
+  the current code wrongly uses it as the whole backdrop). No palette → master.
+- `BUILDING.SS` = **48 frames** (~73×18 each) = the building sprites.
+
+**Code state — `src/ui/colony_screen.c` is a skeleton with empty blits:**
+The composer `colony_screen_render` and sub-painters exist, but every actual
+sprite blit is a no-op `;`:
+- `colony_paint_buildings` (line ~322/324): the per-slot building draw (and
+  empty-lot draw) are stubs. Slot positions: DGROUP `0x266 + i*4` (x,y, 15
+  slots). Per-slot TYPE `0x8D62+i`, LEVEL `0x8E82+i` (0xFF = empty). The
+  `(type,level) → BUILDING.SS frame` mapping (orig leaf at near-call `0x7E33`)
+  is not ported.
+- `colony_paint_flag` (~360), `colony_paint_minimap` tile-walk (~396),
+  `colony_paint_sol_panel`, `colony_paint_stockpile` — sprite/icon blits stubbed.
+- The building-DATA pipeline that fills `0x8D62`/`0x8E82` from the colony record
+  lives in `src/overlay/overlay_024342_027B62.c` (func_025D4x: clears slots to
+  0xFF, flattens the 5×N config into `0x8D62`, records produced goods into
+  `0x8E82`) — partially ported; verify it runs for a loaded colony.
+
+**To finish:** (1) draw the sandy plot backdrop; (2) port the `(type,level)→
+frame` map and blit `BUILDING.SS` at the `0x266` slot positions; (3) the 3×3
+work-tiles grid (terrain + worker icons); (4) the bottom bars from `COLONY.PIK`
++ the stockpile/SoL/ship sub-painters. **Verification needs a colony WITH
+buildings** — the modern build's synthetic test colony (`main_modern.c`) seeds
+only x/y/owner/pop/name, so seed a building set too, or wire a `.SAV` loader.
 
 ## Repo / safety constraints (persistent)
 VICEROY.EXE is never committed and never embedded in the modern build;
