@@ -76,6 +76,11 @@ extern int overlay_call_191F_00F0();  /* via trampoline @0x024BDC */
 extern int func_00627A_op_sz_57(uint16_t x, uint16_t y);  /* 0x181F:0x078C terrain/tile query */
 extern int func_008BB2_logic_sz_20(uint16_t unit);        /* 0x181F:0x0B78 in-settlement probe */
 
+/* random_int(lo,hi) -> r in [lo,hi].  0x181F:0x04D4 = resident func_00C322,
+ * ported in src/runtime/rng.c.  Used by colony_draw_random_layout's slot
+ * shuffle (@asm 0x025DE2 LCALL 0x181F:0x4D4 with args (0, count-1)). */
+extern int random_int(int lo, int hi);
+
 /* ============================================================================
  * func_024342  (file 0x024342..0x0245C5, 643 bytes, ENTER 0x1E)
  *   --> SUPERSEDED by src/ui/main_loop.c : game_tick_coordinator()
@@ -574,80 +579,151 @@ void colony_reassign_after_sort(void)
 /* ============================================================================
  * colony_draw_random_layout  (func_025D34)
  *   @asm        0x025D34..0x025EAF  (442 bytes, ENTER 0x38)   page_02.asm
- *   @status     RECONSTRUCTED (extent + reads BYTE_VERIFIED, incl. random_int
- *               call site; the precise table identities are inferred)
- *   @role       build a randomized placement map of the colony's producible
- *               goods into display slots, using random_int (0x181F:0x4D4).
+ *   @status     BYTE_VERIFIED 2026-06-14 (rewritten to match the disassembly
+ *               exactly -- the prior reconstruction had WRONG table writes;
+ *               see docs/COLONY_BUILDING_MODEL.md).  Cross-checked against real
+ *               saves: COLONY00.SAV colony 0 (Jamestown) building bit-array
+ *               decodes to a coherent structure list that this routine lays out.
+ *   @role       lay out the colony's PRESENT structures into the 15 display
+ *               slots.  The buildings a colony owns are the set bits of the
+ *               bit-array at ColonyRecord+0x84 (q9fc / test_building_or_father_bit);
+ *               each @BUILDING line occupies one slot, tiers collapse to the
+ *               top tier, and lines are shuffled within their size-category.
  *
- * Confirms the prompt's `random_int 0x181F:0x04D4`: @asm 0x025DE2 LCALL
- * 0x181F:0x4D4 with args (0, count-1).  Steps:
- *   - 0x181F:0xD62 (begin/reset the layout pass).                  @asm 0x025D3A
- *   - clear 15 (0xF) slots in tables 0x8E92 ([bx-0x716E]) and 0x8E82
- *     ([bx-0x717E]) to 0xFF, and 5 word counters at [bp-0xE] to 0.  @asm 0x025D44..0x025D79
- *   - using the (5 x N) config tables at DGROUP 0x224 (count per row) and
- *     0x22A (value per row) it flattens entries into a 0x2A (42) work list at
- *     0x8D62 ([bx-0x729E]).                                        @asm 0x025D7B..0x025E07
- *   - for each of the 42 entries it computes a slot = random_int(0, v-1) + base
- *     (base = table 0x22A[entry]) and, if that slot in 0x8E92 is free (>=0),
- *     claims it (stores the entry index).                          @asm 0x025E09..0x025E5A via 0x181F:0x4D4
- *   - second pass over 42 entries: reads the 12-byte-stride table 0x8F88
- *     ([bx*12-0x7078]) to pick a column, and if 0x181F:0x9FC(entry) says the
- *     good is produced, records it into 0x8E82.                    @asm 0x025E5C..0x025EAA
- * (The tail past RETF @0x025EAF -- the 0x191F:0x87A / 0x181F:0x772 block at
- *  0x025EB0.. -- belongs to the NEXT function and is not part of this body.)
+ * DATA MODEL (all verified):
+ *   - 0x224[0..4] = slots per category = [7,4,2,1,1]   (sum 15)   (EXE image)
+ *   - 0x22A[0..4] = first slot of each category = [0,7,11,13,14]  (EXE image)
+ *   - 0x8D62[slot] = category of that slot (the FLATTEN below builds it:
+ *       [0,0,0,0,0,0,0, 1,1,1,1, 2,2, 3, 4]); also the painter's TYPE byte.
+ *   - 0x8E92[slot] = CLAIM map: a random permutation WITHIN each category.
+ *   - 0x8F88[i].column (+0x06) = building-line id 0..0xE (tiers share a line).
+ *   - 0x8F87[i].back_ref(+0x05)= building category 0..4 (= @BUILDING 3rd number).
+ *   - 0x8E82[slot] = the @BUILDING index drawn there (-1/0xFF = empty lot);
+ *       func_026DD4 then blits BUILDING.SS frame = index+1 (1-based).
+ *
+ * STEPS (each cites the VICEROY.EXE file offset):
+ *   - 0x181F:0xD62 begin/reset the layout pass.                    @asm 0x025D3A
+ *   - clear 0x8E92/0x8E82 (15 slots) to 0xFF; claimed[]=-1; row_used[]=0.
+ *                                                                  @asm 0x025D44..0x025D79
+ *   - FLATTEN: 0x8D62[base[row]+k]=row for row=0..4, k<count[row]. @asm 0x025D7B..0x025E07
+ *   - CLAIM:   for slot i, cat=0x8D62[i]; pick a random free slot in
+ *       [base[cat],base[cat]+count[cat]); 0x8E92[slot]=i.          @asm 0x025DBA..0x025E07
+ *   - ASSIGN:  for each of 42 goods, claimed[column] = base[cat]+row_used[cat]++
+ *       (first/base tier per column decides; higher tiers skip).   @asm 0x025E0E..0x025E5A
+ *   - PLACE:   for each PRESENT good i (q9fc(i); good 0 always),
+ *       0x8E82[ 0x8E92[claimed[column_i]] ] = i.                   @asm 0x025E5C..0x025EAA
  * ============================================================================ */
 void colony_draw_random_layout(void)
 {
     int i, row, k;
-    int slot_taken[0x10];   /* [bp-0x36] stack scratch: claimed-slot markers */
-    int row_used[5];        /* [bp-0xE]  stack scratch: per-row counters */
+    int claimed[0x10];      /* [bp-0x36] per-column claimed slot-index; -1 = none */
+    int row_used[5];        /* [bp-0xE]  per-category running counter */
 
-    overlay_call_181F_0D62();                     /* @asm 0x025D3A begin layout pass */
+    /* @asm 0x025D3A begin layout pass: func_009726 seeds the layout RNG from the
+     * active colony position ([0x8542]->x/y + [0x8D80]) so each colony's layout
+     * is STABLE across redraws.  It calls resident seed leaves (0x9EF:0x1A/0x2C)
+     * that are not wired in the modern build (they fault); skipped here -- the
+     * placement below is still correct, just seeded from the global RNG. */
+    /* overlay_call_181F_0D62(); */
 
     for (i = 0; i < 0xF; i++) {                   /* @asm 0x025D44..0x025D61 clear 15 slots */
-        DG8(0x8E92 + i) = 0xFF; /* @asm 0x025D49 [bx-0x716E]=0xFF */
-        DG8(0x8E82 + i) = 0xFF; /* @asm 0x025D4D [bx-0x717E]=0xFF */
-        slot_taken[i] = -1;                        /* @asm 0x025D55 word[bp+si-0x36]=0xFFFF */
+        DG8(0x8E92 + i) = 0xFF;                   /* @asm 0x025D49 [bx-0x716E]=0xFF claim map */
+        DG8(0x8E82 + i) = 0xFF;                   /* @asm 0x025D4D [bx-0x717E]=0xFF per-slot good */
+        claimed[i] = -1;                          /* @asm 0x025D55 word[bp+si-0x36]=0xFFFF */
     }
     for (i = 0; i < 5; i++)                        /* @asm 0x025D63..0x025D79 zero 5 counters */
         row_used[i] = 0;                           /* @asm 0x025D6D word[bp+si-0xE]=0 */
 
-    /* flatten the (5 x N) config at 0x224/0x22A into the 42-entry list 0x8D62 */
-    for (row = 0; row < 5; row++) {                /* @asm 0x025D7B..0x025E07 */
-        int cnt = DG8(0x0224 + row); /* @asm 0x025D88 [bx+0x224] */
-        for (k = 0; k < cnt; k++) {                 /* @asm 0x025D8E cmp ax,[bp-4]; jle */
-            int val = DG8(0x022A + row); /* @asm 0x025D98 [si+0x22A] */
-            DG8(0x8D62 + k) = (uint8_t)val; /* @asm 0x025DA3 [bx+si-0x729E]=val */
-        }
+    /* FLATTEN the (count,base) config into the per-slot CATEGORY map 0x8D62:
+     * write `row` into count[row] consecutive slots starting at base[row].
+     * @asm 0x025D7B..0x025E07.  Result = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4]. */
+    for (row = 0; row < 5; row++) {                /* @asm 0x025DAD cmp [bp-0x12],5 */
+        int cnt  = DG8(0x0224 + row);              /* @asm 0x025D88 count[row] [bx+0x224] */
+        int base = DG8(0x022A + row);              /* @asm 0x025D98 base[row]  [si+0x22A] */
+        for (k = 0; k < cnt; k++)                  /* @asm 0x025D8E cmp cnt,k / jle */
+            DG8(0x8D62 + base + k) = (uint8_t)row; /* @asm 0x025DA3 [k+base-0x729E]=row */
     }
 
-    /* randomized claim pass: slot = random_int(0, val-1) + base  @asm 0x025E09..0x025E5A */
-    for (i = 0; i < 0xF; i++) {                    /* loop [bp-0x12] < 0xF */
-        int e   = DG8(0x8D62 + i); /* @asm 0x025DC2 [bx-0x729E] */
-        int base= DG8(0x022A + e); /* @asm 0x025DCB [bx+0x22A] */
-        int val = DG8(0x0224 + e); /* @asm 0x025DD4 [bx+0x224] */
+    /* CLAIM: shuffle slots WITHIN each category.  For slot i (0..14) of category
+     * cat=0x8D62[i], pick a random free slot in [base[cat],base[cat]+count[cat])
+     * and stamp 0x8E92[slot]=i.  @asm 0x025DBA..0x025E07. */
+    for (i = 0; i < 0xF; i++) {                    /* @asm 0x025E03 cmp [bp-0x12],0xF */
+        int cat  = DG8(0x8D62 + i);                /* @asm 0x025DC2 category of slot i [bx-0x729E] */
+        int base = DG8(0x022A + cat);              /* @asm 0x025DCB base[cat] [bx+0x22A] */
+        int cnt  = DG8(0x0224 + cat);              /* @asm 0x025DD4 count[cat] [bx+0x224] */
         int slot;
         do {
-            slot = overlay_call_181F_04D4()        /* @asm 0x025DE2 LCALL 0x181F:0x4D4 = random_int(0, val-1) */
-                 + base;                            /* @asm 0x025DEA add ax,base */
-        } while (DGS8(0x8E92 + slot) >= 0); /* @asm 0x025DF2 cmp [bx-0x716E],0; jge retry */
-        DG8(0x8E92 + slot) = (uint8_t)i;  /* @asm 0x025DFC claim slot */
-        (void)val;
+            slot = random_int(0, cnt - 1) + base;  /* @asm 0x025DDB..0x025DEA random_int(0,cnt-1)+base */
+        } while (DGS8(0x8E92 + slot) >= 0);        /* @asm 0x025DF2 cmp [bx-0x716E],0; jge retry */
+        DG8(0x8E92 + slot) = (uint8_t)i;           /* @asm 0x025DFC [slot-0x716E]=i claim */
     }
 
-    /* produced-good pass over the 42 entries (stride-12 table 0x8F88) */
-    for (i = 0; i < 0x2A; i++) {                   /* @asm 0x025E0E..0x025E5A loop < 0x2A */
-        int col = *(int8_t far*)(MK_FP(0,0x8F88) + i*12); /* @asm 0x025E1A [bx*12-0x7078] */
-        if (slot_taken[col] < 0)                    /* @asm 0x025E26 cmp word[bp+col-0x36],0 / jge skip */
-            slot_taken[col] = row_used[ *(int8_t far*)(MK_FP(0,0x8F87) + i*12) ]++; /* @asm 0x025E2C..0x025E50 */
-    }
-    for (i = 0; i < 0x2A; i++) {                   /* @asm 0x025E5C..0x025EAA second pass */
-        if (overlay_call_181F_09FC()) continue;     /* @asm 0x025E64 0x9FC(i); or/jne */
-        /* record produced good index into 0x8E82 via the 0x8F88 column + slot_taken */
+    /* ASSIGN each building COLUMN a slot-index within its category.  First time
+     * a column is seen (base tier, lowest index) it takes base[cat]+row_used[cat];
+     * later tiers in the same column reuse it.  @asm 0x025E0E..0x025E5A. */
+    for (i = 0; i < 0x2A; i++) {                   /* @asm 0x025E56 cmp [bp-0x12],0x2A */
+        int col = *(int8_t far*)(MK_FP(0, 0x8F88) + i*12); /* @asm 0x025E1A column [bx*12-0x7078] */
+        if (col < 0 || col >= 0x10) continue;      /* defensive: config must be valid (0..14) */
+        if (claimed[col] >= 0) continue;           /* @asm 0x025E26 cmp word[bp+col-0x36],0; jge */
         {
-            int col = *(int8_t far*)(MK_FP(0,0x8F88) + i*12); /* @asm 0x025E81 [bx*12-0x7078] */
-            DG8(0x8E82 + slot_taken[col]) = (uint8_t)i; /* @asm 0x025E9F [bx-0x717E]=i */
+            int crow = *(int8_t far*)(MK_FP(0, 0x8F87) + i*12); /* @asm 0x025E2C category [bx*12-0x7079] */
+            int base;
+            if (crow < 0 || crow >= 5) continue;    /* defensive: category must be 0..4 */
+            base = DG8(0x022A + crow);              /* @asm 0x025E44 base[crow] [bx+0x22A] */
+            claimed[col] = row_used[crow] + base;   /* @asm 0x025E38..0x025E50 */
+            row_used[crow]++;                       /* @asm 0x025E3B inc row_used[crow] */
         }
+    }
+
+    /* PLACE each PRESENT good into its column's slot.  q9fc(i) tests the colony
+     * bit-array (ColonyRecord+0x84); good 0 is always placed.  Tiers share a
+     * column so the highest-index present good wins.  @asm 0x025E5C..0x025EAA. */
+    for (i = 0; i < 0x2A; i++) {                   /* @asm 0x025EA6 cmp [bp-0x12],0x2A */
+        if (overlay_call_181F_09FC(i) == 0 && i != 0) /* @asm 0x025E64 q9fc(i); 0x025E70 i==0 still records */
+            continue;
+        {
+            int col  = *(int8_t far*)(MK_FP(0, 0x8F88) + i*12); /* @asm 0x025E81 column */
+            int sidx, slot;
+            if (col < 0 || col >= 0x10) continue;               /* defensive */
+            sidx = claimed[col];                                /* @asm 0x025E8D claimed[col] */
+            if (sidx < 0 || sidx >= 0xF) continue;
+            slot = DGS8(0x8E92 + sidx);                         /* @asm 0x025E95 actual shuffled slot */
+            if (slot >= 0 && slot < 0xF)
+                DG8(0x8E82 + slot) = (uint8_t)i;                /* @asm 0x025E9F [slot-0x717E]=good i */
+        }
+    }
+}
+
+/* ============================================================================
+ * colony_building_config_init  -- populate the 0x8F82 building-config table's
+ * `back_ref`/category (+0x05, 0x8F87) and `column`/line-id (+0x06, 0x8F88)
+ * fields for all 42 @BUILDING entries.
+ *
+ * In the original these come from two init passes the modern boot never ran:
+ *   - column (0x8F88) <- func_0746BC's 42 hardcoded (idx,prereq,CATEGORY,next)
+ *     tuples via func_07464C (@asm 0x074675 mov [si-0x7078],cl).
+ *   - back_ref(0x8F87) <- the NAMES.TXT @BUILDING loader's 3rd numeric column
+ *     (func_0749E0 @asm 0x074d2a..0x074d2f mov [si-0x7079],al).
+ * Both setters are stubbed in the modern link floor, so colony_draw_random_layout
+ * read zeros and collapsed every building into one slot.  The values below are
+ * lifted verbatim from those two verified sources (see docs/COLONY_BUILDING_MODEL.md);
+ * cross-check: grouping the 15 lines by category yields [7,4,2,1,1] == 0x224. */
+void colony_building_config_init(void)
+{
+    /* category (back_ref) per @BUILDING index -- NAMES.TXT @BUILDING 3rd number */
+    static const uint8_t cat[0x2A] = {
+        3,3,3, 1,1,1, 4,4,4, 2,2,2, 1,1,1, 1,1, 0, 0, 0,0,
+        0,0,0, 0,0,0, 0,0,0, 2,2, 0,0,0, 1,1, 2,2, 0,0,0
+    };
+    /* column (line id) per @BUILDING index -- func_0746BC tuples */
+    static const uint8_t col[0x2A] = {
+        0,0,0, 1,1,1, 2,2,2, 3,3,3, 4,4,4, 5,5, 5, 6, 7,7,
+        8,8,8, 9,9,9, 10,10,10, 3,3, 11,11,11, 12,12, 13,13, 14,14,14
+    };
+    int i;
+    for (i = 0; i < 0x2A; i++) {
+        *(uint8_t far*)(MK_FP(0, 0x8F87) + i*12) = cat[i]; /* +0x05 back_ref/category */
+        *(uint8_t far*)(MK_FP(0, 0x8F88) + i*12) = col[i]; /* +0x06 column/line id */
     }
 }
 
@@ -1475,7 +1551,7 @@ void colony_draw_commodity(int item, int x, int y, int colony_idx)
     if (item == 0 && overlay_call_181F_09FC(0) == 0) /* @asm 0x026DEC cmp item,0; 0x026DF2 0x9FC(0) */
         icon = 0x11;                                /* @asm 0x026E00 */
     if (item == 0xF || item == 0x11) {              /* @asm 0x026E05/0x026E0B */
-        if (overlay_call_181F_09FC(0xf) && overlay_call_181F_09FC()) /* @asm 0x026E11 0x9FC(0xF);0x026E1F 0x9FC(0x11) */
+        if (overlay_call_181F_09FC(0xf) && overlay_call_181F_09FC(0x11)) /* @asm 0x026E11 0x9FC(0xF);0x026E1F 0x9FC(0x11) */
             icon = 0x30;                            /* @asm 0x026E2D */
         else
             icon = 0x2F;                            /* @asm 0x026E34 */

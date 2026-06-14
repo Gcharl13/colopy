@@ -1471,10 +1471,10 @@ int func_02D3C6_colony_op_3calls(void)
     int bonus = 0;          /* [bp-0x16] */
     int firepower, u, d;    /* [bp-0x18] current unit / [bp-0xC] offset */
 
-    if (overlay_call_181F_09FC() != 0) {            /* @0x02D3D6 fort present */
+    if (overlay_call_181F_09FC(1) != 0) {           /* @0x02D3D6 0x9FC(1): Fort present (b8 01 00 mov ax,1) */
         defenders = 1; bonus = g_w8F8E;             /* @0x02D3E3/0x02D3E8 */
     }
-    if (overlay_call_181F_09FC() != 0) {            /* @0x02D3EE upgraded fort */
+    if (overlay_call_181F_09FC(2) != 0) {           /* @0x02D3EE 0x9FC(2): Fortress present (6a 02 push 2) */
         defenders++; bonus = g_w8F9A;               /* @0x02D3FC/0x02D3FF */
     }
 

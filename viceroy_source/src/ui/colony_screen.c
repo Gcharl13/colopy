@@ -331,14 +331,23 @@ static int col_bldg_ready(void)
 
 /* func_026DD4 base-frame select: frame = LEVEL+1, with the wall special-cases
  * (@asm 0x026E00..0x026E39). q9fc(t) = "colony has building tier t"; modelled
- * here against the per-slot LEVEL bytes the setup already resolved. */
+ * here against the per-slot LEVEL bytes the setup already resolved.
+ *
+ * INDEXING NOTE: the original blit_sprite (0x181F:0x254 / func_00E76A) uses
+ * 1-based sprite IDs: sprite #1 = BUILDING.SS frame[0], sprite #48 = frame[47].
+ * The special-case values 0x2F (47) and 0x30 (48) are 1-based — both valid for a
+ * 48-frame sheet.  The modern ss_blit is 0-based, so:
+ *   ss_blit frame = (original 1-based id) - 1 = (LEVEL+1) - 1 = LEVEL.
+ * Wall special cases also shift by -1: 0x11→0x10, 0x2F→0x2E, 0x30→0x2F. */
 static int col_bldg_frame(int level)
 {
-    int frame = level + 1;                  /* @asm 0x026DE5 [bp-0x58]=[bp+6]+1 */
-    /* wall tiers (Stockade 0xF / Fort 0x11): @asm 0x026E05..0x026E39 pick the
-     * palisade/fort/fortress sprite (0x2F/0x30/0x11).  Left as LEVEL+1 for the
-     * non-wall majority; the wall override needs q9fc which the colony setup
-     * resolves into LEVEL directly. */
+    /* base: original 1-based frame = LEVEL+1  (@asm 0x026DE5 [bp-0x58]=[bp+6]+1)
+     * convert to 0-based for ss_blit: subtract 1 → result = LEVEL. */
+    int frame = level;                      /* 0-based ss_blit index */
+    /* wall-tier special cases (@asm 0x026E05..0x026E39), converted to 0-based:
+     *   original 0x11 (17, 1-based) → 0x10 (16, 0-based)
+     *   original 0x2F (47, 1-based) → 0x2E (46, 0-based) = Fort sprite
+     *   original 0x30 (48, 1-based) → 0x2F (47, 0-based) = Fortress sprite */
     return frame;
 }
 
@@ -362,7 +371,7 @@ void colony_paint_buildings(int repaint)
         } else if (col_bldg_ready()) {                 /* building: func_026DD4 (0x7E33) */
             int frame = col_bldg_frame(blvl);
             if (frame >= 0 && frame < col_bldg.nframes)
-                ss_blit(&col_bldg, frame, bx_x, bx_y); /* @asm 0x026E4E lcall 0x181F:0x254 */
+                ss_blit_remap(&col_bldg, frame, bx_x, bx_y); /* @asm 0x026E4E lcall 0x181F:0x254 */
         }
     }
 

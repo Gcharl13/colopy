@@ -131,6 +131,26 @@ int test_building_or_father_bit(int bit_idx)
     return test_colony_building_bit(bit_idx, (int)g_8DC6); /* @asm 0x8641..0x8649 */
 }
 
+/* ----------------------------------------------------------------------------
+ * overlay_call_181F_09FC — STRONG override of the auto-generated weak stub.
+ *
+ * The RTLink resident thunk 0x181F:0x09FC resolves to func_0863E
+ * (test_building_or_father_bit) — see docs/thunk_signatures.json
+ * "0x181F:0x09FC" -> bld_or_father_bit, resident, 0x863E.  The generated link
+ * floor (tools/generated/linkfloor_stubs.c) left this as a return-0 stub, which
+ * made EVERY colony report "no structures": the colony building layout
+ * (func_025D34) recorded nothing, fort/wall gates never fired, and ~50 other
+ * building-/founding-father-bit probes were dead.  Forwarding to the real leaf
+ * tests bit `bit_idx` in the current colony's bit-array (ColonyRecord+0x84 /
+ * DGROUP 0x5DCA).  Verified against real saves: COLONY00.SAV colony 0
+ * (Jamestown) bit-array cf b2 22 09 99 .. decodes to Stockade/Fort/Fortress/
+ * Armory/Docks/Drydock/Town Hall/Schoolhouse/College/Warehouse/... — the
+ * expected structures for a pop-10 colony. */
+int overlay_call_181F_09FC(int bit_idx)
+{
+    return test_building_or_father_bit(bit_idx) ? 1 : 0;
+}
+
 /* ============================================================================
  * count_building_chain_present — 55 bytes
  *

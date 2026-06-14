@@ -787,6 +787,15 @@ int main(int argc, char **argv)
         printf("  @BEGINMENU: %d options, width=%d y=%d\n",
                g_menu_count, g_menu_width, g_menu_y);
 
+    /* Populate the building-config table (0x8F87 category / 0x8F88 column) that
+     * the original fills via func_0746BC + the NAMES.TXT @BUILDING loader -- both
+     * stubbed in the modern link floor.  Without it colony_draw_random_layout
+     * reads zero columns and collapses every building into one slot.
+     * See docs/COLONY_BUILDING_MODEL.md. */
+    {   extern void colony_building_config_init(void);
+        colony_building_config_init();
+    }
+
     char fpath[512];
     /* The default text context [0x89E] -- the @smallfont the @BEGINMENU panel and
      * the body/report/status text draw with -- is FONTTINY.FF (asset_loader.c
@@ -986,35 +995,51 @@ int main(int argc, char **argv)
             vid_screenshot_ppm("viceroy_map.ppm");
             printf("  headless  : map frame -> viceroy_map.ppm "
                    "(%dx%d tiles)\n", g_map_w, g_map_h);
-            {   /* colony screen frame */
-                extern int func_0082DC_logic_sz_118(uint16_t);
+            /* === COLONY screen frame, driven by REAL building data === */
+            {   extern void colony_draw_random_layout(void);
                 extern void colony_screen_render(int);
-                func_0082DC_logic_sz_118(0);
-                /* sandy building-plot backdrop. The original's textured-sand
-                 * fill leaf (0x181F:0xCE/0x4FC) is unported; flat fill stands in
-                 * until it is. COLONY.PIK (320x72) is the bottom bar, not a
-                 * full backdrop, so it is no longer stretched across the top. */
-                {   extern int ui_color_for(int, int, int);
-                    extern void vid_box_fill(int, int, int, int, uint8_t);
-                    memset(vid_framebuffer(), 0, VID_W * VID_H);
-                    vid_box_fill(0, 8, VID_W, 120,
-                                 (uint8_t)ui_color_for(0xC0, 0xA8, 0x78));
+                extern int  ui_color_for(int, int, int);
+                extern void vid_box_fill(int, int, int, int, uint8_t);
+                int rec = 0x5D46;                      /* ColonyRecord[0] (the test colony) */
+
+                /* Drive the building display from a GENUINE structure set: the
+                 * building-presence bit-array of COLONY00.SAV colony 0 (Jamestown,
+                 * pop 10).  These 8 bytes at ColonyRecord+0x84 decode to Stockade/
+                 * Fort/Fortress, Armory, Docks/Drydock, Town Hall, Schoolhouse/
+                 * College, Warehouse, Stable, the trade houses, Carpenter, Lumber
+                 * Mill and Blacksmith -- exactly what colony_draw_random_layout
+                 * lays out via q9fc(test_building_or_father_bit). */
+                {   static const uint8_t jamestown_bits[8] =
+                        { 0xCF,0xB2,0x22,0x09,0x99,0x00,0x00,0x00 };
+                    for (int b = 0; b < 8; b++)
+                        DG8(rec + 0x84 + b) = jamestown_bits[b];
+                    /* NB: population (rec+0x1F) is left at the synthetic seed's
+                     * value -- the work-grid / colonist-row painters iterate it
+                     * over the colonist arrays, which the test colony does not
+                     * populate, so it must stay small. */
                 }
-                /* TEST SEED (headless build-verify only): the colony building
-                 * setup (overlay_024342) fills the per-slot LEVEL table 0x8E82
-                 * from a real colony's structures; the synthetic test colony has
-                 * none, so seed a representative set here to exercise the ported
-                 * building draw (BUILDING.SS frame = LEVEL+1, func_026DD4). */
-                {   /* slot LEVEL bytes -> BUILDING.SS frame (LEVEL+1); 0xFF=lot */
-                    static const uint8_t seed_lvl[15] = {
-                        8, 9,10,12,13, 14,15,31,16, 32,  /* civic/church/houses */
-                       33, 2,34, 0,35 };                 /* church/warehouse/workshop */
-                    for (int s = 0; s < 15; s++) {
-                        DG8(0x8E82 + s) = seed_lvl[s];
-                        DG8(0x8D62 + s) = (uint8_t)s;
-                    }
+                DG16(0x8DC6) = 0;                      /* active colony idx (q9fc reads this) */
+                DG16(0x8542) = (uint16_t)rec;          /* active ColonyRecord ptr */
+
+                colony_draw_random_layout();           /* fills 0x8E82/0x8D62 from the bits */
+                {   /* report the laid-out slots */
+                    int n = 0; for (int s = 0; s < 15; s++) if ((int8_t)DG8(0x8E82+s) >= 0) n++;
+                    printf("  headless  : colony layout -> %d/15 slots filled\n", n);
                 }
-                colony_screen_render(1);   /* title painter draws the name */
+
+                /* sandy building-plot backdrop (the original's textured-sand fill
+                 * leaf 0x181F:0xCE/0x4FC is unported; flat fill stands in). */
+                memset(vid_framebuffer(), 0, VID_W * VID_H);
+                vid_box_fill(0, 8, VID_W, 120, (uint8_t)ui_color_for(0xC0, 0xA8, 0x78));
+                {   /* Render the building plot directly.  The full composer
+                     * (colony_screen_render) also runs the work-grid / colonist
+                     * sub-painters which iterate colonist arrays the synthetic
+                     * test colony does not populate; isolate the building draw
+                     * to verify it against the real structure set. */
+                    extern void colony_paint_buildings(int);
+                    colony_paint_buildings(0);
+                }
+                (void)colony_screen_render;
                 vid_present();
                 vid_screenshot_ppm("viceroy_colony.ppm");
                 printf("  headless  : colony frame -> viceroy_colony.ppm\n");

@@ -2723,7 +2723,7 @@ int func_053A34_colony_set_field(int16_t value)
     int ok = 1;                                         /* @asm 0x053A39 [bp-2]=1 */
     if (value < 0) {                                    /* @asm 0x053A3E or/jl */
         /* fall through to tail with ok=1 */
-    } else if (overlay_call_181F_09FC() != 0) {         /* @asm 0x053A43 gate 1 */
+    } else if (overlay_call_181F_09FC(value) != 0) {    /* @asm 0x053A43 0x9FC(AX=value): gate 1 */
         /* ok stays 1 */
     } else {
         ok = 0;                                         /* @asm 0x053A4F */
