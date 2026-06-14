@@ -366,6 +366,14 @@ static void draw_map(void)
     g_cam_x = (int16_t)DG16(0x8328);         /* read back the clamped origin */
     g_cam_y = (int16_t)DG16(0x832E);
 
+    /* the right-hand control panel sits on WOOD (x>=240); the map viewport is
+     * x=0..239.  Paint the wood backdrop before the minimap + info panel draw
+     * onto it (matches the live game -- the prior render left it black). */
+    {
+        extern void ui_wood_fill(int, int, int, int);
+        ui_wood_fill(VIEW_TX * 16, 0, VID_W - VIEW_TX * 16, VID_H);  /* x>=240 */
+    }
+
     /* (manual ship blit removed: units draw via the ported chain) */
     /* the REAL right-hand UI: minimap panel + tile/unit info panel */
     {
