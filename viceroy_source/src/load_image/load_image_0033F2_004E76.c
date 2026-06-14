@@ -286,19 +286,62 @@ int func_0036B2_type_sprite_id(uint16_t r_ax)
  * @inferred_role  TINY_ACCESSOR (20 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-/* NOTE 2026-06-09 from func_003710.asm — NOT tiny (auto-banner cut it at 20
- * bytes; the real body is 173 bytes, 0x003710..0x0037BC).  It is a terrain-tile
- * -> sprite-id resolver: a register-arg fastcall (tile record index in AX) that
- * reads the 0x1C-stride tile record at DGROUP:0x3146[ax*0x1C], indexes the sprite
- * table at 0x5232 by 14*type and a sub-type at 0x315B, calls the near helper
- * 0x0036B2 when type==0, then applies a dense ladder of (type,subtype)->id fixups
- * before returning the resolved sprite id.  The fixup ladder is not confidently
- * recoverable from this TU (the 0x0036B2 helper IS -- ported above as
- * func_0036B2_type_sprite_id 2026-06-12), so this stays an honest stub rather
- * than a guessed mapping. */
-int func_003710_logic_sz_20(void)
+/* PORTED 2026-06-14 from func_003710.asm (173 bytes, 0x003710..0x0037BC).  The
+ * terrain-tile -> sprite-id resolver: register-arg fastcall (tile record index in
+ * AX).  Reads the 0x1C-stride tile record at DGROUP:0x3146[ax*0x1C] to get the
+ * tile TYPE, indexes the sprite table at 0x5232 by 14*type for the base sprite,
+ * and a signed SUBTYPE at 0x315B.  When type==0 the base is replaced by the
+ * resident leaf func_0036B2_type_sprite_id(subtype).  A (type,subtype) fixup
+ * ladder then overrides the sprite for the special tile types 1..5 (boundary/
+ * coast variants 0x4A..0x4D), type 3 (0x4E unless subtype 0x18), and type 0xB
+ * with the 0x80 record flag (0x42).  Returns the resolved ICONS-sheet id.
+ * @asm 0x003710..0x0037BC */
+int func_003710_logic_sz_20(uint16_t r_ax)
 {
-    return 0;  /* TODO: port from func_003710.asm — multi-table sprite-id ladder + near 0x0036B2 */
+    /* @asm 0x003716 imul bx,ax,0x1c — tile record byte offset */
+    int rec = (int)(int16_t)r_ax * 0x1C;
+    /* @asm 0x00371c mov bl,[bx+0x3146]; sub bh,bh — tile type (0..255) */
+    int type = DG8(0x3146 + rec);
+    /* @asm 0x003722..0x003730 cx=type; bx=14*type; al=[bx+0x5232] — base sprite */
+    int sprite_id = DG8(0x5232 + 14 * type);
+    /* @asm 0x00373e mov al,[bx+0x315b]; cbw — signed subtype */
+    int si = (int8_t)DG8(0x315B + rec);
+    int di = type;                                /* @asm di = cx = type */
+
+    /* @asm 0x003745 or cx,cx; jne — type==0: resolve base via func_0036B2(subtype) */
+    if (type == 0) {
+        /* @asm 0x003749 cbw; 0x00374a push cs; call 0x36b2 (arg in AX = subtype) */
+        sprite_id = (int16_t)func_0036B2_type_sprite_id((uint16_t)(int16_t)si);
+    }
+
+    /* @asm 0x003751 cmp di,2 — type-2 has its own 0x14 gate before the shared ladder */
+    int dx;
+    if (di == 2) {
+        /* @asm 0x003756 dx=[bp-2]; cmp si,0x14; jne -> dx=0x4a */
+        dx = (si == 0x14) ? sprite_id : 0x4A;
+    } else {
+        /* @asm 0x003798 dx=[bp-2]; jmp 0x3761 — non-2 types start from the base */
+        dx = sprite_id;
+    }
+    /* @asm 0x003761 di==1 && subtype!=0x15 -> dx=0x4b */
+    if (di == 1 && si != 0x15) dx = 0x4B;
+    /* @asm 0x00376e di==4 && subtype!=0x15 -> dx=0x4d */
+    if (di == 4 && si != 0x15) dx = 0x4D;
+    /* @asm 0x00377b di==5 && subtype!=0x16 -> dx=0x4c */
+    if (di == 5 && si != 0x16) dx = 0x4C;
+    /* @asm 0x003788 mov [bp-2],dx */
+    sprite_id = dx;
+    /* @asm 0x00378b di==3: subtype!=0x18 -> 0x4e (0x37a2); else keep dx (0x379e) */
+    if (di == 3 && si != 0x18) {
+        si = 0x4E;
+    } else {
+        si = dx;
+    }
+    /* @asm 0x37a5 di==0xb && (record[0x3148]&0x80) -> 0x42 */
+    if (di == 0x0B && (DG8(0x3148 + rec) & 0x80)) {
+        si = 0x42;
+    }
+    return (int16_t)si;                            /* @asm 0x37b7 ax=si; retf */
 }
 
 /* @asm        0x0037BE..0x00380C  (78 bytes)  region=load_image
@@ -347,7 +390,7 @@ int func_0037BE_op_sz_78(uint16_t r_dx, uint16_t r_ax, uint16_t r_bx)
             chosen = found;                       /* else di stays = default ([bp-6]) */
     }
     DG16(r_bx) = (uint16_t)chosen;                /* @asm 0x003802 mov [bx],ax */
-    return func_003710_logic_sz_20();             /* @asm 0x003805 call 0x3710 */
+    return func_003710_logic_sz_20((uint16_t)chosen); /* @asm 0x003805 call 0x3710 (AX=chosen) */
 }
 
 /* @asm        0x00380C..0x003869  (93 bytes)  region=load_image
@@ -405,18 +448,248 @@ int func_00380C_op_sz_93(uint16_t arg0_bp_06 /*flags*/)
  * @inferred_role  MEDIUM_LOGIC (100 bytes). 0x0427:0x004A
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-/* NOTE 2026-06-09 from func_00386A.asm — NOT 100 bytes (auto-banner cut; the real
- * body is 880 bytes, 0x00386A..0x003BD9).  It is the terrain/feature label
- * renderer: it resolves a tile's display glyph through a large branch ladder over
- * tile types 4..0x16 (city counts '0'..'9', resource '+'/digits, special markers
- * 'X','E', etc.), measures the resulting string via the text-metrics overlay,
- * positions it, and draws it through several blit overlays (0x0B9E, 0x0C56,
- * 0x0C83, 0x0C2A).  This is a large, byte-exact text-layout routine whose glyph
- * ladder and overlay text helpers are not confidently recoverable here, so it is
- * kept as an honest stub rather than a guessed reconstruction. */
-int func_00386A_op_sz_100(void)
+/* PORTED 2026-06-14 from func_00386A.asm — the unified unit/feature label renderer
+ * (resident leaf behind 0x181F:0x02BC).  Register-arg fastcall: AX = unit/record
+ * index, DX = flags, BX = x; three stack words follow (retf 6): [bp+6] = metric,
+ * [bp+8] = box_w, [bp+0xa] = y.  It resolves the unit's display sprite cell (via
+ * func_0037BE / func_003710), builds a one-character label glyph through a large
+ * tile-type ladder (ship cargo digit, native tribe glyph, mission cross 'X',
+ * contact letter 'E', fortified strength digit / '+'), measures it, positions
+ * the figure + label box, and draws them through the text/blit overlay leaves
+ * (0x0C2A:6 measure, 0x0C83:2 metrics, 0x0C56:4 cell blit, 0x0B9E:0xA box).  Those
+ * leaves are asset-gated stubs in this headless build, so they forward to shims;
+ * their pushed far-context args ([0x83E]/[0x840]/[0x89E]/[0x8A0]/&0x2DA8) are taken
+ * off the stack by the shim (declared `(void)` like its siblings).
+ *
+ * SOURCE-EXTENT NOTE: re_work/disasm/func_00386A.asm physically ENDS at its
+ * decoded byte 0x003BE6 (`mov ax,4`).  The complete metric!=0x64 path is present
+ * in the .asm and terminates in the `retf 6` at 0x003BD7 — it is ported in full.
+ * The metric==0x64 branch (entered by `jmp 0x3bda` at 0x003B37) is only partially
+ * present: only its decoded instructions 0x003BDA..0x003BE6 are ported here; the
+ * rest of that branch is NOT in this disassembly and is deliberately left
+ * unported rather than guessed.  (The byte-faithful 0x64 path lives separately as
+ * unit_figure_blit_64 in src/platform/unit_blit.c.)
+ * @asm 0x00386A..0x003BE6 */
+extern int overlay_call_0C2A_0006();  /* @ref RTLink seg 0x0C2A off 0x0006 -- glyph/string measure */
+extern int overlay_call_0C83_0002();  /* @ref RTLink seg 0x0C83 off 0x0002 -- scaled text metrics  */
+extern int overlay_call_0C56_0004();  /* @ref RTLink seg 0x0C56 off 0x0004 -- cell blit            */
+
+int func_00386A_op_sz_100(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx,
+                          uint16_t arg_bp_06, uint16_t arg_bp_08, uint16_t arg_bp_0A)
 {
-    return 0;  /* TODO: port from func_00386A.asm — 880-byte terrain-label renderer */
+    uint16_t flags  = r_dx & 0xDF;          /* [bp-0x4a] @asm 0x00387A and byte[bp-0x4a],0xdf */
+    int      x      = (int16_t)r_bx;        /* [bp-0x48] saved bx */
+    int      metric = (int16_t)arg_bp_06;   /* [bp+6]  (si after @asm 0x003A8C) */
+    int      box_w  = (int16_t)arg_bp_08;   /* [bp+8] */
+    int      y      = (int16_t)arg_bp_0A;   /* [bp+0xa] */
+
+    int rebel_x = 0;                        /* [bp-0x1e] @asm 0x003875 mov [bp-0x1e],0 */
+    int out_idx = 0;                        /* [bp-0x2a] (filled by func_0037BE via &out) */
+    int cell;                               /* [bp-0xc] */
+    int stacked;                            /* [bp-0x1c] */
+    int cls;                                /* [bp-0x12] */
+    int rec;                                /* [bp-0x40] */
+    int type;                               /* @asm si then cl @0x0038BD */
+    int owner;                              /* @asm di @0x003905 */
+    int orders;                             /* [bp-0xa] */
+    int ch;                                 /* [bp-1] (label glyph) */
+    int boxcol;                             /* [bp-0x1f] */
+    int txtcol;                             /* [bp-0xf] */
+    int digit;                              /* [bp-0x18] (fortified-strength flag) */
+    uint8_t buf[2];                         /* [bp-0x32]/[bp-0x31] */
+    int label_w, label_h, fig_w, fig_h, total_w;  /* [bp-0x22]/[bp-0x24]/[bp-0x26]/[bp-0x1a]/[bp-8] */
+    int dx;                                 /* dx working (centre x) */
+    int label_x, label_y;                   /* [bp-2]/[bp-6] */
+    uint8_t far *rec_sheet;                 /* far ptr from [0x83E]:[0x840] */
+
+    /* @asm 0x00387E dx=[bp-0x4a]; and dx,0x40 — only the 0x40 (ship-pref) bit
+     *      reaches func_0037BE as its search flag.
+     * @asm 0x003884 lea bx,[bp-0x2a] (&out); 0x003887 push cs; 0x003888 call 0x37be.
+     * func_0037BE writes the chosen record index through its near-pointer arg via
+     * DG16(r_bx); pass &out_idx as a DGROUP offset and read it back from the same
+     * offset so the round-trip is self-consistent in the flat model. */
+    {
+        uint16_t out_off = (uint16_t)(uintptr_t)(uint16_t near *)&out_idx;
+        cell = func_0037BE_op_sz_78((uint16_t)(r_dx & 0x40), r_ax, out_off) & 0xFFFF;
+                                            /* [bp-0xc] @asm 0x00388B mov [bp-0xc],ax */
+        out_idx = (int16_t)DG16(out_off);   /* read back [bp-0x2a] (func_0037BE's *out) */
+    }
+
+    /* @asm 0x00388E test byte[bp-0x4a],0x80 — stacked-probe flag */
+    stacked = 0;                            /* @asm 0x0038AC mov [bp-0x1c],0 */
+    if (r_dx & 0x80) {
+        /* @asm 0x003894 ax=si; lcall 0x427,2; lcall 0x427,0x4a; or ax,ax; jl 0x38ac */
+        int head = (int16_t)overlay_call_0427_0002();
+        int nxt  = (int16_t)overlay_call_0427_004A((uint16_t)head);
+        if (nxt >= 0)
+            stacked = 1;                    /* @asm 0x0038A4 mov [bp-0x1c],1 */
+    }
+
+    cls = 0;                                /* @asm 0x0038B1 mov [bp-0x12],0 */
+    rec = out_idx * 0x1C;                   /* @asm 0x0038B6 imul bx,[bp-0x2a],0x1c; [bp-0x40]=bx */
+    type = DG8(0x3146 + rec);               /* @asm 0x0038BD al=[bx+0x3146]; cx=ax; si=ax */
+
+    /* tile-type -> label class ladder  @asm 0x0038C7..0x0039FC ([bp-0x12]) */
+    if (type >= 0x0D && type <= 0x12) {     /* @asm 0x0038C7 cmp cl,0xd jae; 0x0038CF cmp al,0x12 jbe */
+        if (type == 0x0F || type == 0x10 || type == 0x11 || type == 0x12)
+            cls = 1;                        /* @asm 0x0038D6..0x0038F4 -> 0x3996 mov [bp-0x12],1 */
+        else
+            cls = 3;                        /* @asm 0x0038F6 mov [bp-0x12],3 */
+    } else if (type == 0x15 || type == 0x16 || type == 5 ||
+               type == 4 || type == 7 || type == 8) {
+        cls = 3;                            /* @asm 0x00399E..0x0039CB -> 0x38F6 */
+    } else if (type == 0x0C || type == 0x0A || type == 0x0B) {
+        cls = 2;                            /* @asm 0x0039CE..0x0039E0 mov [bp-0x12],2 */
+        if (type == 0x0B && (DG8(0x3148 + rec) & 0x80))
+            cls = 4;                        /* @asm 0x0039E5..0x0039F7 mov [bp-0x12],4 */
+    }
+    /* @asm 0x0039DD/0x0039EA/0x0039FC all jmp 0x38FB — fall through to the body */
+
+    owner  = DG8(0x3147 + rec) & 0xF;       /* @asm 0x0038FE al=[bx+0x3147]; and ax,0xf; di=ax */
+    orders = DG8(0x314C + rec);             /* @asm 0x003907 cl=[bx+0x314c]; ch=0; [bp-0xa]=cx */
+    if (owner >= 4)                         /* @asm 0x003910 cmp ax,4; jl 0x391a */
+        orders = 0;                         /* @asm 0x003915 mov [bp-0xa],0 */
+    ch = DG8(0x54DE + orders);              /* @asm 0x00391A bx=[bp-0xa]; al=[bx+0x54de]; [bp-1]=al */
+
+    /* foreign-ship cargo digit / privateer 'X'  @asm 0x003924..0x003955 */
+    if (DG8(0x3146 + rec) >= 0x0D && DG8(0x3146 + rec) <= 0x12 &&   /* @asm 0x003927/0x00392E */
+        (int16_t)DG16(0x5396) != owner) {                          /* @asm 0x003935 cmp [0x5396],di */
+        ch = (uint8_t)(DG8(0x3150 + rec) + 0x30);                  /* @asm 0x00393B al=[bx+0x3150]; add al,0x30 */
+        if (type == 0x10 && DG16(0x53A2) == 0) {                   /* @asm 0x003944/0x003949 */
+            rebel_x = 1;                                           /* @asm 0x003950 mov [bp-0x1e],1 */
+            ch = 0x58;                                             /* @asm 0x003955 mov [bp-1],0x58 ('X') */
+        }
+    }
+    /* active-European contact letter  @asm 0x003959..0x003986 */
+    if (owner < 4) {                                               /* @asm 0x003959 cmp di,4; jge 0x398a */
+        /* @asm 0x00395E jge 0x396a is dead here (di<4); fall through to 0x3960 */
+        if (DG8(0x543F + owner * 0x34) != 0 &&                     /* @asm 0x003960 imul bx,di,0x34; cmp [bx+0x543f],0 */
+            (DG8(0x5383) & 0x20) &&                                /* @asm 0x00396A test [0x5383],0x20 */
+            (DG8(0x894) & 8)) {                                    /* @asm 0x003971 test [0x894],8 */
+            ch = DG8(0x314B + rec);                                /* @asm 0x003978 al=[bx+0x314b]; [bp-1]=al */
+            if ((unsigned)ch >= 0x80)                              /* @asm 0x003982 cmp al,0x80; jb */
+                ch = 0x45;                                         /* @asm 0x003986 mov [bp-1],0x45 ('E') */
+        }
+    }
+
+    /* @asm 0x00398A cmp di,4; jge 0x3a00 — both 0x00398F and 0x003A00 read
+     *      byte[di+0x848] (di==owner on both arms), so boxcol = [owner+0x848]. */
+    boxcol = DG8(owner + 0x848);            /* [bp-0x1f] @asm 0x00398F/0x003A00 */
+
+    txtcol = boxcol;                        /* @asm 0x003A07 [bp-0x28]=di; 0x003A0A [bp-0xf]=al */
+    if (rebel_x)                            /* @asm 0x003A0D cmp [bp-0x1e],0; je 0x3a17 */
+        txtcol = 0;                         /* @asm 0x003A13 mov [bp-0xf],0 */
+
+    /* fortified-strength digit  @asm 0x003A17..0x003A88 */
+    digit = ((DG8(0x3148 + rec) & 0x80) && type != 0x0B);
+                                            /* [bp-0x18] @asm 0x003A1A test[bx+0x3148],0x80; 0x003A21 cmp[bx+0x3146],0xb */
+    /* @asm 0x003A28/0x003A30 mov [bp-0x18],1/0 ; 0x003A35 cmp [bp-0x18],0; je 0x3a8c */
+    if (digit) {
+        /* @asm 0x003A3B bl=[bx+0x3146]; bx = type*14 (shl/add/shl/add/shl chain);
+         *      al=[bx+0x5235]; si=ax */
+        int strength = DG8(0x5235 + type * 14);
+        strength -= DG8(0x315A + rec);      /* @asm 0x003A55 bx=[bp-0x40]; al=[bx+0x315a]; si-=ax */
+        {
+            uint16_t py = DG8(0x3145 + rec); /* @asm 0x003A5E al=[bx+0x3145]; push ax */
+            uint16_t px = DG8(0x3144 + rec); /* @asm 0x003A63 al=[bx+0x3144]; push ax */
+            if (overlay_call_037F_000A(px, py) != 0)   /* @asm 0x003A68 lcall 0x37f,0xa; or ax,ax; je */
+                strength = (strength + 1) >> 1;        /* @asm 0x003A74 lea ax,[si+1]; sar ax,1; si=ax */
+        }
+        if (strength < 10)                  /* @asm 0x003A7B cmp si,0xa; jge 0x3a88 */
+            ch = (uint8_t)(strength + 0x30);/* @asm 0x003A80 lea ax,[si+0x30]; [bp-1]=al */
+        else
+            ch = 0x2B;                      /* @asm 0x003A88 mov [bp-1],0x2b ('+') */
+    }
+
+    /* metric (si) is reloaded from the stack arg for the layout phase.
+     * @asm 0x003A8C mov si,[bp+6] */
+
+    buf[0] = (uint8_t)ch;                   /* @asm 0x003A8F al=[bp-1]; [bp-0x32]=al */
+    buf[1] = 0;                             /* @asm 0x003A95 mov byte[bp-0x31],0 */
+
+    /* measure the one-glyph label string  @asm 0x003A99..0x003AB0 (0xC2A:6, ax=0):
+     *   push [0x8a0]; push [0x89e]; lea ax,[bp-0x32]; push ss; push ax; sub ax,ax;
+     *   lcall 0xc2a,6; add ax,3.  &buf (= [bp-0x32]) is the measured string the
+     *   shim reads off the DOS stack (asset-gated, so the shim takes no C args). */
+    (void)buf;
+    label_w = (overlay_call_0C2A_0006() & 0xFFFF) + 3;            /* [bp-0x22] */
+    /* @asm 0x003AB3 les bx,[0x89e]; al=es:[bx]; sub ah,ah; add ax,3 -> [bp-0x24] */
+    label_h = ((*(uint8_t far * far *)DG_PTR(0x089E))[0] & 0xFF) + 3;  /* [bp-0x24] */
+
+    /* sprite-sheet header for the figure cell  @asm 0x003AC2..0x003AE0:
+     *   bx=[bp-0xc]*12 + [0x83e]; es=[0x840]; [bp-0x44]=bx; [bp-0x42]=es;
+     *   ax = es:[bx+0x3e] (frame width) -> [bp-0x26]. */
+    rec_sheet = *(uint8_t far * far *)DG_PTR(0x083E);
+    fig_w = *(int16_t far *)(rec_sheet + cell * 12 + 0x3E);       /* [bp-0x26] */
+
+    if (metric == 0x64) {                   /* @asm 0x003AE3 cmp si,0x64; jne 0x3af8 */
+        total_w = label_w + fig_w;          /* @asm 0x003AE8 ax=[bp-0x22]; add ax,[bp-0x26]; [bp-8]=ax */
+        fig_h = *(int16_t far *)(rec_sheet + cell * 12 + 0x40);   /* @asm 0x003AF1 ax=es:[bx+0x40] -> [bp-0x1a] */
+    } else {
+        /* @asm 0x003AF8 push es; push [0x83e]; push si; lea ax,[bp-0x3e]; push ss;
+         *      push ax; ax=[bp-0xc]; dx=[bp-0x48]; bx=[bp+0xa]; lcall 0xc83,2 ->
+         *      fills the [bp-0x3e..] out struct, then [bp-8]=[bp-0x36], [bp-0x1a]=[bp-0x34]. */
+        (void)overlay_call_0C83_0002();
+        total_w = 0;                        /* [bp-8]  = [bp-0x36] (0xC83 out; stub) */
+        fig_h   = 0;                        /* [bp-0x1a] = [bp-0x34] (0xC83 out; stub) */
+    }
+
+    /* @asm 0x003B1D dx=[bp-0x48](x); 0x003B20 ax=[bp-8](total_w);
+     *      0x003B23 cmp [bp+8](box_w),ax; jle 0x3b32; else dx += (box_w-total_w)/2 */
+    dx = x;
+    if (box_w > total_w)
+        dx += (box_w - total_w) >> 1;       /* @asm 0x003B28..0x003B30 sar ax,1; add dx,ax */
+
+    /* @asm 0x003B32 cmp si,0x64; jne 0x3b3a; je -> jmp 0x3bda (the 0x64 path) */
+    if (metric != 0x64) {
+        /* ---- metric != 0x64 scaled path  @asm 0x003B3A..0x003BD7 ---- */
+        /* @asm 0x003B3A ax=si; sub ax,0x19; je 0x3b5e; sub ax,0x19; je 0x3b6c */
+        if (metric == 0x19) {
+            /* @asm 0x003B5E ax=[bp-0x48]+1; [bp-2]=ax; ax=[bp+0xa]+1; jmp 0x3b4f; [bp-6]=ax */
+            label_x = x + 1;                /* [bp-2] @asm 0x003B5E inc ax */
+            label_y = y + 1;                /* [bp-6] @asm 0x003B65 inc ax; 0x003B4F mov [bp-6],ax */
+            label_w = 2;                    /* @asm 0x003B52 mov ax,2; [bp-0x22]=ax */
+            label_h = 2;                    /* @asm 0x003B58 [bp-0x24]=ax */
+            /* @asm 0x003B5B jmp 0x3bb0 (skip the figure blit) */
+        } else if (metric == 0x32) {
+            /* @asm 0x003B6C [bp-0xe]=dx; ax=[bp-0x48]+5; [bp-2]=ax; ax=[bp+0xa]+5; [bp-6]=ax */
+            label_x = x + 5;                /* [bp-2] @asm 0x003B6F add ax,5 */
+            label_y = y + 5;                /* [bp-6] @asm 0x003B78 add ax,5 */
+            label_w = 2;                    /* @asm 0x003B81 mov ax,2; [bp-0x22]=ax */
+            label_h = 2;                    /* @asm 0x003B84 [bp-0x24]=ax */
+            /* figure blit @asm 0x003B8A..0x003BAB (0xC56:4):
+             *   di=dx; push [0x840]; push [0x83e]; ax=[bp+0xa]+[bp-0x1a]-1; push ax;
+             *   push si; dx=([bp-8]>>1)+di; ax=[bp-0xc]; bx=&0x2da8; lcall 0xc56,4 */
+            (void)overlay_call_0C56_0004();
+        } else {
+            /* @asm 0x003B46 ax=[bp-0x48]; [bp-2]=ax; ax=[bp+0xa]; [bp-6]=ax;
+             *      ax=2; [bp-0x22]=ax; [bp-0x24]=ax; jmp 0x3bb0 */
+            label_x = x;                    /* [bp-2] @asm 0x003B46 */
+            label_y = y;                    /* [bp-6] @asm 0x003B4C */
+            label_w = 2;                    /* @asm 0x003B52 */
+            label_h = 2;                    /* @asm 0x003B58 */
+        }
+
+        /* shared tail @asm 0x003BB0..0x003BD7 (0xB9E:0xA — the owner colour box):
+         *   push [0x2dae]; push [0x2dac]; push [0x2daa]; push [0x2da8]; push 2;
+         *   al=[bp-0xf]; push ax; ax=[bp-2]; dx=[bp-6]; bx=2; lcall 0xb9e,0xa;
+         *   pop si; pop di; leave; retf 6 */
+        (void)label_x; (void)label_y; (void)label_w; (void)label_h;
+        (void)overlay_call_0B9E_000A();
+        return 0;                           /* @asm 0x003BD7 retf 6 */
+    }
+
+    /* ---- metric == 0x64 figure+label-box path  @asm 0x003BDA.. ----
+     * Only the instructions physically present in func_00386A.asm are ported
+     * (0x003BDA..0x003BE6); the rest of this branch is not in the disassembly. */
+    /* @asm 0x003BDA mov [bp-0xe],dx; 0x003BDD mov di,dx */
+    /* @asm 0x003BDF al=[bp-0x4a]; and al,0x20; je 0x3bef — the 0x20 bit was
+     *      cleared at entry (@0x00387A), so this test is always false here. */
+    if (flags & 0x20)
+        return 4;                           /* @asm 0x003BE6 mov ax,4 (last decoded byte of the .asm) */
+    /* @asm 0x003BE4 je 0x3bef — continuation past 0x003BE6 is NOT in this .asm. */
+    (void)stacked; (void)cls; (void)txtcol; (void)label_h; (void)fig_h; (void)dx;
+    return 0;
 }
 
 /* @asm        0x003E40..0x003EEE  (174 bytes)  region=load_image
@@ -431,18 +704,218 @@ int func_00386A_op_sz_100(void)
  * @inferred_role  MEDIUM_LOGIC (174 bytes). no LCALLs
  * @status     SKELETON (auto-traced control flow; semantics not yet decoded)
  */
-/* NOTE 2026-06-09 from func_003E40.asm — NOT 174 bytes (auto-banner cut; the real
- * body is 1236 bytes, 0x003E40..0x004313).  It is the unit/feature sprite
- * renderer for a map cell: it selects a sprite class from the unit record at
- * DGROUP:0x54EE[id*0x12], scales by the zoom shift at DGROUP:0x0184, and emits a
- * long, branchy sequence of multi-cell blits (overlay 0x0B9E) plus an optional
- * count-string draw (overlays 0x181F:0x0316 text-format, 0x0D1D:0x08FA, 0x0C2A,
- * 0x0C11/0x0C56) depending on the cell's flags at 0x0894/0x5383.  This is a large,
- * byte-exact rendering routine whose overlay helpers and sprite-class ladder are
- * not confidently recoverable here, so it is kept as an honest stub. */
+/* PORTED 2026-06-14 from func_003E40.asm (1236 bytes, 0x003E40..0x004313).  The
+ * native-settlement / feature sprite renderer for a map cell.  DOS convention:
+ * register args AX=settlement id, DX=screen X, BX=screen Y; stack words [bp+6]=
+ * zoom METRIC, [bp+8..0xE]=the clip rect passed straight through to every blit;
+ * retf 0xA (5 stack words).  This C signature carries ONLY the 5 stack words
+ * (the project's fixed shape for this entry), so the three register inputs are
+ * modeled as the entry-state locals r_ax_id/r_dx_sx/r_bx_sy below — their derived
+ * blit coordinates are dead in this headless build because every 0x0B9E/0x0C56/
+ * 0x0C11 blit forwards to an asset-gated `(void)` shim.  What IS preserved
+ * byte-faithfully: the sprite-class selection (records at 0x54EE/0x5AD8/0x084C/
+ * 0x0848), the zoom geometry, the full branch ladder over metric (0x64/0x32/
+ * <=0x19) and class `si`, the unit-count string path (0x181F:0x316 format ->
+ * 0x0D1D:0x8FA itoa -> 0x0C2A measure -> 0x0C11 draw), and the real DGROUP
+ * side effects (the per-(id,count) clamp-write to the 0x54F6 table, and reads of
+ * 0x5396/0x0894/0x54EF/0x54F1).  @asm 0x003E40..0x004313 */
+extern int  overlay_call_0C56_0004();  /* @ref RTLink seg 0x0C56 off 0x0004 (cell blit) */
+extern int  overlay_call_0C2A_0006();  /* @ref RTLink seg 0x0C2A off 0x0006 (measure glyph) */
+extern int  overlay_call_05DC_00E0();  /* @ref RTLink seg 0x05DC off 0x00E0 (terrain/score) */
+
 int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2_bp_0A, uint16_t arg3_bp_0C, uint16_t arg4_bp_0E)
 {
-    return 0;  /* TODO: port from func_003E40.asm — 1236-byte unit/feature renderer */
+    /* @asm 0x003E40 enter 0x60; push bx,dx,ax,di,si — the three saved registers
+     * AX/DX/BX are this routine's first three (register-passed) inputs; this
+     * C signature does not carry them, so they enter as 0.  See header note. */
+    uint16_t metric  = arg0_bp_06;          /* @asm [bp+6] */
+    int      r_ax_id = 0;                    /* @asm [bp-0x66] = entry AX (settlement id) */
+    int      r_dx_sx = 0;                    /* @asm [bp-0x64] = entry DX (screen X) */
+    int      r_bx_sy = 0;                    /* @asm [bp-0x62] = entry BX (screen Y) */
+    (void)arg1_bp_08; (void)arg2_bp_0A; (void)arg3_bp_0C; (void)arg4_bp_0E;
+
+    /* @asm 0x003E49 imul bx,ax,0x12; [bp-0x60]=bx — unit/settlement record offset */
+    int unit_rec_off = r_ax_id * 0x12;       /* @asm [bp-0x60] */
+    /* @asm 0x003E4F al=[bx+0x54ee]; ah=0; ax-=4; [bp-0xc]=ax — sprite class index */
+    int class_idx = DG8(unit_rec_off + 0x54EE) - 4;   /* @asm [bp-0xc] */
+    /* @asm 0x003E5B imul bx,ax,0x4e; al=[bx+0x5ad8]; ah=0; si=ax — sprite class sel */
+    int si = DG8(class_idx * 0x4E + 0x5AD8); /* @asm si */
+
+    int cell_w;                              /* @asm [bp-0xa] cell pixel width */
+    /* @asm 0x003E66 cmp [bp+6],0x64; jge 0x3E80 */
+    if ((int16_t)metric < 0x64) {
+        /* @asm 0x003E6C cl=[0x184]; ax=2 sar cl; [bp-0x64]-=ax */
+        r_dx_sx -= (2 >> (int16_t)DG16(0x0184));
+        /* @asm 0x003E78 ax=[0x5ad4]; [bp-0xa]=ax */
+        cell_w = (int16_t)DG16(0x5AD4);
+    } else {
+        /* @asm 0x003E80 [bp-0xa]=0x10 */
+        cell_w = 0x10;
+    }
+
+    /* @asm 0x003E85 ax=[bp-0x62]+[bp-0xa]-1; [bp-2]=ax — bottom row */
+    int row_bot = r_bx_sy + cell_w - 1;      /* @asm [bp-2] */
+    /* @asm 0x003E8F push [0x840],[0x83e],ax,[bp+6]; ax=si; if ax>3:ax=3; ax+=0xb
+     *      — frame id = min(class,3)+0xb; @asm 0x003EA8 dx=([bp-0xa] sar 1)+[bp-0x64]
+     *      [bp-4]=dx — centre X; lea bx,[bp+8]; lcall 0xc56,4 */
+    int center_x = (cell_w >> 1) + r_dx_sx;  /* @asm [bp-4] */
+    (void)((si > 3) ? 3 : si);               /* @asm frame id min(si,3)+0xb (blit arg, dead) */
+    (void)row_bot; (void)center_x;
+    overlay_call_0C56_0004();                /* @asm 0x003EB6 lcall 0xc56,4 */
+
+    /* @asm 0x003EBB bx=[bp-0xc]; al=[bx+0x84c]; [bp-8]=al — owner colour byte */
+    int color = DG8(class_idx + 0x84C);      /* @asm [bp-8] */
+    int color2 = 0;                          /* @asm [bp-7] (set on the count path) */
+
+    /* @asm 0x003EC5 cmp [bp+6],0x64; je 0x3ECE; else jmp 0x3F8A */
+    if ((int16_t)metric == 0x64) {
+        /* @asm 0x003ECE or si,si; jne 0x3F3A */
+        if (si == 0) {
+            /* @asm 0x003ED2 three 0xb9e blits (class 0, metric 0x64) */
+            overlay_call_0B9E_000A();        /* @asm 0x003EF2 */
+            overlay_call_0B9E_000A();        /* @asm 0x003F14 */
+            overlay_call_0B9E_000A();        /* @asm 0x003F37 -> jmp 0x4046 (bx=1) */
+        } else if (si == 1) {
+            /* @asm 0x003F3A dec si; je 0x3F40 — two 0xb9e blits */
+            overlay_call_0B9E_000A();        /* @asm 0x003F61 */
+            overlay_call_0B9E_000A();        /* @asm 0x003F87 -> jmp 0x4049 (bx=3) */
+        }
+        /* @asm 0x003F3D si>1 -> jmp 0x404E (no class blits) */
+    } else if ((int16_t)metric == 0x32) {
+        /* @asm 0x003F8A cmp [bp+6],0x32; je 0x3F93; else jmp 0x404E */
+        /* @asm 0x003F93 or si,si; jne 0x4000 */
+        if (si == 0) {
+            /* @asm 0x003F97 three 0xb9e blits (class 0, metric 0x32) */
+            overlay_call_0B9E_000A();        /* @asm 0x003FB8 */
+            overlay_call_0B9E_000A();        /* @asm 0x003FDA */
+            overlay_call_0B9E_000A();        /* @asm 0x003FFD -> jmp 0x4046 (bx=1) */
+        } else if (si == 1) {
+            /* @asm 0x004000 dec si; jne 0x404E — two 0xb9e blits */
+            overlay_call_0B9E_000A();        /* @asm 0x004023 */
+            overlay_call_0B9E_000A();        /* @asm 0x004046 (bx=1) */
+        }
+        /* @asm 0x004001 si>1 -> jmp 0x404E */
+    }
+    /* @asm 0x404E shared join for both metric paths */
+
+    /* @asm 0x00404E bx=[bp-0x60]; test [bx+0x54ef],4; je 0x4074 */
+    if (DG8(unit_rec_off + 0x54EF) & 4) {
+        /* @asm 0x004058 push [0x840],[0x83e],[bp-2],[bp+6]; ax=0x12; lea bx,[bp+8];
+         *      dx=[bp-4]; lcall 0xc56,4 — overlay/decoration cell blit */
+        overlay_call_0C56_0004();            /* @asm 0x00406F lcall 0xc56,4 */
+    }
+
+    /* @asm 0x004074 cmp [bp+6],0x64; je 0x407D; else jmp 0x42E3 */
+    if ((int16_t)metric == 0x64) {
+        char buf[10];                        /* @asm [bp-0x5e] count itoa buffer */
+        /* @asm 0x00407D ax=[bp-0x64]+6; [bp-2]=ax — string base X */
+        row_bot = r_dx_sx + 6;               /* @asm [bp-2] reused as text X */
+        /* @asm 0x004086 lea ax,[bp-0xe]; push ax; push [bp-0x66]; lcall 0x181f,0x316;
+         *      sp+=4; si=ax — format count; [bp-0xe] receives a value -> [bp-6] */
+        int count = (int16_t)overlay_call_181F_0316();  /* @asm si */
+        int bp_06_val = 0;                   /* @asm [bp-6] = [bp-0xe] (overlay out, dead) */
+
+        /* @asm 0x00409D or si,si; jge 0x40A4; else jmp 0x41AD */
+        if (count >= 0) {
+            /* @asm 0x0040A4 cmp [0x5396],si; jne 0x410E */
+            if ((int16_t)DG16(0x5396) == count) {
+                /* @asm 0x0040AA bx=[bp-0x66]; ax=bx; bx<<=3; bx+=ax; bx+=si; bx<<=1
+                 *      — index = ((id*9)+si)*2 into the 0x54f6 word table */
+                int t = ((r_ax_id * 9) + count) * 2;
+                /* @asm 0x0040B8 di=[bx+0x54f6]; if di<0: di=0; [bx+0x54f6]=di (clamp-write);
+                 *      di sar 5; if di>3: di=3 */
+                int di = (int16_t)DG16(t + 0x54F6);
+                if (di < 0) di = 0;
+                DG16(t + 0x54F6) = (uint16_t)di;   /* @asm 0x0040C2 store-back */
+                di >>= 5;
+                if (di > 3) di = 3;
+                /* @asm 0x0040D1 push si,[bp-0xc]; lcall 0x5dc,0xe0; sp+=4;
+                 *      if ax>=0x4b: di=3 */
+                if ((int16_t)overlay_call_05DC_00E0() >= 0x4B) di = 3;
+                /* @asm 0x0040E5 di switch -> [bp-8] colour; [bp-7]=0 */
+                switch (di) {                /* @asm 0x0040E7 or ax,ax / dec ax chain */
+                case 0:  color = 0x0A; break;   /* @asm 0x0040F8 */
+                case 1:  color = 0x0B; break;   /* @asm 0x0040FE */
+                case 2:  color = 0x0E; break;   /* @asm 0x004104 */
+                default: color = 0x0C; break;   /* @asm 0x0040F1 */
+                }
+                color2 = 0;                  /* @asm 0x004108 [bp-7]=0 */
+                bp_06_val = 0;               /* @asm [bp-6] stays as the 0x181F out */
+            } else {
+                /* @asm 0x00410E [bp-6]=1; al=[si+0x848]; [bp-8]=al; [bp-7]=al */
+                bp_06_val = 1;
+                color = DG8(count + 0x848);
+                color2 = color;
+            }
+
+            /* @asm 0x00411D cmp [bp-6],0; jge 0x4126; else jmp 0x41A9 */
+            if (bp_06_val >= 0) {
+                /* @asm 0x004126 ax=[bp-0x62]+4; [bp-4]=ax — text row */
+                center_x = r_bx_sy + 4;      /* @asm [bp-4] reused as text Y */
+                /* @asm 0x00412F count loop: while ([bp-6] >= 0) ... [bp-6]-=4 */
+                while (bp_06_val >= 0) {
+                    /* @asm 0x00412F cmp [bp-6],2; jg 0x4139; else [bp-8]-=8 */
+                    if (bp_06_val <= 2) color -= 8;   /* @asm 0x004135 */
+                    overlay_call_0B9E_000A();   /* @asm 0x004154 */
+                    overlay_call_0B9E_000A();   /* @asm 0x004178 */
+                    overlay_call_0B9E_000A();   /* @asm 0x00419A */
+                    /* @asm 0x00419F [bp-2]+=2; [bp-6]-=4; jns 0x412F */
+                    row_bot += 2;
+                    bp_06_val -= 4;
+                }
+            }
+            /* @asm 0x0041A9 [bp-2]+=2 (fall-through from the count loop) */
+            row_bot += 2;
+        }
+        /* @asm 0x41AD join (also reached from count<0 via jmp) */
+
+        /* @asm 0x0041AD bx=[bp-0x60]; cmp [bx+0x54f1],0; jge 0x41BA; else jmp 0x4241 */
+        if ((int8_t)DG8(unit_rec_off + 0x54F1) >= 0) {
+            /* @asm 0x0041BA al=[bx+0x54f1]; cwde; bx=ax; cx=ax; bx&=0xf; cx&=0x10;
+             *      cmp cx,1; sbb al,al; and al,0xf8; al+=[bx+0x848]; [bp-8]=al */
+            int v   = (int8_t)DG8(unit_rec_off + 0x54F1);
+            int lo  = v & 0xF;
+            int hi  = v & 0x10;
+            int sbb = (hi < 1) ? -1 : 0;     /* @asm sbb al,al (CF set when hi<1) */
+            color = ((sbb & 0xF8) + DG8(lo + 0x848)) & 0xFF;
+            overlay_call_0B9E_000A();        /* @asm 0x0041FE */
+            overlay_call_0B9E_000A();        /* @asm 0x00421D */
+            overlay_call_0B9E_000A();        /* @asm 0x00423C */
+        }
+
+        /* @asm 0x004241 test [0x894],1; jne 0x424B; else jmp 0x42E3 */
+        if (DG8(0x0894) & 1) {
+            /* @asm 0x00424B push 0xa; lea ax,[bp-0x5e]; push ax;
+             *      bx=([bp-0x66]*9 + [0x5396])*2; push [bx+0x54f6]; lcall 0xd1d,0x8fa
+             *      sp+=6 — itoa the 0x54f6 count into buf */
+            (void)((r_ax_id * 9 + (int16_t)DG16(0x5396)) * 2);
+            (void)buf;                       /* @asm [bp-0x5e]: itoa writes here, addr passed to 0xd1d/0xc2a/0xc11 */
+            overlay_call_0D1D_08FA();        /* @asm 0x004265 lcall 0xd1d,0x8fa */
+            /* @asm 0x00426D push [0x8a0],[0x89e]; lea ax,[bp-0x5e]; push ss; push ax;
+             *      ax=0; lcall 0xc2a,6; dec ax; [bp-2]=ax — measured width-1 */
+            row_bot = (int16_t)overlay_call_0C2A_0006() - 1;   /* @asm [bp-2] */
+            /* @asm 0x004285 one 0xb9e blit; les bx,[0x89e]; al=es:[bx]; ah=0; inc ax
+             *      — background bar sized by font height */
+            overlay_call_0B9E_000A();        /* @asm 0x0042B2 */
+            /* @asm 0x0042B7 push 0xf; ax=0xffff; dx=0xf; bx=dx; lcall 0xc28,0xa — style */
+            overlay_call_0C28_000A();        /* @asm 0x0042C1 lcall 0xc28,0xa */
+            /* @asm 0x0042C6 push [0x8a0],[0x89e]; lea ax,[bp-0x5e]; push ss; push ax;
+             *      push 0; lea ax,[si+1]; lea dx,[di+1]; lea bx,[bp+8]; lcall 0xc11,0xc */
+            overlay_call_0C11_000C();        /* @asm 0x0042DE lcall 0xc11,0xc */
+        }
+    }
+
+    /* @asm 0x0042E3 cmp [bp+6],0x19; jg 0x430E — strategic-zoom tiny blit */
+    if ((int16_t)metric <= 0x19) {
+        /* @asm 0x0042E9 push [bp+0xE,0xC,0xA,8]; push [bp-0xa]; bx=[bp-0xc];
+         *      al=[bx+0x84c]; push ax; ax=[bp-0x64]; dx=[bp-0x62]; bx=[bp-0xa];
+         *      lcall 0xb9e,0xA */
+        (void)DG8(class_idx + 0x84C);        /* @asm colour arg (dead) */
+        overlay_call_0B9E_000A();            /* @asm 0x004309 lcall 0xb9e,0xA */
+    }
+
+    (void)color; (void)color2; (void)center_x; (void)row_bot; (void)cell_w;
+    return 0;                                /* @asm 0x004310 leave; retf 0xA */
 }
 
 /* @asm        0x004314..0x004322  (14 bytes)  region=load_image

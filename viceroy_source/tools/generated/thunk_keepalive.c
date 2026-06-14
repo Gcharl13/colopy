@@ -14,7 +14,6 @@ extern char func_002932_append_rparen;
 extern char func_0029DE_rtl_sz_39;
 extern char func_002A98_rtl_sz_46;
 extern char func_002AFE_op_sz_58;
-extern char func_003710_logic_sz_20;
 extern char func_00386A_op_sz_100;
 extern char func_0048CC_logic_sz_13;
 extern char func_004900_logic_sz_15;
@@ -192,7 +191,6 @@ void *viceroy_thunk_keepalive[] = {
     (void *)&func_0029DE_rtl_sz_39,
     (void *)&func_002A98_rtl_sz_46,
     (void *)&func_002AFE_op_sz_58,
-    (void *)&func_003710_logic_sz_20,
     (void *)&func_00386A_op_sz_100,
     (void *)&func_0048CC_logic_sz_13,
     (void *)&func_004900_logic_sz_15,
