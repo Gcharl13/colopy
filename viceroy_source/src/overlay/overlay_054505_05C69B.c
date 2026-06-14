@@ -410,8 +410,14 @@ int native_settlement_visit_dialog(int visiting_unit, int settlement,
      * its effect (food/goods/gold credit or unit conversion) before returning
      * the selected outcome id.  Per-amount arithmetic: RUNTIME_ONLY (data-resident). */
 
-    return selected;       /* @asm ~0x057A.. RETF (selected outcome id) */
-    (void)handle; (void)acc0; (void)acc1; (void)acc2;
+    /* @asm 0x057A34 the real RETF returns [bp-0x18], the visit DONE-flag (0/1,
+     * set to 1 at 0x057A10), NOT the selected outcome id.  This structural stub
+     * cannot roll the data-resident outcome (RUNTIME_ONLY), so it returns 0
+     * ("no visit completed") — a value the real function actually produces, and
+     * harmless: the function has no C callers (the speak-with-chief path runs
+     * through func_04A7CA / func_04B308, not this dead overlay entry). */
+    (void)selected; (void)handle; (void)acc0; (void)acc1; (void)acc2;
+    return 0;
 }
 
 /* ============================================================================

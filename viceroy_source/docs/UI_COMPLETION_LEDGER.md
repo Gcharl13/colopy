@@ -23,7 +23,33 @@ Generated baseline from `docs/decompile_status.json` (1250 tracked functions).
 | `superseded`/`phantom`/`data` | 82 | not work items (dead/dup/data) |
 
 **Genuine remaining work surface: 178 functions** (`referenced` + `partial` +
-`skeleton`). This is the spine of "finish the entire project."
+`skeleton`). This is the spine of "finish the entire project." NB: this count
+is from `decompile_status.json` and is known to over-count — many `referenced`
+entries are already ported under a renamed symbol (the tracker keys on the raw
+`func_` name, not the wired alias), so the *real* remaining-body surface is
+smaller. Each item is re-verified against the disasm before it is touched.
+
+### Changelog — 2026-06-14 (this session, all byte-verified, cert7 9/9)
+- **`func_04A7CA_speak_with_chief`** ported in full (was a weak hit-counting
+  stub) — the scout "speak with the chief" outcome resolver: war/shun gating,
+  the three success gifts (season-unit, tales/map-reveal, CHIEFKILL gold).
+  Every branch cited `@asm`; the DOS BIOS tick wait is omitted (no headless
+  timer); CHIEFKILL gold uses the user-verified `+0x04` population. Pruned the
+  now-stale entry from `g4_interactive_floor.json` (floor 19→18 stubs).
+- **`func_03F90E` / `func_03F946`** (AI step-onto-tile cargo redistribution)
+  corrected to be byte-faithful: `func_03F90E` now passes the computed
+  `absX/absY` (was discarding them) with the right sign/zero extension;
+  `func_03F946` gained its missing middle arg, the inverse-range redistribution
+  loop, byte-width slots, abort-on-no-fit, and the two unsigned `>=` result
+  compares (were comparing against 0 / using `<=`).
+- **`native_settlement_visit_dialog`** stub return corrected to the ASM's
+  done-flag default (0), not the bogus `-1`; comment fixed. (Dead code: no C
+  callers — the live path is `func_04A7CA` / `func_04B308`.)
+- Found the interactive floor is at its honest floor: the remaining 17 entries
+  are all thunk / entry-split / arity-blocked / cross-page artifacts whose
+  bodies are ported; resolving their wiring needs an EXE-level static proof or
+  a DOSBox arg-trace (both out of scope here), so they are left correctly
+  classified rather than speculatively wired.
 
 ### Remaining by region (drive order)
 
@@ -76,33 +102,31 @@ no-ops** in `render_glue.c`, so the modern fill is a placeholder
 (`vid_box_fill 0` + `outline 15`). Decoding those two leaves is the next UI item;
 they also feed `texture_fill_rect` (colony work-grid backdrop, `func_005234`).
 
-### [BLOCKED — the real UI completion gap] Nations / Difficulty / Europe composers
-The whole-screen composers ARE ported and control-flow byte-verified:
+### [BRIDGED — byte-verified, asset-gated] Nations / Difficulty composers
+The whole-screen composers are ported and control-flow byte-verified:
 `func_07092E_draw_nation_screen`, `func_070494_draw_difficulty_screen`,
 `func_0707B6_draw_nation_row`, `func_070302_draw_difficulty_row` (+ the modal
 dispatchers `func_070A1A` / `func_070580`) in `overlay_070302_074405.c`.
 
-They do NOT draw in the modern build because their text leaves are no-op stubs:
-`overlay_call_181F_0100` (= `func_002BC8` text-field draw) returns 0 in
-`platform/headless_io_stubs.c`. The chain
-`func_002BC8 -> func_002B38/func_002AFE -> 0x0C11:0xC blit / 0x0C28:0xA style /
-0x0C2A:6 measure` is ported but its leaves pass args via REGISTERS + DGROUP
-([0x89E] font ctx, [0x2DA8] screen desc, string-handle on the stack, x=ax,
-y=dx), which the C port left argless -> stubbed.
+These now DRAW: the prior session (commit f045fc9) bridged each draw point
+**directly** to the platform text primitives (`vid_text_color` / `vid_text_xy`
+/ `vid_text_width`, string resolved via `viceroy_str`), bypassing the stubbed
+`overlay_call_181F_0100` leaf, and `data_load.c` populates the `[0x8394+i*2]`
+LEVELS-handle table the rows read. Geometry, colours and string handles are
+all byte-cited against `@asm 0x070302..0x07054D`. Pixel parity still can't be
+run here (no NAMES/LABELS asset present), so this is a verified-by-byte step.
 
-**Root cause (one fix unblocks several screens):** bridge the 6 resident
-text-field functions to the platform text primitives using their own C args,
-exactly as `render_glue.c` already does for the colony/map path
-(`vid_text_xy`/`vid_text_color`/`vid_text_width`). The functions:
-`func_002AFE`, `func_002B38`, `func_002B72`, `func_002BC8`, `func_002C0C`,
-`func_002C4A` (file 0x2AFE..0x2C82). Their leaf calls (`0x0C11:0xC`,
-`0x0C28:0xA`, `0x0C2A:6`) map 1:1 onto `vid_text_xy` / `vid_text_color` /
-`vid_text_width` (string handle resolved via `viceroy_str`, colour from the
-DGROUP [0x830]/[0x833] bytes or the explicit arg4). Then wire
-`overlay_call_181F_0100 -> func_002BC8` and route the shell's
-`draw_nations`/`draw_difficulty` through the real composers. NOT done yet --
-it needs the user's NAMES/LABELS text + palette to pixel-verify, so it lands as
-a verified-by-byte increment, not an asset-checked one.
+**Why the generic text-field bridge was NOT used:** the six resident leaves
+(`func_002AFE`/`func_002B38`/`func_002B72`/`func_002BC8`/`func_002C0C`/
+`func_002C4A`) take the string as a SPLIT `(lo,hi)` far pointer whose encoding
+is caller-dependent and does not map uniformly onto the flat `viceroy_str`
+handle model — so bridging them generically is not byte-determinable without
+tracing every caller. The verifiable pattern is per-composer direct
+`vid_text_*` calls (as f045fc9 did). The remaining framed screens (Europe /
+harbor 0x04, colony 0x02, reports) are bridged the same way, composer by
+composer — each its own byte-cited increment. `func_002BC8` & co. stay as the
+faithful structural port forwarding to the (still-stubbed) `0x0C11:0xC` leaf;
+they are not on any rendered path.
 
 ### [coded, not yet asset-verified] Colony / Reports / Hall-of-Fame
 Per `UI_VERIFICATION.md` + `SCREEN_LAYOUTS.md`: geometry byte-verified, full
