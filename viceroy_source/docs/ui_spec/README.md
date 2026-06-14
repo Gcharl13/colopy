@@ -48,14 +48,22 @@ program: `# | OP | rect/pos | asset/id | color | data source | @asm | leaf | sta
 
 | # | screen | entry | composer | screen-id | backdrop | spec file | state |
 |---|--------|-------|----------|-----------|----------|-----------|-------|
-| 1 | Title / main menu | func_0759E8 | menu_runner | — | OPENMENU.PIK | `title.md` | DONE (matches) |
-| 2 | Nation picker | — | draw_nations | — | NATIONS.PIK | `nation.md` | verify |
-| 3 | Difficulty picker | — | — | — | DIFFICUL.PIK | `difficulty.md` | verify |
-| 4 | Map / main view | — | func_067644 | — | terrain+wood | `map.md` | chrome partial |
-| 5 | **Colony interior** | func_025EB6 | func_028592 | 0x2C | COLONY.PIK (bar) | `colony.md` | buildings DONE; rest TODO |
-| 6 | Europe / dock | func_030DEB | func_031E4C | 0x2B | EUROPE.PIK | `europe.md` | partial |
-| 7 | Reports | func_072090… | — | — | REPORT7.PIK | `reports.md` | TODO |
-| 8 | Colonizopedia | — | — | — | CCBKGD.PIK | `pedia.md` | TODO |
+| 1 | Title / main menu | func_0759E8 | menu_runner.c (M-engine 0x181F:0x3FE) | — | OPENMENU.PIK | `title.md` | DONE (only OPENBORD blits TODO) |
+| 2 | Nation picker | — | func_0707B6/func_07092E (overlay_070302_074405.c) | — | NATIONS.PIK | `nation.md` | ported; 2×2 grid byte-cited |
+| 3 | Difficulty picker | — | func_070302/func_070494 (overlay_070302_074405.c) | — | DIFFICUL.PIK | `difficulty.md` | ported; label DATA bug ([0x8394]) |
+| 4 | Map / main view | — | func_067644 | — | terrain+wood | `map.md` | viewport OK; menubar x-pos + finalize TODO |
+| 5 | **Colony interior** | func_025EB6 | func_028592 | 0x2C | COLONY.PIK (bar) | `colony.md` | buildings DONE; backdrop/title/workgrid TODO |
+| 6 | Europe / dock | func_030DBC | func_031E4C (trace in europe_screen.c) | 0x2B | EUROPE.PIK | `europe.md` | market OK; banner/dock/recruit TODO/DATA |
+| 7 | Reports | func_072090… | — | — | REPORT7.PIK | `reports.md` | not yet flattened |
+| 8 | Colonizopedia | — | — | — | CCBKGD.PIK | `pedia.md` | not yet flattened |
+
+**Cross-screen DATA bugs surfaced by the flattening** (fix once, helps several screens):
+- `data_load.c` fills `[0x8394]` (difficulty-picker labels) from NAMES.TXT `@LEVELS`
+  (tribe levels) — should be GAME.TXT `@DIFFICULTY` (Discoverer..Viceroy).
+- Colony/map/europe panels share the `cc_fill_444`/`0x4FC`/`0xE2` fill+present
+  leaves — wiring those once lights up every panel background.
+- The work-grid `0x181F:0xCE0(col,r)` arg omission (colony.md W5) also affects any
+  screen that resolves a per-tile good.
 
 ## How to use
 
