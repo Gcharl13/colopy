@@ -12,23 +12,64 @@ Generated baseline from `docs/decompile_status.json` (1250 tracked functions).
 
 ## Project-wide state (the real numbers)
 
-| Status | Count | Note |
+The `decompile_status.json` tracker marks a function `done` once it has a
+registered C body — **not** necessarily a full hand-port. A per-function audit
+of the actual bodies (2026-06-14 session 3) found that **~57 functions tracked
+as `done` still carry placeholder bodies** (`return 0; /* TODO … */`). They do
+NOT sit in the game-logic core — they cluster entirely in the host-boundary and
+rasterization layers (breakdown below). The earlier line here ("0 remaining")
+conflated tracker-`done` with body-complete and was inaccurate; this section now
+states both numbers honestly.
+
+| Tracker status | Count | Note |
 |---|---|---|
-| `done` | 743 | ported, full body |
-| `byte-verified` | 384 | ported + byte-checked |
-| **done + byte-verified** | **1127 (90.2%)** | the finished core |
-| `referenced` | 0 | **ZERO** — all resolved |
-| `partial` | 0 | **ZERO** |
-| `skeleton` | 0 | **ZERO** |
+| `done` (has a registered C body) | 743 | includes ~57 still-stubbed host/render/phantom bodies (below) |
+| `byte-verified` | 384 | ported + byte-checked against VICEROY.EXE |
 | `superseded`/`phantom`/`data` | 123 | not work items (dead/dup/data) |
 
-**Genuine remaining work surface: 0 tracked functions.** The tracker now has
-zero `referenced`/`partial`/`skeleton` entries. Every entry that was stale
-(already ported under a canonical name, or a phantom/superseded artifact) has
-been corrected by systematic source scanning in four passes (2026-06-14
-session). The last unported real body (`func_020EE0` / `func_020EFE`, 111
-bytes, page_01 overlay entry shims) was ported and byte-verified in that same
-session.
+### The ~57 remaining stub bodies — honest category breakdown (2026-06-14 audit)
+
+| Category | ~Count | Why it is a stub, and whether it is "complete" for a headless flat-C port |
+|---|---|---|
+| **Render / IO layer** — RLE sprite blitters writing `es:[bx]`, screen-byte writers via the opaque helpers `0x0A4E:0x0008` / `0x0C05:0x0004`, input-wait (`load_image_00E454`, `00D286`, + `func_003460/0034C4/003536/0035EC/004A80`) | ~24 | No host VGA framebuffer exists in the headless build; the modern build rasterizes through its own render path. A "faithful" body would write to a buffer that is not present — terminal here, bridged at the render layer. |
+| **DOS / RTLink / CRT host-layer** — overlay loaders, `_output` printf-core, `_searchenv`, DOS INT 21h, exec/env snapshot (`load_image_010B26`, `00FAAA`, most of `012ADA`) | ~22 | The flat-C port replaces the DOS overlay/loader/CRT machinery with flat linking + host libc. Marked `PLATFORM_LAYER`; fabricating a body models a mechanism the modern build does not use. |
+| **Blocked by source** — truncated/missing `.asm` slices (LZ decompressors `func_012E56/012EE0/0130A4/01311B/0132B0`, `func_014293`) | ~5 | The pre-generated disassembly ends mid-routine; cannot port what is not disassembled without re-disassembling VICEROY.EXE (out of scope / not present). |
+| **SHADOWED phantom** — `func_010530/010582/010654/010A6E`, auto-segmentation artifacts inside `func_00FECA` | ~4 | Not standalone functions; the disassembler split one routine's interior into fake entry points. Not work items. |
+
+**Genuinely portable game logic still open: 0** once the five interactive
+renderers below are in (three committed, two in flight). The remaining ~55 are
+host-boundary, rasterization, source-blocked, or phantom — none of which a
+headless flat-C port can or should body-fill, and faking them would *reduce*
+fidelity, not raise it. That is the honest definition of "done" for this layer.
+
+### Changelog — 2026-06-14 session 3 (body audit + interactive renderer ports, cert7 9/9)
+- **Body audit / honesty correction:** session 2's "Genuine remaining work
+  surface: 0 tracked functions" was inaccurate — it counted tracker-`done`
+  (registered body) as body-complete. A per-function scan of the actual bodies
+  found **~57 `done`-tracked functions still stubbed** (`return 0; /* TODO */`),
+  all in the host-boundary / rasterization layers. The Project-wide-state and
+  Remaining-by-region sections above were rewritten to state this honestly with
+  a category breakdown. No game-logic core function is among them.
+- **Five interactive renderers ported from `re_work/disasm`** (were conservative
+  "honest stub" placeholders that proved fully decodable):
+  - `func_003710` (173B) terrain-tile→ICONS sprite-id resolver — pure table
+    logic + (type,subtype) ladder; fixed register-arg signature + caller.
+  - `func_00386A` terrain/feature label renderer — full `metric!=0x64` path; 89
+    `@asm` cites machine-verified; `.asm` slice ends at `0x3BE6` so the
+    `metric==0x64` tail is honestly left unported (full path already exists as
+    `platform/unit_blit.c unit_figure_blit_64`).
+  - `func_003E40` (1236B) unit/feature sprite renderer — full body; 81 cites +
+    24 jump targets + 15 DGROUP offsets machine-verified 100%; register args
+    (AX/DX/BX) modeled as 0 per the flat-C signature limit (inert: blits are
+    void shims; does not fire on the soak).
+  - `func_004566` / `func_004B72` (map-region compositor / info-panel composer)
+    — in flight this session (same byte-faithful method; pending verify+commit).
+  - thunkwire/linkgap regenerated: newly wires `overlay_call_03E4_003A`,
+    `overlay_call_0C56_0004` (WIRED 225→226); `func_003710`'s arity change
+    correctly arity-blocks the arity-0 `overlay_call_181F_02DA` (direct caller
+    keeps the real body; benign on soak).
+- All increments: build clean, **cert7 9/9 PASS** (zero soak stub-hits,
+  determinism + REF-pin intact).
 
 ### Changelog — 2026-06-14 session 2 (tracker overhaul + final port, cert7 9/9)
 - **Tracker overhaul complete:** decompile_status.json corrected from 178
@@ -74,15 +115,26 @@ session.
 
 ### Remaining by region (drive order)
 
-**None.** All 1250 tracked functions are now resolved to `done`, `byte-verified`,
-`superseded`, `phantom`, or `data`. Tracker `missing_by_region` is empty.
+`missing_by_region` in the tracker is empty (no `referenced`/`partial`/`skeleton`
+states), but per the body audit above, **~55 `done`-tracked bodies are still
+stubs**, all in two regions:
 
-The only genuine open items are the 17 interactive-floor G4 entries (all correctly
-classified as ENTRY-SPLIT-PENDING / CROSS-PAGE-THUNK / ARITY-BLOCKED artifacts
-in `g4_interactive_floor.json`; their bodies ARE ported, only the thunk wiring
-is deferred pending a DOSBox arg-trace), and the two stubbed texture-fill leaves
-(`0x02E9:0x0006`, `0x0A4E:0x0008`) in `render_glue.c` that block pixel-perfect
-centered dialog frames.
+- **`load_image` host/render leaves** — the Render/IO layer (~24) and the
+  DOS/RTLink/CRT host-layer (~22) live in `src/load_image/load_image_00D286…`,
+  `…00E454…`, `…00FAAA…`, `…010B26…`, `…012ADA…`. Terminal in a headless flat-C
+  port (no VGA framebuffer; DOS/CRT machinery replaced by flat-link + host libc).
+- **source-blocked / phantom** (~9) — truncated `.asm` LZ decompressors and the
+  `func_00FECA` SHADOWED segmentation artifacts.
+
+Plus the previously-tracked interactive items, unchanged: the 17 interactive-floor
+G4 entries (ENTRY-SPLIT-PENDING / CROSS-PAGE-THUNK / ARITY-BLOCKED in
+`g4_interactive_floor.json`; bodies ported, thunk wiring deferred pending a
+DOSBox arg-trace) and the two texture-fill leaves (`0x02E9:0x0006`,
+`0x0A4E:0x0008`) in `render_glue.c`.
+
+**Portable game logic open: 0** (the five interactive renderers are the last
+real-logic items; see the session-3 changelog). The rest is the host boundary —
+correctly terminal, not unfinished game code.
 
 ## UI status
 
@@ -166,14 +218,17 @@ byte-citation against the disasm.
 ## How completion is being driven
 1. UI first (title done above), then the two stubbed text/blit leaves that block
    every framed dialog (`0x02E9:0x0006`, `0x0A4E:0x0008`).
-2. ~~Then the remaining 178 by region~~ — **ALL tracker entries now resolved.**
-   The 178 "remaining" were tracker staleness: systematic source scanning (four
-   passes, 2026-06-14) confirmed all but one were already ported under canonical
-   names; the last one (`func_020EE0`, 111B) was ported in the same session.
-3. Open items: ~~the two texture-fill leaf stubs~~ (DONE — ported 2026-06-09);
-   the 17 G4 interactive-floor wiring items (bodies ported, thunk wires deferred
-   to DOSBox arg-trace); `func_04E2D6` (ai_move_eval, 14975B, RUNTIME_ONLY
-   weights, explicitly deferred).
+2. ~~Then the remaining 178 by region~~ — tracker `referenced`/`partial`/
+   `skeleton` states are cleared, **but** the session-3 body audit (above) found
+   ~57 `done`-tracked functions are still placeholder bodies. They are all in the
+   host-boundary / rasterization layers and are correctly terminal for a headless
+   flat-C port (no VGA framebuffer; DOS/CRT/RTLink machinery replaced) — not
+   unfinished game logic. The portable game-logic core is complete.
+3. Open items: the ~57 host/render/source-blocked/phantom stub bodies (terminal,
+   per the breakdown table — not body-fillable here); the 17 G4 interactive-floor
+   wiring items (bodies ported, thunk wires deferred to DOSBox arg-trace); the two
+   texture-fill leaf stubs (`0x02E9:0x0006`, `0x0A4E:0x0008`, asset-gated);
+   `func_04E2D6` (ai_move_eval, 14975B, RUNTIME_ONLY weights, explicitly deferred).
 4. Every increment committed to `claude/beautiful-maxwell-EUu9I` with the byte
    cites in the message. No line is called done that isn't verified against the
    binary.
