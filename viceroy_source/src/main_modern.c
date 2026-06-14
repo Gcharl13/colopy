@@ -990,8 +990,30 @@ int main(int argc, char **argv)
                 extern int func_0082DC_logic_sz_118(uint16_t);
                 extern void colony_screen_render(int);
                 func_0082DC_logic_sz_118(0);
-                memset(vid_framebuffer(), 0, VID_W * VID_H);  /* see ENTER path */
-                if (load_bg("COLONY.PIK") == 0) draw_bg();
+                /* sandy building-plot backdrop. The original's textured-sand
+                 * fill leaf (0x181F:0xCE/0x4FC) is unported; flat fill stands in
+                 * until it is. COLONY.PIK (320x72) is the bottom bar, not a
+                 * full backdrop, so it is no longer stretched across the top. */
+                {   extern int ui_color_for(int, int, int);
+                    extern void vid_box_fill(int, int, int, int, uint8_t);
+                    memset(vid_framebuffer(), 0, VID_W * VID_H);
+                    vid_box_fill(0, 8, VID_W, 120,
+                                 (uint8_t)ui_color_for(0xC0, 0xA8, 0x78));
+                }
+                /* TEST SEED (headless build-verify only): the colony building
+                 * setup (overlay_024342) fills the per-slot LEVEL table 0x8E82
+                 * from a real colony's structures; the synthetic test colony has
+                 * none, so seed a representative set here to exercise the ported
+                 * building draw (BUILDING.SS frame = LEVEL+1, func_026DD4). */
+                {   /* slot LEVEL bytes -> BUILDING.SS frame (LEVEL+1); 0xFF=lot */
+                    static const uint8_t seed_lvl[15] = {
+                        8, 9,10,12,13, 14,15,31,16, 32,  /* civic/church/houses */
+                       33, 2,34, 0,35 };                 /* church/warehouse/workshop */
+                    for (int s = 0; s < 15; s++) {
+                        DG8(0x8E82 + s) = seed_lvl[s];
+                        DG8(0x8D62 + s) = (uint8_t)s;
+                    }
+                }
                 colony_screen_render(1);   /* title painter draws the name */
                 vid_present();
                 vid_screenshot_ppm("viceroy_colony.ppm");

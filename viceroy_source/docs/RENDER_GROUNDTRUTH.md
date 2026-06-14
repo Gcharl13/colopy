@@ -148,16 +148,26 @@ tiers (Stockade/Fort/Fortress, Church/Cathedral, Warehouse, Carpenter→Lumber
 Mill, …) + standalone Town Hall (always present). `BUILDING.SS` = 48 frames
 covering categories×tiers.
 
-**The one remaining blocker:** the `(building_type, level) → BUILDING.SS frame`
-map (orig leaf at near-call `0x7E33`, "national-variant select on player
-nation"; recol twin `func_018230`, switch on level 0x0F/0x11/0x13/0x14/0x30/0x2F).
-Not in this repo. Derive it from the recol reference OR empirically by matching
-`BUILDING.SS` frames to the slot positions in `refs/ref_colony_interior.png`
-(Curacao). Then: implement the per-slot blit in `colony_paint_buildings`, draw
-the sandy backdrop, place `COLONY.PIK` at the bottom, and **seed a building set
-into the `main_modern.c` test colony** (it currently seeds only x/y/owner/pop/
-name) to verify. Do NOT ship an approximate frame map — per the accuracy bar,
-the buildings must be the correct sprites.
+**Building-draw leaf — REVERSE-ENGINEERED (func_026DD4).** The chain is
+`func_02701C` → trampoline `0x2CA23` → `ljmp 0x191F:0x66C` → Type-A thunk
+(overlay seg 2, off 0x14D4) → **file 0x026DD4** (`func_026DD4`, ENTER 0x62,
+mis-named "colony_draw_commodity" in `overlay_024342_027B62.c`). Args (from the
+`func_02701C` call site): `[bp+6]=LEVEL` (=`DG8(0x8E82+i)`), `[bp+8]=x`,
+`[bp+0xA]=y`, `[bp+0xC]=TYPE` (=`DG8(0x8D62+i)`). Decoded body:
+- **base frame = `LEVEL + 1`** (`[bp-0x58]` = `[bp+6]+1` @0x26DE5-DE9), blitted
+  via `lcall 0x181F:0x254` (= modern `blit_sprite`) at `(x,y)` from the BUILDING
+  sheet descriptor `[0x842]/[0x844]`/`[0x2DA8]` (@0x26E39-E4E).
+- special cases: `LEVEL==0 && q9fc(0)==0 → 0x11`; `LEVEL∈{0xF,0x11} && q9fc(0xF)`
+  → `q9fc(0x11)? 0x30 : 0x2F`, else `0x2F` (@0x26E00-E39). `q9fc` = `0x181F:0x9FC`.
+- then a secondary overlay blit (`0x181F:0x236`) using per-TYPE offset tables at
+  `0x24E`/`0x254`/`0x25A` (`[TYPE]`) for the produced-good/active marker.
+
+So **frame ≈ `DG8(0x8E82+i)+1`** indexed straight into `BUILDING.SS`; the
+`0x8E82` byte already holds the per-slot sprite level (set by the colony building
+setup in `overlay_024342`). To render: lazy-load `BUILDING.SS`, and in
+`colony_paint_buildings` blit frame `LEVEL+1` (with the 3 special cases) at the
+`0x266` slot `(x,y+8)` for each slot whose `LEVEL>=0`. Verify by seeding `0x8E82`
+(and `0x266` is already in the DGROUP image) for the `main_modern.c` test colony.
 
 ## Repo / safety constraints (persistent)
 VICEROY.EXE is never committed and never embedded in the modern build;

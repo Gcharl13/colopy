@@ -54,6 +54,8 @@
 #include "dgroup.h"
 #include "iolib.h"
 #include "colony.h"
+#include "platform.h"
+#include <string.h>
 
 #define SCREEN_COLONY  0x2C  /* @asm 0x025EE8 mov bx,0x2C; enter_screen_view */
 
@@ -303,6 +305,43 @@ void colony_paint_stockpile(int repaint)
  *               else         call 0x7E33                  ; draw one building
  *   0x0270B4  if [bp+6]!=0: lcall 0x181F:0xE2             ; re-blit backdrop
  * ---------------------------------------------------------------------------- */
+/* BUILDING.SS, lazily loaded (48 building sprites). The draw leaf func_026DD4
+ * (reached via the 0x7E33 trampoline -> 0x191F:0x66C -> overlay seg2:0x14D4)
+ * blits BUILDING.SS frame = LEVEL+1 at the slot (x,y) -- see the decode in
+ * docs/RENDER_GROUNDTRUTH.md.  Blitted directly (BUILDING.SS shares the master
+ * VICEROY.PAL, so its indices are correct under the colony screen palette). */
+static ss_sheet_t col_bldg;
+static int        col_bldg_state;          /* 0=unloaded 1=ok -1=failed */
+
+static int col_bldg_ready(void)
+{
+    if (col_bldg_state == 0) {
+        char path[512];
+        extern const char *viceroy_data_dir(void);
+        const char *dir = viceroy_data_dir();
+        size_t n = strlen(dir);
+        if (n > sizeof path - 16) n = sizeof path - 16;
+        memcpy(path, dir, n);
+        memcpy(path + n, "/BUILDING.SS", 13);          /* incl NUL */
+        col_bldg_state = (ss_load(path, &col_bldg) == 0 && col_bldg.nframes > 0)
+                             ? 1 : -1;
+    }
+    return col_bldg_state == 1;
+}
+
+/* func_026DD4 base-frame select: frame = LEVEL+1, with the wall special-cases
+ * (@asm 0x026E00..0x026E39). q9fc(t) = "colony has building tier t"; modelled
+ * here against the per-slot LEVEL bytes the setup already resolved. */
+static int col_bldg_frame(int level)
+{
+    int frame = level + 1;                  /* @asm 0x026DE5 [bp-0x58]=[bp+6]+1 */
+    /* wall tiers (Stockade 0xF / Fort 0x11): @asm 0x026E05..0x026E39 pick the
+     * palisade/fort/fortress sprite (0x2F/0x30/0x11).  Left as LEVEL+1 for the
+     * non-wall majority; the wall override needs q9fc which the colony setup
+     * resolves into LEVEL directly. */
+    return frame;
+}
+
 void colony_paint_buildings(int repaint)
 {
     int i;
@@ -316,12 +355,14 @@ void colony_paint_buildings(int repaint)
         int bx_y  = DGS16(0x0268 + i*4) + 8;          /* tbl[i].y  [bx+0x268]+8 @asm 0x02708B/0x02708F */
         int btype = DGS8 (0x8D62 + i);                /* TYPE  [bx-0x729E] @asm 0x027095 */
         int blvl  = DGS8 (0x8E82 + i);                /* LEVEL [bx-0x717E] @asm 0x02709D */
-        (void)bx_x; (void)bx_y; (void)btype;
+        (void)btype;
 
         if (blvl < 0) {                                /* @asm 0x0270A2 or ax,ax; jl */
             ;                                          /* empty lot: @asm 0x027072 call 0x7EF1 */
-        } else {
-            ;                                          /* building: @asm 0x0270AB call 0x7E33 (BUILDING.SS) */
+        } else if (col_bldg_ready()) {                 /* building: func_026DD4 (0x7E33) */
+            int frame = col_bldg_frame(blvl);
+            if (frame >= 0 && frame < col_bldg.nframes)
+                ss_blit(&col_bldg, frame, bx_x, bx_y); /* @asm 0x026E4E lcall 0x181F:0x254 */
         }
     }
 
