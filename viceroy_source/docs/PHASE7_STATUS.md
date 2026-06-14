@@ -5,7 +5,7 @@
 | gate | state | detail |
 |---|---|---|
 | 7.5 audit.py byte claims | PASS | 229 PASS / 0 FAIL |
-| G4 link-active stub floor (no-new-items) | PASS | 19 interactive func_ stubs, all allowlisted |
+| G4 link-active stub floor (no-new-items) | PASS | 18 interactive func_ stubs, all allowlisted |
 | 7.2/7.3 determinism self-parity | PASS | same-seed md5 52fdf2588f90 == 52fdf2588f90; seed-sensitive True |
 | 7.5 zero stub hits (soak path) | PASS | stub-hits: 0 |
 | 7.2 REF end-state pin (228) | PASS | REF=228 (131/44/21/32) |
