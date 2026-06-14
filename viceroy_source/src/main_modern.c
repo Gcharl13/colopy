@@ -1011,15 +1011,20 @@ int main(int argc, char **argv)
                  * lays out via q9fc(test_building_or_father_bit). */
                 {   static const uint8_t jamestown_bits[8] =
                         { 0xCF,0xB2,0x22,0x09,0x99,0x00,0x00,0x00 };
+                    static const char jamestown_name[] = "Jamestown";
                     for (int b = 0; b < 8; b++)
                         DG8(rec + 0x84 + b) = jamestown_bits[b];
-                    /* NB: population (rec+0x1F) is left at the synthetic seed's
-                     * value -- the work-grid / colonist-row painters iterate it
+                    for (int b = 0; jamestown_name[b]; b++)   /* name field +2 */
+                        DG8(rec + 2 + b) = (uint8_t)jamestown_name[b];
+                    DG8(rec + 2 + (int)sizeof(jamestown_name) - 1) = 0;
+                    DG8(rec + 0x1F) = 10;              /* Jamestown population (header) */
+                    /* NB: the work-grid / colonist-row painters iterate population
                      * over the colonist arrays, which the test colony does not
-                     * populate, so it must stay small. */
+                     * populate -- they are skipped in this headless frame. */
                 }
                 DG16(0x8DC6) = 0;                      /* active colony idx (q9fc reads this) */
-                DG16(0x8542) = (uint16_t)rec;          /* active ColonyRecord ptr */
+                DG16(0x8542) = (uint16_t)rec;          /* active ColonyRecord ptr (near offset) */
+                DG16(0x8544) = 0;                      /* ptr segment = 0 -> maps into DGROUP */
 
                 colony_draw_random_layout();           /* fills 0x8E82/0x8D62 from the bits */
                 {   /* report the laid-out slots */
@@ -1027,19 +1032,33 @@ int main(int argc, char **argv)
                     printf("  headless  : colony layout -> %d/15 slots filled\n", n);
                 }
 
-                /* sandy building-plot backdrop (the original's textured-sand fill
-                 * leaf 0x181F:0xCE/0x4FC is unported; flat fill stands in). */
+                /* clear the framebuffer (the real backdrop is the func_02633E ->
+                 * 0x181F:0x444 textured blit from the COLONY.PIK draw-context; that
+                 * leaf + context are not yet wired, so the plot draws on black --
+                 * no manual fill stands in). */
                 memset(vid_framebuffer(), 0, VID_W * VID_H);
-                vid_box_fill(0, 8, VID_W, 120, (uint8_t)ui_color_for(0xC0, 0xA8, 0x78));
-                {   /* Render the building plot directly.  The full composer
-                     * (colony_screen_render) also runs the work-grid / colonist
-                     * sub-painters which iterate colonist arrays the synthetic
-                     * test colony does not populate; isolate the building draw
-                     * to verify it against the real structure set. */
+                {   /* Run the REAL per-region sub-painters (no manual drawing).
+                     * The full composer colony_screen_render also runs the work-grid
+                     * / colonist-row painters, whose 0x181F:0xCE0 tile-good resolver
+                     * is called without its (col,r) args and faults on the synthetic
+                     * colony; those two are skipped until that wiring is fixed. */
+                    extern void colony_paint_title(void);
+                    extern void colony_draw_workgrid(int);
+                    extern void colony_paint_colonist_row(int);
+                    extern void colony_paint_stockpile(int);
+                    extern void colony_paint_flag(int,int);
+                    extern void colony_paint_minimap(void);
+                    extern void colony_paint_sol_panel(int);
                     extern void colony_paint_buildings(int);
-                    colony_paint_buildings(0);
+                    colony_paint_title();              /* func_0268CE: name/pop title */
+                    colony_paint_stockpile(0);         /* func_0281D6: 16-good bottom bar */
+                    colony_paint_flag(0,0);            /* func_02853C: nation flag panel */
+                    colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
+                    colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
+                    colony_paint_buildings(0);         /* func_02701C: the building plot */
+                    (void)colony_draw_workgrid; (void)colony_paint_colonist_row;
                 }
-                (void)colony_screen_render;
+                (void)colony_screen_render; (void)ui_color_for; (void)vid_box_fill;
                 vid_present();
                 vid_screenshot_ppm("viceroy_colony.ppm");
                 printf("  headless  : colony frame -> viceroy_colony.ppm\n");
