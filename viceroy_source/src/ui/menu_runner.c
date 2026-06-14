@@ -210,6 +210,35 @@ static int mr_atoi_skip(const char *s)
     return atoi(s);
 }
 
+/* %STRINGn run-time substitution (the format leaf 0xD1D:0x117E expanded by
+ * func_00E51C).  Arg slots default to NULL -> the token is left verbatim, so
+ * menus that don't set args are unchanged.  The @BEGINMENU header
+ * "{COLONIZATION} Version %STRING0 -- %STRING1" takes version + build date
+ * (both byte-cited from VICEROY.EXE: "3.0" then "7-Feb-95"). */
+static const char *mr_strarg[4] = { 0, 0, 0, 0 };
+
+void menu_set_string(int n, const char *s)
+{
+    if (n >= 0 && n < 4) mr_strarg[n] = s;
+}
+
+static void mr_subst(char *dst, size_t dstsz, const char *src)
+{
+    size_t o = 0;
+    for (size_t i = 0; src[i] && o + 1 < dstsz; ) {
+        if (src[i] == '%' && !strncmp(src + i, "%STRING", 7)
+            && src[i + 7] >= '0' && src[i + 7] <= '3') {
+            const char *a = mr_strarg[src[i + 7] - '0'];
+            if (a) { for (size_t k = 0; a[k] && o + 1 < dstsz; k++) dst[o++] = a[k]; }
+            else   { for (size_t k = 0; k < 8 && o + 1 < dstsz; k++) dst[o++] = src[i + k]; }
+            i += 8;
+        } else {
+            dst[o++] = src[i++];
+        }
+    }
+    dst[o] = 0;
+}
+
 static int mr_load_section(const char *key, int preselect, mr_panel_t *m)
 {
     char path[512], line[256];
@@ -220,6 +249,12 @@ static int mr_load_section(const char *key, int preselect, mr_panel_t *m)
     memset(m, 0, sizeof *m);
     m->x = -1; m->y = -1;                   /* center sentinels ([0x1F58]/[0x1F5A]=0xFFFF) */
     m->cur_row = preselect;                 /* entry DX -> [bp-0x16a] @asm 0x06F0F8 */
+
+    /* the title menu's version/date args (byte-cited from VICEROY.EXE) */
+    if (!strcmp(key, "BEGINMENU")) {
+        if (!mr_strarg[0]) mr_strarg[0] = "3.0";
+        if (!mr_strarg[1]) mr_strarg[1] = "7-Feb-95";
+    }
 
     /* base name "GAME" = DS:0x87C (@file 0x1E21C); 0x0D1D:0x7E4 formats the
      * path @asm 0x06F114..0x06F121; modern: <data>/GAME.TXT */
@@ -261,10 +296,10 @@ static int mr_load_section(const char *key, int preselect, mr_panel_t *m)
         }
         if (state == 1) {                   /* label line @asm 0x06F410 */
             if (m->nprompt < MR_MAX_PROMPT)
-                strncpy(m->prompt[m->nprompt++], p, MR_LINE_LEN - 1);
+                mr_subst(m->prompt[m->nprompt++], MR_LINE_LEN, p);
         } else if (state == 2) {            /* option line, value=counter @asm 0x06F47E */
             if (m->nopt < MR_MAX_OPT)
-                strncpy(m->opt[m->nopt++], p, MR_LINE_LEN - 1);
+                mr_subst(m->opt[m->nopt++], MR_LINE_LEN, p);
         }
     }
     fclose(f);
@@ -384,47 +419,99 @@ static int mr_draw_styled(const char *s, int x, int y, int norm, int hi)
     return x;
 }
 
-/* ---- one draw pass (func_06D9CC row chain over modern primitives) --------- */
+/* ---- wood panel (WOODTILE.SS, 32x24) -------------------------------------
+ * Every GAME.TXT panel in the original -- the @y=91 title menu, the GAME/VIEW
+ * dropdowns, the Load list, the message popups -- sits on a wood-plank panel
+ * (the texture-fill leaf func_00531C tiling the 0x20x0x18 block @DGROUP:0x93F0,
+ * decoded from WOODTILE.SS).  Verified against the live game (refs: main menu,
+ * GAME dropdown, "Select Game To Load").  Loaded lazily; tiled with the remap
+ * blit so the plank colours stay correct under ANY screen palette (the title's
+ * OPENMENU palette differs from the in-game master in ~31 entries). */
+static ss_sheet_t mr_wood;
+static int        mr_wood_state;          /* 0=unloaded 1=ok -1=failed */
+
+/* The menu ink/bar colours are palette-INDEPENDENT in intent (green text, gold
+ * highlight, recessed dark bar) but each screen carries its own palette: the
+ * title's OPENMENU palette puts the UI green at idx 254, the in-game master
+ * palette at idx 68, etc.  Resolve each colour to the nearest entry in the LIVE
+ * palette at draw time so the menu looks identical on every screen.  RGB targets
+ * are sampled from the live game (refs/): option green #528A31, title gold
+ * #E3AA28, selection bar dark-brown, panel edge near-black-brown. */
+extern const uint8_t *vid_get_palette(void);
+static int mr_color_for(int r, int g, int b)
+{
+    const uint8_t *pal = vid_get_palette();
+    int best = 0; long bestd = 1L << 60;
+    if (!pal) return 0;
+    for (int i = 0; i < 256; i++) {
+        long dr = pal[i*3]-r, dg = pal[i*3+1]-g, db = pal[i*3+2]-b;
+        long d = dr*dr + dg*dg + db*db;
+        if (d < bestd) { bestd = d; best = i; }
+    }
+    return best;
+}
+
+static int mr_wood_ready(void)
+{
+    if (mr_wood_state == 0) {
+        char path[512];
+        snprintf(path, sizeof path, "%s/WOODTILE.SS", viceroy_data_dir());
+        mr_wood_state = (ss_load(path, &mr_wood) == 0 && mr_wood.nframes > 0)
+                            ? 1 : -1;
+    }
+    return mr_wood_state == 1;
+}
+
+static void mr_wood_fill(int x, int y, int w, int h)
+{
+    if (!mr_wood_ready()) { vid_box_fill(x, y, w, h, 0x06); return; }
+    int tw = mr_wood.frames[0].w, th = mr_wood.frames[0].h;
+    for (int ty = y; ty < y + h; ty += th)
+        for (int tx = x; tx < x + w; tx += tw)
+            ss_blit_remap_clip(&mr_wood, 0, tx, ty, x, y, x + w - 1, y + h - 1);
+}
+
+/* one draw pass (func_06D9CC row chain over modern primitives) */
 static void mr_draw(const mr_panel_t *m, const mr_geom_t *g, int sel,
                     const uint8_t *checks)
 {
     int i, y = g->text_y0;
     char buf[MR_LINE_LEN + 4];
+    int c_green = mr_color_for(0x52, 0x8A, 0x31);   /* option/label text   */
+    int c_gold  = mr_color_for(0xE3, 0xAA, 0x28);   /* {highlight} word    */
+    int c_bar   = mr_color_for(0x38, 0x20, 0x10);   /* selected-row bar    */
+    int c_edge  = mr_color_for(0x14, 0x0C, 0x06);   /* panel border        */
 
-    /* The TITLE/@BEGINMENU panel is ANCHORED (@y=91) and draws its rows straight
-     * onto the OPENMENU.PIK plate -- whose carved wood frame is already part of
-     * the backdrop bitmap, so the engine paints NO box/frame for it (the panel
-     * has flags&0x10 clear but @x/@y set -> the WOODFRAM blit 0x181F:0x510 site
-     * @0x0263D6 is the dialog-popup path, not the title).  CENTERED popups (no
-     * @x/@y) are the only ones that get a frame; the original blits WOODFRAM
-     * there, which the modern build leaves as a RECONSTRUCTED placeholder until
-     * the texture-fill leaves (func_00531C's 0x02E9:0x0006/0x0A4E:0x0008) are
-     * decoded -- see docs/UI_COMPLETION_LEDGER.md. */
-    if (m->x == -1 && m->y == -1) {
-        vid_box_fill(g->x, g->y, g->w, g->h, 0x00);
-        vid_box_outline(g->x, g->y, g->w, g->h, 0x0F);
-    }
+    /* Paint the panel: wood-plank fill + a 1px dark edge.  Both the ANCHORED
+     * title menu (@x/@y set) and CENTERED popups get it -- the live game shows
+     * every panel on wood (the prior "title draws straight on the plate, no
+     * panel" assumption was wrong: the real @BEGINMENU sits on its own wood
+     * panel just like the dropdowns). */
+    mr_wood_fill(g->x, g->y, g->w, g->h);
+    vid_box_outline(g->x, g->y, g->w, g->h, (uint8_t)c_edge);
 
     for (i = 0; i < m->nprompt; i++, y += g->pitch)
         /* label rows: '{..}' words switch to the highlight colour (the title's
-         * {COLONIZATION}); plain text stays normal.  @asm 0x06D9CC label draw */
-        mr_draw_styled(m->prompt[i], g->text_x, y, MR_STYLE_NORM, MR_STYLE_HI);
+         * {COLONIZATION} -> gold); plain text stays green.  @asm 0x06D9CC */
+        mr_draw_styled(m->prompt[i], g->text_x, y, c_green, c_gold);
 
     if (m->nopt) y += MR_GAP;               /* option-block pad @asm 0x06D513 */
 
     for (i = 0; i < m->nopt; i++, y += g->pitch) {
         const char *s = m->opt[i];
-        int base = (i + 1 == sel) ? MR_STYLE_HI : MR_STYLE_NORM;  /* +0x40 / +0x3C */
+        if (i + 1 == sel)
+            /* selected row: recessed dark bar behind, text stays green (the
+             * live menu highlights by background, not by recolouring the text
+             * @asm 0x06DA85..0x06DAF0). */
+            vid_box_fill(g->x + MR_BORDER, y - 1,
+                         g->w - 2 * MR_BORDER, g->pitch, (uint8_t)c_bar);
         if (m->checkbox) {
             /* original mark = glyph 0x5D-(widget[+6]<=1) (0x5C/0x5D)
              * @asm 0x06DB5C..0x06DB70; modern ASCII substitute */
             snprintf(buf, sizeof buf, "[%c] %s", checks[i] ? 'x' : ' ', s);
             s = buf;
         }
-        /* selected row resting colour = highlight (8) @asm 0x06DA85..0x06DAF0;
-         * any '{}' in the row toggles to the other member of the style pair. */
-        mr_draw_styled(s, g->text_x, y, base,
-                       base == MR_STYLE_HI ? MR_STYLE_NORM : MR_STYLE_HI);
+        mr_draw_styled(s, g->text_x, y, c_green, c_gold);
     }
     vid_present();
 }
