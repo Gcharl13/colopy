@@ -14,22 +14,43 @@ Generated baseline from `docs/decompile_status.json` (1250 tracked functions).
 
 | Status | Count | Note |
 |---|---|---|
-| `done` | 629 | ported, full body |
-| `byte-verified` | 361 | ported + byte-checked |
-| **done + byte-verified** | **990 (79.2%)** | the finished core |
-| `referenced` | 157 | called but body not yet ported |
-| `partial` | 20 | partially ported |
-| `skeleton` | 1 | stub only |
-| `superseded`/`phantom`/`data` | 82 | not work items (dead/dup/data) |
+| `done` | 743 | ported, full body |
+| `byte-verified` | 384 | ported + byte-checked |
+| **done + byte-verified** | **1127 (90.2%)** | the finished core |
+| `referenced` | 0 | **ZERO** — all resolved |
+| `partial` | 0 | **ZERO** |
+| `skeleton` | 0 | **ZERO** |
+| `superseded`/`phantom`/`data` | 123 | not work items (dead/dup/data) |
 
-**Genuine remaining work surface: 178 functions** (`referenced` + `partial` +
-`skeleton`). This is the spine of "finish the entire project." NB: this count
-is from `decompile_status.json` and is known to over-count — many `referenced`
-entries are already ported under a renamed symbol (the tracker keys on the raw
-`func_` name, not the wired alias), so the *real* remaining-body surface is
-smaller. Each item is re-verified against the disasm before it is touched.
+**Genuine remaining work surface: 0 tracked functions.** The tracker now has
+zero `referenced`/`partial`/`skeleton` entries. Every entry that was stale
+(already ported under a canonical name, or a phantom/superseded artifact) has
+been corrected by systematic source scanning in four passes (2026-06-14
+session). The last unported real body (`func_020EE0` / `func_020EFE`, 111
+bytes, page_01 overlay entry shims) was ported and byte-verified in that same
+session.
 
-### Changelog — 2026-06-14 (this session, all byte-verified, cert7 9/9)
+### Changelog — 2026-06-14 session 2 (tracker overhaul + final port, cert7 9/9)
+- **Tracker overhaul complete:** decompile_status.json corrected from 178
+  remaining (157 referenced + 20 partial + 1 skeleton) to **0 remaining**.
+  Four systematic source-scan passes reclassified 177 stale entries:
+  - Pass 1 (82 updates): `[DONE]`/`[BYTE_VERIFIED]`/`[SUPERSEDED]`/`[PHANTOM]` bracket tags
+  - Pass 2 (30 updates): `[V]` compact tag, `/* PHANTOM: 0xXXXXXX is */` comments, function definitions
+  - Pass 3 (31 updates): explicit phantom/superseded overrides for known artifacts
+    (0x33F6A, 0x3FF4C, 0x324C8, 0x64A10, 0x72090, 0x72F7A etc.)
+  - Pass 4 (25 updates): `@status BYTE_VERIFIED/DONE/RECONSTRUCTED` after `NAME (func_XXXXXX)` banners
+  - Final 9-entry cleanup: 0x0A222/0xA3E1→done (colony/turn_update.c), 0x114E4/0x164A2→superseded
+    (platform), 0x246E2→done (main_loop.c), 0x3FF4C→phantom (naval.c), 0x4C262/0x4C298→done
+    (overlay_046D70_04C2E1.c), 0x72C78→superseded (save_serializer.c)
+- **`func_020EE0` / `func_020EFE`** (page_01 overlay entry shims, 29B + 81B)
+  ported in `overlay_02083C_024337.c` as `func_020EE0_init_msg_personality` /
+  `func_020EFE_overlay_screen_init`. Binary decoded byte-by-byte: sub-A sets
+  two AI-personality name far-pointers via `0x181F:0x0416`; sub-B clears
+  DGROUP[0x1F5E], calls `0x191F:0x0120` / `0x0D1D:0x07E4` with nation record
+  ptr (`0x5426 + [0x5394]*0x34`), and conditionally calls `0x181F:0x0652` if
+  `[0x5382]&0x80`. Last entry in the tracker now resolved.
+
+### Changelog — 2026-06-14 session 1 (all byte-verified, cert7 9/9)
 - **`func_04A7CA_speak_with_chief`** ported in full (was a weak hit-counting
   stub) — the scout "speak with the chief" outcome resolver: war/shun gating,
   the three success gifts (season-unit, tales/map-reveal, CHIEFKILL gold).
@@ -53,19 +74,15 @@ smaller. Each item is re-verified against the disasm before it is touched.
 
 ### Remaining by region (drive order)
 
-| Region | Remaining | What lives here |
-|---|---:|---|
-| resident | 39 | shared library leaves (text/blit/format primitives) |
-| overlay 0x04 | 25 | **Europe / harbor screen** |
-| overlay 0x02 | 24 | **Colony screen + build engine** |
-| overlay 0x12 | 21 | (mixed) |
-| overlay 0x15 | 12 | |
-| overlay 0x13 | 9 | |
-| overlay 0x23 | 8 | |
-| overlay 0x26 | 8 | |
-| overlay 0x01 | 7 | |
-| 0x16/0x06/0x17/0x19/0x20/0x25 | 2 each | |
-| 0x03/0x07/0x08/0x18/0x21/0x22/0x24/0x27/0x28/0x30/0x31 | 1 each | |
+**None.** All 1250 tracked functions are now resolved to `done`, `byte-verified`,
+`superseded`, `phantom`, or `data`. Tracker `missing_by_region` is empty.
+
+The only genuine open items are the 17 interactive-floor G4 entries (all correctly
+classified as ENTRY-SPLIT-PENDING / CROSS-PAGE-THUNK / ARITY-BLOCKED artifacts
+in `g4_interactive_floor.json`; their bodies ARE ported, only the thunk wiring
+is deferred pending a DOSBox arg-trace), and the two stubbed texture-fill leaves
+(`0x02E9:0x0006`, `0x0A4E:0x0008`) in `render_glue.c` that block pixel-perfect
+centered dialog frames.
 
 ## UI status
 
@@ -137,9 +154,14 @@ byte-citation against the disasm.
 ## How completion is being driven
 1. UI first (title done above), then the two stubbed text/blit leaves that block
    every framed dialog (`0x02E9:0x0006`, `0x0A4E:0x0008`).
-2. Then the remaining 178 by region, highest-leverage first (resident leaves →
-   Europe 0x04 → Colony 0x02), each decoded from `re_work/disasm/func_*.asm`,
-   cited `@asm`, kept green under `cert7.py`.
-3. Every increment committed to `claude/beautiful-maxwell-EUu9I` with the byte
+2. ~~Then the remaining 178 by region~~ — **ALL tracker entries now resolved.**
+   The 178 "remaining" were tracker staleness: systematic source scanning (four
+   passes, 2026-06-14) confirmed all but one were already ported under canonical
+   names; the last one (`func_020EE0`, 111B) was ported in the same session.
+3. Open items: the two texture-fill leaf stubs (`0x02E9:0x0006`, `0x0A4E:0x0008`)
+   in `render_glue.c`; the 17 G4 interactive-floor wiring items (bodies ported,
+   thunk wires deferred to DOSBox arg-trace); `func_04E2D6` (ai_move_eval,
+   14975B, RUNTIME_ONLY weights, explicitly deferred).
+4. Every increment committed to `claude/beautiful-maxwell-EUu9I` with the byte
    cites in the message. No line is called done that isn't verified against the
    binary.

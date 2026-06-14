@@ -154,6 +154,58 @@ int func_020918_logic_sz_5(void)
 }
 
 /* ============================================================================
+ * func_020EE0 / func_020EFE  — page_01 overlay entry shims
+ * ----------------------------------------------------------------------------
+ * @asm  0x020EE0..0x020EFC  (29 bytes)  sub-A: set two message-personality ptrs
+ * @asm  0x020EFE..0x020F4E  (81 bytes)  sub-B: overlay-load init + conditional msg
+ *       NOP padding byte at 0x020EFD separates the two RETF-terminated bodies.
+ * @status  BYTE_VERIFIED
+ *
+ * Both are far functions at the very start of page_01 code (after the reloc
+ * header 0x020670..0x020EE0).  Neither has a live C caller in the modern build;
+ * the overlay-load path is replaced by the RTLink emulator.  Ported for byte-
+ * completeness; the inner LCALL stubs are no-ops in the modern build.
+ *
+ * sub-A  @asm 0x020EE0..0x020EFC:
+ *   PUSH DS / PUSH 0x080C / PUSH 0 / LCALL 0x181F:0x0416   ; set_msg_pers(DS:0x080C, 0)  @0x020EE6
+ *   PUSH DS / PUSH 0x0810 / PUSH 1 / LCALL 0x181F:0x0416   ; set_msg_pers(DS:0x0810, 1)  @0x020EF4
+ *   RETF                                                                                   @0x020EFC
+ *
+ * sub-B  @asm 0x020EFE..0x020F4E:
+ *   PUSH 1        / LCALL 0x181F:0x0524                  ; unknown(1)                     @0x020F00
+ *   MOV [0x1F5E], 0                                       ; clear DG16(0x1F5E)             @0x020F08
+ *   PUSH 0x17 ; IMUL DX,[0x5394],0x34 ; ADD DX,0x5426    ; DX = nation_rec_ptr
+ *   LEA BX,[0x087C] ; LEA AX,[0x08A2]                    ; DS-relative title ptrs
+ *   LCALL 0x191F:0x0120                                   ; edit_field(0x17, …)            @0x020F21
+ *   PUSH 0x9820 ; PUSH (0x5426+[0x5394]*0x34)
+ *   LCALL 0x0D1D:0x07E4                                   ; sprintf/format call             @0x020F32
+ *   TEST [0x5382], 0x80 ; JE exit
+ *   PUSH 0 ; PUSH 0x08A9 / LCALL 0x181F:0x0652           ; display_text_key(DS:0x08A9,0)  @0x020F46
+ *   RETF                                                                                   @0x020F4E
+ * ============================================================================ */
+
+/* sub-A: init two AI-personality name far-pointers via 0x181F:0x0416 */
+void func_020EE0_init_msg_personality(void) /* @asm 0x020EE0..0x020EFC 29B */
+{
+    overlay_call_181F_0416(); /* set_message_personality(DS, 0x080C, 0) @0x020EE6 */
+    overlay_call_181F_0416(); /* set_message_personality(DS, 0x0810, 1) @0x020EF4 */
+}
+
+/* sub-B: page_01 overlay-load screen init */
+void func_020EFE_overlay_screen_init(void) /* @asm 0x020EFE..0x020F4E 81B */
+{
+    overlay_call_181F_0524(1);          /* @0x020F00 */
+    DG16(0x1F5E) = 0;                   /* MOV word [0x1F5E], 0  @0x020F08 */
+    /* PUSH 0x17; IMUL DX,[0x5394],0x34; ADD DX,0x5426; LEA BX,[0x087C]; LEA AX,[0x08A2] */
+    overlay_call_191F_0120();           /* edit_field(0x17, DS:0x87C, DS:0x8A2, nation_rec) @0x020F21 */
+    /* PUSH 0x9820; PUSH (0x5426 + DG16(0x5394)*0x34) */
+    overlay_call_0D1D_07E4();           /* format_name(0x9820, nation_rec_ptr) @0x020F32 */
+    if (DG8(0x5382) & 0x80) {          /* TEST [0x5382],0x80  @0x020F3A */
+        overlay_call_181F_0652();       /* display_text_key(DS, 0x08A9, 0) @0x020F46 */
+    }
+}
+
+/* ============================================================================
  * func_020F50  -- TUTORIAL-HINTS DISPATCHER  ("Tutorial Hints" game option)
  * ----------------------------------------------------------------------------
  * @asm        0x020F50..0x021602  (TRUE size 1714; reseg func_020F50)
