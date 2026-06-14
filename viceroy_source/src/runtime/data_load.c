@@ -339,6 +339,9 @@ int viceroy_load_names(const char *dir)
     total += load_cargo(f);                                          /* @0x74F04 */
     derive_cargo_max();                                              /* @0x74F79 */
     total += load_levels(f);                                         /* @0x7507A */
+    /* populate per-row label handle table [0x8394+i*2] from LEVELS col-0 [0x9632+i*6]
+     * @asm 0x0703CD: push [bx-0x7C6C] with bx=0x8394+idx*2; col-0 is the row name */
+    for (int i = 0; i < 5; i++) DG16(0x8394 + i*2) = DG16(0x9632 + i*6);
     total += load_founding(f);                                       /* @0x75109 (6 -> 0x96E8) */
     total += load_fathers(f);                                        /* @0x75132 (25 -> 0x9652) */
     total += load_colors(f);                                         /* @0x751A2 */

@@ -6,10 +6,11 @@
 |---|---|---|
 | 7.5 audit.py byte claims | PASS | 229 PASS / 0 FAIL |
 | G4 link-active stub floor (no-new-items) | PASS | 19 interactive func_ stubs, all allowlisted |
-| 7.2/7.3 determinism self-parity | PASS | same-seed md5 5c94a267e0bf == 5c94a267e0bf; seed-sensitive True |
+| 7.2/7.3 determinism self-parity | PASS | same-seed md5 52fdf2588f90 == 52fdf2588f90; seed-sensitive True |
 | 7.5 zero stub hits (soak path) | PASS | stub-hits: 0 |
 | 7.2 REF end-state pin (228) | PASS | REF=228 (131/44/21/32) |
 | 7.3 long-soak stability (200-turn, repeatable) | PASS | 200-turn smoke PASS, byte-identical across runs |
+| 7.2/7.3 save cross-parity (DOSBox saves round-trip) | PASS | 10/10 byte-identical |
 | 7.5 terminal-state census present | PASS | docs/TERMINAL_STATES.md |
 | 7.5 UNREACHABLE/terminal ledger present | PASS | docs/UNREACHABLE_LEDGER.md |
 

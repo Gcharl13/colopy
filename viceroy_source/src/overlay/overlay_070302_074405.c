@@ -49,6 +49,17 @@
 #include "viceroy.h"
 #include "dgroup.h"
 #include "overlay_externs.h"
+#include <string.h>
+
+/* platform text primitives bridged into the nation/difficulty screen composers
+ * (same externs used by naval_screen.c and unit_blit.c) */
+extern const char *viceroy_str(uint16_t handle);
+extern void        vid_text_color(int c);
+extern void        vid_text_xy(const char *str, int x, int y);
+extern int         vid_text_width(const char *s);
+extern int         vid_text_ctx_byte0(void);
+/* func_0702C0 lives in overlay_06D938_0702D5.c */
+extern void        func_0702C0_report_cell_xy_3col(int idx, int *out_x, int *out_y);
 
 /* ----------------------------------------------------------------------------
  * DGROUP globals referenced below (absolute offsets from the disassembly).
@@ -170,12 +181,14 @@ int func_070FF8_alloc_map_buffers(uint16_t want_second);
  * ============================================================================ */
 int func_070302_draw_difficulty_row(uint16_t idx)
 {
+    int x = 0, y = 0;
     uint8_t color;
+    char buf[128];
 
-    func_070C46();                                      /* @asm 0x070314 build row label */
-    overlay_call_181F_0444();                           /* @asm 0x070345 draw framed box */
+    func_0702C0_report_cell_xy_3col((int)idx, &x, &y); /* @asm 0x070308 push &[bp-56],&[bp-54],idx; call 0x070C46->0x1A1F:0x0B90 */
+    overlay_call_181F_0444();                           /* @asm 0x070345 draw framed box (w=0x44) */
 
-    switch (idx) {                                      /* @asm 0x07034D..0x070834 */
+    switch (idx) {                                      /* @asm 0x07034D..0x070374 */
         case 0:  color = 0x0A; break;                   /* @asm 0x07035C */
         case 1:  color = 0x09; break;                   /* @asm 0x070362 */
         case 2:  color = 0x0E; break;                   /* @asm 0x070368 */
@@ -184,16 +197,34 @@ int func_070302_draw_difficulty_row(uint16_t idx)
     }
 
     if ((uint8_t)g_difficulty_53A6 == (uint8_t)idx) {   /* @asm 0x07037D only selected row */
-        overlay_call_181F_00CE();                       /* @asm 0x0703AB label text @row+0x59 */
-        overlay_call_181F_016E();                       /* @asm 0x0703D7 append handle [0x8394+idx*2] */
-        overlay_call_0D1D_0D64();                       /* @asm 0x0703E3 strlen */
-        overlay_call_0D1D_07A4();                        /* @asm 0x0703F2 strcat ":" @bytes 0x202B */
-        overlay_call_181F_0100();                       /* @asm 0x07040B string field */
-        overlay_call_181F_0100();                       /* @asm 0x070428 string field (coloured) */
-        overlay_call_181F_016E();                       /* @asm 0x070445 append handle [0x2F04+idx*2] */
-        overlay_call_181F_0100();                       /* @asm 0x07045E string field */
-        overlay_call_181F_0100();                       /* @asm 0x070474 string field */
-        (void)color;                                    /* colour passed into the 0x100 draws */
+        /* label: LEVELS col-0 handle from [0x8394+idx*2] @asm 0x0703CD [bx-0x7C6C] */
+        const char *nm = viceroy_str(DG16(0x8394 + (uint16_t)idx * 2));
+        buf[0] = 0;
+        strcat(buf, nm);
+        for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32; /* @asm 0x0703E3 lcall 0xD1D:0xD64 strtoupper */
+        strcat(buf, ":");                               /* @asm 0x0703F2 lcall 0xD1D:0x7A4 strcat DG8(0x202B)=":" */
+
+        int text_w = vid_text_width(buf);
+        int cx = x + 0x22 - text_w / 2;                /* @asm 0x07040B x_base=x+1(shadow)/x(main), w=0x44 -> cx=x+0x22-w/2 */
+        if (cx < 0) cx = 0;
+        int y1 = y - vid_text_ctx_byte0() + 0x2C;      /* @asm 0x070402 [bp-0x52]=y-ctx[0]+0x2C */
+
+        vid_text_color(0);                              /* @asm 0x07040B lcall 0x181F:0x100 shadow color=0 x_base=x+1 */
+        vid_text_xy(buf, cx + 1, y1);
+        vid_text_color(color);                          /* @asm 0x070428 lcall 0x181F:0x100 main color x_base=x */
+        vid_text_xy(buf, cx, y1);
+
+        /* second field: MISC[165+idx] = DG16(0x2F04+idx*2) @asm 0x070445 [bx-0x7C6C] */
+        const char *nm2 = viceroy_str(DG16(0x2F04 + (uint16_t)idx * 2));
+        int text_w2 = vid_text_width(nm2);
+        int cx2 = x + 0x22 - text_w2 / 2;              /* @asm 0x07045E x_base=x+1(shadow)/x(main), w=0x44 */
+        if (cx2 < 0) cx2 = 0;
+        int y2 = y + 0x2E;                              /* @asm 0x070455 [bp-0x52]=y+0x2E */
+
+        vid_text_color(0);                              /* @asm 0x07045E lcall 0x181F:0x100 shadow */
+        vid_text_xy(nm2, cx2 + 1, y2);
+        vid_text_color(color);                          /* @asm 0x070474 lcall 0x181F:0x100 main */
+        vid_text_xy(nm2, cx2, y2);
     }
     overlay_call_181F_00E2();                           /* @asm 0x07048B flush rect -> RETF */
     return 0;
@@ -220,19 +251,26 @@ int func_070302_draw_difficulty_row(uint16_t idx)
  * ============================================================================ */
 int func_070494_draw_difficulty_screen(void)
 {
-    overlay_call_181F_0022((int16_t)DG16(0x2efe));                           /* @asm 0x0704DE bg strip 0 */
+    overlay_call_181F_0022((int16_t)DG16(0x2EFE));      /* @asm 0x0704DE bg strip 0 */
     overlay_call_181F_01C8();                           /* @asm 0x0704E8 composite 0 */
-    overlay_call_181F_0022((int16_t)DG16(0x2f00));                           /* @asm 0x070501 bg strip 1 */
+    overlay_call_181F_0022((int16_t)DG16(0x2F00));      /* @asm 0x070501 bg strip 1 */
     overlay_call_181F_01C8();                           /* @asm 0x07050B composite 1 */
-    overlay_call_181F_011E();                           /* @asm 0x07051B begin text buffer */
-    overlay_call_181F_016E();                           /* @asm 0x07052B append heading [0x2EFC] */
-    overlay_call_181F_0128();                           /* @asm 0x070537 commit text */
-    overlay_call_181F_0100();                           /* @asm 0x07054D draw heading field */
+
+    /* heading: MISC[161]=DG16(0x2EFC), func_002BC8 args x=0x17 w=0x44 y=0x51 color=0xFE
+     * @asm 0x07051B 0x11E begin; 0x07052B 0x16E append [0x2EFC]; 0x070537 0x128 commit;
+     * @asm 0x07054D 0x100 x_base=0x17 width=0x44 y=0x51 color=0xFE */
+    {
+        const char *heading = viceroy_str(DG16(0x2EFC));
+        int text_w = vid_text_width(heading);
+        int cx = 0x22 - text_w / 2 + 0x17;
+        if (cx < 0) cx = 0;
+        vid_text_color(0xFE);
+        vid_text_xy(heading, cx, 0x51);
+    }
     overlay_call_181F_00E2();                           /* @asm 0x070561 flush rect */
 
-    for (int i = 0; i < 5; i++) {                       /* @asm 0x070578 cmp 5 */
-        func_070C50();                                  /* @asm 0x07056F -> draw_difficulty_row(i) */
-    }
+    for (int i = 0; i < 5; i++)                         /* @asm 0x070578 cmp 5 */
+        func_070302_draw_difficulty_row((uint16_t)i);   /* @asm 0x07056F push i; call 0x070C50->0x1A1F:0x0BAC */
     return 0;                                            /* @asm 0x07057E RETF */
 }
 
@@ -330,14 +368,14 @@ int func_070580_difficulty_pick_dispatch(void)
                 /* DOWN: (cur+1) % 5   @asm 0x0706C0 (space/down/right/key-9) */
                 old_row = (int)(uint8_t)g_difficulty_53A6;            /* @asm 0x0706C0 [bp-4] */
                 g_difficulty_53A6 = (uint8_t)(((uint8_t)g_difficulty_53A6 + 1) % 5); /* @asm 0x0706C8/0x07069D */
-                func_070C50();                           /* @asm 0x0706AB redraw old row [bp-4] */
-                func_070C50();                           /* @asm 0x0706B8 redraw new row [0x53A6] */
+                func_070302_draw_difficulty_row((uint16_t)old_row);   /* @asm 0x0706AB redraw old row */
+                func_070302_draw_difficulty_row((uint16_t)(uint8_t)g_difficulty_53A6); /* @asm 0x0706B8 new row */
             } else if (key == 8 || key == 0x148 || key == 0x14B) {
                 /* UP: (cur+4) % 5 == cur-1   @asm 0x070692 (key-8/up/left) */
                 old_row = (int)(uint8_t)g_difficulty_53A6;            /* @asm 0x070692 [bp-4] */
                 g_difficulty_53A6 = (uint8_t)(((uint8_t)g_difficulty_53A6 + 4) % 5); /* @asm 0x07069A/0x07069D */
-                func_070C50();                           /* @asm 0x0706AB redraw old row [bp-4] */
-                func_070C50();                           /* @asm 0x0706B8 redraw new row [0x53A6] */
+                func_070302_draw_difficulty_row((uint16_t)old_row);   /* @asm 0x0706AB redraw old row */
+                func_070302_draw_difficulty_row((uint16_t)(uint8_t)g_difficulty_53A6); /* @asm 0x0706B8 new row */
             } else if (key == 0x0D) {                    /* @asm 0x070670 Enter -> sub al,4 == 0 */
                 done = 0;                                 /* @asm 0x070672 [bp-8]=0 commit */
             }
@@ -351,8 +389,8 @@ int func_070580_difficulty_pick_dispatch(void)
                 if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070707 or ax,ax; je 0x706e2 (else select) */
                     old_row = (int)(uint8_t)g_difficulty_53A6;        /* @asm 0x070713 [bp-4] */
                     g_difficulty_53A6 = (uint8_t)row;    /* @asm 0x07071B [0x53A6]=row */
-                    func_070C50();                       /* @asm 0x070725 redraw old row */
-                    func_070C50();                       /* @asm 0x070732 redraw new row (then 0x070738 jmp 0x706e2 continues) */
+                    func_070302_draw_difficulty_row((uint16_t)old_row);          /* @asm 0x070725 redraw old */
+                    func_070302_draw_difficulty_row((uint16_t)(uint8_t)g_difficulty_53A6); /* @asm 0x070732 new */
                 }
             }
             /* @asm 0x07073A clicked inside the panel area? -> commit */
@@ -418,26 +456,46 @@ int func_070782_grid_cell_xy(uint16_t index, uint16_t *out_x, uint16_t *out_y)
  * ============================================================================ */
 int func_0707B6_draw_nation_row(uint16_t idx)
 {
+    uint16_t x = 0, y = 0;
     uint8_t color;
+    char buf[128];
 
     if ((int16_t)idx < 0 || (int16_t)idx > 3)           /* @asm 0x0707BC range gate 0..3 */
         return 0;
 
-    overlay_call_1A1F_0BC8();                           /* @asm 0x0707DA near 0x07111A label build (page 0x12) */
-    overlay_call_181F_0444();                           /* @asm 0x07080B draw framed box (w0x52,h0x58) */
+    func_070782_grid_cell_xy(idx, &x, &y);              /* @asm 0x0707CE push &[bp-56],&[bp-54],idx; call 0x070C5A->0x1A1F:0x0BC8 */
+    overlay_call_181F_0444();                           /* @asm 0x07080B draw framed box (w=0x52,h=0x58) */
     color = g_diff_color_848[idx];                      /* @asm 0x070813 banner colour @bytes 0x848 */
 
     if ((int16_t)g_sel_nation_5398 == (int16_t)idx) {   /* @asm 0x07081A only selected row */
-        overlay_call_181F_00CE();                       /* @asm 0x070846 name text @row+0x57 */
-        overlay_call_181F_016E();                       /* @asm 0x070866 append handle [0x8D42+idx*2] */
-        overlay_call_0D1D_0D64();                       /* @asm 0x070872 strlen */
-        overlay_call_0D1D_07A4();                        /* @asm 0x070881 strcat ":" @bytes 0x2041 */
-        overlay_call_181F_0100();                       /* @asm 0x07089A string field */
-        overlay_call_181F_0100();                       /* @asm 0x0708B7 string field (coloured) */
-        overlay_call_181F_016E();                       /* @asm 0x0708DF append handle [0x2F14+idx*2] */
-        overlay_call_181F_0100();                       /* @asm 0x0708F8 string field */
-        overlay_call_181F_0100();                       /* @asm 0x07090E string field */
-        (void)color;
+        /* name: COUNTRY handle from [0x8D42+idx*2] @asm 0x07085C [bx-0x72BE] */
+        const char *nm = viceroy_str(DG16(0x8D42 + (uint16_t)idx * 2));
+        buf[0] = 0;
+        strcat(buf, nm);
+        for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32; /* @asm 0x070872 strtoupper */
+        strcat(buf, ":");                               /* @asm 0x070881 strcat DG8(0x2041)=":" */
+
+        int text_w = vid_text_width(buf);
+        int cx = (int)x + 0x2C - text_w / 2;           /* @asm 0x07089A x_base=x+1(shadow)/x(main), w=0x58->cx=x+0x2C-w/2 */
+        if (cx < 0) cx = 0;
+        int y1 = (int)y + 2;                            /* @asm 0x07084B [bp-0x52]=[bp-0x56]+2 */
+
+        vid_text_color(0);                              /* @asm 0x07089A lcall 0x181F:0x100 shadow x_base=x+1 */
+        vid_text_xy(buf, cx + 1, y1);
+        vid_text_color(color);                          /* @asm 0x0708B7 lcall 0x181F:0x100 main */
+        vid_text_xy(buf, cx, y1);
+
+        /* second field: MISC[173+idx] = DG16(0x2F14+idx*2) @asm 0x0708DF [bx-0x72BE] */
+        const char *nm2 = viceroy_str(DG16(0x2F14 + (uint16_t)idx * 2));
+        int text_w2 = vid_text_width(nm2);
+        int cx2 = (int)x + 0x2C - text_w2 / 2;         /* @asm 0x0708F8 x_base=x+1(shadow)/x(main), w=0x58 */
+        if (cx2 < 0) cx2 = 0;
+        int y2 = (int)y - vid_text_ctx_byte0() + 0x50;  /* @asm 0x0708C8 [bp-0x52]=y-ctx[0]+0x50 */
+
+        vid_text_color(0);                              /* @asm 0x0708F8 shadow */
+        vid_text_xy(nm2, cx2 + 1, y2);
+        vid_text_color(color);                          /* @asm 0x07090E main */
+        vid_text_xy(nm2, cx2, y2);
     }
     overlay_call_181F_00E2();                           /* @asm 0x070925 flush rect -> RETF */
     return 0;
@@ -461,19 +519,26 @@ int func_0707B6_draw_nation_row(uint16_t idx)
  * ============================================================================ */
 int func_07092E_draw_nation_screen(void)
 {
-    overlay_call_181F_0022((int16_t)DG16(0x2f0e));                           /* @asm 0x070977 bg strip 0 */
+    overlay_call_181F_0022((int16_t)DG16(0x2F0E));      /* @asm 0x070977 bg strip 0 */
     overlay_call_181F_01C8();                           /* @asm 0x070981 composite 0 */
-    overlay_call_181F_0022();                           /* @asm 0x07099A bg strip 1 */
+    overlay_call_181F_0022((int16_t)DG16(0x2F10));      /* @asm 0x07099A bg strip 1 (push DG16(0x2F10) @asm 0x070996) */
     overlay_call_181F_01C8();                           /* @asm 0x0709A4 composite 1 */
-    overlay_call_181F_011E();                           /* @asm 0x0709B4 begin text */
-    overlay_call_181F_016E();                           /* @asm 0x0709C4 append heading [0x2EFC] */
-    overlay_call_181F_0128();                           /* @asm 0x0709D0 commit text */
-    overlay_call_181F_0100();                           /* @asm 0x0709E7 draw heading field */
+
+    /* heading: MISC[161]=DG16(0x2EFC), func_002BC8 args x=0 w=0x70 y=0xB6 color=0xFE
+     * @asm 0x0709B4 0x11E begin; 0x0709C4 0x16E append [0x2EFC]; 0x0709D0 0x128 commit;
+     * @asm 0x0709E7 0x100 x_base=0 width=0x70 y=0xB6 color=0xFE */
+    {
+        const char *heading = viceroy_str(DG16(0x2EFC));
+        int text_w = vid_text_width(heading);
+        int cx = 0x38 - text_w / 2;                    /* @asm 0x0709E7 cx=w/2-text_w/2+x_base=0x38-text_w/2 */
+        if (cx < 0) cx = 0;
+        vid_text_color(0xFE);
+        vid_text_xy(heading, cx, 0xB6);                 /* @asm 0x0709E7 y=0xB6 */
+    }
     overlay_call_181F_00E2();                           /* @asm 0x0709FB flush rect */
 
-    for (int i = 0; i < 4; i++) {                       /* @asm 0x070A12 cmp 4 */
-        func_070C5F();                                  /* @asm 0x070A09 -> draw_nation_row(i) */
-    }
+    for (int i = 0; i < 4; i++)                         /* @asm 0x070A12 cmp 4 */
+        func_0707B6_draw_nation_row((uint16_t)i);       /* @asm 0x070A09 push i; call 0x070C5F->0x1A1F:0x0BD6 */
     return 0;                                            /* @asm 0x070A18 RETF */
 }
 
@@ -569,8 +634,8 @@ int func_070A1A_nation_pick_dispatch(void)
             if (step != 0) {                             /* @asm 0x070B40 step block */
                 old_row = (int)g_sel_nation_5398;        /* @asm 0x070B46 [bp-6] */
                 g_sel_nation_5398 = (uint16_t)(((int)g_sel_nation_5398 + step) % 4); /* @asm 0x070B4D idiv 4 */
-                func_070C5F();                           /* @asm 0x070B5F redraw old row [bp-6] */
-                func_070C5F();                           /* @asm 0x070B6A redraw new row [0x5398] */
+                func_0707B6_draw_nation_row((uint16_t)old_row);        /* @asm 0x070B5F redraw old */
+                func_0707B6_draw_nation_row(g_sel_nation_5398);        /* @asm 0x070B6A redraw new */
             }
         }
 
@@ -580,12 +645,12 @@ int func_070A1A_nation_pick_dispatch(void)
             DG16(0x07F6) != 0) {              /* @asm 0x070B26 */
             nation_count = (DG16(0x201E) == 1) ? 5 : 4;   /* @asm 0x070B9F cmp 1; sbb; add 5 */
             for (row = 0; row < nation_count; row++) {   /* @asm 0x070BA9 cmp [bp-4] */
-                func_070C5A();                           /* @asm 0x070BBA cell geometry (-> 0x1A1F:0x0BC8) -> [bp-0x12]/[bp-0xE] */
+                func_070C5A();                           /* @asm 0x070BBA cell geometry (-> 0x1A1F:0x0BC8) hit-test setup */
                 if (overlay_call_181F_03CA() != 0) {     /* @asm 0x070BCA point_in_rect(x0x58,w0x52) */
                     old_row = (int)g_sel_nation_5398;    /* @asm 0x070BD6 [bp-6] */
                     g_sel_nation_5398 = (uint16_t)row;   /* @asm 0x070BDC [0x5398]=row */
-                    func_070C5F();                       /* @asm 0x070BE8 redraw old row */
-                    func_070C5F();                       /* @asm 0x070BF3 redraw new row (then 0x070BF9 jmp 0x70b9c continues) */
+                    func_0707B6_draw_nation_row((uint16_t)old_row);     /* @asm 0x070BE8 redraw old */
+                    func_0707B6_draw_nation_row(g_sel_nation_5398);     /* @asm 0x070BF3 redraw new */
                 }
             }
             /* @asm 0x070BFC clicked inside the panel area? -> commit */
