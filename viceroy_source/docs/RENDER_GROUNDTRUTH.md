@@ -124,12 +124,40 @@ sprite blit is a no-op `;`:
   0xFF, flattens the 5×N config into `0x8D62`, records produced goods into
   `0x8E82`) — partially ported; verify it runs for a loaded colony.
 
-**To finish:** (1) draw the sandy plot backdrop; (2) port the `(type,level)→
-frame` map and blit `BUILDING.SS` at the `0x266` slot positions; (3) the 3×3
-work-tiles grid (terrain + worker icons); (4) the bottom bars from `COLONY.PIK`
-+ the stockpile/SoL/ship sub-painters. **Verification needs a colony WITH
-buildings** — the modern build's synthetic test colony (`main_modern.c`) seeds
-only x/y/owner/pop/name, so seed a building set too, or wire a `.SAV` loader.
+**Concrete data gathered (so implementation needs no re-investigation):**
+
+*Building slot positions* — read from the live DGROUP image (VICEROY.EXE file
+0x1D9A0+0x266), 15 slots, `(x, y)`; the painter adds +8 to y:
+```
+ 0:(56,5)  1:(145,7)  2:(173,10) 3:(8,33)  4:(37,37)
+ 5:(67,46) 6:(96,45)  7:(6,6)    8:(128,45) 9:(10,68)
+10:(15,94) 11:(87,3) 12:(66,79) 13:(123,98) 14:(123,47)
+```
+
+*Sub-panel layout rects* (from the colony_screen.c banner, byte-verified):
+- top building plot: the 15 slots above, over a sandy backdrop (top band fill
+  `0,7,199` then frame `0,8,199,7`)
+- 3×3 work-tiles grid: upper-right `(224,32,72,72)`
+- surrounding minimap: `(121,130,84,48)`; SoL/cargo/ship panel: `(211,130,91,48)`
+- nation flag: `(303,132,17,45)`, flag sprite id 68
+- stockpile strip: bottom `y=179..199` (16 goods)
+- `COLONY.PIK` (320×72) is the bottom-bar backdrop (draw at y≈128, not y=0)
+
+*Building system* (docs/COLONY_SYSTEM.md): ~16 building categories, most with 3
+tiers (Stockade/Fort/Fortress, Church/Cathedral, Warehouse, Carpenter→Lumber
+Mill, …) + standalone Town Hall (always present). `BUILDING.SS` = 48 frames
+covering categories×tiers.
+
+**The one remaining blocker:** the `(building_type, level) → BUILDING.SS frame`
+map (orig leaf at near-call `0x7E33`, "national-variant select on player
+nation"; recol twin `func_018230`, switch on level 0x0F/0x11/0x13/0x14/0x30/0x2F).
+Not in this repo. Derive it from the recol reference OR empirically by matching
+`BUILDING.SS` frames to the slot positions in `refs/ref_colony_interior.png`
+(Curacao). Then: implement the per-slot blit in `colony_paint_buildings`, draw
+the sandy backdrop, place `COLONY.PIK` at the bottom, and **seed a building set
+into the `main_modern.c` test colony** (it currently seeds only x/y/owner/pop/
+name) to verify. Do NOT ship an approximate frame map — per the accuracy bar,
+the buildings must be the correct sprites.
 
 ## Repo / safety constraints (persistent)
 VICEROY.EXE is never committed and never embedded in the modern build;
