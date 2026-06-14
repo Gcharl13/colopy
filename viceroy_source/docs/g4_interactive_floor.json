@@ -3,13 +3,6 @@
   "_rule": "Every link-active weak func_ stub in viceroy_modern MUST appear here with a classification. tools/g4_floor.py fails if a func_ stub is NOT listed (no-new-items contract) or if any listed symbol fires on the soak path (stub_hits.c counter). These are reached ONLY on interactive paths (0 hits across the 500-turn AI soak) and are exercised + certified by Phase 7.1 (pixel parity over these screens) and 7.2 (full-verb determinism: combat, native raid, FF election, war declaration). They are NOT marked UNREACHABLE: interactive code is not dead code.",
   "_descoped_audio": "Audio device leaves (adlib/mt32/gm/pcspk/sb, inp/outp/delay_micros) are SILENT terminal defs in src/audio/audio_silent.c per the 2026-06-13 audio descope; they are no longer link-active weak stubs.",
   "interactive_func_floor": {
-    "func_04A7CA_speak_with_chief": {
-      "state": "BODY-MISSING",
-      "size": 1077,
-      "reach": "native settlement 'speak with chief' dialog (interactive)",
-      "target": "own body @file 0x04A7CA (not ported)",
-      "proof": "gold sub-block ported in native_village_raze.c; full dialog body interactive-only, 0 soak hits"
-    },
     "func_03EA33": {
       "state": "ENTRY-SPLIT-PENDING",
       "reach": "diplomacy/mercenary dialog (overlay_03C5A8 @asm 0x03E02E)",
