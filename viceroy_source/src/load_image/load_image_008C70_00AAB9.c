@@ -1738,8 +1738,11 @@ int func_0096DA_find_nth_slot_by_good(uint16_t good, uint16_t n) {
 
 /* @asm 0x009318..0x009626  (782 bytes)
  * overlay_call_181F_0C36 -> 0x05EB:0x1068 -> file 0x009318
- * Colony-view renderer: draws colony panel with goods, population,
- * and production rows.  Structural stub: full port pending. */
+ * NOTE (2026-06-14): overlay_call_181F_0C36 is now wired directly to
+ * colony_assign_or_change_colonist_job (the real 782-byte port in
+ * src/colony/assignment.c) via PROVIDE() in tools/linkfloor_extra.ld.
+ * This stub is kept as a symbol placeholder but will never be called.
+ * Full port superseded; do NOT remove (linker EXTERN reference remains). */
 int func_009318_colony_view(uint16_t arg0, uint16_t arg1) {
     (void)arg0; (void)arg1;
     return 0;

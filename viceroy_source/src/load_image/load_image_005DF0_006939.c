@@ -450,7 +450,7 @@ int func_0060A0_logic_sz_128(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     /* @asm 0x00613b r = overlay 0x03E4:0x003A(x,y); result = [0x0192 + r*2];
      *      if (result == 0) result = 6. */
     {
-        int r = overlay_call_03E4_003A();       /* @asm push y; push x */
+        int r = overlay_call_03E4_003A(arg0_bp_06, arg1_bp_08);  /* @asm push y; push x */
         result = (int16_t)DG16(0x0192 + (unsigned)(uint16_t)r * 2);
         if (result == 0)
             result = 6;

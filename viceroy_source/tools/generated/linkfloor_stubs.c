@@ -528,7 +528,6 @@ __attribute__((weak)) long overlay_call_1A1F_0B9E(void) { viceroy_stub_hit("over
 __attribute__((weak)) long overlay_call_1A1F_0BAC(void) { viceroy_stub_hit("overlay_call_1A1F_0BAC"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0BC8(void) { viceroy_stub_hit("overlay_call_1A1F_0BC8"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0BD6(void) { viceroy_stub_hit("overlay_call_1A1F_0BD6"); return 0; }
-__attribute__((weak)) long overlay_call_1A1F_0BE4(void) { viceroy_stub_hit("overlay_call_1A1F_0BE4"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0C00(void) { viceroy_stub_hit("overlay_call_1A1F_0C00"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0C0E(void) { viceroy_stub_hit("overlay_call_1A1F_0C0E"); return 0; }
 __attribute__((weak)) long overlay_call_1A1F_0C1C(void) { viceroy_stub_hit("overlay_call_1A1F_0C1C"); return 0; }
@@ -637,7 +636,6 @@ __attribute__((weak)) long func_02CAC3(void) { viceroy_stub_hit("func_02CAC3"); 
 __attribute__((weak)) long func_02CAE1(void) { viceroy_stub_hit("func_02CAE1"); return 0; }
 __attribute__((weak)) long func_03EA33(void) { viceroy_stub_hit("func_03EA33"); return 0; }
 __attribute__((weak)) long func_03F1598(void) { viceroy_stub_hit("func_03F1598"); return 0; }
-__attribute__((weak)) long func_03F940(void) { viceroy_stub_hit("func_03F940"); return 0; }
 __attribute__((weak)) long func_04172D(void) { viceroy_stub_hit("func_04172D"); return 0; }
 __attribute__((weak)) long func_041732(void) { viceroy_stub_hit("func_041732"); return 0; }
 __attribute__((weak)) long func_05A938(void) { viceroy_stub_hit("func_05A938"); return 0; }
@@ -668,7 +666,6 @@ __attribute__((weak)) long adlib_play_song(void) { viceroy_stub_hit("adlib_play_
 __attribute__((weak)) long adlib_shutdown(void) { viceroy_stub_hit("adlib_shutdown"); return 0; }
 __attribute__((weak)) long adlib_stop_song(void) { viceroy_stub_hit("adlib_stop_song"); return 0; }
 __attribute__((weak)) long ai_set_plot_target(void) { viceroy_stub_hit("ai_set_plot_target"); return 0; }
-__attribute__((weak)) long assign_job(void) { viceroy_stub_hit("assign_job"); return 0; }
 __attribute__((weak)) long audio_load_sample_bank(void) { viceroy_stub_hit("audio_load_sample_bank"); return 0; }
 __attribute__((weak)) long bar_queue_push(void) { viceroy_stub_hit("bar_queue_push"); return 0; }
 __attribute__((weak)) long bar_queue_reset(void) { viceroy_stub_hit("bar_queue_reset"); return 0; }

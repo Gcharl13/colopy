@@ -1154,7 +1154,7 @@ PROVIDE(overlay_call_1A1F_0192 = func_059B90_europe_dispatch);
 EXTERN(func_059B90_europe_dispatch)
 PROVIDE(overlay_call_1A1F_0CF6 = func_0734F8_scenario_dispatch);
 EXTERN(func_0734F8_scenario_dispatch)
-PROVIDE(overlay_call_181F_0C36 = func_009318_colony_view);
+PROVIDE(overlay_call_181F_0C36 = colony_assign_or_change_colonist_job);
 EXTERN(func_009318_colony_view)
 /* THUNK-UNRESOLVED: DOS service and unspanned stubs */
 PROVIDE(overlay_call_0D1C_0000 = func_0F5C0_vga_addr_calc);
@@ -1189,6 +1189,9 @@ PROVIDE(func_8FB4 = func_008FB4_colony_sz_138);
 EXTERN(func_008FB4_colony_sz_138)
 PROVIDE(func_AB78 = func_00AB78_colony_sz_1496);
 EXTERN(func_00AB78_colony_sz_1496)
+PROVIDE(assign_job = colony_assign_or_change_colonist_job);
+/* overlay_call_05DC_00E0: 0x181F:0x030C -> 0x05DC:0x00E0 -> file 0x082A0 (relation/terrain table) */
+PROVIDE(overlay_call_05DC_00E0 = func_0082A0_logic_sz_18);
 /* ============================================================================
  * Phase 4.8 (2026-06-13): RTLink thunk-trampoline cluster wiring.
  * Each func_0XXXXX below is an `ljmp seg:off` trampoline; resolved to its

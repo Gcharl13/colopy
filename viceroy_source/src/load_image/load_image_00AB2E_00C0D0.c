@@ -22,8 +22,8 @@
 extern int overlay_call_0000_0062();  /* @ref RTLink seg 0x0000 off 0x0062 */
 extern int overlay_call_037F_004A();  /* @ref RTLink seg 0x037F off 0x004A */
 /* overlay_call_037F_02A0(uint16_t x, uint16_t y) declared in overlay_externs.h */
-extern int overlay_call_03E4_003A();  /* @ref RTLink seg 0x03E4 off 0x003A */
-extern int overlay_call_05DC_00E0();  /* @ref RTLink seg 0x05DC off 0x00E0 */
+extern int overlay_call_03E4_003A(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x03E4 off 0x003A */
+extern int overlay_call_05DC_00E0(uint16_t occ, uint16_t nation);  /* @ref RTLink seg 0x05DC off 0x00E0 */
 extern int overlay_call_0981_0000();  /* @ref RTLink seg 0x0981 off 0x0000 */
 /* overlay_call_03E4_0074 declared in overlay_externs.h with (uint16_t x, uint16_t y) */
 extern int overlay_call_0BAA_0006();  /* @ref RTLink seg 0x0BAA off 0x0006 (sprite blit) */
@@ -112,10 +112,671 @@ int func_00AB2E_logic_sz_73(void)
  * arithmetic is dense and heuristic; a faithful byte-accurate reconstruction is
  * deferred to a dedicated pass rather than risk an inexact port here.
  */
+/* Externs needed only by this function (not yet in project-wide headers). */
+extern int16_t func_008D00_colony_stock_cap(void);   /* unit/cargo.c */
+extern int func_0090C8(uint16_t slot);               /* load_image_008C70_00AAB9.c */
+extern int func_008720(void);                        /* load_image_008262_008C6F.c */
+extern int func_009626(uint16_t occ);                /* load_image_008C70_00AAB9.c */
+extern int func_00864E_logic_sz_31(uint16_t arg);    /* load_image_008262_008C6F.c */
+extern int func_009876_logic_sz_62(uint16_t arg);    /* load_image_008C70_00AAB9.c */
+extern int func_008982_logic_sz_532(uint16_t x, uint16_t y, uint16_t obj); /* load_image_008262_008C6F.c */
+extern int compute_terrain_yield(int x, int y, int *out, int flag); /* colony/turn_update.c */
+
 int func_00AB78_colony_sz_1496(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
-    (void)arg0_bp_06; (void)arg1_bp_08;
-    return 0;  /* TODO: port from func_00AB78.asm — 1496-byte unit-AI move scorer */
+    /* Rename parameters to match disasm naming convention */
+    int slot    = (int)arg0_bp_06;  /* [bp+6] colony slot index */
+    int action  = (int)(int16_t)arg1_bp_08; /* [bp+8] -1=find-best, >=0=score specific occ */
+
+    /* @asm 0xAB7D..0xAB87: result=1; competition=0; territory=0 */
+    int result      = 1;            /* [bp-0xa] */
+    int competition = 0;            /* [bp-0x12] */
+    int territory   = 0;            /* [bp-0xc] */
+
+    /* --- NEW COLONY CHECK @asm 0xAB8A --- */
+    /* @asm 0xAB8A: bx=DG16(0x8542); al=[bx+0x1a]; nation_idx in [bp-0x38] */
+    uint16_t col = DG16(0x8542);
+    int nation_idx = (int)(uint8_t)DG8((uint16_t)(col + 0x1au));  /* [bp-0x38] */
+    int is_new_colony;
+    /* @asm 0xAB96: cmp ax,4; jge 0xABAC */
+    if (nation_idx < 4 && DG8((uint16_t)(0x543fu + (uint16_t)(nation_idx * 0x34))) == 0) {
+        is_new_colony = 1;  /* @asm 0xABA4: [bp-0x26]=1 */
+    } else {
+        is_new_colony = 0;  /* @asm 0xABAC: [bp-0x26]=0 */
+    }
+
+    /* --- CAPACITY @asm 0xABB2 --- */
+    int16_t stock_cap = func_008D00_colony_stock_cap();  /* [bp-4] */
+
+    /* --- UNIT SCAN (if NOT is_new_colony) @asm 0xABBC..0xAC24 --- */
+    if (!is_new_colony) {
+        /* @asm 0xABBE: save_slot=[bp-0x2e]=[bp+6] */
+        int save_slot = slot;
+        /* @asm 0xABC4: bx=DG16(0x8542); al=[bx]=col.x in ax; dl=[bx+1]=col.y in dx */
+        col = DG16(0x8542);
+        /* col.x in ax (al), col.y in dx (dl) — passed to overlay via registers */
+        /* @asm 0xABD1: lcall 0x427:0x5c — first unit at (col.x, col.y) */
+        int iter = overlay_call_0427_005C();  /* @asm 0xABD1 */
+        while (iter >= 0) {  /* @asm 0xAC02: or ax,ax; jge loop */
+            /* @asm 0xABD8: bx=iter*0x1c; unit_type=[bx+0x3146] */
+            uint16_t unit_rec = (uint16_t)((uint16_t)(iter * 0x1c));
+            int unit_type = (int)(uint8_t)DG8((uint16_t)(unit_rec + 0x3146u));
+            /* @asm 0xABE3: type_x6 = type*6 */
+            uint16_t type_x6 = (uint16_t)(unit_type * 6);
+            /* @asm 0xABED: cmp [bx+0x5235],1; jbe skip → competition++ */
+            if (DG8((uint16_t)(0x5235u + type_x6)) > 1) {
+                competition++;  /* @asm 0xABF4 */
+            }
+            /* @asm 0xABF7: push [bp+6]=slot; lcall 0x427:0x4a → next unit */
+            iter = overlay_call_0427_004A((uint16_t)iter);  /* @asm 0xABFA */
+            /* @asm 0xABFF: [bp+6]=ax (iter stored back into slot param temporarily) */
+            slot = (int)(int16_t)iter;
+        }
+        /* @asm 0xAC06: restore slot from save_slot */
+        slot = save_slot;
+        col = DG16(0x8542);  /* @asm 0xAC0C */
+        /* @asm 0xAC10: al=[bx+1]=col.y; push ax; al=[bx]=col.x; push ax
+         * @asm 0xAC19: lcall 0x37F:0x2A0(col.y, col.x) → territory */
+        uint16_t col_y_arg = (uint16_t)(uint8_t)DG8((uint16_t)(col + 1u));
+        uint16_t col_x_arg = (uint16_t)(uint8_t)DG8((uint16_t)(col + 0u));
+        territory = overlay_call_037F_02A0(col_y_arg, col_x_arg);  /* @asm 0xAC19 */
+    }
+
+    /* --- RESET LOCALS @asm 0xAC25 --- */
+    int best_score = 0;        /* [bp-0x10] */
+    int result_tile = 0;       /* [bp-0x1e] */
+    int best_occ = -1;         /* [bp-0x16] */
+    int best_tile_x = 0;       /* [bp-0x18] */
+    int best_tile_y = 0;       /* [bp-0x1a] */
+
+    /* --- GET CLASS + CLEAR JOB @asm 0xAC31 --- */
+    /* @asm 0xAC34: push [bp+6]; call 0x90C8 → unit_class=[bp-0x28] */
+    int unit_class = func_0090C8((uint16_t)slot);  /* [bp-0x28] */
+    /* @asm 0xAC3E: push 0x12; push [bp+6]; call 0x9318 (assign landless) */
+    colony_assign_or_change_colonist_job(slot, 0x12);  /* @asm 0xAC44 */
+    /* @asm 0xAC4A: call 0xA222 */
+    compute_colony_center_yields();  /* @asm 0xAC4A */
+
+    /* --- CAN_PLACE CHECK @asm 0xAC4E --- */
+    /* @asm 0xAC4E: ax=DG16(0x8DC8); cmp [0x8E0A],ax; jle→can_place=1 */
+    int can_place = ((int16_t)DG16(0x8dc8u) <= (int16_t)DG16(0x8e0au)) ? 1 : 0;
+    /* @asm 0xAC61: if DG16(0x35e)!=0: can_place=0 */
+    if (DG16(0x35eu) != 0) {
+        can_place = 0;
+    }
+    if (!is_new_colony) {  /* @asm 0xAC6D */
+        col = DG16(0x8542);
+        /* @asm 0xAC73: call 0x8D00; cmp ax,[bx+0x9a]; jge ok → can_place=0 */
+        if ((int16_t)func_008D00_colony_stock_cap() < (int16_t)DG16((uint16_t)(col + 0x9au))) {
+            can_place = 0;  /* @asm 0xAC81 */
+        }
+        /* @asm 0xAC86: ax=DG16(0x8E32)<<4; cmp [bx+0x9a]; jge ok → can_place=0 */
+        if ((int16_t)((int16_t)DG16(0x8e32u) << 4) < (int16_t)DG16((uint16_t)(col + 0x9au))) {
+            can_place = 0;  /* @asm 0xAC92 */
+        }
+    }
+
+    /* --- EARLY EXIT @asm 0xAC97..0xACD8 --- */
+    /* @asm 0xAC97: cmp [bp-0x34],0; jne 0xACDC */
+    if (can_place == 0 && action < 0 && is_new_colony != 0) {
+        /* @asm 0xACA9: push 0xd; call 0x9626 → if==0: continue */
+        if (func_009626(0xd) == 0) {
+            col = DG16(0x8542);
+            /* @asm 0xACBA: cmp [bx+0x1f],3; jl exit */
+            if ((int8_t)DG8((uint16_t)(col + 0x1fu)) >= 3) {
+                /* @asm 0xACC0: cmp [bx+0x94],0; jl exit */
+                if ((int8_t)DG8((uint16_t)(col + 0x94u)) >= 0) {
+                    /* @asm 0xACC7: push 0xd; push [bp+6]; call 0x9318 */
+                    colony_assign_or_change_colonist_job(slot, 0xd);  /* @asm 0xACCC */
+                    result = 0;
+                    goto finish;  /* @asm 0xACD8: jmp 0xB138 */
+                }
+            }
+        }
+    }
+
+    /* --- SET SCAN FLAG @asm 0xACDC --- */
+    DG8(0x34du) = 1;  /* @asm 0xACDC scanning active */
+
+    /* --- ERA VALUE @asm 0xACE2 --- */
+    /* @asm 0xACE2: call 0x8720; mov bx,ax; al=[bx+0x329] */
+    uint16_t era_bx = (uint16_t)func_008720();
+    int16_t era_val = (int16_t)(uint8_t)DG8((uint16_t)(era_bx + 0x329u));  /* [bp-0x20] */
+
+    /* --- TILE LOOP @asm 0xACF0..0xB07B --- */
+    /* @asm 0xACF0: [bp-0x14]=0; jmp 0xB07E (tile_loop_test) */
+    int tile_idx = 0;
+    while (1) {
+        /* @asm 0xB07E: tile_loop_test: ax=[bp-0x14]; cmp [bp-0x20],ax; jle 0xB0EA */
+        if ((int16_t)era_val <= (int16_t)tile_idx) break;
+
+        /* @asm 0xB086: bx=ax=tile_idx; cx=ax */
+        /* @asm 0xB08A: al=[bx+0xDE] (y offset table); sign-extend; +2 */
+        int16_t tile_y = (int16_t)((int8_t)DG8((uint16_t)(tile_idx + 0xdeu))) + 2;  /* [bp-0x2a] */
+        /* @asm 0xB094: al=[bx+0xC8] (x offset table); sign-extend; +2 */
+        int16_t tile_x = (int16_t)((int8_t)DG8((uint16_t)(tile_idx + 0xc8u))) + 2;  /* [bp-0x24] */
+
+        /* @asm 0xB0A0: si=tile_x*5; bx=tile_y; check occupancy */
+        /* cell_addr = tile_y + tile_x*5 - 0x7210 (as uint16: 0x8DF0) */
+        uint16_t cell_addr = (uint16_t)((uint16_t)tile_y + (uint16_t)tile_x * 5u + 0x8df0u);
+        /* @asm 0xB0AA: cmp byte [bx+si-0x7210],0; jne 0xB07B (next tile) */
+        if (DG8(cell_addr) != 0) {
+            tile_idx++;
+            continue;
+        }
+        /* @asm 0xB0B1: is_new_colony check */
+        if (is_new_colony != 0) {
+            /* @asm 0xB0BE: cmp [bx+si-0x7262],0; jge 0xB07B */
+            uint16_t cell_addr2 = (uint16_t)((uint16_t)tile_y + (uint16_t)tile_x * 5u + 0x8d9eu);
+            if ((int8_t)DG8(cell_addr2) >= 0) {
+                tile_idx++;
+                continue;
+            }
+        }
+        /* @asm 0xB0C5: bx=DG16(0x8542); si=cx=tile_idx; cmp [bx+si+0x70],0; jge 0xB07B */
+        col = DG16(0x8542);
+        if ((int8_t)DG8((uint16_t)(col + 0x70u + (uint16_t)tile_idx)) >= 0) {
+            tile_idx++;
+            continue;
+        }
+
+        /* @asm 0xB0D1: push slot; push tile_y; push tile_x; call 0x8982 */
+        func_008982_logic_sz_532((uint16_t)tile_x, (uint16_t)tile_y, (uint16_t)slot);
+
+        /* --- INNER OCC LOOP @asm 0xB0E2..0xAFEB --- */
+        /* @asm 0xB0E2: [bp-0x32]=0; jmp 0xAFE7 (occ_loop_test first) */
+        int occ_idx = 0;
+
+        /* Variables used across the occ loop body */
+        int16_t score;
+        int occ_out;
+        int terrain_type = 0;  /* [bp-0x30] (used in post-score adjustment) */
+
+        while (1) {
+            /* @asm 0xAFE7: cmp [bp-0x32],9; jge 0xB06C (exit occ loop) */
+            if (occ_idx >= 9) break;
+
+            /* @asm 0xAFED: if action>=0 and occ_idx!=action: skip */
+            if (action >= 0 && occ_idx != action) {
+                occ_idx++;
+                continue;
+            }
+
+            /* @asm 0xAFFB: push occ_idx; push slot; call 0x9318 */
+            colony_assign_or_change_colonist_job(slot, occ_idx);  /* @asm 0xB002 */
+
+            /* @asm 0xB008: push 0; lea [bp-0x22]; push tile_y; push tile_x; call 0x9B9C */
+            occ_out = 0;
+            int yield_raw = compute_terrain_yield((int)tile_x, (int)tile_y, &occ_out, 0);  /* @asm 0xB015 */
+            /* @asm 0xB01B: [bp-0x2c]=ax; [bp-0x1c]=ax */
+            int yield = (int16_t)yield_raw;
+            score = (int16_t)yield;
+
+            /* @asm 0xB021: if action>=0: stock headroom check */
+            if (action >= 0) {
+                col = DG16(0x8542);
+                /* @asm 0xB027: cx=[bp-4]=stock_cap; si=occ_out*2
+                 *              cx -= [bx+si+0x9a]=col.stock[occ_out*2] */
+                int16_t cx_tmp = stock_cap - (int16_t)DG16((uint16_t)(col + 0x9au + (uint16_t)occ_out * 2u));
+                /* @asm 0xB037: cmp cx,1; jge ok; cx=1 */
+                if (cx_tmp < 1) cx_tmp = 1;
+                /* @asm 0xB042: cmp cx,ax; jle use_cx; else keep score */
+                if (cx_tmp < score) score = cx_tmp;
+            }
+
+            /* @asm 0xB04B: shl [bp-0x1c],3 */
+            score = (int16_t)((uint16_t)score << 3);
+
+            /* @asm 0xB04F: cmp [bp-0x1c],0; jne 0xB058 */
+            if (score == 0) {
+                /* @asm 0xB055: jmp 0xAD22 (distance scoring with score=0) */
+                goto distance_scoring;
+            }
+
+            /* @asm 0xB058: abs_dx = -(tile_x-2) if tile_x<=2, else tile_x-2 */
+            /* Distance scoring entry from non-zero score */
+            {
+                int16_t tile_off_x = (int16_t)tile_x - 2;
+                int16_t abs_dx;
+                /* @asm 0xACFD: not ax; inc ax = negation */
+                abs_dx = -tile_off_x;  /* initial: abs_dx = -(tile_x-2) = 2-tile_x */
+                /* @asm 0xB060: or ax,ax; jg 0xB067 (if tile_off_x > 0: use positive) */
+                if (tile_off_x > 0) {
+                    /* @asm 0xB067: jmp 0xAD00 */
+                    abs_dx = tile_off_x;
+                }
+
+                /* @asm 0xAD03: tile_off_y = tile_y-2; abs_dy */
+                int16_t tile_off_y = (int16_t)tile_y - 2;
+                int16_t abs_dy;
+                /* @asm 0xAD0B: or ax,ax; jg 0xAD17 */
+                if (tile_off_y > 0) {
+                    abs_dy = tile_off_y;
+                } else {
+                    abs_dy = -tile_off_y;
+                }
+
+                /* @asm 0xAD17: sub ax,7; neg ax; sub ax,[bp-0x3c] → 7-abs_dy-abs_dx */
+                int16_t dist_bonus = (int16_t)(7 - abs_dy - abs_dx);
+                /* @asm 0xAD1F: add [bp-0x1c],ax */
+                score = (int16_t)(score + dist_bonus);
+                goto post_distance;
+            }
+
+        distance_scoring:  /* @asm 0xACF8 — entered when score==0 after shl */
+            {
+                int16_t tile_off_x = (int16_t)tile_x - 2;
+                int16_t abs_dx = -tile_off_x;
+                if (tile_off_x > 0) {
+                    abs_dx = tile_off_x;
+                }
+                int16_t tile_off_y = (int16_t)tile_y - 2;
+                int16_t abs_dy;
+                if (tile_off_y > 0) {
+                    abs_dy = tile_off_y;
+                } else {
+                    abs_dy = -tile_off_y;
+                }
+                score = (int16_t)(score + (int16_t)(7 - abs_dy - abs_dx));
+            }
+
+        post_distance:
+            /* @asm 0xAD22: if action<0 AND occ_idx==unit_class AND is_new_colony!=0: shl score,1 */
+            if (action < 0 && occ_idx == unit_class && is_new_colony != 0) {
+                score = (int16_t)((uint16_t)score << 1);  /* @asm 0xAD36 */
+            }
+
+            /* @asm 0xAD39: if action>=0: goto update_best */
+            if (action >= 0) {
+                goto update_best;
+            }
+
+            /* @asm 0xAD42: if can_place==0: goto no_can_place */
+            if (can_place == 0) {
+                goto no_can_place;
+            }
+
+            /* --- OCC SELECTION SCORING (occ=0 or 8) @asm 0xAD4B --- */
+            /* @asm 0xAD4B: cmp [bp-0x32],0; je 0xAD5A; cmp,8; je 0xAD5A */
+            if (occ_idx == 0 || occ_idx == 8) {
+                /* @asm 0xAD5A: cmp occ_idx,8; jne 0xAD6A */
+                if (occ_idx == 8 && score != 0) {
+                    /* @asm 0xAD66: add [bp-0x1c],8 */
+                    score = (int16_t)(score + 8);
+                }
+                /* @asm 0xAD6A: shl [bp-0x1c],5 */
+                score = (int16_t)((uint16_t)score << 5);
+                /* @asm 0xAD6E: cmp [bp-0x1c],0; je 0xADDB */
+                if (score == 0) {
+                    goto terr_check_non08;
+                }
+
+                /* @asm 0xAD74: terrain call */
+                col = DG16(0x8542);
+                /* @asm 0xAD78: al=[bx+1]=col.y; ax+=tile_y-2; push ax
+                 *              al=[bx]=col.x; ax+=tile_x-2; push ax */
+                uint16_t tx = (uint16_t)((uint16_t)(uint8_t)DG8((uint16_t)(col + 0u)) + (uint16_t)tile_x - 2u);
+                uint16_t ty = (uint16_t)((uint16_t)(uint8_t)DG8((uint16_t)(col + 1u)) + (uint16_t)tile_y - 2u);
+                /* @asm 0xAD8D: lcall 0x3E4:0x3A(tx, ty) → terrain_type */
+                terrain_type = overlay_call_03E4_003A(tx, ty);  /* @asm 0xAD8D */
+                /* @asm 0xAD9A: bx=terrain_type; shl bx,4; al=[bx+0x2f7a] */
+                uint16_t terr_base_addr = (uint16_t)((uint16_t)terrain_type * 16u + 0x2f7au);
+                int16_t terrain_base = (int16_t)(uint8_t)DG8(terr_base_addr);  /* [bp-0xe] */
+
+                /* @asm 0xADA6: forest bonus check */
+                if (terrain_type >= 8 && terrain_type < 0x18) {
+                    col = DG16(0x8542);
+                    /* @asm 0xADB6: cmp [bx+0xa4],0xa; jg 0xADCA */
+                    if ((int16_t)DG16((uint16_t)(col + 0xa4u)) <= 0xa) {
+                        /* @asm 0xADBD: cmp [0x8dd2],0; jne 0xADCA */
+                        if (DG16(0x8dd2u) == 0) {
+                            terrain_base = (int16_t)(terrain_base + 0x18);  /* @asm 0xADC4 */
+                        }
+                    }
+                }
+
+                /* @asm 0xADCA: [bp-0x1c] = score - terrain_base */
+                score = (int16_t)(score - terrain_base);
+                /* @asm 0xADD3: cmp ax,1; jge ok; ax=1 */
+                if (score < 1) score = 1;
+
+                /* @asm 0xADDB: territory check for occ 0/8 path */
+                {
+                    uint16_t terr_addr = (uint16_t)((uint16_t)tile_x * 5u + (uint16_t)tile_y + 0x8d9eu);
+                    if ((int8_t)DG8(terr_addr) < 0) {
+                        goto update_best;  /* wilderness: full score */
+                    }
+                    score = (int16_t)((int16_t)score >> 1);  /* @asm 0xADF2 sar [bp-0x1c],1 */
+                    goto update_best;
+                }
+            }
+
+            /* --- non-0/8 occ with can_place: territory check @asm 0xADDB --- */
+        terr_check_non08:
+            {
+                uint16_t terr_addr2 = (uint16_t)((uint16_t)tile_x * 5u + (uint16_t)tile_y + 0x8d9eu);
+                if ((int8_t)DG8(terr_addr2) < 0) {
+                    goto update_best;  /* wilderness: full score */
+                }
+                score = (int16_t)((int16_t)score >> 1);  /* @asm 0xADF2 sar [bp-0x1c],1 */
+                goto update_best;
+            }
+
+        no_can_place:  /* @asm 0xADF8: can_place==0 path */
+            /* @asm 0xADF8: cmp occ_idx,8; je 0xAE04; cmp occ_idx,0; jne 0xAE42 */
+            if (occ_idx != 0 && occ_idx != 8) {
+                goto other_occ_path;
+            }
+            /* --- occ==0 or 8, can_place==0 @asm 0xAE04 --- */
+            {
+                int16_t min_score = 0;  /* [bp-2] */
+                /* @asm 0xAE04: al=[bp-0x20]=era_val; shl al,1; cmp [bx+0x1f],al */
+                col = DG16(0x8542);
+                if ((int8_t)DG8((uint16_t)(col + 0x1fu)) < (int8_t)((uint8_t)era_val << 1)) {
+                    /* @asm 0xAE12: cmp [0x35e],0; je 0xAE20 */
+                    if (DG16(0x35eu) != 0) {
+                        min_score = 4;  /* @asm 0xAE19 */
+                    }
+                }
+                /* @asm 0xAE25: if is_new_colony!=0 OR action>=0: adjust */
+                if (is_new_colony != 0 || action >= 0) {
+                    if (min_score < 1) min_score = 1;
+                }
+                int16_t adj_score = (int16_t)(min_score + 1);  /* @asm 0xAEA7 */
+                goto post_adj;
+
+            other_occ_path:  /* @asm 0xAE42: non-0/8 occ */
+                ;
+            }
+            /* fall-through — the goto above guarantees we only reach here
+             * via other_occ_path label; other_occ_path is inside the no_can_place
+             * block so we use a second path variable */
+        {
+            /* @asm 0xAE42: si=nation_idx<<4; bx=occ_out; al=[bx+si-0x7b44] */
+            int16_t min_score_b = (int16_t)(uint8_t)DG8(
+                (uint16_t)((uint16_t)occ_out + (uint16_t)nation_idx * 16u + 0x84bcu));
+            int16_t adj_score_b;
+
+            /* @asm 0xAE54: fur-trapper bonus */
+            if (is_new_colony == 0 && occ_out == 6) {
+                col = DG16(0x8542);
+                /* @asm 0xAE63: cmp [bx+0x1f],8; jl 0xAEA3 */
+                if ((int8_t)DG8((uint16_t)(col + 0x1fu)) >= 8) {
+                    /* @asm 0xAE69: cmp [0x538e],0x50; jl 0xAEA3 */
+                    if ((int16_t)DG16(0x538eu) >= 0x50) {
+                        /* @asm 0xAE75: bx=DG16(0x5398); cl=[bx-0x6e84] */
+                        uint16_t nation_ptr = DG16(0x5398u);
+                        uint8_t cl = DG8((uint16_t)(nation_ptr + 0x10000u - 0x6e84u));
+                        /* @asm 0xAE80: cmp [bx-0x6e84],cl where bx=nation_idx */
+                        uint8_t our_val = DG8((uint16_t)((uint16_t)nation_idx + 0x10000u - 0x6e84u));
+                        if (our_val >= cl) {
+                            min_score_b = (int16_t)(min_score_b + 2);  /* @asm 0xAE74 */
+                            /* @asm 0xAE86: push 0x28; call 0x864E */
+                            min_score_b = (int16_t)(min_score_b + (int16_t)func_00864E_logic_sz_31(0x28u));
+                            /* @asm 0xAE95: push 3; call 0x864E; shl ax,1 */
+                            min_score_b = (int16_t)(min_score_b + (int16_t)(func_00864E_logic_sz_31(3u) << 1));
+                        }
+                    }
+                }
+            }
+            /* @asm 0xAEA3: [bp-0x2]=min_score; ax=[bp-0x2]+1 → adj_score */
+            adj_score_b = (int16_t)(min_score_b + 1);  /* @asm 0xAEA7 */
+
+            /* @asm 0xAEAA: if action>=0: goto calc_final_score */
+            if (action >= 0) {
+                /* Use adj_score_b and min_score_b in final calc */
+                {
+                    int16_t adj_s = adj_score_b;
+                    int16_t min_s = min_score_b;
+                    if (adj_s < 0) adj_s = 0;
+                    score = (int16_t)((int16_t)(adj_s + min_s) * score);
+                }
+                goto update_best;
+            }
+
+            /* @asm 0xAEB3: market band adjustments */
+            /* bx=occ_out*2; band_lo=DG16(bx-0x71CE)=DG16(occ_out*2+0x8E32)
+             *               band_hi=DG16(bx-0x71A6)=DG16(occ_out*2+0x8E5A) */
+            {
+                uint16_t band_lo = DG16((uint16_t)((uint16_t)occ_out * 2u + 0x8e32u));
+                uint16_t band_hi = DG16((uint16_t)((uint16_t)occ_out * 2u + 0x8e5au));
+                if (band_lo != 0 || band_hi != 0) {
+                    adj_score_b++;  /* @asm 0xAEC6 */
+                    if (band_hi != 0) {
+                        score = (int16_t)((uint16_t)score << 1);  /* @asm 0xAED5 */
+                    }
+                } else {
+                    /* @asm 0xAEDA: if occ_idx==5 */
+                    if (occ_idx == 5) {
+                        col = DG16(0x8542);
+                        /* @asm 0xAEE4: ax=[bx+0xa4]+DG16(0x8dd2); if ax>=2: dec adj */
+                        int16_t tech = (int16_t)DG16((uint16_t)(col + 0xa4u)) + (int16_t)DG16(0x8dd2u);
+                        if (tech >= 2) {
+                            adj_score_b--;  /* @asm 0xAEF1 */
+                        }
+                    }
+                }
+
+                /* @asm 0xAEF4: al=DG8(occ_idx+0x2b6); call 0x9876 → adj+=market_val */
+                uint8_t comm_type = DG8((uint16_t)((uint16_t)occ_idx + 0x2b6u));
+                adj_score_b = (int16_t)(adj_score_b + (int16_t)func_009876_logic_sz_62((uint16_t)comm_type));
+
+                /* @asm 0xAF07: territory = DG8(tile_y + tile_x*5 + 0x8D9E) signed */
+                /* (this is the territory value used in terrain scoring below) */
+                {
+                    uint16_t terr_a = (uint16_t)((uint16_t)tile_x * 5u + (uint16_t)tile_y + 0x8d9eu);
+                    int terr_val = (int)(int8_t)DG8(terr_a);
+                    /* @asm 0xAF18: or ax,ax; jl 0xAF7E → if territory<0: skip terrain scoring */
+                    if (terr_val < 0) {
+                        /* wilderness: skip overlay/terrain scoring, go straight to calc */
+                        int16_t adj_s = adj_score_b;
+                        if (adj_s < 0) adj_s = 0;
+                        score = (int16_t)((int16_t)(adj_s + min_score_b) * score);
+                        goto update_best;
+                    }
+
+                    /* @asm 0xAF20: push nation_idx; push terr_val; lcall 0x5DC:0xE0 */
+                    int16_t terrain_score = (int16_t)overlay_call_05DC_00E0((uint16_t)terr_val, (uint16_t)nation_idx);
+                    /* @asm 0xAF2C: sub ax,4; neg ax → ax=4-terrain_score */
+                    terrain_score = (int16_t)(4 - terrain_score);
+                    if (terrain_score < 0) terrain_score = 0;  /* @asm 0xAF74 */
+
+                    /* @asm 0xAF34: bx=occ_out; si=bx<<4; bx=territory
+                     *              col_terrain_class=DG8(territory + occ_out*16 + 0x91CC) */
+                    uint8_t col_terrain_class = DG8((uint16_t)(
+                        (uint16_t)terr_val + (uint16_t)occ_out * 16u + 0x91ccu));
+                    /* @asm 0xAF41: si=nation_idx<<4; DG8(territory+nation_idx*16+0x918C) */
+                    uint8_t nat_terrain_class = DG8((uint16_t)(
+                        (uint16_t)terr_val + (uint16_t)nation_idx * 16u + 0x918cu));
+                    /* @asm 0xAF4B: cmp [bx+si-0x6E74],al; jae 0xAF50 */
+                    if (nat_terrain_class < col_terrain_class) {
+                        terrain_score = (int16_t)((uint16_t)terrain_score << 1);  /* @asm 0xAF4D */
+                    }
+
+                    /* @asm 0xAF50: bx=occ_out; al=[bx-0x6E7C]=DG8(occ_out+0x9184) */
+                    uint8_t col_type2 = DG8((uint16_t)((uint16_t)occ_out + 0x9184u));
+                    /* @asm 0xAF5A: bx=nation_idx; DG8(nation_idx+0x9180) */
+                    uint8_t nat_type2 = DG8((uint16_t)((uint16_t)nation_idx + 0x9180u));
+                    /* @asm 0xAF5E: cmp [bx-0x6E80],al; jae 0xAF6E */
+                    if (nat_type2 < col_type2) {
+                        /* @asm 0xAF60: ax=[bp-0x3a]; cx=ax; shl ax,1; add ax,cx; sar ax,1 → ×1.5 */
+                        terrain_score = (int16_t)((int16_t)(terrain_score + (int16_t)((uint16_t)terrain_score << 1)) >> 1);
+                    }
+
+                    /* @asm 0xAF6E: [bp-0x3a] = max(0, [bp-0x3a]-competition) */
+                    terrain_score = (int16_t)(terrain_score - (int16_t)competition);
+                    if (terrain_score < 0) terrain_score = 0;
+
+                    /* @asm 0xAF7B: sub [bp-0x36],[bp-0x3a] */
+                    adj_score_b = (int16_t)(adj_score_b - terrain_score);
+                }
+            }
+
+            /* calc_final_score: @asm 0xAF7E */
+            {
+                int16_t adj_s = adj_score_b;
+                if (adj_s < 0) adj_s = 0;
+                /* @asm 0xAF8A: ax+=min_score_b; imul score */
+                score = (int16_t)((int16_t)(adj_s + min_score_b) * score);
+            }
+
+            /* @asm 0xAF93: post-score forest penalty */
+            if (action < 0 && occ_out != 5) {
+                if (terrain_type >= 8 && terrain_type < 0x18) {
+                    col = DG16(0x8542);
+                    if ((int16_t)DG16((uint16_t)(col + 0xa4u)) <= 0xa) {
+                        if (DG16(0x8dd2u) == 0) {
+                            score = (int16_t)(score - 0xa);  /* @asm 0xAFBD */
+                        }
+                    }
+                }
+            }
+            goto update_best;
+        }
+
+        /* @asm 0xAEA3: adj_score for occ==0/8 no-can-place path — use post_adj label */
+        {
+            int16_t adj_score_0;
+            int16_t min_score_0;
+            int16_t min_s2 = 0;
+
+            /* This block is entered from the occ==0/8, no_can_place path */
+            col = DG16(0x8542);
+            if ((int8_t)DG8((uint16_t)(col + 0x1fu)) < (int8_t)((uint8_t)era_val << 1)) {
+                if (DG16(0x35eu) != 0) {
+                    min_s2 = 4;
+                }
+            }
+            if (is_new_colony != 0 || action >= 0) {
+                if (min_s2 < 1) min_s2 = 1;
+            }
+            min_score_0 = min_s2;
+            adj_score_0 = (int16_t)(min_s2 + 1);
+
+        post_adj:
+            /* @asm 0xAEAA: if action>=0: goto calc_final_score */
+            if (action >= 0) {
+                int16_t adj_s = adj_score_0;
+                if (adj_s < 0) adj_s = 0;
+                score = (int16_t)((int16_t)(adj_s + min_score_0) * score);
+                goto update_best;
+            }
+            /* action<0: market band adjustments for occ 0/8 */
+            {
+                uint16_t occ_for_band = (uint16_t)occ_idx; /* occ_idx==0 or 8 */
+                uint16_t band_lo2 = DG16((uint16_t)((uint16_t)occ_for_band * 2u + 0x8e32u));
+                uint16_t band_hi2 = DG16((uint16_t)((uint16_t)occ_for_band * 2u + 0x8e5au));
+                if (band_lo2 != 0 || band_hi2 != 0) {
+                    adj_score_0++;
+                    if (band_hi2 != 0) {
+                        score = (int16_t)((uint16_t)score << 1);
+                    }
+                } else {
+                    if (occ_idx == 5) {
+                        col = DG16(0x8542);
+                        int16_t tech2 = (int16_t)DG16((uint16_t)(col + 0xa4u)) + (int16_t)DG16(0x8dd2u);
+                        if (tech2 >= 2) {
+                            adj_score_0--;
+                        }
+                    }
+                }
+                uint8_t comm_type2 = DG8((uint16_t)((uint16_t)occ_idx + 0x2b6u));
+                adj_score_0 = (int16_t)(adj_score_0 + (int16_t)func_009876_logic_sz_62((uint16_t)comm_type2));
+
+                /* territory check */
+                uint16_t terr_a2 = (uint16_t)((uint16_t)tile_x * 5u + (uint16_t)tile_y + 0x8d9eu);
+                int terr_val2 = (int)(int8_t)DG8(terr_a2);
+                if (terr_val2 < 0) {
+                    int16_t adj_s = adj_score_0;
+                    if (adj_s < 0) adj_s = 0;
+                    score = (int16_t)((int16_t)(adj_s + min_score_0) * score);
+                    goto update_best;
+                }
+
+                int16_t terrain_score2 = (int16_t)overlay_call_05DC_00E0((uint16_t)terr_val2, (uint16_t)nation_idx);
+                terrain_score2 = (int16_t)(4 - terrain_score2);
+                if (terrain_score2 < 0) terrain_score2 = 0;
+
+                uint8_t col_tc2 = DG8((uint16_t)((uint16_t)terr_val2 + (uint16_t)occ_out * 16u + 0x91ccu));
+                uint8_t nat_tc2 = DG8((uint16_t)((uint16_t)terr_val2 + (uint16_t)nation_idx * 16u + 0x918cu));
+                if (nat_tc2 < col_tc2) {
+                    terrain_score2 = (int16_t)((uint16_t)terrain_score2 << 1);
+                }
+                uint8_t col_t22 = DG8((uint16_t)((uint16_t)occ_out + 0x9184u));
+                uint8_t nat_t22 = DG8((uint16_t)((uint16_t)nation_idx + 0x9180u));
+                if (nat_t22 < col_t22) {
+                    terrain_score2 = (int16_t)((int16_t)(terrain_score2 + (int16_t)((uint16_t)terrain_score2 << 1)) >> 1);
+                }
+                terrain_score2 = (int16_t)(terrain_score2 - (int16_t)competition);
+                if (terrain_score2 < 0) terrain_score2 = 0;
+                adj_score_0 = (int16_t)(adj_score_0 - terrain_score2);
+            }
+            {
+                int16_t adj_s = adj_score_0;
+                if (adj_s < 0) adj_s = 0;
+                score = (int16_t)((int16_t)(adj_s + min_score_0) * score);
+            }
+            if (action < 0 && occ_out != 5) {
+                if (terrain_type >= 8 && terrain_type < 0x18) {
+                    col = DG16(0x8542);
+                    if ((int16_t)DG16((uint16_t)(col + 0xa4u)) <= 0xa) {
+                        if (DG16(0x8dd2u) == 0) {
+                            score = (int16_t)(score - 0xa);
+                        }
+                    }
+                }
+            }
+            goto update_best;
+        }
+
+        update_best:  /* @asm 0xAFC1 */
+            /* @asm 0xAFC4: cmp [bp-0x10],ax; jge (no update) */
+            if (score > best_score) {
+                best_score = score;
+                best_occ   = occ_out;  /* @asm 0xAFCC: [bp-0x16]=[bp-0x22]=occ_out */
+                result_tile = yield;   /* @asm 0xAFD2: [bp-0x1e]=[bp-0x2c]=terrain_yield */
+                best_tile_x = (int)tile_x;  /* @asm 0xAFD8: [bp-0x18]=[bp-0x24] */
+                best_tile_y = (int)tile_y;  /* @asm 0xAFDE: [bp-0x1a]=[bp-0x2a] */
+            }
+            /* @asm 0xAFE4: inc [bp-0x32] */
+            occ_idx++;
+        } /* end occ loop */
+
+        /* @asm 0xB06C: post-tile restore: push -1; push tile_y; push tile_x; call 0x8982 */
+        func_008982_logic_sz_532((uint16_t)tile_x, (uint16_t)tile_y, (uint16_t)-1);
+        tile_idx++;
+    } /* end tile loop */
+
+    /* --- FINAL @asm 0xB0EA --- */
+    DG8(0x34du) = 0;  /* @asm 0xB0EA scanning done */
+    /* @asm 0xB0EF: if best_occ<0: result=0 */
+    if (best_occ < 0) {
+        result = 0;
+    }
+
+    /* --- PLACEMENT @asm 0xB0FA --- */
+    if (best_occ >= 0) {
+        /* @asm 0xB100: cmp [bp+8],-2; jle 0xB126 */
+        if (action > -2) {
+            /* @asm 0xB106: push slot; push best_tile_y; push best_tile_x; call 0x8982 */
+            func_008982_logic_sz_532((uint16_t)best_tile_x, (uint16_t)best_tile_y, (uint16_t)slot);
+            /* @asm 0xB117: push best_occ; push slot; call 0x9318 */
+            colony_assign_or_change_colonist_job(slot, best_occ);  /* @asm 0xB11E */
+        } else {
+            /* @asm 0xB126: action<=-2: re-assign to original class */
+            colony_assign_or_change_colonist_job(slot, unit_class);  /* @asm 0xB12C */
+            /* @asm 0xB133: [bp-0x1e]=0 */
+            result_tile = 0;
+        }
+    }
+
+finish:  /* @asm 0xB138 = store_result */
+    /* @asm 0xB138: DG16(0x8DBE) = result_tile */
+    DG16(0x8dbeu) = (uint16_t)(int16_t)result_tile;
+    /* @asm 0xB141: DG16(0x8DC0) = best_score */
+    DG16(0x8dc0u) = (uint16_t)(int16_t)best_score;
+
+    return result;  /* @asm 0xB14A: [bp-0xa] */
 }
 
 /* @asm        0x00AB95..0x00ABE3  (78 bytes)  region=load_image

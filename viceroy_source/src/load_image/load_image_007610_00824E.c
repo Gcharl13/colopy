@@ -923,7 +923,7 @@ int func_007D3E_op_sz_502(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         /* @asm 0x7E26 terr([bp-0x12]) = overlay 0x03E4:0x003A(ux,uy);
          *      owner0 = unit[arg0].owner&0xF.
          *      Decide `hostile` (fall to 0x7E74) vs `passive` (0x7E5D): */
-        int terr = overlay_call_03E4_003A();         /* @asm push uy; push ux */
+        int terr = overlay_call_03E4_003A((uint16_t)ux, (uint16_t)uy);  /* @asm push uy; push ux */
         int owner0 = DG8(ub0 + 0x03) & 0x0F;
         int hostile;
         /* @asm 0x7E3B cmp owner0,4; jae 0x7E5D (owner>=4 -> passive);

@@ -111,13 +111,25 @@ Known gap (stated, not hidden): `%STRINGn` substitution in the prompt
 `func_00E51C`. The menu text is read verbatim from the user's GAME.TXT; the only
 such value present in VICEROY.EXE is the build date `7-Feb-95`. Not fabricated.
 
-### [RECONSTRUCTED — remaining] Centered dialog/popup WOODFRAM frame
+### [BRIDGED — function-bodies done, asset-gated] Centered dialog/popup WOODFRAM frame
 Centered popups (no @x/@y) get the WOODFRAM blit `0x181F:0x510` →
-`func_00531C` (textured wood-weave fill of the dialog rect). Its inner
-pixel-transform leaves `0x02E9:0x0006` and `0x0A4E:0x0008` are **stubbed
-no-ops** in `render_glue.c`, so the modern fill is a placeholder
-(`vid_box_fill 0` + `outline 15`). Decoding those two leaves is the next UI item;
-they also feed `texture_fill_rect` (colony work-grid backdrop, `func_005234`).
+`func_00531C` (textured wood-weave fill of the dialog rect). Its two inner
+leaves are now both **ported** (as of 2026-06-09):
+- `0x02E9:0x0006` → `func_005296_logic_sz_22` in
+  `src/load_image/load_image_004EE6_005DF0.c` (BYTE_VERIFIED; the per-pixel
+  subtile color transform: sprite range 0x10..0x87 split into three group
+  widths with shift 0/2/2 and mask 0x1F/0xF/0x7; delta = ((dir+subtile)&0xF)
+  after edge-bounce)
+- `0x0A4E:0x0008` → `func_0C8E8_screen_addr_helper` in
+  `src/platform/dos_service_glue.c` (correctly stubbed no-op: DOS VGA
+  seg:off pointer; no host-side VGA buffer)
+- `func_00531C` → `func_00531C_logic_sz_89` PORTED (full scanline blit loop)
+- `func_005234` → `func_005234_logic_sz_62` PORTED (outer wrapper, fallback path)
+
+The modern `texture_fill_rect` bridge in `render_glue.c` correctly follows
+the fallback path (`vid_box_fill`) because `DG16(0x82C) == 0` (no WOODFRAM
+texture block is loaded in the modern build — asset-gated like all bitmaps).
+The remaining gap is asset availability (WOODFRAM.SS), not unported code.
 
 ### [BRIDGED — byte-verified, asset-gated] Nations / Difficulty composers
 The whole-screen composers are ported and control-flow byte-verified:
@@ -158,10 +170,10 @@ byte-citation against the disasm.
    The 178 "remaining" were tracker staleness: systematic source scanning (four
    passes, 2026-06-14) confirmed all but one were already ported under canonical
    names; the last one (`func_020EE0`, 111B) was ported in the same session.
-3. Open items: the two texture-fill leaf stubs (`0x02E9:0x0006`, `0x0A4E:0x0008`)
-   in `render_glue.c`; the 17 G4 interactive-floor wiring items (bodies ported,
-   thunk wires deferred to DOSBox arg-trace); `func_04E2D6` (ai_move_eval,
-   14975B, RUNTIME_ONLY weights, explicitly deferred).
+3. Open items: ~~the two texture-fill leaf stubs~~ (DONE — ported 2026-06-09);
+   the 17 G4 interactive-floor wiring items (bodies ported, thunk wires deferred
+   to DOSBox arg-trace); `func_04E2D6` (ai_move_eval, 14975B, RUNTIME_ONLY
+   weights, explicitly deferred).
 4. Every increment committed to `claude/beautiful-maxwell-EUu9I` with the byte
    cites in the message. No line is called done that isn't verified against the
    binary.

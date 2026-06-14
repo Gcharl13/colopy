@@ -33,7 +33,7 @@ extern int overlay_call_037F_0392();  /* @ref RTLink seg 0x037F off 0x0392 */
 extern int overlay_call_037F_03E4(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x037F off 0x03E4 */
 extern int overlay_call_037F_04B0();  /* @ref RTLink seg 0x037F off 0x04B0 */
 extern int overlay_call_03E4_000E();  /* @ref RTLink seg 0x03E4 off 0x000E */
-extern int overlay_call_03E4_003A();  /* @ref RTLink seg 0x03E4 off 0x003A */
+extern int overlay_call_03E4_003A(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x03E4 off 0x003A */
 extern int overlay_call_03E4_0074(uint16_t x, uint16_t y);  /* @ref RTLink seg 0x03E4 off 0x0074 */
 extern int overlay_call_03F1_02F8();  /* @ref RTLink seg 0x03F1 off 0x02F8 */
 extern int overlay_call_0427_004A(uint16_t idx);  /* @ref RTLink seg 0x0427 off 0x004A -> unit_chain_next(idx) */
