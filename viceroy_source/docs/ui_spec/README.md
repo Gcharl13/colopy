@@ -54,7 +54,7 @@ program: `# | OP | rect/pos | asset/id | color | data source | @asm | leaf | sta
 | 4 | Map / main view | — | func_067644 | — | terrain+wood | `map.md` | viewport OK; menubar x-pos + finalize TODO |
 | 5 | **Colony interior** | func_025EB6 | func_028592 | 0x2C | COLONY.PIK (bar) | `colony.md` | buildings DONE; backdrop/title/workgrid TODO |
 | 6 | Europe / dock | func_030DBC | func_031E4C (trace in europe_screen.c) | 0x2B | EUROPE.PIK | `europe.md` | market OK; banner/dock/recruit TODO/DATA |
-| 7 | Reports | func_072090… | — | — | REPORT7.PIK | `reports.md` | not yet flattened |
+| 7 | Reports (F1-F10) | func_037340 + per-F | func_037958/37A10/38418/38A50/39218/3954C/39888/3744A/38778 | — | REPORT7.PIK | `reports.md` | frame/bodies TODO/DATA |
 | 8 | Colonizopedia | — | — | — | CCBKGD.PIK | `pedia.md` | not yet flattened |
 
 **Cross-screen DATA bugs surfaced by the flattening** (fix once, helps several screens):
