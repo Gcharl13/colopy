@@ -1037,26 +1037,24 @@ int main(int argc, char **argv)
                  * leaf + context are not yet wired, so the plot draws on black --
                  * no manual fill stands in). */
                 memset(vid_framebuffer(), 0, VID_W * VID_H);
-                {   /* Run the REAL per-region sub-painters (no manual drawing).
-                     * The full composer colony_screen_render also runs the work-grid
-                     * / colonist-row painters, whose 0x181F:0xCE0 tile-good resolver
-                     * is called without its (col,r) args and faults on the synthetic
-                     * colony; those two are skipped until that wiring is fixed. */
+                {   /* Real per-region painters (no manual drawing).  Work-grid +
+                     * colonist-row (blocks W/R in docs/ui_spec/colony.md) are DATA:
+                     * they resolve per-tile production via 0x181F:0xB3C (stub→0, so
+                     * empty tiles read good_idx=0 not −1) + func_0091CC, and need a
+                     * real colony's colonist→tile assignments; skipped on the
+                     * synthetic test colony until those resolvers are ported. */
                     extern void colony_paint_title(void);
-                    extern void colony_draw_workgrid(int);
-                    extern void colony_paint_colonist_row(int);
                     extern void colony_paint_stockpile(int);
                     extern void colony_paint_flag(int,int);
                     extern void colony_paint_minimap(void);
                     extern void colony_paint_sol_panel(int);
                     extern void colony_paint_buildings(int);
-                    colony_paint_title();              /* func_0268CE: name/pop title */
+                    colony_paint_title();              /* func_0268CE: name/pop title (stub) */
                     colony_paint_stockpile(0);         /* func_0281D6: 16-good bottom bar */
                     colony_paint_flag(0,0);            /* func_02853C: nation flag panel */
                     colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
                     colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
                     colony_paint_buildings(0);         /* func_02701C: the building plot */
-                    (void)colony_draw_workgrid; (void)colony_paint_colonist_row;
                 }
                 (void)colony_screen_render; (void)ui_color_for; (void)vid_box_fill;
                 vid_present();

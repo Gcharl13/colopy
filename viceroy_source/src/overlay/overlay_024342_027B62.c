@@ -1198,7 +1198,7 @@ void colony_draw_workgrid(int show_close_button)
                                * (the void-arity stub cannot write it yet) */
             count = (int)overlay_call_181F_0B3C();  /* @asm 0x02669B (col,r,&good_idx,1) -> amount [bp-0xE] */
             good_spr = good_idx + 0x17;             /* @asm 0x0266A6/0x0266A9 [bp-2] */
-            cellgood = (int8_t)overlay_call_181F_0CE0(); /* @asm 0x0266B5 (col,r) -> cell good; cbw @0x0266BD [bp-0x20] */
+            cellgood = (int8_t)overlay_call_181F_0CE0(col, r); /* @asm 0x0266AF/B2 push col,r; 0x0266B5 -> cell good (cbw [bp-0x20]) */
             if (func_0090C8((uint16_t)cellgood) == 8) /* @asm 0x0266C1 push ax (cellgood); lcall 0x181F:0xC0E
                                                        * -> [bp-0x18]; cmp ax,8 @0x0266CD (WIRED 2026-06-12) */
                 good_spr = 0x3A;                    /* @asm 0x0266D2 mov [bp-2],0x3A */
@@ -1245,7 +1245,7 @@ void colony_draw_workgrid(int show_close_button)
 
             if (DGS16(0x0B98) == 0) { /* @asm 0x026781 cmp [0xB98],0 / je 0x267C6 */
                 /* selected-good highlight  @asm 0x0267C6..0x026812 */
-                cellgood = (int8_t)overlay_call_181F_0CE0(); /* @asm 0x0267CC (col,r); cbw [bp-0x20] */
+                cellgood = (int8_t)overlay_call_181F_0CE0(col, r); /* @asm 0x0267CC (col,r); cbw [bp-0x20] */
                 if (DGS16(0x8D7C) == cellgood &&    /* @asm 0x0267D8 cmp [0x8D7C],ax */
                     (DGS16(0x07EE) == 0 ||          /* @asm 0x0267DE cmp [0x7EE],0 / je draw */
                      DGS16(0x8D54) != 0))           /* @asm 0x0267E5 cmp [0x8D54],0 / je skip */
@@ -1265,7 +1265,7 @@ void colony_draw_workgrid(int show_close_button)
                         continue;
                     if (DGS16(0x8D54) != 0)         /* @asm 0x026834 cmp [0x8D54],0 / je */
                         continue;
-                    if ((uint8_t)overlay_call_181F_0CE0() /* @asm 0x026846 ([0x330],[0x332]) */
+                    if ((uint8_t)overlay_call_181F_0CE0(DGS16(0x0330), DGS16(0x0332)) /* @asm 0x026846 ([0x330],[0x332]) */
                         != DG8(0x8D7E))             /* @asm 0x02684E cmp al,[0x8D7E] / je */
                         continue;
                 }

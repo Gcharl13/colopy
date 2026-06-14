@@ -65,12 +65,16 @@ W5  LOOP r=1..3, col=1..3  (inner 3×3; edge ring skipped):  cell_x=col*24+200, 
       IF flags==0 && [0x8D9E+col*5+r]≥0: SPRITE ICONS id 0x6D @ (cell_x+8,cell_y+4)  0x0265BF OK
       IF flags&0x80 (colonist): world=(col.x+col-2,col.y+r-2); FIGURE the working unit  0x026639 DATA
       IF flags&8 (resource): ICON_RUN bonus markers id 0x17 + [0xA891/3/4]       0x02665D    OK
-      good = 0xCE0(col,r); amount = 0xB3C(col,r); good_spr = good+0x17 (0x3A if 0xC0E==8)
-      IF amount>0: ICON_RUN good_spr × amount @ cell                             0x026700    OK draw_icon_run
-      ELSE IF good≥0: SPRITE good_spr centered + SPRITE id 0x41 @ cell           0x026758    OK
-      IF good≥0: SPRITE_SH worker-pip 0xA74(good) @ (cell_x+12,cell_y+6)         0x02677C    OK
+      good = 0xCE0(col,r); amount = 0xB3C(col,r,&good_idx,1); good_spr=good_idx+0x17 (0x3A if 0xC0E==8)
+      IF amount>0: ICON_RUN good_spr × amount @ cell                             0x026700    DATA draw_icon_run
+      ELSE IF good_idx≥0: SPRITE good_spr centered + SPRITE id 0x41 @ cell       0x026758    DATA
+      IF good_idx≥0: SPRITE_SH worker-pip func_0091CC(good) @ (cell_x+12,cell_y+6) 0x02677C  DATA
       IF not minimized: hilite selected good [0x8D7C] (BOX 0xA) + cursor cell    0x026810    OK
-    NOTE: 0xCE0 MUST be called (col,r) — the modern port passes no args → faults. FIX REQUIRED.
+    FIXED 2026-06-14: 0xCE0 now called (col,r) / cursor ([0x330],[0x332]) — was the arg crash.
+    STILL BLOCKED: 0xB3C is a stub returning 0, so good_idx=0 (not −1) for EMPTY tiles →
+      the good_idx≥0 gate wrongly runs func_0091CC(cellgood=−1) and faults. Porting 0xB3C
+      (per-cell produced-good+amount resolver, returns good_idx=−1 for unworked tiles) is the
+      real unblock; until then the whole work-grid stays skipped (needs a real colony anyway).
 
 --- COLROW block (func_0270D0): colonist portrait row (mid-band) ----------------------------------
 R1  FILL   (0,130,120,48)               -               -        band            0x0270D6    DATA
@@ -125,5 +129,7 @@ B4  PRESENT (0,8,199,?) if repaint                                              
 
 1. Wire `fill_rect`→`cc_fill_444` + plot fill `0x4FC` so C4/B2/W1 backdrops are real.
 2. Port `func_0268CE` (block T) — assemble name/season/year/gold via the STR leaves.
-3. Pass `(col,r)` to `0x181F:0xCE0` in WORKGRID (W5) — fixes the composer crash.
+3. ~~Pass `(col,r)` to `0x181F:0xCE0` in WORKGRID (W5)~~ — DONE 2026-06-14. The
+   work-grid still faults: next port `0x181F:0xB3C` to return `good_idx=−1` for
+   unworked tiles (the stub returns 0, tripping the `good_idx≥0` gate).
 4. Drive from a real colony (colonists + tile assignments) for blocks W/R/M/P contents.
