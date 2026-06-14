@@ -117,6 +117,9 @@ B4  PRESENT (0,8,199,?) if repaint                                              
 
 ## Implementation status (what renders today)
 
+- **BOTTOM-BAR backdrop** — DONE: the real `COLONY.PIK` (320×72) asset blitted at
+  its documented position (bottom-aligned, y=128); the stockpile/minimap/SoL panels
+  draw on top of it.
 - **BUILDINGS (block B, slots)** — DONE: real `0x8E82` levels → `ss_blit_remap`.
 - **STOCKPILE icons, FLAG, MINIMAP frame, SoL/ workgrid frames** — OK leaves, call them.
 - **SCENE_FILL (C4), plot backdrop (B2), workgrid backdrop (W1)** — need the real fill

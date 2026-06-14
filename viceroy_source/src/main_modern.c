@@ -1037,6 +1037,25 @@ int main(int argc, char **argv)
                  * leaf + context are not yet wired, so the plot draws on black --
                  * no manual fill stands in). */
                 memset(vid_framebuffer(), 0, VID_W * VID_H);
+                /* Bottom-bar backdrop = the real COLONY.PIK asset (320x72), blitted
+                 * at its documented screen position (bottom-aligned, y=128).  The
+                 * stockpile/minimap/SoL panels below draw on top of it.  COLONY.PIK
+                 * carries no palette (uses the master), so its raw indices render
+                 * correctly under the active colony palette. */
+                {   pik_image_t bar;
+                    char bpath[512];
+                    snprintf(bpath, sizeof bpath, "%s/COLONY.PIK", g_data);
+                    if (pik_load(bpath, &bar) == 0) {
+                        uint8_t *fb = vid_framebuffer();
+                        int y0 = VID_H - bar.h;            /* 200-72 = 128 */
+                        int w  = bar.w < VID_W ? bar.w : VID_W;
+                        for (int yy = 0; yy < bar.h && y0 + yy < VID_H; yy++)
+                            if (y0 + yy >= 0)
+                                memcpy(fb + (y0 + yy) * VID_W,
+                                       bar.pixels + yy * bar.w, (size_t)w);
+                        pik_free(&bar);
+                    }
+                }
                 {   /* Real per-region painters (no manual drawing).  Work-grid +
                      * colonist-row (blocks W/R in docs/ui_spec/colony.md) are DATA:
                      * they resolve per-tile production via 0x181F:0xB3C (stub→0, so
