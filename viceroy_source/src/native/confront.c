@@ -36,9 +36,9 @@
  *   0x4BA25 -> 1A1F:0x3EC = func_048A3A native_mission_established   [PORTED]
  *   0x4BA07 -> 1A1F:0x3A4 = func_048CA4 native_mission_heresy        [PORTED]
  *   0x4BA3E -> 1A1F:0x428 = func_04A426 colony_commodity_advisor     [PORTED]
- *   0x4BA39 -> 1A1F:0x41C = func_04A7CA speak-with-chief / CHIEFKILL [PARTIAL:
- *              only the gold block is ported (native_village_raze.c); the full
- *              entry keeps a weak hit-counting default below]
+ *   0x4BA39 -> 1A1F:0x41C = func_04A7CA speak-with-chief / CHIEFKILL [PORTED
+ *              below: full outcome resolver; CHIEFKILL gold uses the
+ *              user-verified +0x04 population (native_village_raze.c)]
  *   0x4BA16 -> 1A1F:0x3C8 = func_04AF5E scout_incite_tribe_to_war    [PORTED]
  *   0x4BA2F -> 1A1F:0x404 = func_04AC00 native_village_trade         [PORTED]
  *
@@ -95,16 +95,179 @@ extern int  colony_commodity_advisor(uint16_t unit, uint16_t owner,
 extern int  scout_incite_tribe_to_war(uint16_t unit, uint16_t owner, uint16_t tribe);  /* func_04AF5E */
 extern int  native_village_trade(uint16_t unit, uint16_t owner, uint16_t tribe);       /* func_04AC00 */
 
-/* func_04A7CA full entry (speak-with-chief outcome roll incl. CHIEFKILL): only
- * its gold block is ported (native_village_raze.c).  Weak hit-counting default
- * so the dispatcher stays honest until the body lands; a real port overrides. */
-extern void viceroy_stub_hit(const char *sym);
-__attribute__((weak)) int func_04A7CA_speak_with_chief(uint16_t unit, uint16_t owner,
-                                                       uint16_t tribe)
+/* ============================================================================
+ * func_04A7CA_speak_with_chief — PORTED (full body @0x04A7CA..0x04ABFE, 1077B,
+ * ENTER 0x24).  The scout "speak with the chief" outcome resolver: rolls the
+ * tribe's reaction off the player's standing, then either declares war / shuns
+ * the player, or (on success) grants one of three gifts — convert-to-seasoned
+ * (chief's blessing), "tales of nearby lands" (map reveal), or CHIEFKILL gold.
+ * Returns 1 only on the war path (caller maps that to ret=2), else 0.
+ *
+ * args: unit (bp+6); owner (bp+8, the player/power, 0..3 for majors); tribe
+ *       (bp+0xA).  @asm re_work/disasm/func_04A7CA.asm — every branch traced.
+ * The repeated `owner < 4 && DG8(owner*0x34 + 0x543F) == 0` guard is the
+ * "human-relevant, personality inactive" display gate (@asm 0x04A86B etc.).
+ *
+ * NOTE: the DOS BIOS tick busy-wait @0x04AA8B..0x04AAB7 (lcall 0xC0C:6) is
+ *       OMITTED — headless has no BIOS timer and it would spin forever.
+ * NOTE: the CHIEFKILL size factor is the NativeSettlement +0x04 POPULATION, not
+ *       the literal operand +0x02 (tribe id) at @0x04AB24 — per the user-verified
+ *       resolution in native_village_raze.c (Inca pop 13 / Aztec pop 10; the
+ *       +0x02 read caused the "Apache richer than Aztec" bug).  +0x02 is kept
+ *       where it is genuinely a tribe index (the roll==1 goods table @0x04A9BE).
+ * ============================================================================ */
+extern void native_attack_apply_4BA48(int a, int b, int c, int d); /* near cs:0x4BA48 */
+extern int  func_0065C4_logic_sz_67(uint16_t idx_ax, uint16_t passthru_dx); /* 181F:0796 */
+extern long overlay_call_181F_07B4();  /* war/treaty probe (owner, relation)   */
+extern long overlay_call_181F_04C0();  /* sound cue (id)                       */
+extern long overlay_call_181F_0808();  /* destroy unit (unit)                  */
+extern long overlay_call_181F_0652();  /* message + int param (text, n)        */
+extern long overlay_call_181F_0E08();  /* center view on tile (x, y, 0)        */
+extern long overlay_call_181F_09AE();  /* dialog slot pair from int32 (0,lo,hi)*/
+extern long overlay_call_191F_0ED0();  /* indirect index sort (buf, keys, n)   */
+extern long overlay_call_191F_0288();  /* present / flush frame                */
+
+int func_04A7CA_speak_with_chief(uint16_t unit, uint16_t owner, uint16_t tribe)
 {
-    (void)unit; (void)owner; (void)tribe;
-    viceroy_stub_hit("func_04A7CA_speak_with_chief");
-    return 0;
+    int16_t  result = 0;                  /* [bp-0x1a] return (1 war, else 0)   */
+    int16_t  is_missionary;               /* [bp-0x24] unit already seasoned?   */
+    int16_t  attitude;                    /* [bp-0x22] tribe standing           */
+    int16_t  roll = 0;                    /* [bp-0x18] reaction roll            */
+    int16_t  advisor = 0;                 /* [bp-0x16] commodity advisor pick   */
+    int16_t  roll3 = 0;                   /* [bp-2]    1/2/3 gift selector       */
+    uint16_t np = 0, rec;                 /* DG16(0x8D4A) / DG16(0x8D4E) ptrs    */
+    uint8_t  buf[16];                     /* [bp-0x12..bp-3] sort index array    */
+    int      i;
+
+    /* @0x04A7D5  is_missionary = (UnitRecord[unit].holy(+0x315B) == 0x16) */
+    is_missionary = (DG8(unit * 0x1C + 0x315B) == 0x16) ? 1 : 0;
+    /* @0x04A7EB  attitude = relation(nation = DG16[0x8D52], owner) */
+    attitude = (int16_t)func_0082A0_logic_sz_18(DG16(0x8D52), owner);
+
+    if (attitude >= 0x4B)                                 /* @0x04A7FD fall-through to war/shun */
+        goto war_or_shun;
+
+    /* @0x04A81A  reaction roll vs a missionary-biased threshold */
+    roll = (int16_t)func_00C322_rtl_sz_63(0, is_missionary * 0x28 + 0x64);
+    if (attitude >= 0x19 && (attitude >> 2) >= roll)      /* @0x04A832..0x04A841 */
+        goto war_or_shun;
+
+    if (DG16(0x8D52) == 2) {                              /* @0x04A843 Spanish extra gate */
+        int16_t t2 = (int16_t)((8 - (uint8_t)DG8(0x53A6)) << is_missionary); /* @0x04A84D */
+        if ((int16_t)func_00C322_rtl_sz_63(0, t2) == 0)   /* @0x04A85F random==0 */
+            goto war_or_shun;
+    }
+
+    /* @0x04A86B  human-relevant setup: compose the goods dialog */
+    if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0) {
+        advisor = (int16_t)colony_commodity_advisor(unit, owner, tribe, 1);  /* @0x04A88D */
+        native_attack_apply_4BA48((int)unit, (int)DG16(0x8D4C), -1, (int)tribe); /* @0x04A8A4 */
+
+        for (i = 0; i < 0x10; ++i)                        /* @0x04A8AF  buf[i] = i */
+            buf[i] = (uint8_t)i;
+        np = DG16(0x8D4A);                                /* @0x04A8C1 settlement ptr */
+        if ((int8_t)DG8(np + 8) >= 0)                     /* @0x04A8C5 */
+            DG16(0x9E58 + (uint8_t)DG8(np + 8) * 2) = 0;  /* @0x04A8D3 clear good slot */
+        if ((int8_t)DG8(np + 9) >= 0)                     /* @0x04A8DD */
+            DG16(0x9E58 + (uint8_t)DG8(np + 9) * 2) = 0;  /* @0x04A8EB clear good slot */
+        (void)overlay_call_191F_0ED0(buf, 0x9E58, 0x10);  /* @0x04A8FD sort idx by keys */
+
+        func_06C23C_dialog_make_from_int(0, DG16(advisor * 8 + 0x8EA4));  /* @0x04A90E */
+        func_06C23C_dialog_make_from_int(1, DG16(buf[15] * 2 + 0x97C0));  /* @0x04A923 */
+        func_06C23C_dialog_make_from_int(2, DG16(buf[14] * 2 + 0x97C0));  /* @0x04A938 */
+        func_06C23C_dialog_make_from_int(3, DG16(buf[13] * 2 + 0x97C0));  /* @0x04A94D */
+        (void)overlay_call_191F_019C(0x1630, (int16_t)DG16(0x8D52));      /* @0x04A95C intro */
+    }
+
+    /* @0x04A964  common: tribe name into slot 0, then the success gate */
+    func_06C23C_dialog_make_from_int(0,
+        (uint16_t)func_008110_logic_sz_14(tribe));        /* @0x04A972 */
+    if (roll <= attitude)                                 /* @0x04A97A (jg keeps going) */
+        goto path_shun;
+    np = DG16(0x8D4A);                                    /* @0x04A985 */
+    if (DG8(np + 3) & 8)                                  /* @0x04A989 already rewarded here */
+        goto path_shun;
+    DG8(np + 3) |= 8;                                     /* @0x04A992 mark rewarded */
+
+    roll3 = (int16_t)func_00C322_rtl_sz_63(1, 3);         /* @0x04A99A 1..3 */
+    if (roll3 == 1) {                                     /* @0x04A9A5 */
+        if (is_missionary != 0)                           /* @0x04A9B4 already seasoned -> tales */
+            goto outcome_tales;
+        /* @0x04A9BA  chief's blessing: season the unit */
+        rec = DG16(0x8D4E);
+        func_06C23C_dialog_make_from_int(1,
+            DG16((uint8_t)DG8(rec + 2) * 6 + 0x9634));    /* @0x04A9CB tribe-keyed goods (+0x02 = idx) */
+        DG8(unit * 0x1C + 0x315B) = 0x16;                 /* @0x04A9DD convert unit */
+        if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0) {
+            (void)overlay_call_191F_019C(0x163B, (int16_t)DG16(0x8D52)); /* @0x04AA00 */
+            func_067700_compose_active_tile(1);           /* @0x04AA0A redraw */
+            (void)overlay_call_181F_0652(0x1647, 3);      /* @0x04AA17 */
+        }
+        goto done;
+    }
+    if (roll3 == 2)                                       /* @0x04A9A8 */
+        goto outcome_tales;
+    goto outcome_gold;                                    /* @0x04A9AC roll3 == 3 */
+
+outcome_tales:                                            /* @0x04AA20  map reveal */
+    if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0) {
+        (void)overlay_call_181F_0E08((uint8_t)DG8(unit * 0x1C + 0x3144),   /* mapX */
+                                     (uint8_t)DG8(unit * 0x1C + 0x3145),   /* mapY */
+                                     0);                  /* @0x04AA43 center view */
+        (void)overlay_call_191F_019C(0x1654, (int16_t)DG16(0x8D52));       /* @0x04AA52 */
+    }
+    (void)func_0065C4_logic_sz_67(unit, 6);               /* @0x04AA60 181F:0796 set state 6 */
+    if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0) {
+        func_067700_compose_active_tile(0);               /* @0x04AA7E */
+        (void)overlay_call_191F_0288();                   /* @0x04AA86 present */
+        /* BIOS tick busy-wait @0x04AA8B..0x04AAB7 OMITTED (no headless timer). */
+    }
+    goto done;
+
+outcome_gold:                                            /* @0x04AABA  CHIEFKILL gold */
+    func_06C23C_dialog_make_from_int(1,
+        (uint16_t)func_008110_logic_sz_14(owner));        /* @0x04AAC8 */
+    {
+        int16_t upper = (int16_t)(10 - (uint8_t)DG8(0x53A6));   /* @0x04AAD0 10 - difficulty */
+        int16_t r1 = (int16_t)func_00C322_rtl_sz_63(1, upper);  /* @0x04AAE2 */
+        int16_t r2 = (int16_t)func_00C322_rtl_sz_63(1, upper);  /* @0x04AAEF */
+        int16_t r3 = (int16_t)func_00C322_rtl_sz_63(1, upper);  /* @0x04AAFC */
+        int16_t roll4 = (int16_t)func_00C322_rtl_sz_63(1, 6);   /* @0x04AB0F */
+        int16_t step1 = (int16_t)((r1 + r2 + r3) * roll4 * 4);  /* @0x04AB04..0x04AB1A (16-bit) */
+        /* size factor = NativeSettlement +0x04 population (user-verified; the
+         * literal operand is +0x02 = tribe id). See banner + native_village_raze.c. */
+        int16_t pop  = (int16_t)((uint8_t)DG8(DG16(0x8D4E) + 4) + 1);  /* @0x04AB24 (+0x04) */
+        int16_t gold = (int16_t)(step1 * pop);                  /* @0x04AB2A (16-bit) */
+        (void)overlay_call_181F_09AE();                         /* @0x04AB35 (0, gold lo/hi) */
+        if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0)
+            (void)overlay_call_191F_019C(0x165E, (int16_t)DG16(0x8D52)); /* @0x04AB55 */
+        DG32(0x8832 + owner * 0x13C) += (uint32_t)(int32_t)gold; /* @0x04AB66 32-bit add */
+    }
+    goto done;
+
+war_or_shun:                                             /* @0x04A802 */
+    if ((int16_t)overlay_call_181F_07B4(owner, 6) != 0)   /* @0x04A807 peace exists -> shun */
+        goto path_shun;
+    /* else fall through: no peace -> WAR @0x04AB72 */
+    result = 1;                                          /* @0x04AB72 */
+    func_06C23C_dialog_make_from_int(0,
+        (uint16_t)func_008110_logic_sz_14(tribe));        /* @0x04AB85 */
+    if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0) {
+        (void)overlay_call_181F_04C0(0x55);               /* @0x04ABA1 war sound */
+        (void)overlay_call_191F_019C(0x1668, (int16_t)DG16(0x8D52)); /* @0x04ABAD */
+    }
+    (void)overlay_call_181F_0808(unit);                   /* @0x04ABB8 destroy unit */
+    goto done;
+
+path_shun:                                               /* @0x04ABC2 */
+    func_06C23C_dialog_make_from_int(1,
+        (uint16_t)func_008110_logic_sz_14(owner));        /* @0x04ABD0 */
+    if (owner < 4 && DG8(owner * 0x34 + 0x543F) == 0)
+        (void)overlay_call_191F_019C(0x1672, (int16_t)DG16(0x8D52)); /* @0x04ABF0 */
+    /* fall to done */
+
+done:                                                    /* @0x04ABF8 */
+    return result;
 }
 
 int func_04B308_confront_native(uint16_t unit /*bp+6*/, uint16_t x /*bp+8*/,
