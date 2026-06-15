@@ -128,6 +128,54 @@ static uint32_t darken(uint32_t c, int pct)
     return RGB(r, g, b);
 }
 
+/* Blit PHYS0 frame `idx` (overlay sprite) scaled to tp. */
+static void blit_phys0(fb *f, int px, int py, int tp, int idx)
+{
+    if (!g_phys0 || idx < 0 || idx >= g_phys0->count)
+        return;
+    blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
+}
+
+static int tile_is_water(const mp_map *m, int x, int y)
+{
+    if (x < 0 || y < 0 || x >= m->width || y >= m->height)
+        return 1;   /* off-map = water, so map-edge land gets a beach edge */
+    uint8_t id = MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]);
+    return id == 25 || id == 26;
+}
+
+/* Neighbour-aware map tile: base ground + real coast beach (PHYS0 shore family
+ * 0x01..0x0F by water-neighbour mask, per RENDER_SPEC.md) + forest + markers.
+ * The shore mask bit order matches the verified nmask4_feature: N=8 S=4 W=2 E=1. */
+void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
+{
+    uint8_t b = m->terrain[mp_idx(m, tx, ty)];
+    uint8_t id = MP_TERRAIN_ID(b);
+
+    /* base ground (+ overlays without context: forest/river/prime) */
+    sprite_draw_tile(f, px, py, tp, b);
+
+    /* coast: land tiles get a beach overlay on edges facing water. */
+    if (!(id == 25 || id == 26)) {
+        if (g_have_sheet && g_phys0) {
+            int wmask = (tile_is_water(m, tx, ty - 1) ? 8 : 0)   /* N */
+                      | (tile_is_water(m, tx, ty + 1) ? 4 : 0)   /* S */
+                      | (tile_is_water(m, tx - 1, ty) ? 2 : 0)   /* W */
+                      | (tile_is_water(m, tx + 1, ty) ? 1 : 0);  /* E */
+            if (wmask)
+                blit_phys0(f, px, py, tp, wmask);   /* PHYS0 0x01..0x0F */
+        } else if (tp >= 4) {
+            /* fallback beach halo on the land side */
+            uint32_t beach = RGB(0xDA, 0xC6, 0x8A);
+            int bt = tp / 5; if (bt < 1) bt = 1;
+            if (tile_is_water(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
+            if (tile_is_water(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
+            if (tile_is_water(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
+            if (tile_is_water(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
+        }
+    }
+}
+
 void sprite_draw_tile(fb *f, int px, int py, int tp, uint8_t tile_byte)
 {
     uint8_t id = MP_TERRAIN_ID(tile_byte);

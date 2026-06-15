@@ -134,22 +134,12 @@ static void minimap_geom(const editor *e, int *mmx, int *mmy, int *cell, int *mm
     *mmy = UI_MENU_H + 10;
 }
 
-static int is_water_tile(const mp_map *m, int x, int y)
-{
-    if (x < 0 || y < 0 || x >= m->width || y >= m->height)
-        return 1;   /* off-map counts as water so edges get a beach */
-    uint8_t id = MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]);
-    return id == 25 || id == 26;
-}
-
-/* ---- map viewport (no grid; coast beach-halos, like the original) ---- */
+/* ---- map viewport: neighbour-aware tiles with real coast sprites ---- */
 static void render_map(fb *f, const editor *e, const ui_view *v)
 {
     fb_fill_rect(f, UI_MAP_X, UI_MAP_Y, UI_MAP_W, UI_MAP_H, C_MAP_VOID);
     int tp = ui_tile_px(v);
     const mp_map *m = e->map;
-    uint32_t beach = RGB(0xDA,0xC6,0x8A);
-    int bt = tp / 5; if (bt < 1) bt = 1;
 
     for (int sy = 0; sy * tp < UI_MAP_H; sy++) {
         int ty = v->scroll_y + sy;
@@ -157,17 +147,9 @@ static void render_map(fb *f, const editor *e, const ui_view *v)
         for (int sx = 0; sx * tp < UI_MAP_W; sx++) {
             int tx = v->scroll_x + sx;
             if (tx >= m->width) break;
-            uint8_t b = m->terrain[mp_idx(m, tx, ty)];
             int px = UI_MAP_X + sx * tp, py = UI_MAP_Y + sy * tp;
-            sprite_draw_tile(f, px, py, tp, b);
-
-            /* beach halo: draw on the water side facing land */
-            if (is_water_tile(m, tx, ty)) {
-                if (!is_water_tile(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
-                if (!is_water_tile(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
-                if (!is_water_tile(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
-                if (!is_water_tile(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
-            }
+            /* neighbour-aware: base ground + real coast beach + overlays */
+            sprite_draw_map_tile(f, px, py, tp, m, tx, ty);
         }
     }
 
