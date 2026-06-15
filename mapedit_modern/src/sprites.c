@@ -63,8 +63,9 @@ bool sprite_load_phys0(const char *colonize_dir)
     for (int id = 0; id < 32; id++) {
         g_terr_frame[id] = -1;
         const terrain_info *t = terrain_by_id((uint8_t)id);
-        if (!t || t->is_water)
-            continue;                       /* water uses the solid colour */
+        if (!t)
+            continue;
+        /* TERRAIN.SS includes water textures too, so match every terrain. */
         uint32_t want = terrain_color((uint8_t)id);
         long best = 0x7FFFFFFF; int bestk = -1;
         for (int k = 0; k < g_terrain->count; k++) {
@@ -75,8 +76,33 @@ bool sprite_load_phys0(const char *colonize_dir)
         }
         g_terr_frame[id] = bestk;
     }
+
+    /* Auto-detect a PHYS0 tree-overlay frame: a 16x16, green-dominant frame
+     * that is partly transparent (trees with gaps), picking the greenest. */
+    g_forest_frame = -1;
+    long best_green = 0;
+    if (g_phys0) {
+        for (int k = 0; k < g_phys0->count; k++) {
+            ss_frame *fr = &g_phys0->frames[k];
+            if (fr->w != 16 || fr->h != 16 || !fr->rgba)
+                continue;
+            long gpx = 0, opaque = 0;
+            for (int i = 0; i < 256; i++) {
+                uint32_t c = fr->rgba[i];
+                if (!(c >> 24)) continue;
+                opaque++;
+                int r = (c >> 16) & 0xFF, g = (c >> 8) & 0xFF, b = c & 0xFF;
+                if (g > r + 16 && g > b + 16) gpx++;
+            }
+            if (opaque < 80 || opaque > 230)         /* overlay-like coverage */
+                continue;
+            if (gpx > best_green && gpx * 2 > opaque) { best_green = gpx; g_forest_frame = k; }
+        }
+    }
     return true;
 }
+
+static int is_forested_id(uint8_t id) { return id >= 8 && id <= 15; }
 
 /* nearest-neighbour blit of a frame scaled to tp x tp; transparent pixels skip */
 static void blit_frame(fb *f, int px, int py, int tp, const ss_frame *fr)
@@ -116,11 +142,13 @@ void sprite_draw_tile(fb *f, int px, int py, int tp, uint8_t tile_byte)
     if (tp < 5)
         return;
 
-    /* Forest overlay (bit 7). With assets we darken+texture; without, triangles. */
-    if (tile_byte & MP_FLAG_FOREST) {
+    /* Forest: forested terrain ids (8..15) and the forest overlay bit. With
+     * assets, overlay the real PHYS0 tree sprite; otherwise draw triangles. */
+    int forested = is_forested_id(id) || (tile_byte & MP_FLAG_FOREST);
+    if (forested) {
         if (g_have_sheet && g_forest_frame >= 0) {
             blit_frame(f, px, py, tp, &g_phys0->frames[g_forest_frame]);
-        } else {
+        } else if (tile_byte & MP_FLAG_FOREST) {
             uint32_t fg = RGB(0x16, 0x40, 0x1C);
             int t = tp;
             for (int dy = 0; dy < t / 2; dy++) {
