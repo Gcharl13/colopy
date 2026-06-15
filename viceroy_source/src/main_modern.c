@@ -1025,6 +1025,8 @@ int main(int argc, char **argv)
                 DG16(0x8DC6) = 0;                      /* active colony idx (q9fc reads this) */
                 DG16(0x8542) = (uint16_t)rec;          /* active ColonyRecord ptr (near offset) */
                 DG16(0x8544) = 0;                      /* ptr segment = 0 -> maps into DGROUP */
+                DG16(0x538A) = 1492;                   /* game year (title: "Spring 1492") */
+                DG16(0x538C) = 0;                      /* season idx 0=Spring (SEASONS@0x9800) */
 
                 colony_draw_random_layout();           /* fills 0x8E82/0x8D62 from the bits */
                 {   /* report the laid-out slots */
@@ -1039,13 +1041,13 @@ int main(int argc, char **argv)
                 memset(vid_framebuffer(), 0, VID_W * VID_H);
                 /* Bottom-bar backdrop = the real COLONY.PIK asset (320x72), blitted
                  * at its documented screen position (bottom-aligned, y=128).  The
-                 * stockpile/minimap/SoL panels below draw on top of it.  COLONY.PIK
-                 * carries no palette (uses the master), so its raw indices render
-                 * correctly under the active colony palette. */
+                 * stockpile/minimap/SoL panels below draw on top of it.  Set the
+                 * palette from the PIK so ui_color_for() searches the right entries. */
                 {   pik_image_t bar;
                     char bpath[512];
                     snprintf(bpath, sizeof bpath, "%s/COLONY.PIK", g_data);
                     if (pik_load(bpath, &bar) == 0) {
+                        if (bar.has_pal) vid_set_palette(bar.pal);
                         uint8_t *fb = vid_framebuffer();
                         int y0 = VID_H - bar.h;            /* 200-72 = 128 */
                         int w  = bar.w < VID_W ? bar.w : VID_W;

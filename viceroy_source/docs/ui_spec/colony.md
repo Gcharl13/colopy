@@ -48,7 +48,7 @@ S3  LOOP n=[..0x329]  for each adjacent colony: SPRITE its tile marker @ derived
 T0  IF status≥4 OR [0xB98]≠0 OR [0x828]≠0 → skip whole block                     0x0268D7    OK
 T1  STR  start buffer with owner/color char [rec+0x1B]                           0x026915    TODO str-leaf
 T2  STR  append colony NAME (rec+2, 16 bytes) + ", "                             0x026930+   TODO
-T3  STR  append SEASON word [tbl 0x97C0+[0x538C]*2] + " "                        0x026965    TODO
+T3  STR  append SEASON word [tbl 0x9800+[0x538C]*2] + " "                        0x026965    TODO
 T4  STR  append YEAR number [0x538A]                                             0x026a44    TODO
 T5  STR  append ", Gold: " + treasury [0x2F5E] (num_to_str 0x22)                 0x026a61    TODO
 T6  TEXT  draw assembled string  (printer 0x181F:0xB0, param [bp+6])  green      0x026aa6    TODO  port func_0268CE

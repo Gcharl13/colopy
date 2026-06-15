@@ -56,6 +56,7 @@
 #include "colony.h"
 #include "platform.h"
 #include <string.h>
+extern int snprintf(char *, unsigned long, const char *, ...);
 
 #define SCREEN_COLONY  0x2C  /* @asm 0x025EE8 mov bx,0x2C; enter_screen_view */
 
@@ -91,6 +92,13 @@ extern int16_t g_panel_mode_337;          /* DGROUP:0x0337 (0=SoL,1=ship,2=msg) 
 extern int16_t g_hilite_good_33A;         /* DGROUP:0x033A */
 extern int16_t g_minimized_B98;           /* DGROUP:0x0B98 */
 extern int16_t g_gold_2F5E;               /* DGROUP:0x2F5E */
+
+/* render_glue.c text primitives */
+extern const char *viceroy_str(uint16_t handle);   /* arena string by handle */
+extern void vid_text_color(int c);                  /* set palette draw color */
+extern void vid_text_xy(const char *str, int x, int y);
+extern int  vid_text_width(const char *s);
+extern int  ui_color_for(int r, int g, int b);     /* nearest-palette RGB lookup */
 
 /* ----------------------------------------------------------------------------
  * Draw thunks used by the composer / sub-renderers (the resident 0x181F leaves).
@@ -256,17 +264,26 @@ void colony_paint_stockpile(int repaint)
      * @asm 0x0281DB push 0x15,0x140,0xB3,0 / 0x0281E6 call 0x7ED3. */
     fill_rect(0, 0xB3, 0x140, 0x15);                   /* @asm 0x0281DB..0x0281E6 */
 
-    /* === pass 1: 16 commodity cells, pitch 19, sprite base 23 (ICONS.SS) === */
+    /* === pass 1: 16 commodity cells, pitch 19, sprite base 22 (ICONS.SS) === */
     for (i = 0; i < 0x10; i++) {                       /* @asm 0x028231 cmp [bp-0x7E],0x10 */
-        int sprite_id = i + 0x17;                      /* @asm 0x028253 add ax,0x17 */
+        /* The assembly annotation @0x028253 says "add ax,0x17" (sprite_id=i+23), but
+         * the actual ICONS.SS has frame 22=Food, frame 23=Sugar (verified visually).
+         * The annotation assumed the frame at index 23 = Food, but the MADSPACK SS
+         * stores frames 0-based and Food is at frame 22 (0x16), not 23 (0x17).
+         * Fix: use i + 0x16 so i=0 blits frame 22 (Food) first. */
+        int sprite_id = i + 0x16;                      /* Food=22, Sugar=23, ..., Muskets=37 */
         int qty       = ctx ? 0 : 0;                   /* colony +0x9A + i*2  @asm 0x028288 [bx+si+0x9A] */
         /* center on cell X using ICONS header width:
          *   half_w = ICONS_hdr[+0x152 + i*12] >> 1   (@asm 0x02825D / 0x028262)
          *   draw_x = x - half_w + 9                   (@asm 0x028264 / 0x028266) */
-        (void)qty;
-        /* blit_sprite(&0x2DA8 = ICONS.SS desc, sprite_id, draw_x, y_icon).
-         * @asm 0x028270 lcall 0x181F:0x254. */
-        blit_sprite(/*&0x2DA8*/ 0, sprite_id, x, y_icon);  /* @asm 0x028270 */
+        {
+            int half_w = sheet_frame_w_icons(sprite_id) >> 1;  /* @asm 0x02825D sar 1 */
+            int draw_x = x - half_w + 9;                       /* @asm 0x028266 */
+            (void)qty;
+            /* blit_sprite(&0x2DA8 = ICONS.SS desc, sprite_id, draw_x, y_icon).
+             * @asm 0x028270 lcall 0x181F:0x254. */
+            blit_sprite(/*&0x2DA8*/ 0, sprite_id, draw_x, y_icon);  /* @asm 0x028270 */
+        }
         x += 0x13;                                     /* @asm 0x02822A add [bp-0x6E],0x13 (pitch 19) */
     }
 
@@ -496,11 +513,54 @@ void colony_paint_sol_panel(int repaint)
  * ---------------------------------------------------------------------------- */
 void colony_paint_title(void)
 {
-    /* status / minimized gates (early-return).  @asm 0x0268D7 cmp [bx+0x1A],4 /
-     * 0x0268E2 imul *0x34 / 0x0268EE cmp [0xB98],0 / 0x0268F8 cmp [0x828],0. */
+    char buf[80];
+    uint16_t rec;
+    uint8_t  pw;
+    const char *name, *season;
+    int year, gold, tw, tx;
 
-    /* owner/color char + colony name text assembly.  @asm 0x02690A mov al,[bx+0x1B]. */
-    (void)ctx;
+    /* T0: gates — status/owner byte (≥4 hides), nation-active, minimized, blocked.
+     *   @asm 0x0268D3 bx=[0x8542]
+     *   @asm 0x0268D7 cmp [bx+0x1A],4; jae return
+     *   @asm 0x0268E2 imul bx,[bx+0x1A],0x34; cmp [bx+0x543F],0; je return
+     *   @asm 0x0268EE cmp [0xB98],0 / 0x0268F8 cmp [0x828],0; jne return */
+    rec = DG16(0x8542);
+    pw  = DG8(rec + 0x1A);                            /* owner power (≥4 = hidden) */
+    if (pw >= 4) return;
+    if (!DG8((uint16_t)((uint16_t)pw * 0x34u + 0x543Fu))) return; /* nation-active gate */
+    if (DG16(0xB98) != 0 || DG16(0x828) != 0) return; /* minimized / blocked */
+
+    /* T1-T5: assemble "<name>, <season> <year>, Gold: <gold>"
+     *   @asm 0x026930 rec+2 = name  (16-byte null-terminated field)
+     *   @asm 0x026965 [0x9800+[0x538C]*2] = season string handle
+     *         (spec annotation 0x97C0 was incorrect; SEASONS is at 0x9800 per loader)
+     *   @asm 0x026a44 [0x538A] = year
+     *   @asm 0x026a61 [0x2F5E] = gold */
+    name   = (const char *)&DG8(rec + 2);
+    { uint16_t si = DG16(0x538C) & 1u;
+      season = viceroy_str(DG16((uint16_t)(0x9800u + si * 2u))); }
+    year = (int)(int16_t)DG16(0x538A);
+    gold = (int)(int16_t)DG16(0x2F5E);
+
+    buf[0] = 0;
+    if (name && name[0]) { strncat(buf, name, 16); buf[sizeof buf - 1] = 0; }
+    strcat(buf, ", ");
+    if (season && season[0]) strcat(buf, season);
+    strcat(buf, " ");
+    { char t[12]; int n = year; int k = (int)(sizeof buf - 1 - (int)strlen(buf));
+      if (k > 0) { snprintf(t, sizeof t, "%d", n); strncat(buf, t, (size_t)k); } }
+    strncat(buf, ", Gold: ", sizeof buf - 1 - strlen(buf));
+    { char t[12]; int n = gold; int k = (int)(sizeof buf - 1 - (int)strlen(buf));
+      if (k > 0) { snprintf(t, sizeof t, "%d", n); strncat(buf, t, (size_t)k); } }
+    buf[sizeof buf - 1] = 0;
+
+    /* T6: TEXT centered in full width at y=1, UI green #528A31.
+     *   @asm 0x026aa6 printer 0x181F:0xB0 (centers + draws in green) */
+    tw = vid_text_width(buf);
+    tx = (320 - tw) / 2;
+    if (tx < 0) tx = 0;
+    vid_text_color(ui_color_for(0x52, 0x8A, 0x31));   /* UI green #528A31 */
+    vid_text_xy(buf, tx, 1);
 }
 
 /* ----------------------------------------------------------------------------

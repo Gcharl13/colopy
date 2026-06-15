@@ -721,9 +721,16 @@ void colony_building_config_init(void)
         8,8,8, 9,9,9, 10,10,10, 3,3, 11,11,11, 12,12, 13,13, 14,14,14
     };
     int i;
+    /* chain-next byte at +0x00 (0x8F86): func_00864E walks this signed-byte
+     * chain (stride 12) to count same-category entries.  0xFF = -1 = terminator.
+     * Above the DGROUP init window (0x2CC5) so it stays 0 after dgroup_load_image,
+     * which causes index-0 to link to itself → infinite loop.  Set all to 0xFF
+     * (every entry is a standalone chain node) so func_00864E terminates cleanly. */
+    for (i = 0; i < 0x40; i++)
+        DG8(0x8F86 + (unsigned)i * 12) = 0xFF;
     for (i = 0; i < 0x2A; i++) {
-        *(uint8_t far*)(MK_FP(0, 0x8F87) + i*12) = cat[i]; /* +0x05 back_ref/category */
-        *(uint8_t far*)(MK_FP(0, 0x8F88) + i*12) = col[i]; /* +0x06 column/line id */
+        DG8(0x8F87 + (unsigned)i * 12) = cat[i]; /* +0x05 back_ref/category */
+        DG8(0x8F88 + (unsigned)i * 12) = col[i]; /* +0x06 column/line id */
     }
 }
 
