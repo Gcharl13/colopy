@@ -43,6 +43,25 @@ PHYS0 frame index == decoded frame number (verified visually; `src/ss.c` frames)
 | `0x95`/`0x96`| active-tile / river-on-terrain markers        |
 | `0x97+p`    | straight **coast** (p = clean-pattern 0..3)    |
 
+## Where the data lives (AMER2, verified)
+
+Everything the renderer needs is in the **terrain layer (L1)** — the feature
+layer (L2) is empty on a fresh map (features are added during play), and the
+resfog layer (L3) holds the 0=border/1=water/2=land + resource classification.
+So the "feature" reads in O513 (`raw_feature & 0x20/0x40/0x80`) resolve to the
+**L1 terrain byte's high bits**:
+
+| L1 bit  | meaning                                             | AMER2 tiles |
+|---------|-----------------------------------------------------|-------------|
+| 0..4    | base id (8..23 = forest variants → collapse to 8..15)| —          |
+| `0x20`  | **hills / mountains** flag                          | 227         |
+| `0x40`  | **river**                                            | 226         |
+| `0x80`  | mountain (vs hill) detail, with `0x20`              | 217         |
+
+`classify_terrain` (func_006204, byte-verified): `id &= 0x1F`; in map mode
+(`[0x18E]==2`) `if 8<=id<0x18: id=(id&7)|8`. So forest = base id in `[8,24)`;
+there is no separate forest *bit*.
+
 ## classify_terrain + centre variant
 
 `classify_terrain(raw)` maps the raw terrain byte (low 5 bits, auto-forest at

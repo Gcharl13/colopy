@@ -1,13 +1,20 @@
 /*
- * sprites.c — terrain tile drawing (see sprites.h).
+ * sprites.c — terrain tile drawing (see sprites.h and docs/RENDER_SPEC.md).
  *
- * If the original COLONIZE assets are reachable, sprite_load_phys0() decodes
- * TERRAIN.SS (textured ground) and PHYS0.SS (overlays) via ss.c and tiles are
- * drawn with the real game art. Each base terrain id is matched to a TERRAIN.SS
- * frame by nearest colour to the byte-verified terrain palette, so the mapping
- * is self-deriving. Water keeps the solid game colour (TERRAIN.SS is land only).
+ * With the COLONIZE assets present this composes each tile the way VICEROY's
+ * O513 does, using the real sprites:
+ *   base ground   TERRAIN.SS[ unforested(id) ]
+ *   forest canopy PHYS0 0x41 + forest-neighbour mask     (terrain id 8..23)
+ *   hills/mtns    PHYS0 0x31 / 0x21 + nmask4_feat_hi      (terrain bit 0x20)
+ *   river         PHYS0 0x51 / 0x52+i                     (terrain bit 0x40)
+ *   coast beach   PHYS0 0x01..0x0F by water-neighbour mask
  *
- * With no assets, every tile falls back to a colored cell plus overlay markers.
+ * Terrain-byte (L1) bits, per the byte-verified renderer:
+ *   bits 0..4 base id (8..23 = forest variants, collapsed to 8..15 by classify)
+ *   bit 0x20  hills/mountains          bit 0x80  mountain (vs hill)
+ *   bit 0x40  river
+ *
+ * Mask bit order matches nmask4: N=8 S=4 W=2 E=1.
  */
 #include "sprites.h"
 #include "ss.h"
@@ -18,11 +25,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-static ss_sheet *g_terrain;             /* TERRAIN.SS base ground */
+static ss_sheet *g_terrain;             /* TERRAIN.SS textured ground */
 static ss_sheet *g_phys0;               /* PHYS0.SS overlays */
-static int       g_terr_frame[32];      /* terrain id -> TERRAIN.SS frame, or -1 */
-static int       g_forest_frame = -1;   /* a PHYS0 forest overlay frame, or -1 */
+static int       g_terr_frame[32];      /* base terrain id -> TERRAIN.SS frame */
 static bool      g_have_sheet;
+
+/* PHYS0 sprite-index bases (RENDER_SPEC.md, verified against decoded frames). */
+#define PH_SHORE   0x00   /* + wmask (0x01..0x0F)  */
+#define PH_MTN     0x21   /* + nmask4_feat_hi      */
+#define PH_HILL    0x31
+#define PH_FOREST  0x41   /* + forest-neighbour mask */
+#define PH_RIVER0  0x51   /* lone river            */
+#define PH_RIVER   0x52   /* + 8-dir bit           */
 
 bool sprite_have_sheet(void) { return g_have_sheet; }
 
@@ -32,11 +46,10 @@ static uint32_t frame_avg(const ss_frame *fr)
     long r = 0, g = 0, b = 0, n = 0;
     for (int i = 0; i < fr->w * fr->h; i++) {
         uint32_t c = fr->rgba[i];
-        if (!(c >> 24)) continue;           /* skip transparent */
+        if (!(c >> 24)) continue;
         r += (c >> 16) & 0xFF; g += (c >> 8) & 0xFF; b += c & 0xFF; n++;
     }
-    if (!n) return 0;
-    return RGB(r / n, g / n, b / n);
+    return n ? RGB(r / n, g / n, b / n) : 0;
 }
 
 static long color_dist(uint32_t a, uint32_t b)
@@ -55,7 +68,7 @@ bool sprite_load_phys0(const char *colonize_dir)
     snprintf(path, sizeof path, "%s/PHYS0.SS", colonize_dir);
     g_phys0 = ss_load(path);
 
-    g_have_sheet = (g_terrain != NULL);
+    g_have_sheet = (g_terrain != NULL && g_phys0 != NULL);
     if (!g_have_sheet)
         return false;
 
@@ -63,9 +76,7 @@ bool sprite_load_phys0(const char *colonize_dir)
     for (int id = 0; id < 32; id++) {
         g_terr_frame[id] = -1;
         const terrain_info *t = terrain_by_id((uint8_t)id);
-        if (!t)
-            continue;
-        /* TERRAIN.SS includes water textures too, so match every terrain. */
+        if (!t) continue;
         uint32_t want = terrain_color((uint8_t)id);
         long best = 0x7FFFFFFF; int bestk = -1;
         for (int k = 0; k < g_terrain->count; k++) {
@@ -76,33 +87,8 @@ bool sprite_load_phys0(const char *colonize_dir)
         }
         g_terr_frame[id] = bestk;
     }
-
-    /* Auto-detect a PHYS0 tree-overlay frame: a 16x16, green-dominant frame
-     * that is partly transparent (trees with gaps), picking the greenest. */
-    g_forest_frame = -1;
-    long best_green = 0;
-    if (g_phys0) {
-        for (int k = 0; k < g_phys0->count; k++) {
-            ss_frame *fr = &g_phys0->frames[k];
-            if (fr->w != 16 || fr->h != 16 || !fr->rgba)
-                continue;
-            long gpx = 0, opaque = 0;
-            for (int i = 0; i < 256; i++) {
-                uint32_t c = fr->rgba[i];
-                if (!(c >> 24)) continue;
-                opaque++;
-                int r = (c >> 16) & 0xFF, g = (c >> 8) & 0xFF, b = c & 0xFF;
-                if (g > r + 16 && g > b + 16) gpx++;
-            }
-            if (opaque < 80 || opaque > 230)         /* overlay-like coverage */
-                continue;
-            if (gpx > best_green && gpx * 2 > opaque) { best_green = gpx; g_forest_frame = k; }
-        }
-    }
     return true;
 }
-
-static int is_forested_id(uint8_t id) { return id >= 8 && id <= 15; }
 
 /* nearest-neighbour blit of a frame scaled to tp x tp; transparent pixels skip */
 static void blit_frame(fb *f, int px, int py, int tp, const ss_frame *fr)
@@ -120,6 +106,129 @@ static void blit_frame(fb *f, int px, int py, int tp, const ss_frame *fr)
     }
 }
 
+static void blit_phys0(fb *f, int px, int py, int tp, int idx)
+{
+    if (g_phys0 && idx >= 0 && idx < g_phys0->count)
+        blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
+}
+
+/* ---- terrain predicates over the L1 byte ---- */
+static int is_water_id(uint8_t id)  { return id == 25 || id == 26; }
+static int is_forest_id(uint8_t id) { return id >= 8 && id < 24; }
+static uint8_t base_ground_id(uint8_t id)
+{
+    if (is_forest_id(id)) return id & 7;     /* unforested ground under canopy */
+    return id;
+}
+
+static uint8_t L1at(const mp_map *m, int x, int y)
+{
+    if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 0;
+    return m->terrain[mp_idx(m, x, y)];
+}
+static int water_at(const mp_map *m, int x, int y)
+{
+    if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 1;  /* off-map = sea */
+    return is_water_id(MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]));
+}
+
+/* 4-cardinal masks (N=8 S=4 W=2 E=1). */
+static int forest_nmask(const mp_map *m, int x, int y)
+{
+    int k = 0;
+    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x, y - 1)))) k |= 8;
+    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x, y + 1)))) k |= 4;
+    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x - 1, y)))) k |= 2;
+    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x + 1, y)))) k |= 1;
+    return k;
+}
+static int feat_hi_nmask(const mp_map *m, int x, int y)
+{
+    int self_hi = L1at(m, x, y) & 0xA0;
+    int k = 0;
+    if ((L1at(m, x, y - 1) & 0xA0) == self_hi) k |= 8;
+    if ((L1at(m, x, y + 1) & 0xA0) == self_hi) k |= 4;
+    if ((L1at(m, x - 1, y) & 0xA0) == self_hi) k |= 2;
+    if ((L1at(m, x + 1, y) & 0xA0) == self_hi) k |= 1;
+    return k;
+}
+static int water_nmask(const mp_map *m, int x, int y)
+{
+    return (water_at(m, x, y - 1) ? 8 : 0) | (water_at(m, x, y + 1) ? 4 : 0)
+         | (water_at(m, x - 1, y) ? 2 : 0) | (water_at(m, x + 1, y) ? 1 : 0);
+}
+/* 8-dir river connectivity (neighbours that also carry the river bit). */
+static int river_nmask8(const mp_map *m, int x, int y)
+{
+    static const int dx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+    static const int dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+    int k = 0;
+    for (int i = 0; i < 8; i++)
+        if (L1at(m, x + dx[i], y + dy[i]) & MP_FLAG_ROADRIVER) k |= (1 << i);
+    return k;
+}
+
+/* Neighbour-aware map tile composition (the O513 stack). */
+void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
+{
+    uint8_t b  = m->terrain[mp_idx(m, tx, ty)];
+    uint8_t id = MP_TERRAIN_ID(b);
+
+    /* 1. base ground */
+    if (g_have_sheet) {
+        int bf = g_terr_frame[base_ground_id(id)];
+        fb_fill_rect(f, px, py, tp, tp, terrain_color(id));
+        if (bf >= 0) blit_frame(f, px, py, tp, &g_terrain->frames[bf]);
+    } else {
+        sprite_draw_tile(f, px, py, tp, b);   /* colored fallback (+ markers) */
+    }
+
+    if (is_water_id(id)) {
+        /* water tiles: coast composes from land neighbours in the land path */
+        return;
+    }
+
+    if (!g_have_sheet) {
+        /* colored fallback already drew forest/river markers; add a halo coast */
+        if (tp >= 4) {
+            uint32_t beach = RGB(0xDA, 0xC6, 0x8A);
+            int bt = tp / 5; if (bt < 1) bt = 1;
+            if (water_at(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
+            if (water_at(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
+            if (water_at(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
+            if (water_at(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
+        }
+        return;
+    }
+
+    /* 2. forest canopy */
+    if (is_forest_id(id))
+        blit_phys0(f, px, py, tp, PH_FOREST + forest_nmask(m, tx, ty));
+
+    /* 3. hills / mountains (terrain bit 0x20; bit 0x80 = mountain) */
+    if (b & 0x20) {
+        int hm = (b & 0x80) ? PH_MTN : PH_HILL;
+        blit_phys0(f, px, py, tp, hm + feat_hi_nmask(m, tx, ty));
+    }
+
+    /* 4. river (terrain bit 0x40) */
+    if (b & MP_FLAG_ROADRIVER) {
+        int r = river_nmask8(m, tx, ty);
+        if (r == 0) {
+            blit_phys0(f, px, py, tp, PH_RIVER0);
+        } else {
+            for (int i = 0; i < 8; i++)
+                if (r & (1 << i)) blit_phys0(f, px, py, tp, PH_RIVER + i);
+        }
+    }
+
+    /* 5. coast beach on edges facing water */
+    int wm = water_nmask(m, tx, ty);
+    if (wm)
+        blit_phys0(f, px, py, tp, PH_SHORE + wm);   /* 0x01..0x0F */
+}
+
+/* ---- context-free single-tile draw (palette/swatches/fallback) ---- */
 static uint32_t darken(uint32_t c, int pct)
 {
     int r = (int)((c >> 16) & 0xFF) * (100 - pct) / 100;
@@ -128,96 +237,18 @@ static uint32_t darken(uint32_t c, int pct)
     return RGB(r, g, b);
 }
 
-/* Blit PHYS0 frame `idx` (overlay sprite) scaled to tp. */
-static void blit_phys0(fb *f, int px, int py, int tp, int idx)
-{
-    if (!g_phys0 || idx < 0 || idx >= g_phys0->count)
-        return;
-    blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
-}
-
-static int tile_is_water(const mp_map *m, int x, int y)
-{
-    if (x < 0 || y < 0 || x >= m->width || y >= m->height)
-        return 1;   /* off-map = water, so map-edge land gets a beach edge */
-    uint8_t id = MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]);
-    return id == 25 || id == 26;
-}
-
-/* Neighbour-aware map tile: base ground + real coast beach (PHYS0 shore family
- * 0x01..0x0F by water-neighbour mask, per RENDER_SPEC.md) + forest + markers.
- * The shore mask bit order matches the verified nmask4_feature: N=8 S=4 W=2 E=1. */
-void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
-{
-    uint8_t b = m->terrain[mp_idx(m, tx, ty)];
-    uint8_t id = MP_TERRAIN_ID(b);
-
-    /* base ground (+ overlays without context: forest/river/prime) */
-    sprite_draw_tile(f, px, py, tp, b);
-
-    /* coast: land tiles get a beach overlay on edges facing water. */
-    if (!(id == 25 || id == 26)) {
-        if (g_have_sheet && g_phys0) {
-            int wmask = (tile_is_water(m, tx, ty - 1) ? 8 : 0)   /* N */
-                      | (tile_is_water(m, tx, ty + 1) ? 4 : 0)   /* S */
-                      | (tile_is_water(m, tx - 1, ty) ? 2 : 0)   /* W */
-                      | (tile_is_water(m, tx + 1, ty) ? 1 : 0);  /* E */
-            if (wmask)
-                blit_phys0(f, px, py, tp, wmask);   /* PHYS0 0x01..0x0F */
-        } else if (tp >= 4) {
-            /* fallback beach halo on the land side */
-            uint32_t beach = RGB(0xDA, 0xC6, 0x8A);
-            int bt = tp / 5; if (bt < 1) bt = 1;
-            if (tile_is_water(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
-            if (tile_is_water(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
-            if (tile_is_water(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
-            if (tile_is_water(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
-        }
-    }
-}
-
 void sprite_draw_tile(fb *f, int px, int py, int tp, uint8_t tile_byte)
 {
     uint8_t id = MP_TERRAIN_ID(tile_byte);
     uint32_t base = terrain_color(id);
-
-    /* base fill (also the water colour, and the backstop under any sprite) */
     fb_fill_rect(f, px, py, tp, tp, base);
 
-    if (g_have_sheet && id < 32 && g_terr_frame[id] >= 0)
-        blit_frame(f, px, py, tp, &g_terrain->frames[g_terr_frame[id]]);
+    if (g_have_sheet && g_terr_frame[base_ground_id(id)] >= 0)
+        blit_frame(f, px, py, tp, &g_terrain->frames[g_terr_frame[base_ground_id(id)]]);
 
-    if (tp < 5)
-        return;
-
-    /* Forest: forested terrain ids (8..15) and the forest overlay bit. With
-     * assets, overlay the real PHYS0 tree sprite; otherwise draw triangles. */
-    int forested = is_forested_id(id) || (tile_byte & MP_FLAG_FOREST);
-    if (forested) {
-        if (g_have_sheet && g_forest_frame >= 0) {
-            blit_frame(f, px, py, tp, &g_phys0->frames[g_forest_frame]);
-        } else if (tile_byte & MP_FLAG_FOREST) {
-            uint32_t fg = RGB(0x16, 0x40, 0x1C);
-            int t = tp;
-            for (int dy = 0; dy < t / 2; dy++) {
-                int wq = dy;
-                fb_hline(f, px + t / 4 - wq / 2, py + t / 4 + dy, wq + 1, fg);
-                fb_hline(f, px + 3 * t / 4 - wq / 2, py + t / 4 + dy, wq + 1, fg);
-            }
-        }
+    if (tp >= 6 && !is_water_id(id) && !g_have_sheet) {
+        uint32_t mottle = darken(base, 12);
+        for (int yy = 1; yy < tp; yy += 3)
+            fb_hline(f, px + 1, py + yy, tp - 2, mottle);
     }
-
-    /* Road / river (bit 6): blue line. */
-    if (tile_byte & MP_FLAG_ROADRIVER) {
-        uint32_t rv = RGB(0x30, 0x70, 0xD8);
-        int cy = py + tp / 2;
-        fb_fill_rect(f, px, cy - (tp >= 14 ? 1 : 0), tp, tp >= 14 ? 3 : 1, rv);
-    }
-
-    /* Prime resource (bit 5): small marker, top-right. */
-    if (tile_byte & MP_FLAG_PRIME) {
-        int s = tp / 4 < 2 ? 2 : tp / 4;
-        fb_fill_rect(f, px + tp - s - 1, py + 1, s, s, RGB(0xFF, 0xE0, 0x40));
-    }
-    (void)darken;
 }
