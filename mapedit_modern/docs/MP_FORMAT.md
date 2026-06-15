@@ -12,31 +12,26 @@ offset   size              field
 -------  ----------------  --------------------------------------------------
 0        u16  little-endian  width            (58 in AMER2)
 2        u16  little-endian  height           (72 in AMER2)
-4        W*H bytes           layer 1: terrain
-4+N      W*H bytes           layer 2: feature
-4+2N     W*H bytes           layer 3: special  (land/water + resource)
-4+3N     rest               trailer           (2 bytes = 0x0000 in AMER2)
+4        u16  little-endian  reserved         (4 in AMER2; preserved verbatim)
+6        W*H bytes           layer 1: terrain
+6+N      W*H bytes           layer 2: feature  (empty on AMER2 — runtime layer)
+6+2N     W*H bytes           layer 3: special  (land/water + resource)
 ```
 
 with `N = width * height`.
 
-For AMER2: `4 + 3 * (58*72) + 2 = 4 + 12528 + 2 = 12534` bytes — the exact file
-size.
+For AMER2: `6 + 3 * (58*72) = 6 + 12528 = 12534` bytes — the exact file size,
+no trailer.
 
-### Why header = 4 (not 6)
+### Why header = 6 (not 4) — pinned by ground truth
 
-The alternative split (6-byte header, no trailer) gives the same total size,
-so it is disambiguated by the **sea-lane border rule**: the left and right edge
-columns must decode to terrain id 26 (Sea Lane). Measured on AMER2:
-
-| split                | left column id 26 | result            |
-|----------------------|-------------------|-------------------|
-| **header 4 + tail 2**| 70 / 72 rows      | ✅ borders line up |
-| header 6 + no tail   | 0 / 72 rows (all 25) | ❌ off by 2 tiles |
-
-So the 4-byte header is correct and the 2 extra bytes are a trailer. The
-reimplementation preserves the trailer verbatim (so unknown trailer content
-never corrupts a round-trip) and writes a 2-byte zero trailer for new maps.
+A 4-byte-header + 2-byte-trailer split gives the same total size, so it is
+disambiguated by the **original program's own output**: MAPEDIT.EXE displays
+tile (29,36) as "(Hills)". That tile decodes to Hills (id 21, +0x20, !0x80)
+**only** under a 6-byte header. A 4-byte header shifts every tile by 2 and
+mis-decodes it (id 23, +0x80 → wrongly a mountain). The 6-byte header also
+yields a uniform ocean border on both edge columns. (An earlier 4-byte
+hypothesis was wrong — it mistook the 2 header bytes for a trailer.)
 
 ## Three planar layers
 
@@ -52,36 +47,43 @@ The layer-3 land/water classifier was the key that pinned the water terrain
 ids: every layer-1 id `0..23` appears only on `land`/`border` tiles, while ids
 `25` and `26` appear only on `water` tiles.
 
-## Terrain byte (layer 1)
+## Terrain byte (layer 1) — verified against the render chain + ground truth
 
 ```
-bits 0..4 : base terrain id (0..26)
-bit  5    : prime-resource flag    (0x20)
-bit  6    : road / river flag      (0x40)
-bit  7    : forest sprite overlay  (0x80)
+bits 0..4 : base terrain id (0..26; 8..23 = forest variants)
+bit  5    : hills / mountains   (0x20)   — VICEROY O513 6e reads this
+bit  6    : river               (0x40)   — O513 6d draws PHYS0 0x96
+bit  7    : mountain (vs hills)  (0x80)   — with bit 0x20: set=mtn, clear=hills
 ```
+
+Confirmed by tile (29,36) = `0x35` = id 21 + 0x20, !0x80 → "(Hills)", which is
+exactly what the original MAPEDIT shows there. (The earlier labels
+prime/road/forest were wrong; forest is encoded by *id*, not a bit.)
 
 ### Base terrain ids
 
 | ids   | group        | source / confidence                                       |
 |-------|--------------|-----------------------------------------------------------|
-| 0..7  | UNFORESTED   | NAMES.TXT `@UNFORESTED` — Tundra,Desert,Plains,Prairie,Grassland,Savannah,Marsh,Swamp **(verified)** |
-| 8..15 | FORESTED     | NAMES.TXT `@FORESTED`, paired with 0..7 — Boreal,Scrub,Mixed,Broadleaf,Conifer,Tropical,Wetland,Rain **(verified)** |
-| 16..23| other land   | Arctic / Hills / Mountains + stock-map variants — **name↔id not yet byte-verified (TODO_VERIFY)** |
-| 24    | (unused)     | absent from AMER2                                          |
+| 0..7  | UNFORESTED   | NAMES.TXT `@UNFORESTED` — Tundra…Swamp **(verified)**      |
+| 8..23 | FORESTED     | forest variants; `classify_terrain` (func_006204) collapses 8..23 → 8..15 in map view (mode 2). Base ground = unforested(id&7); canopy = PHYS0 0x41+ **(verified)** |
+| 24    | Arctic       | (absent from AMER2)                                        |
 | 25    | Ocean        | pinned via layer-3 water correlation **(verified)**        |
 | 26    | Sea Lane     | water + edge-column rule **(verified)**                    |
 
-The editor palette (what you can paint) is the 21 entries NAMES.TXT lists as
-`@UNFORESTED` (8) + `@FORESTED` (8) + `@OTHER` (Arctic, Ocean, Sea Lane,
-Mountains, Hills).
+Hills/mountains are an overlay flag (bit 0x20) on any base, not a base id.
+
+## Sprite rendering (from the real game art)
+
+- **base ground**: TERRAIN.SS frame = `terrain_cell_transform(land_base)`
+  (resident func_03436: `0x11/0x09→8`, `≥8→code-0xF`, else code).
+- **forest** ids 8..23: PHYS0 `0x41 + forest-neighbour mask`.
+- **hills/mtns** bit 0x20: PHYS0 `0x31` (hills) / `0x21` (mtn) `+ nmask4_feat_hi`.
+- **river** bit 0x40: PHYS0 `0x96` (blue water + tan banks).
+- **coast**: PHYS0 shore `0x01..0x0F` by water-neighbour mask on land edges.
+- Each `.SS` uses its **own embedded palette** (VICEROY.PAL as a global DAC
+  palette mis-colours the sprite indices → verified garbage).
 
 ## Open items (do not affect round-trip)
 
-- Exact names/ordering of land ids `16..23`.
-- Exact trailer semantics (always 2 bytes? a record count?). Only `0x0000`
-  observed; preserved verbatim either way.
-- Layer-2 feature encoding beyond "mostly zero on a fresh map".
-
-These can be pinned by decompiling MAPEDIT's overlay write path (`write.obj`)
-or by diffing saves produced by the original under DOSBox.
+- The reserved 3rd header word's meaning (always 4 observed).
+- Layer-2 (feature) runtime encoding (empty on a fresh map).
