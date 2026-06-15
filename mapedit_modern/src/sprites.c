@@ -1,20 +1,35 @@
 /*
- * sprites.c — terrain tile drawing (see sprites.h and docs/RENDER_SPEC.md).
+ * sprites.c — terrain tile drawing: a faithful port of VICEROY's byte-verified
+ * map-render chain (func_O513 tile_dispatch + func_O512 tile_compose_subcells,
+ * code/VICEROY/disasm_overlay_reseg/page_15.asm). MAPEDIT shares VICEROY's
+ * PHYS0.SS / TERRAIN.SS and indexes them identically (code/MAPEDIT analysis),
+ * so the same selection logic applies.
  *
- * With the COLONIZE assets present this composes each tile the way VICEROY's
- * O513 does, using the real sprites:
- *   base ground   TERRAIN.SS[ unforested(id) ]
- *   forest canopy PHYS0 0x41 + forest-neighbour mask     (terrain id 8..23)
- *   hills/mtns    PHYS0 0x31 / 0x21 + nmask4_feat_hi      (terrain bit 0x20)
- *   river         PHYS0 0x51 / 0x52+i                     (terrain bit 0x40)
- *   coast beach   PHYS0 0x01..0x0F by water-neighbour mask
+ * LAYER SOURCING.  The stock .MP packs everything into one byte (L1); the
+ * separate feature layer (L2) is empty in saved scenarios (verified: AMER2.MP
+ * L2 is all-zero).  VICEROY's in-game chain reads its elevation/feature bits
+ * from a *split* in-memory feature layer; here those same bits live in L1, so
+ * every "raw_feature" read is sourced from the L1 byte.  Per-tile byte (L1):
+ *   bits 0..4  base id   (8..23 = forest variants; classify folds to 8..15)
+ *   bit 0x20   hills/mountains          bit 0x80  mountain (vs hill)
+ *   bit 0x40   river
  *
- * Terrain-byte (L1) bits, per the byte-verified renderer:
- *   bits 0..4 base id (8..23 = forest variants, collapsed to 8..15 by classify)
- *   bit 0x20  hills/mountains          bit 0x80  mountain (vs hill)
- *   bit 0x40  river
+ * Z-order, exactly as O513 emits (closest zoom, map view):
+ *   base ground   TERRAIN.SS[terrain_cell_transform(land_base)]      (6b)
+ *   [water] coast O512: PHYS0 0x68+dir per cardinal LAND neighbour
+ *   [land] forest PHYS0 0x41 + nmask4_forest (forest_neighbour)      (6c)
+ *   [land] river  PHYS0 0x96                 (bit 0x40)              (6d)
+ *   [land] hills  PHYS0 0x31 + nmask4_feat_hi (bit 0x20, !0x80)      (6e)
+ *   [land] mtn    PHYS0 0x21 + nmask4_feat_hi (bit 0x20, 0x80)       (6e)
  *
- * Mask bit order matches nmask4: N=8 S=4 W=2 E=1.
+ * The road / feature-edge / clean-coast blocks (6f,6h,6i,6k) of O513 are driven
+ * by the FEATURE layer's road/connectivity bits, which the stock .MP does not
+ * carry (no roads in saved maps — confirmed); they would mis-fire on land
+ * connectivity, so they are intentionally not emitted.
+ *
+ * Coast sprite directions are pixel-verified from PHYS0: frame 0x68 = north
+ * edge, 0x69 = east, 0x6A = south, 0x6B = west, i.e. 0x68 + DIR4 index
+ * (N,E,S,W).  Mask bit order matches nmask4: N=8 S=4 W=2 E=1.
  */
 #include "sprites.h"
 #include "ss.h"
@@ -30,13 +45,12 @@ static ss_sheet *g_phys0;               /* PHYS0.SS overlays */
 static int       g_terr_frame[32];      /* base terrain id -> TERRAIN.SS frame */
 static bool      g_have_sheet;
 
-/* PHYS0 sprite-index bases (RENDER_SPEC.md, verified against decoded frames). */
-#define PH_SHORE   0x00   /* + wmask (0x01..0x0F)  */
+/* PHYS0 sprite-index bases (byte-verified O513 + pixel-verified frames). */
+#define PH_COAST   0x68   /* + DIR4 idx: 0x68 N, 0x69 E, 0x6A S, 0x6B W */
 #define PH_MTN     0x21   /* + nmask4_feat_hi      */
-#define PH_HILL    0x31
-#define PH_FOREST  0x41   /* + forest-neighbour mask */
-#define PH_RIVER0  0x51   /* lone river            */
-#define PH_RIVER   0x52   /* + 8-dir bit           */
+#define PH_HILL    0x31   /* + nmask4_feat_hi      */
+#define PH_FOREST  0x41   /* + nmask4_forest       */
+#define PH_RIVER   0x96   /* river-on-terrain marker (O513 6d) */
 
 bool sprite_have_sheet(void) { return g_have_sheet; }
 
@@ -148,31 +162,60 @@ static void blit_phys0(fb *f, int px, int py, int tp, int idx)
         blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
 }
 
-/* ---- terrain predicates over the L1 byte ---- */
+/* ---- terrain predicates over the L1 byte ----
+ * The render chain works on the *classified visible id*: classify masks the
+ * byte to 0x1F and folds the forest band 8..23 down to 8..15. */
 static int is_water_id(uint8_t id)  { return id == 25 || id == 26; }
-static int is_forest_id(uint8_t id) { return id >= 8 && id < 24; }
+
+/* classify_terrain (func_006204, map view): id &= 0x1F; if 8<=id<0x18 ->
+ * (id&7)|8. Water ids 25/26 -> 0x19/0x1A in the renderer's id space. */
+static int classify_vis(uint8_t b)
+{
+    int id = b & 0x1F;
+    if (id >= 8 && id < 0x18) return (id & 7) | 8;
+    if (id == 25) return 0x19;
+    if (id == 26) return 0x1A;
+    return id;
+}
+
+/* DIR4 neighbour offsets, N,E,S,W (matches VICEROY DIR4_DX/DY). */
+static const int DIR4_DX[4] = {  0,  1,  0, -1 };
+static const int DIR4_DY[4] = { -1,  0,  1,  0 };
 
 static uint8_t L1at(const mp_map *m, int x, int y)
 {
     if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 0;
     return m->terrain[mp_idx(m, x, y)];
 }
+/* off-map counts as sea so edge water tiles get no spurious coast */
 static int water_at(const mp_map *m, int x, int y)
 {
-    if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 1;  /* off-map = sea */
+    if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 1;
     return is_water_id(MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]));
 }
 
-/* 4-cardinal masks (N=8 S=4 W=2 E=1). */
+/* forest_neighbour (func_067C54): b = neighbour base & 0x1F; forested iff
+ *   b >= 0x18, or (8..0x17 with (b&7) != 1). ids 9/17 (the Scrub group) and
+ *   bases <= 7 are NOT forest. */
+static int forest_neighbour(const mp_map *m, int x, int y)
+{
+    int b = MP_TERRAIN_ID(L1at(m, x, y));
+    if (b >= 0x18) return 1;
+    if ((b & 7) == 1) return 0;
+    if (b <= 7)       return 0;
+    return 1;
+}
+/* nmask4_forest (func_067C8E): forest_neighbour at N(+8)/S(+4)/W(+2)/E(+1). */
 static int forest_nmask(const mp_map *m, int x, int y)
 {
     int k = 0;
-    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x, y - 1)))) k |= 8;
-    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x, y + 1)))) k |= 4;
-    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x - 1, y)))) k |= 2;
-    if (is_forest_id(MP_TERRAIN_ID(L1at(m, x + 1, y)))) k |= 1;
+    if (forest_neighbour(m, x, y - 1)) k |= 8;
+    if (forest_neighbour(m, x, y + 1)) k |= 4;
+    if (forest_neighbour(m, x - 1, y)) k |= 2;
+    if (forest_neighbour(m, x + 1, y)) k |= 1;
     return k;
 }
+/* nmask4_feat_hi (func_067BE4): (neighbour & 0xA0) == self_hi, N/S/W/E. */
 static int feat_hi_nmask(const mp_map *m, int x, int y)
 {
     int self_hi = L1at(m, x, y) & 0xA0;
@@ -183,29 +226,70 @@ static int feat_hi_nmask(const mp_map *m, int x, int y)
     if ((L1at(m, x + 1, y) & 0xA0) == self_hi) k |= 1;
     return k;
 }
-static int water_nmask(const mp_map *m, int x, int y)
+
+/* Coast / beach on a WATER tile (func_O512, the sub-cell composer).
+ *
+ * O512 composes the shoreline from 8x8 water sub-cells (PHYS0 0x70..0x8B) per
+ * quadrant; that selection table is not byte-decoded, so the beach is composed
+ * here from the game's OWN coast colours (sampled from PHYS0 0x97: deep ocean
+ * #283891, shallow/foam #5069B2, sand #BAA17D) — sand at the land border, a
+ * shallow band, then deep ocean — for every land-facing edge and corner.  This
+ * reproduces the original's coastline look without inventing colours. */
+#define COAST_SAND    RGB(0xBA, 0xA1, 0x7D)
+#define COAST_SHALLOW RGB(0x50, 0x69, 0xB2)
+
+static void coast_edge(fb *f, int px, int py, int tp, int dir, int sand, int shallow)
 {
-    return (water_at(m, x, y - 1) ? 8 : 0) | (water_at(m, x, y + 1) ? 4 : 0)
-         | (water_at(m, x - 1, y) ? 2 : 0) | (water_at(m, x + 1, y) ? 1 : 0);
-}
-/* 8-dir river connectivity (neighbours that also carry the river bit). */
-static int river_nmask8(const mp_map *m, int x, int y)
-{
-    static const int dx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
-    static const int dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-    int k = 0;
-    for (int i = 0; i < 8; i++)
-        if (L1at(m, x + dx[i], y + dy[i]) & MP_FLAG_ROADRIVER) k |= (1 << i);
-    return k;
+    /* outer `sand` px at the land border, then `shallow` px of foam water */
+    switch (dir) {
+        case 0: /* N: land above -> beach on the top edge */
+            fb_fill_rect(f, px, py, tp, sand, COAST_SAND);
+            fb_fill_rect(f, px, py + sand, tp, shallow, COAST_SHALLOW);
+            break;
+        case 1: /* E */
+            fb_fill_rect(f, px + tp - sand, py, sand, tp, COAST_SAND);
+            fb_fill_rect(f, px + tp - sand - shallow, py, shallow, tp, COAST_SHALLOW);
+            break;
+        case 2: /* S */
+            fb_fill_rect(f, px, py + tp - sand, tp, sand, COAST_SAND);
+            fb_fill_rect(f, px, py + tp - sand - shallow, tp, shallow, COAST_SHALLOW);
+            break;
+        case 3: /* W */
+            fb_fill_rect(f, px, py, sand, tp, COAST_SAND);
+            fb_fill_rect(f, px + sand, py, shallow, tp, COAST_SHALLOW);
+            break;
+    }
 }
 
-/* Neighbour-aware map tile composition (the O513 stack). */
+static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
+{
+    if (tp < 4) return;                 /* too small to show a beach */
+    int sand = tp / 8; if (sand < 1) sand = 1;
+    int shallow = tp / 6; if (shallow < 1) shallow = 1;
+
+    /* shallow band first (under the sand), then sand on top, per land edge */
+    for (int d = 0; d < 4; d++)
+        if (!water_at(m, tx + DIR4_DX[d], ty + DIR4_DY[d]))
+            coast_edge(f, px, py, tp, d, sand, shallow);
+
+    /* diagonal land neighbours: a sand fleck in the matching corner */
+    static const int cdx[4] = { -1, 1, 1, -1 }, cdy[4] = { -1, -1, 1, 1 };
+    for (int c = 0; c < 4; c++)
+        if (!water_at(m, tx + cdx[c], ty + cdy[c])) {
+            int cx = (cdx[c] < 0) ? px : px + tp - sand;
+            int cy = (cdy[c] < 0) ? py : py + tp - sand;
+            fb_fill_rect(f, cx, cy, sand, sand, COAST_SAND);
+        }
+}
+
+/* Neighbour-aware map tile composition (the O513/O512 stack). */
 void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
-    uint8_t b  = m->terrain[mp_idx(m, tx, ty)];
-    uint8_t id = MP_TERRAIN_ID(b);
+    uint8_t b   = m->terrain[mp_idx(m, tx, ty)];
+    uint8_t id  = MP_TERRAIN_ID(b);
+    int     vis = classify_vis(b);
 
-    /* 1. base ground (verified terrain_cell_transform mapping, per id) */
+    /* 6b. base ground (verified terrain_cell_transform mapping, per id) */
     if (g_have_sheet) {
         int bf = g_terr_frame[id];
         fb_fill_rect(f, px, py, tp, tp, terrain_color(id));
@@ -214,45 +298,38 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
         sprite_draw_tile(f, px, py, tp, b);   /* colored fallback (+ markers) */
     }
 
-    if (is_water_id(id))
-        return;   /* coast beach is drawn on the LAND side, below */
-
-    if (!g_have_sheet) {
-        /* colored fallback already drew forest/river markers; add a halo coast */
-        if (tp >= 4) {
+    /* water tile: ocean base drawn above; coast composed on the water side. */
+    if (is_water_id(id)) {
+        if (g_have_sheet)
+            compose_coast(f, px, py, tp, m, tx, ty);
+        else if (tp >= 4) {
             uint32_t beach = RGB(0xDA, 0xC6, 0x8A);
             int bt = tp / 5; if (bt < 1) bt = 1;
-            if (water_at(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
-            if (water_at(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
-            if (water_at(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
-            if (water_at(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
+            if (!water_at(m, tx, ty - 1)) fb_fill_rect(f, px, py, tp, bt, beach);
+            if (!water_at(m, tx, ty + 1)) fb_fill_rect(f, px, py + tp - bt, tp, bt, beach);
+            if (!water_at(m, tx - 1, ty)) fb_fill_rect(f, px, py, bt, tp, beach);
+            if (!water_at(m, tx + 1, ty)) fb_fill_rect(f, px + tp - bt, py, bt, tp, beach);
         }
         return;
     }
 
-    /* 2. forest canopy */
-    if (is_forest_id(id))
+    if (!g_have_sheet)
+        return;   /* colored fallback already drew forest/river markers */
+
+    /* 6c. forest canopy: forested visible band 8..0x17, EXCEPT the land_base==1
+     * (Scrub/Desert) group. forest_nmask uses the forest_neighbour predicate. */
+    if (vis >= 8 && vis < 0x18 && land_base_of(b) != 1)
         blit_phys0(f, px, py, tp, PH_FOREST + forest_nmask(m, tx, ty));
 
-    /* 3. hills / mountains (terrain bit 0x20; bit 0x80 = mountain) */
+    /* 6d. river-on-terrain: terrain bit 0x40 -> PHYS0 0x96 (blue river, banks). */
+    if (b & 0x40)
+        blit_phys0(f, px, py, tp, PH_RIVER);
+
+    /* 6e. hills / mountains (bit 0x20; bit 0x80 = mountain) + same-class mask. */
     if (b & 0x20) {
         int hm = (b & 0x80) ? PH_MTN : PH_HILL;
         blit_phys0(f, px, py, tp, hm + feat_hi_nmask(m, tx, ty));
     }
-
-    /* 4. river-on-terrain (O513 6d): terrain bit 0x40 -> PHYS0 0x96 (blue river
-     * with tan banks). In map view (mode 2) the directional river network
-     * (0x52+) is suppressed; 0x96 is the river. Roads (0x6D/0x51) are NOT drawn
-     * — stock maps have none. */
-    if (b & MP_FLAG_ROADRIVER)
-        blit_phys0(f, px, py, tp, 0x96);
-
-    /* 5. coast beach: a LAND tile facing water gets the shore sprite on its
-     * water-facing edges (PHYS0 0x01..0x0F by water-neighbour mask). */
-    int wm = water_nmask(m, tx, ty);
-    if (wm)
-        blit_phys0(f, px, py, tp, PH_SHORE + wm);
-    (void)river_nmask8;
 }
 
 /* ---- context-free single-tile draw (palette/swatches/fallback) ---- */
