@@ -101,7 +101,10 @@ extern struct PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  *     layout: base cell y = 0xB5 (181)  @asm 0x0310CF [bp-0x6a]=0xB5
  *             cell stride = 0x13 (19 px) @asm 0x03124C ADD [bp-0x68],0x13
  *             count       = 16           @asm 0x031253 CMP [bp-0x72],0x10
- *             icon sprite = ICONS.SS (good_idx + 0x17 = 23..38) @asm 0x0310F2 ADD ax,0x17
+ *             icon sprite = ICONS.SS, asm ADD ax,0x17 @asm 0x0310F2; in our
+ *             MADSPACK loader Food=frame 22 (the DOS in-mem dir is +1 vs the
+ *             on-disk 0-based order), so an implementation must use good_idx+0x16
+ *             (Food=22..Muskets=37) -- matches colony_paint_stockpile.
  *        per cell: blit_sprite(ICONS, idx, x, y) via 0x181F:0x254 @asm 0x03110F;
  *        qty text via 0xD1D:0x8FA(sprintf)+0x181F:0x13C @asm 0x0311AE
  *        (qty drawn at x = [bp-0x70]=0xC2(194)?+ cell, color/coords @asm 0x031174).

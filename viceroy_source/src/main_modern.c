@@ -975,6 +975,15 @@ int main(int argc, char **argv)
             DG8(0x543F)  = 1;                     /* power 0 ACTIVE (the title
                                                    * gate [owner*0x34+0x543F]) */
             DG16(0x2F5E) = 1000;                  /* treasury (gold display) */
+            /* Map-view sidebar (tile_info_panel) reads: year [0x538A], season
+             * index [0x538C] -> 0x9800 table ("Spring"), and the perspective
+             * PowerRecord's GOLD dword (+0x2A at 0x8832) + TAX byte (+0x01 at
+             * 0x8809).  Seed them BEFORE enter_map()/draw_map() so the map frame
+             * shows "Spring 1492 / Gold: 1000 / Tax: 0" instead of zeros. */
+            DG16(0x538A) = 1492;                  /* game year */
+            DG16(0x538C) = 0;                     /* season idx 0 = Spring */
+            DG32(0x8832) = 1000;                  /* PowerRecord[0] gold dword (+0x2A) */
+            DG8(0x8809)  = 0;                     /* PowerRecord[0] tax% (+0x01) */
             {   /* a little stock so the bar's value path is visible:
                  * Food=25, Lumber=60, Ore=12 (ctx words +0x9A+i*2) */
                 DG16(rec + 0x9A + 0*2) = 25;
@@ -991,6 +1000,14 @@ int main(int argc, char **argv)
 
             /* take screenshots immediately — colony already seeded in DGROUP */
             g_cam_x = 24; g_cam_y = 34;
+            /* Mark the 8 native-tribe slots ABSENT (record +0x01 bit7, stride
+             * 0x4E at 0x5AD8) AFTER enter_map() (which re-inits the tribe
+             * region).  The new-game setup the headless harness skips would set
+             * this for tribes not present; without it the sidebar's per-tribe
+             * market loop (tile_info_panel @asm 0x04431B) draws a phantom "0"
+             * line for each empty slot.  Empty record = absent. */
+            for (int t = 0; t < 8; t++)
+                DG8(t * 0x4E + 0x5AD9) |= 0x80;
             draw_map();
             vid_screenshot_ppm("viceroy_map.ppm");
             printf("  headless  : map frame -> viceroy_map.ppm "

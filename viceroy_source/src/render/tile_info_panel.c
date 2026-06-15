@@ -149,6 +149,13 @@ extern uint8_t g_layout_col_836;
  * native_unit_ai.c g_flags_894. Full bit map is RUNTIME_ONLY. */
 extern uint8_t g_flags_894;
 
+/* DGROUP:0x5AD8 -- per-power/tribe record table, stride 0x4E (see
+ * overlay_046D70_04C2E1.c g_native_value_table_5AD8).  The byte at +0x01
+ * (0x5AD9) bit7 = "destroyed/absent": func_04891A's per-turn loop
+ * (@asm 0x048959 test [bx+0x5AD9],0x80; jne skip) and the market-line loop
+ * (@asm 0x04431B) both skip a slot whose bit7 is set. */
+extern uint8_t g_native_value_table_5AD8[];
+
 /* DGROUP:0x5383 -- game/mode flags byte; bit 0x20 tested @asm 0x04339A / 0x043404
  * (test [0x5383],0x20) -- gates the extra coordinate / terrain-detail line. Same
  * byte src/ai/unit_orders.c calls g_mode_flag_5383. */
@@ -707,10 +714,13 @@ market_block:
         if (!(g_flags_894 & 1)) {                           /* @asm 0x044303 */
             ovly_set_subject_A42(slot);                     /* @asm 0x044315 push [bp-0x7a]; lcall 0x181F:0xa42 */
         }
-        /* @asm 0x04431B imul bx,?,?; test [bx+0x5ad9],0x80; jne 0x1ab7 (skip this
-         *      slot when its boycott/flag bit is set). 0x5AD9 is a per-power flag
-         *      byte (boycott region); bit 0x80 = boycott active. RUNTIME_ONLY. */
-        /* (The boycott test uses a per-power flag at DGROUP 0x5AD9; structural.) */
+        /* @asm 0x04431B imul bx,slot,0x4E; test [bx+0x5AD9],0x80; jne 0x1ab7 --
+         * skip this slot when the power/tribe is destroyed/absent (bit7 of the
+         * +0x01 byte; stride 0x4E -- same gate as func_04891A @asm 0x048959).
+         * PORTED 2026-06-15: was previously left as "structural" (un-gated),
+         * which drew a phantom "<blank>: 0" line for every absent slot. */
+        if (g_native_value_table_5AD8[slot * 0x4E + 0x01] & 0x80)
+            continue;                                       /* @asm 0x04431B..0x04432? jne next */
         {
             /* build "<power name>: <market value>" */
             buf_storage[0] = 0;                             /* @asm 0x044328 */

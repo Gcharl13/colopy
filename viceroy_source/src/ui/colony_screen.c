@@ -146,7 +146,7 @@ extern void enter_screen_view(int bx_screen_id);                   /* 0x181F:0x0
  *  Icon Y base                  -    181  -    -    -      0x0281F1 mov [bp-0x72],0xB5                       [byte-verified]
  *  Cell pitch (X advance)       +19  -    -    -    -      0x02822A add [bp-0x6E],0x13                       [byte-verified]
  *  Commodity loop count         -    -    -    -    16     0x028231 cmp [bp-0x7E],0x10                       [byte-verified]
- *  Sprite id = i + 23           -    -    -    -    23..38 0x028253 add ax,0x17 (ICONS.SS base)             [byte-verified]
+ *  Sprite id = i + 22           -    -    -    -    22..37 0x028253 add ax,0x17 (asm); ICONS Food=frame 22  [asm 0x17; data frame 22]
  *  Icon centering: ICONS hdr W  -    -    -    -    -      0x02825D es:[bx+si+0x152]; sar 1; +9 (@asm 0x028266)
  *  Highlight loop count         -    -    -    -    16     0x0283EB cmp [bp-0x7E],0x10                       [byte-verified]
  *  Selected-good source         -    -    -    -    -      0x028399 mov al,[0x33A]; highlight color 0x0E (@asm 0x0283BB)
