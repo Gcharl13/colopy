@@ -135,21 +135,42 @@ static void draw_text_center(const char *s, int y, uint8_t color)
     ff_draw(&g_font, s, (VID_W - w) / 2, y, 1);
 }
 
+static int g_nat_sel;   /* selected European power 0..3 (England default) */
+
 static void draw_nations(void)
 {
+    /* 2x2 flag grid baked into NATIONS.PIK; positions byte-measured from
+     * refs/ref_nation.png (England red box at (112,13)-(199,94)). */
+    static const int flag_x[4] = { 112, 210, 112, 210 };
+    static const int flag_y[4] = {  13,  13, 105, 105 };
+    const int FW = 87, FH = 81;
     draw_bg();
     if (g_have_font) {
+        extern int  ui_color_for(int,int,int);
+        extern void draw_box(int,int,int,int,int);
         uint8_t dark = 0, light = 15;
+        int green = ui_color_for(0x52, 0x8A, 0x31);
         pal_pick_text_colors(&dark, &light);
-        /* the four COUNTRY names exactly as NAMES.TXT loaded them into
-         * DGROUP:0x8D42 (word-ptr table; see data_load.c) */
-        for (int i = 0; i < 4; i++) {
-            char buf[80];
-            snprintf(buf, sizeof buf, "%d  %s", i + 1, &DG8(DG16(0x8D42 + i*2)));
-            g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
-            ff_draw(&g_font, buf, 18, 24 + i * 44, 1);
+        /* title top-left, UI green, two lines (matches ref_nation.png). */
+        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = (uint8_t)green;
+        ff_draw(&g_font, "Select",         30, 24, 1);
+        ff_draw(&g_font, "European Power",  18, 33, 1);
+        /* red selection cursor box around the chosen power's flag. */
+        {   int s = g_nat_sel & 3;
+            int red = ui_color_for(0xE0, 0x20, 0x20);
+            draw_box(flag_x[s]-1, flag_y[s]-1,
+                     flag_x[s]+FW, flag_y[s]+FH, red);
         }
-        draw_text_center("Select a European Power (1-4)", 184, light);
+        /* leader / nation name centred over the selected flag (NAMES.TXT
+         * @COUNTRY table at DGROUP:0x8D42). */
+        {   int s = g_nat_sel & 3;
+            const char *nm = (const char *)&DG8(DG16(0x8D42 + s*2));
+            int tw = ff_text_width(&g_font, nm, 1);
+            g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
+            ff_draw(&g_font, nm, flag_x[s] + (FW - tw)/2, flag_y[s] - 9, 1);
+        }
+        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
+        draw_text_center("Click here when done (Esc)", 188, light);
     }
     vid_present();
 }
@@ -519,6 +540,8 @@ enum { SH_TITLE, SH_NATIONS, SH_DIFFICULTY, SH_MAP, SH_COLONY, SH_EUROPE };
 
 #define KEY_UP     1073741906
 #define KEY_DOWN   1073741905
+#define KEY_LEFT   1073741904
+#define KEY_RIGHT  1073741903
 #define KEY_RETURN 13
 #define KEY_F12    1073741893
 
@@ -591,7 +614,13 @@ static int shell_loop(void)
         switch (screen) {
         case SH_NATIONS:
             if (k == 27) { screen = SH_TITLE; break; }   /* loop top re-runs the engine */
+            /* arrow keys move the red selection cursor over the 2x2 flag grid */
+            if (k == KEY_LEFT)  { g_nat_sel ^= 1; if (load_bg("NATIONS.PIK")==0) draw_nations(); }
+            if (k == KEY_RIGHT) { g_nat_sel ^= 1; if (load_bg("NATIONS.PIK")==0) draw_nations(); }
+            if (k == KEY_UP)    { g_nat_sel ^= 2; if (load_bg("NATIONS.PIK")==0) draw_nations(); }
+            if (k == KEY_DOWN)  { g_nat_sel ^= 2; if (load_bg("NATIONS.PIK")==0) draw_nations(); }
             if (k >= '1' && k <= '4') {
+                g_nat_sel = k - '1';
                 DG16(0x5398) = (uint16_t)(k - '1');      /* player nation */
                 printf("shell: nation = %s\n", &DG8(DG16(0x8D42 + (k-'1')*2)));
                 if (load_bg("DIFFICUL.PIK") == 0) { draw_difficulty(); screen = SH_DIFFICULTY; }
