@@ -32,10 +32,16 @@ With the COLONIZE assets reachable (`$COLONIZE_DIR`, default `../raw/COLONIZE`),
 the map composes exactly like VICEROY's O513 chain, using the real sprites:
 
 - **base ground**: `TERRAIN.SS[terrain_cell_transform(land_base)]`
-- **forest** (ids 8–23): PHYS0 `0x41 + forest-neighbour mask`
-- **hills/mountains** (bit 0x20): PHYS0 `0x31`/`0x21 + nmask4_feat_hi`
+- **forest** (ids 8–23, minus the Scrub/Desert `land_base==1` group): PHYS0
+  `0x41 + nmask4_forest` (the verified `forest_neighbour` predicate)
+- **hills/mountains** (bit 0x20; 0x80 = mtn): PHYS0 `0x31`/`0x21 + nmask4_feat_hi`
 - **river** (bit 0x40): PHYS0 `0x96` (blue + tan banks)
-- **coast**: PHYS0 shore `0x01..0x0F` by water-neighbour mask
+- **coast** (O512, water side): a beach composed from the game's own coast
+  colours (sand/shallow/deep ocean sampled from PHYS0 `0x97`) on every
+  land-facing edge + corner — the 8×8 sub-cell selection table itself is not
+  byte-decoded, so this approximates it without inventing colours
+- elevation/feature bits are read from the **packed L1 byte** (stock `.MP`
+  leaves the separate feature layer empty; all hills/river/forest bits live in L1)
 - each `.SS` uses its **embedded palette** (VICEROY.PAL as a global DAC palette
   mis-colours the indices — verified)
 

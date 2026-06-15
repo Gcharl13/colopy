@@ -46,7 +46,6 @@ static int       g_terr_frame[32];      /* base terrain id -> TERRAIN.SS frame *
 static bool      g_have_sheet;
 
 /* PHYS0 sprite-index bases (byte-verified O513 + pixel-verified frames). */
-#define PH_COAST   0x68   /* + DIR4 idx: 0x68 N, 0x69 E, 0x6A S, 0x6B W */
 #define PH_MTN     0x21   /* + nmask4_feat_hi      */
 #define PH_HILL    0x31   /* + nmask4_feat_hi      */
 #define PH_FOREST  0x41   /* + nmask4_forest       */
