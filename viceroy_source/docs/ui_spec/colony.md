@@ -137,9 +137,23 @@ B4  PRESENT (0,8,199,?) if repaint                                              
   screen, B2=PARCH `(0,8,199,120)`, W1=WOODTILE via `texture_fill_rect`.  Verified
   pixel-for-pixel against `refs/ref_colony_interior.png` (header band, sandy plot,
   work-grid frame).
-- **TITLE (block T)** — needs `func_0268CE` ported (the STR leaves + printer 0xB0).
-- **WORKGRID per-cell, COLROW, SoL contents, MINIMAP tiles** — **DATA**: need a real
-  colony's colonist→tile assignments (`+0x70`, `0x8DF0`); fix the `0xCE0(col,r)` arg bug.
+- **TITLE (block T)** — DONE: `colony_paint_title` assembles "<name>, <season>
+  <year>, Gold: <n>" and centres it in UI green (renders "Jamestown, Spring 1492,
+  Gold: 1000").
+- **WORKGRID (block W)** — DONE 2026-06-15 (visual): `colony_render_workgrid_terrain`
+  renders the 3×3 surrounding terrain directly from the map layers (reusing the
+  map-walk base-ground logic) + colonist figures, produced-good icons and yield
+  amounts on each worked LAND tile, in the woodgrain frame. The byte-exact per-cell
+  resolve still wants the scene precompute (`0x8DF0`/`0x8D9E`).
+- **COLROW (block R)** — DONE: `colony_paint_colonist_row` draws the colonist faces
+  (`func_0091CC` sprites), the warehouse stock/bells/crosses bar-chart, and the
+  SoL/Tory gauge. Unblocked by the `colony_t` `pad_1b` struct fix (population/job/
+  profession arrays were misaligned by 1 byte) + activating `ctx` via `func_0082DC`.
+- **STOCKPILE quantities (P2)** — DONE: per-cell stock numbers from `+0x9A+i*2`.
+- **MINIMAP tiles (M3)** — DONE: `colony_render_minimap_contents` draws the
+  surrounding-terrain overview centred on the colony.
+- **SoL/ship panel (P1)** — DONE: mode-`[0x337]` text ("No Ships In Port" /
+  "Sons of Liberty").
 
 ## Required fixes (from the program, not from re-tracing asm)
 
