@@ -49,4 +49,8 @@ const terrain_info *terrain_palette(int *count);
  * Writes into buf and returns buf. */
 char *terrain_describe(uint8_t tile_byte, char *buf, int bufsz);
 
+/* Packed 0x00RRGGBB colour for the colored-tile fallback / minimap, keyed by
+ * base terrain id. */
+uint32_t terrain_color(uint8_t id);
+
 #endif /* MPEDIT_TERRAIN_H */

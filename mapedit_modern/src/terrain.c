@@ -73,6 +73,45 @@ const terrain_info *terrain_palette(int *count)
     return pal;
 }
 
+/* Colored-tile palette: chosen to read like the original minimap (greens for
+ * vegetation, blue water, tan desert, white arctic, gray mountains). */
+static const uint32_t TERRAIN_RGB[TERRAIN_ID_MAX] = {
+    [0]  = 0x9DB0A0,  /* Tundra    */
+    [1]  = 0xD9C18A,  /* Desert    */
+    [2]  = 0x9CCB6B,  /* Plains    */
+    [3]  = 0xB7C957,  /* Prairie   */
+    [4]  = 0x5FAE4B,  /* Grassland */
+    [5]  = 0x8AA03C,  /* Savannah  */
+    [6]  = 0x6B8E5A,  /* Marsh     */
+    [7]  = 0x5C7348,  /* Swamp     */
+    [8]  = 0x2F6B3A,  /* Boreal    */
+    [9]  = 0x6E8B3D,  /* Scrub     */
+    [10] = 0x3E7E3A,  /* Mixed     */
+    [11] = 0x4C8A39,  /* Broadleaf */
+    [12] = 0x2E6E40,  /* Conifer   */
+    [13] = 0x357A33,  /* Tropical  */
+    [14] = 0x3F6B4A,  /* Wetland   */
+    [15] = 0x276B34,  /* Rain      */
+    [16] = 0xF0F4F8,  /* Arctic    */
+    [17] = 0x8C9A6A,  /* Land(17)  */
+    [18] = 0xA98C5A,  /* Hills     */
+    [19] = 0x8C8C8C,  /* Mountains */
+    [20] = 0x9AA46A,  /* Land(20)  */
+    [21] = 0x7FA05A,  /* Land(21)  */
+    [22] = 0x9A8C6A,  /* Land(22)  */
+    [23] = 0x6FA050,  /* Land(23)  */
+    [24] = 0x000000,
+    [25] = 0x2A5FA8,  /* Ocean     */
+    [26] = 0x4E86C8,  /* Sea Lane  */
+};
+
+uint32_t terrain_color(uint8_t id)
+{
+    if (id >= TERRAIN_ID_MAX)
+        return 0x202020;
+    return TERRAIN_RGB[id];
+}
+
 char *terrain_describe(uint8_t tile_byte, char *buf, int bufsz)
 {
     uint8_t id = MP_TERRAIN_ID(tile_byte);
