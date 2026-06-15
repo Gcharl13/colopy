@@ -83,6 +83,9 @@ const char *ui_menu_item(int m, int i)
 #define C_MAP_VOID    RGB(0x10,0x28,0x50)
 #define C_GRID        RGB(0x00,0x00,0x00)
 #define C_MM_BORDER   RGB(0xC8,0x84,0x30)
+#define C_MM_FOREST   RGB(0x1C,0x6D,0x10)   /* minimap forest (dark green) */
+#define C_MM_HILL     RGB(0x9C,0x84,0x5C)   /* minimap hills  (tan-brown)  */
+#define C_MM_MTN      RGB(0xB4,0xA8,0x9C)   /* minimap mtns   (grey)       */
 #define C_DROP_FG     RGB(0xF0,0xE0,0xB0)
 
 static int clampb(int v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
@@ -228,8 +231,18 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     const mp_map *m = e->map;
     for (int y = 0; y < ch; y++)
         for (int x = 0; x < cw; x++) {
-            uint8_t id = MP_TERRAIN_ID(m->terrain[mp_idx(m, cx0 + x, cy0 + y)]);
-            fb_fill_rect(f, mmx + x * cell, mmy + y * cell, cell, cell, terrain_color(id));
+            /* per the original minimap (func_066BB0 / NAMES @COLORS roles): colour
+             * by CATEGORY — water, then mtn/hill (bit 0x20), then forest (ids
+             * 8..23), then base land — so elevation and forest read on the map. */
+            uint8_t b  = m->terrain[mp_idx(m, cx0 + x, cy0 + y)];
+            uint8_t id = MP_TERRAIN_ID(b);
+            uint32_t c;
+            if (id == 25 || id == 26)        c = terrain_color(id);           /* water */
+            else if (b & 0x20)               c = (b & 0x80) ? C_MM_MTN
+                                                            : C_MM_HILL;       /* mtn/hill */
+            else if (id >= 8 && id < 24)     c = C_MM_FOREST;                  /* forest */
+            else                             c = terrain_color(id);           /* land */
+            fb_fill_rect(f, mmx + x * cell, mmy + y * cell, cell, cell, c);
         }
     fb_rect(f, mmx - 2, mmy - 2, mmw + 4, mmh + 4, C_MM_BORDER);
     fb_rect(f, mmx - 1, mmy - 1, mmw + 2, mmh + 2, C_MM_BORDER);
