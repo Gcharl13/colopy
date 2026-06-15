@@ -842,21 +842,80 @@ void bar_row_flush(int x, int y, int x_limit, int spacing)
     }
 }
 
+/* ---- 32x24 weave textures (PARCH.SS sandy plot / WOODTILE.SS woodgrain) -----
+ * The DOS "texture block" at DGROUP:0x93F0 (slot [0x82C]) that the rect-fill
+ * leaves tile is a 0x20x0x18 (32x24) block.  The map-screen init decodes it
+ * from packed map layers into far memory (unported), but the SAME 32x24 weave
+ * ships as standalone assets: PARCH.SS (the sandy colony building-plot weave,
+ * master-palette indices 98..110) and WOODTILE.SS (the brown woodgrain frame /
+ * map sidebar, indices 130..140).  Both are single-frame 32x24 sheets whose
+ * pixels are already master-palette indices, so they tile directly onto the
+ * colony screen (which keeps the master palette -- COLONY.PIK has no palette).
+ * Verified: PARCH top indices {99,98,100,107} == the ref plot backdrop;
+ * WOODTILE top indices {134,132,135,137} == the ref work-grid frame. */
+enum { TEX_PARCH = 0, TEX_WOODTILE = 1, TEX_COUNT = 2 };
+static ss_sheet_t g_tex[TEX_COUNT];
+static int        g_tex_state[TEX_COUNT];      /* 0=unloaded 1=ok -1=failed */
+static const char *const g_tex_file[TEX_COUNT] = { "/PARCH.SS", "/WOODTILE.SS" };
+
+static const ss_sheet_t *tex_ready(int which)
+{
+    if (which < 0 || which >= TEX_COUNT) return 0;
+    if (g_tex_state[which] == 0) {
+        char path[512];
+        extern const char *viceroy_data_dir(void);
+        const char *dir = viceroy_data_dir();
+        size_t n = strlen(dir);
+        if (n > sizeof path - 16) n = sizeof path - 16;
+        memcpy(path, dir, n);
+        strcpy(path + n, g_tex_file[which]);
+        g_tex_state[which] = (ss_load(path, &g_tex[which]) == 0 &&
+                              g_tex[which].nframes > 0) ? 1 : -1;
+    }
+    return g_tex_state[which] == 1 ? &g_tex[which] : 0;
+}
+
+/* Tile a 32x24 weave across (x,y,w,h).  Phase anchored at screen (0,0):
+ * the source pixel for dest (sx,sy) is tex[(sy mod th)*tw + (sx mod tw)] --
+ * exactly the DOS strip copier's "(x,y) mod (32,24) anchored at the pushed
+ * (0,0)" behaviour (func_00E350 @0x523E..0x526E).  Pixels are master-palette
+ * indices copied straight through (SS_TRANSPARENT never occurs in a weave). */
+void tile_texture(int which, int x, int y, int w, int h)
+{
+    const ss_sheet_t *s = tex_ready(which);
+    if (!s) { return; }
+    const ss_frame_t *f = &s->frames[0];
+    int tw = (int)f->w, th = (int)f->h;
+    if (tw <= 0 || th <= 0) return;
+    uint8_t *fb = vid_framebuffer();
+    for (int r = 0; r < h; r++) {
+        int sy = y + r;
+        if (sy < 0 || sy >= VID_H) continue;
+        const uint8_t *srow = f->pixels + ((sy % th) * tw);
+        uint8_t *drow = fb + sy * VID_W;
+        for (int c = 0; c < w; c++) {
+            int sx = x + c;
+            if (sx < 0 || sx >= VID_W) continue;
+            drow[sx] = srow[sx % tw];
+        }
+    }
+}
+
 /* 0x181F:0x506 -> func_005234 (file 0x5234..0x5294): rect background fill.
  * DOS: when the texture-block slot [0x82C] is set (the map-screen init
  * overlay_0745F0 @0x0762C0 points it at the 0x20x0x18 block decoded into
  * DGROUP:0x93F0), TILE that texture across (x,y,w,h) via the strip copier
  * 0xBF5:0 (@0x523E..0x526E; func_00E350: phase = (x,y) mod (32,24) anchored
  * at the pushed (0,0), strips via 0xBAA:6) -- the terrain-weave backdrop
- * behind the colony work grid.  The decoded block lives in DOS far memory
- * with no host-side image (its 0x181F:0x254 layer-decode is unported), so
- * the texture path is NOT YET PORTABLE; MODERN: the byte-cited fallback path
- * (@0x5272..0x5293, taken when [0x82C]==0): flat fill with the caller's
- * colour via the fill leaf 0xB9E:0xA (regs ax=x dx=y bx=w; pushes desc4
- * [bp+0xC..6], h [bp+0x14], colour byte [bp+0x16]). */
+ * behind the colony work grid.  The decoded 0x93F0 block lives in DOS far
+ * memory, but it is the WOODTILE.SS weave (verified by index histogram), so
+ * MODERN tiles WOODTILE directly; the byte-cited flat-fill fallback path
+ * (@0x5272..0x5293, taken when [0x82C]==0) applies the caller's colour when
+ * the asset is unavailable. */
 void texture_fill_rect(int x, int y, int w, int h, int color)
 {
-    vid_box_fill(x, y, w, h, (uint8_t)color);
+    if (tex_ready(TEX_WOODTILE)) tile_texture(TEX_WOODTILE, x, y, w, h);
+    else                         vid_box_fill(x, y, w, h, (uint8_t)color);
 }
 
 /* ---- save/load map-layer bridge (integration 2026-06-10) -------------------

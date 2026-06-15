@@ -128,15 +128,24 @@ B4  PRESENT (0,8,199,?) if repaint                                              
   draw on top of it.
 - **BUILDINGS (block B, slots)** — DONE: real `0x8E82` levels → `ss_blit_remap`.
 - **STOCKPILE icons, FLAG, MINIMAP frame, SoL/ workgrid frames** — OK leaves, call them.
-- **SCENE_FILL (C4), plot backdrop (B2), workgrid backdrop (W1)** — need the real fill
-  leaves (`cc_fill_444` / `0x4FC`) wired, OR run from a populated `[0x835]`/context.
+- **SCENE_FILL (C4), plot backdrop (B2), workgrid backdrop (W1)** — DONE 2026-06-15:
+  the `0x93F0` texture block the fill leaves (`0x444`/`0x4FC`/`0x506`) tile is the
+  **PARCH.SS** (sandy plot, master indices 98..110) / **WOODTILE.SS** (woodgrain
+  frame, indices 130..140) 32×24 weave — both ship as standalone assets, so no DOS
+  far-memory decode is needed.  `tile_texture()` (render_glue.c) tiles them with the
+  phase anchored at screen (0,0), exactly the DOS strip copier.  C4=WOODTILE full
+  screen, B2=PARCH `(0,8,199,120)`, W1=WOODTILE via `texture_fill_rect`.  Verified
+  pixel-for-pixel against `refs/ref_colony_interior.png` (header band, sandy plot,
+  work-grid frame).
 - **TITLE (block T)** — needs `func_0268CE` ported (the STR leaves + printer 0xB0).
 - **WORKGRID per-cell, COLROW, SoL contents, MINIMAP tiles** — **DATA**: need a real
   colony's colonist→tile assignments (`+0x70`, `0x8DF0`); fix the `0xCE0(col,r)` arg bug.
 
 ## Required fixes (from the program, not from re-tracing asm)
 
-1. Wire `fill_rect`→`cc_fill_444` + plot fill `0x4FC` so C4/B2/W1 backdrops are real.
+1. ~~Wire `fill_rect`→`cc_fill_444` + plot fill `0x4FC` so C4/B2/W1 backdrops are
+   real.~~ — DONE 2026-06-15.  The `0x93F0` weave == PARCH.SS / WOODTILE.SS; tiled
+   via `tile_texture()`.  Plot/frame/header now render sandy+woodgrain.
 2. Port `func_0268CE` (block T) — assemble name/season/year/gold via the STR leaves.
 3. ~~Pass `(col,r)` to `0x181F:0xCE0` in WORKGRID (W5)~~ — DONE 2026-06-14. The
    work-grid still faults: next port `0x181F:0xB3C` to return `good_idx=−1` for

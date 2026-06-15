@@ -1051,11 +1051,15 @@ int main(int argc, char **argv)
                     printf("  headless  : colony layout -> %d/15 slots filled\n", n);
                 }
 
-                /* clear the framebuffer (the real backdrop is the func_02633E ->
-                 * 0x181F:0x444 textured blit from the COLONY.PIK draw-context; that
-                 * leaf + context are not yet wired, so the plot draws on black --
-                 * no manual fill stands in). */
-                memset(vid_framebuffer(), 0, VID_W * VID_H);
+                /* C4 SCENE_FILL (0,0,320,200): the composer's full-screen base.
+                 * The DOS func_02633E -> 0x181F:0x444 fill copies the bound
+                 * texture block (0x93F0), which is the WOODTILE.SS woodgrain
+                 * weave (verified by palette histogram == the ref work-grid
+                 * frame + header band).  Tile it as the brown frame base; the
+                 * sandy PARCH plot + COLONY.PIK landscape draw on top. */
+                {   extern void tile_texture(int, int, int, int, int);
+                    tile_texture(/*WOODTILE*/ 1, 0, 0, VID_W, VID_H);
+                }
                 /* Bottom-bar backdrop = the real COLONY.PIK asset (320x72), blitted
                  * at its documented screen position (bottom-aligned, y=128).  The
                  * stockpile/minimap/SoL panels below draw on top of it.  Set the

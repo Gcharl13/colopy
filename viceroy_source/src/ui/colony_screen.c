@@ -123,6 +123,13 @@ extern void blit_box_id(int x, int y, int w, int h, int id);       /* 0x181F:0x0
 extern void blit_sprite(int desc, int id, int x, int y);           /* 0x181F:0x0254 */
 extern void draw_text(int x, int y, const char *buf);              /* 0x181F:0x013C */
 extern void blit_band(int x, int y, int w, int h);                 /* 0x181F:0x00E2 */
+/* 32x24 weave tiler (render_glue.c): which 0=PARCH (sandy plot), 1=WOODTILE
+ * (woodgrain frame).  The DOS 0x4FC/0x506 fill leaves tile the 0x93F0 block;
+ * that block is the PARCH/WOODTILE weave (verified by palette histogram). */
+extern void tile_texture(int which, int x, int y, int w, int h);
+extern void draw_box(int x1, int y1, int x2, int y2, int color);   /* 0x181F:0xCE rect outline */
+#define TEX_PARCH     0
+#define TEX_WOODTILE  1
 
 /* The colony-screen entry that loads COLONY.PIK and enters screen-id 0x2C. */
 extern void enter_screen_view(int bx_screen_id);                   /* 0x181F:0x0772 */
@@ -373,7 +380,13 @@ void colony_paint_buildings(int repaint)
     int i;
 
     /* top-band backdrop fill + frame (region around y=7..8, w=199).
-     * @asm 0x027031 lcall 0x181F:0xCE ; 0x027044 lcall 0x181F:0x4FC. */
+     * @asm 0x027031 lcall 0x181F:0xCE  -> 1px outer frame (0,7)-(199,?)
+     * @asm 0x027044 lcall 0x181F:0x4FC -> framed weave fill (0,8,199,120):
+     *   the 0x4FC leaf tiles the 0x93F0 texture block, which is the PARCH.SS
+     *   sandy-parchment weave (master indices 98..110).  This is the sandy
+     *   building plot the buildings sit on (ref_colony_interior.png). */
+    draw_box(0, 7, 199, 128, 0);                       /* @asm 0x027031 outer frame, colour 0 */
+    tile_texture(TEX_PARCH, 0, 8, 199, 120);           /* @asm 0x027044 sandy plot (0,8,199,120) */
 
     /* === 15 building slots === */
     for (i = 0; i < 0x0F; i++) {                       /* @asm 0x02707B cmp [bp-8],0xF */
