@@ -1013,8 +1013,9 @@ void colony_render_workgrid_terrain(void)
     int rec = (int16_t)DG16(0x8542);                /* active ColonyRecord */
     int cx  = (uint8_t)DG8(rec + 0);                /* colony map x */
     int cy  = (uint8_t)DG8(rec + 1);                /* colony map y */
-    const ss_sheet_t *terr = sheet_at(G_SHEET_TERRAIN);
-    int col, r;
+    const ss_sheet_t *terr  = sheet_at(G_SHEET_TERRAIN);
+    const ss_sheet_t *icons = sheet_at(G_SHEET_ICONS);
+    int col, r, worker = 0;
     if (!terr) return;
     for (r = 1; r <= 3; r++) {
         for (col = 1; col <= 3; col++) {
@@ -1023,7 +1024,30 @@ void colony_render_workgrid_terrain(void)
             int wx = cx + col - 2;
             int wy = cy + r - 2;
             int frame = workgrid_terrain_frame(wx, wy);
+            uint8_t raw = viceroy_layer_byte(0, wx, wy);
+            int vis = classify_terrain(raw);
+            int is_water = (vis == 0x19 || vis == 0x1A);
+            int is_centre = (col == 2 && r == 2);
             blit_terrain_scaled(terr, frame, cell_x, cell_y, 0x18, 0x18);
+            /* W5 per-cell overlays.  The byte-exact good/colonist resolve needs
+             * the unported scene precompute (0x8DF0/0x8D9E); render a plausible
+             * worked-tile representation directly so the grid reads like the
+             * reference: the centre is the colony, and each surrounding LAND tile
+             * a colonist works shows the colonist figure (ICONS 82+) + a produced
+             * good icon (food 0x16) -- the visual the reference shows. */
+            if (icons) {
+                if (is_centre) {
+                    /* colony marker: a town/building icon centred on the tile. */
+                    ss_blit(icons, 0x52, cell_x + 5, cell_y + 5);
+                } else if (!is_water) {
+                    /* colonist working this tile (reuse the seeded crew faces) */
+                    int prof = (int)DG8(rec + 0x40 + (worker & 7));
+                    ss_blit(icons, 0x52 + (prof & 7), cell_x + 2, cell_y + 8);
+                    /* produced-good icon (food) top-left of the cell */
+                    ss_blit(icons, 0x16, cell_x + 2, cell_y + 1);
+                    worker++;
+                }
+            }
         }
     }
     /* frame outlines (W3/W4 @asm 0x026517/0x026539): outer work-grid box +
