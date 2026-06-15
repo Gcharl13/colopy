@@ -518,12 +518,28 @@ void colony_paint_sol_panel(int repaint)
      * @asm 0x02814F push 0x30,0x5B,0x82,0xD3 / 0x02815A call 0x7ED3. */
     fill_rect(0xD3, 0x82, 0x5B, 0x30);                 /* @asm 0x02814F..0x02815A (211,130,91,48) */
 
-    /* mode dispatch on [0x337].  @asm 0x02815F mov al,[0x337]. */
-    switch (g_panel_mode_337) {                        /* @asm 0x02815F / jump table 0x028178 */
-        case 0:  ; break;                              /* SoL %:    @asm 0x028167 call 0x7DC0 */
-        case 1:  ; break;                              /* ship:     @asm 0x02816D call 0x7E60 */
-        case 2:  ; break;                              /* message:  @asm 0x028173 call 0x7EB0 */
-        default: ; break;
+    /* mode dispatch on [0x337].  @asm 0x02815F mov al,[0x337].
+     * The panel content centres in the (211,130,91,48) region; the text draws
+     * over the COLONY.PIK landscape (the fill leaf is a no-op).  Cream text. */
+    {   int cx = 0xD3 + 0x5B/2;                        /* panel centre x = 256 */
+        int cream = ui_color_for(0xF0, 0xE0, 0xB0);
+        vid_text_color(cream);
+        switch (g_panel_mode_337) {                    /* @asm 0x02815F / jump table 0x028178 */
+            case 1: {                                  /* ship in port  @asm 0x02816D 0x7E60 */
+                const char *s = "No Ships In Port";
+                int tw = vid_text_width(s);
+                vid_text_xy(s, cx - tw/2, 0x8C);       /* y=140 */
+                break;
+            }
+            case 2:  break;                            /* message:  @asm 0x028173 call 0x7EB0 */
+            case 0:  default: {                        /* SoL %:    @asm 0x028167 call 0x7DC0 */
+                /* Sons of Liberty membership header (the % bars are a leaf). */
+                const char *s = "Sons of Liberty";
+                int tw = vid_text_width(s);
+                vid_text_xy(s, cx - tw/2, 0x86);       /* y=134 */
+                break;
+            }
+        }
     }
 
     /* re-blit panel on repaint.  @asm 0x028182 cmp [bp+6],0 /

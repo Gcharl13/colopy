@@ -1117,6 +1117,8 @@ int main(int argc, char **argv)
                     DGS16(0x8D72) = 0;                 /* no extra tile units in count */
                     DGS16(0x8D7C) = -1;                /* no selected colonist (skip box) */
                     DGS16(0x8D7E) = -1;                /* no hovered colonist */
+                    DGS16(0x0337) = 1;                 /* SoL panel mode 1 = ship-in-port
+                                                        * -> "No Ships In Port" (ref) */
                     /* Warehouse / production bars (func_0270D0 row y=0xA3):
                      * stock [0x8DC8] vs cap [0x8E0A], surplus marker [0x8E32]/
                      * [0xA895], bells [0x8DEA] (id 0x39) and crosses [0x8DEC]
