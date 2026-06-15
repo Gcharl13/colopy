@@ -175,13 +175,39 @@ static void draw_nations(void)
     vid_present();
 }
 
+static int g_diff_sel;   /* selected difficulty 0..4 (Discoverer default) */
+
 static void draw_difficulty(void)
 {
+    /* 5 difficulty portraits baked into DIFFICUL.PIK; the level-0 (Discoverer)
+     * slot is the top-centre green box at (128,7)-(195,96) in ref_difficulty.png.
+     * Top row 3, bottom row 2 (centred); ~88px stride. */
+    static const int port_x[5] = { 128,  40, 216,  84, 172 };
+    static const int port_y[5] = {   7,   7,   7,  104, 104 };
+    static const char *const diff_name[5] = {
+        "Discoverer", "Explorer", "Conquistador", "Governor", "Viceroy" };
+    const int PW = 67, PH = 89;
     draw_bg();
     if (g_have_font) {
+        extern int  ui_color_for(int,int,int);
+        extern void draw_box(int,int,int,int,int);
         uint8_t dark = 0, light = 15;
+        int green = ui_color_for(0x40, 0xC0, 0x40);
+        int s = g_diff_sel % 5;
         pal_pick_text_colors(&dark, &light);
-        draw_text_center("Choose Difficulty Level (1-5)", 184, light);
+        /* title top-left, green, two lines. */
+        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = (uint8_t)green;
+        ff_draw(&g_font, "Choose",            22, 24, 1);
+        ff_draw(&g_font, "Difficulty Level",  12, 33, 1);
+        /* green selection box around the chosen level's portrait. */
+        draw_box(port_x[s]-1, port_y[s]-1, port_x[s]+PW, port_y[s]+PH, green);
+        /* level name over the selected portrait, green. */
+        {   int tw = ff_text_width(&g_font, diff_name[s], 1);
+            ff_draw(&g_font, diff_name[s], port_x[s] + (PW - tw)/2,
+                    port_y[s] + PH/2 - 4, 1);
+        }
+        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
+        draw_text_center("Click here when done (Esc)", 188, light);
     }
     vid_present();
 }
@@ -628,7 +654,10 @@ static int shell_loop(void)
             break;
         case SH_DIFFICULTY:
             if (k == 27) { if (load_bg("NATIONS.PIK") == 0) draw_nations(); screen = SH_NATIONS; break; }
+            if (k == KEY_LEFT)  { g_diff_sel = (g_diff_sel+4)%5; if (load_bg("DIFFICUL.PIK")==0) draw_difficulty(); }
+            if (k == KEY_RIGHT) { g_diff_sel = (g_diff_sel+1)%5; if (load_bg("DIFFICUL.PIK")==0) draw_difficulty(); }
             if (k >= '1' && k <= '5') {
+                g_diff_sel = k - '1';
                 DG8(0x53A6) = (uint8_t)(k - '1');        /* difficulty 0..4 */
                 printf("shell: difficulty = %d -- entering the map\n", k - '1');
                 if (enter_map() == 0) screen = SH_MAP;
@@ -984,6 +1013,11 @@ int main(int argc, char **argv)
             draw_nations();
             vid_screenshot_ppm("viceroy_nations.ppm");
             printf("  headless  : nations frame -> viceroy_nations.ppm\n");
+        }
+        if (load_bg("DIFFICUL.PIK") == 0) {
+            draw_difficulty();
+            vid_screenshot_ppm("viceroy_difficulty.ppm");
+            printf("  headless  : difficulty frame -> viceroy_difficulty.ppm\n");
         }
         /* (colony-screen frame added after the map frame below) */
         DG16(0x5398) = 0;                          /* England, for the sidebar */
