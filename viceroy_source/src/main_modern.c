@@ -1163,6 +1163,146 @@ int main(int argc, char **argv)
                 printf("  headless  : colony frame -> viceroy_colony.ppm\n");
             }
 
+            /* === EUROPE trade-port frame (europe_screen.c composer order) === */
+            {   extern void blit_sprite(int desc, int id, int x, int y);
+                extern void colony_paint_stockpile(int);
+                extern void draw_box(int,int,int,int,int);
+                extern int  ui_color_for(int,int,int);
+                extern void vid_text_color(int);
+                extern void vid_text_xy(const char*,int,int);
+                extern int  vid_text_width(const char*);
+                pik_image_t bg;
+                char bpath[512];
+                uint8_t *fb = vid_framebuffer();
+                snprintf(bpath, sizeof bpath, "%s/EUROPE.PIK", g_data);
+                memset(fb, 0, VID_W * VID_H);
+                /* (0) EUROPE.PIK full-screen harbor backdrop (320x200, own
+                 * palette).  The 16 stockpile cells + dock pilings + Exit emblem
+                 * are baked into the asset (@asm 0x031E4C fills below the title
+                 * strip; the PIK shows through). */
+                if (pik_load(bpath, &bg) == 0) {
+                    if (bg.has_pal) vid_set_palette(bg.pal);
+                    int w = bg.w < VID_W ? bg.w : VID_W;
+                    for (int yy = 0; yy < bg.h && yy < VID_H; yy++)
+                        memcpy(fb + yy * VID_W, bg.pixels + yy * bg.w, (size_t)w);
+                    pik_free(&bg);
+                }
+                /* (1) 16-commodity MARKET strip at y=181 (func_0310B4): identical
+                 * layout to the colony stockpile -- reuse it (ICONS frame 22+,
+                 * pitch 19, first cell x=1). */
+                colony_paint_stockpile(0);
+                /* (2) TITLE/PRICE banner (func_030F76): "Selling <Good> at <N>
+                 * Gold" in the top strip, UI green, centred (@asm 0x0310AD). */
+                {   const char *gname = viceroy_str(DG16(0x97C0 + (DG16(0x9E12)&15)*2));
+                    char banner[96];
+                    int price = 6 + (int)(DG16(0x9E12) & 7);   /* sample ask price */
+                    snprintf(banner, sizeof banner, "Selling %s at %d Gold",
+                             (gname && gname[0]) ? gname : "Sugar", price);
+                    int tw = vid_text_width(banner);
+                    vid_text_color(ui_color_for(0x52,0x8A,0x31));
+                    vid_text_xy(banner, (320 - tw)/2, 2);
+                }
+                /* (3) DOCK + 6 ships at anchor (func_0314DC): the in-port ships
+                 * blit ICONS frame 0x7B along the dock row.  @asm 0x031521 count
+                 * 6, sprite 0x7B @asm 0x03154F; dock scene at (143,118,81,60). */
+                {   for (int s = 0; s < 6; s++) {
+                        int sx = 150 + s * 12;        /* spread along the pier */
+                        int sy = 150;
+                        blit_sprite(0, 0x7B, sx, sy);
+                    }
+                }
+                /* (4) RECRUIT pool: 3 candidate slots, right column, base
+                 * (281,89), y-advance per slot (func_031DC8 @asm 0x031DDC).  Draw
+                 * the 3 raised button bevels (raised colours 0x30/0x39) with a
+                 * recruit face icon each. */
+                {   int by = 89;
+                    for (int s = 0; s < 3; s++) {
+                        draw_box(281, by, 281+36, by+10, 0x3A);  /* button bevel */
+                        blit_sprite(0, 0x52 + s, 283, by);
+                        by += 12;
+                    }
+                }
+                /* (5) outer screen frame (@asm 0x031EA0 box 0,0,320,200). */
+                draw_box(0, 0, 319, 199, 0);
+                vid_present();
+                vid_screenshot_ppm("viceroy_europe.ppm");
+                printf("  headless  : europe frame -> viceroy_europe.ppm\n");
+            }
+
+            /* === REPORT screen frame (report_screen.c: Religious Adviser, F2) ===
+             * The byte-traced report engine (rpt_draw_frame/rpt_blit_bg, resident
+             * leaves) is not ported, so compose the panel directly from what the
+             * report functions document: a WOODPANL wood backdrop, the sepia
+             * REPORT illustration inset, a title, and the cross-immigration meter
+             * (report_religious @asm 0x037958: meter of PowerRecord crosses_cur
+             * (+0x2E) of crosses_needed (+0x30)). */
+            {   extern void blit_sprite(int, int, int, int);
+                extern void draw_box(int,int,int,int,int);
+                extern int  ui_color_for(int,int,int);
+                extern void vid_text_color(int);
+                extern void vid_text_xy(const char*,int,int);
+                extern int  vid_text_width(const char*);
+                extern void tile_texture(int,int,int,int,int);
+                pik_image_t wp, ill;
+                char p1[512], p2[512];
+                uint8_t *fb = vid_framebuffer();
+                snprintf(p1, sizeof p1, "%s/WOODPANL.PIK", g_data);
+                snprintf(p2, sizeof p2, "%s/REPORT2.PIK", g_data);
+                memset(fb, 0, VID_W * VID_H);
+                /* WOODPANL wood backdrop (own palette ~= master, so ICONS draw
+                 * with correct colours on top). */
+                if (pik_load(p1, &wp) == 0) {
+                    if (wp.has_pal) vid_set_palette(wp.pal);
+                    int w = wp.w < VID_W ? wp.w : VID_W;
+                    for (int yy = 0; yy < wp.h && yy < VID_H; yy++)
+                        memcpy(fb + yy*VID_W, wp.pixels + yy*wp.w, (size_t)w);
+                    pik_free(&wp);
+                }
+                /* Sepia REPORT illustration in a framed inset (left), remapped to
+                 * the live (wood) palette so the woodcut shows as browns/tans. */
+                {   if (pik_load(p2, &ill) == 0) {
+                        int ix = 18, iy = 30, iw = 150, ih = 120;
+                        for (int yy = 0; yy < ih; yy++)
+                            for (int xx = 0; xx < iw; xx++) {
+                                int sx = xx * ill.w / iw, sy = yy * ill.h / ih;
+                                int p = ill.pixels[sy*ill.w + sx];
+                                int rr = ill.pal[p*3], gg = ill.pal[p*3+1], bb = ill.pal[p*3+2];
+                                fb[(iy+yy)*VID_W + (ix+xx)] =
+                                    (uint8_t)ui_color_for(rr, gg, bb);
+                            }
+                        draw_box(ix-1, iy-1, ix+iw, iy+ih, 0);  /* inset frame */
+                        pik_free(&ill);
+                    }
+                }
+                /* Title banner. */
+                {   const char *t = "Religious Advisor";
+                    int tw = vid_text_width(t);
+                    vid_text_color(ui_color_for(0xF0,0xE0,0xB0));   /* parchment cream */
+                    vid_text_xy(t, (320 - tw)/2, 8);
+                }
+                /* Cross-immigration meter (report_religious crosses_cur of
+                 * crosses_needed): a row of progress cells -- filled (cream) for
+                 * crosses earned, empty (outline) for those still needed. */
+                {   extern void vid_box_fill(int,int,int,int,uint8_t);
+                    int cur = 3, nxt = 10, cx = 185, cy = 60;
+                    int cream = ui_color_for(0xF0,0xE0,0xB0);
+                    for (int k = 0; k < nxt; k++) {
+                        int bx0 = cx + (k%5)*22, by0 = cy + (k/5)*24;
+                        draw_box(bx0, by0, bx0 + 16, by0 + 18, 0);   /* cell frame */
+                        if (k < cur)
+                            vid_box_fill(bx0+2, by0+2, 13, 15, (uint8_t)cream);
+                    }
+                    char m[32];
+                    snprintf(m, sizeof m, "%d of %d crosses", cur, nxt);
+                    vid_text_color(cream);
+                    vid_text_xy(m, cx, cy + 56);
+                }
+                draw_box(0, 0, 319, 199, 0);
+                vid_present();
+                vid_screenshot_ppm("viceroy_report.ppm");
+                printf("  headless  : report frame -> viceroy_report.ppm\n");
+            }
+
             /* classifier self-test (headless): W=water, E=land+empty hold,
              * far-E edge = SAILHOME */
             {
