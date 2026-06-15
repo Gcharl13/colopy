@@ -2,3 +2,7 @@ build/
 *.o
 *.tmp
 ._*
+# generated, derived from the original game assets (regenerable via tools/)
+data/*.atlas
+data/*.png
+data/*.bin

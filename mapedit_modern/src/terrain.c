@@ -73,36 +73,38 @@ const terrain_info *terrain_palette(int *count)
     return pal;
 }
 
-/* Colored-tile palette: chosen to read like the original minimap (greens for
- * vegetation, blue water, tan desert, white arctic, gray mountains). */
+/* Colored-tile / minimap palette. These are the game's own colours, derived
+ * from VICEROY.PAL via the byte-verified TERRAIN_PAL_INDEX table (terrain id ->
+ * VGA palette index), so they match what Colonization draws on its minimap.
+ * @ref tools/render_map_v2.py TERRAIN_PAL_INDEX, VICEROY.PAL */
 static const uint32_t TERRAIN_RGB[TERRAIN_ID_MAX] = {
-    [0]  = 0x9DB0A0,  /* Tundra    */
-    [1]  = 0xD9C18A,  /* Desert    */
-    [2]  = 0x9CCB6B,  /* Plains    */
-    [3]  = 0xB7C957,  /* Prairie   */
-    [4]  = 0x5FAE4B,  /* Grassland */
-    [5]  = 0x8AA03C,  /* Savannah  */
-    [6]  = 0x6B8E5A,  /* Marsh     */
-    [7]  = 0x5C7348,  /* Swamp     */
-    [8]  = 0x2F6B3A,  /* Boreal    */
-    [9]  = 0x6E8B3D,  /* Scrub     */
-    [10] = 0x3E7E3A,  /* Mixed     */
-    [11] = 0x4C8A39,  /* Broadleaf */
-    [12] = 0x2E6E40,  /* Conifer   */
-    [13] = 0x357A33,  /* Tropical  */
-    [14] = 0x3F6B4A,  /* Wetland   */
-    [15] = 0x276B34,  /* Rain      */
-    [16] = 0xF0F4F8,  /* Arctic    */
-    [17] = 0x8C9A6A,  /* Land(17)  */
-    [18] = 0xA98C5A,  /* Hills     */
-    [19] = 0x8C8C8C,  /* Mountains */
-    [20] = 0x9AA46A,  /* Land(20)  */
-    [21] = 0x7FA05A,  /* Land(21)  */
-    [22] = 0x9A8C6A,  /* Land(22)  */
-    [23] = 0x6FA050,  /* Land(23)  */
+    [0]  = 0xAEA5A5,  /* Tundra    (pal 20) */
+    [1]  = 0xCEB28D,  /* Desert    (pal 66) */
+    [2]  = 0xBABA40,  /* Plains    (pal 54) */
+    [3]  = 0xCE9534,  /* Prairie   (pal 60) */
+    [4]  = 0x69B248,  /* Grassland (pal 91) */
+    [5]  = 0x99CE69,  /* Savannah  (pal 40) */
+    [6]  = 0x59A534,  /* Marsh     (pal 43) */
+    [7]  = 0x1C7D10,  /* Swamp     (pal 46) */
+    [8]  = 0xAEA5A5,  /* Boreal    */
+    [9]  = 0xCEB28D,  /* Scrub     */
+    [10] = 0xBABA40,  /* Mixed     */
+    [11] = 0xCE9534,  /* Broadleaf */
+    [12] = 0x69B248,  /* Conifer   */
+    [13] = 0x99CE69,  /* Tropical  */
+    [14] = 0x59A534,  /* Wetland   */
+    [15] = 0x1C7D10,  /* Rain      */
+    [16] = 0xDADADA,  /* Arctic    (pal 15) */
+    [17] = 0x69B248,  /* extended  */
+    [18] = 0xAEA5A5,  /* Hills/extended */
+    [19] = 0x69B248,  /* Mountains/extended */
+    [20] = 0x69B248,  /* extended  */
+    [21] = 0x99CE69,  /* extended  */
+    [22] = 0x59A534,  /* extended  */
+    [23] = 0x69B248,  /* extended  */
     [24] = 0x000000,
-    [25] = 0x2A5FA8,  /* Ocean     */
-    [26] = 0x4E86C8,  /* Sea Lane  */
+    [25] = 0x202C89,  /* Ocean     (pal 45) */
+    [26] = 0x384C9D,  /* Sea Lane  (pal 93) */
 };
 
 uint32_t terrain_color(uint8_t id)

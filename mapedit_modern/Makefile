@@ -13,7 +13,7 @@ CORE_SRC := src/mp.c src/terrain.c src/txt.c src/editor.c
 CORE_OBJ := $(CORE_SRC:src/%.c=$(BUILD)/%.o)
 
 # Renderer (backend-independent): framebuffer + sprites + ui layout.
-RENDER_SRC := src/framebuffer.c src/sprites.c src/ui.c
+RENDER_SRC := src/framebuffer.c src/sprites.c src/ss.c src/ui.c
 RENDER_OBJ := $(RENDER_SRC:src/%.c=$(BUILD)/%.o)
 
 AMER2 ?= ../raw/COLONIZE/AMER2.MP

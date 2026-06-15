@@ -175,7 +175,8 @@ int main(int argc, char **argv)
     e->cursor_x = e->map->width / 2;
     e->cursor_y = e->map->height / 2;
 
-    sprite_load_phys0(".");   /* falls back to colored tiles */
+    const char *adir = getenv("COLONIZE_DIR");
+    sprite_load_phys0(adir ? adir : ".");   /* real art if present, else colored */
 
     ui_view v;
     ui_view_init(&v);

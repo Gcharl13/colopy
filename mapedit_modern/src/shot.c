@@ -24,7 +24,8 @@ int main(int argc, char **argv)
     mp_map *m = mp_load(argv[1], err, sizeof err);
     if (!m) { fprintf(stderr, "load failed: %s\n", err); return 1; }
 
-    sprite_load_phys0("../raw/COLONIZE");   /* falls back to colored tiles */
+    const char *adir = getenv("COLONIZE_DIR");
+    sprite_load_phys0(adir ? adir : "../raw/COLONIZE");  /* real art if present */
 
     editor *e = editor_create(m);
     ui_view v;
