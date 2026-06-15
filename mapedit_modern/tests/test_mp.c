@@ -96,9 +96,13 @@ static void test_terrain_table(void)
     CHECK(n == 21, "palette has 21 entries (got %d)", n);
 
     char buf[64];
-    terrain_describe((uint8_t)(3 | MP_FLAG_ROADRIVER | MP_FLAG_FOREST), buf, sizeof buf);
-    CHECK(strstr(buf, "Prairie") && strstr(buf, "forest") && strstr(buf, "road/river"),
-          "describe: '%s'", buf);
+    /* verified classification: bit 0x20 = hills/mtn (0x80 = mtn); 0x40 = river */
+    terrain_describe((uint8_t)(21 | 0x20), buf, sizeof buf);
+    CHECK(strstr(buf, "Hills"), "describe hills: '%s'", buf);
+    terrain_describe((uint8_t)(21 | 0x20 | 0x80), buf, sizeof buf);
+    CHECK(strstr(buf, "Mountains"), "describe mtn: '%s'", buf);
+    terrain_describe((uint8_t)(2 | MP_FLAG_ROADRIVER), buf, sizeof buf);
+    CHECK(strstr(buf, "Plains") && strstr(buf, "river"), "describe river: '%s'", buf);
 }
 
 int main(int argc, char **argv)

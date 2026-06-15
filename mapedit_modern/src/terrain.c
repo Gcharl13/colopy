@@ -114,20 +114,34 @@ uint32_t terrain_color(uint8_t id)
     return TERRAIN_RGB[id];
 }
 
+/* @FORESTED names, indexed by base id 8..15 (paired with unforested 0..7). */
+static const char *FORESTED_NAME[8] = {
+    "Boreal", "Scrub", "Mixed", "Broadleaf", "Conifer", "Tropical", "Wetland", "Rain"
+};
+
+/* Classify a tile byte the way the original status bar does (verified against
+ * AMER2: tile (29,36) = 0x35 = id21 +0x20 -> "Hills"). Priority: hills/
+ * mountains (bit 0x20; 0x80 = mountains) override the base; forested ids 8..23
+ * map to their forest name; then base terrain. River = bit 0x40. */
 char *terrain_describe(uint8_t tile_byte, char *buf, int bufsz)
 {
     uint8_t id = MP_TERRAIN_ID(tile_byte);
-    const terrain_info *t = terrain_by_id(id);
-    const char *name = t ? t->name : "?";
+    const char *name;
+
+    if (tile_byte & 0x20) {                       /* hills / mountains */
+        name = (tile_byte & 0x80) ? "Mountains" : "Hills";
+    } else if (id >= 8 && id < 16) {              /* forested variant */
+        name = FORESTED_NAME[id - 8];
+    } else if (id >= 16 && id < 24) {             /* extended forested */
+        name = FORESTED_NAME[id & 7];
+    } else {
+        const terrain_info *t = terrain_by_id(id);
+        name = t ? t->name : "?";
+    }
 
     int k = snprintf(buf, (size_t)bufsz, "%s", name);
     if (k < 0) { if (bufsz) buf[0] = 0; return buf; }
-
-    if (tile_byte & MP_FLAG_FOREST)
-        k += snprintf(buf + k, (size_t)(bufsz - k > 0 ? bufsz - k : 0), " +forest");
     if (tile_byte & MP_FLAG_ROADRIVER)
-        k += snprintf(buf + k, (size_t)(bufsz - k > 0 ? bufsz - k : 0), " +road/river");
-    if (tile_byte & MP_FLAG_PRIME)
-        k += snprintf(buf + k, (size_t)(bufsz - k > 0 ? bufsz - k : 0), " +prime");
+        snprintf(buf + k, (size_t)(bufsz - k > 0 ? bufsz - k : 0), " +river");
     return buf;
 }
