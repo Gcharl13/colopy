@@ -1093,6 +1093,13 @@ int main(int argc, char **argv)
                     colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
                     colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
                     colony_paint_buildings(0);         /* func_02701C: the building plot */
+                    /* WORKGRID (func_0264A8) is NOT drawn here: colony_cell_
+                     * production now resolves unworked cells to good_idx=-1 (the
+                     * func_0091CC fault is gone), but the painter still reads the
+                     * surrounding-tile precompute (0x8DF0/0x8D9E set by the scene
+                     * blocks func_025C32/func_026374) which the synthetic test
+                     * colony does not build -- it faults on that uninitialised
+                     * tile data.  Wiring it needs a real colony (per colony.md). */
                 }
                 (void)colony_screen_render; (void)ui_color_for; (void)vid_box_fill;
                 vid_present();

@@ -71,10 +71,16 @@ W5  LOOP r=1..3, col=1..3  (inner 3×3; edge ring skipped):  cell_x=col*24+200, 
       IF good_idx≥0: SPRITE_SH worker-pip func_0091CC(good) @ (cell_x+12,cell_y+6) 0x02677C  DATA
       IF not minimized: hilite selected good [0x8D7C] (BOX 0xA) + cursor cell    0x026810    OK
     FIXED 2026-06-14: 0xCE0 now called (col,r) / cursor ([0x330],[0x332]) — was the arg crash.
-    STILL BLOCKED: 0xB3C is a stub returning 0, so good_idx=0 (not −1) for EMPTY tiles →
-      the good_idx≥0 gate wrongly runs func_0091CC(cellgood=−1) and faults. Porting 0xB3C
-      (per-cell produced-good+amount resolver, returns good_idx=−1 for unworked tiles) is the
-      real unblock; until then the whole work-grid stays skipped (needs a real colony anyway).
+    FIXED 2026-06-15: 0xB3C unworked-case ported (colony_cell_production): good_idx defaults to
+      −1 for cells whose 0x8DF0 flags lack the colonist bit, so the good_idx≥0 paths (goods
+      icon + func_0091CC worker pip) correctly skip — that fault is gone.
+    STILL BLOCKED (needs a real colony): the work-grid is NOT wired into the headless test frame
+      because the SCENE PRECOMPUTE — func_025C32 (setup A) + func_026374 (setup B), which fill the
+      surrounding-tile tables 0x8DF0 (per-cell flags) / 0x8D9E (per-cell tile id) and the data
+      0xCE0 reads — is NOT YET PORTED. Without it 0xCE0(col,r) returns garbage, so cellgood is
+      undefined and func_0090C8(cellgood) at @asm 0x0266C1 (called every cell, before the good_idx
+      gate) reads out of range. Porting func_026374 (the 3×3 ring precompute) is the remaining
+      unblock; the per-cell goods/amount still also need a real colony's colonist→tile data.
 
 --- COLROW block (func_0270D0): colonist portrait row (mid-band) ----------------------------------
 R1  FILL   (0,130,120,48)               -               -        band            0x0270D6    DATA

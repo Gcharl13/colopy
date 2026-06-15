@@ -1101,6 +1101,30 @@ extern int  vid_text_width(const char *s);               /* 0x181F:0x204 */
  * 0xF, gated on [0x334]/[0x7EE]/[0x32E]/[0x8D54]/[0x8D7E]).  Optional close
  * re-blit 0x181F:0xE2 = blit_band(0xC8,8,0x78,0x78).
  * ============================================================================ */
+
+/* 0x181F:0xB3C -- per-cell produced-good + amount resolver.  Returns the
+ * sprite-stack amount and writes *good_idx (the produced good_id, or -1 when
+ * the cell is NOT worked).  The DOS body resolves a colonist's profession +
+ * terrain yield; that full formula is pending the production-chain port.  The
+ * UNWORKED case is byte-correct and is the documented work-grid unblock: a
+ * cell whose 0x8DF0 flags lack the colonist bit (0x80) produces nothing, so
+ * good_idx=-1 and amount=0 (which makes the goods/worker-pip paths skip,
+ * avoiding the func_0091CC(cellgood=-1) fault).  For a worked cell we fall
+ * back to the cell's terrain good (0xCE0) with amount 0 so the goods icon
+ * still shows until the yield formula lands. */
+static int colony_cell_production(int col, int r, int *good_idx)
+{
+    int flags = DG8(0x8DF0 + col * 5 + r);     /* same table as the caller */
+    if (!(flags & 0x80)) {                      /* no colonist -> unworked */
+        *good_idx = -1;
+        return 0;
+    }
+    {   int cg = (int8_t)overlay_call_181F_0CE0(col, r);  /* cell terrain good */
+        *good_idx = (cg >= 0) ? cg : -1;
+    }
+    return 0;                                   /* amount pending yield port */
+}
+
 void colony_draw_workgrid(int show_close_button)
 {
     struct colony_t far *c = ctx;
@@ -1201,9 +1225,12 @@ void colony_draw_workgrid(int show_close_button)
             }
 
             /* ---- worked-good resolve + draw  @asm 0x02668F..0x02675B ---- */
-            good_idx = 0;     /* [bp-0x10] OUT-param of the 0xB3C call below
-                               * (the void-arity stub cannot write it yet) */
-            count = (int)overlay_call_181F_0B3C();  /* @asm 0x02669B (col,r,&good_idx,1) -> amount [bp-0xE] */
+            good_idx = -1;    /* [bp-0x10] OUT-param of 0xB3C: default = UNWORKED
+                               * cell (-1).  Previously defaulted to 0, which made
+                               * the good_idx>=0 paths run func_0091CC(cellgood) and
+                               * fault on empty tiles.  colony_cell_production now
+                               * writes the produced good (or leaves -1). */
+            count = colony_cell_production(col, r, &good_idx); /* @asm 0x02669B 0x181F:0xB3C (col,r,&good_idx,1) -> amount [bp-0xE] */
             good_spr = good_idx + 0x17;             /* @asm 0x0266A6/0x0266A9 [bp-2] */
             cellgood = (int8_t)overlay_call_181F_0CE0(col, r); /* @asm 0x0266AF/B2 push col,r; 0x0266B5 -> cell good (cbw [bp-0x20]) */
             if (func_0090C8((uint16_t)cellgood) == 8) /* @asm 0x0266C1 push ax (cellgood); lcall 0x181F:0xC0E
