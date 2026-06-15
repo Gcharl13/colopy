@@ -226,9 +226,9 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     fb_text(f, tx, y, line, C_GREEN, 1); y += 22;
 
     fb_text(f, tx, y, "Selected:", C_GREEN, 1); y += 14;
-    fb_fill_rect(f, tx, y, 34, 30, terrain_color(e->selected_id));
-    fb_rect(f, tx, y, 34, 30, RGB(0x20,0x10,0x08));
-    y += 36;
+    sprite_draw_tile(f, tx, y, 32, e->selected_id);   /* real terrain sprite */
+    fb_rect(f, tx, y, 32, 32, RGB(0x20,0x10,0x08));
+    y += 38;
     snprintf(line, sizeof line, "(%s)", sel ? sel->name : "?");
     fb_text(f, tx, y, line, C_GREEN, 1); y += 22;
 
@@ -310,7 +310,7 @@ static void render_tile_select(fb *f, const editor *e)
     for (int i = 0; i < count; i++) {
         int x, y;
         ts_entry_rect(px, py, i, &x, &y);
-        fb_fill_rect(f, x, y, 22, 22, terrain_color(pal[i].id));
+        sprite_draw_tile(f, x, y, 22, pal[i].id);   /* real terrain sprite */
         fb_rect(f, x, y, 22, 22, RGB(0x20,0x10,0x08));
         uint32_t fg = (pal[i].id == e->selected_id) ? C_GOLD_HOT : C_DROP_FG;
         if (pal[i].id == e->selected_id)
