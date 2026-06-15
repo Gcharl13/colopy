@@ -214,20 +214,8 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
         sprite_draw_tile(f, px, py, tp, b);   /* colored fallback (+ markers) */
     }
 
-    if (is_water_id(id)) {
-        /* Coast (O512): a water tile facing land gets the beach on the edges
-         * facing land. PHYS0 shore frame 0x01..0x0F by land-neighbour mask
-         * (N=8 S=4 W=2 E=1). */
-        if (g_have_sheet) {
-            int lm = (!water_at(m, tx, ty - 1) ? 8 : 0)
-                   | (!water_at(m, tx, ty + 1) ? 4 : 0)
-                   | (!water_at(m, tx - 1, ty) ? 2 : 0)
-                   | (!water_at(m, tx + 1, ty) ? 1 : 0);
-            if (lm)
-                blit_phys0(f, px, py, tp, PH_SHORE + lm);
-        }
-        return;
-    }
+    if (is_water_id(id))
+        return;   /* coast beach is drawn on the LAND side, below */
 
     if (!g_have_sheet) {
         /* colored fallback already drew forest/river markers; add a halo coast */
@@ -258,7 +246,13 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
      * — stock maps have none. */
     if (b & MP_FLAG_ROADRIVER)
         blit_phys0(f, px, py, tp, 0x96);
-    (void)river_nmask8; (void)water_nmask;
+
+    /* 5. coast beach: a LAND tile facing water gets the shore sprite on its
+     * water-facing edges (PHYS0 0x01..0x0F by water-neighbour mask). */
+    int wm = water_nmask(m, tx, ty);
+    if (wm)
+        blit_phys0(f, px, py, tp, PH_SHORE + wm);
+    (void)river_nmask8;
 }
 
 /* ---- context-free single-tile draw (palette/swatches/fallback) ---- */

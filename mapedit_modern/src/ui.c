@@ -93,8 +93,11 @@ void ui_view_init(ui_view *v)
 
 int ui_tile_px(const ui_view *v)
 {
-    int t = UI_MAP_W / UI_ZOOM_TILES[v->zoom];
-    return t < 1 ? 1 : t;
+    /* Crisp integer ratios of the native 16px tile (4,8,16,32) so PHYS0/TERRAIN
+     * sprites blit with no fractional smearing — matching the DOS look. The
+     * closest zoom is native 16px; the next is a clean 2x. */
+    static const int TPX[4] = { 4, 8, 16, 32 };
+    return TPX[v->zoom & 3];
 }
 
 void ui_clamp_scroll(ui_view *v, const editor *e)
