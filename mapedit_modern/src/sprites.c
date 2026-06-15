@@ -60,6 +60,27 @@ static long color_dist(uint32_t a, uint32_t b)
     return dr * dr + dg * dg + db * db;
 }
 
+/* TERRAIN.SS base-ground cell, byte-verified from the resident blits' shared
+ * helper func_03436 (render_glue.c terrain_cell_transform):
+ *   code 0x11 or 0x09 -> 8 ; code >= 8 -> code-0xF ; else code. */
+static int terrain_cell_transform(int code)
+{
+    if (code == 0x11 || code == 0x09) return 8;
+    if (code >= 8) return code - 0xF;
+    return code;
+}
+
+/* O513 base-ground id (6b): land_base = vis<0x18 ? vis&7 : vis, with the
+ * unforested Desert group (vis&7==1, not forested) remapped to 0x11. */
+static int land_base_of(uint8_t id)
+{
+    int vis = id & 0x1F;
+    int forested = (vis >= 8 && vis < 0x18);
+    int lb = (vis < 0x18) ? (vis & 7) : vis;
+    if (lb == 1 && !forested) lb = 0x11;
+    return lb;
+}
+
 bool sprite_load_phys0(const char *colonize_dir)
 {
     char path[1024];
@@ -72,21 +93,13 @@ bool sprite_load_phys0(const char *colonize_dir)
     if (!g_have_sheet)
         return false;
 
-    /* Match each base terrain id to the closest TERRAIN.SS frame by colour. */
+    /* Base terrain id -> TERRAIN.SS frame via the verified transform (the cells
+     * are 0-based frames in sheet order). */
     for (int id = 0; id < 32; id++) {
-        g_terr_frame[id] = -1;
-        const terrain_info *t = terrain_by_id((uint8_t)id);
-        if (!t) continue;
-        uint32_t want = terrain_color((uint8_t)id);
-        long best = 0x7FFFFFFF; int bestk = -1;
-        for (int k = 0; k < g_terrain->count; k++) {
-            uint32_t avg = frame_avg(&g_terrain->frames[k]);
-            if (!avg) continue;
-            long d = color_dist(avg, want);
-            if (d < best) { best = d; bestk = k; }
-        }
-        g_terr_frame[id] = bestk;
+        int frame = terrain_cell_transform(land_base_of((uint8_t)id));
+        g_terr_frame[id] = (frame >= 0 && frame < g_terrain->count) ? frame : -1;
     }
+    (void)frame_avg; (void)color_dist;
     return true;
 }
 
@@ -115,11 +128,6 @@ static void blit_phys0(fb *f, int px, int py, int tp, int idx)
 /* ---- terrain predicates over the L1 byte ---- */
 static int is_water_id(uint8_t id)  { return id == 25 || id == 26; }
 static int is_forest_id(uint8_t id) { return id >= 8 && id < 24; }
-static uint8_t base_ground_id(uint8_t id)
-{
-    if (is_forest_id(id)) return id & 7;     /* unforested ground under canopy */
-    return id;
-}
 
 static uint8_t L1at(const mp_map *m, int x, int y)
 {
@@ -174,9 +182,9 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
     uint8_t b  = m->terrain[mp_idx(m, tx, ty)];
     uint8_t id = MP_TERRAIN_ID(b);
 
-    /* 1. base ground */
+    /* 1. base ground (verified terrain_cell_transform mapping, per id) */
     if (g_have_sheet) {
-        int bf = g_terr_frame[base_ground_id(id)];
+        int bf = g_terr_frame[id];
         fb_fill_rect(f, px, py, tp, tp, terrain_color(id));
         if (bf >= 0) blit_frame(f, px, py, tp, &g_terrain->frames[bf]);
     } else {
@@ -237,8 +245,8 @@ void sprite_draw_tile(fb *f, int px, int py, int tp, uint8_t tile_byte)
     uint32_t base = terrain_color(id);
     fb_fill_rect(f, px, py, tp, tp, base);
 
-    if (g_have_sheet && g_terr_frame[base_ground_id(id)] >= 0)
-        blit_frame(f, px, py, tp, &g_terrain->frames[g_terr_frame[base_ground_id(id)]]);
+    if (g_have_sheet && g_terr_frame[id] >= 0)
+        blit_frame(f, px, py, tp, &g_terrain->frames[g_terr_frame[id]]);
 
     if (tp >= 6 && !is_water_id(id) && !g_have_sheet) {
         uint32_t mottle = darken(base, 12);
