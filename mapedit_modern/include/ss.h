@@ -22,6 +22,11 @@ typedef struct {
     ss_frame *frames;
 } ss_sheet;
 
+/* Install the master 256-colour palette (0x00RRGGBB) used by the VGA DAC at
+ * render time (VICEROY.PAL). When set, ss_load colours all sprites with it
+ * instead of each sheet's embedded palette — matching how the game draws. */
+void ss_set_master_palette(const uint32_t *argb256);
+
 /* Load + fully decode a .SS file. Returns NULL on failure. */
 ss_sheet *ss_load(const char *path);
 void      ss_free(ss_sheet *s);

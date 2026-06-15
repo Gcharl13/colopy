@@ -81,9 +81,32 @@ static int land_base_of(uint8_t id)
     return lb;
 }
 
+/* Load VICEROY.PAL (256 * 4 bytes, 6-bit RGB) as the master DAC palette. */
+static void load_master_palette(const char *colonize_dir)
+{
+    char path[1024];
+    snprintf(path, sizeof path, "%s/VICEROY.PAL", colonize_dir);
+    FILE *fp = fopen(path, "rb");
+    if (!fp) return;
+    uint8_t raw[1024];
+    size_t n = fread(raw, 1, sizeof raw, fp);
+    fclose(fp);
+    if (n < 1024) return;
+    uint32_t pal[256];
+    for (int k = 0; k < 256; k++) {
+        int r = raw[k*4]*255/63, g = raw[k*4+1]*255/63, b = raw[k*4+2]*255/63;
+        pal[k] = ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
+    }
+    ss_set_master_palette(pal);
+}
+
 bool sprite_load_phys0(const char *colonize_dir)
 {
     char path[1024];
+    /* Each .SS uses its own embedded palette (VICEROY.PAL as a master DAC
+     * palette produces wrong colours for the sprite indices). */
+    ss_set_master_palette(NULL);
+    (void)load_master_palette;
     snprintf(path, sizeof path, "%s/TERRAIN.SS", colonize_dir);
     g_terrain = ss_load(path);
     snprintf(path, sizeof path, "%s/PHYS0.SS", colonize_dir);
@@ -192,7 +215,17 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
     }
 
     if (is_water_id(id)) {
-        /* water tiles: coast composes from land neighbours in the land path */
+        /* Coast (O512): a water tile facing land gets the beach on the edges
+         * facing land. PHYS0 shore frame 0x01..0x0F by land-neighbour mask
+         * (N=8 S=4 W=2 E=1). */
+        if (g_have_sheet) {
+            int lm = (!water_at(m, tx, ty - 1) ? 8 : 0)
+                   | (!water_at(m, tx, ty + 1) ? 4 : 0)
+                   | (!water_at(m, tx - 1, ty) ? 2 : 0)
+                   | (!water_at(m, tx + 1, ty) ? 1 : 0);
+            if (lm)
+                blit_phys0(f, px, py, tp, PH_SHORE + lm);
+        }
         return;
     }
 
@@ -219,15 +252,8 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
         blit_phys0(f, px, py, tp, hm + feat_hi_nmask(m, tx, ty));
     }
 
-    /* (No roads on a stock map: roads come from the in-game road-connectivity
-     * pass, which is empty on AMER2; the brown 0x51/0x52 road sprites are not
-     * drawn here.) */
-    (void)river_nmask8;
-
-    /* 5. coast beach on edges facing water */
-    int wm = water_nmask(m, tx, ty);
-    if (wm)
-        blit_phys0(f, px, py, tp, PH_SHORE + wm);   /* 0x01..0x0F */
+    /* (No roads on a stock map; coast is drawn on the water side, above.) */
+    (void)river_nmask8; (void)water_nmask;
 }
 
 /* ---- context-free single-tile draw (palette/swatches/fallback) ---- */

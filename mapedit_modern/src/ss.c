@@ -15,6 +15,16 @@
 
 #define TRANS_INDEX 0xFD
 
+static uint32_t g_master[256];
+static int      g_have_master;
+
+void ss_set_master_palette(const uint32_t *argb256)
+{
+    if (!argb256) { g_have_master = 0; return; }
+    for (int i = 0; i < 256; i++) g_master[i] = argb256[i];
+    g_have_master = 1;
+}
+
 static uint8_t *read_file(const char *path, size_t *len)
 {
     FILE *f = fopen(path, "rb");
@@ -189,12 +199,18 @@ ss_sheet *ss_load(const char *path)
     free(buf);
     if (!ok) { for (int i = 0; i < 4; i++) free(sec[i]); return NULL; }
 
-    /* palette: 256 * RGB6 -> RGB8 */
+    /* palette: the master VGA palette if installed (how the game draws), else
+     * this sheet's own embedded section-2 palette. */
     uint32_t pal[256];
-    const uint8_t *pr = sec[2];
-    for (int k = 0; k < 256; k++) {
-        int r = pr[k * 3] * 255 / 63, g = pr[k * 3 + 1] * 255 / 63, b = pr[k * 3 + 2] * 255 / 63;
-        pal[k] = ((uint32_t)0xFF << 24) | ((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b;
+    if (g_have_master) {
+        for (int k = 0; k < 256; k++)
+            pal[k] = 0xFF000000u | (g_master[k] & 0xFFFFFFu);
+    } else {
+        const uint8_t *pr = sec[2];
+        for (int k = 0; k < 256; k++) {
+            int r = pr[k*3]*255/63, g = pr[k*3+1]*255/63, b = pr[k*3+2]*255/63;
+            pal[k] = 0xFF000000u | ((uint32_t)r<<16) | ((uint32_t)g<<8) | (uint32_t)b;
+        }
     }
 
     const uint8_t *ft = sec[1];
