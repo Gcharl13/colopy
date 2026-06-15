@@ -1054,6 +1054,17 @@ int main(int argc, char **argv)
                     DGS16(0x8D72) = 0;                 /* no extra tile units in count */
                     DGS16(0x8D7C) = -1;                /* no selected colonist (skip box) */
                     DGS16(0x8D7E) = -1;                /* no hovered colonist */
+                    /* Warehouse / production bars (func_0270D0 row y=0xA3):
+                     * stock [0x8DC8] vs cap [0x8E0A], surplus marker [0x8E32]/
+                     * [0xA895], bells [0x8DEA] (id 0x39) and crosses [0x8DEC]
+                     * (id 0x3F).  Seed plausible values so the bar-chart row
+                     * renders like ref_colony_interior.png. */
+                    DGS16(0x8DC8) = 60;                /* warehouse stock */
+                    DGS16(0x8E0A) = 100;               /* warehouse capacity */
+                    DGS16(0x8E32) = 0;                 /* no over-cap surplus path */
+                    DG8  (0xA895) = 60;                /* stock (byte mirror) */
+                    DGS16(0x8DEA) = 8;                 /* bells produced */
+                    DGS16(0x8DEC) = 3;                 /* crosses produced */
                 }
                 /* Activate colony 0: this sets BOTH the DOS-compat slot
                  * [0x8542]/[0x8DC6] AND the C global `ctx` (host pointer) that
