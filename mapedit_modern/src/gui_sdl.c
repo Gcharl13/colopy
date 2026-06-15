@@ -176,7 +176,9 @@ int main(int argc, char **argv)
     e->cursor_y = e->map->height / 2;
 
     const char *adir = getenv("COLONIZE_DIR");
-    sprite_load_phys0(adir ? adir : ".");   /* real art if present, else colored */
+    adir = adir ? adir : ".";
+    sprite_load_phys0(adir);   /* real art if present, else colored */
+    ui_load_fonts(adir);       /* real game fonts if present, else 8x8 */
 
     ui_view v;
     ui_view_init(&v);
