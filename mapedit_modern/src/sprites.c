@@ -211,16 +211,10 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
         blit_phys0(f, px, py, tp, hm + feat_hi_nmask(m, tx, ty));
     }
 
-    /* 4. river (terrain bit 0x40) */
-    if (b & MP_FLAG_ROADRIVER) {
-        int r = river_nmask8(m, tx, ty);
-        if (r == 0) {
-            blit_phys0(f, px, py, tp, PH_RIVER0);
-        } else {
-            for (int i = 0; i < 8; i++)
-                if (r & (1 << i)) blit_phys0(f, px, py, tp, PH_RIVER + i);
-        }
-    }
+    /* (No roads on a stock map: roads come from the in-game road-connectivity
+     * pass, which is empty on AMER2; the brown 0x51/0x52 road sprites are not
+     * drawn here.) */
+    (void)river_nmask8;
 
     /* 5. coast beach on edges facing water */
     int wm = water_nmask(m, tx, ty);
