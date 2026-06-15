@@ -54,6 +54,11 @@ struct colony_t {
     uint8_t  owner_power;      /* +0x1A  owning power (0..3 European; 4..7 NPCs)
                                 * @ref colony_turn_update @ 0xA3E1 — selects entry
                                 *      in g_table_543F (stride 0x34) */
+    uint8_t  pad_1b;           /* +0x1B  (was MISSING: its absence shifted every
+                                * field from flags_at_1c onward down by 1, so
+                                * c->population landed at C-offset 0x1E not 0x1F
+                                * and the colonist-row painter read pop=0.  All
+                                * @offset comments below are now byte-accurate.) */
     uint8_t  flags_at_1c;      /* +0x1C  bit-flags (bit 1, 2, 4 affect production)
                                 * @ref compute_colony_center_yields @ 0xA222 — bits 2/4 give bonuses */
     uint8_t  pad_1d_1e[2];     /* +0x1D..0x1E  not yet decoded */

@@ -1034,13 +1034,35 @@ int main(int argc, char **argv)
                     for (int b = 0; jamestown_name[b]; b++)   /* name field +2 */
                         DG8(rec + 2 + b) = (uint8_t)jamestown_name[b];
                     DG8(rec + 2 + (int)sizeof(jamestown_name) - 1) = 0;
-                    DG8(rec + 0x1F) = 10;              /* Jamestown population (header) */
-                    /* NB: the work-grid / colonist-row painters iterate population
-                     * over the colonist arrays, which the test colony does not
-                     * populate -- they are skipped in this headless frame. */
+                    DG8(rec + 0x1F) = 8;               /* Jamestown population (header) */
+                    /* Colonist roster: the colonist-row painter (func_0270D0)
+                     * iterates population over +0x20 (job/class) and +0x40
+                     * (profession), resolving each to an ICONS face sprite via
+                     * func_0091CC (small-id path: class<=0x13 -> func_0036B2(
+                     * profession), sprite = profession+0x52 for ordinary ids).
+                     * Seed a plausible 8-colonist crew (Statesman, Farmers,
+                     * Fishermen, Carpenter, Preacher) so the row renders real
+                     * faces.  job<=0x13 keeps the resolver on the in-colony path
+                     * (no external-unit lookup). */
+                    {   static const uint8_t job[8]  = { 1, 0, 0, 3, 3, 5, 8, 0 };
+                        static const uint8_t prof[8] = { 1, 0, 0, 3, 3, 5, 8, 0 };
+                        for (int b = 0; b < 8; b++) {
+                            DG8(rec + 0x20 + b) = job[b];   /* +0x20 job/class */
+                            DG8(rec + 0x40 + b) = prof[b];  /* +0x40 profession */
+                        }
+                    }
+                    DGS16(0x8D72) = 0;                 /* no extra tile units in count */
+                    DGS16(0x8D7C) = -1;                /* no selected colonist (skip box) */
+                    DGS16(0x8D7E) = -1;                /* no hovered colonist */
                 }
-                DG16(0x8DC6) = 0;                      /* active colony idx (q9fc reads this) */
-                DG16(0x8542) = (uint16_t)rec;          /* active ColonyRecord ptr (near offset) */
+                /* Activate colony 0: this sets BOTH the DOS-compat slot
+                 * [0x8542]/[0x8DC6] AND the C global `ctx` (host pointer) that
+                 * the colonist-row / SoL painters dereference (c = ctx; c->...).
+                 * Writing the DGROUP word alone leaves `ctx` NULL -> the row
+                 * painter faults on c->population.  @ref func_0082DC. */
+                {   extern int func_0082DC_logic_sz_118(uint16_t);
+                    func_0082DC_logic_sz_118(0);
+                }
                 DG16(0x8544) = 0;                      /* ptr segment = 0 -> maps into DGROUP */
                 DG16(0x538A) = 1492;                   /* game year (title: "Spring 1492") */
                 DG16(0x538C) = 0;                      /* season idx 0=Spring (SEASONS@0x9800) */
@@ -1103,12 +1125,15 @@ int main(int argc, char **argv)
                     extern void colony_paint_minimap(void);
                     extern void colony_paint_sol_panel(int);
                     extern void colony_paint_buildings(int);
+                    extern void colony_paint_colonist_row(int);
                     colony_paint_title();              /* func_0268CE: name/pop title (stub) */
                     colony_paint_stockpile(0);         /* func_0281D6: 16-good bottom bar */
                     colony_paint_flag(0,0);            /* func_02853C: nation flag panel */
                     colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
                     colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
                     colony_paint_buildings(0);         /* func_02701C: the building plot */
+                    colony_paint_colonist_row(0);      /* func_0270D0: colonist faces +
+                                                        * warehouse bars + SoL/Tory gauge */
                     /* WORKGRID (func_0264A8): the byte-exact per-cell loop reads
                      * the scene-precompute tables 0x8DF0/0x8D9E (func_025C32/
                      * func_026374, not yet ported) and faults on uninitialised
