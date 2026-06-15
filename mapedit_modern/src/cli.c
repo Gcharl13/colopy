@@ -52,7 +52,7 @@ static int cmd_info(const char *path)
 
     printf("file         : %s\n", path);
     printf("dimensions   : %u x %u  (%zu tiles)\n", m->width, m->height, n);
-    printf("on-disk size : %zu bytes  (header 4 + 3 layers + %zu trailer)\n",
+    printf("on-disk size : %zu bytes  (header 6 + 3 layers + %zu trailer)\n",
            mp_file_size(m), m->trailer_len);
     printf("overlays     : prime=%d road/river=%d forest=%d\n", prime, river, forest);
 

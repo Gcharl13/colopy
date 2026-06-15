@@ -7,16 +7,18 @@
  *
  *     offset  size            field
  *     ------  --------------  ---------------------------------------------
- *     0       u16  LE         width   (58 in AMER2)
- *     2       u16  LE         height  (72 in AMER2)
- *     4       W*H bytes       terrain layer  (layer 1)
- *     4+N     W*H bytes       feature layer  (layer 2)
- *     4+2N    W*H bytes       special layer  (layer 3 — land/water + resource)
- *     4+3N    rest            trailer (0x0000 in AMER2; preserved verbatim)
+ *     0       u16  LE         width    (58 in AMER2)
+ *     2       u16  LE         height   (72 in AMER2)
+ *     4       u16  LE         reserved (4 in AMER2; preserved verbatim)
+ *     6       W*H bytes       terrain layer  (layer 1)
+ *     6+N     W*H bytes       feature layer  (layer 2)
+ *     6+2N    W*H bytes       special layer  (layer 3 — land/water + resource)
  *
- * with N = width*height. AMER2 satisfies 4 + 3*4176 + 2 == 12534 exactly, and
- * the alignment is pinned by the sea-lane border rule: the left/right edge
- * columns decode to terrain id 26 (Sea Lane) only under the 4-byte header.
+ * with N = width*height. AMER2 satisfies 6 + 3*4176 == 12534 exactly (no
+ * trailer). The 6-byte header is pinned by ground truth: under it, the edge
+ * columns decode to a uniform ocean border AND tile (29,36) decodes to Hills
+ * (id 21, +0x20, !0x80) — exactly the "(Hills)" the original MAPEDIT shows
+ * there. A 4-byte header shifts every tile by 2 and mis-decodes that tile.
  *
  * The three layers are SEPARATE planar arrays (not interleaved): layer 2 is
  * nearly all-zero on a fresh map (features added during play) and layer 3
@@ -36,7 +38,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MP_HEADER_BYTES   4u
+#define MP_HEADER_BYTES   6u
 #define MP_LAYERS         3u
 
 /* terrain-byte (layer 1) decode */
@@ -48,6 +50,7 @@
 typedef struct {
     uint16_t width;
     uint16_t height;
+    uint16_t reserved;    /* 3rd header word (4 in AMER2); preserved verbatim */
     uint8_t *terrain;     /* layer 1, row-major: terrain[y*width + x] */
     uint8_t *feature;     /* layer 2 */
     uint8_t *special;     /* layer 3 */

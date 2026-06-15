@@ -38,14 +38,15 @@ mp_map *mp_new(uint16_t width, uint16_t height)
 
     m->width = width;
     m->height = height;
+    m->reserved = 4;       /* AMER2's 3rd header word */
     size_t n = (size_t)width * height;
 
     m->terrain = calloc(n, 1);
     m->feature = calloc(n, 1);
     m->special = calloc(n, 1);
-    /* AMER2 carries a 2-byte zero trailer; mirror that for fresh maps. */
-    m->trailer_len = 2;
-    m->trailer = calloc(m->trailer_len, 1);
+    /* AMER2 has no trailer (6-byte header + 3 layers fills the file). */
+    m->trailer_len = 0;
+    m->trailer = calloc(1, 1);
 
     if (!m->terrain || !m->feature || !m->special || !m->trailer) {
         mp_free(m);
@@ -116,6 +117,7 @@ mp_map *mp_load(const char *path, char *err, size_t errsz)
 
     uint16_t w = rd_u16le(buf + 0);
     uint16_t h = rd_u16le(buf + 2);
+    uint16_t reserved = rd_u16le(buf + 4);
     if (w == 0 || h == 0) {
         if (err) snprintf(err, errsz, "invalid dimensions %ux%u", w, h);
         free(buf);
@@ -141,6 +143,7 @@ mp_map *mp_load(const char *path, char *err, size_t errsz)
     }
     m->width = w;
     m->height = h;
+    m->reserved = reserved;
     m->terrain = malloc(n);
     m->feature = malloc(n);
     m->special = malloc(n);
@@ -172,6 +175,7 @@ int mp_save(const mp_map *m, const char *path)
     uint8_t hdr[MP_HEADER_BYTES];
     wr_u16le(hdr + 0, m->width);
     wr_u16le(hdr + 2, m->height);
+    wr_u16le(hdr + 4, m->reserved);
 
     size_t n = mp_tile_count(m);
     bool ok = fwrite(hdr, 1, sizeof hdr, f) == sizeof hdr
