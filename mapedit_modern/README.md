@@ -22,8 +22,9 @@ and `docs/MP_FORMAT.md`). This directory is the forward implementation.
 | GUI (wood menu, mini-map, status panel, tile-select popup, game fonts) | ✅ matches the original; screenshot-verified (`mpedit-shot`) |
 | Editor tools (paint/fill/overlays/undo/continents) | ✅ core done |
 | `mpedit` CLI (info/verify/ascii/new)| ✅ done |
-| SDL2 window/input (`make gui`)     | ✅ written; needs `libsdl2-dev` to build/run |
-| Native 320×200 pixel-exact scale   | ⏳ current window is larger but all content is at native pixel scale |
+| Native 320×200 layout (scaled up)  | ✅ renders at the original VGA resolution, upscaled `UI_SCALE`× — menu/map/panel proportions match; game fonts (FONTINTR/FONTTINY) |
+| SDL2 window/input (`make gui`)     | ✅ written (RenderSetLogicalSize for native coords); needs `libsdl2-dev` |
+| Editor model for hills/mtn painting | ⏳ painting sets base ids; hills/mtn-flag painting is a TODO |
 
 ## Rendering — faithful to the original (see docs/RENDER_SPEC.md)
 
