@@ -279,17 +279,28 @@ void colony_paint_stockpile(int repaint)
          * stores frames 0-based and Food is at frame 22 (0x16), not 23 (0x17).
          * Fix: use i + 0x16 so i=0 blits frame 22 (Food) first. */
         int sprite_id = i + 0x16;                      /* Food=22, Sugar=23, ..., Muskets=37 */
-        int qty       = ctx ? 0 : 0;                   /* colony +0x9A + i*2  @asm 0x028288 [bx+si+0x9A] */
+        int qty       = ctx ? (int)ctx->stockpile_9a[i] /* colony +0x9A + i*2 */
+                            : 0;                       /* @asm 0x028288 [bx+si+0x9A] */
         /* center on cell X using ICONS header width:
          *   half_w = ICONS_hdr[+0x152 + i*12] >> 1   (@asm 0x02825D / 0x028262)
          *   draw_x = x - half_w + 9                   (@asm 0x028264 / 0x028266) */
         {
             int half_w = sheet_frame_w_icons(sprite_id) >> 1;  /* @asm 0x02825D sar 1 */
             int draw_x = x - half_w + 9;                       /* @asm 0x028266 */
-            (void)qty;
             /* blit_sprite(&0x2DA8 = ICONS.SS desc, sprite_id, draw_x, y_icon).
              * @asm 0x028270 lcall 0x181F:0x254. */
             blit_sprite(/*&0x2DA8*/ 0, sprite_id, draw_x, y_icon);  /* @asm 0x028270 */
+            /* P2: quantity text under the icon (@asm 0x028288 reads rec[+0x9A+i*2],
+             * 0x0311AE sprintf+draw on the Europe twin).  Centre a small number in
+             * the 19px cell, baseline near the cell bottom (y~194). */
+            {   char q[8];
+                int qw, qx;
+                snprintf(q, sizeof q, "%d", qty);
+                qw = vid_text_width(q);
+                qx = x + 9 - (qw >> 1);
+                vid_text_color(ui_color_for(0xFF, 0xFF, 0xFF));  /* white qty */
+                vid_text_xy(q, qx, 0xC1);                        /* y=193 cell bottom */
+            }
         }
         x += 0x13;                                     /* @asm 0x02822A add [bp-0x6E],0x13 (pitch 19) */
     }
