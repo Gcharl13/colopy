@@ -61,6 +61,10 @@ typedef struct {
     int hover_x, hover_y; /* last hovered tile (-1 if outside map) */
 } ui_view;
 
+/* Load the authentic game fonts (FONTINTR/FONTTINY) from a COLONIZE dir.
+ * Optional — without it the built-in 8x8 font is used. */
+void ui_load_fonts(const char *colonize_dir);
+
 void ui_view_init(ui_view *v);
 int  ui_tile_px(const ui_view *v);          /* pixels per tile at current zoom */
 void ui_center_on(ui_view *v, const editor *e, int tx, int ty);

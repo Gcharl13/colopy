@@ -4,11 +4,45 @@
 #include "ui.h"
 #include "terrain.h"
 #include "sprites.h"
+#include "ff.h"
 
 #include <stdio.h>
 #include <string.h>
 
 const int UI_ZOOM_TILES[4] = { 120, 60, 30, 15 };
+
+/* Authentic game fonts (loaded from COLONIZE if available; else the built-in
+ * 8x8 font is used). FONTINTR = menus/titles, FONTTINY = panel/status. */
+static ff_font *g_menu_font;     /* FONTINTR.FF */
+static ff_font *g_panel_font;    /* FONTTINY.FF */
+#define MENU_FSCALE   1
+#define PANEL_FSCALE  2
+
+void ui_load_fonts(const char *colonize_dir)
+{
+    char path[1024];
+    snprintf(path, sizeof path, "%s/FONTINTR.FF", colonize_dir);
+    g_menu_font = ff_load(path);
+    snprintf(path, sizeof path, "%s/FONTTINY.FF", colonize_dir);
+    g_panel_font = ff_load(path);
+}
+
+/* Text helpers: use the game font when loaded, else the built-in 8x8 font. */
+static int panel_text(fb *f, int x, int y, const char *s, uint32_t c)
+{
+    if (g_panel_font) return ff_draw(f, g_panel_font, x, y, s, c, PANEL_FSCALE);
+    return fb_text(f, x, y, s, c, 1);
+}
+static int menu_text(fb *f, int x, int y, const char *s, uint32_t c)
+{
+    if (g_menu_font) return ff_draw(f, g_menu_font, x, y, s, c, MENU_FSCALE);
+    return fb_text(f, x, y, s, c, 1);
+}
+static int menu_text_w(const char *s)
+{
+    if (g_menu_font) return ff_text_width(g_menu_font, s) * MENU_FSCALE;
+    return fb_text_w(s, 1);
+}
 
 /* ---- menu model (matches MAPMENU.TXT @GAME/@VIEW/@CUP/@HELP) ---- */
 static const char *MENU_TITLES[UI_MENU_COUNT] = { "Editor", "View", "Map", "Help" };
@@ -69,7 +103,7 @@ static void draw_wood(fb *f, int x0, int y0, int w, int h)
 /* ---- menu-bar geometry: Editor/View/Map left, Help right-aligned ---- */
 static void menu_rect(int m, int *x, int *w)
 {
-    int tw = fb_text_w(MENU_TITLES[m], 1);
+    int tw = menu_text_w(MENU_TITLES[m]);
     if (m == 3) {                       /* Help, right-aligned */
         *x = UI_WIN_W - tw - 16;
         *w = tw + 12;
@@ -77,7 +111,7 @@ static void menu_rect(int m, int *x, int *w)
     }
     int cx = 16;
     for (int i = 0; i < m; i++)
-        cx += fb_text_w(MENU_TITLES[i], 1) + 28;
+        cx += menu_text_w(MENU_TITLES[i]) + 28;
     *x = cx;
     *w = tw + 12;
 }
@@ -217,28 +251,28 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     terrain_describe(cur, desc, sizeof desc);
 
     snprintf(line, sizeof line, "Size: (%d, %d)", e->map->width, e->map->height);
-    fb_text(f, tx, y, line, C_GREEN, 1); y += 13;
+    panel_text(f, tx, y, line, C_GREEN); y += 14;
     snprintf(line, sizeof line, "Curs: (%d, %d)", e->cursor_x, e->cursor_y);
-    fb_text(f, tx, y, line, C_GREEN, 1); y += 22;
+    panel_text(f, tx, y, line, C_GREEN); y += 24;
 
-    fb_text(f, tx, y, "Terrain at cursor:", C_GREEN, 1); y += 13;
+    panel_text(f, tx, y, "Terrain at cursor:", C_GREEN); y += 14;
     snprintf(line, sizeof line, "(%s)", desc);
-    fb_text(f, tx, y, line, C_GREEN, 1); y += 22;
+    panel_text(f, tx, y, line, C_GREEN); y += 24;
 
-    fb_text(f, tx, y, "Selected:", C_GREEN, 1); y += 14;
+    panel_text(f, tx, y, "Selected:", C_GREEN); y += 15;
     sprite_draw_tile(f, tx, y, 32, e->selected_id);   /* real terrain sprite */
     fb_rect(f, tx, y, 32, 32, RGB(0x20,0x10,0x08));
     y += 38;
     snprintf(line, sizeof line, "(%s)", sel ? sel->name : "?");
-    fb_text(f, tx, y, line, C_GREEN, 1); y += 22;
+    panel_text(f, tx, y, line, C_GREEN); y += 24;
 
-    fb_text(f, tx, y, "Shift-Left:  Paint", C_GREEN, 1); y += 13;
-    fb_text(f, tx, y, "Shift-Right: Pick up", C_GREEN, 1); y += 22;
+    panel_text(f, tx, y, "Shift-Left:  Paint", C_GREEN); y += 14;
+    panel_text(f, tx, y, "Shift-Right: Pick up", C_GREEN); y += 24;
 
     snprintf(line, sizeof line, "Fill radius: %d", e->fill_radius);
-    fb_text(f, tx, y, line, C_GREEN, 1); y += 13;
+    panel_text(f, tx, y, line, C_GREEN); y += 14;
     snprintf(line, sizeof line, "Coast Protect: %s", e->coast_protect ? "ON" : "OFF");
-    fb_text(f, tx, y, line, C_GREEN, 1);
+    panel_text(f, tx, y, line, C_GREEN);
 }
 
 /* ---- menu bar + dropdowns ---- */
@@ -250,10 +284,10 @@ static void render_menubar(fb *f, const ui_view *v)
     for (int m = 0; m < UI_MENU_COUNT; m++) {
         int x, w;
         menu_rect(m, &x, &w);
-        fb_text(f, x, 5, MENU_TITLES[m], C_GOLD, 1);
+        menu_text(f, x, 5, MENU_TITLES[m], C_GOLD);
         /* brighter first letter (accelerator) */
         char acc[2] = { MENU_TITLES[m][0], 0 };
-        fb_text(f, x, 5, acc, C_GOLD_HOT, 1);
+        menu_text(f, x, 5, acc, C_GOLD_HOT);
     }
 
     if (v->menu_open >= 0) {
@@ -263,14 +297,14 @@ static void render_menubar(fb *f, const ui_view *v)
         int x = mx - 6, y = UI_MENU_H;
         int w = 16;
         for (int i = 0; i < n; i++) {
-            int iw = fb_text_w(MENU_ITEMS[m][i], 1) + 20;
+            int iw = menu_text_w(MENU_ITEMS[m][i]) + 20;
             if (iw > w) w = iw;
         }
         if (x + w > UI_WIN_W) x = UI_WIN_W - w;
         draw_wood(f, x, y, w, n * 14 + 6);
         fb_rect(f, x, y, w, n * 14 + 6, RGB(0xC8,0x84,0x30));
         for (int i = 0; i < n; i++)
-            fb_text(f, x + 8, y + 5 + i * 14, MENU_ITEMS[m][i], C_DROP_FG, 1);
+            menu_text(f, x + 8, y + 4 + i * 14, MENU_ITEMS[m][i], C_DROP_FG);
     }
 }
 
@@ -300,12 +334,12 @@ static void render_tile_select(fb *f, const editor *e)
     draw_wood(f, px, py, pw, ph);
     fb_rect(f, px, py, pw, ph, RGB(0xC8,0x84,0x30));
     fb_rect(f, px + 1, py + 1, pw - 2, ph - 2, RGB(0xC8,0x84,0x30));
-    fb_text(f, px + 12, py + 8, "Map Tile Select", C_GOLD_HOT, 1);
+    menu_text(f, px + 12, py + 8, "Map Tile Select", C_GOLD_HOT);
 
     int count = 0;
     const terrain_info *pal = terrain_palette(&count);
     for (int g = 0; g < 3; g++)
-        fb_text(f, px + 14 + g * 116, py + 28 - 14 + 14, GROUP_NAME[g], C_GOLD, 1);
+        panel_text(f, px + 14 + g * 116, py + 28, GROUP_NAME[g], C_GOLD);
 
     for (int i = 0; i < count; i++) {
         int x, y;
@@ -315,9 +349,9 @@ static void render_tile_select(fb *f, const editor *e)
         uint32_t fg = (pal[i].id == e->selected_id) ? C_GOLD_HOT : C_DROP_FG;
         if (pal[i].id == e->selected_id)
             fb_rect(f, x - 2, y - 2, 26, 26, C_GOLD_HOT);
-        fb_text(f, x + 26, y + 7, pal[i].name, fg, 1);
+        panel_text(f, x + 26, y + 8, pal[i].name, fg);
     }
-    fb_text(f, px + 12, py + ph - 16, "click a tile  (Esc to close)", C_GREEN_DIM, 1);
+    panel_text(f, px + 12, py + ph - 16, "click a tile  (Esc to close)", C_GREEN_DIM);
 }
 
 void ui_render(fb *f, const editor *e, const ui_view *v)
@@ -353,11 +387,11 @@ int ui_hit_menu_item(const ui_view *v, int mx, int my)
     menu_rect(m, &mx0, &mw);
     int x = mx0 - 6, y = UI_MENU_H, w = 16;
     for (int i = 0; i < n; i++) {
-        int iw = fb_text_w(MENU_ITEMS[m][i], 1) + 20;
+        int iw = menu_text_w(MENU_ITEMS[m][i]) + 20;
         if (iw > w) w = iw;
     }
     if (x + w > UI_WIN_W) x = UI_WIN_W - w;
-    if (mx < x || mx >= x + w || my < y + 5 || my >= y + 5 + n * 14)
+    if (mx < x || mx >= x + w || my < y + 4 || my >= y + 4 + n * 14)
         return -1;
     int item = (my - y - 5) / 14;
     return (item >= 0 && item < n) ? item : -1;

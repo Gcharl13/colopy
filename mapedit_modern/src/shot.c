@@ -25,7 +25,9 @@ int main(int argc, char **argv)
     if (!m) { fprintf(stderr, "load failed: %s\n", err); return 1; }
 
     const char *adir = getenv("COLONIZE_DIR");
-    sprite_load_phys0(adir ? adir : "../raw/COLONIZE");  /* real art if present */
+    adir = adir ? adir : "../raw/COLONIZE";
+    sprite_load_phys0(adir);   /* real art if present */
+    ui_load_fonts(adir);       /* real game fonts if present */
 
     editor *e = editor_create(m);
     ui_view v;
