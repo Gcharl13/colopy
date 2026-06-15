@@ -1044,6 +1044,12 @@ int main(int argc, char **argv)
                 DG16(0x8544) = 0;                      /* ptr segment = 0 -> maps into DGROUP */
                 DG16(0x538A) = 1492;                   /* game year (title: "Spring 1492") */
                 DG16(0x538C) = 0;                      /* season idx 0=Spring (SEASONS@0x9800) */
+                /* Colony map position (+0/+1): the work-grid reads it to pick the
+                 * 3x3 surrounding map tiles.  Place at the coastal land tile the
+                 * move-test starts from (26,36) so the grid shows a real land/sea
+                 * mix from the loaded map layers. */
+                DG8(rec + 0) = 26;                     /* colony map x */
+                DG8(rec + 1) = 36;                     /* colony map y */
 
                 colony_draw_random_layout();           /* fills 0x8E82/0x8D62 from the bits */
                 {   /* report the laid-out slots */
@@ -1097,13 +1103,17 @@ int main(int argc, char **argv)
                     colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
                     colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
                     colony_paint_buildings(0);         /* func_02701C: the building plot */
-                    /* WORKGRID (func_0264A8) is NOT drawn here: colony_cell_
-                     * production now resolves unworked cells to good_idx=-1 (the
-                     * func_0091CC fault is gone), but the painter still reads the
-                     * surrounding-tile precompute (0x8DF0/0x8D9E set by the scene
-                     * blocks func_025C32/func_026374) which the synthetic test
-                     * colony does not build -- it faults on that uninitialised
-                     * tile data.  Wiring it needs a real colony (per colony.md). */
+                    /* WORKGRID (func_0264A8): the byte-exact per-cell loop reads
+                     * the scene-precompute tables 0x8DF0/0x8D9E (func_025C32/
+                     * func_026374, not yet ported) and faults on uninitialised
+                     * tile data.  Render the 3x3 surrounding terrain directly
+                     * from the map layers instead (reuses the proven map-walk
+                     * base-ground logic) so the work grid shows real terrain +
+                     * its frame -- the colonist/production overlays still need
+                     * the precompute (per colony.md). */
+                    {   extern void colony_render_workgrid_terrain(void);
+                        colony_render_workgrid_terrain();
+                    }
                 }
                 (void)colony_screen_render; (void)ui_color_for; (void)vid_box_fill;
                 vid_present();

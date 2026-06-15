@@ -918,6 +918,83 @@ void texture_fill_rect(int x, int y, int w, int h, int color)
     else                         vid_box_fill(x, y, w, h, (uint8_t)color);
 }
 
+/* ---- colony work-grid 3x3 surrounding-terrain render -----------------------
+ * The colony screen's upper-right work grid (func_0264A8) shows the 3x3 map
+ * tiles around the colony.  The byte-exact path drives off the scene-precompute
+ * tables 0x8DF0/0x8D9E (func_025C32/func_026374), which are not yet ported, so
+ * this renders the surrounding terrain DIRECTLY from the map layers, reusing the
+ * proven map-walk base-ground logic (tile_chain.c step 6b):
+ *   vis = classify_terrain(raw);  land_base = vis<0x18 ? (vis&7) : vis  (the
+ *   Plains-group 0x11 special-case folds back to a base frame), water -> 10/11.
+ * Each 16x16 TERRAIN.SS base frame is scaled 1.5x to fill a 24x24 cell so the
+ * grid reads like ref_colony_interior.png (cells at col*0x18+0xC8, row*0x18+8).
+ * The centre cell is the colony tile (drawn as terrain; the buildings panel to
+ * the left already shows the structures). */
+extern int classify_terrain(uint8_t raw);          /* 0x181F:0x6AA */
+extern int terrain_cell_transform_pub(int code);    /* exposed below */
+int terrain_cell_transform_pub(int code) { return terrain_cell_transform(code); }
+
+static int workgrid_terrain_frame(int wx, int wy)
+{
+    uint8_t raw = viceroy_layer_byte(0, wx, wy);
+    int vis = classify_terrain(raw);
+    int land_base;
+    if (vis == 0x19 || vis == 0x1A)                 /* renderer water ids */
+        return terrain_cell_transform(vis);         /* -> frame 10/11 */
+    land_base = (vis < 0x18) ? (vis & 7) : vis;     /* @tile_chain 6b */
+    return terrain_cell_transform(land_base);
+}
+
+/* nearest-neighbour blit of a 16x16 (TILE) frame scaled into a dst_w x dst_h
+ * cell at (dx,dy).  Master-palette indices copied straight (no remap); the
+ * sheet's transparent marker is honoured. */
+static void blit_terrain_scaled(const ss_sheet_t *s, int frame,
+                                int dx, int dy, int dst_w, int dst_h)
+{
+    if (!s || frame < 0 || frame >= s->nframes) return;
+    const ss_frame_t *f = &s->frames[frame];
+    int sw = (int)f->w, sh = (int)f->h;
+    if (sw <= 0 || sh <= 0) return;
+    uint8_t *fb = vid_framebuffer();
+    for (int r = 0; r < dst_h; r++) {
+        int yy = dy + r;
+        if (yy < 0 || yy >= VID_H) continue;
+        int sy = r * sh / dst_h;
+        const uint8_t *srow = f->pixels + sy * sw;
+        uint8_t *drow = fb + yy * VID_W;
+        for (int c = 0; c < dst_w; c++) {
+            int xx = dx + c;
+            if (xx < 0 || xx >= VID_W) continue;
+            uint8_t p = srow[c * sw / dst_w];
+            if (p != SS_TRANSPARENT) drow[xx] = p;
+        }
+    }
+}
+
+void colony_render_workgrid_terrain(void)
+{
+    int rec = (int16_t)DG16(0x8542);                /* active ColonyRecord */
+    int cx  = (uint8_t)DG8(rec + 0);                /* colony map x */
+    int cy  = (uint8_t)DG8(rec + 1);                /* colony map y */
+    const ss_sheet_t *terr = sheet_at(G_SHEET_TERRAIN);
+    int col, r;
+    if (!terr) return;
+    for (r = 1; r <= 3; r++) {
+        for (col = 1; col <= 3; col++) {
+            int cell_x = col * 0x18 + 0xC8;          /* 224 / 248 / 272 */
+            int cell_y = r   * 0x18 + 8;             /* 32 / 56 / 80    */
+            int wx = cx + col - 2;
+            int wy = cy + r - 2;
+            int frame = workgrid_terrain_frame(wx, wy);
+            blit_terrain_scaled(terr, frame, cell_x, cell_y, 0x18, 0x18);
+        }
+    }
+    /* frame outlines (W3/W4 @asm 0x026517/0x026539): outer work-grid box +
+     * inner 3x3 box, colour 0 (black). */
+    draw_box(0xC7, 7, 0x13F, 0x80, 0);              /* outer (199,7)-(319,128) */
+    draw_box(0xDF, 0x1F, 0x128, 0x68, 0);           /* inner (223,31)-(296,104) */
+}
+
 /* ---- save/load map-layer bridge (integration 2026-06-10) -------------------
  * The serializers' externs (DOS layer ptrs at [0x15C..0x168], byte count at
  * [0x180]) become the attached host layers. Layer 3 = the computed region
