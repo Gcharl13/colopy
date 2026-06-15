@@ -450,6 +450,43 @@ void minimap_draw_contents(void)
     }
 }
 
+/* Colony-screen minimap contents (block M3, func_027DB2 inner panel
+ * (121,132,84,57)): a small overview of the colony's surroundings, the same
+ * terrain-colour model as the map minimap, centred on the active colony.  3px
+ * per tile -> 28x19 tiles visible.  The colony's own tile is marked white. */
+void colony_render_minimap_contents(void)
+{
+    int rec = (int16_t)DG16(0x8542);
+    int cx  = (uint8_t)DG8(rec + 0), cy = (uint8_t)DG8(rec + 1);
+    int w = (int16_t)DG16(G_MAP_W), h = (int16_t)DG16(G_MAP_H);
+    uint8_t *fb = vid_framebuffer();
+    const int PX = 3, TW = 28, TH = 19;     /* 28*3=84, 19*3=57 */
+    const int ox = 121, oy = 132;
+    for (int ty = 0; ty < TH; ty++) {
+        for (int tx = 0; tx < TW; tx++) {
+            int mx = cx - TW/2 + tx, my = cy - TH/2 + ty;
+            uint8_t c;
+            if (mx < 0 || my < 0 || mx >= w || my >= h) {
+                c = 0;                       /* off-map = black */
+            } else {
+                uint8_t t = viceroy_layer_byte(0, mx, my) & 0x1F;
+                uint8_t f = viceroy_layer_byte(1, mx, my);
+                if (mx == cx && my == cy)        c = 0x0F;   /* colony tile = white */
+                else if (t == 0x19 || t == 0x1A) c = DG8(0x830);
+                else if (f & 0x20)               c = DG8(0x833);
+                else if (viceroy_layer_byte(0, mx, my) & 0x80) c = DG8(0x832);
+                else                             c = DG8(0x831);
+            }
+            for (int yy = 0; yy < PX; yy++)
+                for (int xx = 0; xx < PX; xx++) {
+                    int px = ox + tx*PX + xx, py = oy + ty*PX + yy;
+                    if (px >= 0 && px < VID_W && py >= 0 && py < VID_H)
+                        fb[py*VID_W + px] = c;
+                }
+        }
+    }
+}
+
 /* ---- text-context slots ([0x89E] default / [0x268A] restore) --------------
  * DOS keeps far pointers to a font-context whose byte0 is the LINE HEIGHT
  * (tile_info_panel line_h = ctx[0]+1 @0x0430E8).  Modern: the slots hold a

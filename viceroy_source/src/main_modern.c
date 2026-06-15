@@ -1141,6 +1141,9 @@ int main(int argc, char **argv)
                     colony_paint_stockpile(0);         /* func_0281D6: 16-good bottom bar */
                     colony_paint_flag(0,0);            /* func_02853C: nation flag panel */
                     colony_paint_minimap();            /* func_027DB2: surrounding-tile minimap */
+                    {   extern void colony_render_minimap_contents(void);
+                        colony_render_minimap_contents(); /* M3: terrain tiles in the panel */
+                    }
                     colony_paint_sol_panel(0);         /* func_02814C: SoL/ship/message panel */
                     colony_paint_buildings(0);         /* func_02701C: the building plot */
                     colony_paint_colonist_row(0);      /* func_0270D0: colonist faces +
