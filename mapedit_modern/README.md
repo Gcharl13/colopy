@@ -14,29 +14,35 @@ and `docs/MP_FORMAT.md`). This directory is the forward implementation.
 | Layer                              | State |
 |------------------------------------|-------|
 | `.MP` read / write (byte-exact)    | ✅ round-trips AMER2.MP byte-for-byte (`make test`) |
-| Terrain model + verified colours   | ✅ ids 0–15, 25, 26 verified; ids 16–23 named TODO_VERIFY |
-| `.TXT` resource parser (menus/names)| ✅ parses the same NAMES/MAPMENU/MAPEDIT files |
+| `.MP` header / layout              | ✅ **6-byte header** (w,h,reserved) + 3 layers — pinned by ground truth (tile (29,36)=Hills) |
+| Terrain classification             | ✅ hills/mtn (bit 0x20/0x80), forest (ids 8–23), river (0x40), ocean/sea-lane (25/26) — matches the original status bar |
+| `.SS` decoder (MADSPACK + FAB + MS_SPRITE) | ✅ `ss.c` — loads the real PHYS0/TERRAIN sprites |
+| `.FF` font decoder                 | ✅ `ff.c` — loads FONTINTR/FONTTINY game fonts |
+| Terrain rendering (real game art)  | ✅ base ground (TERRAIN.SS via verified `terrain_cell_transform`), forest canopy, hills/mountains, rivers, coast — all from PHYS0/TERRAIN |
+| GUI (wood menu, mini-map, status panel, tile-select popup, game fonts) | ✅ matches the original; screenshot-verified (`mpedit-shot`) |
 | Editor tools (paint/fill/overlays/undo/continents) | ✅ core done |
 | `mpedit` CLI (info/verify/ascii/new)| ✅ done |
-| GUI layout (wood menu, mini-map, status panel, tile-select popup) | ✅ matches the original; screenshot-verified headlessly (`mpedit-shot`) |
-| `.SS` asset decoder (MADSPACK + FAB + MS_SPRITE) | ✅ `ss.c` — loads the real PHYS0/TERRAIN textures |
-| Terrain rendering with original art | ✅ textured ground + tree overlays + textured water |
 | SDL2 window/input (`make gui`)     | ✅ written; needs `libsdl2-dev` to build/run |
-| Pixel-exact coast autotiling + mountain/river sprites | ⏳ needs the overlay terrain renderer (terrain.obj) reverse-engineered |
+| Native 320×200 pixel-exact scale   | ⏳ current window is larger but all content is at native pixel scale |
 
-## Rendering with the original art
+## Rendering — faithful to the original (see docs/RENDER_SPEC.md)
 
-The renderer uses the actual game sprites when the COLONIZE assets are reachable
-(`$COLONIZE_DIR`, default `../raw/COLONIZE` for tools / `.` for the GUI):
+With the COLONIZE assets reachable (`$COLONIZE_DIR`, default `../raw/COLONIZE`),
+the map composes exactly like VICEROY's O513 chain, using the real sprites:
 
-- `TERRAIN.SS` supplies the textured ground; each terrain id is matched to a
-  frame by nearest colour to the byte-verified palette.
-- `PHYS0.SS` supplies the tree overlay (auto-detected) for forested tiles.
-- With no assets it falls back to the verified solid colours.
+- **base ground**: `TERRAIN.SS[terrain_cell_transform(land_base)]`
+- **forest** (ids 8–23): PHYS0 `0x41 + forest-neighbour mask`
+- **hills/mountains** (bit 0x20): PHYS0 `0x31`/`0x21 + nmask4_feat_hi`
+- **river** (bit 0x40): PHYS0 `0x96` (blue + tan banks)
+- **coast**: PHYS0 shore `0x01..0x0F` by water-neighbour mask
+- each `.SS` uses its **embedded palette** (VICEROY.PAL as a global DAC palette
+  mis-colours the indices — verified)
+
+Chrome text uses the real **FONTINTR** (menus) and **FONTTINY** (panel) fonts.
+With no assets, everything falls back to verified colours + the built-in font.
 
 `build/mpedit-shot FILE.MP OUT.png [zoom 0..3] [cx cy] [menu|9]` renders the
-whole editor screen to a PNG headlessly — used to verify the layout without a
-window server.
+whole editor screen to a PNG headlessly.
 
 ## Build & test
 
