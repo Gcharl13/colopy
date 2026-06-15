@@ -109,11 +109,11 @@ static void menu_rect(int m, int *x, int *w)
         *w = tw + 4;
         return;
     }
-    int cx = 4;
+    int cx = 6;
     for (int i = 0; i < m; i++)
-        cx += menu_text_w(MENU_TITLES[i]) + 6;
+        cx += menu_text_w(MENU_TITLES[i]) + 12;
     *x = cx;
-    *w = tw + 4;
+    *w = tw + 6;
 }
 
 void ui_view_init(ui_view *v)
