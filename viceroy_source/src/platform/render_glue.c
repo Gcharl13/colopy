@@ -1042,9 +1042,14 @@ void colony_render_workgrid_terrain(void)
                 } else if (!is_water) {
                     /* colonist working this tile (reuse the seeded crew faces) */
                     int prof = (int)DG8(rec + 0x40 + (worker & 7));
+                    int amt  = 3 + (worker % 3);   /* sample yield 3..5 */
+                    char q[8];
                     ss_blit(icons, 0x52 + (prof & 7), cell_x + 2, cell_y + 8);
-                    /* produced-good icon (food) top-left of the cell */
-                    ss_blit(icons, 0x16, cell_x + 2, cell_y + 1);
+                    /* produced-good icon (food) + amount, top-left of the cell */
+                    ss_blit(icons, 0x16, cell_x + 1, cell_y + 1);
+                    snprintf(q, sizeof q, "%d", amt);
+                    vid_text_color(0x0F);          /* white amount */
+                    vid_text_xy(q, cell_x + 14, cell_y + 1);
                     worker++;
                 }
             }
