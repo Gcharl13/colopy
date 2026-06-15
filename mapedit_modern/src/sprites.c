@@ -103,8 +103,8 @@ static void load_master_palette(const char *colonize_dir)
 bool sprite_load_phys0(const char *colonize_dir)
 {
     char path[1024];
-    /* Each .SS uses its own embedded palette (VICEROY.PAL as a master DAC
-     * palette produces wrong colours for the sprite indices). */
+    /* Each .SS uses its own embedded palette — verified: VICEROY.PAL as the
+     * sprite palette produces garbage, so the sheets are self-palettized. */
     ss_set_master_palette(NULL);
     (void)load_master_palette;
     snprintf(path, sizeof path, "%s/TERRAIN.SS", colonize_dir);
