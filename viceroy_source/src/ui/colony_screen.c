@@ -400,6 +400,17 @@ void colony_paint_buildings(int repaint)
             ;                                          /* empty lot: @asm 0x027072 call 0x7EF1 */
         } else if (col_bldg_ready()) {                 /* building: func_026DD4 (0x7E33) */
             int frame = col_bldg_frame(blvl);
+            /* Some building LINES (e.g. line 3 = @BUILDING 9,10,11; line 5 =
+             * 15,16,17) have BLANK top-tier frames (1x1 placeholders 10,11,17,
+             * 30,31) in BUILDING.SS: those tiers reuse the line's base sprite
+             * (the structure looks the same when upgraded).  frame = good_index
+             * lands on the blank, drawing nothing -- walk DOWN to the nearest
+             * non-blank frame of the same line (the blanks are always the top
+             * tiers, so the lower frame belongs to the same column). */
+            while (frame > 0 && frame < col_bldg.nframes &&
+                   col_bldg.frames[frame].w <= 2 &&
+                   col_bldg.frames[frame].h <= 2)
+                frame--;
             if (frame >= 0 && frame < col_bldg.nframes)
                 ss_blit_remap(&col_bldg, frame, bx_x, bx_y); /* @asm 0x026E4E lcall 0x181F:0x254 */
         }

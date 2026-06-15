@@ -1055,6 +1055,12 @@ int main(int argc, char **argv)
                 {   /* report the laid-out slots */
                     int n = 0; for (int s = 0; s < 15; s++) if ((int8_t)DG8(0x8E82+s) >= 0) n++;
                     printf("  headless  : colony layout -> %d/15 slots filled\n", n);
+                    if (getenv("DBG_BLD")) {
+                        printf("  DBG levels:");
+                        for (int s = 0; s < 15; s++)
+                            printf(" [%d]=%d", s, (int8_t)DG8(0x8E82+s));
+                        printf("\n");
+                    }
                 }
 
                 /* C4 SCENE_FILL (0,0,320,200): the composer's full-screen base.
