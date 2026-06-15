@@ -48,13 +48,20 @@ int main(int argc, char **argv)
     fb *f = fb_create(UI_WIN_W, UI_WIN_H);
     ui_render(f, e, &v);
 
-    /* choose encoder by extension (.png or .bmp) */
+    /* upscale the native 320x200 frame by UI_SCALE for a modern-size image */
+    int S = UI_SCALE;
+    fb *big = fb_create(UI_WIN_W * S, UI_WIN_H * S);
+    for (int y = 0; y < big->h; y++)
+        for (int x = 0; x < big->w; x++)
+            big->px[(size_t)y * big->w + x] = f->px[(size_t)(y / S) * f->w + (x / S)];
+
     const char *out = argv[2];
     size_t L = strlen(out);
     int rc = (L >= 4 && (out[L-3]=='p'||out[L-3]=='P'))
-                 ? fb_save_png(f, out) : fb_save_bmp(f, out);
-    if (rc == 0) printf("wrote %s (%dx%d)\n", out, UI_WIN_W, UI_WIN_H);
+                 ? fb_save_png(big, out) : fb_save_bmp(big, out);
+    if (rc == 0) printf("wrote %s (%dx%d)\n", out, big->w, big->h);
     else fprintf(stderr, "save failed\n");
+    fb_free(big);
 
     fb_free(f);
     editor_destroy(e);

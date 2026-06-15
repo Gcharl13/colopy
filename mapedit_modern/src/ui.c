@@ -16,7 +16,7 @@ const int UI_ZOOM_TILES[4] = { 120, 60, 30, 15 };
 static ff_font *g_menu_font;     /* FONTINTR.FF */
 static ff_font *g_panel_font;    /* FONTTINY.FF */
 #define MENU_FSCALE   1
-#define PANEL_FSCALE  2
+#define PANEL_FSCALE  1
 
 void ui_load_fonts(const char *colonize_dir)
 {
@@ -105,20 +105,20 @@ static void menu_rect(int m, int *x, int *w)
 {
     int tw = menu_text_w(MENU_TITLES[m]);
     if (m == 3) {                       /* Help, right-aligned */
-        *x = UI_WIN_W - tw - 16;
-        *w = tw + 12;
+        *x = UI_WIN_W - tw - 4;
+        *w = tw + 4;
         return;
     }
-    int cx = 16;
+    int cx = 4;
     for (int i = 0; i < m; i++)
-        cx += menu_text_w(MENU_TITLES[i]) + 28;
+        cx += menu_text_w(MENU_TITLES[i]) + 6;
     *x = cx;
-    *w = tw + 12;
+    *w = tw + 4;
 }
 
 void ui_view_init(ui_view *v)
 {
-    v->zoom = 2;
+    v->zoom = 3;          /* F4 closest (native 16px, 15x12) — like the original */
     v->scroll_x = v->scroll_y = 0;
     v->menu_open = -1;
     v->tile_select_open = 0;
@@ -127,10 +127,10 @@ void ui_view_init(ui_view *v)
 
 int ui_tile_px(const ui_view *v)
 {
-    /* Crisp integer ratios of the native 16px tile (4,8,16,32) so PHYS0/TERRAIN
-     * sprites blit with no fractional smearing — matching the DOS look. The
-     * closest zoom is native 16px; the next is a clean 2x. */
-    static const int TPX[4] = { 4, 8, 16, 32 };
+    /* Native tile pixels per zoom = 240px viewport / {120,60,30,15} tiles =
+     * {2,4,8,16}. zoom 3 = native 16px (F4, closest); zoom 0 = 2px (F1). All
+     * integer ratios of the 16px sprite, so blits stay crisp. */
+    static const int TPX[4] = { 2, 4, 8, 16 };
     return TPX[v->zoom & 3];
 }
 
@@ -175,15 +175,15 @@ static void minimap_geom(const editor *e, int *mmx, int *mmy, int *cell, int *mm
 {
     int cx0, cy0, cw, ch;
     minimap_crop(e, &cx0, &cy0, &cw, &ch);
-    int sw = (UI_PANEL_W - 24) / cw;
-    int sh = 230 / ch;
+    int sw = (UI_PANEL_W - 6) / cw;     /* fit the panel width */
+    int sh = 80 / ch;                    /* cap height so status fits below */
     int c = sw < sh ? sw : sh;
     if (c < 1) c = 1;
     *cell = c;
     *mmw = cw * c;
     *mmh = ch * c;
     *mmx = UI_PANEL_X + (UI_PANEL_W - *mmw) / 2;
-    *mmy = UI_MENU_H + 10;
+    *mmy = UI_MENU_H + 3;
 }
 
 /* ---- map viewport: neighbour-aware tiles with real coast sprites ---- */
@@ -241,9 +241,9 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     int by = mmy + (v->scroll_y - cy0) * cell;
     fb_rect(f, bx, by, visx * cell, visy * cell, C_WHITE);
 
-    /* status text */
-    int tx = UI_PANEL_X + 12;
-    int y = mmy + mmh + 16;
+    /* status text — native FONTTINY scale (6px), tight line spacing */
+    int tx = UI_PANEL_X + 3;
+    int y = mmy + mmh + 6;
     char line[80];
     const terrain_info *sel = terrain_by_id(e->selected_id);
     char desc[48];
@@ -251,26 +251,26 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     terrain_describe(cur, desc, sizeof desc);
 
     snprintf(line, sizeof line, "Size: (%d, %d)", e->map->width, e->map->height);
-    panel_text(f, tx, y, line, C_GREEN); y += 14;
+    panel_text(f, tx, y, line, C_GREEN); y += 8;
     snprintf(line, sizeof line, "Curs: (%d, %d)", e->cursor_x, e->cursor_y);
-    panel_text(f, tx, y, line, C_GREEN); y += 24;
+    panel_text(f, tx, y, line, C_GREEN); y += 12;
 
-    panel_text(f, tx, y, "Terrain at cursor:", C_GREEN); y += 14;
+    panel_text(f, tx, y, "Terrain at cursor:", C_GREEN); y += 8;
     snprintf(line, sizeof line, "(%s)", desc);
-    panel_text(f, tx, y, line, C_GREEN); y += 24;
+    panel_text(f, tx, y, line, C_GREEN); y += 12;
 
-    panel_text(f, tx, y, "Selected:", C_GREEN); y += 15;
-    sprite_draw_tile(f, tx, y, 32, e->selected_id);   /* real terrain sprite */
-    fb_rect(f, tx, y, 32, 32, RGB(0x20,0x10,0x08));
-    y += 38;
+    panel_text(f, tx, y, "Selected:", C_GREEN); y += 8;
+    sprite_draw_tile(f, tx, y, 16, e->selected_id);   /* real terrain sprite */
+    fb_rect(f, tx, y, 16, 16, RGB(0x20,0x10,0x08));
+    y += 18;
     snprintf(line, sizeof line, "(%s)", sel ? sel->name : "?");
-    panel_text(f, tx, y, line, C_GREEN); y += 24;
+    panel_text(f, tx, y, line, C_GREEN); y += 12;
 
-    panel_text(f, tx, y, "Shift-Left:  Paint", C_GREEN); y += 14;
-    panel_text(f, tx, y, "Shift-Right: Pick up", C_GREEN); y += 24;
+    panel_text(f, tx, y, "Shift-Left:  Paint", C_GREEN); y += 8;
+    panel_text(f, tx, y, "Shift-Right: Pick up", C_GREEN); y += 12;
 
     snprintf(line, sizeof line, "Fill radius: %d", e->fill_radius);
-    panel_text(f, tx, y, line, C_GREEN); y += 14;
+    panel_text(f, tx, y, line, C_GREEN); y += 8;
     snprintf(line, sizeof line, "Coast Protect: %s", e->coast_protect ? "ON" : "OFF");
     panel_text(f, tx, y, line, C_GREEN);
 }
@@ -284,47 +284,47 @@ static void render_menubar(fb *f, const ui_view *v)
     for (int m = 0; m < UI_MENU_COUNT; m++) {
         int x, w;
         menu_rect(m, &x, &w);
-        menu_text(f, x, 5, MENU_TITLES[m], C_GOLD);
-        /* brighter first letter (accelerator) */
+        menu_text(f, x, 0, MENU_TITLES[m], C_GOLD);
         char acc[2] = { MENU_TITLES[m][0], 0 };
-        menu_text(f, x, 5, acc, C_GOLD_HOT);
+        menu_text(f, x, 0, acc, C_GOLD_HOT);   /* brighter accelerator letter */
     }
 
     if (v->menu_open >= 0) {
         int m = v->menu_open, n = MENU_LEN[m];
         int mx, mw;
         menu_rect(m, &mx, &mw);
-        int x = mx - 6, y = UI_MENU_H;
-        int w = 16;
+        int x = mx - 2, y = UI_MENU_H;
+        int w = 8;
         for (int i = 0; i < n; i++) {
-            int iw = menu_text_w(MENU_ITEMS[m][i]) + 20;
+            int iw = menu_text_w(MENU_ITEMS[m][i]) + 6;
             if (iw > w) w = iw;
         }
         if (x + w > UI_WIN_W) x = UI_WIN_W - w;
-        draw_wood(f, x, y, w, n * 14 + 6);
-        fb_rect(f, x, y, w, n * 14 + 6, RGB(0xC8,0x84,0x30));
+        if (x < 0) x = 0;
+        draw_wood(f, x, y, w, n * 10 + 3);
+        fb_rect(f, x, y, w, n * 10 + 3, RGB(0xC8,0x84,0x30));
         for (int i = 0; i < n; i++)
-            menu_text(f, x + 8, y + 4 + i * 14, MENU_ITEMS[m][i], C_DROP_FG);
+            menu_text(f, x + 3, y + 2 + i * 10, MENU_ITEMS[m][i], C_DROP_FG);
     }
 }
 
 /* ---- "Map Tile Select" popup ---- */
 static void tile_select_geom(int *x, int *y, int *w, int *h)
 {
-    *w = 360; *h = 320;
-    *x = (UI_MAP_W - *w) / 2;
+    *w = 300; *h = 150;
+    *x = (UI_WIN_W - *w) / 2;
     *y = UI_MENU_H + (UI_MAP_H - *h) / 2;
 }
 
 static const char *GROUP_NAME[] = { "UNFORESTED", "FORESTED", "OTHER" };
 
-/* row rectangle of palette entry i within the popup */
+/* row rectangle of palette entry i within the popup (native scale) */
 static void ts_entry_rect(int px, int py, int i, int *x, int *y)
 {
     int col = i / 8;                  /* 0:unf 1:for 2:other -> three columns */
     int row = i % 8;
-    *x = px + 14 + col * 116;
-    *y = py + 46 + row * 32;          /* leaves room for group headers above */
+    *x = px + 8 + col * 96;
+    *y = py + 30 + row * 14;          /* leaves room for group headers above */
 }
 
 static void render_tile_select(fb *f, const editor *e)
@@ -334,24 +334,24 @@ static void render_tile_select(fb *f, const editor *e)
     draw_wood(f, px, py, pw, ph);
     fb_rect(f, px, py, pw, ph, RGB(0xC8,0x84,0x30));
     fb_rect(f, px + 1, py + 1, pw - 2, ph - 2, RGB(0xC8,0x84,0x30));
-    menu_text(f, px + 12, py + 8, "Map Tile Select", C_GOLD_HOT);
+    menu_text(f, px + 6, py + 3, "Map Tile Select", C_GOLD_HOT);
 
     int count = 0;
     const terrain_info *pal = terrain_palette(&count);
     for (int g = 0; g < 3; g++)
-        panel_text(f, px + 14 + g * 116, py + 28, GROUP_NAME[g], C_GOLD);
+        panel_text(f, px + 8 + g * 96, py + 18, GROUP_NAME[g], C_GOLD);
 
     for (int i = 0; i < count; i++) {
         int x, y;
         ts_entry_rect(px, py, i, &x, &y);
-        sprite_draw_tile(f, x, y, 22, pal[i].id);   /* real terrain sprite */
-        fb_rect(f, x, y, 22, 22, RGB(0x20,0x10,0x08));
+        sprite_draw_tile(f, x, y, 12, pal[i].id);   /* real terrain sprite */
+        fb_rect(f, x, y, 12, 12, RGB(0x20,0x10,0x08));
         uint32_t fg = (pal[i].id == e->selected_id) ? C_GOLD_HOT : C_DROP_FG;
         if (pal[i].id == e->selected_id)
-            fb_rect(f, x - 2, y - 2, 26, 26, C_GOLD_HOT);
-        panel_text(f, x + 26, y + 8, pal[i].name, fg);
+            fb_rect(f, x - 1, y - 1, 14, 14, C_GOLD_HOT);
+        panel_text(f, x + 15, y + 3, pal[i].name, fg);
     }
-    panel_text(f, px + 12, py + ph - 16, "click a tile  (Esc to close)", C_GREEN_DIM);
+    panel_text(f, px + 6, py + ph - 9, "click a tile  (Esc to close)", C_GREEN_DIM);
 }
 
 void ui_render(fb *f, const editor *e, const ui_view *v)
@@ -385,15 +385,16 @@ int ui_hit_menu_item(const ui_view *v, int mx, int my)
     int m = v->menu_open, n = MENU_LEN[m];
     int mx0, mw;
     menu_rect(m, &mx0, &mw);
-    int x = mx0 - 6, y = UI_MENU_H, w = 16;
+    int x = mx0 - 2, y = UI_MENU_H, w = 8;
     for (int i = 0; i < n; i++) {
-        int iw = menu_text_w(MENU_ITEMS[m][i]) + 20;
+        int iw = menu_text_w(MENU_ITEMS[m][i]) + 6;
         if (iw > w) w = iw;
     }
     if (x + w > UI_WIN_W) x = UI_WIN_W - w;
-    if (mx < x || mx >= x + w || my < y + 4 || my >= y + 4 + n * 14)
+    if (x < 0) x = 0;
+    if (mx < x || mx >= x + w || my < y + 2 || my >= y + 2 + n * 10)
         return -1;
-    int item = (my - y - 5) / 14;
+    int item = (my - y - 2) / 10;
     return (item >= 0 && item < n) ? item : -1;
 }
 
@@ -437,7 +438,7 @@ int ui_hit_tile_select(const ui_view *v, int mx, int my)
     for (int i = 0; i < count; i++) {
         int x, y;
         ts_entry_rect(px, py, i, &x, &y);
-        if (mx >= x - 2 && mx < x + 112 && my >= y - 2 && my < y + 24)
+        if (mx >= x - 1 && mx < x + 92 && my >= y - 1 && my < y + 13)
             return pal[i].id;
     }
     return -1;

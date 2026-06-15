@@ -34,10 +34,14 @@
 #include "framebuffer.h"
 #include "editor.h"
 
-#define UI_WIN_W      820
-#define UI_WIN_H      560
-#define UI_MENU_H     18
-#define UI_PANEL_W    220
+/* Native VGA editor resolution (the original is 320x200). The renderer draws
+ * into this size; shot/gui scale it up by an integer factor for display, so the
+ * proportions match the original exactly. */
+#define UI_WIN_W      320
+#define UI_WIN_H      200
+#define UI_MENU_H     8
+#define UI_PANEL_W    80
+#define UI_SCALE      3       /* default display upscale (320x200 -> 960x600) */
 
 /* Map viewport rectangle. */
 #define UI_MAP_X      0

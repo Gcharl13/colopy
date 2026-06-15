@@ -184,9 +184,12 @@ int main(int argc, char **argv)
     ui_view_init(&v);
     ui_center_on(&v, e, e->cursor_x, e->cursor_y);
 
+    /* Native 320x200 internal frame, displayed at UI_SCALE (the renderer scales
+     * the texture to fill the window; mouse coords are divided back to native). */
     SDL_Window *win = SDL_CreateWindow("MAPEDIT", SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, UI_WIN_W, UI_WIN_H, SDL_WINDOW_SHOWN);
+        SDL_WINDOWPOS_CENTERED, UI_WIN_W * UI_SCALE, UI_WIN_H * UI_SCALE, SDL_WINDOW_SHOWN);
     SDL_Renderer *ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_RenderSetLogicalSize(ren, UI_WIN_W, UI_WIN_H);   /* mouse coords -> native */
     SDL_Texture *tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGB888,
         SDL_TEXTUREACCESS_STREAMING, UI_WIN_W, UI_WIN_H);
     fb *f = fb_create(UI_WIN_W, UI_WIN_H);

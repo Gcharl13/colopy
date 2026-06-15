@@ -119,9 +119,11 @@ int ff_char_width(const ff_font *f, int ch)
 int ff_text_width(const ff_font *f, const char *s)
 {
     int w = 0;
-    for (const unsigned char *p = (const unsigned char *)s; *p; p++)
-        w += ff_char_width(f, *p) + 1;
-    return w > 0 ? w - 1 : 0;
+    for (const unsigned char *p = (const unsigned char *)s; *p; p++) {
+        int cw = ff_char_width(f, *p);
+        w += cw ? cw : 2;     /* glyph width already includes trailing spacing */
+    }
+    return w;
 }
 
 static int ff_bpp(int w)
@@ -137,7 +139,7 @@ int ff_draw(fb *dst, const ff_font *f, int x, int y, const char *s,
     for (const unsigned char *p = (const unsigned char *)s; *p; p++) {
         int ch = *p;
         int w = ff_char_width(f, ch);
-        if (w == 0) { cx += (2 + 1) * scale; continue; }   /* space-ish */
+        if (w == 0) { cx += 2 * scale; continue; }          /* space-ish */
         uint32_t off = u16(f->data + 130 + (ch - 1) * 2);  /* absolute */
         int bpp = ff_bpp(w);
         for (int r = 0; r < f->max_h; r++) {
@@ -151,7 +153,7 @@ int ff_draw(fb *dst, const ff_font *f, int x, int y, const char *s,
                     fb_fill_rect(dst, cx + px * scale, y + r * scale, scale, scale, color);
             }
         }
-        cx += (w + 1) * scale;
+        cx += w * scale;   /* glyph width includes trailing spacing */
     }
     return cx;
 }
