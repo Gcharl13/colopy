@@ -252,7 +252,12 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
         blit_phys0(f, px, py, tp, hm + feat_hi_nmask(m, tx, ty));
     }
 
-    /* (No roads on a stock map; coast is drawn on the water side, above.) */
+    /* 4. river-on-terrain (O513 6d): terrain bit 0x40 -> PHYS0 0x96 (blue river
+     * with tan banks). In map view (mode 2) the directional river network
+     * (0x52+) is suppressed; 0x96 is the river. Roads (0x6D/0x51) are NOT drawn
+     * — stock maps have none. */
+    if (b & MP_FLAG_ROADRIVER)
+        blit_phys0(f, px, py, tp, 0x96);
     (void)river_nmask8; (void)water_nmask;
 }
 
