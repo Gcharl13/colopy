@@ -13,12 +13,30 @@ and `docs/MP_FORMAT.md`). This directory is the forward implementation.
 
 | Layer                              | State |
 |------------------------------------|-------|
-| `.MP` read / write (byte-exact)    | ✅ done — round-trips AMER2.MP byte-for-byte (`make test`) |
-| Terrain model + palette            | ✅ done — verified ids 0–15, 25, 26; ids 16–23 named TODO_VERIFY |
-| `.TXT` resource parser (menus/names)| ✅ done — parses the same NAMES/MAPMENU/MAPEDIT files |
-| Editor tools (paint/fill/overlays/undo/continents) | ✅ core done (headless) |
+| `.MP` read / write (byte-exact)    | ✅ round-trips AMER2.MP byte-for-byte (`make test`) |
+| Terrain model + verified colours   | ✅ ids 0–15, 25, 26 verified; ids 16–23 named TODO_VERIFY |
+| `.TXT` resource parser (menus/names)| ✅ parses the same NAMES/MAPMENU/MAPEDIT files |
+| Editor tools (paint/fill/overlays/undo/continents) | ✅ core done |
 | `mpedit` CLI (info/verify/ascii/new)| ✅ done |
-| SDL2 GUI (menus, palette, map view, status bar) | ⏳ next |
+| GUI layout (wood menu, mini-map, status panel, tile-select popup) | ✅ matches the original; screenshot-verified headlessly (`mpedit-shot`) |
+| `.SS` asset decoder (MADSPACK + FAB + MS_SPRITE) | ✅ `ss.c` — loads the real PHYS0/TERRAIN textures |
+| Terrain rendering with original art | ✅ textured ground + tree overlays + textured water |
+| SDL2 window/input (`make gui`)     | ✅ written; needs `libsdl2-dev` to build/run |
+| Pixel-exact coast autotiling + mountain/river sprites | ⏳ needs the overlay terrain renderer (terrain.obj) reverse-engineered |
+
+## Rendering with the original art
+
+The renderer uses the actual game sprites when the COLONIZE assets are reachable
+(`$COLONIZE_DIR`, default `../raw/COLONIZE` for tools / `.` for the GUI):
+
+- `TERRAIN.SS` supplies the textured ground; each terrain id is matched to a
+  frame by nearest colour to the byte-verified palette.
+- `PHYS0.SS` supplies the tree overlay (auto-detected) for forested tiles.
+- With no assets it falls back to the verified solid colours.
+
+`build/mpedit-shot FILE.MP OUT.png [zoom 0..3] [cx cy] [menu|9]` renders the
+whole editor screen to a PNG headlessly — used to verify the layout without a
+window server.
 
 ## Build & test
 
