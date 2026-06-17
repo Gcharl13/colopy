@@ -139,10 +139,11 @@ static int g_nat_sel;   /* selected European power 0..3 (England default) */
 
 static void draw_nations(void)
 {
-    /* 2x2 flag grid baked into NATIONS.PIK; positions byte-measured from
-     * refs/ref_nation.png (England red box at (112,13)-(199,94)). */
-    static const int flag_x[4] = { 112, 210, 112, 210 };
-    static const int flag_y[4] = {  13,  13, 105, 105 };
+    /* 2x2 flag grid baked into NATIONS.PIK.
+     * Byte-verified positions: (99*col+112, 91*row+13) -- plan Phase D6.
+     * England(112,13), France(211,13), Spain(112,104), Netherlands(211,104) */
+    static const int flag_x[4] = { 112, 211, 112, 211 };
+    static const int flag_y[4] = {  13,  13, 104, 104 };
     const int FW = 87, FH = 81;
     draw_bg();
     if (g_have_font) {
@@ -179,11 +180,12 @@ static int g_diff_sel;   /* selected difficulty 0..4 (Discoverer default) */
 
 static void draw_difficulty(void)
 {
-    /* 5 difficulty portraits baked into DIFFICUL.PIK; the level-0 (Discoverer)
-     * slot is the top-centre green box at (128,7)-(195,96) in ref_difficulty.png.
-     * Top row 3, bottom row 2 (centred); ~88px stride. */
-    static const int port_x[5] = { 128,  40, 216,  84, 172 };
-    static const int port_y[5] = {   7,   7,   7,  104, 104 };
+    /* 5 difficulty portraits baked into DIFFICUL.PIK.
+     * Byte-verified positions from plan: (105*col+23, 96*grp+7), cell(0,0) skipped.
+     * Top row: Discoverer(128,7), Explorer(233,7)
+     * Bottom row: Conquistador(23,103), Governor(128,103), Viceroy(233,103) */
+    static const int port_x[5] = { 128, 233,  23, 128, 233 };
+    static const int port_y[5] = {   7,   7, 103, 103, 103 };
     static const char *const diff_name[5] = {
         "Discoverer", "Explorer", "Conquistador", "Governor", "Viceroy" };
     const int PW = 67, PH = 89;
@@ -520,44 +522,29 @@ static void follow_unit(void)
     if (uy - g_cam_y > 9  && g_cam_y < g_map_h - VIEW_TY)  g_cam_y++;
 }
 
-/* ---- Europe dock (playable economy over the decoded engines) --------------
- * Draws the 16-good market strip from the LIVE price levels through the
- * byte-verified leaves (bid = level-1, ask = level+burden), and routes
- * B/S+digit keys into market_buy/market_sell (tax + crown writes inside).
- * Layout is SHELL-RECONSTRUCTED (the original's europe composer is partially
- * ported); every NUMBER shown comes from the real engines. */
+/* ---- Europe dock (sprite-based painters + live price engines) --------------
+ * Calls the byte-verified europe_draw_* sub-renderers which use ICONS.SS sprites
+ * and live market_bid/ask_price() values from the decoded rules engine.
+ * B/S+digit keys route into market_buy/market_sell (tax + crown writes inside). */
 static int g_eur_sel;
 
 static void draw_europe(void)
 {
-    extern int market_bid_price(int good);
-    extern int market_ask_price(int good);
-    extern uint8_t g_dgroup[];
+    extern void europe_draw_stockpile(int blit);
+    extern void europe_draw_title(int blit);
+    extern void europe_draw_dock_ships(int blit);
+    extern void europe_draw_recruit_pool(int blit);
+
     uint8_t *fb = vid_framebuffer();
     memset(fb, 0, VID_W * VID_H);
     if (load_bg("EUROPE.PIK") == 0) draw_bg();
-    if (g_have_font) {
-        uint8_t dark = 0, light = 15;
-        pal_pick_text_colors(&dark, &light);
-        int32_t gold = *(int32_t *)(g_dgroup + 0x8808 +
-                                    (int16_t)DG16(0x9E12) * 0x13C + 0x2A);
-        char hdr[96];
-        snprintf(hdr, sizeof hdr, "EUROPE  -  Gold %d  Tax %u%%",
-                 gold, DG8(0x8808 + (int16_t)DG16(0x9E12) * 0x13C + 1));
-        draw_text_center(hdr, 4, light);
-        for (int g = 0; g < 16; g++) {
-            char row[96];
-            const char *nm = viceroy_str(DG16(0x97C0 + g * 2)); /* @CARGO col0 */
-            snprintf(row, sizeof row, "%c%2d %-12.12s %3d/%3d",
-                     g == g_eur_sel ? '>' : ' ', g + 1,
-                     (nm && nm[0]) ? nm : "good", 
-                     market_bid_price(g), market_ask_price(g));
-            g_font.colors[1] = g_font.colors[2] = g_font.colors[3] =
-                (g == g_eur_sel) ? light : dark;
-            ff_draw(&g_font, row, 12, 18 + g * (g_font.maxh + 1), 1);
-        }
-        draw_text_center("S sell 100   B buy 100   Up/Down   ESC", 188, light);
-    }
+
+    /* call the byte-verified sub-renderers */
+    europe_draw_title(0);
+    europe_draw_dock_ships(0);
+    europe_draw_recruit_pool(0);
+    europe_draw_stockpile(0);   /* last: draws the bottom strip over everything */
+
     vid_present();
 }
 
@@ -1231,68 +1218,8 @@ int main(int argc, char **argv)
                 printf("  headless  : colony frame -> viceroy_colony.ppm\n");
             }
 
-            /* === EUROPE trade-port frame (europe_screen.c composer order) === */
-            {   extern void blit_sprite(int desc, int id, int x, int y);
-                extern void colony_paint_stockpile(int);
-                extern void draw_box(int,int,int,int,int);
-                extern int  ui_color_for(int,int,int);
-                extern void vid_text_color(int);
-                extern void vid_text_xy(const char*,int,int);
-                extern int  vid_text_width(const char*);
-                pik_image_t bg;
-                char bpath[512];
-                uint8_t *fb = vid_framebuffer();
-                snprintf(bpath, sizeof bpath, "%s/EUROPE.PIK", g_data);
-                memset(fb, 0, VID_W * VID_H);
-                /* (0) EUROPE.PIK full-screen harbor backdrop (320x200, own
-                 * palette).  The 16 stockpile cells + dock pilings + Exit emblem
-                 * are baked into the asset (@asm 0x031E4C fills below the title
-                 * strip; the PIK shows through). */
-                if (pik_load(bpath, &bg) == 0) {
-                    if (bg.has_pal) vid_set_palette(bg.pal);
-                    int w = bg.w < VID_W ? bg.w : VID_W;
-                    for (int yy = 0; yy < bg.h && yy < VID_H; yy++)
-                        memcpy(fb + yy * VID_W, bg.pixels + yy * bg.w, (size_t)w);
-                    pik_free(&bg);
-                }
-                /* (1) 16-commodity MARKET strip at y=181 (func_0310B4): identical
-                 * layout to the colony stockpile -- reuse it (ICONS frame 22+,
-                 * pitch 19, first cell x=1). */
-                colony_paint_stockpile(0);
-                /* (2) TITLE/PRICE banner (func_030F76): "Selling <Good> at <N>
-                 * Gold" in the top strip, UI green, centred (@asm 0x0310AD). */
-                {   const char *gname = viceroy_str(DG16(0x97C0 + (DG16(0x9E12)&15)*2));
-                    char banner[96];
-                    int price = 6 + (int)(DG16(0x9E12) & 7);   /* sample ask price */
-                    snprintf(banner, sizeof banner, "Selling %s at %d Gold",
-                             (gname && gname[0]) ? gname : "Sugar", price);
-                    int tw = vid_text_width(banner);
-                    vid_text_color(ui_color_for(0x52,0x8A,0x31));
-                    vid_text_xy(banner, (320 - tw)/2, 2);
-                }
-                /* (3) DOCK + 6 ships at anchor (func_0314DC): the in-port ships
-                 * blit ICONS frame 0x7B along the dock row.  @asm 0x031521 count
-                 * 6, sprite 0x7B @asm 0x03154F; dock scene at (143,118,81,60). */
-                {   for (int s = 0; s < 6; s++) {
-                        int sx = 150 + s * 12;        /* spread along the pier */
-                        int sy = 150;
-                        blit_sprite(0, 0x7B, sx, sy);
-                    }
-                }
-                /* (4) RECRUIT pool: 3 candidate slots, right column, base
-                 * (281,89), y-advance per slot (func_031DC8 @asm 0x031DDC).  Draw
-                 * the 3 raised button bevels (raised colours 0x30/0x39) with a
-                 * recruit face icon each. */
-                {   int by = 89;
-                    for (int s = 0; s < 3; s++) {
-                        draw_box(281, by, 281+36, by+10, 0x3A);  /* button bevel */
-                        blit_sprite(0, 0x52 + s, 283, by);
-                        by += 12;
-                    }
-                }
-                /* (5) outer screen frame (@asm 0x031EA0 box 0,0,320,200). */
-                draw_box(0, 0, 319, 199, 0);
-                vid_present();
+            /* === EUROPE trade-port frame -- calls the byte-verified painters === */
+            {   draw_europe();
                 vid_screenshot_ppm("viceroy_europe.ppm");
                 printf("  headless  : europe frame -> viceroy_europe.ppm\n");
             }

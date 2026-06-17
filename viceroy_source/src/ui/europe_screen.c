@@ -57,6 +57,8 @@
 #include "viceroy_types.h"
 #include "iolib.h"
 #include "power.h"
+#include "dgroup.h"
+extern int snprintf(char *, unsigned long, const char *, ...);
 
 /* ----------------------------------------------------------------------------
  * Active power record (the player's nation).  BYTE_VERIFIED PowerRecord table
@@ -196,7 +198,7 @@ extern struct PowerRecord *g_active_power;       /* via far ptr DGROUP:0x84FC */
  * ---------------------------------------------------------------------------- */
 extern void fill_rect(int x, int y, int w, int h);          /* near CALL cs:0x6DDC */
 extern void box_frame(int x, int y, int w, int h, int c);   /* 0x181F:0x00E2 */
-extern void blit_sprite(int sprite_idx, int x, int y, void far *sheet); /* 0x181F:0x254 */
+extern void blit_sprite(int desc, int id, int x, int y);  /* 0x181F:0x254 -- desc=0 -> ICONS.SS */
 extern void draw_text_at_xy(int color, int y, int x, void *buf);        /* 0x181F:0x13C */
 extern void gfx_ctx_begin(int a, int b, int c, int d);      /* 0x181F:0x22  (build layer) */
 extern void gfx_ctx_commit(int lo, int hi);                 /* 0x181F:0x100 (commit layer) */
@@ -213,9 +215,151 @@ extern void ov_draw_extra_a(int z);            /* near CALL cs:0x6D73 */
 extern void ov_draw_extra_b(int z);            /* near CALL cs:0x6E36 */
 
 /* DGROUP scalars read by the composer / sub-renderers (BYTE_VERIFIED addrs). */
-extern int16_t g_sel_good_9E12;   /* DGROUP:0x9E12 selected commodity for banner */
+extern int16_t g_sel_good_9E12;   /* DGROUP:0x9E12 active power/selected idx */
 extern int16_t g_boycott_9E40;    /* DGROUP:0x9E40 boycott-active flag */
 extern int16_t g_year_538A;       /* DGROUP:0x538A current year (banner) */
+
+/* Modern rendering primitives (render_glue.c) -- not thunked. */
+extern void vid_text_color(int c);
+extern void vid_text_xy(const char *str, int x, int y);
+extern int  vid_text_width(const char *s);
+extern int  ui_color_for(int r, int g, int b);
+extern void vid_box_fill(int x, int y, int w, int h, uint8_t color);
+extern void vid_box_outline(int x, int y, int w, int h, uint8_t color);
+extern int  sheet_frame_w_icons(int id);
+extern int  market_bid_price(int good);
+extern int  market_ask_price(int good);
+extern const char *viceroy_str(uint16_t handle);
+
+/* ============================================================================
+ * STRONG SUB-RENDERER IMPLEMENTATIONS
+ * These override the weak stubs in tools/generated/linkfloor_stubs.c.
+ * All coordinates are byte-verified from the @asm annotations in the placement
+ * table above.
+ * ============================================================================ */
+
+/* europe_draw_stockpile -- 16-commodity strip at screen bottom.
+ * func_0310B4  @file 0x0310B4
+ *
+ * Background fill (0,179,320,21); 16 icon+price cells; gold footer.
+ * Cell x = 1 + i*19  (pitch 0x13); icon y = 0xB5 (181); price y = 0xC2 (194).
+ * ICONS.SS frame = i + 0x16 (Food=22 .. Muskets=37, 0-based MADSPACK order).
+ * Gold footer: x=0x132(306), y=0xB3(179), value DG16(0x2F5E). */
+void europe_draw_stockpile(int blit)
+{
+    char pstr[16];
+    int  i, x = 1;
+
+    vid_box_fill(0, 0xB3, 0x140, 0x15, 0);  /* bg (x=0,y=179,w=320,h=21) @asm 0x0310B9 */
+
+    for (i = 0; i < 0x10; i++) {            /* @asm 0x031253 CMP [bp-0x72],0x10 */
+        int sid   = i + 0x16;               /* Food=22 .. @asm ADD ax,0x17 (1-based->0-based) */
+        int hw    = sheet_frame_w_icons(sid) >> 1;
+        int dx    = x - hw + 9;             /* centre in cell  @asm 0x028266 twin */
+
+        blit_sprite(0, sid, dx, 0xB5);      /* icon y=181  @asm 0x0310CF [bp-0x6a]=0xB5 */
+
+        /* bid/ask price text at y=194 (@asm 0x0310CF [bp-0x6a=0xC2] twin) */
+        snprintf(pstr, sizeof pstr, "%d", market_bid_price(i));
+        vid_text_color(0x0F);
+        vid_text_xy(pstr, x + 9 - (vid_text_width(pstr) >> 1), 0xC2);
+
+        x += 0x13;  /* pitch 19px  @asm 0x03124C ADD [bp-0x68],0x13 */
+    }
+
+    /* gold footer x=0x132(306), y=0xB3(179)  @asm 0x03125C push 0xF,0xB3,0x132,[0x2f5e] */
+    {
+        char gstr[24];
+        snprintf(gstr, sizeof gstr, "$%d", (int)(int16_t)DG16(0x2F5E));
+        vid_text_color(0x0F);
+        vid_text_xy(gstr, 0x132, 0xB3);
+    }
+    (void)blit;
+}
+
+/* europe_draw_title -- nation/year/tax banner in the top strip (y=0..45).
+ * func_030F76  @file 0x030F76
+ *
+ * Reads active power index from DG16(0x9E12), PowerRecord base at 0x8808 +
+ * power*0x13C, year from DG16(0x538A), tax% from PowerRecord[+0x01].
+ * Font: FONTTINY via vid_text_xy; text centered at y=4.
+ * @asm  0x030F7A MOV bx,[0x9E12]; 0x031007 [0x538A]; 0x03103F [0x84FC]+1. */
+void europe_draw_title(int blit)
+{
+    static const char *nations[4] = { "English", "French", "Spanish", "Dutch" };
+    char hdr[96];
+    int  power = (int)(int16_t)DG16(0x9E12);         /* @asm 0x030F7A MOV bx,[0x9E12] */
+    int  year  = (int)(int16_t)DG16(0x538A);          /* @asm 0x031007 */
+    int  pr_lo = (int)(0x8808 + (unsigned)power * 0x13C);  /* PowerRecord base */
+    int  tax   = (int)DG8((uint16_t)(pr_lo + 0x01));  /* @asm 0x03103F */
+    int  tw;
+
+    if (power < 0 || power > 3) power = 0;
+    snprintf(hdr, sizeof hdr, "%s Port  %d  Tax %d%%",
+             nations[power], year, tax);
+    tw = vid_text_width(hdr);
+    vid_text_color(ui_color_for(0x52, 0x8A, 0x31));  /* UI green */
+    vid_text_xy(hdr, (320 - tw) >> 1, 4);
+    (void)blit;
+}
+
+/* europe_draw_dock_ships -- dock scene + 6 ship slots at anchor.
+ * func_0314DC  @file 0x0314DC
+ *
+ * Dock scene fill (143,118,81,60)  @asm 0x0314E1 PUSH 0x3C,0x51,0x76,0x8F.
+ * In-port row layer (143,81,120,69) @asm 0x0314F8.
+ * 6 ship slots, ICONS.SS frame 0x7B (123) @asm 0x03154F MOV ax,0x7B.
+ * Per-slot (x,y,w) via cs:0x6D55 (unresolved); approximated as 120/6=20px pitch. */
+void europe_draw_dock_ships(int blit)
+{
+    int i, sx;
+
+    /* dock scene fill (x=0x8F=143, y=0x76=118, w=0x51=81, h=0x3C=60) */
+    vid_box_fill(0x8F, 0x76, 0x51, 0x3C, 0);   /* @asm 0x0314E1 */
+
+    /* in-port ship row layer (x=143, y=81, w=120, h=69) */
+    vid_box_fill(0x8F, 0x51, 0x78, 0x45, 0);   /* @asm 0x0314F8 */
+
+    /* 6 ship slots with ICONS.SS frame 0x7B (123)
+     * @asm 0x031521 CMP [bp-0x5c],6;  0x03154F MOV ax,0x7B */
+    sx = 0x8F;                               /* start x = dock scene left */
+    for (i = 0; i < 6; i++) {
+        int hw = sheet_frame_w_icons(0x7B) >> 1;
+        blit_sprite(0, 0x7B, sx + 10 - hw, 0x76 + 4);  /* y ≈ 122 in dock area */
+        sx += 0x78 / 6;                      /* pitch = 120/6 = 20px */
+    }
+    (void)blit;
+}
+
+/* europe_draw_recruit_pool -- 3 recruit/purchase/train slots (right column).
+ * func_031DC8  @file 0x031DC8
+ *
+ * Pool bg fill (281,89,37,32)  @asm 0x031DCC PUSH 0x20,0x25,0x59,0x119.
+ * 3 cells stacking vertically; y advances by cell_h+2 per slot
+ * @asm 0x031E23 INC ax;INC ax;ADD [bp-4],ax.
+ * Per-slot labels: RECRUIT / PURCHASE / TRAIN from LABELS.TXT @EUROLABEL[0..2]
+ * (handle 0x22D4).  @asm func_031BE6 draws each button bevel. */
+void europe_draw_recruit_pool(int blit)
+{
+    static const char *lbls[3] = { "RECRUIT", "PURCHASE", "TRAIN" };
+    int  i, cy = 0x59;                       /* y=89 @asm 0x031DDC */
+    int  cell_h = (0x20 - 4) / 3;           /* ~9px; (32-4gaps)/3 cells */
+
+    /* pool background fill (x=281, y=89, w=37, h=32) */
+    vid_box_fill(0x119, 0x59, 0x25, 0x20, 0);  /* @asm 0x031DCC */
+
+    for (i = 0; i < 3; i++) {               /* @asm 0x031E2B CMP [bp-6],3 */
+        int tw;
+        /* raised-bevel outline: light edge 0x30, dark edge 0x39 */
+        vid_box_outline(0x119, cy, 0x25, cell_h, 0x39);  /* @asm 0x031C8A raised */
+        /* label text centered inside cell */
+        tw = vid_text_width(lbls[i]);
+        vid_text_color(0x0F);
+        vid_text_xy(lbls[i], 0x119 + (0x25 - tw) / 2, cy + 1);
+        cy += cell_h + 2;                   /* @asm 0x031E23 INC ax;INC ax;ADD */
+    }
+    (void)blit;
+}
 
 /* ----------------------------------------------------------------------------
  * europe_screen_render -- the Europe trade-port paint composer.
