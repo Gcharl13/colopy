@@ -41,8 +41,11 @@ const char *viceroy_data_dir(void) { return g_data; }
 static int g_interactive;
 int viceroy_interactive(void) { return g_interactive; }
 static ff_font_t   g_font;
+static ff_font_t   g_font_intr;
 static int         g_have_font;
+static int         g_have_font_intr;
 ff_font_t *viceroy_font(void) { return g_have_font ? &g_font : 0; }
+ff_font_t *viceroy_font_intr(void) { return g_have_font_intr ? &g_font_intr : 0; }
 
 /* ---- @BEGINMENU (GAME.TXT) ------------------------------------------------ */
 #define MENU_MAX 8
@@ -146,32 +149,37 @@ static void draw_nations(void)
     static const int flag_y[4] = {  13,  13, 104, 104 };
     const int FW = 87, FH = 81;
     draw_bg();
-    if (g_have_font) {
+    {
         extern int  ui_color_for(int,int,int);
         extern void draw_box(int,int,int,int,int);
+        ff_font_t *ft = g_have_font_intr ? &g_font_intr : (g_have_font ? &g_font : 0);
+        ff_font_t *fts = g_have_font ? &g_font : 0;  /* small font for label */
+        if (!ft) { vid_present(); return; }
         uint8_t dark = 0, light = 15;
         int green = ui_color_for(0x52, 0x8A, 0x31);
         pal_pick_text_colors(&dark, &light);
-        /* title top-left, UI green, two lines (matches ref_nation.png). */
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = (uint8_t)green;
-        ff_draw(&g_font, "Select",         30, 24, 1);
-        ff_draw(&g_font, "European Power",  18, 33, 1);
+        /* title top-left, UI green -- FONTINTR for headers */
+        ft->colors[1] = ft->colors[2] = ft->colors[3] = (uint8_t)green;
+        ff_draw(ft, "Select",         30, 20, 1);
+        ff_draw(ft, "European Power",  8, 20 + ft->maxh + 2, 1);
         /* red selection cursor box around the chosen power's flag. */
         {   int s = g_nat_sel & 3;
             int red = ui_color_for(0xE0, 0x20, 0x20);
             draw_box(flag_x[s]-1, flag_y[s]-1,
                      flag_x[s]+FW, flag_y[s]+FH, red);
         }
-        /* leader / nation name centred over the selected flag (NAMES.TXT
-         * @COUNTRY table at DGROUP:0x8D42). */
+        /* leader / nation name centred over the selected flag */
         {   int s = g_nat_sel & 3;
             const char *nm = (const char *)&DG8(DG16(0x8D42 + s*2));
-            int tw = ff_text_width(&g_font, nm, 1);
-            g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
-            ff_draw(&g_font, nm, flag_x[s] + (FW - tw)/2, flag_y[s] - 9, 1);
+            ff_font_t *fn = fts ? fts : ft;
+            int tw = ff_text_width(fn, nm, 1);
+            fn->colors[1] = fn->colors[2] = fn->colors[3] = light;
+            ff_draw(fn, nm, flag_x[s] + (FW - tw)/2, flag_y[s] - fn->maxh - 1, 1);
         }
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
-        draw_text_center("Click here when done (Esc)", 188, light);
+        if (fts) {
+            fts->colors[1] = fts->colors[2] = fts->colors[3] = light;
+            draw_text_center("Click here when done (Esc)", 188, light);
+        }
     }
     vid_present();
 }
@@ -188,28 +196,33 @@ static void draw_difficulty(void)
     static const int port_y[5] = {   7,   7, 103, 103, 103 };
     static const char *const diff_name[5] = {
         "Discoverer", "Explorer", "Conquistador", "Governor", "Viceroy" };
+    /* selection box colors per difficulty (plan Phase D6: 0xA,9,0xE,0xD,0xC) */
+    static const int diff_colors[5] = { 0xA, 9, 0xE, 0xD, 0xC };
     const int PW = 67, PH = 89;
     draw_bg();
-    if (g_have_font) {
+    {
         extern int  ui_color_for(int,int,int);
         extern void draw_box(int,int,int,int,int);
+        ff_font_t *ft = g_have_font_intr ? &g_font_intr : (g_have_font ? &g_font : 0);
+        ff_font_t *fts = g_have_font ? &g_font : 0;
+        if (!ft) { vid_present(); return; }
         uint8_t dark = 0, light = 15;
-        int green = ui_color_for(0x40, 0xC0, 0x40);
         int s = g_diff_sel % 5;
         pal_pick_text_colors(&dark, &light);
-        /* title top-left, green, two lines. */
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = (uint8_t)green;
-        ff_draw(&g_font, "Choose",            22, 24, 1);
-        ff_draw(&g_font, "Difficulty Level",  12, 33, 1);
-        /* green selection box around the chosen level's portrait. */
-        draw_box(port_x[s]-1, port_y[s]-1, port_x[s]+PW, port_y[s]+PH, green);
-        /* level name over the selected portrait, green. */
-        {   int tw = ff_text_width(&g_font, diff_name[s], 1);
-            ff_draw(&g_font, diff_name[s], port_x[s] + (PW - tw)/2,
-                    port_y[s] + PH/2 - 4, 1);
+        ft->colors[1] = ft->colors[2] = ft->colors[3] = diff_colors[s];
+        ff_draw(ft, "Choose",           22, 20, 1);
+        ff_draw(ft, "Difficulty Level", 12, 20 + ft->maxh + 2, 1);
+        draw_box(port_x[s]-1, port_y[s]-1, port_x[s]+PW, port_y[s]+PH, diff_colors[s]);
+        {   ff_font_t *fn = fts ? fts : ft;
+            int tw = ff_text_width(fn, diff_name[s], 1);
+            fn->colors[1] = fn->colors[2] = fn->colors[3] = diff_colors[s];
+            ff_draw(fn, diff_name[s], port_x[s] + (PW - tw)/2,
+                    port_y[s] + PH/2 - fn->maxh/2, 1);
         }
-        g_font.colors[1] = g_font.colors[2] = g_font.colors[3] = light;
-        draw_text_center("Click here when done (Esc)", 188, light);
+        if (fts) {
+            fts->colors[1] = fts->colors[2] = fts->colors[3] = light;
+            draw_text_center("Click here when done (Esc)", 188, light);
+        }
     }
     vid_present();
 }
@@ -854,6 +867,11 @@ int main(int argc, char **argv)
         extern void viceroy_init_text_ctx(int);
         viceroy_init_text_ctx(g_font.maxh);   /* ctx byte0+1 = line height */
     }
+    snprintf(fpath, sizeof fpath, "%s/FONTINTR.FF", g_data);
+    g_have_font_intr = ff_load(fpath, &g_font_intr) == 0;
+    if (g_have_font_intr) {
+        printf("  FONTINTR  : %dx%d glyphs\n", g_font_intr.maxw, g_font_intr.maxh);
+    }
 
     /* DOSBox-parity: load a real COLONIZE save and re-save it, for savediff
      * against the original (load-fidelity = modern state model matches the
@@ -1033,7 +1051,9 @@ int main(int argc, char **argv)
             DG16(0x538A) = 1492;                  /* game year */
             DG16(0x538C) = 0;                     /* season idx 0 = Spring */
             DG32(0x8832) = 1000;                  /* PowerRecord[0] gold dword (+0x2A) */
-            DG8(0x8809)  = 0;                     /* PowerRecord[0] tax% (+0x01) */
+            DG8(0x8809)  = 7;                     /* PowerRecord[0] tax% (+0x01) */
+            DG16(0x8836) = 18;                    /* PowerRecord[0] crosses_cur (+0x2E) */
+            DG16(0x8838) = 40;                    /* PowerRecord[0] crosses_needed (+0x30) */
             {   /* a little stock so the bar's value path is visible:
                  * Food=25, Lumber=60, Ore=12 (ctx words +0x9A+i*2) */
                 DG16(rec + 0x9A + 0*2) = 25;
@@ -1275,22 +1295,26 @@ int main(int argc, char **argv)
                     vid_text_color(ui_color_for(0xF0,0xE0,0xB0));   /* parchment cream */
                     vid_text_xy(t, (320 - tw)/2, 8);
                 }
-                /* Cross-immigration meter (report_religious crosses_cur of
-                 * crosses_needed): a row of progress cells -- filled (cream) for
-                 * crosses earned, empty (outline) for those still needed. */
+                /* Cross-immigration meter (func_037958):
+                 * meter_draw(color=0x39, row=0x19=25, col=0xA=10, width=0x12C=300)
+                 * Horizontal bar: outer frame, filled portion, text label.
+                 * Reads PowerRecord[0] +0x2E (crosses_cur) and +0x30 (crosses_needed). */
                 {   extern void vid_box_fill(int,int,int,int,uint8_t);
-                    int cur = 3, nxt = 10, cx = 185, cy = 60;
+                    int cur = (int)(int16_t)DG16(0x8836);   /* PowerRecord[0]+0x2E */
+                    int nxt = (int)(int16_t)DG16(0x8838);   /* PowerRecord[0]+0x30 */
+                    int bx = 0xA, by = 0x19, bw = 0x12C, bh = 0xC;  /* bar geom */
                     int cream = ui_color_for(0xF0,0xE0,0xB0);
-                    for (int k = 0; k < nxt; k++) {
-                        int bx0 = cx + (k%5)*22, by0 = cy + (k/5)*24;
-                        draw_box(bx0, by0, bx0 + 16, by0 + 18, 0);   /* cell frame */
-                        if (k < cur)
-                            vid_box_fill(bx0+2, by0+2, 13, 15, (uint8_t)cream);
-                    }
-                    char m[32];
-                    snprintf(m, sizeof m, "%d of %d crosses", cur, nxt);
+                    int dark  = ui_color_for(0x20,0x10,0x08);
+                    if (nxt < 1) nxt = 1;
+                    int fill_w = (cur * bw) / nxt;
+                    if (fill_w > bw) fill_w = bw;
+                    draw_box(bx, by, bx+bw, by+bh, (int)(uint8_t)dark);
+                    vid_box_fill(bx+1, by+1, fill_w-2 > 0 ? fill_w-2 : 0, bh-2,
+                                 (uint8_t)ui_color_for(0x39,0x19,0x09));
+                    char m[48];
+                    snprintf(m, sizeof m, "%d of %d crosses to next immigrant", cur, nxt);
                     vid_text_color(cream);
-                    vid_text_xy(m, cx, cy + 56);
+                    vid_text_xy(m, bx, by + bh + 4);
                 }
                 draw_box(0, 0, 319, 199, 0);
                 vid_present();
@@ -1369,6 +1393,7 @@ int main(int argc, char **argv)
     }
 
     if (g_have_font) ff_free(&g_font);
+    if (g_have_font_intr) ff_free(&g_font_intr);
     if (g_have_bg) pik_free(&g_bg);
     vid_shutdown();
     printf("viceroy_modern: clean exit\n");
