@@ -16,20 +16,19 @@
  *
  * Z-order, exactly as O513 emits (closest zoom, map view):
  *   base ground   TERRAIN.SS[terrain_cell_transform(land_base)]      (6b)
- *   [water] coast O512: PHYS0 0x68+dir per cardinal LAND neighbour
  *   [land] forest PHYS0 0x41 + nmask4_forest (forest_neighbour)      (6c)
  *   [land] river  PHYS0 0x96                 (bit 0x40)              (6d)
  *   [land] hills  PHYS0 0x31 + nmask4_feat_hi (bit 0x20, !0x80)      (6e)
  *   [land] mtn    PHYS0 0x21 + nmask4_feat_hi (bit 0x20, 0x80)       (6e)
+ *   [water] coast 0xC665: diagonal beach 0x97+pattern OR 4 quadrant
+ *           sub-cells 0x6D+config*4+q, driven by 8-neighbour connectivity (6i)
  *
- * The road / feature-edge / clean-coast blocks (6f,6h,6i,6k) of O513 are driven
- * by the FEATURE layer's road/connectivity bits, which the stock .MP does not
- * carry (no roads in saved maps — confirmed); they would mis-fire on land
- * connectivity, so they are intentionally not emitted.
- *
- * Coast sprite directions are pixel-verified from PHYS0: frame 0x68 = north
- * edge, 0x69 = east, 0x6A = south, 0x6B = west, i.e. 0x68 + DIR4 index
- * (N,E,S,W).  Mask bit order matches nmask4: N=8 S=4 W=2 E=1.
+ * The coast sub-cell/diagonal block (6i) runs ONLY for water tiles (base_drawn
+ * set by the Ocean/Sea-Lane test at 0xC450/0xC457); its connectivity bitmap +
+ * per-quadrant config come from the 0xBC1E builder over the 8 neighbours' L1
+ * land/water — see compose_coast() below. The road / feature-edge blocks
+ * (6f,6h,6k) of O513 need the FEATURE layer's road bits, which the stock .MP
+ * does not carry (no roads in saved maps — confirmed), so they are not emitted.
  */
 #include "sprites.h"
 #include "ss.h"
@@ -161,6 +160,27 @@ static void blit_phys0(fb *f, int px, int py, int tp, int idx)
         blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
 }
 
+/* like blit_phys0 but treats opaque PURE-BLACK (#000000) source pixels as
+ * transparent. The coast sub-cells (0x6D..0x89) encode "ocean shows here" as
+ * solid black; the original covers that black by re-emitting the ocean sprite
+ * after the sub-cells (0xC70D). Colour-keying black to the ocean base below
+ * yields the same result: ocean where black, foam/sand where coloured. */
+static void blit_phys0_ck(fb *f, int px, int py, int tp, int idx)
+{
+    if (!g_phys0 || idx < 0 || idx >= g_phys0->count) return;
+    const ss_frame *fr = &g_phys0->frames[idx];
+    if (!fr->rgba || fr->w <= 0 || fr->h <= 0) return;
+    for (int yy = 0; yy < tp; yy++) {
+        int sy = yy * fr->h / tp;
+        for (int xx = 0; xx < tp; xx++) {
+            int sx = xx * fr->w / tp;
+            uint32_t c = fr->rgba[sy * fr->w + sx];
+            if ((c >> 24) && (c & 0xFFFFFF))
+                fb_set(f, px + xx, py + yy, c & 0xFFFFFF);
+        }
+    }
+}
+
 /* ---- terrain predicates over the L1 byte ----
  * The render chain works on the *classified visible id*: classify masks the
  * byte to 0x1F and folds the forest band 8..23 down to 8..15. */
@@ -177,9 +197,9 @@ static int classify_vis(uint8_t b)
     return id;
 }
 
-/* DIR4 neighbour offsets, N,E,S,W (matches VICEROY DIR4_DX/DY). */
-static const int DIR4_DX[4] = {  0,  1,  0, -1 };
-static const int DIR4_DY[4] = { -1,  0,  1,  0 };
+/* DIR8 neighbour offsets, order N,NE,E,SE,S,SW,W,NW (MAPEDIT/VICEROY DIR8). */
+static const int DIR8_DX[8] = {  0,  1,  1,  1,  0, -1, -1, -1 };
+static const int DIR8_DY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
 
 static uint8_t L1at(const mp_map *m, int x, int y)
 {
@@ -226,59 +246,73 @@ static int feat_hi_nmask(const mp_map *m, int x, int y)
     return k;
 }
 
-/* Coast / beach on a WATER tile (func_O512, the sub-cell composer).
- *
- * O512 composes the shoreline from 8x8 water sub-cells (PHYS0 0x70..0x8B) per
- * quadrant; that selection table is not byte-decoded, so the beach is composed
- * here from the game's OWN coast colours (sampled from PHYS0 0x97: deep ocean
- * #283891, shallow/foam #5069B2, sand #BAA17D) — sand at the land border, a
- * shallow band, then deep ocean — for every land-facing edge and corner.  This
- * reproduces the original's coastline look without inventing colours. */
-#define COAST_SAND    RGB(0xBA, 0xA1, 0x7D)
-#define COAST_SHALLOW RGB(0x50, 0x69, 0xB2)
+/* ---- Coast: byte-verified water-side composer (MAPEDIT 0xC665 + 0xBC1E) ----
+ * For a WATER tile, classify its 8 neighbours (land = non-ocean) into a
+ * connectivity bitmap + a per-quadrant config table (a direct port of MAPEDIT's
+ * 0xBC1E connectivity builder), then compose the shoreline exactly as the
+ * 0xC665 block does:
+ *   - a clean diagonal pattern -> one full-tile diagonal beach PHYS0 0x97+pattern
+ *   - else 4 quadrant 8x8 sub-cells PHYS0 0x6D + config[q]*4 + q at NW/NE/SE/SW
+ * config[q] (0..7) = which of the 3 corner-neighbours touching quadrant q are
+ * LAND (open water = 0, surrounded by land = 7). Open ocean (no land neighbour)
+ * draws nothing extra (the v==0 early-out) — the plain ocean base stands. */
 
-static void coast_edge(fb *f, int px, int py, int tp, int dir, int sand, int shallow)
+/* a neighbour is LAND iff in-bounds and not ocean/sea-lane */
+static int land_at(const mp_map *m, int x, int y)
 {
-    /* outer `sand` px at the land border, then `shallow` px of foam water */
-    switch (dir) {
-        case 0: /* N: land above -> beach on the top edge */
-            fb_fill_rect(f, px, py, tp, sand, COAST_SAND);
-            fb_fill_rect(f, px, py + sand, tp, shallow, COAST_SHALLOW);
-            break;
-        case 1: /* E */
-            fb_fill_rect(f, px + tp - sand, py, sand, tp, COAST_SAND);
-            fb_fill_rect(f, px + tp - sand - shallow, py, shallow, tp, COAST_SHALLOW);
-            break;
-        case 2: /* S */
-            fb_fill_rect(f, px, py + tp - sand, tp, sand, COAST_SAND);
-            fb_fill_rect(f, px, py + tp - sand - shallow, tp, shallow, COAST_SHALLOW);
-            break;
-        case 3: /* W */
-            fb_fill_rect(f, px, py, sand, tp, COAST_SAND);
-            fb_fill_rect(f, px + sand, py, shallow, tp, COAST_SHALLOW);
-            break;
+    if (x < 0 || y < 0 || x >= m->width || y >= m->height) return 0;
+    return !is_water_id(MP_TERRAIN_ID(m->terrain[mp_idx(m, x, y)]));
+}
+
+/* port of the 0xBC1E builder: returns the conn bitmap, fills road[4] config. */
+static int coast_connectivity(const mp_map *m, int tx, int ty, uint8_t road[4])
+{
+    int conn = 0;
+    road[0] = road[1] = road[2] = road[3] = 0;
+    for (int dir = 0; dir < 8; dir++) {
+        if (!land_at(m, tx + DIR8_DX[dir], ty + DIR8_DY[dir]))
+            continue;                       /* ocean neighbour -> no bit */
+        conn |= (1 << dir);
+        if (dir & 1)                        /* diagonal */
+            road[((dir + 1) & 6) >> 1] |= 2;
+        else {                              /* cardinal */
+            road[dir >> 1] |= 4;
+            road[((dir >> 1) + 1) & 3] |= 1;
+        }
     }
+    return conn;
+}
+
+/* blit an 8x8 PHYS0 sub-cell into one quadrant (nudge in 16px-tile units). */
+static void blit_phys0_quad(fb *f, int px, int py, int tp, int nx, int ny, int idx)
+{
+    blit_phys0_ck(f, px + nx * tp / 16, py + ny * tp / 16, tp / 2, idx);
 }
 
 static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
-    if (tp < 4) return;                 /* too small to show a beach */
-    int sand = tp / 8; if (sand < 1) sand = 1;
-    int shallow = tp / 6; if (shallow < 1) shallow = 1;
+    uint8_t road[4];
+    int conn = coast_connectivity(m, tx, ty, road);
+    if (conn == 0) return;                  /* open ocean: plain base (v==0 early-out) */
 
-    /* shallow band first (under the sand), then sand on top, per land edge */
-    for (int d = 0; d < 4; d++)
-        if (!water_at(m, tx + DIR4_DX[d], ty + DIR4_DY[d]))
-            coast_edge(f, px, py, tp, d, sand, shallow);
+    /* clean diagonal patterns -> one full-tile diagonal beach 0x97+pattern.
+     * 0x97/0x98/0x99 exist; pattern 3 -> 0x9A is absent, so fall through. */
+    int pattern = -1;
+    if ((conn & 0xDD) == 0xC1) pattern = 0;
+    if ((conn & 0x77) == 0x07) pattern = 1;
+    if ((conn & 0x77) == 0x70) pattern = 2;
+    if ((conn & 0xDD) == 0x1C) pattern = 3;
+    if (pattern >= 0 && g_phys0 && 0x97 + pattern < g_phys0->count) {
+        blit_phys0_ck(f, px, py, tp, 0x97 + pattern);
+        return;
+    }
 
-    /* diagonal land neighbours: a sand fleck in the matching corner */
-    static const int cdx[4] = { -1, 1, 1, -1 }, cdy[4] = { -1, -1, 1, 1 };
-    for (int c = 0; c < 4; c++)
-        if (!water_at(m, tx + cdx[c], ty + cdy[c])) {
-            int cx = (cdx[c] < 0) ? px : px + tp - sand;
-            int cy = (cdy[c] < 0) ? py : py + tp - sand;
-            fb_fill_rect(f, cx, cy, sand, sand, COAST_SAND);
-        }
+    /* else 4 quadrant sub-cells 0x6D + config*4 + q at NW/NE/SE/SW.
+     * nudge dX=(((q+1)&3)&0x3e)<<2 = {0,8,8,0}, dY=(q&0xfe)<<2 = {0,0,8,8}. */
+    static const int nx[4] = { 0, 8, 8, 0 };
+    static const int ny[4] = { 0, 0, 8, 8 };
+    for (int q = 0; q < 4; q++)
+        blit_phys0_quad(f, px, py, tp, nx[q], ny[q], 0x6D + road[q] * 4 + q);
 }
 
 /* Neighbour-aware map tile composition (the O513/O512 stack). */

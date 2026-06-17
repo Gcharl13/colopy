@@ -79,7 +79,13 @@ Hills/mountains are an overlay flag (bit 0x20) on any base, not a base id.
 - **forest** ids 8..23: PHYS0 `0x41 + forest-neighbour mask`.
 - **hills/mtns** bit 0x20: PHYS0 `0x31` (hills) / `0x21` (mtn) `+ nmask4_feat_hi`.
 - **river** bit 0x40: PHYS0 `0x96` (blue water + tan banks).
-- **coast**: PHYS0 shore `0x01..0x0F` by water-neighbour mask on land edges.
+- **coast** (water tiles only, MAPEDIT `0xC665` + `0xBC1E`): from the 8 neighbours'
+  land/water build a connectivity bitmap + per-quadrant config; a clean diagonal
+  pattern draws the full-tile beach PHYS0 `0x97+pattern` (`0x97..0x99`; `0x9A` absent),
+  else 4 quadrant 8×8 sub-cells PHYS0 `0x6D + config*4 + q` at NW/NE/SE/SW. The
+  sub-cells encode "ocean shows here" as solid black (`0x6D..0x6F`), so pure-black
+  source pixels are colour-keyed to the ocean base below — the same result the game
+  gets by re-emitting the ocean sprite after the sub-cells.
 - Each `.SS` uses its **own embedded palette** (VICEROY.PAL as a global DAC
   palette mis-colours the sprite indices → verified garbage).
 
