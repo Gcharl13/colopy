@@ -53,6 +53,13 @@
 #define UI_PANEL_X    (UI_WIN_W - UI_PANEL_W)
 #define UI_PANEL_Y    UI_MENU_H
 
+/* Minimap box — authoritative geometry from MAPEDIT.EXE's hit-test region 2
+ * (x[252,308), y[9,48)): a fixed 56x39 window, 1px per tile. */
+#define UI_MM_X       252
+#define UI_MM_Y       9
+#define UI_MM_W       56
+#define UI_MM_H       39
+
 /* Zoom levels = tiles visible across the viewport (View menu F1..F4). */
 extern const int UI_ZOOM_TILES[4];   /* {120, 60, 30, 15} */
 

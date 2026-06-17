@@ -165,28 +165,48 @@ void ui_center_on(ui_view *v, const editor *e, int tx, int ty)
  * tile span. */
 #define MM_CROP_COLS 1   /* sea-lane border columns trimmed from each side */
 
-static void minimap_crop(const editor *e, int *cx0, int *cy0, int *cw, int *ch)
+/* Minimap geometry: the fixed authoritative 56x39 box at (252,9), 1px/tile.
+ * Horizontal: border-cropped to MM_CROP_COLS each side (58 -> 56 cols = box w).
+ * Vertical: a 39-row window whose origin (row0) follows the main view, so the
+ * minimap scrolls with it — mirroring the engine's windowed minimap. cx0/cy0
+ * are the cropped-area origin in map coords; row0 is the window's first row. */
+static void minimap_geom(const editor *e, const ui_view *v,
+                         int *mmx, int *mmy, int *mmw, int *mmh,
+                         int *cx0, int *cy0, int *row0)
 {
     int W = e->map->width, H = e->map->height;
-    *cx0 = (W > 2 * MM_CROP_COLS) ? MM_CROP_COLS : 0;
+    int cropx = (W > 2 * MM_CROP_COLS) ? MM_CROP_COLS : 0;
+    int cw = W - 2 * cropx;
+    *cx0 = cropx;
     *cy0 = 0;
-    *cw  = W - 2 * (*cx0);
-    *ch  = H - 2 * (*cy0);
+    *mmx = UI_MM_X;
+    *mmy = UI_MM_Y;
+    *mmw = (cw < UI_MM_W) ? cw : UI_MM_W;   /* 56 (full crop width) */
+    *mmh = (H  < UI_MM_H) ? H  : UI_MM_H;   /* 39-row window (or whole map) */
+
+    int tp = ui_tile_px(v);
+    int visy = UI_MAP_H / tp;
+    int r0 = (v->scroll_y + visy / 2) - UI_MM_H / 2;   /* centre on the view */
+    int maxr = H - *mmh;
+    if (r0 > maxr) r0 = maxr;
+    if (r0 < 0)    r0 = 0;
+    *row0 = r0;
 }
 
-static void minimap_geom(const editor *e, int *mmx, int *mmy, int *cell, int *mmw, int *mmh)
+/* draw a rectangle outline clipped to a box (used for the minimap viewport). */
+static void fb_rect_clipped(fb *f, int x, int y, int w, int h,
+                            int bx, int by, int bw, int bh, uint32_t col)
 {
-    int cx0, cy0, cw, ch;
-    minimap_crop(e, &cx0, &cy0, &cw, &ch);
-    int sw = (UI_PANEL_W - 6) / cw;     /* fit the panel width */
-    int sh = 80 / ch;                    /* cap height so status fits below */
-    int c = sw < sh ? sw : sh;
-    if (c < 1) c = 1;
-    *cell = c;
-    *mmw = cw * c;
-    *mmh = ch * c;
-    *mmx = UI_PANEL_X + (UI_PANEL_W - *mmw) / 2;
-    *mmy = UI_MENU_H + 3;
+    for (int xx = x; xx < x + w; xx++) {
+        if (xx < bx || xx >= bx + bw) continue;
+        if (y >= by && y < by + bh)             fb_set(f, xx, y, col);
+        if (y + h - 1 >= by && y + h - 1 < by + bh) fb_set(f, xx, y + h - 1, col);
+    }
+    for (int yy = y; yy < y + h; yy++) {
+        if (yy < by || yy >= by + bh) continue;
+        if (x >= bx && x < bx + bw)             fb_set(f, x, yy, col);
+        if (x + w - 1 >= bx && x + w - 1 < bx + bw) fb_set(f, x + w - 1, yy, col);
+    }
 }
 
 /* ---- map viewport: neighbour-aware tiles with real coast sprites ---- */
@@ -224,17 +244,17 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     draw_wood(f, UI_PANEL_X, UI_PANEL_Y, UI_PANEL_W, UI_MAP_H);
     fb_vline(f, UI_PANEL_X, UI_PANEL_Y, UI_MAP_H, RGB(0x2A,0x18,0x0C));
 
-    /* mini-map (cropped to the playable area) */
-    int mmx, mmy, cell, mmw, mmh, cx0, cy0, cw, ch;
-    minimap_geom(e, &mmx, &mmy, &cell, &mmw, &mmh);
-    minimap_crop(e, &cx0, &cy0, &cw, &ch);
+    /* mini-map: fixed 56x39 box at (252,9), 1px/tile, vertical window scrolls
+     * with the view (border-cropped horizontally to 56 columns). */
+    int mmx, mmy, mmw, mmh, cx0, cy0, row0;
+    minimap_geom(e, v, &mmx, &mmy, &mmw, &mmh, &cx0, &cy0, &row0);
     const mp_map *m = e->map;
-    for (int y = 0; y < ch; y++)
-        for (int x = 0; x < cw; x++) {
+    for (int y = 0; y < mmh; y++)
+        for (int x = 0; x < mmw; x++) {
             /* per the original minimap (func_066BB0 / NAMES @COLORS roles): colour
              * by CATEGORY — water, then mtn/hill (bit 0x20), then forest (ids
              * 8..23), then base land — so elevation and forest read on the map. */
-            uint8_t b  = m->terrain[mp_idx(m, cx0 + x, cy0 + y)];
+            uint8_t b  = m->terrain[mp_idx(m, cx0 + x, cy0 + row0 + y)];
             uint8_t id = MP_TERRAIN_ID(b);
             uint32_t c;
             if (id == 25 || id == 26)        c = terrain_color(id);           /* water */
@@ -242,21 +262,21 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
                                                             : C_MM_HILL;       /* mtn/hill */
             else if (id >= 8 && id < 24)     c = C_MM_FOREST;                  /* forest */
             else                             c = terrain_color(id);           /* land */
-            fb_fill_rect(f, mmx + x * cell, mmy + y * cell, cell, cell, c);
+            fb_set(f, mmx + x, mmy + y, c);
         }
     fb_rect(f, mmx - 2, mmy - 2, mmw + 4, mmh + 4, C_MM_BORDER);
     fb_rect(f, mmx - 1, mmy - 1, mmw + 2, mmh + 2, C_MM_BORDER);
 
-    /* viewport rectangle on the mini-map (in cropped coordinates) */
+    /* viewport rectangle on the mini-map, clipped to the window */
     int tp = ui_tile_px(v);
     int visx = UI_MAP_W / tp, visy = UI_MAP_H / tp;
-    int bx = mmx + (v->scroll_x - cx0) * cell;
-    int by = mmy + (v->scroll_y - cy0) * cell;
-    fb_rect(f, bx, by, visx * cell, visy * cell, C_WHITE);
+    int bx = mmx + (v->scroll_x - cx0);
+    int by = mmy + (v->scroll_y - cy0 - row0);
+    fb_rect_clipped(f, bx, by, visx, visy, mmx, mmy, mmw, mmh, C_WHITE);
 
-    /* status text — native FONTTINY scale (6px), tight line spacing */
+    /* status text — panel content region begins at y=50 (hit-test region 3) */
     int tx = UI_PANEL_X + 3;
-    int y = mmy + mmh + 6;
+    int y = UI_MM_Y + UI_MM_H + 2;
     char line[80];
     const terrain_info *sel = terrain_by_id(e->selected_id);
     char desc[48];
@@ -413,14 +433,12 @@ int ui_hit_menu_item(const ui_view *v, int mx, int my)
 
 int ui_hit_minimap(const ui_view *v, const editor *e, int mx, int my, int *tx, int *ty)
 {
-    (void)v;
-    int mmx, mmy, cell, mmw, mmh, cx0, cy0, cw, ch;
-    minimap_geom(e, &mmx, &mmy, &cell, &mmw, &mmh);
-    minimap_crop(e, &cx0, &cy0, &cw, &ch);
+    int mmx, mmy, mmw, mmh, cx0, cy0, row0;
+    minimap_geom(e, v, &mmx, &mmy, &mmw, &mmh, &cx0, &cy0, &row0);
     if (mx < mmx || mx >= mmx + mmw || my < mmy || my >= mmy + mmh)
         return 0;
-    *tx = cx0 + (mx - mmx) / cell;   /* cropped -> map coords */
-    *ty = cy0 + (my - mmy) / cell;
+    *tx = cx0 + (mx - mmx);                  /* cropped+windowed -> map coords */
+    *ty = cy0 + row0 + (my - mmy);
     return 1;
 }
 
