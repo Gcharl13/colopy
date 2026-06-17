@@ -27,7 +27,10 @@ void ui_load_fonts(const char *colonize_dir)
     g_panel_font = ff_load(path);
 }
 
-/* Text helpers: use the game font when loaded, else the built-in 8x8 font. */
+/* Text helpers: use the game font when loaded, else the built-in 8x8 font.
+ * MAPEDIT's menu bar is only 8px tall, so it uses the SMALL font (FONTTINY) —
+ * NOT the 9px ornate FONTINTR the previous code used. Both menu and panel text
+ * therefore route through g_panel_font (the tiny editor UI font). */
 static int panel_text(fb *f, int x, int y, const char *s, uint32_t c)
 {
     if (g_panel_font) return ff_draw(f, g_panel_font, x, y, s, c, PANEL_FSCALE);
@@ -35,12 +38,12 @@ static int panel_text(fb *f, int x, int y, const char *s, uint32_t c)
 }
 static int menu_text(fb *f, int x, int y, const char *s, uint32_t c)
 {
-    if (g_menu_font) return ff_draw(f, g_menu_font, x, y, s, c, MENU_FSCALE);
+    if (g_panel_font) return ff_draw(f, g_panel_font, x, y, s, c, MENU_FSCALE);
     return fb_text(f, x, y, s, c, 1);
 }
 static int menu_text_w(const char *s)
 {
-    if (g_menu_font) return ff_text_width(g_menu_font, s) * MENU_FSCALE;
+    if (g_panel_font) return ff_text_width(g_panel_font, s) * MENU_FSCALE;
     return fb_text_w(s, 1);
 }
 
@@ -72,6 +75,16 @@ const char *ui_menu_item(int m, int i)
     if (m < 0 || m >= 4 || i < 0 || i >= MENU_LEN[m]) return "";
     return MENU_ITEMS[m][i];
 }
+
+/* ---- MAPEDIT menu chrome: palette indices extracted from MAPEDIT.EXE's
+ * initialised data (_menu_bar_* / _menu_* globals), resolved via VICEROY.PAL.
+ * This is a flat index-coloured bar, NOT the gold-on-wood I had before. ---- */
+#define MC_TEXT     sprite_ui_color(0)    /* _menu_bar_font_main_color   = 0  */
+#define MC_DISABLED sprite_ui_color(8)    /* _menu_bar_font_grey_color   = 8  */
+#define MC_HILITE   sprite_ui_color(15)   /* _menu_bar_font_hilite_color = 15 */
+#define MC_BAR_BG   sprite_ui_color(7)    /* _menu_bar_background_color   = 7  */
+#define MC_SELECT   sprite_ui_color(8)    /* _menu_bar_select_color       = 8  */
+#define MC_BORDER   sprite_ui_color(0)    /* _menu_border_color           = 0  */
 
 /* ---- colours sampled from the original ---- */
 #define C_GOLD        RGB(0xF0,0xC8,0x40)
@@ -159,38 +172,35 @@ void ui_center_on(ui_view *v, const editor *e, int tx, int ty)
     ui_clamp_scroll(v, (editor *)e);
 }
 
-/* ---- mini-map geometry ----
- * The original minimap shows only the playable area, cropping the sea-lane
- * border columns (x==0 and x==width-1). cx0/cy0 = crop origin, cw/ch = cropped
- * tile span. */
-#define MM_CROP_COLS 1   /* sea-lane border columns trimmed from each side */
-
-/* Minimap geometry: the fixed authoritative 56x39 box at (252,9), 1px/tile.
- * Horizontal: border-cropped to MM_CROP_COLS each side (58 -> 56 cols = box w).
- * Vertical: a 39-row window whose origin (row0) follows the main view, so the
- * minimap scrolls with it — mirroring the engine's windowed minimap. cx0/cy0
- * are the cropped-area origin in map coords; row0 is the window's first row. */
+/* ---- mini-map geometry (byte-verified from MAPEDIT's _generate_mini) ----
+ * The editor's minimap is a 56x39 tile WINDOW at 1px/tile, screen box (252,9),
+ * scrolled in BOTH axes to follow the main view. _generate_mini computes the
+ * window origin as clamp(view_centre - {0x1c,0x13}, 1, {mapW-0x39, mapH-0x28}) —
+ * i.e. centre the 56x39 window on the view (28 = 56/2, 19 ~= 39/2). We mirror
+ * that here. cx0/row0 = window origin in map tiles (cy0 unused, kept 0). */
 static void minimap_geom(const editor *e, const ui_view *v,
                          int *mmx, int *mmy, int *mmw, int *mmh,
                          int *cx0, int *cy0, int *row0)
 {
     int W = e->map->width, H = e->map->height;
-    int cropx = (W > 2 * MM_CROP_COLS) ? MM_CROP_COLS : 0;
-    int cw = W - 2 * cropx;
-    *cx0 = cropx;
-    *cy0 = 0;
     *mmx = UI_MM_X;
     *mmy = UI_MM_Y;
-    *mmw = (cw < UI_MM_W) ? cw : UI_MM_W;   /* 56 (full crop width) */
-    *mmh = (H  < UI_MM_H) ? H  : UI_MM_H;   /* 39-row window (or whole map) */
+    *mmw = (W < UI_MM_W) ? W : UI_MM_W;   /* 56-tile window (or whole map) */
+    *mmh = (H < UI_MM_H) ? H : UI_MM_H;   /* 39-tile window */
 
     int tp = ui_tile_px(v);
-    int visy = UI_MAP_H / tp;
-    int r0 = (v->scroll_y + visy / 2) - UI_MM_H / 2;   /* centre on the view */
-    int maxr = H - *mmh;
-    if (r0 > maxr) r0 = maxr;
-    if (r0 < 0)    r0 = 0;
-    *row0 = r0;
+    int cx = v->scroll_x + (UI_MAP_W / tp) / 2;   /* view centre column */
+    int cy = v->scroll_y + (UI_MAP_H / tp) / 2;   /* view centre row    */
+    int ox = cx - UI_MM_W / 2;                    /* centre window on view */
+    int oy = cy - UI_MM_H / 2;
+    int maxx = W - *mmw, maxy = H - *mmh;
+    if (ox > maxx) ox = maxx;
+    if (ox < 0)    ox = 0;
+    if (oy > maxy) oy = maxy;
+    if (oy < 0)    oy = 0;
+    *cx0 = ox;
+    *cy0 = 0;
+    *row0 = oy;
 }
 
 /* draw a rectangle outline clipped to a box (used for the minimap viewport). */
@@ -251,18 +261,10 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
     const mp_map *m = e->map;
     for (int y = 0; y < mmh; y++)
         for (int x = 0; x < mmw; x++) {
-            /* per the original minimap (func_066BB0 / NAMES @COLORS roles): colour
-             * by CATEGORY — water, then mtn/hill (bit 0x20), then forest (ids
-             * 8..23), then base land — so elevation and forest read on the map. */
-            uint8_t b  = m->terrain[mp_idx(m, cx0 + x, cy0 + row0 + y)];
-            uint8_t id = MP_TERRAIN_ID(b);
-            uint32_t c;
-            if (id == 25 || id == 26)        c = terrain_color(id);           /* water */
-            else if (b & 0x20)               c = (b & 0x80) ? C_MM_MTN
-                                                            : C_MM_HILL;       /* mtn/hill */
-            else if (id >= 8 && id < 24)     c = C_MM_FOREST;                  /* forest */
-            else                             c = terrain_color(id);           /* land */
-            fb_set(f, mmx + x, mmy + y, c);
+            /* colour per tile by sampling its sprite, like MAPEDIT's
+             * _get_tile_colors (classify -> representative colour). */
+            uint8_t b = m->terrain[mp_idx(m, cx0 + x, cy0 + row0 + y)];
+            fb_set(f, mmx + x, mmy + y, sprite_minimap_color(b));
         }
     fb_rect(f, mmx - 2, mmy - 2, mmw + 4, mmh + 4, C_MM_BORDER);
     fb_rect(f, mmx - 1, mmy - 1, mmw + 2, mmh + 2, C_MM_BORDER);
@@ -311,15 +313,16 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
 /* ---- menu bar + dropdowns ---- */
 static void render_menubar(fb *f, const ui_view *v)
 {
-    draw_wood(f, 0, 0, UI_WIN_W, UI_MENU_H);
-    fb_hline(f, 0, UI_MENU_H - 1, UI_WIN_W, RGB(0x2A,0x18,0x0C));
+    /* flat index-7 bar (not wood); the original editor's menu bar is a solid
+     * fill with index-0 text — see the extracted _menu_bar_* colour indices. */
+    fb_fill_rect(f, 0, 0, UI_WIN_W, UI_MENU_H, MC_BAR_BG);
 
     for (int m = 0; m < UI_MENU_COUNT; m++) {
         int x, w;
         menu_rect(m, &x, &w);
-        menu_text(f, x, 0, MENU_TITLES[m], C_GOLD);
-        char acc[2] = { MENU_TITLES[m][0], 0 };
-        menu_text(f, x, 0, acc, C_GOLD_HOT);   /* brighter accelerator letter */
+        int open = (v->menu_open == m);
+        if (open) fb_fill_rect(f, x - 2, 0, w + 2, UI_MENU_H, MC_SELECT);
+        menu_text(f, x, 1, MENU_TITLES[m], open ? MC_HILITE : MC_TEXT);
     }
 
     if (v->menu_open >= 0) {
@@ -334,10 +337,10 @@ static void render_menubar(fb *f, const ui_view *v)
         }
         if (x + w > UI_WIN_W) x = UI_WIN_W - w;
         if (x < 0) x = 0;
-        draw_wood(f, x, y, w, n * 10 + 3);
-        fb_rect(f, x, y, w, n * 10 + 3, RGB(0xC8,0x84,0x30));
+        fb_fill_rect(f, x, y, w, n * 10 + 3, MC_BAR_BG);
+        fb_rect(f, x, y, w, n * 10 + 3, MC_BORDER);
         for (int i = 0; i < n; i++)
-            menu_text(f, x + 3, y + 2 + i * 10, MENU_ITEMS[m][i], C_DROP_FG);
+            menu_text(f, x + 3, y + 2 + i * 10, MENU_ITEMS[m][i], MC_TEXT);
     }
 }
 

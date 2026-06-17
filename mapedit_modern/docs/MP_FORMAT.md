@@ -52,7 +52,7 @@ ids: every layer-1 id `0..23` appears only on `land`/`border` tiles, while ids
 ```
 bits 0..4 : base terrain id (0..26; 8..23 = forest variants)
 bit  5    : hills / mountains   (0x20)   — VICEROY O513 6e reads this
-bit  6    : river               (0x40)   — O513 6d draws PHYS0 0x96
+bit  6    : river               (0x40)   — draws PHYS0 river row 0x00 + mask
 bit  7    : mountain (vs hills)  (0x80)   — with bit 0x20: set=mtn, clear=hills
 ```
 
@@ -72,22 +72,36 @@ prime/road/forest were wrong; forest is encoded by *id*, not a bit.)
 
 Hills/mountains are an overlay flag (bit 0x20) on any base, not a base id.
 
-## Sprite rendering (from the real game art)
+## Sprite rendering (PHYS0 indices are PIXEL-VERIFIED rows — see notes/SPRITE_CATALOG.md)
+
+Each PHYS0 overlay occupies a 16-sprite **row**; a 4-cardinal neighbour mask
+(0..15) indexes WITHIN the row, so the base MUST be the row start or a fully-
+surrounded tile (mask 15) overflows into the next row. Pixel-verified rows:
+`0x20` mtn · `0x30` hills · `0x40` forest · `0x50` **roads** (never drawn here) ·
+`0x6C..0x6F` 8×8 **black null padding** · `0x70..0x7F` 8×8 coast sub-tiles ·
+`0x90..0x99` coast / corner-beaches.
 
 - **base ground**: TERRAIN.SS frame = `terrain_cell_transform(land_base)`
   (resident func_03436: `0x11/0x09→8`, `≥8→code-0xF`, else code).
-- **forest** ids 8..23: PHYS0 `0x41 + forest-neighbour mask`.
-- **hills/mtns** bit 0x20: PHYS0 `0x31` (hills) / `0x21` (mtn) `+ nmask4_feat_hi`.
-- **river** bit 0x40: PHYS0 `0x96` (blue water + tan banks).
-- **coast** (water tiles only, MAPEDIT `0xC665` + `0xBC1E`): from the 8 neighbours'
-  land/water build a connectivity bitmap + per-quadrant config; a clean diagonal
-  pattern draws the full-tile beach PHYS0 `0x97+pattern` (`0x97..0x99`; `0x9A` absent),
-  else 4 quadrant 8×8 sub-cells PHYS0 `0x6D + config*4 + q` at NW/NE/SE/SW. The
-  sub-cells encode "ocean shows here" as solid black (`0x6D..0x6F`), so pure-black
-  source pixels are colour-keyed to the ocean base below — the same result the game
-  gets by re-emitting the ocean sprite after the sub-cells.
-- Each `.SS` uses its **own embedded palette** (VICEROY.PAL as a global DAC
-  palette mis-colours the sprite indices → verified garbage).
+- **forest** ids 8..23: PHYS0 `0x40 + forest-neighbour mask` (row 0x40).
+- **hills/mtns** bit 0x20: PHYS0 `0x30` (hills) / `0x20` (mtn) `+ nmask4_feat_hi`.
+  (The earlier `0x41/0x31/0x21` bases pushed mask-15 tiles into the ROAD row 0x50 —
+  the "road sprites on terrain" bug.)
+- **river** bit 0x40: PHYS0 river row `0x00 + continuity mask` (green/tan banks).
+  (NOT `0x96`, which is pixel-verified as a *corner-beach* coast sprite.)
+- **coast** (water tiles only): the corner-beach sprites `0x96..0x99` ("ocean with
+  sand toward a corner/edge") oriented by mirroring toward the land-facing sides
+  (cardinal land-neighbour mask). The exact mask→sprite+flip table lives inside
+  MAPEDIT's `_buffer_tile` compositor and is verified visually. NEVER the black
+  null-padding frames `0x6C..0x6F`.
+- Minimap: a 56×39 tile **window** at 1px/tile (MAPEDIT `_generate_mini` /
+  `_blast_mini`), scroll origin = clamp(view-centre − {28,19}, …) following the
+  view in both axes; each pixel = sampled representative colour (`_get_tile_colors`).
+- Menu chrome: flat bar, colours = palette indices from MAPEDIT.EXE's
+  `_menu_bar_*` globals (text 0 / bar 7 / disabled 8 / hilite 15) on the standard
+  VGA 16-colour ramp; small font (FONTTINY), not the ornate FONTINTR.
+- Each `.SS` uses its **own embedded palette**; VICEROY.PAL supplies UI-chrome
+  indices ≥16 only.
 
 ## Open items (do not affect round-trip)
 

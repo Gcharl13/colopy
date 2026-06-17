@@ -30,4 +30,13 @@ void sprite_draw_tile(fb *f, int px, int py, int tp, uint8_t tile_byte);
  * river/prime markers). Used by the map viewport renderer. */
 void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty);
 
+/* Resolve a VICEROY.PAL palette index (0..255) to 0x00RRGGBB. The editor's
+ * menu/border colours are stored as palette indices in MAPEDIT.EXE; this maps
+ * them to RGB. Falls back to the standard 16-colour VGA ramp if PAL absent. */
+uint32_t sprite_ui_color(int idx);
+
+/* Representative minimap colour for a layer-1 tile byte, sampled from the tile's
+ * sprite (mirrors MAPEDIT's _get_tile_colors). Falls back to terrain_color(). */
+uint32_t sprite_minimap_color(uint8_t tile_byte);
+
 #endif /* MPEDIT_SPRITES_H */
