@@ -143,43 +143,47 @@ static int g_nat_sel;   /* selected European power 0..3 (England default) */
 static void draw_nations(void)
 {
     /* 2x2 flag grid baked into NATIONS.PIK.
-     * Byte-verified positions: (99*col+112, 91*row+13) -- plan Phase D6.
-     * England(112,13), France(211,13), Spain(112,104), Netherlands(211,104) */
+     * Byte-verified cell positions (nation.md B1 @asm 0x07079A):
+     *   cell_x=(idx%2)*0x63+0x70, cell_y=(idx/2)*0x5B+0x0D */
     static const int flag_x[4] = { 112, 211, 112, 211 };
     static const int flag_y[4] = {  13,  13, 104, 104 };
-    const int FW = 87, FH = 81;
+    /* nation.md B3: [0x848+idx] = {England:0xC, France:9, Spain:0xE, Netherlands:0xD} */
+    static const uint8_t nat_color[4] = { 0xC, 9, 0xE, 0xD };
+    extern void draw_box(int,int,int,int,int);
+    /* "Select European Power" and "Click Here When Finished" are baked into
+     * NATIONS.PIK artwork -- do NOT draw them programmatically. */
+    const int FW = 87, FH = 81;  /* 0x57, 0x51 */
     draw_bg();
     {
-        extern int  ui_color_for(int,int,int);
-        extern void draw_box(int,int,int,int,int);
-        ff_font_t *ft = g_have_font_intr ? &g_font_intr : (g_have_font ? &g_font : 0);
-        ff_font_t *fts = g_have_font ? &g_font : 0;  /* small font for label */
+        ff_font_t *ft = g_have_font ? &g_font : 0;
         if (!ft) { vid_present(); return; }
-        uint8_t dark = 0, light = 15;
-        int green = ui_color_for(0x52, 0x8A, 0x31);
-        pal_pick_text_colors(&dark, &light);
-        /* title top-left, UI green -- FONTINTR for headers */
-        ft->colors[1] = ft->colors[2] = ft->colors[3] = (uint8_t)green;
-        ff_draw(ft, "Select",         30, 20, 1);
-        ff_draw(ft, "European Power",  8, 20 + ft->maxh + 2, 1);
-        /* red selection cursor box around the chosen power's flag. */
-        {   int s = g_nat_sel & 3;
-            int red = ui_color_for(0xE0, 0x20, 0x20);
-            draw_box(flag_x[s]-1, flag_y[s]-1,
-                     flag_x[s]+FW, flag_y[s]+FH, red);
+        int s = g_nat_sel & 3;
+        uint8_t col = nat_color[s];
+        /* Highlight box (nation.md B5): draw_box(cx,cy, cx+0x57,cy+0x51, color) */
+        draw_box(flag_x[s], flag_y[s], flag_x[s]+FW, flag_y[s]+FH, (int)col);
+        /* Nation name (nation.md B6-B8): from [0x8D42+s*2], UPPERCASE+":".
+         * Two-pass shadow: black at (+1,+1), then nation color at (cx+44-w/2, cy+2). */
+        {
+            uint16_t h = DG16(0x8D42 + s*2);
+            if (h) {
+                char buf[64];
+                const char *src = (const char *)&DG8(h);
+                int i = 0;
+                for (; src[i] && i < 62; i++)
+                    buf[i] = (src[i] >= 'a' && src[i] <= 'z') ? src[i]-32 : src[i];
+                buf[i++] = ':'; buf[i] = 0;
+                int tw = ff_text_width(ft, buf, 1);
+                int nx = flag_x[s] + 44 - tw/2;
+                int ny = flag_y[s] + 2;
+                ft->colors[1] = ft->colors[2] = ft->colors[3] = 0;
+                ff_draw(ft, buf, nx+1, ny+1, 1);
+                ft->colors[1] = ft->colors[2] = ft->colors[3] = col;
+                ff_draw(ft, buf, nx, ny, 1);
+            }
         }
-        /* leader / nation name centred over the selected flag */
-        {   int s = g_nat_sel & 3;
-            const char *nm = (const char *)&DG8(DG16(0x8D42 + s*2));
-            ff_font_t *fn = fts ? fts : ft;
-            int tw = ff_text_width(fn, nm, 1);
-            fn->colors[1] = fn->colors[2] = fn->colors[3] = light;
-            ff_draw(fn, nm, flag_x[s] + (FW - tw)/2, flag_y[s] - fn->maxh - 1, 1);
-        }
-        if (fts) {
-            fts->colors[1] = fts->colors[2] = fts->colors[3] = light;
-            draw_text_center("Click here when done (Esc)", 188, light);
-        }
+        /* Second field (nation.md B9-B11): [0x2F14+s*2] leader/adjective.
+         * DATA-gated: populated by game init, not EXE default data; handled
+         * correctly in overlay_070302_074405.c draw_nation_row(). */
     }
     vid_present();
 }
@@ -189,40 +193,50 @@ static int g_diff_sel;   /* selected difficulty 0..4 (Discoverer default) */
 static void draw_difficulty(void)
 {
     /* 5 difficulty portraits baked into DIFFICUL.PIK.
-     * Byte-verified positions from plan: (105*col+23, 96*grp+7), cell(0,0) skipped.
-     * Top row: Discoverer(128,7), Explorer(233,7)
-     * Bottom row: Conquistador(23,103), Governor(128,103), Viceroy(233,103) */
+     * Byte-verified positions (difficulty.md cell positions via func_0702C0):
+     *   idx=0 Discoverer:(128,7)  idx=1 Explorer:(233,7)
+     *   idx=2 Conquistador:(23,103) idx=3 Governor:(128,103) idx=4 Viceroy:(233,103) */
     static const int port_x[5] = { 128, 233,  23, 128, 233 };
     static const int port_y[5] = {   7,   7, 103, 103, 103 };
-    static const char *const diff_name[5] = {
-        "Discoverer", "Explorer", "Conquistador", "Governor", "Viceroy" };
-    /* selection box colors per difficulty (plan Phase D6: 0xA,9,0xE,0xD,0xC) */
-    static const int diff_colors[5] = { 0xA, 9, 0xE, 0xD, 0xC };
-    const int PW = 67, PH = 89;
+    /* difficulty.md C2: idx 0→0xA, 1→9, 2→0xE, 3→0xD, default(4)→0xC */
+    static const uint8_t diff_color[5] = { 0xA, 9, 0xE, 0xD, 0xC };
+    extern void draw_box(int,int,int,int,int);
+    /* "Choose Difficulty Level" and "Click Here When Finished" are baked into
+     * DIFFICUL.PIK artwork -- do NOT draw them programmatically. */
+    const int PW = 67, PH = 89;  /* 0x43, 0x59 */
     draw_bg();
     {
-        extern int  ui_color_for(int,int,int);
-        extern void draw_box(int,int,int,int,int);
-        ff_font_t *ft = g_have_font_intr ? &g_font_intr : (g_have_font ? &g_font : 0);
-        ff_font_t *fts = g_have_font ? &g_font : 0;
+        ff_font_t *ft = g_have_font ? &g_font : 0;
         if (!ft) { vid_present(); return; }
-        uint8_t dark = 0, light = 15;
         int s = g_diff_sel % 5;
-        pal_pick_text_colors(&dark, &light);
-        ft->colors[1] = ft->colors[2] = ft->colors[3] = diff_colors[s];
-        ff_draw(ft, "Choose",           22, 20, 1);
-        ff_draw(ft, "Difficulty Level", 12, 20 + ft->maxh + 2, 1);
-        draw_box(port_x[s]-1, port_y[s]-1, port_x[s]+PW, port_y[s]+PH, diff_colors[s]);
-        {   ff_font_t *fn = fts ? fts : ft;
-            int tw = ff_text_width(fn, diff_name[s], 1);
-            fn->colors[1] = fn->colors[2] = fn->colors[3] = diff_colors[s];
-            ff_draw(fn, diff_name[s], port_x[s] + (PW - tw)/2,
-                    port_y[s] + PH/2 - fn->maxh/2, 1);
+        uint8_t col = diff_color[s];
+        /* Highlight box (difficulty.md C4): draw_box(cx,cy, cx+0x43,cy+0x59, color) */
+        draw_box(port_x[s], port_y[s], port_x[s]+PW, port_y[s]+PH, (int)col);
+        /* Level name (difficulty.md C5-C7): from [0x8394+s*2], UPPERCASE+":".
+         * Two-pass shadow at (cx+34-w/2, cy - ft->maxh + 0x2C). */
+        {
+            char buf[64];
+            uint16_t h = DG16(0x8394 + s*2);
+            const char *src = h ? (const char *)&DG8(h) : 0;
+            /* fallback names if GAME.TXT not yet loaded */
+            static const char *const fallback[5] = {
+                "DISCOVERER","EXPLORER","CONQUISTADOR","GOVERNOR","VICEROY" };
+            if (!src || !src[0]) src = fallback[s];
+            int i = 0;
+            for (; src[i] && i < 62; i++)
+                buf[i] = (src[i] >= 'a' && src[i] <= 'z') ? src[i]-32 : src[i];
+            buf[i++] = ':'; buf[i] = 0;
+            int tw = ff_text_width(ft, buf, 1);
+            int nx = port_x[s] + 34 - tw/2;
+            int ny = port_y[s] - ft->maxh + 0x2C;  /* cy - fonth + 44 */
+            ft->colors[1] = ft->colors[2] = ft->colors[3] = 0;
+            ff_draw(ft, buf, nx+1, ny+1, 1);
+            ft->colors[1] = ft->colors[2] = ft->colors[3] = col;
+            ff_draw(ft, buf, nx, ny, 1);
         }
-        if (fts) {
-            fts->colors[1] = fts->colors[2] = fts->colors[3] = light;
-            draw_text_center("Click here when done (Esc)", 188, light);
-        }
+        /* Second field (difficulty.md C8-C10): [0x2F04+s*2] subtitle.
+         * DATA-gated: populated by game init, not EXE default data; handled
+         * correctly in overlay_070302_074405.c draw_difficulty_row(). */
     }
     vid_present();
 }
@@ -469,12 +483,14 @@ static void draw_map(void)
         int green = ui_color_for(0x52, 0x8A, 0x31);
         ui_wood_fill(0, 0, VID_W, 9);
         vid_text_color(green);
+        /* GROUNDTRUTH x positions (map.md B10, frame-measured):
+         * GAME=11 VIEW=45 ORDERS=77 REPORTS=109 TRADE=146 COLONIZOPEDIA=261 */
         vid_text_xy("GAME",    11, 1);
-        vid_text_xy("VIEW",    48, 1);
-        vid_text_xy("ORDERS",  80, 1);
-        vid_text_xy("REPORTS", 120, 1);
-        vid_text_xy("TRADE",   158, 1);
-        vid_text_xy("COLONIZOPEDIA", 256, 1);
+        vid_text_xy("VIEW",    45, 1);
+        vid_text_xy("ORDERS",  77, 1);
+        vid_text_xy("REPORTS", 109, 1);
+        vid_text_xy("TRADE",   146, 1);
+        vid_text_xy("COLONIZOPEDIA", 261, 1);
     }
     vid_present();
 }
