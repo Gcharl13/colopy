@@ -43,7 +43,6 @@ verified against extracted assets.
 - @python    ../../../tools/madspack.py
 - @ref       MAPEDIT.EXE NB02 symbol table mentions `pfabcomp.asm` and
               `pfabexp.asm` modules in madsdev.lib
-- @ref       ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1.Libraries
 - @rule      Per scope reduction: we do NOT hand-port the Win16 side;
               the DOS .SS files are not MADSPACK-wrapped, so the DOS
               loader path doesn't exercise this codec.

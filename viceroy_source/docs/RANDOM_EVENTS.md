@@ -162,7 +162,6 @@ Most events trigger a popup notification (using the standard event
 dialog renderer). Some events (small monetary LCRs) only update the HUD
 silently.
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §10 (Random Events)
 
 ## Event log
 

@@ -12,7 +12,6 @@
 
 Cross-references every COLONIZE/ asset to the code that references it.
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §1.Assets
 
 ## Palettes (1)
 

@@ -130,7 +130,7 @@ main():
 
 Each major subsystem has its own document under `viceroy_source/docs/`:
 
-- [`DATA_MODEL.md`](DATA_MODEL.md) — every struct + its byte layout
+- [`DATA_MODEL.md`](../../docs/DATA_MODEL.md) — every struct + its byte layout
 - [`MAP_SYSTEM.md`](MAP_SYSTEM.md) — terrain, features, resources
 - [`COLONY_SYSTEM.md`](COLONY_SYSTEM.md) — colonies, production, buildings
 - [`UNIT_SYSTEM.md`](UNIT_SYSTEM.md) — units, types, movement, cargo
@@ -149,5 +149,3 @@ Each major subsystem has its own document under `viceroy_source/docs/`:
 - [`RTLINK_OVERLAYS.md`](RTLINK_OVERLAYS.md) — full RTLink format spec
 - [`ENGINE.md`](ENGINE.md) — madsdev.lib API surface
 
-@ref `../../COLONIZATION_TECHNICAL_REFERENCE.md` for the cross-validated
-     accumulated knowledge document this is summarised from.

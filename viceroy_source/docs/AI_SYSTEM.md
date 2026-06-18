@@ -58,13 +58,11 @@ void ai_dispatch_per_power(int power_id) {
 }
 ```
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §8 (AI System)
 
 ## AI personality templates
 
 Eight pre-canned templates (`AIPersonality` records 0..7), one per power
-plus 4 alternates the random seeder may pick. Templates from
-`COLONIZATION_TECHNICAL_REFERENCE.md` §8.2:
+plus 4 alternates the random seeder may pick. Templates (RECONSTRUCTED — not byte-verified; AI weights are overlay-resident, undecoded):
 
 | ID  | Name             | Aggression | Expansion | Militarism | Trade | Diplomacy |
 |-----|------------------|------------|-----------|------------|-------|-----------|
@@ -251,4 +249,3 @@ The King AI never moves units before independence is declared.
 A debug build of VICEROY.EXE (not shipped) had an `AI_TRACE` flag that
 logged every decision to `AI.LOG`. Not present in the retail build.
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §8

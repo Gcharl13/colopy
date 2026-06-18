@@ -121,7 +121,6 @@ the base terrain. Only active when terrain bit 5 (prime) is set.
 | 0x0D      | Wheat field | Plains (high)               |
 | 0x0E      | Tobacco big | Grassland                   |
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §6.3 (Resource Layer)
 
 ## Movement cost calculation
 

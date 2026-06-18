@@ -35,7 +35,6 @@ COL is loaded by the sound init code.
 ## Citations
 
 - @asm_file  TBD (sound-init in overlay; config-load in load_image)
-- @ref       ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1 (mention
               of "AdLib/Sound Blaster via ASOUND.COL/GSOUND.COL/...")
 - @rule      The four sound drivers are mutually exclusive at runtime;
              only ONE COL is consulted per session.

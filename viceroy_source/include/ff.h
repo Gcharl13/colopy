@@ -21,7 +21,6 @@
  * Religious — NAMES.TXT @FATHERS "type" column 0..4, see FF_CAT_* below). Each
  * FF gives a unique passive bonus when recruited via Liberty-Bell points.
  *
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §15 Founding Fathers
  * @ref ../../../COLONIZE/NAMES.TXT @FATHERS @ file 0x3047  -- canonical id list
  * @asm src/founding_fathers/effects.c func_03BC42 @0x03BC42  (id switch)
  * ============================================================================ */

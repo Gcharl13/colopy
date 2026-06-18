@@ -10,11 +10,12 @@ secondary mechanics.
 
 | # | Gap | Disasm entry point(s) | Upgrades spec doc | Notes |
 |---|-----|-----------------------|-------------------|-------|
-| 1 | Combat outcome roll & demotion | `func_05CA7E` (per-unit decider), `func_05B2C2` (consequence applier) | `systems/combat.md` (from `viceroy_source/docs/COMBAT.md`) | Stats already B; the win/loss roll & demotion selection are TBD. ATK/(ATK+DEF) confirmed wave-9. |
-| 2 | Market price drift | `func_0305A8`; PowerRecord price table `+0x4C[16]` | `systems/market.md` | Entry known; per-turn drift formula TBD. |
+| 1 | Combat terrain/fort bonus **table values** + demotion ladder | `func_05CA7E` (decider; +50% chain located), demotion table reads `UnitRecord +0x15` | `systems/combat.md` §3/§7 | Land odds `ATK/(ATK+DEF)` now **B**; remaining: per-terrain/fort values & demotion ladder + capture branch. |
+| 2 | Market price drift | thunk `0x181F:0x9A4`; `PowerRecord +0x4C[16]`; `0x53EA` | `systems/market.md` §3 | Commodity set B; per-turn drift formula TBD. |
 | 3 | Founding-Father acquisition | `func_075AF8` + bell-cost table (NAMES.TXT thresholds) | `systems/founding_fathers.md` | 25 FFs cataloged; bell-cost computation TBD. |
-| 4 | Tax delta + cadence (pilot follow-up) | `func_034AE0` (+ its `0x538E`-gated caller) | `systems/king.md` §3/§7 | Confirm `((diff&0xFE)*2+4)`; pin interval & pretext selection. |
-| 5 | REF growth threshold | writer of `royal_money` PowerRecord `+0x22` | `systems/king.md` §7 | +18/turn observed; spend threshold unknown. |
+| 4 | Tax **60-vs-hard-cap** + pretext selection | find the `tax_pct` clamp write site; trace dispatcher feeding `@KINGTAX` | `systems/king.md` §3/§7 | Delta formula now **B** (`func_034AE0` read); `0x3C`=60 threshold **B** (`func_0349F4`); is 60 the clamp or a gate? reconcile manual's 75. |
+| 5 | REF growth threshold | writer of REF globals `0x53DA..0x53E0` and of `PowerRecord +0x22` (+18/turn) | `systems/king.md` §7 | REF = 4 globals (B); the spend rule that adds a unit is unknown. |
+| 4b | Colony production formula + SoL | production routine; confirm SoL dividend/divisor offsets at read site | `systems/colony.md` §3 | Record stride + input data (@BUILDING/@JOB/@TERRAIN) B; arithmetic TBD. |
 | 6 | Immigration / cross rate | recruit-pool `DGROUP:0x978C`; `func_074688`, `0x051E52`, `0x035114` | `systems/immigration.md` | Queue structure sketched; rate TBD. |
 | 7 | Diplomacy outcomes | `func_03ECF0` (diplomatic actions) | `systems/diplomacy.md` | Entry known; decision formulas TBD. |
 | 8 | Native conversion / mission | native dispatch `func_05BE84` (6 outcomes), `func_057F4E` (SMITE) | `systems/natives.md` | Raze (CHIEFKILL) already B; conversion TBD. |

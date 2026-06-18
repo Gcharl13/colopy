@@ -34,7 +34,6 @@
  *
  * @ref load_game_state @ 0x011F6E (allocates 0xAE-byte working buffer)
  * @ref decompiled.md "load_game_state — 0xAE-byte working buffer"
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §2 ColonyRecord (202)
  * @asm DGROUP:0x5D60 = colony_table base; stride 0xCA = 202 bytes per colony
  * Field offsets are confirmed by direct disassembly references; widths
  * with `?` are pending exact verification. */

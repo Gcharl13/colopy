@@ -93,7 +93,6 @@ void map_generate_random(uint32_t seed) {
 }
 ```
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §11 (Map Generation)
 
 ## Climate gradient
 

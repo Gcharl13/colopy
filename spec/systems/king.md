@@ -1,153 +1,136 @@
 # King & Royal Taxation
 
-> **Layer 2 — Specification.** Built from evidence (Layer 1), consumed by the
-> implementation (Layer 3). See `/METHODOLOGY.md`. Claims tagged
-> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
-> **This is the pilot/worked-example spec** — copy its shape for other systems.
+> **Layer 2 — Specification.** Built from PRIMARY data only (see `/METHODOLOGY.md`
+> → "Primary data is the decider"). Tiers: `BYTE_VERIFIED` / `ANCHOR_VERIFIED` /
+> `RECONSTRUCTED` / `TBD`. **Worked-example spec** — copy its shape and its
+> discipline (every number read from the bytes, not from a secondary doc).
 
-**Overall confidence:** mixed (state layout B; tax-change formula R; revenue R) ·
-**Last updated:** 2026-06-18 ·
-**Canonical evidence:** `docs/DATA_MODEL.md`, `func_034AE0`, turn counter
-`0x538E`, `docs/KING_AND_CINEMATIC_AUDIT.md`, `GAME.TXT @KINGTAX`.
+**Overall confidence:** state layout + tax-change formula `BYTE_VERIFIED`;
+revenue loop + REF-growth threshold `TBD`. **Last updated:** 2026-06-18.
+**Primary evidence:** `code/VICEROY/disasm/func_034AE0_unknown.asm`,
+`func_0349F4_unknown.asm`; `docs/DATA_MODEL.md` (runtime-verified);
+`data_extracted/text/GAME_sections.json`.
 
 ## 1. Purpose & behavior
 
-The Crown periodically raises the player's **tax rate** (a percentage applied to
-European sales) under escalating pretexts, and maintains a **Royal Expeditionary
-Force (REF)** budget that grows over time. The player may **accept** a tax hike
-(kiss the pinky ring) or **refuse** (hold a "Tea Party"), which dumps one good
-into the sea and triggers a Parliamentary **boycott** of that good until back
-taxes are paid. Tax can also be **reduced** (winning the King's war, losing a REF
-unit, or a successful petition). `[RECONSTRUCTED` from manual + `docs` §12;
-player-visible effects well attested.]
+The Crown periodically raises the player's **tax rate** (a percentage taken from
+European sales) under escalating pretexts. The player may **accept** (kiss the
+pinky ring) or **refuse** with a **Tea Party**, which boycotts one good. The
+Crown also maintains a **Royal Expeditionary Force (REF)** that grows over the
+game and is deployed if the player declares independence.
 
 ## 2. State & data layout
 
-PowerRecord base `DGROUP:0x8808`, **stride 316 (0x13C)**, 12 entries (4 European
-+ 8 native). Active record reachable via far ptr `DGROUP:0x84FC`. All tiers
-below per canonical `docs/DATA_MODEL.md` (runtime cross-validated against the
-in-game UI).
+PowerRecord base `DGROUP:0x8808`, **stride 316 (0x13C)**, 4 European powers;
+active record via far ptr `DGROUP:0x84FC`. REF counts are **separate globals**,
+not PowerRecord fields.
 
 | Address / field | Type | Meaning | Tier | Evidence |
 |-----------------|------|---------|------|----------|
-| `PowerRecord +0x01` | u8 | `tax_pct` (0..100) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md`; `func_034AE0`; user 0%→1% transition |
-| `PowerRecord +0x22` | s32 | `royal_money` — King's REF-expansion budget (drives REF growth; player-only) | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md`: English 936→1062 @ **+18/turn**, Discoverer |
-| `PowerRecord +0x2A` | u32 | `gold` — player treasury | **BYTE_VERIFIED** | `docs/DATA_MODEL.md`: write-back updates UI; 3552/4032 match |
-| `PowerRecord +0x44..+0x49` | u8[6] | REF unit counts (Dragoon/Regular/Cavalry/Artillery/Man-O-War/Frigate) | **RECONSTRUCTED** | `notes/COLONIZATION_TECHNICAL_REFERENCE.md` §12 |
-| `DGROUP:0x538E` | u16 | global **turn counter** (drives the tax-raise cadence/era gates) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md`; `ghidra_export` `*(0x538e)` mod-3/mod-4 gates |
-| `DGROUP:0x53A6` | u8 | difficulty / current player (0..4) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (king-tax + SMITE traces) |
+| `PowerRecord +0x01` | u8 | `tax_pct` (0..) | **BYTE_VERIFIED** | `func_034AE0` reads `[bx+1]`; `docs/DATA_MODEL.md` |
+| `PowerRecord +0x2A` | u32 | `gold` (player treasury) | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md`: write-back matches UI (3552/4032) |
+| `PowerRecord +0x22` | s32 | a per-player counter; grows **+18/turn** (Discoverer). Interpreted as a "royal/REF budget" but the spend rule is undecoded. | field+rate **RUNTIME-VERIFIED**; *meaning* **RECONSTRUCTED** | `docs/DATA_MODEL.md`: English 936→1062 over 7 turns |
+| `DGROUP:0x53DA` | u16 | **REF Regulars** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 23 matches in-game |
+| `DGROUP:0x53DC` | u16 | **REF Cavalry** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 10 matches in-game |
+| `DGROUP:0x53DE` | u16 | **REF Man-O-War** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 5 matches in-game |
+| `DGROUP:0x53E0` | u16 | **REF Artillery** (slot 3) | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 8 matches in-game |
+| `DGROUP:0x538E` | u16 | global **turn counter** | **BYTE_VERIFIED** | read by `func_034AE0` (`IDIV 0x190`) |
+| `DGROUP:0x53A6` | u8 | difficulty / current player (0..4) | **BYTE_VERIFIED** | read by `func_034AE0`, `func_0349F4` |
 
-> **Conflict (ruled by hierarchy):** `notes/COLONIZATION_TECHNICAL_REFERENCE.md`
-> §"Colony Tax/Production" places `king_treasury` at `+0x22`, `player_treasury`
-> at `+0x26`, `gold` at `+0x21`. The **canonical** `docs/DATA_MODEL.md` —
-> runtime-verified against the live UI — places `gold` at `+0x2A` and
-> `royal_money` at `+0x22`. **`docs/DATA_MODEL.md` wins** (higher trust: runtime
-> cross-check). The TECH_REF offsets are treated as an older serializer-relative
-> reading. See `notes/rulings/RULINGS.md`.
+> **The REF is exactly these 4 unit types** (Regulars, Cavalry, Man-O-War,
+> Artillery). A prior draft claimed "6 units incl. Dragoons & Frigates at
+> PowerRecord +0x44" — that was wrong (sourced from a now-deleted secondary doc)
+> and is removed. Dragoons/Frigates exist in `@UNIT` but are not REF.
 
 ## 3. Formulas & rules
 
-**Tax-rate change** (`func_034AE0`, file `0x034AE0` — identified as
-`king_attempt_tax_change`):
+**Tax-raise attempt — `func_034AE0` (file `0x034AE0`, 100 bytes). BYTE_VERIFIED,
+read instruction-by-instruction:**
 ```
-delta   = ((difficulty & 0xFE) * 2) + 4      // ghidra-inferred  (RECONSTRUCTED)
-tax_pct = min(tax_pct + delta, 75)           // cap 75            (BYTE_VERIFIED: CMP …,0x4B)
+if (tax_pct <= 1) return;                       // 034AE8 CMP [bx+1],1 / JLE
+delta       = (([0x53A6] & 0xFE) << 1) + 4;     // 034AEE..034AF6 (AND/SHL/ADD)
+turn_factor = ([0x538E] / 0x190) + 1;           // 034AFC..034B07 (IDIV 400, INC)
+candidate   = delta * turn_factor;              // 034B08..034B0D (IMUL)  [byte used]
+if ((candidate + 5) >= tax_pct) return;         // 034B10..034B15 CMP/JGE
+if (tax_pct <= candidate) {                      // 034B1A CMP/JLE → raise path
+    roll = random_int(1, [0x53A6] + 1);         // 034B25..034B28 LCALL 0x181F:0x4D4
+    if (roll - 1 == 0) return;                  // 034B30 DEC/JE → no raise this turn
+}
+show_king_message();                            // 034B33..034B41 LCALL 0x181F:0x998
 ```
-- The **cap of 75%** is hardcoded — `CMP tax_rate, 0x4B` (`0x4B` = 75).
-  **BYTE_VERIFIED** (`notes/COLONIZATION_TECHNICAL_REFERENCE.md` §"Tax rate cap").
-- The function identity (`0x034AE0` = the tax-change routine) is
-  **ANCHOR_VERIFIED** (`docs/DATA_MODEL.md` cites `func_034AE0` as the writer of
-  `tax_pct`; `code/DISASM_LEDGER.md` marks `0x034AE0` DONE).
-- The `delta` expression is from the **Ghidra decompiler** annotation
-  (`ghidra_export/VICEROY2_annotated.c:215`) and is **RECONSTRUCTED** — it must
-  be byte-confirmed against the disasm before the implementation hardcodes it.
-  → see Open questions.
+So each turn the Crown computes a difficulty- and turn-scaled `candidate` tax and,
+past a gate plus a difficulty `random_int` roll, raises it and shows the demand.
 
-**Tax revenue on European sales** (per-good, annual processing; `func_O111`):
+**Tax-level threshold = 60 (`0x3C`) — `func_0349F4` (file `0x0349F4`).
+BYTE_VERIFIED:**
 ```
-for good in 0..15:
-    if stockpile[good] > 100: amount = stockpile[good] - 50
-    sale_price      = market_price(good) * amount
-    king_tax        = sale_price * tax_pct / 100
-    player_revenue  = sale_price - king_tax
-    treasury_gold  += player_revenue          // +0x2A
-    // king's cut accrues to the Crown side
+... if (tax_pct < 0x3C) return;   // 034A1B CMP byte[bx+1],0x3C / JL
+    ... else show_message([0x1084]);
 ```
-Tier **RECONSTRUCTED** (`notes/COLONIZATION_TECHNICAL_REFERENCE.md` §"Tax revenue
-calculation", from a 1440-byte decode of `func_O111`).
+`0x3C` = **60**. The game manual states a 75% cap; the **bytes use 60** as the
+verified tax-level gate (per the trust hierarchy, EXE bytes win for numbers; 75
+is recorded as manual design-intent / possible patch difference). Whether 60 is
+the hard *clamp* or a "tax is high" branch is not provable from this function
+alone — see §7.
 
-**Tax-raise cadence:** gated on the `0x538E` turn counter via modulo arithmetic
-(`*(0x538e) % 3`, `% 4`, and `0x4F <` era comparisons appear in `ghidra_export`).
-Exact pretext-selection and interval table are **TBD** (see §7). Leniency window
-by difficulty is reported as **20 / 15 / 10 / 7 / 4 turns** (Discoverer→Conquistador)
-— **RECONSTRUCTED** (`notes/COLONIZATION_TECHNICAL_REFERENCE.md`).
+**Tax revenue on European sales:** `TBD`. No primary trace read yet; the
+per-good loop is not byte-verified here (do not import the old reconstructed
+formula). → `spec/BACKLOG.md`.
 
-**Tax-raise pretexts** (string keys, BYTE_VERIFIED that these keys exist in
-GAME.TXT; selection logic TBD): `@KINGTAX`, `@MERCANTILISM` (Custom House),
-`@PURCHASETAX`, `@KINGNAVACT` (Navigation Act), `@KINGSTAMPACT` (Stamp Act),
-`@KINGWIFE` (royal wedding), `@KINGWAR`.
+**Tax-raise pretext keys** (all confirmed present in primary
+`data_extracted/text/GAME_sections.json`, **BYTE_VERIFIED** that the keys exist;
+the selection logic among them is `TBD`):
+`@KINGTAX @KINGRAISE @KINGNAVACT @KINGSTAMPACT @KINGWAR @KINGWIFE @MERCANTILISM
+@PURCHASETAX`.
 
 ## 4. UI layout — "what is drawn where"
 
-The tax demand surfaces as the **King speech-bubble dialog**:
-- **Message body:** `GAME.TXT @KINGTAX` (catalog **line 1622**) — *"…the Crown
-  receive proper recompense… raise tax rate by X%. Tax rate is now Y%."* The
-  dispatcher substitutes `X` (delta) and `Y` (new `tax_pct`).
-  **BYTE_VERIFIED** key (`docs/KING_AND_CINEMATIC_AUDIT.md` line 241;
-  `TEXT_LABEL_AUDIT.md` line 1622).
-- **Portrait:** `KING.SS` (default standing king). The `KING1.SS` sheet is a
-  different pose ("mocking king + bound colonist"), used by sub-variants — do
-  **not** use it for the routine `@KINGTAX` popup. **BYTE_VERIFIED**
-  (`docs/KING_AND_CINEMATIC_AUDIT.md` lines 35–36).
-- **Options:** `TAXOPTIONS` — *"Kiss the pinky ring"* (accept) / *"Hold a
-  [Good] Party"* (refuse → boycott). **BYTE_VERIFIED** key
-  (`docs/KING_AND_CINEMATIC_AUDIT.md` line 241).
-- **Title variant:** the monarch is addressed as **Viceroy** or **Stadtholder**
-  depending on the human player's nation (investiture sequence). Exact gate
-  offset **TBD** (reported near `func_075594` / `0x0755A7`; not byte-confirmed
-  here) — see §7. Cross-ref `docs/KING_AND_CINEMATIC_AUDIT.md`.
-
-Panel geometry / hit-regions follow the shared dialog framework — see
-`docs/DIALOG_GEOMETRY.md` and `docs/POPUP_TEMPLATE_AUDIT.md`.
+The demand surfaces as the **King speech-bubble dialog**:
+- **Message body:** `GAME.TXT @KINGTAX` (present in `GAME_sections.json`;
+  cataloged at line 1622). The dispatcher substitutes the raise amount and the
+  new rate. **BYTE_VERIFIED** key.
+- **Options:** `@TAXOPTIONS` — *Kiss the pinky ring* (accept) / *Hold a [Good]
+  Party* (refuse → boycott). Keys `@TAXOPTIONS`, `@TEAPARTY` confirmed in primary
+  data. **BYTE_VERIFIED** keys.
+- **Portrait:** `KING.SS` (standing king) for the routine demand; `KING1.SS`
+  (mocking king + bound colonist) is a different sub-variant. **ANCHOR_VERIFIED**
+  via `docs/KING_AND_CINEMATIC_AUDIT.md` (asset attribution, not raw bytes).
+- Dialog geometry follows the shared framework — `docs/DIALOG_GEOMETRY.md`,
+  `docs/POPUP_TEMPLATE_AUDIT.md`.
 
 ## 5. Evidence (citations)
 
-- `docs/DATA_MODEL.md` — PowerRecord base `0x8808`/stride 316; `+0x01` tax,
-  `+0x22` royal_money, `+0x2A` gold; globals `0x538E`, `0x53A6`, `0x84FC`. (B)
-- `func_034AE0` (`code/VICEROY/disasm/`, `code/DISASM_LEDGER.md:765` DONE) —
-  tax-change routine. (A)
-- `ghidra_export/VICEROY2_annotated.c:215` — `king_attempt_tax_change`, delta
-  expression. (R, decompiler-inferred)
-- `notes/COLONIZATION_TECHNICAL_REFERENCE.md` §12 + §"Tax revenue calculation" +
-  §"Tax rate cap (CMP …,0x4B)". (B for the cap; R for the revenue loop)
-- `docs/KING_AND_CINEMATIC_AUDIT.md` lines 35–36, 241 — portrait, message key,
-  options. (B)
-- `GAME.TXT @KINGTAX` line 1622; `TEXT_LABEL_AUDIT.md`. (B)
+- `code/VICEROY/disasm/func_034AE0_unknown.asm` — tax-raise attempt, read line by
+  line (delta/turn-factor/IMUL/roll). **B**
+- `code/VICEROY/disasm/func_0349F4_unknown.asm` — `CMP [bx+1],0x3C` (=60). **B**
+- `docs/DATA_MODEL.md` — PowerRecord base/stride; `tax_pct +0x01`, `gold +0x2A`,
+  `+0x22` (+18/turn); REF globals `0x53DA/0x53DC/0x53DE/0x53E0` (USER-VERIFIED);
+  globals `0x538E`, `0x53A6`, `0x84FC`. **B / runtime**
+- `data_extracted/text/GAME_sections.json` — `@KINGTAX @KINGRAISE @KINGNAVACT
+  @KINGSTAMPACT @KINGWAR @KINGWIFE @MERCANTILISM @PURCHASETAX @TAXOPTIONS
+  @TEAPARTY` exist. **B**
+- `docs/KING_AND_CINEMATIC_AUDIT.md` — portrait/option attribution. **A**
 
 ## 6. Confidence summary
 
-- **Solid (B):** state layout (tax/gold/royal_money offsets, turn counter,
-  difficulty), the 75% cap, the dialog's message key / portrait / options.
-- **Reconstructed (R):** the tax-change `delta` formula, the per-good revenue
-  loop, the difficulty leniency intervals, the REF unit-count offsets.
-- **TBD:** pretext-selection logic & cadence table, REF growth threshold, the
-  Viceroy/Stadtholder gate offset, Tea-Party boycott bookkeeping.
+- **Solid (B):** PowerRecord tax/gold offsets; REF = 4 globals; turn counter &
+  difficulty globals; the tax-raise formula; the 60 threshold; the pretext &
+  option message keys.
+- **Runtime/Reconstructed:** `+0x22` field (+18/turn verified; "REF budget"
+  meaning inferred); the `KING.SS` portrait attribution.
+- **TBD:** tax-revenue loop, REF-growth spend threshold, exact pretext selection,
+  the 60-vs-hard-cap semantics, Tea-Party boycott bookkeeping.
 
 ## 7. Open questions (TBD) → feeds `spec/BACKLOG.md`
 
-1. **Byte-confirm the tax `delta` formula.** Disasm `func_034AE0` (file
-   `0x034AE0`, ~39 bytes) and verify `((diff & 0xFE)*2 + 4)` against the bytes;
-   promote R→B or correct it.
-2. **Tax-raise cadence & pretext selection.** Trace the `0x538E`-gated caller of
-   `func_034AE0` (the modulo gates in `ghidra_export`) to pin the interval table
-   and how a pretext key is chosen.
-3. **REF growth threshold.** `royal_money +0x22` grows +18/turn at Discoverer;
-   the spend/threshold that adds a REF unit is unknown (no unit added ≤1188 in
-   two runtime sessions, per `docs/DATA_MODEL.md`).
-4. **Viceroy vs Stadtholder gate.** Confirm the title-variant condition near
-   `func_075594` / `0x0755A7`.
-5. **Tea-Party boycott bookkeeping.** Which field stores the per-good boycott
-   bitmask and how back-tax payment clears it (Jakob Fugger FF forgives all).
-
-Cross-source conflicts (the `+0x22`/`+0x2A` treasury question) are ruled in §2
-and recorded in `notes/rulings/RULINGS.md`.
+1. **60 vs hard cap.** Is `0x3C` in `func_0349F4` the tax clamp or a "high tax"
+   message gate? Find the write site that clamps `tax_pct` and confirm the max.
+   Reconcile with the manual's 75.
+2. **REF-growth threshold.** What spends `+0x22` (+18/turn) to add a REF unit at
+   `0x53DA..0x53E0`? Trace the writer of those globals.
+3. **Tax-revenue loop.** Byte-trace the European-sale tax cut (the per-good
+   computation) from a primary function; do not reuse the deleted reconstruction.
+4. **Pretext selection.** Which condition picks `@KINGNAVACT` vs `@KINGSTAMPACT`
+   vs `@KINGWAR` etc. — trace the dispatcher feeding `@KINGTAX`.
+5. **Tea-Party boycott.** Which field holds the per-good boycott bitmask; how
+   back-tax payment / Jakob Fugger clears it.

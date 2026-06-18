@@ -48,6 +48,41 @@ The trust order itself (running game > pixels > EXE bytes > preprocessed disasm 
 team docs > C reconstruction > AI speculation) lives in
 `notes/TRUTH_HIERARCHY.md`; conflicts are ruled in `notes/rulings/RULINGS.md`.
 
+## Primary data is the decider (and bad data is REMOVED)
+
+A spec is only as trustworthy as its grounding. These three rules are absolute —
+they exist because a draft once imported wrong "facts" (REF composition, a 75%
+tax cap) from a secondary reconstruction and tagged them verified.
+
+**The authoritative PRIMARY data set (the deciders):**
+1. Runtime / USER-VERIFIED observations (as cited in `docs/DATA_MODEL.md`).
+2. Extracted pixels / assets.
+3. **VICEROY.EXE disassembly** at a cited offset — `code/VICEROY/disasm*/`,
+   `data_extracted/disassembly/*.asm`.
+4. **Extracted game data** — `data_extracted/text/*.json` (NAMES/GAME/LABELS/…),
+   `data_extracted/data/*.json`, `data_extracted/palette.json`, `…/map/`.
+5. The byte/runtime-verified parts of `docs/DATA_MODEL.md`,
+   `docs/GAME_INDEX_TABLES.md`.
+6. `docs/GAME_MANUAL.md` — HIGH for a feature's *function*; **EXE bytes win for
+   exact numbers** (e.g. tax cap: bytes = 60, manual = 75 → record 60 verified,
+   note 75 as design-intent / possible patch).
+
+Everything else — `viceroy_source/docs/*`, `viceroy_source/src/*`, and any
+narrative team doc — is **SECONDARY**: a pointer to *where to look*, never a
+source of truth or of a tier.
+
+1. **Primary-data-decides.** Every spec claim traces to the primary set above.
+   On any conflict, primary wins — full stop.
+2. **Author-reads-the-bytes.** A claim is `BYTE_VERIFIED` only if the spec author
+   (or a cited primary trace) **actually read the bytes**. Never inherit a
+   secondary doc's *assertion* of verification — open the `.asm`/data and read it.
+3. **Remove-bad-data.** When a secondary claim conflicts with primary data, or
+   cannot be grounded in it, the bad claim is **deleted** — comment, section, or
+   whole file — and inbound references repointed to primary. (This replaces the
+   earlier "banner-and-keep" approach.) Genuinely byte-verified nuggets are
+   lifted into a cited spec first; nothing verified is lost, but the bad data is
+   gone. Corrections recorded in `notes/rulings/RULINGS.md` are kept.
+
 ## Spec-authoring workflow (Layer 1 → Layer 2)
 
 1. Pick a subsystem or UI screen from `spec/README.md`.
@@ -68,8 +103,9 @@ Layer-1 gap-closing work (turning `TBD`/`RECONSTRUCTED` sections into
   `viceroy_source/ROLE.md`. (This supersedes the "C source is THE product"
   stance in `viceroy_source/RECONSTRUCTION_PLAN.md`.)
 - The scattered `docs/` and `viceroy_source/docs/` corpus is consolidated under
-  the **`spec/`** index, which names the single canonical doc per topic;
-  superseded duplicates carry redirect banners.
+  the **`spec/`** index, which names the single canonical doc per topic.
+  Wrong/superseded secondary docs are **deleted** (see Remove-bad-data), not
+  bannered; only primary-grounded content survives.
 
 Entry points: `spec/README.md` (the specification) · `STATUS.md` (current state)
 · `AUDIT.md` (correct-vs-misleading audit) · `CLAUDE.md` (hard rules).

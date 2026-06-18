@@ -41,7 +41,6 @@ int combat_resolve(Unit *attacker, Unit *defender) {
 }
 ```
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §7 (Combat)
 
 ## Attack strength
 

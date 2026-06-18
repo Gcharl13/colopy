@@ -5,7 +5,7 @@ DGROUP — terrain yields, unit type stats, building costs, founding-father
 effects, king demand schedules, scenario starting positions.
 
 These are reconstructed from byte analysis of the DGROUP segment plus
-cross-validation against `COLONIZATION_TECHNICAL_REFERENCE.md`. Each file
+cross-validation against the disassembly + `data_extracted/text/NAMES_sections.json`. Each file
 is C source that, when compiled, would produce the same DGROUP bytes the
 linker emitted in 1995.
 

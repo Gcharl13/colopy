@@ -11,5 +11,4 @@ Other relocated catalogs:
 - `notes/FUNCTIONS_INVENTORY.md`
 - `notes/SPRITE_CATALOG.md`
 - `notes/MAP_FORMAT.md`
-- `notes/COLONIZATION_TECHNICAL_REFERENCE.md`
 - `notes/STATE.md`

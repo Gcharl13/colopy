@@ -619,7 +619,7 @@ positions of a 48×48 tile.
 - **String evidence**: COLONY.SAV at file offset 0x1FA82 (observed).
 - **Suggested search**: Functions referencing that string with DOS INT 21h
   3Dh (open) or 3Ch (create). Format partially documented in
-  COLONIZATION_TECHNICAL_REFERENCE.md.
+  `docs/SAVE_FORMAT_CROSSREF.md`.
 
 ---
 

@@ -20,7 +20,6 @@
  * Native tribe slots use this 316-byte record to hold their global state:
  * treasury, tax rate, founding fathers, REF strength, market state, etc.
  *
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §2 PowerRecord
  * @asm DGROUP:0x8808 = power_table base; stride 0x13C = 316 bytes per nation
  * @evidence 18 distinct functions index by power_idx * 0x13C
  * ============================================================================ */
