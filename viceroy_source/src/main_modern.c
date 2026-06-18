@@ -142,16 +142,17 @@ static int g_nat_sel;   /* selected European power 0..3 (England default) */
 
 static void draw_nations(void)
 {
-    /* 2x2 flag grid baked into NATIONS.PIK.
+    /* NATIONS.PIK backdrop provides the 4 wood-framed flag plaques.
+     * The flags ARE part of the PIK -- no separate flag blit.
      * Byte-verified cell positions (nation.md B1 @asm 0x07079A):
      *   cell_x=(idx%2)*0x63+0x70, cell_y=(idx/2)*0x5B+0x0D */
     static const int flag_x[4] = { 112, 211, 112, 211 };
     static const int flag_y[4] = {  13,  13, 104, 104 };
     /* nation.md B3: [0x848+idx] = {England:0xC, France:9, Spain:0xE, Netherlands:0xD} */
     static const uint8_t nat_color[4] = { 0xC, 9, 0xE, 0xD };
+    /* "(Click Here When Finished)" does NOT appear on the nation screen at all —
+     * func_07092E never draws it; CHROME_AND_DISPATCH_INDEX §B3 confirms. */
     extern void draw_box(int,int,int,int,int);
-    /* "Select European Power" and "Click Here When Finished" are baked into
-     * NATIONS.PIK artwork -- do NOT draw them programmatically. */
     const int FW = 87, FH = 81;  /* 0x57, 0x51 */
     draw_bg();
     {
@@ -159,10 +160,27 @@ static void draw_nations(void)
         if (!ft) { vid_present(); return; }
         int s = g_nat_sel & 3;
         uint8_t col = nat_color[s];
+
+        /* Heading (func_07092E N5, BYTE_VERIFIED @asm 0x0709E7):
+         * "Select a European Power" centered at x=0x38-w/2, y=0xB6=182, color 0xFE.
+         * NOT baked into NATIONS.PIK -- drawn programmatically.
+         * String: DG16(0x2EFC); fallback used in headless mode. */
+        {
+            uint16_t hh = DG16(0x2EFC);
+            const char *heading = (hh && DG8(hh)) ? (const char *)&DG8(hh)
+                                                   : "Select a European Power";
+            int tw = ff_text_width(ft, heading, 1);
+            int hx = 0x38 - tw/2;
+            if (hx < 0) hx = 0;
+            ft->colors[1] = ft->colors[2] = ft->colors[3] = 0xFE;
+            ff_draw(ft, heading, hx, 0xB6, 1);
+        }
+
         /* Highlight box (nation.md B5): draw_box(cx,cy, cx+0x57,cy+0x51, color) */
         draw_box(flag_x[s], flag_y[s], flag_x[s]+FW, flag_y[s]+FH, (int)col);
+
         /* Nation name (nation.md B6-B8): from [0x8D42+s*2], UPPERCASE+":".
-         * Two-pass shadow: black at (+1,+1), then nation color at (cx+44-w/2, cy+2). */
+         * Two-pass shadow: black at (+1,+1), then nation color at (cx+0x2C-w/2, cy+2). */
         {
             uint16_t h = DG16(0x8D42 + s*2);
             if (h) {
@@ -173,7 +191,7 @@ static void draw_nations(void)
                     buf[i] = (src[i] >= 'a' && src[i] <= 'z') ? src[i]-32 : src[i];
                 buf[i++] = ':'; buf[i] = 0;
                 int tw = ff_text_width(ft, buf, 1);
-                int nx = flag_x[s] + 44 - tw/2;
+                int nx = flag_x[s] + 0x2C - tw/2;
                 int ny = flag_y[s] + 2;
                 ft->colors[1] = ft->colors[2] = ft->colors[3] = 0;
                 ff_draw(ft, buf, nx+1, ny+1, 1);
@@ -181,9 +199,13 @@ static void draw_nations(void)
                 ff_draw(ft, buf, nx, ny, 1);
             }
         }
-        /* Second field (nation.md B9-B11): [0x2F14+s*2] leader/adjective.
-         * DATA-gated: populated by game init, not EXE default data; handled
-         * correctly in overlay_070302_074405.c draw_nation_row(). */
+
+        /* Second field (nation.md B9-B11): [0x2F14+s*2] = MISC[173+s].
+         * Contains nation-specific trait description (DATA-gated, need MISC.TXT):
+         *   England(0)="Immigration" / France(1)=native-alliance / Spain(2)=Conquistadors
+         *   Netherlands(3)="Trade Cooperation"
+         * Position: (cx+0x2C-w2/2, cy-fonth+0x50). Two-pass shadow.
+         * Handled correctly by overlay_070302_074405.c draw_nation_row() when loaded. */
     }
     vid_present();
 }
@@ -192,7 +214,7 @@ static int g_diff_sel;   /* selected difficulty 0..4 (Discoverer default) */
 
 static void draw_difficulty(void)
 {
-    /* 5 difficulty portraits baked into DIFFICUL.PIK.
+    /* DIFFICUL.PIK backdrop provides the 5 figure portraits.
      * Byte-verified positions (difficulty.md cell positions via func_0702C0):
      *   idx=0 Discoverer:(128,7)  idx=1 Explorer:(233,7)
      *   idx=2 Conquistador:(23,103) idx=3 Governor:(128,103) idx=4 Viceroy:(233,103) */
@@ -201,8 +223,9 @@ static void draw_difficulty(void)
     /* difficulty.md C2: idx 0→0xA, 1→9, 2→0xE, 3→0xD, default(4)→0xC */
     static const uint8_t diff_color[5] = { 0xA, 9, 0xE, 0xD, 0xC };
     extern void draw_box(int,int,int,int,int);
-    /* "Choose Difficulty Level" and "Click Here When Finished" are baked into
-     * DIFFICUL.PIK artwork -- do NOT draw them programmatically. */
+    /* "(Click Here When Finished)" does NOT appear on the difficulty screen at all —
+     * CHROME_AND_DISPATCH_INDEX §P2 confirms: "no left-aligned title block or
+     * '(Click Here)' hint". The heading IS drawn programmatically (see below). */
     const int PW = 67, PH = 89;  /* 0x43, 0x59 */
     draw_bg();
     {
@@ -210,10 +233,27 @@ static void draw_difficulty(void)
         if (!ft) { vid_present(); return; }
         int s = g_diff_sel % 5;
         uint8_t col = diff_color[s];
+
+        /* Heading (func_070494, BYTE_VERIFIED @asm 0x07054D):
+         * "Select a Difficulty Level" at x=0x22-w/2+0x17=57-w/2, y=0x51=81, color 0xFE.
+         * NOT baked into DIFFICUL.PIK -- drawn programmatically.
+         * String: DG16(0x2EFC); fallback used in headless mode. */
+        {
+            uint16_t hh = DG16(0x2EFC);
+            const char *heading = (hh && DG8(hh)) ? (const char *)&DG8(hh)
+                                                   : "Select a Difficulty Level";
+            int tw = ff_text_width(ft, heading, 1);
+            int hx = 0x22 - tw/2 + 0x17;
+            if (hx < 0) hx = 0;
+            ft->colors[1] = ft->colors[2] = ft->colors[3] = 0xFE;
+            ff_draw(ft, heading, hx, 0x51, 1);
+        }
+
         /* Highlight box (difficulty.md C4): draw_box(cx,cy, cx+0x43,cy+0x59, color) */
         draw_box(port_x[s], port_y[s], port_x[s]+PW, port_y[s]+PH, (int)col);
+
         /* Level name (difficulty.md C5-C7): from [0x8394+s*2], UPPERCASE+":".
-         * Two-pass shadow at (cx+34-w/2, cy - ft->maxh + 0x2C). */
+         * Two-pass shadow at (cx+0x22-w/2, cy - ft->maxh + 0x2C). */
         {
             char buf[64];
             uint16_t h = DG16(0x8394 + s*2);
@@ -227,16 +267,17 @@ static void draw_difficulty(void)
                 buf[i] = (src[i] >= 'a' && src[i] <= 'z') ? src[i]-32 : src[i];
             buf[i++] = ':'; buf[i] = 0;
             int tw = ff_text_width(ft, buf, 1);
-            int nx = port_x[s] + 34 - tw/2;
+            int nx = port_x[s] + 0x22 - tw/2;
             int ny = port_y[s] - ft->maxh + 0x2C;  /* cy - fonth + 44 */
             ft->colors[1] = ft->colors[2] = ft->colors[3] = 0;
             ff_draw(ft, buf, nx+1, ny+1, 1);
             ft->colors[1] = ft->colors[2] = ft->colors[3] = col;
             ff_draw(ft, buf, nx, ny, 1);
         }
-        /* Second field (difficulty.md C8-C10): [0x2F04+s*2] subtitle.
-         * DATA-gated: populated by game init, not EXE default data; handled
-         * correctly in overlay_070302_074405.c draw_difficulty_row(). */
+
+        /* Second field (difficulty.md C8-C10): [0x2F04+s*2] = MISC[165+s].
+         * Position: (cx+0x22-w2/2, cy+0x2E). Two-pass shadow.
+         * DATA-gated; handled correctly by draw_difficulty_row() when loaded. */
     }
     vid_present();
 }
