@@ -302,6 +302,16 @@ static void blit_coast_sub(fb *f, int px, int py, int tp, int qx, int qy, int id
 static const int CDX[8] = {  0,  1,  1,  1,  0, -1, -1, -1 };
 static const int CDY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
 
+/* Draw a terrain base ground tile (flat colour + TERRAIN.SS texture). Shared by
+ * the ocean/land base path and the diagonal-coast land-corner fill. */
+static void draw_ground(fb *f, int px, int py, int tp, uint8_t id)
+{
+    fb_fill_rect(f, px, py, tp, tp, terrain_color(id));
+    int bf = g_terr_frame[id];
+    if (g_terrain && bf >= 0 && bf < g_terrain->count)
+        blit_frame(f, px, py, tp, &g_terrain->frames[bf]);
+}
+
 static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
     uint8_t cfg[4] = { 0, 0, 0, 0 };
@@ -328,6 +338,21 @@ static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx
     if ((conn & 0x77) == 0x70) pattern = 2; /* land in SW corner (S,SW,W) */
     if ((conn & 0xDD) == 0x1C) pattern = 3; /* land in SE corner (E,SE,S) */
     if (pattern >= 0) {
+        /* the diagonal sprite is transparent on its land-corner half; draw the
+         * adjacent land's ground underneath so that corner shows land, not bare
+         * ocean (the composer's 0xC0E6 masked fill, source [0x4E84] = last
+         * cardinal land neighbour in walk order N,E,S,W). The sprite's opaque
+         * sand+water half covers the rest, so land shows only in the corner. */
+        static const int c4dx[4] = { 0, 1, 0, -1 };
+        static const int c4dy[4] = { -1, 0, 1, 0 };
+        int nb = -1;
+        for (int k = 0; k < 4; k++) {
+            int nxx = tx + c4dx[k], nyy = ty + c4dy[k];
+            if (!water_at(m, nxx, nyy))
+                nb = MP_TERRAIN_ID(m->terrain[mp_idx(m, nxx, nyy)]);
+        }
+        if (nb >= 0)
+            draw_ground(f, px, py, tp, (uint8_t)nb);
         blit_phys0_key(f, px, py, tp, 0x96 + pattern);
         return;
     }
@@ -382,9 +407,7 @@ void sprite_draw_map_tile(fb *f, int px, int py, int tp, const mp_map *m, int tx
 
     /* 6b. base ground (verified terrain_cell_transform mapping, per id) */
     if (g_have_sheet) {
-        int bf = g_terr_frame[id];
-        fb_fill_rect(f, px, py, tp, tp, terrain_color(id));
-        if (bf >= 0) blit_frame(f, px, py, tp, &g_terrain->frames[bf]);
+        draw_ground(f, px, py, tp, id);
     } else {
         sprite_draw_tile(f, px, py, tp, b);   /* colored fallback (+ markers) */
     }
