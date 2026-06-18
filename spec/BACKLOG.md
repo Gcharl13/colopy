@@ -27,3 +27,27 @@ secondary mechanics.
 **Definition of done per item:** the named spec section cites the byte offset(s),
 states the formula/value, is tagged `BYTE_VERIFIED`, and the corresponding
 `spec/README.md` tier is updated.
+
+## Depth-pass queue (per-spec §6)
+
+The taxonomy is now fully populated with breadth-first stubs. **Each
+`spec/**/*.md` file's §6 "Open questions" is its own depth queue** — that is the
+authoritative, per-system list. Below are the highest-value concrete entry
+points surfaced during the population pass (2026-06-18), to seed that work:
+
+| Topic | Entry point (primary) | Upgrades |
+|-------|------------------------|----------|
+| Diplomacy war state | `DGROUP:0x883C` war bit-matrix — decode layout (which bit = which pair) | `systems/diplomacy.md` |
+| Immigration / crosses | `func_0363A2` (crosses loop), `func_035D9A` (threshold) | `systems/immigration.md` |
+| Native raze treasure | `func_04A7CA` (CHIEFKILL) — already B; conversion/mission TBD | `systems/natives.md` |
+| Exploration / scout | `func_05A20E` | `systems/exploration.md` |
+| Colony production | `func_02D658` | `systems/colony.md` |
+| Treasure transport | `func_05C878` | `systems/king.md`, events |
+| Dialog framework | `func_06F0F4` (popup dispatcher), sprite channels `[0x1F5C/5E/60]`, geometry `[0x839E..0x83A4]` | `ui/popups.md` |
+| Cinematic dispatch | `func_075352` (king-defeats arg matrix), `func_03DA2A` (DoI signature) | `ui/cinematics.md`, `ui/declaration_independence.md` |
+| Lost City outcomes | index→outcome binding for `@LOSTCITY0..9` + `@BURIAL1-3` + `@VANISH` | `systems/events.md`, `ui/popups.md` |
+
+**Data caveats to resolve** (from the population pass): NAMES.TXT has **31**
+`@`-sections (recount any list that says 23); ColonyRecord is reached via
+`[0x8542]` (not a static base); PowerRecord base is `0x8808`/`0x8809` — confirm
+which is the array head vs first field at a read site.

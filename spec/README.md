@@ -6,90 +6,87 @@ implementation. See [`/METHODOLOGY.md`](../METHODOLOGY.md) — especially **Prim
 data is the decider** (every claim traces to the bytes/extracted data; bad
 secondary data is deleted, not bannered).
 
-This index enumerates **every spec sheet** the project needs (Route A). Most are
-not yet authored — until a sheet exists under `systems/`, `ui/`, or `data/`, the
-**canonical primary doc** named in its row *is* the spec for that topic. Author
-new sheets from [`_TEMPLATE.md`](_TEMPLATE.md). Gap-closing work is queued in
-[`BACKLOG.md`](BACKLOG.md).
+**Status (2026-06-18):** the taxonomy is **fully populated** — every system, UI
+family, and data topic has a spec sheet. These are **breadth-first stubs**:
+primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
+from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
+deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
-Status: ✍ authored here · ◻ stub (canonical doc only).
 
-## Game systems (24)
+## Game systems (31)
 
-| # | System | Spec / canonical primary doc | Tier | Status |
-|---|--------|------------------------------|------|--------|
-| 1 | King & taxation | **[`systems/king.md`](systems/king.md)** | B/TBD | ✍ |
-| 2 | Combat (land/naval) | **[`systems/combat.md`](systems/combat.md)** | B/TBD | ✍ |
-| 3 | Market & prices | **[`systems/market.md`](systems/market.md)** | B/TBD | ✍ |
-| 4 | Colony & production | **[`systems/colony.md`](systems/colony.md)** | B/TBD | ✍ |
-| 5 | Unit system (types/movement/cargo) | `docs/DATA_MODEL.md` (UnitRecord) + `@UNIT` | B/R | ◻ |
-| 6 | Unit orders (sentry/fortify/goto/build/plow/road) | `@ORDERS` + disasm | R/TBD | ◻ |
-| 7 | Trade routes | `@ORDERS` + disasm | TBD | ◻ |
-| 8 | Immigration / recruitment (crosses) | `docs/IMMIGRATION_RECRUIT_FINDINGS.md` | A/TBD | ◻ |
-| 9 | Colonist training / promotion | `@JOB` + disasm | R/TBD | ◻ |
-| 10 | Native relations (attitude/trade/raid/mission) | `viceroy_source/docs/NATIVE_RELATIONS.md` | R/TBD | ◻ |
-| 11 | Founding Fathers / Congress | `@FATHERS`,`@FOUNDING` + disasm | R/TBD | ◻ |
-| 12 | Independence / revolution | `viceroy_source/docs/REVOLUTION.md` | R/TBD | ◻ |
-| 13 | European diplomacy | `viceroy_source/docs/EUROPEAN_DIPLOMACY.md` ⚠ | R/TBD | ◻ |
-| 14 | Scoring | `viceroy_source/docs/SCORING.md` | R/TBD | ◻ |
-| 15 | Random events / Lost City | `viceroy_source/docs/RANDOM_EVENTS.md` | R/TBD | ◻ |
-| 16 | Map system & terrain | `viceroy_source/docs/MAP_SYSTEM.md` + `@UNFORESTED/@FORESTED` | B/R | ◻ |
-| 17 | Map generation | `viceroy_source/docs/MAP_GENERATION.md` | TBD | ◻ |
-| 18 | Exploration / visibility (fog) | disasm | TBD | ◻ |
-| 19 | Terrain improvement (road/clear/plow) | `@ORDERS` + disasm | R/TBD | ◻ |
-| 20 | Difficulty levels | `@DIFFICULTY` + global `0x53A6` | B/R | ◻ |
-| 21 | National powers / abilities | `@COUNTRY` + disasm | R/TBD | ◻ |
-| 22 | Turn dispatch (per-power sequence/phases) | `docs/ARCHITECTURE.md` | B | ◻ |
-| 23 | Save / load | `docs/SAVE_FORMAT_CROSSREF.md` | R/TBD | ◻ |
-| 24 | Resource mgmt / warehousing | `docs/DATA_MODEL.md` (ColonyRecord) | A/TBD | ◻ |
-| +A | **Tutorial** (`@TUTORIAL1..19`) | `data_extracted/text/GAME_sections.json` | B/TBD | ◻ |
-| +B | **REF growth** (budget→units) | `king.md` §7 + globals `0x53DA..` / `+0x22` | A/TBD | ◻ |
-| +C | **Mercenary hiring** | `GAME_sections.json` (`@MERCENAR*`) | TBD | ◻ |
-| +D | **Boycotts** | `GAME_sections.json` + ColonyRecord | TBD | ◻ |
-| +E | **Tory uprising** | `GAME_sections.json` (`@TORYUPRISING`) | TBD | ◻ |
-| +F | **Heir succession** | `GAME_sections.json` | TBD | ◻ |
-| +G | **Wilderness camp / consolidation** | disasm | TBD | ◻ |
+| System | Spec | Tier | System | Spec | Tier |
+|--------|------|------|--------|------|------|
+| King & taxation | [`systems/king.md`](systems/king.md) | B/TBD | Difficulty | [`systems/difficulty.md`](systems/difficulty.md) | B/R |
+| Combat | [`systems/combat.md`](systems/combat.md) | B/TBD | National powers | [`systems/national_powers.md`](systems/national_powers.md) | R/TBD |
+| Market & prices | [`systems/market.md`](systems/market.md) | B/TBD | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B/TBD |
+| Colony & production | [`systems/colony.md`](systems/colony.md) | B/TBD | Save / load | [`systems/save.md`](systems/save.md) | R/TBD |
+| Unit system | [`systems/unit.md`](systems/unit.md) | B/R | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | A/TBD |
+| Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B/R | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
+| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | A/TBD |
+| Immigration | [`systems/immigration.md`](systems/immigration.md) | A/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B/TBD |
+| Training / promotion | [`systems/training.md`](systems/training.md) | R/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
+| Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B/TBD |
+| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | Heir succession | [`systems/heir_succession.md`](systems/heir_succession.md) | B/TBD |
+| Revolution | [`systems/revolution.md`](systems/revolution.md) | R/TBD | Wilderness camp | [`systems/wilderness_camp.md`](systems/wilderness_camp.md) | A/TBD |
+| Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | A/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
+| Scoring | [`systems/scoring.md`](systems/scoring.md) | R/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
+| Map generation | [`systems/map_generation.md`](systems/map_generation.md) | TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | TBD |
+| Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | R/TBD | | | |
 
-*(+A…+G were missing from the earlier draft; surfaced from primary `GAME_sections.json`.)*
+## UI screens & dialogs (52 entries → 10 spec files)
 
-## UI screens & dialogs (52)
+"What is drawn where." Full-screen views get their own file; report/popup/menu/
+context families are grouped (one file, a section per screen).
 
-Each needs a `ui/<name>.md` ("what is drawn where"). Until authored, the canonical
-doc applies. Primary UI sources: `docs/SESSION_UI_CATALOG.md`,
-`docs/RENDERER_GEOMETRY.md`, `docs/ADVISOR_REPORTS_AUDIT.md`,
-`docs/UI_DIALOGS.md`, `docs/POPUP_TEMPLATE_AUDIT.md`, `docs/DIALOG_GEOMETRY.md`,
-`docs/KING_AND_CINEMATIC_AUDIT.md`, `docs/GAME_INDEX_TABLES.md`.
+| Spec file | Covers |
+|-----------|--------|
+| [`ui/map_view.md`](ui/map_view.md) | main gameplay screen (viewport, minimap, sidebar, menu bar) |
+| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen (buildings, production, SoL, warehouse) |
+| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe (docks, harbor, recruit/purchase/train) |
+| [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress |
+| [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration of Independence |
+| [`ui/advisor_reports.md`](ui/advisor_reports.md) | the 9 advisor reports F2–F10 |
+| [`ui/popups.md`](ui/popups.md) | ~24 gameplay popups (king/native/combat/events/colony/war) |
+| [`ui/menus.md`](ui/menus.md) | main menu, new-game/customize/difficulty/nationality, save/load, Hall of Fame |
+| [`ui/cinematics.md`](ui/cinematics.md) | opening/closing cinematics, king-defeats, score screen |
+| [`ui/context_dialogs.md`](ui/context_dialogs.md) | unit orders, trade-route, native-village, diplomacy, recruit/purchase/train, construction menus |
 
-- **Full-screen views (5):** map/gameplay · colony · Europe · Continental Congress · Declaration of Independence.
-- **Advisor reports (9):** F2 Religious · F3 Congress · F4 Labor · F5 Economic · F6 Colony · F7 Naval · F8 Foreign Affairs · F9 Indian · F10 Score.
-- **Popups (~24):** King tax demand · native raze · native attitude · native gift/haggle · native raid · Lost City (10 variants) · combat result · ship combat/landfall · heresy · rebel-sentiment change · food shortage/starvation · colony burn/capture · intervention · treasure delivery · unit capture/demotion · revolutionary-war messages.
-- **Main-menu screens (8):** main menu · new-game options · customize world · difficulty select · nationality/leader select · save dialog · load dialog · Hall of Fame.
-- **End-game (4):** King-defeats screen · score screen · opening cinematic · closing cinematic.
-- **Context dialogs (≈2 groups):** unit jobs/orders menu · trade-route setup · native-village interaction (10 actions) · colonial-authority · diplomatic choices · recruitment · purchase-unit · training/school · construction-choice.
+Primary UI sources: `docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`,
+`docs/ADVISOR_REPORTS_AUDIT.md`, `docs/UI_DIALOGS.md`,
+`docs/POPUP_TEMPLATE_AUDIT.md`, `docs/DIALOG_GEOMETRY.md`,
+`docs/KING_AND_CINEMATIC_AUDIT.md`, `docs/COLONY_RENDER_CHAIN.md`.
 
-## Data & format specs (23)
+## Data & formats (5 spec files)
 
-| Topic | Canonical primary doc | Tier |
-|-------|------------------------|------|
-| Memory records (Power/Colony/Unit/Native) | **`docs/DATA_MODEL.md`** (runtime-verified) | B |
-| Index tables (sprite/text indices) | `docs/GAME_INDEX_TABLES.md` | B |
-| NAMES.TXT sections (23 `@`-sections) | `data_extracted/text/NAMES_sections.json` | B |
-| Text resources (GAME/LABELS/PEDIA) | `data_extracted/text/*.json` + `docs/*_CATALOG.md` | B |
-| File formats (.MP/.SS/.PAL/.PIK/.FF/COL/MOV/BIN/DAT/EXE/RTLINK) | `formats/` + `viceroy_source/formats/` | B |
+| Spec file | Covers | Canonical primary |
+|-----------|--------|-------------------|
+| [`data/records.md`](data/records.md) | Power/Colony/Unit/Native memory records | `docs/DATA_MODEL.md` |
+| [`data/index_tables.md`](data/index_tables.md) | sprite/text index tables | `docs/GAME_INDEX_TABLES.md` |
+| [`data/names_sections.md`](data/names_sections.md) | the **31** NAMES.TXT `@`-sections | `data_extracted/text/NAMES_sections.json` |
+| [`data/text_resources.md`](data/text_resources.md) | GAME/LABELS/PEDIA/MENU text | `data_extracted/text/*.json` + catalogs |
+| [`data/file_formats.md`](data/file_formats.md) | .MP/.SS/.PAL/.PIK/.FF/… on-disk formats | `formats/` |
 
-## De-duplication record (this turn)
+Notes from the population pass: NAMES.TXT has **31** `@`-sections (not 23);
+ColonyRecord has **no static base** — it's reached via the far pointer
+`[0x8542]` (stride `0xCA`); PowerRecord base appears as `0x8808` (array head) /
+`0x8809` (first field) in `docs/DATA_MODEL.md`.
+
+## De-duplication record
 
 Primary data is canonical; conflicting secondary copies were **deleted** (per
 `/METHODOLOGY.md` → Remove-bad-data):
-
-- **Deleted** `notes/COLONIZATION_TECHNICAL_REFERENCE.md` — ~60–70% uncited
-  speculation; source of the original king.md REF/tax-cap errors. Refs repointed
-  to `docs/DATA_MODEL.md` / `data_extracted/text/*.json` / `docs/GAME_INDEX_TABLES.md`.
-- **Deleted** `viceroy_source/docs/DATA_MODEL.md` — superseded by `docs/DATA_MODEL.md`.
-- ⚠ marks docs with known FABRICATED sections retained as Layer-1 evidence with a
-  corrective note (e.g. `EUROPEAN_DIPLOMACY.md` rel-score model;
+- **Deleted** `notes/COLONIZATION_TECHNICAL_REFERENCE.md` (source of the original
+  king.md REF/tax-cap errors) and `viceroy_source/docs/DATA_MODEL.md` (superseded).
+- Canonical: memory records → `docs/DATA_MODEL.md`; architecture →
+  `docs/ARCHITECTURE.md`; render chain → `docs/RENDER_CHAIN.md` +
+  `docs/COLONY_RENDER_CHAIN.md`.
+- ⚠ Docs with known FABRICATED sections are retained as Layer-1 evidence only,
+  with corrective notes (e.g. `EUROPEAN_DIPLOMACY.md` rel-score model;
   `RENDER_CHAIN.md` dirty-rect "does not exist").
 
-Canonical: memory records → `docs/DATA_MODEL.md`; architecture → `docs/ARCHITECTURE.md`;
-render chain → `docs/RENDER_CHAIN.md` + `docs/COLONY_RENDER_CHAIN.md`.
+## Depth pass
+
+Each spec's **§6 Open questions** is its own depth queue. Cross-cutting,
+highest-value byte-traces are consolidated in [`BACKLOG.md`](BACKLOG.md).
