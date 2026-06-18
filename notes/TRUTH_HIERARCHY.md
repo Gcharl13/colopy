@@ -4,6 +4,15 @@ When evidence from different sources conflicts, the higher-numbered source wins.
 This document exists because **the same factual disputes have been re-litigated
 multiple times in this project.** Write rulings down; don't re-fight them.
 
+> **Path note (2026-06-18):** some sources below cite `extracted/…` (e.g.
+> `extracted/assets/sprites/`), and elsewhere the repo references
+> `colonize_src_v3/`, `viceroy_overlay_full.asm`, `function_index.json`. These
+> are **regenerable, git-ignored** working artifacts (produced by
+> `tools/extract_visuals.py` and the disasm drivers), **not committed**.
+> Committed decoded data lives in **`data_extracted/`**. A citation to
+> `extracted/…` means "regenerate it, then inspect" — it is not a dead link.
+> See `CLAUDE.md` → "Path convention".
+
 ## The hierarchy
 
 | # | Source | Why it ranks here |

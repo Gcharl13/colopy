@@ -1,0 +1,91 @@
+# CLAUDE.md — Prime Directive & Hard Rules
+
+This file is the orientation + rules authority for the project. It is cited
+across the repo as *"per CLAUDE.md hard rule."* It was missing from the tree;
+this version **reconstructs the rules from where they survive** (each rule
+carries its surviving citation) so those references resolve again. It introduces
+**no new unverified claims** — if a rule here is ever found to disagree with the
+disassembly or NAMES.TXT, the higher source wins (see
+`notes/TRUTH_HIERARCHY.md`).
+
+## Prime directive
+
+Every reconstructed value must trace to a **byte-verified** artifact — a file
+offset in a DOS `.EXE`, a `NAMES.TXT`/`GAME.TXT` field, or a recorded ruling in
+`notes/rulings/RULINGS.md`. **Never guess.** Un-cited values are marked `TBD`,
+not invented. Conflicts are resolved by `notes/TRUTH_HIERARCHY.md` and the
+ruling is written down — do not re-litigate settled disputes in conversation.
+
+Orientation for a new session: this file → `notes/TRUTH_HIERARCHY.md` →
+`viceroy_source/DOC_INDEX.md` → `viceroy_source/VERIFICATION_LEDGER.md` →
+`STATUS.md` (current state) and `AUDIT.md` (what is correct vs misleading).
+
+## Trust order (summary; full table in `notes/TRUTH_HIERARCHY.md`)
+
+Running DOS game > extracted sprite pixels > `VICEROY.EXE` disasm at a cited
+offset > preprocessed disasm/index > team docs > **C reconstruction (low
+trust — has been wrong about terrain ordering, sprite roles)** > AI speculation
+(lowest). The original game manual (`docs/GAME_MANUAL.md`) is HIGH trust for a
+feature's *function*, but EXE bytes win for exact *numbers*.
+
+## Hard rules
+
+1. **Terrain ordering authority = `NAMES.TXT` `$TERRAIN`**, never `mapedit.c`.
+   The C reconstruction has been wrong about tile ordering before; do not cite
+   it as primary evidence for terrain ids.
+   *(survives in `formats/MP_FORMAT.md`, `viceroy_source/docs/MAP_SYSTEM.md`)*
+
+2. **Sea-lane column** — the right-edge map column is the sea-lane; base terrain
+   id = **26 (Ocean)**. Never fake it as desert.
+   *(survives in `formats/MP_FORMAT.md`)*
+
+3. **Auto-forest range** — terrain ids **8..23** are the forested variants of
+   the base terrains, byte-verified at file **`0x6204`**
+   (`func_006204` / `get_terrain_id_from_raw`): read byte, mask `& 0x1F`, then
+   apply the auto-forest conversion.
+   *(survives in `viceroy_source/docs/MAP_SYSTEM.md`, `docs/COLONY_RENDER_CHAIN.md`,
+   `docs/GAME_INDEX_TABLES.md`)*
+
+4. **Rivers vs coast** — `PHYS0.SS` rows **`0x01` and `0x11`** are **rivers**,
+   NOT coast. True coasts use sprites **150–153** plus the water-tile beach-halo
+   mechanism.
+   *(survives in `viceroy_source/docs/RENDER_CHAIN.md`, `formats/MP_FORMAT.md`)*
+
+5. **Orphan sprite sheets** — **never load `TERRAIN.SS` or `BDARK.SS`** (orphan
+   assets, not used by the renderer). Skip placeholder sprite indices **0, 16,
+   100**.
+   *(survives in `BUILD.md`, `docs/ASSET_ROLES.md`, `notes/rulings/RULINGS.md`,
+   `tools/render_map.py`)*
+
+6. **Renderer sprite indices** — ships 5–7 / 14–15 / 127; foot units
+   100–105 + 109.
+   *(survives in `notes/SPRITE_CATALOG.md`)*
+
+7. **Tile drawing chain** — each map tile is drawn by
+   `func_O514 → func_O513 → func_O512`. `func_O530` (file `0x69D8C`) is the
+   **map-editor** terrain-palette dialog, confirmed not in-game.
+   *(survives in `viceroy_source/docs/MAP_SYSTEM.md`, `docs/COLONY_RENDER_CHAIN.md`)*
+
+8. **Colony data base** — the current-colony struct is at `*(0x8542)`;
+   ColonyRecord strides per `notes/rulings/` anchor map.
+   *(survives in `docs/ADVISOR_REPORTS_AUDIT.md`, `PROGRESS.md`)*
+
+## Path convention (avoids dangling references)
+
+- `extracted/` (sprites, palettes, assets under `extracted/assets/…`) is a
+  **regenerable, git-ignored** working tree produced by
+  `tools/extract_visuals.py`. It is **not committed**. Docs that cite
+  `extracted/...` refer to this regenerable output.
+- **Committed, decoded data** lives in **`data_extracted/`** (NAMES/GAME
+  sections, palette, map, strings, disasm snapshot).
+- Verbatim DOS binaries are not committed as `.EXE`; `bin/*.b64` +
+  `bin/reconstitute.py` rebuild them into git-ignored `raw/COLONIZE/`.
+  (Note: `col.zip` is an additional convenience bundle of the original files;
+  see `AUDIT.md` for its status.)
+
+## Agents & workflow
+
+Conflicts between sources are arbitrated against `notes/TRUTH_HIERARCHY.md` and
+recorded in `notes/rulings/RULINGS.md` — **not** in the conversation thread, so
+rulings survive compaction. Add *rules* to this file (with user sign-off); add
+*decisions* to `RULINGS.md`.

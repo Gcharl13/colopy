@@ -1,5 +1,10 @@
 # VICEROY Overlay — Plan to convert all 691 functions to citable C
 
+> **⚠️ STALE plan (largely unexecuted) — see [`STATUS.md`](STATUS.md) and
+> [`AUDIT.md`](AUDIT.md) for what was actually done.** The Tier 1 mechanical
+> stub generation produced citable *stubs*, not semantic source; only a handful
+> of overlay functions are deeply understood. Do not read as completion status.
+
 The 362 KB overlay region of VICEROY.EXE contains the bulk of the actual
 game logic — combat, AI, render chain, save/load core, asset loaders for
 SS / PIK / PAL / FF / MP / TXT / DAT / COL / BIN / MOV / PCX / GIF, dialog

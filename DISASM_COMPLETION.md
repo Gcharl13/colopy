@@ -1,5 +1,10 @@
 # DISASM_COMPLETION.md — Final Sprint Report (2026-05-03)
 
+> **⚠️ HISTORICAL working log — superseded by [`STATUS.md`](STATUS.md) (current
+> state) and [`AUDIT.md`](AUDIT.md) (corrected metrics).** Note: its "99.36%
+> lines identified" figure counts *syntactic tags*, not semantic understanding
+> (~few % byte-verified). Read alongside `AUDIT.md` §4.
+
 12-week reverse-engineering sprint completion report. Records every
 verified finding, every tool delivered, and every gap that remains
 for follow-up work.

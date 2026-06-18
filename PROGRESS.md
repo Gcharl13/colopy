@@ -1,5 +1,11 @@
 # Progress Dashboard
 
+> **⚠️ STALE (pre-2026-05-04) — superseded by [`STATUS.md`](STATUS.md) and
+> [`AUDIT.md`](AUDIT.md).** This file predates the sprint-completion work and
+> contains contradictory/inflated claims (e.g. "100% in citable C",
+> "OPENING/CLOSING not started"). See `AUDIT.md` §3–§4 for corrected metrics.
+> Kept for history; do not cite as current state.
+
 Top-level status of the reverse-engineering effort. Per-line code status
 lives in `code/DISASM_LEDGER.md`; per-asset status lives in the sidecar JSONs
 inside `assets/`. This file is the bird's-eye view.

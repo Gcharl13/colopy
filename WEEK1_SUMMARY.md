@@ -1,5 +1,8 @@
 # Week 1 Disasm Sprint — Verified Findings
 
+> **⚠️ STALE (Day 1–7 snapshot) — superseded by [`STATUS.md`](STATUS.md) and
+> [`AUDIT.md`](AUDIT.md).** Covers only the first week; kept for history.
+
 Generated 2026-05-03 at end of Week-1 work session.
 
 ## Tooling delivered (reusable)

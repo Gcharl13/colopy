@@ -13,6 +13,14 @@ Every reconstructed value traces to a **byte-verified** artifact in the original
 binary — a file offset, a `NAMES.TXT` field, or a recorded ruling. **Never guess.**
 Un-cited values are marked `TBD`, not invented.
 
+**Orientation:** [`CLAUDE.md`](CLAUDE.md) holds the hard rules; [`STATUS.md`](STATUS.md)
+is the current-state dashboard; [`AUDIT.md`](AUDIT.md) records what is correct vs
+misleading and the **corrected** completion metrics (the older "100% in citable
+C" / "99% identified" headlines conflate syntactic tags with semantic
+understanding — see `AUDIT.md` §4). Several legacy status docs (`PROGRESS.md`,
+`DISASM_COMPLETION.md`, `WEEK1_SUMMARY.md`, `OVERLAY_PLAN.md`) are stale and
+banner-marked.
+
 ## First run (continuing the disassembly)
 ```bash
 pip install -r requirements.txt                    # capstone is the one hard dependency
@@ -58,9 +66,12 @@ mapedit_source/ opening_source/ closing_source/   companion-program decompilatio
 ## Scope decisions (deliberate)
 - **DOS only.** The Win16 build was a throwaway analysis *oracle*; its findings are
   folded into the DOS-cited docs. No Win16 source, binaries, or tooling here.
-- **No verbatim binaries** (they live only as `bin/*.b64`; `reconstitute.py` rebuilds
-  them locally into `raw/`, which is git-ignored), **no runtime session dumps**, **no
+- **No verbatim binaries** as `.EXE` (they live as `bin/*.b64`; `reconstitute.py`
+  rebuilds them locally into git-ignored `raw/`), **no runtime session dumps**, **no
   ports**, **no build/engine artifacts** — all regenerable or cruft.
+  - *Known exception:* `col.zip` is a convenience bundle of the original game
+    files (incl. `VICEROY.EXE`, `AMER2.MP`) kept at the repo root. It is verbatim
+    and redundant with `bin/*.b64`; retained by decision. See `AUDIT.md` §3.6.
 
 > Private repository. Derivative reverse-engineering/preservation analysis of a
 > copyrighted work — do not make public or redistribute. See `bin/README.md`.

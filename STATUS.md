@@ -1,5 +1,12 @@
 # STATUS — Reverse-Engineering Progress Dashboard
 
+> **This is the single source of truth for current project state.**
+> `PROGRESS.md`, `DISASM_COMPLETION.md`, `WEEK1_SUMMARY.md`, and `OVERLAY_PLAN.md`
+> are historical/stale and carry banners pointing here. For the correct-vs-
+> misleading information audit and **corrected metrics** (the headline "100% in
+> citable C" / "99.36% identified" figures are syntactic, not semantic), see
+> [`AUDIT.md`](AUDIT.md).
+
 Live snapshot of project completion. Refresh by running:
 
 ```bash
@@ -8,7 +15,14 @@ python tools/sigmatch.py --self-test
 python tools/build_catalogs.py
 ```
 
-Last update: 2026-05-03.
+Last update: 2026-06-18 (audit pass). Verification-gate rows below were last
+re-run 2026-05-03; the MAPEDIT line is updated for the clean-rewrite re-approach.
+
+**Headline (honest tiers — see `AUDIT.md` §4):** VICEROY ~47/1,241 functions
+BYTE_VERIFIED (~3.8%), rest skeleton/reconstructed with citations · MAPEDIT 0
+hand-decoded to clean C (rewrite planned, see `mapedit_source/REWRITE_PLAN.md`) ·
+PAL+MP assets round-trip byte-perfect · OPENING/CLOSING = RAW stubs + sigmatch
+helpers.
 
 ---
 
@@ -37,7 +51,7 @@ Last update: 2026-05-03.
 | EXE | .asm files | BYTE_VERIFIED | % |
 |-----|-----------:|--------------:|--:|
 | VICEROY.EXE | 1,243 | ~25 | ~2% |
-| MAPEDIT.EXE | 212 | 5 (sigmatch-promoted) | ~2% |
+| MAPEDIT.EXE | 212 | 5 (sigmatch-promoted) | ~2% (clean rewrite planned — see `mapedit_source/REWRITE_PLAN.md`; old auto-skeleton quarantined in `mapedit_source/legacy_autogen/`) |
 | OPENING.EXE | 147 | 4 (sigmatch-promoted) | ~3% |
 | CLOSING.EXE | 138 | 4 (sigmatch-promoted) | ~3% |
 | MPSCOPY.EXE | 0 | 0 | not yet disassembled |

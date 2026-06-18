@@ -1,5 +1,9 @@
 # Six-Month Plan — Full COLONIZE Reverse-Engineering Completion
 
+> **⚠️ PROSPECTIVE roadmap — ~1 of 26 weeks executed (as of 2026-06-18).**
+> Only M1W1 ran; M1W2–M6W26 are not started. This is aspirational planning, not
+> current status — see [`STATUS.md`](STATUS.md) and [`AUDIT.md`](AUDIT.md).
+
 26 weeks of focused work to close every open gap from the prior
 12-week sprint and reach **pixel-perfect parity with DOSBox** for
 every render, **per-line semantic annotation** for every game-logic
