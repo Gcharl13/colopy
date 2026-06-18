@@ -67,11 +67,18 @@ BYTE_VERIFIED:**
 ... if (tax_pct < 0x3C) return;   // 034A1B CMP byte[bx+1],0x3C / JL
     ... else show_message([0x1084]);
 ```
-`0x3C` = **60**. The game manual states a 75% cap; the **bytes use 60** as the
-verified tax-level gate (per the trust hierarchy, EXE bytes win for numbers; 75
-is recorded as manual design-intent / possible patch difference). Whether 60 is
-the hard *clamp* or a "tax is high" branch is not provable from this function
-alone — see §7.
+`0x3C` = **60** is a *tax-level gate* (branches king message/flow when
+`tax_pct >= 60`) — **not** the cap.
+
+**Tax hard clamp = 75 (`0x4B`) — `func_034318` (file `0x03434C..0x034365`).
+BYTE_VERIFIED:**
+```
+[bx+1] += delta;                  // 03434C ADD [bx+1],al    (apply raise to PowerRecord+0x01 tax_pct)
+if ([bx+1] > 0x4B) [bx+1] = 0x4B; // 03434F CMP [bx+1],0x4B  (raw 80 7F 01 4B); clamped store @034364
+```
+This **resolves the 60-vs-75 question**: 75 is the hard cap on `tax_pct` (matches
+the manual), applied at the write-site; 60 is an independent message gate. Both
+numbers are byte-verified and serve distinct roles.
 
 **Tax revenue on European sales:** `TBD`. No primary trace read yet; the
 per-good loop is not byte-verified here (do not import the old reconstructed
@@ -102,7 +109,8 @@ The demand surfaces as the **King speech-bubble dialog**:
 
 - `code/VICEROY/disasm/func_034AE0_unknown.asm` — tax-raise attempt, read line by
   line (delta/turn-factor/IMUL/roll). **B**
-- `code/VICEROY/disasm/func_0349F4_unknown.asm` — `CMP [bx+1],0x3C` (=60). **B**
+- `code/VICEROY/disasm/func_0349F4_unknown.asm` — `CMP [bx+1],0x3C` (=60 gate). **B**
+- `func_034318` (file `0x03434C..0x034365`) — `CMP [bx+1],0x4B` (=75 hard clamp on `tax_pct`), raw `80 7F 01 4B`. **B**
 - `docs/DATA_MODEL.md` — PowerRecord base/stride; `tax_pct +0x01`, `gold +0x2A`,
   `+0x22` (+18/turn); REF globals `0x53DA/0x53DC/0x53DE/0x53E0` (USER-VERIFIED);
   globals `0x538E`, `0x53A6`, `0x84FC`. **B / runtime**
@@ -119,13 +127,13 @@ The demand surfaces as the **King speech-bubble dialog**:
 - **Runtime/Reconstructed:** `+0x22` field (+18/turn verified; "REF budget"
   meaning inferred); the `KING.SS` portrait attribution.
 - **TBD:** tax-revenue loop, REF-growth spend threshold, exact pretext selection,
-  the 60-vs-hard-cap semantics, Tea-Party boycott bookkeeping.
+  Tea-Party boycott bookkeeping.
 
 ## 7. Open questions (TBD) → feeds `spec/BACKLOG.md`
 
-1. **60 vs hard cap.** Is `0x3C` in `func_0349F4` the tax clamp or a "high tax"
-   message gate? Find the write site that clamps `tax_pct` and confirm the max.
-   Reconcile with the manual's 75.
+1. ~~**60 vs hard cap.**~~ **Resolved 2026-06-18:** `tax_pct` is hard-clamped to
+   **75** (`0x4B`) at `func_034318` `0x03434F`; `0x3C`=60 (`func_0349F4`) is a
+   separate message gate. Both `BYTE_VERIFIED`.
 2. **REF-growth threshold.** What spends `+0x22` (+18/turn) to add a REF unit at
    `0x53DA..0x53E0`? Trace the writer of those globals.
 3. **Tax-revenue loop.** Byte-trace the European-sale tax cut (the per-good

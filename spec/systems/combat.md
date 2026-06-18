@@ -92,6 +92,16 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
   specifics; result message keys.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. Decode the terrain/fortification bonus **table values** (the `·3/2` chain inside `func_05CA7E`).
-2. Decode the **capture-vs-destroy** branch; confirm the `+0x15==24`→type-3 override semantics and the Cont. Army→Colonists mapping at runtime.
+1. Decode the terrain/fortification bonus **table values** (the `·3/2` chain in
+   `func_05CA7E`). **Chain located (2026-06-18):** `0x07D3E` reads the terrain
+   type and writes the bonus scratch word `[0x8D04]`; `func_05CA7E @0x05CE05`
+   reads `[0x8D04]` and applies it. The actual per-terrain/fort values flow
+   through resident overlay thunks `0x181F:0x7E0` (→file `0x030D70`), `0x6BE`
+   (→`0x02EF20`), `0x7BE` (→`0x027A66`) whose bodies aren't decoded — **values
+   `TBD` (thunk/data-blocked)**.
+2. Decode the **capture** path. The combat resolver `func_05B2C2` has only
+   demote/destroy — **no in-combat capture branch found**. An ownership-reassign
+   write (`UnitRecord +0x03` owner nibble) is byte-located at `0x03C81D` inside a
+   separate **power-takeover** function `func_03C638` — not yet confirmed as a
+   unit-combat outcome. Also confirm the `+0x15==24`→type-3 demotion override at runtime.
 3. Naval combat & bombardment specifics (ship pair `0x523B/0x523C`, roll in `func_05B2C2`).
