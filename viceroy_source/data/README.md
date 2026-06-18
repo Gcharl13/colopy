@@ -1,5 +1,12 @@
 # Initialised Data Tables
 
+> **⚠️ Reconstructed — verify against the authoritative basis.** The byte-exact
+> gameplay tables now live in `data_extracted/tables/*.json` (generated from the
+> real `NAMES.TXT`/`TRIBE.TXT` by `tools/build_tables.py`; see
+> `spec/data/tables.md`). The `.c` files here are *reconstructions* and are
+> **pending reconciliation** against that source — treat any value that
+> disagrees with `data_extracted/tables/` as `TBD`, not fact.
+
 This directory holds the **constant tables** that VICEROY.EXE keeps in
 DGROUP — terrain yields, unit type stats, building costs, founding-father
 effects, king demand schedules, scenario starting positions.

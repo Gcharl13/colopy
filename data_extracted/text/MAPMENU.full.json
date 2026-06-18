@@ -1,0 +1,31 @@
+{
+  "file": "MAPMENU.TXT",
+  "section_count": 5,
+  "sections": {
+    "@GAME": {
+      "legend": [],
+      "directives": {},
+      "body": "~Editor\n  ~Save Map\n  Save Map ~As\n  ~Load Map\n  Create Map\n  Exit to DOS"
+    },
+    "@VIEW": {
+      "legend": [],
+      "directives": {},
+      "body": "~View\n  Zoom In#   ~Z\n  Zoom Out   ~X\n  ~F~1  Zoom Level 120 x 96\n  ~F~2  Zoom Level #60 x 48\n  ~F~3  Zoom Level #30 x 24\n  ~F~4  Zoom Level #15 x 12\n  ~Center View"
+    },
+    "@CUP": {
+      "legend": [],
+      "directives": {},
+      "body": "~Map\n  ~Map Tile Select\n  ~Fill Mode Change\n  Toggle Coastline ~Protect\n  Find C~ontinents\n  ~Undo Last Change\n  Memor~y check"
+    },
+    "@HELP": {
+      "legend": [],
+      "directives": {},
+      "body": "~Help\n  General Information\n  Mouse Commands\n  Keyboard Commands\n  Special Functions\n  How To Use Maps\n  About Map Editor"
+    },
+    "@END": {
+      "legend": [],
+      "directives": {},
+      "body": ""
+    }
+  }
+}

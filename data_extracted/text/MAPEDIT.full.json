@@ -1,0 +1,148 @@
+{
+  "file": "MAPEDIT.TXT",
+  "section_count": 24,
+  "sections": {
+    "@MAPTOLOAD": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": "^^Select Map File to Load"
+    },
+    "@MAPTOEDIT": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": "^^COLONIZATION MAP EDITOR\n^^Copyright (C) 1994 by Microprose Software\n^\n^^Select Map File to Edit\n^^(ESC to create new map)"
+    },
+    "@SAVE": {
+      "legend": [],
+      "directives": {
+        "default": "1",
+        "width": "190"
+      },
+      "body": "Save latest changes to %STRING0?\n\nYes\nNo"
+    },
+    "@LOAD": {
+      "legend": [],
+      "directives": {
+        "default": "2",
+        "width": "190"
+      },
+      "body": "There are unsaved changes to %STRING0.\nDo you want to lose these changes?\n\nYes\nNo"
+    },
+    "@ERROR": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "An error has occurred."
+    },
+    "@EXIT": {
+      "legend": [],
+      "directives": {
+        "default": "3",
+        "width": "190"
+      },
+      "body": "There are unsaved changes to %STRING0.\n\nExit without saving.\nSave changes and exit.\nCancel."
+    },
+    "@SAVEAS": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Enter new name for %STRING0.\n\nName:"
+    },
+    "@CREATENOW": {
+      "legend": [],
+      "directives": {
+        "default": "2",
+        "width": "190"
+      },
+      "body": "There are unsaved changes to %STRING0.\nDo you want to lose these changes?\n\nYes\nNo"
+    },
+    "@NEWNAME": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Enter name for new map file.\n\nName:"
+    },
+    "@XS": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Enter width for new map file.\n\nWidth:"
+    },
+    "@YS": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Enter height for new map file.\n\nHeight:"
+    },
+    "@CONTINENTS1": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Warning: Map has more than 15 continents."
+    },
+    "@CONTINENTS2": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Warning: Map has more than 15 oceans."
+    },
+    "@HELP1": {
+      "legend": [],
+      "directives": {
+        "width": "300"
+      },
+      "body": ""
+    },
+    "@smallfont": {
+      "legend": [],
+      "directives": {},
+      "body": "^^HOW TO USE PLAYER-CREATED MAPS\n^\nTo play Colonization using a map you have created, run the game normally\n(you must have the version of viceroy.exe distributed with this editor;\nearlier versions do not support this feature).  From the main menu, select\n\"Start Game in AMERICA\".  A second menu will appear asking if you wish to\nplay on the original map or a mapeditor-created map.  Select map editor.\nThen select the map you wish to play on.\n^\nNormally, the game will place indian villages randomly.  It is possible,\nhowever, to preassign the general locations of specific tribes if you\nwant to create a historical scenario.  Create a file with the same name\nas your map, but with the extension .MPP (if your map is CARIB.MP, then\ncreate CARIB.MPP).  Use the file TRIBE.TXT, which defines the indian\nlocations for the America map, as your model.  Do not place more than\n84 indian villages."
+    },
+    "@HELP2": {
+      "legend": [],
+      "directives": {
+        "width": "300"
+      },
+      "body": ""
+    },
+    "@HELP3": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": ""
+    },
+    "@HELP4": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": ""
+    },
+    "@HELP5": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": ""
+    },
+    "@ABOUT": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": "^^Colonization Map Editor\n^\n^^Copyright (c) 1994 by Microprose Software\n^\n^^Programming by Brian Reynolds\n^^Documentation by Jeff Briggs"
+    }
+  }
+}

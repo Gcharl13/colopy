@@ -51,3 +51,20 @@ points surfaced during the population pass (2026-06-18), to seed that work:
 `@`-sections (recount any list that says 23); ColonyRecord is reached via
 `[0x8542]` (not a static base); PowerRecord base is `0x8808`/`0x8809` — confirm
 which is the array head vs first field at a read site.
+
+## Basis follow-ups (2026-06-18, from the bottom-up re-basis)
+
+The text/table basis is now complete (`tools/extract_txt_sections.py`,
+`build_tables.py`). Remaining byte-grounding:
+
+| Task | Entry point | Upgrades |
+|------|-------------|----------|
+| Column→runtime mapping for `@BUILDING`/`@CARGO`/`@TERRAIN`/`@JOB`/`@FATHERS` loaders | find each section's loader (start from `@UNIT`→`@0x74EC3`) | `spec/data/tables.md`, market/colony/FF specs |
+| Align variable-length `@UNIT`/`@CARGO` special rows | `data_extracted/tables/names_tables.json` | `spec/data/tables.md` |
+| Reconcile `viceroy_source/data/*.c` vs `data_extracted/tables/` | per-table compare | data tables |
+| Spanish-Succession trigger + colony-transfer | event firing `@SUCCESSION`; power-removal in data model | `systems/spanish_succession.md` |
+| Mercenary price (`%NUMBER0`) + offer trigger | dialog firing `@MERCENARIES` | `systems/mercenary.md` |
+
+**Lesson recorded:** the two fabrications (heir-succession, wilderness-camp) came
+from an *empty-key* extraction. Always read the real `.TXT` body first; an empty
+key is never a license to guess.

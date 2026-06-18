@@ -14,7 +14,7 @@ deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
 
-## Game systems (31)
+## Game systems (30)
 
 | System | Spec | Tier | System | Spec | Tier |
 |--------|------|------|--------|------|------|
@@ -28,8 +28,8 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | A/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B/TBD |
 | Training / promotion | [`systems/training.md`](systems/training.md) | R/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B/TBD |
-| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | Heir succession | [`systems/heir_succession.md`](systems/heir_succession.md) | B/TBD |
-| Revolution | [`systems/revolution.md`](systems/revolution.md) | R/TBD | Wilderness camp | [`systems/wilderness_camp.md`](systems/wilderness_camp.md) | A/TBD |
+| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
+| Revolution | [`systems/revolution.md`](systems/revolution.md) | R/TBD | | | |
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | A/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
 | Scoring | [`systems/scoring.md`](systems/scoring.md) | R/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
 | Map generation | [`systems/map_generation.md`](systems/map_generation.md) | TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | TBD |
@@ -58,11 +58,25 @@ Primary UI sources: `docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`,
 `docs/POPUP_TEMPLATE_AUDIT.md`, `docs/DIALOG_GEOMETRY.md`,
 `docs/KING_AND_CINEMATIC_AUDIT.md`, `docs/COLONY_RENDER_CHAIN.md`.
 
-## Data & formats (5 spec files)
+## The basis (primary extraction — read this before writing any spec)
+
+Specs are derived from the extracted **basis**, never imagination (see
+`/METHODOLOGY.md` → Data-first). Rebuilt 2026-06-18 from the real game files:
+- `data_extracted/text/*_sections.json` (flat `@KEY`→body) + `*.full.json`
+  (legend/columns) — **complete bodies** via `tools/extract_txt_sections.py`
+  (the old dump dropped bodies, which is how two systems got invented).
+- `data_extracted/tables/*.json` — byte-anchored gameplay tables
+  (`tools/build_tables.py`): `@UNIT/@CARGO/@BUILDING/@FATHERS/@TERRAIN/@JOB/…`,
+  values verbatim from the data files, columns from the files' own legends.
+- `data_extracted/viceroy_strings.txt` (EXE strings+offsets) · `docs/DATA_MODEL.md`
+  (globals/records).
+
+## Data & formats (6 spec files)
 
 | Spec file | Covers | Canonical primary |
 |-----------|--------|-------------------|
 | [`data/records.md`](data/records.md) | Power/Colony/Unit/Native memory records | `docs/DATA_MODEL.md` |
+| [`data/tables.md`](data/tables.md) | byte-anchored gameplay tables (units/cargo/terrain/buildings/…) | `data_extracted/tables/*.json` |
 | [`data/index_tables.md`](data/index_tables.md) | sprite/text index tables | `docs/GAME_INDEX_TABLES.md` |
 | [`data/names_sections.md`](data/names_sections.md) | the **31** NAMES.TXT `@`-sections | `data_extracted/text/NAMES_sections.json` |
 | [`data/text_resources.md`](data/text_resources.md) | GAME/LABELS/PEDIA/MENU text | `data_extracted/text/*.json` + catalogs |

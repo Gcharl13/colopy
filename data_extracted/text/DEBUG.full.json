@@ -1,0 +1,151 @@
+{
+  "file": "DEBUG.TXT",
+  "section_count": 21,
+  "sections": {
+    "@MOTD": {
+      "legend": [
+        "COLONIZATION Debug System Messages",
+        "Copyright (c) 1994 by MicroProse Software",
+        "Altering the contents of this file may cause the game to",
+        "malfunction."
+      ],
+      "directives": {
+        "width": "300"
+      },
+      "body": "^{COLONIZATION} Version %STRING0 {ALPHA} -- %STRING1\n^\n^Facts for this version:\n^1. Some founding father powers changed:\n^____Fugger: Silver+10 Muskets-5 Tools-5\n^____Minuit: Don't have to purchase land from indians at all.\n^____Coronado: No more indian ambushes.\n^____De Soto: Goody boxes always yield something.\n^____Hudson: Fur Trappers +100%\n^2. Colonies now hold up to 32 colonists.\n^3. Mercenaries appear in larger, more infrequent, chunks.\n^4. Game continues even after foreign powers gain independence.\n^5. The earlier you gain independence, the higher your score.\n^6. Ambush rules during revolution modified.\n^7. Forest/Nonforest resource squares different."
+    },
+    "@MOTD2": {
+      "legend": [],
+      "directives": {
+        "width": "300"
+      },
+      "body": "^^HELP\n^\nIf you are playing {Colonization} from the {network}, please\nbe sure to exit from the game before you go off and leave\nyour computer.  Leaving the game running sometimes leaves\na file open and {prevents} a {new version} from being copied onto\nthe network.  Now that we have so many people outside of the\ngroup playing the game, it is not always possible to track down\nthe person who is keeping a file open.  Thanks for your help!"
+    },
+    "@MEMORY": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "^Memory Available = %NUMBER0\n^Menu Available   = %NUMBER1\n^Near Available   = %NUMBER2\n^Stack Available  = %NUMBER3\n^PSP at           = %HEX4"
+    },
+    "@CREATE": {
+      "legend": [],
+      "directives": {
+        "default": "1"
+      },
+      "body": "Select Unit To Create\n\nColonists\nPioneers\nMilitia\nMissionary\nScout\nArtillery\nWagon Train\nTreasure\nShip\nIndian Braves\nIndian Armed Braves\nIndian Horse\nIndian Armed Horse\nForeign Unit"
+    },
+    "@CREATE2": {
+      "legend": [],
+      "directives": {
+        "default": "1"
+      },
+      "body": "Select Unit To Create\n\nColonists\nPioneers\nMilitia\nMissionary\nScout\nArtillery\nWagon Train\nTreasure\nShip\n{Continental Army}\n{Cont. Army Cavalry}\n{King's Regulars}\n{King's Cavalry}\nForeign Unit"
+    },
+    "@CSHIP": {
+      "legend": [],
+      "directives": {
+        "default": "1"
+      },
+      "body": "Select Ship To Create\n\nCaravel\nMerchantman\nGalleon\nPrivateer\nFrigate\nMan-O-War"
+    },
+    "@FOREIGN": {
+      "legend": [],
+      "directives": {},
+      "body": "Select Nationality To Create\n\nEnglish\nFrench\nSpanish\nDutch"
+    },
+    "@FOREIGN2": {
+      "legend": [],
+      "directives": {},
+      "body": "Select Type to Create\n\nRebel\nLoyal"
+    },
+    "@SETVIEW": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Select Viewpoint\n\nEnglish Map\nFrench Map\nSpanish Map\nDutch Map\nComplete Map\nNo Special View"
+    },
+    "@SETHUMAN": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Select Human Nationality\n\nEnglish\nFrench\nSpanish\nDutch\nNone"
+    },
+    "@SETAUTO": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Automate game?\n\nYes\nNo"
+    },
+    "@SETREPORT": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "View Whose Report?\n\nEnglish\nFrench\nSpanish\nDutch"
+    },
+    "@SETEUROPE": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "View Which City\n\nLondon\nLa Rochelle\nSeville\nAmsterdam"
+    },
+    "@DANGER": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "^^DANGER, WILL ROBINSON!\n^\n^^Warning! %STRING0\n^\n^^Fact: %NUMBER0 / %NUMBER1 / %NUMBER2"
+    },
+    "@END": {
+      "legend": [],
+      "directives": {},
+      "body": ""
+    },
+    "@BADGUYS": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Do you want the bad guys to be wandering\naround out there?\n\nSounds cool! Let's try it!\nBetter not; might crash."
+    },
+    "@SOUND": {
+      "legend": [],
+      "directives": {
+        "width": "190",
+        "default": "0"
+      },
+      "body": "Play what sound #?\n\nSound:"
+    },
+    "@OPTIONS": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": ""
+    },
+    "@checkbox": {
+      "legend": [],
+      "directives": {},
+      "body": "Select Debug Information Options\n\n~Anger & Friction Levels\n~Indian AI movement\n~Supply and Demand (Indians)\n~Foreign AI planning modes\n~Close Moves\n~Far Moves\n~All Movement"
+    },
+    "@FORCED": {
+      "legend": [],
+      "directives": {
+        "width": "190"
+      },
+      "body": "Independence forced at end of next turn."
+    },
+    "@TEST": {
+      "legend": [],
+      "directives": {
+        "width": "220"
+      },
+      "body": "^Number of Units    = %NUMBER0\n^Number of Colonies = %NUMBER1"
+    }
+  }
+}
