@@ -187,22 +187,21 @@ static void blit_phys0(fb *f, int px, int py, int tp, int idx)
         blit_frame(f, px, py, tp, &g_phys0->frames[idx]);
 }
 
-/* blit a PHYS0 frame with optional horizontal/vertical mirroring (used to
- * orient the corner-beach sprites toward whichever side faces land). */
-static void blit_phys0_flip(fb *f, int px, int py, int tp, int idx,
-                            int hflip, int vflip)
+/* blit a PHYS0 frame treating opaque PURE-BLACK (#000000, palette index 0) as
+ * transparent. The coast sub-tiles (row 0x70) use black as the "ocean shows
+ * here" key; the .SS decoder keeps it opaque (only 0xFD is alpha 0), so we
+ * colour-key it to the ocean base below. */
+static void blit_phys0_key(fb *f, int px, int py, int tp, int idx)
 {
     if (!g_phys0 || idx < 0 || idx >= g_phys0->count) return;
     const ss_frame *fr = &g_phys0->frames[idx];
     if (!fr->rgba || fr->w <= 0 || fr->h <= 0) return;
     for (int yy = 0; yy < tp; yy++) {
         int sy = yy * fr->h / tp;
-        if (vflip) sy = fr->h - 1 - sy;
         for (int xx = 0; xx < tp; xx++) {
             int sx = xx * fr->w / tp;
-            if (hflip) sx = fr->w - 1 - sx;
             uint32_t c = fr->rgba[sy * fr->w + sx];
-            if (c >> 24)
+            if ((c >> 24) && (c & 0xFFFFFF))
                 fb_set(f, px + xx, py + yy, c & 0xFFFFFF);
         }
     }
@@ -282,50 +281,51 @@ static int feat_hi_nmask(const mp_map *m, int x, int y)
     return k;
 }
 
-/* ---- Coast: sand-edge beaches from the pixel-verified PHYS0 corner sprites ----
- * The original's coast sub-cells live at PHYS0 row 0x70 (8x8) / 0x90 (16x16);
- * the four sprites 0x96..0x99 are "ocean with sand toward a corner/edge"
- * (SPRITE_CATALOG.md row 0x90). 0x96 has sand at the NW corner — top + left
- * edges — and we mirror it to face any corner. For a WATER tile we look at its
- * 4 cardinal LAND neighbours and pick a sprite + flip so the sand runs along the
- * land-facing edges. Open ocean (no land neighbour) draws nothing — plain base.
- *
- * NOTE: the exact mask->sprite+flip table is approximated here (the byte-exact
- * one lives inside MAPEDIT's _buffer_tile compositor); it is verified visually.
- * What matters vs. the old code: these are REAL beach sprites, never the black
- * "null padding" frames 0x6C..0x6F the previous composer indexed. */
+/* ---- Coast: GREEN SHORE from the pixel-verified PHYS0 row-0x70 sub-tiles ----
+ * Each 0x70..0x7F frame is an 8x8 grass/water coastline fragment (pixel-verified):
+ *   0x70 grass-left   0x71 grass-top    0x72 grass-right  0x73 grass-bottom
+ *   0x74 water-in-TL  0x75 water-in-TR  0x76 water-in-BR  0x77 water-in-BL
+ * (water-in-CORNER = grass along the other two edges). A WATER tile composes four
+ * 8x8 quadrants (NW/NE/SE/SW); each quadrant shows grass bleeding in from its
+ * land-facing edges, drawn over the ocean base. This is the editor's GREEN
+ * shoreline — the sand sprites 0x96..0x99 are NOT used, and the black null-
+ * padding frames 0x6C..0x6F the previous composer indexed are never touched. */
+static void blit_coast_sub(fb *f, int px, int py, int tp, int qx, int qy, int idx)
+{
+    blit_phys0_key(f, px + qx * tp / 16, py + qy * tp / 16, tp / 2, idx);
+}
+
 static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
-    /* cardinal land mask: N=8, E=4, S=2, W=1 */
-    int N = !water_at(m, tx, ty - 1);
-    int E = !water_at(m, tx + 1, ty);
-    int S = !water_at(m, tx, ty + 1);
-    int W = !water_at(m, tx - 1, ty);
-    int mask = (N << 3) | (E << 2) | (S << 1) | W;
-    if (mask == 0) return;                  /* open ocean: plain base */
+    int N  = !water_at(m, tx,   ty-1), S  = !water_at(m, tx,   ty+1);
+    int E  = !water_at(m, tx+1, ty),   W  = !water_at(m, tx-1, ty);
+    int NW = !water_at(m, tx-1, ty-1), NE = !water_at(m, tx+1, ty-1);
+    int SW = !water_at(m, tx-1, ty+1), SE = !water_at(m, tx+1, ty+1);
+    if (!(N||S||E||W||NW||NE||SE||SW)) return;     /* open ocean: plain base */
 
-    /* base sprite 0x96 = sand at NW (top+left). Mirror to orient the sand:
-     *   no flip   -> sand top+left   (covers N and/or W)
-     *   hflip     -> sand top+right  (N and/or E)
-     *   vflip     -> sand bottom+left(S and/or W)
-     *   h+vflip   -> sand bottom+right(S and/or E)
-     * For straight cardinal edges this still bleeds sand along that edge, which
-     * reads as a beach. Three-/four-sided cases use the wider 0x99 sprite. */
-    int idx = PH_COAST;     /* 0x96 */
-    int hflip = 0, vflip = 0;
+    /* NW quadrant (outer edges N, W) at (0,0) */
+    if      (N && W) blit_coast_sub(f, px, py, tp, 0, 0, 0x76);  /* grass top+left */
+    else if (N)      blit_coast_sub(f, px, py, tp, 0, 0, 0x71);  /* grass top   */
+    else if (W)      blit_coast_sub(f, px, py, tp, 0, 0, 0x70);  /* grass left  */
+    else if (NW)     blit_coast_sub(f, px, py, tp, 0, 0, 0x76);  /* corner nub  */
 
-    int sides = N + E + S + W;
-    if (sides >= 3) {
-        idx = 0x99;                 /* sand on three sides */
-        /* leave open side toward the lone water neighbour via flips */
-        if (!N) vflip = 1;          /* open at N -> push sand down  */
-        if (!W) hflip = 1;          /* open at W -> push sand right */
-    } else {
-        /* choose the corner that the present land sides share */
-        vflip = (S && !N);          /* sand toward bottom if S land (and not N) */
-        hflip = (E && !W);          /* sand toward right  if E land (and not W) */
-    }
-    blit_phys0_flip(f, px, py, tp, idx, hflip, vflip);
+    /* NE quadrant (N, E) at (8,0) */
+    if      (N && E) blit_coast_sub(f, px, py, tp, 8, 0, 0x77);  /* grass top+right */
+    else if (N)      blit_coast_sub(f, px, py, tp, 8, 0, 0x71);
+    else if (E)      blit_coast_sub(f, px, py, tp, 8, 0, 0x72);  /* grass right */
+    else if (NE)     blit_coast_sub(f, px, py, tp, 8, 0, 0x77);
+
+    /* SE quadrant (S, E) at (8,8) */
+    if      (S && E) blit_coast_sub(f, px, py, tp, 8, 8, 0x74);  /* grass bot+right */
+    else if (S)      blit_coast_sub(f, px, py, tp, 8, 8, 0x73);  /* grass bottom */
+    else if (E)      blit_coast_sub(f, px, py, tp, 8, 8, 0x72);
+    else if (SE)     blit_coast_sub(f, px, py, tp, 8, 8, 0x74);
+
+    /* SW quadrant (S, W) at (0,8) */
+    if      (S && W) blit_coast_sub(f, px, py, tp, 0, 8, 0x75);  /* grass bot+left */
+    else if (S)      blit_coast_sub(f, px, py, tp, 0, 8, 0x73);
+    else if (W)      blit_coast_sub(f, px, py, tp, 0, 8, 0x70);
+    else if (SW)     blit_coast_sub(f, px, py, tp, 0, 8, 0x75);
 }
 
 /* Representative minimap colour for a tile, mirroring MAPEDIT's _get_tile_colors

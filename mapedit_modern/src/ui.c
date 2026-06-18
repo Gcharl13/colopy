@@ -313,15 +313,15 @@ static void render_panel(fb *f, const editor *e, const ui_view *v)
 /* ---- menu bar + dropdowns ---- */
 static void render_menubar(fb *f, const ui_view *v)
 {
-    /* flat index-7 bar (not wood); the original editor's menu bar is a solid
-     * fill with index-0 text — see the extracted _menu_bar_* colour indices. */
-    fb_fill_rect(f, 0, 0, UI_WIN_W, UI_MENU_H, MC_BAR_BG);
+    /* wood-tiled bar (MAPEDIT _menu_draw_bar tiles the wood background across the
+     * full 320px width); titles in the extracted menu-font colours. */
+    draw_wood(f, 0, 0, UI_WIN_W, UI_MENU_H);
+    fb_hline(f, 0, UI_MENU_H - 1, UI_WIN_W, RGB(0x2A,0x18,0x0C));
 
     for (int m = 0; m < UI_MENU_COUNT; m++) {
         int x, w;
         menu_rect(m, &x, &w);
         int open = (v->menu_open == m);
-        if (open) fb_fill_rect(f, x - 2, 0, w + 2, UI_MENU_H, MC_SELECT);
         menu_text(f, x, 1, MENU_TITLES[m], open ? MC_HILITE : MC_TEXT);
     }
 
@@ -337,7 +337,7 @@ static void render_menubar(fb *f, const ui_view *v)
         }
         if (x + w > UI_WIN_W) x = UI_WIN_W - w;
         if (x < 0) x = 0;
-        fb_fill_rect(f, x, y, w, n * 10 + 3, MC_BAR_BG);
+        draw_wood(f, x, y, w, n * 10 + 3);
         fb_rect(f, x, y, w, n * 10 + 3, MC_BORDER);
         for (int i = 0; i < n; i++)
             menu_text(f, x + 3, y + 2 + i * 10, MENU_ITEMS[m][i], MC_TEXT);
