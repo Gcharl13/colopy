@@ -103,6 +103,20 @@ source of truth or of a tier.
   (offsets), `docs/DATA_MODEL.md` (DGROUP globals + record field map).
 - **Disassembly** — `code/VICEROY/disasm*/`, `data_extracted/disassembly/`.
 
+### Generated spec blocks (bodies & tables are machine-rendered, not transcribed)
+
+The **complete** `@`-key bodies and data tables are surfaced in the spec inside
+`<!-- BEGIN GENERATED:<id> -->` / `<!-- END GENERATED:<id> -->` markers, rendered
+verbatim from the basis by `tools/build_spec_data.py`. **Never hand-edit inside
+the markers** (hand transcription is a fabrication risk) — change the basis or the
+generator and re-run. Hand-written analysis lives *outside* the markers and is
+preserved across regeneration. Pipeline: `extract_txt_sections.py` (the `.TXT` →
+`*.full.json`, whose `sections_ordered` list preserves duplicate keys so **every**
+body is represented) → `build_tables.py` + `extract_dgroup_tables.py` (typed
+tables) → `build_spec_data.py` (splices the blocks into `spec/data/*.md`). DGROUP
+record *values* are runtime/BSS (memory-dump-verified) — only the byte-verified
+*layout* is asserted; static EXE byte extraction is N/A and so marked.
+
 ## Spec-authoring workflow (Layer 1 → Layer 2)
 
 0. Read the **basis** for the topic first: its `@`-section body/columns

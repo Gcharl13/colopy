@@ -1,5 +1,34 @@
 {
+  "@SEASONS": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [
+      "COLONIZATION Game Data",
+      "Copyright (c) 1994 by MicroProse Software",
+      "Altering the contents of this file may cause the game to",
+      "malfunction."
+    ],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 2,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Spring"
+      },
+      {
+        "id": "1",
+        "name": "Autumn"
+      }
+    ]
+  },
   "@UNFORESTED": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Terrain Squares",
@@ -25,6 +54,7 @@
       "y_silver",
       "y_fisherman"
     ],
+    "columns_named": true,
     "byte_anchors": "terrain ids 0..; auto-forest range 8..23 via func_006204 (file 0x6204) [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 8,
@@ -160,6 +190,7 @@
     ]
   },
   "@FORESTED": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [],
     "columns": [
@@ -178,6 +209,7 @@
       "y_silver",
       "y_fisherman"
     ],
+    "columns_named": true,
     "byte_anchors": "forested variants of @UNFORESTED; func_006204 [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 8,
@@ -313,237 +345,572 @@
     ]
   },
   "@OTHER": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [],
-    "columns": null,
-    "byte_anchors": "TBD",
+    "columns": [
+      "name",
+      "movement",
+      "defensive",
+      "improvement",
+      "value",
+      "y_farmer",
+      "y_planter_sugar",
+      "y_planter_tobacco",
+      "y_planter_cotton",
+      "y_trapper",
+      "y_lumberjack",
+      "y_ore",
+      "y_silver",
+      "y_fisherman"
+    ],
+    "columns_named": true,
+    "byte_anchors": "other/misc terrain (Arctic/Ocean/Sea Lane/Mountains...); Sea Lane = base id 26 (hard rule 2); func_006204 [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 5,
     "rows": [
-      [
-        "Arctic",
-        "2",
-        "0",
-        "4",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0"
-      ],
-      [
-        "Ocean",
-        "1",
-        "0",
-        "2",
-        "3",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "3"
-      ],
-      [
-        "Sea Lane",
-        "1",
-        "0",
-        "2",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "3"
-      ],
-      [
-        "Mountains",
-        "3",
-        "6",
-        "7",
-        "2",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "4",
-        "1",
-        "0"
-      ],
-      [
-        "Hills",
-        "2",
-        "4",
-        "4",
-        "2",
-        "1",
-        "0",
-        "0",
-        "0",
-        "0",
-        "0",
-        "4",
-        "0",
-        "0"
-      ]
+      {
+        "name": "Arctic",
+        "movement": "2",
+        "defensive": "0",
+        "improvement": "4",
+        "value": "0",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Ocean",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "2",
+        "value": "3",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "3"
+      },
+      {
+        "name": "Sea Lane",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "2",
+        "value": "0",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "3"
+      },
+      {
+        "name": "Mountains",
+        "movement": "3",
+        "defensive": "6",
+        "improvement": "7",
+        "value": "2",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "4",
+        "y_silver": "1",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Hills",
+        "movement": "2",
+        "defensive": "4",
+        "improvement": "4",
+        "value": "2",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "4",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      }
+    ]
+  },
+  "@OTHER_NAMES": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Forest"
+      },
+      {
+        "id": "1",
+        "name": "River"
+      },
+      {
+        "id": "2",
+        "name": "Major River"
+      },
+      {
+        "id": "3",
+        "name": "Minor River"
+      },
+      {
+        "id": "4",
+        "name": "Unexplored"
+      }
     ]
   },
   "@RESOURCE": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Special resource squares & values."
     ],
-    "columns": null,
-    "byte_anchors": "TBD",
+    "columns": [
+      "name",
+      "value"
+    ],
+    "columns_named": true,
+    "byte_anchors": "special-resource squares; legend 'Special resource squares & values' [B legend]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 14,
     "rows": [
-      [
-        "Depleted Mine",
-        "6"
-      ],
-      [
-        "Oasis",
-        "3"
-      ],
-      [
-        "Wheat",
-        "4"
-      ],
-      [
-        "Prime Cotton",
-        "6"
-      ],
-      [
-        "Prime Tobacco",
-        "6"
-      ],
-      [
-        "Prime Sugar",
-        "7"
-      ],
-      [
-        "Minerals",
-        "4"
-      ],
-      [
-        "Fishery",
-        "5"
-      ],
-      [
-        "Beaver",
-        "6"
-      ],
-      [
-        "Game",
-        "6"
-      ],
-      [
-        "Prime Timber",
-        "6"
-      ],
-      [
-        "Prime Timber",
-        "6"
-      ],
-      [
-        "Silver Deposit",
-        "12"
-      ],
-      [
-        "Ore Deposit",
-        "6"
-      ]
+      {
+        "name": "Depleted Mine",
+        "value": "6"
+      },
+      {
+        "name": "Oasis",
+        "value": "3"
+      },
+      {
+        "name": "Wheat",
+        "value": "4"
+      },
+      {
+        "name": "Prime Cotton",
+        "value": "6"
+      },
+      {
+        "name": "Prime Tobacco",
+        "value": "6"
+      },
+      {
+        "name": "Prime Sugar",
+        "value": "7"
+      },
+      {
+        "name": "Minerals",
+        "value": "4"
+      },
+      {
+        "name": "Fishery",
+        "value": "5"
+      },
+      {
+        "name": "Beaver",
+        "value": "6"
+      },
+      {
+        "name": "Game",
+        "value": "6"
+      },
+      {
+        "name": "Prime Timber",
+        "value": "6"
+      },
+      {
+        "name": "Prime Timber",
+        "value": "6"
+      },
+      {
+        "name": "Silver Deposit",
+        "value": "12"
+      },
+      {
+        "name": "Ore Deposit",
+        "value": "6"
+      }
     ]
   },
   "@COUNTRY": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Country names (color => must be 9-15)"
     ],
-    "columns": null,
-    "byte_anchors": "TBD",
+    "columns": [
+      "name",
+      "color"
+    ],
+    "columns_named": true,
+    "byte_anchors": "EU powers idx 0..3 = PowerRecord index (DGROUP:0x8808 stride 316) [B]; legend 'color => must be 9-15' [B legend]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 4,
     "rows": [
-      [
-        "England",
-        "12"
-      ],
-      [
-        "France",
-        "9"
-      ],
-      [
-        "Spain",
-        "14"
-      ],
-      [
-        "Netherlands",
-        "13"
-      ]
+      {
+        "name": "England",
+        "color": "12"
+      },
+      {
+        "name": "France",
+        "color": "9"
+      },
+      {
+        "name": "Spain",
+        "color": "14"
+      },
+      {
+        "name": "Netherlands",
+        "color": "13"
+      }
+    ]
+  },
+  "@NATIONALITY": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "English"
+      },
+      {
+        "id": "1",
+        "name": "French"
+      },
+      {
+        "id": "2",
+        "name": "Spanish"
+      },
+      {
+        "id": "3",
+        "name": "Dutch"
+      }
+    ]
+  },
+  "@NATIONABBREV": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Eng."
+      },
+      {
+        "id": "1",
+        "name": "Fr."
+      },
+      {
+        "id": "2",
+        "name": "Span."
+      },
+      {
+        "id": "3",
+        "name": "Dutch"
+      }
+    ]
+  },
+  "@HOMEPORT": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "London"
+      },
+      {
+        "id": "1",
+        "name": "La Rochelle"
+      },
+      {
+        "id": "2",
+        "name": "Seville"
+      },
+      {
+        "id": "3",
+        "name": "Amsterdam"
+      }
+    ]
+  },
+  "@COLONYNAME": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "New England"
+      },
+      {
+        "id": "1",
+        "name": "New France"
+      },
+      {
+        "id": "2",
+        "name": "New Spain"
+      },
+      {
+        "id": "3",
+        "name": "New Netherlands"
+      }
+    ]
+  },
+  "@INDEPENDENT": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "United States of America"
+      },
+      {
+        "id": "1",
+        "name": "Republic of Quebec"
+      },
+      {
+        "id": "2",
+        "name": "Republic of Mexico"
+      },
+      {
+        "id": "3",
+        "name": "Republic of Surinam"
+      }
+    ]
+  },
+  "@LEADERNAME": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Leaders",
+      "a) aggressive/friendly",
+      "b) expansionist/perfectionist",
+      "c) civilize/militaristic"
+    ],
+    "columns": [
+      "name",
+      "aggressive_friendly",
+      "expansionist_perfectionist",
+      "civilize_militaristic"
+    ],
+    "columns_named": true,
+    "byte_anchors": "AIPersonality leader_name DGROUP:0x540E+0x00 (4 EU powers) [B]; legend a/b/c personality axes [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 4,
+    "rows": [
+      {
+        "name": "Walter Raleigh",
+        "aggressive_friendly": "1",
+        "expansionist_perfectionist": "-1",
+        "civilize_militaristic": "0"
+      },
+      {
+        "name": "Jacques Cartier",
+        "aggressive_friendly": "0",
+        "expansionist_perfectionist": "1",
+        "civilize_militaristic": "0"
+      },
+      {
+        "name": "Christopher Columbus",
+        "aggressive_friendly": "1",
+        "expansionist_perfectionist": "0",
+        "civilize_militaristic": "-1"
+      },
+      {
+        "name": "Michiel De Ruyter",
+        "aggressive_friendly": "-1",
+        "expansionist_perfectionist": "0",
+        "civilize_militaristic": "1"
+      }
+    ]
+  },
+  "@MISSION": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Church of"
+      },
+      {
+        "id": "1",
+        "name": "Sainte Marie de"
+      },
+      {
+        "id": "2",
+        "name": "Santa Maria del"
+      },
+      {
+        "id": "3",
+        "name": "Church of"
+      }
+    ]
+  },
+  "@DIFFICULTY": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Discoverer"
+      },
+      {
+        "id": "1",
+        "name": "Explorer"
+      },
+      {
+        "id": "2",
+        "name": "Conquistador"
+      },
+      {
+        "id": "3",
+        "name": "Governor"
+      },
+      {
+        "id": "4",
+        "name": "Viceroy"
+      }
     ]
   },
   "@CLASS": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "European classes",
       "Name, transportation costs"
     ],
-    "columns": null,
-    "byte_anchors": "colonist classes; @UNIT/@JOB cross-ref",
+    "columns": [
+      "name",
+      "transport_cost"
+    ],
+    "columns_named": true,
+    "byte_anchors": "European classes; legend 'Name, transportation costs' [B legend]; @CLASS DGROUP:0x9602 stride 4 loaded @0x074CB0 (RESIDUAL §) [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 8,
     "rows": [
-      [
-        "Petty Criminals",
-        "300"
-      ],
-      [
-        "Indentured Servants",
-        "400"
-      ],
-      [
-        "Peasant Farmers",
-        "600"
-      ],
-      [
-        "Skilled Craftsmen",
-        "800"
-      ],
-      [
-        "Hardy Pioneers",
-        "1450"
-      ],
-      [
-        "Town Merchants",
-        "1500"
-      ],
-      [
-        "Trained Mercenaries",
-        "1900"
-      ],
-      [
-        "Educated Elite",
-        "2000"
-      ]
+      {
+        "name": "Petty Criminals",
+        "transport_cost": "300"
+      },
+      {
+        "name": "Indentured Servants",
+        "transport_cost": "400"
+      },
+      {
+        "name": "Peasant Farmers",
+        "transport_cost": "600"
+      },
+      {
+        "name": "Skilled Craftsmen",
+        "transport_cost": "800"
+      },
+      {
+        "name": "Hardy Pioneers",
+        "transport_cost": "1450"
+      },
+      {
+        "name": "Town Merchants",
+        "transport_cost": "1500"
+      },
+      {
+        "name": "Trained Mercenaries",
+        "transport_cost": "1900"
+      },
+      {
+        "name": "Educated Elite",
+        "transport_cost": "2000"
+      }
     ]
   },
   "@BUILDING": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Buildings in Colonies",
@@ -559,7 +926,8 @@
       "min_colony",
       "upkeep"
     ],
-    "byte_anchors": "consumed by colony build/production; loader TBD",
+    "columns_named": true,
+    "byte_anchors": "consumed by colony build/production; loader TBD; legend documents cols [B legend]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 42,
     "rows": [
@@ -902,13 +1270,27 @@
     ]
   },
   "@SCENARIO": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Scenarios",
       "map file (do not change), start, end, x0, y0, x1, y1, x2, y2, x3, y3"
     ],
-    "columns": null,
-    "byte_anchors": "TBD",
+    "columns": [
+      "map_file",
+      "start",
+      "end",
+      "x0",
+      "y0",
+      "x1",
+      "y1",
+      "x2",
+      "y2",
+      "x3",
+      "y3"
+    ],
+    "columns_named": false,
+    "byte_anchors": "scenario bounds; legend 'map file, start, end, x0..y3' [B legend]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 2,
     "rows": [
@@ -937,6 +1319,7 @@
     ]
   },
   "@JOB": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Colonist professions",
@@ -948,6 +1331,7 @@
       "student_level",
       "europe_cost"
     ],
+    "columns_named": true,
     "byte_anchors": "profession; UnitRecord +0x15 = class/profession [B]; europe_cost -1 = not purchasable",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 28,
@@ -1123,6 +1507,7 @@
     ]
   },
   "@CARGO": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Cargo types & economic model",
@@ -1150,7 +1535,8 @@
       "attrition",
       "volatility"
     ],
-    "byte_anchors": "market price model inputs; per-turn drift fn behind overlay thunk 0x181F:0x9A4 [TBD]; values are primary [B]",
+    "columns_named": false,
+    "byte_anchors": "market price model inputs; per-turn drift fn behind overlay thunk 0x181F:0x9A4 [TBD]; values are primary [B]; goods index = PowerRecord market arrays order [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 20,
     "rows": [
@@ -1361,6 +1747,7 @@
     ]
   },
   "@UNIT": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Unit types",
@@ -1382,6 +1769,7 @@
       "role",
       "ai_role_bits"
     ],
+    "columns_named": false,
     "byte_anchors": "loader @0x74EC3 maps cols -> runtime stat tables: attack->0x5236, combat/DEFENSE->0x5235 (LAND, accessor x8), guns->0x523B, ->0x523C (ship). [B, RULINGS wave-10]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 23,
@@ -1711,68 +2099,230 @@
     ]
   },
   "@ORDERS": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [],
-    "columns": null,
-    "byte_anchors": "unit order list + key letters [B present]",
+    "columns": [
+      "name",
+      "key"
+    ],
+    "columns_named": true,
+    "byte_anchors": "unit order list + key letters; UnitRecord +0x05 candidate (0x2D='-'=No Orders) [B present]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 13,
     "rows": [
-      [
-        "No Orders",
-        "-"
-      ],
-      [
-        "Sentry",
-        "S"
-      ],
-      [
-        "Trade Route",
-        "T"
-      ],
-      [
-        "Go To",
-        "G"
-      ],
-      [
-        "Live In Village",
-        "L"
-      ],
-      [
-        "Fortify",
-        "F"
-      ],
-      [
-        "Fortified",
-        "F"
-      ],
-      [
-        "Build Colony",
-        "B"
-      ],
-      [
-        "Clear/Plow",
-        "P"
-      ],
-      [
-        "Build Road",
-        "R"
-      ],
-      [
-        "No Orders",
-        "-"
-      ],
-      [
-        "No Orders",
-        "-"
-      ],
-      [
-        "No Orders",
-        "-"
-      ]
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "Sentry",
+        "key": "S"
+      },
+      {
+        "name": "Trade Route",
+        "key": "T"
+      },
+      {
+        "name": "Go To",
+        "key": "G"
+      },
+      {
+        "name": "Live In Village",
+        "key": "L"
+      },
+      {
+        "name": "Fortify",
+        "key": "F"
+      },
+      {
+        "name": "Fortified",
+        "key": "F"
+      },
+      {
+        "name": "Build Colony",
+        "key": "B"
+      },
+      {
+        "name": "Clear/Plow",
+        "key": "P"
+      },
+      {
+        "name": "Build Road",
+        "key": "R"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      }
+    ]
+  },
+  "@ACTIONS": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 10,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Trade With Village"
+      },
+      {
+        "id": "1",
+        "name": "Enter Hostile Village"
+      },
+      {
+        "id": "2",
+        "name": "Establish Mission"
+      },
+      {
+        "id": "3",
+        "name": "Denounce Heresy of %Fs Mission"
+      },
+      {
+        "id": "4",
+        "name": "Live Among The Natives"
+      },
+      {
+        "id": "5",
+        "name": "Ask to Speak With Chief"
+      },
+      {
+        "id": "6",
+        "name": "Incite Indians"
+      },
+      {
+        "id": "7",
+        "name": "Demand Tribute"
+      },
+      {
+        "id": "8",
+        "name": "Attack Village"
+      },
+      {
+        "id": "9",
+        "name": "Cancel Action"
+      }
+    ]
+  },
+  "@VALUES": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "low quality"
+      },
+      {
+        "id": "1",
+        "name": "good"
+      },
+      {
+        "id": "2",
+        "name": "fine"
+      },
+      {
+        "id": "3",
+        "name": "excellent"
+      }
+    ]
+  },
+  "@ATTITUDE": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Content"
+      },
+      {
+        "id": "1",
+        "name": "Uneasy"
+      },
+      {
+        "id": "2",
+        "name": "Restless"
+      },
+      {
+        "id": "3",
+        "name": "Angry"
+      },
+      {
+        "id": "4",
+        "name": "War"
+      }
+    ]
+  },
+  "@ATTITUDINAL": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Extremely"
+      },
+      {
+        "id": "1",
+        "name": "Very"
+      },
+      {
+        "id": "2",
+        "name": "Rather"
+      },
+      {
+        "id": "3",
+        "name": "Somewhat"
+      },
+      {
+        "id": "4",
+        "name": "Slightly"
+      }
     ]
   },
   "@LEVELS": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [],
     "columns": [
@@ -1780,6 +2330,7 @@
       "settlement_singular",
       "settlement_plural"
     ],
+    "columns_named": true,
     "byte_anchors": "native settlement size tiers (Camp/Village/City/...)",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 5,
@@ -1812,13 +2363,21 @@
     ]
   },
   "@TRIBES": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Indian tribe info",
       "tech-level, color"
     ],
-    "columns": null,
-    "byte_anchors": "TBD",
+    "columns": [
+      "name",
+      "singular",
+      "treasure",
+      "tech_level",
+      "color"
+    ],
+    "columns_named": false,
+    "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; color col verified via capital-raze note (Aztec=149, Inca=97) DATA_MODEL [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 26,
     "rows": [
@@ -1952,7 +2511,50 @@
       ]
     ]
   },
+  "@FOUNDING": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Extra tribe names",
+      "Founding father types."
+    ],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 6,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Trade"
+      },
+      {
+        "id": "1",
+        "name": "Exploration"
+      },
+      {
+        "id": "2",
+        "name": "Military"
+      },
+      {
+        "id": "3",
+        "name": "Political"
+      },
+      {
+        "id": "4",
+        "name": "Religious"
+      },
+      {
+        "id": "5",
+        "name": "Independence"
+      }
+    ]
+  },
   "@FATHERS": {
+    "kind": "csv",
     "source": "NAMES.TXT",
     "legend": [
       "Founding Fathers",
@@ -1967,7 +2569,8 @@
       "weight_1600_1700",
       "weight_1700plus"
     ],
-    "byte_anchors": "Congress acquisition weights by era; selection fn TBD",
+    "columns_named": true,
+    "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection fn TBD",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 25,
     "rows": [
@@ -2145,6 +2748,42 @@
         "weight_1500_1600": "0",
         "weight_1600_1700": "5",
         "weight_1700plus": "10"
+      }
+    ]
+  },
+  "@COLORS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Text Colors",
+      "basic, hilite, grey, enhance, shadow, select, border 0, 1, 2"
+    ],
+    "columns": [
+      "basic",
+      "hilite",
+      "grey",
+      "enhance",
+      "shadow",
+      "select",
+      "border0",
+      "border1",
+      "border2"
+    ],
+    "columns_named": true,
+    "byte_anchors": "text palette indices; legend names all 9 cols [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 1,
+    "rows": [
+      {
+        "basic": "68",
+        "hilite": "149",
+        "grey": "8",
+        "enhance": "128",
+        "shadow": "47",
+        "select": "138",
+        "border0": "134",
+        "border1": "128",
+        "border2": "138"
       }
     ]
   }

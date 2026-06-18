@@ -1,0 +1,993 @@
+{
+  "_note": "DGROUP record VALUES are runtime/BSS (loaded from NAMES.TXT or save, verified vs DOSBox memory dumps) -- they are NOT static initialisers in raw/COLONIZE/VICEROY.EXE, so static byte extraction is N/A. This catalog is the byte-verified LAYOUT (offset/stride/count/field-map) aggregated from docs/DATA_MODEL.md. Reproduce values via tools/analyze_session_mem.py against a memory dump.",
+  "source": "docs/DATA_MODEL.md",
+  "record_count": 8,
+  "scalar_count": 28,
+  "records": [
+    {
+      "record": "PowerRecord — per-power state (12 entries, 0..11)",
+      "dgroup_base": "0x8809",
+      "stride_hex": "0x13C",
+      "stride_dec": null,
+      "count": "12",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: PowerRecord — per-power state (12 entries, 0..11)",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verified by"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x00",
+          "Type": "byte",
+          "Field": "`treasure_pool_byte` (used in SMITE multiplier)",
+          "Verified by": "SMITE byte-trace"
+        },
+        {
+          "Offset": "+0x06",
+          "Type": "bytes",
+          "Field": "`attribute_bitfield` (start) — read by `power_attribute_bit`",
+          "Verified by": "BYTE_VERIFIED at file 0x00BC10"
+        },
+        {
+          "Offset": "+0x21",
+          "Type": "dword",
+          "Field": "`gold` (32-bit running total)",
+          "Verified by": "raze byte-trace"
+        },
+        {
+          "Offset": "+0x25",
+          "Type": "dword",
+          "Field": "`total_loot` (32-bit)",
+          "Verified by": "raze byte-trace"
+        },
+        {
+          "Offset": "+0x29",
+          "Type": "dword",
+          "Field": "`treasury` (32-bit, decremented in SMITE / colony-burn)",
+          "Verified by": "SMITE + colony-burn"
+        },
+        {
+          "Offset": "+0x33",
+          "Type": "byte",
+          "Field": "`score_or_flags` byte (start) — read by `get_per_power_byte` for EU powers",
+          "Verified by": "universal accessor BYTE_VERIFIED"
+        }
+      ]
+    },
+    {
+      "record": "UnitRecord — per-unit state (300 max)",
+      "dgroup_base": "0x3146",
+      "stride_hex": "0x1C",
+      "stride_dec": null,
+      "count": "300",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: UnitRecord — per-unit state (300 max)",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verification"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x00",
+          "Type": "byte",
+          "Field": "**`unit_type`** = NAMES.TXT @UNIT row index (0..23)",
+          "Verification": "Type freq matches @UNIT idx (Colonists=190, Braves=37, Caravel=3, etc.)"
+        },
+        {
+          "Offset": "+0x01",
+          "Type": "byte",
+          "Field": "**`power",
+          "Verification": "flags`** (low nibble = power_idx 0..11; high nibble = state flags)"
+        },
+        {
+          "Offset": "+0x02",
+          "Type": "byte",
+          "Field": "varies (order/destination state)",
+          "Verification": "Caravel=0, Merchantman=0x20, Soldier=0x0C"
+        },
+        {
+          "Offset": "+0x03",
+          "Type": "byte",
+          "Field": "varies (sub-state)",
+          "Verification": "Different per unit"
+        },
+        {
+          "Offset": "+0x04",
+          "Type": "byte",
+          "Field": "varies — 0xFF = \"no destination tile\"?",
+          "Verification": "ships often 0xFF, land units have small values"
+        },
+        {
+          "Offset": "+0x05",
+          "Type": "byte",
+          "Field": "unit-type-specific code",
+          "Verification": "Caravel=0x45, Merchant=0x34, Brave=0x58, Soldier=0x3F, Treasure=0x2D — possibly NAMES.TXT @ORDERS code (0x2D='-' = No Orders)"
+        },
+        {
+          "Offset": "+0x06",
+          "Type": "byte",
+          "Field": "varies (current orders progress?)",
+          "Verification": "usually 0; non-zero for active orders"
+        },
+        {
+          "Offset": "+0x07",
+          "Type": "byte",
+          "Field": "**`map_x`**",
+          "Verification": "Verified — Caravel at (55,49) matches expected ship pos"
+        },
+        {
+          "Offset": "+0x08",
+          "Type": "byte",
+          "Field": "**`map_y`**",
+          "Verification": "Verified"
+        },
+        {
+          "Offset": "+0x09",
+          "Type": "byte",
+          "Field": "possibly ship size or movement-spec",
+          "Verification": "varies per unit type"
+        },
+        {
+          "Offset": "+0x0A..+0x0B",
+          "Type": "bytes",
+          "Field": "varies",
+          "Verification": "TBD"
+        },
+        {
+          "Offset": "+0x0C..+0x0F",
+          "Type": "4 bytes",
+          "Field": "mostly 0; ships have non-zero (cargo or destination?)",
+          "Verification": "Caravel: `00 00 14 0F`, Brave: zeros"
+        },
+        {
+          "Offset": "+0x10..+0x11",
+          "Type": "bytes",
+          "Field": "usually `0xFF 0x00` sentinel",
+          "Verification": "\"no target\" marker"
+        },
+        {
+          "Offset": "+0x12..+0x13",
+          "Type": "bytes",
+          "Field": "varies",
+          "Verification": "TBD"
+        },
+        {
+          "Offset": "+0x14..+0x17",
+          "Type": "bytes",
+          "Field": "per-unit state",
+          "Verification": "TBD"
+        },
+        {
+          "Offset": "+0x18..+0x1B",
+          "Type": "bytes",
+          "Field": "tail bytes — often varying small values",
+          "Verification": "possibly `unique_id` / generation counter"
+        },
+        {
+          "Offset": "-2",
+          "Type": "byte",
+          "Field": "(chain link to prev record — uses last 2 bytes of preceding record's slot)",
+          "Notes": ""
+        },
+        {
+          "Offset": "-1",
+          "Type": "byte",
+          "Field": "(chain link)",
+          "Notes": ""
+        },
+        {
+          "Offset": "+0x00",
+          "Type": "byte",
+          "Field": "`unit_type_or_flags` (most-accessed: 652 refs)",
+          "Notes": "Possibly is_alive flag"
+        },
+        {
+          "Offset": "+0x01",
+          "Type": "byte",
+          "Field": "low nibble = power_idx (0..11)",
+          "Notes": "AI dispatcher uses `[reg+0x3147] & 0x0F`"
+        },
+        {
+          "Offset": "+0x06",
+          "Type": "byte",
+          "Field": "(frequent access: 189 refs — likely orders or state)",
+          "Notes": ""
+        },
+        {
+          "Offset": "+0x15",
+          "Type": "byte",
+          "Field": "`unit_class` or `profession` (initialized 0..0x1C at creation)",
+          "Notes": "Combat demotion table reads this"
+        },
+        {
+          "Offset": "+0x18",
+          "Type": "byte",
+          "Field": "`direction` or `facing` (used by render chain)",
+          "Notes": ""
+        }
+      ]
+    },
+    {
+      "record": "ColonyRecord — per-colony state (~50 max)",
+      "dgroup_base": null,
+      "stride_hex": "0xCA",
+      "stride_dec": null,
+      "count": "50",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: ColonyRecord — per-colony state (~50 max)",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verified by"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x1A",
+          "Type": "byte",
+          "Field": "`owner_power_idx` (0..3)",
+          "Verified by": "colony burn byte-trace"
+        },
+        {
+          "Offset": "+0x1F",
+          "Type": "byte",
+          "Field": "size/population factor (used in colony-burn loot formula)",
+          "Verified by": "colony burn byte-trace at file 0x05DE1E"
+        },
+        {
+          "Offset": "+0x1B",
+          "Type": "byte",
+          "Field": "foreign-colony status (0 for player-owned; varies for foreign)",
+          "Verified by": "Quebec=0x98, Isabella=0x18, NewAms=0x98, StoDom=0x10 — possibly trade reputation byte"
+        },
+        {
+          "Offset": "+0x1C",
+          "Type": "byte",
+          "Field": "constant 0x40 across all 6 colonies",
+          "Verified by": "likely \"warehouse base capacity\" or config flag"
+        },
+        {
+          "Offset": "+0x20",
+          "Type": "byte",
+          "Field": "foreign-colony marker (0 for player; 0x0D=13 for foreign typical)",
+          "Verified by": "Off-by-one candidate for the displayed \"12\" in foreign-colony hover info"
+        },
+        {
+          "Offset": "+0x22",
+          "Type": "u16",
+          "Field": "`colony_state_packed` (low byte + high byte): non-zero only for player-owned + visible colonies",
+          "Verified by": "CROSS-COLONY: Eng=(0x09 0x09 0x11), Du=(0x05 0x0D), Sp/Fr=0"
+        },
+        {
+          "Offset": "+0x40..+0x4?",
+          "Type": "byte[N]",
+          "Field": "**`colonist_job_skills`** (1 byte per colonist; length = +0x1F size)",
+          "Verified by": "RUNTIME-VERIFIED: Plymouth size 5→6 added new byte 0x0d (Carpenter, NAMES.TXT @JOB[13]) at end of array"
+        },
+        {
+          "Offset": "+0x60..+0x65",
+          "Type": "u48",
+          "Field": "**`buildings_constructed_bitmask`** (bit i = building i constructed; visible only for player-owned colonies)",
+          "Verified by": "RUNTIME-VERIFIED 2026-05-05: Plymouth 19 bits set (well-developed); Jamestown 14 bits; Roanoke 2 bits (new); Foreign colonies 0 bits (player can't see). Bit assignment likely matches PEDIA @BUILDING0..41 indices but exact mapping needs disasm to confirm (Plymouth bits 2-19,21 set without bits 0,1 suggests upgrade chains may overwrite lower-tier bits)."
+        },
+        {
+          "Offset": "+0x70..+0x77",
+          "Type": "byte[8]",
+          "Field": "**`tile_worker_assignment`** (8 surrounding tiles in NW/N/NE/W/E/SW/S/SE order; value = colonist index in +0x40 array, 0xFF = empty tile)",
+          "Verified by": "RUNTIME-VERIFIED across 7 colonies: Plymouth has 3 colonists on tiles (W=1, E=2, SE=0), Jamestown 3 (E=0, S=1, SE=2), New Amsterdam 5 (NW=4, N=1, NE=5, SW=0, SE=2). Foreign colonies have all 0xFF (player can't see)."
+        },
+        {
+          "Offset": "+0x9A",
+          "Type": "u16[16]",
+          "Field": "**`stockpile` array** (current cargo per good, NAMES.TXT @CARGO order)",
+          "Verified by": "RUNTIME-VERIFIED 2026-05-05: Plymouth +0x9A = (31, 96, 0, 0, 0, 100, 0, 0, 0, 72, 0, 0, 0, 0, 0, 0) matches in-game inventory bar at frame 1310196718"
+        },
+        {
+          "Offset": "+0xBA",
+          "Type": "u16",
+          "Field": "colony-counter pair (lo=building progress?, hi=tier)",
+          "Verified by": "Plymouth=262 (lo=6, hi=1); Quebec=513 (lo=1, hi=2)"
+        },
+        {
+          "Offset": "+0xBC",
+          "Type": "u16",
+          "Field": "colony-counter pair",
+          "Verified by": "New Amsterdam=1537 stands out"
+        },
+        {
+          "Offset": "+0xC2",
+          "Type": "s32",
+          "Field": "**`rebel_dividend`** (Sons of Liberty fraction numerator)",
+          "Verified by": "RUNTIME-VERIFIED 2026-05-07 via pavelbel/smcol_saves_utility schema cross-reference: Plymouth at frame 1310196718 had +0xC2 = 66, +0xC6 = 617 → 66/617 = 10.7% Sons of Liberty (matches in-game display \"10...\"). NOT wealth as previously labeled."
+        },
+        {
+          "Offset": "+0xC6",
+          "Type": "s32",
+          "Field": "**`rebel_divisor`** (Sons of Liberty fraction denominator)",
+          "Verified by": "Same source — Plymouth 617 → 724 across session"
+        },
+        {
+          "Offset": "+0xC6",
+          "Type": "u16",
+          "Field": "colony counter (NOT lifetime bells — increments slowly +1/2 per turn, jumped +101 when Plymouth grew from size 5→6)",
+          "Verified by": "Plymouth trace: 617→621→722→724 across turns 51-58, big jump at colony growth"
+        }
+      ]
+    },
+    {
+      "record": "NativeSettlement — per-native-village",
+      "dgroup_base": "0x54EC",
+      "stride_hex": "0x12",
+      "stride_dec": null,
+      "count": null,
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: NativeSettlement — per-native-village",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verified by"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x00",
+          "Type": "byte",
+          "Field": "`map_x`",
+          "Verified by": "matches dispersal templates"
+        },
+        {
+          "Offset": "+0x01",
+          "Type": "byte",
+          "Field": "`map_y`",
+          "Verified by": "same"
+        },
+        {
+          "Offset": "+0x02",
+          "Type": "byte",
+          "Field": "`owner_power_idx` (4=Inca, 5=Aztec, 6=Arawak, 7=Iroquois, 8=Cherokee, 9=Apache, 10=Sioux, 11=Tupi)",
+          "Verified by": "per-tribe grouping in dump"
+        },
+        {
+          "Offset": "+0x03",
+          "Type": "byte",
+          "Field": "flags: bit `0x04` = capital, bit `0x08` = \"spoke with chief\" / visited",
+          "Verified by": "inferred (capitals always have higher pop at +0x04)"
+        },
+        {
+          "Offset": "+0x04",
+          "Type": "byte",
+          "Field": "`population` (typical: Inca=9 reg/13 cap, Aztec=7/10, mid-tier=5/7, low-tier=3/4)",
+          "Verified by": "matches civ-tier pattern"
+        },
+        {
+          "Offset": "+0x05",
+          "Type": "byte",
+          "Field": "`mission`: `0xFF` = none, else `0x10 \\",
+          "Verified by": "owner_power_idx` (0=Eng, 1=Fr, 2=Sp, 3=Du)"
+        },
+        {
+          "Offset": "+0x06",
+          "Type": "byte",
+          "Field": "**`growth_counter`** (signed; per pavelbel cross-ref)",
+          "Verified by": "Increments per turn by `population` while brave-missing or pop-below-max. At 20, spawns brave or grows pop. Matches my earlier observations."
+        },
+        {
+          "Offset": "+0x07",
+          "Type": "byte",
+          "Field": "sentinel (always 0xFF — pavelbel `unknown28a`)",
+          "Verified by": "All records have 0xFF here."
+        },
+        {
+          "Offset": "+0x08",
+          "Type": "byte",
+          "Field": "**`last_bought`** (cargo-type idx of last good bought from this dwelling)",
+          "Verified by": "per pavelbel"
+        },
+        {
+          "Offset": "+0x09",
+          "Type": "byte",
+          "Field": "**`last_sold`** (cargo-type idx of last good sold to this dwelling)",
+          "Verified by": "per pavelbel"
+        },
+        {
+          "Offset": "+0x0A..+0x11",
+          "Type": "4×{byte,byte}",
+          "Field": "**`alarm[4]`** = (friction, attacks) per European nation",
+          "Verified by": "Per pavelbel: friction goes up when attacked; attacks queues retaliation. My observation that Inca (27,43) had +0x0A=0x20 = English-friction=32; Arawak (45,35) had +0x0E=0x26, +0x0F=0x03 = Spanish friction=38, attacks=3."
+        }
+      ]
+    },
+    {
+      "record": "TribeData — per-native-tribe defaults (8 entries)",
+      "dgroup_base": "0x5AD6",
+      "stride_hex": "0x4E",
+      "stride_dec": null,
+      "count": "8",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: TribeData — per-native-tribe defaults (8 entries)",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verified by"
+      ],
+      "fields": [
+        {
+          "Offset": "+2",
+          "Type": "byte",
+          "Field": "`settlement_size_factor` (× by random rolls in raze formula)",
+          "Verified by": "CHIEFKILL byte-trace at file 0x04AB24"
+        }
+      ]
+    },
+    {
+      "record": "AIPersonality — 4 European-power AI personalities",
+      "dgroup_base": "0x540E",
+      "stride_hex": "0x34",
+      "stride_dec": null,
+      "count": "4",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: AIPersonality — 4 European-power AI personalities",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Example (English)"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x00..+0x17",
+          "Type": "char[24]",
+          "Field": "`leader_name` (NUL-terminated)",
+          "Example (English)": "\"Walter Raleigh\""
+        },
+        {
+          "Offset": "+0x18..+0x2F",
+          "Type": "char[24]",
+          "Field": "`country_name`",
+          "Example (English)": "\"New England\""
+        },
+        {
+          "Offset": "+0x30",
+          "Type": "byte",
+          "Field": "TBD",
+          "Example (English)": "English=0xC0"
+        },
+        {
+          "Offset": "+0x31",
+          "Type": "byte",
+          "Field": "`is_active` (game-state flag)",
+          "Example (English)": "English=0"
+        },
+        {
+          "Offset": "+0x32",
+          "Type": "byte",
+          "Field": "TBD",
+          "Example (English)": "English=0x03"
+        },
+        {
+          "Offset": "+0x33",
+          "Type": "byte",
+          "Field": "TBD",
+          "Example (English)": "English=0x00"
+        }
+      ]
+    },
+    {
+      "record": "PowerRecord — per-European-power state (4 entries)",
+      "dgroup_base": "0x8808",
+      "stride_hex": "0x13C",
+      "stride_dec": null,
+      "count": "4",
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: PowerRecord — per-European-power state (4 entries)",
+      "header": [
+        "Offset",
+        "Type",
+        "Field",
+        "Verified by"
+      ],
+      "fields": [
+        {
+          "Offset": "+0x01",
+          "Type": "byte",
+          "Field": "`tax_pct` (0..100)",
+          "Verified by": "BYTE_VERIFIED — `func_034AE0`; user's 0%→1% transition"
+        },
+        {
+          "Offset": "+0x02",
+          "Type": "byte",
+          "Field": "**`rebel_sentiment_pct`** (0..100, displayed as Rebel Sentiment %)",
+          "Verified by": "USER-VERIFIED frame 1310124562: byte=13 ↔ \"Rebel Sentiment: 13%\""
+        },
+        {
+          "Offset": "+0x07",
+          "Type": "u32",
+          "Field": "**`acquired_ff_bitmask`** (bit i = FF idx i acquired)",
+          "Verified by": "RUNTIME-VERIFIED for player English: bits=[0]→[0,20] when player acquired Adam Smith → +William Brewster between turns 54-56. AI nations may use this slot differently."
+        },
+        {
+          "Offset": "+0x0C",
+          "Type": "u16",
+          "Field": "**`bells_toward_next_ff`** (resets on each FF acquisition)",
+          "Verified by": "CORRECTED 2026-05-05: At snap 0 (turn 51) value=99 with Brewster as next (cost 129); display formula = `threshold - current = 129 - 99 = 30` shown as \"30 in 129\". After Brewster acquired (between snaps 250-300), value RESET — turn 58 value=30 (accumulated toward NEW next FF)."
+        },
+        {
+          "Offset": "+0x0E",
+          "Type": "u16",
+          "Field": "`bells_per_turn` (Liberty Bells generated last turn)",
+          "Verified by": "Frame 1310124562 had 7 bell sprites = +0x0E=7"
+        },
+        {
+          "Offset": "+0x10",
+          "Type": "u16",
+          "Field": "`crosses_per_turn` (Cathedral immigrant points)",
+          "Verified by": "runtime cross-power check"
+        },
+        {
+          "Offset": "+0x14",
+          "Type": "u16",
+          "Field": "`founding_father_count`",
+          "Verified by": "Frame 1310124562: =1 ↔ Adam Smith only acquired"
+        },
+        {
+          "Offset": "+0x20",
+          "Type": "u16",
+          "Field": "**`boycott_bitfield`** (bit i = good i boycotted by King)",
+          "Verified by": "USER-VERIFIED: only Food (bit 0 = 0x0001) boycotted; Eng record only, all others 0"
+        },
+        {
+          "Offset": "+0x22",
+          "Type": "s32",
+          "Field": "**`royal_money`** (King's REF expansion budget — drives REF growth)",
+          "Verified by": "RUNTIME-VERIFIED 2026-05-07 via pavelbel cross-ref. Player English: 936→1062 over 7 turns @ Discoverer = **exactly +18/turn**. Continued at +18/turn into session_1777955389 (1188 at turn 65). King_anger went 3→5 mid-session but +18/turn rate UNCHANGED. Threshold > 1188 (no REF added across both sessions). Other nations: 0 (royal_money is player-only)."
+        },
+        {
+          "Offset": "+0x26",
+          "Type": "s32",
+          "Field": "unknown (pavelbel labels as `unknown24b`)",
+          "Verified by": "varies per power"
+        },
+        {
+          "Offset": "+0x2A",
+          "Type": "u32",
+          "Field": "**`gold`** (treasury)",
+          "Verified by": "BYTE_VERIFIED — write-back updates UI immediately; user's 3552 / 4032 visible matches"
+        },
+        {
+          "Offset": "+0x1e",
+          "Type": "u16",
+          "Field": "**`artillery_bought_count`** (Europe artillery-recruit escalation counter)",
+          "Verified by": "BYTE_VERIFIED 2026-05-31 — read×100 at `0x035124`/`0x03527B`, `inc` at `0x035282`, zeroed at new-game init `0x03662F`. Drives the artillery-only recruit escalation (see below)."
+        },
+        {
+          "Offset": "+0x30",
+          "Type": "(none)",
+          "Field": "~~`recruit_cost_europe`~~ — **NOT a runtime field** (zero accesses; see RESIDUAL_FINDINGS §14/§21). Recruit gold cost = recruit-pool slot `+0x04` word at DGROUP:0x978C+slot*6 (`func_074688`/read `0x051E52`,`0x035114`). For colonist type 0x0B (Artillery): `cost = base + artillery_bought_count*100`, then counter++ (`0x03527B`/`0x035282`). NOT `base<<count`. The pavelbel SAV \"+0x30\" is a serializer offset, not the runtime layout."
+        },
+        {
+          "Offset": "+0x32",
+          "Type": "u16",
+          "Field": "`ref_strength_rating` (aggregate REF power)",
+          "Verified by": "Eng=12599, Du=15153, Sp=4899, Fr=5154"
+        },
+        {
+          "Offset": "+0x4C..+0x5B",
+          "Type": "16×u8",
+          "Field": "`market_sensitivity` per good",
+          "Verified by": "js-dos doc; values 1..20 typical"
+        },
+        {
+          "Offset": "+0x5C..+0x7B",
+          "Type": "16×s16",
+          "Field": "`market_pool` (supply/demand imbalance)",
+          "Verified by": "js-dos doc"
+        },
+        {
+          "Offset": "+0x7C..+0xBB",
+          "Type": "16×s32",
+          "Field": "`market_traded_volume` (cumulative units)",
+          "Verified by": "js-dos doc"
+        },
+        {
+          "Offset": "+0xBC..+0xFB",
+          "Type": "16×s32",
+          "Field": "`market_eu_supply`",
+          "Verified by": "js-dos doc"
+        },
+        {
+          "Offset": "+0xFC..+0x13B",
+          "Type": "16×s32",
+          "Field": "`market_base_values` (initial state at game start)",
+          "Verified by": "js-dos doc"
+        }
+      ]
+    },
+    {
+      "record": "2026-05-04 update — RUNTIME-VERIFIED ColonyRecord layout",
+      "dgroup_base": null,
+      "stride_hex": null,
+      "stride_dec": null,
+      "count": null,
+      "value_source": "runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes",
+      "source": "docs/DATA_MODEL.md :: 2026-05-04 update — RUNTIME-VERIFIED ColonyRecord layout",
+      "header": [
+        "Offset",
+        "Size",
+        "Field",
+        "Notes"
+      ],
+      "fields": [
+        {
+          "Offset": "0x00",
+          "Size": "byte",
+          "Field": "map_x",
+          "Notes": "Tile column (0..56 on AMER2.MP)"
+        },
+        {
+          "Offset": "0x01",
+          "Size": "byte",
+          "Field": "map_y",
+          "Notes": "Tile row (0..70)"
+        },
+        {
+          "Offset": "0x02..0x19",
+          "Size": "24 bytes",
+          "Field": "name",
+          "Notes": "NUL-terminated colony name (max 23 chars per COLONY.TXT spec)"
+        },
+        {
+          "Offset": "0x1A",
+          "Size": "byte",
+          "Field": "owner_nation",
+          "Notes": "0=England, 1=France, 2=Spain, 3=Netherlands"
+        },
+        {
+          "Offset": "0x1B",
+          "Size": "byte",
+          "Field": "unknown",
+          "Notes": "TBD"
+        },
+        {
+          "Offset": "0x20",
+          "Size": "word",
+          "Field": "flags?",
+          "Notes": "Observed value 0x1002"
+        },
+        {
+          "Offset": "0x90",
+          "Size": "word",
+          "Field": "field_a",
+          "Notes": "Observed Jamestown=272"
+        },
+        {
+          "Offset": "0x9A",
+          "Size": "word",
+          "Field": "field_b",
+          "Notes": "Observed 1 (read by func_02D658 line 02D6BB)"
+        },
+        {
+          "Offset": "0xC6",
+          "Size": "word",
+          "Field": "field_c",
+          "Notes": "Observed 193 (read by func_02D658 line 02D6C8)"
+        }
+      ]
+    }
+  ],
+  "scalars": [
+    {
+      "address": "`0x18E`",
+      "row": {
+        "Address": "`0x18E`",
+        "Type": "word",
+        "Meaning": "terrain-display mode",
+        "Verified by": "auto-forest function"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x28EE`",
+      "row": {
+        "Address": "`0x28EE`",
+        "Type": "word (low)",
+        "Meaning": "RNG seed",
+        "Verified by": "rand() byte-trace"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x28F0`",
+      "row": {
+        "Address": "`0x28F0`",
+        "Type": "word (high)",
+        "Meaning": "RNG seed",
+        "Verified by": "rand() byte-trace"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x372`",
+      "row": {
+        "Address": "`0x372`",
+        "Type": "word",
+        "Meaning": "score accumulator",
+        "Verified by": "inferred from `func_03A9C0`"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x5382`",
+      "row": {
+        "Address": "`0x5382`",
+        "Type": "byte",
+        "Meaning": "game flags (bit 0 = endgame)",
+        "Verified by": "SMITE + win-check byte-trace"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x538A`",
+      "row": {
+        "Address": "`0x538A`",
+        "Type": "word",
+        "Meaning": "turn counter (alt?)",
+        "Verified by": "king-events byte-trace"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x538E`",
+      "row": {
+        "Address": "`0x538E`",
+        "Type": "word",
+        "Meaning": "turn counter (main)",
+        "Verified by": "king tax raise formula"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x5398`",
+      "row": {
+        "Address": "`0x5398`",
+        "Type": "word",
+        "Meaning": "current human player",
+        "Verified by": "SOL display"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53A6`",
+      "row": {
+        "Address": "`0x53A6`",
+        "Type": "byte",
+        "Meaning": "difficulty / current player (0..4)",
+        "Verified by": "king tax + SMITE byte-traces"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53D2`",
+      "row": {
+        "Address": "`0x53D2`",
+        "Type": "word",
+        "Meaning": "self power",
+        "Verified by": "SOL display"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53A7`",
+      "row": {
+        "Address": "`0x53A7`",
+        "Type": "byte",
+        "Meaning": "**King anger** (increments per Tea Party / anger event)",
+        "Verified by": "USER-VERIFIED 2026-05-04: 2 tea parties caused 3→5 transition"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53DA`",
+      "row": {
+        "Address": "`0x53DA`",
+        "Type": "word",
+        "Meaning": "**REF Regulars count**",
+        "Verified by": "**USER-VERIFIED 2026-05-04: 23 matches in-game**"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53DC`",
+      "row": {
+        "Address": "`0x53DC`",
+        "Type": "word",
+        "Meaning": "**REF Cavalry/Dragoons count**",
+        "Verified by": "**USER-VERIFIED: 10 matches in-game**"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53DE`",
+      "row": {
+        "Address": "`0x53DE`",
+        "Type": "word",
+        "Meaning": "**REF Man-O-War count**",
+        "Verified by": "**USER-VERIFIED: 5 matches in-game**"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53E0`",
+      "row": {
+        "Address": "`0x53E0`",
+        "Type": "word",
+        "Meaning": "**REF Artillery count**",
+        "Verified by": "**USER-VERIFIED: 8 matches in-game** (NOTE slot 3 not 2)"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x53EA`",
+      "row": {
+        "Address": "`0x53EA`",
+        "Type": "word[4]",
+        "Meaning": "per-player market base",
+        "Verified by": "market function"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`0x84FC`",
+      "row": {
+        "Address": "`0x84FC`",
+        "Type": "far ptr",
+        "Meaning": "-> PowerRecord[active_power] (was: \"king/payer record\")",
+        "Verified by": "gold at +0x2A matches in-game UI"
+      },
+      "group": "Game-state globals (DGROUP scalars)",
+      "source": "docs/DATA_MODEL.md :: Game-state globals (DGROUP scalars)"
+    },
+    {
+      "address": "`[0x174]`",
+      "row": {
+        "Global": "`[0x174]`",
+        "Type": "word",
+        "Purpose": "cursor_x",
+        "Writer site (file offset)": "0x0765AC (`MOV [0x174], AX` short form)"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x176]`",
+      "row": {
+        "Global": "`[0x176]`",
+        "Type": "word",
+        "Purpose": "cursor_y",
+        "Writer site (file offset)": "0x0765AF (`MOV [0x176], DX`)"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x186]`",
+      "row": {
+        "Global": "`[0x186]`",
+        "Type": "word",
+        "Purpose": "dialog_state flag (>=0x64 enables popup)",
+        "Writer site (file offset)": "TBD"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x1EA4]`",
+      "row": {
+        "Global": "`[0x1EA4]`",
+        "Type": "byte",
+        "Purpose": "char_width_cols (parsed from GAME.TXT @width)",
+        "Writer site (file offset)": "0x0684CC, 0x0684FC, 0x068507"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x1EA5]`",
+      "row": {
+        "Global": "`[0x1EA5]`",
+        "Type": "byte",
+        "Purpose": "char_height_rows",
+        "Writer site (file offset)": "0x0684D7, 0x0684F9, 0x068504"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0xA5A4]`",
+      "row": {
+        "Global": "`[0xA5A4]`",
+        "Type": "word",
+        "Purpose": "font_cell_width",
+        "Writer site (file offset)": "0x068771 (`MOV [0xA5A4], CX`)"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0xA5A6]`",
+      "row": {
+        "Global": "`[0xA5A6]`",
+        "Type": "word",
+        "Purpose": "font_cell_height",
+        "Writer site (file offset)": "0x06872C (`MOV [0xA5A6], AX`)"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x839E]`",
+      "row": {
+        "Global": "`[0x839E]`",
+        "Type": "word",
+        "Purpose": "dialog_rect.field0 (computed)",
+        "Writer site (file offset)": "overlay 0x0C36:0x000A (TBD file offset)"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x83A0]`",
+      "row": {
+        "Global": "`[0x83A0]`",
+        "Type": "word",
+        "Purpose": "dialog_rect.field1 (computed)",
+        "Writer site (file offset)": "same setter"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x83A2]`",
+      "row": {
+        "Global": "`[0x83A2]`",
+        "Type": "word",
+        "Purpose": "dialog_rect.field2 (cursor_x)",
+        "Writer site (file offset)": "same setter"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    },
+    {
+      "address": "`[0x83A4]`",
+      "row": {
+        "Global": "`[0x83A4]`",
+        "Type": "word",
+        "Purpose": "dialog_rect.field3 (cursor_y)",
+        "Writer site (file offset)": "same setter"
+      },
+      "group": "2026-05-03 update — Dialog/popup state globals",
+      "source": "docs/DATA_MODEL.md :: 2026-05-03 update — Dialog/popup state globals"
+    }
+  ]
+}

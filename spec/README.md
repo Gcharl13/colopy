@@ -76,16 +76,24 @@ Specs are derived from the extracted **basis**, never imagination (see
 | Spec file | Covers | Canonical primary |
 |-----------|--------|-------------------|
 | [`data/records.md`](data/records.md) | Power/Colony/Unit/Native memory records | `docs/DATA_MODEL.md` |
-| [`data/tables.md`](data/tables.md) | byte-anchored gameplay tables (units/cargo/terrain/buildings/…) | `data_extracted/tables/*.json` |
+| [`data/tables.md`](data/tables.md) | **every** gameplay data table — all NAMES CSV + id→name list sections, all TRIBE dispersal tables, and the DGROUP layout catalog (full rows inline) | `data_extracted/tables/*.json` |
 | [`data/index_tables.md`](data/index_tables.md) | sprite/text index tables | `docs/GAME_INDEX_TABLES.md` |
-| [`data/names_sections.md`](data/names_sections.md) | the **31** NAMES.TXT `@`-sections | `data_extracted/text/NAMES_sections.json` |
-| [`data/text_resources.md`](data/text_resources.md) | GAME/LABELS/PEDIA/MENU text | `data_extracted/text/*.json` + catalogs |
+| [`data/names_sections.md`](data/names_sections.md) | all **31** NAMES.TXT `@`-sections — **complete verbatim bodies** | `data_extracted/text/NAMES.full.json` |
+| [`data/text_resources.md`](data/text_resources.md) | **all** text `.TXT` files (GAME/PEDIA/LABELS/MENU/COLONY/MAPEDIT/MAPMENU/DEBUG/OPENING/CLOSING/WOODCUT) — **complete verbatim bodies** (763 `@`-keys) | `data_extracted/text/*.full.json` |
 | [`data/file_formats.md`](data/file_formats.md) | .MP/.SS/.PAL/.PIK/.FF/… on-disk formats | `formats/` |
 
-Notes from the population pass: NAMES.TXT has **31** `@`-sections (not 23);
-ColonyRecord has **no static base** — it's reached via the far pointer
-`[0x8542]` (stride `0xCA`); PowerRecord base appears as `0x8808` (array head) /
-`0x8809` (first field) in `docs/DATA_MODEL.md`.
+**Complete enumeration (2026-06-18):** every `@`-key body across all 14 `.TXT`
+files (794 keys: 31 NAMES + 763 others) and every data table (NAMES/TRIBE/DGROUP)
+is now rendered **in full** inside `<!-- BEGIN GENERATED -->` blocks in
+`names_sections.md`, `text_resources.md`, and `tables.md` — machine-rendered
+verbatim from the basis by `tools/build_spec_data.py` (regenerate, don't hand-edit
+inside the markers). Notes: NAMES.TXT has **31** `@`-sections (not 23); GAME.TXT
+repeats some keys (`@smallfont`/`@options`) — the basis `sections_ordered` list
+preserves every duplicate; ColonyRecord has **no static base** — reached via the
+far pointer `[0x8542]` (stride `0xCA`); PowerRecord base appears as `0x8808`
+(array head) / `0x8809` (first field) in `docs/DATA_MODEL.md`. The DGROUP record
+*values* are runtime (memory-dump-verified, **not** static EXE bytes) — the
+catalog surfaces the byte-verified *layout*.
 
 ## De-duplication record
 

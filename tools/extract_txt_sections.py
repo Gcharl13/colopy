@@ -98,7 +98,10 @@ def process(txt_path: Path, text_dir: Path) -> dict:
         json.dumps(flat, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
-    # rich dump: full structure incl. legend/directives/rows
+    # rich dump: full structure incl. legend/directives/rows.
+    # `sections` is a key->section map (LAST wins on duplicate keys, back-compat);
+    # `sections_ordered` preserves file order AND duplicate keys (some files repeat
+    # keys like @smallfont/@options/@STOP) so EVERY body is represented.
     rich = {
         "file": txt_path.name,
         "section_count": len(sections),
@@ -108,6 +111,9 @@ def process(txt_path: Path, text_dir: Path) -> dict:
             }
             for s in sections
         },
+        "sections_ordered": [
+            {k: v for k, v in s.items()} for s in sections
+        ],
     }
     (text_dir / f"{stem}.full.json").write_text(
         json.dumps(rich, indent=2, ensure_ascii=False), encoding="utf-8"

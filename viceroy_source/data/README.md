@@ -1,11 +1,16 @@
 # Initialised Data Tables
 
-> **⚠️ Reconstructed — verify against the authoritative basis.** The byte-exact
-> gameplay tables now live in `data_extracted/tables/*.json` (generated from the
-> real `NAMES.TXT`/`TRIBE.TXT` by `tools/build_tables.py`; see
-> `spec/data/tables.md`). The `.c` files here are *reconstructions* and are
-> **pending reconciliation** against that source — treat any value that
-> disagrees with `data_extracted/tables/` as `TBD`, not fact.
+> **⚠️ Reconstructed — the authoritative basis is `data_extracted/tables/`.** The
+> byte-exact gameplay tables live in `data_extracted/tables/*.json` (generated
+> from the real `NAMES.TXT`/`TRIBE.TXT` by `tools/build_tables.py`) and are now
+> rendered **in full** in `spec/data/tables.md`. The `.c` files here are
+> *reconstructions* rebuilt 2026-05-30 from the same source; spot-checked **equal**
+> to the basis (e.g. `building_costs.c` rows match `@BUILDING` exactly). The basis
+> still wins — treat any value that disagrees with `data_extracted/tables/` as
+> `TBD`, not fact. Note the DGROUP record *values* are runtime (loaded at init /
+> memory-dump verified), **not** static EXE bytes; the offsets below describe the
+> linker layout, and the byte-verified layout catalog is `spec/data/tables.md` §C
+> (from `docs/DATA_MODEL.md`).
 
 This directory holds the **constant tables** that VICEROY.EXE keeps in
 DGROUP — terrain yields, unit type stats, building costs, founding-father
