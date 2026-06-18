@@ -305,11 +305,11 @@ static const int CDY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
 static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
     uint8_t cfg[4] = { 0, 0, 0, 0 };
-    int any = 0;
+    int conn = 0;                           /* 8-neighbour land bitmap (bit=dir) */
     for (int dir = 0; dir < 8; dir++) {
         if (water_at(m, tx + CDX[dir], ty + CDY[dir]))
             continue;                       /* ocean neighbour -> no contribution */
-        any = 1;
+        conn |= (1 << dir);
         if (dir & 1) {                      /* diagonal */
             cfg[((dir + 1) & 6) >> 1] |= 2;
         } else {                            /* cardinal */
@@ -317,9 +317,23 @@ static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx
             cfg[((dir >> 1) + 1) & 3] |= 1;
         }
     }
-    if (!any) return;                       /* open ocean: plain base */
+    if (!conn) return;                      /* open ocean: plain base */
 
-    /* quadrant order q=0..3 = NW,NE,SE,SW at tile-local (0,0)/(8,0)/(8,8)/(0,8) */
+    /* clean-diagonal corners: one full-tile diagonal coast sprite instead of the
+     * 4 quadrants (composer @0xC665: pattern 0..3 -> game 0x97+p = frame 0x96+p).
+     * bit order N,NE,E,SE,S,SW,W,NW. */
+    int pattern = -1;
+    if ((conn & 0xDD) == 0xC1) pattern = 0; /* land in NW corner (N,W,NW) */
+    if ((conn & 0x77) == 0x07) pattern = 1; /* land in NE corner (N,NE,E) */
+    if ((conn & 0x77) == 0x70) pattern = 2; /* land in SW corner (S,SW,W) */
+    if ((conn & 0xDD) == 0x1C) pattern = 3; /* land in SE corner (E,SE,S) */
+    if (pattern >= 0) {
+        blit_phys0_key(f, px, py, tp, 0x96 + pattern);
+        return;
+    }
+
+    /* else 4 quadrant 8x8 sub-tiles. q=0..3 = NW,NE,SE,SW at tile-local
+     * (0,0)/(8,0)/(8,8)/(0,8); sprite = game 0x6D + config*4 + q = frame 0x6C+... */
     static const int qx[4] = { 0, 8, 8, 0 };
     static const int qy[4] = { 0, 0, 8, 8 };
     for (int q = 0; q < 4; q++)
