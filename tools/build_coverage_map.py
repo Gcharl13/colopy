@@ -25,10 +25,13 @@ MAX_ASM_LINES = 200          # cap very large functions
 def off(f): return int(f["file_offset"], 16)
 
 # --- decoded-in-C signal + offset -> C file map ----------------------------
+# NB: C sources reference functions as `func_05CA7E` AND `func_05CA7E_label`,
+# so match the full 6-hex id without a trailing word-boundary (a `\b` would
+# miss the `_label` form and badly over-report "raw").
 cfile_of: dict[int, set[str]] = {}
 for cf in glob.glob(str(ROOT / "viceroy_source/src/**/*.c"), recursive=True):
     rel = str(Path(cf).relative_to(ROOT))
-    for m in re.finditer(r"func_0?([0-9A-Fa-f]{4,6})\b", open(cf, errors="replace").read()):
+    for m in re.finditer(r"func_([0-9A-Fa-f]{6})", open(cf, errors="replace").read()):
         cfile_of.setdefault(int(m.group(1), 16), set()).add(rel)
 cref = set(cfile_of)
 
@@ -102,7 +105,12 @@ parts.append(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 </style></head><body><div class="wrap">
 <h1>VICEROY.EXE — code coverage map</h1>
 <p class="sub">Every recognized function, laid out by file offset. Colour = how well it is understood.
-Click a row to see its raw assembly beside what it does. Nothing here is editable — it's a read-only view.</p>
+Click a row to see its raw assembly beside what it does. Read-only.<br>
+<b>Reading the pale blocks:</b> those are <i>not</i> undone code — they are mostly
+<b>data</b> (lookup tables, sprite/asset bytes, text strings, the data segment) plus
+alignment padding. Data isn't "decoded into a function"; it's handled by the separate
+data-extraction track (NAMES tables, palette, etc.). So the strip can never be all
+blue, and shouldn't be.</p>
 
 <div>
  <span class="stat" style="color:{LABELS['named'][1]}"><b>{len([f for f in FUNCS if classify(f)=='named'])}</b> identified</span>
