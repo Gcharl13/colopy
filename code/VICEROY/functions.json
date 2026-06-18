@@ -18,36 +18,36 @@
       "size": 33,
       "instructions": 13,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_strtab_open",
       "asm_file": "disasm/func_002400_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00242C",
       "size": 53,
       "instructions": 25,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_strtab_append",
       "asm_file": "disasm/func_00242C_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002462",
       "size": 45,
       "instructions": 19,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_far_strlen",
       "asm_file": "disasm/func_002462_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002494",
       "size": 50,
       "instructions": 22,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_code_select_2out",
       "asm_file": "disasm/func_002494_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0024C6",
@@ -81,36 +81,36 @@
       "size": 21,
       "instructions": 11,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_emit_long",
       "asm_file": "disasm/func_002632_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002648",
       "size": 32,
       "instructions": 14,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_fmt_emit_1arg",
       "asm_file": "disasm/func_002648_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002668",
       "size": 35,
       "instructions": 15,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_fmt_emit_2arg",
       "asm_file": "disasm/func_002668_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00268C",
       "size": 38,
       "instructions": 16,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_fmt_emit_str",
       "asm_file": "disasm/func_00268C_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0026D4",
@@ -171,63 +171,63 @@
       "size": 33,
       "instructions": 18,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_emit_repeat_n",
       "asm_file": "disasm/func_0028C0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0028E2",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s52",
       "asm_file": "disasm/func_0028E2_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0028F2",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s55",
       "asm_file": "disasm/func_0028F2_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002902",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s58",
       "asm_file": "disasm/func_002902_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002912",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s5c",
       "asm_file": "disasm/func_002912_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002922",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s5e",
       "asm_file": "disasm/func_002922_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002932",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s60",
       "asm_file": "disasm/func_002932_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002942",
@@ -252,27 +252,27 @@
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s66",
       "asm_file": "disasm/func_002962_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002972",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s68",
       "asm_file": "disasm/func_002972_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002982",
       "size": 16,
       "instructions": 7,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_libwrap_7a4_s6a",
       "asm_file": "disasm/func_002982_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x002992",
@@ -2349,54 +2349,54 @@
       "size": 44,
       "instructions": 16,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_flag_bit_set",
       "asm_file": "disasm/func_0092E0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x009318",
       "size": 782,
       "instructions": 292,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_production_accumulate",
       "asm_file": "disasm/func_009318_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x009626",
       "size": 53,
       "instructions": 21,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_leaf_calls_90c8",
       "asm_file": "disasm/func_009626_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00965C",
       "size": 53,
       "instructions": 21,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_leaf_calls_9102",
       "asm_file": "disasm/func_00965C_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x009692",
       "size": 67,
       "instructions": 25,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_leaf_90c8_9102",
       "asm_file": "disasm/func_009692_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0096DA",
       "size": 75,
       "instructions": 29,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_leaf_activecol",
       "asm_file": "disasm/func_0096DA_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x009726",
@@ -2637,9 +2637,9 @@
       "size": 155,
       "instructions": 61,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_update_step",
       "asm_file": "disasm/func_00B150_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00B1EC",
@@ -2700,9 +2700,9 @@
       "size": 126,
       "instructions": 46,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_helper_b2a2",
       "asm_file": "disasm/func_00B368_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00B42C",
@@ -2772,18 +2772,18 @@
       "size": 80,
       "instructions": 28,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_helper_8dc4_a",
       "asm_file": "disasm/func_00B880_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00B8D0",
       "size": 47,
       "instructions": 19,
       "region": "load_image",
-      "name": "unknown",
+      "name": "colony_helper_8dc4_b",
       "asm_file": "disasm/func_00B8D0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x00B900",
@@ -4536,9 +4536,9 @@
       "size": 105,
       "instructions": 42,
       "region": "load_image",
-      "name": "unknown",
+      "name": "rt_dos_open",
       "asm_file": "disasm/func_011D30_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x011F6E",
@@ -8478,45 +8478,45 @@
       "size": 177,
       "instructions": 55,
       "region": "overlay",
-      "name": "unknown",
+      "name": "colony_helper_181f_c0e",
       "asm_file": "disasm/func_054505_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x055760",
       "size": 11,
       "instructions": 5,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_5576x",
       "asm_file": "disasm/func_055760_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x05576B",
       "size": 87,
       "instructions": 29,
       "region": "overlay",
-      "name": "unknown",
+      "name": "colony_helper_181f_cd6",
       "asm_file": "disasm/func_05576B_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x05651C",
       "size": 45,
       "instructions": 20,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_5651C",
       "asm_file": "disasm/func_05651C_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x056694",
       "size": 811,
       "instructions": 666,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_56694",
       "asm_file": "disasm/func_056694_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x056A10",
@@ -8559,9 +8559,9 @@
       "size": 164,
       "instructions": 60,
       "region": "overlay",
-      "name": "unknown",
+      "name": "native_convert_handler",
       "asm_file": "disasm/func_0572E6_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x057A3A",
@@ -8640,9 +8640,9 @@
       "size": 141,
       "instructions": 48,
       "region": "overlay",
-      "name": "unknown",
+      "name": "colony_scout_or_mayor_check",
       "asm_file": "disasm/func_05A20E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x05A40E",
@@ -8667,27 +8667,27 @@
       "size": 89,
       "instructions": 40,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_5AC34",
       "asm_file": "disasm/func_05AC34_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x05AEA0",
       "size": 140,
       "instructions": 60,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_5AEA0",
       "asm_file": "disasm/func_05AEA0_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x05AF2C",
       "size": 68,
       "instructions": 32,
       "region": "overlay",
-      "name": "unknown",
+      "name": "data_block_misseg_5AF2C",
       "asm_file": "disasm/func_05AF2C_unknown.asm",
-      "status": "RAW"
+      "status": "DATA"
     },
     {
       "file_offset": "0x05AF70",
@@ -10953,9 +10953,9 @@
       "size": 217,
       "instructions": 73,
       "region": "overlay",
-      "name": "unknown",
+      "name": "ui_input_cursor_helper",
       "asm_file": "disasm/func_078068_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x078142",
@@ -11034,9 +11034,9 @@
       "size": 49,
       "instructions": 23,
       "region": "overlay",
-      "name": "unknown",
+      "name": "vga_palette_dac_write",
       "asm_file": "disasm/func_078548_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x078640",
@@ -11142,9 +11142,9 @@
       "size": 52,
       "instructions": 18,
       "region": "overlay",
-      "name": "unknown",
+      "name": "overlay_thunk_1a1f_e90",
       "asm_file": "disasm/func_078B3E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x078BCE",

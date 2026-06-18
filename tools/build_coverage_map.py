@@ -39,13 +39,17 @@ ADDR_RE = re.compile(r"^([0-9A-Fa-f]{6})\s")
 HDR_RE  = re.compile(r"^;\s*(Purpose|Tagged|Verified|Region)\s*:\s*(.*)$")
 
 def classify(f):
+    if f["status"] == "DATA":              return "data_fn"   # not code (mis-segmented)
     if f["status"] == "MANUAL":            return "named"
     if off(f) in cref:                     return "decoded"
+    if f["status"] == "AUDITED":           return "audited"
     return "raw"
 
 LABELS = {"named":   ("Identified", "#1b7e3c"),
           "decoded": ("Decoded in C", "#1565c0"),
+          "audited": ("Role identified (audited)", "#4a9c6d"),
           "raw":     ("Raw / not yet identified", "#8a8f98"),
+          "data_fn": ("Reclassified as data (not code)", "#cfd4da"),
           "gap":     ("Unmapped (data / not disassembled)", "#dfe2e7")}
 
 def read_asm(f):
@@ -65,15 +69,18 @@ def humanize(name):
 # --- build rows ------------------------------------------------------------
 sf = sorted(FUNCS, key=off)
 tot = sum(f["size"] for f in FUNCS)
-by = {k: 0 for k in ("named", "decoded", "raw")}
+by = {k: 0 for k in ("named", "decoded", "audited", "raw", "data_fn")}
 for f in FUNCS: by[classify(f)] += f["size"]
+understood = by["named"] + by["decoded"] + by["audited"]
+codetot = tot - by["data_fn"]                 # data_fn isn't code
 gapbytes = sum(max(0, off(b) - (off(a) + a["size"])) for a, b in zip(sf, sf[1:]))
 span = (off(sf[-1]) + sf[-1]["size"]) - off(sf[0])
 
 def esc(s): return html.escape(str(s))
 
 # proportional summary bar
-total_all = by["named"] + by["decoded"] + by["raw"] + gapbytes
+total_all = (by["named"] + by["decoded"] + by["audited"] + by["raw"]
+             + by["data_fn"] + gapbytes)
 def pct(x): return f"{100*x/total_all:.1f}%"
 
 parts = []
@@ -115,17 +122,19 @@ blue, and shouldn't be.</p>
 <div>
  <span class="stat" style="color:{LABELS['named'][1]}"><b>{len([f for f in FUNCS if classify(f)=='named'])}</b> identified</span>
  <span class="stat" style="color:{LABELS['decoded'][1]}"><b>{len([f for f in FUNCS if classify(f)=='decoded'])}</b> decoded in C</span>
+ <span class="stat" style="color:{LABELS['audited'][1]}"><b>{len([f for f in FUNCS if classify(f)=='audited'])}</b> audited</span>
  <span class="stat" style="color:{LABELS['raw'][1]}"><b>{len([f for f in FUNCS if classify(f)=='raw'])}</b> raw</span>
- <span class="stat"><b>{100*(by['named']+by['decoded'])/tot:.0f}%</b> of recognized code understood</span>
+ <span class="stat"><b>{100*understood/codetot:.0f}%</b> of recognized code understood</span>
 </div>
 <div class="bar">
  <span style="width:{pct(by['named'])};background:{LABELS['named'][1]}" title="identified {pct(by['named'])}"></span>
  <span style="width:{pct(by['decoded'])};background:{LABELS['decoded'][1]}" title="decoded {pct(by['decoded'])}"></span>
+ <span style="width:{pct(by['audited'])};background:{LABELS['audited'][1]}" title="audited {pct(by['audited'])}"></span>
  <span style="width:{pct(by['raw'])};background:{LABELS['raw'][1]}" title="raw {pct(by['raw'])}"></span>
- <span style="width:{pct(gapbytes)};background:{LABELS['gap'][1]}" title="unmapped {pct(gapbytes)}"></span>
+ <span style="width:{pct(by['data_fn']+gapbytes)};background:{LABELS['gap'][1]}" title="data/unmapped {pct(by['data_fn']+gapbytes)}"></span>
 </div>
 <div class="legend">""")
-for k in ("named", "decoded", "raw", "gap"):
+for k in ("named", "decoded", "audited", "raw", "data_fn", "gap"):
     parts.append(f'<span><i style="background:{LABELS[k][1]}"></i>{LABELS[k][0]}</span>')
 parts.append("</div>")
 
@@ -162,6 +171,14 @@ for a, b in zip(sf, sf[1:] + [None]):
         files = sorted(cfile_of.get(off(a), []))
         mean.append("<b>Reconstructed in C</b> (hand-ported from these bytes):")
         mean.append("<br>" + "<br>".join(f"<code>{esc(x)}</code>" for x in files[:4]))
+    elif cls == "audited":
+        mean.append(f"<b>Role identified</b> as <code>{esc(a['name'])}</code> (see "
+                    "<code>docs/RAW_FUNCTION_AUDIT.md</code>). Classified from its own "
+                    "bytes — not a full byte-port yet.")
+    elif cls == "data_fn":
+        mean.append("<b>Not code.</b> This entry is a data / zero-fill block the "
+                    "auto-segmenter wrongly split as a function — reclassified as data "
+                    "(see <code>docs/RAW_FUNCTION_AUDIT.md</code>).")
     else:
         mean.append("<b>Not yet identified.</b> Disassembled, but its purpose hasn't been worked out — this is the kind of gap that remains.")
     if hdr.get("Tagged"): mean.append(f'<div style="margin-top:8px"><h4>String hints</h4>{esc(hdr["Tagged"])}</div>')
