@@ -35,6 +35,29 @@ for cf in glob.glob(str(ROOT / "viceroy_source/src/**/*.c"), recursive=True):
         cfile_of.setdefault(int(m.group(1), 16), set()).add(rel)
 cref = set(cfile_of)
 
+# --- gap content classifier (code vs data), from the EXE bytes if available ---
+try:
+    EXE = (ROOT / "raw/COLONIZE/VICEROY.EXE").read_bytes()
+except OSError:
+    EXE = None
+_THUNK = re.compile(rb"\x9a..\x1f[\x18\x19\x1a]")   # overlay-thunk far-call signature
+
+def gap_is_code(start: int, size: int, region: str) -> bool:
+    """True if an unmapped gap looks like (unenumerated) code rather than data."""
+    if EXE is None:                       # fallback: overlay gaps are code-heavy
+        return region == "overlay"
+    b = EXE[start:start+size]
+    if not b:
+        return False
+    z = b.count(0) / len(b)
+    printable = sum(1 for x in b if 0x20 <= x < 0x7f or x in (9, 10, 13)) / len(b)
+    if printable > 0.55 or z > 0.75:      # strings / padding-bss = data
+        return False
+    t = len(_THUNK.findall(b))
+    codey = sum(b.count(bytes([op])) for op in
+                (0x55, 0x8b, 0x83, 0xc7, 0xe8, 0xe9, 0x74, 0x75, 0x9a)) / len(b)
+    return (t > 0 and len(b)/t < 220) or codey > 0.16
+
 ADDR_RE = re.compile(r"^([0-9A-Fa-f]{6})\s")
 HDR_RE  = re.compile(r"^;\s*(Purpose|Tagged|Verified|Region)\s*:\s*(.*)$")
 
@@ -50,7 +73,9 @@ LABELS = {"named":   ("Identified", "#1b7e3c"),
           "audited": ("Role identified (audited)", "#4a9c6d"),
           "raw":     ("Raw / not yet identified", "#8a8f98"),
           "data_fn": ("Reclassified as data (not code)", "#cfd4da"),
-          "gap":     ("Unmapped (data / not disassembled)", "#dfe2e7")}
+          "gap_code":("Unmapped CODE (overlay, not yet split into functions)", "#b9c7e8"),
+          "gap_data":("Unmapped data / strings / padding", "#e6e2d6"),
+          "gap":     ("Unmapped", "#dfe2e7")}
 
 def read_asm(f):
     """Return (instruction_lines, header_fields)."""
@@ -74,6 +99,12 @@ for f in FUNCS: by[classify(f)] += f["size"]
 understood = by["named"] + by["decoded"] + by["audited"]
 codetot = tot - by["data_fn"]                 # data_fn isn't code
 gapbytes = sum(max(0, off(b) - (off(a) + a["size"])) for a, b in zip(sf, sf[1:]))
+gapcode = gapdata = 0
+for a, b in zip(sf, sf[1:]):
+    g = off(b) - (off(a) + a["size"])
+    if g > 0:
+        if gap_is_code(off(a) + a["size"], g, a["region"]): gapcode += g
+        else: gapdata += g
 span = (off(sf[-1]) + sf[-1]["size"]) - off(sf[0])
 
 def esc(s): return html.escape(str(s))
@@ -113,11 +144,14 @@ parts.append(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <h1>VICEROY.EXE — code coverage map</h1>
 <p class="sub">Every recognized function, laid out by file offset. Colour = how well it is understood.
 Click a row to see its raw assembly beside what it does. Read-only.<br>
-<b>Reading the pale blocks:</b> those are <i>not</i> undone code — they are mostly
-<b>data</b> (lookup tables, sprite/asset bytes, text strings, the data segment) plus
-alignment padding. Data isn't "decoded into a function"; it's handled by the separate
-data-extraction track (NAMES tables, palette, etc.). So the strip can never be all
-blue, and shouldn't be.</p>
+<b>Reading the pale blocks:</b> there are two kinds (see legend). <b>Light-blue</b>
+= unmapped <i>code</i> — overlay function bodies that are disassembled but not yet
+split into discrete functions in the registry this map is built from, so they read
+as "gaps" even though they're understood-able code (this map therefore
+<i>under-counts</i> overlay coverage). <b>Light-tan</b> = genuine <i>data</i> —
+strings, lookup tables, padding — handled by the data-extraction track, not decoded
+into functions. (Earlier this whole band was mislabeled "data"; corrected — see
+<code>docs/UNMAPPED_REGIONS_AUDIT.md</code>.)</p>
 
 <div>
  <span class="stat" style="color:{LABELS['named'][1]}"><b>{len([f for f in FUNCS if classify(f)=='named'])}</b> identified</span>
@@ -131,10 +165,11 @@ blue, and shouldn't be.</p>
  <span style="width:{pct(by['decoded'])};background:{LABELS['decoded'][1]}" title="decoded {pct(by['decoded'])}"></span>
  <span style="width:{pct(by['audited'])};background:{LABELS['audited'][1]}" title="audited {pct(by['audited'])}"></span>
  <span style="width:{pct(by['raw'])};background:{LABELS['raw'][1]}" title="raw {pct(by['raw'])}"></span>
- <span style="width:{pct(by['data_fn']+gapbytes)};background:{LABELS['gap'][1]}" title="data/unmapped {pct(by['data_fn']+gapbytes)}"></span>
+ <span style="width:{pct(gapcode)};background:{LABELS['gap_code'][1]}" title="unmapped code {pct(gapcode)}"></span>
+ <span style="width:{pct(by['data_fn']+gapdata)};background:{LABELS['gap_data'][1]}" title="unmapped data {pct(by['data_fn']+gapdata)}"></span>
 </div>
 <div class="legend">""")
-for k in ("named", "decoded", "audited", "raw", "data_fn", "gap"):
+for k in ("named", "decoded", "audited", "raw", "data_fn", "gap_code", "gap_data"):
     parts.append(f'<span><i style="background:{LABELS[k][1]}"></i>{LABELS[k][0]}</span>')
 parts.append("</div>")
 
@@ -149,7 +184,8 @@ for a, b in zip(sf, sf[1:] + [None]):
         g = off(b) - (off(a) + a["size"])
         if g > 0:
             w = max(1, round(120 * g / span))
-            parts.append(f'<b style="width:{w}px;background:{LABELS["gap"][1]}" title="unmapped {g} bytes"></b>')
+            gk = "gap_code" if gap_is_code(off(a)+a["size"], g, a["region"]) else "gap_data"
+            parts.append(f'<b style="width:{w}px;background:{LABELS[gk][1]}" title="{LABELS[gk][0]} — {g} bytes"></b>')
 parts.append("</div>")
 
 # per-function expandable list
@@ -195,7 +231,9 @@ for a, b in zip(sf, sf[1:] + [None]):
     if b is not None:
         g = off(b) - (off(a) + a["size"])
         if g > 64:   # only flag sizeable gaps
-            parts.append(f'<div class="gap">— unmapped 0x{off(a)+a["size"]:06X}..0x{off(b):06X} · {g} bytes (data / not disassembled) —</div>')
+            start = off(a) + a["size"]
+            gk = "CODE (overlay, not yet split into functions)" if gap_is_code(start, g, a["region"]) else "data / strings / padding"
+            parts.append(f'<div class="gap">— unmapped 0x{start:06X}..0x{off(b):06X} · {g} bytes · {gk} —</div>')
 
 parts.append("</div></body></html>")
 OUT.write_text("".join(parts), encoding="utf-8")
