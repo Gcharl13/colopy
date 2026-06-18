@@ -89,12 +89,14 @@ surrounded tile (mask 15) overflows into the next row. Pixel-verified rows:
   the "road sprites on terrain" bug.)
 - **river** bit 0x40: PHYS0 river row `0x00 + continuity mask` (green/tan banks).
   (NOT `0x96`, which is pixel-verified as a *corner-beach* coast sprite.)
-- **coast** (water tiles only): a GREEN shoreline composed from the pixel-verified
-  row-`0x70` 8×8 sub-tiles (`0x70` grass-left · `0x71` grass-top · `0x72` grass-
-  right · `0x73` grass-bottom · `0x74..0x77` water-in-corner). Four quadrants
-  (NW/NE/SE/SW); each shows grass bleeding from its land-facing edges. The sub-
-  tiles key palette-index-0 (black) to the ocean base. NOT the sand sprites
-  `0x96..0x99`, and never the black null-padding `0x6C..0x6F`.
+- **coast** (water tiles only): the real 4-quadrant sub-cell composer. The
+  connectivity builder (VICEROY analyse_connections / MAPEDIT 0xBC1E) walks the 8
+  neighbours; each LAND neighbour builds a 3-bit per-quadrant `config` (cardinal
+  sets bit2 in its quadrant + bit0 in the next; diagonal sets bit1). Each quadrant
+  q (NW,NE,SE,SW) blits the 8×8 sub-tile **`0x6C + config[q]*4 + q`** (frames
+  `0x6C..0x8B`). config 0 → the black null-padding `0x6C..0x6F`, colour-keyed to
+  ocean (no coast). Verified by config 1: q0→`0x70` grass-left, q1→`0x71` grass-
+  top, q2→`0x72` grass-right, q3→`0x73` grass-bottom. NOT the sand `0x96..0x99`.
 - Minimap: a 56×39 tile **window** at 1px/tile (MAPEDIT `_generate_mini` /
   `_blast_mini`), scroll origin = clamp(view-centre − {28,19}, …) following the
   view in both axes; each pixel = sampled representative colour (`_get_tile_colors`).

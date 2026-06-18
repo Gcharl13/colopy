@@ -281,51 +281,49 @@ static int feat_hi_nmask(const mp_map *m, int x, int y)
     return k;
 }
 
-/* ---- Coast: GREEN SHORE from the pixel-verified PHYS0 row-0x70 sub-tiles ----
- * Each 0x70..0x7F frame is an 8x8 grass/water coastline fragment (pixel-verified):
- *   0x70 grass-left   0x71 grass-top    0x72 grass-right  0x73 grass-bottom
- *   0x74 water-in-TL  0x75 water-in-TR  0x76 water-in-BR  0x77 water-in-BL
- * (water-in-CORNER = grass along the other two edges). A WATER tile composes four
- * 8x8 quadrants (NW/NE/SE/SW); each quadrant shows grass bleeding in from its
- * land-facing edges, drawn over the ocean base. This is the editor's GREEN
- * shoreline — the sand sprites 0x96..0x99 are NOT used, and the black null-
- * padding frames 0x6C..0x6F the previous composer indexed are never touched. */
+/* ---- Coast: the real 4-quadrant sub-cell composer ----
+ * Byte-verified from the connectivity builder (VICEROY analyse_connections /
+ * MAPEDIT 0xBC1E) + pixel-verified sub-tiles. For a WATER tile, walk the 8
+ * neighbours (N,NE,E,SE,S,SW,W,NW); each LAND neighbour contributes to a 3-bit
+ * per-quadrant config: a cardinal sets bit2(4) in the quadrant it leads and
+ * bit0(1) in the next quadrant; a diagonal sets bit1(2) in its quadrant. Then
+ * each of the 4 quadrants (NW,NE,SE,SW) blits the 8x8 sub-tile
+ *     PHYS0  0x6C + config[q]*4 + q
+ * spanning 0x6C..0x8B (32 frames). config 0 lands on the black null-padding
+ * 0x6C..0x6F, which the black colour-key turns into plain ocean (no coast) —
+ * so open-water quadrants draw nothing. Confirmed by config 1: q0->0x70 grass-
+ * left, q1->0x71 grass-top, q2->0x72 grass-right, q3->0x73 grass-bottom. */
 static void blit_coast_sub(fb *f, int px, int py, int tp, int qx, int qy, int idx)
 {
     blit_phys0_key(f, px + qx * tp / 16, py + qy * tp / 16, tp / 2, idx);
 }
 
+/* DIR8 order N,NE,E,SE,S,SW,W,NW */
+static const int CDX[8] = {  0,  1,  1,  1,  0, -1, -1, -1 };
+static const int CDY[8] = { -1, -1,  0,  1,  1,  1,  0, -1 };
+
 static void compose_coast(fb *f, int px, int py, int tp, const mp_map *m, int tx, int ty)
 {
-    int N  = !water_at(m, tx,   ty-1), S  = !water_at(m, tx,   ty+1);
-    int E  = !water_at(m, tx+1, ty),   W  = !water_at(m, tx-1, ty);
-    int NW = !water_at(m, tx-1, ty-1), NE = !water_at(m, tx+1, ty-1);
-    int SW = !water_at(m, tx-1, ty+1), SE = !water_at(m, tx+1, ty+1);
-    if (!(N||S||E||W||NW||NE||SE||SW)) return;     /* open ocean: plain base */
+    uint8_t cfg[4] = { 0, 0, 0, 0 };
+    int any = 0;
+    for (int dir = 0; dir < 8; dir++) {
+        if (water_at(m, tx + CDX[dir], ty + CDY[dir]))
+            continue;                       /* ocean neighbour -> no contribution */
+        any = 1;
+        if (dir & 1) {                      /* diagonal */
+            cfg[((dir + 1) & 6) >> 1] |= 2;
+        } else {                            /* cardinal */
+            cfg[dir >> 1]            |= 4;
+            cfg[((dir >> 1) + 1) & 3] |= 1;
+        }
+    }
+    if (!any) return;                       /* open ocean: plain base */
 
-    /* NW quadrant (outer edges N, W) at (0,0) */
-    if      (N && W) blit_coast_sub(f, px, py, tp, 0, 0, 0x76);  /* grass top+left */
-    else if (N)      blit_coast_sub(f, px, py, tp, 0, 0, 0x71);  /* grass top   */
-    else if (W)      blit_coast_sub(f, px, py, tp, 0, 0, 0x70);  /* grass left  */
-    else if (NW)     blit_coast_sub(f, px, py, tp, 0, 0, 0x76);  /* corner nub  */
-
-    /* NE quadrant (N, E) at (8,0) */
-    if      (N && E) blit_coast_sub(f, px, py, tp, 8, 0, 0x77);  /* grass top+right */
-    else if (N)      blit_coast_sub(f, px, py, tp, 8, 0, 0x71);
-    else if (E)      blit_coast_sub(f, px, py, tp, 8, 0, 0x72);  /* grass right */
-    else if (NE)     blit_coast_sub(f, px, py, tp, 8, 0, 0x77);
-
-    /* SE quadrant (S, E) at (8,8) */
-    if      (S && E) blit_coast_sub(f, px, py, tp, 8, 8, 0x74);  /* grass bot+right */
-    else if (S)      blit_coast_sub(f, px, py, tp, 8, 8, 0x73);  /* grass bottom */
-    else if (E)      blit_coast_sub(f, px, py, tp, 8, 8, 0x72);
-    else if (SE)     blit_coast_sub(f, px, py, tp, 8, 8, 0x74);
-
-    /* SW quadrant (S, W) at (0,8) */
-    if      (S && W) blit_coast_sub(f, px, py, tp, 0, 8, 0x75);  /* grass bot+left */
-    else if (S)      blit_coast_sub(f, px, py, tp, 0, 8, 0x73);
-    else if (W)      blit_coast_sub(f, px, py, tp, 0, 8, 0x70);
-    else if (SW)     blit_coast_sub(f, px, py, tp, 0, 8, 0x75);
+    /* quadrant order q=0..3 = NW,NE,SE,SW at tile-local (0,0)/(8,0)/(8,8)/(0,8) */
+    static const int qx[4] = { 0, 8, 8, 0 };
+    static const int qy[4] = { 0, 0, 8, 8 };
+    for (int q = 0; q < 4; q++)
+        blit_coast_sub(f, px, py, tp, qx[q], qy[q], 0x6C + cfg[q] * 4 + q);
 }
 
 /* Representative minimap colour for a tile, mirroring MAPEDIT's _get_tile_colors
