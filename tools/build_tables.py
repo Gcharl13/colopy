@@ -75,10 +75,12 @@ COLMAP: dict[str, dict] = {
     },
     "@UNIT": {
         "columns": ["name", "icon", "movement", "attack", "combat", "cargo",
-                     "size", "cost", "tools", "guns", "hull", "role", "ai_role_bits"],
+                     "size", "cost", "tools", "guns", "hull", "ai_role_bits"],
         "byte_anchors": ("loader @0x74EC3 maps cols -> runtime stat tables: "
                           "attack->0x5236, combat/DEFENSE->0x5235 (LAND, accessor x8), "
-                          "guns->0x523B, ->0x523C (ship). [B, RULINGS wave-10]"),
+                          "guns->0x523B, ->0x523C (ship). ai_role_bits = AI Role binary "
+                          "(Invade/Settle/Explore/Attack/Defend/Escort/Transp/Naval). "
+                          "[B, RULINGS wave-10]"),
     },
     "@BUILDING": {
         "columns": ["name", "cost", "tools_x10", "size", "min_colony", "upkeep"],
@@ -150,12 +152,16 @@ def build_table(key: str, sec: dict) -> dict:
         raw_rows = sec["rows"] if has_rows else [split_row(l) for l in nonblank]
         rows = [[clean_cell(c) for c in r] for r in raw_rows]
         cols = spec.get("columns")
-        if cols and all(len(r) >= len(cols) for r in rows):
-            body = [dict(zip(cols, r)) for r in rows]
+        # Name the columns as long as NO row is LONGER than the column list
+        # (zip+pad is then lossless). Short rows -- e.g. @CARGO's trailing
+        # name-only goods, @TRIBES' extra tribe names -- are padded with "".
+        # Only when a row would overflow the named columns do we keep raw rows.
+        if cols and rows and all(len(r) <= len(cols) for r in rows):
+            body = [dict(zip(cols, r + [""] * (len(cols) - len(r)))) for r in rows]
             columns = cols
         else:
-            body = rows               # keep raw; columns not confidently named
-            columns = cols            # may be None or "best effort" (length mismatch)
+            body = rows               # keep raw; a row overflows the named columns
+            columns = cols            # may be None or "best effort"
         return {
             "kind": "csv",
             "source": sec.get("_src"),

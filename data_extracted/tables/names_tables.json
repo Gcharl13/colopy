@@ -1289,33 +1289,37 @@
       "x3",
       "y3"
     ],
-    "columns_named": false,
+    "columns_named": true,
     "byte_anchors": "scenario bounds; legend 'map file, start, end, x0..y3' [B legend]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 2,
     "rows": [
-      [
-        "AMER2",
-        "34",
-        "20",
-        "39",
-        "10",
-        "47",
-        "61",
-        "50",
-        "33"
-      ],
-      [
-        "AMERICA",
-        "56",
-        "27",
-        "67",
-        "12",
-        "66",
-        "42",
-        "84",
-        "65"
-      ]
+      {
+        "map_file": "AMER2",
+        "start": "34",
+        "end": "20",
+        "x0": "39",
+        "y0": "10",
+        "x1": "47",
+        "y1": "61",
+        "x2": "50",
+        "y2": "33",
+        "x3": "",
+        "y3": ""
+      },
+      {
+        "map_file": "AMERICA",
+        "start": "56",
+        "end": "27",
+        "x0": "67",
+        "y0": "12",
+        "x1": "66",
+        "y1": "42",
+        "x2": "84",
+        "y2": "65",
+        "x3": "",
+        "y3": ""
+      }
     ]
   },
   "@JOB": {
@@ -1535,215 +1539,251 @@
       "attrition",
       "volatility"
     ],
-    "columns_named": false,
+    "columns_named": true,
     "byte_anchors": "market price model inputs; per-turn drift fn behind overlay thunk 0x181F:0x9A4 [TBD]; values are primary [B]; goods index = PowerRecord market arrays order [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 20,
     "rows": [
-      [
-        "Food",
-        "1",
-        "3",
-        "1",
-        "6",
-        "7",
-        "3",
-        "2",
-        "-1",
-        "0"
-      ],
-      [
-        "Sugar",
-        "4",
-        "7",
-        "3",
-        "7",
-        "1",
-        "4",
-        "6",
-        "-8",
-        "1"
-      ],
-      [
-        "Tobacco",
-        "3",
-        "5",
-        "2",
-        "5",
-        "1",
-        "4",
-        "8",
-        "-10",
-        "1"
-      ],
-      [
-        "Cotton",
-        "2",
-        "5",
-        "2",
-        "5",
-        "1",
-        "4",
-        "6",
-        "-11",
-        "1"
-      ],
-      [
-        "Furs",
-        "4",
-        "6",
-        "2",
-        "6",
-        "1",
-        "4",
-        "20",
-        "-13",
-        "1"
-      ],
-      [
-        "Lumber",
-        "2",
-        "2",
-        "2",
-        "2",
-        "4",
-        "3",
-        "2",
-        "0",
-        "0"
-      ],
-      [
-        "Ore",
-        "3",
-        "6",
-        "2",
-        "6",
-        "2",
-        "2",
-        "4",
-        "-7",
-        "0"
-      ],
-      [
-        "Silver",
-        "20",
-        "20",
-        "2",
-        "20",
-        "0",
-        "8",
-        "1",
-        "-8",
-        "2"
-      ],
-      [
-        "Horses",
-        "2",
-        "3",
-        "2",
-        "11",
-        "0",
-        "3",
-        "2",
-        "-3",
-        "0"
-      ],
-      [
-        "Rum",
-        "11",
-        "13",
-        "1",
-        "20",
-        "0",
-        "4",
-        "4",
-        "-12",
-        "1"
-      ],
-      [
-        "Cigars",
-        "11",
-        "13",
-        "1",
-        "20",
-        "0",
-        "4",
-        "4",
-        "-11",
-        "1"
-      ],
-      [
-        "Cloth",
-        "11",
-        "13",
-        "1",
-        "20",
-        "0",
-        "4",
-        "4",
-        "-13",
-        "1"
-      ],
-      [
-        "Coats",
-        "11",
-        "13",
-        "1",
-        "20",
-        "0",
-        "4",
-        "4",
-        "-11",
-        "1"
-      ],
-      [
-        "Trade Goods",
-        "2",
-        "3",
-        "2",
-        "12",
-        "0",
-        "2",
-        "3",
-        "4",
-        "0"
-      ],
-      [
-        "Tools",
-        "2",
-        "2",
-        "2",
-        "9",
-        "0",
-        "2",
-        "2",
-        "5",
-        "0"
-      ],
-      [
-        "Muskets",
-        "3",
-        "3",
-        "2",
-        "20",
-        "0",
-        "2",
-        "2",
-        "6",
-        "0"
-      ],
-      [
-        "Hammers"
-      ],
-      [
-        "Crosses"
-      ],
-      [
-        "Liberty Bells"
-      ],
-      [
-        "Flags"
-      ]
+      {
+        "name": "Food",
+        "price_start1": "1",
+        "price_start2": "3",
+        "drift_low": "1",
+        "drift_high": "6",
+        "burden": "7",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "-1",
+        "volatility": "0"
+      },
+      {
+        "name": "Sugar",
+        "price_start1": "4",
+        "price_start2": "7",
+        "drift_low": "3",
+        "drift_high": "7",
+        "burden": "1",
+        "rise": "4",
+        "fall": "6",
+        "attrition": "-8",
+        "volatility": "1"
+      },
+      {
+        "name": "Tobacco",
+        "price_start1": "3",
+        "price_start2": "5",
+        "drift_low": "2",
+        "drift_high": "5",
+        "burden": "1",
+        "rise": "4",
+        "fall": "8",
+        "attrition": "-10",
+        "volatility": "1"
+      },
+      {
+        "name": "Cotton",
+        "price_start1": "2",
+        "price_start2": "5",
+        "drift_low": "2",
+        "drift_high": "5",
+        "burden": "1",
+        "rise": "4",
+        "fall": "6",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Furs",
+        "price_start1": "4",
+        "price_start2": "6",
+        "drift_low": "2",
+        "drift_high": "6",
+        "burden": "1",
+        "rise": "4",
+        "fall": "20",
+        "attrition": "-13",
+        "volatility": "1"
+      },
+      {
+        "name": "Lumber",
+        "price_start1": "2",
+        "price_start2": "2",
+        "drift_low": "2",
+        "drift_high": "2",
+        "burden": "4",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "0",
+        "volatility": "0"
+      },
+      {
+        "name": "Ore",
+        "price_start1": "3",
+        "price_start2": "6",
+        "drift_low": "2",
+        "drift_high": "6",
+        "burden": "2",
+        "rise": "2",
+        "fall": "4",
+        "attrition": "-7",
+        "volatility": "0"
+      },
+      {
+        "name": "Silver",
+        "price_start1": "20",
+        "price_start2": "20",
+        "drift_low": "2",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "8",
+        "fall": "1",
+        "attrition": "-8",
+        "volatility": "2"
+      },
+      {
+        "name": "Horses",
+        "price_start1": "2",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "11",
+        "burden": "0",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "-3",
+        "volatility": "0"
+      },
+      {
+        "name": "Rum",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-12",
+        "volatility": "1"
+      },
+      {
+        "name": "Cigars",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Cloth",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-13",
+        "volatility": "1"
+      },
+      {
+        "name": "Coats",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Trade Goods",
+        "price_start1": "2",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "12",
+        "burden": "0",
+        "rise": "2",
+        "fall": "3",
+        "attrition": "4",
+        "volatility": "0"
+      },
+      {
+        "name": "Tools",
+        "price_start1": "2",
+        "price_start2": "2",
+        "drift_low": "2",
+        "drift_high": "9",
+        "burden": "0",
+        "rise": "2",
+        "fall": "2",
+        "attrition": "5",
+        "volatility": "0"
+      },
+      {
+        "name": "Muskets",
+        "price_start1": "3",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "2",
+        "fall": "2",
+        "attrition": "6",
+        "volatility": "0"
+      },
+      {
+        "name": "Hammers",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Crosses",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Liberty Bells",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Flags",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      }
     ]
   },
   "@UNIT": {
@@ -1766,336 +1806,335 @@
       "tools",
       "guns",
       "hull",
-      "role",
       "ai_role_bits"
     ],
-    "columns_named": false,
-    "byte_anchors": "loader @0x74EC3 maps cols -> runtime stat tables: attack->0x5236, combat/DEFENSE->0x5235 (LAND, accessor x8), guns->0x523B, ->0x523C (ship). [B, RULINGS wave-10]",
+    "columns_named": true,
+    "byte_anchors": "loader @0x74EC3 maps cols -> runtime stat tables: attack->0x5236, combat/DEFENSE->0x5235 (LAND, accessor x8), guns->0x523B, ->0x523C (ship). ai_role_bits = AI Role binary (Invade/Settle/Explore/Attack/Defend/Escort/Transp/Naval). [B, RULINGS wave-10]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 23,
     "rows": [
-      [
-        "Colonists",
-        "101",
-        "1",
-        "0",
-        "1",
-        "0",
-        "1",
-        "1",
-        "0",
-        "0",
-        "0",
-        "01000000"
-      ],
-      [
-        "Soldiers",
-        "103",
-        "1",
-        "2",
-        "2",
-        "0",
-        "1",
-        "2",
-        "0",
-        "0",
-        "0",
-        "00011100"
-      ],
-      [
-        "Pioneers",
-        "102",
-        "1",
-        "0",
-        "1",
-        "0",
-        "1",
-        "2",
-        "0",
-        "0",
-        "0",
-        "01000000"
-      ],
-      [
-        "Missionaries",
-        "106",
-        "2",
-        "0",
-        "1",
-        "0",
-        "1",
-        "1",
-        "0",
-        "0",
-        "0",
-        "00100000"
-      ],
-      [
-        "Dragoons",
-        "105",
-        "4",
-        "3",
-        "3",
-        "0",
-        "1",
-        "3",
-        "0",
-        "0",
-        "0",
-        "00111100"
-      ],
-      [
-        "Scouts",
-        "104",
-        "4",
-        "1",
-        "1",
-        "0",
-        "1",
-        "2",
-        "0",
-        "0",
-        "0",
-        "01100100"
-      ],
-      [
-        "Regulars",
-        "126",
-        "1",
-        "5",
-        "5",
-        "0",
-        "1",
-        "3",
-        "0",
-        "0",
-        "0",
-        "00011100"
-      ],
-      [
-        "Cont. Cav.",
-        "130",
-        "4",
-        "5",
-        "5",
-        "0",
-        "1",
-        "3",
-        "0",
-        "0",
-        "0",
-        "00011100"
-      ],
-      [
-        "Cavalry",
-        "127",
-        "4",
-        "6",
-        "6",
-        "0",
-        "1",
-        "4",
-        "0",
-        "0",
-        "0",
-        "00011100"
-      ],
-      [
-        "Cont. Army",
-        "129",
-        "1",
-        "4",
-        "4",
-        "0",
-        "1",
-        "3",
-        "0",
-        "0",
-        "0",
-        "00011100"
-      ],
-      [
-        "Treasure",
-        "17",
-        "1",
-        "0",
-        "0",
-        "0",
-        "6",
-        "4",
-        "0",
-        "0",
-        "0",
-        "00000000"
-      ],
-      [
-        "Artillery",
-        "10",
-        "1",
-        "7",
-        "5",
-        "0",
-        "1",
-        "6",
-        "4",
-        "0",
-        "0",
-        "00011000"
-      ],
-      [
-        "Wagon Train",
-        "9",
-        "2",
-        "0",
-        "1",
-        "2",
-        "99",
-        "1",
-        "0",
-        "0",
-        "0",
-        "00000000"
-      ],
-      [
-        "Caravel",
-        "6",
-        "4",
-        "0",
-        "2",
-        "2",
-        "99",
-        "4",
-        "4",
-        "0",
-        "4",
-        "10100010"
-      ],
-      [
-        "Merchantman",
-        "7",
-        "5",
-        "0",
-        "6",
-        "4",
-        "99",
-        "6",
-        "8",
-        "1",
-        "8",
-        "10000010"
-      ],
-      [
-        "Galleon",
-        "8",
-        "6",
-        "0",
-        "10",
-        "6",
-        "99",
-        "10",
-        "10",
-        "4",
-        "20",
-        "10000010"
-      ],
-      [
-        "Privateer",
-        "15",
-        "8",
-        "8",
-        "8",
-        "2",
-        "99",
-        "8",
-        "12",
-        "4",
-        "12",
-        "00000001"
-      ],
-      [
-        "Frigate",
-        "16",
-        "6",
-        "16",
-        "16",
-        "4",
-        "99",
-        "16",
-        "20",
-        "12",
-        "32",
-        "10000001"
-      ],
-      [
-        "Man-O-War",
-        "128",
-        "5",
-        "24",
-        "24",
-        "6",
-        "99",
-        "32",
-        "90",
-        "32",
-        "64",
-        "10000001"
-      ],
-      [
-        "Braves",
-        "110",
-        "1",
-        "1",
-        "1",
-        "0",
-        "0",
-        "1",
-        "0",
-        "0",
-        "0",
-        "00111000"
-      ],
-      [
-        "Armed Braves",
-        "111",
-        "1",
-        "2",
-        "2",
-        "0",
-        "0",
-        "2",
-        "0",
-        "0",
-        "0",
-        "00111000"
-      ],
-      [
-        "Mtd. Braves",
-        "112",
-        "4",
-        "2",
-        "2",
-        "0",
-        "0",
-        "2",
-        "0",
-        "0",
-        "0",
-        "00111000"
-      ],
-      [
-        "Mtd. Warriors",
-        "113",
-        "4",
-        "3",
-        "3",
-        "0",
-        "0",
-        "3",
-        "0",
-        "0",
-        "0",
-        "00111000"
-      ]
+      {
+        "name": "Colonists",
+        "icon": "101",
+        "movement": "1",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01000000"
+      },
+      {
+        "name": "Soldiers",
+        "icon": "103",
+        "movement": "1",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Pioneers",
+        "icon": "102",
+        "movement": "1",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01000000"
+      },
+      {
+        "name": "Missionaries",
+        "icon": "106",
+        "movement": "2",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00100000"
+      },
+      {
+        "name": "Dragoons",
+        "icon": "105",
+        "movement": "4",
+        "attack": "3",
+        "combat": "3",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111100"
+      },
+      {
+        "name": "Scouts",
+        "icon": "104",
+        "movement": "4",
+        "attack": "1",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01100100"
+      },
+      {
+        "name": "Regulars",
+        "icon": "126",
+        "movement": "1",
+        "attack": "5",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cont. Cav.",
+        "icon": "130",
+        "movement": "4",
+        "attack": "5",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cavalry",
+        "icon": "127",
+        "movement": "4",
+        "attack": "6",
+        "combat": "6",
+        "cargo": "0",
+        "size": "1",
+        "cost": "4",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cont. Army",
+        "icon": "129",
+        "movement": "1",
+        "attack": "4",
+        "combat": "4",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Treasure",
+        "icon": "17",
+        "movement": "1",
+        "attack": "0",
+        "combat": "0",
+        "cargo": "0",
+        "size": "6",
+        "cost": "4",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00000000"
+      },
+      {
+        "name": "Artillery",
+        "icon": "10",
+        "movement": "1",
+        "attack": "7",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "6",
+        "tools": "4",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011000"
+      },
+      {
+        "name": "Wagon Train",
+        "icon": "9",
+        "movement": "2",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "2",
+        "size": "99",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00000000"
+      },
+      {
+        "name": "Caravel",
+        "icon": "6",
+        "movement": "4",
+        "attack": "0",
+        "combat": "2",
+        "cargo": "2",
+        "size": "99",
+        "cost": "4",
+        "tools": "4",
+        "guns": "0",
+        "hull": "4",
+        "ai_role_bits": "10100010"
+      },
+      {
+        "name": "Merchantman",
+        "icon": "7",
+        "movement": "5",
+        "attack": "0",
+        "combat": "6",
+        "cargo": "4",
+        "size": "99",
+        "cost": "6",
+        "tools": "8",
+        "guns": "1",
+        "hull": "8",
+        "ai_role_bits": "10000010"
+      },
+      {
+        "name": "Galleon",
+        "icon": "8",
+        "movement": "6",
+        "attack": "0",
+        "combat": "10",
+        "cargo": "6",
+        "size": "99",
+        "cost": "10",
+        "tools": "10",
+        "guns": "4",
+        "hull": "20",
+        "ai_role_bits": "10000010"
+      },
+      {
+        "name": "Privateer",
+        "icon": "15",
+        "movement": "8",
+        "attack": "8",
+        "combat": "8",
+        "cargo": "2",
+        "size": "99",
+        "cost": "8",
+        "tools": "12",
+        "guns": "4",
+        "hull": "12",
+        "ai_role_bits": "00000001"
+      },
+      {
+        "name": "Frigate",
+        "icon": "16",
+        "movement": "6",
+        "attack": "16",
+        "combat": "16",
+        "cargo": "4",
+        "size": "99",
+        "cost": "16",
+        "tools": "20",
+        "guns": "12",
+        "hull": "32",
+        "ai_role_bits": "10000001"
+      },
+      {
+        "name": "Man-O-War",
+        "icon": "128",
+        "movement": "5",
+        "attack": "24",
+        "combat": "24",
+        "cargo": "6",
+        "size": "99",
+        "cost": "32",
+        "tools": "90",
+        "guns": "32",
+        "hull": "64",
+        "ai_role_bits": "10000001"
+      },
+      {
+        "name": "Braves",
+        "icon": "110",
+        "movement": "1",
+        "attack": "1",
+        "combat": "1",
+        "cargo": "0",
+        "size": "0",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Armed Braves",
+        "icon": "111",
+        "movement": "1",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "0",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Mtd. Braves",
+        "icon": "112",
+        "movement": "4",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "0",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Mtd. Warriors",
+        "icon": "113",
+        "movement": "4",
+        "attack": "3",
+        "combat": "3",
+        "cargo": "0",
+        "size": "0",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      }
     ]
   },
   "@ORDERS": {
@@ -2376,139 +2415,193 @@
       "tech_level",
       "color"
     ],
-    "columns_named": false,
+    "columns_named": true,
     "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; color col verified via capital-raze note (Aztec=149, Inca=97) DATA_MODEL [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 26,
     "rows": [
-      [
-        "Incas",
-        "Inca",
-        "Jewelled Relics",
-        "3",
-        "97"
-      ],
-      [
-        "Aztecs",
-        "Aztec",
-        "Gold Bars",
-        "2",
-        "149"
-      ],
-      [
-        "Arawaks",
-        "Arawak",
-        "Bone Jewelry",
-        "1",
-        "54"
-      ],
-      [
-        "Iroquois",
-        "Iroquois",
-        "Wood Carvings",
-        "1",
-        "87"
-      ],
-      [
-        "Cherokee",
-        "Cherokee",
-        "Turquoise",
-        "1",
-        "67"
-      ],
-      [
-        "Apache",
-        "Apache",
-        "Beads",
-        "0",
-        "111"
-      ],
-      [
-        "Sioux",
-        "Sioux",
-        "Beads",
-        "0",
-        "118"
-      ],
-      [
-        "Tupi",
-        "Tupi",
-        "Gems",
-        "0",
-        "71"
-      ],
-      [
-        "Maya",
-        "Maya"
-      ],
-      [
-        "Toltecs",
-        "Toltec"
-      ],
-      [
-        "Kiowa",
-        "Kiowa"
-      ],
-      [
-        "Hurons",
-        "Huron"
-      ],
-      [
-        "Hopi",
-        "Hopi"
-      ],
-      [
-        "Navajo",
-        "Navajo"
-      ],
-      [
-        "Cheyenne",
-        "Cheyenne"
-      ],
-      [
-        "Cree",
-        "Cree"
-      ],
-      [
-        "Algonquin",
-        "Algonquin"
-      ],
-      [
-        "Powhatan",
-        "Powhatan"
-      ],
-      [
-        "Delaware",
-        "Delaware"
-      ],
-      [
-        "Shawnee",
-        "Shawnee"
-      ],
-      [
-        "Illinois",
-        "Illinois"
-      ],
-      [
-        "Chickasaw",
-        "Chickasaw"
-      ],
-      [
-        "Choctaw",
-        "Choctaw"
-      ],
-      [
-        "Seminole",
-        "Seminole"
-      ],
-      [
-        "Mohicans",
-        "Mohican"
-      ],
-      [
-        "Zapotec",
-        "Zapotec"
-      ]
+      {
+        "name": "Incas",
+        "singular": "Inca",
+        "treasure": "Jewelled Relics",
+        "tech_level": "3",
+        "color": "97"
+      },
+      {
+        "name": "Aztecs",
+        "singular": "Aztec",
+        "treasure": "Gold Bars",
+        "tech_level": "2",
+        "color": "149"
+      },
+      {
+        "name": "Arawaks",
+        "singular": "Arawak",
+        "treasure": "Bone Jewelry",
+        "tech_level": "1",
+        "color": "54"
+      },
+      {
+        "name": "Iroquois",
+        "singular": "Iroquois",
+        "treasure": "Wood Carvings",
+        "tech_level": "1",
+        "color": "87"
+      },
+      {
+        "name": "Cherokee",
+        "singular": "Cherokee",
+        "treasure": "Turquoise",
+        "tech_level": "1",
+        "color": "67"
+      },
+      {
+        "name": "Apache",
+        "singular": "Apache",
+        "treasure": "Beads",
+        "tech_level": "0",
+        "color": "111"
+      },
+      {
+        "name": "Sioux",
+        "singular": "Sioux",
+        "treasure": "Beads",
+        "tech_level": "0",
+        "color": "118"
+      },
+      {
+        "name": "Tupi",
+        "singular": "Tupi",
+        "treasure": "Gems",
+        "tech_level": "0",
+        "color": "71"
+      },
+      {
+        "name": "Maya",
+        "singular": "Maya",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Toltecs",
+        "singular": "Toltec",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Kiowa",
+        "singular": "Kiowa",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Hurons",
+        "singular": "Huron",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Hopi",
+        "singular": "Hopi",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Navajo",
+        "singular": "Navajo",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Cheyenne",
+        "singular": "Cheyenne",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Cree",
+        "singular": "Cree",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Algonquin",
+        "singular": "Algonquin",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Powhatan",
+        "singular": "Powhatan",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Delaware",
+        "singular": "Delaware",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Shawnee",
+        "singular": "Shawnee",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Illinois",
+        "singular": "Illinois",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Chickasaw",
+        "singular": "Chickasaw",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Choctaw",
+        "singular": "Choctaw",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Seminole",
+        "singular": "Seminole",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Mohicans",
+        "singular": "Mohican",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      },
+      {
+        "name": "Zapotec",
+        "singular": "Zapotec",
+        "treasure": "",
+        "tech_level": "",
+        "color": ""
+      }
     ]
   },
   "@FOUNDING": {

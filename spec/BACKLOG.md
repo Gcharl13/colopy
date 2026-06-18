@@ -10,9 +10,9 @@ secondary mechanics.
 
 | # | Gap | Disasm entry point(s) | Upgrades spec doc | Notes |
 |---|-----|-----------------------|-------------------|-------|
-| 1 | Combat terrain/fort bonus **table values** + demotion ladder | `func_05CA7E` (decider; +50% chain located), demotion table reads `UnitRecord +0x15` | `systems/combat.md` §3/§7 | Land odds `ATK/(ATK+DEF)` now **B**; remaining: per-terrain/fort values & demotion ladder + capture branch. |
+| 1 | Combat terrain/fort bonus **table values** + capture branch | `func_05CA7E` (decider; +50% `·3/2` chain located); ladder + override at `func_05B2C2` `0x5B5AA..0x5B61F` | `systems/combat.md` §3/§7 | Land odds `ATK/(ATK+DEF)` **B**; **demotion ladder now B** (1→0,4→1,7→9,8→6,9→0,else kill; `+0x15==24`→3). Remaining: per-terrain/fort byte values in `func_05CA7E`; capture-vs-destroy branch; `+0x15==24` profession semantics. |
 | 2 | Market price drift | thunk `0x181F:0x9A4`; `PowerRecord +0x4C[16]`; `0x53EA` | `systems/market.md` §3 | Commodity set B; per-turn drift formula TBD. |
-| 3 | Founding-Father acquisition | `func_075AF8` + bell-cost table (NAMES.TXT thresholds) | `systems/founding_fathers.md` | 25 FFs cataloged; bell-cost computation TBD. |
+| 3 | Founding-Father acquisition | ~~`func_075AF8`~~ → bell-cost curve **`func_03C282`** (file `0x03C282`); selection-weight consumer of in-mem FF table `DGROUP:0x9652` | `systems/founding_fathers.md` | Bell pool (`PowerRecord +0x0C/+0x0E/+0x14`) + **bell-cost curve now BYTE_VERIFIED** (2026-06-18). Remaining: per-father selection weighting + concrete effect bindings. (`func_075AF8` offset was stale — not a function entry.) |
 | 4 | Tax **60-vs-hard-cap** + pretext selection | find the `tax_pct` clamp write site; trace dispatcher feeding `@KINGTAX` | `systems/king.md` §3/§7 | Delta formula now **B** (`func_034AE0` read); `0x3C`=60 threshold **B** (`func_0349F4`); is 60 the clamp or a gate? reconcile manual's 75. |
 | 5 | REF growth threshold | writer of REF globals `0x53DA..0x53E0` and of `PowerRecord +0x22` (+18/turn) | `systems/king.md` §7 | REF = 4 globals (B); the spend rule that adds a unit is unknown. |
 | 4b | Colony production formula + SoL | production routine; confirm SoL dividend/divisor offsets at read site | `systems/colony.md` §3 | Record stride + input data (@BUILDING/@JOB/@TERRAIN) B; arithmetic TBD. |
