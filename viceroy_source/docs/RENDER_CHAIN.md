@@ -1,3 +1,6 @@
+> **⚠️ SUPERSEDED — canonical: `docs/RENDER_CHAIN.md` + `docs/COLONY_RENDER_CHAIN.md`.**
+> See `spec/README.md`. Kept for history; defer to the canonical copies.
+
 > **>>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<**
 >
 > The formulas, tables, and specific numbers in this document are reconstructed

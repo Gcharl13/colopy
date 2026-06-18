@@ -1,5 +1,8 @@
 # VICEROY.EXE Architecture
 
+> **⚠️ SUPERSEDED — canonical: `docs/ARCHITECTURE.md`.** See `spec/README.md`.
+> Kept for history; defer to the canonical copy on any conflict.
+
 ## High-level structure
 
 VICEROY.EXE is a 494,910-byte 16-bit DOS executable using:

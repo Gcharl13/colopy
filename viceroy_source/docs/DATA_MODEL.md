@@ -1,3 +1,7 @@
+> **⚠️ SUPERSEDED — canonical: `docs/DATA_MODEL.md`** (runtime-verified record
+> layouts). See the master index `spec/README.md`. This copy is kept as a
+> historical reconstruction; do not cite its offsets where they conflict.
+
 > **>>> RECONSTRUCTED — NOT BYTE-VERIFIED <<<**
 >
 > The formulas, tables, and specific numbers in this document are reconstructed

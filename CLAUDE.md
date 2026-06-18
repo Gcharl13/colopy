@@ -16,9 +16,11 @@ offset in a DOS `.EXE`, a `NAMES.TXT`/`GAME.TXT` field, or a recorded ruling in
 not invented. Conflicts are resolved by `notes/TRUTH_HIERARCHY.md` and the
 ruling is written down — do not re-litigate settled disputes in conversation.
 
-Orientation for a new session: this file → `notes/TRUTH_HIERARCHY.md` →
-`viceroy_source/DOC_INDEX.md` → `viceroy_source/VERIFICATION_LEDGER.md` →
-`STATUS.md` (current state) and `AUDIT.md` (what is correct vs misleading).
+Orientation for a new session: this file → `METHODOLOGY.md` (the three-layer
+model: evidence → **spec** → implementation) → `spec/README.md` (the
+specification = source of truth) → `notes/TRUTH_HIERARCHY.md` → `STATUS.md`
+(current state) and `AUDIT.md` (what is correct vs misleading). Evidence-layer
+detail: `viceroy_source/` (now reclassified — see `viceroy_source/ROLE.md`).
 
 ## Trust order (summary; full table in `notes/TRUTH_HIERARCHY.md`)
 

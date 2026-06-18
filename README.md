@@ -13,6 +13,12 @@ Every reconstructed value traces to a **byte-verified** artifact in the original
 binary — a file offset, a `NAMES.TXT` field, or a recorded ruling. **Never guess.**
 Un-cited values are marked `TBD`, not invented.
 
+**Method:** the project follows a three-layer model — **evidence → specification
+→ implementation** — see [`METHODOLOGY.md`](METHODOLOGY.md). The **specification**
+([`spec/README.md`](spec/README.md)) is the source of truth and the entry point
+for any port; `viceroy_source/` is reclassified as *evidence* that feeds it
+([`viceroy_source/ROLE.md`](viceroy_source/ROLE.md)).
+
 **Orientation:** [`CLAUDE.md`](CLAUDE.md) holds the hard rules; [`STATUS.md`](STATUS.md)
 is the current-state dashboard; [`AUDIT.md`](AUDIT.md) records what is correct vs
 misleading and the **corrected** completion metrics (the older "100% in citable

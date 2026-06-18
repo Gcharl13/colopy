@@ -6,6 +6,11 @@
 > misleading information audit and **corrected metrics** (the headline "100% in
 > citable C" / "99.36% identified" figures are syntactic, not semantic), see
 > [`AUDIT.md`](AUDIT.md).
+>
+> **Methodology (2026-06-18):** the project now follows a three-layer model —
+> evidence → **specification** → implementation — see [`METHODOLOGY.md`](METHODOLOGY.md).
+> The specification (`spec/README.md`) is the source of truth; `viceroy_source/`
+> is reclassified as evidence (`viceroy_source/ROLE.md`).
 
 Live snapshot of project completion. Refresh by running:
 
