@@ -1,0 +1,58 @@
+# Map System & Terrain
+
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+
+**Overall confidence:** terrain tables + `.MP` layout + auto-forest rule
+`BYTE_VERIFIED`; per-yield semantics partly `RECONSTRUCTED`.
+**Canonical primary:** `data_extracted/text/NAMES_sections.json`
+(@UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE), `formats/MP_FORMAT.md`,
+auto-forest `func_006204` (file `0x6204`).
+
+## 1. Purpose & behavior
+The world is a grid of terrain tiles; each tile has a base terrain type, optional
+river and forest overlays, and may carry a special resource. Terrain determines
+economic yields, movement cost, and combat modifiers (`docs/GAME_MANUAL.md`).
+
+## 2. State & data
+**`.MP` file layout** (`formats/MP_FORMAT.md`, BYTE_VERIFIED):
+- Header: `width:word`, `height:word` (AMER2 = 56 × 70).
+- Tile data: width × height bytes, row-major (y outer, x inner). Per byte:
+  bits 0–4 = terrain id (0..27); bit 5 = river overlay; bit 6 = forest/special
+  overlay; bit 7 = ? (possibly "discovered").
+- Then ColonyRecord / UnitRecord / NativeSettlement arrays.
+
+**Terrain id authority = `NAMES.TXT` (`$TERRAIN`), NOT `mapedit.c`** (CLAUDE.md hard rule 1).
+- `@UNFORESTED` (ids ~0..7): Tundra, Desert, Plains, Prairie, Grassland, Savannah, Marsh, Swamp. **B**
+- `@FORESTED` (forest variants): Boreal, Scrub, Mixed, Broadleaf, Conifer, Tropical, Wetland, Rain. **B**
+- `@OTHER`: Arctic, Ocean, Sea Lane, Mountains, Hills. **B**
+- `@OTHER_NAMES`: Forest, River, Major River, Minor River, Unexplored. **B**
+- `@RESOURCE`: Depleted Mine, Oasis, Wheat, Prime Cotton/Tobacco/Sugar, Minerals,
+  Fishery, Beaver, Game, Prime Timber, Silver Deposit, Ore Deposit (each w/ a value byte). **B**
+
+Each terrain row in NAMES is a CSV of numeric yield/movement columns; the exact
+column semantics (which column = food/sugar/.../movement/defense) are **TBD** —
+do not assume mapping. → `spec/BACKLOG.md`.
+
+## 3. Formulas & rules
+- **Auto-forest** (CLAUDE.md hard rule 3): read raw byte, mask `& 0x1F`, then
+  forested variants occupy terrain ids **8..23** (`func_006204` / file `0x6204`,
+  BYTE_VERIFIED; cross-cited `docs/GAME_INDEX_TABLES.md:377`).
+- **Sea-lane column** (hard rule 2): right-edge map column base terrain id = **26 (Ocean)**; never desert.
+- **Rivers vs coast** (hard rule 4): `PHYS0.SS` rows `0x01`/`0x11` are rivers, not coast.
+- Per-terrain yield/movement/defense numbers: **TBD** (NAMES columns not yet decoded).
+
+## 4. UI
+Tiles drawn by `func_O514 → func_O513 → func_O512` (CLAUDE.md hard rule 7;
+`docs/COLONY_RENDER_CHAIN.md`). Terrain-info popup on `[F1]` (manual). Layout `TBD`.
+
+## 5. Evidence
+- `data_extracted/text/NAMES_sections.json` — @UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE. **B**
+- `formats/MP_FORMAT.md` — header + tile-byte bitfield + record arrays. **B**
+- `docs/GAME_INDEX_TABLES.md:377` — auto-forest 8..23 at file 0x6204. **B**
+- `docs/GAME_MANUAL.md` — terrain function, improvements, polar-ice bounds. **R**
+
+## 6. Open questions (TBD)
+1. Decode the per-terrain CSV columns in `@UNFORESTED/@FORESTED/@OTHER` (yield/move/defense).
+2. Confirm bit 7 meaning of the tile byte; confirm record-array boundaries from the `.MP` read function.
+3. Map `@RESOURCE` entries to the bonus they grant and to placement rules.
+4. Terrain id 24/25/27 assignments (Arctic base, Mountains, Hills, Sea Lane=26) — confirm full 0..27 table.

@@ -1,0 +1,33 @@
+# Index Tables — Sprite & Text Cross-Reference
+
+> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+
+**Canonical primary:** `docs/GAME_INDEX_TABLES.md` (master mapping reference — CANONICAL). This stub summarizes the mappings it holds and points to it; it does **not** copy the index tables.
+
+## 1. Summary
+
+`docs/GAME_INDEX_TABLES.md` is the single canonical cross-reference linking the game's data taxonomies (NAMES.TXT `@`-sections), the encyclopedia (PEDIA.TXT `@KEY` indices), the runtime records (PowerRecord market arrays etc.), and the renderer's sprite-frame lookups. It exists so that a given entity (cargo type, unit, building, terrain) can be traced from its data-table row to its sprite frame and its string offset.
+
+## 2. Contents
+
+| Mapping | What it indexes | Source / target | Tier |
+|---------|-----------------|-----------------|------|
+| 16 Cargo / Commodity | NAMES `@CARGO` row ↔ PEDIA `@CARGO0..15` ↔ PowerRecord market byte `+0x4C+i` ↔ ICONS sprite range; 9 price params per cargo + boycott bit (`+0x20` u16) | `docs/GAME_INDEX_TABLES.md` | **B** |
+| Units | NAMES `@UNIT` row index (0..23) → UnitRecord `+0x00` unit_type → renderer sprite frame (foot units 100–105+109; ships 5–7/14–15/127 per CLAUDE.md) | `docs/GAME_INDEX_TABLES.md` | **B/A** |
+| Buildings | NAMES `@BUILDING` row → colony-screen sprite frame | `docs/GAME_INDEX_TABLES.md` | **B/A** |
+| Terrain | raw map byte (`& 0x1F`, auto-forest 8..23 per CLAUDE.md hard rule 3) → terrain id → PHYS0.SS frame | `docs/GAME_INDEX_TABLES.md`, `formats/MP_FORMAT.md` | **B/A** |
+| Text / Colonizopedia | PEDIA `@KEY` (`@FATHERN`, `@CARGON`, …) → string offset / encyclopedia entry | `docs/GAME_INDEX_TABLES.md`, `docs/PEDIA_TXT_CATALOG.md` | **B** |
+
+Index counts and the exact per-cargo parameter table (Name, Start1/2, Low, High, Burden, Rise, Fall, Attrition, Volatility, boycott bit) live in `docs/GAME_INDEX_TABLES.md` — read them there.
+
+## 3. Evidence
+
+- `docs/GAME_INDEX_TABLES.md` — generated 2026-05-05 from PEDIA.TXT title extraction; cargo params byte-verified, boycott bitfield verified for Food. **B**
+- `data_extracted/text/NAMES_sections.json` — the `@`-section data tables being indexed. **B**
+- `data_extracted/text/PEDIA_sections.json` — `@KEY` entries. **B**
+- CLAUDE.md hard rules 3/6 — terrain id & renderer sprite-index anchors. **B**
+
+## 4. Open questions (TBD)
+
+1. Exact unit/building/terrain → sprite-frame index lists beyond the anchors in CLAUDE.md — confirm against `notes/SPRITE_CATALOG.md` / renderer.
+2. Whether every PEDIA `@KEY` has a 1:1 NAMES row (some PEDIA entries are misc/category headers) — see `docs/PEDIA_TXT_CATALOG.md`.
