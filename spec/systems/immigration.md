@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** crosses loop control-flow + threshold shape `BYTE_VERIFIED`; immigrant-type selection + pool layout `TBD` (open conflict). **Canonical primary:** `docs/IMMIGRATION_RECRUIT_FINDINGS.md` (byte-cited), `docs/DATA_MODEL.md`; `data_extracted/text/NAMES_sections.json` `@CLASS`; `data_extracted/text/GAME_sections.json` `@RECRUIT*`.
+**Overall confidence:** crosses loop control-flow + threshold shape + **per-turn cross increment (base 2 + per-colony `+0x05`)** `BYTE_VERIFIED`; immigrant-type selection + pool layout `TBD` (open conflict). **Canonical primary:** `docs/IMMIGRATION_RECRUIT_FINDINGS.md` (byte-cited), `docs/DATA_MODEL.md`; `data_extracted/text/NAMES_sections.json` `@CLASS`; `data_extracted/text/GAME_sections.json` `@RECRUIT*`.
 
 ## 1. Purpose & behavior
 Religious freedom (crosses, from churches/cathedrals) accumulates immigrant points; when they reach a threshold a new colonist arrives on the Europe docks. The player may also pay gold to **recruit** a specific waiting colonist immediately. Some types (Artillery) escalate in cost each purchase. **RECONSTRUCTED** (manual + byte-cited control flow).
@@ -22,7 +22,23 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
 
 ## 3. Formulas & rules
 - **Crosses loop** `func_0363A2` (file `0x0363A2..0x036573`), gated by `(g_5382 & 1)`: accumulate `+0x2E`, clamp ≥0; if current > needed → spawn immigrant, reset `+0x2E := 0`. **BYTE_VERIFIED.**
-- **Threshold helper** `func_035D9A` (file `0x035D9A`): `base 0x2`, then table loops over `DGROUP:0x5D60` (stride 202) and the UnitRecord table; `if accum<4000: accum*=2; accum+=8; clamp 4000`; difficulty scale `accum*(8-difficulty[0x53A6])/8`; **England (player 0): accum*2/3**. **BYTE_VERIFIED shape.**
+- **Threshold helper** `func_035D9A` (file `0x035D9A`, reached from the crosses
+  loop via thunk `0x191F:0xB34`): `base 0x2`, then table loops over `DGROUP:0x5D60`
+  (stride 202) and the UnitRecord table; `if accum<4000: accum*=2; accum+=8; clamp
+  4000`; difficulty scale `accum*(8-difficulty[0x53A6])/8`; **England (player 0):
+  accum*2/3**. **BYTE_VERIFIED shape.**
+- **Per-turn crosses increment** — produced by the **same** `func_035D9A` via its
+  out-param `[bp+8]`, **BYTE_VERIFIED** (`@0x35DA1..0x35E2B`): seeds the delta at
+  **`2`** (`@0x35DA1`), then over each colony (count `[0x539E]`, table `DGROUP:0x5D60`
+  stride **`0xCA`**) **adds the per-colony cross byte `+0x05`** (`@0x35DBD..0x35DC2`)
+  when that colony's owner byte `+0x00 == player` (`@0x35DB7`). A field-unit loop
+  (count `[0x539C]`, `UnitRecord` owner nibble `+0x01 &0xF == player`, plus a
+  PowerRecord flag `&0x40` gate `@0x35E18`) can override the delta to `-2`
+  (`0xFFFE` `@0x35E27`). The caller `func_0363A2` adds this delta to `+0x2E`
+  (`@0x363F5`) and **spawns an immigrant when `accumulated > threshold`**
+  (`@0x36404`: `cmp cx, ax; jg`), then resets `+0x2E := 0`. **B.** (Base `+2`/turn +
+  per-colony church/cathedral cross output; the unit-loop `-2` override semantics —
+  likely a cross-consuming unit/father — remain `TBD`.)
 - **Artillery recruit cost** = `base + artillery_bought_count*100`, then counter++ (NOT `base<<count`). **BYTE_VERIFIED** (`DATA_MODEL.md`).
 - Immigrant **type** selection: **TBD** (selector reads pool slots; layout unresolved — do not assert).
 
@@ -36,5 +52,5 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
 
 ## 6. Open questions (TBD)
 1. Resolve the `+0x02` conflict: find the true dock-pool base/stride and the type-selector's `bx`.
-2. Byte-verify per-turn crosses increment source and the exact spawn handler.
+2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override semantics; exact immigrant-placement handler.
 3. Map recruit-pool slot full layout (type, cost, count) and non-artillery cost rules.
