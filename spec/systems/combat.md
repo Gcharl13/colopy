@@ -94,9 +94,11 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
   (`func_007D3E`) and its **per-terrain `$TERRAIN` "Defensive" values** (forests 2 /
   Hills 4 / Mountains 6 / Marsh-Swamp 1 / open 0).
 - **R:** the set of +50% bonuses (manual-sourced).
-- **TBD:** the fort/stockade/fortress *multiplier* values; the capture-vs-destroy
-  branch; `+0x15==24` profession semantics; naval/bombardment specifics; result
-  message keys.
+- **TBD:** the capture-vs-destroy branch; `+0x15==24` profession semantics;
+  naval/bombardment specifics; result message keys. (The fort/stockade/fortress
+  defense bonus is **not** `@BUILDING` data — that table has only
+  `cost/tools/size/min_colony/upkeep`, no defense column — it is the **hardcoded
+  `func_007D3E`** colony `+2` / fortified-building `+4` / `×2` chain, §7.1.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. Terrain/fortification defense bonus — **mechanism BYTE_VERIFIED (2026-06-19),
