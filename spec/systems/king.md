@@ -5,8 +5,9 @@
 > `RECONSTRUCTED` / `TBD`. **Worked-example spec** — copy its shape and its
 > discipline (every number read from the bytes, not from a secondary doc).
 
-**Overall confidence:** state layout + tax-change formula `BYTE_VERIFIED`;
-revenue loop + REF-growth threshold `TBD`. **Last updated:** 2026-06-18.
+**Overall confidence:** state layout + tax-change formula + **tax-pretext selection**
++ **REF-growth threshold (now in `ref_growth.md`)** `BYTE_VERIFIED`; revenue loop `TBD`.
+**Last updated:** 2026-06-19.
 **Primary evidence:** `code/VICEROY/disasm/func_034AE0_unknown.asm`,
 `func_0349F4_unknown.asm`; `docs/DATA_MODEL.md` (runtime-verified);
 `data_extracted/text/GAME_sections.json`.
@@ -84,11 +85,22 @@ numbers are byte-verified and serve distinct roles.
 per-good loop is not byte-verified here (do not import the old reconstructed
 formula). → `spec/BACKLOG.md`.
 
-**Tax-raise pretext keys** (all confirmed present in primary
-`data_extracted/text/GAME_sections.json`, **BYTE_VERIFIED** that the keys exist;
-the selection logic among them is `TBD`):
-`@KINGTAX @KINGRAISE @KINGNAVACT @KINGSTAMPACT @KINGWAR @KINGWIFE @MERCANTILISM
-@PURCHASETAX`.
+**Tax-raise pretext selection — BYTE_VERIFIED** (`func_036138`, the pretext message
+builder; key strcpy via `0xD1D:0x7E4` into `[bp-0x50]`). The pretext is chosen by an
+**escalating gate** on an era/progress metric `[bp-0x52]`, historically ordered:
+
+| Gate (`[bp-0x52] <`) | Pretext key | handle | extra | site |
+|----------------------|-------------|--------|-------|------|
+| `0x28A` (and `[0x53A7] < 0x1E`) | **`@KINGWIFE`** (royal wedding) | `0x1155` | bumps `[0x53A7]` | `@0x362C7` |
+| `0x3B6` | **`@KINGWAR`** | `0x1166` | `random_int(1,8)` war no. | `@0x362FA` |
+| `0x44C` | **`@KINGNAVACT`** (Navigation Acts) | `0x1178` | `random_int(3,4)` | `@0x36348` |
+| else | **`@KINGSTAMPACT`** (Stamp Act) | `0x1183` | `random_int(5,8)` | `@0x36371` |
+
+The chosen case/severity number `[bp-0x56]` is then written to the current
+`PowerRecord +0x10` (`@0x36387`). So the Crown's stated reason escalates over the
+game (wedding → war → Navigation Acts → Stamp Act). **B.** The exact metric behind
+`[bp-0x52]` (its setter) is **TBD**; `@KINGTAX`/`@KINGRAISE`/`@MERCANTILISM`/
+`@PURCHASETAX` are the surrounding tax-dialog strings.
 
 ## 4. UI layout — "what is drawn where"
 

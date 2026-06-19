@@ -6723,9 +6723,9 @@
       "size": 618,
       "instructions": 40,
       "region": "overlay",
-      "name": "unknown",
+      "name": "king_tax_pretext_message",
       "asm_file": "disasm/func_036138_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0363A2",
