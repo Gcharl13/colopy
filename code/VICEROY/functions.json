@@ -6948,9 +6948,9 @@
       "size": 998,
       "instructions": 23,
       "region": "overlay",
-      "name": "unknown",
+      "name": "score_scale_and_rank",
       "asm_file": "disasm/func_03A9C0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03ADA6",

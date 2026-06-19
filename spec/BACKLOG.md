@@ -22,7 +22,7 @@ secondary mechanics.
 | 9 | Map generation | mapgen routines (not yet hand-decoded) | `systems/map_generation.md` | Noise seeding sketched; code TBD. |
 | 10 | Event triggers & timing | event-queue dispatcher | `systems/events.md` | Per-event conditions mostly TBD. |
 | 11 | Save / load codec | `.SAV` loader; `docs/SAVE_FORMAT_CROSSREF.md` | `systems/save.md` | Structure sketched; per-field codec TBD. |
-| 12 | Scoring weights | scoring routine | `systems/scoring.md` | Components known; multipliers TBD. |
+| 12 | Scoring weights | scaler **`func_03A9C0`** (B); component sum behind paged `func_03B36A`→`0x191F:0x3AA` | `systems/scoring.md` | **Scaling now B** (2026-06-19): difficulty mult `[4,5,6,8,10]`, `score=(mult*base)/100>>1`, rank, accumulator `[0x372]`. Remaining: component weights behind the paged thunk. |
 
 **Definition of done per item:** the named spec section cites the byte offset(s),
 states the formula/value, is tagged `BYTE_VERIFIED`, and the corresponding
