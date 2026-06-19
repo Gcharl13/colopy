@@ -29,9 +29,13 @@ score  = score >> 1                   # @0x3AA6A (halved)
   **`0x191F:0x3AA` → file `0x39EE2`** (resolved via `tools/follow_thunk.py`). It
   seeds the accumulator with King-anger terms (`100·[0x53A7] + [0x53A8]`
   `@0x39EE6`) and adds **weighted components** (e.g. a `+5` weight at `@0x39F55`,
-  consistent with the manual's "+5 per Founding Father"). The **full per-component
-  enumeration** (mapping each weight to colonists/fathers/gold/sentiment) is the
-  remaining `RECONSTRUCTED`→`B` step, now that the function is reachable.
+  consistent with the manual's "+5 per Founding Father"). Byte-visible per-line
+  weights include **5, 16 (`0x10`), 24 (`0x18`), 97 (`0x61`)**; this function both
+  computes the sum and renders the F10 breakdown lines (via text thunks
+  `0x181F:0x16E/0x178/0x182`). Mapping each weight to its labelled component
+  requires following each line's `@SCORE*` label — the count globals (`[0x830]`,
+  `[0x831]`) have no xrefs to confirm them yet — so the **full per-component
+  enumeration** is the remaining `RECONSTRUCTED`→`B` step (now reachable, not blocked).
 - A Hall-of-Fame **rank 0..23** is derived from the score (largest `n` with
   `n²/3 < score`, capped at 23). **B** (`@0x3AA41..0x3AA79`).
 - Score accumulator global `[0x372]` (zeroed at entry, written during scoring). **B**
