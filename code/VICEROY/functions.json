@@ -8091,9 +8091,9 @@
       "size": 1077,
       "instructions": 175,
       "region": "overlay",
-      "name": "unknown",
+      "name": "native_raze_treasure_chiefkill",
       "asm_file": "disasm/func_04A7CA_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x04AC00",
