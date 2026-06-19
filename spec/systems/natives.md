@@ -52,8 +52,13 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   owner `@0x5BF1A`) vs threshold `3·K+1` `@0x5BEE5`; a **base outcome**
   `random_int(1,4)` `@0x5BF35` adjusted by turn/difficulty (`turn < 40·(2−diff)`
   downgrades `@0x5BF44`) and per-outcome availability gates (thunk `0x181F:0x9FC`);
-  a 5-way dispatch `@0x5C023` → handlers `0x5C1AF/03E/0CA/252/29A`. Exact
-  outcome→handler→key wiring is partly **TBD** (handlers have sub-branches).
+  a **5-way dispatch** `@0x5C026` (`dec ax` ladder) — **outcome→key now
+  BYTE_VERIFIED** (verified vs EXE): outcome **1 → `@RAIDSTORES`** (loot cargo, sfx
+  `0x4F`, `@0x5C3CC`), **2 → `@RAIDWREAK`** (`@0x5C1DE`), **3 → `@RAIDGOLD`** (sfx
+  `0x4E`, `@0x5C5F7`), **4 → `@RAIDBURN`/`@RAIDSHIP`** family, **0 → `@RAIDNOTHING`**
+  (sfx `0x5B`, `@0x5C637`). The STORES branch also bumps the target settlement's
+  raid-budget `+0x08` (`@0x5C3E1`) and wealth `+0x0A` (`+= 0x19 @0x5C3E4`) — the same
+  fields the tribe-death redistribute uses. **B.**
 - Attitude escalation/decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS — not the price math; do not assert).
 
 ## 4. UI
