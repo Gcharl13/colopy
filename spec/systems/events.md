@@ -45,7 +45,6 @@ selects among them, is not yet traced. → `spec/BACKLOG.md`.
   index→`@LOSTCITYn` mapping is the remaining **TBD**.
 - Fountain-of-Youth immigrant count: **TBD** (manual mentions immigration burst; no number in primary).
 - **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD); the mechanism is byte-verified.
-- Scout/Seasoned Scout modifier to outcomes: **TBD** (manual: "Seasoned Scout Better at exploring rumors").
 - Burial-ground → native alarm increase: **TBD**.
 
 ## 4. UI
