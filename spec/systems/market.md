@@ -53,7 +53,10 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
 - The old `0x181F:0x9A4` attribution was **wrong** — that thunk is a shared utility
   (92 callers), not the drift fn (see `tools/rtlink/THUNK_FOLLOWING.md`).
 - **Remaining `TBD`:** the per-turn *driver* that invokes the `0x1C2AC` thunk
-  (turn-loop call site), and where `+0xFC` is incremented on each buy/sell.
+  (turn-loop call site), and where `+0xFC` is incremented on each buy/sell. The
+  per-good price-base *values* at `DGROUP:0x53EA` are **BSS / runtime-filled** (EXE
+  bytes at `file 0x1D9A0+0x53EA` are not a price table) — they need a live
+  data-segment dump, not static extraction (2026-06-19).
 
 **Buy/sell tax interaction:** the King's tax is taken from European sale proceeds
 — see [`king.md`](king.md) §3 (revenue loop currently `TBD`).

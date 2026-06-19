@@ -81,7 +81,11 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
 - Remaining **TBD:** the exact per-index reward *magnitude* formulas (`[bp-0x10]` /
   `[bp-0x32]` inline rolls) and the `[0x5382]&2` debug-force-Cibola path.
-- **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD); the mechanism is byte-verified.
+- **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD). **Note (2026-06-19):** `DGROUP:0x8394`
+is **BSS / runtime-filled** — reading EXE bytes at `file 0x1D9A0+0x8394` yields
+non-table garbage, so the fee values are **not** EXE-resident constants and need a
+live **data-segment** dump (the PowerRecord/map memory dump does not cover DGROUP
+scalars). The DGROUP **string** base `0x1D9A0` is validated (`LOSTCITY`/`BURIAL`).
 - Burial-ground → native alarm increase: **TBD**.
 
 ## 4. UI
