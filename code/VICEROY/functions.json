@@ -9198,9 +9198,9 @@
       "size": 4886,
       "instructions": 612,
       "region": "overlay",
-      "name": "unknown",
+      "name": "map_generate_new_world",
       "asm_file": "disasm/func_064A10_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x065D26",
