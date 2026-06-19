@@ -9477,9 +9477,9 @@
       "size": 95,
       "instructions": 22,
       "region": "overlay",
-      "name": "unknown",
+      "name": "render_subcell_place",
       "asm_file": "disasm/func_067DC8_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067E28",
@@ -9513,27 +9513,27 @@
       "size": 599,
       "instructions": 141,
       "region": "overlay",
-      "name": "unknown",
+      "name": "tile_compose_subcells_O512",
       "asm_file": "disasm/func_067F50_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0681A8",
       "size": 1076,
       "instructions": 55,
       "region": "overlay",
-      "name": "unknown",
+      "name": "tile_dispatch_O513",
       "asm_file": "disasm/func_0681A8_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0685DC",
       "size": 699,
       "instructions": 56,
       "region": "overlay",
-      "name": "unknown",
+      "name": "map_view_render_O514",
       "asm_file": "disasm/func_0685DC_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x068898",

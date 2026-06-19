@@ -2,8 +2,9 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** terrain tables + `.MP` layout + auto-forest rule
-`BYTE_VERIFIED`; per-yield semantics partly `RECONSTRUCTED`.
+**Overall confidence:** terrain tables + `.MP` layout + auto-forest rule + **`$TERRAIN`
+column legend + the tile-render chain & coast/beach-halo composer** `BYTE_VERIFIED`;
+generator in `map_generation.md`.
 **Canonical primary:** `data_extracted/text/NAMES_sections.json`
 (@UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE), `formats/MP_FORMAT.md`,
 auto-forest `func_006204` (file `0x6204`).
@@ -55,20 +56,49 @@ the CSV order.
   BYTE_VERIFIED; cross-cited `docs/GAME_INDEX_TABLES.md:377`).
 - **Sea-lane column** (hard rule 2): right-edge map column base terrain id = **26 (Ocean)**; never desert.
 - **Rivers vs coast** (hard rule 4): `PHYS0.SS` rows `0x01`/`0x11` are rivers, not coast.
-- Per-terrain yield/movement/defense numbers: **TBD** (NAMES columns not yet decoded).
+- Per-terrain yield/movement/defense numbers: **now legend-mapped** (see §2; Defensive in `combat.md`).
+
+### Coast / beach-halo rendering — **BYTE_VERIFIED** (2026-06-19, verified vs EXE)
+The tile-draw chain (hard rule 7) maps to: **`func_O514` = `func_0685DC`** (visible
+row/col loop, `0x0685DC..0x068897`) → **`func_O513` = `func_0681A8`** (per-tile
+terrain/feature/road/river/coast sprite **selector**, `0x0681A8..0x0685DB`) →
+**`func_O512` = `func_067F50`** (sub-cell **water/coast composer**, `0x067F50..0x0681A7`).
+
+- **Water test (`func_067F50`):** a tile is water when its base id `≥ 0x18`
+  (Arctic `0x18` / Ocean `0x19` / Sea-Lane `0x1A`) — `@0x67FD0 cmp al,0x18`; land
+  ids (`< 0x18`) are masked `& 7` to the base type. Neighbours are read from the
+  terrain layer far-ptr `[0xA598]`/`[0xA59C]` at offset `± 1` (horizontal) and
+  `± map_stride [0x8548]` (vertical), and mapped to a water/land class via
+  `0x181F:0x6AA` (`@0x67FDE`). The composer walks the **4 sub-cells** (`[bp-4]`),
+  building per-edge flag bytes `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]`.
+- **Beach-halo sprites (`func_0681A8`)** — the coastal-edge band is **`0x95..0x99`
+  (149..153)**, confirming hard rule 4: **base beach `0x95`** drawn when a water-edge
+  flag is set (`@0x68212`), and **directional edge sprites `0x97 + edge_index`
+  (151..153)** (`@0x6850D add ax,0x97`) selected by the composed edge code
+  (`[0xA8A1] & 0xC0`, `@0x68206`). Forest/hills overlays use the separate auto-forest
+  rows `+0x21`/`+0x31` (`@0x6837F/0x68384`). Emission is via `func_067DC8` (sub-cell
+  placement) + `func_067EEC` (`emit_terrain_sprite`).
+- So **coasts are a *render-time* composition**, not stored tiles: the composer
+  reads each water tile's land-neighbour configuration and the selector stamps the
+  matching beach edge(s) from the `0x95..0x99` band around it. The exact
+  neighbour-config → which-of-`0x95..0x99` truth table is the bit logic in
+  `func_067F50`/`func_0681A8` (located; full per-direction enumeration is intricate).
 
 ## 4. UI
-Tiles drawn by `func_O514 → func_O513 → func_O512` (CLAUDE.md hard rule 7;
-`docs/COLONY_RENDER_CHAIN.md`). Terrain-info popup on `[F1]` (manual). Layout `TBD`.
+Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)
+(CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` (manual). Layout `TBD`.
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — @UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE. **B**
 - `formats/MP_FORMAT.md` — header + tile-byte bitfield + record arrays. **B**
 - `docs/GAME_INDEX_TABLES.md:377` — auto-forest 8..23 at file 0x6204. **B**
+- `func_067F50` (O512, water/coast composer) / `func_0681A8` (O513, sprite selector) / `func_0685DC` (O514, row/col loop) — coast beach-halo band `0x95..0x99`, water test id≥`0x18`, neighbour read via `[0xA598]`±`[0x8548]`. **B** (verified vs EXE; cross-ref `viceroy_source/src/render/tile_chain.c`).
+- `func_064A10` (`map_generate_new_world`) — procedural generator (see `map_generation.md`). **B**
 - `docs/GAME_MANUAL.md` — terrain function, improvements, polar-ice bounds. **R**
 
 ## 6. Open questions (TBD)
-1. Decode the per-terrain CSV columns in `@UNFORESTED/@FORESTED/@OTHER` (yield/move/defense).
+1. ~~Decode the per-terrain CSV columns.~~ **Done 2026-06-19** — `Movement, Defensive, Improvement, Value` + 9 yields (§2).
+1b. Coast beach-halo: the full neighbour-config → which-of-`0x95..0x99` sprite truth table in `func_067F50`/`func_0681A8` (chain + band byte-verified; per-direction enumeration intricate).
 2. Confirm bit 7 meaning of the tile byte; confirm record-array boundaries from the `.MP` read function.
 3. Map `@RESOURCE` entries to the bonus they grant and to placement rules.
 4. Terrain id 24/25/27 assignments (Arctic base, Mountains, Hills, Sea Lane=26) — confirm full 0..27 table.

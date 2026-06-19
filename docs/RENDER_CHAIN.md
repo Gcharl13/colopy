@@ -19,7 +19,13 @@ indexing into VICEROY.PAL).
 4. **River overlay** — river sprites (PHYS0.SS rows 0x01/0x11) when
    the .MP byte's bit 5 is set.
 5. **Coast halo** — beach pixels around coastal water tiles (sprite
-   indices 150–153).
+   band **149–153 / `0x95`–`0x99`**). **BYTE_VERIFIED (2026-06-19):** composed by
+   `func_067F50` (O512, water/coast sub-cell composer — water = base id ≥ `0x18`;
+   reads 4 neighbours via terrain layer `[0xA598]` ± `1` / ± stride `[0x8548]`) and
+   stamped by `func_0681A8` (O513 selector) — base beach `0x95` `@0x68212`,
+   directional edges `0x97 + edge_index` `@0x6850D`. Coasts are composed at render
+   time from each water tile's land-neighbour config (NOT stored tiles); distinct
+   from rivers (PHYS0.SS rows `0x01`/`0x11`, layer 4).
 6. **Roads** — drawn between road-tile centers.
 7. **Settlements** — colony sprites from BUILDING.SS, native sprites
    from MSS*/MYR*.SS.
