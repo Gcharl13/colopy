@@ -39,8 +39,12 @@ odds = ATK / (ATK + DEF)        // same form as naval combat
   read via accessor functions (LAND uses `0x5235/0x5236`, **not** the ship pair
   `0x523B/0x523C`).
 - Terrain / fortification / veterancy bonuses enter as **`·3/2` (+50%) multipliers**
-  in the land strength-modifier chain inside `func_05CA7E`. **ANCHOR_VERIFIED**
-  (mechanism located; exact per-terrain/fort byte values `TBD`). Per the game
+  in the land strength-modifier chain inside `func_05CA7E`. The **bonus filler
+  `func_007D3E` is now BYTE_VERIFIED** (2026-06-19; see §7.1): colony `+2`, fort
+  (build-level ≥2) `+4`, `×2` condition, river/road `+(n+1)·2`, open-terrain `+`
+  the `@TERRAIN` defensive byte — written to `[0x8D04]` and applied at
+  `func_05CA7E @0x05CE05`. Exact per-terrain *values* are the `@TERRAIN` defense
+  column (NAMES data; column-legend pending). Per the game
   manual (`docs/GAME_MANUAL.md`; RULINGS 2026-05-30) the +50% bonuses are: attacker
   surprise (+50% ATK), **fortified** (+50% DEF), **veteran** (+50%), and **European
   bombardment** of a colony (+50%). Tier **R** (manual) for the set; mechanism
@@ -92,13 +96,26 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
   specifics; result message keys.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. Decode the terrain/fortification bonus **table values** (the `·3/2` chain in
-   `func_05CA7E`). **Chain located (2026-06-18):** `0x07D3E` reads the terrain
-   type and writes the bonus scratch word `[0x8D04]`; `func_05CA7E @0x05CE05`
-   reads `[0x8D04]` and applies it. The actual per-terrain/fort values flow
-   through resident overlay thunks `0x181F:0x7E0` (→file `0x030D70`), `0x6BE`
-   (→`0x02EF20`), `0x7BE` (→`0x027A66`) whose bodies aren't decoded — **values
-   `TBD` (thunk/data-blocked)**.
+1. Terrain/fortification defense bonus — **mechanism BYTE_VERIFIED (2026-06-19),
+   per-terrain *values* in `@TERRAIN` data.** The filler is `func_007D3E`: it zeroes
+   `[0x8D04]`/`[0x8D02]`, then accumulates a defense bonus in `[bp-0x18]` with a
+   bonus-type flag in `[0x8D02]`:
+   - **colony present → `+2`** (`@0x7D8D`);
+   - **fortified building** (settlement build-level `≥ 2`) → **`+4`**, flag `0x10`
+     (`@0x7DBC`); a further condition **doubles** it (`×2`), flag `0x20` (`@0x7DD1`);
+   - **river/road feature** present → **`+(n+1)·2`**, flag `0x40` (`@0x7E12`);
+   - **open terrain** → add the **per-terrain defensive byte from the terrain
+     attribute table** `[terrain·16 + 0x2F77]` (`@0x7E63`), gated by a post-
+     independence/AI check (`[0x5382]&1`, `@0x7E45`).
+   `func_05CA7E @0x05CE05` reads `[0x8D04]` and applies it via the `·3/2` chain. So
+   the **bonus structure is byte-verified**; the per-terrain *numbers* live in the
+   `@TERRAIN` attribute table (NAMES-loaded, `terrain·16` stride) — the defense
+   column is read at row offset `0x2F77`, value-decode pending the `@TERRAIN` column
+   legend (`spec/data/tables.md`).
+   > **Correction:** the prior "values flow through thunks `0x181F:0x7E0`/`0x6BE`/
+   > `0x7BE`" was **wrong** — per `naval_classify.c`, `0x7E0`=`occupant_at`,
+   > `0x6BE`=`owner_at`, `0x768`=`ovl_fortify_accum`; these are **map-query helpers**,
+   > not bonus-value tables.
 2. Decode the **capture** path. The combat resolver `func_05B2C2` has only
    demote/destroy — **no in-combat capture branch found**. The `0x03C81D` ownership-reassign
    write in `func_03C638` is **resolved (2026-06-19): it is the War-of-Spanish-

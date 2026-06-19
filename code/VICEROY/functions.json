@@ -1728,9 +1728,9 @@
       "size": 502,
       "instructions": 157,
       "region": "load_image",
-      "name": "unknown",
+      "name": "combat_terrain_fort_bonus_fill",
       "asm_file": "disasm/func_007D3E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x007F34",
