@@ -106,6 +106,11 @@ overlay-resident).
   bells) that are checked at each affected system's own site — **not** in this
   dispatch — so they stay diffuse/`TBD` (op `0x08` Furs ×2 in `colony.md`; SoL ops
   in `king.md`). **B for the 9 immediate-effect fathers above.**
+- **Continuous-effect fathers byte-verified at their use-sites:**
+  - **#10 Hernán Cortés** — treasure-galleon transport cut: with Cortés the King takes
+    only **your tax rate**; without, **`max(5·diff+50, 2·tax)`** capped 90%
+    (`func_05C878 @0x5C965`; the bit-10 test `0x181F:0x7B4(0xA, power)`). See
+    `events.md` §3. **B.**
 
 ## 4. UI
 F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.SS` plates (asset attribution TBD). See `docs/ADVISOR_REPORTS_AUDIT.md`.

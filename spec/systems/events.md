@@ -81,14 +81,26 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
 - Remaining **TBD:** the exact per-index reward *magnitude* formulas (`[bp-0x10]` /
   `[bp-0x32]` inline rolls) and the `[0x5382]&2` debug-force-Cibola path.
-- **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD). **Note (2026-06-19):** `DGROUP:0x8394`
-is confirmed **BSS** (past the initialized DGROUP window `[0..0x2CC5)`, per
-`viceroy_source/src/platform/dgroup_image.c`); it is a **per-difficulty table indexed
-by `[0x53A6]`** with **no static writer** found in the disasm (cross-confirmed:
-other-branch `king_events.c` verified the *address* only, "layout not yet decoded").
-So the fee values are runtime-filled and need a live **data-segment dump** — they are
-not EXE constants. (The DGROUP string base `0x1D9A0` is validated; the *initialized*
-window is only `0..0x2CC5`, so `0x53EA`/`0x8394`/`0x2F7B` are all BSS.)
+- **Treasure value & King-galleon transport — `func_05C878`. FULLY BYTE_VERIFIED
+  (2026-06-19, verified vs EXE).** Strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`.
+  - **Treasure gold = `100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in
+    its class byte) `@0x5C882`.
+  - **Post-independence** (`[0x5382]&1`): no King — the treasure is **cashed in full**,
+    no cut `@0x5C88B`.
+  - **Pre-independence:** the King offers to ship it (`@KINGGALLEON` dialog; accept/
+    decline via `0x181F:0x3FE @0x5C94A`). On **accept**, the King's **cut percentage**
+    is (`@0x5C958..0x5C9AB`):
+    - **with Hernán Cortés** (Founding-Father **#10**; bit test `0x181F:0x7B4(0xA, power)`
+      `@0x5C965`) → **cut% = your tax rate** (`PowerRecord +0x01`);
+    - **without Cortés** → **cut% = `max(5·difficulty + 50, 2·tax_rate)`** (`@0x5C976`:
+      `(diff+10)·5` vs `tax·2`), then **clamped to ≤ 90%** `@0x5C9A3`. So at Discoverer
+      (diff 0) it's **50%**, rising `50→55→60→65→70` by difficulty (or `2·tax` if higher).
+    - **King's cut = `treasure × cut% / 100`** (`@0x5C9BF` mul, `@0x5C9C6` ÷100); the
+      **player receives `treasure − cut`** `@0x5C9F0`. The dialog shows cut / gross / net.
+  - **Note:** `DGROUP:0x8394[diff]` is only a **displayed number** in the `@KINGGALLEON`
+    message (`@0x5C8C2`, formatted via `0x181F:0x438`) — it is **not** the cut. The
+    actual cut is the inline Cortés/tax/difficulty formula above, so it needs **no dump**.
+    (`0x8394` is still BSS/runtime-filled; its *displayed* meaning is the remaining minor TBD.)
 - Burial-ground → native alarm increase: **TBD**.
 
 ## 4. UI
