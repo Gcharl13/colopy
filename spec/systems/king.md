@@ -85,22 +85,36 @@ numbers are byte-verified and serve distinct roles.
 per-good loop is not byte-verified here (do not import the old reconstructed
 formula). → `spec/BACKLOG.md`.
 
-**Tax-raise pretext selection — BYTE_VERIFIED** (`func_036138`, the pretext message
-builder; key strcpy via `0xD1D:0x7E4` into `[bp-0x50]`). The pretext is chosen by an
-**escalating gate** on an era/progress metric `[bp-0x52]`, historically ordered:
+**Tax-raise pretext selection — BYTE_VERIFIED** (`func_036138`, the per-turn tax-demand
+driver + pretext message builder). **Cadence** (`@0x36150..0x361BA`): nothing before
+**turn 30** (`[0x538E] ≥ 0x1E`); then a demand fires only when `turn % interval == 0`,
+where `interval` starts **18** and shrinks to **15 / 12 / 9** as the year `[0x538A]`
+crosses **1600 / 1700 / 1750** (`@0x3615A..0x36180`), further reduced by a human-player
+difficulty term `(diff−2)` (`@0x36193`). A demand is also skipped once `tax > 85`
+(`@0x361C3`).
 
-| Gate (`[bp-0x52] <`) | Pretext key | handle | extra | site |
-|----------------------|-------------|--------|-------|------|
+The pretext is then chosen by a composite **grievance/severity score** `[bp-0x52]`
+(`@0x361CC..0x36221`):
+```
+sev = random_int(1, 1000)
+    + (2·rebel_sentiment[0x53D0] − tax) · 5      # @0x361F9..0x36208
+    + gold_term(gold +0x2A, 100)                  # @0x361EA (0xD1D:0xEC6)
+    + per_player_const[0x9410 + player]           # @0x3620E
+    + turn / 30                                    # @0x36216
+```
+escalating historically by `sev` threshold:
+
+| Severity (`[bp-0x52] <`) | Pretext key | handle | extra | site |
+|--------------------------|-------------|--------|-------|------|
 | `0x28A` (and `[0x53A7] < 0x1E`) | **`@KINGWIFE`** (royal wedding) | `0x1155` | bumps `[0x53A7]` | `@0x362C7` |
 | `0x3B6` | **`@KINGWAR`** | `0x1166` | `random_int(1,8)` war no. | `@0x362FA` |
 | `0x44C` | **`@KINGNAVACT`** (Navigation Acts) | `0x1178` | `random_int(3,4)` | `@0x36348` |
 | else | **`@KINGSTAMPACT`** (Stamp Act) | `0x1183` | `random_int(5,8)` | `@0x36371` |
 
 The chosen case/severity number `[bp-0x56]` is then written to the current
-`PowerRecord +0x10` (`@0x36387`). So the Crown's stated reason escalates over the
-game (wedding → war → Navigation Acts → Stamp Act). **B.** The exact metric behind
-`[bp-0x52]` (its setter) is **TBD**; `@KINGTAX`/`@KINGRAISE`/`@MERCANTILISM`/
-`@PURCHASETAX` are the surrounding tax-dialog strings.
+`PowerRecord +0x10` (`@0x36387`). So higher unrest/tax/gold raises the severity and
+the stated reason escalates (wedding → war → Navigation Acts → Stamp Act). **B.**
+`@KINGTAX`/`@KINGRAISE`/`@MERCANTILISM`/`@PURCHASETAX` are the surrounding tax-dialog strings.
 
 ## 4. UI layout — "what is drawn where"
 

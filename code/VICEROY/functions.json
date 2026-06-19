@@ -6723,7 +6723,7 @@
       "size": 618,
       "instructions": 40,
       "region": "overlay",
-      "name": "king_tax_pretext_message",
+      "name": "king_tax_demand_and_pretext",
       "asm_file": "disasm/func_036138_unknown.asm",
       "status": "AUDITED"
     },
