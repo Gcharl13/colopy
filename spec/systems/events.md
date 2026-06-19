@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor handler located + scout-bonus `BYTE_VERIFIED`** (`func_061454`); per-index outcome mapping `TBD`. (`func_05BE84` is the native **raid** handler — see `natives.md`.)
+**Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: handler + index→`@LOSTCITY<n>` + reward `[bp-0x32]·100` + scout bonus `BYTE_VERIFIED`** (`func_061454`); per-index *meaning* `TBD`. (`func_05BE84` is the native **raid** handler — see `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).
 
 ## 1. Purpose & behavior
@@ -40,9 +40,15 @@ selects among them, is not yet traced. → `spec/BACKLOG.md`.
   `unit_type == 5` (Scout, `@0x614A6`) and class byte `UnitRecord +0x15 == 0x16`
   (Seasoned Scout, `@0x614BB`) — the manual's "Seasoned Scout better at exploring
   rumors".
-- The outcome index (`[bp-6]`) is chosen by a sequence of `random_int`
-  (`0x181F:0x4D4`) rolls with branch conditions (`@0x614FA..0x6175A`); the exact
-  index→`@LOSTCITYn` mapping is the remaining **TBD**.
+- **Outcome index → message (BYTE_VERIFIED):** the index `n = [bp-6]` is chosen by
+  scout-boosted `random_int` (`0x181F:0x4D4`) rolls (`@0x614FA..0x6175A`), then the
+  shown key is **`@LOSTCITY<n>`** directly — `sprintf("LOSTCITY", …)` `@0x618C9`
+  then appends `n` `@0x618D1` (observed indices 1, 2, 4, 6). The message substitutes
+  a **reward amount = `[bp-0x32]·100`** (gold ×100) and `[bp-0x10]` `@0x618A1..0x618BF`.
+- **One-time special (`n=4`):** gated by a per-power flag `[0x543E]` bit `0x40`
+  (`@0x6186B`: set on first occurrence, so outcome 4 fires once per power).
+- Remaining **TBD:** which `@LOSTCITY0..9` body is treasure vs Fountain-of-Youth vs
+  burial (needs the message bodies) and the per-index reward magnitudes.
 - Fountain-of-Youth immigrant count: **TBD** (manual mentions immigration burst; no number in primary).
 - **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD); the mechanism is byte-verified.
 - Burial-ground → native alarm increase: **TBD**.
@@ -62,5 +68,5 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
 ## 6. Open questions (TBD)
 1. Trigger condition: which map feature flags a tile as a rumor square (see `spec/systems/map_system.md`).
 2. Outcome dispatch table and per-outcome probabilities; bias by difficulty/scout type.
-3. Numeric effects: treasure value, Fountain-of-Youth immigrant count, burial-ground alarm delta.
+3. Numeric effects: which `@LOSTCITY0..9` index = treasure/Fountain-of-Youth/burial, and per-index reward magnitudes (reward = `[bp-0x32]·100`; mechanism B, the per-index amounts TBD).
 4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **Found 2026-06-19** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). Remaining: the index→`@LOSTCITYn` mapping + Fountain-of-Youth/burial numerics.
