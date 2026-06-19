@@ -6111,9 +6111,9 @@
       "size": 20,
       "instructions": 9,
       "region": "overlay",
-      "name": "unknown",
+      "name": "boycott_is_good_boycotted",
       "asm_file": "disasm/func_030B38_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x030B4C",

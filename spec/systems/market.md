@@ -72,4 +72,4 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. Remaining: the turn-loop driver + the `+0xFC` increment (buy/sell) site.
 2. Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.
-3. Locate the **boycott** bitmask field and its clear conditions.
+3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.
