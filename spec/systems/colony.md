@@ -86,9 +86,14 @@ constants are **RECONSTRUCTED** (per `sol_tory.c`); the % computation above is
 byte-verified.
 
 ### Still open
-- **Hammers accumulation:** building progress lands in `ColonyRecord +0xBA` toward
-  the `@BUILDING` hammer cost (`building_costs.c`), but the exact per-turn
-  work-point accumulation is **overlay-resident / RECONSTRUCTED**.
+- **Hammers accumulation:** building progress is a slot in the **per-good colony
+  production/stockpile array at `ColonyRecord +0x9A`** (stride 2) — *not* a
+  standalone field. Cross-branch reconstructions (`colony/colonist_handler.c`,
+  `market/pricing.c`) place the pseudo-commodity rows **`0xF`=Hammers, `0x10`=Crosses,
+  `0x11`=Liberty Bells, `0x12`=Flags**, so Hammers ≈ `+0x9A + 0xF·2 = +0xB8` and the
+  former "`+0xBA`" label is the adjacent (Crosses) slot. **RECONSTRUCTED** (lead from
+  the other branch; the per-turn accumulation site in the big producer `func_00A3E1`
+  is not yet re-verified against this branch's EXE — keep `R` until traced).
 - **Warehouse capacity / spoilage:** base tied to `+0x1C` (=`0x40`); thresholds &
   wastage `TBD`.
 
