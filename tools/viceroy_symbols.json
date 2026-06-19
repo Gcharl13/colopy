@@ -4,6 +4,7 @@
     "0x190": "g_rng_seed",
     "0x192": "g_rng_seed_hi",
     "0x372": "g_score_accum",
+    "0x3144": "g_unit_table",
     "0x5382": "g_game_phase_flags",
     "0x538A": "g_year",
     "0x538C": "g_year_misc",
