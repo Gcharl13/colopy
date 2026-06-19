@@ -2,16 +2,20 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** filename-builder anchor + **HALLFAME.DAT layout** `BYTE_VERIFIED`; record strides `BYTE_VERIFIED` (runtime); SAV per-field on-disk codec `TBD`.
+**Overall confidence:** **SAV orchestrator + serializer + magic + on-disk table
+strides `BYTE_VERIFIED`** (`func_072F7A`/`func_0734F8`, verified vs EXE) +
+**HALLFAME.DAT layout** `BYTE_VERIFIED`; per-field *order within* PowerRecord/SAV
+body `TBD`.
 **Canonical primary:** `docs/SAVE_FORMAT_CROSSREF.md`, `docs/DATA_MODEL.md`
 (record layouts), `data_extracted/viceroy_strings.txt` (`.SAV` @ 0x1FA89).
 
 ## 1. Purpose & behavior
 The game serializes runtime DGROUP state to an on-disk save file. The save is
 "largely a serialization of the runtime DGROUP state, so the field names match
-closely" but **the SAV format re-serializes with a different field order** than
-runtime memory (`docs/SAVE_FORMAT_CROSSREF.md`). There are 10 save slots plus two
-autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from manual).
+closely." (`docs/SAVE_FORMAT_CROSSREF.md` claims a *reordered* field layout, but the
+byte-verified serializer `func_0734F8` writes each table's **raw in-memory block** at
+full stride — see §3; treat the "reordered" claim as unconfirmed.) There are 10 save
+slots plus two autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from manual).
 
 ## 2. State & data
 - Save filename builder: base "COLONY" at file `0x1FA82`, followed by `.SAV\0`
@@ -32,8 +36,34 @@ autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from manual).
   runtime offsets are file offsets.
 
 ## 3. Formulas & rules
-- SAV file header / magic / version: **TBD**.
-- Field serialization order (runtime → disk reordering): **TBD** per record type.
+
+### SAV save path — **BYTE_VERIFIED** (verified vs EXE 2026-06-19)
+- **Orchestrator `func_072F7A`** (file `0x72F7A`, page 0x1A, gated by the `SAVEGAME`
+  key `@0x72F80`): opens the slot dialog, builds the filename, calls the driver.
+- **Filename** (`func_072C4E`): `strcpy("COLONY")` (`@file 0x1FA82`) + slot digit +
+  `strcat(".SAV")` (`@0x1FA89`) → `COLONY<slot>.SAV`. **B.**
+- **Serializer `func_0734F8`** (file `0x734F8`, ENTER 6; reached via `0x1A1F:0xCF6`):
+  writes the **magic `"COLONIZE"`** (`@file 0x1FB1A`) + a **Ctrl-Z `0x1A`** terminator,
+  in mode `"wb"`, then dumps the four game-state tables **each at its full in-memory
+  stride** (no trimmed subset) — byte-verified from the `imul count,stride; push` /
+  base-`push` operands:
+
+  | Table | Base (push) | Count | Stride | On-disk bytes | Site |
+  |-------|-------------|-------|--------|---------------|------|
+  | ColonyRecord | `0x5D46` | `[0x539E]` | `0xCA` (202) | count·202 | `@0x735BD` |
+  | UnitRecord | `0x3144` | `[0x539C]` | `0x1C` (28) | count·28 | `@0x735DF` |
+  | PowerRecord | `0x8808` | 4 (fixed) | `0x13C` (316) | `0x4F0` = 1264 | `@0x735F7` |
+  | NativeSettlement | `0x54EC` | `[0x539A]` | `0x12` (18) | count·18 | `@0x73619` |
+
+  So the **colony `0xCA`-vs-`0xAE` question is RESOLVED**: the disk record is the full
+  `0xCA` stride (the `0xAE` at `*(0x8542)` is a working buffer, not the saved record).
+- **Load deserializer `func_073BB0`** (file `0x73BB0`) — mirror read path.
+- Corroborated by `viceroy_source/src/save/{save_serializer,load_deserializer}.c`
+  (other branch); the offsets/strides above are re-verified against this branch's EXE.
+- **Remaining `TBD`:** the per-field *byte order within* a PowerRecord on disk (the
+  `SAVE_FORMAT_CROSSREF` "reordered vs runtime" claim is **not** supported by
+  `func_0734F8`, which writes the raw `0x13C` block — re-confirm whether any
+  reordering happens elsewhere); compression (none seen).
 - **HALLFAME.DAT format — BYTE_VERIFIED** (`func_03ADA6`, file `0x3ADA6`): the
   file is **5 records × 42 bytes (`0x2A`) = 210 bytes (`0xD2`)** — confirmed by the
   `fread` length `@0x3ADCF` (C runtime `fopen`/`fread`/`fclose` =

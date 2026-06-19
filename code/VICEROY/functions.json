@@ -10575,9 +10575,9 @@
       "size": 478,
       "instructions": 166,
       "region": "overlay",
-      "name": "unknown",
+      "name": "save_orchestrator",
       "asm_file": "disasm/func_072F7A_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x073158",
@@ -10602,9 +10602,9 @@
       "size": 1464,
       "instructions": 72,
       "region": "overlay",
-      "name": "unknown",
+      "name": "save_serializer",
       "asm_file": "disasm/func_0734F8_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x073AB0",
@@ -10620,9 +10620,9 @@
       "size": 1901,
       "instructions": 121,
       "region": "overlay",
-      "name": "unknown",
+      "name": "load_deserializer",
       "asm_file": "disasm/func_073BB0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x07431E",
