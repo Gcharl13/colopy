@@ -3,8 +3,8 @@
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
 **Overall confidence:** roster + per-father data row + bell pool + bell-cost curve +
-era-band selection weighting + **17/25 per-father effects** `BYTE_VERIFIED` (9 immediate
-via `func_03BC42` + 8 continuous via the has-father test); the remaining 8 fathers'
+era-band selection weighting + **19/25 per-father effects** `BYTE_VERIFIED` (9 immediate
+via `func_03BC42` + 10 continuous via the has-father test); the remaining 6 fathers'
 effects are manual-known (`R`), gated outside a literal has-father site. **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
 
 ## 1. Purpose & behavior
@@ -109,7 +109,7 @@ overlay-resident).
   `power_attribute_bit(power, bit)` (`0x181F:0x7B4` → `func_00BC10`, reading the
   `+0x07` bitmask) or a computed-mask test. The full per-father audit is below.
 
-### Complete per-father effect audit — **17/25 BYTE_VERIFIED** (2026-06-19)
+### Complete per-father effect audit — **19/25 BYTE_VERIFIED** (2026-06-19)
 Found by scanning all 50 `0x181F:0x7B4` call sites + `func_03BC42`. `B` = byte-verified
 mechanism at the cited site; `R` = manual effect, in-engine gate not yet located
 (these 8 use a building-availability table or an inline computed-mask test that the
@@ -121,10 +121,10 @@ literal-immediate scans don't catch).
 | 1 | Jakob Fugger (T) | clears **all** boycotts (`+0x20:=0`) | **B** `func_03BC42 @0x3BD45` |
 | 2 | Peter Minuit (T) | no payment to natives for land | **R** |
 | 3 | Peter Stuyvesant (T) | enables Custom House | **R** — build-availability gate |
-| 4 | Jan de Witt (T) | trade w/ foreign colonies + foreign econ reports | **R** |
+| 4 | Jan de Witt (T) | gates the scout/foreign-colony interaction (foreign info) | **B** `func_05A20E @0x5A469` |
 | 5 | Ferdinand Magellan (E) | +1 ship movement; faster Europe transit | **R** |
 | 6 | Francisco Coronado (E) | reveal **all colonies** on the map | **B** `@0x3BF54` |
-| 7 | Hernando de Soto (E) | all Lost-City outcomes positive; +1 sight | **R** |
+| 7 | Hernando de Soto (E) | Lost-City: forces a **positive-outcome flag** (`[bp-0x2e]:=1`) | **B** `func_061454 @0x614CC` |
 | 8 | Henry Hudson (E) | **doubles fur production** (`good==Furs & FF8 → ×2`) | **B** `colony.md` yield |
 | 9 | Sieur de La Salle (E) | free **Stockade** for colonies size ≥3 | **B** `@0x3BD4A` |
 | 10 | Hernán Cortés (M) | King treasure cut = **tax rate** (else `max(5·diff+50, 2·tax)` ≤90%) | **B** `func_05C878 @0x5C965` |
@@ -143,8 +143,7 @@ literal-immediate scans don't catch).
 | 23 | Juan de Sepúlveda (R) | **+4** to the native-conversion metric `[bp-0x62]` | **B** `@0x5E20B` |
 | 24 | Bartolomé de las Casas (R) | converts → free colonists (immediate); **−4** conversion metric | **B** `@0x3BEB2`, `@0x5E221` |
 
-**Still `R` (8):** Smith, Minuit, Stuyvesant, Jan de Witt, Magellan, de Soto, Drake,
-Penn — effects known from the manual, but their in-engine gate is **not** a literal
+**Still `R` (6):** Smith, Minuit, Stuyvesant, Magellan, Drake, Penn — effects known from the manual, but their in-engine gate is **not** a literal
 has-father site (build-availability tables / inline computed masks); locating those is
 the remaining FF work.
 
