@@ -8604,9 +8604,9 @@
       "size": 397,
       "instructions": 99,
       "region": "overlay",
-      "name": "unknown",
+      "name": "diplomacy_sign_treaty",
       "asm_file": "disasm/func_057DC0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x057F4E",
