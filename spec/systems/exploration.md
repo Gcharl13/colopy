@@ -2,8 +2,9 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** behavior `RECONSTRUCTED` from manual; state offsets and
-sighting radius `TBD`.
+**Overall confidence:** behavior `RECONSTRUCTED` from manual; **per-tile fog encoding
+`BYTE_VERIFIED`** (separate per-power visibility layer, bit `player+4`); sighting
+radius `TBD`.
 **Canonical primary:** `docs/GAME_MANUAL.md` (visibility / discovery rules);
 `data_extracted/text/GAME_sections.json` (scout/rumor messages).
 
@@ -15,8 +16,14 @@ area remains visible for the rest of the game** (`docs/GAME_MANUAL.md`).
 RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
 
 ## 2. State & data
-- Per-tile discovered flag: candidate is `.MP` tile-byte **bit 7** ("possibly
-  discovered by player 0", `formats/MP_FORMAT.md`) — **TBD / unconfirmed**.
+- **Per-tile fog — BYTE_VERIFIED (2026-06-19):** visibility is a **separate map
+  layer** (far-ptr `[0x168]`, the 4th layer; cross-ref `colonization-memory-map (1).md`
+  "visibility layer"), **not** the `.MP` terrain bit 7. Each tile byte holds **one
+  bit per power**: bit `player + 4` = explored-by-player. The renderer builds the
+  test mask `1 << (player+4)` at `[0xA89E]` (`func_0685DC @0x685F2`) and a tile is
+  drawn fogged when `fog_byte & mask == 0` (`func_0681A8 @0x681E0`). So player 0 =
+  bit `0x10` … player 3 = bit `0x80` (the runtime dump's "`0x80` = explored" is the
+  player-3 case). Persistent reveal = the bit is sticky once set.
 - Visibility radius per unit type (scout vs ship vs colonist): **TBD**.
 - Scout-related message keys (`GAME_sections.json`, BYTE_VERIFIED strings):
   `@LOSTOURSCOUTS`, `@LOSTTHEIRSCOUTS`, `@SCOUTCOLONY` — used by scout interactions.

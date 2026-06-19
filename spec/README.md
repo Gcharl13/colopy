@@ -32,7 +32,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Revolution | [`systems/revolution.md`](systems/revolution.md) | R/TBD | | | |
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
 | Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
-| Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B/TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | TBD |
+| Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B/TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | B/TBD |
 | Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | R/TBD | | | |
 
 ## UI screens & dialogs (52 entries → 10 spec files)

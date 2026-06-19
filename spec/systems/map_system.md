@@ -105,6 +105,17 @@ Sprite-index bases the selector writes: **road/feature `0x5A`**, **beach band
 `0x95..0x99`**, forest/hills overlay rows `+0x21`/`+0x31`. All drawn through
 `func_067DC8` (sub-cell place) / `func_067E28` (ground) / `func_067EEC` (terrain).
 
+**Viewport geometry (`func_0685DC` = O514) — BYTE_VERIFIED.** The outer loop walks
+the visible tile rectangle from the **scroll origin `[0x8328]` (x) / `[0x832E]` (y)**
+over the viewport span, clamped to the map extents `[0x8804]`/`[0x8806]`. Per tile it
+computes the **linear index `(y+1)·stride[0x8548] + (x+1)`** (`@0x6868E`; the `+1`s
+are the **1-tile border padding** that lets neighbour reads stay in-bounds), forms
+far-pointers into the **4 layers** — `[0x15C]` terrain / `[0x160]` elevation /
+`[0x164]` resource / `[0x168]` fog — at that index, and calls O513. The
+**visibility/fog mask is `1 << (player+4)`** stored at `[0xA89E]` (`@0x685F2`): the
+per-tile fog byte holds **one bit per power (bits 4–7)** — so explored-by-player-3 =
+bit 7 = `0x80` (matches the runtime dump's "`0x80` = explored"). See `exploration.md`.
+
 ## 4. UI
 Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)
 (CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` (manual). Layout `TBD`.
