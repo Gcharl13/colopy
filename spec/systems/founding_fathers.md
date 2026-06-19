@@ -2,7 +2,10 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** roster + per-father data row + **bell pool + bell-cost curve + era-band selection weighting + the 9 immediate-effect fathers (`func_03BC42`)** `BYTE_VERIFIED`; the 16 continuous-effect fathers still diffuse/`TBD`. **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
+**Overall confidence:** roster + per-father data row + bell pool + bell-cost curve +
+era-band selection weighting + **17/25 per-father effects** `BYTE_VERIFIED` (9 immediate
+via `func_03BC42` + 8 continuous via the has-father test); the remaining 8 fathers'
+effects are manual-known (`R`), gated outside a literal has-father site. **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
 
 ## 1. Purpose & behavior
 Liberty bells produced in colonies accumulate toward the **Continental Congress**, which periodically offers a **Founding Father** to join. Each father grants a permanent empire-wide effect (e.g. trade, exploration, military, political, religious, independence bonuses). Fathers are organized into categories; the Congress proposes candidates the player can work toward. **RECONSTRUCTED** (manual §"Founding Fathers").
@@ -101,16 +104,49 @@ overlay-resident).
   | 22 | Jean de Brebeuf | all own missions become expert (settlement `+5 \|= 0x10`) `@0x3BE77` |
   | 24 | Bartolomé de las Casas | convert all own Indian-Converts (class `0x1B`) → Free-Colonist `0x1C` `@0x3BEB2` |
 
-  The remaining 16 fathers grant **continuous/passive** modifiers (e.g. Adam Smith
-  factory output, Washington veteran promotion, Minuit free land, Jefferson +50%
-  bells) that are checked at each affected system's own site — **not** in this
-  dispatch — so they stay diffuse/`TBD` (op `0x08` Furs ×2 in `colony.md`; SoL ops
-  in `king.md`). **B for the 9 immediate-effect fathers above.**
-- **Continuous-effect fathers byte-verified at their use-sites:**
-  - **#10 Hernán Cortés** — treasure-galleon transport cut: with Cortés the King takes
-    only **your tax rate**; without, **`max(5·diff+50, 2·tax)`** capped 90%
-    (`func_05C878 @0x5C965`; the bit-10 test `0x181F:0x7B4(0xA, power)`). See
-    `events.md` §3. **B.**
+  **B for the 9 immediate-effect fathers above.** The other fathers are
+  **continuous**: checked at each affected system's own site via the has-father test
+  `power_attribute_bit(power, bit)` (`0x181F:0x7B4` → `func_00BC10`, reading the
+  `+0x07` bitmask) or a computed-mask test. The full per-father audit is below.
+
+### Complete per-father effect audit — **17/25 BYTE_VERIFIED** (2026-06-19)
+Found by scanning all 50 `0x181F:0x7B4` call sites + `func_03BC42`. `B` = byte-verified
+mechanism at the cited site; `R` = manual effect, in-engine gate not yet located
+(these 8 use a building-availability table or an inline computed-mask test that the
+literal-immediate scans don't catch).
+
+| id | Father (cat) | Effect | Tier · site |
+|----|--------------|--------|-------------|
+| 0 | Adam Smith (T) | enables factory-tier (3rd) buildings | **R** — build-availability gate |
+| 1 | Jakob Fugger (T) | clears **all** boycotts (`+0x20:=0`) | **B** `func_03BC42 @0x3BD45` |
+| 2 | Peter Minuit (T) | no payment to natives for land | **R** |
+| 3 | Peter Stuyvesant (T) | enables Custom House | **R** — build-availability gate |
+| 4 | Jan de Witt (T) | trade w/ foreign colonies + foreign econ reports | **R** |
+| 5 | Ferdinand Magellan (E) | +1 ship movement; faster Europe transit | **R** |
+| 6 | Francisco Coronado (E) | reveal **all colonies** on the map | **B** `@0x3BF54` |
+| 7 | Hernando de Soto (E) | all Lost-City outcomes positive; +1 sight | **R** |
+| 8 | Henry Hudson (E) | **doubles fur production** (`good==Furs & FF8 → ×2`) | **B** `colony.md` yield |
+| 9 | Sieur de La Salle (E) | free **Stockade** for colonies size ≥3 | **B** `@0x3BD4A` |
+| 10 | Hernán Cortés (M) | King treasure cut = **tax rate** (else `max(5·diff+50, 2·tax)` ≤90%) | **B** `func_05C878 @0x5C965` |
+| 11 | George Washington (M) | combat winner **auto-promotes** (skips the random gate) | **B** `@0x5C758` |
+| 12 | Paul Revere (M) | undefended colony w/ muskets `+0xB8 ≥ 50` → colonist defends @str 75 | **B** `@0x5CCAA` |
+| 13 | Francis Drake (M) | privateers +50% combat | **R** — combat-resolver computed test |
+| 14 | John Paul Jones (M) | free **Frigate** (type `0x11`) | **B** `@0x3BD8B` |
+| 15 | Thomas Jefferson (P) | **doubles** the bell/era quantity (`×2`) — manual says +50% | **B** `@0x55818` |
+| 16 | Pocahontas (P) | reset native attitudes to content | **B** `@0x3BDDD` |
+| 17 | Thomas Paine (P) | **bells += bells × tax_rate / 100** (+tax%) | **B** `@0x290FB` |
+| 18 | Simón Bolívar (P) | **+20% Sons of Liberty** (`[0x53D0]+=20`) | **B** `@0x3BE64` |
+| 19 | Benjamin Franklin (P) | foreign powers offer **peace** (zeros hostility) | **B** `@0x5834E` (+6 sites in `func_057F4E`) |
+| 20 | William Brewster (R) | no criminals/servants on docks (dock pool `+0x02..+0x04`) | **B** `@0x3BF85` |
+| 21 | William Penn (R) | +50% cross production | **R** |
+| 22 | Jean de Brébeuf (R) | all missions become **expert** (`+5 \|= 0x10`) | **B** `@0x3BE77` |
+| 23 | Juan de Sepúlveda (R) | **+4** to the native-conversion metric `[bp-0x62]` | **B** `@0x5E20B` |
+| 24 | Bartolomé de las Casas (R) | converts → free colonists (immediate); **−4** conversion metric | **B** `@0x3BEB2`, `@0x5E221` |
+
+**Still `R` (8):** Smith, Minuit, Stuyvesant, Jan de Witt, Magellan, de Soto, Drake,
+Penn — effects known from the manual, but their in-engine gate is **not** a literal
+has-father site (build-availability tables / inline computed masks); locating those is
+the remaining FF work.
 
 ## 4. UI
 F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.SS` plates (asset attribution TBD). See `docs/ADVISOR_REPORTS_AUDIT.md`.
