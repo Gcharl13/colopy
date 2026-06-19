@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/lift) `BYTE_VERIFIED`**; back-tax *amount* + Jakob-Fugger clear-all `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
+**Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/back-tax-lift/Jakob-Fugger-clear-all) `BYTE_VERIFIED`**; back-tax *amount* `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
 
 ## 1. Purpose & behavior
 
@@ -43,8 +43,9 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
   `spec/systems/ref_growth.md` `func_03E162`) — then the good's bit is cleared:
   `PowerRecord[+0x20] &= ~(1 << good)` (`ax = ~(1<<[bp+6]); and [bx+0x20], ax`). **B.**
   (The back-tax **amount** is set by the caller — still `TBD`.)
-- **Lift-all (Jakob Fugger):** clears **all** boycotts at once (manual); the
-  clear-all write site (`+0x20 := 0`) is **TBD**. **R**.
+- **Lift-all (Jakob Fugger) — BYTE_VERIFIED:** acquiring father id 1 (Jakob Fugger)
+  clears the whole mask `PowerRecord +0x20 := 0` in the FF acquire dispatch
+  `func_03BC42` (`@0x3BD45`, gated on `ff_id == 1`). See `founding_fathers.md` §3. **B.**
 - **Effect:** boycotted good cannot be traded in Europe. **R**.
 
 ## 4. UI
@@ -66,7 +67,7 @@ goods are flagged in the Europe trade screen (visual marker) — exact treatment
    — `PowerRecord +0x20` (u16); test `func_030B38`, set `@0x34717`, lift `@0x33423` (**B**).
 2. **Back-tax amount** — the caller-supplied payment value (`ax` at `@0x3340C`); where
    it is computed / how it accrues. `TBD`.
-3. ~~**Lift path** — back-tax payment clear.~~ **Done** (`@0x3340C`: treasury `+0x2A` →
-   King `+0x22`, then `+0x20 &= ~bit`). Remaining: the **Jakob Fugger** clear-all
-   write (`+0x20 := 0`).
+3. ~~**Lift paths** — back-tax clear + Jakob Fugger clear-all.~~ **Done** — back-tax
+   `@0x3340C` (treasury `+0x2A` → King `+0x22`, then `+0x20 &= ~bit`); **Jakob Fugger
+   clear-all `+0x20 := 0` `@0x3BD45`** (`func_03BC42` id 1). Both **B**.
 4. Confirm whether the boycotted good is also exempt from the new tax rate.

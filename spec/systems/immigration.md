@@ -51,6 +51,10 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
 - `data_extracted/text/NAMES_sections.json` `@CLASS`; `GAME_sections.json` `@RECRUIT*`. **B (present)**
 
 ## 6. Open questions (TBD)
-1. Resolve the `+0x02` conflict: find the true dock-pool base/stride and the type-selector's `bx`.
+1. ~~Resolve the `+0x02` dock-pool conflict.~~ **Resolved 2026-06-19** — the dock-pool
+   unit-type bytes are **`PowerRecord +0x02..+0x04`** (3 slots), byte-confirmed by the
+   William Brewster FF effect which rewrites criminals/servants (`0x19`/`0x1A`) → free
+   colonist (`0x1C`) at exactly `+0x02..+0x04` (`func_03BC42 @0x3BF85`, see
+   `founding_fathers.md`). Remaining: the per-slot type **selector** RNG.
 2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override semantics; exact immigrant-placement handler.
 3. Map recruit-pool slot full layout (type, cost, count) and non-artillery cost rules.

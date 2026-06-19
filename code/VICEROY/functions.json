@@ -7065,9 +7065,9 @@
       "size": 911,
       "instructions": 17,
       "region": "overlay",
-      "name": "unknown",
+      "name": "ff_acquire_dispatch",
       "asm_file": "disasm/func_03BC42_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03BFD2",
