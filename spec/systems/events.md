@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** event strings `BYTE_VERIFIED`; **outcome-selection mechanism `BYTE_VERIFIED`** (`func_05BE84`); per-outcome message bindings + probabilities `TBD`.
+**Overall confidence:** event strings `BYTE_VERIFIED`; Lost-City rumor selector `TBD` (not yet located). (The 6-outcome dispatcher `func_05BE84` was the native **raid** handler — moved to `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).
 
 ## 1. Purpose & behavior
@@ -27,25 +27,15 @@ selects among them, is not yet traced. → `spec/BACKLOG.md`.
 
 ## 3. Formulas & rules
 
-### Native-encounter / rumor outcome selection — **BYTE_VERIFIED** (`func_05BE84`, file `0x5BE84`)
-1. **Gate roll** (does anything happen): `roll = random_int(1,12) − 1` (0..11)
-   `@0x5BEFD`; for a **human European** owner it is biased by `+(difficulty − 2)`
-   `@0x5BF1A`. Compared to a threshold `3·K + 1` `@0x5BEE5` (K via thunk
-   `0x181F:0xAB0`); a high roll (non-eval mode `[bp+0xC]==0`) takes the early
-   exit at `0x5C1AA`.
-2. **Base outcome** = `random_int(1,4)` `@0x5BF35`, then adjusted:
-   - early game on easy difficulty (`turn [0x538E] < 40·(2−difficulty)`) downgrades
-     outcomes 2/3 → 0 `@0x5BF44..0x5BF69`;
-   - per-outcome **availability gates** (thunk `0x181F:0x9FC(k)`) downgrade
-     already-taken/unavailable outcomes `@0x5BFAF..0x5C01E`.
-3. **5-way dispatch** on the outcome `@0x5C023`: `0→0x5C1AF` (nothing),
-   `1→0x5C03E`, `2→0x5C0CA`, `3→0x5C252`, `4→0x5C29A`.
+### Native **raid**-on-colony outcomes — `func_05BE84` (see `natives.md` §3)
+> **Correction (2026-06-19):** `func_05BE84` is the **native-RAID** outcome
+> dispatcher (message keys `RAIDWREAK/RAIDSTORES/RAIDBURN/RAIDSHIP/RAIDGOLD/
+> RAIDNOTHING`), **not** the Lost-City rumor selector. The roll/dispatch mechanics
+> are byte-verified — moved to **`spec/systems/natives.md` §3**.
 
-So the outcome is a difficulty- and timing-weighted random pick with
-availability gating. **Which `@LOSTCITY*`/`@BURIAL*`/gift each handler shows is
-TBD** (follow each of the 5 handler offsets to its message key).
-
-- Outcome-selection probabilities (per-outcome message binding): **TBD** (the 5 handlers above).
+- **Lost-City rumor outcome selection** (`@LOSTCITY0..9`/`@BURIAL*`): **TBD** — the
+  rumor selector is a *separate* function, not yet located (do not reuse
+  `func_05BE84`).
 - Fountain-of-Youth immigrant count: **TBD** (manual mentions immigration burst; no number in primary).
 - **Treasure value & transport** — `func_05C878` (file `0x5C878`; strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`). **BYTE_VERIFIED:** treasure gold = **`100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in its class byte) `@0x5C882`. **Post-independence** (`[0x5382]&1`) it is cashed directly (no cut) `@0x5C88B`; **pre-independence** the King offers to transport it for a **per-difficulty fee** read from the word table at `DGROUP:0x8394` (indexed by `difficulty×2`) `@0x5C8C2`, substituted into the `@KINGGALLEON` message. Fee *values* are in the data segment (TBD); the mechanism is byte-verified.
 - Scout/Seasoned Scout modifier to outcomes: **TBD** (manual: "Seasoned Scout Better at exploring rumors").

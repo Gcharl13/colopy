@@ -30,6 +30,17 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   - on success a **convert unit is created at the colony** — thunk `0x181F:0x95C` @`0x5735F` is passed `ColonyRecord +0x00`/`+0x01`/`+0x1A` (map_x / map_y / owner); its returned `UnitRecord` index then gets **`+0x15 (class) = 0x1B`** (`MOV byte[bx+0x315B],0x1B` @`0x57374`). That `0x1B` class is the same "convert/special" colonist the colony-production formula gives a +1 staple bonus (see `colony.md` §3 `is_special`).
   - the `@INDIANSCONVERT` popup (tribe name `[0x8D52]`) is shown only to a **human European** owner (`[bp+6] < 4` and `AIPersonality[+0x543F].controller == 0`), thunk `0x191F:0x19C` @`0x57344`.
   - Still **TBD:** the exact `random_int` bounds and the `cl & 0x10` flag's meaning.
+- **Native raid on colony** — `func_05BE84` (file `0x5BE84`). **BYTE_VERIFIED:** the
+  6 raid outcomes are the message keys `RAIDWREAK` (`@0x5C1DE`), `RAIDSTORES`
+  (`@0x5C3CC`), `RAIDBURN` (`@0x5C50B`), `RAIDSHIP` (`@0x5C57B`), `RAIDGOLD`
+  (`@0x5C5F7`), `RAIDNOTHING` (`@0x5C637`) — i.e. raze havoc / steal stores / burn a
+  building / sink a docked ship / steal gold / no effect. Selection: a **gate roll**
+  `random_int(1,12)−1` `@0x5BEFD` (biased `+(difficulty−2)` for a human-European
+  owner `@0x5BF1A`) vs threshold `3·K+1` `@0x5BEE5`; a **base outcome**
+  `random_int(1,4)` `@0x5BF35` adjusted by turn/difficulty (`turn < 40·(2−diff)`
+  downgrades `@0x5BF44`) and per-outcome availability gates (thunk `0x181F:0x9FC`);
+  a 5-way dispatch `@0x5C023` → handlers `0x5C1AF/03E/0CA/252/29A`. Exact
+  outcome→handler→key wiring is partly **TBD** (handlers have sub-branches).
 - Attitude escalation/decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS — not the price math; do not assert).
 
 ## 4. UI

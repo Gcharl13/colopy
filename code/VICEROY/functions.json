@@ -8730,7 +8730,7 @@
       "size": 2006,
       "instructions": 43,
       "region": "overlay",
-      "name": "native_encounter_outcome_dispatch",
+      "name": "native_raid_outcome_dispatch",
       "asm_file": "disasm/func_05BE84_unknown.asm",
       "status": "AUDITED"
     },
