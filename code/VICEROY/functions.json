@@ -6102,9 +6102,9 @@
       "size": 1424,
       "instructions": 30,
       "region": "overlay",
-      "name": "unknown",
+      "name": "market_price_drift",
       "asm_file": "disasm/func_0305A8_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x030B38",
@@ -6696,9 +6696,9 @@
       "size": 230,
       "instructions": 10,
       "region": "overlay",
-      "name": "unknown",
+      "name": "immigration_threshold_and_cross_production",
       "asm_file": "disasm/func_035D9A_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x035E80",
@@ -6939,9 +6939,9 @@
       "size": 2781,
       "instructions": 261,
       "region": "overlay",
-      "name": "unknown",
+      "name": "score_component_sum_and_report",
       "asm_file": "disasm/func_039EE2_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03A9C0",
