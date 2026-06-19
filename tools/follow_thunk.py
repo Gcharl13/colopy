@@ -1,51 +1,55 @@
 #!/usr/bin/env python3
-"""follow_thunk.py -- resolve an RTLink overlay thunk to its real target and
-disassemble it, so "thunk-blocked" code paths can be read.
+"""follow_thunk.py -- resolve an RTLink overlay thunk to its target FILE offset
+and disassemble it. Now backed by the pre-computed thunk table in
+tools/rtlink/viceroy_rtlink_map.json (1023 thunks), so type-A (paged) targets
+resolve correctly -- the inline disasm "overlay @file" annotations did not.
 
-Mechanism (byte-verified against VICEROY.EXE, see tools/rtlink/RTLINK_V2.md):
-each overlay call `LCALL seg:off` lands on a 7-byte THUNK STUB at the resident
-file offset `0x2400 + seg*16 + off`. The stub is:
-    LCALL 0x110D:0xD91     ; RTLink page-loader (pages in the overlay)
-    LJMP  S:O              ; jump to the paged-in code at runtime segment S
-- **Type-B (resident):** S:O is already in the always-loaded image; its file
-  offset is `0x2400 + S*16 + O` -> disassemble directly.
-- **Type-A (paged overlay):** S:O lives in an overlay page; the file offset is
-  `overlay_pages[page_id].code_offset + (S<<4) + O` (per
-  code/VICEROY/overlay_functions_reseg.json). The page_id must come from the
-  call-site's page or the thunk directory -- the inline disasm "overlay @file"
-  annotations are NOT reliable for Type-A (some point at data).
+Resolution (byte-validated: ~89% of thunks land on a clean function prologue):
+    base = 0x2400                              (type-B, resident) OR
+           segments[page_id-1].code_offset     (type-A, paged overlay)
+    target_file_offset = base + ljmp_seg*16 + offset_in_segment
 
-Needs `pip install capstone`. Usage:
-    python tools/follow_thunk.py 0x181f 0x9a4      # resolve+disasm a thunk
-    python tools/follow_thunk.py --at 0x05FE60     # disasm a file offset
+Subcommands:
+    python tools/follow_thunk.py 0x181f 0x9a4   # resolve a thunk seg:off + disasm
+    python tools/follow_thunk.py --at 0x39EE2   # disasm a file offset
+    python tools/follow_thunk.py --emit         # write data_extracted/thunk_targets.json
 """
 from __future__ import annotations
-import argparse, re, json
+import argparse, json, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXE = (ROOT / "raw/COLONIZE/VICEROY.EXE").read_bytes()
 DIS = ROOT / "code/VICEROY/disasm"
-CODE_BASE = 0x2400
+RMAP = json.load(open(ROOT / "tools/rtlink/viceroy_rtlink_map.json"))
+SEGS = {s["page_id"]: s for s in RMAP["segments"]}
+THUNKS = {t["file_offset"]: t for t in RMAP["thunk_table"]["thunks"]}
 
-def _md():
+def resolve_stub(stub: int):
+    """stub file offset -> (type, target_file_offset) or (None, None)."""
+    t = THUNKS.get(stub)
+    if not t:
+        return None, None
+    base = 0x2400 if t["type"] == "B" else SEGS[t["page_id"]]["code_offset"]
+    return t["type"], base + (t["ljmp_seg"] << 4) + t["offset_in_segment"]
+
+def resolve(seg: int, off: int):
+    return resolve_stub(0x2400 + seg * 16 + off)
+
+def disasm_at(fo: int, n: int = 60):
     from capstone import Cs, CS_ARCH_X86, CS_MODE_16
-    return Cs(CS_ARCH_X86, CS_MODE_16)
-
-def disasm_at(fo: int, n: int = 60, skip_pad: bool = True):
-    md = _md()
-    start = fo
-    if skip_pad:
-        while start < len(EXE) and EXE[start] == 0:
-            start += 1
-        if start != fo:
-            print(f"  (skipped {start-fo} pad bytes -> 0x{start:06X})")
-    for i, ins in enumerate(md.disasm(EXE[start:start+260], start)):
+    md = Cs(CS_ARCH_X86, CS_MODE_16)
+    s = fo
+    while s < len(EXE) and EXE[s] in (0, 0x90):
+        s += 1
+    if s != fo:
+        print(f"  (skipped {s-fo} pad -> 0x{s:06X})")
+    for i, ins in enumerate(md.disasm(EXE[s:s+260], s)):
         if i >= n:
             break
         print(f"  {ins.address:06X}  {ins.mnemonic:7s} {ins.op_str}")
 
-def callers(seg: int, off: int):
+def callers(seg, off):
     pat = re.compile(rf"LCALL\s+0x{seg:x},\s*0x{off:x}\b", re.I)
     out = []
     for af in DIS.glob("*.asm"):
@@ -56,44 +60,42 @@ def callers(seg: int, off: int):
                 out.append((m.group(1) if m else "?", am.group(1) if am else "?"))
     return out
 
-def pages():
-    rs = json.load(open(ROOT / "code/VICEROY/overlay_functions_reseg.json"))
-    return [(int(v["code_offset"], 16), int(v["code_end"], 16)) for v in rs["pages"].values()]
+def emit():
+    out = {}
+    for t in RMAP["thunk_table"]["thunks"]:
+        base = 0x2400 if t["type"] == "B" else SEGS[t["page_id"]]["code_offset"]
+        tgt = base + (t["ljmp_seg"] << 4) + t["offset_in_segment"]
+        # the thunk's own seg:off (resident table addr -> seg:off it answers for)
+        out[f"{t['file_offset']:06X}"] = {
+            "type": t["type"], "page_id": t.get("page_id"),
+            "target_file_offset": f"0x{tgt:06X}",
+        }
+    p = ROOT / "data_extracted/thunk_targets.json"
+    p.write_text(json.dumps({"_note": "RTLink thunk stub file_offset -> resolved "
+                             "target file offset (tools/follow_thunk.py --emit)",
+                             "count": len(out), "thunks": out}, indent=2))
+    print(f"wrote {p.relative_to(ROOT)} ({len(out)} thunks)")
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("seg", nargs="?"); ap.add_argument("off", nargs="?")
-    ap.add_argument("--at")
+    ap.add_argument("--at"); ap.add_argument("--emit", action="store_true")
     a = ap.parse_args()
+    if a.emit:
+        emit(); return
     if a.at:
         disasm_at(int(a.at, 16)); return
     seg, off = int(a.seg, 16), int(a.off, 16)
     cs = callers(seg, off)
     print(f"thunk 0x{seg:X}:0x{off:X} — {len(cs)} call site(s)"
-          + ("  [shared utility — many callers]" if len(cs) > 6 else ""))
-    for fn, addr in cs[:10]:
+          + ("  [shared utility]" if len(cs) > 6 else ""))
+    for fn, addr in cs[:8]:
         print(f"  called from func_{fn} @ 0x{addr}")
-
-    stub = CODE_BASE + seg*16 + off
-    print(f"\nthunk stub @ file 0x{stub:06X}:")
-    disasm_at(stub, n=3, skip_pad=False)
-    # parse the LJMP S:O from the stub (EA off seg after the LCALL)
-    b = EXE
-    j = stub
-    if b[j] == 0x9a:        # LCALL loader, skip 5 bytes
-        j += 5
-    if b[j] == 0xea:        # LJMP
-        o = int.from_bytes(b[j+1:j+3], "little"); s = int.from_bytes(b[j+3:j+5], "little")
-        resident = CODE_BASE + s*16 + o
-        in_pages = any(cs0 <= resident < ce for cs0, ce in pages())
-        kind = "Type-A (paged overlay)" if (s << 4) + o < 0x10000 and not in_pages else "Type-B (resident)"
-        print(f"\n  -> LJMP {s:#06x}:{o:#06x}  ({kind})")
-        if kind.startswith("Type-B"):
-            print(f"  resident target file 0x{resident:06X}:")
-            disasm_at(resident)
-        else:
-            print(f"  paged target runtime {s:#06x}:{o:#06x} — file = page.code_offset + {(s<<4)+o:#x}")
-            print("  (resolve page_id via the call-site page / thunk directory; then --at <file_off>)")
+    kind, tgt = resolve(seg, off)
+    if tgt is None:
+        print("  (thunk not in rtlink map)"); return
+    print(f"\n  Type-{kind} -> target file 0x{tgt:06X}:")
+    disasm_at(tgt)
 
 if __name__ == "__main__":
     main()

@@ -25,9 +25,13 @@ score  = score >> 1                   # @0x3AA6A (halved)
 ```
 - The **difficulty multiplier `[4,5,6,8,10]`** is byte-verified — this is the
   manual's "difficulty factor". **B**
-- `base` (the component points) is computed behind an overlay thunk:
-  `func_03B36A` → `LJMP 0x191F:0x3AA` (paged) — so the **component weights below
-  remain `RECONSTRUCTED`** until that paged target is resolved.
+- `base` (the component points) is computed in the paged function
+  **`0x191F:0x3AA` → file `0x39EE2`** (resolved via `tools/follow_thunk.py`). It
+  seeds the accumulator with King-anger terms (`100·[0x53A7] + [0x53A8]`
+  `@0x39EE6`) and adds **weighted components** (e.g. a `+5` weight at `@0x39F55`,
+  consistent with the manual's "+5 per Founding Father"). The **full per-component
+  enumeration** (mapping each weight to colonists/fathers/gold/sentiment) is the
+  remaining `RECONSTRUCTED`→`B` step, now that the function is reachable.
 - A Hall-of-Fame **rank 0..23** is derived from the score (largest `n` with
   `n²/3 < score`, capped at 23). **B** (`@0x3AA41..0x3AA79`).
 - Score accumulator global `[0x372]` (zeroed at entry, written during scoring). **B**

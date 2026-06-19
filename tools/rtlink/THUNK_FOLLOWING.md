@@ -44,3 +44,20 @@ targets directly.
   `0x181F:0x9A4` has **92** callers; `0x181F:0x4D4` (random_int) has **222**. So
   attributing such a thunk to one feature (see the corrected market-drift note in
   `spec/BACKLOG.md` #2) is a mistake.
+
+## UPDATE 2026-06-19 — type-A resolution solved (89%)
+
+The pre-computed thunk table in `viceroy_rtlink_map.json` (1023 thunks, each with
+`type`, `page_id`, `ljmp_seg`, `offset_in_segment`) resolves every thunk:
+```
+base = 0x2400                            (type-B resident)
+       segments[page_id-1].code_offset   (type-A paged)
+target_file_offset = base + ljmp_seg*16 + offset_in_segment
+```
+This lands on a clean function prologue for **906/1023 = 89%** of thunks (the
+map's own `page_id_model` text omitted the `ljmp_seg<<4` term and only hit 68% of
+type-A; the `typeA_thunk_targets.json` formula with that term is the correct one).
+`tools/follow_thunk.py` now uses this; `--emit` writes
+`data_extracted/thunk_targets.json` (stub → resolved file offset for all 1023).
+First payoff: the scoring component-sum `0x191F:0x3AA` resolves to file `0x39EE2`
+(see `spec/systems/scoring.md`).
