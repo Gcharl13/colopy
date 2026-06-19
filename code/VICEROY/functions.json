@@ -1125,9 +1125,9 @@
       "size": 128,
       "instructions": 45,
       "region": "load_image",
-      "name": "unknown",
+      "name": "tile_terrain_variant_hash",
       "asm_file": "disasm/func_0060A0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x006188",

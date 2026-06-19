@@ -94,15 +94,19 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    `[0xA8A2]` (`@0x68285`/`@0x68301`).
 3. **Auto-forest variant** (hard rule 3) → land class masked `& 7`, then the forested
    bands `8..0x0F` / `0x10..0x17` select the variant; fallback id `0x11` (`@0x682C0..0x68301`).
-4. **Roads / improvements** → road sprite base **`0x5A` (90) + index** from the
-   road-feature test `0x181F:0x718([0xA5A0],[0xA5A2])` (`@0x6829A`, drawn `@0x682B2`).
+4. **Terrain-detail / variant overlay** → sprite base **`0x5A` (90) + variant index**
+   from the position+terrain hash `func_0060A0` (`0x181F:0x718([0xA5A0],[0xA5A2])`,
+   `@0x6829A`, drawn `@0x682B2`). `func_0060A0` is a shared util (14 callers): reads
+   the terrain via `func_005CFE`, masks `& 0x3F`, applies the 8..0x17 forest-band
+   check, and hashes tile `(x&3,y&3)` → a deterministic per-tile variant. *(Not
+   roads — roads are a separate layer drawn between tile centres, site `TBD`.)*
 5. **Forest / hills overlay** → auto-forest rows `+0x21` (mountains) / `+0x31` (hills)
    (`@0x6837F`/`@0x68384`), gated by tile bits forest `0x80` / hills `0x20`.
 6. **River / edge overlay** → sprite `0x96` on tile bit `0x40` (`@0x68354`).
 7. **Coast directional edges** → `0x97 + edge_index` (above).
 
-Sprite-index bases the selector writes: **road/feature `0x5A`**, **beach band
-`0x95..0x99`**, forest/hills overlay rows `+0x21`/`+0x31`. All drawn through
+Sprite-index bases the selector writes: **terrain-detail variants `0x5A`+** (position
+hash), **beach band `0x95..0x99`**, forest/hills overlay rows `+0x21`/`+0x31`. All drawn through
 `func_067DC8` (sub-cell place) / `func_067E28` (ground) / `func_067EEC` (terrain).
 
 **Viewport geometry (`func_0685DC` = O514) — BYTE_VERIFIED.** The outer loop walks
