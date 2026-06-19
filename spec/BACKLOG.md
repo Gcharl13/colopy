@@ -22,7 +22,7 @@ secondary mechanics.
 | 9 | Map generation | mapgen routines (not yet hand-decoded) | `systems/map_generation.md` | Noise seeding sketched; code TBD. |
 | 10 | Event triggers & timing | native-encounter dispatch **`func_05BE84`** (B); per-outcome handlers `0x5C03E/0C0CA/0C252/0C29A/0C1AF` | `systems/events.md` | **Outcome-selection mechanism now B** (2026-06-19): gate roll + `random(1,4)` + difficulty/turn + availability gates + 5-way switch. Remaining: each handler's message binding. |
 | 11 | Save / load codec | `.SAV` loader; HALLFAME.DAT writer **`func_03ADA6`** (B) | `systems/save.md` | **HALLFAME.DAT now B** (2026-06-19): 5×42B=210B records (24B name + ~8 score words). SAV per-field codec still TBD. |
-| 12 | Scoring weights | scaler **`func_03A9C0`** (B); component sum behind paged `func_03B36A`→`0x191F:0x3AA` | `systems/scoring.md` | **Scaling now B** (2026-06-19): difficulty mult `[4,5,6,8,10]`, `score=(mult*base)/100>>1`, rank, accumulator `[0x372]`. Remaining: component weights behind the paged thunk. |
+| 12 | Scoring weights | scaler **`func_03A9C0`** (B); component sum behind paged `func_03B36A`→`0x191F:0x3AA` → file `0x39EE2` (resolved) | `systems/scoring.md` | **Scaling + population component now B** (2026-06-19): difficulty mult `[4,5,6,8,10]`, `score=(mult*base)/100>>1`, rank, accumulator `[0x372]`; **population gates** `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4` (`@0x3A09A..0x3A117`). Remaining: father(+5)/gold/sentiment/razed/revolution weights → label-binding in the same `0x39EE2` report builder. |
 
 **Definition of done per item:** the named spec section cites the byte offset(s),
 states the formula/value, is tagged `BYTE_VERIFIED`, and the corresponding
