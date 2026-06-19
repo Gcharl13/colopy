@@ -1,5121 +1,6145 @@
 {
-  "_note": "RTLink thunk stub file_offset -> resolved target file offset (tools/follow_thunk.py --emit)",
+  "_note": "RTLink thunk stub file_offset -> resolved target file offset (tools/follow_thunk.py --emit). target = base + ljmp_seg*16 + offset_in_segment; base=0x2400 (type-B) or page code_offset (type-A).",
   "count": 1023,
+  "validated_exact_known_function_start": "911/1023 (89%); the rest resolve to mid-function jumps.",
   "thunks": {
     "01A5F0": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070EBA"
+      "target_file_offset": "0x070EBA",
+      "known_function_start": true
     },
     "01A5FE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002400"
+      "target_file_offset": "0x002400",
+      "known_function_start": true
     },
     "01A608": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00242C"
+      "target_file_offset": "0x00242C",
+      "known_function_start": true
     },
     "01A612": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002462"
+      "target_file_offset": "0x002462",
+      "known_function_start": true
     },
     "01A61C": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078C48"
+      "target_file_offset": "0x078C48",
+      "known_function_start": true
     },
     "01A62A": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078CB2"
+      "target_file_offset": "0x078CB2",
+      "known_function_start": true
     },
     "01A638": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078B3E"
+      "target_file_offset": "0x078B3E",
+      "known_function_start": true
     },
     "01A646": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002544"
+      "target_file_offset": "0x002544",
+      "known_function_start": true
     },
     "01A650": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002892"
+      "target_file_offset": "0x002892",
+      "known_function_start": true
     },
     "01A65A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00260E"
+      "target_file_offset": "0x00260E",
+      "known_function_start": true
     },
     "01A664": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002632"
+      "target_file_offset": "0x002632",
+      "known_function_start": true
     },
     "01A66E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002648"
+      "target_file_offset": "0x002648",
+      "known_function_start": true
     },
     "01A678": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0026B2"
+      "target_file_offset": "0x0026B2",
+      "known_function_start": false
     },
     "01A682": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0026D4"
+      "target_file_offset": "0x0026D4",
+      "known_function_start": true
     },
     "01A68C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002700"
+      "target_file_offset": "0x002700",
+      "known_function_start": false
     },
     "01A696": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00273E"
+      "target_file_offset": "0x00273E",
+      "known_function_start": true
     },
     "01A6A0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00275C"
+      "target_file_offset": "0x00275C",
+      "known_function_start": true
     },
     "01A6AA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DDEA"
+      "target_file_offset": "0x00DDEA",
+      "known_function_start": true
     },
     "01A6B4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E350"
+      "target_file_offset": "0x00E350",
+      "known_function_start": true
     },
     "01A6BE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E0A2"
+      "target_file_offset": "0x00E0A2",
+      "known_function_start": true
     },
     "01A6C8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002A98"
+      "target_file_offset": "0x002A98",
+      "known_function_start": true
     },
     "01A6D2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DB3A"
+      "target_file_offset": "0x00DB3A",
+      "known_function_start": true
     },
     "01A6DC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004AFA"
+      "target_file_offset": "0x004AFA",
+      "known_function_start": true
     },
     "01A6E6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D272"
+      "target_file_offset": "0x00D272",
+      "known_function_start": true
     },
     "01A6F0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002BC8"
+      "target_file_offset": "0x002BC8",
+      "known_function_start": true
     },
     "01A6FA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002912"
+      "target_file_offset": "0x002912",
+      "known_function_start": true
     },
     "01A704": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002AC6"
+      "target_file_offset": "0x002AC6",
+      "known_function_start": true
     },
     "01A70E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002922"
+      "target_file_offset": "0x002922",
+      "known_function_start": true
     },
     "01A718": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002932"
+      "target_file_offset": "0x002932",
+      "known_function_start": true
     },
     "01A722": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002AFE"
+      "target_file_offset": "0x002AFE",
+      "known_function_start": true
     },
     "01A72C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002B38"
+      "target_file_offset": "0x002B38",
+      "known_function_start": true
     },
     "01A736": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002962"
+      "target_file_offset": "0x002962",
+      "known_function_start": true
     },
     "01A740": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002B72"
+      "target_file_offset": "0x002B72",
+      "known_function_start": true
     },
     "01A74A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002972"
+      "target_file_offset": "0x002972",
+      "known_function_start": true
     },
     "01A754": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002982"
+      "target_file_offset": "0x002982",
+      "known_function_start": true
     },
     "01A75E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002992"
+      "target_file_offset": "0x002992",
+      "known_function_start": true
     },
     "01A768": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0028B0"
+      "target_file_offset": "0x0028B0",
+      "known_function_start": true
     },
     "01A772": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0029DE"
+      "target_file_offset": "0x0029DE",
+      "known_function_start": true
     },
     "01A77C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002C4A"
+      "target_file_offset": "0x002C4A",
+      "known_function_start": true
     },
     "01A786": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0028C0"
+      "target_file_offset": "0x0028C0",
+      "known_function_start": true
     },
     "01A790": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002A06"
+      "target_file_offset": "0x002A06",
+      "known_function_start": true
     },
     "01A79A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002C82"
+      "target_file_offset": "0x002C82",
+      "known_function_start": true
     },
     "01A7A4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0028E2"
+      "target_file_offset": "0x0028E2",
+      "known_function_start": true
     },
     "01A7AE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0028F2"
+      "target_file_offset": "0x0028F2",
+      "known_function_start": true
     },
     "01A7B8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002CE0"
+      "target_file_offset": "0x002CE0",
+      "known_function_start": true
     },
     "01A7C2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002A6E"
+      "target_file_offset": "0x002A6E",
+      "known_function_start": true
     },
     "01A7CC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002902"
+      "target_file_offset": "0x002902",
+      "known_function_start": true
     },
     "01A7D6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002D28"
+      "target_file_offset": "0x002D28",
+      "known_function_start": true
     },
     "01A7E0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E68A"
+      "target_file_offset": "0x00E68A",
+      "known_function_start": true
     },
     "01A7EA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E51C"
+      "target_file_offset": "0x00E51C",
+      "known_function_start": true
     },
     "01A7F4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E6A6"
+      "target_file_offset": "0x00E6A6",
+      "known_function_start": true
     },
     "01A7FE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00304A"
+      "target_file_offset": "0x00304A",
+      "known_function_start": true
     },
     "01A808": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0033EA"
+      "target_file_offset": "0x0033EA",
+      "known_function_start": false
     },
     "01A812": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0033F2"
+      "target_file_offset": "0x0033F2",
+      "known_function_start": true
     },
     "01A81C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x003104"
+      "target_file_offset": "0x003104",
+      "known_function_start": true
     },
     "01A826": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002EE4"
+      "target_file_offset": "0x002EE4",
+      "known_function_start": true
     },
     "01A830": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x002D74"
+      "target_file_offset": "0x002D74",
+      "known_function_start": true
     },
     "01A83A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00380C"
+      "target_file_offset": "0x00380C",
+      "known_function_start": true
     },
     "01A844": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E76A"
+      "target_file_offset": "0x00E76A",
+      "known_function_start": true
     },
     "01A84E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x003460"
+      "target_file_offset": "0x003460",
+      "known_function_start": true
     },
     "01A858": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0034C4"
+      "target_file_offset": "0x0034C4",
+      "known_function_start": true
     },
     "01A862": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x003536"
+      "target_file_offset": "0x003536",
+      "known_function_start": true
     },
     "01A86C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00341E"
+      "target_file_offset": "0x00341E",
+      "known_function_start": true
     },
     "01A876": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0035EC"
+      "target_file_offset": "0x0035EC",
+      "known_function_start": true
     },
     "01A880": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C8E8"
+      "target_file_offset": "0x00C8E8",
+      "known_function_start": false
     },
     "01A88A": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x0789F0"
+      "target_file_offset": "0x0789F0",
+      "known_function_start": false
     },
     "01A898": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004314"
+      "target_file_offset": "0x004314",
+      "known_function_start": true
     },
     "01A8A2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x003E40"
+      "target_file_offset": "0x003E40",
+      "known_function_start": true
     },
     "01A8AC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00386A"
+      "target_file_offset": "0x00386A",
+      "known_function_start": true
     },
     "01A8B6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0036B2"
+      "target_file_offset": "0x0036B2",
+      "known_function_start": false
     },
     "01A8C0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004566"
+      "target_file_offset": "0x004566",
+      "known_function_start": true
     },
     "01A8CA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x003710"
+      "target_file_offset": "0x003710",
+      "known_function_start": true
     },
     "01A8D4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0066BA"
+      "target_file_offset": "0x0066BA",
+      "known_function_start": true
     },
     "01A8DE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006672"
+      "target_file_offset": "0x006672",
+      "known_function_start": true
     },
     "01A8E8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E964"
+      "target_file_offset": "0x00E964",
+      "known_function_start": true
     },
     "01A8F2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005BFA"
+      "target_file_offset": "0x005BFA",
+      "known_function_start": true
     },
     "01A8FC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0082A0"
+      "target_file_offset": "0x0082A0",
+      "known_function_start": true
     },
     "01A906": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x0460F8"
+      "target_file_offset": "0x0460F8",
+      "known_function_start": true
     },
     "01A912": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00860E"
+      "target_file_offset": "0x00860E",
+      "known_function_start": true
     },
     "01A91C": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066EC8"
+      "target_file_offset": "0x066EC8",
+      "known_function_start": true
     },
     "01A92A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DEA6"
+      "target_file_offset": "0x00DEA6",
+      "known_function_start": true
     },
     "01A934": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06753C"
+      "target_file_offset": "0x06753C",
+      "known_function_start": true
     },
     "01A942": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BF3C"
+      "target_file_offset": "0x00BF3C",
+      "known_function_start": true
     },
     "01A94C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0048CC"
+      "target_file_offset": "0x0048CC",
+      "known_function_start": true
     },
     "01A956": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0048EA"
+      "target_file_offset": "0x0048EA",
+      "known_function_start": true
     },
     "01A960": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004900"
+      "target_file_offset": "0x004900",
+      "known_function_start": true
     },
     "01A96A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00493C"
+      "target_file_offset": "0x00493C",
+      "known_function_start": true
     },
     "01A974": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0049FC"
+      "target_file_offset": "0x0049FC",
+      "known_function_start": true
     },
     "01A97E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004B48"
+      "target_file_offset": "0x004B48",
+      "known_function_start": true
     },
     "01A988": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004B62"
+      "target_file_offset": "0x004B62",
+      "known_function_start": false
     },
     "01A992": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004A22"
+      "target_file_offset": "0x004A22",
+      "known_function_start": false
     },
     "01A99C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004D1E"
+      "target_file_offset": "0x004D1E",
+      "known_function_start": true
     },
     "01A9A6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004A32"
+      "target_file_offset": "0x004A32",
+      "known_function_start": false
     },
     "01A9B0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004A80"
+      "target_file_offset": "0x004A80",
+      "known_function_start": true
     },
     "01A9BA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004B16"
+      "target_file_offset": "0x004B16",
+      "known_function_start": true
     },
     "01A9C4": {
       "type": "A",
       "page_id": 29,
-      "target_file_offset": "0x077ADE"
+      "target_file_offset": "0x077ADE",
+      "known_function_start": true
     },
     "01A9D0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D286"
+      "target_file_offset": "0x00D286",
+      "known_function_start": true
     },
     "01A9DA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005160"
+      "target_file_offset": "0x005160",
+      "known_function_start": true
     },
     "01A9E4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D1E4"
+      "target_file_offset": "0x00D1E4",
+      "known_function_start": true
     },
     "01A9EE": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F594"
+      "target_file_offset": "0x06F594",
+      "known_function_start": false
     },
     "01A9FA": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F646"
+      "target_file_offset": "0x06F646",
+      "known_function_start": false
     },
     "01AA06": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C220"
+      "target_file_offset": "0x06C220",
+      "known_function_start": true
     },
     "01AA12": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FAE8"
+      "target_file_offset": "0x06FAE8",
+      "known_function_start": true
     },
     "01AA1E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008074"
+      "target_file_offset": "0x008074",
+      "known_function_start": true
     },
     "01AA28": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C23C"
+      "target_file_offset": "0x06C23C",
+      "known_function_start": true
     },
     "01AA34": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DCF6"
+      "target_file_offset": "0x00DCF6",
+      "known_function_start": true
     },
     "01AA3E": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076B9E"
+      "target_file_offset": "0x076B9E",
+      "known_function_start": true
     },
     "01AA4C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D1CA"
+      "target_file_offset": "0x00D1CA",
+      "known_function_start": true
     },
     "01AA56": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D106"
+      "target_file_offset": "0x00D106",
+      "known_function_start": true
     },
     "01AA60": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x004EE6"
+      "target_file_offset": "0x004EE6",
+      "known_function_start": true
     },
     "01AA6A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D0E0"
+      "target_file_offset": "0x00D0E0",
+      "known_function_start": false
     },
     "01AA74": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DCD4"
+      "target_file_offset": "0x00DCD4",
+      "known_function_start": true
     },
     "01AA7E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0050BC"
+      "target_file_offset": "0x0050BC",
+      "known_function_start": true
     },
     "01AA88": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0050F0"
+      "target_file_offset": "0x0050F0",
+      "known_function_start": true
     },
     "01AA92": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0050FC"
+      "target_file_offset": "0x0050FC",
+      "known_function_start": true
     },
     "01AA9C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005108"
+      "target_file_offset": "0x005108",
+      "known_function_start": true
     },
     "01AAA6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00513C"
+      "target_file_offset": "0x00513C",
+      "known_function_start": true
     },
     "01AAB0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00518E"
+      "target_file_offset": "0x00518E",
+      "known_function_start": false
     },
     "01AABA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C31C"
+      "target_file_offset": "0x00C31C",
+      "known_function_start": false
     },
     "01AAC4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C322"
+      "target_file_offset": "0x00C322",
+      "known_function_start": true
     },
     "01AACE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01299A"
+      "target_file_offset": "0x01299A",
+      "known_function_start": false
     },
     "01AAD8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C98D"
+      "target_file_offset": "0x00C98D",
+      "known_function_start": false
     },
     "01AAE2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C9D4"
+      "target_file_offset": "0x00C9D4",
+      "known_function_start": false
     },
     "01AAEC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0051D2"
+      "target_file_offset": "0x0051D2",
+      "known_function_start": true
     },
     "01AAF6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005234"
+      "target_file_offset": "0x005234",
+      "known_function_start": true
     },
     "01AB00": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00531C"
+      "target_file_offset": "0x00531C",
+      "known_function_start": true
     },
     "01AB0A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005418"
+      "target_file_offset": "0x005418",
+      "known_function_start": true
     },
     "01AB14": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00543C"
+      "target_file_offset": "0x00543C",
+      "known_function_start": true
     },
     "01AB1E": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06B722"
+      "target_file_offset": "0x06B722",
+      "known_function_start": true
     },
     "01AB2C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00566C"
+      "target_file_offset": "0x00566C",
+      "known_function_start": false
     },
     "01AB36": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005760"
+      "target_file_offset": "0x005760",
+      "known_function_start": true
     },
     "01AB40": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x056B08"
+      "target_file_offset": "0x056B08",
+      "known_function_start": true
     },
     "01AB4E": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x043074"
+      "target_file_offset": "0x043074",
+      "known_function_start": true
     },
     "01AB5A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C136"
+      "target_file_offset": "0x00C136",
+      "known_function_start": false
     },
     "01AB64": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03B2F8"
+      "target_file_offset": "0x03B2F8",
+      "known_function_start": true
     },
     "01AB72": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030550"
+      "target_file_offset": "0x030550",
+      "known_function_start": true
     },
     "01AB80": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BCEA"
+      "target_file_offset": "0x00BCEA",
+      "known_function_start": true
     },
     "01AB8A": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066928"
+      "target_file_offset": "0x066928",
+      "known_function_start": false
     },
     "01AB98": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072090"
+      "target_file_offset": "0x072090",
+      "known_function_start": true
     },
     "01ABA6": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072CA4"
+      "target_file_offset": "0x072CA4",
+      "known_function_start": true
     },
     "01ABB4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00CA0C"
+      "target_file_offset": "0x00CA0C",
+      "known_function_start": true
     },
     "01ABBE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C861"
+      "target_file_offset": "0x00C861",
+      "known_function_start": false
     },
     "01ABC8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0129EF"
+      "target_file_offset": "0x0129EF",
+      "known_function_start": false
     },
     "01ABD2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01298F"
+      "target_file_offset": "0x01298F",
+      "known_function_start": false
     },
     "01ABDC": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x075F98"
+      "target_file_offset": "0x075F98",
+      "known_function_start": true
     },
     "01ABEA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x035B06"
+      "target_file_offset": "0x035B06",
+      "known_function_start": true
     },
     "01ABF8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02C5D4"
+      "target_file_offset": "0x02C5D4",
+      "known_function_start": true
     },
     "01AC04": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0083F2"
+      "target_file_offset": "0x0083F2",
+      "known_function_start": true
     },
     "01AC0E": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02F3A2"
+      "target_file_offset": "0x02F3A2",
+      "known_function_start": true
     },
     "01AC1C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024A48"
+      "target_file_offset": "0x024A48",
+      "known_function_start": true
     },
     "01AC28": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x052F7E"
+      "target_file_offset": "0x052F7E",
+      "known_function_start": true
     },
     "01AC34": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02F052"
+      "target_file_offset": "0x02F052",
+      "known_function_start": true
     },
     "01AC42": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F5F2"
+      "target_file_offset": "0x06F5F2",
+      "known_function_start": true
     },
     "01AC4E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00817E"
+      "target_file_offset": "0x00817E",
+      "known_function_start": true
     },
     "01AC58": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E664"
+      "target_file_offset": "0x03E664",
+      "known_function_start": true
     },
     "01AC66": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04891A"
+      "target_file_offset": "0x04891A",
+      "known_function_start": true
     },
     "01AC72": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005F04"
+      "target_file_offset": "0x005F04",
+      "known_function_start": true
     },
     "01AC7C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005D4E"
+      "target_file_offset": "0x005D4E",
+      "known_function_start": true
     },
     "01AC86": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005F48"
+      "target_file_offset": "0x005F48",
+      "known_function_start": true
     },
     "01AC90": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005D84"
+      "target_file_offset": "0x005D84",
+      "known_function_start": true
     },
     "01AC9A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006204"
+      "target_file_offset": "0x006204",
+      "known_function_start": true
     },
     "01ACA4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005DBA"
+      "target_file_offset": "0x005DBA",
+      "known_function_start": true
     },
     "01ACAE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005FD4"
+      "target_file_offset": "0x005FD4",
+      "known_function_start": true
     },
     "01ACB8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005C2C"
+      "target_file_offset": "0x005C2C",
+      "known_function_start": true
     },
     "01ACC2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006018"
+      "target_file_offset": "0x006018",
+      "known_function_start": true
     },
     "01ACCC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005DF0"
+      "target_file_offset": "0x005DF0",
+      "known_function_start": true
     },
     "01ACD6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00603A"
+      "target_file_offset": "0x00603A",
+      "known_function_start": true
     },
     "01ACE0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005F82"
+      "target_file_offset": "0x005F82",
+      "known_function_start": true
     },
     "01ACEA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005CB0"
+      "target_file_offset": "0x005CB0",
+      "known_function_start": true
     },
     "01ACF4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005E18"
+      "target_file_offset": "0x005E18",
+      "known_function_start": true
     },
     "01ACFE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005CE6"
+      "target_file_offset": "0x005CE6",
+      "known_function_start": true
     },
     "01AD08": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0060A0"
+      "target_file_offset": "0x0060A0",
+      "known_function_start": true
     },
     "01AD12": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005E90"
+      "target_file_offset": "0x005E90",
+      "known_function_start": true
     },
     "01AD1C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005CFE"
+      "target_file_offset": "0x005CFE",
+      "known_function_start": true
     },
     "01AD26": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005ED0"
+      "target_file_offset": "0x005ED0",
+      "known_function_start": true
     },
     "01AD30": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005D1A"
+      "target_file_offset": "0x005D1A",
+      "known_function_start": true
     },
     "01AD3A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005EE8"
+      "target_file_offset": "0x005EE8",
+      "known_function_start": true
     },
     "01AD44": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x005D32"
+      "target_file_offset": "0x005D32",
+      "known_function_start": true
     },
     "01AD4E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006188"
+      "target_file_offset": "0x006188",
+      "known_function_start": true
     },
     "01AD58": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0062B4"
+      "target_file_offset": "0x0062B4",
+      "known_function_start": true
     },
     "01AD62": {
       "type": "A",
       "page_id": 29,
-      "target_file_offset": "0x077D5E"
+      "target_file_offset": "0x077D5E",
+      "known_function_start": true
     },
     "01AD6E": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x078142"
+      "target_file_offset": "0x078142",
+      "known_function_start": true
     },
     "01AD7C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00627A"
+      "target_file_offset": "0x00627A",
+      "known_function_start": true
     },
     "01AD86": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0065C4"
+      "target_file_offset": "0x0065C4",
+      "known_function_start": true
     },
     "01AD90": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006608"
+      "target_file_offset": "0x006608",
+      "known_function_start": true
     },
     "01AD9A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0063B6"
+      "target_file_offset": "0x0063B6",
+      "known_function_start": true
     },
     "01ADA4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BC10"
+      "target_file_offset": "0x00BC10",
+      "known_function_start": true
     },
     "01ADAE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008D26"
+      "target_file_offset": "0x008D26",
+      "known_function_start": true
     },
     "01ADB8": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EB1C"
+      "target_file_offset": "0x02EB1C",
+      "known_function_start": true
     },
     "01ADC6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00701C"
+      "target_file_offset": "0x00701C",
+      "known_function_start": true
     },
     "01ADD0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0066CC"
+      "target_file_offset": "0x0066CC",
+      "known_function_start": true
     },
     "01ADDA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006B46"
+      "target_file_offset": "0x006B46",
+      "known_function_start": true
     },
     "01ADE4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007A80"
+      "target_file_offset": "0x007A80",
+      "known_function_start": true
     },
     "01ADEE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0072E2"
+      "target_file_offset": "0x0072E2",
+      "known_function_start": true
     },
     "01ADF8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006E94"
+      "target_file_offset": "0x006E94",
+      "known_function_start": true
     },
     "01AE02": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0068AA"
+      "target_file_offset": "0x0068AA",
+      "known_function_start": true
     },
     "01AE0C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00757E"
+      "target_file_offset": "0x00757E",
+      "known_function_start": true
     },
     "01AE16": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00730A"
+      "target_file_offset": "0x00730A",
+      "known_function_start": true
     },
     "01AE20": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007B10"
+      "target_file_offset": "0x007B10",
+      "known_function_start": true
     },
     "01AE2A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0075A0"
+      "target_file_offset": "0x0075A0",
+      "known_function_start": true
     },
     "01AE34": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00693A"
+      "target_file_offset": "0x00693A",
+      "known_function_start": true
     },
     "01AE3E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007356"
+      "target_file_offset": "0x007356",
+      "known_function_start": true
     },
     "01AE48": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0075D4"
+      "target_file_offset": "0x0075D4",
+      "known_function_start": true
     },
     "01AE52": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0075E4"
+      "target_file_offset": "0x0075E4",
+      "known_function_start": true
     },
     "01AE5C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006F5A"
+      "target_file_offset": "0x006F5A",
+      "known_function_start": true
     },
     "01AE66": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0075FE"
+      "target_file_offset": "0x0075FE",
+      "known_function_start": true
     },
     "01AE70": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0069D2"
+      "target_file_offset": "0x0069D2",
+      "known_function_start": true
     },
     "01AE7A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0078F4"
+      "target_file_offset": "0x0078F4",
+      "known_function_start": true
     },
     "01AE84": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00738E"
+      "target_file_offset": "0x00738E",
+      "known_function_start": true
     },
     "01AE8E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0069EE"
+      "target_file_offset": "0x0069EE",
+      "known_function_start": true
     },
     "01AE98": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007B64"
+      "target_file_offset": "0x007B64",
+      "known_function_start": true
     },
     "01AEA2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007610"
+      "target_file_offset": "0x007610",
+      "known_function_start": true
     },
     "01AEAC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0073A8"
+      "target_file_offset": "0x0073A8",
+      "known_function_start": true
     },
     "01AEB6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006A10"
+      "target_file_offset": "0x006A10",
+      "known_function_start": true
     },
     "01AEC0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007630"
+      "target_file_offset": "0x007630",
+      "known_function_start": true
     },
     "01AECA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006FD8"
+      "target_file_offset": "0x006FD8",
+      "known_function_start": true
     },
     "01AED4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006CB4"
+      "target_file_offset": "0x006CB4",
+      "known_function_start": false
     },
     "01AEDE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0067D4"
+      "target_file_offset": "0x0067D4",
+      "known_function_start": false
     },
     "01AEE8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007936"
+      "target_file_offset": "0x007936",
+      "known_function_start": true
     },
     "01AEF2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00765C"
+      "target_file_offset": "0x00765C",
+      "known_function_start": true
     },
     "01AEFC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006CCA"
+      "target_file_offset": "0x006CCA",
+      "known_function_start": true
     },
     "01AF06": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007966"
+      "target_file_offset": "0x007966",
+      "known_function_start": true
     },
     "01AF10": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00772E"
+      "target_file_offset": "0x00772E",
+      "known_function_start": true
     },
     "01AF1A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0067F0"
+      "target_file_offset": "0x0067F0",
+      "known_function_start": true
     },
     "01AF24": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007BCE"
+      "target_file_offset": "0x007BCE",
+      "known_function_start": true
     },
     "01AF2E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007002"
+      "target_file_offset": "0x007002",
+      "known_function_start": true
     },
     "01AF38": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006A7C"
+      "target_file_offset": "0x006A7C",
+      "known_function_start": true
     },
     "01AF42": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00723E"
+      "target_file_offset": "0x00723E",
+      "known_function_start": true
     },
     "01AF4C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006D24"
+      "target_file_offset": "0x006D24",
+      "known_function_start": true
     },
     "01AF56": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0079A0"
+      "target_file_offset": "0x0079A0",
+      "known_function_start": true
     },
     "01AF60": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00726E"
+      "target_file_offset": "0x00726E",
+      "known_function_start": true
     },
     "01AF6A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007A20"
+      "target_file_offset": "0x007A20",
+      "known_function_start": true
     },
     "01AF74": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00704C"
+      "target_file_offset": "0x00704C",
+      "known_function_start": true
     },
     "01AF7E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x006696"
+      "target_file_offset": "0x006696",
+      "known_function_start": false
     },
     "01AF88": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F51A"
+      "target_file_offset": "0x06F51A",
+      "known_function_start": true
     },
     "01AF94": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008110"
+      "target_file_offset": "0x008110",
+      "known_function_start": true
     },
     "01AF9E": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C27C"
+      "target_file_offset": "0x06C27C",
+      "known_function_start": true
     },
     "01AFAA": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067644"
+      "target_file_offset": "0x067644",
+      "known_function_start": true
     },
     "01AFB8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007C2A"
+      "target_file_offset": "0x007C2A",
+      "known_function_start": true
     },
     "01AFC2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007BE8"
+      "target_file_offset": "0x007BE8",
+      "known_function_start": true
     },
     "01AFCC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007D3E"
+      "target_file_offset": "0x007D3E",
+      "known_function_start": true
     },
     "01AFD6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0082DC"
+      "target_file_offset": "0x0082DC",
+      "known_function_start": true
     },
     "01AFE0": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x046004"
+      "target_file_offset": "0x046004",
+      "known_function_start": true
     },
     "01AFEC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00863E"
+      "target_file_offset": "0x00863E",
+      "known_function_start": true
     },
     "01AFF6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007F96"
+      "target_file_offset": "0x007F96",
+      "known_function_start": true
     },
     "01B000": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008000"
+      "target_file_offset": "0x008000",
+      "known_function_start": true
     },
     "01B00A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0080C8"
+      "target_file_offset": "0x0080C8",
+      "known_function_start": true
     },
     "01B014": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008158"
+      "target_file_offset": "0x008158",
+      "known_function_start": true
     },
     "01B01E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0081A4"
+      "target_file_offset": "0x0081A4",
+      "known_function_start": true
     },
     "01B028": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x007F34"
+      "target_file_offset": "0x007F34",
+      "known_function_start": true
     },
     "01B032": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0081C6"
+      "target_file_offset": "0x0081C6",
+      "known_function_start": true
     },
     "01B03C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0081F2"
+      "target_file_offset": "0x0081F2",
+      "known_function_start": true
     },
     "01B046": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00822A"
+      "target_file_offset": "0x00822A",
+      "known_function_start": true
     },
     "01B050": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008262"
+      "target_file_offset": "0x008262",
+      "known_function_start": true
     },
     "01B05A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009AAA"
+      "target_file_offset": "0x009AAA",
+      "known_function_start": true
     },
     "01B064": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0091CC"
+      "target_file_offset": "0x0091CC",
+      "known_function_start": true
     },
     "01B06E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008F6C"
+      "target_file_offset": "0x008F6C",
+      "known_function_start": true
     },
     "01B078": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00975A"
+      "target_file_offset": "0x00975A",
+      "known_function_start": true
     },
     "01B082": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0087F4"
+      "target_file_offset": "0x0087F4",
+      "known_function_start": true
     },
     "01B08C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008FB4"
+      "target_file_offset": "0x008FB4",
+      "known_function_start": true
     },
     "01B096": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00994C"
+      "target_file_offset": "0x00994C",
+      "known_function_start": true
     },
     "01B0A0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00864E"
+      "target_file_offset": "0x00864E",
+      "known_function_start": true
     },
     "01B0AA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008806"
+      "target_file_offset": "0x008806",
+      "known_function_start": true
     },
     "01B0B4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B65A"
+      "target_file_offset": "0x00B65A",
+      "known_function_start": true
     },
     "01B0BE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009786"
+      "target_file_offset": "0x009786",
+      "known_function_start": true
     },
     "01B0C8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B880"
+      "target_file_offset": "0x00B880",
+      "known_function_start": true
     },
     "01B0D2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BB6A"
+      "target_file_offset": "0x00BB6A",
+      "known_function_start": true
     },
     "01B0DC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B42C"
+      "target_file_offset": "0x00B42C",
+      "known_function_start": true
     },
     "01B0E6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008846"
+      "target_file_offset": "0x008846",
+      "known_function_start": true
     },
     "01B0F0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008D9C"
+      "target_file_offset": "0x008D9C",
+      "known_function_start": true
     },
     "01B0FA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00929A"
+      "target_file_offset": "0x00929A",
+      "known_function_start": true
     },
     "01B104": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008686"
+      "target_file_offset": "0x008686",
+      "known_function_start": true
     },
     "01B10E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008862"
+      "target_file_offset": "0x008862",
+      "known_function_start": true
     },
     "01B118": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008B96"
+      "target_file_offset": "0x008B96",
+      "known_function_start": true
     },
     "01B122": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B23E"
+      "target_file_offset": "0x00B23E",
+      "known_function_start": true
     },
     "01B12C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009B9C"
+      "target_file_offset": "0x009B9C",
+      "known_function_start": true
     },
     "01B136": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00903E"
+      "target_file_offset": "0x00903E",
+      "known_function_start": true
     },
     "01B140": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008DBC"
+      "target_file_offset": "0x008DBC",
+      "known_function_start": true
     },
     "01B14A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00887C"
+      "target_file_offset": "0x00887C",
+      "known_function_start": true
     },
     "01B154": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BB98"
+      "target_file_offset": "0x00BB98",
+      "known_function_start": true
     },
     "01B15E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00AB78"
+      "target_file_offset": "0x00AB78",
+      "known_function_start": true
     },
     "01B168": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008BB2"
+      "target_file_offset": "0x008BB2",
+      "known_function_start": true
     },
     "01B172": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009626"
+      "target_file_offset": "0x009626",
+      "known_function_start": true
     },
     "01B17C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B900"
+      "target_file_offset": "0x00B900",
+      "known_function_start": true
     },
     "01B186": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B4B8"
+      "target_file_offset": "0x00B4B8",
+      "known_function_start": true
     },
     "01B190": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0086C0"
+      "target_file_offset": "0x0086C0",
+      "known_function_start": true
     },
     "01B19A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009818"
+      "target_file_offset": "0x009818",
+      "known_function_start": true
     },
     "01B1A4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B704"
+      "target_file_offset": "0x00B704",
+      "known_function_start": true
     },
     "01B1AE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0092E0"
+      "target_file_offset": "0x0092E0",
+      "known_function_start": true
     },
     "01B1B8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008BD4"
+      "target_file_offset": "0x008BD4",
+      "known_function_start": true
     },
     "01B1C2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00A93E"
+      "target_file_offset": "0x00A93E",
+      "known_function_start": true
     },
     "01B1CC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0086E4"
+      "target_file_offset": "0x0086E4",
+      "known_function_start": true
     },
     "01B1D6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B2A2"
+      "target_file_offset": "0x00B2A2",
+      "known_function_start": true
     },
     "01B1E0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00965C"
+      "target_file_offset": "0x00965C",
+      "known_function_start": true
     },
     "01B1EA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BBFC"
+      "target_file_offset": "0x00BBFC",
+      "known_function_start": false
     },
     "01B1F4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00A222"
+      "target_file_offset": "0x00A222",
+      "known_function_start": true
     },
     "01B1FE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0090C8"
+      "target_file_offset": "0x0090C8",
+      "known_function_start": true
     },
     "01B208": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0084DC"
+      "target_file_offset": "0x0084DC",
+      "known_function_start": true
     },
     "01B212": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BC06"
+      "target_file_offset": "0x00BC06",
+      "known_function_start": false
     },
     "01B21C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B550"
+      "target_file_offset": "0x00B550",
+      "known_function_start": true
     },
     "01B226": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009318"
+      "target_file_offset": "0x009318",
+      "known_function_start": true
     },
     "01B230": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0084F2"
+      "target_file_offset": "0x0084F2",
+      "known_function_start": true
     },
     "01B23A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008C1E"
+      "target_file_offset": "0x008C1E",
+      "known_function_start": true
     },
     "01B244": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009102"
+      "target_file_offset": "0x009102",
+      "known_function_start": true
     },
     "01B24E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008720"
+      "target_file_offset": "0x008720",
+      "known_function_start": false
     },
     "01B258": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B2F0"
+      "target_file_offset": "0x00B2F0",
+      "known_function_start": true
     },
     "01B262": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00A994"
+      "target_file_offset": "0x00A994",
+      "known_function_start": true
     },
     "01B26C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008734"
+      "target_file_offset": "0x008734",
+      "known_function_start": true
     },
     "01B276": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008524"
+      "target_file_offset": "0x008524",
+      "known_function_start": true
     },
     "01B280": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008918"
+      "target_file_offset": "0x008918",
+      "known_function_start": true
     },
     "01B28A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0082B2"
+      "target_file_offset": "0x0082B2",
+      "known_function_start": true
     },
     "01B294": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B304"
+      "target_file_offset": "0x00B304",
+      "known_function_start": true
     },
     "01B29E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00913C"
+      "target_file_offset": "0x00913C",
+      "known_function_start": true
     },
     "01B2A8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0098B4"
+      "target_file_offset": "0x0098B4",
+      "known_function_start": true
     },
     "01B2B2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B5A8"
+      "target_file_offset": "0x00B5A8",
+      "known_function_start": true
     },
     "01B2BC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008C70"
+      "target_file_offset": "0x008C70",
+      "known_function_start": true
     },
     "01B2C6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009FFC"
+      "target_file_offset": "0x009FFC",
+      "known_function_start": true
     },
     "01B2D0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008956"
+      "target_file_offset": "0x008956",
+      "known_function_start": true
     },
     "01B2DA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B31A"
+      "target_file_offset": "0x00B31A",
+      "known_function_start": true
     },
     "01B2E4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0096DA"
+      "target_file_offset": "0x0096DA",
+      "known_function_start": true
     },
     "01B2EE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0085B2"
+      "target_file_offset": "0x0085B2",
+      "known_function_start": true
     },
     "01B2F8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008F02"
+      "target_file_offset": "0x008F02",
+      "known_function_start": true
     },
     "01B302": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008352"
+      "target_file_offset": "0x008352",
+      "known_function_start": true
     },
     "01B30C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008F2A"
+      "target_file_offset": "0x008F2A",
+      "known_function_start": true
     },
     "01B316": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0085D6"
+      "target_file_offset": "0x0085D6",
+      "known_function_start": true
     },
     "01B320": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0098F6"
+      "target_file_offset": "0x0098F6",
+      "known_function_start": true
     },
     "01B32A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008D00"
+      "target_file_offset": "0x008D00",
+      "known_function_start": true
     },
     "01B334": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x008982"
+      "target_file_offset": "0x008982",
+      "known_function_start": true
     },
     "01B33E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B5FA"
+      "target_file_offset": "0x00B5FA",
+      "known_function_start": true
     },
     "01B348": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00B368"
+      "target_file_offset": "0x00B368",
+      "known_function_start": true
     },
     "01B352": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x009726"
+      "target_file_offset": "0x009726",
+      "known_function_start": true
     },
     "01B35C": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x045DF2"
+      "target_file_offset": "0x045DF2",
+      "known_function_start": true
     },
     "01B368": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x0464C2"
+      "target_file_offset": "0x0464C2",
+      "known_function_start": true
     },
     "01B374": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x046056"
+      "target_file_offset": "0x046056",
+      "known_function_start": true
     },
     "01B380": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C30A"
+      "target_file_offset": "0x00C30A",
+      "known_function_start": true
     },
     "01B38A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BFF2"
+      "target_file_offset": "0x00BFF2",
+      "known_function_start": true
     },
     "01B394": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C00A"
+      "target_file_offset": "0x00C00A",
+      "known_function_start": true
     },
     "01B39E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BCAA"
+      "target_file_offset": "0x00BCAA",
+      "known_function_start": true
     },
     "01B3A8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BD28"
+      "target_file_offset": "0x00BD28",
+      "known_function_start": true
     },
     "01B3B2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C07A"
+      "target_file_offset": "0x00C07A",
+      "known_function_start": true
     },
     "01B3BC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BD4A"
+      "target_file_offset": "0x00BD4A",
+      "known_function_start": true
     },
     "01B3C6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C09A"
+      "target_file_offset": "0x00C09A",
+      "known_function_start": true
     },
     "01B3D0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C0AE"
+      "target_file_offset": "0x00C0AE",
+      "known_function_start": true
     },
     "01B3DA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C0D0"
+      "target_file_offset": "0x00C0D0",
+      "known_function_start": true
     },
     "01B3E4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C17A"
+      "target_file_offset": "0x00C17A",
+      "known_function_start": true
     },
     "01B3EE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C1F8"
+      "target_file_offset": "0x00C1F8",
+      "known_function_start": true
     },
     "01B3F8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00BEDE"
+      "target_file_offset": "0x00BEDE",
+      "known_function_start": true
     },
     "01B402": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C276"
+      "target_file_offset": "0x00C276",
+      "known_function_start": true
     },
     "01B40C": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067700"
+      "target_file_offset": "0x067700",
+      "known_function_start": true
     },
     "01B41A": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067476"
+      "target_file_offset": "0x067476",
+      "known_function_start": true
     },
     "01B428": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066BB0"
+      "target_file_offset": "0x066BB0",
+      "known_function_start": true
     },
     "01B436": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042DA6"
+      "target_file_offset": "0x042DA6",
+      "known_function_start": true
     },
     "01B442": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044E7C"
+      "target_file_offset": "0x044E7C",
+      "known_function_start": true
     },
     "01B44E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C2F4"
+      "target_file_offset": "0x00C2F4",
+      "known_function_start": false
     },
     "01B458": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C2F8"
+      "target_file_offset": "0x00C2F8",
+      "known_function_start": false
     },
     "01B462": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E4D2"
+      "target_file_offset": "0x00E4D2",
+      "known_function_start": false
     },
     "01B46C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C410"
+      "target_file_offset": "0x00C410",
+      "known_function_start": true
     },
     "01B476": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C45A"
+      "target_file_offset": "0x00C45A",
+      "known_function_start": true
     },
     "01B480": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C498"
+      "target_file_offset": "0x00C498",
+      "known_function_start": true
     },
     "01B48A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C362"
+      "target_file_offset": "0x00C362",
+      "known_function_start": true
     },
     "01B494": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C646"
+      "target_file_offset": "0x00C646",
+      "known_function_start": true
     },
     "01B49E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C4A4"
+      "target_file_offset": "0x00C4A4",
+      "known_function_start": true
     },
     "01B4A8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C7EB"
+      "target_file_offset": "0x00C7EB",
+      "known_function_start": false
     },
     "01B4B2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C899"
+      "target_file_offset": "0x00C899",
+      "known_function_start": true
     },
     "01B4BC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00C8FC"
+      "target_file_offset": "0x00C8FC",
+      "known_function_start": true
     },
     "01B4C6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00F510"
+      "target_file_offset": "0x00F510",
+      "known_function_start": true
     },
     "01B4D0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D236"
+      "target_file_offset": "0x00D236",
+      "known_function_start": false
     },
     "01B4DA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D251"
+      "target_file_offset": "0x00D251",
+      "known_function_start": false
     },
     "01B4E4": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022D46"
+      "target_file_offset": "0x022D46",
+      "known_function_start": true
     },
     "01B4F0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021FE6"
+      "target_file_offset": "0x021FE6",
+      "known_function_start": false
     },
     "01B4FC": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021FF2"
+      "target_file_offset": "0x021FF2",
+      "known_function_start": true
     },
     "01B508": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02356C"
+      "target_file_offset": "0x02356C",
+      "known_function_start": true
     },
     "01B514": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0232AE"
+      "target_file_offset": "0x0232AE",
+      "known_function_start": false
     },
     "01B520": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0241CE"
+      "target_file_offset": "0x0241CE",
+      "known_function_start": true
     },
     "01B52C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x020EE0"
+      "target_file_offset": "0x020EE0",
+      "known_function_start": true
     },
     "01B538": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021602"
+      "target_file_offset": "0x021602",
+      "known_function_start": true
     },
     "01B544": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x023344"
+      "target_file_offset": "0x023344",
+      "known_function_start": true
     },
     "01B550": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022E16"
+      "target_file_offset": "0x022E16",
+      "known_function_start": true
     },
     "01B55C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x020EFE"
+      "target_file_offset": "0x020EFE",
+      "known_function_start": false
     },
     "01B568": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0235D6"
+      "target_file_offset": "0x0235D6",
+      "known_function_start": true
     },
     "01B574": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0227E8"
+      "target_file_offset": "0x0227E8",
+      "known_function_start": true
     },
     "01B580": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022A3A"
+      "target_file_offset": "0x022A3A",
+      "known_function_start": true
     },
     "01B58C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021D32"
+      "target_file_offset": "0x021D32",
+      "known_function_start": true
     },
     "01B598": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024224"
+      "target_file_offset": "0x024224",
+      "known_function_start": true
     },
     "01B5A4": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02251E"
+      "target_file_offset": "0x02251E",
+      "known_function_start": false
     },
     "01B5B0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02165E"
+      "target_file_offset": "0x02165E",
+      "known_function_start": true
     },
     "01B5BC": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0245C6"
+      "target_file_offset": "0x0245C6",
+      "known_function_start": true
     },
     "01B5C8": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022EB2"
+      "target_file_offset": "0x022EB2",
+      "known_function_start": false
     },
     "01B5D4": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022542"
+      "target_file_offset": "0x022542",
+      "known_function_start": true
     },
     "01B5E0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x023F1C"
+      "target_file_offset": "0x023F1C",
+      "known_function_start": true
     },
     "01B5F0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022F08"
+      "target_file_offset": "0x022F08",
+      "known_function_start": true
     },
     "01B5FC": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02211E"
+      "target_file_offset": "0x02211E",
+      "known_function_start": true
     },
     "01B608": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0249C6"
+      "target_file_offset": "0x0249C6",
+      "known_function_start": false
     },
     "01B614": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0217AC"
+      "target_file_offset": "0x0217AC",
+      "known_function_start": false
     },
     "01B620": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024632"
+      "target_file_offset": "0x024632",
+      "known_function_start": true
     },
     "01B62C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022832"
+      "target_file_offset": "0x022832",
+      "known_function_start": true
     },
     "01B638": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0242AE"
+      "target_file_offset": "0x0242AE",
+      "known_function_start": true
     },
     "01B644": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021E72"
+      "target_file_offset": "0x021E72",
+      "known_function_start": true
     },
     "01B650": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021EBA"
+      "target_file_offset": "0x021EBA",
+      "known_function_start": false
     },
     "01B65C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0217E2"
+      "target_file_offset": "0x0217E2",
+      "known_function_start": false
     },
     "01B668": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024692"
+      "target_file_offset": "0x024692",
+      "known_function_start": true
     },
     "01B674": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024322"
+      "target_file_offset": "0x024322",
+      "known_function_start": true
     },
     "01B680": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022FD6"
+      "target_file_offset": "0x022FD6",
+      "known_function_start": false
     },
     "01B68C": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021EC4"
+      "target_file_offset": "0x021EC4",
+      "known_function_start": false
     },
     "01B698": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024338"
+      "target_file_offset": "0x024338",
+      "known_function_start": false
     },
     "01B6A4": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021EDE"
+      "target_file_offset": "0x021EDE",
+      "known_function_start": true
     },
     "01B6B0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0219E8"
+      "target_file_offset": "0x0219E8",
+      "known_function_start": true
     },
     "01B6BC": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x024342"
+      "target_file_offset": "0x024342",
+      "known_function_start": true
     },
     "01B6C8": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02287E"
+      "target_file_offset": "0x02287E",
+      "known_function_start": true
     },
     "01B6D4": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x021A14"
+      "target_file_offset": "0x021A14",
+      "known_function_start": true
     },
     "01B6E0": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x0246E2"
+      "target_file_offset": "0x0246E2",
+      "known_function_start": true
     },
     "01B6EC": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022CDC"
+      "target_file_offset": "0x022CDC",
+      "known_function_start": true
     },
     "01B6F8": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x02311A"
+      "target_file_offset": "0x02311A",
+      "known_function_start": false
     },
     "01B704": {
       "type": "A",
       "page_id": 1,
-      "target_file_offset": "0x022334"
+      "target_file_offset": "0x022334",
+      "known_function_start": true
     },
     "01B710": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F64C"
+      "target_file_offset": "0x06F64C",
+      "known_function_start": true
     },
     "01B71C": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x078068"
+      "target_file_offset": "0x078068",
+      "known_function_start": true
     },
     "01B72A": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044B06"
+      "target_file_offset": "0x044B06",
+      "known_function_start": true
     },
     "01B736": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044A92"
+      "target_file_offset": "0x044A92",
+      "known_function_start": true
     },
     "01B742": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044B36"
+      "target_file_offset": "0x044B36",
+      "known_function_start": true
     },
     "01B74E": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044AC2"
+      "target_file_offset": "0x044AC2",
+      "known_function_start": true
     },
     "01B75A": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06E3D0"
+      "target_file_offset": "0x06E3D0",
+      "known_function_start": true
     },
     "01B766": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C850"
+      "target_file_offset": "0x06C850",
+      "known_function_start": true
     },
     "01B772": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F0F4"
+      "target_file_offset": "0x06F0F4",
+      "known_function_start": true
     },
     "01B77E": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06787C"
+      "target_file_offset": "0x06787C",
+      "known_function_start": true
     },
     "01B78C": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F5B0"
+      "target_file_offset": "0x06F5B0",
+      "known_function_start": true
     },
     "01B798": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x0789FA"
+      "target_file_offset": "0x0789FA",
+      "known_function_start": true
     },
     "01B7A6": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C74A"
+      "target_file_offset": "0x06C74A",
+      "known_function_start": true
     },
     "01B7B2": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x040656"
+      "target_file_offset": "0x040656",
+      "known_function_start": true
     },
     "01B7C0": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041410"
+      "target_file_offset": "0x041410",
+      "known_function_start": true
     },
     "01B7CE": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041654"
+      "target_file_offset": "0x041654",
+      "known_function_start": true
     },
     "01B7DC": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EABC"
+      "target_file_offset": "0x02EABC",
+      "known_function_start": true
     },
     "01B7EA": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x040C1E"
+      "target_file_offset": "0x040C1E",
+      "known_function_start": true
     },
     "01B7F8": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x0418AA"
+      "target_file_offset": "0x0418AA",
+      "known_function_start": true
     },
     "01B806": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x0409D6"
+      "target_file_offset": "0x0409D6",
+      "known_function_start": true
     },
     "01B814": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CF7A"
+      "target_file_offset": "0x06CF7A",
+      "known_function_start": true
     },
     "01B820": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CD8C"
+      "target_file_offset": "0x06CD8C",
+      "known_function_start": true
     },
     "01B82C": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C520"
+      "target_file_offset": "0x06C520",
+      "known_function_start": true
     },
     "01B838": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x046EC0"
+      "target_file_offset": "0x046EC0",
+      "known_function_start": true
     },
     "01B844": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EE34"
+      "target_file_offset": "0x02EE34",
+      "known_function_start": true
     },
     "01B852": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F554"
+      "target_file_offset": "0x06F554",
+      "known_function_start": true
     },
     "01B85E": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F54C"
+      "target_file_offset": "0x06F54C",
+      "known_function_start": false
     },
     "01B86A": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078B0E"
+      "target_file_offset": "0x078B0E",
+      "known_function_start": true
     },
     "01B878": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066F68"
+      "target_file_offset": "0x066F68",
+      "known_function_start": true
     },
     "01B886": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066F32"
+      "target_file_offset": "0x066F32",
+      "known_function_start": false
     },
     "01B894": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x068898"
+      "target_file_offset": "0x068898",
+      "known_function_start": true
     },
     "01B8A2": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041080"
+      "target_file_offset": "0x041080",
+      "known_function_start": true
     },
     "01B8B0": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x06076A"
+      "target_file_offset": "0x06076A",
+      "known_function_start": true
     },
     "01B8BE": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x05FE60"
+      "target_file_offset": "0x05FE60",
+      "known_function_start": true
     },
     "01B8CC": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x0605F6"
+      "target_file_offset": "0x0605F6",
+      "known_function_start": true
     },
     "01B8DA": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x04198E"
+      "target_file_offset": "0x04198E",
+      "known_function_start": true
     },
     "01B8E8": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060026"
+      "target_file_offset": "0x060026",
+      "known_function_start": true
     },
     "01B8F6": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F57E"
+      "target_file_offset": "0x06F57E",
+      "known_function_start": true
     },
     "01B902": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E984"
+      "target_file_offset": "0x03E984",
+      "known_function_start": true
     },
     "01B910": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x073158"
+      "target_file_offset": "0x073158",
+      "known_function_start": true
     },
     "01B91E": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072F7A"
+      "target_file_offset": "0x072F7A",
+      "known_function_start": true
     },
     "01B92C": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C77A"
+      "target_file_offset": "0x06C77A",
+      "known_function_start": true
     },
     "01B938": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03D948"
+      "target_file_offset": "0x03D948",
+      "known_function_start": true
     },
     "01B946": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03DE46"
+      "target_file_offset": "0x03DE46",
+      "known_function_start": true
     },
     "01B954": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C638"
+      "target_file_offset": "0x03C638",
+      "known_function_start": true
     },
     "01B962": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06B398"
+      "target_file_offset": "0x06B398",
+      "known_function_start": true
     },
     "01B970": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x0612E6"
+      "target_file_offset": "0x0612E6",
+      "known_function_start": true
     },
     "01B97E": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060FBC"
+      "target_file_offset": "0x060FBC",
+      "known_function_start": true
     },
     "01B98C": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x0610B0"
+      "target_file_offset": "0x0610B0",
+      "known_function_start": true
     },
     "01B99A": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x039EE2"
+      "target_file_offset": "0x039EE2",
+      "known_function_start": true
     },
     "01B9A8": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x039888"
+      "target_file_offset": "0x039888",
+      "known_function_start": true
     },
     "01B9B6": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03954C"
+      "target_file_offset": "0x03954C",
+      "known_function_start": true
     },
     "01B9C4": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x039218"
+      "target_file_offset": "0x039218",
+      "known_function_start": true
     },
     "01B9D2": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038A50"
+      "target_file_offset": "0x038A50",
+      "known_function_start": true
     },
     "01B9E0": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038418"
+      "target_file_offset": "0x038418",
+      "known_function_start": true
     },
     "01B9EE": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x037A10"
+      "target_file_offset": "0x037A10",
+      "known_function_start": true
     },
     "01B9FC": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x037958"
+      "target_file_offset": "0x037958",
+      "known_function_start": true
     },
     "01BA0A": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03744A"
+      "target_file_offset": "0x03744A",
+      "known_function_start": true
     },
     "01BA18": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x069D8C"
+      "target_file_offset": "0x069D8C",
+      "known_function_start": true
     },
     "01BA26": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F698"
+      "target_file_offset": "0x06F698",
+      "known_function_start": true
     },
     "01BA32": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x046FC2"
+      "target_file_offset": "0x046FC2",
+      "known_function_start": true
     },
     "01BA3E": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x03FDDE"
+      "target_file_offset": "0x03FDDE",
+      "known_function_start": true
     },
     "01BA4C": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044A5A"
+      "target_file_offset": "0x044A5A",
+      "known_function_start": true
     },
     "01BA58": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D9E0"
+      "target_file_offset": "0x00D9E0",
+      "known_function_start": true
     },
     "01BA62": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x0452D4"
+      "target_file_offset": "0x0452D4",
+      "known_function_start": true
     },
     "01BA6E": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x0458EC"
+      "target_file_offset": "0x0458EC",
+      "known_function_start": true
     },
     "01BA7A": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x045A1E"
+      "target_file_offset": "0x045A1E",
+      "known_function_start": true
     },
     "01BA86": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x04598A"
+      "target_file_offset": "0x04598A",
+      "known_function_start": true
     },
     "01BA92": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D29C"
+      "target_file_offset": "0x00D29C",
+      "known_function_start": false
     },
     "01BA9C": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x04101C"
+      "target_file_offset": "0x04101C",
+      "known_function_start": true
     },
     "01BAAA": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x040E22"
+      "target_file_offset": "0x040E22",
+      "known_function_start": true
     },
     "01BAB8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B99E"
+      "target_file_offset": "0x02B99E",
+      "known_function_start": false
     },
     "01BAC4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028466"
+      "target_file_offset": "0x028466",
+      "known_function_start": true
     },
     "01BAD0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02701C"
+      "target_file_offset": "0x02701C",
+      "known_function_start": true
     },
     "01BADC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02814C"
+      "target_file_offset": "0x02814C",
+      "known_function_start": true
     },
     "01BAE8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B9B6"
+      "target_file_offset": "0x02B9B6",
+      "known_function_start": false
     },
     "01BAF4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026022"
+      "target_file_offset": "0x026022",
+      "known_function_start": true
     },
     "01BB00": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025EB0"
+      "target_file_offset": "0x025EB0",
+      "known_function_start": false
     },
     "01BB0C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028826"
+      "target_file_offset": "0x028826",
+      "known_function_start": true
     },
     "01BB18": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B2A0"
+      "target_file_offset": "0x02B2A0",
+      "known_function_start": true
     },
     "01BB24": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0264A8"
+      "target_file_offset": "0x0264A8",
+      "known_function_start": true
     },
     "01BB30": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029B84"
+      "target_file_offset": "0x029B84",
+      "known_function_start": true
     },
     "01BB3C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02883E"
+      "target_file_offset": "0x02883E",
+      "known_function_start": true
     },
     "01BB48": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0275CE"
+      "target_file_offset": "0x0275CE",
+      "known_function_start": true
     },
     "01BB54": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026AB2"
+      "target_file_offset": "0x026AB2",
+      "known_function_start": true
     },
     "01BB60": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B9DC"
+      "target_file_offset": "0x02B9DC",
+      "known_function_start": true
     },
     "01BB6C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027954"
+      "target_file_offset": "0x027954",
+      "known_function_start": true
     },
     "01BB78": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02AFCE"
+      "target_file_offset": "0x02AFCE",
+      "known_function_start": true
     },
     "01BB84": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02A6A6"
+      "target_file_offset": "0x02A6A6",
+      "known_function_start": true
     },
     "01BB90": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029BBE"
+      "target_file_offset": "0x029BBE",
+      "known_function_start": true
     },
     "01BB9C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02819E"
+      "target_file_offset": "0x02819E",
+      "known_function_start": true
     },
     "01BBA8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027D84"
+      "target_file_offset": "0x027D84",
+      "known_function_start": true
     },
     "01BBB4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0270D0"
+      "target_file_offset": "0x0270D0",
+      "known_function_start": true
     },
     "01BBC0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02BC72"
+      "target_file_offset": "0x02BC72",
+      "known_function_start": true
     },
     "01BBCC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02853C"
+      "target_file_offset": "0x02853C",
+      "known_function_start": true
     },
     "01BBD8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025D34"
+      "target_file_offset": "0x025D34",
+      "known_function_start": true
     },
     "01BBE4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029BF2"
+      "target_file_offset": "0x029BF2",
+      "known_function_start": false
     },
     "01BBF0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0298A6"
+      "target_file_offset": "0x0298A6",
+      "known_function_start": false
     },
     "01BBFC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027DB2"
+      "target_file_offset": "0x027DB2",
+      "known_function_start": true
     },
     "01BC08": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025A1E"
+      "target_file_offset": "0x025A1E",
+      "known_function_start": true
     },
     "01BC14": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02A31C"
+      "target_file_offset": "0x02A31C",
+      "known_function_start": true
     },
     "01BC20": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026142"
+      "target_file_offset": "0x026142",
+      "known_function_start": true
     },
     "01BC2C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029C10"
+      "target_file_offset": "0x029C10",
+      "known_function_start": true
     },
     "01BC38": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028592"
+      "target_file_offset": "0x028592",
+      "known_function_start": true
     },
     "01BC44": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0281D6"
+      "target_file_offset": "0x0281D6",
+      "known_function_start": true
     },
     "01BC50": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02798C"
+      "target_file_offset": "0x02798C",
+      "known_function_start": true
     },
     "01BC5C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026DD4"
+      "target_file_offset": "0x026DD4",
+      "known_function_start": true
     },
     "01BC68": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B744"
+      "target_file_offset": "0x02B744",
+      "known_function_start": true
     },
     "01BC74": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02860E"
+      "target_file_offset": "0x02860E",
+      "known_function_start": false
     },
     "01BC80": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B368"
+      "target_file_offset": "0x02B368",
+      "known_function_start": true
     },
     "01BC8C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02861C"
+      "target_file_offset": "0x02861C",
+      "known_function_start": false
     },
     "01BC98": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02BB2C"
+      "target_file_offset": "0x02BB2C",
+      "known_function_start": false
     },
     "01BCA4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B046"
+      "target_file_offset": "0x02B046",
+      "known_function_start": true
     },
     "01BCB0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026CC2"
+      "target_file_offset": "0x026CC2",
+      "known_function_start": true
     },
     "01BCBC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0299A0"
+      "target_file_offset": "0x0299A0",
+      "known_function_start": true
     },
     "01BCC8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027746"
+      "target_file_offset": "0x027746",
+      "known_function_start": true
     },
     "01BCD4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026BCC"
+      "target_file_offset": "0x026BCC",
+      "known_function_start": true
     },
     "01BCE0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025C32"
+      "target_file_offset": "0x025C32",
+      "known_function_start": true
     },
     "01BCEC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02BB74"
+      "target_file_offset": "0x02BB74",
+      "known_function_start": false
     },
     "01BCF8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027ADA"
+      "target_file_offset": "0x027ADA",
+      "known_function_start": true
     },
     "01BD04": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02AD8E"
+      "target_file_offset": "0x02AD8E",
+      "known_function_start": true
     },
     "01BD10": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02A8EC"
+      "target_file_offset": "0x02A8EC",
+      "known_function_start": true
     },
     "01BD1C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B4D2"
+      "target_file_offset": "0x02B4D2",
+      "known_function_start": true
     },
     "01BD28": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028690"
+      "target_file_offset": "0x028690",
+      "known_function_start": false
     },
     "01BD34": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02BB8A"
+      "target_file_offset": "0x02BB8A",
+      "known_function_start": true
     },
     "01BD40": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028D8C"
+      "target_file_offset": "0x028D8C",
+      "known_function_start": true
     },
     "01BD4C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027B62"
+      "target_file_offset": "0x027B62",
+      "known_function_start": false
     },
     "01BD58": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029D24"
+      "target_file_offset": "0x029D24",
+      "known_function_start": true
     },
     "01BD64": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025EB6"
+      "target_file_offset": "0x025EB6",
+      "known_function_start": false
     },
     "01BD70": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02B8C6"
+      "target_file_offset": "0x02B8C6",
+      "known_function_start": true
     },
     "01BD7C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02872A"
+      "target_file_offset": "0x02872A",
+      "known_function_start": false
     },
     "01BD88": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x027BB6"
+      "target_file_offset": "0x027BB6",
+      "known_function_start": true
     },
     "01BD94": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02A0BC"
+      "target_file_offset": "0x02A0BC",
+      "known_function_start": true
     },
     "01BDA0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x028792"
+      "target_file_offset": "0x028792",
+      "known_function_start": true
     },
     "01BDAC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025EEE"
+      "target_file_offset": "0x025EEE",
+      "known_function_start": true
     },
     "01BDB8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02AAEC"
+      "target_file_offset": "0x02AAEC",
+      "known_function_start": true
     },
     "01BDC4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0287B2"
+      "target_file_offset": "0x0287B2",
+      "known_function_start": true
     },
     "01BDD0": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029AC0"
+      "target_file_offset": "0x029AC0",
+      "known_function_start": true
     },
     "01BDDC": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02633E"
+      "target_file_offset": "0x02633E",
+      "known_function_start": true
     },
     "01BDE8": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02A462"
+      "target_file_offset": "0x02A462",
+      "known_function_start": true
     },
     "01BDF4": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026374"
+      "target_file_offset": "0x026374",
+      "known_function_start": true
     },
     "01BE00": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x029DD4"
+      "target_file_offset": "0x029DD4",
+      "known_function_start": true
     },
     "01BE0C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0287C6"
+      "target_file_offset": "0x0287C6",
+      "known_function_start": true
     },
     "01BE18": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02842C"
+      "target_file_offset": "0x02842C",
+      "known_function_start": true
     },
     "01BE24": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x026FF2"
+      "target_file_offset": "0x026FF2",
+      "known_function_start": true
     },
     "01BE30": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0268CE"
+      "target_file_offset": "0x0268CE",
+      "known_function_start": true
     },
     "01BE3C": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x025900"
+      "target_file_offset": "0x025900",
+      "known_function_start": true
     },
     "01BE48": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x02AEDA"
+      "target_file_offset": "0x02AEDA",
+      "known_function_start": true
     },
     "01BE54": {
       "type": "A",
       "page_id": 2,
-      "target_file_offset": "0x0287EA"
+      "target_file_offset": "0x0287EA",
+      "known_function_start": true
     },
     "01BE60": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00F450"
+      "target_file_offset": "0x00F450",
+      "known_function_start": true
     },
     "01BE6A": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076AEC"
+      "target_file_offset": "0x076AEC",
+      "known_function_start": true
     },
     "01BE78": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06716A"
+      "target_file_offset": "0x06716A",
+      "known_function_start": false
     },
     "01BE86": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x0672C8"
+      "target_file_offset": "0x0672C8",
+      "known_function_start": false
     },
     "01BE94": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06891E"
+      "target_file_offset": "0x06891E",
+      "known_function_start": false
     },
     "01BEA2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E036"
+      "target_file_offset": "0x00E036",
+      "known_function_start": true
     },
     "01BEAC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DFCC"
+      "target_file_offset": "0x00DFCC",
+      "known_function_start": true
     },
     "01BEB6": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CA82"
+      "target_file_offset": "0x06CA82",
+      "known_function_start": true
     },
     "01BEC2": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CA72"
+      "target_file_offset": "0x06CA72",
+      "known_function_start": true
     },
     "01BECE": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06A700"
+      "target_file_offset": "0x06A700",
+      "known_function_start": true
     },
     "01BEDC": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C832"
+      "target_file_offset": "0x06C832",
+      "known_function_start": true
     },
     "01BEE8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DB80"
+      "target_file_offset": "0x00DB80",
+      "known_function_start": true
     },
     "01BEF2": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06AA88"
+      "target_file_offset": "0x06AA88",
+      "known_function_start": true
     },
     "01BF00": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06EEEC"
+      "target_file_offset": "0x06EEEC",
+      "known_function_start": true
     },
     "01BF0C": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06F9E6"
+      "target_file_offset": "0x06F9E6",
+      "known_function_start": false
     },
     "01BF18": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06F8FA"
+      "target_file_offset": "0x06F8FA",
+      "known_function_start": true
     },
     "01BF24": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x0694AE"
+      "target_file_offset": "0x0694AE",
+      "known_function_start": true
     },
     "01BF32": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x0696C6"
+      "target_file_offset": "0x0696C6",
+      "known_function_start": true
     },
     "01BF40": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02D658"
+      "target_file_offset": "0x02D658",
+      "known_function_start": true
     },
     "01BF4E": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067836"
+      "target_file_offset": "0x067836",
+      "known_function_start": false
     },
     "01BF5C": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067858"
+      "target_file_offset": "0x067858",
+      "known_function_start": false
     },
     "01BF6A": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02D0E4"
+      "target_file_offset": "0x02D0E4",
+      "known_function_start": true
     },
     "01BF78": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02D30A"
+      "target_file_offset": "0x02D30A",
+      "known_function_start": true
     },
     "01BF86": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EB46"
+      "target_file_offset": "0x02EB46",
+      "known_function_start": true
     },
     "01BF94": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EAEA"
+      "target_file_offset": "0x02EAEA",
+      "known_function_start": true
     },
     "01BFA2": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EB78"
+      "target_file_offset": "0x02EB78",
+      "known_function_start": true
     },
     "01BFB0": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02D606"
+      "target_file_offset": "0x02D606",
+      "known_function_start": true
     },
     "01BFBE": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02D3C6"
+      "target_file_offset": "0x02D3C6",
+      "known_function_start": true
     },
     "01BFCC": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02CFD0"
+      "target_file_offset": "0x02CFD0",
+      "known_function_start": true
     },
     "01BFDA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030590"
+      "target_file_offset": "0x030590",
+      "known_function_start": true
     },
     "01BFE8": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C322"
+      "target_file_offset": "0x03C322",
+      "known_function_start": true
     },
     "01BFF6": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x0400D0"
+      "target_file_offset": "0x0400D0",
+      "known_function_start": false
     },
     "01C004": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05CA7E"
+      "target_file_offset": "0x05CA7E",
+      "known_function_start": true
     },
     "01C010": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x04002C"
+      "target_file_offset": "0x04002C",
+      "known_function_start": true
     },
     "01C01E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03234A"
+      "target_file_offset": "0x03234A",
+      "known_function_start": true
     },
     "01C02C": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x06046E"
+      "target_file_offset": "0x06046E",
+      "known_function_start": true
     },
     "01C03A": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x05FE7A"
+      "target_file_offset": "0x05FE7A",
+      "known_function_start": true
     },
     "01C048": {
       "type": "A",
       "page_id": 3,
-      "target_file_offset": "0x02EF64"
+      "target_file_offset": "0x02EF64",
+      "known_function_start": true
     },
     "01C056": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E844"
+      "target_file_offset": "0x03E844",
+      "known_function_start": true
     },
     "01C064": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x042138"
+      "target_file_offset": "0x042138",
+      "known_function_start": true
     },
     "01C072": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041EEA"
+      "target_file_offset": "0x041EEA",
+      "known_function_start": true
     },
     "01C080": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0363A2"
+      "target_file_offset": "0x0363A2",
+      "known_function_start": true
     },
     "01C08E": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x042726"
+      "target_file_offset": "0x042726",
+      "known_function_start": true
     },
     "01C09C": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076594"
+      "target_file_offset": "0x076594",
+      "known_function_start": true
     },
     "01C0AA": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x075352"
+      "target_file_offset": "0x075352",
+      "known_function_start": true
     },
     "01C0B8": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C254"
+      "target_file_offset": "0x06C254",
+      "known_function_start": true
     },
     "01C0C4": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F5DA"
+      "target_file_offset": "0x06F5DA",
+      "known_function_start": true
     },
     "01C0D0": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x034318"
+      "target_file_offset": "0x034318",
+      "known_function_start": true
     },
     "01C0DE": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041832"
+      "target_file_offset": "0x041832",
+      "known_function_start": true
     },
     "01C0EC": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x034C24"
+      "target_file_offset": "0x034C24",
+      "known_function_start": true
     },
     "01C0FA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x032244"
+      "target_file_offset": "0x032244",
+      "known_function_start": false
     },
     "01C108": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031EEE"
+      "target_file_offset": "0x031EEE",
+      "known_function_start": false
     },
     "01C116": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030C68"
+      "target_file_offset": "0x030C68",
+      "known_function_start": true
     },
     "01C124": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x035D9A"
+      "target_file_offset": "0x035D9A",
+      "known_function_start": true
     },
     "01C132": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0324F2"
+      "target_file_offset": "0x0324F2",
+      "known_function_start": true
     },
     "01C140": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031F28"
+      "target_file_offset": "0x031F28",
+      "known_function_start": true
     },
     "01C14E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0314AE"
+      "target_file_offset": "0x0314AE",
+      "known_function_start": true
     },
     "01C15C": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x036574"
+      "target_file_offset": "0x036574",
+      "known_function_start": true
     },
     "01C16A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x036138"
+      "target_file_offset": "0x036138",
+      "known_function_start": true
     },
     "01C178": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x032FE2"
+      "target_file_offset": "0x032FE2",
+      "known_function_start": true
     },
     "01C186": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031F48"
+      "target_file_offset": "0x031F48",
+      "known_function_start": true
     },
     "01C194": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0341D6"
+      "target_file_offset": "0x0341D6",
+      "known_function_start": true
     },
     "01C1A2": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0350A0"
+      "target_file_offset": "0x0350A0",
+      "known_function_start": true
     },
     "01C1B0": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0319A6"
+      "target_file_offset": "0x0319A6",
+      "known_function_start": true
     },
     "01C1BE": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0349F4"
+      "target_file_offset": "0x0349F4",
+      "known_function_start": true
     },
     "01C1CC": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031F5C"
+      "target_file_offset": "0x031F5C",
+      "known_function_start": true
     },
     "01C1DA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030D16"
+      "target_file_offset": "0x030D16",
+      "known_function_start": true
     },
     "01C1E8": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x033716"
+      "target_file_offset": "0x033716",
+      "known_function_start": true
     },
     "01C1F6": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03334E"
+      "target_file_offset": "0x03334E",
+      "known_function_start": true
     },
     "01C204": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0322D0"
+      "target_file_offset": "0x0322D0",
+      "known_function_start": true
     },
     "01C212": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031F80"
+      "target_file_offset": "0x031F80",
+      "known_function_start": true
     },
     "01C220": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0319BC"
+      "target_file_offset": "0x0319BC",
+      "known_function_start": true
     },
     "01C22E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030566"
+      "target_file_offset": "0x030566",
+      "known_function_start": true
     },
     "01C23C": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x033A52"
+      "target_file_offset": "0x033A52",
+      "known_function_start": true
     },
     "01C24A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03200A"
+      "target_file_offset": "0x03200A",
+      "known_function_start": true
     },
     "01C258": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031298"
+      "target_file_offset": "0x031298",
+      "known_function_start": true
     },
     "01C266": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030D6C"
+      "target_file_offset": "0x030D6C",
+      "known_function_start": false
     },
     "01C274": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x035E80"
+      "target_file_offset": "0x035E80",
+      "known_function_start": true
     },
     "01C282": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x034AE0"
+      "target_file_offset": "0x034AE0",
+      "known_function_start": true
     },
     "01C290": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0354BE"
+      "target_file_offset": "0x0354BE",
+      "known_function_start": true
     },
     "01C29E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03342C"
+      "target_file_offset": "0x03342C",
+      "known_function_start": true
     },
     "01C2AC": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0305A8"
+      "target_file_offset": "0x0305A8",
+      "known_function_start": true
     },
     "01C2BA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03471E"
+      "target_file_offset": "0x03471E",
+      "known_function_start": true
     },
     "01C2C8": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030B38"
+      "target_file_offset": "0x030B38",
+      "known_function_start": true
     },
     "01C2D6": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030D86"
+      "target_file_offset": "0x030D86",
+      "known_function_start": true
     },
     "01C2E4": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x033778"
+      "target_file_offset": "0x033778",
+      "known_function_start": true
     },
     "01C2F2": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x032914"
+      "target_file_offset": "0x032914",
+      "known_function_start": true
     },
     "01C300": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030DBC"
+      "target_file_offset": "0x030DBC",
+      "known_function_start": false
     },
     "01C30E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03314E"
+      "target_file_offset": "0x03314E",
+      "known_function_start": true
     },
     "01C31C": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x034DD4"
+      "target_file_offset": "0x034DD4",
+      "known_function_start": true
     },
     "01C32A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030DF4"
+      "target_file_offset": "0x030DF4",
+      "known_function_start": true
     },
     "01C338": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x035344"
+      "target_file_offset": "0x035344",
+      "known_function_start": false
     },
     "01C346": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031A32"
+      "target_file_offset": "0x031A32",
+      "known_function_start": true
     },
     "01C354": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x034B7E"
+      "target_file_offset": "0x034B7E",
+      "known_function_start": false
     },
     "01C362": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0320EE"
+      "target_file_offset": "0x0320EE",
+      "known_function_start": true
     },
     "01C370": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030BB6"
+      "target_file_offset": "0x030BB6",
+      "known_function_start": true
     },
     "01C37E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03240C"
+      "target_file_offset": "0x03240C",
+      "known_function_start": true
     },
     "01C38C": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0317CC"
+      "target_file_offset": "0x0317CC",
+      "known_function_start": true
     },
     "01C39A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x033BE4"
+      "target_file_offset": "0x033BE4",
+      "known_function_start": true
     },
     "01C3A8": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x032122"
+      "target_file_offset": "0x032122",
+      "known_function_start": true
     },
     "01C3B6": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x03245C"
+      "target_file_offset": "0x03245C",
+      "known_function_start": true
     },
     "01C3C4": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031E4C"
+      "target_file_offset": "0x031E4C",
+      "known_function_start": false
     },
     "01C3D2": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031AFA"
+      "target_file_offset": "0x031AFA",
+      "known_function_start": true
     },
     "01C3E0": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031366"
+      "target_file_offset": "0x031366",
+      "known_function_start": true
     },
     "01C3EE": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031EA6"
+      "target_file_offset": "0x031EA6",
+      "known_function_start": false
     },
     "01C3FC": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x030C14"
+      "target_file_offset": "0x030C14",
+      "known_function_start": true
     },
     "01C40A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0353C8"
+      "target_file_offset": "0x0353C8",
+      "known_function_start": false
     },
     "01C418": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x033C96"
+      "target_file_offset": "0x033C96",
+      "known_function_start": true
     },
     "01C426": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x032DAC"
+      "target_file_offset": "0x032DAC",
+      "known_function_start": true
     },
     "01C434": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x031EB0"
+      "target_file_offset": "0x031EB0",
+      "known_function_start": false
     },
     "01C442": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0321B4"
+      "target_file_offset": "0x0321B4",
+      "known_function_start": true
     },
     "01C450": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0353DE"
+      "target_file_offset": "0x0353DE",
+      "known_function_start": true
     },
     "01C45E": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0324B6"
+      "target_file_offset": "0x0324B6",
+      "known_function_start": false
     },
     "01C46C": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0318D2"
+      "target_file_offset": "0x0318D2",
+      "known_function_start": true
     },
     "01C47A": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0324CE"
+      "target_file_offset": "0x0324CE",
+      "known_function_start": false
     },
     "01C488": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0335FA"
+      "target_file_offset": "0x0335FA",
+      "known_function_start": true
     },
     "01C496": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0321FC"
+      "target_file_offset": "0x0321FC",
+      "known_function_start": true
     },
     "01C4A4": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x0324DE"
+      "target_file_offset": "0x0324DE",
+      "known_function_start": false
     },
     "01C4B2": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041B76"
+      "target_file_offset": "0x041B76",
+      "known_function_start": true
     },
     "01C4C0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00F38A"
+      "target_file_offset": "0x00F38A",
+      "known_function_start": true
     },
     "01C4CA": {
       "type": "A",
       "page_id": 4,
-      "target_file_offset": "0x036976"
+      "target_file_offset": "0x036976",
+      "known_function_start": true
     },
     "01C4D8": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x0373CA"
+      "target_file_offset": "0x0373CA",
+      "known_function_start": true
     },
     "01C4E6": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038778"
+      "target_file_offset": "0x038778",
+      "known_function_start": true
     },
     "01C4F4": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038ED4"
+      "target_file_offset": "0x038ED4",
+      "known_function_start": true
     },
     "01C502": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x0393F4"
+      "target_file_offset": "0x0393F4",
+      "known_function_start": true
     },
     "01C510": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038F2C"
+      "target_file_offset": "0x038F2C",
+      "known_function_start": true
     },
     "01C51E": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x038890"
+      "target_file_offset": "0x038890",
+      "known_function_start": true
     },
     "01C52C": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03807E"
+      "target_file_offset": "0x03807E",
+      "known_function_start": true
     },
     "01C53A": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x037340"
+      "target_file_offset": "0x037340",
+      "known_function_start": true
     },
     "01C548": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x0391C0"
+      "target_file_offset": "0x0391C0",
+      "known_function_start": true
     },
     "01C556": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C282"
+      "target_file_offset": "0x03C282",
+      "known_function_start": true
     },
     "01C564": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BB4A"
+      "target_file_offset": "0x03BB4A",
+      "known_function_start": true
     },
     "01C572": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042F20"
+      "target_file_offset": "0x042F20",
+      "known_function_start": true
     },
     "01C57E": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03ADA6"
+      "target_file_offset": "0x03ADA6",
+      "known_function_start": true
     },
     "01C58C": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x03A9C0"
+      "target_file_offset": "0x03A9C0",
+      "known_function_start": true
     },
     "01C59A": {
       "type": "A",
       "page_id": 5,
-      "target_file_offset": "0x039E5E"
+      "target_file_offset": "0x039E5E",
+      "known_function_start": false
     },
     "01C5A8": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06F8E0"
+      "target_file_offset": "0x06F8E0",
+      "known_function_start": true
     },
     "01C5B4": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FA3E"
+      "target_file_offset": "0x06FA3E",
+      "known_function_start": false
     },
     "01C5C0": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076524"
+      "target_file_offset": "0x076524",
+      "known_function_start": true
     },
     "01C5CE": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x0764D0"
+      "target_file_offset": "0x0764D0",
+      "known_function_start": true
     },
     "01C5DC": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BC42"
+      "target_file_offset": "0x03BC42",
+      "known_function_start": true
     },
     "01C5F0": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BFD2"
+      "target_file_offset": "0x03BFD2",
+      "known_function_start": true
     },
     "01C5FE": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BA26"
+      "target_file_offset": "0x03BA26",
+      "known_function_start": true
     },
     "01C60C": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BA5A"
+      "target_file_offset": "0x03BA5A",
+      "known_function_start": true
     },
     "01C61A": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03BAA6"
+      "target_file_offset": "0x03BAA6",
+      "known_function_start": true
     },
     "01C628": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03B900"
+      "target_file_offset": "0x03B900",
+      "known_function_start": true
     },
     "01C636": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03B95A"
+      "target_file_offset": "0x03B95A",
+      "known_function_start": true
     },
     "01C644": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03B980"
+      "target_file_offset": "0x03B980",
+      "known_function_start": true
     },
     "01C652": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06AE08"
+      "target_file_offset": "0x06AE08",
+      "known_function_start": true
     },
     "01C660": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C4A2"
+      "target_file_offset": "0x03C4A2",
+      "known_function_start": true
     },
     "01C66E": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E162"
+      "target_file_offset": "0x03E162",
+      "known_function_start": true
     },
     "01C67C": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C528"
+      "target_file_offset": "0x03C528",
+      "known_function_start": true
     },
     "01C68A": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03DA2A"
+      "target_file_offset": "0x03DA2A",
+      "known_function_start": true
     },
     "01C698": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C932"
+      "target_file_offset": "0x03C932",
+      "known_function_start": true
     },
     "01C6A6": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C5A8"
+      "target_file_offset": "0x03C5A8",
+      "known_function_start": true
     },
     "01C6B4": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E2EA"
+      "target_file_offset": "0x03E2EA",
+      "known_function_start": true
     },
     "01C6C2": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03CA0A"
+      "target_file_offset": "0x03CA0A",
+      "known_function_start": false
     },
     "01C6D0": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03CA14"
+      "target_file_offset": "0x03CA14",
+      "known_function_start": false
     },
     "01C6DE": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03CA2A"
+      "target_file_offset": "0x03CA2A",
+      "known_function_start": true
     },
     "01C6EC": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03CDA2"
+      "target_file_offset": "0x03CDA2",
+      "known_function_start": true
     },
     "01C6FA": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03D510"
+      "target_file_offset": "0x03D510",
+      "known_function_start": true
     },
     "01C708": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03CAC6"
+      "target_file_offset": "0x03CAC6",
+      "known_function_start": true
     },
     "01C716": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03E442"
+      "target_file_offset": "0x03E442",
+      "known_function_start": true
     },
     "01C724": {
       "type": "A",
       "page_id": 6,
-      "target_file_offset": "0x03C424"
+      "target_file_offset": "0x03C424",
+      "known_function_start": true
     },
     "01C732": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x03ECF0"
+      "target_file_offset": "0x03ECF0",
+      "known_function_start": true
     },
     "01C740": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x03F90E"
+      "target_file_offset": "0x03F90E",
+      "known_function_start": true
     },
     "01C74E": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x05A862"
+      "target_file_offset": "0x05A862",
+      "known_function_start": true
     },
     "01C75C": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04B308"
+      "target_file_offset": "0x04B308",
+      "known_function_start": true
     },
     "01C768": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x061454"
+      "target_file_offset": "0x061454",
+      "known_function_start": true
     },
     "01C776": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05C878"
+      "target_file_offset": "0x05C878",
+      "known_function_start": true
     },
     "01C782": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x059B90"
+      "target_file_offset": "0x059B90",
+      "known_function_start": true
     },
     "01C790": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x03F946"
+      "target_file_offset": "0x03F946",
+      "known_function_start": true
     },
     "01C79E": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x03FA9C"
+      "target_file_offset": "0x03FA9C",
+      "known_function_start": true
     },
     "01C7AC": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x040002"
+      "target_file_offset": "0x040002",
+      "known_function_start": true
     },
     "01C7BA": {
       "type": "A",
       "page_id": 7,
-      "target_file_offset": "0x04007E"
+      "target_file_offset": "0x04007E",
+      "known_function_start": true
     },
     "01C7C8": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x04057A"
+      "target_file_offset": "0x04057A",
+      "known_function_start": true
     },
     "01C7D6": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x040608"
+      "target_file_offset": "0x040608",
+      "known_function_start": true
     },
     "01C7E4": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x0404B0"
+      "target_file_offset": "0x0404B0",
+      "known_function_start": true
     },
     "01C7F2": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041034"
+      "target_file_offset": "0x041034",
+      "known_function_start": true
     },
     "01C800": {
       "type": "A",
       "page_id": 19,
-      "target_file_offset": "0x062D84"
+      "target_file_offset": "0x062D84",
+      "known_function_start": true
     },
     "01C80C": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x0603DA"
+      "target_file_offset": "0x0603DA",
+      "known_function_start": true
     },
     "01C81A": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060382"
+      "target_file_offset": "0x060382",
+      "known_function_start": true
     },
     "01C828": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041E7E"
+      "target_file_offset": "0x041E7E",
+      "known_function_start": true
     },
     "01C836": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041C00"
+      "target_file_offset": "0x041C00",
+      "known_function_start": true
     },
     "01C844": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041C64"
+      "target_file_offset": "0x041C64",
+      "known_function_start": true
     },
     "01C852": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x041CBE"
+      "target_file_offset": "0x041CBE",
+      "known_function_start": true
     },
     "01C860": {
       "type": "A",
       "page_id": 8,
-      "target_file_offset": "0x0427D6"
+      "target_file_offset": "0x0427D6",
+      "known_function_start": true
     },
     "01C86E": {
       "type": "A",
       "page_id": 19,
-      "target_file_offset": "0x062716"
+      "target_file_offset": "0x062716",
+      "known_function_start": true
     },
     "01C87A": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042DFA"
+      "target_file_offset": "0x042DFA",
+      "known_function_start": true
     },
     "01C886": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042C50"
+      "target_file_offset": "0x042C50",
+      "known_function_start": true
     },
     "01C892": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042FD6"
+      "target_file_offset": "0x042FD6",
+      "known_function_start": true
     },
     "01C89E": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042CD6"
+      "target_file_offset": "0x042CD6",
+      "known_function_start": false
     },
     "01C8AA": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042CEC"
+      "target_file_offset": "0x042CEC",
+      "known_function_start": true
     },
     "01C8B6": {
       "type": "A",
       "page_id": 9,
-      "target_file_offset": "0x042D46"
+      "target_file_offset": "0x042D46",
+      "known_function_start": true
     },
     "01C8C2": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044836"
+      "target_file_offset": "0x044836",
+      "known_function_start": true
     },
     "01C8CE": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044556"
+      "target_file_offset": "0x044556",
+      "known_function_start": true
     },
     "01C8DA": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044FA4"
+      "target_file_offset": "0x044FA4",
+      "known_function_start": true
     },
     "01C8E6": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x04497E"
+      "target_file_offset": "0x04497E",
+      "known_function_start": true
     },
     "01C8F2": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x0449C4"
+      "target_file_offset": "0x0449C4",
+      "known_function_start": true
     },
     "01C8FE": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x0445EE"
+      "target_file_offset": "0x0445EE",
+      "known_function_start": true
     },
     "01C90A": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044B7A"
+      "target_file_offset": "0x044B7A",
+      "known_function_start": true
     },
     "01C916": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x0450BA"
+      "target_file_offset": "0x0450BA",
+      "known_function_start": true
     },
     "01C922": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044644"
+      "target_file_offset": "0x044644",
+      "known_function_start": true
     },
     "01C92E": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x044D16"
+      "target_file_offset": "0x044D16",
+      "known_function_start": true
     },
     "01C93A": {
       "type": "A",
       "page_id": 10,
-      "target_file_offset": "0x04477E"
+      "target_file_offset": "0x04477E",
+      "known_function_start": true
     },
     "01C946": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078BCE"
+      "target_file_offset": "0x078BCE",
+      "known_function_start": true
     },
     "01C954": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078640"
+      "target_file_offset": "0x078640",
+      "known_function_start": true
     },
     "01C962": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076642"
+      "target_file_offset": "0x076642",
+      "known_function_start": true
     },
     "01C970": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D2AC"
+      "target_file_offset": "0x00D2AC",
+      "known_function_start": true
     },
     "01C97A": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x0786FE"
+      "target_file_offset": "0x0786FE",
+      "known_function_start": true
     },
     "01C988": {
       "type": "A",
       "page_id": 11,
-      "target_file_offset": "0x045D00"
+      "target_file_offset": "0x045D00",
+      "known_function_start": true
     },
     "01C994": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x048CA4"
+      "target_file_offset": "0x048CA4",
+      "known_function_start": true
     },
     "01C9A0": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x0485F6"
+      "target_file_offset": "0x0485F6",
+      "known_function_start": true
     },
     "01C9AC": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x0482DE"
+      "target_file_offset": "0x0482DE",
+      "known_function_start": true
     },
     "01C9B8": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04AF5E"
+      "target_file_offset": "0x04AF5E",
+      "known_function_start": true
     },
     "01C9C4": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x046FFA"
+      "target_file_offset": "0x046FFA",
+      "known_function_start": true
     },
     "01C9D0": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04830E"
+      "target_file_offset": "0x04830E",
+      "known_function_start": true
     },
     "01C9DC": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x048A3A"
+      "target_file_offset": "0x048A3A",
+      "known_function_start": true
     },
     "01C9E8": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04A37C"
+      "target_file_offset": "0x04A37C",
+      "known_function_start": true
     },
     "01C9F4": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04AC00"
+      "target_file_offset": "0x04AC00",
+      "known_function_start": true
     },
     "01CA00": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x046DE0"
+      "target_file_offset": "0x046DE0",
+      "known_function_start": true
     },
     "01CA0C": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04A7CA"
+      "target_file_offset": "0x04A7CA",
+      "known_function_start": true
     },
     "01CA18": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x04A426"
+      "target_file_offset": "0x04A426",
+      "known_function_start": true
     },
     "01CA24": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x048F34"
+      "target_file_offset": "0x048F34",
+      "known_function_start": true
     },
     "01CA30": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x046E18"
+      "target_file_offset": "0x046E18",
+      "known_function_start": true
     },
     "01CA3C": {
       "type": "A",
       "page_id": 12,
-      "target_file_offset": "0x049600"
+      "target_file_offset": "0x049600",
+      "known_function_start": true
     },
     "01CA48": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05AF70"
+      "target_file_offset": "0x05AF70",
+      "known_function_start": true
     },
     "01CA54": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C846"
+      "target_file_offset": "0x04C846",
+      "known_function_start": true
     },
     "01CA60": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C35A"
+      "target_file_offset": "0x04C35A",
+      "known_function_start": true
     },
     "01CA6C": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04CAF6"
+      "target_file_offset": "0x04CAF6",
+      "known_function_start": true
     },
     "01CA78": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x051D56"
+      "target_file_offset": "0x051D56",
+      "known_function_start": true
     },
     "01CA84": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C5C0"
+      "target_file_offset": "0x04C5C0",
+      "known_function_start": true
     },
     "01CA90": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C1F0"
+      "target_file_offset": "0x04C1F0",
+      "known_function_start": true
     },
     "01CA9C": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C89E"
+      "target_file_offset": "0x04C89E",
+      "known_function_start": true
     },
     "01CAA8": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C20C"
+      "target_file_offset": "0x04C20C",
+      "known_function_start": true
     },
     "01CAB4": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C404"
+      "target_file_offset": "0x04C404",
+      "known_function_start": true
     },
     "01CAC0": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C682"
+      "target_file_offset": "0x04C682",
+      "known_function_start": true
     },
     "01CACC": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x051E28"
+      "target_file_offset": "0x051E28",
+      "known_function_start": false
     },
     "01CAD8": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C262"
+      "target_file_offset": "0x04C262",
+      "known_function_start": true
     },
     "01CAE4": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04E2D6"
+      "target_file_offset": "0x04E2D6",
+      "known_function_start": true
     },
     "01CAF0": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x051E2C"
+      "target_file_offset": "0x051E2C",
+      "known_function_start": true
     },
     "01CAFC": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04CC50"
+      "target_file_offset": "0x04CC50",
+      "known_function_start": true
     },
     "01CB08": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C298"
+      "target_file_offset": "0x04C298",
+      "known_function_start": true
     },
     "01CB14": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C4AE"
+      "target_file_offset": "0x04C4AE",
+      "known_function_start": true
     },
     "01CB20": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x051EE6"
+      "target_file_offset": "0x051EE6",
+      "known_function_start": true
     },
     "01CB2C": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C71C"
+      "target_file_offset": "0x04C71C",
+      "known_function_start": true
     },
     "01CB38": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C2CE"
+      "target_file_offset": "0x04C2CE",
+      "known_function_start": true
     },
     "01CB44": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x051EF4"
+      "target_file_offset": "0x051EF4",
+      "known_function_start": true
     },
     "01CB50": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C50C"
+      "target_file_offset": "0x04C50C",
+      "known_function_start": true
     },
     "01CB5C": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04CA86"
+      "target_file_offset": "0x04CA86",
+      "known_function_start": true
     },
     "01CB68": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C532"
+      "target_file_offset": "0x04C532",
+      "known_function_start": true
     },
     "01CB74": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C306"
+      "target_file_offset": "0x04C306",
+      "known_function_start": true
     },
     "01CB80": {
       "type": "A",
       "page_id": 13,
-      "target_file_offset": "0x04C7F0"
+      "target_file_offset": "0x04C7F0",
+      "known_function_start": true
     },
     "01CB8C": {
       "type": "A",
       "page_id": 19,
-      "target_file_offset": "0x061E96"
+      "target_file_offset": "0x061E96",
+      "known_function_start": true
     },
     "01CB98": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053B7E"
+      "target_file_offset": "0x053B7E",
+      "known_function_start": true
     },
     "01CBA4": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053A34"
+      "target_file_offset": "0x053A34",
+      "known_function_start": true
     },
     "01CBB0": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053AA0"
+      "target_file_offset": "0x053AA0",
+      "known_function_start": true
     },
     "01CBBC": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053B14"
+      "target_file_offset": "0x053B14",
+      "known_function_start": true
     },
     "01CBC8": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053820"
+      "target_file_offset": "0x053820",
+      "known_function_start": true
     },
     "01CBD4": {
       "type": "A",
       "page_id": 14,
-      "target_file_offset": "0x053B26"
+      "target_file_offset": "0x053B26",
+      "known_function_start": true
     },
     "01CBE0": {
       "type": "A",
       "page_id": 19,
-      "target_file_offset": "0x061F02"
+      "target_file_offset": "0x061F02",
+      "known_function_start": true
     },
     "01CBEC": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057F4E"
+      "target_file_offset": "0x057F4E",
+      "known_function_start": true
     },
     "01CBFA": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057CE0"
+      "target_file_offset": "0x057CE0",
+      "known_function_start": true
     },
     "01CC08": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057A3A"
+      "target_file_offset": "0x057A3A",
+      "known_function_start": true
     },
     "01CC16": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x059B3E"
+      "target_file_offset": "0x059B3E",
+      "known_function_start": true
     },
     "01CC24": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x056A10"
+      "target_file_offset": "0x056A10",
+      "known_function_start": true
     },
     "01CC32": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057AA2"
+      "target_file_offset": "0x057AA2",
+      "known_function_start": true
     },
     "01CC40": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x056B92"
+      "target_file_offset": "0x056B92",
+      "known_function_start": true
     },
     "01CC4E": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057DC0"
+      "target_file_offset": "0x057DC0",
+      "known_function_start": true
     },
     "01CC5C": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x056C3E"
+      "target_file_offset": "0x056C3E",
+      "known_function_start": true
     },
     "01CC6A": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x057AFC"
+      "target_file_offset": "0x057AFC",
+      "known_function_start": true
     },
     "01CC78": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06F61C"
+      "target_file_offset": "0x06F61C",
+      "known_function_start": true
     },
     "01CC84": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x05A40E"
+      "target_file_offset": "0x05A40E",
+      "known_function_start": true
     },
     "01CC92": {
       "type": "A",
       "page_id": 15,
-      "target_file_offset": "0x05A20E"
+      "target_file_offset": "0x05A20E",
+      "known_function_start": true
     },
     "01CCA0": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05B0DC"
+      "target_file_offset": "0x05B0DC",
+      "known_function_start": true
     },
     "01CCAC": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05C65A"
+      "target_file_offset": "0x05C65A",
+      "known_function_start": true
     },
     "01CCB8": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05BE84"
+      "target_file_offset": "0x05BE84",
+      "known_function_start": true
     },
     "01CCC4": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05C69C"
+      "target_file_offset": "0x05C69C",
+      "known_function_start": true
     },
     "01CCD0": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05B2C2"
+      "target_file_offset": "0x05B2C2",
+      "known_function_start": true
     },
     "01CCDC": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05C876"
+      "target_file_offset": "0x05C876",
+      "known_function_start": false
     },
     "01CCE8": {
       "type": "A",
       "page_id": 16,
-      "target_file_offset": "0x05BE30"
+      "target_file_offset": "0x05BE30",
+      "known_function_start": true
     },
     "01CCF4": {
       "type": "A",
       "page_id": 17,
-      "target_file_offset": "0x05E9B0"
+      "target_file_offset": "0x05E9B0",
+      "known_function_start": true
     },
     "01CD00": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06E0C8"
+      "target_file_offset": "0x06E0C8",
+      "known_function_start": true
     },
     "01CD0C": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060CE0"
+      "target_file_offset": "0x060CE0",
+      "known_function_start": true
     },
     "01CD1A": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x06040A"
+      "target_file_offset": "0x06040A",
+      "known_function_start": true
     },
     "01CD28": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x06044C"
+      "target_file_offset": "0x06044C",
+      "known_function_start": true
     },
     "01CD36": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060D8C"
+      "target_file_offset": "0x060D8C",
+      "known_function_start": true
     },
     "01CD44": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x05FEA0"
+      "target_file_offset": "0x05FEA0",
+      "known_function_start": true
     },
     "01CD52": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x05FEF4"
+      "target_file_offset": "0x05FEF4",
+      "known_function_start": true
     },
     "01CD60": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x06083A"
+      "target_file_offset": "0x06083A",
+      "known_function_start": true
     },
     "01CD6E": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060EC4"
+      "target_file_offset": "0x060EC4",
+      "known_function_start": true
     },
     "01CD7C": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060350"
+      "target_file_offset": "0x060350",
+      "known_function_start": true
     },
     "01CD8A": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060F32"
+      "target_file_offset": "0x060F32",
+      "known_function_start": true
     },
     "01CD98": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x060C34"
+      "target_file_offset": "0x060C34",
+      "known_function_start": true
     },
     "01CDA6": {
       "type": "A",
       "page_id": 18,
-      "target_file_offset": "0x0603A8"
+      "target_file_offset": "0x0603A8",
+      "known_function_start": true
     },
     "01CDB4": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06EED4"
+      "target_file_offset": "0x06EED4",
+      "known_function_start": true
     },
     "01CDC0": {
       "type": "A",
       "page_id": 19,
-      "target_file_offset": "0x06295E"
+      "target_file_offset": "0x06295E",
+      "known_function_start": true
     },
     "01CDCC": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x063880"
+      "target_file_offset": "0x063880",
+      "known_function_start": true
     },
     "01CDDA": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x063C58"
+      "target_file_offset": "0x063C58",
+      "known_function_start": true
     },
     "01CDE8": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x063F3C"
+      "target_file_offset": "0x063F3C",
+      "known_function_start": true
     },
     "01CDF6": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x064266"
+      "target_file_offset": "0x064266",
+      "known_function_start": true
     },
     "01CE04": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x06436C"
+      "target_file_offset": "0x06436C",
+      "known_function_start": true
     },
     "01CE12": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x0643F8"
+      "target_file_offset": "0x0643F8",
+      "known_function_start": true
     },
     "01CE20": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x064534"
+      "target_file_offset": "0x064534",
+      "known_function_start": true
     },
     "01CE2E": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x064A10"
+      "target_file_offset": "0x064A10",
+      "known_function_start": true
     },
     "01CE3C": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x0645F6"
+      "target_file_offset": "0x0645F6",
+      "known_function_start": true
     },
     "01CE4A": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x0641EC"
+      "target_file_offset": "0x0641EC",
+      "known_function_start": true
     },
     "01CE58": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DFB6"
+      "target_file_offset": "0x00DFB6",
+      "known_function_start": true
     },
     "01CE62": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DF9A"
+      "target_file_offset": "0x00DF9A",
+      "known_function_start": true
     },
     "01CE6C": {
       "type": "A",
       "page_id": 20,
-      "target_file_offset": "0x065D26"
+      "target_file_offset": "0x065D26",
+      "known_function_start": true
     },
     "01CE7A": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FA78"
+      "target_file_offset": "0x06FA78",
+      "known_function_start": false
     },
     "01CE86": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066968"
+      "target_file_offset": "0x066968",
+      "known_function_start": true
     },
     "01CE94": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066CD6"
+      "target_file_offset": "0x066CD6",
+      "known_function_start": true
     },
     "01CEA2": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066850"
+      "target_file_offset": "0x066850",
+      "known_function_start": true
     },
     "01CEB0": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066884"
+      "target_file_offset": "0x066884",
+      "known_function_start": true
     },
     "01CEBE": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066B96"
+      "target_file_offset": "0x066B96",
+      "known_function_start": true
     },
     "01CECC": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x0668B8"
+      "target_file_offset": "0x0668B8",
+      "known_function_start": false
     },
     "01CEDA": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067024"
+      "target_file_offset": "0x067024",
+      "known_function_start": false
     },
     "01CEE8": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06703C"
+      "target_file_offset": "0x06703C",
+      "known_function_start": true
     },
     "01CEF6": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066E0C"
+      "target_file_offset": "0x066E0C",
+      "known_function_start": true
     },
     "01CF04": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x066E52"
+      "target_file_offset": "0x066E52",
+      "known_function_start": true
     },
     "01CF12": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067182"
+      "target_file_offset": "0x067182",
+      "known_function_start": true
     },
     "01CF20": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x0674A8"
+      "target_file_offset": "0x0674A8",
+      "known_function_start": true
     },
     "01CF2E": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06760E"
+      "target_file_offset": "0x06760E",
+      "known_function_start": false
     },
     "01CF3C": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x067082"
+      "target_file_offset": "0x067082",
+      "known_function_start": true
     },
     "01CF4A": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x0673CC"
+      "target_file_offset": "0x0673CC",
+      "known_function_start": true
     },
     "01CF58": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x0685DC"
+      "target_file_offset": "0x0685DC",
+      "known_function_start": true
     },
     "01CF66": {
       "type": "A",
       "page_id": 21,
-      "target_file_offset": "0x06892E"
+      "target_file_offset": "0x06892E",
+      "known_function_start": true
     },
     "01CF74": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00EEA4"
+      "target_file_offset": "0x00EEA4",
+      "known_function_start": true
     },
     "01CF7E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00EC96"
+      "target_file_offset": "0x00EC96",
+      "known_function_start": true
     },
     "01CF88": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06927C"
+      "target_file_offset": "0x06927C",
+      "known_function_start": true
     },
     "01CF96": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x068FA0"
+      "target_file_offset": "0x068FA0",
+      "known_function_start": true
     },
     "01CFA4": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06AF1C"
+      "target_file_offset": "0x06AF1C",
+      "known_function_start": true
     },
     "01CFB2": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06929C"
+      "target_file_offset": "0x06929C",
+      "known_function_start": true
     },
     "01CFC0": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x069304"
+      "target_file_offset": "0x069304",
+      "known_function_start": false
     },
     "01CFCE": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x069058"
+      "target_file_offset": "0x069058",
+      "known_function_start": true
     },
     "01CFDC": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06B02A"
+      "target_file_offset": "0x06B02A",
+      "known_function_start": true
     },
     "01CFEA": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06936C"
+      "target_file_offset": "0x06936C",
+      "known_function_start": true
     },
     "01CFF8": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06B202"
+      "target_file_offset": "0x06B202",
+      "known_function_start": true
     },
     "01D006": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x069156"
+      "target_file_offset": "0x069156",
+      "known_function_start": true
     },
     "01D014": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x0691A4"
+      "target_file_offset": "0x0691A4",
+      "known_function_start": true
     },
     "01D022": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x068EE0"
+      "target_file_offset": "0x068EE0",
+      "known_function_start": true
     },
     "01D030": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x068F38"
+      "target_file_offset": "0x068F38",
+      "known_function_start": true
     },
     "01D03E": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06921A"
+      "target_file_offset": "0x06921A",
+      "known_function_start": true
     },
     "01D04C": {
       "type": "A",
       "page_id": 22,
-      "target_file_offset": "0x06B6C4"
+      "target_file_offset": "0x06B6C4",
+      "known_function_start": false
     },
     "01D05A": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x07826A"
+      "target_file_offset": "0x07826A",
+      "known_function_start": true
     },
     "01D068": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x078548"
+      "target_file_offset": "0x078548",
+      "known_function_start": true
     },
     "01D076": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x076C70"
+      "target_file_offset": "0x076C70",
+      "known_function_start": true
     },
     "01D084": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D72E"
+      "target_file_offset": "0x00D72E",
+      "known_function_start": true
     },
     "01D08E": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C6EA"
+      "target_file_offset": "0x06C6EA",
+      "known_function_start": true
     },
     "01D09A": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06E3AE"
+      "target_file_offset": "0x06E3AE",
+      "known_function_start": true
     },
     "01D0A6": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06D938"
+      "target_file_offset": "0x06D938",
+      "known_function_start": true
     },
     "01D0B2": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C7DA"
+      "target_file_offset": "0x06C7DA",
+      "known_function_start": true
     },
     "01D0BE": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CB94"
+      "target_file_offset": "0x06CB94",
+      "known_function_start": true
     },
     "01D0CA": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C80A"
+      "target_file_offset": "0x06C80A",
+      "known_function_start": true
     },
     "01D0D6": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06C296"
+      "target_file_offset": "0x06C296",
+      "known_function_start": true
     },
     "01D0E2": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06E2DE"
+      "target_file_offset": "0x06E2DE",
+      "known_function_start": true
     },
     "01D0EE": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06CA38"
+      "target_file_offset": "0x06CA38",
+      "known_function_start": true
     },
     "01D0FA": {
       "type": "A",
       "page_id": 23,
-      "target_file_offset": "0x06D8C8"
+      "target_file_offset": "0x06D8C8",
+      "known_function_start": true
     },
     "01D106": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FA96"
+      "target_file_offset": "0x06FA96",
+      "known_function_start": false
     },
     "01D112": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FAA8"
+      "target_file_offset": "0x06FAA8",
+      "known_function_start": false
     },
     "01D11E": {
       "type": "A",
       "page_id": 24,
-      "target_file_offset": "0x06FABA"
+      "target_file_offset": "0x06FABA",
+      "known_function_start": true
     },
     "01D12A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E46C"
+      "target_file_offset": "0x00E46C",
+      "known_function_start": true
     },
     "01D134": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D972"
+      "target_file_offset": "0x00D972",
+      "known_function_start": true
     },
     "01D13E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D3BE"
+      "target_file_offset": "0x00D3BE",
+      "known_function_start": true
     },
     "01D148": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x07092E"
+      "target_file_offset": "0x07092E",
+      "known_function_start": true
     },
     "01D156": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070580"
+      "target_file_offset": "0x070580",
+      "known_function_start": true
     },
     "01D164": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070A1A"
+      "target_file_offset": "0x070A1A",
+      "known_function_start": true
     },
     "01D172": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x06FDF0"
+      "target_file_offset": "0x06FDF0",
+      "known_function_start": true
     },
     "01D180": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x0702C0"
+      "target_file_offset": "0x0702C0",
+      "known_function_start": true
     },
     "01D18E": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x06FE1C"
+      "target_file_offset": "0x06FE1C",
+      "known_function_start": true
     },
     "01D19C": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070302"
+      "target_file_offset": "0x070302",
+      "known_function_start": true
     },
     "01D1AA": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x06FF94"
+      "target_file_offset": "0x06FF94",
+      "known_function_start": true
     },
     "01D1B8": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070782"
+      "target_file_offset": "0x070782",
+      "known_function_start": true
     },
     "01D1C6": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x0707B6"
+      "target_file_offset": "0x0707B6",
+      "known_function_start": true
     },
     "01D1D4": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070060"
+      "target_file_offset": "0x070060",
+      "known_function_start": true
     },
     "01D1E2": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070494"
+      "target_file_offset": "0x070494",
+      "known_function_start": true
     },
     "01D1F0": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070C6A"
+      "target_file_offset": "0x070C6A",
+      "known_function_start": false
     },
     "01D1FE": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070C6C"
+      "target_file_offset": "0x070C6C",
+      "known_function_start": true
     },
     "01D20C": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070CB4"
+      "target_file_offset": "0x070CB4",
+      "known_function_start": true
     },
     "01D21A": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070DE8"
+      "target_file_offset": "0x070DE8",
+      "known_function_start": true
     },
     "01D228": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x075FB6"
+      "target_file_offset": "0x075FB6",
+      "known_function_start": true
     },
     "01D236": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012C54"
+      "target_file_offset": "0x012C54",
+      "known_function_start": false
     },
     "01D240": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0129FC"
+      "target_file_offset": "0x0129FC",
+      "known_function_start": true
     },
     "01D24A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D85E"
+      "target_file_offset": "0x00D85E",
+      "known_function_start": true
     },
     "01D254": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x0710C2"
+      "target_file_offset": "0x0710C2",
+      "known_function_start": true
     },
     "01D262": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x070FF8"
+      "target_file_offset": "0x070FF8",
+      "known_function_start": true
     },
     "01D270": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x0713D4"
+      "target_file_offset": "0x0713D4",
+      "known_function_start": true
     },
     "01D27E": {
       "type": "A",
       "page_id": 25,
-      "target_file_offset": "0x071106"
+      "target_file_offset": "0x071106",
+      "known_function_start": true
     },
     "01D28C": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x0775EC"
+      "target_file_offset": "0x0775EC",
+      "known_function_start": true
     },
     "01D29A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D77C"
+      "target_file_offset": "0x00D77C",
+      "known_function_start": true
     },
     "01D2A4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D41E"
+      "target_file_offset": "0x00D41E",
+      "known_function_start": true
     },
     "01D2AE": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072C4E"
+      "target_file_offset": "0x072C4E",
+      "known_function_start": false
     },
     "01D2BC": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072B9A"
+      "target_file_offset": "0x072B9A",
+      "known_function_start": true
     },
     "01D2CA": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072C78"
+      "target_file_offset": "0x072C78",
+      "known_function_start": true
     },
     "01D2D8": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x072CC2"
+      "target_file_offset": "0x072CC2",
+      "known_function_start": true
     },
     "01D2E6": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0734F8"
+      "target_file_offset": "0x0734F8",
+      "known_function_start": true
     },
     "01D2F4": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x073AB0"
+      "target_file_offset": "0x073AB0",
+      "known_function_start": true
     },
     "01D302": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x073BB0"
+      "target_file_offset": "0x073BB0",
+      "known_function_start": true
     },
     "01D310": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0745F0"
+      "target_file_offset": "0x0745F0",
+      "known_function_start": true
     },
     "01D31E": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x07464C"
+      "target_file_offset": "0x07464C",
+      "known_function_start": true
     },
     "01D32C": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x07431E"
+      "target_file_offset": "0x07431E",
+      "known_function_start": true
     },
     "01D33A": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x074688"
+      "target_file_offset": "0x074688",
+      "known_function_start": true
     },
     "01D348": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x073474"
+      "target_file_offset": "0x073474",
+      "known_function_start": false
     },
     "01D356": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0746BC"
+      "target_file_offset": "0x0746BC",
+      "known_function_start": false
     },
     "01D364": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0734BC"
+      "target_file_offset": "0x0734BC",
+      "known_function_start": false
     },
     "01D372": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0749E0"
+      "target_file_offset": "0x0749E0",
+      "known_function_start": true
     },
     "01D380": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0759C8"
+      "target_file_offset": "0x0759C8",
+      "known_function_start": false
     },
     "01D38E": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0759DE"
+      "target_file_offset": "0x0759DE",
+      "known_function_start": false
     },
     "01D39C": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0759E8"
+      "target_file_offset": "0x0759E8",
+      "known_function_start": true
     },
     "01D3AA": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x073270"
+      "target_file_offset": "0x073270",
+      "known_function_start": true
     },
     "01D3B8": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x075594"
+      "target_file_offset": "0x075594",
+      "known_function_start": true
     },
     "01D3C6": {
       "type": "A",
       "page_id": 26,
-      "target_file_offset": "0x0755CC"
+      "target_file_offset": "0x0755CC",
+      "known_function_start": true
     },
     "01D3D4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D700"
+      "target_file_offset": "0x00D700",
+      "known_function_start": true
     },
     "01D3DE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00D6C4"
+      "target_file_offset": "0x00D6C4",
+      "known_function_start": true
     },
     "01D3E8": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E146"
+      "target_file_offset": "0x00E146",
+      "known_function_start": true
     },
     "01D3F2": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x0787A2"
+      "target_file_offset": "0x0787A2",
+      "known_function_start": true
     },
     "01D400": {
       "type": "A",
       "page_id": 27,
-      "target_file_offset": "0x0764F2"
+      "target_file_offset": "0x0764F2",
+      "known_function_start": true
     },
     "01D40E": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DB02"
+      "target_file_offset": "0x00DB02",
+      "known_function_start": false
     },
     "01D418": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x0781DE"
+      "target_file_offset": "0x0781DE",
+      "known_function_start": true
     },
     "01D426": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00DCB4"
+      "target_file_offset": "0x00DCB4",
+      "known_function_start": false
     },
     "01D430": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x077F3A"
+      "target_file_offset": "0x077F3A",
+      "known_function_start": true
     },
     "01D43E": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x078422"
+      "target_file_offset": "0x078422",
+      "known_function_start": false
     },
     "01D44C": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x0783E4"
+      "target_file_offset": "0x0783E4",
+      "known_function_start": true
     },
     "01D45A": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x07845A"
+      "target_file_offset": "0x07845A",
+      "known_function_start": true
     },
     "01D468": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E454"
+      "target_file_offset": "0x00E454",
+      "known_function_start": true
     },
     "01D472": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x077100"
+      "target_file_offset": "0x077100",
+      "known_function_start": true
     },
     "01D480": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078872"
+      "target_file_offset": "0x078872",
+      "known_function_start": true
     },
     "01D48E": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x076E50"
+      "target_file_offset": "0x076E50",
+      "known_function_start": true
     },
     "01D49C": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x07706C"
+      "target_file_offset": "0x07706C",
+      "known_function_start": true
     },
     "01D4AA": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x0772FA"
+      "target_file_offset": "0x0772FA",
+      "known_function_start": true
     },
     "01D4B8": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x0772C4"
+      "target_file_offset": "0x0772C4",
+      "known_function_start": true
     },
     "01D4C6": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x0772BA"
+      "target_file_offset": "0x0772BA",
+      "known_function_start": true
     },
     "01D4D4": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x077772"
+      "target_file_offset": "0x077772",
+      "known_function_start": true
     },
     "01D4E2": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012BC2"
+      "target_file_offset": "0x012BC2",
+      "known_function_start": true
     },
     "01D4EC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012ADA"
+      "target_file_offset": "0x012ADA",
+      "known_function_start": true
     },
     "01D4F6": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012B48"
+      "target_file_offset": "0x012B48",
+      "known_function_start": true
     },
     "01D500": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012A66"
+      "target_file_offset": "0x012A66",
+      "known_function_start": true
     },
     "01D50A": {
       "type": "A",
       "page_id": 29,
-      "target_file_offset": "0x077A34"
+      "target_file_offset": "0x077A34",
+      "known_function_start": true
     },
     "01D516": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012C8C"
+      "target_file_offset": "0x012C8C",
+      "known_function_start": true
     },
     "01D520": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x077ED0"
+      "target_file_offset": "0x077ED0",
+      "known_function_start": true
     },
     "01D52E": {
       "type": "A",
       "page_id": 30,
-      "target_file_offset": "0x078242"
+      "target_file_offset": "0x078242",
+      "known_function_start": true
     },
     "01D53C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012976"
+      "target_file_offset": "0x012976",
+      "known_function_start": false
     },
     "01D546": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012996"
+      "target_file_offset": "0x012996",
+      "known_function_start": false
     },
     "01D550": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012928"
+      "target_file_offset": "0x012928",
+      "known_function_start": true
     },
     "01D55A": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01287A"
+      "target_file_offset": "0x01287A",
+      "known_function_start": true
     },
     "01D564": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012959"
+      "target_file_offset": "0x012959",
+      "known_function_start": true
     },
     "01D56E": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x07881E"
+      "target_file_offset": "0x07881E",
+      "known_function_start": true
     },
     "01D57C": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E2B0"
+      "target_file_offset": "0x00E2B0",
+      "known_function_start": true
     },
     "01D586": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x00E1D2"
+      "target_file_offset": "0x00E1D2",
+      "known_function_start": true
     },
     "01D590": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x0787DC"
+      "target_file_offset": "0x0787DC",
+      "known_function_start": true
     },
     "01D59E": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078856"
+      "target_file_offset": "0x078856",
+      "known_function_start": true
     },
     "01D5AC": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01340E"
+      "target_file_offset": "0x01340E",
+      "known_function_start": true
     },
     "01D5B6": {
       "type": "A",
       "page_id": 31,
-      "target_file_offset": "0x078AF2"
+      "target_file_offset": "0x078AF2",
+      "known_function_start": true
     },
     "01D5C4": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01347C"
+      "target_file_offset": "0x01347C",
+      "known_function_start": true
     },
     "01D5CE": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x01343A"
+      "target_file_offset": "0x01343A",
+      "known_function_start": true
     },
     "01D5D8": {
       "type": "A",
       "page_id": 28,
-      "target_file_offset": "0x0776F4"
+      "target_file_offset": "0x0776F4",
+      "known_function_start": true
     },
     "01D5F0": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0132B0"
+      "target_file_offset": "0x0132B0",
+      "known_function_start": true
     },
     "01D5FA": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x0130A4"
+      "target_file_offset": "0x0130A4",
+      "known_function_start": true
     },
     "01D604": {
       "type": "B",
       "page_id": null,
-      "target_file_offset": "0x012E56"
+      "target_file_offset": "0x012E56",
+      "known_function_start": true
     }
   }
 }

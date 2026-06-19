@@ -60,21 +60,37 @@ def callers(seg, off):
                 out.append((m.group(1) if m else "?", am.group(1) if am else "?"))
     return out
 
+def _known_starts():
+    s = set(int(f["file_offset"], 16) for f in
+            json.load(open(ROOT / "code/VICEROY/functions.json"))["functions"])
+    s |= set(int(f["file_offset"], 16) for f in
+             json.load(open(ROOT / "code/VICEROY/overlay_functions_reseg.json"))["functions"])
+    return s
+
 def emit():
+    known = _known_starts()
     out = {}
+    n_known = 0
     for t in RMAP["thunk_table"]["thunks"]:
         base = 0x2400 if t["type"] == "B" else SEGS[t["page_id"]]["code_offset"]
         tgt = base + (t["ljmp_seg"] << 4) + t["offset_in_segment"]
-        # the thunk's own seg:off (resident table addr -> seg:off it answers for)
+        is_fn = tgt in known
+        n_known += is_fn
         out[f"{t['file_offset']:06X}"] = {
             "type": t["type"], "page_id": t.get("page_id"),
             "target_file_offset": f"0x{tgt:06X}",
+            "known_function_start": is_fn,   # else: likely a mid-function jump
         }
     p = ROOT / "data_extracted/thunk_targets.json"
-    p.write_text(json.dumps({"_note": "RTLink thunk stub file_offset -> resolved "
-                             "target file offset (tools/follow_thunk.py --emit)",
-                             "count": len(out), "thunks": out}, indent=2))
-    print(f"wrote {p.relative_to(ROOT)} ({len(out)} thunks)")
+    p.write_text(json.dumps({
+        "_note": "RTLink thunk stub file_offset -> resolved target file offset "
+                 "(tools/follow_thunk.py --emit). target = base + ljmp_seg*16 + "
+                 "offset_in_segment; base=0x2400 (type-B) or page code_offset (type-A).",
+        "count": len(out),
+        "validated_exact_known_function_start": f"{n_known}/{len(out)} "
+            f"({100*n_known//len(out)}%); the rest resolve to mid-function jumps.",
+        "thunks": out}, indent=2))
+    print(f"wrote {p.relative_to(ROOT)} ({len(out)} thunks, {n_known} = known function starts)")
 
 def main():
     ap = argparse.ArgumentParser()

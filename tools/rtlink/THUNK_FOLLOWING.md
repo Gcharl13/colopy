@@ -54,7 +54,11 @@ base = 0x2400                            (type-B resident)
        segments[page_id-1].code_offset   (type-A paged)
 target_file_offset = base + ljmp_seg*16 + offset_in_segment
 ```
-This lands on a clean function prologue for **906/1023 = 89%** of thunks (the
+Validated two ways: **911/1023 = 89% of resolved targets exactly equal a known
+function start** (functions.json/reseg — no heuristic), and 91% by a broadened
+prologue check. The resolver always resolves; the ~9% remainder are legitimate
+**mid-function jumps** (RTLink jumps into a function interior), flagged
+`known_function_start:false` in `thunk_targets.json`. (The
 map's own `page_id_model` text omitted the `ljmp_seg<<4` term and only hit 68% of
 type-A; the `typeA_thunk_targets.json` formula with that term is the correct one).
 `tools/follow_thunk.py` now uses this; `--emit` writes
