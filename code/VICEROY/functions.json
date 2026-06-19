@@ -8757,9 +8757,9 @@
       "size": 518,
       "instructions": 183,
       "region": "overlay",
-      "name": "unknown",
+      "name": "treasure_value_and_king_transport",
       "asm_file": "disasm/func_05C878_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x05CA7E",

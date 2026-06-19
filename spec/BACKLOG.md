@@ -42,7 +42,7 @@ points surfaced during the population pass (2026-06-18), to seed that work:
 | Native raze treasure | `func_04A7CA` (CHIEFKILL) — already B; conversion/mission TBD | `systems/natives.md` |
 | Exploration / scout | `func_05A20E` | `systems/exploration.md` |
 | Colony production | `func_02D658` | `systems/colony.md` |
-| Treasure transport | `func_05C878` | `systems/king.md`, events |
+| Treasure transport | `func_05C878` **(B 2026-06-19)**: value=100×UnitRecord[+0x15]; King per-difficulty fee table `DGROUP:0x8394`; post-indep cashed direct | `systems/events.md` §3 |
 | Dialog framework | `func_06F0F4` (popup dispatcher), sprite channels `[0x1F5C/5E/60]`, geometry `[0x839E..0x83A4]` | `ui/popups.md` |
 | Cinematic dispatch | `func_075352` (king-defeats arg matrix), `func_03DA2A` (DoI signature) | `ui/cinematics.md`, `ui/declaration_independence.md` |
 | Lost City outcomes | index→outcome binding for `@LOSTCITY0..9` + `@BURIAL1-3` + `@VANISH` | `systems/events.md`, `ui/popups.md` |
