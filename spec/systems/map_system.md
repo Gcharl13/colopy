@@ -84,6 +84,27 @@ terrain/feature/road/river/coast sprite **selector**, `0x0681A8..0x0685DB`) →
   neighbour-config → which-of-`0x95..0x99` truth table is the bit logic in
   `func_067F50`/`func_0681A8` (located; full per-direction enumeration is intricate).
 
+**Per-tile layer dispatch (`func_0681A8` = O513) — BYTE_VERIFIED order.** O513 first
+loads the tile + neighbours from the three layer far-ptrs `[0xA594]`/`[0xA598]`/`[0xA59C]`
+into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
+`@0x681E0`). Then per tile:
+1. **Water/fog tiles** → beach base `0x95` + the coast composer (`call func_067F50`,
+   `@0x68244`) — see above.
+2. **Base terrain** → `emit_ground_sprite` (`func_067E28`) with the terrain class
+   `[0xA8A2]` (`@0x68285`/`@0x68301`).
+3. **Auto-forest variant** (hard rule 3) → land class masked `& 7`, then the forested
+   bands `8..0x0F` / `0x10..0x17` select the variant; fallback id `0x11` (`@0x682C0..0x68301`).
+4. **Roads / improvements** → road sprite base **`0x5A` (90) + index** from the
+   road-feature test `0x181F:0x718([0xA5A0],[0xA5A2])` (`@0x6829A`, drawn `@0x682B2`).
+5. **Forest / hills overlay** → auto-forest rows `+0x21` (mountains) / `+0x31` (hills)
+   (`@0x6837F`/`@0x68384`), gated by tile bits forest `0x80` / hills `0x20`.
+6. **River / edge overlay** → sprite `0x96` on tile bit `0x40` (`@0x68354`).
+7. **Coast directional edges** → `0x97 + edge_index` (above).
+
+Sprite-index bases the selector writes: **road/feature `0x5A`**, **beach band
+`0x95..0x99`**, forest/hills overlay rows `+0x21`/`+0x31`. All drawn through
+`func_067DC8` (sub-cell place) / `func_067E28` (ground) / `func_067EEC` (terrain).
+
 ## 4. UI
 Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)
 (CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` (manual). Layout `TBD`.

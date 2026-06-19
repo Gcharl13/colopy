@@ -9486,9 +9486,9 @@
       "size": 99,
       "instructions": 25,
       "region": "overlay",
-      "name": "unknown",
+      "name": "emit_ground_sprite",
       "asm_file": "disasm/func_067E28_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067E8C",
@@ -9504,9 +9504,9 @@
       "size": 99,
       "instructions": 25,
       "region": "overlay",
-      "name": "unknown",
+      "name": "emit_terrain_sprite",
       "asm_file": "disasm/func_067EEC_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067F50",
