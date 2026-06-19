@@ -144,13 +144,13 @@ parts.append(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <h1>VICEROY.EXE — code coverage map</h1>
 <p class="sub">Every recognized function, laid out by file offset. Colour = how well it is understood.
 Click a row to see its raw assembly beside what it does. Read-only.<br>
-<b>Reading the pale blocks:</b> there are two kinds (see legend). <b>Light-blue</b>
-= unmapped <i>code</i> — overlay function bodies that are disassembled but not yet
-split into discrete functions in the registry this map is built from, so they read
-as "gaps" even though they're understood-able code (this map therefore
-<i>under-counts</i> overlay coverage). <b>Light-tan</b> = genuine <i>data</i> —
-strings, lookup tables, padding — handled by the data-extraction track, not decoded
-into functions. (Earlier this whole band was mislabeled "data"; corrected — see
+<b>Reading the pale blocks:</b> these are now mostly genuine <b>data</b> (light-tan)
+— strings, lookup tables, padding — handled by the data-extraction track, not
+decoded into functions. The overlay function sizes were previously truncated at
+the first internal <code>RETF</code>, which made ~70% of overlay code show as
+false "gaps"; those have been corrected to their true extents (adopted from the
+RTLink re-segmentation), so that code is now attributed to its functions. Any
+light-blue that remains is residual unmapped code. (See
 <code>docs/UNMAPPED_REGIONS_AUDIT.md</code>.)</p>
 
 <div>

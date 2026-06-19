@@ -4983,7 +4983,7 @@
     },
     {
       "file_offset": "0x020F50",
-      "size": 134,
+      "size": 1714,
       "instructions": 45,
       "region": "overlay",
       "name": "unknown",
@@ -5001,7 +5001,7 @@
     },
     {
       "file_offset": "0x02165E",
-      "size": 77,
+      "size": 906,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -5019,7 +5019,7 @@
     },
     {
       "file_offset": "0x021A14",
-      "size": 602,
+      "size": 797,
       "instructions": 186,
       "region": "overlay",
       "name": "unknown",
@@ -5037,7 +5037,7 @@
     },
     {
       "file_offset": "0x021E72",
-      "size": 72,
+      "size": 107,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -5046,7 +5046,7 @@
     },
     {
       "file_offset": "0x021EDE",
-      "size": 264,
+      "size": 275,
       "instructions": 88,
       "region": "overlay",
       "name": "unknown",
@@ -5064,7 +5064,7 @@
     },
     {
       "file_offset": "0x02211E",
-      "size": 102,
+      "size": 533,
       "instructions": 35,
       "region": "overlay",
       "name": "unknown",
@@ -5073,7 +5073,7 @@
     },
     {
       "file_offset": "0x022334",
-      "size": 85,
+      "size": 526,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -5082,7 +5082,7 @@
     },
     {
       "file_offset": "0x022542",
-      "size": 66,
+      "size": 678,
       "instructions": 24,
       "region": "overlay",
       "name": "unknown",
@@ -5109,7 +5109,7 @@
     },
     {
       "file_offset": "0x02287E",
-      "size": 159,
+      "size": 444,
       "instructions": 50,
       "region": "overlay",
       "name": "unknown",
@@ -5118,7 +5118,7 @@
     },
     {
       "file_offset": "0x022A3A",
-      "size": 202,
+      "size": 673,
       "instructions": 62,
       "region": "overlay",
       "name": "unknown",
@@ -5127,7 +5127,7 @@
     },
     {
       "file_offset": "0x022CDC",
-      "size": 50,
+      "size": 106,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -5136,7 +5136,7 @@
     },
     {
       "file_offset": "0x022D46",
-      "size": 23,
+      "size": 208,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -5145,7 +5145,7 @@
     },
     {
       "file_offset": "0x022E16",
-      "size": 155,
+      "size": 242,
       "instructions": 48,
       "region": "overlay",
       "name": "unknown",
@@ -5154,7 +5154,7 @@
     },
     {
       "file_offset": "0x022F08",
-      "size": 123,
+      "size": 1084,
       "instructions": 43,
       "region": "overlay",
       "name": "unknown",
@@ -5172,7 +5172,7 @@
     },
     {
       "file_offset": "0x02356C",
-      "size": 48,
+      "size": 105,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -5181,7 +5181,7 @@
     },
     {
       "file_offset": "0x0235D6",
-      "size": 107,
+      "size": 2374,
       "instructions": 50,
       "region": "overlay",
       "name": "unknown",
@@ -5190,7 +5190,7 @@
     },
     {
       "file_offset": "0x023F1C",
-      "size": 220,
+      "size": 689,
       "instructions": 76,
       "region": "overlay",
       "name": "unknown",
@@ -5199,7 +5199,7 @@
     },
     {
       "file_offset": "0x0241CE",
-      "size": 45,
+      "size": 86,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -5208,7 +5208,7 @@
     },
     {
       "file_offset": "0x024224",
-      "size": 40,
+      "size": 138,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -5217,7 +5217,7 @@
     },
     {
       "file_offset": "0x0242AE",
-      "size": 98,
+      "size": 116,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -5226,7 +5226,7 @@
     },
     {
       "file_offset": "0x024322",
-      "size": 21,
+      "size": 32,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -5235,7 +5235,7 @@
     },
     {
       "file_offset": "0x024342",
-      "size": 536,
+      "size": 643,
       "instructions": 179,
       "region": "overlay",
       "name": "unknown",
@@ -5244,7 +5244,7 @@
     },
     {
       "file_offset": "0x0245C6",
-      "size": 22,
+      "size": 107,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -5262,7 +5262,7 @@
     },
     {
       "file_offset": "0x024692",
-      "size": 50,
+      "size": 80,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -5271,7 +5271,7 @@
     },
     {
       "file_offset": "0x0246E2",
-      "size": 67,
+      "size": 870,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -5280,7 +5280,7 @@
     },
     {
       "file_offset": "0x024A48",
-      "size": 183,
+      "size": 424,
       "instructions": 61,
       "region": "overlay",
       "name": "unknown",
@@ -5307,7 +5307,7 @@
     },
     {
       "file_offset": "0x025A1E",
-      "size": 104,
+      "size": 531,
       "instructions": 35,
       "region": "overlay",
       "name": "unknown",
@@ -5316,7 +5316,7 @@
     },
     {
       "file_offset": "0x025C32",
-      "size": 204,
+      "size": 258,
       "instructions": 74,
       "region": "overlay",
       "name": "unknown",
@@ -5325,7 +5325,7 @@
     },
     {
       "file_offset": "0x025D34",
-      "size": 38,
+      "size": 442,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -5334,7 +5334,7 @@
     },
     {
       "file_offset": "0x025EEE",
-      "size": 53,
+      "size": 308,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -5343,7 +5343,7 @@
     },
     {
       "file_offset": "0x026022",
-      "size": 281,
+      "size": 288,
       "instructions": 99,
       "region": "overlay",
       "name": "unknown",
@@ -5352,7 +5352,7 @@
     },
     {
       "file_offset": "0x026142",
-      "size": 51,
+      "size": 507,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -5370,7 +5370,7 @@
     },
     {
       "file_offset": "0x026374",
-      "size": 152,
+      "size": 308,
       "instructions": 49,
       "region": "overlay",
       "name": "unknown",
@@ -5379,7 +5379,7 @@
     },
     {
       "file_offset": "0x0264A8",
-      "size": 216,
+      "size": 1062,
       "instructions": 74,
       "region": "overlay",
       "name": "unknown",
@@ -5388,7 +5388,7 @@
     },
     {
       "file_offset": "0x0268CE",
-      "size": 151,
+      "size": 483,
       "instructions": 52,
       "region": "overlay",
       "name": "unknown",
@@ -5397,7 +5397,7 @@
     },
     {
       "file_offset": "0x026AB2",
-      "size": 109,
+      "size": 282,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -5406,7 +5406,7 @@
     },
     {
       "file_offset": "0x026BCC",
-      "size": 104,
+      "size": 246,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -5451,7 +5451,7 @@
     },
     {
       "file_offset": "0x0270D0",
-      "size": 243,
+      "size": 1278,
       "instructions": 81,
       "region": "overlay",
       "name": "unknown",
@@ -5460,7 +5460,7 @@
     },
     {
       "file_offset": "0x0275CE",
-      "size": 56,
+      "size": 376,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -5469,7 +5469,7 @@
     },
     {
       "file_offset": "0x027746",
-      "size": 471,
+      "size": 526,
       "instructions": 154,
       "region": "overlay",
       "name": "unknown",
@@ -5496,7 +5496,7 @@
     },
     {
       "file_offset": "0x027ADA",
-      "size": 136,
+      "size": 220,
       "instructions": 50,
       "region": "overlay",
       "name": "unknown",
@@ -5505,7 +5505,7 @@
     },
     {
       "file_offset": "0x027BB6",
-      "size": 172,
+      "size": 461,
       "instructions": 64,
       "region": "overlay",
       "name": "unknown",
@@ -5523,7 +5523,7 @@
     },
     {
       "file_offset": "0x027DB2",
-      "size": 190,
+      "size": 921,
       "instructions": 66,
       "region": "overlay",
       "name": "unknown",
@@ -5541,7 +5541,7 @@
     },
     {
       "file_offset": "0x02819E",
-      "size": 43,
+      "size": 55,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -5550,7 +5550,7 @@
     },
     {
       "file_offset": "0x0281D6",
-      "size": 148,
+      "size": 598,
       "instructions": 53,
       "region": "overlay",
       "name": "unknown",
@@ -5559,7 +5559,7 @@
     },
     {
       "file_offset": "0x02842C",
-      "size": 9,
+      "size": 57,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -5568,7 +5568,7 @@
     },
     {
       "file_offset": "0x028466",
-      "size": 173,
+      "size": 214,
       "instructions": 62,
       "region": "overlay",
       "name": "unknown",
@@ -5586,7 +5586,7 @@
     },
     {
       "file_offset": "0x028592",
-      "size": 124,
+      "size": 512,
       "instructions": 58,
       "region": "overlay",
       "name": "unknown",
@@ -5613,7 +5613,7 @@
     },
     {
       "file_offset": "0x0287C6",
-      "size": 32,
+      "size": 35,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -5640,7 +5640,7 @@
     },
     {
       "file_offset": "0x02883E",
-      "size": 138,
+      "size": 1357,
       "instructions": 49,
       "region": "overlay",
       "name": "unknown",
@@ -5649,7 +5649,7 @@
     },
     {
       "file_offset": "0x028D8C",
-      "size": 185,
+      "size": 2017,
       "instructions": 58,
       "region": "overlay",
       "name": "unknown",
@@ -5658,7 +5658,7 @@
     },
     {
       "file_offset": "0x02956D",
-      "size": 42,
+      "size": 1075,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -5667,7 +5667,7 @@
     },
     {
       "file_offset": "0x0299A0",
-      "size": 22,
+      "size": 287,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -5694,7 +5694,7 @@
     },
     {
       "file_offset": "0x029BBE",
-      "size": 51,
+      "size": 82,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -5703,7 +5703,7 @@
     },
     {
       "file_offset": "0x029C10",
-      "size": 49,
+      "size": 275,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -5721,7 +5721,7 @@
     },
     {
       "file_offset": "0x029DD4",
-      "size": 291,
+      "size": 744,
       "instructions": 111,
       "region": "overlay",
       "name": "unknown",
@@ -5730,7 +5730,7 @@
     },
     {
       "file_offset": "0x02A0BC",
-      "size": 306,
+      "size": 607,
       "instructions": 117,
       "region": "overlay",
       "name": "unknown",
@@ -5739,7 +5739,7 @@
     },
     {
       "file_offset": "0x02A31C",
-      "size": 70,
+      "size": 325,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -5748,7 +5748,7 @@
     },
     {
       "file_offset": "0x02A462",
-      "size": 100,
+      "size": 579,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -5757,7 +5757,7 @@
     },
     {
       "file_offset": "0x02A6A6",
-      "size": 110,
+      "size": 582,
       "instructions": 40,
       "region": "overlay",
       "name": "unknown",
@@ -5766,7 +5766,7 @@
     },
     {
       "file_offset": "0x02A8EC",
-      "size": 63,
+      "size": 512,
       "instructions": 24,
       "region": "overlay",
       "name": "unknown",
@@ -5775,7 +5775,7 @@
     },
     {
       "file_offset": "0x02AAEC",
-      "size": 63,
+      "size": 674,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -5784,7 +5784,7 @@
     },
     {
       "file_offset": "0x02AD8E",
-      "size": 121,
+      "size": 331,
       "instructions": 45,
       "region": "overlay",
       "name": "unknown",
@@ -5793,7 +5793,7 @@
     },
     {
       "file_offset": "0x02AEDA",
-      "size": 127,
+      "size": 243,
       "instructions": 47,
       "region": "overlay",
       "name": "unknown",
@@ -5802,7 +5802,7 @@
     },
     {
       "file_offset": "0x02AFCE",
-      "size": 41,
+      "size": 119,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -5811,7 +5811,7 @@
     },
     {
       "file_offset": "0x02B046",
-      "size": 56,
+      "size": 602,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -5829,7 +5829,7 @@
     },
     {
       "file_offset": "0x02B368",
-      "size": 45,
+      "size": 361,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -5838,7 +5838,7 @@
     },
     {
       "file_offset": "0x02B4D2",
-      "size": 517,
+      "size": 625,
       "instructions": 176,
       "region": "overlay",
       "name": "unknown",
@@ -5847,7 +5847,7 @@
     },
     {
       "file_offset": "0x02B744",
-      "size": 24,
+      "size": 386,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -5856,7 +5856,7 @@
     },
     {
       "file_offset": "0x02B8C6",
-      "size": 70,
+      "size": 277,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -5865,7 +5865,7 @@
     },
     {
       "file_offset": "0x02B9DC",
-      "size": 72,
+      "size": 429,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -5874,7 +5874,7 @@
     },
     {
       "file_offset": "0x02BB8A",
-      "size": 106,
+      "size": 232,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -5883,7 +5883,7 @@
     },
     {
       "file_offset": "0x02BC72",
-      "size": 50,
+      "size": 2259,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -5901,7 +5901,7 @@
     },
     {
       "file_offset": "0x02C5D4",
-      "size": 592,
+      "size": 1318,
       "instructions": 188,
       "region": "overlay",
       "name": "unknown",
@@ -5919,7 +5919,7 @@
     },
     {
       "file_offset": "0x02D0E4",
-      "size": 23,
+      "size": 549,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -5937,7 +5937,7 @@
     },
     {
       "file_offset": "0x02D3C6",
-      "size": 306,
+      "size": 575,
       "instructions": 105,
       "region": "overlay",
       "name": "unknown",
@@ -5955,7 +5955,7 @@
     },
     {
       "file_offset": "0x02D658",
-      "size": 1061,
+      "size": 5220,
       "instructions": 330,
       "region": "overlay",
       "name": "unknown",
@@ -5982,7 +5982,7 @@
     },
     {
       "file_offset": "0x02EB1C",
-      "size": 10,
+      "size": 42,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -5991,7 +5991,7 @@
     },
     {
       "file_offset": "0x02EB46",
-      "size": 13,
+      "size": 49,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -6000,7 +6000,7 @@
     },
     {
       "file_offset": "0x02EB78",
-      "size": 55,
+      "size": 182,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -6009,7 +6009,7 @@
     },
     {
       "file_offset": "0x02EC2E",
-      "size": 15,
+      "size": 518,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -6018,7 +6018,7 @@
     },
     {
       "file_offset": "0x02EE34",
-      "size": 12,
+      "size": 304,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -6036,7 +6036,7 @@
     },
     {
       "file_offset": "0x02F052",
-      "size": 117,
+      "size": 847,
       "instructions": 41,
       "region": "overlay",
       "name": "unknown",
@@ -6045,7 +6045,7 @@
     },
     {
       "file_offset": "0x02F3A2",
-      "size": 63,
+      "size": 1869,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -6081,7 +6081,7 @@
     },
     {
       "file_offset": "0x030566",
-      "size": 10,
+      "size": 42,
       "instructions": 4,
       "region": "overlay",
       "name": "unknown",
@@ -6099,7 +6099,7 @@
     },
     {
       "file_offset": "0x0305A8",
-      "size": 87,
+      "size": 1424,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -6117,7 +6117,7 @@
     },
     {
       "file_offset": "0x030B4C",
-      "size": 36,
+      "size": 105,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -6126,7 +6126,7 @@
     },
     {
       "file_offset": "0x030BB6",
-      "size": 40,
+      "size": 94,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -6153,7 +6153,7 @@
     },
     {
       "file_offset": "0x030D16",
-      "size": 86,
+      "size": 111,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -6162,7 +6162,7 @@
     },
     {
       "file_offset": "0x030D86",
-      "size": 54,
+      "size": 110,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -6171,7 +6171,7 @@
     },
     {
       "file_offset": "0x030DF4",
-      "size": 378,
+      "size": 385,
       "instructions": 136,
       "region": "overlay",
       "name": "unknown",
@@ -6189,7 +6189,7 @@
     },
     {
       "file_offset": "0x0310B4",
-      "size": 85,
+      "size": 483,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -6198,7 +6198,7 @@
     },
     {
       "file_offset": "0x031298",
-      "size": 151,
+      "size": 206,
       "instructions": 57,
       "region": "overlay",
       "name": "unknown",
@@ -6207,7 +6207,7 @@
     },
     {
       "file_offset": "0x031366",
-      "size": 229,
+      "size": 327,
       "instructions": 83,
       "region": "overlay",
       "name": "unknown",
@@ -6225,7 +6225,7 @@
     },
     {
       "file_offset": "0x0314DC",
-      "size": 211,
+      "size": 752,
       "instructions": 74,
       "region": "overlay",
       "name": "unknown",
@@ -6261,7 +6261,7 @@
     },
     {
       "file_offset": "0x0319BC",
-      "size": 97,
+      "size": 117,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -6306,7 +6306,7 @@
     },
     {
       "file_offset": "0x031DC8",
-      "size": 132,
+      "size": 351,
       "instructions": 45,
       "region": "overlay",
       "name": "unknown",
@@ -6333,7 +6333,7 @@
     },
     {
       "file_offset": "0x031F5C",
-      "size": 32,
+      "size": 35,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -6342,7 +6342,7 @@
     },
     {
       "file_offset": "0x031F80",
-      "size": 87,
+      "size": 137,
       "instructions": 33,
       "region": "overlay",
       "name": "unknown",
@@ -6351,7 +6351,7 @@
     },
     {
       "file_offset": "0x03200A",
-      "size": 23,
+      "size": 227,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -6369,7 +6369,7 @@
     },
     {
       "file_offset": "0x032122",
-      "size": 43,
+      "size": 146,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -6378,7 +6378,7 @@
     },
     {
       "file_offset": "0x0321B4",
-      "size": 24,
+      "size": 72,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -6387,7 +6387,7 @@
     },
     {
       "file_offset": "0x0321FC",
-      "size": 24,
+      "size": 102,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -6423,7 +6423,7 @@
     },
     {
       "file_offset": "0x0322D0",
-      "size": 21,
+      "size": 121,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -6432,7 +6432,7 @@
     },
     {
       "file_offset": "0x03234A",
-      "size": 17,
+      "size": 194,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -6450,7 +6450,7 @@
     },
     {
       "file_offset": "0x03245C",
-      "size": 90,
+      "size": 108,
       "instructions": 32,
       "region": "overlay",
       "name": "unknown",
@@ -6459,7 +6459,7 @@
     },
     {
       "file_offset": "0x0324C8",
-      "size": 5,
+      "size": 42,
       "instructions": 2,
       "region": "overlay",
       "name": "unknown",
@@ -6468,7 +6468,7 @@
     },
     {
       "file_offset": "0x0324F2",
-      "size": 70,
+      "size": 1057,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -6477,7 +6477,7 @@
     },
     {
       "file_offset": "0x032914",
-      "size": 148,
+      "size": 1175,
       "instructions": 51,
       "region": "overlay",
       "name": "unknown",
@@ -6486,7 +6486,7 @@
     },
     {
       "file_offset": "0x032DAC",
-      "size": 134,
+      "size": 566,
       "instructions": 46,
       "region": "overlay",
       "name": "unknown",
@@ -6495,7 +6495,7 @@
     },
     {
       "file_offset": "0x032FE2",
-      "size": 145,
+      "size": 364,
       "instructions": 46,
       "region": "overlay",
       "name": "unknown",
@@ -6504,7 +6504,7 @@
     },
     {
       "file_offset": "0x03314E",
-      "size": 16,
+      "size": 511,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -6513,7 +6513,7 @@
     },
     {
       "file_offset": "0x03334E",
-      "size": 47,
+      "size": 221,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -6522,7 +6522,7 @@
     },
     {
       "file_offset": "0x03342C",
-      "size": 79,
+      "size": 462,
       "instructions": 34,
       "region": "overlay",
       "name": "unknown",
@@ -6531,7 +6531,7 @@
     },
     {
       "file_offset": "0x0335FA",
-      "size": 157,
+      "size": 283,
       "instructions": 59,
       "region": "overlay",
       "name": "unknown",
@@ -6540,7 +6540,7 @@
     },
     {
       "file_offset": "0x033716",
-      "size": 18,
+      "size": 97,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -6549,7 +6549,7 @@
     },
     {
       "file_offset": "0x033778",
-      "size": 41,
+      "size": 730,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -6558,7 +6558,7 @@
     },
     {
       "file_offset": "0x033A52",
-      "size": 100,
+      "size": 402,
       "instructions": 36,
       "region": "overlay",
       "name": "unknown",
@@ -6567,7 +6567,7 @@
     },
     {
       "file_offset": "0x033BE4",
-      "size": 53,
+      "size": 178,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -6576,7 +6576,7 @@
     },
     {
       "file_offset": "0x033C96",
-      "size": 540,
+      "size": 724,
       "instructions": 191,
       "region": "overlay",
       "name": "unknown",
@@ -6585,7 +6585,7 @@
     },
     {
       "file_offset": "0x0341D6",
-      "size": 102,
+      "size": 322,
       "instructions": 38,
       "region": "overlay",
       "name": "unknown",
@@ -6594,7 +6594,7 @@
     },
     {
       "file_offset": "0x034318",
-      "size": 289,
+      "size": 1030,
       "instructions": 93,
       "region": "overlay",
       "name": "unknown",
@@ -6603,7 +6603,7 @@
     },
     {
       "file_offset": "0x03471E",
-      "size": 725,
+      "size": 726,
       "instructions": 245,
       "region": "overlay",
       "name": "unknown",
@@ -6612,7 +6612,7 @@
     },
     {
       "file_offset": "0x0349F4",
-      "size": 71,
+      "size": 236,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -6621,7 +6621,7 @@
     },
     {
       "file_offset": "0x034AE0",
-      "size": 100,
+      "size": 324,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -6630,7 +6630,7 @@
     },
     {
       "file_offset": "0x034C24",
-      "size": 112,
+      "size": 432,
       "instructions": 40,
       "region": "overlay",
       "name": "unknown",
@@ -6639,7 +6639,7 @@
     },
     {
       "file_offset": "0x034DD4",
-      "size": 227,
+      "size": 716,
       "instructions": 80,
       "region": "overlay",
       "name": "unknown",
@@ -6648,7 +6648,7 @@
     },
     {
       "file_offset": "0x0350A0",
-      "size": 101,
+      "size": 830,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -6657,7 +6657,7 @@
     },
     {
       "file_offset": "0x0353DE",
-      "size": 113,
+      "size": 224,
       "instructions": 43,
       "region": "overlay",
       "name": "unknown",
@@ -6666,7 +6666,7 @@
     },
     {
       "file_offset": "0x0354BE",
-      "size": 231,
+      "size": 1554,
       "instructions": 92,
       "region": "overlay",
       "name": "unknown",
@@ -6684,7 +6684,7 @@
     },
     {
       "file_offset": "0x035B06",
-      "size": 118,
+      "size": 660,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -6693,7 +6693,7 @@
     },
     {
       "file_offset": "0x035D9A",
-      "size": 27,
+      "size": 230,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -6702,7 +6702,7 @@
     },
     {
       "file_offset": "0x035E80",
-      "size": 282,
+      "size": 440,
       "instructions": 100,
       "region": "overlay",
       "name": "unknown",
@@ -6720,7 +6720,7 @@
     },
     {
       "file_offset": "0x036138",
-      "size": 124,
+      "size": 618,
       "instructions": 40,
       "region": "overlay",
       "name": "unknown",
@@ -6729,7 +6729,7 @@
     },
     {
       "file_offset": "0x0363A2",
-      "size": 33,
+      "size": 466,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -6738,7 +6738,7 @@
     },
     {
       "file_offset": "0x036574",
-      "size": 13,
+      "size": 1026,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -6747,7 +6747,7 @@
     },
     {
       "file_offset": "0x036976",
-      "size": 24,
+      "size": 26,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -6774,7 +6774,7 @@
     },
     {
       "file_offset": "0x037340",
-      "size": 100,
+      "size": 137,
       "instructions": 34,
       "region": "overlay",
       "name": "unknown",
@@ -6783,7 +6783,7 @@
     },
     {
       "file_offset": "0x0373CA",
-      "size": 68,
+      "size": 128,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -6792,7 +6792,7 @@
     },
     {
       "file_offset": "0x03744A",
-      "size": 325,
+      "size": 1294,
       "instructions": 126,
       "region": "overlay",
       "name": "unknown",
@@ -6810,7 +6810,7 @@
     },
     {
       "file_offset": "0x037A10",
-      "size": 140,
+      "size": 1646,
       "instructions": 45,
       "region": "overlay",
       "name": "unknown",
@@ -6819,7 +6819,7 @@
     },
     {
       "file_offset": "0x03807E",
-      "size": 105,
+      "size": 921,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -6828,7 +6828,7 @@
     },
     {
       "file_offset": "0x038418",
-      "size": 703,
+      "size": 864,
       "instructions": 218,
       "region": "overlay",
       "name": "unknown",
@@ -6837,7 +6837,7 @@
     },
     {
       "file_offset": "0x038778",
-      "size": 257,
+      "size": 280,
       "instructions": 81,
       "region": "overlay",
       "name": "unknown",
@@ -6846,7 +6846,7 @@
     },
     {
       "file_offset": "0x038890",
-      "size": 78,
+      "size": 447,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -6855,7 +6855,7 @@
     },
     {
       "file_offset": "0x038A50",
-      "size": 374,
+      "size": 1155,
       "instructions": 128,
       "region": "overlay",
       "name": "unknown",
@@ -6891,7 +6891,7 @@
     },
     {
       "file_offset": "0x039218",
-      "size": 70,
+      "size": 475,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -6909,7 +6909,7 @@
     },
     {
       "file_offset": "0x03954C",
-      "size": 52,
+      "size": 827,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -6918,7 +6918,7 @@
     },
     {
       "file_offset": "0x039888",
-      "size": 28,
+      "size": 1551,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -6936,7 +6936,7 @@
     },
     {
       "file_offset": "0x039EE2",
-      "size": 746,
+      "size": 2781,
       "instructions": 261,
       "region": "overlay",
       "name": "unknown",
@@ -6945,7 +6945,7 @@
     },
     {
       "file_offset": "0x03A9C0",
-      "size": 73,
+      "size": 998,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -6963,7 +6963,7 @@
     },
     {
       "file_offset": "0x03B2F8",
-      "size": 113,
+      "size": 134,
       "instructions": 43,
       "region": "overlay",
       "name": "unknown",
@@ -6981,7 +6981,7 @@
     },
     {
       "file_offset": "0x03B900",
-      "size": 33,
+      "size": 59,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -6990,7 +6990,7 @@
     },
     {
       "file_offset": "0x03B93C",
-      "size": 24,
+      "size": 29,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -7008,7 +7008,7 @@
     },
     {
       "file_offset": "0x03B980",
-      "size": 42,
+      "size": 96,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -7017,7 +7017,7 @@
     },
     {
       "file_offset": "0x03B9E0",
-      "size": 40,
+      "size": 69,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7035,7 +7035,7 @@
     },
     {
       "file_offset": "0x03BA5A",
-      "size": 30,
+      "size": 76,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -7062,7 +7062,7 @@
     },
     {
       "file_offset": "0x03BC42",
-      "size": 48,
+      "size": 911,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -7071,7 +7071,7 @@
     },
     {
       "file_offset": "0x03BFD2",
-      "size": 74,
+      "size": 688,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -7089,7 +7089,7 @@
     },
     {
       "file_offset": "0x03C322",
-      "size": 207,
+      "size": 258,
       "instructions": 73,
       "region": "overlay",
       "name": "unknown",
@@ -7107,7 +7107,7 @@
     },
     {
       "file_offset": "0x03C4A2",
-      "size": 57,
+      "size": 134,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -7125,7 +7125,7 @@
     },
     {
       "file_offset": "0x03C5A8",
-      "size": 83,
+      "size": 143,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -7134,7 +7134,7 @@
     },
     {
       "file_offset": "0x03C638",
-      "size": 73,
+      "size": 762,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -7143,7 +7143,7 @@
     },
     {
       "file_offset": "0x03C932",
-      "size": 96,
+      "size": 247,
       "instructions": 34,
       "region": "overlay",
       "name": "unknown",
@@ -7161,7 +7161,7 @@
     },
     {
       "file_offset": "0x03CAC6",
-      "size": 58,
+      "size": 732,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -7170,7 +7170,7 @@
     },
     {
       "file_offset": "0x03CDA2",
-      "size": 273,
+      "size": 1902,
       "instructions": 92,
       "region": "overlay",
       "name": "unknown",
@@ -7188,7 +7188,7 @@
     },
     {
       "file_offset": "0x03D948",
-      "size": 49,
+      "size": 225,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -7197,7 +7197,7 @@
     },
     {
       "file_offset": "0x03DA2A",
-      "size": 219,
+      "size": 1051,
       "instructions": 70,
       "region": "overlay",
       "name": "unknown",
@@ -7206,7 +7206,7 @@
     },
     {
       "file_offset": "0x03DE46",
-      "size": 138,
+      "size": 795,
       "instructions": 51,
       "region": "overlay",
       "name": "unknown",
@@ -7215,7 +7215,7 @@
     },
     {
       "file_offset": "0x03E162",
-      "size": 145,
+      "size": 391,
       "instructions": 49,
       "region": "overlay",
       "name": "unknown",
@@ -7224,7 +7224,7 @@
     },
     {
       "file_offset": "0x03E2EA",
-      "size": 114,
+      "size": 343,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -7233,7 +7233,7 @@
     },
     {
       "file_offset": "0x03E442",
-      "size": 146,
+      "size": 546,
       "instructions": 57,
       "region": "overlay",
       "name": "unknown",
@@ -7242,7 +7242,7 @@
     },
     {
       "file_offset": "0x03E664",
-      "size": 15,
+      "size": 479,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -7251,7 +7251,7 @@
     },
     {
       "file_offset": "0x03E844",
-      "size": 63,
+      "size": 319,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -7260,7 +7260,7 @@
     },
     {
       "file_offset": "0x03E984",
-      "size": 26,
+      "size": 210,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -7269,7 +7269,7 @@
     },
     {
       "file_offset": "0x03ECF0",
-      "size": 86,
+      "size": 3101,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -7278,7 +7278,7 @@
     },
     {
       "file_offset": "0x03F90E",
-      "size": 50,
+      "size": 56,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -7287,7 +7287,7 @@
     },
     {
       "file_offset": "0x03F946",
-      "size": 59,
+      "size": 342,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -7296,7 +7296,7 @@
     },
     {
       "file_offset": "0x03FA9C",
-      "size": 30,
+      "size": 834,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7305,7 +7305,7 @@
     },
     {
       "file_offset": "0x03FDDE",
-      "size": 82,
+      "size": 366,
       "instructions": 28,
       "region": "overlay",
       "name": "unknown",
@@ -7332,7 +7332,7 @@
     },
     {
       "file_offset": "0x04007E",
-      "size": 82,
+      "size": 114,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -7377,7 +7377,7 @@
     },
     {
       "file_offset": "0x040656",
-      "size": 171,
+      "size": 896,
       "instructions": 56,
       "region": "overlay",
       "name": "unknown",
@@ -7386,7 +7386,7 @@
     },
     {
       "file_offset": "0x0409D6",
-      "size": 571,
+      "size": 584,
       "instructions": 191,
       "region": "overlay",
       "name": "unknown",
@@ -7431,7 +7431,7 @@
     },
     {
       "file_offset": "0x041034",
-      "size": 42,
+      "size": 76,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7440,7 +7440,7 @@
     },
     {
       "file_offset": "0x041080",
-      "size": 24,
+      "size": 912,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -7449,7 +7449,7 @@
     },
     {
       "file_offset": "0x041410",
-      "size": 51,
+      "size": 579,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -7458,7 +7458,7 @@
     },
     {
       "file_offset": "0x041654",
-      "size": 21,
+      "size": 478,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -7467,7 +7467,7 @@
     },
     {
       "file_offset": "0x041832",
-      "size": 12,
+      "size": 120,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -7485,7 +7485,7 @@
     },
     {
       "file_offset": "0x04198E",
-      "size": 406,
+      "size": 487,
       "instructions": 136,
       "region": "overlay",
       "name": "unknown",
@@ -7539,7 +7539,7 @@
     },
     {
       "file_offset": "0x041EEA",
-      "size": 545,
+      "size": 589,
       "instructions": 187,
       "region": "overlay",
       "name": "unknown",
@@ -7548,7 +7548,7 @@
     },
     {
       "file_offset": "0x042138",
-      "size": 200,
+      "size": 1518,
       "instructions": 60,
       "region": "overlay",
       "name": "unknown",
@@ -7566,7 +7566,7 @@
     },
     {
       "file_offset": "0x0427D6",
-      "size": 184,
+      "size": 239,
       "instructions": 63,
       "region": "overlay",
       "name": "unknown",
@@ -7620,7 +7620,7 @@
     },
     {
       "file_offset": "0x042F20",
-      "size": 56,
+      "size": 182,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -7629,7 +7629,7 @@
     },
     {
       "file_offset": "0x042FD6",
-      "size": 118,
+      "size": 157,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -7638,7 +7638,7 @@
     },
     {
       "file_offset": "0x043074",
-      "size": 85,
+      "size": 4990,
       "instructions": 28,
       "region": "overlay",
       "name": "unknown",
@@ -7647,7 +7647,7 @@
     },
     {
       "file_offset": "0x044540",
-      "size": 19,
+      "size": 21,
       "instructions": 9,
       "region": "overlay",
       "name": "clamp_byte_at_far_ptr_to_5",
@@ -7665,7 +7665,7 @@
     },
     {
       "file_offset": "0x04458A",
-      "size": 68,
+      "size": 99,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -7692,7 +7692,7 @@
     },
     {
       "file_offset": "0x04477E",
-      "size": 124,
+      "size": 183,
       "instructions": 44,
       "region": "overlay",
       "name": "unknown",
@@ -7701,7 +7701,7 @@
     },
     {
       "file_offset": "0x044836",
-      "size": 43,
+      "size": 328,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -7710,7 +7710,7 @@
     },
     {
       "file_offset": "0x04497E",
-      "size": 27,
+      "size": 69,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -7719,7 +7719,7 @@
     },
     {
       "file_offset": "0x0449C4",
-      "size": 36,
+      "size": 149,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7728,7 +7728,7 @@
     },
     {
       "file_offset": "0x044A5A",
-      "size": 47,
+      "size": 56,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -7737,7 +7737,7 @@
     },
     {
       "file_offset": "0x044A92",
-      "size": 33,
+      "size": 47,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7746,7 +7746,7 @@
     },
     {
       "file_offset": "0x044AC2",
-      "size": 36,
+      "size": 68,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -7755,7 +7755,7 @@
     },
     {
       "file_offset": "0x044B06",
-      "size": 33,
+      "size": 47,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7764,7 +7764,7 @@
     },
     {
       "file_offset": "0x044B36",
-      "size": 36,
+      "size": 68,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -7773,7 +7773,7 @@
     },
     {
       "file_offset": "0x044B7A",
-      "size": 61,
+      "size": 411,
       "instructions": 24,
       "region": "overlay",
       "name": "unknown",
@@ -7782,7 +7782,7 @@
     },
     {
       "file_offset": "0x044D16",
-      "size": 26,
+      "size": 357,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -7791,7 +7791,7 @@
     },
     {
       "file_offset": "0x044E7C",
-      "size": 230,
+      "size": 296,
       "instructions": 80,
       "region": "overlay",
       "name": "unknown",
@@ -7800,7 +7800,7 @@
     },
     {
       "file_offset": "0x044FA4",
-      "size": 107,
+      "size": 278,
       "instructions": 38,
       "region": "overlay",
       "name": "unknown",
@@ -7809,7 +7809,7 @@
     },
     {
       "file_offset": "0x0450BA",
-      "size": 248,
+      "size": 537,
       "instructions": 96,
       "region": "overlay",
       "name": "unknown",
@@ -7818,7 +7818,7 @@
     },
     {
       "file_offset": "0x0452D4",
-      "size": 45,
+      "size": 1559,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -7827,7 +7827,7 @@
     },
     {
       "file_offset": "0x0458EC",
-      "size": 87,
+      "size": 158,
       "instructions": 33,
       "region": "overlay",
       "name": "unknown",
@@ -7845,7 +7845,7 @@
     },
     {
       "file_offset": "0x045A1E",
-      "size": 192,
+      "size": 198,
       "instructions": 71,
       "region": "overlay",
       "name": "unknown",
@@ -7854,7 +7854,7 @@
     },
     {
       "file_offset": "0x045AE4",
-      "size": 259,
+      "size": 310,
       "instructions": 103,
       "region": "overlay",
       "name": "unknown",
@@ -7881,7 +7881,7 @@
     },
     {
       "file_offset": "0x045DF2",
-      "size": 292,
+      "size": 529,
       "instructions": 104,
       "region": "overlay",
       "name": "unknown",
@@ -7908,7 +7908,7 @@
     },
     {
       "file_offset": "0x0460F8",
-      "size": 123,
+      "size": 969,
       "instructions": 42,
       "region": "overlay",
       "name": "unknown",
@@ -7917,7 +7917,7 @@
     },
     {
       "file_offset": "0x0464C2",
-      "size": 300,
+      "size": 305,
       "instructions": 103,
       "region": "overlay",
       "name": "unknown",
@@ -7953,7 +7953,7 @@
     },
     {
       "file_offset": "0x046E18",
-      "size": 80,
+      "size": 167,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -7962,7 +7962,7 @@
     },
     {
       "file_offset": "0x046EC0",
-      "size": 103,
+      "size": 258,
       "instructions": 36,
       "region": "overlay",
       "name": "unknown",
@@ -7980,7 +7980,7 @@
     },
     {
       "file_offset": "0x046FFA",
-      "size": 121,
+      "size": 4835,
       "instructions": 40,
       "region": "overlay",
       "name": "unknown",
@@ -7989,7 +7989,7 @@
     },
     {
       "file_offset": "0x0482DE",
-      "size": 33,
+      "size": 48,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -8007,7 +8007,7 @@
     },
     {
       "file_offset": "0x0485F6",
-      "size": 18,
+      "size": 804,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -8016,7 +8016,7 @@
     },
     {
       "file_offset": "0x04891A",
-      "size": 147,
+      "size": 287,
       "instructions": 49,
       "region": "overlay",
       "name": "unknown",
@@ -8025,7 +8025,7 @@
     },
     {
       "file_offset": "0x048A3A",
-      "size": 79,
+      "size": 617,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -8052,7 +8052,7 @@
     },
     {
       "file_offset": "0x048F34",
-      "size": 922,
+      "size": 1740,
       "instructions": 327,
       "region": "overlay",
       "name": "unknown",
@@ -8061,7 +8061,7 @@
     },
     {
       "file_offset": "0x049600",
-      "size": 186,
+      "size": 3451,
       "instructions": 56,
       "region": "overlay",
       "name": "unknown",
@@ -8070,7 +8070,7 @@
     },
     {
       "file_offset": "0x04A37C",
-      "size": 76,
+      "size": 170,
       "instructions": 26,
       "region": "overlay",
       "name": "unknown",
@@ -8079,7 +8079,7 @@
     },
     {
       "file_offset": "0x04A426",
-      "size": 113,
+      "size": 931,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -8088,7 +8088,7 @@
     },
     {
       "file_offset": "0x04A7CA",
-      "size": 507,
+      "size": 1077,
       "instructions": 175,
       "region": "overlay",
       "name": "unknown",
@@ -8097,7 +8097,7 @@
     },
     {
       "file_offset": "0x04AC00",
-      "size": 397,
+      "size": 861,
       "instructions": 133,
       "region": "overlay",
       "name": "unknown",
@@ -8106,7 +8106,7 @@
     },
     {
       "file_offset": "0x04AF5E",
-      "size": 62,
+      "size": 216,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -8115,7 +8115,7 @@
     },
     {
       "file_offset": "0x04B036",
-      "size": 353,
+      "size": 722,
       "instructions": 117,
       "region": "overlay",
       "name": "unknown",
@@ -8124,7 +8124,7 @@
     },
     {
       "file_offset": "0x04B308",
-      "size": 631,
+      "size": 1861,
       "instructions": 204,
       "region": "overlay",
       "name": "unknown",
@@ -8196,7 +8196,7 @@
     },
     {
       "file_offset": "0x04C2CE",
-      "size": 19,
+      "size": 55,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -8214,7 +8214,7 @@
     },
     {
       "file_offset": "0x04C35A",
-      "size": 71,
+      "size": 169,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -8223,7 +8223,7 @@
     },
     {
       "file_offset": "0x04C404",
-      "size": 71,
+      "size": 169,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -8232,7 +8232,7 @@
     },
     {
       "file_offset": "0x04C4AE",
-      "size": 29,
+      "size": 94,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -8241,7 +8241,7 @@
     },
     {
       "file_offset": "0x04C50C",
-      "size": 14,
+      "size": 37,
       "instructions": 4,
       "region": "overlay",
       "name": "unknown",
@@ -8268,7 +8268,7 @@
     },
     {
       "file_offset": "0x04C5C0",
-      "size": 40,
+      "size": 194,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -8304,7 +8304,7 @@
     },
     {
       "file_offset": "0x04C846",
-      "size": 22,
+      "size": 87,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -8331,7 +8331,7 @@
     },
     {
       "file_offset": "0x04CAF6",
-      "size": 119,
+      "size": 345,
       "instructions": 38,
       "region": "overlay",
       "name": "unknown",
@@ -8340,7 +8340,7 @@
     },
     {
       "file_offset": "0x04CC50",
-      "size": 223,
+      "size": 5733,
       "instructions": 71,
       "region": "overlay",
       "name": "unknown",
@@ -8358,7 +8358,7 @@
     },
     {
       "file_offset": "0x04E2D6",
-      "size": 584,
+      "size": 14975,
       "instructions": 178,
       "region": "overlay",
       "name": "unknown",
@@ -8367,7 +8367,7 @@
     },
     {
       "file_offset": "0x051D56",
-      "size": 29,
+      "size": 214,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -8376,7 +8376,7 @@
     },
     {
       "file_offset": "0x051E2C",
-      "size": 32,
+      "size": 186,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -8394,7 +8394,7 @@
     },
     {
       "file_offset": "0x051EF4",
-      "size": 1093,
+      "size": 4233,
       "instructions": 370,
       "region": "overlay",
       "name": "unknown",
@@ -8403,7 +8403,7 @@
     },
     {
       "file_offset": "0x052F7E",
-      "size": 27,
+      "size": 1472,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -8421,7 +8421,7 @@
     },
     {
       "file_offset": "0x053820",
-      "size": 150,
+      "size": 531,
       "instructions": 57,
       "region": "overlay",
       "name": "unknown",
@@ -8430,7 +8430,7 @@
     },
     {
       "file_offset": "0x053A34",
-      "size": 63,
+      "size": 107,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -8439,7 +8439,7 @@
     },
     {
       "file_offset": "0x053AA0",
-      "size": 110,
+      "size": 115,
       "instructions": 36,
       "region": "overlay",
       "name": "unknown",
@@ -8457,7 +8457,7 @@
     },
     {
       "file_offset": "0x053B26",
-      "size": 66,
+      "size": 87,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -8466,7 +8466,7 @@
     },
     {
       "file_offset": "0x053B7E",
-      "size": 67,
+      "size": 2439,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -8475,7 +8475,7 @@
     },
     {
       "file_offset": "0x054505",
-      "size": 177,
+      "size": 4699,
       "instructions": 55,
       "region": "overlay",
       "name": "colony_helper_181f_c0e",
@@ -8493,7 +8493,7 @@
     },
     {
       "file_offset": "0x05576B",
-      "size": 87,
+      "size": 2885,
       "instructions": 29,
       "region": "overlay",
       "name": "colony_helper_181f_cd6",
@@ -8547,7 +8547,7 @@
     },
     {
       "file_offset": "0x056C3E",
-      "size": 27,
+      "size": 1704,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -8556,7 +8556,7 @@
     },
     {
       "file_offset": "0x0572E6",
-      "size": 164,
+      "size": 1876,
       "instructions": 60,
       "region": "overlay",
       "name": "native_convert_handler",
@@ -8583,7 +8583,7 @@
     },
     {
       "file_offset": "0x057AFC",
-      "size": 19,
+      "size": 484,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -8592,7 +8592,7 @@
     },
     {
       "file_offset": "0x057CE0",
-      "size": 68,
+      "size": 224,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -8601,7 +8601,7 @@
     },
     {
       "file_offset": "0x057DC0",
-      "size": 279,
+      "size": 397,
       "instructions": 99,
       "region": "overlay",
       "name": "unknown",
@@ -8610,7 +8610,7 @@
     },
     {
       "file_offset": "0x057F4E",
-      "size": 355,
+      "size": 7151,
       "instructions": 115,
       "region": "overlay",
       "name": "unknown",
@@ -8628,7 +8628,7 @@
     },
     {
       "file_offset": "0x059B90",
-      "size": 15,
+      "size": 1662,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -8637,7 +8637,7 @@
     },
     {
       "file_offset": "0x05A20E",
-      "size": 141,
+      "size": 512,
       "instructions": 48,
       "region": "overlay",
       "name": "colony_scout_or_mayor_check",
@@ -8646,7 +8646,7 @@
     },
     {
       "file_offset": "0x05A40E",
-      "size": 85,
+      "size": 1107,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -8655,7 +8655,7 @@
     },
     {
       "file_offset": "0x05A862",
-      "size": 63,
+      "size": 224,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -8691,7 +8691,7 @@
     },
     {
       "file_offset": "0x05AF70",
-      "size": 166,
+      "size": 364,
       "instructions": 55,
       "region": "overlay",
       "name": "unknown",
@@ -8709,7 +8709,7 @@
     },
     {
       "file_offset": "0x05B2C2",
-      "size": 35,
+      "size": 2925,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -8727,7 +8727,7 @@
     },
     {
       "file_offset": "0x05BE84",
-      "size": 113,
+      "size": 2006,
       "instructions": 43,
       "region": "overlay",
       "name": "unknown",
@@ -8745,7 +8745,7 @@
     },
     {
       "file_offset": "0x05C69C",
-      "size": 63,
+      "size": 475,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -8763,7 +8763,7 @@
     },
     {
       "file_offset": "0x05CA7E",
-      "size": 429,
+      "size": 7348,
       "instructions": 133,
       "region": "overlay",
       "name": "unknown",
@@ -8790,7 +8790,7 @@
     },
     {
       "file_offset": "0x05EA38",
-      "size": 186,
+      "size": 4248,
       "instructions": 63,
       "region": "overlay",
       "name": "unknown",
@@ -8826,7 +8826,7 @@
     },
     {
       "file_offset": "0x05FEA0",
-      "size": 56,
+      "size": 83,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -8835,7 +8835,7 @@
     },
     {
       "file_offset": "0x05FEF4",
-      "size": 232,
+      "size": 306,
       "instructions": 82,
       "region": "overlay",
       "name": "unknown",
@@ -8844,7 +8844,7 @@
     },
     {
       "file_offset": "0x060026",
-      "size": 167,
+      "size": 810,
       "instructions": 59,
       "region": "overlay",
       "name": "unknown",
@@ -8853,7 +8853,7 @@
     },
     {
       "file_offset": "0x060350",
-      "size": 32,
+      "size": 50,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -8862,7 +8862,7 @@
     },
     {
       "file_offset": "0x060382",
-      "size": 24,
+      "size": 37,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -8871,7 +8871,7 @@
     },
     {
       "file_offset": "0x0603A8",
-      "size": 30,
+      "size": 50,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -8880,7 +8880,7 @@
     },
     {
       "file_offset": "0x0603DA",
-      "size": 18,
+      "size": 47,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -8889,7 +8889,7 @@
     },
     {
       "file_offset": "0x06040A",
-      "size": 18,
+      "size": 66,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -8907,7 +8907,7 @@
     },
     {
       "file_offset": "0x06046E",
-      "size": 38,
+      "size": 180,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -8916,7 +8916,7 @@
     },
     {
       "file_offset": "0x060522",
-      "size": 68,
+      "size": 211,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -8934,7 +8934,7 @@
     },
     {
       "file_offset": "0x06076A",
-      "size": 65,
+      "size": 208,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -8943,7 +8943,7 @@
     },
     {
       "file_offset": "0x06083A",
-      "size": 283,
+      "size": 1017,
       "instructions": 101,
       "region": "overlay",
       "name": "unknown",
@@ -8979,7 +8979,7 @@
     },
     {
       "file_offset": "0x060EC4",
-      "size": 74,
+      "size": 110,
       "instructions": 27,
       "region": "overlay",
       "name": "unknown",
@@ -8988,7 +8988,7 @@
     },
     {
       "file_offset": "0x060F32",
-      "size": 25,
+      "size": 137,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -8997,7 +8997,7 @@
     },
     {
       "file_offset": "0x060FBC",
-      "size": 90,
+      "size": 243,
       "instructions": 34,
       "region": "overlay",
       "name": "unknown",
@@ -9006,7 +9006,7 @@
     },
     {
       "file_offset": "0x0610B0",
-      "size": 42,
+      "size": 566,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -9015,7 +9015,7 @@
     },
     {
       "file_offset": "0x0612E6",
-      "size": 126,
+      "size": 366,
       "instructions": 45,
       "region": "overlay",
       "name": "unknown",
@@ -9024,7 +9024,7 @@
     },
     {
       "file_offset": "0x061454",
-      "size": 21,
+      "size": 2121,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -9051,7 +9051,7 @@
     },
     {
       "file_offset": "0x061F02",
-      "size": 95,
+      "size": 2067,
       "instructions": 32,
       "region": "overlay",
       "name": "unknown",
@@ -9060,7 +9060,7 @@
     },
     {
       "file_offset": "0x062716",
-      "size": 12,
+      "size": 168,
       "instructions": 4,
       "region": "overlay",
       "name": "unknown",
@@ -9069,7 +9069,7 @@
     },
     {
       "file_offset": "0x0627BE",
-      "size": 173,
+      "size": 415,
       "instructions": 64,
       "region": "overlay",
       "name": "unknown",
@@ -9078,7 +9078,7 @@
     },
     {
       "file_offset": "0x06295E",
-      "size": 52,
+      "size": 1061,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -9087,7 +9087,7 @@
     },
     {
       "file_offset": "0x062D84",
-      "size": 79,
+      "size": 1618,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -9096,7 +9096,7 @@
     },
     {
       "file_offset": "0x063880",
-      "size": 125,
+      "size": 855,
       "instructions": 42,
       "region": "overlay",
       "name": "unknown",
@@ -9114,7 +9114,7 @@
     },
     {
       "file_offset": "0x063C58",
-      "size": 119,
+      "size": 740,
       "instructions": 41,
       "region": "overlay",
       "name": "unknown",
@@ -9123,7 +9123,7 @@
     },
     {
       "file_offset": "0x063F3C",
-      "size": 497,
+      "size": 535,
       "instructions": 183,
       "region": "overlay",
       "name": "unknown",
@@ -9132,7 +9132,7 @@
     },
     {
       "file_offset": "0x064154",
-      "size": 47,
+      "size": 151,
       "instructions": 17,
       "region": "overlay",
       "name": "unknown",
@@ -9150,7 +9150,7 @@
     },
     {
       "file_offset": "0x064266",
-      "size": 61,
+      "size": 261,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -9159,7 +9159,7 @@
     },
     {
       "file_offset": "0x06436C",
-      "size": 73,
+      "size": 140,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -9168,7 +9168,7 @@
     },
     {
       "file_offset": "0x0643F8",
-      "size": 17,
+      "size": 315,
       "instructions": 5,
       "region": "overlay",
       "name": "unknown",
@@ -9177,7 +9177,7 @@
     },
     {
       "file_offset": "0x064534",
-      "size": 24,
+      "size": 194,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -9186,7 +9186,7 @@
     },
     {
       "file_offset": "0x0645F6",
-      "size": 99,
+      "size": 1050,
       "instructions": 33,
       "region": "overlay",
       "name": "unknown",
@@ -9195,7 +9195,7 @@
     },
     {
       "file_offset": "0x064A10",
-      "size": 1792,
+      "size": 4886,
       "instructions": 612,
       "region": "overlay",
       "name": "unknown",
@@ -9204,7 +9204,7 @@
     },
     {
       "file_offset": "0x065D26",
-      "size": 13,
+      "size": 2387,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -9222,7 +9222,7 @@
     },
     {
       "file_offset": "0x066884",
-      "size": 52,
+      "size": 228,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -9231,7 +9231,7 @@
     },
     {
       "file_offset": "0x066968",
-      "size": 100,
+      "size": 558,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -9240,7 +9240,7 @@
     },
     {
       "file_offset": "0x066B96",
-      "size": 17,
+      "size": 26,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -9249,7 +9249,7 @@
     },
     {
       "file_offset": "0x066BB0",
-      "size": 23,
+      "size": 293,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -9258,7 +9258,7 @@
     },
     {
       "file_offset": "0x066CD6",
-      "size": 164,
+      "size": 310,
       "instructions": 54,
       "region": "overlay",
       "name": "unknown",
@@ -9267,7 +9267,7 @@
     },
     {
       "file_offset": "0x066E0C",
-      "size": 69,
+      "size": 70,
       "instructions": 28,
       "region": "overlay",
       "name": "unknown",
@@ -9276,7 +9276,7 @@
     },
     {
       "file_offset": "0x066E52",
-      "size": 97,
+      "size": 118,
       "instructions": 40,
       "region": "overlay",
       "name": "unknown",
@@ -9285,7 +9285,7 @@
     },
     {
       "file_offset": "0x066EC8",
-      "size": 92,
+      "size": 159,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9294,7 +9294,7 @@
     },
     {
       "file_offset": "0x066F68",
-      "size": 86,
+      "size": 211,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9312,7 +9312,7 @@
     },
     {
       "file_offset": "0x067082",
-      "size": 198,
+      "size": 256,
       "instructions": 70,
       "region": "overlay",
       "name": "unknown",
@@ -9321,7 +9321,7 @@
     },
     {
       "file_offset": "0x067182",
-      "size": 107,
+      "size": 350,
       "instructions": 42,
       "region": "overlay",
       "name": "unknown",
@@ -9330,7 +9330,7 @@
     },
     {
       "file_offset": "0x0672E0",
-      "size": 199,
+      "size": 236,
       "instructions": 79,
       "region": "overlay",
       "name": "unknown",
@@ -9339,7 +9339,7 @@
     },
     {
       "file_offset": "0x0673CC",
-      "size": 141,
+      "size": 169,
       "instructions": 48,
       "region": "overlay",
       "name": "unknown",
@@ -9357,7 +9357,7 @@
     },
     {
       "file_offset": "0x0674A8",
-      "size": 128,
+      "size": 147,
       "instructions": 44,
       "region": "overlay",
       "name": "unknown",
@@ -9366,7 +9366,7 @@
     },
     {
       "file_offset": "0x06753C",
-      "size": 210,
+      "size": 264,
       "instructions": 84,
       "region": "overlay",
       "name": "unknown",
@@ -9393,7 +9393,7 @@
     },
     {
       "file_offset": "0x0677CA",
-      "size": 108,
+      "size": 178,
       "instructions": 36,
       "region": "overlay",
       "name": "unknown",
@@ -9402,7 +9402,7 @@
     },
     {
       "file_offset": "0x06787C",
-      "size": 119,
+      "size": 423,
       "instructions": 39,
       "region": "overlay",
       "name": "unknown",
@@ -9411,7 +9411,7 @@
     },
     {
       "file_offset": "0x067A24",
-      "size": 163,
+      "size": 352,
       "instructions": 57,
       "region": "overlay",
       "name": "unknown",
@@ -9465,7 +9465,7 @@
     },
     {
       "file_offset": "0x067D54",
-      "size": 102,
+      "size": 116,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -9474,7 +9474,7 @@
     },
     {
       "file_offset": "0x067DC8",
-      "size": 65,
+      "size": 95,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -9483,7 +9483,7 @@
     },
     {
       "file_offset": "0x067E28",
-      "size": 69,
+      "size": 99,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -9492,7 +9492,7 @@
     },
     {
       "file_offset": "0x067E8C",
-      "size": 65,
+      "size": 95,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -9501,7 +9501,7 @@
     },
     {
       "file_offset": "0x067EEC",
-      "size": 69,
+      "size": 99,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -9510,7 +9510,7 @@
     },
     {
       "file_offset": "0x067F50",
-      "size": 402,
+      "size": 599,
       "instructions": 141,
       "region": "overlay",
       "name": "unknown",
@@ -9519,7 +9519,7 @@
     },
     {
       "file_offset": "0x0681A8",
-      "size": 165,
+      "size": 1076,
       "instructions": 55,
       "region": "overlay",
       "name": "unknown",
@@ -9528,7 +9528,7 @@
     },
     {
       "file_offset": "0x0685DC",
-      "size": 152,
+      "size": 699,
       "instructions": 56,
       "region": "overlay",
       "name": "unknown",
@@ -9537,7 +9537,7 @@
     },
     {
       "file_offset": "0x068898",
-      "size": 9,
+      "size": 149,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -9546,7 +9546,7 @@
     },
     {
       "file_offset": "0x06892E",
-      "size": 60,
+      "size": 75,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -9564,7 +9564,7 @@
     },
     {
       "file_offset": "0x068F38",
-      "size": 29,
+      "size": 104,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -9582,7 +9582,7 @@
     },
     {
       "file_offset": "0x068FDC",
-      "size": 23,
+      "size": 124,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -9591,7 +9591,7 @@
     },
     {
       "file_offset": "0x069058",
-      "size": 39,
+      "size": 253,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -9609,7 +9609,7 @@
     },
     {
       "file_offset": "0x0691A4",
-      "size": 89,
+      "size": 117,
       "instructions": 33,
       "region": "overlay",
       "name": "unknown",
@@ -9636,7 +9636,7 @@
     },
     {
       "file_offset": "0x06929C",
-      "size": 103,
+      "size": 207,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9663,7 +9663,7 @@
     },
     {
       "file_offset": "0x0696C6",
-      "size": 19,
+      "size": 1733,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -9672,7 +9672,7 @@
     },
     {
       "file_offset": "0x069D8C",
-      "size": 1153,
+      "size": 2420,
       "instructions": 359,
       "region": "overlay",
       "name": "unknown",
@@ -9681,7 +9681,7 @@
     },
     {
       "file_offset": "0x06A700",
-      "size": 562,
+      "size": 904,
       "instructions": 197,
       "region": "overlay",
       "name": "unknown",
@@ -9690,7 +9690,7 @@
     },
     {
       "file_offset": "0x06AA88",
-      "size": 80,
+      "size": 895,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -9699,7 +9699,7 @@
     },
     {
       "file_offset": "0x06AE08",
-      "size": 80,
+      "size": 276,
       "instructions": 29,
       "region": "overlay",
       "name": "unknown",
@@ -9717,7 +9717,7 @@
     },
     {
       "file_offset": "0x06B02A",
-      "size": 170,
+      "size": 472,
       "instructions": 58,
       "region": "overlay",
       "name": "unknown",
@@ -9726,7 +9726,7 @@
     },
     {
       "file_offset": "0x06B202",
-      "size": 84,
+      "size": 406,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9735,7 +9735,7 @@
     },
     {
       "file_offset": "0x06B398",
-      "size": 711,
+      "size": 854,
       "instructions": 280,
       "region": "overlay",
       "name": "unknown",
@@ -9744,7 +9744,7 @@
     },
     {
       "file_offset": "0x06B6EE",
-      "size": 9,
+      "size": 52,
       "instructions": 4,
       "region": "overlay",
       "name": "unknown",
@@ -9753,7 +9753,7 @@
     },
     {
       "file_offset": "0x06B722",
-      "size": 970,
+      "size": 975,
       "instructions": 294,
       "region": "overlay",
       "name": "unknown",
@@ -9807,7 +9807,7 @@
     },
     {
       "file_offset": "0x06BF66",
-      "size": 42,
+      "size": 550,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -9816,7 +9816,7 @@
     },
     {
       "file_offset": "0x06C18C",
-      "size": 64,
+      "size": 147,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -9870,7 +9870,7 @@
     },
     {
       "file_offset": "0x06C2D6",
-      "size": 81,
+      "size": 112,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9888,7 +9888,7 @@
     },
     {
       "file_offset": "0x06C388",
-      "size": 19,
+      "size": 265,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -9897,7 +9897,7 @@
     },
     {
       "file_offset": "0x06C492",
-      "size": 61,
+      "size": 141,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -9915,7 +9915,7 @@
     },
     {
       "file_offset": "0x06C6EA",
-      "size": 88,
+      "size": 96,
       "instructions": 31,
       "region": "overlay",
       "name": "unknown",
@@ -9924,7 +9924,7 @@
     },
     {
       "file_offset": "0x06C74A",
-      "size": 38,
+      "size": 47,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -9933,7 +9933,7 @@
     },
     {
       "file_offset": "0x06C77A",
-      "size": 38,
+      "size": 47,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -9942,7 +9942,7 @@
     },
     {
       "file_offset": "0x06C7AA",
-      "size": 25,
+      "size": 48,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -9978,7 +9978,7 @@
     },
     {
       "file_offset": "0x06C850",
-      "size": 34,
+      "size": 488,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10005,7 +10005,7 @@
     },
     {
       "file_offset": "0x06CA82",
-      "size": 34,
+      "size": 274,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10014,7 +10014,7 @@
     },
     {
       "file_offset": "0x06CB94",
-      "size": 35,
+      "size": 465,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -10032,7 +10032,7 @@
     },
     {
       "file_offset": "0x06CD8C",
-      "size": 34,
+      "size": 494,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10041,7 +10041,7 @@
     },
     {
       "file_offset": "0x06CF7A",
-      "size": 61,
+      "size": 65,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -10059,7 +10059,7 @@
     },
     {
       "file_offset": "0x06CFE8",
-      "size": 68,
+      "size": 814,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -10068,7 +10068,7 @@
     },
     {
       "file_offset": "0x06D316",
-      "size": 249,
+      "size": 1398,
       "instructions": 72,
       "region": "overlay",
       "name": "unknown",
@@ -10095,7 +10095,7 @@
     },
     {
       "file_offset": "0x06D938",
-      "size": 61,
+      "size": 148,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -10104,7 +10104,7 @@
     },
     {
       "file_offset": "0x06D9CC",
-      "size": 182,
+      "size": 664,
       "instructions": 60,
       "region": "overlay",
       "name": "unknown",
@@ -10113,7 +10113,7 @@
     },
     {
       "file_offset": "0x06DC64",
-      "size": 52,
+      "size": 522,
       "instructions": 18,
       "region": "overlay",
       "name": "unknown",
@@ -10122,7 +10122,7 @@
     },
     {
       "file_offset": "0x06DE6E",
-      "size": 410,
+      "size": 601,
       "instructions": 140,
       "region": "overlay",
       "name": "unknown",
@@ -10158,7 +10158,7 @@
     },
     {
       "file_offset": "0x06E3D0",
-      "size": 253,
+      "size": 2820,
       "instructions": 87,
       "region": "overlay",
       "name": "unknown",
@@ -10176,7 +10176,7 @@
     },
     {
       "file_offset": "0x06EEEC",
-      "size": 83,
+      "size": 520,
       "instructions": 32,
       "region": "overlay",
       "name": "unknown",
@@ -10185,7 +10185,7 @@
     },
     {
       "file_offset": "0x06F0F4",
-      "size": 80,
+      "size": 1061,
       "instructions": 32,
       "region": "overlay",
       "name": "unknown",
@@ -10194,7 +10194,7 @@
     },
     {
       "file_offset": "0x06F51A",
-      "size": 50,
+      "size": 57,
       "instructions": 19,
       "region": "overlay",
       "name": "unknown",
@@ -10203,7 +10203,7 @@
     },
     {
       "file_offset": "0x06F554",
-      "size": 25,
+      "size": 42,
       "instructions": 12,
       "region": "overlay",
       "name": "unknown",
@@ -10212,7 +10212,7 @@
     },
     {
       "file_offset": "0x06F57E",
-      "size": 21,
+      "size": 49,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -10221,7 +10221,7 @@
     },
     {
       "file_offset": "0x06F5B0",
-      "size": 24,
+      "size": 41,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -10239,7 +10239,7 @@
     },
     {
       "file_offset": "0x06F5F2",
-      "size": 24,
+      "size": 41,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -10248,7 +10248,7 @@
     },
     {
       "file_offset": "0x06F61C",
-      "size": 24,
+      "size": 48,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -10275,7 +10275,7 @@
     },
     {
       "file_offset": "0x06F6DA",
-      "size": 271,
+      "size": 372,
       "instructions": 93,
       "region": "overlay",
       "name": "unknown",
@@ -10284,7 +10284,7 @@
     },
     {
       "file_offset": "0x06F8FA",
-      "size": 140,
+      "size": 447,
       "instructions": 54,
       "region": "overlay",
       "name": "unknown",
@@ -10302,7 +10302,7 @@
     },
     {
       "file_offset": "0x06FAE8",
-      "size": 53,
+      "size": 74,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -10329,7 +10329,7 @@
     },
     {
       "file_offset": "0x06FE1C",
-      "size": 141,
+      "size": 376,
       "instructions": 47,
       "region": "overlay",
       "name": "unknown",
@@ -10347,7 +10347,7 @@
     },
     {
       "file_offset": "0x070060",
-      "size": 431,
+      "size": 607,
       "instructions": 154,
       "region": "overlay",
       "name": "unknown",
@@ -10356,7 +10356,7 @@
     },
     {
       "file_offset": "0x0702C0",
-      "size": 21,
+      "size": 66,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -10365,7 +10365,7 @@
     },
     {
       "file_offset": "0x070302",
-      "size": 165,
+      "size": 402,
       "instructions": 61,
       "region": "overlay",
       "name": "unknown",
@@ -10383,7 +10383,7 @@
     },
     {
       "file_offset": "0x070580",
-      "size": 268,
+      "size": 514,
       "instructions": 88,
       "region": "overlay",
       "name": "unknown",
@@ -10392,7 +10392,7 @@
     },
     {
       "file_offset": "0x070782",
-      "size": 13,
+      "size": 51,
       "instructions": 6,
       "region": "overlay",
       "name": "unknown",
@@ -10401,7 +10401,7 @@
     },
     {
       "file_offset": "0x0707B6",
-      "size": 140,
+      "size": 376,
       "instructions": 48,
       "region": "overlay",
       "name": "unknown",
@@ -10419,7 +10419,7 @@
     },
     {
       "file_offset": "0x070A1A",
-      "size": 436,
+      "size": 594,
       "instructions": 155,
       "region": "overlay",
       "name": "unknown",
@@ -10428,7 +10428,7 @@
     },
     {
       "file_offset": "0x070C6C",
-      "size": 71,
+      "size": 72,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -10437,7 +10437,7 @@
     },
     {
       "file_offset": "0x070CB4",
-      "size": 98,
+      "size": 308,
       "instructions": 37,
       "region": "overlay",
       "name": "unknown",
@@ -10455,7 +10455,7 @@
     },
     {
       "file_offset": "0x070EBA",
-      "size": 209,
+      "size": 317,
       "instructions": 74,
       "region": "overlay",
       "name": "unknown",
@@ -10464,7 +10464,7 @@
     },
     {
       "file_offset": "0x070FF8",
-      "size": 100,
+      "size": 202,
       "instructions": 28,
       "region": "overlay",
       "name": "unknown",
@@ -10473,7 +10473,7 @@
     },
     {
       "file_offset": "0x0710C2",
-      "size": 58,
+      "size": 68,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -10509,7 +10509,7 @@
     },
     {
       "file_offset": "0x0713D4",
-      "size": 168,
+      "size": 178,
       "instructions": 55,
       "region": "overlay",
       "name": "unknown",
@@ -10527,7 +10527,7 @@
     },
     {
       "file_offset": "0x072090",
-      "size": 39,
+      "size": 2826,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -10536,7 +10536,7 @@
     },
     {
       "file_offset": "0x072B9A",
-      "size": 180,
+      "size": 222,
       "instructions": 66,
       "region": "overlay",
       "name": "unknown",
@@ -10581,7 +10581,7 @@
     },
     {
       "file_offset": "0x073158",
-      "size": 270,
+      "size": 280,
       "instructions": 97,
       "region": "overlay",
       "name": "unknown",
@@ -10590,7 +10590,7 @@
     },
     {
       "file_offset": "0x073270",
-      "size": 515,
+      "size": 648,
       "instructions": 199,
       "region": "overlay",
       "name": "unknown",
@@ -10599,7 +10599,7 @@
     },
     {
       "file_offset": "0x0734F8",
-      "size": 194,
+      "size": 1464,
       "instructions": 72,
       "region": "overlay",
       "name": "unknown",
@@ -10608,7 +10608,7 @@
     },
     {
       "file_offset": "0x073AB0",
-      "size": 41,
+      "size": 256,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -10617,7 +10617,7 @@
     },
     {
       "file_offset": "0x073BB0",
-      "size": 366,
+      "size": 1901,
       "instructions": 121,
       "region": "overlay",
       "name": "unknown",
@@ -10626,7 +10626,7 @@
     },
     {
       "file_offset": "0x07431E",
-      "size": 231,
+      "size": 722,
       "instructions": 71,
       "region": "overlay",
       "name": "unknown",
@@ -10644,7 +10644,7 @@
     },
     {
       "file_offset": "0x07464C",
-      "size": 14,
+      "size": 60,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -10653,7 +10653,7 @@
     },
     {
       "file_offset": "0x074688",
-      "size": 9,
+      "size": 856,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -10662,7 +10662,7 @@
     },
     {
       "file_offset": "0x0749E0",
-      "size": 601,
+      "size": 2417,
       "instructions": 184,
       "region": "overlay",
       "name": "unknown",
@@ -10689,7 +10689,7 @@
     },
     {
       "file_offset": "0x0755CC",
-      "size": 235,
+      "size": 1052,
       "instructions": 80,
       "region": "overlay",
       "name": "unknown",
@@ -10698,7 +10698,7 @@
     },
     {
       "file_offset": "0x0759E8",
-      "size": 1438,
+      "size": 1455,
       "instructions": 462,
       "region": "overlay",
       "name": "unknown",
@@ -10716,7 +10716,7 @@
     },
     {
       "file_offset": "0x075FB6",
-      "size": 288,
+      "size": 1039,
       "instructions": 82,
       "region": "overlay",
       "name": "unknown",
@@ -10725,7 +10725,7 @@
     },
     {
       "file_offset": "0x0764F2",
-      "size": 31,
+      "size": 49,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -10734,7 +10734,7 @@
     },
     {
       "file_offset": "0x076524",
-      "size": 25,
+      "size": 111,
       "instructions": 7,
       "region": "overlay",
       "name": "unknown",
@@ -10743,7 +10743,7 @@
     },
     {
       "file_offset": "0x076594",
-      "size": 35,
+      "size": 174,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10779,7 +10779,7 @@
     },
     {
       "file_offset": "0x076C70",
-      "size": 32,
+      "size": 254,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10788,7 +10788,7 @@
     },
     {
       "file_offset": "0x076E50",
-      "size": 247,
+      "size": 521,
       "instructions": 92,
       "region": "overlay",
       "name": "unknown",
@@ -10815,7 +10815,7 @@
     },
     {
       "file_offset": "0x077100",
-      "size": 29,
+      "size": 441,
       "instructions": 14,
       "region": "overlay",
       "name": "unknown",
@@ -10824,7 +10824,7 @@
     },
     {
       "file_offset": "0x0772BA",
-      "size": 8,
+      "size": 10,
       "instructions": 4,
       "region": "overlay",
       "name": "unknown",
@@ -10851,7 +10851,7 @@
     },
     {
       "file_offset": "0x0772FA",
-      "size": 213,
+      "size": 754,
       "instructions": 67,
       "region": "overlay",
       "name": "unknown",
@@ -10860,7 +10860,7 @@
     },
     {
       "file_offset": "0x0775EC",
-      "size": 29,
+      "size": 263,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -10878,7 +10878,7 @@
     },
     {
       "file_offset": "0x077772",
-      "size": 32,
+      "size": 255,
       "instructions": 13,
       "region": "overlay",
       "name": "unknown",
@@ -10887,7 +10887,7 @@
     },
     {
       "file_offset": "0x077990",
-      "size": 69,
+      "size": 164,
       "instructions": 30,
       "region": "overlay",
       "name": "unknown",
@@ -10896,7 +10896,7 @@
     },
     {
       "file_offset": "0x077A34",
-      "size": 54,
+      "size": 169,
       "instructions": 23,
       "region": "overlay",
       "name": "unknown",
@@ -10914,7 +10914,7 @@
     },
     {
       "file_offset": "0x077B10",
-      "size": 31,
+      "size": 590,
       "instructions": 16,
       "region": "overlay",
       "name": "unknown",
@@ -10923,7 +10923,7 @@
     },
     {
       "file_offset": "0x077D5E",
-      "size": 152,
+      "size": 162,
       "instructions": 62,
       "region": "overlay",
       "name": "unknown",
@@ -10932,7 +10932,7 @@
     },
     {
       "file_offset": "0x077ED0",
-      "size": 20,
+      "size": 106,
       "instructions": 10,
       "region": "overlay",
       "name": "unknown",
@@ -10941,7 +10941,7 @@
     },
     {
       "file_offset": "0x077F3A",
-      "size": 296,
+      "size": 302,
       "instructions": 109,
       "region": "overlay",
       "name": "unknown",
@@ -10950,7 +10950,7 @@
     },
     {
       "file_offset": "0x078068",
-      "size": 217,
+      "size": 218,
       "instructions": 73,
       "region": "overlay",
       "name": "ui_input_cursor_helper",
@@ -10995,7 +10995,7 @@
     },
     {
       "file_offset": "0x07826A",
-      "size": 105,
+      "size": 176,
       "instructions": 42,
       "region": "overlay",
       "name": "unknown",
@@ -11004,7 +11004,7 @@
     },
     {
       "file_offset": "0x07831A",
-      "size": 122,
+      "size": 202,
       "instructions": 48,
       "region": "overlay",
       "name": "unknown",
@@ -11013,7 +11013,7 @@
     },
     {
       "file_offset": "0x0783E4",
-      "size": 62,
+      "size": 118,
       "instructions": 21,
       "region": "overlay",
       "name": "unknown",
@@ -11022,7 +11022,7 @@
     },
     {
       "file_offset": "0x07845A",
-      "size": 13,
+      "size": 238,
       "instructions": 8,
       "region": "overlay",
       "name": "unknown",
@@ -11031,7 +11031,7 @@
     },
     {
       "file_offset": "0x078548",
-      "size": 49,
+      "size": 77,
       "instructions": 23,
       "region": "overlay",
       "name": "vga_palette_dac_write",
@@ -11049,7 +11049,7 @@
     },
     {
       "file_offset": "0x0786FE",
-      "size": 55,
+      "size": 163,
       "instructions": 25,
       "region": "overlay",
       "name": "unknown",
@@ -11058,7 +11058,7 @@
     },
     {
       "file_offset": "0x0787A2",
-      "size": 13,
+      "size": 58,
       "instructions": 9,
       "region": "overlay",
       "name": "unknown",
@@ -11067,7 +11067,7 @@
     },
     {
       "file_offset": "0x0787DC",
-      "size": 17,
+      "size": 66,
       "instructions": 11,
       "region": "overlay",
       "name": "unknown",
@@ -11094,7 +11094,7 @@
     },
     {
       "file_offset": "0x078872",
-      "size": 381,
+      "size": 391,
       "instructions": 139,
       "region": "overlay",
       "name": "unknown",
@@ -11112,7 +11112,7 @@
     },
     {
       "file_offset": "0x078A4A",
-      "size": 45,
+      "size": 168,
       "instructions": 22,
       "region": "overlay",
       "name": "unknown",
@@ -11121,7 +11121,7 @@
     },
     {
       "file_offset": "0x078AF2",
-      "size": 23,
+      "size": 28,
       "instructions": 11,
       "region": "overlay",
       "name": "coreleft_max",
@@ -11130,7 +11130,7 @@
     },
     {
       "file_offset": "0x078B0E",
-      "size": 39,
+      "size": 48,
       "instructions": 15,
       "region": "overlay",
       "name": "unknown",
@@ -11139,7 +11139,7 @@
     },
     {
       "file_offset": "0x078B3E",
-      "size": 52,
+      "size": 144,
       "instructions": 18,
       "region": "overlay",
       "name": "overlay_thunk_1a1f_e90",
@@ -11166,7 +11166,7 @@
     },
     {
       "file_offset": "0x078C48",
-      "size": 48,
+      "size": 105,
       "instructions": 20,
       "region": "overlay",
       "name": "unknown",
@@ -11175,12 +11175,93 @@
     },
     {
       "file_offset": "0x078CB2",
-      "size": 140,
+      "size": 137,
       "instructions": 49,
       "region": "overlay",
       "name": "unknown",
       "asm_file": "disasm/func_078CB2_unknown.asm",
       "status": "RAW"
+    },
+    {
+      "file_offset": "0x020EE0",
+      "size": 111,
+      "instructions": 35,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_020EE0_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x033F6A",
+      "size": 620,
+      "instructions": 0,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_033F6A_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x03FF4C",
+      "size": 182,
+      "instructions": 0,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_03FF4C_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x042C50",
+      "size": 155,
+      "instructions": 50,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_042C50_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x068EE0",
+      "size": 87,
+      "instructions": 26,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_068EE0_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x06F8E0",
+      "size": 26,
+      "instructions": 7,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_06F8E0_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x0764D0",
+      "size": 33,
+      "instructions": 8,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_0764D0_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x078595",
+      "size": 2,
+      "instructions": 0,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_078595_unknown.asm",
+      "status": "RESEG"
+    },
+    {
+      "file_offset": "0x078D3B",
+      "size": 2,
+      "instructions": 0,
+      "region": "overlay",
+      "name": "unknown",
+      "asm_file": "disasm/func_078D3B_unknown.asm",
+      "status": "RESEG"
     }
   ]
 }
