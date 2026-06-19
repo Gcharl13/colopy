@@ -1658,7 +1658,7 @@
       "exe": "VICEROY",
       "offset": 425416,
       "raw": "func_067DC8_unknown.asm",
-      "line": 539,
+      "line": 549,
       "source_file": "docs/DATA_MODEL.md",
       "status": "strong_func_entry"
     },

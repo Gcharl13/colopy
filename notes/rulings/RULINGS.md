@@ -56,10 +56,13 @@ exact numbers/operations"):
    role (drift input) is disasm-verified; the "base/initial" label is a turn-1
    observation. Keep the disasm operation; note `+0x7C` (volume) is the semantically
    "long-term trend" array and may also feed drift (untraced).
-3. **`+0x44/45/46`**: real, **write-verified** per-power deployed REF counts (3 bytes).
-   The disasm-incremented `0x53DA[4]` globals are a **distinct** player-side assembly
-   array. Both are real → this **resolves the old "REF-location conflict"** (they are
-   different roles, not rivals).
+3. **`+0x44/45/46`**: the **disasm is decisive** — `func_03E162`/`func_03CDA2`/
+   `func_051EF4` read/write the globals `0x53DA..0x53E1`, so those are the
+   authoritative REF counts. The two runtime dumps **disagree** on `+0x44/45/46`:
+   this dump write-verified them as the REF; `docs/DATA_MODEL.md`'s session found
+   them ≠ the UI (with `0x53DA` matching). So `+0x44/45/46` role is **unresolved**
+   (a later "both real, different roles" reading was over-confident — corrected
+   2026-06-19 consolidation). Needs a fresh dump to settle.
 4. **`+0x30`**: disasm proves `func_0363A2` writes the crosses threshold here; the
    runtime "recruit cost" label was **not** write-verified (inference from the recruit
    menu). Keep the byte-verified meaning (threshold); flag for runtime re-check.

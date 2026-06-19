@@ -28,19 +28,19 @@ budget→unit causal link; the counts and the per-turn rate are runtime-verified
 | `DGROUP:0x53E0` | u16 | REF **Artillery** count (slot 3) | **USER-VERIFIED** | `docs/DATA_MODEL.md` (8 in-game) |
 | `PowerRecord +0x22` | s32 | `royal_money` — King's REF budget | **RUNTIME-VERIFIED** (field+rate); meaning **RECONSTRUCTED** | `docs/DATA_MODEL.md`: English 936→1062 over 7 turns = **+18/turn** (Discoverer); still +18 at turn 65 (1188) |
 | `PowerRecord +0x32` | u16 | `ref_strength_rating` (aggregate REF power) | **RUNTIME-VERIFIED** | `docs/DATA_MODEL.md`; `colonization-memory-map (1).md` |
-| `PowerRecord +0x44/+0x45/+0x46` | u8×3 | **deployed REF counts** (dragoons / regulars / artillery), per power | **RUNTIME-VERIFIED (write)** | `colonization-memory-map (1).md` ("zeroing removes the REF") |
+| `PowerRecord +0x44/+0x45/+0x46` | u8×3 | per-power bytes — **role unresolved** (one dump write-verified as REF, another found ≠ UI); **not** the authoritative count | **CONFLICT** | `colonization-memory-map (1).md` vs `docs/DATA_MODEL.md` (RULINGS 2026-06-19) |
 
 `royal_money` is **player-only** (other nations = 0).
 
-**REF-location conflict — RESOLVED 2026-06-19 (both real, different roles):** the
-runtime dump (`colonization-memory-map (1).md`, **write-verified** — zeroing them
-removes the REF) shows **per-power deployed REF counts at `PowerRecord +0x44`
-(dragoons) / `+0x45` (regulars) / `+0x46` (artillery)**. The static disasm shows the
-budget driver `func_03E162` incrementing the **standalone globals `0x53DA..0x53E1`**
-(regulars/cavalry/manowar/artillery). These are **distinct**: `0x53DA[4]` is the
-player-side **assembly/staging** array the King grows pre-independence; `+0x44..46`
-are the **per-power** counts surfaced in reports. Neither supersedes the other
-(RULINGS 2026-06-19).
+**REF-location — disasm-authoritative + a two-dump conflict (2026-06-19):** the static
+disasm is decisive for game logic — the budget driver `func_03E162` (and
+`func_03CDA2`/`func_051EF4`) read/write the **standalone globals `0x53DA..0x53E1`**
+(regulars/cavalry/manowar/artillery), so **those are the authoritative counts** the
+King grows and deploys. The two runtime dumps **disagree** on `PowerRecord
++0x44/+0x45/+0x46`: `colonization-memory-map (1).md` **write-verified** them as the
+REF ("zeroing removes it"), while `docs/DATA_MODEL.md`'s session found them ≠ the UI
+(with `0x53DA` matching). So `+0x44..46` is a per-power field of **unresolved** role —
+do not treat it as the authoritative REF. (RULINGS 2026-06-19.)
 
 ## 3. Formulas & rules
 

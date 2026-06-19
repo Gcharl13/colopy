@@ -343,6 +343,16 @@ read (1, 11, 62) for the player while the in-game UI shows (23 reg,
 Treat 0x53DA as authoritative; treat the +0x44/+0x45/+0x46 PowerRecord
 bytes as TBD (possibly a different counter, like garrison strength).
 
+> **Two-dump conflict (2026-06-19).** A *second* runtime dump
+> (`colonization-memory-map (1).md`) **write-verified** `+0x44/+0x45/+0x46` as the
+> REF (dragoons/regulars/artillery) — "zeroing all three eliminates the REF". That
+> contradicts the observation above (where `+0x44/+0x45/+0x46` did **not** match the
+> UI). The two dumps disagree; the **disasm is decisive for game logic**:
+> `func_03E162`/`func_03CDA2`/`func_051EF4` read and write the **globals
+> `0x53DA..0x53E1`**, so those are the authoritative counts the King grows and
+> deploys. `PowerRecord +0x44..46` is a per-power field one dump found controls the
+> REF and another found stale — unresolved pending a fresh dump. (RULINGS 2026-06-19.)
+
 ### Capital-raze popup buffer (ephemeral)
 
 When a CIBOLA / Aztec-or-Inca capital raze popup is being prepared,
