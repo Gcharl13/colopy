@@ -100,8 +100,8 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
    (→`0x02EF20`), `0x7BE` (→`0x027A66`) whose bodies aren't decoded — **values
    `TBD` (thunk/data-blocked)**.
 2. Decode the **capture** path. The combat resolver `func_05B2C2` has only
-   demote/destroy — **no in-combat capture branch found**. An ownership-reassign
-   write (`UnitRecord +0x03` owner nibble) is byte-located at `0x03C81D` inside a
-   separate **power-takeover** function `func_03C638` — not yet confirmed as a
-   unit-combat outcome. Also confirm the `+0x15==24`→type-3 demotion override at runtime.
+   demote/destroy — **no in-combat capture branch found**. The `0x03C81D` ownership-reassign
+   write in `func_03C638` is **resolved (2026-06-19): it is the War-of-Spanish-
+   Succession power transfer** (`spec/systems/spanish_succession.md`), not combat
+   capture — so the combat resolver has **no** capture branch. Also confirm the `+0x15==24`→type-3 demotion override at runtime.
 3. Naval combat & bombardment specifics (ship pair `0x523B/0x523C`, roll in `func_05B2C2`).

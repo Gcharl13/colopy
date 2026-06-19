@@ -4,8 +4,7 @@
 > Re-grounded 2026-06-18 from the **real `@SUCCESSION` body** (the prior
 > `heir_succession.md` invented a "king's heir" mechanic from an empty key).
 
-**Overall confidence:** event text + status label `BYTE_VERIFIED`; trigger &
-effect mechanics `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`
+**Overall confidence:** event text + **effect mechanics `BYTE_VERIFIED`** (`func_03C638`: unit + colony ownership transfer); **trigger** `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`
 `@SUCCESSION`; `data_extracted/text/LABELS_sections.json` `@MISC`.
 
 ## 1. Purpose & behavior
@@ -30,10 +29,17 @@ Real `@SUCCESSION` body:
 > {%STRING3} possessions in the New World now fall under {%STRING2} rule.
 
 ## 3. Formulas & rules
-- **Trigger:** `TBD` — date/condition not byte-traced (historically the Treaty of
-  Utrecht is 1713; whether the game gates on a year or a random event is unknown).
-- **Effect:** the ceding power's colonies transfer to the beneficiary; the ceding
-  power is removed. Byte mechanics `TBD`.
+**Handler `func_03C638` (file `0x3C638`, "SUCCESSION").** Announces via the
+`@SUCCESSION` popup (`@0x3C76A`), then performs the **power absorption**:
+- **Units transfer** — a loop reassigns each affected unit's owner nibble
+  `MOV byte[UnitRecord +0x01], al` (`@0x3C81D`, `[bx+0x3147]`). **BYTE_VERIFIED.**
+  (This is the `0x3C81D` write earlier mis-considered as combat "capture" — it is
+  the succession ownership transfer, not combat.)
+- **Colonies transfer** — `MOV byte[ColonyRecord +0x1A], al` (`@0x3C8A0`) sets each
+  ceded colony's `owner_power_idx` to the beneficiary. **BYTE_VERIFIED.**
+- Self/active-power global `[0x53D2]` is updated (`@0x3C922`).
+- **Trigger:** still `TBD` — the *handler* is located; the dispatcher that fires
+  it (date/condition) is the remaining gap.
 
 ## 4. UI
 Announcement popup using `@SUCCESSION` (with `%STRING0..3` substitution) via the

@@ -7137,9 +7137,9 @@
       "size": 762,
       "instructions": 26,
       "region": "overlay",
-      "name": "unknown",
+      "name": "spanish_succession_absorb_power",
       "asm_file": "disasm/func_03C638_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03C932",

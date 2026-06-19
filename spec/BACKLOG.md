@@ -64,7 +64,7 @@ The text/table basis is now complete (`tools/extract_txt_sections.py`,
 | Reconcile `viceroy_source/data/*.c` vs `data_extracted/tables/` | per-table compare | data tables |
 | Reproduce DGROUP record **values** (not just layout) | `tools/analyze_session_mem.py` against a DOSBox memory dump; the layout catalog (`dgroup_tables.json`) gives offset/stride/count | `spec/data/tables.md` §C, `spec/data/records.md` |
 | Name remaining raw/`TBD` table columns from loaders | `@ORDERS` key letters, `@TRIBES` extras, `@LEVELS`; legends in `NAMES.full.json` | `spec/data/tables.md` |
-| Spanish-Succession trigger + colony-transfer | event firing `@SUCCESSION`; power-removal in data model | `systems/spanish_succession.md` |
+| Spanish-Succession **trigger** (handler `func_03C638` now B: unit+colony transfer) | find the dispatcher that fires `func_03C638` | `systems/spanish_succession.md` |
 | Mercenary price (`%NUMBER0`) + offer trigger | dialog firing `@MERCENARIES` | `systems/mercenary.md` |
 
 **Lesson recorded:** the two fabrications (heir-succession, wilderness-camp) came
