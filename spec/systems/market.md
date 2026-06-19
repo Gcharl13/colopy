@@ -75,7 +75,7 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@CARGO`. **B**
 - `func_0305A8` (file `0x0305A8`) — per-turn drift: `price_base[good] -= (base + Σ_players clamped_trade)/256`; per-good base `DGROUP:0x53EA[16]`; trade accumulator `PowerRecord +0xFC` dword[16]. **B**
-- `docs/DATA_MODEL.md` — `PowerRecord +0x4C` price area; `0x53EA` market base. **A**
+- `docs/DATA_MODEL.md` — `PowerRecord +0x4C` "price area" label **superseded** (it is market *sensitivity* u8[16]; RULINGS 2026-06-19); `0x53EA` per-good base. **A→corrected**
 
 ## 6. Confidence summary
 - **B:** commodity set; **per-turn drift formula** (`func_0305A8`); per-good price base `0x53EA[16]`; trade accumulator `+0xFC`.

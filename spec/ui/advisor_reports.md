@@ -38,7 +38,7 @@
 - **title:** `@MISC[65]` "ECONOMIC ADVISER REPORT" (verified). **B**
 - **background:** REPORT5.PIK (scales + currency + hourglass). **R**
 - **body:** treasury gold, tax rate, per-commodity prices/pool, "(Building Upkeep)" + "TOTAL UPKEEP" (`@MISC`, both verified). **B/R**
-- **data:** PowerRecord +0x2A gold, +0x01 tax, +0x4C+i price, +0x5C+i*2 pool. **B**
+- **data:** PowerRecord +0x2A gold, +0x01 tax, +0x4C+i **sensitivity** (u8; not price — RULINGS 2026-06-19), +0x5C+i*2 pool. **B**
 
 ## F6 — Colony Adviser
 - **paint_func:** file 0x0277D8; scan 0x140; letter 'E'. **B**

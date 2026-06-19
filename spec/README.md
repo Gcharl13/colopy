@@ -21,17 +21,17 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | King & taxation | [`systems/king.md`](systems/king.md) | B/TBD | Difficulty | [`systems/difficulty.md`](systems/difficulty.md) | B/R |
 | Combat | [`systems/combat.md`](systems/combat.md) | B/TBD | National powers | [`systems/national_powers.md`](systems/national_powers.md) | R/TBD |
 | Market & prices | [`systems/market.md`](systems/market.md) | B/TBD | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B/TBD |
-| Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | R/TBD |
+| Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | B/TBD |
 | Unit system | [`systems/unit.md`](systems/unit.md) | B/R | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | A/TBD |
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B/R | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
-| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | A/TBD |
-| Immigration | [`systems/immigration.md`](systems/immigration.md) | A/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B/TBD |
+| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
+| Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B/TBD |
 | Training / promotion | [`systems/training.md`](systems/training.md) | R/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B/TBD |
 | Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
 | Revolution | [`systems/revolution.md`](systems/revolution.md) | R/TBD | | | |
-| Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | A/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
-| Scoring | [`systems/scoring.md`](systems/scoring.md) | R/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
+| Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
+| Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
 | Map generation | [`systems/map_generation.md`](systems/map_generation.md) | TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | TBD |
 | Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | R/TBD | | | |
 

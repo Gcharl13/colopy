@@ -40,7 +40,7 @@ Boycott vs saturation: boycotted good shows ICONS.SS red-X overlay; saturated go
 - `docs/SESSION_UI_CATALOG.md` §4 — Europe frame, 3 dock panels, boycott vs saturation. **A**
 - `docs/SCREEN_ASSET_REQUIREMENTS.md` "Europe trade port" — asset/text/memory table. **A**
 - `data_extracted/text/LABELS_sections.json` — `@EUROLABEL`, `@CMESSAGE`, `@MISC` (verified). **B**
-- State fields (`SCREEN_ASSET_REQUIREMENTS.md`): PowerRecord +0x2A gold, +0x20 boycott bitfield, +0x4C+i per-good price (0xC8=saturated), +0x5C+i*2 market pool. **B/R**
+- State fields (`SCREEN_ASSET_REQUIREMENTS.md`): PowerRecord +0x2A gold, +0x20 boycott bitfield, +0x4C+i **market sensitivity** (u8; corrected from "price" — RULINGS 2026-06-19; the displayed price is computed from the `0x53EA` base + drift, not stored here), +0x5C+i*2 market pool. **B/R**
 
 ## 6. Open questions (TBD)
 1. Exact (x,y) of RECRUIT/PURCHASE/TRAIN and the 3 dock panels — only band rects measured; v2 values unverified.
