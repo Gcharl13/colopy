@@ -2,7 +2,11 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** REF count globals + budget rate `USER-VERIFIED`; count **writers located** (`func_03CDA2`/`func_051EF4`, the war-assembly path) `BYTE_VERIFIED`; the `royal_money`→force spend rule `TBD`. · **Canonical primary:** `docs/DATA_MODEL.md` (runtime-verified). Cross-ref `spec/systems/king.md`.
+**Overall confidence:** REF count globals `USER-VERIFIED`; **the budget→force driver
+`func_03E162` `BYTE_VERIFIED`** — accrual rate `(8·diff+10)·2^era`, **threshold 1800**,
+composition ratios, and the `royal_money +0x22` spend; count writers
+(`func_03CDA2`/`func_051EF4`, war-assembly path) `BYTE_VERIFIED`. · **Canonical
+primary:** `func_03E162`; `docs/DATA_MODEL.md` (runtime-verified). Cross-ref `spec/systems/king.md`.
 
 ## 1. Purpose & behavior
 
@@ -31,9 +35,9 @@ a standalone array `0x53DA..0x53E1`, authoritative over any PowerRecord
 
 ## 3. Formulas & rules
 
-- **Budget accrual:** `+0x22 += 18` per turn at Discoverer difficulty.
-  **RUNTIME-VERIFIED.** Whether the +18 scales with difficulty is `TBD` (rate
-  observed unchanged even as king_anger rose 3→5).
+- **Budget accrual:** `+0x22 += (8·difficulty + 10)·2^(era gates)` per turn —
+  **BYTE_VERIFIED** (`func_03E162 @0x3E17C`; see below). The runtime **+18/turn**
+  matches `diff=1` (`8·1+10`); era gates double it at 1600/1700/1750.
 - **Count writers — LOCATED (2026-06-19), and they are REF *assembly*, not a
   per-turn budget spend:**
   - `func_03CDA2` (file `0x3CDA2`) sums the four counts as the REF total
@@ -48,9 +52,32 @@ a standalone array `0x53DA..0x53E1`, authoritative over any PowerRecord
     **not** consumed by a direct per-turn `INC` of these counts — the budget→force
     link is indirect (counts appear assembled at/around the independence
     declaration, consistent with "no REF added up to budget 1188").
-- **Spend / royal-money consumer:** still `TBD` — the function that reads `+0x22`
-  to size the force is not these two; trace it next.
-- **Which of the 4 slots** a new unit goes to (mix/weighting): `TBD`.
+- **Budget accrual + reinforcement — `func_03E162` (file `0x3E162..0x3E2E8`).
+  BYTE_VERIFIED (2026-06-19).** This is the per-turn REF driver and the
+  `royal_money` **consumer**:
+  - **Accrual rate** (`@0x3E17C..0x3E1AC`): `rate = (difficulty[0x53A6]·8 + 10)`,
+    then **doubled once per era gate** passed on year `[0x538A]` ≥ `0x640`/`0x6A4`/
+    `0x6D6` (**1600 / 1700 / 1750**). I.e. `rate = (8·diff + 10) · 2^(eras)`.
+    Base per difficulty = `{Disc:10, +1:18, +2:26, +3:34, +4:42}` — the **+18/turn**
+    runtime observation matches `diff=1` exactly (corroborates the formula; the
+    runtime "Discoverer" label is off by one in indexing). Accrual runs only
+    pre-independence (top gate `[0x5382]&1`, `@0x3E172`).
+  - **Accrue:** `royal_money += rate` — 32-bit at current-player `PowerRecord
+    +0x22/+0x24` via `[0x84FC]` (`@0x3E1B5`).
+  - **Threshold:** a new REF unit is bought **iff `royal_money ≥ 1800` (`0x708`)**
+    (`@0x3E1C6` `cmp +0x22, 0x708; jae`). This is why the runtime budget reached
+    **1188 with no unit added** — it had not yet crossed 1800. **B.**
+  - **Composition selection** (`@0x3E1D0..0x3E21D`) — picks the slot that keeps the
+    force in ratio (`[bp-8]`, default **Regulars** slot 0):
+    - **Cavalry** (slot 1) if `(regulars+2)/3 > cavalry[0x53DC]` (≈ 1 cav per 3 reg);
+    - **Artillery** (slot 3) if `regulars/4 > artillery[0x53E0]` (≈ 1 art per 4 reg);
+    - **Man-O-War** (slot 2) if `(regulars+cavalry+artillery+5)/10 > manowar[0x53DE]`
+      (≈ 1 naval per 10 land).
+  - **Apply:** `inc [0x53DA + slot·2]` (`@0x3E238`) adds the unit to the chosen
+    count; pre-independence it then **deducts the cost `royal_money -= 1800`**
+    (`@0x3E271` `sub +0x22, 0x708; sbb +0x24, 0`) and adds a per-type value to
+    `PowerRecord +0xE` from table `DGROUP:0x9408` (`@0x3E283`). Post-independence
+    the add is announced instead (`@0x3E28A`). **B.**
 
 ## 4. UI
 
@@ -66,16 +93,19 @@ labels `TBD`. **R**.
 - `spec/systems/king.md` — REF = exactly 4 unit types; budget meaning. **B**
 - `func_03CDA2` (file `0x3CDA2`) — REF total = sum of the 4 counts; ≥1 Man-O-War guarantee (`INC [0x53DE]` @`0x3CDF7`). **B**
 - `func_051EF4` (file `0x51EF4`) — tallies the power's `unit_type 0x12` (Man-O-War) units into `[0x53DE]` (`INC` @`0x52013`). **B**
+- `func_03E162` (file `0x3E162`) — REF budget driver: accrual `(8·diff+10)·2^era` (`@0x3E17C`), threshold **1800** (`@0x3E1C6`), composition ratios 3:1 reg:cav / 4:1 reg:art / 10:1 land:naval (`@0x3E1D0`), spend `+0x22 -= 1800` (`@0x3E271`). **B**
 - `docs/GAME_MANUAL.md` — REF grows over the game, deployed on independence. **R**
 
 ## 6. Open questions (TBD)
 
-1. ~~Trace the writer of `0x53DA..0x53E0`.~~ **Done 2026-06-19** — `func_03CDA2`
-   (REF assembly; ≥1 Man-O-War guarantee) and `func_051EF4` (tallies the power's
-   Man-O-War units into `[0x53DE]`). Remaining: the **`royal_money +0x22`
-   consumer** that sizes the force (not in either writer; threshold > 1188).
-2. **Difficulty scaling** of the +18/turn accrual.
-3. The per-power gate byte `[0x53D2*0x13 − 0x6DA2]` and the per-unit thunk
-   `0x181F:0x808` in the assembly path.
-3. **Slot selection** — how a new unit's type is chosen among the four.
-4. Relationship between the four counts and the aggregate `+0x32` rating.
+1. ~~Trace the writer of `0x53DA..0x53E0`.~~ **Done 2026-06-19** — `func_03CDA2`,
+   `func_051EF4`, and the **driver `func_03E162`** (accrual + 1800-threshold spend +
+   slot selection). **Royal-money consumer fully resolved.**
+2. ~~**Difficulty scaling** of the accrual.~~ **Done** — `(8·diff+10)·2^(era gates)`
+   (`func_03E162 @0x3E17C`).
+3. ~~**Slot selection.**~~ **Done** — ratio rules 3:1 reg:cav, 4:1 reg:art, 10:1
+   land:naval (`func_03E162 @0x3E1D0`).
+4. The per-power gate byte `[0x53D2*0x13 − 0x6DA2]` and the per-unit thunk
+   `0x181F:0x808` in the `func_051EF4`/`func_03CDA2` assembly path.
+5. The `PowerRecord +0xE` per-type value added at purchase (table `DGROUP:0x9408`)
+   and the aggregate `+0x32` strength rating's relation to the four counts.

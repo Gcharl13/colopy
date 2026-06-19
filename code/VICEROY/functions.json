@@ -7218,9 +7218,9 @@
       "size": 391,
       "instructions": 49,
       "region": "overlay",
-      "name": "unknown",
+      "name": "ref_budget_accrue_and_reinforce",
       "asm_file": "disasm/func_03E162_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03E2EA",
