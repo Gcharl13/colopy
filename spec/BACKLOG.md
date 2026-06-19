@@ -18,7 +18,7 @@ secondary mechanics.
 | 4b | Colony hammers accumulation + warehouse | per-turn work-point accumulation (overlay-resident) toward `+0xBA`; warehouse spoilage | `systems/colony.md` §3/§7 | **Resolved 2026-06-18:** per-tile production formula (`compute_terrain_yield` `0x9B9C`) + SoL % (`sol_membership_pct` `0x8524`, dividend/divisor `+0xC2/+0xC6`) now **B**. Remaining: hammers per-turn accumulation (R); warehouse thresholds (TBD). |
 | 6 | Immigration / cross rate | recruit-pool `DGROUP:0x978C`; `func_074688`, `0x051E52`, `0x035114` | `systems/immigration.md` | Queue structure sketched; rate TBD. |
 | 7 | Diplomacy outcomes | `func_03ECF0` (diplomatic actions) | `systems/diplomacy.md` | Entry known; decision formulas TBD. |
-| 8 | Native conversion / mission | native dispatch `func_05BE84` (6 outcomes), `func_057F4E` (SMITE) | `systems/natives.md` | Raze (CHIEFKILL) already B; conversion TBD. |
+| 8 | Native conversion / mission | `func_0572E6` (INDIANSCONVERT); native dispatch `func_05BE84` (6 outcomes) | `systems/natives.md` | **Conversion now B** (2026-06-19): roll-gated, creates convert unit `UnitRecord+0x15=0x1B` at colony. Remaining: RNG bounds + `cl&0x10` flag; CHIEFKILL treasure formula; attitude thresholds. |
 | 9 | Map generation | mapgen routines (not yet hand-decoded) | `systems/map_generation.md` | Noise seeding sketched; code TBD. |
 | 10 | Event triggers & timing | event-queue dispatcher | `systems/events.md` | Per-event conditions mostly TBD. |
 | 11 | Save / load codec | `.SAV` loader; `docs/SAVE_FORMAT_CROSSREF.md` | `systems/save.md` | Structure sketched; per-field codec TBD. |
