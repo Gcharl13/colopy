@@ -6957,9 +6957,9 @@
       "size": 1362,
       "instructions": 424,
       "region": "overlay",
-      "name": "unknown",
+      "name": "hallfame_dat_write",
       "asm_file": "disasm/func_03ADA6_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03B2F8",

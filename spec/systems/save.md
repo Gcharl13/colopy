@@ -2,8 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** filename-builder anchor `BYTE_VERIFIED`; record strides
-`BYTE_VERIFIED` (runtime); per-field on-disk codec `TBD`.
+**Overall confidence:** filename-builder anchor + **HALLFAME.DAT layout** `BYTE_VERIFIED`; record strides `BYTE_VERIFIED` (runtime); SAV per-field on-disk codec `TBD`.
 **Canonical primary:** `docs/SAVE_FORMAT_CROSSREF.md`, `docs/DATA_MODEL.md`
 (record layouts), `data_extracted/viceroy_strings.txt` (`.SAV` @ 0x1FA89).
 
@@ -35,8 +34,15 @@ autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from manual).
 ## 3. Formulas & rules
 - SAV file header / magic / version: **TBD**.
 - Field serialization order (runtime → disk reordering): **TBD** per record type.
-- Autosave cadence and HALLFAME.DAT writing: **TBD** (Hall-of-Fame writer
-  `func_03ADA6` BYTE_VERIFIED entry, `docs/ARCHITECTURE.md`).
+- **HALLFAME.DAT format — BYTE_VERIFIED** (`func_03ADA6`, file `0x3ADA6`): the
+  file is **5 records × 42 bytes (`0x2A`) = 210 bytes (`0xD2`)** — confirmed by the
+  `fread` length `@0x3ADCF` (C runtime `fopen`/`fread`/`fclose` =
+  `0xD1D:0x4DA`/`0x528`/`0x3F4`). Each 42-byte record = a **24-byte name** (`+0x00`,
+  NUL-terminated; first byte 0 = empty slot) **+ ~8 score words** (`+0x18..`). The
+  writer reads the 5 existing records, inserts the new candidate as a 6th in-memory
+  slot, keeps the top 5, and writes back `@0x3AE04..0x3AE43`. (Corrects
+  `docs/DATA_MODEL.md`'s "1362 bytes" — that is the *function* size, not the file
+  size.) The per-word score fields' meanings are **TBD**.
 - Any compression on the save: **TBD**.
 
 ## 4. UI
