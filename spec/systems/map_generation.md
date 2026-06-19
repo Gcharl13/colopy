@@ -23,8 +23,13 @@ scenarios with numeric parameter rows:
 AMER2,     34, 20, 39, 10, 47, 61,  50, 33
 AMERICA,   56, 27, 67, 12, 66, 42, 84,  65
 ```
-The 8 numeric columns per scenario are **TBD** (likely starting positions /
-dimensions / seed params — not yet decoded). Do not assume.
+The columns **are documented** by the `@SCENARIO` legend (and used by
+`viceroy_source/data/scenario_starts.c`, byte-identical to the basis):
+`map_file, start, end, x0, y0, x1, y1, x2, y2, x3, y3` — i.e. a map filename, the
+scenario's **start/end year bounds**, and the **(x,y) starting tile** for each
+European power. **BYTE_VERIFIED** (legend + `spec/data/tables.md` `@SCENARIO`).
+Only the *random*-map generator (separate from these fixed-scenario starts)
+remains `TBD`.
 
 ## 3. Formulas & rules
 - Random-map generation algorithm: **TBD** (not located in disasm).
