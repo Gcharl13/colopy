@@ -26,7 +26,12 @@ indexing into VICEROY.PAL).
    directional edges `0x97 + edge_index` `@0x6850D`. Coasts are composed at render
    time from each water tile's land-neighbour config (NOT stored tiles); distinct
    from rivers (PHYS0.SS rows `0x01`/`0x11`, layer 4).
-6. **Roads** — drawn between road-tile centers.
+6. **Roads & rivers (connectivity)** — **BYTE_VERIFIED:** `func_067A24`
+   (`analyse_connections`) builds a 4-cardinal connection bitmap (`[0xA8A6]` +
+   per-dir table `[0x2D24]`); the **road** sprite = base **`0x6D` + mask**, the
+   **river** sprite = the **`0x51`–`0x5E`** range by the same mask (drawn via
+   `0x181F:0x32C`). PHYS0 bands (per `src/render/terrain.c`): `0x40` shore,
+   `0x51`–`0x5E` river, `0x6D` roads, `0x8D`–`0x94` feature edges, `0x96`–`0x99` coast.
 7. **Settlements** — colony sprites from BUILDING.SS, native sprites
    from MSS*/MYR*.SS.
 8. **Units** — unit sprites from ICONS.SS at unit's tile position,

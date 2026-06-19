@@ -100,14 +100,28 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    the terrain via `func_005CFE`, masks `& 0x3F`, applies the 8..0x17 forest-band
    check, and hashes tile `(x&3,y&3)` → a deterministic per-tile variant. *(Not
    roads — roads are a separate layer drawn between tile centres, site `TBD`.)*
-5. **Forest / hills overlay** → auto-forest rows `+0x21` (mountains) / `+0x31` (hills)
-   (`@0x6837F`/`@0x68384`), gated by tile bits forest `0x80` / hills `0x20`.
-6. **River / edge overlay** → sprite `0x96` on tile bit `0x40` (`@0x68354`).
-7. **Coast directional edges** → `0x97 + edge_index` (above).
+5. **Relief overlay** → mountains `0x21` / hills `0x31` / forest `0x41`, gated by tile
+   bits (`@0x6837F`/`@0x68384`).
+6. **Roads & rivers (connectivity-based)** → `func_067A24` = **`analyse_connections`**
+   builds a 4-cardinal connection bitmap `[0xA8A6]` + per-direction table `[0x2D24]`
+   (bits OR'd: N/E/S/W, `@0x67ACC/0x67AE8/0x67AEF`); the **road** sprite is base
+   **`0x6D` + connectivity_mask** and the **river** sprite is the **`0x51..0x5E`** range
+   by connectivity (drawn via `0x181F:0x32C`, "roads/rivers edges"). So a road/river
+   tile picks the sprite matching which neighbours also carry road/river.
+7. **Coast / shore** → single **shore `0x40`**, **feature edges `0x8D..0x94`**, and the
+   **coast band `0x96..0x99`** (composer, above).
 
-Sprite-index bases the selector writes: **terrain-detail variants `0x5A`+** (position
-hash), **beach band `0x95..0x99`**, forest/hills overlay rows `+0x21`/`+0x31`. All drawn through
-`func_067DC8` (sub-cell place) / `func_067E28` (ground) / `func_067EEC` (terrain).
+**Authoritative PHYS0 sprite-index bands (byte-grounded, `src/render/terrain.c`):**
+`0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore · **`0x51..0x5E` river** ·
+**`0x6D` roads** · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
+edges · **`0x96..0x99` coast**. Neighbour masks: `func_067A24` connections,
+`func_067B84`/`067BE4` 4-card feature, `func_067C8E` forest edges, `func_067D54`
+8-dir terrain. Drawn through `func_067DC8` (sub-cell place) / `func_067E28` (ground) /
+`func_067EEC` (terrain).
+> **Correction (2026-06-19):** an earlier draft put "river = `0x96` on bit `0x40`" —
+> wrong. Per `terrain.c` (verified): **river = `0x51..0x5E`**, **roads = `0x6D`**,
+> **shore = `0x40`**, and **`0x96..0x99` = coast**; roads/rivers are connectivity-
+> selected, not a single bit→sprite.
 
 **Viewport geometry (`func_0685DC` = O514) — BYTE_VERIFIED.** The outer loop walks
 the visible tile rectangle from the **scroll origin `[0x8328]` (x) / `[0x832E]` (y)**

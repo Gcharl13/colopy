@@ -9414,18 +9414,18 @@
       "size": 352,
       "instructions": 57,
       "region": "overlay",
-      "name": "unknown",
+      "name": "analyse_connections_road_river",
       "asm_file": "disasm/func_067A24_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067B84",
       "size": 96,
       "instructions": 34,
       "region": "overlay",
-      "name": "unknown",
+      "name": "nmask4_feature",
       "asm_file": "disasm/func_067B84_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067BE4",
@@ -9450,9 +9450,9 @@
       "size": 102,
       "instructions": 38,
       "region": "overlay",
-      "name": "unknown",
+      "name": "nmask4_forest",
       "asm_file": "disasm/func_067C8E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067CF4",
@@ -9468,9 +9468,9 @@
       "size": 116,
       "instructions": 37,
       "region": "overlay",
-      "name": "unknown",
+      "name": "nmask8_terrain",
       "asm_file": "disasm/func_067D54_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x067DC8",
