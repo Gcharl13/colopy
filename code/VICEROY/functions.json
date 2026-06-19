@@ -9027,9 +9027,9 @@
       "size": 2121,
       "instructions": 9,
       "region": "overlay",
-      "name": "unknown",
+      "name": "lost_city_rumor_outcome",
       "asm_file": "disasm/func_061454_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x061E10",

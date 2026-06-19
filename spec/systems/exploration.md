@@ -23,8 +23,7 @@ RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
 
 ## 3. Formulas & rules
 - Sight radius / what a moving unit reveals each step: **TBD**.
-- Scout & Seasoned Scout bonuses ("Better at exploring rumors, negotiating,
-  meeting Chiefs, infiltrating", manual): **R** for function; numbers **TBD**.
+- Scout & Seasoned Scout bonuses: **B that they gate rumor outcomes** — the Lost-City handler `func_061454` tests `unit_type==5` (Scout) and class `+0x15==0x16` (Seasoned Scout) (`events.md` §3). Numeric magnitude of the bonus **TBD**.
 - **Scout "infiltrate colony" interaction** — `func_05A20E` (file `0x5A20E`).
   **BYTE_VERIFIED mechanism:** for a **human European** actor (unit
   `UnitRecord +0x01 & 0x0F < 4` and `AIPersonality[+0x543F].controller == 0`) the
