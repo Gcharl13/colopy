@@ -26,8 +26,11 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
 
 ## 3. Formulas & rules
 
-- **Set boycott:** Tea-Party refusal sets the boycotted-good bit; the good is
-  removed from European trade. Mechanism field `TBD`.
+- **Set boycott:** the boycotted-good bit lives in `PowerRecord +0x20` (boycott
+  bitfield, `docs/DATA_MODEL.md`). The `@SOMEBOYCOTT` announcement is byte-located
+  in the Europe ship-arrival/trade handler **`func_03314E`** (`@0x3331A`, shown
+  when a boycott-condition flag `[bp-0x60]≠0`); the bit-set itself is in its trade
+  sub-functions (`0x368C7`/`0x368D6`) — exact write site `TBD`.
 - **Lift boycott:** pay accrued back taxes on that good (amount `TBD`), OR acquire
   **Jakob Fugger** which clears **all** boycotts at once (manual). **R**.
 - **Effect:** boycotted good cannot be traded in Europe. **R**.

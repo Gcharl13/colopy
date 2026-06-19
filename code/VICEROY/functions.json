@@ -6507,9 +6507,9 @@
       "size": 511,
       "instructions": 5,
       "region": "overlay",
-      "name": "unknown",
+      "name": "europe_ship_arrival_trade_handler",
       "asm_file": "disasm/func_03314E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03334E",
