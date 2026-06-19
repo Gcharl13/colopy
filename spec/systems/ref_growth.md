@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** REF count globals + budget rate `USER-VERIFIED`; budget→unit spend rule `TBD`. · **Canonical primary:** `docs/DATA_MODEL.md` (runtime-verified). Cross-ref `spec/systems/king.md`.
+**Overall confidence:** REF count globals + budget rate `USER-VERIFIED`; count **writers located** (`func_03CDA2`/`func_051EF4`, the war-assembly path) `BYTE_VERIFIED`; the `royal_money`→force spend rule `TBD`. · **Canonical primary:** `docs/DATA_MODEL.md` (runtime-verified). Cross-ref `spec/systems/king.md`.
 
 ## 1. Purpose & behavior
 
@@ -34,9 +34,22 @@ a standalone array `0x53DA..0x53E1`, authoritative over any PowerRecord
 - **Budget accrual:** `+0x22 += 18` per turn at Discoverer difficulty.
   **RUNTIME-VERIFIED.** Whether the +18 scales with difficulty is `TBD` (rate
   observed unchanged even as king_anger rose 3→5).
-- **Spend / add-unit threshold:** `TBD`. Observed: **no** REF unit added across
-  budget values up to **1188** → threshold > 1188 (or gated by another
-  condition). The writer of `0x53DA..0x53E0` is not yet traced.
+- **Count writers — LOCATED (2026-06-19), and they are REF *assembly*, not a
+  per-turn budget spend:**
+  - `func_03CDA2` (file `0x3CDA2`) sums the four counts as the REF total
+    (`[0x53DA]+[0x53DC]+[0x53E0]+[0x53DE]` @`0x3CDB3..0x3CDBE`) and **guarantees
+    ≥1 Man-O-War**: if `[0x53DE]==0` (and a per-power gate byte
+    `[0x53D2*0x13 − 0x6DA2]==0`) it does `INC [0x53DE]` @`0x3CDF7`. **B**
+  - `func_051EF4` (file `0x51EF4`) walks the unit table for units owned by the
+    power (`UnitRecord +0x01 & 0x0F`) of **type `0x12` (Man-O-War)** and, per such
+    unit (after a per-unit thunk `0x181F:0x808`), does `INC [0x53DE]` @`0x52013` —
+    i.e. the player's Man-O-Wars are tallied into the REF. **B**
+  - **Neither writer reads `royal_money` (`+0x22`).** So the +18/turn budget is
+    **not** consumed by a direct per-turn `INC` of these counts — the budget→force
+    link is indirect (counts appear assembled at/around the independence
+    declaration, consistent with "no REF added up to budget 1188").
+- **Spend / royal-money consumer:** still `TBD` — the function that reads `+0x22`
+  to size the force is not these two; trace it next.
 - **Which of the 4 slots** a new unit goes to (mix/weighting): `TBD`.
 
 ## 4. UI
@@ -51,12 +64,18 @@ labels `TBD`. **R**.
   (USER-VERIFIED), `+0x22` royal_money (+18/turn), `+0x32` strength rating,
   REF-location conflict ruling. **B / runtime**
 - `spec/systems/king.md` — REF = exactly 4 unit types; budget meaning. **B**
+- `func_03CDA2` (file `0x3CDA2`) — REF total = sum of the 4 counts; ≥1 Man-O-War guarantee (`INC [0x53DE]` @`0x3CDF7`). **B**
+- `func_051EF4` (file `0x51EF4`) — tallies the power's `unit_type 0x12` (Man-O-War) units into `[0x53DE]` (`INC` @`0x52013`). **B**
 - `docs/GAME_MANUAL.md` — REF grows over the game, deployed on independence. **R**
 
 ## 6. Open questions (TBD)
 
-1. **Spend threshold:** trace the writer of `0x53DA..0x53E0`; find what consumes
-   `+0x22` to add a unit (threshold > 1188 observed).
+1. ~~Trace the writer of `0x53DA..0x53E0`.~~ **Done 2026-06-19** — `func_03CDA2`
+   (REF assembly; ≥1 Man-O-War guarantee) and `func_051EF4` (tallies the power's
+   Man-O-War units into `[0x53DE]`). Remaining: the **`royal_money +0x22`
+   consumer** that sizes the force (not in either writer; threshold > 1188).
 2. **Difficulty scaling** of the +18/turn accrual.
+3. The per-power gate byte `[0x53D2*0x13 − 0x6DA2]` and the per-unit thunk
+   `0x181F:0x808` in the assembly path.
 3. **Slot selection** — how a new unit's type is chosen among the four.
 4. Relationship between the four counts and the aggregate `+0x32` rating.
