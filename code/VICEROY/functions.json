@@ -8613,9 +8613,9 @@
       "size": 7151,
       "instructions": 115,
       "region": "overlay",
-      "name": "unknown",
+      "name": "diplomacy_meeting_dispatch",
       "asm_file": "disasm/func_057F4E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x059B3E",
