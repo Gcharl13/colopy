@@ -2,22 +2,27 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** **meeting/parley handler `func_057F4E` LOCATED + war-matrix mutations + treaty cooldown `BYTE_VERIFIED`** (2026-06-19); AI willingness + exact bit layout `TBD`. **Canonical primary:** `func_057F4E`; `data_extracted/text/GAME_sections.json` treaty/war keys; `docs/GAME_MANUAL.md`.
+**Overall confidence:** **meeting/parley handler `func_057F4E` + war-matrix layout (`PowerRecord +0x34`) + treaty matrix (`+0x40`) + cooldown `BYTE_VERIFIED`** (2026-06-19); AI willingness thresholds + `0x08`/`+0x40` bit meanings `TBD`. **Canonical primary:** `func_057F4E`; `data_extracted/text/GAME_sections.json` treaty/war keys; `docs/GAME_MANUAL.md`.
 
 ## 1. Purpose & behavior
 The player coexists with three rival European powers (English/French/Spanish/Dutch set). They can sign treaties, declare war, make peace, and conduct hostile actions (privateering, blockades). Relations are tracked as boolean war/peace state between power pairs, surfaced through diplomatic dialogs. **RECONSTRUCTED** (manual + GAME.TXT keys).
 
 ## 2. State & data
-- **War bit-matrix** at `DGROUP:0x883C` — a per-power-pair byte matrix, accessed in
-  code as **`[bx+si - 0x77C4]`** (`-0x77C4 = 0x883C`; that displacement encoding is
-  why a literal-`0x883C` grep found "no xrefs"). **BYTE_VERIFIED** (read `@0x582DC`;
-  writes in `func_057F4E`). Known bits: **`0x02` = at war** (set `@0x58A7B`/`0x59A61`),
-  `0x08` (set `@0x59AE9`), `0x80` cleared on peace `@0x58BE1`. Full per-pair indexing
-  (which `bx`/`si` = which power) and the `0x08`/`0x80` meanings: **TBD**.
+- **War bit-matrix** at `DGROUP:0x883C` = a **4×4 per-pair byte matrix embedded as
+  `PowerRecord +0x34`** (base `0x8808+0x34`, row-stride `0x13C`). **BYTE_VERIFIED
+  layout** (`@0x58A72`): the cell is `PowerRecord[subject] + 0x34 + target` — i.e.
+  `imul si, subject, 0x13C; bx = target; [bx+si-0x77C4]` (`-0x77C4 = 0x883C`; that
+  displacement form is why a literal-`0x883C` grep found "no xrefs"). Bit **`0x02` =
+  subject at war with target** (set `@0x58A7B`/`0x59A61`; `0x80` cleared on peace
+  `@0x58BE1`; `0x08` set `@0x59AE9`, meaning `TBD`).
+- **Treaty/relation-state matrix** — a **second** 4×4 byte matrix at
+  `PowerRecord +0x40` (`DGROUP:0x8848`, same `0x13C` row-stride), written `@0x59B31`
+  and read via the relation accessor `0x181F:0xA38` (tested for bit `0x80` `@0x58AA7`).
+  Cross-branch `relations.c` reads it as bits `0x02` hostile / `0x20` peace-pending /
+  `0x40` treaty-in-force — **lead (R)**, the exact bit meanings not yet re-verified here.
 - **Treaty cooldown** at `[power*2 + 0x53C8]` (word) — set to `turn + 0x10`
   (`@0x58075`/`0x5914C`); a 16-turn re-parley lockout. **BYTE_VERIFIED.**
-- PowerRecord base `DGROUP:0x8808`, stride 316 (0x13C), 4 powers; per-pair war state
-  lives in the `0x883C` matrix, not in PowerRecord.
+- PowerRecord base `DGROUP:0x8808`, stride 316 (0x13C), 4 powers.
 
 > `func_03ECF0` was previously mislabeled "diplomatic_action_init" — per `RULINGS.md`
 > it is the **per-unit confrontation/command AI evaluator**, **not** diplomacy.
@@ -54,8 +59,9 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
 0. ~~The `0x883C` matrix "has no code xrefs".~~ **CORRECTED 2026-06-19** — it does: the
    accessor uses `[bx+si-0x77C4]` (displacement form of `0x883C`), in `func_057F4E`.
    The prior grep searched the literal and missed it.
-1. ~~Find the diplomacy dispatcher.~~ **Done** — `func_057F4E` (meeting/parley),
-   byte-verified vs EXE. Remaining: the per-pair **bit layout** (`bx`/`si` → which
-   power pair; `0x08`/`0x80` bit meanings).
+1. ~~Find the diplomacy dispatcher + per-pair bit layout.~~ **Done** — `func_057F4E`;
+   war matrix `PowerRecord[subject]+0x34+target` (bit `0x02`=war), treaty matrix
+   `+0x40`, both byte-verified (`@0x58A72`/`@0x59B31`). Remaining: the `0x08`/`0x80`
+   war-bit meanings and the `+0x40` bit semantics (re-verify the `relations.c` lead).
 2. Byte-trace AI peace/war **willingness** thresholds and treaty-term gold/tribute amounts.
 3. Privateer attribution / blockade mechanics.
