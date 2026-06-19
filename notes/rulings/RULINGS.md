@@ -26,6 +26,57 @@ Format:
 
 ---
 
+## 2026-06-19 — Runtime memory dump (`colonization-memory-map (1).md`) reconciled against the static disasm
+
+**Conflict**: a runtime-verified PowerRecord field map (observed in js-dos/DOSBox,
+several fields **write-verified**) disagrees with the static-disasm field labels on
+three offsets, and corroborates many others.
+
+**Source A** — runtime dump (`colonization-memory-map (1).md`, top of TRUTH_HIERARCHY:
+"Running DOS game"). PowerRecord stride `0x13C`. Write-verified: `+0x2A` gold,
+`+0x01` tax, `+0x44/+0x45/+0x46` REF counts (dragoons/regulars/artillery — "zeroing
+removes the REF"), features-layer `0xB0` = Lost-City marker (plant/remove verified).
+Read-verified: market arrays `+0x4C` sensitivity u8[16], `+0x5C` pool s16[16], `+0x7C`
+traded-volume s32[16], `+0xBC` EU-supply s32[16], `+0xFC` base s32[16]; `+0x0C`
+congress-progress, `+0x0E` bells, `+0x10` crosses/turn, `+0x14` FF-count, `+0x30`
+"recruit cost", `+0x32` REF-strength.
+
+**Source B** — static disasm (this branch). `func_0305A8` reads `+0xFC` as the
+**drift accumulator**; `func_0363A2` writes the **crosses threshold** to `+0x30`;
+`func_03E162` increments REF **globals** `0x53DA[4]` (regulars/cavalry/manowar/arty).
+
+**Ruling** (per TRUTH_HIERARCHY "Running DOS game > EXE disasm; but EXE bytes win for
+exact numbers/operations"):
+1. **`+0x4C` is market *sensitivity* (u8[16]), NOT a price array** — the old
+   `market.md`/`DATA_MODEL` "+0x4C[16] price-level" label is **superseded**; adopt the
+   runtime array map (`+0x4C/+0x5C/+0x7C/+0xBC/+0xFC`). The runtime is authoritative
+   for the *layout*.
+2. **`+0xFC`**: runtime *labels* it "base values (initial)"; the disasm *proves*
+   `func_0305A8` sums it across players and drives drift. Same bytes — the dynamic
+   role (drift input) is disasm-verified; the "base/initial" label is a turn-1
+   observation. Keep the disasm operation; note `+0x7C` (volume) is the semantically
+   "long-term trend" array and may also feed drift (untraced).
+3. **`+0x44/45/46`**: real, **write-verified** per-power deployed REF counts (3 bytes).
+   The disasm-incremented `0x53DA[4]` globals are a **distinct** player-side assembly
+   array. Both are real → this **resolves the old "REF-location conflict"** (they are
+   different roles, not rivals).
+4. **`+0x30`**: disasm proves `func_0363A2` writes the crosses threshold here; the
+   runtime "recruit cost" label was **not** write-verified (inference from the recruit
+   menu). Keep the byte-verified meaning (threshold); flag for runtime re-check.
+
+**Action taken**:
+- Imported the dump to `colonization-memory-map (1).md` (same root path as `main`).
+- `spec/systems/market.md` — corrected `+0x4C`; added the runtime 16-good array map.
+- `spec/systems/ref_growth.md` — `+0x44/45/46` runtime counts reconciled with `0x53DA`.
+- `spec/systems/events.md` + `spec/systems/map_system.md` — Lost-City trigger = features `0xB0` (runtime).
+- `spec/systems/immigration.md` — `+0x30` conflict noted.
+
+**Follow-up**: runtime-confirm whether `+0x30` is dual-use (threshold vs recruit
+cost); trace whether `+0x7C` volume also feeds `func_0305A8`'s sibling drift; locate
+the King `royal_money +0x22` and boycott `+0x20` in a dump (neither identified yet).
+
+---
+
 ## 2026-05-30 — Game manual added as behavioral source; confirms combat-modifier model (reconciles wave-6 "+50% refuted")
 
 User provided the original Colonization manual / Technical Supplement →

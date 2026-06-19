@@ -13,7 +13,7 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
 | Field | Type | Meaning | Tier | Evidence |
 |-------|------|---------|------|----------|
 | `PowerRecord +0x2E` | u16 | current accumulated crosses | **BYTE_VERIFIED** | `IMMIGRATION_RECRUIT_FINDINGS.md`: add @`0x0363F5`, reset @`0x03645E`, F2 read |
-| `PowerRecord +0x30` | u16 | needed crosses / threshold | **BYTE_VERIFIED** | write @`0x0363EF`; F2 read |
+| `PowerRecord +0x30` | u16 | needed crosses / threshold (disasm) | **BYTE_VERIFIED** | write @`0x0363EF` (= `func_035D9A` threshold); F2 read. ⚠ runtime dump labels `+0x30` "recruit cost" (not write-verified) — conflict logged, RULINGS 2026-06-19 |
 | `PowerRecord +0x1E` | u16 | `artillery_bought_count` (Europe recruit escalation) | **BYTE_VERIFIED** (2026-05-31) | `DATA_MODEL.md`: read×100 @`0x035124`/`0x03527B`, inc @`0x035282`, zeroed @`0x03662F` |
 | recruit-pool slot `+0x04` | u16 | recruit gold cost (pool @ `DGROUP:0x978C + slot*6`) | **BYTE_VERIFIED** | `DATA_MODEL.md`/`func_074688`: read @`0x051E52`,`0x035114` |
 | pool slots `+0x02/+0x03/+0x04` | u8 | dock-pool unit-type bytes (selector) | **TBD — conflict** | `IMMIGRATION_RECRUIT_FINDINGS.md` §2: conflicts with `+0x02 = rebel_sentiment`; base may differ from `0x8808` |

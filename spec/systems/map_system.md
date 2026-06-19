@@ -21,6 +21,15 @@ economic yields, movement cost, and combat modifiers (`docs/GAME_MANUAL.md`).
   overlay; bit 7 = ? (possibly "discovered").
 - Then ColonyRecord / UnitRecord / NativeSettlement arrays.
 
+**Runtime map layers** (`colonization-memory-map (1).md`, **RUNTIME-VERIFIED**; live
+play board is **56 × 72**, row-major `tile = y·56 + x`, 4032 bytes/layer):
+- **Features/Rumors layer** — per-tile special-attribute byte: `0x00` = none,
+  **`0xB0` (176) = Lost-City / Rumors-of-treasure marker**. Stepping a unit onto a
+  `0xB0` tile fires the rumor event and **clears the tile to `0x00`** (plant/remove
+  **write-verified**). This is the Lost-City **trigger** (see `spec/systems/events.md`).
+- **Visibility layer** (= features + 0x1B80): per-power fog, `0x00` unexplored /
+  `0x80` explored. **RUNTIME-VERIFIED** (read).
+
 **Terrain id authority = `NAMES.TXT` (`$TERRAIN`), NOT `mapedit.c`** (CLAUDE.md hard rule 1).
 - `@UNFORESTED` (ids ~0..7): Tundra, Desert, Plains, Prairie, Grassland, Savannah, Marsh, Swamp. **B**
 - `@FORESTED` (forest variants): Boreal, Scrub, Mixed, Broadleaf, Conifer, Tropical, Wetland, Rain. **B**

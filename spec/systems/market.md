@@ -19,9 +19,16 @@ block trading a good until lifted. Custom Houses allow trade after independence.
 | Field | Meaning | Tier | Evidence |
 |-------|---------|------|----------|
 | `@CARGO` (NAMES.TXT) | commodity list (16 goods + specials) with economic params | **BYTE_VERIFIED** | `data_extracted/text/NAMES_sections.json` |
-| `PowerRecord +0x4C[16]` | per-good price-level array | **ANCHOR_VERIFIED** | `docs/DATA_MODEL.md` (price area; confirm read site) |
 | `DGROUP:0x53EA` word[16] | **per-good** European price base (indexed `good*2` in `func_0305A8`) | **BYTE_VERIFIED** | `func_0305A8` `@0x305B8`/`@0x30639` (prior "word[4] per-player" label superseded) |
-| `PowerRecord +0xFC` dword[16] (`@0x8904`) | per-good per-player trade-volume accumulator (drift input) | **BYTE_VERIFIED** | `func_0305A8` `@0x305D8` (stride `0x13C`) |
+| `PowerRecord +0x4C` u8[16] | **market sensitivity** (how fast a good's price drops when sold; low = price holds) | **RUNTIME-VERIFIED** | `colonization-memory-map (1).md` (write-verified; supersedes the old "+0x4C price array" label — RULINGS 2026-06-19) |
+| `PowerRecord +0x5C` s16[16] | **market pool** (supply/demand imbalance; +surplus/−scarcity) | **RUNTIME-VERIFIED** | `colonization-memory-map (1).md` |
+| `PowerRecord +0x7C` s32[16] | **traded volume** (cumulative units traded; long-term trend driver) | **RUNTIME-VERIFIED** | `colonization-memory-map (1).md` |
+| `PowerRecord +0xBC` s32[16] | **European supply** per good | **RUNTIME-VERIFIED** | `colonization-memory-map (1).md` |
+| `PowerRecord +0xFC` s32[16] (`@0x8904`) | per-good per-player accumulator **summed by the drift fn** (runtime labels it "base/initial values") | **BYTE_VERIFIED (op)** | `func_0305A8` `@0x305D8` reads/sums it; runtime layout per `colonization-memory-map (1).md` (RULINGS 2026-06-19) |
+
+> **Goods order (runtime-verified, index 0..15):** Food, Sugar, Tobacco, Cotton,
+> Furs, Lumber, Ore, Silver, Horses, Rum, Cigars, Cloth, Coats, Trade Goods, Tools,
+> Muskets (`colonization-memory-map (1).md`).
 
 ## 3. Formulas & rules
 **Per-turn price drift — `func_0305A8` (file `0x0305A8..0x03064C`). BYTE_VERIFIED**
@@ -66,8 +73,8 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 
 ## 6. Confidence summary
 - **B:** commodity set; **per-turn drift formula** (`func_0305A8`); per-good price base `0x53EA[16]`; trade accumulator `+0xFC`.
-- **A:** price-storage locations (`+0x4C[16]`).
-- **TBD:** turn-loop driver call site; `+0xFC` increment site (buy/sell); buy/sell spread; boycott bookkeeping; spoilage.
+- **RUNTIME-VERIFIED:** the full per-power 16-good market array map (`+0x4C` sensitivity, `+0x5C` pool, `+0x7C` volume, `+0xBC` EU-supply, `+0xFC` base) + goods order (`colonization-memory-map (1).md`).
+- **TBD:** turn-loop driver call site; `+0xFC`/`+0x7C` increment site (buy/sell); buy/sell spread; spoilage. (Boycott bookkeeping now **B** — `+0x20`, see `boycotts.md`.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. Remaining: the turn-loop driver + the `+0xFC` increment (buy/sell) site.

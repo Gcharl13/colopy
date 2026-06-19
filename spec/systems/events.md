@@ -2,7 +2,9 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: handler + index→`@LOSTCITY<n>` + reward `[bp-0x32]·100` + scout bonus `BYTE_VERIFIED`** (`func_061454`); per-index *meaning* `TBD`. (`func_05BE84` is the native **raid** handler — see `natives.md`.)
+**Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: trigger
+(features `0xB0`, RUNTIME-VERIFIED) + handler + index→`@LOSTCITY<n>` + reward
+`[bp-0x32]·100` + scout bonus `BYTE_VERIFIED`** (`func_061454`); per-index *meaning* `TBD`. (`func_05BE84` is the native **raid** handler — see `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).
 
 ## 1. Purpose & behavior
@@ -66,7 +68,7 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
 - `func_05BE84` — native **raid** outcome dispatch (RAID* keys) — see `natives.md` §3. **B**
 
 ## 6. Open questions (TBD)
-1. Trigger condition: which map feature flags a tile as a rumor square (see `spec/systems/map_system.md`).
+1. ~~Trigger condition: which map feature flags a tile as a rumor square.~~ **RUNTIME-VERIFIED 2026-06-19** — the **features map-layer byte `0xB0` (176)** marks a Lost-City/Rumor tile; stepping a unit onto it fires the event and **clears the tile to `0x00`** (`colonization-memory-map (1).md`, plant/remove **write-verified**). Map is 56×72 row-major (`tile = y·56 + x`). See `spec/systems/map_system.md`.
 2. Outcome dispatch table and per-outcome probabilities; bias by difficulty/scout type.
 3. Numeric effects: which `@LOSTCITY0..9` index = treasure/Fountain-of-Youth/burial, and per-index reward magnitudes (reward = `[bp-0x32]·100`; mechanism B, the per-index amounts TBD).
 4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **Found 2026-06-19** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). Remaining: the index→`@LOSTCITYn` mapping + Fountain-of-Youth/burial numerics.
