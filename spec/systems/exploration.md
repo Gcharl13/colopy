@@ -25,6 +25,14 @@ RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
 - Sight radius / what a moving unit reveals each step: **TBD**.
 - Scout & Seasoned Scout bonuses ("Better at exploring rumors, negotiating,
   meeting Chiefs, infiltrating", manual): **R** for function; numbers **TBD**.
+- **Scout "infiltrate colony" interaction** — `func_05A20E` (file `0x5A20E`).
+  **BYTE_VERIFIED mechanism:** for a **human European** actor (unit
+  `UnitRecord +0x01 & 0x0F < 4` and `AIPersonality[+0x543F].controller == 0`) the
+  `@SCOUTCOLONY` **3-option dialog** is shown (with the colony name substituted),
+  thunk `0x181F:0x652` @`0x5A254`; otherwise the result defaults to option 3.
+  Choosing option 1 is **blocked during the revolution** (`TEST [0x5382],1` →
+  `@NOMAYORSDURINGREV` @`0x5A28A`). The three options' exact effects (and the
+  Scout-skill numeric bonuses) are **TBD**.
 - Lost-City rumor squares: see `spec/systems/events.md`.
 
 ## 4. UI
@@ -36,7 +44,7 @@ Layout `TBD`.
 - `docs/GAME_MANUAL.md` — fog/discovery, permanent reveal, scout abilities. **R**
 - `formats/MP_FORMAT.md` — tile-byte bit 7 (unconfirmed discovered flag). **TBD**
 - `data_extracted/text/GAME_sections.json` — @LOSTOURSCOUTS/@SCOUTCOLONY. **B** (strings).
-- `docs/ARCHITECTURE.md` — `func_05A20E` scout interactions. **B** (entry point).
+- `func_05A20E` (file `0x5A20E`) — scout infiltrate-colony: `@SCOUTCOLONY` 3-option dialog (human-European gated), option 1 blocked post-independence via `@NOMAYORSDURINGREV` (`[0x5382]&1`). **B** (dialog + gate; option semantics TBD).
 
 ## 6. Open questions (TBD)
 1. Confirm the per-tile discovered flag location (tile-byte bit 7 vs separate visibility map).
