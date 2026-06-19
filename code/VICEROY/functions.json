@@ -10692,9 +10692,9 @@
       "size": 1052,
       "instructions": 80,
       "region": "overlay",
-      "name": "unknown",
+      "name": "new_game_state_init",
       "asm_file": "disasm/func_0755CC_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x0759E8",

@@ -46,17 +46,20 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
 - The drift is a **proportional decay**: each good's European price base relaxes by
   `(current_base + Σ_players clamped_trade_volume) / 256` per turn — i.e. heavy
   selling (large `+0xFC` accumulator) pushes the price down harder. **B.**
-- **`DGROUP:0x53EA`** is indexed **per-good** here (`good*2`, 16 words) — *not* the
-  "word[4] per-player" framing in §2/`DATA_MODEL.md`; that prior label needs
-  reconciliation (the bytes show a 16-entry per-good price-base array). The
-  per-good **trade accumulator** is `PowerRecord +0xFC` (dword[16], `@0x8904`).
+- **`DGROUP:0x53EA`** is indexed **per-good** here (`good*2`, 16 words) — a 16-entry
+  per-good price-base array (`price_seed[16]`), *not* the "word[4] per-player" label.
+  **It is RANDOM-SEEDED — BYTE_VERIFIED:** at new-game init `func_07561C` fills each
+  `price_seed[good] = random_int(600, 1000)` (`@0x75645`: `push 0x3E8; push 0x258;
+  lcall 0x181F:0x4D4; mov [good·2 + 0x53EA], ax`, loop ×16). So **there is no fixed
+  price-base table** — the base is randomized in **[600,1000]** per good each game
+  (the per-good **trade accumulator** is `PowerRecord +0xFC` dword[16], `@0x8904`).
 - The old `0x181F:0x9A4` attribution was **wrong** — that thunk is a shared utility
   (92 callers), not the drift fn (see `tools/rtlink/THUNK_FOLLOWING.md`).
 - **Remaining `TBD`:** the per-turn *driver* that invokes the `0x1C2AC` thunk
-  (turn-loop call site), and where `+0xFC` is incremented on each buy/sell. The
-  per-good price-base *values* at `DGROUP:0x53EA` are **BSS / runtime-filled** (EXE
-  bytes at `file 0x1D9A0+0x53EA` are not a price table) — they need a live
-  data-segment dump, not static extraction (2026-06-19).
+  (turn-loop call site), and where `+0xFC` is incremented on each buy/sell. (The
+  per-good price-base at `DGROUP:0x53EA` is **RESOLVED** — random-seeded `[600,1000]`
+  at init by `func_07561C @0x75645`; BSS because it's set at runtime, not a fixed
+  table, so no dump is needed.)
 
 **Buy/sell tax interaction:** the King's tax is taken from European sale proceeds
 — see [`king.md`](king.md) §3 (revenue loop currently `TBD`).
