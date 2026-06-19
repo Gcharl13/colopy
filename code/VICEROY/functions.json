@@ -6084,9 +6084,9 @@
       "size": 42,
       "instructions": 4,
       "region": "overlay",
-      "name": "unknown",
+      "name": "commodity_current_price",
       "asm_file": "disasm/func_030566_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x030590",
@@ -6516,9 +6516,9 @@
       "size": 221,
       "instructions": 13,
       "region": "overlay",
-      "name": "unknown",
+      "name": "boycott_lift_backtax",
       "asm_file": "disasm/func_03334E_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03342C",

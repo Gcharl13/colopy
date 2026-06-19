@@ -20,9 +20,13 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
 - Related: `@TAXOPTIONS` (accept/refuse menu, per `king.md`). **B**.
 - **Per-good boycott bitmask** = `PowerRecord +0x20` (u16, one bit per good index).
   **BYTE_VERIFIED** — test `func_030B38 @0x30B47`, set `@0x34717`, clear `@0x33423`.
-- **Back-tax owed** to lift a boycott: paid from treasury `PowerRecord +0x2A` and
-  credited to King `royal_money +0x22` (`@0x3340C`, **B**); the *amount* is
-  caller-supplied — still `TBD`.
+- **Back-tax owed** to lift a boycott — **formula BYTE_VERIFIED** (`func_03334E`
+  `@0x333AF`): `cost = commodity_price(good) × 500` (`0x1F4`), where
+  `commodity_price` = `func_030566`: `base[good·9 + DGROUP:0x9700] +
+  PowerRecord[+0x4C + good]` (market sensitivity), clamped `≥ 0`. Paid from treasury
+  `+0x2A` and credited to King `royal_money +0x22` (`@0x3340C`). The `×500` and the
+  price helper are byte-verified; the per-good `0x9700` base bytes are runtime-filled
+  (BSS, stride 9) so the absolute value depends on game state.
 
 ## 3. Formulas & rules
 
@@ -65,8 +69,9 @@ goods are flagged in the Europe trade screen (visual marker) — exact treatment
 
 1. ~~**Boycott bitmask** — which field holds the per-good flags.~~ **Done 2026-06-19**
    — `PowerRecord +0x20` (u16); test `func_030B38`, set `@0x34717`, lift `@0x33423` (**B**).
-2. **Back-tax amount** — the caller-supplied payment value (`ax` at `@0x3340C`); where
-   it is computed / how it accrues. `TBD`.
+2. ~~**Back-tax amount.**~~ **Done 2026-06-19** — `cost = commodity_price(good)·500`
+   (`func_03334E @0x333AF`; price helper `func_030566`). Only the per-good `0x9700`
+   base bytes are runtime state (BSS).
 3. ~~**Lift paths** — back-tax clear + Jakob Fugger clear-all.~~ **Done** — back-tax
    `@0x3340C` (treasury `+0x2A` → King `+0x22`, then `+0x20 &= ~bit`); **Jakob Fugger
    clear-all `+0x20 := 0` `@0x3BD45`** (`func_03BC42` id 1). Both **B**.
