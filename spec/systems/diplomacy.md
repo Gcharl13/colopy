@@ -26,6 +26,7 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
 - `docs/GAME_MANUAL.md` — diplomacy function (rivals, treaties, war). **R**
 
 ## 6. Open questions (TBD)
+0. **The `0x883C` war-matrix anchor has no code xrefs** in the disassembly (verified 2026-06-19 via dgroup_xrefs + grep) — so it is currently a data-only/ruling anchor, not a confirmed code-accessed structure. The real war/treaty handler is **unlocated**; `func_03ECF0` (often cited) is byte-confirmed as `unit_vs_tile_combat_terrain_eval`, not diplomacy.
 1. Decode the `0x883C` war matrix layout (dimensions, which bit = which power pair, self-vs-king vs power-vs-power).
 2. Find the real diplomacy dispatcher (declare-war / sign-treaty handlers) feeding the `@WAR*`/`@TREATY` strings.
 3. Byte-trace AI peace/war willingness and any treaty-term state.

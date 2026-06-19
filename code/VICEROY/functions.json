@@ -7272,9 +7272,9 @@
       "size": 3101,
       "instructions": 31,
       "region": "overlay",
-      "name": "unknown",
+      "name": "unit_vs_tile_combat_terrain_eval",
       "asm_file": "disasm/func_03ECF0_unknown.asm",
-      "status": "RAW"
+      "status": "AUDITED"
     },
     {
       "file_offset": "0x03F90E",
