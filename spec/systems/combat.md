@@ -4,8 +4,9 @@
 > `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
 
 **Overall confidence:** unit stats + land-odds form + **demotion ladder**
-`BYTE_VERIFIED`; exact terrain/fort bonus *values* + capture branch `TBD`.
-**Last updated:** 2026-06-18.
+`BYTE_VERIFIED`; **terrain defense bonus values now `BYTE_VERIFIED`** (`$TERRAIN`
+"Defensive" column: forests 2 / Hills 4 / Mountains 6); capture branch `TBD`.
+**Last updated:** 2026-06-19.
 **Primary evidence:** `data_extracted/text/NAMES_sections.json` (@UNIT),
 stat loader `func @0x74EC3`, land decider `func_05CA7E` (file `0x5CA7E`),
 `notes/rulings/RULINGS.md` 2026-05-30 (wave-9/10, byte-traced).
@@ -89,11 +90,13 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
 ## 6. Confidence summary
 - **B:** unit stat columns; stat-offset mapping; land odds = ATK/(ATK+DEF);
   the +50% modifier mechanism's location; the **demotion ladder** (index table +
-  offsets) and its `+0x15==24` override.
+  offsets) and its `+0x15==24` override; the **terrain defense bonus** filler
+  (`func_007D3E`) and its **per-terrain `$TERRAIN` "Defensive" values** (forests 2 /
+  Hills 4 / Mountains 6 / Marsh-Swamp 1 / open 0).
 - **R:** the set of +50% bonuses (manual-sourced).
-- **TBD:** exact terrain/fort bonus *byte values* in `func_05CA7E`; the
-  capture-vs-destroy branch; `+0x15==24` profession semantics; naval/bombardment
-  specifics; result message keys.
+- **TBD:** the fort/stockade/fortress *multiplier* values; the capture-vs-destroy
+  branch; `+0x15==24` profession semantics; naval/bombardment specifics; result
+  message keys.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. Terrain/fortification defense bonus — **mechanism BYTE_VERIFIED (2026-06-19),
@@ -104,9 +107,14 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
    - **fortified building** (settlement build-level `≥ 2`) → **`+4`**, flag `0x10`
      (`@0x7DBC`); a further condition **doubles** it (`×2`), flag `0x20` (`@0x7DD1`);
    - **river/road feature** present → **`+(n+1)·2`**, flag `0x40` (`@0x7E12`);
-   - **open terrain** → add the **per-terrain defensive byte from the terrain
-     attribute table** `[terrain·16 + 0x2F77]` (`@0x7E63`), gated by a post-
-     independence/AI check (`[0x5382]&1`, `@0x7E45`).
+   - **open terrain** → add the **per-terrain `@TERRAIN` "Defensive" value** (column 2
+     of the `$TERRAIN` row; legend byte-verified in `map_system.md`), read at
+     `[terrain·16 + 0x2F77]` (`@0x7E63`), gated by a post-independence/AI check
+     (`[0x5382]&1`, `@0x7E45`).
+   **Per-terrain Defensive values (now BYTE_VERIFIED from `$TERRAIN` data):**
+   open (Tundra/Desert/Plains/Prairie/Grassland/Savannah) = **0**; Marsh/Swamp = **1**;
+   all forests = **2** (Rain = **3**); **Hills = 4**; **Mountains = 6**; Arctic/Ocean/
+   Sea-Lane = 0. These are added to `[bp-0x18]` then applied via the `·3/2` chain.
    `func_05CA7E @0x05CE05` reads `[0x8D04]` and applies it via the `·3/2` chain. So
    the **bonus structure is byte-verified**; the per-terrain *numbers* live in the
    `@TERRAIN` attribute table (NAMES-loaded, `terrain·16` stride) — the defense

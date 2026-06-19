@@ -38,9 +38,16 @@ play board is **56 × 72**, row-major `tile = y·56 + x`, 4032 bytes/layer):
 - `@RESOURCE`: Depleted Mine, Oasis, Wheat, Prime Cotton/Tobacco/Sugar, Minerals,
   Fishery, Beaver, Game, Prime Timber, Silver Deposit, Ore Deposit (each w/ a value byte). **B**
 
-Each terrain row in NAMES is a CSV of numeric yield/movement columns; the exact
-column semantics (which column = food/sugar/.../movement/defense) are **TBD** —
-do not assume mapping. → `spec/BACKLOG.md`.
+**`$TERRAIN` row columns — BYTE_VERIFIED from the NAMES legend** (header comment
+above `@UNFORESTED`, `raw/COLONIZE/NAMES.TXT`): each row is
+`Name, Movement, Defensive, Improvement, Value, <9 yields>` where the 9 yields are
+**Farmer→Food, Planter(s)→Sugar, Planter(t)→Tobacco, Planter(c)→Cotton,
+Trapper→Furs, Lumberjack→Lumber, Ore-Miner→Ore, Silver-Miner→Silver,
+Fisherman→Fish/Food**. (This resolves the prior "columns TBD".) The DGROUP terrain
+table is `terrain·16`-strided; the 9 yields are read as `[terrain·16 + 0x2F7B + good]`
+(`compute_terrain_yield`), and the **Defensive** value feeds land combat
+(`func_007D3E`, see `combat.md`). **B** (legend) — the in-memory column order matches
+the CSV order.
 
 ## 3. Formulas & rules
 - **Auto-forest** (CLAUDE.md hard rule 3): read raw byte, mask `& 0x1F`, then

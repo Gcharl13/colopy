@@ -43,7 +43,10 @@ for unit/terrain/building/cargo/job/father data — **not** the reconstructed
 
 ## 4. Open questions (TBD)
 1. Byte-confirm each column→runtime-table mapping at the loaders (start: `@0x74EC3`
-   for `@UNIT`; find loaders for `@BUILDING`/`@CARGO`/`@TERRAIN`/`@JOB`/`@FATHERS`).
+   for `@UNIT`; find loaders for `@BUILDING`/`@CARGO`/`@JOB`/`@FATHERS`). **`$TERRAIN`
+   done (2026-06-19):** columns = `Movement, Defensive, Improvement, Value` + 9 yields
+   (Farmer→Food … Fisherman→Fish); DGROUP `terrain·16` table, yields at `[t·16+0x2F7B+good]`,
+   Defensive used by land combat (`func_007D3E`; `systems/combat.md`/`map_system.md`).
 2. ~~Align the variable-length `@UNIT`/`@CARGO` *special* rows to named columns.~~
    **Done (2026-06-18)** — `@UNIT`/`@CARGO`/`@TRIBES` render named (short rows padded).
 3. ~~Verify/replace `viceroy_source/data/*.c` against these tables.~~ **Done
