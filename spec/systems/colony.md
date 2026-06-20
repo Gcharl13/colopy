@@ -150,12 +150,21 @@ is **correct**.
 - **Accumulation:** Hammers are produced like any good (Carpenter `Lumber→Hammers`)
   and accrue into the `+0xBA` slot each turn via the same producer path as the
   raw→finished chains (`colony_turn_update`).
-- **Completion (residual `TBD`):** the "hammers ≥ `@BUILDING` cost ⇒ add the building
-  (set the constructed bit, carry surplus)" check is reached through the array base
-  (`[colony + good·2 + 0x9A]`), not a literal `+0xBA` displacement — so it isn't
-  found by a `+0xBA` operand scan. Entry points: the build-target field + the
-  `@BUILDING` cost table (loaded by `func_0749E0`) and the constructed-buildings
-  bitmask `ColonyRecord +0x60..0x65` (RUNTIME-VERIFIED, `docs/DATA_MODEL.md`).
+- **Completion (residual `TBD` — narrowed 2026-06-20):** the "hammers ≥ `@BUILDING`
+  cost ⇒ add the building" check. Now-established surrounding facts:
+  - **Build target = `ColonyRecord +0x10`** (building id; `0xFF` = no target,
+    `docs/DATA_MODEL.md`); **constructed bitmask = `+0x60..0x65`** (u48, RUNTIME-VERIFIED).
+  - The per-colony **building-present bit** helpers (`func_0085D6` set / `func_0085B2`
+    test, on the work-buffer `*(0x8542)+0x8A` bitmap) have **no resident near-callers**
+    — so the completion that flips the bit is **overlay-resident**, reached by a far
+    call, which is why operand/near-call scans miss it.
+  - The `@BUILDING` cost columns load via `func_074D18` (5-field parse) into a DGROUP
+    table whose base isn't yet isolated (the parser writes through a set-up pointer).
+  - **Why blocked:** the completion reads hammers through the array base
+    `[colony+good·2+0x9A]` (not a literal `+0xBA`), sets `+0x60`/`+0x8A` via a
+    far-called bit helper, and indexes an un-based cost table — none of which a
+    static operand scan resolves. Needs the colony-screen build overlay (where `+0x10`
+    is set) traced into its per-turn completion, not a field scan.
 
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
