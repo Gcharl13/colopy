@@ -4,7 +4,7 @@
 > Re-grounded 2026-06-18 from the **real `@SUCCESSION` body** (the prior
 > `heir_succession.md` invented a "king's heir" mechanic from an empty key).
 
-**Overall confidence:** event text + **effect mechanics `BYTE_VERIFIED`** (`func_03C638`: unit + colony ownership transfer); **trigger** `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`
+**Overall confidence:** event text + **effect mechanics `BYTE_VERIFIED`** (`func_03C638`: unit + colony ownership transfer); **trigger LOCATED** (`@0x02393A` end-game dispatcher, gated `[0x53D0]`/`[0x53D2]`; `tools/find_callers.py`). · **Canonical primary:** `data_extracted/text/GAME_sections.json`
 `@SUCCESSION`; `data_extracted/text/LABELS_sections.json` `@MISC`.
 
 ## 1. Purpose & behavior
@@ -38,10 +38,16 @@ Real `@SUCCESSION` body:
 - **Colonies transfer** — `MOV byte[ColonyRecord +0x1A], al` (`@0x3C8A0`) sets each
   ceded colony's `owner_power_idx` to the beneficiary. **BYTE_VERIFIED.**
 - Self/active-power global `[0x53D2]` is updated (`@0x3C922`).
-- **Trigger:** still `TBD` — the *handler* is located; the dispatcher that fires
-  it (date/condition) is the remaining gap. **No caller is statically findable**
-  (no near/far/thunk `lcall` and no plain data pointer to `0x3C638` anywhere in the
-  image) → it is dispatched indirectly (computed function-pointer / event table).
+- **Trigger — LOCATED 2026-06-20** (via `tools/find_callers.py`, the overlay
+  call-graph resolver). `func_03C638`'s thunk is reached as **`lcall 0x191F:0x0364`**
+  (not the `0x181F:0x1364` a naive file-offset guess gives), called from the
+  **end-game/revolution dispatcher at `@0x02393A`**. The succession branch is gated by:
+  `[0x53D0]` — a counter **clamped to 75 (`0x4B`)** (`@0x02391C`/`@0x02392A`) — and
+  `[0x53D2]` (the seceding/tory power id) being `< 0` (`@0x023930`), with the
+  `[0x5381]` bit-7 **once-flag** routing between the succession and the
+  `[0x5382]`-gated revolution handlers. So it is part of the **revolution/end-game**
+  state machine, **not** SoL-driven (confirming the §below ruling). The exact meaning
+  of the `[0x53D0]` counter (set in an overlay) is the remaining detail.
 - **Not SoL-driven (2026-06-20):** the full handler body (`0x3C638..0x3C932`)
   contains **no read of rebel-sentiment `PowerRecord +0x02`, no `50` (`0x32`) compare,
   and no year check**. Victim selection ranks the 4 powers on the strength tables
