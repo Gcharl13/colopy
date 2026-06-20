@@ -5,7 +5,7 @@
 **Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: trigger
 (features `0xB0`, RUNTIME-VERIFIED) + handler + `random_int(1,9)`→`@LOSTCITY<n>` +
 full per-index meanings + FoY=8 immigrants + reward credit to `+0x2A` + scout bonus
-`BYTE_VERIFIED`** (`func_061454`); **per-index reward magnitudes `BYTE_VERIFIED`** (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola seed `5·(diff−scout+1)+1d6`; scout/difficulty-scaled). (`func_05BE84` is the native **raid** handler — see `natives.md`.)
+`BYTE_VERIFIED`** (`func_061454`); **per-index reward magnitudes `BYTE_VERIFIED`** (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola treasure `100·(10·(scout+2)+1d20)`; scout-scaled). (`func_05BE84` is the native **raid** handler — see `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).
 
 ## 1. Purpose & behavior
@@ -43,8 +43,12 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
     sar 1`). Base range `[30,240]`.
   - **n=7 (friendly tribe, gift of gold):** `gold = 2 · (4d10)` — four
     `random_int(1,10)` summed then `×2` (`@0x617C6..0x61804`). Range `[8,80]`.
-  - **n=2 (Cibola, treasure unit `%NUMBER1`):** magnitude seed `[bp-0x36] =
-    5·(difficulty[0x53A6] − s + 1) + random_int(1,6)` (`@0x61719..0x61738`).
+  - **n=2 (Cibola, treasure unit `%NUMBER1`):** `value = 10·(s+2) + random_int(1,20)`
+    (`@0x6166A..0x61686`: `1d20`; `(s+2)·5·2 = 10·(s+2)`), stored in the created
+    **Treasure unit** (type `0xA`) `+0x17` class byte (`@0x6166BC`), so the gold shown
+    is `%NUMBER1 = value × 100`. With a **Seasoned Scout** `s=1`: `100·(30+1d20)` =
+    3100–5000; without: `100·(20+1d20)` = 2100–4000. *(Corrects an earlier draft that
+    cited the unrelated `[bp-0x36]` count.)*
   - **n=9 (survivors):** non-gold — adds colonist(s) (`@0x6180F`).
   The **explorer bonus `s`** (`[bp-0x34]`) and **difficulty** scale the magnitude.
   - **Message substitution — BYTE_VERIFIED:** `%NUMBER0` (immediate gold) = `[bp-0x10]`
@@ -97,8 +101,8 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
 - **Fountain-of-Youth count = 8 immigrants** — the FoY path calls the recruit-queue
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
 - **Per-index reward magnitudes — BYTE_VERIFIED (2026-06-20):** summed-dice rolls per
-  outcome (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola seed `5·(diff−scout+1)+1d6`),
-  scout/difficulty-scaled — see §2. **`%NUMBER1` = `[bp-0x32]×100` byte-verified** (`@0x618B1`). Remaining **TBD:** the burial `%NUMBER0/1` rolls and the `[0x5382]&2` debug-force-Cibola path.
+  outcome (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola `100·(10·(scout+2)+1d20)`),
+  scout-scaled — see §2. **`%NUMBER1` = `[bp-0x32]×100` byte-verified** (`@0x618B1`). Remaining **TBD:** the burial `%NUMBER0/1` rolls and the `[0x5382]&2` debug-force-Cibola path.
 - **Treasure value & King-galleon transport — `func_05C878`. FULLY BYTE_VERIFIED
   (2026-06-19, verified vs EXE).** Strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`.
   - **Treasure gold = `100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in
