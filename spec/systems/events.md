@@ -130,7 +130,12 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
     "%STRING0 %STRING1"). **There is no per-difficulty fee table and no dump is
     needed** — the actual galleon **fee = the Crown's cut %**, fully byte-verified by
     the inline Cortés/tax/difficulty formula above.
-- Burial-ground → native alarm increase: **TBD**.
+- **Burial-ground → native alarm — BYTE_VERIFIED (2026-06-20):** a desecrated burial
+  ground raises native **tension by +100** against the current nation via the tension
+  applier `func_045DF2` (`@0x61B84`: `push 0(cat); push 0x64(+100); push
+  [0x5394](current nation); push [bp-0x30](settlement)`), gated on a valid settlement
+  (`@0x61B36`). Tension is `[0,100]`, so +100 maxes it → war footing. See
+  `spec/systems/natives.md` §3. **B.**
 
 ## 4. UI
 Outcome surfaced via the dialog/text-template framework (`func_06EEEC` text

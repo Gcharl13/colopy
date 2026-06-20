@@ -137,30 +137,36 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   the raid scan's `≥75` test. So the `0x5B1C` tension is a `[0,100]` per-
   `(settlement-row, power)` anger meter (thresholds 75 hostile / 100 war), separate
   from the `+0x54F6` alarm array (threshold 128).
-- **Per-action tension deltas — BYTE_VERIFIED range (2026-06-20).** `func_045DF2`
-  is reached from **33 call sites** via thunk `0x181f:0xd6c`, each pushing
-  `(delta, power, settlement)` with the settlement almost always the current one
-  `[0x8d52]`. The delta `[bp+0xa]` values span:
-  - **±100 (`0x64`)** — a full max-out / full reset in one step (clamp is `[0,100]`):
-    `+100` for major hostile acts (`@0x486f8`, `@0x4B2E9`, `@0x56DEF`, `@0x58A91`,
-    `@0x61B84`), `−100` for full appeasement (`@0x04870C`).
-  - **small constants** `+1/+2/+3` (`@0x4A2E8`/`@0x4A319`/`@0x4A674`), `±1`
-    (`@0x4857D`/`@0x485A7`/`@0x485E7`), `−4` (`@0x5C41E`, combat region) — minor
-    per-interaction nudges.
-  - **computed deltas** (`[bp-…]`) at the remaining sites, scaled by event severity.
-  So the **applier, its French/Pocahontas halving, the thresholds, and the delta
-  *range* are all B**; the exact event→delta binding for each of the 33 sites
-  (which is "attack", "build adjacent", "missionary", etc.) is the residual. The
-  deltas cluster by region: native-settlement AI (`0x4Axxx`) uses graduated
-  `+1/+2/+3`; the **mission** region (`0x57xxx`, near `func_0572E6`) applies
-  conditionally-halved deltas; **combat** (`0x5C41E`) does `−4` on a flag-tested
-  outcome; major events (`0x486F8`/`0x61B84`/…) do `±100`. **func_045DF2 takes a 4th
-  arg `[bp+0xc]`** — a category/notify code (values **0/3/5** observed), not just
-  `(settlement, power, delta)`; its meaning per call is **TBD**.
-- Decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the
-  per-unit confrontation AI per RULINGS — not the price math; do not assert). The
-  `[..+0x54F6]` access sites carry only caps `0x20`/`0x60`, the `0x80` threshold,
-  and resets.
+- **Per-action tension events — BYTE_VERIFIED deltas + characterized bindings (2026-06-20).**
+  `func_045DF2` is reached from **33 call sites** via thunk `0x181f:0xd6c`, args
+  `(settlement [bp+6], power [bp+8], delta [bp+0xa], category [bp+0xc])`. The
+  notable events (delta = **B** from the immediate push; event label from the
+  enclosing handler's `@`-string/context):
+  | site | delta | cat | event |
+  |------|-------|-----|-------|
+  | `@0x4857D` | −1 | 3 | per-turn alarm **decay** (when tribe spread byte crosses −8) |
+  | `@0x485A7` | +1 | 5 | per-turn alarm **rise** (crosses +8) |
+  | `@0x485E7` | −1 | 0 | normalization decay loop |
+  | `@0x486F8` | **+100** | 0 | **incite / allegiance shift** vs current player `[0x5398]` (message `@[0x14f6]`) |
+  | `@0x04870C` | **−100** | 0 | the paired rival-favor drop (`[0x53d2]`) |
+  | `@0x4A2E8` | +1 | 0 | **trespass** minor |
+  | `@0x4A319` | +2 | 0 | trespass moderate (sets settlement `+0x07=0xFE`) |
+  | `@0x4A674` | +3 | 0 | trespass severe |
+  | `@0x5C41E` | −4 | 0 | **successful trade** goodwill (attr-bit-2 gated) |
+  | `@0x571EB` | −(neg) | 0 | **mission established** (delta clamped so tension+delta ≤ 70, `@0x571DA cmp ax,0x46;jg`) |
+  | `@0x57267` | +(computed) | 0 | **mission destroyed / missionary expelled** |
+  | `@0x61B84` | **+100** | 0 | **burial-ground desecration** vs `[0x5394]` (see `events.md`) |
+  The **4th arg `category` ([bp+0xc])** is a **news/advisor message class** routed
+  through `func_045DF2`'s tail (`jmp 0x46000` `@0x45F03`): **3 = relations cooling**
+  (paired with −1), **5 = heating** (paired with +1), **0 = silent/generic**. The
+  exact category enum at the `0x46000` emitter tail and the upstream computation of
+  the mission/incite *variable* deltas remain the residual.
+- **Native trade pricing — BYTE_VERIFIED (2026-06-20).** Buy price (`@0x5C976`):
+  `floor = 5·difficulty + 50`; the offer is `max(floor, 2·PowerRecord.tax_pct)`
+  (`@0x5C985`) then **capped at 90 (`0x5A`)** (`@0x5C9A3`); the floor applies only
+  when the per-power attribute bit `(0x0A, power) == 0` (`@0x5C96A`). A successful
+  trade lowers tension by 4 (`@0x5C41E`) and bumps the settlement's wealth/goodwill
+  bytes `+0x07`/`+0x08`/`+0x0A` (`@0x5C3E4`). Tribute-gold *amount* table still **TBD**.
 
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.
@@ -172,7 +178,23 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 - `func_0572E6` (file `0x572E6`) — mission conversion: roll-gated success, convert-unit creation at the colony, `UnitRecord +0x15 = 0x1B`, `@INDIANSCONVERT` popup. **B**
 
 ## 6. Open questions (TBD)
-1. Byte-confirm `+0x02` (tribe/owner) and `+0x03` (flags); fill the rest of the 18-byte record (attitude value, mission flag, alarm/tension counter).
-2. ~~CHIEFKILL treasure roll~~ **Done 2026-06-19** — `random_int(0, 40·scout+100)`, Seasoned-Scout (class 0x16) boost, size/4 re-roll bias, tribe-2 `(8−diff)<<scout` (`func_04A7CA`, **B**); the roll→gold conversion remains TBD; **attitude War/raid threshold = alarm ≥ 128 B** (storage `NativeSettlement +0x0A+power·2`), intermediate band cutoffs **B** (score −5/0/10 → Content/Uneasy/Restless/Angry, `@0x48B62`).
-3. Trace native trade pricing and tribute/incite logic.
-4. Mission conversion: ~~the `random_int` bounds~~ **Done** — `random_int(0,15)`, `P=(TribeData[+2]+2)/15` (**B**). Remaining: the `cl & 0x10` flag's *meaning* (doubles the chance).
+1. ~~Fill the 18-byte NativeSettlement record.~~ **Mostly done 2026-06-20** —
+   `+0x00/+0x01` pos, `+0x02` owner tribe, **`+0x03` flags (bit `0x04`=mission
+   present, `0x08`=visited/greeted, `0x40`=event-eligible)**, `+0x04` population,
+   **`+0x05` resident-missionary profession byte** (feeds the `cl&0x10` doubler),
+   **`+0x07` trespass/escalation counter** (set `0xFE` on trespass `@0x4A337`, bumped
+   on trade `@0x5C3F2`), `+0x08` last_bought, **`+0x0A+power·2` per-power alarm word**
+   (raid ≥128 / hostile ≥75), `+0x1A` a coord/index. Remaining interior bytes **TBD**.
+2. ~~CHIEFKILL treasure roll + roll→gold.~~ **Done** — the `random_int(0,40·scout+100)`
+   roll is the village-escape check; the **raze gold** = `(Σ3×random(1,10−diff)) ×
+   random(1,6) × 4 × (tribe_id+1)` → `+0x2A` (`@0x4AAD0..0x4AB66`, **B**, §3).
+3. ~~Trace native trade pricing.~~ **Done 2026-06-20** — buy `max(5·diff+50,
+   2·tax)` cap 90 (`@0x5C976..0x5C9A3`, **B**, §3). Remaining: explicit **tribute-gold
+   amount** formula (TBD).
+4. Mission conversion `cl&0x10` doubler — **Done** (expert/Jesuit missionary bit;
+   mechanism **B** §3); exact bit *label* still TBD.
+5. **TribeData `+0x46+power·2`** = per-power native **alarm/attitude seed**
+   (`func_065D26 @0x65DA6`): `random_int(0,14) + (2·difficulty` **iff the power is
+   human**, `controller==0` `@0x65DC7`; AI gets +0), saturating at 20. So the human
+   starts each tribe more alarmed at higher difficulty (handicap). **B** (formula);
+   "alarm seed" label **R**.
