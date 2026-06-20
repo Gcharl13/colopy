@@ -97,9 +97,26 @@ The .SS loader function reads a filename string, calls fopen/fread,
 decompresses each section, and stores sprite descriptors in a
 SpriteSheet record at a DGROUP location.
 
-**Loader function**: TBD (Phase D — find via PUSH "phys0" / PUSH
-"icons" sites in VICEROY's startup code; the `func_0749E0` scenario
-loader pushes these names).
+**Loader function: NOT statically locatable — it lives in an RTLink overlay
+(investigated 2026-06-20).** A bounded static search ruled out the resident-image
+anchors and the string-xref routes:
+- `func_0749E0` (the hinted "scenario loader") and its `0x191F:0x928` callee are a
+  **config/INI text parser** (comma-separated `fgets`-style line reader, buffers at
+  `[0x833C]`/`[0xA5B8]`), **not** the binary `.SS` loader.
+- The asset-format strings have **zero real instruction references** in the resident
+  image: `MADSPACK 2.0` (`@DGROUP 0xFDAA`/`0xFDB8`), `PIK` (`0xFD9A`), `rb` (`0xF80E`/
+  `0xF9F5`) — every apparent hit is a coincidental `mov ax,imm`/`jmp`/`add` byte
+  collision (verified by disassembling each). No `imm`/near-pointer loads these offsets.
+- Conclusion: the binary loader + the **mode-4 section decompressor** are reached
+  through RTLink overlay far-pointer indirection and are **not addressable by offset
+  search** in the flat image.
+
+**To finish the decoder**, one of: (a) reconstruct the RTLink overlay map (resolve
+each overlay's load segment + relocations, then disassemble the overlay that owns the
+loader), or (b) dynamically trace the running game (DOSBox) at the `.SS` fopen. The
+codec is the **MADSPACK-2 `mode=4`** scheme (NOT standalone FAB; §"Reference
+implementation"). **Do not guess it** — a candidate decoder is only valid if it expands
+every section to exactly its directory `unpacked_len` across all 26 sheets.
 
 ---
 

@@ -33,12 +33,14 @@ secondary mechanics.
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
 > unfound or runtime-only): `0x9408` REF value table + `0x9654` FF candidate table
 > (both BSS/runtime-only); **BUILDING.SS per-building sprite index** — re-scoped
-> 2026-06-20: this is **blocked on implementing a FAB/MADSPACK `.SS` decoder**
-> (`tools/mpskit/*` is absent from the repo; the FAB codec is undocumented; every `.SS`
-> section is FAB-compressed), *not* a "PNG inspection" gap; CC-NN are **FF portraits**
-> (`@FATHERS`, SPRITE-A — the old "unit sheet" label was stale and is corrected); plus
-> Tory-uprising effect magnitude (unit count) + the WoI-loop call frequency for
-> `func_03CAC6`.
+> 2026-06-20: blocked on the **MADSPACK-2 `mode=4` decoder**, and a bounded static hunt
+> showed the `.SS` loader/decompressor is **RTLink-overlay-resident, not statically
+> locatable** (the resident `func_0749E0`/`0x191F:0x928` are a config parser; the
+> `MADSPACK`/`PIK`/`rb` strings have zero real instruction refs). Finishing needs
+> **overlay-map reconstruction or a dynamic DOSBox trace** (see `formats/SS.md`); container
+> layout + codec identity are byte-verified. CC-NN are **FF portraits** (`@FATHERS`,
+> SPRITE-A; old "unit sheet" label corrected). Plus Tory-uprising effect magnitude (unit
+> count) + the WoI-loop call frequency for `func_03CAC6`.
 > **Closed 2026-06-20:** (a) **Spanish-succession** `func_03C638` fully byte-verified —
 > power selection (weakest AI cedes/strongest receives, score `3a+2b+c`), single-player
 > gate, map-tile/unit/colony owner transfer, controller `+0x543F:=2`; emits `@SUCCESSION`
