@@ -61,11 +61,20 @@ one level down:
 | `@0x5A37` (`0x181F:0x638`) | `func_052F7E` | diplomacy/meeting context |
 | `@0x5AE5` (`0x181F:0x61E`) | `func_02F3A2` | **periodic milestone/congress driver** → colony-stats `func_042138` (`@0x2F3B8`), founding-fathers/congress `func_03B2F8` (`@0x2F453`), king-defeat cinematic `func_075352` (`@0x2F552`) |
 So the **production phase is byte-confirmed** = `func_02F052` (per-power colony loop
-→ `func_02D658`). The other big system functions (king tax `0x34AE0`, REF `0x3E162`,
-immigration `0x35D9A`, AI dispatch `0x4E2D6`, diplomacy `0x57F4E`) each have **0–1
-direct far-callers** and are reached deeper inside the per-power processors. **The
-remaining intra-order detail (where king/REF/immigration/AI fire within the
-per-power sequence) is TBD; entry points are the six functions above.**
+→ `func_02D658`). The remaining big system functions are reached via the **JMP-FAR
+trampoline island** (`call near <trampoline>; retf`), and their call sites are now
+located (2026-06-20):
+- **Immigration crosses** `func_035D9A` ← `func_33C96 @0x363E2` — **immediately after
+  the price-drift call** (`@0x363D3`), so the economic recompute does drift **and**
+  immigration together (trampoline `0x36836`).
+- **REF growth** `func_03E162` ← `func_03E888 @0x3E892` (conditional, in the King/
+  mercenary cluster just past the `func_03E664` King phase) and `@0x3E46B`
+  (trampoline `0x3EA15`).
+- **King tax** `func_034AE0` ← `@0x34C05`, one branch of a **king-action dispatch**
+  (`dec ax; je` ladder `@0x34C14` selecting `push cs; call <trampoline>; retf`
+  wrappers `@0x34BF8`/`@0x34BFE`/`@0x34C05`; trampoline `0x368AE`).
+**The call sites are byte-located; the exact per-turn *ordering/cadence* of these
+within the per-power sequence (e.g. how often king-tax/REF fire) is the residual.**
 
 ### Turn / year advance — BYTE_VERIFIED (`0x5A9D..0x5ACC`), runs once/turn (gated `[0x53C2]`)
 - `@0x5A9D` `inc [0x538e]` — **turn counter +1 every turn**.
