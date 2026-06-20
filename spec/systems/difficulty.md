@@ -55,6 +55,7 @@ be genuine difficulty arithmetic, not player indexing.)
 | **AI tribute/demand value** | `value · 10·(diff+8)/100` (×0.8…×1.2) | `@0x583A0` |
 | **AI demand surcharge** | `+= 500·(diff+1)` | `@0x5842B` |
 | **AI/native action prob** | `random_int(1000) < 200·diff + 100` (10%…90%) | `@0x4A73D`, `@0x58315` |
+| **Easy-mode double starting units** | at `diff ≤ 1` the human reruns the starting-unit placement a 2nd time (double Caravel+Pioneer+Soldier, stamped Veteran) | new-game setup `func_0755CC @0x0758F5`/`@0x075961` |
 
 Net effect of the human-side terms: higher difficulty → larger Royal Expeditionary
 Force at independence, less combat padding for the player, worse native attitude,
