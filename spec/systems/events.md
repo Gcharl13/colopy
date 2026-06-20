@@ -5,7 +5,7 @@
 **Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: trigger
 (features `0xB0`, RUNTIME-VERIFIED) + handler + `random_int(1,9)`→`@LOSTCITY<n>` +
 full per-index meanings + FoY=8 immigrants + reward credit to `+0x2A` + scout bonus
-`BYTE_VERIFIED`** (`func_061454`); per-index reward *magnitude* formulas `TBD`. (`func_05BE84` is the native **raid** handler — see `natives.md`.)
+`BYTE_VERIFIED`** (`func_061454`); **per-index reward magnitudes `BYTE_VERIFIED`** (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola seed `5·(diff−scout+1)+1d6`; scout/difficulty-scaled). (`func_05BE84` is the native **raid** handler — see `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).
 
 ## 1. Purpose & behavior
@@ -35,6 +35,20 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
 | 8 | trespassing near holy shrines | `%STRING0` tribe displeased |
 | 9 | desperate survivors of a former colony | colonist(s) join your nation |
 
+- **Reward magnitudes — BYTE_VERIFIED** (`func_061454`, per `@LOSTCITY<n>` index in
+  `[bp-6]`; each outcome rolls summed dice via `random_int(1,N)` = `0x181F:0x4D4`):
+  - **n=3 (ruins, gold `%NUMBER0`):** `gold = 10 · (3d8)` — three `random_int(1,8)`
+    summed then `×10` (`@0x61776..0x617AB`: `shl 2; add; shl 1` = ×10). With an
+    **explorer/scout bonus** `s = [bp-0x34]`, scaled by `(s+2)/2` (`@0x617B4` `imul;
+    sar 1`). Base range `[30,240]`.
+  - **n=7 (friendly tribe, gift of gold):** `gold = 2 · (4d10)` — four
+    `random_int(1,10)` summed then `×2` (`@0x617C6..0x61804`). Range `[8,80]`.
+  - **n=2 (Cibola, treasure unit `%NUMBER1`):** magnitude seed `[bp-0x36] =
+    5·(difficulty[0x53A6] − s + 1) + random_int(1,6)` (`@0x61719..0x61738`).
+  - **n=9 (survivors):** non-gold — adds colonist(s) (`@0x6180F`).
+  The **explorer bonus `s`** (`[bp-0x34]`) and **difficulty** scale the magnitude.
+  Residual: the n=2 treasure-unit value conversion (`×100` per the treasure
+  convention) and the burial `%NUMBER0/1` rolls.
 - `@LOSTCITY0` is **not** a rumor outcome — it is the recruit-menu prompt ("Which
   of the following individuals shall we recruit?") reused by the Fountain-of-Youth
   passage. **B.**
