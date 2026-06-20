@@ -155,5 +155,14 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
    — `@OTHER` order (B) + hard rule 2 (Sea Lane = 26) fix ids **24=Arctic,
    25=Ocean, 26=Sea Lane, 27=Mountains, 28=Hills**; corroborated by the random-map
    generator immediates (`0x18/0x19/0x1A`). `formats/MP_FORMAT.md` corrected (it
-   was the outlier — had Arctic at 16, inside the auto-forest range). Residual: the
-   internal structure of the auto-forest range 8..23 (16 slots vs ~8 variants).
+   was the outlier — had Arctic at 16, inside the auto-forest range).
+5. ~~Auto-forest range 8..23 internal structure (16 slots vs ~8 variants).~~
+   **Resolved 2026-06-20** — `func_006204 @0x6204` (`get_terrain_id_from_raw`) masks
+   the raw byte `& 0x1F`, then (mode global `[0x18e]`) for any id in **8..23**
+   normalizes to the **8 canonical forest ids 8..15** via `(id&7)|8` (`@0x6225`).
+   So **16..23 are a *second* encoding of the same 8 forest variants** (16→8 …
+   23→15), not distinct terrains — which is why the test range is 16 wide but only
+   8 forest types exist. Modes: `[0x18e]==2` → normalize to forest 8..15;
+   `[0x18e]==3` → **strip** to unforested base `id&7` (0..7) (`@0x6238`); default →
+   raw masked id. (Also re-confirms **16 ≠ Arctic** — id 16 is a forest id folding
+   to 8.) **B.**
