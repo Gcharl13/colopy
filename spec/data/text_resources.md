@@ -31,9 +31,23 @@ Beyond NAMES.TXT (the data taxonomy — see `spec/data/names_sections.md`), the 
 
 ## 4. Open questions (TBD)
 
-1. No catalog yet for MENU.TXT — only the 8 top-level keys are enumerated; submenu structure TBD.
-2. Full enumeration of GAME.TXT `%`-substitution slots per message (which messages use which vars) — partial in `docs/GAME_TXT_CATALOG.md`.
-3. PEDIA category → NAMES-section linkage is in `spec/data/index_tables.md` / `docs/GAME_INDEX_TABLES.md`; completeness TBD.
+1. ~~MENU.TXT submenu structure.~~ **Done 2026-06-20** — MENU.TXT is **flat**: 8
+   top-level sections (`@GAME @VIEW @ORDERS @REPORTS @TRADE @CUP(=cheat) @PEDIA @END`),
+   each a dropdown leaf-item list (no deeper tree). Grammar: line 0 = title; `~`
+   precedes the hotkey letter; `#` = separator/disabled; `~F~1`..`~F~1~0` = F-key
+   bindings (Reports = the 10 advisor screens). `@CUP` = the debug/cheat menu;
+   `@PEDIA` dropdown = 8 category entries. **B.**
+2. ~~GAME.TXT `%`-substitution slots.~~ **Done 2026-06-20** — token inventory across
+   502 sections: `%STRING0`(360)/`%STRING1`(211)/`%STRING2`(87)/`%STRING3`(49)/
+   `%STRING4`(6), `%NUMBER0`(124)/`%NUMBER1`(35)/`%NUMBER2`(11)/`%NUMBER3`(2),
+   `%COUNTRY`(7), `%YEAR`(1). Grammar: `{…}` = highlight span; `$` after a number =
+   currency; `%%` = literal percent; the substituter uses longest-digit-run matching
+   (trailing alpha is literal, e.g. `%STRING0catraz`→"Alcatraz"). **B.**
+3. ~~PEDIA ↔ NAMES linkage completeness.~~ **Done 2026-06-20** — 1:1 by count+order:
+   `@FATHER0..24`↔`@FATHERS`(25), `@BUILDING0..41`↔`@BUILDING`(42), `@JOB0..27`↔`@JOB`(28),
+   `@UNIT0..23`↔`@UNIT`(24), `@CARGO0..15`↔`@CARGO` first 16 (tradeables). `@TERRAIN`
+   PEDIA (29) spans `@UNFORESTED`+`@FORESTED` (not a flat 1:1). **Doc bug:**
+   `docs/PEDIA_TXT_CATALOG.md` lists `@JOB` as 27 (real = 28). **B.**
 
 <!-- BEGIN GENERATED:text-bodies (tools/build_spec_data.py) -->
 ## Complete section bodies — all text resources (verbatim)

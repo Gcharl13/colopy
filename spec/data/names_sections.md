@@ -40,9 +40,23 @@ All 31 sections present in `data_extracted/text/NAMES_sections.json`. (Of the ta
 
 ## 4. Open questions (TBD)
 
-1. Per-row numeric parameter layouts for `@BUILDING`/`@JOB`/`@UNIT`/`@RESOURCE` (only `@CARGO` is fully catalogued in `docs/GAME_INDEX_TABLES.md`).
-2. Whether `@TRIBES` (26 lines) maps cleanly onto the 8 PowerRecord tribe slots (idx 4..11) or includes sub-tribe/extra rows — confirm against `docs/DATA_MODEL.md`.
-3. Exact role of `@VALUES` / `@ATTITUDINAL` / `@INDEPENDENT` / `@NATIONABBREV` — TBD.
+1. ~~Per-row layouts for `@BUILDING`/`@JOB`/`@UNIT`/`@RESOURCE`.~~ **Done 2026-06-20**
+   (loader byte-traces): `@BUILDING` = name,cost,tools×10,size,min_colony,upkeep
+   (`func_074D18`, 42 rows); `@JOB` = base_name,expert_name,school_tier(1-4),
+   europe_value(−1=n/a) (28 rows); `@UNIT` stat table `0x5230` stride 14 (`unit.md`
+   §3); **`@RESOURCE` = name,value** (14 rows; map-overlay byte `N → @RESOURCE[N−1]`,
+   `notes/MAP_FORMAT.md`); `@CARGO` loader `func_074DEC` gates stats to rows 0-15
+   (`@0x74DFF cmp,0x10;jge`), rows 16-19 name-only. **B.**
+2. ~~`@TRIBES` (26 lines) alignment.~~ **Done 2026-06-20** — a blank line in the body
+   splits it: **first 8 rows = full 5-col tribes** (PowerRecord idx 4..11: Incas,
+   Aztecs, Arawaks, Iroquois, Cherokee, Apache, Sioux, Tupi); rows 9-26 = name-only
+   extra pool. `level` col = `@LEVELS` tier, `value` = capital-raze treasure base. **B.**
+3. ~~Role of `@VALUES`/`@ATTITUDINAL`/`@INDEPENDENT`/`@NATIONABBREV`.~~ **Done
+   2026-06-20** — all positional display-string lists: **`@ATTITUDINAL`** (5) adverb
+   prefixes (Extremely/Very/Rather/Somewhat/Slightly) pairing with `@ATTITUDE`;
+   **`@INDEPENDENT`** (4) post-revolution nation names by nation (USA/Quebec/Mexico/
+   Surinam); **`@NATIONABBREV`** (4) short HUD labels (Eng./Fr./Span./Dutch);
+   **`@VALUES`** (4) a quality-grade scale (low quality/good/fine/excellent, id 0..3). **B/A.**
 
 <!-- BEGIN GENERATED:names-bodies (tools/build_spec_data.py) -->
 ## Complete section bodies (31 `@`-sections, verbatim)

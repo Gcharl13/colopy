@@ -29,5 +29,15 @@ Index counts and the exact per-cargo parameter table (Name, Start1/2, Low, High,
 
 ## 4. Open questions (TBD)
 
-1. Exact unit/building/terrain → sprite-frame index lists beyond the anchors in CLAUDE.md — confirm against `notes/SPRITE_CATALOG.md` / renderer.
-2. Whether every PEDIA `@KEY` has a 1:1 NAMES row (some PEDIA entries are misc/category headers) — see `docs/PEDIA_TXT_CATALOG.md`.
+1. **Sprite-frame indices — RESOLVED 2026-06-20** (per `notes/SPRITE_CATALOG.md`, the
+   authoritative catalog): a **global ICONS.SS off-by-one** holds — `port_png_index =
+   VICEROY_sprite_index − 1` for all roles (e.g. `@UNIT` icon Caravel 6→png5,
+   Man-O-War 128→png127; the CLAUDE.md anchors ships 5-7/14-15/127 & foot 100-105+109
+   are already PORT indices). `@UNIT` col-1 sprite ids verified (Colonists 101,
+   Soldiers 103, Pioneers 102, Scouts 104, Braves 110). **B.** **Residual TBD:** the
+   CC-00..CC-24 unit-sheet→type table and the BUILDING.SS per-building index list
+   (need per-sheet PNG inspection, not data/disasm).
+2. ~~PEDIA `@KEY` ↔ NAMES 1:1.~~ **Done 2026-06-20** — 1:1 by count+order for FATHERS
+   (25), BUILDING (42), JOB (28), UNIT (24), CARGO (16 tradeables); TERRAIN PEDIA (29)
+   spans `@UNFORESTED`+`@FORESTED`. (`docs/PEDIA_TXT_CATALOG.md` @JOB count 27 is an
+   off-by-one; real = 28.) See `text_resources.md` §4. **B.**
