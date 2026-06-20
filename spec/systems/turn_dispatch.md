@@ -75,8 +75,27 @@ located (2026-06-20):
   wrappers `@0x34BF8`/`@0x34BFE`/`@0x34C05`; trampoline `0x368AE`).
 - **AI action dispatch** `func_04E2D6` (the 25-case per-unit AI switch `@0x4EA7`) ←
   `@0x51DC1` (the page-0x51 AI-unit processor; trampoline `0x534F8`).
-**The call sites are byte-located; the exact per-turn *ordering/cadence* of these
-within the per-power sequence (e.g. how often king-tax/REF fire) is the residual.**
+**Intra-turn phase order & cadence — BYTE_VERIFIED (2026-06-20).** Per power, the
+five `func_005760` phases fire in order, with the system functions nested inside:
+1. **King/mercenary offer** `func_03E664` (`@0x58E2`; gated `[0x5382]&1==0`).
+2. **Orders/movement** `func_024A48` (`@0x58E7`) — **REF accrual rides here**:
+   `func_03E162` is reached via `0x24B42 → func_0235D6 → 0x3EA16`, and **accrues
+   every turn per power** (`(climate_diff<<3)+0xA`, ×2 at 1600/1700/1750, frozen at
+   `≥1800`); **AI orders** `func_04E2D6` via `func_004EE6` (`@0x24731`).
+3. **Production** `func_02F052` (`@0x59EA`, colony loop `@0x2F25F`) — **immigration
+   rides here**: `func_0363A2 @0x2F218 →` drift `@0x363D3` then immigration
+   `func_035D9A @0x363E2`.
+4. **Diplomacy** `func_052F7E` (`@0x5A37`) — calls the **king-action dispatcher
+   `func_034C24`** (`@0x5255D`/`@0x52CF4`), whose switch **case #4 → king-tax
+   `func_034AE0`** (`@0x34C05`); **king-tax is therefore event/relationship-driven
+   within diplomacy, not an every-N-turns gate** (REF, by contrast, is strictly
+   per-turn). AI diplomacy `func_04E2D6` via `func_004EE6` (`@0x531BD`).
+5. **Periodic/congress** `func_02F3A2` (`@0x5AE5`) — Founding-Father congress
+   `func_03B2F8 @0x2F453` (gated `[0x5382]&0x10==0`), king-defeat cinematic `@0x2F552`.
+
+So the full per-power order is **King→Orders(+REF,AI)→Production(+drift+immigration)
+→Diplomacy(+king-tax,AI)→Periodic(+Congress)**, then the once-per-turn year/cadence
+block (§ "Turn / year advance"). **B.**
 
 ### Turn / year advance — BYTE_VERIFIED (`0x5A9D..0x5ACC`), runs once/turn (gated `[0x53C2]`)
 - `@0x5A9D` `inc [0x538e]` — **turn counter +1 every turn**.
@@ -112,9 +131,10 @@ unit needing orders" prompt loop (manual). Layout `TBD`.
    sequencers.
 2. ~~Confirm power order.~~ **Done** — strict European index order 0..3; natives not a
    separate pass (§1). **B.**
-3. Map each phase to its system function — **the per-power processors `func_03E664`
-   `@0x3E664` and `func_024A48` `@0x024A48` are the entry points to trace** (they
-   invoke production/market/king/REF/immigration/diplomacy/AI internally). **TBD.**
+3. ~~Map each phase to its system function + intra-turn order.~~ **Done 2026-06-20**
+   — full per-power order King→Orders(+REF/AI)→Production(+drift/immigration)→
+   Diplomacy(+king-tax/AI)→Periodic(+Congress) byte-verified (§3). REF per-turn;
+   king-tax event-driven within diplomacy. **B.**
 4. ~~Turn-counter → in-game-year conversion.~~ **Done 2026-06-20** — start 1492
    (`0x5D4`); 1 turn/year before 1600, 2 turns/year (seasons) from 1600; forced end
    1725 (`0x6BD`). **B** (§3).

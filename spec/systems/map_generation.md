@@ -129,8 +129,33 @@ Setup-menu options surfaced in the opening/new-game flow. Strings likely in
 - `formats/MP_FORMAT.md` — AMER2.MP is the standard-game world. **B**
 
 ## 6. Open questions (TBD)
-1. Decode the 8 `@SCENARIO` columns.
+1. ~~Decode the 8 `@SCENARIO` columns.~~ **Done 2026-06-20 (legend CORRECTED)** — the
+   loader `func_0749E0 @0x74D6A` reads, after the map-file token (`AMER2`), a loop
+   `i=0..3` of **2 ints each → `PowerRecord[i]` start_x `[bx−0x77C6]` / start_y
+   `[si−0x77C5]`**. So the 8 integers are **4 `(x,y)` power-start pairs**
+   `(34,20)(39,10)(47,61)(50,33)`, **not** start/end-year columns (zero year reads) —
+   the NAMES.TXT comment legend is stale. Consumer `@0x58BB5` copies them to unit
+   coords. **B.**
 2. ~~Locate and trace the random-map generator.~~ **Done 2026-06-19/20** — `func_064A10`, passes P0–P6 **B** (§3); dims 58×72, seed, gate, and the **P2 climate→terrain tables `{5,4,1,3,2,2}`N / `{2,3,3,4,6,7}`S** all byte-verified (inline jump tables `0x64CFC`/`0x6504E`, cs-base `0x64150`). The C-recon climate values are confirmed.
-3. Customize parameter encodings (land size `p1+p2` / moisture / climate scales) — the landmass target `(p1+p2+1)·0x140` + climate jump tables are located; the menu→parameter binding is `TBD`.
-4. Confirm which menu strings drive the three setup choices.
-5. The separate new-game passes that place native settlements / prime resources / Lost-City rumours (`0xB0`) — entry functions `TBD`.
+3. ~~Customize parameter encodings + menu binding.~~ **Done 2026-06-20** — the
+   parameters are a **5-word global array at `DGROUP:0x1E7E`** (idx 0 land-mass p1,
+   1 land-form p2, 2 climate, 3 moisture/temperature, 4 TBD), read by the generator
+   (`@0x64AB0 add ax,[0x1E7E]`; landmass target `(p1+p2+1)·0x140` `@0x64AAD`; climate
+   table `cs:[bx+0xBAC]`, moisture `cs:[bx+0xEFE]`). `func_064A10` itself takes only
+   `[bp+6]` = regenerate flag. The **Customize dialog `func_070060`** (`@0x75CCB`,
+   gated `[bp-0xe0]==3`) writes the player's picks `mov [bx+0x1E7E],…` (`@0x701AD`,
+   value mod-3); strings `@CLAND/@CCONT/@CTEMP/@CCLIM`. **B** (array+target), **A**
+   (idx-4 label, menu strings).
+4. **Post-mapgen placement passes — BYTE_VERIFIED entry functions (2026-06-20):**
+   all orchestrated by `func_0755CC` after the generator call `@0x7579E`:
+   - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)
+     settlement records (stride `0x12` @ `0x54EC`, counter `[0x539A]`; per-tribe data
+     `0x5AD6` stride `0x4E`, tribe type byte = `tribe+4` for tribes 4..11). **B.**
+   - **Resource / land-value layer** `func_063F3C` (`@0x757BA`): per-tile value byte
+     write (`0x181F:0x736`). **A.**
+   - **Lost-City rumour features**: inside the generator tail `@0x65BFD..0x65C21`,
+     `or byte es:[bx], 0xA0` into the **features plane** `[0x15C]`. ⚠ **0xA0 vs 0xB0:**
+     the generator writes mask **`0xA0`** (byte-verified `@0x65C0D`), while
+     `events.md` cites the Lost-City *trigger* read as features `== 0xB0`
+     (runtime-verified) — reconcile (the 0x10 difference may be a second feature bit
+     set elsewhere or a trigger-side mask; **flagged, not yet ruled**). **B** (write).
