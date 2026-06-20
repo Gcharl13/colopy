@@ -39,5 +39,16 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
 ## 6. Open questions (TBD)
 1. Byte-trace the SoL% declare threshold (is it 50%?).
 2. Trace the REF-growth writer (what spends `+0x22` to add REF units).
-3. Decode Tory uprising odds and intervention-force trigger.
+3. **War-of-Independence end-game flow — PARTIALLY BYTE_VERIFIED (2026-06-20):** the
+   per-turn end-game dispatcher `@0x2391C` gates on the **Bolívar SoL meter `[0x53D0]`
+   ≥ 75** (`cmp [0x53D0],0x4B`); game-phase flags `[0x5382]` **bit 0 = WoI declared**,
+   **bit 1 = foreign intervention active**. One-time handlers: **`func_03DE46`** = WoI
+   declaration + initial REF dispatch (`[0x5382]|=1` `@0x3E031`); **`func_03D948`** =
+   foreign-intervention declaration (no roll — picks the strongest eligible foreign
+   ally `[colony+0x5D62]&0x40` / max `[colony+0x1F]`, emits `@INTERVENTION`, sets
+   `[0x5382]|=2` `@0x3DA22`). **B.** ⚠ **Residual:** the per-turn **Tory uprising** and
+   **intervention-arrival** *probability rolls* remain **TBD** — a trace initially
+   put them in `func_03E442`/`func_03E664`, but re-verifying the entry gate
+   (`@0x3E66A je 0x3E674` fires when WoI is *clear*) shows those are the **wartime/
+   peacetime mercenary-offer** functions (`mercenary.md`), not tory/intervention.
 4. Verify the revolution score bonus multipliers (see `spec/systems/scoring.md`).
