@@ -10,9 +10,10 @@ secondary mechanics.
 
 > **Status (2026-06-19 consolidation).** Items 2–12 are now **resolved or
 > substantially byte-verified** (each row's note states what's closed vs the
-> residual). The **only genuinely dump-blocked** value left is the King galleon-fee
-> per-difficulty table `DGROUP:0x8394` (confirmed BSS, no static writer — needs a
-> live data-segment snapshot). The remaining `TBD`s are either **fuzzy AI logic**
+> residual). The King galleon **fee** is the byte-verified Crown-cut formula (Cortés/tax/difficulty,
+> `func_05C878`) — **not** a table and **not** dump-blocked. `DGROUP:0x8394` (once
+> mislabeled "the fee table") is just the per-difficulty king-salutation string
+> pointers (`%STRING0` rank: Discoverer…Viceroy), resolved 2026-06-20. The remaining `TBD`s are either **fuzzy AI logic**
 > (diplomacy willingness thresholds; war-matrix `0x08`/`0x80` bits) or **runtime-state
 > magnitudes** with a known formula (per-Lost-City reward rolls). Item 9 (random
 > map generator) is the one whole system still **unlocated**. The cross-branch
@@ -53,7 +54,7 @@ points surfaced during the population pass (2026-06-18), to seed that work:
 | Native raze treasure | ~~`func_04A7CA` CHIEFKILL~~ **DONE** — roll **B**; conversion RNG + raid wiring **B** | `systems/natives.md` |
 | Exploration / scout | `func_05A20E` | `systems/exploration.md` |
 | Colony production | `func_02D658` | `systems/colony.md` |
-| Treasure transport | `func_05C878` **(B 2026-06-19)**: value=100×UnitRecord[+0x15]; King per-difficulty fee table `DGROUP:0x8394`; post-indep cashed direct | `systems/events.md` §3 |
+| Treasure transport | `func_05C878` **(B 2026-06-19)**: value=100×UnitRecord[+0x15]; King cut% = Cortés→tax / else max(5·diff+50, 2·tax) cap 90% (`0x8394` is the king-salutation string table, not a fee); post-indep cashed direct | `systems/events.md` §3 |
 | Dialog framework | `func_06F0F4` (popup dispatcher), sprite channels `[0x1F5C/5E/60]`, geometry `[0x839E..0x83A4]` | `ui/popups.md` |
 | Cinematic dispatch | `func_075352` (king-defeats arg matrix), `func_03DA2A` (DoI signature) | `ui/cinematics.md`, `ui/declaration_independence.md` |
 | Lost City outcomes | ~~index→outcome binding~~ **DONE** — all 9 `@LOSTCITY<n>` + `@BURIAL1-3` byte-verified (`func_061454`); FoY=8 | `systems/events.md` |

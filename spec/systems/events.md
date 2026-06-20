@@ -115,10 +115,16 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
       (diff 0) it's **50%**, rising `50→55→60→65→70` by difficulty (or `2·tax` if higher).
     - **King's cut = `treasure × cut% / 100`** (`@0x5C9BF` mul, `@0x5C9C6` ÷100); the
       **player receives `treasure − cut`** `@0x5C9F0`. The dialog shows cut / gross / net.
-  - **Note:** `DGROUP:0x8394[diff]` is only a **displayed number** in the `@KINGGALLEON`
-    message (`@0x5C8C2`, formatted via `0x181F:0x438`) — it is **not** the cut. The
-    actual cut is the inline Cortés/tax/difficulty formula above, so it needs **no dump**.
-    (`0x8394` is still BSS/runtime-filled; its *displayed* meaning is the remaining minor TBD.)
+  - **`DGROUP:0x8394` is NOT the galleon fee — RESOLVED 2026-06-20.** It is a
+    **per-difficulty (5-entry) table of king-salutation string pointers** — the
+    `%STRING0` "form of address" the Crown uses for you (your difficulty rank
+    Discoverer/Explorer/Conquistador/Governor/Viceroy). The same `[bx − 0x7C6C]`
+    (`= 0x8394 + diff·2`) pattern feeds slot 0 of the `@KINGGALLEON2/3`, `@KINGWAR`,
+    and `@KINGNEWWAR` messages (`@0x5C8C2`, `@0x36063`, `@0x3622C`; `0x181F:0x438`
+    msg-arg, followed by the king's name into slot 1 → the messages' opening
+    "%STRING0 %STRING1"). **There is no per-difficulty fee table and no dump is
+    needed** — the actual galleon **fee = the Crown's cut %**, fully byte-verified by
+    the inline Cortés/tax/difficulty formula above.
 - Burial-ground → native alarm increase: **TBD**.
 
 ## 4. UI
