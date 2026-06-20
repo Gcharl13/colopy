@@ -1073,7 +1073,7 @@ void format_via_lib_4B_1E8(uint16_t arg1, uint16_t arg2)
 #define POWER_GOLD_LO_OFF      0x2A
 #define POWER_GOLD_HI_OFF      0x2C
 
-#define TREATY_TIMER_BASE      0x53C8
+#define TREATY_TIMER_BASE      TREATY_TIMER_BASE
 #define TURN_COUNTER           g_turn
 #define DIFFICULTY_BYTE        g_difficulty
 
@@ -1373,11 +1373,11 @@ int func_003710_logic_sz_20(uint16_t r_ax)
 
     int rec = (int)(int16_t)r_ax * 0x1C;
 
-    int type = DG8(g_unit_table + rec);
+    int type = DG8(UNIT_TYPE + rec);
 
     int sprite_id = DG8(0x5232 + 14 * type);
 
-    int si = (int8_t)DG8(g_unit_table__class_profession + rec);
+    int si = (int8_t)DG8(g_unit_table__vet_type + rec);
     int di = type;
 
     if (type == 0) {
@@ -1408,7 +1408,7 @@ int func_003710_logic_sz_20(uint16_t r_ax)
         si = dx;
     }
 
-    if (di == 0x0B && (DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80)) {
+    if (di == 0x0B && (DG8(U_FLAGS_3148 + rec) & 0x80)) {
         si = 0x42;
     }
     return (int16_t)si;
@@ -1422,7 +1422,7 @@ int func_0037BE_op_sz_78(uint16_t r_dx, uint16_t r_ax, uint16_t r_bx)
         int idx = (int16_t)overlay_call_0427_0002();
         while (idx >= 0) {
             int bx = idx * 0x1C;
-            uint8_t type = DG8(g_unit_table + bx);
+            uint8_t type = DG8(UNIT_TYPE + bx);
             if (type >= 0x0D && type <= 0x12)
                 found = idx;
             idx = (int16_t)overlay_call_0427_004A((uint16_t)idx);
@@ -1501,7 +1501,7 @@ int func_00386A_op_sz_100(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx,
 
     cls = 0;
     rec = out_idx * 0x1C;
-    type = DG8(g_unit_table + rec);
+    type = DG8(UNIT_TYPE + rec);
 
     if (type >= 0x0D && type <= 0x12) {
         if (type == 0x0F || type == 0x10 || type == 0x11 || type == 0x12)
@@ -1513,19 +1513,19 @@ int func_00386A_op_sz_100(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx,
         cls = 3;
     } else if (type == 0x0C || type == 0x0A || type == 0x0B) {
         cls = 2;
-        if (type == 0x0B && (DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80))
+        if (type == 0x0B && (DG8(U_FLAGS_3148 + rec) & 0x80))
             cls = 4;
     }
 
-    owner  = DG8(g_unit_table__owner_nibble + rec) & 0xF;
-    orders = DG8(g_unit_table__owner_nibble_p5 + rec);
+    owner  = DG8(UNIT_OWNER + rec) & 0xF;
+    orders = DG8(U_ORDERS_314C + rec);
     if (owner >= 4)
         orders = 0;
     ch = DG8(0x54DE + orders);
 
-    if (DG8(g_unit_table + rec) >= 0x0D && DG8(g_unit_table + rec) <= 0x12 &&
+    if (DG8(UNIT_TYPE + rec) >= 0x0D && DG8(UNIT_TYPE + rec) <= 0x12 &&
         (int16_t)DG16(g_active_human_player) != owner) {
-        ch = (uint8_t)(DG8(g_unit_table__owner_nibble_p9 + rec) + 0x30);
+        ch = (uint8_t)(DG8(UNIT_CARGO_3150 + rec) + 0x30);
         if (type == 0x10 && DG16(0x53A2) == 0) {
             rebel_x = 1;
             ch = 0x58;
@@ -1534,10 +1534,10 @@ int func_00386A_op_sz_100(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx,
 
     if (owner < 4) {
 
-        if (DG8(g_ai_table__controller + owner * 0x34) != 0 &&
+        if (DG8(AI_CTRL_543F + owner * 0x34) != 0 &&
             (DG8(0x5383) & 0x20) &&
             (DG8(0x894) & 8)) {
-            ch = DG8(g_unit_table__owner_nibble_p4 + rec);
+            ch = DG8(g_unit_table__profession + rec);
             if ((unsigned)ch >= 0x80)
                 ch = 0x45;
         }
@@ -1549,14 +1549,14 @@ int func_00386A_op_sz_100(uint16_t r_ax, uint16_t r_dx, uint16_t r_bx,
     if (rebel_x)
         txtcol = 0;
 
-    digit = ((DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80) && type != 0x0B);
+    digit = ((DG8(U_FLAGS_3148 + rec) & 0x80) && type != 0x0B);
 
     if (digit) {
 
-        int strength = DG8(0x5235 + type * 14);
-        strength -= DG8(g_unit_table__moves_used_p8 + rec);
+        int strength = DG8(UNIT_REFIT_TABLE_5235 + type * 14);
+        strength -= DG8(U_TURN_315A + rec);
         {
-            uint16_t py = DG8(0x3145 + rec);
+            uint16_t py = DG8(UNIT_Y + rec);
             uint16_t px = DG8(g_unit_table + rec);
             if (overlay_call_037F_000A(px, py) != 0)
                 strength = (strength + 1) >> 1;
@@ -1644,7 +1644,7 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     int unit_rec_off = r_ax_id * 0x12;
 
-    int class_idx = DG8(unit_rec_off + g_settle_table__map_y_p1) - 4;
+    int class_idx = DG8(unit_rec_off + g_settle_table__owner) - 4;
 
     int si = DG8(class_idx * 0x4E + 0x5AD8);
 
@@ -1654,7 +1654,7 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
         r_dx_sx -= (2 >> (int16_t)DG16(0x0184));
 
-        cell_w = (int16_t)DG16(0x5AD4);
+        cell_w = (int16_t)DG16(G_TILE_PX);
     } else {
 
         cell_w = 0x10;
@@ -1698,7 +1698,7 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
     }
 
-    if (DG8(unit_rec_off + g_settle_table__map_y_p2) & 4) {
+    if (DG8(unit_rec_off + g_settle_table__field_03) & 4) {
 
         overlay_call_0C56_0004();
     }
@@ -1717,9 +1717,9 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
                 int t = ((r_ax_id * 9) + count) * 2;
 
-                int di = (int16_t)DG16(t + g_settle_table__wealth_accum);
+                int di = (int16_t)DG16(t + g_settle_table__alarm_by_power);
                 if (di < 0) di = 0;
-                DG16(t + g_settle_table__wealth_accum) = (uint16_t)di;
+                DG16(t + g_settle_table__alarm_by_power) = (uint16_t)di;
                 di >>= 5;
                 if (di > 3) di = 3;
 
@@ -1759,9 +1759,9 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
             row_bot += 2;
         }
 
-        if ((int8_t)DG8(unit_rec_off + g_settle_table__raid_budget) >= 0) {
+        if ((int8_t)DG8(unit_rec_off + g_settle_table__mission) >= 0) {
 
-            int v   = (int8_t)DG8(unit_rec_off + g_settle_table__raid_budget);
+            int v   = (int8_t)DG8(unit_rec_off + g_settle_table__mission);
             int lo  = v & 0xF;
             int hi  = v & 0x10;
             int sbb = (hi < 1) ? -1 : 0;
@@ -1808,8 +1808,8 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
                             uint16_t metric)
 {
     int rec = (int)idx * 0xCA;
-    int owner = DG8(rec + 0x5D60);
-    int pop   = DG8(rec + 0x5D65);
+    int owner = DG8(rec + COL_OWNER_5D60);
+    int pop   = DG8(rec + g_colony_table__population);
     int level = 0, variant;
     char buf[40];
 
@@ -1819,18 +1819,18 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
 
     if (owner != (int16_t)DG16(g_active_human_player) && DG16(0x53A2) == 0) {
         int pw = (int16_t)DG16(g_active_human_player);
-        variant = (DG8(rec + pw + 0x5E04) - 1) & 3;
-        pop = DG8(rec + pw + 0x5E00);
+        variant = (DG8(rec + pw + g_colony_table__muskets_stock_p6) - 1) & 3;
+        pop = DG8(rec + pw + g_colony_table__muskets_stock_p2);
         if (pop == 0) {
             pop = 1;
-            DG8(rec + (int16_t)DG16(g_active_human_player) + 0x5E00) = 1;
+            DG8(rec + (int16_t)DG16(g_active_human_player) + g_colony_table__muskets_stock_p2) = 1;
         }
     }
 
     int dxw;
     if ((int16_t)metric < 0x64) {
         sx -= 2 >> (int16_t)DG16(0x0184);
-        dxw = (int16_t)DG16(0x5AD4);
+        dxw = (int16_t)DG16(G_TILE_PX);
     } else dxw = 0x10;
 
     int cy   = (dxw >> 1) + sx;
@@ -1851,9 +1851,9 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
 
     if ((int16_t)metric == 0x64) {
         int tc = 0xF;
-        if (DG8(rec + 0x5D62) & 4) {
+        if (DG8(rec + COL_FLAG_TABLE_5D62) & 4) {
             tc = 0xA;
-            if (DG8(rec + 0x5D62) & 2) tc = 0xB;
+            if (DG8(rec + COL_FLAG_TABLE_5D62) & 2) tc = 0xB;
         }
         vid_text_color(tc);
         if (pop_flag) {
@@ -1862,11 +1862,11 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
         }
         if (name_flag) {
             vid_text_color(0xF);
-            vid_text_xy((const char *)&DG8(rec + 0x5D48), sx + 2, sy + 0x10);
+            vid_text_xy((const char *)&DG8(rec + g_colony_table__map_y_p1), sx + 2, sy + 0x10);
         }
     }
     if ((int16_t)metric <= 0x19)
-        vid_small_box(sx, sy, (int16_t)DG16(0x5AD4), DG8(owner + 0x848));
+        vid_small_box(sx, sy, (int16_t)DG16(G_TILE_PX), DG8(owner + 0x848));
     return 0;
 }
 
@@ -1912,11 +1912,11 @@ int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
 
     clip_y = (y1 > y0) ? y0 : y1;
 
-    cell_w = (int16_t)DG16(0x5AD4);
+    cell_w = (int16_t)DG16(G_TILE_PX);
     si = 1;
     if (x1 != x0) { cell_w <<= 1; si = 2; }
 
-    cell_h = (int16_t)DG16(0x8326);
+    cell_h = (int16_t)DG16(G_TILE_PX2);
     di = 1;
     if (y1 != y0) { cell_h <<= 1; di = 2; }
 
@@ -1928,19 +1928,19 @@ int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
     if (unit >= 0) {
         int bx = unit * 0x1C;
         rec_lo = DG8(bx + g_unit_table);
-        rec_hi = DG8(bx + 0x3145);
+        rec_hi = DG8(bx + UNIT_Y);
 
         (void)overlay_call_181F_032C();
 
-        (void)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
-        (void)((rec_lo - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(0x832A)) * (int16_t)DG16(0x5AD4));
-        func_00386A_op_sz_100(arg2_bp_0A, 0, 0 , DG16(0x0186), DG16(0x5AD4),
-                              (uint16_t)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+        (void)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8);
+        (void)((rec_lo - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(G_PIXBASE_COL)) * (int16_t)DG16(G_TILE_PX));
+        func_00386A_op_sz_100(arg2_bp_0A, 0, 0 , DG16(0x0186), DG16(G_TILE_PX),
+                              (uint16_t)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8));
     }
 
-    scr_x = (clip_y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8;
+    scr_x = (clip_y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8;
 
-    scr_y = ((int16_t)DG16(0x832A) - (int16_t)DG16(g_viewport_origin_x) + clip_x) * (int16_t)DG16(0x5AD4);
+    scr_y = ((int16_t)DG16(G_PIXBASE_COL) - (int16_t)DG16(g_viewport_origin_x) + clip_x) * (int16_t)DG16(G_TILE_PX);
     (void)overlay_call_0BAA_0006();
 
     if ((x1 - x0) > 0)       di = 1;
@@ -1951,9 +1951,9 @@ int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
     else if ((y1 - y0) < 0)  si = -1;
     else                     si = 0;
 
-    dst_y = ((di < 0) ? 0 : (int16_t)DG16(0x5AD4)) + scr_y;
+    dst_y = ((di < 0) ? 0 : (int16_t)DG16(G_TILE_PX)) + scr_y;
 
-    dst_x = ((si < 0) ? 0 : (int16_t)DG16(0x8326)) + scr_x;
+    dst_x = ((si < 0) ? 0 : (int16_t)DG16(G_TILE_PX2)) + scr_x;
 
     DG16(0x833A) = 0;
     DG16(0x8338) = 0;
@@ -1975,7 +1975,7 @@ int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
 
             (void)overlay_call_0BAA_0006();
             func_00386A_op_sz_100(arg_src_lo, arg_src_hi, (uint16_t)dst_y,
-                                  DG16(0x0186), DG16(0x5AD4), (uint16_t)dst_x);
+                                  DG16(0x0186), DG16(G_TILE_PX), (uint16_t)dst_x);
 
             (void)overlay_call_0B70_003A();
 
@@ -2001,18 +2001,18 @@ int func_004566_op_sz_326(uint16_t arg_src_lo, uint16_t arg_src_hi,
 
         if (arg_src_hi & 0x10) {
 
-            (void)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
-            (void)((rec_lo - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(0x832A)) * (int16_t)DG16(0x5AD4));
-            func_00386A_op_sz_100(arg2_bp_0A, 0, 0 , DG16(0x0186), DG16(0x5AD4),
-                                  (uint16_t)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+            (void)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8);
+            (void)((rec_lo - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(G_PIXBASE_COL)) * (int16_t)DG16(G_TILE_PX));
+            func_00386A_op_sz_100(arg2_bp_0A, 0, 0 , DG16(0x0186), DG16(G_TILE_PX),
+                                  (uint16_t)((rec_hi - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8));
         }
 
         (void)overlay_call_181F_032C();
 
-        (void)((y0 - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8);
-        (void)(((int16_t)DG16(0x832A) - (int16_t)DG16(g_viewport_origin_x) + x0) * (int16_t)DG16(0x5AD4));
-        func_00386A_op_sz_100(arg_src_lo, arg_src_hi, 0 , DG16(0x0186), DG16(0x5AD4),
-                              (uint16_t)((y0 - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C)) * (int16_t)DG16(0x8326) + 8));
+        (void)((y0 - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8);
+        (void)(((int16_t)DG16(G_PIXBASE_COL) - (int16_t)DG16(g_viewport_origin_x) + x0) * (int16_t)DG16(G_TILE_PX));
+        func_00386A_op_sz_100(arg_src_lo, arg_src_hi, 0 , DG16(0x0186), DG16(G_TILE_PX),
+                              (uint16_t)((y0 - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW)) * (int16_t)DG16(G_TILE_PX2) + 8));
 
         (void)overlay_call_0B70_003A();
     }
@@ -2723,7 +2723,7 @@ int func_0054DA_rtl_sz_42(uint16_t arg0_bp_06)
     DG16(0x0372) = 0;
     overlay_call_181F_05EC();
 
-    (void)DG16(0x2DA8); (void)DG16(0x2DAA);
+    (void)DG16(DLG_FMT_2DA8); (void)DG16(0x2DAA);
     (void)DG16(0x2DAC); (void)DG16(0x2DAE);
     overlay_call_0B8D_0004();
     overlay_call_0B70_003A();
@@ -2864,7 +2864,7 @@ turn_loop:
         overlay_call_181F_0550();
         for (u = 0; u < (int16_t)DG16(g_unit_count); u++) {
 
-            DG8((uint16_t)(u * 0x1C) + g_unit_table__owner_nibble_p2) = 0;
+            DG8((uint16_t)(u * 0x1C) + g_unit_table__field_05) = 0;
         }
         DG16(g_active_human_player) = DG16(g_current_player);
         if ((int16_t)DG16(0x53A4) >= 0)
@@ -2874,7 +2874,7 @@ turn_loop:
 
     for (i_outer = 0; ; ) {
 
-        if (DG8((uint16_t)(i_outer * 0x34) + g_ai_table__controller) == 0) {
+        if (DG8((uint16_t)(i_outer * 0x34) + AI_CTRL_543F) == 0) {
 
             DG16(g_active_human_player) = (uint16_t)i_outer;
             if ((int16_t)DG16(0x53A4) >= 0)
@@ -2905,12 +2905,12 @@ turn_loop:
             continue;
 
         DG16(g_current_nation) = (uint16_t)i_outer;
-        if (DG8((uint16_t)(i_outer * 0x34) + g_ai_table__controller) != 0)
+        if (DG8((uint16_t)(i_outer * 0x34) + AI_CTRL_543F) != 0)
             goto unit_done;
         if ((DG8(0x5381) & 0x80) == 0)
             goto unit_done;
 
-        (void)DG16(0x2DA8); (void)DG16(0x2DAA);
+        (void)DG16(DLG_FMT_2DA8); (void)DG16(0x2DAA);
         (void)DG16(0x2DAC); (void)DG16(0x2DAE);
         overlay_call_0B8D_0004();
         overlay_call_0B70_003A();
@@ -2936,10 +2936,10 @@ turn_loop:
     unit_done:
 
         if (DG8(0x0829) == 0 &&
-            DG8((uint16_t)(i_outer * 0x34) + g_ai_table__controller) != 2)
+            DG8((uint16_t)(i_outer * 0x34) + AI_CTRL_543F) != 2)
             overlay_call_181F_0644();
 
-        if (DG8((uint16_t)(i_outer * 0x34) + g_ai_table__controller) != 1)
+        if (DG8((uint16_t)(i_outer * 0x34) + AI_CTRL_543F) != 1)
             continue;
 
         if ((int16_t)DG16(g_active_human_player) == i_outer ||
@@ -3089,10 +3089,10 @@ int func_005CB0_logic_sz_54(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int y = (int16_t)arg1_bp_08;
     int result = 1;
 
-    if (!((int16_t)DG16(g_viewport_origin_x) <= x && (int16_t)DG16(0x8804) >= x))
+    if (!((int16_t)DG16(g_viewport_origin_x) <= x && (int16_t)DG16(G_MAX_COL) >= x))
         result = 0;
 
-    if (!((int16_t)DG16(g_viewport_origin_y) <= y && (int16_t)DG16(0x8806) >= y))
+    if (!((int16_t)DG16(g_viewport_origin_y) <= y && (int16_t)DG16(G_MAX_ROW) >= y))
         result = 0;
     return result;
 }
@@ -3307,10 +3307,10 @@ int save_game_state(const char *path)
     SAVE_BLOCK(f, (uint8_t *)0x5AD6, 0x270);
     SAVE_BLOCK(f, (uint8_t *)0x9566, 0x0C);
     SAVE_BLOCK(f, (uint8_t *)0x8CFC, 4);
-    SAVE_BLOCK(f, (uint8_t *)0x9298, 4);
+    SAVE_BLOCK(f, (uint8_t *)TBL_9298_NCOL, 4);
     SAVE_BLOCK(f, (uint8_t *)0x9408, 4);
     SAVE_BLOCK(f, (uint8_t *)0x940C, 4);
-    SAVE_BLOCK(f, (uint8_t *)0x9410, 4);
+    SAVE_BLOCK(f, (uint8_t *)TBL_9410_ARMTYPE, 4);
     SAVE_BLOCK(f, (uint8_t *)0x9180, 4);
     SAVE_BLOCK(f, (uint8_t *)0x9414, 4);
     SAVE_BLOCK(f, (uint8_t *)0x9418, 4);
@@ -3386,7 +3386,7 @@ extern void king_ref_buildup(int power);
 
 static int colony_owner(int ci)
 {
-    return DG8(0x5D46 + ci * 0xCA + 0x1A);
+    return DG8(g_colony_table + ci * 0xCA + 0x1A);
 }
 
 static void viceroy_native_unit_turns(void)
@@ -3435,7 +3435,7 @@ void viceroy_world_autumn(void)
             king_demand_cadence(p);
         }
 
-        if (DG8(g_ai_table__controller + p * 0x34) == 1) {
+        if (DG8(AI_CTRL_543F + p * 0x34) == 1) {
             extern int func_052F7E_ai_power_asset_census(uint16_t);
             func_052F7E_ai_power_asset_census((uint16_t)p);
         }
@@ -3478,8 +3478,8 @@ int viceroy_world_smoke(int turns)
     }
 
     DG16(g_colony_count) = 1;
-    DG8(0x5D46 + 0x00) = 10;  DG8(0x5D46 + 0x01) = 10;
-    DG8(0x5D46 + 0x1A) = 0;   DG8(0x5D46 + 0x1F) = 3;
+    DG8(g_colony_table + 0x00) = 10;  DG8(g_colony_table + 0x01) = 10;
+    DG8(g_colony_table + 0x1A) = 0;   DG8(g_colony_table + 0x1F) = 3;
 
     DG16(g_current_power_ptr) = g_power_table;
 
@@ -3508,7 +3508,7 @@ int viceroy_world_smoke(int turns)
         extern void tilehead_set(int,int,int);
         extern uint8_t *viceroy_layer_addr(int layer, int x, int y);
         #define UREC(i,k) DG8(g_unit_table + (i)*0x1C + (k))
-        DG8(g_ai_table__controller + 1*0x34) = 1;
+        DG8(AI_CTRL_543F + 1*0x34) = 1;
         DG16(g_unit_count) = 4;
         for (int u = 1; u <= 3; u++) {
             DG16(g_unit_table + u*0x1C + 0x18) = 0xFFFF;
@@ -3986,8 +3986,8 @@ void func_0063B6_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
 
     unsigned crec = (unsigned)arg0_bp_06 * 0xCA;
-    int16_t cy0 = (int16_t)DG8(0x5D46 + crec + 0x00);
-    int16_t col0 = (int16_t)DG8(0x5D46 + crec + 0x01);
+    int16_t cy0 = (int16_t)DG8(g_colony_table + crec + 0x00);
+    int16_t col0 = (int16_t)DG8(g_colony_table + crec + 0x01);
     int16_t layer = (int16_t)arg1_bp_08;
     int16_t ry;
 
@@ -4012,9 +4012,9 @@ void func_0063B6_logic_sz_14(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
                 {
                     unsigned rrec = (unsigned)r * 0xCA + (unsigned)(uint16_t)layer;
-                    if (DG8(0x5D46 + rrec + 0xBA) == 0) {
-                        DG8(0x5D46 + rrec + 0xBA) = 1;
-                        DG8(0x5D46 + rrec + 0xBE) = 0;
+                    if (DG8(g_colony_table + rrec + 0xBA) == 0) {
+                        DG8(g_colony_table + rrec + 0xBA) = 1;
+                        DG8(g_colony_table + rrec + 0xBE) = 0;
                     }
                 }
             }
@@ -4082,7 +4082,7 @@ void func_006468(uint16_t x_ax, uint16_t y_dx, uint16_t owner_bx,
 
                 if (DG16(0x01E8) == 0
                     && owner < 4
-                    && DG8(g_ai_table__controller + (unsigned)owner * 0x34) == 0) {
+                    && DG8(AI_CTRL_543F + (unsigned)owner * 0x34) == 0) {
 
                     if (overlay_call_03E4_0074((uint16_t)cur_x, (uint16_t)cur_y) != 0) {
 
@@ -4265,8 +4265,8 @@ void func_0068AA_op_sz_143(uint16_t idx_ax )
 #include "viceroy_types.h"
 #include "unit.h"
 
-#define UNIT_CHAIN_PREV_OFF  g_unit_table__turn_counter
-#define UNIT_CHAIN_NEXT_OFF  g_unit_table__subtype_p1
+#define UNIT_CHAIN_PREV_OFF  UNIT_CHAIN_PREV_OFF
+#define UNIT_CHAIN_NEXT_OFF  UNIT_CHAIN_NEXT_OFF
 
 extern uint8_t g_units_3144[];
 
@@ -4547,7 +4547,7 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     int16_t si = -1;
     unsigned ubase;
 
-    if (di >= 4 || DG8(g_ai_table__controller + (unsigned)di * 0x34) != 0) {
+    if (di >= 4 || DG8(AI_CTRL_543F + (unsigned)di * 0x34) != 0) {
         if ((int16_t)DG16(g_unit_count) >= 0x124)
             return si;
     }
@@ -4601,7 +4601,7 @@ int func_006D24_op_sz_197(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     return si;
 
 soft_cap:
-    if (di < 4 && DG8(g_ai_table__controller + (unsigned)di * 0x34) == 0)
+    if (di < 4 && DG8(AI_CTRL_543F + (unsigned)di * 0x34) == 0)
         (void)menu_run_boxed(0x01F3);
 
     return si;
@@ -4644,7 +4644,7 @@ int func_006E94_logic_sz_198(uint16_t arg0_bp_06)
         count = (uint16_t)(DG16(g_unit_count) - 1);
         DG16(g_unit_count) = count;
         if ((int16_t)count > 0) {
-            unsigned p = g_unit_table__turn_counter;
+            unsigned p = UNIT_CHAIN_PREV_OFF;
             int k;
             for (k = count; k > 0; k--) {
                 if ((int16_t)DG16(p)     > di) (DG16(p))--;
@@ -5474,7 +5474,7 @@ int func_007B64_op_sz_105(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     uint16_t si;
     unsigned di;
     int16_t count = (int16_t)DG16(g_unit_count);
-    for (si = 0, di = g_unit_table__owner_nibble; si < (uint16_t)count; si++, di += 0x1C) {
+    for (si = 0, di = UNIT_OWNER; si < (uint16_t)count; si++, di += 0x1C) {
         if ((DG8(di) & 0x0F) != (uint8_t)arg0_bp_06)
             continue;
         if (arg1_bp_08 == si)
@@ -5569,14 +5569,14 @@ int combat_terrain_fort_bonus_fill(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
         int settle = overlay_call_181F_09F0();
         unsigned srec = (unsigned)settle * 0x12;
-        int owner = (int)DG8(srec + g_settle_table__map_y_p1) - 4;
+        int owner = (int)DG8(srec + g_settle_table__owner) - 4;
         acc = 2;
         DG16(0x1B04) = (uint16_t)settle;
         if (DG8((unsigned)owner * 0x4E + 0x5AD8) >= 2) {
             acc = 4;
             DG8(0x8D02) |= 0x10;
         }
-        if (DG8((unsigned)settle * 0x12 + g_settle_table__map_y_p2) & 4) {
+        if (DG8((unsigned)settle * 0x12 + g_settle_table__field_03) & 4) {
             acc <<= 1;
             DG8(0x8D02) |= 0x20;
         }
@@ -5603,7 +5603,7 @@ int combat_terrain_fort_bonus_fill(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         } else if (tgt_owner >= 4) {
             hostile = 1;
         } else if ((DG8(g_game_phase_flags) & 1) && tgt_owner < 4
-                   && DG8((unsigned)tgt_owner * 0x34 + g_ai_table__controller) == 0) {
+                   && DG8((unsigned)tgt_owner * 0x34 + AI_CTRL_543F) == 0) {
             hostile = 1;
         } else {
             hostile = 0;
@@ -5617,7 +5617,7 @@ int combat_terrain_fort_bonus_fill(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
             int flag = 1;
 
-            if (tgt_owner < 4 && DG8((unsigned)tgt_owner * 0x34 + g_ai_table__controller) == 0) {
+            if (tgt_owner < 4 && DG8((unsigned)tgt_owner * 0x34 + AI_CTRL_543F) == 0) {
 
                 int adj = 1;
                 if (overlay_call_037F_0358((uint16_t)ux, (uint16_t)uy) < 0) {
@@ -5861,9 +5861,9 @@ int func_0082DC_logic_sz_118(uint16_t arg0_bp_06)
         arg0_bp_06 = 0;
         oob = 1;
     }
-    ctx_local = (unsigned char near *)(DG_BASE + 0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
+    ctx_local = (unsigned char near *)(DG_BASE + g_colony_table + (unsigned)arg0_bp_06 * 0xCA);
     ctx = (struct colony_t far *)ctx_local;
-    DG16(g_current_colony_ptr) = (uint16_t)(0x5D46 + (unsigned)arg0_bp_06 * 0xCA);
+    DG16(g_current_colony_ptr) = (uint16_t)(g_colony_table + (unsigned)arg0_bp_06 * 0xCA);
     owned_human = (ctx_local[0x1A] == DG8(g_active_human_player));
     if (owned_human
         && ctx_local[0x1A] < 4
@@ -5919,7 +5919,7 @@ int func_0083F2_op_sz_71(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
     }
 
     for (i = 0; i < (int16_t)DG16(g_colony_count); i++) {
-        unsigned base = 0x5D46 + (unsigned)i * 0xCA;
+        unsigned base = g_colony_table + (unsigned)i * 0xCA;
         if ((int16_t)arg2_bp_0A >= 0
             && DG8(base + 0x1A) != (uint8_t)arg2_bp_0A)
             continue;
@@ -5972,8 +5972,8 @@ int func_0084F2_logic_sz_21(uint16_t arg0_bp_06)
 int func_008508_logic_sz_9(uint16_t arg0_bp_06)
 {
 
-    uint16_t x = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x00);
-    uint16_t y = (uint8_t)DG8(0x5D46 + (unsigned)arg0_bp_06 * 0xCA + 0x01);
+    uint16_t x = (uint8_t)DG8(g_colony_table + (unsigned)arg0_bp_06 * 0xCA + 0x00);
+    uint16_t y = (uint8_t)DG8(g_colony_table + (unsigned)arg0_bp_06 * 0xCA + 0x01);
     (void)x; (void)y;
     return overlay_call_037F_02A0(x, y);
 }
@@ -5990,7 +5990,7 @@ int func_00860E_logic_sz_15(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if ((int16_t)arg1_bp_08 < 0)
         return 0;
     {
-        uint8_t byte = DG8(0x5DCA + (unsigned)arg0_bp_06 * 0xCA
+        uint8_t byte = DG8(g_colony_table__bits_at_84 + (unsigned)arg0_bp_06 * 0xCA
                                          + ((int16_t)arg1_bp_08 >> 3));
         return byte & (1 << (arg1_bp_08 & 7));
     }
@@ -6218,7 +6218,7 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     overlay_call_181F_0D84((uint16_t)nx, (uint16_t)ny, -1, (uint16_t)region);
 
     if (!(DG8(ctxp + 0x1A) < 4
-          && DG8((unsigned)DG8(ctxp + 0x1A) * 0x34 + g_ai_table__controller) == 0)) {
+          && DG8((unsigned)DG8(ctxp + 0x1A) * 0x34 + AI_CTRL_543F) == 0)) {
         int32_t gold;
 
         v = (int32_t)(int16_t)overlay_call_181F_0D78();
@@ -6244,7 +6244,7 @@ int func_008982_logic_sz_532(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
         int16_t emphasis;
         int16_t color;
         if ((int16_t)DG16(g_current_nation) < 4
-            && DG8((unsigned)DG16(g_current_nation) * 0x34 + g_ai_table__controller) == 0)
+            && DG8((unsigned)DG16(g_current_nation) * 0x34 + AI_CTRL_543F) == 0)
             base = (int16_t)(uint8_t)DG8(g_difficulty);
         else
             base = 0;
@@ -6535,7 +6535,7 @@ int func_008C70_logic_sz_66(void)
         if (unit_field_test_at_3146((uint16_t)idx) != 0)
             DG16(0x8D72)++;
         {
-            uint8_t cls = (uint8_t)DG8(g_unit_table + (unsigned)idx * 0x1C);
+            uint8_t cls = (uint8_t)DG8(UNIT_TYPE + (unsigned)idx * 0x1C);
             if (DG8(0x5237 + (unsigned)cls * 14) == 0)
                 DG16(0x8D76)++;
         }
@@ -6561,8 +6561,8 @@ int func_008D26_op_sz_69(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if (overlay_call_037F_0358(arg0_bp_06, arg1_bp_08) < 0)
         return -1;
     for (i = 0; result < 0 && i < (int16_t)DG16(g_colony_count); i++) {
-        if (DG8(0x5D46 + (unsigned)i * 0xCA) == (uint8_t)arg0_bp_06 &&
-            DG8(0x5D47 + (unsigned)i * 0xCA) == (uint8_t)arg1_bp_08)
+        if (DG8(g_colony_table + (unsigned)i * 0xCA) == (uint8_t)arg0_bp_06 &&
+            DG8(g_colony_table__map_y + (unsigned)i * 0xCA) == (uint8_t)arg1_bp_08)
             result = (int16_t)i;
     }
     if (result < 0)
@@ -6743,7 +6743,7 @@ int current_unit_field_at_40(uint16_t arg0_bp_06)
     {
         int16_t u = (int16_t)func_008BD4_op_sz_73(
             (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
-        return (int8_t)DG8(g_unit_table__class_profession + (unsigned)(uint16_t)u * 0x1C);
+        return (int8_t)DG8(g_unit_table__vet_type + (unsigned)(uint16_t)u * 0x1C);
     }
 }
 
@@ -6788,7 +6788,7 @@ int func_0091CC_colony_sz_181(uint16_t arg0_bp_06)
     if (field20 == 0x15 || field20 == 0x17) {
         int16_t u = (int16_t)func_008BD4_op_sz_73(
             (uint16_t)((int16_t)arg0_bp_06 - (int8_t)ctx_local[0x1F]));
-        uint8_t cls = (uint8_t)DG8(g_unit_table + (unsigned)(uint16_t)u * 0x1C);
+        uint8_t cls = (uint8_t)DG8(UNIT_TYPE + (unsigned)(uint16_t)u * 0x1C);
         if (cls == 9 || cls == 7)
             result = (uint8_t)DG8(0x5232 + (unsigned)cls * 14);
     }
@@ -7078,17 +7078,17 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
         int idx = overlay_call_0427_005C(px, py);
         while (idx >= 0) {
-            uint8_t cls    = (uint8_t)DG8(g_unit_table + (unsigned)idx * 0x1C);
+            uint8_t cls    = (uint8_t)DG8(UNIT_TYPE + (unsigned)idx * 0x1C);
             int gate_ok = 0;
             if ((uint8_t)DG8(0x5236 + (unsigned)cls * 14) > 1) {
                 gate_ok = 1;
             } else if (cls == 2) {
-                uint8_t f3 = (uint8_t)(DG8(g_unit_table__owner_nibble + (unsigned)idx * 0x1C) & 0x0F);
-                if (f3 < 4 && DG8(g_ai_table__controller + (unsigned)f3 * 0x34) == 0)
+                uint8_t f3 = (uint8_t)(DG8(UNIT_OWNER + (unsigned)idx * 0x1C) & 0x0F);
+                if (f3 < 4 && DG8(AI_CTRL_543F + (unsigned)f3 * 0x34) == 0)
                     gate_ok = 1;
             }
             if (gate_ok) {
-                uint8_t f8 = (uint8_t)DG8(g_unit_table__owner_nibble_p5 + (unsigned)idx * 0x1C);
+                uint8_t f8 = (uint8_t)DG8(U_ORDERS_314C + (unsigned)idx * 0x1C);
                 if (f8 == 5 || f8 == 6) {
                     flags |= 0x80;
                     overlay_call_0427_0992();
@@ -7103,7 +7103,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 
     for (j = 0; j < (int16_t)DG16(g_settlement_count); j++) {
         if (DG8(g_settle_table + (unsigned)j * 0x12) == (uint8_t)px &&
-            DG8(g_settle_table__map_y + (unsigned)j * 0x12) == (uint8_t)py) {
+            DG8(g_settle_table__y + (unsigned)j * 0x12) == (uint8_t)py) {
             flags |= 0x04;
         }
     }
@@ -7112,8 +7112,8 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         int16_t cx, cy;
         if (j == (int16_t)DG16(0x8DC6))
             continue;
-        cx = (int16_t)(uint8_t)DG8(0x5D46 + (unsigned)j * 0xCA);
-        cy = (int16_t)(uint8_t)DG8(0x5D47 + (unsigned)j * 0xCA);
+        cx = (int16_t)(uint8_t)DG8(g_colony_table + (unsigned)j * 0xCA);
+        cy = (int16_t)(uint8_t)DG8(g_colony_table__map_y + (unsigned)j * 0xCA);
         if (cx == (uint8_t)px && cy == (uint8_t)py)
             flags |= 0x20;
         {
@@ -7125,7 +7125,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
             int16_t ny = (int16_t)((uint8_t)ctx_local[1] - cy + (int16_t)arg1_bp_08);
             int r = (int16_t)find_pair_in_table_C8_DE((uint16_t)nx, (uint16_t)ny);
             if (r >= 0 &&
-                (int8_t)DG8(0x5DB6 + (unsigned)(uint16_t)r + (unsigned)j * 0xCA) >= 0)
+                (int8_t)DG8(g_colony_table__tile_state_70 + (unsigned)(uint16_t)r + (unsigned)j * 0xCA) >= 0)
                 flags |= 0x40;
         }
         }
@@ -7683,10 +7683,10 @@ extern uint16_t g_8D52;
 
 #define UNIT_BASE_3144     g_unit_table
 #define UNIT_STRIDE_1C     0x1C
-#define U_TYPE_3146        g_unit_table
-#define U_OWNFLG_3147      g_unit_table__owner_nibble
-#define U_FIELD_314A       g_unit_table__owner_nibble_p3
-#define U_TURN_315A        g_unit_table__moves_used_p8
+#define U_TYPE_3146        UNIT_TYPE
+#define U_OWNFLG_3147      UNIT_OWNER
+#define U_FIELD_314A       U_FIELD_314A
+#define U_TURN_315A        U_TURN_315A
 
 #define YIELD_TABLE_2F7B   g_terrain_yield_table
 #define YIELD_COL_2F78     0x2F78
@@ -7694,14 +7694,14 @@ extern uint16_t g_8D52;
 
 #define BYTE_2A2           0x2A2
 
-#define AI_CTRL_543F       g_ai_table__controller
+#define AI_CTRL_543F       AI_CTRL_543F
 #define POWER_STRIDE_34    0x34
 
-#define TBL_9298_NCOL      0x9298
+#define TBL_9298_NCOL      TBL_9298_NCOL
 #define TBL_925D_REVSUB    0x925D
 #define TBL_924E_REVAUX    0x924E
 #define TBL_925B_REVCNT    0x925B
-#define TBL_9410_ARMTYPE   0x9410
+#define TBL_9410_ARMTYPE   TBL_9410_ARMTYPE
 #define TBL_9414_REVSTATE  0x9414
 #define TBL_9424_REVPEND   0x9424
 #define TBL_917C_OWNINT2   0x917C
@@ -9282,7 +9282,7 @@ int func_00B1EC_colony_sz_82(void)
     idx = overlay_call_0427_005C();
     while (idx >= 0) {
 
-        uint8_t type = DG8(g_unit_table + idx * 0x1C);
+        uint8_t type = DG8(UNIT_TYPE + idx * 0x1C);
         if (DG8(0x5237 + type * 14) != 0)
             count++;
         idx = overlay_call_0427_004A((uint16_t)idx);
@@ -9299,7 +9299,7 @@ int func_00B23E_colony_sz_100(uint16_t arg0_bp_06)
     (void)*(uint8_t far *)((char far *)ctx + 1);
     idx = overlay_call_0427_005C();
     while (idx >= 0) {
-        uint8_t type = DG8(g_unit_table + idx * 0x1C);
+        uint8_t type = DG8(UNIT_TYPE + idx * 0x1C);
         if (DG8(0x5237 + type * 14) != 0) {
             ordinal++;
             if (ordinal == (int)arg0_bp_06)
@@ -9315,7 +9315,7 @@ int func_00B31A_logic_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
 
     uint16_t keep_mask = 0x00F0;
     int      byte_off  = (int)(int16_t)arg1_bp_08 >> 1;
-    uint8_t near *cell = (uint8_t near *)(g_unit_table__owner_nibble_pa + arg0_bp_06 * 0x1C + byte_off);
+    uint8_t near *cell = (uint8_t near *)(g_unit_table__cargo_kind_packed + arg0_bp_06 * 0x1C + byte_off);
     uint16_t old_byte  = *cell;
     uint16_t value     = arg2_bp_0A;
     if (arg1_bp_08 & 1) {
@@ -9335,7 +9335,7 @@ int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         int i;
         DG16(0x8DC4) = (uint16_t)unit_table_3154_byte(arg0_bp_06, arg1_bp_08);
         for (i = (int)arg1_bp_08;
-             (int)DG8(g_unit_table__owner_nibble_p9 + arg0_bp_06 * 0x1C) - 1 > i;
+             (int)DG8(UNIT_CARGO_3150 + arg0_bp_06 * 0x1C) - 1 > i;
              i++) {
             uint16_t kind = func_00B2A2(arg0_bp_06, (uint16_t)(i + 1));
             func_00B31A(arg0_bp_06, (uint16_t)i, kind);
@@ -9344,7 +9344,7 @@ int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
                 func_00B304(arg0_bp_06, (uint16_t)i, qty);
             }
         }
-        DG8(g_unit_table__owner_nibble_p9 + arg0_bp_06 * 0x1C) -= 1;
+        DG8(UNIT_CARGO_3150 + arg0_bp_06 * 0x1C) -= 1;
     }
     return pos;
 }
@@ -9352,15 +9352,15 @@ int func_00B42C_logic_sz_139(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 int func_00B4B8_logic_sz_11(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t near *out_bp_0A)
 {
 
-    uint16_t type     = DG8(g_unit_table + arg0_bp_06 * 0x1C);
-    uint16_t used     = DG8(g_unit_table__owner_nibble_p9 + arg0_bp_06 * 0x1C);
+    uint16_t type     = DG8(UNIT_TYPE + arg0_bp_06 * 0x1C);
+    uint16_t used     = DG8(UNIT_CARGO_3150 + arg0_bp_06 * 0x1C);
     uint16_t capacity = DG8(0x5237 + type * 14);
     int free_holds = (int)capacity - (int)used;
 
     *out_bp_0A = (uint16_t)(free_holds * 0x64);
     if (free_holds == 0) {
         int i;
-        int slot_count = DG8(g_unit_table__owner_nibble_p9 + arg0_bp_06 * 0x1C);
+        int slot_count = DG8(UNIT_CARGO_3150 + arg0_bp_06 * 0x1C);
         for (i = 0; slot_count > i; i++) {
             if (func_00B2A2(arg0_bp_06, (uint16_t)i) != arg1_bp_08)
                 continue;
@@ -9379,7 +9379,7 @@ int func_00B550_logic_sz_88(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int found = -1;
     int k = 0;
     while (found < 0) {
-        uint16_t slot_count = DG8(g_unit_table__owner_nibble_p9 + arg0_bp_06 * 0x1C);
+        uint16_t slot_count = DG8(UNIT_CARGO_3150 + arg0_bp_06 * 0x1C);
         if ((int16_t)slot_count <= k)
             break;
         if (func_00B2A2(arg0_bp_06, (uint16_t)k) == arg1_bp_08)
@@ -9424,7 +9424,7 @@ int func_00B5FA_logic_sz_94(uint16_t arg0_bp_06 )
     if (tier == 1)
         arg = DG16(0x8F82 + adj * 12);
     else if (tier == 2)
-        arg = DG16(0x5230 + adj * 14);
+        arg = DG16(UNIT_TYPE_WORD_5230 + adj * 14);
     else
         arg = DG16(0x2DFA);
 
@@ -9477,7 +9477,7 @@ int func_00B704_logic_sz_380(uint16_t arg0_bp_06)
             return result;
 
         {
-            int cat = (int16_t)current_unit_field_at_40(DG16(0x8D7C));
+            int cat = (int16_t)current_unit_field_at_40(DG16(CD_LIST_CURSOR));
             int feat;
             if (cat == 0x1C) cat = 0x19;
             feat = (int16_t)DG16(0x8EA6 + cat * 8);
@@ -9499,7 +9499,7 @@ int func_00B704_logic_sz_380(uint16_t arg0_bp_06)
 
     n = (int16_t)func_00903E((uint16_t)dst, arg0_bp_06);
     {
-        int cat = (int16_t)current_unit_field_at_40(DG16(0x8D7C));
+        int cat = (int16_t)current_unit_field_at_40(DG16(CD_LIST_CURSOR));
 
         if ((int16_t)arg0_bp_06 > 0x13 && cat == 0x1B) {
             result = 0;
@@ -9510,7 +9510,7 @@ int func_00B704_logic_sz_380(uint16_t arg0_bp_06)
 
             if (cat == 0x18 &&
                 (int16_t)DG16(0x8DC6) < 4 &&
-                DG8(g_ai_table__controller + DG16(0x8DC6) * 0x34) == 0) {
+                DG8(AI_CTRL_543F + DG16(0x8DC6) * 0x34) == 0) {
                 result = 0;
                 return result;
             }
@@ -9633,7 +9633,7 @@ tier2:
     if (adj == 0x0C) {
 
         uint8_t s = *(uint8_t far *)((char far *)ctx + 0x1A);
-        if (DG8(0x9258 + s * 0x13) < DG8(0x9298 + s))
+        if (DG8(0x9258 + s * 0x13) < DG8(TBL_9298_NCOL + s))
             result = 0;
     }
 
@@ -9641,7 +9641,7 @@ trailer:
 
     if (*(uint8_t far *)((char far *)ctx + 0x94) == (uint8_t)arg0_bp_06) {
 
-        if (DG8(g_unit_table + arg0_bp_06 * 0x1C) != 1) {
+        if (DG8(UNIT_TYPE + arg0_bp_06 * 0x1C) != 1) {
             result = 1;
         } else if (wrapper_with_global_8DC6(adj) == 0) {
             result = 1;
@@ -9691,7 +9691,7 @@ int is_arg2_negative(uint16_t power_idx_bp_06, uint16_t ff_bp_08)
         return 0;
 
     {
-        uint8_t byte = DG8(g_power_table__acquired_ff_bitmask + power_idx_bp_06 * 0x13C + ((int16_t)ff_bp_08 >> 3));
+        uint8_t byte = DG8(g_power_table__ff_owned_bitmap + power_idx_bp_06 * 0x13C + ((int16_t)ff_bp_08 >> 3));
         return (uint8_t)(byte & (1u << (ff_bp_08 & 7)));
     }
 }
@@ -9743,7 +9743,7 @@ int func_00BD4A_op_sz_404(void)
 
     if (DG16(0x5390) == 0) {
         uint16_t rec = DG16(0x5392) * 0x1C;
-        func_00BD28(DG8(g_unit_table + rec), DG8(0x3145 + rec));
+        func_00BD28(DG8(g_unit_table + rec), DG8(UNIT_Y + rec));
     }
 
     if (DG16(0x53C6) != 0)
@@ -9757,19 +9757,19 @@ int func_00BD4A_op_sz_404(void)
 
     if ((int16_t)DG16(g_viewport_origin_x) > (int16_t)DG16(0x8540))
         return 0;
-    if ((int16_t)(DG16(0x8544) + DG16(g_viewport_origin_x)) <= (int16_t)DG16(0x8540))
+    if ((int16_t)(DG16(G_SPAN_W) + DG16(g_viewport_origin_x)) <= (int16_t)DG16(0x8540))
         return 0;
     if ((int16_t)DG16(g_viewport_origin_y) > (int16_t)DG16(0x853E))
         return 0;
-    if ((int16_t)(DG16(g_viewport_origin_y) + DG16(0x8546)) <= (int16_t)DG16(0x853E))
+    if ((int16_t)(DG16(g_viewport_origin_y) + DG16(G_SPAN_H)) <= (int16_t)DG16(0x853E))
         return 0;
 
     {
         int16_t cy = (int16_t)DG16(0x853E) - (int16_t)DG16(g_viewport_origin_y);
-        scr_x = (int16_t)((DG16(0x8540) - DG16(g_viewport_origin_x) + DG16(0x832A))
-                          * (int16_t)DG16(0x5AD4));
-        scr_y = (int16_t)((cy + (int16_t)DG16(0x832C))
-                          * (int16_t)DG16(0x8326));
+        scr_x = (int16_t)((DG16(0x8540) - DG16(g_viewport_origin_x) + DG16(G_PIXBASE_COL))
+                          * (int16_t)DG16(G_TILE_PX));
+        scr_y = (int16_t)((cy + (int16_t)DG16(G_PIXBASE_ROW))
+                          * (int16_t)DG16(G_TILE_PX2));
     }
 
     (void)scr_x; (void)(scr_y + 8);
@@ -9820,8 +9820,8 @@ int func_00BF3C_logic_sz_182(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
     int16_t row_hi = (row_b >= row_a) ? row_b : row_a;
     int16_t view_col0   = (int16_t)DG16(g_viewport_origin_x);
     int16_t view_row0   = (int16_t)DG16(g_viewport_origin_y);
-    int16_t view_maxcol = (int16_t)DG16(0x8804);
-    int16_t view_maxrow = (int16_t)DG16(0x8806);
+    int16_t view_maxcol = (int16_t)DG16(G_MAX_COL);
+    int16_t view_maxrow = (int16_t)DG16(G_MAX_ROW);
     int16_t map_w       = (int16_t)DG16(g_map_width);
     int16_t map_h       = (int16_t)DG16(g_map_height);
     int near_edge = 0;
@@ -9942,11 +9942,11 @@ int unit_load_commodity_into_slots(int unit_idx, int commodity_idx, int qty)
 int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot)
 {
 
-    if ((int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_p9)) <= slot)
+    if ((int16_t)DG8((uint16_t)(unit * 0x1C + UNIT_CARGO_3150)) <= slot)
         return -1;
 
     int16_t half = slot >> 1;
-    uint8_t packed = DG8((uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_pa + half));
+    uint8_t packed = DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed + half));
     if (slot & 1)
         return (int16_t)(packed >> 4) & 0xF;
     else
@@ -9956,20 +9956,20 @@ int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot)
 int16_t unit_table_3154_byte(int16_t unit, int16_t slot)
 {
 
-    return (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__moves_used_p2 + slot));
+    return (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty + slot));
 }
 
 void func_00B304_cargo_slot_set_amount(int16_t unit, int16_t slot, int16_t qty)
 {
 
-    DG8((uint16_t)(unit * 0x1C + g_unit_table__moves_used_p2 + slot)) = (uint8_t)qty;
+    DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty + slot)) = (uint8_t)qty;
 }
 
 void func_00B31A_cargo_slot_set_good(int16_t unit, int16_t slot, int16_t good)
 {
     uint16_t mask = 0xF0U;
     int16_t  half = slot >> 1;
-    uint16_t addr = (uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_pa + half);
+    uint16_t addr = (uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed + half);
     uint8_t  packed = DG8(addr);
     if (slot & 1) {
         mask = 0x0FU;
@@ -9986,7 +9986,7 @@ int16_t colony_helper_b2a2(int16_t unit, int16_t good, int16_t qty)
 
     for (slot = 0; ; slot++) {
 
-        slot_count = (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_p9));
+        slot_count = (int16_t)DG8((uint16_t)(unit * 0x1C + UNIT_CARGO_3150));
         if (slot_count <= slot)
             break;
 
@@ -10004,11 +10004,11 @@ int16_t colony_helper_b2a2(int16_t unit, int16_t good, int16_t qty)
 
     if (qty == 0) return slot_count;
 
-    slot_count = (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_p9));
+    slot_count = (int16_t)DG8((uint16_t)(unit * 0x1C + UNIT_CARGO_3150));
     old_count = slot_count;
 
     {
-        uint8_t utype = DG8((uint16_t)(unit * 0x1C + g_unit_table));
+        uint8_t utype = DG8((uint16_t)(unit * 0x1C + UNIT_TYPE));
         int16_t t14 = (int16_t)utype * 14;
         int16_t max_slots = (int16_t)DG8((uint16_t)(0x5237 + t14));
         if (max_slots <= slot_count)
@@ -10017,7 +10017,7 @@ int16_t colony_helper_b2a2(int16_t unit, int16_t good, int16_t qty)
 
     func_00B31A_cargo_slot_set_good(unit, slot_count, good);
     func_00B304_cargo_slot_set_amount(unit, slot_count, qty);
-    DG8((uint16_t)(unit * 0x1C + g_unit_table__owner_nibble_p9)) =
+    DG8((uint16_t)(unit * 0x1C + UNIT_CARGO_3150)) =
         (uint8_t)(slot_count + 1);
 
     return old_count;
@@ -10079,13 +10079,13 @@ int func_00C0D0_logic_sz_57(uint16_t arg0_bp_06)
 int func_00C17A_logic_sz_20(uint16_t arg0_bp_06)
 {
     uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);
-    uint8_t  typ  = DG8(g_unit_table__owner_nibble + rec) & 0x0F;
-    uint8_t  cls  = DG8(g_unit_table + rec);
+    uint8_t  typ  = DG8(UNIT_OWNER + rec) & 0x0F;
+    uint8_t  cls  = DG8(UNIT_TYPE + rec);
 
     overlay_call_0009_00B4();
     (void)DG16(0x8D0A + typ * 2);
     overlay_call_0009_01A2();
-    (void)DG16(0x5230 + cls * 14);
+    (void)DG16(UNIT_TYPE_WORD_5230 + cls * 14);
     overlay_call_0009_01A2();
     func_00C09A();
     (void)DG16(0x838C + DG16(g_current_nation) * 2);
@@ -10098,13 +10098,13 @@ int func_00C17A_logic_sz_20(uint16_t arg0_bp_06)
 int func_00C1F8_logic_sz_20(uint16_t arg0_bp_06)
 {
     uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);
-    uint8_t  typ  = DG8(g_unit_table__owner_nibble + rec) & 0x0F;
-    uint8_t  cls  = DG8(g_unit_table + rec);
+    uint8_t  typ  = DG8(UNIT_OWNER + rec) & 0x0F;
+    uint8_t  cls  = DG8(UNIT_TYPE + rec);
 
     overlay_call_0009_00B4();
     (void)DG16(0x8D0A + typ * 2);
     overlay_call_0009_01A2();
-    (void)DG16(0x5230 + cls * 14);
+    (void)DG16(UNIT_TYPE_WORD_5230 + cls * 14);
     overlay_call_0009_01A2();
     func_00C09A();
     (void)DG16(0x838C + DG16(g_current_nation) * 2);
@@ -10117,13 +10117,13 @@ int func_00C1F8_logic_sz_20(uint16_t arg0_bp_06)
 int func_00C276_logic_sz_20(uint16_t arg0_bp_06)
 {
     uint16_t rec  = (uint16_t)(arg0_bp_06 * 0x1C);
-    uint8_t  typ  = DG8(g_unit_table__owner_nibble + rec) & 0x0F;
-    uint8_t  cls  = DG8(g_unit_table + rec);
+    uint8_t  typ  = DG8(UNIT_OWNER + rec) & 0x0F;
+    uint8_t  cls  = DG8(UNIT_TYPE + rec);
 
     overlay_call_0009_00B4();
     (void)DG16(0x8D0A + typ * 2);
     overlay_call_0009_01A2();
-    (void)DG16(0x5230 + cls * 14);
+    (void)DG16(UNIT_TYPE_WORD_5230 + cls * 14);
     overlay_call_0009_01A2();
     func_00C09A();
     (void)DG16(0x838C + DG16(g_current_nation) * 2);
@@ -14395,7 +14395,7 @@ void func_020EE0_init_msg_personality(void)
 void func_020EFE_overlay_screen_init(void)
 {
     overlay_call_181F_0524(1);
-    DG16(0x1F5E) = 0;
+    DG16(OPT_MODE_1F5E) = 0;
 
     overlay_call_191F_0120();
 
@@ -15204,13 +15204,13 @@ void naval_loc_text(char *buf, int x, int y, int col, int flag)
 
     cid = -1;
     for (i = 0; cid < 0 && i < (int16_t)DG16(g_colony_count); i++) {
-        if (DG8(0x5D46 + (unsigned)i * 0xCA) == (uint8_t)x &&
-            DG8(0x5D47 + (unsigned)i * 0xCA) == (uint8_t)y)
+        if (DG8(g_colony_table + (unsigned)i * 0xCA) == (uint8_t)x &&
+            DG8(g_colony_table__map_y + (unsigned)i * 0xCA) == (uint8_t)y)
             cid = i;
     }
     DG16(0x8DC6) = (uint16_t)cid;
     if (cid >= 0) {
-        strcat(buf, (const char *)&DG8(0x5D48 + (unsigned)cid * 0xCA));
+        strcat(buf, (const char *)&DG8(g_colony_table__map_y_p1 + (unsigned)cid * 0xCA));
 
         return;
     }
@@ -15350,7 +15350,7 @@ void naval_screen_render(int player)
         text_y = row_y + 6;
         name_x = base + 0x18;
         buf[0] = 0;
-        strcpy(buf, viceroy_str(DG16(0x5230 + (unsigned)cls * 14)));
+        strcpy(buf, viceroy_str(DG16(UNIT_TYPE_WORD_5230 + (unsigned)cls * 14)));
 
         if (cls >= 0x0D && cls <= 0x12)
             naval_text_at(buf, name_x, text_y, 0x61);
@@ -15439,11 +15439,11 @@ void mouse_hover_popup_helper(void)
         return;
 
     tile_row = (DGS16(0x07EA) - 9)
-             + DGS16(0x9CCA);
+             + DGS16(G_MINIMAP_ROW0);
 
     (void)(DGS16(g_map_width));
     (void)(DGS16(0x07E8));
-    (void)(DGS16(0x9CCC));
+    (void)(DGS16(G_MINIMAP_COL0));
     tile_col = overlay_call_181F_035C();
 
     (void)(DGS16(g_map_height));
@@ -15577,7 +15577,7 @@ int colony_siege_balance(int near *out_hostile_owner,
         u = overlay_call_181F_07E0();
         if (u < 0) continue;
 
-        owner = *(uint8_t far*)(MK_FP(0, g_unit_table__owner_nibble) + u * 0x1C) & 0xF;
+        owner = *(uint8_t far*)(MK_FP(0, UNIT_OWNER) + u * 0x1C) & 0xF;
         if (owner >= 4) continue;
 
         val = overlay_call_181F_08BC();
@@ -15694,8 +15694,8 @@ void colony_reassign_after_sort(void)
         overlay_call_181F_0A7E();
     }
 
-    DGS16(0x8D7C)
-        = perm[ DGS16(0x8D7C) ];
+    DGS16(CD_LIST_CURSOR)
+        = perm[ DGS16(CD_LIST_CURSOR) ];
 
     for (i = 0; i < 0x14; i++) {
         int8_t a = (int8_t)c->tile_state_70[i];
@@ -16030,7 +16030,7 @@ void colony_draw_workgrid(int show_close_button)
                 u = (int16_t)func_0066CC_op_sz_57(
                         (uint16_t)wx, (uint16_t)wy);
                 while (u >= 0) {
-                    int utype = DG8(g_unit_table + u*0x1C);
+                    int utype = DG8(UNIT_TYPE + u*0x1C);
                     if (DG8(0x5236 + utype*14) > 1)
                         break;
                     u = unit_chain_next(u);
@@ -16090,7 +16090,7 @@ void colony_draw_workgrid(int show_close_button)
             if (DGS16(0x0B98) == 0) {
 
                 cellgood = (int8_t)overlay_call_181F_0CE0(col, r);
-                if (DGS16(0x8D7C) == cellgood &&
+                if (DGS16(CD_LIST_CURSOR) == cellgood &&
                     (DGS16(0x07EE) == 0 ||
                      DGS16(0x8D54) != 0))
 
@@ -16130,7 +16130,7 @@ void colony_draw_header(int year_or_flag)
     int i;
 
     if (c->owner_power < 4 &&
-        *(uint8_t far*)(MK_FP(0,g_ai_table__controller) + c->owner_power*0x34) == 0)
+        *(uint8_t far*)(MK_FP(0,AI_CTRL_543F) + c->owner_power*0x34) == 0)
         goto inactive;
     if (DGS16(0x0B98) != 0) goto inactive;
     if (DG8(0x0828) != 0) goto inactive;
@@ -16190,7 +16190,7 @@ void colony_anim_worked_tiles(int x, int y, int phase)
 
         n = DGS16(0x8D72);
 
-        sel = DGS16(0x8D7C);
+        sel = DGS16(CD_LIST_CURSOR);
         if ( sel == sel)
             overlay_call_181F_00CE();
         (void)n; (void)x; (void)y; (void)c;
@@ -16220,7 +16220,7 @@ void colony_draw_colonist_at(int slot, int x, int y, int kind)
         overlay_call_181F_0A74();
         overlay_call_181F_024A();
 
-        if (DGS16(0x8D7C) == i)
+        if (DGS16(CD_LIST_CURSOR) == i)
             overlay_call_181F_00CE();
         x += step;
         if (DGS16(0x07EE) == 0) continue;
@@ -16340,7 +16340,7 @@ void colony_draw_roster_strip(int show_button)
     int i;
 
     overlay_call_181F_00CE();
-    overlay_call_181F_04FC((int16_t)DG16(0x2da8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0, 8, 0xc7, 0x78, 7);
+    overlay_call_181F_04FC((int16_t)DG16(DLG_FMT_2DA8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0, 8, 0xc7, 0x78, 7);
 
     for (i = 0; i < 0xF; i++) {
         int sx = *(int16_t far*)(MK_FP(0,0x0266) + i*4);
@@ -16393,7 +16393,7 @@ void colony_paint_colonist_row(int show_close_button)
         blit_sprite(0, spr, pen_x, 0x8E);
 
         if (DGS16(0x0B98) == 0) {
-            if (DGS16(0x8D7C) == i) {
+            if (DGS16(CD_LIST_CURSOR) == i) {
                 int boxcol = (DGS16(0x032E) == 1 &&
                               DGS16(0x07EE) == 0)
                              ? 0xF
@@ -16477,7 +16477,7 @@ void colony_paint_colonist_row(int show_close_button)
 
     thresh = -((int)DG8(g_difficulty) - 0xA);
     if (!(c->owner_power < 4 &&
-          *(uint8_t far*)(MK_FP(0,g_ai_table__controller) + c->owner_power*0x34) != 0))
+          *(uint8_t far*)(MK_FP(0,AI_CTRL_543F) + c->owner_power*0x34) != 0))
         thresh = 0x32;
     text_col = 0xF;
     if (thresh <= tory_count)
@@ -16594,7 +16594,7 @@ void colony_draw_buildings_panel(void)
     overlay_call_181F_07E0();
     for (u = overlay_call_181F_02E4(); u >= 0;
          u = overlay_call_181F_02E4()) {
-        int utype = *(uint8_t far*)(MK_FP(0,g_unit_table) + u*0x1C);
+        int utype = *(uint8_t far*)(MK_FP(0,UNIT_TYPE) + u*0x1C);
         if (*(uint8_t far*)(MK_FP(0,0x5237) + utype*14) != 0)
             continue;
 
@@ -17578,7 +17578,7 @@ int func_029DD4_colony_click_router(void)
         if (g_in_combat_7F4 == 0) return 0;
         if (subidx < 0) return 0;
         if (subidx == 0x15) {
-            int f = overlay_call_181F_0C0E((int16_t)DG16(0x8d7c));
+            int f = overlay_call_181F_0C0E((int16_t)DG16(CD_LIST_CURSOR));
             if (f < 0x13) {
                 overlay_call_191F_0750();
             }
@@ -17607,7 +17607,7 @@ int func_029DD4_colony_click_router(void)
             overlay_call_191F_0750();
         }
         if (g_flag_7E4 != 0) {
-            int attr = overlay_call_181F_0C54((int16_t)DG16(0x8d7c));
+            int attr = overlay_call_181F_0C54((int16_t)DG16(CD_LIST_CURSOR));
             if (attr == 0x1C) attr = 0x13;
             (void)attr;
             overlay_call_191F_08DE(subidx);
@@ -17650,7 +17650,7 @@ int func_02A0BC_assign_work_tile(void)
         cs_cur_tx_330 = gx; cs_cur_ty_332 = gy;
         overlay_call_191F_051C();
 
-        field = overlay_call_181F_0C0E((int16_t)DG16(0x8d7c));
+        field = overlay_call_181F_0C0E((int16_t)DG16(CD_LIST_CURSOR));
         if (field == 9 || field == 8 || field == 0) {
 
             int mx = *(uint8_t far *)((char far *)ctx + 0) + cs_cur_tx_330 - 2;
@@ -17662,8 +17662,8 @@ int func_02A0BC_assign_work_tile(void)
         }
 
         if (overlay_call_191F_054C() == 1) {
-            overlay_call_181F_0AA6((int16_t)DG16(0x8d7c));
-            overlay_call_181F_0D44((int16_t)DG16(0x330), (int16_t)DG16(0x332), (int16_t)DG8(0x8d7c));
+            overlay_call_181F_0AA6((int16_t)DG16(CD_LIST_CURSOR));
+            overlay_call_181F_0D44((int16_t)DG16(0x330), (int16_t)DG16(0x332), (int16_t)DG8(CD_LIST_CURSOR));
         }
         overlay_call_191F_0738();
         return 0;
@@ -17997,24 +17997,24 @@ int func_02A8EC_cargo_amount_prompt(uint16_t unit, uint16_t unit2,
 #define G_SHEET_PHYS     0x0174
 #define G_SHEET_METRIC   0x0186
 #define G_ZOOM_LEVEL     0x0184
-#define G_TILE_PX_W      0x5AD4
-#define G_TILE_PX_H      0x8326
-#define G_SPAN_W         0x8544
-#define G_SPAN_H         0x8546
+#define G_TILE_PX_W      G_TILE_PX
+#define G_TILE_PX_H      G_TILE_PX2
+#define G_SPAN_W         G_SPAN_W
+#define G_SPAN_H         G_SPAN_H
 #define G_VIEW_ORIGIN_COL g_viewport_origin_x
 #define G_VIEW_ORIGIN_ROW g_viewport_origin_y
-#define G_VIEW_MAX_COL   0x8804
-#define G_VIEW_MAX_ROW   0x8806
-#define G_PIX_BASE_COL   0x832A
-#define G_PIX_BASE_ROW   0x832C
+#define G_VIEW_MAX_COL   G_MAX_COL
+#define G_VIEW_MAX_ROW   G_MAX_ROW
+#define G_PIX_BASE_COL   G_PIXBASE_COL
+#define G_PIX_BASE_ROW   G_PIXBASE_ROW
 #define G_RENDER_STRIDE  g_map_stride
 #define G_MAP_W          g_map_width
 #define G_MAP_H          g_map_height
-#define G_TILE_SX        0xA5A4
-#define G_TILE_SY        0xA5A6
-#define G_NUDGE_DX       0x1EA4
-#define G_NUDGE_DY       0x1EA5
-#define G_CLIP_RECT      0x839E
+#define G_TILE_SX        G_TILE_SX
+#define G_TILE_SY        G_TILE_SY
+#define G_NUDGE_DX       G_NUDGE_DX
+#define G_NUDGE_DY       G_NUDGE_DY
+#define G_CLIP_RECT      G_CLIP_RECT
 
 #include <stdio.h>
 static int g_emit_log;
@@ -18113,7 +18113,7 @@ void wp_commit(int relcol, int relrow)
         fprintf(stderr, "commit rel=%d,%d map=%d,%d byte=%02X SX=%d SY=%d\n",
                 relcol, relrow, origin_col+relcol, origin_row+relrow,
                 g_layer[0] ? g_layer[0][off] : 0xEE,
-                (int16_t)DG16(0xA5A4), (int16_t)DG16(0xA5A6));
+                (int16_t)DG16(G_TILE_SX), (int16_t)DG16(G_TILE_SY));
 }
 
 static uint8_t wp_rel(int layer, int16_t off)
@@ -18304,7 +18304,7 @@ void vid_box_fill(int x, int y, int w, int h, uint8_t color)
 
 void minimap_draw_contents(void)
 {
-    int col0 = (int16_t)DG16(0x9CCC), row0 = (int16_t)DG16(0x9CCA);
+    int col0 = (int16_t)DG16(G_MINIMAP_COL0), row0 = (int16_t)DG16(G_MINIMAP_ROW0);
     int w = (int16_t)DG16(G_MAP_W), h = (int16_t)DG16(G_MAP_H);
     uint8_t *fb = vid_framebuffer();
     for (int ty = 0; ty < 0x26; ty++) {
@@ -18981,10 +18981,10 @@ int colony_service_menu(int colony_sel, int item_id)
 }
 
 #define MENU_DESC_087C   0x087C
-#define OPT_FLAGS_1F54   0x1F54
-#define OPT_FIELD_1F5C   0x1F5C
-#define OPT_MODE_1F5E    0x1F5E
-#define OPT_FIELD_1F60   0x1F60
+#define OPT_FLAGS_1F54   OPT_FLAGS_1F54
+#define OPT_FIELD_1F5C   OPT_FIELD_1F5C
+#define OPT_MODE_1F5E    OPT_MODE_1F5E
+#define OPT_FIELD_1F60   OPT_FIELD_1F60
 
 extern void far *opt_lookup_rec(void);
 extern int       opt_win_query(void far *rec);
@@ -19046,7 +19046,7 @@ void opt_set_field_c(int key, int field_c)
 extern int16_t g_word[];
 extern uint8_t g_byte[];
 
-#define DGROUP_DIALOG_RECT   0x839E
+#define DGROUP_DIALOG_RECT   G_CLIP_RECT
 
 void compute_dialog_rect_from_cursor(void)
 {
@@ -19055,8 +19055,8 @@ void compute_dialog_rect_from_cursor(void)
 
     int arg4 = DG16(0x176);
     int arg3 = DG16(0x174);
-    int arg2 = DG16(0xA5A6) + DG8(0x1EA5) - 0x0F;
-    int arg1 = DG16(0xA5A4) + DG8(0x1EA4) - 0x08;
+    int arg2 = DG16(G_TILE_SY) + DG8(G_NUDGE_DY) - 0x0F;
+    int arg1 = DG16(G_TILE_SX) + DG8(G_NUDGE_DX) - 0x08;
 
     overlay_set_dialog_rect(DGROUP_DIALOG_RECT, arg1, arg2, arg3, arg4);
 }
@@ -19066,7 +19066,7 @@ void dialog_draw_frame(void)
 
 }
 
-#define CD_LIST_CURSOR  0x8D7C
+#define CD_LIST_CURSOR  CD_LIST_CURSOR
 #define CD_RESULT_034E  0x034E
 #define CD_LISTACTIVE   0x035C
 
@@ -19755,7 +19755,7 @@ int func_02B744_colony_sz_24(void)
 
     overlay_call_181F_0D4E();
     overlay_call_0D1D_117E();
-    DG_W(0x9CB0) = (int16_t)value;
+    DG_W(MACRO_VAL_9CB0) = (int16_t)value;
     DG_W(0x9CB2) = (int16_t)(value < 0 ? -1 : 0);
 
     owner = CB(0x1A);
@@ -19954,7 +19954,7 @@ int func_02BC72_logic_sz_50(uint16_t arg0_bp_06)
             overlay_call_191F_0684();
             break;
         case 1: {
-            int b = overlay_call_181F_0C54((int16_t)DG16(0x8d7c));
+            int b = overlay_call_181F_0C54((int16_t)DG16(CD_LIST_CURSOR));
             if (b == 0x1C) b = 0x13;
             overlay_call_191F_08DE();
             break;
@@ -20305,9 +20305,9 @@ int func_02EB1C_logic_sz_10(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     int cid = (int16_t)arg0_bp_06;
     int pw  = (int16_t)arg1_bp_08;
-    uint8_t owner = COLREC_B(cid * 0xCA + 0x5D65);
-    COLREC_B(cid * 0xCA + pw + 0x5E00) = owner;
-    COLREC_B(cid * 0xCA + pw + 0x5E04) =
+    uint8_t owner = COLREC_B(cid * 0xCA + g_colony_table__population);
+    COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p2) = owner;
+    COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p6) =
         (uint8_t)overlay_call_181F_0B14(arg0_bp_06, 0);
     return 0;
 }
@@ -20316,9 +20316,9 @@ int func_02EB46_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
 {
     int cid = (int16_t)arg0_bp_06;
     uint8_t pw = (uint8_t)arg1_bp_08;
-    if (COLREC_B(cid * 0xCA + 0x5D60) == pw) return 1;
+    if (COLREC_B(cid * 0xCA + COL_OWNER_5D60) == pw) return 1;
     if (g_w53A2 != 0) return 0;
-    if (COLREC_B(cid * 0xCA + pw + 0x5E00) != 0) return 1;
+    if (COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p2) != 0) return 1;
     return 0;
 }
 
@@ -20369,7 +20369,7 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
         int b = overlay_call_181F_0C4A();
         if (b >= 0) overlay_call_181F_0C36();
     }
-    COLREC_B(slot * 0xCA + 0x5D65) = 1;
+    COLREC_B(slot * 0xCA + g_colony_table__population) = 1;
     overlay_call_181F_0C36();
     overlay_call_181F_0CAE(0, 0x1c);
     overlay_call_181F_0C72(); overlay_call_181F_0C22();
@@ -20381,7 +20381,7 @@ int func_02EB78_text_sz_55(uint16_t arg0_bp_06, uint16_t arg1_bp_08,
     }
     if (overlay_call_181F_0D12() != 0) {
         if ((overlay_call_181F_06B4((int16_t)DG16(0x8dba), (int16_t)DG16(0x8dbc)) & 0xFF) == 1)
-            COLREC_B(slot * 0xCA + 0x5D62) |= 0x40;
+            COLREC_B(slot * 0xCA + COL_FLAG_TABLE_5D62) |= 0x40;
     }
     CB(0x94) = 0xF;
     if (CB(0x1C) & 0x40) CB(0x94) = 6;
@@ -20397,7 +20397,7 @@ int func_02EE34_logic_sz_12(uint16_t arg0_bp_06)
     int cid = (int16_t)arg0_bp_06;
     int i, j;
 
-    UREC_B(COLREC_B(cid * 0xCA + 0x5D60) - 0x6D68)--;
+    UREC_B(COLREC_B(cid * 0xCA + COL_OWNER_5D60) - 0x6D68)--;
     overlay_call_181F_068C();
 
     for (i = cid; i < g_colony_count_539E - 1; i++)
@@ -20571,7 +20571,7 @@ void ff_congress_screen(int power)
     sel = ff_present_primer(power);
 
     if (power >= 4 ||
-        DG8(g_ai_table__controller + (unsigned)power * 0x34) != 0) {
+        DG8(AI_CTRL_543F + (unsigned)power * 0x34) != 0) {
 
         if (sel >= 0 && sel < 5) {
             unsigned p = DG16(g_current_power_ptr);
@@ -20662,22 +20662,22 @@ extern void *  g_king_record_84FC;
 
 #define UNIT_BASE_3144   g_unit_table
 #define UNIT_STRIDE      0x1C
-#define U_TYPE_3146      g_unit_table
-#define U_OWNFLG_3147    g_unit_table__owner_nibble
-#define U_FLAGS_3148     g_unit_table__owner_nibble_p1
+#define U_TYPE_3146      UNIT_TYPE
+#define U_OWNFLG_3147    UNIT_OWNER
+#define U_FLAGS_3148     U_FLAGS_3148
 #define U_XPOS_3144      g_unit_table
-#define U_YPOS_3145      0x3145
-#define U_REFIT_315A     g_unit_table__moves_used_p8
+#define U_YPOS_3145      UNIT_Y
+#define U_REFIT_315A     U_TURN_315A
 
-#define U_ORDERS_314C    g_unit_table__owner_nibble_p5
-#define U_GOTOX_314D     g_unit_table__owner_nibble_p6
-#define U_GOTOY_314E     g_unit_table__owner_nibble_p7
+#define U_ORDERS_314C    U_ORDERS_314C
+#define U_GOTOX_314D     U_GOTOX_314D
+#define U_GOTOY_314E     U_GOTOY_314E
 
-#define UNIT_REFIT_TABLE_5235  0x5235
-#define UNIT_TYPE_WORD_5230    0x5230
+#define UNIT_REFIT_TABLE_5235  UNIT_REFIT_TABLE_5235
+#define UNIT_TYPE_WORD_5230    UNIT_TYPE_WORD_5230
 #define UNIT_TYPE_STRIDE_7     7
 
-#define AI_CTRL_543F     g_ai_table__controller
+#define AI_CTRL_543F     AI_CTRL_543F
 #define POWER_STRIDE_34  0x34
 
 extern uint8_t g_difficulty_53A6;
@@ -20764,7 +20764,7 @@ void king_process_power_events(void)
                 int slot = find_landing_slot(u[U_XPOS_3144 - UNIT_BASE_3144],
                                              u[U_YPOS_3145 - UNIT_BASE_3144]);
                 if (slot >= 0) {
-                    void *colrec = DGROUP_PTR(0x5D48 + slot * 0xCA);
+                    void *colrec = DGROUP_PTR(g_colony_table__map_y_p1 + slot * 0xCA);
                     msg_set_ptr(1, colrec, 0);
                 } else {
 
@@ -20788,7 +20788,7 @@ void king_process_power_events(void)
     ((int16_t *)g_king_record_84FC)[0x0E / 2] = 0;
 
     for (i = g_colony_count_539E - 1; i >= 0; i--) {
-        uint8_t *col_owner = (uint8_t *)DGROUP_PTR(0x5D60 + i * 0xCA);
+        uint8_t *col_owner = (uint8_t *)DGROUP_PTR(COL_OWNER_5D60 + i * 0xCA);
         if (*col_owner == (uint8_t)P)
             ui_refresh_colony(i);
     }
@@ -20989,7 +20989,7 @@ int order_assign(int order_key)
         code = 1;
 
         if ((int)G16(0x9E12) < 4 &&
-            G8(g_ai_table__controller + (int)G16(0x9E12) * 0x34) == 0)
+            G8(AI_CTRL_543F + (int)G16(0x9E12) * 0x34) == 0)
             r = G8(g_difficulty);
         else
             r = 1;
@@ -21510,18 +21510,18 @@ extern int16_t g_ref_regulars_53DA;
 extern int16_t g_ref_cavalry_53DC;
 extern int16_t g_ref_artillery_53E0;
 
-#define AI_CTRL_543F     g_ai_table__controller
+#define AI_CTRL_543F     AI_CTRL_543F
 #define POWER_STRIDE_34  0x34
 
 #define POWER_NCOL_9230  0x9230
 
-#define COL_OWNER_5D60   0x5D60
+#define COL_OWNER_5D60   COL_OWNER_5D60
 #define COL_STRIDE_CA    0xCA
 
 #define UNIT_BASE_3144   g_unit_table
 #define UNIT_STRIDE_1C   0x1C
-#define U_OWNFLG_3147    g_unit_table__owner_nibble
-#define U_TYPE_3146      g_unit_table
+#define U_OWNFLG_3147    UNIT_OWNER
+#define U_TYPE_3146      UNIT_TYPE
 
 #define POWER_NAME_540E  g_ai_table
 
@@ -21535,7 +21535,7 @@ extern int16_t g_ref_artillery_53E0;
 
 #define REF_ARM_TYPE_9408 0x9408
 
-#define COL_RECORD_5D48  0x5D48
+#define COL_RECORD_5D48  g_colony_table__map_y_p1
 
 extern void  ui_redraw_power(int power);
 extern void  msg_set_int(int slot, int value);
@@ -21981,7 +21981,7 @@ int europe_screen_update(void)
 }
 
 #define KEY_GAME              0x087C
-#define KEY_EUROPESHIPCLICK   0x1005
+#define KEY_EUROPESHIPCLICK   KEY_EUROPESHIPCLICK
 #define KEY_EUROPESHIPOPTIONS 0x1015
 #define KEY_SOMEBOYCOTT       0x1027
 
@@ -22249,7 +22249,7 @@ extern void near_6E27(int x, int unit);
 void func_0321FC(int unit_idx, int x)
 {
     int type = unit_table[unit_idx].type;
-    int attr = g_unittype_attr_5230[type][0x5232 - 0x5230];
+    int attr = g_unittype_attr_5230[type][0x5232 - UNIT_TYPE_WORD_5230];
     box_show_191F_08F8_b(attr, 1);
     G16(0x9E3E) = 1;
     G16(0x9E3A) = 9;
@@ -22282,7 +22282,7 @@ void func_032278(int idx)
 int func_032294(int amount)
 {
     int f;
-    if (G16(0x9E12) < 4 && G8(g_ai_table__controller + G16(0x9E12) * 0x34) == 0)
+    if (G16(0x9E12) < 4 && G8(AI_CTRL_543F + G16(0x9E12) * 0x34) == 0)
         f = G8(g_difficulty) - 2;
     else
         f = -2;
@@ -22478,13 +22478,13 @@ void func_032FE2(int arg)
     int saved = unit_table[unit].orders;
     unit_table[unit].orders = 0;
     overlay_call_181F_0920(unit);
-    G16(0x1F5E) = 0;
+    G16(OPT_MODE_1F5E) = 0;
     if (dlg_open((void *)0x87C, (void *)0xFFC, 0) != 0) {
         overlay_call_181F_07EA(unit,0);
         overlay_call_181F_02EE();
 
     }
-    G16(0x1F5E) = 0xFFFF;
+    G16(OPT_MODE_1F5E) = 0xFFFF;
     unit_table[unit].orders = (uint8_t)saved;
     near_6E31();
 }
@@ -22497,7 +22497,7 @@ int boycott_lift_backtax(int unit_idx)
 {
     int ok = 0;
     struct PowerRecord near *rec;
-    if (G16(0x9E12) >= 4 || G8(g_ai_table__controller + G16(0x9E12) * 0x34) != 0) {
+    if (G16(0x9E12) >= 4 || G8(AI_CTRL_543F + G16(0x9E12) * 0x34) != 0) {
         rec = PREC();
         PREC_W(rec, 0x20) = 0;
         ok = 1;
@@ -23628,7 +23628,7 @@ extern uint8_t g_ai_personality_543F[];
 #define KING_PRICE_BC       0xBC
 #define TAX_CAP             0x4B
 
-#define MARKET_PRICE_5DE0   0x5DE0
+#define MARKET_PRICE_5DE0   MARKET_PRICE_5DE0
 #define MARKET_BLOCK_STRIDE 0x65
 
 extern int32_t crt_lmul(int32_t a, int32_t b);
@@ -25229,7 +25229,7 @@ void ff_acquire_dispatch(int power, int ff_id)
     }
 
     if (power < 4 &&
-        DG8(g_ai_table__controller + (unsigned)power * 0x34) == 0) {
+        DG8(AI_CTRL_543F + (unsigned)power * 0x34) == 0) {
 
         int16_t handle = (int16_t)DG16(g_founding_father_table + (unsigned)power * 6);
         power_set_flag(handle, 0);
@@ -25293,7 +25293,7 @@ void ff_acquire_dispatch(int power, int ff_id)
 
     if (ff_id == FF_SIMON_BOLIVAR) {
         if (power < 4 &&
-            DG8(g_ai_table__controller + (unsigned)power * 0x34) == 0) {
+            DG8(AI_CTRL_543F + (unsigned)power * 0x34) == 0) {
             int v = DGS16(g_rebel_sentiment_meter) + 0x14;
             if (v > 0x64) v = 0x64;
             DGS16(g_rebel_sentiment_meter) = (int16_t)v;
@@ -25443,7 +25443,7 @@ extern int     ff_owned(int ff_id, int power);
 void ff_set_owned_bit(int power, int ff_id, int set)
 {
     uint8_t  bit = (uint8_t)(1 << (ff_id & 7));
-    unsigned off = g_power_table__acquired_ff_bitmask
+    unsigned off = g_power_table__ff_owned_bitmap
                  + (unsigned)power * POWER_RECORD_STRIDE
                  + ((unsigned)ff_id >> 3);
     if (set)
@@ -25660,7 +25660,7 @@ void ff_portrait_dialog(void *a, void *b, int c)
 
 void ui_key_print(int key, int flag)
 {
-    DG16(0x1F5E) = (uint16_t)flag;
+    DG16(OPT_MODE_1F5E) = (uint16_t)flag;
     (void)menu_run_boxed((uint16_t)key);
 }
 
@@ -25696,9 +25696,9 @@ void ff_notify_sound(long n, int z)
 #define UNIT_BASE        g_unit_table
 #define UNIT_STRIDE      0x1C
 #define UNIT_MAPX(rec)   G8((rec)*UNIT_STRIDE + g_unit_table)
-#define UNIT_MAPY(rec)   G8((rec)*UNIT_STRIDE + 0x3145)
-#define UNIT_TYPE(rec)   G8((rec)*UNIT_STRIDE + g_unit_table)
-#define UNIT_OWNER(rec) (G8((rec)*UNIT_STRIDE + g_unit_table__owner_nibble) & 0x0F)
+#define UNIT_MAPY(rec)   G8((rec)*UNIT_STRIDE + UNIT_Y)
+#define UNIT_TYPE(rec)   G8((rec)*UNIT_STRIDE + UNIT_TYPE)
+#define UNIT_OWNER(rec) (G8((rec)*UNIT_STRIDE + UNIT_OWNER) & 0x0F)
 
 #define G_UNIT_COUNT     G16(g_unit_count)
 #define G_CUR_PLAYER     G8(g_self_power_idx)
@@ -25778,8 +25778,8 @@ int spanish_succession_absorb_power(void)
     for (k = 0; k < 4; ++k) {
         rank[k]  = (uint8_t)k;
         score[k] = (int16_t)((uint8_t)G8(0x9418 + k) * 3
-                           + (uint8_t)G8(0x9298 + k) * 2
-                           + (uint8_t)G8(0x9410 + k));
+                           + (uint8_t)G8(TBL_9298_NCOL + k) * 2
+                           + (uint8_t)G8(TBL_9410_ARMTYPE + k));
     }
 
     overlay_call_191F_0ED0();
@@ -25787,7 +25787,7 @@ int spanish_succession_absorb_power(void)
     winner = -1; loser = -1;
     for (k = 0; k < 4; ++k) {
         if (loser >= 0) break;
-        if (rank[k] < 4 && G8((uint16_t)rank[k] * 0x34 + g_ai_table__controller) == 0)
+        if (rank[k] < 4 && G8((uint16_t)rank[k] * 0x34 + AI_CTRL_543F) == 0)
             continue;
         loser = rank[k];
     }
@@ -25795,7 +25795,7 @@ int spanish_succession_absorb_power(void)
     for (k = 0; k < 4; ++k) {
         if (winner >= 0) break;
         if (rank[k] == (uint8_t)loser) continue;
-        if (rank[k] < 4 && G8((uint16_t)rank[k] * 0x34 + g_ai_table__controller) == 0)
+        if (rank[k] < 4 && G8((uint16_t)rank[k] * 0x34 + AI_CTRL_543F) == 0)
             continue;
         winner = rank[k];
     }
@@ -25815,8 +25815,8 @@ int spanish_succession_absorb_power(void)
     for (i = (int16_t)G_UNIT_COUNT - 1; i >= 0; --i) {
         if (UNIT_OWNER(i) != (uint8_t)loser) continue;
         if (overlay_call_181F_0302()  != 0) {
-            G8((uint16_t)i * UNIT_STRIDE + g_unit_table__owner_nibble) =
-                (uint8_t)((G8((uint16_t)i*UNIT_STRIDE+g_unit_table__owner_nibble) & 0xF0) | (uint8_t)winner);
+            G8((uint16_t)i * UNIT_STRIDE + UNIT_OWNER) =
+                (uint8_t)((G8((uint16_t)i*UNIT_STRIDE+UNIT_OWNER) & 0xF0) | (uint8_t)winner);
             overlay_call_181F_0704();
         } else {
             overlay_call_181F_0808();
@@ -25844,7 +25844,7 @@ int spanish_succession_absorb_power(void)
 
     overlay_call_191F_0A74(loser);
     overlay_call_181F_0E1C(1);
-    G8((uint16_t)loser * 0x34 + g_ai_table__controller) = 2;
+    G8((uint16_t)loser * 0x34 + AI_CTRL_543F) = 2;
     G16(g_self_power_idx) = (uint16_t)loser;
     overlay_call_181F_0E1C(1);
 
@@ -25873,7 +25873,7 @@ int func_03C932_op_sz_96(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
         if (owner >= 4)
             goto announce_target;
 
-        if (G8((uint16_t)owner * 0x34 + g_ai_table__controller) != 0)
+        if (G8((uint16_t)owner * 0x34 + AI_CTRL_543F) != 0)
             goto announce_target;
 
         overlay_call_181F_0438();
@@ -26040,12 +26040,12 @@ int func_03CAC6_rng_sz_58(uint16_t arg0_bp_06)
 
             if ((suscept & 1) &&
                 overlay_call_181F_04D4()  != 0) {
-                G8((uint16_t)u * UNIT_STRIDE + g_unit_table__class_profession) = 0x15;
+                G8((uint16_t)u * UNIT_STRIDE + g_unit_table__vet_type) = 0x15;
             }
 
             if ((suscept % 3) == 0 &&
                 overlay_call_181F_04D4()  != 0) {
-                G8((uint16_t)u * UNIT_STRIDE + g_unit_table) = 4;
+                G8((uint16_t)u * UNIT_STRIDE + UNIT_TYPE) = 4;
             }
             --suscept;
         }
@@ -26299,7 +26299,7 @@ p1_test:
 
             for (i = 0; i < budget; ++i) {
                 int16_t un = (i==0) ? lead_unit : u2;
-                G8((uint16_t)un * UNIT_STRIDE + g_unit_table__class_profession) = 0x15;
+                G8((uint16_t)un * UNIT_STRIDE + g_unit_table__vet_type) = 0x15;
                 overlay_call_181F_093E();
                 overlay_call_181F_02D0();
                 overlay_call_181F_0948();
@@ -26408,8 +26408,8 @@ int func_03DE46_op_sz_138(void)
     for (k = 0; k < 4; ++k) {
         rank[k]  = (uint8_t)k;
         score[k] = (int16_t)((uint8_t)G8(0x9418 + k) * 3
-                           + (uint8_t)G8(0x9298 + k) * 2
-                           + (uint8_t)G8(0x9410 + k));
+                           + (uint8_t)G8(TBL_9298_NCOL + k) * 2
+                           + (uint8_t)G8(TBL_9410_ARMTYPE + k));
     }
     overlay_call_191F_0ED0();
 
@@ -26437,7 +26437,7 @@ int func_03DE46_op_sz_138(void)
     maskB = (uint16_t)(0x10 << (uint8_t)G8(g_self_power_idx));
     (void)maskA; (void)maskB;
 
-    G8((uint16_t)G16(g_self_power_idx) * 0x34 + g_ai_table__controller) = 1;
+    G8((uint16_t)G16(g_self_power_idx) * 0x34 + AI_CTRL_543F) = 1;
     overlay_call_181F_0A06(power, (int16_t)DG16(g_self_power_idx), 0x22);
     overlay_call_181F_0A10(power, (int16_t)DG16(g_self_power_idx), 0x40);
     overlay_call_181F_0E1C(1);
@@ -26495,14 +26495,14 @@ int func_03E2EA_colony_input_text(uint16_t arg0_bp_06)
         while (to_convert > 0 && u >= 0) {
             uint8_t t = (uint8_t)UNIT_TYPE(u);
             if ((t == 1 || t == 4) &&
-                G8((uint16_t)u*UNIT_STRIDE + g_unit_table__class_profession) == 0x15) {
+                G8((uint16_t)u*UNIT_STRIDE + g_unit_table__vet_type) == 0x15) {
                 --to_convert;
                 overlay_call_181F_0416();
                 overlay_call_181F_0438();
                 if (t == 1)
-                    G8((uint16_t)u*UNIT_STRIDE + g_unit_table) = 9;
+                    G8((uint16_t)u*UNIT_STRIDE + UNIT_TYPE) = 9;
                 else
-                    G8((uint16_t)u*UNIT_STRIDE + g_unit_table) = 7;
+                    G8((uint16_t)u*UNIT_STRIDE + UNIT_TYPE) = 7;
                 ++converted;
             }
             u = (int16_t)overlay_call_181F_02E4();
@@ -26692,7 +26692,7 @@ int func_03F90E_logic_sz_50(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
 
     int16_t  absy = (int16_t)((int8_t)G8(arg1_bp_08 + 0xBE)
-                            + (uint8_t)G8(rec + 0x3145));
+                            + (uint8_t)G8(rec + UNIT_Y));
 
     int16_t  absx = (int16_t)((int8_t)G8(arg1_bp_08 + 0xB4)
                             + (uint8_t)G8(rec + g_unit_table));
@@ -26717,9 +26717,9 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg2_bp_08,
 
     u = (int16_t)overlay_call_181F_02EE(arg0_bp_06);
     while (u >= 0) {
-        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + g_unit_table);
+        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + UNIT_TYPE);
         if (t >= 0x0D && t <= 0x12) {
-            uint8_t used = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + g_unit_table__owner_nibble_p9);
+            uint8_t used = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + UNIT_CARGO_3150);
             uint8_t cap  = (uint8_t)G8((uint16_t)t * 14 + 0x5237);
             slot[n] = (uint8_t)(cap - used);
             ++n;
@@ -26729,7 +26729,7 @@ int func_03F946_op_sz_59(uint16_t arg0_bp_06, uint16_t arg2_bp_08,
 
     u = (int16_t)overlay_call_181F_02EE(arg0_bp_06);
     while (u >= 0) {
-        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + g_unit_table);
+        uint8_t t = (uint8_t)G8((uint16_t)u * UNIT_STRIDE + UNIT_TYPE);
         if (t >= 0x0D && t <= 0x12) {
             u = (int16_t)overlay_call_181F_02E4();
             continue;
@@ -26790,14 +26790,14 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
     if (dest_x > (int16_t)G16(g_map_width) - 1 || dest_x < 1) {
 
         rec = (uint16_t)unit * UNIT_STRIDE;
-        if (G8(rec + g_unit_table) >= 0x0D && G8(rec + g_unit_table) <= 0x12)
+        if (G8(rec + UNIT_TYPE) >= 0x0D && G8(rec + UNIT_TYPE) <= 0x12)
             G16(0x9E4E) = 4;
         return 0;
     }
 
     rec    = (uint16_t)unit * UNIT_STRIDE;
     unit_x = (uint8_t)G8(rec + g_unit_table);
-    unit_y = (uint8_t)G8(rec + 0x3145);
+    unit_y = (uint8_t)G8(rec + UNIT_Y);
     dest_owner   = (int16_t)map_xy_bounds_or_neg1_alt((uint16_t)dest_x, (uint16_t)dest_y);
     dest_feature = (int16_t)overlay_call_181F_06D2();
     overlay_call_181F_0916();
@@ -26806,11 +26806,11 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
     unit_terr  = (int16_t)(overlay_call_181F_072C() & 0x1F);
 
     if (dest_terr == 0x19 || dest_terr == 0x1A) {
-        if (G8(rec + g_unit_table) >= 0x0D && G8(rec + g_unit_table) <= 0x12) {
+        if (G8(rec + UNIT_TYPE) >= 0x0D && G8(rec + UNIT_TYPE) <= 0x12) {
             u = (int16_t)overlay_call_181F_07E0();
             if (u < 0) goto abort;
 
-            if ((G8((uint16_t)u*UNIT_STRIDE + g_unit_table__owner_nibble) ^ G8(rec + g_unit_table__owner_nibble)) & 0xF)
+            if ((G8((uint16_t)u*UNIT_STRIDE + UNIT_OWNER) ^ G8(rec + UNIT_OWNER)) & 0xF)
                 goto abort;
 
             if (func_03F1598() == 0)
@@ -26819,7 +26819,7 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
     }
 
     if (dest_terr == 0x19 || dest_terr == 0x1A ||
-        (G8(rec + g_unit_table) >= 0x0D && G8(rec + g_unit_table) <= 0x12)) {
+        (G8(rec + UNIT_TYPE) >= 0x0D && G8(rec + UNIT_TYPE) <= 0x12)) {
 
         if ((int16_t)overlay_call_181F_06B4() != 1) {
             G16(0x9E4E) = 8;
@@ -26834,7 +26834,7 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
         uint8_t t = (uint8_t)UNIT_TYPE(u);
         if (G8((uint16_t)t*6 + 0x5238) >= 0x63) continue;
         overlay_call_181F_090C();
-        if (G8(rec + g_unit_table__owner_nibble_p2) >= 0 ) continue;
+        if (G8(rec + g_unit_table__field_05) >= 0 ) continue;
         found = unit;
     }
     if (found >= 0) {
@@ -26845,22 +26845,22 @@ int func_03FA9C_logic_sz_30(int16_t unit, int16_t dest_x, int16_t dest_y)
 
     if ((dest_terr != 0x19 && dest_terr != 0x1A) &&
         dest_feature >= 0 &&
-        (G8(rec + g_unit_table__owner_nibble) & 0xF) != (uint8_t)dest_feature) {
+        (G8(rec + UNIT_OWNER) & 0xF) != (uint8_t)dest_feature) {
         G16(0x9E4E) = 9;
         goto done;
     }
 
     u = (int16_t)overlay_call_181F_0682();
     if (u >= 0 &&
-        (G8((uint16_t)u*UNIT_STRIDE + g_unit_table__owner_nibble) & 0xF) != (uint8_t)0 &&
-        !(G8(rec + g_unit_table) >= 0x10 && G8(rec + g_unit_table) <= 0x12)) {
+        (G8((uint16_t)u*UNIT_STRIDE + UNIT_OWNER) & 0xF) != (uint8_t)0 &&
+        !(G8(rec + UNIT_TYPE) >= 0x10 && G8(rec + UNIT_TYPE) <= 0x12)) {
         G16(0x9E4E) = 7;
         goto done;
     }
 
     if (dest_terr == 0x1A && unit_terr == 0x1A &&
         unit_x < dest_x &&
-        G8(rec + g_unit_table__owner_nibble_p5) != 3 && G8(rec + g_unit_table__owner_nibble_p5) != 2) {
+        G8(rec + U_ORDERS_314C) != 3 && G8(rec + U_ORDERS_314C) != 2) {
         G16(0x9E4E) = 5;
         goto done;
     }
@@ -26907,10 +26907,10 @@ int func_04002C_op_sz_82(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg2
     overlay_call_181F_0894();
 
     rec = (uint16_t)slot * UNIT_STRIDE;
-    G8(rec + g_unit_table) = 0x17;
-    G8(rec + g_unit_table__owner_nibble_p3) = 0xFF;
-    G8(rec + g_unit_table__owner_nibble_p4) = 0x2D;
-    G8(rec + g_unit_table__owner_nibble_p9) = 0;
+    G8(rec + UNIT_TYPE) = 0x17;
+    G8(rec + U_FIELD_314A) = 0xFF;
+    G8(rec + g_unit_table__profession) = 0x2D;
+    G8(rec + UNIT_CARGO_3150) = 0;
 
     overlay_call_181F_0844(slot, arg1_bp_08, arg2_bp_0A);
 
@@ -26944,7 +26944,7 @@ int func_04057A_op_sz_141(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t arg
     int32_t  cur;
 
     if ((int16_t)arg1_bp_08 < 4) {
-        if (G8((uint16_t)arg1_bp_08 * 0x34 + g_ai_table__controller) == 0)
+        if (G8((uint16_t)arg1_bp_08 * 0x34 + AI_CTRL_543F) == 0)
             return 0;
     }
 
@@ -26965,20 +26965,20 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
 {
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
 
-    G8(rec + g_unit_table__moves_used_p7) -= 0x14;
-    if (G8(rec + g_unit_table__moves_used_p7) >= 0x14)
+    G8(rec + g_unit_table__class_profession) -= 0x14;
+    if (G8(rec + g_unit_table__class_profession) >= 0x14)
         return 0;
 
-    G8(rec + g_unit_table__moves_used_p7) = 0;
-    G8(rec + g_unit_table) = 0;
+    G8(rec + g_unit_table__class_profession) = 0;
+    G8(rec + UNIT_TYPE) = 0;
 
-    if (G8(rec + g_unit_table__class_profession) == 0x18)
-        G8(rec + g_unit_table) = 3;
+    if (G8(rec + g_unit_table__vet_type) == 0x18)
+        G8(rec + UNIT_TYPE) = 3;
 
     {
-        uint8_t owner = (uint8_t)(G8(rec + g_unit_table__owner_nibble) & 0x0F);
+        uint8_t owner = (uint8_t)(G8(rec + UNIT_OWNER) & 0x0F);
         if (owner >= 4) return 0;
-        if (G8((uint16_t)owner * 0x34 + g_ai_table__controller) != 0)
+        if (G8((uint16_t)owner * 0x34 + AI_CTRL_543F) != 0)
             return 0;
         overlay_call_181F_0652();
     }
@@ -27000,12 +27000,12 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     int16_t  newpos;
 
     ux = (uint8_t)G8(rec + g_unit_table);
-    uy = (uint8_t)G8(rec + 0x3145);
+    uy = (uint8_t)G8(rec + UNIT_Y);
     region = (int16_t)func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy);
     overlay_call_181F_070E();
     overlay_call_181F_0740();
     terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy);
-    owner = (int16_t)(G8(rec + g_unit_table__owner_nibble) & 0x0F);
+    owner = (int16_t)(G8(rec + UNIT_OWNER) & 0x0F);
 
     if (terr >= 8 && terr < 0x18) {
         if (overlay_call_181F_0754()  & 0x40)
@@ -27018,14 +27018,14 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
         land_move = (terr >= 8 && terr < 0x10) ? 0 : 1;
 
     overlay_call_181F_0934(arg0_bp_06);
-    G8(rec + g_unit_table__moves_used_p8)++;
+    G8(rec + U_TURN_315A)++;
     move_cost = (int16_t)((uint8_t)G8((uint16_t)(terr << 4) + 0x2F78) + 2);
-    scout = (G8(rec + g_unit_table__class_profession) == 0x14) ? 1 : 0;
+    scout = (G8(rec + g_unit_table__vet_type) == 0x14) ? 1 : 0;
     if (scout) move_cost >>= 1;
-    if (G8(rec + g_unit_table__moves_used_p8) < (uint8_t)move_cost)
+    if (G8(rec + U_TURN_315A) < (uint8_t)move_cost)
         goto done;
-    G8(rec + g_unit_table__moves_used_p8) = 0;
-    G8(rec + g_unit_table__owner_nibble_p5) = 0;
+    G8(rec + U_TURN_315A) = 0;
+    G8(rec + U_ORDERS_314C) = 0;
 
     if ((int16_t)G16(g_colony_count) != 0 && land_move == 0) {
         if ((int16_t)overlay_call_181F_0614()  >= 0
@@ -27044,7 +27044,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
             }
             if (dmg < 0) dmg = 0;
             if (dmg != 0 && owner < 4 &&
-                G8((uint16_t)owner*0x34 + g_ai_table__controller) == 0) {
+                G8((uint16_t)owner*0x34 + AI_CTRL_543F) == 0) {
                 overlay_call_181F_09AE();
                 overlay_call_181F_0416();
                 overlay_call_181F_0652(0x1466, 5);
@@ -27082,7 +27082,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
     {
         int16_t base;
         if ((int16_t)G16(g_current_nation) < 4 &&
-            G8((uint16_t)G16(g_current_nation)*0x34 + g_ai_table__controller) == 0)
+            G8((uint16_t)G16(g_current_nation)*0x34 + AI_CTRL_543F) == 0)
             base = (uint8_t)G8(g_difficulty);
         else
             base = 0;
@@ -27101,7 +27101,7 @@ int func_040656_unit_chain_171(uint16_t arg0_bp_06)
 clear314c:
 done:
 
-    G8(rec + g_unit_table__owner_nibble_p5) = 0;
+    G8(rec + U_ORDERS_314C) = 0;
     return 0;
 }
 
@@ -27118,28 +27118,28 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     int16_t  newpos;
 
     ux = (uint8_t)G8(rec + g_unit_table);
-    uy = (uint8_t)G8(rec + 0x3145);
+    uy = (uint8_t)G8(rec + UNIT_Y);
     region = (int16_t)func_005E90_op_sz_64((uint16_t)ux, (uint16_t)uy);
     overlay_call_181F_0740();
     terr  = (int16_t)func_00627A_op_sz_57((uint16_t)ux, (uint16_t)uy);
-    owner = (int16_t)(G8(rec + g_unit_table__owner_nibble) & 0x0F);
+    owner = (int16_t)(G8(rec + UNIT_OWNER) & 0x0F);
     if (G8(G16(g_current_power_ptr) ) & 0x0A)
         goto clear314c;
 
     overlay_call_181F_0934(arg0_bp_06);
-    G8(rec + g_unit_table__moves_used_p8)++;
+    G8(rec + U_TURN_315A)++;
     move_cost = (int16_t)(uint8_t)G8((uint16_t)(terr << 4) + 0x2F78);
-    if (G8(rec + g_unit_table__class_profession) == 0x14)
+    if (G8(rec + g_unit_table__vet_type) == 0x14)
         move_cost >>= 1;
-    if (G8(rec + g_unit_table__moves_used_p8) < (uint8_t)move_cost)
+    if (G8(rec + U_TURN_315A) < (uint8_t)move_cost)
         goto done;
-    G8(rec + g_unit_table__moves_used_p8) = 0;
-    G8(rec + g_unit_table__owner_nibble_p5) = 0;
+    G8(rec + U_TURN_315A) = 0;
+    G8(rec + U_ORDERS_314C) = 0;
 
     if ((int16_t)G16(g_colony_count) != 0) {
         overlay_call_181F_0614();
         colony = G16(g_current_colony_ptr);
-        if ((uint8_t)(G8(rec + g_unit_table__owner_nibble) & 0x0F) == G8(colony + 0x1A))
+        if ((uint8_t)(G8(rec + UNIT_OWNER) & 0x0F) == G8(colony + 0x1A))
             G16(colony + 0x98) += 0x0A;
     }
 
@@ -27168,7 +27168,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
     {
         int16_t base;
         if ((int16_t)G16(g_current_nation) < 4 &&
-            G8((uint16_t)G16(g_current_nation)*0x34 + g_ai_table__controller) == 0)
+            G8((uint16_t)G16(g_current_nation)*0x34 + AI_CTRL_543F) == 0)
             base = (uint8_t)G8(g_difficulty);
         else
             base = 0;
@@ -27187,7 +27187,7 @@ int func_0409D6_colony_sz_571(uint16_t arg0_bp_06)
 clear314c:
 done:
 
-    G8(rec + g_unit_table__owner_nibble_p5) = 0;
+    G8(rec + U_ORDERS_314C) = 0;
     return 0;
 }
 
@@ -27204,10 +27204,10 @@ extern uint8_t g_flags_5382;
 #define COL_RANK_1F     0x1F
 #define COL_STRIDE      0xCA
 
-#define COL_FLAG_TABLE_5D62  0x5D62
+#define COL_FLAG_TABLE_5D62  COL_FLAG_TABLE_5D62
 #define COL_FLAG_INTERVENE   0x40
 
-#define COL_RECORD_TABLE_5D48  0x5D48
+#define COL_RECORD_TABLE_5D48  g_colony_table__map_y_p1
 
 extern void    colony_select(int colony_idx);
 extern void    ui_set_channel(int mode);
@@ -27287,7 +27287,7 @@ extern int16_t g_sol_prev10_53D8;
 #define POWER_STRIDE        0x13C
 #define POWER_SOL_PCT_OFF   0x19
 
-#define POWER_GATE_9410     0x9410
+#define POWER_GATE_9410     TBL_9410_ARMTYPE
 
 extern void    sol_mark_rebel_power(void);
 extern void    sol_helper_3695(int power);
@@ -27549,7 +27549,7 @@ int native_raze_treasure_chiefkill(uint16_t unit, uint16_t owner, uint16_t tribe
     uint8_t  buf[16];
     int      i;
 
-    is_missionary = (DG8(unit * 0x1C + g_unit_table__class_profession) == 0x16) ? 1 : 0;
+    is_missionary = (DG8(unit * 0x1C + g_unit_table__vet_type) == 0x16) ? 1 : 0;
 
     attitude = (int16_t)func_0082A0_logic_sz_18(DG16(0x8D52), owner);
 
@@ -27566,7 +27566,7 @@ int native_raze_treasure_chiefkill(uint16_t unit, uint16_t owner, uint16_t tribe
             goto war_or_shun;
     }
 
-    if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0) {
+    if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0) {
         advisor = (int16_t)colony_commodity_advisor(unit, owner, tribe, 1);
         native_attack_apply_4BA48((int)unit, (int)DG16(0x8D4C), -1, (int)tribe);
 
@@ -27603,8 +27603,8 @@ int native_raze_treasure_chiefkill(uint16_t unit, uint16_t owner, uint16_t tribe
         rec = DG16(g_active_tribe_data_ptr);
         func_06C23C_dialog_make_from_int(1,
             DG16((uint8_t)DG8(rec + 2) * 6 + 0x9634));
-        DG8(unit * 0x1C + g_unit_table__class_profession) = 0x16;
-        if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0) {
+        DG8(unit * 0x1C + g_unit_table__vet_type) = 0x16;
+        if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0) {
             (void)overlay_call_191F_019C(0x163B, (int16_t)DG16(0x8D52));
             func_067700_compose_active_tile(1);
             (void)overlay_call_181F_0652(0x1647, 3);
@@ -27616,14 +27616,14 @@ int native_raze_treasure_chiefkill(uint16_t unit, uint16_t owner, uint16_t tribe
     goto outcome_gold;
 
 outcome_tales:
-    if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0) {
+    if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0) {
         (void)overlay_call_181F_0E08((uint8_t)DG8(unit * 0x1C + g_unit_table),
-                                     (uint8_t)DG8(unit * 0x1C + 0x3145),
+                                     (uint8_t)DG8(unit * 0x1C + UNIT_Y),
                                      0);
         (void)overlay_call_191F_019C(0x1654, (int16_t)DG16(0x8D52));
     }
     (void)func_0065C4_logic_sz_67(unit, 6);
-    if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0) {
+    if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0) {
         func_067700_compose_active_tile(0);
         (void)overlay_call_191F_0288();
 
@@ -27644,7 +27644,7 @@ outcome_gold:
         int16_t pop  = (int16_t)((uint8_t)DG8(DG16(g_active_tribe_data_ptr) + 4) + 1);
         int16_t gold = (int16_t)(step1 * pop);
         (void)overlay_call_181F_09AE();
-        if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0)
+        if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0)
             (void)overlay_call_191F_019C(0x165E, (int16_t)DG16(0x8D52));
         DG32(g_power_table__gold + owner * 0x13C) += (uint32_t)(int32_t)gold;
     }
@@ -27657,7 +27657,7 @@ war_or_shun:
     result = 1;
     func_06C23C_dialog_make_from_int(0,
         (uint16_t)func_008110_logic_sz_14(tribe));
-    if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0) {
+    if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0) {
         (void)overlay_call_181F_04C0(0x55);
         (void)overlay_call_191F_019C(0x1668, (int16_t)DG16(0x8D52));
     }
@@ -27667,7 +27667,7 @@ war_or_shun:
 path_shun:
     func_06C23C_dialog_make_from_int(1,
         (uint16_t)func_008110_logic_sz_14(owner));
-    if (owner < 4 && DG8(owner * 0x34 + g_ai_table__controller) == 0)
+    if (owner < 4 && DG8(owner * 0x34 + AI_CTRL_543F) == 0)
         (void)overlay_call_191F_019C(0x1672, (int16_t)DG16(0x8D52));
 
 done:
@@ -27691,14 +27691,14 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
     func_0081F2_logic_sz_34((uint16_t)settle);
 
     ubx   = unit * 0x1C;
-    owner = DG8(g_unit_table__owner_nibble + ubx) & 0x0F;
+    owner = DG8(UNIT_OWNER + ubx) & 0x0F;
     np    = DG16(g_active_settlement_ptr);
     tribe = DG8(np + 2);
     tribe0 = tribe - 4;
     alarm = func_0082A0_logic_sz_18((uint16_t)tribe0, (uint16_t)owner);
     contact = DG16(np + 0x0A + owner * 2);
 
-    if (owner < 4 && DG8(g_ai_table__controller + owner * 0x34) == 0 && DG16(0x00A2) == 0) {
+    if (owner < 4 && DG8(AI_CTRL_543F + owner * 0x34) == 0 && DG16(0x00A2) == 0) {
         int cue;
         if (DG16(0x8D52) == 0)      cue = 7;
         else if (DG16(0x8D52) == 1) cue = 6;
@@ -27706,7 +27706,7 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
         func_005108_op_sz_51((uint16_t)cue);
     }
 
-    type = DG8(g_unit_table + ubx);
+    type = DG8(UNIT_TYPE + ubx);
     if (type >= 0x0D && type <= 0x12) {
         if (!(func_007F34_logic_sz_27((uint16_t)owner, (uint16_t)tribe) & 0x20)) {
 
@@ -27722,7 +27722,7 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
         }
     }
 
-    if (owner < 4 && DG8(g_ai_table__controller + owner * 0x34) == 0)
+    if (owner < 4 && DG8(AI_CTRL_543F + owner * 0x34) == 0)
         goto human_panel;
 
     choice = 0;
@@ -27754,7 +27754,7 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
     }
     case 1: case 4: case 11:
 
-        (void)func_005E90_op_sz_64(DG8(g_unit_table + ubx), DG8(0x3145 + ubx));
+        (void)func_005E90_op_sz_64(DG8(g_unit_table + ubx), DG8(UNIT_Y + ubx));
         choice = 9;
         goto dispatch;
     case 12:
@@ -27766,8 +27766,8 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
     default:
         if (func_008BB2_logic_sz_20(unit) < 0)
             goto fin;
-        if (DG8(g_unit_table__class_profession + ubx) != 0x1C &&
-            DG8(g_unit_table__class_profession + ubx) != 0x19)
+        if (DG8(g_unit_table__vet_type + ubx) != 0x1C &&
+            DG8(g_unit_table__vet_type + ubx) != 0x19)
             goto fin;
         if (alarm >= 0x4B)
             goto fin;
@@ -27950,7 +27950,7 @@ extern uint8_t g_ai_personality_543F[][0x34];
 extern uint16_t g_colony_ptr_8542;
 
 extern uint8_t g_unittype_attr_5230[][14];
-#define UT_AT(type, abs_addr)  (g_unittype_attr_5230[(type)][(abs_addr) - 0x5230])
+#define UT_AT(type, abs_addr)  (g_unittype_attr_5230[(type)][(abs_addr) - UNIT_TYPE_WORD_5230])
 
 extern uint16_t g_ai_scratch_8D00;
 extern uint8_t  g_ai_scratch_8D01;
@@ -28173,7 +28173,7 @@ candidate_loop:
 
     if (band_flag == 0 && def_band == 0
         && UT_AT(unit_type, 0x5236) > 1
-        && UT_AT(def_type, 0x5235) < 2)
+        && UT_AT(def_type, UNIT_REFIT_TABLE_5235) < 2)
         def_str >>= 1;
 
     if (occ_owner < 0) {
@@ -28791,8 +28791,8 @@ void ovl_shipcombat_fx(int x, int y, int a, int b, int c)
 { (void)a;(void)b;(void)c; printf("ship combat at %d,%d (fx pending)\n", x, y); }
 void ovl_post_landfall(void)          {  }
 
-int  power_scan_done(int power) { return DG8(g_ai_table__lostcity_onetime_flags + power*0x34) & 0x80; }
-void power_scan_mark(int power) { DG8(g_ai_table__lostcity_onetime_flags + power*0x34) |= 0x80; }
+int  power_scan_done(int power) { return DG8(g_ai_table__field_30 + power*0x34) & 0x80; }
+void power_scan_mark(int power) { DG8(g_ai_table__field_30 + power*0x34) |= 0x80; }
 
 #endif
 
@@ -28838,27 +28838,27 @@ void ovl_deselect_fx(int x, int y) { (void)x; (void)y;  }
 #define G_FLAGS_5382     DG16 (g_game_phase_flags)
 
 #define U_X(bx)        DG8 (g_unit_table + (bx))
-#define U_Y(bx)        DG8 (0x3145 + (bx))
-#define U_TYPENAT(bx)  DG8 (g_unit_table__owner_nibble + (bx))
-#define U_PATH(bx)     DG8 (g_unit_table__owner_nibble_p3 + (bx))
-#define U_FLAG4B(bx)   DG8 (g_unit_table__owner_nibble_p4 + (bx))
-#define U_ORDER(bx)    DG8 (g_unit_table__owner_nibble_p5 + (bx))
-#define U_DESTX(bx)    DG8 (g_unit_table__owner_nibble_p6 + (bx))
-#define U_DESTY(bx)    DG8 (g_unit_table__owner_nibble_p7 + (bx))
-#define U_MOVES(bx)    DG8 (g_unit_table__owner_nibble_p9 + (bx))
-#define U_VET2(bx)     DG8 (g_unit_table__moves_used_p3 + (bx))
-#define U_VET3(bx)     DG8 (g_unit_table__moves_used_p4 + (bx))
-#define U_DELAY(bx)    DG8 (g_unit_table__moves_used_p8 + (bx))
-#define U_CARGO0(bx)   DG8 (g_unit_table__class_profession + (bx))
+#define U_Y(bx)        DG8 (UNIT_Y + (bx))
+#define U_TYPENAT(bx)  DG8 (UNIT_OWNER + (bx))
+#define U_PATH(bx)     DG8 (U_FIELD_314A + (bx))
+#define U_FLAG4B(bx)   DG8 (g_unit_table__profession + (bx))
+#define U_ORDER(bx)    DG8 (U_ORDERS_314C + (bx))
+#define U_DESTX(bx)    DG8 (U_GOTOX_314D + (bx))
+#define U_DESTY(bx)    DG8 (U_GOTOY_314E + (bx))
+#define U_MOVES(bx)    DG8 (UNIT_CARGO_3150 + (bx))
+#define U_VET2(bx)     DG8 (g_unit_table__cargo_qty_p1 + (bx))
+#define U_VET3(bx)     DG8 (g_unit_table__cargo_qty_p2 + (bx))
+#define U_DELAY(bx)    DG8 (U_TURN_315A + (bx))
+#define U_CARGO0(bx)   DG8 (g_unit_table__vet_type + (bx))
 #define UNIT_STRIDE 0x1C
 
-#define COL_X(bx)   DG8(0x5D46 + (bx))
-#define COL_Y(bx)   DG8(0x5D47 + (bx))
+#define COL_X(bx)   DG8(g_colony_table + (bx))
+#define COL_Y(bx)   DG8(g_colony_table__map_y + (bx))
 #define COLONY_STRIDE 0xCA
 
 #define POWER_STRIDE 0x13C
 
-#define IS_REF_POWER(player) (DG8(g_ai_table__controller + (player) * 0x34) != 0)
+#define IS_REF_POWER(player) (DG8(AI_CTRL_543F + (player) * 0x34) != 0)
 
 extern int overlay_call_0D1D_07E4();
 extern int overlay_call_0D1D_0DAE();
@@ -28972,10 +28972,10 @@ after_highlight:
 
     if (G_CUR_POWER >= 4 || IS_REF_POWER(G_CUR_POWER))
         goto skip_report;
-    DG16(0x1F5E) = 5;
+    DG16(OPT_MODE_1F5E) = 5;
     if (overlay_call_191F_0120() != 0)
         goto tail;
-    DG16(0x1F5E) = 0xFFFF;
+    DG16(OPT_MODE_1F5E) = 0xFFFF;
 skip_report:
 
     overlay_call_181F_0934(unit);
@@ -29196,7 +29196,7 @@ sea_done:
     {
         int rnd;
 
-        uint8_t far *ctab = *(uint8_t far * near *)DGROUP_PTR(0x9E14);
+        uint8_t far *ctab = *(uint8_t far * near *)DGROUP_PTR(G_MAPROW_TILE);
         rnd = (home + 1) % ctab[0x21];
         home = rnd;
         overlay_call_181F_08B2();
@@ -29204,7 +29204,7 @@ sea_done:
 
     arr_cmp = 0;
     {
-        uint8_t far *ctab = *(uint8_t far * near *)DGROUP_PTR(0x9E14);
+        uint8_t far *ctab = *(uint8_t far * near *)DGROUP_PTR(G_MAPROW_TILE);
         for (j = 1; j <= ctab[0x21]; j++) {
             if (*(uint16_t far *)(ctab + 0x22 + j * 10) !=
                 *(uint16_t far *)(ctab + 0x22))
@@ -29909,7 +29909,7 @@ int func_042138_power_census(uint16_t player )
         if ((uint8_t)(U_X(ubx) - player) == 0xEC)
             DG8(player - 0x6BA6)++;
 
-        if (DG8(0x5235 + U_TYPENAT(ubx)  * 6) > 1) {
+        if (DG8(UNIT_REFIT_TABLE_5235 + U_TYPENAT(ubx)  * 6) > 1) {
             if (U_ORDER(ubx) == 5 || U_ORDER(ubx) == 6) {
 
                 if (overlay_call_181F_0696() >= 0 && home >= 0)
@@ -30773,13 +30773,13 @@ bookkeep:
             uint8_t ty = g_units_3144[unit_index][0x02];
             func_002544_logic_sz_60(1);
             rt_emit_long(
-                DG16(0x5230 + (unsigned)ty * 9));
+                DG16(UNIT_TYPE_WORD_5230 + (unsigned)ty * 9));
             if (g_units_3144[unit_index][0x02] == 0x0C)
                 rt_emit_long(DG16(0x2EBA));
             else
                 rt_emit_long(DG16(0x2DCA));
             format_to_buffer_2D54(
-                (const char *)DG_PTR(0x5D48 + (unsigned)occ_colony * 0xCA));
+                (const char *)DG_PTR(g_colony_table__map_y_p1 + (unsigned)occ_colony * 0xCA));
             func_002892_logic_sz_30(1, 0x78, 0);
         }
 
@@ -30882,7 +30882,7 @@ move_commit:
                 int16_t col = (int16_t)ovly_target_query_7BE(tile_x, tile_y);
 
                 if (col >= 0 &&
-                    (DG8(0x5D62 + (unsigned)col * 0xCA) & 0x40))
+                    (DG8(COL_FLAG_TABLE_5D62 + (unsigned)col * 0xCA) & 0x40))
                     treasure_value_and_king_transport(
                         (uint16_t)unit_index, (uint16_t)actor_owner);
             }
@@ -31464,21 +31464,21 @@ tail:
 
 #define CHAR_CLASS(c)    DG8(0x27ED + (c))
 
-#define FONT_DESC        (0x2DA8)
+#define FONT_DESC        (DLG_FMT_2DA8)
 
 #define NS_STRIDE      0x12
 #define NS_X(bx)       DG8 (g_settle_table + (bx))
-#define NS_Y(bx)       DG8 (g_settle_table__map_y + (bx))
-#define NS_OWNER(bx)   DG8 (g_settle_table__map_y_p1 + (bx))
-#define NS_MISSION(bx) DG8 (g_settle_table__raid_budget + (bx))
-#define NS_TENSION(bx) DGS16(g_settle_table__wealth_accum + (bx))
+#define NS_Y(bx)       DG8 (g_settle_table__y + (bx))
+#define NS_OWNER(bx)   DG8 (g_settle_table__owner + (bx))
+#define NS_MISSION(bx) DG8 (g_settle_table__mission + (bx))
+#define NS_TENSION(bx) DGS16(g_settle_table__alarm_by_power + (bx))
 
 #define TRIBE_ALARM(row)  DGS16(0x5B1C + (row) * 2)
 
 #define TRIBE_REC8(si)    DG8(0x59A0 + (si))
 
 #define UNIT_STRIDE       0x1C
-#define U_TYPE(bx)        DG8(g_unit_table + (bx))
+#define U_TYPE(bx)        DG8(UNIT_TYPE + (bx))
 
 #define G_DIFFICULTY      DG8 (g_difficulty)
 #define G_NEAREST_DIST    DG16(0x8DB8)
@@ -31487,7 +31487,7 @@ tail:
 #define G_CUR_POWER       DGS16(g_current_nation)
 #define G_POWER_FLAG_8D52 DG16(0x8D52)
 
-#define IS_REF_POWER(p)   (DG8(g_ai_table__controller + (p) * 0x34) != 0)
+#define IS_REF_POWER(p)   (DG8(AI_CTRL_543F + (p) * 0x34) != 0)
 
 extern int overlay_call_0D1D_0C56();  extern int overlay_call_0D1D_1010();
 extern int overlay_call_0D1D_10EA();  extern int overlay_call_0D1D_113C();
@@ -32287,7 +32287,7 @@ int func_0464C2_raid_strength(uint16_t party , uint16_t colony ,
         label = 0x41;
     }
 
-    w = (10 - DG8((unsigned)(0x9410 + (int)colony))) >> 1;
+    w = (10 - DG8((unsigned)(TBL_9410_ARMTYPE + (int)colony))) >> 1;
     if (w < 0) w = 0;
     value -= w;
 
@@ -35945,7 +35945,7 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
                 int seen = func_005EE8_logic_sz_28(DG8(cp), DG8(cp + 1));
                 if (!((0x10 << power) & (seen & 0xFF))) {
                     if (DG8(cp + 0x1A) < 4 &&
-                        DG8(g_ai_table__controller + DG8(cp + 0x1A) * 0x34) == 0)
+                        DG8(AI_CTRL_543F + DG8(cp + 0x1A) * 0x34) == 0)
                         goto strength_check;
                 }
             }
@@ -36105,7 +36105,7 @@ int func_04CC50_ai_strategic_plan_build(uint16_t power)
 
                 int score = sup ? 3 : 2;
                 if (DG8(cp + 0x1A) < 4 &&
-                    DG8(g_ai_table__controller + DG8(cp + 0x1A) * 0x34) == 0) {
+                    DG8(AI_CTRL_543F + DG8(cp + 0x1A) * 0x34) == 0) {
                     score++;
 
                     int sum = DG8(0x9516 + region) + DG8(0x9506 + region) +
@@ -37942,10 +37942,10 @@ ai8:
 
                                 if (U_OFF(unit_index, U_TYPE) < 0x11)
                                     score_26 = (int16_t)(score_26 +
-                                        (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                        (((int16_t)DG8(UNIT_REFIT_TABLE_5235 + (uint16_t)type * 14)
                                           - 0x0A) << 1));
                             }
-                            if (!(DG8(0x5D62 + (uint16_t)DG16(0x8DC6) * 0xCA) & 0x40))
+                            if (!(DG8(COL_FLAG_TABLE_5D62 + (uint16_t)DG16(0x8DC6) * 0xCA) & 0x40))
 
                                 func_0083F2_op_sz_71(DG8(DG16(g_current_colony_ptr) + 0),
                                     DG8(DG16(g_current_colony_ptr) + 1), (uint16_t)owner,
@@ -38006,7 +38006,7 @@ ai8:
                             continue;
                         if (ci == col_own && col_own_dist == 0)
                             continue;
-                        if (!(DG8(0x5D62 + (uint16_t)ci * 0xCA) & 0x40))
+                        if (!(DG8(COL_FLAG_TABLE_5D62 + (uint16_t)ci * 0xCA) & 0x40))
                             continue;
 
                         if ((int16_t)(int8_t)U_OFF(unit_index, 0x06) == ci)
@@ -38083,13 +38083,13 @@ ai8:
                         if (DG8(DG16(g_current_colony_ptr) + 0x1B) & 2) {
                             if (U_OFF(unit_index, U_TYPE) < 0x10)
                                 score_26 = (int16_t)(score_26 +
-                                    (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                    (((int16_t)DG8(UNIT_REFIT_TABLE_5235 + (uint16_t)type * 14)
                                       - 0x0A) << 3));
                         } else if (DG8(DG16(g_current_colony_ptr) + 0x1B) & 1) {
 
                             if (U_OFF(unit_index, U_TYPE) < 0x10)
                                 score_26 = (int16_t)(score_26 +
-                                    (((int16_t)DG8(0x5235 + (uint16_t)type * 14)
+                                    (((int16_t)DG8(UNIT_REFIT_TABLE_5235 + (uint16_t)type * 14)
                                       - 0x0A) << 1));
                         }
                         d = (int16_t)func_00493C_logic_sz_14((uint16_t)map_x,
@@ -38678,7 +38678,7 @@ ai17_entry:
                 if (DG8(g_game_phase_flags) & 1) {
                     int attack_ok = 0;
                     if (oth_E < 4 &&
-                        DG8(g_ai_table__controller + (uint16_t)oth_E * 0x34) == 0)
+                        DG8(AI_CTRL_543F + (uint16_t)oth_E * 0x34) == 0)
 
                         attack_ok = 1;
                     if (oth_E >= 4)
@@ -38806,7 +38806,7 @@ ai18_dir_bias:
                         int16_t col_90 = (int16_t)func_008D26_op_sz_69(
                             (uint16_t)cx_2E, (uint16_t)cy_3E);
                         if (col_90 >= 0) {
-                            uint8_t colpw = DG8(0x5D60 + (uint16_t)col_90 * 0xCA);
+                            uint8_t colpw = DG8(COL_OWNER_5D60 + (uint16_t)col_90 * 0xCA);
 
                             if ((func_007F34_logic_sz_27((uint16_t)owner,
                                      (uint16_t)colpw) & 0x60) == 0x20) {
@@ -39108,13 +39108,13 @@ extern uint16_t g_dialog_active_A154;
 
 #define UNIT_STRIDE      0x1C
 #define UNIT_X           g_unit_table
-#define UNIT_Y           0x3145
-#define UNIT_TYPE        g_unit_table
-#define UNIT_OWNER       g_unit_table__owner_nibble
-#define UNIT_STATE_314C  g_unit_table__owner_nibble_p5
-#define UNIT_CARGO_3150  g_unit_table__owner_nibble_p9
+#define UNIT_Y           UNIT_Y
+#define UNIT_TYPE        UNIT_TYPE
+#define UNIT_OWNER       UNIT_OWNER
+#define UNIT_STATE_314C  U_ORDERS_314C
+#define UNIT_CARGO_3150  UNIT_CARGO_3150
 
-#define POWER_DEAD_543F  g_ai_table__controller
+#define POWER_DEAD_543F  AI_CTRL_543F
 
 #define SHIP_TYPE_LO     0x0D
 #define SHIP_TYPE_HI     0x12
@@ -39477,7 +39477,7 @@ int ai_resolve_colony_assault(int unit)
     }
 
     odds = (overlay_call_181F_0AB0(0) + 6) * 2;
-    if (*(uint8_t *)(unit * UNIT_STRIDE + g_unit_table__class_profession) == 0x16)
+    if (*(uint8_t *)(unit * UNIT_STRIDE + g_unit_table__vet_type) == 0x16)
         odds >>= 1;
     if ((int16_t)g_active_power_idx_5394 < 4 &&
         *(uint8_t *)(g_active_power_idx_5394 * 0x34 + POWER_DEAD_543F) == 0)
@@ -39560,7 +39560,7 @@ int trade_with_power_dialog(int unit)
 
     value = (int)*(uint8_t *)(leader * 16 + ctype + 0x84BC) * camt;
 
-    scaled = (int)((int8_t)*(uint8_t *)(leader * 0x13C + g_power_table__tax_pct) * value) / 100;
+    scaled = (int)((int8_t)*(uint8_t *)(leader * 0x13C + g_power_table__tax_rate) * value) / 100;
     offer  = -(scaled - value);
 
     if ((g_game_mode_5382 & 1) == 0) {
@@ -39890,8 +39890,8 @@ void smite_branch(int attacker_power_idx, int opponent_power_idx)
 #include "viceroy_types.h"
 #include "unit.h"
 
-#define UNIT_CHAIN_PREV_BASE  g_unit_table__turn_counter
-#define UNIT_CHAIN_NEXT_BASE  g_unit_table__subtype_p1
+#define UNIT_CHAIN_PREV_BASE  UNIT_CHAIN_PREV_OFF
+#define UNIT_CHAIN_NEXT_BASE  UNIT_CHAIN_NEXT_OFF
 #define UNIT_NULL             0xFFFF
 
 void units_draw_stack(int head_idx)
@@ -39953,7 +39953,7 @@ void func_067182_colony_pass(int x0, int y0, int w, int h)
 
     int n = (int16_t)DG16(g_colony_count);
     for (int i = 0; i < n; i++) {
-        int rec = 0x5D46 + i * 0xCA;
+        int rec = g_colony_table + i * 0xCA;
         int x = DG8(rec), y = DG8(rec + 1);
         if (x < x0 || x > x1 || y < y0 || y > y1) continue;
         if (!func_02EB46_logic_sz_13((uint16_t)i, DG16(g_active_human_player)))
@@ -39961,10 +39961,10 @@ void func_067182_colony_pass(int x0, int y0, int w, int h)
         if (!(func_005EE8_logic_sz_28((uint16_t)x, (uint16_t)y) & fogmask)
             && DG16(0x53A2) == 0)
             continue;
-        int sx = (x - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(0x832A))
-                 * (int16_t)DG16(0x5AD4);
-        int sy = (y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C))
-                 * (int16_t)DG16(0x8326);
+        int sx = (x - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(G_PIXBASE_COL))
+                 * (int16_t)DG16(G_TILE_PX);
+        int sy = (y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW))
+                 * (int16_t)DG16(G_TILE_PX2);
         int f = ((int16_t)DG16(0x0184) == 0 && DG16(0x0890) == 0);
         func_004314_colony_blit((uint16_t)i, sx, sy,
                                 (uint16_t)f, (uint16_t)f,
@@ -39986,10 +39986,10 @@ void func_067082_settlement_pass(int x0, int y0, int w, int h)
         if (!(func_005EE8_logic_sz_28((uint16_t)x, (uint16_t)y) & fogmask)
             && DG16(0x53A2) == 0)
             continue;
-        int sx = (x - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(0x832A))
-                 * (int16_t)DG16(0x5AD4);
-        int sy = (y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C))
-                 * (int16_t)DG16(0x8326);
+        int sx = (x - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(G_PIXBASE_COL))
+                 * (int16_t)DG16(G_TILE_PX);
+        int sy = (y - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW))
+                 * (int16_t)DG16(G_TILE_PX2);
         func_003E40_logic_sz_174((uint16_t)i, (uint16_t)sx, (uint16_t)sy,
                                  DG16(0x0186), 0);
     }
@@ -39998,12 +39998,12 @@ void func_067082_settlement_pass(int x0, int y0, int w, int h)
 void overlay_pass_colonies(void)
 {
     func_067182_colony_pass((int16_t)DG16(g_viewport_origin_x), (int16_t)DG16(g_viewport_origin_y),
-                            (int16_t)DG16(0x8544), (int16_t)DG16(0x8546));
+                            (int16_t)DG16(G_SPAN_W), (int16_t)DG16(G_SPAN_H));
 }
 void overlay_pass_settlements(void)
 {
     func_067082_settlement_pass((int16_t)DG16(g_viewport_origin_x), (int16_t)DG16(g_viewport_origin_y),
-                                (int16_t)DG16(0x8544), (int16_t)DG16(0x8546));
+                                (int16_t)DG16(G_SPAN_W), (int16_t)DG16(G_SPAN_H));
 }
 
 #include "viceroy_types.h"
@@ -40265,7 +40265,7 @@ void combat_demote_loser(int slot)
 static int is_human(int owner)
 {
     if ((unsigned)owner >= 4) return 0;
-    return DG8(g_ai_table__controller + (uint16_t)((unsigned)owner * 0x34)) == 0;
+    return DG8(AI_CTRL_543F + (uint16_t)((unsigned)owner * 0x34)) == 0;
 }
 
 void combat_apply_attacker_loss(int attacker_idx, int atk_owner, int atk_type)
@@ -40274,8 +40274,8 @@ void combat_apply_attacker_loss(int attacker_idx, int atk_owner, int atk_type)
     int def_owner = s_cbx.def_owner;
     (void)attacker_idx; (void)atk_type;
 
-    if ((unsigned)atk_owner < 12) DG16(0x53C8 + (uint16_t)((unsigned)atk_owner * 2)) = 0;
-    if ((unsigned)def_owner < 12) DG16(0x53C8 + (uint16_t)((unsigned)def_owner * 2)) = 0;
+    if ((unsigned)atk_owner < 12) DG16(TREATY_TIMER_BASE + (uint16_t)((unsigned)atk_owner * 2)) = 0;
+    if ((unsigned)def_owner < 12) DG16(TREATY_TIMER_BASE + (uint16_t)((unsigned)def_owner * 2)) = 0;
 
     if ((unsigned)atk_owner < 4 && (unsigned)def_owner < 4) {
         uint16_t atk_pr = 0x8808u + (uint16_t)((unsigned)atk_owner * 0x13Cu);
@@ -40466,7 +40466,7 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
 
     {
         uint8_t nib = UNIT_FIELD(unit_idx, 0x03) & 0x0F;
-        if (nib < 4 && U8(nib * 0x34 + g_ai_table__controller) == 0)
+        if (nib < 4 && U8(nib * 0x34 + AI_CTRL_543F) == 0)
             cost += U8(g_difficulty);
         else
             cost -= U8(g_difficulty);
@@ -40490,7 +40490,7 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
 
         uint8_t nib = UNIT_FIELD(unit_idx, 0x03) & 0x0F;
         if (nib >= 4) return 0;
-        if (U8(nib * 0x34 + g_ai_table__controller) != 0) return 0;
+        if (U8(nib * 0x34 + AI_CTRL_543F) != 0) return 0;
         if (UNIT_FIELD(unit_idx, 0x02) == 1)
             UNIT_FIELD(unit_idx, 0x02) = 9;
         else
@@ -40503,7 +40503,7 @@ int func_05C69C_unit_arrive_on_special_terrain(uint16_t unit_idx,
     {
         uint8_t nib = UNIT_FIELD(unit_idx, 0x03) & 0x0F;
         if (nib >= 4) return 0;
-        if (U8(nib * 0x34 + g_ai_table__controller) != 0) return 0;
+        if (U8(nib * 0x34 + AI_CTRL_543F) != 0) return 0;
 
         overlay_call_181F_0438();
 
@@ -40746,7 +40746,7 @@ int func_05E9B0_draw_tile_info_panel(uint16_t unit0,
 int func_05FE60_set_active_tile_ptr(uint16_t tile_idx)
 {
     U16(0xA15C) = tile_idx;
-    U16(0x9E14) = (uint16_t)(tile_idx * 0x4A + 0);
+    U16(G_MAPROW_TILE) = (uint16_t)(tile_idx * 0x4A + 0);
     U16(0x9E16) = 0x1B22;
     return 0;
 }
@@ -40755,7 +40755,7 @@ int func_05FE7A_set_active_tile_subfield_ptr(uint16_t idx)
 {
     U16(0xA15E) = idx;
 
-    U16(0x9E18) = (uint16_t)(idx * 0x0A + U16(0x9E14) + 0x22);
+    U16(0x9E18) = (uint16_t)(idx * 0x0A + U16(G_MAPROW_TILE) + 0x22);
     U16(0x9E1A) = U16(0x9E16);
     return 0;
 }
@@ -40764,7 +40764,7 @@ void far *func_05FEA0_colony_record_for_tile_slot(uint16_t slot)
 {
 
     uint16_t off = (uint16_t)(slot * 0x0A);
-    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
     uint16_t stored = *(uint16_t far *)(tile + off + 0x22);
 
     if (stored == 0x3E7) {
@@ -40773,7 +40773,7 @@ void far *func_05FEA0_colony_record_for_tile_slot(uint16_t slot)
                                  U16(U16(g_current_nation) * 2 - 0x7C6C));
     }
 
-    return (void far *)MK_FP( 0, (uint16_t)(stored * 0xCA + 0x5D48));
+    return (void far *)MK_FP( 0, (uint16_t)(stored * 0xCA + g_colony_table__map_y_p1));
 }
 
 int func_05FEF4_unit_adjacent_to_active_colony(uint16_t arg0_mode,
@@ -40957,7 +40957,7 @@ int func_06046E_remove_unit_from_tile_stack(uint16_t row)
     }
 
     {
-        uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+        uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
         for (slot = (int)row; slot < (int)(uint8_t)tile[0x21] - 1; slot++) {
             uint8_t far *dst = tile + slot * 0x0A + 0x22;
             uint8_t far *src = tile + slot * 0x0A + 0x2C;
@@ -41040,7 +41040,7 @@ int func_06076A_pick_from_power_list_menu(uint16_t highlight)
     int chosen = -1;
     void far *menu;
     int slot;
-    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
 
     {
         uint16_t title = (tile[0x20] != 0) ? 0x1D23 : 0x1D2C;
@@ -41077,7 +41077,7 @@ int func_06083A_draw_map_view_chrome(void)
 
 int func_060C34_advance_map_cursor_to_next_unit(void)
 {
-    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
     int row = (int)(uint8_t)tile[0x21];
     int next;
 
@@ -41138,7 +41138,7 @@ int func_060D8C_stack_row_at_cursor(uint16_t mode)
     int y0;
     int n;
     int r;
-    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+    uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
 
     if ((int)(uint8_t)tile[0x21] <= (int)U16(0xA15E))
         goto finish;
@@ -41271,7 +41271,7 @@ int func_060FBC_select_tile_or_active_unit(int16_t arg0_slot)
             target_coord = (int)U16(g_current_nation) - 0x14;
         } else {
 
-            target_coord = (int8_t)U8(v * 0xCA + 0x5D46);
+            target_coord = (int8_t)U8(v * 0xCA + g_colony_table);
 
         }
     }
@@ -41305,7 +41305,7 @@ int func_0610B0_found_new_colony(void)
     char namebuf[0x52];
 
     if ((int16_t)U16(0x53A0) >= 0x0C) {
-        U16(0x9CB0) = 0x0C;
+        U16(MACRO_VAL_9CB0) = 0x0C;
         U16(0x9CB2) = 0;
         overlay_call_181F_0998();
         return 0;
@@ -41368,7 +41368,7 @@ int func_0610B0_found_new_colony(void)
 
     overlay_call_0D1D_117E();
     {
-        uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(0x9E14));
+        uint8_t far *tile = (uint8_t far *)MK_FP(U16(0x9E16), U16(G_MAPROW_TILE));
         tile[0x20] = (uint8_t)force_flag;
         tile[0x21] = 2;
     }
@@ -41712,7 +41712,7 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
     if ((int)*(volatile uint16_t *)&g_dgroup[0x2d1a] == (int)*(volatile uint16_t *)&g_dgroup[0xa14e] &&
         (int)*(volatile uint16_t *)&g_dgroup[0x2d1c] == (int)*(volatile uint16_t *)&g_dgroup[0xa14c]) {
         int si = (tgt_col - col0) * 16 - row0;
-        if (DGB(si + (int)*(volatile uint16_t *)&g_dgroup[0xa14c] - 0x5d90) != 0)
+        if (DGB(si + (int)*(volatile uint16_t *)&g_dgroup[0xa14c] - g_colony_table__unit_type_at_40_pa) != 0)
             goto settle;
     }
 
@@ -41726,7 +41726,7 @@ int func_061F02_ai_unit_order(int tgt_col, int tgt_row, int cost_cap)
     *(volatile uint16_t *)&g_dgroup[0x2d16] = 1;
     {
         int si = ((int)*(volatile uint16_t *)&g_dgroup[0xa14e] - col0) * 16 - row0;
-        DGB((int)*(volatile uint16_t *)&g_dgroup[0xa14c] + si - 0x5d90) = 1;
+        DGB((int)*(volatile uint16_t *)&g_dgroup[0xa14c] + si - g_colony_table__unit_type_at_40_pa) = 1;
     }
 
     *(volatile uint16_t *)&g_dgroup[0xa370] = (uint16_t)cost_cap;
@@ -41766,7 +41766,7 @@ settle:
     for (qy = 0; qy < 0x10; qy++) {
         for (qx = 0; qx < 0x10; qx++) {
             int si = qy * 16 + qx;
-            if (DGB(si - 0x5d90) != 0)
+            if (DGB(si - g_colony_table__unit_type_at_40_pa) != 0)
                 overlay_call_191F_012C();
         }
     }
@@ -42055,7 +42055,7 @@ int func_062D84_unit_automove(int unit_idx)
         goto finish;
 
     owner  = U_OWNER(unit_idx) & 0xf;
-    at_war = (DGB(owner * 0x34 + g_ai_table__controller) == 1) ? 1 : 0;
+    at_war = (DGB(owner * 0x34 + AI_CTRL_543F) == 1) ? 1 : 0;
 
     dcol = dst_x - cur_x;
     drow = dst_y - cur_y;
@@ -42668,7 +42668,7 @@ int func_065D26_postgen_large(void)
 
         for (si = 0; si < 4; si++) {
             int bias = 0;
-            if (DGB(si * 0x34 + g_ai_table__controller) == 0)
+            if (DGB(si * 0x34 + AI_CTRL_543F) == 0)
                 bias = (int)*(volatile uint8_t *)&g_dgroup[g_difficulty] << 1;
             (void)(random_int(0, 0xe) + bias);
         }
@@ -42772,7 +42772,7 @@ int func_065D26_postgen_large(void)
 
     for (si = 0; si < (int)*(volatile uint16_t *)&g_dgroup[g_settlement_count]; si++) {
         int sx = DGB(si * 0x12 + g_settle_table);
-        int sy = DGB(si * 0x12 + g_settle_table__map_y);
+        int sy = DGB(si * 0x12 + g_settle_table__y);
         int owner_here = tile_owner(sx, sy);
         (void)owner_here;
         col = sx + random_int(-2, 2);
@@ -42957,10 +42957,10 @@ int func_066CD6_minimap_panel(int highlight, int src)
     minimap_draw_contents();
 
     {
-        int col0 = (int16_t)DG16(0x9CCC), row0 = (int16_t)DG16(0x9CCA);
+        int col0 = (int16_t)DG16(G_MINIMAP_COL0), row0 = (int16_t)DG16(G_MINIMAP_ROW0);
         int vx = (int16_t)DG16(g_viewport_origin_x) - col0 + 0xFC;
         int vy = (int16_t)DG16(g_viewport_origin_y) - row0 + 9;
-        vid_box_outline(vx, vy, (int16_t)DG16(0x8544), (int16_t)DG16(0x8546), 0x0F);
+        vid_box_outline(vx, vy, (int16_t)DG16(G_SPAN_W), (int16_t)DG16(G_SPAN_H), 0x0F);
     }
     if (highlight != 0)
         vid_box_outline(0xF1, 8, 0x29, 0x4F, 0x0F);
@@ -43798,15 +43798,15 @@ int func_066EC8_draw_grid_box_pair(uint16_t arg0_col, uint16_t arg1_row2,
 {
     int gx, gy, gw, gh, px;
 
-    gy = ((int)(*(volatile uint16_t *)&g_dgroup[0x832C]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y])
-          + (int)arg1_row2) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
+    gy = ((int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y])
+          + (int)arg1_row2) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]);
 
-    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
 
-    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
+    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]);
 
-    px = ((int)(*(volatile uint16_t *)&g_dgroup[0x832A]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x])
-          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+    px = ((int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x])
+          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
 
     overlay_call_181F_033A();
     (void)px; (void)gw; (void)gh; (void)gy;
@@ -43820,8 +43820,8 @@ int func_066F68_draw_route_path(void)
     uint16_t lfsr = 1;
     int visited = 0;
     int32_t acc = 0;
-    int area = (int)(*(volatile uint16_t *)&g_dgroup[0x8546])
-             * (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);
+    int area = (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H])
+             * (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W]);
 
     *(volatile uint16_t *)&g_dgroup[0x833A] = 0;
     *(volatile uint16_t *)&g_dgroup[0x8338] = 0;
@@ -43835,11 +43835,11 @@ int func_066F68_draw_route_path(void)
         idx = (int)lfsr - 1;
         if ((unsigned)idx >= (unsigned)area) break;
 
-        col = idx / (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);
-        row = idx % (int)(*(volatile uint16_t *)&g_dgroup[0x8544]);
+        col = idx / (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W]);
+        row = idx % (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W]);
 
-        px = (row + (int)(*(volatile uint16_t *)&g_dgroup[0x832A])) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
-        py = (col + (int)(*(volatile uint16_t *)&g_dgroup[0x832C])) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
+        px = (row + (int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL])) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
+        py = (col + (int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW])) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]) + 8;
 
         overlay_call_181F_00E2();
         (void)px; (void)py;
@@ -43866,15 +43866,15 @@ int func_06703C_draw_grid_box(uint16_t arg0_col, uint16_t arg1_row,
 {
     int py, gh, gw, px;
 
-    py = ((int)(*(volatile uint16_t *)&g_dgroup[0x832C]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y])
-          + (int)arg1_row) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
+    py = ((int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y])
+          + (int)arg1_row) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]) + 8;
 
-    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+    gh = (int)arg2_h * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
 
-    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]);
+    gw = (int)arg3_w * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]);
 
-    px = ((int)(*(volatile uint16_t *)&g_dgroup[0x832A]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x])
-          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+    px = ((int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL]) - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x])
+          + (int)arg0_col) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
 
     overlay_call_181F_00E2();
     (void)py; (void)gh; (void)gw; (void)px;
@@ -43937,7 +43937,7 @@ int func_067182_draw_colony_markers(uint16_t arg0_x0, uint16_t arg1_y0,
     if (count <= 0)
         return 0;
 
-    rec = (uint8_t *)0x5D46;
+    rec = (uint8_t *)g_colony_table;
     for (i = 0; i < count; i++) {
         int cx = (int)rec[0];
         int cy = (int)rec[1];
@@ -44008,10 +44008,10 @@ int func_0673CC_draw_one_unit(uint16_t arg0_unit, uint16_t arg1_sel, uint16_t ar
     attr = 0x80 + (arg1_sel == 1 ? 0 : 0x40);
 
     px = ((int)rec[0] - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x])
-          + (int)(*(volatile uint16_t *)&g_dgroup[0x832A])) * (int)(*(volatile uint16_t *)&g_dgroup[0x5AD4]);
+          + (int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL])) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX]);
 
     py = ((int)rec[1] - (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y])
-          + (int)(*(volatile uint16_t *)&g_dgroup[0x832C])) * (int)(*(volatile uint16_t *)&g_dgroup[0x8326]) + 8;
+          + (int)(*(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW])) * (int)(*(volatile uint16_t *)&g_dgroup[G_TILE_PX2]) + 8;
 
     if (((int)(rec[3] & 0x0F)) != (int)(*(volatile uint8_t *)&g_dgroup[g_active_human_player]))
         attr |= 0x20;
@@ -44047,7 +44047,7 @@ int func_0674A8_blink_selected_unit(uint16_t arg0_unit)
     owner = (int)(sel[3] & 0x0F);
     if (owner >= 4) goto plain;
 
-    if (*(volatile uint8_t *)(g_ai_table__controller + owner * 0x34) != 0) goto plain;
+    if (*(volatile uint8_t *)(AI_CTRL_543F + owner * 0x34) != 0) goto plain;
 
     overlay_call_181F_0966((int16_t)DG16(0x5392));
     if (1 ) {
@@ -44198,88 +44198,88 @@ int func_06787C_render_frame_setup(void)
     int zoom = (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
     int span_w, span_h, origin_col, origin_row, ax;
 
-    span_w = 0x0F << zoom;  *(volatile uint16_t *)&g_dgroup[0x8544] = (uint16_t)span_w;
-    span_h = 0x0C << zoom;  *(volatile uint16_t *)&g_dgroup[0x8546] = (uint16_t)span_h;
+    span_w = 0x0F << zoom;  *(volatile uint16_t *)&g_dgroup[G_SPAN_W] = (uint16_t)span_w;
+    span_h = 0x0C << zoom;  *(volatile uint16_t *)&g_dgroup[G_SPAN_H] = (uint16_t)span_h;
 
     if (*(volatile uint16_t *)&g_dgroup[0x18A] != 0) {
-        span_w = 5; *(volatile uint16_t *)&g_dgroup[0x8544] = 5;
-        span_h = 5; *(volatile uint16_t *)&g_dgroup[0x8546] = 5;
+        span_w = 5; *(volatile uint16_t *)&g_dgroup[G_SPAN_W] = 5;
+        span_h = 5; *(volatile uint16_t *)&g_dgroup[G_SPAN_H] = 5;
         *(volatile uint16_t *)&g_dgroup[0x184] = 0;
         zoom = 0;
     }
 
     {
         int px = 0x10 >> (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
-        *(volatile uint16_t *)&g_dgroup[0x5AD4] = (uint16_t)px;
-        *(volatile uint16_t *)&g_dgroup[0x8326] = (uint16_t)px;
+        *(volatile uint16_t *)&g_dgroup[G_TILE_PX] = (uint16_t)px;
+        *(volatile uint16_t *)&g_dgroup[G_TILE_PX2] = (uint16_t)px;
     }
 
-    origin_col = -(( (int)(*(volatile uint16_t *)&g_dgroup[0x8544]) >> 1)
+    origin_col = -(( (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W]) >> 1)
                     - (int)(*(volatile uint16_t *)&g_dgroup[0x17C]));
     *(volatile uint16_t *)&g_dgroup[g_viewport_origin_x] = (uint16_t)origin_col;
 
-    origin_row = -(( (int)(*(volatile uint16_t *)&g_dgroup[0x8546]) >> 1)
+    origin_row = -(( (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H]) >> 1)
                     - (int)(*(volatile uint16_t *)&g_dgroup[0x17E]));
     *(volatile uint16_t *)&g_dgroup[g_viewport_origin_y] = (uint16_t)origin_row;
 
     if (*(volatile uint16_t *)&g_dgroup[0x18A] == 0) {
         int dx, dy;
         if (origin_col < 1) origin_col = 1;
-        dx = (int)(*(volatile uint16_t *)&g_dgroup[g_map_width]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8544]) - 1;
+        dx = (int)(*(volatile uint16_t *)&g_dgroup[g_map_width]) - (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W]) - 1;
         if (origin_col > dx) origin_col = dx;
         *(volatile uint16_t *)&g_dgroup[g_viewport_origin_x] = (uint16_t)origin_col;
         if (origin_row < 1) origin_row = 1;
-        dy = (int)(*(volatile uint16_t *)&g_dgroup[g_map_height]) - (int)(*(volatile uint16_t *)&g_dgroup[0x8546]) - 1;
+        dy = (int)(*(volatile uint16_t *)&g_dgroup[g_map_height]) - (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H]) - 1;
         if (origin_row > dy) origin_row = dy;
         *(volatile uint16_t *)&g_dgroup[g_viewport_origin_y] = (uint16_t)origin_row;
     }
 
-    *(volatile uint16_t *)&g_dgroup[0x832A] = 0;
-    *(volatile uint16_t *)&g_dgroup[0x832C] = 0;
+    *(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL] = 0;
+    *(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW] = 0;
 
     ax = (int)(*(volatile uint16_t *)&g_dgroup[g_map_width]) - 2;
-    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[0x8544])) {
+    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W])) {
         *(volatile uint16_t *)&g_dgroup[g_viewport_origin_x] = 1;
-        *(volatile uint16_t *)&g_dgroup[0x832A] =
-            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[0x8544])
+        *(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL] =
+            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W])
                         - (int)(*(volatile uint16_t *)&g_dgroup[g_map_width]) + 2) >> 1);
-        *(volatile uint16_t *)&g_dgroup[0x8544] = (uint16_t)ax;
+        *(volatile uint16_t *)&g_dgroup[G_SPAN_W] = (uint16_t)ax;
     }
 
     ax = (int)(*(volatile uint16_t *)&g_dgroup[g_map_height]) - 2;
-    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[0x8546])) {
+    if (ax < (int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H])) {
         *(volatile uint16_t *)&g_dgroup[g_viewport_origin_y] = 1;
-        *(volatile uint16_t *)&g_dgroup[0x832C] =
-            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[0x8546])
+        *(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW] =
+            (uint16_t)(((int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H])
                         - (int)(*(volatile uint16_t *)&g_dgroup[g_map_height]) + 2) >> 1);
-        *(volatile uint16_t *)&g_dgroup[0x8546] = (uint16_t)ax;
+        *(volatile uint16_t *)&g_dgroup[G_SPAN_H] = (uint16_t)ax;
     }
 
-    *(volatile uint16_t *)&g_dgroup[0x854C] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x]) - 1);
-    *(volatile uint16_t *)&g_dgroup[0x854E] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y]) - 1);
+    *(volatile uint16_t *)&g_dgroup[G_WIN_BASE_COL] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x]) - 1);
+    *(volatile uint16_t *)&g_dgroup[G_WIN_BASE_ROW] = (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y]) - 1);
 
     if (*(volatile uint16_t *)&g_dgroup[0x15A] != 0) {
         if (*(volatile uint16_t *)&g_dgroup[0x18A] == 0) {
             int z = (int)(*(volatile uint8_t *)&g_dgroup[0x184]);
             *(volatile uint16_t *)&g_dgroup[g_map_stride] = (uint16_t)((0x0F << z) + 2);
-            *(volatile uint16_t *)&g_dgroup[0x854A] = (uint16_t)((0x0C << z) + 2);
+            *(volatile uint16_t *)&g_dgroup[G_WIN_ROWS] = (uint16_t)((0x0C << z) + 2);
         } else {
 
-            int sc = (int)(*(volatile uint16_t *)&g_dgroup[0x854C]);
-            int sr = (int)(*(volatile uint16_t *)&g_dgroup[0x854E]);
+            int sc = (int)(*(volatile uint16_t *)&g_dgroup[G_WIN_BASE_COL]);
+            int sr = (int)(*(volatile uint16_t *)&g_dgroup[G_WIN_BASE_ROW]);
             int wc = (int)(*(volatile uint16_t *)&g_dgroup[g_map_width]) - 1;
             int wr = (int)(*(volatile uint16_t *)&g_dgroup[g_map_height]) - 1;
-            int ec = (sc < 0) ? 0 : sc; *(volatile uint16_t *)&g_dgroup[0x854C] = (uint16_t)ec;
-            int er = (sr < 0) ? 0 : sr; *(volatile uint16_t *)&g_dgroup[0x854E] = (uint16_t)er;
+            int ec = (sc < 0) ? 0 : sc; *(volatile uint16_t *)&g_dgroup[G_WIN_BASE_COL] = (uint16_t)ec;
+            int er = (sr < 0) ? 0 : sr; *(volatile uint16_t *)&g_dgroup[G_WIN_BASE_ROW] = (uint16_t)er;
             if (wc > sc + 6) wc = sc + 6;
             if (wr > sr + 6) wr = sr + 6;
             *(volatile uint16_t *)&g_dgroup[g_map_stride] = (uint16_t)(wc - ec + 1);
-            *(volatile uint16_t *)&g_dgroup[0x854A] = (uint16_t)(wr - er + 1);
+            *(volatile uint16_t *)&g_dgroup[G_WIN_ROWS] = (uint16_t)(wr - er + 1);
         }
     } else {
 
         *(volatile uint16_t *)&g_dgroup[g_map_stride] = *(volatile uint16_t *)&g_dgroup[g_map_width];
-        *(volatile uint16_t *)&g_dgroup[0x854A] = *(volatile uint16_t *)&g_dgroup[g_map_height];
+        *(volatile uint16_t *)&g_dgroup[G_WIN_ROWS] = *(volatile uint16_t *)&g_dgroup[g_map_height];
     }
 
     {
@@ -44288,11 +44288,11 @@ int func_06787C_render_frame_setup(void)
         *(volatile uint16_t *)&g_dgroup[0x188] = (uint16_t)((5 << z) + 5);
     }
 
-    *(volatile uint16_t *)&g_dgroup[0x8804] =
-        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x8544])
+    *(volatile uint16_t *)&g_dgroup[G_MAX_COL] =
+        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_W])
                    + (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_x]) - 1);
-    *(volatile uint16_t *)&g_dgroup[0x8806] =
-        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[0x8546])
+    *(volatile uint16_t *)&g_dgroup[G_MAX_ROW] =
+        (uint16_t)((int)(*(volatile uint16_t *)&g_dgroup[G_SPAN_H])
                    + (int)(*(volatile uint16_t *)&g_dgroup[g_viewport_origin_y]) - 1);
     return 0;
 }
@@ -44302,7 +44302,7 @@ int func_068898_draw_minimap_or_cursor_box(void)
 
     func_06787C_render_frame_setup();
 
-    if (*(volatile uint16_t *)&g_dgroup[0x832A] == 0 && *(volatile uint16_t *)&g_dgroup[0x832C] == 0) {
+    if (*(volatile uint16_t *)&g_dgroup[G_PIXBASE_COL] == 0 && *(volatile uint16_t *)&g_dgroup[G_PIXBASE_ROW] == 0) {
 
         overlay_call_181F_0484();
     } else if (*(volatile uint16_t *)&g_dgroup[0x82C] == 0) {
@@ -44358,9 +44358,9 @@ static int colonist_prof_cell(int prof)
 static int unit_cell(int idx)
 {
     int rec  = idx * 0x1C;
-    int type = DG8(g_unit_table + rec);
+    int type = DG8(UNIT_TYPE + rec);
     int cell = DG8(0x5232 + type * 14);
-    int prof = (int8_t)DG8(g_unit_table__class_profession + rec);
+    int prof = (int8_t)DG8(g_unit_table__vet_type + rec);
     if (type == 0)
         cell = colonist_prof_cell(prof);
     if (type == 2 && prof != 0x14) cell = 0x4A;
@@ -44368,7 +44368,7 @@ static int unit_cell(int idx)
     if (type == 4 && prof != 0x15) cell = 0x4D;
     if (type == 5 && prof != 0x16) cell = 0x4C;
     if (type == 3 && prof != 0x18) cell = 0x4E;
-    if (type == 0xB && (DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80))
+    if (type == 0xB && (DG8(U_FLAGS_3148 + rec) & 0x80))
         cell = 0x42;
     return cell;
 }
@@ -44408,7 +44408,7 @@ void unit_figure_blit_64(int unit, int flags, int x, int box_w, int y)
         stacked = (unit_chain_next(unit_chain_resolve(unit)) >= 0);
 
     rec  = rec_idx * 0x1C;
-    type = DG8(g_unit_table + rec);
+    type = DG8(UNIT_TYPE + rec);
 
     cls = 0;
     if (type >= 0xD && type <= 0x12)
@@ -44418,18 +44418,18 @@ void unit_figure_blit_64(int unit, int flags, int x, int box_w, int y)
         cls = 3;
     else if (type == 0xC || type == 0xA || type == 0xB) {
         cls = 2;
-        if (type == 0xB && (DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80))
+        if (type == 0xB && (DG8(U_FLAGS_3148 + rec) & 0x80))
             cls = 4;
     }
 
-    owner  = DG8(g_unit_table__owner_nibble + rec) & 0xF;
-    orders = DG8(g_unit_table__owner_nibble_p5 + rec);
+    owner  = DG8(UNIT_OWNER + rec) & 0xF;
+    orders = DG8(U_ORDERS_314C + rec);
     if (owner >= 4) orders = 0;
     ch = DG8(0x54DE + orders);
 
     if (type >= 0xD && type <= 0x12 &&
         (int16_t)DG16(g_active_human_player) != owner) {
-        ch = '0' + DG8(g_unit_table__owner_nibble_p9 + rec);
+        ch = '0' + DG8(UNIT_CARGO_3150 + rec);
         if (type == 0x10 && DG16(0x53A2) == 0) {
             rebel_x = 1;
             ch = 'X';
@@ -44437,10 +44437,10 @@ void unit_figure_blit_64(int unit, int flags, int x, int box_w, int y)
     }
 
     if (owner < 4 &&
-        DG8(g_ai_table__controller + owner * 0x34) != 0 &&
+        DG8(AI_CTRL_543F + owner * 0x34) != 0 &&
         (DG8(0x5383) & 0x20) &&
         (DG8(0x0894) & 8)) {
-        ch = DG8(g_unit_table__owner_nibble_p4 + rec);
+        ch = DG8(g_unit_table__profession + rec);
         if (ch >= 0x80) ch = 'E';
     }
 
@@ -44449,11 +44449,11 @@ void unit_figure_blit_64(int unit, int flags, int x, int box_w, int y)
         int txtcol = boxcol;
         if (rebel_x) txtcol = 0;
 
-        digit = ((DG8(g_unit_table__owner_nibble_p1 + rec) & 0x80) && type != 0xB);
+        digit = ((DG8(U_FLAGS_3148 + rec) & 0x80) && type != 0xB);
         if (digit) {
-            int s = DG8(0x5235 + type * 14)
-                  - DG8(g_unit_table__moves_used_p8 + rec);
-            if (is_xy_in_map_bounds(DG8(g_unit_table + rec), DG8(0x3145 + rec)))
+            int s = DG8(UNIT_REFIT_TABLE_5235 + type * 14)
+                  - DG8(U_TURN_315A + rec);
+            if (is_xy_in_map_bounds(DG8(g_unit_table + rec), DG8(UNIT_Y + rec)))
                 s = (s + 1) >> 1;
             ch = (s < 10) ? '0' + s : '+';
         }
@@ -44560,7 +44560,7 @@ void unit_render_386A(int idx, int flags, int sx, int sy, int metric)
     }
 
     if ((UREC(rec_idx, 4) & 0x80) && type != 0xB) {
-        int s = (int8_t)DG8(0x5235 + type * 14)
+        int s = (int8_t)DG8(UNIT_REFIT_TABLE_5235 + type * 14)
               - (int8_t)UREC(rec_idx, 0x16);
 
         s = (s + 1) >> 1;
@@ -44588,17 +44588,17 @@ void func_0673CC_unit_redraw(int idx, int mode, int flag2)
     if (mode && !flag2) return;
     int flags = 0x80 | ((mode != 1) ? 0x40 : 0)
               | (((UREC(idx,3) & 0x0F) != (int16_t)DG16(g_active_human_player)) ? 0x20 : 0);
-    int sx = ((int)UREC(idx,0) - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(0x832A))
-             * (int16_t)DG16(0x5AD4);
-    int sy = ((int)UREC(idx,1) - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(0x832C))
-             * (int16_t)DG16(0x8326) + 8;
+    int sx = ((int)UREC(idx,0) - (int16_t)DG16(g_viewport_origin_x) + (int16_t)DG16(G_PIXBASE_COL))
+             * (int16_t)DG16(G_TILE_PX);
+    int sy = ((int)UREC(idx,1) - (int16_t)DG16(g_viewport_origin_y) + (int16_t)DG16(G_PIXBASE_ROW))
+             * (int16_t)DG16(G_TILE_PX2) + 8;
     unit_render_386A(idx, flags, sx, sy - 8, (int16_t)DG16(0x0186));
 }
 
 void overlay_pass_units(void)
 {
     int x0 = (int16_t)DG16(g_viewport_origin_x), y0 = (int16_t)DG16(g_viewport_origin_y);
-    int x1 = x0 + (int16_t)DG16(0x8544) - 1, y1 = y0 + (int16_t)DG16(0x8546) - 1;
+    int x1 = x0 + (int16_t)DG16(G_SPAN_W) - 1, y1 = y0 + (int16_t)DG16(G_SPAN_H) - 1;
     int n = (int16_t)DG16(g_unit_count);
     for (int i = 0; i < n; i++) {
         int ux = UREC(i,0), uy = UREC(i,1);
@@ -44663,16 +44663,16 @@ void overlay_pass_units(void)
 #define G_CENTRE_X        0x017C
 #define G_CENTRE_Y        0x017E
 #define G_MINIMAP_FLAG    0x018A
-#define G_TILE_PX         0x5AD4
-#define G_TILE_PX2        0x8326
-#define G_SPAN_COLS       0x8544
-#define G_SPAN_ROWS       0x8546
+#define G_TILE_PX         G_TILE_PX
+#define G_TILE_PX2        G_TILE_PX2
+#define G_SPAN_COLS       G_SPAN_W
+#define G_SPAN_ROWS       G_SPAN_H
 #define G_ORIGIN_COL      g_viewport_origin_x
 #define G_ORIGIN_ROW      g_viewport_origin_y
-#define G_PIXBASE_COL     0x832A
-#define G_PIXBASE_ROW     0x832C
-#define G_MAX_COL         0x8804
-#define G_MAX_ROW         0x8806
+#define G_PIXBASE_COL     G_PIXBASE_COL
+#define G_PIXBASE_ROW     G_PIXBASE_ROW
+#define G_MAX_COL         G_MAX_COL
+#define G_MAX_ROW         G_MAX_ROW
 #define G_MAP_W           g_map_width
 #define G_MAP_H           g_map_height
 
@@ -44682,8 +44682,8 @@ void overlay_pass_units(void)
 #define VIEWPORT_OVERVIEW_SPAN  5
 #define VIEWPORT_SCREEN_Y       8
 
-#define G_MINIMAP_COL0    0x9CCC
-#define G_MINIMAP_ROW0    0x9CCA
+#define G_MINIMAP_COL0    G_MINIMAP_COL0
+#define G_MINIMAP_ROW0    G_MINIMAP_ROW0
 
 #define MINIMAP_PIX_X     0xFC
 #define MINIMAP_PIX_Y     9
@@ -44718,7 +44718,7 @@ void overlay_pass_units(void)
 #define SCREEN_BOX_X      0
 #define SCREEN_BOX_W      0x140
 #define SCREEN_BOX_H      0xC8
-#define G_MAPROW_TILE     0x9E14
+#define G_MAPROW_TILE     G_MAPROW_TILE
 
 struct hud_placement {
     const char *element;
@@ -44749,7 +44749,7 @@ static const struct hud_placement HUD_LAYOUT[] = {
 };
 #define HUD_LAYOUT_COUNT  (int)(sizeof(HUD_LAYOUT) / sizeof(HUD_LAYOUT[0]))
 
-#define G_SCREEN_BOUNDS  0x839E
+#define G_SCREEN_BOUNDS  G_CLIP_RECT
 
 #define PR_TAX_RATE          0x01
 #define PR_REBEL_PCT         0x02
@@ -44868,8 +44868,8 @@ const int8_t DIR4_DY[4] = { -1, 0,  1,  0 };
 const int8_t DIR8_DX[8] = { 0,  1,  1,  1,  0, -1, -1, -1 };
 const int8_t DIR8_DY[8] = { -1, -1, 0,  1,  1,  1,  0, -1 };
 
-#define G_WP_TERRAIN     0xA594
-#define G_WP_FEATURE     0xA598
+#define G_WP_TERRAIN     G_WP_TERRAIN
+#define G_WP_FEATURE     G_WP_FEATURE
 #define G_RENDER_STRIDE  g_map_stride
 #define G_ZOOM_LEVEL     0x0184
 
@@ -44957,11 +44957,11 @@ int nmask4_forest(void)
     return mask;
 }
 
-#define G_CONN_BITMAP    0xA8A6
-#define G_CONN_COUNT     0xA8A3
-#define G_CONN_SCRATCH   0xA8A1
-#define G_VIS_TERRAIN_R  0xA8A2
-#define G_ROAD_DIR_TABLE 0x2D24
+#define G_CONN_BITMAP    G_CONN_BITMAP
+#define G_CONN_COUNT     G_CONN_COUNT
+#define G_CONN_SCRATCH   G_RAW_FEATURE
+#define G_VIS_TERRAIN_R  G_VIS_TERRAIN
+#define G_ROAD_DIR_TABLE G_ROAD_DIR_TABLE
 
 extern int classify_terrain(uint8_t raw);
 
@@ -45056,11 +45056,11 @@ int terrain_is_auto_forest(int terrain_id)
 #define G_ZOOM_LEVEL    0x0184
 #define G_STRAT_VIEW2   0x018E
 
-#define G_TILE_SX       0xA5A4
-#define G_TILE_SY       0xA5A6
-#define G_SUBCELL_DX    0x1EA4
-#define G_SUBCELL_DY    0x1EA5
-#define G_CLIP_RECT     0x839E
+#define G_TILE_SX       G_TILE_SX
+#define G_TILE_SY       G_TILE_SY
+#define G_SUBCELL_DX    G_NUDGE_DX
+#define G_SUBCELL_DY    G_NUDGE_DY
+#define G_CLIP_RECT     G_CLIP_RECT
 
 extern void rblt_marker_full (int sx_minus8, int sy_minus15, int sheet_off, int sheet_seg);
 extern void rblt_marker_scaled(int metric, int sy, int sheet_off, int sheet_seg);
@@ -45160,19 +45160,19 @@ void emit_terrain_sprite(int sprite_idx)
 #define G_VIEW_ORIGIN_COL  g_viewport_origin_x
 #define G_VIEW_ORIGIN_ROW  g_viewport_origin_y
 
-#define G_VIEW_MAX_COL  0x8804
-#define G_VIEW_MAX_ROW  0x8806
+#define G_VIEW_MAX_COL  G_MAX_COL
+#define G_VIEW_MAX_ROW  G_MAX_ROW
 
-#define G_TILE_PX_W  0x5AD4
-#define G_TILE_PX_H  0x8326
+#define G_TILE_PX_W  G_TILE_PX
+#define G_TILE_PX_H  G_TILE_PX2
 
-#define G_PIX_BASE_COL  0x832A
-#define G_PIX_BASE_ROW  0x832C
+#define G_PIX_BASE_COL  G_PIXBASE_COL
+#define G_PIX_BASE_ROW  G_PIXBASE_ROW
 
 #define G_ZOOM_LEVEL  0x0184
 
-#define G_SPAN_W  0x8544
-#define G_SPAN_H  0x8546
+#define G_SPAN_W  G_SPAN_W
+#define G_SPAN_H  G_SPAN_H
 
 #define G_STRAT_VIEW  0x018A
 
@@ -45184,32 +45184,32 @@ void emit_terrain_sprite(int sprite_idx)
 
 #define G_LAYERS_RESIDENT  0x015A
 
-#define G_WP_TERRAIN  0xA594
-#define G_WP_FEATURE  0xA598
-#define G_WP_RESFOG   0xA59C
+#define G_WP_TERRAIN  G_WP_TERRAIN
+#define G_WP_FEATURE  G_WP_FEATURE
+#define G_WP_RESFOG   G_WP_RESFOG
 
-#define G_TILE_SX     0xA5A4
-#define G_TILE_SY     0xA5A6
-#define G_SUBCELL_BX  0xA5A0
-#define G_SUBCELL_BY  0xA5A2
-#define G_COL_PARITY  0xA5A8
+#define G_TILE_SX     G_TILE_SX
+#define G_TILE_SY     G_TILE_SY
+#define G_SUBCELL_BX  G_SUBCELL_BX
+#define G_SUBCELL_BY  G_SUBCELL_BY
+#define G_COL_PARITY  G_COL_PARITY
 
 #define G_FOG_MASK        g_render_fog_mask
-#define G_RAW_TERRAIN     0xA89F
-#define G_RAW_RESFOG      0xA8A0
-#define G_RAW_FEATURE     0xA8A1
-#define G_VIS_TERRAIN     0xA8A2
-#define G_CONN_BITMAP     0xA8A6
+#define G_RAW_TERRAIN     G_RAW_TERRAIN
+#define G_RAW_RESFOG      G_RAW_RESFOG
+#define G_RAW_FEATURE     G_RAW_FEATURE
+#define G_VIS_TERRAIN     G_VIS_TERRAIN
+#define G_CONN_BITMAP     G_CONN_BITMAP
 
-#define G_ROAD_DIR_TABLE  0x2D24
+#define G_ROAD_DIR_TABLE  G_ROAD_DIR_TABLE
 
 #define G_SHEET_PTR_A  0x0174
 #define G_SHEET_PTR_B  0x016C
 
-#define G_SUBCELL_DX  0x1EA4
-#define G_SUBCELL_DY  0x1EA5
+#define G_SUBCELL_DX  G_NUDGE_DX
+#define G_SUBCELL_DY  G_NUDGE_DY
 
-#define G_CLIP_RECT  0x839E
+#define G_CLIP_RECT  G_CLIP_RECT
 
 extern const uint8_t TERRAIN_3X3[9];
 extern const int16_t TERRAIN_CENTER_VARIANT[29];
@@ -45565,9 +45565,9 @@ void map_view_render(int active_layer, int y_extent)
 #define G_VIEW_CENTER_Y  0x017E
 #define G_STRAT_VIEW     0x018A
 #define G_LAYERS_RESIDENT 0x015A
-#define G_WIN_BASE_COL   0x854C
-#define G_WIN_BASE_ROW   0x854E
-#define G_WIN_ROWS       0x854A
+#define G_WIN_BASE_COL   G_WIN_BASE_COL
+#define G_WIN_BASE_ROW   G_WIN_BASE_ROW
+#define G_WIN_ROWS       G_WIN_ROWS
 #define G_SHEET_METRIC2  0x0186
 #define G_METRIC_188     0x0188
 #define G_MAP_W          g_map_width
@@ -45875,7 +45875,7 @@ int func_06929C_tile_info_panel_draw(uint16_t arg0)
 
 int func_069304_tile_info_popup_variant(void)
 {
-    if (overlay_call_191F_087A(0x1ec4, (int16_t)DG16(0x2da8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0) != 0) {
+    if (overlay_call_191F_087A(0x1ec4, (int16_t)DG16(DLG_FMT_2DA8), (int16_t)DG16(0x2daa), (int16_t)DG16(0x2dac), (int16_t)DG16(0x2dae), 0) != 0) {
         overlay_call_181F_0484();
     }
     overlay_call_181F_0444();
@@ -46508,14 +46508,14 @@ int func_06BE50_ui_draw_string_field(uint16_t wdg_lo, uint16_t wdg_hi)
 
 int func_06BE92_ui_label_player_or_score(uint16_t wdg_lo, uint16_t wdg_hi)
 {
-    if (DGS16(0x1F5C) > 7) {
+    if (DGS16(OPT_FIELD_1F5C) > 7) {
         overlay_call_0D1D_07E4();
         DG16(0x1F6E) = 1;
         DG16(0xA5AE) = 1;
         overlay_call_0C0C_0006();
 
     } else {
-        func_0082A0_logic_sz_18(DG16(0x1F5C), DG16(g_current_player));
+        func_0082A0_logic_sz_18(DG16(OPT_FIELD_1F5C), DG16(g_current_player));
         overlay_call_181F_0A60();
         overlay_call_0D1D_07E4();
 
@@ -47483,18 +47483,18 @@ extern uint16_t g_report_lbl_2EDA[];
 extern uint16_t g_report_lbl_2EE2[];
 extern uint8_t  g_tribe_active_314C[];
 
-#define DLG_FMT_2DA8   0x2DA8
-#define RPT_FMT_2DA8   0x2DA8
+#define DLG_FMT_2DA8   DLG_FMT_2DA8
+#define RPT_FMT_2DA8   DLG_FMT_2DA8
 
-#define MACRO_KEYTAB_1FA4  0x1FA4
-#define MACRO_KEYTAB_1FAB  0x1FAB
-#define MACRO_KEYTAB_1FB2  0x1FB2
-#define MACRO_KEYTAB_1FB8  0x1FB8
-#define MACRO_KEYTAB_1FC0  0x1FC0
-#define MACRO_PAD_1FB6     0x1FB6
-#define MACRO_PCT_1FC5     0x1FC5
-#define MACRO_VAL_9CD2     0x9CD2
-#define MACRO_VAL_9CB0     0x9CB0
+#define MACRO_KEYTAB_1FA4  MACRO_KEYTAB_1FA4
+#define MACRO_KEYTAB_1FAB  MACRO_KEYTAB_1FAB
+#define MACRO_KEYTAB_1FB2  MACRO_KEYTAB_1FB2
+#define MACRO_KEYTAB_1FB8  MACRO_KEYTAB_1FB8
+#define MACRO_KEYTAB_1FC0  MACRO_KEYTAB_1FC0
+#define MACRO_PAD_1FB6     MACRO_PAD_1FB6
+#define MACRO_PCT_1FC5     MACRO_PCT_1FC5
+#define MACRO_VAL_9CD2     MACRO_VAL_9CD2
+#define MACRO_VAL_9CB0     MACRO_VAL_9CB0
 
 #define TMPL_KEYTAB_1FC7   0x1FC7
 #define TMPL_KEYTAB_1FCF   0x1FCF
@@ -47507,7 +47507,7 @@ extern uint8_t  g_tribe_active_314C[];
 #define TMPL_KEYTAB_1FF6   0x1FF6
 #define TMPL_KEYTAB_1FFF   0x1FFF
 #define TMPL_FMT_2478      0x2478
-#define TMPL_FMT_2022      0x2022
+#define TMPL_FMT_2022      TMPL_FMT_2022
 #define DLG_NUM_5398       g_current_player
 #define DLG_NUM_538A       g_year
 
@@ -47826,21 +47826,21 @@ int func_06EEEC_text_macro_expand(uint16_t src, uint16_t dst)
         if (overlay_call_0D1D_0CC2() == 0) {
             overlay_call_0D1D_08F6();
             overlay_call_0D1D_07A4();
-        } else if (overlay_call_0D1D_08BC(found, 0x1fab, 6) == 0) {
+        } else if (overlay_call_0D1D_08BC(found, MACRO_KEYTAB_1FAB, 6) == 0) {
             overlay_call_0D1D_08F6();
             overlay_call_0D1D_0916();
             overlay_call_0D1D_07A4();
-        } else if (overlay_call_0D1D_08BC(found, 0x1fb2, 3) == 0) {
+        } else if (overlay_call_0D1D_08BC(found, MACRO_KEYTAB_1FB2, 3) == 0) {
             overlay_call_0D1D_08F6();
             overlay_call_0D1D_0916();
 
-            overlay_call_0D1D_07A4(dst, 0x1fb6);
+            overlay_call_0D1D_07A4(dst, MACRO_PAD_1FB6);
             overlay_call_0D1D_0842();
             overlay_call_0D1D_07A4();
-        } else if (overlay_call_0D1D_08BC(found, 0x1fb8, 7) == 0) {
+        } else if (overlay_call_0D1D_08BC(found, MACRO_KEYTAB_1FB8, 7) == 0) {
             overlay_call_181F_042E();
             overlay_call_0D1D_11B4();
-        } else if (overlay_call_0D1D_08BC(found, 0x1fc0, 4) == 0) {
+        } else if (overlay_call_0D1D_08BC(found, MACRO_KEYTAB_1FC0, 4) == 0) {
             overlay_call_0D1D_08FA();
             overlay_call_0D1D_11B4();
         } else {
@@ -48534,9 +48534,9 @@ static void mr_draw(const mr_panel_t *m, const mr_geom_t *g, int sel,
 
 static void mr_teardown(const mr_panel_t *m, const uint8_t *checks)
 {
-    DG16(0x1F5C) = 0xFFFF;
-    DG16(0x1F5E) = 0xFFFF;
-    DG16(0x1F60) = 0xFFFF;
+    DG16(OPT_FIELD_1F5C) = 0xFFFF;
+    DG16(OPT_MODE_1F5E) = 0xFFFF;
+    DG16(OPT_FIELD_1F60) = 0xFFFF;
     DG16(0x1F8A) = 0;
     DG16(0x1F66) = 0;
     if (m->checkbox) {
@@ -48544,7 +48544,7 @@ static void mr_teardown(const mr_panel_t *m, const uint8_t *checks)
         int i;
         for (i = 0; i < m->nopt; i++)
             if (checks[i]) mask |= (uint16_t)(1 << i);
-        DG16(0x1F54) = mask;
+        DG16(OPT_FLAGS_1F54) = mask;
     }
 }
 
@@ -49208,7 +49208,7 @@ int func_070A1A_nation_pick_dispatch(void)
 
     if (overlay_call_181F_044E() != 0) {
         int r;
-        DG16(0x1F5C) = 4;
+        DG16(OPT_FIELD_1F5C) = 4;
         r = overlay_call_181F_0998();
         if (r <= 0)
             goto teardown;
@@ -49754,7 +49754,7 @@ int func_07431E_new_game_init(void)
         g_sel_nation_5398 = 0;
 
     if (g_quickstart_828 == 0) {
-        int has_panel = (overlay_call_191F_087A(0x2189, (int16_t)DG16(0x839e), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1);
+        int has_panel = (overlay_call_191F_087A(0x2189, (int16_t)DG16(G_CLIP_RECT), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1);
         if (has_panel) {
             overlay_call_181F_040A();
             overlay_call_181F_0444();
@@ -50184,7 +50184,7 @@ static void draw_map(void)
     DG16(0x017C) = (uint16_t)(g_cam_x + 7);
     DG16(0x017E) = (uint16_t)(g_cam_y + 6);
 
-    DG16(0x839E) = 0; DG16(0x83A0) = 0;
+    DG16(G_CLIP_RECT) = 0; DG16(0x83A0) = 0;
     DG16(0x83A2) = 239; DG16(0x83A4) = 191;
     DG16(0x53A2) = 1;
     map_view_render(-1, 0);
@@ -50215,8 +50215,8 @@ static void draw_map(void)
         if (r0 < 0) r0 = 0;
         if (c0 > g_map_w - 0x37) c0 = g_map_w - 0x37;
         if (r0 > g_map_h - 0x26) r0 = g_map_h - 0x26;
-        DG16(0x9CCC) = (uint16_t)c0;
-        DG16(0x9CCA) = (uint16_t)r0;
+        DG16(G_MINIMAP_COL0) = (uint16_t)c0;
+        DG16(G_MINIMAP_ROW0) = (uint16_t)r0;
         func_066CD6_minimap_panel(0, 0);
         DG16(0x8540) = (uint16_t)unit_x();
         DG16(0x853E) = (uint16_t)unit_y();
@@ -50488,7 +50488,7 @@ static int shell_loop(void)
                 int cy = u >= 0 ? UREC(u,1) : unit_y();
                 int n = (int16_t)DG16(g_colony_count);
                 for (int ci = 0; ci < n; ci++) {
-                    if (DG8(0x5D46+ci*0xCA) == cx && DG8(0x5D46+ci*0xCA+1) == cy) {
+                    if (DG8(g_colony_table+ci*0xCA) == cx && DG8(g_colony_table+ci*0xCA+1) == cy) {
                         func_0082DC_logic_sz_118((uint16_t)ci);
 
                         memset(vid_framebuffer(), 0, VID_W * VID_H);
@@ -50508,7 +50508,7 @@ static int shell_loop(void)
                                                    UREC(u,0), UREC(u,1), 0xFFFF);
                     if (s >= 0) {
                         for (int kk = 0; kk < 16; kk++)
-                            DG8(0x5D46 + s*0xCA + 2 + kk) =
+                            DG8(g_colony_table + s*0xCA + 2 + kk) =
                                 DG8(0x5426 + DG16(g_active_human_player)*0x34 + kk);
                         printf("colony founded: slot %d at %d,%d\n",
                                s, UREC(u,0), UREC(u,1));
@@ -50739,7 +50739,7 @@ int main(int argc, char **argv)
         DG16(g_current_player) = 0;
 
         {
-            int rec = 0x5D46;
+            int rec = g_colony_table;
             DG8(rec)     = 30;
             DG8(rec + 1) = 38;
             DG8(rec + 0x1A) = 0;
@@ -50748,14 +50748,14 @@ int main(int argc, char **argv)
                 DG8(rec + 2 + k) = DG8(0x5426 + k);
             DG16(g_colony_count) = 1;
             DG16(g_active_human_player) = 0;
-            DG8(g_ai_table__controller)  = 1;
+            DG8(AI_CTRL_543F)  = 1;
 
             DG16(0x2F5E) = 1000;
 
             DG16(g_year) = 1492;
             DG16(g_year_misc) = 0;
             DG32(g_power_table__gold) = 1000;
-            DG8(g_power_table__tax_pct)  = 7;
+            DG8(g_power_table__tax_rate)  = 7;
             DG16(g_power_table__crosses_accum) = 18;
             DG16(g_power_table__cross_threshold) = 40;
             {
@@ -50784,7 +50784,7 @@ int main(int argc, char **argv)
                 extern void colony_screen_render(int);
                 extern int  ui_color_for(int, int, int);
                 extern void vid_box_fill(int, int, int, int, uint8_t);
-                int rec = 0x5D46;
+                int rec = g_colony_table;
 
                 {   static const uint8_t jamestown_bits[8] =
                         { 0xCF,0xB2,0x22,0x09,0x99,0x00,0x00,0x00 };
@@ -50804,7 +50804,7 @@ int main(int argc, char **argv)
                         }
                     }
                     DGS16(0x8D72) = 0;
-                    DGS16(0x8D7C) = -1;
+                    DGS16(CD_LIST_CURSOR) = -1;
                     DGS16(0x8D7E) = -1;
                     DGS16(0x0337) = 1;
 
@@ -50819,7 +50819,7 @@ int main(int argc, char **argv)
                 {   extern int func_0082DC_logic_sz_118(uint16_t);
                     func_0082DC_logic_sz_118(0);
                 }
-                DG16(0x8544) = 0;
+                DG16(G_SPAN_W) = 0;
                 DG16(g_year) = 1492;
                 DG16(g_year_misc) = 0;
 
@@ -50989,7 +50989,7 @@ int main(int argc, char **argv)
                                 UREC(1,0), UREC(1,1), 0xFFFF);
                         if (s >= 0)
                             for (int kk = 0; kk < 16; kk++)
-                                DG8(0x5D46 + s*0xCA + 2 + kk) =
+                                DG8(g_colony_table + s*0xCA + 2 + kk) =
                                     DG8(0x5426 + DG16(g_active_human_player)*0x34 + kk);
                         printf("  founded   : slot %d colonies=%d\n",
                                s, DG16(g_colony_count));
@@ -51142,10 +51142,10 @@ int load_savegame(const char *path)
     LOAD_BLOCK(f, (uint8_t *)0x5AD6, 0x270, 1);
     LOAD_BLOCK(f, (uint8_t *)0x9566, 0x0C, 1);
     LOAD_BLOCK(f, (uint8_t *)0x8CFC, 4, 1);
-    LOAD_BLOCK(f, (uint8_t *)0x9298, 4, 1);
+    LOAD_BLOCK(f, (uint8_t *)TBL_9298_NCOL, 4, 1);
     LOAD_BLOCK(f, (uint8_t *)0x9408, 4, 1);
     LOAD_BLOCK(f, (uint8_t *)0x940C, 4, 1);
-    LOAD_BLOCK(f, (uint8_t *)0x9410, 4, 1);
+    LOAD_BLOCK(f, (uint8_t *)TBL_9410_ARMTYPE, 4, 1);
     LOAD_BLOCK(f, (uint8_t *)0x9180, 4, 1);
     LOAD_BLOCK(f, (uint8_t *)0x9414, 4, 1);
     LOAD_BLOCK(f, (uint8_t *)0x9418, 4, 1);
@@ -51693,7 +51693,7 @@ int func_0749E0_load_names_data_tables(void)
     for (i = 0; i < 0x17; i++) {
         int si = i * 0xE;
         overlay_call_191F_091C();
-        (*(uint16_t near *)(DG_BASE + (uint16_t)((si + 0x5230)))) =
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((si + UNIT_TYPE_WORD_5230)))) =
             (uint16_t)overlay_call_1A1F_0B22();
         (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5232)))) =
             (uint8_t)overlay_call_1A1F_088A();
@@ -51702,7 +51702,7 @@ int func_0749E0_load_names_data_tables(void)
             (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5234)))) = (uint8_t)(b * 3);
         }
         (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5236)))) = (uint8_t)overlay_call_1A1F_088A();
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5235)))) = (uint8_t)overlay_call_1A1F_088A();
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((si + UNIT_REFIT_TABLE_5235)))) = (uint8_t)overlay_call_1A1F_088A();
         (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5237)))) = (uint8_t)overlay_call_1A1F_088A();
         (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5238)))) = (uint8_t)overlay_call_1A1F_088A();
         (*(uint8_t near *)(DG_BASE + (uint16_t)((si + 0x5239)))) = (uint8_t)overlay_call_1A1F_088A();
@@ -51964,7 +51964,7 @@ int new_game_state_init(uint16_t arg0_bp_06)
     (*(uint16_t near *)(DG_BASE + (uint16_t)(0x53D8))) = 0;
 
     for (i = 0; i < 4; i++)
-        (*(uint16_t near *)(DG_BASE + (uint16_t)((0x53C8 + i * 2)))) = 0xFFFF;
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((TREATY_TIMER_BASE + i * 2)))) = 0xFFFF;
 
     for (i = 0; i < 0x10; i++)
         (*(uint16_t near *)(DG_BASE + (uint16_t)((g_price_seed[16] + i * 2)))) =
@@ -52043,12 +52043,12 @@ int new_game_state_init(uint16_t arg0_bp_06)
     p = 0;
     while (p < 4) {
 
-        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + g_ai_table__controller)))) == 2) {
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + AI_CTRL_543F)))) == 2) {
             p++;
             continue;
         }
 
-        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + g_ai_table__controller)))) != 0) {
+        if ((*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + AI_CTRL_543F)))) != 0) {
             p++;
         } else {
             toggle = 1;
@@ -52060,31 +52060,31 @@ int new_game_state_init(uint16_t arg0_bp_06)
 
         u = overlay_call_181F_095C();
         bx = u * 0x1C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p5)))) = 0;
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_ORDERS_314C)))) = 0;
         si = p * 0x13C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p6)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p7)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOX_314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOY_314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
         if (p == 3)
-            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table)))) = 0xE;
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + UNIT_TYPE)))) = 0xE;
 
         u = overlay_call_181F_095C();
         bx = u * 0x1C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p5)))) = 1;
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_ORDERS_314C)))) = 1;
         si = p * 0x13C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p6)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p7)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOX_314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOY_314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
         if (p == 1)
-            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__class_profession)))) = 0x14;
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__vet_type)))) = 0x14;
 
         u = overlay_call_181F_095C();
         bx = u * 0x1C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p5)))) = 1;
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_ORDERS_314C)))) = 1;
         si = p * 0x13C;
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p6)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
-        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__owner_nibble_p7)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOX_314D)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C6))));
+        (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + U_GOTOY_314E)))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((si - 0x77C5))));
         if ((toggle != 0 && g_difficulty_53A6 <= 1) || p == 2) {
             bx = u * 0x1C;
-            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__class_profession)))) = 0x15;
+            (*(uint8_t near *)(DG_BASE + (uint16_t)((bx + g_unit_table__vet_type)))) = 0x15;
         }
 
         bx = p * 0x13C;
@@ -52092,7 +52092,7 @@ int new_game_state_init(uint16_t arg0_bp_06)
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x8540))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017C)));
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017E))) = (*(uint8_t near *)(DG_BASE + (uint16_t)((bx - 0x77C5))));
         (*(uint16_t near *)(DG_BASE + (uint16_t)(0x853E))) = (*(uint16_t near *)(DG_BASE + (uint16_t)(0x017E)));
-        (*(uint16_t near *)(DG_BASE + (uint16_t)((p * 0x34 + g_ai_table__controller_p1)))) = 0;
+        (*(uint16_t near *)(DG_BASE + (uint16_t)((p * 0x34 + g_ai_table__named_colony_count)))) = 0;
         p++;
     }
 
@@ -52151,7 +52151,7 @@ int func_0759E8_save_load_game_screen(void)
         }
         if (page1A_file_pick() != 0) {
             for (p = 0; p < 4; p++)
-                (*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + g_ai_table__controller)))) = 1;
+                (*(uint8_t near *)(DG_BASE + (uint16_t)((p * 0x34 + AI_CTRL_543F)))) = 1;
         } else {
             goto finish_alt;
         }
@@ -52190,7 +52190,7 @@ int func_0759E8_save_load_game_screen(void)
         overlay_call_181F_0F3C();
         done = 0;
 
-        menu = menu_run_boxed(0x2345);
+        menu = menu_run_boxed(MENU_BEGIN_KEY);
 
         if (menu < 0)
             goto finish_alt;
@@ -52238,7 +52238,7 @@ int func_0759E8_save_load_game_screen(void)
 
         } else if (menu == 3) {
             page1A_sl_prep();
-            done = (overlay_call_191F_087A(0x236b, (int16_t)DG16(0x839e), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1) ? 1 : 0;
+            done = (overlay_call_191F_087A(0x236b, (int16_t)DG16(G_CLIP_RECT), (int16_t)DG16(0x83a0), (int16_t)DG16(0x83a2), (int16_t)DG16(0x83a4), 0) == 1) ? 1 : 0;
             if (done != 0) {
                 overlay_call_181F_040A();
                 overlay_call_181F_0444();
@@ -53257,7 +53257,7 @@ static int load_units(FILE *f)
         if (*p == ';' || *p == '\r' || *p == '\n' || !*p) continue;
         if (*p == '@') { if (in) break; in = !strncmp(p, "@UNIT", 5) && p[5] < 'A'; continue; }
         if (!in) continue;
-        int base = 0x5230 + n * 9;
+        int base = UNIT_TYPE_WORD_5230 + n * 9;
         size_t len = strcspn(p, ",");
         { char sv=p[len]; p[len]=0;
           char *e=p+strlen(p); while(e>p&&e[-1]==' ')*--e=0;
@@ -53474,7 +53474,7 @@ const char *viceroy_str(uint16_t handle)
 #define KEY_KING1      0x2314
 #define KEY_KINGLOSE   0x231A
 #define KEY_KINGWIN    0x2323
-#define KEY_FONTKING   0x232B
+#define KEY_FONTKING   KEY_FONTKING
 
 extern int16_t g_word_372;
 extern int16_t g_word_1F64;
@@ -53543,7 +53543,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
     rec = ov_rec_next(keybuf, 0);
     if (rec != 0) {
 
-        ov_draw_portrait(rec, 0x839E);
+        ov_draw_portrait(rec, G_CLIP_RECT);
     }
 
     if (msg_idx == 1 && subcase == 1) {
@@ -53558,7 +53558,7 @@ int king_audience(int msg_idx, int subcase, int run_arg)
     ov_rec_first();
     rec = ov_rec_next(keybuf, 0);
     if (rec != 0) {
-        ov_draw_portrait(rec, 0x839E);
+        ov_draw_portrait(rec, G_CLIP_RECT);
     }
 
     ov_snapshot();
@@ -53675,7 +53675,7 @@ void king_ref_buildup(int active_power)
 #include "ui_screen.h"
 
 #define SCREEN_TITLE     0
-#define MENU_BEGIN_KEY   0x2345
+#define MENU_BEGIN_KEY   MENU_BEGIN_KEY
 #define BG_BOOT          0x233C
 #define BG_NEWGAME       0x2374
 #define SCREEN_TITLE     1
@@ -53877,7 +53877,7 @@ void func_078142_assert_report(uint16_t modptr_bp06, int16_t a_bp08,
 {
     overlay_call_181F_0416();
 
-    *(volatile int32_t *)0x9CB0 = (int32_t)a_bp08;
+    *(volatile int32_t *)MACRO_VAL_9CB0 = (int32_t)a_bp08;
     *(volatile int32_t *)0x9CB4 = (int32_t)b_bp0A;
     *(volatile int32_t *)0x9CB8 = (int32_t)c_bp0C;
 

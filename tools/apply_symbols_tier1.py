@@ -22,7 +22,8 @@ GLOBALS = {int(k, 16): v for k, v in SYM["globals"].items()}
 WIN = {n: (int(d["base"], 16), int(d["stride"], 16)) for n, d in SYM["record_windows"].items()}
 FIELDS = {r: {int(k, 16): v for k, v in fl.items()} for r, fl in SYM["record_fields"].items()}
 TABLE = {"UnitRecord": "g_unit_table", "AIPersonality": "g_ai_table",
-         "NativeSettlement": "g_settle_table", "PowerRecord": "g_power_table"}
+         "NativeSettlement": "g_settle_table", "PowerRecord": "g_power_table",
+         "ColonyRecord": "g_colony_table"}
 
 def addr_name(v):
     if v < 0x1000:
