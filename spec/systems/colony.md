@@ -97,12 +97,37 @@ sol_pct = (rebel_dividend[+0xC2] * 100) / rebel_divisor[+0xC6]     # @0x8557/0x8
 if FF_op(0x12) [Jan de Witt] and owner<4 and human:  sol_pct += 20  # @0x859C
 sol_pct = min(sol_pct, 100)
 ```
-The dividend/divisor pair is updated each turn in `sol_tory.c`
-(`func_02D658`) from the bells produced; crossing thresholds fires the
-`REBELMAJORITY`/`SONSUP`/`TORYMAJORITY` messages and feeds the per-nation
-`PowerRecord +0x02 rebel_sentiment_pct`. The per-turn dividend/divisor smoothing
-constants are **RECONSTRUCTED** (per `sol_tory.c`); the % computation above is
-byte-verified.
+**Per-turn accumulator update — BYTE_VERIFIED** (`func_02D658 @0x2DA1C..0x2DAD8`).
+Both `+0xC2` (dividend `A`) and `+0xC6` (divisor `B`) are **32-bit exponential
+moving averages** with a fixed decay of **1/64** per turn (six `sar/rcr` pairs):
+```
+new_bells = bells produced this turn (after the modifiers below)
+pop       = colony size (ColonyRecord +0x1F)
+
+# divisor B (capacity)  @0x2DA1C
+B -= B >> 6                 # decay 1/64   (@0x2DA24 ×6 sar/rcr)
+B  = max(B, 1)              # clamp ≥1     (@0x2DA44)
+B += 2 * pop                # inflow       (@0x2DA64 pop<<1; add)
+
+# dividend A (rebel bells)  @0x2DA73
+A += new_bells - (A >> 6)   # decay 1/64 then add new bells (@0x2DA78/@0x2DA98)
+A  = max(A, 0)              # clamp ≥0     (@0x2DAA4)
+A  = min(A, B)              # A never exceeds B (@0x2DABE) → sol_pct ≤ 100
+```
+**`new_bells` modifiers (`@0x2D9DF..0x2DA1C`):** during the War of Independence
+(`[0x5382]&1`) a colony owned by the tory-leader power (`[0x53D2]`) has its bells
+**halved and negated** (`new_bells = −(new_bells/2)`, `@0x2D9F2`); otherwise, if
+`pop > new_bells`, a small downward pressure `new_bells += scratch/(−20)` is applied
+(`@0x2DA0E`, divisor `0xFFEC`).
+
+Because both terms are 1/64-decay EMAs, the **steady state** is `B → 128·pop` and
+`A → min(64·new_bells, B)`, so `sol_pct → min(100, 50·new_bells/pop)` — i.e. **SoL%
+≈ 50 × (bells/turn) ÷ population**, reaching 100% when bell output ≥ `2·pop`.
+(Derived consequence of the byte-verified EMA, not a stored constant.)
+
+Crossing thresholds fires the `REBELMAJORITY` (≥50%, `@0x2DB29`) / `REBELUNANIMOUS`
+(≥100%, `@0x2DB6E`) / `TORYMINORITY` (<95%) / `TORYMAJORITY` (<50%) / `SONSUP`/
+`SONSDOWN` messages and feeds the per-nation `PowerRecord +0x02 rebel_sentiment_pct`.
 
 ### Still open
 - **Hammers accumulation:** building progress is a slot in the **per-good colony
@@ -124,7 +149,9 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
 ## 5. Evidence
 - `viceroy_source/src/colony/turn_update.c` — `compute_terrain_yield` (file `0x9B9C..0x9FFB`) + `colony_turn_update` (`0xA222..0xA6A1`), full byte-traced bodies. **B**
 - `viceroy_source/src/colony/production_support.c` — `sol_membership_pct` (`0x8524..0x85B1`): `(C2*100)/C6` + Jan-de-Witt +20, clamp 100. **B**
-- `viceroy_source/src/colony/sol_tory.c` — per-turn `rebel_dividend`/`rebel_divisor` update (`func_02D658`). **B/R** (smoothing constants R)
+- `viceroy_source/src/colony/sol_tory.c` + `func_02D658 @0x2DA1C..0x2DAD8` — per-turn
+  `rebel_dividend`(+0xC2)/`rebel_divisor`(+0xC6) update: both 32-bit EMAs, decay 1/64,
+  inflow `new_bells` / `2·pop`, clamp `A∈[0,B]`. **B** (smoothing constants now byte-verified). 
 - `docs/DATA_MODEL.md` — ColonyRecord stride `0xCA`; `+0x1A/+0x1B/+0x1C/+0x1F/+0x9A/+0xC2/+0xC6` (runtime-verified). **B/A**
 - `data_extracted/text/NAMES_sections.json` — `@BUILDING/@JOB/@UNFORESTED/@FORESTED/@CARGO`. **B**
 - `docs/COLONY_RENDER_CHAIN.md` — colony-screen composition. **B/R**
@@ -142,4 +169,7 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. Byte-trace the per-turn **hammers** work-point accumulation (overlay-resident) toward `+0xBA` vs the `@BUILDING` cost.
 2. **Warehouse** capacity thresholds + spoilage/wastage logic (base tied to `+0x1C`=`0x40`).
-3. Confirm the per-turn SoL dividend/divisor smoothing constants in `sol_tory.c` against the read site.
+3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
+   — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
+   `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** Remaining: the
+   `new_bells` downward-pressure scratch operand `[bp-0x8C]` at `@0x2DA0E`.
