@@ -30,6 +30,7 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
 | `+0x8A` | `buildings_present[]` bit-array (1 bit per building id; the `building_bit(n)` source) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)` |
+| `+0x95` | `warehouse_level` (0/1/2 = none / Warehouse / +Expansion) | **BYTE_VERIFIED** | read by `func_008D00` capacity = `(+0x95+1)·100` |
 | `+0x9A` | per-good colony amount u16[**20**] (goods 0..0x13: 16 `@CARGO` tradables + Hammers/Crosses/Bells/Flags); array spans `+0x9A..+0xC0` | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime); good order via `sol_tory` `colony_query(0x12)`=Bells |
 | `+0xB8` | `muskets` (good `0xF` slot) | **BYTE_VERIFIED** | `auto_manage.c @0x548E9` arms defender: `col[+0xB8]≥200`, `−=50` |
 | `+0xBA` | `hammers` / build progress (good `0x10` slot) u16 | **BYTE_VERIFIED** | array index `0x10` (`+0x9A+0x20`); supersedes the off-by-one `+0xB8` lead |
@@ -156,9 +157,15 @@ is **correct**.
   `@BUILDING` cost table (loaded by `func_0749E0`) and the constructed-buildings
   bitmask `ColonyRecord +0x60..0x65` (RUNTIME-VERIFIED, `docs/DATA_MODEL.md`).
 
-### Still open
-- **Warehouse capacity / spoilage:** base tied to `+0x1C` (=`0x40`); thresholds &
-  wastage `TBD`.
+### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
+Per-good storage cap = **`(ColonyRecord +0x95 + 1) · 100`**, default **100** when
+`+0x95 == 0` (`@0x008D04` `bp-2=0x64`; `@0x008D14` `(+0x95)+1; ×0x64`). So
+**100 / 200 / 300** for warehouse level **0 (none) / 1 (Warehouse) / 2 (+Expansion)**
+— matching the game. `colony_turn_update` calls it (`@0x00A615`) and limits a good's
+gain to `cap − current_amount` (`@0x00A61F` `cap − [colony+good·2]`, clamp ≥0), e.g.
+capping **horse breeding** here. Goods cannot exceed the cap; surplus production is
+dropped (spoilage). The exact end-of-turn spoilage of an *already-overfull* stock
+(e.g. after a warehouse is lost) is the remaining detail (`TBD`).
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,
@@ -180,16 +187,19 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   fields; the production-input data sets; the **per-tile production formula**
   (terrain lookup, expert ×2 / era +2, SoL/Tory penalty `10−diff` divisor,
   resource bonus, building gates); the **SoL %** computation.
+- **B (added):** warehouse/storage capacity `(+0x95+1)·100` (`func_008D00`).
 - **TBD:** building-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
-  `+0x60` constructed bit + carry surplus); warehouse capacity thresholds / spoilage;
-  building prerequisite gating beyond the bit-6 manufacturing gate.
+  `+0x60` constructed bit + carry surplus); end-of-turn spoilage of an overfull
+  stock; building prerequisite gating beyond the bit-6 manufacturing gate.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation~~ **Field resolved 2026-06-20** —
    Hammers = `+0xBA` (good `0x10` in the `+0x9A` 20-good array); `+0xB8` = Muskets.
    Remaining: the build-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
    `+0x60` constructed bit, carry surplus), reached via the array base.
-2. **Warehouse** capacity thresholds + spoilage/wastage logic (base tied to `+0x1C`=`0x40`).
+2. ~~**Warehouse** capacity thresholds~~ **Done 2026-06-20** — `cap=(+0x95+1)·100`
+   (100/200/300), `func_008D00`, applied in `colony_turn_update @0x00A615`. Remaining:
+   end-of-turn spoilage of an already-overfull stock.
 3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
    — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
    `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** Remaining: the
