@@ -29,11 +29,15 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x1C` | constant `0x40` across colonies (likely warehouse base/config) | **ANCHOR_VERIFIED** | inspection |
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
-| `+0x8A` | `buildings_present[]` bit-array (1 bit per building id; the `building_bit(n)` source) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)` |
+| `+0x84` | **persistent** `buildings_constructed[]` bit-array (48 bits; set on build-completion) | **BYTE_VERIFIED** | setter `func_0092E0` `*(0x8542)+0x84+n/8`, `or 1<<(n&7)` `@0x9308`; guard `func@0x860E` (`0x5D46+0x84`) |
+| `+0x8A` | `buildings_present[]` bit-array — the **DISPLAY copy** of `+0x84` (colony-screen grid + founding) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)`; byte-for-byte twin of `func_0092E0` (`+0x8A` vs `+0x84`) |
+| `+0x92` | `hammers_bank` (build-accrual; `+= hammers_produced` each turn) u16 | **BYTE_VERIFIED** | `func_02D658 @0x2E50F`/`@0x2E53B` (gate vs cost) |
+| `+0x94` | `build_target` (building id; `<0` = none) | **BYTE_VERIFIED** | `func_02D658 @0x2E529`/guard `@0x2E544` (supersedes the dump `+0x10` label) |
+| `+0xB6` | second `hammers` bank (cost-debited on completion, **surplus carried**) u16 | **BYTE_VERIFIED** | `func_02D658 @0x2E6A1`/`@0x2E6A7` |
 | `+0x95` | `warehouse_level` (0/1/2 = none / Warehouse / +Expansion) | **BYTE_VERIFIED** | read by `func_008D00` capacity = `(+0x95+1)·100` |
 | `+0x9A` | per-good colony amount u16[**20**] (goods 0..0x13: 16 `@CARGO` tradables + Hammers/Crosses/Bells/Flags); array spans `+0x9A..+0xC0` | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime); good order via `sol_tory` `colony_query(0x12)`=Bells |
 | `+0xB8` | `muskets` (good `0xF` slot) | **BYTE_VERIFIED** | `auto_manage.c @0x548E9` arms defender: `col[+0xB8]≥200`, `−=50` |
-| `+0xBA` | `hammers` / build progress (good `0x10` slot) u16 | **BYTE_VERIFIED** | array index `0x10` (`+0x9A+0x20`); supersedes the off-by-one `+0xB8` lead |
+| `+0xBA` | ⚠ dump-labeled `hammers` (good `0x10` slot, `+0x9A+0x20`) — **but the build code uses `+0x92`/`+0xB6`, not `+0xBA`** | **CONFLICT** | the per-turn completion never reads `+0xBA` (RULINGS 2026-06-20); `+0xBA`'s real role pending re-examination |
 | `+0xC2` | `rebel_dividend` s32 (SoL fraction numerator) | **BYTE_VERIFIED** | read @ `0x8531` (`sol_membership_pct`) |
 | `+0xC6` | `rebel_divisor` s32 (SoL fraction denominator) | **BYTE_VERIFIED** | read @ `0x8539` |
 
@@ -150,23 +154,37 @@ is **correct**.
 - **Accumulation:** Hammers are produced like any good (Carpenter `Lumber→Hammers`)
   and accrue into the `+0xBA` slot each turn via the same producer path as the
   raw→finished chains (`colony_turn_update`).
-- **Completion (residual `TBD` — narrowed 2026-06-20):** the "hammers ≥ `@BUILDING`
-  cost ⇒ add the building" check. Now-established surrounding facts:
-  - **Build target = `ColonyRecord +0x10`** (building id; `0xFF` = no target,
-    `docs/DATA_MODEL.md`); **constructed bitmask = `+0x60..0x65`** (u48, RUNTIME-VERIFIED).
-  - The per-colony **building-present bit** helpers (`func_0085D6` set / `func_0085B2`
-    test, on the work-buffer `*(0x8542)+0x8A` bitmap) have **no resident near-callers**
-    — so the completion that flips the bit is **overlay-resident**, reached by a far
-    call, which is why operand/near-call scans miss it.
-  - The `@BUILDING` cost columns load via `func_074D18` (5-field parse) into a DGROUP
-    table whose base isn't yet isolated (the parser writes through a set-up pointer).
-  - **Refined 2026-06-20 (via `tools/find_callers.py`):** the `+0x8A` bit helpers
-    `func_0085D6`/`func_0085B2` are far-called only from the **colony-screen building
-    grid renderer** (`@0x29DA9`, a 16-entry display loop) and the **colony-founding
-    cluster** (`@0x2EC58+`) — i.e. `+0x8A` is the **open-colony work-buffer/display**
-    bitmap, **not** the per-turn build state. So the per-turn completion sets the
-    *persistent* `+0x60` bitmask via a separate (still-unlocated) path; that's the
-    narrowed remaining target.
+- **Completion — RESOLVED & BYTE_VERIFIED 2026-06-20** (the "hammers ≥ `@BUILDING`
+  cost ⇒ add the building" check). It is **inline in the per-turn colony update
+  `func_02D658`**, committing via `func_02D0E4 → func_0092E0`. Full chain (all sites
+  byte-verified; see `notes/rulings/RULINGS.md` 2026-06-20):
+  - **Hammer accrual bank = `ColonyRecord +0x92`** (u16): each turn `+0x92 +=
+    hammers_produced` (good-0x10 query `lcall 0x181f:0xb50 → func@0x8DBC`, which reads
+    a **global** per-good table `DGROUP:0x8E5A`, not a colony field), clamped ≥0
+    (`@0x2E50F`/`@0x2E517`).
+  - **Build target id = `ColonyRecord +0x94`** (`@0x2E529 mov al,[bx+0x94]`; `<0` =
+    no target, guard `@0x2E544`). Cost = `@BUILDING[idx].cost` from table
+    **`DGROUP:0x8F8C`** (stride **12 (0xC)**, **42** entries; written by parser
+    `func_074D18 @0x74D1D`, read by `func_00B65A @0xB688`). Gate `cost ≤ +0x92`
+    (`@0x2E53B`).
+  - **Second hammer bank `+0xB6`** (cost-debited): `cost ≤ +0xB6` (`@0x2E6A1`) then
+    **`+0xB6 −= cost`** — **surplus hammers are carried** (remainder kept, not
+    zeroed) (`@0x2E6A7`) → `func_02D0E4`.
+  - **Commit:** `func_0092E0` sets the **persistent constructed-mask bit** in
+    **`ColonyRecord +0x84..0x89`** (`cx = *(0x8542) + (id>>3) + 0x84; or [bx],
+    1<<(id&7)`, `@0x9308`). **The `+0x8A` bitmap is the DISPLAY copy** — its setter
+    `func_0085D6` is a byte-for-byte twin differing only in the `+0x8A`/`+0x84`
+    constant. The pre-completion "already-built?" guard tests `+0x84`
+    (`func@0x860E` reads `[colony_idx·0xCA + 0x5DCA]`, `0x5DCA = 0x5D46 + 0x84`).
+  - **Build target `+0x94` is NOT auto-reset** to 0xFF on completion (no writer in
+    either function); re-completion is blocked by the `+0x84` guard + `@ALREADYHAVE`.
+    Target re-selection is a colony-UI action.
+  - ⚠ **Conflict with prior dump labels (RULINGS 2026-06-20):** the older
+    "RUNTIME-VERIFIED" labels build-target `+0x10` / constructed-mask `+0x60..0x65`
+    / hammers `+0xBA` are **not referenced** by the completion code, which uses
+    `+0x94` / `+0x84` / `+0x92`+`+0xB6`. The byte-traced offsets are authoritative
+    for the build mechanism; the dump labels are flagged for re-examination. **Open:
+    +0x92 vs +0xB6 roles** (which is the UI/save total).
 
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
@@ -198,6 +216,7 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   `rebel_dividend`(+0xC2)/`rebel_divisor`(+0xC6) update: both 32-bit EMAs, decay 1/64,
   inflow `new_bells` / `2·pop`, clamp `A∈[0,B]`. **B** (smoothing constants now byte-verified). 
 - `docs/DATA_MODEL.md` — ColonyRecord stride `0xCA`; `+0x1A/+0x1B/+0x1C/+0x1F/+0x9A/+0xC2/+0xC6` (runtime-verified). **B/A**
+- `func_02D658` (file `0x2D658`) — per-turn build completion: hammer accrual `+0x92` `@0x2E50F`, target `+0x94` `@0x2E529`, cost gate `@0x2E53B`, surplus `+0xB6 −= cost` `@0x2E6A7`; commit `func_02D0E4`→`func_0092E0` sets `+0x84` bit `@0x9308`; `@BUILDING` cost table `DGROUP:0x8F8C` (parser `func_074D18 @0x74D1D`, reader `func_00B65A @0xB688`). **B** (RULINGS 2026-06-20)
 - `data_extracted/text/NAMES_sections.json` — `@BUILDING/@JOB/@UNFORESTED/@FORESTED/@CARGO`. **B**
 - `docs/COLONY_RENDER_CHAIN.md` — colony-screen composition. **B/R**
 
@@ -207,15 +226,21 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   (terrain lookup, expert ×2 / era +2, SoL/Tory penalty `10−diff` divisor,
   resource bonus, building gates); the **SoL %** computation.
 - **B (added):** warehouse/storage capacity `(+0x95+1)·100` (`func_008D00`).
-- **TBD:** building-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
-  `+0x60` constructed bit + carry surplus); end-of-turn spoilage of an overfull
-  stock; building prerequisite gating beyond the bit-6 manufacturing gate.
+- **B (added 2026-06-20):** building-**completion** — `func_02D658`→`func_02D0E4`→
+  `func_0092E0`: hammers `+0x92`/`+0xB6` vs `@BUILDING[+0x94].cost` (table
+  `DGROUP:0x8F8C`, stride 12) ⇒ set persistent bit `+0x84` (display copy `+0x8A`),
+  surplus carried in `+0xB6`, target `+0x94` not auto-reset.
+- **TBD:** end-of-turn spoilage of an overfull stock; building prerequisite gating
+  beyond the bit-6 manufacturing gate; `+0x92` vs `+0xB6` bank roles.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. ~~Byte-trace the per-turn hammers accumulation~~ **Field resolved 2026-06-20** —
-   Hammers = `+0xBA` (good `0x10` in the `+0x9A` 20-good array); `+0xB8` = Muskets.
-   Remaining: the build-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
-   `+0x60` constructed bit, carry surplus), reached via the array base.
+1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE
+   2026-06-20** — completion is `func_02D658`→`func_02D0E4`→`func_0092E0` (**B**):
+   hammer banks `+0x92`/`+0xB6`, target `+0x94`, cost table `DGROUP:0x8F8C`,
+   persistent mask `+0x84` (display copy `+0x8A`), surplus carried, target not reset
+   (§3). **Correction:** the build code uses `+0x92`/`+0xB6` (not the dump-labeled
+   `+0xBA`) and `+0x84`/`+0x94` (not `+0x60`/`+0x10`) — RULINGS 2026-06-20. Residual:
+   `+0x92` vs `+0xB6` bank roles; `+0xBA`'s real meaning.
 2. ~~**Warehouse** capacity thresholds~~ **Mostly done 2026-06-20** — regular goods
    `cap=(+0x95+1)·100` (100/200/300), `func_008D00`, applied `@0x00A615`. Remaining:
    the **food** base-200 growth-store threshold constant (`func_00929A`; user-confirmed

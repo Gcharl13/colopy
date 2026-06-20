@@ -3726,3 +3726,46 @@ elevation→terrain jump table (`@0x64CF6 → file 0x6442c`) is a switch of CODE
 offsets — the C-recon "5,4,1,3,2,2" elev→terrain list does **not** occur in the
 EXE (0 byte-matches) and is **not** byte-verified (see map_generation.md §3 P2,
 now TBD).
+
+---
+
+## 2026-06-20 — Colony build-completion field offsets (byte-trace vs dump labels)
+
+**Context.** `spec/systems/colony.md` carried dump-derived ("RUNTIME-VERIFIED" /
+DATA_MODEL) labels: build target `+0x10`, constructed bitmask `+0x60..0x65`,
+hammers `+0xBA` (good 0x10 in the `+0x9A` array). A static byte-trace of the
+**actual per-turn completion code** (`func_02D658` → `func_02D0E4` → `func_0092E0`)
+disagrees and is internally complete.
+
+**Byte-verified completion mechanism (all sites confirmed this branch's EXE):**
+- **Hammer accrual bank = ColonyRecord `+0x92`** (u16): `@0x2E50F add [bx+0x92],ax`
+  (ax = hammers-produced from good-0x10 query `lcall 0x181f:0xb50` → file `0x8DBC`,
+  which reads a **global** per-good table `DGROUP:0x8E5A`, *not* a colony field),
+  clamped ≥0 `@0x2E517`.
+- **Build target id = ColonyRecord `+0x94`**: `@0x2E529 mov al,[bx+0x94]`; cost
+  lookup `lcall 0x181f:0xac4` → `func_00B65A @0xB688` reads `@BUILDING[idx].cost`
+  from table **`DGROUP:0x8F8C`** (stride **12**, 42 entries; written by parser
+  `func_074D18 @0x74D1D`); gate `@0x2E53B cmp ax,[bx+0x92]; jle`; no-target guard
+  `@0x2E544 cmp byte[bx+0x94],0; jge`.
+- **Second hammer bank `+0xB6`** (cost-debited, **surplus carried**): `@0x2E6A1
+  cmp [bx+0xb6],ax; jl`; `@0x2E6A7 sub [bx+0xb6],ax` → `call 0x2EF4B` trampoline →
+  `func_02D0E4`.
+- **Persistent constructed mask = ColonyRecord `+0x84..0x89`** (48 bits): setter
+  `func_0092E0`: `cx = [0x8542] + (id>>3) + 0x84; or [bx], 1<<(id&7)` `@0x9308`.
+  The **`+0x8A` bit-array is the DISPLAY copy** — its setter `func_0085D6` is a
+  byte-for-byte twin of `func_0092E0` differing only in the `+0x8A`/`+0x84`
+  constant. The "already-built?" guard tests `+0x84` (`func_0086 3E/0x860E` reads
+  `[colony_idx·0xCA + 0x5DCA]`, `0x5DCA = 0x5D46 + 0x84`).
+- **Build target is NOT auto-reset** to 0xFF on completion (no write to `+0x94`
+  in either function); re-completion is blocked by the `+0x84` guard + `@ALREADYHAVE`.
+
+**Resolution.** For the **build system**, the byte-traced offsets are authoritative
+(they are the code that actually accrues hammers, checks cost, and flips the
+constructed bit): **hammers `+0x92`/`+0xB6`, build target `+0x94`, constructed mask
+`+0x84` (display copy `+0x8A`), cost table `DGROUP:0x8F8C`**. The dump labels
+`+0x10`/`+0x60`/`+0xBA` are **not referenced** by the completion path; they are
+flagged in `colony.md` as conflicting and pending re-examination (a dump label can
+be a mis-attributed offset even when the bytes are real). The `+0x8A` =
+buildings-present display array remains correct (now paired with its `+0x84`
+persistent twin). **Open:** the exact roles of the two hammer banks `+0x92` vs
+`+0xB6` (which is the UI-displayed/save-persisted total).
