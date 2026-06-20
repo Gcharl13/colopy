@@ -55,11 +55,17 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   (the per-good **trade accumulator** is `PowerRecord +0xFC` dword[16], `@0x8904`).
 - The old `0x181F:0x9A4` attribution was **wrong** — that thunk is a shared utility
   (92 callers), not the drift fn (see `tools/rtlink/THUNK_FOLLOWING.md`).
-- **Remaining `TBD`:** the per-turn *driver* that invokes the `0x1C2AC` thunk
-  (turn-loop call site), and where `+0xFC` is incremented on each buy/sell. (The
-  per-good price-base at `DGROUP:0x53EA` is **RESOLVED** — random-seeded `[600,1000]`
-  at init by `func_07561C @0x75645`; BSS because it's set at runtime, not a fixed
-  table, so no dump is needed.)
+- **Remaining `TBD` (blocked, not just unfound):** the per-turn *driver* that
+  invokes the `0x1C2AC` thunk (turn-loop call site), and the commodity buy/sell
+  transaction that moves `+0xFC`/`+0x5C`/`+0x7C` and computes the bid/ask coin value.
+  The latter is **trade-dialog-resident**, in the page-04 region behind the jump
+  table at **`0x033F65`** that does **not** linearly disassemble (per
+  `viceroy_source/src/market/pricing.c`), so it needs a jump-table-aware decode, not
+  an operand scan. ⚠ Note `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase**
+  gold debit (it calls `place_unit` `0x181F:0x95C` immediately after) — *not* the
+  commodity-sale debit; do not cite it for `market_sell`. (The per-good price-base at
+  `DGROUP:0x53EA` is **RESOLVED** — random-seeded `[600,1000]` at init by
+  `func_07561C @0x75645`.)
 
 ### Finished-goods are price-coupled through a shared pool — **BYTE_VERIFIED**
 The same drift fn (`func_0305A8`, phases after the supply build) does **not** price
