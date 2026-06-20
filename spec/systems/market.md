@@ -61,6 +61,41 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   at init by `func_07561C @0x75645`; BSS because it's set at runtime, not a fixed
   table, so no dump is needed.)
 
+### Finished-goods are price-coupled through a shared pool — **BYTE_VERIFIED**
+The same drift fn (`func_0305A8`, phases after the supply build) does **not** price
+the four manufactured luxuries independently. First it forms a **supply** per good
+`supply[g] = price_seed[g] + Σ_players max(euro_holdings[+0xFC][g], 0)`
+(`@0x0305AE`). Then:
+
+- **Pool the four finished goods (`@0x030649`):**
+  `S_pair = supply[9] + supply[10] + supply[11] + supply[12]` (Rum, Cigars, Cloth,
+  Coats), 32-bit `add/adc`, clamped `≥ 1`. *(byte-confirmed: four `add/adc` of the
+  good-9..12 frame slots → `[bp-0xa]`.)*
+- **Relative-share target price (`@0x030745`):** for each finished good `i∈{9..12}`,
+  ```
+  target[i] = (S_pair * 3) / supply[i]        # shl/rcl ×2 + add = ×3, then ldiv32
+  ```
+  (`@0x03074F` `shl/rcl/add/adc` = ×3; `@0x030759` `lcall 0x0D1D:0x0EC6` = divide).
+  So a good's target is **3 × (the combined Rum+Cigars+Cloth+Coats European supply)
+  ÷ (that good's own supply)** — i.e. its price tracks its *inverse share* of the
+  shared luxury basket. Dumping one luxury lowers its own price **and nudges the
+  other three up** (it grows the shared numerator `S_pair` while only its own
+  denominator rises).
+- **Raw inputs are priced against the same pool (`@0x0307C9`):** the four raw
+  materials `i∈{1..4}` (Sugar→Rum, Tobacco→Cigars, Cotton→Cloth, Furs→Coats) use the
+  **same** `target = (S_pair*3)/v` (`v = supply[i]`, **Furs halved**; Furs also
+  `+1` if year<1700 and `+1` if year<1600). So each raw good's price is tied to the
+  size of the finished-luxury market.
+- **Apply:** interactive recompute writes `price_level[+0x4C][i] = clamp(target,
+  CARGO.low, CARGO.high)`; the silent per-turn path instead nudges the volume
+  accumulator `+0x5C[i] += sgn(price_level − target) · ((rise+fall)/2) · 100`
+  (finished) or `· 1` (raw), and **Phase 4** steps the published price ±1 toward it.
+
+**`@CARGO` for the three (`data/commodity_prices.c`):** Rum/Cigars/Cloth share an
+identical row — `start 11–13, band [1,20], spread 0, rise 4, fall 4, volatility 1`
+— differing **only in `attrition`** (price-recovery rate): **Cloth −13** (recovers
+fastest) **> Rum −12 > Cigars −11**. (Coats match Cigars at −11.)
+
 **Buy/sell tax interaction:** the King's tax is taken from European sale proceeds
 — see [`king.md`](king.md) §3 (revenue loop currently `TBD`).
 
