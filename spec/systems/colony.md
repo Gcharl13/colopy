@@ -31,9 +31,9 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
 | `+0x84` | **persistent** `buildings_constructed[]` bit-array (48 bits; set on build-completion) | **BYTE_VERIFIED** | setter `func_0092E0` `*(0x8542)+0x84+n/8`, `or 1<<(n&7)` `@0x9308`; guard `func@0x860E` (`0x5D46+0x84`) |
 | `+0x8A` | `buildings_present[]` bit-array — the **DISPLAY copy** of `+0x84` (colony-screen grid + founding) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)`; byte-for-byte twin of `func_0092E0` (`+0x8A` vs `+0x84`) |
-| `+0x92` | `hammers_bank` (build-accrual; `+= hammers_produced` each turn) u16 | **BYTE_VERIFIED** | `func_02D658 @0x2E50F`/`@0x2E53B` (gate vs cost) |
+| `+0x92` | per-turn `hammers` accumulator (`+= hammers_produced` each turn; feeds the early cost gate) u16 | **BYTE_VERIFIED** | `func_02D658 @0x2E50F`/`@0x2E53B` |
 | `+0x94` | `build_target` (building id; `<0` = none) | **BYTE_VERIFIED** | `func_02D658 @0x2E529`/guard `@0x2E544` (supersedes the dump `+0x10` label) |
-| `+0xB6` | second `hammers` bank (cost-debited on completion, **surplus carried**) u16 | **BYTE_VERIFIED** | `func_02D658 @0x2E6A1`/`@0x2E6A7` |
+| `+0xB6` | **build-progress bank** (hammers toward the current building; shown to the player as "X of Y", cost-debited on completion with **surplus carried**) u16 | **BYTE_VERIFIED** | `func_02D658`: shortfall msg `@0x2E5DD`/`@0x2E648` (template `@0xEA1`), debit `@0x2E6A1`/`@0x2E6A7` |
 | `+0x95` | `warehouse_level` (0/1/2 = none / Warehouse / +Expansion) | **BYTE_VERIFIED** | read by `func_008D00` capacity = `(+0x95+1)·100` |
 | `+0x9A` | per-good colony amount u16[**20**] (goods 0..0x13: 16 `@CARGO` tradables + Hammers/Crosses/Bells/Flags); array spans `+0x9A..+0xC0` | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime); good order via `sol_tory` `colony_query(0x12)`=Bells |
 | `+0xB8` | `muskets` (good `0xF` slot) | **BYTE_VERIFIED** | `auto_manage.c @0x548E9` arms defender: `col[+0xB8]≥200`, `−=50` |
@@ -179,12 +179,20 @@ is **correct**.
   - **Build target `+0x94` is NOT auto-reset** to 0xFF on completion (no writer in
     either function); re-completion is blocked by the `+0x84` guard + `@ALREADYHAVE`.
     Target re-selection is a colony-UI action.
+  - **Two hammer fields (clarified 2026-06-20):** `+0x92` is the **per-turn
+    accumulator** (`+= hammers_produced`, feeds the early `cost ≤ +0x92` gate
+    `@0x2E53B`); `+0xB6` is the **build-progress bank** that is **shown to the
+    player** when the building isn't done yet — at `@0x2E5DD` a `+0xB6 < cost`
+    branch formats *cost* and *+0xB6* into a "X of Y hammers" message (template
+    `@0xEA1`, `@0xEAB` when `+0xB6 == 0`) — and is the field **debited** on
+    completion (`+0xB6 −= cost`, surplus carried). So `+0xB6` is the UI/consumed
+    build bank; `+0x92` gates. (Whether the two are kept in lockstep or hold
+    distinct totals still warrants a runtime spot-check.)
   - ⚠ **Conflict with prior dump labels (RULINGS 2026-06-20):** the older
     "RUNTIME-VERIFIED" labels build-target `+0x10` / constructed-mask `+0x60..0x65`
     / hammers `+0xBA` are **not referenced** by the completion code, which uses
     `+0x94` / `+0x84` / `+0x92`+`+0xB6`. The byte-traced offsets are authoritative
-    for the build mechanism; the dump labels are flagged for re-examination. **Open:
-    +0x92 vs +0xB6 roles** (which is the UI/save total).
+    for the build mechanism; the dump labels are flagged for re-examination.
 
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
@@ -231,7 +239,8 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   `DGROUP:0x8F8C`, stride 12) ⇒ set persistent bit `+0x84` (display copy `+0x8A`),
   surplus carried in `+0xB6`, target `+0x94` not auto-reset.
 - **TBD:** end-of-turn spoilage of an overfull stock; building prerequisite gating
-  beyond the bit-6 manufacturing gate; `+0x92` vs `+0xB6` bank roles.
+  beyond the bit-6 manufacturing gate; whether `+0x92` (per-turn accumulator) and
+  `+0xB6` (build-progress bank) stay in lockstep (runtime spot-check).
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE
