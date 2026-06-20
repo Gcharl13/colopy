@@ -59,7 +59,7 @@ one level down:
 | `@0x58E7`/`@0x5A91` (`0x181F:0x62C`) | `func_024A48` | **orders & movement / interactive input-pump** (per-unit orders region, near order dispatch `@0x249CB`) |
 | `@0x59EA` (`0x181F:0x644`) | `func_02F052` | **per-power colony/production phase** — zeroes the per-turn bells accumulator (`PowerRecord +0xE := 0` `@0x2F23F`) then loops all colonies (`[0x539E]` count) and, for each owned by the current power (`ColonyRecord +0x1A == power` `@0x2F256`), calls **production `func_02D658`** (`@0x2F25F`, thunk `0x191F:0x950`) |
 | `@0x5A37` (`0x181F:0x638`) | `func_052F7E` | diplomacy/meeting context |
-| `@0x5AE5` (`0x181F:0x61E`) | `func_02F3A2` | periodic-events driver |
+| `@0x5AE5` (`0x181F:0x61E`) | `func_02F3A2` | **periodic milestone/congress driver** → colony-stats `func_042138` (`@0x2F3B8`), founding-fathers/congress `func_03B2F8` (`@0x2F453`), king-defeat cinematic `func_075352` (`@0x2F552`) |
 So the **production phase is byte-confirmed** = `func_02F052` (per-power colony loop
 → `func_02D658`). The other big system functions (king tax `0x34AE0`, REF `0x3E162`,
 immigration `0x35D9A`, AI dispatch `0x4E2D6`, diplomacy `0x57F4E`) each have **0–1
