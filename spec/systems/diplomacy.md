@@ -43,7 +43,18 @@ Runs when two powers meet and exchange treaty / peace / tribute / war. Structure
   treaty-bit set (`rel_apply_event 0x40`, `0x181F:0xA06`), **gold transfer** on a paid
   treaty (subtract from power-b gold), per-unit ownership transfer (UnitRecord stride
   `0x1C`), and the cooldown write above.
-- AI peace/war **willingness** thresholds + the exact gold/tribute amounts: **TBD**.
+- **Difficulty-scaled demand terms — BYTE_VERIFIED (2026-06-20)** (within
+  `func_057F4E`, `diff=[0x53A6]`):
+  - **AI war/refusal grace period** = `10·(10 − diff)` turns vs `[0x538E]`
+    (100/90/80/70/60 — lower difficulty = longer peace) (`@0x58374`).
+  - **Tribute/demand value** scaled `value · 10·(diff+8) / 100` (×0.8…×1.2)
+    (`@0x583A0`); a flat **demand surcharge `+= 500·(diff+1)`** (`@0x5842B`); a
+    `(diff+1)·value >> 3` term feeds a 0..400 roll (`@0x58409`); an
+    attitude/demand component `+= (diff−2)·meeting_val` (`@0x58580`).
+  - **AI action probability** gate `random_int(1000) < 200·diff + 100` (10%…90%)
+    (`@0x58315`). See `spec/systems/difficulty.md` §3.
+  The remaining **non-difficulty** AI willingness thresholds (attitude/relationship
+  cutoffs that decide *whether* to offer peace vs war) are still **TBD**.
 - Privateer attribution, blockade: **TBD**.
 
 > Corroborated by `viceroy_source/src/diplomacy/{meeting,relations,treaty}.c`
@@ -53,7 +64,7 @@ Runs when two powers meet and exchange treaty / peace / tribute / war. Structure
 Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANCELPEACE @PEACEMANLY @PEACEMEEK @OLDPEACEMANLY @OLDPEACEMEEK @WARMANLY @WARMEEK @WARN1 @WARN2 @WARN3`. **All BYTE_VERIFIED present.** See `docs/SESSION_UI_CATALOG.md`, `docs/UI_DIALOGS.md`.
 
 ## 5. Evidence
-- `func_057F4E` (file `0x057F4E`) — meeting/parley dispatcher: human gate `@0x57F8C`, war-matrix bit `0x02` set `@0x58A7B` / `0x80` clear `@0x58BE1`, treaty cooldown `[0x53C8+power*2]=turn+0x10` `@0x58075`. **B**
+- `func_057F4E` (file `0x057F4E`) — meeting/parley dispatcher: human gate `@0x57F8C`, war-matrix bit `0x02` set `@0x58A7B` / `0x80` clear `@0x58BE1`, treaty cooldown `[0x53C8+power*2]=turn+0x10` `@0x58075`; difficulty-scaled demand terms `@0x58374`/`@0x583A0`/`@0x5842B`/`@0x58315`. **B**
 - `func_057DC0` (file `0x057DC0`) — SIGNTREATY/treaty-state handler: symmetric `+0x40` matrix write `@0x57EC5`/`@0x57ED0`; bits `0x02`/`0x20`/`0x40` tested `@0x57E05`/`@0x57DF0`/`@0x57E7D`; keys `@SIGNTREATY`/`@CANCELTREATY`/`@DECLAREWAR`. **B**
 - `notes/rulings/RULINGS.md` — war bit-matrix at `DGROUP:0x883C`; `func_03ECF0` re-attribution (NOT diplomacy). **A (ruling)**
 - `data_extracted/text/GAME_sections.json` — treaty/war/peace dialog keys present. **B**
@@ -67,5 +78,9 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
    (meeting) + `func_057DC0` (SIGNTREATY); war matrix `+0x34` (bit `0x02`=war), treaty
    matrix `+0x40` (`0x02`=war/`0x20`=peace-pending/`0x40`=treaty), all byte-verified.
    Remaining: the war-matrix `0x08`/`0x80` bit meanings.
-2. Byte-trace AI peace/war **willingness** thresholds and treaty-term gold/tribute amounts.
+2. Byte-trace AI peace/war **willingness** thresholds and treaty-term gold/tribute
+   amounts. **Partially done 2026-06-20** — the **difficulty-scaled** demand terms
+   are **B** (grace `10·(10−diff)`, demand `value·10·(diff+8)/100`, surcharge
+   `500·(diff+1)`, action prob `200·diff+100`; §3). Residual: the non-difficulty
+   attitude/relationship cutoffs that decide offer-peace-vs-war.
 3. Privateer attribution / blockade mechanics.

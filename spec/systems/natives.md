@@ -95,6 +95,20 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   `@ATTITUDINAL` intensity {Extremely, Very, Rather, Somewhat, Slightly} modifies the
   displayed phrase. The exact composition of the presence score `X` (`[bp-0x2C]`) is
   multi-term and not fully decomposed, but the **band cutoffs are byte-verified.**
+- **Tribe attitude/demand evaluator — BYTE_VERIFIED (2026-06-20)** (a separate
+  per-tribe evaluator reading the active tribe-data record's fields `+2` and `+5`,
+  `diff=[0x53A6]`): the human and AI take **different formulas**, making native
+  friendliness a difficulty handicap —
+  - **Human player** (`controller==0`, `@0x46500`):
+    `attitude = 2·(diff+3) + tribe[+2] + tribe[+5] − prior` = `2·diff + 6 + …`,
+    compared to threshold `0x41`.
+  - **AI power** (`@0x46538`): `attitude = tribe[+2] + tribe[+5] − diff + 12 − prior`,
+    threshold `0x32`.
+
+  So at higher difficulty the human faces a **higher (worse)** native-attitude value
+  while the AI faces a **lower (better)** one. (`tribe[+2]`/`tribe[+5]` are the
+  `@TRIBES` per-row level/value columns; cross-ref `spec/data/tables.md`.) **B.**
+  See `spec/systems/difficulty.md` §3.
 - Attitude escalation **deltas** — the per-action alarm-raise magnitudes are **computed inside thunk `0x181F:0x30C`** (the alarm/tension helper, also called from CHIEFKILL `@0x4A7F2` and the raid scan `@0x47320`), not as inline literals at the `[..+0x54F6]` access sites (which are only caps `0x20`/`0x60`, the `0x80` hostility threshold, and resets). So the deltas (building near, attacking,
   missions) + decay, trade pricing, tribute amounts:
   **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS —
