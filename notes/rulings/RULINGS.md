@@ -3830,3 +3830,36 @@ unit's position.
 (its runtime "Caravel (55,49)" read the wrong offsets). Spec uses **absolute offsets**
 going forward to avoid the base-convention ambiguity. (PowerRecord FF acquired-bitmask
 is likewise at **+0x07 / abs 0x880F**, not +0x06 — C5.)
+
+---
+
+## 2026-06-20 — `[0x53D0]`/`[0x53D2]` + `func_03C638` are Spanish-succession, NOT revolution SoL
+
+**Conflict (self-correction).** Mid-session, after compaction, a trace of the
+`[0x53D0] ≥ 0x32 (50)` compare `@0x3E8BD` and `[0x53D0] ≥ 0x4B (75)` compare `@0x2391C`
+was provisionally written into `spec/systems/revolution.md` as "the SoL declare
+threshold (50%)" with `func_03C638` (`0x191F:0x364`) labelled "the revolution-trigger
+handler" (commit `a81ba25`). This **directly contradicted** the already-correct
+`spec/systems/spanish_succession.md`, which had earlier byte-verified the same
+function as the **War of Spanish Succession** handler and explicitly recorded it is
+**not SoL-driven**.
+
+**Evidence (decisive):**
+- `func_03C638` emits message handle **`0x128C`** `@0x3C76A`, which is GAME.TXT
+  **`@SUCCESSION`**: *"War of the Spanish Succession ends in Europe! {%STRING0},
+  ravaged by war, agrees to **cede** %STRING1 to the {%STRING2}…"* — verified directly
+  in `data_extracted/text/GAME_sections.json`.
+- The handler body literally cedes assets: it ranks the 4 powers, then rewrites
+  map-tile / unit (`+0x3147`) / colony (`+0x1A`) owner nibbles loser→winner and sets
+  the loser's controller `+0x543F := 2` (eliminated) — an inter-European annexation,
+  not a colonist revolt against the Crown.
+- Single-player gate `@0x3C63D` (`test [0x5381],0x80`) — succession only fires in
+  single-player; a revolution declaration has no such gate.
+
+**Resolution:** `[0x53D0]` (0..100 meter, +20/cap-100 on Bolívar `@0x3BE64`),
+`[0x53D2]` (eliminated-power latch), and `func_03C638` belong to
+**`spec/systems/spanish_succession.md`** (per `notes/TRUTH_HIERARCHY.md`, the
+byte-traced `@SUCCESSION` string wins). `revolution.md` reverted to its prior state:
+**the SoL% declare threshold is still genuinely TBD** — the `≥50/75` gates are not it.
+Lesson: re-verify a provisional finding against the *existing* spec before committing;
+the mandated re-verification caught this one cross-file.
