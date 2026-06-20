@@ -49,9 +49,12 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
    declaration + initial REF dispatch (`[0x5382]|=1` `@0x3E031`); **`func_03D948`** =
    foreign-intervention declaration (no roll — picks the strongest eligible foreign
    ally `[colony+0x5D62]&0x40` / max `[colony+0x1F]`, emits `@INTERVENTION`, sets
-   `[0x5382]|=2` `@0x3DA22`). **B.** ⚠ **Residual:** the per-turn **Tory uprising** and
-   **intervention-arrival** *probability rolls* remain **TBD** — a trace initially
-   put them in `func_03E442`/`func_03E664`, but re-verifying the entry gate
-   (`@0x3E66A je 0x3E674` fires when WoI is *clear*) shows those are the **wartime/
-   peacetime mercenary-offer** functions (`mercenary.md`), not tory/intervention.
+   `[0x5382]|=2` `@0x3DA22`). **B.** **Per-turn rolls LOCATED 2026-06-20** (via
+   `tools/rtlink/event_emitters.json` handle map): the per-turn **Tory uprising**
+   `@TORYUPRISING` is `func_03CAC6` (`@0x3CD94`; gate `random_int(0,diff+1)≠0`
+   `@0x3CADD` → prob `(diff+1)/(diff+2)`) and the **intervention-arrival** `@INTERVENE`
+   is `func_03D510` (`@0x3D7BB`; weighted colony pick `random_int(1,Σ +0x1F)` `@0x3D57E`)
+   — both detailed in `tory_uprising.md` §3. (The earlier mis-attribution to
+   `func_03E442`/`func_03E664` — actually the mercenary-offer functions per
+   `mercenary.md` — is superseded.)
 4. Verify the revolution score bonus multipliers (see `spec/systems/scoring.md`).

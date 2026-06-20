@@ -31,14 +31,18 @@ secondary mechanics.
 > static items + the previously all-TBD **terrain_improvement** system, near-complete
 > **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
-> unfound or runtime-only): per-turn Tory-uprising/intervention rolls; Lost-City
-> burial `%NUMBER` rolls; spanish-succession
-> power-selection; Lost-City feature `0xA0`-vs-`0xB0` reconcile; `0x9408` REF value
-> table (BSS/runtime-only); CC/BUILDING.SS sprite sheets (need PNG inspection).
-> **Closed 2026-06-20:** revolution **SoL-declare threshold = 50%** (`cmp,0x32`
-> `@0x3E8BD`) byte-verified — meter `[0x53D0]` (0..100), rebel-power latch `[0x53D2]`
-> (`-1`=none), forced ceiling 75 `@0x2391C`, Bolívar FF `+20` `@0x3BE64`; `revolution.md`
-> bumped R/TBD→**B/TBD**.
+> unfound or runtime-only): per-turn Tory-uprising/intervention rolls; the **real**
+> revolution SoL-declare threshold (the `[0x53D0]≥50/75` gates turned out to be
+> Spanish-succession, not it); `0x9408` REF value table (BSS/runtime-only);
+> CC/BUILDING.SS sprite sheets (need PNG inspection).
+> **Closed 2026-06-20:** (a) **Spanish-succession** `func_03C638` fully byte-verified —
+> power selection (weakest AI cedes/strongest receives, score `3a+2b+c`), single-player
+> gate, map-tile/unit/colony owner transfer, controller `+0x543F:=2`; emits `@SUCCESSION`
+> (handle `0x128C`). (b) **Lost-City burial `%NUMBER` rolls** (BURIAL2 `10·3d8`, BURIAL3
+> `2·(1d8+2(scout+5))×100`), debug-Cibola path (`[0x5382]&1`), and the `0xA0`/`0xB0`
+> feature-mask reconcile (feature = high nibble `0xF0`, discriminator in helper
+> `0x181F:0x7E0`). **Corrected:** an interim commit had mis-filed the succession meter
+> as a revolution "50% SoL declare threshold" — reverted; see `RULINGS.md` 2026-06-20.
 
 > **Audit pass (2026-06-20).** Re-tested the RESOLVED rows' specific byte claims
 > vs the EXE: #1 combat-bonus filler `[0x8D04]` writer `func_007D3E`, #4 tax clamp
