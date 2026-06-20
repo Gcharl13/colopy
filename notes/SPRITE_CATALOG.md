@@ -151,14 +151,17 @@ each sheet is a **MADSPACK 2.0** container (`magic "MADSPACK 2.0\x1A"`) with **4
 FAB-compressed sections** (sprite header / descriptor table / palette / pixel data);
 file SHAs match `MANIFEST.md`.
 
-**Per-frame pixel cataloging is BLOCKED on tooling — not "PNG inspection".** The
-`mpskit` FAB/MADSPACK decoder referenced by `formats/SS.md` (`tools/mpskit/ss.py`,
-`madspack.py`, `fab.py`) is **absent from the repo**, and the **FAB (LZ-variant)
-bitstream is not documented**. Every `.SS` section is FAB-compressed (directory flag
-`01`), so even the descriptor table (frame counts/dimensions) is unreadable without a
-decoder. Recovering pixels requires **implementing a FAB/MADSPACK decoder** (RE the
-codec from the `.SS` loader in `VICEROY.EXE`) — a separate project, *not* a one-command
-extraction. Until then the per-portrait frame layout stays **TBD**.
+**Files confirmed genuine sprite sheets (2026-06-20):** the directory + section roles
+parse cleanly (`formats/SS.md` byte-verified layout) — section 2 = **768 B = 256 RGB
+palette**, and CC sheets share identical header/descriptor sections — so the assets are
+valid, not corrupt. **Per-frame pixel cataloging is BLOCKED on the codec.** Compressed
+sections use the **MADSPACK-2 internal codec (`mode=4`), NOT the standalone ScummVM
+"FAB"** (no `FAB` magic / shift byte present), and the `mpskit` decoder referenced by
+`formats/SS.md` is **absent from the repo**. Most sections are compressed (`flag=1`), so
+the descriptor/pixels need the codec. Recovering pixels requires **RE'ing the mode-4
+codec from the `.SS` loader in `VICEROY.EXE`** (string anchors `MADSPACK @0x1FDAA`,
+`BUILDING @0x1F891`, `phys0 @0x1FD70`, `.SS @0x1EE64`) — a focused trace, *not* a
+one-command extraction. Until then the per-portrait frame layout stays **TBD**.
 
 <details><summary>SUPERSEDED unit-sheet hypothesis (kept for history — do not cite)</summary>
 

@@ -13,20 +13,42 @@ for the per-file role catalog.
 ## High-level structure
 
 ```
-[MADSPACK 2.0 header — 14 bytes]
-[per-section directory: N entries × 4 bytes]
-[per-section data — variable, FAB-compressed or raw]
+offset  size  field
+0       12    magic = "MADSPACK 2.0"
+12       2    0x1A 0x00   (end-of-magic)
+14       2    section_count (u16, LE)  -- = 4 for a typical .SS
+16    10*N    directory: N entries, 10 bytes each
+...           section data (in directory order), each `packed` bytes
 ```
 
-The MADSPACK container holds **4 sections** for a typical .SS:
-- Section 0: sprite header (count, dimensions metadata)
-- Section 1: per-sprite descriptor table (offset, w, h, hotspot per sprite)
-- Section 2: palette (optional; some sheets reuse VICEROY.PAL)
-- Section 3: pixel data (color-keyed, indexed-color)
+**Directory entry layout — BYTE_VERIFIED 2026-06-20** (10 bytes each):
+```
+byte 0    flag    0 = stored RAW,  1 = COMPRESSED
+byte 1    mode    compression id (observed = 4 for every .SS section)
+byte 2..5 u32     unpacked_len (decompressed size)
+byte 6..9 u32     packed_len   (bytes of section data on disk)
+```
+Example (`BUILDING.SS`, verified): 4 entries —
+`(1,4,152,39) (1,4,768,502) (1,4,768,437) (1,4,35670,19836)`; data begins at
+offset 56 and the four sections are concatenated in order. `CC-00.SS`/`CC-12.SS` share
+identical sections 0–2 `(1,4,152,39)(0,4,16,16)(1,4,768,745)` (a common sprite header),
+differing only in section 3 (pixels) — confirming these are genuine sprite sheets.
 
-Each section is independently FAB-compressed (LZ-style with bit-packed
-literals + back-references) or stored raw, depending on a per-section
-flag in the directory.
+The **4 sections** of a typical .SS:
+- Section 0: sprite header (152 B; identical across sheets)
+- Section 1: per-sprite descriptor table (16 B raw on CC sheets, `flag=0`)
+- Section 2: **palette — 768 B = 256 RGB triples** (decompressed)
+- Section 3: pixel data (color-keyed, indexed-color; the bulk)
+
+⚠ **Compression is the MADSPACK-2 *internal* codec (`mode=4`), NOT the standalone
+ScummVM "FAB" format — BYTE_VERIFIED 2026-06-20.** Compressed sections carry **no `FAB`
+magic and no shift byte** (ScummVM's `FabDecompressor` requires `"FAB"`+shift 10–13;
+neither is present, and `mode=4` is out of FAB's shift range). So the per-section codec
+must be RE'd from the `.SS` loader in `VICEROY.EXE` (strings present: `MADSPACK`
+`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64`; note the loader
+does **not** reference the `MADSPACK` string by address — no `imm 0xFDAA` xref — so it
+likely validates by section structure, not magic). `flag=0` sections (e.g. CC sheet
+section 1) are readable raw today.
 
 **Color key**: palette index 0 is transparent. Pixels reading 0 during
 blit are skipped.
