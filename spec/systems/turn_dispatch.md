@@ -73,6 +73,8 @@ located (2026-06-20):
 - **King tax** `func_034AE0` ← `@0x34C05`, one branch of a **king-action dispatch**
   (`dec ax; je` ladder `@0x34C14` selecting `push cs; call <trampoline>; retf`
   wrappers `@0x34BF8`/`@0x34BFE`/`@0x34C05`; trampoline `0x368AE`).
+- **AI action dispatch** `func_04E2D6` (the 25-case per-unit AI switch `@0x4EA7`) ←
+  `@0x51DC1` (the page-0x51 AI-unit processor; trampoline `0x534F8`).
 **The call sites are byte-located; the exact per-turn *ordering/cadence* of these
 within the per-power sequence (e.g. how often king-tax/REF fire) is the residual.**
 
