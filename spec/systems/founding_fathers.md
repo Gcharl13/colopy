@@ -122,7 +122,7 @@ literal-immediate scans don't catch).
 | 4 | Jan de Witt (T) | gates the scout/foreign-colony interaction (foreign info) | **B** `func_05A20E @0x5A469` |
 | 5 | Ferdinand Magellan (E) | **faster Europe transit** — sets the Atlantic-crossing time to 1 (vs 2) turns | **B** `@0x41871` (+`@0x418A0`) |
 | 6 | Francisco Coronado (E) | reveal **all colonies** on the map | **B** `@0x3BF54` |
-| 7 | Hernando de Soto (E) | Lost-City: forces a **positive-outcome flag** (`[bp-0x2e]:=1`) | **B** `func_061454 @0x614CC` |
+| 7 | Hernando de Soto (E) | Lost-City: forces a **positive-outcome flag** (`[bp-0x2e]:=1`); **+ extended sight** — naval units get +1 sight radius (R 1→2) when owner has de Soto | **B** `func_061454 @0x614CC` (rumors) + `func_006608 @0x6631` (`has_father(7,owner)` → naval R=2; `exploration.md`) |
 | 8 | Henry Hudson (E) | **doubles fur production** (`good==Furs & FF8 → ×2`) | **B** `colony.md` yield |
 | 9 | Sieur de La Salle (E) | free **Stockade** for colonies size ≥3 | **B** `@0x3BD4A` |
 | 10 | Hernán Cortés (M) | King treasure cut = **tax rate** (else `max(5·diff+50, 2·tax)` ≤90%) | **B** `func_05C878 @0x5C965` |

@@ -39,10 +39,14 @@ RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
   | Other ships (Caravel/Merchantman/Man-O-War) w/o ability #7 | **1** (3×3) | default |
   `func_0065C4` also derives a **naval/water reveal flag** (type ∈ 0x0D..0x12,
   passed as `[bp+4]`) governing *which* tiles are eligible, distinct from `R`.
-  ⚠ The ability-#7 test is `lcall 0x981:0 (7, owner)` — a far-call into overlay
-  seg 0x981 (the has-father/has-ability helper, file `0xBC10`); the identity of
-  **ability/FF #7** (a sight-extending national power or founding father) is
-  **TBD**. NOTE `func_0063B6 @0x63B6` is a **separate** ±5 (11×11) colony/
+  The ability-#7 test is `lcall 0x981:0 (7, owner)` — the **has-father helper**
+  (`func_00BC10`) checking the power's owned-FF bitmask. **Father id 7 = Hernando
+  de Soto** (`@FATHERS` order, index = father id — confirmed this session for
+  Fugger 1 / Magellan 5 / Drake 13 / Penn 21). His manual effect is exactly
+  **extended line of sight + all Lost-City rumors positive** — so the +1 naval
+  sight here is **de Soto's sight bonus**, **BYTE_VERIFIED** in mechanism. (The
+  land-unit reach of de Soto's bonus, if any, is applied elsewhere; this site only
+  grants the naval +1.) NOTE `func_0063B6 @0x63B6` is a **separate** ±5 (11×11) colony/
   settlement-centred reveal (stride-0xCA record table `0x5D46`), not unit sight.
 - Scout-related message keys (`GAME_sections.json`, BYTE_VERIFIED strings):
   `@LOSTOURSCOUTS`, `@LOSTTHEIRSCOUTS`, `@SCOUTCOLONY` — used by scout interactions.
@@ -81,7 +85,9 @@ Layout `TBD`.
 1. ~~Confirm the per-tile discovered flag location.~~ **Done** — separate
    visibility layer (far-ptr `[0x168]`), bit `player+4` (§2). **B.**
 2. ~~Sight radius by unit type; whether terrain extends sight.~~ **Done 2026-06-20**
-   — `func_006608` radius table (§2/§3); no terrain extension. **B.** Residual:
-   identity of **ability/FF #7** granting naval +1 sight (overlay seg 0x981).
+   — `func_006608` radius table (§2/§3); no terrain extension. **B.** The
+   **ability/FF #7 granting naval +1 sight = Hernando de Soto** (has-father
+   helper `func_00BC10`, `@FATHERS` id 7). Residual: where de Soto's bonus
+   reaches **land** units (this site is naval-only).
 3. Whether other powers' positions reveal on contact only, or via shared exploration.
 4. Trace scout-bonus arithmetic out of `func_05A20E`.
