@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** message keys `BYTE_VERIFIED`; **uprising emitter + per-call probability gate `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`); effect/strength comparison `RECONSTRUCTED`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
+**Overall confidence:** message keys `BYTE_VERIFIED`; **uprising emitter + per-call probability gate + SoL-status (50/95/100%) cutoffs `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`/`func_02D658`); uprising effect magnitude `RECONSTRUCTED`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
 
 ## 1. Purpose & behavior
 
@@ -36,8 +36,19 @@ this fraction is **TBD**.
 ## 3. Formulas & rules
 
 - **Sentiment:** Sons-of-Liberty % = `+0xC2 / +0xC6` (per colony).
-  **RUNTIME-VERIFIED** (field meaning); the Tory complement and the
-  majority/minority cutoffs that select `@TORY*`/`@REBEL*` are `TBD`.
+  **RUNTIME-VERIFIED** (field meaning).
+- **Majority/minority status cutoffs — BYTE_VERIFIED (2026-06-20).** In the colony
+  processor `func_02D658`, the colony SoL% (`[bp-0xB6]`) drives four **hysteresis
+  announcements** latched by `ColonyRecord +0x1C` (bit `0x04` = "rebel-majority
+  announced", bit `0x02` = "rebel-unanimous announced"):
+  | Transition | Cutoff | Message (handle) | Latch action | Site |
+  |---|---|---|---|---|
+  | rises to **≥ 50%** | `cmp,0x32; jl` | `@REBELMAJORITY` (`0xD8A`) | set `+0x1C |= 4` | `@0x2DB29`/`@0x2DB55` |
+  | rises to **= 100%** | `cmp,0x64; jl` | `@REBELUNANIMOUS` (`0xD98`) | set `+0x1C |= 2` | `@0x2DB6E`/`@0x2DB9A` |
+  | falls **< 95%** (was unanimous) | `cmp,0x5F; jge` | `@TORYMINORITY` (`0xDA7`) | clear `+0x1C &= ~2` | `@0x2DBB4`/`@0x2DBE0` |
+  | falls **< 50%** (was majority) | `cmp,0x32; jge` | `@TORYMAJORITY` (`0xDB4`) | clear `+0x1C &= ~4` | `@0x2DBFA`/`@0x2DC26` |
+  Each fires once per crossing (gated by the latch bit) and only for a visible/owned
+  colony (`[bp-0xAE] != 0`). **B.**
 - **Uprising trigger — BYTE_VERIFIED (2026-06-20).** `@TORYUPRISING` (handle `0x12AE`)
   is emitted by **`func_03CAC6`** (`@0x3CD94`, per `tools/rtlink/event_emitters.json`),
   the during-WoI Tory-uprising processor. Its **per-call probability gate** is
@@ -76,7 +87,9 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
   `@REBELUNANIMOUS` (395). **B**
 - `func_03CAC6` (file `0x3CAC6`) — Tory-uprising processor: difficulty gate `@0x3CADD`, rebel-strength sum `@0x3CB0A`, `@TORYUPRISING` emit `@0x3CD94`. **B**
 - `func_03D510` (file `0x3D510`) — intervention-arrival: colony enumeration `@0x3D528`, weighted pick `@0x3D57E`, `@INTERVENE` emit `@0x3D7BB`. **B**
-- `tools/rtlink/event_emitters.json` — handle map (`@TORYUPRISING`=`0x12AE`, `@INTERVENE`=`0x12C4`, `@INTERVENTION`=`0x12DB`). **B**
+- `func_02D658` (file `0x2D658`) — colony processor: SoL-status hysteresis
+  announcements at 50/95/100% (`@0x2DB29..0x2DC2A`), latch `ColonyRecord +0x1C`. **B**
+- `tools/rtlink/event_emitters.json` — handle map (`@TORYUPRISING`=`0x12AE`, `@INTERVENE`=`0x12C4`, `@INTERVENTION`=`0x12DB`, `@REBELMAJORITY`=`0xD8A`, `@REBELUNANIMOUS`=`0xD98`, `@TORYMINORITY`=`0xDA7`, `@TORYMAJORITY`=`0xDB4`). **B**
 - `docs/DATA_MODEL.md` — `ColonyRecord +0xC2/+0xC6` rebel fraction. **B/runtime**
 - `docs/GAME_MANUAL.md` — Tory/Rebel sentiment & dissent during independence. **R**
 
@@ -86,7 +99,7 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
    **Done 2026-06-20** — emitter `func_03CAC6` `@0x3CD94`; per-call gate
    `random_int(0,difficulty+1)≠0` (prob `(diff+1)/(diff+2)`) `@0x3CADD`. Residual: the
    WoI-loop call frequency. **B** (§3).
-2. **Majority/minority cutoffs** on the rebel fraction selecting the `@TORY*`/
-   `@REBEL*` status strings (emitter `func_02D658 @0x2DC26`, the colony processor —
-   `@TORYMAJORITY` handle `0xDB4`).
+2. ~~**Majority/minority cutoffs** on the rebel fraction selecting the `@TORY*`/
+   `@REBEL*` status strings.~~ **Done 2026-06-20** — hysteresis at 50/95/100%
+   (`func_02D658`, latch `ColonyRecord +0x1C` bits `0x04`/`0x02`); see §3 table. **B.**
 3. **Effect magnitude** of an uprising (Tory Militia unit count / morale / production).
