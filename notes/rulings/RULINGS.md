@@ -3721,11 +3721,19 @@ terrain-id table corrected accordingly. The map-generation agent's proposed
 **rejected**; the generator's `0x19=Ocean` label stands.
 
 **Unaffected / still open:** the structure of the auto-forest range 8..23 (why 16
-slots for ~8 forested variants) is a separate question; and the P2 climate
-elevation→terrain jump table (`@0x64CF6 → file 0x6442c`) is a switch of CODE
-offsets — the C-recon "5,4,1,3,2,2" elev→terrain list does **not** occur in the
-EXE (0 byte-matches) and is **not** byte-verified (see map_generation.md §3 P2,
-now TBD).
+slots for ~8 forested variants) is a separate question.
+
+**Follow-up (2026-06-20) — P2 climate table IS byte-verified.** A first pass held
+that the C-recon "5,4,1,3,2,2" climate list was not byte-grounded (the literal
+byte sequence is absent from the EXE). That was a false negative: the values are
+**inline switch cases**, not a data array. The N dispatch `@0x64CF6 jmp word ptr
+cs:[bx+0xBAC]` reads a table at file **`0x64CFC`** (cs-base file **`0x64150`**, not
+`0x6442c`) whose 6 words point exactly to local `mov [bp-0x2e],N` cases →
+**`{5,4,1,3,2,2}`**; the S dispatch `@0x65048 cs:[bx+0xEFE]` (table `0x6504E`) →
+`mov [bp-0x12],N` cases → **`{2,3,3,4,6,7}`** (Marsh case 50%-gated, Swamp/Marsh
+moisture −2). Both match `viceroy_source/src/mapgen/climate.c` exactly. The earlier
+"scattered targets `0x66605/…`" were an artifact of decoding the table at the wrong
+offset/segment base. **map_generation.md §3 P2 = BYTE_VERIFIED.**
 
 ---
 

@@ -2,11 +2,10 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** **random-map generator located + pass *control flow*
-`BYTE_VERIFIED`** (`func_064A10`: entry/gate/seed/dims, landmass, borders, flag
-bits); the **P2 elevation→terrain value table is `TBD`** (the C-recon `5,4,1,3,2,2`
-list is not in the EXE — corrected 2026-06-20); scenario presets `BYTE_VERIFIED`
-data; Customize parameter encodings `TBD`.
+**Overall confidence:** **random-map generator located + passes P0–P6 (incl. the
+P2 climate→terrain tables) `BYTE_VERIFIED`** (`func_064A10`: entry/gate/seed/dims,
+landmass, climate `{5,4,1,3,2,2}`N/`{2,3,3,4,6,7}`S, borders, flag bits); scenario
+presets `BYTE_VERIFIED` data; Customize parameter encodings `TBD`.
 **Canonical primary:** `data_extracted/text/NAMES_sections.json` (@SCENARIO),
 `docs/GAME_MANUAL.md` (NEW WORLD / AMERICA / Customize New World).
 
@@ -54,7 +53,7 @@ resource / `[0x168]` fog. Passes, in execution order (all byte-verified):
 |---|------|--------------|------|
 | P0 | init | fill terrain+elev layers with **`0x19` = Ocean (id 25)** (region fill `0x181F:0x484`) — the all-sea background before landmass growth | `@0x64A4B` |
 | P1 | landmass | blob-growth: seed `≈(p1+p2+1)·0x140` land tiles (`@0x64AAD`), random-walk each with the **8-dir compass table `DS:0xB4`(dx)/`0xBE`(dy)** carrying a 4-neighbour land mask (mask 6/9 triggers fill) | `@0x64B5A..0x64BD1` |
-| P2 | climate | latitude sweeps: N half (`y<H/2`) dispatches elevation→terrain via the **switch jump table `jmp word ptr cs:[bx+0xBAC]`** (file `0x6442c`, `bx=elev·2`), S half `cs:[bx+0xEFE]`; sets **hills bit `0x20`** (`@0x64D19`) / **forest bit `0x80`** (`@0x64D23`); elevation-0 default terrain = `0x19` Ocean (`@0x64D0E`) | `@0x64CF6,0x65048` |
+| P2 | climate | latitude sweeps: N half (`y<H/2`) maps the climate-band index (`[bp-6]>>2`, 0..5) → base terrain via an **inline jump table** `jmp word ptr cs:[bx+0xBAC]` (table at file `0x64CFC`, cs-base file `0x64150`) → cases set `[bp-0x2e]`; S half uses `cs:[bx+0xEFE]` (table `0x6504E`) → `[bp-0x12]`. Then sets **hills bit `0x20`** (`@0x64D19`) / **forest bit `0x80`** (`@0x64D23`); elevation-0 default = `0x19` Ocean (`@0x64D0E`) | `@0x64CF6,0x65048` |
 | P3 | smoothing | relaxation budgeted `(p_iter+1)·0x320`; folds unforested→forested ids (**`+8`/`+0x10`**, `@0x653F8/0x6540E`); converts stray interior Ocean | `@0x64DD4,0x65318` |
 | P4 | rivers | feature spread over the 20-cell kernel `DS:0xC8/0xDE`; sets terrain **bit 6 `0x40`** (river overlay) | `@0x65BC2` |
 | P5 | borders | **right two columns → Sea Lane `0x1A` (26)** (`@0x65941`/`@0x65975`, line-fill `0x181F:0xCE` at `x=W-1` then `x=W-2`); **top/bottom rows → Arctic `0x18` (24)** (`@0x6582A`) | `@0x65941` |
@@ -70,15 +69,26 @@ generator builds **only the terrain layer + European starts** — native settlem
 prime resources, and Lost-City rumours are placed by separate (largely data-driven)
 new-game passes (`TBD`).
 
-> **Tier correction (2026-06-20).** The per-elevation→terrain *values* of P2 are
-> **NOT byte-verified** — they were previously shown as a `5,4,1,3,2,2` table, but
-> that byte sequence does **not** occur anywhere in `VICEROY.EXE` (0 matches); it
-> came from the LOW-trust C reconstruction (`viceroy_source/src/mapgen/climate.c`).
-> What IS byte-verified is the **dispatch**: `@0x64CF6 jmp word ptr cs:[bx+0xBAC]`
-> is a switch over a table at file `0x6442c` of **code offsets** (not terrain
-> ids). The N-table targets (`0x66605/0x63888/0x6a2d0/0x6d281/0x63d54/0x6509f`)
-> must each be disassembled to recover the elev→terrain mapping. **P2 terrain-value
-> assignment = TBD**; the control flow + hills/forest bit-sets remain **B**.
+**P2 climate band → base terrain — BYTE_VERIFIED (2026-06-20).** The two latitude
+sweeps each dispatch a 6-entry inline jump table (cs-base file `0x64150`) to local
+`mov [bp-0x2e/0x12], N` cases:
+- **North half** (table file `0x64CFC`, `cs:0xBAC`): band 0..5 →
+  **`{5, 4, 1, 3, 2, 2}`** = Savannah, Grassland, Desert, Prairie, Plains, Plains.
+- **South half** (table file `0x6504E`, `cs:0xEFE`): band 0..5 →
+  **`{2, 3, 3, 4, 6, 7}`** = Plains, Prairie, Prairie, Grassland, Marsh, Swamp
+  (the Marsh case `@0x6500C` is gated by a 50% roll `lcall 0x181f:0x4d4`; Swamp/Marsh
+  also apply a moisture `−2`).
+These match `viceroy_source/src/mapgen/climate.c` exactly.
+
+> **Self-correction (2026-06-20, supersedes the earlier "P2 = TBD" note).** The
+> values were briefly downgraded to TBD after a search found the literal byte
+> sequence `05 04 01 03 02 02` absent from the EXE. That was a false negative: the
+> values are not stored as a data array — they are **inline switch cases** reached
+> through the jump tables above. Decoded at the correct table location/cs-base, the
+> targets land exactly on the `mov [bp-…],N` cases, recovering `{5,4,1,3,2,2}` (N)
+> and `{2,3,3,4,6,7}` (S). The prior "scattered targets `0x66605/0x63888/…`" were an
+> artifact of decoding the table at the wrong offset (`0x6442c`) with the wrong
+> segment base. **P2 terrain-value mapping is BYTE_VERIFIED.**
 
 - **Customize** parameter ranges (land-mass size `p1+p2`, moisture, climate): the
   landmass target `(p1+p2+1)·0x140` and the climate jump tables are located; the
@@ -91,7 +101,7 @@ Setup-menu options surfaced in the opening/new-game flow. Strings likely in
 `OPENING_sections.json` / `MENU_sections.json`; concrete catalog `TBD`.
 
 ## 5. Evidence
-- `func_064A10` (file `0x064A10`, overlay page 0x14) — the procedural generator: RNG seed `@0x64A1B`, arg gate `@0x64A2C`, ocean fill `@0x64A4B`, landmass `@0x64AAD`, climate dispatch `@0x64CF6`, smoothing `@0x653F8`, sea-lane borders `@0x65941`, Arctic `@0x6582A`, starts `@0x65C9C`; wired from new-game `func_0755CC @0x7579E` (dims `@0x75702`). **B** (control flow verified vs EXE). The P2 elev→terrain *values* (`@0x6442c` jump table) are **TBD** — the cross-branch `viceroy_source/src/mapgen/climate.c` `5,4,1,3,2,2` list is **not** byte-grounded (0 EXE matches).
+- `func_064A10` (file `0x064A10`, overlay page 0x14) — the procedural generator: RNG seed `@0x64A1B`, arg gate `@0x64A2C`, ocean fill `@0x64A4B`, landmass `@0x64AAD`, climate dispatch `@0x64CF6`/`@0x65048` (inline tables `0x64CFC`/`0x6504E`, cs-base `0x64150` → N `{5,4,1,3,2,2}` / S `{2,3,3,4,6,7}`), smoothing `@0x653F8`, sea-lane borders `@0x65941`, Arctic `@0x6582A`, starts `@0x65C9C`; wired from new-game `func_0755CC @0x7579E` (dims `@0x75702`). **B** (verified vs EXE; the C-recon climate values are confirmed — they are inline jump-table cases, not a data array).
 - `notes/rulings/RULINGS.md` 2026-06-20 — terrain ids 24–28 (Arctic/Ocean/Sea-Lane/Mountains/Hills); resolves the generator's `0x18/0x19/0x1A` immediates. **A (ruling)**
 - `data_extracted/text/NAMES_sections.json` — `@SCENARIO` rows. **B** (data present).
 - `docs/GAME_MANUAL.md` — NEW WORLD / AMERICA / Customize options. **R** (function).
@@ -99,7 +109,7 @@ Setup-menu options surfaced in the opening/new-game flow. Strings likely in
 
 ## 6. Open questions (TBD)
 1. Decode the 8 `@SCENARIO` columns.
-2. ~~Locate and trace the random-map generator.~~ **Done 2026-06-19** — `func_064A10`, pass sequence P0–P6 control flow **B** (§3). Independently re-verified 2026-06-20 (dims 58×72, seed, gate). **Residual:** the **P2 elevation→terrain value mapping** is **TBD** — decode the switch-jump targets at file `0x6442c` (`0x66605/0x63888/0x6a2d0/0x6d281/0x63d54/0x6509f`); the old `5,4,1,3,2,2` table was C-recon, not byte-verified.
+2. ~~Locate and trace the random-map generator.~~ **Done 2026-06-19/20** — `func_064A10`, passes P0–P6 **B** (§3); dims 58×72, seed, gate, and the **P2 climate→terrain tables `{5,4,1,3,2,2}`N / `{2,3,3,4,6,7}`S** all byte-verified (inline jump tables `0x64CFC`/`0x6504E`, cs-base `0x64150`). The C-recon climate values are confirmed.
 3. Customize parameter encodings (land size `p1+p2` / moisture / climate scales) — the landmass target `(p1+p2+1)·0x140` + climate jump tables are located; the menu→parameter binding is `TBD`.
 4. Confirm which menu strings drive the three setup choices.
 5. The separate new-game passes that place native settlements / prime resources / Lost-City rumours (`0xB0`) — entry functions `TBD`.
