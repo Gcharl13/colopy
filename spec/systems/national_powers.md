@@ -2,9 +2,10 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** nation roster + leaders `BYTE_VERIFIED`; **English, Spanish,
-& French ability effects `BYTE_VERIFIED`** (traced in `VICEROY.EXE`); Dutch effect
-`R` (manual) with the byte-site narrowed.
+**Overall confidence:** nation roster + leaders `BYTE_VERIFIED`; **all four ability
+effects `BYTE_VERIFIED`** (English immigration, French native-tension, Spanish
++50% vs natives, Dutch price-stability — traced in `VICEROY.EXE`). Only the Dutch
+**starting trading vessel** (new-game setup overlay) remains `R/TBD`.
 **Canonical primary:** `data_extracted/text/NAMES_sections.json`
 (@COUNTRY/@NATIONALITY/@NATIONABBREV/@HOMEPORT/@LEADERNAME/@COLONYNAME/@INDEPENDENT),
 `docs/GAME_MANUAL.md` (Choose Your Nationality); `VICEROY.EXE` `func_035D9A`
@@ -30,8 +31,12 @@ literal `power_index == N` test:
   attack strength `+= strength/2` (×1.5) (`func_05CA7E @0x05CF2F..0x05CF4D`:
   `cmp [bp-0x86],2 / cmp [bp-0x76],4 / mov ax,[bp-0x90]; sar ax,1; add [bp-0x90],ax`,
   then sets report-flag `[0x8D01] |= 0x10`).
-- **Dutch (3)** — more stable Amsterdam prices (less price drift) **and start with
-  a trading vessel**. **R** (manual); byte-site narrowed — see §3.
+- **Dutch (3)** — more stable Amsterdam prices. **BYTE_VERIFIED**: in the SELL
+  market-accumulator updater `func_03234A`, the per-player market-pool delta is
+  applied at full value for players 0–2 but **`×2/3` for player 3 (Dutch)**
+  (`@0x32390`: `cmp [bp-8],3; jne; ax = (delta·2)/3`) — so Dutch trades move the
+  market pool less ⇒ stabler prices. The **starting trading vessel** half is still
+  `R` (new-game setup overlay; see §3).
 
 ## 2. State & data
 All four-row tables below are **BYTE_VERIFIED** (data present in `NAMES_sections.json`),
@@ -81,12 +86,16 @@ Byte status of each national-power effect:
   delta** (`@0x45E21`). (This is distinct from the older `DGROUP:0x54F6` alarm array
   with raid threshold `0x80`; the `0x5B1C` tension has thresholds **75** = hostile
   and **100** = war, both checked in the raid scan `func_047320`.)
-- **Dutch (3) price stability + starting ship** — **R** (manual). Narrowed: the
-  per-turn drift `func_0305A8` is per-good global (`0x53EA`), not per-power, so the
-  Dutch damping is in the **per-sale price-drop** path (market sensitivity
-  `PowerRecord +0x4C`) — a `power==3` test there is **TBD**. The **starting trading
-  vessel** is set in the **new-game unit-setup overlay** (not in `@SCENARIO`, which
-  carries only x,y), also **TBD**.
+- **Dutch (3) price stability** — **BYTE_VERIFIED 2026-06-20.** The damping is in
+  the **per-sale market-accumulator** path, not the global drift: `func_03234A`
+  (SELL updater) loops the per-player market-pool array `DGROUP:0x8864`
+  (`[player·0x9e + good]`) and applies the trade delta in full to players 0–2 but
+  **`(delta·2)/3` to player 3 (Dutch)** (`@0x32390..0x323A1`: `cmp [bp-8],3; jne;
+  shl ax,1; mov cx,3; idiv cx`). So the Dutch pool absorbs ⅔ of each trade's impact
+  ⇒ less price movement. (The BUY updater twin `func_0322D0` uses a per-player
+  sensitivity shift instead; the explicit ⅔ is on the sell path.) The **starting
+  trading vessel** is set in the **new-game unit-setup overlay** (not in `@SCENARIO`,
+  which carries only x,y) — still **R/TBD**.
 
 ## 4. UI
 Chosen on the "Choose Your Nationality" setup screen with ability descriptions
@@ -98,6 +107,10 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
   `@0x035E6E` (`cmp [0x9E12],0`; `×2/3`). **B**
 - `VICEROY.EXE` `func_05CA7E` (`0x05CA7E`, land decider) — Spanish power-2 vs-native
   `+50%` `@0x05CF2F..0x05CF4D`. **B**
+- `VICEROY.EXE` `func_045DF2` (`0x045DF2`, native tension-raise applier) — French
+  power-1 halves the tension delta `@0x45E21` (array `DGROUP:0x5B1C`, `[0,100]`). **B**
+- `VICEROY.EXE` `func_03234A` (`0x03234A`, SELL market-accumulator updater) — Dutch
+  power-3 market-pool delta `×2/3` `@0x32390` (array `DGROUP:0x8864`). **B**
 - `docs/GAME_MANUAL.md` — four national-power descriptions (English immigration,
   French native peace, Spanish +50% vs natives, Dutch stable prices + start ship). **R**
 - `docs/DATA_MODEL.md` — `owner_power_idx` in records; native alarm array `0x54F6`. **B**
@@ -106,8 +119,10 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
 1. ~~**French (1):** native-alarm increment site scaling by `power==1`.~~ **Done
    2026-06-20** — `func_045DF2 @0x45E21` halves the native tension-raise delta for
    power 1 (tension array `DGROUP:0x5B1C`, range `[0,100]`). **B.**
-2. **Dutch (3):** find the per-sale **price-drop** `power==3` damping (sensitivity
-   `PowerRecord +0x4C`) and the **starting-ship** grant in the new-game setup overlay.
+2. ~~**Dutch (3):** per-sale price-drop `power==3` damping.~~ **Done 2026-06-20** —
+   `func_03234A @0x32390` applies `×2/3` to the player-3 (Dutch) market-pool delta
+   (array `DGROUP:0x8864`). **B.** Residual: the **starting trading vessel** grant
+   in the new-game unit-setup overlay (still TBD).
 3. ~~Decode the `@LEADERNAME` and `@COUNTRY` trailing numbers (AI bias?).~~
    **Done 2026-06-20** — `@LEADERNAME` triplet → `DGROUP:0x9566` stride 3
    (`@0x547A1`), loaded as AI-personality bias axes; `@COUNTRY` number →
