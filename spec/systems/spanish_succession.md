@@ -39,7 +39,15 @@ Real `@SUCCESSION` body:
   ceded colony's `owner_power_idx` to the beneficiary. **BYTE_VERIFIED.**
 - Self/active-power global `[0x53D2]` is updated (`@0x3C922`).
 - **Trigger:** still `TBD` — the *handler* is located; the dispatcher that fires
-  it (date/condition) is the remaining gap.
+  it (date/condition) is the remaining gap. **No caller is statically findable**
+  (no near/far/thunk `lcall` and no plain data pointer to `0x3C638` anywhere in the
+  image) → it is dispatched indirectly (computed function-pointer / event table).
+- **Not SoL-driven (2026-06-20):** the full handler body (`0x3C638..0x3C932`)
+  contains **no read of rebel-sentiment `PowerRecord +0x02`, no `50` (`0x32`) compare,
+  and no year check**. Victim selection ranks the 4 powers on the strength tables
+  `0x9418`/`0x9298`/`0x9410` and eliminates the weakest eligible — a power-strength
+  merge, gated only by `[0x5381]` bit 7 (enable/once flag). The 50%-SoL threshold is
+  the unrelated `REBELMAJORITY` colony status (`func_02D658 @0x2DB29`), not this event.
 
 ## 4. UI
 Announcement popup using `@SUCCESSION` (with `%STRING0..3` substitution) via the
