@@ -150,7 +150,13 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   - **computed deltas** (`[bp-…]`) at the remaining sites, scaled by event severity.
   So the **applier, its French/Pocahontas halving, the thresholds, and the delta
   *range* are all B**; the exact event→delta binding for each of the 33 sites
-  (which is "attack", "build adjacent", "missionary", etc.) is the residual.
+  (which is "attack", "build adjacent", "missionary", etc.) is the residual. The
+  deltas cluster by region: native-settlement AI (`0x4Axxx`) uses graduated
+  `+1/+2/+3`; the **mission** region (`0x57xxx`, near `func_0572E6`) applies
+  conditionally-halved deltas; **combat** (`0x5C41E`) does `−4` on a flag-tested
+  outcome; major events (`0x486F8`/`0x61B84`/…) do `±100`. **func_045DF2 takes a 4th
+  arg `[bp+0xc]`** — a category/notify code (values **0/3/5** observed), not just
+  `(settlement, power, delta)`; its meaning per call is **TBD**.
 - Decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the
   per-unit confrontation AI per RULINGS — not the price math; do not assert). The
   `[..+0x54F6]` access sites carry only caps `0x20`/`0x60`, the `0x80` threshold,
