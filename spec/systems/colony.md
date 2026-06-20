@@ -158,14 +158,22 @@ is **correct**.
   bitmask `ColonyRecord +0x60..0x65` (RUNTIME-VERIFIED, `docs/DATA_MODEL.md`).
 
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
-Per-good storage cap = **`(ColonyRecord +0x95 + 1) · 100`**, default **100** when
-`+0x95 == 0` (`@0x008D04` `bp-2=0x64`; `@0x008D14` `(+0x95)+1; ×0x64`). So
-**100 / 200 / 300** for warehouse level **0 (none) / 1 (Warehouse) / 2 (+Expansion)**
-— matching the game. `colony_turn_update` calls it (`@0x00A615`) and limits a good's
-gain to `cap − current_amount` (`@0x00A61F` `cap − [colony+good·2]`, clamp ≥0), e.g.
-capping **horse breeding** here. Goods cannot exceed the cap; surplus production is
-dropped (spoilage). The exact end-of-turn spoilage of an *already-overfull* stock
-(e.g. after a warehouse is lost) is the remaining detail (`TBD`).
+Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
+1) · 100`**, default **100** when `+0x95 == 0` (`@0x008D04` `bp-2=0x64`; `@0x008D14`
+`(+0x95)+1; ×0x64`). So **100 / 200 / 300** for warehouse level **0 (none) / 1
+(Warehouse) / 2 (+Expansion)**. `colony_turn_update` calls it (`@0x00A615`) and limits
+a good's gain to `cap − current_amount` (`@0x00A61F`, clamp ≥0). Goods cannot exceed
+the cap; surplus production is dropped (spoilage).
+
+**Food is the exception — base capacity 200** (user-confirmed; manual). Food is not a
+warehouse-limited trade good but the **population-growth store**: it accumulates to
+its cap and then a colonist is born. The growth path is byte-traced —
+`func_00929A` evaluates the food/population balance, and the grow branch
+(`@0x009432`) fires only while `population (+0x1F) < 0x20` (32, the max colony size),
+then `population++` (`@0x009464`), bumps the SoL divisor `+0xC6 += 100` (`@0x009453`),
+and posts `@NEWCOLONIST`. The exact **200** food threshold constant is **TBD** (the
+evaluator compares population against a food-derived argument rather than a literal).
+Likewise the end-of-turn spoilage of an *already-overfull* regular stock is `TBD`.
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,
@@ -197,9 +205,10 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
    Hammers = `+0xBA` (good `0x10` in the `+0x9A` 20-good array); `+0xB8` = Muskets.
    Remaining: the build-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
    `+0x60` constructed bit, carry surplus), reached via the array base.
-2. ~~**Warehouse** capacity thresholds~~ **Done 2026-06-20** — `cap=(+0x95+1)·100`
-   (100/200/300), `func_008D00`, applied in `colony_turn_update @0x00A615`. Remaining:
-   end-of-turn spoilage of an already-overfull stock.
+2. ~~**Warehouse** capacity thresholds~~ **Mostly done 2026-06-20** — regular goods
+   `cap=(+0x95+1)·100` (100/200/300), `func_008D00`, applied `@0x00A615`. Remaining:
+   the **food** base-200 growth-store threshold constant (`func_00929A`; user-confirmed
+   value, byte-site TBD) and end-of-turn spoilage of an already-overfull stock.
 3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
    — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
    `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** Remaining: the
