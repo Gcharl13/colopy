@@ -93,8 +93,10 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
   fires once per power). **B.**
 - **Fountain-of-Youth count = 8 immigrants** — the FoY path calls the recruit-queue
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
-- Remaining **TBD:** the exact per-index reward *magnitude* formulas (`[bp-0x10]` /
-  `[bp-0x32]` inline rolls) and the `[0x5382]&2` debug-force-Cibola path.
+- **Per-index reward magnitudes — BYTE_VERIFIED (2026-06-20):** summed-dice rolls per
+  outcome (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola seed `5·(diff−scout+1)+1d6`),
+  scout/difficulty-scaled — see §2. Remaining **TBD:** the n=2 treasure-unit `×100`
+  conversion, the burial `%NUMBER0/1` rolls, and the `[0x5382]&2` debug-force-Cibola path.
 - **Treasure value & King-galleon transport — `func_05C878`. FULLY BYTE_VERIFIED
   (2026-06-19, verified vs EXE).** Strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`.
   - **Treasure gold = `100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in
