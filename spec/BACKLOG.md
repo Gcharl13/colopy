@@ -76,7 +76,7 @@ The text/table basis is now complete (`tools/extract_txt_sections.py`,
 | Reproduce DGROUP record **values** (not just layout) | `tools/analyze_session_mem.py` against a DOSBox memory dump; the layout catalog (`dgroup_tables.json`) gives offset/stride/count | `spec/data/tables.md` §C, `spec/data/records.md` |
 | Name remaining raw/`TBD` table columns from loaders | `@ORDERS` key letters, `@TRIBES` extras, `@LEVELS`; legends in `NAMES.full.json` | `spec/data/tables.md` |
 | Spanish-Succession **trigger** (handler `func_03C638` now B: unit+colony transfer) | find the dispatcher that fires `func_03C638` | `systems/spanish_succession.md` |
-| Mercenary price (`%NUMBER0`) + offer trigger | dialog firing `@MERCENARIES` | `systems/mercenary.md` |
+| ~~Mercenary price (`%NUMBER0`) + offer trigger~~ | **RESOLVED 2026-06-20:** price **B** — `((diff+K)*2 + rand(0,6))*100 * ((catA+catC)*2 + count)`, K=3 wartime (`func_03E442 @0x03E512`) / K=4 peacetime (`func_03E664 @0x03E707`); triggers **B** (1/3 wartime, 1/21 peacetime). Remaining: force composition (`%STRING1`) via `func_03EA42`. | `systems/mercenary.md` |
 
 **Lesson recorded:** the two fabrications (heir-succession, wilderness-camp) came
 from an *empty-key* extraction. Always read the real `.TXT` body first; an empty

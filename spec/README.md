@@ -25,7 +25,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Unit system | [`systems/unit.md`](systems/unit.md) | B/R | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | A/TBD |
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B/R | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
 | Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
-| Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B/TBD |
+| Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
 | Training / promotion | [`systems/training.md`](systems/training.md) | R/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B/TBD |
 | Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
