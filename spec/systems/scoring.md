@@ -24,7 +24,9 @@ score  = (mult * base) / 100          # @0x3AA31..0x3AA3E (imul; idiv 100)
 score  = score >> 1                   # @0x3AA6A (halved)
 ```
 - The **difficulty multiplier `[4,5,6,8,10]`** is byte-verified — this is the
-  manual's "difficulty factor". **B**
+  manual's "difficulty factor". It is **computed, not a stored table**
+  (`@0x3AA0F`: `mult = difficulty + 4`, `+1 if diff≥3`, `+1 if diff≥4`), yielding
+  `{0→4, 1→5, 2→6, 3→8, 4→10}`. **B**
 - `base` (the component points) is computed in the paged function
   **`0x191F:0x3AA` → file `0x39EE2`** (resolved via `tools/follow_thunk.py`). It
   seeds the accumulator with King-anger terms (`100·[0x53A7] + [0x53A8]`

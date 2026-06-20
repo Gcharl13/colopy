@@ -20,6 +20,14 @@ secondary mechanics.
 > reconstructions (`viceroy_source/src/...`) were mined as leads and every adopted
 > finding was **re-verified against this branch's `raw/COLONIZE/VICEROY.EXE`**.
 
+> **Audit pass (2026-06-20).** Re-tested the RESOLVED rows' specific byte claims
+> vs the EXE: #1 combat-bonus filler `[0x8D04]` writer `func_007D3E`, #4 tax clamp
+> `0x4B`(75), #5 REF spend `0x708`(1800), #11 `"COLONIZE"` magic, #12 score mult
+> `[4,5,6,8,10]` (computed `diff+4 (+1≥3)(+1≥4)`) — **all hold.** The earlier
+> galleon-fee "table" was an isolated **data-global misID** (`0x8394` = king
+> salutation strings, now fixed), not a formula error; the resolved mechanics are
+> reliable.
+
 | # | Gap | Disasm entry point(s) | Upgrades spec doc | Notes |
 |---|-----|-----------------------|-------------------|-------|
 | 1 | Combat terrain/fort bonus + capture branch | `func_05CA7E` (decider); `func_007D3E` (bonus filler); ladder at `func_05B2C2` | `systems/combat.md` §3/§7 | Land odds `ATK/(ATK+DEF)` **B**; demotion ladder **B**; **terrain/fort bonus now B** (2026-06-19): `func_007D3E` colony+2/fort+4/×2/river+(n+1)·2/open-terrain = `$TERRAIN` "Defensive" col (forests 2/Hills 4/Mountains 6). **Capture branch RESOLVED 2026-06-20:** func_05B2C2 seizes loser types {0 Colonists/0xA Treasure/0xC Wagon} via owner-reassign (0x181F:0x894 @0x5B4C7); ship-victor-without-room destroys. Remaining: `+0x17==0x18` override runtime check. |
