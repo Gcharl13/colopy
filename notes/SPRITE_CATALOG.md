@@ -137,58 +137,51 @@ for different river widths or for river-meets-coast transitions.
 4-bit cardinal land-neighbor mask → sprite + flip. Verified in the current
 coast render of ONE.MP / AMER2.MP.
 
-## CC-00 through CC-24 — Unit / colonist sheets
+## CC-00 through CC-24 — Founding Father portrait sheets
 
-25 sheets, each containing all frames/orientations of one unit or colonist
-type. Per-nation color variants are produced at runtime via palette swap
-(indices TBD — needs disassembly).
+**CORRECTED 2026-06-20.** These 25 sheets are **Founding Father portraits**
+(`NAMES.TXT @FATHERS` by index — 25 entries = 25 sheets), per the **SPRITE-A
+resolution** in `notes/PROJECT_BOARD.md` ("FULLY RESOLVED 2026-05-05"). The **prior
+"unit/colonist sheet" hypothesis is SUPERSEDED and wrong** — unit/colonist sprites
+live in **ICONS.SS** (byte-cited from `@UNIT` column 1 "Icon": Colonists 101, Soldiers
+103, Caravel 6, …, Cont. Cav. 130; see `GAME_INDEX_TABLES.md`), not in CC-NN.
 
-**Action: needs per-sheet cataloging**. Each sheet has ~16–32 sprites in
-it (idle / walk / attack / etc. per direction). The mapping of unit type
-→ sheet number requires opening one representative frame from each sheet.
+**Container facts (verified 2026-06-20 from `col.zip` → `raw/COLONIZE/CC-NN.SS`):**
+each sheet is a **MADSPACK 2.0** container (`magic "MADSPACK 2.0\x1A"`) with **4
+FAB-compressed sections** (sprite header / descriptor table / palette / pixel data);
+file SHAs match `MANIFEST.md`.
 
-Placeholder table (to be filled in by a follow-up sprite-cataloger run or
-by manual inspection):
+**Per-frame pixel cataloging is BLOCKED on tooling — not "PNG inspection".** The
+`mpskit` FAB/MADSPACK decoder referenced by `formats/SS.md` (`tools/mpskit/ss.py`,
+`madspack.py`, `fab.py`) is **absent from the repo**, and the **FAB (LZ-variant)
+bitstream is not documented**. Every `.SS` section is FAB-compressed (directory flag
+`01`), so even the descriptor table (frame counts/dimensions) is unreadable without a
+decoder. Recovering pixels requires **implementing a FAB/MADSPACK decoder** (RE the
+codec from the `.SS` loader in `VICEROY.EXE`) — a separate project, *not* a one-command
+extraction. Until then the per-portrait frame layout stays **TBD**.
 
-| Sheet | Unit type (hypothesis) |
-|-------|------------------------|
-| CC-00 | Free Colonist |
-| CC-01 | Indentured Servant |
-| CC-02 | Petty Criminal |
-| CC-03 | Expert Farmer |
-| CC-04 | Expert Fisherman |
-| CC-05 | Expert Fur Trapper |
-| CC-06 | Expert Lumberjack |
-| CC-07 | Expert Ore Miner |
-| CC-08 | Expert Silver Miner |
-| CC-09 | Master Carpenter |
-| CC-10 | Master Distiller |
-| CC-11 | Master Tobacconist |
-| CC-12 | Master Weaver |
-| CC-13 | Master Fur Trader |
-| CC-14 | Master Blacksmith |
-| CC-15 | Master Gunsmith |
-| CC-16 | Elder Statesman |
-| CC-17 | Firebrand Preacher |
-| CC-18 | Veteran Soldier |
-| CC-19 | Hardy Pioneer |
-| CC-20 | Seasoned Scout |
-| CC-21 | Jesuit Missionary |
-| CC-22 | Naval unit (caravel/merchantman) |
-| CC-23 | Naval unit (galleon/frigate) |
-| CC-24 | Naval unit (man-o-war) or treasure train |
+<details><summary>SUPERSEDED unit-sheet hypothesis (kept for history — do not cite)</summary>
 
-**Status**: HYPOTHESIS. Verify by opening one frame from each sheet.
+> An older note treated CC-00..CC-24 as unit/colonist sheets (CC-00=Free Colonist …
+> CC-24=naval). This was a **hypothesis only**, refuted by SPRITE-A (CC-NN = FF
+> portraits; units = ICONS.SS). Retained solely so the prior reasoning is traceable.
+
+</details>
 
 ## BUILDING.SS — Colony buildings
 
 Sprites for colony buildings (carpenter, blacksmith, stable, fortress,
 warehouse, stockade, docks, armory, church, newspaper, distillery,
 tobacconist, weaver, fur trader, rum distillery, cigar maker, etc.) plus
-their higher-tier upgrades.
+their higher-tier upgrades. **48 sprites** (per `notes/ASSET_CATALOG.md`) vs **42**
+PEDIA `@BUILDING0..41` entries — not 1:1 (likely shared sprites across upgrade tiers).
 
-**Status**: NOT YET CATALOGED. Expand this section after opening the
-sheet PNGs.
+**Status: NOT CATALOGED — BLOCKED on the FAB/MADSPACK decoder (2026-06-20).** Verified
+container: MADSPACK 2.0, 4 FAB-compressed sections, 20,990 bytes, SHA `e91784542982216a…`
+matching `MANIFEST.md`. The per-index → building-name mapping needs the **decoded
+pixels** (same tooling blocker as the CC-NN note above), not data/disasm. The PEDIA
+index list (`docs/PEDIA_TXT_CATALOG.md` `@BUILDING0..41`) is the cross-reference target
+once a decoder exists.
 
 ## ICONS.SS — Goods and HUD icons
 
@@ -407,11 +400,14 @@ indices, first investigate mpskit extraction options or inspect the source
 1. **Row 0x70 (112–127)**: are these the true DOS coast sprites? Needs
    disassembly verification of func_O512's sprite-index arithmetic.
 2. **Row 0x80 (128–143)**: distinction from row 0x00 rivers unknown.
-3. **CC-NN sheet → unit type mapping**: table above is hypothesis only.
-   Verify by opening one frame from each sheet.
+3. **CC-NN sheets**: ~~hypothesised as unit sheets~~ **CORRECTED 2026-06-20 — they are
+   Founding Father portraits** (`@FATHERS`, SPRITE-A); per-frame layout blocked on the
+   FAB decoder (see §CC-00..CC-24).
 4. **Nation-tinting palette indices for CC-NN sprites**: unknown.
    Needs disassembly to find the palette-remap function.
-5. **BUILDING.SS index → building name mapping**: not yet cataloged.
+5. **BUILDING.SS index → building name mapping**: not cataloged — **blocked on the
+   FAB/MADSPACK decoder** (`tools/mpskit/*` absent; FAB bitstream undocumented), not a
+   "PNG inspection" gap. 48 sprites vs 42 PEDIA `@BUILDING` entries.
 6. **ICONS.SS indices 16+**: not yet cataloged.
 7. **CLOS-BEL, CLOS-FWK, CLOS-HAT directory contents**: not yet inspected.
 8. **Sprite 101**: silver nugget or stone? Similar visuals — disambiguate

@@ -31,9 +31,14 @@ secondary mechanics.
 > static items + the previously all-TBD **terrain_improvement** system, near-complete
 > **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
-> unfound or runtime-only): `0x9408` REF value table (BSS/runtime-only);
-> CC/BUILDING.SS sprite sheets (need PNG inspection); Tory-uprising effect magnitude
-> (unit count) + the WoI-loop call frequency for `func_03CAC6`.
+> unfound or runtime-only): `0x9408` REF value table + `0x9654` FF candidate table
+> (both BSS/runtime-only); **BUILDING.SS per-building sprite index** — re-scoped
+> 2026-06-20: this is **blocked on implementing a FAB/MADSPACK `.SS` decoder**
+> (`tools/mpskit/*` is absent from the repo; the FAB codec is undocumented; every `.SS`
+> section is FAB-compressed), *not* a "PNG inspection" gap; CC-NN are **FF portraits**
+> (`@FATHERS`, SPRITE-A — the old "unit sheet" label was stale and is corrected); plus
+> Tory-uprising effect magnitude (unit count) + the WoI-loop call frequency for
+> `func_03CAC6`.
 > **Closed 2026-06-20:** (a) **Spanish-succession** `func_03C638` fully byte-verified —
 > power selection (weakest AI cedes/strongest receives, score `3a+2b+c`), single-player
 > gate, map-tile/unit/colony owner transfer, controller `+0x543F:=2`; emits `@SUCCESSION`

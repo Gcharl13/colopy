@@ -34,9 +34,15 @@ Index counts and the exact per-cargo parameter table (Name, Start1/2, Low, High,
    VICEROY_sprite_index − 1` for all roles (e.g. `@UNIT` icon Caravel 6→png5,
    Man-O-War 128→png127; the CLAUDE.md anchors ships 5-7/14-15/127 & foot 100-105+109
    are already PORT indices). `@UNIT` col-1 sprite ids verified (Colonists 101,
-   Soldiers 103, Pioneers 102, Scouts 104, Braves 110). **B.** **Residual TBD:** the
-   CC-00..CC-24 unit-sheet→type table and the BUILDING.SS per-building index list
-   (need per-sheet PNG inspection, not data/disasm).
+   Soldiers 103, Pioneers 102, Scouts 104, Braves 110). **B.** **Residual TBD
+   (re-scoped 2026-06-20):** the BUILDING.SS per-building sprite-index list (48 sprites
+   vs 42 PEDIA `@BUILDING0..41`). ⚠ **Correction:** CC-00..CC-24 are **Founding Father
+   portraits** (`@FATHERS`, per `PROJECT_BOARD.md` SPRITE-A), **not** a "unit-sheet→type"
+   table — unit sprites are in **ICONS.SS** (above). The BUILDING.SS catalog is **blocked
+   on implementing a FAB/MADSPACK `.SS` decoder** (`tools/mpskit/*` is absent from the
+   repo and the FAB codec is undocumented; every `.SS` section is FAB-compressed) — it is
+   a **decoder-implementation** task, *not* "PNG inspection" or data/disasm. See
+   `notes/SPRITE_CATALOG.md` §CC-00..CC-24 / §BUILDING.SS.
 2. ~~PEDIA `@KEY` ↔ NAMES 1:1.~~ **Done 2026-06-20** — 1:1 by count+order for FATHERS
    (25), BUILDING (42), JOB (28), UNIT (24), CARGO (16 tradeables); TERRAIN PEDIA (29)
    spans `@UNFORESTED`+`@FORESTED`. (`docs/PEDIA_TXT_CATALOG.md` @JOB count 27 is an

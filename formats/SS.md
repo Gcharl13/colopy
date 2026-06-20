@@ -35,6 +35,17 @@ blit are skipped.
 
 ## Reference implementation
 
+> ⚠ **TOOLING ABSENT (verified 2026-06-20):** the `mpskit` decoder referenced below
+> (`tools/mpskit/ss.py`, `madspack.py`, `fab.py`) **is not present in this repo**, and
+> the **FAB (LZ-variant) bitstream is not documented** here. The MADSPACK container is
+> parseable (14-byte `MADSPACK 2.0\x1A` header → `04 00` = 4 sections → per-section
+> `flag(1) mode(1) unpacked_len(u32) packed_len(u32)` + data), but **every `.SS` section
+> is FAB-compressed (flag `01`)**, so the descriptor table and pixels stay unreadable
+> until a FAB decoder is implemented (RE the codec from the `.SS` loader in `VICEROY.EXE`,
+> still TBD below). `tools/extract_visuals.py` shells out to the missing `mpskit` and so
+> silently emits **0 frames**. This blocks the BUILDING.SS / CC-NN pixel catalog
+> (`notes/SPRITE_CATALOG.md`).
+
 The byte-level format is implemented in
 [`mpskit/ss.py`](../../tools/mpskit/ss.py) and uses
 [`mpskit/madspack.py`](../../tools/mpskit/madspack.py) +
