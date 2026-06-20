@@ -50,6 +50,14 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
     3100–5000; without: `100·(20+1d20)` = 2100–4000. *(Corrects an earlier draft that
     cited the unrelated `[bp-0x36]` count.)*
   - **n=9 (survivors):** non-gold — adds colonist(s) (`@0x6180F`).
+  - **Burial sub-outcomes (n=4 → `[bp-0x38]`):** **`@BURIAL1`** (empty) `[bp-0x10]=0`
+    (`@0x619F8`); **`@BURIAL2`** (trinkets, gold `%NUMBER0`) = `10·(3d8)` — three
+    `random_int(1,8)` ×10 (`@0x61A1D..0x61A52`, same form as ruins); **`@BURIAL3`**
+    (incredible treasure `%NUMBER1`) `[bp-0x32] = 2·(1d8 + 2·(s+5))` (`@0x61A5D..0x61A75`),
+    shown ×100 → `200·(1d8 + 2s + 10)`. **B (2026-06-20).**
+  - **Master quality roll** `[bp-0xa] = random_int(1,100) + s·10` (`@0x6151D..0x61537`,
+    `s` = scout-proximity bonus `[bp-0x34]`), the threshold variable that selects
+    vanish/nothing/treasure sub-outcomes. **B.**
   The **Seasoned-Scout bonus `s`** (`[bp-0x34]`, 0 or 1) scales n=2/n=3 (difficulty
   does **not** enter these reward rolls).
   - **Message substitution — BYTE_VERIFIED:** `%NUMBER0` (immediate gold) = `[bp-0x10]`
@@ -103,7 +111,12 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
 - **Per-index reward magnitudes — BYTE_VERIFIED (2026-06-20):** summed-dice rolls per
   outcome (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola `100·(10·(scout+2)+1d20)`),
-  scout-scaled — see §2. **`%NUMBER1` = `[bp-0x32]×100` byte-verified** (`@0x618B1`). Remaining **TBD:** the burial `%NUMBER0/1` rolls and the `[0x5382]&2` debug-force-Cibola path.
+  scout-scaled — see §2. **`%NUMBER1` = `[bp-0x32]×100` byte-verified** (`@0x618B1`).
+  **Burial `%NUMBER0/1` rolls RESOLVED 2026-06-20** (BURIAL2 `10·3d8`, BURIAL3
+  `2·(1d8+2·(s+5))` ×100 — see §2). **Debug-force-Cibola RESOLVED:** `@0x615DB
+  test [0x5382],1; je; mov [bp-6],2` — when game-flag `[0x5382]` **bit 0** (the
+  engine-wide debug/cheat flag, *not* bit 1) is set, the outcome is forced to **2**
+  (Cibola treasure). **B.**
 - **Treasure value & King-galleon transport — `func_05C878`. FULLY BYTE_VERIFIED
   (2026-06-19, verified vs EXE).** Strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`.
   - **Treasure gold = `100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in
@@ -150,7 +163,24 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
 - `func_05BE84` — native **raid** outcome dispatch (RAID* keys) — see `natives.md` §3. **B**
 
 ## 6. Open questions (TBD)
-1. ~~Trigger condition: which map feature flags a tile as a rumor square.~~ **RUNTIME-VERIFIED 2026-06-19** — the **features map-layer byte `0xB0` (176)** marks a Lost-City/Rumor tile; stepping a unit onto it fires the event and **clears the tile to `0x00`** (`colonization-memory-map (1).md`, plant/remove **write-verified**). Map is 56×72 row-major (`tile = y·56 + x`). See `spec/systems/map_system.md`.
-2. Outcome **base roll = `random_int(1,9)`** (B); the *bias* cascade (anti-streak rising-floor, Scout/Seasoned-Scout boost, Founding-Father "no bad luck" flag, terrain, per-session counters `[0x1DC6/7]`) still needs per-gate byte-verification for exact probabilities.
+1. **Trigger feature byte — RUNTIME-VERIFIED `0xB0`; static reconcile 2026-06-20.**
+   The runtime memory-map doc (`colonization-memory-map (1).md`, write-verified) has
+   the features-layer byte **`0xB0` (176)** mark a Lost-City tile (cleared to `0x00`
+   on entry). **Static confirms the *mask but not the constant*:** at the trigger the
+   feature is read as `mov al,[bx+0x3147]; and ax,0xF0` (`@0x3F795`) — the **full high
+   nibble (`0xF0`)** is the feature field (low nibble = owning-nation/tribe id) — then
+   the Lost-City *presence* test is **delegated to helper `0x181F:0x7E0`/`0x7FE`**
+   (`@0x3F7A5`/`@0x3F7B2`), not an inline compare. So the earlier puzzle ("no `0xB0`
+   immediate exists in the EXE, but several `0xA0` do") is **explained**: the stray
+   `0xA0`/`0xB0` immediates are unrelated arithmetic/scan code, and the feature
+   discriminator lives inside the unresolved helper. `0xB0` (high nibble of `0xF0`) is
+   **consistent** with the runtime value; static can neither confirm nor refute `0xA0`
+   vs `0xB0` without resolving the helper body. Map is 56×72 row-major
+   (`tile = y·56 + x`). See `spec/systems/map_system.md`.
+2. Outcome **base roll = `random_int(1,9)`** (B); the *bias* cascade still needs
+   per-gate byte-verification for exact probabilities. **Per-session rare-outcome
+   counters identified 2026-06-20:** `[0x1DC6]` (`inc @0x614E6` every rumor; gate
+   `@0x6163D cmp,1`) and `[0x1DC7]` (`inc @0x616C9` on Cibola; gate `@0x61644 cmp,7`)
+   cap the rare Fountain/Cibola outcomes per game.
 3. ~~Numeric effects: which `@LOSTCITY` index = treasure/FoY/burial.~~ **Done 2026-06-19** — full n→meaning table byte-verified (§2): 1 FoY(8 immigrants)/2 Cibola/3 ruins-gold/4 burial/5 vanish/6 nothing/7 gift/8 trespass/9 survivors. Remaining: the per-index reward *magnitude* roll formulas (`[bp-0x10]`/`[bp-0x32]`).
 4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **Found 2026-06-19** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). Remaining: the index→`@LOSTCITYn` mapping + Fountain-of-Youth/burial numerics.
