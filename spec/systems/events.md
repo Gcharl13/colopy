@@ -47,8 +47,11 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
     5·(difficulty[0x53A6] − s + 1) + random_int(1,6)` (`@0x61719..0x61738`).
   - **n=9 (survivors):** non-gold — adds colonist(s) (`@0x6180F`).
   The **explorer bonus `s`** (`[bp-0x34]`) and **difficulty** scale the magnitude.
-  Residual: the n=2 treasure-unit value conversion (`×100` per the treasure
-  convention) and the burial `%NUMBER0/1` rolls.
+  - **Message substitution — BYTE_VERIFIED:** `%NUMBER0` (immediate gold) = `[bp-0x10]`
+    (`@0x618A1`, `fmt_int32` slot 0); **`%NUMBER1` (treasure-unit worth) = `[bp-0x32] × 100`**
+    (`@0x618B1` `imul ax,[bp-0x32],0x64`, slot 1) — i.e. the treasure unit stores
+    `value/100` and the dialog shows the ×100 gross, consistent with the
+    `100 × UnitRecord[+0x15]` treasure convention (§3, `func_05C878`).
 - `@LOSTCITY0` is **not** a rumor outcome — it is the recruit-menu prompt ("Which
   of the following individuals shall we recruit?") reused by the Fountain-of-Youth
   passage. **B.**
@@ -95,8 +98,7 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
   helper 8 times (`queue_immigrant(1,0)`). **B** (cross-confirmed by `lcr.c`).
 - **Per-index reward magnitudes — BYTE_VERIFIED (2026-06-20):** summed-dice rolls per
   outcome (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola seed `5·(diff−scout+1)+1d6`),
-  scout/difficulty-scaled — see §2. Remaining **TBD:** the n=2 treasure-unit `×100`
-  conversion, the burial `%NUMBER0/1` rolls, and the `[0x5382]&2` debug-force-Cibola path.
+  scout/difficulty-scaled — see §2. **`%NUMBER1` = `[bp-0x32]×100` byte-verified** (`@0x618B1`). Remaining **TBD:** the burial `%NUMBER0/1` rolls and the `[0x5382]&2` debug-force-Cibola path.
 - **Treasure value & King-galleon transport — `func_05C878`. FULLY BYTE_VERIFIED
   (2026-06-19, verified vs EXE).** Strings `CASHTREASURE`/`KINGGALLEON`/`LOOTCASH`.
   - **Treasure gold = `100 × UnitRecord[+0x15]`** (a Treasure unit stores value/100 in
