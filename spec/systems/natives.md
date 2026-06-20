@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** NativeSettlement base/stride + a few offsets + **mission-conversion mechanism (incl. RNG bound 0..15) + CHIEFKILL treasure roll + native-raid dispatch** `BYTE_VERIFIED`; **attitude bands (−5/0/10 → Content/Uneasy/Restless/Angry; War=alarm≥128) + alarm storage `BYTE_VERIFIED`**; trade logic + alarm-raise deltas + roll→gold conversion `TBD`. **Canonical primary:** `docs/DATA_MODEL.md` NativeSettlement; `data_extracted/text/NAMES_sections.json` `@TRIBES`/`@ATTITUDE`/`@ATTITUDINAL`/`@LEVELS`/`@MISSION`; `data_extracted/text/GAME_sections.json` native keys.
+**Overall confidence:** NativeSettlement base/stride + a few offsets + **mission-conversion mechanism (incl. RNG bound 0..15) + CHIEFKILL treasure roll + native-raid dispatch** `BYTE_VERIFIED`; **attitude bands (−5/0/10 → Content/Uneasy/Restless/Angry; War=alarm≥128) + alarm storage `BYTE_VERIFIED`**; **mission-doubler (missionary unit+5 bit0x10) + CHIEFKILL roll→gold (→ `+0x2A`) + settlement `+0x02`/`+0x03` fields `BYTE_VERIFIED`**; trade logic + per-action alarm-raise deltas (in thunk `0x181F:0x30C`) `TBD`. **Canonical primary:** `docs/DATA_MODEL.md` NativeSettlement; `data_extracted/text/NAMES_sections.json` `@TRIBES`/`@ATTITUDE`/`@ATTITUDINAL`/`@LEVELS`/`@MISSION`; `data_extracted/text/GAME_sections.json` native keys.
 
 ## 1. Purpose & behavior
 Native tribes occupy settlements the player can trade with, send missionaries to, learn skills from, demand tribute from, or attack. Tribe attitude escalates Content → Uneasy → Restless → Angry → War as the colonial presence grows, unless soothed by trade and tribute. Razing a settlement (CHIEFKILL) can yield treasure scaled by its population. **RECONSTRUCTED** (manual §"Indian Lore" + byte-cited CHIEFKILL).
@@ -14,8 +14,8 @@ Native tribes occupy settlements the player can trade with, send missionaries to
 |-------|------|---------|------|----------|
 | +0x00 | u8 | `map_x` | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md`: matches dispersal templates |
 | +0x01 | u8 | `map_y` | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md` |
-| +0x02 | u8 | tribe / owner (per task hint) | **TBD — not yet traced** | task hint; not confirmed in DATA_MODEL excerpt |
-| +0x03 | u8 | flags (per task hint) | **TBD — not yet traced** | task hint |
+| +0x02 | u8 | **owner tribe / nation id** | **BYTE_VERIFIED** | `[bx+0x54EE]` owner-match scans `@0x37638`/`@0x45D11`/`@0x46078` |
+| +0x03 | u8 | **flags** (bit `0x04` in active use; capital/special marker, exact label TBD) | **BYTE_VERIFIED (field)** | set `@0x66225` `or [bx+0x54EF],4`; test `@0x43DC4`/`@0x46E05`; init 0 `@0x46EA7` |
 | +0x04 | u8 | `population` (size byte, feeds CHIEFKILL) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` §CHIEFKILL: size_byte from `NativeSettlement[+0x04]` |
 | +0x08 | u8 | per-nation `last_bought` | **ANCHOR_VERIFIED** | `docs/DATA_MODEL.md` |
 
@@ -36,13 +36,23 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   - `sz ≥ 75`: a distinct big-treasure branch (`@0x4A802 → 0x4AB72`).
 
   So the magnitude is a **Seasoned-Scout-boosted, size-biased random** roll. **B
-  (roll mechanism).** The downstream conversion of the roll to gold / treasure-unit
-  creation (likely `×100` per the treasure-unit convention, `events.md` §3) is **TBD**.
+  (roll mechanism).** **Roll→gold RESOLVED 2026-06-20:** the `random_int(0,40·scout+100)`
+  roll `@0x4A827` is the **village-survives/escape** check (vs alarm `[bp-0x22]`,
+  `@0x4A97A`), **not** the payout. The raze **treasure gold** is computed in the raze
+  branch `(Σ 3×random_int(0,10−diff)) × random_int(0,6) × 4 × (TribeData[+2]+1)`
+  (`@0x4AAD0..0x4AB35`) and **credited directly to the attacker's gold** `PowerRecord
+  +0x2A` (32-bit `add/adc` at `@0x4AB66`, `[bx−0x77CE]` = `0x8832` = `+0x2A`). No
+  ×100, no treasure-unit for this path.
 - **Mission conversion** — `func_0572E6` (file `0x572E6`, "INDIANSCONVERT"). **BYTE_VERIFIED mechanism:**
   - success is gated by a roll: `threshold = TribeData[+2] + 2` (`[0x8D4E]` = active TribeData), **doubled** if a flag bit (`cl & 0x10`) is set; the roll is **`random_int(0, 15)`** (bound `0x0F` `@0x5730A`, thunk `0x181F:0x4D4` `@0x5730E`); convert **fails if `roll ≥ threshold`** (`@0x57316`). So **P(convert) = (TribeData[+2]+2)/15**, doubled to `2·(…)/15` when `cl & 0x10`. **BYTE_VERIFIED bound.**
   - on success a **convert unit is created at the colony** — thunk `0x181F:0x95C` @`0x5735F` is passed `ColonyRecord +0x00`/`+0x01`/`+0x1A` (map_x / map_y / owner); its returned `UnitRecord` index then gets **`+0x15 (class) = 0x1B`** (`MOV byte[bx+0x315B],0x1B` @`0x57374`). That `0x1B` class is the same "convert/special" colonist the colony-production formula gives a +1 staple bonus (see `colony.md` §3 `is_special`).
   - the `@INDIANSCONVERT` popup (tribe name `[0x8D52]`) is shown only to a **human European** owner (`[bp+6] < 4` and `AIPersonality[+0x543F].controller == 0`), thunk `0x191F:0x19C` @`0x57344`.
-  - Still **TBD:** the `cl & 0x10` flag's *meaning* (it doubles the success chance — likely a mission-level or relevant-father bonus; the bound `0..15` is now B).
+  - **Doubler RESOLVED 2026-06-20:** `cl = byte[[0x8D4A]+5]` of the **missionary
+    unit record** (`@0x572DE`). Its **low nibble = owning power** (`& 0xF`, compared to
+    `[bp+6]` `@0x572EA`); **bit `0x10` doubles the convert chance** (`test cl,0x10;
+    shl ax,1` `@0x57300`). So the doubler is a **per-missionary attribute flag**
+    (high nibble of unit+5) — almost certainly the **expert/Jesuit missionary** bit
+    (the mechanism is byte-verified; the exact bit *label* stays TBD).
 - **Native raid on colony** — `func_05BE84` (file `0x5BE84`). **BYTE_VERIFIED:** the
   6 raid outcomes are the message keys `RAIDWREAK` (`@0x5C1DE`), `RAIDSTORES`
   (`@0x5C3CC`), `RAIDBURN` (`@0x5C50B`), `RAIDSHIP` (`@0x5C57B`), `RAIDGOLD`
@@ -85,8 +95,8 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   `@ATTITUDINAL` intensity {Extremely, Very, Rather, Somewhat, Slightly} modifies the
   displayed phrase. The exact composition of the presence score `X` (`[bp-0x2C]`) is
   multi-term and not fully decomposed, but the **band cutoffs are byte-verified.**
-- Attitude escalation **deltas** (how much each act — building near, attacking,
-  missions — raises the alarm word) + decay, trade pricing, tribute amounts:
+- Attitude escalation **deltas** — the per-action alarm-raise magnitudes are **computed inside thunk `0x181F:0x30C`** (the alarm/tension helper, also called from CHIEFKILL `@0x4A7F2` and the raid scan `@0x47320`), not as inline literals at the `[..+0x54F6]` access sites (which are only caps `0x20`/`0x60`, the `0x80` hostility threshold, and resets). So the deltas (building near, attacking,
+  missions) + decay, trade pricing, tribute amounts:
   **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS —
   not the price math; do not assert).
 
