@@ -59,7 +59,25 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   (sfx `0x5B`, `@0x5C637`). The STORES branch also bumps the target settlement's
   raid-budget `+0x08` (`@0x5C3E1`) and wealth `+0x0A` (`+= 0x19 @0x5C3E4`) — the same
   fields the tribe-death redistribute uses. **B.**
-- Attitude escalation/decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS — not the price math; do not assert).
+- **Per-power alarm/tension storage — BYTE_VERIFIED.** Each settlement holds a
+  **word of alarm per European power** at `NativeSettlement +0x0A + power·2`
+  (`= DGROUP 0x54F6 + (settlement·9 + power)·2`, since stride `0x12` = 9 words;
+  reconciles with `docs/DATA_MODEL.md` "+0x0A..+0x11 alarm[4]"). Indexed in the
+  native AI via `[unit+0x314A]·9 + power` (`@0x4734E`).
+- **War / raid threshold — BYTE_VERIFIED: alarm ≥ `0x80` (128).** When a settlement's
+  alarm toward a power reaches 128 the natives treat that power as hostile —
+  byte-verified at the raid-target scan (`@0x04734E`) and the colony-placement
+  desirability gates (`@0x04CAD7`, `@0x053D4E`) which all test `cmp [..+0x54F6],0x80`.
+- **Attitude bands.** `@ATTITUDE` = 5 levels {Content, Uneasy, Restless, Angry, War}
+  with `@ATTITUDINAL` intensity {Extremely, Very, Rather, Somewhat, Slightly}. The
+  top band (War) is the `≥128` threshold above; the **intermediate cutoffs**
+  (Content/Uneasy/Restless/Angry) are the alarm-value bands shown in the chief
+  dialog — the display-index computation is **TBD** (entry: the `@ATTITUDE`
+  string-table read in the native-meeting dialog).
+- Attitude escalation **deltas** (how much each act — building near, attacking,
+  missions — raises the alarm word) + decay, trade pricing, tribute amounts:
+  **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS —
+  not the price math; do not assert).
 
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.
@@ -72,6 +90,6 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 
 ## 6. Open questions (TBD)
 1. Byte-confirm `+0x02` (tribe/owner) and `+0x03` (flags); fill the rest of the 18-byte record (attitude value, mission flag, alarm/tension counter).
-2. ~~CHIEFKILL treasure roll~~ **Done 2026-06-19** — `random_int(0, 40·scout+100)`, Seasoned-Scout (class 0x16) boost, size/4 re-roll bias, tribe-2 `(8−diff)<<scout` (`func_04A7CA`, **B**); the roll→gold conversion + attitude escalation thresholds remain TBD.
+2. ~~CHIEFKILL treasure roll~~ **Done 2026-06-19** — `random_int(0, 40·scout+100)`, Seasoned-Scout (class 0x16) boost, size/4 re-roll bias, tribe-2 `(8−diff)<<scout` (`func_04A7CA`, **B**); the roll→gold conversion remains TBD; **attitude War/raid threshold = alarm ≥ 128 B** (storage `NativeSettlement +0x0A+power·2`), intermediate band cutoffs TBD.
 3. Trace native trade pricing and tribute/incite logic.
 4. Mission conversion: ~~the `random_int` bounds~~ **Done** — `random_int(0,15)`, `P=(TribeData[+2]+2)/15` (**B**). Remaining: the `cl & 0x10` flag's *meaning* (doubles the chance).
