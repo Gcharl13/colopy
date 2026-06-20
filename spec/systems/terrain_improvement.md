@@ -46,8 +46,9 @@ the tile's forest state (`[bp-0xc]=0` if terrain id ∈ 8..0x17 forested, `@0x40
 ### Turns-to-complete (work counter) — BYTE_VERIFIED
 - **Work-progress counter = `UnitRecord +0x16` (abs `0x315A`)** — incremented each
   turn the unit holds the order (`inc [bx+0x315a]` `@0x04071D` clear, `@0x040A46` road).
-- **Threshold = the per-terrain `@TERRAIN` table** `byte[terrain·16 + 0x2F78]` (same
-  stride-16 table whose `+0x2F80` column is the combat-defense value): **clear/plow
+- **Threshold = the per-terrain `@TERRAIN` table** `byte[terrain·16 + 0x2F78]` (the
+  stride-16 table whose `+0x2F77` column is the combat-defense value, `combat.md`):
+  **clear/plow
   `= table[t·16] + 2`** (`@0x040727`/`@0x04072D`), **road `= table[t·16]`** (no +2,
   `@0x040A50`). **Halved for a Hardy Pioneer** (profession class `UnitRecord
   +0x315B == 0x14`, `sar ax,1` `@0x04074A`/`@0x040A59`).

@@ -75,10 +75,13 @@ no match ⇒ the unit is **destroyed**:
 | 9 Cont. Army | 0 Colonists | `0x5B5CF` |
 | any other | *destroyed* (outcome −1) | — |
 
-Override (`0x5B60B..0x5B616`): if the outcome is `0` (Colonists) **and** the
-veteran/profession byte `UnitRecord +0x17 == 0x18` (`@0x5B60E` `cmp [bx+0x315B],0x18`),
-the outcome becomes type `3` instead. The index ladder + offsets are byte-verified;
-the @UNIT-name reading follows from the now-verified `@UNIT` table.
+Override (`0x5B60B..0x5B616`) — **RESOLVED 2026-06-20**: if the outcome is `0`
+(Colonists) **and** the profession byte `UnitRecord +0x17 == 0x18` (`@0x5B60E`
+`cmp [bx+0x315B],0x18`), the outcome becomes type `3` instead. **Class `0x18` =
+Missionary** (`@JOB` 24); **type `3` = Missionaries** (`@UNIT` 3). So an armed unit
+whose colonist profession is **Missionary**, when it would demote to a plain
+Colonist, instead reverts to a **Missionaries** unit. **B** (both ids confirmed vs
+NAMES).
 
 **Capture vs destroy — BYTE_VERIFIED** (`func_05B2C2`). Before the demotion ladder,
 a **capture-eligible flag `[bp-0x16]`** is set (`@0x5B31D..0x5B33D`): it is **1 iff the
@@ -119,8 +122,14 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
 - **R:** the set of +50% bonuses (manual-sourced).
 - **B (added):** capture-vs-destroy branch (`func_05B2C2`: seize Colonists/Treasure/
   Wagon Train via owner-reassign `0x181F:0x894`; ship-victor-without-room destroys).
-- **TBD:** `+0x17==0x18` (vet) override runtime check;
-  naval/bombardment specifics; result message keys. (The fort/stockade/fortress
+- **B (added 2026-06-20):** the `+0x17==0x18` override = **Missionary (class 0x18) →
+  Missionaries unit (type 3)** (§3, ids confirmed vs NAMES). **Veteran win-promotion**
+  (`@0x5C764`): a winning non-veteran is promoted iff `random_int(1, S) ≤
+  winner_strength` where `S = atk_str + def_str ± difficulty` (human `+diff`/AI
+  `−diff`) minus a class penalty (Criminal `0x1A` −10, Indentured `0x19` −5); the
+  **Washington** gate `@0x5C74A` (`has_father(11)`) **skips the roll → automatic**.
+  Soldiers(1)→Cont.Army(9) on promotion. **B** (form; numeric P is strength-data-dependent).
+- **TBD:** naval/bombardment specifics; result message keys. (The fort/stockade/fortress
   defense bonus is **not** `@BUILDING` data — that table has only
   `cost/tools/size/min_colony/upkeep`, no defense column — it is the **hardcoded
   `func_007D3E`** colony `+2` / fortified-building `+4` / `×2` chain, §7.1.)

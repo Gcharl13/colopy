@@ -99,8 +99,13 @@ Indian-learnable):
   `@0x04A782` writes the learned profession into `UnitRecord +0x315B`, then
   `@0x04A78A or [bx+3],2` stamps the **"already taught" flag = NativeSettlement +0x03
   bit `0x02`** (`[0x8D4A]` = active settlement) — the byte mechanism behind
-  `@LEARNALREADY` (each village teaches once). **B.** The per-class success roll (the
-  `@LEARNSLOW` slow-learner gate) is the remaining detail.
+  `@LEARNALREADY` (each village teaches once). **B.**
+- **Slow-learner success roll — BYTE_VERIFIED (2026-06-20):** for an unskilled
+  colonist (Free Colonist `0x1C` / Indentured `0x19`; Criminal `0x1A` refused), the
+  learn succeeds iff `random_int(1,1000) ≥ 200·difficulty + 100` (`@0x4A72C`:
+  `random_int(1,1000)` then `al=0xC8; mul [0x53a6]; add 0x64`). So **P(success) ≈
+  (900 − 200·diff)/1000** = **90 / 70 / 50 / 30 / 10 %** for Discoverer…Viceroy; on
+  failure `@LEARNSLOW` is shown and the colonist stays. **B.**
 
 ### Veteran promotion / demotion on combat — **B** (demotion ladder)
 The combat consequence applier `func_05B2C2` adjusts the expertise `+0x17`:

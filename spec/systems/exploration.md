@@ -56,15 +56,26 @@ RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
   → `func_006468`, `(2R+1)²` square; R=1 land / R=2 scout & big ships / R=2 any
   naval with ability #7). No terrain (hill/mountain) sight extension is applied —
   the radius is purely unit-type-driven. **B.**
-- Scout & Seasoned Scout bonuses: **B that they gate rumor outcomes** — the Lost-City handler `func_061454` tests `unit_type==5` (Scout) and class `+0x15==0x16` (Seasoned Scout) (`events.md` §3). Numeric magnitude of the bonus **TBD**.
+- **Scout & Seasoned-Scout Lost-City bonus — BYTE_VERIFIED magnitude (2026-06-20).**
+  `func_061454` builds a **scout level 0..3**: +1 if `unit_type==5` (Scout), +1 if
+  class `+0x315B==0x16` (Seasoned/Expert Scout), +1 if owner has **de Soto** (FF 7,
+  `@0x614C6`; de Soto also forces a positive-outcome reroll `[bp-0x2e]:=1`). The
+  outcome **magnitude roll** is biased **`+scout_level·10`** (`@0x6151D`:
+  `random_int(1,100) + scout_level·10`), so scouts add **+10/+20/+30**; and the
+  **bad-outcome escape** (outcomes 5/8) rerolls via `random_int(1, scout_level+1)`,
+  so higher level dodges danger more often. **B.**
 - **Scout "infiltrate colony" interaction** — `func_05A20E` (file `0x5A20E`).
-  **BYTE_VERIFIED mechanism:** for a **human European** actor (unit
-  `UnitRecord +0x01 & 0x0F < 4` and `AIPersonality[+0x543F].controller == 0`) the
-  `@SCOUTCOLONY` **3-option dialog** is shown (with the colony name substituted),
-  thunk `0x181F:0x652` @`0x5A254`; otherwise the result defaults to option 3.
-  Choosing option 1 is **blocked during the revolution** (`TEST [0x5382],1` →
-  `@NOMAYORSDURINGREV` @`0x5A28A`). The three options' exact effects (and the
-  Scout-skill numeric bonuses) are **TBD**.
+  **BYTE_VERIFIED (2026-06-20): a 4-option `@SCOUTCOLONY` dialog** (string `0x1A64`),
+  result in `[bp-6]`:
+  1. **Meet With Mayor** — **blocked during the revolution** (`test [0x5382],1` →
+     `@NOMAYORSDURINGREV` `@0x5A281`); else parley.
+  2. **Infiltrate Colony** (`@0x5A2DC`) — success roll `random_int(1,36) ≤ (X+6)·2`,
+     **halved for a Seasoned Scout** (class `0x16`, `sar [bp-4],1` `@0x5A2F2`; `+
+     (diff−2)` vs a human target). Success reveals colony info + bumps the target
+     colony `+0xAA` by 100; **failure → the scout is caught/lost** (`@0x5A3EA`).
+  3. **Attack Colony** → `func_05A40E`; this path holds the **Jan de Witt** (FF 4)
+     gate `@0x5A469` (full vs limited foreign-colony info).
+  4. **Nothing** — no action. **B** (was mislabeled "3 options").
 - Lost-City rumor squares: see `spec/systems/events.md`.
 
 ## 4. UI
@@ -76,7 +87,7 @@ Layout `TBD`.
 - `docs/GAME_MANUAL.md` — fog/discovery, permanent reveal, scout abilities. **R**
 - `formats/MP_FORMAT.md` — tile-byte bit 7 (unconfirmed discovered flag). **TBD**
 - `data_extracted/text/GAME_sections.json` — @LOSTOURSCOUTS/@SCOUTCOLONY. **B** (strings).
-- `func_05A20E` (file `0x5A20E`) — scout infiltrate-colony: `@SCOUTCOLONY` 3-option dialog (human-European gated), option 1 blocked post-independence via `@NOMAYORSDURINGREV` (`[0x5382]&1`). **B** (dialog + gate; option semantics TBD).
+- `func_05A20E` (file `0x5A20E`) — scout infiltrate-colony: `@SCOUTCOLONY` **4-option** dialog (Meet Mayor / Infiltrate / Attack / Nothing); Meet Mayor blocked post-independence (`@NOMAYORSDURINGREV`); Infiltrate roll `random_int(1,36)≤(X+6)·2` (Seasoned-halved); Attack → `func_05A40E` (de Witt gate `@0x5A469`). **B** (option semantics resolved §3).
 - `func_006608` (file `0x6608`) — sight-radius selector (R=1 default, R=2 scout/big
   ships/ability-#7 naval); `func_006468` (`0x6468`) `(2R+1)²` reveal loop; `func_00631A`
   (`0x631A`) single-tile fog OR `1<<(player+4)`. **B**.
@@ -93,4 +104,7 @@ Layout `TBD`.
    land units (a divergence from the manual's "all units"). `func_006608` is the
    sole radius selector. **Resolved.**
 3. Whether other powers' positions reveal on contact only, or via shared exploration.
-4. Trace scout-bonus arithmetic out of `func_05A20E`.
+4. ~~Trace scout-bonus arithmetic (`func_05A20E` / `func_061454`).~~ **Done 2026-06-20**
+   — Lost-City magnitude `+scout_level·10` (level 0..3 = type5 +1 / Seasoned +1 /
+   de Soto +1) and bad-outcome reroll `random_int(1,level+1)`; infiltrate roll
+   `random_int(1,36)≤(X+6)·2` Seasoned-halved (§3). **B.**
