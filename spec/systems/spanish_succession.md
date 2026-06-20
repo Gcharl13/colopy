@@ -46,8 +46,14 @@ Real `@SUCCESSION` body:
   `[0x53D2]` (the seceding/tory power id) being `< 0` (`@0x023930`), with the
   `[0x5381]` bit-7 **once-flag** routing between the succession and the
   `[0x5382]`-gated revolution handlers. So it is part of the **revolution/end-game**
-  state machine, **not** SoL-driven (confirming the §below ruling). The exact meaning
-  of the `[0x53D0]` counter (set in an overlay) is the remaining detail.
+  state machine, **not** SoL-driven (confirming the §below ruling).
+  - **`[0x53D0]` identified:** it is initialized at new-game (`func_0755CC @0x75620`)
+    and bumped **`+= 20` (capped at 100)** when **Simón Bolívar (FF #18)** is acquired
+    (`func_03BC42 @0x3BE64`, gated to a human European power) — i.e. it is Bolívar's
+    accumulating SoL-boost meter. The dispatcher clamps it to 75 (`@0x02392A`) and
+    routes on whether it has reached that threshold, so **the succession branch is
+    taken in the low-`[0x53D0]` / `[0x53D2] < 0` (no seceding power) state** — the
+    pre-revolution path — while the high state feeds the revolution handlers.
 - **Not SoL-driven (2026-06-20):** the full handler body (`0x3C638..0x3C932`)
   contains **no read of rebel-sentiment `PowerRecord +0x02`, no `50` (`0x32`) compare,
   and no year check**. Victim selection ranks the 4 powers on the strength tables
@@ -65,7 +71,7 @@ shared popup framework (`spec/ui/popups.md`). The removed power renders as
 - `data_extracted/text/LABELS_sections.json` — `@MISC` "(Withdrawn from New World)". **B**
 
 ## 6. Open questions (TBD)
-1. Trigger condition / timing of the event (date gate vs random).
+1. ~~Trigger condition / timing.~~ **LOCATED 2026-06-20** — end-game dispatcher `@0x02393A`, gated on `[0x53D0]` (Bolívar SoL meter, init `func_0755CC`, +20/cap100 `@0x3BE64`) and `[0x53D2]<0`; not SoL/date. Residual: full dispatcher state-machine semantics.
 2. Power-selection: which rival cedes, which receives.
 3. Colony-transfer + power-removal mechanics in the data model.
 
