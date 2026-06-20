@@ -64,10 +64,14 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   **page-13 resident** (`0x4C1F0..0x53540`) with shared helpers on page 4 — see the
   new §3.1. ⚠ `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase** gold debit
   (calls `place_unit 0x181F:0x95C` after) — *not* the commodity-sale debit.
-- **Remaining `TBD`:** only the per-turn *driver* that invokes the `0x1C2AC` drift
-  thunk (turn-loop call site). (The per-good price-base `DGROUP:0x53EA` is
-  **RESOLVED** — random-seeded `[600,1000]` by `func_07561C @0x75645`; the buy/sell
-  accumulator-increment site is now **RESOLVED** — §3.1.)
+- **Remaining `TBD` (narrowed 2026-06-20):** only the per-turn *driver* that invokes
+  the drift fn. It is **not a direct call** — `func_0305A8` is reached through the
+  thunk `0x191f:0xcbc` (file `0x1C2AC`), whose far-pointer is stored in a **page-4
+  fn-ptr/trampoline dispatch table at file `0x368be`** (per `tools/find_callers.py`:
+  0 direct callers, 1 far-pointer data ref). The turn-loop driver indexes that table
+  and calls through it; pinning the indexer is the residual entry point. (Price-base
+  `DGROUP:0x53EA` random-seeded `[600,1000]` by `func_07561C @0x75645`, and the
+  buy/sell accumulator site (§3.1) are both **RESOLVED**.)
 
 ### 3.1 Commodity buy/sell transaction — **BYTE_VERIFIED (2026-06-20)**
 The executor and its accumulator-updaters were byte-traced via the price helper
