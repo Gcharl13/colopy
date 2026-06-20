@@ -50,14 +50,13 @@ unit needing orders" prompt loop (manual). Layout `TBD`.
 
 ## 6. Open questions (TBD)
 1. Identify the top-level turn/phase dispatcher and enumerate its ~27 cases.
-   **Lead (2026-06-20):** a **page-4 dispatch table at file `~0x36814`** (stride
-   `0xA`: 4-byte handler far-ptr + 6 metadata bytes) holds far-pointers to
-   `0x191F:0xCxx` thunks resolving to page-4 economic handlers (`0x0354BE`,
-   `0x0305A8` market-drift @`0x368be`, `0x030B38` boycott-test, `0x033A52`,
-   `0x033778`, `0x034DD4`, …). The market price-drift fn `func_0305A8` is reachable
-   **only** through this table (0 direct callers). The **iterator** that walks it is
-   the dispatcher being sought; confirm whether this is the per-turn phase loop or a
-   Europe-screen command dispatch (cross-ref `market.md` §3 "turn-loop driver").
+   **Ruled out (2026-06-20):** the `func_33C96` switch (`jmp word ptr cs:[bx+0x3a1a]`
+   `@0x33F65`, table `@0x33F6A`) is **not** it — it has only **12 cases** and is a
+   market/Europe **trade-screen** economic/unit-command interpreter (mouse hit-test
+   `0x181F:0x3CA`, page-23 UI helpers), not the headless turn loop. (And the
+   `~0x36814` region I earlier floated as a "dispatch table" is a JMP-FAR trampoline
+   island, not a case table — see `market.md` §3.) The real ~27-case turn-phase
+   dispatcher is still **unlocated**.
 2. Confirm power-processing order (natives first vs interleaved) at the dispatch site.
 3. Map each phase to its BYTE_VERIFIED system function (production `func_02D658`, market `func_0305A8`, king tax `func_034AE0`, etc.).
 4. Turn-counter → in-game-year conversion.

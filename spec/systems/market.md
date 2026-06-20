@@ -64,21 +64,28 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   **page-13 resident** (`0x4C1F0..0x53540`) with shared helpers on page 4 — see the
   new §3.1. ⚠ `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase** gold debit
   (calls `place_unit 0x181F:0x95C` after) — *not* the commodity-sale debit.
-- **Remaining `TBD` (narrowed further 2026-06-20):** only the per-turn *driver* that
-  invokes the drift fn. `func_0305A8` has **0 direct callers**; it is reached through
-  thunk `0x191f:0xcbc` (resident stub file `0x1C2AC`), whose far-pointer `0x191F:0x0CBC`
-  is stored as **data at file `0x368be`** inside a **page-4 dispatch table**:
-  - The table (region `~0x36814..`) is **stride `0xA`** (10-byte records: a 4-byte
-    handler far-ptr + 6 metadata bytes); confirmed consecutive entries
-    `0x191F:0x0CA0`@`0x368b4`, `0x191F:0x0CBC`@`0x368be` (drift), `0x191F:0x0CD8`@`0x368c8`.
-  - Each entry's thunk resolves to a **page-4 economic function** — e.g.
-    `0xCA0→0x0354BE`, **`0xCBC→0x0305A8` (drift)**, `0xCD8→0x030B38` (boycott test),
-    `0xC4C→0x033A52`, `0xCF4→0x033778`, `0xD2C→0x034DD4` — so the table maps an index
-    to a page-4 market/king handler. The **iterator/dispatcher** that walks it (and
-    whether it is the per-turn phase loop vs a Europe-screen command dispatch) is the
-    open residual — its discovery also resolves `turn_dispatch.md` open Q1. (Price-base
-    `DGROUP:0x53EA` random-seeded `[600,1000]` by `func_07561C @0x75645`, and the
-    buy/sell accumulator site (§3.1) are both **RESOLVED**.)
+- **Drift driver — RESOLVED 2026-06-20.** `func_0305A8` has exactly **4 call sites**,
+  all in page 4, reached via the JMP-FAR trampoline at file `0x368bd`
+  (`ljmp 0x191F:0x0CBC → resident stub 0x1C2AC → func_0305A8`):
+  - **`func_33C96 @0x367FC`** — `drift(-1, 1)` inside a per-commodity loop that rolls
+    `random_int` (`lcall 0x181F:0x4D4`) for each good: the **all-16-goods randomized
+    price recompute**. The companion `@0x363D3` does `drift(…, 0)` (all goods, no
+    randomization).
+  - **`func_0324F2 @0x32902`** and **`func_032914 @0x32D99`** — `drift(good, 0)`, the
+    **single-commodity re-drift after a buy/sell** (the SELL/BUY handlers of §3.1).
+  So the European price movement is driven by **the market/Europe trade-screen's
+  economic pass** (`func_33C96`) plus each individual transaction — *not* by a
+  separate headless turn phase. (`func_33C96` is a 12-case economic/unit-command
+  interpreter that runs inside the **interactive trade screen** — mouse hit-test
+  `0x181F:0x3CA`, page-23 UI helpers — not the top-level turn dispatcher.)
+  > **Correction (supersedes the 2026-06-20 "page-4 dispatch table" note):** the
+  > region `0x3680e..0x36976` is **not** a data table — it is a linker **thunk-island
+  > of 72 five-byte `JMP FAR seg:off` trampolines** (RTLink near→far shim). The bytes
+  > `0x191F:0x0CBC` at `0x368bd` are the *operand of a `JMP FAR` instruction*, which
+  > `tools/find_callers.py` mis-reported as a far-pointer data ref. There is no
+  > stride-`0xA` handler table. (Price-base `DGROUP:0x53EA` random-seeded
+  > `[600,1000]` by `func_07561C @0x75645`, and the buy/sell accumulator site (§3.1)
+  > remain **RESOLVED**.)
 
 ### 3.1 Commodity buy/sell transaction — **BYTE_VERIFIED (2026-06-20)**
 The executor and its accumulator-updaters were byte-traced via the price helper
@@ -180,10 +187,14 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
   `+0x26`), BUY page-13 sites (inline gold debit, untaxed), and the mirror
   accumulator-updaters `func@0x322d0`/`func@0x3234a` (`+0xBC`/`+0xFC`/`+0x7C` + DGROUP
   pool `[−0x779c]`). `+0x5C` is **drift-only** (not per-transaction).
-- **TBD:** only the turn-loop driver call site for the `0x1C2AC` drift thunk; buy/sell
-  display spread; spoilage. (Boycott bookkeeping **B** — `+0x20`, see `boycotts.md`.)
+- **B (added 2026-06-20):** the drift **driver** — `func_33C96 @0x367FC` (all-goods
+  randomized recompute) + `func_0324F2`/`func_032914` (single-good post-transaction);
+  reached via the JMP-FAR trampoline `0x368bd`. Price movement is trade-screen +
+  transaction driven, not a headless turn phase.
+- **TBD:** buy/sell display spread; spoilage. (Boycott bookkeeping **B** — `+0x20`,
+  see `boycotts.md`.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1 (`func@0x32914` sell, page-13 buys, updaters `func@0x322d0`/`func@0x3234a`). Remaining: only the turn-loop driver call site.
+1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1. ~~the drift driver/call site.~~ **Done 2026-06-20** — `func_33C96 @0x367FC` (all-goods) + `func_0324F2`/`func_032914` (per-good); the `0x368bd` "table" was a JMP-FAR trampoline misread (§3).
 2. Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.
 3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.
