@@ -55,17 +55,60 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   (the per-good **trade accumulator** is `PowerRecord +0xFC` dword[16], `@0x8904`).
 - The old `0x181F:0x9A4` attribution was **wrong** — that thunk is a shared utility
   (92 callers), not the drift fn (see `tools/rtlink/THUNK_FOLLOWING.md`).
-- **Remaining `TBD` (blocked, not just unfound):** the per-turn *driver* that
-  invokes the `0x1C2AC` thunk (turn-loop call site), and the commodity buy/sell
-  transaction that moves `+0xFC`/`+0x5C`/`+0x7C` and computes the bid/ask coin value.
-  The latter is **trade-dialog-resident**, in the page-04 region behind the jump
-  table at **`0x033F65`** that does **not** linearly disassemble (per
-  `viceroy_source/src/market/pricing.c`), so it needs a jump-table-aware decode, not
-  an operand scan. ⚠ Note `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase**
-  gold debit (it calls `place_unit` `0x181F:0x95C` immediately after) — *not* the
-  commodity-sale debit; do not cite it for `market_sell`. (The per-good price-base at
-  `DGROUP:0x53EA` is **RESOLVED** — random-seeded `[600,1000]` at init by
-  `func_07561C @0x75645`.)
+- **Buy/sell transaction — RESOLVED 2026-06-20 (was "blocked").** The earlier
+  blocker note was wrong: the jump table at **`0x033F65`** is **not** the
+  transaction — decoding it (`dec ax; cmp ax,0xb; ja default; shl; jmp word ptr
+  cs:[bx+0x3a1a]`, 12 handlers `0x33dde..0x33f54`) yields the **button-enable
+  predicates** ("which trade actions are available", testing `[bx+0x3146]`/
+  `[bx+0x315b]` → boolean `[bp-0x66]`), not the executor. The real transaction is
+  **page-13 resident** (`0x4C1F0..0x53540`) with shared helpers on page 4 — see the
+  new §3.1. ⚠ `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase** gold debit
+  (calls `place_unit 0x181F:0x95C` after) — *not* the commodity-sale debit.
+- **Remaining `TBD`:** only the per-turn *driver* that invokes the `0x1C2AC` drift
+  thunk (turn-loop call site). (The per-good price-base `DGROUP:0x53EA` is
+  **RESOLVED** — random-seeded `[600,1000]` by `func_07561C @0x75645`; the buy/sell
+  accumulator-increment site is now **RESOLVED** — §3.1.)
+
+### 3.1 Commodity buy/sell transaction — **BYTE_VERIFIED (2026-06-20)**
+The executor and its accumulator-updaters were byte-traced via the price helper
+`func_030566`'s far-callers (a 7-call cluster in page 13).
+
+**SELL — `func @0x32914`** (args: good `[bp+6]`, screen-idx `[bp+8]`, confirm `[bp+0xa]`):
+1. `gross = price · qty` — price via `func @0x3245c` (`call 0x3691c→0x191f:0xdc6`),
+   `qty=[0x8dc4]`, `gross` @`0x3249f`; it also calls the SELL accumulator-updater
+   `0x3234a` @`0x324ae`. → `[bp-0x52]`.
+2. **Tax split** @`0x32a4a..0x32a78`: `tax = gross · king_rate(PowerRecord +0x01) /
+   100`; `net = gross − tax`.
+3. **Gold credit** @`0x32a82`: `lcall 0x181f:0xaba → func @0x8806` adds `net` (s32)
+   to gold and **clamps to `[0, 999999]` (`0xF423F`)**, writing `PowerRecord
+   +0x2A/+0x2C` (DGROUP `0x8832`, `[player·0x13c − 0x77ce]`).
+4. **King REF fund** `+0x22 += tax` @`0x32a92`; **sales tally** `+0x26 += net`
+   @`0x32a9c` (matches `king.md`).
+
+**BUY — six page-13 sites** (e.g. Muskets `0xF`/qty 0x32 @`0x526a2`, Horses `8`
+@`0x52790`, Tools `0xE`/qty 0x64 @`0x52866`): compute `price·qty` (`imul ax,ax,0x32`
+or `0x64`), affordability-check, then **inline gold debit** `sub [bx+0x2a],ax; sbb
+[bx+0x2c],dx` (gross — **buys are untaxed**), then `push qty; push good; lcall
+0x191f:0xc14 → func @0x322d0` (the BUY accumulator-updater).
+
+**Accumulator updaters — byte-verified mirror pair** (args `good=[bp+6]`, `qty=[bp+8]`):
+
+| field | BUY `func @0x322d0` | SELL `func @0x3234a` |
+|-------|----------------------|----------------------|
+| EU-supply `+0xBC` s32 | `−= qty` @`0x3231c` | `+= qty` @`0x323b4` |
+| accumulator `+0xFC` s32 (`@0x8904`) | `−= qty` @`0x32324` | `+= qty` @`0x323bc` |
+| traded-volume `+0x7C` s32 (good·4) | `−= price·qty` @`0x32340` | `+= price·qty·(100−tax%)/100` @`0x32402` |
+| DGROUP pool array `[bx−0x779c]` (4-player × stride `0x9e`) | `−= scaled_qty` ×4 @`0x322ff` | `+= scaled_qty` ×4 @`0x32383` (4th player ×`2/3`) |
+
+where `scaled_qty = func @0x32294 = ((market_byte − 2)·16 · qty)/100`, and the
+volume `price` uses the **second** price accessor `func @0x30590` = `PowerRecord
+[+0x4C + good] − 1`, clamped `≥0` (distinct from `func_030566`).
+
+> **Spec correction:** the **`+0x5C` market-pool field is NOT moved by the
+> per-transaction path** (it is drift-only, §3). The transaction moves `+0xBC`,
+> `+0xFC`, `+0x7C`, and the DGROUP pool array `[−0x779c]`. **Net direction:** a
+> **buy** decreases all (goods leave Europe, gold `−gross`, untaxed); a **sell**
+> increases supply/accumulator/pool, credits gold `+net`, REF `+tax`, tally `+net`.
 
 ### Finished-goods are price-coupled through a shared pool — **BYTE_VERIFIED**
 The same drift fn (`func_0305A8`, phases after the supply build) does **not** price
@@ -121,9 +164,15 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 ## 6. Confidence summary
 - **B:** commodity set; **per-turn drift formula** (`func_0305A8`); per-good price base `0x53EA[16]`; trade accumulator `+0xFC`.
 - **RUNTIME-VERIFIED:** the full per-power 16-good market array map (`+0x4C` sensitivity, `+0x5C` pool, `+0x7C` volume, `+0xBC` EU-supply, `+0xFC` base) + goods order (`colonization-memory-map (1).md`).
-- **TBD:** turn-loop driver call site; `+0xFC`/`+0x7C` increment site (buy/sell); buy/sell spread; spoilage. (Boycott bookkeeping now **B** — `+0x20`, see `boycotts.md`.)
+- **B (added 2026-06-20):** the **buy/sell transaction** (§3.1) — SELL `func@0x32914`
+  (gross→tax→net→gold `+0x2A` via clamped helper `func@0x8806`, REF `+0x22`, tally
+  `+0x26`), BUY page-13 sites (inline gold debit, untaxed), and the mirror
+  accumulator-updaters `func@0x322d0`/`func@0x3234a` (`+0xBC`/`+0xFC`/`+0x7C` + DGROUP
+  pool `[−0x779c]`). `+0x5C` is **drift-only** (not per-transaction).
+- **TBD:** only the turn-loop driver call site for the `0x1C2AC` drift thunk; buy/sell
+  display spread; spoilage. (Boycott bookkeeping **B** — `+0x20`, see `boycotts.md`.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. Remaining: the turn-loop driver + the `+0xFC` increment (buy/sell) site.
+1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1 (`func@0x32914` sell, page-13 buys, updaters `func@0x322d0`/`func@0x3234a`). Remaining: only the turn-loop driver call site.
 2. Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.
 3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.
