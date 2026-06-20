@@ -84,10 +84,13 @@ Layout `TBD`.
 ## 6. Open questions (TBD)
 1. ~~Confirm the per-tile discovered flag location.~~ **Done** — separate
    visibility layer (far-ptr `[0x168]`), bit `player+4` (§2). **B.**
-2. ~~Sight radius by unit type; whether terrain extends sight.~~ **Done 2026-06-20**
-   — `func_006608` radius table (§2/§3); no terrain extension. **B.** The
-   **ability/FF #7 granting naval +1 sight = Hernando de Soto** (has-father
-   helper `func_00BC10`, `@FATHERS` id 7). Residual: where de Soto's bonus
-   reaches **land** units (this site is naval-only).
+2. ~~Sight radius by unit type; whether terrain extends sight; de Soto's reach.~~
+   **Done 2026-06-20** — `func_006608` radius table (§2/§3); no terrain extension.
+   **B.** **ability/FF #7 = Hernando de Soto** (has-father helper `func_00BC10`,
+   `@FATHERS` id 7), and the de Soto bonus is **naval-only**: the `has_father(7)`
+   branch boosts R only for types `0xD..0x12` (`@0x6647..0x6658`); land units get
+   R=1 (Scout R=2) regardless. So this build **does not** extend de Soto's sight to
+   land units (a divergence from the manual's "all units"). `func_006608` is the
+   sole radius selector. **Resolved.**
 3. Whether other powers' positions reveal on contact only, or via shared exploration.
 4. Trace scout-bonus arithmetic out of `func_05A20E`.
