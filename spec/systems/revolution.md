@@ -61,6 +61,7 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
 - `func_03E984` (file `0x3E984`) — Declare-Independence handler: `@ALREADYREVOLUTION` gate `@0x3E988`, **SoL `< 0x32`→`@TOOTORY` `@0x3E99E`**, rebel-power set `[0x5398]=[0x5394]` `@0x3E9D8`, `@DECLARE` confirm `@0x3E9F0`, `→func_03DE46` `@0x3EA06`. **B**
 - `func_03DE46` (file `0x3DE46`, `0x191F:0x356`) — WoI declaration: `[0x5382]|=1`, emits `@INDEPENDENCE` (handle `0x130B`, `@0x3E104`). **B**
 - `tools/rtlink/event_emitters.json` — handle map: `@TOOTORY=0x1386`, `@ALREADYREVOLUTION=0x1374`, `@DECLARE=0x1397`, `@INDEPENDENCE=0x130B`. **B**
+- **Cross-corroboration:** the king tax-demand driver `func_036138` reads `[0x53D0]` as `rebel_sentiment` in its severity score (`spec/systems/king.md` §3, `@0x361F9`) — an independent code path confirming `[0x53D0]` = national SoL meter. **B**
 
 ## 6. Open questions (TBD)
 1. ~~Byte-trace the SoL% declare threshold (is it 50%?).~~ **Resolved 2026-06-20 — yes,

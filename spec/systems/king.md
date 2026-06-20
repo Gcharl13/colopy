@@ -176,7 +176,11 @@ The demand surfaces as the **King speech-bubble dialog**:
    `0x53DA..0x53E0`? Trace the writer of those globals.
 3. **Tax-revenue loop.** Byte-trace the European-sale tax cut (the per-good
    computation) from a primary function; do not reuse the deleted reconstruction.
-4. **Pretext selection.** Which condition picks `@KINGNAVACT` vs `@KINGSTAMPACT`
-   vs `@KINGWAR` etc. — trace the dispatcher feeding `@KINGTAX`.
+4. ~~**Pretext selection.** Which condition picks `@KINGNAVACT` vs `@KINGSTAMPACT`
+   vs `@KINGWAR` etc.~~ **Done (in §3, re-verified 2026-06-20)** — `func_036138`
+   chooses by the composite severity score `[bp-0x52]` (`< 0x28A` `@KINGWIFE`, `< 0x3B6`
+   `@KINGWAR`, `< 0x44C` `@KINGNAVACT` +`random(3,4)`, else `@KINGSTAMPACT` +`random(5,8)`);
+   magnitude → `PowerRecord +0x10`. The re-trace independently confirms `[0x53D0]` in the
+   score = rebel-sentiment/SoL (cross-ref `revolution.md`). **B.**
 5. **Tea-Party boycott.** Which field holds the per-good boycott bitmask; how
    back-tax payment / Jakob Fugger clears it.
