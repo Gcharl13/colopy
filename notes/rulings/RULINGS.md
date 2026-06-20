@@ -3806,3 +3806,27 @@ offset (the bytes were real, the interpretation wrong). `ref_growth.md` correcte
 - The "REF per-power gate byte `[power·0x13 − 0x6DA2]`" (`DGROUP:0x925E`) is **not** an
   active/surrendered flag — it is the 3rd byte of a 0x13-stride per-power REF count
   record (`0x925C/0x925D/0x925E`), used arithmetically as troop strength (`@0x5B99E`).
+
+---
+
+## 2026-06-20 — UnitRecord base = 0x3144; map position vs goto-target offsets
+
+**Conflict.** `docs/DATA_MODEL.md` / `spec/systems/unit.md` use UnitRecord base
+**0x3146** and label **map_x = +0x07 (abs 0x314D)**, map_y = +0x08 (abs 0x314E).
+Campaign C5's static trace shows those abs offsets are the **goto-target**, not the
+unit's position.
+
+**Evidence (byte-verified, absolute offsets — base-independent):**
+- **Renderer** `@0x03A63 mov al,[bx+0x3144]` (x) / `@0x03A5E [bx+0x3145]` (y) — reads
+  the unit's drawn **position** from **abs 0x3144/0x3145**.
+- **Placer** `@0x06958 mov [bx+0x3144],al` (x) / `@0x0695E [bx+0x3145],al` (y).
+- **GoTo writer** `@0x22D38 mov [bx+0x314D],colony.x` / `@0x22D3F [bx+0x314E]` — the
+  **goto target** is at abs 0x314D/0x314E.
+
+**Resolution:** UnitRecord **base = 0x3144**, stride 0x1C. Map position =
+**abs 0x3144 (x) / 0x3145 (y)**; unit_type = 0x3146; owner nibble = 0x3147; order =
+0x314C; **goto-target = 0x314D/0x314E**; tools = 0x3159; work-counter = 0x315A; class
+= 0x315B. The DATA_MODEL "map_x=+0x07" mislabeled the goto-target as the position
+(its runtime "Caravel (55,49)" read the wrong offsets). Spec uses **absolute offsets**
+going forward to avoid the base-convention ambiguity. (PowerRecord FF acquired-bitmask
+is likewise at **+0x07 / abs 0x880F**, not +0x06 — C5.)

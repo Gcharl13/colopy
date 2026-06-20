@@ -8,7 +8,13 @@
 A unit can be given a standing order that persists across turns and suppresses auto-activation: Sentry, Fortify, Go To, Build Colony, Clear/Plow, Build Road, Live In Village, Trade Route, or No Orders. Pioneers do terrain work (clear/plow/road); soldiers fortify (defense bonus); ships and wagons can run trade routes. **RECONSTRUCTED** (manual §"Unit orders").
 
 ## 2. State & data
-The active order is stored per unit in `UnitRecord` (base `DGROUP:0x3146`, stride 28). **Which offset holds the order code: TBD — not yet traced.**
+The active order is stored at **`UnitRecord 0x314C`** (base `0x3144`, stride 28) —
+**BYTE_VERIFIED (2026-06-20)**: both dispatchers read it (`@0x249CB mov al,[bx+0x314c]`
+→ jump table orders 2..9; `@0x051DCE` `sel=[0x314c]−7`), and immediate writes exist for
+every order value (1 Sentry `@0x078CF`, 2 Trade Route `@0x22E05`, 3 GoTo `@0x22D2D`,
+5 Fortify `@0x22105`, 6 Fortified `@0x41024`, 7 Build Colony `@0x2279E`, 8 Clear/Plow
+`@0x22324`, 9 Build Road `@0x2250E`, 0xA–0xC AI). The pioneer **work-progress counter
+is a separate field `0x315A`** (`terrain_improvement.md`).
 
 `@ORDERS` rows (NAMES, **BYTE_VERIFIED present**) — `name, key-letter`:
 
