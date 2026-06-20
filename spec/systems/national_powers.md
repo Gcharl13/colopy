@@ -43,8 +43,20 @@ nationality** — every national-power effect is a literal `power_index == N` te
 | 3 | Dutch | Netherlands, 13 | Amsterdam | New Netherlands | Republic of Surinam | Michiel De Ruyter, -1, 0, 1 |
 
 - `@NATIONABBREV`: Eng. / Fr. / Span. / Dutch. **B**
-- The `@COUNTRY` trailing number and the three `@LEADERNAME` numbers are **TBD**
-  (likely AI-personality / starting-bias triplets — not decoded). Do not assume.
+- **`@LEADERNAME` trailing triplet — BYTE_VERIFIED (location/use):** the three
+  numbers per leader are stored as a per-power byte triplet at **`DGROUP:0x9566`,
+  stride 3** (`power*3`), read at **`@0x547A1`** (`bx=[bp-0x1ae]; bx*3;
+  al=byte[bx-0x6a9a]` where `-0x6a9a ≡ 0x9566`) — they are loaded as
+  **AI-personality bias values** at AI setup. The triplets are
+  `(1,-1,0)/(0,1,0)/(1,0,-1)/(-1,0,1)` for English/French/Spanish/Dutch — a
+  signed per-axis personality lean (zero-sum across the four), not gameplay
+  multipliers. The **`AIPersonality` record (`0x540E`) `+0x00` holds the
+  leader-name STRING and `+0x18` the colony-name STRING** — these are text, not
+  the numeric triplet.
+- **`@COUNTRY` trailing number — BYTE_VERIFIED (location):** one byte per nation
+  at **`DGROUP:0x848`**, read at **`@0x70813`** (`al=byte[bx+0x848]`). It is the
+  nation's index/id used by the country-selection setup path (12/9/14/13 in the
+  table below); not a gameplay modifier. Its full downstream use is **TBD**.
 - Owning-power index stored in records as `owner_power_idx` (e.g. ColonyRecord
   `+0x1A`, BYTE_VERIFIED — `docs/DATA_MODEL.md`, `spec/systems/colony.md`).
 
@@ -88,5 +100,9 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
    `power==1` (alarm array `DGROUP:0x54F6`, threshold `0x80`).
 2. **Dutch (3):** find the per-sale **price-drop** `power==3` damping (sensitivity
    `PowerRecord +0x4C`) and the **starting-ship** grant in the new-game setup overlay.
-3. Decode the `@LEADERNAME` and `@COUNTRY` trailing numbers (AI bias?).
+3. ~~Decode the `@LEADERNAME` and `@COUNTRY` trailing numbers (AI bias?).~~
+   **Done 2026-06-20** — `@LEADERNAME` triplet → `DGROUP:0x9566` stride 3
+   (`@0x547A1`), loaded as AI-personality bias axes; `@COUNTRY` number →
+   `DGROUP:0x848` byte/nation (`@0x70813`), nation index for setup. Both **B**
+   for location; the numbers are **not** gameplay multipliers.
 4. Confirm the power-index ordering is fixed at 0..3 across all record types.
