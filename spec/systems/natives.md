@@ -109,10 +109,25 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   while the AI faces a **lower (better)** one. (`tribe[+2]`/`tribe[+5]` are the
   `@TRIBES` per-row level/value columns; cross-ref `spec/data/tables.md`.) **B.**
   See `spec/systems/difficulty.md` §3.
-- Attitude escalation **deltas** — the per-action alarm-raise magnitudes are **computed inside thunk `0x181F:0x30C`** (the alarm/tension helper, also called from CHIEFKILL `@0x4A7F2` and the raid scan `@0x47320`), not as inline literals at the `[..+0x54F6]` access sites (which are only caps `0x20`/`0x60`, the `0x80` hostility threshold, and resets). So the deltas (building near, attacking,
-  missions) + decay, trade pricing, tribute amounts:
+- **Thunk `0x181F:0x30C` is a table GETTER, not the delta computer — CORRECTED
+  2026-06-20.** It resolves (Type-B) to **file `0x0082A0`**: a 2-arg accessor
+  `return word[DGROUP:0x5B1C + (row·39 + col)·2]` (`imul bx,[bp+6],0x27; add
+  bx,[bp+8]; shl bx,1; mov ax,[bx+0x5b1c]`). 48 callers across the native-AI
+  cluster (`0x4Axxx`). In the **raid scan `func_047320`** it is called per power
+  `col = 0..3` (row `[bp-0x42]`) and the returned value is compared to **`75`
+  (`0x4b`)** (`@0x47328`): a per-`(tribe-row, power)` **tension/relationship**
+  value with a **hostility threshold of 75** — a *parallel, distinct* signal from
+  the `+0x54F6` alarm array (settlement·9 + power, threshold **128**, checked in
+  the very next block `@0x4734E`). Both raise a per-power hostility tally
+  (`[bp-0x86]`) + bitmask. So the **alarm-raise deltas themselves are still TBD**
+  — they are *not* "computed inside" this thunk; the thunk only **reads** the
+  `0x5B1C` tension table. The table's exact row semantics (39-word stride) remain
+  **TBD**.
+- Attitude escalation **deltas** (per-action alarm-raise magnitudes for building
+  near / attacking / missions) + decay, trade pricing, tribute amounts:
   **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS —
-  not the price math; do not assert).
+  not the price math; do not assert). The `[..+0x54F6]` access sites carry only
+  caps `0x20`/`0x60`, the `0x80` hostility threshold, and resets.
 
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.
