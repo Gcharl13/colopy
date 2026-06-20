@@ -145,7 +145,11 @@ two options *No thank you* / *Pay {%NUMBER0$}*; arrival via `@MERCS`. See
 - `docs/GAME_MANUAL.md` — King sells mercenaries for gold. **R**
 
 ## 6. Open questions (TBD)
-1. Resolve the runtime string pointers `[0x5284]`/`[0x5268]`/`[0x52A0]`/`[0x52CA]`
-   to the exact `%STRING1` wording (unit-type labels) — pointer init not yet traced.
-2. Confirm `random_int(0,6)` / `random_int(0,2)` inclusivity convention of
-   `0x181F:0x04D4` (affects the exact min/max gold-per-unit bounds, not the shape).
+1. ~~Resolve the `%STRING1` unit-type label pointers.~~ **Done 2026-06-20** — they are
+   **entries in the `@UNIT` stat table** (base `DGROUP:0x5230`, stride 14, word[0] =
+   name-string pointer), init by the `@UNIT` loader (`@0x074EEE mov [bx+0x5230],ax`):
+   **`[0x5268]`→idx 4 Dragoons, `[0x5284]`→idx 6 Regulars, `[0x52A0]`→idx 8 Cavalry,
+   `[0x52CA]`→idx 11 Artillery** (cross-checked vs the REF display `func@0x37E1C`). **B.**
+2. ~~`random_int` inclusivity.~~ **Done 2026-06-20** — `0x181F:0x4D4 → func_00C322` =
+   `lo + (rand16·(hi−lo+1))>>16`, i.e. **`[lo,hi]` inclusive**; `random_int(0,6)`=0..6
+   (7 values). Merc/CHIEFKILL bounds inclusive. **B.**

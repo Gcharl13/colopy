@@ -64,11 +64,14 @@ and clamped ≥0; emits `@CLEARCUT` (GAME idx 459, "%NUMBER0 lumber added"). Roa
 completion also bumps `ColonyRecord +0x98` by `0xA` when the tile is the owner's
 (`@0x040AA9`). **B.**
 
-### Tool cost (−20) — TBD (overlay)
-Neither executor subtracts 20 tools inline; the **20-tool debit + pioneer→colonist
-reversion** (`@USEDUPTOOLS`, GAME idx 297) is in the `0x1A1F` overlay handlers reached
-via thunks at file `0x04181D`/`0x041822` (not in this disasm snapshot). The manual's
-"20 tools per action" is therefore **not yet byte-confirmed**; entry offsets recorded.
+### Tool cost (−20) — BYTE_VERIFIED (2026-06-20)
+The completion thunks (`0x04181D`/`0x041822`) resolve to **`func_040608`**, which
+debits tools and handles reversion: `@0x4060F sub byte[bx+0x3159],0x14` (**−20
+tools**; tools = **UnitRecord +0x15**, abs `0x3159`, init 100), then `@0x040614 cmp
+[bx+0x3159],0x14; jae` — **if remaining tools < 20 the Pioneer reverts to a plain
+Colonist**: `[bx+0x3159]=0` and `[bx+0x3146 (type)]=0` (`@0x04061D`/`@0x040621`,
+`@USEDUPTOOLS`). So the manual's "20 tools per action" + pioneer→colonist reversion
+is **byte-confirmed**. **B.**
 
 ## 4. UI
 Active-Pioneer hotkeys (manual keyboard ref): `P` clear/plow, `R` build road.

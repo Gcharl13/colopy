@@ -27,7 +27,7 @@ budget→unit causal link; the counts and the per-turn rate are runtime-verified
 | `DGROUP:0x53DE` | u16 | REF **Man-O-War** count | **USER-VERIFIED** | `docs/DATA_MODEL.md` (5 in-game) |
 | `DGROUP:0x53E0` | u16 | REF **Artillery** count (slot 3) | **USER-VERIFIED** | `docs/DATA_MODEL.md` (8 in-game) |
 | `PowerRecord +0x22` | s32 | `royal_money` — King's REF budget | **RUNTIME-VERIFIED** (field+rate); meaning **RECONSTRUCTED** | `docs/DATA_MODEL.md`: English 936→1062 over 7 turns = **+18/turn** (Discoverer); still +18 at turn 65 (1188) |
-| `PowerRecord +0x32` | u16 | `ref_strength_rating` (aggregate REF power) | **RUNTIME-VERIFIED** | `docs/DATA_MODEL.md`; `colonization-memory-map (1).md` |
+| `PowerRecord +0x32`/`+0x33` | u8×2 | **`home_x`/`home_y`** (the power's spawn/arrival coords) — **NOT** a REF strength rating (corrected 2026-06-20, RULINGS) | **BYTE_VERIFIED** | read byte `@0x58D72`→UnitRecord spawn-x; writers `@0x418D0`/`@0x65CCB`/`@0x74D74`. **No stored aggregate REF strength exists** — the 4 counts are summed on demand |
 | `PowerRecord +0x44/+0x45/+0x46` | u8×3 | per-power bytes — **role unresolved** (one dump write-verified as REF, another found ≠ UI); **not** the authoritative count | **CONFLICT** | `colonization-memory-map (1).md` vs `docs/DATA_MODEL.md` (RULINGS 2026-06-19) |
 
 `royal_money` is **player-only** (other nations = 0).
@@ -129,7 +129,13 @@ labels `TBD`. **R**.
    (`func_03E162 @0x3E17C`).
 3. ~~**Slot selection.**~~ **Done** — ratio rules 3:1 reg:cav, 4:1 reg:art, 10:1
    land:naval (`func_03E162 @0x3E1D0`).
-4. The per-power gate byte `[0x53D2*0x13 − 0x6DA2]` and the per-unit thunk
-   `0x181F:0x808` in the `func_051EF4`/`func_03CDA2` assembly path.
-5. The `PowerRecord +0xE` per-type value added at purchase (table `DGROUP:0x9408`)
-   and the aggregate `+0x32` strength rating's relation to the four counts.
+4. ~~The per-power gate byte `[0x53D2·0x13 − 0x6DA2]`.~~ **Resolved 2026-06-20** —
+   `DGROUP:0x925E` is the 3rd byte of a **0x13-stride per-power REF count record**
+   (`0x925C/0x925D/0x925E`), used arithmetically as troop strength (`@0x5B99E`), not
+   an active/surrendered flag (`func_03CDA2 @0x3CDE8` accrues only if count-C==0). Its
+   write/init path (indirect copy) is the residual.
+5. ~~`PowerRecord +0xE` per-type value + `+0x32` strength rating.~~ **Resolved
+   2026-06-20** — `+0x32` is **`home_x`** (spawn coord), not a strength rating (no
+   aggregate exists; RULINGS). The `+0xE` per-type value (`@0x3E283 add [bx+0xE],ax`
+   from table `DGROUP:0x9408`) is real but the table is **BSS/runtime-zero** in the
+   static image, so its per-type byte values aren't readable from the EXE.

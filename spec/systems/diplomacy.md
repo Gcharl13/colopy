@@ -12,9 +12,15 @@ The player coexists with three rival European powers (English/French/Spanish/Dut
   `PowerRecord +0x34`** (base `0x8808+0x34`, row-stride `0x13C`). **BYTE_VERIFIED
   layout** (`@0x58A72`): the cell is `PowerRecord[subject] + 0x34 + target` — i.e.
   `imul si, subject, 0x13C; bx = target; [bx+si-0x77C4]` (`-0x77C4 = 0x883C`; that
-  displacement form is why a literal-`0x883C` grep found "no xrefs"). Bit **`0x02` =
-  subject at war with target** (set `@0x58A7B`/`0x59A61`; `0x80` cleared on peace
-  `@0x58BE1`; `0x08` set `@0x59AE9`, meaning `TBD`).
+  displacement form is why a literal-`0x883C` grep found "no xrefs"). **Bit catalogue
+  — BYTE_VERIFIED (2026-06-20):** `0x01` = resolved/normalized relationship (set
+  `@0x5318F`), **`0x02` = at war** (set `@0x58A7B`/`0x59A61`/`@0x3F0E8`, cleared
+  `@0x5DE98`), **`0x08` = pending grievance** (set `@0x3F0D7`/`@0x59AE9` when the
+  grievance-score `[bx−0x6BE4]` crosses a threshold; per-turn it transitions to bit
+  `0x01` when its timer `+0x40` expires and `random_int(0,3)==0`, `@0x53165`),
+  **`0x20` = peace-pending** (gate in SIGNTREATY `@0x57DF0`), **`0x40` = met/contacted**,
+  **`0x80` = Privateer hidden-attribution** (set only under attacker-type `==0x10`
+  guard `@0x3F0A1`, *instead of* the war bit; cleared/revealed `@0x58BE1`).
 - **Treaty/relation-state matrix** — a **second** 4×4 byte matrix at
   `PowerRecord +0x40` (`DGROUP:0x8848`, same `0x13C` row-stride). **BYTE_VERIFIED bit
   meanings** (`func_057DC0`, the SIGNTREATY/treaty-state handler, verified vs EXE):
@@ -77,10 +83,18 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
 1. ~~Find the diplomacy dispatcher + per-pair bit layout.~~ **Done** — `func_057F4E`
    (meeting) + `func_057DC0` (SIGNTREATY); war matrix `+0x34` (bit `0x02`=war), treaty
    matrix `+0x40` (`0x02`=war/`0x20`=peace-pending/`0x40`=treaty), all byte-verified.
-   Remaining: the war-matrix `0x08`/`0x80` bit meanings.
-2. Byte-trace AI peace/war **willingness** thresholds and treaty-term gold/tribute
-   amounts. **Partially done 2026-06-20** — the **difficulty-scaled** demand terms
-   are **B** (grace `10·(10−diff)`, demand `value·10·(diff+8)/100`, surcharge
-   `500·(diff+1)`, action prob `200·diff+100`; §3). Residual: the non-difficulty
-   attitude/relationship cutoffs that decide offer-peace-vs-war.
-3. Privateer attribution / blockade mechanics.
+   **War-matrix `0x08`/`0x80` bits now resolved** (§2: `0x08`=grievance, `0x80`=privateer).
+2. ~~Byte-trace AI peace/war **willingness** thresholds.~~ **Done 2026-06-20** — the
+   per-power **attitude table is `DGROUP:0x940C`** (byte/power, adjusted on
+   unit-ownership transfer by `UnitRecord +0x1F` `@0x5DC76`/`@0x5DC87`). Cutoffs:
+   `func_057F4E @0x58C24` — the AI takes no action when `(attitude>>2) > demand_score`
+   **and** `demand_score > 12 (0xC)` **and** `random_int(0,4)!=0`; the final accept
+   gate is an affordability check `demand vs PowerRecord +0x2C gold` (`@0x58E1F`).
+   Target-selection requires **attitude ≥ 8** (`@0x57B1A`). Plus the difficulty-scaled
+   demand terms (§3). **B.**
+3. ~~Privateer attribution / blockade.~~ **Done 2026-06-20** — **Privateer** (unit
+   type `0x10`) hidden attribution is in the war-declaration resolver `func_03ECF0`:
+   `@0x3F092 cmp [bx+0x3146],0x10; jne` → `@0x3F0A1 or war_matrix,0x80` (sets the
+   hidden bit instead of declaring war). **No naval blockade mechanic exists** (0
+   "blockad*" strings; the closest is land-adjacency **SIEGE**, which restricts a
+   besieged colony's production to military units). **B.**

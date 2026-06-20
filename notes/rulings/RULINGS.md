@@ -3777,3 +3777,32 @@ be a mis-attributed offset even when the bytes are real). The `+0x8A` =
 buildings-present display array remains correct (now paired with its `+0x84`
 persistent twin). **Open:** the exact roles of the two hammer banks `+0x92` vs
 `+0xB6` (which is the UI-displayed/save-persisted total).
+
+---
+
+## 2026-06-20 — PowerRecord +0x32 is home_x (spawn coord), NOT a REF strength rating
+
+**Conflict.** `spec/systems/ref_growth.md §2` labeled `PowerRecord +0x32` (u16) as
+`ref_strength_rating` (RUNTIME-VERIFIED, from a memory dump). A static byte-trace
+(Campaign C4) shows otherwise.
+
+**Evidence (this branch's EXE):** `@0x58D72 mov al,[bx-0x77c6]` (`bx=power·0x13C`;
+`-0x77c6 = 0x883A = PowerRecord +0x32`) reads it as a **byte**, then `@0x58D7A mov
+[si+0x314d],al` writes it to a spawned UnitRecord's map-x. Sibling writers
+(`@0x418D0`/`@0x65CCB`/`@0x74D74`) all `mov byte[bx-0x77c6],al` while looping the 4
+powers with spawn coordinates. So **`+0x32 = home_x`, `+0x33 = home_y`** (the power's
+European-arrival / starting spawn coordinate bytes), not a u16 strength.
+
+**Resolution (disasm at a cited offset > a runtime-dump *label*):** adopt
+**`+0x32`/`+0x33` = home (x,y) spawn coordinates** (byte each). **There is no stored
+aggregate REF-strength field** — the four REF counts `[0x53DA..0x53E0]` are summed on
+demand at UI/Congress display. The dump's "ref_strength_rating" was a mis-labeled
+offset (the bytes were real, the interpretation wrong). `ref_growth.md` corrected.
+
+**Related C4 findings (recorded for completeness):**
+- The REF `+0xE` per-type value table `DGROUP:0x9408` is **BSS (runtime-zero in the
+  static image)** — its per-type values can't be byte-read from the EXE; the count
+  increment is `@0x3E238 inc word[bx+0x53da]`.
+- The "REF per-power gate byte `[power·0x13 − 0x6DA2]`" (`DGROUP:0x925E`) is **not** an
+  active/surrendered flag — it is the 3rd byte of a 0x13-stride per-power REF count
+  record (`0x925C/0x925D/0x925E`), used arithmetically as troop strength (`@0x5B99E`).
