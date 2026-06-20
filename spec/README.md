@@ -24,7 +24,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | B/TBD |
 | Unit system | [`systems/unit.md`](systems/unit.md) | B/R | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | A/TBD |
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B/R | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
-| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
+| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B/TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
 | Training / promotion | [`systems/training.md`](systems/training.md) | B/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B/TBD |
