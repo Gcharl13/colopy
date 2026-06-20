@@ -84,35 +84,39 @@ COLMAP: dict[str, dict] = {
     },
     "@BUILDING": {
         "columns": ["name", "cost", "tools_x10", "size", "min_colony", "upkeep"],
-        "byte_anchors": "consumed by colony build/production; loader TBD; legend documents cols [B legend]",
+        "byte_anchors": "loader func_074D18 (5-field parse 0x074D18..0x074D3C, lcall 0x1A1F:0x88A x5) [B]; cols per legend",
     },
     "@CARGO": {
         "columns": ["name", "price_start1", "price_start2", "drift_low",
                      "drift_high", "burden", "rise", "fall", "attrition", "volatility"],
-        "byte_anchors": ("market price model inputs; per-turn drift fn behind "
-                          "overlay thunk 0x181F:0x9A4 [TBD]; values are primary [B]; "
+        "byte_anchors": ("loader func_074DEC (9-field parse @0x074E05, lcall 0x1A1F:0x88A x9) -> "
+                          "DGROUP 0x96FC stride 9 [B]; per-turn drift func_0305A8 [B]; "
                           "goods index = PowerRecord market arrays order [B]"),
     },
     "@JOB": {
-        "columns": ["name", "expert_name", "student_level", "europe_cost"],
-        "byte_anchors": "profession; UnitRecord +0x15 = class/profession [B]; europe_cost -1 = not purchasable",
+        "columns": ["name", "expert_name", "school_tier", "europe_value"],
+        "byte_anchors": "expertise = UnitRecord +0x17 (vet/profession 0x13..0x1C) [B]; "
+                          "school_tier = min teaching building (1=Schoolhouse/2=College/3=University/4=base) [B, manual chart]; "
+                          "europe_value -1 = n/a",
     },
     "@FATHERS": {
         "columns": ["name", "type", "weight_1500_1600", "weight_1600_1700", "weight_1700plus"],
-        "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection fn TBD",
+        "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection func_03BFD2 [B]",
     },
     "@LEVELS": {
         "columns": ["tech_name", "settlement_singular", "settlement_plural"],
-        "byte_anchors": "native settlement size tiers (Camp/Village/City/...)",
+        "byte_anchors": "native settlement size tiers (Camp/Village/City/...); indexed by @TRIBES level col [B]",
     },
     "@TRIBES": {
-        "columns": ["name", "singular", "treasure", "tech_level", "color"],
+        "columns": ["name", "singular", "treasure", "level", "value"],
         "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; "
-                          "color col verified via capital-raze note (Aztec=149, Inca=97) DATA_MODEL [B]",
+                          "level col = @LEVELS settlement-tier idx (Inca/Aztec 3/2 -> City, nomads 0 -> Camp) [B]; "
+                          "value col = capital-raze treasure base (Aztec=149, Inca=97) DATA_MODEL [B]; "
+                          "rows 9-26 = name-only extra tribe pool",
     },
     "@ORDERS": {
         "columns": ["name", "key"],
-        "byte_anchors": "unit order list + key letters; UnitRecord +0x05 candidate (0x2D='-'=No Orders) [B present]",
+        "byte_anchors": "unit order index; key = 1-char status letter (-/S/T/G/L/F/B/P/R); rows 10-12 reserved (No Orders) [B]",
     },
     "@COLORS": {
         "columns": ["basic", "hilite", "grey", "enhance", "shadow", "select",

@@ -927,7 +927,7 @@
       "upkeep"
     ],
     "columns_named": true,
-    "byte_anchors": "consumed by colony build/production; loader TBD; legend documents cols [B legend]",
+    "byte_anchors": "loader func_074D18 (5-field parse 0x074D18..0x074D3C, lcall 0x1A1F:0x88A x5) [B]; cols per legend",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 42,
     "rows": [
@@ -1332,181 +1332,181 @@
     "columns": [
       "name",
       "expert_name",
-      "student_level",
-      "europe_cost"
+      "school_tier",
+      "europe_value"
     ],
     "columns_named": true,
-    "byte_anchors": "profession; UnitRecord +0x15 = class/profession [B]; europe_cost -1 = not purchasable",
+    "byte_anchors": "expertise = UnitRecord +0x17 (vet/profession 0x13..0x1C) [B]; school_tier = min teaching building (1=Schoolhouse/2=College/3=University/4=base) [B, manual chart]; europe_value -1 = n/a",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 28,
     "rows": [
       {
         "name": "Farmer",
         "expert_name": "Expert Farmers",
-        "student_level": "1",
-        "europe_cost": "1100"
+        "school_tier": "1",
+        "europe_value": "1100"
       },
       {
         "name": "Sugar Planter",
         "expert_name": "Master Sugar Planters",
-        "student_level": "2",
-        "europe_cost": "-1"
+        "school_tier": "2",
+        "europe_value": "-1"
       },
       {
         "name": "Tobacco Planter",
         "expert_name": "Master Tobacco Planters",
-        "student_level": "2",
-        "europe_cost": "-1"
+        "school_tier": "2",
+        "europe_value": "-1"
       },
       {
         "name": "Cotton Planter",
         "expert_name": "Master Cotton Planters",
-        "student_level": "2",
-        "europe_cost": "-1"
+        "school_tier": "2",
+        "europe_value": "-1"
       },
       {
         "name": "Fur Trapper",
         "expert_name": "Expert Fur Trappers",
-        "student_level": "1",
-        "europe_cost": "-1"
+        "school_tier": "1",
+        "europe_value": "-1"
       },
       {
         "name": "Lumberjack",
         "expert_name": "Expert Lumberjacks",
-        "student_level": "1",
-        "europe_cost": "700"
+        "school_tier": "1",
+        "europe_value": "700"
       },
       {
         "name": "Ore Miner",
         "expert_name": "Expert Ore Miners",
-        "student_level": "1",
-        "europe_cost": "600"
+        "school_tier": "1",
+        "europe_value": "600"
       },
       {
         "name": "Silver Miner",
         "expert_name": "Expert Silver Miners",
-        "student_level": "1",
-        "europe_cost": "900"
+        "school_tier": "1",
+        "europe_value": "900"
       },
       {
         "name": "Fisherman",
         "expert_name": "Expert Fishermen",
-        "student_level": "1",
-        "europe_cost": "1000"
+        "school_tier": "1",
+        "europe_value": "1000"
       },
       {
         "name": "Distiller",
         "expert_name": "Master Distiller",
-        "student_level": "2",
-        "europe_cost": "1100"
+        "school_tier": "2",
+        "europe_value": "1100"
       },
       {
         "name": "Tobacconist",
         "expert_name": "Master Tobacconists",
-        "student_level": "2",
-        "europe_cost": "1200"
+        "school_tier": "2",
+        "europe_value": "1200"
       },
       {
         "name": "Weaver",
         "expert_name": "Master Weavers",
-        "student_level": "2",
-        "europe_cost": "1300"
+        "school_tier": "2",
+        "europe_value": "1300"
       },
       {
         "name": "Fur Trader",
         "expert_name": "Master Fur Traders",
-        "student_level": "2",
-        "europe_cost": "950"
+        "school_tier": "2",
+        "europe_value": "950"
       },
       {
         "name": "Carpenter",
         "expert_name": "Master Carpenters",
-        "student_level": "1",
-        "europe_cost": "1000"
+        "school_tier": "1",
+        "europe_value": "1000"
       },
       {
         "name": "Blacksmith",
         "expert_name": "Master Blacksmiths",
-        "student_level": "2",
-        "europe_cost": "1050"
+        "school_tier": "2",
+        "europe_value": "1050"
       },
       {
         "name": "Gunsmith",
         "expert_name": "Master Gunsmiths",
-        "student_level": "2",
-        "europe_cost": "850"
+        "school_tier": "2",
+        "europe_value": "850"
       },
       {
         "name": "Preacher",
         "expert_name": "Firebrand Preachers",
-        "student_level": "3",
-        "europe_cost": "1500"
+        "school_tier": "3",
+        "europe_value": "1500"
       },
       {
         "name": "Statesman",
         "expert_name": "Elder Statesmen",
-        "student_level": "3",
-        "europe_cost": "1900"
+        "school_tier": "3",
+        "europe_value": "1900"
       },
       {
         "name": "Teacher",
         "expert_name": "Expert Teachers",
-        "student_level": "4",
-        "europe_cost": "-1"
+        "school_tier": "4",
+        "europe_value": "-1"
       },
       {
         "name": "Colonist",
         "expert_name": "Free Colonists",
-        "student_level": "4",
-        "europe_cost": "-1"
+        "school_tier": "4",
+        "europe_value": "-1"
       },
       {
         "name": "Pioneer",
         "expert_name": "Hardy Pioneers",
-        "student_level": "1",
-        "europe_cost": "1200"
+        "school_tier": "1",
+        "europe_value": "1200"
       },
       {
         "name": "Soldier",
         "expert_name": "Veteran Soldiers",
-        "student_level": "2",
-        "europe_cost": "2000"
+        "school_tier": "2",
+        "europe_value": "2000"
       },
       {
         "name": "Scout",
         "expert_name": "Seasoned Scouts",
-        "student_level": "1",
-        "europe_cost": "-1"
+        "school_tier": "1",
+        "europe_value": "-1"
       },
       {
         "name": "Dragoon",
         "expert_name": "Veteran Dragoons",
-        "student_level": "2",
-        "europe_cost": "-1"
+        "school_tier": "2",
+        "europe_value": "-1"
       },
       {
         "name": "Missionary",
         "expert_name": "Jesuit Missionaries",
-        "student_level": "3",
-        "europe_cost": "1400"
+        "school_tier": "3",
+        "europe_value": "1400"
       },
       {
         "name": "Ind. Servant",
         "expert_name": "Indentured Servants",
-        "student_level": "4",
-        "europe_cost": "-1"
+        "school_tier": "4",
+        "europe_value": "-1"
       },
       {
         "name": "Criminal",
         "expert_name": "Petty Criminals",
-        "student_level": "4",
-        "europe_cost": "-1"
+        "school_tier": "4",
+        "europe_value": "-1"
       },
       {
         "name": "Convert",
         "expert_name": "Indian Converts",
-        "student_level": "4",
-        "europe_cost": "-1"
+        "school_tier": "4",
+        "europe_value": "-1"
       }
     ]
   },
@@ -1540,7 +1540,7 @@
       "volatility"
     ],
     "columns_named": true,
-    "byte_anchors": "market price model inputs; per-turn drift fn behind overlay thunk 0x181F:0x9A4 [TBD]; values are primary [B]; goods index = PowerRecord market arrays order [B]",
+    "byte_anchors": "loader func_074DEC (9-field parse @0x074E05, lcall 0x1A1F:0x88A x9) -> DGROUP 0x96FC stride 9 [B]; per-turn drift func_0305A8 [B]; goods index = PowerRecord market arrays order [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 20,
     "rows": [
@@ -2146,7 +2146,7 @@
       "key"
     ],
     "columns_named": true,
-    "byte_anchors": "unit order list + key letters; UnitRecord +0x05 candidate (0x2D='-'=No Orders) [B present]",
+    "byte_anchors": "unit order index; key = 1-char status letter (-/S/T/G/L/F/B/P/R); rows 10-12 reserved (No Orders) [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 13,
     "rows": [
@@ -2370,7 +2370,7 @@
       "settlement_plural"
     ],
     "columns_named": true,
-    "byte_anchors": "native settlement size tiers (Camp/Village/City/...)",
+    "byte_anchors": "native settlement size tiers (Camp/Village/City/...); indexed by @TRIBES level col [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 5,
     "rows": [
@@ -2412,11 +2412,11 @@
       "name",
       "singular",
       "treasure",
-      "tech_level",
-      "color"
+      "level",
+      "value"
     ],
     "columns_named": true,
-    "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; color col verified via capital-raze note (Aztec=149, Inca=97) DATA_MODEL [B]",
+    "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; level col = @LEVELS settlement-tier idx (Inca/Aztec 3/2 -> City, nomads 0 -> Camp) [B]; value col = capital-raze treasure base (Aztec=149, Inca=97) DATA_MODEL [B]; rows 9-26 = name-only extra tribe pool",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 26,
     "rows": [
@@ -2424,183 +2424,183 @@
         "name": "Incas",
         "singular": "Inca",
         "treasure": "Jewelled Relics",
-        "tech_level": "3",
-        "color": "97"
+        "level": "3",
+        "value": "97"
       },
       {
         "name": "Aztecs",
         "singular": "Aztec",
         "treasure": "Gold Bars",
-        "tech_level": "2",
-        "color": "149"
+        "level": "2",
+        "value": "149"
       },
       {
         "name": "Arawaks",
         "singular": "Arawak",
         "treasure": "Bone Jewelry",
-        "tech_level": "1",
-        "color": "54"
+        "level": "1",
+        "value": "54"
       },
       {
         "name": "Iroquois",
         "singular": "Iroquois",
         "treasure": "Wood Carvings",
-        "tech_level": "1",
-        "color": "87"
+        "level": "1",
+        "value": "87"
       },
       {
         "name": "Cherokee",
         "singular": "Cherokee",
         "treasure": "Turquoise",
-        "tech_level": "1",
-        "color": "67"
+        "level": "1",
+        "value": "67"
       },
       {
         "name": "Apache",
         "singular": "Apache",
         "treasure": "Beads",
-        "tech_level": "0",
-        "color": "111"
+        "level": "0",
+        "value": "111"
       },
       {
         "name": "Sioux",
         "singular": "Sioux",
         "treasure": "Beads",
-        "tech_level": "0",
-        "color": "118"
+        "level": "0",
+        "value": "118"
       },
       {
         "name": "Tupi",
         "singular": "Tupi",
         "treasure": "Gems",
-        "tech_level": "0",
-        "color": "71"
+        "level": "0",
+        "value": "71"
       },
       {
         "name": "Maya",
         "singular": "Maya",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Toltecs",
         "singular": "Toltec",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Kiowa",
         "singular": "Kiowa",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Hurons",
         "singular": "Huron",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Hopi",
         "singular": "Hopi",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Navajo",
         "singular": "Navajo",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Cheyenne",
         "singular": "Cheyenne",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Cree",
         "singular": "Cree",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Algonquin",
         "singular": "Algonquin",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Powhatan",
         "singular": "Powhatan",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Delaware",
         "singular": "Delaware",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Shawnee",
         "singular": "Shawnee",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Illinois",
         "singular": "Illinois",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Chickasaw",
         "singular": "Chickasaw",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Choctaw",
         "singular": "Choctaw",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Seminole",
         "singular": "Seminole",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Mohicans",
         "singular": "Mohican",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       },
       {
         "name": "Zapotec",
         "singular": "Zapotec",
         "treasure": "",
-        "tech_level": "",
-        "color": ""
+        "level": "",
+        "value": ""
       }
     ]
   },
@@ -2663,7 +2663,7 @@
       "weight_1700plus"
     ],
     "columns_named": true,
-    "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection fn TBD",
+    "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection func_03BFD2 [B]",
     "provenance": "values verbatim from game data file (primary); columns from file legend",
     "row_count": 25,
     "rows": [
