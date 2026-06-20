@@ -5,7 +5,7 @@
 
 **Overall confidence:** unit stats + land-odds form + **demotion ladder**
 `BYTE_VERIFIED`; **terrain defense bonus values now `BYTE_VERIFIED`** (`$TERRAIN`
-"Defensive" column: forests 2 / Hills 4 / Mountains 6); capture branch `TBD`.
+"Defensive" column: forests 2 / Hills 4 / Mountains 6); **capture-vs-destroy branch `BYTE_VERIFIED`** (`func_05B2C2`: Colonists/Treasure/Wagon seized via owner-reassign).
 **Last updated:** 2026-06-19.
 **Primary evidence:** `data_extracted/text/NAMES_sections.json` (@UNIT),
 stat loader `func @0x74EC3`, land decider `func_05CA7E` (file `0x5CA7E`),
@@ -68,11 +68,26 @@ no match ⇒ the unit is **destroyed**:
 | any other | *destroyed* (outcome −1) | — |
 
 Override (`0x5B60B..0x5B616`): if the outcome is `0` (Colonists) **and** the
-profession byte `UnitRecord +0x15 == 24`, the outcome becomes type `3` instead.
-The index ladder + offsets are byte-verified; the @UNIT-name reading follows from
-the now-verified `@UNIT` table; the `+0x15==24` profession semantics and a couple
-of mappings (Cont. Army→Colonists; the →type-3 override) warrant runtime
-confirmation. The **capture-vs-destroy** branch (units seized, not demoted) is `TBD`.
+veteran/profession byte `UnitRecord +0x17 == 0x18` (`@0x5B60E` `cmp [bx+0x315B],0x18`),
+the outcome becomes type `3` instead. The index ladder + offsets are byte-verified;
+the @UNIT-name reading follows from the now-verified `@UNIT` table.
+
+**Capture vs destroy — BYTE_VERIFIED** (`func_05B2C2`). Before the demotion ladder,
+a **capture-eligible flag `[bp-0x16]`** is set (`@0x5B31D..0x5B33D`): it is **1 iff the
+defeated unit's type ∈ {`0` Colonists, `0xA` Treasure, `0xC` Wagon Train}**, else 0.
+It is **downgraded to 0 (→ destroy)** if the winner is a **ship** (`type 0xD..0x12`)
+without transport room (`[bp-0x28]==0`, `@0x5B410..0x5B428`) or the zero-attack guard
+at `@0x5B404` fails. Then at `@0x5B49E`:
+- **flag set AND loser owner European (`<4`, `[bp-0x30]`)** ⇒ **capture**: the unit's
+  owner nibble is reassigned to the winner via `set_unit_owner` (`0x181F:0x894` →
+  `@0x00738E`: `unit[+0x3147] ^= (owner_xor & 0xF)`), and the seizure posts
+  `@COLONISTCAPTURE` / `@LOOTCAPTURE` (treasure) / `@WAGONCAPTURE`. The unit changes
+  hands intact (not demoted, not destroyed).
+- **flag clear** ⇒ fall through to the demote/destroy ladder above (`@0x5B58C`).
+
+So Colonists / Treasure / Wagon Trains are **seized** by a land victor; combat units
+(Soldiers/Dragoons/…) demote or are destroyed; and a **ship** victor that can't carry
+the prize destroys it instead.
 
 ## 4. UI layout
 Combat-result popups (win/lose/demote/capture) use the shared dialog framework
@@ -94,7 +109,9 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
   (`func_007D3E`) and its **per-terrain `$TERRAIN` "Defensive" values** (forests 2 /
   Hills 4 / Mountains 6 / Marsh-Swamp 1 / open 0).
 - **R:** the set of +50% bonuses (manual-sourced).
-- **TBD:** the capture-vs-destroy branch; `+0x15==24` profession semantics;
+- **B (added):** capture-vs-destroy branch (`func_05B2C2`: seize Colonists/Treasure/
+  Wagon Train via owner-reassign `0x181F:0x894`; ship-victor-without-room destroys).
+- **TBD:** `+0x17==0x18` (vet) override runtime check;
   naval/bombardment specifics; result message keys. (The fort/stockade/fortress
   defense bonus is **not** `@BUILDING` data — that table has only
   `cost/tools/size/min_colony/upkeep`, no defense column — it is the **hardcoded
@@ -126,9 +143,12 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
    > `0x7BE`" was **wrong** — per `naval_classify.c`, `0x7E0`=`occupant_at`,
    > `0x6BE`=`owner_at`, `0x768`=`ovl_fortify_accum`; these are **map-query helpers**,
    > not bonus-value tables.
-2. Decode the **capture** path. The combat resolver `func_05B2C2` has only
-   demote/destroy — **no in-combat capture branch found**. The `0x03C81D` ownership-reassign
-   write in `func_03C638` is **resolved (2026-06-19): it is the War-of-Spanish-
-   Succession power transfer** (`spec/systems/spanish_succession.md`), not combat
-   capture — so the combat resolver has **no** capture branch. Also confirm the `+0x15==24`→type-3 demotion override at runtime.
+2. ~~Decode the **capture** path.~~ **RESOLVED 2026-06-20** — `func_05B2C2` **does**
+   have an in-combat capture branch: capture-eligible flag `[bp-0x16]` set for loser
+   types {0 Colonists, 0xA Treasure, 0xC Wagon Train} (`@0x5B31D`); on a land victor
+   the unit's owner nibble is reassigned via `set_unit_owner` (`0x181F:0x894 → @0x738E`,
+   `@0x5B4C7`); a ship victor without transport room destroys it instead. (The prior
+   "no capture branch" note was wrong; the `func_03C638` reassign is the *separate*
+   succession transfer.) The `+0x17==0x18`→type-3 demotion override still warrants a
+   runtime spot-check.
 3. Naval combat & bombardment specifics (ship pair `0x523B/0x523C`, roll in `func_05B2C2`).
