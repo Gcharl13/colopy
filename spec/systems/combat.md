@@ -52,6 +52,14 @@ odds = ATK / (ATK + DEF)        // same form as naval combat
   located **A**; the specific values/conditions in `func_05CA7E` are **TBD**.
 - `func_05CA7E` has an **evaluate vs act** mode (`[bp+0xE]`): mode 0 = AI ranking
   (returns the score), else = apply the result.
+- **Difficulty combat handicap — BYTE_VERIFIED (2026-06-20):** before the odds roll,
+  a **human-controlled** combatant gets `strength += (4 − difficulty)` on **both**
+  sides — attacker `[bp-0x90] += (4−diff)` (`@0x5CE35`) and defender `[bp-0x86]`/
+  `[bp-0xa6] += (4−diff)` (`@0x5CE54`) — gated on `AIPersonality.controller==0`.
+  So the human's units carry +4 strength at Discoverer down to +0 at Viceroy
+  (`diff=[0x53A6]`); the AI branch gets no such bonus. A generic strength base
+  `[bp-0x34] = diff + 5` is also formed at `@0x3F005` (tile-combat terrain eval).
+  See `spec/systems/difficulty.md` §3. **B.**
 
 **Demotion ladder — BYTE_VERIFIED** (consequence applier `func_05B2C2`, if-ladder
 at file `0x5B5AA..0x5B61F`; `viceroy_source/src/combat/combat_demotion_ladder.c`).

@@ -44,6 +44,18 @@ do not treat it as the authoritative REF. (RULINGS 2026-06-19.)
 
 ## 3. Formulas & rules
 
+- **Starting REF (new-game init) — BYTE_VERIFIED (2026-06-20):** at
+  `new_game_state_init @0x7569B` the four counts are seeded from difficulty
+  `diff=[0x53A6]`:
+  - Regulars `[0x53DA] = 8·diff + 15` → {15,23,31,39,47}
+  - Cavalry `[0x53DC] = 5·(diff+1)` → {5,10,15,20,25}
+  - Artillery `[0x53E0] = 6·diff + 2` → {2,8,14,20,26}
+  - Man-O-War `[0x53DE] = 3·diff + 2` → {2,5,8,11,14}
+
+  **This corroborates the USER-VERIFIED in-game counts (23/10/5/8) exactly at
+  `diff=1`** — the same difficulty the +18/turn `royal_money` accrual implies —
+  closing the "Discoverer label off-by-one" question: the observed game was at
+  `diff=1` (Explorer), not Discoverer. **B.** See `spec/systems/difficulty.md` §3.
 - **Budget accrual:** `+0x22 += (8·difficulty + 10)·2^(era gates)` per turn —
   **BYTE_VERIFIED** (`func_03E162 @0x3E17C`; see below). The runtime **+18/turn**
   matches `diff=1` (`8·1+10`); era gates double it at 1600/1700/1750.
@@ -103,6 +115,9 @@ labels `TBD`. **R**.
 - `func_03CDA2` (file `0x3CDA2`) — REF total = sum of the 4 counts; ≥1 Man-O-War guarantee (`INC [0x53DE]` @`0x3CDF7`). **B**
 - `func_051EF4` (file `0x51EF4`) — tallies the power's `unit_type 0x12` (Man-O-War) units into `[0x53DE]` (`INC` @`0x52013`). **B**
 - `func_03E162` (file `0x3E162`) — REF budget driver: accrual `(8·diff+10)·2^era` (`@0x3E17C`), threshold **1800** (`@0x3E1C6`), composition ratios 3:1 reg:cav / 4:1 reg:art / 10:1 land:naval (`@0x3E1D0`), spend `+0x22 -= 1800` (`@0x3E271`). **B**
+- `new_game_state_init` (file `@0x7569B`) — starting REF counts seeded from
+  difficulty: `8·diff+15 / 5·(diff+1) / 6·diff+2 / 3·diff+2` (reg/cav/art/manowar);
+  reproduces the 23/10/5/8 in-game counts at `diff=1`. **B**
 - `docs/GAME_MANUAL.md` — REF grows over the game, deployed on independence. **R**
 
 ## 6. Open questions (TBD)

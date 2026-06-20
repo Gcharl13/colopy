@@ -60,7 +60,9 @@ points surfaced during the population pass (2026-06-18), to seed that work:
 | Diplomacy war state | ~~`DGROUP:0x883C` layout~~ **DONE** — `+0x34` war / `+0x40` treaty matrices, bits byte-verified (`func_057F4E`/`func_057DC0`) | `systems/diplomacy.md` |
 | Immigration / crosses | ~~`func_0363A2`/`func_035D9A`~~ **DONE** — loop + threshold + per-turn increment **B** | `systems/immigration.md` |
 | Native raze treasure | ~~`func_04A7CA` CHIEFKILL~~ **DONE** — roll **B**; conversion RNG + raid wiring **B** | `systems/natives.md` |
-| Exploration / scout | `func_05A20E` | `systems/exploration.md` |
+| Exploration / scout | `func_05A20E`; **sight radius `func_006608`/`func_006468` (B 2026-06-20)** | `systems/exploration.md` |
+| Sight radius per unit | ~~radius source~~ **DONE 2026-06-20** — `func_006608` selector (R=1 land, R=2 Scout type 5 / big ships 0x0F-0x11 / any naval with ability #7), `func_006468` `(2R+1)²` reveal, `func_00631A` fog OR `1<<(player+4)`. Residual: FF/ability #7 identity (overlay seg 0x981). | `systems/exploration.md` |
+| Difficulty per-level modifiers | ~~`[0x53A6]` modifier table~~ **DONE 2026-06-20** — starting REF (`8·diff+15`/`5·(diff+1)`/`6·diff+2`/`3·diff+2` @0x7569B), combat human handicap `+(4−diff)` (`func_05CA7E`), native attitude human/AI split (@0x46500/@0x46538), AI diplomacy grace `10·(10−diff)`/demand/prob — all **B**. Economy/king touch points **R** with sites. `king_galleon[diff]` confirmed UI-text-only. | `systems/difficulty.md` §3 |
 | Colony production | `func_02D658` | `systems/colony.md` |
 | Treasure transport | `func_05C878` **(B 2026-06-19)**: value=100×UnitRecord[+0x15]; King cut% = Cortés→tax / else max(5·diff+50, 2·tax) cap 90% (`0x8394` is the king-salutation string table, not a fee); post-indep cashed direct | `systems/events.md` §3 |
 | Dialog framework | `func_06F0F4` (popup dispatcher), sprite channels `[0x1F5C/5E/60]`, geometry `[0x839E..0x83A4]` | `ui/popups.md` |
