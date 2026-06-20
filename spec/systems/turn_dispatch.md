@@ -36,7 +36,15 @@ case table before tagging. → `spec/BACKLOG.md`.
 ## 3. Formulas & rules
 - Phase ordering within a power's turn (movement → production → market → king →
   diplomacy): **TBD** (case order not decoded).
-- Turn-counter increment timing and year mapping: **TBD** (counter at `0x538E` **B**).
+- **Turn / year advance — located `@0x5A9D` (BYTE_VERIFIED anchor 2026-06-20):** the
+  end-of-turn housekeeping does `inc [0x538e]` (turn counter) `@0x5A9D`, then advances
+  the **year `[0x538a]`** via a **season/half-year counter `[0x538c]`** (toggles 0↔1;
+  year steps when it wraps), with an **era threshold at 1600 (`0x640`)** `@0x5AA1`
+  (the `<1600` branch advances the year differently from `≥1600` — the "2 turns/year
+  early game" vs later cadence; exact rule pending careful decode) and a 1600-reached
+  announcement (`@0x5AB2`). Periodic events fire on `[0x538e] mod 4` / `mod 3`
+  (`@0x5B0F`/`@0x5B1F`); a counter `[0x150]` (cap `0x19`=25) increments every 3rd turn
+  (`@0x5B33`). Turn counter initialised `@0x757EF`.
 - Native-tribe turn processing (powers 4..11): **TBD**.
 
 ## 4. UI
