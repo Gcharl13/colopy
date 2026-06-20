@@ -143,9 +143,14 @@ Surfaces in the colony screen (assign job) and education building tooltips. See 
   Indian-learnable), §"Education", "Indian Lore". **B/R**
 
 ## 6. Open questions (TBD)
-1. Byte-trace the **per-turn school teaching rate** (turns-to-graduate; who-teaches-
-   whom selection) — entry: the colony-turn update that writes `UnitRecord +0x17`
-   from a teacher; gate on the building-tier bitmap (`ColonyRecord +0x8A`, see `colony.md`).
+1. Byte-trace the **human-side per-turn school teaching rate** (turns-to-graduate;
+   who-teaches-whom selection). **Searched again 2026-06-20 — not statically located:**
+   the colony-screen region `0x31000..0x33000` (anchors `func_0317CC`/`func_0318D2`) has
+   **no expertise `+0x315B` write and no school-building id `0x0C` reference**, so the
+   human teaching mechanic is UI-driven (teacher-assignment flow) rather than a discrete
+   per-turn function here. The **AI** school-promotion path is already byte-verified
+   (§3, `func_051EF4` probabilistic per turn). Remaining piece is **runtime/UI-bound** —
+   record as honest residual (needs a UI-flow or memory-state trace, not static disasm).
 2. ~~Byte-trace the **native-learning grant** site (`@LEARNDONE` path) and its
    per-class success roll (`@LEARNSLOW` semantics).~~ **Done 2026-06-20** — grant
    `@0x04A782`, "taught" flag `NativeSettlement +0x03` bit `0x02`, slow-learner roll
