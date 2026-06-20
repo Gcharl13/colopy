@@ -160,11 +160,13 @@ is **correct**.
     call, which is why operand/near-call scans miss it.
   - The `@BUILDING` cost columns load via `func_074D18` (5-field parse) into a DGROUP
     table whose base isn't yet isolated (the parser writes through a set-up pointer).
-  - **Why blocked:** the completion reads hammers through the array base
-    `[colony+good·2+0x9A]` (not a literal `+0xBA`), sets `+0x60`/`+0x8A` via a
-    far-called bit helper, and indexes an un-based cost table — none of which a
-    static operand scan resolves. Needs the colony-screen build overlay (where `+0x10`
-    is set) traced into its per-turn completion, not a field scan.
+  - **Refined 2026-06-20 (via `tools/find_callers.py`):** the `+0x8A` bit helpers
+    `func_0085D6`/`func_0085B2` are far-called only from the **colony-screen building
+    grid renderer** (`@0x29DA9`, a 16-entry display loop) and the **colony-founding
+    cluster** (`@0x2EC58+`) — i.e. `+0x8A` is the **open-colony work-buffer/display**
+    bitmap, **not** the per-turn build state. So the per-turn completion sets the
+    *persistent* `+0x60` bitmask via a separate (still-unlocated) path; that's the
+    narrowed remaining target.
 
 ### Warehouse / storage capacity — **BYTE_VERIFIED** (`func_008D00`)
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
