@@ -3683,3 +3683,46 @@ term → correct for the 501 zero-seg thunks but WRONG for 157 nonzero-seg thunk
 (e.g. load_PIK: artifact 0x764DC=garbage vs correct 0x76AEC). Authoritative
 resolver: tools/rtlink/rtlink_decode.py + viceroy_rtlink_map.json (RTLINK_V2.md
 §7.3). Re-resolve the 157 affected thunks.
+
+---
+
+## 2026-06-20 — Terrain ids 24–28: @OTHER ordering resolves MP_FORMAT.md conflict
+
+**Conflict.** Two byte-tier sources disagreed on the high terrain ids:
+- `formats/MP_FORMAT.md` id table: **24=Mountains, 25=Hills, 26=Ocean, 27=Lake**,
+  and (line ~60) **16=Arctic** "(auto-forest base 16)".
+- `spec/systems/map_system.md` @OTHER (tier **B**, present in NAMES) + the coast
+  renderer trace `@0x67FD0 cmp al,0x18`: **0x18/0x19/0x1A = Arctic / Ocean /
+  Sea-Lane**.
+
+**Evidence (this branch's `raw/COLONIZE/VICEROY.EXE` + NAMES data):**
+- `@OTHER` (NAMES_sections.json) byte-verified **order** = `Arctic, Ocean,
+  Sea Lane, Mountains, Hills` (5 rows, in that sequence).
+- **Hard rule 2** (CLAUDE.md): the sea-lane base terrain id = **26 (Ocean-class)**.
+  Sea Lane is the **3rd** @OTHER row (index 2) ⇒ @OTHER base = `26 − 2 = 24`.
+- Therefore: **24 (0x18)=Arctic, 25 (0x19)=Ocean, 26 (0x1A)=Sea Lane,
+  27 (0x1B)=Mountains, 28 (0x1C)=Hills.**
+- **Corroboration from the random-map generator `func_064A10`** (independently
+  byte-traced): P0 fills the interior with **0x19 (=Ocean)** then grows landmass;
+  P5 writes **0x18 (=Arctic)** to the top/bottom rows (polar caps — geographically
+  correct) and **0x1A (=Sea Lane)** to the right two columns. All three immediates
+  are exactly consistent with Arctic=24/Ocean=25/Sea-Lane=26.
+- **MP_FORMAT.md is the outlier and is wrong:** its "16=Arctic" places Arctic
+  *inside* the auto-forest range **8..23** (hard rule 3), which is impossible; and
+  its 24=Mountains would put Mountains at the map's polar rows. It also collapsed
+  Ocean and Sea Lane into a single id 26, whereas @OTHER lists them separately
+  (Ocean=25, Sea Lane=26).
+
+**Resolution (per TRUTH_HIERARCHY — running-game/renderer byte-trace + @OTHER B
++ hard rule 2 outrank a preprocessed format table):** adopt
+**24=Arctic, 25=Ocean, 26=Sea Lane, 27=Mountains, 28=Hills.** `MP_FORMAT.md`'s
+terrain-id table corrected accordingly. The map-generation agent's proposed
+"0x19 ≠ Ocean" correction (which relied on the erroneous MP_FORMAT table) is
+**rejected**; the generator's `0x19=Ocean` label stands.
+
+**Unaffected / still open:** the structure of the auto-forest range 8..23 (why 16
+slots for ~8 forested variants) is a separate question; and the P2 climate
+elevation→terrain jump table (`@0x64CF6 → file 0x6442c`) is a switch of CODE
+offsets — the C-recon "5,4,1,3,2,2" elev→terrain list does **not** occur in the
+EXE (0 byte-matches) and is **not** byte-verified (see map_generation.md §3 P2,
+now TBD).

@@ -89,6 +89,17 @@ and more aggressive/expensive AI diplomacy. **B** (the rows above).
 ### Manual-sourced (R — byte-confirm pending)
 - Indian Destruction Penalty = `−(diff + 1)` per native settlement destroyed
   (`docs/GAME_MANUAL.md`). **R**.
+- **Tory production-penalty threshold = `10 − diff`** (10 at Discoverer … 6 at
+  Viceroy, `docs/GAME_MANUAL.md:3528`): when a colony's Tory count reaches this
+  number, all production there drops by 1. **Value BYTE_VERIFIED:** the colony-
+  production region computes `ax = 10 − diff` for a human-controlled owner
+  (`mov al,[0x53a6]; sub ax,0xa; neg ax`) and a fixed **10** (or **0x32**) for AI,
+  at **`@0x9D49`, `@0xA05C`, `@0x27416`** (all three same idiom, gated on
+  `[bx+0x1a]<4 && [idx·0x34+0x543F]==0`). The `10−diff` value exactly matches the
+  manual's 10→6, identifying this family as the SoL/Tory production thresholds.
+  **B** (value); the exact site→effect binding (which of the three is the Tory
+  *penalty* vs the SoL *bonus* divisor) is the residual — cross-ref
+  `spec/systems/tory_uprising.md`, `spec/systems/colony.md` (SoL production).
 
 ## 4. UI
 Selected on the difficulty-selection setup screen (manual). Strings in the

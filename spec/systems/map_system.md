@@ -151,4 +151,9 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
 1b. Coast beach-halo: the full neighbour-config → which-of-`0x95..0x99` sprite truth table in `func_067F50`/`func_0681A8` (chain + band byte-verified; per-direction enumeration intricate).
 2. Confirm bit 7 meaning of the tile byte; confirm record-array boundaries from the `.MP` read function.
 3. Map `@RESOURCE` entries to the bonus they grant and to placement rules.
-4. Terrain id 24/25/27 assignments (Arctic base, Mountains, Hills, Sea Lane=26) — confirm full 0..27 table.
+4. ~~Terrain id 24/25/27 assignments.~~ **Resolved 2026-06-20** (`notes/rulings/RULINGS.md`)
+   — `@OTHER` order (B) + hard rule 2 (Sea Lane = 26) fix ids **24=Arctic,
+   25=Ocean, 26=Sea Lane, 27=Mountains, 28=Hills**; corroborated by the random-map
+   generator immediates (`0x18/0x19/0x1A`). `formats/MP_FORMAT.md` corrected (it
+   was the outlier — had Arctic at 16, inside the auto-forest range). Residual: the
+   internal structure of the auto-forest range 8..23 (16 slots vs ~8 variants).

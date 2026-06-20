@@ -56,18 +56,28 @@ Per `extracted/text/NAMES_sections.json` ($TERRAIN section), in order:
 | 6 | 0x06 | Marsh | wetland |
 | 7 | 0x07 | Swamp | tropical wetland |
 | 8 | 0x08 | Boreal Forest | northern forest (tundra+forest) |
-| ... | ... | ... | (forest variants of 0..7 are auto-mapped at 8..15 per func_006204 BYTE_VERIFIED) |
-| 16 | 0x10 | Arctic | (auto-forest base 16) |
-| ... | ... | ... | (more forest variants 16..23) |
-| 24 | 0x18 | Mountains | impassable rock |
-| 25 | 0x19 | Hills | brown rolling |
-| 26 | 0x1A | Ocean | sea — also sea-lane right edge |
-| 27 | 0x1B | Lake | freshwater |
+| ... | ... | ... | (forest variants are auto-mapped in **8..23** per func_006204 BYTE_VERIFIED) |
+| 24 | 0x18 | Arctic | polar ice — generator writes to map top/bottom rows (P5) |
+| 25 | 0x19 | Ocean | open sea — generator's interior background fill (P0) |
+| 26 | 0x1A | Sea Lane | navigable right-edge column (Ocean-class; **hard rule 2**) |
+| 27 | 0x1B | Mountains | impassable rock |
+| 28 | 0x1C | Hills | brown rolling |
+
+> **Corrected 2026-06-20** (`notes/rulings/RULINGS.md`): ids **24–28** were
+> previously listed as Mountains/Hills/Ocean/Lake with Arctic at 16. That table
+> was the outlier — it placed Arctic *inside* the auto-forest range 8..23
+> (impossible per func_006204) and conflated Ocean with Sea Lane. The
+> byte-verified `@OTHER` ordering (**Arctic, Ocean, Sea Lane, Mountains, Hills**)
+> + hard rule 2 (Sea Lane = 26) force the base to 24, and the random-map
+> generator's immediates (0x18 poles / 0x19 interior fill / 0x1A right edge)
+> corroborate it. (There is no separate "Lake" terrain in `@OTHER`.)
 
 Sources for ID semantics:
-- NAMES.TXT $TERRAIN section (canonical)
+- NAMES.TXT `$TERRAIN` / `@OTHER` section (canonical) — `@OTHER` order
+  **Arctic, Ocean, Sea Lane, Mountains, Hills** → ids 24..28.
 - `func_006204` BYTE_VERIFIED at file 0x6204 — auto-forest range check
   (terrain id 8..23 = forested variants of base terrains)
+- `notes/rulings/RULINGS.md` 2026-06-20 — id 24–28 conflict resolution.
 
 ---
 
