@@ -131,7 +131,7 @@ literal-immediate scans don't catch).
 | 13 | Sir Francis Drake (E) | **Privateer (unit type 16) combat strength ×1.5 (+50%)** | **B** `@0x7CF0` (`cmp type,0x10; has_father(13,owner); strength += strength/2`) |
 | 14 | John Paul Jones (M) | free **Frigate** (type `0x11`) | **B** `@0x3BD8B` |
 | 15 | Thomas Jefferson (P) | **doubles** the bell/era quantity (`×2`) — manual says +50% | **B** `@0x55818` |
-| 16 | Pocahontas (P) | reset native attitudes to content | **B** `@0x3BDDD` |
+| 16 | Pocahontas (P) | reset native attitudes to content (on acquire) **+ ongoing**: halves all native tension-raise deltas | **B** `@0x3BDDD` (reset) + `func_045DF2 @0x45E30` (`has_father(16)` → delta `>>=1`; `natives.md`) |
 | 17 | Thomas Paine (P) | **bells += bells × tax_rate / 100** (+tax%) | **B** `@0x290FB` |
 | 18 | Simón Bolívar (P) | **+20% Sons of Liberty** (`[0x53D0]+=20`) | **B** `@0x3BE64` |
 | 19 | Benjamin Franklin (P) | foreign powers offer **peace** (zeros hostility) | **B** `@0x5834E` (+6 sites in `func_057F4E`) |

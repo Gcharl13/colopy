@@ -119,15 +119,30 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   value with a **hostility threshold of 75** — a *parallel, distinct* signal from
   the `+0x54F6` alarm array (settlement·9 + power, threshold **128**, checked in
   the very next block `@0x4734E`). Both raise a per-power hostility tally
-  (`[bp-0x86]`) + bitmask. So the **alarm-raise deltas themselves are still TBD**
-  — they are *not* "computed inside" this thunk; the thunk only **reads** the
-  `0x5B1C` tension table. The table's exact row semantics (39-word stride) remain
-  **TBD**.
-- Attitude escalation **deltas** (per-action alarm-raise magnitudes for building
-  near / attacking / missions) + decay, trade pricing, tribute amounts:
-  **TBD** (`func_03ECF0` adjacency is the per-unit confrontation AI per RULINGS —
-  not the price math; do not assert). The `[..+0x54F6]` access sites carry only
-  caps `0x20`/`0x60`, the `0x80` hostility threshold, and resets.
+  (`[bp-0x86]`) + bitmask. The thunk only **reads** the `0x5B1C` tension table; its
+  **writer/applier is `func_045DF2`** (below, range `[0,100]`). The per-action delta
+  *magnitudes* are still TBD, but the applier + its French/Pocahontas halving gates
+  are now **B**. (The 39-word row stride — only the first 4 columns = the powers are
+  used here — remains **TBD**.)
+- **Tension-raise APPLIER — `func_045DF2` BYTE_VERIFIED (2026-06-20).** This is the
+  function that applies a tension **delta** to the `0x5B1C` table:
+  `tension[row·39 + power] += delta` (delta = arg `[bp+0xa]`), then **clamped to
+  `[0,100]`** (clamp helper `func@0x48CC`, `@0x45E4A..0x45E6C`). Two mitigations
+  **halve** a positive delta:
+  - **French national power** — `if power==1 && delta>0: delta >>= 1` (`@0x45E21`).
+  - **Pocahontas (FF 16)** — `if has_father(16,power) && delta>0: delta >>= 1`
+    (`@0x45E30`, thunk `0x181f:0x7b4`).
+  After the write it raises hostility flags at **tension ≥ 75 (`0x4b`)** and
+  **tension == 100 (`0x64`, maxed → war path)** (`@0x45E9E`/`@0x45EB2`), matching
+  the raid scan's `≥75` test. So the `0x5B1C` tension is a `[0,100]` per-
+  `(settlement-row, power)` anger meter (thresholds 75 hostile / 100 war), separate
+  from the `+0x54F6` alarm array (threshold 128). **The per-action delta
+  *magnitudes* per event type (building near / attacking / missions) — i.e. the
+  callers' `[bp+0xa]` values — remain TBD**; the applier + gates are now **B**.
+- Decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the
+  per-unit confrontation AI per RULINGS — not the price math; do not assert). The
+  `[..+0x54F6]` access sites carry only caps `0x20`/`0x60`, the `0x80` threshold,
+  and resets.
 
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.

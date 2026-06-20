@@ -2,8 +2,8 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** nation roster + leaders `BYTE_VERIFIED`; **English & Spanish
-ability effects `BYTE_VERIFIED`** (traced in `VICEROY.EXE`); French & Dutch effects
+**Overall confidence:** nation roster + leaders `BYTE_VERIFIED`; **English, Spanish,
+& French ability effects `BYTE_VERIFIED`** (traced in `VICEROY.EXE`); Dutch effect
 `R` (manual) with the byte-site narrowed.
 **Canonical primary:** `data_extracted/text/NAMES_sections.json`
 (@COUNTRY/@NATIONALITY/@NATIONABBREV/@HOMEPORT/@LEADERNAME/@COLONYNAME/@INDEPENDENT),
@@ -19,8 +19,12 @@ literal `power_index == N` test:
   the crosses-needed **threshold is multiplied by `2/3`** (`func_035D9A @0x035E6E`:
   `cmp [0x9E12],0 / jne / shl ax,1 / idiv 3`), so English need only ⅔ the crosses
   → immigrants arrive ~50% faster.
-- **French (1)** — live among natives more peacefully (lower native alarm growth).
-  **R** (manual); gate not yet pinned — see §3.
+- **French (1)** — live among natives more peacefully. **BYTE_VERIFIED**: in the
+  native tension-raise applier `func_045DF2`, when the power index `== 1` (French)
+  and the tension delta is positive, the delta is **halved** (`@0x45E21`:
+  `cmp [bp+8],1; jne; cmp [bp+0xa],0; jle; sar [bp+0xa],1`) — so the French raise
+  native tension at **half rate**. (Pocahontas FF 16 applies a second, independent
+  halving at `@0x45E30`.)
 - **Spanish (2)** — **+50% attack vs natives**. **BYTE_VERIFIED**: in the land
   decider, attacker owner `== 2` **and** defender owner `>= 4` (a native) →
   attack strength `+= strength/2` (×1.5) (`func_05CA7E @0x05CF2F..0x05CF4D`:
@@ -69,11 +73,14 @@ Byte status of each national-power effect:
   `attacker_power==2 && defender_power>=4`. **BYTE_VERIFIED** (`func_05CA7E
   @0x05CF43`). (Distinct from the unconditional native-defender `÷4` at `@0x05CEE2`
   and the war-of-independence ×3/2 at `@0x05CF82`, which are not nationality-gated.)
-- **French (1) native attitude** — **R** (manual). Narrowed: the per-(settlement·9
-  + power) **alarm/tension array is `DGROUP:0x54F6`** (word, raid threshold `0x80`;
-  `spec` native AI). A French discount would scale the alarm **increment**; the
-  located `0x54F6` sites are caps/resets (`@0x045FC1` clamp, `@0x05DF7D` reset) —
-  the additive-increment site with a `power==1` test is **TBD**.
+- **French (1) native attitude** — **BYTE_VERIFIED 2026-06-20.** The increment site
+  is `func_045DF2` (the **native tension-raise applier** for the `DGROUP:0x5B1C`
+  per-`(settlement·39 + power)` tension array, range `[0,100]`): it adds the delta
+  `[bp+0xa]` to `tension[row·39+power]` and clamps to `[0,100]` (`@0x45E4A..0x45E6C`,
+  clamp helper `func@0x48CC`). The **`power==1` (French) test halves the positive
+  delta** (`@0x45E21`). (This is distinct from the older `DGROUP:0x54F6` alarm array
+  with raid threshold `0x80`; the `0x5B1C` tension has thresholds **75** = hostile
+  and **100** = war, both checked in the raid scan `func_047320`.)
 - **Dutch (3) price stability + starting ship** — **R** (manual). Narrowed: the
   per-turn drift `func_0305A8` is per-good global (`0x53EA`), not per-power, so the
   Dutch damping is in the **per-sale price-drop** path (market sensitivity
@@ -96,8 +103,9 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
 - `docs/DATA_MODEL.md` — `owner_power_idx` in records; native alarm array `0x54F6`. **B**
 
 ## 6. Open questions (TBD)
-1. **French (1):** find the native-alarm **increment** site that scales by
-   `power==1` (alarm array `DGROUP:0x54F6`, threshold `0x80`).
+1. ~~**French (1):** native-alarm increment site scaling by `power==1`.~~ **Done
+   2026-06-20** — `func_045DF2 @0x45E21` halves the native tension-raise delta for
+   power 1 (tension array `DGROUP:0x5B1C`, range `[0,100]`). **B.**
 2. **Dutch (3):** find the per-sale **price-drop** `power==3` damping (sensitivity
    `PowerRecord +0x4C`) and the **starting-ship** grant in the new-game setup overlay.
 3. ~~Decode the `@LEADERNAME` and `@COUNTRY` trailing numbers (AI bias?).~~
