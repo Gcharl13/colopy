@@ -3,8 +3,9 @@
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
 **Overall confidence:** job/profession roster `BYTE_VERIFIED` (present); **expertise
-field + `@JOB` columns + native-learn & school rulesets** `BYTE_VERIFIED`; the
-per-turn school *teaching rate* still `TBD`. **Canonical primary:**
+field + `@JOB` columns + native-learn (grant+roll) + school rulesets + combat
+veteran promotion (Washington-auto / `random_int(1,S)≤winner_str`)** `BYTE_VERIFIED`;
+only the human-side per-turn school *teaching rate* still `TBD`. **Canonical primary:**
 `data_extracted/text/NAMES_sections.json` `@JOB`/`@CLASS`;
 `data_extracted/text/GAME_sections.json` `@LEARN*`/`@SCHOOL1`/`@NOTEACHER`;
 `docs/GAME_MANUAL.md` (player-aid skill chart, p.3); `VICEROY.EXE` `func_05B2C2`
@@ -111,9 +112,21 @@ Indian-learnable):
 The combat consequence applier `func_05B2C2` adjusts the expertise `+0x17`:
 a **Veteran Soldier (`0x15`) is demoted to `0x1C`** on a loss
 (`@0x05B570→0x05B577`), with a parallel `0x18` branch (`@0x05B60E`); the unit
-*type* `+0x02` is demoted in lockstep (Dragoons→Soldiers etc., `@0x05B5B3`). Soldiers
-gain Veteran status by winning (manual); the win-promotion write is at `@0x05C7DD`.
-**BYTE_VERIFIED** (ladder); exact win-promotion probability **TBD**.
+*type* `+0x02` is demoted in lockstep (Dragoons→Soldiers etc., `@0x05B5B3`).
+
+**Win-promotion — BYTE_VERIFIED (2026-06-20).** On a win the promotion of the
+victor (`bp+6`) gates two ways:
+- **With George Washington (Founding Father #11)** — `func 0x181F:0x7B4(0xB, owner)`
+  (`@0x5C758`) returns nonzero → the roll is **skipped and promotion is automatic**.
+- **Otherwise** — `random_int(1, S) ≤ winner_strength` (`@0x5C764`: `random_int(1,
+  [bp-4])` then `cmp ax,[bp+0xA]; jle` proceed, else no promotion). So
+  **P(promote) = winner_strength / S** (`S` = the combat strength sum from
+  `func_05CA7E`, `combat.md`).
+On promotion the class ladder `func_05E714` maps the current `+0x315B` to its next
+rank and writes it back (`@0x5C7DD`); at the soldier ceiling the **unit *type*
+`+0x3146`** advances instead (Soldier `1` → **Continental Army `9`**, else `→ 7`,
+`@0x5C7C3`/`@0x5C7CE`), and only for an active European owner (`owner<4`,
+controller `+0x543F==0`). **B.**
 
 ## 4. UI
 Surfaces in the colony screen (assign job) and education building tooltips. See `spec/systems/colony.md`, `docs/SESSION_UI_CATALOG.md`.
@@ -133,7 +146,13 @@ Surfaces in the colony screen (assign job) and education building tooltips. See 
 1. Byte-trace the **per-turn school teaching rate** (turns-to-graduate; who-teaches-
    whom selection) — entry: the colony-turn update that writes `UnitRecord +0x17`
    from a teacher; gate on the building-tier bitmap (`ColonyRecord +0x8A`, see `colony.md`).
-2. Byte-trace the **native-learning grant** site (`@LEARNDONE` path) and its
-   per-class success roll (`@LEARNSLOW` semantics).
-3. Confirm the **veteran win-promotion probability** at `func` near `@0x05C7DD`.
+2. ~~Byte-trace the **native-learning grant** site (`@LEARNDONE` path) and its
+   per-class success roll (`@LEARNSLOW` semantics).~~ **Done 2026-06-20** — grant
+   `@0x04A782`, "taught" flag `NativeSettlement +0x03` bit `0x02`, slow-learner roll
+   `random_int(1,1000) ≥ 200·diff+100` (§3). **B.**
+3. ~~Confirm the **veteran win-promotion probability** at `func` near `@0x05C7DD`.~~
+   **Done 2026-06-20** — `random_int(1,S) ≤ winner_strength` (`@0x5C764`), or
+   **automatic with Washington FF#11** (`@0x5C758`); ladder `func_05E714`, type
+   bump Soldier→Continental (§3). **B.**
 4. Confirm `@JOB` column-4 = Europe recruit/train gold cost (vs a pure score value).
+   *(Currently **R**, manual-inferred — §2.)*

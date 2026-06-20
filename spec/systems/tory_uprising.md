@@ -64,7 +64,13 @@ this fraction is **TBD**.
   Militia** near a rebel colony (`%STRING0`). The exact rebel-vs-Tory strength
   comparison and the number of Tory units spawned are `RECONSTRUCTED`.
 - **Effect:** Crown-loyal **Tory Militia** units appear adjacent to a rebel colony
-  ("Parliament arms Tory Militia!"). Magnitude `RECONSTRUCTED`.
+  ("Parliament arms Tory Militia!"). The militia count `[bp-8]` is derived from the
+  body's rebel-army-strength vs colony-tory-strength comparison loop
+  (`@0x3CB60..0x3CD40`); when it resolves to **0** the uprising is **suppressed**
+  (clear `ColonyRecord +0x1C` bit 0, return — no message, no units, `@0x3CD59`).
+  Otherwise the colony coords (`ColonyRecord +0/+1`) and name (`+0x02`, `%STRING0`) are
+  bound and `@TORYUPRISING` emitted (`@0x3CD6C..0x3CD97`). The **exact count formula**
+  is `RECONSTRUCTED` (deep multi-variable loop). **B** (gate/emit); **R** (count).
 
 > **Foreign-intervention arrival (cross-ref `revolution.md`).** The companion
 > `@INTERVENE` "Intervention Force arrives" event (handle `0x12C4`) is emitted by

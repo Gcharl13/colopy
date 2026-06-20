@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** order list + key letters `BYTE_VERIFIED` (present in NAMES); effects/durations TBD. **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@ORDERS`/`@ACTIONS`; `docs/GAME_MANUAL.md`.
+**Overall confidence:** order list + key letters + **order-code storage (`0x314C`) + work counter (`0x315A`) + pioneer durations + fortify `·3/2` mechanism `BYTE_VERIFIED`** (2026-06-20, cross-ref `unit.md`/`terrain_improvement.md`/`combat.md`). **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@ORDERS`/`@ACTIONS`; `docs/GAME_MANUAL.md`.
 
 ## 1. Purpose & behavior
 A unit can be given a standing order that persists across turns and suppresses auto-activation: Sentry, Fortify, Go To, Build Colony, Clear/Plow, Build Road, Live In Village, Trade Route, or No Orders. Pioneers do terrain work (clear/plow/road); soldiers fortify (defense bonus); ships and wagons can run trade routes. **RECONSTRUCTED** (manual §"Unit orders").
@@ -37,8 +37,14 @@ is a separate field `0x315A`** (`terrain_improvement.md`).
 `@ACTIONS` (native-interaction menu, BYTE_VERIFIED present): Trade With Village, Enter Hostile Village, Establish Mission, Denounce Heresy of %Fs Mission, Live Among The Natives, Ask to Speak With Chief, Incite Indians, Demand Tribute, Attack Village, Cancel Action.
 
 ## 3. Formulas & rules
-- Fortify = **+50% defense bonus** (manual; **RECONSTRUCTED**, byte value TBD).
-- Clear/plow/road completion times and terrain transitions: **TBD** (byte-trace pioneer work).
+- Fortify = **+50% defense bonus**, applied as a **`·3/2` multiplier in the land
+  strength-modifier chain inside `func_05CA7E`** — **mechanism BYTE_VERIFIED**
+  (`spec/systems/combat.md` §3/§7.1; the `+50%` *value* is manual-sourced **R**).
+- Clear/plow/road completion times, tool cost, and terrain transitions are
+  **BYTE_VERIFIED** in `spec/systems/terrain_improvement.md` (executors `func_040656`
+  clear/plow / `func_0409D6` road; work-counter `UnitRecord +0x16` abs `0x315A`;
+  threshold from the `@TERRAIN` table `terrain·16 + 0x2F78`, **+2** clear/plow / **+0**
+  road; **Hardy Pioneer halves**; tools **−20**).
 - Sentry auto-board outgoing ships; aboard ship = forced sentry (manual; **RECONSTRUCTED**).
 
 ## 4. UI
@@ -49,6 +55,10 @@ Orders shown as a single key letter in the active-unit orders box; commands via 
 - `docs/GAME_MANUAL.md` — fortify/sentry/clear-plow/trade-route function. **R (function HIGH; numbers EXE-win)**
 
 ## 6. Open questions (TBD)
-1. Find the `UnitRecord` offset storing the order code and the work-progress counter.
-2. Byte-verify the fortify defense multiplier and pioneer task durations.
+1. ~~Find the `UnitRecord` offset storing the order code and the work-progress counter.~~
+   **Done 2026-06-20** — order code = `UnitRecord 0x314C`, work-progress counter =
+   `0x315A` (§2; cross-ref `unit.md` §2, `terrain_improvement.md`). **B.**
+2. ~~Byte-verify the fortify defense multiplier and pioneer task durations.~~ **Done
+   2026-06-20** — fortify `·3/2` (+50%) mechanism in `func_05CA7E` (`combat.md`);
+   pioneer durations/tool-cost in `terrain_improvement.md` (§3). **B** (mechanism).
 3. Trade Route data structure → see `spec/systems/trade_routes.md`.
