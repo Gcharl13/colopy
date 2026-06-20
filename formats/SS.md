@@ -45,10 +45,12 @@ ScummVM "FAB" format — BYTE_VERIFIED 2026-06-20.** Compressed sections carry *
 magic and no shift byte** (ScummVM's `FabDecompressor` requires `"FAB"`+shift 10–13;
 neither is present, and `mode=4` is out of FAB's shift range). So the per-section codec
 must be RE'd from the `.SS` loader in `VICEROY.EXE` (strings present: `MADSPACK`
-`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64`; note the loader
-does **not** reference the `MADSPACK` string by address — no `imm 0xFDAA` xref — so it
-likely validates by section structure, not magic). `flag=0` sections (e.g. CC sheet
-section 1) are readable raw today.
+`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64`). **None of
+these three strings has a direct `imm` xref** (`0xFDAA`/`0xEE64`/`0xFD70` — verified
+2026-06-20), so the loader reaches them **indirectly via overlay pointer tables**;
+locating the decompressor therefore needs **RTLink overlay/pointer-table tracing**
+(`tools/follow_thunk.py` / `tools/find_callers.py`), the deep path this project uses
+elsewhere. `flag=0` sections (e.g. CC sheet section 1) are readable raw today.
 
 **Color key**: palette index 0 is transparent. Pixels reading 0 during
 blit are skipped.
