@@ -6,7 +6,7 @@
 > discipline (every number read from the bytes, not from a secondary doc).
 
 **Overall confidence:** state layout + tax-change formula + **tax-pretext selection**
-+ **REF-growth threshold (now in `ref_growth.md`)** `BYTE_VERIFIED`; revenue loop `TBD`.
++ **REF-growth threshold (now in `ref_growth.md`)** `BYTE_VERIFIED`; **tax-revenue loop `BYTE_VERIFIED`** (sale×tax%/100 → REF fund +0x22).
 **Last updated:** 2026-06-19.
 **Primary evidence:** `code/VICEROY/disasm/func_034AE0_unknown.asm`,
 `func_0349F4_unknown.asm`; `docs/DATA_MODEL.md` (runtime-verified);
@@ -81,9 +81,21 @@ This **resolves the 60-vs-75 question**: 75 is the hard cap on `tax_pct` (matche
 the manual), applied at the write-site; 60 is an independent message gate. Both
 numbers are byte-verified and serve distinct roles.
 
-**Tax revenue on European sales:** `TBD`. No primary trace read yet; the
-per-good loop is not byte-verified here (do not import the old reconstructed
-formula). → `spec/BACKLOG.md`.
+**Tax revenue on European sales — BYTE_VERIFIED** (2026-06-20, sell routine
+`@0x32A44..0x32AA2`). When the player sells a good in Europe:
+```
+gross = sale_value (price helper func_03245C)            # [bp-0x52]
+tax   = gross × tax_rate / 100                            # tax_rate = PowerRecord +0x01;
+                                                          # ×: 0xD1D:0xF60, ÷100: 0xD1D:0xEC6  @0x32A64/0x32A6B
+net   = gross − tax                                       # [bp-0x5C]
+PowerRecord.gold (+0x2A) += net    # via add_gold helper 0x181F:0xABA @0x32A82 (clamp [0, 999999])
+PowerRecord +0x22       += tax     # @0x32A92 add/adc — the KING's cut feeds the royal/REF fund
+PowerRecord +0x26       += net     # @0x32A9C add/adc — cumulative European-sales tally
+```
+So **the King's tax on every European sale = `sale × tax% / 100`, and it accrues to
+the royal expeditionary-force fund `PowerRecord +0x22`** (the same fund the REF
+buys units from, `ref_growth.md`) — the in-fiction "your taxes pay for the army
+that will crush you." **B.**
 
 **Tax-raise pretext selection — BYTE_VERIFIED** (`func_036138`, the per-turn tax-demand
 driver + pretext message builder). **Cadence** (`@0x36150..0x361BA`): nothing before

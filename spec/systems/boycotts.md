@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/back-tax-lift/Jakob-Fugger-clear-all) `BYTE_VERIFIED`**; back-tax *amount* `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
+**Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/back-tax-lift/Jakob-Fugger-clear-all) `BYTE_VERIFIED`**; **back-tax amount `BYTE_VERIFIED`** (price×500). · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
 
 ## 1. Purpose & behavior
 
@@ -46,7 +46,12 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
   the back-tax flows straight into the Crown's REF budget (see
   `spec/systems/ref_growth.md` `func_03E162`) — then the good's bit is cleared:
   `PowerRecord[+0x20] &= ~(1 << good)` (`ax = ~(1<<[bp+6]); and [bx+0x20], ax`). **B.**
-  (The back-tax **amount** is set by the caller — still `TBD`.)
+  - **Back-tax AMOUNT — BYTE_VERIFIED** (`@0x333A9..0x333B3`): `back_tax =
+    current_sell_price(good) × 500` (`@0x333AF imul ax,ax,0x1F4`; price from
+    `func_030566` = per-good base table `[good·9 − 0x6900]` + sensitivity
+    `PowerRecord +0x4C[good]`). A gold-sufficiency check precedes the charge
+    (`@0x333DD`); if the player can't afford it the boycott is **not** lifted.
+    (Confirms the prior "`commodity_price × 500`" estimate.) **B.**
 - **Lift-all (Jakob Fugger) — BYTE_VERIFIED:** acquiring father id 1 (Jakob Fugger)
   clears the whole mask `PowerRecord +0x20 := 0` in the FF acquire dispatch
   `func_03BC42` (`@0x3BD45`, gated on `ff_id == 1`). See `founding_fathers.md` §3. **B.**

@@ -103,7 +103,7 @@ identical row — `start 11–13, band [1,20], spread 0, rise 4, fall 4, volatil
 fastest) **> Rum −12 > Cigars −11**. (Coats match Cigars at −11.)
 
 **Buy/sell tax interaction:** the King's tax is taken from European sale proceeds
-— see [`king.md`](king.md) §3 (revenue loop currently `TBD`).
+— **King tax = sale×tax%/100 → REF fund +0x22 (B)**, see [`king.md`](king.md).
 
 **Boycotts:** a Tea Party boycotts one good; field/bitmask `TBD` (cross-ref
 `king.md` §7).
