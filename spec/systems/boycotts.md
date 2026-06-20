@@ -80,4 +80,11 @@ goods are flagged in the Europe trade screen (visual marker) — exact treatment
 3. ~~**Lift paths** — back-tax clear + Jakob Fugger clear-all.~~ **Done** — back-tax
    `@0x3340C` (treasury `+0x2A` → King `+0x22`, then `+0x20 &= ~bit`); **Jakob Fugger
    clear-all `+0x20 := 0` `@0x3BD45`** (`func_03BC42` id 1). Both **B**.
-4. Confirm whether the boycotted good is also exempt from the new tax rate.
+4. ~~Confirm whether the boycotted good is also exempt from the new tax rate.~~
+   **Resolved 2026-06-20 — moot: a boycotted good cannot be sold at all** (so it never
+   reaches the tax math). The sell path tests the boycott bit **before** selling — auto
+   loop `@0x41210` (`lcall func_030B38; or ax,ax; jne skip`) and interactive sell
+   `@0x415A6` (`je sell`); if boycotted it calls the back-tax-to-lift helper
+   `func_03334E` (price×500) and sells only if the boycott lifted, else aborts
+   (`@0x415C1`). The boycott bit is never consulted inside `func_032914`'s tax split —
+   the good is gated out upstream. **B.**

@@ -126,9 +126,21 @@ See `docs/SESSION_UI_CATALOG.md`, `docs/UI_DIALOGS.md`.
    LOAD/UNLOAD `func_00B880`/`func_00B8D0` (§3). **B.**
 3. ~~Route count / stop limits / name storage.~~ **Done** — 12 routes / 4 stops /
    name at record `+0x00` (§2). **B.**
-4. Residual: the **load-list vs unload-list** split within the stop's two cargo
-   nibble lanes (`+0x03`/`+0x06` paths; counts at `+0x02` low/high nibble; whether a
-   nibble is a flag or a quantity) — finish at `func_0603DA`/`func_06040A`/
-   `func_060D8C`; and the **Europe-array write offset** inside `func_0324F2`/
-   `func_032914`. (The `+0x315B` route+stop-nibble vs colonist-vet_type question is
-   **resolved** — different unit types, §2.)
+4. ~~Load-list vs unload-list split + Europe-array write offset.~~ **Mostly resolved
+   2026-06-20:**
+   - **Two cargo lanes, geometry BYTE_VERIFIED** (`func_060350`/`func_060D8C`): each
+     nibble is a **good-id 0..15** (a quantity-counted list, not a flag). One lane =
+     stop bytes **`+0x06..+0x08`** (count = `+0x02` low nibble, dialog string ptr
+     `0x1D47`); the other = stop bytes **`+0x03..+0x05`** (count = `+0x02` high nibble,
+     string `0x1D3D`). Which lane is **load vs unload** is set by the cargo-selector's
+     arg (`func_060D8C [bp+6]` 0/1) under `@CARGOLOAD`/`@CARGOUNLOAD`; the manual puts
+     **unload = center, load = rightmost column**. The exact arg→`@CARGOLOAD` binding
+     (via fn-ptr table `@0x61428` / selector thunk file `0x1CD36`) is the **residual**.
+   - **Europe-array write — CORRECTED:** the good-indexed market arrays
+     (`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC` + pool `0x8864`) are **not** written inside the
+     `func_0324F2`/`func_032914` subtree — that subtree writes only the **scalar**
+     fields (`+0x22` REF / `+0x26` tally / `+0x2A` gold, `@0x32A82..0x32A9C`). The
+     good-arrays are moved separately by `func_0322D0`/`func_03234A` (the accumulator
+     updaters, `market.md §3.1`), reached from the per-turn market-update sites
+     (`0x52xxx`). So a trade-route Europe sale credits gold/REF/tally directly; the
+     market-volume side-effects ride the same accumulator path as a manual sale. **B.**
