@@ -20,6 +20,22 @@ secondary mechanics.
 > reconstructions (`viceroy_source/src/...`) were mined as leads and every adopted
 > finding was **re-verified against this branch's `raw/COLONIZE/VICEROY.EXE`**.
 
+> **Residual-inventory campaign (2026-06-20).** Ran a 9-campaign sweep (C1–C9, ~3
+> waves of parallel byte-trace agents) to close the 86-item "deep trivia" inventory.
+> Every agent finding was **independently re-disassembled before commit** — this
+> caught ~11 agent errors (tribe-seed direction, `+0xB6`≠tools, lumber=`+0x9A` Lumber
+> slot, defense col `0x2F77` not `0x2F80`, `+0x32`=home_x not strength, tools-cost
+> inline not overlay, UnitRecord base `0x3144`/position, `@UNIT` stride 14,
+> `func_03E664`=mercenary not intervention, …). **6 RULINGS** recorded (terrain ids
+> 24–28, P2 climate, alarm-thunk, `+0x32`=home_x, UnitRecord base, …). Closed: most
+> static items + the previously all-TBD **terrain_improvement** system, near-complete
+> **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
+> post-passes, and the data-catalog legends. **Remaining residual** (genuinely
+> unfound or runtime-only): per-turn Tory-uprising/intervention rolls; Lost-City
+> burial `%NUMBER` rolls; revolution SoL-declare threshold; spanish-succession
+> power-selection; Lost-City feature `0xA0`-vs-`0xB0` reconcile; `0x9408` REF value
+> table (BSS/runtime-only); CC/BUILDING.SS sprite sheets (need PNG inspection).
+
 > **Audit pass (2026-06-20).** Re-tested the RESOLVED rows' specific byte claims
 > vs the EXE: #1 combat-bonus filler `[0x8D04]` writer `func_007D3E`, #4 tax clamp
 > `0x4B`(75), #5 REF spend `0x708`(1800), #11 `"COLONIZE"` magic, #12 score mult

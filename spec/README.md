@@ -22,7 +22,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Combat | [`systems/combat.md`](systems/combat.md) | B/TBD | National powers | [`systems/national_powers.md`](systems/national_powers.md) | B/R |
 | Market & prices | [`systems/market.md`](systems/market.md) | B/TBD | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B/TBD |
 | Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | B/TBD |
-| Unit system | [`systems/unit.md`](systems/unit.md) | B/R | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | A/TBD |
+| Unit system | [`systems/unit.md`](systems/unit.md) | B | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | B/TBD |
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B/R | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
 | Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B/TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
@@ -33,7 +33,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B/TBD | Events / Lost City | [`systems/events.md`](systems/events.md) | B/TBD |
 | Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
 | Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B/TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | B/TBD |
-| Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | R/TBD | | | |
+| Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | B/TBD | | | |
 
 ## UI screens & dialogs (52 entries → 10 spec files)
 
