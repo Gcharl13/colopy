@@ -26,7 +26,8 @@ the canonical full field map; the offsets confirmed there include:
 |-------|---------|------|----------|
 | `+0x1A` | `owner_power_idx` (0..3) | **BYTE_VERIFIED** | colony-burn trace |
 | `+0x1B` | foreign-colony status (0 = player-owned) | **BYTE_VERIFIED** | cross-colony inspection |
-| `+0x1C` | constant `0x40` across colonies (likely warehouse base/config) | **ANCHOR_VERIFIED** | inspection |
+| `+0x1C` | per-colony **status/warning flags** byte (bits `0x02`/`0x04`/`0x08`/`0x40`/`0x80` test/set/cleared each turn — shortage/surplus/build warnings) | **BYTE_VERIFIED** | `func_02D658` `@0x2DB34`/`@0x2DB67`/`@0x2E57A`/`@0x2EDF4` (the earlier "constant 0x40" was just bit `0x40` being set) |
+| `+0xC8` | food-growth accumulator (read/written in the per-turn food accounting; the `200` growth constant is added at `@0x2E098`) | **ANCHOR_VERIFIED** | `func_02D658` `@0x2DA20..0x2DACC`, `+200` `@0x2E098` |
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
 | `+0x84` | **persistent** `buildings_constructed[]` bit-array (48 bits; set on build-completion) | **BYTE_VERIFIED** | setter `func_0092E0` `*(0x8542)+0x84+n/8`, `or 1<<(n&7)` `@0x9308`; guard `func@0x860E` (`0x5D46+0x84`) |
@@ -238,9 +239,15 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   `func_0092E0`: hammers `+0x92`/`+0xB6` vs `@BUILDING[+0x94].cost` (table
   `DGROUP:0x8F8C`, stride 12) ⇒ set persistent bit `+0x84` (display copy `+0x8A`),
   surplus carried in `+0xB6`, target `+0x94` not auto-reset.
+- **A (static inference, 2026-06-20):** `+0x92` and `+0xB6` track the **same hammer
+  total** — both are gated against the *identical* cost `[bp-0xc]` (single `@BUILDING`
+  lookup `@0x2E52F`; `+0x92` gate `@0x2E53B`, `+0xB6` gate `@0x2E5DD`/`@0x2E6A1`), and
+  no path advances one without the other; `+0x92` is the raw accumulator, `+0xB6` the
+  displayed/debited copy ("X of Y", surplus carried). (`+0xB6` is **not** a tools bank
+  — there is no separate tool-cost lookup.) Full lockstep would need a runtime dump to
+  100%-confirm, hence **A** not B.
 - **TBD:** end-of-turn spoilage of an overfull stock; building prerequisite gating
-  beyond the bit-6 manufacturing gate; whether `+0x92` (per-turn accumulator) and
-  `+0xB6` (build-progress bank) stay in lockstep (runtime spot-check).
+  beyond the bit-6 manufacturing gate.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE

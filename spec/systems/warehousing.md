@@ -19,9 +19,12 @@ Food, Sugar, Tobacco, Cotton, Furs, Lumber, Ore, Silver, Horses, Rum, Cigars,
 Cloth, Coats, Trade Goods, Tools, Muskets. Plus non-trade tallies listed after:
 Hammers, Crosses, Liberty Bells, Flags (no CSV — accumulators, not warehouse stock). **B** (roster).
 
-- **ColonyRecord `+0x1C`** — constant `0x40` (64) across colonies, "likely
-  warehouse base/config" (`docs/DATA_MODEL.md`, **ANCHOR_VERIFIED**). Its exact
-  role (capacity base?) is unconfirmed — do not treat as the 100-unit cap.
+- **ColonyRecord `+0x1C`** — **per-colony status/warning FLAGS byte** (BYTE_VERIFIED
+  2026-06-20): `func_02D658` tests/sets/clears bits `0x02`/`0x04`/`0x08`/`0x40`/`0x80`
+  each turn (`@0x2DB34`/`@0x2DB67`/`@0x2DBAC`/`@0x2DD2E`/`@0x2E57A`/`@0x2EDF4`) — colony
+  shortage/surplus/build-status warnings. The old "constant `0x40`" reading was just
+  bit `0x40` being set; it is **not** a warehouse capacity base. (The 100-unit cap is
+  `(+0x95+1)·100` via `func_008D00`, §3.)
 - Per-commodity on-hand stock array in ColonyRecord (the 16-slot stockpile):
   offset **TBD** — confirm at read site (`spec/systems/colony.md`).
 - Warehouse / Warehouse Expansion buildings exist in `@BUILDING` (`NAMES`): rows
@@ -49,7 +52,9 @@ showing each storable good and its on-hand count; `[Tab]` selects the strip
 - `docs/GAME_MANUAL.md` — capacities (100/+100), food cap 199, 200-food colonist. **R**
 
 ## 6. Open questions (TBD)
-1. Confirm `+0x1C` (0x40) role and locate the actual per-commodity stockpile array offset.
+1. ~~Confirm `+0x1C` (0x40) role.~~ **Done 2026-06-20** — `+0x1C` is a per-colony
+   **status/warning flags byte** (bits `0x02/0x04/0x08/0x40/0x80`, `func_02D658`), not
+   a capacity base; stockpile array is `+0x9A` (good `i` at `+0x9A+i·2`). **B.**
 2. Byte-confirm warehouse capacities and the +100-per-upgrade rule.
 3. Decode the `@CARGO` CSV columns (price/volume/related-good indices).
 4. Spoilage/overflow timing and whether any good besides food has special handling.
