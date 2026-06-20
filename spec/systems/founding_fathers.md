@@ -3,9 +3,7 @@
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
 **Overall confidence:** roster + per-father data row + bell pool + bell-cost curve +
-era-band selection weighting + **21/25 per-father effects** `BYTE_VERIFIED` (9 immediate
-via `func_03BC42` + 12 continuous via the has-father test); the remaining 4 fathers'
-effects are manual-known (`R`), gated outside a literal has-father site. **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
+era-band selection weighting + **25/25 per-father effects** `BYTE_VERIFIED` (9 immediate via `func_03BC42` + 16 continuous via the has-father test, incl. the direct-call form `lcall 0x981:0`). **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
 
 ## 1. Purpose & behavior
 Liberty bells produced in colonies accumulate toward the **Continental Congress**, which periodically offers a **Founding Father** to join. Each father grants a permanent empire-wide effect (e.g. trade, exploration, military, political, religious, independence bonuses). Fathers are organized into categories; the Congress proposes candidates the player can work toward. **RECONSTRUCTED** (manual §"Founding Fathers").
@@ -109,7 +107,7 @@ overlay-resident).
   `power_attribute_bit(power, bit)` (`0x181F:0x7B4` → `func_00BC10`, reading the
   `+0x07` bitmask) or a computed-mask test. The full per-father audit is below.
 
-### Complete per-father effect audit — **21/25 BYTE_VERIFIED** (2026-06-19)
+### Complete per-father effect audit — **25/25 BYTE_VERIFIED** (2026-06-20)
 Found by scanning all 50 `0x181F:0x7B4` call sites + `func_03BC42`. `B` = byte-verified
 mechanism at the cited site; `R` = manual effect, in-engine gate not yet located
 (these 4 use a building-availability table or an inline computed-mask test that the
@@ -117,10 +115,10 @@ literal-immediate scans don't catch).
 
 | id | Father (cat) | Effect | Tier · site |
 |----|--------------|--------|-------------|
-| 0 | Adam Smith (T) | **enables factory-tier (3rd-level) buildings** (Textile Mill / Cigar Factory / Rum Factory / Arsenal …) | **R** — confirmed (manual + user); gated in build-availability, not via the has-father helper (byte-site TBD) |
+| 0 | Adam Smith (T) | **enables factory-tier buildings** (Arsenal 5 / Textile Mill 23 / Cigar Factory 26 / Rum Factory 29 / Fur Factory 34 / 41): unavailable unless owner has Smith | **B** build-availability `func_00B900 @0xBA8D..0xBAC9` (`has_father(0,owner)`) |
 | 1 | Jakob Fugger (T) | clears **all** boycotts (`+0x20:=0`) | **B** `func_03BC42 @0x3BD45` |
 | 2 | Peter Minuit (T) | **no payment to natives for land** — with Minuit the land charge is skipped | **B** `@0x40BB4` (skip charge) / `@0x465D5` (zero cost) |
-| 3 | Peter Stuyvesant (T) | **enables Custom House construction** | **R** — confirmed (manual + user); gated in build-availability, not via the has-father helper (byte-site TBD) |
+| 3 | Peter Stuyvesant (T) | **enables Custom House (building 18)** construction | **B** `func_00B900 @0xBA37` (`has_father(3,owner)`) |
 | 4 | Jan de Witt (T) | gates the scout/foreign-colony interaction (foreign info) | **B** `func_05A20E @0x5A469` |
 | 5 | Ferdinand Magellan (E) | **faster Europe transit** — sets the Atlantic-crossing time to 1 (vs 2) turns | **B** `@0x41871` (+`@0x418A0`) |
 | 6 | Francisco Coronado (E) | reveal **all colonies** on the map | **B** `@0x3BF54` |
@@ -130,7 +128,7 @@ literal-immediate scans don't catch).
 | 10 | Hernán Cortés (M) | King treasure cut = **tax rate** (else `max(5·diff+50, 2·tax)` ≤90%) | **B** `func_05C878 @0x5C965` |
 | 11 | George Washington (M) | combat winner **auto-promotes** (skips the random gate) | **B** `@0x5C758` |
 | 12 | Paul Revere (M) | undefended colony w/ muskets `+0xB8 ≥ 50` → colonist defends @str 75 | **B** `@0x5CCAA` |
-| 13 | Francis Drake (M) | privateers +50% combat | **R** — combat-resolver computed test |
+| 13 | Sir Francis Drake (E) | **Privateer (unit type 16) combat strength ×1.5 (+50%)** | **B** `@0x7CF0` (`cmp type,0x10; has_father(13,owner); strength += strength/2`) |
 | 14 | John Paul Jones (M) | free **Frigate** (type `0x11`) | **B** `@0x3BD8B` |
 | 15 | Thomas Jefferson (P) | **doubles** the bell/era quantity (`×2`) — manual says +50% | **B** `@0x55818` |
 | 16 | Pocahontas (P) | reset native attitudes to content | **B** `@0x3BDDD` |
@@ -138,29 +136,32 @@ literal-immediate scans don't catch).
 | 18 | Simón Bolívar (P) | **+20% Sons of Liberty** (`[0x53D0]+=20`) | **B** `@0x3BE64` |
 | 19 | Benjamin Franklin (P) | foreign powers offer **peace** (zeros hostility) | **B** `@0x5834E` (+6 sites in `func_057F4E`) |
 | 20 | William Brewster (R) | no criminals/servants on docks (dock pool `+0x02..+0x04`) | **B** `@0x3BF85` |
-| 21 | William Penn (R) | +50% cross production | **R** |
+| 21 | William Penn (R) | **colony crosses production ×1.5 (+50%)** (religious-unrest reduction) | **B** `@0xA16B` (`has_father(21,owner); crosses += crosses/2`) |
 | 22 | Jean de Brébeuf (R) | all missions become **expert** (`+5 \|= 0x10`) | **B** `@0x3BE77` |
 | 23 | Juan de Sepúlveda (R) | **+4** to the native-conversion metric `[bp-0x62]` | **B** `@0x5E20B` |
 | 24 | Bartolomé de las Casas (R) | converts → free colonists (immediate); **−4** conversion metric | **B** `@0x3BEB2`, `@0x5E221` |
 
-**Still `R` (4):** Smith & Stuyvesant (build-availability gate — Smith→factory buildings, Stuyvesant→Custom House, confirmed but byte-site TBD), Drake (privateer +50% combat), Penn (+50% crosses) — effects known from the manual, but their in-engine gate is **not** a literal
-has-father site (build-availability tables / inline computed masks); locating those is
-the remaining FF work.
+**All 25 fathers now `B`.** Smith, Stuyvesant, Drake and Penn — previously held
+at `R` — are byte-verified as **has-father-gated after all** (2026-06-20):
 
-**Negative result (byte-grounded, 2026-06-20).** Bits **0 (Smith), 3 (Stuyvesant),
-13 (Drake), 21 (Penn)** appear in **none** of the 50 `0x181F:0x7B4` (has-father)
-call sites — verified by disassembling the `push imm8` (bit) argument at every
-site (`capstone`, all 50 enumerated). They are also **not** reached by a direct
-FF-bitmask test: a full-image scan finds no `TEST byte[reg+0x07], 0x01/0x08` and
-no `MOV al, byte[reg+0x07]` followed by `AND/TEST 0x01/0x08`. So these four are
-gated **without** consulting `PowerRecord +0x07` at the use-site. The likely
-mechanism is the **per-colony building-presence bitmap** (`ColonyRecord +0x8A`,
-see `colony.md` §buildings): factory-tier is recognized by walking the building
-chain and testing `count > 2` (`@0x8EA9 CMP ax,2 / JLE`), and the build-menu
-overlay that decides *constructability* (Smith/Stuyvesant) reads that subsystem,
-not the FF helper. Pinning the exact build-menu read is the remaining work
-(narrowed search: the colony-screen build-list overlay, accessors `func_0085B2`
-test / `func_0085D6` set-clear / `func_00863E→00860E` chain test).
+| id | Father | Gate (byte-verified) |
+|----|--------|----------------------|
+| 0 | Adam Smith | build-availability `func_00B900 @0xBA8D..0xBAC9`: factory buildings 5/23/26/29/34/41 unavailable unless owner has Smith |
+| 3 | Peter Stuyvesant | `func_00B900 @0xBA37`: Custom House (18) unavailable unless owner has Stuyvesant |
+| 13 | Sir Francis Drake | `@0x7CF0`: Privateer (unit type 16) effective strength `×1.5` (`strength += strength/2`) when owner has Drake |
+| 21 | William Penn | `@0xA16B`: colony crosses output `×1.5` (`crosses += crosses/2`) when owner has Penn |
+
+**Correction (supersedes the 2026-06-20 "negative result").** My earlier scan
+concluded these four were "not gated via the has-father helper." That was **wrong**:
+the has-father function (`func_00BC10` @ file `0xBC10`) is also called in an
+**in-overlay direct form `lcall 0x981:0`** (bytes `9A 00 00 81 09`), *not only* via
+the thunk `0x181F:0x7B4` (`9A B4 07 1F 18`). The earlier scan matched only the thunk
+form, so it missed **13 direct-call sites** (father ids at `@0x663B`=7, `@0x6D01`=5,
+`@0x7CF0`=13 Drake, `@0x8578`=18, `@0x94B8`=9, `@0x9F77`=8, `@0xA16B`=21 Penn,
+`@0xA4EB`=15, `@0xA50C`=17, `@0xA545`=18, `@0xAAA0`=2, `@0xBA49`=3 Stuyvesant,
+`@0xBABD`=0 Smith). All four gates use the idiom `push <ff_id>; mov bx,[0x8542];
+al=[bx+0x1A]; push ax; lcall 0x981:0` (owner = ColonyRecord `+0x1A`; unit-owner via
+`+0x3147 & 0xF` for Drake). **Lesson:** scan *both* call forms for `func_00BC10`.
 
 ## 4. UI
 F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.SS` plates (asset attribution TBD). See `docs/ADVISOR_REPORTS_AUDIT.md`.
