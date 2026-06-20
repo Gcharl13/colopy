@@ -76,8 +76,8 @@ at the power's start tile (`@0x07584B..0x0758CD`):
 | order | `place_unit` type | site | notes |
 |-------|-------------------|------|-------|
 | 1 | **Caravel `0x0D`** (the ship) | `@0x07584B` | **Dutch (power 3):** overwritten to **Merchantman `0x0E`** (`@0x075875 cmp [bp-6],3; mov byte[bx+0x3146],0xe`) — the Dutch trading-vessel power |
-| 2 | **Pioneers `2`** (aboard) | `@0x07588B` | **French (power 1):** class `UnitRecord +0x315b := 0x14` (expert/Hardy-Pioneer-tier) (`@0x0758B5 cmp [bp-6],1`) |
-| 3 | **Soldiers `1`** (aboard) | `@0x0758CD` | class `+0x315b := 0x15` = **Veteran Soldier** for **Spanish (power 2)** or the easy-difficulty bonus pass (`@0x0758F5`: `[0x53a6] ≤ 1` 2nd pass, or `power==2`) |
+| 2 | **Pioneers `2`** (aboard) | `@0x07588B` | **French (power 1):** profession-class `UnitRecord +0x315b := 0x14` = **Pioneer** (`@JOB` index; `@0x0758B5 cmp [bp-6],1`) |
+| 3 | **Soldiers `1`** (aboard) | `@0x0758CD` | profession-class `+0x315b := 0x15` = **Soldier** (`@JOB`; the professional/Veteran-Soldier class vs `0x13` Free Colonist) for **Spanish (power 2)** or the easy-difficulty bonus pass (`@0x0758F5`: `[0x53a6] ≤ 1` 2nd pass, or `power==2`) |
 
 Units 2 & 3 are flagged **aboard** the ship (`UnitRecord +0x314c := 1`; the ship
 itself `:= 0`) and stamped with the start tile (`+0x314d/+0x314e`). The setup also
@@ -85,9 +85,9 @@ records the power's start `(x,y)` into the scroll/center globals
 `[0x17c]/[0x8540]` (x) and `[0x17e]/[0x853e]` (y) (`@0x07591C..0x075929`). At
 **difficulty ≤ 1** (Discoverer/Explorer) the human player runs the placement a
 **second pass** (`[bp-8]:=1; jmp 0x75825`, `@0x075961`), i.e. **double starting
-units** as an easy-mode handicap. **B.** (Class-id `0x14`'s exact profession name
-pends the `+0x315b` vet-type→`@JOB` legend; `0x15` = Veteran Soldier is confirmed
-in `training.md`.)
+units** as an easy-mode handicap. **B.** (Class ids are `@JOB` profession indices:
+`0x13`=Free Colonist, `0x14`=Pioneer, `0x15`=Soldier — so the French get a
+Pioneer-class colonist and the Spanish a Soldier-class one.)
 
 **P2 climate band → base terrain — BYTE_VERIFIED (2026-06-20).** The two latitude
 sweeps each dispatch a 6-entry inline jump table (cs-base file `0x64150`) to local
