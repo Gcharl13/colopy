@@ -178,7 +178,19 @@ F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.
 
 ## 6. Open questions (TBD)
 1. Map each father to its concrete in-engine effect (effect magnitudes are hardcoded, not in NAMES; a few op-ids known — §3).
-2. Decode the per-category candidate scorer `ff_cat_candidate` (overlay thunk `0x1A1F:0x0054`).
-3. Confirm whether category 5 (Independence) ever instantiates a father.
+2. ~~Decode the per-category candidate scorer `ff_cat_candidate` (overlay thunk
+   `0x1A1F:0x0054`).~~ **Structure decoded 2026-06-20** — `0x1A1F:0x0054 → func_03B980`
+   (`enter 4`): loops the 25 father ids (`[bp-2]` `0..0x18`), and for each **not-yet-
+   acquired** father (acquired-test `0x181F:0x7B4(id, power)` `@0x3B996`) whose category
+   byte `[id·6 − 0x69AC]` (per-father table, DGROUP `0x9654`, **stride 6**) equals the
+   target category arg `[bp+8]`, adds the per-father weight from `func_03C41A`
+   (`@0x3B9B7`) and counts it (`[bp-4]`). A sibling `func_03B9E0` does the bare count
+   (no weight). So the Congress scores a category by **Σ weight of its un-acquired
+   fathers**. ⚠ **The `0x9654` father table is runtime-BSS (zeros in the static image)**,
+   so the per-id category/weight *values* can't be byte-read here — they are populated
+   at load from `@FATHERS` (cross-ref §3). **B** (scorer structure); table values runtime.
+3. **Whether category 5 (Independence) ever instantiates a father** — **cannot be settled
+   statically**: the discriminator is the runtime-BSS `0x9654` category column (item 2);
+   needs a memory dump or the `@FATHERS`-load trace. Recorded as runtime-bound.
 
 *(Resolved 2026-06-18: bell pool + bell-cost curve + Congress threshold + the three `@FATHERS` columns = era-band selection weights — now `BYTE_VERIFIED`, §3.)*

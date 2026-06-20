@@ -84,4 +84,13 @@ F10 "Current Colonization Score" (manual menu map). End-game score sequence + Ha
 ## 6. Open questions (TBD)
 1. ~~Locate the score-computation function + accumulator.~~ **Done 2026-06-19** — `func_03A9C0`, accumulator `[0x372]`; scaling/rank now **B**.
 2. ~~Byte-verify the population weights (1/2/4).~~ **Done 2026-06-19** — profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4` at `@0x3A09A..0x3A117` (**B**). Remaining component weights (+5 father, /1000 gold, +1 sentiment, −(diff+1) razed) still behind the paged thunk `0x191F:0x3AA` (`func_03B36A`) — reachable, label-binding pending.
-3. Byte-verify the revolution multipliers (2.0/1.5/1.25) + post-intervention bell bonus (also in the paged component sum).
+3. Byte-verify the revolution multipliers (2.0/1.5/1.25) + post-intervention bell bonus.
+   **Negative finding 2026-06-20 — `func_039EE2` is *not* the site.** It is a display/
+   text-building routine (string concats throughout) whose two score-scalings —
+   `[bp-0x54] = 8 >> n` then `score = base·(8>>n + 8)/8` `@0x3A8B4`, and `100 >> n`
+   `@0x3A790` gated on `[0x5382]&8` — are driven by `n = [bp-0x56] =` **count of
+   non-rebel powers with `PowerRecord[0] & 0x04`** (loop `@0x39F1C`), a *power count*,
+   **not** the declaration-era band. The `×2.0/1.5/1.25/1.125` arithmetic is a
+   coincidence of the `(8>>n+8)/8` form. The true declaration-timing multiplier is
+   therefore **elsewhere** — most likely the real accumulator `func_03A9C0` (§6 item 1)
+   or its paged component, not this display path. Still **TBD** (search narrowed).
