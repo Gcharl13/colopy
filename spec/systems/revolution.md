@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** REF globals `USER-VERIFIED`; SoL gate + Tory mechanics `RECONSTRUCTED`; thresholds `TBD`. **Canonical primary:** `docs/DATA_MODEL.md` (REF globals); `data_extracted/text/GAME_sections.json` independence/Tory keys; `docs/GAME_MANUAL.md`; `spec/systems/king.md`. ⚠ The `[0x53D0]`/`[0x53D2]` meter + `func_03C638` annexation handler (initially mis-filed here) are the **War of Spanish Succession**, not the revolution — see `spec/systems/spanish_succession.md` and `notes/rulings/RULINGS.md` (2026-06-20).
+**Overall confidence:** REF globals `USER-VERIFIED`; **SoL ≥ 50% declare threshold + declaration handler `func_03E984`→`func_03DE46` `BYTE_VERIFIED`** (2026-06-20); Tory mechanics `RECONSTRUCTED`. **Canonical primary:** `docs/DATA_MODEL.md` (REF globals); `data_extracted/text/GAME_sections.json` independence/Tory keys; `tools/rtlink/event_emitters.json` (handle map); `docs/GAME_MANUAL.md`; `spec/systems/king.md`. ⚠ The `func_03C638` annexation handler (and the `[0x53D0]≥75` ceiling gate) are the **War of Spanish Succession**, which shares the `[0x53D0]` SoL meter but is a *separate* event — see `spec/systems/spanish_succession.md` and `notes/rulings/RULINGS.md` (2026-06-20).
 
 ## 1. Purpose & behavior
 When rebel sentiment (Sons of Liberty %) is high enough, the player may declare independence. The Crown then deploys its Royal Expeditionary Force (REF) against the colonies; the player must defeat it (with help from a possible foreign intervention force) to win. Loyalist (Tory) colonists resist; an uprising can occur. Declaring earlier yields a larger score bonus. **RECONSTRUCTED** (manual §"Independence").
@@ -17,10 +17,33 @@ REF counts are **separate globals** (not PowerRecord fields), per `spec/systems/
 | `DGROUP:0x53DE` | u16 | REF Man-O-War | **USER-VERIFIED** | `docs/DATA_MODEL.md` (5) |
 | `DGROUP:0x53E0` | u16 | REF Artillery | **USER-VERIFIED** | `docs/DATA_MODEL.md` (8) |
 | `PowerRecord +0x02` | u8 | `rebel_sentiment_pct` (SoL %) | **USER-VERIFIED** (runtime) | `docs/DATA_MODEL.md` |
+| `DGROUP:0x53D0` | i16 | **national SoL meter** (0..100, the "Bolívar meter") | **BYTE_VERIFIED** | declare gate `@0x3E99E`; +20 Bolívar `@0x3BE64`; init `=0` `@0x75620` |
+| `DGROUP:0x5398` | u16 | **revolting (rebel) power index** — set to the current player on declaration | **BYTE_VERIFIED** | `@0x3E9D8` `[0x5398]=[0x5394]` |
 
 > REF = exactly these 4 unit types (Regulars, Cavalry, Man-O-War, Artillery) — the @UNIT "Cont. Army/Cont. Cav." are the player's revolutionary upgrades, distinct from REF. The Man-O-War "does not appear in American waters until the War of Independence" (manual) — consistent with REF naval slot.
 
-SoL ≥ 50% declare gate, Tory population fraction: **RECONSTRUCTED** (manual/common knowledge); **byte threshold TBD**. (Note: the `[0x53D0] ≥ 50/75` gates found 2026-06-20 are the **Spanish-succession** trigger meter, *not* the SoL declare threshold — see `spanish_succession.md`; the SoL% declare threshold remains genuinely TBD.)
+**SoL ≥ 50% declare threshold — BYTE_VERIFIED (2026-06-20).** The "Declare
+Independence" command handler is **`func_03E984`** (file `0x3E984`, `enter 2`). It
+gates in three steps:
+1. **Already revolting** — `test [0x5382],1; je` → if WoI bit set, emit
+   **`@ALREADYREVOLUTION`** (handle `0x1374`) and return (`@0x3E988`).
+2. **SoL threshold** — **`cmp [0x53D0],0x32` (50); `jge`** (`@0x3E99E`): if the
+   national SoL meter is **< 50**, format it as `%NUMBER0` and emit **`@TOOTORY`**
+   (handle `0x1386`, *"Only %NUMBER0%% of the colonists support the independence
+   movement…"*) then return (`@0x3E9A5..0x3E9BA`). So **50% is the hard declare floor.**
+3. **Confirm & declare** — at SoL ≥ 50 it (multiplayer branch `[0x5381]&0x80` →
+   `@MULTIREV` `0x138E`) sets the **rebel power `[0x5398] := [0x5394]`** (current
+   player, `@0x3E9D8`), shows the **`@DECLARE`** confirm dialog (handle `0x1397`,
+   `@0x3E9F0`) and, on "yes" (`cmp ax,2; je`), calls **`func_03DE46`** (`0x191F:0x356`,
+   `@0x3EA06`) — the WoI declaration that sets `[0x5382]|=1` and emits **`@INDEPENDENCE`**
+   (handle `0x130B`). **B.**
+
+The SoL meter `[0x53D0]` is the same 0..100 "Bolívar meter" that the **Bolívar
+Founding Father** boosts **+20** (cap 100, `add [0x53D0],0x14` `@0x3BE64`). ⚠ Note the
+**War of Spanish Succession** (`func_03C638`/`@SUCCESSION`) *also* auto-fires once when
+the leading power's `[0x53D0]` crosses 50 (and the succession latch `[0x53D2] < 0`,
+`func_03E844 @0x3E8BD`) — a **separate** event sharing the same meter; see
+`spanish_succession.md`. Tory population fraction: still **RECONSTRUCTED**.
 
 ## 3. Formulas & rules
 - REF growth over the game: spend rule (driven by `PowerRecord +0x22`, +18/turn, per `spec/systems/king.md`) → REF globals: **TBD** (trace the writer of `0x53DA..0x53E0`).
@@ -35,12 +58,18 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
 - `data_extracted/text/GAME_sections.json` — `@INDEPENDENCE @PICKINDEPENDENCE @ALREADYREVOLUTION @TORYUPRISING @TORYMAJORITY @TORYMINORITY @TOOTORY @NOWARSDURINGREV @KINGVICTORY`. **B (present)**
 - `docs/GAME_MANUAL.md` §"Independence", revolution score bonus (1x/0.5x/0.25x; pre-1780 bonus). **R**
 - `spec/systems/king.md` — REF = 4 globals; `+0x22` budget. **B**
+- `func_03E984` (file `0x3E984`) — Declare-Independence handler: `@ALREADYREVOLUTION` gate `@0x3E988`, **SoL `< 0x32`→`@TOOTORY` `@0x3E99E`**, rebel-power set `[0x5398]=[0x5394]` `@0x3E9D8`, `@DECLARE` confirm `@0x3E9F0`, `→func_03DE46` `@0x3EA06`. **B**
+- `func_03DE46` (file `0x3DE46`, `0x191F:0x356`) — WoI declaration: `[0x5382]|=1`, emits `@INDEPENDENCE` (handle `0x130B`, `@0x3E104`). **B**
+- `tools/rtlink/event_emitters.json` — handle map: `@TOOTORY=0x1386`, `@ALREADYREVOLUTION=0x1374`, `@DECLARE=0x1397`, `@INDEPENDENCE=0x130B`. **B**
 
 ## 6. Open questions (TBD)
-1. Byte-trace the SoL% declare threshold (is it 50%?). *(2026-06-20: the `[0x53D0]≥50/75`
-   gates initially suspected here were disproved — they drive the **Spanish-succession**
-   annexation `func_03C638`/`@SUCCESSION`, not the revolution; the true SoL declare
-   threshold is still unlocated. See `notes/rulings/RULINGS.md`.)*
+1. ~~Byte-trace the SoL% declare threshold (is it 50%?).~~ **Resolved 2026-06-20 — yes,
+   50%.** Declare handler `func_03E984` rejects with `@TOOTORY` when `[0x53D0] < 0x32`
+   (`@0x3E99E`) and proceeds to the `@DECLARE` confirm → WoI declaration `func_03DE46`
+   at SoL ≥ 50 (§2). `[0x53D0]` = national SoL meter; `[0x5398]` = rebel power. **B.**
+   *(History: an interim trace mis-routed the `[0x53D0]` gate through the
+   Spanish-succession handler `func_03C638`; the `@TOOTORY` evidence settles it — see
+   `notes/rulings/RULINGS.md`.)*
 2. Trace the REF-growth writer (what spends `+0x22` to add REF units).
 3. **War-of-Independence end-game flow — PARTIALLY BYTE_VERIFIED (2026-06-20):** the
    per-turn end-game dispatcher `@0x2391C` gates on the **Bolívar SoL meter `[0x53D0]`

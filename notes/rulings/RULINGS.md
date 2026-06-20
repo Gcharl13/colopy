@@ -3863,3 +3863,17 @@ byte-traced `@SUCCESSION` string wins). `revolution.md` reverted to its prior st
 **the SoL% declare threshold is still genuinely TBD** — the `≥50/75` gates are not it.
 Lesson: re-verify a provisional finding against the *existing* spec before committing;
 the mandated re-verification caught this one cross-file.
+
+**Follow-up / final resolution (same day).** The revert above was itself an
+*over-correction*. The SoL declare threshold **is 50%**, proven by the cleaner,
+more-direct **declare-independence command handler `func_03E984`**: it emits
+**`@TOOTORY`** (*"Only N%% of the colonists support the independence movement"*) when
+**`[0x53D0] < 0x32` (50)** (`@0x3E99E`), and otherwise runs the `@DECLARE` confirm →
+**`func_03DE46`** WoI declaration (`@INDEPENDENCE`). So `[0x53D0]` **is** the national
+SoL meter (0..100, Bolívar `+20`), and **50% is the byte-verified declare floor**
+(`revolution.md`). The subtlety that caused the confusion: the **War of Spanish
+Succession** (`func_03C638`/`@SUCCESSION`) *also* auto-fires once when the leading
+power's `[0x53D0]` crosses 50 (latch `[0x53D2] < 0`, `func_03E844`) — two distinct
+events sharing the same SoL meter. Net: the `[0x53D0]` *identity* (SoL) and the *50%*
+threshold are correct (original instinct); only the claim that `func_03C638` was the
+*revolution* handler was wrong — that one is succession. `revolution.md` B/TBD restored.

@@ -31,18 +31,24 @@ secondary mechanics.
 > static items + the previously all-TBD **terrain_improvement** system, near-complete
 > **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
-> unfound or runtime-only): per-turn Tory-uprising/intervention rolls; the **real**
-> revolution SoL-declare threshold (the `[0x53D0]≥50/75` gates turned out to be
-> Spanish-succession, not it); `0x9408` REF value table (BSS/runtime-only);
-> CC/BUILDING.SS sprite sheets (need PNG inspection).
+> unfound or runtime-only): `0x9408` REF value table (BSS/runtime-only);
+> CC/BUILDING.SS sprite sheets (need PNG inspection); Tory-uprising effect magnitude
+> (unit count) + the WoI-loop call frequency for `func_03CAC6`.
 > **Closed 2026-06-20:** (a) **Spanish-succession** `func_03C638` fully byte-verified —
 > power selection (weakest AI cedes/strongest receives, score `3a+2b+c`), single-player
 > gate, map-tile/unit/colony owner transfer, controller `+0x543F:=2`; emits `@SUCCESSION`
 > (handle `0x128C`). (b) **Lost-City burial `%NUMBER` rolls** (BURIAL2 `10·3d8`, BURIAL3
 > `2·(1d8+2(scout+5))×100`), debug-Cibola path (`[0x5382]&1`), and the `0xA0`/`0xB0`
 > feature-mask reconcile (feature = high nibble `0xF0`, discriminator in helper
-> `0x181F:0x7E0`). **Corrected:** an interim commit had mis-filed the succession meter
-> as a revolution "50% SoL declare threshold" — reverted; see `RULINGS.md` 2026-06-20.
+> `0x181F:0x7E0`). (c) **Revolution SoL declare threshold = 50%** — `func_03E984`
+> rejects with `@TOOTORY` when `[0x53D0] < 0x32` `@0x3E99E`, else `@DECLARE`→`func_03DE46`
+> (`@INDEPENDENCE`); `[0x53D0]`=SoL meter, `[0x5398]`=rebel power; `revolution.md`
+> R/TBD→**B/TBD**. (d) **Per-turn Tory-uprising** `func_03CAC6` (gate
+> `random_int(0,diff+1)≠0`) + **intervention-arrival** `func_03D510` (weighted colony
+> pick) byte-verified (`tory_uprising.md`). (e) **Spanish-succession** `func_03C638`
+> fully verified (power select / asset transfer / `@SUCCESSION`). The succession shares
+> the `[0x53D0]` SoL meter (auto-fires at ≥50) but is a distinct event — one interim
+> commit briefly mis-filed it as the revolution threshold; resolved, see `RULINGS.md`.
 
 > **Audit pass (2026-06-20).** Re-tested the RESOLVED rows' specific byte claims
 > vs the EXE: #1 combat-bonus filler `[0x8D04]` writer `func_007D3E`, #4 tax clamp
