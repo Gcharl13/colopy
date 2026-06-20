@@ -136,9 +136,21 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   **tension == 100 (`0x64`, maxed → war path)** (`@0x45E9E`/`@0x45EB2`), matching
   the raid scan's `≥75` test. So the `0x5B1C` tension is a `[0,100]` per-
   `(settlement-row, power)` anger meter (thresholds 75 hostile / 100 war), separate
-  from the `+0x54F6` alarm array (threshold 128). **The per-action delta
-  *magnitudes* per event type (building near / attacking / missions) — i.e. the
-  callers' `[bp+0xa]` values — remain TBD**; the applier + gates are now **B**.
+  from the `+0x54F6` alarm array (threshold 128).
+- **Per-action tension deltas — BYTE_VERIFIED range (2026-06-20).** `func_045DF2`
+  is reached from **33 call sites** via thunk `0x181f:0xd6c`, each pushing
+  `(delta, power, settlement)` with the settlement almost always the current one
+  `[0x8d52]`. The delta `[bp+0xa]` values span:
+  - **±100 (`0x64`)** — a full max-out / full reset in one step (clamp is `[0,100]`):
+    `+100` for major hostile acts (`@0x486f8`, `@0x4B2E9`, `@0x56DEF`, `@0x58A91`,
+    `@0x61B84`), `−100` for full appeasement (`@0x04870C`).
+  - **small constants** `+1/+2/+3` (`@0x4A2E8`/`@0x4A319`/`@0x4A674`), `±1`
+    (`@0x4857D`/`@0x485A7`/`@0x485E7`), `−4` (`@0x5C41E`, combat region) — minor
+    per-interaction nudges.
+  - **computed deltas** (`[bp-…]`) at the remaining sites, scaled by event severity.
+  So the **applier, its French/Pocahontas halving, the thresholds, and the delta
+  *range* are all B**; the exact event→delta binding for each of the 33 sites
+  (which is "attack", "build adjacent", "missionary", etc.) is the residual.
 - Decay, trade pricing, tribute amounts: **TBD** (`func_03ECF0` adjacency is the
   per-unit confrontation AI per RULINGS — not the price math; do not assert). The
   `[..+0x54F6]` access sites carry only caps `0x20`/`0x60`, the `0x80` threshold,
