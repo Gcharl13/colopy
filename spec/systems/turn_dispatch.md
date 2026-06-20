@@ -2,10 +2,11 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** dispatcher + turn-counter anchors `BYTE_VERIFIED`;
-per-phase ordering partly `RECONSTRUCTED`; case-by-case decode `TBD`.
-**Canonical primary:** `docs/ARCHITECTURE.md` (per-turn loop, dispatchers, anchors),
-`data_extracted/text/NAMES_sections.json` (@NATIONALITY for power order).
+**Overall confidence:** **main turn loop `func_005760`, power iteration order, and
+turn/year cadence `BYTE_VERIFIED`** (2026-06-20); the per-power phase *ordering*
+(inside the two per-power processors `func_03E664`/`func_024A48`) `TBD`.
+**Canonical primary:** `func_005760` (the loop); `docs/ARCHITECTURE.md`;
+`data_extracted/text/NAMES_sections.json` (@NATIONALITY).
 
 ## 1. Purpose & behavior
 Each turn the game iterates active powers and, per power, processes pending events
@@ -13,10 +14,13 @@ Each turn the game iterates active powers and, per power, processes pending even
 viewport/HUD and writes saves at intervals (`docs/ARCHITECTURE.md`). Powers:
 0..3 European players + 4..11 native tribes (`docs/ARCHITECTURE.md`). **B** (iteration scheme).
 
-RECONSTRUCTED per-power sequence (manual/team-doc framing): natives → English →
-French → Spanish → Dutch. The exact European order is the `@NATIONALITY` order
-(English/French/Spanish/Dutch, **B** that this is the index order); confirmation
-that turn processing follows index order is **TBD**.
+**Power order — BYTE_VERIFIED (2026-06-20):** the loop processes the **4 European
+powers in strict index order 0,1,2,3** (English/French/Spanish/Dutch), indexing
+`AIPersonality[idx] = idx·0x34 + 0x540E` and testing the controller byte
+`[idx·0x34 + 0x543F]` (`@0x57C5`/`@0x58AA`/`@0x5929`). **Natives are NOT a separate
+turn pass** — the prior "natives → English → …" framing is superseded; native
+relations are handled within/transitively from each European power's processing,
+not as powers 4..11 in the top loop.
 
 ## 2. State & data
 DGROUP anchors (`docs/ARCHITECTURE.md`, BYTE_VERIFIED):
@@ -26,45 +30,79 @@ DGROUP anchors (`docs/ARCHITECTURE.md`, BYTE_VERIFIED):
 - PowerRecord[N] at `0x8809 + N×0x13C`; UnitRecord[N] at `0x3146 + N×0x1C`;
   AIPersonality[N] at `0x540E + N×0x34`. **B**
 
-Main dispatcher: the architecture doc names overlay dispatchers
-(`func_210d_0d91` / `func_210d_0dab`, file `0x011D91`/`0x011DAB`, BYTE_VERIFIED)
-as the cross-overlay call surface; AI dispatcher `func_04E2D6`, tutorial
-dispatcher `func_020F50` (BYTE_VERIFIED entry points). A dedicated top-level
-turn-phase dispatcher (~27 cases) is **TBD here** — confirm the function and its
-case table before tagging. → `spec/BACKLOG.md`.
+**Main turn loop — `func_005760` (file `0x5760`, `enter 0x16`, ends `retf @0x5BF9`).
+BYTE_VERIFIED.** It is the multi-turn game loop: one turn begins at `0x5836`; at the
+end (`0x5BF4`) it `jmp 0x5836` to run the next turn while the **continue-gate
+`[0x53C2] != 0`** (`@0x5BED`); when the gate clears it `leave/retf`. Called **once**
+from the new-game/load setup machine `func_075FB6` (`@0x76330`, thunk `0x181F:0x546`);
+the gate `[0x53C2]` is armed `@0x76309` at game start. **New-game init:** year
+`[0x538a] = 0x5D4` (**1492**) `@0x757E7`, turn `[0x538e] = 0` `@0x757EF`, season
+`[0x538c] = 0` `@0x757F2`. The end-of-turn / year-advance block is **inline at the
+loop tail** (`0x5A9D..0x5BF9`), run once per turn after all powers.
+
+> There is **no single ~27-case turn-phase dispatcher** — the phases are a
+> straight-line + per-power-processor structure (§3). The "~27-case dispatcher"
+> guess is retired; the 35-entry switch `@0x0D2AC` (and `@0x233D7`/`@0x2C076`) are
+> **keyboard/command routers**, not turn sequencers.
 
 ## 3. Formulas & rules
-- Phase ordering within a power's turn (movement → production → market → king →
-  diplomacy): **TBD** (case order not decoded).
-- **Turn / year advance — located `@0x5A9D` (BYTE_VERIFIED anchor 2026-06-20):** the
-  end-of-turn housekeeping does `inc [0x538e]` (turn counter) `@0x5A9D`, then advances
-  the **year `[0x538a]`** via a **season/half-year counter `[0x538c]`** (toggles 0↔1;
-  year steps when it wraps), with an **era threshold at 1600 (`0x640`)** `@0x5AA1`
-  (the `<1600` branch advances the year differently from `≥1600` — the "2 turns/year
-  early game" vs later cadence; exact rule pending careful decode) and a 1600-reached
-  announcement (`@0x5AB2`). Periodic events fire on `[0x538e] mod 4` / `mod 3`
-  (`@0x5B0F`/`@0x5B1F`); a counter `[0x150]` (cap `0x19`=25) increments every 3rd turn
-  (`@0x5B33`). Turn counter initialised `@0x757EF`.
-- Native-tribe turn processing (powers 4..11): **TBD**.
+
+### Per-power phase structure — BYTE_VERIFIED (call graph) / TBD (intra-order)
+`func_005760` issues, per power, a set of direct calls (thunks resolved); the big
+system functions are **not** called from the top loop — they are reached
+*transitively* from the two per-power processors, so the fine phase ordering lives
+one level down:
+| call from `func_005760` | → function | role |
+|---|---|---|
+| `@0x5866` (`0x181F:0x550`) | `func_056B08` | unit-cleanup |
+| `@0x58E2` (`0x181F:0x668`) | `func_03E664` | **per-power AI/turn processor** |
+| `@0x58E7`/`@0x5A91` (`0x181F:0x62C`) | `func_024A48` | **orders & movement / interactive input-pump** |
+| `@0x59EA` (`0x181F:0x644`) | `func_02F052` | per-power nation/era helper |
+| `@0x5A37` (`0x181F:0x638`) | `func_052F7E` | diplomacy/meeting context |
+| `@0x5AE5` (`0x181F:0x61E`) | `func_02F3A2` | periodic-events driver |
+The system functions (production `0x2D658`, market `0x33C96`/drift `0x305A8`, king
+tax `0x34AE0`, REF `0x3E162`, immigration `0x35D9A`, AI dispatch `0x4E2D6`,
+diplomacy `0x57F4E`) each have 0–1 direct callers — invoked from inside
+`func_03E664`/`func_024A48`. **Mapping each sub-call to its phase is TBD; entry
+points = `func_03E664 @0x3E664` and `func_024A48 @0x024A48`.**
+
+### Turn / year advance — BYTE_VERIFIED (`0x5A9D..0x5ACC`), runs once/turn (gated `[0x53C2]`)
+- `@0x5A9D` `inc [0x538e]` — **turn counter +1 every turn**.
+- **Year cadence (`@0x5AA1` `cmp [0x538a],0x640`=1600):**
+  - **year < 1600 → `inc [0x538a]` directly = 1 turn ⇒ 1 year** (fast early game,
+    Autumn-only).
+  - **year ≥ 1600 →** the **season counter `[0x538c]`** toggles `0→1→0` (`@0x5ABB`
+    `inc`; `@0x5AC6` reset when >1) and the year steps only when it wraps ⇒ **2 turns
+    per year** (Spring/Autumn) from 1600 on.
+- **1600 announcement** at year==1600 & season==0 (`@0x5AB2`, event `0x181F:0x3FE`,
+  `bx=[0x141]`).
+- **Game start = 1492 (`0x5D4`)**, **forced game-end check at 1725 (`0x6BD`)**
+  `@0x5BB5` (sets `[0x82b]=1`).
+- **Periodic events** after the advance: `[0x538e] mod 4 == 0` (`@0x5B0F`); `mod 3`
+  paths (`@0x5B1F` inc `[0x150]` cap `0x19`=25; `@0x5B54` REF/sea-lane edge spawn).
 
 ## 4. UI
 End-of-turn redraw via render chain `func_O514 → O513 → O512`; HUD update; "next
 unit needing orders" prompt loop (manual). Layout `TBD`.
 
 ## 5. Evidence
-- `docs/ARCHITECTURE.md` — per-turn loop; power iteration 0..3 + 4..11; DGROUP anchors; dispatcher functions. **B**
-- `data_extracted/text/NAMES_sections.json` — `@NATIONALITY` index order. **B**
+- `func_005760` (file `0x5760`) — main turn loop: per-turn top `@0x5836`, continue-gate `[0x53C2]` `@0x5BED`, power loop `[bp-0x14]` 0..3, inline end-of-turn/year-advance `0x5A9D`. **B**
+- `func_075FB6` (file `0x75FB6`) — setup machine that calls the loop once (`@0x76330`); new-game year=1492/turn=0/season=0 init (`@0x757E7..0x757F2`). **B**
+- per-power processors `func_03E664` (`0x3E664`), `func_024A48` (`0x024A48`); diplomacy `func_052F7E`; periodic `func_02F3A2`. **B** (call sites)
+- `docs/ARCHITECTURE.md` — per-turn loop framing. **B/R** (power "4..11" framing superseded — natives not a separate pass)
 - `docs/GAME_MANUAL.md` — per-unit orders prompt; end-of-turn flow. **R**
 
 ## 6. Open questions (TBD)
-1. Identify the top-level turn/phase dispatcher and enumerate its ~27 cases.
-   **Ruled out (2026-06-20):** the `func_33C96` switch (`jmp word ptr cs:[bx+0x3a1a]`
-   `@0x33F65`, table `@0x33F6A`) is **not** it — it has only **12 cases** and is a
-   market/Europe **trade-screen** economic/unit-command interpreter (mouse hit-test
-   `0x181F:0x3CA`, page-23 UI helpers), not the headless turn loop. (And the
-   `~0x36814` region I earlier floated as a "dispatch table" is a JMP-FAR trampoline
-   island, not a case table — see `market.md` §3.) The real ~27-case turn-phase
-   dispatcher is still **unlocated**.
-2. Confirm power-processing order (natives first vs interleaved) at the dispatch site.
-3. Map each phase to its BYTE_VERIFIED system function (production `func_02D658`, market `func_0305A8`, king tax `func_034AE0`, etc.).
-4. Turn-counter → in-game-year conversion.
+1. ~~Identify the top-level turn/phase dispatcher (~27 cases).~~ **Resolved
+   2026-06-20** — there is **no single dispatcher**; the loop is `func_005760` with a
+   straight-line set of per-power calls (§2/§3). The `func_33C96` 12-case switch and
+   the `0x0D2AC`/`0x233D7`/`0x2C076` switches are keyboard/command routers, not turn
+   sequencers.
+2. ~~Confirm power order.~~ **Done** — strict European index order 0..3; natives not a
+   separate pass (§1). **B.**
+3. Map each phase to its system function — **the per-power processors `func_03E664`
+   `@0x3E664` and `func_024A48` `@0x024A48` are the entry points to trace** (they
+   invoke production/market/king/REF/immigration/diplomacy/AI internally). **TBD.**
+4. ~~Turn-counter → in-game-year conversion.~~ **Done 2026-06-20** — start 1492
+   (`0x5D4`); 1 turn/year before 1600, 2 turns/year (seasons) from 1600; forced end
+   1725 (`0x6BD`). **B** (§3).
