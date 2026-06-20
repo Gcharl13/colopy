@@ -4,11 +4,11 @@
 > Re-grounded 2026-06-18 from the **real key bodies** (the breadth stub guessed
 > from empty keys and mis-anchored on `@MERCENARY`).
 
-**Overall confidence:** offer text `BYTE_VERIFIED`; **price formula `BYTE_VERIFIED`**
-(wartime + peacetime, traced from `VICEROY.EXE`); offer trigger `BYTE_VERIFIED`;
-force composition `R`. ·
+**Overall confidence:** offer text + **price formula + offer trigger + force
+composition** all `BYTE_VERIFIED` (wartime + peacetime, traced from `VICEROY.EXE`). ·
 **Canonical primary:** `data_extracted/text/GAME_sections.json`; `VICEROY.EXE`
-`func_03E442` (wartime) / `func_03E664` (peacetime).
+`func_03E442` (wartime offer) / `func_03E664` (peacetime offer) /
+`func_03D510` (force landing) / `func_03C4A2` (per-category unit type).
 
 ## 1. Purpose & behavior
 The King offers to sell the player a force of **mercenary soldiers** for gold.
@@ -82,10 +82,43 @@ On *Pay* (`msg_show` returns `2`), debit the buyer's treasury in place
 (`*(int32*)([0x84FC]+0x2A) −= price`, wartime `@0x03E651`) and run the accept
 side-effect `func_03EA42(1)` (spawns the force / `@MERCS` arrival).
 
-- **Force (`%STRING1`):** the offer text is assembled from `count` plus category
-  strings (`str@0x5284`/`0x5268` base, `+0x52A0` for cat A, `+0x52CA` for cat C);
-  the concrete unit types per category are **R** (string-built, unit spawn in
-  `func_03EA42` not yet traced).
+### Force composition (`%STRING1`) — **BYTE_VERIFIED**
+`func_03EA42(1) → func_03D510` is the **shared force-landing routine** (also used
+by the free foreign intervention with arg `0`). For the purchased-mercenary path
+(arg `≠ 0`) it:
+
+1. **Picks the arrival colony** — a **population-weighted random** among up to 10 of
+   the buyer's **coastal** colonies (`ColonyRecord +0x1C & 0x40`), weight = colony
+   size `+0x1F` (`@0x03D528..0x03D5C1`), then scores the best adjacent **beach**
+   tile (`@0x03D5CC..0x03D72A`). This is the colony named in `@MERCS`.
+2. **Lands a `Man-O-War` (unit type 18)** as the carrier at that beach
+   (`@0x03D748` `place_unit(type 0x12)`).
+3. **Loads the troop stack** onto it (`@0x03D8C8` create at sentinel `(-2,-2)` =
+   carried). The **per-category counts are the offer package** (`@0x03D919`
+   `budget = [0x9E46 + cat*2]`, i.e. the same numbers shown in the offer text):
+   - **cat 0** = `[0x9E46]` (`count`) units,
+   - **cat 1** = `[0x9E48]` (category-A flag, 0/1) units,
+   - **cat 3** = `[0x9E4C]` (category-C flag, 0/1/2) units. *(cat 2 is skipped.)*
+4. **Per-category unit type** from `func_03EA10 → func_03C4A2(power, cat)`
+   (`@0x03C4A2`), keyed on the revolution flag `[0x5382]&1` (and the buyer being a
+   human/foreign power, `power<4 && AIPersonality[power]==0`):
+
+   | cat | package word | **wartime** (`[0x5382]&1`) | **peacetime** | AI/default |
+   |-----|--------------|---------------------------|---------------|-----------|
+   | 0 | `[0x9E46]` count | **Continental Army (9)** | **Dragoons (4)** | Regulars (6) |
+   | 1 | `[0x9E48]` A-flag | **Continental Cavalry (7)** | **Dragoons (4)** | Cavalry (8) |
+   | 3 | `[0x9E4C]` C-flag | **Artillery (11)** | **Artillery (11)** | Artillery (11) |
+
+   (Type ids per `viceroy_source/data/unit_classes.c` `@UNIT`.)
+5. **Every spawned land unit is a Veteran** — `UnitRecord +0x17 vet_type := 0x15`
+   (`@0x03D835`; `vet_type` range `0x13..0x1C`, `unit.h`).
+
+So a typical **wartime** King's package is *N Veteran Continental Army* plus
+**either** *1 Veteran Continental Cavalry* **or** *1 Veteran Artillery* (exactly one
+category set in the wartime roll), delivered by a **Man-O-War**; the **peacetime**
+foreign offer is *N Veteran Dragoons* + *1–2 Veteran Artillery*. The `@MERCENARIES`
+`%STRING1` text is built from the same `count`/category words (base `str@0x5284`
+wartime / `0x5268` peacetime, `+0x52A0` cat A, `+0x52CA` cat C).
 
 ## 4. UI
 Offer dialog from `@MERCENARIES` (King speech-bubble framework, `KING.SS`),
@@ -102,10 +135,17 @@ two options *No thank you* / *Pay {%NUMBER0$}*; arrival via `@MERCS`. See
   `@0x03E707..0x03E736` (K=4), 1/21 gate `@0x03E66A`, byte-traced. **B**
 - `random_int(lo,hi)` helper `0x181F:0x04D4`; difficulty `byte[0x53A6]`; buyer
   treasury `*(int32*)([0x84FC]+0x2A)`. **B**
+- `VICEROY.EXE` `func_03D510` (`0x03D510..0x03D947`, force landing) — colony pick
+  `@0x03D528`, Man-O-War lead `@0x03D748`, mercenary per-category budget
+  `@0x03D919`, veteran stamp `@0x03D835`; byte-traced. **B**
+- `VICEROY.EXE` `func_03C4A2` (`0x03C4A2`, via thunk `func_03EA10`/`0x1A1F:0x70`) —
+  per-category unit type by revolution flag `[0x5382]&1`; byte-traced. **B**
+- `viceroy_source/data/unit_classes.c` `@UNIT` (type ids) + `viceroy_source/include/unit.h`
+  (`+0x17 vet_type`). **B**
 - `docs/GAME_MANUAL.md` — King sells mercenaries for gold. **R**
 
 ## 6. Open questions (TBD)
-1. **Force composition** (`%STRING1`) — the concrete unit type/count each category
-   (A `+0x52A0` / C `+0x52CA`) spawns; trace `func_03EA42` (accept side-effect).
+1. Resolve the runtime string pointers `[0x5284]`/`[0x5268]`/`[0x52A0]`/`[0x52CA]`
+   to the exact `%STRING1` wording (unit-type labels) — pointer init not yet traced.
 2. Confirm `random_int(0,6)` / `random_int(0,2)` inclusivity convention of
    `0x181F:0x04D4` (affects the exact min/max gold-per-unit bounds, not the shape).
