@@ -57,15 +57,15 @@ one level down:
 | `@0x5866` (`0x181F:0x550`) | `func_056B08` | unit-cleanup |
 | `@0x58E2` (`0x181F:0x668`) | `func_03E664` | **King/mercenary-offer phase** (peacetime mercenary roll `@0x3E707`, cross-ref `mercenary.md`; body = random rolls + offer dialog, *not* a generic AI processor) |
 | `@0x58E7`/`@0x5A91` (`0x181F:0x62C`) | `func_024A48` | **orders & movement / interactive input-pump** (per-unit orders region, near order dispatch `@0x249CB`) |
-| `@0x59EA` (`0x181F:0x644`) | `func_02F052` | per-power nation/era helper → reaches **colony production** `func_02D658` via `func_02F25F` (`@0x2F25F`, a far-caller of `0x2D658`) |
+| `@0x59EA` (`0x181F:0x644`) | `func_02F052` | **per-power colony/production phase** — zeroes the per-turn bells accumulator (`PowerRecord +0xE := 0` `@0x2F23F`) then loops all colonies (`[0x539E]` count) and, for each owned by the current power (`ColonyRecord +0x1A == power` `@0x2F256`), calls **production `func_02D658`** (`@0x2F25F`, thunk `0x191F:0x950`) |
 | `@0x5A37` (`0x181F:0x638`) | `func_052F7E` | diplomacy/meeting context |
 | `@0x5AE5` (`0x181F:0x61E`) | `func_02F3A2` | periodic-events driver |
-The big system functions (king tax `0x34AE0`, REF `0x3E162`, immigration `0x35D9A`,
-AI dispatch `0x4E2D6`, diplomacy `0x57F4E`) each have **0–1 direct far-callers** —
-they are reached deep inside the per-power processors above (e.g. production
-`0x2D658` ← `func_02F25F` ← the `func_02F052` chain). **The exact phase ordering and
-the full sub-call→phase mapping inside these processors is TBD; entry points are the
-six functions above.**
+So the **production phase is byte-confirmed** = `func_02F052` (per-power colony loop
+→ `func_02D658`). The other big system functions (king tax `0x34AE0`, REF `0x3E162`,
+immigration `0x35D9A`, AI dispatch `0x4E2D6`, diplomacy `0x57F4E`) each have **0–1
+direct far-callers** and are reached deeper inside the per-power processors. **The
+remaining intra-order detail (where king/REF/immigration/AI fire within the
+per-power sequence) is TBD; entry points are the six functions above.**
 
 ### Turn / year advance — BYTE_VERIFIED (`0x5A9D..0x5ACC`), runs once/turn (gated `[0x53C2]`)
 - `@0x5A9D` `inc [0x538e]` — **turn counter +1 every turn**.
