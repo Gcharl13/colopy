@@ -191,9 +191,9 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 3. ~~Trace native trade pricing.~~ **Done 2026-06-20** — buy `max(5·diff+50,
    2·tax)` cap 90 (`@0x5C976..0x5C9A3`, **B**, §3). Remaining: explicit **tribute-gold
    amount** formula (TBD).
-4. Mission conversion `cl&0x10` doubler — **Done** (expert/Jesuit missionary bit;
+4. ~~Mission conversion `cl&0x10` doubler.~~ **Done** (expert/Jesuit missionary bit;
    mechanism **B** §3); exact bit *label* still TBD.
-5. **TribeData `+0x46+power·2`** = per-power native **alarm/attitude seed**
+5. **[Resolved — B]** **TribeData `+0x46+power·2`** = per-power native **alarm/attitude seed**
    (`func_065D26 @0x65DA6`): `random_int(0,14) + (2·difficulty` **iff the power is
    human**, `controller==0` `@0x65DC7`; AI gets +0), saturating at 20. So the human
    starts each tribe more alarmed at higher difficulty (handicap). **B** (formula);

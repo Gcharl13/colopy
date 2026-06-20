@@ -111,6 +111,15 @@ anchors and the string-xref routes:
   through RTLink overlay far-pointer indirection and are **not addressable by offset
   search** in the flat image.
 
+A **second pass (2026-06-20)** using the reconstructed overlay map
+(`tools/rtlink/viceroy_rtlink_map.json`, 31 segments) + the named disassembly also did
+**not** isolate the decompressor: `func_0749E0`/`0x191F:0x928` are config-text parsers;
+`func_008F2A` ("unpack nibble") is a game-data nibble accessor, not MADSPACK; the
+`load_asset` path cited in `docs/COLONY_RENDERER_DECODED.md` lands in the command
+dispatcher and its file offsets use a **different base** than the raw EXE in the
+low/runtime region (`cs:[…]` indirect-call code). So the loader genuinely needs
+methodical per-overlay reconstruction (with offset-base reconciliation) or a dynamic trace.
+
 **To finish the decoder**, one of: (a) reconstruct the RTLink overlay map (resolve
 each overlay's load segment + relocations, then disassemble the overlay that owns the
 loader), or (b) dynamically trace the running game (DOSBox) at the `.SS` fopen. The

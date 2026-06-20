@@ -71,7 +71,11 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
    *(History: an interim trace mis-routed the `[0x53D0]` gate through the
    Spanish-succession handler `func_03C638`; the `@TOOTORY` evidence settles it — see
    `notes/rulings/RULINGS.md`.)*
-2. Trace the REF-growth writer (what spends `+0x22` to add REF units).
+2. ~~Trace the REF-growth writer (what spends `+0x22` to add REF units).~~ **Done —
+   resolved in `ref_growth.md`/`king.md`:** `func_03E162` accrues `royal_money +=
+   (8·diff+10)·2^era`, buys a REF unit at **threshold 1800 (`0x708`)** and spends
+   `+0x22 -= 1800` (`@0x3E271`), slot by ratio (3:1 reg:cav / 4:1 reg:art / 10:1
+   land:naval). **B.**
 3. **War-of-Independence end-game flow — PARTIALLY BYTE_VERIFIED (2026-06-20):** the
    per-turn end-game dispatcher `@0x2391C` gates on the **Bolívar SoL meter `[0x53D0]`
    ≥ 75** (`cmp [0x53D0],0x4B`); game-phase flags `[0x5382]` **bit 0 = WoI declared**,

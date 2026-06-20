@@ -24,7 +24,7 @@ not as powers 4..11 in the top loop.
 
 ## 2. State & data
 DGROUP anchors (`docs/ARCHITECTURE.md`, BYTE_VERIFIED):
-- `0x53A6` — current player / difficulty (byte). **B**
+- `0x53A6` — **difficulty level (0..4)** (byte), *not* current player (resolved 2026-06-20, `difficulty.md` §6.2; current power index = `[0x5394]`). **B**
 - `0x538E` — turn counter (16-bit, BYTE_VERIFIED via king-tax formula). **B**
 - `0x5382` — game flags. **B**
 - PowerRecord[N] at `0x8809 + N×0x13C`; UnitRecord[N] at `0x3146 + N×0x1C`;

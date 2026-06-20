@@ -121,6 +121,13 @@ opening/menu catalogs; layout `TBD`.
    handicap, native attitude, diplomacy demands, action probability all **B** (§3).
    Residual: instruction-level confirm of the §3 "touch points" subset
    (economy/king clusters) and the native field `+0x46` label.
-2. Resolve the `0x53A6` dual role (difficulty vs current player) at read sites.
+2. ~~Resolve the `0x53A6` dual role (difficulty vs current player) at read sites.~~
+   **Resolved 2026-06-20 — `[0x53A6]` is the *difficulty level* (0..4), NOT current
+   player.** All ~150 read sites treat it as a 0..4 value: compared against `4`
+   (`@0x36637`/`@0x3AA20`/`@0x51F6A`), used with `mul` as a difficulty multiplier
+   (`@0x4A73D`/`@0x58315`), written **only at new-game setup** (`@0x705D2`/`@0x706A3`/
+   `@0x7071E`; default `2` `@0x7433C`). It is **never** iterated `0..3` as a per-power
+   index — the **current power index is the separate global `[0x5394]`**. The "dual
+   role" label in `docs/DATA_MODEL.md`/`turn_dispatch.md` is superseded. **B.**
 3. ~~Confirm the score difficulty factor.~~ **Done** — `diff+4 (+1 if≥3, +1 if≥4)`
    `@0x3AA0A` (**B**, see scoring). Indian-destruction penalty still **R**.

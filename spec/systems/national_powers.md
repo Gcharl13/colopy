@@ -135,4 +135,10 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
    (`@0x547A1`), loaded as AI-personality bias axes; `@COUNTRY` number →
    `DGROUP:0x848` byte/nation (`@0x70813`), nation index for setup. Both **B**
    for location; the numbers are **not** gameplay multipliers.
-4. Confirm the power-index ordering is fixed at 0..3 across all record types.
+4. ~~Confirm the power-index ordering is fixed at 0..3 across all record types.~~
+   **Resolved 2026-06-20 — yes, one fixed index `0..3` (English/French/Spanish/Dutch)
+   keys every per-power record:** `AIPersonality[idx]=idx·0x34+0x540E` (controller
+   `+0x543F`), `PowerRecord[idx]=0x8809+idx·0x13C`, the `UnitRecord +0x03` /
+   `ColonyRecord +0x1A` owner nibbles, the per-power alarm/market arrays (`+power·2`),
+   and the strict `0..3` turn-loop iteration (`turn_dispatch.md` §1) + the succession
+   `0..3` score loop all use the same index. **B.**

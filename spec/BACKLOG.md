@@ -65,6 +65,46 @@ secondary mechanics.
 > salutation strings, now fixed), not a formula error; the resolved mechanics are
 > reliable.
 
+## ★ Authoritative Residual Ledger (2026-06-20 certification)
+
+The single source of truth for **what is left**. Every game system's *byte layer* is
+`BYTE_VERIFIED` (`spec/README.md`); the items below are the only open `§6` questions,
+each tagged by **why** it is open. Categories **R/O** are not closeable by static
+disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
+
+**Category R — runtime/BSS-bound (need a memory dump; out of static scope):**
+- `DGROUP:0x9408` REF per-type value table — BSS, runtime-zero in the image (`ref_growth.md`).
+- `DGROUP:0x9654` FF candidate-scorer table — BSS; gates `founding_fathers.md` §6.3
+  (does category 5 instantiate) + per-father effect *magnitudes* (§6.1).
+- `training.md` §6.1 — human-side school teaching rate (UI-driven; AI path is **B**).
+- `tory_uprising.md` §6.3 — Tory-Militia spawn *count* (`[bp-8]`, deep multi-variable; gate/emit **B**).
+- `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
+
+**Category O — overlay/asset-bound (need RTLink overlay-map reconstruction or a DOSBox trace):**
+- BUILDING.SS index→building catalog + CC-NN portrait pixel-confirmation
+  (`index_tables.md` §4, `unit.md` §6.3, `notes/SPRITE_CATALOG.md`). Blocked on the
+  **MADSPACK-2 `mode=4` decoder**; the `.SS` loader/decompressor is overlay-resident and
+  **not statically locatable** (verified 2026-06-20 — `formats/SS.md` §"Loader"). Container
+  layout + codec identity are byte-verified; CC-NN = FF portraits (`@FATHERS`, SPRITE-A).
+
+**Category S — static depth-queue (closeable by disassembly; genuinely not yet traced):**
+- `save.md` §6.1–6.4 — the **SAV write/read format** (the one whole system still untraced).
+- `warehousing.md` §6.2–6.4 — warehouse capacities/+100-per-upgrade, `@CARGO` columns, spoilage timing.
+- `tutorial.md` §6.1–6.3 — `@TUTORIALn`→prose→trigger binding; enabled-flag/step-index; sequencing.
+- `map_system.md` §6.2–6.3 — tile bit-7 meaning + `.MP` record boundaries; `@RESOURCE`→bonus.
+- `immigration.md` §6.3 — recruit-pool slot layout (type/cost/count) + non-artillery cost rule.
+- `events.md` §6.2 — Lost-City bias-cascade exact per-gate probabilities (base roll is **B**).
+- `data/{file_formats,records,tables}.md` — per-column→loader confirmation sweeps.
+
+**Category F — inherently fuzzy AI logic (low value; soft by nature):**
+- `diplomacy.md` — AI willingness thresholds; war-matrix `0x08`/`0x80` bit *labels*.
+- `natives.md` §6.3 — explicit tribute-gold amount formula.
+- `exploration.md` §6.3 — whether rival positions reveal on contact vs shared exploration.
+
+**Closed this certification (2026-06-20):** `0x53A6` = difficulty-level `0..4` (not
+current player; current power = `[0x5394]`) — `difficulty.md` §6.2, `turn_dispatch.md` §2;
+power-index fixed `0..3` across all record types — `national_powers.md` §6.4.
+
 | # | Gap | Disasm entry point(s) | Upgrades spec doc | Notes |
 |---|-----|-----------------------|-------------------|-------|
 | 1 | Combat terrain/fort bonus + capture branch | `func_05CA7E` (decider); `func_007D3E` (bonus filler); ladder at `func_05B2C2` | `systems/combat.md` §3/§7 | Land odds `ATK/(ATK+DEF)` **B**; demotion ladder **B**; **terrain/fort bonus now B** (2026-06-19): `func_007D3E` colony+2/fort+4/×2/river+(n+1)·2/open-terrain = `$TERRAIN` "Defensive" col (forests 2/Hills 4/Mountains 6). **Capture branch RESOLVED 2026-06-20:** func_05B2C2 seizes loser types {0 Colonists/0xA Treasure/0xC Wagon} via owner-reassign (0x181F:0x894 @0x5B4C7); ship-victor-without-room destroys. Remaining: `+0x17==0x18` override runtime check. |
