@@ -29,6 +29,7 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x1C` | constant `0x40` across colonies (likely warehouse base/config) | **ANCHOR_VERIFIED** | inspection |
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
+| `+0x8A` | `buildings_present[]` bit-array (1 bit per building id; the `building_bit(n)` source) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)` |
 | `+0x9A` | `stockpile` u16[16] (NAMES `@CARGO` order) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime) |
 | `+0xBA` | `hammers` (building-progress accumulator) u16 | **ANCHOR_VERIFIED** | `docs/DATA_MODEL.md` |
 | `+0xC2` | `rebel_dividend` s32 (SoL fraction numerator) | **BYTE_VERIFIED** | read @ `0x8531` (`sol_membership_pct`) |
@@ -71,6 +72,24 @@ multipliers, the `10−difficulty` divisor, and the gates are byte-verified from
 operand bytes. The per-turn driver `colony_turn_update` (file `0xA222..0xA6A1`)
 zeroes the 20-good accumulator, runs the 3×3 ring through `compute_terrain_yield`,
 then applies the 5 raw→finished chains (Ore→Tools, etc.).
+
+### Building presence & factory tier — **BYTE_VERIFIED** (`ColonyRecord +0x8A` bitmap)
+Each colony tracks which buildings it has in the per-colony bit-array at
+`ColonyRecord +0x8A` (one bit per building id; `building_bit(n)` above is a read of
+this array). Accessors:
+- `func_0085B2` `test_bit_at_8a(n)` — getter (used by the production gates).
+- `func_0085D6` `set_or_clear_bit_at_8a(n, op)` — `op!=0` sets, `op==0` clears;
+  both compute `*(0x8542) + 0x8A + n/8` and mask `1 << (n&7)`.
+
+A building **chain** (e.g. Weaver's House → Weaver's Shop → Textile Mill) is walked
+by `count_building_chain_present` (`@0x864E`): from a start link it follows the
+signed-byte next-link table `byte[idx*12 + 0x8F86]` (negative = end), tallying each
+link whose colony bit is set via `func_00863E → func_00860E` (the `[0x8DC6]`-scoped
+test). The caller treats **`count > 2`** as the *factory present* condition
+(`@0x8EA9 CMP ax,2 / JLE`) — i.e. the 3rd link present ⇒ factory-tier yield
+(Henry-Hudson-style ×2 manufacturing). This per-colony bitmap (not the
+`PowerRecord +0x07` FF bitmask) is the subsystem the build-menu consults for
+Adam-Smith/Stuyvesant constructability gating; see `founding_fathers.md` §3 note.
 
 ### Sons of Liberty % — **BYTE_VERIFIED** (`sol_membership_pct`, file `0x8524..0x85B1`)
 ```

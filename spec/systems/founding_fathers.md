@@ -147,6 +147,21 @@ literal-immediate scans don't catch).
 has-father site (build-availability tables / inline computed masks); locating those is
 the remaining FF work.
 
+**Negative result (byte-grounded, 2026-06-20).** Bits **0 (Smith), 3 (Stuyvesant),
+13 (Drake), 21 (Penn)** appear in **none** of the 50 `0x181F:0x7B4` (has-father)
+call sites — verified by disassembling the `push imm8` (bit) argument at every
+site (`capstone`, all 50 enumerated). They are also **not** reached by a direct
+FF-bitmask test: a full-image scan finds no `TEST byte[reg+0x07], 0x01/0x08` and
+no `MOV al, byte[reg+0x07]` followed by `AND/TEST 0x01/0x08`. So these four are
+gated **without** consulting `PowerRecord +0x07` at the use-site. The likely
+mechanism is the **per-colony building-presence bitmap** (`ColonyRecord +0x8A`,
+see `colony.md` §buildings): factory-tier is recognized by walking the building
+chain and testing `count > 2` (`@0x8EA9 CMP ax,2 / JLE`), and the build-menu
+overlay that decides *constructability* (Smith/Stuyvesant) reads that subsystem,
+not the FF helper. Pinning the exact build-menu read is the remaining work
+(narrowed search: the colony-screen build-list overlay, accessors `func_0085B2`
+test / `func_0085D6` set-clear / `func_00863E→00860E` chain test).
+
 ## 4. UI
 F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.SS` plates (asset attribution TBD). See `docs/ADVISOR_REPORTS_AUDIT.md`.
 
