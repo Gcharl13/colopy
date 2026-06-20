@@ -21,6 +21,9 @@ NAME = {int(f["file_offset"], 16): f["name"] for f in FUNCS
 GLOBALS = {int(k, 16): v for k, v in SYM["globals"].items()}
 WIN = {n: (int(d["base"], 16), int(d["stride"], 16)) for n, d in SYM["record_windows"].items()}
 FIELDS = {r: {int(k, 16): v for k, v in fl.items()} for r, fl in SYM["record_fields"].items()}
+# span/array-aware field layout: rec -> sorted [(off, name, elemsize, count)]
+META = {r: sorted((int(k, 16), v[0], v[1], v[2]) for k, v in fm.items())
+        for r, fm in SYM.get("field_meta", {}).items()}
 TABLE = {"UnitRecord": "g_unit_table", "AIPersonality": "g_ai_table",
          "NativeSettlement": "g_settle_table", "PowerRecord": "g_power_table",
          "ColonyRecord": "g_colony_table"}
@@ -35,9 +38,13 @@ def addr_name(v):
             return TABLE[rec]
         if base < v < base + stride:
             off = v - base
+            # span/array-aware: find the field whose [foff, foff+elem*count) covers off
+            for foff, name, elem, count in META.get(rec, []):
+                if foff <= off < foff + elem * count:
+                    if count > 1:
+                        return f"{TABLE[rec]}__{name}[{(off - foff) // elem}]"
+                    return f"{TABLE[rec]}__{name}"          # scalar (absorbs u16/u32 inner bytes)
             fl = FIELDS.get(rec, {})
-            if off in fl:
-                return f"{TABLE[rec]}__{fl[off]}"
             below = [o for o in fl if o < off]
             if below:
                 o = max(below); return f"{TABLE[rec]}__{fl[o]}_p{off-o:x}"

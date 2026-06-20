@@ -1717,9 +1717,9 @@ int func_003E40_logic_sz_174(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t 
 
                 int t = ((r_ax_id * 9) + count) * 2;
 
-                int di = (int16_t)DG16(t + g_settle_table__alarm_by_power);
+                int di = (int16_t)DG16(t + g_settle_table__alarm_by_power[0]);
                 if (di < 0) di = 0;
-                DG16(t + g_settle_table__alarm_by_power) = (uint16_t)di;
+                DG16(t + g_settle_table__alarm_by_power[0]) = (uint16_t)di;
                 di >>= 5;
                 if (di > 3) di = 3;
 
@@ -1819,11 +1819,11 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
 
     if (owner != (int16_t)DG16(g_active_human_player) && DG16(0x53A2) == 0) {
         int pw = (int16_t)DG16(g_active_human_player);
-        variant = (DG8(rec + pw + g_colony_table__muskets_stock_p6) - 1) & 3;
-        pop = DG8(rec + pw + g_colony_table__muskets_stock_p2);
+        variant = (DG8(rec + pw + g_colony_table__stockpile_9a[18]) - 1) & 3;
+        pop = DG8(rec + pw + g_colony_table__stockpile_9a[16]);
         if (pop == 0) {
             pop = 1;
-            DG8(rec + (int16_t)DG16(g_active_human_player) + g_colony_table__muskets_stock_p2) = 1;
+            DG8(rec + (int16_t)DG16(g_active_human_player) + g_colony_table__stockpile_9a[16]) = 1;
         }
     }
 
@@ -1862,7 +1862,7 @@ int func_004314_colony_blit(uint16_t idx, int sx, int sy,
         }
         if (name_flag) {
             vid_text_color(0xF);
-            vid_text_xy((const char *)&DG8(rec + g_colony_table__map_y_p1), sx + 2, sy + 0x10);
+            vid_text_xy((const char *)&DG8(rec + g_colony_table__name[0]), sx + 2, sy + 0x10);
         }
     }
     if ((int16_t)metric <= 0x19)
@@ -5990,7 +5990,7 @@ int func_00860E_logic_sz_15(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     if ((int16_t)arg1_bp_08 < 0)
         return 0;
     {
-        uint8_t byte = DG8(g_colony_table__bits_at_84 + (unsigned)arg0_bp_06 * 0xCA
+        uint8_t byte = DG8(g_colony_table__bits_at_84[0] + (unsigned)arg0_bp_06 * 0xCA
                                          + ((int16_t)arg1_bp_08 >> 3));
         return byte & (1 << (arg1_bp_08 & 7));
     }
@@ -7125,7 +7125,7 @@ int func_00A6A2_colony_sz_130(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
             int16_t ny = (int16_t)((uint8_t)ctx_local[1] - cy + (int16_t)arg1_bp_08);
             int r = (int16_t)find_pair_in_table_C8_DE((uint16_t)nx, (uint16_t)ny);
             if (r >= 0 &&
-                (int8_t)DG8(g_colony_table__tile_state_70 + (unsigned)(uint16_t)r + (unsigned)j * 0xCA) >= 0)
+                (int8_t)DG8(g_colony_table__tile_state_70[0] + (unsigned)(uint16_t)r + (unsigned)j * 0xCA) >= 0)
                 flags |= 0x40;
         }
         }
@@ -9315,7 +9315,7 @@ int func_00B31A_logic_sz_77(uint16_t arg0_bp_06, uint16_t arg1_bp_08, uint16_t a
 
     uint16_t keep_mask = 0x00F0;
     int      byte_off  = (int)(int16_t)arg1_bp_08 >> 1;
-    uint8_t near *cell = (uint8_t near *)(g_unit_table__cargo_kind_packed + arg0_bp_06 * 0x1C + byte_off);
+    uint8_t near *cell = (uint8_t near *)(g_unit_table__cargo_kind_packed[0] + arg0_bp_06 * 0x1C + byte_off);
     uint16_t old_byte  = *cell;
     uint16_t value     = arg2_bp_0A;
     if (arg1_bp_08 & 1) {
@@ -9691,7 +9691,7 @@ int is_arg2_negative(uint16_t power_idx_bp_06, uint16_t ff_bp_08)
         return 0;
 
     {
-        uint8_t byte = DG8(g_power_table__ff_owned_bitmap + power_idx_bp_06 * 0x13C + ((int16_t)ff_bp_08 >> 3));
+        uint8_t byte = DG8(g_power_table__ff_owned_bitmap[0] + power_idx_bp_06 * 0x13C + ((int16_t)ff_bp_08 >> 3));
         return (uint8_t)(byte & (1u << (ff_bp_08 & 7)));
     }
 }
@@ -9946,7 +9946,7 @@ int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot)
         return -1;
 
     int16_t half = slot >> 1;
-    uint8_t packed = DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed + half));
+    uint8_t packed = DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed[0] + half));
     if (slot & 1)
         return (int16_t)(packed >> 4) & 0xF;
     else
@@ -9956,20 +9956,20 @@ int16_t func_00B2A2_cargo_slot_good(int16_t unit, int16_t slot)
 int16_t unit_table_3154_byte(int16_t unit, int16_t slot)
 {
 
-    return (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty + slot));
+    return (int16_t)DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty[0] + slot));
 }
 
 void func_00B304_cargo_slot_set_amount(int16_t unit, int16_t slot, int16_t qty)
 {
 
-    DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty + slot)) = (uint8_t)qty;
+    DG8((uint16_t)(unit * 0x1C + g_unit_table__cargo_qty[0] + slot)) = (uint8_t)qty;
 }
 
 void func_00B31A_cargo_slot_set_good(int16_t unit, int16_t slot, int16_t good)
 {
     uint16_t mask = 0xF0U;
     int16_t  half = slot >> 1;
-    uint16_t addr = (uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed + half);
+    uint16_t addr = (uint16_t)(unit * 0x1C + g_unit_table__cargo_kind_packed[0] + half);
     uint8_t  packed = DG8(addr);
     if (slot & 1) {
         mask = 0x0FU;
@@ -15210,7 +15210,7 @@ void naval_loc_text(char *buf, int x, int y, int col, int flag)
     }
     DG16(0x8DC6) = (uint16_t)cid;
     if (cid >= 0) {
-        strcat(buf, (const char *)&DG8(g_colony_table__map_y_p1 + (unsigned)cid * 0xCA));
+        strcat(buf, (const char *)&DG8(g_colony_table__name[0] + (unsigned)cid * 0xCA));
 
         return;
     }
@@ -20306,8 +20306,8 @@ int func_02EB1C_logic_sz_10(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     int cid = (int16_t)arg0_bp_06;
     int pw  = (int16_t)arg1_bp_08;
     uint8_t owner = COLREC_B(cid * 0xCA + g_colony_table__population);
-    COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p2) = owner;
-    COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p6) =
+    COLREC_B(cid * 0xCA + pw + g_colony_table__stockpile_9a[16]) = owner;
+    COLREC_B(cid * 0xCA + pw + g_colony_table__stockpile_9a[18]) =
         (uint8_t)overlay_call_181F_0B14(arg0_bp_06, 0);
     return 0;
 }
@@ -20318,7 +20318,7 @@ int func_02EB46_logic_sz_13(uint16_t arg0_bp_06, uint16_t arg1_bp_08)
     uint8_t pw = (uint8_t)arg1_bp_08;
     if (COLREC_B(cid * 0xCA + COL_OWNER_5D60) == pw) return 1;
     if (g_w53A2 != 0) return 0;
-    if (COLREC_B(cid * 0xCA + pw + g_colony_table__muskets_stock_p2) != 0) return 1;
+    if (COLREC_B(cid * 0xCA + pw + g_colony_table__stockpile_9a[16]) != 0) return 1;
     return 0;
 }
 
@@ -20764,7 +20764,7 @@ void king_process_power_events(void)
                 int slot = find_landing_slot(u[U_XPOS_3144 - UNIT_BASE_3144],
                                              u[U_YPOS_3145 - UNIT_BASE_3144]);
                 if (slot >= 0) {
-                    void *colrec = DGROUP_PTR(g_colony_table__map_y_p1 + slot * 0xCA);
+                    void *colrec = DGROUP_PTR(g_colony_table__name[0] + slot * 0xCA);
                     msg_set_ptr(1, colrec, 0);
                 } else {
 
@@ -21535,7 +21535,7 @@ extern int16_t g_ref_artillery_53E0;
 
 #define REF_ARM_TYPE_9408 0x9408
 
-#define COL_RECORD_5D48  g_colony_table__map_y_p1
+#define COL_RECORD_5D48  g_colony_table__name[0]
 
 extern void  ui_redraw_power(int power);
 extern void  msg_set_int(int slot, int value);
@@ -25443,7 +25443,7 @@ extern int     ff_owned(int ff_id, int power);
 void ff_set_owned_bit(int power, int ff_id, int set)
 {
     uint8_t  bit = (uint8_t)(1 << (ff_id & 7));
-    unsigned off = g_power_table__ff_owned_bitmap
+    unsigned off = g_power_table__ff_owned_bitmap[0]
                  + (unsigned)power * POWER_RECORD_STRIDE
                  + ((unsigned)ff_id >> 3);
     if (set)
@@ -26965,11 +26965,11 @@ int func_040608_op_sz_78(uint16_t arg0_bp_06)
 {
     uint16_t rec = arg0_bp_06 * UNIT_STRIDE;
 
-    G8(rec + g_unit_table__class_profession) -= 0x14;
-    if (G8(rec + g_unit_table__class_profession) >= 0x14)
+    G8(rec + g_unit_table__cargo_qty[5]) -= 0x14;
+    if (G8(rec + g_unit_table__cargo_qty[5]) >= 0x14)
         return 0;
 
-    G8(rec + g_unit_table__class_profession) = 0;
+    G8(rec + g_unit_table__cargo_qty[5]) = 0;
     G8(rec + UNIT_TYPE) = 0;
 
     if (G8(rec + g_unit_table__vet_type) == 0x18)
@@ -27207,7 +27207,7 @@ extern uint8_t g_flags_5382;
 #define COL_FLAG_TABLE_5D62  COL_FLAG_TABLE_5D62
 #define COL_FLAG_INTERVENE   0x40
 
-#define COL_RECORD_TABLE_5D48  g_colony_table__map_y_p1
+#define COL_RECORD_TABLE_5D48  g_colony_table__name[0]
 
 extern void    colony_select(int colony_idx);
 extern void    ui_set_channel(int mode);
@@ -27734,7 +27734,7 @@ int func_04B308_confront_native(uint16_t unit , uint16_t x ,
             (func_007F34_logic_sz_27(DG16(g_current_player), (uint16_t)tribe) & 0x20) &&
             DG8(0x917C + owner) < DG8(0x917C + DG16(g_current_player))) {
             int pbx = owner * 0x13C;
-            int hi  = DGS16(pbx + g_power_table__gold_p2);
+            int hi  = DGS16(pbx + g_power_table__gold);
             if (hi > 0 || (hi == 0 && DG16(pbx + g_power_table__gold) >= 0x5DC)) {
                 if (func_00C322_rtl_sz_63(0, 4) != 0 ||
                     (int8_t)DG8(np + 5) >= 0) {
@@ -28846,8 +28846,8 @@ void ovl_deselect_fx(int x, int y) { (void)x; (void)y;  }
 #define U_DESTX(bx)    DG8 (U_GOTOX_314D + (bx))
 #define U_DESTY(bx)    DG8 (U_GOTOY_314E + (bx))
 #define U_MOVES(bx)    DG8 (UNIT_CARGO_3150 + (bx))
-#define U_VET2(bx)     DG8 (g_unit_table__cargo_qty_p1 + (bx))
-#define U_VET3(bx)     DG8 (g_unit_table__cargo_qty_p2 + (bx))
+#define U_VET2(bx)     DG8 (g_unit_table__cargo_qty[1] + (bx))
+#define U_VET3(bx)     DG8 (g_unit_table__cargo_qty[2] + (bx))
 #define U_DELAY(bx)    DG8 (U_TURN_315A + (bx))
 #define U_CARGO0(bx)   DG8 (g_unit_table__vet_type + (bx))
 #define UNIT_STRIDE 0x1C
@@ -30779,7 +30779,7 @@ bookkeep:
             else
                 rt_emit_long(DG16(0x2DCA));
             format_to_buffer_2D54(
-                (const char *)DG_PTR(g_colony_table__map_y_p1 + (unsigned)occ_colony * 0xCA));
+                (const char *)DG_PTR(g_colony_table__name[0] + (unsigned)occ_colony * 0xCA));
             func_002892_logic_sz_30(1, 0x78, 0);
         }
 
@@ -31471,7 +31471,7 @@ tail:
 #define NS_Y(bx)       DG8 (g_settle_table__y + (bx))
 #define NS_OWNER(bx)   DG8 (g_settle_table__owner + (bx))
 #define NS_MISSION(bx) DG8 (g_settle_table__mission + (bx))
-#define NS_TENSION(bx) DGS16(g_settle_table__alarm_by_power + (bx))
+#define NS_TENSION(bx) DGS16(g_settle_table__alarm_by_power[0] + (bx))
 
 #define TRIBE_ALARM(row)  DGS16(0x5B1C + (row) * 2)
 
@@ -40773,7 +40773,7 @@ void far *func_05FEA0_colony_record_for_tile_slot(uint16_t slot)
                                  U16(U16(g_current_nation) * 2 - 0x7C6C));
     }
 
-    return (void far *)MK_FP( 0, (uint16_t)(stored * 0xCA + g_colony_table__map_y_p1));
+    return (void far *)MK_FP( 0, (uint16_t)(stored * 0xCA + g_colony_table__name[0]));
 }
 
 int func_05FEF4_unit_adjacent_to_active_colony(uint16_t arg0_mode,

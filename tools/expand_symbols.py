@@ -27,19 +27,34 @@ SYM["record_windows"] = {
 }
 HDR = {"UnitRecord":"unit.h","AIPersonality":"ai_personality.h",
        "NativeSettlement":"native.h","ColonyRecord":"colony.h","PowerRecord":"power.h"}
-FIELD_LINE = re.compile(r"^\s*(?:const\s+)?u?int\d+_t\s+(\w+)(?:\[\d+\])?\s*;\s*/\*\s*\+0x([0-9a-fA-F]+)")
-fields = {}
+# capture name, optional [count], type-width, offset
+FIELD_LINE = re.compile(
+    r"^\s*(?:const\s+)?(u?int(\d+)_t|char)\s+(\w+)(?:\[(\d+)\])?\s*;\s*/\*\s*\+0x([0-9a-fA-F]+)")
+fields = {}        # rec -> {offhex: name}            (back-compat)
+meta = {}          # rec -> {offhex: [name, elemsize, count]}  (span/array aware)
 for rec, hdr in HDR.items():
-    fl = {}
+    fl, ml = {}, {}
     for line in show(f"viceroy_source/include/{hdr}").splitlines():
         m = FIELD_LINE.match(line)
-        if m and not m.group(1).startswith("pad"):
-            fl.setdefault(f"0x{int(m.group(2),16):02X}", m.group(1))
-    fields[rec] = fl
+        if not m or m.group(3).startswith("pad"):
+            continue
+        bits = int(m.group(2)) if m.group(2) else 8
+        elem = bits // 8
+        count = int(m.group(4)) if m.group(4) else 1
+        name, off = m.group(3), int(m.group(5), 16)
+        key = f"0x{off:02X}"
+        fl.setdefault(key, name)
+        ml.setdefault(key, [name, elem, count])
+    fields[rec], meta[rec] = fl, ml
+# manual: ColonyRecord name string (the pad_02[0x18] block)
+meta.setdefault("ColonyRecord", {}).setdefault("0x02", ["name", 1, 0x18])
+fields.setdefault("ColonyRecord", {}).setdefault("0x02", "name")
 for rec, fl in SYM.get("record_fields", {}).items():       # keep my hand fields too
     for k, v in fl.items():
         fields.setdefault(rec, {}).setdefault(k, v)
+        meta.setdefault(rec, {}).setdefault(k, [v, 1, 1])
 SYM["record_fields"] = fields
+SYM["field_meta"] = meta
 
 # (2) scalar globals: dgroup_map whitelist x #define names --------------------
 dgm = json.loads(show("viceroy_source/docs/dgroup_map.json"))
