@@ -50,7 +50,8 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
     3100–5000; without: `100·(20+1d20)` = 2100–4000. *(Corrects an earlier draft that
     cited the unrelated `[bp-0x36]` count.)*
   - **n=9 (survivors):** non-gold — adds colonist(s) (`@0x6180F`).
-  The **explorer bonus `s`** (`[bp-0x34]`) and **difficulty** scale the magnitude.
+  The **Seasoned-Scout bonus `s`** (`[bp-0x34]`, 0 or 1) scales n=2/n=3 (difficulty
+  does **not** enter these reward rolls).
   - **Message substitution — BYTE_VERIFIED:** `%NUMBER0` (immediate gold) = `[bp-0x10]`
     (`@0x618A1`, `fmt_int32` slot 0); **`%NUMBER1` (treasure-unit worth) = `[bp-0x32] × 100`**
     (`@0x618B1` `imul ax,[bp-0x32],0x64`, slot 1) — i.e. the treasure unit stores
