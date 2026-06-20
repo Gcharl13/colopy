@@ -67,8 +67,20 @@ init `0x2D`, is a different profession/assignment datum — not the expertise cl
   University upgrades raise the **tier cap**: a building of level *L* can teach only
   professions whose `@JOB` column-3 tier `≤ L` (S/C/U = 1/2/3, §2). Teaching copies
   the teacher's expertise (`+0x17`) onto a student colonist.
-- The **per-turn teaching rate / turns-to-graduate** byte mechanic is **TBD** (entry
-  point: the colony-turn update path that writes `UnitRecord +0x17` from a teacher).
+- **Building ids — BYTE_VERIFIED:** Schoolhouse `0x0C`, College `0x0D`, University
+  `0x0E` (bits 12/13/14 in `ColonyRecord +0x84`/`+0x8A` building bitmaps).
+- **AI-side school promotion — BYTE_VERIFIED (2026-06-20):** in the AI economic turn
+  `func_051EF4`, a school gate `@0x052959` (counts schoolhouse id `0x0C` via thunk
+  `0x181F:0x8BC`, gated on the AI phase flag `[0x5382]&1`; **no school ⇒ skip** the
+  block `@0x05296D jmp 0x52D3D`), then promotes a pooled colonist by copying a class
+  byte into `UnitRecord +0x315B` (`@0x052710`, target class `0x1C`) — **probabilistic
+  per turn** (`random_int` rolls `@0x05260E/@0x05262B`) with a gold cost debited from
+  `PowerRecord +0x2A`. So the AI path is a per-turn *chance*, not a fixed counter.
+- The **human-side deterministic per-turn teaching rate / turns-to-graduate** byte
+  mechanic remains **TBD** — no distinct human teaching function survives in the
+  annotated disasm (likely folded into a UI-driven teacher-assignment flow whose
+  message-key call sites didn't survive the xref artifacts; closest anchors
+  `func_0317CC`/`func_0318D2` colony-screen profession code).
 
 ### Native learning ("live among the Indians") — ruleset **B**, grant site **TBD**
 From the `@LEARN*` bodies + the player-aid chart (skills marked `*` are
@@ -83,7 +95,12 @@ Indian-learnable):
   converts** already know native ways (`@TEACHCONVERT`).
 - **Each village teaches only once** (`@LEARNALREADY`).
 - On success (`@LEARNDONE` *"become a master {%STRING1}"*) the colonist's expertise
-  `+0x17` is set to the village's skill. The grant byte-site is **TBD**.
+  `+0x17` is set to the village's skill. **Grant site BYTE_VERIFIED (2026-06-20):**
+  `@0x04A782` writes the learned profession into `UnitRecord +0x315B`, then
+  `@0x04A78A or [bx+3],2` stamps the **"already taught" flag = NativeSettlement +0x03
+  bit `0x02`** (`[0x8D4A]` = active settlement) — the byte mechanism behind
+  `@LEARNALREADY` (each village teaches once). **B.** The per-class success roll (the
+  `@LEARNSLOW` slow-learner gate) is the remaining detail.
 
 ### Veteran promotion / demotion on combat — **B** (demotion ladder)
 The combat consequence applier `func_05B2C2` adjusts the expertise `+0x17`:
