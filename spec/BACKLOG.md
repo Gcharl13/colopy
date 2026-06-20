@@ -32,9 +32,13 @@ secondary mechanics.
 > **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
 > unfound or runtime-only): per-turn Tory-uprising/intervention rolls; Lost-City
-> burial `%NUMBER` rolls; revolution SoL-declare threshold; spanish-succession
+> burial `%NUMBER` rolls; spanish-succession
 > power-selection; Lost-City feature `0xA0`-vs-`0xB0` reconcile; `0x9408` REF value
 > table (BSS/runtime-only); CC/BUILDING.SS sprite sheets (need PNG inspection).
+> **Closed 2026-06-20:** revolution **SoL-declare threshold = 50%** (`cmp,0x32`
+> `@0x3E8BD`) byte-verified — meter `[0x53D0]` (0..100), rebel-power latch `[0x53D2]`
+> (`-1`=none), forced ceiling 75 `@0x2391C`, Bolívar FF `+20` `@0x3BE64`; `revolution.md`
+> bumped R/TBD→**B/TBD**.
 
 > **Audit pass (2026-06-20).** Re-tested the RESOLVED rows' specific byte claims
 > vs the EXE: #1 combat-bonus filler `[0x8D04]` writer `func_007D3E`, #4 tax clamp
