@@ -4,8 +4,8 @@
 > `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
 
 **Overall confidence:** record stride + fields + **per-tile production formula**
-+ **Sons-of-Liberty %** `BYTE_VERIFIED`; per-turn hammers accumulation
-`RECONSTRUCTED`; warehouse spoilage `TBD`. **Last updated:** 2026-06-18.
++ **Sons-of-Liberty %** + **hammers/build-progress field** `BYTE_VERIFIED`;
+building-completion check + warehouse spoilage `TBD`. **Last updated:** 2026-06-20.
 **Primary evidence:** `docs/DATA_MODEL.md` (ColonyRecord, runtime-verified),
 `viceroy_source/src/colony/{turn_update,production_support,sol_tory}.c`
 (full byte-traced bodies), `data_extracted/text/NAMES_sections.json`.
@@ -30,8 +30,9 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
 | `+0x8A` | `buildings_present[]` bit-array (1 bit per building id; the `building_bit(n)` source) | **BYTE_VERIFIED** | accessors `func_0085D6` (set/clear) / `func_0085B2` (test) compute `*(0x8542)+0x8A + n/8`, mask `1<<(n&7)` |
-| `+0x9A` | `stockpile` u16[16] (NAMES `@CARGO` order) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime) |
-| `+0xBA` | `hammers` (building-progress accumulator) u16 | **ANCHOR_VERIFIED** | `docs/DATA_MODEL.md` |
+| `+0x9A` | per-good colony amount u16[**20**] (goods 0..0x13: 16 `@CARGO` tradables + Hammers/Crosses/Bells/Flags); array spans `+0x9A..+0xC0` | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` (runtime); good order via `sol_tory` `colony_query(0x12)`=Bells |
+| `+0xB8` | `muskets` (good `0xF` slot) | **BYTE_VERIFIED** | `auto_manage.c @0x548E9` arms defender: `col[+0xB8]≥200`, `−=50` |
+| `+0xBA` | `hammers` / build progress (good `0x10` slot) u16 | **BYTE_VERIFIED** | array index `0x10` (`+0x9A+0x20`); supersedes the off-by-one `+0xB8` lead |
 | `+0xC2` | `rebel_dividend` s32 (SoL fraction numerator) | **BYTE_VERIFIED** | read @ `0x8531` (`sol_membership_pct`) |
 | `+0xC6` | `rebel_divisor` s32 (SoL fraction denominator) | **BYTE_VERIFIED** | read @ `0x8539` |
 
@@ -129,15 +130,33 @@ Crossing thresholds fires the `REBELMAJORITY` (≥50%, `@0x2DB29`) / `REBELUNANI
 (≥100%, `@0x2DB6E`) / `TORYMINORITY` (<95%) / `TORYMAJORITY` (<50%) / `SONSUP`/
 `SONSDOWN` messages and feeds the per-nation `PowerRecord +0x02 rebel_sentiment_pct`.
 
+### Hammers / build progress — field **BYTE_VERIFIED**, completion site **TBD**
+Building progress is a slot in the **per-good colony amount array at `ColonyRecord
++0x9A`** (u16, stride 2) — *not* a standalone field. The array holds **20 goods
+(0..0x13)**: the 16 `@CARGO` tradables (0..0xF) followed by the 4 internal goods
+**`0x10`=Hammers, `0x11`=Crosses, `0x12`=Liberty Bells, `0x13`=Flags**, so the array
+runs `+0x9A..+0xC0` and the SoL dividend `+0xC2` sits immediately after it.
+Therefore **Hammers = `+0x9A + 0x10·2 = +0xBA`** (u16) — the original `+0xBA` label
+is **correct**.
+
+> **Conflict resolved 2026-06-20 (corrects the prior off-by-one lead):** the earlier
+> note placed `0xF`=Hammers ⇒ `+0xB8`. That is wrong. `+0xB8` is good `0xF` =
+> **Muskets** — `auto_manage.c @0x548E9` arms a defender when `col[+0xB8] ≥ 0xC8`
+> (200), spending `0x32` (50) muskets. And `sol_tory.c` reads `colony_query(0x12)` =
+> **Liberty Bells**, which fixes the order to Hammers `0x10` / Crosses `0x11` / Bells
+> `0x12` / Flags `0x13`. Both independently land **Hammers at `+0xBA`**.
+
+- **Accumulation:** Hammers are produced like any good (Carpenter `Lumber→Hammers`)
+  and accrue into the `+0xBA` slot each turn via the same producer path as the
+  raw→finished chains (`colony_turn_update`).
+- **Completion (residual `TBD`):** the "hammers ≥ `@BUILDING` cost ⇒ add the building
+  (set the constructed bit, carry surplus)" check is reached through the array base
+  (`[colony + good·2 + 0x9A]`), not a literal `+0xBA` displacement — so it isn't
+  found by a `+0xBA` operand scan. Entry points: the build-target field + the
+  `@BUILDING` cost table (loaded by `func_0749E0`) and the constructed-buildings
+  bitmask `ColonyRecord +0x60..0x65` (RUNTIME-VERIFIED, `docs/DATA_MODEL.md`).
+
 ### Still open
-- **Hammers accumulation:** building progress is a slot in the **per-good colony
-  production/stockpile array at `ColonyRecord +0x9A`** (stride 2) — *not* a
-  standalone field. Cross-branch reconstructions (`colony/colonist_handler.c`,
-  `market/pricing.c`) place the pseudo-commodity rows **`0xF`=Hammers, `0x10`=Crosses,
-  `0x11`=Liberty Bells, `0x12`=Flags**, so Hammers ≈ `+0x9A + 0xF·2 = +0xB8` and the
-  former "`+0xBA`" label is the adjacent (Crosses) slot. **RECONSTRUCTED** (lead from
-  the other branch; the per-turn accumulation site in the big producer `func_00A3E1`
-  is not yet re-verified against this branch's EXE — keep `R` until traced).
 - **Warehouse capacity / spoilage:** base tied to `+0x1C` (=`0x40`); thresholds &
   wastage `TBD`.
 
@@ -161,13 +180,15 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   fields; the production-input data sets; the **per-tile production formula**
   (terrain lookup, expert ×2 / era +2, SoL/Tory penalty `10−diff` divisor,
   resource bonus, building gates); the **SoL %** computation.
-- **R:** per-turn SoL dividend/divisor smoothing constants; per-turn hammers
-  work-point accumulation (overlay-resident).
-- **TBD:** warehouse capacity thresholds / spoilage; building prerequisite gating
-  beyond the bit-6 manufacturing gate.
+- **TBD:** building-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
+  `+0x60` constructed bit + carry surplus); warehouse capacity thresholds / spoilage;
+  building prerequisite gating beyond the bit-6 manufacturing gate.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
-1. Byte-trace the per-turn **hammers** work-point accumulation (overlay-resident) toward `+0xBA` vs the `@BUILDING` cost.
+1. ~~Byte-trace the per-turn hammers accumulation~~ **Field resolved 2026-06-20** —
+   Hammers = `+0xBA` (good `0x10` in the `+0x9A` 20-good array); `+0xB8` = Muskets.
+   Remaining: the build-**completion** check (hammers ≥ `@BUILDING` cost ⇒ set the
+   `+0x60` constructed bit, carry surplus), reached via the array base.
 2. **Warehouse** capacity thresholds + spoilage/wastage logic (base tied to `+0x1C`=`0x40`).
 3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
    — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
