@@ -64,14 +64,21 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
   **page-13 resident** (`0x4C1F0..0x53540`) with shared helpers on page 4 — see the
   new §3.1. ⚠ `@0x352CA` (`sub [0x84FC]+0x2A`) is the **unit-purchase** gold debit
   (calls `place_unit 0x181F:0x95C` after) — *not* the commodity-sale debit.
-- **Remaining `TBD` (narrowed 2026-06-20):** only the per-turn *driver* that invokes
-  the drift fn. It is **not a direct call** — `func_0305A8` is reached through the
-  thunk `0x191f:0xcbc` (file `0x1C2AC`), whose far-pointer is stored in a **page-4
-  fn-ptr/trampoline dispatch table at file `0x368be`** (per `tools/find_callers.py`:
-  0 direct callers, 1 far-pointer data ref). The turn-loop driver indexes that table
-  and calls through it; pinning the indexer is the residual entry point. (Price-base
-  `DGROUP:0x53EA` random-seeded `[600,1000]` by `func_07561C @0x75645`, and the
-  buy/sell accumulator site (§3.1) are both **RESOLVED**.)
+- **Remaining `TBD` (narrowed further 2026-06-20):** only the per-turn *driver* that
+  invokes the drift fn. `func_0305A8` has **0 direct callers**; it is reached through
+  thunk `0x191f:0xcbc` (resident stub file `0x1C2AC`), whose far-pointer `0x191F:0x0CBC`
+  is stored as **data at file `0x368be`** inside a **page-4 dispatch table**:
+  - The table (region `~0x36814..`) is **stride `0xA`** (10-byte records: a 4-byte
+    handler far-ptr + 6 metadata bytes); confirmed consecutive entries
+    `0x191F:0x0CA0`@`0x368b4`, `0x191F:0x0CBC`@`0x368be` (drift), `0x191F:0x0CD8`@`0x368c8`.
+  - Each entry's thunk resolves to a **page-4 economic function** — e.g.
+    `0xCA0→0x0354BE`, **`0xCBC→0x0305A8` (drift)**, `0xCD8→0x030B38` (boycott test),
+    `0xC4C→0x033A52`, `0xCF4→0x033778`, `0xD2C→0x034DD4` — so the table maps an index
+    to a page-4 market/king handler. The **iterator/dispatcher** that walks it (and
+    whether it is the per-turn phase loop vs a Europe-screen command dispatch) is the
+    open residual — its discovery also resolves `turn_dispatch.md` open Q1. (Price-base
+    `DGROUP:0x53EA` random-seeded `[600,1000]` by `func_07561C @0x75645`, and the
+    buy/sell accumulator site (§3.1) are both **RESOLVED**.)
 
 ### 3.1 Commodity buy/sell transaction — **BYTE_VERIFIED (2026-06-20)**
 The executor and its accumulator-updaters were byte-traced via the price helper
