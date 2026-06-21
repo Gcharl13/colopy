@@ -88,8 +88,15 @@ mislabeled "need a memory dump" — each is computed/loaded by byte-readable cod
   table; semantics byte-verified (`ref_growth.md`).
 - ~~`DGROUP:0x9654` FF candidate table.~~ **RESOLVED** — content loaded verbatim from
   `@FATHERS`; `founding_fathers.md` §6.3 done (no type-5 father). Only per-father
-  continuous-effect *magnitudes* (§6.1) remain partial (mostly documented in §3).
-- `training.md` §6.1 — human-side school teaching rate (UI-driven; AI path is **B**).
+  continuous-effect *magnitudes* (§6.1) — **mechanism located 2026-06-21:** applied inline
+  via `test_building_or_father_bit(N)` with the **magnitudes hardcoded at each site** (bit
+  `0x14` bells ×2, `0x13` +50%, `0x11` SoL divisor `0x32→0x19`, `0x24`/`0x26` yield ×2 — in
+  `func_02D658`); only the exact bit-N→father binding is residual, **not** a runtime table.
+- ~~`training.md` §6.1 — human-side school teaching rate.~~ **DONE 2026-06-21 — it WAS
+  static** (corrects the "UI-driven" claim): in `func_02D658` `@0x02DDB4..0x02E012`
+  (per-colony turn processor) — faculty cap 3, **turns-to-graduate 4/6/8 by skill class**
+  (unit-type table `0x8EA6`), per-student counter `0x181F:0xD1C`/`0xA7E`, emits
+  `@TRAINPROFESSION`/`@TRAINFAIL`; tier → **B** (`training.md` §3).
 - ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
 - `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
 

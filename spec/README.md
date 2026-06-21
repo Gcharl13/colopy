@@ -16,8 +16,10 @@ deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 `BYTE_VERIFIED`** (the `B` in each tier cell below). The remaining open `§6` items are
 consolidated into the single
 **[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**,
-each tagged by *why* it is open: **R** runtime/BSS-bound (each shown to be
-runtime-derived, *not* dump-bound), **F** inherently fuzzy AI logic. **Categories S
+each tagged by *why* it is open: **R** runtime data values (each shown to be computed by
+byte-readable code, *not* dump-bound — the school teaching rate and the FF effect
+magnitudes, once thought "UI/runtime", were both found statically 2026-06-21 in
+`func_02D658`), **F** inherently fuzzy AI logic. **Categories S
 (static depth-queue) and O (the `.SS` sprite codec) are now empty** — the SAV format,
 warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends, exploration
 fog, the data-table loaders, and the revolution score bonus (additive `(1780−year)×2`,
@@ -42,7 +44,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B |
 | Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B/TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
-| Training / promotion | [`systems/training.md`](systems/training.md) | B/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
+| Training / promotion | [`systems/training.md`](systems/training.md) | B | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B |
 | Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
 | Revolution | [`systems/revolution.md`](systems/revolution.md) | B/TBD | | | |

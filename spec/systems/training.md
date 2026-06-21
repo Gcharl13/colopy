@@ -5,7 +5,8 @@
 **Overall confidence:** job/profession roster `BYTE_VERIFIED` (present); **expertise
 field + `@JOB` columns + native-learn (grant+roll) + school rulesets + combat
 veteran promotion (Washington-auto / `random_int(1,S)≤winner_str`)** `BYTE_VERIFIED`;
-only the human-side per-turn school *teaching rate* still `TBD`. **Canonical primary:**
+the human-side per-turn school *teaching rate* is now `BYTE_VERIFIED` too
+(`func_02D658`; 4/6/8 turns by skill class — §3). **Canonical primary:**
 `data_extracted/text/NAMES_sections.json` `@JOB`/`@CLASS`;
 `data_extracted/text/GAME_sections.json` `@LEARN*`/`@SCHOOL1`/`@NOTEACHER`;
 `docs/GAME_MANUAL.md` (player-aid skill chart, p.3); `VICEROY.EXE` `func_05B2C2`
@@ -60,7 +61,7 @@ init `0x2D`, is a different profession/assignment datum — not the expertise cl
 
 ## 3. Formulas & rules
 
-### Schoolhouse teaching — rules **B** (text), per-turn rate **TBD**
+### Schoolhouse teaching — **B** (located in `func_02D658`, the per-colony turn processor)
 - **Only a colonist who has mastered a profession may teach** (`@NOTEACHER`:
   *"Only colonists who have mastered a profession may teach."*).
 - A **Schoolhouse holds one teacher** at a time (`@SCHOOL1`: *"…faculty of only one
@@ -77,11 +78,30 @@ init `0x2D`, is a different profession/assignment datum — not the expertise cl
   byte into `UnitRecord +0x315B` (`@0x052710`, target class `0x1C`) — **probabilistic
   per turn** (`random_int` rolls `@0x05260E/@0x05262B`) with a gold cost debited from
   `PowerRecord +0x2A`. So the AI path is a per-turn *chance*, not a fixed counter.
-- The **human-side deterministic per-turn teaching rate / turns-to-graduate** byte
-  mechanic remains **TBD** — no distinct human teaching function survives in the
-  annotated disasm (likely folded into a UI-driven teacher-assignment flow whose
-  message-key call sites didn't survive the xref artifacts; closest anchors
-  `func_0317CC`/`func_0318D2` colony-screen profession code).
+- **Human-side per-turn teaching — BYTE_VERIFIED 2026-06-21 (correcting the earlier
+  "UI-driven / not statically located" claim).** It is **not** a separate UI routine: it
+  runs inside **`func_02D658`** — the per-colony turn processor that executes for *every*
+  colony regardless of owner — in the block `@0x02DDB4..0x02E012`, which emits
+  **`@TRAINPROFESSION`** (handle `0xE0F`, `@0x02DFA8`) on graduation and **`@TRAINFAIL`**
+  (`0xDE7`, `@0x02E008`) when a teacher has no eligible student. The mechanic:
+  - **Faculty cap = 3** teachers per colony (`cmp [bp-0x6C], 3` `@0x02DE5B`) — i.e.
+    Schoolhouse 1 / College 2 / University 3 (matches `@SCHOOL1`/`@COLLEGE2`/`@UNIV3`).
+  - **Eligible students** = unit types `0x13`/`0x19`/`0x1A`/`0x1C` (`@0x02DE2B..0x02DE3D`)
+    (free colonist + servant/criminal/petty tiers); **teacher** = job code `0x12`
+    (`cmp [bp-0xC0], 0x12` `@0x02DE51`).
+  - **Turns-to-graduate = 4 / 6 / 8**, selected by the profession's **skill class**
+    read from the unit-type attribute table at **DGROUP `0x8EA6`** (`mov ax,[bx-0x715A]`,
+    `bx = type·8`, `@0x02DE75`): class `1 → 4`, class `2 → 6`, class `3 → 8` turns
+    (`mov [bp-0xB2], 4/6/8` `@0x02DDB4`/`@0x02DE98`/`@0x02DE8E`); class `≥ 4` ⇒ the
+    profession is **not teachable** (`@0x02DE7D cmp ax,4; jl`).
+  - A **per-student teach counter** is read each turn (`0x181F:0xD1C` `@0x02DDFE`),
+    **incremented** (`@0x02DE19`), written back (`0x181F:0xA7E` `@0x02DDDD`), and **reset
+    to 0 on graduation** (`@0x02DDD1`); graduation fires when the counter reaches the
+    4/6/8 threshold (`cmp [bp-0x7E], [bp-0xB2]; jl skip` `@0x02DDBA`).
+  - On graduation a **student below expert is promoted one tier** (criminal `0x1A`→servant,
+    servant `0x19`→colonist `0x1C`, `@0x02DF00`/`@0x02DF35`); a **free colonist learns the
+    teacher's profession** outright (`0x181F:0xCAE` set-type `@0x02DF70`). Teacher→student
+    pairing picks a **random student** (`random_int`, `0x181F:0x4D4` `@0x02DEC5`).
 
 ### Native learning ("live among the Indians") — ruleset **B**, grant site **TBD**
 From the `@LEARN*` bodies + the player-aid chart (skills marked `*` are
@@ -143,14 +163,15 @@ Surfaces in the colony screen (assign job) and education building tooltips. See 
   Indian-learnable), §"Education", "Indian Lore". **B/R**
 
 ## 6. Open questions (TBD)
-1. Byte-trace the **human-side per-turn school teaching rate** (turns-to-graduate;
-   who-teaches-whom selection). **Searched again 2026-06-20 — not statically located:**
-   the colony-screen region `0x31000..0x33000` (anchors `func_0317CC`/`func_0318D2`) has
-   **no expertise `+0x315B` write and no school-building id `0x0C` reference**, so the
-   human teaching mechanic is UI-driven (teacher-assignment flow) rather than a discrete
-   per-turn function here. The **AI** school-promotion path is already byte-verified
-   (§3, `func_051EF4` probabilistic per turn). Remaining piece is **runtime/UI-bound** —
-   record as honest residual (needs a UI-flow or memory-state trace, not static disasm).
+1. ~~Byte-trace the **human-side per-turn school teaching rate** (turns-to-graduate;
+   who-teaches-whom selection).~~ **DONE 2026-06-21 — it WAS statically located** (the
+   earlier "UI-driven / not in the disasm" conclusion was wrong; I had searched the
+   colony-*screen* code `0x31000..0x33000`, but teaching runs in the colony *turn*
+   processor). It is in **`func_02D658` `@0x02DDB4..0x02E012`**: faculty cap 3, students
+   types `0x13/0x19/0x1A/0x1C`, teacher job `0x12`, **turns-to-graduate 4/6/8 by skill
+   class** (unit-type table DGROUP `0x8EA6`), per-student counter via `0x181F:0xD1C`/`0xA7E`,
+   promote-one-tier or learn-profession on graduation, emits `@TRAINPROFESSION`/`@TRAINFAIL`
+   (§3). Tier → **B**. Found via the `@TRAINPROFESSION` emitter (`tools/rtlink/event_emitters.json`).
 2. ~~Byte-trace the **native-learning grant** site (`@LEARNDONE` path) and its
    per-class success roll (`@LEARNSLOW` semantics).~~ **Done 2026-06-20** — grant
    `@0x04A782`, "taught" flag `NativeSettlement +0x03` bit `0x02`, slow-learner roll

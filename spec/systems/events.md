@@ -177,6 +177,14 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
    **consistent** with the runtime value; static can neither confirm nor refute `0xA0`
    vs `0xB0` without resolving the helper body. Map is 56×72 row-major
    (`tile = y·56 + x`). See `spec/systems/map_system.md`.
+   **Helper traced 2026-06-21:** the delegated `0x181F:0x7E0` (file `0x66CC`) is a generic
+   **"find unit at map coords"** scan (walks the unit table `0x3144` stride `0x1C`, matching
+   fields `+0`/`+1` against x/y; 86 call sites) — i.e. the `0x3F795` site is the **unit /
+   tile-arrival** path, and the Lost-City *consumer function exists and is byte-verified*
+   (`func_061454`). So nothing here is a *missing function* — the only open atom is the
+   single **feature-layer marker byte** (`0xA0` vs `0xB0`), a value in the runtime features
+   array; the memory-map doc anchors it at `0xB0`. Resolving `0xA0`-vs-`0xB0` is a one-byte
+   data read, not code recovery.
 2. ~~Outcome bias cascade — exact per-gate probabilities.~~ **Done 2026-06-20.** The
    outcome index is `[bp-6] = max(anti_streak_floor, random_int(1,9))` (`@0x614F6..0x6151A`),
    where the **anti-streak floor** = `min(prev_floor+1, 3)` rises by 1 each rumor (stored

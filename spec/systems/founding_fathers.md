@@ -177,7 +177,17 @@ F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.
 - `docs/GAME_MANUAL.md` §"Founding Fathers", scoring "+5 per Founding Father". **R**
 
 ## 6. Open questions (TBD)
-1. Map each father to its concrete in-engine effect (effect magnitudes are hardcoded, not in NAMES; a few op-ids known — §3).
+1. Map each father to its concrete in-engine effect. **Mechanism located 2026-06-21
+   (not a runtime table):** continuous effects are applied **inline** at each mechanic's
+   site via `test_building_or_father_bit(N)` (a combined building+father feature-bit test),
+   and the **magnitudes are hardcoded constants right there** — e.g. in the colony turn
+   processor `colony_turn_update`/`func_02D658`: bit `0x14` **doubles** bell output
+   (`g_8DEC <<= 1`), bit `0x13` **+50%** (`+= g_8DEC>>1`), bit `0x11` switches the SoL quota
+   divisor `0x32→0x19`, bits `0x24`/`0x26` **double** a tile yield (`yield <<= 1`), bits
+   `0x25`/`0x26` `+1`. So the per-father magnitudes are byte-readable at their use sites; the
+   only residual is the exact **bit-N → father-name** binding (the feature-bit assignment),
+   not the magnitudes. (No runtime/BSS dump needed — corrects the earlier "hardcoded,
+   unknown" framing.)
 2. ~~Decode the per-category candidate scorer `ff_cat_candidate` (overlay thunk
    `0x1A1F:0x0054`).~~ **Structure decoded 2026-06-20** — `0x1A1F:0x0054 → func_03B980`
    (`enter 4`): loops the 25 father ids (`[bp-2]` `0..0x18`), and for each **not-yet-
