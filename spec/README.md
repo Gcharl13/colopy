@@ -16,14 +16,17 @@ deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 `BYTE_VERIFIED`** (the `B` in each tier cell below). The remaining open `§6` items are
 consolidated into the single
 **[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**,
-each tagged by *why* it is open: **R** runtime/BSS-bound (need a memory dump), **O**
-overlay/asset-bound (the `.SS` `mode=4` decoder; loader is overlay-resident), **F**
-inherently fuzzy AI logic. **The static depth-queue (Category S) is now empty** — the
-SAV format, warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends,
-exploration fog, the data-table loaders, and the revolution score bonus (additive
-`(1780−year)×2`, *not* a multiplier — a manual correction) are all byte-verified this
-pass; only narrow runtime/soft residuals remain. No game *mechanic* is left
-un-byte-grounded — `tools/linkcheck.py` is clean (`INVALID: 0`).
+each tagged by *why* it is open: **R** runtime/BSS-bound (each shown to be
+runtime-derived, *not* dump-bound), **F** inherently fuzzy AI logic. **Categories S
+(static depth-queue) and O (the `.SS` sprite codec) are now empty** — the SAV format,
+warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends, exploration
+fog, the data-table loaders, and the revolution score bonus (additive `(1780−year)×2`,
+*not* a multiplier — a manual correction) are all byte-verified this pass; and the `.SS`
+codec is **solved** (standard **FAB**, recovered statically into [`tools/ssdec.py`](../tools/ssdec.py),
+decoding all 28 sheets to exact `unpacked` sizes — CC-NN = the 25 `@FATHERS` portraits,
+BUILDING.SS = 48 building frames; see `formats/SS.md`). Only narrow runtime/soft residuals
+remain. No game *mechanic* is left un-byte-grounded — `tools/linkcheck.py` is clean
+(`INVALID: 0`).
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
 

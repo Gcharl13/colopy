@@ -41,6 +41,14 @@ secondary mechanics.
 > layout + codec identity are byte-verified. CC-NN are **FF portraits** (`@FATHERS`,
 > SPRITE-A; old "unit sheet" label corrected). Plus Tory-uprising effect magnitude (unit
 > count) + the WoI-loop call frequency for `func_03CAC6`.
+> **UPDATE 2026-06-20: the `.SS` codec is SOLVED** — it is standard **FAB** (LZ77
+> bitstream), recovered statically from the in-EXE `fab_decompress`/`madspack_load`
+> (`ghidra_export/VICEROY_decompiled.named.c`), ported to [`tools/ssdec.py`](tools/ssdec.py)
+> which decodes all 28 `.SS` sheets to their exact directory `unpacked` sizes and renders
+> correct sprites. The "RTLink-resident / not locatable / mode-4 / needs a dump" framing was
+> **wrong** (two compounding errors: section data starts at `0xB0` not `56`; the `MADSPACK`
+> magic lives in the loader overlay's own `DS:0x240A`). CC-NN = the 25 `@FATHERS` portraits
+> (visually confirmed); BUILDING.SS = 48 building frames. See `formats/SS.md`.
 > **Closed 2026-06-20:** (a) **Spanish-succession** `func_03C638` fully byte-verified —
 > power selection (weakest AI cedes/strongest receives, score `3a+2b+c`), single-player
 > gate, map-tile/unit/colony owner transfer, controller `+0x543F:=2`; emits `@SUCCESSION`
@@ -85,16 +93,21 @@ mislabeled "need a memory dump" — each is computed/loaded by byte-readable cod
 - ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
 - `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
 
-**Category O — `.SS` sprite codec (static library RE; no dump needed).**
-- BUILDING.SS index→building catalog + CC-NN portrait pixel-confirmation
-  (`index_tables.md` §4, `unit.md` §6.3, `notes/SPRITE_CATALOG.md`). The **loader is now
-  LOCATED** (2026-06-20, correcting the earlier "not locatable" claim): the MADSPACK
-  stream subsystem `func_076E50_stream_open` + `func_0775EC_stream_read_chunked` +
-  `func_077772` vtable, in overlay `0x0745F0..0x077A6A`; the magic is at the overlay's
-  own `DS:0x240A` (why the DGROUP search failed). Container layout, directory (stride
-  `0xA`), and codec identity (MADSPACK-2 `mode=4`) are byte-verified. **Remaining:** read
-  the per-section decode transform in the `0x0D1D` stream-vtable and write the codec —
-  a bounded library RE, **not** a memory dump. CC-NN = FF portraits (`@FATHERS`, SPRITE-A).
+**Category O — `.SS` sprite codec — RESOLVED 2026-06-20.**
+- The codec is **standard FAB** (LZ77 bitstream), not a bespoke "MADSPACK-2 mode-4"
+  scheme. Recovered **statically** (no dump) from the in-EXE `fab_decompress`/`madspack_load`
+  in `ghidra_export/VICEROY_decompiled.named.c`, ported verbatim to
+  [`tools/ssdec.py`](tools/ssdec.py). The decoder is **certified**: every compressed
+  section of all 28 `.SS` sheets expands to **exactly** its directory `unpacked` length,
+  the palette to 768 B, and rendered frames read as correct sprites. The loader stream
+  subsystem (`func_076E50_stream_open` + `func_0775EC_stream_read_chunked` + `func_077772`
+  vtable, overlay `0x0745F0..0x077A6A`; magic at the overlay's own `DS:0x240A`) is also
+  byte-verified. Two earlier errors that masked this: section data starts at `0xB0`
+  (`16+0xA0`), not `56`; the `MADSPACK` magic is overlay-local, so the DGROUP xref search
+  found nothing. **Catalog confirmed:** CC-NN = the 25 `@FATHERS` portraits (SPRITE-A);
+  BUILDING.SS = 48 building frames. See `formats/SS.md`, `notes/SPRITE_CATALOG.md`.
+  *Remaining (mechanical, low value):* the exact BUILDING.SS 48-frame → PEDIA
+  `@BUILDING0..41` index map — a render-and-match step now that pixels decode.
 
 **Category S — static depth-queue (closeable by disassembly; genuinely not yet traced):**
 - ~~`save.md` — the SAV write/read format.~~ **DONE 2026-06-20** — full 43-block on-disk

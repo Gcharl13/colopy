@@ -146,50 +146,56 @@ resolution** in `notes/PROJECT_BOARD.md` ("FULLY RESOLVED 2026-05-05"). The **pr
 live in **ICONS.SS** (byte-cited from `@UNIT` column 1 "Icon": Colonists 101, Soldiers
 103, Caravel 6, …, Cont. Cav. 130; see `GAME_INDEX_TABLES.md`), not in CC-NN.
 
-**Container facts (verified 2026-06-20 from `col.zip` → `raw/COLONIZE/CC-NN.SS`):**
-each sheet is a **MADSPACK 2.0** container (`magic "MADSPACK 2.0\x1A"`) with **4
-FAB-compressed sections** (sprite header / descriptor table / palette / pixel data);
-file SHAs match `MANIFEST.md`.
+**DECODED & VISUALLY CONFIRMED 2026-06-20** via `tools/ssdec.py` (FAB codec solved). Each
+`CC-NN.SS` holds **exactly one frame** — a tall portrait (~54–68 × 124–136 px) — and the
+rendered pixels match the `@FATHERS` order one-for-one:
 
-**Files confirmed genuine sprite sheets (2026-06-20):** the directory + section roles
-parse cleanly (`formats/SS.md` byte-verified layout) — section 2 = **768 B = 256 RGB
-palette**, and CC sheets share identical header/descriptor sections — so the assets are
-valid, not corrupt. **Per-frame pixel cataloging is BLOCKED on the codec.** Compressed
-sections use the **MADSPACK-2 internal codec (`mode=4`), NOT the standalone ScummVM
-"FAB"** (no `FAB` magic / shift byte present), and the `mpskit` decoder referenced by
-`formats/SS.md` is **absent from the repo**. Most sections are compressed (`flag=1`), so
-the descriptor/pixels need the codec. Recovering pixels requires the **mode-4 decoder**. The **loader is LOCATED** (2026-06-20,
-correcting an earlier "not locatable" claim): **`func_076E50_stream_open` (file
-`0x076E50`)** + `func_0775EC_stream_read_chunked` + the `func_077772` stream-op vtable, in
-the overlay `0x0745F0..0x077A6A` (`viceroy_source/.../overlay_0745F0_077A6A.c`). The
-DGROUP string-search failed only because the `"MADSPACK 2.0"` magic is in that overlay's
-**own** data segment (`DS:0x240A`), not the resident DGROUP. The remaining work is a
-**bounded library RE** of the per-section decode transform in the `0x0D1D` stream-vtable
-(no memory dump needed) — see `formats/SS.md` §"Loader in VICEROY.EXE". Until that codec
-is written, the per-portrait frame layout stays **TBD**.
+| Sheet | Founding Father (`@FATHERS[N]`) | Sheet | Founding Father |
+|---|---|---|---|
+| CC-00 | Adam Smith (ledger) | CC-13 | Francis Drake (treasure chest) |
+| CC-01 | Jakob Fugger (coin bags) | CC-14 | John Paul Jones (naval) |
+| CC-02 | Peter Minuit (wampum) | CC-15 | Thomas Jefferson |
+| CC-03 | Peter Stuyvesant (peg-leg) | CC-16 | Pocahontas (buckskin) |
+| CC-04 | Jan de Witt (plumed hat) | CC-17 | Thomas Paine |
+| CC-05 | Ferdinand Magellan (red cape) | CC-18 | Simón Bolívar |
+| CC-06 | Francisco Coronado (helm) | CC-19 | Benjamin Franklin (seated) |
+| CC-07 | Hernando de Soto | CC-20 | William Brewster |
+| CC-08 | Henry Hudson | CC-21 | William Penn |
+| CC-09 | Sieur de La Salle (parrot) | CC-22 | Jean de Brébeuf |
+| CC-10 | Hernán Cortés (armor) | CC-23 | Juan de Sepúlveda |
+| CC-11 | George Washington (blue) | CC-24 | Bartolomé de las Casas |
+| CC-12 | Paul Revere | | |
+
+So CC-22/23/24 are the **religious** fathers (not "naval units" as the old hypothesis
+guessed). Container facts (all byte-verified, `formats/SS.md`): MADSPACK + 10-byte
+directory; sections at `0xB0`; **FAB**-compressed; section roles header(`nframes`@+38) /
+16-byte descriptor / 768-B 6-bit palette / RLE pixels (`0xFD`=transparent). Per-nation
+tinting **not applicable** (FF portraits are fixed-palette). Regenerate via
+`python3 tools/ssdec.py raw/COLONIZE/CC-NN.SS` (pixels git-ignored).
 
 <details><summary>SUPERSEDED unit-sheet hypothesis (kept for history — do not cite)</summary>
 
 > An older note treated CC-00..CC-24 as unit/colonist sheets (CC-00=Free Colonist …
-> CC-24=naval). This was a **hypothesis only**, refuted by SPRITE-A (CC-NN = FF
-> portraits; units = ICONS.SS). Retained solely so the prior reasoning is traceable.
+> CC-24=naval). **Refuted** — units are in ICONS.SS; CC-NN render as the 25 FF portraits.
 
 </details>
 
 ## BUILDING.SS — Colony buildings
 
-Sprites for colony buildings (carpenter, blacksmith, stable, fortress,
-warehouse, stockade, docks, armory, church, newspaper, distillery,
-tobacconist, weaver, fur trader, rum distillery, cigar maker, etc.) plus
-their higher-tier upgrades. **48 sprites** (per `notes/ASSET_CATALOG.md`) vs **42**
-PEDIA `@BUILDING0..41` entries — not 1:1 (likely shared sprites across upgrade tiers).
+**DECODED 2026-06-20** via `tools/ssdec.py` — **48 frames**, all render correctly.
+The rendered montage shows the colony buildings with **multiple frames per building for
+construction tiers**: wooden **stockade/palisade** (frames 0–2, 73×18), **warehouses**,
+**docks/drydock** (the ship-on-water scenes), **church → cathedral** (steeple/twin-tower
+frames in the lower rows), and the workshop set (carpenter/blacksmith/armory/distillery/
+weaver/etc.). Frame dims vary (≈18–60 px tall) and group in 3s for the 3-tier upgrade
+chains, which is why **48 frames > 42 PEDIA `@BUILDING0..41` entries** (shared/extra
+construction-level art). Container: MADSPACK + FAB, sections at `0xB0`, 16-byte
+descriptors (`off,size,x,y,w,h`), SHA `e91784542982216a…` matches `MANIFEST.md`.
 
-**Status: NOT CATALOGED — BLOCKED on the FAB/MADSPACK decoder (2026-06-20).** Verified
-container: MADSPACK 2.0, 4 FAB-compressed sections, 20,990 bytes, SHA `e91784542982216a…`
-matching `MANIFEST.md`. The per-index → building-name mapping needs the **decoded
-pixels** (same tooling blocker as the CC-NN note above), not data/disasm. The PEDIA
-index list (`docs/PEDIA_TXT_CATALOG.md` `@BUILDING0..41`) is the cross-reference target
-once a decoder exists.
+**Per-index → PEDIA mapping:** now a straightforward rendering task (no longer blocked) —
+`python3 tools/ssdec.py` + render each frame and match to `docs/PEDIA_TXT_CATALOG.md`
+`@BUILDING0..41`. The visual categories above are confirmed; the exact 48→42 index table
+is the only remaining (mechanical) step.
 
 ## ICONS.SS — Goods and HUD icons
 
@@ -408,14 +414,12 @@ indices, first investigate mpskit extraction options or inspect the source
 1. **Row 0x70 (112–127)**: are these the true DOS coast sprites? Needs
    disassembly verification of func_O512's sprite-index arithmetic.
 2. **Row 0x80 (128–143)**: distinction from row 0x00 rivers unknown.
-3. **CC-NN sheets**: ~~hypothesised as unit sheets~~ **CORRECTED 2026-06-20 — they are
-   Founding Father portraits** (`@FATHERS`, SPRITE-A); per-frame layout blocked on the
-   FAB decoder (see §CC-00..CC-24).
+3. **CC-NN sheets**: ~~hypothesised as unit sheets~~ **DECODED 2026-06-20 — the 25
+   Founding Father portraits** (`tools/ssdec.py`; render-confirmed vs `@FATHERS`, §CC-00..CC-24).
 4. **Nation-tinting palette indices for CC-NN sprites**: unknown.
    Needs disassembly to find the palette-remap function.
-5. **BUILDING.SS index → building name mapping**: not cataloged — **blocked on the
-   FAB/MADSPACK decoder** (`tools/mpskit/*` absent; FAB bitstream undocumented), not a
-   "PNG inspection" gap. 48 sprites vs 42 PEDIA `@BUILDING` entries.
+5. **BUILDING.SS index → building name mapping**: **DECODED 2026-06-20** (`tools/ssdec.py`,
+   48 frames render correctly); exact 48→42 PEDIA index table is a mechanical render-and-match step (§BUILDING.SS).
 6. **ICONS.SS indices 16+**: not yet cataloged.
 7. **CLOS-BEL, CLOS-FWK, CLOS-HAT directory contents**: not yet inspected.
 8. **Sprite 101**: silver nugget or stone? Similar visuals — disambiguate
