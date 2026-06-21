@@ -76,7 +76,22 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
    (8·diff+10)·2^era`, buys a REF unit at **threshold 1800 (`0x708`)** and spends
    `+0x22 -= 1800` (`@0x3E271`), slot by ratio (3:1 reg:cav / 4:1 reg:art / 10:1
    land:naval). **B.**
-3. **War-of-Independence end-game flow — PARTIALLY BYTE_VERIFIED (2026-06-20):** the
+3. **War-of-Independence end-game flow — BYTE_VERIFIED (completed 2026-06-21).**
+   **Victory condition located:** the per-turn end-game resolver `@0x02F464` runs while WoI
+   is **declared** (`[0x5382]&1`) and **not yet won** (`[0x5382]&8` clear). It scans all units
+   `0..[0x539C]` (records at `0x3147+i·0x1C`), counts those **owned by the King/REF power**
+   (unit owner low-nibble `[+0x3147]&0xF == [0x53D2]`) whose **type `[+0x3146]` ∈ {6, 8, 0xB}**
+   (REF land+naval combatants) into `[bp-0x58]`. When that **surviving-REF count falls below
+   the threshold** — `1` normally, `8` when `[0x5382]&0x40` is set (`@0x2F4D2..0x2F4E5`,
+   `cmp thr,[bp-0x58]; jg`) — and the foreign-intervention force tally
+   (`[0x53E0]+[0x53DC]+[0x53DA] ≥ 4`) clears, the rebels **WIN: `or [0x5382],8` `@0x2F55A`**,
+   and the victory message is built from the **rebel PowerRecord `[0x5398]·0x34 + 0x540E`**
+   (`@0x2F510`). So independence is won by **attriting the REF army below the survival
+   threshold**, not by a timer. (The dispatcher `@0x2391C` separately sets `[0x5382]|=0x20`
+   once SoL≥75 + declared + intervention-active, and `|=0x10` `@0x2FAE0` flags the REF-arrival
+   phase.) This closes the former "partial" residual; tier → **B**. Pre-win machinery (all
+   previously verified):
+   the
    per-turn end-game dispatcher `@0x2391C` gates on the **Bolívar SoL meter `[0x53D0]`
    ≥ 75** (`cmp [0x53D0],0x4B`); game-phase flags `[0x5382]` **bit 0 = WoI declared**,
    **bit 1 = foreign intervention active**, **bit 3 (`0x8`) = independence WON** (gates

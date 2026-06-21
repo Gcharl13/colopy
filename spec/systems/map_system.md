@@ -148,15 +148,34 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
 
 ## 6. Open questions (TBD)
 1. ~~Decode the per-terrain CSV columns.~~ **Done 2026-06-19** — `Movement, Defensive, Improvement, Value` + 9 yields (§2).
-1b. Coast beach-halo: the full neighbour-config → which-of-`0x95..0x99` sprite truth table in `func_067F50`/`func_0681A8` (chain + band byte-verified; per-direction enumeration intricate).
+1b. ~~Coast beach-halo: the full neighbour-config → sprite truth table.~~ **DONE 2026-06-21
+   — there is no 16-entry config LUT; it's 4 independent per-direction draws.** The coast
+   renderer **`func_0681A8`** reads the 3 map planes (`[0xA594]`/`[0xA598]`/`[0xA59C]`), and on
+   a coastal tile draws the **base coast sprite `0x95`** (`mov ax,0x95; call 0x67DC8`
+   `@0x68212`), gated by feature bits `0x40`/`0x80` (`[0xA8A1]&0xC0`) and ocean/sea-lane
+   terrain (`0x19`/`0x1A`). It then calls **`func_067F50`**, which **loops the 4 cardinal
+   directions** (dx/dy offset tables at DGROUP `0xA8`/`0xAE`, index `[bp-4]=0..3`); for each
+   direction whose neighbour crosses the land/water boundary (neighbour terrain folded
+   `&0x1F`, `<0x18 → &7`; same-ocean/sea-lane neighbours skipped `@0x68120..0x68150`) it draws
+   the **per-direction overlay sprite `0x69 + direction`** (`mov ax,[bp-4]; add ax,0x69; call
+   0x67DC8` `@0x68189`) plus a neighbour-terrain edge blit (`call 0x67EEC`). So the halo is
+   **additive and per-direction** (base `0x95` + up to four overlays `0x69..0x6C`), not a
+   combined-neighbour-mask table — which is why no truth table exists to enumerate. **B.**
 2. **Tile-byte bit encoding — PARTIALLY RESOLVED 2026-06-20** (`func_006204` /
    `func_0624E`): low 5 bits (`& 0x1F`) = **base terrain id**; the forest decoder
    `func_006204` masks `& 0x1F` then applies the auto-forest map (ids 8..23 → `(id&7)|8`,
    per CLAUDE.md hard rule #3). In `func_0624E`, **bit `0x20` flags a special terrain**,
    and **bit `0x80` then selects id 27 vs 28** (`and 0x80; sbb; +0x1B`). Bit `0x80` *in
    isolation* (bit `0x20` clear) is **never observed** in shipped maps (PROJECT_BOARD
-   AMB-6), so its standalone meaning stays TBD. The `.MP` **record-array boundaries**
-   remain TBD (needs the `.MP` reader; `formats/MP_FORMAT.md`).
+   AMB-6), so its standalone meaning stays TBD. **`.MP` record-array boundaries — DONE
+   2026-06-21:** there are **no variable-length records**. The map body is **4 parallel
+   byte-planes** (`g_map_layer[0..3]`), **each exactly `width×height` bytes** (`g_map_layer_bytes`,
+   one byte/tile), written/read as four contiguous blocks (`for i<4: blk_write(g_map_layer[i],
+   g_map_layer_bytes)` `@save 0x3342`; same in the loader). Plane `k` begins at
+   `header + k·(w·h)`; within a plane each tile is one byte (low nibble terrain/owner, high
+   nibble feature — confirmed via the tile reader `0x5D9C`/`0x5DF0`). So the "record
+   boundaries" are simply the **layer strides `w·h`** — terrain plane + 3 overlay planes
+   (feature, units-present, visibility), `w`=`[0x853A]`=56. **B.**
 3. ~~Map `@RESOURCE` entries to the bonus they grant.~~ **Done 2026-06-20** — the
    NAMES.TXT legend names `@RESOURCE` *"Special resource squares & **values**"*: each
    resource's single column = the **production-bonus magnitude** for its associated good

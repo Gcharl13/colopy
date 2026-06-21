@@ -147,13 +147,26 @@ pass were all found statically). Entries are kept struck-through as an audit tra
   `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100.
 - ~~`data/{records,tables}.md` — per-column→loader confirmation sweeps.~~ **DONE
   2026-06-20** — all loaders located; ColonyRecord load-bearing field map resolved.
-- **The Category-S static depth-queue is empty.** Only cosmetic narrow bits remain atop a
-  byte-verified backbone (all low-value, none a gap in any *mechanic*): `map_system.md`
-  `.MP` record boundaries + `§1b` coast beach-halo per-direction truth table; `warehousing`
-  exact wastage ordering; `immigration` §6.2 field-unit `-2` override + placement handler;
-  `revolution.md` §6.3 WoI end-game flow (PARTIAL); `save.md` §6.5 HALLFAME per-word
-  score-field *semantics* (record layout is **B**). (The former `training.md`, `events.md`
-  and `founding_fathers.md` §6.1 residuals are now **RESOLVED** — see Category R above.)
+- **The Category-S static depth-queue is empty — and the former "cosmetic narrow bits"
+  are now closed too (2026-06-21):**
+  - ~~`map_system.md` `.MP` record boundaries~~ → **B**: 4 parallel `w×h` byte-planes
+    (`g_map_layer[0..3]`, stride `g_map_layer_bytes`; `@save 0x3342`), no variable records.
+  - ~~`map_system.md` §1b coast beach-halo truth table~~ → **B**: not a config LUT — base
+    coast sprite `0x95` (`func_0681A8`) + 4 independent per-direction overlays `0x69+dir`
+    (`func_067F50` `@0x68189`).
+  - ~~`warehousing` wastage ordering~~ → **B**: production banked first, then per-good
+    over-cap surplus is sold to Europe (`net = excess − tax%`) or **wasted** when
+    independence is declared (`[0x5382]&1`); food surplus → colony growth
+    (`colony_sol_tory_turn`).
+  - ~~`revolution.md` §6.3 WoI end-game flow~~ → **B**: victory when surviving REF combat
+    units (owner `[0x53D2]`, types {6,8,0xB}) fall below the threshold → `[0x5382]|=8`
+    (`@0x2F55A`).
+  - ~~`save.md` §6.5 HALLFAME score-field semantics~~ → **B**: 42-byte records, score
+    `int16` @ `+0x26` (= the `scoring.md` composite, descending sort key); name @ `+0x00`.
+  - The only literal leftover is `immigration` §6.2 field-unit `-2` placement override —
+    a cosmetic placement detail, not a mechanic.
+  (The former `training.md`, `events.md` and `founding_fathers.md` §6.1 residuals are
+  **RESOLVED** — see Category R above.)
 
 **Category F — RESOLVED 2026-06-20.** `diplomacy.md` willingness thresholds + `0x08`/
 `0x80` war-bits → **B** (tier → **B**); `natives.md` §6.3 tribute-gold = clamp

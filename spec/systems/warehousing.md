@@ -73,7 +73,19 @@ showing each storable good and its on-hand count; `[Tab]` selects the strip
 3. ~~Decode the `@CARGO` CSV columns.~~ **Done 2026-06-20** — the 9 columns are the
    per-good **price-drift model** (Start1/2, Low, High, Burden, Rise, Fall, Attrition,
    Volatility), legend in NAMES.TXT lines 257–268; §2. (Not warehouse-volume.) **B.**
-4. ~~Spoilage/overflow timing.~~ **Mostly done 2026-06-20** — per-good cap applied in
-   `func_02D658` against stockpile `+0x9A`; overflow `stock−cap` removed end-of-turn
-   (§3). Narrow residual: exact wastage-vs-sale ordering inside the production loop;
-   only **Food** has special handling (200→colonist). **B** (mechanism).
+4. ~~Spoilage/overflow timing + wastage-vs-sale ordering.~~ **DONE 2026-06-21.** Per-good
+   cap applied in `func_02D658` against stockpile `+0x9A`; the **end-of-turn order is fixed**
+   in the per-colony finalize `colony_sol_tory_turn` (the per-turn loop over goods `i=0..0xF`):
+   1. **Production is added first** — `stockpile[i] += term` where `term` is the net
+      production (`g_global_amount[i] − band_base[i]`), clamped `≥ 0`;
+   2. **then over-cap surplus is disposed** — when good `i` is over its warehouse cap and
+      `stockpile[i] ≥ 100`, the colony keeps the lower band and the **excess is sold to
+      Europe**: `net = excess − (excess·tax%)/100` credited to the treasury
+      (`score_add_money`), **unless independence is declared** (`[0x5382]&1`) in which case
+      `net = 0` — the excess is **wasted, not sold** (no Crown market in rebellion);
+   3. **Food** is the special case: its surplus drives **colony growth** (`colony_growth_event`,
+      the 200-food→new-colonist path) rather than a sale.
+   So wastage and sale are the **same** end-of-turn surplus-disposal step (sell if trade is
+   open, waste if at war for independence), strictly **after** production is banked. Source:
+   `colony_sol_tory_turn` (byte-derived; `score_add_money`/tax gate `[0x5382]&1` cross-checked
+   vs the EXE). **B.**

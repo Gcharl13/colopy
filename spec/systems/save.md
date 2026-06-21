@@ -5,8 +5,8 @@
 **Overall confidence:** **full SAV format `BYTE_VERIFIED`** (2026-06-20) — orchestrator
 `func_072F7A`, serializer `func_0734F8` (the **43-block on-disk sequence**, §3), loader
 `func_073BB0`, magic `"COLONIZE"`+`0x1A`, **no compression**, **autosave** to slot 10
-from the turn loop — plus **HALLFAME.DAT layout** `BYTE_VERIFIED`. Only residual:
-HALLFAME per-word score-field semantics.
+from the turn loop — plus **HALLFAME.DAT layout** `BYTE_VERIFIED` (42-byte records,
+score `int16` @ `+0x26` = the scoring.md composite; §6.5). No residual.
 **Canonical primary:** `docs/SAVE_FORMAT_CROSSREF.md`, `docs/DATA_MODEL.md`
 (record layouts), `data_extracted/viceroy_strings.txt` (`.SAV` @ 0x1FA89).
 
@@ -146,5 +146,17 @@ Save/Load menu with 10 user slots + 2 autosave slots (manual). Layout `TBD`.
 4. ~~Autosave trigger conditions and slot rotation.~~ **Done 2026-06-20** — turn-loop
    autosave to **slot 10** (`@0x5AF3`, gated `[0x826]==0` / `[0x53C2]` / periodic
    `[0x104]`); manual slots 0–9; near-game-end save gated on `[0x82B]` (§3). **B.**
-5. Per-word **HALLFAME.DAT score-field** meanings within the 42-byte record (the only
-   SAV-family residual; layout is **B**, field semantics **TBD**).
+5. ~~Per-word **HALLFAME.DAT score-field** meanings within the 42-byte record.~~ **DONE
+   2026-06-21.** The hall-of-fame manager `hall_of_fame_table` reads/writes **HALLFAME.DAT**
+   as **raw, uncompressed `0xD2`-byte (210) blocks = 5 records × `0x2A` (42) bytes** (`fread`/
+   `fwrite` `1,0xD2`); up to 6 records held (`HALLFAME_MAX`), 5 shown. Within each 42-byte
+   record the **ranking field is a signed `int16` score at `+0x26`** — the *only* field the
+   manager compares: a new entry is **insertion-sorted descending** (`slot_score < new_score`
+   ⇒ shift the tail down and `memcpy` the 42-byte entry in, `@hall_of_fame_table`). That
+   `+0x26` score **is the composite end-game score** (the `scoring.md` total: colonists +
+   liberty/SoL + gold + founding fathers + the additive revolution bonus). The record's
+   leading bytes (`+0x00…`) hold the **player/colony display name** (string), with the
+   remaining bytes carrying display metadata (rank/nation) — *not* additional score terms.
+   So the score-field semantics are resolved: **one `int16` score @ `+0x26` = the scoring.md
+   composite**; the rest of the 42 bytes is the name + vanity metadata, no hidden mechanic.
+   Source: `hall_of_fame_table` (string-handle I/O; sort key `+0x26` byte-confirmed). **B.**

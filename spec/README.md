@@ -50,7 +50,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Training / promotion | [`systems/training.md`](systems/training.md) | B | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B |
 | Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
-| Revolution | [`systems/revolution.md`](systems/revolution.md) | B/TBD | | | |
+| Revolution | [`systems/revolution.md`](systems/revolution.md) | B | | | |
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B | Events / Lost City | [`systems/events.md`](systems/events.md) | B |
 | Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
 | Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B/TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | B/TBD |
