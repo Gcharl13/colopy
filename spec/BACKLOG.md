@@ -98,7 +98,10 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
   event-driven, step-shown bitmask `[0x5386]/[0x5387]`, per-step event wiring; tier → **B**.
 - ~~`map_system.md` §6.3 `@RESOURCE`→bonus~~ **DONE** (value = bonus magnitude); §6.2
   tile bit-7 **partially** done (bit 0x20+0x80 → terrain 27/28); `.MP` record boundaries remain.
-- `immigration.md` §6.3 — recruit-pool slot layout (type/cost/count) + non-artillery cost rule.
+- ~~`immigration.md` §6.3 — recruit-pool slot layout.~~ **DONE 2026-06-20** — pool
+  `DGROUP:0x978C` stride 6 (`func_074688`: type `+0x00`, attrs `+0x01–3`, cost word
+  `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100. (immigration §6.2
+  field-unit `-2` override + placement handler is the only remaining immigration bit.)
 - `events.md` §6.2 — Lost-City bias-cascade exact per-gate probabilities (base roll is **B**).
 - `data/{file_formats,records,tables}.md` — per-column→loader confirmation sweeps.
 

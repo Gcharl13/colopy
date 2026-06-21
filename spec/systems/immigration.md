@@ -75,4 +75,12 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
    colonist (`0x1C`) at exactly `+0x02..+0x04` (`func_03BC42 @0x3BF85`, see
    `founding_fathers.md`). **Selector RESOLVED 2026-06-20:** `random_int(0,2)` picks the slot, `func_034C24` refills it (difficulty-weighted; Brewster→top class).
 2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override semantics; exact immigrant-placement handler.
-3. Map recruit-pool slot full layout (type, cost, count) and non-artillery cost rules.
+3. ~~Map recruit-pool slot full layout (type, cost, count) and non-artillery cost.~~
+   **Done 2026-06-20.** The recruit pool is **`DGROUP:0x978C`, stride 6** (6-byte slots),
+   built by the setter **`func_074688`** (`@0x74698..0x746B3`): `+0x00` = recruit/unit
+   **type**, `+0x01`/`+0x02`/`+0x03` = attribute bytes (category/flags), `+0x04` (word) =
+   the slot **value/cost**. The **non-artillery recruit cost is this `+0x04` word**
+   (read `@0x051E52`/`@0x035114`); **artillery** instead escalates `base +
+   artillery_bought_count·100` (`PowerRecord +0x1E`, §3) — the one type with a
+   count-based cost. **B** (structure + cost rule); exact per-attribute-byte labels are
+   the only remainder.
