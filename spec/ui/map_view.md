@@ -1,6 +1,9 @@
 # Map View (main gameplay screen)
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> Substantive: outer geometry + minimap + tile chain + menu/label keys are A/B-grounded;
+> the residual soft spots (sidebar per-line text x,y; menu per-item hit-rects) are honestly
+> **R** — single-frame/low-trust, called out in §6.3/§6.4 with the exact source.
 
 **Overall confidence:** outer band geometry **A** (overlay-verified, not byte-cited); tile chain & sidebar fields **B/R**. · **Canonical primary:** `docs/RENDERER_GEOMETRY.md` "Map view", `docs/SESSION_UI_CATALOG.md` §1, `docs/COLONY_RENDER_CHAIN.md` (tile chain).
 
@@ -70,9 +73,34 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
    seg `191F/1A1F`) whose layout constants are **overlay-resident, not statically resolvable**
    (confirmed 2026-06-21: the `191F/1A1F:0x6a/0x74/0x88` thunk records do not parse cleanly from
    the rtlink trailer table — only `1A1F:0x7e`→file 0x3E162 resolves, and that is a treasury/tax
-   turn routine, **not** a sidebar painter). The season/gold/tax (sidebar B) and Moves/Locat
-   (sidebar C) per-line `(x,y)` constants stay **honest TBD** (genuinely overlay-resident); font
-   is FONTTINY **B**; the displayed text is live UnitRecord/PowerRecord data.
+   turn routine, **not** a sidebar painter). So **no byte-verified (B) source exists** for these
+   per-line constants; font is FONTTINY **B** and the displayed text is live UnitRecord/PowerRecord
+   data, but the positions stay **TBD at B**.
+
+   **Implementation layout (R — approximate, single-frame).** For a Layer-3 render that must only
+   *look like* the original (not be byte-exact), the one available source is the pixel-measured
+   table in `docs/RENDERER_GEOMETRY.md` "Default map view sidebar" (**frame 1310262984**, Scout
+   selected). Use it as the **approximate** sidebar layout, explicitly **R** — it is a single
+   eyeballed frame and is internally imperfect (its menu row even places CHEAT@244 right of
+   COLONIZOPEDIA@234, and its minimap rect (244,8,72,44) is *superseded* by the byte-verified
+   (241,8,79,41) of §6.1). Relative to the sidebar origin x≈240:
+
+   | Line | x | y | Source string |
+   |------|---|---|---------------|
+   | Season/year | 244 | 58 | `Spring %YEAR` (NAMES `@SEASONS`) |
+   | Gold | 244 | 66 | `Gold: %d%%` (LABELS `@MISC`) |
+   | Tax | 290 | 66 | `Tax: %d%%` |
+   | Unit sprite | 244 | 80 | ICONS.SS[unit_type] |
+   | Moves: N | 270 | 82 | LABELS `@INFO`[0] |
+   | Locat: (x,y) | 270 | 92 | LABELS `@INFO`[1] |
+   | Unit type | 244 | 104 | NAMES `@UNIT`[type] |
+   | Unit skill | 244 | 112 | NAMES `@JOB`[skill] |
+   | Orders | 244 | 120 | LABELS `@MISC` (No Orders/Sentry/…) |
+   | (Terrain) | 244 | 128 | NAMES `@UNFORESTED`/`@FORESTED` |
+
+   These are the **only** non-invented coordinates available; an implementer must render *from this
+   table* (citing it as R), never fabricate positions. Tightening to B requires either disassembling
+   the `191F/1A1F` HUD thunks or pixel-measuring several frames to average out the single-frame error.
 4. **Top-menu item hit-rects** — built by the `menubar` widget from **FONTTINY title widths**
    (glyph-grid), not a fixed table. The explicit x-origins (GAME@11 … COLONIZOPEDIA@261) come
    from the low-trust `_VICEROY_MODERN` C reconstruction (absent from the EXE; that block also
