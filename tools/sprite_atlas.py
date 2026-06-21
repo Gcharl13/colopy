@@ -87,7 +87,7 @@ def render_atlas(ss_path: Path, out_path: Path, cols: int, scale: int,
     n = len(frames)
     rows = (n + cols - 1) // cols
     W, H = cols * cellw, rows * cellh + 24
-    im = Image.new("RGB", (W, H), (28, 28, 34))
+    im = Image.new("RGB", (W, H), (0, 0, 0))
     dr = ImageDraw.Draw(im)
     dr.text((6, 7), f"{ss_path.name}  ({n} sprites)  label = decimal / 0xhex",
             fill=(255, 255, 120))
@@ -96,7 +96,7 @@ def render_atlas(ss_path: Path, out_path: Path, cols: int, scale: int,
         if w <= 0 or h <= 0 or w > 240 or h > 240:          # placeholder / oversize
             cell = Image.new("RGB", (8, 8), (60, 30, 30))
         else:
-            cell = Image.new("RGB", (w, h), (0, 100, 0))     # green color-key bg
+            cell = Image.new("RGB", (w, h), (0, 0, 0))       # black color-key bg
             for yy in range(h):
                 row = yy * w
                 for xx in range(w):
