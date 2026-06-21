@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** key set `BYTE_VERIFIED` (keys exist in primary data); trigger logic + step ordering `TBD`. · **Canonical primary:** `data_extracted/text/GAME_sections.json` (`@TUTORIAL1..19`).
+**Overall confidence:** key set + **trigger wiring + step-shown bitmask `[0x5386]/[0x5387]` + event-driven (non-sequential) model `BYTE_VERIFIED`** (2026-06-20). · **Canonical primary:** `data_extracted/text/GAME_sections.json` (`@TUTORIAL1..19`); `tools/rtlink/event_emitters.json`.
 
 ## 1. Purpose & behavior
 
@@ -24,14 +24,29 @@ from the manual / observed strings; trigger wiring not byte-traced).
   key→prose binding is `TBD`.
 - Related help keys nearby: `@TUTNOLUMBER`, `@TUTNOSPACES` (lines 513–514) —
   conditional warnings (no lumber / no build space). **B** (keys exist).
-- An on/off **tutorial-enabled flag** (set at new-game) and a **current-step**
-  index are expected in game state but are **TBD** (no byte trace).
+- **Tutorial state = a 16-bit "step-shown" bitmask `[0x5386]` (low byte) / `[0x5387]`
+  (high byte) — BYTE_VERIFIED 2026-06-20.** There is **no sequential step index**; each
+  step owns one bit and is **idempotent**: its event site does
+  `test [0x538x], <bit>; jne skip` → emit `@TUTORIALn` → `or [0x538x], <bit>` (mark
+  shown), so each lesson fires **once** when its event first occurs. New-game init
+  `mov word [0x5386], 0x0E` (`@0x755EB`) pre-marks three steps as already-shown.
 
 ## 3. Formulas & rules
 
-- Step advancement: which event fires which `@TUTORIALn` — `TBD`.
-- Whether steps are gated/sequential or purely event-driven — `TBD`.
-- No numeric formulas. **TBD**.
+- **Steps are event-driven & idempotent, NOT sequential — BYTE_VERIFIED 2026-06-20.**
+  Each `@TUTORIALn` is emitted inline at the game function for its triggering event,
+  guarded by its `[0x5386]/[0x5387]` bit (`tools/rtlink/event_emitters.json` handle map):
+
+  | Step (handle) | Bit | Triggering function / event |
+  |---|---|---|
+  | TUTORIAL1 (`0x8B3`) | `[0x5386]&0x10` | `func_020F50` — unit move/land dispatcher (`@0x20FFB`) |
+  | TUTORIAL5 (`0x1197`) | `[0x5387]&0x01` | `func_033F6A` — market/king phase (`@0x3651F`) |
+  | TUTORIAL6 (`0xEC7`) | `[0x5387]&0x02` | `func_02D658` — colony processor / found colony (`@0x2EA4C`) |
+  | TUTORIAL7 (`0xC99`) | `[0x5387]&0x04` | `func_02883E` — unit-movement event (`@0x28D41`) |
+  | TUTORIAL4/12 (`0xD3D`/`0xD47`) | `[0x5386]&0x80` / `[0x5387]&0x80` | `func_02C5D4` — Europe/docks (`@0x2C74A`/`@0x2C7BC`) |
+  | TUTORIAL3/8–11/13–15/19 | other `[0x5386]/[0x5387]` bits | `func_020F50` (`@0x21350`/`@0x213E9`/`@0x21481`/`@0x215CD`/…) |
+
+- No numeric formulas.
 
 ## 4. UI
 
@@ -47,6 +62,12 @@ name). Dismissed with `{ESC}`. Geometry per the shared dialog framework. **R**.
 
 ## 6. Open questions (TBD)
 
-1. Bind each `@TUTORIALn` key to its `@y=N` prose and to the triggering event.
-2. Locate the tutorial-enabled flag and current-step index in game state.
-3. Determine whether the 19 steps are sequential or event-gated.
+1. ~~Bind each `@TUTORIALn` to its triggering event.~~ **Done 2026-06-20** — each step
+   is emitted inline at its event function, guarded by a `[0x5386]/[0x5387]` bit (§3
+   table). The `@TUTORIALn`↔`@y=N` *prose* binding is a GAME.TXT extraction detail (the
+   visible text is in the `@y=N` continuations). **B** (event wiring).
+2. ~~Locate the tutorial-enabled flag and current-step index.~~ **Done 2026-06-20** —
+   state is the **16-bit shown-bitmask `[0x5386]/[0x5387]`** (no sequential index);
+   new-game init `[0x5386]=0x0E` `@0x755EB` (§2). **B.**
+3. ~~Sequential or event-gated?~~ **Resolved 2026-06-20 — event-driven & idempotent**
+   (fire once per event when the step's bit is clear), not a sequential script (§3). **B.**

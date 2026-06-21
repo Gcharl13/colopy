@@ -33,7 +33,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Market & prices | [`systems/market.md`](systems/market.md) | B/TBD | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B/TBD |
 | Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | B |
 | Unit system | [`systems/unit.md`](systems/unit.md) | B | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | B |
-| Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B/TBD |
+| Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B |
 | Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B/TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
 | Training / promotion | [`systems/training.md`](systems/training.md) | B/TBD | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |

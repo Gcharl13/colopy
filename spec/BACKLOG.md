@@ -94,8 +94,10 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
 - ~~`warehousing.md` — capacities, `@CARGO` columns, spoilage.~~ **DONE 2026-06-20** —
   cap `(level+1)·100` (`func_008D00`), `@CARGO` 9-col price-drift legend (NAMES.TXT),
   per-good overflow in `func_02D658`; tier → **B** (only wastage-ordering detail left).
-- `tutorial.md` §6.1–6.3 — `@TUTORIALn`→prose→trigger binding; enabled-flag/step-index; sequencing.
-- `map_system.md` §6.2–6.3 — tile bit-7 meaning + `.MP` record boundaries; `@RESOURCE`→bonus.
+- ~~`tutorial.md` — trigger binding / state / sequencing.~~ **DONE 2026-06-20** —
+  event-driven, step-shown bitmask `[0x5386]/[0x5387]`, per-step event wiring; tier → **B**.
+- ~~`map_system.md` §6.3 `@RESOURCE`→bonus~~ **DONE** (value = bonus magnitude); §6.2
+  tile bit-7 **partially** done (bit 0x20+0x80 → terrain 27/28); `.MP` record boundaries remain.
 - `immigration.md` §6.3 — recruit-pool slot layout (type/cost/count) + non-artillery cost rule.
 - `events.md` §6.2 — Lost-City bias-cascade exact per-gate probabilities (base roll is **B**).
 - `data/{file_formats,records,tables}.md` — per-column→loader confirmation sweeps.
