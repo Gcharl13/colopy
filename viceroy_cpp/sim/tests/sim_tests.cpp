@@ -10,6 +10,12 @@
 #include "../game.hpp"
 #include "../unit.hpp"
 #include "../combat.hpp"
+#include "../natives.hpp"
+#include "../diplomacy.hpp"
+#include "../founding_fathers.hpp"
+#include "../revolution.hpp"
+#include "../scoring.hpp"
+#include "../mapgen.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -184,6 +190,74 @@ static void test_combat() {
     CHECK(r.attacker_won && r.captured && r.loser_outcome == TREASURE, "treasure captured");
 }
 
+static void test_natives() {
+    std::printf("natives:\n");
+    CHECK(mission_threshold(1, false) == 3, "level1 threshold 3");
+    CHECK(mission_converts(2, 1, false) && !mission_converts(3, 1, false), "roll gate");
+    CHECK(mission_threshold(1, true) == 6, "jesuit doubles");
+    CHECK(apply_tension(50, 100, false, false) == 100, "incite -> war");
+    CHECK(apply_tension(10, 4, true, false) == 12, "french halves +4 -> +2");
+    CHECK(native_trade_price(1, 10) == 55, "price floor 5d+50");
+    CHECK(native_trade_price(0, 60) == 90, "price capped 90");
+    CHECK(tribute_gold(100, 20) == 70, "tribute ceil 3w+10");
+    CHECK(tribute_gold(5, 20) == 10, "tribute floor 10");
+}
+
+static void test_diplomacy() {
+    std::printf("diplomacy:\n");
+    Diplomacy d;
+    declare_war(d, 0, 1);
+    CHECK(at_war(d, 0, 1) && at_war(d, 1, 0), "war symmetric");
+    sign_treaty(d, 0, 1, 100);
+    CHECK(!at_war(d, 0, 1) && has_treaty(d, 0, 1), "treaty ends war");
+    CHECK(d.cooldown[0] == 116, "cooldown turn+16 -> %d", d.cooldown[0]);
+    CHECK(ai_grace(3) == 70, "grace 10*(10-diff)");
+    auto rng1 = [](int, int) { return 1; };
+    CHECK(!ai_acts(80, 15, rng1), "restrained: (80>>2=20)>15, >12, rng!=0");
+    CHECK(ai_acts(40, 15, rng1), "acts: 10 not > 15");
+}
+
+static void test_founding_fathers() {
+    std::printf("founding fathers:\n");
+    CHECK(ff_cost(1, 1599, 1, true, false) == 129, "human Explorer ff1 -> %d",
+          ff_cost(1, 1599, 1, true, false));
+    CHECK(ff_cost(2, 1500, 0, true, true) == 5000, "post-indep override d2");
+    CHECK(ff_era_band(1599) == 0 && ff_era_band(1650) == 1 && ff_era_band(1700) == 2, "era bands");
+    // 5 categories x 5; father 1 (cat 0) needs father 0 (cat 0) owned first.
+    int cat[10] = {0,0,0,0,0, 1,1,1,1,1};
+    CHECK(ff_available(0u, 0, cat, 10), "father0 available");
+    CHECK(!ff_available(0u, 1, cat, 10), "father1 blocked (needs 0)");
+    CHECK(ff_available(1u, 1, cat, 10), "father1 ok once 0 owned");
+}
+
+static void test_revolution() {
+    std::printf("revolution:\n");
+    CHECK(can_declare_independence(50) && !can_declare_independence(49), "SoL>=50 gate");
+    CHECK(ref_war_won(0, 0, false) && !ref_war_won(1, 0, false), "REF < 1 -> win");
+    CHECK(ref_war_won(7, 0, true) && !ref_war_won(8, 0, true), "hard flag threshold 8");
+    CHECK(!ref_war_won(0, 5, false), "intervention blocks win");
+    CHECK(revolution_bonus(1700) == 160 && revolution_bonus(1776) == 8, "bonus (1780-y)*2");
+    CHECK(revolution_bonus(1780) == 0, "no bonus from 1780");
+}
+
+static void test_scoring() {
+    std::printf("scoring:\n");
+    CHECK(score_difficulty_mult(0) == 4 && score_difficulty_mult(2) == 6 &&
+          score_difficulty_mult(3) == 8 && score_difficulty_mult(4) == 10, "mult {4,5,6,8,10}");
+    CHECK(score_population_component(0x1C) == 2, "free colonist +2");
+    CHECK(score_population_component(0x19) == 1, "criminal +1");
+    CHECK(score_population_component(0x10) == 4, "skilled +4");
+    CHECK(score_rank(100) == 17, "rank(100) -> %d", score_rank(100));
+}
+
+static void test_mapgen() {
+    std::printf("map generation:\n");
+    CHECK(MAP_W == 58 && MAP_H == 72, "dims 58x72");
+    CHECK(climate_base_terrain(0, false) == 5, "north band0 -> Savannah(5)");
+    CHECK(climate_base_terrain(3, true) == 4, "south band3 -> Grassland(4)");
+    CHECK(climate_base_terrain(2, false) == 1, "north band2 -> Desert(1)");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -197,6 +271,12 @@ int main() {
     test_turn_loop();
     test_units();
     test_combat();
+    test_natives();
+    test_diplomacy();
+    test_founding_fathers();
+    test_revolution();
+    test_scoring();
+    test_mapgen();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

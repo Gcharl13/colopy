@@ -39,6 +39,9 @@ add_library(viceroy_sim STATIC
   sim/game.cpp
   sim/unit.cpp
   sim/combat.cpp
+  sim/natives.cpp
+  sim/diplomacy.cpp
+  sim/founding_fathers.cpp
 )
 target_include_directories(viceroy_sim PUBLIC sim)
 
