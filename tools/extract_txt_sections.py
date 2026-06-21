@@ -105,6 +105,11 @@ def process(txt_path: Path, text_dir: Path) -> dict:
     sections = parse_txt(text)
     stem = txt_path.stem.upper()
 
+    # Files with no @-sections (AUTOEXEC/CONFIG/MEMORY/README) carry no data —
+    # don't emit empty JSON artifacts (keeps the committed text/ dir to content).
+    if not sections:
+        return {"file": txt_path.name, "sections": 0, "csv": 0}
+
     # back-compat flat dump: { "@KEY": "body" } (first occurrence wins)
     flat: dict[str, str] = {}
     for s in sections:
