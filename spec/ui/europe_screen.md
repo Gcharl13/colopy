@@ -5,8 +5,9 @@
 **Overall confidence:** main-panel geometry **B** (literal coords in the decompiled
 `europe_screen_render` + corroborating hit-test rects); load-bearing state fields **B**
 (raw-EXE-verified); the transaction sub-panel + market price formula now **B** (traced
-2026-06-21, §3/§7). Only the boycott overlay's exact ICONS frame is runtime-index-driven
-(cosmetic). · **Canonical primary:**
+2026-06-21, §3/§7). **No runtime residual** — the boycott overlay's sprite is indexed by the
+good (static, from sheet `[0x2DA8]`); *whether* it shows is the good's market/boycott state
+(game data). · **Canonical primary:**
 `ghidra_export/VICEROY_decompiled.named.c` (`europe_screen_render` line 21920 + helpers),
 `raw/COLONIZE/VICEROY.EXE`, `docs/RENDERER_GEOMETRY.md`, `docs/SESSION_UI_CATALOG.md` §4.
 
@@ -109,10 +110,11 @@ stockpile row (0,179,305,21)→0; dock A (143,118,81,60)→1; **"Bound For"** (7
 2. ✅ **Boycott marker — mechanism B; the "red-X ~slot 043" guess is REFUTED.** In extra_a
    `@0x31A73..0x31AB4` each good blits its commodity icon (`0x181F:0x2BC`) at (100,16), then a
    **state-gated overlay** (`lcall 0x181F:0x254 → 0x0E76A`) fires when the good-record state
-   byte `[good·0x1C + 0x3146] ∈ 0x0D..0x12` **and** `[good·0x1C + 0x3150] ≠ 0`, drawn with a
-   **runtime index** (the cell's own index), not a fixed sprite slot. So there is no literal
-   red-X constant; the exact ICONS frame is observation-only. **B (mechanism) / TBD (frame).**
+   byte `[good·0x1C + 0x3146] ∈ 0x0D..0x12` **and** `[good·0x1C + 0x3150] ≠ 0`, drawn with the
+   **good's own index** into sheet `[0x2DA8]` (a static per-good sprite, not a fixed red-X
+   slot). So the frame is **static** (function of the good); *whether* it shows is the good's
+   market/boycott state (game data). **B.**
 3. ✅ **Market bid/ask** — fully byte-traced (see §3). **B.**
 
-*(Only residual: the precise ICONS frame the state-gated boycott overlay resolves to is
-runtime-index-driven, not a static literal — cosmetic.)*
+*No runtime residual* — every Europe element (geometry, sprites, price formula, boycott marker)
+is static; only the live values (gold, prices, which goods are boycotted) are game state.

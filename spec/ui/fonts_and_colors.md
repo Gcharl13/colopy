@@ -23,28 +23,38 @@ The engine loads four fonts at boot (asset table `@file 0x1FD20`/export `BOOT_AS
 `FONTTINY` and switches to `FONTSMAL` on the `SMALLFONT` directive. Full-screen renderers pick
 their font explicitly (e.g. the Score screen and Hall of Fame call `FONTKING`).
 
-## 2. Colors — palette-index args (not literal RGB)
+## 2. Colors — palette-index args, resolved to exact RGB (fully static — tier B)
 
 Text and fills take an **explicit palette-index color argument**, pushed immediately before the
 draw thunk — e.g. `push 0xF` (white) before a text-draw `lcall`, or `push 0x90` before a
-box-fill. So the **byte-cited value is the VGA palette index (tier B)**; the **perceived RGB is
-palette-dependent** — it resolves through the screen's currently-loaded PIK/`VICEROY.PAL`
-palette, so RGBs are **A** (pixel-measured) or **R** (inferred), never raw literals.
+box-fill. The byte-cited value is the VGA palette index (**B**), and the **exact RGB is also
+static**: it resolves through the screen's loaded **PIK palette, which is a decodable 768-byte
+section of the `.PIK` file** (`tools/ssdec.py`) — *no runtime/capture needed*. Resolving an
+index = decode that screen's PIK palette (last 768-byte section, 6-bit→8-bit) and index it.
+Tier **B** for both index and RGB. (Each screen's palette source: reports → `REPORT<N>.PIK`;
+colony/Europe → `EUROPE.PIK`; congress → `CCBKGD.PIK`; menus/HoF → `WOODPANL`/`WOODPAN2`.)
 
-### Recurring named colors
-| Index / RGB | Meaning | Source | Tier |
-|-------------|---------|--------|------|
-| `0x0F` (15) | **white** body/number text | `push 0xf` before text-draw (e.g. colony stockpile, europe) | B |
-| `0x90` | title/header **box-fill** color (all advisor reports) | `push 0x90` fill | B |
-| `0x91` / `0x92` | report row text (strength / labels) | advisor bodies | B |
-| `0x61` | report value / tan text | advisor F3/F4/F7 | B |
-| RGB(0x52,0x8A,0x31) | **title green** (colony title, europe header) | `ui_color_for`, render bodies | B (call) / A (RGB) |
-| RGB(0xE3,0xAA,0x28) | menu **gold** (selected/highlight text) | menu framework export 48508 | B / A |
-| RGB(0x38,0x20,0x10) | menu **selection bar** | menu framework 48507 | B / A |
-| RGB(0x14,0x0C,0x06) | menu plaque **outline** | menu framework 48506 | B / A |
-| RGB(0xF0,0xE0,0xB0) | SoL-panel **cream** ("Sons of Liberty") | `colony_paint_sol_panel` 16910 | B / A |
-| yellow ~(218,178,0) | colony **title-bar** text | pixel-verified `docs/UI_FONT_REFERENCE.md` | A |
-| dark-navy (20,28,120) | colony **inventory qty** digits | pixel-verified | A |
+### Recurring named colors — RGB resolved from the PIK palette (all tier **B**)
+| Index | Resolved RGB | Meaning | Source (palette) |
+|-------|--------------|---------|------------------|
+| `0x0F` | (255,255,255) white | body / number text | every screen (EUROPE/REPORT/CCBKGD all agree) |
+| `0x90` | (255,255,190) pale-yellow | title/header **box-fill** (advisor reports) | REPORT\<N\>.PIK |
+| `0x91` | (255,255,142) yellow | report strength rows | REPORT\<N\>.PIK |
+| `0x92` | (255,243, 93) bright-yellow | report labels (F3/F4/F6/F9) | REPORT\<N\>.PIK |
+| `0x61` | (247,243,199) cream | report values (F3/F4/F7) | REPORT\<N\>.PIK |
+| `0x39` | (77,97,170) / blue | crosses/bells **filled** gauge | EUROPE/REPORT |
+| `0x3A` | (65,81,158) blue | gauge variant | EUROPE.PIK |
+| `0x7C` | (65,146,130) | colony **rebel face** tint | CCBKGD/EUROPE |
+| `0x7D` | (56,121,109) | colony **tory face** tint | CCBKGD/EUROPE |
+| `0x44` | (85,150, 52) green | player flag | CCBKGD/EUROPE |
+| RGB(0x52,0x8A,0x31) | (82,138,49) green | **title green** (colony/europe header) | `ui_color_for` (direct RGB) |
+| RGB(0xE3,0xAA,0x28) | (227,170,40) gold | menu **gold** highlight | menu framework 48508 (direct RGB) |
+| RGB(0x38,0x20,0x10) | (56,32,16) | menu **selection bar** | menu framework 48507 (direct RGB) |
+| RGB(0xF0,0xE0,0xB0) | (240,224,176) cream | SoL-panel "Sons of Liberty" | `colony_paint_sol_panel` (direct RGB) |
+
+*(Resolve any other index for a given screen with `tools/ssdec.py`: decode that screen's PIK,
+take the last 768-byte section as the 6-bit palette, `(v<<2)|(v>>4)` per channel, index by the
+push-arg.)*
 
 ## 3. Per-screen font + color (byte/pixel-grounded)
 
@@ -62,8 +72,10 @@ The authoritative per-element table is in each screen's own spec; collected here
 | Boot-menu plaques | FONTINTR | green text `0x52,0x8A,0x31` / gold selected | B/A |
 | Popup body (default / `SMALLFONT`) | FONTTINY / FONTSMAL | per `TEXTCOLR` directive | B |
 
-## 4. Residual
-The exact **perceived RGB** of a palette-index color depends on the loaded PIK palette and any
-cycling; where not pixel-measured it stays **A/R**. The palette *index* in every render call is
-**B**. (No font/color claim requires a memory dump — fonts are byte-cited loads, colors are
-byte-cited push-args; only the index→RGB resolution is palette/runtime.)
+## 4. Residual — none (font/color is fully static)
+**No font/color claim needs a runtime or a capture.** Fonts are byte-cited boot-table loads;
+colors are byte-cited push-args **and** their exact RGB is the decodable PIK palette indexed by
+that arg. The only runtime aspect is **palette *cycling*** (a few animated indices, e.g. water),
+which shifts an index's RGB frame-to-frame — that is a documented animation effect
+(`docs/PALETTE_AND_CYCLING.md`), not an unknown. (Corrects the earlier note that called the
+index→RGB resolution "runtime" — it is static, from the `.PIK` file.)

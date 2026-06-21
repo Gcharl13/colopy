@@ -92,5 +92,6 @@ raw-disassembled this pass).
 2. Per-report intra-row exact label (x,y)/font for the non-Naval reports — bodies show the
    color + primitive; full per-line coords are a deeper decompile (**A** where geometry docs
    measured, else **R**).
-3. The runtime `@MISC` field-index per `[DS:0x2Dxx]` title-label slot (the label-loader that
-   maps `push N` → `@MISC` field index is unidentified; the title *string content* is verified).
+3. The `@MISC` field-index per `[DS:0x2Dxx]` title-label slot — the label-loader that maps
+   `push N` → `@MISC` field index is **unidentified (findable, not runtime)**; the title
+   *string content* is already verified.

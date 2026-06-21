@@ -5,9 +5,10 @@
 > R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
 
 **Overall confidence:** framework dispatch, 11 directives, 4 speaker channels, reset address,
-Lost-City variant map, raid-count, `@KINGNEWWAR` sprite, and per-section `@width` all **B**
-(raw-verified 2026-06-21); message-key existence **B**; final per-popup pixel rect + highlight
-RGB **A/R** (runtime).
+Lost-City variant map, raid-count, `@KINGNEWWAR` sprite, per-section `@width`/`@x`/`@y`, and
+highlight-color RGB (via the PIK palette) all **B** (raw-verified 2026-06-21); message-key
+existence **B**. **No runtime residual** — placement is `@x`/`@y` (GAME.TXT) or centered, and
+colors resolve from the decodable PIK palette (see `fonts_and_colors.md`).
 **Canonical primary:** `data_extracted/text/GAME_sections.json`,
 `docs/POPUP_TEMPLATE_AUDIT.md`, `docs/UI_DIALOGS.md`, `docs/DIALOG_GEOMETRY.md`.
 **Last updated:** 2026-06-18.
@@ -36,14 +37,14 @@ A per-event handler:
 3. calls the body-render thunk; the dispatcher `func_06E3D0` fires whichever
    channels are `≥ 0`. After close, all three channels are reset (usually to
    `0xFFFF`) at file `0x06EE6B`. **B** for the channel mechanism.
-4. **Geometry**: each GAME.TXT section carries a literal **`@width=NN` pixel width** (present
-   in 475/499 sections; default 190 — e.g. KINGTAX/KINGNEWWAR/LOSTCITY1/2/RAIDWREAK=190,
-   SMITEINDIANS=220, WANTSTUFF=260, VICEROY=78). The framework parses it via the WIDTH/atoi
-   directive (→ struct +0xc). **Correction:** `[0x1EA4]/[0x1EA5]` are **not** the `@width`
-   parser output — they are written by the layout loop at file `0x0684BC` (`mov [0x1ea4],al`
-   @0x684CC / `mov [0x1ea5],al` @0x684D7, both `shl al,2`) iterating 4 sub-elements via
-   `func_067DC8`. So `@width` is **B** (literal source); the final pixel rect still depends on
-   the runtime cursor + that layout loop → **A/R**.
+4. **Geometry — fully static (B).** Each GAME.TXT section carries a literal **`@width=NN`**
+   (475/499 sections; default 190 — KINGTAX/KINGNEWWAR/LOSTCITY1/2/RAIDWREAK=190, SMITEINDIANS=220,
+   WANTSTUFF=260, VICEROY=78), and many also carry literal **`@x`/`@y`** (e.g. `@KINGLOSE @x=232
+   @y=31`, `@KINGWIN @x=202 @y=125`). The popup origin = those `@x`/`@y` when present, else the
+   **centered formula** `x=(320-w)/2`, `y=(200-h)/2` (same `mr_finalize_geometry` rule as the
+   menu plaques). So the rect is **static**, not cursor-dependent. (`[0x1EA4]/[0x1EA5]`, written
+   by the `0x0684BC` loop, are the **4-corner frame-tile counter**, not the popup origin — they
+   are not cursor-relative.) **B.**
 5. **Background/frame**: tiled `WOODPANL.PIK` (some `WOODPAN2.PIK`) + `WOODFRAM.SS`
    border + `NAMEPLAT.SS` title strip; **A** (asset roles, not per-popup dispatch).
 6. **Font**: body defaults to `FONTTINY`; `SMALLFONT` directive → `FONTSMAL`
@@ -232,9 +233,12 @@ A per-event handler:
    keys (LOSTCITY0/3-9, RAIDSTORES/BURN/SHIP/GOLD, SHIPOPTIONS, ARMOPTIONS, etc.) are **present
    and full in `raw/COLONIZE/GAME.TXT`** — `data_extracted/text/GAME_sections.json` is partial.
    Action = re-extract the JSON (mechanical); source is **B**.
-2. **Final per-popup pixel rect** — the `@width` and option text are **B**, but the on-screen
-   rect is composed at runtime by the layout loop (`0x0684BC`) over the live cursor. Exact
-   placement stays **A/R** (runtime); not a static constant.
-3. **Per-popup option-highlight RGB** — applied at runtime via `@DEFAULT`/`TEXTCOLR` palette
-   index; perceived color needs a capture. **R**. (And WOODPANL-vs-WOODPAN2 per-popup choice —
-   **TBD**.)
+2. ~~Final per-popup pixel rect.~~ **RESOLVED — static (B):** origin = `@x`/`@y` (GAME.TXT) or
+   centered; size = `@width` + line count. Not cursor-dependent (§Overview item 4).
+3. ~~Per-popup option-highlight RGB.~~ **RESOLVED — static (B):** the `@DEFAULT`/`TEXTCOLR`
+   palette index resolves to exact RGB via the loaded PIK palette (`fonts_and_colors.md`); no
+   capture needed. (Only the per-popup WOODPANL-vs-WOODPAN2 background choice is a minor **TBD**.)
+
+*No runtime residual remains for popups* — the live **values** inside a popup (gold, names,
+counts) are game state, but the layout, text keys, sprite channels, geometry, and colors are all
+static.

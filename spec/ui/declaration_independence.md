@@ -56,6 +56,8 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive s
 bodies are the same `GAME_sections.json` extraction defect seen across the UI specs — present in
 `raw/COLONIZE/GAME.TXT`.)*
 
-1. **No native frame capture** — exact signature glyph (x,y)/line-stride is **TBD** (the
-   export-side `pen_x=0x94`/`pen_y=0x7E` are R; would need a runtime capture to confirm pixel
-   placement). This is the last residual and is **runtime-only**, not a missing function.
+1. **Signature glyph (x,y)/line-stride** — the pen origin (export-side `pen_x=0x94`/`pen_y=0x7E`)
+   is computed in the signature loop of `func_03DA2A` (and its `overlay_call_191F_0ED0` helper).
+   It is **findable by disassembling that loop** — *not* "runtime-only"; the earlier
+   "would need a runtime capture" framing was wrong (the layout is in code, the only runtime
+   input is the leader's *name string* `0x540E+[0x5398]*0x34`, which is game data). **R→findable.**

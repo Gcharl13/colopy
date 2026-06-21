@@ -46,13 +46,18 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 - `docs/COLONY_RENDER_CHAIN.md` §3/§4 — tile chain, `0x6204` decoder, entry chain. **B**
 - `data_extracted/text/MENU_sections.json`, `LABELS_sections.json`, `NAMES_sections.json` — menu/sidebar keys (all verified). **B**
 
-## 6. Open questions (TBD — honest ceiling: runtime/unlocated, not statically byte-answerable)
-1. Sidebar B/C exact intra-panel text (x,y) per line — laid out by the **live text pipeline**
-   from runtime UnitRecord/PowerRecord fields each frame, not a static layout constant; only
-   the band rects are overlay-measured (**A**). **TBD** (runtime).
-2. Minimap dot color → owner mapping (orange=own, grey/red=foreign/native) — **observation**,
-   not byte-cited. The byte-cited per-tile-color-from-layers code (`func_019202` / `DG8(0x830
-   ..0x833)`) is the **colony** surround minimap (a *different* path), so it cannot ground the
-   map-view world minimap, whose render function is "BYTE_VERIFIED-pending"/unlocated. **TBD**.
-3. Per-zoom-level viewport tile counts beyond closest zoom (15×12) — runtime/measured. **TBD**.
-4. Top-menu item hit-rects (x ranges) — only roughly placed. **TBD**.
+## 6. Open questions — re-evaluated 2026-06-21 (these are *static/findable*, **not** runtime)
+*(Correction: the prior "runtime" framing conflated the live displayed **values** — gold, year,
+season, the selected unit's stats — which are game state, with the **layout**, which is computed
+in the render functions and is static. Only the values are runtime, and those are data, not a
+spec gap.)*
+1. Sidebar B/C intra-panel text (x,y) per line — **static layout** in the sidebar render
+   function (the text *content* is the live UnitRecord/PowerRecord value, but each row's
+   position is a code constant). **Findable** (disasm the sidebar painter); not runtime.
+2. Map-view world-minimap render function + owner→dot-color map — **unlocated/findable** (the
+   colony surround minimap `func_019202` reads tile color from `DG8(0x830..0x833)`; the
+   map-view minimap is a sibling path, not yet located). The owner→color is a byte table, not
+   runtime.
+3. Per-zoom viewport tile counts (120×96/60×48/30×24/15×12 per the `@VIEW` menu) — **fixed
+   constants** in the viewport setup; findable, not runtime.
+4. Top-menu item hit-rects (x ranges) — **static** glyph-grid layout; findable.

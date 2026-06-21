@@ -73,32 +73,37 @@ in the export). Residuals are honestly tiered. A follow-up pass (2026-06-21) the
 per-cell good→sprite, unit iterator, build frame-select), the Europe transaction panel +
 market-price LUT, the F8 power-picker, native-action gating (`func_04B308`), and
 build-availability (`func_0B900`) are now **B**; and DECLARAT.PIK was shown to be an **orphan
-asset** (the engine uses DECOIND.PIK). So the residuals now reduce to just **(ii)** runtime
-values (final composed pixel rect, palette colors, live coords) and **(iii)** the separate
-non-exported binaries `OPENING.EXE`/`CLOSING.EXE` (cinematic frame timing) — no missing
-function remains in VICEROY.EXE. Tiers: **B** = decompiled body / capstone offset; **A** =
-luma/anchor-measured; **R** = reconstructed-from-asset; **TBD** = requires runtime or a
-non-exported binary.
+asset** (the engine uses DECOIND.PIK). A **"runtime" re-evaluation (2026-06-21)** then showed
+that nearly everything previously tagged *runtime* is in fact **static**: **colors** resolve to
+exact RGB from the decodable PIK palette (index + palette, both byte-readable — not a capture);
+**popup/dialog placement** is `@x`/`@y` from GAME.TXT or a centered formula (not the cursor);
+**pixel layout coords** are constants in the render functions. The **only** genuine runtime
+dependency is the displayed **values** themselves (gold, year, SoL%, which units/colonies exist)
+— which are live game *state*, documented by layout/format, not spec gaps — plus the separate
+non-exported `OPENING.EXE`/`CLOSING.EXE` cinematic frame timing. **No missing function or
+un-resolvable constant remains in VICEROY.EXE.** Tiers: **B** = decompiled body / capstone offset
+/ file-decoded value; **A** = luma/anchor-measured; **R** = reconstructed-from-asset; **TBD** =
+separate non-exported binary or a live game-state value.
 
 | Spec file | Covers | Layout / draw-code | Honest residual |
 |-----------|--------|--------------------|-----------------|
 | [`ui/map_view.md`](ui/map_view.md) | main gameplay screen | **B** tile chain (`O514→O513→O512`, `0x6204`) / **A** bands | sidebar text coords, minimap owner→color (runtime/unlocated) |
 | [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, + all 4 overlay-`0x181F` helpers traced: SoL%, good→sprite, frame-select, build-cost) | SoL-face ICONS index (cosmetic) |
-| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT) | boycott overlay's runtime-index ICONS frame |
+| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed) | live values only (gold/prices) |
 | [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism / **A** bands | bell/flag not drawn in the F3 text body (overlay/absent) |
 | [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter (DECLARAT.PIK = orphan, never loaded) | signature glyph (x,y) — runtime capture only |
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`) | non-Naval intra-row coords (deeper decompile) |
-| [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework, 11 directives, channels, Lost-City map, raid=6, `@width`) | final pixel rect + highlight RGB (runtime) |
+| [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework, 11 directives, channels, Lost-City map, raid=6, `@width`/`@x`/`@y`, colors via palette) | live values only |
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count; per-axis widget geom (overlay); LEVN grid |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats, score, DECOIND) | OPENING/CLOSING frame timing (separate binaries) |
-| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`) | `@BUILDING` prereq-index decode (R); highlight RGB (runtime) |
-| [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (5 `.FF` fonts; palette-index color args) | **B** (font loads, color push-args) | index→RGB resolution (palette/runtime, A) |
+| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`) | `@BUILDING` prereq-index decode (R) |
+| [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (5 `.FF` fonts; palette-index color args → exact RGB) | **B** (font loads, color push-args, RGB via decoded PIK palette) | none (only palette *cycling* is animation) |
 
 **Fonts & colors** are captured in [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md): the five
 bitmap fonts (FONTTINY/FONTINTR/FONTKING/FONT-NP/FONTSMAL, byte-cited loads) and the color model
-— every text/fill color is an **explicit palette-index argument** (tier **B**), with the
-perceived RGB resolving through the screen's PIK palette (tier **A**, pixel-verified for the
-colony screen in `docs/UI_FONT_REFERENCE.md`).
+— every text/fill color is an **explicit palette-index argument** (**B**) whose **exact RGB is
+also static**, resolved by decoding that screen's PIK palette (a 768-byte file section). So color
+is fully **B**, *not* a runtime/capture residual.
 
 Primary UI sources: `ghidra_export/VICEROY_decompiled.named.c`, `raw/COLONIZE/VICEROY.EXE`,
 `docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`, `docs/UI_DIALOGS.md`,

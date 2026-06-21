@@ -168,8 +168,8 @@ extraction defect (bodies full in `raw/COLONIZE/GAME.TXT`); **native-action row 
 `func_04B308` per-row predicates (B, §Native-village); **build availability** = `func_0B900`
 pop+prereq gates (B, §Construction-choice). All struck.)*
 
-1. **Final option-list pixel rect / highlight RGB** — `@width` + `@default` row are **B**; the
-   composed rect (runtime cursor + layout loop `0x0684BC`) and the highlight palette color are
-   **A/R** (runtime — the only remaining residual class).
+1. ~~Final option-list pixel rect / highlight RGB.~~ **RESOLVED — static (B):** the rect is
+   `@width` + `@x`/`@y` (or centered), not cursor-dependent; the `@default`/highlight palette
+   index resolves to exact RGB via the loaded PIK palette (`fonts_and_colors.md`). No runtime.
 2. The construction prereq-building **indices** in the in-memory `@BUILDING` record (entry+2/+3)
    aren't a visible NAMES column — a small data-table decode (**R**), not a missing function.
