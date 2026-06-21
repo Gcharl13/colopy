@@ -100,19 +100,28 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
   tile bit-7 **partially** done (bit 0x20+0x80 → terrain 27/28); `.MP` record boundaries remain.
 - ~~`immigration.md` §6.3 — recruit-pool slot layout.~~ **DONE 2026-06-20** — pool
   `DGROUP:0x978C` stride 6 (`func_074688`: type `+0x00`, attrs `+0x01–3`, cost word
-  `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100. (immigration §6.2
-  field-unit `-2` override + placement handler is the only remaining immigration bit.)
-- `events.md` §6.2 — Lost-City bias-cascade exact per-gate probabilities (base roll is **B**).
-- `data/{file_formats,records,tables}.md` — per-column→loader confirmation sweeps.
+  `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100.
+- ~~`data/{records,tables}.md` — per-column→loader confirmation sweeps.~~ **DONE
+  2026-06-20** — all loaders located; ColonyRecord load-bearing field map resolved.
+- **The Category-S static depth-queue is now empty.** Residual narrow bits (all with a
+  byte-verified backbone): `map_system.md` `.MP` record boundaries + `§1b` coast
+  beach-halo truth table; `warehousing` exact wastage ordering; `events.md` §6.2
+  Lost-City bias-cascade per-gate probabilities; `immigration` §6.2 field-unit `-2`
+  override + placement handler; `revolution.md` §6.3 WoI end-game flow (PARTIAL);
+  `founding_fathers.md` §6.1 per-father effect magnitudes (mostly done; some hardcoded).
 
 **Category F — inherently fuzzy AI logic (low value; soft by nature):**
 - `diplomacy.md` — AI willingness thresholds; war-matrix `0x08`/`0x80` bit *labels*.
 - `natives.md` §6.3 — explicit tribute-gold amount formula.
-- `exploration.md` §6.3 — whether rival positions reveal on contact vs shared exploration.
 
-**Closed this certification (2026-06-20):** `0x53A6` = difficulty-level `0..4` (not
-current player; current power = `[0x5394]`) — `difficulty.md` §6.2, `turn_dispatch.md` §2;
-power-index fixed `0..3` across all record types — `national_powers.md` §6.4.
+**Closed this certification (2026-06-20):** `0x53A6` = difficulty `0..4` (not current
+player; current power = `[0x5394]`) (`difficulty.md`/`turn_dispatch.md`); power-index
+fixed `0..3` (`national_powers.md`); **SAV format** (43-block layout + autosave,
+`save.md` → **B**); **warehousing** (cap `(level+1)·100`, `@CARGO` legend, overflow →
+**B**); **tutorial** (event-driven shown-bitmask → **B**); `@JOB` col-4 = Europe cost;
+`@RESOURCE` value = bonus; tile-byte bits; immigration recruit-pool; exploration =
+per-player fog (no shared sight); **revolution score bonus = additive `(1780−year)×2`**
+(not a multiplier — corrected the manual); unit→sprite = ICONS.SS; data-table loaders.
 
 | # | Gap | Disasm entry point(s) | Upgrades spec doc | Notes |
 |---|-----|-----------------------|-------------------|-------|

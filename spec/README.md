@@ -12,15 +12,18 @@ primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
 from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
 deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
-**Certification (2026-06-20):** every game system's **byte layer is `BYTE_VERIFIED`**
-(the `B` in each tier cell below). The remaining open `§6` items are consolidated into
-the single **[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**,
+**Certification (2026-06-20, updated):** every game system's **byte layer is
+`BYTE_VERIFIED`** (the `B` in each tier cell below). The remaining open `§6` items are
+consolidated into the single
+**[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**,
 each tagged by *why* it is open: **R** runtime/BSS-bound (need a memory dump), **O**
-overlay/asset-bound (the `.SS` `mode=4` decoder; loader is overlay-resident), **S**
-static depth-queue (closeable by disassembly — chiefly the SAV format, warehousing,
-tutorial, map `.MP`/`@RESOURCE`), **F** inherently fuzzy AI logic. No game *mechanic* is
-left un-byte-grounded; what remains is data-legend, runtime-magnitude, or asset-decode
-work — `tools/linkcheck.py` is clean (`INVALID: 0`).
+overlay/asset-bound (the `.SS` `mode=4` decoder; loader is overlay-resident), **F**
+inherently fuzzy AI logic. **The static depth-queue (Category S) is now empty** — the
+SAV format, warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends,
+exploration fog, the data-table loaders, and the revolution score bonus (additive
+`(1780−year)×2`, *not* a multiplier — a manual correction) are all byte-verified this
+pass; only narrow runtime/soft residuals remain. No game *mechanic* is left
+un-byte-grounded — `tools/linkcheck.py` is clean (`INVALID: 0`).
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
 
