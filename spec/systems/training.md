@@ -159,5 +159,7 @@ Surfaces in the colony screen (assign job) and education building tooltips. See 
    **Done 2026-06-20** — `random_int(1,S) ≤ winner_strength` (`@0x5C764`), or
    **automatic with Washington FF#11** (`@0x5C758`); ladder `func_05E714`, type
    bump Soldier→Continental (§3). **B.**
-4. Confirm `@JOB` column-4 = Europe recruit/train gold cost (vs a pure score value).
-   *(Currently **R**, manual-inferred — §2.)*
+4. ~~Confirm `@JOB` column-4 = Europe recruit/train gold cost.~~ **Done 2026-06-20** —
+   the **NAMES.TXT legend itself** (above `@JOB`) names the columns
+   *"name, expert-name, student level (4 = unlearnable), **cost in europe**"*; col-4 =
+   the Europe recruit/purchase gold cost (`-1` = not recruitable). **B** (primary legend).

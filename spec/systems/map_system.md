@@ -149,8 +149,22 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
 ## 6. Open questions (TBD)
 1. ~~Decode the per-terrain CSV columns.~~ **Done 2026-06-19** — `Movement, Defensive, Improvement, Value` + 9 yields (§2).
 1b. Coast beach-halo: the full neighbour-config → which-of-`0x95..0x99` sprite truth table in `func_067F50`/`func_0681A8` (chain + band byte-verified; per-direction enumeration intricate).
-2. Confirm bit 7 meaning of the tile byte; confirm record-array boundaries from the `.MP` read function.
-3. Map `@RESOURCE` entries to the bonus they grant and to placement rules.
+2. **Tile-byte bit encoding — PARTIALLY RESOLVED 2026-06-20** (`func_006204` /
+   `func_0624E`): low 5 bits (`& 0x1F`) = **base terrain id**; the forest decoder
+   `func_006204` masks `& 0x1F` then applies the auto-forest map (ids 8..23 → `(id&7)|8`,
+   per CLAUDE.md hard rule #3). In `func_0624E`, **bit `0x20` flags a special terrain**,
+   and **bit `0x80` then selects id 27 vs 28** (`and 0x80; sbb; +0x1B`). Bit `0x80` *in
+   isolation* (bit `0x20` clear) is **never observed** in shipped maps (PROJECT_BOARD
+   AMB-6), so its standalone meaning stays TBD. The `.MP` **record-array boundaries**
+   remain TBD (needs the `.MP` reader; `formats/MP_FORMAT.md`).
+3. ~~Map `@RESOURCE` entries to the bonus they grant.~~ **Done 2026-06-20** — the
+   NAMES.TXT legend names `@RESOURCE` *"Special resource squares & **values**"*: each
+   resource's single column = the **production-bonus magnitude** for its associated good
+   (Silver Deposit **12**, Prime Sugar **7**, Depleted Mine/Prime Cotton/Prime Tobacco/
+   Beaver/Game/Prime Timber/Ore Deposit **6**, Fishery **5**, Wheat/Minerals **4**, Oasis
+   **3**); the good is implied by name. **B** (primary legend). *Placement rules* (which
+   terrain spawns which resource) live in the map-gen resource pass `func_063F3C`
+   (`map_generation.md`) — remaining.
 4. ~~Terrain id 24/25/27 assignments.~~ **Resolved 2026-06-20** (`notes/rulings/RULINGS.md`)
    — `@OTHER` order (B) + hard rule 2 (Sea Lane = 26) fix ids **24=Arctic,
    25=Ocean, 26=Sea Lane, 27=Mountains, 28=Hills**; corroborated by the random-map
