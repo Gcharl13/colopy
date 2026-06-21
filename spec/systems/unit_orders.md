@@ -61,4 +61,5 @@ Orders shown as a single key letter in the active-unit orders box; commands via 
 2. ~~Byte-verify the fortify defense multiplier and pioneer task durations.~~ **Done
    2026-06-20** — fortify `·3/2` (+50%) mechanism in `func_05CA7E` (`combat.md`);
    pioneer durations/tool-cost in `terrain_improvement.md` (§3). **B** (mechanism).
-3. Trade Route data structure → see `spec/systems/trade_routes.md`.
+3. ~~Trade Route data structure → see `spec/systems/trade_routes.md`.~~ **Covered** —
+   `trade_routes.md` is fully byte-verified (all §6 items closed). **B** (cross-ref).

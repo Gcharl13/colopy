@@ -103,7 +103,13 @@ Layout `TBD`.
    R=1 (Scout R=2) regardless. So this build **does not** extend de Soto's sight to
    land units (a divergence from the manual's "all units"). `func_006608` is the
    sole radius selector. **Resolved.**
-3. Whether other powers' positions reveal on contact only, or via shared exploration.
+3. ~~Whether other powers' positions reveal on contact only, or via shared exploration.~~
+   **Resolved 2026-06-20 — per-player, no shared exploration.** Each player owns an
+   **independent fog bit `1 << (player+4)`** in the tile's visibility byte (§2); a tile
+   is visible to player *p* iff *that* bit is set, which only *p*'s own units set. So a
+   rival's units/colonies are seen **only when they lie within your own revealed/visible
+   tiles** (line-of-sight/contact), never via shared sight. **B** (follows from the
+   per-player fog mechanism).
 4. ~~Trace scout-bonus arithmetic (`func_05A20E` / `func_061454`).~~ **Done 2026-06-20**
    — Lost-City magnitude `+scout_level·10` (level 0..3 = type5 +1 / Seasoned +1 /
    de Soto +1) and bad-outcome reroll `random_int(1,level+1)`; infiltrate roll

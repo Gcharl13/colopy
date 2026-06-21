@@ -146,7 +146,7 @@ Setup-menu options surfaced in the opening/new-game flow. Strings likely in
    gated `[bp-0xe0]==3`) writes the player's picks `mov [bx+0x1E7E],…` (`@0x701AD`,
    value mod-3); strings `@CLAND/@CCONT/@CTEMP/@CCLIM`. **B** (array+target), **A**
    (idx-4 label, menu strings).
-4. **Post-mapgen placement passes — BYTE_VERIFIED entry functions (2026-06-20):**
+4. ~~Post-mapgen placement passes.~~ **Done — BYTE_VERIFIED entry functions (2026-06-20):**
    all orchestrated by `func_0755CC` after the generator call `@0x7579E`:
    - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)
      settlement records (stride `0x12` @ `0x54EC`, counter `[0x539A]`; per-tribe data

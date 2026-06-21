@@ -91,4 +91,7 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
    — both detailed in `tory_uprising.md` §3. (The earlier mis-attribution to
    `func_03E442`/`func_03E664` — actually the mercenary-offer functions per
    `mercenary.md` — is superseded.)
-4. Verify the revolution score bonus multipliers (see `spec/systems/scoring.md`).
+4. Verify the revolution score bonus multipliers — **tracks `scoring.md` §6.3** (open):
+   the `func_039EE2` display-scaling was shown *not* to be the declaration-era
+   multiplier (negative finding 2026-06-20); the true `2.0/1.5/1.25` site is still
+   unlocated (likely the accumulator `func_03A9C0`). **TBD** (shared with scoring).

@@ -84,4 +84,7 @@ Active-unit orders box and map cursor. See `docs/UI_RENDER_MAP.md`, `notes/SPRIT
 2. ~~Trace the 28-byte UnitRecord fields.~~ **Mostly done 2026-06-20** — base `0x3144`,
    full field map in §2 (position/type/owner/order/goto/cargo/tools/work/class/links).
    Residual: `0x3158`, `0x314F` europe state, and exact bits of `0x3148`/`0x314B`.
-3. Confirm unit→sprite mapping against `notes/SPRITE_CATALOG.md`.
+3. ~~Confirm unit→sprite mapping against `notes/SPRITE_CATALOG.md`.~~ **Done 2026-06-20**
+   — unit sprites are in **ICONS.SS**, byte-cited from `@UNIT` column 1 "Icon" (Colonists
+   101, Soldiers 103, Caravel 6, …, Cont. Cav. 130; PORT png = VICEROY index − 1), per
+   `spec/data/index_tables.md` §4 / SPRITE-A. (CC-NN are FF portraits, not units.) **B.**
