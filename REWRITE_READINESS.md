@@ -57,7 +57,7 @@ empty"):
 | Domain | Readiness | Build on | Residual (relaxed goal) |
 |---|---|---|---|
 | **Game logic / rules** (30 systems) | **Ready** | `spec/systems/*.md` formulas (all byte-verified; map-gen incl.) | A few **fuzzy AI** thresholds → APPROXIMABLE (pick a documented default) |
-| **Asset loading** (`.SS/.PIK/.FF/.PAL/.MP/.TXT`) | **Ready** | `tools/ssdec.py` → ported to `viceroy_cpp` (P0) | none |
+| **Asset loading** | **Ready** | two-stage (§4a): an **offline importer** decodes `.SS/.PIK/.FF` (MADSPACK/FAB) → a **paletted-PNG + JSON bundle**; the **runtime loads only the bundle** | none |
 | **Map-view render** | **Ready** | tile chain `func_O514→O513→O512` (`spec/ui/map_view.md`), `viceroy_cpp` P0 | sub-cell transition refinement → COSMETIC (P0 uses naive mapping) |
 | **Screen-UI render** (colony/Europe/advisor/congress) | **Ready** | `spec/ui/*.md` byte-grounded render bodies + geometry + font/color | sidebar HUD per-line coords; popup body color → APPROXIMABLE (measure from frames) |
 | **Fonts + color** | **Ready** | `spec/ui/fonts_and_colors.md` (4 `.FF` fonts, palette-indexed colors → RGB) | none |
@@ -77,7 +77,8 @@ dropped.
 **Reuse (do not re-derive):**
 - **The spec contract** — `spec/systems/*` (formulas), `spec/ui/*` (geometry + font/color),
   `spec/data/*` + `data_extracted/text/*_sections.json` (NAMES/GAME/LABELS tables), `formats/*.md`.
-- **The asset decoders** — `tools/ssdec.py` (now ported to C++ in `viceroy_cpp`), `tools/extract_*`.
+- **The asset decoders** — `tools/ssdec.py` (ported to C++ in `viceroy_cpp`); these run **only in
+  the offline importer** (§4a), never in the shipped runtime.
 - **The visual oracle** — `tools/render_map.py` and the new `viceroy_cpp/verify.py` (pixel parity).
 - **`viceroy_source/` as *leads only*** — low-trust Layer-1 transcript (never compiled); cite its
   `@asm` blocks to find code, but trust the **spec**, not its C bodies (CLAUDE.md trust order).
@@ -85,7 +86,41 @@ dropped.
   round-trip/oracle-verified).
 
 **Write fresh:** the C++ sim core, the presentation layer (indexed-color surface + palette + the 4
-`.FF` fonts + `.SS`/`.PIK` blitter), input + turn loop, and the test harness.
+`.FF` fonts + an **atlas blitter**), the offline importer, input + turn loop, and the test harness.
+
+---
+
+## 4a. Asset pipeline — import once, run on a modern bundle
+
+**Decision:** the shipped runtime does **not** carry the original MicroProse codec (MADSPACK/FAB/
+`.SS` RLE). It runs entirely on **modern, standard formats**. The quirky codec lives in a **one-time
+offline importer**:
+
+```
+original game files (user-owned)            ── importer (uses the decoder) ──▶  asset bundle
+  raw/COLONIZE/PHYS0.SS, *.PIK, *.FF, ...                                         *.png (atlas) + *.json (frames) + palette
+                                                                                  └── runtime loads ONLY this
+```
+
+- **Importer** (`viceroy_cpp import …`): decodes `.SS/.PIK/.FF` via the ported MADSPACK/FAB/SS code,
+  packs frames into a texture atlas, writes a **paletted PNG** (color-type-3, with `PLTE`+`tRNS`) +
+  a **`frames.json`** (per-frame `w,h` + original `.SS` hotspot `x,y` + atlas rect `ax,ay`). PNG via
+  **libpng** (a standard dep — not a game codec).
+- **Runtime** loads the bundle (libpng + JSON) and never touches `.SS`. Simpler, modding-friendly
+  (artists can edit the PNGs), and dependency-light.
+
+**Two fidelity invariants this must keep** (the reason it's *paletted* PNG, not flattened RGB):
+1. **Indexed color is preserved.** The atlas stores **palette indices**, not baked RGB, so the
+   runtime can apply the live `VICEROY.PAL` and do **palette cycling** (animated water/shimmer per
+   `docs/PALETTE_AND_CYCLING.md` / `CYCLE.DAT`). Flattening to RGB would freeze those animations.
+2. **Frame metadata is preserved.** `.SS` frames carry a `(x,y)` hotspot; per-frame PNGs alone drop
+   it. `frames.json` keeps it, so unit/building/UI sprites place correctly (terrain tiles are 16×16
+   at origin and don't need it, but the metadata is captured uniformly).
+
+**Provenance:** ship the **engine + importer**, not the converted art. The import step runs locally
+against the user's own game files — the bundle is derived from copyrighted MicroProse assets and is
+not committed/redistributed (the `docs/atlas/` PNGs are a deliberate documentation exception, not
+the shipping path).
 
 ---
 
@@ -98,10 +133,12 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
   an injected RNG. This is where "modernized math" lives (wide ints, clean code) under the §1
   contract.
 - **Presentation layer** — a thin client over the sim: a **320×200 indexed-color framebuffer**
-  (mode-13h-faithful), VICEROY.PAL + cycling, the `.SS`/`.PIK` blitter and `.FF` glyph renderer,
-  integer-scaled to the window. Engine intentionally unspecified (SDL2/raylib-class); P0 proves the
-  pipeline headlessly to a file first.
-- **Asset layer** — `viceroy_cpp` (P0): MADSPACK/FAB/SS/PIK/PAL/MP loaders.
+  (mode-13h-faithful), VICEROY.PAL + cycling, an **atlas blitter** (from the §4a bundle) and `.FF`
+  glyph renderer, integer-scaled to the window. Engine intentionally unspecified (SDL2/raylib-class);
+  P0 proves the pipeline headlessly to a file first.
+- **Asset layer** — split per §4a: the **importer** (MADSPACK/FAB/SS decode → bundle, offline) and
+  the **runtime bundle loader** (paletted PNG + JSON). `.MP`/`.PAL` are simple enough to load
+  directly at runtime.
 
 ---
 
@@ -120,8 +157,9 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
 
 ## 6. Phased roadmap
 
-- **P0 — asset → pixels (DONE).** `viceroy_cpp`: decode VICEROY.PAL + PHYS0.SS + AMER2.MP from
-  scratch, render the map view, **pixel-identical to the oracle**. Proves the foundation.
+- **P0 — asset → pixels (DONE).** `viceroy_cpp`: the offline importer (§4a) decodes PHYS0.SS → a
+  paletted-PNG atlas + `frames.json`; the runtime renders the map view **from the bundle** (no codec)
+  + VICEROY.PAL + AMER2.MP, **pixel-identical to the oracle**. Proves the foundation + the pipeline.
 - **P1 — economic spine.** Sim core: turn loop (`func_005760`), colony production, market drift,
   warehousing, immigration. Golden-master tests per formula.
 - **P2 — units & conflict.** Units/orders/movement, combat, natives, diplomacy.
