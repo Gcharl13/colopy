@@ -87,7 +87,7 @@ The authoritative per-element table is in each screen's own spec; collected here
 | Advisor F10 score | **FONTTINY** (`[0x89E]`) + FONTINTR figure metrics (`[0x268A]`) — *not* FONTKING; same `func_03A9C0` as the cinematic score | per `@MISC` | B |
 | Boot-menu plaque (BEGINMENU) | latched (FONTINTR/FONTTINY) — `@smallfont` loads no distinct font | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | A (font) / B (color) |
 | Hall of Fame table | **FONTINTR** (`push [0x268A]` @0x23C06 — *not* FONTKING) | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
-| King-defeats text (the **sole FONTKING user**) | **FONTKING** (`func_075352` @0x754F2, pen (x=242,y=47), glyph engine `0x181F:0x3FE`) | no per-call palette arg → glyph-engine mapping (`[0x1F5C]` is the **speaker-sprite recolor** channel, *not* text color — RULING) | B (font/pos) / A (RGB) |
+| King-defeats text (the **sole FONTKING user**) | **FONTKING** (`func_075352` @0x754F2, pen (x=242,y=47), glyph engine `0x181F:0x3FE`) | no per-call palette arg → glyph-engine mapping (`[0x1F5C]` is the **speaker-portrait selector** channel, *not* text color — RULING) | B (font/pos) / A (RGB) |
 | Popup body | FONTTINY (latch; `SMALLFONT` just copies it) | white `0x0F` default (push is overlay-resident → A/TBD); no `TEXTCOLR` override exists | A |
 | Speaker name-plate | FONT-NP (loaded with WOODFRAM/NAMEPLAT) | overlay-resident → TBD | A |
 

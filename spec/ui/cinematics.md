@@ -6,12 +6,14 @@
 
 **Overall confidence:** in-VICEROY painters **B** (`func_075352` king-defeats argument
 matrix, `func_03A9C0`+`func_039EE2` score screen, `func_03DA2A` DECOIND — all re-disassembled
-2026-06-21); per-frame animation timing in the separate OPENING.EXE/CLOSING.EXE binaries
-**TBD** (no Ghidra export — honest ceiling for the VICEROY-only scope).
+2026-06-21); per-frame animation timing lives in the OPENING.EXE/CLOSING.EXE binaries, which **are
+present and mechanically disassembled in-repo** (`code/OPENING/disasm` 145 fns, `code/CLOSING/disasm`
+136 fns, 99.7% byte-identified) but **not yet semantically annotated** — so timing/`.MOV` stay
+**TBD by Phase-2 effort**, not artifact-absence; out of the chosen VICEROY-only scope this pass.
 **Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md`,
 `data_extracted/text/OPENING_sections.json`,
 `data_extracted/text/CLOSING_sections.json`, `data_extracted/text/GAME_sections.json`.
-**Last updated:** 2026-06-18.
+**Last updated:** 2026-06-21.
 
 ## Overview — cinematic engine split
 
@@ -51,9 +53,9 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
   per-call palette arg** at this site — the on-screen color is the engine's glyph→palette mapping
   (FONTKING.FF foreground = 1-bpp pixel index 3), which is **runtime/engine-resident → A** (not
   byte-pinnable here). *(Correction 2026-06-21: `[0x1F5C]` is NOT the text color — it is the
-  **speaker-sprite recolor channel** (RULING): `cmp [0x1F5C],0; jl; call 0x6F82B(sprite struct
-  +0x10..+0x16)` @0x6E319 tints the speaker/king sprite, default 8 @0x6F5DD. My earlier "text fg
-  = [0x1F5C]" was wrong.)*
+  **speaker-portrait selector channel** (RULING): the dispatcher `func_06E3D0`/`func_06BE92` branch
+  on it (≤7→`IND<tribe>`, =8→KING), and `cmp [0x1F5C],0; jl; call 0x6F82B(sprite struct +0x10..+0x16)`
+  @0x6E319 renders the selected speaker sprite. My earlier "text fg = [0x1F5C]" was wrong.)*
 - **Tier:** **B** (font/geometry/position/text-string); text RGB **A** (glyph-engine mapping).
 
 ## Score screen (SCORE01-24.SS) — **B (byte-grounded 2026-06-21)**
@@ -138,13 +140,19 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
 *(Score plate→category mapping is RESOLVED 2026-06-21 — the plates are rating-tier art,
 selected by `func_03A9C0`; see the Score-screen section above.)*
 
-The remaining items are all **out of static reach this pass** (VICEROY.EXE-only scope) —
-they require disassembling the separate non-exported cinematic binaries or a runtime:
-1. **OPENING/CLOSING frame timing & sequencing** — lives in `OPENING.EXE`/`CLOSING.EXE`,
-   which have **no Ghidra export** (the `opening_source/`/`closing_source/` C stubs are empty,
-   pointing only at `code/OPENING/disasm/*.asm`). The `@OPENING`/`@CLOSING`/`@CREDITS` script
-   tables and asset lists are byte-present (**B**); the playback engine is **TBD**.
-2. **AMERICA.MOV demo-script semantics** — the `.MOV` interpreter is in OPENING.EXE. **TBD.**
+The remaining items are **out of the chosen VICEROY-only scope this pass** — they live in the
+OPENING.EXE/CLOSING.EXE binaries (not a runtime, and not absent — see below):
+1. **OPENING/CLOSING frame timing & sequencing** — lives in `OPENING.EXE`/`CLOSING.EXE`, which
+   **are present in-repo** (`raw/COLONIZE/OPENING.EXE`/`CLOSING.EXE` via `bin/reconstitute.py`)
+   and **mechanically disassembled** (`code/OPENING/disasm` 145 fns, `code/CLOSING/disasm` 136 fns,
+   99.7% byte-identified; `functions.json`, `rtlink_segments.md`). What is missing is **Phase-2
+   semantic annotation** of those listings — every function is still `func_0XXXXX_unknown` (no
+   Ghidra decompile, unlike VICEROY). The `@OPENING`/`@CLOSING`/`@CREDITS` script tables and asset
+   lists are byte-present (**B**); the playback-engine *semantics* are **TBD by Phase-2 effort**,
+   not by artifact-absence.
+2. **AMERICA.MOV demo-script semantics** — the `.MOV` blob is extracted
+   (`data_extracted/data/AMERICA_MOV.json`); the interpreter is among the (disassembled-but-
+   unannotated) OPENING.EXE functions. **TBD by Phase-2 effort.**
 3. **DECLARAT.PIK printed-document loader** — no string xref in VICEROY (likely overlay). **TBD.**
 4. **`KING2.SS` animation loader** — the "KING2" string is not in any traced VICEROY
    function; the war-declaration cinematic loader is unlocated. **TBD.**

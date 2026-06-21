@@ -54,10 +54,10 @@ A per-event handler:
    **`TEXTCOLR` is a vestigial directive — never compared** by `func_06F0F4` (only 10 of the 11
    table strings are live: OPTIONS..DEFAULT); there is **no per-popup text-color override**.
    The body is rendered by the glyph engine `func_06F7EF`=`0x181F:0x998` (the 4 channel wrappers
-   `@0x6F5B0..0x6F64C` set the **speaker-sprite recolor channel** `[0x1F5C]` (=8 for KING @0x6F5DD,
-   =arg for tribe @0x6F5B6) / advisor `[0x1F5E]` / missionary `[0x1F60]` — these are **sprite tint
-   channels**, byte-verified at the recolor path `cmp [0x1F5C],0; call 0x6F82B(sprite +0x10..0x16)`
-   @0x6E319, **NOT** the body text color; RULING 2026-06-21). The body **text** color carries no
+   `@0x6F5B0..0x6F64C` set the **speaker-portrait selector channel** `[0x1F5C]` (=8 for KING @0x6F5DD,
+   =tribe_idx @0x6F5B6) / advisor `[0x1F5E]` / missionary `[0x1F60]` — these **select the speaker
+   portrait** (`func_06E3D0`/`func_06BE92`: ≤7→`IND<tribe>`, 8→KING; render `cmp [0x1F5C],0; call
+   0x6F82B(sprite +0x10..0x16)` @0x6E319), **NOT** the body text color; RULING 2026-06-21). The body **text** color carries no
    explicit per-call palette arg in the glyph engine → **A/TBD** (engine glyph mapping; the
    observed body is light/white on the wood panel). Speaker name-plate uses **FONT-NP** (loaded
    with WOODFRAM/NAMEPLAT) — color overlay-resident (TBD). The `@DEFAULT=N` directive stores a
