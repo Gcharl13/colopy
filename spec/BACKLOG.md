@@ -110,9 +110,9 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
   override + placement handler; `revolution.md` §6.3 WoI end-game flow (PARTIAL);
   `founding_fathers.md` §6.1 per-father effect magnitudes (mostly done; some hardcoded).
 
-**Category F — inherently fuzzy AI logic (low value; soft by nature):**
-- `diplomacy.md` — AI willingness thresholds; war-matrix `0x08`/`0x80` bit *labels*.
-- `natives.md` §6.3 — explicit tribute-gold amount formula.
+**Category F — RESOLVED 2026-06-20.** `diplomacy.md` willingness thresholds + `0x08`/
+`0x80` war-bits → **B** (tier → **B**); `natives.md` §6.3 tribute-gold = clamp
+`[10, min(3·tribe_wealth+10, 100)]` (`func_04AC00`) → **B**. No fuzzy-AI items remain.
 
 **Closed this certification (2026-06-20):** `0x53A6` = difficulty `0..4` (not current
 player; current power = `[0x5394]`) (`difficulty.md`/`turn_dispatch.md`); power-index

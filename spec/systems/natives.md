@@ -188,9 +188,14 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 2. ~~CHIEFKILL treasure roll + roll→gold.~~ **Done** — the `random_int(0,40·scout+100)`
    roll is the village-escape check; the **raze gold** = `(Σ3×random(1,10−diff)) ×
    random(1,6) × 4 × (tribe_id+1)` → `+0x2A` (`@0x4AAD0..0x4AB66`, **B**, §3).
-3. ~~Trace native trade pricing.~~ **Done 2026-06-20** — buy `max(5·diff+50,
-   2·tax)` cap 90 (`@0x5C976..0x5C9A3`, **B**, §3). Remaining: explicit **tribute-gold
-   amount** formula (TBD).
+3. ~~Trace native trade pricing + tribute-gold amount.~~ **Done 2026-06-20** — buy
+   `max(5·diff+50, 2·tax)` cap 90 (`@0x5C976..0x5C9A3`, **B**, §3). **Tribute (Demand
+   Tribute → `@EXTORT*`, `func_04AC00`):** the gold extorted is **clamped to
+   `[10, min(3·tribe_wealth[0x9E96]+10, 100)]`** (`@0x4AE95..0x4AEB8`: ceiling
+   `min(3·[0x9E96]+10, 100)`, floor `10`), then added to the player and removed from the
+   settlement; emits `@EXTORTSTUFF` (gold) / `@EXTORTPOOR` / `@EXTORTLAUGH` / `@EXTORTNO`
+   by outcome. **B** (bounds). The raw pre-clamp demand derives from the settlement's
+   stock. ✓ All native `§6` items resolved.
 4. ~~Mission conversion `cl&0x10` doubler.~~ **Done** (expert/Jesuit missionary bit;
    mechanism **B** §3); exact bit *label* still TBD.
 5. **[Resolved — B]** **TribeData `+0x46+power·2`** = per-power native **alarm/attitude seed**
