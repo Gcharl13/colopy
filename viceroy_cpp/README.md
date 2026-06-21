@@ -74,15 +74,27 @@ goes **`.SS` → ssdec**, a match validates the *whole bundle round-trip* (decod
 atlas pack + paletted-PNG write/read + JSON) — any divergence is caught. P0
 result: **PARITY OK (3,207,168 bytes exact).**
 
+## P1 — economic-spine sim core (`sim/`, started)
+A pure-logic, **headless** sim core (no I/O, no rendering) implementing the
+byte-verified economic formulas from `spec/systems/*`, with "modernized math"
+(plain `int`/`int64`, but the *observable* integer truncation preserved):
+turn/season cadence, colony production (tory penalty + expert), Sons-of-Liberty
+1/64 EMA, hammers/build (surplus carry), warehouse cap, market price drift
+(`>>8`), and REF growth. Validated by a dependency-free golden-master suite
+(`sim/tests/sim_tests.cpp`) asserting documented outputs (SoL 5/10/20%, price
+800→797→794, REF 23/10/5/8, …):
+```sh
+cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM TESTS PASSED
+```
+
 ## Not yet (per roadmap in `REWRITE_READINESS.md`)
-- **Fonts (`.FF`)** — the 4 loaded fonts are **not** bundled yet: they live in
-  `col.zip` (not `raw/COLONIZE`), and the `.FF` glyph layout (per-glyph directory +
-  2-bpp bitmaps) has **no decoder in-repo** (FF.md is high-level; loader/blitter are
-  TBD). Bundling fonts needs that glyph-format RE first — won't guess it.
+- **Fonts (`.FF`)** — not bundled: glyph layout uncracked (overlay-resident parser;
+  see `formats/FF.md` + RULING 2026-06-21). Needs the loader disasm or a
+  render-validation pass — won't guess it.
 - Sub-cell terrain transition chain `func_O514→O513→O512` (CLAUDE.md #7) — P0 uses
   the naive `terrain_id→sprite` mapping; refinement is **TBD** (@asm those funcs).
-- Sim core (turn loop, colony production, market…), screen-UI render, input,
-  windowing, sound — P1+.
+- P1 remainder (full turn-loop phases) + P2+ (combat, units, natives, diplomacy,
+  congress), screen-UI render, input, windowing, sound.
 
 ## Layout
 ```
@@ -90,6 +102,7 @@ include/   importer:  fab madspack ss pik       (.hpp)
            runtime:   bundle pal mp render
            shared:    png_io image_io util
 src/       (same set) + main.cpp  (import-all / import / render subcommands)
+sim/       P1 sim core: types economy market turn ref (+ tests/sim_tests.cpp)
 verify.py  oracle parity check (uses tools/ssdec.py)
-CMakeLists.txt   (links libpng)
+CMakeLists.txt   (links libpng; builds viceroy_cpp + sim_tests)
 ```

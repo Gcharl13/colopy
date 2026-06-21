@@ -28,3 +28,17 @@ add_executable(viceroy_cpp
 )
 target_include_directories(viceroy_cpp PRIVATE include)
 target_link_libraries(viceroy_cpp PRIVATE PNG::PNG)
+
+# --- P1: headless economic-spine sim core (pure logic, no I/O) + golden tests ---
+add_library(viceroy_sim STATIC
+  sim/economy.cpp
+  sim/market.cpp
+  sim/turn.cpp
+  sim/ref.cpp
+)
+target_include_directories(viceroy_sim PUBLIC sim)
+
+enable_testing()
+add_executable(sim_tests sim/tests/sim_tests.cpp)
+target_link_libraries(sim_tests PRIVATE viceroy_sim)
+add_test(NAME sim_tests COMMAND sim_tests)

@@ -165,8 +165,10 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
 - **P0 — asset → pixels (DONE).** `viceroy_cpp`: the offline importer (§4a) decodes PHYS0.SS → a
   paletted-PNG atlas + `frames.json`; the runtime renders the map view **from the bundle** (no codec)
   + VICEROY.PAL + AMER2.MP, **pixel-identical to the oracle**. Proves the foundation + the pipeline.
-- **P1 — economic spine.** Sim core: turn loop (`func_005760`), colony production, market drift,
-  warehousing, immigration. Golden-master tests per formula.
+- **P1 — economic spine (in progress).** Headless sim core `viceroy_cpp/sim/`: turn cadence,
+  colony production (tory penalty + expert), SoL 1/64 EMA, hammers/build, warehouse cap, market
+  price drift, REF growth — **done + golden-master tested** (`sim_tests`). Remaining P1: wiring the
+  full per-turn loop (`func_005760`) over multiple colonies + immigration.
 - **P2 — units & conflict.** Units/orders/movement, combat, natives, diplomacy.
 - **P3 — meta systems.** Founding fathers/congress, revolution + REF + Tory uprising, scoring,
   map generation.
