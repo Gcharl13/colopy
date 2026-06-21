@@ -175,8 +175,19 @@ background+geometry = procedural WOODPAN2/WOODPANL + the row literals above. Bot
    dialog** (glob `*.MP`), overlay-resident; there is **no `MAX_SAVE`/10 array constant** in
    any decompiled body. The manual's "10" may be a save-name limit, not a code array. Stays
    **R/TBD** (overlay code not in the export).
-2. **Customize / difficulty / nationality per-axis widget geometry** — the generic plaque
-   geometry is known (above), but the slider / flag-plaque hit-rects are drawn by the
-   overlay handlers (`191F:087A` Customize, `PICKNATION`/`DIFFICULTY`) not in the export. **TBD**.
-3. **Scenario-select (LEVN*.PIK) thumbnail-grid geometry** — no decompiled body touches the
-   LEVN thumbnails. **A (assets) / TBD (geometry)**.
+2. **Customize / difficulty / nationality per-axis widget geometry** — the *click hit-rects* are
+   drawn by overlay handlers (`191F:087A` Customize, `PICKNATION`/`DIFFICULTY`) not in the export,
+   so they are not byte-derivable. **Best-available R (pixel-measured 2026-06-21 from the committed
+   `docs/atlas/pik/*.png` backgrounds, native 320×200; the widget art is baked into each PIK, so
+   these are the on-screen widget rects):**
+   - **DIFFICUL.PIK** — 5 conquistador plaques, **~62×84** each: top row `y=10` at `x=131, 236`;
+     bottom row `y=106` at `x=26, 131, 236`. (Plaque→difficulty-level assignment is overlay-coded.)
+   - **NATIONS.PIK** — 4 flag plaques, **~70×78**, 2×2: top `y=15` England `x=126` / France `x=226`;
+     bottom `y=107` Spain `x=126` / Netherlands `x=226`.
+   - **CUSTOMIZ.PIK** — 4-axis × 3-value grid of map thumbnails, **~62×42** each: columns
+     `x≈{15, 91, 167, 244}` (Land Mass / Land Form / Temperature / Climate), rows `y≈{20, 79, 138}`.
+   Tier **R** (single committed PIK, ±2px); B would require the overlay click-handler constants.
+3. **Scenario-select (LEVN*.PIK) thumbnail-grid geometry** — the LEVN*.PIK are **full-screen
+   320×200 previews**, not pre-tiled thumbnails, and no committed picker-screen frame shows their
+   arrangement, so the grid geometry has **no asset to measure**. No decompiled body touches them.
+   **A (assets) / TBD (grid geometry — genuinely no evidence).**
