@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** **score scaling formula + difficulty multiplier + rank + accumulator + population-component weights `BYTE_VERIFIED`** (`func_03A9C0`; population gates in paged `0x191F:0x3AA`→`0x39EE2`); remaining component weights (father/gold/sentiment/razed/revolution) `RECONSTRUCTED` (manual; reachable in the same paged function). **Canonical primary:** `func_03A9C0`; `docs/GAME_MANUAL.md` §"Colonization scoring"; `data_extracted/text/GAME_sections.json` `@SCORE`.
+**Overall confidence:** **score scaling formula + difficulty multiplier + rank + accumulator + population-component weights `BYTE_VERIFIED`** (`func_03A9C0`; population gates in paged `0x191F:0x3AA`→`0x39EE2`); **revolution bonus = additive `(1780−decl_year)×2`** `BYTE_VERIFIED` (2026-06-20, §6.3); remaining component weights (father/gold/sentiment/razed) `RECONSTRUCTED` (manual; reachable in the same paged function). **Canonical primary:** `func_03A9C0`; `docs/GAME_MANUAL.md` §"Colonization scoring"; `data_extracted/text/GAME_sections.json` `@SCORE`.
 
 ## 1. Purpose & behavior
 At game end the player's empire is scored as a sum of component points, with a revolution bonus multiplier and a difficulty modifier. The score ranks the empire in the Hall of Fame and yields an "epitaph." **RECONSTRUCTED** (manual §"Colonization scoring"; function HIGH trust, but EXE bytes win for the exact numbers).
@@ -84,13 +84,14 @@ F10 "Current Colonization Score" (manual menu map). End-game score sequence + Ha
 ## 6. Open questions (TBD)
 1. ~~Locate the score-computation function + accumulator.~~ **Done 2026-06-19** — `func_03A9C0`, accumulator `[0x372]`; scaling/rank now **B**.
 2. ~~Byte-verify the population weights (1/2/4).~~ **Done 2026-06-19** — profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4` at `@0x3A09A..0x3A117` (**B**). Remaining component weights (+5 father, /1000 gold, +1 sentiment, −(diff+1) razed) still behind the paged thunk `0x191F:0x3AA` (`func_03B36A`) — reachable, label-binding pending.
-3. Byte-verify the revolution multipliers (2.0/1.5/1.25) + post-intervention bell bonus.
-   **Negative finding 2026-06-20 — `func_039EE2` is *not* the site.** It is a display/
-   text-building routine (string concats throughout) whose two score-scalings —
-   `[bp-0x54] = 8 >> n` then `score = base·(8>>n + 8)/8` `@0x3A8B4`, and `100 >> n`
-   `@0x3A790` gated on `[0x5382]&8` — are driven by `n = [bp-0x56] =` **count of
-   non-rebel powers with `PowerRecord[0] & 0x04`** (loop `@0x39F1C`), a *power count*,
-   **not** the declaration-era band. The `×2.0/1.5/1.25/1.125` arithmetic is a
-   coincidence of the `(8>>n+8)/8` form. The true declaration-timing multiplier is
-   therefore **elsewhere** — most likely the real accumulator `func_03A9C0` (§6 item 1)
-   or its paged component, not this display path. Still **TBD** (search narrowed).
+3. ~~Byte-verify the revolution multipliers (2.0/1.5/1.25).~~ **RESOLVED 2026-06-20 — the
+   bonus is ADDITIVE, not a multiplier** (the manual's "1×/0.5×/0.25×" framing is wrong;
+   EXE wins). In `func_039EE2` (reached from the accumulator `func_03A9C0` `@0x3B340`),
+   gated on **independence won** (`test [0x5382],8` `@0x3A5F5`) **and** declaration year
+   `< 1780` (`cmp [bp-0x6A],0x6F4` `@0x3A5FF`), the score gains
+   **`(1780 − declaration_year) × 2` points** (`@0x3A609`: `mov ax,0x6F4; sub
+   ax,decl_year; shl ax,1`). The **declaration year** is recorded by the WoI handler
+   `func_03DE46` into `[0x53A7]` (year÷100) / `[0x53A8]` (year mod 100) (`@0x3DE65`/
+   `@0x3DE6F`) and reconstructed `@0x39EE6`. So *earlier* declaration → *larger* additive
+   bonus (e.g. 1700 → +160, 1776 → +8); `≥1780` → none. **B.** *(The earlier "(8>>n+8)/8"
+   scaling in the same function is an unrelated per-power-count display value, not this.)*

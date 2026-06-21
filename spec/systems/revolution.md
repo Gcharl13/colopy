@@ -79,7 +79,8 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
 3. **War-of-Independence end-game flow — PARTIALLY BYTE_VERIFIED (2026-06-20):** the
    per-turn end-game dispatcher `@0x2391C` gates on the **Bolívar SoL meter `[0x53D0]`
    ≥ 75** (`cmp [0x53D0],0x4B`); game-phase flags `[0x5382]` **bit 0 = WoI declared**,
-   **bit 1 = foreign intervention active**. One-time handlers: **`func_03DE46`** = WoI
+   **bit 1 = foreign intervention active**, **bit 3 (`0x8`) = independence WON** (gates
+   the score bonus, §6.4 / `scoring.md` §6.3). One-time handlers: **`func_03DE46`** = WoI
    declaration + initial REF dispatch (`[0x5382]|=1` `@0x3E031`); **`func_03D948`** =
    foreign-intervention declaration (no roll — picks the strongest eligible foreign
    ally `[colony+0x5D62]&0x40` / max `[colony+0x1F]`, emits `@INTERVENTION`, sets
@@ -91,7 +92,8 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
    — both detailed in `tory_uprising.md` §3. (The earlier mis-attribution to
    `func_03E442`/`func_03E664` — actually the mercenary-offer functions per
    `mercenary.md` — is superseded.)
-4. Verify the revolution score bonus multipliers — **tracks `scoring.md` §6.3** (open):
-   the `func_039EE2` display-scaling was shown *not* to be the declaration-era
-   multiplier (negative finding 2026-06-20); the true `2.0/1.5/1.25` site is still
-   unlocated (likely the accumulator `func_03A9C0`). **TBD** (shared with scoring).
+4. ~~Verify the revolution score bonus multipliers.~~ **RESOLVED 2026-06-20 (`scoring.md`
+   §6.3) — it's an ADDITIVE bonus, not a multiplier:** if independence is **won**
+   (`[0x5382]&8`) and declared **before 1780**, score `+= (1780 − declaration_year) × 2`
+   (`@0x3A609`). Declaration year stored by `func_03DE46` at `[0x53A7]`/`[0x53A8]`
+   (`@0x3DE65`). Earlier = bigger bonus. **B.**
