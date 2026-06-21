@@ -91,7 +91,9 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
 - ~~`save.md` — the SAV write/read format.~~ **DONE 2026-06-20** — full 43-block on-disk
   sequence + autosave (slot 10) byte-verified (`save.md` §3; tier → **B**); only residual
   is HALLFAME per-word score-field *semantics*.
-- `warehousing.md` §6.2–6.4 — warehouse capacities/+100-per-upgrade, `@CARGO` columns, spoilage timing.
+- ~~`warehousing.md` — capacities, `@CARGO` columns, spoilage.~~ **DONE 2026-06-20** —
+  cap `(level+1)·100` (`func_008D00`), `@CARGO` 9-col price-drift legend (NAMES.TXT),
+  per-good overflow in `func_02D658`; tier → **B** (only wastage-ordering detail left).
 - `tutorial.md` §6.1–6.3 — `@TUTORIALn`→prose→trigger binding; enabled-flag/step-index; sequencing.
 - `map_system.md` §6.2–6.3 — tile bit-7 meaning + `.MP` record boundaries; `@RESOURCE`→bonus.
 - `immigration.md` §6.3 — recruit-pool slot layout (type/cost/count) + non-artillery cost rule.
