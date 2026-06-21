@@ -77,7 +77,7 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
 - `DGROUP:0x9654` FF candidate-scorer table — BSS; gates `founding_fathers.md` §6.3
   (does category 5 instantiate) + per-father effect *magnitudes* (§6.1).
 - `training.md` §6.1 — human-side school teaching rate (UI-driven; AI path is **B**).
-- `tory_uprising.md` §6.3 — Tory-Militia spawn *count* (`[bp-8]`, deep multi-variable; gate/emit **B**).
+- ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
 - `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
 
 **Category O — overlay/asset-bound (need RTLink overlay-map reconstruction or a DOSBox trace):**

@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** message keys `BYTE_VERIFIED`; **uprising emitter + per-call probability gate + SoL-status (50/95/100%) cutoffs `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`/`func_02D658`); uprising effect magnitude `RECONSTRUCTED`. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
+**Overall confidence:** **uprising emitter + per-call probability gate + SoL-status (50/95/100%) cutoffs + target selection + Militia spawn (≤8 adjacent tiles) `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`/`func_02D658`). Only the WoI-loop call frequency for `func_03CAC6` is unpinned. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
 
 ## 1. Purpose & behavior
 
@@ -58,19 +58,22 @@ this fraction is **TBD**.
   probability **`(difficulty+1)/(difficulty+2)`** per call — 50% at Discoverer (diff 0)
   rising to ~83% at Viceroy (diff 4). **B.** *(Call frequency — i.e. how often the WoI
   loop invokes `func_03CAC6` — not yet pinned; the gate itself is byte-exact.)*
-- **Uprising target & strength — partial.** When it proceeds, `func_03CAC6` sums the
-  **rebel army strength** (per-unit attack stat `@UNIT[type·14 + 0x5236]`, accumulated
-  `@0x3CB0A..0x3CB10`) over the rebel power's (`[0x53D2]`) units, then arms a **Tory
-  Militia** near a rebel colony (`%STRING0`). The exact rebel-vs-Tory strength
-  comparison and the number of Tory units spawned are `RECONSTRUCTED`.
-- **Effect:** Crown-loyal **Tory Militia** units appear adjacent to a rebel colony
-  ("Parliament arms Tory Militia!"). The militia count `[bp-8]` is derived from the
-  body's rebel-army-strength vs colony-tory-strength comparison loop
-  (`@0x3CB60..0x3CD40`); when it resolves to **0** the uprising is **suppressed**
-  (clear `ColonyRecord +0x1C` bit 0, return — no message, no units, `@0x3CD59`).
-  Otherwise the colony coords (`ColonyRecord +0/+1`) and name (`+0x02`, `%STRING0`) are
-  bound and `@TORYUPRISING` emitted (`@0x3CD6C..0x3CD97`). The **exact count formula**
-  is `RECONSTRUCTED` (deep multi-variable loop). **B** (gate/emit); **R** (count).
+- **Uprising target — BYTE_VERIFIED 2026-06-20.** `func_03CAC6` scans the rebel power's
+  (`bp+6`) colonies (`@0x3CBC1..0x3CC20`, skipping those with `ColonyRecord +0x1C & 1`)
+  and picks the one with the **highest tory-strength**
+  `= population[+0x1F]·2·(100 − SoL%)/100 + difficulty + 1` (`@0x3CBE6`: `(100−SoL)·2`
+  via `0x181F:0xC86`; `@0x3CBF9` ×pop ÷100; `@0x3CC06` `+ [0x53A6] + 1`). The winner's
+  `+0x1C` bit 0 is set so it can't re-fire (`@0x3CC3C`).
+- **Effect — BYTE_VERIFIED 2026-06-20.** Crown-loyal **Tory Militia** spawn on the
+  **valid empty tiles adjacent to the target colony**: the loop `[bp-0xA]` 0..7 walks the
+  **8 neighbours** (delta tables `[bx+0xBE]`/`[bx+0xB4]`), and for each tile that is
+  passable (`0x181F:0x768`), in-bounds (`0x181F:0x6BE`), and **not occupied by a rebel
+  unit** (`0x181F:0x682`), it calls **`spawn_unit(col,row,[0x53D2],1)`** (`0x181F:0x95C`
+  `@0x3CCCF`). So **up to 8 militia** arm (one per free adjacent tile); `[bp-8]` is the
+  *spawned-any* flag — if **no** adjacent tile is free, the uprising is **suppressed**
+  (clear `+0x1C` bit 0, return — no message/units, `@0x3CD59`). Otherwise the colony
+  coords (`+0/+1`) + name (`+0x02`, `%STRING0`) are bound and `@TORYUPRISING` emitted
+  (`@0x3CD6C..0x3CD97`). **B.**
 
 > **Foreign-intervention arrival (cross-ref `revolution.md`).** The companion
 > `@INTERVENE` "Intervention Force arrives" event (handle `0x12C4`) is emitted by
@@ -108,4 +111,7 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
 2. ~~**Majority/minority cutoffs** on the rebel fraction selecting the `@TORY*`/
    `@REBEL*` status strings.~~ **Done 2026-06-20** — hysteresis at 50/95/100%
    (`func_02D658`, latch `ColonyRecord +0x1C` bits `0x04`/`0x02`); see §3 table. **B.**
-3. **Effect magnitude** of an uprising (Tory Militia unit count / morale / production).
+3. ~~**Effect magnitude** of an uprising (Tory Militia unit count).~~ **Done 2026-06-20**
+   — up to **8** Tory Militia spawn on the free tiles adjacent to the target colony
+   (the rebel colony with max tory-strength `pop·2·(100−SoL%)/100 + diff + 1`); suppressed
+   if no adjacent tile is free (§3). **B.**
