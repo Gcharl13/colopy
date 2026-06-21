@@ -25,13 +25,65 @@ OUT = ROOT / "extracted" / "sprite_atlas"
 sys.path.insert(0, str(ROOT))
 
 
+def _viceroy_pal():
+    """Fallback palette (first 256 RGB6 triples of VICEROY.PAL) -> 8-bit."""
+    raw = (RAW / "VICEROY.PAL").read_bytes()
+    return bytes(((raw[i] << 2) | (raw[i] >> 4)) for i in range(768))
+
+
+def render_pik(pik_path: Path, out_path: Path):
+    """Render a full-screen .PIK image. Layout: sec0 = header (h,w u16),
+    sec1 = w*h indexed pixels, sec2 (optional) = raw 768 palette else VICEROY.PAL."""
+    import struct
+    import tools.ssdec as ssdec
+    from PIL import Image
+
+    secs = ssdec.madspack_load(pik_path.read_bytes())
+    hdr = secs[0][1]
+    h, w = struct.unpack_from("<HH", hdr, 0)
+    pix = secs[1][1]
+    if len(secs) >= 3 and len(secs[2][1]) >= 768:
+        p6 = secs[2][1]
+        pal = bytes(((p6[i] << 2) | (p6[i] >> 4)) for i in range(768))
+    else:
+        pal = _viceroy_pal()
+    im = Image.new("RGB", (w, h))
+    im.putdata([(pal[v * 3], pal[v * 3 + 1], pal[v * 3 + 2]) for v in pix[: w * h]])
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    im.save(out_path)
+    return w, h
+
+
+def _load_sheet_robust(ss_path: Path):
+    """Like ssdec.load_sheet but tolerant of sheets whose section-2 isn't a
+    standard 768-byte palette (e.g. WIN-FWRK.SS) -> fall back to VICEROY.PAL."""
+    import struct
+    import tools.ssdec as ssdec
+    secs = ssdec.madspack_load(ss_path.read_bytes())
+    blobs = [d for _, d in secs]
+    hdr, desc, pal6, pix = blobs[0], blobs[1], blobs[2], blobs[3]
+    nframes = struct.unpack_from("<H", hdr, 38)[0]
+    if len(pal6) >= 768 and max(pal6[:768]) <= 63:
+        pal = bytes(((pal6[i] << 2) | (pal6[i] >> 4)) for i in range(768))
+    else:
+        pal = _viceroy_pal()
+    frames = []
+    for k in range(nframes):
+        e = desc[k * 16:k * 16 + 16]
+        if len(e) < 16:
+            break
+        off, size = struct.unpack_from("<I", e, 0)[0], struct.unpack_from("<I", e, 4)[0]
+        x, y, w, h = struct.unpack_from("<hhHH", e, 8)
+        frames.append((x, y, w, h, ssdec.rle_decode(pix[off:off + size], w, h)))
+    return pal, frames
+
+
 def render_atlas(ss_path: Path, out_path: Path, cols: int, scale: int,
                  cellw: int, cellh: int) -> tuple[int, tuple[int, int]]:
     import tools.ssdec as ssdec
     from PIL import Image, ImageDraw
 
-    sh = ssdec.load_sheet(str(ss_path))
-    pal, frames = sh["pal"], sh["frames"]
+    pal, frames = _load_sheet_robust(ss_path)
     n = len(frames)
     rows = (n + cols - 1) // cols
     W, H = cols * cellw, rows * cellh + 24
@@ -68,26 +120,37 @@ def render_atlas(ss_path: Path, out_path: Path, cols: int, scale: int,
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("sheets", nargs="*", help="sheet filenames in raw/COLONIZE (e.g. ICONS.SS)")
-    ap.add_argument("--all", action="store_true", help="render every .SS in raw/COLONIZE")
+    ap.add_argument("--all", action="store_true",
+                    help="render every .SS and .PIK in raw/COLONIZE")
+    ap.add_argument("--out", default=str(OUT), help="output dir (default extracted/sprite_atlas)")
     ap.add_argument("--cols", type=int, default=16)
     ap.add_argument("--scale", type=int, default=3)
     ap.add_argument("--cellw", type=int, default=58)
     ap.add_argument("--cellh", type=int, default=58)
     args = ap.parse_args()
+    outdir = Path(args.out)
 
-    names = sorted(p.name for p in RAW.glob("*.SS")) if args.all else args.sheets
+    if args.all:
+        names = sorted(p.name for p in RAW.glob("*.SS")) + sorted(p.name for p in RAW.glob("*.PIK"))
+    else:
+        names = args.sheets
     if not names:
-        ap.error("give sheet names (e.g. ICONS.SS) or --all")
+        ap.error("give sheet names (e.g. ICONS.SS / OPENMENU.PIK) or --all")
 
     for name in names:
-        ss = RAW / name
-        if not ss.exists():
+        src = RAW / name
+        if not src.exists():
             print(f"SKIP {name}: not in {RAW} (unzip from col.zip first)", file=sys.stderr)
             continue
-        out = OUT / f"atlas_{ss.stem}.png"
         try:
-            n, size = render_atlas(ss, out, args.cols, args.scale, args.cellw, args.cellh)
-            print(f"{name}: {n} sprites -> {out} {size}")
+            if src.suffix.upper() == ".PIK":
+                out = outdir / "pik" / f"{src.stem}.png"
+                w, h = render_pik(src, out)
+                print(f"{name}: PIK {w}x{h} -> {out}")
+            else:
+                out = outdir / "sprites" / f"atlas_{src.stem}.png"
+                n, size = render_atlas(src, out, args.cols, args.scale, args.cellw, args.cellh)
+                print(f"{name}: {n} sprites -> {out} {size}")
         except Exception as e:                                  # noqa: BLE001
             print(f"FAIL {name}: {e}", file=sys.stderr)
     return 0
