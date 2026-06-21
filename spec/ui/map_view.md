@@ -10,13 +10,13 @@ The default in-game screen (155/396 session snaps — the majority of play). Lef
 ## 2. Layout — "what is drawn where"
 Native 320×200 (mode 13h). Coordinates from `RENDERER_GEOMETRY.md` (overlay-verified v2/v3, tier **A** — pixel-measured, not byte-cited).
 
-| Region | Pixel rect | Tier | Notes |
-|--------|-----------|------|-------|
-| Top menu strip | (0, 0, 320, 8) | A | glyph-grid; v3 corrected from 14→8 px |
-| Map viewport | (0, 8, 240, 192) | A | 15×12 tiles × 16×16 px at closest zoom (240×192) |
-| Sidebar A — minimap | (240, 14, 80, 58) | A | ~58×72 world squashed; white viewport rect, colony/unit dots |
-| Sidebar B — season/gold/tax | (240, 72, 80, 64) | A | "Spring NNNN / Gold: NNNN / Tax: NN%" |
-| Sidebar C — selected-unit panel | (240, 136, 80, 64) | A | sprite + Moves/Locat + type/skill/orders/(terrain) |
+| Region | Pixel rect | Font | Color | Notes |
+|--------|-----------|------|-------|-------|
+| Top menu strip | (0, 0, 320, 9) | FONTTINY | green `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) | glyph-grid; `ui_wood_fill(0,0,320,9)` bg. Item x-ranges from title widths (mechanism B; exact coords R) |
+| Map viewport | (0, 8, 240, 192) | — (tiles) | per-tile palette | 15×12@16px (zoom 0); see §6.2 |
+| Sidebar A — minimap | (241, 8, 79, 41) | — | viewport rect `0x0F`→white; dots from DG8(0x830..0x833) | `func_066CD6` (§6.1) |
+| Sidebar B — season/gold/tax | (240, 72, 80, 64) | FONTTINY | white `0x0F`→(255,255,255) | per-line x,y overlay-resident (§6.3) |
+| Sidebar C — selected-unit panel | (240, 136, 80, 64) | FONTTINY | white `0x0F` | sprite + `@INFO` labels; layout overlay-resident |
 
 Sidebar variants: foreign-colony hover replaces panel C with name/nation/treasury + With:/Ask: trade lists (`SESSION_UI_CATALOG.md` §8). **A**
 
@@ -46,18 +46,22 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 - `docs/COLONY_RENDER_CHAIN.md` §3/§4 — tile chain, `0x6204` decoder, entry chain. **B**
 - `data_extracted/text/MENU_sections.json`, `LABELS_sections.json`, `NAMES_sections.json` — menu/sidebar keys (all verified). **B**
 
-## 6. Open questions — re-evaluated 2026-06-21 (these are *static/findable*, **not** runtime)
-*(Correction: the prior "runtime" framing conflated the live displayed **values** — gold, year,
-season, the selected unit's stats — which are game state, with the **layout**, which is computed
-in the render functions and is static. Only the values are runtime, and those are data, not a
-spec gap.)*
-1. Sidebar B/C intra-panel text (x,y) per line — **static layout** in the sidebar render
-   function (the text *content* is the live UnitRecord/PowerRecord value, but each row's
-   position is a code constant). **Findable** (disasm the sidebar painter); not runtime.
-2. Map-view world-minimap render function + owner→dot-color map — **unlocated/findable** (the
-   colony surround minimap `func_019202` reads tile color from `DG8(0x830..0x833)`; the
-   map-view minimap is a sibling path, not yet located). The owner→color is a byte table, not
-   runtime.
-3. Per-zoom viewport tile counts (120×96/60×48/30×24/15×12 per the `@VIEW` menu) — **fixed
-   constants** in the viewport setup; findable, not runtime.
-4. Top-menu item hit-rects (x ranges) — **static** glyph-grid layout; findable.
+## 6. Open questions — mostly CLOSED 2026-06-21 (none are truly runtime)
+1. ✅ **World-minimap render function — LOCATED (B).** `func_066CD6_minimap_panel` (`@0x66CD6`;
+   panel box `(0xF1,8,0x4F,0x29)`=(241,8,79,41) byte-verified `@0x66CF4`) → `minimap_draw_contents`
+   (the sibling of the colony surround minimap). Owner→dot-color is the table at **DG8(`0x830..0x833`)**
+   (`0x830` ocean/coast, `0x831` land, `0x832` fog `&0x80`, `0x833` owned `&0x20`); the white
+   viewport rect uses idx `0x0F`. **Structure B**; the color *index values* `0x830..0x839` are
+   **loaded from an asset at init** (`lcall 0x1A1F:0x88A` `@0x751A7`), i.e. data-driven, not EXE
+   constants.
+2. ✅ **Per-zoom viewport tile counts — CLOSED (B, computed).** Viewport setup `@0x6787C`:
+   `SPAN_W[0x8544]=0xF<<zoom`, `SPAN_H[0x8546]=0xC<<zoom`, `TILE_PX[0x5AD4]=0x10>>zoom` (zoom =
+   `[0x184]`, re-verified). zoom 0..3 = **15×12@16px / 30×24@8px / 60×48@4px / 120×96@2px** —
+   exactly the four `@VIEW` "Zoom Level" entries; the overview mode (`[0x18A]≠0`) forces 5×5.
+3. **Sidebar B/C per-line text (x,y)** — painted by overlay HUD thunks (`hud_print_6a/74/7e`,
+   seg `191F/1A1F`) whose layout constants are **overlay-resident, not in the export** — honest
+   **TBD** (font is FONTTINY **B**; the text is live UnitRecord/PowerRecord data).
+4. **Top-menu item hit-rects** — built by the `menubar` widget from **FONTTINY title widths**
+   (glyph-grid), not a fixed table. The explicit x-origins (GAME@11 … COLONIZOPEDIA@261) come
+   from the low-trust `_VICEROY_MODERN` C reconstruction (absent from the EXE; that block also
+   loads the forbidden `TERRAIN.SS`) → those exact coords are **R**, the glyph-grid mechanism is **B**.

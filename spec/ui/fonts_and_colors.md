@@ -14,7 +14,7 @@ The engine loads four fonts at boot (asset table `@file 0x1FD20`/export `BOOT_AS
 | Font | File | Glyph (h × w) | Style | Role / where used | Tier |
 |------|------|---------------|-------|-------------------|------|
 | **FONTTINY** | `FONTTINY.FF` (`@0x1FD32`) | 6 × 4 fixed | mixed-case fixed | **default body / HUD**: inventory qty, production-grid yields, sidebar numbers | B (load) / A (role) |
-| **FONTINTR** | `FONTINTR.FF` (`@0x1FD29`) | 9 × 6 fixed | chunky 3-D | **intro / boot-menu plaques / title** | B / A |
+| **FONTINTR** | `FONTINTR.FF` (`@0x1FD29`) | 9 × 6 fixed | chunky 3-D | **intro / title**; default menu font (but `@BEGINMENU` overrides to FONTSMAL via `@smallfont`) | B / A |
 | **FONTKING** | `FONTKING.FF` (`@0x1FCCB`) | 7 × 3–7 var | mixed-case proportional | **large readable**: screen titles, SoL%, **Score screen**, **Hall of Fame**, king-defeats | B / A |
 | **FONT-NP** | `FONT-NP.FF` (`@0x1F8AF`) | 8 × 7–8 var | uppercase var | **national-power** / grayed text | B / A |
 | **FONTSMAL** | `FONTSMAL.FF` | 6 × 6 fixed | uppercase fixed | popup body when the **`SMALLFONT`** directive (`@file 0x1F97B`) is set (`func_06F0F4`) | B |
@@ -73,7 +73,8 @@ The authoritative per-element table is in each screen's own spec; collected here
 | SoL% / "No Ships In Port" | FONTKING | white / cream | B/A |
 | Score screen + Hall of Fame | **FONTKING** | per `@MISC` | B |
 | Advisor report titles | (report font) | fill `0x90`; rows `0x91/0x92/0x61` | B |
-| Boot-menu plaques | FONTINTR | green text `0x52,0x8A,0x31` / gold selected | B/A |
+| Boot-menu plaque (BEGINMENU) | **FONTSMAL** (`@smallfont`) | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | B |
+| Hall of Fame | FONTKING | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
 | Popup body (default / `SMALLFONT`) | FONTTINY / FONTSMAL | per `TEXTCOLR` directive | B |
 
 ## 4. Residual — none (font/color is fully static)

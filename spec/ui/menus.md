@@ -42,9 +42,16 @@ All wood-plaque menus (boot + setup + in-game bars) share this layout engine; co
 export 48237–48245: BORDER=3, INSET=2, GAP=3, MIN_W=80, LINE_MARGIN=10. `w = max(80,
 longest+10, @width) + 6`; row pitch = `font.maxh + 3`; `x = (@x==-1)? (320-w)/2 : @x`,
 `y = (@y==-1)? (200-h)/2 : @y` (so `@BEGINMENU` pins y=91, centered x, width ≥160); text
-origin (x+4, y+5). Panel fill = **WOODTILE.SS** tiled; outline RGB(0x14,0x0C,0x06); selection
-bar RGB(0x38,0x20,0x10); text green RGB(0x52,0x8A,0x31) / gold RGB(0xE3,0xAA,0x28). Nav: ENTER
-13 / ESC 27 / SPACE 32 / arrows / digit + first-letter hotkeys. **B**.
+origin (x+4, y+5). Panel fill = **WOODTILE.SS** tiled. Nav: ENTER 13 / ESC 27 / SPACE 32 /
+arrows / digit + first-letter hotkeys. **B**.
+
+**Fonts & colors (B):** the four plaque colors are passed as **direct RGB** through
+`mr_color_for(r,g,b)` (export 48464), which scans the live palette for the nearest entry — they
+are design-intent RGBs, not palette-index pushes: outline **(20,12,6)**, selection bar
+**(56,32,16)**, text green **(82,138,49)**, selected gold **(227,170,40)** (gold hits OPENMENU
+idx `0x54` exactly). **Boot-menu body font = FONTSMAL** (the `@BEGINMENU` section carries
+`@smallfont`, which sets `m->smallfont=1` in `mr_load_section` export 48348) — *not* FONTINTR;
+FONTINTR is the general intro/menu font that BEGINMENU overrides. **B.**
 
 ## Main menu
 - **Purpose:** entry choices after the title screen.
@@ -117,12 +124,15 @@ bar RGB(0x38,0x20,0x10); text green RGB(0x52,0x8A,0x31) / gold RGB(0xE3,0xAA,0x2
   `@MISC`: "President", "General, Continental Army", "Leader", "Score",
   "Colonization_Rating", "A.D." (**B**). Retirement keys `GAME @RETIRE`,
   `@RETIRING`, `@RETIRING2`, `@SOONRETIRING0/1` (**B**, bodies empty).
-- **Background/geometry — RESOLVED (B):** there is **no HoF PIK** — `hall_of_fame_render`
-  (export 25037, `@file 0x3ACAF`) draws on the procedural **WOODPAN2/WOODPANL** wood panels
-  (handles 0x11D7/0x11FF). Render literals: title commit at (0x8C,0x8E) color 0xFC; score
-  column x=0xA0 with `y = 0xC3−(i+1)`; full-screen rule `box_rule(0,0x140,0xC8)`; trophy sprite
-  0x24/0x25/0x21 by rating. Table rows (`hall_of_fame_table`): start y=0x10, x=0x0A, pitch 10.
-  **B**.
+- **Background/geometry + font/color — RESOLVED (B):** there is **no HoF PIK** —
+  `hall_of_fame_render` (export 25037, `@file 0x3ACB2`) draws on the procedural **WOODPAN2**
+  (render screen, handle 0x11D7) / **WOODPANL** (table screen) wood panels. Font = **FONTKING**.
+  Colors resolve via **WOODPAN2.PIK** (*not* WOODPANL — there 0xFC is magenta): title at
+  (0x8C,0x8E) color **`0xFC`→(199,162,32) gold** (sprite 0x22); score/rating bars x=0xA0,
+  `y=0xC3−(i+1)`, color `0xFC` gold when `i==rating` else `0xFE`; full-screen rule
+  `box_rule(0,0x140,0xC8)`; trophy sprite **0x24** (rating≥0x17) / **0x21** (≤6) / **0x25** (else)
+  — all byte-verified `@0x3AC37..0x3AD6A`. Table rows (`hall_of_fame_table`): start y=0x10, x=0x0A,
+  pitch 10. **B**.
 - **Record I/O — B (raw-verified, `@file 0x3ADA6`):** `HALLFAME.DAT`, `fread/fwrite` size
   **0xD2 (210)** = 5 records × **0x2A (42)**; buffer holds 6 slots, file holds 5; **score =
   int16 @ record +0x26**, descending insertion-sort. (Cross-ref `spec/systems/save.md` §6.5.)
