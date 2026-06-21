@@ -178,16 +178,38 @@ F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.
 
 ## 6. Open questions (TBD)
 1. Map each father to its concrete in-engine effect. **Mechanism located 2026-06-21
-   (not a runtime table):** continuous effects are applied **inline** at each mechanic's
-   site via `test_building_or_father_bit(N)` (a combined building+father feature-bit test),
-   and the **magnitudes are hardcoded constants right there** — e.g. in the colony turn
-   processor `colony_turn_update`/`func_02D658`: bit `0x14` **doubles** bell output
-   (`g_8DEC <<= 1`), bit `0x13` **+50%** (`+= g_8DEC>>1`), bit `0x11` switches the SoL quota
-   divisor `0x32→0x19`, bits `0x24`/`0x26` **double** a tile yield (`yield <<= 1`), bits
-   `0x25`/`0x26` `+1`. So the per-father magnitudes are byte-readable at their use sites; the
-   only residual is the exact **bit-N → father-name** binding (the feature-bit assignment),
-   not the magnitudes. (No runtime/BSS dump needed — corrects the earlier "hardcoded,
-   unknown" framing.)
+   (not a runtime table; no dump needed).** Father (and national-advantage) effects are
+   per-**power** flags tested by **`ov_power_flag(power, op_id)`** — file `0xBC10`, which
+   reads **bit `op_id` of a per-power bitfield at DGROUP `0x880F`** (stride `0x13C`/power;
+   `byte[power·0x13C + op_id>>3 − 0x77F1] & (1<<(op_id&7))`; only powers `0..3`, and `op_id<0`
+   ⇒ always-true). The **effect magnitudes are hardcoded inline** at each test site, mostly
+   in the colony turn processor `colony_turn_update`/`func_02D658`:
+   - op **`0x0F`** → **+50% bells** (`g_8DEC += g_8DEC>>1`, `@line 8216`);
+   - op **`0x15`** → **+50%** to a production yield (`yield += yield>>1`);
+   - op **`0x08`** → **×2** yield for good id 4 (`yield <<= 1`);
+   - op **`0x11`** → **+pct%** where `pct` = the per-power byte at `0x8809[power·0x13C]`;
+   - op **`0x12`** → **+(pop+3)/5** production for a non-active power, and **+20%** (`pct+=0x14`)
+     in the SoL-percentage path (`@line 6451`).
+   (NB: the colony **building** bonuses — `test_building_or_father_bit`/`test_colony_building_bit`,
+   bits `0x13` Printing Press +50% / `0x14` Newspaper ×2 bells, per-colony bitmap
+   `g_colony_bits_5DCA` stride `0xCA` — are a **separate** mechanism, *not* fathers.)
+
+   **op_id → father binding — RESOLVED 2026-06-21 (direct).** The grant routine
+   `ff_set_owned_bit(power, ff_id, set)` (`@0x025443`, called from `congress_screen_render`
+   `@0x025614` on award) sets **bit `ff_id`** of the *same* per-power bitfield (`0x880F`,
+   stride `0x13C`) that `ov_power_flag` reads — so **`op_id` ≡ the `@FATHERS` index** (no
+   indirection). That pins the five continuous-effect fathers, and the magnitudes match the
+   manual exactly:
+   | op_id | `@FATHERS[id]` | effect (byte-verified) |
+   |-------|----------------|------------------------|
+   | `0x08` | #8 **Henry Hudson** | ×2 yield for good 4 (**furs**) |
+   | `0x0F` | #15 **Thomas Jefferson** | **+50% bell** production |
+   | `0x11` | #17 **Thomas Paine** | bells **+ tax-rate %** (`pct` = per-power byte `0x8809`) |
+   | `0x12` | #18 **Simón Bolívar** | **+20% SoL** (`pct += 0x14`) + pop-scaled bell bonus |
+   | `0x15` | #21 **William Penn** | **+50%** (crosses) yield |
+   The other fathers are **one-shot / event effects** coded at their own mechanic (e.g.
+   Washington #11 auto-promotion `@0x05C758`, §3) rather than per-turn `ov_power_flag` tests.
+   **§6.1 closed for the continuous-effect fathers; tier → B.**
 2. ~~Decode the per-category candidate scorer `ff_cat_candidate` (overlay thunk
    `0x1A1F:0x0054`).~~ **Structure decoded 2026-06-20** — `0x1A1F:0x0054 → func_03B980`
    (`enter 4`): loops the 25 father ids (`[bp-2]` `0..0x18`), and for each **not-yet-

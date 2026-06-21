@@ -76,29 +76,36 @@ secondary mechanics.
 ## ★ Authoritative Residual Ledger (2026-06-20 certification)
 
 The single source of truth for **what is left**. Every game system's *byte layer* is
-`BYTE_VERIFIED` (`spec/README.md`); the items below are the only open `§6` questions,
-each tagged by **why** it is open. Categories **R/O** are not closeable by static
-disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
+`BYTE_VERIFIED` (`spec/README.md`). **As of 2026-06-21 Categories R, O, S and F are all
+empty** — every item below has been resolved by byte-readable code (no memory dump or
+runtime trace was needed for any of them; the three "needs-a-trace" items from the prior
+pass were all found statically). Entries are kept struck-through as an audit trail.
 
-**Category R — runtime-derived (NOT dump-bound; corrected 2026-06-20).** These were
-mislabeled "need a memory dump" — each is computed/loaded by byte-readable code:
+**Category R — runtime-derived (NOT dump-bound; all RESOLVED).** Each was mislabeled
+"need a memory dump" — each is computed/loaded by byte-readable code:
 - ~~`DGROUP:0x9408` REF "value table".~~ **RESOLVED** — a **per-power military tally
   recomputed at runtime** (stats-reset `@0x42138` zeroes it with the sibling per-power
   tables `0x9298`/`0x9410`/`0x9418`; unit-scan re-increments `@0x4229F`), not a constants
   table; semantics byte-verified (`ref_growth.md`).
 - ~~`DGROUP:0x9654` FF candidate table.~~ **RESOLVED** — content loaded verbatim from
   `@FATHERS`; `founding_fathers.md` §6.3 done (no type-5 father). Only per-father
-  continuous-effect *magnitudes* (§6.1) — **mechanism located 2026-06-21:** applied inline
-  via `test_building_or_father_bit(N)` with the **magnitudes hardcoded at each site** (bit
-  `0x14` bells ×2, `0x13` +50%, `0x11` SoL divisor `0x32→0x19`, `0x24`/`0x26` yield ×2 — in
-  `func_02D658`); only the exact bit-N→father binding is residual, **not** a runtime table.
+  continuous-effect *magnitudes* (§6.1) — **RESOLVED 2026-06-21.** Father effects are
+  per-power flags via `ov_power_flag(power, op_id)` (file `0xBC10`, DGROUP `0x880F` stride
+  `0x13C`); the grant `ff_set_owned_bit` sets **bit = `ff_id`** in that same field, so
+  **op_id ≡ `@FATHERS` index**. Binding + magnitudes verified vs the manual: Hudson(8)=×2 furs,
+  Jefferson(15)=+50% bells, Paine(17)=bells+tax%, Bolívar(18)=+20% SoL, Penn(21)=+50% crosses
+  (`func_02D658`). One-shot fathers are coded at their own mechanic (Washington auto-promote
+  `0x5C758`). Not a runtime table. **Tier → B.**
 - ~~`training.md` §6.1 — human-side school teaching rate.~~ **DONE 2026-06-21 — it WAS
   static** (corrects the "UI-driven" claim): in `func_02D658` `@0x02DDB4..0x02E012`
   (per-colony turn processor) — faculty cap 3, **turns-to-graduate 4/6/8 by skill class**
   (unit-type table `0x8EA6`), per-student counter `0x181F:0xD1C`/`0xA7E`, emits
   `@TRAINPROFESSION`/`@TRAINFAIL`; tier → **B** (`training.md` §3).
 - ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
-- `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
+- ~~`events.md` §6.1 — Lost-City trigger feature value (`0xA0` vs `0xB0`).~~ **RESOLVED
+  2026-06-21 — the question is dissolved:** rumor presence is **procedural** (`func_006188`
+  `@0x6188`: coordinate hash vs map seed `[0x190]`, requiring feature high-nibble `0xF`),
+  not a stored marker — so there is no `0xB0` placement constant (RULING 2026-06-21). **Done.**
 
 **Category O — `.SS` sprite codec — RESOLVED 2026-06-20.**
 - The codec is **standard FAB** (LZ77 bitstream), not a bespoke "MADSPACK-2 mode-4"
@@ -140,15 +147,13 @@ mislabeled "need a memory dump" — each is computed/loaded by byte-readable cod
   `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100.
 - ~~`data/{records,tables}.md` — per-column→loader confirmation sweeps.~~ **DONE
   2026-06-20** — all loaders located; ColonyRecord load-bearing field map resolved.
-- **The Category-S static depth-queue is empty.** Tiny narrow bits remain atop a
-  byte-verified backbone (all low-value): `map_system.md` `.MP` record boundaries +
-  `§1b` coast beach-halo per-direction truth table; `warehousing` exact wastage
-  ordering; `immigration` §6.2 field-unit `-2` override + placement handler;
-  `revolution.md` §6.3 WoI end-game flow (PARTIAL); `founding_fathers.md` §6.1 a few
-  per-father continuous-effect *magnitudes* (mostly done; hardcoded); `save.md` §6.5
-  HALLFAME per-word score-field *semantics* (record layout is **B**); `training.md`
-  §6.1 human teaching rate (UI-driven; AI path **B**); `events.md` §6.1 Lost-City
-  feature value (runtime-verified `0xB0`). None is a gap in any game *mechanic*.
+- **The Category-S static depth-queue is empty.** Only cosmetic narrow bits remain atop a
+  byte-verified backbone (all low-value, none a gap in any *mechanic*): `map_system.md`
+  `.MP` record boundaries + `§1b` coast beach-halo per-direction truth table; `warehousing`
+  exact wastage ordering; `immigration` §6.2 field-unit `-2` override + placement handler;
+  `revolution.md` §6.3 WoI end-game flow (PARTIAL); `save.md` §6.5 HALLFAME per-word
+  score-field *semantics* (record layout is **B**). (The former `training.md`, `events.md`
+  and `founding_fathers.md` §6.1 residuals are now **RESOLVED** — see Category R above.)
 
 **Category F — RESOLVED 2026-06-20.** `diplomacy.md` willingness thresholds + `0x08`/
 `0x80` war-bits → **B** (tier → **B**); `natives.md` §6.3 tribute-gold = clamp

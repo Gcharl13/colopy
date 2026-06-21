@@ -163,28 +163,27 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
 - `func_05BE84` — native **raid** outcome dispatch (RAID* keys) — see `natives.md` §3. **B**
 
 ## 6. Open questions (TBD)
-1. **Trigger feature byte — RUNTIME-VERIFIED `0xB0`; static reconcile 2026-06-20.**
-   The runtime memory-map doc (`colonization-memory-map (1).md`, write-verified) has
-   the features-layer byte **`0xB0` (176)** mark a Lost-City tile (cleared to `0x00`
-   on entry). **Static confirms the *mask but not the constant*:** at the trigger the
-   feature is read as `mov al,[bx+0x3147]; and ax,0xF0` (`@0x3F795`) — the **full high
-   nibble (`0xF0`)** is the feature field (low nibble = owning-nation/tribe id) — then
-   the Lost-City *presence* test is **delegated to helper `0x181F:0x7E0`/`0x7FE`**
-   (`@0x3F7A5`/`@0x3F7B2`), not an inline compare. So the earlier puzzle ("no `0xB0`
-   immediate exists in the EXE, but several `0xA0` do") is **explained**: the stray
-   `0xA0`/`0xB0` immediates are unrelated arithmetic/scan code, and the feature
-   discriminator lives inside the unresolved helper. `0xB0` (high nibble of `0xF0`) is
-   **consistent** with the runtime value; static can neither confirm nor refute `0xA0`
-   vs `0xB0` without resolving the helper body. Map is 56×72 row-major
-   (`tile = y·56 + x`). See `spec/systems/map_system.md`.
-   **Helper traced 2026-06-21:** the delegated `0x181F:0x7E0` (file `0x66CC`) is a generic
-   **"find unit at map coords"** scan (walks the unit table `0x3144` stride `0x1C`, matching
-   fields `+0`/`+1` against x/y; 86 call sites) — i.e. the `0x3F795` site is the **unit /
-   tile-arrival** path, and the Lost-City *consumer function exists and is byte-verified*
-   (`func_061454`). So nothing here is a *missing function* — the only open atom is the
-   single **feature-layer marker byte** (`0xA0` vs `0xB0`), a value in the runtime features
-   array; the memory-map doc anchors it at `0xB0`. Resolving `0xA0`-vs-`0xB0` is a one-byte
-   data read, not code recovery.
+1. **Trigger feature byte — RESOLVED 2026-06-21: rumor presence is PROCEDURAL, not a
+   stored `0xA0`/`0xB0` marker** (corrects the earlier "runtime-`0xB0`" reconcile; the
+   `0xA0`-vs-`0xB0` question is dissolved). The rumor-presence predicate is **`func_006188`**
+   (`@0x6188`), called per tile entry (`@0x30822`). It does **not** read a stored "lost-city"
+   value — it **computes** presence from a **coordinate hash against a global map seed
+   `[0x190]`**: `((x>>2)·0x13 + (y>>2)·0x11 + seed + 8) & 0x1F − (y&3)·4 == (x&3)`
+   (`@0x61C7..0x61F8`), gated by:
+   - terrain ≠ ocean/sea-lane/arctic (`0x18`/`0x19`/`0x1A`, `@0x61A6..0x61B3`), and
+   - the tile's **feature high-nibble must be `0xF` ("none")** — read via `0x5DF0`→`0x5D9C`
+     (`shr al,4`; `0xF`→−1; `func_006188` requires the `−1`, `@0x61BB..0x61C5`).
+   The map is **one byte/tile** in the far array at `[0x164]:[0x166]`, index `y·[0x853A]+x`
+   (`[0x853A]` = width 56): **low nibble = terrain/owner, high nibble = feature** (`0x5DBA`
+   reads low, `0x5DF0` reads high, `0x5DCC` XOR-mutates it). So a tile carrying a stored
+   `0xB0`/`0xA0` high-nibble feature would **suppress** a rumor (nibble ≠ `0xF`), not mark
+   one — the memory-map doc's "`0xB0` = lost-city tile, cleared on entry" is the **consumed
+   /feature state**, not a placement marker (per `TRUTH_HIERARCHY`, EXE disasm at a cited
+   offset outranks the memory-map note; see `notes/rulings/RULINGS.md`). Map is 56×72
+   row-major. See `spec/systems/map_system.md`. The trigger's `0x181F:0x7E0` (file `0x66CC`)
+   is the generic **"find unit at map coords"** scan (unit table `0x3144` stride `0x1C`),
+   and the consumer is the byte-verified `func_061454` — **nothing here is a missing
+   function or an un-pinned constant.**
 2. ~~Outcome bias cascade — exact per-gate probabilities.~~ **Done 2026-06-20.** The
    outcome index is `[bp-6] = max(anti_streak_floor, random_int(1,9))` (`@0x614F6..0x6151A`),
    where the **anti-streak floor** = `min(prev_floor+1, 3)` rises by 1 each rumor (stored

@@ -3877,3 +3877,27 @@ power's `[0x53D0]` crosses 50 (latch `[0x53D2] < 0`, `func_03E844`) — two dist
 events sharing the same SoL meter. Net: the `[0x53D0]` *identity* (SoL) and the *50%*
 threshold are correct (original instinct); only the claim that `func_03C638` was the
 *revolution* handler was wrong — that one is succession. `revolution.md` B/TBD restored.
+
+---
+
+## 2026-06-21 — Lost-City rumor presence is PROCEDURAL, not a stored `0xB0` feature byte
+
+**Conflict.** `spec/systems/events.md` §6.1 (following the runtime memory-map doc
+`colonization-memory-map (1).md`) anchored the Lost-City tile marker at feature byte
+**`0xB0`**, with the residual being "`0xA0` vs `0xB0`, a one-byte runtime read."
+
+**Disassembly (this branch's `raw/COLONIZE/VICEROY.EXE`, capstone 16-bit).** The
+rumor-presence predicate `func_006188` (`@0x6188`, called `@0x30822`) does **not** read a
+stored lost-city value. It **computes** presence from a coordinate hash against the global
+map seed `[0x190]` (`@0x61C7..0x61F8`), gated by terrain ≠ `0x18/0x19/0x1A` and by the
+tile's **feature high-nibble == `0xF`** ("none"), read via `0x5DF0`→`0x5D9C` (`shr al,4`,
+`0xF`→−1; the predicate requires that −1). The map is one byte/tile (far array
+`[0x164]:[0x166]`, index `y·[0x853A]+x`): **low nibble = terrain/owner, high nibble =
+feature**.
+
+**Resolution.** A tile whose feature nibble is `0xA`/`0xB` would **suppress** a rumor
+(nibble ≠ `0xF`), so `0xB0` is **not** a placement marker — the memory-map "`0xB0` = lost
+city, cleared on entry" is the **consumed/feature state**. Per `notes/TRUTH_HIERARCHY.md`
+(EXE disasm at a cited offset > memory-map note), the `0xA0`-vs-`0xB0` question is
+**dissolved**: rumor placement is procedural (`func_006188` + seed `[0x190]`), not a stored
+constant. `events.md` §6.1 closed. No dump/trace needed.

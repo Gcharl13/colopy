@@ -12,15 +12,18 @@ primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
 from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
 deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
-**Certification (2026-06-20, updated):** every game system's **byte layer is
-`BYTE_VERIFIED`** (the `B` in each tier cell below). The remaining open `§6` items are
-consolidated into the single
-**[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**,
-each tagged by *why* it is open: **R** runtime data values (each shown to be computed by
-byte-readable code, *not* dump-bound — the school teaching rate and the FF effect
-magnitudes, once thought "UI/runtime", were both found statically 2026-06-21 in
-`func_02D658`), **F** inherently fuzzy AI logic. **Categories S
-(static depth-queue) and O (the `.SS` sprite codec) are now empty** — the SAV format,
+**Certification (2026-06-21, updated):** every game system's **byte layer is
+`BYTE_VERIFIED`** (the `B` in each tier cell below), and the
+**[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**
+is now **empty of code/value residuals across all four categories (R/O/S/F)** — **no game
+mechanic, function, or constant is left un-byte-grounded, and nothing required a memory dump
+or runtime trace.** The last three "needs-a-trace" items were all found statically on
+2026-06-21: the **school teaching rate** (`func_02D658`: 4/6/8 turns by skill class), the
+**FF effect bindings** (`ov_power_flag` op_id ≡ `@FATHERS` index — Hudson ×2 furs, Jefferson
++50% bells, Paine bells+tax%, Bolívar +20% SoL, Penn +50% crosses), and the **Lost-City
+marker** (dissolved — rumor presence is procedural via `func_006188` + map seed `[0x190]`,
+not a stored `0xB0` byte; RULING 2026-06-21). **Categories S (static depth-queue) and O (the
+`.SS` sprite codec) are also empty** — the SAV format,
 warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends, exploration
 fog, the data-table loaders, and the revolution score bonus (additive `(1780−year)×2`,
 *not* a multiplier — a manual correction) are all byte-verified this pass; and the `.SS`
@@ -46,7 +49,7 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 | Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
 | Training / promotion | [`systems/training.md`](systems/training.md) | B | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
 | Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B |
-| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B/TBD | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
+| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
 | Revolution | [`systems/revolution.md`](systems/revolution.md) | B/TBD | | | |
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B | Events / Lost City | [`systems/events.md`](systems/events.md) | B |
 | Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
