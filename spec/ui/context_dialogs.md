@@ -141,9 +141,20 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   tail (`@0xBB39`, per-building meta `[+0x3146]`); plus a few index special-cases (terrain
   adjacency, colony flag `[+0x1C]&0x40`, per-nation capability). Built-bitmap **`func_0860E`**:
   `[colony·0xCA + 0x5DCA]` bit `idx&7` — **re-confirms CLAUDE.md hard rule #8 (ColonyRecord
-  stride 0xCA)**. Residual R: the entry+2/+3 prereq-building *indices* aren't a visible NAMES
-  comma column (data-table decode).
-- **Tier:** building table **B**; availability predicate **B** (prereq index data R).
+  stride 0xCA)**.
+- **Building-record layout — refined 2026-06-21 (B).** The record stride is **12 bytes**
+  (`bx=idx·12`, three `shl;add;shl` chains @0xB93D/0xB953/0xB97A); the prereq/supersede fields are
+  byte-read at displacements **`[bx−0x707C]`** (`@0xB97D`) and **`[bx−0x707B]`** (`@0xB956`), each
+  fed to is-built `func_0863E`, and the min-colony-size field at **`[bx−0x7076]`** (`@0xB940`, vs
+  `ColonyRecord+0x1F`). This table is in **BSS (DS:0x8F84, beyond the initialized-data image —
+  file 0x26924 is code), populated at runtime from `NAMES @BUILDING`** (so the prereq *values* are
+  data — tier B; the source is the text file, not an EXE constant). The NAMES `@BUILDING` CSV
+  columns are `name, hammer_cost, col2, category, col4, min_tier`; **the category column is
+  constant within each upgrade family** (3=defense Stockade/Fort/Fortress, 1=armory, 4=docks,
+  2=town-hall…) and the last column tracks the size/era tier. Residual **R**: the precise
+  CSV-column→record-field mapping the `@BUILDING` loader computes is not yet traced.
+- **Tier:** building table **B**; availability predicate **B**; prereq-index *value source* **B**
+  (NAMES `@BUILDING`, BSS-loaded); CSV-column→field mapping **R**.
 
 ## Evidence
 - `data_extracted/text/NAMES_sections.json` — `@ORDERS` (order codes),
@@ -172,5 +183,8 @@ pop+prereq gates (B, §Construction-choice). All struck.)*
 1. ~~Final option-list pixel rect / highlight RGB.~~ **RESOLVED — static (B):** the rect is
    `@width` + `@x`/`@y` (or centered), not cursor-dependent; the `@default`/highlight palette
    index resolves to exact RGB via the loaded PIK palette (`fonts_and_colors.md`). No runtime.
-2. The construction prereq-building **indices** in the in-memory `@BUILDING` record (entry+2/+3)
-   aren't a visible NAMES column — a small data-table decode (**R**), not a missing function.
+2. The construction prereq-building **indices** in the in-memory `@BUILDING` record — **mostly
+   resolved 2026-06-21 (B).** The record is a **12-byte BSS struct (DS:0x8F84) runtime-loaded from
+   `NAMES @BUILDING`**; the gate reads prereq/supersede at `[bx−0x707C]`/`[bx−0x707B]` and
+   min-size at `[bx−0x7076]` (§Construction-choice). The values are NAMES data (B); only the exact
+   **CSV-column→record-field mapping** (computed by the `@BUILDING` loader) remains **R**.

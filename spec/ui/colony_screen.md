@@ -82,7 +82,7 @@ Colors are EUROPE.PIK palette indices → RGB (B); fonts are screen-latched (A, 
 | SoL% text | rebel x=face+2 / tory x=face−tw, y=0x85 | "N%% (R)" / "N%% (T)" | **FONTTINY** (colony render latch — *not* FONTKING) | **`0x0F`→white**, →**`0x04`(170,0,0)** if tories≥thresh, →**`0x0C`(255,85,85)** if ≥2·thresh | 16478–16512 |
 | Rebel/Tory faces | 0x7C@(2,0x84) / 0x7D@(face_x,0x84) | ICONS.SS sprites **0x7C/0x7D** (frame ids, not colors) | — | — | 16492/16514 |
 | SoL panel label | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships" y=0x8C | text | **FONTTINY** (colony render latch — *not* FONTKING) | `ui_color_for(0xF0,0xE0,0xB0)`→(240,224,176) cream | `colony_paint_sol_panel` 16904 |
-| Nation flag | fill(0x12F,0x84,0x11,0x2D) | flag sprite | — | — | `colony_paint_flag` 16874 |
+| Nation flag | fill(0x12F,0x84,0x11,0x2D)=(303,132,17,45) | **ICONS sprite `0x44`** (`push 0x44 @0x28558`), frame = nation byte `[0x337]`/`[0x339]` | — | — | `colony_paint_flag` 16874 (`@file 0x2853C`) |
 | Surround minimap | fill(0x79,0x82,0x54,0x30); 28×19 @3px, origin (121,132) | per-tile color from layers | — | per-tile (map layers) | `colony_paint_minimap` 16891 / `_contents` 18327 |
 | Stockpile strip | fill(0,0xB3,0x140,0x15); 16 cells stride 0x13, icon y=0xB5, qty y=0xC1 | ICONS `good+0x16`; qty | FONTTINY | qty `0x0F`→white | `colony_paint_stockpile` 16769 |
 
@@ -118,5 +118,7 @@ The overlay-`0x181F` helpers were all traced statically (no dump needed; thunks 
 5. ✅ **Build-cost** — data in NAMES.TXT `@BUILDING` (DGROUP `0x8F8C`); Stockade 64H / Warehouse
    80H / Printing Press 52H+20T confirmed (§3). **B.**
 
-*Only genuinely soft residual:* the SoL-face / nation-flag ICONS.SS indices (`0x7C`/`0x7D`/flag)
-are export-attested but not independently raw-confirmed — **A** (cosmetic, not a mechanic).
+*SoL-face / nation-flag ICONS.SS indices — CLOSED 2026-06-21 (B):* SoL faces `0x7C`/`0x7D`
+(byte-cited §2, `@0x28492`/`@0x28514`) and the **nation flag = ICONS sprite `0x44`** (`push 0x44
+@0x28558` in `colony_paint_flag` `@0x2853C`, fill rect (303,132,17,45), frame = nation byte
+`[0x337]`/`[0x339]`). No soft residual remains for this screen.
