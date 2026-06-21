@@ -72,23 +72,29 @@ The single source of truth for **what is left**. Every game system's *byte layer
 each tagged by **why** it is open. Categories **R/O** are not closeable by static
 disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
 
-**Category R — runtime/BSS-bound (need a memory dump; out of static scope):**
-- `DGROUP:0x9408` REF per-type value table — BSS, runtime-zero in the image (`ref_growth.md`).
-- `DGROUP:0x9654` FF candidate-scorer table — BSS at runtime, but its **content is
-  loaded verbatim from `@FATHERS`** (known data): so `founding_fathers.md` §6.3 is
-  **RESOLVED** (no type-5 father exists; category 5 never instantiates). Only the
-  per-father continuous-effect *magnitudes* (§6.1) remain partial (mostly hardcoded,
-  documented in §3).
+**Category R — runtime-derived (NOT dump-bound; corrected 2026-06-20).** These were
+mislabeled "need a memory dump" — each is computed/loaded by byte-readable code:
+- ~~`DGROUP:0x9408` REF "value table".~~ **RESOLVED** — a **per-power military tally
+  recomputed at runtime** (stats-reset `@0x42138` zeroes it with the sibling per-power
+  tables `0x9298`/`0x9410`/`0x9418`; unit-scan re-increments `@0x4229F`), not a constants
+  table; semantics byte-verified (`ref_growth.md`).
+- ~~`DGROUP:0x9654` FF candidate table.~~ **RESOLVED** — content loaded verbatim from
+  `@FATHERS`; `founding_fathers.md` §6.3 done (no type-5 father). Only per-father
+  continuous-effect *magnitudes* (§6.1) remain partial (mostly documented in §3).
 - `training.md` §6.1 — human-side school teaching rate (UI-driven; AI path is **B**).
 - ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
 - `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).
 
-**Category O — overlay/asset-bound (need RTLink overlay-map reconstruction or a DOSBox trace):**
+**Category O — `.SS` sprite codec (static library RE; no dump needed).**
 - BUILDING.SS index→building catalog + CC-NN portrait pixel-confirmation
-  (`index_tables.md` §4, `unit.md` §6.3, `notes/SPRITE_CATALOG.md`). Blocked on the
-  **MADSPACK-2 `mode=4` decoder**; the `.SS` loader/decompressor is overlay-resident and
-  **not statically locatable** (verified 2026-06-20 — `formats/SS.md` §"Loader"). Container
-  layout + codec identity are byte-verified; CC-NN = FF portraits (`@FATHERS`, SPRITE-A).
+  (`index_tables.md` §4, `unit.md` §6.3, `notes/SPRITE_CATALOG.md`). The **loader is now
+  LOCATED** (2026-06-20, correcting the earlier "not locatable" claim): the MADSPACK
+  stream subsystem `func_076E50_stream_open` + `func_0775EC_stream_read_chunked` +
+  `func_077772` vtable, in overlay `0x0745F0..0x077A6A`; the magic is at the overlay's
+  own `DS:0x240A` (why the DGROUP search failed). Container layout, directory (stride
+  `0xA`), and codec identity (MADSPACK-2 `mode=4`) are byte-verified. **Remaining:** read
+  the per-section decode transform in the `0x0D1D` stream-vtable and write the codec —
+  a bounded library RE, **not** a memory dump. CC-NN = FF portraits (`@FATHERS`, SPRITE-A).
 
 **Category S — static depth-queue (closeable by disassembly; genuinely not yet traced):**
 - ~~`save.md` — the SAV write/read format.~~ **DONE 2026-06-20** — full 43-block on-disk

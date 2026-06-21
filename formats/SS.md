@@ -97,35 +97,32 @@ The .SS loader function reads a filename string, calls fopen/fread,
 decompresses each section, and stores sprite descriptors in a
 SpriteSheet record at a DGROUP location.
 
-**Loader function: NOT statically locatable — it lives in an RTLink overlay
-(investigated 2026-06-20).** A bounded static search ruled out the resident-image
-anchors and the string-xref routes:
-- `func_0749E0` (the hinted "scenario loader") and its `0x191F:0x928` callee are a
-  **config/INI text parser** (comma-separated `fgets`-style line reader, buffers at
-  `[0x833C]`/`[0xA5B8]`), **not** the binary `.SS` loader.
-- The asset-format strings have **zero real instruction references** in the resident
-  image: `MADSPACK 2.0` (`@DGROUP 0xFDAA`/`0xFDB8`), `PIK` (`0xFD9A`), `rb` (`0xF80E`/
-  `0xF9F5`) — every apparent hit is a coincidental `mov ax,imm`/`jmp`/`add` byte
-  collision (verified by disassembling each). No `imm`/near-pointer loads these offsets.
-- Conclusion: the binary loader + the **mode-4 section decompressor** are reached
-  through RTLink overlay far-pointer indirection and are **not addressable by offset
-  search** in the flat image.
+**Loader function: LOCATED — `func_076E50_stream_open` (file `0x076E50`, 2026-06-20).**
+(My earlier "not statically locatable / needs a dump" claim was **wrong** — corrected.)
+The loader is in the overlay `0x0745F0..0x077A6A` (reconstructed in
+`viceroy_source/src/overlay/overlay_0745F0_077A6A.c`), and the reason the DGROUP
+string-search failed is now clear: **the `"MADSPACK 2.0\x1A"` magic lives in that
+overlay's *own* data segment at `DS:0x240A`/`0x2418`, not in the resident DGROUP** — so
+there is no `0xFDAA` xref to find. The whole MADSPACK stream subsystem is byte-verified:
+- **`func_076E50_stream_open`** — opens the archive: `sprintf` the path, `open`
+  (`0x181F:0xE86`) → handle at `obj+0x06`; reads the 16-byte header, **verifies the
+  magic via `0x0D1D:0x1084` (`@0x076F26`)**, binds the **entry table (stride `0xA`,
+  count at `obj+0x28`)** and sums each entry's size into `obj+0x14` (dword total). This
+  confirms the on-disk directory layout in §"High-level structure".
+- **`func_0775EC_stream_read_chunked`** (file `0x0775EC`) — buffered chunked transfer:
+  primes the section buffer via **`0x0D1D:0xB1C`** (`→ func_0100EC`, the C-runtime
+  buffered-stream refill) and copies out via `0x0D1D:0xE9D`, clamping chunks to
+  `0xF000`.
+- **`func_0776F4_stream_pump`** / **`func_077772_stream_op_dispatch`** drive a
+  per-record **callback vtable** (read cb `[0xA644]`, seek cb `[0xA63A]`, table
+  `[0x26CA..0x26E0]`); the actual **per-section decode transform** is one of those
+  vtable handlers inside the `0x0D1D` library segment.
 
-A **second pass (2026-06-20)** using the reconstructed overlay map
-(`tools/rtlink/viceroy_rtlink_map.json`, 31 segments) + the named disassembly also did
-**not** isolate the decompressor: `func_0749E0`/`0x191F:0x928` are config-text parsers;
-`func_008F2A` ("unpack nibble") is a game-data nibble accessor, not MADSPACK; the
-`load_asset` path cited in `docs/COLONY_RENDERER_DECODED.md` lands in the command
-dispatcher and its file offsets use a **different base** than the raw EXE in the
-low/runtime region (`cs:[…]` indirect-call code). So the loader genuinely needs
-methodical per-overlay reconstruction (with offset-base reconciliation) or a dynamic trace.
-
-**To finish the decoder**, one of: (a) reconstruct the RTLink overlay map (resolve
-each overlay's load segment + relocations, then disassemble the overlay that owns the
-loader), or (b) dynamically trace the running game (DOSBox) at the `.SS` fopen. The
-codec is the **MADSPACK-2 `mode=4`** scheme (NOT standalone FAB; §"Reference
-implementation"). **Do not guess it** — a candidate decoder is only valid if it expands
-every section to exactly its directory `unpacked_len` across all 26 sheets.
+**Remaining (bounded library RE, no dump needed):** read the exact byte/bit transform
+in the `0x0D1D` decode vtable handler to write the codec. The codec is the **MADSPACK-2
+`mode=4`** scheme (NOT standalone FAB). **Do not guess it** — a candidate decoder is
+valid only if it expands every section to exactly its directory `unpacked_len` across
+all 26 sheets. The loader/stream layer above is fully byte-verified.
 
 ---
 

@@ -136,6 +136,13 @@ labels `TBD`. **R**.
    write/init path (indirect copy) is the residual.
 5. ~~`PowerRecord +0xE` per-type value + `+0x32` strength rating.~~ **Resolved
    2026-06-20** — `+0x32` is **`home_x`** (spawn coord), not a strength rating (no
-   aggregate exists; RULINGS). The `+0xE` per-type value (`@0x3E283 add [bx+0xE],ax`
-   from table `DGROUP:0x9408`) is real but the table is **BSS/runtime-zero** in the
-   static image, so its per-type byte values aren't readable from the EXE.
+   aggregate exists; RULINGS). The `+0xE` value (`@0x3E283 add [bx+0xE],[idx−0x6BF8]`
+   from `DGROUP:0x9408`) reads a **per-power tally that is RECOMPUTED at runtime — not a
+   static constants table, and no memory dump is needed to understand it** (corrected
+   2026-06-20). `0x9408` is one of the per-power statistics tables (alongside `0x9298`
+   colony-count, `0x9410`, `0x9418`): the **stats-reset function `@0x42138`** zeroes all
+   of them per power (`mov [idx−0x6BF8],0` `@0x42155`), then a **unit-scan loop**
+   re-increments `0x9408[power]` per qualifying unit (`inc [idx−0x6BF8]` `@0x4229F`,
+   gated on unit-type `[+0x3146]`). So the value = a derived per-power military tally;
+   it is BSS-zero in the *static image* only because it is computed from live unit state
+   — the computing code is byte-verified, so the semantics are fully recoverable.

@@ -158,14 +158,15 @@ valid, not corrupt. **Per-frame pixel cataloging is BLOCKED on the codec.** Comp
 sections use the **MADSPACK-2 internal codec (`mode=4`), NOT the standalone ScummVM
 "FAB"** (no `FAB` magic / shift byte present), and the `mpskit` decoder referenced by
 `formats/SS.md` is **absent from the repo**. Most sections are compressed (`flag=1`), so
-the descriptor/pixels need the codec. Recovering pixels requires the **mode-4 decoder**, but a bounded static hunt
-(2026-06-20) found the **loader is NOT statically locatable** — it lives in an RTLink
-overlay: the resident anchors `func_0749E0` / `0x191F:0x928` are a **config-text
-parser** (not the binary loader), and the format strings (`MADSPACK`/`PIK`/`rb`) have
-**zero real instruction refs** in the flat image (all apparent hits are byte
-collisions). So finishing needs **RTLink overlay-map reconstruction or a dynamic
-(DOSBox) trace** at the `.SS` fopen — see `formats/SS.md` §"Loader in VICEROY.EXE".
-Until then the per-portrait frame layout stays **TBD**.
+the descriptor/pixels need the codec. Recovering pixels requires the **mode-4 decoder**. The **loader is LOCATED** (2026-06-20,
+correcting an earlier "not locatable" claim): **`func_076E50_stream_open` (file
+`0x076E50`)** + `func_0775EC_stream_read_chunked` + the `func_077772` stream-op vtable, in
+the overlay `0x0745F0..0x077A6A` (`viceroy_source/.../overlay_0745F0_077A6A.c`). The
+DGROUP string-search failed only because the `"MADSPACK 2.0"` magic is in that overlay's
+**own** data segment (`DS:0x240A`), not the resident DGROUP. The remaining work is a
+**bounded library RE** of the per-section decode transform in the `0x0D1D` stream-vtable
+(no memory dump needed) — see `formats/SS.md` §"Loader in VICEROY.EXE". Until that codec
+is written, the per-portrait frame layout stays **TBD**.
 
 <details><summary>SUPERSEDED unit-sheet hypothesis (kept for history — do not cite)</summary>
 
