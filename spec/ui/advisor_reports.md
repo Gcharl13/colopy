@@ -45,18 +45,26 @@ raw-disassembled this pass).
 
 ### Fonts & colors (resolved 2026-06-21)
 - **Font:** every report **body (F2–F9) uses FONTTINY** — each body reads the `[0x89E]`
-  (FONTTINY) descriptor for row pitch, with **no second-font switch** (B). Only **F10 score**
-  also reads `[0x268A]` (FONTKING) (`@0x3B054`) for the big score figures — **B** (F10 uses
-  FONTKING); the `[0x268A]`=FONTKING.FF identity is by usage, **A/R**.
+  (FONTTINY) descriptor for row pitch, with **no second-font switch** (B). **F10 score** also
+  reads `[0x268A]` (`@0x3B054`/`0x3B0E6`) for the big-figure glyph metrics — and **`[0x268A]` is
+  FONTINTR.FF, not FONTKING**: it is loaded from the string `fontintr`@0x2389 at 0x760CB
+  (byte-verified; corrects the prior "FONTKING by usage A/R" — RULING 2026-06-21). So F10 = FONTTINY
+  labels + FONTINTR figures; **no report uses FONTKING** (the `FONTKING` string loads only in the
+  king-defeats screen). **B.**
 - **Colors** resolve via the shared **REPORT\*.PIK palette** (identical across REPORT2/3/4/5/7/8/9
   for every cited index) → exact RGB (B): `0x0F`→(255,255,255) white; **title fill `0x90`**→
   (255,255,190); `0x91`→(255,255,142); `0x92`→(255,243,93); `0x61`→(247,243,199) cream. Byte-cited
   pushes: title `push 0x90 @0x37970`, F2 `push 0x0F @0x379D9`, F3 `push 0x61 @0x37FF7`, F6
   `push 0x92 @0x39335`, F8 `push 0x91 @0x39973`.
 - **Correction:** `0x39/0x38/0x3F/0x7C/0x7D` are **ICONS.SS sprite indices** (the gauge / rebel /
-  tory / REF tiled-strip sprites), **not** text colors. The F4/F8 column line-fills use `dx`
-  args `0x137`/`0x13F` which are **16-bit** (>255) → color-run/pattern args, **not** palette
-  indices (**TBD** as a single RGB).
+  tory / REF tiled-strip sprites), **not** text colors.
+- **F4/F8 column separators — RESOLVED 2026-06-21 (B; the earlier "16-bit color-run/pattern,
+  TBD" guess was wrong).** The `dx` args `0x137`/`0x13F` are **right-edge x-coordinates**, not
+  colors: the call is `lcall 0x191F:0x8BC` → `func_00DFCC`, a clipped horizontal run-fill
+  (`mov al,[bp+6]; mov es:[di],al; inc di; loopne`). F4 separator @0x3887D: x-start `ax=2`,
+  **x-end `dx=0x137`=311**, y `bx=row·8+0x2A`, **color `push 0x77`** (@0x3886F). F8 @0x39908:
+  x-start `ax=0`, **x-end `dx=0x13F`=319**, color `push 0x77`. **`0x77`→(134,0,0) dark-red**
+  (resolved via REPORT4/REPORT8.PIK, both `#860000`) — a solid dark-red horizontal rule.
 
 ## 2. Report-specific detail
 - **F2 Religious:** per-colony grid of crosses + colonist counts; iterates colonies; cross
@@ -82,7 +90,8 @@ raw-disassembled this pass).
 - **F10 Score:** `func_03A9C0` (`@0x3A9C0`) computes `scaled = value·(diff+4(+1≥3)(+1≥4))/100
   >>1`, then loops `i=1..24` choosing `panel = i-1` for the largest `i` with `i·i/3 ≥ scaled`
   (clamped 0..23), and loads **`SCORE(panel+1).SS`** (one band plate, not a per-line map) over
-  background **WOODPAN2**. Uses FONTKING. Body lines from `@MISC` (Citizens / Independence /
+  background **WOODPAN2**. Font = **FONTTINY** labels + **FONTINTR** big-figure metrics (`[0x89E]`
+  @0x3ABF4, `[0x268A]`=FONTINTR @0x3B054) — **not** FONTKING. Body lines from `@MISC` (Citizens / Independence /
   Villages Burned / Foreign Recognition / Total Score + FF list + Rebel Sentiment). **B**
 
 ## 5. Evidence

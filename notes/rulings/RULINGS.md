@@ -3964,3 +3964,46 @@ shipped data, **not** a small-font selector. This **corrects** (a) `fonts_and_co
 Also: the popup framework compares **10** live directives (OPTIONS..DEFAULT); **TEXTCOLR is a
 vestigial table entry, never compared** (`push 0x200A` appears nowhere as a directive) — there
 is **no per-popup text-color override** directive.
+
+---
+
+## 2026-06-21 — FONTKING.FF is used by exactly ONE screen (king-defeats); not colony/Europe/score/HoF/menus
+
+**Conflict.** The W1 screen-render cluster (from the Ghidra named export) attributed **FONTKING**
+to many screens: colony title / SoL% / SoL-panel, Europe title, the Score screen, advisor F10,
+the Hall of Fame, and menu render. A later pass also inferred `[0x268A]` = FONTKING "by usage."
+Both are **wrong** against the raw EXE.
+
+**Disassembly (raw VICEROY.EXE, capstone 16-bit; trust order: EXE bytes win over the export).**
+- The string **`FONTKING` (DGROUP `0x232b`) is referenced exactly once in the whole image** —
+  `lea bx,[0x232b]` @**0x754F2**, inside `func_075352` (the **king-defeats** screen). It loads
+  via `lcall 0x1A1F:0xA86` into a **local** (`[bp-0xC]`), falls back to `[0x89E]` (FONTTINY) on
+  failure, and promotes the result to the **active-font global `[0x1F9E]/[0x1FA0]`** @0x75511.
+  FONTKING is **never stored to a persistent global**, so no other code path can select it.
+- The **active-font global `[0x1F9E]`** is written at only 5 sites: from FONTTINY `[0x89E]`
+  (@0x692DE), from FONTINTR `[0x268A]` (@0x692FA and the king-defeats *restore* @0x7557D), from a
+  caller-supplied ptr (the `set_active_font` helper @0x6EED4), and the king-defeats FONTKING set
+  @0x75511. So the only fonts ever made active are **FONTTINY, FONTINTR, and (king-defeats only)
+  FONTKING**.
+- **Font-far-ptr render pushes** confirm each screen's font: `push [0x8A0];push [0x89E]`
+  (**FONTTINY**) at colony render 0x25F62/0x26000/…/0x282A9 and Europe render
+  0x30EDE/0x30F53/0x31179 and advisor report bodies 0x3860C…0x38DFC; `push [0x268C];push [0x268A]`
+  (**FONTINTR**) at the Hall-of-Fame/menu region 0x22ABE/0x23C06. The Score painter `func_03A9C0`
+  reads `[0x89E]` (FONTTINY, @0x3ABF4/0x3AC25) for labels and `[0x268A]` (FONTINTR, @0x3B054/
+  0x3B0E6) for the big-figure glyph metrics — **no FONTKING**.
+
+**`[0x268A]` identity (resolves the prior "by usage A/R").** `[0x268A]/[0x268C]` is written
+@0x760CB from loading the string **`fontintr`** (`lea bx,[0x2389]="fontintr"`; `lcall 0x1A1F:0xA86`)
+in the engine-init `func_075FB6`. **`[0x268A]` = FONTINTR.FF**, byte-verified — NOT FONTKING.
+
+**Resolution.** **FONTKING.FF is used by exactly one screen: king-defeats (`func_075352`),
+pen seed (x=0xF2=242, y=0x2F=47).** Corrected font attributions (all byte-verified):
+- **Colony** title / SoL% / SoL-panel → **FONTTINY** (`[0x89E]`).
+- **Europe** title → **FONTTINY**.
+- **Score** screen (cinematic `func_03A9C0` = advisor F10) → **FONTTINY** labels + **FONTINTR**
+  figure metrics.
+- **Hall of Fame** / **menus** → **FONTINTR** (`[0x268A]`).
+- **king-defeats** → **FONTKING** (unchanged; the sole user).
+This corrects `fonts_and_colors.md` §1/§3, `colony_screen.md`, `europe_screen.md`,
+`advisor_reports.md` (F10 + the `[0x268A]`=FONTKING identity), `cinematics.md` (score),
+`menus.md`, and `continental_congress.md` (the `[0x268A]` parenthetical).

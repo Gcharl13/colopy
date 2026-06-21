@@ -37,8 +37,9 @@ The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM
 
 ### Fonts & colors (F3 body `0x37A10..0x3807D`, byte-grounded 2026-06-21)
 - **Font = FONTTINY** for the whole F3 body — it reads the `[0x89E]` (FONTTINY) latch **6×** and
-  `[0x268A]` (FONTKING) **0×** (B). The geometry doc's "FONTKING title" is **not supported** by
-  this body (the title is centred FONTTINY text via `0x181F:0x100`) → mark FONTKING-title **R**.
+  `[0x268A]` (=FONTINTR, byte-verified — *not* FONTKING; RULING 2026-06-21) **0×** (B). The
+  geometry doc's "FONTKING title" is **not supported** — FONTKING loads only in king-defeats; the
+  title is centred FONTTINY text via `0x181F:0x100` → mark FONTKING-title **R (refuted)**.
 - **Colors** (resolved via **CCBKGD.PIK** palette): **title `0x90`→(255,255,190)** pale-yellow;
   **all body/row text `0x92`→(255,243,93)** bright-yellow (B — the trailing color arg to each
   `0x181F:0x13C`/`0x100` text draw). Layout latches: left margin **x=4**, running **y seed 0x19=25**,

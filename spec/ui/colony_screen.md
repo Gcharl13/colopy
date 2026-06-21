@@ -75,13 +75,13 @@ Colors are EUROPE.PIK palette indices → RGB (B); fonts are screen-latched (A, 
 
 | Element | Rect / (x,y) | Sprite/text | Font | Color → RGB | Fn (line) |
 |---------|--------------|-------------|------|-------------|-----------|
-| Title | centered, y=1 | name/season/"…, Gold: N" | FONTKING | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green¹ | `colony_paint_title` 16935 |
+| Title | centered, y=1 | name/season/"…, Gold: N" | **FONTTINY** (`push [0x89E]` @0x25F62 — *not* FONTKING; RULING 2026-06-21) | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green¹ | `colony_paint_title` 16935 |
 | Buildings panel | box(0,7,199,128)+parch | `BUILDING.SS` frame, `ss_blit_remap` | — | — | `colony_paint_buildings` 16841 |
 | Work-grid (3×3) | cell `(col·0x18+0xC8, r·0x18+8)` | terrain; good icon `good_idx+0x17`; prof `0x52+prof`; yield "N" | FONTTINY (yields) | yield `0x0F`→white | `colony_draw_workgrid` 15986 / `_terrain` 18730 |
 | Colonist row | fill(0,0x82,0x78,0x30); baseline y=0x8E | colonist sprites; sel box | — | sel box `0x0F`/`0x0A`→white/(85,255,85) | `colony_paint_colonist_row` 16361 |
-| SoL% text | rebel x=face+2 / tory x=face−tw, y=0x85 | "N%% (R)" / "N%% (T)" | FONTKING | **`0x0F`→white**, →**`0x04`(170,0,0)** if tories≥thresh, →**`0x0C`(255,85,85)** if ≥2·thresh | 16478–16512 |
+| SoL% text | rebel x=face+2 / tory x=face−tw, y=0x85 | "N%% (R)" / "N%% (T)" | **FONTTINY** (colony render latch — *not* FONTKING) | **`0x0F`→white**, →**`0x04`(170,0,0)** if tories≥thresh, →**`0x0C`(255,85,85)** if ≥2·thresh | 16478–16512 |
 | Rebel/Tory faces | 0x7C@(2,0x84) / 0x7D@(face_x,0x84) | ICONS.SS sprites **0x7C/0x7D** (frame ids, not colors) | — | — | 16492/16514 |
-| SoL panel label | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships" y=0x8C | text | FONTKING | `ui_color_for(0xF0,0xE0,0xB0)`→(240,224,176) cream | `colony_paint_sol_panel` 16904 |
+| SoL panel label | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships" y=0x8C | text | **FONTTINY** (colony render latch — *not* FONTKING) | `ui_color_for(0xF0,0xE0,0xB0)`→(240,224,176) cream | `colony_paint_sol_panel` 16904 |
 | Nation flag | fill(0x12F,0x84,0x11,0x2D) | flag sprite | — | — | `colony_paint_flag` 16874 |
 | Surround minimap | fill(0x79,0x82,0x54,0x30); 28×19 @3px, origin (121,132) | per-tile color from layers | — | per-tile (map layers) | `colony_paint_minimap` 16891 / `_contents` 18327 |
 | Stockpile strip | fill(0,0xB3,0x140,0x15); 16 cells stride 0x13, icon y=0xB5, qty y=0xC1 | ICONS `good+0x16`; qty | FONTTINY | qty `0x0F`→white | `colony_paint_stockpile` 16769 |

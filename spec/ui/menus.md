@@ -128,7 +128,9 @@ not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
   `@RETIRING`, `@RETIRING2`, `@SOONRETIRING0/1` (**B**, bodies empty).
 - **Background/geometry + font/color — RESOLVED (B):** there is **no HoF PIK** —
   `hall_of_fame_render` (export 25037, `@file 0x3ACB2`) draws on the procedural **WOODPAN2**
-  (render screen, handle 0x11D7) / **WOODPANL** (table screen) wood panels. Font = **FONTKING**.
+  (render screen, handle 0x11D7) / **WOODPANL** (table screen) wood panels. Font = **FONTINTR**
+  (`push [0x268A]` @0x22ABE/0x23C06 — *not* FONTKING, which loads only in king-defeats; RULING
+  2026-06-21).
   Colors resolve via **WOODPAN2.PIK** (*not* WOODPANL — there 0xFC is magenta): title at
   (0x8C,0x8E) color **`0xFC`→(199,162,32) gold** (sprite 0x22); score/rating bars x=0xA0,
   `y=0xC3−(i+1)`, color `0xFC` gold when `i==rating` else `0xFE`; full-screen rule

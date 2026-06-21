@@ -42,7 +42,17 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
   "…let you go your own way…") and `GAME @KINGWIN` (`@width=90 @x=202 @y=125`,
   body "…Rag Tag armies are simply no match…"). Both bodies + geometry verified
   in GAME_sections.json. **B.**
-- **Tier:** **B**.
+- **Font + color (2026-06-21):** this screen is the **sole FONTKING user** in VICEROY.EXE —
+  `func_075352` loads `FONTKING` (`lea bx,[0x232b]` @0x754F2, `lcall 0x1A1F:0xA86`), falls back to
+  FONTTINY on failure, and promotes it to the active-font global `[0x1F9E]/[0x1FA0]` @0x75511; pen
+  seed **(x=`[0x1F4A]`=0xF2=242, y=`[0x1F50]`=0x2F=47)** set @0x75526/0x7552C; on exit it restores
+  `[0x1F9E]←[0x268A]` (FONTINTR) @0x7557D. Font + position **B**. **Text color** is the engine's
+  persistent foreground global **`[0x1F5C]`** (default 8 @0x6F5DD; recolor path 0x6E2DE when
+  `[0x1F5C]≥0`) — no per-call RGB arg — so the exact on-screen color is **runtime-state
+  dependent (A)**; against the KINGLSS1/2.PIK standard VGA-16 ramp, idx 8=#555555, 14=#FFFF55,
+  15=#FFFFFF. Glyph value is 1-bpp (FONTKING.FF foreground = index 3). **B (font/geometry) / A
+  (RGB).**
+- **Tier:** **B** (font/geometry/text); text RGB **A** (engine fg latch).
 
 ## Score screen (SCORE01-24.SS) — **B (byte-grounded 2026-06-21)**
 - **Purpose:** end-of-game score + honor-rating screen, one illustrated plate per
@@ -54,7 +64,9 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
   largest `i` with `i·i/3 ≥ scaled`; `panel = i−1` clamped `[0,0x17]`. Filename =
   `"SCORE"(0x11CF) + ("0"(0x11D5) if panel<9) + (panel+1)` → **SCORE01..SCORE24**
   (`push 0x11cf @0x3AAAA`, `cmp [bp-0xc0],9; jge; push 0x11d5 @0x3AAB9`, both re-verified),
-  drawn over background **WOODPAN2**; uses FONTKING. **B.**
+  drawn over background **WOODPAN2**. Font = **FONTTINY** labels (`[0x89E]` @0x3ABF4) +
+  **FONTINTR** big-figure metrics (`[0x268A]` @0x3B054) — **not** FONTKING (RULING 2026-06-21;
+  the `FONTKING` string loads only in king-defeats). **B.**
 - **Score component sum** (`func_039EE2`, `@file 0x39EE2`): base `[0x53A8] + 0x64·[0x53A7]`
   (century-of-independence byte ×100, written by the Independence handler `func_03DE46`);
   "Foreign Recognition" = count of the 4 powers with `PowerRecord[+? ] & 4` (stride 0x13C);

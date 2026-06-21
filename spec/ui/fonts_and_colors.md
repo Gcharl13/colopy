@@ -17,7 +17,7 @@ loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metr
 |------|------|---------------|-------|-------------------|------|
 | **FONTTINY** | `FONTTINY.FF` (`@0x1FD32`) | 6 × 4 fixed | mixed-case fixed | **default body / HUD** (boot latch `[0x89E]`): inventory qty, yields, sidebar numbers, advisor bodies, popup bodies | B (load) / A (role) |
 | **FONTINTR** | `FONTINTR.FF` (`@0x1FD29`) | 9 × 6 fixed | chunky 3-D | **intro / title / boot menu** plaques | B / A |
-| **FONTKING** | `FONTKING.FF` (`@0x1FCCB`) | 7 × 3–7 var | mixed-case proportional | **large readable**: Score screen, Hall of Fame, king-defeats | B / A |
+| **FONTKING** | `FONTKING.FF` (`@0x1FCCB`) | 7 × 3–7 var | mixed-case proportional | **king-defeats screen ONLY** — the string `FONTKING`@0x232b is referenced **exactly once** in the EXE (`lea bx,[0x232b]` @0x754F2 in `func_075352`); never cached to a global (RULING 2026-06-21) | B / A |
 | **FONT-NP** | `FONT-NP.FF` (`@0x1F8AF`) | 8 × 7–8 var | uppercase var | **national-power** / speaker name-plate | B / A |
 | ~~FONTSMAL~~ | `FONTSMAL.FF` | — | — | **ORPHAN — never loaded by VICEROY.EXE**; the `SMALLFONT`/`@smallfont` directive does *not* load it | (refuted) |
 
@@ -29,8 +29,12 @@ loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metr
 (`docs/UI_FONT_REFERENCE.md`), tier **A**, not a byte-verified per-blit handle. The popup
 framework's `SMALLFONT` directive (handler `@0x6F207`) merely **copies the latched `[0x89E]`
 font** into the section — it does **not** switch to a smaller font (FONTSMAL is never loaded).
-The genuinely **B** font cases are the explicit FONTKING loads (Score / Hall of Fame / king-
-defeats, which `push "FONTKING"`). **Colors, by contrast, are per-draw `push`-args → exact RGB
+The active-font global is **`[0x1F9E]/[0x1FA0]`**, set only from FONTTINY (`[0x89E]`), FONTINTR
+(`[0x268A]`), or — uniquely in king-defeats — FONTKING (RULING 2026-06-21). Screens select their
+font by pushing the font far-ptr to the render call: colony/Europe/advisor-report bodies push
+**FONTTINY** (`push [0x8A0];push [0x89E]` @0x25F62/0x30EDE/0x3860C…); the Hall of Fame and menus
+push **FONTINTR** (`push [0x268C];push [0x268A]` @0x22ABE/0x23C06). The only genuine FONTKING load
+is king-defeats (`func_075352`). **Colors, by contrast, are per-draw `push`-args → exact RGB
 (B) wherever the draw is in the extracted image; in the popup framework the body color push is
 overlay-resident (A/TBD).**
 
@@ -73,15 +77,17 @@ The authoritative per-element table is in each screen's own spec; collected here
 
 | Element | Font | Color | Tier |
 |---------|------|-------|------|
-| Colony/Europe title bar | FONTKING | title green / yellow (218,178,0) | B (font), A (RGB) |
+| Colony/Europe title bar | **FONTTINY** (`push [0x89E]` @0x25F62/0x30EDE — *not* FONTKING) | title green / yellow (218,178,0) | B (font), A (RGB) |
 | Inventory cell qty | FONTTINY | white `0x0F` (navy in some captures) | B |
 | Production-grid yields | FONTTINY | yellow | A |
-| SoL% / "No Ships In Port" | FONTKING | white / cream | B/A |
-| Score screen + Hall of Fame | **FONTKING** | per `@MISC` | B |
+| SoL% / "No Ships In Port" | **FONTTINY** (colony render latch — *not* FONTKING) | white / cream | B/A |
+| Score screen | **FONTTINY** labels (`[0x89E]`) + **FONTINTR** big-figure metrics (`[0x268A]` @0x3B054) — *not* FONTKING | per `@MISC` | B |
+| Hall of Fame | **FONTINTR** (`push [0x268A]` @0x22ABE — *not* FONTKING) | per `@MISC` | B |
 | Advisor reports F2–F9 | FONTTINY (body+title) | title fill `0x90`→(255,255,190); rows `0x91`(255,255,142)/`0x92`(255,243,93)/`0x61`(247,243,199); text `0x0F` white | B |
-| Advisor F10 score | FONTKING (+FONTTINY) | per `@MISC` | B |
+| Advisor F10 score | **FONTTINY** (`[0x89E]`) + FONTINTR figure metrics (`[0x268A]`) — *not* FONTKING; same `func_03A9C0` as the cinematic score | per `@MISC` | B |
 | Boot-menu plaque (BEGINMENU) | latched (FONTINTR/FONTTINY) — `@smallfont` loads no distinct font | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | A (font) / B (color) |
-| Hall of Fame | FONTKING | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
+| Hall of Fame table | **FONTINTR** (`push [0x268A]` @0x23C06 — *not* FONTKING) | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
+| King-defeats text (the **sole FONTKING user**) | **FONTKING** (`func_075352` @0x754F2, pen (x=242,y=47)) | engine fg `[0x1F5C]` (persistent; default 8) → KINGLSS1/2 VGA-16 ramp | B (font/pos) / A (RGB) |
 | Popup body | FONTTINY (latch; `SMALLFONT` just copies it) | white `0x0F` default (push is overlay-resident → A/TBD); no `TEXTCOLR` override exists | A |
 | Speaker name-plate | FONT-NP (loaded with WOODFRAM/NAMEPLAT) | overlay-resident → TBD | A |
 

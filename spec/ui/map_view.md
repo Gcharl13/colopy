@@ -51,16 +51,28 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
    panel box `(0xF1,8,0x4F,0x29)`=(241,8,79,41) byte-verified `@0x66CF4`) → `minimap_draw_contents`
    (the sibling of the colony surround minimap). Owner→dot-color is the table at **DG8(`0x830..0x833`)**
    (`0x830` ocean/coast, `0x831` land, `0x832` fog `&0x80`, `0x833` owned `&0x20`); the white
-   viewport rect uses idx `0x0F`. **Structure B**; the color *index values* `0x830..0x839` are
-   **loaded from an asset at init** (`lcall 0x1A1F:0x88A` `@0x751A7`), i.e. data-driven, not EXE
-   constants.
+   viewport rect uses idx `0x0F`. **Structure B**; the color *index values* `0x830..0x839` —
+   **RESOLVED 2026-06-21 (B):** filled at init @0x751A2–0x751E7 by a byte-stream reader
+   (`lcall 0x1A1F:0x88A` `@0x751A7`, store `mov [0x830],al` @0x751A7) after opening the section
+   keyed **`COLORS`** (`push 0x22A7`="COLORS"@0x7518C). The source is **`NAMES.TXT @COLORS`**
+   (line 471): the 9 bytes `68,149,8,128,47,138,134,128,138` =
+   `basic,hilite,grey,enhance,shadow,select,border0,border1,border2`, written to
+   `0x830,0x831,0x832,0x833,0x834,0x835,0x837,0x838,0x839` (`0x836` skipped). These are **palette
+   indices into VICEROY.PAL** (6-bit) → e.g. `basic 68`→#559634 green, `hilite 149`→#C7A220 gold,
+   `grey 8`→#555555; the low four (`0x830..0x833`) feed the minimap owner-dots. The same loader
+   sequentially reads `@FOUNDING`, `@FATHERS`, `@COLORS`, `@INFO` from NAMES.TXT. (These are the
+   UI text-color slots — **9** color bytes, not "10 owner/terrain" bytes.) Data-driven, **B**.
 2. ✅ **Per-zoom viewport tile counts — CLOSED (B, computed).** Viewport setup `@0x6787C`:
    `SPAN_W[0x8544]=0xF<<zoom`, `SPAN_H[0x8546]=0xC<<zoom`, `TILE_PX[0x5AD4]=0x10>>zoom` (zoom =
    `[0x184]`, re-verified). zoom 0..3 = **15×12@16px / 30×24@8px / 60×48@4px / 120×96@2px** —
    exactly the four `@VIEW` "Zoom Level" entries; the overview mode (`[0x18A]≠0`) forces 5×5.
 3. **Sidebar B/C per-line text (x,y)** — painted by overlay HUD thunks (`hud_print_6a/74/7e`,
-   seg `191F/1A1F`) whose layout constants are **overlay-resident, not in the export** — honest
-   **TBD** (font is FONTTINY **B**; the text is live UnitRecord/PowerRecord data).
+   seg `191F/1A1F`) whose layout constants are **overlay-resident, not statically resolvable**
+   (confirmed 2026-06-21: the `191F/1A1F:0x6a/0x74/0x88` thunk records do not parse cleanly from
+   the rtlink trailer table — only `1A1F:0x7e`→file 0x3E162 resolves, and that is a treasury/tax
+   turn routine, **not** a sidebar painter). The season/gold/tax (sidebar B) and Moves/Locat
+   (sidebar C) per-line `(x,y)` constants stay **honest TBD** (genuinely overlay-resident); font
+   is FONTTINY **B**; the displayed text is live UnitRecord/PowerRecord data.
 4. **Top-menu item hit-rects** — built by the `menubar` widget from **FONTTINY title widths**
    (glyph-grid), not a fixed table. The explicit x-origins (GAME@11 … COLONIZOPEDIA@261) come
    from the low-trust `_VICEROY_MODERN` C reconstruction (absent from the EXE; that block also

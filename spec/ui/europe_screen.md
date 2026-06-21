@@ -70,7 +70,7 @@ per `fonts_and_colors.md`).
 | Full clear | (0, 8, 320, 192) | — | — | — | B |
 | Stockpile cells (16) | x=1, stride **19**, icon y=**181**, price y=**194** | ICONS.SS `good+0x16` + bid-price `"%d"` | FONTTINY | price `0x0F`→(255,255,255) | B |
 | Stockpile gold | x=**306**, y=**179** | `"$%d"` of `DG16(0x2F5E)` | FONTTINY | `0x0F`→white | B |
-| Title header | centered, y=**4** | "\<Nation\> Port \<year\> Tax \<N\>%" | FONTKING | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green | B (RGB) / A (font) |
+| Title header | centered, y=**4** | "\<Nation\> Port \<year\> Tax \<N\>%" | **FONTTINY** (`push [0x89E]` @0x30EDE — *not* FONTKING; RULING 2026-06-21) | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green | B (RGB) / A (font) |
 | Dock water boxes | (143,118,81,60) / (143,81,120,69) | box fill | — | — | B |
 | Dock ships (6) | x0=**143**, stride **20**, y=**122** | ICONS.SS sprite **0x7B** | — | — | B |
 | Recruit-pool box | (**281**,**89**,**37**,**32**) | box fill, outline `0x39` | — | outline `0x39`→(77,97,170) | B |
