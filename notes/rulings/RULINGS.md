@@ -3901,3 +3901,37 @@ city, cleared on entry" is the **consumed/feature state**. Per `notes/TRUTH_HIER
 (EXE disasm at a cited offset > memory-map note), the `0xA0`-vs-`0xB0` question is
 **dissolved**: rumor placement is procedural (`func_006188` + seed `[0x190]`), not a stored
 constant. `events.md` §6.1 closed. No dump/trace needed.
+
+---
+
+## 2026-06-21 — Advisor-report (F2–F10) paint-function offsets: AUDIT doc was wrong
+
+**Conflict.** `docs/ADVISOR_REPORTS_AUDIT.md` (and `spec/ui/advisor_reports.md`, which copied
+it) gave the F2–F10 paint-function file offsets as `0x025F18` (F2) / `0x025FD0` (F3) /
+`0x0269D8` (F4) / `0x027010` (F5) / `0x0277D8` (F6) / `0x027B0C` (F7) / `0x027E48` (F8) /
+`0x025A0A` (F9). `viceroy_source/docs/drawlist/REPORTS.md` instead places the real bodies at
+`0x37958`/`0x37A10`/`0x38418`/`0x38A50`/`0x39218`/`0x3954C`/`0x39888`/`0x39EE2`.
+
+**Disassembly (raw VICEROY.EXE, capstone 16-bit, re-verified by the orchestrator).**
+- `0x37958` = `enter 0x2c; … push 2` (F2, REPORT title N=2); `0x38418` = `enter 0x120; …
+  push 4; call 0x39e53` (F4, N=4) — clean painter prologues with the title-N `push`.
+- `0x025F18` disassembles to `les ax,[bp+si]; or ax,ax; je …` — **mid-instruction garbage**,
+  not a function. The audit's offsets are **broken-thunk artifacts**: the dispatcher does
+  `lcall 0x191F:0x3xx`; each thunk does `lcall 0x110d:0xdab; ljmp 0:OFF`, and the audit
+  resolved `OFF` against the wrong overlay base (≈0x25900) instead of the page-5 code base
+  (file `0x37340`; F9 needs `ljmp_seg=0x2B1`).
+- `func_037340` (`enter 0x352; push 0x11A2 ["REPORT"]; strcat; push [bp+6] [N]; sprintf;
+  load_PIK`) — so the loaded art is **REPORT\<N\>.PIK with N = the title number** (F2→REPORT2,
+  F3→REPORT3, F4→REPORT4, F5→REPORT5, F6→REPORT7, F8→REPORT8), **not** the audit's visual
+  guess (F4→REPORT3 etc.). Strings REPORT@0x11A2 / SCORE@0x11CF / WOODPAN2@0x11D7 confirmed
+  at DGROUP base 0x1D9A0.
+
+**Resolution.** Per `notes/TRUTH_HIERARCHY.md` (raw disasm at a cited offset > team docs), the
+**REPORTS.md offsets win and the AUDIT doc offsets are struck.** Although `viceroy_source/` is
+low-trust by default, here its offsets are raw-byte-confirmed and the audit's are
+raw-byte-disproven. `spec/ui/advisor_reports.md` rewritten to the real bodies + the
+title-N→PIK mapping. Also corrected: F8 gate polarity (FOREIGNNOTAVAIL fires when
+`[0x5382]&1` is **set**, i.e. once WoI is declared); F10 `func_03A9C0` is a **score-band
+plate selector** (`panel = largest i in 1..24 with i·i/3 ≥ scaled_score`, draws
+`SCORE(panel+1).SS` over WOODPAN2), not a per-line panel map. Residual TBD: the F8
+nested power-picker function offset.
