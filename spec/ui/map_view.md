@@ -20,7 +20,13 @@ Native 320×200 (mode 13h). Coordinates from `RENDERER_GEOMETRY.md` (overlay-ver
 
 Sidebar variants: foreign-colony hover replaces panel C with name/nation/treasury + With:/Ask: trade lists (`SESSION_UI_CATALOG.md` §8). **A**
 
-**Tile drawing chain (per CLAUDE.md hard rule #7):** each tile drawn by `func_O514 → func_O513 → func_O512`. `func_O512`'s 4-loop iterates the 4 cardinal neighbors (dX `00 01 00 FF`, dY `FF 00 01 00`) for terrain-transition composition; terrain id decoded via `get_terrain_id_from_raw` (file `0x6204`, mask `& 0x1F` + auto-forest). **B** (`COLONY_RENDER_CHAIN.md` §4, §3).
+**Tile drawing chain (per CLAUDE.md hard rule #7) — re-verified 2026-06-21:** each tile drawn
+by `func_O514 → func_O513 → func_O512`. `func_O512`'s 4-loop (`@file 0x68026`, `cmp [bp-4],4`)
+iterates the 4 cardinal neighbors via dY table `[bx+0xae]` / dX table `[bx+0xa8]`, world coords
+from `[0xa5a0]/[0xa5a2]`, on-screen test `lcall 0x181f:0x302`; `func_O513` (`@0x681D5`) decodes
+terrain via `lcall 0x181f:0x6aa` → `[0xa8a2]`. `get_terrain_id_from_raw` (`@file 0x6204`)
+confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest for ids 8..23
+(`and ax,7; or al,8` `@0x6225`). **B**.
 
 ## 3. Assets & text
 - **Tiles:** PHYS0.SS (+ auto-forest variants); **never** TERRAIN.SS/BDARK.SS (orphans, CLAUDE.md #5). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
@@ -40,8 +46,13 @@ Sidebar variants: foreign-colony hover replaces panel C with name/nation/treasur
 - `docs/COLONY_RENDER_CHAIN.md` §3/§4 — tile chain, `0x6204` decoder, entry chain. **B**
 - `data_extracted/text/MENU_sections.json`, `LABELS_sections.json`, `NAMES_sections.json` — menu/sidebar keys (all verified). **B**
 
-## 6. Open questions (TBD)
-1. Sidebar B/C exact intra-panel text (x,y) per line — only band rects measured.
-2. Minimap dot color → owner mapping (orange=own, grey/red=foreign/native) is observation, not byte-cited.
-3. Per-zoom-level viewport tile counts beyond closest zoom (15×12) not measured.
-4. Top-menu item hit-rects (x ranges) only roughly placed in v1 geometry.
+## 6. Open questions (TBD — honest ceiling: runtime/unlocated, not statically byte-answerable)
+1. Sidebar B/C exact intra-panel text (x,y) per line — laid out by the **live text pipeline**
+   from runtime UnitRecord/PowerRecord fields each frame, not a static layout constant; only
+   the band rects are overlay-measured (**A**). **TBD** (runtime).
+2. Minimap dot color → owner mapping (orange=own, grey/red=foreign/native) — **observation**,
+   not byte-cited. The byte-cited per-tile-color-from-layers code (`func_019202` / `DG8(0x830
+   ..0x833)`) is the **colony** surround minimap (a *different* path), so it cannot ground the
+   map-view world minimap, whose render function is "BYTE_VERIFIED-pending"/unlocated. **TBD**.
+3. Per-zoom-level viewport tile counts beyond closest zoom (15×12) — runtime/measured. **TBD**.
+4. Top-menu item hit-rects (x ranges) — only roughly placed. **TBD**.

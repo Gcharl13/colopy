@@ -4,12 +4,19 @@
 > `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
 > R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
 
-**Overall confidence:** screen→PIK asset mapping **A** (`docs/SESSION_UI_CATALOG.md`,
-visual ID); the menu-item text and option lists are partly **B** (verified in
-`MENU_sections.json` / `LABELS_sections.json`), partly **TBD** (main-menu item
-list not found as a single menu section). **Canonical primary:**
-`data_extracted/text/MENU_sections.json`, `data_extracted/text/LABELS_sections.json`,
-`docs/SESSION_UI_CATALOG.md`. **Last updated:** 2026-06-18.
+**Overall confidence:** boot-menu items now **B** (GAME.TXT `@BEGINMENU @options`, matched
+to the 1–5 dispatch); menu-plaque framework geometry **B** (`menu_run_key`/`mr_finalize_geometry`
+constants); Hall-of-Fame layout + record I/O **B** (raw-verified); screen→background base-names
+**B** (literal EXE strings, upgrading the prior luma IDs). · **Canonical primary:**
+`ghidra_export/VICEROY_decompiled.named.c` (boot dispatch 52193, menu framework 48237–48663,
+HoF 24990–25147), `raw/COLONIZE/{VICEROY.EXE,GAME.TXT}`. **Last updated:** 2026-06-21.
+
+> **Corrections (2026-06-21):** (a) the boot-menu item strings are **not** "baked into
+> OPENMENU.PIK / OPENING.EXE" — they are **GAME.TXT `@BEGINMENU @options`** (5 lines, read by
+> `mr_load_section`), matched 1:1 to the live 5-way dispatch at export line **52193**
+> (`title_screen_update`'s switch is a stub). (b) The Hall of Fame has **no PIK** — it draws on
+> the procedural **WOODPANL/WOODPAN2** wood panels; the old "no HoF PIK → geometry TBD" is
+> resolved.
 
 ## Overview — the menu framework
 
@@ -22,22 +29,33 @@ all visually identified in `docs/SESSION_UI_CATALOG.md`:
 ORDERS / REPORTS / TRADE / CHEAT / COLONIZOPEDIA) are separate and live in
 `MENU_sections.json` (those are the map-screen menu bars, not the boot menu).
 
-> Note: the **main-menu item list** (New / Load / Hall of Fame / Quit) is **not**
-> present as a discrete section in `MENU_sections.json` (which holds the in-game
-> menu bars). Individual labels are sourced from `GAME_sections.json`
-> (`@RETIRE`, `@DOSYES`) and `LABELS @MISC` ("COLONIZATION HALL OF FAME"). The
-> exact boot-menu option strings are **TBD**.
+> **Boot-menu item list — RESOLVED (B):** the five items live in **GAME.TXT `@BEGINMENU`**
+> under its `@options` directive (`@width=160 @y=91`): "Start a Game in NEW WORLD" /
+> "Start a Game in AMERICA" / "CUSTOMIZE New World" / "LOAD Game" / "View Hall of Fame". Read
+> by `mr_load_section("BEGINMENU")` and dispatched 1–5 at export line 52193 (`menu==2` opens
+> the `@AMERICA` "Original Americas / Map Editor" sub-picker `menu_run_boxed(0x234F)`). The
+> JSON section dump shows the body empty, but **`raw/COLONIZE/GAME.TXT` lines 31–42** carry it
+> verbatim (re-verified this pass).
+
+## Menu-plaque framework geometry — **B** (`mr_finalize_geometry`, export 48376)
+All wood-plaque menus (boot + setup + in-game bars) share this layout engine; constants at
+export 48237–48245: BORDER=3, INSET=2, GAP=3, MIN_W=80, LINE_MARGIN=10. `w = max(80,
+longest+10, @width) + 6`; row pitch = `font.maxh + 3`; `x = (@x==-1)? (320-w)/2 : @x`,
+`y = (@y==-1)? (200-h)/2 : @y` (so `@BEGINMENU` pins y=91, centered x, width ≥160); text
+origin (x+4, y+5). Panel fill = **WOODTILE.SS** tiled; outline RGB(0x14,0x0C,0x06); selection
+bar RGB(0x38,0x20,0x10); text green RGB(0x52,0x8A,0x31) / gold RGB(0xE3,0xAA,0x28). Nav: ENTER
+13 / ESC 27 / SPACE 32 / arrows / digit + first-letter hotkeys. **B**.
 
 ## Main menu
 - **Purpose:** entry choices after the title screen.
 - **Background:** `OPENMENU.PIK` over `OPENING.PIK`, decorative `OPENBORD`. **A**
   (`docs/SESSION_UI_CATALOG.md`).
-- **Items:** New game / Load game / Hall of Fame / Quit (function per manual,
-  **R**). Verified label fragments: `LABELS @MISC` "COLONIZATION HALL OF FAME"
-  (**B**); exit-to-DOS confirm `GAME @DOSYES` ("Exit to DOS?\nYes\nNo", **B**).
-  The in-game `MENU @GAME` list ("Save Game / Load Game / DECLARE INDEPENDENCE /
-  Retire / Exit to DOS") is the *map* menu, not the boot menu (**B**).
-- **Tier:** background **A**; item set **R/TBD**.
+- **Background:** **OPENMENU** (literal EXE string @0x1FCDC; handle `BG_BOOT=0x233C`); plaque
+  rendered over it via the framework above. **B**
+- **Items (B):** the 5 `@BEGINMENU @options` lines (New World / America / Customize / Load /
+  Hall of Fame), dispatched 1–5 at export 52193. The in-game `MENU @GAME` list is a *separate*
+  map menu. **B**
+- **Tier:** background **B**; item set **B**.
 
 ## New-game options (world type / difficulty / nationality / name)
 - **Purpose:** the ordered new-game setup wizard.
@@ -99,9 +117,16 @@ ORDERS / REPORTS / TRADE / CHEAT / COLONIZOPEDIA) are separate and live in
   `@MISC`: "President", "General, Continental Army", "Leader", "Score",
   "Colonization_Rating", "A.D." (**B**). Retirement keys `GAME @RETIRE`,
   `@RETIRING`, `@RETIRING2`, `@SOONRETIRING0/1` (**B**, bodies empty).
-- **Background/geometry:** **TBD** (no dedicated Hall-of-Fame PIK identified in
-  `docs/SESSION_UI_CATALOG.md`).
-- **Tier:** title/columns **B**; layout **TBD**.
+- **Background/geometry — RESOLVED (B):** there is **no HoF PIK** — `hall_of_fame_render`
+  (export 25037, `@file 0x3ACAF`) draws on the procedural **WOODPAN2/WOODPANL** wood panels
+  (handles 0x11D7/0x11FF). Render literals: title commit at (0x8C,0x8E) color 0xFC; score
+  column x=0xA0 with `y = 0xC3−(i+1)`; full-screen rule `box_rule(0,0x140,0xC8)`; trophy sprite
+  0x24/0x25/0x21 by rating. Table rows (`hall_of_fame_table`): start y=0x10, x=0x0A, pitch 10.
+  **B**.
+- **Record I/O — B (raw-verified, `@file 0x3ADA6`):** `HALLFAME.DAT`, `fread/fwrite` size
+  **0xD2 (210)** = 5 records × **0x2A (42)**; buffer holds 6 slots, file holds 5; **score =
+  int16 @ record +0x26**, descending insertion-sort. (Cross-ref `spec/systems/save.md` §6.5.)
+- **Tier:** title/columns/layout/record-I/O **B**.
 
 ## Scenario select (adjacent)
 - **Purpose:** choose a preset scenario map (custom-scenario path).
@@ -124,9 +149,15 @@ ORDERS / REPORTS / TRADE / CHEAT / COLONIZOPEDIA) are separate and live in
   PIK visual identification. **A**.
 
 ## Open questions (TBD)
-1. **Boot main-menu item strings** — locate the New/Load/Hall-of-Fame/Quit menu
-   section (likely baked into `OPENMENU.PIK` or an OPENING.EXE string table).
-2. **Save/load slot count** — confirm 10 slots and slot-name layout by tracing
-   the save/load dialog handler.
-3. **Hall-of-Fame background + row geometry.**
-4. **Customize-world control widget geometry** (sliders/plaques) per axis.
+*(Resolved 2026-06-21: boot-menu item strings = GAME.TXT `@BEGINMENU @options`; Hall-of-Fame
+background+geometry = procedural WOODPAN2/WOODPANL + the row literals above. Both struck.)*
+
+1. **Save/load slot count** — the save/load picker (`page1A_file_pick`) is a **file-list
+   dialog** (glob `*.MP`), overlay-resident; there is **no `MAX_SAVE`/10 array constant** in
+   any decompiled body. The manual's "10" may be a save-name limit, not a code array. Stays
+   **R/TBD** (overlay code not in the export).
+2. **Customize / difficulty / nationality per-axis widget geometry** — the generic plaque
+   geometry is known (above), but the slider / flag-plaque hit-rects are drawn by the
+   overlay handlers (`191F:087A` Customize, `PICKNATION`/`DIFFICULTY`) not in the export. **TBD**.
+3. **Scenario-select (LEVN*.PIK) thumbnail-grid geometry** — no decompiled body touches the
+   LEVN thumbnails. **A (assets) / TBD (geometry)**.

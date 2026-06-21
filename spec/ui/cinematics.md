@@ -4,9 +4,10 @@
 > `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
 > R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
 
-**Overall confidence:** asset names + endgame argument matrix **A/B**
-(`docs/KING_AND_CINEMATIC_AUDIT.md`, disasm-cited `func_075352`); per-frame
-animation timing in OPENING.EXE/CLOSING.EXE **TBD**.
+**Overall confidence:** in-VICEROY painters **B** (`func_075352` king-defeats argument
+matrix, `func_03A9C0`+`func_039EE2` score screen, `func_03DA2A` DECOIND — all re-disassembled
+2026-06-21); per-frame animation timing in the separate OPENING.EXE/CLOSING.EXE binaries
+**TBD** (no Ghidra export — honest ceiling for the VICEROY-only scope).
 **Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md`,
 `data_extracted/text/OPENING_sections.json`,
 `data_extracted/text/CLOSING_sections.json`, `data_extracted/text/GAME_sections.json`.
@@ -43,18 +44,25 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
   in GAME_sections.json. **B.**
 - **Tier:** **B**.
 
-## Score screen (SCORE01-24.SS)
-- **Purpose:** end-of-game score breakdown, one illustrated plate per category.
-- **Painter:** `func_03A9C0` (score-screen renderer) — referenced in
-  `docs/SESSION_UI_CATALOG.md`; per-line plate mapping **TBD** (needs disasm).
-- **Assets (A):** 24 plates `SCORE01..SCORE24.SS`, all visually identified
-  (`docs/SESSION_UI_CATALOG.md`). **A.**
-- **Text (B):** title + category words in `LABELS @MISC` "COLONIZATION SCORE":
-  "Citizens", "Independence", "Villages Burned", "Foreign Recognition",
-  "Total Score", "SCORING COMPLETE", "SCORE COMPLETE". Naming-honor flavor
-  `GAME @EXPLOITS` ("COLONIZATION RATING: …") + `@SCORE` (the 24-line
-  honor-list, body present, **B**). `@SCORED` key exists (**B**, empty).
-- **Tier:** assets **A**; plate→category map **TBD**; text **B**.
+## Score screen (SCORE01-24.SS) — **B (byte-grounded 2026-06-21)**
+- **Purpose:** end-of-game score + honor-rating screen, one illustrated plate per
+  **rating tier**.
+- **Painter:** `func_03A9C0` (`@file 0x3A9C0`) — disassembled this pass. **B.**
+- **Plate selection — RESOLVED (was "per-category TBD"):** the 24 `SCORE*` plates are
+  **rating-tier art**, not per-category lines. `func_03A9C0` computes
+  `scaled = rawscore·(diff+4(+1≥3)(+1≥4))/100 >>1`, then loops `i=1..0x18` choosing the
+  largest `i` with `i·i/3 ≥ scaled`; `panel = i−1` clamped `[0,0x17]`. Filename =
+  `"SCORE"(0x11CF) + ("0"(0x11D5) if panel<9) + (panel+1)` → **SCORE01..SCORE24**
+  (`push 0x11cf @0x3AAAA`, `cmp [bp-0xc0],9; jge; push 0x11d5 @0x3AAB9`, both re-verified),
+  drawn over background **WOODPAN2**; uses FONTKING. **B.**
+- **Score component sum** (`func_039EE2`, `@file 0x39EE2`): base `[0x53A8] + 0x64·[0x53A7]`
+  (century-of-independence byte ×100, written by the Independence handler `func_03DE46`);
+  "Foreign Recognition" = count of the 4 powers with `PowerRecord[+? ] & 4` (stride 0x13C);
+  cross-ref `spec/systems/scoring.md`. **B.**
+- **Text (B):** `LABELS @MISC` "COLONIZATION SCORE", "Citizens", "Independence", "Villages
+  Burned", "Foreign Recognition", "Total Score"; honor flavor `GAME @EXPLOITS` + `@SCORE`
+  (24-line honor-list, body present). **B.**
+- **Tier:** painter + plate selector + component sum **B**; plate art identification **A**.
 
 ## Opening cinematic (OPENING.PIK)
 - **Purpose:** title screen / boot demo (old-style world map with sea monsters).
@@ -113,11 +121,16 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
   `DEC-*` visual identification. **A**.
 
 ## Open questions (TBD)
-1. **Score plate→category mapping** — disasm `func_03A9C0` to bind each of the
-   24 `SCORE*` plates to its score line.
-2. **OPENING/CLOSING frame timing** — the per-frame sequencing lives in the
-   separate exes (not yet disassembled).
-3. **DECLARAT.PIK printed-document loader** — find the function that loads it
-   (not located by string search in VICEROY disasm).
-4. **`KING2.SS` animation loader** — locate the war-declaration cinematic that
-   uses the 8-frame arm-raise sheet.
+*(Score plate→category mapping is RESOLVED 2026-06-21 — the plates are rating-tier art,
+selected by `func_03A9C0`; see the Score-screen section above.)*
+
+The remaining items are all **out of static reach this pass** (VICEROY.EXE-only scope) —
+they require disassembling the separate non-exported cinematic binaries or a runtime:
+1. **OPENING/CLOSING frame timing & sequencing** — lives in `OPENING.EXE`/`CLOSING.EXE`,
+   which have **no Ghidra export** (the `opening_source/`/`closing_source/` C stubs are empty,
+   pointing only at `code/OPENING/disasm/*.asm`). The `@OPENING`/`@CLOSING`/`@CREDITS` script
+   tables and asset lists are byte-present (**B**); the playback engine is **TBD**.
+2. **AMERICA.MOV demo-script semantics** — the `.MOV` interpreter is in OPENING.EXE. **TBD.**
+3. **DECLARAT.PIK printed-document loader** — no string xref in VICEROY (likely overlay). **TBD.**
+4. **`KING2.SS` animation loader** — the "KING2" string is not in any traced VICEROY
+   function; the war-declaration cinematic loader is unlocated. **TBD.**
