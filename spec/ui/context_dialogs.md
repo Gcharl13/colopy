@@ -13,11 +13,12 @@ in `GAME_sections.json` / `NAMES_sections.json`; trigger functions **A**
 
 ## Overview — the menu-list framework
 
-These dialogs all use the same framework `func_06F0F4` as popups — the **11**-directive parser
-(`OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X / WIDTH / LENGTH / CHECKBOX / DEFAULT / TEXTCOLR`
-at file `0x1F967`; see `popups.md` §Overview). The `OPTIONS` directive marks an option-list
-section; `@default=N` is the **highlight-row** directive (handler @0x6F374, stored to the
-section struct). A section with a bare numeric first line (`@TRADENAMES` = "5\nRun\nFerry\n…")
+These dialogs all use the same framework `func_06F0F4` as popups — **10 live directives**
+(`OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X / WIDTH / LENGTH / CHECKBOX / DEFAULT`; `TEXTCOLR`
+is a vestigial 11th table string, never compared — see `popups.md` §Overview). Font = the
+latched **FONTTINY** (`SMALLFONT` copies the latch, does *not* load FONTSMAL); body text color
+white `0x0F` with the push overlay-resident (A/TBD). The `OPTIONS` directive marks an option-list
+section; `@default=N` stores the **highlighted-row index** (handler @0x6F374), not a color. A section with a bare numeric first line (`@TRADENAMES` = "5\nRun\nFerry\n…")
 is consumed as a menu list. Each section's **`@width=NN` is a literal pixel width** (B) — e.g.
 SUREDELETE=190, SMITEINDIANS=220, ABANDON=190; bare option-lists (UNITOPTIONS/SHIPOPTIONS/
 ARMOPTIONS/TRADENAMES) have no `@width` and flow through the OPTIONS path. The map-screen

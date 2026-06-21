@@ -20,11 +20,19 @@ No frame capture exists (event never fired in session) → geometry **TBD**. Kno
 2026-06-21 via `KING_AND_CINEMATIC_AUDIT.md` §5): `03DA47 push "DECOIND" → load_PIK_fullscreen`;
 `03DA59 lcall 0x181F:0x3B6` present; `03DAB4 imul ax,[0x5398],0x34; 03DAB9 add ax,0x540E;
 03DAC1 strcpy(local,name)` — the leader-name read matches `0x540E + [0x5398]*0x34` exactly;
-then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive sprites. **B**.
-> Note: the Ghidra C export of this function is **overlay-thunked** (the name read sits inside
-> `overlay_call_191F_0ED0`, not inline) — so the **audit-doc raw disasm is the load-bearing
-> source**, not the C export. The export-side signature pen origin (`pen_x=0x94`, `pen_y=0x7E`)
-> is **R** (export reconstruction, not raw-cited). Per-glyph (x,y)/line stride **TBD**.
+then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\*/DEC-SQIG cursive sprites.
+**Signature layout — now BYTE_VERIFIED (B, 2026-06-21; the pen geometry is INLINE in
+`func_03DA2A`, not overlay-thunked):**
+- pen seed **(x=0x94=148, y=0x7E=126)** — `mov [bp-0x4FE],0x94` `@0x3DC42`, `mov [bp-0x1FC],0x7E`
+  `@0x3DC3C`;
+- per-glyph **primary advance** adds the glyph width `es:[sprite+0x4A]` to the **y axis**
+  `[bp-0x1FC]` (`@0x3DDD9`); **cross advance** adds a small kern **{−1,−2,−3,−4}** (by glyph
+  class) to the **x axis** `[bp-0x4FE]` (`@0x3DDE0`);
+- the run **ends when `[bp-0x1FC] ≥ 0xDC (220)`** (`cmp @0x3DE04`);
+- each glyph is a single sprite blit `0x181F:0x254` at `(x,y)=([bp-0x4FE],[bp-0x1FC])`.
+- **No text color** — the signature is pure sprite blits (each `DEC-*.SS` carries its own
+  palette); there is no `vid_text_color`/color push in `func_03DA2A`. The only runtime input is
+  the leader-name string at `0x540E+[0x5398]*0x34`. DECOIND.PIK background fills (0,0,320,200).
 
 ## 3. Assets & text
 - **DECOIND.PIK** — celebratory document-signing scene (Founding Fathers around the document). Painted by `func_03DA2A`. **B**
@@ -56,8 +64,9 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive s
 bodies are the same `GAME_sections.json` extraction defect seen across the UI specs — present in
 `raw/COLONIZE/GAME.TXT`.)*
 
-1. **Signature glyph (x,y)/line-stride** — the pen origin (export-side `pen_x=0x94`/`pen_y=0x7E`)
-   is computed in the signature loop of `func_03DA2A` (and its `overlay_call_191F_0ED0` helper).
-   It is **findable by disassembling that loop** — *not* "runtime-only"; the earlier
-   "would need a runtime capture" framing was wrong (the layout is in code, the only runtime
-   input is the leader's *name string* `0x540E+[0x5398]*0x34`, which is game data). **R→findable.**
+1. ✅ **Signature glyph (x,y)/advance — CLOSED 2026-06-21 (B).** Pen seed (0x94,0x7E); per-glyph
+   y-advance = glyph width `es:[sprite+0x4A]`, x-advance = kern {−1..−4} by class; ends at
+   y≥0xDC; glyph blit `0x181F:0x254` (§2). The layout is **inline** in `func_03DA2A` — the
+   earlier "overlay_call_191F_0ED0 hides it / runtime-capture needed" framing was wrong. The
+   only runtime input is the leader name string. **No open questions remain** (DECLARAT orphan,
+   DECOIND used, signature geometry byte-verified).

@@ -3935,3 +3935,32 @@ title-N→PIK mapping. Also corrected: F8 gate polarity (FOREIGNNOTAVAIL fires w
 plate selector** (`panel = largest i in 1..24 with i·i/3 ≥ scaled_score`, draws
 `SCORE(panel+1).SS` over WOODPAN2), not a per-line panel map. Residual TBD: the F8
 nested power-picker function offset.
+
+---
+
+## 2026-06-21 — FONTSMAL.FF is never loaded; SMALLFONT copies the latched font
+
+**Conflict.** Two UI agents disagreed: one said the popup/menu `SMALLFONT`/`@smallfont`
+directive selects a distinct small font **FONTSMAL.FF**; another said FONTSMAL is never loaded
+and the directive just copies the active font latch.
+
+**Disassembly (raw VICEROY.EXE).**
+- The strings **`FONTSMAL`/`fontsmal` are ABSENT from the entire image** (`find` = −1, both
+  cases). Only `fonttiny`@0x1FD32, `fontintr`@0x1FD29 (lowercase, load path) and `FONTKING`
+  @0x1FCCB, `FONT-NP`@0x1F8AF (uppercase) appear. So **FONTSMAL.FF is an orphan on disk — VICEROY.EXE
+  never `load_font`s it.**
+- The popup framework's **SMALLFONT handler @0x6F207** is `mov ax,[0x89E]; mov dx,[0x8A0]; les
+  bx,[bp-0xC]; mov es:[bx+0x80],ax; mov es:[bx+0x82],dx` — it **snapshots the currently-latched
+  active-font far pointer** `[0x89E]/[0x8A0]` into the section struct. No font is loaded; it does
+  not switch to a smaller font.
+
+**Resolution.** There are **4 fonts actually loaded** by VICEROY.EXE: FONTTINY (the boot default
+latch `[0x89E]`), FONTINTR, FONTKING, FONT-NP. **FONTSMAL.FF is unloaded (orphan).** The
+`SMALLFONT` / `@smallfont` directive copies the latch — it is effectively a no-op font-wise in
+shipped data, **not** a small-font selector. This **corrects** (a) `fonts_and_colors.md` (the
+"5 fonts / FONTSMAL via SMALLFONT" model), (b) `popups.md` item 6, and (c) the
+2026-06-21 menus commit's "boot-menu body = FONTSMAL" claim — the boot menu renders in the
+**latched font** (FONTINTR/FONTTINY), and the `@smallfont` flag loads no distinct font.
+Also: the popup framework compares **10** live directives (OPTIONS..DEFAULT); **TEXTCOLR is a
+vestigial table entry, never compared** (`push 0x200A` appears nowhere as a directive) — there
+is **no per-popup text-color override** directive.

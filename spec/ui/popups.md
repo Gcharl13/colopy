@@ -16,12 +16,13 @@ colors resolve from the decodable PIK palette (see `fonts_and_colors.md`).
 ## Overview — the shared popup framework
 
 All gameplay popups are drawn by the **single dialog framework `func_06F0F4`** (enter 0x168
-@0x6F0F4; `@`-key check `cmp byte [bx],0x40` @0x6F193). The directive table is **11** keywords
-(re-verified at file `0x1F967`): `OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X / WIDTH / LENGTH
-/ CHECKBOX / DEFAULT / TEXTCOLR` — the prior "9 directives" omitted the single-char `Y`/`X`
-and `TEXTCOLR`. Handlers byte-located: `TEXT`→body ptr to struct +0x80/+0x82 (0x6F207);
-`X`→+0xc (0x6F266); `Y`→+0xe (0x6F21E); `WIDTH`→atoi `func_06F812` (0x6F2AE); `LENGTH`→`[0xA5B6]`
-(0x6F300); `CHECKBOX`→`or es:[bx+0xa],5` (0x6F34E); `DEFAULT`→highlight row (0x6F374). **B.**
+@0x6F0F4; `@`-key check `cmp byte [bx],0x40` @0x6F193). The directive table at file `0x1F967`
+holds **11 strings** but `func_06F0F4` compares only **10 live directives**: `OPTIONS / PROMPT /
+TEXT / SMALLFONT / Y / X / WIDTH / LENGTH / CHECKBOX / DEFAULT` — **`TEXTCOLR` is vestigial**
+(never compared; `push 0x200A` appears nowhere as a directive). Handlers byte-located: `TEXT`→
+section-kind latch `[bp-4]=1` (0x6F1D8); `SMALLFONT`→copies font `[0x89E]/[0x8A0]`→+0x80/+0x82
+(0x6F207); `X`→+0xc (0x6F266); `Y`→+0xe (0x6F21E); `WIDTH`→atoi (0x6F2B0); `LENGTH`→`[0xA5B6]`
+(0x6F302); `CHECKBOX`→`or es:[bx+0xa],5` (0x6F350); `DEFAULT`→highlight-row index (0x6F374). **B.**
 *(Infra note: the DGROUP→file delta is `0x1D9A0` — DGROUP off + 0x1D9A0 = the literal's file
 offset; this is why earlier audits that treated DGROUP offsets as file offsets saw "garbage".)*
 A per-event handler:
@@ -47,8 +48,16 @@ A per-event handler:
    are not cursor-relative.) **B.**
 5. **Background/frame**: tiled `WOODPANL.PIK` (some `WOODPAN2.PIK`) + `WOODFRAM.SS`
    border + `NAMEPLAT.SS` title strip; **A** (asset roles, not per-popup dispatch).
-6. **Font**: body defaults to `FONTTINY`; `SMALLFONT` directive → `FONTSMAL`
-   (user-curated ruling, `docs/POPUP_TEMPLATE_AUDIT.md`). **A**.
+6. **Font & color (corrected 2026-06-21):** body renders in the **latched `[0x89E]` font
+   (FONTTINY** by default). The **`SMALLFONT` directive does NOT load FONTSMAL** — its handler
+   `@0x6F207` just copies `[0x89E]/[0x8A0]` into the section (FONTSMAL.FF is never loaded; RULING).
+   **`TEXTCOLR` is a vestigial directive — never compared** by `func_06F0F4` (only 10 of the 11
+   table strings are live: OPTIONS..DEFAULT); there is **no per-popup text-color override**.
+   Body text color is white `0x0F`=(255,255,255), but the actual color push is in the **overlay
+   `0x191F` body-render thunk** (`0x191F:0x8C6/0x8D2/0x910`), so it's **A/TBD** at the popup
+   level. Speaker name-plate uses **FONT-NP** (loaded with WOODFRAM/NAMEPLAT) — color overlay-
+   resident (TBD). The `@DEFAULT=N` directive stores a **highlighted-row index**, not a color
+   (handler `@0x6F374`). Font/default-color = **A**; directive negatives = **B**.
 7. **Multi-section popups** (`@KINGTAX` + `@TAXOPTIONS`) concatenate a body
    section with an option-list section; mechanism **INFERRED** (`func_06F0F4`
    recursion), key existence **B**.

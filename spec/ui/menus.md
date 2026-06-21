@@ -49,9 +49,11 @@ arrows / digit + first-letter hotkeys. **B**.
 `mr_color_for(r,g,b)` (export 48464), which scans the live palette for the nearest entry — they
 are design-intent RGBs, not palette-index pushes: outline **(20,12,6)**, selection bar
 **(56,32,16)**, text green **(82,138,49)**, selected gold **(227,170,40)** (gold hits OPENMENU
-idx `0x54` exactly). **Boot-menu body font = FONTSMAL** (the `@BEGINMENU` section carries
-`@smallfont`, which sets `m->smallfont=1` in `mr_load_section` export 48348) — *not* FONTINTR;
-FONTINTR is the general intro/menu font that BEGINMENU overrides. **B.**
+idx `0x54` exactly). **Boot-menu body font = the latched font (FONTINTR/FONTTINY)** — the
+`@BEGINMENU` section's `@smallfont` directive sets `m->smallfont=1` (`mr_load_section`), but
+**FONTSMAL.FF is never loaded** by VICEROY.EXE (RULING 2026-06-21), so `@smallfont` selects no
+distinct font; the body renders in the active latch (A — the exact metric effect of the flag is
+not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
 
 ## Main menu
 - **Purpose:** entry choices after the title screen.

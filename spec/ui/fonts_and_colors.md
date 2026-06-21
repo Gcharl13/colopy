@@ -5,28 +5,34 @@
 > table `@file 0x1FD20` (font loads), the per-call color push-arg in each render function
 > (`raw/COLONIZE/VICEROY.EXE`), and `docs/UI_FONT_REFERENCE.md` (pixel-verified colony screen).
 
-## 1. Fonts — five bitmap fonts (`.FF`)
+## 1. Fonts — four loaded bitmap fonts (`.FF`) (+ FONTSMAL orphan)
 
-The engine loads four fonts at boot (asset table `@file 0x1FD20`/export `BOOT_ASSETS`) plus
-`FONTSMAL` selected by the `@smallfont` directive. Each is a MicroProse `.FF` bitmap font
-(format in `formats/FF.md`). Glyph metrics from extracted PNGs (`docs/UI_FONT_REFERENCE.md`).
+VICEROY.EXE loads exactly **four** fonts: FONTTINY (the boot default latch), FONTINTR, FONTKING,
+FONT-NP. A fifth file `FONTSMAL.FF` exists on disk but is **never loaded** (the strings
+`FONTSMAL`/`fontsmal` are absent from the EXE — see `notes/rulings/RULINGS.md` 2026-06-21). Each
+loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metrics from
+`docs/UI_FONT_REFERENCE.md`.
 
 | Font | File | Glyph (h × w) | Style | Role / where used | Tier |
 |------|------|---------------|-------|-------------------|------|
-| **FONTTINY** | `FONTTINY.FF` (`@0x1FD32`) | 6 × 4 fixed | mixed-case fixed | **default body / HUD**: inventory qty, production-grid yields, sidebar numbers | B (load) / A (role) |
-| **FONTINTR** | `FONTINTR.FF` (`@0x1FD29`) | 9 × 6 fixed | chunky 3-D | **intro / title**; default menu font (but `@BEGINMENU` overrides to FONTSMAL via `@smallfont`) | B / A |
-| **FONTKING** | `FONTKING.FF` (`@0x1FCCB`) | 7 × 3–7 var | mixed-case proportional | **large readable**: screen titles, SoL%, **Score screen**, **Hall of Fame**, king-defeats | B / A |
-| **FONT-NP** | `FONT-NP.FF` (`@0x1F8AF`) | 8 × 7–8 var | uppercase var | **national-power** / grayed text | B / A |
-| **FONTSMAL** | `FONTSMAL.FF` | 6 × 6 fixed | uppercase fixed | popup body when the **`SMALLFONT`** directive (`@file 0x1F97B`) is set (`func_06F0F4`) | B |
+| **FONTTINY** | `FONTTINY.FF` (`@0x1FD32`) | 6 × 4 fixed | mixed-case fixed | **default body / HUD** (boot latch `[0x89E]`): inventory qty, yields, sidebar numbers, advisor bodies, popup bodies | B (load) / A (role) |
+| **FONTINTR** | `FONTINTR.FF` (`@0x1FD29`) | 9 × 6 fixed | chunky 3-D | **intro / title / boot menu** plaques | B / A |
+| **FONTKING** | `FONTKING.FF` (`@0x1FCCB`) | 7 × 3–7 var | mixed-case proportional | **large readable**: Score screen, Hall of Fame, king-defeats | B / A |
+| **FONT-NP** | `FONT-NP.FF` (`@0x1F8AF`) | 8 × 7–8 var | uppercase var | **national-power** / speaker name-plate | B / A |
+| ~~FONTSMAL~~ | `FONTSMAL.FF` | — | — | **ORPHAN — never loaded by VICEROY.EXE**; the `SMALLFONT`/`@smallfont` directive does *not* load it | (refuted) |
 
 **Selection mechanism — important caveat (tier A for per-element font):** the active font is a
-**screen-level global latch** (`g_font_ptr_89E`, set by an `ov_set_font(KEY_…)` at screen-enter),
-**not** a per-draw select inside the paint helpers — no `ov_set_font` appears in
-`colony_paint_*` / `europe_draw_*`. So **which font a given element uses is inferred from the
-framework + pixel verification** (`docs/UI_FONT_REFERENCE.md`), tier **A**, not a byte-verified
-per-blit handle. (The popup framework `func_06F0F4` is the exception that *does* switch
-`FONTTINY`↔`FONTSMAL` on the `SMALLFONT` directive — that one is **B**.) **Colors, by contrast,
-are per-draw `push`-args → exact RGB (B); fonts are screen-latched → A.**
+**screen-level global latch** (`[0x89E]/[0x8A0]`, set at screen-enter; FONTTINY by boot default),
+**not** a per-draw select inside the paint helpers — no per-draw font-set appears in
+`colony_paint_*` / `europe_draw_*` / the advisor bodies (those read the `[0x89E]` latch). So
+**which font a given element uses is inferred from the framework + pixel verification**
+(`docs/UI_FONT_REFERENCE.md`), tier **A**, not a byte-verified per-blit handle. The popup
+framework's `SMALLFONT` directive (handler `@0x6F207`) merely **copies the latched `[0x89E]`
+font** into the section — it does **not** switch to a smaller font (FONTSMAL is never loaded).
+The genuinely **B** font cases are the explicit FONTKING loads (Score / Hall of Fame / king-
+defeats, which `push "FONTKING"`). **Colors, by contrast, are per-draw `push`-args → exact RGB
+(B) wherever the draw is in the extracted image; in the popup framework the body color push is
+overlay-resident (A/TBD).**
 
 ## 2. Colors — palette-index args, resolved to exact RGB (fully static — tier B)
 
@@ -74,9 +80,10 @@ The authoritative per-element table is in each screen's own spec; collected here
 | Score screen + Hall of Fame | **FONTKING** | per `@MISC` | B |
 | Advisor reports F2–F9 | FONTTINY (body+title) | title fill `0x90`→(255,255,190); rows `0x91`(255,255,142)/`0x92`(255,243,93)/`0x61`(247,243,199); text `0x0F` white | B |
 | Advisor F10 score | FONTKING (+FONTTINY) | per `@MISC` | B |
-| Boot-menu plaque (BEGINMENU) | **FONTSMAL** (`@smallfont`) | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | B |
+| Boot-menu plaque (BEGINMENU) | latched (FONTINTR/FONTTINY) — `@smallfont` loads no distinct font | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | A (font) / B (color) |
 | Hall of Fame | FONTKING | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
-| Popup body (default / `SMALLFONT`) | FONTTINY / FONTSMAL | per `TEXTCOLR` directive | B |
+| Popup body | FONTTINY (latch; `SMALLFONT` just copies it) | white `0x0F` default (push is overlay-resident → A/TBD); no `TEXTCOLR` override exists | A |
+| Speaker name-plate | FONT-NP (loaded with WOODFRAM/NAMEPLAT) | overlay-resident → TBD | A |
 
 ## 4. Residual — none (font/color is fully static)
 **No font/color claim needs a runtime or a capture.** Fonts are byte-cited boot-table loads;

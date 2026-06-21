@@ -35,6 +35,20 @@ Native 320×200. Bands frame-verified via luma analysis (`RENDERER_GEOMETRY.md` 
 
 The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM = threshold` (`RENDERER_GEOMETRY.md` "Display formula"). **B**
 
+### Fonts & colors (F3 body `0x37A10..0x3807D`, byte-grounded 2026-06-21)
+- **Font = FONTTINY** for the whole F3 body — it reads the `[0x89E]` (FONTTINY) latch **6×** and
+  `[0x268A]` (FONTKING) **0×** (B). The geometry doc's "FONTKING title" is **not supported** by
+  this body (the title is centred FONTTINY text via `0x181F:0x100`) → mark FONTKING-title **R**.
+- **Colors** (resolved via **CCBKGD.PIK** palette): **title `0x90`→(255,255,190)** pale-yellow;
+  **all body/row text `0x92`→(255,243,93)** bright-yellow (B — the trailing color arg to each
+  `0x181F:0x13C`/`0x100` text draw). Layout latches: left margin **x=4**, running **y seed 0x19=25**,
+  advanced by `[0x89E]` glyph-height+2 per line.
+- **Correction (sprite-vs-color trap):** the *only* colors in the body are `0x90`/`0x92`.
+  `0x3F`/`0x38` (progress/bell gauge) and the REF-row icons (from `[0x5286]/[0x52A2]/…`) are
+  **ICONS.SS sprite ids**, `0x61` is the FF-list **marker** sprite, and `0x12C`=300 / `0x4E`=78 are
+  the gauge **scale** / REF **column stride** — none are text colors. (Bell/US-flag sprites are
+  legitimately absent from this body — §6.1.)
+
 **FF portrait slots (25, CC-NN.SS):** the 25 portraits CC-00..CC-24 map 1:1 to NAMES
 `@FATHERS` order. On this **Activities** screen the acquired-FF list renders as **plain text**
 (frame 1310124562). The CC-NN blits live in the **FF-acquisition reveal popup**, now
