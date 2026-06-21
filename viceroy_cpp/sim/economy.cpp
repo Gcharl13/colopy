@@ -39,6 +39,17 @@ int tory_expert_adjust(int base_yield, int population, int sol_percent,
     return y < 0 ? 0 : y;
 }
 
+void colony_economic_step(Colony& c, int difficulty) {
+    (void)difficulty;                          // tile-yield difficulty applies upstream
+    sol_update(c, c.bells_per_turn, c.population);
+    build_step(c, c.hammers_per_turn, c.build_cost);
+    if (c.food_per_turn > 0) c.food_accum += (uint32_t)c.food_per_turn;
+    if (c.food_accum >= 200 && c.population < 32) {
+        c.population += 1;
+        c.food_accum -= 200;                   // surplus carried
+    }
+}
+
 bool build_step(Colony& c, int hammers_produced, int build_cost) {
     if (hammers_produced > 0) {
         c.hammers_accum += (uint32_t)hammers_produced;

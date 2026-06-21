@@ -35,6 +35,10 @@ add_library(viceroy_sim STATIC
   sim/market.cpp
   sim/turn.cpp
   sim/ref.cpp
+  sim/immigration.cpp
+  sim/game.cpp
+  sim/unit.cpp
+  sim/combat.cpp
 )
 target_include_directories(viceroy_sim PUBLIC sim)
 

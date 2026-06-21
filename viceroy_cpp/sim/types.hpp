@@ -24,7 +24,7 @@ inline bool good_is_era(int g) { return g == FOOD || g == HORSES; }
 struct Colony {
     int  owner_power = 0;        // ColonyRecord +0x1A
     bool human       = true;     // controller gate (+0x543F on the power)
-    int  population  = 1;        // +0x1F
+    int  population  = 1;        // +0x1F  (max 32)
 
     // Sons-of-Liberty 32-bit EMA (rebel dividend A / divisor B).
     int32_t rebel_A = 0;         // +0xC2
@@ -33,8 +33,16 @@ struct Colony {
     uint32_t hammers_accum = 0;  // +0x92  raw per-turn hammer sum (early gate)
     uint32_t build_bank    = 0;  // +0xB6  progress bank ("X of Y"), surplus carried
     int      build_target  = -1; // +0x94  building id (<0 = none)
+    int      build_cost    = 0;  // cost of build_target (from @BUILDING)
     int      warehouse_lvl = 0;  // +0x95  0/1/2
     uint64_t built_mask    = 0;  // +0x84  constructed-building bits (0..47)
+    uint32_t food_accum    = 0;  // +0xC8  food accumulator (grow at 200)
+
+    // Per-turn production inputs (fed by the colonist/profession model, P1+):
+    int bells_per_turn   = 0;    // statesmen -> good 0x12
+    int hammers_per_turn = 0;    // carpenters -> good 0x10
+    int food_per_turn    = 0;    // net food surplus
+    int crosses_output   = 0;    // +0x05  preacher crosses (feeds immigration)
 };
 
 struct Power {
@@ -42,6 +50,10 @@ struct Power {
     int64_t gold        = 0;         // +0x2A
     int     tax         = 0;         // +0x01
     std::array<int32_t, NGOODS> trade{};  // +0xFC cumulative trade accumulator
+
+    int crosses_accum     = 0;       // +0x2E  accumulated crosses
+    int crosses_threshold = 0;       // +0x30  spawn threshold (recomputed each turn)
+    std::array<int, 3> dock_pool{{-1, -1, -1}};  // +0x02..+0x04 waiting immigrant types
 };
 
 // Royal Expeditionary Force counts (DGROUP 0x53DA..0x53E0).

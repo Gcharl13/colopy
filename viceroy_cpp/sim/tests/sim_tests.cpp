@@ -6,6 +6,10 @@
 #include "../market.hpp"
 #include "../turn.hpp"
 #include "../ref.hpp"
+#include "../immigration.hpp"
+#include "../game.hpp"
+#include "../unit.hpp"
+#include "../combat.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -97,6 +101,89 @@ static void test_ref() {
           "purchase -> money %lld reg %d", (long long)money, r.regulars);
 }
 
+static void test_food_growth() {
+    std::printf("food -> population growth (food 50/turn, threshold 200):\n");
+    Colony c; c.population = 1; c.food_per_turn = 50;
+    colony_economic_step(c, 1); colony_economic_step(c, 1); colony_economic_step(c, 1);
+    CHECK(c.population == 1 && c.food_accum == 150, "after 3 -> pop %d acc %u",
+          c.population, c.food_accum);
+    colony_economic_step(c, 1);
+    CHECK(c.population == 2 && c.food_accum == 0, "after 4 -> pop %d acc %u",
+          c.population, c.food_accum);
+}
+
+static void test_immigration() {
+    std::printf("immigration (England, 3 workers, 0 units, diff 0):\n");
+    CHECK(crosses_threshold(3, 0, 0, false, 0) == 9, "threshold -> %d",
+          crosses_threshold(3, 0, 0, false, 0));
+    Power p;
+    auto rng = [](int, int) { return 1; };       // dock slot 1
+    bool spawned = false;
+    int turns = 0;
+    for (; turns < 10 && !spawned; ++turns)       // 2 crosses/turn, threshold 9
+        spawned = immigration_step(p, 2, 3, 0, 0, false, 0, rng).spawned;
+    CHECK(turns == 5, "spawned on turn %d", turns);
+    CHECK(p.dock_pool[1] == 0x1C && p.crosses_accum == 0, "dock %d acc %d",
+          p.dock_pool[1], p.crosses_accum);
+}
+
+static void test_turn_loop() {
+    std::printf("turn-loop integration (diff 1; 1 colony building Stockade):\n");
+    GameState g; g.difficulty = 1;
+    g.price_base[SUGAR] = 800; g.powers[0].trade[SUGAR] = 100;
+    World w; Colony c;
+    c.owner_power = 0; c.population = 3; c.hammers_per_turn = 10;
+    c.build_target = 0; c.build_cost = 64;        // Stockade
+    w.colonies.push_back(c);
+    auto rng = [](int, int) { return 0; };
+    for (int i = 0; i < 8; ++i) step_turn(g, w, rng);
+    CHECK((w.colonies[0].built_mask & 1ull) != 0, "Stockade built");
+    CHECK(g.powers[0].royal_money == 144, "REF accrued -> %lld",
+          (long long)g.powers[0].royal_money);          // 18/turn * 8
+    CHECK(g.price_base[SUGAR] < 800, "Sugar price drifted -> %d", g.price_base[SUGAR]);
+    CHECK(g.year == 1500 && g.turn == 8, "advanced to %d t%ld", g.year, (long)g.turn);
+}
+
+static void test_units() {
+    std::printf("@UNIT stats:\n");
+    CHECK(unit_stats(SOLDIERS).attack == 2 && unit_stats(SOLDIERS).defense == 2, "Soldiers");
+    CHECK(unit_stats(ARTILLERY).attack == 7 && unit_stats(ARTILLERY).defense == 5, "Artillery");
+    CHECK(unit_stats(MAN_O_WAR).attack == 24 && unit_stats(MAN_O_WAR).defense == 24, "Man-O-War");
+    CHECK(unit_stats(COLONISTS).attack == 0 && unit_stats(COLONISTS).defense == 1, "Colonists");
+}
+
+static void test_combat() {
+    std::printf("land combat:\n");
+    CHECK(combat_odds(2, 2) == 0.5, "Soldiers v Soldiers = 50%%");
+    CHECK(combat_odds(2, 6) == 0.25, "vs def 6 = 25%%");
+    CHECK(terrain_defense_value(28) == 4 && terrain_defense_value(27) == 6, "hills/mountains");
+    CHECK(terrain_defense_value(23) == 3 && terrain_defense_value(10) == 2, "rain/forest");
+    CHECK(difficulty_bonus(0) == 4 && difficulty_bonus(4) == 0, "handicap");
+    // demotion ladder
+    CHECK(demote(SOLDIERS, 0) == COLONISTS, "Soldiers->Colonists");
+    CHECK(demote(DRAGOONS, 0) == SOLDIERS, "Dragoons->Soldiers");
+    CHECK(demote(CAVALRY, 0) == REGULARS, "Cavalry->Regulars");
+    CHECK(demote(REGULARS, 0) == -1, "Regulars destroyed");
+    CHECK(demote(SOLDIERS, CLASS_MISSIONARY) == MISSIONARIES, "missionary override");
+    CHECK(is_capturable(TREASURE) && is_capturable(WAGON_TRAIN) && !is_capturable(SOLDIERS), "capture set");
+
+    Unit atk; atk.type = SOLDIERS;
+    Unit def; def.type = SOLDIERS;
+    auto win  = [](int, int) { return 1; };       // roll 1 <= atk 2 -> attacker wins
+    auto lose = [](int, int hi) { return hi; };   // roll = max -> defender wins
+    CombatResult r = resolve_land(atk, def, /*td*/0, /*fort*/0, /*diff*/4, false, false, win);
+    CHECK(r.attacker_won && r.loser_outcome == COLONISTS && !r.captured, "win -> defender demoted");
+    r = resolve_land(atk, def, 0, 0, 4, false, false, lose);
+    CHECK(!r.attacker_won && r.loser_outcome == COLONISTS, "loss -> attacker demoted");
+    // terrain + human handicap fold into strengths
+    r = resolve_land(atk, def, /*td hills*/4, 0, /*diff*/0, /*atkH*/true, /*defH*/false, win);
+    CHECK(r.atk_str == 6 && r.def_str == 6, "str atk %d def %d", r.atk_str, r.def_str);
+    // capture a Treasure
+    Unit treasure; treasure.type = TREASURE;
+    r = resolve_land(atk, treasure, 0, 0, 4, false, false, win);
+    CHECK(r.attacker_won && r.captured && r.loser_outcome == TREASURE, "treasure captured");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -105,6 +192,11 @@ int main() {
     test_build();
     test_price_drift();
     test_ref();
+    test_food_growth();
+    test_immigration();
+    test_turn_loop();
+    test_units();
+    test_combat();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

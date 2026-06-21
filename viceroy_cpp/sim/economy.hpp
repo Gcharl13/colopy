@@ -29,4 +29,9 @@ int tory_expert_adjust(int base_yield, int population, int sol_percent,
 // (surplus carried); set the built bit. Returns true on completion.
 bool build_step(Colony& c, int hammers_produced, int build_cost);
 
+// One colony's per-turn economic update (the Production phase, per colony):
+// SoL EMA from bells, build progress from hammers, and food->population growth
+// (accumulate food_per_turn; +1 pop at 200, surplus carried, max 32 @0x009432).
+void colony_economic_step(Colony& c, int difficulty);
+
 } // namespace vc::sim
