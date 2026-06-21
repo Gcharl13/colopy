@@ -165,15 +165,21 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
 - **P0 — asset → pixels (DONE).** `viceroy_cpp`: the offline importer (§4a) decodes PHYS0.SS → a
   paletted-PNG atlas + `frames.json`; the runtime renders the map view **from the bundle** (no codec)
   + VICEROY.PAL + AMER2.MP, **pixel-identical to the oracle**. Proves the foundation + the pipeline.
-- **P1 — economic spine (in progress).** Headless sim core `viceroy_cpp/sim/`: turn cadence,
-  colony production (tory penalty + expert), SoL 1/64 EMA, hammers/build, warehouse cap, market
-  price drift, REF growth — **done + golden-master tested** (`sim_tests`). Remaining P1: wiring the
-  full per-turn loop (`func_005760`) over multiple colonies + immigration.
-- **P2 — units & conflict.** Units/orders/movement, combat, natives, diplomacy.
-- **P3 — meta systems.** Founding fathers/congress, revolution + REF + Tory uprising, scoring,
-  map generation.
-- **P4 — screen-UI parity.** Colony/Europe/advisor/congress/menus rendered from `spec/ui/*` with
-  fonts + palette; visual-diff each.
+- **P1 — economic spine (DONE).** Headless sim core `viceroy_cpp/sim/`: turn cadence + orchestrated
+  per-turn loop (`game.step_turn`), colony production (tory penalty + expert), SoL 1/64 EMA,
+  hammers/build, warehouse cap, food→growth, immigration, market price drift, REF growth — all
+  golden-master tested (`sim_tests`).
+- **P2 — units & conflict (DONE).** `@UNIT` stat table + Unit model; land combat (odds, terrain
+  defense, difficulty handicap, demotion ladder, capture); natives (mission/raid/tension/trade/
+  tribute); diplomacy (war/treaty matrices, cooldown, AI willingness). Golden-tested. *(Remaining
+  for later: unit movement/orders pathing, naval combat detail — not gating P3.)*
+- **P3 — meta systems (DONE).** Founding Fathers bell-cost curve + availability + era bands;
+  revolution (declare gate, REF-war victory, score bonus, Tory uprising); scoring (difficulty
+  mult, population component, rank); map-gen climate→terrain + dims. Golden-tested.
+- **P4 — screen-UI parity (NEXT — the stopping point).** Colony/Europe/advisor/congress/menus
+  rendered from `spec/ui/*` with fonts + palette; visual-diff each. **Gated on:** the deferred
+  `.FF` font decode (RULING 2026-06-21) **and** building the screen-render + widget layer on top
+  of the P0 blitter — a substantial new sub-project.
 - **P5 — polish.** Palette cycling, sound, cinematics (annotate OPENING/CLOSING or hand-time),
   windowed/interactive client + input.
 

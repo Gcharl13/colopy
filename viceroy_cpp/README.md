@@ -74,18 +74,25 @@ goes **`.SS` → ssdec**, a match validates the *whole bundle round-trip* (decod
 atlas pack + paletted-PNG write/read + JSON) — any divergence is caught. P0
 result: **PARITY OK (3,207,168 bytes exact).**
 
-## P1 — economic-spine sim core (`sim/`, started)
+## sim/ — headless game-logic core (P1–P3 done, golden-master tested)
 A pure-logic, **headless** sim core (no I/O, no rendering) implementing the
-byte-verified economic formulas from `spec/systems/*`, with "modernized math"
-(plain `int`/`int64`, but the *observable* integer truncation preserved):
-turn/season cadence, colony production (tory penalty + expert), Sons-of-Liberty
-1/64 EMA, hammers/build (surplus carry), warehouse cap, market price drift
-(`>>8`), and REF growth. Validated by a dependency-free golden-master suite
-(`sim/tests/sim_tests.cpp`) asserting documented outputs (SoL 5/10/20%, price
-800→797→794, REF 23/10/5/8, …):
+byte-verified rules from `spec/systems/*`, with "modernized math" (plain
+`int`/`int64`, but the *observable* integer truncation preserved). All validated
+by a dependency-free golden-master suite (`sim/tests/sim_tests.cpp`):
 ```sh
 cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM TESTS PASSED
 ```
+- **P1 economic spine** — turn/season cadence + orchestrated `step_turn`; colony
+  production (tory penalty + expert), Sons-of-Liberty 1/64 EMA, hammers/build
+  (surplus carry), warehouse cap, food→growth, immigration; market price drift
+  (`>>8`); REF growth. (SoL 5/10/20%, price 800→797→794, REF 23/10/5/8, …)
+- **P2 units & conflict** — `@UNIT` stats + Unit; land combat (odds, terrain
+  defense, difficulty handicap, demotion ladder, capture); natives (mission/raid/
+  tension/trade/tribute); diplomacy (war/treaty matrices, cooldown, AI willingness).
+- **P3 meta systems** — Founding Fathers cost curve (Explorer ff1→129) + era
+  bands + availability; revolution (declare gate, REF-war win, bonus `(1780-y)·2`,
+  Tory uprising); scoring (mult {4,5,6,8,10}, population, rank `n²/3`); map-gen
+  climate→terrain + 58×72 dims.
 
 ## Not yet (per roadmap in `REWRITE_READINESS.md`)
 - **Fonts (`.FF`)** — not bundled: glyph layout uncracked (overlay-resident parser;
@@ -102,7 +109,9 @@ include/   importer:  fab madspack ss pik       (.hpp)
            runtime:   bundle pal mp render
            shared:    png_io image_io util
 src/       (same set) + main.cpp  (import-all / import / render subcommands)
-sim/       P1 sim core: types economy market turn ref (+ tests/sim_tests.cpp)
+sim/       game-logic core (P1-P3): types economy market turn ref immigration
+           game unit combat natives diplomacy founding_fathers revolution
+           scoring mapgen  (+ tests/sim_tests.cpp)
 verify.py  oracle parity check (uses tools/ssdec.py)
 CMakeLists.txt   (links libpng; builds viceroy_cpp + sim_tests)
 ```
