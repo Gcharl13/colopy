@@ -106,12 +106,15 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
   `+0x04`); non-artillery cost = `+0x04`, artillery = base+count·100.
 - ~~`data/{records,tables}.md` — per-column→loader confirmation sweeps.~~ **DONE
   2026-06-20** — all loaders located; ColonyRecord load-bearing field map resolved.
-- **The Category-S static depth-queue is now empty.** Residual narrow bits (all with a
-  byte-verified backbone): `map_system.md` `.MP` record boundaries + `§1b` coast
-  beach-halo truth table; `warehousing` exact wastage ordering; `events.md` §6.2
-  Lost-City bias-cascade per-gate probabilities; `immigration` §6.2 field-unit `-2`
-  override + placement handler; `revolution.md` §6.3 WoI end-game flow (PARTIAL);
-  `founding_fathers.md` §6.1 per-father effect magnitudes (mostly done; some hardcoded).
+- **The Category-S static depth-queue is empty.** Tiny narrow bits remain atop a
+  byte-verified backbone (all low-value): `map_system.md` `.MP` record boundaries +
+  `§1b` coast beach-halo per-direction truth table; `warehousing` exact wastage
+  ordering; `immigration` §6.2 field-unit `-2` override + placement handler;
+  `revolution.md` §6.3 WoI end-game flow (PARTIAL); `founding_fathers.md` §6.1 a few
+  per-father continuous-effect *magnitudes* (mostly done; hardcoded); `save.md` §6.5
+  HALLFAME per-word score-field *semantics* (record layout is **B**); `training.md`
+  §6.1 human teaching rate (UI-driven; AI path **B**); `events.md` §6.1 Lost-City
+  feature value (runtime-verified `0xB0`). None is a gap in any game *mechanic*.
 
 **Category F — RESOLVED 2026-06-20.** `diplomacy.md` willingness thresholds + `0x08`/
 `0x80` war-bits → **B** (tier → **B**); `natives.md` §6.3 tribute-gold = clamp
