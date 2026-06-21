@@ -13,13 +13,16 @@ in `GAME_sections.json` / `NAMES_sections.json`; trigger functions **A**
 
 ## Overview — the menu-list framework
 
-These dialogs all use the same framework `func_06F0F4` as popups (the `OPTIONS`
-directive marks an option-list section; `DEFAULT=N` highlights one row). A
-section with a bare numeric first line (e.g. `@TRADENAMES` = "5\nRun\nFerry\n…")
-is consumed as a menu list. The map-screen pull-down bars (GAME/VIEW/ORDERS/
-REPORTS/TRADE/CHEAT/COLONIZOPEDIA) are the verbatim `MENU_sections.json`
-tables and are distinct from these context popups. **A** (framework) /
-**B** (list bodies where present).
+These dialogs all use the same framework `func_06F0F4` as popups — the **11**-directive parser
+(`OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X / WIDTH / LENGTH / CHECKBOX / DEFAULT / TEXTCOLR`
+at file `0x1F967`; see `popups.md` §Overview). The `OPTIONS` directive marks an option-list
+section; `@default=N` is the **highlight-row** directive (handler @0x6F374, stored to the
+section struct). A section with a bare numeric first line (`@TRADENAMES` = "5\nRun\nFerry\n…")
+is consumed as a menu list. Each section's **`@width=NN` is a literal pixel width** (B) — e.g.
+SUREDELETE=190, SMITEINDIANS=220, ABANDON=190; bare option-lists (UNITOPTIONS/SHIPOPTIONS/
+ARMOPTIONS/TRADENAMES) have no `@width` and flow through the OPTIONS path. The map-screen
+pull-down bars are the verbatim `MENU_sections.json` tables, distinct from these context
+popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
 
 ## Unit jobs / orders menu
 - **Purpose:** issue movement/work orders to the selected unit.
@@ -57,7 +60,12 @@ tables and are distinct from these context popups. **A** (framework) /
   mission `@MISSION0..3`, `@LIVE`-related. Handler `func_04A7CA` (CHIEFHOWDY) +
   the speaker uses `IND<tribe>` via `[0x1f5c]` (`docs/KING_AND_CINEMATIC_AUDIT.md`
   §6). **A.**
-- **Tier:** action list **B**.
+- **Menu builder located (B for "where"):** the 10-row `@ACTIONS` list is referenced exactly
+  once — `push 0x2264 @file 0x74FC4` — the village-action menu builder (`0x74Fxx`). The per-row
+  **show/enable predicates** (unit type = scout/missionary/military; tribe attitude;
+  mission-present) are computed there but not yet traced row-by-row. **TBD** (byte-traceable in
+  `0x74Fxx`, *not* runtime-R).
+- **Tier:** action list **B**; per-row gating **TBD**.
 
 ## Colonial-authority (build / abandon / rename)
 - **Purpose:** found, abandon, or rename a colony.
@@ -135,10 +143,16 @@ tables and are distinct from these context popups. **A** (framework) /
   `func_06F0F4` option-list framework. **A**.
 
 ## Open questions (TBD)
-1. **Empty-body option keys** — re-extract bodies for the many menu keys that
-   are empty strings in this JSON dump (e.g. diplomatic, train, trade-route).
-2. **Per-colony build availability** — which buildings the construction-choice
-   list shows depends on prerequisites; logic not byte-traced.
-3. **Dialog geometry** — resolve per-section `@width=NN` to fix option-list rects.
-4. **Native-action gating** — which of the 10 `@ACTIONS` rows are shown/enabled
-   per unit type + tribe state.
+*(Resolved 2026-06-21: per-section `@width` is a literal pixel width (B); the "empty-body" keys
+are a `GAME_sections.json` extraction defect — bodies (SHIPOPTIONS/ARMOPTIONS/SUREDELETE/
+SMITEINDIANS …) are present and full in `raw/COLONIZE/GAME.TXT`, so re-extracting the JSON is
+mechanical, source **B**.)*
+
+1. **Native-action row gating** — the builder is located (`@ACTIONS` ref @0x74FC4); the per-row
+   show/enable predicates are **TBD** (byte-traceable in `0x74Fxx`, not runtime).
+2. **Per-colony build availability** — which buildings the construction list offers depends on
+   prerequisite + colony-size + already-built; a **state-machine over ColonyRecord**, not a
+   static table — so **TBD (B-with-effort)**, not R.
+3. **Final option-list pixel rect / highlight RGB** — `@width` + `@default` row are **B**; the
+   composed rect (runtime cursor + layout loop `0x0684BC`) and the highlight palette color are
+   **A/R** (runtime).

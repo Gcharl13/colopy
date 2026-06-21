@@ -4,19 +4,26 @@
 > `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
 > R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
 
-**Overall confidence:** message-key existence **B** (every key below grepped in
-`data_extracted/text/GAME_sections.json`); framework dispatch **A**; per-popup
-geometry / option text / sprite-channel value mostly **TBD**.
+**Overall confidence:** framework dispatch, 11 directives, 4 speaker channels, reset address,
+Lost-City variant map, raid-count, `@KINGNEWWAR` sprite, and per-section `@width` all **B**
+(raw-verified 2026-06-21); message-key existence **B**; final per-popup pixel rect + highlight
+RGB **A/R** (runtime).
 **Canonical primary:** `data_extracted/text/GAME_sections.json`,
 `docs/POPUP_TEMPLATE_AUDIT.md`, `docs/UI_DIALOGS.md`, `docs/DIALOG_GEOMETRY.md`.
 **Last updated:** 2026-06-18.
 
 ## Overview — the shared popup framework
 
-All gameplay popups are drawn by the **single dialog framework
-`func_06F0F4`** (the 9 in-section directives `OPTIONS / PROMPT / TEXT /
-SMALLFONT / WIDTH / LENGTH / CHECKBOX / DEFAULT / TEXTCOLR` are byte-cited at
-file `0x1F967..0x1F9B3`). A per-event handler:
+All gameplay popups are drawn by the **single dialog framework `func_06F0F4`** (enter 0x168
+@0x6F0F4; `@`-key check `cmp byte [bx],0x40` @0x6F193). The directive table is **11** keywords
+(re-verified at file `0x1F967`): `OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X / WIDTH / LENGTH
+/ CHECKBOX / DEFAULT / TEXTCOLR` — the prior "9 directives" omitted the single-char `Y`/`X`
+and `TEXTCOLR`. Handlers byte-located: `TEXT`→body ptr to struct +0x80/+0x82 (0x6F207);
+`X`→+0xc (0x6F266); `Y`→+0xe (0x6F21E); `WIDTH`→atoi `func_06F812` (0x6F2AE); `LENGTH`→`[0xA5B6]`
+(0x6F300); `CHECKBOX`→`or es:[bx+0xa],5` (0x6F34E); `DEFAULT`→highlight row (0x6F374). **B.**
+*(Infra note: the DGROUP→file delta is `0x1D9A0` — DGROUP off + 0x1D9A0 = the literal's file
+offset; this is why earlier audits that treated DGROUP offsets as file offsets saw "garbage".)*
+A per-event handler:
 
 1. selects the **GAME.TXT message key** (the `@`-named section, body text);
 2. sets one of the **4 speaker-sprite channels** (`docs/POPUP_TEMPLATE_AUDIT.md`),
@@ -29,10 +36,14 @@ file `0x1F967..0x1F9B3`). A per-event handler:
 3. calls the body-render thunk; the dispatcher `func_06E3D0` fires whichever
    channels are `≥ 0`. After close, all three channels are reset (usually to
    `0xFFFF`) at file `0x06EE6B`. **B** for the channel mechanism.
-4. **Geometry**: popup rect `[0x839E..0x83A4]` is computed, never hard-set
-   (`docs/DIALOG_GEOMETRY.md`); `func_067DC8` formula is byte-cited but its
-   inputs (`@width=NN`, cursor) are runtime. So per-popup pixel rects are
-   **TBD** unless a hand-derived value is cited.
+4. **Geometry**: each GAME.TXT section carries a literal **`@width=NN` pixel width** (present
+   in 475/499 sections; default 190 — e.g. KINGTAX/KINGNEWWAR/LOSTCITY1/2/RAIDWREAK=190,
+   SMITEINDIANS=220, WANTSTUFF=260, VICEROY=78). The framework parses it via the WIDTH/atoi
+   directive (→ struct +0xc). **Correction:** `[0x1EA4]/[0x1EA5]` are **not** the `@width`
+   parser output — they are written by the layout loop at file `0x0684BC` (`mov [0x1ea4],al`
+   @0x684CC / `mov [0x1ea5],al` @0x684D7, both `shl al,2`) iterating 4 sub-elements via
+   `func_067DC8`. So `@width` is **B** (literal source); the final pixel rect still depends on
+   the runtime cursor + that layout loop → **A/R**.
 5. **Background/frame**: tiled `WOODPANL.PIK` (some `WOODPAN2.PIK`) + `WOODFRAM.SS`
    border + `NAMEPLAT.SS` title strip; **A** (asset roles, not per-popup dispatch).
 6. **Font**: body defaults to `FONTTINY`; `SMALLFONT` directive → `FONTSMAL`
@@ -85,13 +96,14 @@ file `0x1F967..0x1F9B3`). A per-event handler:
 
 ## Native raid / warpath
 - **Purpose:** native attack on a player colony/unit; warpath declaration.
-- **Keys (B):** raid outcomes (6+) `@RAIDNOTHING`, `@RAIDWREAK`, `@RAIDSTORES`,
-  `@RAIDBURN`, `@RAIDSCALP`, `@RAIDSHIP`, `@RAIDGOLD`; warpath `@INDIANWARPATH`,
-  `@INDIANWARPATH2`, `@INDIANWARFARE`, `@INDIANWAR`, `@INDIANGRUDGE`,
-  `@INDIANSURPRISE`. Handlers `func_05BE84` (raid, 6 outcomes), `func_04B036`
-  (warpath; sets `[0x1f5c]=tribe_owner`) per `docs/UI_DIALOGS.md` /
-  `docs/POPUP_TEMPLATE_AUDIT.md`. **A.** War-dance woodcut `WDCUT13`.
-- **Tier:** keys **B**; raid count/outcome map **TBD**.
+- **Raid outcomes = exactly 6 (B, raw-verified).** The EXE raid-key block at file
+  `0x1F52A` is six contiguous keys: `RAIDWREAK, RAIDSTORES, RAIDBURN, RAIDSHIP, RAIDGOLD,
+  RAIDNOTHING`. Handler `func_05BE84` (enter 0x24 @0x5BE84; uses the `[0x8542]` colony anchor).
+  **Note on `@RAIDSCALP`:** it exists as a section in `GAME.TXT` but is **not** referenced by
+  this 6-key raid block (absent from the EXE) — it is an orphan / separate-path (warpath/scalp)
+  key, **not** a 7th raid-popup outcome. Warpath `@INDIANWARPATH/2/WARFARE/WAR/GRUDGE/SURPRISE`
+  handled by `func_04B036` (sets `[0x1f5c]=tribe_owner`); war-dance woodcut `WDCUT13`. **B.**
+- **Tier:** keys **B**; raid count = 6 **B**.
 
 ## Lost City (10 variants)
 - **Purpose:** result of a unit entering a Lost City Rumor tile.
@@ -99,15 +111,17 @@ file `0x1F967..0x1F9B3`). A per-event handler:
   GAME_sections.json, plus adjacent outcome keys `@BURIAL1`, `@BURIAL2`,
   `@BURIAL3` (burial-grounds anger), `@SCREWED`, `@VANISH` (expedition
   vanished). Label "Lost City Rumor" is `LABELS @MISC` (**B**).
-- **Variant→outcome mapping is `TBD`.** The brief's named outcomes (Fountain of
-  Youth, Cibola/treasure, Burial Grounds, Ruins, Expedition Vanished, Rumors,
-  Tribe Meeting, Sacred Shrine, Survivor Rescue, Recruit Choice) describe the
-  *function* (manual-level) but **no `@FOUNTAIN`/`@CIBOLA` key exists** — the
-  outcomes are selected among `@LOSTCITY0..9` + `@BURIAL*` + `@VANISH`. Which
-  index = which outcome is **not byte-traced**; do not guess. Treasure-ransom
-  woodcut is `WDCUT04`/`WDCUT05` (Aztec/Inca, **A**). Recruit-choice likely
-  reuses `@RECRUITCHOOSE` (**B** key, attribution **TBD**).
-- **Tier:** key existence **B**; per-variant semantics **TBD**.
+- **Variant→outcome mapping — RESOLVED (B, 2026-06-21).** Handler `func_061454` (enter 0x3c
+  @0x61454, the same fn `events.md` cites) builds `@LOSTCITY<n>` by appending the outcome index
+  `[bp-6]` (1–9) to the "LOSTCITY" template (`push 0x1dae @0x618C2`) and shows it (`lcall
+  0x181f:0x182 @0x618D9`). Byte-cited per-index side effects (matching `events.md` §2 exactly):
+  **1** Fountain of Youth (sound 0x37 @0x618ED; promotes to 2 if `[0x5382]&1`); **2**
+  Cibola/treasure (sound 0x3c); **3** ruins gold (`10·3d8` @0x61770); **4** burial-grounds anger
+  (`or [bx+0x543e],0x40` @0x61877; sub-dispatches `@BURIAL1/2/3`+`@SCREWED`); **5** expedition
+  vanished (`@VANISH`, downgrades to 6); **6** nothing; **7** gift/larger treasure (`2·4d10`
+  @0x617C0); **8** trespass near shrines; **9** survivors/recruit (spawn `lcall 0x191f:0xac8`
+  @0x61809; `@LOSTCITY0` is the recruit prompt reused by FoY/survivors). **B.**
+- **Tier:** key existence + per-variant index map **B**.
 
 ## Combat result
 - **Purpose:** land/colony combat resolution outcome.
@@ -188,9 +202,11 @@ file `0x1F967..0x1F9B3`). A per-event handler:
   `@EUROPENOTAVAIL`, `@FOREIGNNOTAVAIL`, `@ALREADYREVOLUTION`; siege/invasion
   `@INVASION`, `@SEIZURE`, `@SEIZURESEA`, `@SEIZURELAND`, `@TOOTORY`,
   `@LOSENOCOLONIES`. Independence handler `func_03DE46` + guard `func_03E984`
-  (`docs/UI_DIALOGS.md`, **A**). `@KINGNEWWAR` may use the `KING2.SS`
-  arm-raise animation — **TBD** (`docs/KING_AND_CINEMATIC_AUDIT.md` §7).
-- **Tier:** keys **B**; per-message sprite/geometry **TBD**.
+  (`docs/UI_DIALOGS.md`, **A**). **`@KINGNEWWAR` sprite — RESOLVED (B, negative):** `KING2.SS`
+  **does not exist** in the binary (`"KING2"` has zero occurrences; only `"KING1"` @file
+  0x1FCB4, built by the `>7` branch of `func_06BE92`), so `@KINGNEWWAR` uses **`KING1.SS`** (or
+  a static portrait), not a KING2 arm-raise animation — the KING2 hypothesis is byte-refuted.
+- **Tier:** keys **B**; `@KINGNEWWAR` sprite **B** (=KING1); per-message geometry **A/R**.
 
 ## Evidence
 - `data_extracted/text/GAME_sections.json` — every `@`-key above grepped
@@ -208,12 +224,17 @@ file `0x1F967..0x1F9B3`). A per-event handler:
   "Intervention Force". **B**.
 
 ## Open questions (TBD)
-1. **Lost City variant map** — which of `@LOSTCITY0..9` / `@BURIAL*` / `@VANISH`
-   corresponds to Fountain of Youth, Cibola, Ruins, Tribe Meeting, Sacred Shrine,
-   Survivor Rescue, Recruit Choice. Byte-trace the LostCity outcome selector.
-2. **Per-popup geometry** — resolve `@width=NN` per section + the
-   `[0x1EA4]/[0x1EA5]` writer to make rects static.
-3. **Raid outcome count** — confirm the 6-vs-7 outcome set for `func_05BE84`.
-4. **Empty-body keys** — re-extract GAME.TXT bodies for the many `@`-keys that
-   are empty strings in this JSON dump.
-5. **`@KINGNEWWAR` sprite** — confirm `KING2.SS` animation vs static `KING`.
+*(Resolved 2026-06-21: Lost City variant map (`func_061454`, index 1–9); raid count = 6
+(`@RAIDSCALP` is an orphan GAME.TXT key, not a raid-block outcome); `@KINGNEWWAR` = KING1.SS
+(KING2.SS absent); `@width` is a literal per-section pixel width. All struck.)*
+
+1. **Empty-body keys are a JSON-dump defect, not a binary unknown.** Bodies for the "empty"
+   keys (LOSTCITY0/3-9, RAIDSTORES/BURN/SHIP/GOLD, SHIPOPTIONS, ARMOPTIONS, etc.) are **present
+   and full in `raw/COLONIZE/GAME.TXT`** — `data_extracted/text/GAME_sections.json` is partial.
+   Action = re-extract the JSON (mechanical); source is **B**.
+2. **Final per-popup pixel rect** — the `@width` and option text are **B**, but the on-screen
+   rect is composed at runtime by the layout loop (`0x0684BC`) over the live cursor. Exact
+   placement stays **A/R** (runtime); not a static constant.
+3. **Per-popup option-highlight RGB** — applied at runtime via `@DEFAULT`/`TEXTCOLR` palette
+   index; perceived color needs a capture. **R**. (And WOODPANL-vs-WOODPAN2 per-popup choice —
+   **TBD**.)
