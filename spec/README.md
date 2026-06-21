@@ -79,10 +79,12 @@ exact RGB from the decodable PIK palette (index + palette, both byte-readable �
 **popup/dialog placement** is `@x`/`@y` from GAME.TXT or a centered formula (not the cursor);
 **pixel layout coords** are constants in the render functions. The **only** genuine runtime
 dependency is the displayed **values** themselves (gold, year, SoL%, which units/colonies exist)
-— which are live game *state*, documented by layout/format, not spec gaps — plus the
-`OPENING.EXE`/`CLOSING.EXE` cinematic frame timing (those binaries are disassembled in-repo at
-`code/OPENING|CLOSING/disasm` but not yet semantically annotated, and are outside the chosen
-VICEROY-only scope). **No missing function or un-resolvable constant remains in VICEROY.EXE.**
+— which are live game *state*, documented by layout/format, not spec gaps. The
+`OPENING.EXE`/`CLOSING.EXE` cinematic per-frame timing — once deferred as out-of-scope — was
+**byte-grounded 2026-06-21** (scope expansion): the playback loops, real-time `[0x82]`/`[0x6c]`
+clock, frame-select cascade and panning subsystem are traced in `docs/CINEMATIC_TIMING_AUDIT.md`
+(**B**); only the resident draw routine + outer-driver clock remain narrow TBDs. **No missing
+function or un-resolvable constant remains in VICEROY.EXE.**
 Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor-measured;
 **R** = reconstructed-from-asset; **TBD** = un-annotated separate binary or a live game-state value.
 
@@ -96,7 +98,7 @@ Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = l
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`; F4/F8 separators dark-red `0x77`→311/319; per-report static x-columns + y-start byte-cited; F10 font FONTTINY+FONTINTR) | per-row y = FONTTINY flow (state); F9 color = `[0x830]` `@COLORS` |
 | [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework: 10 live directives, speaker-portrait selector globals `[0x1F5C/5E/60]`, Lost-City map, raid=6, `@width`/`@x`/`@y`; FONTTINY latch) | body text color = glyph-engine mapping (A; no per-popup override) |
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count (overlay); setup-widget rects **R** (pixel-measured from PIKs); LEVN grid (no asset) |
-| [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) | OPENING/CLOSING frame timing (disasm in-repo, Phase-2 annotation not done); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
+| [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) + **OPENING/CLOSING per-frame timing byte-grounded** (`[0x82]`/`[0x6c]` clock, `docs/CINEMATIC_TIMING_AUDIT.md`); KING2.SS proven absent | resident draw routine + outer-driver clock (narrow TBD, that doc §5); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
 | [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | none (mapping closed, B) |
 | [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (4 loaded `.FF` fonts + FONTSMAL orphan; FONTKING = king-defeats only; palette-index color args → exact RGB) | **B** (font loads, color push-args, RGB via decoded PIK palette) | none (only palette *cycling* is animation) |
 

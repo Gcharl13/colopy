@@ -4,17 +4,19 @@
 > B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
 > Substantive: the in-VICEROY painters (king-defeats `func_075352`, score `func_03A9C0`,
 > Declaration `func_03DA2A`) and the `@OPENING`/`@CLOSING`/`@CREDITS` script tables are **B**;
-> cinematic assets **A**. Remaining: OPENING.EXE/CLOSING.EXE per-frame timing + the `AMERICA.MOV`
-> interpreter — being lifted from TBD via annotation of the in-repo `code/OPENING|CLOSING/disasm`
-> (§ Open questions / §Opening / §Closing).
+> cinematic assets **A**. The OPENING.EXE/CLOSING.EXE **per-frame timing is now byte-grounded**
+> (real-time `[0x82]`/`[0x6c]` clock + frame-select cascade — `docs/CINEMATIC_TIMING_AUDIT.md`),
+> KING2.SS is proven absent, and AMERICA.MOV is decoded (A/R). Residuals (resident draw routines,
+> outer-driver clock) are listed in §Open-questions.
 
 **Overall confidence:** in-VICEROY painters **B** (`func_075352` king-defeats argument
 matrix, `func_03A9C0`+`func_039EE2` score screen, `func_03DA2A` DECOIND — all re-disassembled
-2026-06-21); per-frame animation timing lives in the OPENING.EXE/CLOSING.EXE binaries, which **are
-present and mechanically disassembled in-repo** (`code/OPENING/disasm` 145 fns, `code/CLOSING/disasm`
-136 fns, 99.7% byte-identified) but **not yet semantically annotated** — so timing/`.MOV` stay
-**TBD by Phase-2 effort**, not artifact-absence; out of the chosen VICEROY-only scope this pass.
-**Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md`,
+2026-06-21); per-frame animation timing in OPENING.EXE/CLOSING.EXE is **now byte-grounded** (the
+playback loops in `code/OPENING|CLOSING/disasm/orphans_load_image.asm` — real-time `[0x82]`/`[0x6c]`
+clock + frame-select cascade, drawn `LCALL 0x392`/`0x2BC`; **B**), traced in
+`docs/CINEMATIC_TIMING_AUDIT.md`; AMERICA.MOV decoded (A/R). Remaining residuals (the resident draw
+routine, the outer keypress/clock driver) are narrow and listed there.
+**Canonical primary:** `docs/CINEMATIC_TIMING_AUDIT.md`, `docs/KING_AND_CINEMATIC_AUDIT.md`,
 `data_extracted/text/OPENING_sections.json`,
 `data_extracted/text/CLOSING_sections.json`, `data_extracted/text/GAME_sections.json`.
 **Last updated:** 2026-06-21.
@@ -89,13 +91,21 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
 - **Engine:** OPENING.EXE (separate exe; loads `AMERICA.MOV` script per
   `docs/KING_AND_CINEMATIC_AUDIT.md` §5). **A.**
 - **Script (B):** `OPENING_sections.json @OPENING` — CSV of
-  `(sprite, frame, layer, width)` rows commented Wind/Sun/Monster1-3/Fish/
-  "Bonk into land"/"Guy getting out"/"Opening logo"/"END OF DEMO". `@CREDITS`
-  section = credit-roll timing rows. **B** (table present verbatim).
+  **`(sprite_idx, activation_time, layer, pan_width)`** rows commented Wind/Sun/Monster1-3/Fish/
+  "Bonk into land"/"Guy getting out"/"Opening logo"/"END OF DEMO" (`-1`=END at time 891). `@CREDITS`
+  section = credit-roll timing rows. **B** (table present verbatim; col3 pan-extent **A**).
+- **Frame timing — RESOLVED 2026-06-21 (B; scope-expanded into OPENING.EXE).** The demo is a
+  **real-time master clock**, not a fixed delay: the loop in `code/OPENING/disasm/orphans_load_image.asm`
+  spins on the BIOS 18.2 Hz tick (`SUB cx,[0x6c]` @file `0x1335`) and advances demo clock `[0x82]`
+  (`INC [0x82]` @`0x134D`); a `CMP [0x82],imm` cascade (`0x106A`…`0x10B8`,`0x117E`; thresholds
+  135/153/173/195/220/236/252/507) selects the active frame; draw = `LCALL 0x392,0` @`0x111E`; loop
+  exits on row count `[0x46]` (not a sentinel). The element X-pan over the wide `OPENING.PIK`
+  panorama uses `_pan_x`/`_scr_map`/`_update_*_map_area` + `_ship_path`/`_load_ship_path`. Full
+  trace: **`docs/CINEMATIC_TIMING_AUDIT.md` §1**. Delay quantum ≈ one tick (55 ms)/clock step.
 - **Assets (A):** `OPENING.PIK` bg + `OPEN*` sprites (OPENLOGO, OPENBORD,
   OPENGUY, OPENSHIP, OPENFISH, OPENSUN, OPENMON1-3, OPENWND1-2, OPENCRD1-3,
   OPENTILE, OPENBONK) per `docs/SESSION_UI_CATALOG.md`.
-- **Tier:** script **B**; assets **A**; exact frame timing **TBD**.
+- **Tier:** script **B**; assets **A**; **frame-timing mechanism B** (`CINEMATIC_TIMING_AUDIT.md`).
 
 ## Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS)
 - **Purpose:** end credits / retirement celebration (Liberty Bell, fireworks).
@@ -103,25 +113,34 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
 - **Script (B):** `CLOSING_sections.json @CLOSING` — CSV rows commented
   Fireworks / Liberty Bell / Rock / Hat / Lady / Man / Military / "End of
   closing". **B** (table present verbatim).
+- **Frame timing — RESOLVED 2026-06-21 (B mechanism; scope-expanded into CLOSING.EXE).** The
+  per-element composite loop in `code/CLOSING/disasm/orphans_load_image.asm` (`@0xB16`) walks a
+  **stride-7 element table** (type `0x4B96` / active `0x4BA0` / sprite `0x4BA2`), draws via
+  `LCALL 0x2BC,4` @`0xB91` (fade effect `LCALL 0x69B,0xE`, `ax=0x5A`=90 @`0xBAA`), and loops to the
+  active-element count `[0x52]`; a companion erase/redraw pass is at `0xC57`. Per-element times live
+  in the stride-7 table; the outer-driver real-time pacer (CLOSING's analogue of OPENING's
+  `[0x82]`/`[0x6c]`) is **TBD**. Full trace: **`docs/CINEMATIC_TIMING_AUDIT.md` §2**.
 - **Assets (A):** bg `CLOS-BKG.PIK`; sprites `CLOS-FWK` (fireworks),
   `CLOS-BEL` (Liberty Bell), `CLOS-ROC`, `CLOS-HAT`, `CLOS-LDY`, `CLOS-MAN`,
   `CLOS-MIL` per `docs/SESSION_UI_CATALOG.md` / `docs/KING_AND_CINEMATIC_AUDIT.md`.
-- **Tier:** script **B**; assets **A**; frame timing **TBD**.
+- **Tier:** script **B**; assets **A**; **per-frame loop B**, outer-driver clock **TBD** (`CINEMATIC_TIMING_AUDIT.md`).
 
 ## Declaration of Independence (adjacent, VICEROY.EXE)
 - **Purpose:** the signing cinematic + printed-document screen.
-- **Painters (B):** `func_03DA2A` (DECOIND.PIK signing scene, disasm-cited);
-  `DECLARAT.PIK` printed-document scene (loader **TBD**).
-  `docs/KING_AND_CINEMATIC_AUDIT.md` §5.
-- **Assets (A):** `DECOIND.PIK`, `DECLARAT.PIK` backgrounds; signature drawn from
+- **Painter (B):** `func_03DA2A` (DECOIND.PIK signing scene + signature glyph layout, disasm-cited;
+  `docs/KING_AND_CINEMATIC_AUDIT.md` §5, full detail in `declaration_independence.md`).
+  **`DECLARAT.PIK` is an ORPHAN** — the "DECLARAT" string is absent from every binary; the engine
+  draws **DECOIND.PIK**. There is no DECLARAT loader to find (closed as a negative).
+- **Assets (A):** `DECOIND.PIK` background; signature drawn from
   `DEC-LOWA..Z` + `DEC-UPPA..Z` + `DEC-SQIG` cursive-letter sprites (53).
-- **Tier:** DECOIND painter **B**; DECLARAT loader **TBD**.
+- **Tier:** DECOIND painter + signature layout **B**; DECLARAT orphan **B** (negative).
 
 ## KINGWIN / KINGLOSE sprite roles (reference)
 - `KINGLOSE.SS` = king crying (player won the Revolution); `KINGWIN.SS` = king
   triumphant (player lost); `KING1.SS` = mocking king + bound colonist sub-variant.
   Naming is inverted vs game outcome (`docs/KING_AND_CINEMATIC_AUDIT.md` §5). **B**.
-  `KING2.SS` (8-frame arm-raise animation) loader site **TBD** (§7).
+  `KING2.SS` (8-frame arm-raise animation): **no loader exists** — "KING2" is absent from VICEROY,
+  OPENING.EXE and CLOSING.EXE (`docs/CINEMATIC_TIMING_AUDIT.md` §4); treat as an orphan asset. **B** (negative).
 
 ## Evidence
 - `docs/KING_AND_CINEMATIC_AUDIT.md` — `func_075352` argument matrix (KINGLSS,
@@ -144,19 +163,20 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
 *(Score plate→category mapping is RESOLVED 2026-06-21 — the plates are rating-tier art,
 selected by `func_03A9C0`; see the Score-screen section above.)*
 
-The remaining items are **out of the chosen VICEROY-only scope this pass** — they live in the
-OPENING.EXE/CLOSING.EXE binaries (not a runtime, and not absent — see below):
-1. **OPENING/CLOSING frame timing & sequencing** — lives in `OPENING.EXE`/`CLOSING.EXE`, which
-   **are present in-repo** (`raw/COLONIZE/OPENING.EXE`/`CLOSING.EXE` via `bin/reconstitute.py`)
-   and **mechanically disassembled** (`code/OPENING/disasm` 145 fns, `code/CLOSING/disasm` 136 fns,
-   99.7% byte-identified; `functions.json`, `rtlink_segments.md`). What is missing is **Phase-2
-   semantic annotation** of those listings — every function is still `func_0XXXXX_unknown` (no
-   Ghidra decompile, unlike VICEROY). The `@OPENING`/`@CLOSING`/`@CREDITS` script tables and asset
-   lists are byte-present (**B**); the playback-engine *semantics* are **TBD by Phase-2 effort**,
-   not by artifact-absence.
-2. **AMERICA.MOV demo-script semantics** — the `.MOV` blob is extracted
-   (`data_extracted/data/AMERICA_MOV.json`); the interpreter is among the (disassembled-but-
-   unannotated) OPENING.EXE functions. **TBD by Phase-2 effort.**
-3. **DECLARAT.PIK printed-document loader** — no string xref in VICEROY (likely overlay). **TBD.**
-4. **`KING2.SS` animation loader** — the "KING2" string is not in any traced VICEROY
-   function; the war-declaration cinematic loader is unlocated. **TBD.**
+1. ✅ **OPENING/CLOSING frame timing & sequencing — RESOLVED 2026-06-21 (B mechanism).** Scope was
+   expanded into `OPENING.EXE`/`CLOSING.EXE` (in-repo, `code/OPENING|CLOSING/disasm`). The playback
+   is a **real-time master clock**: a BIOS-tick spin-wait advances demo clock `[0x82]` and a
+   `CMP [0x82],threshold` cascade selects the active frame; loop exit is count-based. Full
+   byte-cited trace (loop offsets, draw calls, panning subsystem) → **`docs/CINEMATIC_TIMING_AUDIT.md`**.
+   Residual TBD: the resident draw routines (`LCALL 0x392`/`0x2BC`), the outer-driver keypress
+   early-out, and CLOSING's outer clock offset (listed in that doc §5).
+2. ✅ **AMERICA.MOV demo-script — partly resolved (A/R).** The `.MOV` blob
+   (`data_extracted/data/AMERICA_MOV.json`) is a **1-bpp coastline/depth bitmap + ship-path waypoint
+   list** (`_load_ship_path`/`_increments`/`_scr_depth`), `docs/CINEMATIC_TIMING_AUDIT.md` §3. Any
+   non-bitmap header opcode grammar stays **TBD**.
+3. **DECLARAT.PIK printed-document loader** — no string xref in VICEROY (DECLARAT is an **orphan**;
+   the engine draws DECOIND.PIK, see `declaration_independence.md`). Closed as a negative.
+4. ✅ **`KING2.SS` loader — RESOLVED (B, negative).** "KING2" is absent from VICEROY **and** from
+   OPENING.EXE/CLOSING.EXE (grep over both disasm trees + `strings.json`,
+   `docs/CINEMATIC_TIMING_AUDIT.md` §4) — no binary loads it via a traceable path; treat as an
+   unused/orphan asset.
