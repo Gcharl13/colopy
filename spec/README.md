@@ -92,6 +92,13 @@ non-exported binary.
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count; per-axis widget geom (overlay); LEVN grid |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats, score, DECOIND) | OPENING/CLOSING frame timing (separate binaries) |
 | [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`) | `@BUILDING` prereq-index decode (R); highlight RGB (runtime) |
+| [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (5 `.FF` fonts; palette-index color args) | **B** (font loads, color push-args) | index→RGB resolution (palette/runtime, A) |
+
+**Fonts & colors** are captured in [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md): the five
+bitmap fonts (FONTTINY/FONTINTR/FONTKING/FONT-NP/FONTSMAL, byte-cited loads) and the color model
+— every text/fill color is an **explicit palette-index argument** (tier **B**), with the
+perceived RGB resolving through the screen's PIK palette (tier **A**, pixel-verified for the
+colony screen in `docs/UI_FONT_REFERENCE.md`).
 
 Primary UI sources: `ghidra_export/VICEROY_decompiled.named.c`, `raw/COLONIZE/VICEROY.EXE`,
 `docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`, `docs/UI_DIALOGS.md`,
