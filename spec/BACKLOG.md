@@ -106,8 +106,16 @@ mislabeled "need a memory dump" — each is computed/loaded by byte-readable cod
   (`16+0xA0`), not `56`; the `MADSPACK` magic is overlay-local, so the DGROUP xref search
   found nothing. **Catalog confirmed:** CC-NN = the 25 `@FATHERS` portraits (SPRITE-A);
   BUILDING.SS = 48 building frames. See `formats/SS.md`, `notes/SPRITE_CATALOG.md`.
-  *Remaining (mechanical, low value):* the exact BUILDING.SS 48-frame → PEDIA
-  `@BUILDING0..41` index map — a render-and-match step now that pixels decode.
+- **BUILDING.SS catalog — DONE 2026-06-21.** All 48 frames rendered and catalogued
+  (`notes/SPRITE_CATALOG.md` §BUILDING.SS). Render mechanism **byte-verified** via
+  `colony_paint_buildings` (15-slot loop; pos table `0x0266`, type `0x8D62`, level `0x8E82`;
+  frame self-positioning; `≤2×2` placeholder walk-back — corroborated by the dummy frames
+  10/11/17/30/31). **48-vs-42 resolved:** 5 placeholder dummies + ~4 empty-lot/waterfront
+  background frames + **shared production art** (weaver/tobacconist/rum/fur/cigar/coat chains
+  reuse one house→shop→factory silhouette, distinguished by a runtime ICONS.SS goods overlay).
+  Wall/dock/civic/church/education/warehouse/stable/blacksmith frames are 1:1; only the exact
+  `frame_index(type,level)` arithmetic is ANCHORED (Ghidra export simplifies it). **Category O
+  is now fully closed.**
 
 **Category S — static depth-queue (closeable by disassembly; genuinely not yet traced):**
 - ~~`save.md` — the SAV write/read format.~~ **DONE 2026-06-20** — full 43-block on-disk

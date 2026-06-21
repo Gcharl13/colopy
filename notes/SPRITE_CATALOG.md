@@ -182,20 +182,68 @@ tinting **not applicable** (FF portraits are fixed-palette). Regenerate via
 
 ## BUILDING.SS — Colony buildings
 
-**DECODED 2026-06-20** via `tools/ssdec.py` — **48 frames**, all render correctly.
-The rendered montage shows the colony buildings with **multiple frames per building for
-construction tiers**: wooden **stockade/palisade** (frames 0–2, 73×18), **warehouses**,
-**docks/drydock** (the ship-on-water scenes), **church → cathedral** (steeple/twin-tower
-frames in the lower rows), and the workshop set (carpenter/blacksmith/armory/distillery/
-weaver/etc.). Frame dims vary (≈18–60 px tall) and group in 3s for the 3-tier upgrade
-chains, which is why **48 frames > 42 PEDIA `@BUILDING0..41` entries** (shared/extra
-construction-level art). Container: MADSPACK + FAB, sections at `0xB0`, 16-byte
-descriptors (`off,size,x,y,w,h`), SHA `e91784542982216a…` matches `MANIFEST.md`.
+**DECODED & RENDERED 2026-06-21** via `tools/ssdec.py` — **48 frames**, all decode and
+render correctly (each section to its exact directory `unpacked` size). Container: MADSPACK
++ FAB, sections at `0xB0`, 16-byte descriptors (`off,size,x,y,w,h`), SHA
+`e91784542982216a…` matches `MANIFEST.md`. **Each frame carries its own colony-screen blit
+coordinate `(x,y)`** — the renderer just blits `frame[k]` at the frame's own `(x,y)`.
 
-**Per-index → PEDIA mapping:** now a straightforward rendering task (no longer blocked) —
-`python3 tools/ssdec.py` + render each frame and match to `docs/PEDIA_TXT_CATALOG.md`
-`@BUILDING0..41`. The visual categories above are confirmed; the exact 48→42 index table
-is the only remaining (mechanical) step.
+### Render mechanism — BYTE_VERIFIED (`colony_paint_buildings`)
+From `ghidra_export/VICEROY_decompiled.named.c` (`colony_paint_buildings`, the
+BUILDING.SS = `g_sprite_sheet[2]` consumer): the colony panel loops **15 building slots**
+`i = 0..0x0E`:
+- screen pos `(x,y)` = `DGROUP[0x0266 + i·4]` / `DGROUP[0x0268 + i·4] + 8` (stride-4 table),
+- building **type** = `DGROUP byte[0x8D62 + i]`, **level** = `DGROUP byte[0x8E82 + i]`
+  (both offsets present as immediates in the EXE, verified),
+- frame index derives from (type, level); **if `blvl < 0` the slot is empty (not drawn)**,
+- **placeholder walk-back:** while the chosen frame is a **`≤2×2` dummy**, the renderer
+  decrements the index to fall back to the lower tier's art, then blits via `ss_blit_remap`.
+
+This walk-back is **corroborated by the pixels**: frames **10, 11, 17, 30, 31** are exactly
+the `1×1`/`2×2` dummies the code skips — they are *level-fallback markers*, not buildings.
+
+### Visual catalog — HIGH trust (rendered pixels; `/tmp/building_montage.png`)
+| Frame(s) | Dim | Depicts | PEDIA |
+|----------|-----|---------|-------|
+| 0 | 73×18 | wooden-post **palisade** wall | `@BUILDING0` STOCKADE |
+| 1 | 73×18 | taller solid **wooden** wall | `@BUILDING1` FORT |
+| 2 | 73×18 | **stone** wall + arched gate | `@BUILDING2` FORTRESS |
+| 16, 46 | 73×18 / 44×22 | low fence / no-wall baseline art | (wall slot, un-upgraded) |
+| 6 | 75×48 | pier/jetty on water | `@BUILDING6` DOCKS |
+| 7 | 75×48 | dock + crane gantry | `@BUILDING7` DRYDOCKS |
+| 8 | 75×48 | dock + ship under construction | `@BUILDING8` SHIPYARD |
+| 45 | 75×48 | open coast, no structure | empty waterfront (no docks) |
+| 9 | 53×37 | building w/ central cupola | `@BUILDING9/10` TOWN HALL |
+| 19, 20 | 23×27 | civic bldg w/ red-white-blue bunting | TOWN HALL/ASSEMBLY/`@BUILDING11` |
+| 12 | 44×22 | white chapel + steeple + picket fence | `@BUILDING37` CHURCH (small) |
+| 37 | 53×37 | church w/ tall bell-steeple | `@BUILDING37` CHURCH |
+| 38 | 53×37 | **twin-tower cathedral** | `@BUILDING38` CATHEDRAL |
+| 13 | 44×22 | grand columned hall | `@BUILDING13` COLLEGE |
+| 14 | 44×22 | grand hall w/ central portico | `@BUILDING14` UNIVERSITY |
+| 15, 47 | 44×22 | barn, yellow/thatch roof | `@BUILDING15/16` WAREHOUSE (+expansion) |
+| 35 | 44×22 | **open-post pavilion** | `@BUILDING17` STABLES |
+| 36 | 44×22 | house w/ side lean-to | carpenter/fur-trader house |
+| 39 | 23×27 | forge interior | `@BUILDING39` BLACKSMITH'S HOUSE |
+| 40, 41 | 23×27 | forge + **grindstone wheel** | `@BUILDING40/41` BLACKSMITH'S SHOP / IRON WORKS |
+| 18 | 23×27 | shop w/ red awning + barrels/goods | a goods shop (rum/tobacco tier) |
+| 21–29, 32–34, 3–5 | 23×27 / 44×22 | craftsman **house→shop→factory** silhouettes (height grows by tier; tall multi-storey blue-window frames 28/29/34 = the factory tier) | weaver/tobacconist/rum/fur/cigar/coat chains |
+| 42, 43, 44 | 53×37 / 44×22 / 23×27 | forest, **no building** | empty land lot (un-built slot art) |
+| 10, 11, 17, 30, 31 | 1×1 / 2×2 | **placeholder dummies** | level-fallback markers (skipped) |
+
+### 48-vs-42 resolution
+The count gap is **not** a simple "42 buildings + 6 extras." It decomposes as: **5 placeholder
+dummies** (10/11/17/30/31, skipped by the renderer), **~4 empty-lot / open-waterfront
+background frames** (42/43/44/45 + the un-upgraded wall baseline), and **shared production
+art** — the goods-production chains (weaver, tobacconist, rum distiller, fur trader, cigar,
+coat) reuse the **same house→shop→factory silhouettes**, differentiated at runtime by an
+**overlaid goods icon from ICONS.SS**, not by distinct BUILDING.SS frames. So several PEDIA
+buildings legitimately map to one shared frame. The wall (0–2), dock (6–8), civic (9),
+church/cathedral (37/38), education (13/14), warehouse (15), stable (35) and blacksmith
+(39–41) frames are **1:1 and unambiguous**; the craftsman-chain frames (3–5, 18, 21–34) are
+**shared by goods**, so their exact per-PEDIA-index binding is set by the runtime goods
+overlay, not the sheet — recorded here at category granularity (HIGH-trust pixels), with the
+exact `frame_index(type, level)` arithmetic ANCHORED to `colony_paint_buildings`
+(`0x8D62`/`0x8E82`/`0x0266` slot tables) — the only arithmetic the Ghidra export simplifies.
 
 ## ICONS.SS — Goods and HUD icons
 
@@ -418,8 +466,12 @@ indices, first investigate mpskit extraction options or inspect the source
    Founding Father portraits** (`tools/ssdec.py`; render-confirmed vs `@FATHERS`, §CC-00..CC-24).
 4. **Nation-tinting palette indices for CC-NN sprites**: unknown.
    Needs disassembly to find the palette-remap function.
-5. **BUILDING.SS index → building name mapping**: **DECODED 2026-06-20** (`tools/ssdec.py`,
-   48 frames render correctly); exact 48→42 PEDIA index table is a mechanical render-and-match step (§BUILDING.SS).
+5. **BUILDING.SS index → building name mapping**: **RESOLVED 2026-06-21** (`tools/ssdec.py`,
+   48 frames rendered + catalogued; render mechanism byte-verified via `colony_paint_buildings`
+   — see §BUILDING.SS). Wall/dock/civic/church/education/warehouse/stable/blacksmith frames
+   are 1:1; craftsman-chain frames are **shared by goods** (runtime ICONS.SS overlay), which
+   resolves the 48-vs-42 gap. Only the exact `frame_index(type,level)` arithmetic is ANCHORED
+   (Ghidra export simplifies it; slot tables `0x8D62`/`0x8E82`/`0x0266` confirmed in-EXE).
 6. **ICONS.SS indices 16+**: not yet cataloged.
 7. **CLOS-BEL, CLOS-FWK, CLOS-HAT directory contents**: not yet inspected.
 8. **Sprite 101**: silver nugget or stone? Similar visuals — disambiguate

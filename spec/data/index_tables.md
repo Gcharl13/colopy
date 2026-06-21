@@ -42,10 +42,14 @@ Index counts and the exact per-cargo parameter table (Name, Start1/2, Low, High,
    [`tools/ssdec.py`](../../tools/ssdec.py); it decodes all 28 `.SS` sheets to their exact
    directory `unpacked` sizes and renders correct sprites (the old "FAB codec undocumented /
    `mpskit` absent / decoder-blocked" note is superseded — see `formats/SS.md`). CC-NN
-   render as the 25 portraits; BUILDING.SS as 48 building frames. **Residual TBD (mechanical,
-   low value):** the BUILDING.SS per-building sprite-index list (48 sprites vs 42 PEDIA
-   `@BUILDING0..41`) — now a render-and-match step. See `notes/SPRITE_CATALOG.md`
-   §CC-00..CC-24 / §BUILDING.SS.
+   render as the 25 portraits; BUILDING.SS as 48 building frames. **BUILDING.SS catalogued
+   (2026-06-21):** all 48 frames rendered + identified, render mechanism byte-verified via
+   `colony_paint_buildings` (slot tables `0x8D62`/`0x8E82`/`0x0266`); the 48-vs-42 gap is
+   5 placeholder dummies + ~4 empty-lot/waterfront backgrounds + production art **shared by
+   goods** (runtime ICONS.SS overlay) — so no clean 1:1 list exists for the craftsman chains;
+   the unambiguous frames (walls 0–2, docks 6–8, civic 9, church/cathedral 37/38, education
+   13/14, warehouse 15, stable 35, blacksmith 39–41) are bound. See `notes/SPRITE_CATALOG.md`
+   §CC-00..CC-24 / §BUILDING.SS. **B** (pixels HIGH + mechanism byte-verified).
 2. ~~PEDIA `@KEY` ↔ NAMES 1:1.~~ **Done 2026-06-20** — 1:1 by count+order for FATHERS
    (25), BUILDING (42), JOB (28), UNIT (24), CARGO (16 tradeables); TERRAIN PEDIA (29)
    spans `@UNFORESTED`+`@FORESTED`. (`docs/PEDIA_TXT_CATALOG.md` @JOB count 27 is an
