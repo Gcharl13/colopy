@@ -72,7 +72,8 @@ The authoritative per-element table is in each screen's own spec; collected here
 | Production-grid yields | FONTTINY | yellow | A |
 | SoL% / "No Ships In Port" | FONTKING | white / cream | B/A |
 | Score screen + Hall of Fame | **FONTKING** | per `@MISC` | B |
-| Advisor report titles | (report font) | fill `0x90`; rows `0x91/0x92/0x61` | B |
+| Advisor reports F2–F9 | FONTTINY (body+title) | title fill `0x90`→(255,255,190); rows `0x91`(255,255,142)/`0x92`(255,243,93)/`0x61`(247,243,199); text `0x0F` white | B |
+| Advisor F10 score | FONTKING (+FONTTINY) | per `@MISC` | B |
 | Boot-menu plaque (BEGINMENU) | **FONTSMAL** (`@smallfont`) | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | B |
 | Hall of Fame | FONTKING | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
 | Popup body (default / `SMALLFONT`) | FONTTINY / FONTSMAL | per `TEXTCOLR` directive | B |

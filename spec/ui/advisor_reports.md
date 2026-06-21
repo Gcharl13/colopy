@@ -43,6 +43,21 @@ intra-row pixel coords are **A** (geometry docs) / **B** (where the body shows t
 All `@MISC` titles verified present in `LABELS_sections.json`. **B** (offsets + title-N all
 raw-disassembled this pass).
 
+### Fonts & colors (resolved 2026-06-21)
+- **Font:** every report **body (F2–F9) uses FONTTINY** — each body reads the `[0x89E]`
+  (FONTTINY) descriptor for row pitch, with **no second-font switch** (B). Only **F10 score**
+  also reads `[0x268A]` (FONTKING) (`@0x3B054`) for the big score figures — **B** (F10 uses
+  FONTKING); the `[0x268A]`=FONTKING.FF identity is by usage, **A/R**.
+- **Colors** resolve via the shared **REPORT\*.PIK palette** (identical across REPORT2/3/4/5/7/8/9
+  for every cited index) → exact RGB (B): `0x0F`→(255,255,255) white; **title fill `0x90`**→
+  (255,255,190); `0x91`→(255,255,142); `0x92`→(255,243,93); `0x61`→(247,243,199) cream. Byte-cited
+  pushes: title `push 0x90 @0x37970`, F2 `push 0x0F @0x379D9`, F3 `push 0x61 @0x37FF7`, F6
+  `push 0x92 @0x39335`, F8 `push 0x91 @0x39973`.
+- **Correction:** `0x39/0x38/0x3F/0x7C/0x7D` are **ICONS.SS sprite indices** (the gauge / rebel /
+  tory / REF tiled-strip sprites), **not** text colors. The F4/F8 column line-fills use `dx`
+  args `0x137`/`0x13F` which are **16-bit** (>255) → color-run/pattern args, **not** palette
+  indices (**TBD** as a single RGB).
+
 ## 2. Report-specific detail
 - **F2 Religious:** per-colony grid of crosses + colonist counts; iterates colonies; cross
   gauge sprites filled `0x39`/empty `0x38`. ColonyRecord `+0x1F` size, profession byte for
@@ -89,9 +104,14 @@ raw-disassembled this pass).
    `[0x5398]/[0x5394]/[0x5396]`. The F8 body reads the focus flag `[0x53A2]` (0 ⇒ 4-power table,
    else single-power branch `@0x39B27` indexed by `[0x53D2]`). **B** (only the exact per-key
    sub-handler that copies `[0x5396]→[0x53A2]/[0x53D2]` is left as a minor R).
-2. Per-report intra-row exact label (x,y)/font for the non-Naval reports — bodies show the
-   color + primitive; full per-line coords are a deeper decompile (**A** where geometry docs
-   measured, else **R**).
-3. The `@MISC` field-index per `[DS:0x2Dxx]` title-label slot — the label-loader that maps
-   `push N` → `@MISC` field index is **unidentified (findable, not runtime)**; the title
-   *string content* is already verified.
+2. Per-report intra-row exact label (x,y) for the non-Naval reports — full per-line coords are
+   a deeper decompile (**A** where geometry docs measured, else **R**); the *font* (FONTTINY)
+   and *color* are now resolved (§1).
+3. ✅ **`@MISC` title-label loader — CLOSED 2026-06-21 (B).** Each `[DS:0x2Dxx]` slot is filled
+   by the indexed loop in `func_0749E0` `@0x75226..0x7523C` (`intern token 0x1A1F:0xB16 →
+   mov [bx+0x2DBA],ax`, `0xDD=221` entries), so **`label_slot = 0x2DBA + @MISC_index·2`** — a
+   linear pointer array, not a push-N table. Verified: F2 `[0x2DF6]`=idx30, F3 `[0x2E04]`=idx37,
+   F4 `[0x2E1C]`=idx49, F8 `[0x2E78]`=idx95 (all `0x2DBA+idx·2`). (Disproves the prior
+   "`func_0749E0` stops at `0x2DB0`" claim.)
+4. F3 REF/2nd-force icon ids are read from runtime DGROUP cells `[0x5286/0x52A2/…]` — those are
+   live **game-state values** (the current REF composition), not a static layout gap.
