@@ -3,11 +3,11 @@
 > **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
 
 **Overall confidence:** composition + every panel-paint routine **decompiled** (tier **B**);
-the building-placement tables, work-grid flag table, and active-colony pointer are
-**raw-EXE-verified** (**B**); a handful of overlay-`0x181F` helpers (SoL% math, per-cell good
-resolution, terrain classify, building frame-selection) remain **TBD**. · **Canonical
-primary:** `ghidra_export/VICEROY_decompiled.named.c` (`colony_screen_render` line 16974 +
-helpers), `raw/COLONIZE/VICEROY.EXE`, `docs/COLONY_RENDER_CHAIN.md`, `docs/RENDERER_GEOMETRY.md`.
+placement tables, work-grid flag table, active-colony pointer **raw-EXE-verified** (**B**); and
+the overlay-`0x181F` helpers (SoL% math, per-cell good→sprite, unit iterator, build frame-select)
+are now **all traced (B)** — see §6. · **Canonical primary:**
+`ghidra_export/VICEROY_decompiled.named.c` (`colony_screen_render` line 16974 + helpers),
+`raw/COLONIZE/VICEROY.EXE`, `docs/COLONY_RENDER_CHAIN.md`, `docs/RENDERER_GEOMETRY.md`.
 
 > **Corrections (2026-06-21):** (a) the per-element draw code is **NOT** in an
 > "un-extracted overlay 0x191F → TBD" — the composition `colony_screen_render` and all paint
@@ -47,11 +47,24 @@ byte-verified (`mov bx,[0x8542]` @0x26176). **B**
   of a 5×5 (border cols/rows 0 and 4 skipped). **B** (origin/stride byte-adjacent @0x2617f).
 - **Surround minimap**: 28×19 tiles at 3 px each, origin (121,132), center pixel color 0x0F,
   per-tile color from map layers (`colony_render_minimap_contents`, export 18327). **B**
-- **SoL text color**: `thresh = clamp(-(difficulty-0xA), …, 0x32)`; color `0xF→4` if
-  `thresh ≤ tory_count`, `→0xC` if `thresh·2 ≤ tory_count`. **B** (export 16478–86)
+- **SoL%** (per-colony Sons-of-Liberty, `0x181F:0x0C86 → @file 0x8524`, re-verified):
+  `sol = (colony[+0xC2]·100) / colony[+0xC6]` (32-bit, mul `0xD1D:0xF60` / div `0xD1D:0xEC6`),
+  then **+20** if the colony's power is human-controlled (`[+0x1A]<4` and
+  `byte[power·0x34 + 0x543F]==0`), clamped to 100. **B** (matches `systems/colony.md`
+  `sol_membership_pct`; feeds the national meter `[0x53D0]`). SoL *text* color: `0xF→4` if
+  `thresh ≤ tory_count`, `→0xC` if `thresh·2 ≤ tory_count` (export 16478–86). **B**
 - **Stockpile qty** is plain **white** (`0xFF,0xFF,0xFF`), no color threshold. **B** (16794)
-- **Build-cost table**: not referenced by any render routine; routed through `func_02D658`
-  (warehousing). **R** (not re-verified here).
+- **Building frame select** (`0x191F:0x66C → @file 0x26DD4`): **`frame = building_type + 1`**
+  (type from `0x8D62`), with composite frames `0x2F`/`0x30` for the Stockade/wall pair; level
+  overlay via `0x2CA46`/`0x181F:0x236`. (Correction: `0x181F:0x3CA → 0x4B16` is a **rectangle
+  bounds hit-test** `(x,y,w,h)` vs clip `[0x7E8]/[0x7EA]`, **not** frame-select — re-verified.)
+  **B** (offset/bounds) / **R** (the type+1 frame map; the EXE keys on *type*, not the
+  decompiler's `frame=level` stub).
+- **Build-cost** is **data, not code**: per-building hammer/tool costs live in NAMES.TXT
+  `@BUILDING` (legend `name, hammers, tools×10, size, min_colony, upkeep`; DGROUP table
+  `0x8F8C`). `func_02D658` *reads* `@BUILDING[+0x94]` and gates the two hammer banks
+  (`+0x92`/`+0xB6`) — it does not hold a cost table. Stockade **64H**, Warehouse **80H**,
+  Printing Press **52H+20T** all byte-confirmed. **B**
 
 ## 4. UI layout — "what is drawn where"
 Native 320×200. Composition `colony_screen_render` (line 16974) draw order: clear → title →
@@ -61,7 +74,7 @@ work-grid → colonist row → stockpile → flag → minimap → SoL panel → 
 |---------|--------------|----------------------|-----------|------|
 | Title | centered, y=1, green RGB(0x52,0x8A,0x31) | name@rec+2, season, "…, Gold: N" | `colony_paint_title` 16935 | B |
 | Buildings panel | box(0,7,199,128)+parch(0,8,199,120); slots at `0x266+i*4` | `BUILDING.SS` frame, `ss_blit_remap` | `colony_paint_buildings` 16841 | B |
-| Work-grid (3×3) | cell `(col·0x18+0xC8, r·0x18+8)` | terrain scaled; good icon `good+0x17`; prof `0x52+prof`; unit figure | `colony_draw_workgrid` 15986 / `_terrain` 18730 | B |
+| Work-grid (3×3) | cell `(col·0x18+0xC8, r·0x18+8)` | terrain scaled; **production good icon = `good_idx+0x17`** (good_idx from `0x181F:0x0CE0` = `colony[slot+0x70]`); prof `0x52+prof`; unit figure | `colony_draw_workgrid` 15986 / `_terrain` 18730 | B |
 | Colonist row | fill(0,0x82,0x78,0x30); baseline y=0x8E, adaptive spacing | colonist sprites; SoL faces 0x7C/0x7D | `colony_paint_colonist_row` 16361 | B |
 | Production/warehouse bars | row at (2,0xA3,0x76,4) | `bar_queue_push`/`bar_row_flush` | 16440–71 | B |
 | SoL panel | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships In Port" y=0x8C, cream | text | `colony_paint_sol_panel` 16904 | B |
@@ -80,14 +93,22 @@ work-grid → colonist row → stockpile → flag → minimap → SoL panel → 
 - `docs/COLONY_RENDER_CHAIN.md`, `docs/RENDERER_GEOMETRY.md` "Colony screen (VERIFIED v3)". **B/A**
 - `data_extracted/text/{NAMES,LABELS}_sections.json` — `@CARGO`, `@CTITLE`, `@BUILDING`, `@MISC`. **B**
 
-## 6. Open questions (TBD)
-All remaining unknowns are **overlay-`0x181F`-resident helpers** — their call sites and
-arguments are known; only their internals are TBD:
-1. `overlay 0x181F:0x0C86` — SoL% computation.
-2. `overlay 0x181F:0x0CE0(col,r)` — per-cell good/profession resolution (the exact bell/
-   cross/anvil good-index values).
-3. `overlay 0x181F:0x02E4` — colony unit-chain iterator.
-4. `overlay 0x181F:0x3ca` — building bitmask→`BUILDING.SS` frame selection (placement table
-   itself is byte-verified; only the frame index is TBD).
-5. Build-cost table byte-verification vs `func_02D658` (warehousing).
-6. Bell/SoL face exact ICONS.SS indices (0x7C/0x7D export-attested, not raw-confirmed).
+## 6. Open questions — RESOLVED 2026-06-21
+The overlay-`0x181F` helpers were all traced statically (no dump needed; thunks resolved via
+`tools/follow_thunk.py` to clean function bodies):
+1. ✅ **SoL%** `0x181F:0x0C86 → @0x8524` — `(colony[+0xC2]·100)/colony[+0xC6]` +20 human latch,
+   clamp 100 (§3). **B.**
+2. ✅ **Per-cell good** `0x181F:0x0CE0 → @0x8956` — returns `colony[slot+0x70]` (good-index);
+   **production sprite = `good_idx + 0x17`**. Production-good indices (after the 16 `@CARGO`
+   goods 0..15): **Hammers = 16 → sprite 0x27**, **Crosses = 17 → 0x28**, **Liberty Bells = 18
+   → 0x29**, Food = 0 → 0x17; alt-bells icon forced to **0x3A** when the cell good == 8.
+   (Stockpile strip uses `good+0x16`, one less than the production base.) **B.**
+3. ✅ **Unit iterator** `0x181F:0x02E4 → @0x66BA` — unit-record accessor, stride `0x1C`, base
+   DGROUP `0x315E`. **B.**
+4. ✅ **Building frame select** — `frame = type+1` (`0x191F:0x66C → @0x26DD4`); `0x3CA` was a
+   bounds hit-test, not the selector (corrected, §3). **B/R.**
+5. ✅ **Build-cost** — data in NAMES.TXT `@BUILDING` (DGROUP `0x8F8C`); Stockade 64H / Warehouse
+   80H / Printing Press 52H+20T confirmed (§3). **B.**
+
+*Only genuinely soft residual:* the SoL-face / nation-flag ICONS.SS indices (`0x7C`/`0x7D`/flag)
+are export-attested but not independently raw-confirmed — **A** (cosmetic, not a mechanic).
