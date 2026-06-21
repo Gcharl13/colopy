@@ -1,8 +1,12 @@
 # End-Game & Cinematic Screens
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per
-> `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
-> R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> Substantive: the in-VICEROY painters (king-defeats `func_075352`, score `func_03A9C0`,
+> Declaration `func_03DA2A`) and the `@OPENING`/`@CLOSING`/`@CREDITS` script tables are **B**;
+> cinematic assets **A**. Remaining: OPENING.EXE/CLOSING.EXE per-frame timing + the `AMERICA.MOV`
+> interpreter — being lifted from TBD via annotation of the in-repo `code/OPENING|CLOSING/disasm`
+> (§ Open questions / §Opening / §Closing).
 
 **Overall confidence:** in-VICEROY painters **B** (`func_075352` king-defeats argument
 matrix, `func_03A9C0`+`func_039EE2` score screen, `func_03DA2A` DECOIND — all re-disassembled

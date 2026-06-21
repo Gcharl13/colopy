@@ -1,8 +1,11 @@
 # Gameplay Popups
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per
-> `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
-> R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> Substantive: the popup framework (10 live directives), speaker-portrait selector channels,
+> per-popup `@width`/`@x`/`@y` geometry, and static placement/colors are all **B**; body text
+> color is the glyph-engine mapping (**A**). No runtime residual — only the live *values* inside a
+> popup are game state. Minor TBD: per-popup WOODPANL-vs-WOODPAN2 background choice.
 
 **Overall confidence:** framework dispatch, 11 directives, 4 speaker channels, reset address,
 Lost-City variant map, raid-count, `@KINGNEWWAR` sprite, per-section `@width`/`@x`/`@y`, and

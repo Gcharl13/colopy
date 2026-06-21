@@ -1,8 +1,10 @@
 # Context Menus & Action Dialogs
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per
-> `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
-> R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> Substantive: the option-list framework (`@width`/`@x`/`@y`, static rect+highlight color),
+> native-action row gating (`func_04B308`), and build-availability gating (`func_0B900`) are all
+> **B**. Residual: the `@BUILDING` CSV-column→record-field mapping (R, §6).
 
 **Overall confidence:** option-list text **B** where the list body is captured
 in `GAME_sections.json` / `NAMES_sections.json`; trigger functions **A**

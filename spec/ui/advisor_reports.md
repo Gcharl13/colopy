@@ -56,8 +56,10 @@ raw-disassembled this pass).
   (255,255,190); `0x91`→(255,255,142); `0x92`→(255,243,93); `0x61`→(247,243,199) cream. Byte-cited
   pushes: title `push 0x90 @0x37970`, F2 `push 0x0F @0x379D9`, F3 `push 0x61 @0x37FF7`, F6
   `push 0x92 @0x39335`, F8 `push 0x91 @0x39973`.
-- **Correction:** `0x39/0x38/0x3F/0x7C/0x7D` are **ICONS.SS sprite indices** (the gauge / rebel /
-  tory / REF tiled-strip sprites), **not** text colors.
+- **Correction:** `0x39/0x38/0x3F/0x7C/0x7D` are **ICONS.SS sprite indices** — **discrete**
+  filled/empty indicator sprites (crosses/bells, one per count) and the rebel / tory / REF
+  tiled-strip sprites, **not** text colors and **not** a continuous progress/fill bar (the game
+  has no fill bars — RULING 2026-06-21).
 - **F4/F8 column separators — RESOLVED 2026-06-21 (B; the earlier "16-bit color-run/pattern,
   TBD" guess was wrong).** The `dx` args `0x137`/`0x13F` are **right-edge x-coordinates**, not
   colors: the call is `lcall 0x191F:0x8BC` → `func_00DFCC`, a clipped horizontal run-fill

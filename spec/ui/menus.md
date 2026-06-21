@@ -1,8 +1,11 @@
 # Main-Menu & Setup Screens
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per
-> `/METHODOLOGY.md`. Tiers: B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) /
-> R (`RECONSTRUCTED`) / `TBD`. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> Substantive: boot-menu items, plaque framework geometry, Hall-of-Fame layout + record I/O, and
+> screen→background names are **B**; setup-screen backgrounds **A**. Residuals: save/load slot
+> count (R/TBD — overlay file-list, no `MAX_SAVE` constant) and the per-axis setup-widget /
+> LEVN-thumbnail hit-rects (R, pixel-measured from the committed PIK PNGs — §6).
 
 **Overall confidence:** boot-menu items now **B** (GAME.TXT `@BEGINMENU @options`, matched
 to the 1–5 dispatch); menu-plaque framework geometry **B** (`menu_run_key`/`mr_finalize_geometry`

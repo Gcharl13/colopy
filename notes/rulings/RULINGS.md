@@ -4085,3 +4085,42 @@ block — all scramble. **Decoder:** `viceroy_cpp/include/ff.hpp` + `src/ff.cpp`
 `viceroy_cpp import-font` / `import-all` (fonts → paletted glyph atlas + metrics JSON). The 4
 loaded fonts (FONTTINY/FONTINTR/FONTKING/FONT-NP) are now bundled; FONTSMAL stays orphan. This
 **unblocks P4 text rendering** in the rewrite. Updates `formats/FF.md`.
+
+---
+
+## 2026-06-21 — No graphical progress/fill bars exist anywhere in the game
+
+**Conflict**: `spec/ui/continental_congress.md` (and its source `docs/RENDERER_GEOMETRY.md`)
+claimed a graphical **"Progress bar (0,30,320,6) — yellow fill = bells_current / threshold"** on
+the Continental Congress screen, tagged tier **A**; the user states there are **no progress bars
+anywhere in the game**, and the screen's own decompiled paint body is text/box-only.
+
+**Source A** — `docs/RENDERER_GEOMETRY.md` (team doc, luma/anchor measurement of frame
+1310124562) asserted a yellow-fill progress bar in three places (v2 line 240, v3 line 221,
+detail table lines 347–348: "Bar fill color yellow (200,160,24)"). Tier **A** (luma-guessed,
+not byte-cited).
+
+**Source B** — (1) the **running game** (user, top of `TRUTH_HIERARCHY.md`): "there are no
+progress bars anywhere in the game." (2) The **F3 paint body** `0x37A10..0x3807D` (fully
+disassembled, tier **B**) is **text + box-rule only** — it contains no sprite blits
+(`0x181F:0x254/0x2BC`) and no fill-bar draw; a text/box routine cannot paint a fill bar
+(`spec/ui/continental_congress.md` §6.1).
+
+**Ruling**: **no graphical progress/fill bars exist in the game** — both the running-game
+observation (rank 1) and the disassembled paint body (rank 3) outrank the luma guess (team doc,
+rank 5) per `TRUTH_HIERARCHY.md`. Progress toward the next Founding Father is conveyed by the
+**"(NN in MM)" text** in the session subtitle (`NN = threshold − bells_current`, `MM =
+threshold`), not a bar. The game's progress/quantity UI idiom is **discrete filled/empty
+sprite-icon rows** (e.g. crosses/bells, ICONS.SS `0x39` filled / `0x38` empty — one sprite per
+unit counted), which is **not** a continuous bar.
+
+**Action taken**:
+- `spec/ui/continental_congress.md`: deleted the "Progress bar" layout row; added a "No progress
+  bar" note; reconciled the §"Fonts & colors" `0x3F/0x38` wording (discrete indicator sprites,
+  not a bar); re-tiered the bell row as A/TBD (not in the F3 body).
+- `spec/ui/advisor_reports.md`, `spec/ui/fonts_and_colors.md`: clarified the `0x39/0x38` "gauge"
+  wording as **discrete** filled/empty indicator sprites, explicitly "*not* a continuous bar."
+
+**Follow-up**: the Continental Congress **bell-icon row** is luma-observed but absent from the F3
+text body — whether it is drawn by a separate Activities/overlay path or was itself a luma misread
+stays A/TBD until that path is traced or a frame is re-measured.

@@ -1,14 +1,17 @@
 # Declaration of Independence Screen
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> Complete: asset attribution & cinematic split **B**; signature glyph layout **B** (pen seed +
+> per-glyph advance byte-verified inline in `func_03DA2A`, §2). DECLARAT.PIK is an **orphan** (the
+> engine draws DECOIND.PIK). **No open questions remain** (§6).
 
-**Overall confidence:** asset attribution & cinematic split **B** (byte-cited via paint funcs); pixel layout **TBD** (not observed in session). · **Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md` §5, `docs/SESSION_UI_CATALOG.md` (Declaration sprites), `data_extracted/text/GAME_sections.json`.
+**Overall confidence:** asset attribution & cinematic split **B** (byte-cited via paint funcs); signature glyph layout **B** (byte-verified inline, §2). · **Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md` §5, `docs/SESSION_UI_CATALOG.md` (Declaration sprites), `data_extracted/text/GAME_sections.json`.
 
 ## 1. Purpose
-The post-revolution signing screen shown when the player declares independence. A parchment Declaration document is displayed and the player's leader signature is composed glyph-by-glyph from cursive letter sprites. Two distinct PIKs cover two moments: a celebratory signing scene and the printed document itself. **B** (`KING_AND_CINEMATIC_AUDIT.md` §5). Not triggered in the recorded session (pre-revolution), so pixel layout is **TBD**.
+The post-revolution signing screen shown when the player declares independence. A parchment Declaration document is displayed and the player's leader signature is composed glyph-by-glyph from cursive letter sprites. Two distinct PIKs cover two moments: a celebratory signing scene and the printed document itself. **B** (`KING_AND_CINEMATIC_AUDIT.md` §5). The event never fired in the recorded session, but the signature **pixel layout is byte-verified inline** in `func_03DA2A` (§2), so it is **not** TBD.
 
 ## 2. Layout — "what is drawn where"
-No frame capture exists (event never fired in session) → geometry **TBD**. Known structure (byte-cited from paint funcs):
+No frame capture exists (event never fired in session), but the layout is **byte-cited from the paint funcs** (the signature geometry is fully resolved inline — see below):
 
 | Element | Source | Tier | Notes |
 |---------|--------|------|-------|

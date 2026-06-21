@@ -1,6 +1,9 @@
 # Continental Congress
 
-> **Layer 2 — UI Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> Substantive: state→display map, FF-acquisition reveal mechanism, and F3-body fonts/colors are
+> **B**; band geometry **A**. **No graphical progress bar** (RULING 2026-06-21). Residuals:
+> bell/US-flag/REF sprite IDs (A/TBD — absent from the F3 text body) and reveal-popup chrome (TBD).
 
 **Overall confidence:** band geometry **A**; state→display memory map **B** (REF base, portrait
 table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mechanism **B**. ·
@@ -25,15 +28,21 @@ Native 320×200. Bands frame-verified via luma analysis (`RENDERER_GEOMETRY.md` 
 | Region | Pixel rect | Tier | Notes |
 |--------|-----------|------|-------|
 | Title | (0, 0, 320, 10) | A | "CONTINENTAL CONGRESS ACTIVITIES" |
-| Session subtitle | (0, 10, 320, 20) | A | "Next Continental Congress Session: (\<FF\>) (NN in MM)" |
-| Progress bar | (0, 30, 320, 6) | A | yellow fill = bells_current / threshold |
+| Session subtitle | (0, 10, 320, 20) | A | "Next Continental Congress Session: (\<FF\>) (NN in MM)" — the **progress is this text, not a bar** |
 | Sentiment strip | (0, 36, 320, 8) | A | "Rebel Sentiment: X%   Tory Sentiment: Y%" |
-| Bell icons row | (0, 44, 320, 32) | A | bell sprites + US flag |
+| Bell icons row | (0, 44, 320, 32) | A/TBD | **discrete** bell sprites (one per bells/turn) — *not in the F3 text body* (§6.1); luma-observed only, may be a separate overlay path |
 | REF / FF list | (0, 76, 320, 40) | A | 4 REF unit groups w/ count badges |
 | Founding Fathers list | (0, 116, 320, 60) | A | acquired FF names (plain green text, not portraits) |
 | OK button | (290, 184, 26, 14) | A | bottom-right |
 
-The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM = threshold` (`RENDERER_GEOMETRY.md` "Display formula"). **B**
+> **No progress bar (RULING 2026-06-21).** An earlier row claimed a graphical
+> "Progress bar (0,30,320,6) — yellow fill = bells_current/threshold" (tier A, luma-guessed from
+> `RENDERER_GEOMETRY.md`). It is **deleted as fabricated**: (1) the game has **no graphical
+> progress/fill bars anywhere** (user ground-truth, top of the truth hierarchy), and (2) the F3
+> paint body (`0x37A10`, fully disassembled) is **text/box only** (§6.1) — a text/box routine
+> cannot draw a fill bar. Progress toward the next Founding Father is conveyed **only** by the
+> **"(NN in MM)" text** in the session subtitle, where `NN = threshold − bells_current`,
+> `MM = threshold` (`RENDERER_GEOMETRY.md` "Display formula"). **B** (text + computation).
 
 ### Fonts & colors (F3 body `0x37A10..0x3807D`, byte-grounded 2026-06-21)
 - **Font = FONTTINY** for the whole F3 body — it reads the `[0x89E]` (FONTTINY) latch **6×** and
@@ -45,10 +54,11 @@ The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM
   `0x181F:0x13C`/`0x100` text draw). Layout latches: left margin **x=4**, running **y seed 0x19=25**,
   advanced by `[0x89E]` glyph-height+2 per line.
 - **Correction (sprite-vs-color trap):** the *only* colors in the body are `0x90`/`0x92`.
-  `0x3F`/`0x38` (progress/bell gauge) and the REF-row icons (from `[0x5286]/[0x52A2]/…`) are
-  **ICONS.SS sprite ids**, `0x61` is the FF-list **marker** sprite, and `0x12C`=300 / `0x4E`=78 are
-  the gauge **scale** / REF **column stride** — none are text colors. (Bell/US-flag sprites are
-  legitimately absent from this body — §6.1.)
+  `0x3F`/`0x38` and the REF-row icons (from `[0x5286]/[0x52A2]/…`) are **ICONS.SS sprite ids**
+  (`0x39` filled / `0x38` empty are the game's **discrete** indicator sprites — *not* a continuous
+  bar), `0x61` is the FF-list **marker** sprite, and `0x12C`=300 / `0x4E`=78 are a numeric **scale**
+  / REF **column stride** — none are text colors, and none is a progress-bar fill. (Bell/US-flag
+  sprites are legitimately absent from this F3 text body — §6.1.)
 
 **FF portrait slots (25, CC-NN.SS):** the 25 portraits CC-00..CC-24 map 1:1 to NAMES
 `@FATHERS` order. On this **Activities** screen the acquired-FF list renders as **plain text**

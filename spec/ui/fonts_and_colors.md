@@ -57,7 +57,7 @@ colony/Europe → `EUROPE.PIK`; congress → `CCBKGD.PIK`; menus/HoF → `WOODPA
 | `0x91` | (255,255,142) yellow | report strength rows | REPORT\<N\>.PIK |
 | `0x92` | (255,243, 93) bright-yellow | report labels (F3/F4/F6/F9) | REPORT\<N\>.PIK |
 | `0x61` | (247,243,199) cream | report values (F3/F4/F7) | REPORT\<N\>.PIK |
-| `0x39` | (77,97,170) / blue | crosses/bells **filled** gauge; recruit-cell outline | EUROPE/REPORT |
+| `0x39` | (77,97,170) / blue | crosses/bells **filled** indicator sprite (discrete, one per count — *not* a bar); recruit-cell outline | EUROPE/REPORT |
 | `0x04` | (170,0,0) dark-red | SoL% text when tories ≥ threshold | EUROPE.PIK |
 | `0x0C` | (255,85,85) bright-red | SoL% text when tories ≥ 2·threshold | EUROPE.PIK |
 | `0x0A` | (85,255,85) green | colonist selection box | EUROPE.PIK |
