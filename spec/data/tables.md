@@ -44,8 +44,11 @@ for unit/terrain/building/cargo/job/father data — **not** the reconstructed
 - `data_extracted/text/NAMES.full.json` — legends + raw rows per section.
 
 ## 4. Open questions (TBD)
-1. Byte-confirm each column→runtime-table mapping at the loaders (start: `@0x74EC3`
-   for `@UNIT`; find loaders for `@CARGO`/`@JOB`/`@FATHERS`). **`$TERRAIN` done
+1. ~~Byte-confirm each column→runtime-table mapping at the loaders.~~ **Done 2026-06-20
+   — all located** (per-section loaders call field-parser `0x1A1F:0x88A` per column;
+   `@BUILDING func_074D18`, `@CARGO func_074DEC`→`0x96FC`, `@UNIT @0x74EF4`, `@TERRAIN`
+   `terrain·16`, `@JOB`/`@ORDERS`/`@TRIBES`/`@LEVELS` named — see below). **B.** Detail:
+   **`$TERRAIN` done
    (2026-06-19):** columns = `Movement, Defensive, Improvement, Value` + 9 yields
    (Farmer→Food … Fisherman→Fish); DGROUP `terrain·16` table, yields at `[t·16+0x2F7B+good]`,
    Defensive used by land combat (`func_007D3E`; `systems/combat.md`/`map_system.md`).

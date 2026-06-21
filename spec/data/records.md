@@ -29,9 +29,11 @@ Power index ordering (0..3 = Dutch/English/French/Spanish per NAMES `@COUNTRY`; 
 
 ## 4. Open questions (TBD)
 
-1. ColonyRecord: SoL dividend/divisor `+0xC2`/`+0xC6` (B, `colony.md`); `+0x1C` =
-   per-colony **status flags** byte (not const 0x40 — `colony.md`); `+0x92`/`+0xB6`
-   hammers, `+0x84` constructed mask. **Mostly resolved 2026-06-20.**
+1. ~~ColonyRecord field map.~~ **Mostly resolved 2026-06-20** — SoL dividend/divisor
+   `+0xC2`/`+0xC6` (B, `colony.md`); `+0x1C` = per-colony **status-flags** byte (not
+   const 0x40); `+0x92`/`+0xB6` hammers; `+0x84` constructed mask; `+0x95` warehouse
+   level (`warehousing.md`); `+0x9A` 16-slot stockpile (good `i` at `+0x9A+i·2`); `+0x1A`
+   owner; `+0xA4` Lumber slot. **B** (load-bearing fields); deep interior bytes TBD.
 2. ~~UnitRecord `+0x02..+0x1B` semantics.~~ **Done 2026-06-20** — base `0x3144`,
    near-complete field map in `spec/systems/unit.md` §2 (RULINGS; position `0x3144`,
    type `0x3146`, owner `0x3147`, order `0x314C`, goto `0x314D/E`, cargo `0x3150..`,
