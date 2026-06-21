@@ -177,10 +177,15 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
    **consistent** with the runtime value; static can neither confirm nor refute `0xA0`
    vs `0xB0` without resolving the helper body. Map is 56×72 row-major
    (`tile = y·56 + x`). See `spec/systems/map_system.md`.
-2. Outcome **base roll = `random_int(1,9)`** (B); the *bias* cascade still needs
-   per-gate byte-verification for exact probabilities. **Per-session rare-outcome
-   counters identified 2026-06-20:** `[0x1DC6]` (`inc @0x614E6` every rumor; gate
-   `@0x6163D cmp,1`) and `[0x1DC7]` (`inc @0x616C9` on Cibola; gate `@0x61644 cmp,7`)
-   cap the rare Fountain/Cibola outcomes per game.
+2. ~~Outcome bias cascade — exact per-gate probabilities.~~ **Done 2026-06-20.** The
+   outcome index is `[bp-6] = max(anti_streak_floor, random_int(1,9))` (`@0x614F6..0x6151A`),
+   where the **anti-streak floor** = `min(prev_floor+1, 3)` rises by 1 each rumor (stored
+   in `[bp-0x2C]`, capped at 3): so the **good low outcomes (1 FoY / 2 Cibola) are only
+   reachable on the first rumors** — once the floor reaches 3, every outcome is forced
+   `≥ 3` (mundane). Sub-outcome refinement then uses the **quality roll
+   `[bp-0xA] = random_int(1,100) + scout·10`** against thresholds **10/25** (FoY→vanish/
+   nothing demotion `@0x6159A`; Cibola→burial-treasure `@0x61646`). **Per-game rare-outcome
+   caps:** `[0x1DC6]` (`inc @0x614E6`, gate `@0x6163D cmp,1`) and `[0x1DC7]`
+   (`inc @0x616C9`, gate `@0x61644 cmp,7`) limit Fountain/Cibola. **B.**
 3. ~~Numeric effects: which `@LOSTCITY` index = treasure/FoY/burial.~~ **Done 2026-06-19** — full n→meaning table byte-verified (§2): 1 FoY(8 immigrants)/2 Cibola/3 ruins-gold/4 burial/5 vanish/6 nothing/7 gift/8 trespass/9 survivors. Remaining: the per-index reward *magnitude* roll formulas (`[bp-0x10]`/`[bp-0x32]`).
 4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **Found 2026-06-19** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). Remaining: the index→`@LOSTCITYn` mapping + Fountain-of-Youth/burial numerics.
