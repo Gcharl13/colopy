@@ -14,12 +14,18 @@ for the per-file role catalog.
 
 ```
 offset  size  field
-0       12    magic = "MADSPACK 2.0"
+0       12    magic = "MADSPACK 2.0"   (loader checks first 8 bytes "MADSPACK")
 12       2    0x1A 0x00   (end-of-magic)
 14       2    section_count (u16, LE)  -- = 4 for a typical .SS
 16    10*N    directory: N entries, 10 bytes each
-...           section data (in directory order), each `packed` bytes
+B0    ...     section data -- FIXED START = 16 + 0xA0 reserved block (NOT 16+10*N);
+              sections concatenated in directory order, each `packed` bytes.
 ```
+
+> ⚠ **The section data starts at offset `0xB0` (`16 + 0xA0`)** — a 160-byte reserved
+> block follows the directory. (This is the single fact I missed for a long time:
+> reading from `16+10*N=56` instead made the directory padding look like "x86 code"
+> and hid the `FAB` magic that sits at `0xB0`.)
 
 **Directory entry layout — BYTE_VERIFIED 2026-06-20** (10 bytes each):
 ```
@@ -40,13 +46,32 @@ The **4 sections** of a typical .SS:
 - Section 2: **palette — 768 B = 256 RGB triples** (decompressed)
 - Section 3: pixel data (color-keyed, indexed-color; the bulk)
 
-⚠ **Compression is the MADSPACK-2 *internal* codec (`mode=4`), NOT the standalone
-ScummVM "FAB" format — BYTE_VERIFIED 2026-06-20.** Compressed sections carry **no `FAB`
-magic and no shift byte** (ScummVM's `FabDecompressor` requires `"FAB"`+shift 10–13;
-neither is present, and `mode=4` is out of FAB's shift range). So the per-section codec
-must be RE'd from the `.SS` loader in `VICEROY.EXE` (strings present: `MADSPACK`
-`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64`). **None of
-these three strings has a direct `imm` xref** (`0xFDAA`/`0xEE64`/`0xFD70` — verified
+✅ **Compression IS standard FAB — SOLVED 2026-06-20, working decoder in
+[`tools/ssdec.py`](../tools/ssdec.py).** Each `flag=1` section (at/after `0xB0`) is a
+**FAB stream** beginning with the magic `"FAB"` + a shift byte (observed **0x0C** = 12).
+My earlier "no FAB magic / mode-4 mystery" conclusion was **wrong** — it came entirely
+from reading sections at the wrong offset (`56` instead of `0xB0`); the `FAB\x0C` magic
+is right there at `0xB0`. `tools/ssdec.py` (ported verbatim from the byte-verified
+`fab_decompress`/`madspack_load` in `ghidra_export/VICEROY_decompiled.named.c`)
+**decodes all 28 `.SS` sheets, every section to its exact `unpacked` size**, the palette
+to 768 B, and renders correct sprites (CC-NN = the 25 `@FATHERS` portraits; BUILDING.SS
+= 48 building frames). FAB = an LZ77 bitstream (LSB-first 16-bit refill): a `1` bit = one
+literal byte; a `0` bit = a back-reference (short: 2 more bits → len 2–5, 1-byte offset;
+long: 2-byte offset/len with a `len==0` escape). The `mode` byte (`=4`) is *not* a codec
+selector — `flag` alone picks RAW(0) vs FAB(1).
+
+<details><summary>Superseded "not FAB / not locatable" notes (kept for history)</summary>
+
+> Earlier passes claimed the codec was a MADSPACK-internal `mode=4` scheme with "no FAB
+> magic", and that the loader was "overlay-resident, not statically locatable / needs a
+> dump". **All wrong**, for two compounding reasons: (1) the section data starts at
+> `0xB0`, not `56`, so the real `FAB`-prefixed bytes were never examined; (2) the
+> `MADSPACK` string lives in the loader overlay's *own* data segment (`DS:0x240A`), so a
+> resident-DGROUP xref search found nothing. The strings below have no DGROUP `imm` xref</details>
+
+Original investigation notes (retained): the resident-DGROUP strings `MADSPACK`
+`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64` have **no direct
+`imm` xref** (`0xFDAA`/`0xEE64`/`0xFD70` — verified
 2026-06-20), so the loader reaches them **indirectly via overlay pointer tables**;
 locating the decompressor therefore needs **RTLink overlay/pointer-table tracing**
 (`tools/follow_thunk.py` / `tools/find_callers.py`), the deep path this project uses
