@@ -53,11 +53,16 @@ A per-event handler:
    `@0x6F207` just copies `[0x89E]/[0x8A0]` into the section (FONTSMAL.FF is never loaded; RULING).
    **`TEXTCOLR` is a vestigial directive — never compared** by `func_06F0F4` (only 10 of the 11
    table strings are live: OPTIONS..DEFAULT); there is **no per-popup text-color override**.
-   Body text color is white `0x0F`=(255,255,255), but the actual color push is in the **overlay
-   `0x191F` body-render thunk** (`0x191F:0x8C6/0x8D2/0x910`), so it's **A/TBD** at the popup
-   level. Speaker name-plate uses **FONT-NP** (loaded with WOODFRAM/NAMEPLAT) — color overlay-
-   resident (TBD). The `@DEFAULT=N` directive stores a **highlighted-row index**, not a color
-   (handler `@0x6F374`). Font/default-color = **A**; directive negatives = **B**.
+   The body is rendered by the glyph engine `func_06F7EF`=`0x181F:0x998` (the 4 channel wrappers
+   `@0x6F5B0..0x6F64C` set the **speaker-sprite recolor channel** `[0x1F5C]` (=8 for KING @0x6F5DD,
+   =arg for tribe @0x6F5B6) / advisor `[0x1F5E]` / missionary `[0x1F60]` — these are **sprite tint
+   channels**, byte-verified at the recolor path `cmp [0x1F5C],0; call 0x6F82B(sprite +0x10..0x16)`
+   @0x6E319, **NOT** the body text color; RULING 2026-06-21). The body **text** color carries no
+   explicit per-call palette arg in the glyph engine → **A/TBD** (engine glyph mapping; the
+   observed body is light/white on the wood panel). Speaker name-plate uses **FONT-NP** (loaded
+   with WOODFRAM/NAMEPLAT) — color overlay-resident (TBD). The `@DEFAULT=N` directive stores a
+   **highlighted-row index**, not a color (handler `@0x6F374`). Font/text-color = **A**;
+   channel + directive negatives = **B**.
 7. **Multi-section popups** (`@KINGTAX` + `@TAXOPTIONS`) concatenate a body
    section with an option-list section; mechanism **INFERRED** (`func_06F0F4`
    recursion), key existence **B**.

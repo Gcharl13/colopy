@@ -45,14 +45,16 @@ keys with explicit `@x` / `@y` / `@width` directives. **A/B**.
 - **Font + color (2026-06-21):** this screen is the **sole FONTKING user** in VICEROY.EXE —
   `func_075352` loads `FONTKING` (`lea bx,[0x232b]` @0x754F2, `lcall 0x1A1F:0xA86`), falls back to
   FONTTINY on failure, and promotes it to the active-font global `[0x1F9E]/[0x1FA0]` @0x75511; pen
-  seed **(x=`[0x1F4A]`=0xF2=242, y=`[0x1F50]`=0x2F=47)** set @0x75526/0x7552C; on exit it restores
-  `[0x1F9E]←[0x268A]` (FONTINTR) @0x7557D. Font + position **B**. **Text color** is the engine's
-  persistent foreground global **`[0x1F5C]`** (default 8 @0x6F5DD; recolor path 0x6E2DE when
-  `[0x1F5C]≥0`) — no per-call RGB arg — so the exact on-screen color is **runtime-state
-  dependent (A)**; against the KINGLSS1/2.PIK standard VGA-16 ramp, idx 8=#555555, 14=#FFFF55,
-  15=#FFFFFF. Glyph value is 1-bpp (FONTKING.FF foreground = index 3). **B (font/geometry) / A
-  (RGB).**
-- **Tier:** **B** (font/geometry/text); text RGB **A** (engine fg latch).
+  seed **(x=`[0x1F4A]`=0xF2=242, y=`[0x1F50]`=0x2F=47)** set @0x75526/0x7552C; style bits
+  `[0x1F56]|=0x18` @0x75538; the text is drawn by the glyph engine `lcall 0x181F:0x3FE` @0x75540.
+  Font + position **B**. **Text color:** the `0x181F:0x3FE` glyph engine takes **no explicit
+  per-call palette arg** at this site — the on-screen color is the engine's glyph→palette mapping
+  (FONTKING.FF foreground = 1-bpp pixel index 3), which is **runtime/engine-resident → A** (not
+  byte-pinnable here). *(Correction 2026-06-21: `[0x1F5C]` is NOT the text color — it is the
+  **speaker-sprite recolor channel** (RULING): `cmp [0x1F5C],0; jl; call 0x6F82B(sprite struct
+  +0x10..+0x16)` @0x6E319 tints the speaker/king sprite, default 8 @0x6F5DD. My earlier "text fg
+  = [0x1F5C]" was wrong.)*
+- **Tier:** **B** (font/geometry/position/text-string); text RGB **A** (glyph-engine mapping).
 
 ## Score screen (SCORE01-24.SS) — **B (byte-grounded 2026-06-21)**
 - **Purpose:** end-of-game score + honor-rating screen, one illustrated plate per

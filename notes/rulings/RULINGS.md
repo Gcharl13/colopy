@@ -4007,3 +4007,29 @@ pen seed (x=0xF2=242, y=0x2F=47).** Corrected font attributions (all byte-verifi
 This corrects `fonts_and_colors.md` §1/§3, `colony_screen.md`, `europe_screen.md`,
 `advisor_reports.md` (F10 + the `[0x268A]`=FONTKING identity), `cinematics.md` (score),
 `menus.md`, and `continental_congress.md` (the `[0x268A]` parenthetical).
+
+---
+
+## 2026-06-21 — `[0x1F5C]` is the speaker-sprite recolor channel, NOT the cinematic/popup text color
+
+**Conflict.** The cinematics integration (king-defeats) claimed the on-screen text color is the
+"engine persistent foreground global `[0x1F5C]`" (default 8). The popup-template audit
+(`docs/POPUP_TEMPLATE_AUDIT.md`) instead labels `[0x1F5C]` a **sprite channel** (the 4 wrappers
+`@0x6F5B0..0x6F64C` set `[0x1F5C]`/`[0x1F5E]`/`[0x1F60]` for tribe/advisor/missionary popups).
+
+**Disassembly (raw VICEROY.EXE).** The recolor path at **0x6E319** is
+`cmp [0x1F5C],0; jl skip; push es; push bx; call 0x6F82B` where `es:bx` is a **sprite struct whose
++0x10/+0x12/+0x14/+0x16 fields are x/y/w/h** (loaded @0x6E2FD..0x6E316), then the sprite is blitted
+via `0x6F81C`. So `[0x1F5C]` gates **recoloring/tinting the speaker sprite**, not text. The popup
+wrappers set it to a sprite/tint id (KING hard-codes `[0x1F5C]=8` @0x6F5DD; tribe `=arg` @0x6F5B6).
+The king-defeats **text** is drawn by the glyph engine `lcall 0x181F:0x3FE` @0x75540 with **no
+`[0x1F5C]` (or other explicit palette) argument** at the call site.
+
+**Resolution.** `[0x1F5C]` (and siblings `[0x1F5E]`/`[0x1F60]`) = **speaker-sprite recolor/tint
+channel** (the audit is correct). The cinematic king-text and popup body-text **color** is the
+glyph engine's own glyph→palette mapping (FONTKING/FONTTINY foreground pixel), with no byte-pinnable
+per-call palette index at the draw site → honest **A/TBD**. Corrects `cinematics.md` (king-defeats
+font+color), `fonts_and_colors.md` (king-defeats row), and clarifies `popups.md` §6 (the channel
+globals are sprite tints; TEXTCOLR remains vestigial so there is still **no per-popup text-color
+override**). The font identities (FONTKING king-defeats, FONTTINY popup body) and pen geometry are
+unaffected and stay **B**.
