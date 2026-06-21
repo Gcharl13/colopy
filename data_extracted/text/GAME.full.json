@@ -1,6 +1,6 @@
 {
   "file": "GAME.TXT",
-  "section_count": 518,
+  "section_count": 499,
   "sections": {
     "@DOS": {
       "legend": [
@@ -30,19 +30,11 @@
       "legend": [],
       "directives": {
         "width": "160",
-        "y": "91"
+        "y": "91",
+        "smallfont": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    "@smallfont": {
-      "legend": [],
-      "directives": {},
-      "body": "Cargo is normally purchased in units of 100; when you drag a cargo from\nthe warehouse to your ship, you are assumed to be loading 100 units.  Since\n{%STRING0} costs {%NUMBER0$} per unit and we only have {%NUMBER1$} gold,\nwe cannot afford 100 units.  If you want to load or unload less than 100\nunits of cargo onto a ship, simply hold down the {SHIFT} key while you drag\nthe cargo with the mouse.  You will then be prompted to enter the number\nof units you wish to buy."
-    },
-    "@options": {
-      "legend": [],
-      "directives": {},
-      "body": "______________________"
+      "body": "{COLONIZATION} Version %STRING0 -- %STRING1\nStart a Game in NEW WORLD\nStart a Game in AMERICA\nCUSTOMIZE New World\nLOAD Game\nView Hall of Fame"
     },
     "@AMERICA": {
       "legend": [],
@@ -82,28 +74,29 @@
     "@GAMEOPTIONS": {
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    "@checkbox": {
-      "legend": [],
-      "directives": {},
-      "body": ""
+      "body": "Set Game Options\nShow ~Indian Moves\nShow ~Foreign Moves\nFast Piece ~Slide\n~End of Turn\n~Autosave\n~Combat Analysis\nWater Color C~ycling\n~Tutorial Hints"
     },
     "@COLONYOPTIONS": {
       "legend": [],
       "directives": {
-        "width": "220"
+        "width": "220",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
+      "body": "Set Colony Report Options\nLabels on {buildings}\nLabels on {cargo} and {terrain}\nReport when colonists {trained}\nReport {food} shortages\nReport {raw materials} shortages\nReport {tools} needed for production\nReport {inefficient} government\nReport {new cargos} available\nReport {Sons of Liberty} membership\nReport {rebel} majorities"
     },
     "@SOUNDOPTIONS": {
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
+      "body": "Set Sound Options\n~Background Music\n~Event Music\n~Sound Effects"
     },
     "@SAVEGAME": {
       "legend": [],
@@ -185,9 +178,10 @@
     "@LEADERNAME": {
       "legend": [],
       "directives": {
-        "width": "300"
+        "width": "300",
+        "options": "true"
       },
-      "body": "^^Please Enter Your Name.\n_\n_"
+      "body": "^^Please Enter Your Name.\n_\n_\n______________________"
     },
     "@FINDCITY": {
       "legend": [],
@@ -548,9 +542,10 @@
     "@KINGRECRUIT": {
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "smallfont": "true"
       },
-      "body": ""
+      "body": "The {Royal University} can provide us with specialists\nif we grease the right palms.  Which\nskill shall we request?"
     },
     "@PURCHASE": {
       "legend": [],
@@ -2393,9 +2388,11 @@
     "@CUSTOM": {
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "smallfont": "true"
       },
-      "body": ""
+      "body": "Which cargos shall our {Custom House} export?"
     },
     "@CONTINENTAL": {
       "legend": [],
@@ -2949,23 +2946,35 @@
     },
     "@PICKMUSIC": {
       "legend": [],
-      "directives": {},
-      "body": ""
+      "directives": {
+        "smallfont": "true",
+        "width": "220"
+      },
+      "body": "Select a piece of music:\n\n\"Bird Song\"\n\"Smoky Tune\"\n\"Cornwall\"\n\"Shady Grove\"\n\"Fiddler's Dance\"\n\"Jine the Cavalry\"\n\"Joe Clark\"\n\"Little Fiddle\"\n\"Hornpipe\"\n\"Bonny Morn\"\n\"Hole In The Wall\"\n\"Nightingale\"\nIndependence Tunes\nMilitary Tunes\nIndian Tunes"
     },
     "@PICKINDEPENDENCE": {
       "legend": [],
-      "directives": {},
-      "body": ""
+      "directives": {
+        "smallfont": "true",
+        "width": "220"
+      },
+      "body": "Select an independence tune:\n\n\"Love Forever\"\n\"York Fusiliers\"\n\"Washington Artillery March\"\n\"Road to Boston\"\n\"Independence Way\""
     },
     "@PICKMILITARY": {
       "legend": [],
-      "directives": {},
-      "body": ""
+      "directives": {
+        "smallfont": "true",
+        "width": "220"
+      },
+      "body": "Select a military tune:\n\n\"The Reveille\"\n\"Successful Campaign\"\n\"Morelli's Lesson\"\n\"To Arms\""
     },
     "@PICKINDIAN": {
       "legend": [],
-      "directives": {},
-      "body": ""
+      "directives": {
+        "smallfont": "true",
+        "width": "220"
+      },
+      "body": "Select an Indian tune:\n\n\"Indian Victory\"\n\"Natives\"\n\"Tenochtitlan\"\n\"Pizarro at Cuzco\""
     },
     "@UPKEEP": {
       "legend": [],
@@ -3872,25 +3881,28 @@
       "directives": {
         "width": "220",
         "y": "10",
-        "x": "5"
+        "x": "5",
+        "smallfont": "true"
       },
-      "body": ""
+      "body": "It is important for every colony to grow enough {food} to feed its\ncolonists.  Each colonist eats {two} units of food per turn.  Food is\nrepresented by the \"corn\" icon; if you are not growing enough food\neach turn to feed all of your colonists, some of the corn in the colonist\nwindow will be covered with red \"X\"'es.  To grow more food, turn more of\nyour colonists into {farmers} or {fishermen}.  You can make individual\nfarmers more productive by having your pioneers {clear} forests and {plow}\nfields."
     },
     "@TUTORIAL17": {
       "legend": [],
       "directives": {
         "width": "300",
-        "y": "10"
+        "y": "10",
+        "smallfont": "true"
       },
-      "body": ""
+      "body": "The European Status Screen shows your home port in %STRING0, %STRING1.\nAs new immigrants arrive, they will line up on the docks to await transport\nto the New World.  You can recruit new immigrants by pressing the {Recruit}\nor {Train} buttons.  When ships arrive in the harbor, their cargo can be\nsold by dragging it from the cargo holds to the blue warehouses at the bottom\nof the screen.  Cargo can also be purchased by dragging it from the warehouse\nto a ship's holds.  In the warehouse boxes, the first number indicates the\n{bidding} price which the port will pay for that type of cargo.  The second\nindicates the {asking} price should you wish to buy that cargo.  To send a\nship back to the New World, click on it or drag it into the \"Bound for\n%STRING2\" box."
     },
     "@TUTORIAL18": {
       "legend": [],
       "directives": {
         "width": "300",
-        "y": "10"
+        "y": "10",
+        "smallfont": "true"
       },
-      "body": ""
+      "body": "Cargo is normally purchased in units of 100; when you drag a cargo from\nthe warehouse to your ship, you are assumed to be loading 100 units.  Since\n{%STRING0} costs {%NUMBER0$} per unit and we only have {%NUMBER1$} gold,\nwe cannot afford 100 units.  If you want to load or unload less than 100\nunits of cargo onto a ship, simply hold down the {SHIFT} key while you drag\nthe cargo with the mouse.  You will then be prompted to enter the number\nof units you wish to buy."
     },
     "@TUTORIAL19": {
       "legend": [],
@@ -4129,21 +4141,11 @@
       "legend": [],
       "directives": {
         "width": "160",
-        "y": "91"
+        "y": "91",
+        "smallfont": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
-      "body": "{COLONIZATION} Version %STRING0 -- %STRING1"
-    },
-    {
-      "key": "@options",
-      "legend": [],
-      "directives": {},
-      "body": "Start a Game in NEW WORLD\nStart a Game in AMERICA\nCUSTOMIZE New World\nLOAD Game\nView Hall of Fame"
+      "body": "{COLONIZATION} Version %STRING0 -- %STRING1\nStart a Game in NEW WORLD\nStart a Game in AMERICA\nCUSTOMIZE New World\nLOAD Game\nView Hall of Fame"
     },
     {
       "key": "@AMERICA",
@@ -4189,61 +4191,31 @@
       "key": "@GAMEOPTIONS",
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@checkbox",
-      "legend": [],
-      "directives": {},
-      "body": "Set Game Options"
-    },
-    {
-      "key": "@options",
-      "legend": [],
-      "directives": {},
-      "body": "Show ~Indian Moves\nShow ~Foreign Moves\nFast Piece ~Slide\n~End of Turn\n~Autosave\n~Combat Analysis\nWater Color C~ycling\n~Tutorial Hints"
+      "body": "Set Game Options\nShow ~Indian Moves\nShow ~Foreign Moves\nFast Piece ~Slide\n~End of Turn\n~Autosave\n~Combat Analysis\nWater Color C~ycling\n~Tutorial Hints"
     },
     {
       "key": "@COLONYOPTIONS",
       "legend": [],
       "directives": {
-        "width": "220"
+        "width": "220",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@checkbox",
-      "legend": [],
-      "directives": {},
-      "body": "Set Colony Report Options"
-    },
-    {
-      "key": "@options",
-      "legend": [],
-      "directives": {},
-      "body": "Labels on {buildings}\nLabels on {cargo} and {terrain}\nReport when colonists {trained}\nReport {food} shortages\nReport {raw materials} shortages\nReport {tools} needed for production\nReport {inefficient} government\nReport {new cargos} available\nReport {Sons of Liberty} membership\nReport {rebel} majorities"
+      "body": "Set Colony Report Options\nLabels on {buildings}\nLabels on {cargo} and {terrain}\nReport when colonists {trained}\nReport {food} shortages\nReport {raw materials} shortages\nReport {tools} needed for production\nReport {inefficient} government\nReport {new cargos} available\nReport {Sons of Liberty} membership\nReport {rebel} majorities"
     },
     {
       "key": "@SOUNDOPTIONS",
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "options": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@checkbox",
-      "legend": [],
-      "directives": {},
-      "body": "Set Sound Options"
-    },
-    {
-      "key": "@options",
-      "legend": [],
-      "directives": {},
-      "body": "~Background Music\n~Event Music\n~Sound Effects"
+      "body": "Set Sound Options\n~Background Music\n~Event Music\n~Sound Effects"
     },
     {
       "key": "@SAVEGAME",
@@ -4337,15 +4309,10 @@
       "key": "@LEADERNAME",
       "legend": [],
       "directives": {
-        "width": "300"
+        "width": "300",
+        "options": "true"
       },
-      "body": "^^Please Enter Your Name.\n_\n_"
-    },
-    {
-      "key": "@options",
-      "legend": [],
-      "directives": {},
-      "body": "______________________"
+      "body": "^^Please Enter Your Name.\n_\n_\n______________________"
     },
     {
       "key": "@FINDCITY",
@@ -4743,14 +4710,9 @@
       "key": "@KINGRECRUIT",
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "smallfont": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
       "body": "The {Royal University} can provide us with specialists\nif we grease the right palms.  Which\nskill shall we request?"
     },
     {
@@ -6845,20 +6807,10 @@
       "key": "@CUSTOM",
       "legend": [],
       "directives": {
-        "width": "190"
+        "width": "190",
+        "checkbox": "true",
+        "smallfont": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@checkbox",
-      "legend": [],
-      "directives": {},
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
       "body": "Which cargos shall our {Custom House} export?"
     },
     {
@@ -7491,13 +7443,8 @@
     {
       "key": "@PICKMUSIC",
       "legend": [],
-      "directives": {},
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
       "directives": {
+        "smallfont": "true",
         "width": "220"
       },
       "body": "Select a piece of music:\n\n\"Bird Song\"\n\"Smoky Tune\"\n\"Cornwall\"\n\"Shady Grove\"\n\"Fiddler's Dance\"\n\"Jine the Cavalry\"\n\"Joe Clark\"\n\"Little Fiddle\"\n\"Hornpipe\"\n\"Bonny Morn\"\n\"Hole In The Wall\"\n\"Nightingale\"\nIndependence Tunes\nMilitary Tunes\nIndian Tunes"
@@ -7505,13 +7452,8 @@
     {
       "key": "@PICKINDEPENDENCE",
       "legend": [],
-      "directives": {},
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
       "directives": {
+        "smallfont": "true",
         "width": "220"
       },
       "body": "Select an independence tune:\n\n\"Love Forever\"\n\"York Fusiliers\"\n\"Washington Artillery March\"\n\"Road to Boston\"\n\"Independence Way\""
@@ -7519,13 +7461,8 @@
     {
       "key": "@PICKMILITARY",
       "legend": [],
-      "directives": {},
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
       "directives": {
+        "smallfont": "true",
         "width": "220"
       },
       "body": "Select a military tune:\n\n\"The Reveille\"\n\"Successful Campaign\"\n\"Morelli's Lesson\"\n\"To Arms\""
@@ -7533,13 +7470,8 @@
     {
       "key": "@PICKINDIAN",
       "legend": [],
-      "directives": {},
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
       "directives": {
+        "smallfont": "true",
         "width": "220"
       },
       "body": "Select an Indian tune:\n\n\"Indian Victory\"\n\"Natives\"\n\"Tenochtitlan\"\n\"Pizarro at Cuzco\""
@@ -8534,14 +8466,9 @@
       "directives": {
         "width": "220",
         "y": "10",
-        "x": "5"
+        "x": "5",
+        "smallfont": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
       "body": "It is important for every colony to grow enough {food} to feed its\ncolonists.  Each colonist eats {two} units of food per turn.  Food is\nrepresented by the \"corn\" icon; if you are not growing enough food\neach turn to feed all of your colonists, some of the corn in the colonist\nwindow will be covered with red \"X\"'es.  To grow more food, turn more of\nyour colonists into {farmers} or {fishermen}.  You can make individual\nfarmers more productive by having your pioneers {clear} forests and {plow}\nfields."
     },
     {
@@ -8549,14 +8476,9 @@
       "legend": [],
       "directives": {
         "width": "300",
-        "y": "10"
+        "y": "10",
+        "smallfont": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
       "body": "The European Status Screen shows your home port in %STRING0, %STRING1.\nAs new immigrants arrive, they will line up on the docks to await transport\nto the New World.  You can recruit new immigrants by pressing the {Recruit}\nor {Train} buttons.  When ships arrive in the harbor, their cargo can be\nsold by dragging it from the cargo holds to the blue warehouses at the bottom\nof the screen.  Cargo can also be purchased by dragging it from the warehouse\nto a ship's holds.  In the warehouse boxes, the first number indicates the\n{bidding} price which the port will pay for that type of cargo.  The second\nindicates the {asking} price should you wish to buy that cargo.  To send a\nship back to the New World, click on it or drag it into the \"Bound for\n%STRING2\" box."
     },
     {
@@ -8564,14 +8486,9 @@
       "legend": [],
       "directives": {
         "width": "300",
-        "y": "10"
+        "y": "10",
+        "smallfont": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@smallfont",
-      "legend": [],
-      "directives": {},
       "body": "Cargo is normally purchased in units of 100; when you drag a cargo from\nthe warehouse to your ship, you are assumed to be loading 100 units.  Since\n{%STRING0} costs {%NUMBER0$} per unit and we only have {%NUMBER1$} gold,\nwe cannot afford 100 units.  If you want to load or unload less than 100\nunits of cargo onto a ship, simply hold down the {SHIFT} key while you drag\nthe cargo with the mouse.  You will then be prompted to enter the number\nof units you wish to buy."
     },
     {

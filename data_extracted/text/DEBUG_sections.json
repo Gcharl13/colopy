@@ -16,8 +16,7 @@
   "@END": "",
   "@BADGUYS": "Do you want the bad guys to be wandering\naround out there?\n\nSounds cool! Let's try it!\nBetter not; might crash.",
   "@SOUND": "Play what sound #?\n\nSound:",
-  "@OPTIONS": "",
-  "@checkbox": "Select Debug Information Options\n\n~Anger & Friction Levels\n~Indian AI movement\n~Supply and Demand (Indians)\n~Foreign AI planning modes\n~Close Moves\n~Far Moves\n~All Movement",
+  "@OPTIONS": "Select Debug Information Options\n\n~Anger & Friction Levels\n~Indian AI movement\n~Supply and Demand (Indians)\n~Foreign AI planning modes\n~Close Moves\n~Far Moves\n~All Movement",
   "@FORCED": "Independence forced at end of next turn.",
   "@TEST": "^Number of Units    = %NUMBER0\n^Number of Colonies = %NUMBER1"
 }

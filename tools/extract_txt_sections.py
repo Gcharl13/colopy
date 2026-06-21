@@ -29,7 +29,14 @@ import re
 from pathlib import Path
 
 DIRECTIVE_RE = re.compile(r"^@[A-Za-z0-9_]+=")     # @width=220, @y=5, @default=2
-SECTION_RE = re.compile(r"^@[A-Za-z0-9_]+\s*$")     # @SUCCESSION
+# Section KEYS are UPPERCASE-initial (@SUCCESSION, @BEGINMENU, @LOSTCITY0); the
+# valueless sub-directives are LOWERCASE-initial (@smallfont, @options, @checkbox,
+# @echo). This case rule is exact across all .TXT files (verified: every lowercase
+# @token is one of those 4 markers, no uppercase token is ever a directive). The
+# old `^@\w+$` wrongly split a section at each @smallfont/@options, dropping the
+# section body + option lines (e.g. @BEGINMENU rendered empty).
+SECTION_RE = re.compile(r"^@[A-Z][A-Za-z0-9_]*\s*$")          # @SUCCESSION
+VALUELESS_DIRECTIVE_RE = re.compile(r"^@[a-z][A-Za-z0-9_]*\s*$")  # @smallfont/@options/@checkbox/@echo
 
 
 def parse_txt(text: str) -> "list[dict]":
@@ -65,6 +72,14 @@ def parse_txt(text: str) -> "list[dict]":
             if cur is not None:
                 k, _, v = stripped[1:].partition("=")
                 cur["directives"][k] = v
+            continue
+        if VALUELESS_DIRECTIVE_RE.match(stripped):
+            # @smallfont / @options / @checkbox / @echo — a flag on the CURRENT
+            # section, NOT a new section. The lines that follow @options (the
+            # selectable items) fall through to the body below, so the section's
+            # full text is preserved.
+            if cur is not None:
+                cur["directives"][stripped[1:]] = "true"
             continue
         if SECTION_RE.match(stripped):
             finalize(cur)

@@ -246,10 +246,12 @@ A per-event handler:
 (`@RAIDSCALP` is an orphan GAME.TXT key, not a raid-block outcome); `@KINGNEWWAR` = KING1.SS
 (KING2.SS absent); `@width` is a literal per-section pixel width. All struck.)*
 
-1. **Empty-body keys are a JSON-dump defect, not a binary unknown.** Bodies for the "empty"
-   keys (LOSTCITY0/3-9, RAIDSTORES/BURN/SHIP/GOLD, SHIPOPTIONS, ARMOPTIONS, etc.) are **present
-   and full in `raw/COLONIZE/GAME.TXT`** — `data_extracted/text/GAME_sections.json` is partial.
-   Action = re-extract the JSON (mechanical); source is **B**.
+1. ~~Empty-body keys are a JSON-dump defect.~~ **RESOLVED 2026-06-21 (B).** The bodies for the
+   "empty" keys (LOSTCITY0/3-9, RAIDSTORES/BURN/SHIP/GOLD, SHIPOPTIONS, ARMOPTIONS, etc.) are now
+   **present in `data_extracted/text/GAME_sections.json`** — the extractor
+   (`tools/extract_txt_sections.py`) was fixed: it had wrongly split a section at each valueless
+   `@options`/`@smallfont`/`@checkbox` directive (treating them as new section headers), dropping
+   the body + option lines; section keys are UPPERCASE-initial, those markers lowercase. Source **B**.
 2. ~~Final per-popup pixel rect.~~ **RESOLVED — static (B):** origin = `@x`/`@y` (GAME.TXT) or
    centered; size = `@width` + line count. Not cursor-dependent (§Overview item 4).
 3. ~~Per-popup option-highlight RGB.~~ **RESOLVED — static (B):** the `@DEFAULT`/`TEXTCOLR`

@@ -45,7 +45,7 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
 - **Lists (B):** `GAME @TRADENAMES` ("5\nRun\nFerry\nCargo\nTransport\nTriangle",
   **B**); route keys `@TRADESTART`, `@TRADETYPE`, `@TRADENAME`, `@TRADESELECT`,
   `@TRADEDELETE`, `@SUREDELETE`, `@CARGOLOAD`, `@CARGOUNLOAD`, `@ROUTELOOP`,
-  `@TRADENONE`, `@TRADEMANY` (**B**, bodies empty in dump). Editor labels
+  `@TRADENONE`, `@TRADEMANY` (**B**, bodies present in JSON). Editor labels
   `LABELS @ROUTE` ("EDIT TRADE ROUTE / Route Name: / Route Type: / Sea / Land /
   Destination / Unload Cargo / Load Cargo / (Delete Destination)", **B**).
   Menu bar `MENU @TRADE` (Edit/Create/Delete Trade Route, **B**).
@@ -94,7 +94,7 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
 - **Purpose:** the diplomatic-action menu vs another European power.
 - **Option keys (B):** `GAME @CANCELPEACE`, `@SIGNTREATY`, `@DECLAREWAR`,
   `@HAVETREATY`, `@WHACKINDIANS`, `@SMITEINDIANS`, `@SMITEEUROPE`,
-  `@ALREADYSMITE`, `@NOCONTACT` (**B**, bodies empty). Demand/threat bodies
+  `@ALREADYSMITE`, `@NOCONTACT` (**B**, bodies present in JSON). Demand/threat bodies
   `@WANTSTUFF` (full body present, **B**), `@THREATS`, `@GIFTS`, `@MILITARY`,
   `@PROVOKE`, `@WARMEEK`, `@WARMANLY`, `@PEACEMEEK`, `@PEACEMANLY`. Handler:
   diplomatic-actions menu `func_03ECF0`, SMITE `func_057F4E`
@@ -121,7 +121,7 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
 - **Purpose:** train a colonist into a specialist (schoolhouse/college/univ).
 - **Keys (B):** `GAME @SCHOOL1`, `@COLLEGE2`, `@UNIV3`, `@NOTEACHER`,
   `@NEEDCOLLEGE`, `@NEEDUNIVERSITY`, `@TRAINFAIL`, `@TRAINCRIMINAL`,
-  `@TRAININDENTURED`, `@TRAINPROFESSION`, `@TEACHCONVERT` (**B**, bodies empty).
+  `@TRAININDENTURED`, `@TRAINPROFESSION`, `@TEACHCONVERT` (**B**, bodies present in JSON).
   Profession list `NAMES @JOB` (Farmer/Sugar Planter/… with skill tier + cost,
   **B**). Build-cost row `LABELS @CTITLE` "Select a Profession for". Button
   `LABELS @EUROLABEL` "TRAIN" (**B**).
@@ -177,9 +177,10 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   `func_06F0F4` option-list framework. **A**.
 
 ## Open questions (TBD)
-*(Resolved 2026-06-21: per-section `@width` (B); "empty-body" keys = `GAME_sections.json`
-extraction defect (bodies full in `raw/COLONIZE/GAME.TXT`); **native-action row gating** =
-`func_04B308` per-row predicates (B, §Native-village); **build availability** = `func_0B900`
+*(Resolved 2026-06-21: per-section `@width` (B); "empty-body" keys now **present in
+`GAME_sections.json`** (the extractor was fixed — it had split sections at valueless
+`@options`/`@smallfont` directives; see `popups.md` §Open-questions); **native-action row gating**
+= `func_04B308` per-row predicates (B, §Native-village); **build availability** = `func_0B900`
 pop+prereq gates (B, §Construction-choice). All struck.)*
 
 1. ~~Final option-list pixel rect / highlight RGB.~~ **RESOLVED — static (B):** the rect is

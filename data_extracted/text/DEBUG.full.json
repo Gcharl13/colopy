@@ -1,6 +1,6 @@
 {
   "file": "DEBUG.TXT",
-  "section_count": 21,
+  "section_count": 20,
   "sections": {
     "@MOTD": {
       "legend": [
@@ -124,13 +124,9 @@
     "@OPTIONS": {
       "legend": [],
       "directives": {
-        "width": "220"
+        "width": "220",
+        "checkbox": "true"
       },
-      "body": ""
-    },
-    "@checkbox": {
-      "legend": [],
-      "directives": {},
       "body": "Select Debug Information Options\n\n~Anger & Friction Levels\n~Indian AI movement\n~Supply and Demand (Indians)\n~Foreign AI planning modes\n~Close Moves\n~Far Moves\n~All Movement"
     },
     "@FORCED": {
@@ -289,14 +285,9 @@
       "key": "@OPTIONS",
       "legend": [],
       "directives": {
-        "width": "220"
+        "width": "220",
+        "checkbox": "true"
       },
-      "body": ""
-    },
-    {
-      "key": "@checkbox",
-      "legend": [],
-      "directives": {},
       "body": "Select Debug Information Options\n\n~Anger & Friction Levels\n~Indian AI movement\n~Supply and Demand (Indians)\n~Foreign AI planning modes\n~Close Moves\n~Far Moves\n~All Movement"
     },
     {

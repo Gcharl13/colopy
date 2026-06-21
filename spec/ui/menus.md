@@ -37,8 +37,9 @@ ORDERS / REPORTS / TRADE / CHEAT / COLONIZOPEDIA) are separate and live in
 > "Start a Game in AMERICA" / "CUSTOMIZE New World" / "LOAD Game" / "View Hall of Fame". Read
 > by `mr_load_section("BEGINMENU")` and dispatched 1–5 at export line 52193 (`menu==2` opens
 > the `@AMERICA` "Original Americas / Map Editor" sub-picker `menu_run_boxed(0x234F)`). The
-> JSON section dump shows the body empty, but **`raw/COLONIZE/GAME.TXT` lines 31–42** carry it
-> verbatim (re-verified this pass).
+> JSON section dump now carries the body verbatim (`@BEGINMENU` = version line + the 5 option
+> lines, **`raw/COLONIZE/GAME.TXT` lines 31–42**) after the `tools/extract_txt_sections.py` fix
+> (it had split the section at the valueless `@options`/`@smallfont` markers). **B.**
 
 ## Menu-plaque framework geometry — **B** (`mr_finalize_geometry`, export 48376)
 All wood-plaque menus (boot + setup + in-game bars) share this layout engine; constants at
@@ -85,7 +86,8 @@ not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
   "Climate"; values **Land Mass** Small/Moderate/Large; **Land Form**
   Archipelago/Continents (label shows "Normal/Continents"); **Temperature**
   Cool/Temperate/Warm; **Climate** Arid/Normal/Wet. The in-popup help keys
-  `GAME @CLAND`, `@CCONT`, `@CTEMP`, `@CCLIM` exist (**B**, bodies empty in dump).
+  `GAME @CLAND`, `@CCONT`, `@CTEMP`, `@CCLIM` exist (**B**, bodies present in JSON — e.g. `@CLAND`
+  = "LAND MASS / Small / Normal / Large").
 - **Tier:** labels **B**; control geometry **TBD**.
 
 ## Difficulty select
@@ -95,7 +97,7 @@ not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
   Governor / Viceroy (in order). `LABELS @MISC` also carries the prompt
   "Choose / Difficulty Level / Level" and rank words
   Easiest/Easy/Moderate/Tough/Toughest (**B**). The `GAME @DIFFICULTY` key
-  exists (**B**, body empty).
+  exists (**B**, body present in JSON).
 - **Tier:** level names **B**.
 
 ## Nationality / leader select
@@ -107,20 +109,20 @@ not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
   `@LEADERNAME` = Walter Raleigh / Jacques Cartier / Christopher Columbus /
   Michiel De Ruyter. `LABELS @MISC` "Select / European Power / Power" +
   play-style words Immigration/Cooperation/Conquest/Trade (**B**). Picker keys
-  `GAME @PICKNATION`, `@PICKACARGO` exist (**B**, body empty). Per-nation flavor
-  `GAME @NATION0A/0B..3A/3B` (**B**, empty).
+  `GAME @PICKNATION`, `@PICKACARGO` exist (**B**, bodies present in JSON). Per-nation flavor
+  `GAME @NATION0A/0B..3A/3B` (**B**, all 8 bodies present).
 - **Tier:** power/leader data **B**; layout **TBD**.
 
 ## Save dialog (10 slots)
 - **Purpose:** write the game to one of the save slots.
 - **Keys (B):** `GAME @SAVEGAME`, `@SAVEGOOD`, `@SAVEERROR` (all present, bodies
-  empty in dump). Manual: 10 slots (**R** — slot count not byte-verified here).
+  present in JSON). Manual: 10 slots (**R** — slot count not byte-verified here).
 - **Tier:** keys **B**; 10-slot count **R/TBD**.
 
 ## Load dialog
 - **Purpose:** restore a saved game.
 - **Keys (B):** `GAME @LOADGAME`, `@LOADGOOD`, `@LOADNOT`, `@LOADOLD`,
-  `@LOADSIZE`, `@LOADERROR` (present, bodies empty). Map-load `@MAPTOLOAD`.
+  `@LOADSIZE`, `@LOADERROR` (present, bodies present in JSON). Map-load `@MAPTOLOAD`.
 - **Tier:** keys **B**; slot layout **TBD**.
 
 ## Hall of Fame
@@ -128,7 +130,7 @@ not byte-pinned). *(Correction to an earlier claim that this was "FONTSMAL".)*
 - **Title (B):** `LABELS @MISC` "COLONIZATION HALL OF FAME"; columns from
   `@MISC`: "President", "General, Continental Army", "Leader", "Score",
   "Colonization_Rating", "A.D." (**B**). Retirement keys `GAME @RETIRE`,
-  `@RETIRING`, `@RETIRING2`, `@SOONRETIRING0/1` (**B**, bodies empty).
+  `@RETIRING`, `@RETIRING2`, `@SOONRETIRING0/1` (**B**, bodies present in JSON).
 - **Background/geometry + font/color — RESOLVED (B):** there is **no HoF PIK** —
   `hall_of_fame_render` (export 25037, `@file 0x3ACB2`) draws on the procedural **WOODPAN2**
   (render screen, handle 0x11D7) / **WOODPANL** (table screen) wood panels. Font = **FONTINTR**

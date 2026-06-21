@@ -63,9 +63,9 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\*/DEC-SQIG 
 
 ## 6. Open questions (TBD)
 *(Resolved 2026-06-21: DECLARAT.PIK is an **orphan** never loaded — the engine uses DECOIND.PIK
-(`func_03DA2A` → `func_076B9E`), so items 2 and 4 are moot. `@DECLARE`/`@INDEPENDENCE` "empty"
-bodies are the same `GAME_sections.json` extraction defect seen across the UI specs — present in
-`raw/COLONIZE/GAME.TXT`.)*
+(`func_03DA2A` → `func_076B9E`), so items 2 and 4 are moot. `@DECLARE`/`@INDEPENDENCE` bodies are
+now **present in `data_extracted/text/GAME_sections.json`** (the extractor was fixed — see
+`popups.md` §Open-questions).)*
 
 1. ✅ **Signature glyph (x,y)/advance — CLOSED 2026-06-21 (B).** Pen seed (0x94,0x7E); per-glyph
    y-advance = glyph width `es:[sprite+0x4A]`, x-advance = kern {−1..−4} by class; ends at
