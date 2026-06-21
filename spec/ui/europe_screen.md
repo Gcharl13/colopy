@@ -3,9 +3,10 @@
 > **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
 
 **Overall confidence:** main-panel geometry **B** (literal coords in the decompiled
-`europe_screen_render` + corroborating hit-test rects — supersedes the old luma-only **A**);
-load-bearing state fields **B** (raw-EXE-verified); two extra draw passes + transaction
-sub-panel **TBD** (genuinely overlay-resident). · **Canonical primary:**
+`europe_screen_render` + corroborating hit-test rects); load-bearing state fields **B**
+(raw-EXE-verified); the transaction sub-panel + market price formula now **B** (traced
+2026-06-21, §3/§7). Only the boycott overlay's exact ICONS frame is runtime-index-driven
+(cosmetic). · **Canonical primary:**
 `ghidra_export/VICEROY_decompiled.named.c` (`europe_screen_render` line 21920 + helpers),
 `raw/COLONIZE/VICEROY.EXE`, `docs/RENDERER_GEOMETRY.md`, `docs/SESSION_UI_CATALOG.md` §4.
 
@@ -47,9 +48,11 @@ All offsets raw-verified against `raw/COLONIZE/VICEROY.EXE` (capstone 16-bit) un
   header is **"\<Nation\> Port  \<year\>  Tax \<N\>%"** — the old "Selling X at N Gold" string
   is `@CMESSAGE`-driven and belongs to the transaction sub-panel, not this title. **B**
   `nations[4] = {English, French, Spanish, Dutch}`.
-- **Stockpile price per cell**: `market_bid_price(i)` formatted `"%d"` (line 21847); the
-  bid/ask spread (`ask = bid + @CARGO burden+1`) is in `market_bid_price`/`market_ask_price`
-  whose bodies are overlay-resident — **TBD**.
+- **Market price — B (traced 2026-06-21, `0x181F:0xAEC → bid_get @0x0B2A2`):** per-good market
+  record stride `0x1C`, base DGROUP `0x3150`; `level = [good·0x1C + 0x3150]`; **bid = nibble of
+  `[good·0x1C + 0x3151 + level/2]`** (`sar 4` odd level / `and 0xF` even). **`ask = bid +
+  @CARGO.Burden + 1`** (NAMES.TXT `@CARGO` "Burden" legend: *"0 means ask is 1 higher than
+  bid"*). Sell handler `@0x32914` (price helper `@0x3245C`); cross-ref `systems/market.md`. **B**
 - **Recruit-pool cell height**: `(0x20-4)/3 = 9`; cells stepped `cy += 9 + 2`. **B**
 
 ## 4. UI layout — "what is drawn where"
@@ -96,12 +99,20 @@ stockpile row (0,179,305,21)→0; dock A (143,118,81,60)→1; **"Bound For"** (7
 - `docs/RENDERER_GEOMETRY.md` (luma bands, now superseded by literal coords). **A**
 - `data_extracted/text/LABELS_sections.json` `@EUROLABEL`/`@CMESSAGE`/`@MISC`. **B**
 
-## 7. Open questions (TBD)
-1. `ov_draw_extra_a/b` (lines 21815–21816) — the **trade-transaction parchment panel** (the
-   `@CMESSAGE` "Selling/Sold…Net" text + the boycott red-X overlay) and the Exit "E" button.
-   Declared extern → overlay-resident; bodies not in the export. **TBD** (entry: overlay
-   `0x181F` call from `europe_screen_render`).
-2. Boycott **red-X sprite index** in ICONS.SS — not in any decompiled body; the "~slot 043"
-   is observation-only. **TBD**.
-3. `market_bid_price`/`market_ask_price` → displayed coin value, and the `ask = bid +
-   (@CARGO burden+1)` spread — overlay-resident. **TBD**.
+## 7. Open questions — RESOLVED 2026-06-21
+1. ✅ **`ov_draw_extra_a/b`** resolved (`europe_screen_render` `@file 0x31E4C`; extra_a `call
+   0x36863 → 0x319A6`, worker `0x31A32`; extra_b `0x31AFA`). The **trade-transaction parchment
+   panel** is two sub-fns: top strip `@0x317CC` box-fill `(51,70,118,72)` + text rows `(x=0x45,
+   y=0x78)` drawing the power/good names; bottom strip `@0x318D2` box `(51,1,118,1)` + the
+   numeric value `[0x2DCC]`. Text = `@CMESSAGE` tokens (Buying/Selling/at/Price/%Tax/Net), data
+   in LABELS.TXT. **B.**
+2. ✅ **Boycott marker — mechanism B; the "red-X ~slot 043" guess is REFUTED.** In extra_a
+   `@0x31A73..0x31AB4` each good blits its commodity icon (`0x181F:0x2BC`) at (100,16), then a
+   **state-gated overlay** (`lcall 0x181F:0x254 → 0x0E76A`) fires when the good-record state
+   byte `[good·0x1C + 0x3146] ∈ 0x0D..0x12` **and** `[good·0x1C + 0x3150] ≠ 0`, drawn with a
+   **runtime index** (the cell's own index), not a fixed sprite slot. So there is no literal
+   red-X constant; the exact ICONS frame is observation-only. **B (mechanism) / TBD (frame).**
+3. ✅ **Market bid/ask** — fully byte-traced (see §3). **B.**
+
+*(Only residual: the precise ICONS frame the state-gated boycott overlay resolves to is
+runtime-index-driven, not a static literal — cosmetic.)*

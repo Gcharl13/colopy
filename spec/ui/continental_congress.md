@@ -73,9 +73,12 @@ portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x
 - `data_extracted/text/{LABELS,NAMES}_sections.json` — `@MISC`, `@FATHERS` (verified). **B**
 
 ## 6. Open questions (TBD)
-1. Bell sprite + US-flag exact ICONS.SS indices — **TBD** (not byte-cited; only the generic
-   player-flag index **0x44** is byte-cited, from the colony renderer). Bells render
-   1-per-`bells/turn` (PowerRecord +0x0E).
+1. Bell sprite + US-flag ICONS.SS indices — **legitimately TBD (confirmed 2026-06-21).** The
+   F3 paint body (`@file 0x37A10`, fully disassembled) is **text/box only** — it contains **no
+   sprite blits** (`0x181F:0x254`/`0x2BC`) and no bell/flag immediate. So the bell row and US
+   flag are **not** drawn in the F3 report; they live on the (separate) Activities/overlay path
+   or are absent from this text report. The only byte-cited flag index **0x44** is the *colony*
+   renderer's player flag (`push 0x44 @0x65C11`), **not** congress. Stays **TBD** for this screen.
 2. ~~FF "next session" selection logic + DGROUP:0xE7AC threshold table.~~ **Mostly resolved
    2026-06-21.** Selection logic is **B** in the export: `ff_is_available` (25425) = not-owned
    AND all lower-index same-category fathers owned (category-gated walk over the 25-entry
