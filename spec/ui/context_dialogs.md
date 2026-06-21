@@ -4,7 +4,8 @@
 > B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
 > Substantive: the option-list framework (`@width`/`@x`/`@y`, static rect+highlight color),
 > native-action row gating (`func_04B308`), and build-availability gating (`func_0B900`) are all
-> **B**. Residual: the `@BUILDING` CSV-column→record-field mapping (R, §6).
+> **B** (including the `@BUILDING` CSV-column→record-field mapping, traced to loader
+> `func_0749E0` — §Construction-choice). No residual.
 
 **Overall confidence:** option-list text **B** where the list body is captured
 in `GAME_sections.json` / `NAMES_sections.json`; trigger functions **A**
@@ -144,19 +145,35 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   adjacency, colony flag `[+0x1C]&0x40`, per-nation capability). Built-bitmap **`func_0860E`**:
   `[colony·0xCA + 0x5DCA]` bit `idx&7` — **re-confirms CLAUDE.md hard rule #8 (ColonyRecord
   stride 0xCA)**.
-- **Building-record layout — refined 2026-06-21 (B).** The record stride is **12 bytes**
-  (`bx=idx·12`, three `shl;add;shl` chains @0xB93D/0xB953/0xB97A); the prereq/supersede fields are
-  byte-read at displacements **`[bx−0x707C]`** (`@0xB97D`) and **`[bx−0x707B]`** (`@0xB956`), each
-  fed to is-built `func_0863E`, and the min-colony-size field at **`[bx−0x7076]`** (`@0xB940`, vs
-  `ColonyRecord+0x1F`). This table is in **BSS (DS:0x8F84, beyond the initialized-data image —
-  file 0x26924 is code), populated at runtime from `NAMES @BUILDING`** (so the prereq *values* are
-  data — tier B; the source is the text file, not an EXE constant). The NAMES `@BUILDING` CSV
-  columns are `name, hammer_cost, col2, category, col4, min_tier`; **the category column is
-  constant within each upgrade family** (3=defense Stockade/Fort/Fortress, 1=armory, 4=docks,
-  2=town-hall…) and the last column tracks the size/era tier. Residual **R**: the precise
-  CSV-column→record-field mapping the `@BUILDING` loader computes is not yet traced.
-- **Tier:** building table **B**; availability predicate **B**; prereq-index *value source* **B**
-  (NAMES `@BUILDING`, BSS-loaded); CSV-column→field mapping **R**.
+- **Building-record layout — RESOLVED 2026-06-21 (B).** The record stride is **12 bytes**
+  (`bx=idx·12`, three `shl;add;shl` chains @0xB93D/0xB953/0xB97A); the build-gate byte-reads
+  prereq at **`[bx−0x707C]`** (`@0xB97D`) and supersede at **`[bx−0x707B]`** (`@0xB956`), each fed
+  to is-built `func_0863E`, and min-colony-size at **`[bx−0x7076]`** (`@0xB940`, vs
+  `ColonyRecord+0x1F`). The table is in **BSS (DS:0x8F84), runtime-loaded from `NAMES @BUILDING`**.
+- **CSV-column→record-field mapping — now traced to the loader `func_0749E0_load_names_data_tables`
+  (`@file 0x749E0`).** Its `for(i=0;i<0x2A;i++)` loop (**0x2A = 42 buildings**, stride `si=i·0xC`)
+  reads the 6 NAMES `@BUILDING` columns — byte-verified legend **`name, cost, tools(*10), size,
+  min_colony, upkeep`** — one per row, via `1A1F:0x0B22` (name/string token → u16) then
+  `1A1F:0x088A` (integer token), into the record (base `0x8F82`, i.e. `[bx−0x707E]`):
+
+  | CSV column | record field | offset | width | accessor |
+  |-----------|--------------|--------|-------|----------|
+  | `name` | name/string idx | +0 `[−0x707E]` | u16 | `0B22` |
+  | `cost` | hammer cost | +10 `[−0x7074]` | u16 | `088A` |
+  | `tools(*10)` | tools | +7 `[−0x7077]` | u8 | `088A` |
+  | `size` | upgrade-chain category | +5 `[−0x7079]` | u8 | `088A` |
+  | `min_colony` | min colony size | +8 `[−0x7076]` | u8 | `088A` |
+  | `upkeep` | upkeep | +9 `[−0x7075]` | u8 | `088A` |
+
+  The read order is exactly the CSV column order, and read #5 lands at `[−0x7076]` — matching the
+  build-gate's min-size field byte-for-byte. The **`size` column is the upgrade-chain id**
+  (constant within a family: 3=defense Stockade/Fort/Fortress, 1=armory, 4=docks, …). The
+  **prereq `[−0x707C]`/supersede `[−0x707B]`** fields are **NOT** CSV columns — they are set
+  separately by `func_07464C` (a hardcoded chain init, analogous to the Founding-Father chain
+  `func_0746BC_init_founding_fathers_table`), so a building's predecessor/successor is engine-coded,
+  not data-driven. **B.**
+- **Tier:** building table **B**; availability predicate **B**; prereq/supersede value source **B**
+  (engine chain init); CSV-column→field mapping **B**.
 
 ## Evidence
 - `data_extracted/text/NAMES_sections.json` — `@ORDERS` (order codes),
@@ -186,8 +203,8 @@ pop+prereq gates (B, §Construction-choice). All struck.)*
 1. ~~Final option-list pixel rect / highlight RGB.~~ **RESOLVED — static (B):** the rect is
    `@width` + `@x`/`@y` (or centered), not cursor-dependent; the `@default`/highlight palette
    index resolves to exact RGB via the loaded PIK palette (`fonts_and_colors.md`). No runtime.
-2. The construction prereq-building **indices** in the in-memory `@BUILDING` record — **mostly
-   resolved 2026-06-21 (B).** The record is a **12-byte BSS struct (DS:0x8F84) runtime-loaded from
-   `NAMES @BUILDING`**; the gate reads prereq/supersede at `[bx−0x707C]`/`[bx−0x707B]` and
-   min-size at `[bx−0x7076]` (§Construction-choice). The values are NAMES data (B); only the exact
-   **CSV-column→record-field mapping** (computed by the `@BUILDING` loader) remains **R**.
+2. ~~The construction `@BUILDING` record CSV-column→field mapping.~~ **RESOLVED 2026-06-21 (B).**
+   The 12-byte BSS record (DS:0x8F82, stride 12) is loaded by `func_0749E0` (`@0x749E0`); the
+   full column→offset map (name/cost/tools/size/min_colony/upkeep) is in §Construction-choice, and
+   read #5 lands at `[−0x7076]` matching the build-gate min-size field byte-for-byte. prereq/
+   supersede are an engine-coded chain (`func_07464C`), not CSV columns. **No residual.**
