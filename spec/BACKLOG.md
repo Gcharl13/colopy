@@ -74,8 +74,11 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
 
 **Category R — runtime/BSS-bound (need a memory dump; out of static scope):**
 - `DGROUP:0x9408` REF per-type value table — BSS, runtime-zero in the image (`ref_growth.md`).
-- `DGROUP:0x9654` FF candidate-scorer table — BSS; gates `founding_fathers.md` §6.3
-  (does category 5 instantiate) + per-father effect *magnitudes* (§6.1).
+- `DGROUP:0x9654` FF candidate-scorer table — BSS at runtime, but its **content is
+  loaded verbatim from `@FATHERS`** (known data): so `founding_fathers.md` §6.3 is
+  **RESOLVED** (no type-5 father exists; category 5 never instantiates). Only the
+  per-father continuous-effect *magnitudes* (§6.1) remain partial (mostly hardcoded,
+  documented in §3).
 - `training.md` §6.1 — human-side school teaching rate (UI-driven; AI path is **B**).
 - ~~`tory_uprising.md` §6.3 — Tory-Militia spawn count.~~ **DONE 2026-06-20** — ≤8 militia on free tiles adjacent to the max-tory-strength rebel colony (`func_03CAC6`); tier → **B**.
 - `events.md` §6.1 — Lost-City trigger feature value (runtime-verified `0xB0`; statically reconciled to the `0xF0` high-nibble + an overlay helper).

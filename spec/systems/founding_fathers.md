@@ -189,8 +189,13 @@ F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.
    fathers**. ⚠ **The `0x9654` father table is runtime-BSS (zeros in the static image)**,
    so the per-id category/weight *values* can't be byte-read here — they are populated
    at load from `@FATHERS` (cross-ref §3). **B** (scorer structure); table values runtime.
-3. **Whether category 5 (Independence) ever instantiates a father** — **cannot be settled
-   statically**: the discriminator is the runtime-BSS `0x9654` category column (item 2);
-   needs a memory dump or the `@FATHERS`-load trace. Recorded as runtime-bound.
+3. ~~Whether category 5 (Independence) ever instantiates a father.~~ **RESOLVED
+   2026-06-20 — NO.** No memory dump needed: the `0x9654` table is loaded verbatim from
+   **`@FATHERS` (NAMES.TXT)**, whose `type` column (= `@FOUNDING` index) shows the 25
+   fathers are **exactly 5 each in types 0–4** (Trade/Exploration/Military/Political/
+   Religious); **type 5 (Independence) has zero fathers** — it is a declared-but-unused
+   category, so the candidate scorer's category-5 branch always counts 0. (The
+   "independence-themed" fathers — Jefferson, Paine, Bolívar, Franklin — are all
+   **type 3 = Political**.) **B** (primary data).
 
 *(Resolved 2026-06-18: bell pool + bell-cost curve + Congress threshold + the three `@FATHERS` columns = era-band selection weights — now `BYTE_VERIFIED`, §3.)*
