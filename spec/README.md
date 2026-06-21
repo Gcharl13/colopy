@@ -90,10 +90,10 @@ separate non-exported binary or a live game-state value.
 | [`ui/map_view.md`](ui/map_view.md) | main gameplay screen | **B** tile chain (`O514→O513→O512`, `0x6204`) / **A** bands | sidebar text coords, minimap owner→color (runtime/unlocated) |
 | [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, + all 4 overlay-`0x181F` helpers traced: SoL%, good→sprite, frame-select, build-cost) | SoL-face ICONS index (cosmetic) |
 | [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed) | live values only (gold/prices) |
-| [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism / **A** bands | bell/flag not drawn in the F3 text body (overlay/absent) |
-| [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter (DECLARAT.PIK = orphan, never loaded) | signature glyph (x,y) — runtime capture only |
+| [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism; F3 body FONTTINY, title `0x90`/body `0x92` (CCBKGD) / **A** bands | bell/flag sprites absent from the F3 text body (overlay) |
+| [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter + **signature glyph layout byte-verified** (pen (0x94,0x7E), glyph-width advance) | none (DECLARAT orphan; geometry closed) |
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`) | non-Naval intra-row coords (deeper decompile) |
-| [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework, 11 directives, channels, Lost-City map, raid=6, `@width`/`@x`/`@y`, colors via palette) | live values only |
+| [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework: 10 live directives, channels, Lost-City map, raid=6, `@width`/`@x`/`@y`; FONTTINY latch) | body/highlight color push is overlay-resident (A/TBD) |
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count; per-axis widget geom (overlay); LEVN grid |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats, score, DECOIND) | OPENING/CLOSING frame timing (separate binaries) |
 | [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`) | `@BUILDING` prereq-index decode (R) |
