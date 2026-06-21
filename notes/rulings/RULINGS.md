@@ -4038,3 +4038,29 @@ king-text and popup body-text **color** is the glyph engine's own glyph→palett
 TEXTCOLR remains vestigial so there is still **no per-popup text-color override**). The font
 identities (FONTKING king-defeats, FONTTINY popup body) and pen geometry are unaffected and stay
 **B**.
+
+---
+
+## 2026-06-21 — .FF font glyph format is NOT yet cracked (do not guess a decoder)
+
+**Context.** While bundling assets for the C++ reimplementation, two RE passes (on-disk bytes +
+the VICEROY.EXE loader/blitter) tried to decode the `.FF` bitmap-font glyph layout. The format is
+**not yet byte-verified**, so no decoder was written (prime directive: never guess).
+
+**Byte-verified facts.** `.FF` = MADSPACK 2.0; one FAB section is the font payload (decompressed
+sizes FONTTINY 914 / FONT-NP 914 / FONTKING 1219 / FONTINTR 1898). **Font struct byte 0 = glyph
+height** (`mov al,es:[bx]; add ax,3` @0x3AB7). Loader = `lcall 0x1A1F:0xA86` (file ~0x6FC74; sites
+@0x760C6/0x760E8/0x754F6/0x6B7AF); glyph blitter `0x181F:0x3FE`/`:0x998`; glyphs are **2-bpp**
+(transparent/highlight/base/shadow). FONTKING/FONT-NP are variable-height.
+
+**Disproven hypotheses (this pass).** Interleaved `[w][h][bitmap]` from offset 33 desyncs
+immediately (~165 of 914 bytes consumed) under both `ceil(w*h*2/8)` and row-aligned
+`h*ceil(w*2/8)` sizing; a fixed-height width-table + bitmap block gives no clean file-length
+landing for any height. The real parser is **overlay-resident** (the recurring RTLink-overlay
+ceiling).
+
+**Ruling.** `.FF` glyph decode stays **TBD**. Finishing it requires either disassembling the
+overlay loader at ~0x6FC74, or a render-validation pass (decode glyphs, render `A–Z 0–9`, confirm
+they form correct letters — a font is self-validating). Corrects `formats/FF.md` (the stale
+`tools/mpskit/ff.py` reference — that file does not exist). The 4 fonts are therefore **not yet
+bundled** in `viceroy_cpp` (all 204 `.SS` + 35 `.PIK` are).
