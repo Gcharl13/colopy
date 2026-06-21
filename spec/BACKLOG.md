@@ -73,6 +73,19 @@ secondary mechanics.
 > salutation strings, now fixed), not a formula error; the resolved mechanics are
 > reliable.
 
+> **UI sweep (2026-06-21).** Byte-grounded all 10 `spec/ui/*.md` to the systems-spec standard
+> (5 commits). The pervasive "per-element draw code lives in un-extracted overlay 0x191F → TBD"
+> rationale was **stale** — the render functions are decompiled in the Ghidra export (overlay is
+> `0x181F`), and the load-bearing offsets are raw-EXE-verified. Notable corrections recorded as
+> RULINGS: (a) the advisor-report paint offsets in `docs/ADVISOR_REPORTS_AUDIT.md` are
+> broken-thunk artifacts — real bodies at `0x37958..0x39EE2`; (b) `@RAIDSCALP` is an orphan
+> GAME.TXT key (raid popup has 6 outcomes); (c) `KING2.SS` does not exist (`@KINGNEWWAR`=KING1);
+> (d) the Lost-City variant→outcome map is `func_061454` index 1–9; (e) the score screen plates
+> are rating-tier art (`func_03A9C0`), not per-category. UI certification table in
+> `spec/README.md`. Honest residuals only: overlay-`0x181F` helper internals, runtime
+> values (final pixel rects / colors / live coords), and the non-exported `OPENING/CLOSING.EXE`
+> cinematic timing (out of scope for the VICEROY-only pass).
+
 ## ★ Authoritative Residual Ledger (2026-06-20 certification)
 
 The single source of truth for **what is left**. Every game system's *byte layer* is
