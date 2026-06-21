@@ -62,18 +62,20 @@ Native 320×200. Coordinates are **literal immediates** in the decompiled render
 Draw order (`europe_screen_render`, line 21920): clear → clip → stockpile → title → dock
 ships → `ov_draw_extra_a/b` (TBD) → recruit pool → outer box frame.
 
-| Element | Rect (x,y,w,h) | Sprite / text | Tier | Line |
-|---------|----------------|---------------|------|------|
-| Full clear | (0, 8, 320, 192) | — | B | 21923 |
-| Stockpile strip bg | (0, **179**, 320, 21) | box fill | B | 21838 |
-| Stockpile cells (16) | x=1, stride **19**, icon y=**181**, price y=**194** | ICONS.SS `sid = good+0x16` (22..37), centered `x−(w/2)+9` | B | 21840–21851 |
-| Stockpile gold | x=**306**, y=**179** | `"$%d"` of `DG16(0x2F5E)`, color 0x0F | B | 21856 |
-| Title header | centered, y=**4** | "\<Nation\> Port  \<year\>  Tax \<N\>%", green | B | 21877 |
-| Dock water box A | (**143**, 118, 81, 60) | box fill | B | 21886 |
-| Dock water box B | (143, 81, 120, 69) | box fill | B | 21888 |
-| Dock ships (6) | x0=**143**, stride **20**, y=**122**, centered −(w/2)+10 | ICONS.SS sprite **0x7B** (123) | B | 21890 |
-| Recruit-pool box | (**281**, **89**, **37**, **32**), outline 0x39 | box fill | B | 21905 |
-| RECRUIT/PURCHASE/TRAIN | inside box: y≈89 / 100 / 111, text centered in 37 px, color 0x0F | text (matches `@EUROLABEL`) | B | 21901–21915 |
+Colors below are EUROPE.PIK palette indices → exact RGB (B); fonts are screen-latched (A,
+per `fonts_and_colors.md`).
+
+| Element | Rect (x,y,w,h) | Sprite / text | Font | Color → RGB | Tier |
+|---------|----------------|---------------|------|-------------|------|
+| Full clear | (0, 8, 320, 192) | — | — | — | B |
+| Stockpile cells (16) | x=1, stride **19**, icon y=**181**, price y=**194** | ICONS.SS `good+0x16` + bid-price `"%d"` | FONTTINY | price `0x0F`→(255,255,255) | B |
+| Stockpile gold | x=**306**, y=**179** | `"$%d"` of `DG16(0x2F5E)` | FONTTINY | `0x0F`→white | B |
+| Title header | centered, y=**4** | "\<Nation\> Port \<year\> Tax \<N\>%" | FONTKING | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green | B (RGB) / A (font) |
+| Dock water boxes | (143,118,81,60) / (143,81,120,69) | box fill | — | — | B |
+| Dock ships (6) | x0=**143**, stride **20**, y=**122** | ICONS.SS sprite **0x7B** | — | — | B |
+| Recruit-pool box | (**281**,**89**,**37**,**32**) | box fill, outline `0x39` | — | outline `0x39`→(77,97,170) | B |
+| RECRUIT/PURCHASE/TRAIN | inside box, y≈89/100/111, centered | text (`@EUROLABEL`, EXE @0x1EA17/0x1EAB1/0x1E787) | FONTTINY | `0x0F`→white | B (RGB) / A (font) |
+| Boycott marker | over dock, gated unit-type 0x0D–0x12 + `[+0x3150]` | ICONS.SS **`good+0x17`** (the good's own icon) | — | — | B |
 
 **Click hit-test rects** (`func_03200A`, line 22202) — corroborate the draw rects and name
 the dock panels: stockpile-gold (306,179,15,21)→0xB; recruit pool (281,89,37,32)→5;
@@ -107,13 +109,15 @@ stockpile row (0,179,305,21)→0; dock A (143,118,81,60)→1; **"Bound For"** (7
    y=0x78)` drawing the power/good names; bottom strip `@0x318D2` box `(51,1,118,1)` + the
    numeric value `[0x2DCC]`. Text = `@CMESSAGE` tokens (Buying/Selling/at/Price/%Tax/Net), data
    in LABELS.TXT. **B.**
-2. ✅ **Boycott marker — mechanism B; the "red-X ~slot 043" guess is REFUTED.** In extra_a
-   `@0x31A73..0x31AB4` each good blits its commodity icon (`0x181F:0x2BC`) at (100,16), then a
-   **state-gated overlay** (`lcall 0x181F:0x254 → 0x0E76A`) fires when the good-record state
-   byte `[good·0x1C + 0x3146] ∈ 0x0D..0x12` **and** `[good·0x1C + 0x3150] ≠ 0`, drawn with the
-   **good's own index** into sheet `[0x2DA8]` (a static per-good sprite, not a fixed red-X
-   slot). So the frame is **static** (function of the good); *whether* it shows is the good's
-   market/boycott state (game data). **B.**
+2. ✅ **Boycott marker — fully closed (B); the "red-X slot 043" guess is REFUTED.** At
+   `@0x31A73..0x31AB4`: gated by unit type `[unit·0x1C + 0x3146] ∈ 0x0D..0x12`, slot index 0,
+   and per-unit flag `[unit·0x1C + 0x3150] ≠ 0`, it pushes the **ICONS.SS** far pointer
+   (`[0x840]:[0x83E]` = `G_SHEET_ICONS`), resolves the good's icon frame via `0x181F:0xBE6`,
+   **`add ax,0x17`**, and blits via `0x181F:0x254`. So the boycott "marker" is simply the
+   **boycotted good's own commodity icon (ICONS.SS frame `good+0x17`)** redrawn over the dock —
+   not a dedicated red-X sprite. (`[0x2DA8]` is a shared 4-word clip/blit-descriptor scratch
+   block passed by pointer to the blit thunk, used all over the EXE — **not** a sheet handle.)
+   **B.**
 3. ✅ **Market bid/ask** — fully byte-traced (see §3). **B.**
 
 *No runtime residual* — every Europe element (geometry, sprites, price formula, boycott marker)

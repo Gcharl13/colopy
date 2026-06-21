@@ -70,17 +70,25 @@ byte-verified (`mov bx,[0x8542]` @0x26176). **B**
 Native 320×200. Composition `colony_screen_render` (line 16974) draw order: clear → title →
 work-grid → colonist row → stockpile → flag → minimap → SoL panel → buildings.
 
-| Element | Rect / (x,y) | Sprite/sheet or text | Fn (line) | Tier |
-|---------|--------------|----------------------|-----------|------|
-| Title | centered, y=1, green RGB(0x52,0x8A,0x31) | name@rec+2, season, "…, Gold: N" | `colony_paint_title` 16935 | B |
-| Buildings panel | box(0,7,199,128)+parch(0,8,199,120); slots at `0x266+i*4` | `BUILDING.SS` frame, `ss_blit_remap` | `colony_paint_buildings` 16841 | B |
-| Work-grid (3×3) | cell `(col·0x18+0xC8, r·0x18+8)` | terrain scaled; **production good icon = `good_idx+0x17`** (good_idx from `0x181F:0x0CE0` = `colony[slot+0x70]`); prof `0x52+prof`; unit figure | `colony_draw_workgrid` 15986 / `_terrain` 18730 | B |
-| Colonist row | fill(0,0x82,0x78,0x30); baseline y=0x8E, adaptive spacing | colonist sprites; SoL faces 0x7C/0x7D | `colony_paint_colonist_row` 16361 | B |
-| Production/warehouse bars | row at (2,0xA3,0x76,4) | `bar_queue_push`/`bar_row_flush` | 16440–71 | B |
-| SoL panel | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships In Port" y=0x8C, cream | text | `colony_paint_sol_panel` 16904 | B |
-| Nation flag | fill(0x12F,0x84,0x11,0x2D) | flag sprite (blit elided in export) | `colony_paint_flag` 16874 | B (partial) |
-| Surround minimap | fill(0x79,0x82,0x54,0x30); 28×19 tiles @3px, origin (121,132) | per-tile color from layers | `colony_paint_minimap` 16891 / `_contents` 18327 | B |
-| Stockpile strip | fill(0,0xB3,0x140,0x15); 16 cells stride 0x13, icon y=0xB5, qty y=0xC1 | ICONS `good+0x16`; qty white | `colony_paint_stockpile` 16769 | B |
+Colors are EUROPE.PIK palette indices → RGB (B); fonts are screen-latched (A, see
+`fonts_and_colors.md`).
+
+| Element | Rect / (x,y) | Sprite/text | Font | Color → RGB | Fn (line) |
+|---------|--------------|-------------|------|-------------|-----------|
+| Title | centered, y=1 | name/season/"…, Gold: N" | FONTKING | `ui_color_for(0x52,0x8A,0x31)`→(82,138,49) green¹ | `colony_paint_title` 16935 |
+| Buildings panel | box(0,7,199,128)+parch | `BUILDING.SS` frame, `ss_blit_remap` | — | — | `colony_paint_buildings` 16841 |
+| Work-grid (3×3) | cell `(col·0x18+0xC8, r·0x18+8)` | terrain; good icon `good_idx+0x17`; prof `0x52+prof`; yield "N" | FONTTINY (yields) | yield `0x0F`→white | `colony_draw_workgrid` 15986 / `_terrain` 18730 |
+| Colonist row | fill(0,0x82,0x78,0x30); baseline y=0x8E | colonist sprites; sel box | — | sel box `0x0F`/`0x0A`→white/(85,255,85) | `colony_paint_colonist_row` 16361 |
+| SoL% text | rebel x=face+2 / tory x=face−tw, y=0x85 | "N%% (R)" / "N%% (T)" | FONTKING | **`0x0F`→white**, →**`0x04`(170,0,0)** if tories≥thresh, →**`0x0C`(255,85,85)** if ≥2·thresh | 16478–16512 |
+| Rebel/Tory faces | 0x7C@(2,0x84) / 0x7D@(face_x,0x84) | ICONS.SS sprites **0x7C/0x7D** (frame ids, not colors) | — | — | 16492/16514 |
+| SoL panel label | fill(0xD3,0x82,0x5B,0x30); "Sons of Liberty" y=0x86 / "No Ships" y=0x8C | text | FONTKING | `ui_color_for(0xF0,0xE0,0xB0)`→(240,224,176) cream | `colony_paint_sol_panel` 16904 |
+| Nation flag | fill(0x12F,0x84,0x11,0x2D) | flag sprite | — | — | `colony_paint_flag` 16874 |
+| Surround minimap | fill(0x79,0x82,0x54,0x30); 28×19 @3px, origin (121,132) | per-tile color from layers | — | per-tile (map layers) | `colony_paint_minimap` 16891 / `_contents` 18327 |
+| Stockpile strip | fill(0,0xB3,0x140,0x15); 16 cells stride 0x13, icon y=0xB5, qty y=0xC1 | ICONS `good+0x16`; qty | FONTTINY | qty `0x0F`→white | `colony_paint_stockpile` 16769 |
+
+¹ EXE/C emits green `RGB(0x52,0x8A,0x31)`; the pixel capture in `docs/UI_FONT_REFERENCE.md`
+reads the title as **yellow (218,178,0)**. EXE bytes win per CLAUDE.md, but the per-draw font/
+color handle is screen-latched (not per-blit), so title-as-rendered is **A** — a noted discrepancy.
 
 ## 5. Evidence
 - `ghidra_export/VICEROY_decompiled.named.c`: composition 16974; buildings 16841/16573;

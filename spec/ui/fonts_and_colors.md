@@ -19,9 +19,14 @@ The engine loads four fonts at boot (asset table `@file 0x1FD20`/export `BOOT_AS
 | **FONT-NP** | `FONT-NP.FF` (`@0x1F8AF`) | 8 × 7–8 var | uppercase var | **national-power** / grayed text | B / A |
 | **FONTSMAL** | `FONTSMAL.FF` | 6 × 6 fixed | uppercase fixed | popup body when the **`SMALLFONT`** directive (`@file 0x1F97B`) is set (`func_06F0F4`) | B |
 
-**Selection mechanism (B):** the popup/dialog framework `func_06F0F4` defaults bodies to
-`FONTTINY` and switches to `FONTSMAL` on the `SMALLFONT` directive. Full-screen renderers pick
-their font explicitly (e.g. the Score screen and Hall of Fame call `FONTKING`).
+**Selection mechanism — important caveat (tier A for per-element font):** the active font is a
+**screen-level global latch** (`g_font_ptr_89E`, set by an `ov_set_font(KEY_…)` at screen-enter),
+**not** a per-draw select inside the paint helpers — no `ov_set_font` appears in
+`colony_paint_*` / `europe_draw_*`. So **which font a given element uses is inferred from the
+framework + pixel verification** (`docs/UI_FONT_REFERENCE.md`), tier **A**, not a byte-verified
+per-blit handle. (The popup framework `func_06F0F4` is the exception that *does* switch
+`FONTTINY`↔`FONTSMAL` on the `SMALLFONT` directive — that one is **B**.) **Colors, by contrast,
+are per-draw `push`-args → exact RGB (B); fonts are screen-latched → A.**
 
 ## 2. Colors — palette-index args, resolved to exact RGB (fully static — tier B)
 
@@ -42,11 +47,10 @@ colony/Europe → `EUROPE.PIK`; congress → `CCBKGD.PIK`; menus/HoF → `WOODPA
 | `0x91` | (255,255,142) yellow | report strength rows | REPORT\<N\>.PIK |
 | `0x92` | (255,243, 93) bright-yellow | report labels (F3/F4/F6/F9) | REPORT\<N\>.PIK |
 | `0x61` | (247,243,199) cream | report values (F3/F4/F7) | REPORT\<N\>.PIK |
-| `0x39` | (77,97,170) / blue | crosses/bells **filled** gauge | EUROPE/REPORT |
-| `0x3A` | (65,81,158) blue | gauge variant | EUROPE.PIK |
-| `0x7C` | (65,146,130) | colony **rebel face** tint | CCBKGD/EUROPE |
-| `0x7D` | (56,121,109) | colony **tory face** tint | CCBKGD/EUROPE |
-| `0x44` | (85,150, 52) green | player flag | CCBKGD/EUROPE |
+| `0x39` | (77,97,170) / blue | crosses/bells **filled** gauge; recruit-cell outline | EUROPE/REPORT |
+| `0x04` | (170,0,0) dark-red | SoL% text when tories ≥ threshold | EUROPE.PIK |
+| `0x0C` | (255,85,85) bright-red | SoL% text when tories ≥ 2·threshold | EUROPE.PIK |
+| `0x0A` | (85,255,85) green | colonist selection box | EUROPE.PIK |
 | RGB(0x52,0x8A,0x31) | (82,138,49) green | **title green** (colony/europe header) | `ui_color_for` (direct RGB) |
 | RGB(0xE3,0xAA,0x28) | (227,170,40) gold | menu **gold** highlight | menu framework 48508 (direct RGB) |
 | RGB(0x38,0x20,0x10) | (56,32,16) | menu **selection bar** | menu framework 48507 (direct RGB) |
