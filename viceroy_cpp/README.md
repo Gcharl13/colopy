@@ -41,19 +41,27 @@ The **asset → pixels spine**, end to end:
 Importing `PHYS0.SS` then rendering `AMER2.MP` **from the bundle** yields a
 928×1152 image **pixel-identical to the Python oracle**.
 
+**`import-all`** bundles the whole asset set in one pass: **204 sprite sheets**
+(`.SS` → `sprites/<NAME>.png` + `.json`) + **35 backgrounds** (`.PIK` →
+`backgrounds/<NAME>.png`, paletted) + a `manifest.json`. The 2 orphan sheets
+`TERRAIN.SS`/`BDARK.SS` are skipped (CLAUDE.md hard rule #5); 0 decode failures.
+
 ## Build & run (headless)
 ```sh
 python3 bin/reconstitute.py                 # from repo root: rebuild raw/COLONIZE/*
 cmake -S viceroy_cpp -B viceroy_cpp/build -DCMAKE_BUILD_TYPE=Release
 cmake --build viceroy_cpp/build -j
 B=viceroy_cpp/build
-# 1) import (offline): original .SS -> modern bundle
-$B/viceroy_cpp import --ss raw/COLONIZE/PHYS0.SS --atlas $B/phys0.png --frames $B/phys0.json
-# 2) render (runtime): bundle + .MP -> image  (no .SS / no codec)
-$B/viceroy_cpp render --atlas $B/phys0.png --frames $B/phys0.json \
+# 1) import EVERYTHING (offline): all .SS + .PIK -> modern bundle/
+$B/viceroy_cpp import-all --colonize raw/COLONIZE --out $B/bundle
+# 2) render (runtime): a bundled sheet + .MP -> image  (no .SS / no codec)
+$B/viceroy_cpp render --atlas $B/bundle/sprites/PHYS0.png --frames $B/bundle/sprites/PHYS0.json \
     --mp raw/COLONIZE/AMER2.MP --out $B/map
-python3 viceroy_cpp/verify.py               # PARITY OK iff runtime == ssdec oracle
+python3 viceroy_cpp/verify.py --cpp $B/map.ppm    # PARITY OK iff runtime == ssdec oracle
 ```
+`import-all` writes `bundle/{sprites,backgrounds}/*.png|json` + `manifest.json`.
+For a single sheet use `import --ss FILE --atlas PNG --frames JSON`.
+
 Needs **libpng** (a standard library, not a game codec). No display required:
 P0 renders to a file. A windowed/interactive client (SDL/raylib, 320×200
 mode-13h viewport) is a later phase.
@@ -67,17 +75,21 @@ atlas pack + paletted-PNG write/read + JSON) — any divergence is caught. P0
 result: **PARITY OK (3,207,168 bytes exact).**
 
 ## Not yet (per roadmap in `REWRITE_READINESS.md`)
+- **Fonts (`.FF`)** — the 4 loaded fonts are **not** bundled yet: they live in
+  `col.zip` (not `raw/COLONIZE`), and the `.FF` glyph layout (per-glyph directory +
+  2-bpp bitmaps) has **no decoder in-repo** (FF.md is high-level; loader/blitter are
+  TBD). Bundling fonts needs that glyph-format RE first — won't guess it.
 - Sub-cell terrain transition chain `func_O514→O513→O512` (CLAUDE.md #7) — P0 uses
   the naive `terrain_id→sprite` mapping; refinement is **TBD** (@asm those funcs).
-- Sim core (turn loop, colony production, market…), screen-UI, fonts, input,
+- Sim core (turn loop, colony production, market…), screen-UI render, input,
   windowing, sound — P1+.
 
 ## Layout
 ```
-include/   importer:  fab madspack ss          (.hpp)
+include/   importer:  fab madspack ss pik       (.hpp)
            runtime:   bundle pal mp render
            shared:    png_io image_io util
-src/       (same set) + main.cpp  (import / render subcommands)
+src/       (same set) + main.cpp  (import-all / import / render subcommands)
 verify.py  oracle parity check (uses tools/ssdec.py)
 CMakeLists.txt   (links libpng)
 ```

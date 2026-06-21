@@ -17,6 +17,7 @@ add_executable(viceroy_cpp
   src/fab.cpp
   src/madspack.cpp
   src/ss.cpp
+  src/pik.cpp
   # bundle + runtime
   src/bundle.cpp
   src/png_io.cpp

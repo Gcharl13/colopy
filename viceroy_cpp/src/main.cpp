@@ -1,19 +1,26 @@
-// main.cpp -- two subcommands embodying the asset-pipeline split (§4a of
-// REWRITE_READINESS.md):
-//   import : original PHYS0.SS  --(MADSPACK/FAB/SS decode + atlas pack)-->  bundle
-//   render : bundle + AMER2.MP  --(no codec)-->  map image (PNG + PPM)
+// main.cpp -- asset-pipeline subcommands (§4a of REWRITE_READINESS.md):
+//   import-all : COLONIZE/ dir  --(decode .SS + .PIK)-->  full modern bundle
+//   import     : one PHYS0.SS   --(decode + atlas pack)-->  sprite bundle
+//   render     : bundle + .MP   --(no codec)-->  map image (PNG + PPM)
 // The runtime `render` path never touches the original codec.
 #include "ss.hpp"        // load_sheet (importer only)
+#include "pik.hpp"       // load_pik   (importer only)
 #include "bundle.hpp"    // write_bundle / load_bundle
+#include "pal.hpp"
+#include "png_io.hpp"    // write_png_indexed / write_png_rgb
 #include "mp.hpp"
 #include "render.hpp"
 #include "image_io.hpp"  // write_ppm
-#include "png_io.hpp"    // write_png_rgb
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+#include <filesystem>
 
 using namespace vc;
+namespace fs = std::filesystem;
 
 static const char* opt(int argc, char** argv, const char* key) {
     for (int i = 2; i + 1 < argc; ++i)
@@ -30,8 +37,89 @@ static int cmd_import(int argc, char** argv) {
         return 2;
     }
     Sheet s = load_sheet(ss);
-    write_bundle(s, atlas, frames);
+    write_bundle(s, fs::path(ss).stem().string(), atlas, frames);
     std::printf("import: %s -> %s + %s (%d frames)\n", ss, atlas, frames, s.nframes);
+    return 0;
+}
+
+// Collect *.EXT (upper-case) filenames in `dir`, sorted for determinism.
+static std::vector<fs::path> list_ext(const fs::path& dir, const std::string& ext) {
+    std::vector<fs::path> out;
+    for (const auto& e : fs::directory_iterator(dir)) {
+        if (!e.is_regular_file()) continue;
+        std::string s = e.path().extension().string();
+        std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+        if (s == ext) out.push_back(e.path());
+    }
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+static void json_list(std::ofstream& f, const char* key,
+                      const std::vector<std::string>& v, bool last) {
+    f << "  \"" << key << "\": [";
+    for (size_t i = 0; i < v.size(); ++i)
+        f << (i ? ", " : "") << '"' << v[i] << '"';
+    f << "]" << (last ? "" : ",") << "\n";
+}
+
+static int cmd_import_all(int argc, char** argv) {
+    fs::path colonize = opt(argc, argv, "--colonize") ? opt(argc, argv, "--colonize")
+                                                      : "../../raw/COLONIZE";
+    fs::path outdir   = opt(argc, argv, "--out") ? opt(argc, argv, "--out") : "bundle";
+    fs::path palpath  = opt(argc, argv, "--pal") ? opt(argc, argv, "--pal")
+                                                 : (colonize / "VICEROY.PAL");
+
+    // Orphan sheets never loaded by the engine (CLAUDE.md hard rule #5).
+    const std::vector<std::string> orphan_ss = {"TERRAIN", "BDARK"};
+    auto is_orphan = [&](const std::string& n) {
+        return std::find(orphan_ss.begin(), orphan_ss.end(), n) != orphan_ss.end();
+    };
+
+    Palette gp = load_pal(palpath.string());           // global palette (PIK fallback)
+    fs::create_directories(outdir / "sprites");
+    fs::create_directories(outdir / "backgrounds");
+
+    std::vector<std::string> sprites, backgrounds, skipped;
+
+    for (const auto& p : list_ext(colonize, ".SS")) {
+        std::string name = p.stem().string();
+        if (is_orphan(name)) { skipped.push_back(name + ".SS (orphan)"); continue; }
+        try {
+            Sheet s = load_sheet(p.string());
+            write_bundle(s, name,
+                         (outdir / "sprites" / (name + ".png")).string(),
+                         (outdir / "sprites" / (name + ".json")).string());
+            sprites.push_back(name);
+        } catch (const std::exception& e) {
+            skipped.push_back(name + ".SS (" + e.what() + ")");
+        }
+    }
+
+    for (const auto& p : list_ext(colonize, ".PIK")) {
+        std::string name = p.stem().string();
+        try {
+            PikImage im = load_pik(p.string(), gp.rgb);
+            write_png_indexed((outdir / "backgrounds" / (name + ".png")).string(),
+                              im.w, im.h, im.idx, im.pal, -1);
+            backgrounds.push_back(name);
+        } catch (const std::exception& e) {
+            skipped.push_back(name + ".PIK (" + e.what() + ")");
+        }
+    }
+
+    std::ofstream man((outdir / "manifest.json").string());
+    if (!man) { std::fprintf(stderr, "cannot write manifest\n"); return 1; }
+    man << "{\n";
+    man << "  \"format\": \"viceroy_cpp asset bundle v1\",\n";
+    json_list(man, "sprites", sprites, false);
+    json_list(man, "backgrounds", backgrounds, false);
+    json_list(man, "skipped", skipped, true);
+    man << "}\n";
+
+    std::printf("import-all: %zu sprites, %zu backgrounds, %zu skipped -> %s/\n",
+                sprites.size(), backgrounds.size(), skipped.size(), outdir.string().c_str());
+    for (const auto& s : skipped) std::printf("  skip: %s\n", s.c_str());
     return 0;
 }
 
@@ -57,13 +145,14 @@ static int cmd_render(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::fprintf(stderr, "usage: viceroy_cpp <import|render> [options]\n");
+        std::fprintf(stderr, "usage: viceroy_cpp <import-all|import|render> [options]\n");
         return 2;
     }
     try {
-        if (std::strcmp(argv[1], "import") == 0) return cmd_import(argc, argv);
-        if (std::strcmp(argv[1], "render") == 0) return cmd_render(argc, argv);
-        std::fprintf(stderr, "unknown command '%s' (expected import|render)\n", argv[1]);
+        if (std::strcmp(argv[1], "import-all") == 0) return cmd_import_all(argc, argv);
+        if (std::strcmp(argv[1], "import") == 0)     return cmd_import(argc, argv);
+        if (std::strcmp(argv[1], "render") == 0)     return cmd_render(argc, argv);
+        std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

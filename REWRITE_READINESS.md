@@ -102,10 +102,15 @@ original game files (user-owned)            ── importer (uses the decoder) �
                                                                                   └── runtime loads ONLY this
 ```
 
-- **Importer** (`viceroy_cpp import …`): decodes `.SS/.PIK/.FF` via the ported MADSPACK/FAB/SS code,
-  packs frames into a texture atlas, writes a **paletted PNG** (color-type-3, with `PLTE`+`tRNS`) +
-  a **`frames.json`** (per-frame `w,h` + original `.SS` hotspot `x,y` + atlas rect `ax,ay`). PNG via
-  **libpng** (a standard dep — not a game codec).
+- **Importer** (`viceroy_cpp import-all …`): decodes the assets via the ported MADSPACK/FAB code,
+  packs sprite frames into a texture atlas, writes a **paletted PNG** (color-type-3, with
+  `PLTE`+`tRNS`) + a **`frames.json`** (per-frame `w,h` + original `.SS` hotspot `x,y` + atlas rect),
+  and `.PIK` backgrounds as paletted PNGs, into a bundle dir + `manifest.json`. PNG via **libpng**
+  (a standard dep — not a game codec). **Status:** all **204** sprite sheets (`.SS`, minus the 2
+  CLAUDE.md-#5 orphans) + **35** backgrounds (`.PIK`) bundle with **0 failures**. **Fonts (`.FF`)
+  are not bundled yet** — they live in `col.zip` and the glyph layout (per-glyph dir + 2-bpp
+  bitmaps) has no in-repo decoder (FF.md loader/blitter are TBD); a small RE task, deferred (not
+  guessed).
 - **Runtime** loads the bundle (libpng + JSON) and never touches `.SS`. Simpler, modding-friendly
   (artists can edit the PNGs), and dependency-light.
 

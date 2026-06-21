@@ -12,7 +12,7 @@ namespace vc {
 
 // Offline importer: pack `sheet`'s frames into an atlas, write a paletted PNG +
 // a frames.json (per-frame w,h + original .SS hotspot x,y + atlas rect ax,ay).
-void write_bundle(const Sheet& sheet,
+void write_bundle(const Sheet& sheet, const std::string& name,
                   const std::string& atlas_png, const std::string& frames_json);
 
 // Runtime loader: reconstruct a Sheet from the bundle (no .SS / no FAB codec).

@@ -31,7 +31,7 @@ std::vector<Rect> pack(const Sheet& s, int& atlasW, int& atlasH, int TARGET_W = 
 }
 } // namespace
 
-void write_bundle(const Sheet& sheet,
+void write_bundle(const Sheet& sheet, const std::string& name,
                   const std::string& atlas_png, const std::string& frames_json) {
     int atlasW, atlasH;
     std::vector<Rect> rect = pack(sheet, atlasW, atlasH);
@@ -52,7 +52,7 @@ void write_bundle(const Sheet& sheet,
     // frames.json (valid JSON; one frame object per line for easy parsing).
     std::ofstream js(frames_json);
     if (!js) throw std::runtime_error("cannot write " + frames_json);
-    js << "{\n  \"sheet\": \"PHYS0\",\n  \"nframes\": " << sheet.frames.size()
+    js << "{\n  \"sheet\": \"" << name << "\",\n  \"nframes\": " << sheet.frames.size()
        << ",\n  \"atlas\": { \"w\": " << atlasW << ", \"h\": " << atlasH << " },\n"
        << "  \"frames\": [\n";
     for (size_t i = 0; i < sheet.frames.size(); ++i) {
