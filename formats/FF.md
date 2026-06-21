@@ -19,29 +19,35 @@ for glyph counts.
 
 ---
 
-## Layout — PARTIALLY DECODED (2026-06-21); the bitmap layout is NOT yet cracked
+## Layout — CRACKED 2026-06-21 (render-validated: all 4 fonts decode to readable A–Z/0–9)
 
 Outer container: `.FF` is a **MADSPACK 2.0** container; its single FAB section
-decompresses (via `tools/ssdec.py`) to the font payload. Decompressed sizes:
-FONTTINY **914**, FONT-NP **914**, FONTKING **1219**, FONTINTR **1898**.
+decompresses (via `tools/ssdec.py`) to the font payload. The payload has a **fixed
+structure** (validated by decoding every glyph to a recognizable letter):
 
-What is **byte-verified** about the payload:
-- **Byte 0 = glyph height** (VICEROY reads `mov al,es:[bx]; add ax,3` @0x3AB7, used as
-  the row pitch). Header begins `[height, maxWidth, flag]`, then ~30 zero bytes, then a run
-  of small width-like values (e.g. FONTINTR ' '=3, '!'=3, '"'=5, '#'=7, '$'=7, '%'=9,
-  digits=6 — a plausible per-glyph width table).
-- Glyphs are **2 bits per pixel** (4 levels: 0=transparent, 1=highlight, 2=base, 3=shadow),
-  for anti-aliased text. FONTKING/FONT-NP are **variable-height**; FONTTINY/FONTINTR fixed.
+```
+[0]            height H (byte)        # glyph cell height; VICEROY uses H+3 as line pitch (@0x3AB7)
+[1]            max width (byte)
+[2 .. 130)     width table: 128 bytes, width[char] for char 0..127  (control chars = 0)
+[130 .. 386)   offset table: 128 * u16 LE, offset[char] = file offset of that glyph's bitmap
+[386 .. end)   glyph bitmaps
+```
 
-What is **NOT cracked** (every obvious recipe disproven 2026-06-21 — see `RULINGS.md`):
-- Interleaved `[w][h][bitmap]` from offset 33 **desyncs immediately** (consumes ~165/914),
-  with both `ceil(w*h*2/8)` and row-aligned `h*ceil(w*2/8)` bitmap sizing.
-- A fixed-height width-table + bitmap block gives **no clean file-length landing** for any
-  height.
-So the true layout is non-obvious (offset table? separate variable-height table? per-font
-differences?). **Do not guess a decoder** — the authoritative parser is the overlay-resident
-loader below; cracking it needs that disasm or a render-validation pass (decode glyphs,
-render `A–Z 0–9`, confirm they form correct letters).
+- **Glyph c** bitmap = `payload[offset[c] : offset[c+1]]` (size 0 ⇒ blank, e.g. space). The
+  offset table makes blanks share an offset, so glyph size = `offset[c+1]-offset[c]` =
+  `H * ceil(width[c]*2/8)` (validated: 87/87 chars match for FONTINTR & FONTTINY).
+- **Bitmap encoding: 2 bits per pixel, MSB-first, row-major.** H rows; each row is
+  `ceil(width*2/8)` bytes; within a byte the leftmost pixel is bits 7–6, next 5–4, etc.
+  The 4 levels are 0=transparent/background, 1/2/3 = ink shades (highlight/base/shadow) for
+  anti-aliased text. (LSB-first or planar decode produces scrambled glyphs — MSB row-major is
+  the validated one.)
+- Because the width/offset tables are fixed-size (128 each), the **bitmap region always starts
+  at 386** (= 130 + 256). Decompressed sizes: FONTTINY 914, FONT-NP 914, FONTKING 1219,
+  FONTINTR 1898 — each = 386 + Σ glyph sizes (exact).
+
+**Reference decoder:** `viceroy_cpp/include/ff.hpp` + `src/ff.cpp` (C++), validated by
+re-rendering the glyph atlas. *(Earlier hypotheses — interleaved `[w][h][bitmap]`, planar
+1-bit-plane — were disproven; the offset-table + MSB 2bpp layout above is the correct one.)*
 
 ---
 

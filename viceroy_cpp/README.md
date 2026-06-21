@@ -43,8 +43,10 @@ Importing `PHYS0.SS` then rendering `AMER2.MP` **from the bundle** yields a
 
 **`import-all`** bundles the whole asset set in one pass: **204 sprite sheets**
 (`.SS` → `sprites/<NAME>.png` + `.json`) + **35 backgrounds** (`.PIK` →
-`backgrounds/<NAME>.png`, paletted) + a `manifest.json`. The 2 orphan sheets
-`TERRAIN.SS`/`BDARK.SS` are skipped (CLAUDE.md hard rule #5); 0 decode failures.
+`backgrounds/<NAME>.png`, paletted) + **4 fonts** (`.FF` → `fonts/<NAME>.png`
+glyph atlas + `.json`, when the `.FF` files are present) + a `manifest.json`.
+The orphan `TERRAIN.SS`/`BDARK.SS`/`FONTSMAL.FF` are skipped (CLAUDE.md #5);
+0 decode failures. Single font: `import-font --ff FILE --atlas PNG --frames JSON`.
 
 ## Build & run (headless)
 ```sh
@@ -95,9 +97,6 @@ cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM 
   climate→terrain + 58×72 dims.
 
 ## Not yet (per roadmap in `REWRITE_READINESS.md`)
-- **Fonts (`.FF`)** — not bundled: glyph layout uncracked (overlay-resident parser;
-  see `formats/FF.md` + RULING 2026-06-21). Needs the loader disasm or a
-  render-validation pass — won't guess it.
 - Sub-cell terrain transition chain `func_O514→O513→O512` (CLAUDE.md #7) — P0 uses
   the naive `terrain_id→sprite` mapping; refinement is **TBD** (@asm those funcs).
 - P1 remainder (full turn-loop phases) + P2+ (combat, units, natives, diplomacy,
@@ -105,7 +104,7 @@ cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM 
 
 ## Layout
 ```
-include/   importer:  fab madspack ss pik       (.hpp)
+include/   importer:  fab madspack ss pik ff    (.hpp)
            runtime:   bundle pal mp render
            shared:    png_io image_io util
 src/       (same set) + main.cpp  (import-all / import / render subcommands)

@@ -107,10 +107,8 @@ original game files (user-owned)            ── importer (uses the decoder) �
   `PLTE`+`tRNS`) + a **`frames.json`** (per-frame `w,h` + original `.SS` hotspot `x,y` + atlas rect),
   and `.PIK` backgrounds as paletted PNGs, into a bundle dir + `manifest.json`. PNG via **libpng**
   (a standard dep — not a game codec). **Status:** all **204** sprite sheets (`.SS`, minus the 2
-  CLAUDE.md-#5 orphans) + **35** backgrounds (`.PIK`) bundle with **0 failures**. **Fonts (`.FF`)
-  are not bundled yet** — they live in `col.zip` and the glyph layout (per-glyph dir + 2-bpp
-  bitmaps) has no in-repo decoder (FF.md loader/blitter are TBD); a small RE task, deferred (not
-  guessed).
+  CLAUDE.md-#5 orphans) + **35** backgrounds (`.PIK`) + **4** fonts (`.FF`, format cracked
+  2026-06-21 → glyph atlas + metrics) bundle with **0 failures**. (FONTSMAL stays orphan.)
 - **Runtime** loads the bundle (libpng + JSON) and never touches `.SS`. Simpler, modding-friendly
   (artists can edit the PNGs), and dependency-light.
 
@@ -176,10 +174,10 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
 - **P3 — meta systems (DONE).** Founding Fathers bell-cost curve + availability + era bands;
   revolution (declare gate, REF-war victory, score bonus, Tory uprising); scoring (difficulty
   mult, population component, rank); map-gen climate→terrain + dims. Golden-tested.
-- **P4 — screen-UI parity (NEXT — the stopping point).** Colony/Europe/advisor/congress/menus
-  rendered from `spec/ui/*` with fonts + palette; visual-diff each. **Gated on:** the deferred
-  `.FF` font decode (RULING 2026-06-21) **and** building the screen-render + widget layer on top
-  of the P0 blitter — a substantial new sub-project.
+- **P4 — screen-UI parity (NEXT).** Colony/Europe/advisor/congress/menus rendered from `spec/ui/*`
+  with fonts + palette; visual-diff each. **Fonts now unblocked:** the `.FF` format is cracked +
+  bundled (glyph atlas + metrics; RULING 2026-06-21). Remaining for P4: build the screen-render +
+  text/widget layer on top of the P0 blitter — a substantial new sub-project.
 - **P5 — polish.** Palette cycling, sound, cinematics (annotate OPENING/CLOSING or hand-time),
   windowed/interactive client + input.
 

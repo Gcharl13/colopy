@@ -5,6 +5,7 @@
 // The runtime `render` path never touches the original codec.
 #include "ss.hpp"        // load_sheet (importer only)
 #include "pik.hpp"       // load_pik   (importer only)
+#include "ff.hpp"        // load_font  (importer only)
 #include "bundle.hpp"    // write_bundle / load_bundle
 #include "pal.hpp"
 #include "png_io.hpp"    // write_png_indexed / write_png_rgb
@@ -39,6 +40,20 @@ static int cmd_import(int argc, char** argv) {
     Sheet s = load_sheet(ss);
     write_bundle(s, fs::path(ss).stem().string(), atlas, frames);
     std::printf("import: %s -> %s + %s (%d frames)\n", ss, atlas, frames, s.nframes);
+    return 0;
+}
+
+static int cmd_import_font(int argc, char** argv) {
+    const char* ff     = opt(argc, argv, "--ff");
+    const char* atlas  = opt(argc, argv, "--atlas");
+    const char* frames = opt(argc, argv, "--frames");
+    if (!ff || !atlas || !frames) {
+        std::fprintf(stderr, "usage: viceroy_cpp import-font --ff FILE --atlas PNG --frames JSON\n");
+        return 2;
+    }
+    Sheet s = load_font(ff);                       // 128 glyph frames (index = char code)
+    write_bundle(s, fs::path(ff).stem().string(), atlas, frames);
+    std::printf("import-font: %s -> %s + %s (128 glyphs)\n", ff, atlas, frames);
     return 0;
 }
 
@@ -79,8 +94,9 @@ static int cmd_import_all(int argc, char** argv) {
     Palette gp = load_pal(palpath.string());           // global palette (PIK fallback)
     fs::create_directories(outdir / "sprites");
     fs::create_directories(outdir / "backgrounds");
+    fs::create_directories(outdir / "fonts");
 
-    std::vector<std::string> sprites, backgrounds, skipped;
+    std::vector<std::string> sprites, backgrounds, fonts, skipped;
 
     for (const auto& p : list_ext(colonize, ".SS")) {
         std::string name = p.stem().string();
@@ -108,17 +124,34 @@ static int cmd_import_all(int argc, char** argv) {
         }
     }
 
+    // Fonts (.FF) are typically alongside, or in col.zip; bundle any present.
+    for (const auto& p : list_ext(colonize, ".FF")) {
+        std::string name = p.stem().string();
+        if (name == "FONTSMAL") { skipped.push_back(name + ".FF (orphan)"); continue; }
+        try {
+            Sheet s = load_font(p.string());
+            write_bundle(s, name,
+                         (outdir / "fonts" / (name + ".png")).string(),
+                         (outdir / "fonts" / (name + ".json")).string());
+            fonts.push_back(name);
+        } catch (const std::exception& e) {
+            skipped.push_back(name + ".FF (" + e.what() + ")");
+        }
+    }
+
     std::ofstream man((outdir / "manifest.json").string());
     if (!man) { std::fprintf(stderr, "cannot write manifest\n"); return 1; }
     man << "{\n";
     man << "  \"format\": \"viceroy_cpp asset bundle v1\",\n";
     json_list(man, "sprites", sprites, false);
     json_list(man, "backgrounds", backgrounds, false);
+    json_list(man, "fonts", fonts, false);
     json_list(man, "skipped", skipped, true);
     man << "}\n";
 
-    std::printf("import-all: %zu sprites, %zu backgrounds, %zu skipped -> %s/\n",
-                sprites.size(), backgrounds.size(), skipped.size(), outdir.string().c_str());
+    std::printf("import-all: %zu sprites, %zu backgrounds, %zu fonts, %zu skipped -> %s/\n",
+                sprites.size(), backgrounds.size(), fonts.size(), skipped.size(),
+                outdir.string().c_str());
     for (const auto& s : skipped) std::printf("  skip: %s\n", s.c_str());
     return 0;
 }
@@ -149,9 +182,10 @@ int main(int argc, char** argv) {
         return 2;
     }
     try {
-        if (std::strcmp(argv[1], "import-all") == 0) return cmd_import_all(argc, argv);
-        if (std::strcmp(argv[1], "import") == 0)     return cmd_import(argc, argv);
-        if (std::strcmp(argv[1], "render") == 0)     return cmd_render(argc, argv);
+        if (std::strcmp(argv[1], "import-all") == 0)  return cmd_import_all(argc, argv);
+        if (std::strcmp(argv[1], "import-font") == 0) return cmd_import_font(argc, argv);
+        if (std::strcmp(argv[1], "import") == 0)      return cmd_import(argc, argv);
+        if (std::strcmp(argv[1], "render") == 0)      return cmd_render(argc, argv);
         std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;
     } catch (const std::exception& e) {

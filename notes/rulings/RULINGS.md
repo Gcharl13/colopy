@@ -4064,3 +4064,24 @@ overlay loader at ~0x6FC74, or a render-validation pass (decode glyphs, render `
 they form correct letters — a font is self-validating). Corrects `formats/FF.md` (the stale
 `tools/mpskit/ff.py` reference — that file does not exist). The 4 fonts are therefore **not yet
 bundled** in `viceroy_cpp` (all 204 `.SS` + 35 `.PIK` are).
+
+---
+
+## 2026-06-21 — .FF font glyph format CRACKED (supersedes the earlier "not cracked" ruling)
+
+The `.FF` bitmap-font format is now fully decoded and render-validated (all 4 fonts decode to
+readable A–Z / 0–9 / a–z). Supersedes the earlier same-day "not yet cracked" ruling.
+
+**Format** (MADSPACK/FAB payload): `[0]`=glyph height H, `[1]`=max width; `[2..130)` = 128-byte
+width table; `[130..386)` = 128×u16-LE offset table; `[386..)` = glyph bitmaps. Glyph for char
+`c` = `payload[offset[c-1] : offset[c]]` (the tables are offset by one — **table entry t holds the
+glyph for char t+1**, found via render-validation: index-0 mapping rendered every letter shifted
++1). Bitmap = **2 bits/pixel, MSB-first, row-major**, H rows × `ceil(width*2/8)` bytes; 4 levels
+(0=transparent, 1/2/3 = ink shades). Bitmap region always starts at 386 (=130+256). Validated:
+387+Σ glyph sizes = file length exactly; 87/87 width↔offset-delta match.
+
+**Disproven en route:** interleaved `[w][h][bitmap]`, planar 1-bit-plane, LSB-first, fixed-height
+block — all scramble. **Decoder:** `viceroy_cpp/include/ff.hpp` + `src/ff.cpp`; bundled via
+`viceroy_cpp import-font` / `import-all` (fonts → paletted glyph atlas + metrics JSON). The 4
+loaded fonts (FONTTINY/FONTINTR/FONTKING/FONT-NP) are now bundled; FONTSMAL stays orphan. This
+**unblocks P4 text rendering** in the rewrite. Updates `formats/FF.md`.
