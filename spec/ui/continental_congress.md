@@ -2,7 +2,19 @@
 
 > **Layer 2 — UI Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** band geometry **A**; state→display memory map **B**; FF portrait-slot rendering **R/TBD**. · **Canonical primary:** `docs/SESSION_UI_CATALOG.md` §3, `docs/RENDERER_GEOMETRY.md` "Continental Congress (VERIFIED v3)", `docs/ADVISOR_REPORTS_AUDIT.md` F3.
+**Overall confidence:** band geometry **A**; state→display memory map **B** (REF base, portrait
+table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mechanism **B**. ·
+**Canonical primary:** `ghidra_export/VICEROY_decompiled.named.c` (`congress_screen_render`
+25583, `congress_portraits_draw` 25547), `raw/COLONIZE/VICEROY.EXE`, `docs/RENDERER_GEOMETRY.md`,
+`docs/ADVISOR_REPORTS_AUDIT.md` F3, `docs/SESSION_UI_CATALOG.md` §3.
+
+> **Updates (2026-06-21, raw-EXE-verified):** (a) the CC-NN portrait blit loop
+> (`congress_portraits_draw`) is the **FF-acquisition reveal animation**, not the F3 list —
+> reconciling the "text-only Activities / portraits in popup" split (now **B** mechanism).
+> (b) The portrait-id table `DG8(0x123A+i)`, the owned-FF bitmap (stride `0x13C`, base
+> `−0x77F1`), and the REF array base `0x53DA` are byte-confirmed. (c) The `DGROUP:0xE7AC`
+> FF-threshold table is **unsupported** (zero raw immediate hits) — the threshold is
+> *computed* by `func_03C282`; demoted to TBD (see §6).
 
 ## 1. Purpose
 The Continental Congress Activities screen (also reachable as advisor report F3). Shows progress toward the next Founding Father, Rebel/Tory sentiment, bells/turn, the King's Expeditionary Force (REF) by unit type, and the list of acquired Founding Fathers. Surfaces as an overlay on CCBKGD.PIK. **A** (`SESSION_UI_CATALOG.md` §3).
@@ -23,7 +35,18 @@ Native 320×200. Bands frame-verified via luma analysis (`RENDERER_GEOMETRY.md` 
 
 The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM = threshold` (`RENDERER_GEOMETRY.md` "Display formula"). **B**
 
-**FF portrait slots (25, CC-NN.SS):** the 25 Founding-Father portraits CC-00..CC-24 map 1:1 to NAMES `@FATHERS` line order (`SESSION_UI_CATALOG.md` "Founding Father portraits — full mapping"). On this Activities screen the acquired-FF list renders as **plain text, not CC-NN blits** (frame 1310124562 confirms text-only). CC-NN portraits are used in the dedicated FF-acquisition popups / FF detail views — those slots are **R** (not byte-cited here). **A (text-only) / R (portrait use)**
+**FF portrait slots (25, CC-NN.SS):** the 25 portraits CC-00..CC-24 map 1:1 to NAMES
+`@FATHERS` order. On this **Activities** screen the acquired-FF list renders as **plain text**
+(frame 1310124562). The CC-NN blits live in the **FF-acquisition reveal popup**, now
+byte-grounded: `congress_screen_render(power, new_ff)` loads CCBKGD.PIK, then runs a two-phase
+reveal — draw owned portraits *without* the new bit → present → set the owned bit
+(`ff_set_owned_bit`) → redraw → present (the "portrait lights up"). `congress_portraits_draw`
+loops `i=0..0x18`, reads portrait id `DG8(0x123A+i)` (raw-verified @0x386D8, the `0x123A`
+immediate occurs exactly once), tests the per-power owned bitmap (`lcall 0x181F:0x7B4`, stride
+`0x13C`, base `−0x77F1`, bit `1<<(ff&7)`), builds the `"CC-NN"` path, and **blits each owned
+portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x,frame.y)`
+25574) — i.e. screen positions come from inside each CC-NN.SS, not a code-side grid. **B
+(mechanism)**; popup chrome (frame/title/OK) **TBD** (no frame capture).
 
 ## 3. Assets & text
 - **Background:** CCBKGD.PIK full-screen (scribe at desk). REF unit icons + bell + US flag from ICONS.SS. FF portraits: CC-00..CC-24.SS (1 per FF, indices = `@FATHERS` order). **A/B**
@@ -39,11 +62,27 @@ The "(NN in MM)" displays `NN = threshold − bells_current` (still needed), `MM
 - `docs/SESSION_UI_CATALOG.md` §3 — frame 1310124562, memory-tied display table, CC-NN→`@FATHERS` mapping. **A/B**
 - `docs/RENDERER_GEOMETRY.md` "Continental Congress (VERIFIED v3)" + "Continental Congress Activities" detailed element table + memory map. **A/B**
 - `docs/ADVISOR_REPORTS_AUDIT.md` F3 — paint_func file 0x025FD0, CCBKGD.PIK, title `@MISC[52]`. **B**
-- State→display (BYTE_VERIFIED, `RENDERER_GEOMETRY.md`/`ADVISOR_REPORTS_AUDIT.md`): PowerRecord +0x02 rebel%, +0x0C bells_current, +0x0E bells/turn, +0x14 FF count, +0x07 acquired-FF mask; REF DGROUP 0x53DA Regulars / 0x53DC Cavalry / 0x53DE Man-O-War / 0x53E0 Artillery. **B**
+- State→display (BYTE_VERIFIED): PowerRecord +0x02 rebel%, +0x0C bells_current, +0x0E
+  bells/turn, +0x14 FF count (also the `≥0x19`→INDEPENDENCE gate, export 25502), +0x07
+  acquired-FF mask. **B**
+- **Raw-EXE anchors (capstone 16-bit, this pass):** portrait-id table `DG8(0x123A+i)` @0x386D8
+  (`0x123A` unique in image); owned-FF bitmap `mov al,[bx+si−0x77F1]`, power stride `0x13C`
+  @0xBC10; REF u16 array base `0x53DA` (slots 0..3, `bx=slot<<1`) @0x34F2F. **B**
+- REF DGROUP order: 0x53DA Regulars / 0x53DC Cavalry / 0x53DE Man-O-War / 0x53E0 Artillery
+  (note the *screen* draws Artillery before Man-O-War); USER-VERIFIED values (23,10,5,8). **B**
 - `data_extracted/text/{LABELS,NAMES}_sections.json` — `@MISC`, `@FATHERS` (verified). **B**
 
 ## 6. Open questions (TBD)
-1. Bell sprite + US-flag exact ICONS.SS indices (not byte-cited).
-2. FF "next session" selection logic (which FF is next) — walk `@FATHERS` by category; threshold table at DGROUP:0xE7AC noted but layout TBD (`SESSION_UI_CATALOG.md` open-questions #1).
-3. REF group sprite indices + count-badge geometry (v2 sub-coords only).
-4. CC-NN portrait-slot screen (FF acquisition popup) layout — separate from this Activities screen, not specified here.
+1. Bell sprite + US-flag exact ICONS.SS indices — **TBD** (not byte-cited; only the generic
+   player-flag index **0x44** is byte-cited, from the colony renderer). Bells render
+   1-per-`bells/turn` (PowerRecord +0x0E).
+2. ~~FF "next session" selection logic + DGROUP:0xE7AC threshold table.~~ **Mostly resolved
+   2026-06-21.** Selection logic is **B** in the export: `ff_is_available` (25425) = not-owned
+   AND all lower-index same-category fathers owned (category-gated walk over the 25-entry
+   `FF_TABLE`), weighted by era band (`ff_weight_for_year` 25413; bands at 1600/1700). The
+   **threshold ("129") is computed** by `func_03C282` (bell-cost curve, entry @0x03C282), **not**
+   a static table — `0xE7AC` has **zero** raw immediate hits and is struck as speculative.
+3. REF group sprite indices + count-badge geometry — sprites **R** (candidate ICONS indices
+   Regulars/Cavalry/Man-O-War/Artillery not tied to this screen); geometry **A** (v3 bands).
+4. CC-NN FF-acquisition reveal popup chrome (frame/title/OK) — **TBD** (mechanism byte-grounded
+   in §2; only the popup decoration lacks a frame capture).

@@ -16,7 +16,15 @@ No frame capture exists (event never fired in session) → geometry **TBD**. Kno
 | Leader signature | DEC-UPP\*/DEC-LOW\*.SS cursive letter sprites | B | composed per-letter from player leader name |
 | Signature seed | DGROUP player-name table at 0x540E + player_idx*0x34 | B | `func_03DA2A` reads leader name (`KING_AND_CINEMATIC_AUDIT.md` §5) |
 
-`DECOIND.PIK` paint = `func_03DA2A` (file 0x03DA2A..0x03DB04); it loads the background, present-buffers, then strcpy's the player leader name from `0x540E + [0x5398]*0x34` and renders the signature via the DEC-\* letter sprites. **B** Exact (x,y) per glyph/line **TBD** (the document-body layout uses GAME.TXT `@x`/`@y`/`@width` directives — not captured here).
+`DECOIND.PIK` paint = `func_03DA2A` (file 0x03DA2A..0x03DB04). Raw disasm (re-verified
+2026-06-21 via `KING_AND_CINEMATIC_AUDIT.md` §5): `03DA47 push "DECOIND" → load_PIK_fullscreen`;
+`03DA59 lcall 0x181F:0x3B6` present; `03DAB4 imul ax,[0x5398],0x34; 03DAB9 add ax,0x540E;
+03DAC1 strcpy(local,name)` — the leader-name read matches `0x540E + [0x5398]*0x34` exactly;
+then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive sprites. **B**.
+> Note: the Ghidra C export of this function is **overlay-thunked** (the name read sits inside
+> `overlay_call_191F_0ED0`, not inline) — so the **audit-doc raw disasm is the load-bearing
+> source**, not the C export. The export-side signature pen origin (`pen_x=0x94`, `pen_y=0x7E`)
+> is **R** (export reconstruction, not raw-cited). Per-glyph (x,y)/line stride **TBD**.
 
 ## 3. Assets & text
 - **DECOIND.PIK** — celebratory document-signing scene (Founding Fathers around the document). Painted by `func_03DA2A`. **B**
