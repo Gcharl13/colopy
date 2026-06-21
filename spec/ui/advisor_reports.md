@@ -81,8 +81,14 @@ raw-disassembled this pass).
   `@JOB`/`@TRIBES`. **B**
 
 ## 6. Open questions (TBD)
-1. F8 "View Whose Report?" nested power-picker function offset — not located (it is *not*
-   `func_039888`).
+1. ✅ **F8 "View Whose Report?" nested power-picker — RESOLVED 2026-06-21 (B).** The picker is
+   in the command/menu dispatcher `func_0235D6`, block `@0x23810`: it seeds the default from the
+   viewed-power global `[0x5396]`, runs the generic TXT-menu builder (`lcall 0x181F:0x998` with
+   section "SETREPORT" / file "DEBUG"), and `dec ax` maps the 1-based result to power **0..3**
+   (English/French/Spanish/Dutch); the sibling SETVIEW handler `@0x23D52` commits it to
+   `[0x5398]/[0x5394]/[0x5396]`. The F8 body reads the focus flag `[0x53A2]` (0 ⇒ 4-power table,
+   else single-power branch `@0x39B27` indexed by `[0x53D2]`). **B** (only the exact per-key
+   sub-handler that copies `[0x5396]→[0x53A2]/[0x53D2]` is left as a minor R).
 2. Per-report intra-row exact label (x,y)/font for the non-Naval reports — bodies show the
    color + primitive; full per-line coords are a deeper decompile (**A** where geometry docs
    measured, else **R**).

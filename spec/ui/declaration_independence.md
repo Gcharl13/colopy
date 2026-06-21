@@ -28,7 +28,14 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive s
 
 ## 3. Assets & text
 - **DECOIND.PIK** — celebratory document-signing scene (Founding Fathers around the document). Painted by `func_03DA2A`. **B**
-- **DECLARAT.PIK** — the printed parchment document (static body text baked in); used as backdrop for the signature overlay. No code xref found by string search in extracted VICEROY disasm (likely overlay-loaded). **B (asset) / TBD (loader)**
+- **DECLARAT.PIK — ORPHAN ASSET (RESOLVED 2026-06-21, negative).** The string `"DECLARAT"` is
+  **absent from VICEROY.EXE, OPENING.EXE, CLOSING.EXE and COLONIZE.EXE** (verified) — no code
+  path loads it (analogous to TERRAIN.SS/BDARK.SS per CLAUDE.md hard rule #5). The parchment the
+  engine actually draws is **DECOIND.PIK**, loaded by `func_03DA2A` via the PIK loader
+  `func_076B9E` (thunk `0x181F:0x44E`; basename ptr DGROUP `0x12E8` = "DECOIND", `.PIK` appended
+  in code). So there is no "DECLARAT loader" to find — the residual is closed as a negative.
+  *(Any tool that names DECLARAT.PIK as the Declaration background is wrong; it's DECOIND.PIK.)*
+  **B.**
 - **DEC-UPPA..Z + DEC-LOWA..Z (+ DEC-SQIG)** = 52–53 cursive letter sprites for the signature/Declaration text (`SESSION_UI_CATALOG.md` "Declaration of Independence letter sprites"; CLAUDE.md / SPRITE_CATALOG ruling). **B**
 - **Text keys** present in `data_extracted/text/GAME_sections.json` (verified as keys; bodies are section markers / driven by overlay): `@DECLARE`, `@INDEPENDENCE`, `@PICKINDEPENDENCE`, `@DECLAREWAR`. The declare-independence menu item is in MENU `@GAME` ("DECLARE INDEPENDENCE", verified). **B**
 - Note: the King's mocking response to declaration is `@KINGLAUGH` ("Ha ha ha ha…", verified in GAME) — a separate King-audience popup, not this screen. **B**
@@ -44,8 +51,11 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\* cursive s
 - `data_extracted/text/{GAME,MENU}_sections.json` — `@DECLARE`, `@INDEPENDENCE`, `@PICKINDEPENDENCE`, `@DECLAREWAR`, MENU `@GAME` "DECLARE INDEPENDENCE" (all verified as keys). **B**
 
 ## 6. Open questions (TBD)
-1. No native frame capture — all pixel coordinates TBD.
-2. DECLARAT.PIK loader function offset not located (likely overlay).
-3. Signature glyph layout (x,y, line stride, spacing) using DEC-\* sprites.
-4. Which PIK shows first (DECOIND signing scene vs DECLARAT document) in the sequence, and transition.
-5. `@DECLARE`/`@INDEPENDENCE` body text is empty in the extracted section dump — confirm whether bodies live in a different file or are overlay-composed.
+*(Resolved 2026-06-21: DECLARAT.PIK is an **orphan** never loaded — the engine uses DECOIND.PIK
+(`func_03DA2A` → `func_076B9E`), so items 2 and 4 are moot. `@DECLARE`/`@INDEPENDENCE` "empty"
+bodies are the same `GAME_sections.json` extraction defect seen across the UI specs — present in
+`raw/COLONIZE/GAME.TXT`.)*
+
+1. **No native frame capture** — exact signature glyph (x,y)/line-stride is **TBD** (the
+   export-side `pen_x=0x94`/`pen_y=0x7E` are R; would need a runtime capture to confirm pixel
+   placement). This is the last residual and is **runtime-only**, not a missing function.

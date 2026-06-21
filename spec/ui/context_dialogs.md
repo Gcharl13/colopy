@@ -60,12 +60,22 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   mission `@MISSION0..3`, `@LIVE`-related. Handler `func_04A7CA` (CHIEFHOWDY) +
   the speaker uses `IND<tribe>` via `[0x1f5c]` (`docs/KING_AND_CINEMATIC_AUDIT.md`
   §6). **A.**
-- **Menu builder located (B for "where"):** the 10-row `@ACTIONS` list is referenced exactly
-  once — `push 0x2264 @file 0x74FC4` — the village-action menu builder (`0x74Fxx`). The per-row
-  **show/enable predicates** (unit type = scout/missionary/military; tribe attitude;
-  mission-present) are computed there but not yet traced row-by-row. **TBD** (byte-traceable in
-  `0x74Fxx`, *not* runtime-R).
-- **Tier:** action list **B**; per-row gating **TBD**.
+- **Per-row gating — RESOLVED 2026-06-21 (B).** *(Correction: `0x74FC4` is the NAMES string-table
+  loader, not the menu builder.)* The action menu is built by **`func_04B308`** (`enter 0xba`),
+  the sole consumer of the `@ACTIONS` label array (DGROUP `0x932A`, +2/row). Inputs: UnitRecord
+  `0x3146` stride 0x1C (type@+0; `@UNIT` codes 3=Missionary, 5=Scout); current village `[0x8D4A]`;
+  tribe→player **alarm** via `func_0082A0`; row-add `lcall 0x191F:0x176` (arg 1/2 = enable). Each
+  row's show/enable predicate (all B):
+  - **r0 Trade / r1 Enter Hostile** (`@0x4B664`) — mutually exclusive on **alarm < 0x4B (75)**
+    (`<75`→Trade, else Hostile).
+  - **r2 Establish Mission** — unit type==3 AND village mission `[+5] < 0` (none present).
+  - **r3 Denounce Heresy** — mission present (`[+5]≥0`) AND foreign owner (`[+5]&0xF ≠ self`).
+  - **r4 Live Among** — player-relation ≥0 AND tribe-record `[+0x5236] < 2` AND not Scout.
+  - **r5 Speak With Chief** — unit type==5 (Scout).
+  - **r6 Incite / r7 Demand Tribute** — tribe-record `[+0x5236] ≠ 0` (tribute also excludes
+    ships 0xD–0x12).
+  - **r8 Attack** — tribe-record `[+0x5236] > 1`. **r9 Cancel** — always.
+- **Tier:** action list **B**; per-row gating **B**.
 
 ## Colonial-authority (build / abandon / rename)
 - **Purpose:** found, abandon, or rename a colony.
@@ -122,7 +132,17 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   in `docs/SESSION_UI_CATALOG.md` §2 build-menu). Completion-buy confirm
   `GAME @default=1` ("Cost to complete %STRING0…", **B**). Wagon-cap warning
   `GAME @width=190` (**B**).
-- **Tier:** building table **B**; per-colony availability logic **TBD**.
+- **Availability — RESOLVED 2026-06-21 (B).** Menu fn **`func_02B4D2`** ("Select An Item To
+  Build" = `@CTITLE[4]`), paginated, filters each slot via `func_0BB98` → predicate
+  **`func_0B900`** (`[bp-0x12]=1` default-buildable). Gates: **colony-size** (`@0xB940`:
+  `min_colony[entry-0x7076] > colony_pop[+0x1F]` ⇒ not buildable); **prereq-built** (entry+3
+  must be built, entry+2 built ⇒ superseded) via built-bitmap; **already-built / single-instance**
+  tail (`@0xBB39`, per-building meta `[+0x3146]`); plus a few index special-cases (terrain
+  adjacency, colony flag `[+0x1C]&0x40`, per-nation capability). Built-bitmap **`func_0860E`**:
+  `[colony·0xCA + 0x5DCA]` bit `idx&7` — **re-confirms CLAUDE.md hard rule #8 (ColonyRecord
+  stride 0xCA)**. Residual R: the entry+2/+3 prereq-building *indices* aren't a visible NAMES
+  comma column (data-table decode).
+- **Tier:** building table **B**; availability predicate **B** (prereq index data R).
 
 ## Evidence
 - `data_extracted/text/NAMES_sections.json` — `@ORDERS` (order codes),
@@ -143,16 +163,13 @@ popups. **B** (framework + `@width` + list bodies) / **A** (trigger fns).
   `func_06F0F4` option-list framework. **A**.
 
 ## Open questions (TBD)
-*(Resolved 2026-06-21: per-section `@width` is a literal pixel width (B); the "empty-body" keys
-are a `GAME_sections.json` extraction defect — bodies (SHIPOPTIONS/ARMOPTIONS/SUREDELETE/
-SMITEINDIANS …) are present and full in `raw/COLONIZE/GAME.TXT`, so re-extracting the JSON is
-mechanical, source **B**.)*
+*(Resolved 2026-06-21: per-section `@width` (B); "empty-body" keys = `GAME_sections.json`
+extraction defect (bodies full in `raw/COLONIZE/GAME.TXT`); **native-action row gating** =
+`func_04B308` per-row predicates (B, §Native-village); **build availability** = `func_0B900`
+pop+prereq gates (B, §Construction-choice). All struck.)*
 
-1. **Native-action row gating** — the builder is located (`@ACTIONS` ref @0x74FC4); the per-row
-   show/enable predicates are **TBD** (byte-traceable in `0x74Fxx`, not runtime).
-2. **Per-colony build availability** — which buildings the construction list offers depends on
-   prerequisite + colony-size + already-built; a **state-machine over ColonyRecord**, not a
-   static table — so **TBD (B-with-effort)**, not R.
-3. **Final option-list pixel rect / highlight RGB** — `@width` + `@default` row are **B**; the
+1. **Final option-list pixel rect / highlight RGB** — `@width` + `@default` row are **B**; the
    composed rect (runtime cursor + layout loop `0x0684BC`) and the highlight palette color are
-   **A/R** (runtime).
+   **A/R** (runtime — the only remaining residual class).
+2. The construction prereq-building **indices** in the in-memory `@BUILDING` record (entry+2/+3)
+   aren't a visible NAMES column — a small data-table decode (**R**), not a missing function.

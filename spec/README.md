@@ -68,26 +68,30 @@ bodies, the popup framework `func_06F0F4`, `title_screen_render`/menu framework,
 `hall_of_fame_render`, the king-defeats/score/DECOIND painters) are decompiled and/or
 re-disassembled at cited offsets. The pervasive stale rationale "per-element draw code lives in
 un-extracted overlay 0x191F → TBD" was **false** (the overlay is `0x181F`, and the bodies are
-in the export). Residuals are honestly tiered and attributed to one of: **(i)** overlay-`0x181F`
-helper internals (colony SoL%/per-cell-good), **(ii)** runtime values (final composed pixel
-rect, palette colors, live-scroll coords), **(iii)** the **separate non-exported binaries**
-`OPENING.EXE`/`CLOSING.EXE` (cinematic frame timing), or **(iv)** a few located-but-untraced
-functions (F8 nested picker, native-action gating, build-availability, DECLARAT.PIK loader).
-Tiers: **B** = decompiled body / capstone offset; **A** = luma/anchor-measured; **R** =
-reconstructed-from-asset; **TBD** = requires runtime or a non-exported binary.
+in the export). Residuals are honestly tiered. A follow-up pass (2026-06-21) then **traced the remaining
+"located-but-untraced" functions statically** — the colony overlay-`0x181F` helpers (SoL%,
+per-cell good→sprite, unit iterator, build frame-select), the Europe transaction panel +
+market-price LUT, the F8 power-picker, native-action gating (`func_04B308`), and
+build-availability (`func_0B900`) are now **B**; and DECLARAT.PIK was shown to be an **orphan
+asset** (the engine uses DECOIND.PIK). So the residuals now reduce to just **(ii)** runtime
+values (final composed pixel rect, palette colors, live coords) and **(iii)** the separate
+non-exported binaries `OPENING.EXE`/`CLOSING.EXE` (cinematic frame timing) — no missing
+function remains in VICEROY.EXE. Tiers: **B** = decompiled body / capstone offset; **A** =
+luma/anchor-measured; **R** = reconstructed-from-asset; **TBD** = requires runtime or a
+non-exported binary.
 
 | Spec file | Covers | Layout / draw-code | Honest residual |
 |-----------|--------|--------------------|-----------------|
 | [`ui/map_view.md`](ui/map_view.md) | main gameplay screen | **B** tile chain (`O514→O513→O512`, `0x6204`) / **A** bands | sidebar text coords, minimap owner→color (runtime/unlocated) |
-| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition + placement tables `0x0266/0x8D62/0x8E82`) | 4 overlay-`0x181F` helpers; build-cost |
-| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords in `europe_screen_render`) | `ov_draw_extra_*` transaction panel; boycott red-X |
-| [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism / **A** bands | bell/flag ICONS indices; popup chrome |
-| [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter | DECLARAT.PIK loader; glyph layout (no capture) |
-| [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; audit offsets struck) | F8 picker fn; non-Naval intra-row coords |
+| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, + all 4 overlay-`0x181F` helpers traced: SoL%, good→sprite, frame-select, build-cost) | SoL-face ICONS index (cosmetic) |
+| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT) | boycott overlay's runtime-index ICONS frame |
+| [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism / **A** bands | bell/flag not drawn in the F3 text body (overlay/absent) |
+| [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter (DECLARAT.PIK = orphan, never loaded) | signature glyph (x,y) — runtime capture only |
+| [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`) | non-Naval intra-row coords (deeper decompile) |
 | [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework, 11 directives, channels, Lost-City map, raid=6, `@width`) | final pixel rect + highlight RGB (runtime) |
-| [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count; per-axis widget geom; LEVN grid |
+| [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count; per-axis widget geom (overlay); LEVN grid |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats, score, DECOIND) | OPENING/CLOSING frame timing (separate binaries) |
-| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework + `@width` + list bodies) | native-action gating; build-availability (both traceable) |
+| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`) | `@BUILDING` prereq-index decode (R); highlight RGB (runtime) |
 
 Primary UI sources: `ghidra_export/VICEROY_decompiled.named.c`, `raw/COLONIZE/VICEROY.EXE`,
 `docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`, `docs/UI_DIALOGS.md`,
