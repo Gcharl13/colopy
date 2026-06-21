@@ -4,6 +4,13 @@ Authoritative catalog of every sprite sheet referenced by the in-game
 renderer. Maintained by the `sprite-cataloger` agent (and the main thread
 when the agent is unable to complete).
 
+> **Visual atlas:** run `python3 tools/sprite_atlas.py ICONS.SS PHYS0.SS BUILDING.SS`
+> (or `--all`) to render a labeled contact sheet (each cell tagged `decimal/0xHEX`,
+> the index the specs cite) to the git-ignored, regenerable `extracted/sprite_atlas/`.
+> Requires the sheet in `raw/COLONIZE/` (unzip from `col.zip`); decode via
+> `tools/ssdec.py`. The atlas PNGs are **not committed** (binaries stay regenerable,
+> per CLAUDE.md path convention).
+
 All sprites are extracted from MADSPACK-compressed `.SS` files and live
 under `extracted/assets/sprites/<SHEET>/<SHEET>.SS.NNN.png`. Palette
 index 253 is the transparency key in PHYS0. Other sheets use a standard
