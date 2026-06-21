@@ -88,7 +88,9 @@ disassembly; **S** is the honest static depth-queue; **F** is inherently soft.
   layout + codec identity are byte-verified; CC-NN = FF portraits (`@FATHERS`, SPRITE-A).
 
 **Category S — static depth-queue (closeable by disassembly; genuinely not yet traced):**
-- `save.md` §6.1–6.4 — the **SAV write/read format** (the one whole system still untraced).
+- ~~`save.md` — the SAV write/read format.~~ **DONE 2026-06-20** — full 43-block on-disk
+  sequence + autosave (slot 10) byte-verified (`save.md` §3; tier → **B**); only residual
+  is HALLFAME per-word score-field *semantics*.
 - `warehousing.md` §6.2–6.4 — warehouse capacities/+100-per-upgrade, `@CARGO` columns, spoilage timing.
 - `tutorial.md` §6.1–6.3 — `@TUTORIALn`→prose→trigger binding; enabled-flag/step-index; sequencing.
 - `map_system.md` §6.2–6.3 — tile bit-7 meaning + `.MP` record boundaries; `@RESOURCE`→bonus.
