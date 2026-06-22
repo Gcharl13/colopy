@@ -163,13 +163,39 @@ static void draw_ground(Surface& scr, const Sheet& terr, uint8_t b, int dx, int 
     scr.blit_frame(f, dx, dy);
 }
 
-// blit a PHYS0 coast sub-tile with the black colour-key (index 0 AND 253 transparent ->
-// the ocean base shows). Used for the faithful coast sub-tiles / diagonal beach.
-static void blit_key(Surface& scr, const Frame& fr, int dx, int dy) {
+// nearest cardinal LAND neighbour's terrain pixel at tile-local (gx,gy).
+static uint8_t nearest_land_px(const Sheet& terr, const Map& map, int tx, int ty,
+                               int gx, int gy, uint8_t fallback) {
+    struct E { int dist, nx, ny; };
+    E es[4] = {{gy, tx, ty - 1}, {15 - gy, tx, ty + 1}, {gx, tx - 1, ty}, {15 - gx, tx + 1, ty}};
+    for (int i = 0; i < 4; ++i)
+        for (int j = i + 1; j < 4; ++j)
+            if (es[j].dist < es[i].dist) { E t = es[i]; es[i] = es[j]; es[j] = t; }
+    for (int i = 0; i < 4; ++i) {
+        int nx = es[i].nx, ny = es[i].ny;
+        if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
+        uint8_t nb = map.tiles[ny * map.w + nx];
+        if (is_water(nb & 0x1F)) continue;
+        int bf = base_frame_of(nb);
+        if (bf >= 0 && bf < (int)terr.nframes) {
+            const Frame& f = terr.frames[bf];
+            if (gx < f.w && gy < f.h) { uint8_t p = f.px[gy * f.w + gx]; if (p != SS_TRANSPARENT) return p; }
+        }
+    }
+    return fallback;
+}
+
+// blit a coast sub-tile: the sprite's SHORE region (its drawn land/shallow pixels, which
+// follow the coastline curve) becomes the FULL nearest-land terrain; the index-0 key and
+// 253 stay ocean (the deep-water side). (ox,oy) = the sub-tile's offset in the 16x16 tile.
+static void blit_coast(Surface& scr, const Sheet& terr, const Frame& fr, const Map& map,
+                       int tx, int ty, int dx, int dy, int ox, int oy) {
     for (int gy = 0; gy < fr.h; ++gy)
         for (int gx = 0; gx < fr.w; ++gx) {
             uint8_t p = fr.px[gy * fr.w + gx];
-            if (p != SS_TRANSPARENT && p != 0) scr.put(dx + gx, dy + gy, p);
+            if (p == SS_TRANSPARENT || p == 0) continue;     // key/transparent -> ocean base
+            scr.put(dx + ox + gx, dy + oy + gy,
+                    nearest_land_px(terr, map, tx, ty, ox + gx, oy + gy, p));
         }
 }
 
@@ -177,7 +203,7 @@ static void blit_key(Surface& scr, const Frame& fr, int dx, int dy) {
 // 8-neighbour land bitmap `conn` + per-quadrant `cfg`, then draw the coast sub-tiles over
 // the ocean base (index-0/253 -> ocean). Clean diagonal -> 0x96+pattern; else 4 quadrant
 // sub-tiles 0x6C+cfg*4+q.
-static void compose_coast(Surface& scr, const Sheet& phys,
+static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
                           const Map& map, int tx, int ty, int dx, int dy) {
     static const int CDX[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // N,NE,E,SE,S,SW,W,NW
     static const int CDY[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
@@ -197,13 +223,13 @@ static void compose_coast(Surface& scr, const Sheet& phys,
     if ((conn & 0xDD) == 0x1C) pattern = 3;                  // SE
     if (pattern >= 0) {
         int f = 0x96 + pattern;
-        if (f < (int)phys.nframes) blit_key(scr, phys.frames[f], dx, dy);
+        if (f < (int)phys.nframes) blit_coast(scr, terr, phys.frames[f], map, tx, ty, dx, dy, 0, 0);
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;
-        if (f >= 0 && f < (int)phys.nframes) blit_key(scr, phys.frames[f], dx + qx[q], dy + qy[q]);
+        if (f >= 0 && f < (int)phys.nframes) blit_coast(scr, terr, phys.frames[f], map, tx, ty, dx, dy, qx[q], qy[q]);
     }
 }
 
@@ -215,12 +241,12 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     int vis = classify_vis(b);
 
     draw_ground(scr, terr, b, dx, dy);                       // 1. base ground (emit_ground)
-    blend_edges(scr, terr, phys, map, mx, my, dx, dy);       // 2. O512 blend / beach halo
 
     if (is_water(id)) {                                      // 10. coast (water tiles), done
-        compose_coast(scr, phys, map, mx, my, dx, dy);
+        compose_coast(scr, terr, phys, map, mx, my, dx, dy);
         return;
     }
+    blend_edges(scr, terr, phys, map, mx, my, dx, dy);       // 2. O512 land biome blend
     // 4. forest canopy (visible band 8..0x17, EXCEPT Desert/Scrub land_base==1): 0x41+mask.
     if (vis >= 8 && vis < 0x18 && land_base_of(b) != 1) {
         int f = 0x40 + forest_nmask(map, mx, my);            // my 0x40 = game 0x41
