@@ -261,8 +261,11 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
-    // The 0x6C sub-tiles paint a GREEN grassy shore (right for inland lakes). An OCEAN
-    // coast (L3==1) gets a SAND beach instead -- same connectivity shape, green->sand.
+    // The 0x6C sub-tiles are LAKE shores: a thin grassy edge + a band of (lake) water.
+    // For an OCEAN coast (L3==1) we want a clean SAND beach -- draw only the shore (green
+    // -> sand) and let the deep-ocean base show through the sub-tile's own water band,
+    // otherwise that medium-blue water reads as "water on the land side". Lakes keep the
+    // full grassy-shore + water sub-tile.
     bool ocean = is_ocean_tile(map, tx, ty);
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;
@@ -272,7 +275,12 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
             for (int gx = 0; gx < sub.w; ++gx) {
                 uint8_t p = sub.px[gy * sub.w + gx];
                 if (p == SS_TRANSPARENT || p == 0) continue;     // key/transparent -> ocean base
-                scr.put(dx + qx[q] + gx, dy + qy[q] + gy, ocean ? shore_to_sand(p, phys.pal) : p);
+                if (ocean) {
+                    uint8_t s = shore_to_sand(p, phys.pal);
+                    if (s != p) scr.put(dx + qx[q] + gx, dy + qy[q] + gy, s);  // sand only
+                } else {
+                    scr.put(dx + qx[q] + gx, dy + qy[q] + gy, p);              // lake: full shore
+                }
             }
     }
 }
