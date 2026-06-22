@@ -8,8 +8,8 @@
 **Overall confidence:** band geometry **A**; state→display memory map **B** (REF base, portrait
 table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mechanism **B**. ·
 **Canonical primary:** `ghidra_export/VICEROY_decompiled.named.c` (`congress_screen_render`
-25583, `congress_portraits_draw` 25547), `raw/COLONIZE/VICEROY.EXE`, `docs/RENDERER_GEOMETRY.md`,
-`docs/ADVISOR_REPORTS_AUDIT.md` F3, `docs/SESSION_UI_CATALOG.md` §3.
+25583, `congress_portraits_draw` 25547), `raw/COLONIZE/VICEROY.EXE`,
+`docs/ADVISOR_REPORTS_AUDIT.md` F3, `docs/SESSION_UI_CATALOG.md` §3 (overlay band geometry).
 
 > **Updates (2026-06-21, raw-EXE-verified):** (a) the CC-NN portrait blit loop
 > (`congress_portraits_draw`) is the **FF-acquisition reveal animation**, not the F3 list —
@@ -23,7 +23,8 @@ table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mec
 The Continental Congress Activities screen (also reachable as advisor report F3). Shows progress toward the next Founding Father, Rebel/Tory sentiment, bells/turn, the King's Expeditionary Force (REF) by unit type, and the list of acquired Founding Fathers. Surfaces as an overlay on CCBKGD.PIK. **A** (`SESSION_UI_CATALOG.md` §3).
 
 ## 2. Layout — "what is drawn where"
-Native 320×200. Bands frame-verified via luma analysis (`RENDERER_GEOMETRY.md` v3, tier **A**).
+Native 320×200. Bands frame-verified via luma analysis (originally `RENDERER_GEOMETRY.md` v3, now
+removed; the overlay source survives as `SESSION_UI_CATALOG.md` §3 frame 1310124562, tier **A**).
 
 | Region | Pixel rect | Tier | Notes |
 |--------|-----------|------|-------|
@@ -37,12 +38,12 @@ Native 320×200. Bands frame-verified via luma analysis (`RENDERER_GEOMETRY.md` 
 
 > **No progress bar (RULING 2026-06-21).** An earlier row claimed a graphical
 > "Progress bar (0,30,320,6) — yellow fill = bells_current/threshold" (tier A, luma-guessed from
-> `RENDERER_GEOMETRY.md`). It is **deleted as fabricated**: (1) the game has **no graphical
+> the since-removed `RENDERER_GEOMETRY.md`). It is **deleted as fabricated**: (1) the game has **no graphical
 > progress/fill bars anywhere** (user ground-truth, top of the truth hierarchy), and (2) the F3
 > paint body (`0x37A10`, fully disassembled) is **text/box only** (§6.1) — a text/box routine
 > cannot draw a fill bar. Progress toward the next Founding Father is conveyed **only** by the
 > **"(NN in MM)" text** in the session subtitle, where `NN = threshold − bells_current`,
-> `MM = threshold` (`RENDERER_GEOMETRY.md` "Display formula"). **B** (text + computation).
+> `MM = threshold` (session-subtitle text + computation, F3 body `0x37A10`). **B** (text + computation).
 
 ### Fonts & colors (F3 body `0x37A10..0x3807D`, byte-grounded 2026-06-21)
 - **Font = FONTTINY** for the whole F3 body — it reads the `[0x89E]` (FONTTINY) latch **6×** and
@@ -85,7 +86,11 @@ portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x
 
 ## 5. Evidence
 - `docs/SESSION_UI_CATALOG.md` §3 — frame 1310124562, memory-tied display table, CC-NN→`@FATHERS` mapping. **A/B**
-- `docs/RENDERER_GEOMETRY.md` "Continental Congress (VERIFIED v3)" + "Continental Congress Activities" detailed element table + memory map. **A/B**
+- Band geometry (§2 table) was originally luma-measured in the since-removed `RENDERER_GEOMETRY.md`
+  "Continental Congress (VERIFIED v3)"; those bands are tier **A** (overlay/luma, not byte-cited) and
+  now rest on `SESSION_UI_CATALOG.md` §3 (frame 1310124562) as the surviving overlay source. The
+  state→display **memory map** (REF base `0x53DA`, portrait table `DG8(0x123A+i)`, owned-FF bitmap)
+  is byte-verified in `ghidra_export/VICEROY_decompiled.named.c` + `raw/COLONIZE/VICEROY.EXE`. **A/B**
 - `docs/ADVISOR_REPORTS_AUDIT.md` F3 — paint_func file 0x025FD0, CCBKGD.PIK, title `@MISC[52]`. **B**
 - State→display (BYTE_VERIFIED): PowerRecord +0x02 rebel%, +0x0C bells_current, +0x0E
   bells/turn, +0x14 FF count (also the `≥0x19`→INDEPENDENCE gate, export 25502), +0x07

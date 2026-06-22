@@ -110,9 +110,12 @@ also static**, resolved by decoding that screen's PIK palette (a 768-byte file s
 is fully **B**, *not* a runtime/capture residual.
 
 Primary UI sources: `ghidra_export/VICEROY_decompiled.named.c`, `raw/COLONIZE/VICEROY.EXE`,
-`docs/SESSION_UI_CATALOG.md`, `docs/RENDERER_GEOMETRY.md`, `docs/UI_DIALOGS.md`,
-`docs/POPUP_TEMPLATE_AUDIT.md`, `docs/KING_AND_CINEMATIC_AUDIT.md`, `docs/COLONY_RENDER_CHAIN.md`,
-`viceroy_source/docs/drawlist/REPORTS.md`. (Note: `docs/ADVISOR_REPORTS_AUDIT.md` paint-function
+`docs/SESSION_UI_CATALOG.md`, `viceroy_source/docs/SCREEN_LAYOUTS.md` (byte-cited per-screen element
+tables), `viceroy_source/docs/drawlist/{EUROPE_COLONY,REPORTS,CHROME_AND_DISPATCH_INDEX}.md`,
+`docs/INGAME_MAP_RENDER_TRACE.md`, `docs/UI_DIALOGS.md`, `docs/POPUP_TEMPLATE_AUDIT.md`,
+`docs/KING_AND_CINEMATIC_AUDIT.md`, `docs/COLONY_RENDER_CHAIN.md`. (The older overlay-measured
+`docs/RENDERER_GEOMETRY.md` was removed in the 2026-06-22 cleanup — superseded by the byte-cited
+`SCREEN_LAYOUTS.md` geometry.) (Note: `docs/ADVISOR_REPORTS_AUDIT.md` paint-function
 offsets are superseded — see `notes/rulings/RULINGS.md` 2026-06-21.)
 
 ## The basis (primary extraction — read this before writing any spec)
@@ -159,11 +162,12 @@ Primary data is canonical; conflicting secondary copies were **deleted** (per
 - **Deleted** `notes/COLONIZATION_TECHNICAL_REFERENCE.md` (source of the original
   king.md REF/tax-cap errors) and `viceroy_source/docs/DATA_MODEL.md` (superseded).
 - Canonical: memory records → `docs/DATA_MODEL.md`; architecture →
-  `docs/ARCHITECTURE.md`; render chain → `docs/RENDER_CHAIN.md` +
+  `docs/ARCHITECTURE.md`; map render chain → `docs/INGAME_MAP_RENDER_TRACE.md` +
   `docs/COLONY_RENDER_CHAIN.md`.
 - ⚠ Docs with known FABRICATED sections are retained as Layer-1 evidence only,
-  with corrective notes (e.g. `EUROPEAN_DIPLOMACY.md` rel-score model;
-  `RENDER_CHAIN.md` dirty-rect "does not exist").
+  with corrective notes (e.g. `EUROPEAN_DIPLOMACY.md` rel-score model). The old
+  `docs/RENDER_CHAIN.md` (coast/road/river mis-IDs, dirty-rect "does not exist")
+  was removed in the 2026-06-22 cleanup — superseded by `INGAME_MAP_RENDER_TRACE.md`.
 
 ## Depth pass
 

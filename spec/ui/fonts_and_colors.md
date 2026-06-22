@@ -3,15 +3,17 @@
 > **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. This is the shared
 > font + color model referenced by every `spec/ui/*.md`. **Canonical primary:** boot asset
 > table `@file 0x1FD20` (font loads), the per-call color push-arg in each render function
-> (`raw/COLONIZE/VICEROY.EXE`), and `docs/UI_FONT_REFERENCE.md` (pixel-verified colony screen).
+> (`raw/COLONIZE/VICEROY.EXE`), and the per-screen pixel verification in `spec/ui/colony_screen.md`
+> (the removed `docs/UI_FONT_REFERENCE.md` previously held the same colony-screen measurements).
 
 ## 1. Fonts — four loaded bitmap fonts (`.FF`) (+ FONTSMAL orphan)
 
 VICEROY.EXE loads exactly **four** fonts: FONTTINY (the boot default latch), FONTINTR, FONTKING,
 FONT-NP. A fifth file `FONTSMAL.FF` exists on disk but is **never loaded** (the strings
 `FONTSMAL`/`fontsmal` are absent from the EXE — see `notes/rulings/RULINGS.md` 2026-06-21). Each
-loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metrics from
-`docs/UI_FONT_REFERENCE.md`.
+loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metrics are measured
+from the decoded `.FF` glyph atlases (importer output — see `viceroy_cpp` `import-font`; the removed
+`docs/UI_FONT_REFERENCE.md` previously tabulated the same metrics).
 
 | Font | File | Glyph (h × w) | Style | Role / where used | Tier |
 |------|------|---------------|-------|-------------------|------|
@@ -26,7 +28,8 @@ loaded font is a MicroProse `.FF` bitmap (format in `formats/FF.md`); glyph metr
 **not** a per-draw select inside the paint helpers — no per-draw font-set appears in
 `colony_paint_*` / `europe_draw_*` / the advisor bodies (those read the `[0x89E]` latch). So
 **which font a given element uses is inferred from the framework + pixel verification**
-(`docs/UI_FONT_REFERENCE.md`), tier **A**, not a byte-verified per-blit handle. The popup
+(per-screen pixel verification, formerly tabulated in the removed `docs/UI_FONT_REFERENCE.md`),
+tier **A**, not a byte-verified per-blit handle. The popup
 framework's `SMALLFONT` directive (handler `@0x6F207`) merely **copies the latched `[0x89E]`
 font** into the section — it does **not** switch to a smaller font (FONTSMAL is never loaded).
 The active-font global is **`[0x1F9E]/[0x1FA0]`**, set only from FONTTINY (`[0x89E]`), FONTINTR
@@ -73,7 +76,7 @@ push-arg.)*
 ## 3. Per-screen font + color (byte/pixel-grounded)
 
 The authoritative per-element table is in each screen's own spec; collected here for reference.
-**Colony screen** is pixel-verified (`docs/UI_FONT_REFERENCE.md`):
+**Colony screen** is pixel-verified (see `spec/ui/colony_screen.md`; formerly `docs/UI_FONT_REFERENCE.md`):
 
 | Element | Font | Color | Tier |
 |---------|------|-------|------|

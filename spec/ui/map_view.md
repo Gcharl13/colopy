@@ -5,13 +5,17 @@
 > the residual soft spots (sidebar per-line text x,y; menu per-item hit-rects) are honestly
 > **R** — single-frame/low-trust, called out in §6.3/§6.4 with the exact source.
 
-**Overall confidence:** outer band geometry **A** (overlay-verified, not byte-cited); tile chain & sidebar fields **B/R**. · **Canonical primary:** `docs/RENDERER_GEOMETRY.md` "Map view", `docs/SESSION_UI_CATALOG.md` §1, `docs/COLONY_RENDER_CHAIN.md` (tile chain).
+**Overall confidence:** outer band geometry **B** (byte-verified `[V]` in `SCREEN_LAYOUTS.md` §1; formerly overlay-only **A**); tile chain & sidebar fields **B/R**. · **Canonical primary:** `viceroy_source/docs/SCREEN_LAYOUTS.md` §1 (map HUD geometry, byte-cited), `docs/SESSION_UI_CATALOG.md` §1, `docs/COLONY_RENDER_CHAIN.md` (tile chain), `docs/INGAME_MAP_RENDER_TRACE.md` (tile draw chain).
 
 ## 1. Purpose
 The default in-game screen (155/396 session snaps — the majority of play). Left ~3/4 is the tile-rendered world viewport; the right ~80px is a woodgrain sidebar showing season/gold/tax plus a context panel for the selected unit or hovered (foreign) colony. A top menu strip drives all pulldowns. **A** (`SESSION_UI_CATALOG.md` §1).
 
 ## 2. Layout — "what is drawn where"
-Native 320×200 (mode 13h). Coordinates from `RENDERER_GEOMETRY.md` (overlay-verified v2/v3, tier **A** — pixel-measured, not byte-cited).
+Native 320×200 (mode 13h). Coordinates from `viceroy_source/docs/SCREEN_LAYOUTS.md` §1 (byte-verified
+`[V]`, tier **B** — e.g. map viewport `(0,8,240,192)` @`func_06787C`, minimap panel `(241,8,79,41)`
+`[V @0x066DD7]`). This supersedes the older overlay-measured `RENDERER_GEOMETRY.md` pass (tier A),
+which was removed in the 2026-06-22 cleanup (it also carried a wrong "minimap = whole map squashed"
+claim; the byte-verified minimap is a 1px/tile 56×39 scrolling window — see `INGAME_MAP_RENDER_TRACE.md`).
 
 | Region | Pixel rect | Font | Color | Notes |
 |--------|-----------|------|-------|-------|
@@ -44,7 +48,7 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 - VIEW menu zoom levels (120×96 / 60×48 / 30×24 / 15×12) per `@VIEW`. **B**
 
 ## 5. Evidence
-- `docs/RENDERER_GEOMETRY.md` — "Map view (VERIFIED v2)" + "REVISED v3" (band y=8), "Default map view sidebar". **A**
+- `viceroy_source/docs/SCREEN_LAYOUTS.md` §1 — map HUD element table, byte-cited `[V]` (viewport, minimap panel/fill, status lines). **B** *(supersedes the removed overlay-only `RENDERER_GEOMETRY.md` "Map view v2/v3"; the sidebar R-table it held is preserved inline in §6.3 below)*.
 - `docs/SESSION_UI_CATALOG.md` §1, §8 — layout, sidebar variants. **A**
 - `docs/COLONY_RENDER_CHAIN.md` §3/§4 — tile chain, `0x6204` decoder, entry chain. **B**
 - `data_extracted/text/MENU_sections.json`, `LABELS_sections.json`, `NAMES_sections.json` — menu/sidebar keys (all verified). **B**
@@ -79,8 +83,9 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 
    **Implementation layout (R — approximate, single-frame).** For a Layer-3 render that must only
    *look like* the original (not be byte-exact), the one available source is the pixel-measured
-   table in `docs/RENDERER_GEOMETRY.md` "Default map view sidebar" (**frame 1310262984**, Scout
-   selected). Use it as the **approximate** sidebar layout, explicitly **R** — it is a single
+   sidebar table **preserved inline below** (originally from the removed `RENDERER_GEOMETRY.md`
+   "Default map view sidebar", **frame 1310262984**, Scout selected). Use it as the **approximate**
+   sidebar layout, explicitly **R** — it is a single
    eyeballed frame and is internally imperfect (its menu row even places CHEAT@244 right of
    COLONIZOPEDIA@234, and its minimap rect (244,8,72,44) is *superseded* by the byte-verified
    (241,8,79,41) of §6.1). Relative to the sidebar origin x≈240:
