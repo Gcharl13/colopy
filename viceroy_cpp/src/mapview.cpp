@@ -315,21 +315,22 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
         }
     }
 
-    // --- Minimap: func_066CD6/066BB0/066968 (BYTE_VERIFIED) -- a 1-pixel-per-tile
-    // window, NOT the whole map squashed. The vertical clip window is 39 rows (extent
-    // 0x26) so a tall map scrolls; the orange frame hugs the content so there are NO
-    // black side bars (the byte-anchored 56-col window left 11/12px of dead panel on
-    // each side -- cropped here to fill the frame with the actual map width). Tile
-    // (sx,sy) -> pixel (cx + sx-col0, cy + sy-row0); the window scrolls to keep the
-    // view centred, clamped to the map. White "you are here" rectangle = the view
-    // window clamped (func_066BB0 / func_066E0C); orange frame (DOS ref ORANGE bdr).
+    // --- Minimap: 1px/tile (byte-accurate scale, func_066968), orange frame hugging
+    // the content, CENTRED horizontally in the right panel. The 39-row vertical clip
+    // window (extent 0x26) scrolls to follow the view, clamped to the map. White "you
+    // are here" rectangle = the clamped view window (func_066BB0 / func_066E0C). Orange
+    // frame + a 1px black perimeter.
     static const uint8_t MM_COLOR[27] = {
         7, 88, 72, 80, 67, 66, 68, 70, 7, 88, 72, 80, 67, 66, 68, 70,
         20, 67, 7, 67, 67, 66, 68, 67, 0, 60, 124 };
-    static const int MM_ROWS = 39;                         // vertical clip window (extent 0x26+1)
-    int mm_cols = map.w < (320 - MM_X - 3) ? map.w : (320 - MM_X - 3);  // full map width, fits screen
-    int cx = MM_X + 1, cy = MM_Y + 1;                      // content top-left, just inside the frame
-    int fw = mm_cols + 2, fh = MM_ROWS + 2;                // frame hugs content (no side bars)
+    const int SB_X = VP_X + VP_W;                          // 240, right panel left edge
+    const int SB_W = Surface::W - SB_X;                    // 80, right panel width
+    const int MM_ROWS = 39;                                // vertical clip window (extent 0x26+1)
+    int mm_cols = map.w < (SB_W - 8) ? map.w : (SB_W - 8); // map width, fit the panel with margin
+    int fw = mm_cols + 2, fh = MM_ROWS + 2;                // orange frame hugs content
+    int fx = SB_X + (SB_W - fw) / 2;                       // CENTRE the frame in the right panel
+    int fy = MM_Y + 3;                                     // leave room below the panel top border
+    int cx = fx + 1, cy = fy + 1;                          // content top-left, inside the frame
     int avail_c = map.w - mm_cols;
     int avail_r = map.h > MM_ROWS ? map.h - MM_ROWS : 0;
     int col0 = ox + VP_COLS / 2 - mm_cols / 2;             // centre window on the view
@@ -337,7 +338,7 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     if (col0 < 0) col0 = 0; else if (col0 > avail_c) col0 = avail_c;
     if (row0 < 0) row0 = 0; else if (row0 > avail_r) row0 = avail_r;
 
-    scr.fill_rect(MM_X, MM_Y, fw, fh, 0);                  // BLACK background behind content
+    scr.fill_rect(fx, fy, fw, fh, 0);                      // BLACK background behind content
     for (int ry = 0; ry < MM_ROWS; ++ry) {
         int sy = row0 + ry;
         if (sy < 0 || sy >= map.h) continue;
@@ -358,7 +359,12 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     if (by1 > cy + MM_ROWS - 1) by1 = cy + MM_ROWS - 1;
     if (bx1 >= bx0 && by1 >= by0)
         scr.rect_outline(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1, COL_WHITE);
-    scr.rect_outline(MM_X, MM_Y, fw, fh, COL_MM_FRAME);    // orange frame, hugging the content
+    scr.rect_outline(fx, fy, fw, fh, COL_MM_FRAME);        // orange frame, hugging the content
+    scr.rect_outline(fx - 1, fy - 1, fw + 2, fh + 2, 0);   // 1px black perimeter around minimap
+
+    // --- 1px black perimeter around the main map viewport and the right panel ------
+    scr.rect_outline(VP_X, VP_Y, VP_W, VP_H, 0);           // main map (0,8,240,192)
+    scr.rect_outline(SB_X, VP_Y, SB_W, VP_H, 0);           // right panel (240,8,80,192)
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
