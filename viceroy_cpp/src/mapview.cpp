@@ -152,10 +152,18 @@ static void blit_key(Surface& scr, const Frame& fr, int dx, int dy) {
         }
 }
 
+// Base TERRAIN.SS frame for a tile. Scrub / forested-desert (classified id 9 --
+// terrain_cell_transform's 0x09/0x11 -> 8 special case) uses the brush/cacti frame 8,
+// distinct from plain Desert's frame 1; everything else folds to its land base.
+static int base_frame_of(uint8_t b) {
+    if (classify_vis(b) == 9) return 8;          // Scrub (brush forest / forested desert)
+    return terrain_base_frame(land_base_of(b));
+}
+
 // draw_ground (6b): fill the terrain's flat colour then blit its TERRAIN.SS texture
 // (so transparent gaps in the texture show the biome colour, not black).
 static void draw_ground(Surface& scr, const Sheet& terr, uint8_t b, int dx, int dy) {
-    int bf = terrain_base_frame(land_base_of(b));
+    int bf = base_frame_of(b);
     if (bf < 0 || bf >= (int)terr.nframes) return;
     const Frame& f = terr.frames[bf];
     if (f.w > 0 && f.h > 0) {
