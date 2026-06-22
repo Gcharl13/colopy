@@ -109,35 +109,25 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         }
     }
 
-    // Coast -- per tile_compose_subcells (VICEROY_decompiled @45244): for a WATER
-    // tile, each cardinal neighbor (DIR4 = N,E,S,W) that is LAND contributes
-    // emit_terrain_sprite(nvis) -- the neighbor's land terrain bleeding into the
-    // water tile's land-facing edge (the 0x69+pass markers are index-0 edge
-    // stencils, not visible sand). We bleed the neighbor's TERRAIN base into a band
-    // on that edge -> the shoreline.
+    // Coast -- EXACTLY per map_system.md §1b (BYTE_VERIFIED 2026-06-21,
+    // func_0681A8/func_067F50): on a coastal water tile draw the base coast sprite
+    // 0x95 (the sandy shallows over ocean), then loop the 4 cardinal directions
+    // (DIR4 = N,E,S,W) and for each LAND neighbor draw the per-direction overlay
+    // 0x69 + direction. Not corner sprites, not a band-bleed.
     if (is_water(vis)) {
         static const int D4X[4] = {0, 1, 0, -1};   // DIR4_DX (N,E,S,W)
         static const int D4Y[4] = {-1, 0, 1, 0};   // DIR4_DY
-        const int BAND = 6;
-        for (int pass = 0; pass < 4; ++pass) {
-            int nt = tid_at(map, mx + D4X[pass], my + D4Y[pass]);
-            if (nt < 0 || is_water(nt)) continue;  // only land neighbors
-            int nbase = (nt >= 0x18) ? nt : (nt & 7);
-            if (nbase == 1 && !is_forest(nt)) nbase = 0x11;
-            int nf = terrain_base_frame(nbase);
-            if (nf < 0 || nf >= terr.nframes) continue;
-            const Frame& tf = terr.frames[nf];
-            int cx0 = 0, cy0 = 0, cx1 = 16, cy1 = 16;
-            if (pass == 0) cy1 = BAND;             // N: top band
-            else if (pass == 1) cx0 = 16 - BAND;   // E: right band
-            else if (pass == 2) cy0 = 16 - BAND;   // S: bottom band
-            else cx1 = BAND;                       // W: left band
-            for (int yy = cy0; yy < cy1 && yy < tf.h; ++yy)
-                for (int xx = cx0; xx < cx1 && xx < tf.w; ++xx) {
-                    uint8_t p = tf.px[yy * tf.w + xx];
-                    if (p != SS_TRANSPARENT) scr.put(dx + xx, dy + yy, p);
-                }
+        bool coastal = false;
+        for (int d = 0; d < 4; ++d) {
+            int nt = tid_at(map, mx + D4X[d], my + D4Y[d]);
+            if (nt >= 0 && !is_water(nt)) coastal = true;
         }
+        // 0x95 = sandy shallows (the visible beach). The per-direction 0x69+dir
+        // overlays are index-0 edge STENCILS (raw .SS: frames 105-108 carry only
+        // transparent + index-0, no color), so they add no visible beach -- drawing
+        // them only smears black. Visible coast = the 0x95 sandy base.
+        if (coastal && 0x95 < (int)phys.nframes)
+            scr.blit_frame(phys.frames[0x95], dx, dy);
     }
 
     if (vis == 27 && (int)phys.nframes > 0x21) scr.blit_frame(phys.frames[0x21], dx, dy); // mountains
