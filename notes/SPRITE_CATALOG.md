@@ -111,7 +111,7 @@ Confirmed via agent pixel inspection + verification:
 the .MP file selects which of 96–103 to draw on that tile. See
 `MAP_FORMAT.md` for the resource-byte layout (pending).
 
-### Row 0x6D–0x7C (indices 109–124) — 8×8 coast sub-tile quadrants — **RESOLVED 2026-06-22**
+### Row 0x6D–0x8B (indices 109–139) — 8×8 coast sub-tile quadrants — **RESOLVED 2026-06-22**
 
 **Confirmed the TRUE complex-coast path** (byte-verified vs `func_0681A8`,
 capstone `0x684b1..0x684f7`; pixels via `tools/ssdec.py`). These frames are
@@ -125,9 +125,10 @@ land-neighbour bitmap does NOT match a clean 16×16 edge pattern. The renderer:
   table at `[0x2D24]`.
 - If `[0xA8A6]` matches a clean pattern → one 16×16 edge `0x97+pattern` (151–153).
 - **Else** → 4-quadrant loop (`@0x684bc`): for quadrant `q=0..3`, draw frame
-  **`0x6D + table[q]·4 + q`** (range 109–124, all 8×8) at the 8×8 sub-cell offset
-  for that quadrant (TL/TR/BR/BL, set into `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces
-  tile the 16×16 cell.
+  **`0x6D + table[q]·4 + q`** (`table[q]`∈0..7; reachable frames **109–139, all 8×8**)
+  at the 8×8 sub-cell offset for that quadrant (TL/TR/BR/BL, set into
+  `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces tile the 16×16 cell. (The extreme
+  `table[q]=7,q=3` combo indexes 140 = a 16×16 frame — all-land-corner edge case.)
 
 **This is NOT the road layer.** `map_system.md`'s old "`0x6D` = roads" label is a
 mislabel: the `0x6D` band is gated entirely by **water terrain id + land-neighbour
@@ -478,7 +479,7 @@ indices, first investigate mpskit extraction options or inspect the source
 
 ## Known ambiguities / follow-up
 
-1. **Row 0x6D–0x7C (109–124)**: ~~are these the true DOS coast sprites?~~
+1. **Row 0x6D–0x8B (109–139)**: ~~are these the true DOS coast sprites?~~
    **RESOLVED 2026-06-22** — yes: the **8×8 per-quadrant complex-coast sub-tiles**
    (`0x6D + table[q]·4 + q`, the no-clean-edge fallback in `func_0681A8`
    `@0x684bc`). NOT roads. See the Row 0x6D–0x7C section above + RULINGS 2026-06-22.

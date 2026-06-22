@@ -124,9 +124,13 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
      `0x97 + pattern`** (151..153; pattern 3 would index 154 = past the 154-frame sheet
      — see TBD note) `@0x6850D`;
    - **else** (no clean pattern) → a **4-quadrant 8×8 sub-tile loop** (`@0x684BC..0x684F5`):
-     for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** (range 109..124, **all 8×8**)
-     at the quadrant sub-cell offset (TL/TR/BR/BL via `[0x1EA4]/[0x1EA5]`). Four 8×8
-     pieces tile the 16×16 cell — the **fine-grained complex-coastline** path.
+     for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** where `table[q]` (0..7) is the
+     per-quadrant land bitmask built in `analyse_connections` (`@0x67AC7..0x67AEF`: diagonal
+     land `|=2`, the two flanking cardinals `|=4`/`|=1`). The reachable frames are
+     **`0x6D..0x8B` (109..139), all 8×8** (pixel-confirmed) — drawn at the quadrant sub-cell
+     offset (TL/TR/BR/BL via `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces tile the 16×16 cell — the
+     **fine-grained complex-coastline** path. (The extreme `table[q]=7,q=3` combo would index
+     `0x8C`=140, a 16×16 frame — an all-land-corner edge case, flagged TBD.)
    **There is no road draw in this chain** — the `0x6D` band is the 8×8 coast sub-tile
    set, gated by water terrain id + the land-neighbour bitmap, not a road bit (matches
    the user ground-truth "no roads in new maps"). **B** (chain + frame roles, sizes
@@ -137,7 +141,7 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
 `0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore-feature · **`0x51..0x5E` river**
 (connectivity) · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
 edges · **shore base `0x96`** + **coast edges `0x97..0x99`** (16×16, clean patterns) ·
-**`0x6D..0x7C` = 8×8 coast sub-tile quadrants** (complex-coast fallback — **NOT roads**,
+**`0x6D..0x8B` = 8×8 coast sub-tile quadrants** (complex-coast fallback — **NOT roads**,
 correction 2026-06-22) · **`0x95` = fog/unexplored tile** (hidden path, NOT coast —
 correction 2026-06-22). Neighbour masks: `func_067A24` = `analyse_connections`
 (water-tile land-neighbour bitmap `[0xA8A6]` + quadrant table `[0x2D24]`),
@@ -149,7 +153,7 @@ correction 2026-06-22). Neighbour masks: `func_067A24` = `analyse_connections`
 >   **river = `0x51..0x5E`** (connectivity), **shore base = `0x96`**, **coast edges
 >   `0x97..0x99`**.
 > - *(2026-06-22)* the "**roads = `0x6D`**" label was **also wrong** — re-traced vs EXE,
->   the `0x6D..0x7C` band is the **8×8 per-quadrant coast sub-tiles** drawn on water
+>   the `0x6D..0x8B` band is the **8×8 per-quadrant coast sub-tiles** drawn on water
 >   tiles (the no-clean-edge fallback in `func_0681A8` `@0x684BC`), gated by the
 >   land-neighbour bitmap `[0xA8A6]`, not by any road bit. There is **no road layer** in
 >   this render chain. (`src/render/terrain.c`, a low-trust C reconstruction, is the
@@ -197,7 +201,7 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
      (`func_067A24`), called **only** when the tile's own terrain is water (`0x19`/`0x1A`).
    - **Complex coastlines (no clean edge pattern) — RESOLVED 2026-06-22:** the fallback
      (`@0x684BC..0x684F5`) is a **4-quadrant 8×8 sub-tile loop** drawing **`0x6D + table[q]·4 + q`**
-     (frames 109..124, all 8×8, pixel-confirmed) at TL/TR/BR/BL sub-cell offsets. This band was
+     (frames 109..139, all 8×8, pixel-confirmed) at TL/TR/BR/BL sub-cell offsets. This band was
      previously **mislabelled "roads = `0x6D`"** — it is the per-quadrant coast composition,
      gated by the same water-tile land-neighbour bitmap (no road bit). See §3 item 7. **B**
      (chain + frame roles + sizes); the `[0xA8A6]`→`0x97..0x99` pattern table located but the

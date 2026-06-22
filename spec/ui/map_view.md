@@ -32,7 +32,7 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 (`and ax,7; or al,8` `@0x6225`). **B**.
 
 ## 3. Assets & text
-- **Tiles:** **TERRAIN.SS = base ground**, composited under **PHYS0.SS overlays** (forest/river/mountain/hill/resource + the **water-tile coast composition**: shore `0x96` + 16×16 edges `0x97..0x99` or the 8×8 quadrant sub-tiles `0x6D..0x7C`); BDARK.SS is the only orphan (CLAUDE.md #5, amended 2026-06-22). **No road overlay** — the `0x6D` band once labelled "roads" is the coast sub-tile set (`map_system.md` §3, corrected 2026-06-22). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
+- **Tiles:** **TERRAIN.SS = base ground**, composited under **PHYS0.SS overlays** (forest/river/mountain/hill/resource + the **water-tile coast composition**: shore `0x96` + 16×16 edges `0x97..0x99` or the 8×8 quadrant sub-tiles `0x6D..0x8B`); BDARK.SS is the only orphan (CLAUDE.md #5, amended 2026-06-22). **No road overlay** — the `0x6D` band once labelled "roads" is the coast sub-tile set (`map_system.md` §3, corrected 2026-06-22). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
 - **Menu text** (verified present in `data_extracted/text/MENU_sections.json`): keys `@GAME`, `@VIEW`, `@ORDERS`, `@REPORTS`, `@TRADE`, `@CUP` (CHEAT), `@PEDIA` (COLONIZOPEDIA). **B**
 - **Sidebar labels** (verified in `LABELS_sections.json`): `@INFO` ("Moves:\nLocat:"), `@MISC` ("Gold", "Road", order statuses). Season from NAMES `@SEASONS`; terrain from NAMES `@FORESTED`/`@UNFORESTED`; unit type NAMES `@UNIT`, skill NAMES `@JOB`. All keys verified present. **B**
 

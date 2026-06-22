@@ -5,7 +5,10 @@
 // ELEMENT -> SPEC CITATION (map_view.md):
 //   Background wood    WOODPANL.PIK (§3 "Sidebar bg: WOODPANL.PIK")            A
 //   Menu strip         (0,0,320,9) FONTTINY green idx68; MENU ~titles (§2,§3)  B mech / R x-pos
-//   Map viewport       (0,8,240,192) 15x12@16, terrain_id->sprite (§2,§6.2)    B (naive; sub-cell chain deferred)
+//   Map viewport       (0,8,240,192) 15x12@16, TERRAIN.SS base + PHYS0 overlays   B (forest/river/coast);
+//                      forest 0x40 band; river 0x51/0x52; COAST = water-tile        coast shore=0x96 +
+//                      composition (shore 0x96 + 16x16 edge 0x97+pat OR 8x8          0x97+pat / 0x6D 8x8
+//                      quadrant sub-tiles 0x6D+table[q]*4+q), map_system.md §3       (RULINGS 2026-06-22)
 //   Minimap            (241,8,79,41) func_066CD6; white viewport rect idx0x0F  B geom
 //   Sidebar B text     season(244,58)/gold(244,66)/tax(290,66) FONTTINY white  R (frame 1310262984, §6.3)
 //   Sidebar C          selected-unit panel -- BLANK (no unit selected): the
@@ -109,34 +112,64 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         }
     }
 
-    // Coast -- the byte-verified composer (tile_compose_subcells / func_067F50,
-    // map_system.md §1b): for a WATER tile, each cardinal direction (DIR4 = N,E,S,W)
-    // whose neighbour is LAND draws the per-direction stipple frame 0x69+dir AND
-    // emit_terrain_sprite(neighbour) -- i.e. the neighbour's LAND terrain stamped at
-    // the stipple-mask positions, a dithered shoreline. (0x95 is the PLOW, not coast;
-    // 105-108 carry only transparent + index-0, so they are masks, not drawable.)
+    // Coast -- the water-tile composition, byte-verified vs func_0681A8 +
+    // analyse_connections (func_067A24), map_system.md §3 item 7 (corrected 2026-06-22;
+    // RULINGS 2026-06-22). A WATER tile examines its 8 neighbours (clockwise from N,
+    // exact DGROUP dx@0xB4/dy@0xBE order) and builds a LAND-neighbour bitmap [0xA8A6]
+    // (water/off-map neighbours skipped). From it: a shore base 0x96, then EITHER one
+    // 16x16 directional edge 0x97+pattern (clean land-bitmap patterns) OR -- the
+    // complex-coastline fallback -- four 8x8 quadrant sub-tiles 0x6D + table[q]*4 + q.
+    // This is NOT a road draw (the old "0x6D = roads" was a mislabel); 0x95 is the FOG
+    // sprite, not coast.
     if (is_water(vis)) {
-        static const int D4X[4] = {0, 1, 0, -1};   // DIR4_DX (N,E,S,W)
-        static const int D4Y[4] = {-1, 0, 1, 0};   // DIR4_DY
-        for (int d = 0; d < 4; ++d) {
-            int nt = tid_at(map, mx + D4X[d], my + D4Y[d]);
-            if (nt < 0 || is_water(nt)) continue;          // land neighbour only
-            int stencilIdx = 0x69 + d;
-            if (stencilIdx >= (int)phys.nframes) continue;
-            const Frame& st = phys.frames[stencilIdx];     // dither stipple mask
-            int nbase = (nt >= 0x18) ? nt : (nt & 7);
-            if (nbase == 1 && !is_forest(nt)) nbase = 0x11;
-            int nf = terrain_base_frame(nbase);
-            if (nf < 0 || nf >= terr.nframes) continue;
-            const Frame& land = terr.frames[nf];           // neighbour's land terrain
-            for (int gy = 0; gy < st.h; ++gy)
-                for (int gx = 0; gx < st.w; ++gx)
-                    if (st.px[gy * st.w + gx] != SS_TRANSPARENT) {   // stipple dot
-                        if (gx < land.w && gy < land.h) {
-                            uint8_t lp = land.px[gy * land.w + gx];
-                            if (lp != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, lp);
+        // 8-direction offsets, exact DGROUP order: N,NE,E,SE,S,SW,W,NW.
+        static const int D8X[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+        static const int D8Y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+        int land = 0;                            // [0xA8A6] land-neighbour bitmap (bit d)
+        int qtab[4] = {0, 0, 0, 0};              // [0x2D24] per-quadrant land bitmask
+        for (int d = 0; d < 8; ++d) {
+            int nt = tid_at(map, mx + D8X[d], my + D8Y[d]);
+            if (nt < 0 || is_water(nt)) continue;        // land neighbour only
+            land |= (1 << d);
+            if (d & 1) {                                  // diagonal -> one quadrant |= 2
+                qtab[((d + 1) & 6) >> 1] |= 2;
+            } else {                                      // cardinal -> two quadrants |=4/|=1
+                int q1 = d >> 1, q2 = (q1 + 1) & 3;
+                qtab[q1] |= 4;
+                qtab[q2] |= 1;
+            }
+        }
+        if (land) {                              // shore base 0x96 (R: approximates [0xA89F]&0x40)
+            if (0x96 < (int)phys.nframes) scr.blit_frame(phys.frames[0x96], dx, dy);
+            // Clean-edge land patterns -> a single 16x16 edge (@0x68479..0x6850D).
+            int pat = -1;                        // sequential match, later pattern wins (as in EXE)
+            if ((land & 0xDD) == 0xC1) pat = 0;
+            if ((land & 0x77) == 0x07) pat = 1;
+            if ((land & 0x77) == 0x70) pat = 2;
+            if ((land & 0xDD) == 0x1C) pat = 3;
+            if (pat >= 0) {
+                int f = 0x97 + pat;
+                if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
+            } else {
+                // Complex coastline -> 4x 8x8 quadrant sub-tiles at TL/TR/BR/BL (@0x684BC).
+                static const int QDX[4] = {0, 8, 8, 0};  // (((q+1)&3)&0x3E)<<2
+                static const int QDY[4] = {0, 0, 8, 8};  // (q&0xFE)<<2
+                for (int q = 0; q < 4; ++q) {
+                    int f = 0x6D + qtab[q] * 4 + q;
+                    if (f < 0 || f >= (int)phys.nframes) continue;
+                    const Frame& sub = phys.frames[f];
+                    // Sub-cell blit. These 8x8 frames carry index 0 (black); the all-0
+                    // corner frames 109-111 must render as transparent (the ocean base is
+                    // blue, the 16x16 coast frames use no index 0) -- so we skip BOTH 0 and
+                    // 253 here. TBD: confirm the sub-cell blitter (0x181f:0x254) index-0 rule.
+                    for (int gy = 0; gy < sub.h; ++gy)
+                        for (int gx = 0; gx < sub.w; ++gx) {
+                            uint8_t p = sub.px[gy * sub.w + gx];
+                            if (p != SS_TRANSPARENT && p != 0)
+                                scr.put(dx + QDX[q] + gx, dy + QDY[q] + gy, p);
                         }
-                    }
+                }
+            }
         }
     }
 

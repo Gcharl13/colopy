@@ -4205,7 +4205,7 @@ needs enumerating before a faithful coast implementation.
 
 ---
 
-## 2026-06-22 — The `0x6D..0x7C` band = 8×8 coast sub-tiles, NOT roads (map_system.md "roads = 0x6D" wrong)
+## 2026-06-22 — The `0x6D..0x8B` band = 8×8 coast sub-tiles, NOT roads (map_system.md "roads = 0x6D" wrong)
 
 **Conflict**: `spec/systems/map_system.md` §3 listed **"`0x6D` roads"** and described item 6 as
 "Roads & rivers (connectivity-based)" with the road sprite = `0x6D + connectivity_mask`. The
@@ -4228,13 +4228,14 @@ low-trust C reconstruction `src/render/terrain.c`.
   base `0x96` (`@0x68356`, bit `[0xA89F]&0x40`); if `[0xA8A6]` matches a clean pattern
   (`&0xDD==0xC1`/`&0x77==0x07`/`&0x77==0x70`/`&0xDD==0x1C`) draw one 16×16 edge `0x97+pattern`
   (`@0x6850D`); **else** the loop `@0x684BC..0x684F5` draws, for `q=0..3`, frame
-  **`0x6D + table[q]·4 + q`** (range 109..124) at TL/TR/BR/BL **8×8** sub-cell offsets
-  (`[0x1EA4]/[0x1EA5]`).
-- Pixel check (`tools/ssdec.py`): frames `0x6D..0x7C` (109..124) are all **8×8** with water
+  **`0x6D + table[q]·4 + q`** (`table[q]`∈0..7, reachable 109..139) at TL/TR/BR/BL **8×8**
+  sub-cell offsets (`[0x1EA4]/[0x1EA5]`).
+- Pixel check (`tools/ssdec.py`): frames `0x6D..0x8B` (109..139) are all **8×8** with water
   palette indices 55–58; frames `0x96..0x99` (150..153) are **16×16** water+sand coast pieces.
-  PHYS0 has **154 frames (0..153)** — so `0x97+pattern` with pattern=3 would index 154 (OOB).
+  PHYS0 has **154 frames (0..153)** — so `0x97+pattern=3` (→154) and the extreme `table[q]=7,q=3`
+  combo (→`0x8C`=140, a 16×16 frame) are out-of-band edge cases, flagged TBD.
 
-**Ruling**: **The `0x6D..0x7C` band (109..124) is the 8×8 per-quadrant complex-coast sub-tile set**
+**Ruling**: **The `0x6D..0x8B` band (109..139) is the 8×8 per-quadrant complex-coast sub-tile set**
 — the fallback drawn on water tiles whose land-neighbour bitmap matches no clean 16×16 edge
 pattern. **There are no roads in this render chain**; the "roads = `0x6D`" label (from the low-trust
 `terrain.c`) is wrong, consistent with the user ground-truth that new maps have no roads. The full
@@ -4247,7 +4248,7 @@ label.
 - `map_system.md` §3: item 6 split into rivers (`0x51..0x5E`) + item 7 coast (water-tile,
   `0x96`/`0x97+pattern`/`0x6D` 8×8 fallback); band list "roads = `0x6D`" → "8×8 coast sub-tiles";
   §6 1b extended with the 8×8 resolution.
-- `notes/SPRITE_CATALOG.md`: row 0x6D–0x7C section + follow-up #1 resolved (true coast sub-tiles).
+- `notes/SPRITE_CATALOG.md`: row 0x6D–0x8B section + follow-up #1 resolved (true coast sub-tiles).
 - `spec/ui/map_view.md` §3: overlay list — coast composition spelled out, "no road overlay".
 
 **Follow-up (still TBD)**: the exact `[0xA8A6]`→`0x97..0x99` pattern enumeration and the
