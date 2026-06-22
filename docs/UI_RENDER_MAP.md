@@ -14,7 +14,8 @@ the default body font:
 - Score screen body
 - Continental Congress hall: NO TEXT (just FF portraits)
 
-FONTSMAL/FONTINTR/FONT-NP are not yet definitively assigned.
+FONTSMAL is NOT loaded at all (on-disk orphan; `@SMALLFONT` → FONTTINY via
+`[0x89E]`). FONTINTR/FONT-NP are not yet definitively assigned.
 
 Earlier identifications of FONTKING/FONTINTR for body text are SUPERSEDED.
 
@@ -42,7 +43,7 @@ From file 0x1FD20 startup asset table + uppercase string xrefs:
 | FONTINTR.FF | `fontintr` (lowercase, file 0x1FD29) | chunky 3D mixed-case | 9 px tall, 6 px wide fixed |
 | FONTTINY.FF | `fonttiny` (lowercase, file 0x1FD32) | small clean mixed-case | 6 px tall, 4 px wide fixed |
 | FONTKING.FF | `FONTKING` (uppercase, file 0x1FCCB) | mixed-case proportional | 7 px tall, 3-7 px wide var |
-| FONTSMAL.FF | via `SMALLFONT` directive (file 0x1F97B) | uppercase fixed | 6 px tall, 6-7 px wide |
+| FONTSMAL.FF | **NOT loaded — on-disk orphan.** The `@SMALLFONT` directive does NOT bind to FONTSMAL; it resolves to FONTTINY via `[0x89E]`. | (n/a) | (n/a) |
 | FONT-NP.FF | `FONT-NP` (uppercase, file 0x1F8AF) | uppercase var (incomplete) | 8 px tall, used for grayed |
 
 ---

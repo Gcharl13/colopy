@@ -11,8 +11,8 @@ text-display contexts.
 | `FONTINTR.FF` | Intro / title font (large stylized) |
 | `FONTKING.FF` | Large king-text font |
 | `FONT-NP.FF`  | "No-press" / disabled menu items |
-| `FONTSMAL.FF` | Standard small UI font |
-| `FONTTINY.FF` | Smallest dialog text |
+| `FONTSMAL.FF` | On-disk orphan — present in COLONIZE/ but NEVER loaded by VICEROY.EXE (not "the standard small UI font") |
+| `FONTTINY.FF` | Default / body UI font — bound to the `@SMALLFONT` directive at runtime via `[0x89E]`; used by almost every screen |
 
 See [`assets/fonts/FONT_CATALOG.md`](../assets/fonts/FONT_CATALOG.md)
 for glyph counts.

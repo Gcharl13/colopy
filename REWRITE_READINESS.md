@@ -79,7 +79,9 @@ dropped.
   `spec/data/*` + `data_extracted/text/*_sections.json` (NAMES/GAME/LABELS tables), `formats/*.md`.
 - **The asset decoders** — `tools/ssdec.py` (ported to C++ in `viceroy_cpp`); these run **only in
   the offline importer** (§4a), never in the shipped runtime.
-- **The visual oracle** — `tools/render_map.py` and the new `viceroy_cpp/verify.py` (pixel parity).
+- **The visual oracle** — `viceroy_cpp` (the `mapview` renderer output) checked against DOS
+  reference screenshots (pixel parity). *(The old `tools/render_map.py` Python oracle was a naive
+  placeholder and has been removed — superseded by the C++ renderer.)*
 - **`viceroy_source/` as *leads only*** — low-trust Layer-1 transcript (never compiled); cite its
   `@asm` blocks to find code, but trust the **spec**, not its C bodies (CLAUDE.md trust order).
 - **The proven Layer-3 pattern** — `mapedit_source/REWRITE_PLAN.md` ("cite or TBD, never guess";
@@ -149,7 +151,7 @@ Keep a hard split so the rules are testable headlessly and the look is faithful:
 
 "Looks + runs like the original" still needs an oracle:
 
-1. **Visual parity** — composite each screen against `tools/render_map.py` / `viceroy_cpp/verify.py`
+1. **Visual parity** — composite each screen from `viceroy_cpp` (the `mapview` renderer)
    and recorded session frames; pixel-diff. (P0 already passes this for the map view.)
 2. **Behavioral golden-master** — per-system unit tests asserting the spec formulas (price drift,
    SoL EMA, combat odds, tax curve, REF accrual, score/rank…) over fixed inputs.

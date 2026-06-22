@@ -18,8 +18,8 @@ Where the audits CORRECTED prior assumptions, this doc cites both.
 
 | Font | Used for |
 |------|----------|
-| **FONTTINY** | Default for dialog body, popup body, inventory numbers, yield digits, small labels. |
-| **FONTSMAL** | Triggered by `@SMALLFONT` directive in GAME.TXT section (NOT the default). Lowercase glyph slots are actually filled with uppercase shapes — so FONTSMAL text always *looks* uppercase. |
+| **FONTTINY** | Default for dialog body, popup body, inventory numbers, yield digits, small labels. Also what the `@SMALLFONT` directive binds to at runtime via `[0x89E]`. |
+| **FONTSMAL** | On-disk orphan — present in COLONIZE/ but NEVER loaded by VICEROY.EXE. The `@SMALLFONT` directive does NOT bind to FONTSMAL; it resolves to FONTTINY via `[0x89E]` (see FONTTINY row). |
 | **FONTINTR** | Title bars (top of every screen), sidebar labels, "GAME / VIEW / ORDERS / REPORTS / TRADE" menu, EXIT label. |
 | **FONTKING** | King-audience speech-bubble text ONLY. |
 | **FONT-NP** | Disabled / grayed menu items. |

@@ -62,8 +62,7 @@ feature's *function*, but EXE bytes win for exact *numbers*.
    was overturned by byte evidence: `BOOT_ASSETS[]` loads TERRAIN.SS, and
    `emit_ground_sprite` draws from `G_SHEET_TERRAIN`. See
    `notes/rulings/RULINGS.md` 2026-06-22. Survives in `spec/systems/map_system.md`
-   §3; the old "orphan" wording in `BUILD.md`/`docs/ASSET_ROLES.md`/
-   `tools/render_map.py` is stale re TERRAIN.SS.)*
+   §3; the old "orphan" wording in `docs/ASSET_ROLES.md` is stale re TERRAIN.SS.)*
 
 6. **Renderer sprite indices** — ships 5–7 / 14–15 / 127; foot units
    100–105 + 109.
@@ -76,7 +75,7 @@ feature's *function*, but EXE bytes win for exact *numbers*.
 
 8. **Colony data base** — the current-colony struct is at `*(0x8542)`;
    ColonyRecord strides per `notes/rulings/` anchor map.
-   *(survives in `docs/ADVISOR_REPORTS_AUDIT.md`, `PROGRESS.md`)*
+   *(survives in `docs/ADVISOR_REPORTS_AUDIT.md`)*
 
 ## Path convention (avoids dangling references)
 

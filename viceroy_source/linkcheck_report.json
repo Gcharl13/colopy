@@ -1,8 +1,8 @@
 {
   "stats": {
-    "total": 287,
-    "strong": 202,
-    "weak": 85,
+    "total": 269,
+    "strong": 193,
+    "weak": 76,
     "invalid": 0
   },
   "citations": [
@@ -729,63 +729,9 @@
     {
       "type": "file_offset",
       "exe": "VICEROY",
-      "offset": 130251,
-      "raw": "file 0x1FCCB",
-      "line": 31,
-      "source_file": "docs/UI_FONT_REFERENCE.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 129199,
-      "raw": "file 0x1F8AF",
-      "line": 32,
-      "source_file": "docs/UI_FONT_REFERENCE.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 129403,
-      "raw": "file 0x1F97B",
-      "line": 33,
-      "source_file": "docs/UI_FONT_REFERENCE.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 132709,
-      "raw": "file 0x20665",
-      "line": 112,
-      "source_file": "docs/UI_FONT_REFERENCE.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 33500,
-      "raw": "file 0x82DC",
-      "line": 115,
-      "source_file": "docs/UI_FONT_REFERENCE.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 185944,
-      "raw": "file 0x02D658",
-      "line": 612,
-      "source_file": "docs/RENDERER_GEOMETRY.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
       "offset": 130336,
       "raw": "file 0x1FD20",
-      "line": 32,
+      "line": 33,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -794,7 +740,7 @@
       "exe": "VICEROY",
       "offset": 130336,
       "raw": "file 0x1FD20",
-      "line": 38,
+      "line": 39,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -803,7 +749,7 @@
       "exe": "VICEROY",
       "offset": 130345,
       "raw": "file 0x1FD29",
-      "line": 42,
+      "line": 43,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -812,7 +758,7 @@
       "exe": "VICEROY",
       "offset": 130354,
       "raw": "file 0x1FD32",
-      "line": 43,
+      "line": 44,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -821,15 +767,6 @@
       "exe": "VICEROY",
       "offset": 130251,
       "raw": "file 0x1FCCB",
-      "line": 44,
-      "source_file": "docs/UI_RENDER_MAP.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 129403,
-      "raw": "file 0x1F97B",
       "line": 45,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
@@ -839,7 +776,7 @@
       "exe": "VICEROY",
       "offset": 129199,
       "raw": "file 0x1F8AF",
-      "line": 46,
+      "line": 47,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -848,7 +785,7 @@
       "exe": "VICEROY",
       "offset": 130370,
       "raw": "file 0x1FD42",
-      "line": 75,
+      "line": 76,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -857,7 +794,7 @@
       "exe": "VICEROY",
       "offset": 130428,
       "raw": "file 0x1FD7C",
-      "line": 78,
+      "line": 79,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -866,7 +803,7 @@
       "exe": "VICEROY",
       "offset": 130422,
       "raw": "file 0x1FD76",
-      "line": 85,
+      "line": 86,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -875,7 +812,7 @@
       "exe": "VICEROY",
       "offset": 130416,
       "raw": "file 0x1FD70",
-      "line": 116,
+      "line": 117,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -884,7 +821,7 @@
       "exe": "VICEROY",
       "offset": 132709,
       "raw": "file 0x20665",
-      "line": 217,
+      "line": 218,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "weak_in_gap"
     },
@@ -893,7 +830,7 @@
       "exe": "VICEROY",
       "offset": 33500,
       "raw": "file 0x82DC",
-      "line": 220,
+      "line": 221,
       "source_file": "docs/UI_RENDER_MAP.md",
       "status": "strong_func_entry"
     },
@@ -986,6 +923,33 @@
       "line": 140,
       "source_file": "docs/CAPITAL_BONUS_ANALYSIS.md",
       "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13408,
+      "raw": "file 0x3460",
+      "line": 43,
+      "source_file": "docs/INGAME_MAP_RENDER_TRACE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13508,
+      "raw": "file 0x34C4",
+      "line": 45,
+      "source_file": "docs/INGAME_MAP_RENDER_TRACE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 59242,
+      "raw": "file 0xE76A",
+      "line": 48,
+      "source_file": "docs/INGAME_MAP_RENDER_TRACE.md",
+      "status": "strong_func_entry"
     },
     {
       "type": "file_offset",
@@ -2461,132 +2425,6 @@
       "raw": "file 0x1F97B",
       "line": 546,
       "source_file": "docs/POPUP_TEMPLATE_AUDIT.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 130336,
-      "raw": "file 0x1FD20",
-      "line": 263,
-      "source_file": "STATUS.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 153868,
-      "raw": "file\n0x02590C",
-      "line": 857,
-      "source_file": "STATUS.md",
-      "status": "strong_in_function"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 153856,
-      "raw": "file 0x025900",
-      "line": 859,
-      "source_file": "STATUS.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 132720,
-      "raw": "file 0x20670",
-      "line": 885,
-      "source_file": "STATUS.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 480082,
-      "raw": "func_075352_unknown.asm",
-      "line": 385,
-      "source_file": "STATUS.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 425416,
-      "raw": "func_067DC8_unknown.asm",
-      "line": 798,
-      "source_file": "STATUS.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 153856,
-      "raw": "func_025900_unknown.asm",
-      "line": 859,
-      "source_file": "STATUS.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 132720,
-      "raw": "file 0x20670",
-      "line": 101,
-      "source_file": "WEEK1_SUMMARY.md",
-      "status": "weak_in_gap"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 425416,
-      "raw": "func_067DC8_unknown.asm",
-      "line": 41,
-      "source_file": "WEEK1_SUMMARY.md",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 480082,
-      "raw": "file 0x075352",
-      "line": 141,
-      "source_file": "tools/render_king.py",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 480286,
-      "raw": "file 0x07541E",
-      "line": 143,
-      "source_file": "tools/render_king.py",
-      "status": "strong_in_function"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 480286,
-      "raw": "file 0x07541E",
-      "line": 157,
-      "source_file": "tools/render_king.py",
-      "status": "strong_in_function"
-    },
-    {
-      "type": "func_file",
-      "exe": "VICEROY",
-      "offset": 480082,
-      "raw": "func_075352_unknown.asm",
-      "line": 141,
-      "source_file": "tools/render_king.py",
-      "status": "strong_func_entry"
-    },
-    {
-      "type": "file_offset",
-      "exe": "VICEROY",
-      "offset": 130345,
-      "raw": "file 0x1FD29",
-      "line": 300,
-      "source_file": "tools/render_gameplay.py",
       "status": "weak_in_gap"
     }
   ]

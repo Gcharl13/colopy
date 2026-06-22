@@ -54,13 +54,7 @@ python tools/ledger_update.py
 # 9. Linkcheck across docs (every "file 0xNNNNNN" must resolve)
 python tools/linkcheck.py
 
-# 10. Fabrication check across renderers
-python tools/check_no_fabrication.py
-
-# 11. Visual diff (informational; not a hard pass)
-python tools/visual_diff.py
-
-# 12. Asset round-trip status
+# 10. Asset round-trip status
 python tools/verify_assets.py
 ```
 
@@ -70,7 +64,6 @@ Expected outputs after running the above:
 - `viceroy_source/lcall_resolution_VICEROY.json` — 7,048 LCALLs resolved
 - `viceroy_source/overlay_directory.json` — 34/82 segments resolved
 - `viceroy_source/linkcheck_report.json` — 38 STRONG / 32 WEAK / 0 INVALID
-- `viceroy_source/visual_diff_report.json` — per-render mismatch %
 - `mapedit_source/mapedit.h` — 210 function decls
 - `code/VICEROY/disasm/func_067DC8_unknown.asm` — BYTE_VERIFIED
   (compute_dialog_rect_from_cursor, 65 bytes, full line annotation)
@@ -240,39 +233,24 @@ identifications in [`viceroy_source/FUNCTION_INVENTORY.md`](viceroy_source/FUNCT
 
 ---
 
-## Step 8: Render and verify the UI screens
+## Step 8: Render and verify the map view
 
-Each major UI screen has a dedicated renderer that composes its layout
-from extracted assets. All fonts/colors/positions are pixel-verified
-against DOSBox screenshots.
+The current renderer is the C++ port `viceroy_cpp` (the old Python per-screen
+`tools/render_*.py` renderers were naive placeholders and have been removed —
+superseded by `viceroy_cpp`). The map view is composed from the byte-verified
+in-game chain (`func_O514 -> O513 -> O512`, see
+[`docs/INGAME_MAP_RENDER_TRACE.md`](docs/INGAME_MAP_RENDER_TRACE.md)).
 
 ```bash
-# Run all dedicated renderers
-python tools/render_colony.py
-python tools/render_gameplay.py
-python tools/render_europe.py
-python tools/render_score.py
-python tools/render_nations.py
-python tools/render_menu.py
-python tools/render_cc.py
-python tools/render_declaration.py
-
-# Render all 6 dialog examples
-python tools/render_dialog.py --all-examples --scale 2
-
-# Generate side-by-side master verification sheet
-python tools/verify_ui_renders.py
-# -> writes verification/ui_verification_sheet.png comparing 11 renders
-#    against their DOSBox reference screenshots where available
+# Build the bundle + renderer, then render the map view from AMER2.MP
+cmake --build viceroy_cpp/build -j
+viceroy_cpp/build/viceroy_cpp mapview \
+    --bundle viceroy_cpp/build/bundle --mp raw/COLONIZE/AMER2.MP \
+    --out /tmp/mapview --scale 3
 ```
 
-The verified font usage map is in [`docs/UI_RENDER_MAP.md`](docs/UI_RENDER_MAP.md);
-the renderer architecture is in [`docs/RENDERER_ARCHITECTURE.md`](docs/RENDERER_ARCHITECTURE.md).
-
-Open `verification/ui_verification_sheet.png` and visually compare
-each rendered screen against its reference. All renders should be
-structurally identical to DOSBox; deviations are documented in
-[`docs/UI_RENDER_MAP.md`](docs/UI_RENDER_MAP.md) under "Code-citation gap".
+Open the rendered PNG and compare against a DOS reference screenshot. The
+byte-verified render trace is the oracle for terrain/coast/forest/minimap.
 
 ---
 
@@ -282,10 +260,8 @@ The synthesis-doc tree is the human-readable summary:
 
 ```
 docs/ARCHITECTURE.md           — top-level game architecture
-docs/RENDER_CHAIN.md           — per-pixel render trace
-docs/RENDERER_ARCHITECTURE.md  — per-screen renderer pipeline
+docs/INGAME_MAP_RENDER_TRACE.md — byte-verified map render trace (O514->O513->O512)
 docs/UI_RENDER_MAP.md          — pixel-verified element catalog
-docs/UI_FONT_REFERENCE.md      — code-cited font reference
 docs/DATA_MODEL.md             — record types and DGROUP layout
 docs/ASSET_ROLES.md            — every asset → loader function
 docs/UI_DIALOGS.md             — every dialog cataloged

@@ -66,25 +66,28 @@ has been wrong about ordering before, see CLAUDE.md.
 | 5   | Savannah          | 1        | 0       | Equatorial            |
 | 6   | Marsh             | 2        | 0       | Slow movement         |
 | 7   | Swamp             | 2        | 0       | Slow + disease risk   |
-| 8   | Forest (tundra)   | 2        | 25%     | Auto-forest range start (CLAUDE.md ruling) |
-| 9   | Forest (desert)   | 2        | 25%     |                       |
-| 10  | Forest (plains)   | 2        | 25%     |                       |
-| 11  | Forest (prairie)  | 2        | 25%     |                       |
-| 12  | Forest (grass)    | 2        | 25%     |                       |
-| 13  | Forest (savannah) | 2        | 25%     |                       |
-| 14  | Forest (marsh)    | 2        | 25%     |                       |
-| 15  | Forest (swamp)    | 2        | 25%     |                       |
-| 16  | Arctic            | 2        | 0       | Auto-forest base id   |
-| 17  | Arctic (forested) | 2        | 25%     |                       |
-| 18  | Hills             | 2        | 50%     | Defense bonus         |
-| 19  | Mountains         | 3        | 100%    | Heavy defense         |
-| 20  | Lake              | NA       | NA      | Inland water          |
-| 25  | Sea               | 1 (ship) | 0       | Open water            |
-| 26  | Sea-lane          | 1 (ship) | 0       | Border columns 0/57   |
-| 27  | River (small)     | 1        | 25%     | If road/river bit set |
+| 8   | Boreal (forested Tundra)   | 2 | 25% | Auto-forest range start (CLAUDE.md ruling) |
+| 9   | Scrub (forested Desert)    | 2 | 25% |                       |
+| 10  | Mixed (forested Plains)    | 2 | 25% |                       |
+| 11  | Broadleaf (forested Prairie)| 2 | 25% |                      |
+| 12  | Conifer (forested Grassland)| 2 | 25% |                      |
+| 13  | Tropical (forested Savannah)| 2 | 25% |                      |
+| 14  | Wetland (forested Marsh)   | 2 | 25% |                       |
+| 15  | Rain (forested Swamp)      | 2 | 25% |                       |
+| 16-23 | (second encoding of the 8 forest variants: 16->8 .. 23->15) | | | folds to 8..15 via `(id&7)\|8` @0x6225 |
+| 24  | Arctic            | 2        | 0       | polar ice             |
+| 25  | Ocean             | 1 (ship) | 0       | open water            |
+| 26  | Sea Lane          | 1 (ship) | 0       | right-edge sea-lane column (hard rule 2) |
+| 27  | Mountains         | 3        | 100%    | heavy defense         |
+| 28  | Hills             | 2        | 50%     | defense bonus         |
 
-The auto-forest range **8..23 (incl. Arctic = 16)** is byte-verified at
-VICEROY.EXE 0x6204 and 0x6831B per CLAUDE.md.
+Terrain id ordering = `NAMES.TXT $TERRAIN` (CLAUDE.md hard rule 1; resolved in
+`notes/rulings/RULINGS.md` + `formats/MP_FORMAT.md`): **24=Arctic, 25=Ocean,
+26=Sea Lane, 27=Mountains, 28=Hills**. The earlier "16=Arctic / 18=Hills /
+19=Mountains / 20=Lake / 25=Sea / 27=River" table was the stale mapedit-derived
+ordering and is wrong. The auto-forest range **8..23** is byte-verified at
+VICEROY.EXE 0x6204 (`get_terrain_id_from_raw`, masks `&0x1F` then folds 8..23 to
+the 8 canonical forest ids 8..15) and 0x6831B.
 
 ## Feature layer
 
