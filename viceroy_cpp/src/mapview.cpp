@@ -116,19 +116,22 @@ static int feat_hi_nmask(const Map& m, int x, int y) {         // (nb&0xA0)==sel
 // land/water edges are the coast (compose_coast), not this. map_system.md §3, RULINGS.
 static void blend_land_edges(Surface& scr, const Sheet& terr, const Sheet& phys,
                              const Map& map, int mx, int my, int dx, int dy, uint8_t cb) {
-    static const int D4X[4] = {0, 1, 0, -1}, D4Y[4] = {-1, 0, 1, 0};   // N,E,S,W
+    // The dither stencils are 16x16 EDGE strips: 0x69 = East (right cols), 0x6A =
+    // South (bottom rows), 0x6B = West (left cols) -- 3px deep, index-0 dots. There
+    // is no North strip; the N boundary is dithered by the north neighbour's S edge.
+    struct Edge { int dx, dy, st; };
+    static const Edge edges[3] = {{1, 0, 0x69}, {0, 1, 0x6A}, {-1, 0, 0x6B}};   // E,S,W
     int cbase = land_base_of(cb);
-    for (int d = 0; d < 4; ++d) {
-        int nx = mx + D4X[d], ny = my + D4Y[d];
+    for (const Edge& e : edges) {
+        int nx = mx + e.dx, ny = my + e.dy;
         if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
         uint8_t nb = map.tiles[ny * map.w + nx];
         if (is_water(nb & 0x1F)) continue;                  // coast, not biome blend
         int nbase = land_base_of(nb);
         if (nbase == cbase) continue;                       // same biome -> no edge
         int nf = terrain_base_frame(nbase);
-        int sidx = 0x69 + d;
-        if (nf < 0 || nf >= (int)terr.nframes || sidx >= (int)phys.nframes) continue;
-        const Frame& st = phys.frames[sidx];
+        if (nf < 0 || nf >= (int)terr.nframes || e.st >= (int)phys.nframes) continue;
+        const Frame& st = phys.frames[e.st];                // 16x16 edge strip
         const Frame& nbf = terr.frames[nf];
         for (int gy = 0; gy < st.h && gy < 16; ++gy)
             for (int gx = 0; gx < st.w && gx < 16; ++gx)
@@ -180,6 +183,41 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
         else { cfg[dir >> 1] |= 4; cfg[((dir >> 1) + 1) & 3] |= 1; }
     }
     if (!conn) return;                                       // open ocean
+    // 1-tile lake = water enclosed on all 4 CARDINALS by land (conn bits N0/E2/S4/W6
+    // = 0x55). The 0x6C+cfg sub-tiles are transparent at the outer corners, so the
+    // ocean base shows on the coast side ("water on the coast side"). Render it as a
+    // pond: surrounding land at the edges (transparent shows the land base) + lake
+    // water in the centre (the sub-tiles' index-0 key, drawn as water not ocean base).
+    if ((conn & 0x55) == 0x55) {
+        static const int c4dx[4] = {0, 1, 0, -1}, c4dy[4] = {-1, 0, 1, 0};
+        int nb = -1;
+        for (int k = 0; k < 4; ++k)
+            if (!water_at(map, tx + c4dx[k], ty + c4dy[k]))
+                nb = map.tiles[(ty + c4dy[k]) * map.w + (tx + c4dx[k])] & 0x1F;
+        if (nb >= 0) draw_ground(scr, terr, (uint8_t)nb, dx, dy);
+        uint8_t wat = 59;                                    // lake-water palette index
+        int of = terrain_base_frame(0x19);
+        if (of >= 0 && of < (int)terr.nframes) {
+            const Frame& o = terr.frames[of];
+            if (o.w > 0 && o.h > 0) {
+                uint8_t c = o.px[(o.h / 2) * o.w + o.w / 2];
+                if (c != SS_TRANSPARENT) wat = c;
+            }
+        }
+        static const int lqx[4] = {0, 8, 8, 0}, lqy[4] = {0, 0, 8, 8};
+        for (int q = 0; q < 4; ++q) {
+            int f = 0x6C + cfg[q] * 4 + q;                    // per-quadrant sub-tile
+            if (f < 0 || f >= (int)phys.nframes) continue;
+            const Frame& sub = phys.frames[f];
+            for (int gy = 0; gy < sub.h; ++gy)
+                for (int gx = 0; gx < sub.w; ++gx) {
+                    uint8_t p = sub.px[gy * sub.w + gx];
+                    if (p == SS_TRANSPARENT) continue;        // land base shows (coast)
+                    scr.put(dx + lqx[q] + gx, dy + lqy[q] + gy, p == 0 ? wat : p);
+                }
+        }
+        return;
+    }
     int pattern = -1;
     if ((conn & 0xDD) == 0xC1) pattern = 0;                  // land in NW corner
     if ((conn & 0x77) == 0x07) pattern = 1;                  // NE
