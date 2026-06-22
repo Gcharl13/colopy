@@ -163,30 +163,64 @@ static void draw_ground(Surface& scr, const Sheet& terr, uint8_t b, int dx, int 
     scr.blit_frame(f, dx, dy);
 }
 
-// Draw a PHYS0 coast sub-tile AS-IS over the ocean base: the sprite's blue shallows
-// and green/sand shore draw straight from the sheet; index 0 (the sprite's deep-water
-// cutout) and 253 are keyed so the ocean ground base painted by draw_ground shows
-// through. This is the in-game blit model -- emit_terrain_sprite backfills the index-0
-// holes with the WATER id (ocean), NOT the nearest land (docs/INGAME_MAP_RENDER_TRACE
-// §3). No neighbour-terrain invention. (ox,oy) = the sub-tile's offset in the 16x16 tile.
-static void blit_subtile(Surface& scr, const Frame& fr, int dx, int dy, int ox, int oy) {
+// land_fill_px: the nearest cardinal LAND neighbour's ground-texture pixel at this tile's
+// local (lx,ly). Water neighbours are skipped, so only genuine adjacent land bleeds in;
+// returns -1 when no land cardinal covers this pixel (caller leaves the ocean base). This
+// is the in-game emit_terrain_sprite backfill (func_O512): the coast sprite's LAND-side
+// holes are filled with the neighbouring land terrain -- e.g. for sprite 150 (land to the
+// west) the transparent upper-left is filled with the west tile's terrain.
+static int land_fill_px(const Sheet& terr, const Map& map, int tx, int ty, int lx, int ly) {
+    struct E { int dist, nx, ny; };
+    E es[4] = {{ly, tx, ty - 1}, {15 - ly, tx, ty + 1}, {lx, tx - 1, ty}, {15 - lx, tx + 1, ty}};
+    for (int i = 0; i < 4; ++i)                              // sort cardinals nearest-first
+        for (int j = i + 1; j < 4; ++j)
+            if (es[j].dist < es[i].dist) { E t = es[i]; es[i] = es[j]; es[j] = t; }
+    for (int i = 0; i < 4; ++i) {
+        int nx = es[i].nx, ny = es[i].ny;
+        if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
+        uint8_t nb = map.tiles[ny * map.w + nx];
+        if (is_water(nb & 0x1F)) continue;                  // only land bleeds in
+        int bf = base_frame_of(nb);
+        if (bf >= 0 && bf < (int)terr.nframes) {
+            const Frame& f = terr.frames[bf];
+            if (lx < f.w && ly < f.h) { uint8_t p = f.px[ly * f.w + lx]; if (p != SS_TRANSPARENT) return p; }
+        }
+    }
+    return -1;
+}
+
+// Draw a PHYS0 coast sub-tile. Pixel roles (verified on the decoded sheet): index 0
+// (opaque black) = the deep-ocean cutout -> left as the ocean base; the blue shallows,
+// green shore and sand beach = drawn AS-IS; transparent (0xFD) = the LAND side -> when
+// this sub-tile faces land (fill_land), filled with the adjacent land terrain via
+// land_fill_px (else left ocean). (ox,oy) = the sub-tile's offset in the 16x16 tile.
+static void blit_subtile(Surface& scr, const Sheet& terr, const Map& map, int tx, int ty,
+                         const Frame& fr, int dx, int dy, int ox, int oy, bool fill_land) {
     for (int gy = 0; gy < fr.h; ++gy)
         for (int gx = 0; gx < fr.w; ++gx) {
             uint8_t p = fr.px[gy * fr.w + gx];
-            if (p == 0 || p == SS_TRANSPARENT) continue;     // deep-water cutout -> ocean base
-            scr.put(dx + ox + gx, dy + oy + gy, p);
+            int lx = ox + gx, ly = oy + gy;
+            if (p == 0) continue;                            // deep-ocean cutout -> ocean base
+            if (p == SS_TRANSPARENT) {                       // land side
+                if (!fill_land) continue;                    // open-ocean quadrant -> ocean base
+                int lp = land_fill_px(terr, map, tx, ty, lx, ly);
+                if (lp >= 0) scr.put(dx + lx, dy + ly, (uint8_t)lp);
+                continue;
+            }
+            scr.put(dx + lx, dy + ly, p);                    // water / shore / sand as-is
         }
 }
 
 // compose_coast (O513 step 10 = analyse_connections, WATER tiles only). Build the
 // 8-neighbour land bitmap `conn` + the per-quadrant land mask `cfg[q]` (0..7: diagonal
-// corner |=2, the two flanking cardinals |=4/|=1), then SELECT and draw PHYS0 coast
-// sprites AS-IS over the ocean base -- pure sprite selection, exactly the in-game
-// formula (no nearest-land fill):
+// corner |=2, the two flanking cardinals |=4/|=1), then SELECT and draw the PHYS0 coast
+// sprites -- pure sprite selection by the in-game formula:
 //   - clean edge pattern -> one 16x16 diagonal beach, frame 0x96+pattern (150..153);
 //   - else 4 quadrant 8x8 sub-tiles, frame 0x6C + cfg[q]*4 + q (108..139; cfg=0 -> the
 //     blank 108..111 = open ocean in that quadrant).
-static void compose_coast(Surface& scr, const Sheet& phys,
+// The sprite's transparent LAND side is filled with the adjacent land terrain (only for
+// land-facing quadrants), the deep-ocean cutout stays ocean.
+static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
                           const Map& map, int tx, int ty, int dx, int dy) {
     static const int CDX[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // N,NE,E,SE,S,SW,W,NW
     static const int CDY[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
@@ -206,13 +240,14 @@ static void compose_coast(Surface& scr, const Sheet& phys,
     if ((conn & 0xDD) == 0x1C) pattern = 3;                  // SE
     if (pattern >= 0) {
         int f = 0x96 + pattern;                              // 150..153 diagonal beach edges
-        if (f < (int)phys.nframes) blit_subtile(scr, phys.frames[f], dx, dy, 0, 0);
+        if (f < (int)phys.nframes) blit_subtile(scr, terr, map, tx, ty, phys.frames[f], dx, dy, 0, 0, true);
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;                       // 108 + table[q]*4 + q
-        if (f >= 0 && f < (int)phys.nframes) blit_subtile(scr, phys.frames[f], dx, dy, qx[q], qy[q]);
+        if (f >= 0 && f < (int)phys.nframes)
+            blit_subtile(scr, terr, map, tx, ty, phys.frames[f], dx, dy, qx[q], qy[q], cfg[q] != 0);
     }
 }
 
@@ -226,7 +261,7 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     draw_ground(scr, terr, b, dx, dy);                       // 1. base ground (emit_ground)
 
     if (is_water(id)) {                                      // 10. coast (water tiles), done
-        compose_coast(scr, phys, map, mx, my, dx, dy);
+        compose_coast(scr, terr, phys, map, mx, my, dx, dy);
         return;
     }
     blend_edges(scr, terr, phys, map, mx, my, dx, dy);       // 2. O512 land biome blend
