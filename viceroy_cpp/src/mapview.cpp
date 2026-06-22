@@ -86,12 +86,18 @@ static int forest_nmask(const Map& m, int x, int y) {            // N=8,S=4,W=2,
     if (forest_neighbour(m, x + 1, y)) k |= 1;
     return k;
 }
-static int river_nmask(const Map& m, int x, int y) {            // river bit 0x40, isolated->0xF
+// river continuity: a cardinal continues the river if the neighbour carries the
+// river bit 0x40 OR is open water (the river MOUTH flows into the sea / a lake).
+static bool river_link(const Map& m, int x, int y) {
+    uint8_t b = L1at(m, x, y);
+    return (b & 0x40) || is_water(b & 0x1F);
+}
+static int river_nmask(const Map& m, int x, int y) {            // N=8,S=4,W=2,E=1; isolated->0xF
     int k = 0;
-    if (L1at(m, x, y - 1) & 0x40) k |= 8;
-    if (L1at(m, x, y + 1) & 0x40) k |= 4;
-    if (L1at(m, x - 1, y) & 0x40) k |= 2;
-    if (L1at(m, x + 1, y) & 0x40) k |= 1;
+    if (river_link(m, x, y - 1)) k |= 8;
+    if (river_link(m, x, y + 1)) k |= 4;
+    if (river_link(m, x - 1, y)) k |= 2;
+    if (river_link(m, x + 1, y)) k |= 1;
     return k ? k : 0x0F;
 }
 static int feat_hi_nmask(const Map& m, int x, int y) {         // (nb&0xA0)==self_hi
@@ -101,6 +107,36 @@ static int feat_hi_nmask(const Map& m, int x, int y) {         // (nb&0xA0)==sel
     if ((L1at(m, x - 1, y) & 0xA0) == self_hi) k |= 2;
     if ((L1at(m, x + 1, y) & 0xA0) == self_hi) k |= 1;
     return k;
+}
+
+// O512 land-biome edge dither (func_067F50 main path, land centres): for each cardinal
+// LAND neighbour whose base biome differs, dither the neighbour's TERRAIN.SS texture
+// into this tile's edge through the dither stencil 0x69+dir (index-0 dots = the 0x839E
+// mask). This is the soft biome transition DOS draws between adjacent land terrains;
+// land/water edges are the coast (compose_coast), not this. map_system.md §3, RULINGS.
+static void blend_land_edges(Surface& scr, const Sheet& terr, const Sheet& phys,
+                             const Map& map, int mx, int my, int dx, int dy, uint8_t cb) {
+    static const int D4X[4] = {0, 1, 0, -1}, D4Y[4] = {-1, 0, 1, 0};   // N,E,S,W
+    int cbase = land_base_of(cb);
+    for (int d = 0; d < 4; ++d) {
+        int nx = mx + D4X[d], ny = my + D4Y[d];
+        if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
+        uint8_t nb = map.tiles[ny * map.w + nx];
+        if (is_water(nb & 0x1F)) continue;                  // coast, not biome blend
+        int nbase = land_base_of(nb);
+        if (nbase == cbase) continue;                       // same biome -> no edge
+        int nf = terrain_base_frame(nbase);
+        int sidx = 0x69 + d;
+        if (nf < 0 || nf >= (int)terr.nframes || sidx >= (int)phys.nframes) continue;
+        const Frame& st = phys.frames[sidx];
+        const Frame& nbf = terr.frames[nf];
+        for (int gy = 0; gy < st.h && gy < 16; ++gy)
+            for (int gx = 0; gx < st.w && gx < 16; ++gx)
+                if (st.px[gy * st.w + gx] == 0 && gx < nbf.w && gy < nbf.h) {   // dot
+                    uint8_t p = nbf.px[gy * nbf.w + gx];
+                    if (p != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, p);
+                }
+    }
 }
 
 // blit a PHYS0/TERRAIN frame with a black colour-key (index 0 AND 253 transparent) --
@@ -180,6 +216,8 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         compose_coast(scr, terr, phys, map, mx, my, dx, dy);
         return;
     }
+    blend_land_edges(scr, terr, phys, map, mx, my, dx, dy, b);   // soft biome transitions
+
     // 6c forest canopy (visible band 8..0x17, EXCEPT the Desert/Scrub land_base==1).
     if (vis >= 8 && vis < 0x18 && land_base_of(b) != 1) {
         int f = 0x40 + forest_nmask(map, mx, my);
