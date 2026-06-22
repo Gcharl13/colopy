@@ -187,15 +187,18 @@ static uint8_t nearest_land_px(const Sheet& terr, const Map& map, int tx, int ty
     return fallback;
 }
 
-// Draw a coast sprite: index-0 (key) and 253 show the ocean base (the deep-water side);
-// every other (beach / shallow-water) pixel is replaced by the FULL nearest-land terrain.
-// (ox,oy) = the sub-tile's offset within the 16x16 tile.
-static void blit_coast(Surface& scr, const Sheet& terr, const Frame& fr, const Map& map,
-                       int tx, int ty, int dx, int dy, int ox, int oy) {
+// Draw a coast sprite. index-0 (key), 253, AND the sub-tile's own shallow-water pixels
+// all show the ocean base (the deep-water side). Only the BEACH (the sprite's land/sand
+// pixels) is replaced by the FULL nearest-land terrain -- so the shoreline isn't pushed
+// out into the ocean. (ox,oy) = the sub-tile's offset within the 16x16 tile.
+static void blit_coast(Surface& scr, const Sheet& terr, const Sheet& phys, const Frame& fr,
+                       const Map& map, int tx, int ty, int dx, int dy, int ox, int oy) {
     for (int gy = 0; gy < fr.h; ++gy)
         for (int gx = 0; gx < fr.w; ++gx) {
             uint8_t p = fr.px[gy * fr.w + gx];
-            if (p == SS_TRANSPARENT || p == 0) continue;     // -> ocean base
+            if (p == SS_TRANSPARENT || p == 0) continue;     // key/transparent -> ocean base
+            int r = phys.pal[p * 3], g = phys.pal[p * 3 + 1], b = phys.pal[p * 3 + 2];
+            if (b > r && b > g && b > 90) continue;          // shallow water -> ocean base
             scr.put(dx + ox + gx, dy + oy + gy,
                     nearest_land_px(terr, map, tx, ty, ox + gx, oy + gy, p));
         }
@@ -225,14 +228,14 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
     if ((conn & 0xDD) == 0x1C) pattern = 3;                  // SE
     if (pattern >= 0) {
         int f = 0x96 + pattern;
-        if (f < (int)phys.nframes) blit_coast(scr, terr, phys.frames[f], map, tx, ty, dx, dy, 0, 0);
+        if (f < (int)phys.nframes) blit_coast(scr, terr, phys, phys.frames[f], map, tx, ty, dx, dy, 0, 0);
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;
         if (f >= 0 && f < (int)phys.nframes)
-            blit_coast(scr, terr, phys.frames[f], map, tx, ty, dx, dy, qx[q], qy[q]);
+            blit_coast(scr, terr, phys, phys.frames[f], map, tx, ty, dx, dy, qx[q], qy[q]);
     }
 }
 
