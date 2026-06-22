@@ -26,6 +26,7 @@ namespace vc {
 // map_view.md / fonts_and_colors.md:
 static constexpr uint8_t COL_MENU_GREEN = 68;   // menu titles, ui_color_for(0x52,0x8A,0x31)
 static constexpr uint8_t COL_WHITE      = 15;   // 0x0F sidebar text + minimap viewport rect
+static constexpr uint8_t COL_MM_FRAME   = 80;   // minimap orange frame, PHYS0 idx 80 (207,150,52)
 
 // Map-view geometry (map_view.md §2, tier A pixel-measured):
 static constexpr int VP_X = 0,   VP_Y = 8,  VP_W = 240, VP_H = 192;  // viewport
@@ -314,28 +315,48 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
         }
     }
 
-    // --- Minimap (241,8,79,41): whole map squashed in; current view = white rect.
-    // Per-tile colour = the in-game minimap table (TERRAIN_PAL_INDEX -> VICEROY.PAL,
-    // resolved to the nearest PHYS0 palette index; func_066CD6 blits a pre-rendered
-    // bitmap built from this table). docs/INGAME_MAP_RENDER_TRACE §6.3.
+    // --- Minimap: func_066CD6/066BB0/066968 (BYTE_VERIFIED geometry). NOT the whole
+    // map squashed -- it is a 1-pixel-per-tile window. The content window is 56 cols x
+    // 39 rows (clip extents 0x37/0x26), drawn into the panel (0xF1,8,0x4F,0x29) centred
+    // at screen (0xFC,9)=(252,9) (= 241+(79-56)/2, 8+(41-39)/2), so tile (sx,sy) ->
+    // pixel (252 + sx-col0, 9 + sy-row0). The window scrolls so the current view stays
+    // centred, clamped to the map (the [0x9CCA]/[0x9CCC] origin). Per-tile colour from
+    // the in-game terrain->minimap table. White "you are here" rectangle = the view
+    // window (g_view_col0/row0..maxcol/maxrow) in minimap pixels; orange panel frame.
     static const uint8_t MM_COLOR[27] = {
         7, 88, 72, 80, 67, 66, 68, 70, 7, 88, 72, 80, 67, 66, 68, 70,
         20, 67, 7, 67, 67, 66, 68, 67, 0, 60, 124 };
-    for (int my = 0; my < MM_H; ++my) {
-        for (int mx = 0; mx < MM_W; ++mx) {
-            int tx = map.w ? mx * map.w / MM_W : 0;
-            int ty = map.h ? my * map.h / MM_H : 0;
-            int id = map.tiles[ty * map.w + tx] & 0x1F;
-            scr.put(MM_X + mx, MM_Y + my, id < 27 ? MM_COLOR[id] : 0);
+    static const int MM_WIN_COLS = 56, MM_WIN_ROWS = 39;   // clip extents 0x37+1 / 0x26+1
+    static const int MM_PIX_X = 0xFC, MM_PIX_Y = 9;        // content top-left (252,9)
+    int avail_c = map.w > MM_WIN_COLS ? map.w - MM_WIN_COLS : 0;
+    int avail_r = map.h > MM_WIN_ROWS ? map.h - MM_WIN_ROWS : 0;
+    int col0 = ox + VP_COLS / 2 - MM_WIN_COLS / 2;         // centre window on the view
+    int row0 = oy + VP_ROWS / 2 - MM_WIN_ROWS / 2;
+    if (col0 < 0) col0 = 0; else if (col0 > avail_c) col0 = avail_c;
+    if (row0 < 0) row0 = 0; else if (row0 > avail_r) row0 = avail_r;
+
+    scr.fill_rect(MM_X, MM_Y, MM_W, MM_H, 0);              // BLACK panel background
+    for (int ry = 0; ry < MM_WIN_ROWS; ++ry) {
+        int sy = row0 + ry;
+        if (sy < 0 || sy >= map.h) continue;
+        for (int rx = 0; rx < MM_WIN_COLS; ++rx) {
+            int sx = col0 + rx;
+            if (sx < 0 || sx >= map.w) continue;
+            int id = map.tiles[sy * map.w + sx] & 0x1F;
+            scr.put(MM_PIX_X + rx, MM_PIX_Y + ry, id < 27 ? MM_COLOR[id] : 0);
         }
     }
-    if (map.w && map.h) {                                  // white viewport rectangle (idx 0x0F)
-        int rx = MM_X + ox * MM_W / map.w;
-        int ry = MM_Y + oy * MM_H / map.h;
-        int rw = VP_COLS * MM_W / map.w;
-        int rh = VP_ROWS * MM_H / map.h;
-        scr.rect_outline(rx, ry, rw > 1 ? rw : 2, rh > 1 ? rh : 2, COL_WHITE);
-    }
+    // white "you are here" view rectangle -- view tiles mapped into minimap pixels,
+    // clamped to the content window (func_066BB0 / func_066E0C clamp-to-view).
+    int bx0 = MM_PIX_X + (ox - col0),                bx1 = MM_PIX_X + (ox + VP_COLS - 1 - col0);
+    int by0 = MM_PIX_Y + (oy - row0),                by1 = MM_PIX_Y + (oy + VP_ROWS - 1 - row0);
+    if (bx0 < MM_PIX_X) bx0 = MM_PIX_X;
+    if (by0 < MM_PIX_Y) by0 = MM_PIX_Y;
+    if (bx1 > MM_PIX_X + MM_WIN_COLS - 1) bx1 = MM_PIX_X + MM_WIN_COLS - 1;
+    if (by1 > MM_PIX_Y + MM_WIN_ROWS - 1) by1 = MM_PIX_Y + MM_WIN_ROWS - 1;
+    if (bx1 >= bx0 && by1 >= by0)
+        scr.rect_outline(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1, COL_WHITE);
+    scr.rect_outline(MM_X, MM_Y, MM_W, MM_H, COL_MM_FRAME); // orange panel frame
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
