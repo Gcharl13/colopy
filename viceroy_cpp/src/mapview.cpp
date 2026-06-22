@@ -26,7 +26,6 @@ namespace vc {
 // map_view.md / fonts_and_colors.md:
 static constexpr uint8_t COL_MENU_GREEN = 68;   // menu titles, ui_color_for(0x52,0x8A,0x31)
 static constexpr uint8_t COL_WHITE      = 15;   // 0x0F sidebar text + minimap viewport rect
-static constexpr uint8_t COL_MM_FRAME   = 80;   // minimap orange frame, PHYS0 idx 80 (207,150,52)
 
 // Map-view geometry (map_view.md §2, tier A pixel-measured):
 static constexpr int VP_X = 0,   VP_Y = 8,  VP_W = 240, VP_H = 192;  // viewport
@@ -359,12 +358,13 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     if (by1 > cy + MM_ROWS - 1) by1 = cy + MM_ROWS - 1;
     if (bx1 >= bx0 && by1 >= by0)
         scr.rect_outline(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1, COL_WHITE);
-    scr.rect_outline(fx, fy, fw, fh, COL_MM_FRAME);        // orange frame, hugging the content
-    scr.rect_outline(fx - 1, fy - 1, fw + 2, fh + 2, 0);   // 1px black perimeter around minimap
+    scr.rect_outline(fx, fy, fw, fh, 0);                   // 1px BLACK frame around the minimap
 
-    // --- 1px black perimeter around the main map viewport and the right panel ------
-    scr.rect_outline(VP_X, VP_Y, VP_W, VP_H, 0);           // main map (0,8,240,192)
-    scr.rect_outline(SB_X, VP_Y, SB_W, VP_H, 0);           // right panel (240,8,80,192)
+    // --- 1px black separators matching the DOS layout: a single line under the menu
+    // strip (menu <-> playfield) and a single line between the map and the right panel
+    // (no doubled edge, no full screen-edge perimeter, no sidebar section dividers). --
+    scr.fill_rect(VP_X, VP_Y - 1, Surface::W, 1, 0);       // menu <-> map/sidebar (y=7, full width)
+    scr.fill_rect(SB_X, VP_Y - 1, 1, VP_H + 1, 0);         // map <-> right panel (x=240, single line)
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
