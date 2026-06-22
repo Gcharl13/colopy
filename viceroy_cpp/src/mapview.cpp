@@ -315,48 +315,50 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
         }
     }
 
-    // --- Minimap: func_066CD6/066BB0/066968 (BYTE_VERIFIED geometry). NOT the whole
-    // map squashed -- it is a 1-pixel-per-tile window. The content window is 56 cols x
-    // 39 rows (clip extents 0x37/0x26), drawn into the panel (0xF1,8,0x4F,0x29) centred
-    // at screen (0xFC,9)=(252,9) (= 241+(79-56)/2, 8+(41-39)/2), so tile (sx,sy) ->
-    // pixel (252 + sx-col0, 9 + sy-row0). The window scrolls so the current view stays
-    // centred, clamped to the map (the [0x9CCA]/[0x9CCC] origin). Per-tile colour from
-    // the in-game terrain->minimap table. White "you are here" rectangle = the view
-    // window (g_view_col0/row0..maxcol/maxrow) in minimap pixels; orange panel frame.
+    // --- Minimap: func_066CD6/066BB0/066968 (BYTE_VERIFIED) -- a 1-pixel-per-tile
+    // window, NOT the whole map squashed. The vertical clip window is 39 rows (extent
+    // 0x26) so a tall map scrolls; the orange frame hugs the content so there are NO
+    // black side bars (the byte-anchored 56-col window left 11/12px of dead panel on
+    // each side -- cropped here to fill the frame with the actual map width). Tile
+    // (sx,sy) -> pixel (cx + sx-col0, cy + sy-row0); the window scrolls to keep the
+    // view centred, clamped to the map. White "you are here" rectangle = the view
+    // window clamped (func_066BB0 / func_066E0C); orange frame (DOS ref ORANGE bdr).
     static const uint8_t MM_COLOR[27] = {
         7, 88, 72, 80, 67, 66, 68, 70, 7, 88, 72, 80, 67, 66, 68, 70,
         20, 67, 7, 67, 67, 66, 68, 67, 0, 60, 124 };
-    static const int MM_WIN_COLS = 56, MM_WIN_ROWS = 39;   // clip extents 0x37+1 / 0x26+1
-    static const int MM_PIX_X = 0xFC, MM_PIX_Y = 9;        // content top-left (252,9)
-    int avail_c = map.w > MM_WIN_COLS ? map.w - MM_WIN_COLS : 0;
-    int avail_r = map.h > MM_WIN_ROWS ? map.h - MM_WIN_ROWS : 0;
-    int col0 = ox + VP_COLS / 2 - MM_WIN_COLS / 2;         // centre window on the view
-    int row0 = oy + VP_ROWS / 2 - MM_WIN_ROWS / 2;
+    static const int MM_ROWS = 39;                         // vertical clip window (extent 0x26+1)
+    int mm_cols = map.w < (320 - MM_X - 3) ? map.w : (320 - MM_X - 3);  // full map width, fits screen
+    int cx = MM_X + 1, cy = MM_Y + 1;                      // content top-left, just inside the frame
+    int fw = mm_cols + 2, fh = MM_ROWS + 2;                // frame hugs content (no side bars)
+    int avail_c = map.w - mm_cols;
+    int avail_r = map.h > MM_ROWS ? map.h - MM_ROWS : 0;
+    int col0 = ox + VP_COLS / 2 - mm_cols / 2;             // centre window on the view
+    int row0 = oy + VP_ROWS / 2 - MM_ROWS / 2;
     if (col0 < 0) col0 = 0; else if (col0 > avail_c) col0 = avail_c;
     if (row0 < 0) row0 = 0; else if (row0 > avail_r) row0 = avail_r;
 
-    scr.fill_rect(MM_X, MM_Y, MM_W, MM_H, 0);              // BLACK panel background
-    for (int ry = 0; ry < MM_WIN_ROWS; ++ry) {
+    scr.fill_rect(MM_X, MM_Y, fw, fh, 0);                  // BLACK background behind content
+    for (int ry = 0; ry < MM_ROWS; ++ry) {
         int sy = row0 + ry;
         if (sy < 0 || sy >= map.h) continue;
-        for (int rx = 0; rx < MM_WIN_COLS; ++rx) {
+        for (int rx = 0; rx < mm_cols; ++rx) {
             int sx = col0 + rx;
             if (sx < 0 || sx >= map.w) continue;
             int id = map.tiles[sy * map.w + sx] & 0x1F;
-            scr.put(MM_PIX_X + rx, MM_PIX_Y + ry, id < 27 ? MM_COLOR[id] : 0);
+            scr.put(cx + rx, cy + ry, id < 27 ? MM_COLOR[id] : 0);
         }
     }
     // white "you are here" view rectangle -- view tiles mapped into minimap pixels,
-    // clamped to the content window (func_066BB0 / func_066E0C clamp-to-view).
-    int bx0 = MM_PIX_X + (ox - col0),                bx1 = MM_PIX_X + (ox + VP_COLS - 1 - col0);
-    int by0 = MM_PIX_Y + (oy - row0),                by1 = MM_PIX_Y + (oy + VP_ROWS - 1 - row0);
-    if (bx0 < MM_PIX_X) bx0 = MM_PIX_X;
-    if (by0 < MM_PIX_Y) by0 = MM_PIX_Y;
-    if (bx1 > MM_PIX_X + MM_WIN_COLS - 1) bx1 = MM_PIX_X + MM_WIN_COLS - 1;
-    if (by1 > MM_PIX_Y + MM_WIN_ROWS - 1) by1 = MM_PIX_Y + MM_WIN_ROWS - 1;
+    // clamped to the content (func_066BB0 / func_066E0C clamp-to-view).
+    int bx0 = cx + (ox - col0),               bx1 = cx + (ox + VP_COLS - 1 - col0);
+    int by0 = cy + (oy - row0),               by1 = cy + (oy + VP_ROWS - 1 - row0);
+    if (bx0 < cx) bx0 = cx;
+    if (by0 < cy) by0 = cy;
+    if (bx1 > cx + mm_cols - 1) bx1 = cx + mm_cols - 1;
+    if (by1 > cy + MM_ROWS - 1) by1 = cy + MM_ROWS - 1;
     if (bx1 >= bx0 && by1 >= by0)
         scr.rect_outline(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1, COL_WHITE);
-    scr.rect_outline(MM_X, MM_Y, MM_W, MM_H, COL_MM_FRAME); // orange panel frame
+    scr.rect_outline(MM_X, MM_Y, fw, fh, COL_MM_FRAME);    // orange frame, hugging the content
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
