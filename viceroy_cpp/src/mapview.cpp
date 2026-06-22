@@ -241,19 +241,6 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     }
 }
 
-// Sample a base-terrain frame's representative (center) color index for the minimap.
-static uint8_t tile_color(const Sheet& terr, uint8_t raw) {
-    int vis = raw & 0x1F;
-    int frame = (vis == 0x19 || vis == 0x1A) ? terrain_base_frame(vis)
-              : (vis >= 0x18 ? terrain_base_frame(vis < 27 ? vis : 2)
-                             : terrain_base_frame(vis & 7));
-    if (frame < 0 || frame >= terr.nframes) return 0;
-    const Frame& f = terr.frames[frame];
-    if (f.w <= 0 || f.h <= 0) return 0;
-    uint8_t c = f.px[(f.h / 2) * f.w + (f.w / 2)];
-    return c == SS_TRANSPARENT ? 0 : c;
-}
-
 void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
                     const Sheet& tiles, const Sheet& woodtile,
                     const Sheet& font, const vc::sim::GameState& g,
@@ -282,12 +269,18 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     }
 
     // --- Minimap (241,8,79,41): whole map squashed in; current view = white rect.
+    // Per-tile colour = the in-game minimap table (TERRAIN_PAL_INDEX -> VICEROY.PAL,
+    // resolved to the nearest PHYS0 palette index; func_066CD6 blits a pre-rendered
+    // bitmap built from this table). docs/INGAME_MAP_RENDER_TRACE §6.3.
+    static const uint8_t MM_COLOR[27] = {
+        7, 88, 72, 80, 67, 66, 68, 70, 7, 88, 72, 80, 67, 66, 68, 70,
+        20, 67, 7, 67, 67, 66, 68, 67, 0, 60, 124 };
     for (int my = 0; my < MM_H; ++my) {
         for (int mx = 0; mx < MM_W; ++mx) {
             int tx = map.w ? mx * map.w / MM_W : 0;
             int ty = map.h ? my * map.h / MM_H : 0;
-            uint8_t b = map.tiles[ty * map.w + tx];
-            scr.put(MM_X + mx, MM_Y + my, tile_color(terrain, b));
+            int id = map.tiles[ty * map.w + tx] & 0x1F;
+            scr.put(MM_X + mx, MM_Y + my, id < 27 ? MM_COLOR[id] : 0);
         }
     }
     if (map.w && map.h) {                                  // white viewport rectangle (idx 0x0F)
