@@ -157,6 +157,7 @@ static void blit_key(Surface& scr, const Frame& fr, int dx, int dy) {
 // distinct from plain Desert's frame 1; everything else folds to its land base.
 static int base_frame_of(uint8_t b) {
     if (classify_vis(b) == 9) return 8;          // Scrub (brush forest / forested desert)
+    if ((b & 0x1F) == 1) return 1;               // plain Desert -> bare sand (not 0x11->8)
     return terrain_base_frame(land_base_of(b));
 }
 
@@ -249,6 +250,38 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
     }
 }
 
+// coast_halo = the O512 beach halo (RENDER_SPEC: "for each non-water neighbour, emit
+// 0x69+pass then the neighbour's classified GROUND"). The 4-quadrant sub-tiles paint a
+// generic green+ocean coast; this dithers the adjacent LAND terrain into the water
+// tile's facing edge so a desert coast reads sandy, a grass coast green -- terrain, not
+// ocean, on the land side. Edge stencils: E=0x69 (right), S=0x6A (bottom), W=0x6B (left);
+// N reuses the South strip flipped to the top.
+static void coast_halo(Surface& scr, const Sheet& terr, const Sheet& phys,
+                       const Map& map, int mx, int my, int dx, int dy) {
+    struct Edge { int dx, dy, st; bool flipV; };
+    static const Edge edges[4] = {{0, -1, 0x6A, true}, {1, 0, 0x69, false},
+                                  {0, 1, 0x6A, false}, {-1, 0, 0x6B, false}};   // N,E,S,W
+    for (const Edge& e : edges) {
+        int nx = mx + e.dx, ny = my + e.dy;
+        if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
+        uint8_t nb = map.tiles[ny * map.w + nx];
+        if (is_water(nb & 0x1F)) continue;                  // only land neighbours
+        int nf = base_frame_of(nb);
+        if (nf < 0 || nf >= (int)terr.nframes || e.st >= (int)phys.nframes) continue;
+        const Frame& st = phys.frames[e.st];
+        const Frame& nbf = terr.frames[nf];
+        for (int gy = 0; gy < st.h && gy < 16; ++gy)
+            for (int gx = 0; gx < st.w && gx < 16; ++gx)
+                if (st.px[gy * st.w + gx] == 0) {           // dot
+                    int ty = e.flipV ? (15 - gy) : gy;
+                    if (gx < nbf.w && ty < nbf.h) {
+                        uint8_t p = nbf.px[ty * nbf.w + gx];
+                        if (p != SS_TRANSPARENT) scr.put(dx + gx, dy + ty, p);
+                    }
+                }
+    }
+}
+
 // Neighbour-aware tile composition (port of sprite_draw_map_tile = the O513/O512 stack).
 static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
                             const Map& map, int mx, int my, int dx, int dy) {
@@ -260,6 +293,7 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
 
     if (is_water(id)) {                                      // water -> coast, done
         compose_coast(scr, terr, phys, map, mx, my, dx, dy);
+        coast_halo(scr, terr, phys, map, mx, my, dx, dy);   // terrain-coloured beach
         return;
     }
     blend_land_edges(scr, terr, phys, map, mx, my, dx, dy, b);   // soft biome transitions
