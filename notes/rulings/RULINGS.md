@@ -4296,3 +4296,36 @@ hard rule #4 outrank the mistaken same-day edit.
 **Follow-up (R/TBD)**: river major/minor base (`0x01` vs `0x11`) is selected by feature-plane bit
 `0x80` in the EXE; the C++ `Map` loads only the terrain plane, so the port approximates it from the
 forested terrain id. Loading the feature plane would make it exact.
+
+---
+
+## 2026-06-22 — O512 (func_067F50) is the dithered terrain-edge BLEND composer (coast is one case)
+
+**User directive**: "stop with all the guessing. and go a full code deep dive on the coasts. it is
+not just 4-6 sprites. there is a whole set of functions."
+
+**Finding** (full byte-trace of `func_067F50` 0x67F50..0x681A7 + its call sites in `func_0681A8`):
+O512 is not "the coast sprites" — it is the engine that **dithers every tile edge into its 4 cardinal
+neighbours**, of which the coast is one case.
+- 4-cardinal loop (N,E,S,W via DGROUP 4-dir tables `0xA8`/`0xAE`). For each neighbour: in-bounds
+  (`lcall 0x181F:0x302`), read terrain (layer `[0xA598]`, `&0x1F`, fold forest), `classify_terrain`
+  (`lcall 0x181F:0x6AA`), fog flag from `[0xA59C]`&`[0xA89E]`.
+- **8-ring walk** for water neighbours (`@0x6809A`, gated `[bp+6]==0`): walks the neighbour's own
+  N/E/S/W (even 8-dir indices) for the first land cell → its class becomes the blend class. This is
+  the **land-side coast**.
+- **Draw** (`@0x68189`): `draw_subcell(0x69+dir)` writes the **dither stencil** (`0x69..0x6C`, sparse
+  index-0 dot patterns, pixel-confirmed) into **mask buffer `0x839E`**; `emit_terrain_sprite(nb_class)`
+  (`func_067EEC`) **masked-blits** the neighbour terrain through `0x839E` (`lcall 0x181F:0x268`).
+- Call sites: fog path `O512(1,centre_water,0)` (`@0x68244`); main path `O512(0,[bp-4],0)` (`@0x68315`)
+  — ring-walk **enabled for land centres** (land-side coast), disabled for water (O513 does the
+  water-side: shore `0x96` + `0x97+pattern` + `0x6D` 8×8 quadrants).
+
+**Ruling**: the complete coast/terrain transition = **O513 water-side + O512 land-side dither
++ O512 biome-edge dithering**. Prior renderer attempts drew only O513's 4–6 water sprites and omitted
+O512 entirely → hard tile edges instead of Col1's dithered biome/coast transitions ("all wrong").
+Documented in `spec/systems/map_system.md` §3 (O512 deep-dive subsection). `classify_terrain`/
+`is_xy_in_bounds`/`read_terrain`/masked-blit are overlay `0x181F` helpers; roles inferred from call
+context (the only non-byte-pinned part). Byte-disasm (rank 3) + user directive (rank 1).
+
+**Action**: implement the O512 dithered-edge blend in `viceroy_cpp/src/mapview.cpp` (4-cardinal +
+water ring-walk on land tiles + dither stencil `0x69+dir`); self-verify the render then user-verify.

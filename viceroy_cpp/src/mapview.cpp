@@ -47,6 +47,60 @@ static int tid_at(const Map& m, int x, int y) {        // terrain id at (x,y), -
 static bool is_forest(int t)  { return t >= 8 && t < 24; }            // auto-forest range
 static bool is_water(int t)   { return t == 0x19 || t == 0x1A; }      // Ocean / Sea-lane
 
+// classify_terrain (lcall 0x181F:0x6AA): a tile's terrain id -> its TERRAIN.SS base
+// frame (fold forest variants 8..0x17 -> 0..7, keep 0x18+). Used by the O512 blend.
+static int classify_frame(int raw_id) {
+    if (raw_id < 0) return -1;
+    int base = (raw_id < 0x18) ? (raw_id & 7) : raw_id;
+    return terrain_base_frame(base);
+}
+
+// O512 = func_067F50, the dithered terrain-edge BLEND composer (map_system.md §3
+// deep-dive, RULINGS 2026-06-22). For each cardinal neighbour (N,E,S,W via DGROUP
+// 4-dir tables 0xA8/0xAE) whose terrain class differs from the centre, dither the
+// neighbour's terrain into this tile's edge through stencil 0x69+dir (sparse index-0
+// dots = the mask written to 0x839E). Water neighbours of a LAND tile trigger the
+// 8-ring walk (even 8-dir indices = the neighbour's own N/E/S/W) to the nearby land
+// class -- the land-side coast dither. (Water centres skip the ring-walk; their coast
+// is O513's shore 0x96 + 0x97 edges + 0x6D 8x8 quadrants.)
+static void o512_blend(Surface& scr, const Sheet& terr, const Sheet& phys,
+                       const Map& map, int mx, int my, int dx, int dy, int vis) {
+    static const int D4X[4] = {0, 1, 0, -1};                 // N,E,S,W
+    static const int D4Y[4] = {-1, 0, 1, 0};
+    static const int D8X[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // 8-dir ring
+    static const int D8Y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+    bool center_water = is_water(vis);
+    int center_frame = classify_frame(vis);
+    for (int d = 0; d < 4; ++d) {
+        int nid = tid_at(map, mx + D4X[d], my + D4Y[d]);
+        if (nid < 0) continue;
+        int nb_frame = classify_frame(nid);
+        bool nb_water = is_water(nid);
+        if (nb_water && !center_water) {                     // land-side coast ring walk
+            int found = -1;
+            for (int r = 0; r < 8; r += 2) {                 // neighbour's N,E,S,W
+                int rid = tid_at(map, mx + D4X[d] + D8X[r], my + D4Y[d] + D8Y[r]);
+                if (rid >= 0 && !is_water(rid)) { found = rid; break; }
+            }
+            if (found < 0) continue;
+            nb_frame = classify_frame(found);
+            nb_water = false;
+        }
+        if (nb_water || nb_frame < 0 || nb_frame >= (int)terr.nframes) continue;
+        if (nb_frame == center_frame) continue;              // same biome -> no edge
+        int sidx = 0x69 + d;                                 // dither stencil
+        if (sidx >= (int)phys.nframes) continue;
+        const Frame& st = phys.frames[sidx];
+        const Frame& nb = terr.frames[nb_frame];
+        for (int gy = 0; gy < st.h && gy < 16; ++gy)
+            for (int gx = 0; gx < st.w && gx < 16; ++gx)
+                if (st.px[gy * st.w + gx] == 0 && gx < nb.w && gy < nb.h) {  // dot
+                    uint8_t np = nb.px[gy * nb.w + gx];
+                    if (np != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, np);
+                }
+    }
+}
+
 // Compose one 16x16 tile: TERRAIN.SS base ground + PHYS0 overlays, per the
 // byte-verified per-tile dispatch (VICEROY_decompiled.named.c `tile_dispatch`).
 // Neighbor masks follow nmask4_forest's bit order (N=8,S=4,W=2,E=1). `terr`=
@@ -72,6 +126,9 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     if (frame >= terr.nframes) frame = terr.nframes - 1;
     scr.blit_frame(terr.frames[frame], dx, dy);              // opaque base ground
 
+    // O512 dithered terrain-edge blend (neighbour biomes/coast stipple into the edge).
+    o512_blend(scr, terr, phys, map, mx, my, dx, dy, vis);
+
     // 4-neighbor masks (N=8, S=4, W=2, E=1) -- nmask4_forest bit order.
     auto mask4 = [&](bool (*pred)(int)) {
         int m = 0;
@@ -84,7 +141,10 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
 
     // Forest overlay: transition frame from the 0x40 band by forest-neighbor mask
     // (tile_dispatch: draw_tile_marker(0x41 + nmask4_forest()); the band is 64..79).
-    if (forested) {
+    // Biome-aware (colonize_sdl STEP 5, RULINGS 2026-05-19d "forest in the desert"):
+    // bases 8/9/16/17/18/22 (boreal/scrub/ice + AMER2 extended) already encode their
+    // biome texture (cacti/ice) in the base, so the generic GREEN canopy is suppressed.
+    if (forested && vis != 8 && vis != 9 && vis != 16 && vis != 17 && vis != 18 && vis != 22) {
         int fmask = mask4(is_forest);
         int f = 0x40 + fmask;
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
@@ -109,7 +169,10 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         if (river_at(mx - 1, my)) rmask |= 2;
         if (river_at(mx + 1, my)) rmask |= 1;
         if (rmask == 0) rmask = 0xf;                     // isolated -> full cross (@0x683BB)
-        int base = is_forest(vis) ? 0x01 : 0x11;         // major/minor (R approximation)
+        // major (forested river = main trunk, row 0x11) vs minor (row 0x01) -- RULINGS
+        // 2026-05-19b: forest+river clusters on the main trunks. R approximation (the
+        // exact major flag is a feature-plane bit not in this terrain-only Map).
+        int base = is_forest(vis) ? 0x11 : 0x01;
         int f = base + rmask;
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }

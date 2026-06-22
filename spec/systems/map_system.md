@@ -64,6 +64,44 @@ row/col loop, `0x0685DC..0x068897`) → **`func_O513` = `func_0681A8`** (per-til
 terrain/feature/road/river/coast sprite **selector**, `0x0681A8..0x0685DB`) →
 **`func_O512` = `func_067F50`** (sub-cell composer, `0x067F50..0x0681A7`).
 
+#### O512 = the dithered terrain-edge BLEND composer — **DEEP-DIVE 2026-06-22 (byte-verified)**
+O512 is **not** "just the coast" — it is the engine that **dithers every tile's edge into its 4
+cardinal neighbours**, and the coast is one case of it. Full trace of `func_067F50`:
+
+- **Loop the 4 cardinals** `[bp-4]=0..3` via the **4-dir tables** DGROUP `0xA8`(dx=`[0,1,0,-1]`)/
+  `0xAE`(dy=`[-1,0,1,0]`) = **N,E,S,W** (`@0x68032`). For each neighbour cell:
+  - in-bounds via `lcall 0x181F:0x302` (`is_xy_in_bounds`, `@0x68054`);
+  - read neighbour terrain from layer `[0xA598]`, mask `&0x1F`, fold forest `<0x18 → &7`
+    (`@0x67FC1`), then `lcall 0x181F:0x6AA` = **`classify_terrain`** → neighbour class `[bp-0x1C]`
+    (`@0x67FDE`); fog/hidden flag `[bp-0xE]` from layer `[0xA59C]` & fog mask `[0xA89E]`.
+- **Water-neighbour 8-ring walk** (`@0x6809A..0x6811E`, gated `nb_class∈{0x19,0x1A}` **and**
+  `[bp+6]==0`): walk the neighbour's own ring via the **8-dir tables** `0xB4`/`0xBE`, **even
+  indices only** (`test bl,1` skips diagonals, `@0x680E0`) = the neighbour's N/E/S/W; take the
+  **first land** cell found (`read_terrain` `lcall 0x181F:0x72C` → `classify_terrain`) as the
+  blend class `[bp-0x1C]`. This is what produces the **dithered beach** where land sits next to a
+  water tile (the coast on the LAND side).
+- **Skip** the edge when: neighbour is still water after the walk (`@0x68120`); or neighbour class
+  == centre class (`[0xA8A2]` classified, `@0x68153`) with no fog. Otherwise →
+- **DRAW the dithered blend** (`@0x68189`): `draw_subcell(0x69 + dir)` stamps the **dither stencil**
+  (`0x69..0x6C` = sparse index-0 dot patterns, per-direction) into the **mask buffer `0x839E`**;
+  then `emit_terrain_sprite(nb_class)` (`func_067EEC`) does a **masked blit** of the neighbour's
+  terrain through `0x839E` (`lcall 0x181F:0x268`, or `:0x286` scaled when `[0x184]!=0`), at the
+  sub-cell offset `[0x1EA4]/[0x1EA5]`. Net effect: the neighbour's terrain **bleeds into this
+  tile's edge as a dither gradient** — the characteristic Col1 biome/coast transition.
+
+**Two O512 call sites in O513** (args `[bp+4]=hidden, [bp+6]=disable-ring, [bp+8]`):
+- **Fog path** (`@0x68244`, after the `0x95` draw): `O512(1, centre_water?1:0, 0)` — blends explored
+  neighbours into a **fogged** tile's edge; ring-walk off for water centres.
+- **Main path** (`@0x68315`): `O512(0, [bp-4], 0)` where `[bp-4]` = "centre is water". So **land
+  centres run with the ring-walk ENABLED** (→ land-side coast dither); water centres run it off
+  (their coast is O513's shore `0x96` + `0x97+pattern` + `0x6D` 8×8 quadrants, below).
+
+**So the complete coast = O513 water-side (shore/edges/8×8) + O512 land-side dither (ring-walk) +
+O512 biome dithering on every differing edge.** The "4–6 coast sprites" are only O513's water side;
+the land-side beaches and all biome transitions come from O512's dither-mask blend. **B** (full chain
+byte-traced; `classify_terrain`/`is_xy_in_bounds`/`read_terrain`/masked-blit are overlay `0x181F`
+helpers, role inferred from call context).
+
 > **Correction (2026-06-22, RULING):** the earlier "coast = base `0x95` + per-direction
 > `0x69..0x6C`" was **wrong** — it was actually the **fog-of-war path**. `func_0681A8` draws
 > **`0x95` (frame 149) ONLY on unexplored/fogged tiles**: `@0x68212 mov ax,0x95` is gated by
