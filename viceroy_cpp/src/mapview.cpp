@@ -72,6 +72,11 @@ static uint8_t shore_to_sand(uint8_t p, const uint8_t* pal) {
     }
     return p;
 }
+// a water-blue palette pixel (so the blend can avoid dithering Marsh/Swamp water onto land).
+static bool is_water_px(uint8_t p, const uint8_t* pal) {
+    int r = pal[p * 3], g = pal[p * 3 + 1], b = pal[p * 3 + 2];
+    return b > r && b > g && b > 90;
+}
 // classify_terrain (func_006204, map view): id&0x1F; fold forest 8..0x17 -> (id&7)|8.
 static int classify_vis(uint8_t b) {
     int id = b & 0x1F;
@@ -154,7 +159,9 @@ static void blend_land_edges(Surface& scr, const Sheet& terr, const Sheet& phys,
             for (int gx = 0; gx < st.w && gx < 16; ++gx)
                 if (st.px[gy * st.w + gx] == 0 && gx < nbf.w && gy < nbf.h) {   // dot
                     uint8_t p = nbf.px[gy * nbf.w + gx];
-                    if (p != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, p);
+                    // dither the neighbour's LAND texture only -- never its water-blue
+                    // pixels (Marsh/Swamp), which would read as water on the land side.
+                    if (p != SS_TRANSPARENT && !is_water_px(p, terr.pal)) scr.put(dx + gx, dy + gy, p);
                 }
     }
 }
@@ -189,6 +196,24 @@ static void draw_ground(Surface& scr, const Sheet& terr, uint8_t b, int dx, int 
         scr.fill_rect(dx, dy, 16, 16, c == SS_TRANSPARENT ? 0 : c);
     }
     scr.blit_frame(f, dx, dy);
+}
+
+// "black -> nearest terrain": for an index-0 (black key) pixel of a coast sub-tile at
+// tile-local (gx,gy), return the terrain of the nearest CARDINAL neighbour (land tile ->
+// its ground, water tile -> ocean), sampled at (gx,gy). So the land-facing key pixels of
+// the coast show land, not deep ocean.
+static uint8_t nearest_terrain_px(const Sheet& terr, const Map& map, int tx, int ty, int gx, int gy) {
+    int m = gy, nx = tx, ny = ty - 1;                   // nearest of top/bottom/left/right edge
+    if (15 - gy < m) { m = 15 - gy; nx = tx; ny = ty + 1; }
+    if (gx < m)      { m = gx;      nx = tx - 1; ny = ty; }
+    if (15 - gx < m) { m = 15 - gx; nx = tx + 1; ny = ty; }
+    uint8_t nb = (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) ? 0x19 : map.tiles[ny * map.w + nx];
+    int bf = is_water(nb & 0x1F) ? terrain_base_frame(0x19) : base_frame_of(nb);
+    if (bf >= 0 && bf < (int)terr.nframes) {
+        const Frame& f = terr.frames[bf];
+        if (gx < f.w && gy < f.h) { uint8_t p = f.px[gy * f.w + gx]; if (p != SS_TRANSPARENT) return p; }
+    }
+    return 59;
 }
 
 // compose_coast (func_067F50 / MAPEDIT 0xBC1E): WATER-tile only. Walk the 8 neighbours;
@@ -261,11 +286,9 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
-    // The 0x6C sub-tiles are LAKE shores: a thin grassy edge + a band of (lake) water.
-    // For an OCEAN coast (L3==1) we want a clean SAND beach -- draw only the shore (green
-    // -> sand) and let the deep-ocean base show through the sub-tile's own water band,
-    // otherwise that medium-blue water reads as "water on the land side". Lakes keep the
-    // full grassy-shore + water sub-tile.
+    // Per sub-tile pixel: index-0 (black key) -> NEAREST TERRAIN (land-facing key shows
+    // land, ocean-facing shows ocean); the grassy shore -> SAND on an ocean coast (L3==1),
+    // kept green on a lake; the sub-tile's own water band is kept. 253 -> ocean base.
     bool ocean = is_ocean_tile(map, tx, ty);
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;
@@ -274,13 +297,11 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
         for (int gy = 0; gy < sub.h; ++gy)
             for (int gx = 0; gx < sub.w; ++gx) {
                 uint8_t p = sub.px[gy * sub.w + gx];
-                if (p == SS_TRANSPARENT || p == 0) continue;     // key/transparent -> ocean base
-                if (ocean) {
-                    uint8_t s = shore_to_sand(p, phys.pal);
-                    if (s != p) scr.put(dx + qx[q] + gx, dy + qy[q] + gy, s);  // sand only
-                } else {
-                    scr.put(dx + qx[q] + gx, dy + qy[q] + gy, p);              // lake: full shore
-                }
+                int TX = qx[q] + gx, TY = qy[q] + gy;            // tile-local 0..15
+                if (p == SS_TRANSPARENT) continue;               // -> ocean base
+                uint8_t out = (p == 0) ? nearest_terrain_px(terr, map, tx, ty, TX, TY)
+                            : (ocean ? shore_to_sand(p, phys.pal) : p);
+                scr.put(dx + TX, dy + TY, out);
             }
     }
 }
