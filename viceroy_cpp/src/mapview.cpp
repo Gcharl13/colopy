@@ -114,21 +114,12 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     // 0x95 (the sandy shallows over ocean), then loop the 4 cardinal directions
     // (DIR4 = N,E,S,W) and for each LAND neighbor draw the per-direction overlay
     // 0x69 + direction. Not corner sprites, not a band-bleed.
-    if (is_water(vis)) {
-        static const int D4X[4] = {0, 1, 0, -1};   // DIR4_DX (N,E,S,W)
-        static const int D4Y[4] = {-1, 0, 1, 0};   // DIR4_DY
-        bool coastal = false;
-        for (int d = 0; d < 4; ++d) {
-            int nt = tid_at(map, mx + D4X[d], my + D4Y[d]);
-            if (nt >= 0 && !is_water(nt)) coastal = true;
-        }
-        // 0x95 = sandy shallows (the visible beach). The per-direction 0x69+dir
-        // overlays are index-0 edge STENCILS (raw .SS: frames 105-108 carry only
-        // transparent + index-0, no color), so they add no visible beach -- drawing
-        // them only smears black. Visible coast = the 0x95 sandy base.
-        if (coastal && 0x95 < (int)phys.nframes)
-            scr.blit_frame(phys.frames[0x95], dx, dy);
-    }
+    // NOTE: 0x95 (149) is the PLOW/farmland improvement sprite (vertical plowed
+    // rows), NOT a coast base -- the spec's "base coast 0x95" was mislabeled; it is
+    // gated by the feature/plow bits, not drawn on coasts. The real coast sprites
+    // are the ocean+sand diagonals 0x96..0x99 (150..153) selected by land-neighbor
+    // config. Not yet correctly implemented -> no coast overlay for now (clean
+    // land/water edge) rather than drawing the wrong sprite.
 
     if (vis == 27 && (int)phys.nframes > 0x21) scr.blit_frame(phys.frames[0x21], dx, dy); // mountains
     if (vis == 28 && (int)phys.nframes > 0x31) scr.blit_frame(phys.frames[0x31], dx, dy); // hills
