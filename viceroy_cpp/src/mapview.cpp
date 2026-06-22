@@ -255,13 +255,21 @@ static uint8_t tile_color(const Sheet& terr, uint8_t raw) {
 }
 
 void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
-                    const Sheet& tiles, const IndexedPng& woodpanl,
+                    const Sheet& tiles, const Sheet& woodtile,
                     const Sheet& font, const vc::sim::GameState& g,
                     const vc::sim::World& w, int ox, int oy) {
     (void)w;  // colonies are not yet placed on the map (no owner-dots / unit panel)
 
-    // --- Background: WOODPANL wood (menu strip + sidebar). ------------------
-    scr.blit_region(woodpanl, 0, 0, Surface::W, Surface::H, 0, 0);
+    // --- Background: WOODTILE.SS (32x24) tiled across the chrome (menu bar +
+    //     sidebar), per the in-game wood fill. Tiled over the whole screen; the
+    //     map viewport is painted with terrain on top. ------------------------
+    if (woodtile.nframes > 0) {
+        const Frame& wt = woodtile.frames[0];
+        if (wt.w > 0 && wt.h > 0)
+            for (int y = 0; y < Surface::H; y += wt.h)
+                for (int x = 0; x < Surface::W; x += wt.w)
+                    scr.blit_frame(wt, x, y);
+    }
 
     // --- Map viewport (0,8,240,192): 15x12 tiles @16px, layered terrain
     //     composition (TERRAIN.SS base ground + PHYS0 overlays), map_view.md §2. -

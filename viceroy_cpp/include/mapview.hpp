@@ -15,11 +15,11 @@
 namespace vc {
 
 // Render the 320x200 map-view screen. `terrain` = TERRAIN.SS base-ground sheet,
-// `tiles` = PHYS0 overlay sheet, `woodpanl` = WOODPANL.PIK background (indexed),
-// `font` = FONTTINY. (ox,oy) = top-left map tile of the 15x12 viewport. Live
-// values come from the headless sim state.
+// `tiles` = PHYS0 overlay sheet, `woodtile` = WOODTILE.SS 32x24 wood-grain tile
+// (tiled across the menu bar + sidebar, per the in-game chrome), `font` = FONTTINY.
+// (ox,oy) = top-left map tile of the 15x12 viewport. Live values come from the sim.
 void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
-                    const Sheet& tiles, const IndexedPng& woodpanl,
+                    const Sheet& tiles, const Sheet& woodtile,
                     const Sheet& font, const vc::sim::GameState& g,
                     const vc::sim::World& w, int ox, int oy);
 

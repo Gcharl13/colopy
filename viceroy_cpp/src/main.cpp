@@ -205,7 +205,7 @@ static int cmd_mapview(int argc, char** argv) {
     Sheet terrain = load_bundle(bd + "/sprites/TERRAIN.png", bd + "/sprites/TERRAIN.json");
     Sheet tiles   = load_bundle(bd + "/sprites/PHYS0.png",   bd + "/sprites/PHYS0.json");
     Sheet font    = load_bundle(bd + "/fonts/FONTTINY.png",  bd + "/fonts/FONTTINY.json");
-    IndexedPng wood = read_png_indexed(bd + "/backgrounds/WOODPANL.png");
+    Sheet woodtile = load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
     Map map = load_mp(mp);
 
     // A minimal, honest game state: one colony of the human power building.
@@ -222,7 +222,7 @@ static int cmd_mapview(int argc, char** argv) {
         // PHYS0 differs from VICEROY.PAL in 197/256 entries -- VICEROY.PAL is 4 bytes/
         // entry; WOODPANL + ICONS + fonts all share PHYS0's palette within ~2 indices).
         scr.set_palette(tiles.pal);
-        render_mapview(scr, map, terrain, tiles, wood, font, g, w, ox, oy);
+        render_mapview(scr, map, terrain, tiles, woodtile, font, g, w, ox, oy);
         Image img = scr.to_rgb(scale);
         char name[256];
         std::snprintf(name, sizeof name, "%s_%02d.png", out, t);
