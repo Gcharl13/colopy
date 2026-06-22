@@ -37,18 +37,25 @@ static int terrain_base_frame(int code) {
     return code;
 }
 
-// Compose one 16x16 tile: TERRAIN.SS base ground (emit_ground_sprite) + PHYS0
-// overlays, per the byte-verified per-tile dispatch (VICEROY_decompiled.named.c
-// @45356-45390) and CLAUDE.md #5 (amended). `terr`=TERRAIN.SS, `phys`=PHYS0.SS.
-// Common terrains (0..26) are byte-grounded; mountains/hills(27/28) land-base is
-// an R approximation; the coast sub-cell halo (PHYS0 0x70 band) stays TBD.
+static int tid_at(const Map& m, int x, int y) {        // terrain id at (x,y), -1 off-map
+    if (x < 0 || y < 0 || x >= m.w || y >= m.h) return -1;
+    return m.tiles[y * m.w + x] & 0x1F;
+}
+static bool is_forest(int t)  { return t >= 8 && t < 24; }            // auto-forest range
+static bool is_water(int t)   { return t == 0x19 || t == 0x1A; }      // Ocean / Sea-lane
+
+// Compose one 16x16 tile: TERRAIN.SS base ground + PHYS0 overlays, per the
+// byte-verified per-tile dispatch (VICEROY_decompiled.named.c `tile_dispatch`).
+// Neighbor masks follow nmask4_forest's bit order (N=8,S=4,W=2,E=1). `terr`=
+// TERRAIN.SS, `phys`=PHYS0.SS. Forest/coast use the TERRAIN layer (the feature
+// layer is empty in AMER2). mountains/hills(27/28) base is an R approximation.
 static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
-                            uint8_t raw, int dx, int dy) {
-    int vis = raw & 0x1F;                       // decoded terrain id
-    bool forested = (vis >= 8 && vis < 24);     // auto-forest range (CLAUDE.md #3)
+                            const Map& map, int mx, int my, int dx, int dy) {
+    int vis = tid_at(map, mx, my);
+    bool forested = is_forest(vis);
 
     int frame;
-    if (vis == 0x19 || vis == 0x1A) {           // Ocean / Sea-lane base
+    if (is_water(vis)) {                         // Ocean / Sea-lane base
         frame = terrain_base_frame(vis);
     } else if (vis >= 0x18) {                    // Arctic(24)/Mountains(27)/Hills(28)
         frame = (vis == 27 || vis == 28) ? 2     // mtn/hills sit on a land base (R)
@@ -62,15 +69,44 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     if (frame >= terr.nframes) frame = terr.nframes - 1;
     scr.blit_frame(terr.frames[frame], dx, dy);              // opaque base ground
 
-    // PHYS0 overlays (SPRITE_CATALOG bands; spec/systems/map_system.md §3):
-    if (forested && (int)phys.nframes > 0x41)  scr.blit_frame(phys.frames[0x41], dx, dy); // forest
+    // 4-neighbor masks (N=8, S=4, W=2, E=1) -- nmask4_forest bit order.
+    auto mask4 = [&](bool (*pred)(int)) {
+        int m = 0;
+        if (pred(tid_at(map, mx, my - 1))) m |= 8;
+        if (pred(tid_at(map, mx, my + 1))) m |= 4;
+        if (pred(tid_at(map, mx - 1, my))) m |= 2;
+        if (pred(tid_at(map, mx + 1, my))) m |= 1;
+        return m;
+    };
+
+    // Forest overlay: transition frame from the 0x40 band by forest-neighbor mask
+    // (tile_dispatch: draw_tile_marker(0x41 + nmask4_forest()); the band is 64..79).
+    if (forested) {
+        int fmask = mask4(is_forest);
+        int f = 0x40 + fmask;
+        if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
+    }
+
+    // Coast beach-halo: a WATER tile touching land draws sand-edge corners
+    // 150..153 (CLAUDE.md #4). Each corner is keyed by its two adjacent land
+    // neighbors (NW=150, NE=151, SE=152, SW=153).
+    if (is_water(vis)) {
+        bool N = !is_water(tid_at(map, mx, my - 1)) && tid_at(map, mx, my - 1) >= 0;
+        bool S = !is_water(tid_at(map, mx, my + 1)) && tid_at(map, mx, my + 1) >= 0;
+        bool W = !is_water(tid_at(map, mx - 1, my)) && tid_at(map, mx - 1, my) >= 0;
+        bool E = !is_water(tid_at(map, mx + 1, my)) && tid_at(map, mx + 1, my) >= 0;
+        if ((int)phys.nframes > 153) {
+            if (N || W) scr.blit_frame(phys.frames[150], dx, dy);   // NW
+            if (N || E) scr.blit_frame(phys.frames[151], dx, dy);   // NE
+            if (S || E) scr.blit_frame(phys.frames[152], dx, dy);   // SE
+            if (S || W) scr.blit_frame(phys.frames[153], dx, dy);   // SW
+        }
+    }
+
     if (vis == 27 && (int)phys.nframes > 0x21) scr.blit_frame(phys.frames[0x21], dx, dy); // mountains
     if (vis == 28 && (int)phys.nframes > 0x31) scr.blit_frame(phys.frames[0x31], dx, dy); // hills
-    // DEFERRED (next milestone): the connectivity layers -- river (PHYS0 0x51..0x5E
-    // chosen by 4-neighbor river connections, MP bit5=0x20) and the coast beach-halo
-    // (water tiles adjacent to land, PHYS0 0x96..0x99 + 0x70 sub-cell band). Both need
-    // the func_O512 neighbor analysis; drawing a single river frame here produced
-    // uniform wrong streaks, so it is omitted until the connectivity pass lands.
+    // River (MP feature/resfog connectivity) stays a labeled TBD pending the
+    // 3-layer .MP decode + func_O512 connectivity (AMER2 feature layer is empty).
 }
 
 // Sample a base-terrain frame's representative (center) color index for the minimap.
@@ -101,8 +137,7 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
         for (int col = 0; col < VP_COLS; ++col) {
             int mx = ox + col, my = oy + row;
             if (mx < 0 || my < 0 || mx >= map.w || my >= map.h) continue;
-            uint8_t b = map.tiles[my * map.w + mx];
-            terrain_compose(scr, terrain, tiles, b, VP_X + col * TILE, VP_Y + row * TILE);
+            terrain_compose(scr, terrain, tiles, map, mx, my, VP_X + col * TILE, VP_Y + row * TILE);
         }
     }
 
