@@ -197,12 +197,10 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
-    static const char* MENU[] = {"GAME","VIEW","ORDERS","REPORTS","TRADE","CHEAT","COLONIZOPEDIA"};
-    int mxp = 2;
-    for (const char* item : MENU) {
-        scr.draw_text(font, mxp, 1, item, COL_MENU_GREEN);
-        mxp += scr.text_width(font, item) + 4;             // glyph-grid + gap (R)
-    }
+    static const char* MENU[]  = {"GAME","VIEW","ORDERS","REPORTS","TRADE","CHEAT","COLONIZOPEDIA"};
+    static const int    MENU_X[] = {6, 44, 82, 132, 188, 226, 258};   // spread x-origins (R, §6.4)
+    for (int i = 0; i < 7; ++i)
+        scr.draw_text(font, MENU_X[i], 1, MENU[i], COL_MENU_GREEN);
 
     // --- Sidebar B (240,72,80,64): season / gold / tax, FONTTINY white, at the
     //     R coords pixel-measured from frame 1310262984 (map_view.md §6.3). -----
