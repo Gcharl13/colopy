@@ -109,17 +109,36 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         }
     }
 
-    // Coast -- EXACTLY per map_system.md §1b (BYTE_VERIFIED 2026-06-21,
-    // func_0681A8/func_067F50): on a coastal water tile draw the base coast sprite
-    // 0x95 (the sandy shallows over ocean), then loop the 4 cardinal directions
-    // (DIR4 = N,E,S,W) and for each LAND neighbor draw the per-direction overlay
-    // 0x69 + direction. Not corner sprites, not a band-bleed.
-    // NOTE: 0x95 (149) is the PLOW/farmland improvement sprite (vertical plowed
-    // rows), NOT a coast base -- the spec's "base coast 0x95" was mislabeled; it is
-    // gated by the feature/plow bits, not drawn on coasts. The real coast sprites
-    // are the ocean+sand diagonals 0x96..0x99 (150..153) selected by land-neighbor
-    // config. Not yet correctly implemented -> no coast overlay for now (clean
-    // land/water edge) rather than drawing the wrong sprite.
+    // Coast -- the byte-verified composer (tile_compose_subcells / func_067F50,
+    // map_system.md §1b): for a WATER tile, each cardinal direction (DIR4 = N,E,S,W)
+    // whose neighbour is LAND draws the per-direction stipple frame 0x69+dir AND
+    // emit_terrain_sprite(neighbour) -- i.e. the neighbour's LAND terrain stamped at
+    // the stipple-mask positions, a dithered shoreline. (0x95 is the PLOW, not coast;
+    // 105-108 carry only transparent + index-0, so they are masks, not drawable.)
+    if (is_water(vis)) {
+        static const int D4X[4] = {0, 1, 0, -1};   // DIR4_DX (N,E,S,W)
+        static const int D4Y[4] = {-1, 0, 1, 0};   // DIR4_DY
+        for (int d = 0; d < 4; ++d) {
+            int nt = tid_at(map, mx + D4X[d], my + D4Y[d]);
+            if (nt < 0 || is_water(nt)) continue;          // land neighbour only
+            int stencilIdx = 0x69 + d;
+            if (stencilIdx >= (int)phys.nframes) continue;
+            const Frame& st = phys.frames[stencilIdx];     // dither stipple mask
+            int nbase = (nt >= 0x18) ? nt : (nt & 7);
+            if (nbase == 1 && !is_forest(nt)) nbase = 0x11;
+            int nf = terrain_base_frame(nbase);
+            if (nf < 0 || nf >= terr.nframes) continue;
+            const Frame& land = terr.frames[nf];           // neighbour's land terrain
+            for (int gy = 0; gy < st.h; ++gy)
+                for (int gx = 0; gx < st.w; ++gx)
+                    if (st.px[gy * st.w + gx] != SS_TRANSPARENT) {   // stipple dot
+                        if (gx < land.w && gy < land.h) {
+                            uint8_t lp = land.px[gy * land.w + gx];
+                            if (lp != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, lp);
+                        }
+                    }
+        }
+    }
 
     if (vis == 27 && (int)phys.nframes > 0x21) scr.blit_frame(phys.frames[0x21], dx, dy); // mountains
     if (vis == 28 && (int)phys.nframes > 0x31) scr.blit_frame(phys.frames[0x31], dx, dy); // hills
