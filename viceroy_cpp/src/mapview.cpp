@@ -55,28 +55,6 @@ static bool water_at(const Map& m, int x, int y) {      // off-map counts as sea
     if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
     return is_water(m.tiles[y * m.w + x] & 0x1F);
 }
-// L3 resfog class at (x,y): 1 = open ocean, 2+ = inland lake/land region. Off-map or
-// no-L3 -> 1 (treat as ocean). Distinguishes ocean coasts (sand beach) from lake shores.
-static int resfog_at(const Map& m, int x, int y) {
-    if (m.resfog.empty() || x < 0 || y < 0 || x >= m.w || y >= m.h) return 1;
-    return m.resfog[y * m.w + x];
-}
-static bool is_ocean_tile(const Map& m, int x, int y) { return resfog_at(m, x, y) == 1; }
-// Remap a green "grassy shore" pixel to beach sand (ocean coasts), preserving brightness;
-// water/sand pixels pass through. Sand indices 88/89/111 = dark/mid/light beach sand.
-static uint8_t shore_to_sand(uint8_t p, const uint8_t* pal) {
-    int r = pal[p * 3], g = pal[p * 3 + 1], b = pal[p * 3 + 2];
-    if (g > r + 5 && g > b + 5) {                       // a green land pixel
-        int lum = (r + g + b) / 3;
-        return lum > 130 ? 111 : (lum > 90 ? 89 : 88);
-    }
-    return p;
-}
-// a water-blue palette pixel (so the blend can avoid dithering Marsh/Swamp water onto land).
-static bool is_water_px(uint8_t p, const uint8_t* pal) {
-    int r = pal[p * 3], g = pal[p * 3 + 1], b = pal[p * 3 + 2];
-    return b > r && b > g && b > 90;
-}
 // classify_terrain (func_006204, map view): id&0x1F; fold forest 8..0x17 -> (id&7)|8.
 static int classify_vis(uint8_t b) {
     int id = b & 0x1F;
@@ -108,18 +86,15 @@ static int forest_nmask(const Map& m, int x, int y) {            // N=8,S=4,W=2,
     if (forest_neighbour(m, x + 1, y)) k |= 1;
     return k;
 }
-// river continuity: a cardinal continues the river if the neighbour carries the
-// river bit 0x40 OR is open water (the river MOUTH flows into the sea / a lake).
-static bool river_link(const Map& m, int x, int y) {
-    uint8_t b = L1at(m, x, y);
-    return (b & 0x40) || is_water(b & 0x1F);
-}
-static int river_nmask(const Map& m, int x, int y) {            // N=8,S=4,W=2,E=1; isolated->0xF
+// river continuity mask (func_067B84(0x40,3)): 4 cardinal neighbours carrying the river
+// bit 0x40; N=8,S=4,W=2,E=1; isolated -> 0xF (@0x683BB). NOT linked to open water -- the
+// in-game river band does not connect to the sea.
+static int river_nmask(const Map& m, int x, int y) {
     int k = 0;
-    if (river_link(m, x, y - 1)) k |= 8;
-    if (river_link(m, x, y + 1)) k |= 4;
-    if (river_link(m, x - 1, y)) k |= 2;
-    if (river_link(m, x + 1, y)) k |= 1;
+    if (L1at(m, x, y - 1) & 0x40) k |= 8;
+    if (L1at(m, x, y + 1) & 0x40) k |= 4;
+    if (L1at(m, x - 1, y) & 0x40) k |= 2;
+    if (L1at(m, x + 1, y) & 0x40) k |= 1;
     return k ? k : 0x0F;
 }
 static int feat_hi_nmask(const Map& m, int x, int y) {         // (nb&0xA0)==self_hi
@@ -131,37 +106,37 @@ static int feat_hi_nmask(const Map& m, int x, int y) {         // (nb&0xA0)==sel
     return k;
 }
 
-// O512 land-biome edge dither (func_067F50 main path, land centres): for each cardinal
-// LAND neighbour whose base biome differs, dither the neighbour's TERRAIN.SS texture
-// into this tile's edge through the dither stencil 0x69+dir (index-0 dots = the 0x839E
-// mask). This is the soft biome transition DOS draws between adjacent land terrains;
-// land/water edges are the coast (compose_coast), not this. map_system.md §3, RULINGS.
-static void blend_land_edges(Surface& scr, const Sheet& terr, const Sheet& phys,
-                             const Map& map, int mx, int my, int dx, int dy, uint8_t cb) {
-    // The dither stencils are 16x16 EDGE strips: 0x69 = East (right cols), 0x6A =
-    // South (bottom rows), 0x6B = West (left cols) -- 3px deep, index-0 dots. There
-    // is no North strip; the N boundary is dithered by the north neighbour's S edge.
-    struct Edge { int dx, dy, st; };
-    static const Edge edges[3] = {{1, 0, 0x69}, {0, 1, 0x6A}, {-1, 0, 0x6B}};   // E,S,W
-    int cbase = land_base_of(cb);
-    for (const Edge& e : edges) {
-        int nx = mx + e.dx, ny = my + e.dy;
+// O512 terrain-edge blend (func_067F50): for each cardinal neighbour whose classified
+// terrain differs and is LAND, dither its ground texture into the matching edge. The
+// in-game mechanism is: the dither stencil writes index-0 holes, then emit_terrain
+// backfills them with the neighbour's ground -- equivalently, draw the neighbour's
+// ground at the stencil's index-0 dots. Stencils (my frames, = game 0x69+dir): dir 0..3
+// = N,E,S,W -> 0x68/0x69/0x6A/0x6B with dots on the top/right/bottom/left edge (verified,
+// docs/INGAME_MAP_RENDER_TRACE §6.1). Runs for BOTH land tiles (biome blend) and water
+// tiles -- where a LAND neighbour dithers in as the BEACH HALO showing the real land
+// terrain (sand for a desert coast, grass for a grass coast).
+static int base_frame_of(uint8_t b);   // defined below (uses classify_vis/land_base_of)
+static void blend_edges(Surface& scr, const Sheet& terr, const Sheet& phys,
+                        const Map& map, int mx, int my, int dx, int dy) {
+    static const int D4X[4] = {0, 1, 0, -1}, D4Y[4] = {-1, 0, 1, 0};   // N,E,S,W
+    int cclass = classify_vis(map.tiles[my * map.w + mx]);
+    for (int d = 0; d < 4; ++d) {
+        int nx = mx + D4X[d], ny = my + D4Y[d];
         if (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) continue;
         uint8_t nb = map.tiles[ny * map.w + nx];
-        if (is_water(nb & 0x1F)) continue;                  // coast, not biome blend
-        int nbase = land_base_of(nb);
-        if (nbase == cbase) continue;                       // same biome -> no edge
-        int nf = terrain_base_frame(nbase);
-        if (nf < 0 || nf >= (int)terr.nframes || e.st >= (int)phys.nframes) continue;
-        const Frame& st = phys.frames[e.st];                // 16x16 edge strip
+        int nclass = classify_vis(nb);
+        if (is_water(nclass)) continue;                     // water neighbour -> no dither
+        if (nclass == cclass) continue;                     // same biome -> no edge
+        int nf = base_frame_of(nb);                         // neighbour ground frame
+        int sidx = 0x68 + d;                                // stencil N/E/S/W
+        if (nf < 0 || nf >= (int)terr.nframes || sidx >= (int)phys.nframes) continue;
+        const Frame& st = phys.frames[sidx];
         const Frame& nbf = terr.frames[nf];
         for (int gy = 0; gy < st.h && gy < 16; ++gy)
             for (int gx = 0; gx < st.w && gx < 16; ++gx)
-                if (st.px[gy * st.w + gx] == 0 && gx < nbf.w && gy < nbf.h) {   // dot
+                if (st.px[gy * st.w + gx] == 0 && gx < nbf.w && gy < nbf.h) {   // stencil hole
                     uint8_t p = nbf.px[gy * nbf.w + gx];
-                    // dither the neighbour's LAND texture only -- never its water-blue
-                    // pixels (Marsh/Swamp), which would read as water on the land side.
-                    if (p != SS_TRANSPARENT && !is_water_px(p, terr.pal)) scr.put(dx + gx, dy + gy, p);
+                    if (p != SS_TRANSPARENT) scr.put(dx + gx, dy + gy, p);
                 }
     }
 }
@@ -198,30 +173,13 @@ static void draw_ground(Surface& scr, const Sheet& terr, uint8_t b, int dx, int 
     scr.blit_frame(f, dx, dy);
 }
 
-// "black -> nearest terrain": for an index-0 (black key) pixel of a coast sub-tile at
-// tile-local (gx,gy), return the terrain of the nearest CARDINAL neighbour (land tile ->
-// its ground, water tile -> ocean), sampled at (gx,gy). So the land-facing key pixels of
-// the coast show land, not deep ocean.
-static uint8_t nearest_terrain_px(const Sheet& terr, const Map& map, int tx, int ty, int gx, int gy) {
-    int m = gy, nx = tx, ny = ty - 1;                   // nearest of top/bottom/left/right edge
-    if (15 - gy < m) { m = 15 - gy; nx = tx; ny = ty + 1; }
-    if (gx < m)      { m = gx;      nx = tx - 1; ny = ty; }
-    if (15 - gx < m) { m = 15 - gx; nx = tx + 1; ny = ty; }
-    uint8_t nb = (nx < 0 || ny < 0 || nx >= map.w || ny >= map.h) ? 0x19 : map.tiles[ny * map.w + nx];
-    int bf = is_water(nb & 0x1F) ? terrain_base_frame(0x19) : base_frame_of(nb);
-    if (bf >= 0 && bf < (int)terr.nframes) {
-        const Frame& f = terr.frames[bf];
-        if (gx < f.w && gy < f.h) { uint8_t p = f.px[gy * f.w + gx]; if (p != SS_TRANSPARENT) return p; }
-    }
-    return 59;
-}
-
-// compose_coast (func_067F50 / MAPEDIT 0xBC1E): WATER-tile only. Walk the 8 neighbours;
-// each LAND neighbour contributes to a 3-bit per-quadrant config (cardinal -> bit2 in
-// its quadrant + bit0 in the next; diagonal -> bit1). Clean diagonal patterns draw the
-// adjacent land's ground + the full-tile beach 0x96+pattern; otherwise 4 quadrant 8x8
-// sub-tiles PHYS0 0x6C + config*4 + q (config 0 = black null-pad -> open ocean).
-static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
+// compose_coast (O513 step 10, WATER tiles only): from analyse_connections, build the
+// 8-neighbour land bitmap `conn` + per-quadrant `cfg`, then draw the coast sub-tiles over
+// the ocean base. Clean diagonal -> one 16x16 beach 0x96+pattern; else 4 quadrant 8x8
+// sub-tiles 0x6C + cfg[q]*4 + q at NW/NE/SE/SW. blit_key leaves index-0 (the key) and 253
+// showing the ocean base -- the in-game `emit_terrain(water)` backfill of the 0-holes.
+// (The land-terrain beach halo is drawn separately by blend_edges, run on water tiles.)
+static void compose_coast(Surface& scr, const Sheet& phys,
                           const Map& map, int tx, int ty, int dx, int dy) {
     static const int CDX[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // N,NE,E,SE,S,SW,W,NW
     static const int CDY[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
@@ -234,75 +192,20 @@ static void compose_coast(Surface& scr, const Sheet& terr, const Sheet& phys,
         else { cfg[dir >> 1] |= 4; cfg[((dir >> 1) + 1) & 3] |= 1; }
     }
     if (!conn) return;                                       // open ocean
-    // 1-tile lake = water enclosed on all 4 CARDINALS by land (conn bits N0/E2/S4/W6
-    // = 0x55). The 0x6C+cfg sub-tiles are transparent at the outer corners, so the
-    // ocean base shows on the coast side ("water on the coast side"). Render it as a
-    // pond: surrounding land at the edges (transparent shows the land base) + lake
-    // water in the centre (the sub-tiles' index-0 key, drawn as water not ocean base).
-    if ((conn & 0x55) == 0x55) {
-        static const int c4dx[4] = {0, 1, 0, -1}, c4dy[4] = {-1, 0, 1, 0};
-        int nb = -1;
-        for (int k = 0; k < 4; ++k)
-            if (!water_at(map, tx + c4dx[k], ty + c4dy[k]))
-                nb = map.tiles[(ty + c4dy[k]) * map.w + (tx + c4dx[k])] & 0x1F;
-        if (nb >= 0) draw_ground(scr, terr, (uint8_t)nb, dx, dy);
-        uint8_t wat = 59;                                    // lake-water palette index
-        int of = terrain_base_frame(0x19);
-        if (of >= 0 && of < (int)terr.nframes) {
-            const Frame& o = terr.frames[of];
-            if (o.w > 0 && o.h > 0) {
-                uint8_t c = o.px[(o.h / 2) * o.w + o.w / 2];
-                if (c != SS_TRANSPARENT) wat = c;
-            }
-        }
-        static const int lqx[4] = {0, 8, 8, 0}, lqy[4] = {0, 0, 8, 8};
-        for (int q = 0; q < 4; ++q) {
-            int f = 0x6C + cfg[q] * 4 + q;                    // per-quadrant sub-tile
-            if (f < 0 || f >= (int)phys.nframes) continue;
-            const Frame& sub = phys.frames[f];
-            for (int gy = 0; gy < sub.h; ++gy)
-                for (int gx = 0; gx < sub.w; ++gx) {
-                    uint8_t p = sub.px[gy * sub.w + gx];
-                    if (p == SS_TRANSPARENT) continue;        // land base shows (coast)
-                    scr.put(dx + lqx[q] + gx, dy + lqy[q] + gy, p == 0 ? wat : p);
-                }
-        }
-        return;
-    }
     int pattern = -1;
-    if ((conn & 0xDD) == 0xC1) pattern = 0;                  // land in NW corner
+    if ((conn & 0xDD) == 0xC1) pattern = 0;                  // clean NW-corner diagonal
     if ((conn & 0x77) == 0x07) pattern = 1;                  // NE
     if ((conn & 0x77) == 0x70) pattern = 2;                  // SW
     if ((conn & 0xDD) == 0x1C) pattern = 3;                  // SE
     if (pattern >= 0) {
-        static const int c4dx[4] = {0, 1, 0, -1}, c4dy[4] = {-1, 0, 1, 0};
-        int nb = -1;
-        for (int k = 0; k < 4; ++k)
-            if (!water_at(map, tx + c4dx[k], ty + c4dy[k]))
-                nb = map.tiles[(ty + c4dy[k]) * map.w + (tx + c4dx[k])] & 0x1F;
-        if (nb >= 0) draw_ground(scr, terr, (uint8_t)nb, dx, dy);
         int f = 0x96 + pattern;
         if (f < (int)phys.nframes) blit_key(scr, phys.frames[f], dx, dy);
         return;
     }
     static const int qx[4] = {0, 8, 8, 0}, qy[4] = {0, 0, 8, 8};   // NW,NE,SE,SW
-    // Per sub-tile pixel: index-0 (black key) -> NEAREST TERRAIN (land-facing key shows
-    // land, ocean-facing shows ocean); the grassy shore -> SAND on an ocean coast (L3==1),
-    // kept green on a lake; the sub-tile's own water band is kept. 253 -> ocean base.
-    bool ocean = is_ocean_tile(map, tx, ty);
     for (int q = 0; q < 4; ++q) {
         int f = 0x6C + cfg[q] * 4 + q;
-        if (f < 0 || f >= (int)phys.nframes) continue;
-        const Frame& sub = phys.frames[f];
-        for (int gy = 0; gy < sub.h; ++gy)
-            for (int gx = 0; gx < sub.w; ++gx) {
-                uint8_t p = sub.px[gy * sub.w + gx];
-                int TX = qx[q] + gx, TY = qy[q] + gy;            // tile-local 0..15
-                if (p == SS_TRANSPARENT) continue;               // -> ocean base
-                uint8_t out = (p == 0) ? nearest_terrain_px(terr, map, tx, ty, TX, TY)
-                            : (ocean ? shore_to_sand(p, phys.pal) : p);
-                scr.put(dx + TX, dy + TY, out);
-            }
+        if (f >= 0 && f < (int)phys.nframes) blit_key(scr, phys.frames[f], dx + qx[q], dy + qy[q]);
     }
 }
 
@@ -313,25 +216,24 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     int id = b & 0x1F;
     int vis = classify_vis(b);
 
-    draw_ground(scr, terr, b, dx, dy);                       // 6b base ground
+    draw_ground(scr, terr, b, dx, dy);                       // 1. base ground (emit_ground)
+    blend_edges(scr, terr, phys, map, mx, my, dx, dy);       // 2. O512: biome blend / beach halo
 
-    if (is_water(id)) {                                      // water -> coast, done
-        compose_coast(scr, terr, phys, map, mx, my, dx, dy);
+    if (is_water(id)) {                                      // 10. coast (water tiles), done
+        compose_coast(scr, phys, map, mx, my, dx, dy);
         return;
     }
-    blend_land_edges(scr, terr, phys, map, mx, my, dx, dy, b);   // soft biome transitions
-
-    // 6c forest canopy (visible band 8..0x17, EXCEPT the Desert/Scrub land_base==1).
+    // 4. forest canopy (visible band 8..0x17, EXCEPT Desert/Scrub land_base==1): 0x41+mask.
     if (vis >= 8 && vis < 0x18 && land_base_of(b) != 1) {
-        int f = 0x40 + forest_nmask(map, mx, my);
+        int f = 0x40 + forest_nmask(map, mx, my);            // my 0x40 = game 0x41
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }
-    // 6d river-on-terrain (bit 0x40): PHYS0 river row 0x00 + continuity mask.
+    // 7. river band (bit 0x40): base (bit 0x80 ? 0x00 : 0x10) + 4-cardinal river mask.
     if (b & 0x40) {
-        int f = 0x00 + river_nmask(map, mx, my);
+        int f = ((b & 0x80) ? 0x00 : 0x10) + river_nmask(map, mx, my);   // game 0x01/0x11
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }
-    // 6e hills / mountains (bit 0x20; bit 0x80 = mountain) + same-class mask.
+    // 6. hills / mountains (bit 0x20; bit 0x80 = mountain) + same-class mask.
     if (b & 0x20) {
         int base = (b & 0x80) ? 0x20 : 0x30;
         int f = base + feat_hi_nmask(map, mx, my);
