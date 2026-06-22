@@ -90,26 +90,28 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }
 
-    // River overlay (land tiles, terrain bit 0x20). Per tile_dispatch: isolated =
-    // 0x51; else for each connected DIR8 direction draw 0x52+dir (river segments
-    // stack into a path). River-neighbor = adjacent tile also has bit 0x20.
+    // River overlay (land tiles, terrain bit 0x20) -- the BLUE river band 0x01/0x11
+    // (CLAUDE.md hard rule #4), drawn per func_0681A8 @0x6838A: base + 4-cardinal
+    // river-neighbour mask (func_067b84, bit order N=8/S=4/W=2/E=1; isolated -> 0xf).
+    // Base 0x01 (feature bit 0x80 / main trunk) vs 0x11 -- approximated here from the
+    // forested terrain id (R: the exact feature-plane bit isn't in this terrain-only
+    // Map). NOT the 0x51..0x5E ROAD band (brown, separate layer @0x6842B, empty on new
+    // maps -- "no roads in new maps").
     uint8_t raw = map.tiles[my * map.w + mx];
     if ((raw & 0x20) && !is_water(vis)) {
-        static const int D8X[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // DIR8 (N,NE,E,SE,S,SW,W,NW)
-        static const int D8Y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
-        int rmask = 0;
-        for (int i = 0; i < 8; ++i) {
-            int nx = mx + D8X[i], ny = my + D8Y[i];
-            if (nx >= 0 && ny >= 0 && nx < map.w && ny < map.h &&
-                (map.tiles[ny * map.w + nx] & 0x20)) rmask |= (1 << i);
-        }
-        if (rmask == 0) {
-            if (0x51 < (int)phys.nframes) scr.blit_frame(phys.frames[0x51], dx, dy);
-        } else {
-            for (int i = 0; i < 8; ++i)
-                if ((rmask & (1 << i)) && (0x52 + i) < (int)phys.nframes)
-                    scr.blit_frame(phys.frames[0x52 + i], dx, dy);
-        }
+        auto river_at = [&](int x, int y) {
+            if (x < 0 || y < 0 || x >= map.w || y >= map.h) return false;
+            return (map.tiles[y * map.w + x] & 0x20) != 0;
+        };
+        int rmask = 0;                                   // 4-cardinal: N=8,S=4,W=2,E=1
+        if (river_at(mx, my - 1)) rmask |= 8;
+        if (river_at(mx, my + 1)) rmask |= 4;
+        if (river_at(mx - 1, my)) rmask |= 2;
+        if (river_at(mx + 1, my)) rmask |= 1;
+        if (rmask == 0) rmask = 0xf;                     // isolated -> full cross (@0x683BB)
+        int base = is_forest(vis) ? 0x01 : 0x11;         // major/minor (R approximation)
+        int f = base + rmask;
+        if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }
 
     // Coast -- the water-tile composition, byte-verified vs func_0681A8 +

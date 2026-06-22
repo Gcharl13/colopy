@@ -4255,3 +4255,44 @@ label.
 pattern-3→frame-154 (out-of-range) edge case, before the faithful coast implementation. The coast
 IMPLEMENTATION in `viceroy_cpp` must use this water-tile path (`0x96` + `0x97+pattern` + `0x6D` 8×8
 quadrant fallback), never `0x95`/`0x69`.
+
+---
+
+## 2026-06-22 — River band is `0x01/0x11` (BLUE), `0x51..0x5E` is the ROAD layer (correcting same-day "river = 0x51..0x5E")
+
+**Conflict**: a same-day edit to `spec/systems/map_system.md` §3 item 6 + band list (commits
+`c9e7d32`/`43fa99b`) labelled **"river = `0x51..0x5E`"**, derived from the disasm connectivity
+block at `@0x6842B` (base `0x51`). The `viceroy_cpp` map-view, built on that, drew `0x51`/`0x52+dir`
+for river-bit tiles and produced a **brown diagonal lattice** over the land — clearly not rivers.
+This also contradicts **CLAUDE.md hard rule #4** (rivers = PHYS0 rows `0x01`/`0x11`).
+
+**Source A** — the same-day spec edit "river = `0x51..0x5E`" (`@0x6842B` block, base `0x51`).
+
+**Source B** — pixel inspection (`tools/ssdec.py`, rank 2) + disasm of `func_0681A8` (rank 3) vs
+`raw/COLONIZE/VICEROY.EXE`:
+- **Pixels**: PHYS0 `0x01–0x0F` / `0x11–0x1F` are **BLUE water + GREEN banks** (idx 57/58 blue,
+  69/70 green) = rivers. PHYS0 `0x51–0x58` are **BROWN** road segments (idx 85/132,
+  RGB ~(134,81,28)). `SPRITE_CATALOG` already labels row 0x00/0x10 = rivers and row 0x50 = roads.
+- **Disasm**: the **river** draw is a *different* block at **`@0x6838A`** — gated by feature-layer
+  bit `0x40` (`[0xA8A1]`), base **`0x01`** (feature bit `0x80` set, `@0x6839E`) or **`0x11`**
+  (clear, `@0x683A6`), plus a **4-cardinal** river-neighbour mask (`func_067B84` `ax=0x40,dx=3`;
+  bit order N=8/S=4/W=2/E=1; isolated → `0xf`, `@0x683BB`), drawn `base+mask` via `func_067DC8`.
+  The **`@0x6842B`** block (base `0x51` + 8-dir `func_067D54` `ax=0xa`, gated `[0x18E]==0`) is the
+  **ROAD** layer — empty on new maps ("no roads in new maps", user ground-truth rank 1).
+
+**Ruling**: **Rivers = PHYS0 `0x01..0x1F`** (base `0x01`/`0x11` + 4-cardinal connectivity, BLUE),
+exactly as CLAUDE.md hard rule #4 always stated. **`0x51..0x5E` = the ROAD layer** (BROWN, separate
+connectivity block, drawn only when road-feature tiles exist). The same-day "river = `0x51..0x5E`"
+edit conflated the road block with rivers; reverted. Pixel inspection (rank 2) + disasm (rank 3) +
+hard rule #4 outrank the mistaken same-day edit.
+
+**Action taken**:
+- `viceroy_cpp/src/mapview.cpp`: river overlay now draws `base + 4-card mask` from the `0x01/0x11`
+  blue band (base via forested-id proxy, R), removing the `0x51`/8-dir road draw. The brown lattice
+  is gone; rivers render as blue channels (verified vs AMER2 render).
+- `map_system.md` §3 item 6 rewritten (river `@0x6838A` `0x01/0x11`; road `@0x6842B` `0x51`); band
+  list `0x51..0x5E river` → `0x51..0x5E roads`, added `0x01..0x1F river`; corrections block updated.
+
+**Follow-up (R/TBD)**: river major/minor base (`0x01` vs `0x11`) is selected by feature-plane bit
+`0x80` in the EXE; the C++ `Map` loads only the terrain plane, so the port approximates it from the
+forested terrain id. Loading the feature plane would make it exact.

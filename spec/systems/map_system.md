@@ -108,10 +108,17 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    coast sub-tile set, item 7.)*
 5. **Relief overlay** → mountains `0x21` / hills `0x31` / forest `0x41`, gated by tile
    bits (`@0x6837F`/`@0x68384`).
-6. **Rivers (connectivity)** → on a river tile, an 8-dir neighbour read
-   (`func_067D54`, `@0x6842B`) selects the **river** sprite in the **`0x51..0x5E`**
-   range: base `0x51` (isolated) or `0x52 + bit` per connected direction
-   (`@0x6843B/0x68459`), gated by mode `[0x18E]==0`. (Drawn via `func_067DC8`.)
+6. **Rivers (connectivity) — CORRECTED 2026-06-22 (was "river = `0x51..0x5E`"; those are ROADS).**
+   The river draw is at **`@0x6838A`**, gated by **feature-layer bit `0x40`** (`[0xA8A1]`): it
+   picks base **`0x01`** (feature bit `0x80` set) or **`0x11`** (clear, `@0x6839E/0x683A6`), adds
+   a **4-cardinal** river-neighbour mask (`func_067B84`, `ax=0x40,dx=3`; bit order **N=8/S=4/W=2/E=1**;
+   isolated → mask `0xf`, `@0x683BB`), and draws `base + mask` via `func_067DC8` (`@0x683C6`). These
+   are the **BLUE river sprites `0x01..0x1F`** (pixel-verified blue water + green banks; CLAUDE.md
+   hard rule #4), **not** `0x51`.
+   **Roads** are the *separate* layer at **`@0x6842B`** (base **`0x51`** + 8-dir `func_067D54`,
+   `ax=0xa`, gated `[0x18E]==0`) — pixel-verified BROWN (`0x51..0x58`); empty on new maps ("no
+   roads in new maps"). **B** (both blocks byte-traced + frame colours pixel-confirmed); river
+   major/minor base selector (feature bit `0x80`) **R** in a terrain-only reader.
 7. **Coast (water-tile composition) — CORRECTED 2026-06-22 (was "roads = `0x6D`").**
    `func_067A24` = **`analyse_connections`** is called **only for water tiles**
    (terrain `0x19` Ocean / `0x1A` Sea-Lane, gated `@0x68256`). It builds `[0xA8A6]` =
@@ -138,8 +145,10 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    edge case **TBD**.
 
 **Authoritative PHYS0 sprite-index bands (byte-verified vs `func_0681A8`/`func_067A24`):**
-`0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore-feature · **`0x51..0x5E` river**
-(connectivity) · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
+`0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore-feature · **`0x01..0x1F` river**
+(base `0x01`/`0x11` + 4-card connectivity, BLUE — hard rule #4) · **`0x51..0x5E` roads**
+(base `0x51` + connectivity, BROWN; separate layer, empty on new maps) · `0x5A`
+terrain-detail centre (position hash) · `0x8D..0x94` feature
 edges · **shore base `0x96`** + **coast edges `0x97..0x99`** (16×16, clean patterns) ·
 **`0x6D..0x8B` = 8×8 coast sub-tile quadrants** (complex-coast fallback — **NOT roads**,
 correction 2026-06-22) · **`0x95` = fog/unexplored tile** (hidden path, NOT coast —
@@ -150,8 +159,10 @@ correction 2026-06-22). Neighbour masks: `func_067A24` = `analyse_connections`
 `func_067EEC` (terrain).
 > **Corrections:**
 > - *(2026-06-19)* an earlier draft put "river = `0x96` on bit `0x40`" — wrong:
->   **river = `0x51..0x5E`** (connectivity), **shore base = `0x96`**, **coast edges
->   `0x97..0x99`**.
+>   **shore base = `0x96`**, **coast edges `0x97..0x99`**.
+> - *(2026-06-22)* a same-day draft then put **"river = `0x51..0x5E`"** — also wrong:
+>   `0x51..0x5E` is the **ROAD** layer (BROWN, `@0x6842B`). **River = `0x01..0x1F`** (BLUE,
+>   base `0x01`/`0x11` + 4-card connectivity `@0x6838A`; CLAUDE.md hard rule #4). See §3 item 6.
 > - *(2026-06-22)* the "**roads = `0x6D`**" label was **also wrong** — re-traced vs EXE,
 >   the `0x6D..0x8B` band is the **8×8 per-quadrant coast sub-tiles** drawn on water
 >   tiles (the no-clean-edge fallback in `func_0681A8` `@0x684BC`), gated by the
