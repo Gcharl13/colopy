@@ -96,9 +96,36 @@ cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM 
   Tory uprising); scoring (mult {4,5,6,8,10}, population, rank `n²/3`); map-gen
   climate→terrain + 58×72 dims.
 
+## P4 — the map-view SCREEN (`mapview`), composed strictly from the spec
+`viceroy_cpp mapview --bundle B --mp raw/COLONIZE/AMER2.MP --out F [--turns N] [--scale S]`
+composites the 320×200 mode-13h main screen from the bundle + the headless sim and writes PNG
+frame(s). It is built **only** from `spec/ui/map_view.md` — every element traces to a spec
+coordinate + tier (`src/mapview.cpp` carries the citation table); R-tier elements are drawn from
+the *cited* approximate data and labeled, nothing is invented:
+
+| Element | Rect | Source (`map_view.md`) | Tier |
+|---------|------|------------------------|------|
+| Background wood | full | WOODPANL.PIK (§3) | A |
+| Menu strip | (0,0,320,9) | FONTTINY green idx68; MENU `~`titles (§2/§3) | B mech / **R** x-pos |
+| Map viewport | (0,8,240,192) | 15×12@16, terrain_id→sprite (§6.2) | **naive baseline** (sub-cell chain deferred) |
+| Minimap | (241,8,79,41) | `func_066CD6`; white viewport rect idx0x0F (§6.1) | B geom |
+| Sidebar season/gold/tax | 244,58 / 244,66 / 290,66 | frame 1310262984 (§6.3) | **R** (no B source) |
+| Sidebar unit panel | (240,136,…) | selected-unit — **blank** (no map unit in the sim yet) | honest empty |
+
+**Active palette = PHYS0's embedded palette** (resolved from evidence: the map screen uses the
+terrain sheet's palette, which WOODPANL/ICONS/fonts all share within ~2 indices). VICEROY.PAL is
+**4 bytes/entry** (R,G,B,pad) and differs from it in **197/256** entries — an earlier "use
+VICEROY.PAL" attempt was a 3-byte-parse mis-measurement and rendered terrain brown; PHYS0's palette
+renders it correctly (green/blue), matching the P0 oracle.
+
+> **Honest limitation:** the viewport is the **naive `terrain_id→sprite` baseline** — PHYS0 frames
+> are *overlay* pieces (forest/coast/river), so terrain shows as fragments on black, exactly what
+> the P0 oracle produces. Faithful terrain (TERRAIN.SS base ground + PHYS0 overlays via the
+> `func_O514→O513→O512` chain) is the next milestone.
+
 ## Not yet (per roadmap in `REWRITE_READINESS.md`)
-- Sub-cell terrain transition chain `func_O514→O513→O512` (CLAUDE.md #7) — P0 uses
-  the naive `terrain_id→sprite` mapping; refinement is **TBD** (@asm those funcs).
+- Faithful terrain composition `func_O514→O513→O512` (CLAUDE.md #7): base ground (TERRAIN.SS) +
+  forest/mountain/hill/river/road/coast overlays per neighbor masks — replaces the naive viewport.
 - P1 remainder (full turn-loop phases) + P2+ (combat, units, natives, diplomacy,
   congress), screen-UI render, input, windowing, sound.
 
@@ -106,8 +133,9 @@ cmake --build viceroy_cpp/build -j && ./viceroy_cpp/build/sim_tests   # ALL SIM 
 ```
 include/   importer:  fab madspack ss pik ff    (.hpp)
            runtime:   bundle pal mp render
+           presentation: surface mapview        (P4 map-view screen)
            shared:    png_io image_io util
-src/       (same set) + main.cpp  (import-all / import / render subcommands)
+src/       (same set) + main.cpp  (import-all / import / render / mapview subcommands)
 sim/       game-logic core (P1-P3): types economy market turn ref immigration
            game unit combat natives diplomacy founding_fathers revolution
            scoring mapgen  (+ tests/sim_tests.cpp)

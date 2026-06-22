@@ -12,6 +12,10 @@
 #include "mp.hpp"
 #include "render.hpp"
 #include "image_io.hpp"  // write_ppm
+#include "surface.hpp"   // Surface (P4 presentation)
+#include "mapview.hpp"   // render_mapview
+#include "sim/game.hpp"  // GameState, World, step_turn
+#include "sim/ref.hpp"   // ref_start
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -176,9 +180,60 @@ static int cmd_render(int argc, char** argv) {
     return 0;
 }
 
+// Compose the spec-faithful map-view SCREEN (320x200) from the bundle + the
+// headless sim, and write N PNG frames. Every drawn element traces to
+// spec/ui/map_view.md (see mapview.cpp). The map-view active palette is
+// VICEROY.PAL (resolved from evidence: all gameplay assets share it).
+static int cmd_mapview(int argc, char** argv) {
+    using namespace vc::sim;
+    const char* bundle = opt(argc, argv, "--bundle");
+    const char* mp     = opt(argc, argv, "--mp");
+    const char* out    = opt(argc, argv, "--out");
+    if (!bundle || !mp || !out) {
+        std::fprintf(stderr, "usage: viceroy_cpp mapview --bundle DIR --mp FILE --out BASE "
+                             "[--turns N] [--scale S] [--ox X --oy Y]\n");
+        return 2;
+    }
+    int turns = opt(argc, argv, "--turns") ? std::atoi(opt(argc, argv, "--turns")) : 0;
+    int scale = opt(argc, argv, "--scale") ? std::atoi(opt(argc, argv, "--scale")) : 3;
+    int ox    = opt(argc, argv, "--ox") ? std::atoi(opt(argc, argv, "--ox")) : 38;
+    int oy    = opt(argc, argv, "--oy") ? std::atoi(opt(argc, argv, "--oy")) : 56;
+    std::string bd = bundle;
+
+    Sheet tiles = load_bundle(bd + "/sprites/PHYS0.png", bd + "/sprites/PHYS0.json");
+    Sheet font  = load_bundle(bd + "/fonts/FONTTINY.png", bd + "/fonts/FONTTINY.json");
+    IndexedPng wood = read_png_indexed(bd + "/backgrounds/WOODPANL.png");
+    Map map = load_mp(mp);
+
+    // A minimal, honest game state: one colony of the human power building.
+    GameState g; g.difficulty = 1; g.powers[0].gold = 600; g.ref = ref_start(g.difficulty);
+    World w; Colony c;
+    c.owner_power = 0; c.population = 3; c.bells_per_turn = 6; c.hammers_per_turn = 10;
+    c.food_per_turn = 40; c.build_target = 0; c.build_cost = 64; c.crosses_output = 1;
+    w.colonies.push_back(c);
+    auto rng = [](int lo, int) { return lo; };
+
+    for (int t = 0; t <= turns; ++t) {
+        Surface scr;
+        // Active map-view palette = PHYS0's embedded palette (resolved from evidence:
+        // PHYS0 differs from VICEROY.PAL in 197/256 entries -- VICEROY.PAL is 4 bytes/
+        // entry; WOODPANL + ICONS + fonts all share PHYS0's palette within ~2 indices).
+        scr.set_palette(tiles.pal);
+        render_mapview(scr, map, tiles, wood, font, g, w, ox, oy);
+        Image img = scr.to_rgb(scale);
+        char name[256];
+        std::snprintf(name, sizeof name, "%s_%02d.png", out, t);
+        write_png_rgb(name, img.w, img.h, img.rgb);
+        if (t < turns) step_turn(g, w, rng);
+    }
+    std::printf("mapview: wrote %d frame(s) %s_00..%02d.png (320x200 x%d)\n",
+                turns + 1, out, turns, scale);
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::fprintf(stderr, "usage: viceroy_cpp <import-all|import|render> [options]\n");
+        std::fprintf(stderr, "usage: viceroy_cpp <import-all|import|render|mapview> [options]\n");
         return 2;
     }
     try {
@@ -186,6 +241,7 @@ int main(int argc, char** argv) {
         if (std::strcmp(argv[1], "import-font") == 0) return cmd_import_font(argc, argv);
         if (std::strcmp(argv[1], "import") == 0)      return cmd_import(argc, argv);
         if (std::strcmp(argv[1], "render") == 0)      return cmd_render(argc, argv);
+        if (std::strcmp(argv[1], "mapview") == 0)     return cmd_mapview(argc, argv);
         std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;
     } catch (const std::exception& e) {
