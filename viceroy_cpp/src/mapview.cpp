@@ -314,11 +314,11 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
         }
     }
 
-    // --- Minimap: 1px/tile (byte-accurate scale, func_066968), orange frame hugging
-    // the content, CENTRED horizontally in the right panel. The 39-row vertical clip
-    // window (extent 0x26) scrolls to follow the view, clamped to the map. White "you
-    // are here" rectangle = the clamped view window (func_066BB0 / func_066E0C). Orange
-    // frame + a 1px black perimeter.
+    // --- Minimap: 1px/tile (byte-accurate scale, func_066968), CENTRED horizontally in
+    // the right panel. NO border around it -- just a horizontal black divider below it
+    // separating the minimap area from the info text. The 39-row vertical clip window
+    // (extent 0x26) scrolls to follow the view, clamped to the map. White "you are here"
+    // rectangle = the clamped view window (func_066BB0 / func_066E0C).
     static const uint8_t MM_COLOR[27] = {
         7, 88, 72, 80, 67, 66, 68, 70, 7, 88, 72, 80, 67, 66, 68, 70,
         20, 67, 7, 67, 67, 66, 68, 67, 0, 60, 124 };
@@ -326,10 +326,8 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     const int SB_W = Surface::W - SB_X;                    // 80, right panel width
     const int MM_ROWS = 39;                                // vertical clip window (extent 0x26+1)
     int mm_cols = map.w < (SB_W - 8) ? map.w : (SB_W - 8); // map width, fit the panel with margin
-    int fw = mm_cols + 2, fh = MM_ROWS + 2;                // orange frame hugs content
-    int fx = SB_X + (SB_W - fw) / 2;                       // CENTRE the frame in the right panel
-    int fy = MM_Y + 3;                                     // leave room below the panel top border
-    int cx = fx + 1, cy = fy + 1;                          // content top-left, inside the frame
+    int cx = SB_X + (SB_W - mm_cols) / 2;                  // CENTRE content in the right panel
+    int cy = MM_Y + 2;                                     // just below the menu separator
     int avail_c = map.w - mm_cols;
     int avail_r = map.h > MM_ROWS ? map.h - MM_ROWS : 0;
     int col0 = ox + VP_COLS / 2 - mm_cols / 2;             // centre window on the view
@@ -337,7 +335,7 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     if (col0 < 0) col0 = 0; else if (col0 > avail_c) col0 = avail_c;
     if (row0 < 0) row0 = 0; else if (row0 > avail_r) row0 = avail_r;
 
-    scr.fill_rect(fx, fy, fw, fh, 0);                      // BLACK background behind content
+    scr.fill_rect(cx, cy, mm_cols, MM_ROWS, 0);            // black backing (off-map -> black)
     for (int ry = 0; ry < MM_ROWS; ++ry) {
         int sy = row0 + ry;
         if (sy < 0 || sy >= map.h) continue;
@@ -358,13 +356,14 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
     if (by1 > cy + MM_ROWS - 1) by1 = cy + MM_ROWS - 1;
     if (bx1 >= bx0 && by1 >= by0)
         scr.rect_outline(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1, COL_WHITE);
-    scr.rect_outline(fx, fy, fw, fh, 0);                   // 1px BLACK frame around the minimap
 
-    // --- 1px black separators matching the DOS layout: a single line under the menu
-    // strip (menu <-> playfield) and a single line between the map and the right panel
-    // (no doubled edge, no full screen-edge perimeter, no sidebar section dividers). --
+    // --- 1px black separators matching the DOS layout: a line under the menu strip
+    // (menu <-> playfield), a single line between the map and the right panel, and a
+    // line across the panel below the minimap (minimap area <-> info text). No border
+    // around the minimap; no other sidebar dividers. ------------------------------
     scr.fill_rect(VP_X, VP_Y - 1, Surface::W, 1, 0);       // menu <-> map/sidebar (y=7, full width)
     scr.fill_rect(SB_X, VP_Y - 1, 1, VP_H + 1, 0);         // map <-> right panel (x=240, single line)
+    scr.fill_rect(SB_X, cy + MM_ROWS + 1, SB_W, 1, 0);     // minimap <-> info text (horizontal)
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
