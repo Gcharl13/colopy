@@ -71,12 +71,16 @@ static int land_base_of(uint8_t id) {
     if (lb == 1 && !forested) lb = 0x11;
     return lb;
 }
-// forest_neighbour (func_067C54): forest iff base>=0x18, or 8..0x17 with (b&7)!=1.
+// forest_neighbour: forest iff the neighbour's L1 id is in the auto-forest band 8..23,
+// excluding desert/scrub (base&7==1). The in-game func_067C54 reads the FEATURE plane
+// (where >=0x18 flags forest); here we read the L1 TERRAIN byte, in which ids 0x18..0x1F
+// are Arctic/Ocean/Sea-Lane/Mountains/Hills -- NOT forest. So water/mountains adjacent to
+// a forest tile must NOT count as forest, otherwise the canopy runs full into the coast
+// edge with no recede.
 static bool forest_neighbour(const Map& m, int x, int y) {
     int b = L1at(m, x, y) & 0x1F;
-    if (b >= 0x18) return true;
-    if ((b & 7) == 1) return false;
-    return b > 7;
+    if (b < 8 || b >= 0x18) return false;   // only the auto-forest band 8..23
+    return (b & 7) != 1;                     // exclude desert/scrub
 }
 static int forest_nmask(const Map& m, int x, int y) {            // N=8,S=4,W=2,E=1
     int k = 0;
