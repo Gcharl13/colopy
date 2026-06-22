@@ -4124,3 +4124,40 @@ unit counted), which is **not** a continuous bar.
 **Follow-up**: the Continental Congress **bell-icon row** is luma-observed but absent from the F3
 text body — whether it is drawn by a separate Activities/overlay path or was itself a luma misread
 stays A/TBD until that path is traced or a frame is re-measured.
+
+---
+
+## 2026-06-22 — TERRAIN.SS is the base-ground sheet, NOT an orphan (overturns hard rule #5)
+
+**Conflict**: CLAUDE.md hard rule #5 says "never load TERRAIN.SS or BDARK.SS (orphan assets, not
+used by the renderer)"; byte evidence shows TERRAIN.SS is the **base-terrain ground sheet** the
+in-game renderer composites PHYS0 overlays on top of.
+
+**Source A** — CLAUDE.md hard rule #5 (team-doc rule), citing `BUILD.md`, `docs/ASSET_ROLES.md`,
+`tools/render_map.py`. Claim: TERRAIN.SS unused/orphan.
+
+**Source B** — `ghidra_export/VICEROY_decompiled.named.c` (byte-grounded decompile, rank 3 in
+`TRUTH_HIERARCHY.md`): (1) `BOOT_ASSETS[]` loads `"TERRAIN.SS" -> g_sprite_sheet[3]` as a core
+gameplay startup asset (@~53999–54002), alongside ICONS/PHYS0/BUILDING/WOODFRAM/WOODTILE;
+(2) `emit_ground_sprite(idx) = emit(sheet_at(G_SHEET_TERRAIN), terrain_cell_transform(idx))`
+(@18201) — the BASE ground layer is drawn from the TERRAIN sheet, while `draw_tile_marker`/
+`emit_sprite_alt` use `G_SHEET_PHYS` for OVERLAYS (@18192–18193); (3) `enter_map()` hard-requires
+TERRAIN.SS to enter the map view (@~50249, registers it via `viceroy_set_sheet_terrain`).
+Corroborated by `spec/systems/map_system.md` §3 ("Base terrain -> `emit_ground_sprite`").
+
+**Ruling**: **TERRAIN.SS is the base-ground sheet** (loaded at boot + on map-enter; the source of
+`emit_ground_sprite`), composited UNDER the PHYS0 overlays (forest/mountain/hill/river/road/coast/
+resource). It is **not** an orphan. **BDARK.SS remains the orphan** (no load path). Placeholder
+indices 0/16/100 are still skipped. Per `TRUTH_HIERARCHY.md` byte-grounded disasm at a cited offset
+outranks a team-doc rule; the user explicitly confirmed "TERRAIN is valuable, BDARK is not" and
+granted sign-off to amend the hard rule.
+
+**Action taken**:
+- Amend **CLAUDE.md hard rule #5**: orphan = **BDARK.SS only**; TERRAIN.SS = base-ground sheet.
+- Correct stale "TERRAIN.SS orphan" wording in its citations where it survives.
+- `viceroy_cpp` `import-all` stops skipping TERRAIN.SS (bundles it); the map-view viewport moves
+  from the naive PHYS0-only blit to layered TERRAIN.SS base + PHYS0 overlays (Phase C).
+
+**Follow-up**: `terrain_cell_transform` (code 0x11/0x09->8; code>=8 -> code-0xF; else code) maps
+terrain ids to TERRAIN.SS frame indices — exact per-terrain frame mapping to be pinned in Phase C
+from TERRAIN.SS frame inspection. The `0x70`-band / `0x1F884` coast sub-cell table stays TBD.

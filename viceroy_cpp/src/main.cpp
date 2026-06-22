@@ -89,8 +89,10 @@ static int cmd_import_all(int argc, char** argv) {
     fs::path palpath  = opt(argc, argv, "--pal") ? opt(argc, argv, "--pal")
                                                  : (colonize / "VICEROY.PAL");
 
-    // Orphan sheets never loaded by the engine (CLAUDE.md hard rule #5).
-    const std::vector<std::string> orphan_ss = {"TERRAIN", "BDARK"};
+    // Orphan sheet never loaded by the engine (CLAUDE.md hard rule #5, amended
+    // 2026-06-22: TERRAIN.SS is the base-ground sheet and IS bundled; only
+    // BDARK.SS is orphan).
+    const std::vector<std::string> orphan_ss = {"BDARK"};
     auto is_orphan = [&](const std::string& n) {
         return std::find(orphan_ss.begin(), orphan_ss.end(), n) != orphan_ss.end();
     };

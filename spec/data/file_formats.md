@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-The original *Colonization* data directory uses a handful of MicroProse/MADS container formats plus the DOS executable. Each on-disk file type has its own spec under `formats/`; several have parallel decode-notes under `viceroy_source/formats/` (secondary — pointers only). Per CLAUDE.md hard rule 5, `TERRAIN.SS` and `BDARK.SS` are orphan sprite sheets and must never be loaded.
+The original *Colonization* data directory uses a handful of MicroProse/MADS container formats plus the DOS executable. Each on-disk file type has its own spec under `formats/`; several have parallel decode-notes under `viceroy_source/formats/` (secondary — pointers only). Per CLAUDE.md hard rule 5 (amended 2026-06-22), `TERRAIN.SS` is the base-ground sheet (composited under PHYS0 overlays); only `BDARK.SS` is an orphan sprite sheet that must never be loaded.
 
 ## 2. Contents
 

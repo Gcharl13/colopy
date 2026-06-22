@@ -53,11 +53,17 @@ feature's *function*, but EXE bytes win for exact *numbers*.
    mechanism.
    *(survives in `viceroy_source/docs/RENDER_CHAIN.md`, `formats/MP_FORMAT.md`)*
 
-5. **Orphan sprite sheets** — **never load `TERRAIN.SS` or `BDARK.SS`** (orphan
-   assets, not used by the renderer). Skip placeholder sprite indices **0, 16,
-   100**.
-   *(survives in `BUILD.md`, `docs/ASSET_ROLES.md`, `notes/rulings/RULINGS.md`,
-   `tools/render_map.py`)*
+5. **Sprite-sheet roles** — **`TERRAIN.SS` is the base-ground sheet** (loaded at
+   boot + on map-enter; the source of `emit_ground_sprite`/`G_SHEET_TERRAIN`),
+   composited UNDER the **`PHYS0.SS` overlays** (forest/mountain/hill/river/road/
+   coast/resource). **`BDARK.SS` is the only orphan** (no load path) — never load
+   it. Skip placeholder sprite indices **0, 16, 100**.
+   *(Amended 2026-06-22 with user sign-off — the prior "TERRAIN.SS is an orphan"
+   was overturned by byte evidence: `BOOT_ASSETS[]` loads TERRAIN.SS, and
+   `emit_ground_sprite` draws from `G_SHEET_TERRAIN`. See
+   `notes/rulings/RULINGS.md` 2026-06-22. Survives in `spec/systems/map_system.md`
+   §3; the old "orphan" wording in `BUILD.md`/`docs/ASSET_ROLES.md`/
+   `tools/render_map.py` is stale re TERRAIN.SS.)*
 
 6. **Renderer sprite indices** — ships 5–7 / 14–15 / 127; foot units
    100–105 + 109.

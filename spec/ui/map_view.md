@@ -32,7 +32,7 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 (`and ax,7; or al,8` `@0x6225`). **B**.
 
 ## 3. Assets & text
-- **Tiles:** PHYS0.SS (+ auto-forest variants); **never** TERRAIN.SS/BDARK.SS (orphans, CLAUDE.md #5). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
+- **Tiles:** **TERRAIN.SS = base ground**, composited under **PHYS0.SS overlays** (forest/coast/river/road/mountain/hill/resource); BDARK.SS is the only orphan (CLAUDE.md #5, amended 2026-06-22). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
 - **Menu text** (verified present in `data_extracted/text/MENU_sections.json`): keys `@GAME`, `@VIEW`, `@ORDERS`, `@REPORTS`, `@TRADE`, `@CUP` (CHEAT), `@PEDIA` (COLONIZOPEDIA). **B**
 - **Sidebar labels** (verified in `LABELS_sections.json`): `@INFO` ("Moves:\nLocat:"), `@MISC` ("Gold", "Road", order statuses). Season from NAMES `@SEASONS`; terrain from NAMES `@FORESTED`/`@UNFORESTED`; unit type NAMES `@UNIT`, skill NAMES `@JOB`. All keys verified present. **B**
 
@@ -103,5 +103,5 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
    the `191F/1A1F` HUD thunks or pixel-measuring several frames to average out the single-frame error.
 4. **Top-menu item hit-rects** — built by the `menubar` widget from **FONTTINY title widths**
    (glyph-grid), not a fixed table. The explicit x-origins (GAME@11 … COLONIZOPEDIA@261) come
-   from the low-trust `_VICEROY_MODERN` C reconstruction (absent from the EXE; that block also
-   loads the forbidden `TERRAIN.SS`) → those exact coords are **R**, the glyph-grid mechanism is **B**.
+   from the low-trust `_VICEROY_MODERN` C reconstruction (absent from the EXE) → those exact coords
+   are **R**, the glyph-grid mechanism is **B**.
