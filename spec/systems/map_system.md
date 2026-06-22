@@ -92,8 +92,9 @@ terrain/feature/road/river/coast sprite **selector**, `0x0681A8..0x0685DB`) →
 loads the tile + neighbours from the three layer far-ptrs `[0xA594]`/`[0xA598]`/`[0xA59C]`
 into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
 `@0x681E0`). Then per tile:
-1. **Water/fog tiles** → beach base `0x95` + the coast composer (`call func_067F50`,
-   `@0x68244`) — see above.
+1. **Hidden/fog tiles** → fog sprite `0x95` + the fog-edge composer (`call func_067F50`,
+   `@0x68244`) — see the §3 correction. **(Not coast: `0x95` is the unexplored-tile
+   sprite; the visible water-tile coast path is item 7.)**
 2. **Base terrain** → `emit_ground_sprite` (`func_067E28`) with the terrain class
    `[0xA8A2]` (`@0x68285`/`@0x68301`).
 3. **Auto-forest variant** (hard rule 3) → land class masked `& 7`, then the forested
@@ -102,31 +103,57 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    from the position+terrain hash `func_0060A0` (`0x181F:0x718([0xA5A0],[0xA5A2])`,
    `@0x6829A`, drawn `@0x682B2`). `func_0060A0` is a shared util (14 callers): reads
    the terrain via `func_005CFE`, masks `& 0x3F`, applies the 8..0x17 forest-band
-   check, and hashes tile `(x&3,y&3)` → a deterministic per-tile variant. *(Not
-   roads — roads are a separate layer drawn between tile centres, site `TBD`.)*
+   check, and hashes tile `(x&3,y&3)` → a deterministic per-tile variant. *(No road
+   layer is drawn in this chain — the band once labelled "roads" `0x6D` is the 8×8
+   coast sub-tile set, item 7.)*
 5. **Relief overlay** → mountains `0x21` / hills `0x31` / forest `0x41`, gated by tile
    bits (`@0x6837F`/`@0x68384`).
-6. **Roads & rivers (connectivity-based)** → `func_067A24` = **`analyse_connections`**
-   builds a 4-cardinal connection bitmap `[0xA8A6]` + per-direction table `[0x2D24]`
-   (bits OR'd: N/E/S/W, `@0x67ACC/0x67AE8/0x67AEF`); the **road** sprite is base
-   **`0x6D` + connectivity_mask** and the **river** sprite is the **`0x51..0x5E`** range
-   by connectivity (drawn via `0x181F:0x32C`, "roads/rivers edges"). So a road/river
-   tile picks the sprite matching which neighbours also carry road/river.
-7. **Coast / shore** → single **shore `0x40`**, **feature edges `0x8D..0x94`**, and the
-   **coast band `0x96..0x99`** (composer, above).
+6. **Rivers (connectivity)** → on a river tile, an 8-dir neighbour read
+   (`func_067D54`, `@0x6842B`) selects the **river** sprite in the **`0x51..0x5E`**
+   range: base `0x51` (isolated) or `0x52 + bit` per connected direction
+   (`@0x6843B/0x68459`), gated by mode `[0x18E]==0`. (Drawn via `func_067DC8`.)
+7. **Coast (water-tile composition) — CORRECTED 2026-06-22 (was "roads = `0x6D`").**
+   `func_067A24` = **`analyse_connections`** is called **only for water tiles**
+   (terrain `0x19` Ocean / `0x1A` Sea-Lane, gated `@0x68256`). It builds `[0xA8A6]` =
+   the **8-direction LAND-neighbour bitmap** (each neighbour's terrain read, **water
+   neighbours `0x19/0x1A` skipped** `@0x67AA6`, so a bit is set only where a neighbour
+   is land) plus a 4-entry per-quadrant diagonal/cardinal table at `[0x2D24]`. Then:
+   - **shore base `0x96` (150)** when `[0xA89F] & 0x40` (`@0x68354/0x68356`);
+   - if `[0xA8A6]` matches a **clean edge pattern** (`&0xDD==0xC1`→0 / `&0x77==0x07`→1 /
+     `&0x77==0x70`→2 / `&0xDD==0x1C`→3, `@0x68479..0x684AA`) → one **16×16 edge
+     `0x97 + pattern`** (151..153; pattern 3 would index 154 = past the 154-frame sheet
+     — see TBD note) `@0x6850D`;
+   - **else** (no clean pattern) → a **4-quadrant 8×8 sub-tile loop** (`@0x684BC..0x684F5`):
+     for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** (range 109..124, **all 8×8**)
+     at the quadrant sub-cell offset (TL/TR/BR/BL via `[0x1EA4]/[0x1EA5]`). Four 8×8
+     pieces tile the 16×16 cell — the **fine-grained complex-coastline** path.
+   **There is no road draw in this chain** — the `0x6D` band is the 8×8 coast sub-tile
+   set, gated by water terrain id + the land-neighbour bitmap, not a road bit (matches
+   the user ground-truth "no roads in new maps"). **B** (chain + frame roles, sizes
+   pixel-confirmed); the `[0xA8A6]`→`0x97..0x99` pattern table located, the pattern-3→154
+   edge case **TBD**.
 
-**Authoritative PHYS0 sprite-index bands (byte-grounded, `src/render/terrain.c`):**
-`0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore · **`0x51..0x5E` river** ·
-**`0x6D` roads** · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
-edges · **`0x96..0x99` coast** · **`0x95` = fog/unexplored tile** (hidden path, NOT coast —
-correction 2026-06-22). Neighbour masks: `func_067A24` connections,
+**Authoritative PHYS0 sprite-index bands (byte-verified vs `func_0681A8`/`func_067A24`):**
+`0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore-feature · **`0x51..0x5E` river**
+(connectivity) · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
+edges · **shore base `0x96`** + **coast edges `0x97..0x99`** (16×16, clean patterns) ·
+**`0x6D..0x7C` = 8×8 coast sub-tile quadrants** (complex-coast fallback — **NOT roads**,
+correction 2026-06-22) · **`0x95` = fog/unexplored tile** (hidden path, NOT coast —
+correction 2026-06-22). Neighbour masks: `func_067A24` = `analyse_connections`
+(water-tile land-neighbour bitmap `[0xA8A6]` + quadrant table `[0x2D24]`),
 `func_067B84`/`067BE4` 4-card feature, `func_067C8E` forest edges, `func_067D54`
 8-dir terrain. Drawn through `func_067DC8` (sub-cell place) / `func_067E28` (ground) /
 `func_067EEC` (terrain).
-> **Correction (2026-06-19):** an earlier draft put "river = `0x96` on bit `0x40`" —
-> wrong. Per `terrain.c` (verified): **river = `0x51..0x5E`**, **roads = `0x6D`**,
-> **shore = `0x40`**, and **`0x96..0x99` = coast**; roads/rivers are connectivity-
-> selected, not a single bit→sprite.
+> **Corrections:**
+> - *(2026-06-19)* an earlier draft put "river = `0x96` on bit `0x40`" — wrong:
+>   **river = `0x51..0x5E`** (connectivity), **shore base = `0x96`**, **coast edges
+>   `0x97..0x99`**.
+> - *(2026-06-22)* the "**roads = `0x6D`**" label was **also wrong** — re-traced vs EXE,
+>   the `0x6D..0x7C` band is the **8×8 per-quadrant coast sub-tiles** drawn on water
+>   tiles (the no-clean-edge fallback in `func_0681A8` `@0x684BC`), gated by the
+>   land-neighbour bitmap `[0xA8A6]`, not by any road bit. There is **no road layer** in
+>   this render chain. (`src/render/terrain.c`, a low-trust C reconstruction, is the
+>   source of the stale "roads" wording — superseded by the disasm.)
 
 **Viewport geometry (`func_0685DC` = O514) — BYTE_VERIFIED.** The outer loop walks
 the visible tile rectangle from the **scroll origin `[0x8328]` (x) / `[0x832E]` (y)**
@@ -163,10 +190,18 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
      (dx/dy at DGROUP `0xA8`/`0xAE`, `[bp-4]=0..3`) drawing `0x69+dir` (`@0x68189`) +
      `emit_terrain_sprite` (`@0x68197`) — the **fog-edge blend** showing partial explored
      neighbours at the fog boundary.
-   - The **real coast** is the *visible-tile* path: shore base **`0x96`** when `[0xA89F]&0x40`
-     (`@0x6834F/0x68356`) + directional edges **`0x97+pattern` (151..153)** from the connection
-     bitmap `[0xA8A6]` (`@0x6850D`, patterns `@0x68479..0x684A8`), each + `emit_terrain_sprite`
-     (`@0x68518`). See §3. **B** (chain + frame roles); pattern enumeration **R/TBD**.
+   - The **real coast** is the *visible water-tile* path: shore base **`0x96`** when
+     `[0xA89F]&0x40` (`@0x6834F/0x68356`) + directional edges **`0x97+pattern` (151..153)**
+     from the **land-neighbour bitmap `[0xA8A6]`** (`@0x6850D`, patterns `@0x68479..0x684A8`),
+     each + `emit_terrain_sprite` (`@0x68518`). `[0xA8A6]` is built by `analyse_connections`
+     (`func_067A24`), called **only** when the tile's own terrain is water (`0x19`/`0x1A`).
+   - **Complex coastlines (no clean edge pattern) — RESOLVED 2026-06-22:** the fallback
+     (`@0x684BC..0x684F5`) is a **4-quadrant 8×8 sub-tile loop** drawing **`0x6D + table[q]·4 + q`**
+     (frames 109..124, all 8×8, pixel-confirmed) at TL/TR/BR/BL sub-cell offsets. This band was
+     previously **mislabelled "roads = `0x6D`"** — it is the per-quadrant coast composition,
+     gated by the same water-tile land-neighbour bitmap (no road bit). See §3 item 7. **B**
+     (chain + frame roles + sizes); the `[0xA8A6]`→`0x97..0x99` pattern table located but the
+     pattern-3→154-OOB case **TBD**.
 2. **Tile-byte bit encoding — PARTIALLY RESOLVED 2026-06-20** (`func_006204` /
    `func_0624E`): low 5 bits (`& 0x1F`) = **base terrain id**; the forest decoder
    `func_006204` masks `& 0x1F` then applies the auto-forest map (ids 8..23 → `(id&7)|8`,

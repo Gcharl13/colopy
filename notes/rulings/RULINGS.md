@@ -4202,3 +4202,55 @@ ground-truth (rank 1) outrank the team-doc claim.
 **Follow-up**: the exact `0x97+pattern` connection-bitmap → edge-variant mapping (`[0xA8A6]`
 patterns `0xC1`/`0x07`/`0x70`/`0x1C` @`0x68479..0x684A8`) for the directional coast edges still
 needs enumerating before a faithful coast implementation.
+
+---
+
+## 2026-06-22 — The `0x6D..0x7C` band = 8×8 coast sub-tiles, NOT roads (map_system.md "roads = 0x6D" wrong)
+
+**Conflict**: `spec/systems/map_system.md` §3 listed **"`0x6D` roads"** and described item 6 as
+"Roads & rivers (connectivity-based)" with the road sprite = `0x6D + connectivity_mask`. The
+project also has explicit user ground-truth that **"there are no roads in new maps."** The open
+`SPRITE_CATALOG` question — whether the row-0x70 8×8 frames are the true DOS coast sub-tiles — was
+unresolved.
+
+**Source A** — `spec/systems/map_system.md` §3 band list + item 6 ("roads = `0x6D`"), citing the
+low-trust C reconstruction `src/render/terrain.c`.
+
+**Source B** — capstone disasm of `func_0681A8` (O513) + `func_067A24` (`analyse_connections`) vs
+`raw/COLONIZE/VICEROY.EXE` (rank-3 byte-grounded), cross-checked with PHYS0 frame pixels via
+`tools/ssdec.py` (rank-2):
+- `analyse_connections` (`func_067A24`) is called **only for water tiles** — gated `@0x68256`
+  `cmp [0xA8A2],0x19 (Ocean) / 0x1A (Sea-Lane)`. It builds `[0xA8A6]` = the **8-direction
+  LAND-neighbour bitmap**: for each neighbour it reads the terrain id and `cmp al,0x19 / 0x1A;
+  je skip` (`@0x67AA6`) — **water neighbours are skipped**, so a bit is set only where a neighbour
+  is land. It also fills a 4-entry per-quadrant table at `[0x2D24]` from diagonal/cardinal land bits.
+- The coast draw (`@0x6846B` onward, gated `cmp [bp-4],0` where `[bp-4]=1` ⇒ water tile): shore
+  base `0x96` (`@0x68356`, bit `[0xA89F]&0x40`); if `[0xA8A6]` matches a clean pattern
+  (`&0xDD==0xC1`/`&0x77==0x07`/`&0x77==0x70`/`&0xDD==0x1C`) draw one 16×16 edge `0x97+pattern`
+  (`@0x6850D`); **else** the loop `@0x684BC..0x684F5` draws, for `q=0..3`, frame
+  **`0x6D + table[q]·4 + q`** (range 109..124) at TL/TR/BR/BL **8×8** sub-cell offsets
+  (`[0x1EA4]/[0x1EA5]`).
+- Pixel check (`tools/ssdec.py`): frames `0x6D..0x7C` (109..124) are all **8×8** with water
+  palette indices 55–58; frames `0x96..0x99` (150..153) are **16×16** water+sand coast pieces.
+  PHYS0 has **154 frames (0..153)** — so `0x97+pattern` with pattern=3 would index 154 (OOB).
+
+**Ruling**: **The `0x6D..0x7C` band (109..124) is the 8×8 per-quadrant complex-coast sub-tile set**
+— the fallback drawn on water tiles whose land-neighbour bitmap matches no clean 16×16 edge
+pattern. **There are no roads in this render chain**; the "roads = `0x6D`" label (from the low-trust
+`terrain.c`) is wrong, consistent with the user ground-truth that new maps have no roads. The full
+coast = shore base `0x96` + (16×16 edges `0x97..0x99` for clean cases) OR (4× 8×8 `0x6D` quadrants
+for complex cases), all keyed by the water-tile land-neighbour bitmap `[0xA8A6]`. Byte-disasm
+(rank 3) + pixel inspection (rank 2) + user ground-truth (rank 1) outrank the C-reconstruction
+label.
+
+**Action taken**:
+- `map_system.md` §3: item 6 split into rivers (`0x51..0x5E`) + item 7 coast (water-tile,
+  `0x96`/`0x97+pattern`/`0x6D` 8×8 fallback); band list "roads = `0x6D`" → "8×8 coast sub-tiles";
+  §6 1b extended with the 8×8 resolution.
+- `notes/SPRITE_CATALOG.md`: row 0x6D–0x7C section + follow-up #1 resolved (true coast sub-tiles).
+- `spec/ui/map_view.md` §3: overlay list — coast composition spelled out, "no road overlay".
+
+**Follow-up (still TBD)**: the exact `[0xA8A6]`→`0x97..0x99` pattern enumeration and the
+pattern-3→frame-154 (out-of-range) edge case, before the faithful coast implementation. The coast
+IMPLEMENTATION in `viceroy_cpp` must use this water-tile path (`0x96` + `0x97+pattern` + `0x6D` 8×8
+quadrant fallback), never `0x95`/`0x69`.

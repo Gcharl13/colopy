@@ -111,17 +111,29 @@ Confirmed via agent pixel inspection + verification:
 the .MP file selects which of 96–103 to draw on that tile. See
 `MAP_FORMAT.md` for the resource-byte layout (pending).
 
-### Row 0x70 (indices 112–127) — 8×8 coast sub-tile strips
+### Row 0x6D–0x7C (indices 109–124) — 8×8 coast sub-tile quadrants — **RESOLVED 2026-06-22**
 
-**High-value re-investigation opportunity.** These are 8×8 (not 16×16)
-blue/green sub-tile fragments — potentially the TRUE DOS coast sprites
-rendered via 4-sub-tile composition on water tiles. Current renderer
-uses sprites 150–153 as bulk coast overlays; this row may offer finer-
-grained per-sub-tile coast rendering that matches DOS more precisely.
+**Confirmed the TRUE complex-coast path** (byte-verified vs `func_0681A8`,
+capstone `0x684b1..0x684f7`; pixels via `tools/ssdec.py`). These frames are
+**8×8** (every other PHYS0 frame is 16×16) with water palette indices 55–58 —
+they are the **per-quadrant coast sub-tiles** drawn on **water** tiles when the
+land-neighbour bitmap does NOT match a clean 16×16 edge pattern. The renderer:
 
-**Action**: before shipping further coast refinements, have
-`dos-disassembler` locate where func_O512 references sprite indices in
-this range and confirm the composition rule.
+- For a water tile (terrain `0x19` Ocean / `0x1a` Sea-Lane), `analyse_connections`
+  (`func_067A24`) builds `[0xA8A6]` = the 8-direction **land**-neighbour bitmap
+  (water neighbours skipped, `@0x67aa6`) plus a 4-entry per-quadrant diagonal/cardinal
+  table at `[0x2D24]`.
+- If `[0xA8A6]` matches a clean pattern → one 16×16 edge `0x97+pattern` (151–153).
+- **Else** → 4-quadrant loop (`@0x684bc`): for quadrant `q=0..3`, draw frame
+  **`0x6D + table[q]·4 + q`** (range 109–124, all 8×8) at the 8×8 sub-cell offset
+  for that quadrant (TL/TR/BR/BL, set into `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces
+  tile the 16×16 cell.
+
+**This is NOT the road layer.** `map_system.md`'s old "`0x6D` = roads" label is a
+mislabel: the `0x6D` band is gated entirely by **water terrain id + land-neighbour
+bitmap** — there is no road bit and no road draw in this chain (consistent with the
+user ground-truth "there are no roads in new maps"). See `map_system.md` §3 and
+RULINGS 2026-06-22.
 
 ### Row 0x80 (indices 128–143) — More river / water variants
 
@@ -466,8 +478,10 @@ indices, first investigate mpskit extraction options or inspect the source
 
 ## Known ambiguities / follow-up
 
-1. **Row 0x70 (112–127)**: are these the true DOS coast sprites? Needs
-   disassembly verification of func_O512's sprite-index arithmetic.
+1. **Row 0x6D–0x7C (109–124)**: ~~are these the true DOS coast sprites?~~
+   **RESOLVED 2026-06-22** — yes: the **8×8 per-quadrant complex-coast sub-tiles**
+   (`0x6D + table[q]·4 + q`, the no-clean-edge fallback in `func_0681A8`
+   `@0x684bc`). NOT roads. See the Row 0x6D–0x7C section above + RULINGS 2026-06-22.
 2. **Row 0x80 (128–143)**: distinction from row 0x00 rivers unknown.
 3. **CC-NN sheets**: ~~hypothesised as unit sheets~~ **DECODED 2026-06-20 — the 25
    Founding Father portraits** (`tools/ssdec.py`; render-confirmed vs `@FATHERS`, §CC-00..CC-24).
