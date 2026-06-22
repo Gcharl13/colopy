@@ -87,6 +87,28 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
         if (f < (int)phys.nframes) scr.blit_frame(phys.frames[f], dx, dy);
     }
 
+    // River overlay (land tiles, terrain bit 0x20). Per tile_dispatch: isolated =
+    // 0x51; else for each connected DIR8 direction draw 0x52+dir (river segments
+    // stack into a path). River-neighbor = adjacent tile also has bit 0x20.
+    uint8_t raw = map.tiles[my * map.w + mx];
+    if ((raw & 0x20) && !is_water(vis)) {
+        static const int D8X[8] = {0, 1, 1, 1, 0, -1, -1, -1};   // DIR8 (N,NE,E,SE,S,SW,W,NW)
+        static const int D8Y[8] = {-1, -1, 0, 1, 1, 1, 0, -1};
+        int rmask = 0;
+        for (int i = 0; i < 8; ++i) {
+            int nx = mx + D8X[i], ny = my + D8Y[i];
+            if (nx >= 0 && ny >= 0 && nx < map.w && ny < map.h &&
+                (map.tiles[ny * map.w + nx] & 0x20)) rmask |= (1 << i);
+        }
+        if (rmask == 0) {
+            if (0x51 < (int)phys.nframes) scr.blit_frame(phys.frames[0x51], dx, dy);
+        } else {
+            for (int i = 0; i < 8; ++i)
+                if ((rmask & (1 << i)) && (0x52 + i) < (int)phys.nframes)
+                    scr.blit_frame(phys.frames[0x52 + i], dx, dy);
+        }
+    }
+
     // Coast -- per tile_compose_subcells (VICEROY_decompiled @45244): for a WATER
     // tile, each cardinal neighbor (DIR4 = N,E,S,W) that is LAND contributes
     // emit_terrain_sprite(nvis) -- the neighbor's land terrain bleeding into the
