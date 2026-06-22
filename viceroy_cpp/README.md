@@ -107,7 +107,7 @@ the *cited* approximate data and labeled, nothing is invented:
 |---------|------|------------------------|------|
 | Background wood | full | WOODPANL.PIK (§3) | A |
 | Menu strip | (0,0,320,9) | FONTTINY green idx68; MENU `~`titles (§2/§3) | B mech / **R** x-pos |
-| Map viewport | (0,8,240,192) | 15×12@16, terrain_id→sprite (§6.2) | **naive baseline** (sub-cell chain deferred) |
+| Map viewport | (0,8,240,192) | 15×12@16, **TERRAIN.SS base + PHYS0 overlays** (§2) | B (terrains 0–26); mtn/hills base R; river/coast deferred |
 | Minimap | (241,8,79,41) | `func_066CD6`; white viewport rect idx0x0F (§6.1) | B geom |
 | Sidebar season/gold/tax | 244,58 / 244,66 / 290,66 | frame 1310262984 (§6.3) | **R** (no B source) |
 | Sidebar unit panel | (240,136,…) | selected-unit — **blank** (no map unit in the sim yet) | honest empty |
@@ -118,14 +118,17 @@ terrain sheet's palette, which WOODPANL/ICONS/fonts all share within ~2 indices)
 VICEROY.PAL" attempt was a 3-byte-parse mis-measurement and rendered terrain brown; PHYS0's palette
 renders it correctly (green/blue), matching the P0 oracle.
 
-> **Honest limitation:** the viewport is the **naive `terrain_id→sprite` baseline** — PHYS0 frames
-> are *overlay* pieces (forest/coast/river), so terrain shows as fragments on black, exactly what
-> the P0 oracle produces. Faithful terrain (TERRAIN.SS base ground + PHYS0 overlays via the
-> `func_O514→O513→O512` chain) is the next milestone.
+**Faithful terrain** (`func_O514→O513→O512`, CLAUDE.md #7): each tile is `TERRAIN.SS[base]`
+(`emit_ground_sprite`/`terrain_cell_transform`, byte-verified) composited under PHYS0 overlays —
+forest (band `0x40`), mountains (`0x20`), hills (`0x30`). Water (Ocean/Sea-lane) draws its TERRAIN
+base. This replaced the old naive `terrain_id→PHYS0` blit (which drew PHYS0's *river-edge* frames
+for forested ids → fragments on black). The viewport now renders solid ground + forests + ocean,
+recognizably the original.
 
-## Not yet (per roadmap in `REWRITE_READINESS.md`)
-- Faithful terrain composition `func_O514→O513→O512` (CLAUDE.md #7): base ground (TERRAIN.SS) +
-  forest/mountain/hill/river/road/coast overlays per neighbor masks — replaces the naive viewport.
+> **Deferred (next milestone):** the **connectivity layers** — rivers (PHYS0 `0x51..0x5E` by
+> 4-neighbor river connections) and the **coast beach-halo** (water-adjacent tiles, PHYS0
+> `0x96..0x99` + the `0x70` sub-cell band) — both need the `func_O512` neighbor analysis. Also
+> mountains/hills(27/28) use an R land-base approximation pending their exact base mapping.
 - P1 remainder (full turn-loop phases) + P2+ (combat, units, natives, diplomacy,
   congress), screen-UI render, input, windowing, sound.
 

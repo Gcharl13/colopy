@@ -14,12 +14,13 @@
 
 namespace vc {
 
-// Render the 320x200 map-view screen. `tiles` = PHYS0 bundle, `woodpanl` =
-// WOODPANL.PIK background (indexed), `font` = FONTTINY. (ox,oy) = top-left map
-// tile of the 15x12 viewport. Live values come from the headless sim state.
-void render_mapview(Surface& scr, const Map& map, const Sheet& tiles,
-                    const IndexedPng& woodpanl, const Sheet& font,
-                    const vc::sim::GameState& g, const vc::sim::World& w,
-                    int ox, int oy);
+// Render the 320x200 map-view screen. `terrain` = TERRAIN.SS base-ground sheet,
+// `tiles` = PHYS0 overlay sheet, `woodpanl` = WOODPANL.PIK background (indexed),
+// `font` = FONTTINY. (ox,oy) = top-left map tile of the 15x12 viewport. Live
+// values come from the headless sim state.
+void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
+                    const Sheet& tiles, const IndexedPng& woodpanl,
+                    const Sheet& font, const vc::sim::GameState& g,
+                    const vc::sim::World& w, int ox, int oy);
 
 } // namespace vc

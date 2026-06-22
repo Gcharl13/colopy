@@ -29,41 +29,80 @@ static constexpr int VP_X = 0,   VP_Y = 8,  VP_W = 240, VP_H = 192;  // viewport
 static constexpr int TILE = 16,  VP_COLS = 15, VP_ROWS = 12;
 static constexpr int MM_X = 241, MM_Y = 8,  MM_W = 79,  MM_H = 41;   // minimap (func_066CD6)
 
-// Sample a tile sprite's representative (center) color index for the minimap.
-static uint8_t tile_color(const Sheet& tiles, int terrain_id) {
-    if (terrain_id < 0 || terrain_id >= tiles.nframes) return 0;
-    const Frame& f = tiles.frames[terrain_id];
+// terrain_cell_transform (VICEROY_decompiled.named.c @18195): terrain code ->
+// TERRAIN.SS base-ground frame index.
+static int terrain_base_frame(int code) {
+    if (code == 0x11 || code == 0x09) return 8;
+    if (code >= 8) return code - 0xF;
+    return code;
+}
+
+// Compose one 16x16 tile: TERRAIN.SS base ground (emit_ground_sprite) + PHYS0
+// overlays, per the byte-verified per-tile dispatch (VICEROY_decompiled.named.c
+// @45356-45390) and CLAUDE.md #5 (amended). `terr`=TERRAIN.SS, `phys`=PHYS0.SS.
+// Common terrains (0..26) are byte-grounded; mountains/hills(27/28) land-base is
+// an R approximation; the coast sub-cell halo (PHYS0 0x70 band) stays TBD.
+static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
+                            uint8_t raw, int dx, int dy) {
+    int vis = raw & 0x1F;                       // decoded terrain id
+    bool forested = (vis >= 8 && vis < 24);     // auto-forest range (CLAUDE.md #3)
+
+    int frame;
+    if (vis == 0x19 || vis == 0x1A) {           // Ocean / Sea-lane base
+        frame = terrain_base_frame(vis);
+    } else if (vis >= 0x18) {                    // Arctic(24)/Mountains(27)/Hills(28)
+        frame = (vis == 27 || vis == 28) ? 2     // mtn/hills sit on a land base (R)
+                                         : terrain_base_frame(vis);
+    } else {                                     // land: strip forest -> base 0..7
+        int land_base = vis & 7;
+        if (land_base == 1 && !forested) land_base = 0x11;   // desert special (@45384)
+        frame = terrain_base_frame(land_base);
+    }
+    if (frame < 0) frame = 0;
+    if (frame >= terr.nframes) frame = terr.nframes - 1;
+    scr.blit_frame(terr.frames[frame], dx, dy);              // opaque base ground
+
+    // PHYS0 overlays (SPRITE_CATALOG bands; spec/systems/map_system.md §3):
+    if (forested && (int)phys.nframes > 0x41)  scr.blit_frame(phys.frames[0x41], dx, dy); // forest
+    if (vis == 27 && (int)phys.nframes > 0x21) scr.blit_frame(phys.frames[0x21], dx, dy); // mountains
+    if (vis == 28 && (int)phys.nframes > 0x31) scr.blit_frame(phys.frames[0x31], dx, dy); // hills
+    // DEFERRED (next milestone): the connectivity layers -- river (PHYS0 0x51..0x5E
+    // chosen by 4-neighbor river connections, MP bit5=0x20) and the coast beach-halo
+    // (water tiles adjacent to land, PHYS0 0x96..0x99 + 0x70 sub-cell band). Both need
+    // the func_O512 neighbor analysis; drawing a single river frame here produced
+    // uniform wrong streaks, so it is omitted until the connectivity pass lands.
+}
+
+// Sample a base-terrain frame's representative (center) color index for the minimap.
+static uint8_t tile_color(const Sheet& terr, uint8_t raw) {
+    int vis = raw & 0x1F;
+    int frame = (vis == 0x19 || vis == 0x1A) ? terrain_base_frame(vis)
+              : (vis >= 0x18 ? terrain_base_frame(vis < 27 ? vis : 2)
+                             : terrain_base_frame(vis & 7));
+    if (frame < 0 || frame >= terr.nframes) return 0;
+    const Frame& f = terr.frames[frame];
     if (f.w <= 0 || f.h <= 0) return 0;
     uint8_t c = f.px[(f.h / 2) * f.w + (f.w / 2)];
     return c == SS_TRANSPARENT ? 0 : c;
 }
 
-void render_mapview(Surface& scr, const Map& map, const Sheet& tiles,
-                    const IndexedPng& woodpanl, const Sheet& font,
-                    const vc::sim::GameState& g, const vc::sim::World& w,
-                    int ox, int oy) {
+void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
+                    const Sheet& tiles, const IndexedPng& woodpanl,
+                    const Sheet& font, const vc::sim::GameState& g,
+                    const vc::sim::World& w, int ox, int oy) {
     (void)w;  // colonies are not yet placed on the map (no owner-dots / unit panel)
 
-    // --- Background: WOODPANL wood (menu strip + sidebar). The viewport area is
-    //     then blacked out: the naive forest sprites are tree-on-transparent, so
-    //     their gaps show this base. Black matches the P0 visual oracle; the
-    //     opaque base-terrain layer is the deferred sub-cell chain (CLAUDE.md #7).
+    // --- Background: WOODPANL wood (menu strip + sidebar). ------------------
     scr.blit_region(woodpanl, 0, 0, Surface::W, Surface::H, 0, 0);
-    scr.fill_rect(VP_X, VP_Y, VP_W, VP_H, 0);
 
-    // --- Map viewport (0,8,240,192): 15x12 tiles @16px, naive terrain_id->sprite
-    //     (map_view.md §6.2; sub-cell func_O514 chain deferred per CLAUDE.md #7). -
+    // --- Map viewport (0,8,240,192): 15x12 tiles @16px, layered terrain
+    //     composition (TERRAIN.SS base ground + PHYS0 overlays), map_view.md §2. -
     for (int row = 0; row < VP_ROWS; ++row) {
         for (int col = 0; col < VP_COLS; ++col) {
             int mx = ox + col, my = oy + row;
             if (mx < 0 || my < 0 || mx >= map.w || my >= map.h) continue;
             uint8_t b = map.tiles[my * map.w + mx];
-            int terrain = b & 0x1F;                       // CLAUDE.md #3
-            if (terrain == 0 || terrain == 16 || terrain == 100) continue;  // #5 placeholders
-            if (terrain < tiles.nframes)
-                scr.blit_frame(tiles.frames[terrain], VP_X + col * TILE, VP_Y + row * TILE);
-            if ((b & 0x20) && tiles.nframes > 1)          // river bit -> overlay frame 1
-                scr.blit_frame(tiles.frames[1], VP_X + col * TILE, VP_Y + row * TILE);
+            terrain_compose(scr, terrain, tiles, b, VP_X + col * TILE, VP_Y + row * TILE);
         }
     }
 
@@ -73,7 +112,7 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& tiles,
             int tx = map.w ? mx * map.w / MM_W : 0;
             int ty = map.h ? my * map.h / MM_H : 0;
             uint8_t b = map.tiles[ty * map.w + tx];
-            scr.put(MM_X + mx, MM_Y + my, tile_color(tiles, b & 0x1F));
+            scr.put(MM_X + mx, MM_Y + my, tile_color(terrain, b));
         }
     }
     if (map.w && map.h) {                                  // white viewport rectangle (idx 0x0F)
