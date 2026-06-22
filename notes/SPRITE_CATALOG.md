@@ -134,7 +134,7 @@ for different river widths or for river-meets-coast transitions.
 |-------|---------|
 | 144–147 | Small blue water / fish-swirl fragments (smaller than 8×8?) |
 | 148 | **Deep dithered ocean** — pure 16×16 opaque, palette indices (24,28,125) / (32,44,137) / (16,16,117). Used as full water-tile base fill. |
-| 149 | **Sandy dune** — vertical stripes of desert, 4 columns of tan (117,97,68)(133,113,80)(101,80,52)(153,129,93). |
+| 149 | **FOG / unexplored-tile sprite** (`0x95`) — vertical tan-striped hatching (resembles plow furrows). **CORRECTED 2026-06-22:** `func_0681A8` draws `0x95` ONLY on hidden/unexplored tiles (gated by the fog flag `[bp-8]` from fog mask `[0xA89E]`, `@0x68212`), NOT as a coast base. (Prior "Sandy dune"/"base coast" label was wrong — see `map_system.md` §3 + RULINGS 2026-06-22.) |
 | 150 | Ocean with sand at NW corner (2-edge). Used for water tiles with land to NW. |
 | 151 | Ocean with sand at corresponding corner (see below). |
 | 152 | Ocean with wider sand on SE/S+E. |

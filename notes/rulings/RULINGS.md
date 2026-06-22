@@ -4161,3 +4161,44 @@ granted sign-off to amend the hard rule.
 **Follow-up**: `terrain_cell_transform` (code 0x11/0x09->8; code>=8 -> code-0xF; else code) maps
 terrain ids to TERRAIN.SS frame indices — exact per-terrain frame mapping to be pinned in Phase C
 from TERRAIN.SS frame inspection. The `0x70`-band / `0x1F884` coast sub-cell table stays TBD.
+
+---
+
+## 2026-06-22 — Sprite 0x95 is the FOG/unexplored tile, NOT "base coast" (map_system.md §3/§1b wrong)
+
+**Conflict**: `spec/systems/map_system.md` §3 + §1b (tagged BYTE_VERIFIED) describe the coast as
+"base coast sprite `0x95` + per-direction overlays `0x69..0x6C`." Implementing that put a striped
+"plow"-looking sprite all over the coast (user: "you have the plow sprite on the coast"), and the
+`0x69..0x6C` frames turned out to be selection-box/padding sprites, not coast.
+
+**Source A** — `spec/systems/map_system.md` §3 (line ~75) / §1b (line ~154): "base beach/coast
+sprite `0x95` (`mov ax,0x95; call 0x67dc8 @0x68212`)" + "per-direction overlay `0x69+direction`".
+Tagged BYTE_VERIFIED.
+
+**Source B** — capstone disasm of `func_0681A8` (O513) vs `raw/COLONIZE/VICEROY.EXE` (rank-3
+byte-grounded): the single `mov ax,0x95` @`0x68212` is gated by **`[bp-8]` = the fog/hidden flag**
+(`@0x6820c cmp [bp-8],0; je 0x6824e`). `[bp-8]` is set from the **fog mask `[0xA89E]`** and the
+tile fog byte `[0xA8A0]` in the prologue (`@0x681E0..0x681FE`) — `[bp-8]=1` ⇒ tile **unexplored**.
+The same branch then calls O512 (`func_067F50`), whose per-direction draws (`0x69+dir` +
+`emit_terrain_sprite`) are the **fog-edge blend** for hidden tiles. The spec itself documents
+`[0xA89E]` = `1<<(player+4)` fog mask (§3, line 133). The **visible-tile coast** is a *different*
+code path: shore base `0x96` (drawn when terrain byte `[0xA89F]&0x40` @`0x68356`) + directional
+edges `0x97+pattern` (151..153, from the connection bitmap `[0xA8A6]` @`0x6850D`).
+
+**Ruling**: **`0x95` (PHYS0 frame 149) is the fog-of-war / unexplored-tile sprite** (its vertical
+striped hatching resembles plow furrows — hence the "plow" appearance when wrongly drawn on
+coasts), **not** a coast base. §1b's "coast = `0x95` + `0x69..0x6C`" actually documents the
+**fog-of-war renderer**, mislabeled. The **real coast** = `0x96` shore base (terrain bit `0x40`) +
+`0x97..0x99` directional edges (connection-bitmap pattern), in the visible-land path. The
+BYTE_VERIFIED tag on the old coast description was unjustified. Byte-disasm (rank 3) + user
+ground-truth (rank 1) outrank the team-doc claim.
+
+**Action taken**:
+- `map_system.md` §3 + §1b: relabel `0x95`/`0x69..0x6C` as the fog-of-war path; document the real
+  coast (`0x96` + `0x97+pattern`); retier.
+- `notes/SPRITE_CATALOG.md` row 0x90: frame 149 "sandy dune" → **fog/unexplored tile** (striped).
+- `viceroy_cpp` map-view: the coast must use the visible-path `0x96`/`0x97+pattern`, not `0x95`.
+
+**Follow-up**: the exact `0x97+pattern` connection-bitmap → edge-variant mapping (`[0xA8A6]`
+patterns `0xC1`/`0x07`/`0x70`/`0x1C` @`0x68479..0x684A8`) for the directional coast edges still
+needs enumerating before a faithful coast implementation.

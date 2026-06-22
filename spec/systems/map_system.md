@@ -58,31 +58,35 @@ the CSV order.
 - **Rivers vs coast** (hard rule 4): `PHYS0.SS` rows `0x01`/`0x11` are rivers, not coast.
 - Per-terrain yield/movement/defense numbers: **now legend-mapped** (see §2; Defensive in `combat.md`).
 
-### Coast / beach-halo rendering — **BYTE_VERIFIED** (2026-06-19, verified vs EXE)
+### Coast + fog rendering — **CORRECTED 2026-06-22** (re-traced vs EXE; prior version wrong)
 The tile-draw chain (hard rule 7) maps to: **`func_O514` = `func_0685DC`** (visible
 row/col loop, `0x0685DC..0x068897`) → **`func_O513` = `func_0681A8`** (per-tile
 terrain/feature/road/river/coast sprite **selector**, `0x0681A8..0x0685DB`) →
-**`func_O512` = `func_067F50`** (sub-cell **water/coast composer**, `0x067F50..0x0681A7`).
+**`func_O512` = `func_067F50`** (sub-cell composer, `0x067F50..0x0681A7`).
 
-- **Water test (`func_067F50`):** a tile is water when its base id `≥ 0x18`
-  (Arctic `0x18` / Ocean `0x19` / Sea-Lane `0x1A`) — `@0x67FD0 cmp al,0x18`; land
-  ids (`< 0x18`) are masked `& 7` to the base type. Neighbours are read from the
-  terrain layer far-ptr `[0xA598]`/`[0xA59C]` at offset `± 1` (horizontal) and
-  `± map_stride [0x8548]` (vertical), and mapped to a water/land class via
-  `0x181F:0x6AA` (`@0x67FDE`). The composer walks the **4 sub-cells** (`[bp-4]`),
-  building per-edge flag bytes `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]`.
-- **Beach-halo sprites (`func_0681A8`)** — the coastal-edge band is **`0x95..0x99`
-  (149..153)**, confirming hard rule 4: **base beach `0x95`** drawn when a water-edge
-  flag is set (`@0x68212`), and **directional edge sprites `0x97 + edge_index`
-  (151..153)** (`@0x6850D add ax,0x97`) selected by the composed edge code
-  (`[0xA8A1] & 0xC0`, `@0x68206`). Forest/hills overlays use the separate auto-forest
-  rows `+0x21`/`+0x31` (`@0x6837F/0x68384`). Emission is via `func_067DC8` (sub-cell
-  placement) + `func_067EEC` (`emit_terrain_sprite`).
-- So **coasts are a *render-time* composition**, not stored tiles: the composer
-  reads each water tile's land-neighbour configuration and the selector stamps the
-  matching beach edge(s) from the `0x95..0x99` band around it. The exact
-  neighbour-config → which-of-`0x95..0x99` truth table is the bit logic in
-  `func_067F50`/`func_0681A8` (located; full per-direction enumeration is intricate).
+> **Correction (2026-06-22, RULING):** the earlier "coast = base `0x95` + per-direction
+> `0x69..0x6C`" was **wrong** — it was actually the **fog-of-war path**. `func_0681A8` draws
+> **`0x95` (frame 149) ONLY on unexplored/fogged tiles**: `@0x68212 mov ax,0x95` is gated by
+> `@0x6820c cmp [bp-8],0; je` where `[bp-8]` = the **hidden flag** set from the **fog mask
+> `[0xA89E]`** + tile fog byte `[0xA8A0]` (`@0x681E0..0x681FE`; `[bp-8]=1` ⇒ unexplored). That
+> branch then calls `func_067F50`, whose per-direction `0x69+dir` + `emit_terrain_sprite` draws are
+> the **fog-edge blend** (partial neighbour terrain at the edge of explored area). `0x95`'s striped
+> hatching resembles plow furrows — hence its "plow" look when mis-drawn on coasts. **`0x95` is the
+> fog/unexplored sprite, not a coast base; `0x69..0x6C` are fog-edge (and selection-box) sprites,
+> not coast.**
+
+- **Real coast (visible-land path, `func_0681A8`):** after the base ground + forest, a tile with
+  the **shore bit** (`[0xA89F] & 0x40`, `@0x6834F`) draws **shore base `0x96` (150)** (`@0x68356`);
+  the **directional coast edges `0x97 + pattern` (151..153)** (`@0x6850D add ax,0x97`) are selected
+  from the **4-cardinal connection bitmap `[0xA8A6]`** (pattern matches `&0xDD==0xC1` / `&0x77==0x07`
+  / `&0x77==0x70` / `&0xDD==0x1C`, `@0x68479..0x684A8`), each followed by `emit_terrain_sprite`
+  (`@0x68518`). Forest/hills overlays use the auto-forest rows `+0x21`/`+0x31`
+  (`@0x6837F/0x68384`). Emission via `func_067DC8` (sub-cell place) + `func_067EEC`
+  (`emit_terrain_sprite`).
+- So **coasts are a render-time composition** on the *visible-land* side: shore base `0x96` +
+  directional edges `0x97..0x99` chosen by the land/water connection bitmap. The exact
+  pattern→`0x97..0x99` enumeration (`[0xA8A6]` cases above) is **TBD-precise** but the entry points
+  are byte-cited. **B** (chain + frame roles); pattern table **R** (located, not fully enumerated).
 
 **Per-tile layer dispatch (`func_0681A8` = O513) — BYTE_VERIFIED order.** O513 first
 loads the tile + neighbours from the three layer far-ptrs `[0xA594]`/`[0xA598]`/`[0xA59C]`
@@ -114,7 +118,8 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
 **Authoritative PHYS0 sprite-index bands (byte-grounded, `src/render/terrain.c`):**
 `0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore · **`0x51..0x5E` river** ·
 **`0x6D` roads** · `0x5A` terrain-detail centre (position hash) · `0x8D..0x94` feature
-edges · **`0x96..0x99` coast**. Neighbour masks: `func_067A24` connections,
+edges · **`0x96..0x99` coast** · **`0x95` = fog/unexplored tile** (hidden path, NOT coast —
+correction 2026-06-22). Neighbour masks: `func_067A24` connections,
 `func_067B84`/`067BE4` 4-card feature, `func_067C8E` forest edges, `func_067D54`
 8-dir terrain. Drawn through `func_067DC8` (sub-cell place) / `func_067E28` (ground) /
 `func_067EEC` (terrain).
@@ -142,25 +147,26 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
 - `data_extracted/text/NAMES_sections.json` — @UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE. **B**
 - `formats/MP_FORMAT.md` — header + tile-byte bitfield + record arrays. **B**
 - `docs/GAME_INDEX_TABLES.md:377` — auto-forest 8..23 at file 0x6204. **B**
-- `func_067F50` (O512, water/coast composer) / `func_0681A8` (O513, sprite selector) / `func_0685DC` (O514, row/col loop) — coast beach-halo band `0x95..0x99`, water test id≥`0x18`, neighbour read via `[0xA598]`±`[0x8548]`. **B** (verified vs EXE; cross-ref `viceroy_source/src/render/tile_chain.c`).
+- `func_067F50` (O512, fog-edge / sub-cell composer) / `func_0681A8` (O513, sprite selector) / `func_0685DC` (O514, row/col loop) — **coast band `0x96..0x99`** (visible path), **`0x95` = fog/unexplored sprite** (hidden path, §3 correction), water test id≥`0x18`, neighbour read via `[0xA598]`±`[0x8548]`. **B** (verified vs EXE).
 - `func_064A10` (`map_generate_new_world`) — procedural generator (see `map_generation.md`). **B**
 - `docs/GAME_MANUAL.md` — terrain function, improvements, polar-ice bounds. **R**
 
 ## 6. Open questions (TBD)
 1. ~~Decode the per-terrain CSV columns.~~ **Done 2026-06-19** — `Movement, Defensive, Improvement, Value` + 9 yields (§2).
-1b. ~~Coast beach-halo: the full neighbour-config → sprite truth table.~~ **DONE 2026-06-21
-   — there is no 16-entry config LUT; it's 4 independent per-direction draws.** The coast
-   renderer **`func_0681A8`** reads the 3 map planes (`[0xA594]`/`[0xA598]`/`[0xA59C]`), and on
-   a coastal tile draws the **base coast sprite `0x95`** (`mov ax,0x95; call 0x67DC8`
-   `@0x68212`), gated by feature bits `0x40`/`0x80` (`[0xA8A1]&0xC0`) and ocean/sea-lane
-   terrain (`0x19`/`0x1A`). It then calls **`func_067F50`**, which **loops the 4 cardinal
-   directions** (dx/dy offset tables at DGROUP `0xA8`/`0xAE`, index `[bp-4]=0..3`); for each
-   direction whose neighbour crosses the land/water boundary (neighbour terrain folded
-   `&0x1F`, `<0x18 → &7`; same-ocean/sea-lane neighbours skipped `@0x68120..0x68150`) it draws
-   the **per-direction overlay sprite `0x69 + direction`** (`mov ax,[bp-4]; add ax,0x69; call
-   0x67DC8` `@0x68189`) plus a neighbour-terrain edge blit (`call 0x67EEC`). So the halo is
-   **additive and per-direction** (base `0x95` + up to four overlays `0x69..0x6C`), not a
-   combined-neighbour-mask table — which is why no truth table exists to enumerate. **B.**
+1b. **Coast vs fog rendering — CORRECTED 2026-06-22 (the 2026-06-21 "coast" entry was wrong; it
+   described the FOG-OF-WAR path).** Re-traced vs EXE (capstone `func_0681A8`/`func_067F50`):
+   - The `0x95` + per-direction `0x69..0x6C` draws are the **fog-of-war renderer**, NOT coast.
+     `@0x68212 mov ax,0x95` is gated by `@0x6820c cmp [bp-8],0; je` where **`[bp-8]` = hidden flag**
+     (set from the fog mask `[0xA89E]` + tile fog byte `[0xA8A0]`, `@0x681E0..0x681FE`;
+     `[bp-8]=1` ⇒ unexplored). For a hidden tile it draws **`0x95` (fog/unexplored sprite, frame
+     149 — striped, "plow"-looking)** then `func_067F50`, which loops the 4 cardinal directions
+     (dx/dy at DGROUP `0xA8`/`0xAE`, `[bp-4]=0..3`) drawing `0x69+dir` (`@0x68189`) +
+     `emit_terrain_sprite` (`@0x68197`) — the **fog-edge blend** showing partial explored
+     neighbours at the fog boundary.
+   - The **real coast** is the *visible-tile* path: shore base **`0x96`** when `[0xA89F]&0x40`
+     (`@0x6834F/0x68356`) + directional edges **`0x97+pattern` (151..153)** from the connection
+     bitmap `[0xA8A6]` (`@0x6850D`, patterns `@0x68479..0x684A8`), each + `emit_terrain_sprite`
+     (`@0x68518`). See §3. **B** (chain + frame roles); pattern enumeration **R/TBD**.
 2. **Tile-byte bit encoding — PARTIALLY RESOLVED 2026-06-20** (`func_006204` /
    `func_0624E`): low 5 bits (`& 0x1F`) = **base terrain id**; the forest decoder
    `func_006204` masks `& 0x1F` then applies the auto-forest map (ids 8..23 → `(id&7)|8`,
