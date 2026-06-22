@@ -89,8 +89,46 @@ My `nearest_terrain_px` invention contradicts the game.
 - **Menu bar** [V via spec]: WOODTILE strip bg + FONTTINY green titles
   `ui_color_for(0x52,0x8A,0x31)`; item x from title widths. (Exact draw fn TBD.)
 
-## Open items to reach 100%
-1. `draw_subcell` color-key (does the `0x69+dir` stencil write 0-holes?) — verify the 0xE76A copy loop.
-2. overlay `0x718` (centre variant) + `0x75E` (surf) semantics.
-3. minimap bitmap builder (terrain→colour table at `[0x2DA8]`).
-4. menu-bar draw function + WOODTILE tiling fn.
+## 6. RESOLVED open items  **[V]**
+
+### 6.1 draw_subcell color-key + the blend stencils
+`draw_subcell` (0xE76A) is an RLE blitter whose **only transparent value is 0xFD
+(253)** — **index 0 (black) IS written**. So the `0x69+dir` dither stencil writes
+its index-0 dots as 0-holes into the buffer, and `emit_terrain` backfills them →
+neighbour terrain dithered into the edge. **Blend mechanism confirmed.**
+
+**Frame numbering settled empirically: my decoded frame N = game index N−1.** So my
+code's bases (forest 0x40, coast-quad 0x6C, diagonal 0x96) are correct. The four
+blend stencils are **my frames 0x68/0x69/0x6A/0x6B** (= game 0x69/0x6A/0x6B/0x6C),
+and their dot edges map exactly to direction order N,E,S,W:
+- dir0 N → 0x68 (TOP dots) · dir1 E → 0x69 (RIGHT) · dir2 S → 0x6A (BOTTOM) · dir3 W → 0x6B (LEFT).
+
+**O512 runs for water tiles too** (call @0x68315, ring-walk off). For a water tile
+it dithers each adjacent **LAND** neighbour's terrain into the facing edge = the
+real beach halo showing the actual land terrain (sand for a desert coast, grass
+for a grass coast). The green/sand coast-quad sub-tiles (step 10) are drawn *in
+addition*. So the coast = O512 land-terrain dither + coast-block sub-tiles +
+`emit_terrain(water)` backfill.
+
+→ My code: blend uses the right E/S/W frames but **drops North (0x68)**; the
+water-blue skip I added is NOT in the game (it backfills with the neighbour's
+ground frame as-is, marsh/swamp blue included). And I removed the water-tile
+land-dither (was conceptually the right "beach halo").
+
+### 6.2 centre variant (0x718) + surf (0x75E)
+Both gate on map-extras pointer `[0x190]` (per-tile decoration/special data);
+return −1/0 when absent. Centre variant = `0x5A + lookup`, surf = `0x68`. Secondary
+decorative layer; needs the `[0x190]` table, not essential for base terrain.
+
+### 6.3 minimap colour
+The minimap bitmap `[0x2DA8]` is built from a terrain-id → **VICEROY.PAL index**
+table (byte-verified `TERRAIN_PAL_INDEX`, tools/render_map_v2.py): e.g. Tundra→20,
+Desert→66, Plains→54, Prairie→60, Grassland→91, Savannah→40, Marsh→43, Swamp→46,
+Arctic(16)→15, Ocean(25)→45, Sea-Lane(26)→93; forested 8..15 reuse their base
+colour. NOT a live frame-centre sample like mine. **Note: VICEROY.PAL indices**,
+so the minimap needs the VICEROY.PAL, not PHYS0's palette.
+
+### 6.4 wood chrome
+`WOODTILE.SS` = a single **32×24** wood-grain tile. The game **tiles** it across
+the top menu bar (full width, y≈0..9) and the right sidebar (x≈240..320). My code
+blits WOODPANL.PIK full-screen — wrong asset and wrong method.
