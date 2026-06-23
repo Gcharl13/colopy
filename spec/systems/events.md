@@ -3,7 +3,8 @@
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
 **Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: trigger
-(features `0xB0`, RUNTIME-VERIFIED) + handler + `random_int(1,9)`→`@LOSTCITY<n>` +
+PROCEDURAL (`func_006188` coordinate-hash `@0x6188` — corrects the earlier
+`0xB0`-marker model; see §6.1, 2026-06-21) + handler + `random_int(1,9)`→`@LOSTCITY<n>` +
 full per-index meanings + FoY=8 immigrants + reward credit to `+0x2A` + scout bonus
 `BYTE_VERIFIED`** (`func_061454`); **per-index reward magnitudes `BYTE_VERIFIED`** (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola treasure `100·(10·(scout+2)+1d20)`; scout-scaled). (`func_05BE84` is the native **raid** handler — see `natives.md`.)
 **Canonical primary:** `data_extracted/text/GAME_sections.json` (@LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE), `docs/GAME_MANUAL.md` (Rumors of Lost Cities, Corrupting Burial Grounds).

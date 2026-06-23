@@ -4355,3 +4355,46 @@ the parenthetical **name** was wrong. Corrected "(Ocean)" → "(Sea Lane)" in th
 three docs above. No behavior change; this only removes a stale label that
 disagreed with the 2026-06-20 ruling. Implementation needed no change. Rank: EXE
 bytes (top) + prior recorded ruling.
+
+---
+
+## 2026-06-23 — spec cross-consistency audit (4-cluster): fixes + 2 open conflicts
+
+Read-only audit of spec/systems for cross-spec/internal contradictions. Most shared
+constants were consistent (REF globals, royal_money +0x22/1800, [0x53D0] identity,
+50% declare floor, ColonyRecord 0xCA, terrain ids 24..28, NativeSettlement 0x54EC/18,
+diplomacy +0x34/+0x40, @UNIT stat columns, difficulty 4-diff). Defects fixed:
+
+**Fixed (stale value contradicting a recorded ruling + the spec's own corrected text):**
+- `spec/data/records.md` UnitRecord base `0x3146`→**`0x3144`** (RULINGS 2026-05-28; the
+  file's own §4 already said 0x3144). `+0x07 map_x`→`+0x00 map_x`; `0x3146`=type at +0x02;
+  `0x314D/0x314E`=goto-target (not map_x/y).
+- `spec/systems/combat.md` profession byte `+0x15`→**`+0x17`** (abs 0x315B; matched its own
+  §3 prose `cmp [bx+0x315B],0x18`).
+- `spec/systems/ref_growth.md` Evidence list `+0x32 "strength rating"`→**home_x/home_y**
+  (RULINGS 2026-06-20; the §state table already had it right).
+- `spec/systems/events.md` header: Lost-City trigger `0xB0 RUNTIME-VERIFIED`→**PROCEDURAL
+  `func_006188`** (aligned to the file's own §6.1 2026-06-21 resolution).
+- `spec/systems/colony.md`: softened "`+0xBA` Hammers label is correct" → **DISPUTED**
+  (aligned to the file's own `+0xBA` CONFLICT row + §6 residual).
+- `spec/systems/map_system.md`: flagged the stale "`0xB0`=Lost-City trigger marker,
+  planted/cleared" model as SUPERSEDED by events.md §6.1 (procedural).
+
+**OPEN — need a targeted disasm pass to reconcile (do NOT guess):**
+1. **War-of-Spanish-Succession `[0x53D0]` trigger direction.** `revolution.md` + the
+   2026-06-20 ruling say succession "auto-fires when `[0x53D0]` **crosses 50**"
+   (`func_03E844 @0x3E8BD`); `spanish_succession.md` (dedicated call-graph analysis)
+   says the succession branch is the **low-`[0x53D0]` / `[0x53D2]<0` state**, dispatcher
+   `@0x02391C` **clamps `[0x53D0]` to 75**, and the handler body has *no* 50-compare.
+   The two cite different functions. Reconcile by disassembling the dispatcher at
+   `@0x02391C/@0x02392A` and `func_03C638` vs `func_03E844`.
+2. **River overlay bit in the procedural generator.** `map_generation.md:58` (P4) writes
+   river as "**bit 6 `0x40`**", but the `.MP` format authority (`MP_FORMAT.md`,
+   `map_system.md:21`) says packed river = **bit 5 `0x20`** (bit 6/`0x40` = forest), while
+   the runtime render trace (`map_system.md:152`) gates the river *draw* on feature-plane
+   `0x40`. Plane ambiguity — confirm which bit the generator actually `or`s at the P4 site
+   (`@0x64xxx`) and disambiguate the .MP-packed bit (0x20) from the runtime feature-plane
+   bit (0x40) in both specs.
+
+Both are conflicts between byte-cited claims; recorded here per the prime directive
+rather than resolved by guesswork.

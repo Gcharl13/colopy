@@ -109,8 +109,9 @@ labels `TBD`. **R**.
 ## 5. Evidence
 
 - `docs/DATA_MODEL.md` — REF globals `0x53DA/0x53DC/0x53DE/0x53E0`
-  (USER-VERIFIED), `+0x22` royal_money (+18/turn), `+0x32` strength rating,
-  REF-location conflict ruling. **B / runtime**
+  (USER-VERIFIED), `+0x22` royal_money (+18/turn), `+0x32`/`+0x33` home_x/home_y
+  (**NOT** a REF strength rating — corrected 2026-06-20, RULINGS; see the §state
+  table line for `+0x32`), REF-location conflict ruling. **B / runtime**
 - `spec/systems/king.md` — REF = exactly 4 unit types; budget meaning. **B**
 - `func_03CDA2` (file `0x3CDA2`) — REF total = sum of the 4 counts; ≥1 Man-O-War guarantee (`INC [0x53DE]` @`0x3CDF7`). **B**
 - `func_051EF4` (file `0x51EF4`) — tallies the power's `unit_type 0x12` (Man-O-War) units into `[0x53DE]` (`INC` @`0x52013`). **B**

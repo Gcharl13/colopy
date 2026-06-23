@@ -141,9 +141,11 @@ Building progress is a slot in the **per-good colony amount array at `ColonyReco
 +0x9A`** (u16, stride 2) — *not* a standalone field. The array holds **20 goods
 (0..0x13)**: the 16 `@CARGO` tradables (0..0xF) followed by the 4 internal goods
 **`0x10`=Hammers, `0x11`=Crosses, `0x12`=Liberty Bells, `0x13`=Flags**, so the array
-runs `+0x9A..+0xC0` and the SoL dividend `+0xC2` sits immediately after it.
-Therefore **Hammers = `+0x9A + 0x10·2 = +0xBA`** (u16) — the original `+0xBA` label
-is **correct**.
+would run `+0x9A..+0xC0` and put **Hammers at `+0x9A + 0x10·2 = +0xBA`** (u16).
+⚠ **DISPUTED, not settled** — the build code reads `+0x92`/`+0xB6`, **never `+0xBA`**
+(RULINGS 2026-06-20), and `docs/DATA_MODEL.md` maps the per-good array as **16×u16**
+(`+0x9A..+0xB9`), making `+0xBA` a separate field. See the `+0xBA` **CONFLICT** row in
+the §state table and the §6 residual; the 16-vs-20 array width is unresolved.
 
 > **Conflict resolved 2026-06-20 (corrects the prior off-by-one lead):** the earlier
 > note placed `0xF`=Hammers ⇒ `+0xB8`. That is wrong. `+0xB8` is good `0xF` =

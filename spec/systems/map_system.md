@@ -25,9 +25,12 @@ economic yields, movement cost, and combat modifiers (`docs/GAME_MANUAL.md`).
 **Runtime map layers** (`colonization-memory-map (1).md`, **RUNTIME-VERIFIED**; live
 play board is **56 × 72**, row-major `tile = y·56 + x`, 4032 bytes/layer):
 - **Features/Rumors layer** — per-tile special-attribute byte: `0x00` = none,
-  **`0xB0` (176) = Lost-City / Rumors-of-treasure marker**. Stepping a unit onto a
-  `0xB0` tile fires the rumor event and **clears the tile to `0x00`** (plant/remove
-  **write-verified**). This is the Lost-City **trigger** (see `spec/systems/events.md`).
+  `0xB0` (176) = high-nibble feature value (memory-dump observed). ⚠ **The
+  "`0xB0` = Lost-City trigger marker, planted/cleared" model is SUPERSEDED** —
+  `spec/systems/events.md` §6.1 (2026-06-21, EXE-verified) resolves rumor presence as
+  **PROCEDURAL** (`func_006188 @0x6188` coordinate-hash vs a global map seed), *not* a
+  stored `0xA0`/`0xB0` marker (a stored high-nibble would in fact **suppress** a rumor).
+  Defer to `events.md` for the Lost-City **trigger**.
 - **Visibility layer** (= features + 0x1B80): per-power fog, `0x00` unexplored /
   `0x80` explored. **RUNTIME-VERIFIED** (read).
 

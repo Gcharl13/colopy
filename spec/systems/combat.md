@@ -23,7 +23,7 @@ decided by a single odds roll modified by terrain/fortification/veterancy.
 | `@UNIT` rows (NAMES.TXT) | per-type stat columns (attack, defense, guns, …) | **BYTE_VERIFIED** | `data_extracted/text/NAMES_sections.json` |
 | stat loader `@0x74EC3` | maps `@UNIT` col3 ATTACK→`0x5236`, col4 DEFENSE→`0x5235` (LAND, ×8 in accessor); col9 guns→`0x523B`, →`0x523C` (ship) | **BYTE_VERIFIED** | `notes/rulings/RULINGS.md` (wave-10 loader trace) |
 | `UnitRecord +0x00` | `unit_type` = @UNIT row — indexes the **demotion** if-ladder | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` |
-| `UnitRecord +0x15` | `unit_class` / profession — the demotion **override** condition (`==24`) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` |
+| `UnitRecord +0x17` | `unit_class` / profession (abs `0x315B`) — the demotion **override** condition (`==24`) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md`; `cmp [bx+0x315B],0x18` `@0x5B60E` (see §3) |
 
 **Two combat functions (role split, RULINGS 2026-05-30):**
 - `func_05CA7E` (file `0x5CA7E`, in `src/ai/unit_ai_leaf.c`) — the **LAND decider**: computes win/loss via `ATK/(ATK+DEF)` on *derived* strengths (stat pair `0x5235`/`0x5236`), applying the terrain/fort/veteran modifiers.

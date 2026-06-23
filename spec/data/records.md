@@ -14,7 +14,7 @@ VICEROY.EXE keeps per-entity state in four primary fixed-stride record arrays in
 |--------|---------------|--------|-------|----------------------------------------------------------------|------|
 | **PowerRecord** | `0x8808` (`0x8809` in field table) | `0x13C` = 316 | 12 (0..3 EU, 4..11 tribes) | `+0x21` gold (dword), `+0x25` total_loot, `+0x29` treasury, `+0x06` attribute bitfield, boycott u16 `+0x20`, market bytes `+0x4C..+0x5B` | **B** |
 | **ColonyRecord** | active via `[0x8542]` far ptr | `0xCA` = 202 | ~50 | `+0x1A` owner_power_idx, `+0x1B` foreign-status, `+0x1C` status-flags byte (B), `+0x1F` size, stockpile `+0x9A` 16×u16 | **B** (stride/anchors), A/TBD elsewhere |
-| **UnitRecord** | `0x3146` | `0x1C` = 28 | 300 max | `+0x00` unit_type (@UNIT idx), `+0x01` power\|flags, `+0x07` map_x, `+0x08` map_y | **B** |
+| **UnitRecord** | `0x3144` | `0x1C` = 28 | 300 max | `+0x00` map_x, `+0x01` map_y, `+0x02` unit_type (@UNIT idx), `+0x03` power\|flags, `+0x17` class/profession | **B** (base `0x3144` per RULINGS 2026-05-28 / §4 below; the old `0x3146`-as-base with `+0x07` map_x was superseded — `0x3146` is the *type* field at `+0x02`, and `0x314D/0x314E` is the goto-target, not map_x/y) |
 | **NativeSettlement** | `0x54EC` | `0x12` = 18 | per-village | `+0x04` population (CHIEFKILL size_byte), `+0x08` last_bought | **B** |
 
 > PowerRecord appears as base `0x8808` (record-array head) and `0x8809` (first field) in `docs/DATA_MODEL.md`; both are present there. Stockpile/SoL dividend-divisor/colonist-job offsets are NOT pinned here — read them at the `docs/DATA_MODEL.md` cited site.
