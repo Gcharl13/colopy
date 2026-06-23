@@ -61,6 +61,17 @@ removed; the overlay source survives as `SESSION_UI_CATALOG.md` §3 frame 131012
   / REF **column stride** — none are text colors, and none is a progress-bar fill. (Bell/US-flag
   sprites are legitimately absent from this F3 text body — §6.1.)
 
+> **Bell-row layout — the discrete sprites are PROPORTIONALLY pitched (`0x181F:0x236`
+> = `func_002EE4`, helper `func_002D74`, byte-verified 2026-06-23).** The row of `count`
+> = bells-needed sprites is fitted into a fixed span (`0x12C`=300): each sprite's pitch
+> `stride = (span − sprite_w)/(count − 1)` (`idiv` @0x002DC6), **clamped to
+> `[1, sprite_w+1]`** (cap @0x002DCD, floor @0x002DD7). So with **few** bells needed the
+> sprites sit just-touching (`stride = sprite_w+1`); with **many** needed the pitch
+> collapses toward **1 px and the bells overlap / almost stack** — the count's "fullness"
+> reads as how many are the **filled** sprite (`0x39`/the passed `0x3F`) vs the **empty**
+> sprite (`0x38`, @0x002FA5), NOT a fill bar. This is exactly why it is a sprite row, not
+> a gauge. **B.**
+
 **FF portrait slots (25, CC-NN.SS):** the 25 portraits CC-00..CC-24 map 1:1 to NAMES
 `@FATHERS` order. On this **Activities** screen the acquired-FF list renders as **plain text**
 (frame 1310124562). The CC-NN blits live in the **FF-acquisition reveal popup**, now
