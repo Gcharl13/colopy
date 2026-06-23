@@ -46,10 +46,10 @@ the body region varies per report (§4).
 | Region | Pixel rect | Font | Color | Notes / cite |
 |--------|-----------|------|-------|--------------|
 | Background plate | (0, 0, 320, 200) | — | PIK palette | `REPORT<N>.PIK`, loaded by `func_037340` (§2.1). **B** |
-| Title bar — fill | (0, 0, 320, 5) | — | `0x90`→(255,255,190) + per-report attr | `fill_rect` `0x181F:0x22` (`func_002462`); `push 0x90` @0x37970 (F2). **B** |
-| Title bar — text | centered, y≈0 | FONTTINY | composited (PIK) | title template `0x11A2` + report-N → `@MISC` string, drawn by `0x191F:0xF4A` (`func_037340` @0x37340). **B** |
+| Title — report-name text | centered in box (0,0,0x140,5) | FONTTINY | `0x90`→(255,255,190) | **CORRECTED 2026-06-23:** `0x181F:0x22` (`func_002462`) is the **string FETCH** of the report-name id `[0x2DF6]`, fed to `0x181F:0x100` (**centre-text-in-box**, color `0x90`) @0x37970/@0x37988 (F2). It is **NOT a fill_rect** — `0x22` does not draw (`UI_PRIMITIVES.md` §0x022). **B** |
+| Title bar — background | (0, 0, 320, ~10) | FONTTINY | composited (PIK) | title template `0x11A2` + report-N → `@MISC` string, drawn by `0x191F:0xF4A` (`func_037340` @0x37340). **B** |
 | Body | (0, ~10, 320, ~188) | FONTTINY | per-report (§4) | per-report row/column stack; bodies at `0x37xxx–0x3Axxx`. **B (layout) / R (flow y, live values)** |
-| Footer rule | (0, 200, 320, 1) | — | full-width rule | `0x181F:0xE2` (`func_00DB3A`), `push 0xC8` (y=200). **B** |
+| Footer strip | (0, 200, 320) | — | composited sprite | **CORRECTED 2026-06-23:** `0x181F:0xE2` (`func_00DB3A`) is a **clipped sprite blit** (sheet `[0x2DA8]`), `push 0xC8` (y=200) — **NOT a 1-px line-rule** (`UI_PRIMITIVES.md` §0x0E2). The intra-report separators (F4/F8) are the real lines, via `0x191F:0x8BC`. **B** |
 | OK button | bottom (widget) | (widget) | (widget) | `0x181F:0x3C0` (`func_004A80`), label `@MISC 46` "OK". **B** |
 
 **Tier note on body row pitch:** within a body the **per-row y advance is a FONTTINY

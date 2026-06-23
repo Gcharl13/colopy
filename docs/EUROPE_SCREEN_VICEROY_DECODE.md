@@ -35,7 +35,7 @@ Near-call trampolines `call cs:0x368xx` → `ljmp 0x191F:NNN` → file (all reso
 | 6 | 0x031E7C | `call 0x36863` → `0x191F:0xBC0` | **func_0319A6** | transaction strips: dispatches **func_0317CC** (`0x3690D`) + **func_0318D2** (`0x3695D`) |
 | 7 | 0x031E85 | `call 0x36926` → `0x191F:0xDE2` | **func_031AFA** | right-side in-port recruit/unit list panel `(224,120,96,59)` |
 | 8 | 0x031E8D | `call 0x31DC8` (arg 0) | **func_031DC8** | **RECRUIT/PURCHASE/TRAIN** panel `(281,89,37,32)` |
-| 9 | 0x031E95 | `lcall 0x181F:0xE2` | — | screen outer rule `(0,200,320)` |
+| 9 | 0x031E95 | `lcall 0x181F:0xE2` | — | screen-bottom **sprite strip** `(0,200,320)` (`0xE2`=clipped sprite blit, not a line — §0x0E2) |
 
 The screen-toggle/refresh entry points (`@0x031EB0`/`@0x031EEE`) re-call steps 3/4/5/7
 with arg 1 and recompute the gold mirror `[0x9E30] = treasury+0x14` (`@0x031F1F`).
@@ -55,7 +55,7 @@ with arg 1 and recompute the gold mirror `[0x9E30] = treasury+0x14` (`@0x031F1F`
 | Docked ships (6) | 147+slot·12 | 165 | 10 | 12 | ICONS sprite `0x7B`; `func_0314AE` |
 | Ship status row | state·tile+base | 146/137/132 by state | — | — | `func_031298`/`func_031366` |
 | Recruit/Purchase/Train panel | 281 | 89 | 37 | 32 | `func_031DC8` |
-| Screen outer rule | 0 | 200 | 320 | — | `0x181F:0xE2` |
+| Screen-bottom sprite strip | 0 | 200 | 320 | — | `0x181F:0xE2` (clipped sprite blit, not a line) |
 
 ## 4. Market PRICE bar — `func_0310B4` (twin of colony stockpile bar)
 Byte-identical layout to the colony stockpile bar (colony decode §6): fill
@@ -114,7 +114,8 @@ and Europe `@0x03125C` draws are byte-identical, both captions). **B (field) / B
   `good+0x17` (`0x181F:0x254` @0x031417). **B.**
 
 ## 8. RECRUIT / PURCHASE / TRAIN — `func_031DC8` (the 3 right-side buttons)
-Panel `(281,89,37,32)`, optional 1-px frame `0x181F:0xE2`. Three centered rows from
+Panel `(281,89,37,32)`, optional frame **sprite** `0x181F:0xE2` (clipped sprite blit, not a
+drawn 1-px line — §0x0E2). Three centered rows from
 `@EUROLABEL` (`"RECRUIT\nPURCHASE\nTRAIN\nx"`, table `[bx-0x6C28]` indexed by `row`),
 y = `89 + row·(glyphH+2)`, ink `0x0F`/`0x0` by selection (`@0x031C10`/`@0x031BF4`).
 **Row→action is fixed by the draw order** (row indexes the label list): **row 0 =

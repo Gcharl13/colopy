@@ -4504,3 +4504,34 @@ over-read.
 **Follow-up**: pin the exact x/y/font of the header gold blit — the menu chrome draws the
 formatted string buffer `[0x9CD2]` (`@0x072FE1`/`@0x0731D0`); the literal draw site in the
 menu renderer is the next trace. And identify what heap string `[0x2F5E]` actually is.
+
+---
+
+## 2026-06-23 — Fill/frame verb traps synced across screen specs (0x22, 0xE2)
+
+**Conflict**: `viceroy_source/docs/UI_PRIMITIVES.md` byte-verifies `0x181F:0x22` =
+string-fetch (`func_002462`, no draw) and `0x181F:0xE2` = clipped sprite blit
+(`func_00DB3A`), but several screen specs still labeled them as `fill_rect` and a
+"1-px rule/frame/outline".
+
+**Source A** (screen specs): `advisor_reports.md` "Title bar fill via `0x181F:0x22`",
+"Footer rule via `0x181F:0xE2`"; `colony_screen.md`/decode + `europe` decode "screen
+outer rule" / "1-px frame" via `0x181F:0xE2`.
+
+**Source B** (central primitive doc, byte-verified): `0x22` = packed-string fetch
+(skip-N, `REPNE SCASB`, no draw) — the F2 title is `fetch [0x2DF6] → centre via 0x100`
+(`@0x37970`); `0xE2` = clipped sprite blit (sheet `[0x2DA8]`, `RETF 6`). The real
+rectangle fill is `0x444`, the real line/divider is `0xCE`/`0x191F:0x8BC`.
+
+**Ruling**: the byte-verified primitive catalogue wins (TRUTH_HIERARCHY: disasm at a
+cited offset > drawlist interpretation). `0x22` is a fetch, `0xE2` is a sprite blit;
+"fill"/"rule"/"frame" labels for them are corrected to "centred text"/"sprite strip".
+
+**Action taken**:
+- `advisor_reports.md`: title row + footer row corrected.
+- `colony_screen.md` + colony/europe decode docs: `0xE2` labels corrected (sprite, not line).
+- `UI_PRIMITIVES.md §0a`: added a "common verb-misread traps" block (0x22, 0xE2, the real
+  fill 0x444, and that WOODFRAM 0x510 has a single caller = colony-scene-only).
+
+**Follow-up**: a full audit of the 85 `0xE2` sites + 37 `0xCE` sites to confirm which
+panels use which is open (the corrections above cover the screen-composer call sites).

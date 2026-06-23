@@ -46,7 +46,7 @@ Trampolines `CALL cs:0x2C9xx/0x2CAxx` → each `ljmp 0x191F:NNN` to the real sub
 | 10 | 0x0285DF | `call 0x2C9FB` | func_027DB2 | **surrounding-tile minimap** |
 | 11 | 0x0285E7 | `call 0x2C983` | func_02814C | **SoL / cargo / msg panel** |
 | 12 | 0x0285EF | `call 0x2C97E` | **func_02701C** | **buildings loop (15 slots)** |
-| — | 0x028607 | `lcall 0x181F:0xE2` if `[bp+6]≠0` | — | screen-bottom rule |
+| — | 0x028607 | `lcall 0x181F:0xE2` if `[bp+6]≠0` | — | screen-bottom **sprite strip** (`0xE2`=clipped sprite blit, not a line — `UI_PRIMITIVES.md` §0x0E2) |
 
 > **Correction (2026-06-23):** the stockpile bar `func_0281D6` IS composer step 8
 > (`call 0x2CA19` → `ljmp 0x191F:0x654` → file `0x0281D6`, verified with

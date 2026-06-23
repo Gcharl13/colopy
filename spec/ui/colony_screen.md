@@ -61,8 +61,12 @@ Paint-order subtlety: the **terrain scene + scene-units (step 3) are drawn FIRST
 **full-screen region fill (step 4)** is composited over it, then title/panels/buildings on top.
 The fill (`func_02633E`, a flat patterned fill via `0x181F:0x444`) is a region paint, **not** a
 destructive clear — the scene survives. **B** (drawlist §2.0). There are **no HI/LO bevel edges**
-anywhere in the colony composer; every panel is a flat fill with at most a single-colour 1-px frame
-(`0x181F:0xE2`). **B** (drawlist §0).
+anywhere in the colony composer; every panel is a flat fill with at most a frame via `0x181F:0xE2`.
+**Correction (2026-06-23):** `0x181F:0xE2` is byte-verified as `func_00DB3A`, a **clipped sprite
+blit** (sheet `[0x2DA8]`), **not** a drawn 1-px line/rectangle (`UI_PRIMITIVES.md` §0x0E2). So the
+"1-px frame", "panel outlines", and "screen-bottom rule" labels below all denote a **composited
+frame/edge SPRITE**, not a vector line. The byte-verified primitive supersedes the drawlist's
+"1px frame" wording. **B** (primitive) / drawlist §0 (geometry).
 
 | # | Call site | Sub-renderer | Role | Tier |
 |---|-----------|--------------|------|------|

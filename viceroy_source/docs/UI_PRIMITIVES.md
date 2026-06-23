@@ -39,6 +39,20 @@ same routine renders the "same kind of thing" on many screens. Recognise these o
 > fill bars anywhere**; every "how much" indicator resolves to `0x236`/`0x2BC`/`0x22C`,
 > all of which bottom out in the single-sprite blit `0xC36:0x0A` (= `0x254`).
 
+> **Common verb-misread traps (do not repeat across screens):**
+> - **`0x181F:0x22` is NOT a fill_rect** — it is `func_002462`, a packed-string **fetch**
+>   (skip-N-strings, no draw). When you see `push <id>; lcall 0x22; push dx; push ax;
+>   lcall 0x100`, that is **fetch report/label string → centre it**, not a filled bar.
+> - **`0x181F:0xE2` is NOT a 1-px rule/frame** — it is `func_00DB3A`, a **clipped sprite
+>   blit** (sheet `[0x2DA8]`). "Screen outer rule" / "panel frame" pushes are compositing a
+>   **sprite strip**, not drawing a line. The real **line/divider** verb is `0x181F:0xCE`
+>   (37 sites; colony field dividers, F4/F8 separators) or overlay `0x191F:0x8BC`.
+> - **The real rectangle fill is `0x181F:0x444`** (`func_00DCF6`, 25 sites — colony
+>   `func_02633E`, Europe `func_030D86`); the solid colour-span fill is `0x181F:0x484`.
+> - **WOODFRAM frame `0x181F:0x510` has ONE caller** (colony scene `func_026374` @0x0263D6);
+>   popups/panels do **not** use it — their frame is the WOODFRAM/WOODPANL composite via the
+>   popup engine. So "0x510 frame" is colony-scene-specific, not shared chrome.
+
 ---
 
 ## 0. How `0x181F:NNN` resolves (the addressing model)
