@@ -70,7 +70,9 @@ removed; the overlay source survives as `SESSION_UI_CATALOG.md` §3 frame 131012
 > collapses toward **1 px and the bells overlap / almost stack** — the count's "fullness"
 > reads as how many are the **filled** sprite (`0x39`/the passed `0x3F`) vs the **empty**
 > sprite (`0x38`, @0x002FA5), NOT a fill bar. This is exactly why it is a sprite row, not
-> a gauge. **B.**
+> a gauge. **B.** **This is a SHARED engine verb, not a CC-specific draw** — the same
+> `0x181F:0x236` renders the colony field-production yields and other report count strips
+> (7 call sites). Canonical: `viceroy_source/docs/UI_PRIMITIVES.md` §0x236 (call-site map).
 
 **FF portrait slots (25, CC-NN.SS):** the 25 portraits CC-00..CC-24 map 1:1 to NAMES
 `@FATHERS` order. On this **Activities** screen the acquired-FF list renders as **plain text**

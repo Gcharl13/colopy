@@ -116,6 +116,12 @@ dump or a runtime trace (do not invent it). Full breakdown:
   lines). **B**
 - Per-field-worker loop: commodity icon index `= good + 0x17` (`add ax,0x17 @0x026573`), h=0xC,
   sheet `[0x2DA8]`. **B**
+- **Production yield indicators use the SHARED proportional sprite-strip primitive
+  `0x181F:0x236`** (`func_002EE4`, calls `@0x02665D`/`@0x02668A`/`@0x026700`) — a count shown
+  as a row of filled/empty icons fitted to a fixed span at pitch `(span−w)/(count−1)` clamped
+  `[1, w+1]` (overlapping when the count is large). This is the **same** verb the Continental
+  Congress bell row and other reports use; see `viceroy_source/docs/UI_PRIMITIVES.md` §0x236.
+  Do not re-derive it per panel. **B**
 - ⇒ field-production panel = FILL (224,32,72,72) + commodity icons (ICONS 0x17+). Labels
   "Harvest / Resources" / "Units Present" / "Make" are **LABELS `@CMISC`** (verified present). **B**
 

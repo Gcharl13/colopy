@@ -80,7 +80,7 @@ disassembly `func_01A5F0_rtlink_overlay_thunk_table.asm`.
 | **0x1C8** | `func_002CE0` | **CENTER text in box** (style variant of 0x100, more font args) | `[bp+6]`=surface, `[bp+8]`=string, `[bp+0xA]`=box_x, `[bp+0xC]`=boxW, `[bp+0xE..0x12]`=font/style | **H-centred** — *NOT a title sprite tiler* |
 | **0x222** | `func_0033F2` | **ENQUEUE (sprite,value,colour)** into row arrays (no draw) | `ax`=value→`[0x2CF4]`, `[bp-4]`=sprite→`[0x2CCE]`, `[bp-2]`=colour→`[0x2CE2]`, INC `[0x2CE0]` | — |
 | **0x22C** | `func_003104` | **FLUSH row**: measure each sprite (sheet `[0x83E]`+0x3E), lay out + **centre** the row | drains `[0x2CE0]` items; widths from `[0x83E]+si*12+0x3E` | **H-centred row**; sheet `[0x83E]` |
-| **0x236** | `func_002EE4` | **Sprite-strip GAUGE**: tile filled-sprite then empty-sprite `0x38` along x | `ax/bx/dx`(in)=fill-sprite/count/max; `[bp+0xE]`=x, `[bp+0x10]`=y | sprite strip, sheet `[0x83E]`/`[0x2DA8]`; filled idx = arg, empty idx = **0x38 (56)** |
+| **0x236** | `func_002EE4` | **Proportional sprite-strip indicator** (shared, 7 sites): `count` filled/empty icons fitted to a fixed span at pitch `(span−w)/(count−1)` clamped `[1, w+1]` (overlap when count large) — NOT a fill bar. See detail below. | `ax/bx/dx`(in)=fill-sprite/count/max; `[bp+0xE]`=x, `[bp+0x10]`=y, width arg `[bp+0xC]` | filled idx = arg, empty idx = **0x38 (56)**; used by colony field/building panels, CC bells, reports |
 | **0x254** | `func_00E76A` | **Blit ONE sprite** (with H-mirror via high bit) | `bx`=sprite-record ptr (`[bx]`=w−1,`[bx+2]`=h−1); `[bp-0x2E]`=index (bit15=mirror) | sprite; mirror flag = index bit 15 |
 | **0x290** | `func_00C8E8` | **Pixel-address calc** (x,y → far ptr) — helper, not a draw | `ax`=x, `dx`=y, `bx`=surface desc(`+2`pitch,`+4`base,`+6`seg) | — |
 | **0x2BC** | `func_00386A` | **Per-unit info panel** (icon + filled stat spans + text) — *composite, NOT a plain bar* | `ax`=unit index (→`[0x3146]`, stride 0x1C); large frame | sprites + colour spans + FONTTINY |
@@ -225,6 +225,31 @@ count `[bp-0x1C]`, max `[bp-0x1E]`). The fill loop (`@0x2F66`):
 **Verdict: tiles the caller-supplied sprite for the filled portion and sprite
 `0x38` for the empty portion, segment by segment, via the single-sprite blit.**
 Cite: `func_002EE4_unknown.asm` lines 62–112.
+
+> **Proportional, clamped pitch — the defining behaviour (byte-verified 2026-06-23,
+> helper `func_002D74`).** The segments are NOT packed at a fixed sprite width: the
+> `count` sprites are fitted into a fixed **span** (the caller's width arg, e.g.
+> `0x12C`=300) at pitch **`stride = (span − sprite_w)/(count − 1)`** (`idiv` @0x002DC6),
+> **clamped to `[1, sprite_w+1]`** (cap @0x002DCD, floor @0x002DD7). Consequences:
+> small `count` → `stride = sprite_w+1` (icons just touching); large `count` → `stride`
+> floors at **1 px so the icons OVERLAP / almost stack**. So this is the engine's
+> universal **"show a count as a proportional row of filled/empty icons across a fixed
+> width"** verb — fullness is conveyed by filled (caller sprite) vs empty (`0x38`)
+> segments, never by a rectangle fill. (This is why none of the screens have graphical
+> fill bars.)
+
+> **Call-site map (all 7 — this is shared chrome, recognise it everywhere):**
+> | site | screen / panel | what it counts |
+> |------|----------------|----------------|
+> | `@0x02665D` / `@0x02668A` / `@0x026700` | colony **field-production panel** (`func_0264A8`) | per-field production yield icons |
+> | `@0x026EF7` | colony **building draw** (`func_026DD4` region) | building-level / capacity indicator |
+> | `@0x027CCC` | colony **bottom panel** (`func_027xxx`) | a per-colony count strip |
+> | `@0x037BF5` | **F3 Continental Congress** body (`func_037A20`) | bells-toward-next-FF (filled `0x3F`/`0x39` vs empty `0x38`) |
+> | `@0x0379B4` | advisor **report** sub-renderer (`func_037958`) | a report count strip |
+>
+> Any spec that shows "a row of N icons for a count" should cite `0x181F:0x236`
+> rather than re-deriving it: `spec/ui/continental_congress.md` (bells),
+> `spec/ui/colony_screen.md` §3.2 (field yields), and the advisor reports.
 
 ### 0x254 → `func_00E76A` — **Blit ONE sprite** (signature pinned)
 File `0x00E76A..` (the load-image sprite blitter). `bx` = pointer to a sprite
