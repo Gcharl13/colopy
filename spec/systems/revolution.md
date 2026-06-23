@@ -40,10 +40,15 @@ gates in three steps:
 
 The SoL meter `[0x53D0]` is the same 0..100 "Bolívar meter" that the **Bolívar
 Founding Father** boosts **+20** (cap 100, `add [0x53D0],0x14` `@0x3BE64`). ⚠ Note the
-**War of Spanish Succession** (`func_03C638`/`@SUCCESSION`) *also* auto-fires once when
-the leading power's `[0x53D0]` crosses 50 (and the succession latch `[0x53D2] < 0`,
-`func_03E844 @0x3E8BD`) — a **separate** event sharing the same meter; see
-`spanish_succession.md`. Tory population fraction: still **RECONSTRUCTED**.
+**War of Spanish Succession** (`func_03C638`/`@SUCCESSION`) is a **separate** event
+sharing this meter, with a **different gate** (byte-verified 2026-06-23, disasm of the
+end-game dispatcher `func_0235D6 @0x2391C`): it calls the succession handler
+(`lcall 0x191F:0x364`→`func_03C638`) when **`[0x53D0] < 75`** (`cmp [0x53D0],0x4B; jl`,
+clamped to 75 `@0x2392A`) **AND `[0x53D2] < 0`** (no power has seceded yet, `@0x23930`);
+the high-meter (`≥75`) state instead feeds the **revolution** handlers (`@0x23942`,
+gated on `[0x5382]`). This corrects the earlier "crosses 50 / `func_03E844`"
+mis-attribution — `func_03E844` is `sons_of_liberty_active_check` (the SoL *display*
+gate, no `[0x53D0]` read). See `spanish_succession.md`. Tory population fraction: still **RECONSTRUCTED**.
 
 ## 3. Formulas & rules
 - REF growth over the game: spend rule (driven by `PowerRecord +0x22`, +18/turn, per `spec/systems/king.md`) → REF globals: **TBD** (trace the writer of `0x53DA..0x53E0`).

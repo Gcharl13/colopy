@@ -4398,3 +4398,41 @@ diplomacy +0x34/+0x40, @UNIT stat columns, difficulty 4-diff). Defects fixed:
 
 Both are conflicts between byte-cited claims; recorded here per the prime directive
 rather than resolved by guesswork.
+
+---
+
+## 2026-06-23 — RESOLVED: the 2 open conflicts from the cross-consistency audit (disasm pass)
+
+Both conflicts recorded earlier today were resolved by disassembling the raw EXE
+(`raw/COLONIZE/VICEROY.EXE`, capstone 16-bit).
+
+**1. War-of-Spanish-Succession `[0x53D0]` trigger — RESOLVED in favor of
+`spanish_succession.md` (revolution.md was wrong).** The end-game dispatcher
+`func_0235D6 @0x2391C` reads:
+```
+0x2391C  cmp  [0x53d0], 0x4b     ; threshold = 75 (0x4B), NOT 50
+0x23921  jl   0x2392a            ; if [0x53D0] < 75:
+0x2392A  mov  [0x53d0], 0x4b     ;   clamp to 75
+0x23930  cmp  [0x53d2], 0
+0x23935  jl   0x2393a            ;   and [0x53D2] < 0 (no secession yet):
+0x2393A  lcall 0x191f, 0x364     ;   -> SUCCESSION handler (func_03C638)
+0x23942  test [0x5382], 1        ; the >=75 path feeds the REVOLUTION handlers
+```
+So succession fires in the **low-meter (`[0x53D0] < 75`) + no-secession (`[0x53D2] < 0`)**
+state; the high (`≥75`) state feeds revolution. `revolution.md`'s "auto-fires when
+`[0x53D0]` crosses 50, `func_03E844 @0x3E8BD`" was wrong on BOTH counts: the threshold
+is **75** (not 50), and `func_03E844` is **`sons_of_liberty_active_check`** (the SoL
+display gate for REBELUP/REBELDOWN; reads `[0x5398]/[0x5382]/[0x53D2]`, **no `[0x53D0]`
+read**). The "50" came from conflating the *separate* declare-independence floor
+(`cmp [0x53D0],0x32` `@0x3E99E` in `func_03E984` — that one IS 50, and is correct).
+Fixed `revolution.md`; `spanish_succession.md` was already accurate.
+
+**2. Generator river overlay bit — RESOLVED (runtime-vs-.MP distinction).** Scanning the
+whole generator `func_064A10` (0x64A10..0x65D26) for flag-bit `or`-immediates: the only
+direct ones are **hills `or …,0x20` @0x64D19** and **forest `or …,0x80` @0x64D23**.
+There is **no `or …,0x40`** anywhere — the river feature is spread via thunk
+`0x181F:0x718` (@0x65BC2), and river therefore occupies the one remaining **runtime-board
+flag bit `0x40`** (consistent with the render trace `map_system.md` §3). `map_generation.md`'s
+"river `0x40`" is correct **for the runtime board**; `MP_FORMAT.md`'s "bit 5 `0x20` = river,
+bit 6 `0x40` = forest" describes the **`.MP` file format** — a different representation.
+Both specs annotated; the `.MP`→board remap in the `.MP` loader is the remaining residual.

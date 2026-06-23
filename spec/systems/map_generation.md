@@ -55,13 +55,19 @@ resource / `[0x168]` fog. Passes, in execution order (all byte-verified):
 | P1 | landmass | blob-growth: seed `≈(p1+p2+1)·0x140` land tiles (`@0x64AAD`), random-walk each with the **8-dir compass table `DS:0xB4`(dx)/`0xBE`(dy)** carrying a 4-neighbour land mask (mask 6/9 triggers fill) | `@0x64B5A..0x64BD1` |
 | P2 | climate | latitude sweeps: N half (`y<H/2`) maps the climate-band index (`[bp-6]>>2`, 0..5) → base terrain via an **inline jump table** `jmp word ptr cs:[bx+0xBAC]` (table at file `0x64CFC`, cs-base file `0x64150`) → cases set `[bp-0x2e]`; S half uses `cs:[bx+0xEFE]` (table `0x6504E`) → `[bp-0x12]`. Then sets **hills bit `0x20`** (`@0x64D19`) / **forest bit `0x80`** (`@0x64D23`); elevation-0 default = `0x19` Ocean (`@0x64D0E`) | `@0x64CF6,0x65048` |
 | P3 | smoothing | relaxation budgeted `(p_iter+1)·0x320`; folds unforested→forested ids (**`+8`/`+0x10`**, `@0x653F8/0x6540E`); converts stray interior Ocean | `@0x64DD4,0x65318` |
-| P4 | rivers | feature spread over the 20-cell kernel `DS:0xC8/0xDE`; sets terrain **bit 6 `0x40`** (river overlay) | `@0x65BC2` |
+| P4 | rivers | feature spread over the 20-cell kernel `DS:0xC8/0xDE` via thunk `0x181F:0x718`; river occupies the runtime-board flag **bit `0x40`** — verified by elimination: the generator's only direct `or`-immediates are **hills `0x20`** (`@0x64D19`) and **forest `0x80`** (`@0x64D23`), so river takes the remaining high bit; the river bit-set itself is inside the thunk, not a literal `or …,0x40` in the body (2026-06-23 disasm) | `@0x65BC2` |
 | P5 | borders | **right two columns → Sea Lane `0x1A` (26)** (`@0x65941`/`@0x65975`, line-fill `0x181F:0xCE` at `x=W-1` then `x=W-2`); **top/bottom rows → Arctic `0x18` (24)** (`@0x6582A`) | `@0x65941` |
 | P6 | starts | seed the 4 European powers' `(x,y)` into `PowerRecord +0x32/+0x33` (stride `0x13C`): `y = (H/5)·(p+1)` band, `x` walked inland from the east sea lane | `@0x65C9C` |
 
 Base-terrain immediates the generator literally writes: **Arctic `0x18`(24),
-Ocean `0x19`(25), Sea Lane `0x1A`(26)**; flag bits **hills `0x20` / river `0x40` /
-forest `0x80`**. These id↔name bindings are confirmed by the byte-verified `@OTHER`
+Ocean `0x19`(25), Sea Lane `0x1A`(26)**; **runtime-board** flag bits **hills `0x20`
+(`@0x64D19`) / river `0x40` (thunk, by elimination) / forest `0x80` (`@0x64D23`)**.
+⚠ This runtime-board layout differs from the **`.MP` *file* format** (`formats/MP_FORMAT.md`:
+bit 5 `0x20` = river, bit 6 `0x40` = forest) — the file packing and the in-memory board
+are **different representations** of the same features; the `.MP`→board remap (in the
+`.MP` loader) is the remaining residual. The runtime river bit is `0x40` (this spec +
+the render trace `map_system.md` §3; hills `0x20`/forest `0x80` are byte-confirmed here).
+These id↔name bindings are confirmed by the byte-verified `@OTHER`
 ordering + hard rule 2 (Sea Lane = 26) — see `notes/rulings/RULINGS.md` 2026-06-20;
 they reconcile the generator (fill 0x19=Ocean → grow land → poles 0x18=Arctic →
 right edge 0x1A=Sea Lane) with the coast renderer (`@0x67FD0 cmp al,0x18`). The
