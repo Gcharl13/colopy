@@ -250,6 +250,26 @@ the world tile id (`lcall 0x181F:0x718` at colony_xy + offset), on-map-tests it
 So the upper-right = the colony's worked land (terrain under `func_026374`, the
 worker+goods overlay under `func_0264A8`), a 3×3(+) grid of 24px tiles centred at (252,60).
 
+## 5c. COLONY.PIK — load + placement (BOTTOM of screen)
+
+**It is at the BOTTOM**, the background of the bottom band (320×72 → y = 200−72 = **128**;
+the info panels + stockpile are drawn over it).
+
+Load path (verified):
+- Colony-enter stub `@0x25EB6`: `load_PIK("COLONY"=DS:0xBA0, [0x839E], [0x83A0],
+  [0x83A2], [0x83A4], flag=1)` → `load_PIK` = `0x191F:0x87A` = file **`0x76AEC`**.
+- `load_PIK` opens the file (`0xD1D:0x7E4`), reads the 8-byte header + the FAB pixel
+  section (`0x1A1F:0xA94/0xE9E/0xE82`) **directly into the dest far-ptr `[0x83A2]:[0x83A4]`**,
+  scanline by scanline, with `[0x839E]` as the x/stride offset (`@0x76C0E` `dx=[bp+8]−
+  [bp-0xc]`, `0x181F:0x290`). So the **screen Y is encoded in the dest offset
+  `[0x83A2]:[0x83A4]`** (the bottom-band surface), which is set up by the graphics-context
+  pipeline *before* the enter stub — the same `[0x839E..0x83A4]` 4-word surface descriptor
+  the map renderer fills via `0x181F:0x25E/0x272` (`@0x67E5D/0x67F21`).
+- **Not yet pinned to a literal instruction:** the exact set of `[0x83A2]:[0x83A4]` to the
+  y=128 screen offset for the colony screen (it's the persistent surface context, not set
+  inside the colony enter). The y=128 value follows from the 320×72 size + bottom placement;
+  confirming the literal needs either the surface-context setup site or a runtime trace.
+
 ## 8. Status — verified vs remaining
 - **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
   rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
