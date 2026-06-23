@@ -402,12 +402,14 @@ File `0x00E0A2..`. The 14-byte head `CMP bx,ax; if bx<ax swap` only **orders the
 endpoints** (`ax`/`bx` = x0/x1 low→high; same for `[bp+8]`/`[bp-4]` = y0/y1). It then
 **falls through to two draw calls**: `lcall 0xBBC:0xC` at `@0x00E0E2` and `@0x00E100`,
 passing the ordered coords + color `[bp+6]` + the sheet/clip words `[bp+0xA..0x10]`.
-`0xBBC:0xC` (file `0x00DFCC`) computes the framebuffer offset (`mul bx` = y·width) and
-**writes pixels** (`mov byte es:[di],al` @0x00E02A). So `0xCE` **plots a line/edge**
-(two passes = the rule's two endpoints/edges), it is **not** a no-draw clamp — the
-earlier verdict stopped at the prologue and missed the pixel writes. This is the
-screen **line/divider** verb (colony field-panel dividers `@0x026517`/`@0x026539`, etc.).
-Cite: `func_00E0A2` head + `func_00DFCC` (`0xBBC:0xC`) pixel loop.
+`0xBBC:0xC` (file `0x00DFCC`) is a **clipped horizontal pixel-run (HLINE)**: it clamps the
+x-range (`[bp-0xC]`≥0 left, `[bp-0xA]`≤width−1 right), computes `di = y·rowstride + x_left`
+(`mul bx`), sets `cx = x_right−x_left+1`, then `mov es:[di],al; inc di; loopne` — a solid
+horizontal run of colour `al`. So **`0xCE` draws a 2-pass horizontal rule** (two `0xBBC:0xC`
+HLINEs = the rule's top+bottom edge, i.e. a 2-px divider) — it is **not** a no-draw clamp;
+the earlier verdict stopped at the prologue and missed the pixel writes. This is the screen
+**line/divider** verb (colony field-panel dividers `@0x026517`/`@0x026539`, etc.).
+Cite: `func_00E0A2` head + `func_00DFCC` (`0xBBC:0xC`) HLINE loop @0x00E02A.
 
 ---
 

@@ -449,17 +449,23 @@ then iterates the worked tiles on a **3×3 grid, 24-px (`0x18`) pitch** (origin 
 + offsets); per worked tile it blits the field sprite `0x6D` and the commodity icon
 `good+0x17`; two divider rules `0x181F:0xCE` at `(0xC7,7,0x140)` and `(0xDF,0x1F,0x128)`.
 
-**Surrounding-tile minimap — RESOLVED (geometry helper located).** `func_027DB2`
-fills `(121,130,84,48)`; if `[0x33C]==0` it draws a centred caption (heap string
-`[0x2DD0]` via `0x181F:0x22`→`0x100`); else it loops **6 slots**, each slot's screen
-`(x,y)` from the trampoline `cs:0x2C9D8`, blitting sprite **`0x7B`** from sheet `[0x2DA8]`.
+**Surrounding-tile minimap — RESOLVED (geometry pinned).** `func_027DB2` fills
+`(121,130,84,48)`; if `[0x33C]==0` it draws a centred caption (heap string `[0x2DD0]`
+via `0x181F:0x22`→`0x100`); else it loops **6 slots**, geometry from helper
+`func_027D84` (`cs:0x2C9D8`→`0x191F:0x5B8`): **x = `0x7F + slot·12` (127..187), y = `0xA5`
+(165), w `0xA` (10), h `0x16` (22)**, sprite **`0x7B`** from sheet `[0x2DA8]`. (Same
+6-slot/x=base+slot·12/y=165 shape as the Europe dock ships, `EUROPE…` §7.)
 
-**Construction completion does NOT call `set_building`.** All 8 callers of
-`set_building` (`0x181F:0xBBE`) are: founding (`func_040C1E` grants the 5 base houses
-21/24/27/32/39; `func_02EC2E` Town Hall+Carpenter), the build-preview flicker
-(`func_02C5D4`), and the cheat "give-all" (`@0x02C204`). The normal turn-completion
-sets the `+0x84` bit by a **different path** (not this thunk) — left as the one
-gameplay-logic item (the screen render path is complete).
+**Construction completion — RESOLVED (`@0x02D195`).** The turn-side build-complete handler
+DOES call `set_building(type, 1)` (`@0x02D19A`) — it just **sets the finished building's
+`+0x84` bit and does NOT clear the predecessor**. (Earlier "no caller in the turn region"
+was wrong: this site is in the colony turn region `0x2Dxxx`, missed by the capped
+`follow_thunk` list.) So **upgrade tiers coexist as bits, highest-tier wins** for
+render/production — i.e. building the **Weaver's Shop (22)** sets bit 22 with the
+**Weaver's House (21)** bit still set; the renderer/production pick the top tier present.
+Special cases (no bit): **Warehouse Expansion (16)** → `inc [colony+0x95]`; **Capitol
+Expansion (31)** → `inc [colony+0x96]` (so the cheat clears 16/31 because they are counters,
+not building bits). **B.**
 
 ### Colony screen — render path status: COMPLETE
 **Fully byte-mapped:** all 12 composer steps; buildings (positions `0x266`, type/level
@@ -475,5 +481,7 @@ a live trace, NOT guessed):**
    time; value = `PowerRecord+0x2A`, mirror `0x9CB0` recomputed `@0x2B80E`).
 3. COLONY.PIK exact blit-Y literal (set via the make-surface context `[0x839E]`; geometry
    ⇒ `y=128`).
-4. The 6-direction minimap position table (inside the `cs:0x2C9D8` helper).
-5. Construction-complete `+0x84` write site (gameplay logic, not the screen).
+4. ~~The 6-direction minimap position table~~ — **RESOLVED** (`func_027D84`: x=127+slot·12,
+   y=165, 10×22).
+5. ~~Construction-complete `+0x84` write site~~ — **RESOLVED** (`@0x02D19A` set_building(type,1),
+   no predecessor clear; expansions 16/31 use counters `+0x95`/`+0x96`).
