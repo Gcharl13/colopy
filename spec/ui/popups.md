@@ -2,262 +2,459 @@
 
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
 > B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
-> Substantive: the popup framework (10 live directives), speaker-portrait selector channels,
-> per-popup `@width`/`@x`/`@y` geometry, and static placement/colors are all **B**; body text
-> color is the glyph-engine mapping (**A**). No runtime residual — only the live *values* inside a
-> popup are game state. Minor TBD: per-popup WOODPANL-vs-WOODPAN2 background choice.
+> Substantive: the **shared centered-dialog FRAME engine** (`func_06C520` /
+> `func_06D316` / `func_06C850`, frame blit `0x181F:0x510`) is the byte-cited
+> backbone; the **10 live `@`-directives**, the **4 speaker-portrait channels**
+> (`func_06BE92`/`BF12`/`BF3C`/`BF66`), the channel-reset address, the Lost-City
+> variant map, the 6-key raid block, and the `@KINGNEWWAR`=KING1 finding are all
+> **B**. Each per-popup section names its **GAME.TXT `@KEY`** (all grep-confirmed
+> present in `GAME_sections.json` unless flagged). Body text color = glyph-engine
+> mapping (**A**). No runtime residual — only the live *values* substituted into a
+> popup body are game state.
 
-**Overall confidence:** framework dispatch, 11 directives, 4 speaker channels, reset address,
-Lost-City variant map, raid-count, `@KINGNEWWAR` sprite, per-section `@width`/`@x`/`@y`, and
-highlight-color RGB (via the PIK palette) all **B** (raw-verified 2026-06-21); message-key
-existence **B**. **No runtime residual** — placement is `@x`/`@y` (GAME.TXT) or centered, and
-colors resolve from the decodable PIK palette (see `fonts_and_colors.md`).
-**Canonical primary:** `data_extracted/text/GAME_sections.json`,
-`docs/POPUP_TEMPLATE_AUDIT.md`, `docs/UI_DIALOGS.md`, `docs/DIALOG_GEOMETRY.md`.
-**Last updated:** 2026-06-18.
+**Overall confidence:** frame engine + geometry-finalize formula + 10 directives +
+4 speaker channels + reset address + Lost-City index map + 6-key raid block +
+`@KINGNEWWAR` sprite are **B** (byte-cited 2026-05-31 / 2026-06-21); every cited
+message `@KEY` is **B** for *existence* (grep-confirmed). Per-section `@width`/`@x`/`@y`
+are **B via the EXE/raw-GAME.TXT audit** but are **stripped from the decoded
+`*_sections.json`** (the section extractor drops valueless `@`-directive lines), so
+they cannot be re-confirmed from the committed JSON — flagged where it matters.
+**No runtime residual** — placement is `@x`/`@y` (raw GAME.TXT) or the centered
+formula, and colors resolve from the decodable PIK palette (see `fonts_and_colors.md`).
+**Canonical primary:** `raw/COLONIZE/VICEROY.EXE`,
+`viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` §B8 (the shared dialog
+engine, byte-cited), `viceroy_source/docs/UI_PRIMITIVES.md` (the `0x181F:NNN` draw-verb
+library), `docs/POPUP_TEMPLATE_AUDIT.md` (the @-parser + 4-channel sprite system),
+`data_extracted/text/GAME_sections.json` (message keys).
+**Last updated:** 2026-06-23.
 
-## Overview — the shared popup framework
+---
 
-All gameplay popups are drawn by the **single dialog framework `func_06F0F4`** (enter 0x168
-@0x6F0F4; `@`-key check `cmp byte [bx],0x40` @0x6F193). The directive table at file `0x1F967`
-holds **11 strings** but `func_06F0F4` compares only **10 live directives**: `OPTIONS / PROMPT /
-TEXT / SMALLFONT / Y / X / WIDTH / LENGTH / CHECKBOX / DEFAULT` — **`TEXTCOLR` is vestigial**
-(never compared; `push 0x200A` appears nowhere as a directive). Handlers byte-located: `TEXT`→
-section-kind latch `[bp-4]=1` (0x6F1D8); `SMALLFONT`→copies font `[0x89E]/[0x8A0]`→+0x80/+0x82
-(0x6F207); `X`→+0xc (0x6F266); `Y`→+0xe (0x6F21E); `WIDTH`→atoi (0x6F2B0); `LENGTH`→`[0xA5B6]`
-(0x6F302); `CHECKBOX`→`or es:[bx+0xa],5` (0x6F350); `DEFAULT`→highlight-row index (0x6F374). **B.**
-*(Infra note: the DGROUP→file delta is `0x1D9A0` — DGROUP off + 0x1D9A0 = the literal's file
-offset; this is why earlier audits that treated DGROUP offsets as file offsets saw "garbage".)*
-A per-event handler:
+## 1. Purpose
 
-1. selects the **GAME.TXT message key** (the `@`-named section, body text);
-2. sets one of the **4 speaker-sprite channels** (`docs/POPUP_TEMPLATE_AUDIT.md`),
-   each a signed DGROUP word, `< 0` = "no sprite this popup":
-   - `[0x1f5c]` — KING/IND: value `0..7` → `IND<n>A<pose>.SS` (tribe portrait);
-     value `8` → `KING1.SS` (the `CMP 7 / JLE` split at `func_06BE92` 06BE96);
-   - `[0x1f5e]` — advisor `0..5` → `MSS0..MSS5` (`func_06BF12`);
-   - `[0x1f60]` — missionary `0..3` → `MYR0..MYR3` (`func_06BF3C`);
-   - slot 4 — fixed `MSS3` colonist (`func_06BF66`);
-3. calls the body-render thunk; the dispatcher `func_06E3D0` fires whichever
-   channels are `≥ 0`. After close, all three channels are reset (usually to
-   `0xFFFF`) at file `0x06EE6B`. **B** for the channel mechanism.
-4. **Geometry — fully static (B).** Each GAME.TXT section carries a literal **`@width=NN`**
-   (475/499 sections; default 190 — KINGTAX/KINGNEWWAR/LOSTCITY1/2/RAIDWREAK=190, SMITEINDIANS=220,
-   WANTSTUFF=260, VICEROY=78), and many also carry literal **`@x`/`@y`** (e.g. `@KINGLOSE @x=232
-   @y=31`, `@KINGWIN @x=202 @y=125`). The popup origin = those `@x`/`@y` when present, else the
-   **centered formula** `x=(320-w)/2`, `y=(200-h)/2` (same `mr_finalize_geometry` rule as the
-   menu plaques). So the rect is **static**, not cursor-dependent. (`[0x1EA4]/[0x1EA5]`, written
-   by the `0x0684BC` loop, are the **4-corner frame-tile counter**, not the popup origin — they
-   are not cursor-relative.) **B.**
-5. **Background/frame**: tiled `WOODPANL.PIK` (some `WOODPAN2.PIK`) + `WOODFRAM.SS`
-   border + `NAMEPLAT.SS` title strip; **A** (asset roles, not per-popup dispatch).
-6. **Font & color (corrected 2026-06-21):** body renders in the **latched `[0x89E]` font
-   (FONTTINY** by default). The **`SMALLFONT` directive does NOT load FONTSMAL** — its handler
-   `@0x6F207` just copies `[0x89E]/[0x8A0]` into the section (FONTSMAL.FF is never loaded; RULING).
-   **`TEXTCOLR` is a vestigial directive — never compared** by `func_06F0F4` (only 10 of the 11
-   table strings are live: OPTIONS..DEFAULT); there is **no per-popup text-color override**.
-   The body is rendered by the glyph engine `func_06F7EF`=`0x181F:0x998` (the 4 channel wrappers
-   `@0x6F5B0..0x6F64C` set the **speaker-portrait selector channel** `[0x1F5C]` (=8 for KING @0x6F5DD,
-   =tribe_idx @0x6F5B6) / advisor `[0x1F5E]` / missionary `[0x1F60]` — these **select the speaker
-   portrait** (`func_06E3D0`/`func_06BE92`: ≤7→`IND<tribe>`, 8→KING; render `cmp [0x1F5C],0; call
-   0x6F82B(sprite +0x10..0x16)` @0x6E319), **NOT** the body text color; RULING 2026-06-21). The body **text** color carries no
-   explicit per-call palette arg in the glyph engine → **A/TBD** (engine glyph mapping; the
-   observed body is light/white on the wood panel). Speaker name-plate uses **FONT-NP** (loaded
-   with WOODFRAM/NAMEPLAT) — color overlay-resident (TBD). The `@DEFAULT=N` directive stores a
-   **highlighted-row index**, not a color (handler `@0x6F374`). Font/text-color = **A**;
-   channel + directive negatives = **B**.
-7. **Multi-section popups** (`@KINGTAX` + `@TAXOPTIONS`) concatenate a body
-   section with an option-list section; mechanism **INFERRED** (`func_06F0F4`
-   recursion), key existence **B**.
+The gameplay popups are the modal event dialogs that interrupt the turn: king
+demands, native diplomacy/raids, Lost-City results, combat outcomes, colony
+loss, treasure delivery, and the Revolutionary-War message bank. **There is no
+per-event painter.** Every one of the ~30 popup-bearing GAME.TXT event templates
+pushes its `@KEY` string and runs the **single shared centered-dialog FRAME
+engine** (`CHROME_AND_DISPATCH_INDEX.md` §B8 / index rows 25–29). The dispatcher
+`func_0235D6` (resident, @0x0235D6, 27-case switch on the event/screen id) routes
+the events; the event handlers themselves are thin wrappers over the §2 engine.
+**B** (`CHROME_AND_DISPATCH_INDEX.md` index rows 29–30).
 
-> Each section below lists the **verified message key(s)**, the sprite channel /
-> PIK asset, options, and tier. Geometry is **TBD** unless noted.
+---
 
-## King tax demand
+## 2. Shared popup frame engine — draw chain (the backbone) — **B**
+
+All gameplay popups, the ~30 GAME.TXT event templates, the King-audience body,
+and (via the same `func_06D316`) the menu/dropdown sizing share one engine on
+**overlay page 0x17** (code base 0x06BE50). The load-bearing constants, with
+their byte offsets (`CHROME_AND_DISPATCH_INDEX.md` §B8, spot-checks PASS):
+
+### 2.1 Construction — `panel_construct func_06C520` @0x06C520
+
+| Field | Role | Value | @asm |
+|-------|------|-------|------|
+| `+0x46` | border thickness | `(flags&0x10)?0:3` = **3 px** | 0x06C5E9 |
+| `+0x48` | inner inset | `(flags&0x10)?0:2` = **2 px** | 0x06C5F5 |
+| `+0x28` | default/min content width | **0x50 = 80 px** | 0x06C5A6 |
+| `+0x4A` | body line count | (per line) | 0x06C68D |
+| alloc | panel struct = 0x29 paragraphs | `lcall 0x1A1F:0x356` | 0x06C56E |
+
+**B.** Spot-checks: 0x06C5A6 `26 c7 47 28 50 00` (minW 80); border-3 / inset-2 idioms.
+
+### 2.2 Per-line text builder — `func_06C850` + `func_06CCxx` @0x06C850
+
+Per body line: `line_w = text_px + sub_w + 0x0A`; `[bx+0x34] = max(...)`. The
+**body margin is 10 px** (`add ax,0x0A` @0x06CCE3). Text width is measured via the
+font engine `lcall 0x181F:0x204` (FONTTINY metrics). **B.** Spot-check 0x06CCE3
+`05 0a 00` (+10 margin).
+
+### 2.3 Geometry finalize — `panel_finalize_geometry func_06D316` @0x06D316
+
+```
+content_w = max(80, longest_line_px + 10, @width)       ; @0x06D392 (max of +0x28,+0x20,+0x34)
+box_w     = content_w + border(3) + per-branch pad(3..6); @0x06D4BA / 0x06D606 / 0x06D61D
+box_h     = line_count·2 + border(3)                    ; @0x06D363 (shl 1; add [bx+0x46])
+            + (title  ? title_rows·metric + (match?6:3)) ; @0x06D509 (+6) / 0x06D513 (+3)
+            + (options? Σ(option_rows + 3) + 3 : 0)      ; @0x06D606 / 0x06D61D
+X = (@x == -1) ? (320 - box_w)/2 : @x                    ; @0x06D522 (sar 1; sub 0xA0; neg)
+Y = (@y == -1) ? (200 - box_h)/2 : @y                    ; @0x06D53B (sar 1; sub 0x64; neg)
+clamp: if X+box_w>0x140 shift left; if Y+box_h>0xC8 shift up ; @0x06D563 / 0x06D571
+```
+
+So the popup rect is **static**: centered on (160,100) by default, or pinned to a
+literal `@x`/`@y` when the GAME.TXT section carries them; `@width` is a **floor**
+(keyword string `"WIDTH\0"` @file **0x1F989**), never a clamp. **B.** Spot-checks:
+0x06D522 `26 8b 47 14 d1 f8 2d a0 00 f7 d8` (X-center), 0x06D53B
+`26 8b 47 16 d1 f8 2d 64 00 f7 d8` (Y-center), 0x06D363 `d1 e0 26 03 47 46`
+(rows·2 + border), 0x1F989 `57 49 44 54 48 00` ("WIDTH").
+
+> **Note on the older `func_067DC8` "popup-from-cursor" path.** `POPUP_TEMPLATE_AUDIT.md`
+> documents a separate 65-byte rect-setter `func_067DC8` @0x067DC8 that derives a
+> rect from cursor `[0x174]/[0x176]` + `[0x1EA4]/[0x1EA5]` char counts. That path
+> writes the 4-word header rect `[0x839E..0x83A4]` used by the §2.5 frame blit;
+> the §2.3 centered formula is the **dialog-engine** geometry. Both are byte-cited;
+> the centered/`@x@y` path is the one the GAME.TXT event templates use. **B.**
+
+### 2.4 Body & speaker render (the `0x181F:NNN` primitives) — **B**
+
+Body text renders through the resident draw-verb library (`UI_PRIMITIVES.md`),
+**font = FONTTINY** (`[0x89E]/[0x8A0]`, the engine default):
+
+| `0x181F:` | resident func | role (byte-verified) |
+|-----------|---------------|----------------------|
+| 0x13C | `func_002B38` @0x2B38 | draw text at explicit (x,y), left-aligned |
+| 0x100 | `func_002BC8` @0x2BC8 | center text in box (option/title rows) |
+| 0x114 | `func_002AC6` @0x2AC6 | measure string width (line-grow + right-align) |
+| 0x16E / 0x182 | `func_002992` / `func_0029DE` | strcat / append-number (body `{%NUMBER}`/`{%STRING}` substitution) |
+| 0xE2  | `func_00DB3A` @0xDB3A | **clipped sprite blit** (NOT a horizontal rule — corrected `UI_PRIMITIVES.md` §0xE2) |
+| 0x254 | `func_00E76A` @0xE76A | blit one sprite (the speaker portrait bottoms out here) |
+| 0x3C0 | `func_004A80` @0x4A80 | **modal wait-for-OK/keypress loop** (~120-tick timeout; DRAWS NOTHING — the OK box/label are painted by the dialog builder first) |
+
+The body is dispatched through wrappers `func_06F5B0..0x6F64C` (one per channel),
+all of which call `func_06F7EF` (= `LJMP 0x181F:0x998`, render-popup-body) and,
+when input is expected, `func_06F7F9` (= `LJMP 0x191F:0x16A`, show-and-wait). The
+section-load core is `func_06F803` (= `LJMP 0x191F:0x182`). **B**
+(`POPUP_TEMPLATE_AUDIT.md` "Convenience wrappers").
+
+### 2.5 Frame blit (WOODFRAM) — **B / A**
+
+`lcall 0x181F:0x510` (frame painter) @ site **0x0263D6** (`9a 10 05 1f 18`), pushed
+consts **(0x50, 0x50, 8, 0xC8, 0, 0)** + the 4-word rect `[0x839E..0x83A4]` pushed
+**twice** (clip-rect, dest-rect — same coords ⇒ no clipping). WOODFRAM is a
+whole-sprite carved-wood frame, **not** an indexed corner set. **B** (engine /
+call site). Background fill = tiled **WOODPANL.PIK** (some `WOODPAN2.PIK`) +
+**NAMEPLAT.SS** speaker title strip; these asset *roles* are **A**
+(`POPUP_TEMPLATE_AUDIT.md` "Frame & body rendering"), and the per-popup
+WOODPANL-vs-WOODPAN2 choice is a minor **TBD** (no per-call dispatch byte-cited;
+INFERRED WOODPAN2 = king-audience + a few "darker" popups).
+
+### 2.6 The 10 live `@`-directives — **B**
+
+The `@`-directive parser is `func_06F0F4` @0x06F0F4 (`enter 0x168`; `@`-key check
+`cmp byte [bx],0x40` @0x6F193). The keyword table at file **0x1F967** holds **11
+strings** but only **10 are live** (`OPTIONS / PROMPT / TEXT / SMALLFONT / Y / X /
+WIDTH / LENGTH / CHECKBOX / DEFAULT`):
+
+| directive | file off | handler | effect |
+|-----------|----------|---------|--------|
+| `OPTIONS`  | 0x1F967 | — | begins the option-list section |
+| `PROMPT`   | 0x1F96F | — | input-prompt mode |
+| `TEXT`     | 0x1F976 | 0x6F1D8 | section-kind latch `[bp-4]=1` |
+| `SMALLFONT`| 0x1F97B | 0x6F207 | copies `[0x89E]/[0x8A0]`→+0x80/+0x82 (does **NOT** load FONTSMAL — RULING) |
+| `WIDTH`    | 0x1F989 | 0x6F2B0 | atoi → content-width floor (§2.3) |
+| `LENGTH`   | 0x1F98F | 0x6F302 | `[0xA5B6]` |
+| `X`        | (table) | 0x6F266 | `+0xc` (literal popup origin x) |
+| `Y`        | (table) | 0x6F21E | `+0xe` (literal popup origin y) |
+| `CHECKBOX` | 0x1F996 | 0x6F350 | `or es:[bx+0xa],5` |
+| `DEFAULT`  | 0x1F99F | 0x6F374 | highlighted-row index (NOT a color) |
+
+**`TEXTCOLR`** (file 0x1F9AA) is **vestigial — never compared** by `func_06F0F4`
+(`push 0x200A` appears nowhere as a directive); there is **no per-popup text-color
+override**. **B.** *(Infra note: the DGROUP→file delta is `0x1D9A0` — DGROUP off +
+0x1D9A0 = the literal's file offset; this is why earlier audits that treated DGROUP
+offsets as file offsets saw "garbage".)*
+
+### 2.7 The 4 speaker-portrait channels — **B**
+
+The sprite shown above/beside the popup is dispatched through 4 DGROUP-word
+channels; each channel `< 0` (`0xFFFF`) means "no sprite this popup". The master
+dispatcher `func_06E3D0` @0x06E3D0 fires whichever channels are `≥ 0`:
+
+| channel | global | builder | name built (from channel value) |
+|---------|--------|---------|----------------------------------|
+| KING / tribe | `[0x1F5C]` | `func_06BE92` @0x06BE92 | `0..7` → `IND<n>A<pose>.SS`; `> 7` → `KING<n>.SS` (the `CMP 7 / JLE` split @0x06BE96) |
+| advisor | `[0x1F5E]` | `func_06BF12` @0x06BF12 | `0..5` → `MSS0..MSS5.SS` |
+| missionary | `[0x1F60]` | `func_06BF3C` @0x06BF3C | `0..3` → `MYR0..MYR3.SS` |
+| (blitter) | — | `func_06BF66` @0x06BF66 | positions + blits the loaded sheet above the popup |
+
+The builders mutate the template string in place: `func_06BE92` pushes `"KING"`
+(file 0x1F72) on the `> 7` branch and `"IND0A0"` (file 0x1F77) on the else branch,
+adding the channel byte into the 4th char (`add [bp-0x11],al` @0x06BEF5) and a pose
+index into the suffix. **B** (`POPUP_TEMPLATE_AUDIT.md`, byte-cited 0x06BE92..0x06BF11).
+
+The tribe order matches NAMES `@TRIBES` (`[0x1F5C]` 0=Inca, 1=Aztec, 2=Arawak,
+3=Iroquois, 4=Cherokee, 5=Apache, 6=Sioux, 7=Tupi). The native-event dispatchers
+read the owner byte from the NativeSettlement table (`[0x54EC]` +0x02 stride 18)
+into `[0x1F5C]` (e.g. `func_04B036` warpath). **B.**
+
+After a popup closes, **all three channels are reset** (usually to `0xFFFF`) at
+file **0x06EE6B** (`mov [0x1f5c],ax; mov [0x1f5e],ax; mov [0x1f60],ax`). **B.**
+
+### 2.8 Multi-section popups (`@KEY` body + `@OPTIONS` list) — **B keys / INFERRED combine**
+
+A popup such as the king-tax demand concatenates a body section (`@KINGTAX`) with
+an option-list section (`@TAXOPTIONS`). `func_06F0F4` is recursive over sections:
+it parses the body, and on hitting an `@OPTIONS` directive (or the next bare
+`@KEY`) re-parses the following section for the option lines (parser core
+`lcall 0x191F:0x928` → file 0x02591A). Section *existence* + adjacency **B**; the
+exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section").
+
+---
+
+> Each section below lists the **verified message `@KEY`(s)** (grep-confirmed in
+> `GAME_sections.json` unless flagged), the speaker channel, the special-sprite
+> name (via §2.7 `func_06BE92`/etc.), and the tier. Geometry follows §2.3.
+
+## 3. King tax demand
 - **Purpose:** Crown raises (or adjusts) the European-sales tax rate.
-- **Keys (B, in GAME_sections.json):** body `@KINGTAX`; punitive raise
-  `@KINGRAISE`; lower `@KINGLOWER`; no-change `@KINGNOTHING`; manufactory-tax
-  `@MERCANTILISM`; Crown-resource tax `@PURCHASETAX`; pretexts `@KINGNAVACT`,
-  `@KINGSTAMPACT`, `@KINGWAR`, `@KINGWIFE`. Options `@TAXOPTIONS`
-  ("Kiss pinky ring." / "Hold '{%STRING3 Party}.'" — text present, **B**) and
-  `@TEAPARTY` (B).
-- **Sprite:** `[0x1f5c]=8` → `KING1.SS` (`func_06F5DA`, "open King audience"). **B**.
+- **Keys (B, present in GAME_sections.json):** body `@KINGTAX` (body confirmed:
+  *"It is essential that the Crown receive proper recompense…raise your tax rate
+  by {%NUMBER0%%}…"*); punitive raise `@KINGRAISE`; lower `@KINGLOWER`; no-change
+  `@KINGNOTHING`; manufactory tax `@MERCANTILISM`; Crown-resource tax
+  `@PURCHASETAX`; pretexts `@KINGNAVACT`, `@KINGSTAMPACT`, `@KINGWAR`, `@KINGWIFE`.
+  Options `@TAXOPTIONS` ("Kiss pinky ring." / "Hold '{%STRING3 Party}.'" — body
+  confirmed) and `@TEAPARTY`.
+- **Speaker:** `[0x1F5C]=8` → `KING1.SS` via wrapper `func_06F5DA` (`mov [0x1f5c],8`
+  @0x06F5DD). **B.**
+- **Geometry:** raw `@KINGTAX @width=190` (confirmed in `GAME.full.json` /
+  `POPUP_TEMPLATE_AUDIT.md` direct file read; **stripped from `*_sections.json`**).
+  Centered (no `@x/@y`). **B via EXE/raw audit.**
 - **Cross-ref:** full formula + state layout in `spec/systems/king.md` (tax-raise
   `func_034AE0`, threshold 60 `func_0349F4`). **Tier: B (keys) / see king.md.**
 
-## Native village raze
+## 4. Native village raze
 - **Purpose:** player destroys a native settlement; gold reward + razed message.
 - **Keys (B):** `@CHIEFKILL` (chief executes the player — taboo), `@INDIANGOLD`
-  (raze gold reward), `@INDIANBURN`. Per `docs/UI_DIALOGS.md` raze handler is
-  `func_04A7CA` (CHIEFKILL); razed scene woodcut `WDCUT12` (burning village).
-- **Sprite:** `IND<tribe>A<pose>.SS` via `[0x1f5c]=tribe_idx`. **A.**
-- **Tier:** keys **B**; trigger fn **A**; geometry **TBD**.
+  (raze gold reward), `@INDIANBURN`. Raze handler `func_04A7CA` (CHIEFKILL,
+  `docs/UI_DIALOGS.md`, **A**); razed-scene woodcut `WDCUT12` (burning village).
+- **Speaker:** `IND<tribe>A<pose>.SS` via `[0x1F5C]=tribe_idx` (§2.7). **A.**
+- **Tier:** keys **B**; trigger fn **A**; geometry centered **B (engine)**.
 
-## Native attitude
+## 5. Native attitude
 - **Purpose:** report a tribe's stance toward the player.
-- **Keys (B):** `@VILLAGEHAPPY`, `@VILLAGEMEDIUM`, `@VILLAGESAVAGE`,
-  `@VILLAGEBAD`, `@VILLAGEWAR`; ships-anger `@MADATSHIPS`, `@MADATWAGONS`;
-  `@DONTKNOWSHIPS`. Attitude word-list is `NAMES @ATTITUDE`
-  (Content/Uneasy/Restless/Angry/War, **B**). Handler `func_04B308`
-  (`docs/UI_DIALOGS.md`, **A**).
-- **Sprite:** tribe `IND<n>`. **A.** **Tier:** keys **B**.
+- **Keys (B):** `@VILLAGEHAPPY`, `@VILLAGEMEDIUM`, `@VILLAGESAVAGE`, `@VILLAGEBAD`,
+  `@VILLAGEWAR`; ship/wagon anger `@MADATSHIPS`, `@MADATWAGONS`; `@DONTKNOWSHIPS`.
+  Attitude word-list is NAMES `@ATTITUDE` (Content/Uneasy/Restless/Angry/War —
+  `NAMES_sections.json`, **B**). Handler `func_04B308` (`docs/UI_DIALOGS.md`, **A**).
+- **Speaker:** tribe `IND<n>` (§2.7). **Tier:** keys **B**.
 
-## Native gift / haggle
+## 6. Native gift / haggle
 - **Purpose:** trade-overture outcomes and gifts from a village.
-- **Keys (B):** haggle outcomes `@BADHAGGLE0`, `@BADHAGGLE1`, `@BADHAGGLE2`,
-  `@BADHAGGLE3`; trade prompts `@BUY0`, `@BUY1`, `@BUYWHICH`, `@TRADE0`,
-  `@TRADE1`, `@BADCARGO`, `@NOTENOUGH`; gifts `@INDIANGIVEFOOD`,
-  `@INDIANGIVESTUFF`, `@INDIANSCONVERT`, `@CHIEFGIFT`, `@CHIEFGUIDES`,
-  `@CHIEFAREA`, `@CHIEFHOWDY`, `@CHIEFBORED`. Handler `func_049600` (haggling),
-  `func_0572E6` (gift/tribute) per `docs/UI_DIALOGS.md`. **A.**
-- **Sprite:** tribe `IND<n>`. **Tier:** keys **B**.
+- **Keys (B):** haggle outcomes `@BADHAGGLE0..@BADHAGGLE3`; trade prompts `@BUY0`,
+  `@BUY1`, `@BUYWHICH`, `@TRADE0`, `@TRADE1`, `@BADCARGO`, `@NOTENOUGH`; gifts
+  `@INDIANGIVEFOOD`, `@INDIANGIVESTUFF`, `@INDIANSCONVERT`, `@CHIEFGIFT`,
+  `@CHIEFGUIDES`, `@CHIEFAREA`, `@CHIEFHOWDY`, `@CHIEFBORED`. Handlers `func_049600`
+  (haggling), `func_0572E6` (gift/tribute) per `docs/UI_DIALOGS.md`, **A**.
+- **Speaker:** tribe `IND<n>`; trade popups also set the advisor channel
+  `[0x1F5E]` (e.g. MSS2/MSS3/MSS4 via `func_034DD4` @0x034E5E/74/98 — `POPUP_TEMPLATE_AUDIT.md`
+  caller map). **Tier:** keys **B**.
 
-## Native raid / warpath
+## 7. Native raid / warpath
 - **Purpose:** native attack on a player colony/unit; warpath declaration.
 - **Raid outcomes = exactly 6 (B, raw-verified).** The EXE raid-key block at file
-  `0x1F52A` is six contiguous keys: `RAIDWREAK, RAIDSTORES, RAIDBURN, RAIDSHIP, RAIDGOLD,
-  RAIDNOTHING`. Handler `func_05BE84` (enter 0x24 @0x5BE84; uses the `[0x8542]` colony anchor).
-  **Note on `@RAIDSCALP`:** it exists as a section in `GAME.TXT` but is **not** referenced by
-  this 6-key raid block (absent from the EXE) — it is an orphan / separate-path (warpath/scalp)
-  key, **not** a 7th raid-popup outcome. Warpath `@INDIANWARPATH/2/WARFARE/WAR/GRUDGE/SURPRISE`
-  handled by `func_04B036` (sets `[0x1f5c]=tribe_owner`); war-dance woodcut `WDCUT13`. **B.**
+  **0x1F52A** is six contiguous keys: `RAIDWREAK, RAIDSTORES, RAIDBURN, RAIDSHIP,
+  RAIDGOLD, RAIDNOTHING` (all present in JSON; `@RAIDWREAK` body confirmed
+  *"{%STRING0} raiding party wreaks havoc…"*). Handler `func_05BE84` (enter 0x24
+  @0x5BE84; uses the `[0x8542]` colony anchor). **B.**
+- **`@RAIDSCALP`:** exists as a GAME.TXT section but is **not** referenced by the
+  6-key raid block (absent from the EXE block) — it is an orphan / separate
+  (warpath/scalp) key, **not** a 7th raid outcome. **B (negative).**
+- **Warpath keys (B — corrected prefixes):** `@INDIANWARPATH`, `@INDIANWARPATH2`,
+  `@INDIANWARFARE`, `@INDIANWAR`, `@INDIANGRUDGE`, `@INDIANSURPRISE` (the prior
+  draft cited bare `WARFARE/WAR/GRUDGE/SURPRISE`; the actual JSON keys all carry
+  the `@INDIAN` prefix — grep-confirmed). Handler `func_04B036` (sets
+  `[0x1F5C]=tribe_owner`); war-dance woodcut `WDCUT13`. **B.**
 - **Tier:** keys **B**; raid count = 6 **B**.
 
-## Lost City (10 variants)
+## 8. Lost City (10 variants)
 - **Purpose:** result of a unit entering a Lost City Rumor tile.
-- **Keys (B), the 10 `@LOSTCITY0..@LOSTCITY9`** are all present in
-  GAME_sections.json, plus adjacent outcome keys `@BURIAL1`, `@BURIAL2`,
-  `@BURIAL3` (burial-grounds anger), `@SCREWED`, `@VANISH` (expedition
-  vanished). Label "Lost City Rumor" is `LABELS @MISC` (**B**).
-- **Variant→outcome mapping — RESOLVED (B, 2026-06-21).** Handler `func_061454` (enter 0x3c
-  @0x61454, the same fn `events.md` cites) builds `@LOSTCITY<n>` by appending the outcome index
-  `[bp-6]` (1–9) to the "LOSTCITY" template (`push 0x1dae @0x618C2`) and shows it (`lcall
-  0x181f:0x182 @0x618D9`). Byte-cited per-index side effects (matching `events.md` §2 exactly):
-  **1** Fountain of Youth (sound 0x37 @0x618ED; promotes to 2 if `[0x5382]&1`); **2**
-  Cibola/treasure (sound 0x3c); **3** ruins gold (`10·3d8` @0x61770); **4** burial-grounds anger
-  (`or [bx+0x543e],0x40` @0x61877; sub-dispatches `@BURIAL1/2/3`+`@SCREWED`); **5** expedition
-  vanished (`@VANISH`, downgrades to 6); **6** nothing; **7** gift/larger treasure (`2·4d10`
-  @0x617C0); **8** trespass near shrines; **9** survivors/recruit (spawn `lcall 0x191f:0xac8`
+- **Keys (B):** the 10 `@LOSTCITY0..@LOSTCITY9` are all present in
+  `GAME_sections.json` (`@LOSTCITY1` body confirmed *"You have discovered a
+  {Fountain of Youth}!…"*), plus adjacent outcome keys `@BURIAL1`, `@BURIAL2`,
+  `@BURIAL3` (burial-grounds anger), `@SCREWED`, `@VANISH`. Label "Lost City
+  Rumor" is `LABELS @MISC` (**B**).
+- **Variant→outcome mapping — RESOLVED (B, 2026-06-21).** Handler `func_061454`
+  (enter 0x3c @0x61454) builds `@LOSTCITY<n>` by appending the outcome index
+  `[bp-6]` (1–9) to the "LOSTCITY" template (`push 0x1dae @0x618C2`) and shows it
+  (`lcall 0x181f:0x182 @0x618D9`). Byte-cited per-index side effects (matching
+  `events.md` §2): **1** Fountain of Youth (sound 0x37 @0x618ED; promotes to 2 if
+  `[0x5382]&1`); **2** Cibola/treasure (sound 0x3c); **3** ruins gold
+  (`10·3d8` @0x61770); **4** burial-grounds anger (`or [bx+0x543e],0x40` @0x61877;
+  sub-dispatches `@BURIAL1/2/3`+`@SCREWED`); **5** expedition vanished (`@VANISH`,
+  downgrades to 6); **6** nothing; **7** gift/larger treasure (`2·4d10` @0x617C0);
+  **8** trespass near shrines; **9** survivors/recruit (spawn `lcall 0x191f:0xac8`
   @0x61809; `@LOSTCITY0` is the recruit prompt reused by FoY/survivors). **B.**
 - **Tier:** key existence + per-variant index map **B**.
 
-## Combat result
+## 9. Combat result
 - **Purpose:** land/colony combat resolution outcome.
-- **Keys (B):** `@DEMOTE`, `@COLONISTCAPTURE`, `@COLONISTCAPTURE2`,
-  `@CARGOCAPTURE`, `@WAGONCAPTURE`, `@SHIPDAMAGE`, `@ARTILLERY`, `@ARTILLERY2`,
-  `@VETERAN`, `@VALOR`, `@WELLSEASONED`. Handler `func_05B2C2`
-  (`docs/UI_DIALOGS.md`, **A**). Battle woodcut `WDCUT10`.
+- **Keys (B):** `@DEMOTE`, `@COLONISTCAPTURE`, `@COLONISTCAPTURE2`, `@CARGOCAPTURE`,
+  `@WAGONCAPTURE`, `@SHIPDAMAGE`, `@ARTILLERY`, `@ARTILLERY2`, `@VETERAN`, `@VALOR`,
+  `@WELLSEASONED`. Handler `func_05B2C2` (`docs/UI_DIALOGS.md`, **A**; thunk
+  0x1CCD0 → func_05B2C2 validated in the RTLink resolver). Battle woodcut `WDCUT10`.
 - **Tier:** keys **B**.
 
-## Ship combat / landfall
+## 10. Ship combat / landfall
 - **Purpose:** naval combat and shore-arrival events.
-- **Keys (B):** `@SHIPCOMBAT`, `@SHIPLAKE`, `@SHIPDAMAGE`, `@SHIPSUNK`,
-  `@LANDFALL`, `@LANDFALL2`, `@LANDFIRST`, `@SAILHOME`, `@SHIPRUN`, `@SHIPSLOW`,
-  `@FORTFIRE`, `@OVERBOARD`, `@EVASIVE`. Handler `func_03FDDE`
-  (`docs/UI_DIALOGS.md`, **A**). Note: many of these `@`-keys have **empty
-  bodies** in the extracted JSON (body text not captured in this dump) — key
-  *presence* is **B**, body text **TBD**.
-- **Tier:** keys **B**.
+- **Keys (B):** `@SHIPCOMBAT` (body confirmed *"Only {Privateers} and {Frigates}
+  can attack enemy ships."*), `@SHIPLAKE`, `@SHIPDAMAGE`, `@SHIPSUNK`, `@LANDFALL`
+  (body confirmed — has inline options "Stay With Ships / Make Landfall"),
+  `@LANDFALL2`, `@LANDFIRST`, `@SAILHOME`, `@SHIPRUN`, `@SHIPSLOW`, `@FORTFIRE`,
+  `@OVERBOARD`, `@EVASIVE`. Handler `func_03FDDE` (`docs/UI_DIALOGS.md`, **A**).
+- **Tier:** keys **B** (all present); some bodies are short single-line prompts.
 
-## Heresy denunciation
+## 11. Heresy denunciation
 - **Purpose:** missionary denounces a rival nation's mission.
 - **Keys (B):** `@HERESY0`, `@HERESY1`; mission keys `@MISSION0..@MISSION3`.
-  Action label "Denounce Heresy of %Fs Mission" is `NAMES @ACTIONS` (**B**).
-- **Sprite:** missionary `MYR<n>` (`[0x1f60]`) or Jesuit `MSS4`. **A.**
+  Action label "Denounce Heresy of %Fs Mission" is NAMES `@ACTIONS` (**B**).
+- **Speaker:** missionary channel `[0x1F60]` → `MYR<n>.SS` (`func_06BF3C`), or
+  Jesuit `MSS4` via the advisor channel. **A.**
 - **Tier:** keys **B**.
 
-## Rebel-sentiment change (Sons of Liberty)
+## 12. Rebel-sentiment change (Sons of Liberty)
 - **Purpose:** announce a colony crossing a SoL/Tory threshold.
 - **Keys (B):** `@REBELUP`, `@REBELUP50`, `@REBELDOWN`; `@SONSUP`, `@SONSDOWN`;
   `@REBELMAJORITY`, `@REBELUNANIMOUS`, `@TORYMINORITY`, `@TORYMAJORITY`,
-  `@TORYUPRISING`. Handler `func_03E844` (REBELUP/REBELDOWN) per
-  `docs/UI_DIALOGS.md` (**A**). Rebel/Tory % shown in Continental Congress
-  screen (PowerRecord+0x02, `docs/SESSION_UI_CATALOG.md` §3).
-- **Tier:** keys **B**.
+  `@TORYUPRISING`. Handler `func_03E844` (REBELUP/REBELDOWN, `docs/UI_DIALOGS.md`,
+  **A**); `@TORYUPRISING` event handler `func_03CAC6` runs the shared engine
+  (`CHROME_AND_DISPATCH_INDEX.md` §B8). Rebel/Tory % is shown in the Continental
+  Congress report (F3, see `advisor_reports.md` §4). **Tier:** keys **B**.
 
-## Food shortage / starvation
+## 13. Food shortage / starvation
 - **Purpose:** warn of low food / a colonist starving.
-- **Keys (B):** `@FOODLOW`, `@STARVE1`, `@STARVE2`, `@FOOD1`, `@FOOD2`;
-  spoilage `@SPOIL1..@SPOIL4`; `@WAREHOUSEFULL`, `@NOMOREWAREHOUSE`.
+- **Keys (B):** `@FOODLOW`, `@STARVE1`, `@STARVE2`, `@FOOD1`, `@FOOD2`; spoilage
+  `@SPOIL1..@SPOIL4`; `@WAREHOUSEFULL`, `@NOMOREWAREHOUSE`.
 - **Tier:** keys **B**; trigger fn **TBD**.
 
-## Colony burn / capture
+## 14. Colony burn / capture
 - **Purpose:** a colony is razed or captured (by natives or a rival power).
 - **Keys (B):** `@BURNED`, `@BURNED2`, `@BURNED3`; `@CAPTURED`, `@CAPTURED2`,
   `@CAPTURED3`; `@INDIANBURNCOLONY`, `@INDIANBURNCOLONY2`, `@INDIANWINCOLONY`,
-  `@INDIANWINCOLONY2`; war outcome `@EUROPEWIN`, `@EUROPELOSE`. Handler
-  `func_05CA7E` (`docs/UI_DIALOGS.md`, **A**). Burning-colony woodcut `WDCUT11`.
+  `@INDIANWINCOLONY2`; war outcome `@EUROPEWIN`, `@EUROPELOSE`. Handler `func_05CA7E`
+  (`docs/UI_DIALOGS.md`, **A**). Burning-colony woodcut `WDCUT11`.
 - **Tier:** keys **B**.
 
-## Intervention
+## 15. Intervention
 - **Purpose:** a foreign power's Intervention Force joins the Revolution.
 - **Keys (B):** `@INTERVENTION`, `@INTERVENE`, `@CONSIDER`; ally names `@FRIEND`
-  (Cornwallis/Lafayette/etc., body present, **B**). Handler `func_03D948`
-  (`docs/UI_DIALOGS.md`, **A**). "Intervention Force" label in `LABELS @MISC`.
-- **Tier:** keys **B**.
+  (body confirmed: *"British General Cornwallis / French General Lafayette /
+  Spanish Generals / Dutch Admiral de Ruyter"*). Event handler `@INTERVENE`
+  `func_03D510` runs the shared engine (`CHROME_AND_DISPATCH_INDEX.md` §B8);
+  announce handler `func_03D948` (`docs/UI_DIALOGS.md`, **A**). "Intervention
+  Force" label in `LABELS @MISC`. **Tier:** keys **B**.
 
-## Treasure delivery
+## 16. Treasure delivery
 - **Purpose:** a treasure train is shipped to Europe (King's Galleon) and cashed.
 - **Keys (B):** `@CASHTREASURE`, `@KINGGALLEON2`, `@KINGGALLEON3`, `@LOOTCASH`,
-  `@LOOT`, `@LOOT2`, `@LOOTFOREIGN`, `@LOOTCAPTURE`, `@NOLOOT`. Handler
-  `func_05C878` (King's Galleon) per `docs/UI_DIALOGS.md`. Sprite `KING1.SS`.
-  Treasure woodcut `WDCUT04`. **A.**
-- **Tier:** keys **B**.
+  `@LOOT`, `@LOOT2`, `@LOOTFOREIGN`, `@LOOTCAPTURE`, `@NOLOOT`. Handler `func_05C878`
+  (King's Galleon, `docs/UI_DIALOGS.md`, **A**). Speaker `[0x1F5C]=8` → `KING1.SS`.
+  Treasure woodcut `WDCUT04`. **Tier:** keys **B**.
 
-## Unit capture / demotion
+## 17. Unit capture / demotion
 - **Purpose:** a unit is captured or demoted after combat.
-- **Keys (B):** `@DEMOTE`, `@COLONISTCAPTURE`, `@COLONISTCAPTURE2`,
-  `@CARGOCAPTURE`, `@WAGONCAPTURE`, `@CAPTURED`, `@CONFISCATE`, `@LOBOTOMIZE`.
-- **Tier:** keys **B** (overlaps Combat result handler `func_05B2C2`).
+- **Keys (B):** `@DEMOTE`, `@COLONISTCAPTURE`, `@COLONISTCAPTURE2`, `@CARGOCAPTURE`,
+  `@WAGONCAPTURE`, `@CAPTURED`, `@CONFISCATE`, `@LOBOTOMIZE`.
+- **Tier:** keys **B** (overlaps Combat-result handler `func_05B2C2`).
 
-## Revolutionary-war messages
+## 18. Revolutionary-war messages
 - **Purpose:** declaration, mobilization, REF, and end-of-war events.
 - **Keys (B):** `@DECLARE`, `@INDEPENDENCE`, `@DECLARAT`-screen (see
   `spec/ui/cinematics.md`), `@MOBILIZE`, `@MOBILIZE2`, `@CANTMOBILIZE`,
-  `@KINGMOBILIZE`, `@UPKEEP`; king war keys `@KINGFRIGATE`, `@KINGNEWWAR`,
+  `@KINGMOBILIZE`, `@UPKEEP`; king-war keys `@KINGFRIGATE`, `@KINGNEWWAR`,
   `@KINGVICTORY`, `@KINGWAR`, `@KINGMERCY`, `@KINGBUY`, `@REFIT`; guards
-  `@NOWARSDURINGREV`, `@NOCOLONIESEITHER`, `@NOMAYORSDURINGREV`,
-  `@EUROPENOTAVAIL`, `@FOREIGNNOTAVAIL`, `@ALREADYREVOLUTION`; siege/invasion
-  `@INVASION`, `@SEIZURE`, `@SEIZURESEA`, `@SEIZURELAND`, `@TOOTORY`,
-  `@LOSENOCOLONIES`. Independence handler `func_03DE46` + guard `func_03E984`
-  (`docs/UI_DIALOGS.md`, **A**). **`@KINGNEWWAR` sprite — RESOLVED (B, negative):** `KING2.SS`
-  **does not exist** in the binary (`"KING2"` has zero occurrences; only `"KING1"` @file
-  0x1FCB4, built by the `>7` branch of `func_06BE92`), so `@KINGNEWWAR` uses **`KING1.SS`** (or
-  a static portrait), not a KING2 arm-raise animation — the KING2 hypothesis is byte-refuted.
-- **Tier:** keys **B**; `@KINGNEWWAR` sprite **B** (=KING1); per-message geometry **A/R**.
+  `@NOWARSDURINGREV`, `@NOCOLONIESEITHER`, `@NOMAYORSDURINGREV`, `@EUROPENOTAVAIL`,
+  `@FOREIGNNOTAVAIL`, `@ALREADYREVOLUTION`; siege/invasion `@INVASION`, `@SEIZURE`,
+  `@SEIZURESEA`, `@SEIZURELAND`, `@TOOTORY`, `@LOSENOCOLONIES`. Independence handler
+  `func_03DE46` + guard `func_03E984`; event templates `@SEIZURE` `func_03C5A8`,
+  `@INVASION` `func_03CDA2`, `@TOOTORY`/`@WAR`/`@PEACE` via the shared engine
+  (`CHROME_AND_DISPATCH_INDEX.md` §B8). **A**.
+- **`@KINGNEWWAR` sprite — RESOLVED (B, negative):** `KING2.SS` **does not exist**
+  in the binary (`"KING2"` has **zero** GAME.TXT sections and zero string
+  occurrences; only `"KING1"` @file 0x1FCB4, built by the `> 7` branch of
+  `func_06BE92`), so `@KINGNEWWAR` uses **`KING1.SS`** (or a static portrait), not a
+  KING2 arm-raise animation — the KING2 hypothesis is byte-refuted.
+- **Tier:** keys **B**; `@KINGNEWWAR` sprite **B** (=KING1); per-message geometry
+  centered **B (engine)**.
 
-## Evidence
-- `data_extracted/text/GAME_sections.json` — every `@`-key above grepped
-  present. **B** (key existence). Bodies for `@TAXOPTIONS`, `@FRIEND`,
-  `@ARMOPTIONS`, `@WANTSTUFF` etc. are captured; many event keys have empty
-  bodies in this dump.
-- `docs/POPUP_TEMPLATE_AUDIT.md` — framework `func_06F0F4`, 9 directives at
-  `0x1F967`, 4 sprite channels `[0x1f5c/5e/60]`, builders `func_06BE92/BF12/BF3C`,
-  reset `0x06EE6B`. **B** (mechanism) / **A** (per-event attribution).
+---
+
+## 19. Interactions
+- **Dismiss:** every popup ends with the modal wait loop `0x181F:0x3C0`
+  (`func_004A80` @0x4A80) — polls keyboard (kbhit/getch) + mouse with a ~120-tick
+  timeout; OK/keypress/click dismisses. It **draws nothing** (the OK box/label are
+  painted by the dialog builder first). **B** (`UI_PRIMITIVES.md` §0x3C0).
+- **Option select:** option-list popups (`@OPTIONS` / `@TAXOPTIONS` / `@SMITEINDIANS`
+  inline options / `@LANDFALL`) stack the option rows below the body, left-aligned
+  to the body margin; the `@DEFAULT=N` row is the highlighted index (handler
+  @0x6F374), **not** a color. Selection is read by the show-and-wait thunk
+  `0x191F:0x16A`. **B (mechanism) / TBD (highlight RGB capture not needed — resolves
+  via PIK palette).**
+- **Speaker portrait:** drawn above the popup by `func_06BF66` from the active
+  channel sheet (§2.7); reset to `0xFFFF` on close (@0x06EE6B). **B.**
+- **Channel reset:** the dispatcher clears all three channels after close so the
+  next popup starts with no speaker unless it sets one. **B.**
+
+## 20. Assets & text
+- **Frame/background:** WOODPANL.PIK (some WOODPAN2.PIK) tiled body + WOODFRAM.SS
+  frame (`0x181F:0x510` @0x0263D6) + NAMEPLAT.SS title strip. **A** (asset roles).
+- **Speaker sheets:** `KING1.SS`, `IND0A0..IND7A0.SS`, `MSS0..MSS5.SS`,
+  `MYR0..MYR3.SS` — built by NAME (not index) by `func_06BE92`/`BF12`/`BF3C`. **B.**
+- **Body font:** FONTTINY (`[0x89E]/[0x8A0]`, engine default). `SMALLFONT` does
+  **not** load FONTSMAL (handler @0x6F207 only copies the latched FONTTINY
+  descriptor — RULING). **B.**
+- **Message keys:** `data_extracted/text/GAME_sections.json` — every `@KEY` in §3–§18
+  grep-confirmed present (2026-06-23). `@KINGTAX`, `@TAXOPTIONS`, `@RAIDWREAK`,
+  `@LOSTCITY1`, `@KINGNEWWAR`, `@FRIEND`, `@SMITEINDIANS`, `@WANTSTUFF`, `@VICEROY`,
+  `@KINGLOSE`, `@KINGWIN`, `@SHIPCOMBAT`, `@LANDFALL` bodies spot-confirmed. **B.**
+- **NAMES tables:** `@ATTITUDE`, `@ACTIONS`, `@TRIBES` (all present in
+  `NAMES_sections.json`). **B.** **LABELS:** "Lost City Rumor", "Intervention
+  Force" in `LABELS @MISC` (present). **B.**
+- **Woodcuts:** WDCUT04 (treasure), WDCUT10 (battle), WDCUT11 (burning colony),
+  WDCUT12 (burning village), WDCUT13 (war dance) per `docs/UI_DIALOGS.md`. **A.**
+
+## 21. Evidence
+- `raw/COLONIZE/VICEROY.EXE` — dialog engine `func_06C520` @0x06C520 /
+  `func_06D316` @0x06D316 / line builder `func_06C850` @0x06C850 / frame blit
+  `0x181F:0x510` @0x0263D6 / @-parser `func_06F0F4` @0x06F0F4 / sprite builders
+  `func_06BE92`/`BF12`/`BF3C`/`BF66` / dispatcher `func_06E3D0` @0x06E3D0 /
+  reset @0x06EE6B / directive table @0x1F967 / `"WIDTH"` @0x1F989 /
+  raid block @0x1F52A / Lost-City handler `func_061454` @0x61454. **B.**
+- `viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` §B8 — the shared
+  centered-dialog FRAME engine + the ~30 GAME.TXT event templates (index rows
+  25–29), spot-checks PASS. **B** (mechanism) / **A** (per-event attribution).
+- `viceroy_source/docs/UI_PRIMITIVES.md` — the resident `0x181F:NNN` draw-verb
+  library (corrected: `0x22`=string-scan not fill, `0xE2`=clipped sprite blit not
+  rule, `0x3C0`=modal wait not OK-draw). **B.**
+- `docs/POPUP_TEMPLATE_AUDIT.md` — 11-string directive table @0x1F967, 4 sprite
+  channels `[0x1F5C/5E/60]`, builders, reset @0x06EE6B, `func_067DC8` cursor-rect
+  path, multi-section combine. **B** (mechanism) / **A** (per-event attribution).
+- `data_extracted/text/{GAME,NAMES,LABELS}_sections.json` — message keys, attitude/
+  action/tribe lists, misc labels (all grep-verified present). **B.**
 - `docs/UI_DIALOGS.md` — per-popup trigger functions (`func_05BE84` raid,
-  `func_05B2C2` combat, `func_05CA7E` burn, `func_03E844` rebel, etc.). **A**.
-- `docs/DIALOG_GEOMETRY.md` — rect `[0x839E..0x83A4]` compute path. **A/TBD**.
-- `data_extracted/text/NAMES_sections.json` — `@ATTITUDE`, `@ACTIONS`. **B**.
-- `data_extracted/text/LABELS_sections.json` — "Lost City Rumor",
-  "Intervention Force". **B**.
+  `func_05B2C2` combat, `func_05CA7E` burn, `func_03E844` rebel, etc.). **A.**
 
-## Open questions (TBD)
-*(Resolved 2026-06-21: Lost City variant map (`func_061454`, index 1–9); raid count = 6
-(`@RAIDSCALP` is an orphan GAME.TXT key, not a raid-block outcome); `@KINGNEWWAR` = KING1.SS
-(KING2.SS absent); `@width` is a literal per-section pixel width. All struck.)*
+## 22. Open questions
+*(Resolved 2026-06-21/23: Lost-City variant map (`func_061454`, index 1–9); raid
+count = 6 (`@RAIDSCALP` is an orphan key, not a raid outcome); `@KINGNEWWAR` =
+KING1.SS (KING2.SS absent); the centered geometry formula (`func_06D316`); the
+warpath key prefixes are `@INDIAN…`. All struck.)*
 
-1. ~~Empty-body keys are a JSON-dump defect.~~ **RESOLVED 2026-06-21 (B).** The bodies for the
-   "empty" keys (LOSTCITY0/3-9, RAIDSTORES/BURN/SHIP/GOLD, SHIPOPTIONS, ARMOPTIONS, etc.) are now
-   **present in `data_extracted/text/GAME_sections.json`** — the extractor
-   (`tools/extract_txt_sections.py`) was fixed: it had wrongly split a section at each valueless
-   `@options`/`@smallfont`/`@checkbox` directive (treating them as new section headers), dropping
-   the body + option lines; section keys are UPPERCASE-initial, those markers lowercase. Source **B**.
-2. ~~Final per-popup pixel rect.~~ **RESOLVED — static (B):** origin = `@x`/`@y` (GAME.TXT) or
-   centered; size = `@width` + line count. Not cursor-dependent (§Overview item 4).
-3. ~~Per-popup option-highlight RGB.~~ **RESOLVED — static (B):** the `@DEFAULT`/`TEXTCOLR`
-   palette index resolves to exact RGB via the loaded PIK palette (`fonts_and_colors.md`); no
-   capture needed. (Only the per-popup WOODPANL-vs-WOODPAN2 background choice is a minor **TBD**.)
+1. **Per-section `@width`/`@x`/`@y` literals — B-via-EXE, NOT re-confirmable from
+   the committed JSON.** `func_06D316` reads these as the content-width floor /
+   literal origin, and `POPUP_TEMPLATE_AUDIT.md` quotes `@KINGTAX @width=190`
+   directly from the raw GAME.TXT — but the section extractor **strips valueless
+   `@`-directive lines**, so `data_extracted/text/GAME_sections.json` does **not**
+   carry `@width`/`@x`/`@y` (only 2 stray `@width=200` captures survive in
+   `GAME.full.json`). To re-confirm specific per-popup values, read raw
+   `GAME.TXT` / the EXE, not the sections JSON. **B (engine + KINGTAX) / TBD
+   (per-section values from JSON).**
+2. **WOODPANL-vs-WOODPAN2 background per popup — TBD.** No per-call frame-index
+   dispatch is byte-cited; INFERRED WOODPAN2 = king-audience + a few "darker"
+   popups, everything else WOODPANL. **TBD.**
+3. **`func_06BF66` sprite-blit POSITION math — partial.** The builder positions the
+   speaker sheet above the popup (centered), but only the first ~30 bytes
+   (KING/IND flag split @0x6BF7C) are decoded; the exact `sprite_x/sprite_y =
+   popup.x/y − sprite_w/h` math is **TBD**.
+4. **Food-shortage trigger function — TBD.** Keys (`@FOODLOW`/`@STARVE*`/`@SPOIL*`)
+   are present; the colony-update fn that fires them is not yet pinned. **TBD.**
+5. **Option-highlight RGB / button SS index — not needed / TBD.** `@DEFAULT` stores
+   a row index, not a color; the highlight resolves via the loaded PIK palette
+   (`fonts_and_colors.md`) — no capture needed. The OK/Cancel button SS sprite
+   index (if any; the wait loop `0x3C0` draws nothing) is a carried-forward **TBD**
+   (`CHROME_AND_DISPATCH_INDEX.md` §B8 open items).
 
-*No runtime residual remains for popups* — the live **values** inside a popup (gold, names,
-counts) are game state, but the layout, text keys, sprite channels, geometry, and colors are all
-static.
+*No runtime residual remains for popups* — the live **values** substituted into a
+popup body (gold, names, counts via `{%NUMBER}`/`{%STRING}`) are game state, but the
+layout, text keys, sprite channels, geometry, and colors are all static.
