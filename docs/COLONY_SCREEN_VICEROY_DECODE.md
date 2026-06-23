@@ -473,15 +473,18 @@ not building bits). **B.**
 panels (field 3×3, plaza, 6-slot minimap, SoL/cargo/msg, flag); stockpile bar; header
 (name+season+year, gold field); build interaction + the shared dialog engine.
 
-**Genuinely runtime-only residuals (cannot be pinned statically — need a screenshot or
-a live trace, NOT guessed):**
-1. Literal heap strings — the title sentence and the `[0x2F5E]` warehouse caption (string
-   heap `[0x2D42:0x2D44]` is loaded at runtime).
-2. Exact header **gold blit x/y/font** (menu chrome reads the formatted buffer at paint
-   time; value = `PowerRecord+0x2A`, mirror `0x9CB0` recomputed `@0x2B80E`).
-3. COLONY.PIK exact blit-Y literal (set via the make-surface context `[0x839E]`; geometry
-   ⇒ `y=128`).
-4. ~~The 6-direction minimap position table~~ — **RESOLVED** (`func_027D84`: x=127+slot·12,
-   y=165, 10×22).
-5. ~~Construction-complete `+0x84` write site~~ — **RESOLVED** (`@0x02D19A` set_building(type,1),
+**Static analysis COMPLETE.** Everything statically knowable is pinned. The only residue is
+**runtime state** — fully characterized below, each with the exact breakpoint a one-shot
+runtime trace would read (do NOT guess these):
+1. **Title literal sentence** — fields are byte-traced (§9b); the words need the loaded string
+   heap `[0x2D42:0x2D44]`. *Trace:* break `@0x026AA6` (paint `0x181F:0xB0`), dump `ss:[bp-0x50]`.
+2. **`[0x2F5E]` warehouse caption text** — *Trace:* break `@0x0283F1`, follow `0x181F:0x22`
+   result (string at `[0x2D42:0x2D44]` + index `[0x2F5E]`).
+3. **Header gold blit x/y/font** — value byte-pinned (`PowerRecord+0x2A`, mirror `0x9CB0`
+   `@0x2B80E`, formatted into `[0x9CD2]`); the blit is runtime menu chrome. *Trace:* break on
+   the menu draw of `[0x9CD2]`.
+4. **COLONY.PIK exact blit-Y** — geometry ⇒ `y=128`; literal set via make-surface `[0x839E]`.
+   *Trace:* break in `load_PIK`/`func_026374`, read `[0x83A2]`.
+5. ~~6-direction minimap table~~ — **RESOLVED** (`func_027D84`: x=127+slot·12, y=165, 10×22).
+6. ~~Construction-complete `+0x84` write~~ — **RESOLVED** (`@0x02D19A` set_building(type,1),
    no predecessor clear; expansions 16/31 use counters `+0x95`/`+0x96`).

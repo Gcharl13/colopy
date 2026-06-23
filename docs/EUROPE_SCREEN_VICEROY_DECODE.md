@@ -164,10 +164,11 @@ appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block �
 - **Exit RESOLVED (framework-level):** there is **no Europe-private exit hit-rect** beyond
   the `@0x032034` block; leaving Europe is the generic screen-view runner's close (the
   `@EUROLABEL` 4th token `"x"` / ESC), `enter_screen_view(0x2B)` (§11). Not a painted button.
-- **Runtime-only residuals (require a live trace / string-section dump, NOT guessable):**
-  (a) banner & gold blit pixel x/y (runtime text-box / menu chrome); (b) the literal
-  contents of heap strings `[0x2F5E]`/`[0x2DD0]`/`[0x2DCE]`/`[0x2DCC]`; (c) the per-ship
-  state→caption id mapping in `func_0314DC` (captions are `@MISC`-indexed at runtime). The composer steps 6/7 are now resolved: step 7
+- **Static analysis COMPLETE.** Residue is runtime state only, each with a one-shot trace:
+  (a) banner blit x/y — *break `@0x0310AD`*, read text-box `[0x2CC6..0x2CCC]`; gold blit x/y
+  — runtime menu chrome (`PowerRecord+0x2A` is byte-pinned); (b) heap-string *contents*
+  `[0x2F5E]/[0x2DD0]/[0x2DCE]/[0x2DCC]` — *follow `0x181F:0x22`* at each draw; (c) per-ship
+  state→caption id — *break inside `func_0314DC`* and read the `@MISC` index per state. The composer steps 6/7 are now resolved: step 7
   `func_031AFA` = the right-side in-port recruit/unit list panel `(224,120,96,59)`
   (iterates units of type `0x0D..0x12`); step 6 `func_0319A6` dispatches **func_0317CC**
   + **func_0318D2** (the two transaction-detail strips — their exact contents are the
