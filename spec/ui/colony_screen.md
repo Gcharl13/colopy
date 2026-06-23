@@ -87,19 +87,23 @@ anywhere in the colony composer; every panel is a flat fill with at most a singl
 > at pitch 0x13). All 12 head calls are now resolved sub-renderers (`docs/COLONY_SCREEN_VICEROY_DECODE.md` §2).
 
 ### 3.1 Title text — `func_0268CE @0x0268CE`  (the colony screen's only "menu bar above")
-Assembles the title/status line into `[bp-0x50]` with the C string library —
-`0x181F:0x182` (append-char `func_0029DE`), `0x181F:0x16E` (append-substring `func_002992`),
-`0x181F:0x1A0` (status prefix `func_002A06`), and `0x181F:0x178` (`func_0028B0`, **strlen / end-of-string**,
-**not** the paint) `@0x026906..0x026A61` — guarded by state checks (`[0xB98]==0`, `[0x828]==0`,
-controller gate at `0x268D7`); owner colour merged from `colony+0x1B`/`+0x1A` via `0x181F:0xB1E`
-(`func_008862`). The final **paint is `0x181F:0xB0` (`func_00275C`, the rich-text painter) at `@0x026AA6`**
-with `mode=[bp+6]=0` (composer pushes `0` at `@0x0285B2`). Paint origin is the per-screen text-box
-globals `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` set by the composer's `0x181F:0xC22` context init, so x/y are
-**runtime state** — centred near `y≈5` is **R** (recol clear `(0,0,320,7)` + map menu-bar `y=5`); the
-string *sources* are **B**. There is **no File/Orders dropdown** here — that is the map view's separate
-bar (`func_072090`, `spec/ui/menus.md` §173). Full breakdown:
-`docs/COLONY_SCREEN_VICEROY_DECODE.md` §9. Strings: "Pop:", "Gold:", "Tax:" are **LABELS `@CTITLE`**
-(verified present); season is **NAMES `@SEASONS`** = `Spring\nAutumn` (only 2 entries — verified). **B**
+Assembles the title/status line into `[bp-0x50]` with the C string library (helper bodies
+decoded): `0x181F:0x182` (`func_0029DE`, append **decimal number**), `0x181F:0x16E`
+(`func_002992`, append a **string fetched from a table** via `0:0x62`), `0x181F:0x1A0`
+(`func_002A06`, zero-padded number), `0x181F:0x178` (`func_0028B0`, **strlen / util — not a
+paint**) `@0x026906..0x026A61` — guarded by state checks (`[0xB98]==0`, `[0x828]==0`,
+controller gate at `0x268D7`); owner descriptor/colour merged from `colony+0x1A` via
+`0x181F:0xB1E` (`func_008862`). The final **paint is `0x181F:0xB0` (`func_00275C`, the
+rich-text painter) at `@0x026AA6`** with `mode=[bp+6]=0` (composer pushes `0` at `@0x0285B2`).
+Paint origin is the per-screen text-box globals `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` from the
+`0x181F:0xC22` context init, so x/y are **runtime state** — centred near `y≈5` is **R**
+(recol clear `(0,0,320,7)` + map menu-bar `y=5`). There is **no File/Orders dropdown** here —
+that is the map view's separate bar (`func_072090`, `spec/ui/menus.md` §173).
+**The call sequence + which fields feed the string are B; the literal rendered words are
+TBD/R** — the `0x16E`/`0x22` appends read from the runtime string heap (`[0x2D42:0x2D44]`,
+per-colony word tables at `-0x6840`/`-0x6800`), so the exact text needs a string-section
+dump or a runtime trace (do not invent it). Full breakdown:
+`docs/COLONY_SCREEN_VICEROY_DECODE.md` §9.
 
 ### 3.2 Field-production panel — `func_0264A8 @0x0264A8`
 - Background fill `@0x0264E9`: `push 0x48,0x48,0x20,0xE0 → func_02633E` ⇒ **rect (x=224, y=32,
@@ -197,7 +201,7 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Element | Rect (x,y,w,h) | Sprite / text | Font | Color | Fn @offset | Tier |
 |---------|----------------|---------------|------|-------|------------|------|
 | Full-screen region fill | (0,0,320,200) | flat patterned fill | — | panel fill | `func_02633E` (`0x181F:0x444`) | B |
-| Title | origin **TBD** (DOS-centered, y≈1) | "Name. Season Year. Gold:N" | FONTTINY¹ | green `(0x52,0x8A,0x31)`→(82,138,49)¹ | `func_0268CE @0x0268CE` | B / TBD origin |
+| Title strip ("menu bar above") | origin **R** (DOS-centered, y≈5) | per-colony fields + table strings (literal text **TBD**, §3.1) | FONTTINY¹ | nation/screen-latched¹ | `func_0268CE @0x0268CE` (paint `0x181F:0xB0`) | B chain / TBD text |
 | Field-production panel | (224,32,72,72) | commodity icons ICONS `good+0x17` | FONTTINY | per-icon | `func_0264A8 @0x0264E9` | B |
 | Colonist plaza row | (0,130,120,48) | colonist sprites; **x-origin 143, walks left** | — | — | `func_0270D0 @0x0270D6` | B (pitch TBD) |
 | Flag panel | (303,132,17,45) | **ICONS sprite 0x44 (68)** at +3, frame=`[0x337]`/`[0x339]` | — | — | `func_02853C @0x028540` | B |
@@ -206,8 +210,8 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Buildings (15 slots) | **each BUILDING.SS frame's own baked (x,y)** (the `0x266` table is filled FROM the frame coords) | **BUILDING.SS** frame from (type,level); type=`byte[0x8D62+i]`, level=`byte[0x8E82+i]` (`<0`=empty); dummy frames 10/11/17/30/31 = level-fallback markers (skip) | — | — | `func_02701C @0x027067` / `SPRITE_CATALOG.md` | B |
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
-| Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F` | `func_0281D6 @0x0281DB` | B |
-| Stockpile gold | (306,179) | gold readout | FONTTINY | — | `@0x0283F1` | B |
+| Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F`, **red `0x0C` when over warehouse cap** (`0x181F:0xD3A`) | `func_0281D6 @0x0281DB` | B |
+| Stockpile gold | (306,179) | **player TREASURY** `"$%d"` of `DG16(0x2F5E)` (byte-identical to Europe `@0x03125C`) | FONTTINY | white `0x0F` | `@0x0283F1` | B |
 | Panel outlines | each panel (single colour) | 1-px frame | — | — | `0x181F:0xE2` | B |
 | Screen-bottom rule | (0,200,320) | 1-px rule | — | — | `func_028592 @0x028607` | B |
 

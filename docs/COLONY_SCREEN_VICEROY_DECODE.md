@@ -155,7 +155,16 @@ Returns (frame_base `[bp-6]`, dims `[bp-4]`, …) for a building type `[bp+6]`:
 - **cell x:** start `x=1`, `x += 19` each cell; **icon centered**: `icon_x = x − (icon_w/2) + 9`
   where `icon_w = ICONS_header[0x152 + i*12]` (recol). number printed = **quantity + 1**.
 - selected-good highlight (push 0xE box) + boycott red-X second loop (`[0x907]`/boycott id).
-- **gold** readout at `(306,179)` (right-aligned).
+- **over-capacity warning:** per cell, `0x181F:0xD3A` returns the warehouse cap; if
+  `stockpile[i] > cap` the quantity is drawn **red `0x0C`** (else white `0x0F`) — the
+  classic "goods will spoil" colour.
+- **gold readout — the player TREASURY, not a colony field.** End of `func_0281D6`
+  `@0x0283F1`: `push 0x0F` (white), `push 0xB3` (y=179), `push 0x132` (x=306),
+  `push [0x2F5E]`, `lcall 0x181F:0x22` (`func_002462` = fetch string #N from the loaded
+  text heap `[0x2D42:0x2D44]`), `lcall 0x181F:0x13C` (draw). `DG16(0x2F5E)` is the global
+  "displayed gold" mirror rendered as **`"$%d"`**. This block is **byte-identical** to the
+  Europe screen's gold readout (`@0x03125C`, `spec/ui/europe_screen.md` §gold) — it is the
+  shared treasury total, right-aligned at **(306,179)** in white.
 
 ## 7. Bottom-band panels
 - **Colonist plaza** `func_0270D0`: clear `(0,130,120,48)`; row x-origin **143**, walks
@@ -338,17 +347,23 @@ The alt branch (`0x269F8`) builds a shorter string from `colony+2` via
 Built left→right with the C string library (call counts confirm these are the
 shared string primitives, not colony-specific):
 
+**Helper semantics (decoded bodies, so the table is read correctly):**
+`0x181F:0x182` (`func_0029DE`) = **append a decimal number** (`itoa` via `0xD1D:0x8FA`
+then `strcat`); `0x181F:0x16E` (`func_002992`) = **append a string fetched from a table**
+(`lcall 0:0x62`(index) → far ptr, then `%s`); `0x181F:0x1A0` (`func_002A06`) =
+zero-padded number; `0x181F:0x178` (`func_0028B0`) = strlen/util (not a paint).
+
 | order | site | call | source | meaning |
 |------|------|------|--------|---------|
-| 1 | 0x26915 | `0x181F:0x1A0` → `func_002A06` | `byte[colony+0x1b]` | status/number prefix, zero-padded to width 8 (`func_002A06` loops `8-len` pad chars via `0xD1D:0x11B4`) |
-| 2 | 0x26942 (×4) | `0x181F:0x182` append-char `func_0029DE` | `byte[colony+0x8c .. +0x8f]` | the 4-char colony **name** |
-| 2′ | 0x2697A | `0x181F:0x16E` append `func_002992` | `word[ byte[colony+0x8d]*2 - 0x6840 ]` | inserted **name-table** word after name char 1 |
-| 3 | 0x2698C | `0x181F:0x16E` | `word[0x2E38]` | appended value/string id |
-| 4 | 0x269AD | `0x181F:0x722` → `func_005E90(map_x=byte[colony], map_y=byte[colony+1])` | returns a tile attribute byte (−1 if not owned/visible) → appended `0x181F:0x182` | **region/season descriptor from the colony's map position** |
-| 5 | 0x269E1 | `0x181F:0x182` | `byte[ (byte[colony+0x1a]<<4) + si - 0x6790 ]` | nation×region indexed char |
-| 6 | 0x26A28 | `0x181F:0x16E` | `word[ word[0x538C]*2 - 0x6800 ]` | appended table word |
+| 1 | 0x26915 | `0x181F:0x1A0` (zero-pad num) | `byte[colony+0x1b]` | numeric status/prefix, padded to width 8 |
+| 2 | 0x26942 (×4) | `0x181F:0x182` (append **number**) | `byte[colony+0x8c .. +0x8f]` | four numeric fields (per-colony bytes — **field identity R**, NOT verified as ASCII name) |
+| 2′ | 0x2697A | `0x181F:0x16E` (append **table string**) | `word[ byte[colony+0x8d]*2 - 0x6840 ]` | a string from a per-colony word table, inserted after field 1 |
+| 3 | 0x2698C | `0x181F:0x16E` (append table string) | `word[0x2E38]` | appended string by id |
+| 4 | 0x269AD | `0x181F:0x722` → `func_005E90(map_x=byte[colony], map_y=byte[colony+1])` | returns a tile attribute byte (−1 if not owned/visible), appended as a **number** | descriptor derived from the colony's map position |
+| 5 | 0x269E1 | `0x181F:0x182` (append number) | `byte[ (byte[colony+0x1a]<<4) + si - 0x6790 ]` | nation×index byte |
+| 6 | 0x26A28 | `0x181F:0x16E` (append table string) | `word[ word[0x538C]*2 - 0x6800 ]` | appended string by id |
 | 7 | 0x26A44 | `0x181F:0x182` | `word[0x538A]` | appended value |
-| 8 | 0x26A61 | `0x181F:0x22` → `func_002462([0x93A0])` → `0xD1D:0x11B4` | dx:ax | **numeric** field (sprintf) |
+| 8 | 0x26A61 | `0x181F:0x22` → `func_002462([0x93A0])` (fetch table string #N) → `0xD1D:0x11B4` | far ptr | appended string |
 
 ### 9c. Final transform + paint
 - `0x26A96` `lcall 0x181F:0xB1E` → `func_008862(buf, nation=byte[colony+0x1a])`:
@@ -362,6 +377,16 @@ shared string primitives, not colony-specific):
   `0x181F:0xC22` context init), not a static literal, so the `y≈5` here is **R**
   (geometry/recol), the string sources above are **B**.
 
-**Net:** the colony "menu bar above" = a single centred banner line of the form
-*"«status» «ColonyName» … «season/region» … «number»"* in the owner nation's
-colour, painted at the top (`y≈5`, full width). No buttons, no dropdowns.
+**Net:** the colony "menu bar above" = a single centred banner line — assembled by
+`func_0268CE` from the per-colony numeric fields + table-string lookups above, merged
+with the owner-nation descriptor, painted centred at the top (`y≈5`, full width). No
+buttons, no dropdowns.
+
+**Honest limit on the literal words.** The *mechanism* and *which fields feed it* are
+byte-traced (**B**), but the **literal rendered sentence is not statically reproducible**:
+the `0x16E`/`0x22` appends pull from the runtime-loaded string heap (`[0x2D42:0x2D44]`,
+`[0x93A0]`, the `-0x6840`/`-0x6800` per-colony word tables) and several inputs are live
+colony fields. So the rendered string is **TBD/R** until a string-section dump + a live
+field snapshot (or a runtime trace at `0x026AA6`) is taken. The game manual (HIGH trust
+for *function*) describes this band as the colony's heading; the exact glyphs are not yet
+pinned. Do **not** invent the wording.
