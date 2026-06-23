@@ -425,3 +425,55 @@ composer-step-5 banner (§9): colony **name + season** (`@SEASONS = Spring\nAutu
 **Still TBD:** the exact x/y/font of the header gold blit (the menu chrome reads `[0x9CD2]`
 at runtime; the literal draw site in the menu renderer is the next trace target). The
 `(306,179)` `[0x2F5E]` readout on the warehouse bar is a heap caption, **not** gold (§6).
+
+## 11. Render-path closure (2026-06-23)
+
+Final pass resolving the open render items from §8:
+
+**(c) Building frame-mapper jump table — RESOLVED.** `func_026CC2(type)` returns
+`(frame, dims)`. Specials first: type `0x13`/`0x14` (Printing Press/Newspaper) →
+frame `byte[0xA892]`, dims `0x3F`; type `0x11` (Stable) → frame `[0x8DD8]`, dims
+`0x1F`. Otherwise `frame_base = byte[type+0x2CA]` (`0x181F:0xACE`); `<0` ⇒ skip. The
+jump `jmp cs:[bx+0x1472]` (table @file `0x26D72`, 9 words, cs base `0x25900`) is
+indexed by **`frame_base-9`**:
+
+| frame_base | types (examples) | handler | result |
+|-----------|------------------|---------|--------|
+| 9,10,11,12,14,15 | Rum/Tobacco/Weaver/Fur/Blacksmith/Armory chains | `0x26D30` | frame=`frame_base`, dims=`frame_base+0x17` |
+| 13 | Carpenter (35/36) | `0x26D3E` | frame `0x10`, dims `0x37` |
+| 16 | Church (37/38) | `0x26D4A` | frame `0x11`, dims `0x39` |
+| 17 | Town Hall/Capitol/Stable | `0x26D56` | frame `0x12`, dims `0x3F` |
+
+**Field-production panel grid — RESOLVED.** `func_0264A8` fills `(224,32,72,72)`,
+then iterates the worked tiles on a **3×3 grid, 24-px (`0x18`) pitch** (origin = panel
++ offsets); per worked tile it blits the field sprite `0x6D` and the commodity icon
+`good+0x17`; two divider rules `0x181F:0xCE` at `(0xC7,7,0x140)` and `(0xDF,0x1F,0x128)`.
+
+**Surrounding-tile minimap — RESOLVED (geometry helper located).** `func_027DB2`
+fills `(121,130,84,48)`; if `[0x33C]==0` it draws a centred caption (heap string
+`[0x2DD0]` via `0x181F:0x22`→`0x100`); else it loops **6 slots**, each slot's screen
+`(x,y)` from the trampoline `cs:0x2C9D8`, blitting sprite **`0x7B`** from sheet `[0x2DA8]`.
+
+**Construction completion does NOT call `set_building`.** All 8 callers of
+`set_building` (`0x181F:0xBBE`) are: founding (`func_040C1E` grants the 5 base houses
+21/24/27/32/39; `func_02EC2E` Town Hall+Carpenter), the build-preview flicker
+(`func_02C5D4`), and the cheat "give-all" (`@0x02C204`). The normal turn-completion
+sets the `+0x84` bit by a **different path** (not this thunk) — left as the one
+gameplay-logic item (the screen render path is complete).
+
+### Colony screen — render path status: COMPLETE
+**Fully byte-mapped:** all 12 composer steps; buildings (positions `0x266`, type/level
+`0x8D62`/`0x8E82`, frame mapper + jump table); scene/outside view; COLONY.PIK; the 5
+panels (field 3×3, plaza, 6-slot minimap, SoL/cargo/msg, flag); stockpile bar; header
+(name+season+year, gold field); build interaction + the shared dialog engine.
+
+**Genuinely runtime-only residuals (cannot be pinned statically — need a screenshot or
+a live trace, NOT guessed):**
+1. Literal heap strings — the title sentence and the `[0x2F5E]` warehouse caption (string
+   heap `[0x2D42:0x2D44]` is loaded at runtime).
+2. Exact header **gold blit x/y/font** (menu chrome reads the formatted buffer at paint
+   time; value = `PowerRecord+0x2A`, mirror `0x9CB0` recomputed `@0x2B80E`).
+3. COLONY.PIK exact blit-Y literal (set via the make-surface context `[0x839E]`; geometry
+   ⇒ `y=128`).
+4. The 6-direction minimap position table (inside the `cs:0x2C9D8` helper).
+5. Construction-complete `+0x84` write site (gameplay logic, not the screen).
