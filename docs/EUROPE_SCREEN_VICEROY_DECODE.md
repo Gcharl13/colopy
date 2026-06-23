@@ -72,12 +72,22 @@ builds the trade confirmation by `%`-substituting the **good name** (`[bx-0x6840
 of that good at the bid price (tax deducted per the banner `% Tax:`). **B.**
 
 ## 5. Banner / header — `func_030F76`
-Assembles the trade line into `[bp-0x50]` from `@CMESSAGE` fragments (`Selling`/`Buying`/
-`at`/`. Price:`/`% Tax:`/`. Net:`), merges nation via `0x181F:0xB1E` (`@0x03109D`,
-arg `[0x9E12]`), then paints via **`0x181F:0xB0` (`func_00275C`) `@0x0310AD`** with mode
-`[bp+4]` = **0** (composer arg). This is the **same rich-text painter the colony title
-uses** — so the origin is the runtime text-box `[0x2CC6/8/A/C]` (header band, centered);
-the literal pixel origin is **R/TBD** exactly as on the colony title. **B chain / R origin.**
+Two states, both assembled into `[bp-0x50]` and painted via **`0x181F:0xB0` (`func_00275C`,
+the same rich-text painter as the colony title) `@0x0310AD`**, composer mode `[bp+4]=0` ⇒
+header band, runtime text-box origin (`[0x2CC6/8/A/C]`, **R**).
+
+**Idle banner (byte-decoded fields):** nation string (`[0x9E12]`-indexed `[bx-0x7C74]`,
+then `[bx-0x72BE]` via `0x181F:0x22` fetch) + **season** (`[0x538C]`-indexed `[bx-0x6800]`,
+the same season global as the colony title) + **year** (`[0x538A]`, itoa) + **tax rate**
+(`PowerRecord+0x01` = `byte[[0x84FC]+1]`, `@0x031043`). So the idle Europe header reads
+roughly *"«Nation» … «Spring» «1612» … Tax «N»%"*. **B (fields) / R (literal layout).**
+
+**Transaction banner:** during a buy/sell the same line is rebuilt from `@CMESSAGE`
+fragments (`Selling`/`Buying`/`at`/`. Price:`/`% Tax:`/`. Net:`) and the nation merge
+`0x181F:0xB1E` (`@0x03109D`). **B (keys) / R (origin).**
+
+> Gold is **not** in this banner — it's in the top **menu header** (`PowerRecord+0x2A`,
+> §6). The banner carries the **tax**; the menu header carries the **gold**.
 
 ## 6. Gold (treasury) — top menu header, NOT the warehouse bar
 As on the colony screen (corrected 2026-06-23, user/DOS): the player gold is shown in
@@ -137,9 +147,12 @@ appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block �
 
 ## 10. Status — verified vs remaining
 - **VERIFIED (B):** all 9 composer steps + every trampoline resolved to a named
-  sub-renderer; market bar (twin of colony); dock/ship geometry (6 slots, x=147+slot·12,
-  y=165; status-row Y by sail-state); recruit panel; banner painter; gold field
-  (`PowerRecord+0x2A`, header); `(306,179)` is a caption not gold.
+  sub-renderer; market bar (twin of colony) + **trade handler `@0x032914`** (boycott
+  block + sell-confirm substitution); dock/ship geometry (6 slots, x=147+slot·12,
+  y=165; status-row Y by sail-state); **3 right-side buttons** (row0 RECRUIT / row1
+  PURCHASE / row2 TRAIN, each chooser keyed); **hit-test rects** (`@0x032034`, ids
+  0–5); **banner fields** (nation+season `[0x538C]`+year `[0x538A]`+tax `PowerRecord+0x01`);
+  gold field (`PowerRecord+0x2A`, header); `(306,179)` is a caption not gold.
 - **Runtime-only / remaining (NOT guessed):** (a) banner & gold blit pixel x/y (runtime
   text-box / menu chrome); (b) the `[0x2F5E]`/`[0x2DD0]` heap string contents; (c) the
   dock caption id↔sail-state map (captions not literal pushes in `func_0314DC`); (d) the
