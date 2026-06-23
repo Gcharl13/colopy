@@ -128,20 +128,18 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         scr.draw_text(font, gx, L::BAR_Y, gtxt, COL_GOLD);
     }
 
-    // --- Step 12: buildings loop, 15 slots, BUILDING.SS sprite = type+1. [C-3.7]
-    // The byte-exact positions come from the DGROUP table at 0x266 (stride 4) which is NOT
-    // yet extracted, so we lay the constructed buildings in an approximate grid (tier R)
-    // across the colony plaza area. The sprite index (type+1) and the 15-slot cap ARE B. ---
+    // --- Step 12: buildings loop, 15 slots, BUILDING.SS. [C-3.7] / SPRITE_CATALOG.
+    // Each BUILDING.SS frame carries its OWN colony-screen blit coordinate (Frame.x,
+    // Frame.y) -- the runtime 0x266 table is filled from these (func_02701C reads
+    // [bx+0x266]/[bx+0x268]+8). So buildings place themselves; NOT a grid. The
+    // <=2x2 dummy frames (10,11,17,30,31) are level-fallback markers, skipped. ---
     {
-        int drawn = 0;
-        for (int type = 0; type < 15 && drawn < 15; ++type) {
-            if (!(c.built_mask & (1ull << type))) continue;
-            int gx = 8 + (drawn % 5) * 40;          // R placeholder grid
-            int gy = 40 + (drawn / 5) * 28;
-            int frame = type + 1;                   // BUILDING.SS = type+1 (B, @0x027087)
-            if (frame >= 0 && frame < (int)building.frames.size())
-                scr.blit_frame(building.frames[frame], gx, gy);
-            ++drawn;
+        auto is_dummy = [](int k){ return k==10||k==11||k==17||k==30||k==31; };
+        for (int k = 0; k < (int)building.frames.size(); ++k) {
+            const Frame& f = building.frames[k];
+            if (is_dummy(k) || f.w <= 2 || f.h <= 2) continue;
+            if (f.y + f.h > Surface::H) continue;          // skip off-screen catalogue frames
+            scr.blit_frame(f, f.x, f.y);                   // blit at the frame's own (x,y)
         }
     }
 

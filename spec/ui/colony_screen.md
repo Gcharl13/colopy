@@ -197,7 +197,7 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Flag panel | (303,132,17,45) | **ICONS sprite 0x44 (68)** at +3, frame=`[0x337]`/`[0x339]` | — | — | `func_02853C @0x028540` | B |
 | Surrounding-tile minimap | (121,130,84,48) | **6× ICONS sprite 0x7B (123)** tiles (or centered caption if `[0x33C]==0`) | — | per-tile | `func_027DB2 @0x027DB7` | B |
 | SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]` (3 cases) | FONTTINY | — | `func_02814C @0x02814F` | B (text TBD) |
-| Buildings (15 slots) | table `0x266` stride 4 (x@+0, y@+2 +8) | **BUILDING.SS** index = **type+1** | — | — | `func_02701C @0x027067` | B (frame map R) |
+| Buildings (15 slots) | **each BUILDING.SS frame's own baked (x,y)** (the `0x266` table is filled FROM the frame coords) | **BUILDING.SS** frame from (type,level); type=`byte[0x8D62+i]`, level=`byte[0x8E82+i]` (`<0`=empty); dummy frames 10/11/17/30/31 = level-fallback markers (skip) | — | — | `func_02701C @0x027067` / `SPRITE_CATALOG.md` | B |
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
 | Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F` | `func_0281D6 @0x0281DB` | B |
@@ -223,8 +223,12 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
   `[0x839E]`. Backdrop **COLONY.PIK** (key 0x0BA0) — **a 320×72 *scene strip*, NOT a full-screen
   background** (build-verified 2026-06-23 from the decoded bundle: `COLONY.png` is 320×72). The lower
   ⅔ of the screen is the composer's wood-pattern region fill (step 4, `func_02633E`), panels over it.
-  Note: COLONY.PIK has its **own palette** (browns absent), distinct from the WOODTILE/ICONS gameplay
-  palette — the runtime composites the strip onto the gameplay palette (the C++ port remaps it). **B**
+  Note: COLONY.PIK has its **own palette** (≈ VICEROY.PAL), distinct from the **gameplay palette**
+  (PHYS0/WOODTILE/ICONS/**BUILDING** all share it — build-verified: BUILDING.SS renders NOISY under
+  VICEROY.PAL but correct under the gameplay palette). The colony screen runs on the gameplay palette;
+  the COLONY.PIK strip is remapped onto it. **Buildings:** the BUILDING atlas is itself laid out at the
+  colony-screen coordinates — **each frame is blitted at its own (x,y)**, which IS the byte-accurate
+  building layout (NOT a grid; the `0x266` runtime table caches these). **B** (build-verified 2026-06-23).
 - **Verified text keys** (grepped present in `data_extracted/text/*_sections.json` this pass):
   - **LABELS `@CTITLE`** = "Pop:", "Gold:", "BUY", "CHANGE", "Select An Item To Build",
     "(No Production)", "(More)", "Turns)", "Select a Profession for", "Tax:". **B**
