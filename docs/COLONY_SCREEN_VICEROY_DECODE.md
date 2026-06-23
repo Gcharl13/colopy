@@ -270,6 +270,26 @@ Load path (verified):
   inside the colony enter). The y=128 value follows from the 320×72 size + bottom placement;
   confirming the literal needs either the surface-context setup site or a runtime trace.
 
+### 4d. Frame selection — building type → BUILDING.SS frame (RESOLVED)
+`func_026CC2` (the type→frame/dims mapper) resolves the sprite frame:
+- type `0x13`/`0x14` → frame `[0xA892]`, dims `0x3F`; type `0x11` → frame `[0x8DD8]`,
+  dims `0x1F` (then `−[0xA892]`).
+- else: `base = 0x181F:0xACE(type)` = **`byte[type + 0x2ca]`** — a STATIC per-type
+  base-frame table at `DS:0x2ca` (file `0x1DC6A`, 42 entries). A jump table
+  `cs:[bx+0x1472]` (file `0x26D72`, 9 cases for base 9..0x11) remaps a few:
+  base 13→frame 16, base 16→17, base 17→18; all others use `frame=base, dims=base+0x17`.
+- LEVEL = `0x181F:0xBAA(type)` walks the upgrade chain (`@BUILDING` predecessor at
+  `DS:0x8F88`, stride 12) and counts how many the colony owns → offsets/refines the frame.
+
+**`DS:0x2ca` base-frame table (42 types, grouped in 3 = the 3 upgrade levels/category;
+`0xFF` = no BUILDING.SS sprite):**
+```
+type 0-2 :21   3-5 :15   6-8 :FF   9-11:17  12-14:18  15-20:FF
+type 21-23:11  24-26:10  27-29:09  30-31:17 32-34:12  35-36:13  37-38:16  39-41:14
+```
+The `0xFF` groups (6-8, 15-20) are wall/non-sprite categories. The dummy frames
+10/11/17 appearing as bases are the `≤2×2` markers the level walk-back steps past.
+
 ## 8. Status — verified vs remaining
 - **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
   rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
