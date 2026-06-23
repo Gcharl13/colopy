@@ -1,10 +1,9 @@
-// colony_screen.cpp -- colony screen composer, per spec/ui/colony_screen.md.
+// colony_screen.cpp -- colony screen composer, per docs/COLONY_SCREEN_VICEROY_DECODE.md.
 //
-// Draw order follows the byte-read composer func_028592 @0x028592 (§3, 12 steps).
-// The COLONY.PIK backdrop supplies the static chrome that the composer paints as
-// flat region fills (func_02633E) + single-colour 1px frames (0x181F:0xE2) -- there
-// are NO bevels anywhere in the colony composer (drawlist §0). Over it we overlay the
-// dynamic, byte-cited elements. Citations [C-x] -> spec/ui/colony_screen.md §x.
+// Draw order follows the byte-read composer func_028592 (decode §2): wood fill ->
+// buildings (upper-left, real 0x266 plot table + BUILDING.SS frame_base table) ->
+// COLONY.PIK landscape strip at the BOTTOM (decode §5c) -> bottom-band panels ->
+// stockpile bar -> title. Tables (PLOT, FRAME_BASE) extracted from VICEROY.EXE.
 #include "colony_screen.hpp"
 #include <cstdio>
 #include <string>
@@ -12,47 +11,54 @@
 
 namespace vc {
 
-// ---- byte-cited geometry (spec/ui/colony_screen.md §3, all tier B) ----------------
-// Panel background rects the composer fills (func_02633E x,y,w,h). The backdrop already
-// carries these as wood panels; kept here as named constants documenting the layout.
-namespace L {
-    // §3.2 field-production panel  (push 0xE0,0x20,0x48,0x48 @0x0264E9)
-    constexpr int FIELD_X = 224, FIELD_Y = 32, FIELD_W = 72, FIELD_H = 72;
-    // §3.3 colonist plaza row      (push 0x00,0x82,0x78,0x30 @0x0270D6)
-    constexpr int PLAZA_X = 0,   PLAZA_Y = 130, PLAZA_W = 120, PLAZA_H = 48;
-    // §3.4 flag panel              (push 0x12F,0x84,0x11,0x2D @0x028540)
-    constexpr int FLAG_X = 303,  FLAG_Y = 132, FLAG_W = 17,  FLAG_H = 45;
-    // §3.5 surrounding-tile minimap(push 0x79,0x82,0x54,0x30 @0x027DB7)
-    constexpr int SURR_X = 121,  SURR_Y = 130, SURR_W = 84,  SURR_H = 48;
-    // §3.6 SoL / cargo / msg panel (push 0xD3,0x82,0x5B,0x30 @0x02814F)
-    constexpr int SOL_X = 211,   SOL_Y = 130, SOL_W = 91,   SOL_H = 48;
-    // §3.9 stockpile bar           (bar 0,179,320,21 @0x0281DB)
-    constexpr int BAR_X = 0,     BAR_Y = 179, BAR_W = 320,  BAR_H = 21;
-}
+// ---- byte-extracted tables (VICEROY.EXE, DGROUP base 0x1D9A0) -----------------------
+// DS:0x266 plot table -- 15 building plots (x, table_y); render y = table_y + 8 (decode §4b).
+static const int PLOT[15][2] = {
+    {56,5},{145,7},{173,10},{8,33},{37,37},{67,46},{96,45},{6,6},
+    {128,45},{10,68},{15,94},{87,3},{66,79},{123,98},{123,47},
+};
+// DS:0x2CA frame-base table -- BUILDING.SS frame per building type 0..41 (255 = wall/no sprite).
+static const unsigned char FRAME_BASE[42] = {
+    21,21,21, 15,15,15, 255,255,255, 17,17,17, 18,18,18, 255,255,255,255,255,255,
+    11,11,11, 10,10,10, 9,9,9, 17,17, 12,12,12, 13,13, 16,16, 14,14,14,
+};
+// Building type -> plot slot (chains share a plot; highest built tier wins by draw order).
+// The real per-colony assignment is the runtime fill func_025D34; this is a faithful static
+// arrangement of the byte-verified plots for the buildings that carry a sprite.
+static const signed char TYPE_PLOT[42] = {
+    7,7,7,        // 0-2  defense (Stockade/Fort/Fortress)
+    14,14,14,     // 3-5  Armory chain
+    -1,-1,-1,     // 6-8  Docks chain (no sprite)
+    0,0,0,        // 9-11 Town Hall
+    12,12,12,     // 12-14 School/College/University
+    -1,-1,-1,-1,-1,-1, // 15-20 warehouse/stable/customhouse/press (no sprite)
+    4,4,4,        // 21-23 Weaver
+    5,5,5,        // 24-26 Tobacconist
+    6,6,6,        // 27-29 Rum
+    1,1,          // 30-31 Capitol
+    8,8,8,        // 32-34 Fur Trader
+    3,3,          // 35-36 Carpenter/Lumber Mill
+    11,11,        // 37-38 Church/Cathedral
+    9,9,9,        // 39-41 Blacksmith
+};
 
-// ICONS.SS indices (spec §5): commodity good i -> good+0x17; flag 0x44; surround 0x7B.
-constexpr int ICON_GOOD0 = 0x17;     // good 0 (Food) = ICONS 23
-constexpr int ICON_FLAG  = 0x44;     // 68
-// Stockpile bar: 16 cells, pitch 19 (0x13), icon row y=181 (0xB5), gold readout @ (306,179).
-constexpr int BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 181, GOLD_X = 306;
-
-// UI colours (NAMES @COLORS / fonts_and_colors.md): basic green 68, hilite gold 149, white 15.
-constexpr uint8_t COL_GOLD = 149, COL_WHITE = 15, COL_FRAME = 68;
-
-// COLONY.PIK is a 320x72 SCENE STRIP (not a full-screen backdrop) -- the composer fills
-// the rest of the screen with the wood pattern (func_02633E) and draws panels over it.
-constexpr int SCENE_H = 72;
+// COLONY.PIK is a 320x72 landscape STRIP placed at the BOTTOM of the screen (decode §5c).
+constexpr int PIK_Y = 128;
+// ICONS.SS indices (decode §6): commodity good i -> good+0x17; flag 0x44.
+constexpr int ICON_GOOD0 = 0x17, ICON_FLAG = 0x44;
+// Stockpile bar (decode §6): 16 cells, pitch 19 (0x13), icon row y=181 (0xB5).
+constexpr int BAR_X = 0, BAR_Y = 179, BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 181;
+// UI colours (fonts_and_colors.md): white 15, basic green 68.
+constexpr uint8_t COL_WHITE = 15, COL_FRAME = 68;
 
 static void blit_icon(Surface& scr, const Sheet& icons, int idx, int x, int y) {
     if (idx >= 0 && idx < (int)icons.frames.size())
         scr.blit_frame(icons.frames[idx], x, y);
 }
 
-// Composite a PIK (its own palette) onto the surface (the active gameplay palette) by
-// remapping each source index to the nearest active-palette colour. The colony screen
-// runs on ONE active palette (the WOODTILE/ICONS gameplay palette); COLONY.PIK was
-// authored against a different palette, so its scene strip is translated here.
-static void blit_pik_remap(Surface& scr, const IndexedPng& pik, int rows) {
+// Composite a PIK (its own palette) onto the active gameplay palette by nearest-colour
+// remap, at (0, dstY). Used for the COLONY.PIK landscape strip.
+static void blit_pik_remap(Surface& scr, const IndexedPng& pik, int dstY) {
     uint8_t lut[256];
     for (int i = 0; i < 256; ++i) {
         int sr = pik.pal[i*3], sg = pik.pal[i*3+1], sb = pik.pal[i*3+2];
@@ -64,10 +70,9 @@ static void blit_pik_remap(Surface& scr, const IndexedPng& pik, int rows) {
         }
         lut[i] = (uint8_t)best;
     }
-    int h = std::min(rows, pik.h);
-    for (int y = 0; y < h; ++y)
+    for (int y = 0; y < pik.h && (dstY + y) < Surface::H; ++y)
         for (int x = 0; x < pik.w && x < Surface::W; ++x)
-            scr.put(x, y, lut[pik.idx[y * pik.w + x]]);
+            scr.put(x, dstY + y, lut[pik.idx[y * pik.w + x]]);
 }
 
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
@@ -75,8 +80,7 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                           const Sheet& building, const Sheet& font,
                           const vc::sim::Colony& c, int gold, int tax_pct, int year,
                           const int stockpile[16]) {
-    // --- Step 4: full-screen wood region fill (func_02633E, pattern via 0x181F:0x444).
-    // WOODTILE.SS (32x24) tiled across the whole screen is that patterned background. [C-3] ---
+    // --- Step 4: full-screen wood region fill (func_02633E; WOODTILE.SS tiled). [decode §2] ---
     if (woodtile.nframes > 0 && woodtile.frames[0].w > 0) {
         const Frame& wt = woodtile.frames[0];
         for (int y = 0; y < Surface::H; y += wt.h)
@@ -84,68 +88,54 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                 scr.blit_frame(wt, x, y);
     }
 
-    // --- Step 3: terrain scene -- the COLONY.PIK 320x72 strip painted over the top,
-    // remapped from its own palette to the active gameplay palette. [C-3.8] ---
-    blit_pik_remap(scr, backdrop, SCENE_H);
-
-    // --- Panel frames: the composer outlines each panel with a single-colour 1px frame
-    // (0x181F:0xE2, no bevels -- drawlist §0). Draw the byte-cited panel rects. [C-3.2..3.6] ---
-    scr.rect_outline(L::FIELD_X, L::FIELD_Y, L::FIELD_W, L::FIELD_H, COL_FRAME);
-    scr.rect_outline(L::PLAZA_X, L::PLAZA_Y, L::PLAZA_W, L::PLAZA_H, COL_FRAME);
-    scr.rect_outline(L::SURR_X,  L::SURR_Y,  L::SURR_W,  L::SURR_H,  COL_FRAME);
-    scr.rect_outline(L::SOL_X,   L::SOL_Y,   L::SOL_W,   L::SOL_H,   COL_FRAME);
-    scr.rect_outline(L::FLAG_X,  L::FLAG_Y,  L::FLAG_W,  L::FLAG_H,  COL_FRAME);
-
-    // --- Step 5: title text -- "Pop:/Gold:/Tax:" from LABELS @CTITLE, season @SEASONS. [C-3.1]
-    // §3.1: paint origin is TBD (terminal paint past the decoded slice); rendered here at
-    // an approximate top band -- tier R for x/y, the string sources are B. ---
-    {
-        std::string season = (year % 2 == 0) ? "Spring" : "Autumn";   // @SEASONS (2 entries)
-        char line[96];
-        std::snprintf(line, sizeof line, "%s %d   Pop: %d   Gold: %d   Tax: %d%%",
-                      season.c_str(), year, c.population, gold, tax_pct);
-        int w = font.frames.empty() ? 0 : scr.text_width(font, line);
-        scr.draw_text(font, (Surface::W - w) / 2, 3, line, COL_WHITE);   // R: centered top band
+    // --- Step 12: buildings loop -- 15 plots, upper-left. For each built building type
+    // (built_mask bit) that carries a sprite, blit BUILDING.SS[frame_base] at (plot_x,
+    // plot_y + 8). Chains share a plot; iterating low->high tier lets the highest tier win
+    // (Weaver's Shop over House, etc -- decode §4 construction-complete). [decode §4] ---
+    for (int t = 0; t < 42; ++t) {
+        if (!((c.built_mask >> t) & 1ull)) continue;
+        int fb = FRAME_BASE[t];
+        int slot = TYPE_PLOT[t];
+        if (fb == 255 || slot < 0) continue;            // wall / no-sprite category
+        if (fb < (int)building.frames.size())
+            scr.blit_frame(building.frames[fb], PLOT[slot][0], PLOT[slot][1] + 8);
     }
 
-    // --- Step 9: flag panel -- ICONS sprite 0x44 (68) at flag panel +3, frame = nation. [C-3.4]
-    // (Single-frame ICONS here; the per-nation frame select is the colony owner.) ---
-    blit_icon(scr, icons, ICON_FLAG, L::FLAG_X + 3, L::FLAG_Y + 3);
+    // --- Step 3: COLONY.PIK landscape strip at the BOTTOM (y=128), own palette remapped
+    // onto the active gameplay palette. The bottom-band panels composite OVER it. [decode §5c] ---
+    blit_pik_remap(scr, backdrop, PIK_Y);
 
-    // --- Step 12 + §3.9: stockpile bar -- 16 commodity cells, ICONS good+0x17, pitch 19,
-    // icon-Y 181; per-cell number = warehouse quantity. Gold readout at (306,179). [C-3.9] ---
+    // --- Bottom-band panels (decode §3 region map): flat rects the composer fills; drawn as
+    // framed regions here so their geometry is visible. Their dynamic contents (colonist
+    // sprites, surrounding-tile loop) need the per-colonist model -- left for a follow-up. ---
+    scr.rect_outline(0,   130, 120, 48, COL_FRAME);     // §7 colonist plaza
+    scr.rect_outline(121, 130, 84,  48, COL_FRAME);     // §7 surrounding minimap
+    scr.rect_outline(211, 130, 91,  48, COL_FRAME);     // §7 SoL / cargo / msg
+    scr.rect_outline(303, 132, 17,  45, COL_FRAME);     // §7 flag panel
+    scr.rect_outline(224, 32,  72,  72, COL_FRAME);     // §3.2 field-production panel
+    blit_icon(scr, icons, ICON_FLAG, 303 + 3, 132 + 3); // flag sprite
+
+    // --- Step 8: stockpile bar (decode §6) -- 16 commodity cells, ICONS good+0x17, pitch 19,
+    // icon-Y 181; per-cell number = warehouse quantity (white). The right-end readout at
+    // (306,179) is a heap caption, NOT gold (decode §6), so it is omitted. ---
     for (int i = 0; i < BAR_CELLS; ++i) {
-        int cx = L::BAR_X + i * BAR_PITCH;
+        int cx = BAR_X + i * BAR_PITCH;
         blit_icon(scr, icons, ICON_GOOD0 + i, cx, BAR_ICON_Y);
         char q[8];
         std::snprintf(q, sizeof q, "%d", stockpile ? stockpile[i] : 0);
-        scr.draw_text(font, cx + 1, BAR_ICON_Y - 6, q, COL_WHITE);       // quantity above icon
+        scr.draw_text(font, cx + 1, BAR_ICON_Y - 6, q, COL_WHITE);
     }
+
+    // --- Step 5: title strip (decode §9) -- colony name + season + year, centred near y=5.
+    // (Gold is in the menu header, not here; see decode §10.) ---
     {
-        char gtxt[16]; std::snprintf(gtxt, sizeof gtxt, "%d", gold);
-        int gw = scr.text_width(font, gtxt);
-        int gx = std::min(GOLD_X, Surface::W - gw - 2);                  // §3.9 readout @306, right-clamped
-        scr.draw_text(font, gx, L::BAR_Y, gtxt, COL_GOLD);
+        std::string season = ((year % 2) == 0) ? "Spring" : "Autumn";   // @SEASONS (2 entries)
+        char line[80];
+        std::snprintf(line, sizeof line, "Jamestown   %s %d", season.c_str(), year);
+        int w = font.frames.empty() ? 0 : scr.text_width(font, line);
+        scr.draw_text(font, (Surface::W - w) / 2, 2, line, COL_WHITE);
     }
-
-    // --- Step 12: buildings loop, 15 slots, func_02701C @0x027067. [decode §4]
-    // Buildings are placed by the STATIC plot table DS:0x266 (file 0x1DC06), drawn at
-    // (plot_x, plot_y + 8). NOT a grid, NOT the BUILDING.SS frame descriptors. Which
-    // building/level occupies each plot = byte[0x8D62+slot]/byte[0x8E82+slot] (per-colony,
-    // BSS; level<0 = empty). Frame from func_026CC2 mapper + dummy-frame walk-back.
-    // (docs/COLONY_SCREEN_VICEROY_DECODE.md §4. The type/level fill + frame-map jump
-    // table are not yet fully traced, so per-plot frame selection is left for that pass.)
-    static const int PLOT[15][2] = {            // DS:0x266 (x, table_y); render y = table_y+8
-        {56,5},{145,7},{173,10},{8,33},{37,37},{67,46},{96,45},{6,6},
-        {128,45},{10,68},{15,94},{87,3},{66,79},{123,98},{123,47},
-    };
-    (void)PLOT; (void)building;  // wired in once 0x8D62/0x8E82 fill + frame-map are traced
-
-    // Panels §3.2/3.3/3.5/3.6 (field-production / plaza / surrounding-tile / SoL) are carried
-    // by the backdrop chrome; their dynamic contents (commodity icons, colonist sprites,
-    // surrounding-tile 0x7B loop, SoL/cargo/msg variants) need the per-colonist + per-tile
-    // sim model that is P1+ -- left to a follow-up, the rects are documented in L:: above.
-    (void)L::FIELD_X; (void)L::PLAZA_X; (void)L::SURR_X; (void)L::SOL_X;
+    (void)gold; (void)tax_pct; (void)BAR_Y;
 }
 
 } // namespace vc

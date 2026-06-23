@@ -255,10 +255,15 @@ static int cmd_colony(int argc, char** argv) {
     vc::Sheet woodtile = vc::load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
     vc::Sheet font     = vc::load_bundle(bd + "/fonts/FONTTINY.png",   bd + "/fonts/FONTTINY.json");
 
-    // Minimal demo colony: a few buildings constructed + demo stockpile quantities.
-    Colony c; c.owner_power = 0; c.population = 6;
-    c.built_mask = (1ull<<0) | (1ull<<2) | (1ull<<5) | (1ull<<7);  // Stockade, Town Hall, ...
-    int stockpile[16] = { 80, 12, 30, 5, 0, 0, 40, 0, 100, 0, 0, 0, 0, 0, 0, 25 };
+    // Demo colony: a founded + grown settlement. built_mask bits = building type ids
+    // (NAMES @BUILDING): 0 Stockade, 9 Town Hall, 35 Carpenter's Shop, 36 Lumber Mill,
+    // 21+22 Weaver House+SHOP (shows highest-tier-wins), 24 Tobacconist, 27 Rum, 32 Fur,
+    // 39 Blacksmith, 37 Church, 12 Schoolhouse, 3 Armory.
+    Colony c; c.owner_power = 0; c.population = 8;
+    auto Bit = [](int t){ return (1ull << t); };
+    c.built_mask = Bit(0)|Bit(9)|Bit(35)|Bit(36)|Bit(21)|Bit(22)|Bit(24)|Bit(27)
+                 | Bit(32)|Bit(39)|Bit(37)|Bit(12)|Bit(3);
+    int stockpile[16] = { 80, 12, 30, 5, 0, 0, 40, 0, 100, 6, 4, 0, 2, 0, 0, 25 };
 
     vc::Surface scr;
     // Active palette = the WOODTILE/ICONS gameplay palette (wood + sprites + font share it);
