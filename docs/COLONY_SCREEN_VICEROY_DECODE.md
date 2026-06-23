@@ -156,6 +156,34 @@ Returns (frame_base `[bp-6]`, dims `[bp-4]`, …) for a building type `[bp+6]`:
 - **Flag** `func_02853C`: `(303,132,17,45)`; sprite **ICONS 0x44=68** at panel+3,
   frame = nation byte `[0x337]`/`[0x339]`.
 
+## 7b. RTLink `0x191F` thunk resolution (was the blocker — now cracked)
+
+`load_PIK`/`draw_building` go through the **`0x191F`** resident thunk window, which the
+project data did NOT resolve (only `0x181F`'s 1023 entries). Resolution:
+- `0x191F:X` aliases `0x181F:(X+0x1000)` (segment +0x100 para = +0x1000 bytes).
+- For a type-A thunk, `target_file = pages[page_id] + (ljmp_seg<<4) + page_relative_off`,
+  where the trailer = `(page_id u16, ljmp_seg u16)` and `pages[]` is the flat-map page table.
+- **Verified** on succession: `0x191F:0x364` → page 6 (`0x3B900`) + `0xB2<<4` + `0x218`
+  = `0x3C638` = `func_03C638` ✓.
+
+Resolved:
+- **`load_PIK` = `0x191F:0x87A` → file `0x76AEC`** — the asset *file* loader (open/read/
+  FAB-decompress into a buffer); it does NOT place pixels on screen.
+- **`draw_building` = `0x191F:0x66C` → file `0x26DD4`** (page 2 `0x25900` + `0x14D4`).
+  It blits the building sprite via `lcall 0x181F:0x254` at **`x=[bp+8]`, `y=[bp+0xa]`
+  passed straight through** (= the `0x266` plot `x`, `y+8`) against sheet `[0x2DA8]`,
+  with per-building sub-sprite offsets `[type+0x24e/0x254/0x25a]`. The info-mapper is
+  the sibling `func_026CC2` (type→frame/dims, `frame=val+0x17`, jump table `cs:[bx+0x1472]`).
+
+**Open tension (the thing to finish):** `draw_building` uses the plot `(x, y+8)` as
+ABSOLUTE screen coords, and the `0x266` table y's are 5..98 → screen y 13..106 (upper
+area). But COLONY.PIK is at the **bottom** (per ground-truth). So either (a) there is a
+colony-view viewport/origin offset applied by the `0x181F:0x254` blit or set globally
+that I have not yet pinned, or (b) the colony layout is buildings-upper + a separate
+COLONY.PIK strip lower. The COLONY.PIK screen blit itself goes through the offscreen
+`[0x839e..0x83a4]` buffer + the resident compositor (`0x181F:0x510` = file `0x531C`, a
+two-surface masked copy) — its exact dst-Y is the next thing to pin.
+
 ## 8. Status — verified vs remaining
 - **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
   rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
