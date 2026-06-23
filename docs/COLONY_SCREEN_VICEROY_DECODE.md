@@ -411,16 +411,16 @@ updates the UI immediately; matched the user's on-screen 3552/4032). A displayed
 lives at **DGROUP `+0x9CB0`** (u32), recomputed in the colony page `@0x02B80E`
 (`mov [0x9CB0],ax` / `[0x9CB2],dx`).
 
-**Header label source — `@CTITLE` (LABELS, byte-verified):**
-`@CTITLE = "Pop:\nGold:\nBUY\nCHANGE\nSelect An Item To Build\n(No Production)\n(More)\n`
-`Turns)\nSelect a Profession for\nTax:"`. So the colony header readout uses the literal
-labels **`Pop:`** (idx 0), **`Gold:`** (idx 1), **`Tax:`** (idx 9), with values:
-`Pop` = colonist count `colony+0x1F`; `Gold` = treasury `PowerRecord+0x2A`; `Tax` =
-`PowerRecord+0x01`. The date comes from `@SEASONS` (`Spring\nAutumn`) + year `[0x538A]`
-(the composer-step-5 banner, §9).
+**Header label source — `Gold:` from `@CTITLE` (LABELS, byte-verified).** `@CTITLE` is
+the colony-screen label *pool* (`"Pop:\nGold:\nBUY\nCHANGE\n…\nTax:"`); **only `Gold:`
+(idx 1) belongs to the top header.** `Pop:` (idx 0) and `Tax:` (idx 9) are drawn **elsewhere**
+on the colony screen (NOT in the top menu — user/DOS, 2026-06-23) — do not place them in the
+header. Gold value = treasury `PowerRecord+0x2A`. The other header element is the
+composer-step-5 banner (§9): colony **name + season** (`@SEASONS = Spring\nAutumn`,
+`[0x538C]`) **+ year** (`[0x538A]`).
 
-**Example full top line** (labels/values **B**, exact order/spacing **R**):
-> `Jamestown   Pop: 3   Gold: 1240   Tax: 5%        Spring 1612`
+**Example top line** (gold + date **B**; exact order/spacing **R** — no Pop/Tax here):
+> `Jamestown   Spring 1612        Gold: 1240`
 
 **Still TBD:** the exact x/y/font of the header gold blit (the menu chrome reads `[0x9CD2]`
 at runtime; the literal draw site in the menu renderer is the next trace target). The
