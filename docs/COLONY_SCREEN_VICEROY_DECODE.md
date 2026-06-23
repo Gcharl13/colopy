@@ -404,14 +404,23 @@ colony page handler:
 - **menu registration** `@0x02BE00+`: a run of `lcall 0x191F:0x3xx` (the same `0x3FE`
   BEGINMENU-runner family the map menu uses, `spec/ui/menus.md`).
 
-**Gold is shown in this top menu header — NOT on the warehouse bar** (user/DOS,
+**Gold is shown in this top header — NOT on the warehouse bar** (user/DOS,
 authoritative per `TRUTH_HIERARCHY`). The player treasury is **`PowerRecord+0x2A`** via
 `[0x84FC]` (`g_current_power_ptr`) — **BYTE_VERIFIED** in `docs/DATA_MODEL.md` (write-back
 updates the UI immediately; matched the user's on-screen 3552/4032). A displayed mirror
-lives at **DGROUP `+0x9CB0`** (u32), and the colony page recomputes/stores it
-`@0x02B80E` (`mov [0x9CB0],ax` / `[0x9CB2],dx`), formatting a string into the menu buffer
-`[0x9CD2]` (`sprintf 0xD1D:0x117E`) that the menu chrome (`func_072xxx`, e.g. `push 0x9CD2`
-`@0x072FE1`/`@0x0731D0`) draws.
+lives at **DGROUP `+0x9CB0`** (u32), recomputed in the colony page `@0x02B80E`
+(`mov [0x9CB0],ax` / `[0x9CB2],dx`).
+
+**Header label source — `@CTITLE` (LABELS, byte-verified):**
+`@CTITLE = "Pop:\nGold:\nBUY\nCHANGE\nSelect An Item To Build\n(No Production)\n(More)\n`
+`Turns)\nSelect a Profession for\nTax:"`. So the colony header readout uses the literal
+labels **`Pop:`** (idx 0), **`Gold:`** (idx 1), **`Tax:`** (idx 9), with values:
+`Pop` = colonist count `colony+0x1F`; `Gold` = treasury `PowerRecord+0x2A`; `Tax` =
+`PowerRecord+0x01`. The date comes from `@SEASONS` (`Spring\nAutumn`) + year `[0x538A]`
+(the composer-step-5 banner, §9).
+
+**Example full top line** (labels/values **B**, exact order/spacing **R**):
+> `Jamestown   Pop: 3   Gold: 1240   Tax: 5%        Spring 1612`
 
 **Still TBD:** the exact x/y/font of the header gold blit (the menu chrome reads `[0x9CD2]`
 at runtime; the literal draw site in the menu renderer is the next trace target). The
