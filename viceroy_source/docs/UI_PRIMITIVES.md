@@ -17,6 +17,30 @@
 
 ---
 
+## 0a. Shared WIDGETS — cross-screen "recognize once" index (2026-06-23)
+
+Several `0x181F:NNN` verbs are not one-screen helpers but **reusable UI widgets**: the
+same routine renders the "same kind of thing" on many screens. Recognise these once and
+**cite the verb** instead of re-deriving a per-screen mechanism (this is the lesson from the
+"is the bell row a fill bar?" trap — it is the shared `0x236` indicator, not CC-specific).
+
+| verb | widget | screens / call sites that use it |
+|------|--------|----------------------------------|
+| **0x236** `func_002EE4` | **proportional filled/empty icon strip** (count fitted to a fixed span; pitch `(span−w)/(count−1)` clamped `[1,w+1]`; overlaps when count large) — §0x236 | colony field-production yields (`@0x02665D/8A/0x026700`), colony building indicator (`@0x026EF7`), colony bottom panel (`@0x027CCC`), **CC F3 bells** (`@0x037BF5`), advisor report strip (`@0x0379B4`) — **7 sites** |
+| **0x2BC** `func_00386A` | **per-unit info panel** (UnitRecord-indexed: icon + colour-span stat bars + text) — §0x2BC | Europe ship-status row (`@0x0313C2`) + in-port unit (`@0x031A6E`), colony field/plaza/SoL panels (`@0x026639/0x02794A/0x028058`), advisor reports (`@0x039297/0x039586`), popup/menu engine (`@0x06DF9E`) — **20 sites** |
+| **0x222 + 0x22C** `func_0033F2`/`func_003104` | **enqueue row item → flush a centred icon+value+colour row** (the three parallel accumulators `[0x2CCE]/[0x2CE2]/[0x2CF4]`) — §0x222/§0x22C | wherever a centred row of mixed icons/numbers is built (reports, panels) |
+| **0x100** `func_002BC8` | **centre text in a box** | menu-bar label line, dialog OPTION rows, **report titles**, colony minimap & Europe dock **empty-panel captions**, and 70+ more sites |
+| **0x13C** `func_002B38` | **draw text at explicit (x,y)** | every screen's body/number text |
+| **`[0x2DD0]` caption** | **shared "empty panel" caption string** (fetched `0x22`→centred `0x100`) | colony surrounding-minimap empty state (`@0x027DD7`) **and** Europe dock "No Ships In Port" (`@0x031501`) — same DGROUP string id on both screens |
+
+> **Rule for screen specs:** when a screen draws "a count as a row of icons", "a unit
+> info panel", "a centred row", or "an empty-panel caption", reference the verb above and
+> link here — do **not** invent a screen-local bar/grid. The game has **no continuous
+> fill bars anywhere**; every "how much" indicator resolves to `0x236`/`0x2BC`/`0x22C`,
+> all of which bottom out in the single-sprite blit `0xC36:0x0A` (= `0x254`).
+
+---
+
 ## 0. How `0x181F:NNN` resolves (the addressing model)
 
 `0x181F` is the **first of three overlapping link-time windows onto the single

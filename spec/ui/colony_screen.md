@@ -147,7 +147,9 @@ dump or a runtime trace (do not invent it). Full breakdown:
 - Background fill `@0x027DB7`: `push 0x30,0x54,0x82,0x79 → func_02633E` ⇒ **rect (x=121, y=130,
   w=84, h=48)**. **B**
 - `[0x33C]==0` (no tiles) → sub-fill `(0x79,0x54,0x84,0x39)` + **CENTERED caption** (string `[0x2DD0]`)
-  via `0x181F:0x22`+`0x181F:0x100` `@0x027DCE..0x027DE5`. **B**
+  via `0x181F:0x22`+`0x181F:0x100` `@0x027DCE..0x027DE5`. **`[0x2DD0]` is the SHARED empty-panel
+  caption string** — the Europe dock "No Ships In Port" draws the same id (`@0x031501`); shared-
+  widget index `viceroy_source/docs/UI_PRIMITIVES.md` §0a. **B**
 - Else: **6-slot surrounding-tile loop** (`cmp 6 @0x027DF7`), geometry from `call 0x2C9D8`, sprite
   **ICONS 0x7B = 123** (`mov ax,0x7B @0x027E25`), sheet `[0x2DA8]`, blit `0x181F:0x254`. **B**
 - ⇒ per the drawlist this "minimap" is the **surrounding-tile scene drawn as 6 sprite-0x7B tiles**

@@ -100,11 +100,15 @@ and Europe `@0x03125C` draws are byte-identical, both captions). **B (field) / B
 ## 7. Dock + ships — `func_0314DC` → `func_0314AE`
 - Dock fill `(143,118,81,60)`. If `[0xFA2]==0` (no ships): centered empty caption
   (`@MISC "No Ships In Port"` family; box `(143,81,120,69)`, heap ptr `[0x2DD0]` via
-  `0x181F:0x22`→`0x100`). Else: in-port ship-name list, centered rows (`0x181F:0x100`).
+  `0x181F:0x22`→`0x100`). **`[0x2DD0]` is the SHARED empty-panel caption string** — the
+  colony surrounding-minimap empty state draws the same id (`@0x027DD7`); see the shared-
+  widget index `UI_PRIMITIVES.md` §0a. Else: in-port ship-name list, centered rows (`0x181F:0x100`).
 - **6 dock slots** `func_0314AE`: **x = slot·12 + 0x93 (147)** (147..207), **y=165
   (`0xA5`)**, **10×12** (`0xA`×`0xC`), ICONS sprite **`0x7B` (123)**. **B.**
-- Per in-port ship: a sail-progress bar (`0x181F:0x2BC`, width `0x64>>state`) + the unit
-  type icon, on a status row whose **Y bins by sail-state**: state1→146, state2→137,
+- Per in-port ship: the **shared per-unit info panel `0x181F:0x2BC`** (`func_00386A`,
+  UnitRecord-indexed icon + colour-span stat bars + text — *not* a Europe-specific bar; the
+  same verb draws colony panels and report rows, `UI_PRIMITIVES.md` §0a/§0x2BC), width
+  `0x64>>state`, on a status row whose **Y bins by sail-state**: state1→146, state2→137,
   state3→132 (`func_031298` @0x031329/0x03133F/0x031353); state0 keeps passed-in Y. **B.**
 - Boycott marker: gated unit-type `0x0D..0x12` + `[+0x3150]≠0`, blits the good's own icon
   `good+0x17` (`0x181F:0x254` @0x031417). **B.**
