@@ -197,14 +197,13 @@ Resolved:
   with per-building sub-sprite offsets `[type+0x24e/0x254/0x25a]`. The info-mapper is
   the sibling `func_026CC2` (type→frame/dims, `frame=val+0x17`, jump table `cs:[bx+0x1472]`).
 
-**Open tension (the thing to finish):** `draw_building` uses the plot `(x, y+8)` as
-ABSOLUTE screen coords, and the `0x266` table y's are 5..98 → screen y 13..106 (upper
-area). But COLONY.PIK is at the **bottom** (per ground-truth). So either (a) there is a
-colony-view viewport/origin offset applied by the `0x181F:0x254` blit or set globally
-that I have not yet pinned, or (b) the colony layout is buildings-upper + a separate
-COLONY.PIK strip lower. The COLONY.PIK screen blit itself goes through the offscreen
-`[0x839e..0x83a4]` buffer + the resident compositor (`0x181F:0x510` = file `0x531C`, a
-two-surface masked copy) — its exact dst-Y is the next thing to pin.
+**RESOLVED — option (b).** `draw_building` uses the plot `(x, y+8)` as ABSOLUTE screen
+coords (plots y 13..106, upper area); **COLONY.PIK is a separate strip at the bottom**
+(user ground-truth + geometry `y=128`, §5c). So the layout is **buildings-upper-left + a
+distinct COLONY.PIK strip lower** — there is no global viewport offset on the buildings
+(option (a) is rejected). The COLONY.PIK blit goes through the offscreen
+`[0x839e..0x83a4]` buffer + the resident compositor (`0x181F:0x510`); only its exact
+literal dst-Y is runtime (geometry ⇒ 128).
 
 ## 4b. BUILDING LIFECYCLE — generation, state, render fill (byte-verified)
 

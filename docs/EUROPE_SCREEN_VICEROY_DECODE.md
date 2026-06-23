@@ -148,7 +148,8 @@ Exact rects, in test order (returns the id of the first rect the cursor is insid
 | 4 | (224,120,96,59) | in-port recruit/unit list panel (step-7 `func_031AFA`) |
 
 (The `(306,179)` right readout is inside the id-0 strip; its own click-id `0xB`
-appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block — TBD.)
+appears in the deeper dispatch. There is **no Exit-button rect** — exit is the
+framework close, §10/§11, not a hit-rect here.)
 
 ## 10. Status — verified vs remaining
 - **VERIFIED (B):** all 9 composer steps + every trampoline resolved to a named
