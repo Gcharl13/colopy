@@ -135,6 +135,22 @@ Roles byte-verified from usage + prologue (`REPORTS.md` §2.2):
   **0x38**; F3 bells filled **0x3F** / empty **0x38**; rebel **0x7C** / tory **0x7D**.
   (Port mapping: VICEROY runtime idx − 1 = ICONS png idx; `REPORTS.md` §A/B.)
 
+> **Shared UI widgets used by the reports (recognise once — `viceroy_source/docs/UI_PRIMITIVES.md`
+> §0a).** The report bodies do **not** invent per-report bars/rows; they call the engine's
+> shared widget verbs:
+> - **`0x181F:0x236`** = the **proportional filled/empty icon strip** → **F2** crosses
+>   (`@0x0379B4`, filled `0x39`) and **F3** bells (`@0x037BF5`, filled `0x3F`). Same verb as
+>   the colony field-production yields — pitch `(span−w)/(count−1)` clamped `[1,w+1]`, *not* a
+>   fill bar.
+> - **`0x181F:0x2BC`** = the **per-unit info panel** → **F6** Colony (`@0x039297`) and **F7**
+>   Naval (`@0x039586`); same verb as Europe ship rows and colony panels.
+> - **`0x181F:0x22C`** = the **centred icon+value+colour row flush** → **F3** rebel/tory + REF +
+>   FF-list rows (`@0x037D68/0x037E6D/0x037F4F`); same verb as the colony bottom panels.
+>
+> So a report "count strip", "unit panel", or "centred row" is the shared verb — cite it, do
+> not re-derive. (The recurring `0x39`/`0x3F`/`0x7C`/`0x7D`/etc are the **filled-segment sprite
+> ids** handed to `0x236`/`0x22C`; only empty `0x38` is constant.)
+
 ## 3. Dispatch ladder (F1–F10 → body) — **B**
 
 The in-game key handler is a `switch ([bp+6])` (keypress code); the F-key report ladder
