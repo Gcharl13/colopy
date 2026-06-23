@@ -38,6 +38,15 @@ Indices:
 
 ## UnitRecord — per-unit state (300 max)
 
+> ⚠ **BASE CORRECTED 2026-05-28 (RULINGS): the true base is `DGROUP:0x3144`, NOT
+> `0x3146`.** `0x3146` is the **`unit_type`** field at `+0x02`; `0x3144`=`map_x`(+0x00),
+> `0x3145`=`map_y`(+0x01), `0x315B`=`unit_class/profession`(+0x17), `0x314D/0x314E`=
+> goto-target. The detailed offset table **below predates this correction** — its
+> offsets are relative to the retired `0x3146` base and several labels are wrong (the
+> "`+0x07` map_x" row is actually the goto-target, not position). **For the corrected
+> layout use `spec/data/records.md` + `spec/systems/unit.md` (base `0x3144`)**; this
+> section is retained as the historical runtime-verification record only.
+
 **Base**: `DGROUP:0x3146`. **Stride**: `0x1C` (= 28 bytes).
 **BYTE_VERIFIED** via 652+ refs to `[reg+0x3146]` plus unit-creation
 plus runtime cross-validation 2026-05-05.

@@ -702,8 +702,9 @@ _Each row is a settlement `(map_x, map_y)` from the tribe's historical dispersal
 
 _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory record/scalar tables; field **values** are runtime (reproduce via a memory dump), the **layout** is the byte-verified deliverable._
 
-#### PowerRecord — base `DGROUP:0x8809`, stride `0x13C`, count 12
+#### PowerRecord — base `DGROUP:0x8808`, stride `0x13C`, count 12
 > source: docs/DATA_MODEL.md :: PowerRecord — per-power state (12 entries, 0..11) · value_source: runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes
+> ⚠ **base is `0x8808`** (record-array head; `0x8809` is the off-by-one first-field addr — see `spec/data/records.md` which reconciles both, and the `count 4` PowerRecord block below which already uses `0x8808`).
 
 | Offset | Type | Field | Verified by |
 |---|---|---|---|
@@ -714,8 +715,9 @@ _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory re
 | +0x29 | dword | `treasury` (32-bit, decremented in SMITE / colony-burn) | SMITE + colony-burn |
 | +0x33 | byte | `score_or_flags` byte (start) — read by `get_per_power_byte` for EU powers | universal accessor BYTE_VERIFIED |
 
-#### UnitRecord — base `DGROUP:0x3146`, stride `0x1C`, count 300
+#### UnitRecord — base `DGROUP:0x3144`, stride `0x1C`, count 300
 > source: docs/DATA_MODEL.md :: UnitRecord — per-unit state (300 max) · value_source: runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes
+> ⚠ **base CORRECTED to `0x3144`** (RULINGS 2026-05-28; `0x3146`=type at `+0x02`). The offset rows below are auto-generated from `docs/DATA_MODEL.md`'s pre-correction table (relative to the retired `0x3146` base; the `+0x07` map_x row is actually the goto-target). **Use `spec/data/records.md` for the corrected layout** (base `0x3144`: `+0x00` map_x, `+0x02` type, `+0x17` class).
 
 | Offset | Type | Field | Verification |
 |---|---|---|---|

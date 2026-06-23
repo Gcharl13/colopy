@@ -27,8 +27,10 @@ DGROUP anchors (`docs/ARCHITECTURE.md`, BYTE_VERIFIED):
 - `0x53A6` — **difficulty level (0..4)** (byte), *not* current player (resolved 2026-06-20, `difficulty.md` §6.2; current power index = `[0x5394]`). **B**
 - `0x538E` — turn counter (16-bit, BYTE_VERIFIED via king-tax formula). **B**
 - `0x5382` — game flags. **B**
-- PowerRecord[N] at `0x8809 + N×0x13C`; UnitRecord[N] at `0x3146 + N×0x1C`;
-  AIPersonality[N] at `0x540E + N×0x34`. **B**
+- PowerRecord[N] at `0x8808 + N×0x13C` (base `0x8808`; `0x8809` is the off-by-one
+  first-field addr, corrected per RULINGS 2026-05-30 wave-3); UnitRecord[N] at
+  `0x3144 + N×0x1C` (base `0x3144` per RULINGS 2026-05-28; `0x3146` is the type field
+  at `+0x02`); AIPersonality[N] at `0x540E + N×0x34`. **B**
 
 **Main turn loop — `func_005760` (file `0x5760`, `enter 0x16`, ends `retf @0x5BF9`).
 BYTE_VERIFIED.** It is the multi-turn game loop: one turn begins at `0x5836`; at the

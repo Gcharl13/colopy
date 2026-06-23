@@ -94,7 +94,7 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
 - Builds the outcome key as **`"LOSTCITY" + digit`** dynamically (bare `LOSTCITY`
   string `@0x618C2`), so `@LOSTCITY0..9` are selected by a computed index.
 - **Scout bonus is byte-confirmed:** it tests the triggering unit's
-  `unit_type == 5` (Scout, `@0x614A6`) and class byte `UnitRecord +0x15 == 0x16`
+  `unit_type == 5` (Scout, `@0x614A6`) and class byte `UnitRecord +0x17` (abs `0x315B`) `== 0x16`
   (Seasoned Scout, `@0x614BB`) — the manual's "Seasoned Scout better at exploring
   rumors".
 - **Outcome index → message (BYTE_VERIFIED):** the base index `n = random_int(1,9)`

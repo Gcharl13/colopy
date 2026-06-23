@@ -8,7 +8,7 @@
 At game end the player's empire is scored as a sum of component points, with a revolution bonus multiplier and a difficulty modifier. The score ranks the empire in the Hall of Fame and yields an "epitaph." **RECONSTRUCTED** (manual §"Colonization scoring"; function HIGH trust, but EXE bytes win for the exact numbers).
 
 ## 2. State & data
-Inputs (all sourced from other systems): colonist counts by class (`@CLASS`/`UnitRecord +0x15`), founding fathers joined, treasury gold (`PowerRecord +0x2A`), rebel sentiment (`PowerRecord +0x02`), native settlements destroyed, difficulty (`DGROUP:0x53A6`).
+Inputs (all sourced from other systems): colonist counts by class (`@CLASS`/`UnitRecord +0x17`, abs `0x315B`), founding fathers joined, treasury gold (`PowerRecord +0x2A`), rebel sentiment (`PowerRecord +0x02`), native settlements destroyed, difficulty (`DGROUP:0x53A6`).
 
 Score accumulator global **`DGROUP:0x372`** — zeroed at the top of `func_03A9C0` and written during scoring. **BYTE_VERIFIED** (`@0x3A9E5`/`@0x3A9EC`).
 
@@ -29,8 +29,10 @@ score  = score >> 1                   # @0x3AA6A (halved)
   `{0→4, 1→5, 2→6, 3→8, 4→10}`. **B**
 - `base` (the component points) is computed in the paged function
   **`0x191F:0x3AA` → file `0x39EE2`** (resolved via `tools/follow_thunk.py`). It
-  seeds the accumulator with King-anger terms (`100·[0x53A7] + [0x53A8]`
-  `@0x39EE6`) and adds **weighted components**; this same function both computes
+  seeds the accumulator with **year terms** (`100·[0x53A7] + [0x53A8]` = the
+  reconstructed year per RULINGS 2026-05-30 — see §6.3; `[0x53A7]`=year/100,
+  `[0x53A8]`=year mod 100; **not** king-anger, which is real but UNLOCATED/TBD)
+  (`@0x39EE6`) and adds **weighted components**; this same function both computes
   the sum and renders the F10 breakdown lines (via text thunks
   `0x181F:0x16E/0x178/0x182`). Byte-visible per-line weights include **5, 16
   (`0x10`), 24 (`0x18`), 97 (`0x61`)**.
@@ -39,7 +41,7 @@ score  = score >> 1                   # @0x3AA6A (halved)
   over each owned colony (count `[0x539E]`, `ColonyRecord` via `[0x8542]`, owner
   `+0x1A == player`, population size `+0x1F` `@0x3A0E1`) classifies every
   colonist by a profession byte (fetched via `0x181F:0xC54` → `0x181F:0x2C6`,
-  stored `[bp-0x70]`; this is the `UnitRecord +0x15` profession, range `0..0x1C`):
+  stored `[bp-0x70]`; this is the `UnitRecord +0x17` profession (abs `0x315B`), range `0..0x1C`):
   - profession `∈ {0x19, 0x1A, 0x1B}` → **+1** (`@0x3A0BE..0x3A0D0`);
   - profession `== 0x1C` → **+2** (`@0x3A10D..0x3A113`);
   - any other profession → **+4** (`@0x3A0D6`).
