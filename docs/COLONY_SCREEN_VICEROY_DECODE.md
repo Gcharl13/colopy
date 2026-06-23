@@ -184,6 +184,41 @@ COLONY.PIK strip lower. The COLONY.PIK screen blit itself goes through the offsc
 `[0x839e..0x83a4]` buffer + the resident compositor (`0x181F:0x510` = file `0x531C`, a
 two-surface masked copy) — its exact dst-Y is the next thing to pin.
 
+## 4b. BUILDING LIFECYCLE — generation, state, render fill (byte-verified)
+
+The colony view buildings are **upper-left** (plot table `0x266`, x 6..173, y 13..106).
+Three pieces feed it:
+
+**(A) Built-state storage — `ColonyRecord +0x84` bitmask (42 bits).**
+- `has_building(colony_idx, type)` = **`func_0860E`**: `byte = ColonyRecord[idx*0xCA] +
+  0x84 + (type>>3)`, bit `= type&7`; returns that bit. (`0x5DCA = base 0x5D46 + 0x84`.)
+- **construction setter** = **`func_092E0(type, flag)`**: `flag≠0` → `[+0x84+(type>>3)]
+  |= 1<<(type&7)` (build, the `@0x9308` `or [bx],al`); `flag=0` → clears the bit
+  (demolish/capture). So "what happens when a building is built" = this one bit flips on.
+- `[0x8DC6]` = the current colony index (set `@0x082E8`), the arg `has_building` passes.
+
+**(B) Building catalogue (42 types) + the 15 on-screen slots.**
+- The colony screen shows **15 plots in 5 categories**, counts `DS:0x224 = [7,4,2,1,1]`
+  (=15), category type-bases `DS:0x22a = [0,7,11,13,14]` (static data).
+- The full **`@BUILDING` def table** is `DS:0x8F86`, stride **12**, 42 entries (loaded from
+  NAMES.TXT `@BUILDING`); it carries the **upgrade-chain predecessor** field used to count
+  a building's LEVEL (e.g. Stockade→Fort→Fortress).
+
+**(C) Render-table fill — `func_025D34` (every colony-screen paint):**
+1. init all 15 slots: LEVEL `0x8E82[slot] = -1` (empty), `0x8E92[slot] = -1`.
+2. TYPE table `0x8D62[slot]`: filled from the 5 categories (`0x224`/`0x22a`).
+3. LEVEL table `0x8E82[slot]`: for each of the 42 types, if `has_building` (B), walk the
+   upgrade chain and store the slot's level. (`func_025C32`, the sibling, separately sorts
+   the **colonists** for the plaza row — not buildings.)
+
+**(D) Draw — `func_02701C` loop → `draw_building` (`func_026DD4`):**
+for slot 0..14: `x=0x266[slot].x`, `y=0x266[slot].y + 8`, `type=0x8D62[slot]`,
+`level=0x8E82[slot]` (skip if `<0`); frame from `(type,level)` via mapper `func_026CC2`;
+blit at the absolute `(x,y)` (sheet `[0x2DA8]`). **Upper-left, no extra origin offset.**
+
+**What a colony STARTS with** = the bits set in `+0x84` at founding (the colony-creation
+code, separate from the render — the one remaining thing to pin; see §8).
+
 ## 8. Status — verified vs remaining
 - **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
   rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
