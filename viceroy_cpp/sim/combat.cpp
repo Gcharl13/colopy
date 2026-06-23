@@ -16,8 +16,12 @@ int terrain_defense_value(int terrain_id) {
         case 28: return 4;                  // Hills
     }
     if (terrain_id >= 8 && terrain_id <= 23) {
-        // forests = 2; Rain Forest = 3 (the wettest variant, id 23)
-        return terrain_id == 23 ? 3 : 2;
+        // func_006204 (@0x6204) normalizes raw forest ids 8..23 -> canonical 8..15
+        // via (id&7)|8 (16..23 are a duplicate encoding). Rain Forest = canonical
+        // id 15 (Defensive=3 per @TERRAIN, B); every other forest = 2.
+        // (Was wrongly keyed to id 23, so normalized Rain id 15 got 2 instead of 3.)
+        int canon = (terrain_id & 7) | 8;
+        return canon == 15 ? 3 : 2;
     }
     return 0;                               // open land / ocean / arctic / sea-lane
 }

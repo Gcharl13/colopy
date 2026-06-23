@@ -163,7 +163,8 @@ static void test_combat() {
     CHECK(combat_odds(2, 2) == 0.5, "Soldiers v Soldiers = 50%%");
     CHECK(combat_odds(2, 6) == 0.25, "vs def 6 = 25%%");
     CHECK(terrain_defense_value(28) == 4 && terrain_defense_value(27) == 6, "hills/mountains");
-    CHECK(terrain_defense_value(23) == 3 && terrain_defense_value(10) == 2, "rain/forest");
+    CHECK(terrain_defense_value(15) == 3 && terrain_defense_value(23) == 3 &&
+          terrain_defense_value(10) == 2, "rain (canon 15 & raw 23) / forest");
     CHECK(difficulty_bonus(0) == 4 && difficulty_bonus(4) == 0, "handicap");
     // demotion ladder
     CHECK(demote(SOLDIERS, 0) == COLONISTS, "Soldiers->Colonists");
@@ -223,11 +224,10 @@ static void test_founding_fathers() {
           ff_cost(1, 1599, 1, true, false));
     CHECK(ff_cost(2, 1500, 0, true, true) == 5000, "post-indep override d2");
     CHECK(ff_era_band(1599) == 0 && ff_era_band(1650) == 1 && ff_era_band(1700) == 2, "era bands");
-    // 5 categories x 5; father 1 (cat 0) needs father 0 (cat 0) owned first.
-    int cat[10] = {0,0,0,0,0, 1,1,1,1,1};
-    CHECK(ff_available(0u, 0, cat, 10), "father0 available");
-    CHECK(!ff_available(0u, 1, cat, 10), "father1 blocked (needs 0)");
-    CHECK(ff_available(1u, 1, cat, 10), "father1 ok once 0 owned");
+    // Offerable = un-acquired only (no intra-category ordering, per spec audit 2026-06-23).
+    CHECK(ff_available(0u, 0), "father0 available (un-acquired)");
+    CHECK(ff_available(0u, 1), "father1 available (un-acquired; no intra-category gate)");
+    CHECK(!ff_available(1u, 0), "father0 not offerable once owned");
 }
 
 static void test_revolution() {

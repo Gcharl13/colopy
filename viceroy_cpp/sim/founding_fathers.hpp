@@ -14,8 +14,9 @@ int ff_cost(int difficulty, int year, int ff_count, bool human, bool post_indepe
 // Era band by year: 0 (<1600), 1 (1600..1699), 2 (>=1700).
 int ff_era_band(int year);
 
-// Offerable iff not owned AND every lower-index father of the same category is
-// owned. owned_bits: bit i set = father i acquired. category[i] in 0..4.
-bool ff_available(uint32_t owned_bits, int ff_id, const int* category, int nfathers);
+// Offerable iff not yet acquired (the byte-verified rule: the next father is a
+// weighted random over all un-owned fathers; there is no intra-category ordering).
+// owned_bits: bit i set = father i acquired.
+bool ff_available(uint32_t owned_bits, int ff_id);
 
 } // namespace vc::sim

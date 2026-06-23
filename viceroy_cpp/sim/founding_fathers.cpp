@@ -20,13 +20,13 @@ int ff_era_band(int year) {
     return 2;
 }
 
-bool ff_available(uint32_t owned_bits, int ff_id, const int* category, int nfathers) {
-    if (owned_bits & (1u << ff_id)) return false;           // already owned
-    int cat = category[ff_id];
-    for (int i = 0; i < nfathers; ++i)                      // lower-index same cat owned?
-        if (category[i] == cat && i < ff_id && !(owned_bits & (1u << i)))
-            return false;
-    return true;
+bool ff_available(uint32_t owned_bits, int ff_id) {
+    // Offerable set is byte-verified as simply "un-acquired": the next father is a
+    // weighted random over ALL un-owned fathers (founding_fathers.md §71-79 / :220,
+    // func_03BFD2 @0x03C035/@0x03C0C4). There is NO intra-category ordering gate --
+    // a prior version invented a "lower-index same-category must be owned first"
+    // rule with no byte basis (removed 2026-06-23 per spec-conformance audit).
+    return !(owned_bits & (1u << ff_id));
 }
 
 } // namespace vc::sim

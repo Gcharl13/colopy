@@ -47,6 +47,7 @@ void colony_economic_step(Colony& c, int difficulty) {
     if (c.food_accum >= 200 && c.population < 32) {
         c.population += 1;
         c.food_accum -= 200;                   // surplus carried
+        c.rebel_B += 100;                      // SoL divisor bump on birth (colony.md:211, @0x009453, B)
     }
 }
 
