@@ -128,20 +128,18 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         scr.draw_text(font, gx, L::BAR_Y, gtxt, COL_GOLD);
     }
 
-    // --- Step 12: buildings loop, 15 slots, BUILDING.SS. [C-3.7] / SPRITE_CATALOG.
-    // Each BUILDING.SS frame carries its OWN colony-screen blit coordinate (Frame.x,
-    // Frame.y) -- the runtime 0x266 table is filled from these (func_02701C reads
-    // [bx+0x266]/[bx+0x268]+8). So buildings place themselves; NOT a grid. The
-    // <=2x2 dummy frames (10,11,17,30,31) are level-fallback markers, skipped. ---
-    {
-        auto is_dummy = [](int k){ return k==10||k==11||k==17||k==30||k==31; };
-        for (int k = 0; k < (int)building.frames.size(); ++k) {
-            const Frame& f = building.frames[k];
-            if (is_dummy(k) || f.w <= 2 || f.h <= 2) continue;
-            if (f.y + f.h > Surface::H) continue;          // skip off-screen catalogue frames
-            scr.blit_frame(f, f.x, f.y);                   // blit at the frame's own (x,y)
-        }
-    }
+    // --- Step 12: buildings loop, 15 slots, func_02701C @0x027067. [decode §4]
+    // Buildings are placed by the STATIC plot table DS:0x266 (file 0x1DC06), drawn at
+    // (plot_x, plot_y + 8). NOT a grid, NOT the BUILDING.SS frame descriptors. Which
+    // building/level occupies each plot = byte[0x8D62+slot]/byte[0x8E82+slot] (per-colony,
+    // BSS; level<0 = empty). Frame from func_026CC2 mapper + dummy-frame walk-back.
+    // (docs/COLONY_SCREEN_VICEROY_DECODE.md §4. The type/level fill + frame-map jump
+    // table are not yet fully traced, so per-plot frame selection is left for that pass.)
+    static const int PLOT[15][2] = {            // DS:0x266 (x, table_y); render y = table_y+8
+        {56,5},{145,7},{173,10},{8,33},{37,37},{67,46},{96,45},{6,6},
+        {128,45},{10,68},{15,94},{87,3},{66,79},{123,98},{123,47},
+    };
+    (void)PLOT; (void)building;  // wired in once 0x8D62/0x8E82 fill + frame-map are traced
 
     // Panels §3.2/3.3/3.5/3.6 (field-production / plaza / surrounding-tile / SoL) are carried
     // by the backdrop chrome; their dynamic contents (commodity icons, colonist sprites,
