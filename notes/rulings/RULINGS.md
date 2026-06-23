@@ -4470,3 +4470,37 @@ evidence (the resolved `ljmp`) outranks the earlier drawlist gap and the recon n
 
 **Follow-up**: the title text-box origin is runtime state (`[0x2CC6/8/A/C]` from the
 `0x181F:0xC22` init), so the literal title x/y remains **R** (`y≈5`).
+
+---
+
+## 2026-06-23 — Colony gold is in the TOP MENU HEADER, not the warehouse bar; (306,179) ≠ gold
+
+**Conflict**: I documented the colony/Europe warehouse bar's `(306,179)` `"$%d"` of
+`DG16(0x2F5E)` as the player gold, and claimed the colony screen has "no menu bar." The
+user (running DOS game) stated gold is shown in the **top menu header only**.
+
+**Source A** (my disasm read): `func_0281D6 @0x0283F1` draws `[0x2F5E]` at (306,179);
+`europe_screen.md` had it labeled "displayed gold mirror `$%d`".
+
+**Source B** (running game = top of `TRUTH_HIERARCHY`; corroborated by disasm on re-check):
+gold is in the top menu header. Re-check shows: (1) the colony screen DOES have a menu bar
+— command table `cmp [bp+6],0x13C..0x142 @0x02BDEA`, registration `lcall 0x191F:0x3xx
+@0x02BE00`; (2) `0x2F5E` is a **string-heap index** consumed by `0x181F:0x22` (fetch
+string #N), **never written** as a treasury value (`grep`: only 2 read sites, no `mov
+[0x2F5E]`); (3) the real treasury is `PowerRecord+0x2A` via `[0x84FC]` (BYTE_VERIFIED,
+`DATA_MODEL.md`), mirror DGROUP `+0x9CB0` recomputed in the colony page `@0x02B80E`.
+
+**Ruling**: gold renders in the **top menu header** (field `PowerRecord+0x2A` / mirror
+`0x9CB0`), NOT on the warehouse bar. The `(306,179)` `[0x2F5E]` readout is a heap caption,
+semantic **TBD**. The colony screen **has** a menu bar. Running game outranks the static
+over-read.
+
+**Action taken**:
+- `docs/COLONY_SCREEN_VICEROY_DECODE.md`: §6 relabel (306,179) as heap caption / not gold;
+  §8 status; §9 retract "no menu bar"; new **§10** (menu bar + header gold).
+- `spec/ui/colony_screen.md`: §3.1 + §4 table rows (warehouse readout + gold-in-header).
+- `spec/ui/europe_screen.md`: `DG16(0x2F5E)` relabeled NOT-gold (same byte-identical code).
+
+**Follow-up**: pin the exact x/y/font of the header gold blit — the menu chrome draws the
+formatted string buffer `[0x9CD2]` (`@0x072FE1`/`@0x0731D0`); the literal draw site in the
+menu renderer is the next trace. And identify what heap string `[0x2F5E]` actually is.

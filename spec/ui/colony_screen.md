@@ -97,8 +97,11 @@ controller gate at `0x268D7`); owner descriptor/colour merged from `colony+0x1A`
 rich-text painter) at `@0x026AA6`** with `mode=[bp+6]=0` (composer pushes `0` at `@0x0285B2`).
 Paint origin is the per-screen text-box globals `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` from the
 `0x181F:0xC22` context init, so x/y are **runtime state** — centred near `y≈5` is **R**
-(recol clear `(0,0,320,7)` + map menu-bar `y=5`). There is **no File/Orders dropdown** here —
-that is the map view's separate bar (`func_072090`, `spec/ui/menus.md` §173).
+(recol clear `(0,0,320,7)`). The byte-confirmed tail of this banner is the **season**
+(`[0x538C]`) + **year** (`[0x538A]`) — i.e. colony name + date. This is the *title*,
+separate from the **top menu bar** (command table `@0x02BDEA`, registration `@0x02BE00`;
+`docs/COLONY_SCREEN_VICEROY_DECODE.md` §10), which carries the dropdown commands and the
+**gold** readout (treasury `PowerRecord+0x2A`).
 **The call sequence + which fields feed the string are B; the literal rendered words are
 TBD/R** — the `0x16E`/`0x22` appends read from the runtime string heap (`[0x2D42:0x2D44]`,
 per-colony word tables at `-0x6840`/`-0x6800`), so the exact text needs a string-section
@@ -211,7 +214,8 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
 | Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F`, **red `0x0C` when over warehouse cap** (`0x181F:0xD3A`) | `func_0281D6 @0x0281DB` | B |
-| Stockpile gold | (306,179) | **player TREASURY** `"$%d"` of `DG16(0x2F5E)` (byte-identical to Europe `@0x03125C`) | FONTTINY | white `0x0F` | `@0x0283F1` | B |
+| Warehouse-bar right readout | (306,179) | heap **string #`[0x2F5E]`** (caption; **NOT gold** — corrected 2026-06-23) | FONTTINY | white `0x0F` | `@0x0283F1` | B draw / TBD semantic |
+| **Gold (treasury)** | **top menu header** (x/y TBD) | `PowerRecord+0x2A` via `[0x84FC]` (mirror `+0x9CB0`) | menu-bar font | — | menu chrome (`[0x9CD2]`, `@0x072FE1`); colony recompute `@0x02B80E` | B field / TBD blit |
 | Panel outlines | each panel (single colour) | 1-px frame | — | — | `0x181F:0xE2` | B |
 | Screen-bottom rule | (0,200,320) | 1-px rule | — | — | `func_028592 @0x028607` | B |
 

@@ -50,7 +50,7 @@ unless noted.
 | Field | Type | Meaning | Tier | Evidence |
 |-------|------|---------|------|----------|
 | PowerRecord `+0x2A` | u32 | treasury gold (dword) | B | `sub [bx+0x2a],ax; sbb [bx+0x2c],dx` @0x3340D |
-| `DG16(0x2F5E)` | u16 | displayed gold mirror ("`$%d`") | B | render line 21856 |
+| `DG16(0x2F5E)` | u16 | **string-heap index** drawn at (306,179) via `0x181F:0x22`→`0x13C` — **semantic TBD, NOT gold** (corrected 2026-06-23: never written as a treasury value; gold = `PowerRecord+0x2A`). Was mislabeled "displayed gold mirror." | B draw / TBD | render line 21856 |
 | PowerRecord `+0x01` | u8 | tax rate 0..100 | B | banner uses it (`func_030F76`, `SCREEN_LAYOUTS.md` §2 ord 2) |
 | PowerRecord `+0x20` | u16 | **boycott bitmask** (`1<<good`), one bit/good | B | `and ax,[bx+0x20]` @0x30B47; clear `and [bx+0x20],ax` @0x33423 |
 | PowerRecord `+0x22` | u32 | cumulative spent | B | `add [bx+0x22]; adc [bx+0x24]` @0x33413 |
@@ -113,7 +113,7 @@ screen-latched (A, per `fonts_and_colors.md`).
 | Market bar fill (16-good) | (0, 179, 320, 21) | frame-helper fill | — | — | B (`push 0x15,0x140,0xB3,0; call 0x368CC` @0x0310B9) |
 | Market-bar icons (16) | x=1, **stride 19**, icon row in bar | ICONS.SS `good+0x17` (23..38) | — | — | B (`add ax,0x17` @0x0310F2; pitch via `[0x83E]:[si+0x152]` half-width @0x031101) |
 | Market-bar prices (16) | **cell-centered**, y=**194** | bid-price `"%d"` | FONTTINY | `0x2F` (price ink) | B (centering @0x031191; `0x181F:0x13C` @0x0311AE) |
-| Stockpile gold | x=**306**, y=**179** | `"$%d"` of `DG16(0x2F5E)` | FONTTINY | `0x0F`→white | B (`push 0x132` @0x031261; render line 21856) |
+| Warehouse-bar right readout | x=**306**, y=**179** | heap **string #`[0x2F5E]`** (caption; **NOT gold** — corrected 2026-06-23) | FONTTINY | `0x0F`→white | B draw / TBD semantic (`push 0x132` @0x031261) |
 | Dock fill | (143, 118, 81, 60) | frame-helper fill | — | — | B (`push 0x3C,0x51,0x76,0x8F; call 0x368CC` @0x0314E1) |
 | Empty-dock caption box | (143, 81, 120, 69) | FILL + **CENTERED** caption `[0x2DD0]` | FONTTINY | — | B (`push 0x45,0x78,0x51,0x8F; 0x181F:0x22 then 0x181F:0x100` @0x0314F8) |
 | In-port ship-name list | (143, 81, 120, 69) | **CENTERED** ship-name rows | FONTTINY | — | B (`0x181F:0x100` @0x0315C9; 2nd line @0x031621) |

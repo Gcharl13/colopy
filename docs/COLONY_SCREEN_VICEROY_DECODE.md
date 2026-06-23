@@ -158,13 +158,15 @@ Returns (frame_base `[bp-6]`, dims `[bp-4]`, …) for a building type `[bp+6]`:
 - **over-capacity warning:** per cell, `0x181F:0xD3A` returns the warehouse cap; if
   `stockpile[i] > cap` the quantity is drawn **red `0x0C`** (else white `0x0F`) — the
   classic "goods will spoil" colour.
-- **gold readout — the player TREASURY, not a colony field.** End of `func_0281D6`
-  `@0x0283F1`: `push 0x0F` (white), `push 0xB3` (y=179), `push 0x132` (x=306),
-  `push [0x2F5E]`, `lcall 0x181F:0x22` (`func_002462` = fetch string #N from the loaded
-  text heap `[0x2D42:0x2D44]`), `lcall 0x181F:0x13C` (draw). `DG16(0x2F5E)` is the global
-  "displayed gold" mirror rendered as **`"$%d"`**. This block is **byte-identical** to the
-  Europe screen's gold readout (`@0x03125C`, `spec/ui/europe_screen.md` §gold) — it is the
-  shared treasury total, right-aligned at **(306,179)** in white.
+- **right-end readout at `(306,179)` — NOT gold (corrected 2026-06-23, user/DOS).**
+  End of `func_0281D6` `@0x0283F1`: `push 0x0F` (white), `push 0xB3` (y=179),
+  `push 0x132` (x=306), `push [0x2F5E]`, `lcall 0x181F:0x22` (`func_002462` = **fetch
+  string #N** from the loaded text heap `[0x2D42:0x2D44]`), `lcall 0x181F:0x13C` (draw).
+  So this draws **heap string #`[0x2F5E]`** — a label/caption, **semantic TBD**. The
+  earlier "`$%d` gold mirror" reading was an over-read: `0x2F5E` is a string *index*,
+  never written as a treasury value anywhere in code (`grep` finds only the two read
+  sites, colony + Europe `@0x03125C`; no `mov [0x2F5E]`). **The player gold is NOT shown
+  on the warehouse bar** — see §10.
 
 ## 7. Bottom-band panels
 - **Colonist plaza** `func_0270D0`: clear `(0,130,120,48)`; row x-origin **143**, walks
@@ -315,23 +317,28 @@ The `0xFF` groups (6-8, 15-20) are wall/non-sprite categories. The dummy frames
   sub-renderers** (§2, incl. step 8 = stockpile bar and the §9 top-bar/title); the 15
   plot positions (`0x266`); all panel rects; stockpile geometry+centering; building
   loop tables (`0x266`/`0x8D62`/`0x8E82`) and the frame-mapper `func_026CC2`; the scene
-  zone `(0,7,320,128)`; palette grouping. **No menu/button bar** exists on the colony
-  screen — the top is the title/status strip (§9).
+  zone `(0,7,320,128)`; palette grouping. The colony screen **has a top menu bar** (§10,
+  command table @0x2BDEA) above the composer's title/date strip (§9); **gold renders in
+  that menu header** (treasury `PowerRecord+0x2A`), **not** on the warehouse bar.
 - **NEEDS A FINAL TRACE (do before pixel-perfect):** (a) the per-colony writer that
   fills `0x8D62`/`0x8E82` from the ColonyRecord; (b) the exact COLONY.PIK blit Y inside
   `func_026374` (the scene-sheet `lcall 0x181F:0x510` args); (c) the `func_026CC2`
   jump-table targets `cs:[bx+0x1472]` (per-type frame indices 9..0x11); (d) the
   surrounding-minimap 6-direction tile geometry.
 
-## 9. Top bar — the "menu bar above" (title / status strip)
+## 9. Top bar — title / status strip (composer step 5)
 
-**Conclusion:** the colony screen has **no File/Orders dropdown menu bar**. The
-map view's menu bar is a different screen entirely (`func_072090` build /
-`@0x060890` label line — see `spec/ui/menus.md` §173). The only thing drawn at the
-top of the colony screen is the **title / status line**, composer **step 5**
+> **Correction (2026-06-23).** An earlier revision claimed the colony screen has
+> "no menu bar." **That was wrong** — the colony screen DOES have a top **menu bar**
+> with dropdown commands (see §10). What follows is the composer's centred title
+> line, which is a *separate* element from the menu bar.
+
+The composer's top text is the **title / status line**, composer **step 5**
 `func_0268CE @0x0268CE` (trampoline `0x2CAE6` → `0x191F:0x840` → file `0x0268CE`).
-It is one centred text line across the full 320-px width near `y≈5`, matching the
-recol clear rect `(0,0,320,7)` and the map menu-bar's own `y=5` convention.
+It is one centred text line across the full 320-px width near `y≈5`. Byte-confirmed
+fields: it ends with the **season** (`word[word[0x538C]*2-0x6800]`, `[0x538C]` = season
+counter) + **year** (`[0x538A]`, the game-year global) — i.e. the colony name + date
+banner. (`[0x538A]`/`[0x538C]` verified in `spec/systems/turn_dispatch.md`.)
 
 ### 9a. Gating (when the strip is drawn)
 `func_0268CE` paints only when all three hold (else it jumps to the alt branch at
@@ -377,16 +384,35 @@ zero-padded number; `0x181F:0x178` (`func_0028B0`) = strlen/util (not a paint).
   `0x181F:0xC22` context init), not a static literal, so the `y≈5` here is **R**
   (geometry/recol), the string sources above are **B**.
 
-**Net:** the colony "menu bar above" = a single centred banner line — assembled by
-`func_0268CE` from the per-colony numeric fields + table-string lookups above, merged
-with the owner-nation descriptor, painted centred at the top (`y≈5`, full width). No
-buttons, no dropdowns.
+**Net:** the composer's top line = a centred banner — colony name + **season + year**
+(byte-confirmed) — assembled by `func_0268CE`. This is the *title*, distinct from the
+menu bar (§10).
 
 **Honest limit on the literal words.** The *mechanism* and *which fields feed it* are
 byte-traced (**B**), but the **literal rendered sentence is not statically reproducible**:
 the `0x16E`/`0x22` appends pull from the runtime-loaded string heap (`[0x2D42:0x2D44]`,
 `[0x93A0]`, the `-0x6840`/`-0x6800` per-colony word tables) and several inputs are live
 colony fields. So the rendered string is **TBD/R** until a string-section dump + a live
-field snapshot (or a runtime trace at `0x026AA6`) is taken. The game manual (HIGH trust
-for *function*) describes this band as the colony's heading; the exact glyphs are not yet
-pinned. Do **not** invent the wording.
+field snapshot (or a runtime trace at `0x026AA6`) is taken. Do **not** invent the wording.
+
+## 10. Top MENU BAR + gold (corrected 2026-06-23)
+
+The colony screen **has a top menu bar** with dropdown commands — byte-confirmed in the
+colony page handler:
+- **command dispatch** `@0x02BDEA+`: `cmp [bp+6], 0x13C … 0x142`, each firing a handler
+  `lcall 0x191F:0x40C / 0x3FE / 0x3F0 / 0x3E2 / 0x3D4 / 0x3C6 …` (menu-item commands).
+- **menu registration** `@0x02BE00+`: a run of `lcall 0x191F:0x3xx` (the same `0x3FE`
+  BEGINMENU-runner family the map menu uses, `spec/ui/menus.md`).
+
+**Gold is shown in this top menu header — NOT on the warehouse bar** (user/DOS,
+authoritative per `TRUTH_HIERARCHY`). The player treasury is **`PowerRecord+0x2A`** via
+`[0x84FC]` (`g_current_power_ptr`) — **BYTE_VERIFIED** in `docs/DATA_MODEL.md` (write-back
+updates the UI immediately; matched the user's on-screen 3552/4032). A displayed mirror
+lives at **DGROUP `+0x9CB0`** (u32), and the colony page recomputes/stores it
+`@0x02B80E` (`mov [0x9CB0],ax` / `[0x9CB2],dx`), formatting a string into the menu buffer
+`[0x9CD2]` (`sprintf 0xD1D:0x117E`) that the menu chrome (`func_072xxx`, e.g. `push 0x9CD2`
+`@0x072FE1`/`@0x0731D0`) draws.
+
+**Still TBD:** the exact x/y/font of the header gold blit (the menu chrome reads `[0x9CD2]`
+at runtime; the literal draw site in the menu renderer is the next trace target). The
+`(306,179)` `[0x2F5E]` readout on the warehouse bar is a heap caption, **not** gold (§6).
