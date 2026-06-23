@@ -1595,7 +1595,7 @@
       "exe": "VICEROY",
       "offset": 384538,
       "raw": "file 0x05DE1A",
-      "line": 109,
+      "line": 118,
       "source_file": "docs/DATA_MODEL.md",
       "status": "strong_in_function"
     },
@@ -1604,7 +1604,7 @@
       "exe": "VICEROY",
       "offset": 384542,
       "raw": "file 0x05DE1E",
-      "line": 116,
+      "line": 125,
       "source_file": "docs/DATA_MODEL.md",
       "status": "strong_in_function"
     },
@@ -1613,7 +1613,7 @@
       "exe": "VICEROY",
       "offset": 305956,
       "raw": "file 0x04AB24",
-      "line": 214,
+      "line": 223,
       "source_file": "docs/DATA_MODEL.md",
       "status": "strong_in_function"
     },
@@ -1622,7 +1622,7 @@
       "exe": "VICEROY",
       "offset": 425416,
       "raw": "func_067DC8_unknown.asm",
-      "line": 549,
+      "line": 558,
       "source_file": "docs/DATA_MODEL.md",
       "status": "strong_func_entry"
     },

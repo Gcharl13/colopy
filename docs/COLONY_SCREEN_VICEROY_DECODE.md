@@ -41,15 +41,26 @@ Trampolines `CALL cs:0x2C9xx/0x2CAxx` → each `ljmp 0x191F:NNN` to the real sub
 | 5 | 0x0285B5 | `call 0x2CAE6` | func_0268CE | **title text** |
 | 6 | 0x0285BD | `call 0x2C9A1` | func_0264A8 | **field-production panel** |
 | 7 | 0x0285C5 | `call 0x2C9DD` | func_0270D0 | **colonist plaza row** |
-| 8 | 0x0285CD | `call 0x2CA19` | (trampoline) | sub-renderer (role TBD) |
+| 8 | 0x0285CD | `call 0x2CA19` → `0x191F:0x654` | **func_0281D6** | **STOCKPILE bar** (resolved 2026-06-23) |
 | 9 | 0x0285D7 | `call 0x2C9E7` | func_02853C | **flag panel** |
 | 10 | 0x0285DF | `call 0x2C9FB` | func_027DB2 | **surrounding-tile minimap** |
 | 11 | 0x0285E7 | `call 0x2C983` | func_02814C | **SoL / cargo / msg panel** |
 | 12 | 0x0285EF | `call 0x2C97E` | **func_02701C** | **buildings loop (15 slots)** |
 | — | 0x028607 | `lcall 0x181F:0xE2` if `[bp+6]≠0` | — | screen-bottom rule |
 
-> The stockpile bar is a separate per-page sub-renderer `func_0281D6` (not one of the
-> 12 head calls); recol confirms it as `func_019622`.
+> **Correction (2026-06-23):** the stockpile bar `func_0281D6` IS composer step 8
+> (`call 0x2CA19` → `ljmp 0x191F:0x654` → file `0x0281D6`, verified with
+> `tools/follow_thunk.py 0x191f 0x654`; its body fills `(0,179,320,21)` then loops
+> 16 cells at pitch 0x13). The earlier "separate per-page sub-renderer, not one of
+> the 12 head calls" note was wrong — every one of the 12 head calls is now
+> resolved to a named sub-renderer (no remaining TBD). recol equivalent
+> `func_019622`.
+
+**All 12 composer steps resolved** (`tools/follow_thunk.py 0x191f <off>`):
+`0x6F0→025C32, 0x804→026374, 0x7EC→02633E, 0x840→0268CE, 0x534→0264A8,
+0x5C4→0270D0, 0x654→0281D6, 0x5DC→02853C, 0x60C→027DB2, 0x4EC→02814C,
+0x4E0→02701C`. There is **no** thirteenth/menu sub-renderer in the composer
+(see §9).
 
 ## 3. Region map — "what is drawn where" (all byte-verified)
 
@@ -291,11 +302,66 @@ The `0xFF` groups (6-8, 15-20) are wall/non-sprite categories. The dummy frames
 10/11/17 appearing as bases are the `≤2×2` markers the level walk-back steps past.
 
 ## 8. Status — verified vs remaining
-- **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
-  rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
-  and the frame-mapper `func_026CC2`; the scene zone `(0,7,320,128)`; palette grouping.
+- **VERIFIED (byte/static):** DGROUP base; **all 12 composer steps resolved to named
+  sub-renderers** (§2, incl. step 8 = stockpile bar and the §9 top-bar/title); the 15
+  plot positions (`0x266`); all panel rects; stockpile geometry+centering; building
+  loop tables (`0x266`/`0x8D62`/`0x8E82`) and the frame-mapper `func_026CC2`; the scene
+  zone `(0,7,320,128)`; palette grouping. **No menu/button bar** exists on the colony
+  screen — the top is the title/status strip (§9).
 - **NEEDS A FINAL TRACE (do before pixel-perfect):** (a) the per-colony writer that
   fills `0x8D62`/`0x8E82` from the ColonyRecord; (b) the exact COLONY.PIK blit Y inside
   `func_026374` (the scene-sheet `lcall 0x181F:0x510` args); (c) the `func_026CC2`
   jump-table targets `cs:[bx+0x1472]` (per-type frame indices 9..0x11); (d) the
   surrounding-minimap 6-direction tile geometry.
+
+## 9. Top bar — the "menu bar above" (title / status strip)
+
+**Conclusion:** the colony screen has **no File/Orders dropdown menu bar**. The
+map view's menu bar is a different screen entirely (`func_072090` build /
+`@0x060890` label line — see `spec/ui/menus.md` §173). The only thing drawn at the
+top of the colony screen is the **title / status line**, composer **step 5**
+`func_0268CE @0x0268CE` (trampoline `0x2CAE6` → `0x191F:0x840` → file `0x0268CE`).
+It is one centred text line across the full 320-px width near `y≈5`, matching the
+recol clear rect `(0,0,320,7)` and the map menu-bar's own `y=5` convention.
+
+### 9a. Gating (when the strip is drawn)
+`func_0268CE` paints only when all three hold (else it jumps to the alt branch at
+`0x269F8`):
+- controller check `0x268D7`: `[colony+0x1a] < 4`, **or** the AI-personality slot
+  `byte[ [colony+0x1a]*0x34 + 0x543F ] == 0`;
+- `word[0xB98] == 0` (`0x268EE`);
+- `byte[0x828] == 0` (`0x268F8`).
+The alt branch (`0x269F8`) builds a shorter string from `colony+2` via
+`lcall 0xD1D:0x7E4` (the `sprintf`-family) — the spectator/AI-owned variant.
+
+### 9b. String assembly (into stack buffer `[bp-0x50]`)
+Built left→right with the C string library (call counts confirm these are the
+shared string primitives, not colony-specific):
+
+| order | site | call | source | meaning |
+|------|------|------|--------|---------|
+| 1 | 0x26915 | `0x181F:0x1A0` → `func_002A06` | `byte[colony+0x1b]` | status/number prefix, zero-padded to width 8 (`func_002A06` loops `8-len` pad chars via `0xD1D:0x11B4`) |
+| 2 | 0x26942 (×4) | `0x181F:0x182` append-char `func_0029DE` | `byte[colony+0x8c .. +0x8f]` | the 4-char colony **name** |
+| 2′ | 0x2697A | `0x181F:0x16E` append `func_002992` | `word[ byte[colony+0x8d]*2 - 0x6840 ]` | inserted **name-table** word after name char 1 |
+| 3 | 0x2698C | `0x181F:0x16E` | `word[0x2E38]` | appended value/string id |
+| 4 | 0x269AD | `0x181F:0x722` → `func_005E90(map_x=byte[colony], map_y=byte[colony+1])` | returns a tile attribute byte (−1 if not owned/visible) → appended `0x181F:0x182` | **region/season descriptor from the colony's map position** |
+| 5 | 0x269E1 | `0x181F:0x182` | `byte[ (byte[colony+0x1a]<<4) + si - 0x6790 ]` | nation×region indexed char |
+| 6 | 0x26A28 | `0x181F:0x16E` | `word[ word[0x538C]*2 - 0x6800 ]` | appended table word |
+| 7 | 0x26A44 | `0x181F:0x182` | `word[0x538A]` | appended value |
+| 8 | 0x26A61 | `0x181F:0x22` → `func_002462([0x93A0])` → `0xD1D:0x11B4` | dx:ax | **numeric** field (sprintf) |
+
+### 9c. Final transform + paint
+- `0x26A96` `lcall 0x181F:0xB1E` → `func_008862(buf, nation=byte[colony+0x1a])`:
+  looks up the nation descriptor (`0x87F4(nation)` → far ptr) and merges it into the
+  buffer (`lcall 0x4B:0x1E8`) — the per-nation prefix/colour.
+- `0x26AA6` `lcall 0x181F:0xB0` → **`func_00275C(buf, mode=[bp+6])`**, the general
+  rich-text painter. The composer passes `mode = 0` (`push 0` at `0x0285B2` before
+  `call 0x2CAE6`). `func_00275C` draws inside the text-box globals
+  `[0x2CC6]/[0x2CC8]/[0x2CCA]/[0x2CCC]` (the per-screen cursor/clip rect), centred —
+  the exact top-band origin is **runtime state** (set by the composer's
+  `0x181F:0xC22` context init), not a static literal, so the `y≈5` here is **R**
+  (geometry/recol), the string sources above are **B**.
+
+**Net:** the colony "menu bar above" = a single centred banner line of the form
+*"«status» «ColonyName» … «season/region» … «number»"* in the owner nation's
+colour, painted at the top (`y≈5`, full width). No buttons, no dropdowns.

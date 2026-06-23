@@ -73,26 +73,32 @@ anywhere in the colony composer; every panel is a flat fill with at most a singl
 | 5 | `@0x0285B5` `call 0x2CAE6` | `func_0268CE` | **title text** (§3.1) | B |
 | 6 | `@0x0285BD` `call 0x2C9A1` | `func_0264A8` | **field-production panel** (§3.2) | B |
 | 7 | `@0x0285C5` `call 0x2C9DD` | `func_0270D0` | **colonist plaza row** (§3.3) | B |
-| 8 | `@0x0285CD` `call 0x2CA19` | (trampoline) | sub-renderer, role NEEDS VERIFICATION | TBD |
+| 8 | `@0x0285CD` `call 0x2CA19` → `0x191F:0x654` | `func_0281D6` | **stockpile bar** (§3.9) | B |
 | 9 | `@0x0285D7` `call 0x2C9E7` | `func_02853C` | **flag panel** (§3.4) | B |
 | 10 | `@0x0285DF` `call 0x2C9FB` | `func_027DB2` | **surrounding-tile minimap** (§3.5) | B |
 | 11 | `@0x0285E7` `call 0x2C983` | `func_02814C` | **SoL / cargo / msg panel** (§3.6) | B |
 | 12 | `@0x0285EF` `call 0x2C97E` | `func_02701C` | **buildings loop, 15 slots** (§3.7) | B |
 | — | `@0x028607` `lcall 0x181F:0xE2` (if `[bp+6]≠0`) | — | screen-bottom rule (0,200,320) | B |
 
-> **Stockpile-bar note.** SCREEN_LAYOUTS §3 lists the 16-cell warehouse strip as a distinct
-> sub-renderer `func_0281D6` (the per-page **twin** of Europe's market bar `func_0310B4`). It is
-> not one of the 12 calls in the `func_028592` head transcribed above (the drawlist did not enumerate
-> it as a head-call), so its exact position in the composer order is **TBD**, but its existence and
-> geometry are **B** (§3.9).
+> **Stockpile-bar note (resolved 2026-06-23).** The 16-cell warehouse strip `func_0281D6`
+> (the per-page **twin** of Europe's market bar `func_0310B4`) IS composer **step 8**:
+> `call 0x2CA19` → `ljmp 0x191F:0x654` → file `0x0281D6`
+> (`tools/follow_thunk.py 0x191f 0x654`; body fills `(0,179,320,21)` then loops 16 cells
+> at pitch 0x13). All 12 head calls are now resolved sub-renderers (`docs/COLONY_SCREEN_VICEROY_DECODE.md` §2).
 
-### 3.1 Title text — `func_0268CE @0x0268CE`
-Assembles the colony-name + season/year + gold string into `[bp-0x50]` via `0x181F:0x182`
-(number-format) and `0x181F:0x178` (string draw/concat) `@0x026906..0x0269ED`, guarded by state
-checks (`[0xB98]`, `[0x828]`); a status≥4 gate hides it, owner colour from `colony+0x1B`. The final
-paint is `0x181F:0x178`. **Paint x/y and centering = TBD** — the terminal paint sits past the decoded
-slice (`>0x26A61`); DOS convention for this band is centered but the literal origin is not pinned.
-**B** (call sequence) / **TBD** (origin). Strings: "Pop:", "Gold:", "Tax:" are **LABELS `@CTITLE`**
+### 3.1 Title text — `func_0268CE @0x0268CE`  (the colony screen's only "menu bar above")
+Assembles the title/status line into `[bp-0x50]` with the C string library —
+`0x181F:0x182` (append-char `func_0029DE`), `0x181F:0x16E` (append-substring `func_002992`),
+`0x181F:0x1A0` (status prefix `func_002A06`), and `0x181F:0x178` (`func_0028B0`, **strlen / end-of-string**,
+**not** the paint) `@0x026906..0x026A61` — guarded by state checks (`[0xB98]==0`, `[0x828]==0`,
+controller gate at `0x268D7`); owner colour merged from `colony+0x1B`/`+0x1A` via `0x181F:0xB1E`
+(`func_008862`). The final **paint is `0x181F:0xB0` (`func_00275C`, the rich-text painter) at `@0x026AA6`**
+with `mode=[bp+6]=0` (composer pushes `0` at `@0x0285B2`). Paint origin is the per-screen text-box
+globals `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` set by the composer's `0x181F:0xC22` context init, so x/y are
+**runtime state** — centred near `y≈5` is **R** (recol clear `(0,0,320,7)` + map menu-bar `y=5`); the
+string *sources* are **B**. There is **no File/Orders dropdown** here — that is the map view's separate
+bar (`func_072090`, `spec/ui/menus.md` §173). Full breakdown:
+`docs/COLONY_SCREEN_VICEROY_DECODE.md` §9. Strings: "Pop:", "Gold:", "Tax:" are **LABELS `@CTITLE`**
 (verified present); season is **NAMES `@SEASONS`** = `Spring\nAutumn` (only 2 entries — verified). **B**
 
 ### 3.2 Field-production panel — `func_0264A8 @0x0264A8`
@@ -280,9 +286,11 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
   present this pass). **B**
 
 ## 8. Open questions
-1. **Title paint origin/centering — TBD.** The terminal `0x181F:0x178` paint in `func_0268CE` sits
-   past the decoded slice (`>0x26A61`); the call chain is **B** but x/y/centering are **TBD**. DOS
-   convention is centered; do not invent a literal origin.
+1. **Title paint origin/centering — TBD (paint routine now identified).** The terminal paint in
+   `func_0268CE` is `0x181F:0xB0` (`func_00275C`) at `@0x026AA6` with `mode=0` (§3.1); the call chain
+   and string sources are **B**. The x/y are the per-screen text-box globals `[0x2CC6/0x2CC8/0x2CCA/
+   0x2CCC]` (runtime state from the `0x181F:0xC22` context init), so centred `y≈5` stays **R** — do not
+   invent a literal origin.
 2. **Colonist-row per-unit pitch — TBD.** `func_0270D0` x-origin 143 walking left is **B**; the pitch
    is a data-driven width-accumulate/wrap loop (wrap at packed width >96) with no static literal.
 3. **SoL / cargo / msg panel mode text — TBD.** Panel rect (211,130,91,48) and the 3-way `[0x337]`
@@ -305,9 +313,8 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
    places worked colonists on tiles at **cell·24+252 / cell·24+60** (§3.8), and (b) the
    **surrounding-tile minimap** `func_027DB2` is a **6-slot loop of sprite 0x7B** over (121,130,84,48)
    (§3.5) — *not* a 28×19 raster and *not* a 3×3 grid. The "3×3 work grid" cell formula is therefore
-   **R** (decompiler/C-recon, superseded by the scene loop); the surround panel is **B**. Step-8
-   trampoline `func @0x2CA19` (`@0x0285CD`) is the one composer call whose role is still **TBD** and
-   is the most likely home of any additional work-assignment grid.
-7. **Stockpile bar's position in the composer order — TBD.** `func_0281D6` geometry is **B** (§3.9)
-   but it is not among the 12 head-calls the drawlist transcribed for `func_028592`; whether it is
-   inside step-8's trampoline or a separate dispatch is **TBD**.
+   **R** (decompiler/C-recon, superseded by the scene loop); the surround panel is **B**. Step-8 is
+   now **resolved** to the stockpile bar (`func_0281D6`, below), so it is *not* a work-assignment grid.
+7. **Stockpile bar's position in the composer order — RESOLVED (B), 2026-06-23.** Step 8
+   (`call 0x2CA19` → `0x191F:0x654`) is `func_0281D6`; all 12 composer head-calls are now named
+   sub-renderers and **no menu/button bar** is drawn — the top is the title strip (§3.1, item 1).

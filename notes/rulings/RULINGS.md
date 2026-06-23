@@ -4436,3 +4436,37 @@ flag bit `0x40`** (consistent with the render trace `map_system.md` §3). `map_g
 "river `0x40`" is correct **for the runtime board**; `MP_FORMAT.md`'s "bit 5 `0x20` = river,
 bit 6 `0x40` = forest" describes the **`.MP` file format** — a different representation.
 Both specs annotated; the `.MP`→board remap in the `.MP` loader is the remaining residual.
+
+---
+
+## 2026-06-23 — Colony composer step 8 = stockpile bar; no colony menu bar
+
+**Conflict**: `docs/COLONY_SCREEN_VICEROY_DECODE.md` §2 and `spec/ui/colony_screen.md`
+§2.0 left composer step 8 (`call 0x2CA19`) as "role TBD" and asserted the stockpile
+bar `func_0281D6` was a *separate* per-page sub-renderer "not one of the 12 head
+calls." Separately, the user asked what is in the colony screen's "menu bar above."
+
+**Source A** — prior decode/spec said: step 8 role unknown; stockpile bar drawn
+outside the 12-step composer; colony title paint routine = `0x181F:0x178`.
+
+**Source B** — VICEROY disasm this pass (`tools/follow_thunk.py`) said: `call 0x2CA19`
+→ `ljmp 0x191F:0x654` → file `0x0281D6` = `func_0281D6` (fills `(0,179,320,21)`, 16
+cells × pitch 0x13). The title painter is `0x181F:0xB0` (`func_00275C`), not `0x178`
+(`func_0028B0` = strlen). All twelve `0x191F` step targets resolve to named
+sub-renderers; none is a File/Orders menu bar.
+
+**Ruling**: step 8 **is** the stockpile bar; the "menu bar above" is just the title/
+status strip (composer step 5 `func_0268CE`, painted centred near `y≈5` by
+`func_00275C`). The colony screen has **no dropdown menu bar** — that is the map
+view's `func_072090` (`spec/ui/menus.md` §173). Decided per TRUTH_HIERARCHY: byte
+evidence (the resolved `ljmp`) outranks the earlier drawlist gap and the recon note.
+
+**Action taken**:
+- `docs/COLONY_SCREEN_VICEROY_DECODE.md`: §2 table step 8 → `func_0281D6`; replaced
+  the "separate sub-renderer" note with the resolution; added §9 (top bar / title);
+  updated §8 status.
+- `spec/ui/colony_screen.md`: §2.0 step 8 row + stockpile note; §3.1 paint routine
+  (`0x181F:0xB0`) + "menu bar above" framing; open-items 1, 6, 7 updated.
+
+**Follow-up**: the title text-box origin is runtime state (`[0x2CC6/8/A/C]` from the
+`0x181F:0xC22` init), so the literal title x/y remains **R** (`y≈5`).
