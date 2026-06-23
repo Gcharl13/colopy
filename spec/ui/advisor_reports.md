@@ -341,7 +341,7 @@ RTLink-resolved (`REPORTS.md` §1):
 3. **`@MISC` title-label loader — partially open (TBD for some section labels).** Each
    `[DS:0x2Dxx]` slot is filled in bulk at game-text load by a LABELS.TXT section loader
    (NOT `func_0749E0`, which is the NAMES.TXT name-table loader and stops at DS:0x2DB0 —
-   `docs/NAMES_LOADER.md`). Report **titles** are unambiguous (template `0x11A2` index
+   `viceroy_source/docs/NAMES_LOADER.md`). Report **titles** are unambiguous (template `0x11A2` index
    N → `@MISC 29/30/37/49/50/51/52/93`, all verified), and F3/F7 column/REF labels are
    pinned; the exact `@MISC` index for some **F4/F5/F6/F8 section-label slots** is
    best-effort until the loader is identified. **TBD** (`REPORTS.md` §13.1).

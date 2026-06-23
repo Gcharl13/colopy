@@ -207,7 +207,7 @@ section content and the gameplay predicates (row gating, build availability) dif
   (`func_049600` haggle, `func_04A426` learning). **A.**
 - **Per-row gating — `func_04B308` (`enter 0xba`) — B.** *(Correction: `0x74FC4` is the NAMES
   string-table loader, NOT the menu builder.)* `func_04B308` is the sole consumer of the `@ACTIONS`
-  label array (DGROUP `0x932A`, +2/row). Inputs: UnitRecord `0x3146` stride 0x1C (type@+0; `@UNIT`
+  label array (DGROUP `0x932A`, +2/row). Inputs: UnitRecord base `0x3144` stride 0x1C (type@+0x02=`0x3146`; `@UNIT`
   codes 3=Missionary, 5=Scout); current village `[0x8D4A]`; tribe→player **alarm** via
   `func_0082A0`; row-add `lcall 0x191F:0x176` (arg 1/2 = enable). Each row's show/enable predicate
   (all **B**):
