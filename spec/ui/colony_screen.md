@@ -220,7 +220,11 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
 ## 5. Assets & text
 - **Sheets:** **BUILDING.SS** (buildings, index type+1), **ICONS.SS** (`[0x83E]`: commodity 0x17..0x26,
   colonist, flag 0x44, surrounding-tile 0x7B), terrain/scene sheet `[0x2DA8]`, scene-unit sheet
-  `[0x839E]`. Backdrop **COLONY.PIK** (key 0x0BA0). **B**
+  `[0x839E]`. Backdrop **COLONY.PIK** (key 0x0BA0) — **a 320×72 *scene strip*, NOT a full-screen
+  background** (build-verified 2026-06-23 from the decoded bundle: `COLONY.png` is 320×72). The lower
+  ⅔ of the screen is the composer's wood-pattern region fill (step 4, `func_02633E`), panels over it.
+  Note: COLONY.PIK has its **own palette** (browns absent), distinct from the WOODTILE/ICONS gameplay
+  palette — the runtime composites the strip onto the gameplay palette (the C++ port remaps it). **B**
 - **Verified text keys** (grepped present in `data_extracted/text/*_sections.json` this pass):
   - **LABELS `@CTITLE`** = "Pop:", "Gold:", "BUY", "CHANGE", "Select An Item To Build",
     "(No Production)", "(More)", "Turns)", "Select a Profession for", "Tax:". **B**

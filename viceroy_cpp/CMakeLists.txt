@@ -46,6 +46,7 @@ add_executable(viceroy_cpp
   # presentation (P4): map-view screen compositor
   src/surface.cpp
   src/mapview.cpp
+  src/colony_screen.cpp
 )
 # `include` for the engine headers, `.` so mapview.cpp resolves "sim/*.hpp".
 target_include_directories(viceroy_cpp PRIVATE include .)

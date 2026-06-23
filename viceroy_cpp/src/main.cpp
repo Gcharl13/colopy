@@ -14,6 +14,7 @@
 #include "image_io.hpp"  // write_ppm
 #include "surface.hpp"   // Surface (P4 presentation)
 #include "mapview.hpp"   // render_mapview
+#include "colony_screen.hpp" // render_colony_screen
 #include "sim/game.hpp"  // GameState, World, step_turn
 #include "sim/ref.hpp"   // ref_start
 #include <cstdio>
@@ -234,9 +235,46 @@ static int cmd_mapview(int argc, char** argv) {
     return 0;
 }
 
+// Compose the colony screen from spec/ui/colony_screen.md (see colony_screen.cpp).
+// Loads the COLONY.PIK backdrop + ICONS/BUILDING/FONTTINY from the bundle and a
+// minimal colony state, writes one 320x200 PNG.
+static int cmd_colony(int argc, char** argv) {
+    using namespace vc::sim;
+    const char* bundle = opt(argc, argv, "--bundle");
+    const char* out    = opt(argc, argv, "--out");
+    if (!bundle || !out) {
+        std::fprintf(stderr, "usage: viceroy_cpp colony --bundle DIR --out FILE.png [--scale S]\n");
+        return 2;
+    }
+    int scale = opt(argc, argv, "--scale") ? std::atoi(opt(argc, argv, "--scale")) : 3;
+    std::string bd = bundle;
+
+    vc::IndexedPng backdrop = vc::read_png_indexed(bd + "/backgrounds/COLONY.png");
+    vc::Sheet icons    = vc::load_bundle(bd + "/sprites/ICONS.png",    bd + "/sprites/ICONS.json");
+    vc::Sheet building = vc::load_bundle(bd + "/sprites/BUILDING.png", bd + "/sprites/BUILDING.json");
+    vc::Sheet woodtile = vc::load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
+    vc::Sheet font     = vc::load_bundle(bd + "/fonts/FONTTINY.png",   bd + "/fonts/FONTTINY.json");
+
+    // Minimal demo colony: a few buildings constructed + demo stockpile quantities.
+    Colony c; c.owner_power = 0; c.population = 6;
+    c.built_mask = (1ull<<0) | (1ull<<2) | (1ull<<5) | (1ull<<7);  // Stockade, Town Hall, ...
+    int stockpile[16] = { 80, 12, 30, 5, 0, 0, 40, 0, 100, 0, 0, 0, 0, 0, 0, 25 };
+
+    vc::Surface scr;
+    // Active palette = the WOODTILE/ICONS gameplay palette (wood + sprites + font share it);
+    // the COLONY.PIK scene strip is remapped onto it inside render_colony_screen.
+    scr.set_palette(woodtile.pal);
+    vc::render_colony_screen(scr, backdrop, woodtile, icons, building, font, c,
+                             /*gold*/ 1240, /*tax*/ 7, /*year*/ 1600, stockpile);
+    vc::Image img = scr.to_rgb(scale);
+    vc::write_png_rgb(out, img.w, img.h, img.rgb);
+    std::printf("colony: wrote %s (320x200 x%d)\n", out, scale);
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::fprintf(stderr, "usage: viceroy_cpp <import-all|import|render|mapview> [options]\n");
+        std::fprintf(stderr, "usage: viceroy_cpp <import-all|import|render|mapview|colony> [options]\n");
         return 2;
     }
     try {
@@ -245,6 +283,7 @@ int main(int argc, char** argv) {
         if (std::strcmp(argv[1], "import") == 0)      return cmd_import(argc, argv);
         if (std::strcmp(argv[1], "render") == 0)      return cmd_render(argc, argv);
         if (std::strcmp(argv[1], "mapview") == 0)     return cmd_mapview(argc, argv);
+        if (std::strcmp(argv[1], "colony") == 0)      return cmd_colony(argc, argv);
         std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;
     } catch (const std::exception& e) {
