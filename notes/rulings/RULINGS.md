@@ -4535,3 +4535,33 @@ cited offset > drawlist interpretation). `0x22` is a fetch, `0xE2` is a sprite b
 
 **Follow-up**: a full audit of the 85 `0xE2` sites + 37 `0xCE` sites to confirm which
 panels use which is open (the corrections above cover the screen-composer call sites).
+
+---
+
+## 2026-06-23 — `0x181F:0xCE` IS a line/rule draw (overturns "no-draw clamp")
+
+**Conflict**: `UI_PRIMITIVES.md` classified `0x181F:0xCE` (`func_00E0A2`) as a "min/order-2
+clamp helper, NO draw", but the colony field panel calls it with line coordinates
+(`@0x026517`/`@0x026539`) as "divider lines", and the `0xE2`-sweep depended on knowing the
+real line verb.
+
+**Source A** (prior central-doc verdict): `func_00E0A2` head is `CMP bx,ax; swap` → "returns
+ordered low/high, not a draw."
+
+**Source B** (full disasm this pass): the ordering head **falls through to two draw calls**
+`lcall 0xBBC:0xC` (`@0x00E0E2`/`@0x00E100`) with the ordered coords + color `[bp+6]`;
+`0xBBC:0xC` (file `0x00DFCC`) does `mul bx` (y·width) then **`mov byte es:[di],al`**
+(@0x00E02A) — it plots pixels. So `0xCE` draws a line/edge (two passes), it only *orders*
+the endpoints first.
+
+**Ruling**: `0x181F:0xCE` = **line/rule draw** (the screen line/divider verb). The prior
+"no-draw clamp" entry is overturned — it stopped at the prologue and missed the helper's
+pixel writes. Byte evidence (the `es:[di]` store) wins.
+
+**Action taken**:
+- `UI_PRIMITIVES.md`: 0xCE table row (line 110), detail §0x0CE, and the summary row all
+  corrected to "line/rule draw"; added the `0xE2`/`0xCE` full call-site audit (87/49 sites).
+- Confirms the colony field-panel "divider lines via 0x181F:0xCE" labeling is correct.
+
+**Follow-up**: whether `0xBBC:0xC` is exclusively horizontal runs or general lines is not
+fully pinned (the two-pass call suggests top+bottom edges of a separator).

@@ -53,6 +53,21 @@ same routine renders the "same kind of thing" on many screens. Recognise these o
 >   popups/panels do **not** use it — their frame is the WOODFRAM/WOODPANL composite via the
 >   popup engine. So "0x510 frame" is colony-scene-specific, not shared chrome.
 
+> **`0xE2` / `0xCE` full call-site audit (2026-06-23) — both are shared, used on every screen.**
+> Counted from the disassembly (`lcall 0x181F:NNN`):
+>
+> | verb | what it does | total | colony | europe | reports | map/HUD | title/menu | popup | other |
+> |------|--------------|------|--------|--------|---------|---------|-----------|-------|-------|
+> | **0xE2** | clipped **sprite** blit (edge/strip composite) | **87** | 13 | 8 | 17 | 12 | 15 | 7 | 15 |
+> | **0xCE** | **line/rule** draw (ordered endpoints → plot) | **49** | 23 | 3 | 1 | 6 | 2 | 5 | 9 |
+>
+> Takeaways: `0xE2` is the universal "composite a frame/edge **sprite**" verb (every screen,
+> heaviest in reports + title screens); `0xCE` is the universal **line/divider** verb,
+> heaviest by far on the **colony screen** (23 dividers/edges). Neither is a per-screen
+> invention. A spec that says "panel outline / separator / bottom rule" should resolve to
+> `0xE2` (sprite) or `0xCE` (drawn line) — and the colony composer is flat fills + `0xCE`
+> lines + `0xE2` edge sprites, **no bevels**.
+
 ---
 
 ## 0. How `0x181F:NNN` resolves (the addressing model)
@@ -107,7 +122,7 @@ disassembly `func_01A5F0_rtlink_overlay_thunk_table.asm`.
 | 0x181F off | Function (file) | Role | Stack signature (caller pushes, far/Pascal order) | Align / sheet / colour |
 |---|---|---|---|---|
 | **0x022** | `func_002462` | **String scan (`memchr`/`strlen`-helper)** — *NOT a fill-rect* | `[bp+6]` = max count; buffer at `[0x2D42:0x2D44]`; `REPNE SCASB` | — (no draw) |
-| **0x0CE** | `func_00E0A2` | **min/order-2 clamp helper** — *NOT a glyph draw* | regs `ax`,`bx`; returns ordered low/high | — (no draw) |
+| **0x0CE** | `func_00E0A2` | **LINE / rule draw** (orders the two endpoints `ax↔bx`, `[bp+8]↔[bp-4]`, then **plots pixels via `0xBBC:0xC` ×2**) — **CORRECTED 2026-06-23: it DOES draw** (earlier "no-draw clamp" read only the min/max prologue; the helper `0xBBC:0xC` does `mul bx`→row offset, `mov es:[di],al`) | `ax/bx`=x0/x1, `[bp+8]/[bp-4]`=y0/y1, color `[bp+6]`, sheet `[bp+0xA..0x10]` | line/edge into the framebuffer |
 | **0x0E2** | `func_00DB3A` | **Clipped sprite blit** (cursor-hidden) — *NOT a horizontal rule* | `[bp+6],[bp+8],[bp+0xA]` coords/idx; `dx`→`di`; sheet `[0x2DA8]`; `RETF 6` | sprite, sheet `[0x2DA8]` |
 | **0x100** | `func_002BC8` | **CENTER text in box** (horizontal) | `[bp+6]`=surface, `[bp+8]`=string, `[bp+0xA]`=box_x, `[bp+0xC]`=boxW, `[bp+0xE]`,`[bp+0x10]`=font/colour | **H-centred**; FONTTINY |
 | **0x114** | `func_002AC6` | **Measure string width** (returns width−1) | `[bp+6]`=string, `[bp+8]`=?, `[0x89E]/[0x8A0]`=font | FONTTINY |
@@ -382,11 +397,17 @@ is read inline from `[0x83E]+0x3E` by `0x22C`/`0x236`.) Cite:
 `func_00B2A2_unit_cargo_slot_kind_or_neg1.asm` lines 15–24; memory
 `project_unit_table_correction` (base 0x3144, stride 0x1C).
 
-### 0x0CE → `func_00E0A2` — **min / order-2 helper** (NOT glyph draw) — **corrected**
-File `0x00E0A2..0x00E0B0+` (14 b head). `CMP bx,ax; if bx<ax swap (dx=ax, ax=bx)`
-— returns the two inputs in low/high order (a clamp/min used for clip bounds).
-**Not a glyph or short-string draw.** Cite: `func_00E0A2_unknown.asm`
-lines 17–22.
+### 0x0CE → `func_00E0A2` — **LINE / rule draw** — **re-corrected 2026-06-23**
+File `0x00E0A2..`. The 14-byte head `CMP bx,ax; if bx<ax swap` only **orders the
+endpoints** (`ax`/`bx` = x0/x1 low→high; same for `[bp+8]`/`[bp-4]` = y0/y1). It then
+**falls through to two draw calls**: `lcall 0xBBC:0xC` at `@0x00E0E2` and `@0x00E100`,
+passing the ordered coords + color `[bp+6]` + the sheet/clip words `[bp+0xA..0x10]`.
+`0xBBC:0xC` (file `0x00DFCC`) computes the framebuffer offset (`mul bx` = y·width) and
+**writes pixels** (`mov byte es:[di],al` @0x00E02A). So `0xCE` **plots a line/edge**
+(two passes = the rule's two endpoints/edges), it is **not** a no-draw clamp — the
+earlier verdict stopped at the prologue and missed the pixel writes. This is the
+screen **line/divider** verb (colony field-panel dividers `@0x026517`/`@0x026539`, etc.).
+Cite: `func_00E0A2` head + `func_00DFCC` (`0xBBC:0xC`) pixel loop.
 
 ---
 
@@ -405,7 +426,7 @@ lines 17–22.
 | `0x444 → func_00DCD4` | `0x444` thunk → `func_00DCF6` (**rect block-fill/copy**); `func_00DCD4` is `0x484`. |
 | `0x484 / func_00DCD4` = composited title string | **Horizontal solid-colour span fill** (`REP STOSW` via `func_00DDEA`). |
 | `0xBE6 / func_00B2A2` = sprite-width query | **UnitRecord field predicate** (`unit[i]@+0x50 > arg ? −1`). Not a width query. |
-| `0xCE / func_00E0A2` = glyph/short string | **min / order-2 clamp** helper. No draw. |
+| `0xCE / func_00E0A2` = glyph/short string | **LINE / rule draw** (orders endpoints, then plots pixels via `0xBBC:0xC` ×2). **CORRECTED 2026-06-23 — it DOES draw** (the prior "no-draw clamp" missed the helper's `mov es:[di],al`). This is the screen line/divider verb. |
 
 ---
 
