@@ -32,7 +32,7 @@ Near-call trampolines `call cs:0x368xx` → `ljmp 0x191F:NNN` → file (all reso
 | 3 | 0x031E63 | `call 0x310B4` (arg 0) | **func_0310B4** | **16-good market PRICE bar** `(0,179,320,21)` |
 | 4 | 0x031E6B | `call 0x30F76` (arg 0) | **func_030F76** | **market banner** ("Selling …") |
 | 5 | 0x031E73 | `call 0x314DC` (arg 0) | **func_0314DC** | **dock + 6 ships + in-port list** |
-| 6 | 0x031E7C | `call 0x36863` → `0x191F:0xBC0` | **func_0319A6** | transaction strips: dispatches **func_0317CC** (`0x3690D`) + **func_0318D2** (`0x3695D`) |
+| 6 | 0x031E7C | `call 0x36863` → `0x191F:0xBC0` | **func_0319A6** | the two **left dock sub-panels**: **func_0317CC** = `(72,118,70,51)` caption `[0x2DCE]` (hit-id 2) + **func_0318D2** = `(1,118,70,51)` caption `[0x2DCC]` (hit-id 3) — centred captions+values via `0x100` |
 | 7 | 0x031E85 | `call 0x36926` → `0x191F:0xDE2` | **func_031AFA** | right-side in-port recruit/unit list panel `(224,120,96,59)` |
 | 8 | 0x031E8D | `call 0x31DC8` (arg 0) | **func_031DC8** | **RECRUIT/PURCHASE/TRAIN** panel `(281,89,37,32)` |
 | 9 | 0x031E95 | `lcall 0x181F:0xE2` | — | screen-bottom **sprite strip** `(0,200,320)` (`0xE2`=clipped sprite blit, not a line — §0x0E2) |
@@ -158,10 +158,16 @@ appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block �
   PURCHASE / row2 TRAIN, each chooser keyed); **hit-test rects** (`@0x032034`, ids
   0–5); **banner fields** (nation+season `[0x538C]`+year `[0x538A]`+tax `PowerRecord+0x01`);
   gold field (`PowerRecord+0x2A`, header); `(306,179)` is a caption not gold.
-- **Runtime-only / remaining (NOT guessed):** (a) banner & gold blit pixel x/y (runtime
-  text-box / menu chrome); (b) the `[0x2F5E]`/`[0x2DD0]` heap string contents; (c) the
-  dock caption id↔sail-state map (captions not literal pushes in `func_0314DC`); (d) the
-  Exit-button paint origin. The composer steps 6/7 are now resolved: step 7
+- **Step 6 dock sub-panels RESOLVED:** `func_0317CC` = dock zone `(72,118,70,51)` caption
+  `[0x2DCE]` (hit-id 2); `func_0318D2` = dock zone `(1,118,70,51)` caption `[0x2DCC]`
+  (hit-id 3) — both centred caption+value panels (the ship destination/cargo sub-panels).
+- **Exit RESOLVED (framework-level):** there is **no Europe-private exit hit-rect** beyond
+  the `@0x032034` block; leaving Europe is the generic screen-view runner's close (the
+  `@EUROLABEL` 4th token `"x"` / ESC), `enter_screen_view(0x2B)` (§11). Not a painted button.
+- **Runtime-only residuals (require a live trace / string-section dump, NOT guessable):**
+  (a) banner & gold blit pixel x/y (runtime text-box / menu chrome); (b) the literal
+  contents of heap strings `[0x2F5E]`/`[0x2DD0]`/`[0x2DCE]`/`[0x2DCC]`; (c) the per-ship
+  state→caption id mapping in `func_0314DC` (captions are `@MISC`-indexed at runtime). The composer steps 6/7 are now resolved: step 7
   `func_031AFA` = the right-side in-port recruit/unit list panel `(224,120,96,59)`
   (iterates units of type `0x0D..0x12`); step 6 `func_0319A6` dispatches **func_0317CC**
   + **func_0318D2** (the two transaction-detail strips — their exact contents are the

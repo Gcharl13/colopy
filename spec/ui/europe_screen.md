@@ -123,7 +123,7 @@ screen-latched (A, per `fonts_and_colors.md`).
 | RECRUIT/PURCHASE/TRAIN rows (3) | inside panel, **centered**, y = 89 + row·(glyphH+2) | `@EUROLABEL` text | FONTTINY | `0x0F`/`0x0` by selection | B (3-row loop @0x031DEB..0x031E2F; center @0x031C40; ink @0x031C10/@0x031BF4) |
 | Boycott marker | over dock, gated unit-type 0x0D–0x12 + `[+0x3150]≠0` | ICONS.SS **`good+0x17`** (the good's own icon) | — | — | B (gate @0x031A73..0x031AB4; `add ax,0x17`; blit `0x181F:0x254` @0x031417) |
 | Screen outer rule | (0, 200, 320) bottom 1-px line | rule via `0x181F:0xE2` | — | — | B (`push 0,0x140,0xC8; lcall 0x181F:0xE2` @0x031E95/@0x031EA0) |
-| Exit button | clickrect ~(305,…) — **paint origin TBD** | — | — | — | TBD (no literal push in `func_031E4C` body; likely in `func_036863`/`func_036926` sub-renderers — drawlist §1.6) |
+| Exit | framework-level (no painted button) | — | — | — | **RESOLVED 2026-06-23:** leaving Europe is the generic screen-view runner's close (`@EUROLABEL` 4th token `"x"`/ESC), not a Europe-painted button; steps 6/`func_036863`/`036926` are the two **left dock sub-panels** (`func_0317CC`/`func_0318D2`), not an exit widget. `EUROPE_SCREEN_VICEROY_DECODE.md` §10/§11 |
 
 **Click hit-test rects** (Europe hit-test orphan `@0x032034`, point-in-rect
 `0x181F:0x3CA`) — corroborate the draw rects and name the dock panels:
