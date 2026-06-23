@@ -23,9 +23,10 @@ for any port; `viceroy_source/` is reclassified as *evidence* that feeds it
 is the current-state dashboard; [`AUDIT.md`](AUDIT.md) records what is correct vs
 misleading and the **corrected** completion metrics (the older "100% in citable
 C" / "99% identified" headlines conflate syntactic tags with semantic
-understanding — see `AUDIT.md` §4). Several legacy status docs (`PROGRESS.md`,
-`DISASM_COMPLETION.md`, `WEEK1_SUMMARY.md`, `OVERLAY_PLAN.md`) are stale and
-banner-marked.
+understanding — see `AUDIT.md` §4). Several legacy top-level status docs
+(`PROGRESS.md`, `DISASM_COMPLETION.md`, `WEEK1_SUMMARY.md`, `OVERLAY_PLAN.md`)
+were **removed** in the 2026-06-22 cleanup (they inflated/contradicted the
+verified state — see `STATUS.md`).
 
 ## First run (continuing the disassembly)
 ```bash
@@ -41,7 +42,7 @@ works directly: file offsets in the disasm/docs (e.g. `0x035D9A`) index
 
 Then for orientation: `notes/TRUTH_HIERARCHY.md`, `viceroy_source/DOC_INDEX.md` (doc
 map), `viceroy_source/VERIFICATION_LEDGER.md` (`BYTE_VERIFIED` vs skeleton), and
-`viceroy_source/RECONSTRUCTION_PLAN.md` + `PROGRESS.md` (roadmap).
+`viceroy_source/RECONSTRUCTION_PLAN.md` + `viceroy_source/PROGRESS.md` (roadmap).
 
 ## Layout
 ```

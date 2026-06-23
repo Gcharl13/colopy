@@ -217,7 +217,9 @@ Asset library full identification 2026-05-05:
 - ICONS commodity range (slots 12-27 for 16 goods)
 - ICONS slot 043 = boycott red-X overlay marker
 
-Renderer geometry spec consolidated in `RENDERER_GEOMETRY.md`.
+Renderer geometry now lives byte-cited in `viceroy_source/docs/SCREEN_LAYOUTS.md` +
+the per-screen `spec/ui/*.md` (the older overlay-measured `RENDERER_GEOMETRY.md` was
+removed in the 2026-06-22 cleanup).
 
 - **AMB-7** (SPRITE_CATALOG): PHYS0 sprite indices 0, 16, 100 are 1×1 placeholders
   in the current extraction. Investigate whether mpskit has options to recover
