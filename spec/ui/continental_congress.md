@@ -91,10 +91,18 @@ portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x
   now rest on `SESSION_UI_CATALOG.md` §3 (frame 1310124562) as the surviving overlay source. The
   state→display **memory map** (REF base `0x53DA`, portrait table `DG8(0x123A+i)`, owned-FF bitmap)
   is byte-verified in `ghidra_export/VICEROY_decompiled.named.c` + `raw/COLONIZE/VICEROY.EXE`. **A/B**
-- `docs/ADVISOR_REPORTS_AUDIT.md` F3 — paint_func file 0x025FD0, CCBKGD.PIK, title `@MISC[52]`. **B**
+- `docs/ADVISOR_REPORTS_AUDIT.md` F3 — CCBKGD.PIK, title `@MISC[52]`. **B** *(its older
+  "paint_func file 0x025FD0" is **stale/refuted** — that offset is colony stockpile-cell
+  code; the real F3 body is `func_037A20` per the 2026-06-21 RULING, re-confirmed this pass.)*
 - State→display (BYTE_VERIFIED): PowerRecord +0x02 rebel%, +0x0C bells_current, +0x0E
-  bells/turn, +0x14 FF count (also the `≥0x19`→INDEPENDENCE gate, export 25502), +0x07
-  acquired-FF mask. **B**
+  bells/turn, **+0x12 FF-in-progress index** (the founding father being worked toward →
+  name table `[bx−0x69AE]`; gated by phase `[0x5382]&1`, `@0x037A7A`/`@0x037AA2`), +0x14
+  FF count (also the `≥0x19`→INDEPENDENCE gate, export 25502), +0x07 acquired-FF mask. **B**
+- **F3 body re-verified (`func_037A20`, this pass):** title = report N=3 (`call 0x39E53`),
+  fill `(0,0,320,5)` color `0x90`, centred title string `[0x2E04]` (`0x181F:0x100`); body
+  x=4, y-seed 0x19, color `0x92`, FONTTINY. The bells row uses `0x181F:0x236` with **sprite
+  id `0x3F`** (`ax=0x3F`, count `dx`, max `bx`, width `0x12C`) — a **discrete sprite row**,
+  **confirming the no-fill-bar RULING** (it is *not* a continuous gauge). **B.**
 - **Raw-EXE anchors (capstone 16-bit, this pass):** portrait-id table `DG8(0x123A+i)` @0x386D8
   (`0x123A` unique in image); owned-FF bitmap `mov al,[bx+si−0x77F1]`, power stride `0x13C`
   @0xBC10; REF u16 array base `0x53DA` (slots 0..3, `bx=slot<<1`) @0x34F2F. **B**
