@@ -189,8 +189,10 @@ is emitted by `func_031366 @0x031417` within the same in-port path.
   drives recruit / purchase / train of a waiting unit via `func_031DC8`. **B**
 - **Dock panels** — click the dock (id 1), Bound For (2), Loading (3), Expected (4)
   zones to inspect/dispatch ships in those sail-states. **B**
-- **Stockpile gold** (306,179,15,21 → click-id 0xB) and stockpile row (0,179,305,21
-  → click-id 0) are the trade-readout zones. **B**
+- **Right-end readout** (306,179,15,21 → click-id 0xB) and market row (0,179,305,21
+  → click-id 0) are the trade-readout zones. (The 306,179 readout is heap string
+  `[0x2F5E]`, **not gold** — corrected 2026-06-23; player gold is in the top menu
+  header, `PowerRecord+0x2A`. See `docs/EUROPE_SCREEN_VICEROY_DECODE.md` §6.) **B**
 - **Exit** — a click-rect exists (`@0x032034`), but the Exit-button paint origin is
   **TBD** (§4). **B (clickable) / TBD (paint)**
 
