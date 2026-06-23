@@ -54,7 +54,7 @@ the CSV order.
 - **Auto-forest** (CLAUDE.md hard rule 3): read raw byte, mask `& 0x1F`, then
   forested variants occupy terrain ids **8..23** (`func_006204` / file `0x6204`,
   BYTE_VERIFIED; cross-cited `docs/GAME_INDEX_TABLES.md:377`).
-- **Sea-lane column** (hard rule 2): right-edge map column base terrain id = **26 (Ocean)**; never desert.
+- **Sea-lane column** (hard rule 2): right-edge map column base terrain id = **26 (Sea Lane)**; never desert. (Ocean is **25** — see the `@OTHER` ordering at §282; the prior "26 (Ocean)" gloss was a label error, corrected 2026-06-23.)
 - **Rivers vs coast** (hard rule 4): `PHYS0.SS` rows `0x01`/`0x11` are rivers, not coast.
 - Per-terrain yield/movement/defense numbers: **now legend-mapped** (see §2; Defensive in `combat.md`).
 

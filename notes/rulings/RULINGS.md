@@ -4329,3 +4329,29 @@ context (the only non-byte-pinned part). Byte-disasm (rank 3) + user directive (
 
 **Action**: implement the O512 dithered-edge blend in `viceroy_cpp/src/mapview.cpp` (4-cardinal +
 water ring-walk on land tiles + dither stencil `0x69+dir`); self-verify the render then user-verify.
+
+---
+
+## 2026-06-23 — Terrain id 26 label fix: 26 = Sea Lane, NOT Ocean (housekeeping)
+
+**Context**: spec-vs-implementation audit. Three docs glossed terrain id **26** as
+"Ocean" — `CLAUDE.md` hard rule #2, `spec/systems/map_system.md` §57, and
+`formats/MP_FORMAT.md`. This contradicts the already-settled **2026-06-20 ruling**
+(this file) and the byte-verified `@OTHER` ordering: **24=Arctic, 25=Ocean,
+26=Sea Lane, 27=Mountains, 28=Hills**.
+
+**Evidence** (unchanged, already top-of-hierarchy):
+- Generator immediates (`spec/systems/map_generation.md`, B): ocean fill `0x19`(25)
+  `@0x64A4B`; right-two-columns → Sea Lane `0x1A`(26) `@0x65941`; poles → Arctic
+  `0x18`(24) `@0x6582A`.
+- `@OTHER` order in `spec/data/names_sections.md`: Arctic, Ocean, Sea Lane → 24/25/26.
+- Empirical `.MP` tile counts (`notes/MAP_FORMAT.md`): id 25 = 2139 tiles (Ocean),
+  id 26 = 810 tiles (Sea Lane).
+- Implementation `viceroy_cpp/src/mapview.cpp`: `is_water` = `0x19 || 0x1A`
+  (Ocean / Sea-lane) — already correct.
+
+**Ruling**: the **number 26 was always right** (the sea-lane column IS id 26); only
+the parenthetical **name** was wrong. Corrected "(Ocean)" → "(Sea Lane)" in the
+three docs above. No behavior change; this only removes a stale label that
+disagreed with the 2026-06-20 ruling. Implementation needed no change. Rank: EXE
+bytes (top) + prior recorded ruling.

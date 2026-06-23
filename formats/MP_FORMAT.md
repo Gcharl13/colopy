@@ -101,7 +101,7 @@ loader function.)
 Per CLAUDE.md hard rule (BYTE_VERIFIED via prior pixel work):
 - PHYS0 sprites 0x01 and 0x11 are **rivers**, not coast
 - True coasts use sprites 150–153 plus the water-tile beach-halo mechanism
-- Sea-lane column (right edge) base terrain id = 26 (Ocean)
+- Sea-lane column (right edge) base terrain id = 26 (Sea Lane; Ocean is 25 — corrected 2026-06-23, the prior "(Ocean)" label on 26 was wrong)
 
 ---
 

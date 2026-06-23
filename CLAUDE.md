@@ -38,7 +38,10 @@ feature's *function*, but EXE bytes win for exact *numbers*.
    *(survives in `formats/MP_FORMAT.md`, `viceroy_source/docs/MAP_SYSTEM.md`)*
 
 2. **Sea-lane column** — the right-edge map column is the sea-lane; base terrain
-   id = **26 (Ocean)**. Never fake it as desert.
+   id = **26 (Sea Lane)**. Never fake it as desert. (Note: **Ocean is 25**, Sea
+   Lane is 26 — per the byte-verified `@OTHER` ordering 24=Arctic/25=Ocean/26=Sea
+   Lane and the 2026-06-20 ruling; the prior "(Ocean)" gloss on 26 was a label
+   error, corrected 2026-06-23. The *number* 26 was always right.)
    *(survives in `formats/MP_FORMAT.md`)*
 
 3. **Auto-forest range** — terrain ids **8..23** are the forested variants of
