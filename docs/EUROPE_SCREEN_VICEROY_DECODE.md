@@ -161,3 +161,30 @@ appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block �
   (iterates units of type `0x0D..0x12`); step 6 `func_0319A6` dispatches **func_0317CC**
   + **func_0318D2** (the two transaction-detail strips — their exact contents are the
   remaining trace).
+
+## 11. Entry / event loop / sail-exit boundary
+
+**Entry (`func_030DBC @0x030DBC`):** load `EUROPE.PIK` (key `0x0FBA`, `0x191F:0x87A`),
+then **`enter_screen_view(ax=0xFFAD, dx=2, bx=0x2B)`** via `0x181F:0x772` — the generic
+screen-view runner. That runner owns the modal event loop: it repaints via the composer
+`func_031E4C` and routes clicks through the hit-test `func_032034` (§9) to the per-id
+handlers (§8 panel modes, §9 market trade). So there is **no Europe-private event loop** —
+input is the shared screen framework.
+
+**Sail / exit are the shared unit-order system, NOT Europe-screen code.** A docked ship's
+**sail-state** (the 0/1/2/3 the status row bins by, `func_031298` reads `[bx]` of the
+per-ship status record) is set by the generic unit-order logic (the same system the map
+view uses to move/queue units), not by a Europe-specific painter. Dispatching a ship to
+the New World and leaving the harbor therefore live in the **unit-order / turn subsystem**
+(`UnitRecord` stride `0x1C`, type `+0x3146`), which is shared chrome — out of scope for
+this screen decode and traced separately. **Boundary noted, not guessed.**
+
+### Europe screen — render + on-screen interaction: COMPLETE
+**Fully byte-mapped:** entry + composer (9 steps, all trampolines); market price bar +
+trade handler; banner (nation/season/year/tax) + painter; dock/ship geometry; the 3
+RECRUIT/PURCHASE/TRAIN buttons (row order + chooser keys); the full hit-test rect set;
+gold = menu header (`PowerRecord+0x2A`), `(306,179)` = caption not gold.
+**Runtime-only / cross-system residuals (not guessed):** banner & gold blit pixel x/y
+(runtime text-box/menu chrome); `[0x2F5E]`/`[0x2DD0]` heap-string literals; dock
+caption↔state map; Exit-button paint origin; the two transaction strips
+(`func_0317CC`/`func_0318D2`); and the sail/unit-order subsystem (§11, shared).
