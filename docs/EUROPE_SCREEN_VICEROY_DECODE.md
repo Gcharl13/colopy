@@ -63,7 +63,13 @@ Byte-identical layout to the colony stockpile bar (colony decode §6): fill
 ink:** Europe draws the **bid PRICE** per good (`"%d"`, ink `0x2F`), **cell-centered at
 y=194 (`0xC2`)** (`@0x031191` add 8 / `@0x0311AE`); the colony twin draws warehouse
 quantities at the same coordinates. Same right-end `[0x2F5E]` caption at (306,179).
-Clicking a cell is the buy/sell action (sell handler `@0x032914`). **B.**
+Clicking a cell is the buy/sell action — handler **`func @0x032914`**: it resolves the
+clicked good (`0x181F:0xC2C` from cursor) and, if that good is **boycotted** (`[0x892]`),
+blocks with a message (good name `[bx-0x6840]`, dialog `0x36840`/`0x36854`). Otherwise it
+builds the trade confirmation by `%`-substituting the **good name** (`[bx-0x6840]`, slot
+0), the **in-port ship / cargo type** (`[bx+0x5230]`, slot 1), the **nation**
+(`[bx-0x7C74]`, slot 2) and the **price/amount** (`[0x8DC4]`), i.e. sell the ship's cargo
+of that good at the bid price (tax deducted per the banner `% Tax:`). **B.**
 
 ## 5. Banner / header — `func_030F76`
 Assembles the trade line into `[bp-0x50]` from `@CMESSAGE` fragments (`Selling`/`Buying`/
@@ -93,20 +99,41 @@ and Europe `@0x03125C` draws are byte-identical, both captions). **B (field) / B
 - Boycott marker: gated unit-type `0x0D..0x12` + `[+0x3150]≠0`, blits the good's own icon
   `good+0x17` (`0x181F:0x254` @0x031417). **B.**
 
-## 8. RECRUIT / PURCHASE / TRAIN — `func_031DC8`
+## 8. RECRUIT / PURCHASE / TRAIN — `func_031DC8` (the 3 right-side buttons)
 Panel `(281,89,37,32)`, optional 1-px frame `0x181F:0xE2`. Three centered rows from
-`@EUROLABEL` (`"RECRUIT\nPURCHASE\nTRAIN\nx"`, table `[bx-0x6C28]`), y = `89 + row·(glyphH+2)`,
-ink `0x0F`/`0x0` by selection (`@0x031C10`/`@0x031BF4`). Recruit cost = recruit-pool slot
-`+0x04` word at DGROUP `0x978C + slot·6` (`DATA_MODEL.md`; not `base<<count`). **B.**
+`@EUROLABEL` (`"RECRUIT\nPURCHASE\nTRAIN\nx"`, table `[bx-0x6C28]` indexed by `row`),
+y = `89 + row·(glyphH+2)`, ink `0x0F`/`0x0` by selection (`@0x031C10`/`@0x031BF4`).
+**Row→action is fixed by the draw order** (row indexes the label list): **row 0 =
+RECRUIT, row 1 = PURCHASE, row 2 = TRAIN**.
 
-## 9. Interactions (hit-test orphan `@0x032034`, point-in-rect)
-| zone | click-id | action |
-|------|----------|--------|
-| market cell | (per cell) | buy/sell (`@0x032914`) |
-| dock / Bound For / Loading / Expected | 1 / 2 / 3 / 4 | inspect/dispatch ships by sail-state |
-| Recruit/Purchase/Train | 5 | recruit/purchase/train waiting unit |
-| market bar row / right readout | 0 / 0xB | trade-readout zones |
-| Exit | (rect @0x032034) | leave Europe (paint origin TBD — likely `func_036863`/`036926`) |
+Clicking the panel returns hit-id 5 (§9); the row chosen enters a selection sub-mode
+`[0x9E3A]` and opens that action's chooser dialog; `[0x9E3E]=1` marks an active
+selection. Per-item handlers `func_? @0x320EE`/`@0x321B4`/`@0x321FC` (set `[0x9E3A]`
+to `0xA`/`8`/`9`) process clicks on the candidate sub-list (read unit type `[+0x3146]`,
+icon `[+0x5232]`). Actions, anchored to the GAME.TXT chooser each raises:
+- **RECRUIT** → `@RECRUIT` ("…pay their passage ({N gold}). Whom shall we recruit?") —
+  bring over a waiting immigrant now; cost = recruit-pool slot `+0x04` word at DGROUP
+  `0x978C + slot·6` (`DATA_MODEL.md`; not `base<<count`), rising per recruit.
+- **PURCHASE** → `@PURCHASE` ("…Which shall we purchase?") then `@REALLYBUY`
+  ("Purchase %STRING0 for %NUMBER0$? Yes/No") — buy a ship/artillery for gold.
+- **TRAIN** → `@KINGRECRUIT`/`@RECRUIT2` (Royal University specialists) → result
+  `@TRAINPROFESSION` ("…has learned the specialty profession {Y}.") — pay to train a
+  specialist. **B (labels/panel/row order) / B (chooser keys present).**
+
+## 9. Interactions — hit-test `func @0x032034` (point-in-rect `0x181F:0x3CA`), B
+Exact rects, in test order (returns the id of the first rect the cursor is inside):
+
+| click-id | rect (x,y,w,h) | zone / action |
+|----------|----------------|---------------|
+| 5 | (281,89,37,32) | RECRUIT/PURCHASE/TRAIN buttons (§8) |
+| 0 | (0,179,305,21) | market price bar — buy/sell (`@0x032914`) |
+| 1 | (143,118,81,60) | dock (docked ships) |
+| 2 | (72,118,70,51) | dock left-centre zone (ships by sail-state) |
+| 3 | (1,118,70,51) | dock far-left zone |
+| 4 | (224,120,96,59) | in-port recruit/unit list panel (step-7 `func_031AFA`) |
+
+(The `(306,179)` right readout is inside the id-0 strip; its own click-id `0xB`
+appears in the deeper dispatch. Exit-button rect not in this `@0x032034` block — TBD.)
 
 ## 10. Status — verified vs remaining
 - **VERIFIED (B):** all 9 composer steps + every trampoline resolved to a named
