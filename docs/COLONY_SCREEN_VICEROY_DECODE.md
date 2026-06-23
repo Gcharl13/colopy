@@ -219,6 +219,37 @@ blit at the absolute `(x,y)` (sheet `[0x2DA8]`). **Upper-left, no extra origin o
 **What a colony STARTS with** = the bits set in `+0x84` at founding (the colony-creation
 code, separate from the render — the one remaining thing to pin; see §8).
 
+## 5b. UPPER-RIGHT "outside colony" view (surrounding land + workers)
+
+Two sub-renderers compose the upper-right surrounding-land view (the worked tiles):
+
+**Surrounding-tile LAYOUT** — static tables `DS:0xC8` (col offsets) / `DS:0xDE` (row
+offsets), 20 entries (signed), the fat-cross around the colony centre:
+`(0,-1)N (1,0)E (0,1)S (-1,0)W (-1,-1)NW (1,-1)NE (1,1)SE (-1,1)SW` then the
+outer ring (±2). The grid is **centred at screen (252,60)** with **24px** cells:
+`screen_x = 252 + 24*col`, `screen_y = 60 + 24*row` (so the 3×3 core spans x 228..300,
+y 36..108 — upper-right; centre tile (252,60) = the colony itself).
+
+**(A) Terrain — `func_026374` (composer step 3):** for each surrounding tile it reads
+the world tile id (`lcall 0x181F:0x718` at colony_xy + offset), on-map-tests it
+(`0x181F:0x302`), and blits the **terrain sprite `frame = id + 0x5a`** at `(252+24*col,
+60+24*row)` from sheet `[0x839E]`, clipped by `[0x174]/[0x176]`.
+
+**(B) Workers + production — `func_0264A8` (composer step 6):**
+1. composites the surrounding-land strip (`0x181F:0x506`, sheet `[0x2DA8]`), fills the
+   panel `(224,32,72,72)`, and draws two divider rules (`0x181F:0xCE`) at **y=104**
+   (x 223..) and **y=128** (x 0..320).
+2. loops a **per-tile work table `DS:0x8DF0` (stride 5)** indexed `[outer]*5+[inner]`,
+   and per worked tile draws: the **worker colonist** (flag bit `0x80` — found by walking
+   the units at that map tile, `UnitRecord 0x3146`, stat `0x5236`; blit `0x181F:0x2BC`,
+   x+4,y+4); the **commodity icon** produced (`good + 0x17` ⇒ ICONS 23.., flag bit `0x40`);
+   an empty/road marker (sprite `0x6D`, sheet `[0x2DA8]`, when unworked); and the
+   **production quantity** number (`0x181F:0xB3C`). Centre/expert markers use `[0xA891]/
+   [0xA893]/[0xA894]` (`good+0x17`).
+
+So the upper-right = the colony's worked land (terrain under `func_026374`, the
+worker+goods overlay under `func_0264A8`), a 3×3(+) grid of 24px tiles centred at (252,60).
+
 ## 8. Status — verified vs remaining
 - **VERIFIED (byte/static):** DGROUP base; the 15 plot positions (`0x266`); all panel
   rects; stockpile geometry+centering; building loop tables (`0x266`/`0x8D62`/`0x8E82`)
