@@ -515,11 +515,14 @@ count[cat]-1)`; if `0x8E92[plot] ≥ 0` (taken) **retry**; else assign. Type/lev
 `0x8D62[plot]`/`0x8E82[plot]`. **B.**
 
 **Still one level deeper (the only things between here and a full port — named precisely):**
-1. **Per-type → category** `cat = byte[type*0xC − 0x7078]` (BSS `0x8F88`, stride 12). This is
-   one column of a per-type building-info struct populated by the setter `@0x074661`
-   (`mov [si-0x7078],cl`), whose CALLER supplies the category — **trace that caller for the
-   static category source** (it is NOT `@BUILDING` col3: that histogram is 19/10/7/3/3, not
-   7/4/2/1/1). TBD-source.
+1. **Per-type → category** `cat = byte[type*0xC − 0x7078]` (BSS `0x8F88`, stride 12), one
+   column of a per-type building-info struct. Setter = `func_07464C` (`@0x074675
+   mov [si-0x7078],cl`; category = its `[bp+6]` arg, type = `ax`). **BLOCKER:** the setter
+   has **no grep-findable `call` site** — it is invoked via a far-pointer dispatch (same
+   pattern as the SCORE screen's `func_03A9C0`), so the static category source is reached
+   through the building-data-load framework, not a direct call. It is **not** `@BUILDING`
+   col3 (histogram 19/10/7/3/3 ≠ the plot counts 7/4/2/1/1). TBD-source — needs the
+   far-ptr dispatch table that holds `func_07464C`, or a runtime dump of `0x8F88`.
 2. **Final BUILDING.SS frame** `frame = word[idx*2 − 0x7238]` (BSS `0x8DC8`) in `func_026CC2`
    @0x026D8F. PARTIALLY TRACED: the table is built at `@0x00A3DF` (zero 20 entries) then
    accumulated `@0x00A409` (`add [bx-0x7238], ax`) from the loaded-sheet metadata bytes
