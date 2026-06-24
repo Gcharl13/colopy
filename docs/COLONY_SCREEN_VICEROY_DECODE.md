@@ -149,10 +149,26 @@ Returns (frame_base `[bp-6]`, dims `[bp-4]`, …) for a building type `[bp+6]`:
   all share it — build-verified: BUILDING.SS is NOISY under VICEROY.PAL, correct under the
   gameplay palette). COLONY.PIK carries its own ≈VICEROY.PAL palette and is composited onto
   the gameplay palette at runtime.
+  > **Render correction (2026-06-24, pixel-verified).** "Composited onto the gameplay palette"
+  > means the PIK's **raw pixel indices are drawn directly under the gameplay (BUILDING/ICONS)
+  > palette** — the PIK's *embedded* palette is a red herring (a stored chunk, not the one used
+  > at draw time). A nearest-colour **remap** of the embedded palette mangled all 197 differing
+  > entries (washed-out greens, teal cells). Blitting the raw indices renders the scene exactly:
+  > blue sky, green grass, the dock fence, the brown warehouse barrels, the mountains, the blue
+  > stockpile cells and the red "E" button. **COLONY.PIK is the entire bottom band** (those panel
+  > frames + stockpile cells + Europe button are baked in) — do NOT also draw panel outlines over
+  > it. `viceroy_cpp/src/colony_screen.cpp::blit_pik_raw`.
 
 ## 6. STOCKPILE bar — `func_0281D6` (recol `func_019622`, byte-detailed)
 - bg fill `(0,179,320,21)`; **16 cells**, **pitch 19 (0x13)**, **icon-Y 181 (0xB5)**.
 - icon sprite = `good + 0x17` ⇒ **ICONS 23..38** (Food=23 … Muskets=38, NAMES @CARGO order).
+  > **Bundle-frame correction (2026-06-24, pixel + DOS ground-truth).** In the *committed
+  > bundle* (`tools/extract_visuals.py`/ssdec frame numbering), Food is **frame 22** and the
+  > base is **`good + 0x16`**, NOT `0x17`. Pixel-verified: bundle frame 22 = the corn cob
+  > (Food), frame 23 = sugar cane (Sugar). The EXE literal `+0x17` indexes the EXE's own
+  > sheet enumeration, which is offset by one from the bundle's. Drawing `+0x17` put **Sugar**
+  > in the Food cell. Per `notes/TRUTH_HIERARCHY.md` (running DOS game > sprite pixels > EXE
+  > offset) the bundle base is `0x16`. `viceroy_cpp/src/colony_screen.cpp` uses `0x16`.
 - **cell x:** start `x=1`, `x += 19` each cell; **icon centered**: `icon_x = x − (icon_w/2) + 9`
   where `icon_w = ICONS_header[0x152 + i*12]` (recol). number printed = **quantity + 1**.
 - selected-good highlight (push 0xE box) + boycott red-X second loop (`[0x907]`/boycott id).

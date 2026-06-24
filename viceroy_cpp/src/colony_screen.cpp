@@ -47,32 +47,30 @@ static const signed char TYPE_PLOT[42] = {
 // Empty-plot "base tree" / forest sprites (SPRITE_CATALOG.md: frames 42/43/44 = empty land lot).
 static const int TREE_FRAME[3] = {42, 43, 44};
 
-constexpr int PIK_Y = 128;                 // COLONY.PIK landscape strip at the bottom.
-constexpr int ICON_GOOD0 = 0x17, ICON_FLAG = 0x44;
-constexpr int BAR_X = 0, BAR_Y = 179, BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 181;
-constexpr uint8_t COL_WHITE = 15, COL_FRAME = 68;
+constexpr int PIK_Y = 128;                 // COLONY.PIK bottom band (320x72 → y=200-72).
+// Stockpile bar: 16 cells, pitch 19, start x=1, icon-Y 179 (decode §6). Icon = good+0x16
+// ⇒ ICONS frame 22 = Food … 37 = Muskets. NOTE: the EXE literal is good+0x17 but that
+// indexes the EXE's frame numbering; in OUR bundle frame 22 is Food (pixel-verified: corn
+// cob; frame 23 is the sugar-cane the old 0x17 base wrongly drew first). DOS ground-truth +
+// sprite pixels outrank the spec's "23" per notes/TRUTH_HIERARCHY.md.
+constexpr int ICON_GOOD0 = 0x16;
+constexpr int BAR_X0 = 1, BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 179, BAR_NUM_Y = 192;
+constexpr uint8_t COL_WHITE = 15;
 
 static void blit_idx(Surface& scr, const Sheet& sh, int idx, int x, int y) {
     if (idx >= 0 && idx < (int)sh.frames.size() && sh.frames[idx].w > 2)
         scr.blit_frame(sh.frames[idx], x, y);
 }
 
-// Composite a PIK (its own palette) onto the active gameplay palette at (0, dstY).
-static void blit_pik_remap(Surface& scr, const IndexedPng& pik, int dstY) {
-    uint8_t lut[256];
-    for (int i = 0; i < 256; ++i) {
-        int sr = pik.pal[i*3], sg = pik.pal[i*3+1], sb = pik.pal[i*3+2];
-        int best = 0, bestd = 1 << 30;
-        for (int j = 0; j < 256; ++j) {
-            int dr = sr - scr.pal[j*3], dg = sg - scr.pal[j*3+1], db = sb - scr.pal[j*3+2];
-            int d = dr*dr + dg*dg + db*db;
-            if (d < bestd) { bestd = d; best = j; }
-        }
-        lut[i] = (uint8_t)best;
-    }
+// COLONY.PIK is the whole bottom-band BACKGROUND (scenery + panel frames + stockpile
+// cells + Europe "E" button, all baked in). Its pixels are authored against the GAMEPLAY
+// palette — the embedded PIK palette is a red herring (a nearest-colour remap onto the
+// gameplay palette mangled every hue). So blit the RAW indices, no remap. [decode §5/§5c,
+// pixel-verified 2026-06-24: raw indices under the BUILDING palette render the scene exactly.]
+static void blit_pik_raw(Surface& scr, const IndexedPng& pik, int dstY) {
     for (int y = 0; y < pik.h && (dstY + y) < Surface::H; ++y)
         for (int x = 0; x < pik.w && x < Surface::W; ++x)
-            scr.put(x, dstY + y, lut[pik.idx[y * pik.w + x]]);
+            scr.put(x, dstY + y, pik.idx[y * pik.w + x]);
 }
 
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
@@ -103,33 +101,43 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         else                 blit_idx(scr, building, TREE_FRAME[slot % 3], x, y);  // base tree
     }
 
-    // --- Step 3: COLONY.PIK landscape strip at the BOTTOM (y=128); panels composite over it. ---
-    blit_pik_remap(scr, backdrop, PIK_Y);
+    // --- Step 3: COLONY.PIK = the whole bottom band (y=128). It already carries the panel
+    // frames, the warehouse barrels, the blue stockpile cells and the "E" button — so we do
+    // NOT draw our own panel outlines/flag over it (those were scaffolding that painted wrong-
+    // coloured boxes on top of the baked chrome). Dynamic per-panel content (colonist plaza,
+    // surrounding tiles, SoL bar) is composited over the PIK by its sub-renderers — TBD until
+    // the per-colonist / surrounding-tile model is wired in. ---
+    blit_pik_raw(scr, backdrop, PIK_Y);
 
-    // --- Bottom-band panel rects (decode §3); dynamic contents need the per-colonist model. ---
-    scr.rect_outline(0,   130, 120, 48, COL_FRAME);
-    scr.rect_outline(121, 130, 84,  48, COL_FRAME);
-    scr.rect_outline(211, 130, 91,  48, COL_FRAME);
-    scr.rect_outline(303, 132, 17,  45, COL_FRAME);
-    scr.rect_outline(224, 32,  72,  72, COL_FRAME);
-    blit_idx(scr, icons, ICON_FLAG, 303 + 3, 132 + 3);
-
-    // --- Step 8: stockpile bar -- 16 commodity cells, ICONS good+0x17, pitch 19, icon-Y 181. ---
+    // --- Step 8: stockpile bar — 16 commodity cells over the PIK's blue cells. Icon = ICONS
+    // good+0x16 (Food..Muskets), centred in the 19-px cell; quantity centred just below it. ---
     for (int i = 0; i < BAR_CELLS; ++i) {
-        int cx = BAR_X + i * BAR_PITCH;
-        blit_idx(scr, icons, ICON_GOOD0 + i, cx, BAR_ICON_Y);
+        int cellx = BAR_X0 + i * BAR_PITCH;
+        int fi = ICON_GOOD0 + i;
+        if (fi >= 0 && fi < (int)icons.frames.size()) {
+            int iw = icons.frames[fi].w;
+            blit_idx(scr, icons, fi, cellx + (BAR_PITCH - iw) / 2, BAR_ICON_Y);
+        }
         char q[8]; std::snprintf(q, sizeof q, "%d", stockpile ? stockpile[i] : 0);
-        scr.draw_text(font, cx + 1, BAR_ICON_Y - 6, q, COL_WHITE);
+        int tw = font.frames.empty() ? 0 : scr.text_width(font, q);
+        scr.draw_text(font, cellx + (BAR_PITCH - tw) / 2, BAR_NUM_Y, q, COL_WHITE);
     }
 
-    // --- Step 5: title strip -- colony name + season + year (gold is in the menu header). ---
+    // --- Top header (composer step 5 banner + menu-bar Gold). Centred colony name + season +
+    // year (§9, byte-confirmed fields); Gold readout right-aligned (§10: treasury PowerRecord
+    // +0x2A renders in the top menu header, NOT on the warehouse bar). Pop:/Tax: are drawn
+    // elsewhere, never in this header (§10) — so they are intentionally absent. ---
     {
         std::string season = ((year % 2) == 0) ? "Spring" : "Autumn";
         char line[80]; std::snprintf(line, sizeof line, "Jamestown   %s %d", season.c_str(), year);
         int w = font.frames.empty() ? 0 : scr.text_width(font, line);
         scr.draw_text(font, (Surface::W - w) / 2, 2, line, COL_WHITE);
+
+        char g[24]; std::snprintf(g, sizeof g, "Gold: %d", gold);
+        int gw = font.frames.empty() ? 0 : scr.text_width(font, g);
+        scr.draw_text(font, Surface::W - gw - 3, 2, g, COL_WHITE);
     }
-    (void)gold; (void)tax_pct; (void)BAR_Y;
+    (void)tax_pct;
 }
 
 } // namespace vc
