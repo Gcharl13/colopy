@@ -493,25 +493,47 @@ interaction + dialog engine; construction-complete (§11).
   *pre-lookup* index (and hits the 1×1 dummy frames). The static `SPRITE_CATALOG` map is
   recon-trust, not EXE-verified.
 
-## 12. Building placement — `func_025D34` is RNG-driven (the part I wrongly called done)
-Entry re-seeds the RNG (`lcall 0x181F:0xD62` → `func_009726`, its only caller, @0x025D3A),
-then for each building **randomly assigns a plot within its category's range**:
-- 15 plots split into **5 categories**: counts `byte[0x224] = [7,4,2,1,1]`, bases
-  `byte[0x22A] = [0,7,11,13,14]` → cat0 = plots 0–6, cat1 = 7–10, cat2 = 11–12, cat3 = 13,
-  cat4 = 14.
-- per-building category from the BSS table `[type*0xC − 0x7078]` (`0x8F88`, filled
-  elsewhere — not yet traced).
-- placement loop @0x025DDB: `plot = base[cat] + random_int(0, count[cat]-1)`
-  (`lcall 0x181F:0x4D4`); if `0x8E92[plot] ≥ 0` (taken) **retry** until a free plot.
-- result written to `0x8D62[plot]` (type) / `0x8E82[plot]` (level).
+## 12. Building placement — `func_025D34` is RNG-driven (deep trace 2026-06-24)
+The 15 building plots are filled by RNG, **seeded deterministically from the colony's map
+position** (so a given colony always lays out the same way). Byte-verified chain:
 
-So the layout is **deterministic given the per-colony seed** but is genuinely RNG output,
-not a table. **To finish for real:** port `func_009726` (seed source), `func_00C322`
-(the RNG), the per-type→category table, and `func_026CC2`'s `0x7238` frame lookup — *then*
-the screen is renderable from the bitmask. None of that is done.
+**Seed — `func_009726` (`0x181F:0xD62`, only caller is `func_025D34` @0x025D3A):**
+`seed = (colony_map_y << 8) + colony_map_x + DG32[0x8D80]` (`@0x009736`: `[colony+1]<<8`,
+`[colony+0]`, `+ [0x8D80]:[0x8D82]`), then `lcall 0x9EF:0x1A` (srand). So the layout key is
+the colony tile (`[0x8542]+0/+1`) plus the game base seed `[0x8D80]`. **B.**
+
+**`random_int(lo,hi)` — `func_00C322` (`0x181F:0x4D4`):**
+`r = rand()` (`lcall 0xD1D:0xE04`, a 15-bit LCG 0..32767); returns
+`lo + ((r * (hi-lo+1)) >> 15)` (`@0x00C334` imul + the 7× `sar dx,1/rcr ax,1` = `>>15`). **B.**
+
+**Plot categories (static):** counts `byte[0x224] = [7,4,2,1,1]`, bases `byte[0x22A] =
+[0,7,11,13,14]` ⇒ cat0 = plots 0–6, cat1 = 7–10, cat2 = 11–12, cat3 = 13, cat4 = 14
+(extracted from file `0x1DBC4`/`0x1DBCA`). **B.**
+
+**Placement loop @0x025DDB:** for each building, `plot = base[cat] + random_int(0,
+count[cat]-1)`; if `0x8E92[plot] ≥ 0` (taken) **retry**; else assign. Type/level land in
+`0x8D62[plot]`/`0x8E82[plot]`. **B.**
+
+**Still one level deeper (the only things between here and a full port — named precisely):**
+1. **Per-type → category** `cat = byte[type*0xC − 0x7078]` (BSS `0x8F88`, stride 12). This is
+   one column of a per-type building-info struct populated by the setter `@0x074661`
+   (`mov [si-0x7078],cl`), whose CALLER supplies the category — **trace that caller for the
+   static category source** (it is NOT `@BUILDING` col3: that histogram is 19/10/7/3/3, not
+   7/4/2/1/1). TBD-source.
+2. **Final BUILDING.SS frame** `frame = word[idx*2 − 0x7238]` (BSS `0x8DC8`) in `func_026CC2`
+   @0x026D8F. The table is accumulated at `@0x00A409`/`@0x00A462` (`add [bx-0x7238],ax`) —
+   **trace that to the static frame source.** TBD-source.
+3. **`rand()` LCG constants** — `0xD1D:0xE04` is the C-runtime rand in an overlay (stub file
+   `0x103D4` → page-loader); resolve the overlay to get the multiplier/increment (likely the
+   standard `seed=seed*0x015A4E35+1; return (seed>>16)&0x7FFF`, but **verify, don't assume**).
+
+**Status: PARTIAL.** The algorithm + seed source + category structure are byte-verified;
+the three sub-sources above are named with exact sites but not yet resolved. The screen is
+renderable-from-bitmask **only after** those three are pinned. Not "done."
 
 ---
 _(Superseded status block retained below for history; read §12 + the retraction above first.)_
+
 
 **Static analysis CLAIM (RETRACTED — see above).** Everything statically knowable is pinned. The only residue is
 **runtime state** — fully characterized below, each with the exact breakpoint a one-shot

@@ -99,3 +99,28 @@ Conflicts between sources are arbitrated against `notes/TRUTH_HIERARCHY.md` and
 recorded in `notes/rulings/RULINGS.md` — **not** in the conversation thread, so
 rulings survive compaction. Add *rules* to this file (with user sign-off); add
 *decisions* to `RULINGS.md`.
+
+## UI DOCUMENTATION MANDATE (2026-06-24, user directive)
+
+**Goal: 100% byte-verified documentation of the ENTIRE UI — enough to rebuild it.**
+Every screen, every drawn element's EXACT position, every font, every string, every
+color — traced to a VICEROY.EXE offset. This is a standing directive until the UI is
+fully documented.
+
+**Hard rules for this work:**
+1. **Never fabricate a single line.** Every placement/coordinate/frame/string/color must
+   cite a `func_XXXXXX @0xNNNNN` (or a NAMES/GAME.TXT key, or a recorded ruling). If you
+   cannot byte-verify it, write **TBD** — do NOT invent it, do NOT approximate it, do NOT
+   pull it from the low-trust recon (`*_DECODED.md`/`SPRITE_CATALOG`) and present it as
+   verified. Recon is a cross-check only; the EXE wins.
+2. **Runtime values are TBD, not "complete."** If an element's position/frame is computed
+   at runtime (RNG, BSS table, live state), say so explicitly and name the exact site +
+   what a trace/port would need. **Never label a screen "COMPLETE" while a load-bearing
+   render input is unresolved.** (Burned 2026-06-24: the colony screen was falsely marked
+   COMPLETE while building placement `func_025D34` — RNG-driven — was unresolved.)
+3. **When you solve one item, move to the next. Do not stop.** If stuck on an item, mark
+   it TBD with the blocker and move on — do not halt the whole sweep on one leaf.
+4. **Coverage tracker:** `docs/UI_AUDIT_TRACKER.md` lists every UI screen/subsystem and its
+   status (DONE/PARTIAL/TBD). Keep it honest and current. A screen is DONE only when every
+   element is byte-cited or explicitly TBD with the blocker named.
+5. **Commit incrementally** (per screen / per cluster) so progress survives.
