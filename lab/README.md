@@ -41,11 +41,14 @@ The tool fetches:
   once if the bundle is missing)
 
 ## Tabs (built incrementally)
-- **Sprites** — sheet picker, atlas + frame rects, placeholder-index flags (the sprite-mapping pain). *Deepen: M1.*
+- **Sprites** *(M1)* — sheet picker, atlas + clickable frame boxes, full frame table, per-frame
+  zoom inspector, hide-placeholders/filter, byte-cited frame roles.
 - **Mechanics** — single-colony flow (M2) then European market (M4); B data tables shown now.
-- **Map** — AMER2.MP decoded + terrain-id view (M0); sprite compositing (M3); modeled generator (M4).
+- **Map** *(M3)* — AMER2.MP rendered as the FULL sprite composite (TERRAIN.SS + PHYS0.SS, ported
+  1:1 from `mapview.cpp`); tile inspector with layer stack; modeled generator (M4).
 - **Settings & Export** — provenance ledger + snapshot export (JSON now, CSV series with M2).
 
 ## Status
 **M0 (scaffold) complete:** shell, provenance spine, data loaders, four thin-but-real tabs,
-JSON export. Later milestones deepen each tab (see `/root`-level plan or repo history).
+JSON export. **M1:** deepened Sprites tab. **M3:** full sprite-composited Map render. Remaining
+milestones (M2 colony flow, M4 market + generator) deepen the other tabs.

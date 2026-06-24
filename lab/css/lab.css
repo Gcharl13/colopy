@@ -88,7 +88,8 @@ table.data tbody tr{cursor:pointer}
 .kv .k{color:var(--muted)}
 
 .map-layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
-.map-canvas{image-rendering:pixelated;border:1px solid var(--line);background:#0b0d11;cursor:crosshair}
+.map-scroll{max-width:100%;max-height:70vh;overflow:auto;border:1px solid var(--line);background:#0b0d11}
+.map-canvas{image-rendering:pixelated;display:block;cursor:crosshair}
 .inspector{min-width:280px;background:#0d0f13;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12.5px}
 .inspector div{margin:3px 0}
 

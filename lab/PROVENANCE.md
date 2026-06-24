@@ -42,16 +42,26 @@ Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; fir
 | **Starvation rule** | **TBD** | not decompiled |
 | **Tory-uprising call cadence** | **TBD** | gate known (`func_03CAC6`); WoI invocation frequency TBD |
 
-## Map tab
+## Map tab — full sprite-composited render (M3)
 | Item | Tier | Source / note |
 |------|------|----------------|
 | Map dimensions 58×72 | B | AMER2.MP header |
-| Terrain id = `raw & 0x1F` | B | `func_006204 @0x6204` |
+| Terrain id = `raw & 0x1F`, `classify_vis` | B | `func_006204 @0x6204` |
 | Terrain id → name table | B | `formats/MP_FORMAT.md` |
-| River bit 0x20 / forest bit 0x40 | B | `formats/MP_FORMAT.md` bits 5/6 |
+| L1 bit semantics: 0x20 hills/mtn, 0x40 river, 0x80 mountain | B | `viceroy_cpp/src/mapview.cpp` (NOT the old M0 0x20/0x40 reading) |
+| Forest = id band 8..23 (not a bit) | B | CLAUDE.md hard rule 3 (`@0x6204`) |
 | Sea-lane right column = id 26 | B | CLAUDE.md hard rule 2 |
-| **Flat preview colors** | **A** | tool convenience; real look = sprite compositing (M3) |
+| **Frame pixels** (TERRAIN.SS + PHYS0.SS) | **B** | bundle indexed PNGs, decoded to indices (`png_indexed.js`) |
+| **Layer order + sprite selection** | **B** | hard rules 3/4/5/7; port of `mapview.cpp` `terrain_compose` |
+| Active palette = PHYS0 embedded PLTE | B | `main.cpp:225` (`scr.set_palette(tiles.pal)`) |
+| **Edge-blend + coast-connectivity heuristics** | **A** | inherit `mapview.cpp`'s tier (RULINGS 2026-06-22 / INGAME_MAP_RENDER_TRACE) |
 | **Procedural generator** | **TBD** | DOS generator algorithm not decompiled — *M4, badged* |
+
+The render pipeline (`js/data/png_indexed.js` → `js/sim/sheet.js` → `js/sim/surface.js` →
+`js/sim/mapview.js`) is a 1:1 JS port of the C++ reference renderer: it decodes the SAME
+indexed atlases the C++ reads, reconstructs each frame's palette-index pixels, composites on
+an indexed Surface, and resolves to RGB through PHYS0's palette — so the lab map is the
+byte-faithful image, not a recolor.
 
 ## Export
 The JSON snapshot embeds: `provenance.summary` (tier counts), `provenance.modeled` (every R/TBD
