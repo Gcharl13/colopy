@@ -61,8 +61,17 @@ export const SCREENS = {
     ],
   },
   colony: {
-    name: 'Colony screen — plots + stockpile', bg: 'COLONY', bgY: 128, w: 320, h: 200, scale: 2,
-    note: 'COLONY.PIK is the bottom band (screen y=128). BYTE-CITED (B): the 15 building plots at DS:0x266 (render y=table_y+8, func_02701C) and the 16-cell stockpile bar (x=1+i·19, icon y=181, ICONS frame 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so a plot’s FRAME is TBD (editable). The upper field has no committed background image (drawn procedurally in-game).',
+    name: 'Colony screen — plots + stockpile', w: 320, h: 200, scale: 2,
+    // Composited backdrop (matches colony_screen.cpp): wood-grain chrome (WOODTILE
+    // tiled) → parchment scene inset (PARCH tiled, SCENE 4,8,204,120) → COLONY.PIK
+    // bottom band at y=128. NOT a single image — that's why the plain-image version
+    // looked broken (black void above the band).
+    backdrop: [
+      { op: 'tile', sheet: 'WOODTILE', x: 0, y: 0, w: 320, h: 200 },
+      { op: 'tile', sheet: 'PARCH', x: 4, y: 8, w: 204, h: 120 },
+      { op: 'image', bg: 'COLONY', x: 0, y: 128 },
+    ],
+    note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH, 4,8,204,120) + COLONY.PIK band at y=128. BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C) and the 16-cell stockpile bar (x=1+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so a plot’s FRAME is TBD (editable). The 3×3 worked-tiles grid + panel text aren’t seeded yet.',
     elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
   },
   colonyReport: {

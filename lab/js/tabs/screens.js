@@ -54,21 +54,51 @@ export async function render(host, ctx) {
     buildTable();
   }
 
-  // --- the stage: background image + absolutely-positioned element overlays ----
+  // --- the stage: background (image or composited canvas) + element overlays ---
   let stage, bgImg;
   function buildStage() {
     stageWrap.innerHTML = '';
     stage = el('div', { class: 'screen-stage' });
     stage.style.width = scr.w * scale + 'px';
     stage.style.height = scr.h * scale + 'px';
-    bgImg = el('img', { class: 'screen-bg', src: backgroundImageURL(scr.bg), alt: scr.bg });
-    bgImg.style.width = scr.w * scale + 'px';
-    // a screen may place its backdrop below the top (e.g. COLONY.PIK band at y=128);
-    // height is the image's own — let it size naturally below bgY.
-    bgImg.style.top = (scr.bgY || 0) * scale + 'px';
-    stage.append(bgImg);
+    if (scr.backdrop) {
+      // composited backdrop (e.g. colony: wood + parch inset + PIK band)
+      const cv = el('canvas', { class: 'screen-bg', width: scr.w, height: scr.h });
+      cv.style.width = scr.w * scale + 'px'; cv.style.height = scr.h * scale + 'px';
+      stage.append(cv);
+      buildBackdrop(cv);
+    } else {
+      bgImg = el('img', { class: 'screen-bg', src: backgroundImageURL(scr.bg), alt: scr.bg });
+      bgImg.style.width = scr.w * scale + 'px';
+      bgImg.style.top = (scr.bgY || 0) * scale + 'px';
+      stage.append(bgImg);
+    }
     for (const e of els) stage.append(makeElDiv(e));
     stageWrap.append(stage);
+  }
+
+  // Execute a backdrop recipe onto a 320×200 canvas via drawImage (the browser
+  // resolves each indexed PNG's palette + transparency for us).
+  async function buildBackdrop(cv) {
+    const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+    for (const step of scr.backdrop) {
+      if (step.op === 'image') {
+        const img = await loadImg(backgroundImageURL(step.bg));
+        g.drawImage(img, step.x, step.y);
+      } else if (step.op === 'tile') {
+        const { frames, img } = await atlas(step.sheet);
+        const f = frames.frames[0];
+        if (!f || f.w <= 0) continue;
+        for (let y = step.y; y < step.y + step.h; y += f.h)
+          for (let x = step.x; x < step.x + step.w; x += f.w) {
+            const dw = Math.min(f.w, step.x + step.w - x), dh = Math.min(f.h, step.y + step.h - y);
+            g.drawImage(img, f.ax, f.ay, dw, dh, x, y, dw, dh);
+          }
+      }
+    }
+  }
+  function loadImg(src) {
+    return new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = src; i.decode?.().then(() => res(i)).catch(() => {}); });
   }
 
   function makeElDiv(e) {
