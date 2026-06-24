@@ -39,6 +39,10 @@ export async function loadSheetFrames(name) {
 export function sheetImageURL(name) {
   return `${BUNDLE}/sprites/${name}.png`;             // paletted PNG atlas
 }
+// Screen backgrounds (.PIK → PNG), e.g. COLONY / EUROPE / REPORT1..9 [B asset].
+export function backgroundImageURL(name) {
+  return `${BUNDLE}/backgrounds/${name}.png`;
+}
 
 // AMER2 map tile grid (committed via tools/extract_mp.py) [B].
 // Returns {width,height,tiles:Uint8Array} — tiles are raw map bytes.

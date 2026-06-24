@@ -1,0 +1,207 @@
+// tabs/screens.js — Screens: render a game screen (Colony / Europe / Reports) on
+// its real vendored backdrop, then SELECT, DRAG, re-sprite, or feed test values to
+// each overlay element — the screen updates live. Element POSITIONS carry tiers:
+// byte-cited (B, e.g. the colony plots) vs modeled (R/TBD, drag to measure). Export
+// captures the layout you place, so this doubles as a UI-coordinate measuring tool.
+import { el, section, fireRendered } from '../ui.js';
+import { badge } from '../provenance.js';
+import { loadSheetFrames, sheetImageURL, backgroundImageURL } from '../data/loaders.js';
+import { SCREENS, ALL_BACKGROUNDS } from '../sim/screens.js';
+
+const TIER_CLS = { B: 'tier-b', A: 'tier-a', R: 'tier-r', TBD: 'tier-tbd' };
+
+export async function render(host, ctx) {
+  // screen picker: the seeded screens + any raw background as a blank canvas
+  const keys = Object.keys(SCREENS);
+  const picker = el('select', { class: 'picker' },
+    el('optgroup', { label: 'seeded screens' }, ...keys.map((k) => el('option', { value: k }, SCREENS[k].name))),
+    el('optgroup', { label: 'blank backdrops (measure)', ...{} },
+      ...ALL_BACKGROUNDS.map((b) => el('option', { value: `bg:${b}` }, `${b}.PIK`))));
+
+  const stageWrap = el('div', { class: 'screen-stagewrap' });
+  const tableWrap = el('div', { class: 'screen-table' });
+  const noteEl = el('p', { class: 'hint' });
+  const exportOut = el('pre', { class: 'export-out', style: 'display:none' });
+
+  // per-sheet atlas <img> + frames cache (for sprite elements)
+  const atlasCache = new Map();
+  async function atlas(sheet) {
+    if (atlasCache.has(sheet)) return atlasCache.get(sheet);
+    const p = (async () => {
+      const frames = await loadSheetFrames(sheet);
+      const img = new Image(); img.src = sheetImageURL(sheet);
+      await img.decode().catch(() => {});
+      return { frames, img };
+    })();
+    atlasCache.set(sheet, p);
+    return p;
+  }
+
+  let scr = null, els = [], scale = 2, selected = null;
+
+  function loadScreen(val) {
+    if (val.startsWith('bg:')) {
+      const bg = val.slice(3);
+      scr = { name: `${bg}.PIK`, bg, w: 320, h: 200, scale: 2, note: 'Blank measuring canvas — add elements and drag them to read off coordinates.', elements: [] };
+    } else {
+      scr = SCREENS[val];
+    }
+    scale = scr.scale || 2;
+    els = scr.elements.map((e) => ({ ...e }));   // working clone (edits don't mutate defs)
+    selected = null;
+    noteEl.textContent = scr.note || '';
+    buildStage();
+    buildTable();
+  }
+
+  // --- the stage: background image + absolutely-positioned element overlays ----
+  let stage, bgImg;
+  function buildStage() {
+    stageWrap.innerHTML = '';
+    stage = el('div', { class: 'screen-stage' });
+    stage.style.width = scr.w * scale + 'px';
+    stage.style.height = scr.h * scale + 'px';
+    bgImg = el('img', { class: 'screen-bg', src: backgroundImageURL(scr.bg), alt: scr.bg });
+    bgImg.style.width = scr.w * scale + 'px';
+    bgImg.style.height = scr.h * scale + 'px';
+    stage.append(bgImg);
+    for (const e of els) stage.append(makeElDiv(e));
+    stageWrap.append(stage);
+  }
+
+  function makeElDiv(e) {
+    const d = el('div', { class: 'screen-el ' + e.type, 'data-id': e.id });
+    d.style.left = e.x * scale + 'px';
+    d.style.top = e.y * scale + 'px';
+    if (e.type === 'text') {
+      d.style.color = e.color === 'white' ? '#fff' : e.color;
+      d.style.fontSize = (6 * scale) + 'px';
+      d.textContent = e.value;
+    } else if (e.type === 'sprite') {
+      const cv = el('canvas', { class: 'screen-sprite' });
+      d.append(cv);
+      paintSprite(cv, e);
+    }
+    d._el = e;
+    if (e.id === selected) d.classList.add('sel');
+    d.addEventListener('mousedown', (ev) => startDrag(ev, e, d));
+    return d;
+  }
+
+  async function paintSprite(cv, e) {
+    const { frames, img } = await atlas(e.sheet);
+    const f = frames.frames.find((x) => x.i === Number(e.frame)) || frames.frames[0];
+    if (!f) return;
+    cv.width = Math.max(1, f.w) * scale; cv.height = Math.max(1, f.h) * scale;
+    const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+    if (img.naturalWidth) g.drawImage(img, f.ax, f.ay, f.w, f.h, 0, 0, f.w * scale, f.h * scale);
+  }
+
+  // --- dragging --------------------------------------------------------------
+  function startDrag(ev, e, d) {
+    ev.preventDefault();
+    selectEl(e.id);
+    const sx = ev.clientX, sy = ev.clientY, ex = e.x, ey = e.y;
+    const move = (m) => {
+      e.x = clamp(Math.round(ex + (m.clientX - sx) / scale), 0, scr.w - 1);
+      e.y = clamp(Math.round(ey + (m.clientY - sy) / scale), 0, scr.h - 1);
+      d.style.left = e.x * scale + 'px'; d.style.top = e.y * scale + 'px';
+      syncRow(e);
+    };
+    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  }
+
+  function selectEl(id) {
+    selected = id;
+    for (const d of stage.querySelectorAll('.screen-el')) d.classList.toggle('sel', d._el.id === id);
+    for (const tr of tableWrap.querySelectorAll('tr[data-id]')) tr.classList.toggle('sel', tr.dataset.id === id);
+  }
+
+  // --- the test-value / position table (two-way bound to the stage) ----------
+  function buildTable() {
+    tableWrap.innerHTML = '';
+    const head = el('thead', {}, el('tr', {},
+      ...['element', 'type', 'x', 'y', 'value / frame', 'pos tier'].map((c) => el('th', {}, c))));
+    const body = el('tbody', {}, ...els.map((e) => rowFor(e)));
+    tableWrap.append(el('table', { class: 'data' }, head, body));
+  }
+
+  function rowFor(e) {
+    const xIn = numInput(e.x, (v) => { e.x = v; positionDiv(e); });
+    const yIn = numInput(e.y, (v) => { e.y = v; positionDiv(e); });
+    let valCell;
+    if (e.type === 'text') {
+      valCell = el('input', { class: 'val-input txt', value: e.value });
+      valCell.addEventListener('input', () => { e.value = valCell.value; const d = divFor(e); if (d) d.textContent = e.value; });
+    } else {
+      valCell = el('input', { type: 'number', class: 'num', value: String(e.frame), min: 0 });
+      valCell.addEventListener('input', () => { e.frame = Number(valCell.value) || 0; const d = divFor(e); if (d) paintSprite(d.querySelector('canvas'), e); });
+    }
+    const tr = el('tr', { 'data-id': e.id, class: e.id === selected ? 'sel' : '' },
+      el('td', {}, e.label + (e.type === 'sprite' ? ` (${e.sheet})` : '')),
+      el('td', {}, e.type),
+      el('td', {}, xIn), el('td', {}, yIn),
+      el('td', {}, valCell),
+      el('td', {}, posTier(e)));
+    tr.addEventListener('click', (ev) => { if (ev.target.tagName !== 'INPUT') selectEl(e.id); });
+    e._row = { xIn, yIn };
+    return tr;
+  }
+
+  function posTier(e) {
+    const span = el('span', { class: `val ${TIER_CLS[e.tier] || 'tier-tbd'}`, title: e.cite },
+      el('span', { class: 'val-text' }, e.tier === 'B' ? 'byte-cited' : 'modeled'));
+    span.append(badge(e.tier));
+    return span;
+  }
+
+  // keep stage ⇄ table in sync
+  const divFor = (e) => stage.querySelector(`.screen-el[data-id="${e.id}"]`);
+  function positionDiv(e) { const d = divFor(e); if (d) { d.style.left = e.x * scale + 'px'; d.style.top = e.y * scale + 'px'; } }
+  function syncRow(e) { if (e._row) { e._row.xIn.value = e.x; e._row.yIn.value = e.y; } }
+
+  function numInput(v, onChange) {
+    const i = el('input', { type: 'number', class: 'num', value: String(v) });
+    i.addEventListener('input', () => onChange(Number(i.value) || 0));
+    return i;
+  }
+
+  // --- export ----------------------------------------------------------------
+  const exportBtn = el('button', { class: 'btn' }, 'Export layout (JSON)');
+  exportBtn.addEventListener('click', () => {
+    const out = {
+      screen: scr.name, background: scr.bg, size: `${scr.w}×${scr.h}`,
+      elements: els.map((e) => ({
+        id: e.id, label: e.label, type: e.type, x: e.x, y: e.y,
+        ...(e.type === 'text' ? { value: e.value } : { sheet: e.sheet, frame: e.frame }),
+        positionTier: e.tier, cite: e.cite,
+      })),
+    };
+    exportOut.style.display = 'block';
+    exportOut.textContent = JSON.stringify(out, null, 2);
+  });
+
+  picker.addEventListener('change', () => loadScreen(picker.value));
+
+  host.append(
+    section('Screens — composite, select, drag, and feed test values',
+      el('p', { class: 'hint' },
+        'Render a screen on its real backdrop, then ', el('b', {}, 'click an element to select'), ', drag it to ',
+        'reposition (the x,y update live — a coordinate-measuring tool), change a sprite’s frame, or type test ',
+        'values. Position ', el('b', {}, 'tier'), ' marks byte-cited (B) vs modeled (drag to measure).'),
+      el('div', { class: 'row' }, el('label', {}, 'screen '), picker,
+        el('span', { class: 'gap' }), exportBtn),
+      noteEl,
+      el('div', { class: 'screen-layout' },
+        el('div', { class: 'map-scroll' }, stageWrap),
+        el('div', {}, el('h3', {}, 'elements — test values & positions'), tableWrap)),
+      exportOut),
+  );
+
+  loadScreen(picker.value);
+  fireRendered();
+}
+
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }

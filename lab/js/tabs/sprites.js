@@ -5,7 +5,7 @@
 // frame ROLES, which carry their own tier+citation via sprite_roles.js — a role
 // is shown with a badge, or "—" when nothing is cited (never a guess).
 import { el, section, fireRendered } from '../ui.js';
-import { renderVal, B, V, badge, TIER } from '../provenance.js';
+import { renderVal, B, V, TBD_, badge, TIER } from '../provenance.js';
 import { loadSheetFrames, sheetImageURL } from '../data/loaders.js';
 import { roleFor, isPlaceholder, PHYS0_PLACEHOLDER_INDICES } from '../data/sprite_roles.js';
 
@@ -54,7 +54,9 @@ export async function render(host, ctx) {
       el('p', { class: 'hint' },
         'Loaded from the vendored sprite atlases (', el('code', {}, 'lab/assets'),
         ', a committed copy of the bundle the C++ reads) — frame rects are byte-accurate. ',
-        'Roles carry their own tier+citation; “—” means uncited.'),
+        el('b', {}, 'Role'), ' = what a frame depicts (ship / foot unit / river / commodity icon…). ',
+        'Cited roles show B/A; uncited frames give a red editable box — type what it is and it’s saved as a ',
+        'candidate catalog entry (exported from Settings, feeds ', el('code', {}, 'notes/SPRITE_CATALOG.md'), ').'),
       el('div', { class: 'row' },
         el('label', {}, 'Sheet: '), picker,
         el('label', { class: 'gap' }, el('span', {}, hidePh), ' hide placeholders'),
@@ -160,7 +162,7 @@ export async function render(host, ctx) {
         el('td', {}, `${f.x},${f.y}`),
         el('td', {}, `${f.ax},${f.ay}`),
         el('td', {}, `${f.w}×${f.h}`),
-        el('td', {}, r ? roleCell(r) : (isPlaceholder(f, data.sheet) ? placeholderLabel(f, data.sheet) : '—')));
+        el('td', {}, r ? roleCell(r) : (isPlaceholder(f, data.sheet) ? placeholderLabel(f, data.sheet) : editableRole(data.sheet, f.i))));
       tr.addEventListener('click', () => select(f.i));
       return tr;
     }));
@@ -173,6 +175,14 @@ export async function render(host, ctx) {
       el('span', { class: 'val-text' }, r.role));
     span.append(badge(r.tier));
     return span;
+  }
+
+  // Uncited frame → an editable TBD role the user can populate. The label is stored
+  // in the override registry (id role.<sheet>.<i>) and travels into the export, so
+  // labelling a frame here contributes a candidate sprite-catalog entry.
+  function editableRole(sheet, i) {
+    return renderVal(TBD_('', `role: user-labelled (candidate for notes/SPRITE_CATALOG.md) — ${sheet} #${i}`,
+      { id: `role.${sheet}.${i}` }));
   }
 
   function select(i) {
@@ -208,7 +218,7 @@ export async function render(host, ctx) {
       kv('index (hex)', B(`0x${f.i.toString(16)}`, `${data.sheet}.json frame ${f.i}`)),
       el('div', { class: 'kv' }, el('span', { class: 'k' }, 'role'),
         r ? renderVal(V(r.role, r.tier, r.cite))
-          : el('span', {}, isPlaceholder(f, data.sheet) ? placeholderLabel(f, data.sheet) : '— (uncited)')),
+          : (isPlaceholder(f, data.sheet) ? el('span', {}, placeholderLabel(f, data.sheet)) : editableRole(data.sheet, f.i))),
     );
   }
 

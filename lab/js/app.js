@@ -7,9 +7,10 @@ import * as mechanics from './tabs/mechanics.js';
 import * as market from './tabs/market.js';
 import * as mapTab from './tabs/map.js';
 import * as worldgen from './tabs/worldgen.js';
+import * as screens from './tabs/screens.js';
 import * as settings from './tabs/settings.js';
 
-const TABS = { sprites, mechanics, market, map: mapTab, worldgen, settings };
+const TABS = { sprites, mechanics, market, map: mapTab, worldgen, screens, settings };
 
 // Shared context handed to every tab. Data loaded once, lazily, and cached.
 export const ctx = {

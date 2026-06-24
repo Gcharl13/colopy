@@ -49,10 +49,10 @@ Requirements: a current browser (the Map/World Gen tabs decode indexed PNGs with
 
 The tool fetches only committed files, so a plain `git` checkout runs **all six tabs**:
 - `../data_extracted/{palette.json,tables/names_tables.json,map/AMER2_tiles.json}` (**B** data)
-- `./assets/{manifest.json,sprites/*.{png,json}}` — the sprite atlases, **vendored** here (a
-  committed copy of `viceroy_cpp/build/bundle/sprites`, which lives in the git-ignored C++ build
-  tree). The bytes are identical to what the C++ reads; re-vendor after a rebuild with
-  `cp viceroy_cpp/build/bundle/manifest.json lab/assets/ && cp viceroy_cpp/build/bundle/sprites/* lab/assets/sprites/`.
+- `./assets/{manifest.json,sprites/*,backgrounds/*}` — the sprite atlases + screen backdrops,
+  **vendored** here (a committed copy of `viceroy_cpp/build/bundle/{sprites,backgrounds}`, which
+  live in the git-ignored C++ build tree). The bytes are identical to what the C++ reads; re-vendor
+  after a rebuild with `cp viceroy_cpp/build/bundle/manifest.json lab/assets/ && cp viceroy_cpp/build/bundle/sprites/* lab/assets/sprites/ && cp viceroy_cpp/build/bundle/backgrounds/* lab/assets/backgrounds/`.
 
 ## Tabs (built incrementally)
 - **Sprites** *(M1)* — sheet picker, atlas + clickable frame boxes, full frame table, per-frame
@@ -66,6 +66,9 @@ The tool fetches only committed files, so a plain `git` checkout runs **all six 
 - **World Gen** — a live map view driven by the four byte-verified Customize-New-World inputs
   (LAND MASS / LAND FORM / TEMPERATURE / CLIMATE = `@CLAND/@CCONT/@CTEMP/@CCLIM`, `DGROUP:0x1E7E`)
   plus a seed; change any and the world rebuilds via `func_064A10`'s passes through the same renderer.
+- **Screens** — render a game screen (Colony / Europe / Reports) on its real backdrop; select, drag,
+  re-sprite, or feed test values to each element and watch it update live. Element positions carry
+  tiers (byte-cited like the colony plots vs modeled — drag to measure); export captures the layout.
 - **Settings & Export** — provenance ledger + snapshot export (JSON now, CSV series with M2).
 
 ## Status

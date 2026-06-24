@@ -93,6 +93,21 @@ table.data tbody tr{cursor:pointer}
 .gen-ctl{display:flex;flex-direction:column;gap:3px}
 .gen-title{font-size:12px;color:var(--ink);font-weight:600;letter-spacing:.03em}
 .gen-key{font-size:10px;color:var(--muted);font-family:ui-monospace,monospace}
+
+/* Screens tab: backdrop + draggable element overlays */
+.screen-layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.screen-stagewrap{display:inline-block}
+.screen-stage{position:relative;image-rendering:pixelated;border:1px solid var(--line);user-select:none}
+.screen-bg{display:block;image-rendering:pixelated;pointer-events:none}
+.screen-el{position:absolute;cursor:grab;outline:1px dotted rgba(255,255,255,.35)}
+.screen-el:hover{outline:1px solid var(--accent)}
+.screen-el.sel{outline:2px solid var(--accent);background:rgba(93,176,255,.18)}
+.screen-el.text{white-space:nowrap;font-family:ui-monospace,monospace;line-height:1;padding:1px 2px;text-shadow:0 0 2px #000,0 0 2px #000}
+.screen-el.sprite{line-height:0}
+.screen-sprite{display:block;image-rendering:pixelated}
+.screen-table{max-height:60vh;overflow:auto;min-width:360px}
+.screen-table input.txt{width:150px}
+.export-out{max-height:240px;overflow:auto;background:#0d0f13;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:11px;color:#cdd6e6}
 .map-canvas{image-rendering:pixelated;display:block;cursor:crosshair}
 .inspector{min-width:280px;background:#0d0f13;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12.5px}
 .inspector div{margin:3px 0}
