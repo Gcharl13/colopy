@@ -21,26 +21,37 @@ reference. **If a value here is `R` or `TBD`, a wrong result is a modeling gap, 
 
 Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; first match wins).
 
-## Mechanics tab
+## Colony tab — per-turn sim (M5)
 | Item | Tier | Source / note |
 |------|------|----------------|
-| Terrain farmer/planter/etc. yields | B | `@UNFORESTED`/`@FORESTED` (NAMES.TXT) |
-| Goods base price / drift / burden | B | `@CARGO` (NAMES.TXT) |
-| Growth threshold = 200 stored food | B | `func_02D658 @0x2E098` |
-| Max colony size = 32 | B | `population < 0x20` |
-| Expert bonus (+2 food/horses, ×2 mfg) | B | `colony.md §3` (`@0x9DAD..0x9DD2`) — *wired in M2* |
-| Factory tier ×2 (3rd chain link) | B | `count_building_chain_present @0x864E` — *M2* |
-| Tory penalty `tory/(10−diff)` | B | `colony.md §3` (`@0x9D14..0x9D98`) — *M2* |
-| SoL EMA (1/64 decay, +2·pop) | B | `colony.md §3` (`func_02D658 @0x2DA1C`) — *M2* |
-| Price drift `−(price+Σtrade)/256` | B | `market.md §3` (`func_0305A8`) — *M4* |
-| Buy/sell + king tax | B | `market.md §3.1` (`@0x32914`) — *M4* |
-| Luxury shared-pool coupling | B | `market.md §3` (`@0x030649..`) — *M4* |
-| Boycott bitmask / back-tax ×500 | B | `boycotts.md §3` — *M4* |
-| **Food consumption = pop × 2** | **R** | user-confirmed; byte-loc TBD (`colony.md §1`) — **editable** |
-| **Raw→finished conversion ratios** | **R** | 5 chains known by name; exact ratios not decompiled — *M4* |
-| **Ask/bid spread (`burden` role)** | **TBD** | field loaded; exact computation not decompiled |
+| Terrain farmer/planter/etc. yields | B | `@UNFORESTED`/`@FORESTED` (NAMES.TXT), `@0x9C1E` |
+| Tory penalty `−floor(toryCnt/(10−diff))` | B | `compute_terrain_yield @0x9D14..0x9D98` (divisor `@0x9D49`) |
+| Expert bonus (+2 food/horses, ×2 mfg) | B | `@0x9DAD..0x9DD2` |
+| Manufacturing building gate (g≥8 ⇒ 0) | B | `@0x9F4F` (bit 6) |
+| Factory tier ×2 (3rd chain link) | A | `count_building_chain_present>2 @0x8EA9`; ×2 application inferred |
+| SoL % = 100·A/B | B | `sol_membership_pct @0x8557` |
+| SoL EMA (A,B 1/64 decay, B+=2·pop, A+=bells) | B | `func_02D658 @0x2DA1C..0x2DAD8` |
+| SoL steady state ≈ 50·bells/pop | A | derived consequence of the EMA (`colony.md §3`) |
+| Growth store = 200, max pop = 32 | B | `func_02D658 @0x2E098`; `population<0x20 @0x009432` |
+| **Food consumption = pop × 2** | **R** | user-confirmed; byte-loc TBD — **editable** |
+| **WoI bells halving / <pop pressure** | **TBD** | omitted from the EMA sim (noted, not folded in silently) |
 | **Starvation rule** | **TBD** | not decompiled |
-| **Tory-uprising call cadence** | **TBD** | gate known (`func_03CAC6`); WoI invocation frequency TBD |
+
+## Market tab (M4)
+| Item | Tier | Source / note |
+|------|------|----------------|
+| Goods order (16, index 0..15) | B | runtime-verified (`market.md §2`) |
+| `@CARGO` price params (start/band/rise/fall/attrition) | B | NAMES.TXT |
+| Price drift `base −= (base+Σclamped_trade)/256` | B | `func_0305A8 @0x30618` |
+| Price seed random [600,1000]/good | B | `func_07561C @0x75645` |
+| Supply `seed + Σ max(accum,0)` | B | `@0x0305AE` |
+| Luxury pool `target=(S_pair·3)/supply[i]` | B | `@0x030649` / `@0x030745`; Furs halved `@0x0307C9` |
+| SELL `gross→tax→net→gold` (clamp [0,999999]) | B | `func@0x32914`; gold helper `func@0x8806 @0x32a82` |
+| King tax = sale·tax%/100 → REF +0x22 | B | `@0x32a4a` (`king.md`) |
+| BUY untaxed inline debit | B | page-13 sites |
+| **Live state (seed, accumulators, tax %, qty)** | **R** | runtime — modeled/editable inputs the B formulas run on |
+| **Boycott bitmask / back-tax** | **B (data); not yet wired** | `boycotts.md §3` (`+0x20`) — future |
+| **Raw→finished conversion ratios** | **R** | 5 chains known by name; exact ratios not decompiled |
 
 ## Map tab — full sprite-composited render (M3)
 | Item | Tier | Source / note |

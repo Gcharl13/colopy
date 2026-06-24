@@ -43,12 +43,16 @@ The tool fetches:
 ## Tabs (built incrementally)
 - **Sprites** *(M1)* — sheet picker, atlas + clickable frame boxes, full frame table, per-frame
   zoom inspector, hide-placeholders/filter, byte-cited frame roles.
-- **Mechanics** — single-colony flow (M2) then European market (M4); B data tables shown now.
+- **Colony** *(M5)* — single-colony per-turn sim: per-tile production (Tory penalty, expert,
+  building gate, factory), the Sons-of-Liberty EMA, and food growth. Formulas byte-cited.
+- **Market** *(M4)* — European market: per-turn price drift, luxury shared-pool coupling, and
+  buy/sell with the King's tax. Formulas B; live state (seed/accumulators/tax) modeled & editable.
 - **Map** *(M3)* — AMER2.MP rendered as the FULL sprite composite (TERRAIN.SS + PHYS0.SS, ported
-  1:1 from `mapview.cpp`); tile inspector with layer stack; modeled generator (M4).
+  1:1 from `mapview.cpp`); tile inspector with layer stack; modeled generator (future).
 - **Settings & Export** — provenance ledger + snapshot export (JSON now, CSV series with M2).
 
 ## Status
-**M0 (scaffold) complete:** shell, provenance spine, data loaders, four thin-but-real tabs,
-JSON export. **M1:** deepened Sprites tab. **M3:** full sprite-composited Map render. Remaining
-milestones (M2 colony flow, M4 market + generator) deepen the other tabs.
+**M0 (scaffold) complete:** shell, provenance spine, data loaders, tabs, JSON export.
+**M1:** deepened Sprites tab. **M3:** full sprite-composited Map render. **M4:** European Market
+tab. **M5:** colony per-turn sim (Colony tab; folds in the deferred M2 colony flow). Remaining:
+boycotts/raw→finished ratios, the modeled map generator.

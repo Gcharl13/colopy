@@ -4,10 +4,11 @@ import { loadPalette, loadTables, loadManifest, loadMap } from './data/loaders.j
 
 import * as sprites from './tabs/sprites.js';
 import * as mechanics from './tabs/mechanics.js';
+import * as market from './tabs/market.js';
 import * as mapTab from './tabs/map.js';
 import * as settings from './tabs/settings.js';
 
-const TABS = { sprites, mechanics, map: mapTab, settings };
+const TABS = { sprites, mechanics, market, map: mapTab, settings };
 
 // Shared context handed to every tab. Data loaded once, lazily, and cached.
 export const ctx = {
