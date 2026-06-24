@@ -1,12 +1,14 @@
 // loaders.js — fetch the committed, byte-verified data the lab reads.
 //
-// Paths are relative to /lab/index.html, served by `python3 -m http.server` at
-// the repo root. So `../data_extracted/...` resolves to the committed JSON, and
-// `../viceroy_cpp/build/bundle/...` to the regenerable sprite bundle (the SAME
-// bytes the C++ reads — pure B for sprite verification).
+// Paths are relative to /lab/index.html, served by a static server at the repo
+// root (e.g. `python -m http.server`). `../data_extracted/...` resolves to the
+// committed JSON. The sprite atlases are VENDORED under `lab/assets/` (a committed
+// copy of viceroy_cpp/build/bundle/sprites — that build tree is git-ignored, so
+// vendoring lets the lab run from a plain git checkout with no C++ build). The
+// atlas bytes are identical to what the C++ reads — pure B for sprite verification.
 
 const DATA = '../data_extracted';
-const BUNDLE = '../viceroy_cpp/build/bundle';
+const BUNDLE = './assets';     // vendored sprite atlases (committed): lab/assets/{manifest.json,sprites/*}
 
 async function getJSON(url) {
   const r = await fetch(url);

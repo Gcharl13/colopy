@@ -24,21 +24,35 @@ So when a number looks wrong: **B wrong → report a bug.  R/TBD wrong → a pla
 as designed → tune the assumption** (edit it in place; the flow updates live). Exports record
 the tier, citation, and any override of every value — see `PROVENANCE.md` for the full ledger.
 
-## Run it
-Browsers block `fetch()` from `file://`, so serve the repo root with any static server:
+## Run it (no build step, no Node)
+The Lab is pure static HTML/JS. Browsers block `fetch()` from `file://`, so you must serve it
+over `http://` — **from the repo root**, because it fetches `../data_extracted/...`.
 
+**Windows** (PowerShell or CMD, with Python installed):
+```
+cd path\to\colopy
+python -m http.server 8000
+```
+then open **http://localhost:8000/lab/** in Chrome / Edge / Firefox (keep the trailing slash).
+
+**macOS / Linux:**
 ```bash
-cd /home/user/colopy
-python3 -m http.server 8000
-# then open:  http://localhost:8000/lab/
+cd /path/to/colopy
+python3 -m http.server 8000   # then open http://localhost:8000/lab/
 ```
 
-The tool fetches:
-- `../data_extracted/palette.json`, `../data_extracted/tables/names_tables.json`,
-  `../data_extracted/map/AMER2_tiles.json` (committed, **B**)
-- `../viceroy_cpp/build/bundle/{manifest.json,sprites/*.{png,json}}` (regenerable — run
-  `viceroy_cpp/build/viceroy_cpp import-all --colonize raw/COLONIZE --out viceroy_cpp/build/bundle`
-  once if the bundle is missing)
+No Python? Any static server works as long as it serves the **repo root**: `npx serve` (Node),
+or VS Code's **Live Server** extension. Don't double-click `index.html` (`file://` won't load).
+
+Requirements: a current browser (the Map/World Gen tabs decode indexed PNGs with
+`DecompressionStream`, supported in all current Chromium/Firefox). Nothing to install otherwise.
+
+The tool fetches only committed files, so a plain `git` checkout runs **all six tabs**:
+- `../data_extracted/{palette.json,tables/names_tables.json,map/AMER2_tiles.json}` (**B** data)
+- `./assets/{manifest.json,sprites/*.{png,json}}` — the sprite atlases, **vendored** here (a
+  committed copy of `viceroy_cpp/build/bundle/sprites`, which lives in the git-ignored C++ build
+  tree). The bytes are identical to what the C++ reads; re-vendor after a rebuild with
+  `cp viceroy_cpp/build/bundle/manifest.json lab/assets/ && cp viceroy_cpp/build/bundle/sprites/* lab/assets/sprites/`.
 
 ## Tabs (built incrementally)
 - **Sprites** *(M1)* — sheet picker, atlas + clickable frame boxes, full frame table, per-frame

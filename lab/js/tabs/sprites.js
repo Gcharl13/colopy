@@ -52,8 +52,9 @@ export async function render(host, ctx) {
   host.append(
     section('Sprite verification',
       el('p', { class: 'hint' },
-        'Loaded directly from the bundle the C++ reads (', el('code', {}, 'viceroy_cpp/build/bundle'),
-        ') — frame rects are byte-accurate. Roles carry their own tier+citation; “—” means uncited.'),
+        'Loaded from the vendored sprite atlases (', el('code', {}, 'lab/assets'),
+        ', a committed copy of the bundle the C++ reads) — frame rects are byte-accurate. ',
+        'Roles carry their own tier+citation; “—” means uncited.'),
       el('div', { class: 'row' },
         el('label', {}, 'Sheet: '), picker,
         el('label', { class: 'gap' }, el('span', {}, hidePh), ' hide placeholders'),

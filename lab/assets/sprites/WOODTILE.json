@@ -1,0 +1,8 @@
+{
+  "sheet": "WOODTILE",
+  "nframes": 1,
+  "atlas": { "w": 32, "h": 24 },
+  "frames": [
+    {"i":0,"x":37,"y":50,"w":32,"h":24,"ax":0,"ay":0}
+  ]
+}
