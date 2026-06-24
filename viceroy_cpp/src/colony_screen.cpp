@@ -144,30 +144,30 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
         const Frame& f = sh.frames[fi];
         scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
     };
-    // Figures stand at the BOTTOM of the cell (feet on the tile), facing RIGHT. The sheet art
-    // faces left, so flip (the engine's 0x8000 flip flag → func_00E76A). [DOS observation.]
+    // The figure (colonist/colony) sits at the BOTTOM-CENTRE of the cell, facing RIGHT (sheet
+    // art faces left → flip via the engine's 0x8000 flag, func_00E76A).
     auto blit_worker = [&](int fi, int col, int row) {
         if (fi < 0 || fi >= (int)icons.frames.size()) return;
         const Frame& f = icons.frames[fi];
-        scr.blit_frame_flip(f, GX + col * CELL + 1, GY + row * CELL + CELL - f.h - 1);
+        scr.blit_frame_flip(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + CELL - f.h - 1);
     };
-    auto blit_colony = [&](int fi, int col, int row) {               // colony sprite, bottom-centred
+    auto blit_colony = [&](int fi, int col, int row) {               // colony sprite, bottom-centre
         if (fi < 0 || fi >= (int)icons.frames.size()) return;
         const Frame& f = icons.frames[fi];
         scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + CELL - f.h - 1);
     };
-    // Production = a HORIZONTAL ROW of the produced good's sprite (ICONS good+0x16) along the
-    // tile bottom — the func_002EE4 gauge layout (same primitive as the Continental Congress
-    // bells), NOT a number. `startdx` leaves room for the worker at the bottom-left.
-    auto row_good = [&](int col, int row, int good, int qty, int startdx) {
+    // Produced good = a HORIZONTAL ROW of the good's sprite (ICONS good+0x16), centred ABOVE the
+    // colonist near the top of the cell (good sprite over the worker, both centred — DOS layout).
+    auto row_good = [&](int col, int row, int good, int qty) {
         int fi = 0x16 + good;
         if (fi < 0 || fi >= (int)icons.frames.size() || qty <= 0) return;
         const Frame& f = icons.frames[fi];
-        int avail = CELL - startdx - 1;
+        int avail = CELL - 1;
         int step = (qty <= 1) ? 0 : std::min(f.w, (avail - f.w) / (qty - 1));
         if (qty > 1 && step < 2) step = 2;
-        int bx = GX + col * CELL + startdx;
-        int by = GY + row * CELL + CELL - f.h - 1;                    // tile floor
+        int total = f.w + step * (qty - 1);
+        int bx = GX + col * CELL + (CELL - total) / 2;               // centred horizontally
+        int by = GY + row * CELL + 1;                                // top of the cell, above the figure
         for (int k = 0; k < qty && k < 5; ++k) scr.blit_frame(f, bx + k * step, by);
     };
 
@@ -184,15 +184,15 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
                 if (q > best_q) { best_q = q; best_g = YIELD_GOOD[j]; best_col = col; best_row = row; }
             }
         }
-    // 3. centre = the colony sprite (ICONS frame 0) at the bottom + its auto food as a row.
+    // 3. centre = the colony sprite (ICONS frame 0) at the bottom + its auto food above.
     blit_colony(0, 1, 1);
     int cyr = yield_row(tile_id(1, 1));
-    if (cyr >= 0) row_good(1, 1, 0 /*Food*/, YIELD[cyr][0], 2);       // centre auto food (farmer yield)
-    // 4. the worker = a Free Colonist (ICONS frame 100) at the bottom-left facing right; produced
-    //    good as a horizontal row to its right.
+    if (cyr >= 0) row_good(1, 1, 0 /*Food*/, YIELD[cyr][0]);          // centre auto food (farmer yield)
+    // 4. the worker = a Free Colonist (ICONS frame 100) bottom-centre facing right, produced good
+    //    centred above it.
     if (best_col >= 0) {
-        blit_worker(100, best_col, best_row);                        // Free Colonist, bottom-left, facing right
-        row_good(best_col, best_row, best_g, best_q, 8);             // produced good, horizontal row
+        blit_worker(100, best_col, best_row);                        // Free Colonist, bottom-centre, facing right
+        row_good(best_col, best_row, best_g, best_q);                // produced good, above the colonist
     }
     scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);    // white frame on the colony tile
 }
@@ -300,19 +300,20 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                 if (!dx && !dy) continue; int yr = yield_row(tid(dx, dy));
                 if (yr >= 0 && YIELD[yr][0] > bestf) bestf = YIELD[yr][0];
             }
-            food += bestf - pop * 2;                       // + best worked food − consumption (2/colonist)
+            food += bestf;                                 // TOTAL food produced (centre + worked tile), not net
         }
+        // Each production qty is shown as LAYERED SPRITES (one icon per unit), never a number —
+        // the func_002EE4 gauge layout (same as the Continental Congress bells); applies game-wide.
         int rx = 4;
         auto prod = [&](int frame, int val) {
-            if (frame >= 0 && frame < (int)icons.frames.size()) blit_idx(scr, icons, frame, rx, 161);
-            char b[8]; std::snprintf(b, sizeof b, "%d", val);
-            int iw = (frame < (int)icons.frames.size() && icons.frames[frame].w > 2) ? icons.frames[frame].w : 8;
-            scr.draw_text(font, rx + iw + 1, 163, b, COL_WHITE);
-            rx += iw + 14;
+            if (frame < 0 || frame >= (int)icons.frames.size()) return;
+            int iw = icons.frames[frame].w > 2 ? icons.frames[frame].w : 6;
+            for (int k = 0; k < val && k < 12; ++k) { blit_idx(scr, icons, frame, rx, 161); rx += iw; }
+            rx += iw + 4;                                   // reserve a category slot + gap
         };
-        prod(22, food);                                    // Food (good 0)
-        prod(56, crosses);                                 // Crosses
-        prod(62, bells);                                   // Bells
+        prod(22, food);                                    // Food (good 0) — layered
+        prod(56, crosses);                                 // Crosses — layered
+        prod(62, bells);                                   // Bells — layered
     }
     // --- Ship/cargo "No Ships In Port" — kept centred where it was (user directive). ---
     {
