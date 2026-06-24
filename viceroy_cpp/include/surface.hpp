@@ -35,6 +35,8 @@ struct Surface {
 
     // Blit an indexed sprite Frame at (dx,dy); skips 0xFD; clips to the surface.
     void blit_frame(const Frame& f, int dx, int dy);
+    // Same, horizontally mirrored (engine 0x8000 flip flag) — e.g. to face a figure right.
+    void blit_frame_flip(const Frame& f, int dx, int dy);
     // Opaque copy of a sub-region of an indexed image (e.g. a .PIK background).
     void blit_region(const IndexedPng& img, int sx, int sy, int sw, int sh,
                      int dx, int dy);

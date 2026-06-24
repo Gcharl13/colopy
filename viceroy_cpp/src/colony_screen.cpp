@@ -144,26 +144,31 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
         const Frame& f = sh.frames[fi];
         scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
     };
-    auto blit_top = [&](const Sheet& sh, int fi, int col, int row) {   // top-centred (colonist/colony)
-        if (fi < 0 || fi >= (int)sh.frames.size()) return;
-        const Frame& f = sh.frames[fi];
-        scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + 1);
+    // Figures stand at the BOTTOM of the cell (feet on the tile), facing RIGHT. The sheet art
+    // faces left, so flip (the engine's 0x8000 flip flag → func_00E76A). [DOS observation.]
+    auto blit_worker = [&](int fi, int col, int row) {
+        if (fi < 0 || fi >= (int)icons.frames.size()) return;
+        const Frame& f = icons.frames[fi];
+        scr.blit_frame_flip(f, GX + col * CELL + 1, GY + row * CELL + CELL - f.h - 1);
     };
-    // Production = a HORIZONTAL ROW of the produced good's sprite (ICONS good+0x16), one per
-    // unit, laid out along the tile bottom — the in-game func_002EE4 gauge layout (the same
-    // primitive as the Continental Congress bell row), NOT a number and NOT a vertical pile.
-    auto row_good = [&](int col, int row, int good, int qty) {
+    auto blit_colony = [&](int fi, int col, int row) {               // colony sprite, bottom-centred
+        if (fi < 0 || fi >= (int)icons.frames.size()) return;
+        const Frame& f = icons.frames[fi];
+        scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + CELL - f.h - 1);
+    };
+    // Production = a HORIZONTAL ROW of the produced good's sprite (ICONS good+0x16) along the
+    // tile bottom — the func_002EE4 gauge layout (same primitive as the Continental Congress
+    // bells), NOT a number. `startdx` leaves room for the worker at the bottom-left.
+    auto row_good = [&](int col, int row, int good, int qty, int startdx) {
         int fi = 0x16 + good;
         if (fi < 0 || fi >= (int)icons.frames.size() || qty <= 0) return;
         const Frame& f = icons.frames[fi];
-        int avail = CELL - 1;
+        int avail = CELL - startdx - 1;
         int step = (qty <= 1) ? 0 : std::min(f.w, (avail - f.w) / (qty - 1));
-        if (qty > 1 && step < 2) step = 2;                            // keep them distinguishable
-        int total = f.w + step * (qty - 1);
-        int bx = GX + col * CELL + (CELL - total) / 2;
-        int by = GY + row * CELL + CELL - f.h;                        // along the tile floor
-        for (int k = 0; k < qty && k < 6; ++k)
-            scr.blit_frame(f, bx + k * step, by);
+        if (qty > 1 && step < 2) step = 2;
+        int bx = GX + col * CELL + startdx;
+        int by = GY + row * CELL + CELL - f.h - 1;                    // tile floor
+        for (int k = 0; k < qty && k < 5; ++k) scr.blit_frame(f, bx + k * step, by);
     };
 
     // 2. the founding colonist works the best adjacent LAND tile; show the colonist + the
@@ -179,16 +184,15 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
                 if (q > best_q) { best_q = q; best_g = YIELD_GOOD[j]; best_col = col; best_row = row; }
             }
         }
-    // 3. centre = the colony sprite (ICONS frame 0, top) + the centre tile's auto food as a row.
-    blit_top(icons, 0, 1, 1);
+    // 3. centre = the colony sprite (ICONS frame 0) at the bottom + its auto food as a row.
+    blit_colony(0, 1, 1);
     int cyr = yield_row(tile_id(1, 1));
-    if (cyr >= 0) row_good(1, 1, 0 /*Food*/, YIELD[cyr][0]);          // centre auto food (farmer yield)
-    // 4. the worker = a Free Colonist (ICONS frame 100 — png 100, the @UNIT Icon for Free
-    //    Colonist; frame 5 was the Caravel, 58 was an unrelated pip) at top, produced good as a
-    //    horizontal row along the bottom.
+    if (cyr >= 0) row_good(1, 1, 0 /*Food*/, YIELD[cyr][0], 2);       // centre auto food (farmer yield)
+    // 4. the worker = a Free Colonist (ICONS frame 100) at the bottom-left facing right; produced
+    //    good as a horizontal row to its right.
     if (best_col >= 0) {
-        blit_top(icons, 100, best_col, best_row);                    // Free Colonist figure
-        row_good(best_col, best_row, best_g, best_q);                // produced good, horizontal row
+        blit_worker(100, best_col, best_row);                        // Free Colonist, bottom-left, facing right
+        row_good(best_col, best_row, best_g, best_q, 8);             // produced good, horizontal row
     }
     scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);    // white frame on the colony tile
 }
@@ -230,20 +234,25 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // --- Colony-scene parchment inset (top-left): PARCH.SS tiled inside the scene window. ---
     tile_fill(scr, parch, SCENE_X, SCENE_Y, SCENE_W, SCENE_H);
 
-    // --- Scene: for each of the 15 plots, draw the occupying building (highest built tier), or
-    // if the plot is empty/not-yet-built draw its CATEGORY cleared-lot sprite (BUILDING.SS
-    // 45/44/43/–/46), NOT a tree. Buildings at the byte-verified plot coords (x, y+8). ---
+    // --- Scene: 15 plots, each drawing its built building (type-specific BUILDING.SS sprite via
+    // func_026DD4) or, if empty, its CATEGORY cleared-lot frame (45/44/43/–/46). PLACEMENT is the
+    // byte-computed result of func_025D34 for THIS colony (20,25): the MSC-LCG claim permutation
+    // (seed=(uint16)((y<<8)+x)=0x1914) + the +0x84 produced-good pass gives slot→good 0x8E82 =
+    // [27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1]. (Agent-verified; the general algorithm is
+    // documented — re-run it if cx/cy or the base seed [0x8D80] change.) ---
+    static const signed char SLOT_GOOD[15] = {27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1};
     for (int slot = 0; slot < 15; ++slot) {
-        int best_frame = -1;
-        for (int t = 0; t < 42; ++t) {                 // low->high so higher tier wins
-            if (TYPE_PLOT[t] != slot) continue;
-            if (!((c.built_mask >> t) & 1ull)) continue;
-            if (TYPE_FRAME[t] >= 0) best_frame = TYPE_FRAME[t];
-        }
+        int good = (cx == 20 && cy == 25) ? SLOT_GOOD[slot] : -2;    // computed layout for the default founding
         int frame;
-        if (best_frame >= 0) frame = best_frame;                     // built: the building sprite
-        else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }  // cleared lot
-        int x = PLOT[slot][0], y = PLOT[slot][1] + 8;               // byte-verified plot coords (raw)
+        if (good >= 0 && TYPE_FRAME[good] >= 0) frame = TYPE_FRAME[good];   // built: type-specific sprite
+        else if (good == -2) {                                       // other colony: fall back to mask+plot
+            int bf = -1;
+            for (int t = 0; t < 42; ++t)
+                if (TYPE_PLOT[t] == slot && ((c.built_mask >> t) & 1ull) && TYPE_FRAME[t] >= 0) bf = TYPE_FRAME[t];
+            if (bf >= 0) frame = bf;
+            else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }
+        } else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }  // cleared lot
+        int x = PLOT[slot][0], y = PLOT[slot][1] + 8;               // byte-verified plot coords (DS:0x266)
         blit_idx_clip(scr, building, frame, x, y,
                       SCENE_X, SCENE_Y, SCENE_X + SCENE_W, SCENE_Y + SCENE_H);
     }
@@ -261,28 +270,49 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // the per-colonist / surrounding-tile model is wired in. ---
     blit_pik_raw(scr, backdrop, PIK_Y);
 
-    // --- Colonist plaza (LEFT panel 0..120, func_0270D0). The colony's colonists stand on the
-    // grass; the Sons-of-Liberty / Tory split is drawn HERE (agent-traced: NOT func_02814C — the
-    // decode §7 SoL attribution to func_02814C was an over-read). Tory icon = ICONS 0x7C, Rebel
-    // = ICONS 0x7D, each with its count. Fresh founding: SoL 0% => all colonists Tory. ---
+    // --- Colonist plaza (LEFT panel 0..120, func_0270D0): colonist figures + SoL%/Tory (y=132)
+    // + the Food/Crosses/Bells production row (y=163). All drawn HERE (the SoL attribution to
+    // func_02814C in decode §7 was an over-read — agent-traced). ---
     {
-        int pop   = c.population < 1 ? 1 : c.population;
-        int solp  = 0;                                    // fresh founding: 0% SoL (spec colony.md §3)
-        int rebel = (solp * pop + 50) / 100;
-        int tory  = pop - rebel;
-        blit_idx(scr, icons, 0x7C, 2, 132);               // Tory icon @ x=2,y=132 (func_0270D0 @0x027471)
-        char n[8]; std::snprintf(n, sizeof n, "%d", tory);
-        scr.draw_text(font, 14, 133, n, COL_WHITE);
-        if (rebel > 0) {
-            blit_idx(scr, icons, 0x7D, 60, 132);          // Rebel icon (func_0270D0 @0x02759C)
-            std::snprintf(n, sizeof n, "%d", rebel);
-            scr.draw_text(font, 72, 133, n, COL_WHITE);
-        }
-        if (100 < (int)icons.frames.size()) {             // Free Colonist figures, laid right-to-left
+        int pop = c.population < 1 ? 1 : c.population;
+        // SoL%/Tory at y=132 (func_0270D0 @0x027471): fresh founding = 0% SoL, all Tory.
+        blit_idx(scr, icons, 0x7C, 2, 132);               // SoL/Tory icon
+        scr.draw_text(font, 14, 133, "0%", COL_WHITE);
+        // Colonist figures on the grass, facing RIGHT (sheet art faces left -> flip).
+        if (100 < (int)icons.frames.size()) {
             const Frame& cf = icons.frames[100];
-            int px = 104;
-            for (int k = 0; k < pop && k < 8; ++k) { scr.blit_frame(cf, px, 150); px -= cf.w + 4; }
+            int px = 8;
+            for (int k = 0; k < pop && k < 8; ++k) { scr.blit_frame_flip(cf, px, 148); px += cf.w + 6; }
         }
+        // Production row at y=163 (func_0270D0 @0x027326, flushed via 0x22C): Food (good0),
+        // Crosses (ICONS 0x39/bundle 56), Bells (ICONS 0x3f/bundle 62). Values are runtime BSS;
+        // derived here from the byte-verified terrain yields for this founding.
+        int food = 0, crosses = 0, bells = 0;
+        if (map) {
+            auto tid = [&](int dx, int dy) {
+                int x = cx + dx, y = cy + dy;
+                if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 25;
+                return (int)(map->tiles[(size_t)y * map->w + x] & 0x1F);
+            };
+            int cr = yield_row(tid(0, 0)); if (cr >= 0) food += YIELD[cr][0];   // colony-centre auto food
+            int bestf = 0;
+            for (int dy = -1; dy <= 1; ++dy) for (int dx = -1; dx <= 1; ++dx) {
+                if (!dx && !dy) continue; int yr = yield_row(tid(dx, dy));
+                if (yr >= 0 && YIELD[yr][0] > bestf) bestf = YIELD[yr][0];
+            }
+            food += bestf - pop * 2;                       // + best worked food − consumption (2/colonist)
+        }
+        int rx = 4;
+        auto prod = [&](int frame, int val) {
+            if (frame >= 0 && frame < (int)icons.frames.size()) blit_idx(scr, icons, frame, rx, 161);
+            char b[8]; std::snprintf(b, sizeof b, "%d", val);
+            int iw = (frame < (int)icons.frames.size() && icons.frames[frame].w > 2) ? icons.frames[frame].w : 8;
+            scr.draw_text(font, rx + iw + 1, 163, b, COL_WHITE);
+            rx += iw + 14;
+        };
+        prod(22, food);                                    // Food (good 0)
+        prod(56, crosses);                                 // Crosses
+        prod(62, bells);                                   // Bells
     }
     // --- Ship/cargo "No Ships In Port" — kept centred where it was (user directive). ---
     {

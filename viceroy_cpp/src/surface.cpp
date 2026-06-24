@@ -47,6 +47,18 @@ void Surface::blit_frame(const Frame& f, int dx, int dy) {
     }
 }
 
+// Horizontal-flip blit (the engine's 0x8000 frame-flag → func_00E76A @0x00E786 mirrors the
+// sprite). Used to face colonist/unit figures right when the sheet art faces left.
+void Surface::blit_frame_flip(const Frame& f, int dx, int dy) {
+    for (int yy = 0; yy < f.h; ++yy) {
+        for (int xx = 0; xx < f.w; ++xx) {
+            uint8_t p = f.px[yy * f.w + xx];
+            if (p == SS_TRANSPARENT) continue;
+            put(dx + (f.w - 1 - xx), dy + yy, p);
+        }
+    }
+}
+
 void Surface::blit_region(const IndexedPng& img, int sx, int sy, int sw, int sh,
                           int dx, int dy) {
     for (int yy = 0; yy < sh; ++yy) {
