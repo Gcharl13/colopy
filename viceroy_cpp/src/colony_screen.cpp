@@ -284,11 +284,11 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
             for (int k = 0; k < pop && k < 8; ++k) { scr.blit_frame(cf, px, 150); px -= cf.w + 4; }
         }
     }
-    // --- Ship/cargo panel (RIGHT panel 211..302, func_02814C): no ship at a fresh founding. ---
+    // --- Ship/cargo "No Ships In Port" — kept centred where it was (user directive). ---
     {
         const char* s = "No Ships In Port";
         int tw = font.frames.empty() ? 0 : scr.text_width(font, s);
-        scr.draw_text(font, 256 - tw / 2, 136, s, COL_WHITE);
+        scr.draw_text(font, 163 - tw / 2, 136, s, COL_WHITE);
     }
     // --- Production/build button slots (far-right column above the Exit button). ICONS blue-
     // button frames 67/68/69 = the lumber/tools/hammer production chain. ---
