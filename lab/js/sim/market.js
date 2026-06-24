@@ -67,3 +67,23 @@ export function buy(price, qty, gold = 0) {
   const newGold = Math.min(999999, Math.max(0, gold - cost));
   return { cost, goldDelta: newGold - gold, newGold, affordable: gold >= cost };
 }
+
+// --- Boycotts (spec/systems/boycotts.md, all BYTE_VERIFIED) ---------------
+// Per-good boycott bits live in PowerRecord +0x20 (u16, one bit per good).
+//   test  func_030B38:  (1<<good) & mask
+//   set   @0x34717:     mask |= (1<<good)
+//   clear @0x33423:     mask &= ~(1<<good)
+//   Jakob Fugger (FF 1) @0x3BD45: mask := 0  (clears all)
+export function isBoycotted(mask, good) { return ((mask >> good) & 1) === 1; }
+export function setBoycott(mask, good) { return (mask | (1 << good)) & 0xFFFF; }
+export function clearBoycott(mask, good) { return mask & ~(1 << good) & 0xFFFF; }
+export const JAKOB_FUGGER_CLEAR = 0;     // mask := 0 (@0x3BD45)
+
+// Back-tax owed to lift a boycott — func_03334E @0x333AF: price · 500.
+// Paid from treasury +0x2A, credited to the King's REF fund +0x22 (@0x3340C);
+// only lifts if affordable (@0x333DD).
+export function backTaxToLift(price, gold) {
+  const owed = price * 500;
+  return { owed, affordable: gold >= owed, refDelta: owed };
+}
+

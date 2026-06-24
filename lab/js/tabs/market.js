@@ -6,17 +6,25 @@
 import { el, section, dataTable, fireRendered } from '../ui.js';
 import { renderVal, B, R } from '../provenance.js';
 import { rowsOf } from '../data/loaders.js';
-import { GOODS, FINISHED, RAW_INPUT, driftStep, supplyOf, luxuryTargets, sell, buy } from '../sim/market.js';
+import { GOODS, FINISHED, RAW_INPUT, driftStep, supplyOf, luxuryTargets, sell, buy,
+  isBoycotted, setBoycott, clearBoycott, JAKOB_FUGGER_CLEAR, backTaxToLift } from '../sim/market.js';
 
 const numInput = (v, attrs = {}) => el('input', { type: 'number', value: String(v), class: 'num', ...attrs });
+
+// Shared boycott bitmask (PowerRecord +0x20) for this tab session — modeled state.
+let boycottMask = 0;
+const boycottListeners = new Set();
+function setMask(m) { boycottMask = m & 0xFFFF; for (const fn of boycottListeners) fn(); }
 
 export async function render(host, ctx) {
   const tables = await ctx.tablesData();
   const cargo = tables['@CARGO'];
+  boycottMask = 0;
 
   host.append(
     driftSection(),
     luxurySection(),
+    boycottSection(cargo),
     tradeSection(cargo),
     section('@CARGO — goods & price params (B)',
       el('p', { class: 'hint' }, 'Base buy/sell prices, drift band [drift_low, drift_high], rise/fall, attrition (recovery), volatility — all from NAMES.TXT.'),
@@ -89,6 +97,36 @@ function luxurySection() {
     out);
 }
 
+// --- boycotts (PowerRecord +0x20 bitmask; spec/systems/boycotts.md) -------
+function boycottSection(cargo) {
+  const rows = rowsOf(cargo);
+  const chips = el('div', { class: 'boycott-chips' });
+  const maskOut = el('span', {});
+  const render = () => {
+    chips.innerHTML = '';
+    for (let g = 0; g < GOODS.length; g++) {
+      const on = isBoycotted(boycottMask, g);
+      const chip = el('button', { class: 'chip' + (on ? ' on' : '') }, GOODS[g]);
+      chip.addEventListener('click', () => setMask(on ? clearBoycott(boycottMask, g) : setBoycott(boycottMask, g)));
+      chips.append(chip);
+    }
+    maskOut.textContent = '';
+    maskOut.append(renderVal(R('0x' + boycottMask.toString(16).padStart(4, '0'),
+      'boycott bitmask PowerRecord +0x20 [field B; live state R]')));
+  };
+  boycottListeners.add(render);
+  setTimeout(render, 0);
+  const fugger = el('button', { class: 'btn' }, 'Jakob Fugger — clear all');
+  fugger.addEventListener('click', () => setMask(JAKOB_FUGGER_CLEAR));
+  return section('Boycotts (B — PowerRecord +0x20 bitmask)',
+    el('p', { class: 'hint' }, 'A refused tax raise ⇒ Tea Party ⇒ the disputed good is boycotted (bit set ',
+      el('code', {}, 'mask |= 1<<good'), ' @0x34717). A boycotted good cannot be traded in Europe until the ',
+      'back-tax (price×500) is paid (treasury +0x2A → King +0x22, @0x3340C) or Jakob Fugger clears all (@0x3BD45).'),
+    el('div', { class: 'row' }, el('span', {}, 'Click a good to toggle its boycott:')),
+    chips,
+    el('div', { class: 'row' }, el('span', {}, 'mask: '), maskOut, el('span', { class: 'gap' }), fugger));
+}
+
 // --- buy/sell transaction (SELL func@0x32914; BUY page-13) ----------------
 function tradeSection(cargo) {
   const rows = rowsOf(cargo);
@@ -105,6 +143,19 @@ function tradeSection(cargo) {
     const price = Number(row.price_start2 ?? row.price_start1 ?? 1);   // sell (ask) price
     const buyPrice = Number(row.price_start1 ?? price);
     const q = Number(qty.value) || 0, k = Number(king.value) || 0, g0 = Number(gold.value) || 0;
+    // Boycott gate: the good is tested BEFORE the tax math (@0x415A6) — if boycotted,
+    // trading is blocked until the back-tax (price×500) is paid.
+    if (isBoycotted(boycottMask, gi)) {
+      const bt = backTaxToLift(price, g0);
+      out.append(
+        el('div', { class: 'tier-tbd' }, el('strong', {}, `${GOODS[gi]} is BOYCOTTED`), ' — cannot buy or sell in Europe.'),
+        el('div', {}, 'back-tax to lift = price × 500: ', renderVal(R(bt.owed, 'func_03334E @0x333AF — price×500 [formula B]'))),
+        el('div', {}, 'affordable from gold ', String(g0), '? ', renderVal(R(bt.affordable ? 'yes' : 'no', 'gold check @0x333DD [B]')),
+          ' → pays treasury +0x2A, credits King +0x22'),
+        el('p', { class: 'hint' }, 'Toggle the boycott off above (or Jakob Fugger) to trade again.'),
+      );
+      return;
+    }
     const s = sell(price, q, k, g0);
     const b = buy(buyPrice, q, g0);
     out.append(
@@ -121,6 +172,7 @@ function tradeSection(cargo) {
     );
   };
   for (const inp of [goodSel, qty, king, gold]) inp.addEventListener('input', recompute);
+  boycottListeners.add(recompute);     // re-evaluate the boycott gate live
   setTimeout(recompute, 0);
   return section('Buy / sell transaction (B formula, modeled qty & tax)',
     el('p', { class: 'hint' }, 'SELL func@0x32914: gross → King tax → net → gold. BUY (page-13): inline gold debit, untaxed.'),

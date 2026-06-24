@@ -44,15 +44,17 @@ The tool fetches:
 - **Sprites** *(M1)* — sheet picker, atlas + clickable frame boxes, full frame table, per-frame
   zoom inspector, hide-placeholders/filter, byte-cited frame roles.
 - **Colony** *(M5)* — single-colony per-turn sim: per-tile production (Tory penalty, expert,
-  building gate, factory), the Sons-of-Liberty EMA, and food growth. Formulas byte-cited.
-- **Market** *(M4)* — European market: per-turn price drift, luxury shared-pool coupling, and
-  buy/sell with the King's tax. Formulas B; live state (seed/accumulators/tax) modeled & editable.
+  building gate, factory), raw→finished chains, the Sons-of-Liberty EMA, and food growth.
+- **Market** *(M4)* — European market: per-turn price drift, luxury shared-pool coupling, buy/sell
+  with the King's tax, and boycotts (bitmask, back-tax to lift, Jakob Fugger clear-all).
 - **Map** *(M3)* — AMER2.MP rendered as the FULL sprite composite (TERRAIN.SS + PHYS0.SS, ported
-  1:1 from `mapview.cpp`); tile inspector with layer stack; modeled generator (future).
+  1:1 from `mapview.cpp`); tile inspector; plus a Customize-New-World generator (`func_064A10`
+  passes, modeled RNG) whose output composites through the same renderer.
 - **Settings & Export** — provenance ledger + snapshot export (JSON now, CSV series with M2).
 
 ## Status
-**M0 (scaffold) complete:** shell, provenance spine, data loaders, tabs, JSON export.
-**M1:** deepened Sprites tab. **M3:** full sprite-composited Map render. **M4:** European Market
-tab. **M5:** colony per-turn sim (Colony tab; folds in the deferred M2 colony flow). Remaining:
-boycotts/raw→finished ratios, the modeled map generator.
+**Complete:** M0 scaffold + provenance spine; M1 Sprites; M3 full sprite-composited Map render;
+M4 European Market (drift, luxury pool, buy/sell, boycotts); M5 colony per-turn sim (production,
+raw→finished chains, SoL EMA, growth); and the Customize-New-World map generator. Every value is
+tier-tagged — byte-verified formulas vs modeled runtime state — and the remaining gaps are TBD-
+badged in `PROVENANCE.md` (raw:finished ratio, WoI/starvation rules, byte-exact RNG), never faked.

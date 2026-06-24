@@ -34,6 +34,8 @@ Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; fir
 | SoL steady state ≈ 50·bells/pop | A | derived consequence of the EMA (`colony.md §3`) |
 | Growth store = 200, max pop = 32 | B | `func_02D658 @0x2E098`; `population<0x20 @0x009432` |
 | **Food consumption = pop × 2** | **R** | user-confirmed; byte-loc TBD — **editable** |
+| Raw→finished chains (House→Shop→Factory ×5) | B | `@BUILDING` chains; factory tier `count_building_chain_present>2 @0x8EA9` |
+| Per-worker raw:finished conversion ratio | R | modeled 1:1; exact ratio not decompiled |
 | **WoI bells halving / <pop pressure** | **TBD** | omitted from the EMA sim (noted, not folded in silently) |
 | **Starvation rule** | **TBD** | not decompiled |
 
@@ -49,9 +51,10 @@ Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; fir
 | SELL `gross→tax→net→gold` (clamp [0,999999]) | B | `func@0x32914`; gold helper `func@0x8806 @0x32a82` |
 | King tax = sale·tax%/100 → REF +0x22 | B | `@0x32a4a` (`king.md`) |
 | BUY untaxed inline debit | B | page-13 sites |
-| **Live state (seed, accumulators, tax %, qty)** | **R** | runtime — modeled/editable inputs the B formulas run on |
-| **Boycott bitmask / back-tax** | **B (data); not yet wired** | `boycotts.md §3` (`+0x20`) — future |
-| **Raw→finished conversion ratios** | **R** | 5 chains known by name; exact ratios not decompiled |
+| Boycott bitmask test/set/clear | B | `PowerRecord +0x20`; `func_030B38` / `@0x34717` / `@0x33423` |
+| Back-tax to lift = price × 500 | B | `func_03334E @0x333AF`; treasury +0x2A → King +0x22 |
+| Jakob Fugger clears all boycotts | B | `@0x3BD45` (`mask := 0`) |
+| **Live state (seed, accumulators, tax %, qty, boycott bits)** | **R** | runtime — modeled/editable inputs the B formulas run on |
 
 ## Map tab — full sprite-composited render (M3)
 | Item | Tier | Source / note |
@@ -66,7 +69,8 @@ Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; fir
 | **Layer order + sprite selection** | **B** | hard rules 3/4/5/7; port of `mapview.cpp` `terrain_compose` |
 | Active palette = PHYS0 embedded PLTE | B | `main.cpp:225` (`scr.set_palette(tiles.pal)`) |
 | **Edge-blend + coast-connectivity heuristics** | **A** | inherit `mapview.cpp`'s tier (RULINGS 2026-06-22 / INGAME_MAP_RENDER_TRACE) |
-| **Procedural generator** | **TBD** | DOS generator algorithm not decompiled — *M4, badged* |
+| Generator pass structure / climate tables / borders | B | `func_064A10` P0–P6; climate `{5,4,1,3,2,2}`N/`{2,3,3,4,6,7}`S `@0x64CFC/@0x6504E`; dims `@0x75702`; landmass target `@0x64AAD` |
+| **Generator RNG + blob-walk / smoothing fill** | **R** | DOS LCG not pinned — modeled PRNG; output is a per-seed continent, not a byte-exact DOS map (`sim/mapgen.js`) |
 
 The render pipeline (`js/data/png_indexed.js` → `js/sim/sheet.js` → `js/sim/surface.js` →
 `js/sim/mapview.js`) is a 1:1 JS port of the C++ reference renderer: it decodes the SAME

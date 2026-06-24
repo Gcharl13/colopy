@@ -28,6 +28,7 @@ export async function render(host, ctx) {
 
   host.append(
     productionSection(unforested),
+    chainsSection(tables['@BUILDING']),
     solSection(),
     growthSection(),
     section('@UNFORESTED — terrain yields (B)',
@@ -83,6 +84,38 @@ function productionSection(unforested) {
       el('label', { class: 'gap' }, 'difficulty '), diffSel,
       el('label', { class: 'gap' }, expert, ' expert')),
     out);
+}
+
+// --- raw→finished production chains (@BUILDING House→Shop→Factory) --------
+// The 5 manufacturing chains: each finished good has a 3-link building chain;
+// the 3rd link (Factory) is the count_building_chain_present>2 factory tier (×2).
+const CHAINS = [
+  { raw: 'Sugar', finished: 'Rum', links: ['Rum Distiller\'s House', 'Rum Distillery', 'Rum Factory'] },
+  { raw: 'Tobacco', finished: 'Cigars', links: ['Tobacconist\'s House', 'Tobacconist\'s Shop', 'Cigar Factory'] },
+  { raw: 'Cotton', finished: 'Cloth', links: ['Weaver\'s House', 'Weaver\'s Shop', 'Textile Mill'] },
+  { raw: 'Furs', finished: 'Coats', links: ['Fur Trader\'s House', 'Fur Trading Post', 'Fur Factory'] },
+  { raw: 'Ore', finished: 'Tools', links: ['Blacksmith\'s House', 'Blacksmith\'s Shop', 'Iron Works'] },
+];
+function chainsSection(building) {
+  const present = new Set(rowsOf(building).map((r) => r.name));
+  const rows = CHAINS.map((c) => ({
+    chain: `${c.raw} → ${c.finished}`,
+    house: c.links[0], shop: c.links[1], factory: c.links[2],
+    inData: c.links.filter((l) => present.has(l)).length,
+  }));
+  return section('Raw → finished production chains (B chains; R ratio)',
+    el('p', { class: 'hint' },
+      'Each finished good is made from its raw input through a 3-link building chain (', el('code', {}, 'House → Shop → Factory'),
+      '). The 3rd link is the factory tier (', el('code', {}, 'count_building_chain_present>2'), ' @0x8EA9) that doubles output. ',
+      'The chains and buildings are byte-verified (@BUILDING); the exact raw:finished conversion RATIO is not decompiled — ',
+      'modeled here as 1:1 per worker (', el('b', {}, 'R'), ').'),
+    el('table', { class: 'data' },
+      el('thead', {}, el('tr', {}, ...['chain', 'House (tier 1)', 'Shop (tier 2)', 'Factory (×2)', 'ratio'].map((c) => el('th', {}, c)))),
+      el('tbody', {}, ...rows.map((r) => el('tr', {},
+        el('td', {}, renderVal(B(r.chain, '@BUILDING chain (NAMES.TXT) [B]'))),
+        el('td', {}, r.house), el('td', {}, r.shop),
+        el('td', {}, present.has(r.factory) ? r.factory : el('span', { class: 'tier-tbd' }, `${r.factory}?`)),
+        el('td', {}, renderVal(R('1:1', 'MODELED: per-worker conversion ratio (not decompiled)'))))))));
 }
 
 // --- Sons-of-Liberty EMA (func_02D658 @0x2DA1C) --------------------------
