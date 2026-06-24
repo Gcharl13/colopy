@@ -144,37 +144,37 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
         const Frame& f = sh.frames[fi];
         scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
     };
-    auto put_num = [&](int col, int row, int val, uint8_t color) {
+    auto put_num = [&](int col, int row, int val) {        // production qty, bottom-right + shadow
         char s[8]; std::snprintf(s, sizeof s, "%d", val);
         int tw = scr.text_width(font, s);
-        scr.draw_text(font, GX + col * CELL + (CELL - tw) / 2, GY + row * CELL + CELL - 7, s, color);
+        int x = GX + col * CELL + CELL - tw - 2, y = GY + row * CELL + CELL - 8;
+        scr.draw_text(font, x + 1, y + 1, s, 0);           // black shadow for legibility
+        scr.draw_text(font, x, y, s, COL_WHITE);
     };
 
-    // 2. the founding colonist works the best adjacent LAND tile; show colonist + the good it
-    //    produces (icon) + the byte-verified yield. Centre auto-produces the colony's food.
+    // 2. the founding colonist works the best adjacent LAND tile; show the colonist + the
+    //    byte-verified yield of the good it produces. The centre tile auto-produces food.
     int best_col = -1, best_row = -1, best_g = 0, best_q = 0;
     for (int row = 0; row < 3; ++row)
         for (int col = 0; col < 3; ++col) {
             if (col == 1 && row == 1) continue;
             int yr = yield_row(tile_id(col, row));
             if (yr < 0) continue;
-            for (int j = 0; j < 8; ++j) {                              // best non-food good, else food
+            for (int j = 0; j < 8; ++j) {                              // best produced good on the tile
                 int q = YIELD[yr][j];
                 if (q > best_q) { best_q = q; best_g = YIELD_GOOD[j]; best_col = col; best_row = row; }
             }
         }
-    // 3. centre = the colony sprite (ICONS frame 0) + the centre tile's farmer food yield.
+    // 3. centre = the colony sprite (ICONS frame 0) + the centre tile's auto food production.
     blit_centered(icons, 0, 1, 1);
     int cyr = yield_row(tile_id(1, 1));
-    if (cyr >= 0) {
-        blit_idx(scr, icons, 0x16 /*Food*/, GX + CELL + 1, GY + CELL + 1);
-        put_num(1, 1, YIELD[cyr][0] + 3, COL_WHITE);                  // colony-centre food bonus +3
-    }
-    // 4. the colonist on its worked tile + the produced good's icon + quantity.
+    if (cyr >= 0) put_num(1, 1, YIELD[cyr][0]);                       // centre auto food (farmer yield)
+    // 4. the colonist (ICONS frame 58 — NOT the caravel 5) on its worked tile + the produced
+    //    good's icon (top-left) + the quantity (bottom-right).
     if (best_col >= 0) {
-        blit_centered(icons, 5, best_col, best_row);                 // colonist figure
         blit_idx(scr, icons, 0x16 + best_g, GX + best_col * CELL + 1, GY + best_row * CELL + 1);
-        put_num(best_col, best_row, best_q, COL_WHITE);
+        blit_centered(icons, 58, best_col, best_row);                // colonist figure
+        put_num(best_col, best_row, best_q);
     }
     scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);    // white frame on the colony tile
 }
@@ -219,9 +219,9 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
             if (!((c.built_mask >> t) & 1ull)) continue;
             if (TYPE_FRAME[t] >= 0) best_frame = TYPE_FRAME[t];
         }
+        if (best_frame < 0) continue;                                // empty plot (decode §4a: skip)
         int x = SCENE_X + PLOT[slot][0], y = SCENE_Y + PLOT[slot][1];
-        int frame = (best_frame >= 0) ? best_frame : TREE_FRAME[slot % 3];   // building or base tree
-        blit_idx_clip(scr, building, frame, x, y,
+        blit_idx_clip(scr, building, best_frame, x, y,
                       SCENE_X, SCENE_Y, SCENE_X + SCENE_W, SCENE_Y + SCENE_H);
     }
 
@@ -238,13 +238,17 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // the per-colonist / surrounding-tile model is wired in. ---
     blit_pik_raw(scr, backdrop, PIK_Y);
 
-    // --- Centre bottom panel: ship/cargo. A freshly-founded colony has no ship docked, so the
-    // panel reads "No Ships In Port" (SESSION_UI_CATALOG §2 / decode §7 func_02814C). ---
+    // --- Centre bottom panel (x121..205): ship/cargo. A freshly-founded colony has no ship,
+    // so it reads "No Ships In Port", centred IN the centre panel (decode §7 func_02814C). ---
     {
         const char* s = "No Ships In Port";
         int tw = font.frames.empty() ? 0 : scr.text_width(font, s);
-        scr.draw_text(font, 180 - tw / 2, 131, s, COL_WHITE);
+        scr.draw_text(font, 163 - tw / 2, 136, s, COL_WHITE);
     }
+    // --- Right bottom panel (x206..319): the production/build button slots (lower-right area).
+    // ICONS blue-button frames 67/68/69 = the lumber/tools/hammer production chain. ---
+    for (int i = 0; i < 3; ++i)
+        blit_idx(scr, icons, 67 + i, 286, 133 + i * 15);
 
     // --- Step 8: stockpile bar — 16 commodity cells over the PIK's blue cells. Icon = ICONS
     // good+0x16 (Food..Muskets), centred in the 19-px cell; quantity centred just below it. ---
