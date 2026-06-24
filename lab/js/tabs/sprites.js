@@ -7,7 +7,14 @@
 import { el, section, fireRendered } from '../ui.js';
 import { renderVal, B, V, badge, TIER } from '../provenance.js';
 import { loadSheetFrames, sheetImageURL } from '../data/loaders.js';
-import { roleFor, isPlaceholder } from '../data/sprite_roles.js';
+import { roleFor, isPlaceholder, PHYS0_PLACEHOLDER_INDICES } from '../data/sprite_roles.js';
+
+// Honest label for a placeholder frame: PHYS0's named 0/16/100 cite hard rule 5;
+// any other 1×1 frame is just an empty/corrupt slot, not a hard-rule skip.
+function placeholderLabel(f, sheet) {
+  if (sheet === 'PHYS0' && PHYS0_PLACEHOLDER_INDICES.has(f.i)) return 'placeholder [hard rule 5]';
+  return '1×1 stub';
+}
 
 // CLAUDE.md hard rules worth surfacing as a sanity check on the sheet picker.
 const HARD_RULES = {
@@ -82,12 +89,12 @@ export async function render(host, ctx) {
     if (HARD_RULES[name]) info.append(el('div', { class: 'rule-note' }, '⚑ ', HARD_RULES[name]));
 
     // Derived B stats — all computed from the byte-true frame list.
-    const real = data.frames.filter((f) => !isPlaceholder(f));
+    const real = data.frames.filter((f) => !isPlaceholder(f, name));
     const sizes = new Set(real.map((f) => `${f.w}×${f.h}`));
     stats.append(
       el('span', {}, 'real frames: '), renderVal(B(real.length, `${name}: non-placeholder count`)),
       el('span', { class: 'gap' }, 'placeholders: '),
-      renderVal(B(data.frames.length - real.length, `${name}: skip(0,16,100)+1×1 stubs [hard rule 5]`)),
+      renderVal(B(data.frames.length - real.length, `${name}: 1×1 stubs` + (name === 'PHYS0' ? ' incl. 0/16/100 [hard rule 5]' : ''))),
       el('span', { class: 'gap' }, 'distinct sizes: '),
       renderVal(B([...sizes].sort().join(', ') || '—', `${name}: distinct real-frame dimensions`)));
 
@@ -110,7 +117,7 @@ export async function render(host, ctx) {
 
   // Does a frame pass the current hide/filter controls?
   function visible(f) {
-    if (hidePh.checked && isPlaceholder(f)) return false;
+    if (hidePh.checked && isPlaceholder(f, data.sheet)) return false;
     const q = filter.value.trim().toLowerCase();
     if (!q) return true;
     if (q.includes('x')) return `${f.w}x${f.h}` === q;        // size match "16x16"
@@ -130,10 +137,10 @@ export async function render(host, ctx) {
     overlay.innerHTML = '';
     for (const f of frames) {
       if (f.w <= 1 && f.h <= 1) continue;                      // un-clickable stubs
-      const box = el('div', { class: 'fbox' + (isPlaceholder(f) ? ' skip' : '') + (f.i === selected ? ' sel' : '') });
+      const box = el('div', { class: 'fbox' + (isPlaceholder(f, data.sheet) ? ' skip' : '') + (f.i === selected ? ' sel' : '') });
       box.style.cssText += `left:${f.ax}px;top:${f.ay}px;width:${f.w}px;height:${f.h}px`;
       const r = roleFor(data.sheet, f.i);
-      box.title = `#${f.i} ${f.w}×${f.h}` + (r ? ` — ${r.role}` : '') + (isPlaceholder(f) ? ' (placeholder)' : '');
+      box.title = `#${f.i} ${f.w}×${f.h}` + (r ? ` — ${r.role}` : '') + (isPlaceholder(f, data.sheet) ? ' (placeholder)' : '');
       box.addEventListener('click', () => select(f.i));
       overlay.append(box);
     }
@@ -146,13 +153,13 @@ export async function render(host, ctx) {
     const body = el('tbody', {}, ...frames.map((f) => {
       const r = roleFor(data.sheet, f.i);
       const tr = el('tr', {
-        class: (isPlaceholder(f) ? 'skip' : '') + (f.i === selected ? ' sel' : ''),
+        class: (isPlaceholder(f, data.sheet) ? 'skip' : '') + (f.i === selected ? ' sel' : ''),
       },
         el('td', {}, String(f.i)),
         el('td', {}, `${f.x},${f.y}`),
         el('td', {}, `${f.ax},${f.ay}`),
         el('td', {}, `${f.w}×${f.h}`),
-        el('td', {}, r ? roleCell(r) : (isPlaceholder(f) ? 'placeholder [hard rule 5]' : '—')));
+        el('td', {}, r ? roleCell(r) : (isPlaceholder(f, data.sheet) ? placeholderLabel(f, data.sheet) : '—')));
       tr.addEventListener('click', () => select(f.i));
       return tr;
     }));
@@ -200,7 +207,7 @@ export async function render(host, ctx) {
       kv('index (hex)', B(`0x${f.i.toString(16)}`, `${data.sheet}.json frame ${f.i}`)),
       el('div', { class: 'kv' }, el('span', { class: 'k' }, 'role'),
         r ? renderVal(V(r.role, r.tier, r.cite))
-          : el('span', {}, isPlaceholder(f) ? 'placeholder [hard rule 5]' : '— (uncited)')),
+          : el('span', {}, isPlaceholder(f, data.sheet) ? placeholderLabel(f, data.sheet) : '— (uncited)')),
     );
   }
 

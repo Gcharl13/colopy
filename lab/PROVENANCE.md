@@ -14,9 +14,9 @@ reference. **If a value here is `R` or `TBD`, a wrong result is a modeling gap, 
 | Placeholder indices 0/16/100 + 1×1 stubs | B | CLAUDE.md hard rule 5 |
 | TERRAIN base / PHYS0 overlay roles | B | CLAUDE.md hard rule 5 (amended 2026-06-22) |
 | PHYS0 rivers (1/17), true coast (150–153) | B | CLAUDE.md hard rule 4 |
-| ICONS foot units 101–105/109, ships 5–7/14–15/127 | B | CLAUDE.md hard rule 6; #109 = `mov ax,0x6D @0x0265BF` |
+| ICONS foot units 100–105/109, ships 5–7/14–15/127 | B | CLAUDE.md hard rule 6; #109 = `mov ax,0x6D @0x0265BF` |
 | ICONS commodities 22–37, cursors, boycott 43 | A | `docs/GHIDRA_REFERENCE.c` (pixel-verified, not a hard rule) |
-| **ICONS #100** | **TBD** | **open conflict** — rule 5 (skip) vs rule 6 (foot unit); see `notes/rulings/RULINGS.md` 2026-06-24 |
+| Placeholder skip {0,16,100} is **PHYS0-scoped** (1×1 artifacts) | B | resolved 2026-06-24 (RULINGS); ICONS #100 = real foot unit |
 | Uncited frame role | — | shown as “—”, never guessed |
 
 Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; first match wins).

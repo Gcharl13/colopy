@@ -4586,3 +4586,21 @@ prime directive (never invent; record conflicts). A ruling is needed: is 100 a d
 placeholder slot with foot units actually at 101–105 (+109), or is the rule-5 "100" a
 typo/overlap? Resolution likely needs the ICONS.SS pixel check at index 100. Until then the
 lab's role map (`lab/js/data/sprite_roles.js`) keeps 100 = TBD-conflict, 101–105 = foot unit.
+
+## 2026-06-24 — RESOLVED: the rule-5 skip set {0,16,100} is PHYS0-SCOPED; ICONS #100 is a real foot unit
+Resolves the OPEN CONFLICT directly above. There is **no conflict** — the two rules name
+different sheets:
+- **PHYS0** frames **0, 16, 100** are each a **1×1 transparent** stub (palette idx 253) —
+  corrupted MADSPACK extraction artifacts, "NOT usable sprites, should never be indexed"
+  (`notes/SPRITE_CATALOG.md` "Known extraction artifacts"; RULINGS A3). Byte-verified in the
+  bundle: `PHYS0.json` frames 0/16/100 are all `w=1,h=1`. THIS is what hard rule 5 skips.
+- **ICONS** is **contiguous 0–130, no gaps** (`notes/STATE.md:254`). `ICONS.json` #100 is a
+  real **6×16** sprite, the first of the foot-unit run 100–106 (src y=20). So hard rule 6's
+  "foot units 100–105 + 109" stands; #100 is a foot unit, not a placeholder.
+**Determination**: hard rule 5's "skip 0, 16, 100" applies to **PHYS0 only** (and those frames
+are 1×1, so a geometric "1×1 = placeholder" test already isolates them on any sheet). The M1
+lab bug was applying {0,16,100} to *every* sheet, which wrongly flagged ICONS #100.
+**Action taken**: `lab/js/data/sprite_roles.js` — renamed the set to `PHYS0_PLACEHOLDER_INDICES`,
+made `isPlaceholder(frame, sheet)` geometric + PHYS0-scoped, and set ICONS #100 = foot unit (B).
+**Suggested CLAUDE.md clarification (needs user sign-off)**: reword hard rule 5 to "skip the
+PHYS0 placeholder indices 0, 16, 100 (1×1 artifacts)" so the scope is explicit in the rule.

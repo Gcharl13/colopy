@@ -21,8 +21,13 @@
 
 import { TIER } from '../provenance.js';
 
-// Placeholder indices that every sheet skips (CLAUDE.md hard rule 5).
-export const PLACEHOLDER_INDICES = new Set([0, 16, 100]);
+// Placeholder indices. CLAUDE.md hard rule 5's "skip 0, 16, 100" is PHYS0-SCOPED:
+// those three PHYS0 frames are 1×1 transparent extraction artifacts (verified —
+// SPRITE_CATALOG "Known extraction artifacts"; RULINGS A3 / 2026-06-24). They are
+// NOT a universal skip set: ICONS is contiguous 0–130 with no gaps (STATE.md), and
+// ICONS #100 is a real 6×16 foot-unit sprite. The earlier M1 reading that applied
+// {0,16,100} to every sheet was a bug; it wrongly flagged ICONS #100.
+export const PHYS0_PLACEHOLDER_INDICES = new Set([0, 16, 100]);
 
 // A rule = a predicate over the frame index + the role it confers.
 // Stored per-sheet, first match wins.
@@ -33,11 +38,9 @@ const ROLES = {
   ICONS: [
     { test: isOne(109), role: 'foot unit — colony unit-on-tile marker', tier: TIER.B,
       cite: 'mov ax,0x6D @0x0265BF (docs/UI_FIDELITY.md)' },
-    // Index 100 is claimed by BOTH hard rule 5 (placeholder skip) and hard rule 6
-    // (foot units 100–105). Genuine source conflict — surface it, don't pick.
-    { test: isOne(100), role: 'CONFLICT: skip-index (rule 5) vs foot-unit start (rule 6)', tier: TIER.TBD,
-      cite: 'CLAUDE.md rule 5 lists 100 as skip; rule 6 lists 100–105 as foot units — needs a ruling in notes/rulings/RULINGS.md' },
-    { test: inRange(101, 105), role: 'foot unit', tier: TIER.B, cite: 'CLAUDE.md hard rule 6' },
+    // ICONS #100 is a real 6×16 foot-unit sprite, NOT a placeholder — the rule-5
+    // skip set is PHYS0-scoped (resolved 2026-06-24, RULINGS).
+    { test: inRange(100, 105), role: 'foot unit', tier: TIER.B, cite: 'CLAUDE.md hard rule 6 (#100 = ICONS foot unit, RULINGS 2026-06-24)' },
     { test: isOne(127), role: 'ship', tier: TIER.B, cite: 'CLAUDE.md hard rule 6' },
     { test: inRange(5, 7), role: 'ship', tier: TIER.B, cite: 'CLAUDE.md hard rule 6' },
     { test: inRange(14, 15), role: 'ship', tier: TIER.B, cite: 'CLAUDE.md hard rule 6' },
@@ -70,8 +73,12 @@ export function roleFor(sheet, index) {
   return null;
 }
 
-// A frame is a "placeholder" if it's a hard-rule skip index OR a 1×1 stub
-// (the bundle emits 1×1 frames for unused slots).
-export function isPlaceholder(frame) {
-  return PLACEHOLDER_INDICES.has(frame.i) || (frame.w <= 1 && frame.h <= 1);
+// A frame is a "placeholder" if it's a 1×1 transparent stub (the bundle emits 1×1
+// frames for unused/corrupt slots — universal), or specifically a PHYS0 0/16/100
+// extraction artifact (hard rule 5; those happen to be 1×1 too, so the geometric
+// test already covers them — the sheet check just documents the rule).
+export function isPlaceholder(frame, sheet) {
+  if (frame.w <= 1 && frame.h <= 1) return true;
+  if (sheet === 'PHYS0' && PHYS0_PLACEHOLDER_INDICES.has(frame.i)) return true;
+  return false;
 }
