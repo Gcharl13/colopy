@@ -75,3 +75,14 @@
   "enter_screen_view 0x181F:0x772" with "screen setup (id in bx); the 0x181F:0x772 call there is
   the error-logger, not the entry" pending the real entry being pinned.
 - `func_06083A` = trade-route title, not map menu bar (already noted) — fix map_view.md/menus.md.
+
+## SCRUB COMPLETE — parallel phase (2026-06-24)
+10 byte-verified decode docs cover every screen: MAPVIEW, COLONY, EUROPE, ADVISOR_REPORTS
+(F1–F10), ENDGAME (King/Score/Declaration/Closing), MENUS (boot+in-game), POPUP_INSTANCES
+(~30 families), FONTS, SCREEN_FRAMEWORK, FRONTEND_SCREENS (Nation/Difficulty/Customize).
+**Static layout of every screen is byte-cited.** The ONE consistent remaining TBD class is
+**live game-state + a few overlay-resident HUD blits** (per-row counts/gold/prices/score
+figures; the sidebar/menu-header gold blit; runtime DGROUP string indices; the colony
+RNG-placement sub-source tables) — each TBD names its exact site/blocker. Two adjacent
+binaries (OPENING.EXE, CLOSING.EXE) are out of VICEROY.EXE scope, noted with extract steps.
+Nothing was fabricated.
