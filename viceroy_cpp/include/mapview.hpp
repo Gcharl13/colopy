@@ -23,4 +23,12 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
                     const Sheet& font, const vc::sim::GameState& g,
                     const vc::sim::World& w, int ox, int oy);
 
+// Render ONE fully-composited 16px terrain tile (the exact map-view tile stack:
+// base ground + biome blend + forest/river/hills + coast) for map cell (mx,my) at
+// screen pixel (dx,dy). Off-map cells are treated as ocean. Reused by the colony
+// screen so its worked-tiles view looks identical to the map. `terrain` = TERRAIN.SS,
+// `tiles` = PHYS0.
+void compose_map_tile(Surface& scr, const Map& map, const Sheet& terrain,
+                      const Sheet& tiles, int mx, int my, int dx, int dy);
+
 } // namespace vc

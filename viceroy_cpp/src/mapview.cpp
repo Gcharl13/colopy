@@ -287,6 +287,16 @@ static void terrain_compose(Surface& scr, const Sheet& terr, const Sheet& phys,
     }
 }
 
+// Public wrapper: one fully-composited 16px tile (off-map => open ocean). See header.
+void compose_map_tile(Surface& scr, const Map& map, const Sheet& terrain,
+                      const Sheet& tiles, int mx, int my, int dx, int dy) {
+    if (mx < 0 || my < 0 || mx >= map.w || my >= map.h) {
+        draw_ground(scr, terrain, 0x19, dx, dy);            // off-map = open ocean
+        return;
+    }
+    terrain_compose(scr, terrain, tiles, map, mx, my, dx, dy);
+}
+
 void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
                     const Sheet& tiles, const Sheet& woodtile,
                     const Sheet& font, const vc::sim::GameState& g,

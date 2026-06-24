@@ -254,6 +254,8 @@ static int cmd_colony(int argc, char** argv) {
     vc::Sheet building = vc::load_bundle(bd + "/sprites/BUILDING.png", bd + "/sprites/BUILDING.json");
     vc::Sheet parch    = vc::load_bundle(bd + "/sprites/PARCH.png",    bd + "/sprites/PARCH.json");
     vc::Sheet terrain  = vc::load_bundle(bd + "/sprites/TERRAIN.png",  bd + "/sprites/TERRAIN.json");
+    vc::Sheet phys     = vc::load_bundle(bd + "/sprites/PHYS0.png",    bd + "/sprites/PHYS0.json");
+    vc::Sheet woodtile = vc::load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
     vc::Sheet font     = vc::load_bundle(bd + "/fonts/FONTTINY.png",   bd + "/fonts/FONTTINY.json");
 
     // --- Scenario: a colony a colonist JUST founded. Jamestown, 1612, treasury 872 gold,
@@ -266,19 +268,12 @@ static int cmd_colony(int argc, char** argv) {
     int year = opt(argc, argv, "--year") ? std::atoi(opt(argc, argv, "--year")) : 1612;
     int gold = opt(argc, argv, "--gold") ? std::atoi(opt(argc, argv, "--gold")) : 872;
 
-    int surround[9];
-    bool have_surround = false;
+    vc::Map m;
+    bool have_map = false;
     try {
-        vc::Map m = vc::load_mp(mp);
-        for (int dy = -1; dy <= 1; ++dy)
-            for (int dx = -1; dx <= 1; ++dx) {
-                int x = cx + dx, y = cy + dy;
-                int id = (x < 0 || y < 0 || x >= m.w || y >= m.h) ? 25   // off-map => Ocean
-                                                                  : (m.tiles[(size_t)y * m.w + x] & 0x1F);
-                surround[(dy + 1) * 3 + (dx + 1)] = id;
-            }
-        have_surround = true;
-        std::printf("colony: founded at %s (%d,%d), surrounding terrain captured\n", mp, cx, cy);
+        m = vc::load_mp(mp);
+        have_map = true;
+        std::printf("colony: founded at %s (%d,%d) on a %dx%d map\n", mp, cx, cy, m.w, m.h);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "colony: could not load map %s (%s) — skipping outside view\n", mp, e.what());
     }
@@ -288,11 +283,14 @@ static int cmd_colony(int argc, char** argv) {
     int stockpile[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};   // empty warehouse at founding
 
     vc::Surface scr;
-    // Active palette = the gameplay palette shared by BUILDING/PARCH/ICONS/TERRAIN/font.
-    scr.set_palette(building.pal);
-    vc::render_colony_screen(scr, backdrop, parch, icons, building, font, terrain, c,
-                             gold, /*tax*/ 0, year, stockpile,
-                             have_surround ? surround : nullptr);
+    // Active palette = PHYS0's. It is identical to BUILDING's except 9 indices: 120..127 are
+    // the WATER/RIVER blue gradient in PHYS0 but unused magenta placeholders in BUILDING — so
+    // PHYS0's palette renders the worked-tiles rivers/coast in blue (not pink) while leaving
+    // the buildings/PIK/icons (which don't use 120..127) unchanged.
+    scr.set_palette(phys.pal);
+    vc::render_colony_screen(scr, backdrop, parch, woodtile, icons, building, font, terrain, phys,
+                             have_map ? &m : nullptr, cx, cy, c,
+                             gold, /*tax*/ 0, year, stockpile);
     vc::Image img = scr.to_rgb(scale);
     vc::write_png_rgb(out, img.w, img.h, img.rgb);
     std::printf("colony: wrote %s (320x200 x%d)\n", out, scale);

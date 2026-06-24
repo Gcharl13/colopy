@@ -10,21 +10,24 @@
 #include "surface.hpp"
 #include "ss.hpp"
 #include "png_io.hpp"      // IndexedPng (COLONY.PIK backdrop)
+#include "mp.hpp"          // Map (surrounding terrain for the worked-tiles grid)
 #include "sim/types.hpp"
 
 namespace vc {
 
-// Render the 320x200 colony screen. `backdrop` = COLONY.PIK (bundle background),
-// `icons` = ICONS.SS, `building` = BUILDING.SS, `font` = FONTTINY, `terrain` =
-// TERRAIN.SS (base-ground tiles for the outside-colony worked-tiles grid). `stockpile`
-// = the 16 warehouse good quantities. `surround` (may be null) = the 3x3 terrain ids
-// around the colony (row-major, index 4 = centre = the colony tile), used to draw the
-// upper-right worked-tiles grid from the real map; null skips that panel.
+// Render the 320x200 colony screen. `backdrop` = COLONY.PIK (bottom band), `parch` =
+// PARCH.SS (the colony-scene inset), `woodtile` = WOODTILE.SS (the screen background —
+// the colony screen is wood chrome with a parchment scene window, NOT full parchment),
+// `icons` = ICONS.SS, `building` = BUILDING.SS, `font` = FONTTINY, `terrain` = TERRAIN.SS,
+// `phys` = PHYS0.SS (the worked-tiles grid uses the exact map-view terrain compositing).
+// `map`/`cx`/`cy` = the colony's map + position; if `map` is null the worked-tiles grid is
+// skipped. `stockpile` = the 16 warehouse good quantities.
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
-                          const Sheet& woodtile, const Sheet& icons,
+                          const Sheet& parch, const Sheet& woodtile, const Sheet& icons,
                           const Sheet& building, const Sheet& font,
-                          const Sheet& terrain,
+                          const Sheet& terrain, const Sheet& phys,
+                          const Map* map, int cx, int cy,
                           const vc::sim::Colony& c, int gold, int tax_pct, int year,
-                          const int stockpile[16], const int surround[9]);
+                          const int stockpile[16]);
 
 } // namespace vc
