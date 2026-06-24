@@ -27,7 +27,7 @@
 | | family | code | text source | background |
 |--|--------|------|-------------|-----------|
 | §2–4 | **Boot / main menu** | title composer `func_0759E8` @0x0759E8 + `BEGINMENU` runner `func_06F594` @0x06F594 | `GAME.TXT @BEGINMENU` | `OPENMENU` over `OPENING.PIK` |
-| §5–7 | **In-game pulldown bar** | build `func_072090` @0x072090; bar line `func_06083A` @0x060890; run `func_06E3D0` @0x06E3D0 | `MENU_sections.json` `game menu` | map HUD top strip |
+| §5–7 | **In-game pulldown bar** | build `func_072090` @0x072090; run/hit-test `func_06E3D0` @0x06E3D0 (bar *draw* = overlay HUD, TBD; `func_06083A` @0x060890 is the turn/title line, NOT the bar — §6) | `MENU_sections.json` `game menu` | map HUD top strip |
 
 Both share the centred-dialog geometry engine `panel_construct func_06C520` /
 `panel_finalize_geometry func_06D316` (`spec/ui/menus.md §11`, `popups.md §2.3`) — see §8.
@@ -187,30 +187,43 @@ coordinates). **B.**
 
 ---
 
-## 6. IN-GAME MENU BAR — bar line draw `func_06083A` @0x060890 — **B**
+## 6. IN-GAME top centred title line `func_06083A` @0x060890 — **B (composer) / REFUTED as the pulldown bar**
 
-The menu bar is **ONE centred label line**, not a strip-fill. Re-confirmed @0x060890:
+> **CORRECTION (this pass, agrees with `UI_AUDIT_TRACKER.md` row 1).** `func_06083A` @0x06083A
+> is **NOT** the pulldown menu-bar (GAME/VIEW/ORDERS…). It is the **top centred status/title
+> line composer** (turn/year/trade-route title). `spec/ui/menus.md §6.2` labels the @0x060890
+> line as the "menu bar"; that labelling is **refuted** — the function reads the turn counter
+> and divides by the year step. The pulldown bar itself is built by `func_072090` (§5,
+> correct); its *draw* site is the overlay HUD, not byte-pinned in the 0x60000-page composer.
+
+Re-confirmed @0x06083A this pass — the function composites a string then divides a counter:
 
 ```
-0x060890: lcall 0x181f, 0x182     ; 0x181F:0x182 builds the bar string into [bp-0x50]
-0x060898: push  0xf               ; color = 0x0F (white)
-0x06089a: push  5                 ; y = 5
-0x06089c: push  0x140             ; box-w = 0x140 (320)
-0x06089f: push  0                 ; x = 0
-0x0608a1: lea   ax, [bp-0x50] / push ss / push ax   ; the assembled bar string
-0x0608a6: lcall 0x181f, 0x100     ; 0x181F:0x100 = CENTER-TEXT-IN-BOX
+0x06083a: enter 0x60,0
+0x06083f: push [0x2dae]/[0x2dac]/[0x2daa]/[0x2da8]   ; sheet quartet
+0x060851: lcall 0x181f, 0x484                         ; 0x484 = h-span fill (al=0x22)
+0x06085a: lcall 0x181f, 0x22                          ; string-scan helper ([0x93de])
+0x060875: lcall 0x181f, 0x178                         ; append field
+0x06087d: mov  ax, [0x9e14]                            ; ← TURN/year counter, not a menu index
+0x060880: sub  ax, 0
+0x060883: mov  cx, 0x4a / cdq / idiv cx / inc ax       ; ax = counter / 0x4A + 1  (year step)
+0x060890: lcall 0x181f, 0x182                          ; build the title string into [bp-0x50]
+0x060898: push 0xf; push 5; push 0x140; push 0         ; color 0x0F, y=5, box-w 320, x=0
+0x0608a6: lcall 0x181f, 0x100                          ; 0x181F:0x100 = CENTER-TEXT-IN-BOX
 ```
 
-Spot-check @0x060898: `6a 0f 6a 05 68 40 01 6a 00` — **PASS** (push 0x0F color; push 5 y;
-push 0x140 box-w; push 0 x). **Bar geometry: x=0, y=5, box-w=320, color 0x0F, centred,
-FONTTINY/FONTINTR.** Menu-bar **height = 8 px** (text at y=5; map viewport begins y=8 per
-`render_frame_setup func_06787C`). There is **no** wood-fill / black rule / per-label color
-draw in this function. **B.** (CORRECTION carried from RULING 2026-05-31: a prior draw-list
-mislabeled `0x100` as a fill.)
+Spot-checks **PASS**: @0x06087D `a1 14 9e` (mov ax,[0x9e14]); @0x060883 `b9 4a 00 … f7 f9 40`
+(cx=0x4A; idiv; inc — the year step); @0x060898 `6a 0f 6a 05 68 40 01 6a 00` (push 0x0F/5/0x140/0).
+So this **centred title line** is at **x=0, y=5, box-w=320, color 0x0F**, centred via
+`0x181F:0x100`, height 8 px (map viewport begins y=8 per `render_frame_setup func_06787C`).
+**B (this line's geometry).** It is the turn/title strip — the `[0x9E14]`/0x4A counter
+confirms it is **not** the pulldown-menu title bar. **B / REFUTED-as-menu-bar.**
 
-After the centred line, @0x0608AE the builder terminates the string and re-emits via
-`0x181F:0x16E` (strcat) / `0x181F:0x178` for the secondary (gold/turn) field — not part of
-the title row. **B.**
+> **Pulldown-bar draw — TBD-blocker.** The seven pulldown titles (GAME/VIEW/…) are *built* by
+> `func_072090` (§5) but their **draw + per-title layout** is in an overlay HUD handler not
+> pinned in the 0x60000 composer page. **TBD** (blocker: the bar-title draw site is overlay-
+> resident, not in the static export). The dropdown that opens *below* a clicked title is
+> `func_06E3D0` (§7.1, byte-cited).
 
 ---
 
@@ -233,7 +246,7 @@ as the picker selection boxes (§4). **B.**
 ### 7.2 Per-item hit-rects — mechanism **B**, explicit per-item x **R**
 
 The bar's per-title hit-rects are built by the bar widget from the **glyph-grid title widths**
-— they fall out of the single centred `0x181F:0x100` label string (§6), **not** per-label
+(via the same `0x181F:0x100` centre-in-box primitive the title line uses), **not** per-label
 draw-immediates. So **mechanism = B** but the **explicit x-origins are R** (`GAME@11 … COLONIZOPEDIA@261`
 come from the low-trust `_VICEROY_MODERN` C reconstruction, absent from the EXE). Same
 reconciliation as `map_view.md §6.4` / `menus.md §6.4` — **do not assert the x's as
@@ -305,7 +318,8 @@ clamp: X+box_w>0x140 shift left @0x06D563; Y+box_h>0xC8 shift up @0x06D571      
 - `raw/COLONIZE/VICEROY.EXE` — boot runner site 0x075C60 (`lea [0x2345]; lcall 0x181F:0x3FE`);
   `dec ax` ladder 0x075C6D; begin_game `lcall 0x191F:0x320` @0x075E5F; OPENBORD blit 0x075B8E;
   bar build `func_072090` @0x072090 (font 0x1A1F:0x2D2; section "game"/"menu" 0x0720BE; readers
-  0x191F:0x928/0x91C); bar line `func_06083A` @0x060890 (push 0x0F/5/0x140/0; 0x181F:0x100 @0x0608A6);
+  0x191F:0x928/0x91C); top title line `func_06083A` @0x060890 (turn counter [0x9E14]/0x4A @0x060883;
+  push 0x0F/5/0x140/0; 0x181F:0x100 @0x0608A6 — this is the title strip, NOT the pulldown bar);
   dropdown engine `func_06E3D0` @0x06E3D0 (mode split @0x06E3DA); `func_06F0F4` @0x06F0F4
   (`cmp byte [bx],0x40` @0x06F192); geometry `func_06D316` (0x06D363/0x06D392/0x06D522/0x06D53B/
   0x06D563/0x06D571); `func_06C520` (border/inset/min-width); difficulty `func_0702C0`
@@ -320,9 +334,11 @@ clamp: X+box_w>0x140 shift left @0x06D563; Y+box_h>0xC8 shift up @0x06D571      
 
 ## 10. Open items / blockers
 
-1. **Menu-bar per-item x-origins** — built from glyph-grid title widths (mechanism **B**);
-   explicit per-label x's are **R** (C-recon). **Blocker:** disassemble the bar widget's
-   per-label layout (currently one centred `0x181F:0x100` string).
+1. **Pulldown-bar draw + per-item x-origins** — the bar is *built* by `func_072090` (B), but
+   its **draw + per-title layout** is overlay-resident (not in the 0x60000 composer page);
+   `func_06083A` @0x060890 is the **turn/title strip**, REFUTED as the pulldown bar (matches
+   `UI_AUDIT_TRACKER.md` row 1). Per-label x's are **R** (C-recon). **Blocker:** the bar-title
+   draw site is overlay-resident, absent from the static export.
 2. **Per-row `game menu` command-id binding** (non-REPORTS pulldown rows) — data-driven via
    `func_0235D6`; item text+order **B**, per-row id→handler **TBD**. **Blocker:** the binding
    lives in the `game menu` data section, not statically pinned per row.
