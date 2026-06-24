@@ -1,8 +1,8 @@
 {
   "stats": {
-    "total": 300,
-    "strong": 204,
-    "weak": 96,
+    "total": 302,
+    "strong": 205,
+    "weak": 97,
     "invalid": 0
   },
   "citations": [
@@ -281,7 +281,7 @@
       "exe": "VICEROY",
       "offset": 130277,
       "raw": "file 0x1FCE5",
-      "line": 313,
+      "line": 327,
       "source_file": "docs/MENUS_VICEROY_DECODE.md",
       "status": "weak_in_gap"
     },
@@ -290,7 +290,7 @@
       "exe": "VICEROY",
       "offset": 130268,
       "raw": "file\n  0x1FCDC",
-      "line": 313,
+      "line": 327,
       "source_file": "docs/MENUS_VICEROY_DECODE.md",
       "status": "weak_in_gap"
     },
@@ -299,7 +299,7 @@
       "exe": "VICEROY",
       "offset": 129592,
       "raw": "file 0x1FA38",
-      "line": 314,
+      "line": 328,
       "source_file": "docs/MENUS_VICEROY_DECODE.md",
       "status": "weak_in_gap"
     },
@@ -308,7 +308,7 @@
       "exe": "VICEROY",
       "offset": 129417,
       "raw": "file\n  0x1F989",
-      "line": 314,
+      "line": 328,
       "source_file": "docs/MENUS_VICEROY_DECODE.md",
       "status": "weak_in_gap"
     },
@@ -1971,9 +1971,27 @@
     {
       "type": "file_offset",
       "exe": "VICEROY",
+      "offset": 49128,
+      "raw": "file 0x0BFE8",
+      "line": 21,
+      "source_file": "docs/UI_AUDIT_TRACKER.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 128298,
+      "raw": "file 0x1F52A",
+      "line": 26,
+      "source_file": "docs/UI_AUDIT_TRACKER.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
       "offset": 121531,
       "raw": "file 0x1DABB",
-      "line": 60,
+      "line": 63,
       "source_file": "docs/UI_AUDIT_TRACKER.md",
       "status": "weak_in_gap"
     },
