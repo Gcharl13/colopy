@@ -67,6 +67,21 @@ static void blit_idx(Surface& scr, const Sheet& sh, int idx, int x, int y) {
         scr.blit_frame(sh.frames[idx], x, y);
 }
 
+// Blit a frame clipped to a rect [cx0,cx1) x [cy0,cy1) — keeps the colony scene inside the
+// parchment window so buildings/trees never spill onto the surrounding wood chrome.
+static void blit_idx_clip(Surface& scr, const Sheet& sh, int idx, int x, int y,
+                          int cx0, int cy0, int cx1, int cy1) {
+    if (idx < 0 || idx >= (int)sh.frames.size() || sh.frames[idx].w <= 2) return;
+    const Frame& f = sh.frames[idx];
+    for (int gy = 0; gy < f.h; ++gy)
+        for (int gx = 0; gx < f.w; ++gx) {
+            int px = x + gx, py = y + gy;
+            if (px < cx0 || py < cy0 || px >= cx1 || py >= cy1) continue;
+            uint8_t p = f.px[gy * f.w + gx];
+            if (p != SS_TRANSPARENT) scr.put(px, py, p);
+        }
+}
+
 // Tile a sheet frame across a rect (used for the wood-grain screen background and the
 // parchment scene inset).
 static void tile_fill(Surface& scr, const Sheet& sh, int x0, int y0, int w, int h) {
@@ -82,28 +97,86 @@ static void tile_fill(Surface& scr, const Sheet& sh, int x0, int y0, int w, int 
         }
 }
 
+// NAMES.TXT @UNFORESTED(0-7)/@FORESTED(8-15) per-terrain yields (byte-verified):
+// Farmer/food, Planter-sugar, Planter-tobacco, Planter-cotton, Trapper/furs, Lumberjack/
+// lumber, OreMiner/ore, SilverMiner/silver, Fisherman.
+static const signed char YIELD[16][9] = {
+    {2,0,0,0,0,0,2,0,0},{1,0,0,1,0,0,2,0,0},{4,0,0,2,0,0,1,0,0},{2,0,0,3,0,0,0,0,0}, // Tundra..Prairie
+    {2,0,3,0,0,0,0,0,0},{3,3,0,0,0,0,0,0,0},{2,0,2,0,0,0,2,0,0},{2,2,0,0,0,0,2,0,0}, // Grassland..Swamp
+    {1,0,0,0,3,2,1,0,0},{1,0,0,1,2,1,1,0,0},{2,0,0,1,3,3,0,0,0},{1,0,0,1,2,2,0,0,0}, // Boreal..Broadleaf
+    {1,0,1,0,2,3,0,0,0},{2,1,0,0,2,2,0,0,0},{1,0,1,0,2,2,1,0,0},{1,1,0,0,1,2,1,0,0}, // Conifer..Rain
+};
+static const int YIELD_GOOD[9] = {0,1,2,3,4,5,6,7,0};   // yield column -> @CARGO good id
+
+// classify terrain id -> yield row 0..15 (unforested 0-7 / forested fold 8-15); -1 = water/arctic.
+static int yield_row(int id) {
+    id &= 0x1F;
+    if (id < 8)    return id;
+    if (id < 0x18) return (id & 7) | 8;
+    return -1;
+}
+
 // Upper-right "outside colony" worked-tiles grid (decode §5b): a 3x3 grid of the colony's
-// real surrounding terrain, rendered with the EXACT map-view tile compositing (base ground +
-// biome blend + forest/river/hills + coast) so it looks identical to the map. The 16px
-// composited tiles are nearest-scaled to the 24px colony cells. Grid centre (col=row=0) =
-// the colony tile (white-outlined). [decode §5b; tile compositing = mapview compose_map_tile]
+// real surrounding terrain, rendered with the EXACT map-view tile compositing (so it looks
+// identical to the map), then overlaid with the colony sprite on the centre tile, the
+// founding colonist on the tile it works, and the per-tile production value (good icon +
+// quantity) from the byte-verified terrain yields. 16px tiles nearest-scaled to 24px cells.
 static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet& phys,
+                                const Sheet& icons, const Sheet& font,
                                 const Map& map, int cx, int cy) {
-    constexpr int CELL = 24, GX = 228, GY = 36;     // panel grid origin (decode: 3x3 @24px)
-    // 1. compose the 3x3 region into a scratch surface at 16px (48x48 block).
+    constexpr int CELL = 24, GX = 224, GY = 34;
+    // 1. terrain: compose the 3x3 region at 16px, nearest-scale to the 72x72 panel.
     Surface tmp; tmp.set_palette(scr.pal);
     for (int row = 0; row < 3; ++row)
         for (int col = 0; col < 3; ++col)
-            compose_map_tile(tmp, map, terrain, phys, cx + col - 1, cy + row - 1,
-                             col * 16, row * 16);
-    // 2. nearest-scale the 48x48 block up to the 72x72 panel grid.
+            compose_map_tile(tmp, map, terrain, phys, cx + col - 1, cy + row - 1, col * 16, row * 16);
     for (int y = 0; y < 3 * CELL; ++y)
-        for (int x = 0; x < 3 * CELL; ++x) {
-            int sx = x * 48 / (3 * CELL), sy = y * 48 / (3 * CELL);
-            scr.put(GX + x, GY + y, tmp.idx[sy * Surface::W + sx]);
+        for (int x = 0; x < 3 * CELL; ++x)
+            scr.put(GX + x, GY + y, tmp.idx[(y * 48 / (3 * CELL)) * Surface::W + (x * 48 / (3 * CELL))]);
+
+    auto tile_id = [&](int col, int row) {
+        int x = cx + col - 1, y = cy + row - 1;
+        if (x < 0 || y < 0 || x >= map.w || y >= map.h) return 25;     // ocean
+        return (int)(map.tiles[(size_t)y * map.w + x] & 0x1F);
+    };
+    auto blit_centered = [&](const Sheet& sh, int fi, int col, int row) {
+        if (fi < 0 || fi >= (int)sh.frames.size()) return;
+        const Frame& f = sh.frames[fi];
+        scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
+    };
+    auto put_num = [&](int col, int row, int val, uint8_t color) {
+        char s[8]; std::snprintf(s, sizeof s, "%d", val);
+        int tw = scr.text_width(font, s);
+        scr.draw_text(font, GX + col * CELL + (CELL - tw) / 2, GY + row * CELL + CELL - 7, s, color);
+    };
+
+    // 2. the founding colonist works the best adjacent LAND tile; show colonist + the good it
+    //    produces (icon) + the byte-verified yield. Centre auto-produces the colony's food.
+    int best_col = -1, best_row = -1, best_g = 0, best_q = 0;
+    for (int row = 0; row < 3; ++row)
+        for (int col = 0; col < 3; ++col) {
+            if (col == 1 && row == 1) continue;
+            int yr = yield_row(tile_id(col, row));
+            if (yr < 0) continue;
+            for (int j = 0; j < 8; ++j) {                              // best non-food good, else food
+                int q = YIELD[yr][j];
+                if (q > best_q) { best_q = q; best_g = YIELD_GOOD[j]; best_col = col; best_row = row; }
+            }
         }
-    // 3. white frame around the colony (centre) tile.
-    scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);
+    // 3. centre = the colony sprite (ICONS frame 0) + the centre tile's farmer food yield.
+    blit_centered(icons, 0, 1, 1);
+    int cyr = yield_row(tile_id(1, 1));
+    if (cyr >= 0) {
+        blit_idx(scr, icons, 0x16 /*Food*/, GX + CELL + 1, GY + CELL + 1);
+        put_num(1, 1, YIELD[cyr][0] + 3, COL_WHITE);                  // colony-centre food bonus +3
+    }
+    // 4. the colonist on its worked tile + the produced good's icon + quantity.
+    if (best_col >= 0) {
+        blit_centered(icons, 5, best_col, best_row);                 // colonist figure
+        blit_idx(scr, icons, 0x16 + best_g, GX + best_col * CELL + 1, GY + best_row * CELL + 1);
+        put_num(best_col, best_row, best_q, COL_WHITE);
+    }
+    scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);    // white frame on the colony tile
 }
 
 // COLONY.PIK is the whole bottom-band BACKGROUND (scenery + panel frames + stockpile
@@ -120,7 +193,7 @@ static void blit_pik_raw(Surface& scr, const IndexedPng& pik, int dstY) {
 // Parchment colony-scene inset window (R — measured from the DOS capture: the buildings
 // scene is a tan parchment panel inset into the wood chrome, top-left, ending before the
 // worked-tiles panel and above the COLONY.PIK bottom band).
-constexpr int SCENE_X = 4, SCENE_Y = 10, SCENE_W = 214, SCENE_H = 118;
+constexpr int SCENE_X = 4, SCENE_Y = 10, SCENE_W = 176, SCENE_H = 118;
 
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                           const Sheet& parch, const Sheet& woodtile, const Sheet& icons,
@@ -146,15 +219,16 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
             if (!((c.built_mask >> t) & 1ull)) continue;
             if (TYPE_FRAME[t] >= 0) best_frame = TYPE_FRAME[t];
         }
-        int x = PLOT[slot][0], y = PLOT[slot][1] + 8;
-        if (best_frame >= 0) blit_idx(scr, building, best_frame, x, y);
-        else                 blit_idx(scr, building, TREE_FRAME[slot % 3], x, y);  // base tree
+        int x = SCENE_X + PLOT[slot][0], y = SCENE_Y + PLOT[slot][1];
+        int frame = (best_frame >= 0) ? best_frame : TREE_FRAME[slot % 3];   // building or base tree
+        blit_idx_clip(scr, building, frame, x, y,
+                      SCENE_X, SCENE_Y, SCENE_X + SCENE_W, SCENE_Y + SCENE_H);
     }
 
     // --- Upper-right OUTSIDE-COLONY view: the 3x3 worked-tiles grid rendered with the EXACT
     // map-view terrain compositing (so it looks like the map), from the colony's real map
     // neighbourhood. [decode §5b] ---
-    if (map) render_worked_tiles(scr, terrain, phys, *map, cx, cy);
+    if (map) render_worked_tiles(scr, terrain, phys, icons, font, *map, cx, cy);
 
     // --- Step 3: COLONY.PIK = the whole bottom band (y=128). It already carries the panel
     // frames, the warehouse barrels, the blue stockpile cells and the "E" button — so we do
@@ -163,6 +237,14 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // surrounding tiles, SoL bar) is composited over the PIK by its sub-renderers — TBD until
     // the per-colonist / surrounding-tile model is wired in. ---
     blit_pik_raw(scr, backdrop, PIK_Y);
+
+    // --- Centre bottom panel: ship/cargo. A freshly-founded colony has no ship docked, so the
+    // panel reads "No Ships In Port" (SESSION_UI_CATALOG §2 / decode §7 func_02814C). ---
+    {
+        const char* s = "No Ships In Port";
+        int tw = font.frames.empty() ? 0 : scr.text_width(font, s);
+        scr.draw_text(font, 180 - tw / 2, 131, s, COL_WHITE);
+    }
 
     // --- Step 8: stockpile bar — 16 commodity cells over the PIK's blue cells. Icon = ICONS
     // good+0x16 (Food..Muskets), centred in the 19-px cell; quantity centred just below it. ---

@@ -279,7 +279,12 @@ static int cmd_colony(int argc, char** argv) {
     }
 
     Colony c; c.owner_power = 0; c.population = 1;
-    c.built_mask = 0;                                 // freshly founded: nothing built yet
+    // BASE buildings every colony starts with at founding — the set the in-game Build menu
+    // EXCLUDES (SESSION_UI_CATALOG §2 build list): Town Hall(9), Carpenter's Shop(35) and the
+    // five craftsman "Houses" Weaver(21)/Tobacconist(24)/Rum(27)/Fur(32)/Blacksmith(39). These
+    // are present from the start; everything else (Stockade, Church, Shops, …) must be built.
+    auto Bit = [](int t){ return 1ull << t; };
+    c.built_mask = Bit(9) | Bit(35) | Bit(21) | Bit(24) | Bit(27) | Bit(32) | Bit(39);
     int stockpile[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};   // empty warehouse at founding
 
     vc::Surface scr;
