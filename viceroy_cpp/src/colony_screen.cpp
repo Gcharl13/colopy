@@ -66,6 +66,46 @@ static void blit_idx(Surface& scr, const Sheet& sh, int idx, int x, int y) {
         scr.blit_frame(sh.frames[idx], x, y);
 }
 
+// terrain_cell_transform (mapview.cpp / VICEROY_decompiled @18195): L1 terrain code
+// (id & 0x1F) -> TERRAIN.SS base-ground frame index. Same mapping the map view uses.
+static int terrain_base_frame(int code) {
+    if (code == 0x11 || code == 0x09) return 8;
+    if (code >= 8) return code - 0xF;
+    return code;
+}
+
+// Blit a sheet frame nearest-scaled to dw x dh at (dx,dy). Opaque (terrain ground has no
+// transparency); SS_TRANSPARENT pixels are still skipped so any holes show the panel bg.
+static void blit_scaled(Surface& scr, const Frame& f, int dx, int dy, int dw, int dh) {
+    if (f.w <= 0 || f.h <= 0) return;
+    for (int y = 0; y < dh; ++y)
+        for (int x = 0; x < dw; ++x) {
+            uint8_t p = f.px[(y * f.h / dh) * f.w + (x * f.w / dw)];
+            if (p != SS_TRANSPARENT) scr.put(dx + x, dy + y, p);
+        }
+}
+
+// Upper-right "outside colony" worked-tiles grid (decode §5b): a 3x3 grid of the colony's
+// surrounding terrain, 24px cells, top-left of each tile at (252 + 24*col, 60 + 24*row);
+// centre (col=row=0) = the colony tile. Terrain art = TERRAIN.SS base ground (16px) scaled
+// to 24px. NOTE: the exact in-game tile sheet/frame for this panel is decode-TBD
+// (frame=id+0x5a from [0x839E]); this draws the *real* surrounding terrain via the map-view
+// TERRAIN base mapping — faithful terrain, approximate tile art (R). The crops/worker
+// overlays per tile are not drawn (need the per-tile work table).
+static void render_outside_view(Surface& scr, const Sheet& terrain, const int surround[9]) {
+    constexpr int CELL = 24, CX = 252, CY = 60;
+    for (int row = -1; row <= 1; ++row)
+        for (int col = -1; col <= 1; ++col) {
+            int id = surround[(row + 1) * 3 + (col + 1)] & 0x1F;
+            int fr = terrain_base_frame(id);
+            int dx = CX + CELL * col, dy = CY + CELL * row;
+            if (fr >= 0 && fr < (int)terrain.frames.size())
+                blit_scaled(scr, terrain.frames[fr], dx, dy, CELL, CELL);
+        }
+    // 1px white frame around the colony (centre) tile so "this tile = the colony" reads.
+    scr.rect_outline(CX, CY, CELL, CELL, COL_WHITE);
+}
+
 // COLONY.PIK is the whole bottom-band BACKGROUND (scenery + panel frames + stockpile
 // cells + Europe "E" button, all baked in). Its pixels are authored against the GAMEPLAY
 // palette — the embedded PIK palette is a red herring (a nearest-colour remap onto the
@@ -80,8 +120,9 @@ static void blit_pik_raw(Surface& scr, const IndexedPng& pik, int dstY) {
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                           const Sheet& parch, const Sheet& icons,
                           const Sheet& building, const Sheet& font,
+                          const Sheet& terrain,
                           const vc::sim::Colony& c, int gold, int tax_pct, int year,
-                          const int stockpile[16]) {
+                          const int stockpile[16], const int surround[9]) {
     // --- Step 4: full-screen PARCHMENT fill (func_02633E; PARCH.SS 32x24 tiled). [decode §2] ---
     if (parch.nframes > 0 && parch.frames[0].w > 0) {
         const Frame& p = parch.frames[0];
@@ -104,6 +145,10 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         if (best_frame >= 0) blit_idx(scr, building, best_frame, x, y);
         else                 blit_idx(scr, building, TREE_FRAME[slot % 3], x, y);  // base tree
     }
+
+    // --- Upper-right OUTSIDE-COLONY view: the 3x3 worked-tiles grid from the real
+    // surrounding terrain (the colony's map neighbourhood). [decode §5b] ---
+    if (surround) render_outside_view(scr, terrain, surround);
 
     // --- Step 3: COLONY.PIK = the whole bottom band (y=128). It already carries the panel
     // frames, the warehouse barrels, the blue stockpile cells and the "E" button — so we do

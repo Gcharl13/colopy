@@ -15,13 +15,16 @@
 namespace vc {
 
 // Render the 320x200 colony screen. `backdrop` = COLONY.PIK (bundle background),
-// `icons` = ICONS.SS, `building` = BUILDING.SS, `font` = FONTTINY. `stockpile` =
-// the 16 warehouse good quantities (ColonyRecord +0x9A; not yet in the sim model,
-// so main passes a demo array). `tax_pct` from the owning power.
+// `icons` = ICONS.SS, `building` = BUILDING.SS, `font` = FONTTINY, `terrain` =
+// TERRAIN.SS (base-ground tiles for the outside-colony worked-tiles grid). `stockpile`
+// = the 16 warehouse good quantities. `surround` (may be null) = the 3x3 terrain ids
+// around the colony (row-major, index 4 = centre = the colony tile), used to draw the
+// upper-right worked-tiles grid from the real map; null skips that panel.
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                           const Sheet& woodtile, const Sheet& icons,
                           const Sheet& building, const Sheet& font,
+                          const Sheet& terrain,
                           const vc::sim::Colony& c, int gold, int tax_pct, int year,
-                          const int stockpile[16]);
+                          const int stockpile[16], const int surround[9]);
 
 } // namespace vc

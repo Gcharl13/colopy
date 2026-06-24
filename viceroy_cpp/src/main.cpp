@@ -253,26 +253,46 @@ static int cmd_colony(int argc, char** argv) {
     vc::Sheet icons    = vc::load_bundle(bd + "/sprites/ICONS.png",    bd + "/sprites/ICONS.json");
     vc::Sheet building = vc::load_bundle(bd + "/sprites/BUILDING.png", bd + "/sprites/BUILDING.json");
     vc::Sheet parch    = vc::load_bundle(bd + "/sprites/PARCH.png",    bd + "/sprites/PARCH.json");
-    vc::Sheet woodtile = vc::load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
+    vc::Sheet terrain  = vc::load_bundle(bd + "/sprites/TERRAIN.png",  bd + "/sprites/TERRAIN.json");
     vc::Sheet font     = vc::load_bundle(bd + "/fonts/FONTTINY.png",   bd + "/fonts/FONTTINY.json");
 
-    // Demo colony: a founded + grown settlement. built_mask bits = building type ids
-    // (NAMES @BUILDING): 0 Stockade, 9 Town Hall, 35 Carpenter's Shop, 36 Lumber Mill,
-    // 21+22 Weaver House+SHOP (shows highest-tier-wins), 24 Tobacconist, 27 Rum, 32 Fur,
-    // 39 Blacksmith, 37 Church, 12 Schoolhouse, 3 Armory.
-    Colony c; c.owner_power = 0; c.population = 8;
-    auto Bit = [](int t){ return (1ull << t); };
-    c.built_mask = Bit(0)|Bit(9)|Bit(35)|Bit(36)|Bit(21)|Bit(22)|Bit(24)|Bit(27)
-                 | Bit(32)|Bit(39)|Bit(37)|Bit(12)|Bit(3);
-    int stockpile[16] = { 80, 12, 30, 5, 0, 0, 40, 0, 100, 6, 4, 0, 2, 0, 0, 25 };
+    // --- Scenario: a colony a colonist JUST founded. Jamestown, 1612, treasury 872 gold,
+    // on a coastal tile of AMER2.MP. Fresh founding => population 1, NO buildings built,
+    // empty warehouse. The colony's surrounding terrain (for the outside-colony grid) is
+    // read straight from the map at (x,y). ---
+    const char* mp   = opt(argc, argv, "--mp")   ? opt(argc, argv, "--mp")   : "raw/COLONIZE/AMER2.MP";
+    int cx   = opt(argc, argv, "--x")    ? std::atoi(opt(argc, argv, "--x"))    : 20;
+    int cy   = opt(argc, argv, "--y")    ? std::atoi(opt(argc, argv, "--y"))    : 25;
+    int year = opt(argc, argv, "--year") ? std::atoi(opt(argc, argv, "--year")) : 1612;
+    int gold = opt(argc, argv, "--gold") ? std::atoi(opt(argc, argv, "--gold")) : 872;
+
+    int surround[9];
+    bool have_surround = false;
+    try {
+        vc::Map m = vc::load_mp(mp);
+        for (int dy = -1; dy <= 1; ++dy)
+            for (int dx = -1; dx <= 1; ++dx) {
+                int x = cx + dx, y = cy + dy;
+                int id = (x < 0 || y < 0 || x >= m.w || y >= m.h) ? 25   // off-map => Ocean
+                                                                  : (m.tiles[(size_t)y * m.w + x] & 0x1F);
+                surround[(dy + 1) * 3 + (dx + 1)] = id;
+            }
+        have_surround = true;
+        std::printf("colony: founded at %s (%d,%d), surrounding terrain captured\n", mp, cx, cy);
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "colony: could not load map %s (%s) — skipping outside view\n", mp, e.what());
+    }
+
+    Colony c; c.owner_power = 0; c.population = 1;
+    c.built_mask = 0;                                 // freshly founded: nothing built yet
+    int stockpile[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};   // empty warehouse at founding
 
     vc::Surface scr;
-    // Active palette = the gameplay palette shared by BUILDING/PARCH/ICONS/font; the
-    // COLONY.PIK scene strip is remapped onto it inside render_colony_screen.
+    // Active palette = the gameplay palette shared by BUILDING/PARCH/ICONS/TERRAIN/font.
     scr.set_palette(building.pal);
-    vc::render_colony_screen(scr, backdrop, parch, icons, building, font, c,
-                             /*gold*/ 1240, /*tax*/ 7, /*year*/ 1600, stockpile);
-    (void)woodtile;
+    vc::render_colony_screen(scr, backdrop, parch, icons, building, font, terrain, c,
+                             gold, /*tax*/ 0, year, stockpile,
+                             have_surround ? surround : nullptr);
     vc::Image img = scr.to_rgb(scale);
     vc::write_png_rgb(out, img.w, img.h, img.rgb);
     std::printf("colony: wrote %s (320x200 x%d)\n", out, scale);
