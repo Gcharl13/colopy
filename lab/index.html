@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Colopy Lab — sprite / mechanics / map verification</title>
+  <link rel="stylesheet" href="css/lab.css" />
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">
+      <strong>Colopy&nbsp;Lab</strong>
+      <span class="sub">sprite · mechanics · map — every value tagged <b>accurate vs modeled</b></span>
+    </div>
+    <div id="legend-slot"></div>
+    <div id="prov-summary" class="prov-summary" title="counts of values shown this session, by tier"></div>
+  </header>
+
+  <nav id="tabnav" role="tablist">
+    <button class="tab-btn" data-tab="sprites">Sprites</button>
+    <button class="tab-btn" data-tab="mechanics">Mechanics</button>
+    <button class="tab-btn" data-tab="map">Map</button>
+    <button class="tab-btn" data-tab="settings">Settings &amp; Export</button>
+  </nav>
+
+  <main id="tabhost"><!-- active tab renders here --></main>
+
+  <div id="status" class="status"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
