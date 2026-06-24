@@ -4565,3 +4565,14 @@ pixel writes. Byte evidence (the `es:[di]` store) wins.
 
 **Follow-up**: whether `0xBBC:0xC` is exclusively horizontal runs or general lines is not
 fully pinned (the two-pass call suggests top+bottom edges of a separator).
+
+## 2026-06-24 — Colony building placement: far-ptr dispatch traced, §12 blocker resolved
+Traced `func_07464C` (the supposed per-type→category setter): reached via thunk `0x1A1F:0xD2E`
+(stub file `0x1D31E`), which has **0 static lcall sites** — the call goes through the `ljmp`
+trampoline at `0x76384` (jump table; entry 0 = `ljmp 0x1a1f:0xd2e`), invoked 42× from the
+registration block at `0x0746BC`. The `0x8F88` (+6) column it writes = `floor(id/3)` (chain
+group), used by the produced-good pass, **not** plot placement. Plot placement (`func_025D34`)
+uses only the static `0x224`/`0x22A` config (`[7,4,2,1,1]`/`[0,7,11,13,14]`) + a random
+permutation within each category block. RULING: the "per-type category table" blocker in
+`docs/COLONY_SCREEN_VICEROY_DECODE.md` §12 was a misdiagnosis; placement is byte-portable given
+only the `rand()` LCG. Full trace recorded in the decode §12 note.

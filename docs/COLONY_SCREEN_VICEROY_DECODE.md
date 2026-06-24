@@ -539,6 +539,30 @@ count[cat]-1)`; if `0x8E92[plot] ≥ 0` (taken) **retry**; else assign. Type/lev
    through the building-data-load framework, not a direct call. It is **not** `@BUILDING`
    col3 (histogram 19/10/7/3/3 ≠ the plot counts 7/4/2/1/1). TBD-source — needs the
    far-ptr dispatch table that holds `func_07464C`, or a runtime dump of `0x8F88`.
+
+> **TRACED 2026-06-24 — blocker resolved + decode corrected.** The far-pointer dispatch and
+> the `0x8F88` role are now byte-verified end to end:
+> - **Dispatch chain:** `func_07464C` is reached via resident thunk **`0x1A1F:0xD2E`** (stub
+>   file `0x1D31E`, `thunk_targets.json`). That thunk has **0 static `lcall` sites**
+>   (`follow_thunk.py 0x1a1f 0xd2e`). The call goes through the **`ljmp` trampoline at
+>   `0x76384`** — a jump table whose first entry is `ljmp 0x1a1f:0xd2e`; so `call 0x76384`
+>   → `ljmp` → `func_07464C` (which is why `grep 0x7464C` finds nothing).
+> - **Caller:** the registration block at **`0x0746BC`** does `push cs; call 0x76384` **42×**
+>   for building ids 0..41. Per call: `ax`=id, `push2`(→struct `+6`=`0x8F88`)=`floor(id/3)`
+>   (the upgrade-chain group), `dx`(→`+3`)=chain predecessor (`0xFFFF`=base tier),
+>   `push1`(→`+4`)=chain successor. So `0x8F88` is the **chain/produced-good column**, NOT a
+>   5-way plot category.
+> - **Placement does NOT use `0x8F88`.** `func_025D34` (`colony_draw_random_layout`,
+>   `overlay_024342_027B62.c`) places buildings purely from the **static** `0x224`/`0x22A`
+>   config: it flattens counts `[7,4,2,1,1]` / bases `[0,7,11,13,14]` into a 15-slot work-list
+>   `0x8D62`, then for each slot picks `random_int(0,count[cat]-1)+base[cat]`, retrying if the
+>   plot is taken — i.e. a **random permutation within each static category block**. `0x8F88`
+>   is read only in the later **produced-good pass** (`@0x025E1A`), to assign goods, not plots.
+> - **Net:** the supposed "per-type category table" was a **misdiagnosis** — placement needs
+>   no such table. The category STRUCTURE (which plots form each of the 5 groups) is the static
+>   `0x224`/`0x22A` data, already byte-verified. The **only** remaining input for a byte-exact
+>   port is the `rand()` LCG (item 3) that drives the permutation order; everything else here
+>   is resolved.
 2. **Final BUILDING.SS frame** `frame = word[idx*2 − 0x7238]` (BSS `0x8DC8`) in `func_026CC2`
    @0x026D8F. PARTIALLY TRACED: the table is built at `@0x00A3DF` (zero 20 entries) then
    accumulated `@0x00A409` (`add [bx-0x7238], ax`) from the loaded-sheet metadata bytes
