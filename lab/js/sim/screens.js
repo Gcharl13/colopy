@@ -8,14 +8,28 @@
 // drag them onto the real backdrop to find them. Export captures what you place,
 // so the lab doubles as a UI-position measuring tool (the UI documentation mandate).
 
-// Building TYPE → BUILDING.SS frame defaults (first 15, colony_screen.cpp BUILD_FRAME).
+// Colony building plots — BYTE-VERIFIED positions. The 15 (x, table_y) pairs are the
+// DS:0x266 plot table; the painter func_02701C @0x02701C reads [bx+0x266]/[bx+0x268]
+// over 15 entries (CMP [bp-8],0xf) and draws at y = table_y + 8 (ADD cx,8 @0x02708F).
+// ⚠ Position is B; WHICH building fills each plot is RNG-driven (func_025D34) → the
+// sprite FRAME is a placeholder (TBD), so leave frame editable.
 const COLONY_PLOTS = [
   [56, 5], [145, 7], [173, 10], [8, 33], [37, 37], [67, 46], [96, 45], [6, 6],
   [128, 45], [10, 68], [15, 94], [87, 3], [66, 79], [123, 98], [123, 47],
 ].map(([x, y], i) => ({
   id: `plot${i}`, label: `building plot ${i}`, type: 'sprite', sheet: 'BUILDING',
-  frame: i, x, y: y + 8,                       // render y = table_y + 8 (colony_screen.cpp)
-  tier: 'B', cite: `DS:0x266 plot[${i}] (colony_screen.cpp) — render y=table_y+8`,
+  frame: i, x, y: y + 8,
+  tier: 'B', cite: `DS:0x266 plot[${i}], render y=table_y+8 (func_02701C @0x02708F) — POSITION B; building→frame is RNG (func_025D34), so frame=TBD`,
+}));
+
+// Stockpile bar — BYTE-VERIFIED (colony_screen.cpp §6): 16 cells, pitch 19, x0=1,
+// icon row y=181; icon = good + 0x16 ⇒ ICONS frame 22 (Food) … 37 (Muskets).
+const STOCKPILE_GOODS = ['Food', 'Sugar', 'Tobacco', 'Cotton', 'Furs', 'Lumber', 'Ore', 'Silver',
+  'Horses', 'Rum', 'Cigars', 'Cloth', 'Coats', 'Trade Goods', 'Tools', 'Muskets'];
+const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
+  id: `stock${i}`, label: `stockpile: ${g}`, type: 'sprite', sheet: 'ICONS',
+  frame: 0x16 + i, x: 1 + i * 19, y: 181,
+  tier: 'B', cite: `colony_screen.cpp §6: x=1+${i}·19, icon y=181; icon=good+0x16 (ICONS ${0x16 + i})`,
 }));
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
@@ -23,7 +37,11 @@ const COLONY_PLOTS = [
 const field = (id, label, value, x, y, opts = {}) => ({
   id, label, type: 'text', value: String(value), x, y,
   color: opts.color || 'white', tier: opts.tier || 'TBD',
-  cite: opts.cite || 'MODELED: report field position not byte-decoded — drag to measure',
+  // BLOCKER (investigated 2026-06-24): the F2–F9 report painters render in overlay
+  // 0x191F / the orphan code (orphans_load_image.asm, ~118k lines); field positions
+  // are loop/table-driven there and not yet traced. So report-field coords are TBD
+  // (drag to measure), NOT fabricated. Only the TITLE index is byte-cited.
+  cite: opts.cite || 'TBD: report field rendered in overlay 0x191F (orphans_load_image.asm); position not yet traced — drag to measure',
 });
 
 export const SCREENS = {
@@ -43,9 +61,9 @@ export const SCREENS = {
     ],
   },
   colony: {
-    name: 'Colony screen — building plots', bg: 'COLONY', w: 320, h: 72, scale: 2,
-    note: 'COLONY.PIK field backdrop with the 15 building plots at their byte-cited (B) DS:0x266 positions. Select a plot to drag it or change its BUILDING.SS frame (the “change sprites” path). Plot coords are byte-true; the sprite frame per plot is editable.',
-    elements: COLONY_PLOTS,
+    name: 'Colony screen — plots + stockpile', bg: 'COLONY', bgY: 128, w: 320, h: 200, scale: 2,
+    note: 'COLONY.PIK is the bottom band (screen y=128). BYTE-CITED (B): the 15 building plots at DS:0x266 (render y=table_y+8, func_02701C) and the 16-cell stockpile bar (x=1+i·19, icon y=181, ICONS frame 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so a plot’s FRAME is TBD (editable). The upper field has no committed background image (drawn procedurally in-game).',
+    elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
   },
   colonyReport: {
     name: 'Colony Adviser (F6)', bg: 'REPORT4', w: 320, h: 200, scale: 2,

@@ -63,7 +63,9 @@ export async function render(host, ctx) {
     stage.style.height = scr.h * scale + 'px';
     bgImg = el('img', { class: 'screen-bg', src: backgroundImageURL(scr.bg), alt: scr.bg });
     bgImg.style.width = scr.w * scale + 'px';
-    bgImg.style.height = scr.h * scale + 'px';
+    // a screen may place its backdrop below the top (e.g. COLONY.PIK band at y=128);
+    // height is the image's own — let it size naturally below bgY.
+    bgImg.style.top = (scr.bgY || 0) * scale + 'px';
     stage.append(bgImg);
     for (const e of els) stage.append(makeElDiv(e));
     stageWrap.append(stage);

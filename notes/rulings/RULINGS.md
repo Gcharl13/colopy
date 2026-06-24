@@ -4604,3 +4604,23 @@ lab bug was applying {0,16,100} to *every* sheet, which wrongly flagged ICONS #1
 made `isPlaceholder(frame, sheet)` geometric + PHYS0-scoped, and set ICONS #100 = foot unit (B).
 **Suggested CLAUDE.md clarification (needs user sign-off)**: reword hard rule 5 to "skip the
 PHYS0 placeholder indices 0, 16, 100 (1×1 artifacts)" so the scope is explicit in the rule.
+
+## 2026-06-24 — Colony-screen layout decoded for the lab Screens tab; F2–F9 report fields are blocked
+While seeding the lab's Screens tab with byte-verified element positions:
+- **Colony building plots — B.** `func_02701C` (@0x02701C, VICEROY) is the plot painter:
+  loops 15 entries (`CMP [bp-8],0xf` @0x02707B), reads `x=[bx+0x266]`, `y_table=[bx+0x268]`,
+  draws at `y = y_table + 8` (`ADD cx,8` @0x02708F); a per-plot gate byte `[bx-0x717e]` (`JL`
+  skip = empty plot → tree frames 42/43/44) and a frame-type byte `[bx-0x729e]`. Confirms the
+  DS:0x266 plot table in `colony_screen.cpp`. **Position is B; WHICH building fills a plot is
+  RNG-driven (`func_025D34`) so the per-plot frame is TBD.**
+- **Colony stockpile bar — B** (`colony_screen.cpp` §6): 16 cells, x=1+i·19, icon row y=181,
+  quantity y=193; icon = good+0x16 ⇒ ICONS frame 22 (Food)…37 (Muskets). Visually validated —
+  the icons land exactly in COLONY.PIK's blue cells.
+- **F2–F9 report field positions — TBD (blocker named).** The report painters (F-key dispatch
+  `LCALL 0x191F:0x3xx`) render in **overlay 0x191F / the orphan code** (`orphans_load_image.asm`,
+  ~118k lines); field positions are loop/table-driven and not yet traced. The COLONIZE/VICEROY
+  per-func disasm offsets in `ADVISOR_REPORTS_AUDIT.md` (e.g. "file 0x027010") do NOT correspond
+  to the committed per-function `.asm` (0x02701C there is the VICEROY colony-plot painter, a
+  different EXE/offset space). Only each report's TITLE index is byte-cited (MISC[44..129]).
+  The lab seeds report fields as **TBD** (drag-to-measure), NOT fabricated — per the prime
+  directive. Tracing the 0x191F overlay is the remaining work to upgrade them to B.
