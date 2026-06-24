@@ -144,12 +144,18 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
         const Frame& f = sh.frames[fi];
         scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
     };
-    auto put_num = [&](int col, int row, int val) {        // production qty, bottom-right + shadow
-        char s[8]; std::snprintf(s, sizeof s, "%d", val);
-        int tw = scr.text_width(font, s);
-        int x = GX + col * CELL + CELL - tw - 2, y = GY + row * CELL + CELL - 8;
-        scr.draw_text(font, x + 1, y + 1, s, 0);           // black shadow for legibility
-        scr.draw_text(font, x, y, s, COL_WHITE);
+    // Production = LAYERED commodity sprites (a little stack of the produced good), NOT a number
+    // — the in-game colony-tile representation. Stack `qty` copies of ICONS[good+0x16] at the
+    // tile's bottom-RIGHT corner, overlapping upward (a pile of barrels/crops). Drawn before the
+    // colonist so the worker stays visible.
+    auto stack_good = [&](int col, int row, int good, int qty) {
+        int fi = 0x16 + good;
+        if (fi < 0 || fi >= (int)icons.frames.size() || qty <= 0) return;
+        const Frame& f = icons.frames[fi];
+        int bx = GX + col * CELL + CELL - f.w - 1;            // bottom-right corner
+        int by = GY + row * CELL + CELL - f.h - 1;
+        for (int k = 0; k < qty && k < 5; ++k)
+            scr.blit_frame(f, bx, by - k * 3);                // 3px overlap = a stacked pile
     };
 
     // 2. the founding colonist works the best adjacent LAND tile; show the colonist + the
@@ -165,16 +171,15 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
                 if (q > best_q) { best_q = q; best_g = YIELD_GOOD[j]; best_col = col; best_row = row; }
             }
         }
-    // 3. centre = the colony sprite (ICONS frame 0) + the centre tile's auto food production.
+    // 3. centre = the colony sprite (ICONS frame 0) + the centre tile's auto food, layered.
     blit_centered(icons, 0, 1, 1);
     int cyr = yield_row(tile_id(1, 1));
-    if (cyr >= 0) put_num(1, 1, YIELD[cyr][0]);                       // centre auto food (farmer yield)
-    // 4. the colonist (ICONS frame 58 — NOT the caravel 5) on its worked tile + the produced
-    //    good's icon (top-left) + the quantity (bottom-right).
+    if (cyr >= 0) stack_good(1, 1, 0 /*Food*/, YIELD[cyr][0]);        // centre auto food (farmer yield)
+    // 4. the colonist (ICONS frame 58 — NOT the caravel 5) on its worked tile; draw the produced
+    //    good as a LAYERED stack FIRST (bottom-right), then the colonist on top so it stays visible.
     if (best_col >= 0) {
-        blit_idx(scr, icons, 0x16 + best_g, GX + best_col * CELL + 1, GY + best_row * CELL + 1);
-        blit_centered(icons, 58, best_col, best_row);                // colonist figure
-        put_num(best_col, best_row, best_q);
+        stack_good(best_col, best_row, best_g, best_q);              // produced good, layered
+        blit_centered(icons, 58, best_col, best_row);                // colonist figure (on top)
     }
     scr.rect_outline(GX + CELL, GY + CELL, CELL, CELL, COL_WHITE);    // white frame on the colony tile
 }
@@ -245,10 +250,11 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         int tw = font.frames.empty() ? 0 : scr.text_width(font, s);
         scr.draw_text(font, 163 - tw / 2, 136, s, COL_WHITE);
     }
-    // --- Right bottom panel (x206..319): the production/build button slots (lower-right area).
+    // --- Right bottom panel: the 3 stacked build/production button slots sit in the FAR-RIGHT
+    // sub-cell (PIK divider at x~257; slots column at the right edge above the Exit button).
     // ICONS blue-button frames 67/68/69 = the lumber/tools/hammer production chain. ---
     for (int i = 0; i < 3; ++i)
-        blit_idx(scr, icons, 67 + i, 286, 133 + i * 15);
+        blit_idx(scr, icons, 67 + i, 303, 132 + i * 15);
 
     // --- Step 8: stockpile bar — 16 commodity cells over the PIK's blue cells. Icon = ICONS
     // good+0x16 (Food..Muskets), centred in the 19-px cell; quantity centred just below it. ---
