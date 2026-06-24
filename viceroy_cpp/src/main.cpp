@@ -252,6 +252,7 @@ static int cmd_colony(int argc, char** argv) {
     vc::IndexedPng backdrop = vc::read_png_indexed(bd + "/backgrounds/COLONY.png");
     vc::Sheet icons    = vc::load_bundle(bd + "/sprites/ICONS.png",    bd + "/sprites/ICONS.json");
     vc::Sheet building = vc::load_bundle(bd + "/sprites/BUILDING.png", bd + "/sprites/BUILDING.json");
+    vc::Sheet parch    = vc::load_bundle(bd + "/sprites/PARCH.png",    bd + "/sprites/PARCH.json");
     vc::Sheet woodtile = vc::load_bundle(bd + "/sprites/WOODTILE.png", bd + "/sprites/WOODTILE.json");
     vc::Sheet font     = vc::load_bundle(bd + "/fonts/FONTTINY.png",   bd + "/fonts/FONTTINY.json");
 
@@ -266,11 +267,12 @@ static int cmd_colony(int argc, char** argv) {
     int stockpile[16] = { 80, 12, 30, 5, 0, 0, 40, 0, 100, 6, 4, 0, 2, 0, 0, 25 };
 
     vc::Surface scr;
-    // Active palette = the WOODTILE/ICONS gameplay palette (wood + sprites + font share it);
-    // the COLONY.PIK scene strip is remapped onto it inside render_colony_screen.
-    scr.set_palette(woodtile.pal);
-    vc::render_colony_screen(scr, backdrop, woodtile, icons, building, font, c,
+    // Active palette = the gameplay palette shared by BUILDING/PARCH/ICONS/font; the
+    // COLONY.PIK scene strip is remapped onto it inside render_colony_screen.
+    scr.set_palette(building.pal);
+    vc::render_colony_screen(scr, backdrop, parch, icons, building, font, c,
                              /*gold*/ 1240, /*tax*/ 7, /*year*/ 1600, stockpile);
+    (void)woodtile;
     vc::Image img = scr.to_rgb(scale);
     vc::write_png_rgb(out, img.w, img.h, img.rgb);
     std::printf("colony: wrote %s (320x200 x%d)\n", out, scale);
