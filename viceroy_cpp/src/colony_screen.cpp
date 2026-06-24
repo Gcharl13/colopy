@@ -275,9 +275,12 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // func_02814C in decode §7 was an over-read — agent-traced). ---
     {
         int pop = c.population < 1 ? 1 : c.population;
-        // SoL%/Tory at y=132 (func_0270D0 @0x027471): fresh founding = 0% SoL, all Tory.
-        blit_idx(scr, icons, 0x7C, 2, 132);               // SoL/Tory icon
-        scr.draw_text(font, 14, 133, "0%", COL_WHITE);
+        // Crown (ICONS 0x7C) = the TORY indicator + the Tory COUNT (a number), per user. SoL% is
+        // a separate number. Fresh founding: SoL 0% => Tory = whole population. [position pending
+        // the exact func_0270D0 surface→screen mapping — agent resolving.]
+        blit_idx(scr, icons, 0x7C, 2, 132);               // Tory crown
+        char tn[8]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count
+        scr.draw_text(font, 14, 133, tn, COL_WHITE);
         // Colonist figures on the grass, facing RIGHT (sheet art faces left -> flip).
         if (100 < (int)icons.frames.size()) {
             const Frame& cf = icons.frames[100];
