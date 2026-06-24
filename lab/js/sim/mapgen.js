@@ -27,6 +27,26 @@ function rng(seed) {
   };
 }
 
+// Smooth value-noise field (seeded), bilinearly interpolated over a coarse grid —
+// used to make climate boundaries wavy (not even strips) and to cluster elevation
+// into ranges. NOT byte-derived: the DOS generator's perturbation isn't pinned, so
+// this is part of the modeled (R) randomization. cell = grid spacing in tiles.
+function noiseField(seed, cell) {
+  const h = (xi, yi) => {                       // hash lattice point → [0,1)
+    let a = (xi * 374761393 + yi * 668265263 + seed * 2246822519) >>> 0;
+    a = Math.imul(a ^ (a >>> 13), 1274126177) >>> 0;
+    return ((a ^ (a >>> 16)) >>> 0) / 4294967296;
+  };
+  const sm = (t) => t * t * (3 - 2 * t);        // smoothstep
+  return (x, y) => {
+    const gx = x / cell, gy = y / cell;
+    const x0 = Math.floor(gx), y0 = Math.floor(gy);
+    const fx = sm(gx - x0), fy = sm(gy - y0);
+    const a = h(x0, y0), b = h(x0 + 1, y0), c = h(x0, y0 + 1), d = h(x0 + 1, y0 + 1);
+    return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;  // [0,1)
+  };
+}
+
 // The four byte-verified Customize-New-World parameters (DGROUP:0x1E7E, mod-3 0..2),
 // with their exact in-game menu labels (GAME.TXT @CLAND/@CCONT/@CTEMP/@CCLIM):
 export const CUSTOMIZE = {
@@ -49,7 +69,8 @@ export function generate(params = {}) {
   const p1 = landMass + 1, p2 = landForm;                   // landmass target (p1+p2+1)·0x140 @0x64AAD
   const climateShift = 1 - temperature;                     // Cool → poleward bands, Warm → equatorial
   const moisture = climateV;                                // Arid(0)/Normal(1)/Wet(2)
-  const rand = rng((params.seed ?? 1) >>> 0);
+  const seed = (params.seed ?? 1) >>> 0;
+  const rand = rng(seed);
   const ri = (lo, hi) => { lo = Math.floor(lo); hi = Math.floor(hi); return lo + Math.floor(rand() * (hi - lo + 1)); };
 
   const t = new Uint8Array(W * H).fill(OCEAN);   // P0: all Ocean (0x19) @0x64A4B
@@ -86,30 +107,45 @@ export function generate(params = {}) {
   }
 
   // --- P2 climate: latitude band → base terrain; set hills/forest (@0x64CF6/@0x65048) [tables B] ---
+  // The latitude→band mapping is byte-verified; the DOS generator does NOT lay even
+  // strips, so we perturb the band with a smooth noise field (modeled R) — boundaries
+  // wander, and an independent elevation field clusters hills/mountains into ranges.
+  const climateNoise = noiseField(seed ^ 0x1234, 9);     // ~9-tile climate cells → wavy bands
+  const localNoise = noiseField(seed ^ 0x9E37, 3);       // fine per-tile terrain jitter
+  const elevNoise = noiseField(seed ^ 0x5151, 7);        // elevation → mountain ranges/foothills
   for (let y = 0; y < H; y++) {
     const north = y < H / 2;
     const distFromEq = north ? (H / 2 - y) / (H / 2) : (y - H / 2) / (H / 2);
-    let band = clamp(Math.round(distFromEq * 5) + climateShift, 0, 5);
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
       if (!land[i]) continue;
+      // band wanders ±~2 with the climate noise instead of a clean latitude step
+      const jitter = (climateNoise(x, y) - 0.5) * 4.2;
+      let band = clamp(Math.round(distFromEq * 5 + jitter) + climateShift, 0, 5);
       let base = (north ? CLIMATE_N : CLIMATE_S)[band];
+      // local jitter: sometimes borrow an adjacent band's terrain so a band isn't one flat colour
+      const lj = localNoise(x, y);
+      if (lj > 0.86 && band < 5) base = (north ? CLIMATE_N : CLIMATE_S)[band + 1];
+      else if (lj < 0.14 && band > 0) base = (north ? CLIMATE_N : CLIMATE_S)[band - 1];
       if (!north && (base === 6 || base === 7) && moisture < 1) base -= 2;   // dry: Marsh/Swamp → drier (@moisture −2)
       let b = base & 0x1F;
-      // elevation: scatter hills (0x20) and a few mountains (0x20|0x80)
-      const e = rand();
-      if (e > 0.92) b |= 0x20 | 0x80;        // mountain
-      else if (e > 0.80) b |= 0x20;          // hills
+      // elevation from the clustered field: high zones = mountain spines, flanks = hills
+      const e = elevNoise(x, y);
+      if (e > 0.78) b |= 0x20 | 0x80;        // mountain (ranges, not specks)
+      else if (e > 0.66) b |= 0x20;          // hills (foothills around the spines)
       t[i] = b;
     }
   }
 
-  // --- P3 smoothing: fold some unforested→forested (+8, @0x653F8); de-speckle interior ocean ---
-  const forestChance = 0.18 + moisture * 0.12;
-  for (let i = 0; i < t.length; i++) {
+  // --- P3 smoothing: fold unforested→forested (+8, @0x653F8) in NOISE PATCHES (not
+  // speckle); de-speckle interior ocean. forestThresh ↓ with moisture ⇒ wetter = more forest. ---
+  const forestNoise = noiseField(seed ^ 0x7A21, 5);   // ~5-tile forest patches
+  const forestThresh = 0.62 - moisture * 0.12;        // Arid 0.62 / Normal 0.50 / Wet 0.38
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
     if (!land[i]) continue;
     const baseId = t[i] & 0x1F;
-    if (baseId < 8 && (t[i] & 0x20) === 0 && baseId !== 1 && rand() < forestChance)  // not desert, not hills
+    if (baseId < 8 && (t[i] & 0x20) === 0 && baseId !== 1 && forestNoise(x, y) > forestThresh)
       t[i] = (t[i] & 0xE0) | ((baseId & 7) | 8);   // forested variant (band 8..15)
   }
   // remove 1-tile ocean holes surrounded by land
