@@ -1,8 +1,8 @@
 {
   "stats": {
-    "total": 293,
+    "total": 300,
     "strong": 204,
-    "weak": 89,
+    "weak": 96,
     "invalid": 0
   },
   "citations": [
@@ -2038,6 +2038,69 @@
       "raw": "file 0x011DAB",
       "line": 132,
       "source_file": "docs/ARCHITECTURE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129298,
+      "raw": "file 0x1F912",
+      "line": 48,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129303,
+      "raw": "file 0x1F917",
+      "line": 48,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129310,
+      "raw": "file 0x1F91E",
+      "line": 49,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129315,
+      "raw": "file 0x1F923",
+      "line": 50,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 130228,
+      "raw": "file 0x1FCB4",
+      "line": 60,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 129383,
+      "raw": "file 0x1F967",
+      "line": 230,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 128298,
+      "raw": "file 0x1F52A",
+      "line": 231,
+      "source_file": "docs/POPUP_INSTANCES_VICEROY_DECODE.md",
       "status": "weak_in_gap"
     },
     {

@@ -15,7 +15,7 @@
 ```
 europe_screen stub  func_030DBC @0x030DEB
   load EUROPE.PIK   (numeric key 0x0FBA @0x030DCE)   -- the harbor backdrop, full screen
-  mov bx,0x2B ; lcall enter_screen_view             -- screen id 0x2B
+  mov bx,0x2B ; lcall 0x181F:0x772  -- NOTE: 0x772 is the error-logger, NOT screen entry (see §11 correction); event loop = inlined per-screen modal template @0x035CAE
   paint = COMPOSER func_031E4C @0x031E4C
   event loop / hit-test (orphan @0x032034, point-in-rect)
 ```
@@ -164,7 +164,7 @@ framework close, §10/§11, not a hit-rect here.)
   (hit-id 3) — both centred caption+value panels (the ship destination/cargo sub-panels).
 - **Exit RESOLVED (framework-level):** there is **no Europe-private exit hit-rect** beyond
   the `@0x032034` block; leaving Europe is the generic screen-view runner's close (the
-  `@EUROLABEL` 4th token `"x"` / ESC), `enter_screen_view(0x2B)` (§11). Not a painted button.
+  `@EUROLABEL` 4th token `"x"` / ESC), exit zeroes the runner sentinel `[0x9E38]` (§11). Not a painted button.
 - **Static analysis COMPLETE.** Residue is runtime state only, each with a one-shot trace:
   (a) banner blit x/y — *break `@0x0310AD`*, read text-box `[0x2CC6..0x2CCC]`; gold blit x/y
   — runtime menu chrome (`PowerRecord+0x2A` is byte-pinned); (b) heap-string *contents*
@@ -178,11 +178,16 @@ framework close, §10/§11, not a hit-rect here.)
 ## 11. Entry / event loop / sail-exit boundary
 
 **Entry (`func_030DBC @0x030DBC`):** load `EUROPE.PIK` (key `0x0FBA`, `0x191F:0x87A`),
-then **`enter_screen_view(ax=0xFFAD, dx=2, bx=0x2B)`** via `0x181F:0x772` — the generic
-screen-view runner. That runner owns the modal event loop: it repaints via the composer
-`func_031E4C` and routes clicks through the hit-test `func_032034` (§9) to the per-id
-handlers (§8 panel modes, §9 market trade). So there is **no Europe-private event loop** —
-input is the shared screen framework.
+then `mov bx,0x2B` + `lcall 0x181F:0x772`.
+> **CORRECTION 2026-06-24:** `0x181F:0x772` is **NOT** `enter_screen_view` — it resolves to
+> file `0x077D5E`, an **error/assert logger** (page references `"*ERRORS.DB"`/`"*MODULES.DB"`,
+> `Error "…" in module "…"`). `bx=0x2B` is an error-context **tag**, and this is an error-exit
+> tail, not the screen-entry call. (`docs/SCREEN_FRAMEWORK_VICEROY_DECODE.md`.) The actual
+> Europe event loop is the **inlined per-screen modal-loop template** — Europe's runner is
+> `@0x035CAE` (twin of colony `func_02C5D4` loop), with the shared input thunks and a
+> per-screen "running" sentinel `[0x9E38]` (zeroed to exit @0x035D73). It repaints via the
+> composer `func_031E4C` and routes clicks through the hit-test `func_032034` (§9). So there
+> is no separate `enter_screen_view`; the framework is cloned per screen.
 
 **Sail / exit are the shared unit-order system, NOT Europe-screen code.** A docked ship's
 **sail-state** (the 0/1/2/3 the status row bins by, `func_031298` reads `[bx]` of the
