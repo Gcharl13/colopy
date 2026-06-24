@@ -70,6 +70,7 @@ Role map lives in `lab/js/data/sprite_roles.js` (each entry tier + citation; fir
 | Active palette = PHYS0 embedded PLTE | B | `main.cpp:225` (`scr.set_palette(tiles.pal)`) |
 | **Edge-blend + coast-connectivity heuristics** | **A** | inherit `mapview.cpp`'s tier (RULINGS 2026-06-22 / INGAME_MAP_RENDER_TRACE) |
 | Generator pass structure / climate tables / borders | B | `func_064A10` P0–P6; climate `{5,4,1,3,2,2}`N/`{2,3,3,4,6,7}`S `@0x64CFC/@0x6504E`; dims `@0x75702`; landmass target `@0x64AAD` |
+| Customize inputs (4 vars + labels) | B | `DGROUP:0x1E7E` idx0-3; `@CLAND/@CCONT/@CTEMP/@CCLIM` (GAME.TXT) — the **World Gen** tab's dropdowns |
 | **Generator RNG + blob-walk / smoothing fill** | **R** | DOS LCG not pinned — modeled PRNG; output is a per-seed continent, not a byte-exact DOS map (`sim/mapgen.js`) |
 
 The render pipeline (`js/data/png_indexed.js` → `js/sim/sheet.js` → `js/sim/surface.js` →

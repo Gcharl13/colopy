@@ -48,8 +48,10 @@ The tool fetches:
 - **Market** *(M4)* — European market: per-turn price drift, luxury shared-pool coupling, buy/sell
   with the King's tax, and boycotts (bitmask, back-tax to lift, Jakob Fugger clear-all).
 - **Map** *(M3)* — AMER2.MP rendered as the FULL sprite composite (TERRAIN.SS + PHYS0.SS, ported
-  1:1 from `mapview.cpp`); tile inspector; plus a Customize-New-World generator (`func_064A10`
-  passes, modeled RNG) whose output composites through the same renderer.
+  1:1 from `mapview.cpp`); tile inspector with layer stack.
+- **World Gen** — a live map view driven by the four byte-verified Customize-New-World inputs
+  (LAND MASS / LAND FORM / TEMPERATURE / CLIMATE = `@CLAND/@CCONT/@CTEMP/@CCLIM`, `DGROUP:0x1E7E`)
+  plus a seed; change any and the world rebuilds via `func_064A10`'s passes through the same renderer.
 - **Settings & Export** — provenance ledger + snapshot export (JSON now, CSV series with M2).
 
 ## Status

@@ -27,13 +27,28 @@ function rng(seed) {
   };
 }
 
-// params: { p1, p2, climateShift, moisture, seed }  (p1,p2 land-mass 0..2 like the
-//          mod-3 Customize globals @0x1E7E; climateShift −2..2; moisture 0..2)
+// The four byte-verified Customize-New-World parameters (DGROUP:0x1E7E, mod-3 0..2),
+// with their exact in-game menu labels (GAME.TXT @CLAND/@CCONT/@CTEMP/@CCLIM):
+export const CUSTOMIZE = {
+  landMass:    { key: '@CLAND', title: 'LAND MASS',   options: ['Small', 'Normal', 'Large'] },
+  landForm:    { key: '@CCONT', title: 'LAND FORM',   options: ['Archipelago', 'Normal', 'Large Continents'] },
+  temperature: { key: '@CTEMP', title: 'TEMPERATURE', options: ['Cool', 'Temperate', 'Warm'] },
+  climate:     { key: '@CCLIM', title: 'CLIMATE',     options: ['Arid', 'Normal', 'Wet'] },
+};
+
+// params: { landMass, landForm, temperature, climate, seed }, each Customize var 0..2
+// (idx0=land-mass p1, idx1=land-form p2, idx2=temperature, idx3=moisture/climate —
+//  DGROUP:0x1E7E, written mod-3 by the Customize dialog func_070060 @0x701AD).
 export function generate(params = {}) {
   const W = 58, H = 72;                 // random-map defaults @0x75702/@0x75708 (0x3A×0x48) [B]
-  const p1 = clamp(params.p1 ?? 2, 0, 4), p2 = clamp(params.p2 ?? 1, 0, 4);
-  const climateShift = params.climateShift ?? 0;
-  const moisture = clamp(params.moisture ?? 1, 0, 2);
+  const landMass = clamp(params.landMass ?? 1, 0, 2);       // idx0 p1
+  const landForm = clamp(params.landForm ?? 1, 0, 2);       // idx1 p2
+  const temperature = clamp(params.temperature ?? 1, 0, 2); // idx2 (Cool..Warm)
+  const climateV = clamp(params.climate ?? 1, 0, 2);        // idx3 moisture (Arid..Wet)
+  // Map the named vars onto the generator's internals:
+  const p1 = landMass + 1, p2 = landForm;                   // landmass target (p1+p2+1)·0x140 @0x64AAD
+  const climateShift = 1 - temperature;                     // Cool → poleward bands, Warm → equatorial
+  const moisture = climateV;                                // Arid(0)/Normal(1)/Wet(2)
   const rand = rng((params.seed ?? 1) >>> 0);
   const ri = (lo, hi) => { lo = Math.floor(lo); hi = Math.floor(hi); return lo + Math.floor(rand() * (hi - lo + 1)); };
 
@@ -45,7 +60,9 @@ export function generate(params = {}) {
   const target = (p1 + p2 + 1) * 0x140;
   const DX = [0, 1, 1, 1, 0, -1, -1, -1], DY = [-1, -1, 0, 1, 1, 1, 0, -1];   // 8-dir compass (DS:0xB4/0xBE)
   let placed = 0;
-  const nWalk = p1 + p2 + 1;
+  // LAND FORM controls coherence: Archipelago = many scattered blobs, Large
+  // Continents = few big ones (fewer walkers over the same land target).
+  const nWalk = landForm === 0 ? 6 + landMass : landForm === 1 ? 3 : 2;
   // Round-robin drunkard's walk over a few walkers until we hit the land target.
   const walkers = [];
   for (let s = 0; s < nWalk; s++) walkers.push({ x: ri(W * 0.25, W * 0.7), y: Math.floor((H / (nWalk + 1)) * (s + 1)) });

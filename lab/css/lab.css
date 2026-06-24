@@ -89,6 +89,10 @@ table.data tbody tr{cursor:pointer}
 
 .map-layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .map-scroll{max-width:100%;max-height:70vh;overflow:auto;border:1px solid var(--line);background:#0b0d11}
+.gen-controls{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0}
+.gen-ctl{display:flex;flex-direction:column;gap:3px}
+.gen-title{font-size:12px;color:var(--ink);font-weight:600;letter-spacing:.03em}
+.gen-key{font-size:10px;color:var(--muted);font-family:ui-monospace,monospace}
 .map-canvas{image-rendering:pixelated;display:block;cursor:crosshair}
 .inspector{min-width:280px;background:#0d0f13;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12.5px}
 .inspector div{margin:3px 0}
