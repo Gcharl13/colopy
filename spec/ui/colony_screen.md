@@ -179,10 +179,13 @@ dump or a runtime trace (do not invent it). Full breakdown:
 - **15-slot loop** `@0x027067..0x0270B1` (`cmp 0xF @0x02707B`): per slot `bx = slot·4`
   (`shl bx,2`), then **x = `[bx+0x266]`**, **y = `[bx+0x268] + 8`** `@0x027087/0x02708B`. Building
   TYPE from `[bx−0x729E]`, present-gate from `[bx−0x717E]` (skip if `<0`). Blit `call 0x2CA23`. **B**
-- ⇒ buildings are **TABLE-POSITIONED** (DGROUP `0x266` stride 4), **not** a fixed column grid.
-  BUILDING.SS sprite index = **type+1** ([V @0x027087], `SCREEN_LAYOUTS.md` §3). The exact
-  per-type/level frame map (level switch 0x0F/0x11/0x13/0x14/0x2F/0x30) is one leaf deeper and is
-  **R/TBD** (recol-xref to `COLONY_RENDERER_DECODED.md` §2, VICEROY frame offset not yet pinned). **B**
+- ⇒ the 15 plot **positions** are TABLE-POSITIONED (DGROUP `0x266` stride 4). But **which
+  building occupies which plot is RNG-driven** (`func_025D34`: random_int within 5 category
+  plot-ranges `0x224=[7,4,2,1,1]`/`0x22A=[0,7,11,13,14]`, RNG seeded per colony at `0x181F:0xD62`).
+  So the type/level tables `0x8D62`/`0x8E82` are **runtime, not static** — see
+  `docs/COLONY_SCREEN_VICEROY_DECODE.md` §12. The final BUILDING.SS frame per (type,level) is
+  also a runtime lookup `word[idx*2−0x7238]` in `func_026CC2` (§4d) — **not** simply type+1, and
+  **R/TBD until the RNG+seed+frame-table are ported**. **B (positions) / TBD (placement+frame)**
 
 ### 3.8 Terrain scene — `func_026374 @0x026374`
 - Colony cell from `[0x8542]:[bx+0]` (X→`[0x17C]`) / `+1` (Y→`[0x17E]`) `@0x026381`. **B**

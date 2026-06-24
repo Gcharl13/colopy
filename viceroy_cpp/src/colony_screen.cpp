@@ -36,7 +36,10 @@ static const signed char TYPE_FRAME[42] = {
     37,38,        // 37-38 Church/Cathedral
     39,40,41,     // 39-41 Blacksmith's House/Shop/Iron Works
 };
-// Which plot each building type occupies (chains share a plot; highest built tier wins).
+// WARNING (2026-06-24): this TYPE_PLOT table is a PLACEHOLDER, not the real placement.
+// The actual which-building-in-which-plot is RNG-driven (func_025D34: random_int within
+// 5 category plot-ranges, seeded per colony) -- see decode §12. This static arrangement
+// is NOT faithful; rendering correct placement requires porting the RNG+seed+frame table.
 static const signed char TYPE_PLOT[42] = {
     7,7,7, 14,14,14, -1,-1,-1, 0,0,0, 12,12,12, 2,-1,10, -1,-1,-1,
     4,4,4, 5,5,5, 6,6,6, 1,1, 8,8,8, 3,3, 11,11, 9,9,9,

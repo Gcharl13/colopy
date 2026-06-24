@@ -123,7 +123,8 @@ colony's actual buildings just occupy the plots whose `level ≥ 0`.)
 ### 4c. Generation — which building/level per plot
 - `type[slot]` = `byte[0x8D62+slot]`, `level[slot]` = `byte[0x8E82+slot]` — both BSS,
   filled per-colony from the ColonyRecord building data at colony-screen entry
-  (writer not yet pinned — runtime fill; `level<0` marks an unbuilt plot).
+  (the writer is `func_025D34` — **RNG-driven placement, §12**, NOT a static fill; `level<0`
+  marks an unbuilt plot).
 
 ### 4d. Frame selection — building type→frame mapper `func_026CC2 @0x026CC2`
 Returns (frame_base `[bp-6]`, dims `[bp-4]`, …) for a building type `[bp+6]`:
@@ -291,8 +292,13 @@ Load path (verified):
   inside the colony enter). The y=128 value follows from the 320×72 size + bottom placement;
   confirming the literal needs either the surface-context setup site or a runtime trace.
 
-### 4d. Frame selection — building type → BUILDING.SS frame (RESOLVED)
-`func_026CC2` (the type→frame/dims mapper) resolves the sprite frame:
+### 4d. Frame selection — building type → BUILDING.SS frame (PARTIAL — final step is runtime)
+> **Correction:** the chain below yields a *pre-lookup* index, NOT the final BUILDING.SS
+> frame. `func_026CC2`'s last step is `frame = word[index*2 − 0x7238]` (BSS `0x8DC8`, @0x026D8F)
+> — a **runtime** table. The `0x2CA` base values include the 1×1 dummy frames (10/11/17),
+> which is why using them directly draws nothing/garbage. Final frame is NOT statically known.
+
+`func_026CC2` (the type→frame/dims mapper) computes the pre-lookup index:
 - type `0x13`/`0x14` → frame `[0xA892]`, dims `0x3F`; type `0x11` → frame `[0x8DD8]`,
   dims `0x1F` (then `−[0xA892]`).
 - else: `base = 0x181F:0xACE(type)` = **`byte[type + 0x2ca]`** — a STATIC per-type
@@ -466,13 +472,48 @@ Special cases (no bit): **Warehouse Expansion (16)** → `inc [colony+0x95]`; **
 Expansion (31)** → `inc [colony+0x96]` (so the cheat clears 16/31 because they are counters,
 not building bits). **B.**
 
-### Colony screen — render path status: COMPLETE
-**Fully byte-mapped:** all 12 composer steps; buildings (positions `0x266`, type/level
-`0x8D62`/`0x8E82`, frame mapper + jump table); scene/outside view; COLONY.PIK; the 5
-panels (field 3×3, plaza, 6-slot minimap, SoL/cargo/msg, flag); stockpile bar; header
-(name+season+year, gold field); build interaction + the shared dialog engine.
+### Colony screen — render path status: NOT COMPLETE (corrected 2026-06-24)
+> **Retraction.** A prior revision labeled this "COMPLETE / Static analysis COMPLETE."
+> **That was false.** The single most visible thing on the screen — *which building is
+> drawn in which plot* — is **NOT resolved** and is **not a static table**: `func_025D34`
+> places buildings by **RNG** (see §12). The chrome geometry below is byte-mapped; the
+> building *placement* and the final *frame index* are not. Do not treat this screen as
+> renderable-from-static-data.
 
-**Static analysis COMPLETE.** Everything statically knowable is pinned. The only residue is
+**Byte-mapped (chrome/geometry):** the 12 composer steps; the 15 plot *positions* `0x266`;
+the 5 panel rects; the stockpile bar; the scene/outside view; COLONY.PIK strip; build
+interaction + dialog engine; construction-complete (§11).
+
+**NOT resolved (the load-bearing render inputs):**
+- **Building → plot placement** = `func_025D34` (§12), **RNG-seeded per colony** — no static
+  answer. To render a specific colony you must replicate the RNG + seed, or dump `0x8D62`
+  (type)/`0x8E82` (level) at runtime.
+- **Final BUILDING.SS frame** per (type,level) = a **runtime table lookup** `word[frame*2 −
+  0x7238]` (BSS `0x8DC8`) inside `func_026CC2`; the `0x2CA`+jump-table path yields only the
+  *pre-lookup* index (and hits the 1×1 dummy frames). The static `SPRITE_CATALOG` map is
+  recon-trust, not EXE-verified.
+
+## 12. Building placement — `func_025D34` is RNG-driven (the part I wrongly called done)
+Entry re-seeds the RNG (`lcall 0x181F:0xD62` → `func_009726`, its only caller, @0x025D3A),
+then for each building **randomly assigns a plot within its category's range**:
+- 15 plots split into **5 categories**: counts `byte[0x224] = [7,4,2,1,1]`, bases
+  `byte[0x22A] = [0,7,11,13,14]` → cat0 = plots 0–6, cat1 = 7–10, cat2 = 11–12, cat3 = 13,
+  cat4 = 14.
+- per-building category from the BSS table `[type*0xC − 0x7078]` (`0x8F88`, filled
+  elsewhere — not yet traced).
+- placement loop @0x025DDB: `plot = base[cat] + random_int(0, count[cat]-1)`
+  (`lcall 0x181F:0x4D4`); if `0x8E92[plot] ≥ 0` (taken) **retry** until a free plot.
+- result written to `0x8D62[plot]` (type) / `0x8E82[plot]` (level).
+
+So the layout is **deterministic given the per-colony seed** but is genuinely RNG output,
+not a table. **To finish for real:** port `func_009726` (seed source), `func_00C322`
+(the RNG), the per-type→category table, and `func_026CC2`'s `0x7238` frame lookup — *then*
+the screen is renderable from the bitmask. None of that is done.
+
+---
+_(Superseded status block retained below for history; read §12 + the retraction above first.)_
+
+**Static analysis CLAIM (RETRACTED — see above).** Everything statically knowable is pinned. The only residue is
 **runtime state** — fully characterized below, each with the exact breakpoint a one-shot
 runtime trace would read (do NOT guess these):
 1. **Title literal sentence** — fields are byte-traced (§9b); the words need the loaded string
