@@ -1,8 +1,8 @@
 {
   "stats": {
-    "total": 269,
-    "strong": 193,
-    "weak": 76,
+    "total": 279,
+    "strong": 201,
+    "weak": 78,
     "invalid": 0
   },
   "citations": [
@@ -193,6 +193,42 @@
       "raw": "func_037340_unknown.asm",
       "line": 522,
       "source_file": "docs/ADVISOR_REPORTS_AUDIT.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 483254,
+      "raw": "file 0x075FB6",
+      "line": 33,
+      "source_file": "docs/FONTS_VICEROY_DECODE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 123454,
+      "raw": "file 0x1E23E",
+      "line": 59,
+      "source_file": "docs/FONTS_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 130336,
+      "raw": "file 0x1FD20",
+      "line": 65,
+      "source_file": "docs/FONTS_VICEROY_DECODE.md",
+      "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 10950,
+      "raw": "file 0x002AC6",
+      "line": 158,
+      "source_file": "docs/FONTS_VICEROY_DECODE.md",
       "status": "strong_func_entry"
     },
     {
@@ -725,6 +761,60 @@
       "line": 408,
       "source_file": "docs/COLONY_RENDERER_DECODED.md",
       "status": "weak_in_gap"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 395395,
+      "raw": "file 0x060883",
+      "line": 40,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 395399,
+      "raw": "file 0x060887",
+      "line": 41,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_in_function"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 254306,
+      "raw": "file 0x3E162",
+      "line": 157,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13408,
+      "raw": "file 0x3460",
+      "line": 185,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 13508,
+      "raw": "file 0x34C4",
+      "line": 186,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_func_entry"
+    },
+    {
+      "type": "file_offset",
+      "exe": "VICEROY",
+      "offset": 59242,
+      "raw": "file 0xE76A",
+      "line": 187,
+      "source_file": "docs/MAPVIEW_SCREEN_VICEROY_DECODE.md",
+      "status": "strong_func_entry"
     },
     {
       "type": "file_offset",

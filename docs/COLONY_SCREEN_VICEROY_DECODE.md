@@ -521,8 +521,11 @@ count[cat]-1)`; if `0x8E92[plot] ≥ 0` (taken) **retry**; else assign. Type/lev
    static category source** (it is NOT `@BUILDING` col3: that histogram is 19/10/7/3/3, not
    7/4/2/1/1). TBD-source.
 2. **Final BUILDING.SS frame** `frame = word[idx*2 − 0x7238]` (BSS `0x8DC8`) in `func_026CC2`
-   @0x026D8F. The table is accumulated at `@0x00A409`/`@0x00A462` (`add [bx-0x7238],ax`) —
-   **trace that to the static frame source.** TBD-source.
+   @0x026D8F. PARTIALLY TRACED: the table is built at `@0x00A3DF` (zero 20 entries) then
+   accumulated `@0x00A409` (`add [bx-0x7238], ax`) from the loaded-sheet metadata bytes
+   `[0xA891]/[0xA893]/[0xA894]` (BUILDING.SS section frame counts). So it is **computed from
+   the BUILDING.SS frame layout at load**, not a static literal — deterministic given the
+   sheet. Port = replicate this accumulation from the sheet's per-category frame counts.
 3. **`rand()` LCG constants** — `0xD1D:0xE04` is the C-runtime rand in an overlay (stub file
    `0x103D4` → page-loader); resolve the overlay to get the multiplier/increment (likely the
    standard `seed=seed*0x015A4E35+1; return (seed>>16)&0x7FFF`, but **verify, don't assume**).

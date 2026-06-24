@@ -10,7 +10,7 @@
 
 | # | Screen / subsystem | entry / composer | decode doc | status |
 |---|--------------------|------------------|-----------|--------|
-| 1 | Map view (HUD/sidebar/menubar/minimap/viewport) | enter_screen_view 0xD @0x076871 | spec/ui/map_view.md | PARTIAL (sidebar per-line x/y TBD; menu-bar) |
+| 1 | Map view (HUD/sidebar/menubar/minimap/viewport) | enter_screen_view 0xD @0x076871; composer func_067700 | docs/MAPVIEW_SCREEN_VICEROY_DECODE.md; spec/ui/map_view.md | PARTIAL — composer/minimap(241,8,79,41 @0x066CF8)/viewport-geom(func_06787C)/tile-chain/units-overlay all **B**; sidebar season/gold/tax text **TBD** (no draw site in map page 0x66000-0x77000 — overlay HUD); **func_06083A REFUTED** as map bar (= trade-route title, [0x9E14]/0x4A @0x060883) |
 | 2 | Colony screen | composer func_028592; screen 0x2C @0x025EE5 | docs/COLONY_SCREEN_VICEROY_DECODE.md | PARTIAL (RNG placement func_025D34 §12, frame table — being ported) |
 | 3 | Europe screen | composer func_031E4C; screen 0x2B @0x030DEB | docs/EUROPE_SCREEN_VICEROY_DECODE.md | PARTIAL (heap-string contents, menu gold blit) |
 | 4 | Advisor reports F1–F10 | dispatch @0x023843; bodies 0x37xxx–0x3Axxx | spec/ui/advisor_reports.md | PARTIAL (per-report exact rows) |
@@ -22,7 +22,7 @@
 | 10 | Nation select (NATIONS.PIK) | screen 0x18 region | — | TBD |
 | 11 | Difficulty select (DIFFICUL.PIK) | — | — | TBD |
 | 12 | Customize (CUSTOMIZ.PIK) | — | — | TBD |
-| 13 | King audience / loss / win (KING*) | king-defeats func_075352 | spec/ui/fonts_and_colors.md (font) | TBD (layout) |
+| 13 | King audience / loss / win (KING*) | renderer func_075352 @0x075352; trigger func_02F3A2 @0x02F3A2 | docs/ENDGAME_SCREENS_VICEROY_DECODE.md §1 | DONE (KING1/KINGLOSE/KINGWIN select + pen (242,47) FONTKING + portrait x=100 byte-cited; portrait y/h + body text runtime TBD) |
 | 14 | Native diplomacy / raids (IND*) | popup channels func_06BE92 | spec/ui/popups.md §2.7 | PARTIAL |
 | 15 | Score screen (SCORE01–24) / F10 | func_03A9C0 @0x03A9C0 | spec/ui/advisor_reports.md §F10 | PARTIAL |
 | 16 | Declaration of Independence (DECLARAT) | screen 0x28 @0x0450AE? | — | TBD |
