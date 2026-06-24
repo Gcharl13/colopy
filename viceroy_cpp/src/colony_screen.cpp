@@ -127,19 +127,16 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         scr.draw_text(font, cellx + (BAR_PITCH - tw) / 2, BAR_NUM_Y, q, COL_WHITE);
     }
 
-    // --- Top header (composer step 5 banner + menu-bar Gold). Centred colony name + season +
-    // year (§9, byte-confirmed fields); Gold readout right-aligned (§10: treasury PowerRecord
-    // +0x2A renders in the top menu header, NOT on the warehouse bar). Pop:/Tax: are drawn
-    // elsewhere, never in this header (§10) — so they are intentionally absent. ---
+    // --- Top banner: a single line "Name, Season Year, Gold: N" — verbatim format from the
+    // DOS session captures (SESSION_UI_CATALOG.md §2: "Plymouth, Spring 1543, Gold: 19200").
+    // Name+season+year are composer-step-5 fields (§9); Gold is the treasury PowerRecord+0x2A
+    // (§10), shown INLINE in this banner (not on the warehouse bar). ---
     {
         std::string season = ((year % 2) == 0) ? "Spring" : "Autumn";
-        char line[80]; std::snprintf(line, sizeof line, "Jamestown   %s %d", season.c_str(), year);
+        char line[96];
+        std::snprintf(line, sizeof line, "Jamestown, %s %d, Gold: %d", season.c_str(), year, gold);
         int w = font.frames.empty() ? 0 : scr.text_width(font, line);
         scr.draw_text(font, (Surface::W - w) / 2, 2, line, COL_WHITE);
-
-        char g[24]; std::snprintf(g, sizeof g, "Gold: %d", gold);
-        int gw = font.frames.empty() ? 0 : scr.text_width(font, g);
-        scr.draw_text(font, Surface::W - gw - 3, 2, g, COL_WHITE);
     }
     (void)tax_pct;
 }
