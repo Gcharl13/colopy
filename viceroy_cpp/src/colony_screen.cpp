@@ -273,23 +273,25 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // --- Colonist plaza (LEFT panel 0..120, func_0270D0): colonist figures + SoL%/Tory (y=132)
     // + the Food/Crosses/Bells production row (y=163). All drawn HERE (the SoL attribution to
     // func_02814C in decode §7 was an over-read — agent-traced). ---
+    // All positions below are ABSOLUTE SCREEN coords (agent-verified: func_0270D0 draws to the
+    // 320x200 back buffer with no panel-origin transform — 132/142/163 are screen-y).
     {
         int pop = c.population < 1 ? 1 : c.population;
-        // Crown (ICONS 0x7C) = the TORY indicator + the Tory COUNT (a number), per user. SoL% is
-        // a separate number. Fresh founding: SoL 0% => Tory = whole population. [position pending
-        // the exact func_0270D0 surface→screen mapping — agent resolving.]
-        blit_idx(scr, icons, 0x7C, 2, 132);               // Tory crown
-        char tn[8]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count
-        scr.draw_text(font, 14, 133, tn, COL_WHITE);
-        // Colonist figures on the grass, facing RIGHT (sheet art faces left -> flip).
+        // y=132 row: Tory crown (ICONS 0x7C) @ (2,132) + Tory COUNT; SoL% right-aligned @ x=0x75-w.
+        blit_idx(scr, icons, 0x7C, 2, 132);
+        char tn[8]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count (= pop at 0% SoL)
+        scr.draw_text(font, 16, 133, tn, COL_WHITE);
+        const char* sol = "0%";                            // fresh founding SoL = 0%
+        int sw = font.frames.empty() ? 0 : scr.text_width(font, sol);
+        scr.draw_text(font, 0x75 - sw, 133, sol, COL_WHITE);   // right-aligned at x=117-width (@0x027589)
+        // y=142 row: colonist figures (screen x≈2, y=142; @0x0270FF), facing right (flip).
         if (100 < (int)icons.frames.size()) {
             const Frame& cf = icons.frames[100];
-            int px = 8;
-            for (int k = 0; k < pop && k < 8; ++k) { scr.blit_frame_flip(cf, px, 148); px += cf.w + 6; }
+            int px = 2;
+            for (int k = 0; k < pop && k < 8; ++k) { scr.blit_frame_flip(cf, px, 142); px += cf.w + 6; }
         }
-        // Production row at y=163 (func_0270D0 @0x027326, flushed via 0x22C): Food (good0),
-        // Crosses (ICONS 0x39/bundle 56), Bells (ICONS 0x3f/bundle 62). Values are runtime BSS;
-        // derived here from the byte-verified terrain yields for this founding.
+        // y=163 production row, CENTRED in span [2,120] (flush 0x22C @0x0273D7). Food/Crosses/Bells
+        // as LAYERED sprites (never numbers). Counts from the byte-verified terrain yields (founding).
         int food = 0, crosses = 0, bells = 0;
         if (map) {
             auto tid = [&](int dx, int dy) {
@@ -303,16 +305,13 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                 if (!dx && !dy) continue; int yr = yield_row(tid(dx, dy));
                 if (yr >= 0 && YIELD[yr][0] > bestf) bestf = YIELD[yr][0];
             }
-            food += bestf;                                 // TOTAL food produced (centre + worked tile), not net
+            food += bestf;                                 // TOTAL food produced (centre + worked tile)
         }
-        // Each production qty is shown as LAYERED SPRITES (one icon per unit), never a number —
-        // the func_002EE4 gauge layout (same as the Continental Congress bells); applies game-wide.
-        int rx = 4;
+        auto iw = [&](int f) { return (f >= 0 && f < (int)icons.frames.size() && icons.frames[f].w > 2) ? icons.frames[f].w : 6; };
+        int total = food * iw(22) + crosses * iw(56) + bells * iw(62);   // centred row width
+        int rx = 2 + (118 - total) / 2; if (rx < 2) rx = 2;
         auto prod = [&](int frame, int val) {
-            if (frame < 0 || frame >= (int)icons.frames.size()) return;
-            int iw = icons.frames[frame].w > 2 ? icons.frames[frame].w : 6;
-            for (int k = 0; k < val && k < 12; ++k) { blit_idx(scr, icons, frame, rx, 161); rx += iw; }
-            rx += iw + 4;                                   // reserve a category slot + gap
+            for (int k = 0; k < val && k < 12; ++k) { blit_idx(scr, icons, frame, rx, 163); rx += iw(frame); }
         };
         prod(22, food);                                    // Food (good 0) — layered
         prod(56, crosses);                                 // Crosses — layered
