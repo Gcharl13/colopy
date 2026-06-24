@@ -27,11 +27,11 @@
 | 15 | Score screen (SCORE01–24) / F10 | func_03A9C0 @0x03A9C0 | docs/ADVISOR_REPORTS_VICEROY_DECODE.md §F10 (+ spec/ui/advisor_reports.md) | DONE (selector) — band selector byte-cited: i=1..0x18, panel=i-1 for largest i with i·i/3≥scaled (`imul cx;idiv 3;jge` @0x3AA4D-0x3AA5A), clamp ≤0x17 @0x3AA71; SCORE<panel+1>.SS (str 0x11CF +`0x182`@0x3AADA) over WOODPAN2 (str 0x11D7 @0x3AAFF, quartet 0x44E @0x3AB02); FONTTINY+FONTINTR (`[0x268A]`@0x3B054). TBD = live score figures + per-line big-figure x/y |
 | 16 | Declaration of Independence (DECLARAT) | screen 0x28 @0x0450AE? | — | TBD |
 | 17 | Closing / end (CLOS-BKG) | — | — | TBD |
-| 18 | Fonts (FONTTINY/INTR/KING/NP) | 4 loads | spec/ui/fonts_and_colors.md | PARTIAL (glyph widths) |
-| 19 | Screen-view runner / event loop | enter_screen_view 0x181F:0x772 | — | TBD (the framework all screens share) |
+| 18 | Fonts (FONTTINY/INTR/KING/NP) | load verb 0x1A1F:0xA86 (4 loads); measure core 0x181F:0x204→0x00E6A6 | docs/FONTS_VICEROY_DECODE.md | DONE (loads+latches+per-glyph width byte-verified; cell heights .FF-atlas tier-A; FONT-NP draw site TBD) |
+| 19 | Screen-view runner / event loop | INLINED template; colony runner func_02C5D4 loop 0x02C85C, exit [0x346]@0x2C929 | docs/SCREEN_FRAMEWORK_VICEROY_DECODE.md | DONE (skeleton+input thunks+exit byte-verified; **0x181F:0x772 corrected = error-logger, NOT enter_screen_view**; map main-loop start TBD) |
 | 20 | Colony RNG placement PORT | func_025D34/009726/00C322 + 0x7238 frame | docs/COLONY_SCREEN_VICEROY_DECODE.md §12 | IN PROGRESS (this session) |
 
-## Screen-id map (enter_screen_view `bx`)
+## Screen-tag map (`bx` at the error-exit tails — `0x181F:0x772` = error-logger, NOT a screen dispatch; see docs/SCREEN_FRAMEWORK_VICEROY_DECODE.md §0)
 - 0x2D @0x005E63 · 0x2C @0x025EE5 (colony) · 0x2B @0x030DEB (europe) · 0x28 @0x0450AE
   · 0x29 @0x06D5AA · 0x2A @0x07661F (boot menu) · 0xD @0x076871 (map) · 0x18 @0x077401/
   0x0774E4/0x0775A7 (intro/nation/difficulty) · more @0x078B8B/0x078C7C.
@@ -62,3 +62,13 @@
   artwork; FONTINTR pen `[0x268A]`, color 0xFC (0xFE for player's own band); 3 palette tiers (≤6→0x21,
   7..22→0x25, 23→0x24).
 - **KING = `func_075352`** (FONTKING, pen 242,47; KING1/KINGLOSE/KINGWIN by outcome; portrait x=100).
+
+## Corrections to PROPAGATE (found late in the scrub — fix across docs)
+- **`0x181F:0x772` is NOT `enter_screen_view`** — the framework agent byte-verified it as an
+  error-logger. So the "enter_screen_view(bx=screen-id)" labels in EUROPE_SCREEN /
+  COLONY_SCREEN / MAPVIEW decode + the screen-id table are MISLABELED on the function identity
+  (the bx=0x2B/0x2C/0xD screen ids are still passed to the real screen setup, but via a
+  different call). Real screen-view entry / main loop = TBD (SCREEN_FRAMEWORK doc). FIX: replace
+  "enter_screen_view 0x181F:0x772" with "screen setup (id in bx); the 0x181F:0x772 call there is
+  the error-logger, not the entry" pending the real entry being pinned.
+- `func_06083A` = trade-route title, not map menu bar (already noted) — fix map_view.md/menus.md.
