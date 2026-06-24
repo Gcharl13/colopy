@@ -54,7 +54,11 @@ constexpr int PIK_Y = 128;                 // COLONY.PIK bottom band (320x72 →
 // cob; frame 23 is the sugar-cane the old 0x17 base wrongly drew first). DOS ground-truth +
 // sprite pixels outrank the spec's "23" per notes/TRUTH_HIERARCHY.md.
 constexpr int ICON_GOOD0 = 0x16;
-constexpr int BAR_X0 = 1, BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 179, BAR_NUM_Y = 192;
+// The PIK's blue stockpile-cell interior is screen y=180..198 (pixel-measured). Icons are
+// 12px tall, numbers 6px — so they stack icon-over-number inside the 19px cell. Drop the icon
+// off the top border (was y=179, sitting ON the border → "too high") to y=181, with the
+// quantity on the bottom row y=193.
+constexpr int BAR_X0 = 1, BAR_CELLS = 16, BAR_PITCH = 19, BAR_ICON_Y = 181, BAR_NUM_Y = 193;
 constexpr uint8_t COL_WHITE = 15;
 
 static void blit_idx(Surface& scr, const Sheet& sh, int idx, int x, int y) {
