@@ -69,9 +69,23 @@ td.cite,.cite{color:var(--muted);font-size:11px;font-family:ui-monospace,monospa
 .atlas-stage{position:relative;display:inline-block;image-rendering:pixelated;border:1px solid var(--line);background:#0b0d11;transform:scale(2);transform-origin:top left;margin-bottom:60px}
 .atlas-img{display:block;image-rendering:pixelated}
 .atlas-overlay{position:absolute;inset:0}
-.fbox{position:absolute;outline:1px solid rgba(93,176,255,.5)}
+.fbox{position:absolute;outline:1px solid rgba(93,176,255,.5);cursor:pointer}
 .fbox.skip{outline:1px solid var(--tbd)}
-.frames-wrap{max-height:360px;overflow:auto}
+.fbox:hover{outline:1px solid #fff;background:rgba(255,255,255,.12)}
+.fbox.sel{outline:2px solid var(--accent);background:rgba(93,176,255,.22)}
+.frames-wrap{max-height:420px;overflow:auto}
+table.data tr.sel{outline:1px solid var(--accent);background:#16202c}
+table.data tbody tr{cursor:pointer}
+
+/* M1 sprite layout: atlas on the left, frame inspector on the right */
+.sprite-layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.atlas-col{flex:1 1 360px;min-width:300px;overflow:auto}
+.frame-inspector{flex:0 0 230px}
+.frame-inspector h3{margin:0 0 8px;color:var(--ink)}
+.frame-canvas{image-rendering:pixelated;border:1px solid var(--line);background:
+  repeating-conic-gradient(#1a1d24 0% 25%,#0c0e12 0% 50%) 0/16px 16px;display:block;margin-bottom:10px}
+.kv{display:flex;justify-content:space-between;gap:10px;margin:3px 0;font-variant-numeric:tabular-nums}
+.kv .k{color:var(--muted)}
 
 .map-layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
 .map-canvas{image-rendering:pixelated;border:1px solid var(--line);background:#0b0d11;cursor:crosshair}

@@ -4576,3 +4576,13 @@ uses only the static `0x224`/`0x22A` config (`[7,4,2,1,1]`/`[0,7,11,13,14]`) + a
 permutation within each category block. RULING: the "per-type category table" blocker in
 `docs/COLONY_SCREEN_VICEROY_DECODE.md` §12 was a misdiagnosis; placement is byte-portable given
 only the `rand()` LCG. Full trace recorded in the decode §12 note.
+
+## 2026-06-24 — OPEN CONFLICT (unresolved): ICONS index 100 — skip vs foot-unit
+Surfaced while building the lab Sprites tab (M1). `CLAUDE.md` hard rule 5 lists **100**
+among the placeholder indices to **skip** (0, 16, 100); hard rule 6 lists foot units as
+**100–105**. Index 100 is therefore claimed by both rules. Not resolved here — the lab
+renders ICONS #100 as a **TBD "CONFLICT"** role (rather than silently picking one) per the
+prime directive (never invent; record conflicts). A ruling is needed: is 100 a dead
+placeholder slot with foot units actually at 101–105 (+109), or is the rule-5 "100" a
+typo/overlap? Resolution likely needs the ICONS.SS pixel check at index 100. Until then the
+lab's role map (`lab/js/data/sprite_roles.js`) keeps 100 = TBD-conflict, 101–105 = foot unit.
