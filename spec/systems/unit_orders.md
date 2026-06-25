@@ -72,9 +72,57 @@ order code for all proven rows.
 | 9 | Build Road | `R` | 9 | `@0x2250E` | **`func_0409D6`** | **B** |
 | 10–12 | No Orders (reserved/AI) | `-` | 0xA–0xC | AI-only | AI (10→`0x181f:0x934` unresolved) | **B** |
 
-> The menu-OPEN call passing the `@ORDERS` section to a pulldown/list routine, and the
-> in-handler row/letter→trampoline selector, are **TBD** (not byte-located; `func_072090`
-> only draws the menu-bar titles, not the pulldown population). Do not fabricate them.
+### 2.2 `@ORDERS` accelerator/status-letter table `0x54de[13]` (BYTE_VERIFIED 2026-06-25)
+
+A NAMES-section table-builder (loader body **file `0x074E70..0x074FE0`**; exact ENTER
+entry not linearly recoverable — reached via overlay/RTLink, so cited by body region)
+opens the `@ORDERS` section and parses its accelerator letters into a DGROUP byte array
+at **`0x54de`**:
+
+- `@0x074F69` `push 0x225d` — DGROUP `0x1D9A0 + 0x225d = file 0x1FBFD = "ORDERS\0"`
+  (byte-verified) — `push 0x882` · `lcall 0x191f:0x928` (section opener, **`func_06F8FA`**,
+  identity prior-confirmed; see blocker).
+- 13-row loop: `@0x074F77` `[bp-8]=0`; `@0x074F9D` `cmp word[bp-8],0xd / jge` (exactly
+  **13 rows** = the 13 `@ORDERS` rows). Per row: skip spaces (`@0x074F7E`
+  `cmp byte es:[bx],0x20`), take first non-space (`@0x074F90` `mov al,es:[bx]`), store
+  (`@0x074F96` `mov bx,[bp-8]; mov byte[bx+0x54de],al`).
+- Result: **`0x54de[row] = {'-','S','T','G','L','F','F','B','P','R','-','-','-'}`** (NAMES
+  `@ORDERS`, 13 rows). **Row index == order code** (matches §2/§2.1). After the loop the
+  same builder opens `@ACTIONS` (`@0x074FC4` `push 0x2264 = file 0x1FC04 = "ACTIONS\0"`)
+  for a sibling table — confirming this is a general menu-letter builder.
+
+### 2.3 On-map status-letter renderer `func @0x0386A` (BYTE_VERIFIED 2026-06-25)
+
+`0x54de` is used **dually**: the same array is the on-map unit status glyph table.
+**`func @0x0386A`** (prologue `enter 0x46,0`; runs to ~`0x039E0`; note: the linear-sweep label `func_038F2C` names a DIFFERENT function with no `0x54de` reference — the renderer entry is `0x0386A`, corrected via independent disasm) renders one status letter per visible unit. Registers: **`di` = owner/nationality**
+= `[bx+0x3147] & 0xf` (`@0x038FE`); **`[bp-0x40]` = unit-record base ptr**; **`si` = the
+per-unit loop/state selector** (si-dispatch ladder `@0x0399E..0x039DB` testing si ∈
+{4,5,7,8,0xa,0xb,0xc,0x15,0x16}); `[bp-1]` = chosen glyph.
+
+Default glyph: `@0x03907` `mov cl,[bx+0x314c]` (**order code**) → `@0x0390D`
+`mov [bp-0xa],cx`; `@0x03910` `cmp ax,4 / jl` then `@0x03915` `mov [bp-0xa],0` (clamp to 0
+when owner index `di>=4`); `@0x0391A` `mov bx,[bp-0xa]`; **`@0x0391D` `mov al,[bx+0x54de]`**;
+`@0x03921` `mov [bp-1],al`. So **`0x54de` is indexed by the unit's order code
+(`UnitRecord 0x314c`)** — the same value §2/§2.1 dispatch on.
+
+Three overrides replace the default glyph:
+- **Ship cargo count as ASCII digit** when unit type `[bx+0x3146] ∈ 0x0d..0x12` and the unit
+  is not own-viewer (`@0x03927` `cmp byte[bx+0x3146],0xd/jb`; `@0x0392E` `..,0x12/ja`;
+  `@0x03935` `cmp [0x5396],di/je` skip): `@0x0393B` `mov al,[bx+0x3150]` `+ 0x30`
+  (`@0x0393F`) → `[bp-1]`.
+- **`'X'` (0x58)** `@0x03955` when `si==0x10` (`@0x03944`) and `[0x53a2]==0` (`@0x03949`).
+- **AI-state char `[bx+0x314b]`** `@0x0397B` → `[bp-1]`, replaced by **`'E'` (0x45)**
+  `@0x03986` when `[bx+0x314b] >= 0x80` (`@0x03982` `cmp al,0x80/jb`).
+
+### 2.4 No key-match scan over `0x54de` (menu selection is engine-internal) — PROVEN
+
+A full-binary scan finds **exactly two** code references to `0x54de`: the writer
+`@0x074F96` and the reader `@0x0391D` — and **zero** register-constant loads
+(`mov bx/si/di,0x54de`, `lea [..],0x54de`). Therefore the on-map orders **menu** does NOT
+select a row by scanning a pressed key against `0x54de[]`; accelerator matching happens
+**inside the section/dialog engine `func_06F8FA`** from the `@ORDERS` text itself. `0x54de`
+serves only the on-map status glyph (§2.3). The exact in-engine key-match site is **TBD**
+(inside `func_06F8FA`; not byte-located here). Do not fabricate a `0x54de` key-scan loop.
 
 > Note the two states "Fortify" (in progress) vs "Fortified" (active) — distinct rows, matching the manual's "not gain the effects until the following turn."
 

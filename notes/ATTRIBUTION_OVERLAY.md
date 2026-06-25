@@ -516,3 +516,27 @@ re-verification. The setup-menu, advisor-report, and Lost-City items WERE verifi
 
 **Evidence:** 0x720A1 PUSH 0xfa0; 0x720A4 LCALL 0x1a1f:0x2d2 (draw bar); no @ORDERS section index loaded.
 
+
+---
+## Track 6 additions (2026-06-25) — accel/status-letter array
+
+### func @0x0386A — overlay (renderer; prologue enter 0x46,0, runs to ~0x039E0)
+**Purpose:** On-map unit STATUS-LETTER renderer. Per visible unit, computes the single glyph
+drawn over it. di=owner ([bx+0x3147]&0xf); [bp-0x40]=unit-record base; si=per-unit selector.
+Default glyph = 0x54de[order-code 0x314c]; overrides: ship cargo count as ASCII digit
+(type 0x0d..0x12), 'X' (si==0x10 & [0x53a2]==0), AI-state char 0x314b (→'E' when >=0x80).
+NOTE: the linear-sweep label "func_038F2C" is a DIFFERENT function; the renderer entry is 0x0386A.
+**Evidence:** @0x0391D 8a87de54 mov al,[bx+0x54de]; @0x03907 mov cl,[bx+0x314c]; overrides
+@0x0393B/@0x03955/@0x0397B/@0x03986. Independently byte-verified.
+
+### @ORDERS accel-letter table builder — loader body file 0x074E70..0x074FE0
+**Purpose:** Parses NAMES @ORDERS rows into DGROUP byte array 0x54de[13] = the accelerator/
+status letters {'-','S','T','G','L','F','F','B','P','R','-','-','-'}, indexed by order code.
+Opens @ORDERS (push 0x225d=file 0x1FBFD) then @ACTIONS (push 0x2264=file 0x1FC04) via section
+opener func_06F8FA (0x191f:0x928). **Evidence:** @0x074F96 88 87 de 54 mov [bx+0x54de],al;
+13-row loop @0x074F9D cmp word[bp-8],0xd.
+
+**Key-match note (PROVEN):** exactly 2 code refs to 0x54de (writer 0x74F96, reader 0x391D),
+zero register-constant loads → the orders MENU does NOT scan 0x54de for accelerator matching;
+that happens inside the dialog/section engine func_06F8FA from the @ORDERS text. 0x54de is the
+on-map status-letter table ONLY.

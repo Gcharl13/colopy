@@ -4782,3 +4782,21 @@ inside the overlay menu engine around func_06E3D0 @0x6E3D0 (polls input via LCAL
 function-pointer table patched at runtime), so the letter→id translation needs a runtime trace
 or the overlay dispatch table resolved. Next site: callees of func_06E3D0's poll loop + per-row
 draw func_06F83A @0x6F83A + the consumer of the 'ORDERS' section-name lookup @file 0x1FBFD.
+
+## 2026-06-25 — 0x54de = @ORDERS status-letter table (NOT the menu key-match); renderer func @0x0386A (Track 6)
+
+Extended Track 5. DGROUP byte array 0x54de[13] is built by a NAMES-section table-builder
+(loader body file 0x074E70..0x074FE0) that parses the @ORDERS accelerator column into
+0x54de[row] = {'-','S','T','G','L','F','F','B','P','R','-','-','-'}, indexed by order code
+(@0x074F96 mov [bx+0x54de],al; 13-row loop). It is consumed ONLY by the on-map unit
+STATUS-LETTER renderer func @0x0386A (NOT func_038F2C — that linear-sweep label is a different
+function; renderer prologue enter 0x46,0 @0x0386A): default glyph = 0x54de[0x314c order code],
+with overrides for ship cargo digit, 'X', and the 0x314b AI-state char (→'E' when >=0x80) —
+cross-linking Track 1's 0x314B.
+
+PROVEN (full-binary scan): exactly TWO code refs to 0x54de (writer 0x74F96, reader 0x391D),
+zero register-constant loads. So the orders MENU does NOT select a row by scanning a pressed
+key against 0x54de — accelerator matching is engine-internal to the dialog/section opener
+func_06F8FA, matching the @ORDERS text directly. The in-engine key-match site stays the one
+honest TBD (overlay-internal). Adversarial verify caught my initial renderer mis-citation
+(func_038F2C @0x038F2C) and it was corrected to func @0x0386A before landing.
