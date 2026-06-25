@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""ghidra_prep_overlays.py — emit the overlay memory-block manifest for Ghidra Phase 2.
+"""ghidra_prep_overlays.py — emit the per-PAGE overlay block manifest for Ghidra (Tier 2).
 
-The committed Ghidra export covers only the load image (file 0x2400..0x20665); every
-overlay function decompiles to `halt_baddata()` because the overlay code regions were
-never added as memory blocks. The overlay code IS present in VICEROY.EXE (and raw-
-disassembled in code/VICEROY/disasm/orphans_overlay.asm) — it just isn't loaded into
-Ghidra.
+NOTE: for the report screens you do NOT need this — those painters are RESIDENT in
+COLONIZE.EXE and decompile from a plain import (see docs/GHIDRA_PHASE2_RUNBOOK.md, Tier 1).
+This script is only for the harder Tier-2 case: code that lives ONLY in VICEROY.EXE's
+overlay pages.
 
-This script reads code/VICEROY/overlay_segments.json (`detected_segments`, the overlay
-code regions found by the project's segmenter) and writes a flat manifest of memory
-blocks for the Ghidra Jython helper (tools/ghidra_add_overlays.py) to add.
+The committed Ghidra export covers only VICEROY's load image (file 0x2400..0x20665); overlay
+code decompiles to `halt_baddata()` because the pages were never loaded. This emits ONE
+contiguous memory block per RTLink overlay PAGE (from code/VICEROY/overlay_pages.json
+`pages`), each placed at a real per-page base — far safer than the prior 209 flat-file-offset
+blocks (a single page is well under a 64-KB segment, and the base matches the project's
+`disasm_overlay_reseg` address convention so function starts line up).
 
-Block placement: each overlay region is mapped at a LINEAR base = its file offset. That
-is enough for Ghidra to disassemble + decompile each function BODY — including the
-literal operands we care about (e.g. `push 0x46; push 7; lcall draw_text` = a field at
-x=0x46,y=7). Cross-overlay FAR calls won't auto-resolve (type-A targets are runtime-
-paged, jmpf_seg=0x0000 placeholder per thunks_resolved.json), but intra-function logic
-and constants decompile correctly — which is what UI-position / value decode needs.
+Block model: load `size_bytes` from VICEROY.EXE at file `file_offset`, placed at base =
+`file_offset` (linear, == the reseg address space). The page's code starts at `code_offset`
+within it; far calls across pages (type-A, runtime-paged) still won't resolve — extract
+per-function facts.
 
 Output: code/VICEROY/ghidra_overlay_blocks.json
 Run:    python3 tools/ghidra_prep_overlays.py
@@ -26,9 +26,8 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SEG = os.path.join(ROOT, "code/VICEROY/overlay_segments.json")
+PAGES = os.path.join(ROOT, "code/VICEROY/overlay_pages.json")
 OUT = os.path.join(ROOT, "code/VICEROY/ghidra_overlay_blocks.json")
-IMAGE_END = 0x20665   # load-image already covered by the Phase-1 Ghidra import
 
 
 def h(x):
@@ -36,37 +35,33 @@ def h(x):
 
 
 def main():
-    with open(SEG) as f:
-        data = json.load(f)
-    segs = data["detected_segments"]
+    with open(PAGES) as f:
+        pages = json.load(f)["pages"]
 
     blocks = []
-    for s in segs:
-        first = h(s["first_offset"])
-        last = h(s["last_offset"])
-        length = last - first + 1
-        if length <= 0:
-            continue
+    for pid in sorted(pages, key=lambda k: h(k)):
+        p = pages[pid]
+        foff = h(p["file_offset"])
+        size = h(p["size_bytes"])
+        code = h(p["code_offset"])
         blocks.append({
-            "name": "ov_%06x" % first,
-            "file_offset": "0x%06x" % first,
-            "length": length,
-            "func_count": s.get("function_count", 0),
-            "func_offsets": s.get("function_offsets", []),
-            # base = file offset (flat). Ghidra script maps the block here.
-            "base": "0x%06x" % first,
-            "past_image": first >= IMAGE_END,
+            "name": "page_%02x" % h(pid),
+            "page_id": pid,
+            "file_offset": "0x%06x" % foff,     # disk read position
+            "length": size,                     # whole page (header+reloc+code)
+            "base": "0x%06x" % foff,            # load address (== reseg convention)
+            "code_offset": "0x%06x" % code,     # where the code starts inside the block
+            "confidence": p.get("confidence", ""),
         })
 
     manifest = {
-        "_doc": ("Overlay memory blocks for Ghidra Phase 2. Add each as an initialized "
-                 "block from VICEROY.EXE bytes [file_offset, file_offset+length) at `base`. "
-                 "Then Auto-Analyze + re-export C. Function bodies (incl. literal "
-                 "coordinate/value operands) decompile; cross-overlay far-calls (type-A, "
-                 "runtime-paged) may stay unresolved — extract per-function facts, not the "
-                 "cross-overlay call graph."),
+        "_doc": ("Per-PAGE overlay memory blocks for Ghidra Tier 2 (VICEROY-only overlay code). "
+                 "Add each as an initialized block from VICEROY.EXE [file_offset, +length) at "
+                 "`base`. Function bodies + literal operands decompile; cross-page far-calls "
+                 "(type-A, runtime-paged) may stay unresolved. The report painters do NOT need "
+                 "this — they are resident in COLONIZE.EXE (Tier 1, plain import)."),
         "exe": "raw/COLONIZE/VICEROY.EXE",
-        "image_end": "0x%06x" % IMAGE_END,
+        "source": "code/VICEROY/overlay_pages.json",
         "block_count": len(blocks),
         "total_bytes": sum(b["length"] for b in blocks),
         "blocks": blocks,
@@ -74,10 +69,12 @@ def main():
     with open(OUT, "w") as f:
         json.dump(manifest, f, indent=1)
 
-    past = sum(1 for b in blocks if b["past_image"])
     print("wrote %s" % os.path.relpath(OUT, ROOT))
-    print("  %d overlay blocks, %d KB total (%d past the load-image boundary)"
-          % (len(blocks), manifest["total_bytes"] // 1024, past))
+    print("  %d page blocks, %d KB total" % (len(blocks), manifest["total_bytes"] // 1024))
+    for b in blocks:
+        if b["page_id"] in ("0x05", "0x06"):
+            print("  %s: load @ %s len 0x%x (code @ %s) — report-painter pages"
+                  % (b["name"], b["base"], b["length"], b["code_offset"]))
     return 0
 
 

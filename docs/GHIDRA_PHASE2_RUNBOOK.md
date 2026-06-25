@@ -1,92 +1,107 @@
-# Ghidra Phase 2 — decompile the overlay code (runbook)
+# Ghidra runbook — decompile the report-screen painters (and other overlay code)
 
-**Why:** the committed Ghidra export (`ghidra_export/VICEROY_decompiled.c`) covers only the
-**load image** (file `0x2400..0x20665`). Every overlay function decompiles to
-`halt_baddata()` because the overlay code was never added to the Ghidra program. That
-overlay code is where the **report screens, market, and most UI/render logic** live — i.e.
-the subsystems that keep getting *re-guessed* because nobody can read them as C. Loading the
-overlay regions makes those function bodies decompile, so their literal operands (a field's
-`x`/`y`, a constant) become **citable byte-fact** instead of opinion.
+**Goal:** turn the report-screen render code from a black box into readable C, so the field
+layouts become **citable byte-fact** instead of guesses that get re-litigated. Most of the
+churn-prone UI/report logic was "TBD" only because it was never decompiled.
 
-> The overlay bytes are already raw-disassembled at `code/VICEROY/disasm/orphans_overlay.asm`
-> (~109k lines) and `orphans_load_image.asm` — use those as a cross-check. Phase 2 turns that
-> wall of asm into readable decompiled C.
-
-**What Phase 2 delivers / does not:**
-- ✅ Function **bodies** decompile — control flow, locals, and **literal operands** (the
-  coordinates/values we need).
-- ⚠️ Cross-overlay **far calls** (type-A, 658 of them) may stay unresolved: their target
-  segment is patched by RTLink at runtime (`jmpf_seg = 0x0000` placeholder, see
-  `code/VICEROY/thunks_resolved.json`). That's fine — we extract per-function facts, not the
-  cross-overlay call graph.
+There are two tiers. **Do Tier 1 — it needs no overlay surgery at all.** Tier 2 is the harder,
+optional path for code that lives only in VICEROY's overlays.
 
 ---
 
-## Steps (Windows)
+## Tier 1 — the report painters (RESIDENT in COLONIZE.EXE) — *do this one*
 
-### 0. Prereqs
-- Ghidra installed (any recent build).
-- This repo checked out. Reconstitute the EXE:
-  ```
-  python bin/reconstitute.py
-  ```
-  → produces `raw/COLONIZE/VICEROY.EXE`. Generate the overlay block manifest:
-  ```
-  python tools/ghidra_prep_overlays.py
-  ```
-  → writes `code/VICEROY/ghidra_overlay_blocks.json` (209 overlay regions, ~123 KB).
+The advisor-report (F2–F9) painters are in the **plain load image of COLONIZE.EXE** (the
+smaller "recol" build). No memory blocks, no segment math, no scripts — a normal import
+decompiles them. (Byte-verified: `code/COLONIZE/disasm/func_01EFA3_unknown.asm` is
+`Region: load_image`, prologue `ENTER 0x82,0` — a report painter. The committed disasm there
+is a *truncated 272-byte stub* from a splitter bug; Ghidra gives the full ~1900-byte function,
+which is exactly why running it is worth it.)
 
-### 1. Import the EXE
-- Ghidra → `File → Import File` → `raw/COLONIZE/VICEROY.EXE`.
-- Language: **x86, 16-bit, real mode** (the MZ loader will offer this). Let auto-analysis run
-  on the load image first (this reproduces the existing Phase-1 export).
+### Steps (Windows)
+1. Reconstitute the binary:
+   ```
+   python bin/reconstitute.py
+   ```
+   → `raw/COLONIZE/COLONIZE.EXE` (455,137 bytes).
+2. Ghidra → **`File → Import File`** → `raw/COLONIZE/COLONIZE.EXE`. Accept the **MZ / x86
+   16-bit real mode** language the loader offers. Let **Auto-Analyze** run.
+3. Find the painter. File offset `0x1EFA3` maps to a `seg:off` address after import, so the
+   reliable way is **`Search → Memory…`** for the prologue bytes **`C8 82 00 00 56`**
+   (`ENTER 0x82,0; PUSH si`) → that hit is the F5-cluster painter. (Other report painters share
+   the `C8 ?? 00 00 56` shape with different frame sizes.) Click it, `D` to disassemble if
+   needed, open the **Decompiler**. You should see real C — a `load_PIK` call, a 320×200 rect
+   fill, and a loop over a record list — **not** `halt_baddata()`.
+4. Export the C: **`File → Export Program → C/C++`** → save as
+   `ghidra_export/COLONIZE_reports.c`. (Exporting the whole program is fine.) Commit + push:
+   ```
+   git add ghidra_export/COLONIZE_reports.c
+   git commit -m "ghidra: COLONIZE report-painter decompile export"
+   git push
+   ```
+5. Tell me it's pushed.
 
-### 2. Add the overlay blocks
-Two ways — **do the targeted one first.**
+### What you'll see (so the output isn't misread)
+Decompiling yields, per report:
+- **Literals** — the background/frame: a `load_PIK("REPORTn")`, a `320×200` rect (`0x140`,`0xC8`),
+  and a few fixed column anchors (e.g. `x=26`).
+- **A per-row layout FORMULA, not a flat coordinate list** — field rows are drawn in a **loop**
+  over a record table, with the row Y walked per iteration (`base + index·pitch`). So the useful
+  output is **"anchor + pitch + which record table feeds it"** per report — which is *more*
+  faithful than guessing one coordinate per field.
 
-**a) Targeted (recommended first):** you usually only need the one overlay region behind the
-screen you're decoding. Find its file offset in `orphans_overlay.asm` (search for the painter,
-e.g. a report's title-painter `LCALL 0x4509,0x10f`), then add just that block:
-`Window → Memory Map → + (Add Block)` → Block Type **Initialized**, **File Bytes** source =
-`VICEROY.EXE` at that file offset, length from the manifest. Disassemble it (`D`), open in the
-Decompiler.
+### One thing to confirm first (don't assume the F-key labels)
+The per-F-key mapping isn't pinned: the function commonly labeled "F5/Economic" actually reads
+the REF/Expeditionary tables (looks military). Before labeling F2–F9, note **which `REPORTn.PIK`
+each function loads** (the `load_PIK` string) and/or its **MISC title index** — that's the
+ground truth for which painter is which report. I'll do this when I parse the export; flag it if
+you spot it.
 
-**b) Bulk (all 209):** `Window → Script Manager` → run `tools/ghidra_add_overlays.py`.
-**Validate first:** when it asks "how many blocks", enter **1**, confirm that one overlay
-function decompiles to real C, *then* re-run with **0** (all). If a block overlaps a Phase-1
-segment it's skipped, not aborted.
-
-### 3. Re-analyze + export
-- `Analysis → Auto Analyze` (accept defaults; the new blocks get disassembled).
-- `File → Export Program → C/C++` → save as `ghidra_export/VICEROY_overlays.c`.
-- Commit it:
-  ```
-  git add ghidra_export/VICEROY_overlays.c
-  git commit -m "ghidra: Phase-2 overlay decompile export"
-  git push
-  ```
-
-### 4. Hand back
-Tell me it's pushed. I parse `VICEROY_overlays.c` and extract byte-cited facts for the
-currently-TBD subsystems — **starting with the F2–F9 report painters** (the field `x`/`y` the
-lab Screens tab marks TBD) — landing each as a **B** fact in the canonical `spec/` doc (and the
-Screens-tab seed), citing the Ghidra function. That's a TBD→B conversion that can't be
-re-litigated.
+### Then I integrate (TBD → B)
+From `COLONIZE_reports.c` I record each report's layout formula (frame literals + per-row anchor
+& pitch + feeding record table) as **B** in the canonical spec and the lab **Screens** tab
+(anchor+pitch rows replacing the TBD drag-to-measure fields), citing the COLONIZE function offset.
 
 ---
 
-## Validation / sanity
-- A known-good check: after loading, a resident **type-B** thunk target should match
-  `code/VICEROY/thunks_resolved.json` `anchor_validation` (e.g. thunk `0x1aaa6` → target file
-  `0x513c`). If your loaded bytes decode to the same instructions there, placement is right.
-- If a report painter's decompiled C shows a sequence like
-  `draw_text(font, 0x46, 7, "...")` (or the equivalent `push 0x46; push 7; lcall`), that
-  `0x46,7` **is** the field position — exactly the kind of fact we want.
+## Tier 2 — VICEROY overlay pages (optional, harder — *skip unless needed*)
 
-## Known limits / honesty
-- Linear `base = file offset` placement means cross-overlay far-calls won't auto-link; extract
-  per-function facts. Resolving the full type-A call graph (runtime overlay paging) is a
-  separate, harder follow-up and is **not** required for the position/value decode that breaks
-  the churn.
-- `tools/ghidra_add_overlays.py` is written against the standard Ghidra FlatProgramAPI but is
-  **untested on your build** — that's why step 2b says validate on one block first.
+Only for code resident **only** in VICEROY.EXE's overlays (not in COLONIZE's load image). In
+VICEROY the report painters are in **overlay page 0x06** (`code/VICEROY/disasm_overlay_reseg/page_06.asm`);
+the report helpers (PIK loader, score renderer) are in **page 0x05**.
+
+Prep the per-page block manifest:
+```
+python bin/reconstitute.py          # -> raw/COLONIZE/VICEROY.EXE
+python tools/ghidra_prep_overlays.py # -> code/VICEROY/ghidra_overlay_blocks.json (31 page blocks)
+```
+This now emits **one contiguous block per overlay page** at its real code base (e.g. page 0x06 @
+`0x3B900`, page 0x05 @ `0x37340`) — not the old 209 flat-file-offset blocks (those were unsafe in
+a 16-bit segmented program).
+
+Import `raw/COLONIZE/VICEROY.EXE` (x86 16-bit real mode), then add the pages:
+- **Bulk:** `Window → Script Manager` → run `tools/ghidra_add_overlays.py`. **When it asks how
+  many blocks, enter `1` first** — confirm that one overlay function decompiles to real C — then
+  re-run with `0` (all 31).
+- **Manual fallback (one page):** `Window → Memory Map → + (Add Block)` → Initialized, **File
+  Bytes** = `VICEROY.EXE` at the page's `file_offset`, length from the manifest. Disassemble (`D`).
+
+Then `Analysis → Auto Analyze`, `File → Export Program → C/C++` → `ghidra_export/VICEROY_overlays.c`,
+commit.
+
+### Tier-2 honesty
+- 16-bit real-mode addressing of these page bases is the **unverified** part — that's why the
+  script says validate one block first. If `createInitializedBlock`/`getAddress` throws, send me
+  the error.
+- Cross-page **type-A far calls won't resolve** (`jmpf_seg=0x0000`, runtime-paged — see
+  `code/VICEROY/thunks_resolved.json`). Expected; extract per-function facts, not the call graph.
+- The raw overlay disassembly already exists at `code/VICEROY/disasm/orphans_overlay.asm` and
+  `code/VICEROY/disasm_overlay_reseg/page_0{5,6}.asm` — use it as a cross-check.
+
+---
+
+## Why this is the right first move
+Tier 1 converts a re-guessed subsystem (report layouts) into byte-fact with a **plain import and
+no overlay surgery**. A decompiled `load_PIK + 320×200 rect + a record loop with base+pitch`
+**is** the layout — there's nothing left to re-litigate. That's one concrete TBD→B win that the
+churn metric (`tools/churn_metric.py`) should reflect.

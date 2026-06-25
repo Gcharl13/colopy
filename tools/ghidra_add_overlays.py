@@ -1,20 +1,25 @@
-# Ghidra Jython script — add VICEROY.EXE overlay regions as memory blocks (Phase 2).
+# Ghidra Jython script — add VICEROY.EXE overlay PAGE blocks (Tier 2 only).
 # @category Colopy
 # @menupath Tools.Colopy.Add Overlay Blocks
+#
+# TIER 2 ONLY. For the report screens you do NOT need this: those painters are RESIDENT
+# in COLONIZE.EXE and decompile from a plain import (docs/GHIDRA_PHASE2_RUNBOOK.md Tier 1).
+# Use this only for code that lives ONLY in VICEROY.EXE's overlay pages.
 #
 # RUN INSIDE GHIDRA (Script Manager), not with system python — it uses the Ghidra API.
 # Prereq: VICEROY.EXE already imported (Phase-1 load image) and open as currentProgram.
 #
 # It reads code/VICEROY/ghidra_overlay_blocks.json (produced by
-# tools/ghidra_prep_overlays.py) and adds each overlay code region as an initialized
-# memory block at a linear base = its file offset, then disassembles it. Function
-# BODIES (incl. literal coordinate/value operands) then decompile; cross-overlay
-# far-calls (type-A, runtime-paged) may stay unresolved — that's expected.
+# tools/ghidra_prep_overlays.py) — now ONE contiguous block per RTLink overlay page (31
+# blocks at real per-page bases, e.g. page 0x06 @ 0x3B900), not 209 flat-offset blocks —
+# and adds each at its base, then disassembles. Function BODIES (incl. literal operands)
+# decompile; cross-page far-calls (type-A, runtime-paged) may stay unresolved — expected.
 #
-# UNTESTED on your Ghidra build — VALIDATE on the first block before trusting the rest:
-# run with `limit=1` (prompt) first, confirm a known overlay function decompiles, then
-# re-run with the full set. Manual fallback: Window -> Memory Map -> + (Add Block),
-# Block Type = Initialized (from file bytes), Source = VICEROY.EXE @ the file offset.
+# UNTESTED on your Ghidra build — VALIDATE on the first block (use limit=1) and confirm a
+# known overlay function decompiles before doing the rest. 16-bit real-mode addressing of
+# these bases is the unverified part; if a block throws on getAddress/createBlock, that's
+# the thing to report back. Manual fallback: Window -> Memory Map -> + (Add Block),
+# Initialized, File Bytes = VICEROY.EXE @ the block's file_offset.
 
 import json
 import jarray
