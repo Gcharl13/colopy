@@ -169,8 +169,13 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    - **shore base `0x96` (150)** when `[0xA89F] & 0x40` (`@0x68354/0x68356`);
    - if `[0xA8A6]` matches a **clean edge pattern** (`&0xDD==0xC1`→0 / `&0x77==0x07`→1 /
      `&0x77==0x70`→2 / `&0xDD==0x1C`→3, `@0x68479..0x684AA`) → one **16×16 edge
-     `0x97 + pattern`** (151..153; pattern 3 would index 154 = past the 154-frame sheet
-     — see TBD note) `@0x6850D`;
+     `0x97 + pattern`** (151..153; pattern 3 would index **154 = 0x9A**, which is
+     **out of bounds — RESOLVED 2026-06-25**: PHYS0.SS holds exactly **154 frames**
+     (valid `0..153` = `0..0x99`), byte-decoded from the sheet's section-0 header
+     `nframes @0x26` via `tools/ssdec.py`; see `data_extracted/SPRITE_SHEET_FRAMES.md`.
+     So `0x97+3` overruns the sheet by one. The residual question is only whether the
+     pattern-3 mask (`&0xDD==0x1C`) is ever satisfied for a real coast tile at runtime;
+     the frame-count itself is no longer TBD) `@0x6850D`;
    - **else** (no clean pattern) → a **4-quadrant 8×8 sub-tile loop** (`@0x684BC..0x684F5`):
      for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** where `table[q]` (0..7) is the
      per-quadrant land bitmask built in `analyse_connections` (`@0x67AC7..0x67AEF`: diagonal
@@ -182,8 +187,10 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    **There is no road draw in this chain** — the `0x6D` band is the 8×8 coast sub-tile
    set, gated by water terrain id + the land-neighbour bitmap, not a road bit (matches
    the user ground-truth "no roads in new maps"). **B** (chain + frame roles, sizes
-   pixel-confirmed); the `[0xA8A6]`→`0x97..0x99` pattern table located, the pattern-3→154
-   edge case **TBD**.
+   pixel-confirmed); the `[0xA8A6]`→`0x97..0x99` pattern table located. **The pattern-3→154
+   frame-count question is RESOLVED 2026-06-25** — PHYS0.SS has exactly 154 frames (valid
+   `0..0x99`), so `0x9A` is one past the end (`data_extracted/SPRITE_SHEET_FRAMES.md`);
+   only the runtime reachability of pattern 3 remains open.
 
 **Authoritative PHYS0 sprite-index bands (byte-verified vs `func_0681A8`/`func_067A24`):**
 `0x21` mtn · `0x31` hills · `0x41` forest · `0x40` shore-feature · **`0x01..0x1F` river**
@@ -256,8 +263,10 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
      (frames 109..139, all 8×8, pixel-confirmed) at TL/TR/BR/BL sub-cell offsets. This band was
      previously **mislabelled "roads = `0x6D`"** — it is the per-quadrant coast composition,
      gated by the same water-tile land-neighbour bitmap (no road bit). See §3 item 7. **B**
-     (chain + frame roles + sizes); the `[0xA8A6]`→`0x97..0x99` pattern table located but the
-     pattern-3→154-OOB case **TBD**.
+     (chain + frame roles + sizes); the `[0xA8A6]`→`0x97..0x99` pattern table located. The
+     pattern-3→154-OOB case is **RESOLVED 2026-06-25** (PHYS0.SS = 154 frames, valid
+     `0..0x99`; `0x9A` overruns by one — `data_extracted/SPRITE_SHEET_FRAMES.md`); only
+     pattern-3 runtime reachability remains open.
 2. **Tile-byte bit encoding — PARTIALLY RESOLVED 2026-06-20** (`func_006204` /
    `func_0624E`): low 5 bits (`& 0x1F`) = **base terrain id**; the forest decoder
    `func_006204` masks `& 0x1F` then applies the auto-forest map (ids 8..23 → `(id&7)|8`,

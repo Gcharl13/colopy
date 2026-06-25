@@ -4686,3 +4686,15 @@ redraw (byte-verified), other bits context-overloaded and per-bit meaning kept T
 REJECTED by adversarial verify (NOT landed): a 0x314B per-letter alphabet proposal (byte
 encoding errors — claimed BX-form writes were SI-form, phantom letters); and a native
 0x5B1C column-padding claim. Honest TBDs, not invented.
+
+## 2026-06-25 — PHYS0.SS = 154 frames; map pattern-3 frame 0x9A IS out of bounds (Track 2a)
+
+The map_system coast-edge renderer computes `0x97 + pattern`; pattern 3 yields frame
+`0x9A` (154). Whether that overruns PHYS0.SS was a standing TBD because the frame count
+is NOT in VICEROY.EXE — it lives in the MADSPACK-packed sheet. **Byte-decoded the sheet:**
+PHYS0.SS section-0 header `nframes @0x26` = **154**, so valid indices are `0..153`
+(`0..0x99`) and frame `0x9A` is one past the end. Resolved. The only residual is whether
+the pattern-3 mask (`[0xA8A6] & 0xDD == 0x1C`) is ever satisfied for a real coast tile at
+runtime (latent bug vs unreachable branch). Full frame-count table for all 205 decodable
+.SS sheets recorded in `data_extracted/SPRITE_SHEET_FRAMES.md` (decoder: tools/ssdec.py).
+Notable counts: TERRAIN.SS=12, ICONS.SS=131, PHYS0.SS=154, BUILDING.SS=48, BDARK.SS=46.
