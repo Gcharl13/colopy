@@ -5,6 +5,15 @@ the VICEROY.EXE disassembly to its paint function, background image,
 title string, and data sources. Renderers can use this to produce
 pixel-faithful versions.
 
+> **Live visual ground-truth added 2026-06-25:** all 10 reports (F1–F10) captured from the
+> running game — see `docs/screens/reports/` + its README. The real `REPORTS` menu order is
+> F1 Terrain / F2 Religious / F3 Continental Congress / F4 Labor / F5 Economic / F6 Colony /
+> F7 Naval / F8 Foreign Affairs / F9 Indian / F10 Score. Data-rich captures confirm live field
+> values: **F5 Economic** (Tons/Gold/Bid/Ask × 16 commodities), **F8 Foreign Affairs** (4
+> leaders + Rebels/Tories), **F10 Score** (Citizens +6 / Congress +0 / Gold +1 / Total 7).
+> Reports close via the **OK** button (not Esc); an F-key inside a report pages that report's
+> sub-views (e.g. Economic "European Trade" → "Cargo in Port"). Captured via `tools/drive_game.sh`.
+
 **Source files searched**
 - `code/VICEROY/disasm/` (1,243 .asm files)
 - `code/COLONIZE/disasm/` (1,245 .asm files, recol overlay)

@@ -4842,3 +4842,24 @@ Findings (triangulated: live RAM + static MENU.TXT + screenshot):
 New screens: docs/screens/06_ingame_map.png, 07_king_audience.png (KING.SS, row 13),
 08_orders_menu.png. The runtime memory harness + driving harness together now reach and confirm
 any reachable game state.
+
+## 2026-06-25 — All 10 advisor reports captured live (F1–F10) (Track 9)
+
+Drove the running game to an in-game state and opened every report from the REPORTS pulldown.
+Visual ground-truth for the advisor-report subsystem (renderer func_037958, Track 2b) now lives
+in docs/screens/reports/ (+README). Confirmed REPORTS menu order: F1 Terrain / F2 Religious /
+F3 Continental Congress / F4 Labor / F5 Economic / F6 Colony / F7 Naval / F8 Foreign Affairs /
+F9 Indian / F10 Score.
+
+Live field values confirmed (not just layout):
+- F5 Economic = "European Trade" table, cols Tons/Gold/Bid Price/Ask Price × 16 commodities
+  (live bid/ask: Food 0/8, Sugar 5/7, Silver 19/20, Rum 9/10, Muskets 2/3, ...); pages to
+  "Cargo in Port" sub-view. Confirms the market bid/ask model (market.md).
+- F8 Foreign Affairs = 4 European leaders by name (Walter Raleigh/English, Jacques Cartier/
+  French, Christopher Columbus/Spanish, Michiel De Ruyter/Dutch), each Rebels/Tories (revolution.md).
+- F10 Score = func_03A9C0: "Discoverer Walter Raleigh of the English: Spring 1498"; English
+  Citizens +6 / Continental Congress +0 / Gold (1000e) +1 / Total Score: 7 (scoring.md terms).
+- F1 Terrain = Colonopedia popup for the tile ("Sea Lane" — hard rule 2).
+
+UX facts: reports close via the OK button (bottom-right), NOT Esc (Esc quits from the map); an
+F-key pressed inside a report pages THAT report's sub-views, it doesn't switch reports.
