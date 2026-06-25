@@ -185,6 +185,26 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
    is the generic **"find unit at map coords"** scan (unit table `0x3144` stride `0x1C`),
    and the consumer is the byte-verified `func_061454` — **nothing here is a missing
    function or an un-pinned constant.**
+
+   - **`0xA0`-vs-`0xB0` discrepancy — CLOSED BY BYTE PROOF (2026-06-25).** The map
+     generator **`func_064A10`** (overlay page `0x14`, file `0x64A10`) ORs feature mask
+     **`0xA0`** into the tile byte at **two FIXED coordinates** — `(1,0x15)` `@0x65C0D`
+     and `(0x44,0x2b)` `@0x65C21` — each `26 80 0f a0` = `or byte ptr es:[bx],0xa0`,
+     the pointer from tile helper `0x181F:0x70E`, both gated by `cmp [bp+6],0`
+     (generator/scenario mode) **and** `cmp [0x2174],0/jne` (map-loaded flag). This is the
+     SAME generator that seeds the rumor hash: its first act `@0x64A23` stores
+     `random_int(0,0x7fff)` into `[0x190]` (the seed `func_006188` reads). **There is NO
+     `0xB0` write and NO `==0xB0` read anywhere in `VICEROY.EXE`:** an exhaustive scan of
+     all 494,910 bytes for every tile-byte form of a `0xB0` immediate
+     (`cmp/test/and/or al,0xb0`; `cmp ah/dl,0xb0`; grp1 `0x80 /r` on `[bx]`/`es:[bx]` with
+     `0xb0` imm) returns **zero** matches — the only tile-byte grp1-imm writes in the whole
+     image are the two `or …,0xa0` above. The earlier model's extra `0x10` bit (`0xA0`→`0xB0`)
+     is therefore **set by no instruction**; the `==0xB0` trigger-read function **does not
+     exist**. Consistent with the procedural predicate above: a stored `0xA` high-nibble
+     feature (the generator's `0xA0`) makes `0x5DF0` return ≥0, so `func_006188`'s
+     `jge`-fail `@0x61C5` **suppresses** a rumor on those two tiles rather than marking one.
+     (The two fixed `0xA0` tiles are a distinct stored feature, not a rumor placement; its
+     nibble-`0xA` meaning is the only open leaf — see §6.4.)
 2. ~~Outcome bias cascade — exact per-gate probabilities.~~ **Done 2026-06-20.** The
    outcome index is `[bp-6] = max(anti_streak_floor, random_int(1,9))` (`@0x614F6..0x6151A`),
    where the **anti-streak floor** = `min(prev_floor+1, 3)` rises by 1 each rumor (stored

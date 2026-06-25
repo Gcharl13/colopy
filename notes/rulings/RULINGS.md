@@ -4663,3 +4663,26 @@ file-picker thunks not in the committed disasm; `map_system` pattern-3 frame `0x
 the `0x5B1C` tension-row columns 4..38 are never accessed in committed disasm; the
 events Lost-City trigger read `0xB0` vs the generator write `0xA0` is a cross-file
 ruling needing the trigger function traced.
+
+## 2026-06-25 — UnitRecord 0x314F = facing/heading (8-way compass), NOT "europe/recruit state"
+
+Track-1 orphan-overlay attribution. The spec previously glossed UnitRecord +0x314F as
+"europe/recruit state (cmp ==8)". **Overturned by bytes:** 0x314F is the unit's 8-way
+compass HEADING (values 0..7; 8 = invalid/none sentinel). Proven independently on three
+overlay pages by the `xor al,4` reverse-direction test (8-way compass reverse): page 0x0C
+`@0x047AA8`, page 0x13 `@0x062F7C`; the angular-distance momentum score
+`d=0x314F−target; if d>4 d=8−d; score−=d²·2` `@0x051712..0x051737`; and the `cmp
+[bx+0x314f],8; jge` invalid-bound `@0x0516F0`. Written by AI move routines
+`func_04E2D6`(page 0x0D)/`func_059B90`(page 0x0F) — confirming it is AI heading state, not
+europe/recruit code. The enclosing AI order/move processor `func_04E2D6` (page 0x0D,
+0x04E2D6..0x051D55) is now attributed (see notes/ATTRIBUTION_OVERLAY.md).
+
+Also this pass: 0x3156 = overloaded per-unit TIMER field (word snapshot of progress
+counter [0x538e] for owner≥4; byte 0xFF→rand for owner<4) — NOT cost/sale/treasure;
+0x3158 = u8 per-turn land-unit boolean (set after cargo-load LCALL func_00B368, tested
+only for Wagon Trains); 0x3148 = transient bit-scratch register, bit 0x08 = tile-dirty/
+redraw (byte-verified), other bits context-overloaded and per-bit meaning kept TBD.
+
+REJECTED by adversarial verify (NOT landed): a 0x314B per-letter alphabet proposal (byte
+encoding errors — claimed BX-form writes were SI-form, phantom letters); and a native
+0x5B1C column-padding claim. Honest TBDs, not invented.
