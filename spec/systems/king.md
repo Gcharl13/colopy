@@ -30,7 +30,7 @@ not PowerRecord fields.
 |-----------------|------|---------|------|----------|
 | `PowerRecord +0x01` | u8 | `tax_pct` (0..) | **BYTE_VERIFIED** | `func_034AE0` reads `[bx+1]`; `docs/DATA_MODEL.md` |
 | `PowerRecord +0x2A` | u32 | `gold` (player treasury) | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md`: write-back matches UI (3552/4032) |
-| `PowerRecord +0x22` | s32 | a per-player counter; grows **+18/turn** (Discoverer). Interpreted as a "royal/REF budget" but the spend rule is undecoded. | field+rate **RUNTIME-VERIFIED**; *meaning* **RECONSTRUCTED** | `docs/DATA_MODEL.md`: English 936→1062 over 7 turns |
+| `PowerRecord +0x22` | s32 | **Royal/REF fund.** Per turn it accrues `(diff*8+10)` (doubled once per era as the year `[0x538A]` passes 1600/1700/1750); at diff 1 that is 8+10=**18/turn**, matching the runtime observation. When the fund reaches **0x708 (1800)** the Crown buys one REF unit and subtracts 0x708. | **BYTE_VERIFIED** | `func_03E162` @0x3E181/@0x3E18A/@0x3E1B5 (accrue), @0x3E1C6 (gate `>= 0x708`), @0x3E271 (`SUB [bx+0x22],0x708`); `docs/DATA_MODEL.md`: English 936→1062 over 7 turns |
 | `DGROUP:0x53DA` | u16 | **REF Regulars** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 23 matches in-game |
 | `DGROUP:0x53DC` | u16 | **REF Cavalry** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 10 matches in-game |
 | `DGROUP:0x53DE` | u16 | **REF Man-O-War** | **USER-VERIFIED** | `docs/DATA_MODEL.md`: 5 matches in-game |
@@ -162,20 +162,30 @@ The demand surfaces as the **King speech-bubble dialog**:
 - **Solid (B):** PowerRecord tax/gold offsets; REF = 4 globals; turn counter &
   difficulty globals; the tax-raise formula; the 60 threshold; the pretext &
   option message keys.
-- **Runtime/Reconstructed:** `+0x22` field (+18/turn verified; "REF budget"
-  meaning inferred); the `KING.SS` portrait attribution.
-- **TBD:** tax-revenue loop, REF-growth spend threshold, exact pretext selection,
-  Tea-Party boycott bookkeeping.
+- **Runtime/Reconstructed:** the `KING.SS` portrait attribution. (The `+0x22`
+  "REF budget" meaning is no longer inferred — it is BYTE_VERIFIED as the Royal/REF
+  fund: `func_03E162` accrues to it and spends it at the 0x708 threshold.)
+- **TBD:** Tea-Party boycott bookkeeping (per-good boycott field + lift mechanism).
+  (The tax-revenue loop, REF-growth spend threshold `func_03E162`, and pretext
+  selection `func_036138` are now BYTE_VERIFIED — see §3 and Open-Questions 2/3/4.)
 
 ## 7. Open questions (TBD) → feeds `spec/BACKLOG.md`
 
 1. ~~**60 vs hard cap.**~~ **Resolved 2026-06-18:** `tax_pct` is hard-clamped to
    **75** (`0x4B`) at `func_034318` `0x03434F`; `0x3C`=60 (`func_0349F4`) is a
    separate message gate. Both `BYTE_VERIFIED`.
-2. **REF-growth threshold.** What spends `+0x22` (+18/turn) to add a REF unit at
-   `0x53DA..0x53E0`? Trace the writer of those globals.
-3. **Tax-revenue loop.** Byte-trace the European-sale tax cut (the per-good
-   computation) from a primary function; do not reuse the deleted reconstruction.
+2. ~~**REF-growth threshold.** What spends `+0x22` (+18/turn) to add a REF unit at
+   `0x53DA..0x53E0`?~~ **Resolved — `func_03E162` (@0x3E162..0x3E2E9).** Each turn it
+   accrues `(diff*8+10)` into `PowerRecord +0x22` (era-doubled at years 1600/1700/1750),
+   gates on the fund reaching **0x708 (1800)** (@0x3E1C6 `CMP [bx+0x22],0x708`/JAE), then
+   picks the most under-strength REF type by ratio (Cavalry vs `([0x53DA]+2)/3` @0x3E1D5;
+   Man-O-War vs `([0x53DA]+[0x53DC]+[0x53E0]+5)/10` @0x3E203; Artillery vs `|[0x53DA]|/4`
+   @0x3E1EB), increments `[bx*2 + 0x53DA]` (@0x3E238 `INC [bx+0x53da]`), and subtracts
+   0x708 from the fund (@0x3E271 `SUB [bx+0x22],0x708`). **BYTE_VERIFIED.**
+3. ~~**Tax-revenue loop.** Byte-trace the European-sale tax cut (the per-good
+   computation) from a primary function.~~ **Done (in §3, 2026-06-20)** — sell routine
+   `@0x32A44..0x32AA2`: `tax = sale × tax% / 100`, `net` accrues to `gold +0x2A` and the
+   tax accrues to the royal/REF fund `PowerRecord +0x22` (@0x32A92 add/adc). **B.**
 4. ~~**Pretext selection.** Which condition picks `@KINGNAVACT` vs `@KINGSTAMPACT`
    vs `@KINGWAR` etc.~~ **Done (in §3, re-verified 2026-06-20)** — `func_036138`
    chooses by the composite severity score `[bp-0x52]` (`< 0x28A` `@KINGWIFE`, `< 0x3B6`

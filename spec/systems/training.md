@@ -44,7 +44,7 @@ init `0x2D`, is a different profession/assignment datum — not the expertise cl
 | Colonist | Free Colonists | 4 | -1 |
 | Pioneer | Hardy Pioneers | 1 | 1200 |
 | Soldier | Veteran Soldiers | 2 | 2000 |
-| Scout | Seasoned Scouts | … | … |
+| Scout | Seasoned Scouts | 1 | -1 |
 
 **`@JOB` columns decoded** (cross-checked against the manual player-aid skill chart,
 `docs/GAME_MANUAL.md` p.3 line 5338):
@@ -103,7 +103,7 @@ init `0x2D`, is a different profession/assignment datum — not the expertise cl
     teacher's profession** outright (`0x181F:0xCAE` set-type `@0x02DF70`). Teacher→student
     pairing picks a **random student** (`random_int`, `0x181F:0x4D4` `@0x02DEC5`).
 
-### Native learning ("live among the Indians") — ruleset **B**, grant site **TBD**
+### Native learning ("live among the Indians") — ruleset **B**, grant site **B** (`@0x04A782`)
 From the `@LEARN*` bodies + the player-aid chart (skills marked `*` are
 Indian-learnable):
 - **Learnable skills are the outdoorsman/gathering experts only** — Expert

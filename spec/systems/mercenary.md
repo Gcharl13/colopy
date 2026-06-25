@@ -21,8 +21,20 @@ The player declines or pays. The mercenaries then **arrive in a colony**.
 | `@MERCS` | "%STRING1 mercenaries arrive in %STRING0." | arrival message | **BYTE_VERIFIED** |
 
 - **Price (`%NUMBER0`) and force composition (`%STRING1`) are runtime-substituted**
-  — the values come from game state, not the string; the formula is `TBD`.
-- Eligibility/offer flag in game state: `TBD` (not traced).
+  — the values come from game state, not the string. The price formula and the
+  force-composition (count/category) rolls are **BYTE_VERIFIED** — see §3
+  (`func_03E442` wartime `@0x03E512..0x03E57B`, `func_03E664` peacetime
+  `@0x03E6C8..0x03E736`). **B**
+- Eligibility/offer flag in game state: the offer-trigger code in `func_03E442` is
+  reached only when a **per-power one-shot bit** on the active `PowerRecord` is
+  already set — `func_03E442 @0x03E4BC` `test byte ptr [bx],8` (`bx = word[0x84FC]`,
+  the active `PowerRecord` offset set by `func_030550` from the `[bp+6]` power arg);
+  if clear, the routine instead **sets** it (`@0x03E4CD` `or byte ptr [bx],8`) and
+  returns with no offer. So a foreign power makes no offer on its first eligible
+  call and only from the second onward (bit `0x08` of `PowerRecord+0x00`). **B**
+  The init side-effect run on that first call (`@0x03E4C3` `call 0x3EA2E →
+  0x1A1F:0xC4`) is in an **undisassembled overlay**, so the bit's full semantics
+  (what else it initializes) remain **TBD**.
 
 **Corrections from the basis (do not reuse the old anchors):**
 - `@MERCENARY` is **NOT** the mercenary offer — its body is *"The {%STRING0}

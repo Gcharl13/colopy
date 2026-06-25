@@ -18,12 +18,25 @@ from the manual / observed strings; trigger wiring not byte-traced).
 - Tutorial strings live in `GAME.TXT` as keys **`@TUTORIAL1` … `@TUTORIAL19`**
   (19 keys), all confirmed present in `data_extracted/text/GAME_sections.json`
   (lines 489–512). **B** (keys exist).
-- Most `@TUTORIALn` slots carry an **empty value** in the extracted section; the
-  visible tutorial prose is held in the adjacent `@y=N` continuation entries
-  (e.g. `@y=5` at line 503 = the "ship has arrived … drag cargo" lesson). The
-  key→prose binding is `TBD`.
-- Related help keys nearby: `@TUTNOLUMBER`, `@TUTNOSPACES` (lines 513–514) —
-  conditional warnings (no lumber / no build space). **B** (keys exist).
+- Each `@TUTORIALn` key carries its **full prose value directly** in the extracted
+  section (`data_extracted/text/GAME_sections.json` lines 464–482; all 19 keys
+  TUTORIAL1..19 have non-empty values, e.g. line 475 `@TUTORIAL12` = the "ship has
+  arrived … drag cargo" lesson). There are **no `@y=N` continuation entries** in the
+  file (grep `"@y=` → 0 matches), so the key→prose binding is **direct/1:1** — the prior
+  "empty value + `@y=N` continuation" note was a stale-extraction artifact, now
+  superseded. **B** (prose binding resolved).
+- Related help keys nearby: `@TUTNOLUMBER`, `@TUTNOSPACES`
+  (`data_extracted/text/GAME_sections.json` lines 483–484) — conditional build-colony
+  warnings, both emitted from the founding-colony validation routine **`func_022542`**
+  (page 01, also home of NOPORT/NOCOLONIESEITHER). Both are gated by
+  `cmp byte [0x53a6],2; jae skip` (`@0x22763`): warnings only fire when `[0x53a6] < 2`.
+  **`@TUTNOSPACES`** (handle `0x9cd`, `@0x22772`) fires when `cmp word [bp-6],4; jge skip`
+  (`@0x2276A`) is not taken — i.e. the adjacent productive-square count `[bp-6] < 4`.
+  **`@TUTNOLUMBER`** (handle `0x9d9`, `@0x2278a`) fires when `cmp word [bp-0xe],0; jne skip`
+  (`@0x22782`) is not taken — i.e. the forested-square count `[bp-0xe] == 0`. Each is a
+  two-choice dialog (`lcall 0x181f,0x652`, arg `3`); the build proceeds only when the
+  return `ax == 2` (`cmp ax,2; jne 0x2175` → otherwise abort), matching the
+  "Cancel action. / Build colony anyway." prose. **B** (keys + trigger conditions).
 - **Tutorial state = a 16-bit "step-shown" bitmask `[0x5386]` (low byte) / `[0x5387]`
   (high byte) — BYTE_VERIFIED 2026-06-20.** There is **no sequential step index**; each
   step owns one bit and is **idempotent**: its event site does

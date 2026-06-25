@@ -117,9 +117,15 @@ These match `viceroy_source/src/mapgen/climate.c` exactly.
 > artifact of decoding the table at the wrong offset (`0x6442c`) with the wrong
 > segment base. **P2 terrain-value mapping is BYTE_VERIFIED.**
 
-- **Customize** parameter ranges (land-mass size `p1+p2`, moisture, climate): the
-  landmass target `(p1+p2+1)·0x140` and the climate jump tables are located; the
-  menu→parameter encodings are still `TBD`.
+- **Customize** parameter ranges: the **4 player-facing parameters are 3-way enums
+  (value 0..2)** chosen from a 4-row menu (`func_070060`, cursor `mod 4` `@0x70158`,
+  value `mod 3` `@0x701AA/0x701AD`): idx0 `@CLAND` land-mass {Small/Normal/Large},
+  idx1 `@CCONT` land-form {Archipelago/Normal/Large Continents}, idx2 `@CTEMP`
+  temperature {Cool/Temperate/Warm}, idx3 `@CCLIM` climate {Arid/Normal/Wet}
+  (`GAME_sections.json`). They feed the generator as landmass target `(p1+p2+1)·0x140`
+  and the temperature/climate jump-table inputs. A 5th array slot `0x1E86` =
+  smoothing-iteration count is generator-internal (`(p_iter+1)·0x320` `@0x6538D`), not
+  on the menu. **B.**
 - Polar-ice boundary: top/bottom rows = Arctic `0x18` (P5). **B** (was R).
 - Sea-lane on right edge: id 26 (`0x1A`), **right two columns** (P5). **B** (CLAUDE.md hard rule 2).
 
@@ -144,14 +150,23 @@ Setup-menu options surfaced in the opening/new-game flow. Strings likely in
    coords. **B.**
 2. ~~Locate and trace the random-map generator.~~ **Done 2026-06-19/20** — `func_064A10`, passes P0–P6 **B** (§3); dims 58×72, seed, gate, and the **P2 climate→terrain tables `{5,4,1,3,2,2}`N / `{2,3,3,4,6,7}`S** all byte-verified (inline jump tables `0x64CFC`/`0x6504E`, cs-base `0x64150`). The C-recon climate values are confirmed.
 3. ~~Customize parameter encodings + menu binding.~~ **Done 2026-06-20** — the
-   parameters are a **5-word global array at `DGROUP:0x1E7E`** (idx 0 land-mass p1,
-   1 land-form p2, 2 climate, 3 moisture/temperature, 4 TBD), read by the generator
-   (`@0x64AB0 add ax,[0x1E7E]`; landmass target `(p1+p2+1)·0x140` `@0x64AAD`; climate
-   table `cs:[bx+0xBAC]`, moisture `cs:[bx+0xEFE]`). `func_064A10` itself takes only
+   parameters are a **5-word global array at `DGROUP:0x1E7E`** (idx 0 land-mass p1
+   `0x1E7E`, 1 land-form p2 `0x1E80`, 2 temperature `0x1E82`, 3 climate/moisture
+   `0x1E84`, 4 smoothing-iteration count `p_iter` `0x1E86`), all five read by the
+   generator: landmass target `(p1+p2+1)·0x140` (`@0x64AAD/0x64AB0 mov ax,[0x1E80];
+   add ax,[0x1E7E]`); temperature shifts the latitude/climate band index
+   (`@0x64CA0 sub ax,[0x1E82]`); climate/moisture biases smoothing
+   (`@0x64DFE/0x64E2A mov cx,[0x1E84]`); and **idx 4 = `[0x1E86]` is the P3 relaxation
+   budget `(p_iter+1)·0x320`** (`@0x6538D mov ax,[0x1E86]; inc ax; imul ax,ax,0x320`). `func_064A10` itself takes only
    `[bp+6]` = regenerate flag. The **Customize dialog `func_070060`** (`@0x75CCB`,
    gated `[bp-0xe0]==3`) writes the player's picks `mov [bx+0x1E7E],…` (`@0x701AD`,
-   value mod-3); strings `@CLAND/@CCONT/@CTEMP/@CCLIM`. **B** (array+target), **A**
-   (idx-4 label, menu strings).
+   value mod-3 → 0..2); the menu exposes **exactly 4 rows** (cursor wraps `([0xa60a]+3)
+   mod 4` `@0x70158`) → idx 0..3 of the array, with strings `@CLAND/@CCONT/@CTEMP/@CCLIM`
+   (`@CLAND`="LAND MASS: Small/Normal/Large", `@CCONT`="LAND FORM: Archipelago/Normal/
+   Large Continents", `@CTEMP`="TEMPERATURE: Cool/Temperate/Warm", `@CCLIM`="CLIMATE:
+   Arid/Normal/Wet"; `GAME_sections.json`). **idx 4 (`0x1E86`, smoothing iterations) is
+   NOT player-exposed** — it is read only by the generator. **B** (array+target+idx-4
+   site + 4-row menu + strings).
 4. ~~Post-mapgen placement passes.~~ **Done — BYTE_VERIFIED entry functions (2026-06-20):**
    all orchestrated by `func_0755CC` after the generator call `@0x7579E`:
    - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)

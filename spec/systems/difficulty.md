@@ -61,7 +61,7 @@ Net effect of the human-side terms: higher difficulty → larger Royal Expeditio
 Force at independence, less combat padding for the player, worse native attitude,
 and more aggressive/expensive AI diplomacy. **B** (the rows above).
 
-### Touch points consistent with the same idioms (spot-checked subset; treat as R until each is instruction-verified)
+### Touch points consistent with the same idioms (instruction-verified 2026-06-25 — promoted R→B)
 - **Native gift/treasure:** reward `2·diff+15` (`@0x4A05A`); `10·(diff+rand)`
   (`@0x4A0C2`); gate `diff+1` + cap `8−diff` (`@0x4A2A9`); native price floor
   `5·diff+50` (`@0x5C976`). (CHIEFKILL roll bound `(8−diff)<<scout` `@0x4A84D` is
@@ -98,8 +98,17 @@ and more aggressive/expensive AI diplomacy. **B** (the rows above).
   at **`@0x9D49`, `@0xA05C`, `@0x27416`** (all three same idiom, gated on
   `[bx+0x1a]<4 && [idx·0x34+0x543F]==0`). The `10−diff` value exactly matches the
   manual's 10→6, identifying this family as the SoL/Tory production thresholds.
-  **B** (value); the exact site→effect binding (which of the three is the Tory
-  *penalty* vs the SoL *bonus* divisor) is the residual — cross-ref
+  **B** (value); the exact site→effect binding is now **byte-resolved
+  (2026-06-25)**: at **`@0x9D49`** and **`@0xA05C`** the `(10−diff)` value is used
+  as an `IDIV` **divisor** of the SoL production term, then negated
+  (`@0x9D7C IDIV [bp-0xe]; @0x9D7F NEG ax`; `@0xA090 IDIV [bp-0xa]; @0xA093 NEG ax`)
+  — i.e. these two are the **SoL-bonus divisor**. At **`@0x27416`** the value is
+  instead used as a **comparison threshold** against a count (`[bp-0x5e]`):
+  `@0x27444 CMP [bp-0x62],[bp-0x5e]; JG` and `@0x27451 SHL ax,1; @0x27453 CMP
+  ax,[bp-0x5e]; JG`, selecting outcome tiers `0xf/0xc/4` — i.e. `@0x27416` is the
+  **threshold-comparison site** (the `count reaches 10−diff` semantics of the
+  manual's Tory penalty). Note the AI constant differs by site: `0xa` (10) at
+  9D49/A05C but `0x32` (50) at 27416. **B.** Cross-ref
   `spec/systems/tory_uprising.md`, `spec/systems/colony.md` (SoL production).
 
 ## 4. UI
